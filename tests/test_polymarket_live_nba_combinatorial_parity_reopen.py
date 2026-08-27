@@ -13,7 +13,7 @@ ARTIFACT = ROOT / "docs/model-research/action-value" / (
 )
 REGISTRY = ROOT / "docs/model-research/structural-edge-priority-registry-v1.json"
 EXPECTED_HASH = "70cfc7b2ae1cb256e7a8c08c9af33fa8524d2308a8c18400d5a2b7d93c966fe3"
-REGISTRY_HASH = "95283a6ce281bd2e3d6c44ad4a196605a9d7f5cfa424ad474b75bfec593c3ebe"
+REGISTRY_HASH = "d970fb88450a9f4111912a43c51fba8c6ae60c5933bcb096025aa7106b183547"
 
 
 def _load(path: Path) -> dict[str, object]:
@@ -98,7 +98,17 @@ def test_registry_reopens_only_the_distinct_future_nba_recurrence_family() -> No
                 "v1-2026-08-26.json"
             ),
             "result_sha256": EXPECTED_HASH,
-        }
+        },
+        {
+            "path": (
+                "docs/model-research/action-value/"
+                "polymarket-sports-taker-delay-maker-protection-gate-v1-"
+                "2026-08-27.json"
+            ),
+            "result_sha256": (
+                "4847ec7828e598950da9a455170b66a529d9a5d671bfb4c37a57a36f608b9627"
+            ),
+        },
     ]
     terminal = next(
         item

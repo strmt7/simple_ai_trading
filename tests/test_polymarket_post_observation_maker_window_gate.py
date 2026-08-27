@@ -28,7 +28,7 @@ EXPECTED_PROSPECTIVE_V3_HASH = (
 )
 REGISTRY_PATH = ROOT / "docs/model-research/structural-edge-priority-registry-v1.json"
 EXPECTED_REGISTRY_HASH = (
-    "95283a6ce281bd2e3d6c44ad4a196605a9d7f5cfa424ad474b75bfec593c3ebe"
+    "d970fb88450a9f4111912a43c51fba8c6ae60c5933bcb096025aa7106b183547"
 )
 
 

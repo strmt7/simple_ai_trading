@@ -1,0 +1,173 @@
+{
+  "adjudication": {
+    "accepted_edge": false,
+    "deployment_ready": false,
+    "existing_accepted_edge_count_changes": 0,
+    "market_direction_independent_edge_proved": false,
+    "profitability_claim": false,
+    "public_after_cost_profit_floor_pusd": "0",
+    "status": "current_primary_rules_make_sports_taker_delay_a_non_atomic_uncancellable_pending_execution_risk_not_free_maker_protection_exact_duration_and_rebate_rate_are_unresolved",
+    "trading_authority": false
+  },
+  "authority": {
+    "account_state_accessed": false,
+    "authenticated_requests": 0,
+    "credentials_inspected_or_used": false,
+    "funded_actions": 0,
+    "orders_cancellations_or_quotes_submitted": 0,
+    "public_document_GETs": 7,
+    "venue_market_data_or_API_requests": 0
+  },
+  "completed_after_utc": "2026-08-27T01:05:07.4149776Z",
+  "distinctness": {
+    "classification": "execution_contract_correction_for_the_existing_live_NBA_moneyline_spread_implication_and_sports_maker_reward_candidates",
+    "new_accepted_edge": false,
+    "reason": "the_sources_define_a_sports_specific_pending_order_state_that_changes_causal_execution_and_hedge_risk_but_supply_no_owned_fill_rebate_or_after_cost_profit",
+    "registry_mechanism": "polymarket_live_NBA_moneyline_spread_monotone_payoff_implication"
+  },
+  "current_primary_rule_evidence": {
+    "game_start_cancel": {
+      "rule": "outstanding_sports_limit_orders_are_automatically_cancelled_at_the_official_game_start",
+      "failure_warning": "shifted_game_start_or_other_circumstances_can_leave_orders_uncleared",
+      "risk_conclusion": "automatic_start_cancel_is_not_a_fail_closed_owned_cancel_confirmation"
+    },
+    "marketable_order_delay": {
+      "general_sports_help_center_seconds": 3,
+      "NBA_and_MLB_test_seconds": 1,
+      "lifecycle_rule": "configured_sports_markets_hold_marketable_orders_for_the_markets_configured_delay_window_before_matching",
+      "pending_cancellation_rule": "during_the_delay_the_marketable_order_is_pending_and_cannot_be_cancelled",
+      "post_delay_rule": "validation_runs_after_the_delay_and_the_order_may_match_be_rejected_or_become_unmatched",
+      "exact_current_per_market_duration_publicly_exposed": false
+    },
+    "compact_market_info_limit": {
+      "documented_public_endpoint": "GET https://clob.polymarket.com/clob-markets/{condition_id}",
+      "itode_meaning": "selected_crypto_and_finance_250_millisecond_taker_delay_enabled_boolean",
+      "sports_numeric_delay_field_documented": false,
+      "oas_meaning": "minimum_order_age_in_seconds_not_documented_as_the_sports_taker_delay",
+      "conclusion": "itode_true_or_the_local_250_millisecond_crypto_constant_cannot_source_bind_a_sports_delay_duration"
+    },
+    "sports_maker_rebate_conflict": {
+      "help_trading_fees_page_rate": "0.15",
+      "help_maker_rebates_page_rate": "0.20",
+      "resolution": "unresolved_current_primary_source_conflict_credit_zero_until_an_effective_source_or_owned_post_change_payout_resolves_it"
+    },
+    "liquidity_reward_timing": {
+      "march_madness_minimum_active_book_seconds": "3.5",
+      "general_scoring_sample_frequency": "once_per_minute_using_random_sampling",
+      "conclusion": "minimum_age_and_random_sampling_define_reward_eligibility_not_a_fill_or_profit_guarantee"
+    }
+  },
+  "execution_consequences": {
+    "resting_maker_side": [
+      "a_resting_order_can_be_cancelled_before_it_is_matched",
+      "no_public_rule_proves_that_a_maker_can_observe_incoming_delayed_taker_intent",
+      "no_public_rule_proves_that_cancel_confirmation_wins_the_matching_race",
+      "therefore_the_delay_has_no_positive_maker_protection_value_in_the_public_profit_floor"
+    ],
+    "maker_first_taker_hedge_side": [
+      "after_an_owned_maker_fill_the_opposite_marketable_hedge_can_enter_an_uncancellable_pending_delay",
+      "the_hedge_is_revalidated_after_the_delay_so_creation_time_book_headroom_does_not_prove_the_fill_price_or_fill",
+      "the_entire_pending_interval_and_every_reject_unmatched_partial_or_late_fill_belongs_in_orphan_PnL"
+    ],
+    "two_leg_all_taker_side": [
+      "two_market_order_submission_is_not_proved_atomic",
+      "each_leg_can_be_delayed_and_revalidated_independently",
+      "a_synchronized_public_book_violation_is_only_a_recurrence_screen_until_owned_both_leg_state_and_cost_are_reconciled"
+    ],
+    "net_effect": "the_current_public_floor_for_delay_protection_is_zero_and_the_current_latency_stress_for_a_marketable_hedge_must_include_the_unresolved_sports_delay_not_250_milliseconds"
+  },
+  "prospective_contract_correction": {
+    "public_recurrence_allowed": "one_precommitted_synchronized_read_only_NBA_full_game_moneyline_spread_recurrence_capture_after_the_existing_exact_payoff_and_market_fee_trigger",
+    "required_public_sensitivity": [
+      "evaluate_both_one_second_and_three_second_independent_leg_delays_without_future_books",
+      "reject_any_episode_that_is_not_positive_after_current_exact_taker_fee_rounding_at_each_delayed_leg_state",
+      "assign_zero_to_maker_rebates_and_liquidity_rewards_in_public_all_taker_economics"
+    ],
+    "authenticated_paper_activation_requires": [
+      "explicit_authenticated_paper_authority_after_every_protected_boundary",
+      "runtime_evidence_for_the_exact_markets_configured_sports_delay_duration_and_activation_phase",
+      "owned_order_acceptance_delayed_matched_unmatched_rejected_cancel_and_fill_timestamps",
+      "full_orphan_PnL_for_every_independently_delayed_leg",
+      "effective_sports_rebate_rate_resolved_by_account_or_owned_post_change_payout_evidence",
+      "game_start_cancel_confirmation_observed_as_owned_state_not_assumed_from_schedule"
+    ],
+    "promotion_gate": "positive_worst_episode_after_every_fee_delay_revalidation_partial_fill_orphan_rebate_reward_external_and_capital_cost_in_every_required_game_time_volatility_liquidity_and_latency_slice",
+    "stop_conditions": [
+      "exact_sports_delay_duration_or_phase_is_unknown",
+      "a_pending_delayed_order_cannot_be_reconciled_to_terminal_owned_state",
+      "either_leg_rejects_becomes_unmatched_partially_fills_or_exceeds_the_frozen_cost",
+      "sports_rebate_or_reward_terms_are_conflicting_or_unreconciled",
+      "automatic_game_start_cancel_is_not_owned_and_confirmed"
+    ]
+  },
+  "prohibited_shortcuts": [
+    "treating_a_sports_taker_delay_as_free_maker_protection",
+    "assuming_a_delayed_marketable_order_can_be_cancelled",
+    "using_itode_or_the_crypto_250_millisecond_constant_as_the_sports_delay_duration",
+    "treating_synchronized_public_books_or_batch_submission_as_atomic_two_leg_execution",
+    "choosing_15_or_20_percent_sports_maker_rebate_from_conflicting_current_primary_pages",
+    "crediting_randomly_sampled_liquidity_rewards_before_owned_eligibility_and_payout",
+    "treating_scheduled_game_start_cleanup_as_owned_cancel_confirmation",
+    "using_future_post_delay_books_to_reprice_a_creation_time_trade"
+  ],
+  "result_sha256": "4847ec7828e598950da9a455170b66a529d9a5d671bfb4c37a57a36f608b9627",
+  "schema_version": "polymarket-sports-taker-delay-maker-protection-gate-v1",
+  "sources": [
+    {
+      "payload_bytes": 73142,
+      "payload_sha256": "19b843f1e60f76a5588060273f23d024f9d868d81a145f790c6c9d27ec56b4ae",
+      "received_after_utc": "2026-08-27T01:05:05.6345347Z",
+      "requested_before_utc": "2026-08-27T01:05:03.4889794Z",
+      "role": "official_sports_three_second_general_one_second_NBA_MLB_test_and_game_start_cancel_warning",
+      "url": "https://help.polymarket.com/en/articles/13364444-limit-orders"
+    },
+    {
+      "payload_bytes": 8341,
+      "payload_sha256": "854236c2602d4268c72d61f3c568f85ffb3f5e58071486abe8c88cecde9d8e76",
+      "received_after_utc": "2026-08-27T01:05:06.6120215Z",
+      "requested_before_utc": "2026-08-27T01:05:06.3998332Z",
+      "role": "official_delayed_order_pending_uncancellable_revalidation_and_terminal_state_rules",
+      "url": "https://docs.polymarket.com/concepts/order-lifecycle.md"
+    },
+    {
+      "payload_bytes": 5703,
+      "payload_sha256": "b6e72949b7dc1c8c6cf97a1657a3dcd0f7aa145ca4ca9c82d9f9f77110b4e1a4",
+      "received_after_utc": "2026-08-27T01:05:06.8420976Z",
+      "requested_before_utc": "2026-08-27T01:05:06.6205961Z",
+      "role": "official_public_CLOB_market_info_itode_250_millisecond_boolean_and_minimum_order_age_schema",
+      "url": "https://docs.polymarket.com/api-reference/markets/get-clob-market-info.md"
+    },
+    {
+      "payload_bytes": 81665,
+      "payload_sha256": "a5794b14eb3defe8ab289978447ecee3761857e725d86392939b8ac07e5af1ca",
+      "received_after_utc": "2026-08-27T01:05:06.0106743Z",
+      "requested_before_utc": "2026-08-27T01:05:05.6859802Z",
+      "role": "official_current_trading_fee_page_listing_15_percent_sports_maker_rebate",
+      "url": "https://help.polymarket.com/en/articles/13364478-trading-fees"
+    },
+    {
+      "payload_bytes": 108891,
+      "payload_sha256": "ce6df2d5eeb5da0be10348640c7cd23550694eb6aa0cf09bb897c70980486a98",
+      "received_after_utc": "2026-08-27T01:05:06.3634155Z",
+      "requested_before_utc": "2026-08-27T01:05:06.0409333Z",
+      "role": "official_current_maker_rebate_page_listing_20_percent_sports_rate_daily_payout_one_dollar_minimum_and_per_market_competition",
+      "url": "https://help.polymarket.com/en/articles/13364471-maker-rebates-program"
+    },
+    {
+      "payload_bytes": 23375,
+      "payload_sha256": "630e2f885b355a5a34dc1d0e09c2ac033ee83af4595ba283b217273e6f5ac73b",
+      "received_after_utc": "2026-08-27T01:05:07.1525011Z",
+      "requested_before_utc": "2026-08-27T01:05:06.8519900Z",
+      "role": "official_March_Madness_liquidity_reward_minimum_3_5_second_active_order_rule",
+      "url": "https://docs.polymarket.com/changelog/predictions.md"
+    },
+    {
+      "payload_bytes": 7191,
+      "payload_sha256": "27e11fc522c0aa9ee586e838add32b176a27ec5e216a7d18f27a2298e62efc63",
+      "received_after_utc": "2026-08-27T01:05:07.4149776Z",
+      "requested_before_utc": "2026-08-27T01:05:07.1659820Z",
+      "role": "official_current_liquidity_reward_random_minute_sampling_relative_share_and_one_dollar_minimum",
+      "url": "https://docs.polymarket.com/programs/liquidity-rewards.md"
+    }
+  ]
+}

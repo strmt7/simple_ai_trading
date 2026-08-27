@@ -20,8 +20,9 @@ from .paper_execution import BookLevel, PaperBookSnapshot, PolymarketFeeModel
 
 POLYMARKET_MARKET_SCHEMA_VERSION = "polymarket-crypto-5m-market-v1"
 POLYMARKET_FIFTEEN_MINUTE_MARKET_SCHEMA_VERSION = "polymarket-crypto-15m-market-v1"
-# Polymarket identifies this independently from the general ``seconds_delay``
-# field. See the official 2026-06-05 CLOB maintenance record.
+# Crypto/finance ``itode`` only. Sports/game delays use a separate configured
+# seconds window and must never inherit this value. See the official order
+# lifecycle and per-market CLOB-info contracts.
 POLYMARKET_TAKER_ORDER_DELAY_MS = 250
 SUPPORTED_POLYMARKET_ASSETS = ("BTC", "ETH", "SOL")
 GAMMA_MARKETS_URL = "https://gamma-api.polymarket.com/markets"

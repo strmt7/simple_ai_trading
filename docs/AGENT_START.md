@@ -1025,6 +1025,19 @@ safety gate, blocks Stop, or submits an order.
   `polymarket-maker-execution-manipulation-regime-gate-v1-2026-08-27.json`,
   result SHA-256
   `7d3387289a7e82b33fa52c03b2bc134864259a001c3d28524745026bb83db387`.
+- Current sports execution rules do not turn maker rebates or live-NBA parity
+  into a protected edge. Marketable sports orders enter a configured delay and
+  cannot be cancelled while pending; the help center lists a three-second
+  general delay and a one-second NBA/MLB test, while the compact market-info
+  `itode` field describes the separate 250-millisecond crypto/finance delay and
+  exposes no sports duration. Therefore each all-taker leg or post-maker hedge
+  must be treated as independently delayed and revalidated, with full orphan
+  risk. Current official pages also conflict between 15% and 20% sports maker
+  rebates, so credit zero until effective or owned payout evidence resolves it.
+  Never reuse the crypto 250-millisecond constant for sports. Canonical gate:
+  `polymarket-sports-taker-delay-maker-protection-gate-v1-2026-08-27.json`,
+  result SHA-256
+  `4847ec7828e598950da9a455170b66a529d9a5d671bfb4c37a57a36f608b9627`.
 - A shared source-continuity gate now permits only slot-local failure
   containment for future, separately activated Binance and Polymarket
   campaigns. It is design-only: no future schedule, capture, target, model, or
@@ -1063,6 +1076,7 @@ safety gate, blocks Stop, or submits an order.
 | Binance Ondo/bStock/stock-perpetual wrapper parity candidate | `docs/model-research/action-value/binance-ondo-bstock-stock-perpetual-wrapper-parity-candidate-v1-2026-08-27.json` |
 | Polymarket maker-first/taker-hedge complete-set candidate | `docs/model-research/action-value/polymarket-maker-first-taker-hedge-complete-set-candidate-v1-2026-08-27.json` |
 | Polymarket maker execution manipulation regime gate | `docs/model-research/action-value/polymarket-maker-execution-manipulation-regime-gate-v1-2026-08-27.json` |
+| Polymarket sports taker-delay maker-protection gate | `docs/model-research/action-value/polymarket-sports-taker-delay-maker-protection-gate-v1-2026-08-27.json` |
 | Polymarket August crypto-TWAP liquidity-reward terminal screen | `docs/model-research/polymarket/crypto-twap-liquidity-reward-screen-attempt1-failure-v1.json` |
 | Post-observation maker window | `docs/model-research/action-value/polymarket-post-observation-maker-window-gate-v1-2026-08-26.json` |
 | LDUSDT margin yield | `docs/model-research/action-value/binance-ldusdt-margin-yield-gate-v1-2026-08-26.json` |

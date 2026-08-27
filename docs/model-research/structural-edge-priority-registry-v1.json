@@ -1068,6 +1068,7 @@
       "blocking_evidence": [
         "future active NBA full-game same-game moneyline and spread pair with exact source-proved team handicap overtime push tie cancellation postponement forfeit and correction resolution mapping",
         "current per-market feesEnabled feeSchedule rate exponent takerOnly rebateRate tick size minimum order size and acceptingOrders state",
+        "exact per-market configured sports taker-delay duration and phase plus independently delayed leg state transitions",
         "recurrent synchronized batch-book all-taker violations after exact fee rounding displayed bottleneck depth and frozen latency cancellation orphan and external-cost stress",
         "multiple independent games with positive aggregate and worst-game economics and no value assigned to the historically unrealized middle payout",
         "owned simultaneous or otherwise causally complete both-leg fills reconciliation and unwind costs before any deployment or profitability claim"
@@ -1076,18 +1077,24 @@
         {
           "path": "docs/model-research/action-value/polymarket-live-nba-moneyline-spread-combinatorial-parity-reopen-v1-2026-08-26.json",
           "result_sha256": "70cfc7b2ae1cb256e7a8c08c9af33fa8524d2308a8c18400d5a2b7d93c966fe3"
+        },
+        {
+          "path": "docs/model-research/action-value/polymarket-sports-taker-delay-maker-protection-gate-v1-2026-08-27.json",
+          "result_sha256": "4847ec7828e598950da9a455170b66a529d9a5d671bfb4c37a57a36f608b9627"
         }
       ],
-      "current_status": "materially_reopened_distinct_direction_independent_live_NBA_full_game_moneyline_spread_payoff_implication_candidate_primary_2026_paper_reports_290_executable_episodes_and_101_01_bips_median_under_a_now_stale_zero_fee_assumption_current_official_sports_category_taker_rate_is_0_05_exact_market_fee_recurrence_resolution_and_fill_evidence_unproved_not_accepted_or_deployment_ready",
+      "current_status": "materially_reopened_distinct_direction_independent_live_NBA_full_game_moneyline_spread_payoff_implication_candidate_primary_2026_paper_reports_290_executable_episodes_and_101_01_bips_median_under_a_now_stale_zero_fee_assumption_current_official_sports_category_taker_rate_is_0_05_current_primary_rules_add_an_uncancellable_configured_sports_delay_to_each_marketable_leg_with_conflicting_one_second_NBA_test_and_three_second_general_help_terms_and_conflicting_15_or_20_percent_sports_rebates_exact_market_fee_delay_recurrence_resolution_and_fill_evidence_unproved_not_accepted_or_deployment_ready",
       "market_direction_forecast_required": false,
       "mechanism": "polymarket_live_NBA_moneyline_spread_monotone_payoff_implication",
-      "next_action": "do_not_resample_the_current_offseason_when_future_active_NBA_full_game_events_exist_first_source_prove_exhaustive_pair_payoffs_and_exact_current_market_fees_then_run_one_public_read_only_synchronized_batch_book_recurrence_capture_under_the_frozen_all_taker_contract",
+      "next_action": "do_not_resample_the_current_offseason_when_future_active_NBA_full_game_events_exist_first_source_prove_exhaustive_pair_payoffs_exact_current_market_fees_and_the_configured_sports_delay_phase_then_run_one_public_read_only_synchronized_batch_book_recurrence_capture_under_the_frozen_all_taker_contract_with_independent_one_and_three_second_delay_sensitivities_and_no_rebate_credit",
       "priority_rank": 30,
       "prohibited_shortcuts": [
         "reusing_the_paper_zero_fee_median_as_current_profit",
         "assuming_integer_handicap_push_or_other_unmapped_settlement_states_preserve_the_one_dollar_floor",
         "valuing_the_zero_realization_middle_jackpot",
         "forward_filling_stale_asynchronous_books_or_using_post_game_quotes",
+        "using_itode_or_the_crypto_250_millisecond_constant_as_a_sports_delay_or_assuming_a_pending_delayed_order_can_be_cancelled",
+        "treating_synchronized_books_or_batch_submission_as_atomic_two_leg_execution_or_choosing_15_or_20_percent_from_conflicting_sports_rebate_pages",
         "crediting_midpoints_last_trades_uncapped_depth_maker_fees_or_rebates_without_causal_owned_fills",
         "calling_public_recurrence_profitable_without_owned_both_leg_fill_reconciliation_and_all_external_costs"
       ],
@@ -1309,7 +1316,7 @@
       "venue_scope": "Binance_BTC_ETH_Options_predefined_same_expiry_two_leg_call_and_put_spreads"
     }
   ],
-  "result_sha256": "95283a6ce281bd2e3d6c44ad4a196605a9d7f5cfa424ad474b75bfec593c3ebe",
+  "result_sha256": "d970fb88450a9f4111912a43c51fba8c6ae60c5933bcb096025aa7106b183547",
   "schema_version": "structural-edge-priority-registry-v1",
   "terminal_do_not_repeat": [
     {
