@@ -1012,6 +1012,19 @@ safety gate, blocks Stop, or submits an order.
   `2f08c6b0a8509d9d51db7716d5dde499c3a1937b68eafe77b2970e4da8311b59`;
   and `binance-alpha-ondo-perpetual-parity-v1-2026-08-27.json`, result SHA-256
   `a3d474e9010b92c9454a5bc04b5a7f586656c8bc5842cecc61baaa508c2d8bc3`.
+- Binance's new public native Stocks Trading quote streams create a direct
+  stock-versus-TradFi-perpetual parity path. A frozen same-USDT-quote screen
+  covered all 14 discovered overlaps. Thirteen completed and zero survived the
+  30 bps stress; NBIS led gross at 27.5414636448 bps but failed one-share
+  perpetual capacity, while SNDK was the best capacity-valid row at
+  14.6402997861 bps. KLAC alone timed out, so the population is incomplete and
+  unaccepted. Do not resample the 13. After a new active KLAC quote state,
+  freeze one KLAC-only recovery and join it to the parent. Canonical contract:
+  `binance-native-stock-perpetual-parity-contract-v1.json`, SHA-256
+  `ec5d4855c69d3afa461838b674530936a07e646394540a1a2b30ae3ddaf77db1`.
+  Canonical result: `binance-native-stock-perpetual-parity-v1-2026-08-27.json`,
+  SHA-256
+  `2776ff86fddf78e7e87860c6b9500cb237fce5af908a4840d351ae0cc2eff930`.
 - A new primary paper materially supports a maker-first/taker-hedge complete-set
   execution design, but the strict public-fill reconstruction rejects a stable
   edge claim. In one exact 2026-04-27 Polymarket-v1 daily partition, 159
@@ -1109,6 +1122,7 @@ safety gate, blocks Stop, or submits an order.
 | Binance NOK bStock dividend/perpetual under-debit candidate | `docs/model-research/action-value/binance-nok-bstock-dividend-perpetual-underdebit-candidate-v1-2026-08-27.json` |
 | Binance Ondo/bStock/stock-perpetual wrapper parity candidate | `docs/model-research/action-value/binance-ondo-bstock-stock-perpetual-wrapper-parity-candidate-v1-2026-08-27.json` |
 | Binance Alpha/Ondo/stock-perpetual exact-book terminal screen | `docs/model-research/action-value/binance-alpha-ondo-perpetual-parity-v1-2026-08-27.json` |
+| Binance native-stock/TradFi-perpetual parity incomplete screen | `docs/model-research/action-value/binance-native-stock-perpetual-parity-v1-2026-08-27.json` |
 | Polymarket maker-first/taker-hedge complete-set candidate | `docs/model-research/action-value/polymarket-maker-first-taker-hedge-complete-set-candidate-v1-2026-08-27.json` |
 | Polymarket maker execution manipulation regime gate | `docs/model-research/action-value/polymarket-maker-execution-manipulation-regime-gate-v1-2026-08-27.json` |
 | Polymarket sports taker-delay maker-protection gate | `docs/model-research/action-value/polymarket-sports-taker-delay-maker-protection-gate-v1-2026-08-27.json` |

@@ -1,0 +1,85 @@
+{
+  "schema_version": "binance-native-stock-perpetual-parity-contract-v1",
+  "status": "frozen_before_complete_fourteen_ticker_quote_capture",
+  "frozen_at_utc": "2026-08-27T02:47:01.1568937Z",
+  "contract_sha256": "ec5d4855c69d3afa461838b674530936a07e646394540a1a2b30ae3ddaf77db1",
+  "purpose": "test whether Binance public native Stocks Trading asks and matching TradFi perpetual bids expose market-direction-independent one-share entry headroom after executable USDCUSDT conversion and a conservative pre-account stress",
+  "authority": {
+    "research_only": true,
+    "public_unauthenticated_sources_only": true,
+    "credentials_accounts_orders_quotes_transfers_or_disclaimer_actions_permitted": false,
+    "live_or_paper_trading_authority": false,
+    "profitability_or_accepted_edge_claim_permitted": false
+  },
+  "discovery_boundary": {
+    "native_price_stream_symbol_count": 45,
+    "active_TradFi_perpetual_count": 174,
+    "exact_ticker_overlap_count": 15,
+    "included_same_USDT_perpetual_quote_count": 14,
+    "excluded_cross_quote": {
+      "ticker": "SPCX",
+      "perpetual_symbol": "SPCXUSD1",
+      "reason": "requires_a_distinct_USD1_to_USDC_executable_conversion_path_and_is_not_part_of_the_frozen_same_USDT_quote_identity"
+    },
+    "selection_rule": "include every exact native-stock ticker overlap whose active matching TradFi perpetual is USDT-quoted; do not select by discovery price gap"
+  },
+  "frozen_universe": [
+    {"ticker": "AAPL", "perpetual_symbol": "AAPLUSDT"},
+    {"ticker": "AMZN", "perpetual_symbol": "AMZNUSDT"},
+    {"ticker": "ASTS", "perpetual_symbol": "ASTSUSDT"},
+    {"ticker": "AVGO", "perpetual_symbol": "AVGOUSDT"},
+    {"ticker": "CRWD", "perpetual_symbol": "CRWDUSDT"},
+    {"ticker": "DRAM", "perpetual_symbol": "DRAMUSDT"},
+    {"ticker": "IREN", "perpetual_symbol": "IRENUSDT"},
+    {"ticker": "KLAC", "perpetual_symbol": "KLACUSDT"},
+    {"ticker": "KORU", "perpetual_symbol": "KORUUSDT"},
+    {"ticker": "NBIS", "perpetual_symbol": "NBISUSDT"},
+    {"ticker": "NVDA", "perpetual_symbol": "NVDAUSDT"},
+    {"ticker": "SNDK", "perpetual_symbol": "SNDKUSDT"},
+    {"ticker": "SOXL", "perpetual_symbol": "SOXLUSDT"},
+    {"ticker": "SQQQ", "perpetual_symbol": "SQQQUSDT"}
+  ],
+  "capture": {
+    "native_quote_stream_template": "wss://nbstream.binance.com/equity/ws/{TICKER}@quote",
+    "futures_book_ticker_template": "https://fapi.binance.com/fapi/v1/ticker/bookTicker?symbol={PERPETUAL_SYMBOL}",
+    "spot_fx_book_ticker_endpoint": "https://api.binance.com/api/v3/ticker/bookTicker?symbol=USDCUSDT",
+    "request_plan": "for every frozen ticker concurrently open exactly one no-retry public stock quote WebSocket then immediately after its first valid quote make one matching single-symbol perpetual book GET and one USDCUSDT book GET",
+    "websocket_timeout_seconds": 30,
+    "maximum_public_GET_requests": 28,
+    "maximum_public_websocket_connections": 14,
+    "retry_permitted": false,
+    "durable_raw_before_calculation": true,
+    "pre_validation_design_revision": "replaced_one_global_perpetual_and_FX_snapshot_with_row_local_immediate_books_to_remove_avoidable_cross_row_timestamp_staleness_before_any_validation_request"
+  },
+  "economics": {
+    "screen_quantity_shares": "1",
+    "native_order_direction": "buy_one_share_at_native_stock_best_ask_with_default_USDC_quote_asset",
+    "hedge_direction": "short_one_share_equivalent_at_matching_TradFi_perpetual_best_bid",
+    "perpetual_bid_USDC_equivalent": "perpetual_bid_USDT_divided_by_USDCUSDT_spot_best_ask",
+    "gross_entry_headroom_USDC": "perpetual_bid_USDC_equivalent_minus_native_stock_ask",
+    "labeled_pre_account_cost_stress_bps": "30",
+    "stress_role": "frozen escalation gate only not an account commission quote or after-cost profit claim",
+    "top_level_capacity_required_on_all_three_legs": true,
+    "no_exit_dividend_funding_reward_rebate_or_conversion_value_credited": true
+  },
+  "decision_boundary": {
+    "pass": "retain an unaccepted candidate only if at least one exact row has all three one-share capacities and remains strictly positive after the 30 bps stress then require exact account commissions settlement short eligibility exit funding recurrence and orphan-risk evidence",
+    "fail": "terminalize this current fourteen-ticker snapshot if zero rows survive the stress; an incomplete quote population records an incomplete capture and cannot terminalize unobserved rows",
+    "all_outcomes": "accepted edge count remains unchanged and no authenticated funded quoted paper or live action is authorized"
+  },
+  "source_contracts": [
+    "https://developers.binance.com/en/docs/products/stocks/introduction",
+    "https://developers.binance.com/en/docs/products/stocks/general-info",
+    "https://developers.binance.com/en/docs/products/stocks/market-data-general-info",
+    "https://developers.binance.com/en/docs/products/stocks/websocket-streams-general-info"
+  ],
+  "prohibited_shortcuts": [
+    "use_native_price_stream_last_values_as_executable_quotes",
+    "treat_USDC_USDT_or_USD1_as_identical_without_an_executable_conversion_side",
+    "select_only_tickers_with_positive_discovery_gaps",
+    "assume_native_and_perpetual_legs_are_atomic",
+    "assume_commission_short_eligibility_funding_exit_or_settlement_cost",
+    "repeat_or_expand_the_snapshot_after_viewing_results",
+    "place_or_simulate_an_order_accept_the_stock_disclaimer_or_access_an_account"
+  ]
+}
