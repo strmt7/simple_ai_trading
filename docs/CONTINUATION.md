@@ -12,14 +12,16 @@ Development belongs only on `main`; do not create another development branch.
   code-scanning, and secret-scanning alerts. Reverify the publication commit;
   zero alerts never proves zero undisclosed vulnerabilities.
 - The repository is beta `0.1.0-beta.1`. No model has production authority or a
-  demonstrated long-lived after-all-cost edge. Seventeen narrowly scoped structural
+  demonstrated long-lived after-all-cost edge. Eighteen narrowly scoped structural
   edges are accepted: Polymarket holding yield for existing idle on-platform
   pUSD; Polymarket pUSD taker-fee rebates only for independently justified
   legitimate organic BTC/ETH/SOL taker flow after the direct-wallet tier is
   effective; Binance Soft Staking yield for already-held idle non-order ETH/SOL
   Spot inventory; LDUSDT yield only for already-required futures collateral;
   just-in-time BNB fee reduction; current quote-native BTC/ETH/SOL promotional
-  fee reduction; USD1/WLFI holding-airdrop yield; the fixed USD1 Simple Earn
+  fee reduction; the current TradFi perpetual zero-maker and reduced-taker fee
+  overlay only for independently justified organic flow with the exact current
+  symbol and actual fill role; USD1/WLFI holding-airdrop yield; the fixed USD1 Simple Earn
   bonus on at most the first 1,500 independently already-held idle USD1 only
   when its mutually exclusive balance-specific route beats the airdrop; U
   Flexible yield; automatic
@@ -911,7 +913,7 @@ grants paper, testnet, or live authority.
 
 The canonical structural-edge priority and retry-trigger registry is
 `docs/model-research/structural-edge-priority-registry-v1.json`, result SHA-256
-`51005178e370b03e2974b20e780b8ed5b25b7847b59b8c284fb7bca9ea12c70f`.
+`9c1d110fe26ae6875824b5c7fd68ee41998d4dd41479f3df8159faa5a67527b8`.
 Advance only the highest-ranked hypothesis whose trigger is actually satisfied.
 This prevents account-blocked or terminal screens from being rerun as if more
 snapshots could create an edge.
@@ -1273,6 +1275,24 @@ are unproved; no signed or funded action occurred. Canonical gate:
 `docs/model-research/action-value/binance-spot-promotional-fee-overlay-v1-2026-08-26.json`,
 result SHA-256
 `f951d167b3abbb89afc39a29671b9a4cb6929661f13a957e553a8fad439ce9e6`.
+
+The current official fee surface also establishes an accepted scoped TradFi
+perpetual fee overlay on independently justified organic flow. All displayed
+regular/VIP levels currently show `0.0000%` maker fees, while taker fees range
+from `0.0400%` for regular/VIP1 to `0.0085%` for VIP9 before the separate BNB
+discount. Against the same-session standard USD-M USDT table, the positive
+displayed comparator savings span `18` to `200` USD per `1,000,000` USD of
+notional. This is not standalone profit or permission to trade. Refresh the
+exact current table before each otherwise authorized order, apply the rate only
+to the exact current account and symbol, and credit zero maker cost only after
+an owned maker fill. Never change price, role, or volume to chase the rate; the
+underlying strategy must independently clear spread, slippage, queue, adverse
+selection, latency, partial-fill, funding, basis, liquidation, opportunity,
+tax, and operating costs. The public table exposes no end date, so it cannot be
+carried forward without refresh. Canonical edge:
+`docs/model-research/action-value/binance-tradfi-perpetual-current-fee-overlay-edge-v1-2026-08-27.json`,
+result SHA-256
+`705cb3da615c1873623e7f5be31f0d8cf672c3db9635a5ba971407cf6e715b6c`.
 
 A materially distinct current fee overlay is Binance's `VIP 6 for Six`
 promotion. The Growth Track requires an actively trading current Binance
@@ -1996,7 +2016,7 @@ result SHA-256
 `64943efe0c6ad16f8d02f78548afef38f919448d2da87c7573e825a2eeefd6b9`.
 The structural registry remains at seventeen accepted scoped edges and now has
 result SHA-256
-`51005178e370b03e2974b20e780b8ed5b25b7847b59b8c284fb7bca9ea12c70f`.
+`9c1d110fe26ae6875824b5c7fd68ee41998d4dd41479f3df8159faa5a67527b8`.
 
 The complete Binance XAU/XAG Commodity Options versus matching TradFi
 perpetual lower-bound screen is terminal for the active 2026-08-27 and

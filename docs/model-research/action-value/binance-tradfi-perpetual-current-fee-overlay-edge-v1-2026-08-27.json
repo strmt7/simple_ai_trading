@@ -1,0 +1,120 @@
+{
+  "schema_version": "binance-tradfi-perpetual-current-fee-overlay-edge-v1",
+  "created_at_utc": "2026-08-27T05:43:47.741000Z",
+  "result_sha256": "705cb3da615c1873623e7f5be31f0d8cf672c3db9635a5ba971407cf6e715b6c",
+  "purpose": "bind the current Binance TradFi perpetual maker and taker fee promotion as a market-direction-independent incremental cost overlay on independently justified organic flow",
+  "authority": {
+    "public_read_only_research": true,
+    "browser_state": "logged_out",
+    "credentials_used": false,
+    "authenticated_requests": 0,
+    "account_state_accessed": false,
+    "orders_transfers_borrowing_or_account_changes": 0,
+    "paper_or_live_trading_authority": false
+  },
+  "current_public_terms": {
+    "observed_at_utc": "2026-08-27T05:43:47.741000Z",
+    "tradfi_fee_url": "https://www.binance.com/en/fee/tradFiFee",
+    "scope": "all_Binance_regular_and_VIP_1_to_9_users_trading_TradFi_Perps",
+    "maker_fee_percent_all_levels": "0.0000",
+    "taker_fee_discount_claim": "up_to_50_percent_during_the_promotion_period",
+    "promotion_end_exposed_on_current_fee_table": false,
+    "refresh_rule": "refresh the exact current TradFi fee table and exact account symbol commission immediately before every otherwise authorized organic order"
+  },
+  "displayed_fee_percent_by_level": {
+    "Regular_User": {"maker": "0.0000", "taker": "0.0400", "taker_with_BNB": "0.0360"},
+    "VIP_1": {"maker": "0.0000", "taker": "0.0400", "taker_with_BNB": "0.0360"},
+    "VIP_2": {"maker": "0.0000", "taker": "0.0320", "taker_with_BNB": "0.0288"},
+    "VIP_3": {"maker": "0.0000", "taker": "0.0256", "taker_with_BNB": "0.0230"},
+    "VIP_4": {"maker": "0.0000", "taker": "0.0150", "taker_with_BNB": "0.0135"},
+    "VIP_5": {"maker": "0.0000", "taker": "0.0135", "taker_with_BNB": "0.0122"},
+    "VIP_6": {"maker": "0.0000", "taker": "0.0125", "taker_with_BNB": "0.0113"},
+    "VIP_7": {"maker": "0.0000", "taker": "0.0110", "taker_with_BNB": "0.0099"},
+    "VIP_8": {"maker": "0.0000", "taker": "0.0100", "taker_with_BNB": "0.0090"},
+    "VIP_9": {"maker": "0.0000", "taker": "0.0085", "taker_with_BNB": "0.0077"}
+  },
+  "same_snapshot_standard_USD_M_USDT_fee_percent_by_level": {
+    "Regular_User": {"maker": "0.0200", "taker": "0.0500", "maker_with_BNB": "0.0180", "taker_with_BNB": "0.0450"},
+    "VIP_1": {"maker": "0.0180", "taker": "0.0500", "maker_with_BNB": "0.0162", "taker_with_BNB": "0.0450"},
+    "VIP_2": {"maker": "0.0160", "taker": "0.0400", "maker_with_BNB": "0.0144", "taker_with_BNB": "0.0360"},
+    "VIP_3": {"maker": "0.0120", "taker": "0.0320", "maker_with_BNB": "0.0108", "taker_with_BNB": "0.0288"},
+    "VIP_4": {"maker": "0.0100", "taker": "0.0300", "maker_with_BNB": "0.0090", "taker_with_BNB": "0.0270"},
+    "VIP_5": {"maker": "0.0080", "taker": "0.0270", "maker_with_BNB": "0.0072", "taker_with_BNB": "0.0243"},
+    "VIP_6": {"maker": "0.0060", "taker": "0.0250", "maker_with_BNB": "0.0054", "taker_with_BNB": "0.0225"},
+    "VIP_7": {"maker": "0.0040", "taker": "0.0220", "maker_with_BNB": "0.0036", "taker_with_BNB": "0.0198"},
+    "VIP_8": {"maker": "0.0020", "taker": "0.0200", "maker_with_BNB": "0.0018", "taker_with_BNB": "0.0180"},
+    "VIP_9": {"maker": "0.0000", "taker": "0.0170", "maker_with_BNB": "0.0000", "taker_with_BNB": "0.0153"}
+  },
+  "displayed_gross_saving_USD_per_1000000_USD_organic_notional_against_standard_USD_M_USDT_rates": {
+    "without_BNB": {
+      "Regular_User": {"maker": "200", "taker": "100"},
+      "VIP_1": {"maker": "180", "taker": "100"},
+      "VIP_2": {"maker": "160", "taker": "80"},
+      "VIP_3": {"maker": "120", "taker": "64"},
+      "VIP_4": {"maker": "100", "taker": "150"},
+      "VIP_5": {"maker": "80", "taker": "135"},
+      "VIP_6": {"maker": "60", "taker": "125"},
+      "VIP_7": {"maker": "40", "taker": "110"},
+      "VIP_8": {"maker": "20", "taker": "100"},
+      "VIP_9": {"maker": "0", "taker": "85"}
+    },
+    "with_BNB": {
+      "Regular_User": {"maker": "180", "taker": "90"},
+      "VIP_1": {"maker": "162", "taker": "90"},
+      "VIP_2": {"maker": "144", "taker": "72"},
+      "VIP_3": {"maker": "108", "taker": "58"},
+      "VIP_4": {"maker": "90", "taker": "135"},
+      "VIP_5": {"maker": "72", "taker": "121"},
+      "VIP_6": {"maker": "54", "taker": "112"},
+      "VIP_7": {"maker": "36", "taker": "99"},
+      "VIP_8": {"maker": "18", "taker": "90"},
+      "VIP_9": {"maker": "0", "taker": "76"}
+    },
+    "formula": "one_million_times_standard_USD_M_USDT_displayed_rate_minus_current_TradFi_displayed_rate",
+    "precision_boundary": "the fee table rounds displayed percentages so exact account commission and realized fill reconciliation override this sensitivity"
+  },
+  "adjudication": {
+    "accepted_edge": true,
+    "accepted_scope": "current incremental TradFi perpetual fee reduction only for independently justified organic flow using the exact current account symbol and actual maker or taker role without changing volume quote inventory or execution solely to chase the promotion",
+    "standalone_profitability_claim": false,
+    "deployment_ready": false,
+    "market_direction_forecast_required": false,
+    "status": "accepted_scoped_current_market_direction_independent_TradFi_perpetual_fee_overlay_zero_maker_for_all_displayed_levels_and_reduced_taker_rates_with_18_to_200_USD_displayed_gross_saving_per_million_for_positive_comparators_but_exact_account_symbol_role_fill_promotion_end_and_all_strategy_costs_remain_unproved"
+  },
+  "execution_gate": {
+    "requirements": [
+      "the underlying TradFi perpetual order is independently justified and positive after every non-promotional cost",
+      "the exact symbol is currently available to the account and the current fee table still shows the retained rate",
+      "the intended role is explicit and only an actual owned maker fill receives the zero maker rate",
+      "the exact account commission response and realized owned fill commission reconcile without double counting BNB VIP liquidity provider referral or other adjustments",
+      "spread slippage queue adverse selection latency partial fill funding basis liquidation opportunity tax and operating costs remain charged to the underlying strategy"
+    ],
+    "rejection_rule": "reject the overlay if the exact current account rate is positive or unavailable if the fill role differs or if promotional routing execution changes or extra volume erase the incremental saving"
+  },
+  "prohibited_shortcuts": [
+    "manufacturing_enlarging_churning_self_matching_or_wash_trading_volume",
+    "assuming_a_post_only_order_fills_or_that_a_fill_is_maker_without_owned_execution_evidence",
+    "changing_execution_role_or_accepting_adverse_selection_only_to_obtain_zero_maker_fees",
+    "using_the_fee_overlay_to_rescue_an_underlying_strategy_that_is_not_independently_positive",
+    "double_counting_BNB_VIP_liquidity_provider_referral_or_other_fee_adjustments",
+    "assuming_the_current_rate_persists_beyond_the_last_source_bound_refresh_or_has_an_unpublished_end_date",
+    "placing_orders_transferring_collateral_borrowing_or_changing_account_state_without_separate_explicit_authority",
+    "calling_a_zero_commission_market_direction_risk_free_arbitrage_or_standalone_profit"
+  ],
+  "sources": [
+    {
+      "label": "current_TradFi_perpetual_fee_table_logged_out_render",
+      "url": "https://www.binance.com/en/fee/tradFiFee",
+      "observed_at_utc": "2026-08-27T05:43:47.741000Z",
+      "rendered_semantic_snapshot_bytes": 16235,
+      "rendered_semantic_snapshot_sha256": "533a88101edc1b43d41e2fc5fdf8c6ec2bffe396f764a92a6389d9ddb078acd4"
+    },
+    {
+      "label": "same_session_current_standard_USD_M_Futures_fee_table_logged_out_render",
+      "url": "https://www.binance.com/en/fee/trading",
+      "observed_at_utc": "2026-08-27T05:36:16.872000Z",
+      "rendered_semantic_snapshot_bytes": 19939,
+      "rendered_semantic_snapshot_sha256": "c53d727650490342cc9b748d552cc983924a5282ae6d903289dc3d51648ad0ab"
+    }
+  ]
+}
