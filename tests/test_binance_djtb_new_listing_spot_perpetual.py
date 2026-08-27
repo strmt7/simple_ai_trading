@@ -19,7 +19,7 @@ IMPLEMENTATION = ROOT / "tools/screen_binance_djtb_new_listing_spot_perpetual.py
 CONTRACT_HASH = "087b06191378fa949ac62340d9f3e5c625aa31feff71bba3c7fd20cae1155ee8"
 CORRECTION_HASH = "692ee1f9a0374726b0adeccbe4fcd710c9c3a86d49b4b33210a8c34b2c79c4d3"
 RESULT_HASH = "2b85a6eca339799a6eb07ba48069e3a2943d97116a9320ce20400d260227e1be"
-REGISTRY_HASH = "934a63b745d556c0b3fd3a3d3e77a1d1e7f2ba2531e4dbf0bf3bca21634592f2"
+REGISTRY_HASH = "08576eb7bbf9f12cdb9e784ea9334d0db88c72d1afb665a87475a44f4dc9ebef"
 
 
 def _load(path: Path) -> dict[str, object]:

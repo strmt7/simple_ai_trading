@@ -39,6 +39,17 @@ safety gate, blocks Stop, or submits an order.
 
 ## Research State
 
+- A one-use public Lite Loan/stablecoin-yield screen found one narrow,
+  time-limited USD1 candidate and rejected U and plain USDT. After the frozen
+  worst 30-day USD1 close decline, the USD1 route retained only 1.1079 to
+  1.3278 bps at 100 to 1,000 USDT loan sizes. It is not accepted, stable,
+  profitable, or deployment-ready. The offer ends at
+  `2026-08-27T23:59:59Z`; do not borrow, convert, subscribe, or repay without
+  separate explicit funded authority. Exact account eligibility may be checked
+  before expiry only with both credentials and explicit signed GET-only
+  authority. Canonical result:
+  `binance-lite-loan-stablecoin-yield-curve-v1-2026-08-27.json`, result SHA-256
+  `65f223a245fa1bb65a8fd791275da0dbd71d3c52ee2d232ac1420feb198b129d`.
 - A one-use public broad-crypto funding-carry preflight corrected the earlier
   BTC/ETH/SOL-only research boundary without changing execution scope. It
   deterministically selected 17 exact Binance Spot/USDT and USD-M USDT crypto
@@ -1131,6 +1142,7 @@ safety gate, blocks Stop, or submits an order.
 | Post-observation maker window | `docs/model-research/action-value/polymarket-post-observation-maker-window-gate-v1-2026-08-26.json` |
 | LDUSDT margin yield | `docs/model-research/action-value/binance-ldusdt-margin-yield-gate-v1-2026-08-26.json` |
 | USD1 holding airdrop and active Simple Earn allocation | `docs/model-research/action-value/binance-usd1-simple-earn-activation-refresh-v1-2026-08-27.json` |
+| Lite Loan and fixed-bonus stablecoin yield curve | `docs/model-research/action-value/binance-lite-loan-stablecoin-yield-curve-v1-2026-08-27.json` |
 | U Flexible idle-holding yield | `docs/model-research/action-value/binance-u-flexible-idle-holding-yield-gate-v1-2026-08-26.json` |
 | Existing RWUSD VIP bonus overlay | `docs/model-research/action-value/binance-rwusd-existing-vip-bonus-overlay-gate-v1-2026-08-26.json` |
 | Current USDT Flexible bonus overlay | `docs/model-research/action-value/binance-usdt-flexible-current-bonus-overlay-v1-2026-08-26.json` |
