@@ -42,7 +42,7 @@ EXPECTED_RESULT_SHA256 = (
     "c992e0e1febc1a9789289cb129c166280ee0192cab203d3a6935a8c40e949612"
 )
 EXPECTED_REGISTRY_SHA256 = (
-    "9c1c159abe9ff97c2bf8703447084b72091956f89317cbdbce5acf8e3bc3d83f"
+    "d9b8d325ca4099fa6e89b4152ca3ca74284056369bdecc54f61b37e43ed0f652"
 )
 EXPECTED_MAKER_FIRST_SHA256 = (
     "4fe308ddeb6fd080bbd8548347a095762d8fc67eb5820fb0c7b3c2d6b7430d69"
@@ -52,6 +52,12 @@ EXPECTED_MAKER_FIRST_DIAGNOSTIC_RESULT_SHA256 = (
 )
 EXPECTED_MANIPULATION_GATE_SHA256 = (
     "7d3387289a7e82b33fa52c03b2bc134864259a001c3d28524745026bb83db387"
+)
+EXPECTED_TWAP_CONTRACT_SHA256 = (
+    "0f872c30360d8184905d7468f2ad78c1de439f3e97ad2e4ec1f082b71c60edda"
+)
+EXPECTED_TWAP_FAILURE_SHA256 = (
+    "e486f2928a326e6829cbe3c07aad5a47bb25a63783a935273606df00cea98c66"
 )
 
 
@@ -170,27 +176,41 @@ def test_registry_tracks_recurrence_without_increasing_accepted_edges() -> None:
     candidate = next(
         row
         for row in registry["prioritized_hypotheses"]
-        if row["mechanism"] == "paired_crypto_maker_rebates"
+        if row["mechanism"] == "paired_crypto_maker_rebates_and_twap_liquidity_rewards"
     )
     assert candidate["priority_rank"] == 17
-    assert candidate["canonical_artifacts"][-3] == {
+    assert candidate["canonical_artifacts"][-5] == {
         "path": (
             "docs/model-research/polymarket/"
             "crypto-maker-rebate-public-recurrence-v2-2026-08-26.json"
         ),
         "result_sha256": EXPECTED_RESULT_SHA256,
     }
-    assert candidate["canonical_artifacts"][-2] == {
+    assert candidate["canonical_artifacts"][-4] == {
         "path": (
             "docs/model-research/action-value/"
             "polymarket-maker-first-taker-hedge-complete-set-candidate-v1-2026-08-27.json"
         ),
         "result_sha256": EXPECTED_MAKER_FIRST_SHA256,
     }
-    assert candidate["canonical_artifacts"][-1] == {
+    assert candidate["canonical_artifacts"][-3] == {
         "path": (
             "docs/model-research/action-value/"
             "polymarket-maker-execution-manipulation-regime-gate-v1-2026-08-27.json"
         ),
         "result_sha256": EXPECTED_MANIPULATION_GATE_SHA256,
+    }
+    assert candidate["canonical_artifacts"][-2] == {
+        "path": (
+            "docs/model-research/polymarket/"
+            "crypto-twap-liquidity-reward-screen-contract-v1.json"
+        ),
+        "result_sha256": EXPECTED_TWAP_CONTRACT_SHA256,
+    }
+    assert candidate["canonical_artifacts"][-1] == {
+        "path": (
+            "docs/model-research/polymarket/"
+            "crypto-twap-liquidity-reward-screen-attempt1-failure-v1.json"
+        ),
+        "result_sha256": EXPECTED_TWAP_FAILURE_SHA256,
     }

@@ -1,0 +1,55 @@
+{
+  "attempt": {
+    "activation_window_end_utc": "2026-08-27T00:16:30Z",
+    "activation_window_start_utc": "2026-08-27T00:15:05Z",
+    "attempt_number": 1,
+    "observed_failed_by_utc": "2026-08-27T00:15:45.8071560Z",
+    "one_attempt_contract_exhausted": true,
+    "retry_count": 0
+  },
+  "authority": {
+    "account_accessed": false,
+    "credentials_used": false,
+    "funded_actions": 0,
+    "orders_or_cancellations": 0,
+    "public_read_only_requests": 2,
+    "trading_authority": false
+  },
+  "contract": {
+    "file_sha256": "31d49c71882090ab55398ce53da68b87bd36c109aa64f1d50488fb6ac336ca1c",
+    "path": "docs/model-research/polymarket/crypto-twap-liquidity-reward-screen-contract-v1.json",
+    "result_sha256": "0f872c30360d8184905d7468f2ad78c1de439f3e97ad2e4ec1f082b71c60edda"
+  },
+  "failure": {
+    "books_requested": false,
+    "error_message": "exact reward identity changed",
+    "error_type": "ValueError",
+    "failed_request_role": "first_exact_BTC_fifteen_minute_condition_reward_lookup_with_sponsored_true",
+    "gamma_request_completed": true,
+    "interpretation": "The transient response did not prove exactly one reward row whose condition_id equaled the exact Gamma BTC fifteen-minute condition. The response may have been empty, duplicated, or mismatched; the lost payload prevents distinguishing those cases and no one is inferred.",
+    "market_slug": "btc-updown-15m-1787789700",
+    "output_artifact_created": false,
+    "profitability_or_reward_inference_permitted": false,
+    "response_identity_validated": false
+  },
+  "implementation_deficiency": {
+    "correction_required_before_any_materially_triggered_future_attempt": "Journal each public response and its hash atomically before parsing or identity validation, then seal a terminal receipt from the journal on every success or failure.",
+    "impact": "The source responses existed only in memory and were discarded when validation raised, so their exact bytes, hashes, Gamma-derived condition ID, and returned reward shape are unavailable.",
+    "mistake": "The collector embedded sources only in the final success artifact instead of retaining each response before validation.",
+    "no_reconstruction_from_a_retry": true
+  },
+  "result_sha256": "e486f2928a326e6829cbe3c07aad5a47bb25a63783a935273606df00cea98c66",
+  "schema_version": "polymarket-crypto-twap-liquidity-reward-screen-attempt1-failure-v1",
+  "terminal_decision": {
+    "accepted_edge": false,
+    "candidate_advanced": false,
+    "deployment_ready": false,
+    "public_after_cost_floor_pUSD": "0",
+    "retry_inside_same_window": false,
+    "status": "rejected_exact_reward_identity_unproved_and_one_attempt_exhausted"
+  },
+  "tool": {
+    "path": "tools/screen_polymarket_crypto_twap_liquidity_rewards.py",
+    "sha256_at_attempt": "68d9a41624a64083d7b8a99954e15c3fae7882be751fdb744734639a723e0226"
+  }
+}
