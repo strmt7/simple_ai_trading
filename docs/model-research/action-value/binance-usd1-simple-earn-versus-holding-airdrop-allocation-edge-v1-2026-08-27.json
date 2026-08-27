@@ -1,0 +1,135 @@
+{
+  "schema_version": "binance-usd1-simple-earn-versus-holding-airdrop-allocation-edge-v1",
+  "created_at_utc": "2026-08-27T04:55:00.2541197Z",
+  "result_sha256": "a4158bf059f4f5ad839b2f504c08c4afc65615260b4171533866f4c2337494e0",
+  "purpose": "select the higher current gross reward location for independently already-held idle USD1 without acquiring principal or double-counting mutually exclusive Simple Earn and WLFI holding-airdrop rewards",
+  "authority": {
+    "public_read_only_research": true,
+    "credentials_used": false,
+    "authenticated_requests": 0,
+    "account_state_accessed": false,
+    "subscriptions_redemptions_conversions_transfers_orders_or_quotes": 0,
+    "paper_or_live_trading_authority": false
+  },
+  "current_public_snapshot": {
+    "capture_method": "Chrome logged-out DOM accessibility snapshot",
+    "observed_at_utc": "2026-08-27T04:55:00.2541197Z",
+    "source_url": "https://www.binance.com/en/earn/usd1",
+    "logged_out_evidence": [
+      "Log In button visible",
+      "Sign Up button visible"
+    ],
+    "product": "USD1 Simple Earn Flexible",
+    "principal_protected_label": true,
+    "displayed_max_apr_percent": "8.62",
+    "displayed_realtime_apr_percent": "1.62",
+    "displayed_bonus_apr_percent": "7.00",
+    "displayed_rate_rule": "APR is variable and estimated in cryptocurrency rather than a guaranteed fiat return",
+    "simultaneous_public_stablecoin_max_apr_percent": {
+      "USD1": "8.62",
+      "U": "8.59",
+      "USDC": "7.28",
+      "USDT": "6.80"
+    },
+    "cross_token_rule": "the displayed ordering is discovery context only and cannot justify conversion because issuer peg reserve eligibility spread redemption and tax risks are not in one executable unit"
+  },
+  "source_bound_terms": {
+    "bonus_tier_cap_usd1": "1500",
+    "minimum_subscription_usd1": "0.01",
+    "promotion_start_utc": "2026-08-27T00:00:00Z",
+    "promotion_end_utc": "2026-09-25T23:59:59Z",
+    "bonus_accrual_starts": "next day at 00:00 UTC after subscription",
+    "redemption_forfeits_bonus_on_redeemed_amount_for_that_UTC_day": true,
+    "current_holding_airdrop_base_apr_percent": "5.46",
+    "holding_airdrop_campaign_end_utc": "2026-09-04T00:00:00Z",
+    "holding_airdrop_eligible_account_categories_include_Simple_Earn": false,
+    "same_principal_can_receive_both_rewards": false,
+    "predecessors": [
+      {
+        "path": "docs/model-research/action-value/binance-usd1-simple-earn-promotion-gate-v1-2026-08-26.json",
+        "result_sha256": "230b1524f337964394a45ffe047adfd19b35b339a7735866a15cafdd7549c6f1"
+      },
+      {
+        "path": "docs/model-research/action-value/binance-usd1-wlfi-holding-airdrop-gate-v1-2026-08-26.json",
+        "result_sha256": "c67367932b440d6f4a23330a17c405c0e15b0021b0484575a0b0efcc6e9238a6"
+      },
+      {
+        "path": "docs/model-research/action-value/binance-usd1-simple-earn-activation-refresh-v1-2026-08-27.json",
+        "result_sha256": "f8106a93155813a3130bc925a3f4b223fad16b6133ee073226251d25175ecf06"
+      }
+    ]
+  },
+  "economics": {
+    "principal_usd1": "1500",
+    "current_full_rate_comparison": {
+      "simple_earn_apr_percent": "8.62",
+      "holding_airdrop_apr_percent": "5.46",
+      "incremental_apr_percentage_points": "3.16",
+      "incremental_reward_usd1_per_365_days": "47.4000",
+      "incremental_reward_usd1_per_day": "0.1298630136986301369863013699",
+      "gross_break_even_days_after_one_forfeited_current_airdrop_day": "1.727848101265822784810126582",
+      "maximum_balance_where_capped_bonus_plus_current_realtime_rate_exceeds_current_airdrop_rate_usd1": "2734.375",
+      "classification": "current_variable_rate_sensitivity_not_a_future_floor"
+    },
+    "fixed_bonus_only_comparison": {
+      "simple_earn_fixed_bonus_apr_percent": "7.00",
+      "holding_airdrop_current_apr_percent": "5.46",
+      "incremental_apr_percentage_points": "1.54",
+      "incremental_reward_usd1_per_365_days": "23.1000",
+      "incremental_reward_usd1_per_day": "0.06328767123287671232876712329",
+      "current_airdrop_reward_usd1_equivalent_for_one_day": "0.2243835616438356164383561644",
+      "gross_break_even_days_after_one_forfeited_current_airdrop_day": "3.545454545454545454545454545",
+      "maximum_balance_where_capped_fixed_bonus_exceeds_current_airdrop_rate_usd1": "1923.076923076923076923076923",
+      "classification": "conservative_with_respect_to_omitting_positive_but_variable_realtime_APR_not_a_guarantee_of_future_airdrop_or_bonus_terms"
+    },
+    "immediate_fixed_bonus_versus_wait_through_airdrop_end_sensitivity": {
+      "immediate_bonus_accrual_days_from_2026_08_28_through_2026_09_25": 29,
+      "immediate_fixed_bonus_reward_usd1": "8.342465753424657534246575342",
+      "hypothetical_current_rate_airdrop_days_from_2026_08_27_through_2026_09_03": 8,
+      "wait_airdrop_reward_usd1_equivalent": "1.795068493150684931506849315",
+      "delayed_bonus_accrual_days_from_2026_09_05_through_2026_09_25": 21,
+      "delayed_fixed_bonus_reward_usd1": "6.041095890410958904109589041",
+      "wait_then_subscribe_combined_reward_usd1_equivalent": "7.836164383561643835616438356",
+      "immediate_fixed_bonus_advantage_usd1_equivalent": "0.506301369863013698630136986",
+      "immediate_fixed_bonus_advantage_bps_of_principal": "3.375342465753424657534246573",
+      "limitations": "assumes the current airdrop rate persists through campaign end and Simple Earn bonus capacity remains available for delayed subscription; this is an allocation sensitivity not a funded instruction"
+    }
+  },
+  "accepted_scope": {
+    "accepted_edge": true,
+    "scope": "current fixed 7 percent Simple Earn bonus on at most the first 1500 USD1 already independently held idle when the account is eligible capacity is available the balance is not needed for prompt liquidity and the proved remaining bonus horizon exceeds every transition and opportunity cost",
+    "acquisition_or_conversion_edge_accepted": false,
+    "same_principal_double_counting_permitted": false,
+    "market_direction_forecast_required": false,
+    "after_all_external_costs_proved": false,
+    "profitability_claim": false,
+    "deployment_ready": false
+  },
+  "execution_gate": {
+    "public_forward_net_profit_floor": "0",
+    "required_before_any_subscription": [
+      "exact same-account regional identity and master-account eligibility",
+      "exact current bonus and realtime tiers quota available capacity sold-out state and existing position",
+      "proof the USD1 balance is independently already held idle and not required for orders collateral settlement withdrawal or prompt liquidity",
+      "exact transition timing redemption delay tax custody support and alternative-yield costs",
+      "strictly positive balance-specific comparison against the then-current mutually exclusive holding-airdrop route"
+    ],
+    "signed_prequalification_trigger": "both designated ephemeral Binance mainnet credentials plus explicit GET-only account-evidence authority",
+    "separate_funded_authority_required": true
+  },
+  "prohibited_shortcuts": [
+    "buying_borrowing_converting_depositing_or_retaining_USD1_for_the_bonus",
+    "crediting_Simple_Earn_and_WLFI_holding_airdrop_rewards_to_the_same_principal",
+    "applying_the_8_62_percent_maximum_or_7_percent_bonus_above_the_1500_USD1_tier_cap",
+    "treating_principal_protected_as_USDT_or_fiat_value_protection",
+    "treating_the_1_62_percent_realtime_APR_or_5_46_percent_airdrop_APR_as_fixed_future_rates",
+    "subscribing_redeeming_converting_transferring_or_trading_without_separate_explicit_authority"
+  ],
+  "adjudication": {
+    "accepted_edge": true,
+    "profitability_claim": false,
+    "deployment_ready": false,
+    "market_direction_forecast_required": false,
+    "status": "accepted_scoped_current_fixed_bonus_yield_on_first_1500_independently_already_held_idle_USD1_with_mutually_exclusive_balance_specific_airdrop_comparison_no_acquisition_and_no_double_counting"
+  }
+}

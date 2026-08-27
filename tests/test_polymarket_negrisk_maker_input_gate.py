@@ -17,7 +17,7 @@ EXPECTED_ARTIFACT_HASH = (
     "d4e02d2d1cc6b0a598265af734b29f62aec6145bc5a1cc3b3d65771ba2031d2a"
 )
 EXPECTED_REGISTRY_HASH = (
-    "887f062b3ac8f362283328a1baf47db29cf876da255091c9aed6ac569dd7c5d7"
+    "9f4de1a4fcfe266973434bd3a29eaeb0643e65fd0865229b72c44ffe0d2f140e"
 )
 
 
@@ -166,7 +166,7 @@ def test_registry_binds_the_exact_event_scope_without_promoting_the_edge() -> No
         "path": ARTIFACT_PATH.relative_to(ROOT).as_posix(),
         "result_sha256": artifact["result_sha256"],
     }
-    assert registry["accepted_edge_count"] == 16
+    assert registry["accepted_edge_count"] == 17
     assert artifact["research_decision"]["accepted_edge_count_change"] == 0
     assert (
         artifact["prospective_fill_and_unwind_capture"]["active_result_claim"] is False
