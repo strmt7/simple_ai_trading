@@ -1,0 +1,98 @@
+{
+  "authority": {
+    "accepted_edge": false,
+    "account_access_permitted": false,
+    "credentials_permitted": false,
+    "funded_actions_permitted": false,
+    "orders_or_cancellations_permitted": false,
+    "profitability_claim_permitted": false,
+    "public_read_only_market_data_only": true
+  },
+  "capture": {
+    "activation_not_before_utc": "2026-08-27T00:15:05Z",
+    "activation_not_after_utc": "2026-08-27T00:16:30Z",
+    "assets": [
+      "BTC",
+      "ETH",
+      "SOL"
+    ],
+    "book_max_event_age_ms": 5000,
+    "book_max_timestamp_skew_ms": 1000,
+    "durations": [
+      "15m",
+      "4h"
+    ],
+    "excluded_duration": {
+      "duration": "5m",
+      "reason": "The source-bound settlement-manipulation gate excludes five-minute maker exposure until authenticated cancel-safety is separately proved."
+    },
+    "fifteen_minute_epoch_seconds": 1787789700,
+    "four_hour_epoch_seconds": 1787788800,
+    "minimum_remaining_market_ms": 600000,
+    "one_attempt_only": true,
+    "receipt_max_span_ms": 5000,
+    "unexpected_missing_stale_or_disagreeing_market_action": "reject_that_exact_market_without_substitution_or_retry"
+  },
+  "created_at_utc": "2026-08-26T23:52:40.9760724Z",
+  "economics_amended_before_capture_at_utc": "2026-08-27T00:03:24.7997636Z",
+  "decision": {
+    "accepted_edge_possible_from_this_screen": false,
+    "advance_to_prospective_capture_design_only_when": [
+      "the exact Gamma market and CLOB reward configuration identities agree",
+      "the fee schedule explicitly charges takers only",
+      "the synchronized books pass age skew and receipt-span gates",
+      "equal-size one-tick-improved YES and NO maker bids remain noncrossing and sum below one",
+      "the exact current total daily reward rate is positive",
+      "the conditional full-market reward after a fixed 100-times competition stress covers the maximum orphan settlement loss"
+    ],
+    "otherwise": "reject_without_resampling",
+    "publicly_proven_reward_payout_floor_pUSD": "0"
+  },
+  "distinctness": {
+    "material_new_source_evidence": "The current official Liquidity Rewards page advertises one million dollars of August crypto TWAP rewards split across five-minute fifteen-minute and four-hour markets.",
+    "not_the_prior_holding_reward_stack": "The prior complete-set liquidity stack gate screened long-dated BTC ETH SOL holding-reward markets whose exact pools were zero or 0.001 pUSD per day.",
+    "not_the_prior_paired_maker_attempt": "The prior scope-corrected paired-maker snapshot was an out-of-scope Moonshot condition and the separate BTC ETH SOL five-minute attempt predated the current source-bound TWAP allocation and is not rerun."
+  },
+  "economics": {
+    "both_fill_identity": "Equal quantities of YES and NO shares in one binary condition merge or settle to one pUSD per pair.",
+    "market_direction_dependency": "Both-fill payoff is direction independent; every one-sided fill is directional orphan exposure and must be stress charged.",
+    "maker_fee_rule": "Require the exact Gamma feeSchedule to state takerOnly true; never infer zero maker fee from another category.",
+    "orphan_loss_bound": "quantity times max(YES bid, NO bid)",
+    "reward_duration_rule": "Multiply the conditional daily reward equivalent by exact market duration milliseconds divided by 86400000; never compare a full daily rate with a fifteen-minute or four-hour risk bound.",
+    "reward_share_rule": "Public books cannot identify maker ownership queue persistence or final epoch normalization, so every reward-share calculation is conditional and the proved payout floor remains zero.",
+    "stress_multipliers": [
+      1,
+      10,
+      100
+    ],
+    "stress_promotion_rule": "Only the 100-times competition-stressed full-market conditional reward is allowed to advance this public screen."
+  },
+  "request_contract": {
+    "maximum_public_requests": 8,
+    "requests": [
+      "one Gamma GET for the six exact frozen slugs",
+      "six exact-condition current reward GETs with sponsored=true",
+      "one CLOB batch-books POST for the twelve exact token IDs"
+    ],
+    "response_payload_hashes_required": true,
+    "retry_on_429_or_source_failure": false,
+    "substitute_market_or_epoch_permitted": false
+  },
+  "result_sha256": "0f872c30360d8184905d7468f2ad78c1de439f3e97ad2e4ec1f082b71c60edda",
+  "schema_version": "polymarket-crypto-twap-liquidity-reward-screen-contract-v1",
+  "source_contract": {
+    "active_rewards_endpoint": "https://clob.polymarket.com/rewards/markets/current",
+    "exact_market_rewards_endpoint_pattern": "https://clob.polymarket.com/rewards/markets/{condition_id}?sponsored=true",
+    "gamma_markets_endpoint": "https://gamma-api.polymarket.com/markets",
+    "liquidity_rewards_documentation": "https://docs.polymarket.com/programs/liquidity-rewards",
+    "order_books_endpoint": "https://clob.polymarket.com/books"
+  },
+  "terminal_prohibitions": [
+    "No five-minute market may be substituted.",
+    "No displayed daily pool is a guaranteed user payout.",
+    "No stale or asynchronous book may establish a candidate.",
+    "No hypothetical score may be called realized profit.",
+    "No daily reward equivalent may be compared directly with a sub-day market loss.",
+    "No account order cancellation fill reward merge redemption or trade is authorized."
+  ]
+}

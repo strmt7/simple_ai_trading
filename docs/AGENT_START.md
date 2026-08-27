@@ -477,9 +477,15 @@ safety gate, blocks Stop, or submits an order.
   not a stable accepted edge. Canonical gate:
   `binance-usd1-simple-earn-promotion-gate-v1-2026-08-26.json`, result SHA-256
   `230b1524f337964394a45ffe047adfd19b35b339a7735866a15cafdd7549c6f1`.
-  At activation, confirm terms and exact fee treatment once; do not assume
-  public Convert bounds, a displayed spread, or an issuer redemption claim is
-  an executable fee-free round trip.
+  The one permitted post-activation refresh confirmed the same 7% bonus terms
+  and a 0.10001-bip public top-book spread, but the frozen conservative margin
+  remains only 0.96835 bips before exact account costs, peg risk, and redemption
+  risk. It remains active but unaccepted and not stable. Canonical activation
+  refresh: `binance-usd1-simple-earn-activation-refresh-v1-2026-08-27.json`,
+  result SHA-256
+  `f8106a93155813a3130bc925a3f4b223fad16b6133ee073226251d25175ecf06`.
+  Do not assume public Convert bounds, a displayed spread, or an issuer
+  redemption claim is an executable fee-free round trip.
   A separate 2026 bStock screen covered 67 trading tokenized-stock symbols
   against Binance's public external reference price. `SNXXBUSDT` was the only
   selected live outlier and remained gross-positive at 1,000 and 5,000 USDT
@@ -588,6 +594,20 @@ safety gate, blocks Stop, or submits an order.
   screen then stopped after two public requests because BTC reward settings
   disagreed between Gamma and the exact CLOB reward endpoint. It reached no
   books or economics and is terminal without resampling.
+  A distinct 15-minute/4-hour August crypto-TWAP liquidity-reward screen then
+  corrected the old daily-rate mistake before capture: every daily reward
+  equivalent must be prorated to the exact market lifetime, and only a fixed
+  100-times competition-stressed full-market reward may cover the maximum
+  orphan loss. Its one attempt again stopped after Gamma and the first exact
+  BTC 15-minute reward GET because exact reward identity was not proved. No
+  books were requested. The transient payload was lost because the collector
+  embedded sources only on success, repeating an already documented workflow
+  defect. The terminal receipt is
+  `crypto-twap-liquidity-reward-screen-attempt1-failure-v1.json`, result SHA-256
+  `e486f2928a326e6829cbe3c07aad5a47bb25a63783a935273606df00cea98c66`.
+  The collector now journals every public response before validation and a
+  focused test enforces that correction. Never retry this exhausted window or
+  infer whether the lost response was empty, duplicated, or mismatched.
 - The separate official crypto maker-rebate schedule has exact conditional
   filled-order arithmetic, not an accepted edge. At 50 shares bid on each side
   at 0.49, the unrounded nominal rebates total 0.3498600 pUSD and raise the
@@ -1012,9 +1032,10 @@ safety gate, blocks Stop, or submits an order.
 | Binance Ondo/bStock/stock-perpetual wrapper parity candidate | `docs/model-research/action-value/binance-ondo-bstock-stock-perpetual-wrapper-parity-candidate-v1-2026-08-27.json` |
 | Polymarket maker-first/taker-hedge complete-set candidate | `docs/model-research/action-value/polymarket-maker-first-taker-hedge-complete-set-candidate-v1-2026-08-27.json` |
 | Polymarket maker execution manipulation regime gate | `docs/model-research/action-value/polymarket-maker-execution-manipulation-regime-gate-v1-2026-08-27.json` |
+| Polymarket August crypto-TWAP liquidity-reward terminal screen | `docs/model-research/polymarket/crypto-twap-liquidity-reward-screen-attempt1-failure-v1.json` |
 | Post-observation maker window | `docs/model-research/action-value/polymarket-post-observation-maker-window-gate-v1-2026-08-26.json` |
 | LDUSDT margin yield | `docs/model-research/action-value/binance-ldusdt-margin-yield-gate-v1-2026-08-26.json` |
-| USD1 holding airdrop and Simple Earn allocation | `docs/model-research/action-value/binance-usd1-wlfi-holding-airdrop-gate-v1-2026-08-26.json` |
+| USD1 holding airdrop and active Simple Earn allocation | `docs/model-research/action-value/binance-usd1-simple-earn-activation-refresh-v1-2026-08-27.json` |
 | U Flexible idle-holding yield | `docs/model-research/action-value/binance-u-flexible-idle-holding-yield-gate-v1-2026-08-26.json` |
 | Existing RWUSD VIP bonus overlay | `docs/model-research/action-value/binance-rwusd-existing-vip-bonus-overlay-gate-v1-2026-08-26.json` |
 | Current USDT Flexible bonus overlay | `docs/model-research/action-value/binance-usdt-flexible-current-bonus-overlay-v1-2026-08-26.json` |

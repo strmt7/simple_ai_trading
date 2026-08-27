@@ -576,15 +576,22 @@ diagnostics, not accepted edges.
   cost. One public 30-day window was worse than -19.1694 bps; none was worse
   than -29.1694 bps, but an intraday low reached 0.9000. The latest attestation
   month listed by BitGo was June 2026 and the live public reserve dashboard did
-  not return a current collateralization ratio. The offer had not started at
-  evaluation time. It is a high-priority conditional allocation candidate, not
-  a stable edge or deployment authority. Canonical gate:
+  not return a current collateralization ratio. The offer subsequently
+  activated with the same terms; the one permitted public refresh observed a
+  0.10001-bip top-book spread but did not improve the frozen 0.96835-bip margin
+  before unproved account costs and peg or redemption risk. It remains a
+  conditional time-limited candidate, not a stable edge or deployment
+  authority. Canonical gate:
   `docs/model-research/action-value/binance-usd1-simple-earn-promotion-gate-v1-2026-08-26.json`,
   result SHA-256
   `230b1524f337964394a45ffe047adfd19b35b339a7735866a15cafdd7549c6f1`.
-  At activation, refresh the terms and fee treatment once. Exact account
-  product eligibility, current rates, capacity, entry and exit costs remain
-  signed evidence and any funded action still needs separate authority.
+  Post-activation refresh:
+  `docs/model-research/action-value/binance-usd1-simple-earn-activation-refresh-v1-2026-08-27.json`,
+  result SHA-256
+  `f8106a93155813a3130bc925a3f4b223fad16b6133ee073226251d25175ecf06`.
+  Exact account product eligibility, current rates, capacity, entry and exit
+  costs remain signed evidence and any funded action still needs separate
+  authority.
 - Binance bStock structural parity is a promising research-only candidate
   outside the current BTC/ETH/SOL execution scope. A public 67-symbol screen
   selected `SNXXBUSDT`; exact displayed depth stayed positive at 1,000 and
@@ -724,6 +731,23 @@ diagnostics, not accepted edges.
   The failed tool also taught a workflow correction: every future one-use live
   screen must retain its request ledger and decoded source payloads and write a
   terminal failure receipt before propagating any validation exception.
+- The separate August crypto-TWAP liquidity-reward screen excluded 5-minute
+  markets and froze six exact BTC/ETH/SOL 15-minute and 4-hour identities. It
+  corrected a material economic error before capture: a daily reward equivalent
+  must be multiplied by exact market milliseconds divided by 86,400,000, and
+  the frozen public escalation gate requires the 100-times competition-stressed
+  full-market conditional reward to cover maximum orphan settlement loss. The
+  one attempt stopped after Gamma and the first exact BTC 15-minute reward GET
+  because exact reward identity was not proved; no books were requested. The
+  transient responses were not retained because the implementation wrote
+  sources only on success, repeating the workflow defect documented above.
+  Do not retry or infer the lost shape. Canonical failure receipt:
+  `docs/model-research/polymarket/crypto-twap-liquidity-reward-screen-attempt1-failure-v1.json`,
+  result SHA-256
+  `e486f2928a326e6829cbe3c07aad5a47bb25a63783a935273606df00cea98c66`.
+  The tool now atomically journals request intent, raw response, and response
+  hash before parsing; focused tests enforce the correction for any materially
+  triggered future contract.
 - A distinct complete-set inventory stack screen did not repeat paired-maker
   books or wallet polling. Gamma metadata showed 12 of the 55 currently
   holding-reward-eligible BTC/ETH/SOL annual thresholds with positive reward
@@ -874,7 +898,7 @@ grants paper, testnet, or live authority.
 
 The canonical structural-edge priority and retry-trigger registry is
 `docs/model-research/structural-edge-priority-registry-v1.json`, result SHA-256
-`9c1c159abe9ff97c2bf8703447084b72091956f89317cbdbce5acf8e3bc3d83f`.
+`d9b8d325ca4099fa6e89b4152ca3ca74284056369bdecc54f61b37e43ed0f652`.
 Advance only the highest-ranked hypothesis whose trigger is actually satisfied.
 This prevents account-blocked or terminal screens from being rerun as if more
 snapshots could create an edge.
@@ -1221,10 +1245,13 @@ Polymarket taker-tier rebates are cost reductions for legitimate organic taker
 flow, not authority to manufacture a complete-set volume loop. Do not self-match,
 wash trade, create inauthentic volume, ignore fee precision and market-specific
 minimums, or treat a one-time level-up bonus as persistent edge. The current
-August crypto TWAP liquidity-reward caps are materially relevant, but the
-protected boundary leaves too little of that stated window for a representative
-post-boundary study. Wait for a later documented allocation with enough frozen
-horizon and explicit account plus paper or funding authority.
+August crypto TWAP liquidity-reward caps are materially relevant, but the one
+public 15-minute/4-hour exact-identity screen is now terminal after its first
+BTC reward response failed the condition-identity gate before books. Do not
+retry that window. Reopen only after a material exact endpoint, configuration,
+or program change, with source journaling active before every validation. Any
+authenticated reward, order, cancellation, or fill study still requires
+explicit account plus paper or funding authority.
 
 The Binance option workflow adds a request-efficiency contract learned from a
 failed exploratory confirmation: fetch the contract catalog once, fetch the
@@ -1806,6 +1833,11 @@ not grant account, funding, order, or transaction authority.
    schedule, unique per-slot storage, role capacities, host supervision, and a
    pre-market activation receipt. Do not share schedules or storage between
    venues.
+   The August 15-minute/4-hour crypto-TWAP liquidity-reward source screen is
+   terminal after its exact BTC reward identity failure. Do not retry that
+   window or fetch books. A materially new endpoint, exact configuration, or
+   program allocation is required to reopen it, and every future one-use source
+   collector must journal raw responses before validation.
    The distinct Polymarket maker-rebate study now includes the maker-first,
    exact-quantity taker-hedge mechanism. Its one-day historical diagnostic is
    negative in aggregate and unstable across assets and hours; do not expand
