@@ -908,7 +908,7 @@ grants paper, testnet, or live authority.
 
 The canonical structural-edge priority and retry-trigger registry is
 `docs/model-research/structural-edge-priority-registry-v1.json`, result SHA-256
-`541357748293bcf1af277aab91c6c49cbe04f4d0ddb7330c4f0798603e917d2d`.
+`36556fa1dbb792bf99c94c1b5cea039a822fb4f58ac476cc23cd70a25dd587c8`.
 Advance only the highest-ranked hypothesis whose trigger is actually satisfied.
 This prevents account-blocked or terminal screens from being rerun as if more
 snapshots could create an edge.
@@ -1598,6 +1598,26 @@ nonaccepted BUY and SELL RFQs. Canonical candidate:
 result SHA-256
 `08fb223f771c5793da944497f37f4067238e7fd2b40fa2427293dbf7b55c4116`.
 
+The broad Polymarket sports Combo requester-overround idea is now terminal and
+must not be confused with that exact Boolean parity candidate. An initial
+discovery screen was invalid because the Combo positions endpoint's default
+listing omitted redeemed winners; the frozen correction explicitly requested
+`RESOLVED_WIN,RESOLVED_PARTIAL,RESOLVED_LOSS` and excluded every discovery
+wallet before examining sports leaderboard ranks 251 through 1000. The unseen
+validation retained 6,264 resolved Combo YES positions across 162 wallets and
+77 first-entry UTC dates. Buyers lost only 12,641.550729 pUSD, or 0.2928%,
+after 86,010.262565 pUSD of attributed buyer fees. Once those fees are removed
+because they are not maker revenue, the opposite-side gross spread proxy lost
+73,368.711836 pUSD before any seller fee, hedge, collateral, funding, Last
+Look, latency, or operating cost. The PNL-ranked cohort, chronological training
+role, chronological test role, wallet-cluster lower bound, and date-cluster
+lower bound were all negative. Do not repeat leaderboard mining or infer a
+house edge from requester losses; reopen only with a materially less selected
+population or a direct maker quote ledger. Canonical result:
+`docs/model-research/action-value/polymarket-combo-maker-overround-validation-v1-2026-08-27.json`,
+result SHA-256
+`416daf4d279e06a2353127e642d588a39ae85be0709c2d7498896c1d182847ee`.
+
 Binance bStock dividend reinvestment versus stock TradFi-perpetual funding has
 now been separated into a terminal direct family and a materially distinct
 calendar-timing candidate. At the 2026-08-20 AMAT and MSFT bStock snapshot, the
@@ -1802,7 +1822,7 @@ result SHA-256
 `64943efe0c6ad16f8d02f78548afef38f919448d2da87c7573e825a2eeefd6b9`.
 The structural registry remains at sixteen accepted scoped edges and now has
 result SHA-256
-`541357748293bcf1af277aab91c6c49cbe04f4d0ddb7330c4f0798603e917d2d`.
+`36556fa1dbb792bf99c94c1b5cea039a822fb4f58ac476cc23cd70a25dd587c8`.
 
 ## Protected Local Work
 
