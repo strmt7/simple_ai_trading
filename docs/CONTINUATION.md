@@ -198,16 +198,26 @@ diagnostics, not accepted edges.
   Polygon gas recommendation and executable POLUSDT ask makes the five-share
   margin negative and leaves only `0.0092570280188902383064000` pUSD minus a
   USDT sensitivity at twenty shares before other costs. This is not same-unit
-  after-cost proof. The V2 README deployment address conflicts with the current
-  official Python SDK address that agrees with the observed conversion and must
-  remain unresolved. Exact account conversion access, approvals, user gas or
-  relayer charge, latency, adverse selection, and after-external-cost profit are
-  unproved. The official batch and single-token historical-price endpoints both
+  after-cost proof. The prior V2 README deployment-address conflict is now
+  resolved by the current official Contracts registry, which explicitly declares
+  itself the single source of truth, labels `0xd91E80...35296` as the deprecated
+  CLOB-v1 adapter, and lists `0xadA200...6eAab` as the current pUSD NegRisk
+  collateral adapter. The dated official changelog says the V1 relayer route was
+  fully retired on 2026-07-17, and current official source at commit `ccc0596`
+  confirms that the V2 wrapper invokes the legacy adapter internally. This
+  removes only the address-identity blocker. Exact account conversion access,
+  approvals, user gas or relayer charge, latency, adverse selection, and
+  after-external-cost profit are unproved. The official batch and single-token
+  historical-price endpoints both
   returned current points outside the requested 2026-08-24 window; those
   responses were retained and rejected without guessed retries. Canonical gate:
   `docs/model-research/action-value/polymarket-negrisk-maker-input-gate-v1-2026-08-26.json`,
   result SHA-256
   `d4e02d2d1cc6b0a598265af734b29f62aec6145bc5a1cc3b3d65771ba2031d2a`.
+  Canonical address resolution:
+  `docs/model-research/action-value/polymarket-negrisk-v2-adapter-address-resolution-v1-2026-08-27.json`,
+  result SHA-256
+  `e11810a0215521cb5ad0c0c966340b4ff943760fda516e7841430fe057fe25fe`.
   A distinct organic-taker fee overlay is now accepted without changing the
   NegRisk verdict. The official fee page defines the current crypto fee as
   `shares * 0.07 * price * (1-price)` and says takers can earn a portion back.
@@ -898,7 +908,7 @@ grants paper, testnet, or live authority.
 
 The canonical structural-edge priority and retry-trigger registry is
 `docs/model-research/structural-edge-priority-registry-v1.json`, result SHA-256
-`d9b8d325ca4099fa6e89b4152ca3ca74284056369bdecc54f61b37e43ed0f652`.
+`bf5e77b2d85f6a976a4af9d2d7510aedfa1ba323d314b1002acb6b08ef76d2a3`.
 Advance only the highest-ranked hypothesis whose trigger is actually satisfied.
 This prevents account-blocked or terminal screens from being rerun as if more
 snapshots could create an edge.

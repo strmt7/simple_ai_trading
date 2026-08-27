@@ -87,9 +87,13 @@
         {
           "path": "docs/model-research/polymarket/structural-parity-snapshot-v1-2026-08-25.json",
           "result_sha256": "9d7a2c61ae29cb6b29fd3f417ed3e40f1ea08fb2cb6729d20372648abdc448e2"
+        },
+        {
+          "path": "docs/model-research/action-value/polymarket-negrisk-v2-adapter-address-resolution-v1-2026-08-27.json",
+          "result_sha256": "e11810a0215521cb5ad0c0c966340b4ff943760fda516e7841430fe057fe25fe"
         }
       ],
-      "current_status": "highest_priority_market_direction_independent_candidate_one_five_minute_22_event_live_capture_found_one_positive_event_frame_at_5_and_20_shares_but_all_taker_was_negative_after_fees_maker_input_was_positive_by_only_0_00740_and_0_02960_pUSD_before_external_costs_an_exact_recent_receipt_proved_66_72_Bitcoin_NO_shares_filled_as_maker_at_0_82_and_official_source_plus_one_successful_index7_conversion_proved_the_V2_to_legacy_route_but_reusing_479446_whole_outer_transaction_gas_units_at_one_current_gas_and_POLUSDT_ask_sensitivity_rejected_5_shares_and_left_only_0_009257_pUSD_minus_USDT_at_20_shares_before_other_costs_queue_post_fill_output_books_candidate_index_set_exact_account_access_user_charge_latency_and_after_cost_profit_remain_unproved",
+      "current_status": "highest_priority_market_direction_independent_candidate_one_five_minute_22_event_live_capture_found_one_positive_event_frame_at_5_and_20_shares_but_all_taker_was_negative_after_fees_maker_input_was_positive_by_only_0_00740_and_0_02960_pUSD_before_external_costs_an_exact_recent_receipt_proved_66_72_Bitcoin_NO_shares_filled_as_maker_at_0_82_and_current_official_single_source_of_truth_registry_plus_dated_V1_relayer_retirement_current_source_and_one_successful_index7_conversion_resolved_the_V2_pUSD_collateral_adapter_identity_and_proved_the_V2_to_legacy_route_but_reusing_479446_whole_outer_transaction_gas_units_at_one_current_gas_and_POLUSDT_ask_sensitivity_rejected_5_shares_and_left_only_0_009257_pUSD_minus_USDT_at_20_shares_before_other_costs_queue_post_fill_output_books_candidate_index_set_exact_account_access_user_charge_latency_and_after_cost_profit_remain_unproved",
       "market_direction_forecast_required": false,
       "mechanism": "polymarket_negative_risk_NO_to_YES_converter_recurrence",
       "next_action": "leave_the_active_frozen_24_hour_six_token_capture_untouched_and_terminally_audit_only_after_completion_the_5_share_direct_gas_branch_is_rejected_for_20_shares_if_a_Bitcoin_NO_sell_fill_reaches_0_82_join_queue_censored_entry_to_the_first_causally_subsequent_Gold_YES_and_SP500_YES_taker_unwind_then_reject_on_no_fill_stale_or_discontinuous_books_nonpositive_after_fee_unwind_or_any_unbound_candidate_index_set_account_access_same_unit_user_charge_latency_approval_adverse_selection_or_external_cost",
@@ -103,7 +107,7 @@
         "calling_a_transport_clean_subscription_source_continuous_when_cross_token_source_timestamps_are_stale_or_skewed",
         "filtering_aggregate_Data_API_trade_prices_as_price_level_maker_fill_probability",
         "calling_output_maker_economics_locked_without_pre_existing_inventory_and_holding_risk",
-        "silently_selecting_the_V2_README_adapter_address_despite_its_conflict_with_the_current_official_SDK_and_observed_conversion",
+        "using_the_stale_repository_README_or_retired_CLOB_V1_adapter_as_the_current_user_facing_pUSD_relayer_target_after_the_official_registry_and_dated_changelog_resolved_the_runtime_address",
         "counting_an_index7_all_three_NO_conversion_as_an_observed_candidate_one_NO_conversion",
         "calling_a_pUSD_minus_USDT_sensitivity_same_unit_after_cost_profit",
         "ignoring_augmented_or_non_exhaustive_event_risk_conversion_fees_CLOB_fees_latency_atomicity_or_capacity",
@@ -1275,7 +1279,7 @@
       "venue_scope": "Binance_NOKBUSDT_bStock_and_NOKUSDT_TradFi_perpetual_dividend_adjustment"
     }
   ],
-  "result_sha256": "d9b8d325ca4099fa6e89b4152ca3ca74284056369bdecc54f61b37e43ed0f652",
+  "result_sha256": "bf5e77b2d85f6a976a4af9d2d7510aedfa1ba323d314b1002acb6b08ef76d2a3",
   "schema_version": "structural-edge-priority-registry-v1",
   "terminal_do_not_repeat": [
     {
@@ -1404,6 +1408,6 @@
       "reason": "AMAT_and_MSFT_special_negative_short_funding_debits_matched_their_declared_gross_dividends_within_three_micro_USDT_while_bStock_reinvests_only_the_net_dividend_so_the_direct_dividend_contribution_is_N_minus_D_equal_to_negative_deductions_before_every_other_cost"
     }
   ],
-  "updated_at_utc": "2026-08-27T00:17:08.9261615Z",
+  "updated_at_utc": "2026-08-27T00:28:27.4212553Z",
   "usage_rule": "advance_the_highest_ranked_hypothesis_whose_retry_trigger_is_satisfied_otherwise_do_not_repeat_a_blocked_or_terminal_screen"
 }

@@ -1,0 +1,105 @@
+{
+  "schema_version": "polymarket-negrisk-v2-adapter-address-resolution-v1",
+  "created_at_utc": "2026-08-27T00:28:27.4212553Z",
+  "purpose": "resolve the previously conflicting current Polymarket NegRisk pUSD collateral adapter address before any authenticated execution study",
+  "authority": {
+    "public_read_only_research": true,
+    "credentials_used": false,
+    "signed_requests_made": 0,
+    "venue_market_data_requests_made": 0,
+    "orders_or_conversions_submitted": 0,
+    "funded_actions": 0,
+    "live_money_authority": false
+  },
+  "predecessor": {
+    "path": "docs/model-research/action-value/polymarket-negrisk-maker-input-gate-v1-2026-08-26.json",
+    "result_sha256": "d4e02d2d1cc6b0a598265af734b29f62aec6145bc5a1cc3b3d65771ba2031d2a",
+    "unresolved_statement": "the ctf-exchange-v2 README address conflicted with the current official Python SDK address that agreed with one observed successful conversion"
+  },
+  "source_contract": {
+    "request_count": 4,
+    "requests": [
+      {
+        "method": "GET",
+        "url": "https://docs.polymarket.com/resources/contracts.md",
+        "security": "public official documentation read",
+        "response_bytes": 7987,
+        "response_sha256": "ed59020bd28a24cbca9dbd2f92624a2a8ad7e403f0f08b6ff1529e33860c99a6",
+        "retained_outside_repository": "2026-08-27-polymarket-negrisk-adapter-resolution/contracts.md"
+      },
+      {
+        "method": "GET",
+        "url": "https://docs.polymarket.com/changelog/predictions.md",
+        "security": "public official documentation read",
+        "response_bytes": 23375,
+        "response_sha256": "630e2f885b355a5a34dc1d0e09c2ac033ee83af4595ba283b217273e6f5ac73b",
+        "retained_outside_repository": "2026-08-27-polymarket-negrisk-adapter-resolution/predictions-changelog.md"
+      },
+      {
+        "method": "GET",
+        "url": "https://raw.githubusercontent.com/Polymarket/ctf-exchange-v2/main/src/adapters/NegRiskCtfCollateralAdapter.sol",
+        "security": "public official source read",
+        "response_bytes": 7227,
+        "response_sha256": "2461eb793fa5571a6902a52c5276f02a8621814fdc026cf3a7814879b1b3db76",
+        "retained_outside_repository": "2026-08-27-polymarket-negrisk-adapter-resolution/NegRiskCtfCollateralAdapter.sol"
+      },
+      {
+        "method": "GET",
+        "url": "https://api.github.com/repos/Polymarket/ctf-exchange-v2/commits/main",
+        "security": "public official repository metadata read",
+        "response_bytes": 6063,
+        "response_sha256": "7e06cd3505f77fc09ea096e18ee445e18d09d72da86625b69e9aeab6ff5530d3",
+        "retained_outside_repository": "2026-08-27-polymarket-negrisk-adapter-resolution/ctf-exchange-v2-main-commit.json"
+      }
+    ]
+  },
+  "resolution": {
+    "official_contract_page_authority": "the current Contracts page explicitly declares itself the single source of truth for all platform contract addresses",
+    "deprecated_clob_v1_adapter": "0xd91E80cF2E7be2e162c6513ceD06f1dD0dA35296",
+    "current_pusd_negrisk_collateral_adapter": "0xadA2005600Dec949baf300f4C6120000bDB6eAab",
+    "effective_history": {
+      "deprecation_announcement_date": "2026-07-14",
+      "v1_relayer_grace_period_ended_at_utc": "2026-07-17T00:00:00Z",
+      "current_rule": "all pUSD-collateral NegRisk actions use the current V2 collateral adapter"
+    },
+    "current_source_commit": "ccc0596074f4dfd62c944fbca4de252893b82b4b",
+    "current_source_file_sha256": "2461eb793fa5571a6902a52c5276f02a8621814fdc026cf3a7814879b1b3db76",
+    "route": "the current V2 pUSD collateral adapter pulls selected legacy CTF NO positions from the caller, invokes its immutable legacy NegRisk adapter, returns complementary legacy CTF YES positions, and wraps any returned USDC.e into pUSD",
+    "independent_continuity": "the predecessor already bound the same current V2 address in the official Python SDK and one successful on-chain indexSet=7 conversion",
+    "stale_readme_address_status": "superseded_for_runtime_address_selection_by_the_current_official_single_source_of_truth_contract_page_and_dated_relayer_deprecation_changelog"
+  },
+  "economic_impact": {
+    "market_direction_forecast_required": false,
+    "resolved_blocker": "current V2 pUSD NegRisk collateral adapter identity",
+    "remaining_blockers": [
+      "one exact candidate one-NO index-set conversion rather than the observed all-three-NO conversion",
+      "authenticated account conversion accessibility and approvals",
+      "exact user-paid or relayer-paid same-unit conversion cost",
+      "conversion latency and causally subsequent executable output books",
+      "owned or conservatively queue-censored maker input fill",
+      "adverse selection capacity external costs and repeated non-overlapping regimes"
+    ],
+    "accepted_edge_count_change": 0,
+    "deployment_ready": false,
+    "profitability_claim": false,
+    "future_profit_guaranteed": false,
+    "protected_capture_touched": false
+  },
+  "workflow_correction": {
+    "rule": "when a current official contract page explicitly declares itself the single source of truth and a dated official changelog retires the competing address, use that runtime address and preserve the stale repository README only as superseded provenance",
+    "reason": "treating every primary-source mismatch as permanently unresolved can preserve a stale deployment address after the operator has published an explicit authoritative replacement",
+    "do_not_repeat": [
+      "using a repository README deployment table over the current official contract registry",
+      "targeting the retired CLOB v1 adapter directly for current pUSD relayer actions",
+      "calling adapter identity resolution proof of account access exact cost candidate index-set feasibility or profit",
+      "touching restarting or interpreting the partial protected 24-hour capture"
+    ]
+  },
+  "verdict": {
+    "status": "current_v2_pusd_negrisk_adapter_identity_resolved_without_changing_the_edge_or_profit_verdict",
+    "candidate_edge": true,
+    "accepted_edge": false,
+    "next_action": "leave the protected capture untouched and use the resolved V2 address only in its terminal post-completion audit; require explicit authenticated paper authority for any later exact candidate conversion access or cost study"
+  },
+  "result_sha256": "e11810a0215521cb5ad0c0c966340b4ff943760fda516e7841430fe057fe25fe"
+}
