@@ -1,0 +1,141 @@
+{
+  "schema_version": "binance-vip-earn-public-btc-eth-sol-comparator-terminal-v1",
+  "created_at_utc": "2026-08-27T04:55:00.2541197Z",
+  "result_sha256": "cd41cad8e0053b9d41ddda64fd4ad8a86a163307ddcc9fabc805c56b9c5028c9",
+  "purpose": "test the newly public unauthenticated Binance VIP Earn rows against simultaneous public BTC ETH and SOL alternatives without account access or subscription activity",
+  "authority": {
+    "public_read_only_research": true,
+    "credentials_used": false,
+    "authenticated_requests": 0,
+    "account_state_accessed": false,
+    "subscriptions_redemptions_borrows_transfers_orders_or_quotes": 0,
+    "paper_or_live_trading_authority": false
+  },
+  "capture_contract": {
+    "method": "Chrome logged-out DOM accessibility snapshot",
+    "logged_out_evidence": [
+      "Log In button visible",
+      "Sign Up button visible"
+    ],
+    "vip_url": "https://www.binance.com/en/earn/vip-earn",
+    "retail_urls": {
+      "BTC": "https://www.binance.com/en/earn/btc",
+      "ETH": "https://www.binance.com/en/earn/eth",
+      "SOL": "https://www.binance.com/en/earn/sol"
+    },
+    "observed_at_utc": "2026-08-27T04:55:00.2541197Z",
+    "account_personalization_used": false,
+    "subscription_buttons_clicked": false
+  },
+  "visible_public_rows": {
+    "BTC": {
+      "VIP_Earn": {
+        "apr_range_percent": [
+          "0.25",
+          "0.41"
+        ],
+        "duration_label": "Locked"
+      },
+      "retail_Simple_Earn": {
+        "max_apr_percent": "0.27",
+        "duration_label": "Flexible",
+        "principal_protected_label": true
+      },
+      "retail_On_chain_Yields": {
+        "apr_range_percent": [
+          "0.20",
+          "0.41"
+        ],
+        "duration_label": "Locked",
+        "risk_comparability": "not_proved_equivalent_to_VIP_Earn"
+      },
+      "best_VIP_minus_best_visible_non_VIP_bps": "0"
+    },
+    "ETH": {
+      "VIP_Earn": {
+        "apr_range_percent": [
+          "1.70",
+          "1.90"
+        ],
+        "duration_label": "Locked"
+      },
+      "retail_Simple_Earn": {
+        "apr_range_percent": [
+          "1.40",
+          "1.90"
+        ],
+        "duration_label": "Flexible/Locked",
+        "principal_protected_label": true
+      },
+      "retail_ETH_Staking": {
+        "apr_percent": "2.20",
+        "duration_label": "Locked",
+        "principal_protected_label": true
+      },
+      "best_VIP_minus_best_visible_non_VIP_bps": "-30"
+    },
+    "SOL": {
+      "VIP_Earn": {
+        "apr_range_percent": [
+          "3.78",
+          "4.50"
+        ],
+        "duration_label": "Locked"
+      },
+      "retail_Simple_Earn": {
+        "apr_range_percent": [
+          "2.56",
+          "4.50"
+        ],
+        "duration_label": "Flexible/Locked",
+        "principal_protected_label": true
+      },
+      "retail_SOL_Staking": {
+        "apr_percent": "4.65",
+        "duration_label": "Locked",
+        "principal_protected_label": true
+      },
+      "best_VIP_minus_best_visible_non_VIP_bps": "-15"
+    }
+  },
+  "source_age_gate": {
+    "VIP_Earn_launch_date_utc": "2026-08-12",
+    "legacy_locked_product_pdf_url": "https://public.bnbstatic.com/vip/portal/public/locked_product_onepager_EN_0528",
+    "legacy_pdf_http_status": 200,
+    "legacy_pdf_content_type": "application/pdf",
+    "legacy_pdf_bytes": 1356284,
+    "legacy_pdf_sha256": "ba47361602d46ffeaf867160a40f66a00ee3257dbd19de0d3435a5b010a8e634",
+    "legacy_pdf_last_modified_utc": "2025-05-28T11:04:26Z",
+    "legacy_pdf_etag": "e96cb94a4698315a30bfd944a0fbfaf6",
+    "days_before_VIP_Earn_launch": 441,
+    "admissibility": "rejected_as_current_VIP_Earn_rate_evidence",
+    "rule": "an undated or pre-launch exact sheet cannot establish a current offer unless a current official product page explicitly adopts or links it"
+  },
+  "economic_screen": {
+    "in_scope_assets": [
+      "BTC",
+      "ETH",
+      "SOL"
+    ],
+    "strictly_positive_displayed_maximum_uplift_survivors": 0,
+    "public_forward_incremental_profit_floor": "0",
+    "reason": "no in-scope VIP displayed maximum exceeded the best simultaneously visible non-VIP maximum and exact same-product duration quota redemption eligibility and cost joins remain absent",
+    "account_specific_exception": "a future signed account view may differ by eligibility quota duration or unavailable retail alternatives but cannot be inferred from the public rows"
+  },
+  "adjudication": {
+    "accepted_edge": false,
+    "profitability_claim": false,
+    "deployment_ready": false,
+    "market_direction_forecast_required": false,
+    "status": "terminal_for_the_current_public_BTC_ETH_SOL_maximum_APR_snapshot_zero_in_scope_VIP_rows_have_positive_displayed_maximum_uplift"
+  },
+  "retry_trigger": "a material current BTC ETH or SOL VIP rate duration quota redemption or comparator change or both designated ephemeral credentials plus explicit GET-only account-evidence authority",
+  "prohibited_shortcuts": [
+    "treating_a_pre_launch_or_undated_PDF_as_a_current_VIP_Earn_offer",
+    "treating_a_displayed_APR_range_as_an_exact_owned_full_principal_rate",
+    "treating_different_risk_duration_or_product_families_as_exact_comparators",
+    "manufacturing_VIP_status_inventory_or_volume",
+    "calling_zero_public_survivors_proof_that_no_account_specific_offer_can_exist",
+    "subscribing_redeeming_converting_or_accessing_account_state_without_separate_authority"
+  ]
+}

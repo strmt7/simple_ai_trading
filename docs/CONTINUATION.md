@@ -908,7 +908,7 @@ grants paper, testnet, or live authority.
 
 The canonical structural-edge priority and retry-trigger registry is
 `docs/model-research/structural-edge-priority-registry-v1.json`, result SHA-256
-`aabfdc0750a619b380929c59546d37c86306686bc2144d85c90d770f5bea6d23`.
+`887f062b3ac8f362283328a1baf47db29cf876da255091c9aed6ac569dd7c5d7`.
 Advance only the highest-ranked hypothesis whose trigger is actually satisfied.
 This prevents account-blocked or terminal screens from being rerun as if more
 snapshots could create an edge.
@@ -1033,6 +1033,24 @@ occurred. Canonical gate:
 result SHA-256
 `9ded119650ed1679795cca8616935015bc8bf48850bfcc509ba28486e94bd9a7`.
 
+A current logged-out public comparison now identifies ETH and SOL liquid
+staking as the stronger idle-native-token lead, but not yet an accepted edge.
+ETH Staking displays 2.20% and SOL Staking 4.65%, respectively 170 and 415 bips
+above the 0.50% Soft Staking comparator. At those displayed uplifts, the
+maximum total-cost budgets are only 13.97260274 and 34.10958904 bips over 30
+days, 41.91780822 and 102.32876712 bips over 90 days, and 170 and 415 bips over
+365 days. Current official Binance Academy material says subscription produces
+WBETH or BNSOL, whose conversion ratio includes rewards; the BNSOL glossary
+says redemption may take days.
+Exact same-account quota, commission, conversion ratio, redemption period,
+eligibility, owned rewards, and every delay/liquidity/alternative-yield cost
+remain absent. The public forward net floor is therefore zero. Do not stake,
+redeem, convert, transfer, trade, or use the receipt token as collateral.
+Canonical candidate:
+`docs/model-research/action-value/binance-existing-idle-eth-sol-liquid-staking-yield-candidate-v1-2026-08-27.json`,
+result SHA-256
+`b7fc84d0be3968d31afeb801b7a40ee0d382724b11281c28733a8145d12ee035`.
+
 The market-direction-independent extension that combines long ETH or SOL Spot
 Soft Staking with an equal-notional short USDT perpetual is now terminal under
 the retained funding evidence. Both official funding responses contain 500
@@ -1081,6 +1099,21 @@ contract risk to users, and warns protocol failure can lose assets. The public
 BTC page does not identify the exact offering or bind principal return, reward
 asset, lock, redemption, fees, slashing, or protocol terms. Do not reopen on a
 higher APR alone.
+
+The logged-out VIP Earn page is now publicly enumerable, but its current
+BTC/ETH/SOL rows do not create a displayed-rate edge. BTC VIP at
+`0.25%~0.41%` merely equals the best visible non-VIP maximum; ETH VIP at
+`1.70%~1.90%` trails the public 2.20% ETH Staking row; SOL VIP at
+`3.78%~4.50%` trails the public 4.65% SOL Staking row. Zero in-scope displayed
+maximum-uplift rows survive, and exact same-product duration, quota,
+redemption, account eligibility, and costs remain missing. A separately found
+official locked-products PDF was last modified 2025-05-28, 441 days before the
+2026-08-12 VIP Earn launch, so it is discovery provenance rather than current
+rate evidence. Do not repeat the public snapshot unless a material rate or
+terms change occurs. Canonical terminal snapshot:
+`docs/model-research/action-value/binance-vip-earn-public-btc-eth-sol-comparator-terminal-v1-2026-08-27.json`,
+result SHA-256
+`cd41cad8e0053b9d41ddda64fd4ad8a86a163307ddcc9fabc805c56b9c5028c9`.
 
 The next accepted Binance structural edge is LDUSDT incremental margin
 yield. Official product guidance says eligible USDT Simple Earn Flexible assets
@@ -1898,7 +1931,7 @@ result SHA-256
 `64943efe0c6ad16f8d02f78548afef38f919448d2da87c7573e825a2eeefd6b9`.
 The structural registry remains at sixteen accepted scoped edges and now has
 result SHA-256
-`aabfdc0750a619b380929c59546d37c86306686bc2144d85c90d770f5bea6d23`.
+`887f062b3ac8f362283328a1baf47db29cf876da255091c9aed6ac569dd7c5d7`.
 
 The complete Binance XAU/XAG Commodity Options versus matching TradFi
 perpetual lower-bound screen is terminal for the active 2026-08-27 and
@@ -2205,13 +2238,14 @@ not grant account, funding, order, or transaction authority.
    account access, and every order remain separately gated.
    VIP Earn is a distinct conditional idle-inventory overlay, not a reason to
    manufacture trading volume, borrow, buy BNB, or retain a volatile asset.
-   Binance advertises up to 20 percent higher APR relative to retail Earn and
-   up to 10 times quota, but exact current products and rates are USER_DATA.
-   Reopen only when both designated credentials and explicit GET-only account
-   evidence authority exist, or when Binance publishes a durable exact public
-   product listing. Join the exact VIP and retail versions of the same product,
-   existing VIP status, independently idle eligible balance, quotas, duration,
-   redemption terms, and every cost; stop before every TRADE endpoint.
+   Its public BTC/ETH/SOL listing is now exact enough to close the displayed-
+   maximum screen: zero row beats the best simultaneously visible non-VIP
+   maximum. Do not repeat it. Reopen only after a material current rate,
+   duration, quota, redemption, or comparator change, or when both designated
+   credentials and explicit GET-only account evidence authority exist. Reject
+   undated or pre-launch sheets unless a current official page adopts them.
+   Join exact same-product terms, existing VIP status, independently idle
+   eligible balance, and every cost; stop before every TRADE endpoint.
    For BFUSD/RWUSD, wait until both designated ephemeral credential variables
    exist, then source-bind and hosted-verify one six-GET rate, quota, and
    flexible-alternative prequalification before its single run. Do not build
@@ -2224,11 +2258,13 @@ not grant account, funding, order, or transaction authority.
    Source-bind eligible BNB principal, realized Simple Earn and dividend rows,
    conservative executable reward sale values, and exact account costs against
    the frozen hedge history. Do not refresh BNB funding or books.
-   For the idle-native-token family, do not poll unchanged public pages. When
-   both designated ephemeral credentials exist and explicit read-only authority
-   is given, freeze one signed ETH/SOL Soft Staking product-list and reward-
-   history prequalification plus BTC Simple Earn product-list, position, and
-   reward-history prequalification.
+   For the idle-native-token family, do not poll unchanged public pages. The
+   public liquid-staking rates are now known but are only gross sensitivities.
+   When both designated ephemeral credentials exist and explicit read-only
+   authority is given, freeze one signed ETH/SOL liquid-staking quota,
+   conversion-rate, reward, and operation-history prequalification alongside
+   the Soft Staking product-list/reward history and BTC Simple Earn product-
+   list, position, and reward-history prequalification.
    Never call the state-changing activation GET under read-only authority, and
    never subscribe, redeem, or credit pending-order, Auto-Subscribe, or prompt-
    liquidity inventory without the separately required authority and evidence.
