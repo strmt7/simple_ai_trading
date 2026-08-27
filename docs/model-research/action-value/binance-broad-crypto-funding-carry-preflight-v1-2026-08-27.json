@@ -1,0 +1,3892 @@
+{
+  "authority": {
+    "account_state_accessed": false,
+    "credentials_used": false,
+    "one_use_session_scope_exception_exhausted": true,
+    "orders_or_transfers_submitted": 0,
+    "public_unauthenticated_gets_only": true,
+    "trading_authority": false
+  },
+  "capture_finished_at_ms": 1787791796647,
+  "capture_started_at_ms": 1787791783814,
+  "contract": {
+    "path": "docs/model-research/action-value/binance-broad-crypto-funding-carry-preflight-contract-v1.json",
+    "sha256": "7a2c34c4f9c0d44bcd6bed4564d33cda89831ab9a60341ac7ca23cc452231ed1",
+    "status": "frozen_before_public_market_outcome_access"
+  },
+  "created_at_ms": 1787791796647,
+  "funding_only_gate_pass_count": 0,
+  "funding_only_gate_pass_symbols": [],
+  "implementation": {
+    "path": "tools/screen_binance_broad_crypto_funding_carry.py",
+    "sha256": "0659a8ac93643b0244f15c931aa47a972fe791ec1ce7064f927f07ee377967e4"
+  },
+  "limitations": [
+    "Current liquidity ranking applied to a trailing history is selection-biased and cannot promote an edge.",
+    "Funding history contains mark prices but not synchronized executable spot/perpetual basis, depth, fills, or exit basis.",
+    "The frozen fee and opportunity-cost values are conservative labeled stresses, not same-account commission or capital evidence.",
+    "Top-book prices contain no atomicity, queue, latency, or fill guarantee.",
+    "A passing funding-only row can justify only a separate frozen point-in-time-universe basis and execution study; it cannot justify trading."
+  ],
+  "purpose": "test whether a deterministic volume-ranked broad crypto universe contains stable market-direction-neutral spot-perpetual funding carry with enough conservative funding-only headroom to justify basis and account-cost work",
+  "result_sha256": "095009a36a5c6a8a5a2dfdfb3e57ebe6183721bb84600518552ccf6d463617c8",
+  "schema_version": "binance-broad-crypto-funding-carry-preflight-v1",
+  "scope": {
+    "current_liquidity_selection_is_not_historical_point_in_time_universe_evidence": true,
+    "eligible_exact_spot_perpetual_pair_count": 17,
+    "selected_by_current_minimum_leg_24h_quote_volume_only": true,
+    "selected_symbol_count": 17
+  },
+  "sources": {
+    "request_count": 23,
+    "responses": [
+      {
+        "elapsed_ms": 2040,
+        "method": "GET",
+        "name": "spot-exchange-info",
+        "raw_path": "data/binance-broad-crypto-funding-carry-preflight-v1/raw/01-spot-exchange-info.raw",
+        "received_after_ms": 1787791785854,
+        "requested_before_ms": 1787791783814,
+        "response_bytes": 17532870,
+        "response_sha256": "04288039ece69d6f60ed3eb4a10a253d6b5590b66c934d84ac3057c6a8996f16",
+        "status_code": 200,
+        "url": "https://api.binance.com/api/v3/exchangeInfo",
+        "x_mbx_used_weight_1m": "20"
+      },
+      {
+        "elapsed_ms": 1090,
+        "method": "GET",
+        "name": "futures-exchange-info",
+        "raw_path": "data/binance-broad-crypto-funding-carry-preflight-v1/raw/02-futures-exchange-info.raw",
+        "received_after_ms": 1787791787060,
+        "requested_before_ms": 1787791785970,
+        "response_bytes": 1084769,
+        "response_sha256": "f3e1722a36c08c300ec307488f4c09d16d88f5b11c0ee1c1c1a341bf042ae1eb",
+        "status_code": 200,
+        "url": "https://fapi.binance.com/fapi/v1/exchangeInfo",
+        "x_mbx_used_weight_1m": "1"
+      },
+      {
+        "elapsed_ms": 272,
+        "method": "GET",
+        "name": "spot-24hr-tickers",
+        "raw_path": "data/binance-broad-crypto-funding-carry-preflight-v1/raw/03-spot-24hr-tickers.raw",
+        "received_after_ms": 1787791787358,
+        "requested_before_ms": 1787791787086,
+        "response_bytes": 1013854,
+        "response_sha256": "3c49119d8d53c34c448b3defdc2871d452fc24b5685b60cd6b4a48c8d87fcf05",
+        "status_code": 200,
+        "url": "https://api.binance.com/api/v3/ticker/24hr?type=MINI",
+        "x_mbx_used_weight_1m": "100"
+      },
+      {
+        "elapsed_ms": 265,
+        "method": "GET",
+        "name": "futures-24hr-tickers",
+        "raw_path": "data/binance-broad-crypto-funding-carry-preflight-v1/raw/04-futures-24hr-tickers.raw",
+        "received_after_ms": 1787791787634,
+        "requested_before_ms": 1787791787369,
+        "response_bytes": 278162,
+        "response_sha256": "ed30edb5579724c5656121ca66c0c63daf73fcbad2f3301c94b3e825fe1adeae",
+        "status_code": 200,
+        "url": "https://fapi.binance.com/fapi/v1/ticker/24hr",
+        "x_mbx_used_weight_1m": "41"
+      },
+      {
+        "elapsed_ms": 268,
+        "method": "GET",
+        "name": "spot-book-tickers",
+        "raw_path": "data/binance-broad-crypto-funding-carry-preflight-v1/raw/05-spot-book-tickers.raw",
+        "received_after_ms": 1787791787919,
+        "requested_before_ms": 1787791787651,
+        "response_bytes": 424158,
+        "response_sha256": "7ae67ad4839b135f1d59fa36c5e4339c6ed0da35124f6d635f3d8e4b47bf8c48",
+        "status_code": 200,
+        "url": "https://api.binance.com/api/v3/ticker/bookTicker",
+        "x_mbx_used_weight_1m": "104"
+      },
+      {
+        "elapsed_ms": 266,
+        "method": "GET",
+        "name": "futures-book-tickers",
+        "raw_path": "data/binance-broad-crypto-funding-carry-preflight-v1/raw/06-futures-book-tickers.raw",
+        "received_after_ms": 1787791788193,
+        "requested_before_ms": 1787791787927,
+        "response_bytes": 112457,
+        "response_sha256": "6647e2bd12d8e72319075b28d42439980567ef61b9e3ff670869dfeeee9367bd",
+        "status_code": 200,
+        "url": "https://fapi.binance.com/fapi/v1/ticker/bookTicker",
+        "x_mbx_used_weight_1m": "5"
+      },
+      {
+        "elapsed_ms": 265,
+        "method": "GET",
+        "name": "funding-btcusdt",
+        "raw_path": "data/binance-broad-crypto-funding-carry-preflight-v1/raw/07-funding-btcusdt.raw",
+        "received_after_ms": 1787791788475,
+        "requested_before_ms": 1787791788210,
+        "response_bytes": 63137,
+        "response_sha256": "6b4219597b85ee51a7b0601ba1399b2775a4ca1356fe3db48c459376fad9b9a8",
+        "status_code": 200,
+        "url": "https://fapi.binance.com/fapi/v1/fundingRate?symbol=BTCUSDT&limit=1000",
+        "x_mbx_used_weight_1m": null
+      },
+      {
+        "elapsed_ms": 516,
+        "method": "GET",
+        "name": "funding-ethusdt",
+        "raw_path": "data/binance-broad-crypto-funding-carry-preflight-v1/raw/08-funding-ethusdt.raw",
+        "received_after_ms": 1787791789082,
+        "requested_before_ms": 1787791788566,
+        "response_bytes": 62650,
+        "response_sha256": "73901ed47ae67f544b586133083ed8aefde10dcf52bd2a8574f4e05c0863d6cc",
+        "status_code": 200,
+        "url": "https://fapi.binance.com/fapi/v1/fundingRate?symbol=ETHUSDT&limit=1000",
+        "x_mbx_used_weight_1m": null
+      },
+      {
+        "elapsed_ms": 270,
+        "method": "GET",
+        "name": "funding-solusdt",
+        "raw_path": "data/binance-broad-crypto-funding-carry-preflight-v1/raw/09-funding-solusdt.raw",
+        "received_after_ms": 1787791789443,
+        "requested_before_ms": 1787791789173,
+        "response_bytes": 61738,
+        "response_sha256": "fd94adb008bca4e083a8097fa3c675134ccb06fb2936546ee86d6b7fbe62d297",
+        "status_code": 200,
+        "url": "https://fapi.binance.com/fapi/v1/fundingRate?symbol=SOLUSDT&limit=1000",
+        "x_mbx_used_weight_1m": null
+      },
+      {
+        "elapsed_ms": 516,
+        "method": "GET",
+        "name": "funding-xrpusdt",
+        "raw_path": "data/binance-broad-crypto-funding-carry-preflight-v1/raw/10-funding-xrpusdt.raw",
+        "received_after_ms": 1787791790058,
+        "requested_before_ms": 1787791789542,
+        "response_bytes": 61235,
+        "response_sha256": "5302849d52e2fa352ec0193308ff7af77aa32f42218e0bfe213a63650fd450ff",
+        "status_code": 200,
+        "url": "https://fapi.binance.com/fapi/v1/fundingRate?symbol=XRPUSDT&limit=1000",
+        "x_mbx_used_weight_1m": null
+      },
+      {
+        "elapsed_ms": 513,
+        "method": "GET",
+        "name": "funding-zecusdt",
+        "raw_path": "data/binance-broad-crypto-funding-carry-preflight-v1/raw/11-funding-zecusdt.raw",
+        "received_after_ms": 1787791790662,
+        "requested_before_ms": 1787791790149,
+        "response_bytes": 62185,
+        "response_sha256": "edec1ad460ebd754ec0c9a4e26eb54600605bd0d70650352b6de78ca3e2c73a4",
+        "status_code": 200,
+        "url": "https://fapi.binance.com/fapi/v1/fundingRate?symbol=ZECUSDT&limit=1000",
+        "x_mbx_used_weight_1m": null
+      },
+      {
+        "elapsed_ms": 270,
+        "method": "GET",
+        "name": "funding-bnbusdt",
+        "raw_path": "data/binance-broad-crypto-funding-carry-preflight-v1/raw/12-funding-bnbusdt.raw",
+        "received_after_ms": 1787791791053,
+        "requested_before_ms": 1787791790783,
+        "response_bytes": 62007,
+        "response_sha256": "5680a767198a1cfd639c6a1284542f076992347642e4e2787bea8fe54fae4818",
+        "status_code": 200,
+        "url": "https://fapi.binance.com/fapi/v1/fundingRate?symbol=BNBUSDT&limit=1000",
+        "x_mbx_used_weight_1m": null
+      },
+      {
+        "elapsed_ms": 261,
+        "method": "GET",
+        "name": "funding-ongusdt",
+        "raw_path": "data/binance-broad-crypto-funding-carry-preflight-v1/raw/13-funding-ongusdt.raw",
+        "received_after_ms": 1787791791416,
+        "requested_before_ms": 1787791791155,
+        "response_bytes": 61245,
+        "response_sha256": "c98299e18bf40541c89d99d5e6eb524f018506aa95accdcf15fbc291935df4c1",
+        "status_code": 200,
+        "url": "https://fapi.binance.com/fapi/v1/fundingRate?symbol=ONGUSDT&limit=1000",
+        "x_mbx_used_weight_1m": null
+      },
+      {
+        "elapsed_ms": 273,
+        "method": "GET",
+        "name": "funding-dogeusdt",
+        "raw_path": "data/binance-broad-crypto-funding-carry-preflight-v1/raw/14-funding-dogeusdt.raw",
+        "received_after_ms": 1787791791776,
+        "requested_before_ms": 1787791791503,
+        "response_bytes": 61649,
+        "response_sha256": "08d5a30a99b0bd0ca96b6a5911eb114aae0a81eaa6fb30963f24981a65fc2fb0",
+        "status_code": 200,
+        "url": "https://fapi.binance.com/fapi/v1/fundingRate?symbol=DOGEUSDT&limit=1000",
+        "x_mbx_used_weight_1m": null
+      },
+      {
+        "elapsed_ms": 768,
+        "method": "GET",
+        "name": "funding-suiusdt",
+        "raw_path": "data/binance-broad-crypto-funding-carry-preflight-v1/raw/15-funding-suiusdt.raw",
+        "received_after_ms": 1787791792633,
+        "requested_before_ms": 1787791791865,
+        "response_bytes": 61164,
+        "response_sha256": "32226305d9267a1f24381b643f02e7ba324c0f7c3f69d4738536deec1fc67ec1",
+        "status_code": 200,
+        "url": "https://fapi.binance.com/fapi/v1/fundingRate?symbol=SUIUSDT&limit=1000",
+        "x_mbx_used_weight_1m": null
+      },
+      {
+        "elapsed_ms": 269,
+        "method": "GET",
+        "name": "funding-pumpusdt",
+        "raw_path": "data/binance-broad-crypto-funding-carry-preflight-v1/raw/16-funding-pumpusdt.raw",
+        "received_after_ms": 1787791792994,
+        "requested_before_ms": 1787791792725,
+        "response_bytes": 61613,
+        "response_sha256": "63ed0532b615e736c9c648753885a192e8f07a09315d566739f1b0839f3af033",
+        "status_code": 200,
+        "url": "https://fapi.binance.com/fapi/v1/fundingRate?symbol=PUMPUSDT&limit=1000",
+        "x_mbx_used_weight_1m": null
+      },
+      {
+        "elapsed_ms": 527,
+        "method": "GET",
+        "name": "funding-trxusdt",
+        "raw_path": "data/binance-broad-crypto-funding-carry-preflight-v1/raw/17-funding-trxusdt.raw",
+        "received_after_ms": 1787791793609,
+        "requested_before_ms": 1787791793082,
+        "response_bytes": 61262,
+        "response_sha256": "cb4d496e1831698c738c3b70b23ce5f0eca62c8c26a8a8d7ba38b2a5a4ab3df1",
+        "status_code": 200,
+        "url": "https://fapi.binance.com/fapi/v1/fundingRate?symbol=TRXUSDT&limit=1000",
+        "x_mbx_used_weight_1m": null
+      },
+      {
+        "elapsed_ms": 274,
+        "method": "GET",
+        "name": "funding-enausdt",
+        "raw_path": "data/binance-broad-crypto-funding-carry-preflight-v1/raw/18-funding-enausdt.raw",
+        "received_after_ms": 1787791793985,
+        "requested_before_ms": 1787791793711,
+        "response_bytes": 61149,
+        "response_sha256": "511ae2e31b36ad2e3f89940e76a8d9cb7ffc2c2ed88b5aeea4ae94e609d5cb06",
+        "status_code": 200,
+        "url": "https://fapi.binance.com/fapi/v1/fundingRate?symbol=ENAUSDT&limit=1000",
+        "x_mbx_used_weight_1m": null
+      },
+      {
+        "elapsed_ms": 266,
+        "method": "GET",
+        "name": "funding-trumpusdt",
+        "raw_path": "data/binance-broad-crypto-funding-carry-preflight-v1/raw/19-funding-trumpusdt.raw",
+        "received_after_ms": 1787791794342,
+        "requested_before_ms": 1787791794076,
+        "response_bytes": 62329,
+        "response_sha256": "087e9e01044c48cab8aa2cda39b44eb513bdee7a168a51b97450f5b73dd63bad",
+        "status_code": 200,
+        "url": "https://fapi.binance.com/fapi/v1/fundingRate?symbol=TRUMPUSDT&limit=1000",
+        "x_mbx_used_weight_1m": null
+      },
+      {
+        "elapsed_ms": 271,
+        "method": "GET",
+        "name": "funding-pythusdt",
+        "raw_path": "data/binance-broad-crypto-funding-carry-preflight-v1/raw/20-funding-pythusdt.raw",
+        "received_after_ms": 1787791794710,
+        "requested_before_ms": 1787791794439,
+        "response_bytes": 61540,
+        "response_sha256": "cf2fe65b51b430edd844adcce6448b2793613e286e136e9a8ba90b1ddaddfc0d",
+        "status_code": 200,
+        "url": "https://fapi.binance.com/fapi/v1/fundingRate?symbol=PYTHUSDT&limit=1000",
+        "x_mbx_used_weight_1m": null
+      },
+      {
+        "elapsed_ms": 524,
+        "method": "GET",
+        "name": "funding-tutusdt",
+        "raw_path": "data/binance-broad-crypto-funding-carry-preflight-v1/raw/21-funding-tutusdt.raw",
+        "received_after_ms": 1787791795337,
+        "requested_before_ms": 1787791794813,
+        "response_bytes": 61019,
+        "response_sha256": "a04d7422d059950de0a12af94320bd57f02f983d4764284797ad4cf7ff4e9665",
+        "status_code": 200,
+        "url": "https://fapi.binance.com/fapi/v1/fundingRate?symbol=TUTUSDT&limit=1000",
+        "x_mbx_used_weight_1m": null
+      },
+      {
+        "elapsed_ms": 271,
+        "method": "GET",
+        "name": "funding-bmtusdt",
+        "raw_path": "data/binance-broad-crypto-funding-carry-preflight-v1/raw/22-funding-bmtusdt.raw",
+        "received_after_ms": 1787791795703,
+        "requested_before_ms": 1787791795432,
+        "response_bytes": 61143,
+        "response_sha256": "7fc078b8e2f01fd1fe5a363a0be72050f52bac0640564ea0b95c26733e1c84c3",
+        "status_code": 200,
+        "url": "https://fapi.binance.com/fapi/v1/fundingRate?symbol=BMTUSDT&limit=1000",
+        "x_mbx_used_weight_1m": null
+      },
+      {
+        "elapsed_ms": 778,
+        "method": "GET",
+        "name": "funding-reusdt",
+        "raw_path": "data/binance-broad-crypto-funding-carry-preflight-v1/raw/23-funding-reusdt.raw",
+        "received_after_ms": 1787791796576,
+        "requested_before_ms": 1787791795798,
+        "response_bytes": 50646,
+        "response_sha256": "76ccf0587c91b52af68e2fe7b8a5a1f52de2bc86d1088d763fe43f8afba424ec",
+        "status_code": 200,
+        "url": "https://fapi.binance.com/fapi/v1/fundingRate?symbol=REUSDT&limit=1000",
+        "x_mbx_used_weight_1m": null
+      }
+    ],
+    "total_response_bytes": 21483981
+  },
+  "symbol_results": [
+    {
+      "all_roles_pass_funding_only_gate": false,
+      "base_asset": "BTC",
+      "current_top_book": {
+        "combined_round_trip_top_spread_bips": "0.013968360041232675934440000",
+        "future_ask": "78745.90",
+        "future_bid": "78745.80",
+        "long_spot_short_future_entry_basis_bips": "-5.032655141272912701520395000",
+        "spot_ask": "78785.45000000",
+        "spot_bid": "78785.44000000",
+        "top_book_has_no_quantity_or_atomicity_claim": true
+      },
+      "future_symbol": "BTCUSDT",
+      "minimum_leg_quote_volume_usdt_24h": "1140394595.26213630",
+      "roles": {
+        "test": {
+          "capital_opportunity_hurdle_bips": "182.6484016996448503297818367",
+          "duration_days": "33.33333331018518518518518519",
+          "family_adjusted_bootstrap_net_lower_bound_bips": "-162.4727016996448503297818367",
+          "first_funding_time_ms": 1784937600002,
+          "gross_funding_bips": "62.68270000",
+          "last_funding_time_ms": 1787788800000,
+          "maximum_net_drawdown_bips": "151.9657016996448503297818381",
+          "maximum_positive_week_concentration": "0.2974106093068741454978805954",
+          "net_after_frozen_hurdles_bips": "-151.9657016996448503297818367",
+          "observation_count": 100,
+          "passes": false,
+          "rejection_reasons": [
+            "nonpositive_net_after_frozen_hurdles",
+            "family_adjusted_bootstrap_lower_bound_not_positive",
+            "one_or_more_required_slices_failed",
+            "positive_week_concentration_exceeded"
+          ],
+          "round_trip_execution_stress_bips": "32",
+          "slices": {
+            "bearish": {
+              "net_after_allocated_hurdle_bips": "-47.50290452688990360223236938",
+              "observation_count": 31,
+              "passes": false
+            },
+            "bullish": {
+              "net_after_allocated_hurdle_bips": "-56.08729264586504312531709795",
+              "observation_count": 38,
+              "passes": false
+            },
+            "choppy": {
+              "net_after_allocated_hurdle_bips": "-90.3347570027904616945712837",
+              "observation_count": 59,
+              "passes": false
+            },
+            "directional": {
+              "net_after_allocated_hurdle_bips": "-61.63094469685438863521055305",
+              "observation_count": 41,
+              "passes": false
+            },
+            "high_volatility": {
+              "net_after_allocated_hurdle_bips": "-47.94857256088280060882800611",
+              "observation_count": 33,
+              "passes": false
+            },
+            "low_or_normal_volatility": {
+              "net_after_allocated_hurdle_bips": "-86.1083209348046676813800102",
+              "observation_count": 55,
+              "passes": false
+            },
+            "sideways": {
+              "net_after_allocated_hurdle_bips": "-48.37550452688990360223236938",
+              "observation_count": 31,
+              "passes": false
+            },
+            "stress_volatility": {
+              "net_after_allocated_hurdle_bips": "-17.9088082039573820395738204",
+              "observation_count": 12,
+              "passes": false
+            }
+          }
+        },
+        "training": {
+          "capital_opportunity_hurdle_bips": "544.2922369989852866565195332",
+          "duration_days": "99.33333325231481481481481481",
+          "family_adjusted_bootstrap_net_lower_bound_bips": "-599.9115369989852866565195332",
+          "first_funding_time_ms": 1773504000007,
+          "gross_funding_bips": "12.12280000",
+          "last_funding_time_ms": 1782057600000,
+          "maximum_net_drawdown_bips": "564.1694369989852866565195443",
+          "maximum_positive_week_concentration": "0.2363847291672120847186951855",
+          "net_after_frozen_hurdles_bips": "-564.1694369989852866565195332",
+          "observation_count": 298,
+          "passes": false,
+          "rejection_reasons": [
+            "nonpositive_net_after_frozen_hurdles",
+            "family_adjusted_bootstrap_lower_bound_not_positive",
+            "one_or_more_required_slices_failed",
+            "maximum_drawdown_exceeded"
+          ],
+          "round_trip_execution_stress_bips": "32",
+          "slices": {
+            "bearish": {
+              "net_after_allocated_hurdle_bips": "-202.9644558150650880723511044",
+              "observation_count": 109,
+              "passes": false
+            },
+            "bullish": {
+              "net_after_allocated_hurdle_bips": "-211.5852555163971547165442541",
+              "observation_count": 112,
+              "passes": false
+            },
+            "choppy": {
+              "net_after_allocated_hurdle_bips": "-294.3384513350460877352483494",
+              "observation_count": 154,
+              "passes": false
+            },
+            "directional": {
+              "net_after_allocated_hurdle_bips": "-269.8309856639391989212711838",
+              "observation_count": 144,
+              "passes": false
+            },
+            "high_volatility": {
+              "net_after_allocated_hurdle_bips": "-166.6442910399619993257944899",
+              "observation_count": 90,
+              "passes": false
+            },
+            "low_or_normal_volatility": {
+              "net_after_allocated_hurdle_bips": "-283.3373184994926433282597666",
+              "observation_count": 149,
+              "passes": false
+            },
+            "sideways": {
+              "net_after_allocated_hurdle_bips": "-149.6197256675230438676241747",
+              "observation_count": 77,
+              "passes": false
+            },
+            "stress_volatility": {
+              "net_after_allocated_hurdle_bips": "-114.1878274595306440024652767",
+              "observation_count": 59,
+              "passes": false
+            }
+          }
+        },
+        "validation": {
+          "capital_opportunity_hurdle_bips": "180.8219183155758498224251649",
+          "duration_days": "33.00000009259259259259259259",
+          "family_adjusted_bootstrap_net_lower_bound_bips": "-172.0746183155758498224251649",
+          "first_funding_time_ms": 1782086400000,
+          "gross_funding_bips": "53.39090000",
+          "last_funding_time_ms": 1784908800008,
+          "maximum_net_drawdown_bips": "159.4310183155758498224251637",
+          "maximum_positive_week_concentration": "0.2927728244405015508920642160",
+          "net_after_frozen_hurdles_bips": "-159.4310183155758498224251649",
+          "observation_count": 99,
+          "passes": false,
+          "rejection_reasons": [
+            "nonpositive_net_after_frozen_hurdles",
+            "family_adjusted_bootstrap_lower_bound_not_positive",
+            "one_or_more_required_slices_failed",
+            "positive_week_concentration_exceeded"
+          ],
+          "round_trip_execution_stress_bips": "32",
+          "slices": {
+            "bearish": {
+              "net_after_allocated_hurdle_bips": "-57.84607213176923983621091689",
+              "observation_count": 35,
+              "passes": false
+            },
+            "bullish": {
+              "net_after_allocated_hurdle_bips": "-66.15588655812308780345310026",
+              "observation_count": 42,
+              "passes": false
+            },
+            "choppy": {
+              "net_after_allocated_hurdle_bips": "-89.3676990642088054569028694",
+              "observation_count": 55,
+              "passes": false
+            },
+            "directional": {
+              "net_after_allocated_hurdle_bips": "-70.06331925136704436552229552",
+              "observation_count": 44,
+              "passes": false
+            },
+            "high_volatility": {
+              "net_after_allocated_hurdle_bips": "-49.25572309190330499310712401",
+              "observation_count": 32,
+              "passes": false
+            },
+            "low_or_normal_volatility": {
+              "net_after_allocated_hurdle_bips": "-73.45265194461100092759149076",
+              "observation_count": 46,
+              "passes": false
+            },
+            "sideways": {
+              "net_after_allocated_hurdle_bips": "-35.42905962568352218276114776",
+              "observation_count": 22,
+              "passes": false
+            },
+            "stress_volatility": {
+              "net_after_allocated_hurdle_bips": "-36.72264327906154390172655013",
+              "observation_count": 21,
+              "passes": false
+            }
+          }
+        }
+      },
+      "spot_symbol": "BTCUSDT",
+      "training_regime_thresholds": {
+        "high_stress_boundary": "0.013117367451992250811288138",
+        "normal_high_boundary": "0.005866881233569314543378312"
+      }
+    },
+    {
+      "all_roles_pass_funding_only_gate": false,
+      "base_asset": "ETH",
+      "current_top_book": {
+        "combined_round_trip_top_spread_bips": "0.080176552046349886047900000",
+        "future_ask": "2494.00",
+        "future_bid": "2493.99",
+        "long_spot_short_future_entry_basis_bips": "-4.088159967294720261642238000",
+        "spot_ask": "2495.01000000",
+        "spot_bid": "2495.00000000",
+        "top_book_has_no_quantity_or_atomicity_claim": true
+      },
+      "future_symbol": "ETHUSDT",
+      "minimum_leg_quote_volume_usdt_24h": "622269605.86127700",
+      "roles": {
+        "test": {
+          "capital_opportunity_hurdle_bips": "182.6484016996448503297818367",
+          "duration_days": "33.33333331018518518518518519",
+          "family_adjusted_bootstrap_net_lower_bound_bips": "-179.3318016996448503297818367",
+          "first_funding_time_ms": 1784937600002,
+          "gross_funding_bips": "49.78480000",
+          "last_funding_time_ms": 1787788800000,
+          "maximum_net_drawdown_bips": "164.8636016996448503297818383",
+          "maximum_positive_week_concentration": "0.3800709894224579349283313942",
+          "net_after_frozen_hurdles_bips": "-164.8636016996448503297818367",
+          "observation_count": 100,
+          "passes": false,
+          "rejection_reasons": [
+            "nonpositive_net_after_frozen_hurdles",
+            "family_adjusted_bootstrap_lower_bound_not_positive",
+            "one_or_more_required_slices_failed",
+            "positive_week_concentration_exceeded"
+          ],
+          "round_trip_execution_stress_bips": "32",
+          "slices": {
+            "bearish": {
+              "net_after_allocated_hurdle_bips": "-45.48435247590055809233891428",
+              "observation_count": 28,
+              "passes": false
+            },
+            "bullish": {
+              "net_after_allocated_hurdle_bips": "-60.77909264586504312531709795",
+              "observation_count": 38,
+              "passes": false
+            },
+            "choppy": {
+              "net_after_allocated_hurdle_bips": "-98.8595250367833587011669204",
+              "observation_count": 61,
+              "passes": false
+            },
+            "directional": {
+              "net_after_allocated_hurdle_bips": "-66.00407666286149162861491631",
+              "observation_count": 39,
+              "passes": false
+            },
+            "high_volatility": {
+              "net_after_allocated_hurdle_bips": "-44.06635247590055809233891428",
+              "observation_count": 28,
+              "passes": false
+            },
+            "low_or_normal_volatility": {
+              "net_after_allocated_hurdle_bips": "-94.6398209348046676813800102",
+              "observation_count": 55,
+              "passes": false
+            },
+            "sideways": {
+              "net_after_allocated_hurdle_bips": "-58.60015657787924911212582448",
+              "observation_count": 34,
+              "passes": false
+            },
+            "stress_volatility": {
+              "net_after_allocated_hurdle_bips": "-26.15742828893962455606291224",
+              "observation_count": 17,
+              "passes": false
+            }
+          }
+        },
+        "training": {
+          "capital_opportunity_hurdle_bips": "544.2922369989852866565195332",
+          "duration_days": "99.33333325231481481481481481",
+          "family_adjusted_bootstrap_net_lower_bound_bips": "-603.6957369989852866565195332",
+          "first_funding_time_ms": 1773504000007,
+          "gross_funding_bips": "15.66830000",
+          "last_funding_time_ms": 1782057600000,
+          "maximum_net_drawdown_bips": "560.6239369989852866565195443",
+          "maximum_positive_week_concentration": "0.1822704026965335220980535021",
+          "net_after_frozen_hurdles_bips": "-560.6239369989852866565195332",
+          "observation_count": 298,
+          "passes": false,
+          "rejection_reasons": [
+            "nonpositive_net_after_frozen_hurdles",
+            "family_adjusted_bootstrap_lower_bound_not_positive",
+            "one_or_more_required_slices_failed",
+            "maximum_drawdown_exceeded"
+          ],
+          "round_trip_execution_stress_bips": "32",
+          "slices": {
+            "bearish": {
+              "net_after_allocated_hurdle_bips": "-244.7471208888361101747145693",
+              "observation_count": 125,
+              "passes": false
+            },
+            "bullish": {
+              "net_after_allocated_hurdle_bips": "-214.4241549190612880049305534",
+              "observation_count": 118,
+              "passes": false
+            },
+            "choppy": {
+              "net_after_allocated_hurdle_bips": "-285.3177182008247099724529163",
+              "observation_count": 152,
+              "passes": false
+            },
+            "directional": {
+              "net_after_allocated_hurdle_bips": "-275.3062187981605766840666169",
+              "observation_count": 146,
+              "passes": false
+            },
+            "high_volatility": {
+              "net_after_allocated_hurdle_bips": "-172.5996910399619993257944899",
+              "observation_count": 90,
+              "passes": false
+            },
+            "low_or_normal_volatility": {
+              "net_after_allocated_hurdle_bips": "-276.8868184994926433282597666",
+              "observation_count": 149,
+              "passes": false
+            },
+            "sideways": {
+              "net_after_allocated_hurdle_bips": "-101.4526611910878884768744105",
+              "observation_count": 55,
+              "passes": false
+            },
+            "stress_volatility": {
+              "net_after_allocated_hurdle_bips": "-111.1374274595306440024652767",
+              "observation_count": 59,
+              "passes": false
+            }
+          }
+        },
+        "validation": {
+          "capital_opportunity_hurdle_bips": "180.8219183155758498224251649",
+          "duration_days": "33.00000009259259259259259259",
+          "family_adjusted_bootstrap_net_lower_bound_bips": "-196.7640183155758498224251649",
+          "first_funding_time_ms": 1782086400000,
+          "gross_funding_bips": "30.10270000",
+          "last_funding_time_ms": 1784908800008,
+          "maximum_net_drawdown_bips": "182.7192183155758498224251635",
+          "maximum_positive_week_concentration": "0.3664323505599985660212766593",
+          "net_after_frozen_hurdles_bips": "-182.7192183155758498224251649",
+          "observation_count": 99,
+          "passes": false,
+          "rejection_reasons": [
+            "nonpositive_net_after_frozen_hurdles",
+            "family_adjusted_bootstrap_lower_bound_not_positive",
+            "one_or_more_required_slices_failed",
+            "positive_week_concentration_exceeded"
+          ],
+          "round_trip_execution_stress_bips": "32",
+          "slices": {
+            "bearish": {
+              "net_after_allocated_hurdle_bips": "-66.06557213176923983621091689",
+              "observation_count": 35,
+              "passes": false
+            },
+            "bullish": {
+              "net_after_allocated_hurdle_bips": "-77.92740290474506608448769789",
+              "observation_count": 43,
+              "passes": false
+            },
+            "choppy": {
+              "net_after_allocated_hurdle_bips": "-80.28690290474506608448769789",
+              "observation_count": 43,
+              "passes": false
+            },
+            "directional": {
+              "net_after_allocated_hurdle_bips": "-102.4323154108307837379374670",
+              "observation_count": 56,
+              "passes": false
+            },
+            "high_volatility": {
+              "net_after_allocated_hurdle_bips": "-67.06580482501319639828011213",
+              "observation_count": 37,
+              "passes": false
+            },
+            "low_or_normal_volatility": {
+              "net_after_allocated_hurdle_bips": "-84.60415194461100092759149076",
+              "observation_count": 46,
+              "passes": false
+            },
+            "sideways": {
+              "net_after_allocated_hurdle_bips": "-38.72624327906154390172655013",
+              "observation_count": 21,
+              "passes": false
+            },
+            "stress_volatility": {
+              "net_after_allocated_hurdle_bips": "-31.049261545951652496553562",
+              "observation_count": 16,
+              "passes": false
+            }
+          }
+        }
+      },
+      "spot_symbol": "ETHUSDT",
+      "training_regime_thresholds": {
+        "high_stress_boundary": "0.0167509550755778680803627814",
+        "normal_high_boundary": "0.0067370856049784245204213273"
+      }
+    },
+    {
+      "all_roles_pass_funding_only_gate": false,
+      "base_asset": "SOL",
+      "current_top_book": {
+        "combined_round_trip_top_spread_bips": "1.980394117843156864706080000",
+        "future_ask": "100.9900",
+        "future_bid": "100.9800",
+        "long_spot_short_future_entry_basis_bips": "-2.970002970002970002970003000",
+        "spot_ask": "101.01000000",
+        "spot_bid": "101.00000000",
+        "top_book_has_no_quantity_or_atomicity_claim": true
+      },
+      "future_symbol": "SOLUSDT",
+      "minimum_leg_quote_volume_usdt_24h": "262234841.65630000",
+      "roles": {
+        "test": {
+          "capital_opportunity_hurdle_bips": "182.6484016996448503297818367",
+          "duration_days": "33.33333331018518518518518519",
+          "family_adjusted_bootstrap_net_lower_bound_bips": "-197.6074016996448503297818367",
+          "first_funding_time_ms": 1784937600002,
+          "gross_funding_bips": "44.25940000",
+          "last_funding_time_ms": 1787788800000,
+          "maximum_net_drawdown_bips": "170.3890016996448503297818382",
+          "maximum_positive_week_concentration": "0.3514539128553658668493447026",
+          "net_after_frozen_hurdles_bips": "-170.3890016996448503297818367",
+          "observation_count": 100,
+          "passes": false,
+          "rejection_reasons": [
+            "nonpositive_net_after_frozen_hurdles",
+            "family_adjusted_bootstrap_lower_bound_not_positive",
+            "one_or_more_required_slices_failed",
+            "positive_week_concentration_exceeded"
+          ],
+          "round_trip_execution_stress_bips": "32",
+          "slices": {
+            "bearish": {
+              "net_after_allocated_hurdle_bips": "-62.09114059487569761542364284",
+              "observation_count": 35,
+              "passes": false
+            },
+            "bullish": {
+              "net_after_allocated_hurdle_bips": "-62.37941273084728564180618978",
+              "observation_count": 43,
+              "passes": false
+            },
+            "choppy": {
+              "net_after_allocated_hurdle_bips": "-106.0890250367833587011669204",
+              "observation_count": 61,
+              "passes": false
+            },
+            "directional": {
+              "net_after_allocated_hurdle_bips": "-64.29997666286149162861491631",
+              "observation_count": 39,
+              "passes": false
+            },
+            "high_volatility": {
+              "net_after_allocated_hurdle_bips": "-61.40447666286149162861491631",
+              "observation_count": 39,
+              "passes": false
+            },
+            "low_or_normal_volatility": {
+              "net_after_allocated_hurdle_bips": "-95.2257848668188736681887367",
+              "observation_count": 51,
+              "passes": false
+            },
+            "sideways": {
+              "net_after_allocated_hurdle_bips": "-45.91844837392186707255200407",
+              "observation_count": 22,
+              "passes": false
+            },
+            "stress_volatility": {
+              "net_after_allocated_hurdle_bips": "-13.75874016996448503297818367",
+              "observation_count": 10,
+              "passes": false
+            }
+          }
+        },
+        "training": {
+          "capital_opportunity_hurdle_bips": "544.2922369989852866565195332",
+          "duration_days": "99.33333325231481481481481481",
+          "family_adjusted_bootstrap_net_lower_bound_bips": "-712.9438369989852866565195332",
+          "first_funding_time_ms": 1773504000007,
+          "gross_funding_bips": "-70.17620000",
+          "last_funding_time_ms": 1782057600000,
+          "maximum_net_drawdown_bips": "646.4684369989852866565195448",
+          "maximum_positive_week_concentration": "0.1580086203648147665052159874",
+          "net_after_frozen_hurdles_bips": "-646.4684369989852866565195332",
+          "observation_count": 298,
+          "passes": false,
+          "rejection_reasons": [
+            "nonpositive_net_after_frozen_hurdles",
+            "family_adjusted_bootstrap_lower_bound_not_positive",
+            "one_or_more_required_slices_failed",
+            "maximum_drawdown_exceeded"
+          ],
+          "round_trip_execution_stress_bips": "32",
+          "slices": {
+            "bearish": {
+              "net_after_allocated_hurdle_bips": "-307.2925871572788657003054355",
+              "observation_count": 129,
+              "passes": false
+            },
+            "bullish": {
+              "net_after_allocated_hurdle_bips": "-244.0540208888361101747145693",
+              "observation_count": 125,
+              "passes": false
+            },
+            "choppy": {
+              "net_after_allocated_hurdle_bips": "-336.2832507377102210236346487",
+              "observation_count": 160,
+              "passes": false
+            },
+            "directional": {
+              "net_after_allocated_hurdle_bips": "-310.1851862612750656328848845",
+              "observation_count": 138,
+              "passes": false
+            },
+            "high_volatility": {
+              "net_after_allocated_hurdle_bips": "-185.8408910399619993257944899",
+              "observation_count": 90,
+              "passes": false
+            },
+            "low_or_normal_volatility": {
+              "net_after_allocated_hurdle_bips": "-317.5200184994926433282597666",
+              "observation_count": 149,
+              "passes": false
+            },
+            "sideways": {
+              "net_after_allocated_hurdle_bips": "-95.12182895287031078149952839",
+              "observation_count": 44,
+              "passes": false
+            },
+            "stress_volatility": {
+              "net_after_allocated_hurdle_bips": "-143.1075274595306440024652767",
+              "observation_count": 59,
+              "passes": false
+            }
+          }
+        },
+        "validation": {
+          "capital_opportunity_hurdle_bips": "180.8219183155758498224251649",
+          "duration_days": "33.00000009259259259259259259",
+          "family_adjusted_bootstrap_net_lower_bound_bips": "-220.9482183155758498224251649",
+          "first_funding_time_ms": 1782086400000,
+          "gross_funding_bips": "15.08140000",
+          "last_funding_time_ms": 1784908800008,
+          "maximum_net_drawdown_bips": "197.7405183155758498224251634",
+          "maximum_positive_week_concentration": "0.3205603504642343402641558781",
+          "net_after_frozen_hurdles_bips": "-197.7405183155758498224251649",
+          "observation_count": 99,
+          "passes": false,
+          "rejection_reasons": [
+            "nonpositive_net_after_frozen_hurdles",
+            "family_adjusted_bootstrap_lower_bound_not_positive",
+            "one_or_more_required_slices_failed",
+            "positive_week_concentration_exceeded"
+          ],
+          "round_trip_execution_stress_bips": "32",
+          "slices": {
+            "bearish": {
+              "net_after_allocated_hurdle_bips": "-85.29993751825715296034930738",
+              "observation_count": 39,
+              "passes": false
+            },
+            "bullish": {
+              "net_after_allocated_hurdle_bips": "-80.44481925136704436552229552",
+              "observation_count": 44,
+              "passes": false
+            },
+            "choppy": {
+              "net_after_allocated_hurdle_bips": "-101.2438173310989140517298812",
+              "observation_count": 50,
+              "passes": false
+            },
+            "directional": {
+              "net_after_allocated_hurdle_bips": "-96.4967009844769357706952836",
+              "observation_count": 49,
+              "passes": false
+            },
+            "high_volatility": {
+              "net_after_allocated_hurdle_bips": "-68.83998847839121811724551451",
+              "observation_count": 36,
+              "passes": false
+            },
+            "low_or_normal_volatility": {
+              "net_after_allocated_hurdle_bips": "-93.5412682912329792086260884",
+              "observation_count": 47,
+              "passes": false
+            },
+            "sideways": {
+              "net_after_allocated_hurdle_bips": "-31.995761545951652496553562",
+              "observation_count": 16,
+              "passes": false
+            },
+            "stress_volatility": {
+              "net_after_allocated_hurdle_bips": "-35.359261545951652496553562",
+              "observation_count": 16,
+              "passes": false
+            }
+          }
+        }
+      },
+      "spot_symbol": "SOLUSDT",
+      "training_regime_thresholds": {
+        "high_stress_boundary": "0.0192339028555029415985076769",
+        "normal_high_boundary": "0.008220619620848952037884149"
+      }
+    },
+    {
+      "all_roles_pass_funding_only_gate": false,
+      "base_asset": "XRP",
+      "current_top_book": {
+        "combined_round_trip_top_spread_bips": "1.423335732925876657917950000",
+        "future_ask": "1.4048",
+        "future_bid": "1.4047",
+        "long_spot_short_future_entry_basis_bips": "-7.113893433876360532119229000",
+        "spot_ask": "1.40570000",
+        "spot_bid": "1.40560000",
+        "top_book_has_no_quantity_or_atomicity_claim": true
+      },
+      "future_symbol": "XRPUSDT",
+      "minimum_leg_quote_volume_usdt_24h": "236336620.32363000",
+      "roles": {
+        "test": {
+          "capital_opportunity_hurdle_bips": "182.6484016996448503297818367",
+          "duration_days": "33.33333331018518518518518519",
+          "family_adjusted_bootstrap_net_lower_bound_bips": "-202.1762016996448503297818367",
+          "first_funding_time_ms": 1784937600002,
+          "gross_funding_bips": "40.35540000",
+          "last_funding_time_ms": 1787788800000,
+          "maximum_net_drawdown_bips": "174.2930016996448503297818383",
+          "maximum_positive_week_concentration": "0.3640025293153637200392118713",
+          "net_after_frozen_hurdles_bips": "-174.2930016996448503297818367",
+          "observation_count": 100,
+          "passes": false,
+          "rejection_reasons": [
+            "nonpositive_net_after_frozen_hurdles",
+            "family_adjusted_bootstrap_lower_bound_not_positive",
+            "one_or_more_required_slices_failed",
+            "positive_week_concentration_exceeded"
+          ],
+          "round_trip_execution_stress_bips": "32",
+          "slices": {
+            "bearish": {
+              "net_after_allocated_hurdle_bips": "-73.05497666286149162861491631",
+              "observation_count": 39,
+              "passes": false
+            },
+            "bullish": {
+              "net_after_allocated_hurdle_bips": "-53.02329264586504312531709795",
+              "observation_count": 38,
+              "passes": false
+            },
+            "choppy": {
+              "net_after_allocated_hurdle_bips": "-97.2475209348046676813800102",
+              "observation_count": 55,
+              "passes": false
+            },
+            "directional": {
+              "net_after_allocated_hurdle_bips": "-77.04548076484018264840182652",
+              "observation_count": 45,
+              "passes": false
+            },
+            "high_volatility": {
+              "net_after_allocated_hurdle_bips": "-43.42738444190766108574327754",
+              "observation_count": 26,
+              "passes": false
+            },
+            "low_or_normal_volatility": {
+              "net_after_allocated_hurdle_bips": "-97.8580688838153221714865551",
+              "observation_count": 52,
+              "passes": false
+            },
+            "sideways": {
+              "net_after_allocated_hurdle_bips": "-48.21473239091831557584982244",
+              "observation_count": 23,
+              "passes": false
+            },
+            "stress_volatility": {
+              "net_after_allocated_hurdle_bips": "-33.00754837392186707255200407",
+              "observation_count": 22,
+              "passes": false
+            }
+          }
+        },
+        "training": {
+          "capital_opportunity_hurdle_bips": "544.2922369989852866565195332",
+          "duration_days": "99.33333325231481481481481481",
+          "family_adjusted_bootstrap_net_lower_bound_bips": "-638.7651369989852866565195332",
+          "first_funding_time_ms": 1773504000007,
+          "gross_funding_bips": "-26.67940000",
+          "last_funding_time_ms": 1782057600000,
+          "maximum_net_drawdown_bips": "602.9716369989852866565195445",
+          "maximum_positive_week_concentration": "0.1155883915694658806264706627",
+          "net_after_frozen_hurdles_bips": "-602.9716369989852866565195332",
+          "observation_count": 298,
+          "passes": false,
+          "rejection_reasons": [
+            "nonpositive_net_after_frozen_hurdles",
+            "family_adjusted_bootstrap_lower_bound_not_positive",
+            "one_or_more_required_slices_failed",
+            "maximum_drawdown_exceeded"
+          ],
+          "round_trip_execution_stress_bips": "32",
+          "slices": {
+            "bearish": {
+              "net_after_allocated_hurdle_bips": "-288.0957871572788657003054355",
+              "observation_count": 129,
+              "passes": false
+            },
+            "bullish": {
+              "net_after_allocated_hurdle_bips": "-195.2139223821757769537488210",
+              "observation_count": 110,
+              "passes": false
+            },
+            "choppy": {
+              "net_after_allocated_hurdle_bips": "-315.2628513350460877352483494",
+              "observation_count": 154,
+              "passes": false
+            },
+            "directional": {
+              "net_after_allocated_hurdle_bips": "-287.7087856639391989212711838",
+              "observation_count": 144,
+              "passes": false
+            },
+            "high_volatility": {
+              "net_after_allocated_hurdle_bips": "-174.7009910399619993257944899",
+              "observation_count": 90,
+              "passes": false
+            },
+            "low_or_normal_volatility": {
+              "net_after_allocated_hurdle_bips": "-302.4215184994926433282597666",
+              "observation_count": 149,
+              "passes": false
+            },
+            "sideways": {
+              "net_after_allocated_hurdle_bips": "-119.6619274595306440024652767",
+              "observation_count": 59,
+              "passes": false
+            },
+            "stress_volatility": {
+              "net_after_allocated_hurdle_bips": "-125.8491274595306440024652767",
+              "observation_count": 59,
+              "passes": false
+            }
+          }
+        },
+        "validation": {
+          "capital_opportunity_hurdle_bips": "180.8219183155758498224251649",
+          "duration_days": "33.00000009259259259259259259",
+          "family_adjusted_bootstrap_net_lower_bound_bips": "-243.6148183155758498224251649",
+          "first_funding_time_ms": 1782086400000,
+          "gross_funding_bips": "-5.35970000",
+          "last_funding_time_ms": 1784908800008,
+          "maximum_net_drawdown_bips": "218.1816183155758498224251632",
+          "maximum_positive_week_concentration": "0.3977733775386178049907842253",
+          "net_after_frozen_hurdles_bips": "-218.1816183155758498224251649",
+          "observation_count": 99,
+          "passes": false,
+          "rejection_reasons": [
+            "nonpositive_net_after_frozen_hurdles",
+            "family_adjusted_bootstrap_lower_bound_not_positive",
+            "one_or_more_required_slices_failed",
+            "positive_week_concentration_exceeded"
+          ],
+          "round_trip_execution_stress_bips": "32",
+          "slices": {
+            "bearish": {
+              "net_after_allocated_hurdle_bips": "-91.55537021150110952241850264",
+              "observation_count": 41,
+              "passes": false
+            },
+            "bullish": {
+              "net_after_allocated_hurdle_bips": "-89.72917021150110952241850264",
+              "observation_count": 41,
+              "passes": false
+            },
+            "choppy": {
+              "net_after_allocated_hurdle_bips": "-115.7486663709648488948336741",
+              "observation_count": 53,
+              "passes": false
+            },
+            "directional": {
+              "net_after_allocated_hurdle_bips": "-102.4329519446110009275914908",
+              "observation_count": 46,
+              "passes": false
+            },
+            "high_volatility": {
+              "net_after_allocated_hurdle_bips": "-83.92440482501319639828011213",
+              "observation_count": 37,
+              "passes": false
+            },
+            "low_or_normal_volatility": {
+              "net_after_allocated_hurdle_bips": "-100.8972682912329792086260884",
+              "observation_count": 47,
+              "passes": false
+            },
+            "sideways": {
+              "net_after_allocated_hurdle_bips": "-36.89707789257363077758815963",
+              "observation_count": 17,
+              "passes": false
+            },
+            "stress_volatility": {
+              "net_after_allocated_hurdle_bips": "-33.35994519932967421551896438",
+              "observation_count": 15,
+              "passes": false
+            }
+          }
+        }
+      },
+      "spot_symbol": "XRPUSDT",
+      "training_regime_thresholds": {
+        "high_stress_boundary": "0.016783727082003101340873848",
+        "normal_high_boundary": "0.0072969369131809097342147308"
+      }
+    },
+    {
+      "all_roles_pass_funding_only_gate": false,
+      "base_asset": "ZEC",
+      "current_top_book": {
+        "combined_round_trip_top_spread_bips": "0.248155904606528330519660000",
+        "future_ask": "805.77",
+        "future_bid": "805.76",
+        "long_spot_short_future_entry_basis_bips": "-4.713821420596918649366115000",
+        "spot_ask": "806.14000000",
+        "spot_bid": "806.13000000",
+        "top_book_has_no_quantity_or_atomicity_claim": true
+      },
+      "future_symbol": "ZECUSDT",
+      "minimum_leg_quote_volume_usdt_24h": "154393418.27654000",
+      "roles": {
+        "test": {
+          "capital_opportunity_hurdle_bips": "182.6484016996448503297818367",
+          "duration_days": "33.33333331018518518518518519",
+          "family_adjusted_bootstrap_net_lower_bound_bips": "-168.6507016996448503297818367",
+          "first_funding_time_ms": 1784937600002,
+          "gross_funding_bips": "65.33060000",
+          "last_funding_time_ms": 1787788800000,
+          "maximum_net_drawdown_bips": "149.3178016996448503297818381",
+          "maximum_positive_week_concentration": "0.2953034260681705564821081158",
+          "net_after_frozen_hurdles_bips": "-149.3178016996448503297818367",
+          "observation_count": 100,
+          "passes": false,
+          "rejection_reasons": [
+            "nonpositive_net_after_frozen_hurdles",
+            "family_adjusted_bootstrap_lower_bound_not_positive",
+            "one_or_more_required_slices_failed",
+            "positive_week_concentration_exceeded"
+          ],
+          "round_trip_execution_stress_bips": "32",
+          "slices": {
+            "bearish": {
+              "net_after_allocated_hurdle_bips": "-62.32344469685438863521055305",
+              "observation_count": 41,
+              "passes": false
+            },
+            "bullish": {
+              "net_after_allocated_hurdle_bips": "-69.9199487988330796549974632",
+              "observation_count": 47,
+              "passes": false
+            },
+            "choppy": {
+              "net_after_allocated_hurdle_bips": "-76.2603529008117706747843735",
+              "observation_count": 53,
+              "passes": false
+            },
+            "directional": {
+              "net_after_allocated_hurdle_bips": "-73.0574487988330796549974632",
+              "observation_count": 47,
+              "passes": false
+            },
+            "high_volatility": {
+              "net_after_allocated_hurdle_bips": "-45.57108854388635210553018774",
+              "observation_count": 32,
+              "passes": false
+            },
+            "low_or_normal_volatility": {
+              "net_after_allocated_hurdle_bips": "-94.638341019786910197869102",
+              "observation_count": 60,
+              "passes": false
+            },
+            "sideways": {
+              "net_after_allocated_hurdle_bips": "-17.0744082039573820395738204",
+              "observation_count": 12,
+              "passes": false
+            },
+            "stress_volatility": {
+              "net_after_allocated_hurdle_bips": "-9.10837213597158802638254694",
+              "observation_count": 8,
+              "passes": false
+            }
+          }
+        },
+        "training": {
+          "capital_opportunity_hurdle_bips": "544.2922369989852866565195332",
+          "duration_days": "99.33333325231481481481481481",
+          "family_adjusted_bootstrap_net_lower_bound_bips": "-963.5619369989852866565195332",
+          "first_funding_time_ms": 1773504000007,
+          "gross_funding_bips": "-211.61490000",
+          "last_funding_time_ms": 1782057600000,
+          "maximum_net_drawdown_bips": "787.9071369989852866565195440",
+          "maximum_positive_week_concentration": "0.1355068396528137141118478300",
+          "net_after_frozen_hurdles_bips": "-787.9071369989852866565195332",
+          "observation_count": 298,
+          "passes": false,
+          "rejection_reasons": [
+            "nonpositive_net_after_frozen_hurdles",
+            "family_adjusted_bootstrap_lower_bound_not_positive",
+            "one_or_more_required_slices_failed",
+            "maximum_drawdown_exceeded"
+          ],
+          "round_trip_execution_stress_bips": "32",
+          "slices": {
+            "bearish": {
+              "net_after_allocated_hurdle_bips": "-325.3207534257216212258963017",
+              "observation_count": 133,
+              "passes": false
+            },
+            "bullish": {
+              "net_after_allocated_hurdle_bips": "-427.9235519323819544468620500",
+              "observation_count": 148,
+              "passes": false
+            },
+            "choppy": {
+              "net_after_allocated_hurdle_bips": "-381.0951525297178211584757507",
+              "observation_count": 142,
+              "passes": false
+            },
+            "directional": {
+              "net_after_allocated_hurdle_bips": "-406.8119844692674654980437825",
+              "observation_count": 156,
+              "passes": false
+            },
+            "high_volatility": {
+              "net_after_allocated_hurdle_bips": "-241.6863910399619993257944899",
+              "observation_count": 90,
+              "passes": false
+            },
+            "low_or_normal_volatility": {
+              "net_after_allocated_hurdle_bips": "-370.8642184994926433282597666",
+              "observation_count": 149,
+              "passes": false
+            },
+            "sideways": {
+              "net_after_allocated_hurdle_bips": "-34.66283164088171098376118142",
+              "observation_count": 17,
+              "passes": false
+            },
+            "stress_volatility": {
+              "net_after_allocated_hurdle_bips": "-175.3565274595306440024652767",
+              "observation_count": 59,
+              "passes": false
+            }
+          }
+        },
+        "validation": {
+          "capital_opportunity_hurdle_bips": "180.8219183155758498224251649",
+          "duration_days": "33.00000009259259259259259259",
+          "family_adjusted_bootstrap_net_lower_bound_bips": "-200.3559183155758498224251649",
+          "first_funding_time_ms": 1782086400000,
+          "gross_funding_bips": "43.77240000",
+          "last_funding_time_ms": 1784908800008,
+          "maximum_net_drawdown_bips": "169.0495183155758498224251635",
+          "maximum_positive_week_concentration": "0.2769766635176242473069293320",
+          "net_after_frozen_hurdles_bips": "-169.0495183155758498224251649",
+          "observation_count": 99,
+          "passes": false,
+          "rejection_reasons": [
+            "nonpositive_net_after_frozen_hurdles",
+            "family_adjusted_bootstrap_lower_bound_not_positive",
+            "one_or_more_required_slices_failed",
+            "positive_week_concentration_exceeded"
+          ],
+          "round_trip_execution_stress_bips": "32",
+          "slices": {
+            "bearish": {
+              "net_after_allocated_hurdle_bips": "-85.63715194461100092759149076",
+              "observation_count": 46,
+              "passes": false
+            },
+            "bullish": {
+              "net_after_allocated_hurdle_bips": "-67.63290290474506608448769789",
+              "observation_count": 43,
+              "passes": false
+            },
+            "choppy": {
+              "net_after_allocated_hurdle_bips": "-70.7603682912329792086260884",
+              "observation_count": 47,
+              "passes": false
+            },
+            "directional": {
+              "net_after_allocated_hurdle_bips": "-98.2891500243428706137990765",
+              "observation_count": 52,
+              "passes": false
+            },
+            "high_volatility": {
+              "net_after_allocated_hurdle_bips": "-67.06345578514726155517631926",
+              "observation_count": 34,
+              "passes": false
+            },
+            "low_or_normal_volatility": {
+              "net_after_allocated_hurdle_bips": "-79.9420663709648488948336741",
+              "observation_count": 53,
+              "passes": false
+            },
+            "sideways": {
+              "net_after_allocated_hurdle_bips": "-15.77946346621978281034597625",
+              "observation_count": 10,
+              "passes": false
+            },
+            "stress_volatility": {
+              "net_after_allocated_hurdle_bips": "-22.04399615946373937241517151",
+              "observation_count": 12,
+              "passes": false
+            }
+          }
+        }
+      },
+      "spot_symbol": "ZECUSDT",
+      "training_regime_thresholds": {
+        "high_stress_boundary": "0.0391707712673181748538812489",
+        "normal_high_boundary": "0.0166986654442497724085061054"
+      }
+    },
+    {
+      "all_roles_pass_funding_only_gate": false,
+      "base_asset": "BNB",
+      "current_top_book": {
+        "combined_round_trip_top_spread_bips": "0.284181760740982930599680000",
+        "future_ask": "704.000",
+        "future_bid": "703.990",
+        "long_spot_short_future_entry_basis_bips": "5.969555268132524126952540000",
+        "spot_ask": "703.57000000",
+        "spot_bid": "703.56000000",
+        "top_book_has_no_quantity_or_atomicity_claim": true
+      },
+      "future_symbol": "BNBUSDT",
+      "minimum_leg_quote_volume_usdt_24h": "96825120.56042000",
+      "roles": {
+        "test": {
+          "capital_opportunity_hurdle_bips": "182.6484016996448503297818367",
+          "duration_days": "33.33333331018518518518518519",
+          "family_adjusted_bootstrap_net_lower_bound_bips": "-186.8591016996448503297818367",
+          "first_funding_time_ms": 1784937600002,
+          "gross_funding_bips": "51.60810000",
+          "last_funding_time_ms": 1787788800000,
+          "maximum_net_drawdown_bips": "163.0403016996448503297818382",
+          "maximum_positive_week_concentration": "0.3878538446484175933622822774",
+          "net_after_frozen_hurdles_bips": "-163.0403016996448503297818367",
+          "observation_count": 100,
+          "passes": false,
+          "rejection_reasons": [
+            "nonpositive_net_after_frozen_hurdles",
+            "family_adjusted_bootstrap_lower_bound_not_positive",
+            "one_or_more_required_slices_failed",
+            "positive_week_concentration_exceeded"
+          ],
+          "round_trip_execution_stress_bips": "32",
+          "slices": {
+            "bearish": {
+              "net_after_allocated_hurdle_bips": "-55.45812050989345509893455101",
+              "observation_count": 30,
+              "passes": false
+            },
+            "bullish": {
+              "net_after_allocated_hurdle_bips": "-67.8910328158295281582952816",
+              "observation_count": 48,
+              "passes": false
+            },
+            "choppy": {
+              "net_after_allocated_hurdle_bips": "-93.6634209348046676813800102",
+              "observation_count": 55,
+              "passes": false
+            },
+            "directional": {
+              "net_after_allocated_hurdle_bips": "-69.37688076484018264840182652",
+              "observation_count": 45,
+              "passes": false
+            },
+            "high_volatility": {
+              "net_after_allocated_hurdle_bips": "-43.94546845890410958904109591",
+              "observation_count": 27,
+              "passes": false
+            },
+            "low_or_normal_volatility": {
+              "net_after_allocated_hurdle_bips": "-107.2142250367833587011669204",
+              "observation_count": 61,
+              "passes": false
+            },
+            "sideways": {
+              "net_after_allocated_hurdle_bips": "-39.69114837392186707255200407",
+              "observation_count": 22,
+              "passes": false
+            },
+            "stress_volatility": {
+              "net_after_allocated_hurdle_bips": "-11.8806082039573820395738204",
+              "observation_count": 12,
+              "passes": false
+            }
+          }
+        },
+        "training": {
+          "capital_opportunity_hurdle_bips": "544.2922369989852866565195332",
+          "duration_days": "99.33333325231481481481481481",
+          "family_adjusted_bootstrap_net_lower_bound_bips": "-537.8805369989852866565195332",
+          "first_funding_time_ms": 1773504000007,
+          "gross_funding_bips": "58.06770000",
+          "last_funding_time_ms": 1782057600000,
+          "maximum_net_drawdown_bips": "518.2245369989852866565195443",
+          "maximum_positive_week_concentration": "0.1684824027584733901489103156",
+          "net_after_frozen_hurdles_bips": "-518.2245369989852866565195332",
+          "observation_count": 298,
+          "passes": false,
+          "rejection_reasons": [
+            "nonpositive_net_after_frozen_hurdles",
+            "family_adjusted_bootstrap_lower_bound_not_positive",
+            "one_or_more_required_slices_failed",
+            "maximum_drawdown_exceeded"
+          ],
+          "round_trip_execution_stress_bips": "32",
+          "slices": {
+            "bearish": {
+              "net_after_allocated_hurdle_bips": "-190.8416226808437103095556713",
+              "observation_count": 107,
+              "passes": false
+            },
+            "bullish": {
+              "net_after_allocated_hurdle_bips": "-195.3301883519505991235328368",
+              "observation_count": 117,
+              "passes": false
+            },
+            "choppy": {
+              "net_after_allocated_hurdle_bips": "-290.4597835732636654306232315",
+              "observation_count": 165,
+              "passes": false
+            },
+            "directional": {
+              "net_after_allocated_hurdle_bips": "-227.7647534257216212258963017",
+              "observation_count": 133,
+              "passes": false
+            },
+            "high_volatility": {
+              "net_after_allocated_hurdle_bips": "-155.1969910399619993257944899",
+              "observation_count": 90,
+              "passes": false
+            },
+            "low_or_normal_volatility": {
+              "net_after_allocated_hurdle_bips": "-263.6765184994926433282597666",
+              "observation_count": 149,
+              "passes": false
+            },
+            "sideways": {
+              "net_after_allocated_hurdle_bips": "-132.0527259661909772234310250",
+              "observation_count": 74,
+              "passes": false
+            },
+            "stress_volatility": {
+              "net_after_allocated_hurdle_bips": "-99.3510274595306440024652767",
+              "observation_count": 59,
+              "passes": false
+            }
+          }
+        },
+        "validation": {
+          "capital_opportunity_hurdle_bips": "180.8219183155758498224251649",
+          "duration_days": "33.00000009259259259259259259",
+          "family_adjusted_bootstrap_net_lower_bound_bips": "-184.8897183155758498224251649",
+          "first_funding_time_ms": 1782086400000,
+          "gross_funding_bips": "45.75150000",
+          "last_funding_time_ms": 1784908800008,
+          "maximum_net_drawdown_bips": "167.0704183155758498224251635",
+          "maximum_positive_week_concentration": "0.3378293607859851589565369441",
+          "net_after_frozen_hurdles_bips": "-167.0704183155758498224251649",
+          "observation_count": 99,
+          "passes": false,
+          "rejection_reasons": [
+            "nonpositive_net_after_frozen_hurdles",
+            "family_adjusted_bootstrap_lower_bound_not_positive",
+            "one_or_more_required_slices_failed",
+            "positive_week_concentration_exceeded"
+          ],
+          "round_trip_execution_stress_bips": "32",
+          "slices": {
+            "bearish": {
+              "net_after_allocated_hurdle_bips": "-68.64593751825715296034930738",
+              "observation_count": 39,
+              "passes": false
+            },
+            "bullish": {
+              "net_after_allocated_hurdle_bips": "-58.70910482501319639828011213",
+              "observation_count": 37,
+              "passes": false
+            },
+            "choppy": {
+              "net_after_allocated_hurdle_bips": "-94.2719154108307837379374670",
+              "observation_count": 56,
+              "passes": false
+            },
+            "directional": {
+              "net_after_allocated_hurdle_bips": "-72.79850290474506608448769789",
+              "observation_count": 43,
+              "passes": false
+            },
+            "high_volatility": {
+              "net_after_allocated_hurdle_bips": "-64.36263751825715296034930738",
+              "observation_count": 39,
+              "passes": false
+            },
+            "low_or_normal_volatility": {
+              "net_after_allocated_hurdle_bips": "-85.9916336777208923327644789",
+              "observation_count": 51,
+              "passes": false
+            },
+            "sideways": {
+              "net_after_allocated_hurdle_bips": "-39.71537597230550046379574538",
+              "observation_count": 23,
+              "passes": false
+            },
+            "stress_volatility": {
+              "net_after_allocated_hurdle_bips": "-16.71614711959780452931137863",
+              "observation_count": 9,
+              "passes": false
+            }
+          }
+        }
+      },
+      "spot_symbol": "BNBUSDT",
+      "training_regime_thresholds": {
+        "high_stress_boundary": "0.0154389668690065575823540257",
+        "normal_high_boundary": "0.0062565892946646157036934617"
+      }
+    },
+    {
+      "all_roles_pass_funding_only_gate": false,
+      "base_asset": "ONG",
+      "current_top_book": {
+        "combined_round_trip_top_spread_bips": "18.71305514908915460039726000",
+        "future_ask": "0.1571600",
+        "future_bid": "0.1570500",
+        "long_spot_short_future_entry_basis_bips": "-816.3265306122448979591836730",
+        "spot_ask": "0.17101000",
+        "spot_bid": "0.17081000",
+        "top_book_has_no_quantity_or_atomicity_claim": true
+      },
+      "future_symbol": "ONGUSDT",
+      "minimum_leg_quote_volume_usdt_24h": "68217891.01833000",
+      "roles": {
+        "test": {
+          "capital_opportunity_hurdle_bips": "29.45205473110096397767630644",
+          "duration_days": "5.374999988425925925925925926",
+          "family_adjusted_bootstrap_net_lower_bound_bips": "-3483.734654731100963977676306",
+          "first_funding_time_ms": 1787328000001,
+          "gross_funding_bips": "-1698.15140000",
+          "last_funding_time_ms": 1787788800000,
+          "maximum_net_drawdown_bips": "1759.603454731100963977676309",
+          "maximum_positive_week_concentration": "1",
+          "net_after_frozen_hurdles_bips": "-1759.603454731100963977676306",
+          "observation_count": 100,
+          "passes": false,
+          "rejection_reasons": [
+            "nonpositive_net_after_frozen_hurdles",
+            "family_adjusted_bootstrap_lower_bound_not_positive",
+            "one_or_more_required_slices_failed",
+            "maximum_drawdown_exceeded",
+            "positive_week_concentration_exceeded"
+          ],
+          "round_trip_execution_stress_bips": "32",
+          "slices": {
+            "bearish": {
+              "net_after_allocated_hurdle_bips": "-673.0920218924403855910705226",
+              "observation_count": 40,
+              "passes": false
+            },
+            "bullish": {
+              "net_after_allocated_hurdle_bips": "-956.6878068182394723490613902",
+              "observation_count": 49,
+              "passes": false
+            },
+            "choppy": {
+              "net_after_allocated_hurdle_bips": "-1066.462147912861491628614916",
+              "observation_count": 51,
+              "passes": false
+            },
+            "directional": {
+              "net_after_allocated_hurdle_bips": "-693.1413068182394723490613902",
+              "observation_count": 49,
+              "passes": false
+            },
+            "high_volatility": {
+              "net_after_allocated_hurdle_bips": "-243.4761136827752409944190766",
+              "observation_count": 25,
+              "passes": false
+            },
+            "low_or_normal_volatility": {
+              "net_after_allocated_hurdle_bips": "-246.0841136827752409944190766",
+              "observation_count": 25,
+              "passes": false
+            },
+            "sideways": {
+              "net_after_allocated_hurdle_bips": "-129.8236260204211060375443937",
+              "observation_count": 11,
+              "passes": false
+            },
+            "stress_volatility": {
+              "net_after_allocated_hurdle_bips": "-1270.043227365550481988838153",
+              "observation_count": 50,
+              "passes": false
+            }
+          }
+        },
+        "training": {
+          "capital_opportunity_hurdle_bips": "273.0593607305936073059360730",
+          "duration_days": "49.83333333333333333333333333",
+          "family_adjusted_bootstrap_net_lower_bound_bips": "-2968.765560730593607305936073",
+          "first_funding_time_ms": 1781769600000,
+          "gross_funding_bips": "-1330.24420000",
+          "last_funding_time_ms": 1786060800000,
+          "maximum_net_drawdown_bips": "1635.303560730593607305936063",
+          "maximum_positive_week_concentration": "0.2354209939681676844396679625",
+          "net_after_frozen_hurdles_bips": "-1635.303560730593607305936073",
+          "observation_count": 298,
+          "passes": false,
+          "rejection_reasons": [
+            "nonpositive_net_after_frozen_hurdles",
+            "family_adjusted_bootstrap_lower_bound_not_positive",
+            "one_or_more_required_slices_failed",
+            "maximum_drawdown_exceeded"
+          ],
+          "round_trip_execution_stress_bips": "32",
+          "slices": {
+            "bearish": {
+              "net_after_allocated_hurdle_bips": "-746.5999608164015813183782293",
+              "observation_count": 114,
+              "passes": false
+            },
+            "bullish": {
+              "net_after_allocated_hurdle_bips": "-587.8247260365909717753056909",
+              "observation_count": 108,
+              "passes": false
+            },
+            "choppy": {
+              "net_after_allocated_hurdle_bips": "-932.8763586252336735006588826",
+              "observation_count": 151,
+              "passes": false
+            },
+            "directional": {
+              "net_after_allocated_hurdle_bips": "-702.4272021053599338052771904",
+              "observation_count": 147,
+              "passes": false
+            },
+            "high_volatility": {
+              "net_after_allocated_hurdle_bips": "-438.8553216971591431460880757",
+              "observation_count": 90,
+              "passes": false
+            },
+            "low_or_normal_volatility": {
+              "net_after_allocated_hurdle_bips": "-642.4939803652968036529680365",
+              "observation_count": 149,
+              "passes": false
+            },
+            "sideways": {
+              "net_after_allocated_hurdle_bips": "-300.8788738776010542122521528",
+              "observation_count": 76,
+              "passes": false
+            },
+            "stress_volatility": {
+              "net_after_allocated_hurdle_bips": "-553.9542586681376605068799608",
+              "observation_count": 59,
+              "passes": false
+            }
+          }
+        },
+        "validation": {
+          "capital_opportunity_hurdle_bips": "80.13698630136986301369863014",
+          "duration_days": "14.625",
+          "family_adjusted_bootstrap_net_lower_bound_bips": "-4254.163786301369863013698630",
+          "first_funding_time_ms": 1786075200000,
+          "gross_funding_bips": "-1521.39030000",
+          "last_funding_time_ms": 1787324400000,
+          "maximum_net_drawdown_bips": "1633.527286301369863013698628",
+          "maximum_positive_week_concentration": "0.5454296115294469655413155139",
+          "net_after_frozen_hurdles_bips": "-1633.527286301369863013698630",
+          "observation_count": 99,
+          "passes": false,
+          "rejection_reasons": [
+            "nonpositive_net_after_frozen_hurdles",
+            "family_adjusted_bootstrap_lower_bound_not_positive",
+            "one_or_more_required_slices_failed",
+            "maximum_drawdown_exceeded",
+            "positive_week_concentration_exceeded"
+          ],
+          "round_trip_execution_stress_bips": "32",
+          "slices": {
+            "bearish": {
+              "net_after_allocated_hurdle_bips": "-537.3683859277708592777085928",
+              "observation_count": 36,
+              "passes": false
+            },
+            "bullish": {
+              "net_after_allocated_hurdle_bips": "-1086.035751072367510723675107",
+              "observation_count": 47,
+              "passes": false
+            },
+            "choppy": {
+              "net_after_allocated_hurdle_bips": "-448.3141732530787325307873253",
+              "observation_count": 40,
+              "passes": false
+            },
+            "directional": {
+              "net_after_allocated_hurdle_bips": "-1185.213113048291130482911305",
+              "observation_count": 59,
+              "passes": false
+            },
+            "high_volatility": {
+              "net_after_allocated_hurdle_bips": "-80.69851761450117614501176144",
+              "observation_count": 26,
+              "passes": false
+            },
+            "low_or_normal_volatility": {
+              "net_after_allocated_hurdle_bips": "-218.8482081084820810848208108",
+              "observation_count": 29,
+              "passes": false
+            },
+            "sideways": {
+              "net_after_allocated_hurdle_bips": "-10.12314930123149301231493012",
+              "observation_count": 16,
+              "passes": false
+            },
+            "stress_volatility": {
+              "net_after_allocated_hurdle_bips": "-1333.980560578386605783866058",
+              "observation_count": 44,
+              "passes": false
+            }
+          }
+        }
+      },
+      "spot_symbol": "ONGUSDT",
+      "training_regime_thresholds": {
+        "high_stress_boundary": "0.014102564102564102564102564",
+        "normal_high_boundary": "0.0059052126298724600725301541"
+      }
+    },
+    {
+      "all_roles_pass_funding_only_gate": false,
+      "base_asset": "DOGE",
+      "current_top_book": {
+        "combined_round_trip_top_spread_bips": "2.304944227561775035504230000",
+        "future_ask": "0.086760",
+        "future_bid": "0.086750",
+        "long_spot_short_future_entry_basis_bips": "-5.760368663594470046082949000",
+        "spot_ask": "0.08680000",
+        "spot_bid": "0.08679000",
+        "top_book_has_no_quantity_or_atomicity_claim": true
+      },
+      "future_symbol": "DOGEUSDT",
+      "minimum_leg_quote_volume_usdt_24h": "51210826.23240000",
+      "roles": {
+        "test": {
+          "capital_opportunity_hurdle_bips": "182.6484016996448503297818367",
+          "duration_days": "33.33333331018518518518518519",
+          "family_adjusted_bootstrap_net_lower_bound_bips": "-166.1509016996448503297818367",
+          "first_funding_time_ms": 1784937600002,
+          "gross_funding_bips": "64.05660000",
+          "last_funding_time_ms": 1787788800000,
+          "maximum_net_drawdown_bips": "150.5918016996448503297818381",
+          "maximum_positive_week_concentration": "0.3126395712371594461813309513",
+          "net_after_frozen_hurdles_bips": "-150.5918016996448503297818367",
+          "observation_count": 100,
+          "passes": false,
+          "rejection_reasons": [
+            "nonpositive_net_after_frozen_hurdles",
+            "family_adjusted_bootstrap_lower_bound_not_positive",
+            "one_or_more_required_slices_failed",
+            "positive_week_concentration_exceeded"
+          ],
+          "round_trip_execution_stress_bips": "32",
+          "slices": {
+            "bearish": {
+              "net_after_allocated_hurdle_bips": "-63.23397666286149162861491631",
+              "observation_count": 39,
+              "passes": false
+            },
+            "bullish": {
+              "net_after_allocated_hurdle_bips": "-60.89748076484018264840182652",
+              "observation_count": 45,
+              "passes": false
+            },
+            "choppy": {
+              "net_after_allocated_hurdle_bips": "-85.3743889687975646879756469",
+              "observation_count": 57,
+              "passes": false
+            },
+            "directional": {
+              "net_after_allocated_hurdle_bips": "-65.21741273084728564180618978",
+              "observation_count": 43,
+              "passes": false
+            },
+            "high_volatility": {
+              "net_after_allocated_hurdle_bips": "-43.18563649289700659563673264",
+              "observation_count": 29,
+              "passes": false
+            },
+            "low_or_normal_volatility": {
+              "net_after_allocated_hurdle_bips": "-89.6634889687975646879756469",
+              "observation_count": 57,
+              "passes": false
+            },
+            "sideways": {
+              "net_after_allocated_hurdle_bips": "-26.46034427194317605276509387",
+              "observation_count": 16,
+              "passes": false
+            },
+            "stress_volatility": {
+              "net_after_allocated_hurdle_bips": "-17.74267623795027904616945714",
+              "observation_count": 14,
+              "passes": false
+            }
+          }
+        },
+        "training": {
+          "capital_opportunity_hurdle_bips": "544.2922369989852866565195332",
+          "duration_days": "99.33333325231481481481481481",
+          "family_adjusted_bootstrap_net_lower_bound_bips": "-541.9178369989852866565195332",
+          "first_funding_time_ms": 1773504000007,
+          "gross_funding_bips": "69.03680000",
+          "last_funding_time_ms": 1782057600000,
+          "maximum_net_drawdown_bips": "507.2554369989852866565195443",
+          "maximum_positive_week_concentration": "0.1368423594926052371447744998",
+          "net_after_frozen_hurdles_bips": "-507.2554369989852866565195332",
+          "observation_count": 298,
+          "passes": false,
+          "rejection_reasons": [
+            "nonpositive_net_after_frozen_hurdles",
+            "family_adjusted_bootstrap_lower_bound_not_positive",
+            "one_or_more_required_slices_failed",
+            "maximum_drawdown_exceeded"
+          ],
+          "round_trip_execution_stress_bips": "32",
+          "slices": {
+            "bearish": {
+              "net_after_allocated_hurdle_bips": "-223.3314211875040435305214196",
+              "observation_count": 122,
+              "passes": false
+            },
+            "bullish": {
+              "net_after_allocated_hurdle_bips": "-195.7148540230574879375100024",
+              "observation_count": 127,
+              "passes": false
+            },
+            "choppy": {
+              "net_after_allocated_hurdle_bips": "-279.6757170061529765492255149",
+              "observation_count": 164,
+              "passes": false
+            },
+            "directional": {
+              "net_after_allocated_hurdle_bips": "-227.5797199928323101072940183",
+              "observation_count": 134,
+              "passes": false
+            },
+            "high_volatility": {
+              "net_after_allocated_hurdle_bips": "-151.1024910399619993257944899",
+              "observation_count": 90,
+              "passes": false
+            },
+            "low_or_normal_volatility": {
+              "net_after_allocated_hurdle_bips": "-258.6735184994926433282597666",
+              "observation_count": 149,
+              "passes": false
+            },
+            "sideways": {
+              "net_after_allocated_hurdle_bips": "-88.20916178842375518848811117",
+              "observation_count": 49,
+              "passes": false
+            },
+            "stress_volatility": {
+              "net_after_allocated_hurdle_bips": "-97.4794274595306440024652767",
+              "observation_count": 59,
+              "passes": false
+            }
+          }
+        },
+        "validation": {
+          "capital_opportunity_hurdle_bips": "180.8219183155758498224251649",
+          "duration_days": "33.00000009259259259259259259",
+          "family_adjusted_bootstrap_net_lower_bound_bips": "-198.4973183155758498224251649",
+          "first_funding_time_ms": 1782086400000,
+          "gross_funding_bips": "35.43720000",
+          "last_funding_time_ms": 1784908800008,
+          "maximum_net_drawdown_bips": "177.3847183155758498224251635",
+          "maximum_positive_week_concentration": "0.2993628557087495421514585585",
+          "net_after_frozen_hurdles_bips": "-177.3847183155758498224251649",
+          "observation_count": 99,
+          "passes": false,
+          "rejection_reasons": [
+            "nonpositive_net_after_frozen_hurdles",
+            "family_adjusted_bootstrap_lower_bound_not_positive",
+            "one_or_more_required_slices_failed",
+            "positive_week_concentration_exceeded"
+          ],
+          "round_trip_execution_stress_bips": "32",
+          "slices": {
+            "bearish": {
+              "net_after_allocated_hurdle_bips": "-82.15490290474506608448769789",
+              "observation_count": 43,
+              "passes": false
+            },
+            "bullish": {
+              "net_after_allocated_hurdle_bips": "-59.37250482501319639828011213",
+              "observation_count": 37,
+              "passes": false
+            },
+            "choppy": {
+              "net_after_allocated_hurdle_bips": "-95.7175663709648488948336741",
+              "observation_count": 53,
+              "passes": false
+            },
+            "directional": {
+              "net_after_allocated_hurdle_bips": "-81.66715194461100092759149076",
+              "observation_count": 46,
+              "passes": false
+            },
+            "high_volatility": {
+              "net_after_allocated_hurdle_bips": "-60.39293943852528327414172164",
+              "observation_count": 33,
+              "passes": false
+            },
+            "low_or_normal_volatility": {
+              "net_after_allocated_hurdle_bips": "-88.9526336777208923327644789",
+              "observation_count": 51,
+              "passes": false
+            },
+            "sideways": {
+              "net_after_allocated_hurdle_bips": "-35.85731058581758733965735488",
+              "observation_count": 19,
+              "passes": false
+            },
+            "stress_volatility": {
+              "net_after_allocated_hurdle_bips": "-28.03914519932967421551896438",
+              "observation_count": 15,
+              "passes": false
+            }
+          }
+        }
+      },
+      "spot_symbol": "DOGEUSDT",
+      "training_regime_thresholds": {
+        "high_stress_boundary": "0.019531786993872025420450196",
+        "normal_high_boundary": "0.008561003774970804037571157"
+      }
+    },
+    {
+      "all_roles_pass_funding_only_gate": false,
+      "base_asset": "SUI",
+      "current_top_book": {
+        "combined_round_trip_top_spread_bips": "2.641310274076055922384830000",
+        "future_ask": "0.757100",
+        "future_bid": "0.757000",
+        "long_spot_short_future_entry_basis_bips": "-6.600660066006600660066007000",
+        "spot_ask": "0.75750000",
+        "spot_bid": "0.75740000",
+        "top_book_has_no_quantity_or_atomicity_claim": true
+      },
+      "future_symbol": "SUIUSDT",
+      "minimum_leg_quote_volume_usdt_24h": "42487544.21057000",
+      "roles": {
+        "test": {
+          "capital_opportunity_hurdle_bips": "182.6484016996448503297818367",
+          "duration_days": "33.33333331018518518518518519",
+          "family_adjusted_bootstrap_net_lower_bound_bips": "-199.4828016996448503297818367",
+          "first_funding_time_ms": 1784937600002,
+          "gross_funding_bips": "40.34380000",
+          "last_funding_time_ms": 1787788800000,
+          "maximum_net_drawdown_bips": "174.3046016996448503297818384",
+          "maximum_positive_week_concentration": "0.4085112993333497517348251346",
+          "net_after_frozen_hurdles_bips": "-174.3046016996448503297818367",
+          "observation_count": 100,
+          "passes": false,
+          "rejection_reasons": [
+            "nonpositive_net_after_frozen_hurdles",
+            "family_adjusted_bootstrap_lower_bound_not_positive",
+            "one_or_more_required_slices_failed",
+            "positive_week_concentration_exceeded"
+          ],
+          "round_trip_execution_stress_bips": "32",
+          "slices": {
+            "bearish": {
+              "net_after_allocated_hurdle_bips": "-80.53741273084728564180618978",
+              "observation_count": 43,
+              "passes": false
+            },
+            "bullish": {
+              "net_after_allocated_hurdle_bips": "-56.33492461187214611872146121",
+              "observation_count": 36,
+              "passes": false
+            },
+            "choppy": {
+              "net_after_allocated_hurdle_bips": "-100.5605729857940131912734653",
+              "observation_count": 58,
+              "passes": false
+            },
+            "directional": {
+              "net_after_allocated_hurdle_bips": "-73.74402871385083713850837141",
+              "observation_count": 42,
+              "passes": false
+            },
+            "high_volatility": {
+              "net_after_allocated_hurdle_bips": "-38.99013239091831557584982244",
+              "observation_count": 23,
+              "passes": false
+            },
+            "low_or_normal_volatility": {
+              "net_after_allocated_hurdle_bips": "-112.002141019786910197869102",
+              "observation_count": 60,
+              "passes": false
+            },
+            "sideways": {
+              "net_after_allocated_hurdle_bips": "-37.43226435692541856925418571",
+              "observation_count": 21,
+              "passes": false
+            },
+            "stress_volatility": {
+              "net_after_allocated_hurdle_bips": "-23.31232828893962455606291224",
+              "observation_count": 17,
+              "passes": false
+            }
+          }
+        },
+        "training": {
+          "capital_opportunity_hurdle_bips": "544.2922369989852866565195332",
+          "duration_days": "99.33333325231481481481481481",
+          "family_adjusted_bootstrap_net_lower_bound_bips": "-557.2135369989852866565195332",
+          "first_funding_time_ms": 1773504000007,
+          "gross_funding_bips": "51.71770000",
+          "last_funding_time_ms": 1782057600000,
+          "maximum_net_drawdown_bips": "524.5745369989852866565195444",
+          "maximum_positive_week_concentration": "0.1054587860948529956899574606",
+          "net_after_frozen_hurdles_bips": "-524.5745369989852866565195332",
+          "observation_count": 298,
+          "passes": false,
+          "rejection_reasons": [
+            "nonpositive_net_after_frozen_hurdles",
+            "family_adjusted_bootstrap_lower_bound_not_positive",
+            "one_or_more_required_slices_failed",
+            "maximum_drawdown_exceeded"
+          ],
+          "round_trip_execution_stress_bips": "32",
+          "slices": {
+            "bearish": {
+              "net_after_allocated_hurdle_bips": "-256.2111196941643767514871680",
+              "observation_count": 137,
+              "passes": false
+            },
+            "bullish": {
+              "net_after_allocated_hurdle_bips": "-203.3131208888361101747145693",
+              "observation_count": 125,
+              "passes": false
+            },
+            "choppy": {
+              "net_after_allocated_hurdle_bips": "-281.9408173048209099050323653",
+              "observation_count": 161,
+              "passes": false
+            },
+            "directional": {
+              "net_after_allocated_hurdle_bips": "-242.6337196941643767514871680",
+              "observation_count": 137,
+              "passes": false
+            },
+            "high_volatility": {
+              "net_after_allocated_hurdle_bips": "-151.5777910399619993257944899",
+              "observation_count": 90,
+              "passes": false
+            },
+            "low_or_normal_volatility": {
+              "net_after_allocated_hurdle_bips": "-261.9603184994926433282597666",
+              "observation_count": 149,
+              "passes": false
+            },
+            "sideways": {
+              "net_after_allocated_hurdle_bips": "-65.05029641598479973031779597",
+              "observation_count": 36,
+              "passes": false
+            },
+            "stress_volatility": {
+              "net_after_allocated_hurdle_bips": "-111.0364274595306440024652767",
+              "observation_count": 59,
+              "passes": false
+            }
+          }
+        },
+        "validation": {
+          "capital_opportunity_hurdle_bips": "180.8219183155758498224251649",
+          "duration_days": "33.00000009259259259259259259",
+          "family_adjusted_bootstrap_net_lower_bound_bips": "-197.3563183155758498224251649",
+          "first_funding_time_ms": 1782086400000,
+          "gross_funding_bips": "34.39820000",
+          "last_funding_time_ms": 1784908800008,
+          "maximum_net_drawdown_bips": "178.4237183155758498224251636",
+          "maximum_positive_week_concentration": "0.3066174144361317690254563926",
+          "net_after_frozen_hurdles_bips": "-178.4237183155758498224251649",
+          "observation_count": 99,
+          "passes": false,
+          "rejection_reasons": [
+            "nonpositive_net_after_frozen_hurdles",
+            "family_adjusted_bootstrap_lower_bound_not_positive",
+            "one_or_more_required_slices_failed",
+            "positive_week_concentration_exceeded"
+          ],
+          "round_trip_execution_stress_bips": "32",
+          "slices": {
+            "bearish": {
+              "net_after_allocated_hurdle_bips": "-74.03623751825715296034930738",
+              "observation_count": 39,
+              "passes": false
+            },
+            "bullish": {
+              "net_after_allocated_hurdle_bips": "-78.8378682912329792086260884",
+              "observation_count": 47,
+              "passes": false
+            },
+            "choppy": {
+              "net_after_allocated_hurdle_bips": "-106.3317644506967185810412599",
+              "observation_count": 59,
+              "passes": false
+            },
+            "directional": {
+              "net_after_allocated_hurdle_bips": "-72.09195386487913124138390501",
+              "observation_count": 40,
+              "passes": false
+            },
+            "high_volatility": {
+              "net_after_allocated_hurdle_bips": "-64.71083751825715296034930738",
+              "observation_count": 39,
+              "passes": false
+            },
+            "low_or_normal_volatility": {
+              "net_after_allocated_hurdle_bips": "-94.2663336777208923327644789",
+              "observation_count": 51,
+              "passes": false
+            },
+            "sideways": {
+              "net_after_allocated_hurdle_bips": "-25.54961250608571765344976913",
+              "observation_count": 13,
+              "passes": false
+            },
+            "stress_volatility": {
+              "net_after_allocated_hurdle_bips": "-19.44654711959780452931137863",
+              "observation_count": 9,
+              "passes": false
+            }
+          }
+        }
+      },
+      "spot_symbol": "SUIUSDT",
+      "training_regime_thresholds": {
+        "high_stress_boundary": "0.025649493615147512109202994",
+        "normal_high_boundary": "0.0107518452293111609891861231"
+      }
+    },
+    {
+      "all_roles_pass_funding_only_gate": false,
+      "base_asset": "PUMP",
+      "current_top_book": {
+        "combined_round_trip_top_spread_bips": "4.101723413623139103775120000",
+        "future_ask": "0.0048750",
+        "future_bid": "0.0048740",
+        "long_spot_short_future_entry_basis_bips": "-10.24800163968026234884197600",
+        "spot_ask": "0.00487900",
+        "spot_bid": "0.00487800",
+        "top_book_has_no_quantity_or_atomicity_claim": true
+      },
+      "future_symbol": "PUMPUSDT",
+      "minimum_leg_quote_volume_usdt_24h": "41342372.62085600",
+      "roles": {
+        "test": {
+          "capital_opportunity_hurdle_bips": "91.32420091324200913242009134",
+          "duration_days": "16.66666666666666666666666667",
+          "family_adjusted_bootstrap_net_lower_bound_bips": "-127.3603009132420091324200913",
+          "first_funding_time_ms": 1786363200000,
+          "gross_funding_bips": "12.67520000",
+          "last_funding_time_ms": 1787788800000,
+          "maximum_net_drawdown_bips": "110.6490009132420091324200909",
+          "maximum_positive_week_concentration": "0.6806860104118116394258494158",
+          "net_after_frozen_hurdles_bips": "-110.6490009132420091324200913",
+          "observation_count": 100,
+          "passes": false,
+          "rejection_reasons": [
+            "nonpositive_net_after_frozen_hurdles",
+            "family_adjusted_bootstrap_lower_bound_not_positive",
+            "one_or_more_required_slices_failed",
+            "positive_week_concentration_exceeded"
+          ],
+          "round_trip_execution_stress_bips": "32",
+          "slices": {
+            "bearish": {
+              "net_after_allocated_hurdle_bips": "-44.27933835616438356164383561",
+              "observation_count": 39,
+              "passes": false
+            },
+            "bullish": {
+              "net_after_allocated_hurdle_bips": "-55.75158447488584474885844748",
+              "observation_count": 52,
+              "passes": false
+            },
+            "choppy": {
+              "net_after_allocated_hurdle_bips": "-59.33314246575342465753424656",
+              "observation_count": 51,
+              "passes": false
+            },
+            "directional": {
+              "net_after_allocated_hurdle_bips": "-51.31585844748858447488584474",
+              "observation_count": 49,
+              "passes": false
+            },
+            "high_volatility": {
+              "net_after_allocated_hurdle_bips": "-29.95877625570776255707762556",
+              "observation_count": 28,
+              "passes": false
+            },
+            "low_or_normal_volatility": {
+              "net_after_allocated_hurdle_bips": "-52.47874840182648401826484017",
+              "observation_count": 44,
+              "passes": false
+            },
+            "sideways": {
+              "net_after_allocated_hurdle_bips": "-10.61807808219178082191780822",
+              "observation_count": 9,
+              "passes": false
+            },
+            "stress_volatility": {
+              "net_after_allocated_hurdle_bips": "-28.21147625570776255707762556",
+              "observation_count": 28,
+              "passes": false
+            }
+          }
+        },
+        "training": {
+          "capital_opportunity_hurdle_bips": "273.0593607305936073059360730",
+          "duration_days": "49.83333333333333333333333333",
+          "family_adjusted_bootstrap_net_lower_bound_bips": "-266.4919607305936073059360730",
+          "first_funding_time_ms": 1780632000001,
+          "gross_funding_bips": "75.05970000",
+          "last_funding_time_ms": 1784923200001,
+          "maximum_net_drawdown_bips": "229.9996607305936073059360791",
+          "maximum_positive_week_concentration": "0.1785731875135800680814079815",
+          "net_after_frozen_hurdles_bips": "-229.9996607305936073059360730",
+          "observation_count": 298,
+          "passes": false,
+          "rejection_reasons": [
+            "nonpositive_net_after_frozen_hurdles",
+            "family_adjusted_bootstrap_lower_bound_not_positive",
+            "one_or_more_required_slices_failed"
+          ],
+          "round_trip_execution_stress_bips": "32",
+          "slices": {
+            "bearish": {
+              "net_after_allocated_hurdle_bips": "-117.1082347154546290337409212",
+              "observation_count": 144,
+              "passes": false
+            },
+            "bullish": {
+              "net_after_allocated_hurdle_bips": "-92.9075086359596702522141521",
+              "observation_count": 128,
+              "passes": false
+            },
+            "choppy": {
+              "net_after_allocated_hurdle_bips": "-121.4135607949495878152676902",
+              "observation_count": 160,
+              "passes": false
+            },
+            "directional": {
+              "net_after_allocated_hurdle_bips": "-108.5860999356440194906683828",
+              "observation_count": 138,
+              "passes": false
+            },
+            "high_volatility": {
+              "net_after_allocated_hurdle_bips": "-69.01682169715914314608807574",
+              "observation_count": 90,
+              "passes": false
+            },
+            "low_or_normal_volatility": {
+              "net_after_allocated_hurdle_bips": "-113.9321803652968036529680365",
+              "observation_count": 149,
+              "passes": false
+            },
+            "sideways": {
+              "net_after_allocated_hurdle_bips": "-19.98391737917930801998099966",
+              "observation_count": 26,
+              "passes": false
+            },
+            "stress_volatility": {
+              "net_after_allocated_hurdle_bips": "-47.05065866813766050687996077",
+              "observation_count": 59,
+              "passes": false
+            }
+          }
+        },
+        "validation": {
+          "capital_opportunity_hurdle_bips": "90.41095909436834094368340942",
+          "duration_days": "16.50000003472222222222222222",
+          "family_adjusted_bootstrap_net_lower_bound_bips": "-107.7907590943683409436834094",
+          "first_funding_time_ms": 1784937600002,
+          "gross_funding_bips": "24.93580000",
+          "last_funding_time_ms": 1786348800005,
+          "maximum_net_drawdown_bips": "97.47515909436834094368340945",
+          "maximum_positive_week_concentration": "0.5774210628438752791288876611",
+          "net_after_frozen_hurdles_bips": "-97.4751590943683409436834094",
+          "observation_count": 99,
+          "passes": false,
+          "rejection_reasons": [
+            "nonpositive_net_after_frozen_hurdles",
+            "family_adjusted_bootstrap_lower_bound_not_positive",
+            "one_or_more_required_slices_failed",
+            "positive_week_concentration_exceeded"
+          ],
+          "round_trip_execution_stress_bips": "32",
+          "slices": {
+            "bearish": {
+              "net_after_allocated_hurdle_bips": "-37.35689903717540703842073704",
+              "observation_count": 39,
+              "passes": false
+            },
+            "bullish": {
+              "net_after_allocated_hurdle_bips": "-52.27199104861399381947327151",
+              "observation_count": 51,
+              "passes": false
+            },
+            "choppy": {
+              "net_after_allocated_hurdle_bips": "-54.58521138861983610842058328",
+              "observation_count": 58,
+              "passes": false
+            },
+            "directional": {
+              "net_after_allocated_hurdle_bips": "-42.88994770574850483526282611",
+              "observation_count": 41,
+              "passes": false
+            },
+            "high_volatility": {
+              "net_after_allocated_hurdle_bips": "-37.58987337146195593684178158",
+              "observation_count": 40,
+              "passes": false
+            },
+            "low_or_normal_volatility": {
+              "net_after_allocated_hurdle_bips": "-46.55854504289470042894700427",
+              "observation_count": 45,
+              "passes": false
+            },
+            "sideways": {
+              "net_after_allocated_hurdle_bips": "-7.84626900857894008578940086",
+              "observation_count": 9,
+              "passes": false
+            },
+            "stress_volatility": {
+              "net_after_allocated_hurdle_bips": "-13.32674068001168457789462356",
+              "observation_count": 14,
+              "passes": false
+            }
+          }
+        }
+      },
+      "spot_symbol": "PUMPUSDT",
+      "training_regime_thresholds": {
+        "high_stress_boundary": "0.030481222657803533890119880",
+        "normal_high_boundary": "0.013471059840659478750408404"
+      }
+    },
+    {
+      "all_roles_pass_funding_only_gate": false,
+      "base_asset": "TRX",
+      "current_top_book": {
+        "combined_round_trip_top_spread_bips": "3.279861766173182323060830000",
+        "future_ask": "0.33519",
+        "future_bid": "0.33518",
+        "long_spot_short_future_entry_basis_bips": "-9.538002980625931445603577000",
+        "spot_ask": "0.33550000",
+        "spot_bid": "0.33540000",
+        "top_book_has_no_quantity_or_atomicity_claim": true
+      },
+      "future_symbol": "TRXUSDT",
+      "minimum_leg_quote_volume_usdt_24h": "40627582.21656000",
+      "roles": {
+        "test": {
+          "capital_opportunity_hurdle_bips": "182.6484016996448503297818367",
+          "duration_days": "33.33333331018518518518518519",
+          "family_adjusted_bootstrap_net_lower_bound_bips": "-252.7653016996448503297818367",
+          "first_funding_time_ms": 1784937600002,
+          "gross_funding_bips": "-4.97390000",
+          "last_funding_time_ms": 1787788800000,
+          "maximum_net_drawdown_bips": "219.6223016996448503297818388",
+          "maximum_positive_week_concentration": "0.4916939834733319674930000683",
+          "net_after_frozen_hurdles_bips": "-219.6223016996448503297818367",
+          "observation_count": 100,
+          "passes": false,
+          "rejection_reasons": [
+            "nonpositive_net_after_frozen_hurdles",
+            "family_adjusted_bootstrap_lower_bound_not_positive",
+            "one_or_more_required_slices_failed",
+            "positive_week_concentration_exceeded"
+          ],
+          "round_trip_execution_stress_bips": "32",
+          "slices": {
+            "bearish": {
+              "net_after_allocated_hurdle_bips": "-51.84513239091831557584982244",
+              "observation_count": 23,
+              "passes": false
+            },
+            "bullish": {
+              "net_after_allocated_hurdle_bips": "-52.76378444190766108574327754",
+              "observation_count": 26,
+              "passes": false
+            },
+            "choppy": {
+              "net_after_allocated_hurdle_bips": "-133.4778250367833587011669204",
+              "observation_count": 61,
+              "passes": false
+            },
+            "directional": {
+              "net_after_allocated_hurdle_bips": "-86.14447666286149162861491631",
+              "observation_count": 39,
+              "passes": false
+            },
+            "high_volatility": {
+              "net_after_allocated_hurdle_bips": "-44.75954837392186707255200407",
+              "observation_count": 22,
+              "passes": false
+            },
+            "low_or_normal_volatility": {
+              "net_after_allocated_hurdle_bips": "-157.1808971727549467275494673",
+              "observation_count": 69,
+              "passes": false
+            },
+            "sideways": {
+              "net_after_allocated_hurdle_bips": "-115.0133848668188736681887367",
+              "observation_count": 51,
+              "passes": false
+            },
+            "stress_volatility": {
+              "net_after_allocated_hurdle_bips": "-17.6818561529680365296803653",
+              "observation_count": 9,
+              "passes": false
+            }
+          }
+        },
+        "training": {
+          "capital_opportunity_hurdle_bips": "544.2922369989852866565195332",
+          "duration_days": "99.33333325231481481481481481",
+          "family_adjusted_bootstrap_net_lower_bound_bips": "-1069.721936998985286656519533",
+          "first_funding_time_ms": 1773504000007,
+          "gross_funding_bips": "-256.93030000",
+          "last_funding_time_ms": 1782057600000,
+          "maximum_net_drawdown_bips": "833.2225369989852866565195442",
+          "maximum_positive_week_concentration": "0.1601736591363147379744890118",
+          "net_after_frozen_hurdles_bips": "-833.2225369989852866565195332",
+          "observation_count": 298,
+          "passes": false,
+          "rejection_reasons": [
+            "nonpositive_net_after_frozen_hurdles",
+            "family_adjusted_bootstrap_lower_bound_not_positive",
+            "one_or_more_required_slices_failed",
+            "maximum_drawdown_exceeded"
+          ],
+          "round_trip_execution_stress_bips": "32",
+          "slices": {
+            "bearish": {
+              "net_after_allocated_hurdle_bips": "-289.6094259661909772234310250",
+              "observation_count": 74,
+              "passes": false
+            },
+            "bullish": {
+              "net_after_allocated_hurdle_bips": "-246.9882220835078435979419706",
+              "observation_count": 113,
+              "passes": false
+            },
+            "choppy": {
+              "net_after_allocated_hurdle_bips": "-364.6325531270536878700894514",
+              "observation_count": 136,
+              "passes": false
+            },
+            "directional": {
+              "net_after_allocated_hurdle_bips": "-468.5899838719315987864300818",
+              "observation_count": 162,
+              "passes": false
+            },
+            "high_volatility": {
+              "net_after_allocated_hurdle_bips": "-255.4786910399619993257944899",
+              "observation_count": 90,
+              "passes": false
+            },
+            "low_or_normal_volatility": {
+              "net_after_allocated_hurdle_bips": "-389.3173184994926433282597666",
+              "observation_count": 149,
+              "passes": false
+            },
+            "sideways": {
+              "net_after_allocated_hurdle_bips": "-296.6248889492864658351465376",
+              "observation_count": 111,
+              "passes": false
+            },
+            "stress_volatility": {
+              "net_after_allocated_hurdle_bips": "-188.4265274595306440024652767",
+              "observation_count": 59,
+              "passes": false
+            }
+          }
+        },
+        "validation": {
+          "capital_opportunity_hurdle_bips": "180.8219183155758498224251649",
+          "duration_days": "33.00000009259259259259259259",
+          "family_adjusted_bootstrap_net_lower_bound_bips": "-396.4801183155758498224251649",
+          "first_funding_time_ms": 1782086400000,
+          "gross_funding_bips": "-91.17720000",
+          "last_funding_time_ms": 1784908800008,
+          "maximum_net_drawdown_bips": "303.9991183155758498224251630",
+          "maximum_positive_week_concentration": "0.3146634704379697160416126763",
+          "net_after_frozen_hurdles_bips": "-303.9991183155758498224251649",
+          "observation_count": 99,
+          "passes": false,
+          "rejection_reasons": [
+            "nonpositive_net_after_frozen_hurdles",
+            "family_adjusted_bootstrap_lower_bound_not_positive",
+            "one_or_more_required_slices_failed",
+            "maximum_drawdown_exceeded",
+            "positive_week_concentration_exceeded"
+          ],
+          "round_trip_execution_stress_bips": "32",
+          "slices": {
+            "bearish": {
+              "net_after_allocated_hurdle_bips": "-98.20679231892747874483034301",
+              "observation_count": 24,
+              "passes": false
+            },
+            "bullish": {
+              "net_after_allocated_hurdle_bips": "-74.26097405203737015000333113",
+              "observation_count": 29,
+              "passes": false
+            },
+            "choppy": {
+              "net_after_allocated_hurdle_bips": "-133.4635009844769357706952836",
+              "observation_count": 49,
+              "passes": false
+            },
+            "directional": {
+              "net_after_allocated_hurdle_bips": "-170.5356173310989140517298812",
+              "observation_count": 50,
+              "passes": false
+            },
+            "high_volatility": {
+              "net_after_allocated_hurdle_bips": "-99.81920674528132671207252638",
+              "observation_count": 31,
+              "passes": false
+            },
+            "low_or_normal_volatility": {
+              "net_after_allocated_hurdle_bips": "-164.5220317574527620189720646",
+              "observation_count": 57,
+              "passes": false
+            },
+            "sideways": {
+              "net_after_allocated_hurdle_bips": "-131.5313519446110009275914908",
+              "observation_count": 46,
+              "passes": false
+            },
+            "stress_volatility": {
+              "net_after_allocated_hurdle_bips": "-39.65787981284176109138057388",
+              "observation_count": 11,
+              "passes": false
+            }
+          }
+        }
+      },
+      "spot_symbol": "TRXUSDT",
+      "training_regime_thresholds": {
+        "high_stress_boundary": "0.007755098892283007806473510",
+        "normal_high_boundary": "0.003979788898007444082771864"
+      }
+    },
+    {
+      "all_roles_pass_funding_only_gate": false,
+      "base_asset": "ENA",
+      "current_top_book": {
+        "combined_round_trip_top_spread_bips": "7.487901824401822595052990000",
+        "future_ask": "0.1469500",
+        "future_bid": "0.1469400",
+        "long_spot_short_future_entry_basis_bips": "-4.081632653061224489795918000",
+        "spot_ask": "0.14700000",
+        "spot_bid": "0.14690000",
+        "top_book_has_no_quantity_or_atomicity_claim": true
+      },
+      "future_symbol": "ENAUSDT",
+      "minimum_leg_quote_volume_usdt_24h": "33146023.47338200",
+      "roles": {
+        "test": {
+          "capital_opportunity_hurdle_bips": "91.32420091324200913242009134",
+          "duration_days": "16.66666666666666666666666667",
+          "family_adjusted_bootstrap_net_lower_bound_bips": "-108.2511009132420091324200913",
+          "first_funding_time_ms": 1786363200000,
+          "gross_funding_bips": "32.95200000",
+          "last_funding_time_ms": 1787788800000,
+          "maximum_net_drawdown_bips": "90.37220091324200913242009104",
+          "maximum_positive_week_concentration": "0.6029852029412062182035177150",
+          "net_after_frozen_hurdles_bips": "-90.3722009132420091324200913",
+          "observation_count": 100,
+          "passes": false,
+          "rejection_reasons": [
+            "nonpositive_net_after_frozen_hurdles",
+            "family_adjusted_bootstrap_lower_bound_not_positive",
+            "one_or_more_required_slices_failed",
+            "positive_week_concentration_exceeded"
+          ],
+          "round_trip_execution_stress_bips": "32",
+          "slices": {
+            "bearish": {
+              "net_after_allocated_hurdle_bips": "-44.08254840182648401826484017",
+              "observation_count": 44,
+              "passes": false
+            },
+            "bullish": {
+              "net_after_allocated_hurdle_bips": "-34.01860639269406392694063926",
+              "observation_count": 43,
+              "passes": false
+            },
+            "choppy": {
+              "net_after_allocated_hurdle_bips": "-42.59507442922374429223744291",
+              "observation_count": 47,
+              "passes": false
+            },
+            "directional": {
+              "net_after_allocated_hurdle_bips": "-47.77712648401826484018264839",
+              "observation_count": 53,
+              "passes": false
+            },
+            "high_volatility": {
+              "net_after_allocated_hurdle_bips": "-16.95404018264840182648401826",
+              "observation_count": 20,
+              "passes": false
+            },
+            "low_or_normal_volatility": {
+              "net_after_allocated_hurdle_bips": "-55.48722648401826484018264839",
+              "observation_count": 53,
+              "passes": false
+            },
+            "sideways": {
+              "net_after_allocated_hurdle_bips": "-12.27104611872146118721461187",
+              "observation_count": 13,
+              "passes": false
+            },
+            "stress_volatility": {
+              "net_after_allocated_hurdle_bips": "-17.93093424657534246575342465",
+              "observation_count": 27,
+              "passes": false
+            }
+          }
+        },
+        "training": {
+          "capital_opportunity_hurdle_bips": "273.0593607305936073059360730",
+          "duration_days": "49.83333333333333333333333333",
+          "family_adjusted_bootstrap_net_lower_bound_bips": "-336.7724607305936073059360730",
+          "first_funding_time_ms": 1780632000001,
+          "gross_funding_bips": "16.97320000",
+          "last_funding_time_ms": 1784923200001,
+          "maximum_net_drawdown_bips": "288.0861607305936073059360795",
+          "maximum_positive_week_concentration": "0.2379313323200641479321444824",
+          "net_after_frozen_hurdles_bips": "-288.0861607305936073059360730",
+          "observation_count": 298,
+          "passes": false,
+          "rejection_reasons": [
+            "nonpositive_net_after_frozen_hurdles",
+            "family_adjusted_bootstrap_lower_bound_not_positive",
+            "one_or_more_required_slices_failed",
+            "maximum_drawdown_exceeded"
+          ],
+          "round_trip_execution_stress_bips": "32",
+          "slices": {
+            "bearish": {
+              "net_after_allocated_hurdle_bips": "-148.6590890656124544145138059",
+              "observation_count": 139,
+              "passes": false
+            },
+            "bullish": {
+              "net_after_allocated_hurdle_bips": "-108.1989086359596702522141521",
+              "observation_count": 128,
+              "passes": false
+            },
+            "choppy": {
+              "net_after_allocated_hurdle_bips": "-146.2664042750758481198859980",
+              "observation_count": 156,
+              "passes": false
+            },
+            "directional": {
+              "net_after_allocated_hurdle_bips": "-141.8197564555177591860500751",
+              "observation_count": 142,
+              "passes": false
+            },
+            "high_volatility": {
+              "net_after_allocated_hurdle_bips": "-92.50692169715914314608807574",
+              "observation_count": 90,
+              "passes": false
+            },
+            "low_or_normal_volatility": {
+              "net_after_allocated_hurdle_bips": "-134.8469803652968036529680365",
+              "observation_count": 149,
+              "passes": false
+            },
+            "sideways": {
+              "net_after_allocated_hurdle_bips": "-31.22816302902148263920811498",
+              "observation_count": 31,
+              "passes": false
+            },
+            "stress_volatility": {
+              "net_after_allocated_hurdle_bips": "-60.73225866813766050687996077",
+              "observation_count": 59,
+              "passes": false
+            }
+          }
+        },
+        "validation": {
+          "capital_opportunity_hurdle_bips": "90.41095909436834094368340942",
+          "duration_days": "16.50000003472222222222222222",
+          "family_adjusted_bootstrap_net_lower_bound_bips": "-128.2675590943683409436834094",
+          "first_funding_time_ms": 1784937600002,
+          "gross_funding_bips": "13.80400000",
+          "last_funding_time_ms": 1786348800005,
+          "maximum_net_drawdown_bips": "108.6069590943683409436834092",
+          "maximum_positive_week_concentration": "0.5183970647661074893522674038",
+          "net_after_frozen_hurdles_bips": "-108.6069590943683409436834094",
+          "observation_count": 99,
+          "passes": false,
+          "rejection_reasons": [
+            "nonpositive_net_after_frozen_hurdles",
+            "family_adjusted_bootstrap_lower_bound_not_positive",
+            "one_or_more_required_slices_failed",
+            "positive_week_concentration_exceeded"
+          ],
+          "round_trip_execution_stress_bips": "32",
+          "slices": {
+            "bearish": {
+              "net_after_allocated_hurdle_bips": "-39.49405036860230924157864796",
+              "observation_count": 37,
+              "passes": false
+            },
+            "bullish": {
+              "net_after_allocated_hurdle_bips": "-42.20164770574850483526282611",
+              "observation_count": 41,
+              "passes": false
+            },
+            "choppy": {
+              "net_after_allocated_hurdle_bips": "-53.71083971718709161631536059",
+              "observation_count": 53,
+              "passes": false
+            },
+            "directional": {
+              "net_after_allocated_hurdle_bips": "-54.89611937718124932736804881",
+              "observation_count": 46,
+              "passes": false
+            },
+            "high_volatility": {
+              "net_after_allocated_hurdle_bips": "-19.61198934858478237473671263",
+              "observation_count": 16,
+              "passes": false
+            },
+            "low_or_normal_volatility": {
+              "net_after_allocated_hurdle_bips": "-76.34670340005842288947311776",
+              "observation_count": 70,
+              "passes": false
+            },
+            "sideways": {
+              "net_after_allocated_hurdle_bips": "-26.91126102001752686684193532",
+              "observation_count": 21,
+              "passes": false
+            },
+            "stress_volatility": {
+              "net_after_allocated_hurdle_bips": "-12.64826634572513567947357901",
+              "observation_count": 13,
+              "passes": false
+            }
+          }
+        }
+      },
+      "spot_symbol": "ENAUSDT",
+      "training_regime_thresholds": {
+        "high_stress_boundary": "0.022716599780029160168439396",
+        "normal_high_boundary": "0.0122849487973326982614908312"
+      }
+    },
+    {
+      "all_roles_pass_funding_only_gate": false,
+      "base_asset": "TRUMP",
+      "current_top_book": {
+        "combined_round_trip_top_spread_bips": "8.752736906135419587437740000",
+        "future_ask": "2.285000",
+        "future_bid": "2.284000",
+        "long_spot_short_future_entry_basis_bips": "-13.11762133799737647573240100",
+        "spot_ask": "2.28700000",
+        "spot_bid": "2.28600000",
+        "top_book_has_no_quantity_or_atomicity_claim": true
+      },
+      "future_symbol": "TRUMPUSDT",
+      "minimum_leg_quote_volume_usdt_24h": "30084932.73949500",
+      "roles": {
+        "test": {
+          "capital_opportunity_hurdle_bips": "91.32420091324200913242009134",
+          "duration_days": "16.66666666666666666666666667",
+          "family_adjusted_bootstrap_net_lower_bound_bips": "-157.4329009132420091324200913",
+          "first_funding_time_ms": 1786363200000,
+          "gross_funding_bips": "0.28280000",
+          "last_funding_time_ms": 1787788800000,
+          "maximum_net_drawdown_bips": "123.0414009132420091324200909",
+          "maximum_positive_week_concentration": "0.5046476568536840350903774185",
+          "net_after_frozen_hurdles_bips": "-123.0414009132420091324200913",
+          "observation_count": 100,
+          "passes": false,
+          "rejection_reasons": [
+            "nonpositive_net_after_frozen_hurdles",
+            "family_adjusted_bootstrap_lower_bound_not_positive",
+            "one_or_more_required_slices_failed",
+            "positive_week_concentration_exceeded"
+          ],
+          "round_trip_execution_stress_bips": "32",
+          "slices": {
+            "bearish": {
+              "net_after_allocated_hurdle_bips": "-62.89631643835616438356164382",
+              "observation_count": 48,
+              "passes": false
+            },
+            "bullish": {
+              "net_after_allocated_hurdle_bips": "-38.45985433789954337899543378",
+              "observation_count": 37,
+              "passes": false
+            },
+            "choppy": {
+              "net_after_allocated_hurdle_bips": "-59.09990045662100456621004565",
+              "observation_count": 50,
+              "passes": false
+            },
+            "directional": {
+              "net_after_allocated_hurdle_bips": "-63.94150045662100456621004565",
+              "observation_count": 50,
+              "passes": false
+            },
+            "high_volatility": {
+              "net_after_allocated_hurdle_bips": "-32.24102420091324200913242009",
+              "observation_count": 22,
+              "passes": false
+            },
+            "low_or_normal_volatility": {
+              "net_after_allocated_hurdle_bips": "-52.99594840182648401826484017",
+              "observation_count": 44,
+              "passes": false
+            },
+            "sideways": {
+              "net_after_allocated_hurdle_bips": "-21.6852301369863013698630137",
+              "observation_count": 15,
+              "passes": false
+            },
+            "stress_volatility": {
+              "net_after_allocated_hurdle_bips": "-37.80442831050228310502283104",
+              "observation_count": 34,
+              "passes": false
+            }
+          }
+        },
+        "training": {
+          "capital_opportunity_hurdle_bips": "273.0593607305936073059360730",
+          "duration_days": "49.83333333333333333333333333",
+          "family_adjusted_bootstrap_net_lower_bound_bips": "-823.5711607305936073059360730",
+          "first_funding_time_ms": 1780632000001,
+          "gross_funding_bips": "-381.45250000",
+          "last_funding_time_ms": 1784923200001,
+          "maximum_net_drawdown_bips": "686.5118607305936073059360825",
+          "maximum_positive_week_concentration": "0.5524772850819290207346431622",
+          "net_after_frozen_hurdles_bips": "-686.5118607305936073059360730",
+          "observation_count": 298,
+          "passes": false,
+          "rejection_reasons": [
+            "nonpositive_net_after_frozen_hurdles",
+            "family_adjusted_bootstrap_lower_bound_not_positive",
+            "one_or_more_required_slices_failed",
+            "maximum_drawdown_exceeded",
+            "positive_week_concentration_exceeded"
+          ],
+          "round_trip_execution_stress_bips": "32",
+          "slices": {
+            "bearish": {
+              "net_after_allocated_hurdle_bips": "-323.9433434157702797952866905",
+              "observation_count": 134,
+              "passes": false
+            },
+            "bullish": {
+              "net_after_allocated_hurdle_bips": "-272.7944608164015813183782293",
+              "observation_count": 114,
+              "passes": false
+            },
+            "choppy": {
+              "net_after_allocated_hurdle_bips": "-344.8388368851705433483497288",
+              "observation_count": 153,
+              "passes": false
+            },
+            "directional": {
+              "net_after_allocated_hurdle_bips": "-341.6730238454230639575863442",
+              "observation_count": 145,
+              "passes": false
+            },
+            "high_volatility": {
+              "net_after_allocated_hurdle_bips": "-208.1100216971591431460880757",
+              "observation_count": 90,
+              "passes": false
+            },
+            "low_or_normal_volatility": {
+              "net_after_allocated_hurdle_bips": "-280.5378803652968036529680365",
+              "observation_count": 149,
+              "passes": false
+            },
+            "sideways": {
+              "net_after_allocated_hurdle_bips": "-89.77405649842174619227115319",
+              "observation_count": 50,
+              "passes": false
+            },
+            "stress_volatility": {
+              "net_after_allocated_hurdle_bips": "-197.8639586681376605068799608",
+              "observation_count": 59,
+              "passes": false
+            }
+          }
+        },
+        "validation": {
+          "capital_opportunity_hurdle_bips": "90.41095909436834094368340942",
+          "duration_days": "16.50000003472222222222222222",
+          "family_adjusted_bootstrap_net_lower_bound_bips": "-144.4770590943683409436834094",
+          "first_funding_time_ms": 1784937600002,
+          "gross_funding_bips": "1.54380000",
+          "last_funding_time_ms": 1786348800005,
+          "maximum_net_drawdown_bips": "120.8671590943683409436834085",
+          "maximum_positive_week_concentration": "0.4629766489632727256035143609",
+          "net_after_frozen_hurdles_bips": "-120.8671590943683409436834094",
+          "observation_count": 99,
+          "passes": false,
+          "rejection_reasons": [
+            "nonpositive_net_after_frozen_hurdles",
+            "family_adjusted_bootstrap_lower_bound_not_positive",
+            "one_or_more_required_slices_failed",
+            "positive_week_concentration_exceeded"
+          ],
+          "round_trip_execution_stress_bips": "32",
+          "slices": {
+            "bearish": {
+              "net_after_allocated_hurdle_bips": "-51.29719903717540703842073704",
+              "observation_count": 39,
+              "passes": false
+            },
+            "bullish": {
+              "net_after_allocated_hurdle_bips": "-41.52455036860230924157864796",
+              "observation_count": 37,
+              "passes": false
+            },
+            "choppy": {
+              "net_after_allocated_hurdle_bips": "-66.32343971718709161631536059",
+              "observation_count": 53,
+              "passes": false
+            },
+            "directional": {
+              "net_after_allocated_hurdle_bips": "-54.54371937718124932736804881",
+              "observation_count": 46,
+              "passes": false
+            },
+            "high_volatility": {
+              "net_after_allocated_hurdle_bips": "-28.71010968859062466368402440",
+              "observation_count": 23,
+              "passes": false
+            },
+            "low_or_normal_volatility": {
+              "net_after_allocated_hurdle_bips": "-84.47900340005842288947311776",
+              "observation_count": 70,
+              "passes": false
+            },
+            "sideways": {
+              "net_after_allocated_hurdle_bips": "-28.04540968859062466368402440",
+              "observation_count": 23,
+              "passes": false
+            },
+            "stress_volatility": {
+              "net_after_allocated_hurdle_bips": "-7.678046005719293390526267236",
+              "observation_count": 6,
+              "passes": false
+            }
+          }
+        }
+      },
+      "spot_symbol": "TRUMPUSDT",
+      "training_regime_thresholds": {
+        "high_stress_boundary": "0.0184626862026862026862026862",
+        "normal_high_boundary": "0.0085771075463462137327896765"
+      }
+    },
+    {
+      "all_roles_pass_funding_only_gate": false,
+      "base_asset": "PYTH",
+      "current_top_book": {
+        "combined_round_trip_top_spread_bips": "6.130795876632861733650520000",
+        "future_ask": "0.0489200",
+        "future_bid": "0.0489000",
+        "long_spot_short_future_entry_basis_bips": "-22.44439910222403591103856400",
+        "spot_ask": "0.04901000",
+        "spot_bid": "0.04900000",
+        "top_book_has_no_quantity_or_atomicity_claim": true
+      },
+      "future_symbol": "PYTHUSDT",
+      "minimum_leg_quote_volume_usdt_24h": "29275626.0856800",
+      "roles": {
+        "test": {
+          "capital_opportunity_hurdle_bips": "91.32420091324200913242009134",
+          "duration_days": "16.66666666666666666666666667",
+          "family_adjusted_bootstrap_net_lower_bound_bips": "-81.1589009132420091324200913",
+          "first_funding_time_ms": 1786363200000,
+          "gross_funding_bips": "46.30070000",
+          "last_funding_time_ms": 1787788800000,
+          "maximum_net_drawdown_bips": "77.02350091324200913242009104",
+          "maximum_positive_week_concentration": "0.4464799449410296198451680196",
+          "net_after_frozen_hurdles_bips": "-77.0235009132420091324200913",
+          "observation_count": 100,
+          "passes": false,
+          "rejection_reasons": [
+            "nonpositive_net_after_frozen_hurdles",
+            "family_adjusted_bootstrap_lower_bound_not_positive",
+            "one_or_more_required_slices_failed",
+            "positive_week_concentration_exceeded"
+          ],
+          "round_trip_execution_stress_bips": "32",
+          "slices": {
+            "bearish": {
+              "net_after_allocated_hurdle_bips": "-34.66989041095890410958904108",
+              "observation_count": 45,
+              "passes": false
+            },
+            "bullish": {
+              "net_after_allocated_hurdle_bips": "-32.52680639269406392694063926",
+              "observation_count": 43,
+              "passes": false
+            },
+            "choppy": {
+              "net_after_allocated_hurdle_bips": "-38.59065844748858447488584474",
+              "observation_count": 49,
+              "passes": false
+            },
+            "directional": {
+              "net_after_allocated_hurdle_bips": "-38.43284246575342465753424656",
+              "observation_count": 51,
+              "passes": false
+            },
+            "high_volatility": {
+              "net_after_allocated_hurdle_bips": "-11.1189301369863013698630137",
+              "observation_count": 15,
+              "passes": false
+            },
+            "low_or_normal_volatility": {
+              "net_after_allocated_hurdle_bips": "-43.0631684931506849315068493",
+              "observation_count": 54,
+              "passes": false
+            },
+            "sideways": {
+              "net_after_allocated_hurdle_bips": "-9.82680410958904109589041096",
+              "observation_count": 12,
+              "passes": false
+            },
+            "stress_volatility": {
+              "net_after_allocated_hurdle_bips": "-22.8414022831050228310502283",
+              "observation_count": 31,
+              "passes": false
+            }
+          }
+        },
+        "training": {
+          "capital_opportunity_hurdle_bips": "273.0593607305936073059360730",
+          "duration_days": "49.83333333333333333333333333",
+          "family_adjusted_bootstrap_net_lower_bound_bips": "-219.3730607305936073059360730",
+          "first_funding_time_ms": 1780632000001,
+          "gross_funding_bips": "103.66940000",
+          "last_funding_time_ms": 1784923200001,
+          "maximum_net_drawdown_bips": "201.3899607305936073059360779",
+          "maximum_positive_week_concentration": "0.1769136500075581437199023920",
+          "net_after_frozen_hurdles_bips": "-201.3899607305936073059360730",
+          "observation_count": 298,
+          "passes": false,
+          "rejection_reasons": [
+            "nonpositive_net_after_frozen_hurdles",
+            "family_adjusted_bootstrap_lower_bound_not_positive",
+            "one_or_more_required_slices_failed"
+          ],
+          "round_trip_execution_stress_bips": "32",
+          "slices": {
+            "bearish": {
+              "net_after_allocated_hurdle_bips": "-93.9908781955808893383592289",
+              "observation_count": 140,
+              "passes": false
+            },
+            "bullish": {
+              "net_after_allocated_hurdle_bips": "-90.6274868958965400999049983",
+              "observation_count": 130,
+              "passes": false
+            },
+            "choppy": {
+              "net_after_allocated_hurdle_bips": "-107.2167607949495878152676902",
+              "observation_count": 160,
+              "passes": false
+            },
+            "directional": {
+              "net_after_allocated_hurdle_bips": "-94.1731999356440194906683828",
+              "observation_count": 138,
+              "passes": false
+            },
+            "high_volatility": {
+              "net_after_allocated_hurdle_bips": "-64.28912169715914314608807574",
+              "observation_count": 90,
+              "passes": false
+            },
+            "low_or_normal_volatility": {
+              "net_after_allocated_hurdle_bips": "-97.0975803652968036529680365",
+              "observation_count": 149,
+              "passes": false
+            },
+            "sideways": {
+              "net_after_allocated_hurdle_bips": "-16.77159563911617786767184579",
+              "observation_count": 28,
+              "passes": false
+            },
+            "stress_volatility": {
+              "net_after_allocated_hurdle_bips": "-40.00325866813766050687996077",
+              "observation_count": 59,
+              "passes": false
+            }
+          }
+        },
+        "validation": {
+          "capital_opportunity_hurdle_bips": "90.41095909436834094368340942",
+          "duration_days": "16.50000003472222222222222222",
+          "family_adjusted_bootstrap_net_lower_bound_bips": "-90.2926590943683409436834094",
+          "first_funding_time_ms": 1784937600002,
+          "gross_funding_bips": "40.05940000",
+          "last_funding_time_ms": 1786348800005,
+          "maximum_net_drawdown_bips": "82.35155909436834094368340945",
+          "maximum_positive_week_concentration": "0.3794589156442053233602344553",
+          "net_after_frozen_hurdles_bips": "-82.3515590943683409436834094",
+          "observation_count": 99,
+          "passes": false,
+          "rejection_reasons": [
+            "nonpositive_net_after_frozen_hurdles",
+            "family_adjusted_bootstrap_lower_bound_not_positive",
+            "one_or_more_required_slices_failed",
+            "positive_week_concentration_exceeded"
+          ],
+          "round_trip_execution_stress_bips": "32",
+          "slices": {
+            "bearish": {
+              "net_after_allocated_hurdle_bips": "-36.67094504289470042894700427",
+              "observation_count": 45,
+              "passes": false
+            },
+            "bullish": {
+              "net_after_allocated_hurdle_bips": "-31.92442470288885813999969249",
+              "observation_count": 38,
+              "passes": false
+            },
+            "choppy": {
+              "net_after_allocated_hurdle_bips": "-43.11649104861399381947327151",
+              "observation_count": 51,
+              "passes": false
+            },
+            "directional": {
+              "net_after_allocated_hurdle_bips": "-39.23506804575434712421013789",
+              "observation_count": 48,
+              "passes": false
+            },
+            "high_volatility": {
+              "net_after_allocated_hurdle_bips": "-22.02460702573682025736820257",
+              "observation_count": 27,
+              "passes": false
+            },
+            "low_or_normal_volatility": {
+              "net_after_allocated_hurdle_bips": "-55.90810606291222729578893960",
+              "observation_count": 66,
+              "passes": false
+            },
+            "sideways": {
+              "net_after_allocated_hurdle_bips": "-13.75618934858478237473671263",
+              "observation_count": 16,
+              "passes": false
+            },
+            "stress_volatility": {
+              "net_after_allocated_hurdle_bips": "-4.418846005719293390526267236",
+              "observation_count": 6,
+              "passes": false
+            }
+          }
+        }
+      },
+      "spot_symbol": "PYTHUSDT",
+      "training_regime_thresholds": {
+        "high_stress_boundary": "0.0249373912038723257817621896",
+        "normal_high_boundary": "0.011554392849356878133856551"
+      }
+    },
+    {
+      "all_roles_pass_funding_only_gate": false,
+      "base_asset": "TUT",
+      "current_top_book": {
+        "combined_round_trip_top_spread_bips": "3.959611958028113244902000000",
+        "future_ask": "0.0505200",
+        "future_bid": "0.0505100",
+        "long_spot_short_future_entry_basis_bips": "-1.979414093428345209817894000",
+        "spot_ask": "0.05052000",
+        "spot_bid": "0.05051000",
+        "top_book_has_no_quantity_or_atomicity_claim": true
+      },
+      "future_symbol": "TUTUSDT",
+      "minimum_leg_quote_volume_usdt_24h": "28004556.96373000",
+      "roles": {
+        "test": {
+          "capital_opportunity_hurdle_bips": "91.32420091324200913242009134",
+          "duration_days": "16.66666666666666666666666667",
+          "family_adjusted_bootstrap_net_lower_bound_bips": "-133.9382009132420091324200913",
+          "first_funding_time_ms": 1786363200000,
+          "gross_funding_bips": "36.49780000",
+          "last_funding_time_ms": 1787788800000,
+          "maximum_net_drawdown_bips": "86.82640091324200913242009106",
+          "maximum_positive_week_concentration": "0.4896985007053574357796660215",
+          "net_after_frozen_hurdles_bips": "-86.8264009132420091324200913",
+          "observation_count": 100,
+          "passes": false,
+          "rejection_reasons": [
+            "nonpositive_net_after_frozen_hurdles",
+            "family_adjusted_bootstrap_lower_bound_not_positive",
+            "one_or_more_required_slices_failed",
+            "positive_week_concentration_exceeded"
+          ],
+          "round_trip_execution_stress_bips": "32",
+          "slices": {
+            "bearish": {
+              "net_after_allocated_hurdle_bips": "-56.71767853881278538812785387",
+              "observation_count": 59,
+              "passes": false
+            },
+            "bullish": {
+              "net_after_allocated_hurdle_bips": "-30.10872237442922374429223743",
+              "observation_count": 41,
+              "passes": false
+            },
+            "choppy": {
+              "net_after_allocated_hurdle_bips": "-50.18155844748858447488584474",
+              "observation_count": 49,
+              "passes": false
+            },
+            "directional": {
+              "net_after_allocated_hurdle_bips": "-36.64484246575342465753424656",
+              "observation_count": 51,
+              "passes": false
+            },
+            "high_volatility": {
+              "net_after_allocated_hurdle_bips": "-11.07587214611872146118721461",
+              "observation_count": 16,
+              "passes": false
+            },
+            "low_or_normal_volatility": {
+              "net_after_allocated_hurdle_bips": "-6.050094063926940639269406391",
+              "observation_count": 7,
+              "passes": false
+            },
+            "sideways": {
+              "net_after_allocated_hurdle_bips": "0.0000000000000000000000000",
+              "observation_count": 0,
+              "passes": false
+            },
+            "stress_volatility": {
+              "net_after_allocated_hurdle_bips": "-69.7004347031963470319634703",
+              "observation_count": 77,
+              "passes": false
+            }
+          }
+        },
+        "training": {
+          "capital_opportunity_hurdle_bips": "273.0593607305936073059360730",
+          "duration_days": "49.83333333333333333333333333",
+          "family_adjusted_bootstrap_net_lower_bound_bips": "-162.9329607305936073059360730",
+          "first_funding_time_ms": 1780632000001,
+          "gross_funding_bips": "145.89280000",
+          "last_funding_time_ms": 1784923200001,
+          "maximum_net_drawdown_bips": "159.1665607305936073059360764",
+          "maximum_positive_week_concentration": "0.1437870636832905053293648104",
+          "net_after_frozen_hurdles_bips": "-159.1665607305936073059360730",
+          "observation_count": 298,
+          "passes": false,
+          "rejection_reasons": [
+            "nonpositive_net_after_frozen_hurdles",
+            "family_adjusted_bootstrap_lower_bound_not_positive",
+            "one_or_more_required_slices_failed"
+          ],
+          "round_trip_execution_stress_bips": "32",
+          "slices": {
+            "bearish": {
+              "net_after_allocated_hurdle_bips": "-73.2954999356440194906683828",
+              "observation_count": 138,
+              "passes": false
+            },
+            "bullish": {
+              "net_after_allocated_hurdle_bips": "-68.5893195059912353283687291",
+              "observation_count": 127,
+              "passes": false
+            },
+            "choppy": {
+              "net_after_allocated_hurdle_bips": "-88.2909173148233275106493824",
+              "observation_count": 164,
+              "passes": false
+            },
+            "directional": {
+              "net_after_allocated_hurdle_bips": "-70.8756434157702797952866905",
+              "observation_count": 134,
+              "passes": false
+            },
+            "high_volatility": {
+              "net_after_allocated_hurdle_bips": "-48.81342169715914314608807574",
+              "observation_count": 90,
+              "passes": false
+            },
+            "low_or_normal_volatility": {
+              "net_after_allocated_hurdle_bips": "-78.8756803652968036529680365",
+              "observation_count": 149,
+              "passes": false
+            },
+            "sideways": {
+              "net_after_allocated_hurdle_bips": "-17.28174128895835248689896111",
+              "observation_count": 33,
+              "passes": false
+            },
+            "stress_volatility": {
+              "net_after_allocated_hurdle_bips": "-31.47745866813766050687996077",
+              "observation_count": 59,
+              "passes": false
+            }
+          }
+        },
+        "validation": {
+          "capital_opportunity_hurdle_bips": "90.41095909436834094368340942",
+          "duration_days": "16.50000003472222222222222222",
+          "family_adjusted_bootstrap_net_lower_bound_bips": "-84.9275590943683409436834094",
+          "first_funding_time_ms": 1784937600002,
+          "gross_funding_bips": "97.72450000",
+          "last_funding_time_ms": 1786348800005,
+          "maximum_net_drawdown_bips": "73.49543875436249865473609767",
+          "maximum_positive_week_concentration": "0.6458627380901900683099003923",
+          "net_after_frozen_hurdles_bips": "-24.6864590943683409436834094",
+          "observation_count": 99,
+          "passes": false,
+          "rejection_reasons": [
+            "nonpositive_net_after_frozen_hurdles",
+            "family_adjusted_bootstrap_lower_bound_not_positive",
+            "one_or_more_required_slices_failed",
+            "positive_week_concentration_exceeded"
+          ],
+          "round_trip_execution_stress_bips": "32",
+          "slices": {
+            "bearish": {
+              "net_after_allocated_hurdle_bips": "-8.42530436288301585105238072",
+              "observation_count": 31,
+              "passes": false
+            },
+            "bullish": {
+              "net_after_allocated_hurdle_bips": "-11.84230872576603170210476144",
+              "observation_count": 62,
+              "passes": false
+            },
+            "choppy": {
+              "net_after_allocated_hurdle_bips": "-23.19347070860815153052595974",
+              "observation_count": 44,
+              "passes": false
+            },
+            "directional": {
+              "net_after_allocated_hurdle_bips": "-1.49298838576018941315744967",
+              "observation_count": 55,
+              "passes": false
+            },
+            "high_volatility": {
+              "net_after_allocated_hurdle_bips": "-12.59086368287133127315775717",
+              "observation_count": 17,
+              "passes": false
+            },
+            "low_or_normal_volatility": {
+              "net_after_allocated_hurdle_bips": "-24.65287869716956474947342526",
+              "observation_count": 32,
+              "passes": false
+            },
+            "sideways": {
+              "net_after_allocated_hurdle_bips": "-4.418846005719293390526267236",
+              "observation_count": 6,
+              "passes": false
+            },
+            "stress_volatility": {
+              "net_after_allocated_hurdle_bips": "12.55728328567255507894777303",
+              "observation_count": 50,
+              "passes": true
+            }
+          }
+        }
+      },
+      "spot_symbol": "TUTUSDT",
+      "training_regime_thresholds": {
+        "high_stress_boundary": "0.0230169709643690179361376981",
+        "normal_high_boundary": "0.010547401007298360624314131"
+      }
+    },
+    {
+      "all_roles_pass_funding_only_gate": false,
+      "base_asset": "BMT",
+      "current_top_book": {
+        "combined_round_trip_top_spread_bips": "9.380871294621839125977360000",
+        "future_ask": "0.0213100",
+        "future_bid": "0.0213000",
+        "long_spot_short_future_entry_basis_bips": "-23.41920374707259953161592500",
+        "spot_ask": "0.02135000",
+        "spot_bid": "0.02134000",
+        "top_book_has_no_quantity_or_atomicity_claim": true
+      },
+      "future_symbol": "BMTUSDT",
+      "minimum_leg_quote_volume_usdt_24h": "27096549.75876600",
+      "roles": {
+        "test": {
+          "capital_opportunity_hurdle_bips": "91.32420091324200913242009134",
+          "duration_days": "16.66666666666666666666666667",
+          "family_adjusted_bootstrap_net_lower_bound_bips": "-1406.203100913242009132420091",
+          "first_funding_time_ms": 1786363200000,
+          "gross_funding_bips": "-739.47420000",
+          "last_funding_time_ms": 1787788800000,
+          "maximum_net_drawdown_bips": "862.7984009132420091324200903",
+          "maximum_positive_week_concentration": "0.5690849760851101872960529257",
+          "net_after_frozen_hurdles_bips": "-862.7984009132420091324200913",
+          "observation_count": 100,
+          "passes": false,
+          "rejection_reasons": [
+            "nonpositive_net_after_frozen_hurdles",
+            "family_adjusted_bootstrap_lower_bound_not_positive",
+            "one_or_more_required_slices_failed",
+            "maximum_drawdown_exceeded",
+            "positive_week_concentration_exceeded"
+          ],
+          "round_trip_execution_stress_bips": "32",
+          "slices": {
+            "bearish": {
+              "net_after_allocated_hurdle_bips": "-377.6765004566210045662100456",
+              "observation_count": 50,
+              "passes": false
+            },
+            "bullish": {
+              "net_after_allocated_hurdle_bips": "-422.0788963470319634703196347",
+              "observation_count": 38,
+              "passes": false
+            },
+            "choppy": {
+              "net_after_allocated_hurdle_bips": "-524.1897625570776255707762557",
+              "observation_count": 61,
+              "passes": false
+            },
+            "directional": {
+              "net_after_allocated_hurdle_bips": "-338.6086383561643835616438356",
+              "observation_count": 39,
+              "passes": false
+            },
+            "high_volatility": {
+              "net_after_allocated_hurdle_bips": "-120.9175041095890410958904110",
+              "observation_count": 12,
+              "passes": false
+            },
+            "low_or_normal_volatility": {
+              "net_after_allocated_hurdle_bips": "-99.44299817351598173515981735",
+              "observation_count": 19,
+              "passes": false
+            },
+            "sideways": {
+              "net_after_allocated_hurdle_bips": "-63.04300410958904109589041096",
+              "observation_count": 12,
+              "passes": false
+            },
+            "stress_volatility": {
+              "net_after_allocated_hurdle_bips": "-642.437898630136986301369863",
+              "observation_count": 69,
+              "passes": false
+            }
+          }
+        },
+        "training": {
+          "capital_opportunity_hurdle_bips": "273.0593607305936073059360730",
+          "duration_days": "49.83333333333333333333333333",
+          "family_adjusted_bootstrap_net_lower_bound_bips": "-222.0740607305936073059360730",
+          "first_funding_time_ms": 1780632000001,
+          "gross_funding_bips": "112.20770000",
+          "last_funding_time_ms": 1784923200001,
+          "maximum_net_drawdown_bips": "192.8516607305936073059360779",
+          "maximum_positive_week_concentration": "0.1588672913429430392674553545",
+          "net_after_frozen_hurdles_bips": "-192.8516607305936073059360730",
+          "observation_count": 298,
+          "passes": false,
+          "rejection_reasons": [
+            "nonpositive_net_after_frozen_hurdles",
+            "family_adjusted_bootstrap_lower_bound_not_positive",
+            "one_or_more_required_slices_failed"
+          ],
+          "round_trip_execution_stress_bips": "32",
+          "slices": {
+            "bearish": {
+              "net_after_allocated_hurdle_bips": "-83.0341977659281051760595752",
+              "observation_count": 129,
+              "passes": false
+            },
+            "bullish": {
+              "net_after_allocated_hurdle_bips": "-65.7028912567803622322331525",
+              "observation_count": 102,
+              "passes": false
+            },
+            "choppy": {
+              "net_after_allocated_hurdle_bips": "-102.2525499249180227391131133",
+              "observation_count": 161,
+              "passes": false
+            },
+            "directional": {
+              "net_after_allocated_hurdle_bips": "-90.5991108056755845668229597",
+              "observation_count": 137,
+              "passes": false
+            },
+            "high_volatility": {
+              "net_after_allocated_hurdle_bips": "-54.55022169715914314608807574",
+              "observation_count": 90,
+              "passes": false
+            },
+            "low_or_normal_volatility": {
+              "net_after_allocated_hurdle_bips": "-104.6201803652968036529680365",
+              "observation_count": 149,
+              "passes": false
+            },
+            "sideways": {
+              "net_after_allocated_hurdle_bips": "-44.11457170788513989764334527",
+              "observation_count": 67,
+              "passes": false
+            },
+            "stress_volatility": {
+              "net_after_allocated_hurdle_bips": "-33.68125866813766050687996077",
+              "observation_count": 59,
+              "passes": false
+            }
+          }
+        },
+        "validation": {
+          "capital_opportunity_hurdle_bips": "90.41095909436834094368340942",
+          "duration_days": "16.50000003472222222222222222",
+          "family_adjusted_bootstrap_net_lower_bound_bips": "-279.2398590943683409436834094",
+          "first_funding_time_ms": 1784937600002,
+          "gross_funding_bips": "-27.46770000",
+          "last_funding_time_ms": 1786348800005,
+          "maximum_net_drawdown_bips": "149.8786590943683409436834092",
+          "maximum_positive_week_concentration": "0.3942878781258647558293645592",
+          "net_after_frozen_hurdles_bips": "-149.8786590943683409436834094",
+          "observation_count": 99,
+          "passes": false,
+          "rejection_reasons": [
+            "nonpositive_net_after_frozen_hurdles",
+            "family_adjusted_bootstrap_lower_bound_not_positive",
+            "one_or_more_required_slices_failed",
+            "positive_week_concentration_exceeded"
+          ],
+          "round_trip_execution_stress_bips": "32",
+          "slices": {
+            "bearish": {
+              "net_after_allocated_hurdle_bips": "-42.35607603431576034315760341",
+              "observation_count": 36,
+              "passes": false
+            },
+            "bullish": {
+              "net_after_allocated_hurdle_bips": "-84.69774770574850483526282611",
+              "observation_count": 41,
+              "passes": false
+            },
+            "choppy": {
+              "net_after_allocated_hurdle_bips": "-81.58873971718709161631536059",
+              "observation_count": 53,
+              "passes": false
+            },
+            "directional": {
+              "net_after_allocated_hurdle_bips": "-68.28991937718124932736804881",
+              "observation_count": 46,
+              "passes": false
+            },
+            "high_volatility": {
+              "net_after_allocated_hurdle_bips": "-26.13385835716372246052611348",
+              "observation_count": 25,
+              "passes": false
+            },
+            "low_or_normal_volatility": {
+              "net_after_allocated_hurdle_bips": "-55.36144238004089602263118243",
+              "observation_count": 49,
+              "passes": false
+            },
+            "sideways": {
+              "net_after_allocated_hurdle_bips": "-22.82483535430407576526297987",
+              "observation_count": 22,
+              "passes": false
+            },
+            "stress_volatility": {
+              "net_after_allocated_hurdle_bips": "-68.38335835716372246052611348",
+              "observation_count": 25,
+              "passes": false
+            }
+          }
+        }
+      },
+      "spot_symbol": "BMTUSDT",
+      "training_regime_thresholds": {
+        "high_stress_boundary": "0.014849705279178651120197082",
+        "normal_high_boundary": "0.007143617021276595744680851"
+      }
+    },
+    {
+      "all_roles_pass_funding_only_gate": false,
+      "base_asset": "RE",
+      "current_top_book": {
+        "combined_round_trip_top_spread_bips": "3.878225085957170317026290000",
+        "future_ask": "0.5155000",
+        "future_bid": "0.5154000",
+        "long_spot_short_future_entry_basis_bips": "-13.56326293354001162565394300",
+        "spot_ask": "0.51610000",
+        "spot_bid": "0.51600000",
+        "top_book_has_no_quantity_or_atomicity_claim": true
+      },
+      "future_symbol": "REUSDT",
+      "minimum_leg_quote_volume_usdt_24h": "26500872.9421000",
+      "roles": {
+        "test": {
+          "capital_opportunity_hurdle_bips": "75.79908675799086757990867578",
+          "duration_days": "13.83333333333333333333333333",
+          "family_adjusted_bootstrap_net_lower_bound_bips": "-141.5124867579908675799086758",
+          "first_funding_time_ms": 1786608000000,
+          "gross_funding_bips": "1.43790000",
+          "last_funding_time_ms": 1787788800000,
+          "maximum_net_drawdown_bips": "106.3611867579908675799086754",
+          "maximum_positive_week_concentration": "0.8206220178782591437951194503",
+          "net_after_frozen_hurdles_bips": "-106.3611867579908675799086758",
+          "observation_count": 83,
+          "passes": false,
+          "rejection_reasons": [
+            "nonpositive_net_after_frozen_hurdles",
+            "family_adjusted_bootstrap_lower_bound_not_positive",
+            "one_or_more_required_slices_failed",
+            "positive_week_concentration_exceeded"
+          ],
+          "round_trip_execution_stress_bips": "32",
+          "slices": {
+            "bearish": {
+              "net_after_allocated_hurdle_bips": "-51.59679875667051768718710458",
+              "observation_count": 38,
+              "passes": false
+            },
+            "bullish": {
+              "net_after_allocated_hurdle_bips": "-44.49781457886339880068218078",
+              "observation_count": 37,
+              "passes": false
+            },
+            "choppy": {
+              "net_after_allocated_hurdle_bips": "-56.45641964570611211971172360",
+              "observation_count": 43,
+              "passes": false
+            },
+            "directional": {
+              "net_after_allocated_hurdle_bips": "-49.90476711228475546019695219",
+              "observation_count": 40,
+              "passes": false
+            },
+            "high_volatility": {
+              "net_after_allocated_hurdle_bips": "-28.92046773394949661660339990",
+              "observation_count": 21,
+              "passes": false
+            },
+            "low_or_normal_volatility": {
+              "net_after_allocated_hurdle_bips": "-66.93839306816306321175111405",
+              "observation_count": 51,
+              "passes": false
+            },
+            "sideways": {
+              "net_after_allocated_hurdle_bips": "-10.26657342245695109203939044",
+              "observation_count": 8,
+              "passes": false
+            },
+            "stress_volatility": {
+              "net_after_allocated_hurdle_bips": "-10.50232595587830775155416186",
+              "observation_count": 11,
+              "passes": false
+            }
+          }
+        },
+        "training": {
+          "capital_opportunity_hurdle_bips": "226.4840182648401826484018265",
+          "duration_days": "41.33333333333333333333333333",
+          "family_adjusted_bootstrap_net_lower_bound_bips": "-4909.614618264840182648401826",
+          "first_funding_time_ms": 1781841600000,
+          "gross_funding_bips": "-3131.07340000",
+          "last_funding_time_ms": 1785398400000,
+          "maximum_net_drawdown_bips": "3389.557418264840182648401794",
+          "maximum_positive_week_concentration": "0.7980555230174534379758697435",
+          "net_after_frozen_hurdles_bips": "-3389.557418264840182648401826",
+          "observation_count": 247,
+          "passes": false,
+          "rejection_reasons": [
+            "nonpositive_net_after_frozen_hurdles",
+            "family_adjusted_bootstrap_lower_bound_not_positive",
+            "one_or_more_required_slices_failed",
+            "maximum_drawdown_exceeded",
+            "positive_week_concentration_exceeded"
+          ],
+          "round_trip_execution_stress_bips": "32",
+          "slices": {
+            "bearish": {
+              "net_after_allocated_hurdle_bips": "-1949.463332137245114894718355",
+              "observation_count": 128,
+              "passes": false
+            },
+            "bullish": {
+              "net_after_allocated_hurdle_bips": "-1356.920170112583883312073651",
+              "observation_count": 105,
+              "passes": false
+            },
+            "choppy": {
+              "net_after_allocated_hurdle_bips": "-1742.126738136172887434603368",
+              "observation_count": 127,
+              "passes": false
+            },
+            "directional": {
+              "net_after_allocated_hurdle_bips": "-1647.430680128667295213798458",
+              "observation_count": 120,
+              "passes": false
+            },
+            "high_volatility": {
+              "net_after_allocated_hurdle_bips": "-1035.108756079344832048509049",
+              "observation_count": 74,
+              "passes": false
+            },
+            "low_or_normal_volatility": {
+              "net_after_allocated_hurdle_bips": "-1299.539256132956205054258407",
+              "observation_count": 124,
+              "passes": false
+            },
+            "sideways": {
+              "net_after_allocated_hurdle_bips": "-83.17391601501118444160982013",
+              "observation_count": 14,
+              "passes": false
+            },
+            "stress_volatility": {
+              "net_after_allocated_hurdle_bips": "-1054.909406052539145545634370",
+              "observation_count": 49,
+              "passes": false
+            }
+          }
+        },
+        "validation": {
+          "capital_opportunity_hurdle_bips": "75.79908675799086757990867578",
+          "duration_days": "13.83333333333333333333333333",
+          "family_adjusted_bootstrap_net_lower_bound_bips": "-309.1382867579908675799086758",
+          "first_funding_time_ms": 1785412800000,
+          "gross_funding_bips": "-114.79940000",
+          "last_funding_time_ms": 1786593600000,
+          "maximum_net_drawdown_bips": "222.5984867579908675799086754",
+          "maximum_positive_week_concentration": "0.8567152043757853499889127060",
+          "net_after_frozen_hurdles_bips": "-222.5984867579908675799086758",
+          "observation_count": 83,
+          "passes": false,
+          "rejection_reasons": [
+            "nonpositive_net_after_frozen_hurdles",
+            "family_adjusted_bootstrap_lower_bound_not_positive",
+            "one_or_more_required_slices_failed",
+            "positive_week_concentration_exceeded"
+          ],
+          "round_trip_execution_stress_bips": "32",
+          "slices": {
+            "bearish": {
+              "net_after_allocated_hurdle_bips": "-111.2842829344776365736920284",
+              "observation_count": 39,
+              "passes": false
+            },
+            "bullish": {
+              "net_after_allocated_hurdle_bips": "-89.04028293447763657369202839",
+              "observation_count": 39,
+              "passes": false
+            },
+            "choppy": {
+              "net_after_allocated_hurdle_bips": "-122.6329038235132310062166474",
+              "observation_count": 44,
+              "passes": false
+            },
+            "directional": {
+              "net_after_allocated_hurdle_bips": "-99.96558293447763657369202839",
+              "observation_count": 39,
+              "passes": false
+            },
+            "high_volatility": {
+              "net_after_allocated_hurdle_bips": "-50.11134684491390218407878088",
+              "observation_count": 16,
+              "passes": false
+            },
+            "low_or_normal_volatility": {
+              "net_after_allocated_hurdle_bips": "-153.0138823128128954172855807",
+              "observation_count": 58,
+              "passes": false
+            },
+            "sideways": {
+              "net_after_allocated_hurdle_bips": "-22.27392088903559443252461902",
+              "observation_count": 5,
+              "passes": false
+            },
+            "stress_volatility": {
+              "net_after_allocated_hurdle_bips": "-19.47325760026406997854431424",
+              "observation_count": 9,
+              "passes": false
+            }
+          }
+        }
+      },
+      "spot_symbol": "REUSDT",
+      "training_regime_thresholds": {
+        "high_stress_boundary": "0.050557311647254441464151713",
+        "normal_high_boundary": "0.023569668905287469605225768"
+      }
+    }
+  ],
+  "verdict": {
+    "accepted_edge": false,
+    "deployment_ready": false,
+    "profitability_claim": false,
+    "status": "no_broad_universe_symbol_passed_the_frozen_funding_only_cross_regime_gate",
+    "trading_authority": false
+  }
+}

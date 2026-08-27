@@ -908,7 +908,7 @@ grants paper, testnet, or live authority.
 
 The canonical structural-edge priority and retry-trigger registry is
 `docs/model-research/structural-edge-priority-registry-v1.json`, result SHA-256
-`bf5e77b2d85f6a976a4af9d2d7510aedfa1ba323d314b1002acb6b08ef76d2a3`.
+`95283a6ce281bd2e3d6c44ad4a196605a9d7f5cfa424ad474b75bfec593c3ebe`.
 Advance only the highest-ranked hypothesis whose trigger is actually satisfied.
 This prevents account-blocked or terminal screens from being rerun as if more
 snapshots could create an edge.
@@ -1700,6 +1700,59 @@ using future PushIntensity or reversal. Canonical regime gate:
 result SHA-256
 `7d3387289a7e82b33fa52c03b2bc134864259a001c3d28524745026bb83db387`.
 
+## Broad Crypto Funding And Options RFQ R&D
+
+The prior BTC/ETH/SOL-only funding-carry boundary was a research omission, not
+evidence about the broader cross-section. A one-use frozen public preflight
+corrected it without changing execution scope. It selected exact Binance
+Spot/USDT and USD-M USDT `PERPETUAL`/`COIN` pairs by the smaller current 24-hour
+quote volume, required at least 25 million USDT on each leg, and retained 23
+raw public responses plus a durable response journal before parsing. Seventeen
+symbols qualified. Zero passed the frozen training, validation, and test gate.
+Every role was negative after 32 bps of round-trip execution stress plus a 10%
+annual opportunity hurdle on each of two gross capital legs, and every
+family-adjusted moving-block bootstrap lower bound was negative. PYTH was the
+least-negative mature holdout (`-82.35/-77.02` bps validation/test); TUT had
+`-24.69/-86.83` bps. Neither approached promotion, and neither passed the
+required direction, volatility, path, drawdown, and concentration gates.
+
+This closes the current-liquidity-selected broad funding-only preflight; do not
+resample, change the universe cutoff, or relax costs. The selection is
+historically biased by construction and therefore could never accept an edge,
+but the all-negative frozen result does not justify a more expensive
+point-in-time basis study. Canonical contract/result:
+`docs/model-research/action-value/binance-broad-crypto-funding-carry-preflight-contract-v1.json`,
+contract SHA-256
+`7a2c34c4f9c0d44bcd6bed4564d33cda89831ab9a60341ac7ca23cc452231ed1`;
+`docs/model-research/action-value/binance-broad-crypto-funding-carry-preflight-v1-2026-08-27.json`,
+result SHA-256
+`095009a36a5c6a8a5a2dfdfb3e57ebe6183721bb84600518552ccf6d463617c8`.
+
+A distinct Binance Options execution architecture is materially reopened.
+Current official Options RFQ sources prove that predefined same-expiry
+two-leg call spreads and put spreads bypass the public order book and execute
+all predefined legs together. They do not prove arbitrary custom legs, a
+four-leg box template, a documented RFQ API, minimum size, Last Look behavior,
+account eligibility, exact commission/margin/capital cost, or a positive
+quote. The official developer corpus contains standard `/eapi/v1/order` and
+`/eapi/v1/batchOrders` paths plus signed `GET /eapi/v1/commission`, but zero
+literal Options RFQ references and no documented RFQ endpoint. Therefore the
+old displayed-book vertical and box results remain terminal; only the two-leg
+vertical execution architecture is reopened.
+
+Do not request a quote without explicit quote-request-only authority. When the
+trigger exists, preregister one minimum nonaccepted call-spread and one
+minimum nonaccepted put-spread RFQ for a fixed payoff identity, stop without
+confirmation, and advance only if each exact account quote clears commission,
+settlement, margin, capital, and cross-regime stress. Confirmation or execution
+requires separate explicit authority. Canonical triage:
+`docs/model-research/action-value/binance-options-rfq-fixed-payoff-execution-triage-v1-2026-08-27.json`,
+result SHA-256
+`64943efe0c6ad16f8d02f78548afef38f919448d2da87c7573e825a2eeefd6b9`.
+The structural registry remains at sixteen accepted scoped edges and now has
+result SHA-256
+`95283a6ce281bd2e3d6c44ad4a196605a9d7f5cfa424ad474b75bfec593c3ebe`.
+
 ## Protected Local Work
 
 `C:\trader\simple_ai_trading-model-dev` remains detached at
@@ -1746,7 +1799,8 @@ not grant account, funding, order, or transaction authority.
 2. Keep the completed model-dev three-way audit frozen. Do not bulk-integrate
    stale or divergent files; reevaluate a specific path only when a current task
    requires it.
-3. Do not rerun rejected Binance elevated-funding spot/perpetual carry,
+3. Do not rerun rejected Binance elevated-funding spot/perpetual carry or the
+   terminal one-use broad-current-liquidity-selected crypto funding preflight,
    USDT/USDC perpetual funding
    differential, quarterly carry, two-sided touch making,
    Polymarket binary complete-set taking, negative-risk parity, logical

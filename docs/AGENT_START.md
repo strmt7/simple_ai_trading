@@ -39,6 +39,29 @@ safety gate, blocks Stop, or submits an order.
 
 ## Research State
 
+- A one-use public broad-crypto funding-carry preflight corrected the earlier
+  BTC/ETH/SOL-only research boundary without changing execution scope. It
+  deterministically selected 17 exact Binance Spot/USDT and USD-M USDT crypto
+  perpetual pairs by the smaller current 24-hour leg volume, retained 23 raw
+  public responses plus a durable journal, and found zero funding-only passes.
+  Every training, validation, and test role was negative after the frozen
+  32-bps round-trip stress and 10% annual opportunity cost on each of two
+  capital legs; every family-adjusted bootstrap lower bound was negative. Do
+  not resample the current-liquidity-selected history or relax its gates.
+  Canonical result:
+  `binance-broad-crypto-funding-carry-preflight-v1-2026-08-27.json`, result
+  SHA-256 `095009a36a5c6a8a5a2dfdfb3e57ebe6183721bb84600518552ccf6d463617c8`.
+- Official Binance Options RFQ material proves a materially different
+  execution path for predefined same-expiry two-leg call and put spreads: the
+  RFQ bypasses the public book and all predefined legs execute together. It
+  does not prove a four-leg box, documented RFQ API, account eligibility,
+  minimum quantity, exact quote cost, or profit. The displayed-book vertical
+  and box screens remain terminal; only the two-leg vertical execution
+  architecture is reopened. Request no quote without explicit quote-request-
+  only authority, and never confirm or execute without separate authority.
+  Canonical triage:
+  `binance-options-rfq-fixed-payoff-execution-triage-v1-2026-08-27.json`, result
+  SHA-256 `64943efe0c6ad16f8d02f78548afef38f919448d2da87c7573e825a2eeefd6b9`.
 - Round 75 ended and is rejected. Its metadata-only terminal audit found 35
   result slots, 33 admitted training epochs, 684 missed slots, incomplete slot
   67, no tuning or test epochs, and a retained WAL. The training-role raw
