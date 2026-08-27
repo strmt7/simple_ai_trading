@@ -28,7 +28,7 @@ EXPECTED_PROSPECTIVE_V3_HASH = (
 )
 REGISTRY_PATH = ROOT / "docs/model-research/structural-edge-priority-registry-v1.json"
 EXPECTED_REGISTRY_HASH = (
-    "784a928804196c4fd6719bcc8dd71a539738041537f24689ca19e186083a77d9"
+    "7649f4f2266799277db55eac2a1d52f611ffc1dda1c82bed8680725634fad4d9"
 )
 
 
@@ -139,7 +139,7 @@ def test_registry_marks_the_public_mechanism_terminal() -> None:
     assert registry["result_sha256"] == EXPECTED_REGISTRY_HASH
     assert _embedded_hash(registry) == EXPECTED_REGISTRY_HASH
     hypotheses = registry["prioritized_hypotheses"]
-    assert [row["priority_rank"] for row in hypotheses] == list(range(1, 38))
+    assert [row["priority_rank"] for row in hypotheses] == list(range(1, 39))
     lead = next(
         row
         for row in hypotheses

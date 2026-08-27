@@ -1323,9 +1323,43 @@
       ],
       "retry_trigger": "explicit_quote_request_only_authority_plus_eligible_Binance_Options_RFQ_account_access",
       "venue_scope": "Binance_BTC_ETH_Options_predefined_same_expiry_two_leg_call_and_put_spreads"
+    },
+    {
+      "blocking_evidence": [
+        "one separately frozen KLAC-only native stock quote paired immediately with matching perpetual and USDCUSDT books during a new active quote state",
+        "exact account native-stock and perpetual commissions plus stock short eligibility and settlement rules",
+        "entry exit funding basis margin liquidation stablecoin conversion and non-atomic orphan costs",
+        "multiple independent complete-population positive after-cost observations across regular extended 24-hour volatility liquidity and latency states",
+        "separate account eligibility disclaimer jurisdiction paper and live authority before any owned order or fill study"
+      ],
+      "canonical_artifacts": [
+        {
+          "path": "docs/model-research/action-value/binance-native-stock-perpetual-parity-contract-v1.json",
+          "result_sha256": "ec5d4855c69d3afa461838b674530936a07e646394540a1a2b30ae3ddaf77db1"
+        },
+        {
+          "path": "docs/model-research/action-value/binance-native-stock-perpetual-parity-v1-2026-08-27.json",
+          "result_sha256": "2776ff86fddf78e7e87860c6b9500cb237fce5af908a4840d351ae0cc2eff930"
+        }
+      ],
+      "current_status": "materially_new_market_direction_independent_native_stock_TradFi_perpetual_parity_candidate_13_of_14_synchronized_rows_observed_zero_survived_30_bips_stress_best_NBIS_27_5414636448_bips_gross_failed_one_share_perpetual_capacity_best_capacity_valid_SNDK_14_6402997861_bips_KLAC_timed_out_so_population_incomplete_not_accepted_or_deployment_ready",
+      "market_direction_forecast_required": false,
+      "mechanism": "binance_native_stock_USDC_TradFi_perpetual_USDT_parity",
+      "next_action": "do_not_resample_the_13_observed_rows_after_a_new_active_KLAC_quote_state_freeze_one_KLAC_only_recovery_contract_pair_its_first_public_stock_quote_with_immediate_perpetual_and_USDCUSDT_books_and_join_only_to_the_retained_parent_result",
+      "priority_rank": 38,
+      "prohibited_shortcuts": [
+        "using_native_price_stream_last_values_as_executable_quotes",
+        "treating_USDC_USDT_or_USD1_as_identical_without_executable_conversion",
+        "resampling_the_13_observed_tickers_while_recovering_KLAC",
+        "ignoring_one_share_displayed_capacity_or_non_atomic_leg_risk",
+        "calling_an_incomplete_snapshot_recurrence_profit_or_an_accepted_edge",
+        "accepting_the_stock_disclaimer_accessing_an_account_or_placing_orders_without_separate_explicit_authority"
+      ],
+      "retry_trigger": "new_active_KLAC_native_stock_quote_state_for_one_separately_frozen_missing_row_recovery_only",
+      "venue_scope": "Binance_native_US_stocks_default_USDC_quote_and_matching_USDT_TradFi_perpetuals"
     }
   ],
-  "result_sha256": "784a928804196c4fd6719bcc8dd71a539738041537f24689ca19e186083a77d9",
+  "result_sha256": "7649f4f2266799277db55eac2a1d52f611ffc1dda1c82bed8680725634fad4d9",
   "schema_version": "structural-edge-priority-registry-v1",
   "terminal_do_not_repeat": [
     {
@@ -1474,6 +1508,6 @@
       "reason": "the_frozen_unseen_rank_251_to_1000_validation_used_explicit_win_partial_loss_statuses_across_6264_resolved_YES_positions_162_wallets_and_77_dates_but_the_opposite_side_gross_spread_proxy_lost_73368_711836_pUSD_before_maker_costs_and_was_negative_in_the_PNL_cohort_training_test_and_both_wallet_and_date_cluster_lower_bounds_do_not_repeat_leaderboard_mining"
     }
   ],
-  "updated_at_utc": "2026-08-27T02:36:16Z",
+  "updated_at_utc": "2026-08-27T02:51:25Z",
   "usage_rule": "advance_the_highest_ranked_hypothesis_whose_retry_trigger_is_satisfied_otherwise_do_not_repeat_a_blocked_or_terminal_screen"
 }

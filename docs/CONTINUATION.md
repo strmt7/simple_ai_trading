@@ -908,7 +908,7 @@ grants paper, testnet, or live authority.
 
 The canonical structural-edge priority and retry-trigger registry is
 `docs/model-research/structural-edge-priority-registry-v1.json`, result SHA-256
-`784a928804196c4fd6719bcc8dd71a539738041537f24689ca19e186083a77d9`.
+`7649f4f2266799277db55eac2a1d52f611ffc1dda1c82bed8680725634fad4d9`.
 Advance only the highest-ranked hypothesis whose trigger is actually satisfied.
 This prevents account-blocked or terminal screens from being rerun as if more
 snapshots could create an edge.
@@ -1697,6 +1697,29 @@ and
 result SHA-256
 `a3d474e9010b92c9454a5bc04b5a7f586656c8bc5842cecc61baaa508c2d8bc3`.
 
+Binance's newly documented native Stocks Trading WebSocket feed created a
+distinct direct-stock versus TradFi-perpetual parity path. Discovery found 45
+native symbols, 174 active TradFi perpetuals, and 15 exact ticker overlaps; the
+frozen same-USDT-quote population excluded only `SPCXUSD1` and covered the
+remaining 14. Each first native executable quote was paired immediately with
+its own perpetual book and executable `USDCUSDT` ask. Thirteen rows completed;
+KLAC emitted no quote within the frozen 30-second window. Zero observed row
+survived the 30 bps pre-account stress. NBIS had the largest gross gap at
+27.5414636448 bps but only 0.23 shares at the perpetual bid, failing the frozen
+one-share capacity. SNDK was the best capacity-valid row at 14.6402997861 bps.
+The incomplete population cannot be terminalized or promoted. Do not resample
+the 13 observed rows. After a new active KLAC quote state, freeze one KLAC-only
+recovery and join it to the retained parent result; account commission,
+eligibility, settlement, exit, funding, and non-atomic leg risk remain unbound.
+Canonical contract:
+`docs/model-research/action-value/binance-native-stock-perpetual-parity-contract-v1.json`,
+SHA-256
+`ec5d4855c69d3afa461838b674530936a07e646394540a1a2b30ae3ddaf77db1`.
+Canonical result:
+`docs/model-research/action-value/binance-native-stock-perpetual-parity-v1-2026-08-27.json`,
+SHA-256
+`2776ff86fddf78e7e87860c6b9500cb237fce5af908a4840d351ae0cc2eff930`.
+
 A new primary paper, *Taker vs. Maker Arbitrage*, distinguishes the execution
 mechanism in which an arbitrageur passively supplies one payoff-equivalent leg
 and, after that leg fills, aggressively completes the bundle. This materially
@@ -1837,7 +1860,7 @@ result SHA-256
 `64943efe0c6ad16f8d02f78548afef38f919448d2da87c7573e825a2eeefd6b9`.
 The structural registry remains at sixteen accepted scoped edges and now has
 result SHA-256
-`784a928804196c4fd6719bcc8dd71a539738041537f24689ca19e186083a77d9`.
+`7649f4f2266799277db55eac2a1d52f611ffc1dda1c82bed8680725634fad4d9`.
 
 ## Protected Local Work
 
@@ -1948,6 +1971,13 @@ not grant account, funding, order, or transaction authority.
    clearing that gate; freeze a new complete-population contract before any
    request. Installing or signing into a wallet, approvals, transfers, swaps,
    and orders retain separate authority gates.
+   For native Stocks Trading versus TradFi perpetual parity, do not resample
+   AAPL, AMZN, ASTS, AVGO, CRWD, DRAM, IREN, KORU, NBIS, NVDA, SNDK, SOXL,
+   or SQQQ. All 13 observed rows failed the 30 bps stress or one-share capacity.
+   KLAC alone timed out. After a new active KLAC stock-quote state, freeze one
+   KLAC-only public recovery, pair its first quote with immediate KLACUSDT and
+   USDCUSDT books, and join only to the retained parent result. Stock disclaimer,
+   account access, and every order remain separately gated.
    For BFUSD/RWUSD, wait until both designated ephemeral credential variables
    exist, then source-bind and hosted-verify one six-GET rate, quota, and
    flexible-alternative prequalification before its single run. Do not build
