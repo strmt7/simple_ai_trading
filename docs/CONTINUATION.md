@@ -12,14 +12,17 @@ Development belongs only on `main`; do not create another development branch.
   code-scanning, and secret-scanning alerts. Reverify the publication commit;
   zero alerts never proves zero undisclosed vulnerabilities.
 - The repository is beta `0.1.0-beta.1`. No model has production authority or a
-  demonstrated long-lived after-all-cost edge. Sixteen narrowly scoped structural
+  demonstrated long-lived after-all-cost edge. Seventeen narrowly scoped structural
   edges are accepted: Polymarket holding yield for existing idle on-platform
   pUSD; Polymarket pUSD taker-fee rebates only for independently justified
   legitimate organic BTC/ETH/SOL taker flow after the direct-wallet tier is
   effective; Binance Soft Staking yield for already-held idle non-order ETH/SOL
   Spot inventory; LDUSDT yield only for already-required futures collateral;
   just-in-time BNB fee reduction; current quote-native BTC/ETH/SOL promotional
-  fee reduction; USD1/WLFI holding-airdrop yield; U Flexible yield; automatic
+  fee reduction; USD1/WLFI holding-airdrop yield; the fixed USD1 Simple Earn
+  bonus on at most the first 1,500 independently already-held idle USD1 only
+  when its mutually exclusive balance-specific route beats the airdrop; U
+  Flexible yield; automatic
   RWUSD VIP bonus yield; current USDT Flexible bonus yield; and the current
   automatic USDe holding reward only for eligible USDe already independently
   held on Binance for at least 24 hours; Polymarket builder fees only on
@@ -908,7 +911,7 @@ grants paper, testnet, or live authority.
 
 The canonical structural-edge priority and retry-trigger registry is
 `docs/model-research/structural-edge-priority-registry-v1.json`, result SHA-256
-`887f062b3ac8f362283328a1baf47db29cf876da255091c9aed6ac569dd7c5d7`.
+`9f4de1a4fcfe266973434bd3a29eaeb0643e65fd0865229b72c44ffe0d2f140e`.
 Advance only the highest-ranked hypothesis whose trigger is actually satisfied.
 This prevents account-blocked or terminal screens from being rerun as if more
 snapshots could create an edge.
@@ -1387,17 +1390,29 @@ to farm it because the current boost adds only 2.0904 bips over seven days
 before funding, spread, basis, liquidation, margin, and operational costs.
 Simple Earn is absent from the announcement's closed list of eligible account
 categories, so never credit the airdrop and Simple Earn to the same principal.
-From 2026-08-27, the public headline allocation is 8.5% on the first 1,500 USD1
-in Simple Earn versus the current 5.46% airdrop base, while above the bonus cap
-the current airdrop base exceeds the approximate 1.5% Real-Time APR by 8.6795
-bips over eight days. These are public sensitivities, not account instructions:
+From 2026-08-27, the logged-out public Simple Earn page displays `8.62% Max` on
+the first 1,500 USD1, decomposed as a variable `1.62%` Real-Time APR plus a
+fixed `7%` bonus. The fixed bonus alone exceeds the current 5.46% airdrop base
+by 154 annualized bps; after one forfeited airdrop day its gross break-even is
+3.5455 days. For a 1,500 USD1 balance, immediate fixed-bonus allocation beats
+the sensitivity of waiting through the airdrop and subscribing afterward by
+only 0.5063 USD1, or 3.3753 bps. This mutually exclusive allocation is now
+accepted only for independently already-held idle USD1, after exact account,
+capacity, liquidity, transition-cost, tax, and redemption-timing proof. Never
+credit both rewards to the same principal, acquire or retain USD1 for this
+bonus, or use the displayed USD1/U/USDC/USDT rate ordering to justify a
+conversion. These are public sensitivities, not account instructions:
 credentials are absent, region and product eligibility are unproved, USD1
 principal risk remains, and exact reward-sale costs are unknown. Refresh the
-Simple Earn activation once on 2026-08-27, the third airdrop APR once on
-2026-08-28, and the final airdrop once on 2026-09-04. Canonical gate:
+third airdrop APR once on 2026-08-28 and the final airdrop once on 2026-09-04.
+Canonical holding-airdrop gate:
 `docs/model-research/action-value/binance-usd1-wlfi-holding-airdrop-gate-v1-2026-08-26.json`,
 result SHA-256
 `c67367932b440d6f4a23330a17c405c0e15b0021b0484575a0b0efcc6e9238a6`.
+Canonical allocation adjudication:
+`docs/model-research/action-value/binance-usd1-simple-earn-versus-holding-airdrop-allocation-edge-v1-2026-08-27.json`,
+result SHA-256
+`a4158bf059f4f5ad839b2f504c08c4afc65615260b4171533866f4c2337494e0`.
 
 The current Binance U Flexible promotion is also accepted only as a scoped,
 time-limited gross yield overlay for U that is already held idle in an eligible
@@ -1929,9 +1944,9 @@ requires separate explicit authority. Canonical triage:
 `docs/model-research/action-value/binance-options-rfq-fixed-payoff-execution-triage-v1-2026-08-27.json`,
 result SHA-256
 `64943efe0c6ad16f8d02f78548afef38f919448d2da87c7573e825a2eeefd6b9`.
-The structural registry remains at sixteen accepted scoped edges and now has
+The structural registry remains at seventeen accepted scoped edges and now has
 result SHA-256
-`887f062b3ac8f362283328a1baf47db29cf876da255091c9aed6ac569dd7c5d7`.
+`9f4de1a4fcfe266973434bd3a29eaeb0643e65fd0865229b72c44ffe0d2f140e`.
 
 The complete Binance XAU/XAG Commodity Options versus matching TradFi
 perpetual lower-bound screen is terminal for the active 2026-08-27 and

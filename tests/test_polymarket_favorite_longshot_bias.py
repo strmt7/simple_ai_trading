@@ -112,8 +112,8 @@ def test_canonical_result_terminalizes_without_edge_promotion() -> None:
     registry = json.loads(registry_path.read_text(encoding="utf-8"))
     registry_hash = registry.pop("result_sha256")
     assert hashlib.sha256(analysis._canonical_json(registry).encode("ascii")).hexdigest() == registry_hash
-    assert registry_hash == "887f062b3ac8f362283328a1baf47db29cf876da255091c9aed6ac569dd7c5d7"
-    assert registry["accepted_edge_count"] == 16
+    assert registry_hash == "9f4de1a4fcfe266973434bd3a29eaeb0643e65fd0865229b72c44ffe0d2f140e"
+    assert registry["accepted_edge_count"] == 17
     terminal = {row["family"]: row for row in registry["terminal_do_not_repeat"]}
     assert terminal[
         "polymarket_static_high_price_favorite_taker_buy_from_trade_weighted_longshot_bias"

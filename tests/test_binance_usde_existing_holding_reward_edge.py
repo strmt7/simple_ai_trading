@@ -18,7 +18,7 @@ EXPECTED_RESULT_HASH = (
     "4640635514ad43ed846660c204a95c0d59ed75ac3ccbf5f17a0b70f3d5726f6a"
 )
 EXPECTED_REGISTRY_HASH = (
-    "887f062b3ac8f362283328a1baf47db29cf876da255091c9aed6ac569dd7c5d7"
+    "9f4de1a4fcfe266973434bd3a29eaeb0643e65fd0865229b72c44ffe0d2f140e"
 )
 
 
@@ -146,7 +146,7 @@ def test_usde_primary_sources_and_registry_lineage_are_exact() -> None:
     registry = _load(REGISTRY_PATH)
     assert registry["result_sha256"] == EXPECTED_REGISTRY_HASH
     assert _canonical_hash(registry) == EXPECTED_REGISTRY_HASH
-    assert registry["accepted_edge_count"] == 16
+    assert registry["accepted_edge_count"] == 17
     family = next(
         row
         for row in registry["prioritized_hypotheses"]

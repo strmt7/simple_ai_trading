@@ -12,7 +12,7 @@ operating contract. Historical handoff text is archived under
 | Development branch | `main` only |
 | Binance | BTC, ETH, and SOL; paper or testnet/Demo only |
 | Polymarket | Independent BTC 5-minute/15-minute research; disabled by default |
-| Accepted edges | Sixteen scoped structural edges: Polymarket complete-set holding yield for existing idle on-platform pUSD; Polymarket pUSD taker-fee rebates only for independently justified legitimate organic BTC/ETH/SOL taker flow after the direct-wallet tier is effective; Polymarket builder fees only on bona fide independently existing third-party orders routed through an owned app with an account-confirmed active disclosed positive rate; Polymarket referral rewards only for authentic external referrals when the account already independently cleared the lifetime-volume threshold; Polymarket Perps referral fee share only for authentic external traders within account-confirmed available invites and without volume-based invite unlocking; Binance Soft Staking yield for already-held idle non-order ETH/SOL Spot inventory; LDUSDT yield only for already-required futures collateral; just-in-time BNB fee reduction only for independently justified organic Spot flow; current quote-native BTC/ETH/SOL promotional fee reduction without quote acquisition or extra volume; USD1/WLFI holding-airdrop yield only for already-held eligible USD1; U Flexible yield only for already-held eligible non-EEA U; the automatic RWUSD VIP bonus only on independently required existing RWUSD; current USDT Flexible bonus yield only for independently held idle eligible USDT; the current automatic USDe holding reward only for eligible USDe already independently held on Binance for at least 24 hours; Binance Square's base 20% Write to Earn commission only on authentic external readers' independently existing eligible fee-bearing trades attributed to genuinely useful content; and Binance Referral Pro's base 20% Spot/Margin and 10% one-year Futures fee commission only for authentic independently acquired new external users. None is deployment-ready or fully account-and-external-cost-qualified. |
+| Accepted edges | Seventeen scoped structural edges: Polymarket complete-set holding yield for existing idle on-platform pUSD; Polymarket pUSD taker-fee rebates only for independently justified legitimate organic BTC/ETH/SOL taker flow after the direct-wallet tier is effective; Polymarket builder fees only on bona fide independently existing third-party orders routed through an owned app with an account-confirmed active disclosed positive rate; Polymarket referral rewards only for authentic external referrals when the account already independently cleared the lifetime-volume threshold; Polymarket Perps referral fee share only for authentic external traders within account-confirmed available invites and without volume-based invite unlocking; Binance Soft Staking yield for already-held idle non-order ETH/SOL Spot inventory; LDUSDT yield only for already-required futures collateral; just-in-time BNB fee reduction only for independently justified organic Spot flow; current quote-native BTC/ETH/SOL promotional fee reduction without quote acquisition or extra volume; USD1/WLFI holding-airdrop yield only for already-held eligible USD1; the fixed USD1 Simple Earn bonus only on the first 1,500 independently already-held idle USD1 when its mutually exclusive balance-specific route beats the holding airdrop after all transition and opportunity costs; U Flexible yield only for already-held eligible non-EEA U; the automatic RWUSD VIP bonus only on independently required existing RWUSD; current USDT Flexible bonus yield only for independently held idle eligible USDT; the current automatic USDe holding reward only for eligible USDe already independently held on Binance for at least 24 hours; Binance Square's base 20% Write to Earn commission only on authentic external readers' independently existing eligible fee-bearing trades attributed to genuinely useful content; and Binance Referral Pro's base 20% Spot/Margin and 10% one-year Futures fee commission only for authentic independently acquired new external users. None is deployment-ready or fully account-and-external-cost-qualified. |
 | Live-money authority | None |
 | Historical cutoff | `2026-08-14T00:00:00Z` |
 
@@ -319,7 +319,7 @@ safety gate, blocks Stop, or submits an order.
   `polymarket-round27-complete-set-taker-rebate-overlay-v1-2026-08-26.json`,
   SHA-256
   `948f47d9d0c2fb6cbf441da1147ae07006a897f307141dfd6ae25c85e47f13d2`.
-  The current structural-edge registry accepted count is sixteen. Binance's
+  The current structural-edge registry accepted count is seventeen. Binance's
   best three-leg spot cycle
   was only 0.6462 bps gross and required less than 0.2154 bps fee per leg to
   break even. The exact three spot fee queries are now defined from Binance's
@@ -826,6 +826,22 @@ safety gate, blocks Stop, or submits an order.
   2026-08-28, and 2026-09-04 triggers. Canonical gate:
   `binance-usd1-wlfi-holding-airdrop-gate-v1-2026-08-26.json`, result SHA-256
   `c67367932b440d6f4a23330a17c405c0e15b0021b0484575a0b0efcc6e9238a6`.
+- The mutually exclusive USD1 Simple Earn route is now separately accepted only
+  for at most the first 1,500 USD1 that is independently already held idle. The
+  logged-out public product page displayed `8.62% Max`, decomposed as a variable
+  `1.62%` Real-Time APR plus a fixed `7%` promotion bonus. The fixed bonus alone
+  exceeds the current `5.46%` holding-airdrop base by 154 annualized bps; after
+  forfeiting one airdrop day, its gross break-even is 3.5455 days. At a 1,500
+  USD1 balance, immediate fixed-bonus allocation beats the sensitivity of
+  waiting through the airdrop and then subscribing by only 0.5063 USD1, or
+  3.3753 bps. Never count both rewards on the same principal or infer that the
+  displayed USD1/U/USDC/USDT rate ordering justifies a conversion. Exact account
+  eligibility, capacity, liquidity need, transition cost, tax, and redemption
+  timing must all be proved before any subscription, which requires separate
+  authority. Canonical adjudication:
+  `binance-usd1-simple-earn-versus-holding-airdrop-allocation-edge-v1-2026-08-27.json`,
+  result SHA-256
+  `a4158bf059f4f5ad839b2f504c08c4afc65615260b4171533866f4c2337494e0`.
 - The Binance U Flexible promotion is accepted only for already-held idle U in
   an eligible non-EEA master account: regular users receive a public headline
   8.5% APR on the first 5,000 U through 2026-09-14. Buying U for the promotion
@@ -1237,7 +1253,8 @@ safety gate, blocks Stop, or submits an order.
 | Terminal ETH/SOL Soft Staking delta-neutral funding stack | `docs/model-research/action-value/binance-soft-staking-delta-neutral-funding-stack-terminal-v1-2026-08-27.json` |
 | Existing-idle ETH/SOL liquid-staking yield candidate | `docs/model-research/action-value/binance-existing-idle-eth-sol-liquid-staking-yield-candidate-v1-2026-08-27.json` |
 | Terminal public BTC/ETH/SOL VIP Earn comparator | `docs/model-research/action-value/binance-vip-earn-public-btc-eth-sol-comparator-terminal-v1-2026-08-27.json` |
-| USD1 holding airdrop and active Simple Earn allocation | `docs/model-research/action-value/binance-usd1-simple-earn-activation-refresh-v1-2026-08-27.json` |
+| USD1 Simple Earn activation refresh | `docs/model-research/action-value/binance-usd1-simple-earn-activation-refresh-v1-2026-08-27.json` |
+| Accepted USD1 Simple Earn versus holding-airdrop allocation | `docs/model-research/action-value/binance-usd1-simple-earn-versus-holding-airdrop-allocation-edge-v1-2026-08-27.json` |
 | Lite Loan and fixed-bonus stablecoin yield curve | `docs/model-research/action-value/binance-lite-loan-stablecoin-yield-curve-v1-2026-08-27.json` |
 | U Flexible idle-holding yield | `docs/model-research/action-value/binance-u-flexible-idle-holding-yield-gate-v1-2026-08-26.json` |
 | Existing RWUSD VIP bonus overlay | `docs/model-research/action-value/binance-rwusd-existing-vip-bonus-overlay-gate-v1-2026-08-26.json` |

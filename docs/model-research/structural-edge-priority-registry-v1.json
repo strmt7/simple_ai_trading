@@ -1,6 +1,6 @@
 {
-  "accepted_edge_count": 16,
-  "accepted_edge_scope": "sixteen scoped structural edges: Polymarket complete-set holding yield for existing idle on-platform pUSD; Polymarket pUSD taker-fee rebates only for independently justified legitimate organic BTC ETH SOL taker flow after the direct-wallet tier is effective; Polymarket builder fees only on bona fide independently existing third-party orders routed through an owned app with an account-confirmed active disclosed positive rate; Polymarket referral rewards only for authentic external referrals when the account already independently cleared the lifetime-volume threshold; Polymarket Perps referral fee share only for authentic external traders within account-confirmed available invites and without volume-based invite unlocking; Binance Soft Staking yield for already-held idle non-order ETH SOL Spot inventory; LDUSDT yield only for already-required futures collateral; just-in-time BNB fee reduction only for independently justified organic Spot flow; current quote-native BTC ETH SOL promotional fee reduction without quote acquisition or extra volume; USD1 WLFI holding-airdrop yield only for already-held eligible USD1; U Flexible yield only for already-held eligible non-EEA U; automatic RWUSD VIP bonus only on independently required existing RWUSD; current USDT Flexible bonus yield only for independently held idle eligible USDT; current automatic USDe holding reward only for eligible USDe already independently held on Binance for at least 24 hours; Binance Square base 20 percent Write to Earn commission only on authentic external readers independently existing eligible fee-bearing trades attributed to genuinely useful content; and Binance Referral Pro base 20 percent Spot Margin and 10 percent one-year Futures fee commission only for authentic independently acquired new external users; none is deployment-ready or fully account-and-external-cost-qualified",
+  "accepted_edge_count": 17,
+  "accepted_edge_scope": "seventeen scoped structural edges: Polymarket complete-set holding yield for existing idle on-platform pUSD; Polymarket pUSD taker-fee rebates only for independently justified legitimate organic BTC ETH SOL taker flow after the direct-wallet tier is effective; Polymarket builder fees only on bona fide independently existing third-party orders routed through an owned app with an account-confirmed active disclosed positive rate; Polymarket referral rewards only for authentic external referrals when the account independently cleared the lifetime-volume threshold; Polymarket Perps referral fee share only for authentic external traders within account-confirmed available invites and without volume-based invite unlocking; Binance Soft Staking yield for already-held idle non-order ETH SOL Spot inventory; LDUSDT yield only for already-required futures collateral; just-in-time BNB fee reduction only for independently justified organic Spot flow; current quote-native BTC ETH SOL promotional fee reduction without quote acquisition or extra volume; USD1 WLFI holding-airdrop yield only for already-held eligible USD1; current fixed USD1 Simple Earn bonus only on at most the first 1500 independently already-held idle USD1 under a mutually exclusive balance-specific holding-airdrop comparison; U Flexible yield only for already-held eligible non-EEA U; automatic RWUSD VIP bonus only on independently required existing RWUSD; current USDT Flexible bonus yield only for independently held idle eligible USDT; current automatic USDe holding reward only for eligible USDe already independently held on Binance for at least 24 hours; Binance Square base 20 percent Write to Earn commission only on authentic external readers independently existing eligible fee-bearing trades attributed to genuinely useful content; and Binance Referral Pro base 20 percent Spot Margin and 10 percent one-year Futures fee commission only for authentic independently acquired new external users; none is deployment-ready or fully account-and-external-cost-qualified",
   "authority": {
     "live_trading_authority": false,
     "paper_trading_authority": false,
@@ -333,6 +333,10 @@
           "result_sha256": "f8106a93155813a3130bc925a3f4b223fad16b6133ee073226251d25175ecf06"
         },
         {
+          "path": "docs/model-research/action-value/binance-usd1-simple-earn-versus-holding-airdrop-allocation-edge-v1-2026-08-27.json",
+          "result_sha256": "a4158bf059f4f5ad839b2f504c08c4afc65615260b4171533866f4c2337494e0"
+        },
+        {
           "path": "docs/model-research/action-value/binance-lite-loan-stablecoin-yield-curve-contract-v1.json",
           "result_sha256": "73f6a0362ca88db393b723119b21e603f202345f570b59a70204fa3779349d41"
         },
@@ -365,10 +369,10 @@
           "result_sha256": "54fe3d3e23a92290debdc67d1e7e19ecac6c06441c045f1aa21fe3e62558c03c"
         }
       ],
-      "current_status": "accepted_scoped_current_time_limited_USD1_holding_airdrop_for_identical_already_held_principal_at_5_46_percent_current_base_APR_accepted_scoped_U_Flexible_yield_for_already_held_idle_U_at_8_5_percent_regular_headline_APR_on_first_5000_U_without_acquisition_accepted_scoped_RWUSD_VIP_bonus_only_on_independently_required_existing_RWUSD_accepted_scoped_current_USDT_Flexible_bonus_family_only_for_independently_held_idle_USDT_and_accepted_scoped_current_automatic_4_percent_reference_APR_USDe_holding_reward_only_for_eligible_USDe_already_independently_held_for_24_hours_BFUSD_existing_holding_reward_is_rejected_because_the_current_product_page_says_BFUSD_while_the_current_FAQ_and_governing_terms_say_a_USD_stablecoin_the_separate_USD1_Simple_Earn_offer_activated_with_7_percent_bonus_APR_on_1500_USD1_and_a_0_10001_bip_public_spread_but_remains_unaccepted_and_not_stable_because_only_0_96835_bips_of_frozen_conservative_margin_remain_before_exact_account_costs_peg_and_redemption_risk_the_time_limited_0_3_percent_Lite_Loan_USDT_to_USD1_fixed_bonus_composite_is_the_only_route_positive_under_the_frozen_historical_close_stress_at_1_1079_to_1_3278_bips_for_100_to_1000_USDT_while_U_and_plain_USDT_are_rejected_but_it_is_not_accepted_stable_or_deployment_ready_all_accepted_overlays_require_exact_account_eligibility_and_none_is_deployment_ready",
+      "current_status": "accepted_scoped_current_time_limited_USD1_holding_airdrop_for_identical_already_held_principal_at_5_46_percent_current_base_APR_plus_accepted_scoped_mutually_exclusive_fixed_7_percent_USD1_Simple_Earn_bonus_on_at_most_the_first_1500_independently_already_held_idle_USD1_current_page_displays_1_62_plus_7_00_equals_8_62_percent_and_the_fixed_only_immediate_allocation_sensitivity_leads_waiting_through_airdrop_end_by_3_37534247_bips_before_costs_accepted_scoped_U_Flexible_RWUSD_VIP_USDT_Flexible_and_USDe_existing_inventory_overlays_remain_BFUSD_reward_unit_conflict_and_USDT_to_USD1_acquisition_remain_rejected_Lite_Loan_composite_remains_unaccepted_all_accepted_overlays_require_exact_account_eligibility_and_none_is_deployment_ready",
       "market_direction_forecast_required": false,
       "mechanism": "same_account_stable_value_yield_allocation",
-      "next_action": "before_2026_08_27T23_59_59Z_only_if_both_credentials_and_explicit_signed_GET_only_authority_exist_prequalify_exact_account_region_Lite_Loan_product_quota_and_terms_without_borrowing_converting_or_subscribing_otherwise_let_the_candidate_expire_at_2026_08_28_capture_the_third_USD1_airdrop_APR_and_RLUSD_update_once_monitor_other_yield_products_only_on_published_changes_and_require_separate_funded_authority_for_every_borrow_conversion_subscription_or_repayment",
+      "next_action": "before_2026_08_27T23_59_59Z_only_if_both_credentials_and_explicit_signed_GET_only_authority_exist_prequalify_exact_account_Lite_Loan_and_USD1_Simple_Earn_region_product_quota_capacity_current_tiers_and_existing_idle_balance_without_borrowing_converting_or_subscribing_otherwise_let_Lite_Loan_expire_at_2026_08_28_capture_the_third_USD1_airdrop_APR_and_recompute_the_mutually_exclusive_balance_specific_allocation_once_monitor_other_yield_products_only_on_published_changes_and_require_separate_funded_authority_for_every_borrow_conversion_subscription_or_repayment",
       "priority_rank": 8,
       "prohibited_shortcuts": [
         "logged-out marketing APR as account rate evidence",
@@ -379,7 +383,8 @@
         "manufactured_churn_self_trading_wash_trading_or_other_inauthentic_volume_to_qualify_for_rewards",
         "extrapolating_one_RLUSD_reward_week_or_an_illustrative_example_into_future_APR",
         "calling_a_temporary_USD1_bonus_a_stable_edge_or_ignoring_issuer_peg_redemption_and_reserve_freshness_risk",
-        "calling_the_activated_USD1_Simple_Earn_offer_an_after_cost_edge_when_only_0_96835_bips_remain_before_unproved_account_costs_and_peg_or_redemption_risk",
+        "calling_USDT_to_USD1_acquisition_for_the_activated_Simple_Earn_offer_an_after_cost_edge_when_only_0_96835_bips_remain_before_unproved_account_costs_and_peg_or_redemption_risk",
+        "applying_the_USD1_Simple_Earn_7_percent_bonus_above_1500_USD1_or_ignoring_the_balance_specific_mutually_exclusive_airdrop_comparison",
         "calling_the_Lite_Loan_USD1_composite_profitable_stable_or_accepted_when_only_1_1079_to_1_3278_historical_stress_bips_remain",
         "borrowing_converting_subscribing_or_repaying_under_read_only_authority_or_without_separate_explicit_funded_authority",
         "crediting_variable_Real_Time_APR_the_random_3_USDT_voucher_or_any_unproved_reward",
@@ -1502,7 +1507,7 @@
       "venue_scope": "Binance_XAU_XAG_USDT_long_only_commodity_options_and_matching_TradFi_perpetuals"
     }
   ],
-  "result_sha256": "887f062b3ac8f362283328a1baf47db29cf876da255091c9aed6ac569dd7c5d7",
+  "result_sha256": "9f4de1a4fcfe266973434bd3a29eaeb0643e65fd0865229b72c44ffe0d2f140e",
   "schema_version": "structural-edge-priority-registry-v1",
   "terminal_do_not_repeat": [
     {
@@ -1666,6 +1671,6 @@
       "reason": "reusing_the_retained_actual_500_row_histories_the_current_0_50_percent_reward_left_ETH_training_negative_after_the_frozen_32_bips_and_SOL_training_negative_even_gross_every_ETH_and_SOL_role_was_negative_after_one_or_two_10_percent_annual_capital_hurdles_do_not_repeat_until_ETH_reward_reaches_0_59006995_percent_or_SOL_reaches_3_73322000_percent_or_another_material_execution_margin_or_funding_change_occurs"
     }
   ],
-  "updated_at_utc": "2026-08-27T04:55:00.2541197Z",
+  "updated_at_utc": "2026-08-27T05:09:00Z",
   "usage_rule": "advance_the_highest_ranked_hypothesis_whose_retry_trigger_is_satisfied_otherwise_do_not_repeat_a_blocked_or_terminal_screen"
 }

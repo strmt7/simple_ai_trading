@@ -20,7 +20,7 @@ EXPECTED_RESULT_SHA256 = (
     "3fe1801a6cbf442ab1ce79d1f3bd4586542d97414aea954b0bbd9a55a85453e1"
 )
 EXPECTED_REGISTRY_SHA256 = (
-    "887f062b3ac8f362283328a1baf47db29cf876da255091c9aed6ac569dd7c5d7"
+    "9f4de1a4fcfe266973434bd3a29eaeb0643e65fd0865229b72c44ffe0d2f140e"
 )
 
 
@@ -69,7 +69,7 @@ def test_registry_tracks_fpsl_without_increasing_accepted_count() -> None:
 
     assert registry["result_sha256"] == EXPECTED_REGISTRY_SHA256
     assert _embedded_hash(registry) == EXPECTED_REGISTRY_SHA256
-    assert registry["accepted_edge_count"] == 16
+    assert registry["accepted_edge_count"] == 17
     family = next(
         row
         for row in registry["prioritized_hypotheses"]
