@@ -23,7 +23,7 @@ BFUSD_HASH = "54fe3d3e23a92290debdc67d1e7e19ecac6c06441c045f1aa21fe3e62558c03c"
 SMART_ARBITRAGE_HASH = (
     "03b652fcd7e50c0671abbfb73f68f69509a2e5d7f75d8166f6b74743eab630d3"
 )
-REGISTRY_HASH = "934a63b745d556c0b3fd3a3d3e77a1d1e7f2ba2531e4dbf0bf3bca21634592f2"
+REGISTRY_HASH = "08576eb7bbf9f12cdb9e784ea9334d0db88c72d1afb665a87475a44f4dc9ebef"
 
 
 def _load(path: Path) -> dict[str, object]:

@@ -908,7 +908,7 @@ grants paper, testnet, or live authority.
 
 The canonical structural-edge priority and retry-trigger registry is
 `docs/model-research/structural-edge-priority-registry-v1.json`, result SHA-256
-`934a63b745d556c0b3fd3a3d3e77a1d1e7f2ba2531e4dbf0bf3bca21634592f2`.
+`08576eb7bbf9f12cdb9e784ea9334d0db88c72d1afb665a87475a44f4dc9ebef`.
 Advance only the highest-ranked hypothesis whose trigger is actually satisfied.
 This prevents account-blocked or terminal screens from being rerun as if more
 snapshots could create an edge.
@@ -1860,7 +1860,7 @@ result SHA-256
 `64943efe0c6ad16f8d02f78548afef38f919448d2da87c7573e825a2eeefd6b9`.
 The structural registry remains at sixteen accepted scoped edges and now has
 result SHA-256
-`934a63b745d556c0b3fd3a3d3e77a1d1e7f2ba2531e4dbf0bf3bca21634592f2`.
+`08576eb7bbf9f12cdb9e784ea9334d0db88c72d1afb665a87475a44f4dc9ebef`.
 
 The complete Binance XAU/XAG Commodity Options versus matching TradFi
 perpetual lower-bound screen is terminal for the active 2026-08-27 and
@@ -1914,6 +1914,41 @@ timestamps must henceforth be read directly from the system clock when the
 file is created and checked against the first request timestamp; never type or
 estimate them. Correction SHA-256:
 `692ee1f9a0374726b0adeccbe4fcd710c9c3a86d49b4b33210a8c34b2c79c4d3`.
+
+## Lite Loan Stablecoin Yield-Curve R&D
+
+The current Binance Lite Loan promotion creates one narrow, time-limited
+public candidate when its 0.3% upfront fee is paired with the fixed 7% USD1
+Simple Earn bonus. A frozen one-request screen used the current public
+USD1/USDT book and the official zero-fee USD1/USDT row. At loan amounts of
+100, 500, and 1,000 USDT, current fixed-bonus-only net headroom was 24.9497,
+25.2827, and 25.3382 bps. After the retained worst 30-day USD1 close decline,
+only 1.1079, 1.2964, and 1.3278 bps remained, equal to 0.0111, 0.0648, and
+0.1328 USDT. The U and plain-USDT routes failed the same gate.
+
+This is not an accepted, stable, profitable, or deployment-ready edge. The
+historical close stress is not a future depeg or issuer-loss bound; account
+region, product access, quota, exact repayment behavior, reward rounding,
+redemption, and every custody, tax, liquidity, and operating cost remain
+unproved. The BTC collateral must already be independently held and idle for
+the full 30-day term. Variable Real-Time APR and the random voucher are both
+credited as zero.
+
+The loan promotion ends at `2026-08-27T23:59:59Z`. Before then, only if both
+designated credentials and explicit signed GET-only authority exist, an exact
+account eligibility/product/quota prequalification may run. It must not borrow,
+convert, subscribe, or repay. Every such funded action requires separate
+explicit authority. Without that trigger, let this candidate expire; do not
+resample the unchanged book or reprice it after expiry. Reopen only for a
+materially new loan, yield, fee, or eligibility term.
+
+Canonical contract/result:
+`docs/model-research/action-value/binance-lite-loan-stablecoin-yield-curve-contract-v1.json`,
+SHA-256
+`73f6a0362ca88db393b723119b21e603f202345f570b59a70204fa3779349d41`;
+`docs/model-research/action-value/binance-lite-loan-stablecoin-yield-curve-v1-2026-08-27.json`,
+result SHA-256
+`65f223a245fa1bb65a8fd791275da0dbd71d3c52ee2d232ac1420feb198b129d`.
 
 ## Protected Local Work
 
