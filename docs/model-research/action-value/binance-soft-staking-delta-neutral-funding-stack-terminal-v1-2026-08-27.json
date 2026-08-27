@@ -1,0 +1,169 @@
+{
+  "adjudication": {
+    "accepted_edge": false,
+    "deployment_ready": false,
+    "market_direction_forecast_required": false,
+    "profitability_claim": false,
+    "status": "terminal_current_0_50_percent_ETH_SOL_Soft_Staking_reward_does_not_rescue_the_retained_delta_neutral_spot_short_USDT_perpetual_funding_stack_ETH_fails_training_after_32_bips_even_before_opportunity_cost_SOL_fails_training_gross_and_every_role_for_both_assets_is_negative_after_one_or_two_10_percent_capital_hurdles",
+    "trading_authority": false
+  },
+  "authority": {
+    "account_requests": 0,
+    "credentials_used": false,
+    "funded_actions": 0,
+    "new_public_market_requests": 0,
+    "orders_or_transfers": 0,
+    "retained_public_responses_reused": 2
+  },
+  "calculation_contract": {
+    "capital_hurdle_annual_bips_per_leg": "1000",
+    "chronological_role_fractions": [
+      "0.60",
+      "0.20",
+      "0.20"
+    ],
+    "funding_cashflow_sign": "positive_USDT_perpetual_funding_rate_is_received_by_the_short",
+    "gross_role_bips_formula": "10000_times_sum_funding_rates_plus_10000_times_0_005_times_role_days_divided_by_365",
+    "one_capital_leg_net_bips_formula": "gross_role_bips_minus_32_minus_1000_times_role_days_divided_by_365",
+    "round_trip_execution_stress_bips": "32",
+    "soft_staking_apr_fraction": "0.005",
+    "two_capital_leg_net_bips_formula": "gross_role_bips_minus_32_minus_2000_times_role_days_divided_by_365"
+  },
+  "created_at_utc": "2026-08-27T04:38:00Z",
+  "distinctness": {
+    "mechanism": "long_ETH_or_SOL_Spot_receiving_Soft_Staking_rewards_plus_equal_notional_short_USDT_perpetual",
+    "not_a_repeat_of": [
+      "idle_unhedged_Soft_Staking_increment",
+      "BNB_Simple_Earn_airdrop_hedge_stack",
+      "broad_funding_only_current_liquidity_selected_screen"
+    ],
+    "reason": "this fixed two-symbol overlay asks whether the current native-token reward converts an existing spot-perpetual hedge into a direction-neutral persistent yield stack"
+  },
+  "input_lineage": {
+    "funding_contract": {
+      "file_sha256": "36e4ed618e6f2b75f538bc8ee7b5bb9a0dfec7d9fbd6f88287f60f99e2a5d5bf",
+      "path": "docs/model-research/action-value/binance-broad-crypto-funding-carry-preflight-contract-v1.json"
+    },
+    "funding_parent_result": {
+      "path": "docs/model-research/action-value/binance-broad-crypto-funding-carry-preflight-v1-2026-08-27.json",
+      "result_sha256": "095009a36a5c6a8a5a2dfdfb3e57ebe6183721bb84600518552ccf6d463617c8"
+    },
+    "funding_responses": [
+      {
+        "actual_row_count": 500,
+        "path": "data/binance-broad-crypto-funding-carry-preflight-v1/raw/08-funding-ethusdt.raw",
+        "payload_bytes": 62650,
+        "payload_sha256": "73901ed47ae67f544b586133083ed8aefde10dcf52bd2a8574f4e05c0863d6cc",
+        "requested_limit": 1000,
+        "symbol": "ETHUSDT"
+      },
+      {
+        "actual_row_count": 500,
+        "path": "data/binance-broad-crypto-funding-carry-preflight-v1/raw/09-funding-solusdt.raw",
+        "payload_bytes": 61738,
+        "payload_sha256": "fd94adb008bca4e083a8097fa3c675134ccb06fb2936546ee86d6b7fbe62d297",
+        "requested_limit": 1000,
+        "symbol": "SOLUSDT"
+      }
+    ],
+    "soft_staking_source": {
+      "file_sha256": "a97f41cfaefb7c1a763260a46b12c60c4c9622abed2c857336127150eaeffd32",
+      "path": "docs/model-research/action-value/binance-soft-staking-idle-spot-yield-gate-v1-2026-08-26.json",
+      "result_sha256": "9ded119650ed1679795cca8616935015bc8bf48850bfcc509ba28486e94bd9a7"
+    }
+  },
+  "prohibited_shortcuts": [
+    "sizing_chronological_roles_from_the_requested_limit_instead_of_the_validated_actual_response_count",
+    "calling_positive_funding_plus_reward_gross_profit_without_entry_exit_basis_fees_slippage_margin_and_capital_cost",
+    "buying_or_retaining_ETH_or_SOL_for_a_failed_delta_neutral_stack",
+    "assuming_Soft_Staking_inventory_can_also_remain_frozen_in_orders_or_serve_as_immediately_available_margin",
+    "using_future_funding_rates_to_select_entry_or_exit",
+    "retrying_the_same_500_row_history_without_a_material_rate_fee_margin_or_product_change"
+  ],
+  "result_sha256": "591fb98b9a8e58365c67c4a281d1fda3de674b42f1f868a42d98acf2ab19ae68",
+  "results": {
+    "ETHUSDT": {
+      "maximum_required_soft_staking_apr_fraction": {
+        "after_32_bips_only": "0.0059006995",
+        "after_32_bips_plus_one_10pct_capital_leg": "0.1059006995",
+        "after_32_bips_plus_two_10pct_capital_legs": "0.2059006995"
+      },
+      "roles": [
+        {
+          "days": "100.0000",
+          "funding_bips": "15.833700",
+          "gross_funding_plus_reward_bips": "29.532330",
+          "net_after_32_bips_and_one_capital_leg": "-276.440273",
+          "net_after_32_bips_and_two_capital_legs": "-550.412875",
+          "role": "training",
+          "row_count": 300,
+          "staking_reward_bips": "13.698630"
+        },
+        {
+          "days": "33.3333",
+          "funding_bips": "30.178400",
+          "gross_funding_plus_reward_bips": "34.744610",
+          "net_after_32_bips_and_one_capital_leg": "-88.579591",
+          "net_after_32_bips_and_two_capital_legs": "-179.903792",
+          "role": "validation",
+          "row_count": 100,
+          "staking_reward_bips": "4.566210"
+        },
+        {
+          "days": "33.3333",
+          "funding_bips": "49.784800",
+          "gross_funding_plus_reward_bips": "54.351010",
+          "net_after_32_bips_and_one_capital_leg": "-68.973191",
+          "net_after_32_bips_and_two_capital_legs": "-160.297392",
+          "role": "test",
+          "row_count": 100,
+          "staking_reward_bips": "4.566210"
+        }
+      ]
+    },
+    "SOLUSDT": {
+      "maximum_required_soft_staking_apr_fraction": {
+        "after_32_bips_only": "0.0373322000",
+        "after_32_bips_plus_one_10pct_capital_leg": "0.1373322000",
+        "after_32_bips_plus_two_10pct_capital_legs": "0.2373322000"
+      },
+      "roles": [
+        {
+          "days": "100.0000",
+          "funding_bips": "-70.280000",
+          "gross_funding_plus_reward_bips": "-56.581370",
+          "net_after_32_bips_and_one_capital_leg": "-362.553973",
+          "net_after_32_bips_and_two_capital_legs": "-636.526575",
+          "role": "training",
+          "row_count": 300,
+          "staking_reward_bips": "13.698630"
+        },
+        {
+          "days": "33.3333",
+          "funding_bips": "15.155900",
+          "gross_funding_plus_reward_bips": "19.722110",
+          "net_after_32_bips_and_one_capital_leg": "-103.602091",
+          "net_after_32_bips_and_two_capital_legs": "-194.926292",
+          "role": "validation",
+          "row_count": 100,
+          "staking_reward_bips": "4.566210"
+        },
+        {
+          "days": "33.3333",
+          "funding_bips": "44.259400",
+          "gross_funding_plus_reward_bips": "48.825610",
+          "net_after_32_bips_and_one_capital_leg": "-74.498591",
+          "net_after_32_bips_and_two_capital_legs": "-165.822792",
+          "role": "test",
+          "row_count": 100,
+          "staking_reward_bips": "4.566210"
+        }
+      ]
+    },
+    "all_roles_positive_after_32_bips": false,
+    "all_roles_positive_after_one_capital_leg_hurdle": false,
+    "all_roles_positive_after_two_capital_leg_hurdle": false
+  },
+  "schema_version": "binance-soft-staking-delta-neutral-funding-stack-terminal-v1",
+  "workflow_correction": "the first local calculation assumed the requested 1000 row limit and stopped on empty validation rows; the validated payload contains 500 rows so the final calculation derives every split boundary from actual_row_count and no future screen may infer row count from a request limit"
+}
