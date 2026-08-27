@@ -908,7 +908,7 @@ grants paper, testnet, or live authority.
 
 The canonical structural-edge priority and retry-trigger registry is
 `docs/model-research/structural-edge-priority-registry-v1.json`, result SHA-256
-`95283a6ce281bd2e3d6c44ad4a196605a9d7f5cfa424ad474b75bfec593c3ebe`.
+`d970fb88450a9f4111912a43c51fba8c6ae60c5933bcb096025aa7106b183547`.
 Advance only the highest-ranked hypothesis whose trigger is actually satisfied.
 This prevents account-blocked or terminal screens from being rerun as if more
 snapshots could create an edge.
@@ -1700,6 +1700,32 @@ using future PushIntensity or reversal. Canonical regime gate:
 result SHA-256
 `7d3387289a7e82b33fa52c03b2bc134864259a001c3d28524745026bb83db387`.
 
+Current official sports execution rules add a separate fail-closed constraint
+to the live-NBA implication candidate. A marketable sports order enters the
+market's configured delay and cannot be cancelled while pending; after that
+delay it is revalidated and may match, reject, or become unmatched. The help
+center lists a three-second sports delay and a one-second NBA/MLB test, but the
+compact public CLOB market-info response does not expose a numeric sports delay:
+its `itode` boolean documents the separate 250-millisecond crypto/finance path,
+and `oas` is only documented as minimum order age. Never reuse the local crypto
+250-millisecond constant for sports.
+
+The delay is not free maker protection. Public rules do not prove that a maker
+can observe incoming delayed taker intent or win a cancellation race. After a
+maker fill, the marketable hedge itself can instead become an uncancellable
+pending orphan; two all-taker legs can be delayed and revalidated independently,
+so synchronized books or batch submission do not prove atomic paired fills.
+The current Trading Fees and Maker Rebates help pages also conflict between 15%
+and 20% sports maker rebates. Credit zero until effective-date or owned payout
+evidence resolves the conflict. A future public NBA recurrence screen must use
+independent one- and three-second causal delay sensitivities and no reward
+credit; authenticated paper execution additionally requires exact runtime
+delay phase, every owned state transition, full orphan P&L, and explicit
+authority. Canonical gate:
+`docs/model-research/action-value/polymarket-sports-taker-delay-maker-protection-gate-v1-2026-08-27.json`,
+result SHA-256
+`4847ec7828e598950da9a455170b66a529d9a5d671bfb4c37a57a36f608b9627`.
+
 ## Broad Crypto Funding And Options RFQ R&D
 
 The prior BTC/ETH/SOL-only funding-carry boundary was a research omission, not
@@ -1751,7 +1777,7 @@ result SHA-256
 `64943efe0c6ad16f8d02f78548afef38f919448d2da87c7573e825a2eeefd6b9`.
 The structural registry remains at sixteen accepted scoped edges and now has
 result SHA-256
-`95283a6ce281bd2e3d6c44ad4a196605a9d7f5cfa424ad474b75bfec593c3ebe`.
+`d970fb88450a9f4111912a43c51fba8c6ae60c5933bcb096025aa7106b183547`.
 
 ## Protected Local Work
 
