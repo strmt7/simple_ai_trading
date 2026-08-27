@@ -39,6 +39,17 @@ safety gate, blocks Stop, or submits an order.
 
 ## Research State
 
+- Binance's time-limited bStock Spot LP promotion adds bStock maker-share
+  thresholds of 0.05%, 0.10%, 0.30%, and 0.60%; tiers 2 through 4 advertise
+  0.4, 0.6, and 0.8-bp maker rebates across all symbols when the bStock tier
+  exceeds the original tier. The first effective week starts
+  `2026-09-01T00:00:00Z`. This is not accepted or profitable evidence: exact
+  account tier, denominator, organic volume, fills, hedges, and realized rebates
+  are absent. Do not fetch books, generate volume, apply, or place orders.
+  Canonical result:
+  `binance-bstock-spot-lp-all-symbol-rebate-overlay-candidate-v1-2026-08-27.json`,
+  SHA-256
+  `d279f8ab88875c812e6691fa500fdfde741f2e2fbca19ee240b4c0d4a579d607`.
 - A one-use public Lite Loan/stablecoin-yield screen found one narrow,
   time-limited USD1 candidate and rejected U and plain USDT. After the frozen
   worst 30-day USD1 close decline, the USD1 route retained only 1.1079 to
@@ -1130,6 +1141,7 @@ safety gate, blocks Stop, or submits an order.
 | Polymarket Combo RFQ versus CLOB Boolean parity candidate | `docs/model-research/action-value/polymarket-combo-rfq-boolean-parity-candidate-v1-2026-08-27.json` |
 | Polymarket terminal broad sports Combo requester-overround validation | `docs/model-research/action-value/polymarket-combo-maker-overround-validation-v1-2026-08-27.json` |
 | Binance bStock dividend/perpetual funding timing-gap candidate | `docs/model-research/action-value/binance-bstock-dividend-perp-funding-timing-gap-candidate-v1-2026-08-27.json` |
+| Binance bStock Spot LP all-symbol rebate overlay | `docs/model-research/action-value/binance-bstock-spot-lp-all-symbol-rebate-overlay-candidate-v1-2026-08-27.json` |
 | Binance NOK bStock dividend/perpetual under-debit candidate | `docs/model-research/action-value/binance-nok-bstock-dividend-perpetual-underdebit-candidate-v1-2026-08-27.json` |
 | Binance Ondo/bStock/stock-perpetual wrapper parity candidate | `docs/model-research/action-value/binance-ondo-bstock-stock-perpetual-wrapper-parity-candidate-v1-2026-08-27.json` |
 | Binance Alpha/Ondo/stock-perpetual exact-book terminal screen | `docs/model-research/action-value/binance-alpha-ondo-perpetual-parity-v1-2026-08-27.json` |

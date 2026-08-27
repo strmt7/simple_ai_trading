@@ -1,0 +1,132 @@
+{
+  "adjudication": {
+    "accepted_edge": false,
+    "deployment_ready": false,
+    "market_direction_forecast_required": false,
+    "profitability_claim": false,
+    "stable_edge": false,
+    "status": "time_limited_public_all_symbol_fee_overlay_candidate_account_and_execution_evidence_absent",
+    "trading_authority": false
+  },
+  "authority": {
+    "account_requests": 0,
+    "credentials_used": false,
+    "funded_actions": 0,
+    "orders_or_applications": 0,
+    "public_source_requests": 1
+  },
+  "candidate_scope": {
+    "eligible_principal": "independently_existing_legitimate_organic_Binance_Spot_maker_flow_only",
+    "economic_identity": "incremental_all_symbol_maker_rebate_equals_effective_rebate_fraction_times_eligible_owned_maker_notional_minus_incremental_bStock_qualification_execution_and_operating_costs",
+    "market_direction_forecast_required": false,
+    "maximum_public_rebate_bips_per_maker_notional": "0.8",
+    "minimum_current_public_rebate_bips_per_maker_notional": "0",
+    "why_structural": "the overlay changes fees on already-justified maker flow rather than forecasting price direction",
+    "why_not_yet_an_edge": "the public schedule proves neither same-account enrollment nor owned organic volume bStock qualification share fills adverse selection inventory hedging realized rebates or after-cost persistence"
+  },
+  "current_promotion": {
+    "first_performance_review_end_utc": "2026-08-30T23:59:00Z",
+    "first_performance_review_start_utc": "2026-08-24T00:00:00Z",
+    "first_promotion_tier_effective_end_utc": "2026-09-07T23:59:00Z",
+    "first_promotion_tier_effective_start_utc": "2026-09-01T00:00:00Z",
+    "last_performance_review_end_utc": "2026-10-18T23:59:00Z",
+    "last_performance_review_start_utc": "2026-10-12T00:00:00Z",
+    "last_promotion_tier_effective_end_utc": "2026-10-26T23:59:00Z",
+    "last_promotion_tier_effective_start_utc": "2026-10-20T00:00:00Z",
+    "promotion_end_utc": "2026-10-18T23:59:00Z",
+    "promotion_start_utc": "2026-08-24T00:00:00Z"
+  },
+  "decision_gates": {
+    "account_evidence": [
+      "current same-account Spot Liquidity Provider enrollment and original tier",
+      "weekly bStocks tier and exact qualification denominator",
+      "owned all-symbol eligible maker notional and final rebate rows",
+      "rebates reconciled to balance and tax history without double counting"
+    ],
+    "execution_evidence": [
+      "independently justified post-only maker flow",
+      "queue partial-fill adverse-selection cancellation and outage behavior",
+      "inventory and any hedge spread slippage commission funding margin and capital cost",
+      "positive after-cost results across direction volatility liquidity and latency stress"
+    ],
+    "fail_closed_rules": [
+      "credit zero before an account-proved effective tier week",
+      "credit zero on unowned unfilled taker or ineligible volume",
+      "reject any route that needs manufactured churn self-dealing wash trading or market manipulation",
+      "reject if incremental bStock qualification costs meet or exceed the all-symbol incremental rebate",
+      "never infer account jurisdiction enrollment tier or volume from public schedule data"
+    ]
+  },
+  "manual_trial": {
+    "economic_rebate_floor_bips": "0",
+    "eligibility": "over_20000000_USD_equivalent_current_30_day_Binance_Spot_trading_volume_and_manual_application",
+    "term_weeks": 4,
+    "tier": 1,
+    "usage_rule": "the trial proves no positive rebate and is not a reason to generate volume or contact Binance without user authority"
+  },
+  "next_action": "after_2026_09_01T00_00_00Z_and_only_with_both_designated_credentials_plus_explicit_signed_GET_only_authority_query_the_existing_liquidity_program_overview_performance_weekly_result_and_rebate_history_then_join_only_to_independently_existing_owned_organic_maker_flow_no_orders_application_or_volume_generation",
+  "program_mechanics": {
+    "all_symbol_upgrade": "when_the_bStocks_tier_is_greater_than_the_original_category_tier_Binance_automatically_applies_the_higher_bStocks_tier_maker_rebate_across_all_symbols",
+    "qualification_basis": "weekly_maker_volume_percentage_or_tier_1_absolute_requirement_for_the_original_program_and_separate_weekly_bStocks_maker_volume_percentage",
+    "scope": "spot_and_margin_pairs_listed_on_Binance_com",
+    "tiers": [
+      {
+        "bStocks_weekly_maker_volume_percentage": "0.05",
+        "maker_fee_percent": "0.0000",
+        "maker_rebate_bips": "0",
+        "original_weekly_maker_volume_USD_alternative": "25000000",
+        "original_weekly_maker_volume_percentage": "0.05",
+        "tier": 1
+      },
+      {
+        "bStocks_weekly_maker_volume_percentage": "0.10",
+        "maker_fee_percent": "-0.0040",
+        "maker_rebate_bips": "0.4",
+        "original_weekly_maker_volume_USD_alternative": null,
+        "original_weekly_maker_volume_percentage": "0.15",
+        "tier": 2
+      },
+      {
+        "bStocks_weekly_maker_volume_percentage": "0.30",
+        "maker_fee_percent": "-0.0060",
+        "maker_rebate_bips": "0.6",
+        "original_weekly_maker_volume_USD_alternative": null,
+        "original_weekly_maker_volume_percentage": "0.50",
+        "tier": 3
+      },
+      {
+        "bStocks_weekly_maker_volume_percentage": "0.60",
+        "maker_fee_percent": "-0.0080",
+        "maker_rebate_bips": "0.8",
+        "original_weekly_maker_volume_USD_alternative": null,
+        "original_weekly_maker_volume_percentage": "1.00",
+        "tier": 4
+      }
+    ]
+  },
+  "prohibited_shortcuts": [
+    "manufacturing_volume_to_reach_a_tier",
+    "treating_public_tier_thresholds_as_same_account_enrollment_or_performance",
+    "crediting_the_rebate_during_the_performance_review_week_before_the_effective_week",
+    "assuming_bStock_maker_fills_are_delta_neutral_without_owned_same_quantity_hedges",
+    "ignoring_stock_market_hours_bStock_conversion_pauses_or_TradFi_perpetual_funding_and_basis",
+    "double_counting_the_rebate_with_standard_commission_BNB_referral_or_other_fee_overlays",
+    "calling_a_maximum_0_8_bip_fee_overlay_profitable_stable_or_market_invariant"
+  ],
+  "result_sha256": "d279f8ab88875c812e6691fa500fdfde741f2e2fbca19ee240b4c0d4a579d607",
+  "schema_version": "binance-bstock-spot-lp-all-symbol-rebate-overlay-candidate-v1",
+  "source": {
+    "article_code": "5ac98eff7ca3466583ffd0d81db4ad9e",
+    "article_title": "Binance Launches Limited-Time Promotion for bStocks in Spot Liquidity Provider Program (2026-08-24)",
+    "article_url": "https://www.binance.com/en/support/announcement/detail/5ac98eff7ca3466583ffd0d81db4ad9e",
+    "cms_url": "https://www.binance.com/bapi/composite/v1/public/cms/article/detail/query?articleCode=5ac98eff7ca3466583ffd0d81db4ad9e",
+    "observed_at_utc": "2026-08-27T04:11:12.4039088Z",
+    "raw_journal_bytes": 439,
+    "raw_journal_path": "data/binance-bstock-spot-lp-promotion-rnd-v1/raw/journal.json",
+    "raw_journal_sha256": "4c317fb32bb411932012a9cb539eadea68f83409105902447c08a2e6833ea9e6",
+    "raw_response_bytes": 98179,
+    "raw_response_path": "data/binance-bstock-spot-lp-promotion-rnd-v1/raw/article.json",
+    "raw_response_sha256": "03353fbbb34ede4f65834900434a55f67bcda4c6444c1ed0a3aa736c05c3aa0c"
+  },
+  "updated_at_utc": "2026-08-27T04:12:15.5015061Z"
+}
