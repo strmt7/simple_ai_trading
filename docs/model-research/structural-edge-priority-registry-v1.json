@@ -132,9 +132,13 @@
         {
           "path": "docs/model-research/action-value/binance-btc-simple-earn-idle-yield-candidate-v1-2026-08-26.json",
           "result_sha256": "193495029148d0022fe1bf4158442226705a7f62a22dbf0eafdbf9a53bece785"
+        },
+        {
+          "path": "docs/model-research/action-value/binance-soft-staking-delta-neutral-funding-stack-terminal-v1-2026-08-27.json",
+          "result_sha256": "591fb98b9a8e58365c67c4a281d1fda3de674b42f1f868a42d98acf2ab19ae68"
         }
       ],
-      "current_status": "accepted_scoped_current_idle_spot_native_token_yield_for_ETH_and_SOL_Soft_Staking_only_plus_unaccepted_BTC_Simple_Earn_extension_candidate_public_0_27_percent_max_is_0_02_plus_0_25_percent_with_minimum_bonus_cap_end_fee_and_account_state_unproved_and_adjacent_locked_0_2_to_0_41_percent_BTC_On_Chain_Yields_rejected_as_high_risk_protocol_dependent_and_unguaranteed_not_deployment_ready",
+      "current_status": "accepted_scoped_current_idle_spot_native_token_yield_for_ETH_and_SOL_Soft_Staking_only_plus_unaccepted_BTC_Simple_Earn_extension_candidate_public_0_27_percent_max_is_0_02_plus_0_25_percent_with_minimum_bonus_cap_end_fee_and_account_state_unproved_and_adjacent_locked_0_2_to_0_41_percent_BTC_On_Chain_Yields_rejected_as_high_risk_protocol_dependent_and_unguaranteed_the_distinct_delta_neutral_ETH_SOL_Soft_Staking_plus_short_USDT_perpetual_extension_is_terminal_at_the_current_0_50_percent_reward_ETH_requires_at_least_0_59006995_percent_and_SOL_3_73322000_percent_to_clear_32_bips_in_every_retained_role_even_before_opportunity_cost_not_deployment_ready",
       "market_direction_forecast_required": false,
       "mechanism": "binance_idle_spot_native_token_yield",
       "next_action": "do_not_poll_unchanged_public_pages_when_both_designated_ephemeral_credentials_exist_and_explicit_read_only_authority_is_given_freeze_one_signed_ETH_SOL_Soft_Staking_product_list_and_rewards_history_plus_BTC_Simple_Earn_product_list_position_and_reward_history_prequalification_activation_or_subscription_remains_a_separate_state_change_requiring_explicit_authority",
@@ -149,7 +153,7 @@
         "treating_a_higher_locked_on_chain_yield_headline_as_stable_without_exact_protocol_principal_loss_lock_redemption_fee_reward_slashing_capacity_and_eligibility_terms",
         "calling_GET_sapi_v1_soft_staking_set_read_only_because_it_mutates_account_activation_state"
       ],
-      "retry_trigger": "official_BTC_Simple_Earn_or_ETH_SOL_Soft_Staking_rate_tier_term_fee_or_eligibility_change_or_both_SIMPLE_AI_TRADING_BINANCE_MAINNET_API_KEY_and_SIMPLE_AI_TRADING_BINANCE_MAINNET_API_SECRET_available_with_explicit_read_only_authority",
+      "retry_trigger": "official_BTC_Simple_Earn_or_ETH_SOL_Soft_Staking_rate_tier_term_fee_or_eligibility_change_or_both_SIMPLE_AI_TRADING_BINANCE_MAINNET_API_KEY_and_SIMPLE_AI_TRADING_BINANCE_MAINNET_API_SECRET_available_with_explicit_read_only_authority_for_the_delta_neutral_extension_do_not_retry_unless_ETH_public_reward_reaches_0_59006995_percent_or_SOL_reaches_3_73322000_percent_or_execution_capital_margin_or_funding_product_economics_materially_change",
       "venue_scope": "binance_BTC_Simple_Earn_and_ETH_SOL_Spot_Soft_Staking"
     },
     {
@@ -1487,7 +1491,7 @@
       "venue_scope": "Binance_XAU_XAG_USDT_long_only_commodity_options_and_matching_TradFi_perpetuals"
     }
   ],
-  "result_sha256": "33c6c614e3aee8764b8393150951c33d4dc02b411e9803a90402a0957c483c52",
+  "result_sha256": "aabfdc0750a619b380929c59546d37c86306686bc2144d85c90d770f5bea6d23",
   "schema_version": "structural-edge-priority-registry-v1",
   "terminal_do_not_repeat": [
     {
@@ -1644,8 +1648,13 @@
       "canonical_result_sha256": "416daf4d279e06a2353127e642d588a39ae85be0709c2d7498896c1d182847ee",
       "family": "polymarket_broad_sports_combo_requester_overround_as_market_maker_edge",
       "reason": "the_frozen_unseen_rank_251_to_1000_validation_used_explicit_win_partial_loss_statuses_across_6264_resolved_YES_positions_162_wallets_and_77_dates_but_the_opposite_side_gross_spread_proxy_lost_73368_711836_pUSD_before_maker_costs_and_was_negative_in_the_PNL_cohort_training_test_and_both_wallet_and_date_cluster_lower_bounds_do_not_repeat_leaderboard_mining"
+    },
+    {
+      "canonical_result_sha256": "591fb98b9a8e58365c67c4a281d1fda3de674b42f1f868a42d98acf2ab19ae68",
+      "family": "binance_ETH_SOL_Soft_Staking_delta_neutral_USDT_perpetual_funding_stack",
+      "reason": "reusing_the_retained_actual_500_row_histories_the_current_0_50_percent_reward_left_ETH_training_negative_after_the_frozen_32_bips_and_SOL_training_negative_even_gross_every_ETH_and_SOL_role_was_negative_after_one_or_two_10_percent_annual_capital_hurdles_do_not_repeat_until_ETH_reward_reaches_0_59006995_percent_or_SOL_reaches_3_73322000_percent_or_another_material_execution_margin_or_funding_change_occurs"
     }
   ],
-  "updated_at_utc": "2026-08-27T04:18:26.9080618Z",
+  "updated_at_utc": "2026-08-27T04:44:28.5302667Z",
   "usage_rule": "advance_the_highest_ranked_hypothesis_whose_retry_trigger_is_satisfied_otherwise_do_not_repeat_a_blocked_or_terminal_screen"
 }

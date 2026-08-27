@@ -908,7 +908,7 @@ grants paper, testnet, or live authority.
 
 The canonical structural-edge priority and retry-trigger registry is
 `docs/model-research/structural-edge-priority-registry-v1.json`, result SHA-256
-`33c6c614e3aee8764b8393150951c33d4dc02b411e9803a90402a0957c483c52`.
+`aabfdc0750a619b380929c59546d37c86306686bc2144d85c90d770f5bea6d23`.
 Advance only the highest-ranked hypothesis whose trigger is actually satisfied.
 This prevents account-blocked or terminal screens from being rerun as if more
 snapshots could create an edge.
@@ -1032,6 +1032,27 @@ occurred. Canonical gate:
 `docs/model-research/action-value/binance-soft-staking-idle-spot-yield-gate-v1-2026-08-26.json`,
 result SHA-256
 `9ded119650ed1679795cca8616935015bc8bf48850bfcc509ba28486e94bd9a7`.
+
+The market-direction-independent extension that combines long ETH or SOL Spot
+Soft Staking with an equal-notional short USDT perpetual is now terminal under
+the retained funding evidence. Both official funding responses contain 500
+rows, despite the original request limit of 1,000. The first local calculation
+that assumed the request limit stopped on empty validation data; no false
+result was preserved. The final calculation derives its chronological
+300/100/100 training, validation, and test roles from each validated response's
+actual row count. At the current 0.50% Soft Staking APR and a frozen 32-bip
+round-trip execution stress, ETH's training role is negative and SOL's training
+role is negative even before opportunity cost. Every role for both assets is
+negative after one or two 10% annual capital-leg hurdles. The maximum Soft
+Staking APR needed across roles is 0.59006995% for ETH and 3.73322000% for SOL
+after execution stress alone; with one 10% capital-leg hurdle the thresholds
+are 10.59006995% and 13.73322000%. Do not buy or retain either asset for this
+stack, infer response size from a requested limit, or rerun the unchanged
+500-row history. Reopen only after a material Soft Staking rate, funding, fee,
+margin-reuse, or opportunity-cost change. Canonical terminal result:
+`docs/model-research/action-value/binance-soft-staking-delta-neutral-funding-stack-terminal-v1-2026-08-27.json`,
+result SHA-256
+`591fb98b9a8e58365c67c4a281d1fda3de674b42f1f868a42d98acf2ab19ae68`.
 
 BTC Simple Earn is now recorded as an unaccepted candidate extension to this
 same idle-native-token family. The official current BTC page displays Flexible
@@ -1877,7 +1898,7 @@ result SHA-256
 `64943efe0c6ad16f8d02f78548afef38f919448d2da87c7573e825a2eeefd6b9`.
 The structural registry remains at sixteen accepted scoped edges and now has
 result SHA-256
-`33c6c614e3aee8764b8393150951c33d4dc02b411e9803a90402a0957c483c52`.
+`aabfdc0750a619b380929c59546d37c86306686bc2144d85c90d770f5bea6d23`.
 
 The complete Binance XAU/XAG Commodity Options versus matching TradFi
 perpetual lower-bound screen is terminal for the active 2026-08-27 and

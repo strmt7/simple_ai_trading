@@ -170,6 +170,20 @@ safety gate, blocks Stop, or submits an order.
   state-changing signed `GET` and needs separate authority. Canonical gate:
   `binance-soft-staking-idle-spot-yield-gate-v1-2026-08-26.json`, SHA-256
   `9ded119650ed1679795cca8616935015bc8bf48850bfcc509ba28486e94bd9a7`.
+- The adjacent delta-neutral ETH/SOL Soft Staking plus short-USDT-perpetual
+  stack is terminal under the retained 500-row funding histories. The first
+  local calculation correctly stopped after discovering that the response had
+  500 rows rather than the requested limit of 1,000; the final chronological
+  roles were therefore derived from the actual response count as 300/100/100.
+  At 0.50% Soft Staking APR and 32 bips round-trip execution stress, ETH still
+  fails training and SOL fails training before opportunity cost. Every role for
+  both assets is negative after even one 10% annual capital-leg hurdle. The
+  maximum required APR across roles is 0.59006995% for ETH and 3.73322000% for
+  SOL after execution stress alone, or 10.59006995% and 13.73322000% after one
+  capital hurdle. Do not repeat unchanged history or acquire inventory for this
+  stack. Canonical terminal result:
+  `binance-soft-staking-delta-neutral-funding-stack-terminal-v1-2026-08-27.json`,
+  SHA-256 `591fb98b9a8e58365c67c4a281d1fda3de674b42f1f868a42d98acf2ab19ae68`.
 - BTC Simple Earn is a new extension candidate for that same idle-native-token
   family, not a tenth accepted edge. The current official page shows BTC
   Flexible at `0.27% Max` with an APR breakdown of `0.02% + 0.25%`; it does
@@ -1195,6 +1209,7 @@ safety gate, blocks Stop, or submits an order.
 | Polymarket August crypto-TWAP liquidity-reward terminal screen | `docs/model-research/polymarket/crypto-twap-liquidity-reward-screen-attempt1-failure-v1.json` |
 | Post-observation maker window | `docs/model-research/action-value/polymarket-post-observation-maker-window-gate-v1-2026-08-26.json` |
 | LDUSDT margin yield | `docs/model-research/action-value/binance-ldusdt-margin-yield-gate-v1-2026-08-26.json` |
+| Terminal ETH/SOL Soft Staking delta-neutral funding stack | `docs/model-research/action-value/binance-soft-staking-delta-neutral-funding-stack-terminal-v1-2026-08-27.json` |
 | USD1 holding airdrop and active Simple Earn allocation | `docs/model-research/action-value/binance-usd1-simple-earn-activation-refresh-v1-2026-08-27.json` |
 | Lite Loan and fixed-bonus stablecoin yield curve | `docs/model-research/action-value/binance-lite-loan-stablecoin-yield-curve-v1-2026-08-27.json` |
 | U Flexible idle-holding yield | `docs/model-research/action-value/binance-u-flexible-idle-holding-yield-gate-v1-2026-08-26.json` |
