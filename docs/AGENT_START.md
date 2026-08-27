@@ -758,6 +758,21 @@ safety gate, blocks Stop, or submits an order.
   The collector now journals every public response before validation and a
   focused test enforces that correction. Never retry this exhausted window or
   infer whether the lost response was empty, duplicated, or mismatched.
+  The current official program later added an exact 550,000 dollar five-minute
+  allocation across BTC, ETH, SOL, XRP, HYPE, BNB, and DOGE, which materially
+  reopened only that previously excluded duration. One exact seven-market
+  source screen started at 2026-08-27 06:45:05 UTC and retained both public
+  responses before validation. All seven exact markets existed with a
+  50-share reward minimum, 4.5-cent maximum spread, and identical taker-only
+  0.07/exponent-1/0.2-rebate fee schedules, but raw Gamma omitted the optional
+  `clobRewards` field on every row. The screen stopped before books because no
+  exact dated per-market daily allocation was available. Its terminal artifact
+  is `crypto-twap-5m-liquidity-reward-screen-attempt1-terminal-v1-2026-08-27.json`,
+  result SHA-256
+  `319c6aedbb5491e56e68cc3fdf95f366766ce4a070dcadec3213471ff938120d`.
+  Do not infer a daily rate from the monthly program cap or retry the same
+  source configuration. The current SDK model documents `clobRewards` as
+  optional; never treat a normalized SDK field as guaranteed raw Gamma output.
 - The separate official crypto maker-rebate schedule has exact conditional
   filled-order arithmetic, not an accepted edge. At 50 shares bid on each side
   at 0.49, the unrounded nominal rebates total 0.3498600 pUSD and raise the

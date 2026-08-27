@@ -766,6 +766,22 @@ diagnostics, not accepted edges.
   The tool now atomically journals request intent, raw response, and response
   hash before parsing; focused tests enforce the correction for any materially
   triggered future contract.
+- The official current program then materially changed by adding a 550,000
+  dollar five-minute allocation across BTC, ETH, SOL, XRP, HYPE, BNB, and DOGE.
+  That reopened only the previously excluded duration. A frozen seven-market
+  attempt at 2026-08-27 06:45:05 UTC retained its official documentation and
+  Gamma responses before validation. All seven exact markets were returned
+  with a 50-share reward minimum, 4.5-cent maximum spread, and the same
+  taker-only 0.07/exponent-1/0.2-rebate fee schedule, but raw Gamma omitted the
+  optional `clobRewards` field on every row. The collector stopped before any
+  book request, so no exact daily allocation, reward economics, candidate, or
+  profit was established. Canonical terminal artifact:
+  `docs/model-research/polymarket/crypto-twap-5m-liquidity-reward-screen-attempt1-terminal-v1-2026-08-27.json`,
+  result SHA-256
+  `319c6aedbb5491e56e68cc3fdf95f366766ce4a070dcadec3213471ff938120d`.
+  Do not retry the same source configuration or derive a daily rate from the
+  monthly program cap. The current SDK model makes `clobRewards` optional; a
+  normalized SDK field is not proof that raw Gamma populates it.
 - A distinct complete-set inventory stack screen did not repeat paired-maker
   books or wallet polling. Gamma metadata showed 12 of the 55 currently
   holding-reward-eligible BTC/ETH/SOL annual thresholds with positive reward
@@ -916,7 +932,7 @@ grants paper, testnet, or live authority.
 
 The canonical structural-edge priority and retry-trigger registry is
 `docs/model-research/structural-edge-priority-registry-v1.json`, result SHA-256
-`8b68d4b1f13bcd3edc5f085d90aaf648c52e68c43b0354b6411b323114a57786`.
+`d5154a63f6f3e46e6f7302dde61a2141383a04d6e1f7a12c5b87eb92a6b4e89b`.
 Advance only the highest-ranked hypothesis whose trigger is actually satisfied.
 This prevents account-blocked or terminal screens from being rerun as if more
 snapshots could create an edge.
@@ -1392,6 +1408,13 @@ retry that window. Reopen only after a material exact endpoint, configuration,
 or program change, with source journaling active before every validation. Any
 authenticated reward, order, cancellation, or fill study still requires
 explicit account plus paper or funding authority.
+The later exact 550,000 dollar five-minute program allocation was such a
+material change, but its one source-bound attempt also terminated before books:
+all seven exact raw Gamma rows omitted the optional `clobRewards` allocation.
+This newer source configuration is now terminal too. Reopen only when a
+materially new public response supplies an exact per-market dated daily
+allocation or the official program allocation changes again; never infer a
+daily rate by dividing the monthly cap.
 
 The Binance option workflow adds a request-efficiency contract learned from a
 failed exploratory confirmation: fetch the contract catalog once, fetch the
@@ -2032,7 +2055,7 @@ result SHA-256
 `64943efe0c6ad16f8d02f78548afef38f919448d2da87c7573e825a2eeefd6b9`.
 That checkpoint left seventeen accepted scoped edges. The current registry now
 has nineteen and result SHA-256
-`8b68d4b1f13bcd3edc5f085d90aaf648c52e68c43b0354b6411b323114a57786`.
+`d5154a63f6f3e46e6f7302dde61a2141383a04d6e1f7a12c5b87eb92a6b4e89b`.
 
 The complete Binance XAU/XAG Commodity Options versus matching TradFi
 perpetual lower-bound screen is terminal for the active 2026-08-27 and
@@ -2394,6 +2417,12 @@ not grant account, funding, order, or transaction authority.
    window or fetch books. A materially new endpoint, exact configuration, or
    program allocation is required to reopen it, and every future one-use source
    collector must journal raw responses before validation.
+   The later 550,000 dollar five-minute allocation did materially reopen the
+   excluded duration once. That one seven-asset attempt journaled both sources
+   and then stopped before books because raw Gamma omitted `clobRewards` for all
+   seven exact markets. Do not retry that source configuration or divide the
+   monthly cap into an invented daily rate. Reopen only for a materially new
+   public exact per-market dated allocation response or another program change.
    The distinct Polymarket maker-rebate study now includes the maker-first,
    exact-quantity taker-hedge mechanism. Its one-day historical diagnostic is
    negative in aggregate and unstable across assets and hours; do not expand
