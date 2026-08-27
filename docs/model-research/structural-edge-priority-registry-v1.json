@@ -1,6 +1,6 @@
 {
-  "accepted_edge_count": 18,
-  "accepted_edge_scope": "eighteen scoped structural edges: Polymarket complete-set holding yield for existing idle on-platform pUSD; Polymarket pUSD taker-fee rebates only for independently justified legitimate organic BTC ETH SOL taker flow after the direct-wallet tier is effective; Polymarket builder fees only on bona fide independently existing third-party orders routed through an owned app with an account-confirmed active disclosed positive rate; Polymarket referral rewards only for authentic external referrals when the account independently cleared the lifetime-volume threshold; Polymarket Perps referral fee share only for authentic external traders within account-confirmed available invites and without volume-based invite unlocking; Binance Soft Staking yield for already-held idle non-order ETH SOL Spot inventory; LDUSDT yield only for already-required futures collateral; just-in-time BNB fee reduction only for independently justified organic Spot flow; current quote-native BTC ETH SOL promotional fee reduction without quote acquisition or extra volume; current TradFi perpetual zero-maker and reduced-taker fee overlay only for independently justified organic flow with the exact current symbol and actual fill role; USD1 WLFI holding-airdrop yield only for already-held eligible USD1; current fixed USD1 Simple Earn bonus only on at most the first 1500 independently already-held idle USD1 under a mutually exclusive balance-specific holding-airdrop comparison; U Flexible yield only for already-held eligible non-EEA U; automatic RWUSD VIP bonus only on independently required existing RWUSD; current USDT Flexible bonus yield only for independently held idle eligible USDT; current automatic USDe holding reward only for eligible USDe already independently held on Binance for at least 24 hours; Binance Square base 20 percent Write to Earn commission only on authentic external readers independently existing eligible fee-bearing trades attributed to genuinely useful content; and Binance Referral Pro base 20 percent Spot Margin and 10 percent one-year Futures fee commission only for authentic independently acquired new external users; none is deployment-ready or fully account-and-external-cost-qualified",
+  "accepted_edge_count": 19,
+  "accepted_edge_scope": "nineteen scoped structural edges: Polymarket complete-set holding yield for existing idle on-platform pUSD; Polymarket pUSD taker-fee rebates only for independently justified legitimate organic BTC ETH SOL taker flow after the direct-wallet tier is effective; Polymarket builder fees only on bona fide independently existing third-party orders routed through an owned app with an account-confirmed active disclosed positive rate; Polymarket referral rewards only for authentic external referrals when the account independently cleared the lifetime-volume threshold; Polymarket Perps referral fee share only for authentic external traders within account-confirmed available invites and without volume-based invite unlocking; Binance Soft Staking yield for already-held idle non-order ETH SOL Spot inventory; LDUSDT yield only for already-required futures collateral; just-in-time BNB fee reduction only for independently justified organic Spot flow; current quote-native BTC ETH SOL promotional fee reduction without quote acquisition or extra volume; current TradFi perpetual zero-maker and reduced-taker fee overlay only for independently justified organic flow with the exact current symbol and actual fill role; current Binance Stocks promotional trading-spread reduction only for independently justified organic direct-stock flow with the exact current order tier and realized fee; USD1 WLFI holding-airdrop yield only for already-held eligible USD1; current fixed USD1 Simple Earn bonus only on at most the first 1500 independently already-held idle USD1 under a mutually exclusive balance-specific holding-airdrop comparison; U Flexible yield only for already-held eligible non-EEA U; automatic RWUSD VIP bonus only on independently required existing RWUSD; current USDT Flexible bonus yield only for independently held idle eligible USDT; current automatic USDe holding reward only for eligible USDe already independently held on Binance for at least 24 hours; Binance Square base 20 percent Write to Earn commission only on authentic external readers independently existing eligible fee-bearing trades attributed to genuinely useful content; and Binance Referral Pro base 20 percent Spot Margin and 10 percent one-year Futures fee commission only for authentic independently acquired new external users; none is deployment-ready or fully account-and-external-cost-qualified",
   "authority": {
     "live_trading_authority": false,
     "paper_trading_authority": false,
@@ -200,8 +200,9 @@
         "account regional symbol promotional tax rebate and precision behavior",
         "fresh current official promotional pair and exact maker_or_taker role plus account and region availability",
         "owned promotional fill commission reconciliation without quote acquisition VIP chasing extra volume or double counting",
-        "current Binance VIP level Growth Track external VIP proof or Reactivation Track 2025 history and exact approved VIP 6 effective interval",
-        "exact account fee-bearing organic future volume by symbol role discount and promotion before valuing VIP 6 for Six"
+      "current Binance VIP level Growth Track external VIP proof or Reactivation Track 2025 history and exact approved VIP 6 effective interval",
+      "exact account fee-bearing organic future volume by symbol role discount and promotion before valuing VIP 6 for Six",
+      "fresh exact Binance Stocks symbol tradability jurisdiction order preview applicable fee tier and realized owned fee reconciliation"
       ],
       "canonical_artifacts": [
         {
@@ -216,15 +217,19 @@
           "path": "docs/model-research/action-value/binance-vip6-for-six-organic-fee-overlay-candidate-v1-2026-08-27.json",
           "result_sha256": "f638cb6f565c1ee18c9dc065c5f4fc6506442f00833193d23c287bdf9d8ec74d"
         },
-        {
-          "path": "docs/model-research/action-value/binance-tradfi-perpetual-current-fee-overlay-edge-v1-2026-08-27.json",
-          "result_sha256": "705cb3da615c1873623e7f5be31f0d8cf672c3db9635a5ba971407cf6e715b6c"
-        }
-      ],
-      "current_status": "three_accepted_scoped_fee_reductions_BNB_just_in_time_buffer_for_positive_standard_commission_current_quote_native_BTC_ETH_SOL_spot_promotions_zero_maker_on_FDUSD_and_U_VIP2_9_zero_taker_on_U_and_zero_maker_taker_on_USD1_plus_regular_USDC_taker_saving_0_5_bips_without_BNB_or_0_375_with_BNB_and_current_TradFi_perpetual_zero_maker_for_all_displayed_levels_plus_reduced_taker_rates_only_on_independently_justified_organic_flow_the_distinct_VIP_6_for_Six_promotion_is_a_material_unaccepted_account_gated_candidate_with_current_gross_savings_of_15_to_710_USD_per_million_USD_of_organic_flow_across_the_scoped_tier_role_and_discount_examples_but_zero_public_forward_floor_until_track_eligibility_selection_approval_effective_interval_exact_account_fees_future_organic_volume_and_all_costs_are_proved_not_deployment_ready",
+      {
+        "path": "docs/model-research/action-value/binance-tradfi-perpetual-current-fee-overlay-edge-v1-2026-08-27.json",
+        "result_sha256": "705cb3da615c1873623e7f5be31f0d8cf672c3db9635a5ba971407cf6e715b6c"
+      },
+      {
+        "path": "docs/model-research/action-value/binance-stocks-current-fee-overlay-edge-v1-2026-08-27.json",
+        "result_sha256": "d4f02be559d9267abbea28ccefb48f4886f375b359ce7274b90b6585b828160a"
+      }
+    ],
+    "current_status": "four_accepted_scoped_fee_reductions_BNB_just_in_time_buffer_for_positive_standard_commission_current_quote_native_BTC_ETH_SOL_spot_promotions_zero_maker_on_FDUSD_and_U_VIP2_9_zero_taker_on_U_and_zero_maker_taker_on_USD1_plus_regular_USDC_taker_saving_0_5_bips_without_BNB_or_0_375_with_BNB_current_TradFi_perpetual_zero_maker_for_all_displayed_levels_plus_reduced_taker_rates_and_current_Binance_Stocks_saving_5_bips_strictly_above_340_USD_or_0_18_USD_per_order_strictly_below_340_USD_until_2026_08_31T00_00_00Z_all_only_on_independently_justified_organic_flow_with_exactly_340_USD_unresolved_the_distinct_VIP_6_for_Six_promotion_is_a_material_unaccepted_account_gated_candidate_with_current_gross_savings_of_15_to_710_USD_per_million_USD_of_organic_flow_across_the_scoped_tier_role_and_discount_examples_but_zero_public_forward_floor_until_track_eligibility_selection_approval_effective_interval_exact_account_fees_future_organic_volume_and_all_costs_are_proved_not_deployment_ready",
       "market_direction_forecast_required": false,
       "mechanism": "binance_spot_fee_minimization_overlays",
-      "next_action": "for_an_otherwise_authorized_organic_order_refresh_the_exact_official_spot_pair_or_TradFi_perpetual_fee_table_once_and_apply_only_the_exact_actual_fill_role_without_conversion_or_double_counting_else_when_both_credentials_and_explicit_signed_GET_only_authority_exist_prequalify_current_Binance_VIP_tier_exact_symbol_role_commissions_2025_VIP_history_and_any_already_applied_VIP_6_adjustment_without_applying_contacting_or_disclosing_external_records_if_a_separate_user_authorized_Growth_Track_evaluation_is_requested_require_user_supplied_current_external_VIP_3_plus_evidence_and_value_only_independently_planned_fee_bearing_volume_then_require_separate_authority_for_every_application_contact_record_disclosure_borrow_trade_or_reconciliation",
+    "next_action": "for_an_otherwise_authorized_organic_order_refresh_the_exact_official_spot_pair_TradFi_perpetual_or_Binance_Stocks_fee_table_once_apply_only_the_exact_actual_fill_role_or_previewed_stock_order_tier_and_reconcile_the_owned_realized_fee_without_conversion_or_double_counting_treat_exactly_340_USD_as_unresolved_until_previewed_else_when_both_credentials_and_explicit_signed_GET_only_authority_exist_prequalify_current_Binance_VIP_tier_exact_symbol_role_commissions_2025_VIP_history_and_any_already_applied_VIP_6_adjustment_without_applying_contacting_or_disclosing_external_records_if_a_separate_user_authorized_Growth_Track_evaluation_is_requested_require_user_supplied_current_external_VIP_3_plus_evidence_and_value_only_independently_planned_fee_bearing_volume_then_require_separate_authority_for_every_application_contact_record_disclosure_borrow_trade_or_reconciliation",
       "priority_rank": 5,
       "prohibited_shortcuts": [
         "manufacturing_enlarging_churning_self_matching_or_wash_trading_volume",
@@ -240,12 +245,14 @@
         "assuming_Growth_Track_or_Reactivation_Track_eligibility_selection_approval_or_two_full_months_from_a_late_application",
         "valuing_zero_percent_loans_VIP_Earn_or_other_unbounded_VIP_6_benefits_without_exact_account_terms",
         "applying_contacting_an_account_manager_or_disclosing_external_exchange_records_without_separate_explicit_authority",
-        "assuming_a_TradFi_post_only_order_fills_or_changing_role_or_price_to_chase_zero_maker_fees",
-        "carrying_a_current_TradFi_fee_rate_beyond_its_last_refresh_or_inventing_an_unpublished_promotion_end",
-        "calling_the_capped_incremental_cost_policy_risk_free_arbitrage_or_guaranteed_profit"
-      ],
-      "retry_trigger": "otherwise_authorized_independently_positive_organic_TradFi_perpetual_or_spot_flow_with_one_fresh_exact_fee_table_or_fresh_official_fee_or_VIP_6_for_Six_term_change_or_both_SIMPLE_AI_TRADING_BINANCE_MAINNET_API_KEY_and_SIMPLE_AI_TRADING_BINANCE_MAINNET_API_SECRET_available_with_explicit_signed_GET_only_authority_for_current_tier_commission_history_and_existing_upgrade_state_or_user_supplied_external_VIP_3_plus_evidence_with_explicit_Growth_Track_evaluation_authority_before_2026_10_16T23_59_59Z",
-      "venue_scope": "binance_BTC_ETH_SOL_spot_TradFi_perpetual_and_USD_M_organic_fee_flow_USDC_FDUSD_U_USD1_quotes_USDT_to_BNB_Convert_and_VIP_6_for_Six"
+      "assuming_a_TradFi_post_only_order_fills_or_changing_role_or_price_to_chase_zero_maker_fees",
+      "carrying_a_current_TradFi_fee_rate_beyond_its_last_refresh_or_inventing_an_unpublished_promotion_end",
+      "sizing_a_stock_order_to_cross_340_USD_only_to_chase_the_fee_tier_or_assuming_either_tier_at_exactly_340_USD",
+      "carrying_the_Binance_Stocks_promotion_beyond_2026_08_31T00_00_00Z_or_ignoring_quote_conversion_spread",
+      "calling_the_capped_incremental_cost_policy_risk_free_arbitrage_or_guaranteed_profit"
+    ],
+    "retry_trigger": "otherwise_authorized_independently_positive_organic_TradFi_perpetual_spot_or_direct_stock_flow_with_one_fresh_exact_fee_table_or_fresh_official_fee_or_VIP_6_for_Six_term_change_or_both_SIMPLE_AI_TRADING_BINANCE_MAINNET_API_KEY_and_SIMPLE_AI_TRADING_BINANCE_MAINNET_API_SECRET_available_with_explicit_signed_GET_only_authority_for_current_tier_commission_history_and_existing_upgrade_state_or_user_supplied_external_VIP_3_plus_evidence_with_explicit_Growth_Track_evaluation_authority_before_2026_10_16T23_59_59Z",
+    "venue_scope": "binance_BTC_ETH_SOL_spot_TradFi_perpetual_direct_Stocks_and_USD_M_organic_fee_flow_USDC_FDUSD_U_USD1_quotes_USDT_to_BNB_Convert_and_VIP_6_for_Six"
     },
     {
       "blocking_evidence": [
@@ -1426,7 +1433,7 @@
     },
     {
       "blocking_evidence": [
-        "one separately frozen KLAC-only native stock quote paired immediately with matching perpetual and USDCUSDT books during a new active quote state",
+      "a new preregistered exhaustive current-population contract that proves the native-stock universe boundary and retains every raw quote before joining matching TradFi perpetual and USDCUSDT books",
         "exact account native-stock and perpetual commissions plus stock short eligibility and settlement rules",
         "entry exit funding basis margin liquidation stablecoin conversion and non-atomic orphan costs",
         "multiple independent complete-population positive after-cost observations across regular extended 24-hour volatility liquidity and latency states",
@@ -1442,20 +1449,21 @@
           "result_sha256": "2776ff86fddf78e7e87860c6b9500cb237fce5af908a4840d351ae0cc2eff930"
         }
       ],
-      "current_status": "materially_new_market_direction_independent_native_stock_TradFi_perpetual_parity_candidate_13_of_14_synchronized_rows_observed_zero_survived_30_bips_stress_best_NBIS_27_5414636448_bips_gross_failed_one_share_perpetual_capacity_best_capacity_valid_SNDK_14_6402997861_bips_KLAC_timed_out_so_population_incomplete_not_accepted_or_deployment_ready",
+    "current_status": "old_frozen_14_symbol_native_stock_TradFi_perpetual_population_remains_incomplete_and_unaccepted_with_13_observed_rows_zero_surviving_30_bips_stress_but_current_official_all_symbol_Stocks_stream_architecture_materially_expanded_the_discoverable_population_and_invalidated_the_KLAC_only_completeness_assumption_an_exploratory_expanded_public_screen_found_no_after_public_fee_positive_row_but_did_not_retain_a_canonical_raw_population_so_it_cannot_terminalize_the_current_universe_or_support_profit_not_deployment_ready",
       "market_direction_forecast_required": false,
       "mechanism": "binance_native_stock_USDC_TradFi_perpetual_USDT_parity",
-      "next_action": "do_not_resample_the_13_observed_rows_after_a_new_active_KLAC_quote_state_freeze_one_KLAC_only_recovery_contract_pair_its_first_public_stock_quote_with_immediate_perpetual_and_USDCUSDT_books_and_join_only_to_the_retained_parent_result",
+    "next_action": "do_not_run_a_KLAC_only_recovery_or_claim_the_old_14_symbol_set_is_current_only_after_a_material_fee_basis_or_stream_architecture_change_preregister_one_exhaustive_current-population_capture_with_a_source_bound_completion_rule_retain_raw_native_quotes_before_calculation_join_each_to_immediate_perpetual_and_USDCUSDT_books_and_charge_current_stock_perpetual_conversion_exit_funding_orphan_and_opportunity_costs",
       "priority_rank": 38,
       "prohibited_shortcuts": [
         "using_native_price_stream_last_values_as_executable_quotes",
         "treating_USDC_USDT_or_USD1_as_identical_without_executable_conversion",
-        "resampling_the_13_observed_tickers_while_recovering_KLAC",
+      "treating_the_old_14_symbol_discovery_or_one_KLAC_row_as_the_current_complete_population",
+      "promoting_or_terminalizing_the_ad_hoc_expanded_screen_without_retained_raw_population_evidence",
         "ignoring_one_share_displayed_capacity_or_non_atomic_leg_risk",
         "calling_an_incomplete_snapshot_recurrence_profit_or_an_accepted_edge",
         "accepting_the_stock_disclaimer_accessing_an_account_or_placing_orders_without_separate_explicit_authority"
       ],
-      "retry_trigger": "new_active_KLAC_native_stock_quote_state_for_one_separately_frozen_missing_row_recovery_only",
+    "retry_trigger": "material_current_stock_fee_basis_or_official_stream_architecture_change_capable_of_clearing_costs_then_one_preregistered_exhaustive_current_population_capture_with_retained_raw_evidence",
       "venue_scope": "Binance_native_US_stocks_default_USDC_quote_and_matching_USDT_TradFi_perpetuals"
     },
     {
@@ -1528,7 +1536,7 @@
       "venue_scope": "Binance_XAU_XAG_USDT_long_only_commodity_options_and_matching_TradFi_perpetuals"
     }
   ],
-  "result_sha256": "9c1d110fe26ae6875824b5c7fd68ee41998d4dd41479f3df8159faa5a67527b8",
+  "result_sha256": "8b68d4b1f13bcd3edc5f085d90aaf648c52e68c43b0354b6411b323114a57786",
   "schema_version": "structural-edge-priority-registry-v1",
   "terminal_do_not_repeat": [
     {

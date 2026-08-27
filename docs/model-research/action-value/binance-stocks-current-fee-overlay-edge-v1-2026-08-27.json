@@ -1,0 +1,101 @@
+{
+  "schema_version": "binance-stocks-current-fee-overlay-edge-v1",
+  "created_at_utc": "2026-08-27T05:54:47.866000Z",
+  "result_sha256": "d4f02be559d9267abbea28ccefb48f4886f375b359ce7274b90b6585b828160a",
+  "purpose": "bind the current Binance Stocks promotional trading spread as a market-direction-independent incremental cost overlay on independently justified organic direct-stock flow",
+  "authority": {
+    "public_read_only_research": true,
+    "browser_state": "logged_out",
+    "credentials_used": false,
+    "authenticated_requests": 0,
+    "account_state_accessed": false,
+    "disclaimer_accepted": false,
+    "orders_transfers_conversions_or_account_changes": 0,
+    "paper_or_live_trading_authority": false
+  },
+  "current_public_terms": {
+    "observed_at_utc": "2026-08-27T05:54:47.866000Z",
+    "stocks_fee_url": "https://www.binance.com/en/fee/stocks",
+    "promotion_end_utc": "2026-08-31T00:00:00Z",
+    "strictly_above_340_USD": {
+      "promotional_trading_spread_percent": "0.05",
+      "normal_trading_spread_percent": "0.10"
+    },
+    "strictly_below_340_USD": {
+      "promotional_trading_spread_USD_per_order": "0.17",
+      "normal_trading_spread_USD_per_order": "0.35"
+    },
+    "exactly_340_USD": {
+      "status": "unresolved_due_to_overlapping_inclusive_page_labels",
+      "page_label_one": "340_USD_and_above",
+      "page_label_two": "340_USD_and_below",
+      "execution_rule": "do_not_precredit_either_tier_require_current_order_preview_and_realized_owned_fee_reconciliation"
+    },
+    "baseline_cost_absences": {
+      "minimum_balance_USD": "0",
+      "account_opening_maintenance_inactivity_and_custody_fees_USD": "0",
+      "regulatory_fees_charged_to_user_USD": "0",
+      "USDC_to_USD_and_USD_to_USDC_conversion_fee_USD": "0",
+      "USDC_USD_conversion_spread": "absorbed_by_Binance"
+    },
+    "other_quote_to_USDC_conversion": "USDT_USD1_USDU_or_BNB_to_USDC_market_spread_applies",
+    "service_and_custody": "services_via_Nest_Exchange_with_Alpaca_clearing_and_custody",
+    "availability": "eligible_jurisdictions_and_account_disclaimer_required",
+    "change_risk": "fees_are_subject_to_change",
+    "refresh_rule": "refresh_the_exact_fee_page_order_preview_symbol_tradability_jurisdiction_and_account_terms_immediately_before_every_otherwise_authorized_organic_order"
+  },
+  "gross_incremental_saving": {
+    "strictly_above_340_USD": {
+      "basis_points_of_order_notional": "5",
+      "USD_per_1000000_USD_organic_notional": "500"
+    },
+    "strictly_below_340_USD": {
+      "USD_per_order": "0.18"
+    },
+    "exactly_340_USD": {
+      "precredited_saving": "0",
+      "reason": "overlapping_inclusive_labels_leave_the_applicable_tier_unresolved"
+    },
+    "baseline_zero_fee_items": "current_cost_absences_not_promotional_savings_and_never_double_counted"
+  },
+  "adjudication": {
+    "accepted_edge": true,
+    "accepted_scope": "current incremental Binance Stocks trading-spread reduction only for a direct-stock order that is independently justified and positive after every non-promotional cost without changing size timing symbol quote inventory or execution solely to chase the promotion",
+    "standalone_profitability_claim": false,
+    "deployment_ready": false,
+    "market_direction_forecast_required": false,
+    "accepted_edge_count_change": 1,
+    "status": "accepted_scoped_current_market_direction_independent_Binance_Stocks_fee_overlay_five_basis_points_saved_strictly_above_340_USD_or_0_18_USD_saved_strictly_below_340_USD_until_2026_08_31T00_00_00Z_with_exactly_340_USD_unresolved_and_account_symbol_jurisdiction_preview_realized_fee_and_all_strategy_costs_unproved"
+  },
+  "execution_gate": {
+    "requirements": [
+      "the direct-stock order is independently justified and positive after spread slippage latency taxes opportunity cost and every other non-promotional cost",
+      "the exact symbol is currently tradable for the account session and order type and the account has already independently accepted all required terms",
+      "the current fee page still exposes the retained promotion and its end has not passed",
+      "an exact current order preview resolves the applicable fee tier especially at exactly 340_USD",
+      "the owned realized fee reconciles to the preview before the saving enters strategy PnL",
+      "any USDT_USD1_USDU_or_BNB_to_USDC conversion market spread remains separately charged"
+    ],
+    "rejection_rule": "reject_the_overlay_if_the_order_is_not_independently_positive_the_promotion_is_expired_or_changed_the_tier_is_ambiguous_the_account_symbol_or_jurisdiction_is_ineligible_or_routing_size_conversion_and_other_costs_erase_the_incremental_saving"
+  },
+  "prohibited_shortcuts": [
+    "manufacturing_enlarging_churning_self_matching_or_wash_trading_volume",
+    "sizing_to_cross_340_USD_only_to_chase_the_fee_tier",
+    "assuming_either_fee_tier_at_exactly_340_USD",
+    "using_zero_regulatory_account_or_USDC_USD_conversion_fees_as_additional_promotional_savings",
+    "ignoring_market_spread_when_converting_USDT_USD1_USDU_or_BNB_to_USDC",
+    "using_the_overlay_to_rescue_an_underlying_stock_trade_that_is_not_independently_positive",
+    "assuming_fees_or_symbol_tradability_persist_beyond_the_last_source_bound_refresh_or_promotion_end",
+    "accepting_the_stock_disclaimer_accessing_an_account_transferring_funds_converting_or_placing_orders_without_separate_explicit_authority",
+    "calling_the_fee_reduction_risk_free_arbitrage_guaranteed_profit_or_a_deployment_ready_strategy"
+  ],
+  "sources": [
+    {
+      "label": "current_Binance_Stocks_fee_page_logged_out_render",
+      "url": "https://www.binance.com/en/fee/stocks",
+      "observed_at_utc": "2026-08-27T05:54:47.866000Z",
+      "rendered_semantic_snapshot_bytes": 15147,
+      "rendered_semantic_snapshot_sha256": "133a2a4dd8362ac1cab2fdfa5f76345bf0bbafe81ac680a2a60d24b01009821a"
+    }
+  ]
+}

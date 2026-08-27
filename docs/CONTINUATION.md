@@ -12,7 +12,7 @@ Development belongs only on `main`; do not create another development branch.
   code-scanning, and secret-scanning alerts. Reverify the publication commit;
   zero alerts never proves zero undisclosed vulnerabilities.
 - The repository is beta `0.1.0-beta.1`. No model has production authority or a
-  demonstrated long-lived after-all-cost edge. Eighteen narrowly scoped structural
+  demonstrated long-lived after-all-cost edge. Nineteen narrowly scoped structural
   edges are accepted: Polymarket holding yield for existing idle on-platform
   pUSD; Polymarket pUSD taker-fee rebates only for independently justified
   legitimate organic BTC/ETH/SOL taker flow after the direct-wallet tier is
@@ -21,7 +21,10 @@ Development belongs only on `main`; do not create another development branch.
   just-in-time BNB fee reduction; current quote-native BTC/ETH/SOL promotional
   fee reduction; the current TradFi perpetual zero-maker and reduced-taker fee
   overlay only for independently justified organic flow with the exact current
-  symbol and actual fill role; USD1/WLFI holding-airdrop yield; the fixed USD1 Simple Earn
+  symbol and actual fill role; the current Binance Stocks promotional trading-
+  spread reduction only for independently justified organic direct-stock flow
+  with the exact previewed order tier and realized fee; USD1/WLFI holding-airdrop
+  yield; the fixed USD1 Simple Earn
   bonus on at most the first 1,500 independently already-held idle USD1 only
   when its mutually exclusive balance-specific route beats the airdrop; U
   Flexible yield; automatic
@@ -261,7 +264,7 @@ diagnostics, not accepted edges.
   `docs/model-research/action-value/polymarket-negrisk-taker-rebate-overlay-v1-2026-08-26.json`,
   result SHA-256
   `fbbaf4ff7a7d93f8cf5d306a829ff00518d82c9802be674fdace864cea907a60`.
-  Accepted edges are now thirteen. One frozen 24-hour public capture of only the six
+  At that earlier checkpoint, accepted edges were thirteen. One frozen 24-hour public capture of only the six
   event tokens was launched under internal contract SHA-256
   `9d32e66b6d150434e4b978daafa1ea9482066230f253da4c86eb9a18504717da`.
   Before acting, verify the process and terminal artifact. Never consume its
@@ -913,7 +916,7 @@ grants paper, testnet, or live authority.
 
 The canonical structural-edge priority and retry-trigger registry is
 `docs/model-research/structural-edge-priority-registry-v1.json`, result SHA-256
-`9c1d110fe26ae6875824b5c7fd68ee41998d4dd41479f3df8159faa5a67527b8`.
+`8b68d4b1f13bcd3edc5f085d90aaf648c52e68c43b0354b6411b323114a57786`.
 Advance only the highest-ranked hypothesis whose trigger is actually satisfied.
 This prevents account-blocked or terminal screens from being rerun as if more
 snapshots could create an edge.
@@ -1836,25 +1839,38 @@ and
 result SHA-256
 `a3d474e9010b92c9454a5bc04b5a7f586656c8bc5842cecc61baaa508c2d8bc3`.
 
-Binance's newly documented native Stocks Trading WebSocket feed created a
-distinct direct-stock versus TradFi-perpetual parity path. Discovery found 45
-native symbols, 174 active TradFi perpetuals, and 15 exact ticker overlaps; the
-frozen same-USDT-quote population excluded only `SPCXUSD1` and covered the
-remaining 14. Each first native executable quote was paired immediately with
-its own perpetual book and executable `USDCUSDT` ask. Thirteen rows completed;
-KLAC emitted no quote within the frozen 30-second window. Zero observed row
-survived the 30 bps pre-account stress. NBIS had the largest gross gap at
-27.5414636448 bps but only 0.23 shares at the perpetual bid, failing the frozen
-one-share capacity. SNDK was the best capacity-valid row at 14.6402997861 bps.
-The incomplete population cannot be terminalized or promoted. Do not resample
-the 13 observed rows. After a new active KLAC quote state, freeze one KLAC-only
-recovery and join it to the retained parent result; account commission,
-eligibility, settlement, exit, funding, and non-atomic leg risk remain unbound.
-Canonical contract:
+Binance Stocks now has one accepted scoped, time-limited cost overlay. The
+current public fee page saves 5 bps versus the normal trading spread strictly
+above 340 USD, or 0.18 USD per order strictly below 340 USD, through
+`2026-08-31T00:00:00Z`. At exactly 340 USD the page labels both tiers as
+inclusive, so precredit zero until a current order preview and owned realized
+fee resolve the ambiguity. Apply the saving only to independently justified
+organic direct-stock flow; never resize, acquire quote inventory, or trade to
+chase it. The zero account, regulatory, and USDC/USD conversion fees are
+current baseline cost absences, not extra promotional savings. Account,
+jurisdiction, symbol, tax, spread, preview, and realized-fee evidence remain
+unproved, so the overlay is not deployment-ready. Canonical result:
+`docs/model-research/action-value/binance-stocks-current-fee-overlay-edge-v1-2026-08-27.json`,
+SHA-256
+`d4f02be559d9267abbea28ccefb48f4886f375b359ce7274b90b6585b828160a`.
+
+The older native-stock/TradFi-perpetual parity screen remains an incomplete
+result for its frozen 14-symbol population. Thirteen rows completed and zero
+survived the 30 bps stress; NBIS led gross at 27.5414636448 bps but failed
+one-share perpetual capacity, while SNDK was the best capacity-valid row at
+14.6402997861 bps. Current official all-symbol Stocks stream behavior
+materially expanded the discoverable population, invalidating the old
+KLAC-only completeness assumption. Do not run the KLAC-only recovery. One
+exploratory expanded public screen found no after-public-fee positive row but
+did not retain a canonical raw population, so it cannot terminalize the
+current universe or support profit. Reopen only after a material fee, basis,
+or stream-architecture change, with a preregistered exhaustive population
+boundary and raw quotes retained before every calculation. The old canonical
+contract and result remain source authority only for their frozen population:
 `docs/model-research/action-value/binance-native-stock-perpetual-parity-contract-v1.json`,
 SHA-256
-`ec5d4855c69d3afa461838b674530936a07e646394540a1a2b30ae3ddaf77db1`.
-Canonical result:
+`ec5d4855c69d3afa461838b674530936a07e646394540a1a2b30ae3ddaf77db1`,
+and
 `docs/model-research/action-value/binance-native-stock-perpetual-parity-v1-2026-08-27.json`,
 SHA-256
 `2776ff86fddf78e7e87860c6b9500cb237fce5af908a4840d351ae0cc2eff930`.
@@ -2014,9 +2030,9 @@ requires separate explicit authority. Canonical triage:
 `docs/model-research/action-value/binance-options-rfq-fixed-payoff-execution-triage-v1-2026-08-27.json`,
 result SHA-256
 `64943efe0c6ad16f8d02f78548afef38f919448d2da87c7573e825a2eeefd6b9`.
-The structural registry remains at seventeen accepted scoped edges and now has
-result SHA-256
-`9c1d110fe26ae6875824b5c7fd68ee41998d4dd41479f3df8159faa5a67527b8`.
+That checkpoint left seventeen accepted scoped edges. The current registry now
+has nineteen and result SHA-256
+`8b68d4b1f13bcd3edc5f085d90aaf648c52e68c43b0354b6411b323114a57786`.
 
 The complete Binance XAU/XAG Commodity Options versus matching TradFi
 perpetual lower-bound screen is terminal for the active 2026-08-27 and
@@ -2314,13 +2330,17 @@ not grant account, funding, order, or transaction authority.
    clearing that gate; freeze a new complete-population contract before any
    request. Installing or signing into a wallet, approvals, transfers, swaps,
    and orders retain separate authority gates.
-   For native Stocks Trading versus TradFi perpetual parity, do not resample
-   AAPL, AMZN, ASTS, AVGO, CRWD, DRAM, IREN, KORU, NBIS, NVDA, SNDK, SOXL,
-   or SQQQ. All 13 observed rows failed the 30 bps stress or one-share capacity.
-   KLAC alone timed out. After a new active KLAC stock-quote state, freeze one
-   KLAC-only public recovery, pair its first quote with immediate KLACUSDT and
-   USDCUSDT books, and join only to the retained parent result. Stock disclaimer,
-   account access, and every order remain separately gated.
+   For native Stocks Trading versus TradFi perpetual parity, the old 14-symbol
+   population remains incomplete but the current all-symbol stream architecture
+   has invalidated its KLAC-only recovery instruction. Do not run that recovery,
+   treat the old discovery set as current, or promote the unretained exploratory
+   expanded screen. Reopen only after a material fee, basis, or stream-
+   architecture change capable of clearing costs, then preregister one
+   exhaustive current-population boundary, retain every raw native quote before
+   calculation, pair each with immediate perpetual and USDCUSDT books, and
+   charge stock, perpetual, conversion, exit, funding, orphan, and opportunity
+   costs. Stock disclaimer, account access, and every order remain separately
+   gated.
    VIP Earn is a distinct conditional idle-inventory overlay, not a reason to
    manufacture trading volume, borrow, buy BNB, or retain a volatile asset.
    Its public BTC/ETH/SOL listing is now exact enough to close the displayed-

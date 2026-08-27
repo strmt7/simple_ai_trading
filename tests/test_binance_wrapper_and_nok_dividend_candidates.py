@@ -17,7 +17,7 @@ NOK = ACTION_VALUE / (
 REGISTRY = ROOT / "docs/model-research/structural-edge-priority-registry-v1.json"
 WRAPPER_HASH = "8bcf6f7bfa0cca6dab1fd6fd854a331d5ee41366ac6f9c0244b62a8f3545f475"
 NOK_HASH = "79118e0e9a32a17d0d79040746068b94e6ec545179958a29dc45f3b8771434bb"
-REGISTRY_HASH = "9c1d110fe26ae6875824b5c7fd68ee41998d4dd41479f3df8159faa5a67527b8"
+REGISTRY_HASH = "8b68d4b1f13bcd3edc5f085d90aaf648c52e68c43b0354b6411b323114a57786"
 
 
 def _load(path: Path) -> dict[str, object]:
@@ -118,7 +118,7 @@ def test_registry_adds_both_candidates_without_promoting_an_edge() -> None:
 
     assert registry["result_sha256"] == REGISTRY_HASH
     assert _canonical_hash(registry) == REGISTRY_HASH
-    assert registry["accepted_edge_count"] == 18
+    assert registry["accepted_edge_count"] == 19
     hypotheses = registry["prioritized_hypotheses"]
     assert [row["priority_rank"] for row in hypotheses] == list(range(1, 41))
     by_mechanism = {row["mechanism"]: row for row in hypotheses}

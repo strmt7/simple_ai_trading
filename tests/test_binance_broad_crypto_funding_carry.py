@@ -145,7 +145,7 @@ def test_broad_result_and_rfq_reopening_are_registered_without_edge_promotion() 
     assert rfq["decision"]["vertical_execution_architecture_materially_reopened"] is True
     assert rfq["decision"]["box_execution_architecture_reopened"] is False
     assert rfq["decision"]["accepted_edge"] is False
-    assert registry["accepted_edge_count"] == 18
+    assert registry["accepted_edge_count"] == 19
     rfq_entry = next(
         row
         for row in registry["prioritized_hypotheses"]

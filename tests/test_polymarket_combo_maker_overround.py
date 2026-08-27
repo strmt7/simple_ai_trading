@@ -16,7 +16,7 @@ RESULT = (
 )
 REGISTRY = ROOT / "docs/model-research/structural-edge-priority-registry-v1.json"
 RESULT_HASH = "416daf4d279e06a2353127e642d588a39ae85be0709c2d7498896c1d182847ee"
-REGISTRY_HASH = "9c1d110fe26ae6875824b5c7fd68ee41998d4dd41479f3df8159faa5a67527b8"
+REGISTRY_HASH = "8b68d4b1f13bcd3edc5f085d90aaf648c52e68c43b0354b6411b323114a57786"
 
 
 def test_economics_excludes_buyer_fees_from_opposite_side_proxy() -> None:
@@ -76,7 +76,7 @@ def test_canonical_result_terminalizes_broad_combo_overround() -> None:
         == registry_claimed
     )
     assert registry_claimed == REGISTRY_HASH
-    assert registry["accepted_edge_count"] == 18
+    assert registry["accepted_edge_count"] == 19
     terminal = {row["family"]: row for row in registry["terminal_do_not_repeat"]}
     assert terminal[
         "polymarket_broad_sports_combo_requester_overround_as_market_maker_edge"
