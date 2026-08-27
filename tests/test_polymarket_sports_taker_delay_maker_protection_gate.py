@@ -12,7 +12,7 @@ ARTIFACT = ROOT / "docs/model-research/action-value" / (
 REGISTRY = ROOT / "docs/model-research/structural-edge-priority-registry-v1.json"
 SOURCE = ROOT / "src/simple_ai_trading/polymarket.py"
 EXPECTED_HASH = "4847ec7828e598950da9a455170b66a529d9a5d671bfb4c37a57a36f608b9627"
-REGISTRY_HASH = "aabfdc0750a619b380929c59546d37c86306686bc2144d85c90d770f5bea6d23"
+REGISTRY_HASH = "887f062b3ac8f362283328a1baf47db29cf876da255091c9aed6ac569dd7c5d7"
 
 
 def _load(path: Path) -> dict[str, object]:

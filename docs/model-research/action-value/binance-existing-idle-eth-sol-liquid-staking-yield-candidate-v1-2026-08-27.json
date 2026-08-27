@@ -1,0 +1,119 @@
+{
+  "schema_version": "binance-existing-idle-eth-sol-liquid-staking-yield-candidate-v1",
+  "created_at_utc": "2026-08-27T04:55:00.2541197Z",
+  "result_sha256": "b7fc84d0be3968d31afeb801b7a40ee0d382724b11281c28733a8145d12ee035",
+  "purpose": "adjudicate the current public ETH and SOL liquid-staking yield as a market-direction-independent overlay only on identical native-token inventory already held idle for independent reasons",
+  "authority": {
+    "public_read_only_research": true,
+    "credentials_used": false,
+    "authenticated_requests": 0,
+    "account_state_accessed": false,
+    "subscriptions_redemptions_conversions_transfers_orders_or_quotes": 0,
+    "paper_or_live_trading_authority": false
+  },
+  "public_current_snapshot": {
+    "capture_method": "Chrome logged-out DOM accessibility snapshot",
+    "observed_at_utc": "2026-08-27T04:55:00.2541197Z",
+    "logged_out_evidence": [
+      "Log In button visible",
+      "Sign Up button visible"
+    ],
+    "ETH": {
+      "source_url": "https://www.binance.com/en/earn/eth",
+      "liquid_staking_product": "ETH Staking",
+      "displayed_apr_percent": "2.20",
+      "displayed_duration": "Locked",
+      "displayed_principal_protected": true,
+      "soft_staking_comparator_apr_percent": "0.50",
+      "gross_incremental_apr_percentage_points": "1.70",
+      "gross_incremental_apr_bps": "170"
+    },
+    "SOL": {
+      "source_url": "https://www.binance.com/en/earn/sol",
+      "liquid_staking_product": "SOL Staking",
+      "displayed_apr_percent": "4.65",
+      "displayed_duration": "Locked",
+      "displayed_principal_protected": true,
+      "soft_staking_comparator_apr_percent": "0.50",
+      "gross_incremental_apr_percentage_points": "4.15",
+      "gross_incremental_apr_bps": "415"
+    },
+    "displayed_rate_rule": "APR is variable and estimated in cryptocurrency rather than a guaranteed fiat return"
+  },
+  "official_mechanism": {
+    "guide_url": "https://academy.binance.com/ur-PK/articles/a-beginner-s-guide-to-binance-earn",
+    "guide_updated_date": "2026-06-08",
+    "ETH_receipt_token": "WBETH",
+    "SOL_receipt_token": "BNSOL",
+    "receipt_tokens_represent_principal_and_accrued_staking_rewards": true,
+    "receipt_tokens_advertised_transferable_and_usable_outside_Binance": true,
+    "redemption_uses_current_conversion_ratio": true,
+    "BNSOL_reference_url": "https://academy.binance.com/ur-PK/glossary/bnsol",
+    "BNSOL_conversion_ratio_generally_refreshes_every_two_days": true,
+    "BNSOL_redemption_may_take_days": true
+  },
+  "cost_budget_sensitivity": {
+    "identity": "maximum_total_cost_bps_equals_gross_incremental_apr_bps_times_holding_days_divided_by_365",
+    "not_a_profit_claim": true,
+    "ETH": {
+      "30_days": "13.97260274",
+      "60_days": "27.94520548",
+      "90_days": "41.91780822",
+      "180_days": "83.83561644",
+      "365_days": "170.00000000",
+      "days_to_recover_20_bps": "42.94117647",
+      "days_to_recover_50_bps": "107.35294118",
+      "days_to_recover_100_bps": "214.70588235"
+    },
+    "SOL": {
+      "30_days": "34.10958904",
+      "60_days": "68.21917808",
+      "90_days": "102.32876712",
+      "180_days": "204.65753425",
+      "365_days": "415.00000000",
+      "days_to_recover_20_bps": "17.59036145",
+      "days_to_recover_50_bps": "43.97590361",
+      "days_to_recover_100_bps": "87.95180723"
+    }
+  },
+  "blocking_evidence": [
+    "same-account current stakeable and redeemable state minimum maximum quota commission fee conversion ratio and redemption period",
+    "exact owned idle ETH or SOL balance not needed for orders collateral withdrawal settlement or prompt liquidity",
+    "owned subscription conversion reward and redemption lineage",
+    "all conversion spread slippage delay liquidity custody tax support and alternative-yield costs",
+    "proof that displayed principal protection covers the exact admitted product and does not eliminate receipt-token conversion redemption or venue risk"
+  ],
+  "economic_gate": {
+    "accepted_scope_if_proved": "incremental native-token yield only on identical ETH or SOL already held idle for independent reasons when exact liquid-staking net value strictly exceeds every available same-account alternative",
+    "net_identity": "native_token_staking_rewards_minus_soft_staking_or_best_available_alternative_rewards_minus_conversion_redemption_spread_slippage_delay_liquidity_custody_tax_support_and_operational_costs",
+    "strict_positive_gate": "every admitted interval and the aggregate must remain strictly positive in the native principal unit after all costs",
+    "public_forward_net_profit_floor": "0",
+    "volatile_asset_rule": "do not buy retain or directionally hedge ETH or SOL solely for this yield; any hedge is a separate strategy with full funding basis margin liquidation and execution costs"
+  },
+  "distinctness": {
+    "from_Soft_Staking": "subscription converts native inventory into a liquid staking receipt token and advertises materially higher staking APR rather than automatic yield on an unchanged Spot balance",
+    "from_conversion_parity": "this candidate values native-token reward accrual on independently idle inventory and does not assume or trade an LST market discount",
+    "from_delta_neutral_funding_stack": "this candidate has no short perpetual leg and makes no claim about fiat-denominated return"
+  },
+  "signed_read_only_retry_contract": {
+    "trigger": "both designated ephemeral Binance mainnet credentials are available with explicit GET-only account-evidence authority",
+    "permitted_scope": "one frozen ETH and SOL staking quota conversion-rate reward and operation-history prequalification using endpoints already classified signed read-only by the official developer contract",
+    "stop_condition": "stop before staking redemption transfer trade order borrow or any account mutation",
+    "separate_mutation_authority_required": true
+  },
+  "adjudication": {
+    "accepted_edge": false,
+    "profitability_claim": false,
+    "deployment_ready": false,
+    "market_direction_forecast_required": false,
+    "status": "materially_stronger_direction_independent_existing_idle_native_token_yield_candidate_public_gross_uplift_is_170_bps_ETH_and_415_bps_SOL_but_exact_account_cost_redemption_and_owned_reward_evidence_are_unproved"
+  },
+  "prohibited_shortcuts": [
+    "buying_or_retaining_ETH_or_SOL_for_the_reward",
+    "calling_displayed_variable_APR_an_exact_future_or_owned_rate",
+    "calling_a_principal_protected_label_elimination_of_receipt_token_conversion_redemption_or_venue_risk",
+    "crediting_the_public_gross_uplift_before_exact_costs_and_alternative_yield",
+    "using_WBETH_or_BNSOL_in_DeFi_or_as_collateral_without_a_separate_full_risk_contract",
+    "staking_redeeming_converting_transferring_or_trading_without_separate_explicit_authority"
+  ]
+}

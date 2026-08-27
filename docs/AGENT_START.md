@@ -170,6 +170,18 @@ safety gate, blocks Stop, or submits an order.
   state-changing signed `GET` and needs separate authority. Canonical gate:
   `binance-soft-staking-idle-spot-yield-gate-v1-2026-08-26.json`, SHA-256
   `9ded119650ed1679795cca8616935015bc8bf48850bfcc509ba28486e94bd9a7`.
+- The current logged-out Binance Earn pages expose a materially stronger but
+  still unaccepted liquid-staking lead for independently idle inventory: ETH
+  Staking displays 2.20% and SOL Staking 4.65%, respectively 170 and 415 bips
+  above the 0.50% Soft Staking comparator. Those uplifts can absorb at most
+  13.97260274/34.10958904 bips over 30 days or 41.91780822/102.32876712 bips
+  over 90 days before becoming nonpositive. Exact same-account conversion
+  ratio, quota, commission, redemption period, owned reward lineage, delay,
+  liquidity, and alternative-yield costs remain absent, so the public net
+  profit floor is zero. Do not stake or redeem. Canonical candidate:
+  `binance-existing-idle-eth-sol-liquid-staking-yield-candidate-v1-2026-08-27.json`,
+  SHA-256
+  `b7fc84d0be3968d31afeb801b7a40ee0d382724b11281c28733a8145d12ee035`.
 - The adjacent delta-neutral ETH/SOL Soft Staking plus short-USDT-perpetual
   stack is terminal under the retained 500-row funding histories. The first
   local calculation correctly stopped after discovering that the response had
@@ -202,6 +214,19 @@ safety gate, blocks Stop, or submits an order.
   On-Chain Yields headline: Binance classifies it as high risk, makes rewards
   protocol-dependent and unguaranteed, and says protocol failure can lose
   assets. Do not trade a higher headline for an unbound principal-loss path.
+- The current logged-out VIP Earn page now exposes exact BTC, ETH, and SOL APR
+  ranges, so absence of credentials no longer justifies repeating that public
+  lookup. Zero in-scope row has positive displayed maximum uplift: BTC VIP
+  `0.25%~0.41%` equals the best visible non-VIP maximum, ETH VIP
+  `1.70%~1.90%` trails ETH Staking at 2.20%, and SOL VIP `3.78%~4.50%`
+  trails SOL Staking at 4.65%. A 2025 locked-products PDF is 441 days before
+  the 2026-08-12 VIP Earn launch and is inadmissible as current evidence unless
+  a current official page adopts it. Reopen only on a material current terms
+  change or explicit signed GET-only account evidence. Canonical terminal
+  snapshot:
+  `binance-vip-earn-public-btc-eth-sol-comparator-terminal-v1-2026-08-27.json`,
+  SHA-256
+  `cd41cad8e0053b9d41ddda64fd4ad8a86a163307ddcc9fabc805c56b9c5028c9`.
 - The 2026-08-25 target-free structural-parity screens found no accepted edge.
   Polymarket had zero gross-positive paths across 22 fixed BTC/ETH/SOL
   negative-risk events and zero gross-positive logical-implication bundles
@@ -1210,6 +1235,8 @@ safety gate, blocks Stop, or submits an order.
 | Post-observation maker window | `docs/model-research/action-value/polymarket-post-observation-maker-window-gate-v1-2026-08-26.json` |
 | LDUSDT margin yield | `docs/model-research/action-value/binance-ldusdt-margin-yield-gate-v1-2026-08-26.json` |
 | Terminal ETH/SOL Soft Staking delta-neutral funding stack | `docs/model-research/action-value/binance-soft-staking-delta-neutral-funding-stack-terminal-v1-2026-08-27.json` |
+| Existing-idle ETH/SOL liquid-staking yield candidate | `docs/model-research/action-value/binance-existing-idle-eth-sol-liquid-staking-yield-candidate-v1-2026-08-27.json` |
+| Terminal public BTC/ETH/SOL VIP Earn comparator | `docs/model-research/action-value/binance-vip-earn-public-btc-eth-sol-comparator-terminal-v1-2026-08-27.json` |
 | USD1 holding airdrop and active Simple Earn allocation | `docs/model-research/action-value/binance-usd1-simple-earn-activation-refresh-v1-2026-08-27.json` |
 | Lite Loan and fixed-bonus stablecoin yield curve | `docs/model-research/action-value/binance-lite-loan-stablecoin-yield-curve-v1-2026-08-27.json` |
 | U Flexible idle-holding yield | `docs/model-research/action-value/binance-u-flexible-idle-holding-yield-gate-v1-2026-08-26.json` |

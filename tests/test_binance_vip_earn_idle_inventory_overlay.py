@@ -13,7 +13,8 @@ ARTIFACT = (
 )
 REGISTRY = ROOT / "docs/model-research/structural-edge-priority-registry-v1.json"
 ARTIFACT_HASH = "6c83a950c856202c511b7a7717be3e154cfe8aeed78b84bc89378c7d017ec692"
-REGISTRY_HASH = "aabfdc0750a619b380929c59546d37c86306686bc2144d85c90d770f5bea6d23"
+PUBLIC_TERMINAL_HASH = "cd41cad8e0053b9d41ddda64fd4ad8a86a163307ddcc9fabc805c56b9c5028c9"
+REGISTRY_HASH = "887f062b3ac8f362283328a1baf47db29cf876da255091c9aed6ac569dd7c5d7"
 
 
 def _load(path: Path) -> dict[str, object]:
@@ -70,5 +71,9 @@ def test_registry_adds_only_the_unaccepted_conditional_overlay() -> None:
         {
             "path": "docs/model-research/action-value/binance-vip-earn-idle-inventory-overlay-candidate-v1-2026-08-27.json",
             "result_sha256": ARTIFACT_HASH,
-        }
+        },
+        {
+            "path": "docs/model-research/action-value/binance-vip-earn-public-btc-eth-sol-comparator-terminal-v1-2026-08-27.json",
+            "result_sha256": PUBLIC_TERMINAL_HASH,
+        },
     ]
