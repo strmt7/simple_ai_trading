@@ -14,7 +14,7 @@ REGISTRY = ROOT / "docs/model-research/structural-edge-priority-registry-v1.json
 IMPLEMENTATION = ROOT / "tools/screen_binance_native_stock_perpetual_parity.py"
 CONTRACT_HASH = "ec5d4855c69d3afa461838b674530936a07e646394540a1a2b30ae3ddaf77db1"
 RESULT_HASH = "2776ff86fddf78e7e87860c6b9500cb237fce5af908a4840d351ae0cc2eff930"
-REGISTRY_HASH = "9c1d110fe26ae6875824b5c7fd68ee41998d4dd41479f3df8159faa5a67527b8"
+REGISTRY_HASH = "8b68d4b1f13bcd3edc5f085d90aaf648c52e68c43b0354b6411b323114a57786"
 
 
 def _load(path: Path) -> dict[str, object]:
@@ -125,12 +125,12 @@ def test_observed_rows_fail_stress_or_one_share_capacity() -> None:
     assert adjudication["public_after_cost_profit_floor_USDC"] == "0"
 
 
-def test_registry_adds_unaccepted_missing_row_recovery_only() -> None:
+def test_registry_retires_stale_missing_row_recovery() -> None:
     registry = _load(REGISTRY)
 
     assert registry["result_sha256"] == REGISTRY_HASH
     assert _canonical_hash(registry, "result_sha256") == REGISTRY_HASH
-    assert registry["accepted_edge_count"] == 18
+    assert registry["accepted_edge_count"] == 19
     hypotheses = registry["prioritized_hypotheses"]
     assert [row["priority_rank"] for row in hypotheses] == list(range(1, 41))
     hypothesis = next(
@@ -139,8 +139,8 @@ def test_registry_adds_unaccepted_missing_row_recovery_only() -> None:
         if row["mechanism"]
         == "binance_native_stock_USDC_TradFi_perpetual_USDT_parity"
     )
-    assert hypothesis["retry_trigger"] == (
-        "new_active_KLAC_native_stock_quote_state_for_one_separately_frozen_"
-        "missing_row_recovery_only"
+    assert hypothesis["retry_trigger"].startswith(
+        "material_current_stock_fee_basis_or_official_stream_architecture_change"
     )
-    assert "do_not_resample_the_13_observed_rows" in hypothesis["next_action"]
+    assert "do_not_run_a_KLAC_only_recovery" in hypothesis["next_action"]
+    assert "retained_raw_evidence" in hypothesis["retry_trigger"]

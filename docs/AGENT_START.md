@@ -12,7 +12,7 @@ operating contract. Historical handoff text is archived under
 | Development branch | `main` only |
 | Binance | BTC, ETH, and SOL; paper or testnet/Demo only |
 | Polymarket | Independent BTC 5-minute/15-minute research; disabled by default |
-| Accepted edges | Eighteen scoped structural edges: Polymarket complete-set holding yield for existing idle on-platform pUSD; Polymarket pUSD taker-fee rebates only for independently justified legitimate organic BTC/ETH/SOL taker flow after the direct-wallet tier is effective; Polymarket builder fees only on bona fide independently existing third-party orders routed through an owned app with an account-confirmed active disclosed positive rate; Polymarket referral rewards only for authentic external referrals when the account already independently cleared the lifetime-volume threshold; Polymarket Perps referral fee share only for authentic external traders within account-confirmed available invites and without volume-based invite unlocking; Binance Soft Staking yield for already-held idle non-order ETH/SOL Spot inventory; LDUSDT yield only for already-required futures collateral; just-in-time BNB fee reduction only for independently justified organic Spot flow; current quote-native BTC/ETH/SOL promotional fee reduction without quote acquisition or extra volume; the current TradFi perpetual zero-maker and reduced-taker fee overlay only for independently justified organic flow with the exact current symbol and actual fill role; USD1/WLFI holding-airdrop yield only for already-held eligible USD1; the fixed USD1 Simple Earn bonus only on the first 1,500 independently already-held idle USD1 when its mutually exclusive balance-specific route beats the holding airdrop after all transition and opportunity costs; U Flexible yield only for already-held eligible non-EEA U; the automatic RWUSD VIP bonus only on independently required existing RWUSD; current USDT Flexible bonus yield only for independently held idle eligible USDT; the current automatic USDe holding reward only for eligible USDe already independently held on Binance for at least 24 hours; Binance Square's base 20% Write to Earn commission only on authentic external readers' independently existing eligible fee-bearing trades attributed to genuinely useful content; and Binance Referral Pro's base 20% Spot/Margin and 10% one-year Futures fee commission only for authentic independently acquired new external users. None is deployment-ready or fully account-and-external-cost-qualified. |
+| Accepted edges | Nineteen scoped structural edges: Polymarket complete-set holding yield for existing idle on-platform pUSD; Polymarket pUSD taker-fee rebates only for independently justified legitimate organic BTC/ETH/SOL taker flow after the direct-wallet tier is effective; Polymarket builder fees only on bona fide independently existing third-party orders routed through an owned app with an account-confirmed active disclosed positive rate; Polymarket referral rewards only for authentic external referrals when the account already independently cleared the lifetime-volume threshold; Polymarket Perps referral fee share only for authentic external traders within account-confirmed available invites and without volume-based invite unlocking; Binance Soft Staking yield for already-held idle non-order ETH/SOL Spot inventory; LDUSDT yield only for already-required futures collateral; just-in-time BNB fee reduction only for independently justified organic Spot flow; current quote-native BTC/ETH/SOL promotional fee reduction without quote acquisition or extra volume; the current TradFi perpetual zero-maker and reduced-taker fee overlay only for independently justified organic flow with the exact current symbol and actual fill role; the current Binance Stocks promotional trading-spread reduction only for independently justified organic direct-stock flow with the exact previewed order tier and realized fee; USD1/WLFI holding-airdrop yield only for already-held eligible USD1; the fixed USD1 Simple Earn bonus only on the first 1,500 independently already-held idle USD1 when its mutually exclusive balance-specific route beats the holding airdrop after all transition and opportunity costs; U Flexible yield only for already-held eligible non-EEA U; the automatic RWUSD VIP bonus only on independently required existing RWUSD; current USDT Flexible bonus yield only for independently held idle eligible USDT; the current automatic USDe holding reward only for eligible USDe already independently held on Binance for at least 24 hours; Binance Square's base 20% Write to Earn commission only on authentic external readers' independently existing eligible fee-bearing trades attributed to genuinely useful content; and Binance Referral Pro's base 20% Spot/Margin and 10% one-year Futures fee commission only for authentic independently acquired new external users. None is deployment-ready or fully account-and-external-cost-qualified. |
 | Live-money authority | None |
 | Historical cutoff | `2026-08-14T00:00:00Z` |
 
@@ -1166,18 +1166,29 @@ safety gate, blocks Stop, or submits an order.
   `2f08c6b0a8509d9d51db7716d5dde499c3a1937b68eafe77b2970e4da8311b59`;
   and `binance-alpha-ondo-perpetual-parity-v1-2026-08-27.json`, result SHA-256
   `a3d474e9010b92c9454a5bc04b5a7f586656c8bc5842cecc61baaa508c2d8bc3`.
-- Binance's new public native Stocks Trading quote streams create a direct
-  stock-versus-TradFi-perpetual parity path. A frozen same-USDT-quote screen
-  covered all 14 discovered overlaps. Thirteen completed and zero survived the
-  30 bps stress; NBIS led gross at 27.5414636448 bps but failed one-share
-  perpetual capacity, while SNDK was the best capacity-valid row at
-  14.6402997861 bps. KLAC alone timed out, so the population is incomplete and
-  unaccepted. Do not resample the 13. After a new active KLAC quote state,
-  freeze one KLAC-only recovery and join it to the parent. Canonical contract:
-  `binance-native-stock-perpetual-parity-contract-v1.json`, SHA-256
-  `ec5d4855c69d3afa461838b674530936a07e646394540a1a2b30ae3ddaf77db1`.
-  Canonical result: `binance-native-stock-perpetual-parity-v1-2026-08-27.json`,
-  SHA-256
+- Binance Stocks has one accepted scoped, time-limited cost overlay. The current
+  public fee page saves 5 bps versus the normal trading spread strictly above
+  340 USD, or 0.18 USD per order strictly below 340 USD, through
+  `2026-08-31T00:00:00Z`. The page labels both tiers as inclusive at exactly
+  340 USD, so precredit zero there until a current order preview and owned
+  realized fee resolve the ambiguity. Apply the saving only to independently
+  justified organic direct-stock flow; never resize, acquire quote inventory,
+  or trade to chase it. Account, jurisdiction, symbol, tax, spread, preview,
+  and realized-fee evidence remain unproved, so it is not deployment-ready.
+  Canonical result:
+  `binance-stocks-current-fee-overlay-edge-v1-2026-08-27.json`, SHA-256
+  `d4f02be559d9267abbea28ccefb48f4886f375b359ce7274b90b6585b828160a`.
+- The older native-stock/TradFi-perpetual parity screen remains an incomplete
+  result for its frozen 14-symbol population: 13 rows completed and zero
+  survived 30 bps stress. Current official all-symbol Stocks stream behavior
+  materially expanded the discoverable population, so the old KLAC-only
+  recovery instruction is invalid and must not run. One exploratory expanded
+  public screen found no after-public-fee positive row but did not retain a
+  canonical raw population, so it cannot terminalize the current universe or
+  support profit. Reopen only after a material fee, basis, or stream-
+  architecture change, using a preregistered exhaustive population boundary
+  and retaining raw quotes before every calculation. The old canonical result
+  remains `binance-native-stock-perpetual-parity-v1-2026-08-27.json`, SHA-256
   `2776ff86fddf78e7e87860c6b9500cb237fce5af908a4840d351ae0cc2eff930`.
 - A new primary paper materially supports a maker-first/taker-hedge complete-set
   execution design, but the strict public-fill reconstruction rejects a stable
@@ -1307,6 +1318,7 @@ safety gate, blocks Stop, or submits an order.
 | Accepted USD1 Simple Earn versus holding-airdrop allocation | `docs/model-research/action-value/binance-usd1-simple-earn-versus-holding-airdrop-allocation-edge-v1-2026-08-27.json` |
 | First-USD-deposit SPCXB reward hedge candidate | `docs/model-research/action-value/binance-first-usd-deposit-spcxb-reward-hedge-candidate-v1-2026-08-27.json` |
 | Accepted current TradFi perpetual fee overlay | `docs/model-research/action-value/binance-tradfi-perpetual-current-fee-overlay-edge-v1-2026-08-27.json` |
+| Accepted current Binance Stocks fee overlay | `docs/model-research/action-value/binance-stocks-current-fee-overlay-edge-v1-2026-08-27.json` |
 | Binance VIP 6 for Six organic-fee overlay candidate | `docs/model-research/action-value/binance-vip6-for-six-organic-fee-overlay-candidate-v1-2026-08-27.json` |
 | Lite Loan and fixed-bonus stablecoin yield curve | `docs/model-research/action-value/binance-lite-loan-stablecoin-yield-curve-v1-2026-08-27.json` |
 | U Flexible idle-holding yield | `docs/model-research/action-value/binance-u-flexible-idle-holding-yield-gate-v1-2026-08-26.json` |
