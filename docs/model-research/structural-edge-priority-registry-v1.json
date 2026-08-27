@@ -1226,8 +1226,8 @@
     },
     {
       "blocking_evidence": [
-        "one minimum-notional nonexecuting executable Ondo buy quote with exact output fee gas slippage expiry and minimum-receive fields from an approved configured read-only quote capability",
-        "one synchronized displayed-depth CEX batch for the exact multiplier-normalized share quantity only after the quote retains conservative headroom",
+        "a material Binance Alpha fee execution or book architecture change capable of exceeding the frozen 20 bips pre-account stress",
+        "exact account Alpha commission network settlement and perpetual commission evidence before any new recurrence design",
         "exact wrapper transfer conversion settlement short availability funding entry exit fee gas basis and non-atomic orphan costs",
         "multiple independent positive worst-episode after-cost observations across regular postmarket high-volatility low-liquidity and latency-stress states",
         "separate account eligibility jurisdiction and paper execution authority before any owned order or fill study"
@@ -1236,12 +1236,20 @@
         {
           "path": "docs/model-research/action-value/binance-ondo-bstock-stock-perpetual-wrapper-parity-candidate-v1-2026-08-27.json",
           "result_sha256": "8bcf6f7bfa0cca6dab1fd6fd854a331d5ee41366ac6f9c0244b62a8f3545f475"
+        },
+        {
+          "path": "docs/model-research/action-value/binance-alpha-ondo-perpetual-parity-contract-v1.json",
+          "result_sha256": "2f08c6b0a8509d9d51db7716d5dde499c3a1937b68eafe77b2970e4da8311b59"
+        },
+        {
+          "path": "docs/model-research/action-value/binance-alpha-ondo-perpetual-parity-v1-2026-08-27.json",
+          "result_sha256": "a3d474e9010b92c9454a5bc04b5a7f586656c8bc5842cecc61baaa508c2d8bc3"
         }
       ],
-      "current_status": "materially_new_market_direction_independent_exact_multiplier_normalized_Ondo_bStock_stock_perpetual_wrapper_parity_candidate_60_three_way_overlaps_and_10_point_gaps_at_least_10_bips_but_the_Ondo_value_is_a_nonexecuting_on_chain_reference_not_an_ask_and_no_quote_after_cost_recurrence_or_authority_is_proved_not_accepted_or_deployment_ready",
+      "current_status": "public_Binance_Alpha_full_depth_closed_the_Ondo_executable_looking_ask_gap_but_the_frozen_complete_four_contract_screen_had_zero_of_four_positive_after_the_20_bips_pre_account_stress_best_MSTR_was_only_7_2132724213_bips_gross_before_every_account_settlement_funding_exit_and_leg_risk_cost_not_accepted_or_deployment_ready",
       "market_direction_forecast_required": false,
       "mechanism": "binance_Ondo_bStock_stock_perpetual_exact_multiplier_wrapper_parity",
-      "next_action": "only_after_an_approved_configured_read_only_baw_quote_capability_or_documented_public_unauthenticated_executable_quote_endpoint_exists_request_one_minimum_notional_nonexecuting_Ondo_buy_quote_for_the_highest_current_normalized_candidate_then_capture_one_CEX_depth_batch_only_if_exact_all_cost_headroom_remains",
+      "next_action": "do_not_repeat_the_current_four_contract_public_book_screen_reopen_only_after_a_material_Alpha_fee_execution_or_book_architecture_change_then_freeze_a_new_complete_population_contract_before_any_requests",
       "priority_rank": 35,
       "prohibited_shortcuts": [
         "treating_Ondo_tokenInfo_price_referencePrice_or_oracle_value_as_an_executable_ask",
@@ -1249,10 +1257,11 @@
         "ignoring_sharesMultiplier_UI_quantity_or_wrapper_conversion_semantics",
         "assuming_Ondo_bStock_and_perpetual_legs_are_atomic_or_freely_convertible",
         "installing_signing_into_or_mutating_a_wallet_without_separate_authority",
-        "calling_one_point_screen_recurrence_profit_or_an_accepted_edge"
+        "calling_one_point_screen_recurrence_profit_or_an_accepted_edge",
+        "repeating_the_four_contract_Alpha_full_depth_screen_without_a_material_fee_execution_or_book_architecture_change"
       ],
-      "retry_trigger": "approved_configured_read_only_baw_market_order_quote_capability_or_a_documented_public_unauthenticated_executable_Ondo_quote_endpoint",
-      "venue_scope": "Binance_Web3_Ondo_BSC_wrapper_Binance_bStock_spot_and_matching_stock_TradFi_perpetual"
+      "retry_trigger": "material_Binance_Alpha_fee_execution_or_book_architecture_change_capable_of_exceeding_the_frozen_20_bips_pre_account_stress",
+      "venue_scope": "Binance_Alpha_Ondo_BSC_wrapper_and_matching_Binance_stock_TradFi_perpetual"
     },
     {
       "blocking_evidence": [
@@ -1316,9 +1325,14 @@
       "venue_scope": "Binance_BTC_ETH_Options_predefined_same_expiry_two_leg_call_and_put_spreads"
     }
   ],
-  "result_sha256": "36556fa1dbb792bf99c94c1b5cea039a822fb4f58ac476cc23cd70a25dd587c8",
+  "result_sha256": "784a928804196c4fd6719bcc8dd71a539738041537f24689ca19e186083a77d9",
   "schema_version": "structural-edge-priority-registry-v1",
   "terminal_do_not_repeat": [
+    {
+      "canonical_result_sha256": "a3d474e9010b92c9454a5bc04b5a7f586656c8bc5842cecc61baaa508c2d8bc3",
+      "family": "binance_alpha_ondo_perpetual_current_four_contract_book_snapshot",
+      "reason": "zero_of_four_active_transferable_exact_contract_rows_survived_the_frozen_20_bips_pre_account_stress_best_MSTR_was_7_2132724213_bips_gross_before_commissions_settlement_funding_exit_basis_and_non_atomic_leg_risk"
+    },
     {
       "canonical_result_sha256": "9d7a2c61ae29cb6b29fd3f417ed3e40f1ea08fb2cb6729d20372648abdc448e2",
       "family": "polymarket_negative_risk_structural_parity_isolated_snapshot_contract",
@@ -1460,6 +1474,6 @@
       "reason": "the_frozen_unseen_rank_251_to_1000_validation_used_explicit_win_partial_loss_statuses_across_6264_resolved_YES_positions_162_wallets_and_77_dates_but_the_opposite_side_gross_spread_proxy_lost_73368_711836_pUSD_before_maker_costs_and_was_negative_in_the_PNL_cohort_training_test_and_both_wallet_and_date_cluster_lower_bounds_do_not_repeat_leaderboard_mining"
     }
   ],
-  "updated_at_utc": "2026-08-27T02:15:21.9543024Z",
+  "updated_at_utc": "2026-08-27T02:36:16Z",
   "usage_rule": "advance_the_highest_ranked_hypothesis_whose_retry_trigger_is_satisfied_otherwise_do_not_repeat_a_blocked_or_terminal_screen"
 }

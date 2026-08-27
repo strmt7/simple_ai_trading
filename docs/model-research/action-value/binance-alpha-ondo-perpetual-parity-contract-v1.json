@@ -1,0 +1,112 @@
+{
+  "schema_version": "binance-alpha-ondo-perpetual-parity-contract-v1",
+  "status": "frozen_before_four_contract_validation_book_capture",
+  "frozen_at_utc": "2026-08-27T02:31:08.3936473Z",
+  "contract_sha256": "2f08c6b0a8509d9d51db7716d5dde499c3a1937b68eafe77b2970e4da8311b59",
+  "purpose": "test whether Binance Alpha public full depth supplies an executable-looking same-contract Ondo buy leg with enough current stock-perpetual bid headroom to advance the existing market-direction-independent wrapper-parity candidate",
+  "authority": {
+    "research_only": true,
+    "public_unauthenticated_GET_sources_only": true,
+    "credentials_permitted": false,
+    "account_state_permitted": false,
+    "orders_transfers_quotes_or_wallet_actions_permitted": false,
+    "live_or_paper_trading_authority": false,
+    "profitability_or_accepted_edge_claim_permitted": false
+  },
+  "discovery_boundary_already_observed": {
+    "official_alpha_token_list_response_sha256": "5198f388e0d611b34fd047b5c267f829076a822b04f989b501e3a2dd199819a7",
+    "official_alpha_exchange_info_response_sha256": "7d2d4c62d9114b849a0e3288bb20e8b5adcb15ed72edf181aae652c9509daa20",
+    "discovery_only_MSTR_book_response_sha256": "ecab50ff1a9c374e5b59056f8b6228c8d1cd4dfa68656096cf64e657e350d3df",
+    "discovery_only_MSTR_gross_gap_bps": "4.010909674314134445692283",
+    "selection_rule": "validate the complete four-row population of active transferable Binance Alpha Ondo stock wrappers observed before freezing; do not select by the discovery gap"
+  },
+  "frozen_universe": [
+    {
+      "ticker": "CRCL",
+      "alpha_symbol": "ALPHA_742USDT",
+      "token_name": "Circle Internet Group (Ondo)",
+      "contract_address": "0x992879cd8ce0c312d98648875b5a8d6d042cbf34",
+      "chain_id": "56",
+      "perpetual_symbol": "CRCLUSDT"
+    },
+    {
+      "ticker": "TSLA",
+      "alpha_symbol": "ALPHA_745USDT",
+      "token_name": "Tesla (Ondo)",
+      "contract_address": "0x2494b603319d4d9f9715c9f4496d9e0364b59d93",
+      "chain_id": "56",
+      "perpetual_symbol": "TSLAUSDT"
+    },
+    {
+      "ticker": "COIN",
+      "alpha_symbol": "ALPHA_781USDT",
+      "token_name": "Coinbase (Ondo)",
+      "contract_address": "0xf8589b526fdd65f7f301c605a6e04f0f1b4b3620",
+      "chain_id": "56",
+      "perpetual_symbol": "COINUSDT"
+    },
+    {
+      "ticker": "MSTR",
+      "alpha_symbol": "ALPHA_787USDT",
+      "token_name": "MicroStrategy (Ondo)",
+      "contract_address": "0x7313ea16493b2f55054df0131a3a14b043ec8992",
+      "chain_id": "56",
+      "perpetual_symbol": "MSTRUSDT"
+    }
+  ],
+  "capture": {
+    "alpha_full_depth_endpoint": "https://www.binance.com/bapi/defi/v1/public/alpha-trade/fullDepth",
+    "alpha_exchange_info_endpoint": "https://www.binance.com/bapi/defi/v1/public/alpha-trade/get-exchange-info",
+    "futures_exchange_info_endpoint": "https://fapi.binance.com/fapi/v1/exchangeInfo",
+    "futures_book_ticker_endpoint": "https://fapi.binance.com/fapi/v1/ticker/bookTicker",
+    "request_plan": "one Alpha exchange-info population, one Futures exchange-info population, one Futures book-ticker population, then exactly one Alpha full-depth response for each frozen symbol",
+    "stop_on_first_http_or_identity_error": true,
+    "retry_permitted": false,
+    "durable_raw_before_calculation": true,
+    "maximum_http_requests": 7
+  },
+  "economics": {
+    "numeric_type": "decimal_never_binary_float",
+    "direction": "buy_exact_Ondo_wrapper_on_Binance_Alpha_and_short_equal_underlying_share_quantity_on_the_matching_Binance_stock_perpetual",
+    "minimum_quantity": "the smallest common step-aligned quantity satisfying both venues minimum notional and top-level displayed capacity",
+    "gross_entry_headroom_usdt": "perpetual_bid_times_quantity_minus_alpha_ask_times_quantity",
+    "gross_entry_headroom_bps": "gross_entry_headroom_usdt_divided_by_alpha_cost_times_10000",
+    "labeled_pre_account_cost_stress_bps": "20",
+    "stress_role": "a frozen escalation screen only; it is not an account fee quote or proof of after-cost profit",
+    "no_exit_value_credited": true,
+    "no_funding_value_credited": true,
+    "no_reward_or_rebate_value_credited": true
+  },
+  "decision_boundary": {
+    "pass": "retain the wrapper family as an unaccepted exact-book candidate only if at least one row remains strictly positive after the 20 bps labeled stress; then require exact read-only account fees Alpha settlement charges short eligibility and a separately frozen recurrence study",
+    "fail": "terminalize only this four-contract current-book validation snapshot and require a material Alpha fee execution or book-state change before another public screen",
+    "all_outcomes": "accepted edge count remains unchanged and no authenticated funded quoted paper or live action is authorized"
+  },
+  "source_contracts": [
+    "https://developers.binance.com/en/docs/products/alpha/general-info",
+    "https://developers.binance.com/en/docs/products/alpha/change-log",
+    "https://academy.binance.com/en/articles/what-is-binance-alpha",
+    "https://www.binance.com/en/support/faq/detail/87cbb1ca0df34a348eaecb73c26167d7"
+  ],
+  "raw_retention": {
+    "directory": "data/binance-alpha-ondo-perpetual-parity-v1/raw",
+    "journal": "data/binance-alpha-ondo-perpetual-parity-v1/request-journal.jsonl",
+    "manifest_must_record": [
+      "request_count",
+      "status_codes",
+      "response_bytes",
+      "response_sha256",
+      "capture_window_ms"
+    ]
+  },
+  "prohibited_shortcuts": [
+    "treat_the_earlier_reference_price_or_MSTR_discovery_gap_as_validation",
+    "substitute_symbol_text_for_the_exact_contract_address_identity",
+    "use_midpoint_last_trade_or_oracle_price_as_an_executable_leg",
+    "assume_full_depth_includes_network_account_or_perpetual_fees",
+    "assume_the_Alpha_and_perpetual_legs_are_atomic",
+    "credit_exit_funding_rewards_rebates_or_conversion_without_source_bound_evidence",
+    "repeat_or_expand_the_snapshot_after_viewing_results",
+    "place_or_simulate_an_order_or_access_an_account"
+  ]
+}

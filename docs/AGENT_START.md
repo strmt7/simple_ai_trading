@@ -997,15 +997,21 @@ safety gate, blocks Stop, or submits an order.
   `22.2047` bps. These are not executable spreads: official Binance source
   classifies `tokenInfo.price / sharesMultiplier` as a reference value whose
   feeds can update asynchronously, and no Ondo market-order quote was available.
-  The local `baw` quote client is absent. Do not repeat the point screen or
-  install, authenticate, or transact. Advance only when an approved configured
-  read-only quote capability or documented public unauthenticated executable
-  quote endpoint exists; request one minimum nonexecuting quote first and fetch
-  one matching CEX depth batch only if exact after-cost headroom remains.
-  Canonical candidate:
+  Binance Alpha public full depth subsequently closed the missing
+  executable-looking ask question for the complete active transferable
+  four-contract population. All minimum common quantities fit top-level depth,
+  but none survived the frozen 20 bps pre-account stress: CRCL 0 bps, TSLA
+  3.4592101470, COIN 6.5313231372, and MSTR 7.2132724213 gross. Do not repeat
+  either screen. Reopen only after a material Alpha fee, execution, or book-
+  architecture change capable of clearing 20 bps; no account, quote, order,
+  transfer, paper, or live authority was used or added. Canonical artifacts:
   `binance-ondo-bstock-stock-perpetual-wrapper-parity-candidate-v1-2026-08-27.json`,
   result SHA-256
-  `8bcf6f7bfa0cca6dab1fd6fd854a331d5ee41366ac6f9c0244b62a8f3545f475`.
+  `8bcf6f7bfa0cca6dab1fd6fd854a331d5ee41366ac6f9c0244b62a8f3545f475`;
+  `binance-alpha-ondo-perpetual-parity-contract-v1.json`, contract SHA-256
+  `2f08c6b0a8509d9d51db7716d5dde499c3a1937b68eafe77b2970e4da8311b59`;
+  and `binance-alpha-ondo-perpetual-parity-v1-2026-08-27.json`, result SHA-256
+  `a3d474e9010b92c9454a5bc04b5a7f586656c8bc5842cecc61baaa508c2d8bc3`.
 - A new primary paper materially supports a maker-first/taker-hedge complete-set
   execution design, but the strict public-fill reconstruction rejects a stable
   edge claim. In one exact 2026-04-27 Polymarket-v1 daily partition, 159
@@ -1102,6 +1108,7 @@ safety gate, blocks Stop, or submits an order.
 | Binance bStock dividend/perpetual funding timing-gap candidate | `docs/model-research/action-value/binance-bstock-dividend-perp-funding-timing-gap-candidate-v1-2026-08-27.json` |
 | Binance NOK bStock dividend/perpetual under-debit candidate | `docs/model-research/action-value/binance-nok-bstock-dividend-perpetual-underdebit-candidate-v1-2026-08-27.json` |
 | Binance Ondo/bStock/stock-perpetual wrapper parity candidate | `docs/model-research/action-value/binance-ondo-bstock-stock-perpetual-wrapper-parity-candidate-v1-2026-08-27.json` |
+| Binance Alpha/Ondo/stock-perpetual exact-book terminal screen | `docs/model-research/action-value/binance-alpha-ondo-perpetual-parity-v1-2026-08-27.json` |
 | Polymarket maker-first/taker-hedge complete-set candidate | `docs/model-research/action-value/polymarket-maker-first-taker-hedge-complete-set-candidate-v1-2026-08-27.json` |
 | Polymarket maker execution manipulation regime gate | `docs/model-research/action-value/polymarket-maker-execution-manipulation-regime-gate-v1-2026-08-27.json` |
 | Polymarket sports taker-delay maker-protection gate | `docs/model-research/action-value/polymarket-sports-taker-delay-maker-protection-gate-v1-2026-08-27.json` |
