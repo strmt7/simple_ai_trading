@@ -842,6 +842,25 @@ safety gate, blocks Stop, or submits an order.
   `binance-usd1-simple-earn-versus-holding-airdrop-allocation-edge-v1-2026-08-27.json`,
   result SHA-256
   `a4158bf059f4f5ad839b2f504c08c4afc65615260b4171533866f4c2337494e0`.
+- The current first-USD-deposit Promotion A is a distinct high-margin but
+  unaccepted action-gated candidate for a genuinely first-time eligible user.
+  It advertises a 15 USD-equivalent SPCXB voucher to the first 1,000 users who
+  register, deposit at least 100 USD, and complete at least 200 USD of eligible
+  trade volume; distribution is within 30 hours after both tasks. A frozen
+  public one-way purchase of 201 USDT cost 200.93166 USD and the theoretical
+  reward had 15.6135 USDT of displayed liquidation value. After labeled 10-bp
+  task and reward-sale fees, a 20-bp round-trip SPCX hedge fee, and four funding
+  intervals at the worst short-pay rate in the latest 20 rows, 15.3490 USDT
+  equivalent remained for every deposit, bank, FX, withdrawal, tax, basis, and
+  operating cost. This is not profit: first-time status, jurisdiction, first-
+  come capacity, deposit fees, task completion, exact entitlement, rounding,
+  and future reward value are account-specific. Never pre-hedge an unproved
+  reward or manufacture round-trip volume. Every registration, BPay activation,
+  deposit, trade, hedge, claim, sale, and withdrawal requires separate explicit
+  authority. Canonical candidate:
+  `binance-first-usd-deposit-spcxb-reward-hedge-candidate-v1-2026-08-27.json`,
+  result SHA-256
+  `e0b6ed9311d2a022abee417a677b952e83cf918fc6b396804f5cba39fd83d4ed`.
 - The Binance U Flexible promotion is accepted only for already-held idle U in
   an eligible non-EEA master account: regular users receive a public headline
   8.5% APR on the first 5,000 U through 2026-09-14. Buying U for the promotion
@@ -1255,6 +1274,7 @@ safety gate, blocks Stop, or submits an order.
 | Terminal public BTC/ETH/SOL VIP Earn comparator | `docs/model-research/action-value/binance-vip-earn-public-btc-eth-sol-comparator-terminal-v1-2026-08-27.json` |
 | USD1 Simple Earn activation refresh | `docs/model-research/action-value/binance-usd1-simple-earn-activation-refresh-v1-2026-08-27.json` |
 | Accepted USD1 Simple Earn versus holding-airdrop allocation | `docs/model-research/action-value/binance-usd1-simple-earn-versus-holding-airdrop-allocation-edge-v1-2026-08-27.json` |
+| First-USD-deposit SPCXB reward hedge candidate | `docs/model-research/action-value/binance-first-usd-deposit-spcxb-reward-hedge-candidate-v1-2026-08-27.json` |
 | Lite Loan and fixed-bonus stablecoin yield curve | `docs/model-research/action-value/binance-lite-loan-stablecoin-yield-curve-v1-2026-08-27.json` |
 | U Flexible idle-holding yield | `docs/model-research/action-value/binance-u-flexible-idle-holding-yield-gate-v1-2026-08-26.json` |
 | Existing RWUSD VIP bonus overlay | `docs/model-research/action-value/binance-rwusd-existing-vip-bonus-overlay-gate-v1-2026-08-26.json` |

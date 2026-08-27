@@ -1,0 +1,229 @@
+{
+  "schema_version": "binance-first-usd-deposit-spcxb-reward-hedge-candidate-v1",
+  "created_at_utc": "2026-08-27T05:23:20.161000Z",
+  "result_sha256": "e0b6ed9311d2a022abee417a677b952e83cf918fc6b396804f5cba39fd83d4ed",
+  "purpose": "test the current first-USD-deposit Promotion A as a market-direction-independent one-way USD-to-stablecoin task plus a strictly entitlement-gated SPCXB reward-price hedge",
+  "authority": {
+    "public_read_only_research": true,
+    "browser_state": "logged_out",
+    "credentials_used": false,
+    "authenticated_requests": 0,
+    "account_state_accessed": false,
+    "registrations_deposits_trades_hedges_claims_sales_or_withdrawals": 0,
+    "paper_or_live_trading_authority": false
+  },
+  "promotion_terms": {
+    "source_url": "https://www.binance.com/en/support/announcement/detail/1d66621a261040a087497839c5df1882",
+    "promotion_period_start_utc": "2026-08-26T08:00:00Z",
+    "promotion_period_end_utc": "2026-09-14T23:59:00Z",
+    "promotion_A": {
+      "registration_required": true,
+      "first_time_user_cutoff_utc": "2026-08-26T08:00:00Z",
+      "minimum_eligible_USD_deposit": "100",
+      "minimum_eligible_trade_volume_USD_equivalent": "200",
+      "eligible_trade_pairs": [
+        "BNB/USD",
+        "BTC/USD",
+        "ETH/USD",
+        "SOL/USD",
+        "USDC/USD",
+        "USDT/USD",
+        "U/USD"
+      ],
+      "reward_USD_equivalent_in_SPCXB_voucher": "15",
+      "reward_valuation_SPCXB_USDT": "135.2389566",
+      "reward_distribution_deadline_after_task_completion_hours": 30,
+      "first_come_eligible_user_cap": 1000,
+      "campaign_pool_USD_equivalent": "15000",
+      "voucher_claim_expiry_days": 30
+    },
+    "promotion_B_not_selected": {
+      "tier_deposit_and_reward_USD_equivalent": [
+        {
+          "deposit": "1000",
+          "reward_in_SPCXB": "50"
+        },
+        {
+          "deposit": "10000",
+          "reward_in_SPCXB": "300"
+        },
+        {
+          "deposit": "50000",
+          "reward_in_SPCXB": "500"
+        }
+      ],
+      "first_come_eligible_user_cap": 100,
+      "required_USD_balance_hold_days": 30,
+      "distribution_starts": "third week after campaign end",
+      "reason_not_prioritized": "the lower percentage reward is exposed to a longer unhedged entitlement and distribution interval and still has unproved account capacity deposit fees and future SPCXB liquidation value"
+    }
+  },
+  "public_snapshot": {
+    "observed_interval_utc": [
+      "2026-08-27T05:23:17.208000Z",
+      "2026-08-27T05:23:20.161000Z"
+    ],
+    "USDTUSD": {
+      "bid": "0.99965000",
+      "ask": "0.99966000",
+      "ask_quantity_USDT": "47355.00000000",
+      "lot_step_USDT": "1.00000000"
+    },
+    "SPCXBUSDT": {
+      "bid": "140.77000000",
+      "bid_quantity_SPCXB": "3.87500000",
+      "ask": "140.78000000",
+      "lot_step_SPCXB": "0.00100000"
+    },
+    "SPCXUSDT_TRADIFI_PERPETUAL": {
+      "bid": "140.75000",
+      "bid_quantity_SPCX": "183.08",
+      "ask": "140.76000",
+      "lot_step_SPCX": "0.01",
+      "minimum_notional_USDT": "5",
+      "current_funding_rate": "0.00000000",
+      "worst_short_pay_rate_last_20_settlements": "0.00027319"
+    },
+    "SPCXB_mapping": {
+      "ticker": "SPCX",
+      "bstock_multiplier": "1.000000000000000000",
+      "contract_address": "0xbe9d156892e55e7154bcd3cb0fea677f9d3103e1",
+      "interpretation": "public metadata and near-aligned books support a hedge candidate but do not prove account entitlement exact reward rounding perpetual basis convergence or delivery timing"
+    }
+  },
+  "economics": {
+    "task_route_sensitivity": {
+      "route": "one_way_buy_201_USDT_with_USD",
+      "USDT_quantity": "201",
+      "displayed_ask_USD_per_USDT": "0.99966000",
+      "displayed_quote_notional_USD": "200.93166000",
+      "clears_200_USD_trade_task_before_fees": true,
+      "why_one_way": "no round trip wash self match churn or manufactured repeated volume is admitted"
+    },
+    "reward_sensitivity": {
+      "theoretical_SPCXB_quantity_before_voucher_rounding": "0.1109147865164762739673488430",
+      "current_gross_liquidation_value_USDT": "15.61347449792436508638369663",
+      "current_gross_reward_bips_on_200_USD": "780.6737248962182543191848315",
+      "classification": "point_in_time_gross_sensitivity_not_a_forward_floor"
+    },
+    "entitlement_gated_hedge_sensitivity": {
+      "rounded_down_short_SPCX_quantity": "0.11",
+      "theoretical_reward_quantity_coverage_fraction": "0.9917523484000000000000000003",
+      "unhedged_theoretical_SPCXB_quantity": "0.0009147865164762739673488430",
+      "labeled_task_trade_10_bips_fee_stress_USD": "0.20093166000",
+      "labeled_reward_sale_10_bips_fee_stress_USDT": "0.01561347449792436508638369663",
+      "labeled_hedge_round_trip_20_bips_fee_stress_USDT": "0.0309650000",
+      "labeled_four_funding_intervals_at_worst_short_pay_rate_from_last_20_USDT": "0.016918656700000",
+      "remaining_budget_before_deposit_bank_FX_withdrawal_tax_basis_and_operating_costs_USDT_equivalent": "15.34904570672644072129731293",
+      "critical_rule": "do not open any hedge before exact account enrollment first_come capacity task completion deterministic reward entitlement quantity rounding and distribution evidence because a zero reward would leave a directional naked short"
+    }
+  },
+  "adjudication": {
+    "accepted_edge": false,
+    "profitability_claim": false,
+    "deployment_ready": false,
+    "market_direction_forecast_required": false,
+    "public_forward_net_profit_floor": "0",
+    "status": "high_margin_current_action_gated_first_time_user_reward_candidate_public_snapshot_leaves_15_3490_USDT_equivalent_cost_budget_after_labeled_trading_and_hedge_stresses_but_account_eligibility_first_come_capacity_deposit_cost_task_completion_reward_entitlement_and_future_executable_value_are_unproved"
+  },
+  "prequalification_gate": {
+    "public_work_complete": true,
+    "signed_read_only_requirements": [
+      "exact same-account first-time status eligible jurisdiction and completed verification",
+      "registered Promotion A state and remaining first-come capacity",
+      "exact account USD deposit payment method fee bank intermediary fee FX cost limits and credit timing",
+      "exact USDTUSD commission and qualifying-volume accounting",
+      "after any separately authorized task exact completed status deterministic SPCXB voucher quantity rounding and distribution state"
+    ],
+    "separate_authority_required_for": [
+      "promotion registration",
+      "BPay activation",
+      "USD deposit",
+      "USDTUSD trade",
+      "SPCXUSDT hedge",
+      "voucher claim",
+      "SPCXB sale",
+      "withdrawal"
+    ],
+    "rejection_rule": "reject unless the balance-specific worst-case reward value exceeds every exact deposit bank FX trade hedge basis funding liquidation tax withdrawal opportunity and operating cost with no reward credited before entitlement"
+  },
+  "prohibited_shortcuts": [
+    "assuming_the_logged_out_host_or_timezone_proves_eligible_jurisdiction_or_first_time_status",
+    "assuming_a_public_campaign_page_proves_a_first_come_slot_or_selected_user_status",
+    "depositing_registering_activating_BPay_trading_hedging_claiming_selling_or_withdrawing_without_separate_explicit_authority",
+    "pre_hedging_an_unproved_reward_entitlement",
+    "treating_the_135_2389566_reward_valuation_as_a_future_SPCXB_sale_floor",
+    "treating_SPCXB_and_SPCX_as_identical_without_multiplier_basis_delivery_and_rounding_reconciliation",
+    "manufacturing_churning_self_matching_or_round_tripping_volume",
+    "calling_a_one_time_first_user_promotion_a_stable_or_recurring_edge",
+    "calling_the_15_3490_cost_budget_an_after_cost_profit"
+  ],
+  "sources": [
+    {
+      "label": "promotion_article",
+      "url": "https://www.binance.com/bapi/composite/v1/public/cms/article/detail/query?articleCode=1d66621a261040a087497839c5df1882",
+      "payload_bytes": 146052,
+      "payload_sha256": "0472baefbbce8859e48340ec285dec32af78ad755d31374dd63340b40e9ef64b",
+      "logged_out_rendered_source": "https://www.binance.com/en/support/announcement/detail/1d66621a261040a087497839c5df1882"
+    },
+    {
+      "label": "SPCXB_bstock_metadata",
+      "url": "https://www.binance.com/bapi/defi/v1/public/wallet-direct/buw/wallet/market/token/rwa/stock/detail/list/ai?type=3",
+      "payload_bytes": 14867,
+      "payload_sha256": "87aa11d459f9babcba9837743ab616fef4c066b20e209524b43ee383429cde3d"
+    },
+    {
+      "label": "USDTUSD_exchange_info",
+      "url": "https://api.binance.com/api/v3/exchangeInfo?symbol=USDTUSD",
+      "payload_bytes": 5218,
+      "payload_sha256": "d37c856ae81a2dffe177023bee7fd7a7b385a66853d90c184b97d908dcee9ba5"
+    },
+    {
+      "label": "USDTUSD_book",
+      "url": "https://api.binance.com/api/v3/ticker/bookTicker?symbol=USDTUSD",
+      "payload_bytes": 119,
+      "payload_sha256": "62cc3413cfe6d62fbab450b7b1f32c4737625e98d7b39c8265128589bcd4e651"
+    },
+    {
+      "label": "SPCXBUSDT_exchange_info",
+      "url": "https://api.binance.com/api/v3/exchangeInfo?symbol=SPCXBUSDT",
+      "payload_bytes": 5091,
+      "payload_sha256": "94c9279dedf7cf5e8d50b1fc140cf529ff2570597b73f267afaf39491896a168"
+    },
+    {
+      "label": "SPCXBUSDT_book",
+      "url": "https://api.binance.com/api/v3/ticker/bookTicker?symbol=SPCXBUSDT",
+      "payload_bytes": 118,
+      "payload_sha256": "7d19b17ec9fe8a8e242f8f38b8a101f7b2b8fc361a8c5ce6c005c2a194dbf9d2"
+    },
+    {
+      "label": "SPCXUSDT_futures_exchange_info",
+      "url": "https://fapi.binance.com/fapi/v1/exchangeInfo",
+      "payload_bytes": 1084769,
+      "payload_sha256": "fc2351d502922c2504a7281e63e43868ac273d2c9c8ac8c1c72df6df6e2e859b"
+    },
+    {
+      "label": "SPCXUSDT_futures_book",
+      "url": "https://fapi.binance.com/fapi/v1/ticker/bookTicker?symbol=SPCXUSDT",
+      "payload_bytes": 153,
+      "payload_sha256": "a802926276cf73f7781afa29863677d8e2003eba4966891b7be7c95dd282df4e"
+    },
+    {
+      "label": "SPCXUSDT_premium_index",
+      "url": "https://fapi.binance.com/fapi/v1/premiumIndex?symbol=SPCXUSDT",
+      "payload_bytes": 226,
+      "payload_sha256": "37d25ef246b35a982e33ee5f2223cb5d168a1a9ba57e318f61f301d2364e5516"
+    },
+    {
+      "label": "SPCXUSDT_last_20_funding_rows",
+      "url": "https://fapi.binance.com/fapi/v1/fundingRate?symbol=SPCXUSDT&limit=20",
+      "payload_bytes": 2503,
+      "payload_sha256": "c30f53d4ab63dcda9fae98aa2734b844c504a823803414f9bd16e2a6c6c73f19"
+    },
+    {
+      "label": "USD_deposit_process_and_fee_boundary",
+      "url": "https://www.binance.com/en/support/faq/detail/fcdceafa17fb4ee19ffeb66e13d0209f",
+      "use": "logged-out official source says the exact transaction fee is shown in the account flow and sender or intermediary banks may add fees"
+    }
+  ]
+}
