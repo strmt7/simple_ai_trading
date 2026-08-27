@@ -908,7 +908,7 @@ grants paper, testnet, or live authority.
 
 The canonical structural-edge priority and retry-trigger registry is
 `docs/model-research/structural-edge-priority-registry-v1.json`, result SHA-256
-`f6cc7c0bdaa2b41d5ed787e5c37bb8004b883f92ba2549c0aef8886a65cc4294`.
+`3f822fd911a779e3ceccba5c86c8d36c9ac488f6415ebb8dd2f45e8b2041a343`.
 Advance only the highest-ranked hypothesis whose trigger is actually satisfied.
 This prevents account-blocked or terminal screens from being rerun as if more
 snapshots could create an edge.
@@ -1860,7 +1860,7 @@ result SHA-256
 `64943efe0c6ad16f8d02f78548afef38f919448d2da87c7573e825a2eeefd6b9`.
 The structural registry remains at sixteen accepted scoped edges and now has
 result SHA-256
-`f6cc7c0bdaa2b41d5ed787e5c37bb8004b883f92ba2549c0aef8886a65cc4294`.
+`3f822fd911a779e3ceccba5c86c8d36c9ac488f6415ebb8dd2f45e8b2041a343`.
 
 The complete Binance XAU/XAG Commodity Options versus matching TradFi
 perpetual lower-bound screen is terminal for the active 2026-08-27 and
@@ -2013,6 +2013,41 @@ Canonical result:
 `docs/model-research/action-value/binance-existing-stock-transfer-reward-overlay-candidate-v1-2026-08-27.json`,
 result SHA-256
 `3ecb4f39848719f788b6853bd90120d1809379b8d81b5419da4b1bbc957fec3d`.
+
+## Binance Stocks FPSL Existing-Inventory Yield R&D
+
+Binance Stocks Fully Paid Securities Lending is a materially distinct
+direction-independent incremental-income candidate. The official FAQ, updated
+2026-08-14, says eligible fully settled U.S.-listed stocks and ETFs already held
+in the account may be lent by Alpaca to institutional borrowers. Interest
+accrues daily only while shares are actually on loan, is paid at the end of the
+following month, and selling remains available because a sale automatically
+recalls the loan. The cashflow is market value times annualized lending rate
+times the account's fee-share percentage times days on loan divided by 365.
+
+This is not an accepted, stable, or publicly proved profitable edge. Lending is
+not guaranteed, public sources provide neither current symbol rates nor the
+Binance account's fee-share percentage, and loan records may lag by two business
+days. The public forward income floor is zero. Do not import Alpaca's direct
+retail or Elite share percentages into the separate Binance account contract.
+Shares on loan lose SIPC coverage and voting rights; dividends are paid as
+cash-in-lieu, so incremental tax, custody, counterparty, and support costs can
+exceed small interest distributions.
+
+Apply this candidate only to stock inventory already independently owned and
+intended to remain held. Never buy, transfer, or retain stock to manufacture the
+overlay. Exact account region, Stocks and FPSL eligibility, settled holdings,
+actual loan days, rates, share percentage, monthly distributions, and after-cost
+economics remain unproved. Account inspection requires explicit read-only
+authority, and enabling FPSL or answering its suitability questionnaire is a
+separate account-state change requiring explicit user authority. Promote only
+after at least three independent owned monthly distribution cycles remain
+positive after every incremental cost. The expired July leaderboard has zero
+forward value and is only discovery evidence for the continuing product.
+Canonical result:
+`docs/model-research/action-value/binance-stocks-fpsl-existing-inventory-yield-overlay-candidate-v1-2026-08-27.json`,
+result SHA-256
+`3fe1801a6cbf442ab1ce79d1f3bd4586542d97414aea954b0bbd9a55a85453e1`.
 
 ## Protected Local Work
 
