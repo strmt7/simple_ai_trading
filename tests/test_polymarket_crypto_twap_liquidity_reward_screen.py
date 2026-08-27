@@ -54,6 +54,10 @@ def test_every_new_artifact_hash_reconstructs() -> None:
         / "docs/model-research/polymarket/crypto-twap-liquidity-reward-screen-contract-v1.json",
         ROOT
         / "docs/model-research/polymarket/crypto-twap-liquidity-reward-screen-attempt1-failure-v1.json",
+        ROOT
+        / "docs/model-research/polymarket/crypto-twap-5m-liquidity-reward-screen-contract-v1-2026-08-27.json",
+        ROOT
+        / "docs/model-research/polymarket/crypto-twap-5m-liquidity-reward-screen-attempt1-terminal-v1-2026-08-27.json",
     )
     for path in paths:
         assert _embedded_hash(path)[0] == _embedded_hash(path)[1]
@@ -75,3 +79,18 @@ def test_public_response_is_journaled_before_validation(tmp_path: Path) -> None:
     assert intent["method"] == "GET"
     assert response["payload_sha256"] == hashlib.sha256(_Response.content).hexdigest()
     assert source["payload_sha256"] == response["payload_sha256"]
+
+
+def test_five_minute_terminal_receipt_stopped_before_books() -> None:
+    receipt = json.loads(
+        (
+            ROOT
+            / "docs/model-research/polymarket/crypto-twap-5m-liquidity-reward-screen-attempt1-terminal-v1-2026-08-27.json"
+        ).read_text(encoding="ascii")
+    )
+
+    assert receipt["failure"]["books_requested"] is False
+    assert receipt["observed_market_configuration"]["exact_market_count"] == 7
+    assert receipt["observed_market_configuration"]["raw_clobRewards_field_omitted_count"] == 7
+    assert receipt["terminal_decision"]["accepted_edge"] is False
+    assert receipt["terminal_decision"]["public_after_cost_floor_pUSD"] == "0"

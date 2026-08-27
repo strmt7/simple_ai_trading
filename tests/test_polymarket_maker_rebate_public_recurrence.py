@@ -49,7 +49,7 @@ EXPECTED_RESULT_SHA256 = (
     "c992e0e1febc1a9789289cb129c166280ee0192cab203d3a6935a8c40e949612"
 )
 EXPECTED_REGISTRY_SHA256 = (
-    "8b68d4b1f13bcd3edc5f085d90aaf648c52e68c43b0354b6411b323114a57786"
+    "d5154a63f6f3e46e6f7302dde61a2141383a04d6e1f7a12c5b87eb92a6b4e89b"
 )
 EXPECTED_MAKER_FIRST_SHA256 = (
     "4fe308ddeb6fd080bbd8548347a095762d8fc67eb5820fb0c7b3c2d6b7430d69"
@@ -202,38 +202,27 @@ def test_registry_tracks_recurrence_without_increasing_accepted_edges() -> None:
         if row["mechanism"] == "paired_crypto_maker_rebates_and_twap_liquidity_rewards"
     )
     assert candidate["priority_rank"] == 17
-    assert candidate["canonical_artifacts"][-5] == {
-        "path": (
-            "docs/model-research/polymarket/"
-            "crypto-maker-rebate-public-recurrence-v2-2026-08-26.json"
-        ),
-        "result_sha256": EXPECTED_RESULT_SHA256,
+    artifacts_by_path = {
+        artifact["path"]: artifact["result_sha256"]
+        for artifact in candidate["canonical_artifacts"]
     }
-    assert candidate["canonical_artifacts"][-4] == {
-        "path": (
-            "docs/model-research/action-value/"
-            "polymarket-maker-first-taker-hedge-complete-set-candidate-v1-2026-08-27.json"
-        ),
-        "result_sha256": EXPECTED_MAKER_FIRST_SHA256,
-    }
-    assert candidate["canonical_artifacts"][-3] == {
-        "path": (
-            "docs/model-research/action-value/"
-            "polymarket-maker-execution-manipulation-regime-gate-v1-2026-08-27.json"
-        ),
-        "result_sha256": EXPECTED_MANIPULATION_GATE_SHA256,
-    }
-    assert candidate["canonical_artifacts"][-2] == {
-        "path": (
-            "docs/model-research/polymarket/"
-            "crypto-twap-liquidity-reward-screen-contract-v1.json"
-        ),
-        "result_sha256": EXPECTED_TWAP_CONTRACT_SHA256,
-    }
-    assert candidate["canonical_artifacts"][-1] == {
-        "path": (
-            "docs/model-research/polymarket/"
-            "crypto-twap-liquidity-reward-screen-attempt1-failure-v1.json"
-        ),
-        "result_sha256": EXPECTED_TWAP_FAILURE_SHA256,
-    }
+    assert artifacts_by_path[
+        "docs/model-research/polymarket/"
+        "crypto-maker-rebate-public-recurrence-v2-2026-08-26.json"
+    ] == EXPECTED_RESULT_SHA256
+    assert artifacts_by_path[
+        "docs/model-research/action-value/"
+        "polymarket-maker-first-taker-hedge-complete-set-candidate-v1-2026-08-27.json"
+    ] == EXPECTED_MAKER_FIRST_SHA256
+    assert artifacts_by_path[
+        "docs/model-research/action-value/"
+        "polymarket-maker-execution-manipulation-regime-gate-v1-2026-08-27.json"
+    ] == EXPECTED_MANIPULATION_GATE_SHA256
+    assert artifacts_by_path[
+        "docs/model-research/polymarket/"
+        "crypto-twap-liquidity-reward-screen-contract-v1.json"
+    ] == EXPECTED_TWAP_CONTRACT_SHA256
+    assert artifacts_by_path[
+        "docs/model-research/polymarket/"
+        "crypto-twap-liquidity-reward-screen-attempt1-failure-v1.json"
+    ] == EXPECTED_TWAP_FAILURE_SHA256

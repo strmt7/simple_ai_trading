@@ -1,0 +1,87 @@
+{
+  "attempt": {
+    "activation_window_end_utc": "2026-08-27T06:45:50Z",
+    "activation_window_start_utc": "2026-08-27T06:45:05Z",
+    "attempt_number": 1,
+    "failed_at_utc": "2026-08-27T06:45:07.486101Z",
+    "one_attempt_contract_exhausted": true,
+    "retry_count": 0
+  },
+  "authority": {
+    "account_accessed": false,
+    "credentials_used": false,
+    "funded_actions": 0,
+    "orders_or_cancellations": 0,
+    "public_read_only_requests": 2,
+    "trading_authority": false
+  },
+  "contract": {
+    "file_sha256": "7482f3edc09bfebea7b2498b7fe9b25f06496e2a2a914a53db1cd88aaf040d0f",
+    "path": "docs/model-research/polymarket/crypto-twap-5m-liquidity-reward-screen-contract-v1-2026-08-27.json",
+    "result_sha256": "34bb81a8678dd4eb04406159546d2769e6ebbe79da88fa15ed632851df51e3aa"
+  },
+  "failure": {
+    "books_requested": false,
+    "error_message": "clobRewards must be a list",
+    "error_type": "ValueError",
+    "failed_request_role": "post_Gamma_embedded_reward_allocation_validation_before_books",
+    "interpretation": "All seven exact markets were returned, but the raw Gamma representation omitted clobRewards on every row. The current SDK documentation describes clobRewards as an optional normalized market field; it does not prove that raw Gamma must populate the field. Therefore no exact per-market daily allocation or reward-share economics can be computed from this frozen source set.",
+    "profitability_or_reward_inference_permitted": false,
+    "response_identity_validated": false
+  },
+  "journal": {
+    "documentation": {
+      "path": "docs/model-research/polymarket/raw/crypto-twap-5m-liquidity-reward-screen-v1-2026-08-27/01-official-liquidity-rewards-documentation.raw",
+      "payload_bytes": 618315,
+      "payload_sha256": "1e3db7aa93967630e5ba6022e4457f6f9e17e5ddddee84c36f03d7c3d9e3afa0",
+      "status_code": 200
+    },
+    "gamma": {
+      "path": "docs/model-research/polymarket/raw/crypto-twap-5m-liquidity-reward-screen-v1-2026-08-27/02-gamma-seven-markets.raw",
+      "payload_bytes": 36636,
+      "payload_sha256": "a9b4698b162e2403a890f16b5ef2738080023c5d20f8037f48e81c911ea9d377",
+      "status_code": 200
+    },
+    "raw_responses_retained_before_validation": true
+  },
+  "observed_market_configuration": {
+    "exact_market_count": 7,
+    "exact_slugs": [
+      "btc-updown-5m-1787813100",
+      "eth-updown-5m-1787813100",
+      "sol-updown-5m-1787813100",
+      "xrp-updown-5m-1787813100",
+      "hype-updown-5m-1787813100",
+      "bnb-updown-5m-1787813100",
+      "doge-updown-5m-1787813100"
+    ],
+    "fee_schedule_all_markets": {
+      "exponent": 1,
+      "rate": 0.07,
+      "rebateRate": 0.2,
+      "takerOnly": true
+    },
+    "rewards_max_spread_cents_all_markets": "4.5",
+    "rewards_min_size_shares_all_markets": "50",
+    "raw_clobRewards_field_omitted_count": 7
+  },
+  "result_sha256": "319c6aedbb5491e56e68cc3fdf95f366766ce4a070dcadec3213471ff938120d",
+  "schema_version": "polymarket-crypto-twap-5m-liquidity-reward-screen-attempt1-terminal-v1",
+  "terminal_decision": {
+    "accepted_edge": false,
+    "candidate_advanced": false,
+    "deployment_ready": false,
+    "public_after_cost_floor_pUSD": "0",
+    "retry_inside_same_program_source_configuration": false,
+    "status": "rejected_exact_per_market_daily_allocation_unavailable_before_books"
+  },
+  "tool": {
+    "path": "tools/screen_polymarket_crypto_twap_5m_liquidity_rewards.py",
+    "sha256_at_attempt": "1e86ef2fefd2d677241be597bdbc2d3545aa0be7a1fe9b4dc1efb06844d7d8c4"
+  },
+  "workflow_correction": {
+    "future_reopen_requirement": "Require a materially new public response that supplies exact per-market dated daily allocation, or a materially changed official program allocation. Never infer a daily rate from the one-million-dollar monthly cap.",
+    "instruction_change": "Treat current SDK clobRewards as optional and distinguish normalized SDK models from fields actually populated by raw Gamma before preregistering a raw-Gamma-only collector.",
+    "mistake": "The new contract treated the optional normalized SDK clobRewards field as guaranteed in the raw Gamma representation."
+  }
+}
