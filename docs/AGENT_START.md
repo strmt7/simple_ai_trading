@@ -1108,16 +1108,28 @@ safety gate, blocks Stop, or submits an order.
   `polymarket-maker-execution-manipulation-regime-gate-v1-2026-08-27.json`,
   result SHA-256
   `7d3387289a7e82b33fa52c03b2bc134864259a001c3d28524745026bb83db387`.
+- Polymarket's official changelog reduced the crypto taker delay from 250 ms to
+  50 ms effective `2026-08-17T11:00:00Z`. This leaves resting makers 80% less
+  delayed time in which a stale quote might be cancelled, a negative protection
+  change that invalidates 250 ms as a current forward-execution assumption but
+  does not prove a numeric adverse-selection loss or current PnL. Do not
+  resample books on this change alone. Any future authorized execution contract
+  must use 50 ms or the exact current market value and fail closed when absent.
+  Canonical regime artifact:
+  `polymarket-crypto-taker-delay-regime-change-v1-2026-08-27.json`, result
+  SHA-256
+  `c7b785a1fbf4d6380033810338b2cf2845399f2a7464688c8ac36427b375a777`.
 - Current sports execution rules do not turn maker rebates or live-NBA parity
   into a protected edge. Marketable sports orders enter a configured delay and
   cannot be cancelled while pending; the help center lists a three-second
   general delay and a one-second NBA/MLB test, while the compact market-info
-  `itode` field describes the separate 250-millisecond crypto/finance delay and
-  exposes no sports duration. Therefore each all-taker leg or post-maker hedge
+  `itode` field only identifies a separate crypto/finance delay path and does
+  not expose a numeric duration. The current crypto duration is 50 ms from the
+  changelog; do not infer a finance duration. Therefore each all-taker leg or post-maker hedge
   must be treated as independently delayed and revalidated, with full orphan
   risk. Current official pages also conflict between 15% and 20% sports maker
   rebates, so credit zero until effective or owned payout evidence resolves it.
-  Never reuse the crypto 250-millisecond constant for sports. Canonical gate:
+  Never reuse any crypto or finance delay constant for sports. Canonical gate:
   `polymarket-sports-taker-delay-maker-protection-gate-v1-2026-08-27.json`,
   result SHA-256
   `4847ec7828e598950da9a455170b66a529d9a5d671bfb4c37a57a36f608b9627`.
@@ -1177,6 +1189,7 @@ safety gate, blocks Stop, or submits an order.
 | Binance native-stock/TradFi-perpetual parity incomplete screen | `docs/model-research/action-value/binance-native-stock-perpetual-parity-v1-2026-08-27.json` |
 | Polymarket maker-first/taker-hedge complete-set candidate | `docs/model-research/action-value/polymarket-maker-first-taker-hedge-complete-set-candidate-v1-2026-08-27.json` |
 | Polymarket maker execution manipulation regime gate | `docs/model-research/action-value/polymarket-maker-execution-manipulation-regime-gate-v1-2026-08-27.json` |
+| Polymarket crypto taker-delay regime change | `docs/model-research/action-value/polymarket-crypto-taker-delay-regime-change-v1-2026-08-27.json` |
 | Polymarket sports taker-delay maker-protection gate | `docs/model-research/action-value/polymarket-sports-taker-delay-maker-protection-gate-v1-2026-08-27.json` |
 | Polymarket terminal favorite-longshot bias translation | `docs/model-research/action-value/polymarket-favorite-longshot-bias-preflight-v1-2026-08-27.json` |
 | Polymarket August crypto-TWAP liquidity-reward terminal screen | `docs/model-research/polymarket/crypto-twap-liquidity-reward-screen-attempt1-failure-v1.json` |
