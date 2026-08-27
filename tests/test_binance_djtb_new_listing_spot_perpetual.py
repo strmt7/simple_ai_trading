@@ -19,7 +19,7 @@ IMPLEMENTATION = ROOT / "tools/screen_binance_djtb_new_listing_spot_perpetual.py
 CONTRACT_HASH = "087b06191378fa949ac62340d9f3e5c625aa31feff71bba3c7fd20cae1155ee8"
 CORRECTION_HASH = "692ee1f9a0374726b0adeccbe4fcd710c9c3a86d49b4b33210a8c34b2c79c4d3"
 RESULT_HASH = "2b85a6eca339799a6eb07ba48069e3a2943d97116a9320ce20400d260227e1be"
-REGISTRY_HASH = "51005178e370b03e2974b20e780b8ed5b25b7847b59b8c284fb7bca9ea12c70f"
+REGISTRY_HASH = "9c1d110fe26ae6875824b5c7fd68ee41998d4dd41479f3df8159faa5a67527b8"
 
 
 def _load(path: Path) -> dict[str, object]:
@@ -132,7 +132,7 @@ def test_registry_updates_existing_bstock_family_and_terminalizes_snapshot() -> 
 
     assert registry["result_sha256"] == REGISTRY_HASH
     assert _canonical_hash(registry, "result_sha256") == REGISTRY_HASH
-    assert registry["accepted_edge_count"] == 17
+    assert registry["accepted_edge_count"] == 18
     assert [row["priority_rank"] for row in registry["prioritized_hypotheses"]] == list(
         range(1, 41)
     )

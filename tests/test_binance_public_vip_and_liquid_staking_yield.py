@@ -20,7 +20,7 @@ STAKING_ARTIFACT = (
 REGISTRY = ROOT / "docs/model-research/structural-edge-priority-registry-v1.json"
 VIP_HASH = "cd41cad8e0053b9d41ddda64fd4ad8a86a163307ddcc9fabc805c56b9c5028c9"
 STAKING_HASH = "b7fc84d0be3968d31afeb801b7a40ee0d382724b11281c28733a8145d12ee035"
-REGISTRY_HASH = "51005178e370b03e2974b20e780b8ed5b25b7847b59b8c284fb7bca9ea12c70f"
+REGISTRY_HASH = "9c1d110fe26ae6875824b5c7fd68ee41998d4dd41479f3df8159faa5a67527b8"
 
 
 def _load(path: Path) -> dict[str, object]:
@@ -103,7 +103,7 @@ def test_registry_routes_public_vip_terminal_and_liquid_staking_candidate() -> N
 
     assert registry["result_sha256"] == REGISTRY_HASH
     assert _canonical_hash(registry) == REGISTRY_HASH
-    assert registry["accepted_edge_count"] == 17
+    assert registry["accepted_edge_count"] == 18
     hypotheses = registry["prioritized_hypotheses"]
     idle_yield = next(
         row for row in hypotheses if row["mechanism"] == "binance_idle_spot_native_token_yield"
