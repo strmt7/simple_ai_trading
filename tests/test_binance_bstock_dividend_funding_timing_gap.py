@@ -12,7 +12,7 @@ ARTIFACT = ROOT / "docs/model-research/action-value" / (
 )
 REGISTRY = ROOT / "docs/model-research/structural-edge-priority-registry-v1.json"
 EXPECTED_HASH = "c073b61271886a5add71c2578caa889dfb97b1245327ae746bd517a91e52530d"
-REGISTRY_HASH = "2cbcccc4527f97f8e4535181489c6d816d8336a111453ca9e92290b61563d735"
+REGISTRY_HASH = "28fb871eae091483b1d5625daad0e7ac251a1a4d80fa41308a65f2530d910d87"
 
 
 def _load(path: Path) -> dict[str, object]:
@@ -107,7 +107,7 @@ def test_registry_adds_candidate_and_closes_only_direct_family() -> None:
     assert _canonical_hash(registry) == REGISTRY_HASH
     assert registry["accepted_edge_count"] == 16
     hypotheses = registry["prioritized_hypotheses"]
-    assert [row["priority_rank"] for row in hypotheses] == list(range(1, 40))
+    assert [row["priority_rank"] for row in hypotheses] == list(range(1, 41))
     candidate = next(
         row
         for row in hypotheses

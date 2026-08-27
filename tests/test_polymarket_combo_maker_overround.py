@@ -16,7 +16,7 @@ RESULT = (
 )
 REGISTRY = ROOT / "docs/model-research/structural-edge-priority-registry-v1.json"
 RESULT_HASH = "416daf4d279e06a2353127e642d588a39ae85be0709c2d7498896c1d182847ee"
-REGISTRY_HASH = "2cbcccc4527f97f8e4535181489c6d816d8336a111453ca9e92290b61563d735"
+REGISTRY_HASH = "28fb871eae091483b1d5625daad0e7ac251a1a4d80fa41308a65f2530d910d87"
 
 
 def test_economics_excludes_buyer_fees_from_opposite_side_proxy() -> None:

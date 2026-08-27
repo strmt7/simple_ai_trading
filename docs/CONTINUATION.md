@@ -908,7 +908,7 @@ grants paper, testnet, or live authority.
 
 The canonical structural-edge priority and retry-trigger registry is
 `docs/model-research/structural-edge-priority-registry-v1.json`, result SHA-256
-`2cbcccc4527f97f8e4535181489c6d816d8336a111453ca9e92290b61563d735`.
+`28fb871eae091483b1d5625daad0e7ac251a1a4d80fa41308a65f2530d910d87`.
 Advance only the highest-ranked hypothesis whose trigger is actually satisfied.
 This prevents account-blocked or terminal screens from being rerun as if more
 snapshots could create an edge.
@@ -1860,7 +1860,35 @@ result SHA-256
 `64943efe0c6ad16f8d02f78548afef38f919448d2da87c7573e825a2eeefd6b9`.
 The structural registry remains at sixteen accepted scoped edges and now has
 result SHA-256
-`2cbcccc4527f97f8e4535181489c6d816d8336a111453ca9e92290b61563d735`.
+`28fb871eae091483b1d5625daad0e7ac251a1a4d80fa41308a65f2530d910d87`.
+
+The complete Binance XAU/XAG Commodity Options versus matching TradFi
+perpetual lower-bound screen is terminal for the active 2026-08-27 and
+2026-08-28 expiries. The market-direction-independent construction was long a
+call at its ask plus an equal short perpetual at its bid, or long a put at its
+ask plus an equal long perpetual at its ask. Across all 92 active commodity
+options, 73 published positive asks, but zero had positive indicative gross
+terminal-payoff headroom. The best row, `XAU-260827-4580-C`, was already
+`-11.1005015702` bps before the frozen 33.5-bps option, exercise, futures, and
+exit-basis stress and before adverse funding. The all-options ticker publishes
+ask prices but no ask quantities, so zero rows could satisfy executable
+top-level capacity; this does not affect the negative-gross rejection.
+
+Do not resample those 92 symbols. Reopen only for a newly listed XAU/XAG
+expiry or a material option-fee, funding, basis, book, or product-access
+change. Freeze an all-ticker prefilter first; fetch per-symbol option depth
+only for rows that are strictly positive after the same conservative stress.
+The retained capture made exactly seven public GETs with zero authenticated or
+trading actions. A population-hash serialization mismatch stopped after the
+first response; the receipt-bound response was reused and requests 2-7 were
+made without retrying request 1. A later futures label correction was processed
+entirely offline from the seven retained, hash-verified responses. Canonical
+contract SHA-256:
+`a1ecde2ac379d40fba81840cc9adf10dd731f29bd8b4eba030a6e71521158b94`.
+Canonical result:
+`docs/model-research/action-value/binance-commodity-option-perpetual-lower-bound-v1-2026-08-27.json`,
+result SHA-256
+`3cbc79050473b456e4175239b687b0329bc1c7a66d3530842e524ac4200a0905`.
 
 ## Protected Local Work
 

@@ -17,7 +17,7 @@ NOK = ACTION_VALUE / (
 REGISTRY = ROOT / "docs/model-research/structural-edge-priority-registry-v1.json"
 WRAPPER_HASH = "8bcf6f7bfa0cca6dab1fd6fd854a331d5ee41366ac6f9c0244b62a8f3545f475"
 NOK_HASH = "79118e0e9a32a17d0d79040746068b94e6ec545179958a29dc45f3b8771434bb"
-REGISTRY_HASH = "2cbcccc4527f97f8e4535181489c6d816d8336a111453ca9e92290b61563d735"
+REGISTRY_HASH = "28fb871eae091483b1d5625daad0e7ac251a1a4d80fa41308a65f2530d910d87"
 
 
 def _load(path: Path) -> dict[str, object]:
@@ -120,7 +120,7 @@ def test_registry_adds_both_candidates_without_promoting_an_edge() -> None:
     assert _canonical_hash(registry) == REGISTRY_HASH
     assert registry["accepted_edge_count"] == 16
     hypotheses = registry["prioritized_hypotheses"]
-    assert [row["priority_rank"] for row in hypotheses] == list(range(1, 40))
+    assert [row["priority_rank"] for row in hypotheses] == list(range(1, 41))
     by_mechanism = {row["mechanism"]: row for row in hypotheses}
     assert by_mechanism[
         "binance_Ondo_bStock_stock_perpetual_exact_multiplier_wrapper_parity"

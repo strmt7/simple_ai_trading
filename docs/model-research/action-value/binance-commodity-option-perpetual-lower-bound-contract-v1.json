@@ -1,0 +1,131 @@
+{
+  "schema_version": "binance-commodity-option-perpetual-lower-bound-contract-v1",
+  "status": "frozen_before_complete_active_commodity_option_ticker_capture",
+  "frozen_at_utc": "2026-08-27T03:21:30Z",
+  "contract_sha256": "a1ecde2ac379d40fba81840cc9adf10dd731f29bd8b4eba030a6e71521158b94",
+  "purpose": "test the long-option-only no-direction payoff lower bounds formed by a deep-in-the-money XAU or XAG call plus an equal short TradFi perpetual and by a deep-in-the-money put plus an equal long TradFi perpetual",
+  "authority": {
+    "research_only": true,
+    "public_unauthenticated_GET_sources_only": true,
+    "credentials_permitted": false,
+    "account_state_permitted": false,
+    "orders_transfers_quotes_or_wallet_actions_permitted": false,
+    "live_or_paper_trading_authority": false,
+    "profitability_or_accepted_edge_claim_permitted": false
+  },
+  "discovery_boundary_already_observed": {
+    "observed_at_utc": "2026-08-27T03:20:23.6361616Z",
+    "official_exchange_info_response_bytes": 1123991,
+    "official_exchange_info_response_sha256": "bc18ef353427e13574202b4833a404729733f948509dd65e44aeb2c05ee2372b",
+    "active_TRADFI_OPTIONS_COMMODITY_XAU_XAG_row_count": 92,
+    "sorted_symbol_population_sha256": "da4c880101f75e987edc143c991d0589aaf72343c3f25e9fb7b4de63b4c1e1dc",
+    "underlyings": [
+      "XAGUSDT",
+      "XAUUSDT"
+    ],
+    "expiry_groups": [
+      {
+        "underlying": "XAGUSDT",
+        "expiry_date_ms": 1787864400000,
+        "symbol_count": 20
+      },
+      {
+        "underlying": "XAGUSDT",
+        "expiry_date_ms": 1787950800000,
+        "symbol_count": 24
+      },
+      {
+        "underlying": "XAUUSDT",
+        "expiry_date_ms": 1787864400000,
+        "symbol_count": 24
+      },
+      {
+        "underlying": "XAUUSDT",
+        "expiry_date_ms": 1787950800000,
+        "symbol_count": 24
+      }
+    ],
+    "selection_rule": "the validation request must reconstruct exactly the 92-symbol sorted population hash before any ticker economics; stop without changing the universe if it differs"
+  },
+  "identity_contract": {
+    "option_contract_type": "TRADFI_OPTIONS",
+    "option_underlying_type": "COMMODITY",
+    "option_settlement_asset": "USDT",
+    "option_exercise_style": "European",
+    "option_contract_unit": "1",
+    "option_underlying_price_source": "matching Binance TradFi Perpetual Contract Index Price",
+    "option_settlement_price": "underlying market close price at 5 PM ET on expiration date",
+    "perpetual_symbols": [
+      "XAUUSDT",
+      "XAGUSDT"
+    ],
+    "retail_option_position_mode": "buy_to_open_and_sell_to_close_only; no option writing",
+    "long_only_construction_is_permitted_by_public_terms": true,
+    "non_atomic_legs": true
+  },
+  "capture": {
+    "options_exchange_info_endpoint": "https://eapi.binance.com/eapi/v1/exchangeInfo",
+    "options_all_ticker_endpoint": "https://eapi.binance.com/eapi/v1/ticker",
+    "futures_exchange_info_endpoint": "https://fapi.binance.com/fapi/v1/exchangeInfo",
+    "futures_all_book_ticker_endpoint": "https://fapi.binance.com/fapi/v1/ticker/bookTicker",
+    "futures_all_premium_index_endpoint": "https://fapi.binance.com/fapi/v1/premiumIndex",
+    "futures_funding_history_endpoint": "https://fapi.binance.com/fapi/v1/fundingRate",
+    "request_plan": "one options exchangeInfo, one all-options ticker, one futures exchangeInfo, one all-futures bookTicker, one all-futures premiumIndex, and exactly one limit-1000 funding history request for each of XAUUSDT and XAGUSDT",
+    "maximum_http_requests": 7,
+    "stop_on_first_http_identity_population_or_schema_error": true,
+    "retry_permitted": false,
+    "durable_raw_before_calculation": true
+  },
+  "economics": {
+    "numeric_type": "decimal_never_binary_float",
+    "call_construction": "buy_call_at_displayed_ask_and_short_equal_unit_XAUUSDT_or_XAGUSDT_perpetual_at_displayed_bid",
+    "call_terminal_gross_payoff_floor_per_unit_before_funding_exit_basis_and_fees": "perpetual_entry_bid_minus_strike_minus_call_ask",
+    "put_construction": "buy_put_at_displayed_ask_and_long_equal_unit_XAUUSDT_or_XAGUSDT_perpetual_at_displayed_ask",
+    "put_terminal_gross_payoff_floor_per_unit_before_funding_exit_basis_and_fees": "strike_minus_perpetual_entry_ask_minus_put_ask",
+    "common_quantity": "smallest exact common option and perpetual step satisfying both minimum quantities and both displayed top-level capacities",
+    "option_taker_fee_stress_bps_of_underlying_notional": "2",
+    "option_exercise_fee_stress_bps_of_underlying_notional": "1.5",
+    "futures_round_trip_fee_stress_bps_of_underlying_notional": "10",
+    "perpetual_exit_basis_stress_bps_of_underlying_notional": "20",
+    "fixed_nonfunding_stress_bps_of_underlying_notional": "33.5",
+    "funding_stress": "for short hedges use the worst rolling sum of adverse negative rates only and for long hedges the worst rolling sum of adverse positive rates only across eight consecutive retained funding events; never credit favorable funding",
+    "capital_opportunity_cost_credited": false,
+    "maker_fee_or_rebate_credited": false,
+    "exit_price_improvement_credited": false
+  },
+  "decision_boundary": {
+    "public_pass": "retain an unaccepted current-book candidate only when displayed top-level capacity passes and the terminal payoff floor remains strictly positive after the frozen 33.5 bps nonfunding stress and direction-specific worst-eight-event funding stress",
+    "public_fail": "terminalize this exact 92-symbol current public ticker population and require a new listed expiry or material fee funding basis book or product-access change before another screen",
+    "accepted_edge": "never from this snapshot; exact account commissions executable recurrence synchronized expiry exit basis and owned cash settlement remain mandatory",
+    "all_outcomes": "accepted edge count remains unchanged and no authenticated funded quoted paper or live action is authorized"
+  },
+  "source_contracts": [
+    "https://www.binance.com/en/support/announcement/detail/068cb34c503a417982f8c9c6493ff5bf",
+    "https://www.binance.com/en/support/faq/detail/dc9e52b4440b48bd900a767cc5024c84",
+    "https://developers.binance.com/en/docs/catalog/core-trading-options/api/rest-api/exchange-information",
+    "https://developers.binance.com/en/docs/catalog/core-trading-options/api/rest-api/24hr-ticker-price-change-statistics",
+    "https://developers.binance.com/en/docs/catalog/core-trading-futures-usds-m/api/rest-api/exchange-information",
+    "https://developers.binance.com/en/docs/catalog/core-trading-futures-usds-m/api/rest-api/symbol-order-book-ticker"
+  ],
+  "raw_retention": {
+    "directory": "data/binance-commodity-option-perpetual-lower-bound-v1/raw",
+    "journal": "data/binance-commodity-option-perpetual-lower-bound-v1/request-journal.jsonl",
+    "manifest_must_record": [
+      "request_count",
+      "status_codes",
+      "response_bytes",
+      "response_sha256",
+      "capture_window_ms"
+    ]
+  },
+  "prohibited_shortcuts": [
+    "using_option_mark_last_trade_or_model_price_instead_of_displayed_ask_and_quantity",
+    "using_perpetual_mark_or_index_instead_of_displayed_entry_book_side",
+    "assuming_the_perpetual_exit_book_equals_the_option_settlement_index",
+    "ignoring_funding_option_futures_exercise_or_exit_basis_costs",
+    "crediting_favorable_funding_or_maker_execution",
+    "assuming_the_option_and_perpetual_legs_are_atomic",
+    "changing_the_frozen_population_after_viewing_tickers",
+    "placing_or_simulating_an_order_or_accessing_an_account"
+  ]
+}
