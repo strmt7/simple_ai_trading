@@ -1,0 +1,107 @@
+{
+  "schema_version": "binance-djtb-new-listing-spot-perpetual-contract-v1",
+  "status": "frozen_before_first_DJTBUSDT_DJTUSDT_economic_book_or_funding_capture",
+  "frozen_at_utc": "2026-08-27T03:48:30Z",
+  "contract_sha256": "087b06191378fa949ac62340d9f3e5c625aa31feff71bba3c7fd20cae1155ee8",
+  "purpose": "test the newly listed exact-one-share DJTB bStock versus DJT TradFi perpetual for market-direction-independent long-spot short-perpetual entry basis after capacity fixed-cost exit-basis and adverse-funding stress without resampling any previously screened bStock pair",
+  "authority": {
+    "research_only": true,
+    "public_unauthenticated_GET_sources_only": true,
+    "credentials_permitted": false,
+    "account_state_permitted": false,
+    "orders_transfers_conversions_wallet_or_margin_actions_permitted": false,
+    "paper_or_live_trading_authority": false,
+    "profitability_or_accepted_edge_claim_permitted": false
+  },
+  "material_new_listing_boundary": {
+    "spot_announcement_article_code": "653dce6a74234b999d7a189c0fa49a80",
+    "spot_pair": "DJTBUSDT",
+    "spot_open_utc": "2026-08-26T12:00:00Z",
+    "futures_announcement_article_code": "bda2e5ae3e3d46718a14a493521f6078",
+    "perpetual_symbol": "DJTUSDT",
+    "perpetual_open_utc": "2026-08-25T09:15:00Z",
+    "collateral_announcement_article_code": "8837d1a33b97422597c14d38ead5dc82",
+    "why_not_a_repeat": "DJTB was listed after the retained full-universe bStock screen and is absent from every prior bStock result; all earlier bStock symbols remain prohibited from this capture"
+  },
+  "discovery_identity_already_observed": {
+    "observed_before_utc": "2026-08-27T03:48:30Z",
+    "official_bstock_list_response_bytes": 14867,
+    "official_bstock_list_response_sha256": "87aa11d459f9babcba9837743ab616fef4c066b20e209524b43ee383429cde3d",
+    "required_row": {
+      "asset": "DJTB",
+      "assetType": 1,
+      "chainId": "56",
+      "contractAddress": "0xf2ec508422174ee564de98187db9359d318afb6b",
+      "cs": "DJTBUSDT",
+      "d": 18,
+      "multiplier": "1",
+      "symbol": "DJTB",
+      "ticker": "DJT",
+      "type": 3
+    }
+  },
+  "capture": {
+    "bstock_list_endpoint": "https://www.binance.com/bapi/defi/v1/public/wallet-direct/buw/wallet/market/token/rwa/stock/detail/list/ai?type=3",
+    "spot_exchange_info_endpoint": "https://api.binance.com/api/v3/exchangeInfo?symbol=DJTBUSDT",
+    "futures_exchange_info_endpoint": "https://fapi.binance.com/fapi/v1/exchangeInfo",
+    "spot_depth_endpoint": "https://api.binance.com/api/v3/depth?symbol=DJTBUSDT&limit=1000",
+    "futures_depth_endpoint": "https://fapi.binance.com/fapi/v1/depth?symbol=DJTUSDT&limit=1000",
+    "futures_funding_history_endpoint": "https://fapi.binance.com/fapi/v1/fundingRate?symbol=DJTUSDT&limit=1000",
+    "futures_premium_index_endpoint": "https://fapi.binance.com/fapi/v1/premiumIndex?symbol=DJTUSDT",
+    "request_plan": "exactly one GET to each of the seven endpoints in the listed order",
+    "maximum_http_requests": 7,
+    "stop_on_first_http_identity_or_schema_error": true,
+    "retry_permitted": false,
+    "durable_raw_before_calculation": true
+  },
+  "economics": {
+    "numeric_type": "decimal_never_binary_float",
+    "construction": "buy_DJTB_bStock_from_spot_asks_and_short_the_exact_same_underlying_quantity_of_DJTUSDT_perpetual_into_futures_bids",
+    "target_spot_costs_usdt": [
+      "100",
+      "1000",
+      "5000"
+    ],
+    "common_quantity": "round each target up to the smallest exact common spot and perpetual LOT_SIZE step and require both books to fill that same quantity",
+    "gross_entry_headroom": "futures_bid_proceeds_minus_spot_ask_cost_for_the_same_underlying_quantity",
+    "spot_round_trip_taker_fee_stress_bps": "20",
+    "futures_round_trip_taker_fee_stress_bps": "10",
+    "perpetual_exit_basis_stress_bps": "20",
+    "fixed_stress_bps_of_spot_cost": "50",
+    "funding_stress": "short hedge never credits positive funding and debits the sum of adverse negative rates across up to the latest eight retained funding events; fewer than eight events is explicitly insufficient persistence but still fully debited",
+    "maker_rebate_or_fee_discount_credited": false,
+    "stock_dividend_or_lending_income_credited": false,
+    "reference_price_or_index_used_as_executable_leg": false
+  },
+  "decision_boundary": {
+    "public_pass": "retain an unaccepted new-listing candidate only when every target is capacity-valid and remains strictly positive after 50 bps fixed stress plus adverse-only retained funding stress",
+    "public_fail": "terminalize the first DJTBUSDT_DJTUSDT listing-state snapshot and require a material fee basis funding book product-access or exact-account conversion change before another screen",
+    "accepted_edge": "never from this snapshot; exact account fees eligibility stock settlement taxes margin liquidation exit synchronization owned fills and multi-regime recurrence remain mandatory",
+    "all_outcomes": "accepted edge count remains unchanged and no authenticated funded quoted paper or live action is authorized"
+  },
+  "source_contracts": [
+    "https://www.binance.com/en/support/announcement/detail/653dce6a74234b999d7a189c0fa49a80",
+    "https://www.binance.com/en/support/announcement/detail/bda2e5ae3e3d46718a14a493521f6078",
+    "https://www.binance.com/en/support/announcement/detail/8837d1a33b97422597c14d38ead5dc82"
+  ],
+  "raw_retention": {
+    "directory": "data/binance-djtb-new-listing-spot-perpetual-v1/raw",
+    "journal": "data/binance-djtb-new-listing-spot-perpetual-v1/request-journal.jsonl",
+    "manifest_must_record": [
+      "request_count",
+      "status_codes",
+      "response_bytes",
+      "response_sha256",
+      "capture_window_ms"
+    ]
+  },
+  "prohibited_shortcuts": [
+    "requesting_any_previously_screened_bStock_pair",
+    "using_reference_index_mark_last_trade_or_kline_as_an_executable_leg",
+    "assuming_the_spot_and_perpetual_legs_are_atomic",
+    "crediting_positive_funding_or_dividends",
+    "ignoring_exact_contract_multiplier_quantity_steps_depth_or_minimum_notional",
+    "calling_a_new_listing_spread_persistent_profit_or_an_accepted_edge",
+    "placing_or_simulating_an_order_or_accessing_an_account"
+  ]
+}
