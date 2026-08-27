@@ -108,6 +108,11 @@ override prose.
   If an unchanged mechanism already fails an economic gate, do not spend another
   capture merely to repair sample count unless a precommitted decision could
   still change.
+- In Windows/PowerShell capture wrappers, compare absolute instants with
+  `DateTimeOffset` or normalize both operands to UTC before comparison. Never
+  compare `DateTime.UtcNow` directly with a parsed local-kind `DateTime`; its
+  tick comparison can wait past the frozen UTC boundary without issuing a
+  request.
 - Before claiming complete coverage from a paginated public catalog, prove a
   source-bound population/page ceiling or freeze an explicitly partial rank or
   cursor boundary. A non-null cursor at the request ceiling is incomplete, not

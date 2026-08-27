@@ -1,0 +1,1 @@
+{"json_body_sha256":null,"method":"GET","params":{"endTime":1787788799999,"interval":"1h","limit":1500,"startTime":1787140800000,"symbol":"DOGEUSDT"},"requested_before_ms":1787813754433,"url":"https://fapi.binance.com/fapi/v1/premiumIndexKlines"}

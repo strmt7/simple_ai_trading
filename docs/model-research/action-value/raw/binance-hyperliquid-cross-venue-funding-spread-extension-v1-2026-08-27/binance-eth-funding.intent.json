@@ -1,0 +1,1 @@
+{"json_body_sha256":null,"method":"GET","params":{"endTime":1787788799999,"limit":1000,"startTime":1781740800000,"symbol":"ETHUSDT"},"requested_before_ms":1787813747824,"url":"https://fapi.binance.com/fapi/v1/fundingRate"}

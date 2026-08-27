@@ -782,6 +782,19 @@ diagnostics, not accepted edges.
   Do not retry the same source configuration or derive a daily rate from the
   monthly program cap. The current SDK model makes `clobRewards` optional; a
   normalized SDK field is not proof that raw Gamma populates it.
+- A second frozen attempt used the materially distinct unsigned public current
+  rewards list documented by official SDK commit
+  `41c642c2d056e5a697fd5962498ca5a7313ac8ef`. At 2026-08-27 07:20:05 UTC,
+  `/rewards/markets/current?sponsored=true` returned its complete 54-row
+  population in one page with the terminal `LTE=` cursor. Zero row matched any
+  of the seven exact five-minute condition IDs, so the collector stopped before
+  books. Canonical terminal artifact:
+  `docs/model-research/polymarket/crypto-twap-5m-current-rewards-list-join-v1-2026-08-27.json`,
+  result SHA-256
+  `62940fa602d71259aab1326eb038069b23df6f247dd898a952f493fcebc38e6f`.
+  This closes the distinct current-list source path as well as Gamma; do not
+  repeat either absent another program change or a genuinely new exact dated
+  per-market allocation response.
 - A distinct complete-set inventory stack screen did not repeat paired-maker
   books or wallet polling. Gamma metadata showed 12 of the 55 currently
   holding-reward-eligible BTC/ETH/SOL annual thresholds with positive reward
@@ -932,7 +945,7 @@ grants paper, testnet, or live authority.
 
 The canonical structural-edge priority and retry-trigger registry is
 `docs/model-research/structural-edge-priority-registry-v1.json`, result SHA-256
-`d5154a63f6f3e46e6f7302dde61a2141383a04d6e1f7a12c5b87eb92a6b4e89b`.
+`aca1295421ba83a9a0e97a305baaf0f62371d6d2ea95526f671ec1877a0de035`.
 Advance only the highest-ranked hypothesis whose trigger is actually satisfied.
 This prevents account-blocked or terminal screens from being rerun as if more
 snapshots could create an edge.
@@ -1411,10 +1424,12 @@ explicit account plus paper or funding authority.
 The later exact 550,000 dollar five-minute program allocation was such a
 material change, but its one source-bound attempt also terminated before books:
 all seven exact raw Gamma rows omitted the optional `clobRewards` allocation.
-This newer source configuration is now terminal too. Reopen only when a
-materially new public response supplies an exact per-market dated daily
-allocation or the official program allocation changes again; never infer a
-daily rate by dividing the monthly cap.
+The distinct complete official current-rewards list then returned 54 terminal-
+cursor sponsored rows with zero of those seven exact condition IDs, and also
+stopped before books. Both public source configurations are terminal. Reopen
+only when a genuinely new public response supplies an exact per-market dated
+daily allocation or the official program allocation changes again; never infer
+a daily rate by dividing the monthly cap.
 
 The Binance option workflow adds a request-efficiency contract learned from a
 failed exploratory confirmation: fetch the contract catalog once, fetch the
@@ -2032,6 +2047,19 @@ contract SHA-256
 result SHA-256
 `095009a36a5c6a8a5a2dfdfb3e57ebe6183721bb84600518552ccf6d463617c8`.
 
+A distinct Binance-Hyperliquid direction-neutral funding-spread hypothesis was
+then reproduced from the exact Zenodo package and extended with one frozen
+70-day public interval. BTC, ETH, SOL, and DOGE each had complete 1,680-hour
+cross-venue coverage. After the frozen 20-bip round trip and exact entry/exit
+premium-basis drift, their APRs were 0.23645%, 2.16957%, 1.27718%, and 1.17155%;
+the primary BTC/ETH equal-weight basket was 1.20301%. All failed the
+same-timestamp 3.86% DGS3MO opportunity-cost hurdle. Do not refit or resample
+this interval. Reopen only after a material venue-fee, funding, basis, or
+hurdle change. Canonical result:
+`docs/model-research/action-value/binance-hyperliquid-cross-venue-funding-spread-extension-v1-2026-08-27.json`,
+result SHA-256
+`23eb54dfd19890d984d73156ef05950f7362f8fffe081b93cc5d471f59f62755`.
+
 A distinct Binance Options execution architecture is materially reopened.
 Current official Options RFQ sources prove that predefined same-expiry
 two-leg call spreads and put spreads bypass the public order book and execute
@@ -2055,7 +2083,7 @@ result SHA-256
 `64943efe0c6ad16f8d02f78548afef38f919448d2da87c7573e825a2eeefd6b9`.
 That checkpoint left seventeen accepted scoped edges. The current registry now
 has nineteen and result SHA-256
-`d5154a63f6f3e46e6f7302dde61a2141383a04d6e1f7a12c5b87eb92a6b4e89b`.
+`aca1295421ba83a9a0e97a305baaf0f62371d6d2ea95526f671ec1877a0de035`.
 
 The complete Binance XAU/XAG Commodity Options versus matching TradFi
 perpetual lower-bound screen is terminal for the active 2026-08-27 and
@@ -2292,6 +2320,8 @@ not grant account, funding, order, or transaction authority.
    requires it.
 3. Do not rerun rejected Binance elevated-funding spot/perpetual carry or the
    terminal one-use broad-current-liquidity-selected crypto funding preflight,
+   the terminal 70-day Binance-Hyperliquid cross-venue funding-spread extension
+   without a material venue-fee funding basis or hurdle change,
    USDT/USDC perpetual funding
    differential, quarterly carry, two-sided touch making,
    Polymarket binary complete-set taking, negative-risk parity, logical
@@ -2420,9 +2450,12 @@ not grant account, funding, order, or transaction authority.
    The later 550,000 dollar five-minute allocation did materially reopen the
    excluded duration once. That one seven-asset attempt journaled both sources
    and then stopped before books because raw Gamma omitted `clobRewards` for all
-   seven exact markets. Do not retry that source configuration or divide the
-   monthly cap into an invented daily rate. Reopen only for a materially new
-   public exact per-market dated allocation response or another program change.
+   seven exact markets. A distinct complete unsigned sponsored current-rewards
+   list then returned 54 terminal-cursor rows and zero exact matches for the
+   same seven conditions, also stopping before books. Do not retry either
+   source configuration or divide the monthly cap into an invented daily rate.
+   Reopen only for a genuinely new public exact per-market dated allocation
+   response or another program change.
    The distinct Polymarket maker-rebate study now includes the maker-first,
    exact-quantity taker-hedge mechanism. Its one-day historical diagnostic is
    negative in aggregate and unstable across assets and hours; do not expand
