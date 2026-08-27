@@ -500,7 +500,10 @@
         "proved bStock multiplier to stock and perpetual hedge-unit mapping through corporate actions",
         "conversion availability limits cadence completion and balance reconciliation",
         "margin liquidation capital and opportunity costs plus prospective trigger persistence",
-        "explicit permanent scope expansion beyond BTC ETH and SOL before execution work"
+        "explicit permanent scope expansion beyond BTC ETH and SOL before execution work",
+        "exact Binance Stocks account KYC region first-transfer and live unallocated reward-pool eligibility",
+        "same-owner independently held supported U_S stock inventory transfer value buffer delivering-broker fees and settlement before 2026-09-30",
+        "21-day post-credit liquidity restriction custody tax corporate-action voucher receipt claim and conversion costs"
       ],
       "canonical_artifacts": [
         {
@@ -526,12 +529,16 @@
         {
           "path": "docs/model-research/action-value/binance-djtb-new-listing-spot-perpetual-v1-2026-08-27.json",
           "result_sha256": "2b85a6eca339799a6eb07ba48069e3a2943d97116a9320ce20400d260227e1be"
+        },
+        {
+          "path": "docs/model-research/action-value/binance-existing-stock-transfer-reward-overlay-candidate-v1-2026-08-27.json",
+          "result_sha256": "3ecb4f39848719f788b6853bd90120d1809379b8d81b5419da4b1bbc957fec3d"
         }
       ],
-      "current_status": "full_66_match_60_exact_multiplier_screen_rejected_all_57_unexposed_symbols_at_frozen_training_gate_and_the_pre_frozen_top_20_percent_equal_weight_basket_then_failed_validation_minus_81_80_bips_test_minus_108_20_bips_and_every_aggregate_regime_slice_after_60_bips_execution_stress_plus_10_percent_annual_gross_capital_hurdle_the_distinct_new_DJTB_exact_multiplier_listing_was_tested_once_at_100_1000_5000_USDT_all_sizes_had_capacity_but_gross_entry_headroom_was_already_negative_45_56_to_negative_91_70_bips_before_50_bips_fixed_stress_and_26_3045_bips_adverse_six_event_funding_not_accepted_or_deployment_ready",
+      "current_status": "full_66_match_60_exact_multiplier_screen_and_the_new_DJTB_exact_multiplier_listing_are_rejected_the_distinct_existing_stock_transfer_reward_is_a_time_limited_high_margin_public_candidate_with_fixed_bonus_250_150_66_67_40_25_and_20_bips_at_the_six_transfer_thresholds_and_the_first_three_remain_positive_after_an_illustrative_10_percent_annual_21_day_hurdle_but_the_forward_reward_floor_is_zero_until_live_first_come_pool_account_region_first_transfer_supported_inventory_settlement_and_every_transfer_custody_liquidity_tax_and_voucher_cost_are_proved_not_accepted_stable_or_deployment_ready",
       "market_direction_forecast_required": false,
       "mechanism": "bstock_reference_conversion_and_delta_neutral_perpetual_funding",
-      "next_action": "do_not_retry_any_prior_bStock_funding_parameter_basket_or_DJTB_listing_state_for_a_future_new_exact_multiplier_bStock_with_a_matching_new_TradFi_perpetual_freeze_one_symbol_only_public_prefilter_otherwise_revisit_conversion_parity_only_after_explicit_permanent_scope_authority_and_same_account_eligibility_quote_conversion_and_exact_cost_evidence",
+      "next_action": "before_any_stock_transfer_require_explicit_account_read_only_authority_to_prove_exact_region_KYC_Stocks_access_first_transfer_status_supported_inventory_and_live_pool_availability_then_present_exact_owned_inventory_transfer_cost_and_21_day_liquidity_decision_to_the_user_transfer_submission_requires_separate_high_impact_authority_do_not_retry_prior_bStock_funding_or_DJTB_state",
       "priority_rank": 12,
       "prohibited_shortcuts": [
         "external_reference_price_as_an_executable_stock_quote",
@@ -540,10 +547,14 @@
         "labeled_fee_sensitivity_as_exact_after_cost_profit",
         "campaign_rewards_self_trading_or_wash_volume_as_persistent_edge",
         "changing_the_BTC_ETH_SOL_execution_scope_from_a_research_snapshot",
-        "resampling_DJTBUSDT_DJTUSDT_or_any_previously_screened_bStock_pair_without_a_material_trigger"
+        "resampling_DJTBUSDT_DJTUSDT_or_any_previously_screened_bStock_pair_without_a_material_trigger",
+        "inferring_stock_transfer_account_region_from_host_timezone_or_crediting_a_first_come_pool_without_live_account_evidence",
+        "transferring_or_buying_stock_only_to_chase_the_reward_or_submitting_any_transfer_without_separate_explicit_authority",
+        "crediting_transfer_fee_reimbursement_as_profit_without_actual_eligible_fees_or_assuming_IBKR_origin_is_eligible",
+        "ignoring_the_14_business_day_settlement_21_day_restriction_price_snapshot_voucher_expiry_or_custody_and_corporate_action_risks"
       ],
-      "retry_trigger": "new_exact_multiplier_bStock_listing_with_a_matching_previously_unscreened_TradFi_perpetual_for_one_symbol_only_public_prefilter_or_explicit_permanent_bStock_scope_authority_plus_eligible_same_account_read_only_stock_quote_conversion_and_commission_evidence",
-      "venue_scope": "binance_bstocks_stocks_and_matching_tradifi_perpetuals_research_only"
+      "retry_trigger": "explicit_read_only_Binance_Stocks_account_authority_before_the_2026_09_30_activity_end_to_prove_region_first_transfer_and_live_pool_state_or_new_exact_multiplier_bStock_listing_with_a_matching_previously_unscreened_TradFi_perpetual_for_one_symbol_only_public_prefilter_or_explicit_permanent_bStock_scope_authority_plus_eligible_same_account_read_only_stock_quote_conversion_and_commission_evidence",
+      "venue_scope": "binance_bstocks_stocks_existing_stock_transfer_reward_and_matching_tradifi_perpetuals_research_only"
     },
     {
       "blocking_evidence": [
@@ -1460,7 +1471,7 @@
       "venue_scope": "Binance_XAU_XAG_USDT_long_only_commodity_options_and_matching_TradFi_perpetuals"
     }
   ],
-  "result_sha256": "29ef9296b8a07a6011f4325c0048805f5b36f790c5e3b75eecdb1b126c58d742",
+  "result_sha256": "f6cc7c0bdaa2b41d5ed787e5c37bb8004b883f92ba2549c0aef8886a65cc4294",
   "schema_version": "structural-edge-priority-registry-v1",
   "terminal_do_not_repeat": [
     {
@@ -1619,6 +1630,6 @@
       "reason": "the_frozen_unseen_rank_251_to_1000_validation_used_explicit_win_partial_loss_statuses_across_6264_resolved_YES_positions_162_wallets_and_77_dates_but_the_opposite_side_gross_spread_proxy_lost_73368_711836_pUSD_before_maker_costs_and_was_negative_in_the_PNL_cohort_training_test_and_both_wallet_and_date_cluster_lower_bounds_do_not_repeat_leaderboard_mining"
     }
   ],
-  "updated_at_utc": "2026-08-27T04:13:24.3009035Z",
+  "updated_at_utc": "2026-08-27T04:18:26.9080618Z",
   "usage_rule": "advance_the_highest_ranked_hypothesis_whose_retry_trigger_is_satisfied_otherwise_do_not_repeat_a_blocked_or_terminal_screen"
 }

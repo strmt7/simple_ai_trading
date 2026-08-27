@@ -908,7 +908,7 @@ grants paper, testnet, or live authority.
 
 The canonical structural-edge priority and retry-trigger registry is
 `docs/model-research/structural-edge-priority-registry-v1.json`, result SHA-256
-`29ef9296b8a07a6011f4325c0048805f5b36f790c5e3b75eecdb1b126c58d742`.
+`f6cc7c0bdaa2b41d5ed787e5c37bb8004b883f92ba2549c0aef8886a65cc4294`.
 Advance only the highest-ranked hypothesis whose trigger is actually satisfied.
 This prevents account-blocked or terminal screens from being rerun as if more
 snapshots could create an edge.
@@ -1860,7 +1860,7 @@ result SHA-256
 `64943efe0c6ad16f8d02f78548afef38f919448d2da87c7573e825a2eeefd6b9`.
 The structural registry remains at sixteen accepted scoped edges and now has
 result SHA-256
-`29ef9296b8a07a6011f4325c0048805f5b36f790c5e3b75eecdb1b126c58d742`.
+`f6cc7c0bdaa2b41d5ed787e5c37bb8004b883f92ba2549c0aef8886a65cc4294`.
 
 The complete Binance XAU/XAG Commodity Options versus matching TradFi
 perpetual lower-bound screen is terminal for the active 2026-08-27 and
@@ -1978,6 +1978,41 @@ orders, applications, and volume generation remain forbidden. Canonical result:
 `docs/model-research/action-value/binance-bstock-spot-lp-all-symbol-rebate-overlay-candidate-v1-2026-08-27.json`,
 result SHA-256
 `d279f8ab88875c812e6691fa500fdfde741f2e2fbca19ee240b4c0d4a579d607`.
+
+## Existing-Stock Transfer Reward R&D
+
+Binance's 2026-08-11 through 2026-09-30 first U.S.-stock transfer-in program is
+the widest public structural reward lead in the current pass. For first
+successful transfer values of 2,000, 10,000, 30,000, 150,000, 400,000, and
+1,000,000 USD, the fixed transfer bonuses are 50, 150, 200, 600, 1,000, and
+2,000 USDC: 250, 150, 66.67, 40, 25, and 20 bps at the thresholds. After an
+illustrative 10% annualized 21-day liquidity hurdle, the first three thresholds
+still retain 192.47, 92.47, and 9.13 bps; the larger three fail that sensitivity.
+Fee-reimbursement caps are excluded from profit and may only offset actual
+eligible owned fees after voucher receipt. IBKR-origin transfers do not qualify
+for fee reimbursement.
+
+This is a high-margin candidate, not an accepted or guaranteed edge. The
+300,000-USDC pool is allocated strictly first-come by successful credit time and
+may end early, so the public forward reward floor is zero. The program excludes
+the United States, United Kingdom, EEA, and other restricted jurisdictions;
+host timezone does not prove account region. Exact KYC, Stocks access,
+first-transfer status, supported symbols, same legal owner, pool availability,
+transfer fees, tax, custody, corporate actions, price-snapshot tier buffer,
+voucher conversion, and operational costs remain unproved. Transfers generally
+require at least 14 business days, and the bonus is cancelled by transferring
+out activity stocks or selling and withdrawing the equivalent within 21 days
+after credit.
+
+Do not buy or transfer stock to chase the reward. Before any external action,
+explicit read-only account authority must first prove exact eligibility and a
+live unallocated or account-reserved reward. Then present the exact existing
+inventory and cost decision to the user. Submitting a Binance or external-broker
+transfer is a separate high-impact action requiring explicit authority.
+Canonical result:
+`docs/model-research/action-value/binance-existing-stock-transfer-reward-overlay-candidate-v1-2026-08-27.json`,
+result SHA-256
+`3ecb4f39848719f788b6853bd90120d1809379b8d81b5419da4b1bbc957fec3d`.
 
 ## Protected Local Work
 
