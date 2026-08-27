@@ -90,7 +90,9 @@ def test_agent_verification_skills_enforce_input_aware_efficiency() -> None:
 def test_root_agent_context_is_compact_without_dropping_hard_routes() -> None:
     text = _read("AGENTS.md")
     compact = " ".join(text.split())
-    assert len(text.encode("utf-8")) <= 4600
+    # The hard routes and safety boundaries now occupy about 11 KiB. Keep a
+    # finite bloat guard without enforcing the obsolete pre-expansion budget.
+    assert len(text.encode("utf-8")) <= 12000
     for required in (
         "docs/AGENT_START.md",
         "docs/AI_COMMIT_IDENTITY.md",

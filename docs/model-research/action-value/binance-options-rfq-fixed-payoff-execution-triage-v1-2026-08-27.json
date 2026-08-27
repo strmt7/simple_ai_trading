@@ -1,0 +1,107 @@
+{
+  "schema_version": "binance-options-rfq-fixed-payoff-execution-triage-v1",
+  "created_at_utc": "2026-08-27T00:48:31.8271298Z",
+  "result_sha256": "64943efe0c6ad16f8d02f78548afef38f919448d2da87c7573e825a2eeefd6b9",
+  "purpose": "determine whether current official Binance Options RFQ evidence materially changes the execution boundary for previously rejected direction-independent option vertical and box parity candidates",
+  "authority": {
+    "public_research_only": true,
+    "credentials_used": false,
+    "account_state_accessed": false,
+    "rfq_requested": false,
+    "quote_confirmed_or_executed": false,
+    "orders_or_transfers_submitted": 0,
+    "trading_authority": false
+  },
+  "source_proved_capabilities": {
+    "rfq_bypasses_the_public_order_book": true,
+    "request_is_sent_to_multiple_market_makers": true,
+    "quote_review_and_confirmation_are_separate_from_quote_request": true,
+    "predefined_multi_leg_strategies_execute_all_legs_together": true,
+    "predefined_same_expiry_two_leg_call_spread": true,
+    "predefined_same_expiry_two_leg_put_spread": true,
+    "other_predefined_strategies": [
+      "single_call",
+      "single_put",
+      "calendar_spread",
+      "diagonal_spread",
+      "straddle",
+      "strangle"
+    ],
+    "intended_user_scope": "institutional_advanced_retail_and_VIP_users_with_first_use_questionnaire"
+  },
+  "not_source_proved": [
+    "arbitrary_custom_leg_count",
+    "four_leg_box_or_conversion_reversal_template",
+    "RFQ_REST_or_WebSocket_API_endpoint",
+    "minimum_or_maximum_RFQ_quantity",
+    "quote_validity_window_and_last_look_semantics",
+    "market_maker_count_or_response_probability_for_the_account",
+    "exact_RFQ_spread_commission_settlement_fee_margin_or_capital_cost",
+    "account_region_eligibility_or_questionnaire_completion",
+    "positive_quote_or_after_cost_profit"
+  ],
+  "developer_api_catalog_check": {
+    "documentation_url": "https://developers.binance.com/en/docs/llms-full.txt",
+    "retained_path": "C:/trader/retained-public-evidence/2026-08-27-binance-options-rfq-fixed-payoff/binance-developer-llms-full.txt",
+    "retained_bytes": 7984993,
+    "retained_sha256": "3399639eb6123ccfed85881a5437dde37b073d0b98e4a8df51ad80d5372eaaab",
+    "literal_Options_RFQ_occurrences": 0,
+    "option_RFQ_or_multi_leg_endpoint_found": false,
+    "documented_standard_option_order_endpoints_found": [
+      "POST /eapi/v1/order",
+      "POST /eapi/v1/batchOrders",
+      "GET /eapi/v1/order"
+    ],
+    "documented_account_cost_endpoint": {
+      "endpoint": "GET /eapi/v1/commission",
+      "security": "USER_DATA",
+      "credentials_currently_available_to_this_process": false
+    },
+    "interpretation": "the_public_developer_catalog_does_not_prove_programmatic_Options_RFQ_access_and_undocumented_interfaces_must_not_be_relied_upon"
+  },
+  "source_records": [
+    {
+      "publisher": "Binance Academy",
+      "title": "What Is Binance Options RFQ?",
+      "url": "https://academy.binance.com/ur-PK/articles/what-is-binance-options-rfq",
+      "updated_at_source": "2026-06-26",
+      "access_method": "web_rendered_source_snapshot",
+      "payload_retained": false
+    },
+    {
+      "publisher": "Binance Academy",
+      "title": "8 Trading Strategies for Binance Options RFQ",
+      "url": "https://academy.binance.com/ky-KG/articles/trading-strategies-for-binance-options-rfq",
+      "updated_at_source": "2026-07-06",
+      "access_method": "web_rendered_source_snapshot",
+      "payload_retained": false
+    },
+    {
+      "publisher": "Binance Developers",
+      "title": "Official full developer documentation",
+      "url": "https://developers.binance.com/en/docs/llms-full.txt",
+      "access_method": "retained_exact_public_payload",
+      "payload_retained": true,
+      "payload_sha256": "3399639eb6123ccfed85881a5437dde37b073d0b98e4a8df51ad80d5372eaaab"
+    }
+  ],
+  "decision": {
+    "accepted_edge": false,
+    "profitability_claim": false,
+    "deployment_ready": false,
+    "displayed_book_vertical_rejection_remains_terminal": true,
+    "vertical_execution_architecture_materially_reopened": true,
+    "box_execution_architecture_reopened": false,
+    "status": "predefined_atomic_two_leg_vertical_RFQ_path_source_proved_but_account_quote_cost_and_profit_unproved",
+    "next_action": "only_after_explicit_quote_request_only_authority_and_eligible_account_access_request_one_minimum_nonaccepted_call_spread_and_one_minimum_nonaccepted_put_spread_quote_for_a_pre_frozen_fixed_payoff_identity_then_stop_without_confirmation_and_escalate_only_if_the_exact_quote_clears_commission_settlement_margin_capital_and_stress_costs",
+    "quote_confirmation_or_execution_requires_separate_explicit_authority": true
+  },
+  "prohibited_shortcuts": [
+    "treating_atomic_execution_as_positive_pricing",
+    "treating_a_two_leg_vertical_template_as_a_four_leg_box",
+    "using_standard_batch_orders_as_proof_of_atomic_RFQ_execution",
+    "requesting_or_confirming_a_quote_without_the_separate_explicit_authority",
+    "relying_on_an_undocumented_RFQ_API",
+    "using_public_option_tickers_instead_of_the_future_account_specific_RFQ_quote"
+  ]
+}

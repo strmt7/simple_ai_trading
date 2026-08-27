@@ -1,0 +1,142 @@
+{
+  "schema_version": "binance-broad-crypto-funding-carry-preflight-contract-v1",
+  "status": "frozen_before_public_market_outcome_access",
+  "frozen_at_utc": "2026-08-27T00:48:31.8271298Z",
+  "contract_sha256": "7a2c34c4f9c0d44bcd6bed4564d33cda89831ab9a60341ac7ca23cc452231ed1",
+  "purpose": "test once whether a deterministic volume-ranked broad crypto universe contains stable market-direction-neutral spot-perpetual funding carry with enough conservative funding-only headroom to justify a separate unbiased basis and account-cost study",
+  "authority": {
+    "research_only": true,
+    "public_unauthenticated_gets_only": true,
+    "credentials_permitted": false,
+    "account_state_permitted": false,
+    "orders_or_transfers_permitted": false,
+    "live_or_paper_trading_authority": false,
+    "profitability_or_accepted_edge_claim_permitted": false,
+    "session_scope_exception": "the_user_explicitly_authorized_broader_public_edge_R_and_D_for_this_session_only",
+    "execution_scope_change": false
+  },
+  "research_correction": {
+    "previous_major_only_boundary": [
+      "BTC",
+      "ETH",
+      "SOL"
+    ],
+    "reason_for_one_use_broader_preflight": "a_major_only_universe_can_hide_cross_sectional_carry_and_cannot_terminalize_the_broader_crypto_family",
+    "no_repeated_resampling_rule": "one_frozen_current_liquidity_selection_and_one_frozen_history_request_per_selected_symbol_only"
+  },
+  "population_and_selection": {
+    "spot_venue": "Binance Spot",
+    "future_venue": "Binance USD-M Futures",
+    "exact_base_asset_identity_required": true,
+    "spot_quote_asset": "USDT",
+    "spot_status": "TRADING",
+    "spot_isSpotTradingAllowed": true,
+    "future_contract_type": "PERPETUAL",
+    "future_status": "TRADING",
+    "future_quote_asset": "USDT",
+    "future_margin_asset": "USDT",
+    "future_underlying_type": "COIN",
+    "minimum_each_leg_quote_volume_usdt_24h": "25000000",
+    "ranking": "descending_minimum_of_spot_and_future_current_24h_quote_volume_then_future_symbol_ascending",
+    "maximum_selected_symbols": 20,
+    "minimum_selected_symbols": 10,
+    "funding_history_limit": 1000,
+    "funding_history_row_bounds_inclusive": [
+      240,
+      1000
+    ]
+  },
+  "causal_roles": {
+    "ordered_split": [
+      "training",
+      "validation",
+      "test"
+    ],
+    "fractions": [
+      "0.60",
+      "0.20",
+      "0.20"
+    ],
+    "regime_thresholds_fit_on_training_only": true,
+    "validation_and_test_cannot_select_symbols_thresholds_or_gates": true,
+    "funding_at_t_feature_lag": "mark_return_ending_at_t_minus_1"
+  },
+  "economic_and_stability_gates": {
+    "round_trip_execution_stress_bips": "32",
+    "annual_opportunity_hurdle_bips_per_capital_leg": "1000",
+    "gross_capital_legs": 2,
+    "minimum_observations_per_role": 45,
+    "direction_threshold_absolute_return": "0.0025",
+    "volatility_training_quantiles": [
+      "0.50",
+      "0.80"
+    ],
+    "required_slices": [
+      "bullish",
+      "bearish",
+      "sideways",
+      "low_or_normal_volatility",
+      "high_volatility",
+      "stress_volatility",
+      "directional",
+      "choppy"
+    ],
+    "minimum_observations_per_slice": 5,
+    "moving_block_bootstrap_repetitions": 2000,
+    "moving_block_length_settlements": 4,
+    "multiple_testing_control": "bonferroni_over_all_selected_symbols_in_each_role",
+    "required_family_adjusted_bootstrap_net_lower_bound_bips": "0",
+    "maximum_net_drawdown_bips": "250",
+    "maximum_positive_week_concentration": "0.25",
+    "pass_requires": "positive_net_and_positive_family_adjusted_bootstrap_lower_bound_and_all_required_slices_positive_and_drawdown_and_concentration_within_bounds_in_each_of_training_validation_and_test"
+  },
+  "source_contract": {
+    "maximum_public_get_requests": 26,
+    "retries_permitted": false,
+    "raw_response_written_before_parse": true,
+    "durable_request_journal_written_after_each_response": true,
+    "request_sequence": [
+      "GET /api/v3/exchangeInfo once",
+      "GET /fapi/v1/exchangeInfo once",
+      "GET /api/v3/ticker/24hr with type MINI once",
+      "GET /fapi/v1/ticker/24hr once",
+      "GET /api/v3/ticker/bookTicker once",
+      "GET /fapi/v1/ticker/bookTicker once",
+      "GET /fapi/v1/fundingRate with limit 1000 once for each selected symbol up to 20"
+    ],
+    "http_429_or_transport_failure_action": "retain_the_journal_and_raw_responses_then_stop_without_retry",
+    "same_retained_response_reuse_required_after_local_parse_or_calculation_failure": true,
+    "official_documentation_url": "https://developers.binance.com/en/docs/llms-full.txt",
+    "official_documentation_retrieved_at_utc_date": "2026-08-27",
+    "official_documentation_bytes": 7984993,
+    "official_documentation_sha256": "3399639eb6123ccfed85881a5437dde37b073d0b98e4a8df51ad80d5372eaaab",
+    "observed_exchange_info_request_weight_limit_per_minute": 2400
+  },
+  "external_research_trigger": {
+    "paper_title": "Arbitrage Exists, but Not at Retail: Measuring the Retail Accessibility of Cryptocurrency Arbitrage",
+    "paper_url": "https://papers.ssrn.com/sol3/papers.cfm?abstract_id=7138638",
+    "used_claim": "a_volume_ranked_broader_universe_can_reverse_a_major_only_funding_carry_screen_but_the_reported_timing_rule_failed_its_placebo_test",
+    "paper_result_is_not_used_as_edge_evidence": true
+  },
+  "decision_boundary": {
+    "this_preflight_can_accept_an_edge": false,
+    "no_passing_symbol_action": "terminalize_this_broad_current_liquidity_selected_funding_only_preflight_without_resampling",
+    "passing_symbol_action": "freeze_a_separate_point_in_time_universe_historical_basis_depth_execution_account_fee_and_collateral_contract_before_any_additional_outcome_access",
+    "passing_symbol_does_not_authorize": [
+      "trading",
+      "account_access",
+      "profitability_claim",
+      "accepted_edge_promotion"
+    ]
+  },
+  "known_limitations": [
+    "current_liquidity_selection_applied_to_trailing_history_is_selection_biased",
+    "funding_history_does_not_contain_synchronized_executable_spot_and_perpetual_entry_or_exit_basis",
+    "current_top_books_do_not_prove_quantity_atomicity_latency_queue_or_fill",
+    "frozen_fee_and_capital_values_are_labeled_stresses_not_same_account_evidence"
+  ],
+  "implementation": {
+    "path": "tools/screen_binance_broad_crypto_funding_carry.py",
+    "sha256": "0659a8ac93643b0244f15c931aa47a972fe791ec1ce7064f927f07ee377967e4"
+  }
+}

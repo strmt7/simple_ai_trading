@@ -1277,9 +1277,39 @@
       ],
       "retry_trigger": "new_official_Nokia_board_resolution_with_exact_per_share_amount_plus_matching_official_Binance_NOKB_dividend_announcement",
       "venue_scope": "Binance_NOKBUSDT_bStock_and_NOKUSDT_TradFi_perpetual_dividend_adjustment"
+    },
+    {
+      "blocking_evidence": [
+        "explicit quote-request-only authority and eligible Binance Options RFQ account access",
+        "one minimum nonaccepted same-expiry call-spread RFQ and one put-spread RFQ under a pre-frozen fixed-payoff identity",
+        "exact account option commission settlement margin collateral and capital costs",
+        "positive quote headroom across independent expiries volatility and liquidity regimes",
+        "separate explicit authority before any quote confirmation or execution"
+      ],
+      "canonical_artifacts": [
+        {
+          "path": "docs/model-research/action-value/binance-options-rfq-fixed-payoff-execution-triage-v1-2026-08-27.json",
+          "result_sha256": "64943efe0c6ad16f8d02f78548afef38f919448d2da87c7573e825a2eeefd6b9"
+        }
+      ],
+      "current_status": "material_execution_architecture_reopening_official_Options_RFQ_predefined_same_expiry_two_leg_call_and_put_spreads_execute_all_legs_together_and_bypass_the_public_order_book_but_no_RFQ_API_four_leg_box_account_eligibility_quote_cost_or_positive_after_cost_edge_is_proved_not_accepted_or_deployment_ready",
+      "market_direction_forecast_required": false,
+      "mechanism": "binance_options_Rfq_atomic_vertical_fixed_payoff_parity",
+      "next_action": "only_after_explicit_quote_request_only_authority_and_eligible_account_access freeze_one_minimum_nonaccepted_call_spread_and_one_put_spread_quote_request_stop_without_confirmation_and_advance_only_if_exact_quotes_clear_every_account_cost_and_stress_gate",
+      "priority_rank": 37,
+      "prohibited_shortcuts": [
+        "treating_atomic_execution_as_positive_pricing_or_profit",
+        "treating_a_two_leg_vertical_template_as_a_four_leg_box",
+        "using_standard_batch_orders_as_proof_of_atomic_RFQ_execution",
+        "requesting_confirming_or_executing_a_quote_without_the_separate_explicit_authority",
+        "relying_on_an_undocumented_RFQ_API",
+        "rerunning_the_terminal_displayed_book_vertical_or_box_snapshot"
+      ],
+      "retry_trigger": "explicit_quote_request_only_authority_plus_eligible_Binance_Options_RFQ_account_access",
+      "venue_scope": "Binance_BTC_ETH_Options_predefined_same_expiry_two_leg_call_and_put_spreads"
     }
   ],
-  "result_sha256": "bf5e77b2d85f6a976a4af9d2d7510aedfa1ba323d314b1002acb6b08ef76d2a3",
+  "result_sha256": "95283a6ce281bd2e3d6c44ad4a196605a9d7f5cfa424ad474b75bfec593c3ebe",
   "schema_version": "structural-edge-priority-registry-v1",
   "terminal_do_not_repeat": [
     {
@@ -1336,6 +1366,11 @@
       "canonical_result_sha256": "e2f6275232b7f6b7b511211b26a697536a401e14a118393502bcfda96ae4d6e4",
       "family": "binance_elevated_funding_spot_perpetual_carry",
       "reason": "the_frozen_Round_61_matched_base_replay_failed_capacity_and_after_cost_economic_gates_across_BTCUSDT_ETHUSDT_and_SOLUSDT"
+    },
+    {
+      "canonical_result_sha256": "095009a36a5c6a8a5a2dfdfb3e57ebe6183721bb84600518552ccf6d463617c8",
+      "family": "binance_broad_crypto_current_liquidity_selected_spot_perpetual_funding_carry_preflight",
+      "reason": "zero_of_17_exact_liquid_crypto_spot_perpetual_pairs_passed_the_frozen_funding_only_training_validation_test_cross_regime_family_adjusted_execution_and_two_leg_capital_gate_do_not_resample_the_current_liquidity_selected_history"
     },
     {
       "canonical_result_sha256": "03b652fcd7e50c0671abbfb73f68f69509a2e5d7f75d8166f6b74743eab630d3",
@@ -1408,6 +1443,6 @@
       "reason": "AMAT_and_MSFT_special_negative_short_funding_debits_matched_their_declared_gross_dividends_within_three_micro_USDT_while_bStock_reinvests_only_the_net_dividend_so_the_direct_dividend_contribution_is_N_minus_D_equal_to_negative_deductions_before_every_other_cost"
     }
   ],
-  "updated_at_utc": "2026-08-27T00:28:27.4212553Z",
+  "updated_at_utc": "2026-08-27T00:48:31.8271298Z",
   "usage_rule": "advance_the_highest_ranked_hypothesis_whose_retry_trigger_is_satisfied_otherwise_do_not_repeat_a_blocked_or_terminal_screen"
 }
