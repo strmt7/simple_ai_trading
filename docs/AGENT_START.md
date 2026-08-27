@@ -39,6 +39,20 @@ safety gate, blocks Stop, or submits an order.
 
 ## Research State
 
+- The current widest public structural reward lead is Binance's first
+  U.S.-stock transfer-in program for independently held inventory. Its fixed
+  bonuses equal 250, 150, 66.67, 40, 25, and 20 bps at the six tier thresholds;
+  the first three retain 192.47, 92.47, and 9.13 bps after an illustrative 10%
+  annualized 21-day liquidity hurdle. It is not accepted: the 300,000-USDC pool
+  is first-come, account eligibility and region are unknown, the program excludes
+  U.S., U.K., EEA, and other restricted users, transfer settlement generally
+  needs at least 14 business days, and the bonus has a 21-day transfer-out
+  restriction. Do not buy or transfer stock. Account eligibility needs explicit
+  read-only authority; submitting any transfer needs separate high-impact
+  authority. Canonical result:
+  `binance-existing-stock-transfer-reward-overlay-candidate-v1-2026-08-27.json`,
+  SHA-256
+  `3ecb4f39848719f788b6853bd90120d1809379b8d81b5419da4b1bbc957fec3d`.
 - Binance's time-limited bStock Spot LP promotion adds bStock maker-share
   thresholds of 0.05%, 0.10%, 0.30%, and 0.60%; tiers 2 through 4 advertise
   0.4, 0.6, and 0.8-bp maker rebates across all symbols when the bStock tier
@@ -1142,6 +1156,7 @@ safety gate, blocks Stop, or submits an order.
 | Polymarket terminal broad sports Combo requester-overround validation | `docs/model-research/action-value/polymarket-combo-maker-overround-validation-v1-2026-08-27.json` |
 | Binance bStock dividend/perpetual funding timing-gap candidate | `docs/model-research/action-value/binance-bstock-dividend-perp-funding-timing-gap-candidate-v1-2026-08-27.json` |
 | Binance bStock Spot LP all-symbol rebate overlay | `docs/model-research/action-value/binance-bstock-spot-lp-all-symbol-rebate-overlay-candidate-v1-2026-08-27.json` |
+| Binance existing-stock transfer reward overlay | `docs/model-research/action-value/binance-existing-stock-transfer-reward-overlay-candidate-v1-2026-08-27.json` |
 | Binance NOK bStock dividend/perpetual under-debit candidate | `docs/model-research/action-value/binance-nok-bstock-dividend-perpetual-underdebit-candidate-v1-2026-08-27.json` |
 | Binance Ondo/bStock/stock-perpetual wrapper parity candidate | `docs/model-research/action-value/binance-ondo-bstock-stock-perpetual-wrapper-parity-candidate-v1-2026-08-27.json` |
 | Binance Alpha/Ondo/stock-perpetual exact-book terminal screen | `docs/model-research/action-value/binance-alpha-ondo-perpetual-parity-v1-2026-08-27.json` |

@@ -1,0 +1,147 @@
+{
+  "adjudication": {
+    "accepted_edge": false,
+    "deployment_ready": false,
+    "market_direction_forecast_required": false,
+    "profitability_claim": false,
+    "public_positive_if_all_external_gates_hold": true,
+    "stable_edge": false,
+    "status": "large_time_limited_existing_inventory_transfer_reward_candidate_but_forward_reward_floor_is_zero_until_pool_and_account_eligibility_are_proved",
+    "trading_authority": false,
+    "transfer_authority": false
+  },
+  "authority": {
+    "account_requests": 0,
+    "credentials_used": false,
+    "external_broker_actions": 0,
+    "funded_actions": 0,
+    "stock_transfer_requests": 0,
+    "public_source_requests": 1
+  },
+  "candidate_scope": {
+    "eligible_assets": "U_S_listed_stocks_and_ETFs_transferred_from_an_external_broker",
+    "eligible_principal": "same_legal_owner_stock_inventory_already_independently_held_and_already_intended_to_remain_held_for_at_least_21_days",
+    "market_direction_forecast_required": false,
+    "reward_asset": "USDC_token_voucher",
+    "why_structural": "the fixed transfer bonus is conditional on relocating already-held securities rather than their future price direction",
+    "why_not_market_invariant": "stock_price_changes_can_move_the_first_transfer_snapshot_between_reward_tiers_and_custody_transfer_liquidity_and_sale_or_withdrawal_constraints_remain"
+  },
+  "current_program": {
+    "activity_end_utc": "2026-09-30T23:59:00Z",
+    "activity_start_utc": "2026-08-11T08:00:00Z",
+    "minimum_general_transfer_duration_business_days": 14,
+    "post_credit_no_transfer_out_or_sell_and_withdraw_days": 21,
+    "reward_distribution_deadline_utc": "2026-10-30T23:59:59Z",
+    "reward_pool_USDC": "300000",
+    "reward_pool_allocation": "strict_first_come_first_served_by_successful_credit_time_and_may_end_early",
+    "token_voucher_expiry_days_after_distribution": 21
+  },
+  "decision_gates": {
+    "account_and_region": [
+      "completed KYC and exact Binance Stocks account eligibility",
+      "not United States United Kingdom EEA or another restricted jurisdiction",
+      "first eligible stock transfer status and same legal name at both brokers"
+    ],
+    "economic": [
+      "live unallocated reward pool or an account-specific reservation before any external action",
+      "first-transfer value buffer above the intended tier after price and foreign-exchange stress",
+      "delivering-broker transfer fee and any tax custody FX dividend corporate-action and operating cost",
+      "21-day transfer-out and sell-plus-withdraw liquidity option cost",
+      "voucher receipt claim and conversion value before expiry"
+    ],
+    "operational": [
+      "every stock and ETF symbol quantity DTC number account number and legal name accepted by both brokers",
+      "settlement safely before the activity deadline despite the stated at-least-14-business-day duration",
+      "ability to preserve the independently intended stock exposure and manage corporate actions during transfer"
+    ]
+  },
+  "economics": {
+    "fee_reimbursement_profit_credit_USDC": "0",
+    "fee_reimbursement_rule": "150_USDC_per_successfully_settled_initial_ticker_subject_to_tier_cap_but_IBKR_origin_is_ineligible",
+    "fee_reimbursement_usage": "treat_as_cost_reimbursement_only_after_actual_eligible_fee_and_owned_voucher_evidence_never_as_public_profit",
+    "fixed_21_day_annual_hurdle_sensitivities": [
+      {
+        "annual_hurdle_fraction": "0.05",
+        "hurdle_bips_of_transfer_value": "28.76712328767123287671232877"
+      },
+      {
+        "annual_hurdle_fraction": "0.10",
+        "hurdle_bips_of_transfer_value": "57.53424657534246575342465753"
+      }
+    ],
+    "reward_tiers": [
+      {
+        "bonus_USDC": "50",
+        "bonus_bips_at_threshold": "250",
+        "maximum_fee_reimbursement_USDC": "200",
+        "minimum_first_transfer_value_USD": "2000",
+        "net_bonus_bips_after_10pct_annual_21_day_hurdle": "192.4657534246575342465753425"
+      },
+      {
+        "bonus_USDC": "150",
+        "bonus_bips_at_threshold": "150",
+        "maximum_fee_reimbursement_USDC": "500",
+        "minimum_first_transfer_value_USD": "10000",
+        "net_bonus_bips_after_10pct_annual_21_day_hurdle": "92.46575342465753424657534247"
+      },
+      {
+        "bonus_USDC": "200",
+        "bonus_bips_at_threshold": "66.66666666666666666666666667",
+        "maximum_fee_reimbursement_USDC": "1500",
+        "minimum_first_transfer_value_USD": "30000",
+        "net_bonus_bips_after_10pct_annual_21_day_hurdle": "9.13242009132420091324200914"
+      },
+      {
+        "bonus_USDC": "600",
+        "bonus_bips_at_threshold": "40",
+        "maximum_fee_reimbursement_USDC": "3000",
+        "minimum_first_transfer_value_USD": "150000",
+        "net_bonus_bips_after_10pct_annual_21_day_hurdle": "-17.53424657534246575342465753"
+      },
+      {
+        "bonus_USDC": "1000",
+        "bonus_bips_at_threshold": "25",
+        "maximum_fee_reimbursement_USDC": "5000",
+        "minimum_first_transfer_value_USD": "400000",
+        "net_bonus_bips_after_10pct_annual_21_day_hurdle": "-32.53424657534246575342465753"
+      },
+      {
+        "bonus_USDC": "2000",
+        "bonus_bips_at_threshold": "20",
+        "maximum_fee_reimbursement_USDC": "10000",
+        "minimum_first_transfer_value_USD": "1000000",
+        "net_bonus_bips_after_10pct_annual_21_day_hurdle": "-37.53424657534246575342465753"
+      }
+    ],
+    "usage_rule": "the_positive_public_bonus_sensitivity_is_not_a_forward_reward_floor_because_pool_availability_account_region_first_transfer_status_and_successful_settlement_are_unproved"
+  },
+  "next_action": "before_any_external_broker_or_Binance_transfer_action_require_explicit_account_read_only_authority_to_prove_exact_region_KYC_Stocks_access_first_transfer_status_and_live_pool_availability_then_present_the_owned_inventory_and_exact_cost_decision_to_the_user_transfer_submission_remains_separate_high_impact_authority",
+  "prohibited_shortcuts": [
+    "inferring_account_region_from_host_timezone",
+    "transferring_or_buying_stock_only_to_chase_the_reward",
+    "crediting_a_first_come_pool_without_live_account_specific_availability",
+    "splitting_the_first_transfer_or_assuming_later_transfers_raise_the_tier",
+    "crediting_fee_reimbursement_as_profit_without_actual_eligible_fees_and_voucher_receipt",
+    "assuming_IBKR_origin_receives_fee_reimbursement",
+    "ignoring_the_14_business_day_transfer_duration_21_day_restriction_or_voucher_expiry",
+    "calling_a_same_market_exposure_transfer_risk_free_market_invariant_stable_or_deployment_ready",
+    "submitting_any_Binance_or_external_broker_transfer_without_separate_explicit_authority"
+  ],
+  "result_sha256": "3ecb4f39848719f788b6853bd90120d1809379b8d81b5419da4b1bbc957fec3d",
+  "schema_version": "binance-existing-stock-transfer-reward-overlay-candidate-v1",
+  "source": {
+    "article_code": "e983065edf554091b6b399f75c7297f6",
+    "article_title": "Binance Stocks: Earn Up to 12,000 USDC for Your First Stocks Transfer-in",
+    "article_url": "https://www.binance.com/en/support/announcement/detail/e983065edf554091b6b399f75c7297f6",
+    "cms_url": "https://www.binance.com/bapi/composite/v1/public/cms/article/detail/query?articleCode=e983065edf554091b6b399f75c7297f6",
+    "last_update_time_ms": 1786439280000,
+    "observed_at_utc": "2026-08-27T04:16:31.5390197Z",
+    "raw_journal_bytes": 437,
+    "raw_journal_path": "data/binance-stock-transfer-reward-rnd-v1/raw/journal.json",
+    "raw_journal_sha256": "b42c60f75c4463d05bd6abd8801f5865c454658dacdbcc53f46a690d7fe9e232",
+    "raw_response_bytes": 138924,
+    "raw_response_path": "data/binance-stock-transfer-reward-rnd-v1/raw/article.json",
+    "raw_response_sha256": "4d37559a8a653a3ede33a3ce6040972ec69a7044d7efb420bafce430573c0b8f"
+  },
+  "updated_at_utc": "2026-08-27T04:17:17.1737166Z"
+}
