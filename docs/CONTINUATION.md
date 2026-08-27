@@ -908,7 +908,7 @@ grants paper, testnet, or live authority.
 
 The canonical structural-edge priority and retry-trigger registry is
 `docs/model-research/structural-edge-priority-registry-v1.json`, result SHA-256
-`28fb871eae091483b1d5625daad0e7ac251a1a4d80fa41308a65f2530d910d87`.
+`934a63b745d556c0b3fd3a3d3e77a1d1e7f2ba2531e4dbf0bf3bca21634592f2`.
 Advance only the highest-ranked hypothesis whose trigger is actually satisfied.
 This prevents account-blocked or terminal screens from being rerun as if more
 snapshots could create an edge.
@@ -1860,7 +1860,7 @@ result SHA-256
 `64943efe0c6ad16f8d02f78548afef38f919448d2da87c7573e825a2eeefd6b9`.
 The structural registry remains at sixteen accepted scoped edges and now has
 result SHA-256
-`28fb871eae091483b1d5625daad0e7ac251a1a4d80fa41308a65f2530d910d87`.
+`934a63b745d556c0b3fd3a3d3e77a1d1e7f2ba2531e4dbf0bf3bca21634592f2`.
 
 The complete Binance XAU/XAG Commodity Options versus matching TradFi
 perpetual lower-bound screen is terminal for the active 2026-08-27 and
@@ -1889,6 +1889,31 @@ Canonical result:
 `docs/model-research/action-value/binance-commodity-option-perpetual-lower-bound-v1-2026-08-27.json`,
 result SHA-256
 `3cbc79050473b456e4175239b687b0329bc1c7a66d3530842e524ac4200a0905`.
+
+The newly listed `DJTBUSDT` bStock and `DJTUSDT` TradFi perpetual were tested
+once as a symbol-only material universe addition to the existing bStock carry
+family. Official metadata binds DJTB to DJT with multiplier exactly one. All
+100, 1,000, and 5,000 USDT targets had same-quantity depth, but their gross
+entry headroom was already `-45.5622`, `-56.5107`, and `-91.6986` bps. Six
+funding events existed; the short hedge paid `26.3045` bps across them, and no
+positive funding was credited. Zero target survived the frozen 50-bps fixed
+round-trip and exit-basis stress. Do not resample this listing state. A future
+new exact-multiplier bStock with a matching previously unscreened TradFi
+perpetual may receive one symbol-only public prefilter; all account, scope, and
+execution gates remain separate. Canonical result:
+`docs/model-research/action-value/binance-djtb-new-listing-spot-perpetual-v1-2026-08-27.json`,
+SHA-256
+`2b85a6eca339799a6eb07ba48069e3a2943d97116a9320ce20400d260227e1be`.
+
+The DJT contract's manually entered `frozen_at_utc` was incorrectly
+future-dated. The original contract hash is preserved; correction artifact
+`docs/model-research/action-value/binance-djtb-new-listing-contract-timestamp-correction-v1.json`
+records the local `03:42:18Z` final-write evidence and the later first request
+at `03:44:38.213Z`, with no economic or decision-rule amendment. Freeze
+timestamps must henceforth be read directly from the system clock when the
+file is created and checked against the first request timestamp; never type or
+estimate them. Correction SHA-256:
+`692ee1f9a0374726b0adeccbe4fcd710c9c3a86d49b4b33210a8c34b2c79c4d3`.
 
 ## Protected Local Work
 

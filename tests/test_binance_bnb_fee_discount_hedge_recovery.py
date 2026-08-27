@@ -73,7 +73,7 @@ EXPECTED_PUBLISHED_RAW_SHA256 = (
     "77e70b92af3492456f653294d9eedae548e17c45969ef67d5cbfc99042416cc7"
 )
 EXPECTED_REGISTRY_SHA256 = (
-    "28fb871eae091483b1d5625daad0e7ac251a1a4d80fa41308a65f2530d910d87"
+    "934a63b745d556c0b3fd3a3d3e77a1d1e7f2ba2531e4dbf0bf3bca21634592f2"
 )
 SPEC = importlib.util.spec_from_file_location(
     "recover_binance_bnb_fee_discount_hedge_history", TOOL_PATH
