@@ -1,0 +1,51 @@
+{
+  "adjudication": {
+    "accepted_edge": false,
+    "deployment_ready": false,
+    "market_direction_forecast_required": false,
+    "profitability_claim": false,
+    "status": "official_August_17_crypto_taker_delay_regime_change_invalidates_250ms_as_a_current_execution_assumption_and_weakens_stale_quote_cancellation_protection_for_makers_without_proving_current_fill_adverse_selection_rebate_or_after_cost_economics",
+    "trading_authority": false
+  },
+  "authority": {
+    "account_requests": 0,
+    "authenticated_requests": 0,
+    "credentials_used": false,
+    "funded_actions": 0,
+    "orders_or_cancellations": 0,
+    "public_source_documents_bound": 1
+  },
+  "created_at_utc": "2026-08-27T04:32:14Z",
+  "execution_impact": {
+    "current_crypto_taker_delay_ms": 50,
+    "effective_at_utc": "2026-08-17T11:00:00Z",
+    "maker_cancellation_protection_inference": "a marketable crypto taker order now waits 200ms less before matching so a stale resting maker quote has less time to cancel; this is a negative protection change but does not quantify current adverse selection or net maker PnL",
+    "old_crypto_taker_delay_ms": 250,
+    "remaining_fraction_of_old_delay": "0.2",
+    "reduction_fraction": "0.8"
+  },
+  "official_source": {
+    "http_date_utc": "2026-08-27T04:32:14Z",
+    "payload_bytes": 23375,
+    "payload_sha256": "630e2f885b355a5a34dc1d0e09c2ac033ee83af4595ba283b217273e6f5ac73b",
+    "retrieval_url": "https://docs.polymarket.com/changelog/predictions.md",
+    "source_url": "https://docs.polymarket.com/changelog/predictions",
+    "statement": "crypto taker delay is 50ms down from 250ms effective August 17 at 11:00 UTC"
+  },
+  "prohibited_shortcuts": [
+    "using_250ms_as_a_current_crypto_taker_delay_after_the_effective_timestamp",
+    "assuming_the_delay_reduction_improves_maker_profitability",
+    "converting_a_mechanical_reduction_in_cancellation_protection_into_a_numeric_adverse_selection_loss_without_owned_fills_and_timing",
+    "replaying_old_books_with_50ms_and_claiming_current_queue_fill_or_cancel_behavior",
+    "starting_a_new_public_sampling_loop_without_the_existing_retry_trigger_or_material_reward_configuration_change"
+  ],
+  "research_consequence": {
+    "historical_250ms_results": "remain historical evidence only for observations before the effective timestamp",
+    "live_or_forward_models": "must source the exact current market delay and must fail closed if it is absent or conflicts with the official current regime",
+    "maker_family_retry_trigger_changed": false,
+    "next_action": "do_not_resample_books_on_delay_change_alone_keep_the_existing_not_before_2026_08_29T23_40_00Z_and_explicit_account_paper_authority_gate_then_use_50ms_or_the_exact_current_market_value_in_any_future_execution_contract",
+    "public_after_cost_profit_floor_pusd": "0"
+  },
+  "result_sha256": "c7b785a1fbf4d6380033810338b2cf2845399f2a7464688c8ac36427b375a777",
+  "schema_version": "polymarket-crypto-taker-delay-regime-change-v1"
+}

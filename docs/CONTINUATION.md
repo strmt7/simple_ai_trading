@@ -908,7 +908,7 @@ grants paper, testnet, or live authority.
 
 The canonical structural-edge priority and retry-trigger registry is
 `docs/model-research/structural-edge-priority-registry-v1.json`, result SHA-256
-`3f822fd911a779e3ceccba5c86c8d36c9ac488f6415ebb8dd2f45e8b2041a343`.
+`33c6c614e3aee8764b8393150951c33d4dc02b411e9803a90402a0957c483c52`.
 Advance only the highest-ranked hypothesis whose trigger is actually satisfied.
 This prevents account-blocked or terminal screens from being rerun as if more
 snapshots could create an edge.
@@ -1783,15 +1783,32 @@ using future PushIntensity or reversal. Canonical regime gate:
 result SHA-256
 `7d3387289a7e82b33fa52c03b2bc134864259a001c3d28524745026bb83db387`.
 
+Polymarket's official changelog creates a current execution-regime break:
+crypto taker delay fell from 250 milliseconds to 50 milliseconds at
+`2026-08-17T11:00:00Z`. A marketable taker order therefore waits 200 ms less,
+or only 20% of the old interval, before matching. This mechanically reduces the
+time in which a resting maker might cancel a stale quote; it does not quantify
+current adverse selection, queue behavior, or maker PnL. Treat every 250 ms
+result as historical-only before the effective timestamp and never use 250 ms
+as a current forward assumption. Do not resample books on this change alone.
+The existing protected-boundary and explicit authenticated paper-authority
+retry trigger remains unchanged. Any future authorized execution contract must
+source 50 ms or the exact current market delay and fail closed on absence or
+conflict. Canonical regime artifact:
+`docs/model-research/action-value/polymarket-crypto-taker-delay-regime-change-v1-2026-08-27.json`,
+result SHA-256
+`c7b785a1fbf4d6380033810338b2cf2845399f2a7464688c8ac36427b375a777`.
+
 Current official sports execution rules add a separate fail-closed constraint
 to the live-NBA implication candidate. A marketable sports order enters the
 market's configured delay and cannot be cancelled while pending; after that
 delay it is revalidated and may match, reject, or become unmatched. The help
 center lists a three-second sports delay and a one-second NBA/MLB test, but the
 compact public CLOB market-info response does not expose a numeric sports delay:
-its `itode` boolean documents the separate 250-millisecond crypto/finance path,
-and `oas` is only documented as minimum order age. Never reuse the local crypto
-250-millisecond constant for sports.
+its `itode` boolean identifies a separate crypto/finance delay path without a
+numeric duration, and `oas` is only documented as minimum order age. The
+current crypto duration is 50 ms from the changelog; no finance duration is
+inferred. Never reuse a crypto or finance constant for sports.
 
 The delay is not free maker protection. Public rules do not prove that a maker
 can observe incoming delayed taker intent or win a cancellation race. After a
@@ -1860,7 +1877,7 @@ result SHA-256
 `64943efe0c6ad16f8d02f78548afef38f919448d2da87c7573e825a2eeefd6b9`.
 The structural registry remains at sixteen accepted scoped edges and now has
 result SHA-256
-`3f822fd911a779e3ceccba5c86c8d36c9ac488f6415ebb8dd2f45e8b2041a343`.
+`33c6c614e3aee8764b8393150951c33d4dc02b411e9803a90402a0957c483c52`.
 
 The complete Binance XAU/XAG Commodity Options versus matching TradFi
 perpetual lower-bound screen is terminal for the active 2026-08-27 and

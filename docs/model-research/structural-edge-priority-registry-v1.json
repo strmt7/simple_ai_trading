@@ -699,9 +699,14 @@
         "authenticated maker fills and exact ownership",
         "creation-time synchronized opposite executable ask and exact post-fill taker hedge lineage",
         "queue hedge and cancellation latency adverse selection and orphan PnL",
-        "realized rebate payment and complete after-cost persistence"
+        "realized rebate payment and complete after-cost persistence",
+        "exact current market taker delay with all post_2026_08_17 forward execution using 50ms rather than the stale 250ms regime"
       ],
       "canonical_artifacts": [
+        {
+          "path": "docs/model-research/action-value/polymarket-crypto-taker-delay-regime-change-v1-2026-08-27.json",
+          "result_sha256": "c7b785a1fbf4d6380033810338b2cf2845399f2a7464688c8ac36427b375a777"
+        },
         {
           "path": "docs/model-research/polymarket/crypto-maker-rebate-economics-v1.json",
           "result_sha256": "09f67265772716873c625ada816140332430697894f30af22c05bd0dd6422c8a"
@@ -727,10 +732,10 @@
           "result_sha256": "e486f2928a326e6829cbe3c07aad5a47bb25a63783a935273606df00cea98c66"
         }
       ],
-      "current_status": "realized_public_program_recurrence_proved_but_both_local_fill_reconstruction_and_new_primary_regime_evidence_reject_a_stable_edge_claim_159_strict_sequences_were_negative_in_aggregate_and_BTC_five_minute_market_makers_lost_0_62M_in_top_decile_manipulation_pressure_cycles_while_making_3_11M_in_normal_cycles_before_the_papers_unmodeled_dynamic_fees_fifteen_minute_manipulation_was_largely_absent_but_profitability_unproved_the_distinct_August_crypto_TWAP_liquidity_reward_screen_stopped_after_Gamma_and_the_first_exact_BTC_fifteen_minute_reward_GET_because_exact_reward_identity_was_unproved_and_no_books_or_profitability_screen_were_permitted",
+      "current_status": "realized_public_program_recurrence_proved_but_both_local_fill_reconstruction_and_new_primary_regime_evidence_reject_a_stable_edge_claim_159_strict_sequences_were_negative_in_aggregate_and_BTC_five_minute_market_makers_lost_0_62M_in_top_decile_manipulation_pressure_cycles_while_making_3_11M_in_normal_cycles_before_the_papers_unmodeled_dynamic_fees_fifteen_minute_manipulation_was_largely_absent_but_profitability_unproved_the_distinct_August_crypto_TWAP_liquidity_reward_screen_stopped_after_Gamma_and_the_first_exact_BTC_fifteen_minute_reward_GET_because_exact_reward_identity_was_unproved_and_no_books_or_profitability_screen_were_permitted_the_official_August_17_reduction_from_250ms_to_50ms_is_a_negative_maker_cancellation_protection_change_and_makes_every_250ms_forward_execution_assumption_stale_without_itself_proving_numeric_current_adverse_selection_or_PnL",
       "market_direction_forecast_required": false,
       "mechanism": "paired_crypto_maker_rebates_and_twap_liquidity_rewards",
-      "next_action": "do_not_retry_the_exhausted_TWAP_reward_window_or_infer_the_lost_response_shape_reopen_that_submechanism_only_after_a_material_exact_reward_endpoint_configuration_or_program_change_and_require_response_journaling_before_validation_for_the_maker_rebate_submechanism_do_not_expand_history_after_the_protected_boundary_and_only_with_explicit_authenticated_paper_authority_start_with_one_minimum_fifteen_minute_only_post_only_maker_first_exact_quantity_FOK_or_FAK_hedge_study_five_minute_remains_excluded_until_a_separate_current_cancel_safety_preflight_proves_every_owned_order_cancel_confirmed_before_the_settlement_risk_window_under_latency_stress",
+      "next_action": "do_not_resample_books_on_the_delay_change_alone_do_not_retry_the_exhausted_TWAP_reward_window_or_infer_the_lost_response_shape_reopen_that_submechanism_only_after_a_material_exact_reward_endpoint_configuration_or_program_change_and_require_response_journaling_before_validation_for_the_maker_rebate_submechanism_do_not_expand_history_after_the_protected_boundary_and_only_with_explicit_authenticated_paper_authority_start_with_one_minimum_fifteen_minute_only_post_only_maker_first_exact_quantity_FOK_or_FAK_hedge_study_using_50ms_or_the_exact_current_market_delay_five_minute_remains_excluded_until_a_separate_current_cancel_safety_preflight_proves_every_owned_order_cancel_confirmed_before_the_settlement_risk_window_under_latency_stress",
       "priority_rank": 17,
       "prohibited_shortcuts": [
         "nominal rebate algebra as realized payout",
@@ -744,7 +749,9 @@
         "comparing_a_daily_liquidity_reward_rate_directly_with_a_fifteen_minute_or_four_hour_orphan_loss_without_exact_duration_proration",
         "retrying_the_exhausted_TWAP_reward_window_to_reconstruct_a_lost_response_or_assuming_empty_duplicate_or_mismatched_shape",
         "aggregate wallet activity as crypto specific without a condition join",
-        "top volume wallet receipts or receipt to volume diagnostics as complete profit"
+        "top volume wallet receipts or receipt to volume diagnostics as complete profit",
+        "using_250ms_as_a_current_crypto_taker_delay_after_2026_08_17T11_00_00Z",
+        "assuming_the_50ms_delay_improves_maker_profitability_or_assigning_a_numeric_loss_without_owned_timing_and_fill_evidence"
       ],
       "retry_trigger": "material_exact_TWAP_reward_endpoint_configuration_or_program_change_with_prevalidation_source_journaling_or_not_before_2026_08_29T23_40_00Z_and_only_with_explicit_account_and_paper_or_funding_authority_for_the_separate_maker_rebate_execution_study",
       "venue_scope": "polymarket_btc_eth_sol"
@@ -1480,7 +1487,7 @@
       "venue_scope": "Binance_XAU_XAG_USDT_long_only_commodity_options_and_matching_TradFi_perpetuals"
     }
   ],
-  "result_sha256": "3f822fd911a779e3ceccba5c86c8d36c9ac488f6415ebb8dd2f45e8b2041a343",
+  "result_sha256": "33c6c614e3aee8764b8393150951c33d4dc02b411e9803a90402a0957c483c52",
   "schema_version": "structural-edge-priority-registry-v1",
   "terminal_do_not_repeat": [
     {

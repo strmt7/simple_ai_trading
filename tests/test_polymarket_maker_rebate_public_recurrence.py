@@ -35,6 +35,13 @@ MANIPULATION_GATE_PATH = (
     / "action-value"
     / "polymarket-maker-execution-manipulation-regime-gate-v1-2026-08-27.json"
 )
+TAKER_DELAY_REGIME_PATH = (
+    ROOT
+    / "docs"
+    / "model-research"
+    / "action-value"
+    / "polymarket-crypto-taker-delay-regime-change-v1-2026-08-27.json"
+)
 REGISTRY_PATH = (
     ROOT / "docs" / "model-research" / "structural-edge-priority-registry-v1.json"
 )
@@ -42,7 +49,7 @@ EXPECTED_RESULT_SHA256 = (
     "c992e0e1febc1a9789289cb129c166280ee0192cab203d3a6935a8c40e949612"
 )
 EXPECTED_REGISTRY_SHA256 = (
-    "3f822fd911a779e3ceccba5c86c8d36c9ac488f6415ebb8dd2f45e8b2041a343"
+    "33c6c614e3aee8764b8393150951c33d4dc02b411e9803a90402a0957c483c52"
 )
 EXPECTED_MAKER_FIRST_SHA256 = (
     "4fe308ddeb6fd080bbd8548347a095762d8fc67eb5820fb0c7b3c2d6b7430d69"
@@ -58,6 +65,9 @@ EXPECTED_TWAP_CONTRACT_SHA256 = (
 )
 EXPECTED_TWAP_FAILURE_SHA256 = (
     "e486f2928a326e6829cbe3c07aad5a47bb25a63783a935273606df00cea98c66"
+)
+EXPECTED_TAKER_DELAY_REGIME_SHA256 = (
+    "c7b785a1fbf4d6380033810338b2cf2845399f2a7464688c8ac36427b375a777"
 )
 
 
@@ -165,6 +175,19 @@ def test_manipulation_regime_gate_rejects_five_minute_all_situation_edge() -> No
     assert gate["prospective_population_and_risk_gate"]["first_cohort"] == (
         "BTC_ETH_SOL_fifteen_minute_only"
     )
+
+
+def test_current_crypto_taker_delay_rejects_stale_250ms_assumption() -> None:
+    regime = _load(TAKER_DELAY_REGIME_PATH)
+
+    assert regime["result_sha256"] == EXPECTED_TAKER_DELAY_REGIME_SHA256
+    assert _embedded_hash(regime) == EXPECTED_TAKER_DELAY_REGIME_SHA256
+    assert regime["authority"]["orders_or_cancellations"] == 0
+    assert regime["execution_impact"]["old_crypto_taker_delay_ms"] == 250
+    assert regime["execution_impact"]["current_crypto_taker_delay_ms"] == 50
+    assert regime["execution_impact"]["reduction_fraction"] == "0.8"
+    assert regime["research_consequence"]["public_after_cost_profit_floor_pusd"] == "0"
+    assert regime["adjudication"]["accepted_edge"] is False
 
 
 def test_registry_tracks_recurrence_without_increasing_accepted_edges() -> None:
