@@ -1387,11 +1387,50 @@
       ],
       "retry_trigger": "both_SIMPLE_AI_TRADING_BINANCE_MAINNET_API_KEY_and_SIMPLE_AI_TRADING_BINANCE_MAINNET_API_SECRET_available_with_explicit_GET_only_account_evidence_authority_or_a_durable_public_unauthenticated_exact_VIP_Earn_product_listing",
       "venue_scope": "Binance_VIP_Earn_on_independently_existing_VIP_status_and_idle_eligible_inventory"
+    },
+    {
+      "blocking_evidence": [
+        "a newly listed commodity-option expiry or a material option-fee funding basis book or product-access change",
+        "a frozen all-options-ticker prefilter with a strictly positive lower bound after conservative fixed and adverse-funding stress",
+        "displayed option ask quantity from separately frozen per-symbol depth only for prefilter survivors",
+        "exact account option and perpetual commissions eligibility margin collateral settlement and exercise costs",
+        "positive synchronized recurrence across independent expiries liquidity and volatility states before any deployment claim"
+      ],
+      "canonical_artifacts": [
+        {
+          "path": "docs/model-research/action-value/binance-commodity-option-perpetual-lower-bound-contract-v1.json",
+          "result_sha256": "a1ecde2ac379d40fba81840cc9adf10dd731f29bd8b4eba030a6e71521158b94"
+        },
+        {
+          "path": "docs/model-research/action-value/binance-commodity-option-perpetual-lower-bound-v1-2026-08-27.json",
+          "result_sha256": "3cbc79050473b456e4175239b687b0329bc1c7a66d3530842e524ac4200a0905"
+        }
+      ],
+      "current_status": "market_direction_independent_long_option_plus_equal_opposite_commodity_perpetual_terminal_lower_bound_was_tested_across_all_92_active_XAU_XAG_options_73_had_positive_asks_zero_had_positive_gross_indicative_headroom_best_XAU_260827_4580_C_was_negative_11_1005015702_bips_before_the_frozen_33_5_bips_and_adverse_funding_stress_all_options_ticker_omitted_ask_quantity_so_zero_rows_were_executable_capacity_valid_not_accepted_or_deployment_ready",
+      "market_direction_forecast_required": false,
+      "mechanism": "binance_long_commodity_option_opposite_perpetual_terminal_payoff_lower_bound",
+      "next_action": "do_not_resample_this_expiry_population_after_a_new_expiry_or_material_cost_funding_basis_book_or_access_change_freeze_one_all_ticker_prefilter_then_request_per_symbol_option_depth_only_for_rows_strictly_positive_after_the_same_conservative_stress",
+      "priority_rank": 40,
+      "prohibited_shortcuts": [
+        "using_option_mark_last_trade_model_or_exercise_price_instead_of_the_displayed_ask",
+        "treating_an_option_ask_without_published_quantity_as_executable_capacity",
+        "crediting_favorable_funding_or_ignoring_perpetual_exit_basis",
+        "assuming_the_option_and_perpetual_entries_or_expiry_exit_are_atomic",
+        "resampling_the_terminal_92_symbol_260827_260828_population",
+        "calling_a_negative_gross_snapshot_an_edge_or_deployment_ready"
+      ],
+      "retry_trigger": "new_listed_XAU_or_XAG_option_expiry_or_material_option_fee_funding_basis_book_or_product_access_change",
+      "venue_scope": "Binance_XAU_XAG_USDT_long_only_commodity_options_and_matching_TradFi_perpetuals"
     }
   ],
-  "result_sha256": "2cbcccc4527f97f8e4535181489c6d816d8336a111453ca9e92290b61563d735",
+  "result_sha256": "28fb871eae091483b1d5625daad0e7ac251a1a4d80fa41308a65f2530d910d87",
   "schema_version": "structural-edge-priority-registry-v1",
   "terminal_do_not_repeat": [
+    {
+      "canonical_result_sha256": "3cbc79050473b456e4175239b687b0329bc1c7a66d3530842e524ac4200a0905",
+      "family": "binance_commodity_option_perpetual_260827_260828_terminal_lower_bound_snapshot",
+      "reason": "all_92_active_XAU_XAG_options_were_screened_73_had_positive_asks_zero_had_positive_gross_indicative_terminal_payoff_floor_best_was_negative_11_1005015702_bips_before_33_5_bips_fixed_and_adverse_funding_stress_and_the_all_options_ticker_published_no_ask_quantities"
+    },
     {
       "canonical_result_sha256": "a3d474e9010b92c9454a5bc04b5a7f586656c8bc5842cecc61baaa508c2d8bc3",
       "family": "binance_alpha_ondo_perpetual_current_four_contract_book_snapshot",
@@ -1538,6 +1577,6 @@
       "reason": "the_frozen_unseen_rank_251_to_1000_validation_used_explicit_win_partial_loss_statuses_across_6264_resolved_YES_positions_162_wallets_and_77_dates_but_the_opposite_side_gross_spread_proxy_lost_73368_711836_pUSD_before_maker_costs_and_was_negative_in_the_PNL_cohort_training_test_and_both_wallet_and_date_cluster_lower_bounds_do_not_repeat_leaderboard_mining"
     }
   ],
-  "updated_at_utc": "2026-08-27T03:09:00Z",
+  "updated_at_utc": "2026-08-27T03:35:19Z",
   "usage_rule": "advance_the_highest_ranked_hypothesis_whose_retry_trigger_is_satisfied_otherwise_do_not_repeat_a_blocked_or_terminal_screen"
 }
