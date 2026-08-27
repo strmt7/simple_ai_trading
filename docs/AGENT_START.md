@@ -438,6 +438,22 @@ safety gate, blocks Stop, or submits an order.
   `f951d167b3abbb89afc39a29671b9a4cb6929661f13a957e553a8fad439ce9e6`.
   Both credentials remain absent, so account/region eligibility and exact-order
   commission evidence remain unproved and no signed or funded action occurred.
+  A distinct current fee-overlay candidate is Binance's `VIP 6 for Six`
+  promotion. The public Growth Track is for current Binance VIP1-5 users who
+  can verify VIP3+ on another exchange; the Reactivation Track is for users who
+  held Binance VIP3-6 in 2025 and can be applied automatically by email. At the
+  current published fee table, moving to VIP6 saves from `15` to `710` USD per
+  `1,000,000` USD of already-intended fee-bearing flow across the scoped Spot
+  and USD-M tier, maker/taker, and BNB-discount examples. This is a material
+  candidate, not an accepted edge: the logged-out public floor is zero because
+  this account's track eligibility, selection, approval, exact effective
+  interval, exact symbol commissions, future organic flow, and incremental
+  costs are unknown. Never create volume, borrow BNB, apply, contact an account
+  manager, or disclose external exchange records without the separately
+  required authority. Canonical candidate:
+  `binance-vip6-for-six-organic-fee-overlay-candidate-v1-2026-08-27.json`,
+  result SHA-256
+  `f638cb6f565c1ee18c9dc065c5f4fc6506442f00833193d23c287bdf9d8ec74d`.
   A materially different BNB candidate now stacks BNB Simple Earn base rewards
   with realized Launchpool, Megadrop, and HODLer distributions while keeping the
   equal-base BNBUSDT short. Binance's current seven-day BNB offer advertises
@@ -1275,6 +1291,7 @@ safety gate, blocks Stop, or submits an order.
 | USD1 Simple Earn activation refresh | `docs/model-research/action-value/binance-usd1-simple-earn-activation-refresh-v1-2026-08-27.json` |
 | Accepted USD1 Simple Earn versus holding-airdrop allocation | `docs/model-research/action-value/binance-usd1-simple-earn-versus-holding-airdrop-allocation-edge-v1-2026-08-27.json` |
 | First-USD-deposit SPCXB reward hedge candidate | `docs/model-research/action-value/binance-first-usd-deposit-spcxb-reward-hedge-candidate-v1-2026-08-27.json` |
+| Binance VIP 6 for Six organic-fee overlay candidate | `docs/model-research/action-value/binance-vip6-for-six-organic-fee-overlay-candidate-v1-2026-08-27.json` |
 | Lite Loan and fixed-bonus stablecoin yield curve | `docs/model-research/action-value/binance-lite-loan-stablecoin-yield-curve-v1-2026-08-27.json` |
 | U Flexible idle-holding yield | `docs/model-research/action-value/binance-u-flexible-idle-holding-yield-gate-v1-2026-08-26.json` |
 | Existing RWUSD VIP bonus overlay | `docs/model-research/action-value/binance-rwusd-existing-vip-bonus-overlay-gate-v1-2026-08-26.json` |

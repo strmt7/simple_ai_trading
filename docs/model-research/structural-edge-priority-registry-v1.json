@@ -199,7 +199,9 @@
         "owned immediate fill BNB commission deduction residual and unwind reconciliation",
         "account regional symbol promotional tax rebate and precision behavior",
         "fresh current official promotional pair and exact maker_or_taker role plus account and region availability",
-        "owned promotional fill commission reconciliation without quote acquisition VIP chasing extra volume or double counting"
+        "owned promotional fill commission reconciliation without quote acquisition VIP chasing extra volume or double counting",
+        "current Binance VIP level Growth Track external VIP proof or Reactivation Track 2025 history and exact approved VIP 6 effective interval",
+        "exact account fee-bearing organic future volume by symbol role discount and promotion before valuing VIP 6 for Six"
       ],
       "canonical_artifacts": [
         {
@@ -209,12 +211,16 @@
         {
           "path": "docs/model-research/action-value/binance-spot-promotional-fee-overlay-v1-2026-08-26.json",
           "result_sha256": "f951d167b3abbb89afc39a29671b9a4cb6929661f13a957e553a8fad439ce9e6"
+        },
+        {
+          "path": "docs/model-research/action-value/binance-vip6-for-six-organic-fee-overlay-candidate-v1-2026-08-27.json",
+          "result_sha256": "f638cb6f565c1ee18c9dc065c5f4fc6506442f00833193d23c287bdf9d8ec74d"
         }
       ],
-      "current_status": "two_accepted_scoped_non_overlapping_spot_fee_reductions_BNB_just_in_time_buffer_for_positive_standard_commission_and_current_quote_native_BTC_ETH_SOL_promotions_zero_maker_on_FDUSD_and_U_VIP2_9_zero_taker_on_U_and_zero_maker_taker_on_USD1_plus_regular_USDC_taker_saving_0_5_bips_without_BNB_or_0_375_with_BNB_not_deployment_ready",
+      "current_status": "two_accepted_scoped_non_overlapping_spot_fee_reductions_BNB_just_in_time_buffer_for_positive_standard_commission_and_current_quote_native_BTC_ETH_SOL_promotions_zero_maker_on_FDUSD_and_U_VIP2_9_zero_taker_on_U_and_zero_maker_taker_on_USD1_plus_regular_USDC_taker_saving_0_5_bips_without_BNB_or_0_375_with_BNB_the_distinct_VIP_6_for_Six_promotion_is_a_material_unaccepted_account_gated_candidate_with_current_gross_savings_of_15_to_710_USD_per_million_USD_of_organic_flow_across_the_scoped_tier_role_and_discount_examples_but_zero_public_forward_floor_until_track_eligibility_selection_approval_effective_interval_exact_account_fees_future_organic_volume_and_all_costs_are_proved_not_deployment_ready",
       "market_direction_forecast_required": false,
       "mechanism": "binance_spot_fee_minimization_overlays",
-      "next_action": "for_an_otherwise_authorized_organic_order_refresh_the_exact_official_promotional_pair_once_and_prefer_the_quote_native_exact_role_fee_if_account_eligible_without_conversion_else_when_both_credentials_exist_freeze_one_exact_symbol_commission_and_order_test_for_the_bounded_BNB_fallback_then_require_separate_funded_authority_for_any_reconciliation",
+      "next_action": "for_an_otherwise_authorized_organic_order_refresh_the_exact_official_promotional_pair_once_and_prefer_the_quote_native_exact_role_fee_if_account_eligible_without_conversion_else_when_both_credentials_and_explicit_signed_GET_only_authority_exist_prequalify_current_Binance_VIP_tier_exact_symbol_role_commissions_2025_VIP_history_and_any_already_applied_VIP_6_adjustment_without_applying_contacting_or_disclosing_external_records_if_a_separate_user_authorized_Growth_Track_evaluation_is_requested_require_user_supplied_current_external_VIP_3_plus_evidence_and_value_only_independently_planned_fee_bearing_volume_then_require_separate_authority_for_every_application_contact_record_disclosure_borrow_trade_or_reconciliation",
       "priority_rank": 5,
       "prohibited_shortcuts": [
         "manufacturing_enlarging_churning_self_matching_or_wash_trading_volume",
@@ -226,10 +232,14 @@
         "switching_quote_asset_without_executable_spread_basis_conversion_fill_settlement_and_opportunity_cost_proof",
         "double_counting_zero_fees_BNB_discounts_rebates_or_rewards",
         "chasing_VIP_status_or_assuming_maker_fills",
+        "manufacturing_volume_or_borrowing_BNB_to_obtain_or_extend_VIP_6_for_Six",
+        "assuming_Growth_Track_or_Reactivation_Track_eligibility_selection_approval_or_two_full_months_from_a_late_application",
+        "valuing_zero_percent_loans_VIP_Earn_or_other_unbounded_VIP_6_benefits_without_exact_account_terms",
+        "applying_contacting_an_account_manager_or_disclosing_external_exchange_records_without_separate_explicit_authority",
         "calling_the_capped_incremental_cost_policy_risk_free_arbitrage_or_guaranteed_profit"
       ],
-      "retry_trigger": "fresh_official_fee_table_change_or_both_SIMPLE_AI_TRADING_BINANCE_MAINNET_API_KEY_and_SIMPLE_AI_TRADING_BINANCE_MAINNET_API_SECRET_available_to_the_process_for_one_exact_organic_order_prequalification",
-      "venue_scope": "binance_BTC_ETH_SOL_spot_organic_fee_flow_USDC_FDUSD_U_USD1_quotes_and_USDT_to_BNB_Convert"
+      "retry_trigger": "fresh_official_fee_table_or_VIP_6_for_Six_term_change_or_both_SIMPLE_AI_TRADING_BINANCE_MAINNET_API_KEY_and_SIMPLE_AI_TRADING_BINANCE_MAINNET_API_SECRET_available_with_explicit_signed_GET_only_authority_for_current_tier_commission_history_and_existing_upgrade_state_or_user_supplied_external_VIP_3_plus_evidence_with_explicit_Growth_Track_evaluation_authority_before_2026_10_16T23_59_59Z",
+      "venue_scope": "binance_BTC_ETH_SOL_spot_and_USD_M_organic_fee_flow_USDC_FDUSD_U_USD1_quotes_USDT_to_BNB_Convert_and_VIP_6_for_Six"
     },
     {
       "blocking_evidence": [
@@ -1512,7 +1522,7 @@
       "venue_scope": "Binance_XAU_XAG_USDT_long_only_commodity_options_and_matching_TradFi_perpetuals"
     }
   ],
-  "result_sha256": "2f3b1dfbe64d7f9ea1787a08ed059a49564f9f24f37aed18519e88355a9713d2",
+  "result_sha256": "51005178e370b03e2974b20e780b8ed5b25b7847b59b8c284fb7bca9ea12c70f",
   "schema_version": "structural-edge-priority-registry-v1",
   "terminal_do_not_repeat": [
     {
@@ -1676,6 +1686,6 @@
       "reason": "reusing_the_retained_actual_500_row_histories_the_current_0_50_percent_reward_left_ETH_training_negative_after_the_frozen_32_bips_and_SOL_training_negative_even_gross_every_ETH_and_SOL_role_was_negative_after_one_or_two_10_percent_annual_capital_hurdles_do_not_repeat_until_ETH_reward_reaches_0_59006995_percent_or_SOL_reaches_3_73322000_percent_or_another_material_execution_margin_or_funding_change_occurs"
     }
   ],
-  "updated_at_utc": "2026-08-27T05:23:20.161000Z",
+  "updated_at_utc": "2026-08-27T05:36:16.872000Z",
   "usage_rule": "advance_the_highest_ranked_hypothesis_whose_retry_trigger_is_satisfied_otherwise_do_not_repeat_a_blocked_or_terminal_screen"
 }

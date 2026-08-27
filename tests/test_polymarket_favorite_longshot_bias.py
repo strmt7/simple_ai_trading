@@ -112,7 +112,7 @@ def test_canonical_result_terminalizes_without_edge_promotion() -> None:
     registry = json.loads(registry_path.read_text(encoding="utf-8"))
     registry_hash = registry.pop("result_sha256")
     assert hashlib.sha256(analysis._canonical_json(registry).encode("ascii")).hexdigest() == registry_hash
-    assert registry_hash == "2f3b1dfbe64d7f9ea1787a08ed059a49564f9f24f37aed18519e88355a9713d2"
+    assert registry_hash == "51005178e370b03e2974b20e780b8ed5b25b7847b59b8c284fb7bca9ea12c70f"
     assert registry["accepted_edge_count"] == 17
     terminal = {row["family"]: row for row in registry["terminal_do_not_repeat"]}
     assert terminal[
