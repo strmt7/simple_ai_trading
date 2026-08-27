@@ -908,7 +908,7 @@ grants paper, testnet, or live authority.
 
 The canonical structural-edge priority and retry-trigger registry is
 `docs/model-research/structural-edge-priority-registry-v1.json`, result SHA-256
-`36556fa1dbb792bf99c94c1b5cea039a822fb4f58ac476cc23cd70a25dd587c8`.
+`784a928804196c4fd6719bcc8dd71a539738041537f24689ca19e186083a77d9`.
 Advance only the highest-ranked hypothesis whose trigger is actually satisfied.
 This prevents account-blocked or terminal screens from being rerun as if more
 snapshots could create an edge.
@@ -1673,14 +1673,29 @@ Binance source says `referencePrice = tokenInfo.price / sharesMultiplier` and
 warns that the on-chain token and stock feeds update at different frequencies.
 No executable Ondo ask, fee, gas, slippage, transfer, settlement, short-funding,
 exit, or atomicity evidence exists. The nonexecuting Agentic Wallet quote client
-is not installed, and no quote was requested. Do not repeat the point screen.
-Only after an approved configured read-only quote capability or a documented
-public unauthenticated executable quote endpoint exists may one minimum-size
-nonexecuting top-candidate quote run; capture a matching CEX depth batch only if
-the quote leaves conservative after-cost headroom. Canonical candidate:
+is not installed, and no quote was requested. Binance Alpha subsequently
+supplied a documented public unauthenticated full-depth endpoint for the exact
+active transferable Ondo contracts. A contract frozen before validation covered
+the complete four-contract Alpha/perpetual population: CRCL, TSLA, COIN, and
+MSTR. All four minimum common quantities fit displayed top-level capacity, but
+zero survived the frozen 20 bps pre-account stress. Gross entry headroom was
+0 bps for CRCL, 3.4592101470 for TSLA, 6.5313231372 for COIN, and a best
+7.2132724213 for MSTR, before commission, settlement/network cost, funding,
+exit basis, and non-atomic leg risk. Seven public GETs completed in 4,489 ms;
+the 2,412,967 retained raw bytes are locally hash-bound by the result. Do not
+repeat this current snapshot. Reopen only after a material Alpha fee, execution,
+or book-architecture change capable of clearing the 20 bps gate. Canonical
+artifacts:
 `docs/model-research/action-value/binance-ondo-bstock-stock-perpetual-wrapper-parity-candidate-v1-2026-08-27.json`,
 result SHA-256
-`8bcf6f7bfa0cca6dab1fd6fd854a331d5ee41366ac6f9c0244b62a8f3545f475`.
+`8bcf6f7bfa0cca6dab1fd6fd854a331d5ee41366ac6f9c0244b62a8f3545f475`;
+`docs/model-research/action-value/binance-alpha-ondo-perpetual-parity-contract-v1.json`,
+contract SHA-256
+`2f08c6b0a8509d9d51db7716d5dde499c3a1937b68eafe77b2970e4da8311b59`;
+and
+`docs/model-research/action-value/binance-alpha-ondo-perpetual-parity-v1-2026-08-27.json`,
+result SHA-256
+`a3d474e9010b92c9454a5bc04b5a7f586656c8bc5842cecc61baaa508c2d8bc3`.
 
 A new primary paper, *Taker vs. Maker Arbitrage*, distinguishes the execution
 mechanism in which an arbitrageur passively supplies one payoff-equivalent leg
@@ -1822,7 +1837,7 @@ result SHA-256
 `64943efe0c6ad16f8d02f78548afef38f919448d2da87c7573e825a2eeefd6b9`.
 The structural registry remains at sixteen accepted scoped edges and now has
 result SHA-256
-`36556fa1dbb792bf99c94c1b5cea039a822fb4f58ac476cc23cd70a25dd587c8`.
+`784a928804196c4fd6719bcc8dd71a539738041537f24689ca19e186083a77d9`.
 
 ## Protected Local Work
 
@@ -1924,14 +1939,15 @@ not grant account, funding, order, or transaction authority.
    Board resolves an exact new amount and Binance publishes a matching NOKB
    announcement; close the historical multiplier event lineage before any
    prospective event-time capture.
-   For Ondo/bStock/stock-perpetual wrapper parity, do not repeat the current
-   point screen or treat `tokenInfo.price / sharesMultiplier` as an ask. Advance
-   only when an approved configured read-only nonexecuting quote capability or
-   a documented public unauthenticated executable quote endpoint exists. Quote
-   one minimum-notional top candidate first and fetch one matching CEX depth
-   batch only if exact fee, gas, slippage, quantity, settlement, funding, and
-   exit headroom remains positive. Installing or signing into a wallet,
-   approvals, transfers, swaps, and orders retain separate authority gates.
+   For Ondo/bStock/stock-perpetual wrapper parity, Binance Alpha public full
+   depth has now closed the missing executable-looking ask question. Do not
+   repeat either the old point screen or the frozen four-contract Alpha book
+   screen: zero of CRCL, TSLA, COIN, and MSTR survived the 20 bps pre-account
+   stress, with MSTR best at only 7.2132724213 bps gross. Reopen only after a
+   material Alpha fee, execution, or book-architecture change capable of
+   clearing that gate; freeze a new complete-population contract before any
+   request. Installing or signing into a wallet, approvals, transfers, swaps,
+   and orders retain separate authority gates.
    For BFUSD/RWUSD, wait until both designated ephemeral credential variables
    exist, then source-bind and hosted-verify one six-GET rate, quota, and
    flexible-alternative prequalification before its single run. Do not build
