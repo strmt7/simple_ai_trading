@@ -615,7 +615,9 @@
     {
       "blocking_evidence": [
         "same-account liquidity program enrollment tier and pair scope",
+        "same-account original tier bStocks review-week tier and exact qualification denominator",
         "weekly final rebates reconciled to rebate history and balances",
+        "independently existing legitimate all-symbol maker notional that benefits from the bStocks tier without manufactured qualification volume",
         "post-only queue fill adverse-selection inventory and capacity evidence",
         "realized after-cost stress persistence"
       ],
@@ -623,21 +625,28 @@
         {
           "path": "docs/model-research/action-value/binance-spot-maker-rebate-account-evidence-gate-v1.json",
           "result_sha256": "d2adda1c5ab4b561e0c238e1e874cc72edaee15ebadafbb76703251f9cd99e10"
+        },
+        {
+          "path": "docs/model-research/action-value/binance-bstock-spot-lp-all-symbol-rebate-overlay-candidate-v1-2026-08-27.json",
+          "result_sha256": "d279f8ab88875c812e6691fa500fdfde741f2e2fbca19ee240b4c0d4a579d607"
         }
       ],
-      "current_status": "current_public_schedule_proved_zero_maker_fee_by_enrollment_tier1_0_05_percent_weekly_share_or_25_million_USD_and_tiers2_4_rebate_0_4_to_0_8_bips_after_0_15_to_1_00_percent_share_but_account_enrollment_organic_volume_owned_execution_and_realized_after_cost_profit_absent",
+      "current_status": "current_public_schedule_proved_zero_maker_fee_by_enrollment_tier1_0_05_percent_weekly_share_or_25_million_USD_and_tiers2_4_rebate_0_4_to_0_8_bips_the_time_limited_bStocks_overlay_adds_lower_separate_bStocks_share_thresholds_of_0_05_0_10_0_30_and_0_60_percent_and_applies_a_higher_bStocks_tier_rebate_across_all_symbols_but_the_first_effective_week_starts_2026_09_01_and_account_enrollment_organic_volume_owned_execution_and_realized_after_cost_profit_are_absent",
       "market_direction_forecast_required": false,
       "mechanism": "spot_market_maker_rebates",
-      "next_action": "query_only_the_frozen_account_evidence_path_after_explicit_read_only_credential_authority",
+      "next_action": "not_before_2026_09_01T00_00_00Z_and_only_with_both_designated_credentials_plus_explicit_signed_GET_only_authority_query_the_frozen_liquidity_program_overview_performance_weekly_result_and_rebate_history_then_join_only_to_independently_existing_owned_organic_maker_flow_no_orders_application_or_volume_generation",
       "priority_rank": 15,
       "prohibited_shortcuts": [
         "dynamic public schedule as same_account enrollment or realized rebate proof",
         "symbol commission response as maker-rebate proof",
         "taker triangle prices as non-atomic maker execution",
-        "volume farming self-trading or wash trading for a maximum displayed 0_8_bip rebate"
+        "volume farming self-trading or wash trading for a maximum displayed 0_8_bip rebate",
+        "crediting_the_bStocks_review_week_before_the_following_effective_tier_week",
+        "treating_the_public_bStocks_share_threshold_as_account_tier_or_as_a_known_notional_denominator",
+        "assuming_bStock_maker_fills_are_delta_neutral_without_owned_same_quantity_hedges_and_every_cost"
       ],
-      "retry_trigger": "explicit_read_only_mainnet_account_evidence_authority",
-      "venue_scope": "binance_spot"
+      "retry_trigger": "not_before_2026_09_01T00_00_00Z_plus_both_SIMPLE_AI_TRADING_BINANCE_MAINNET_API_KEY_and_SIMPLE_AI_TRADING_BINANCE_MAINNET_API_SECRET_available_with_explicit_signed_GET_only_account_evidence_authority_or_a_material_bStocks_LP_schedule_or_execution_change",
+      "venue_scope": "binance_spot_and_bStocks_spot_LP_promotion"
     },
     {
       "blocking_evidence": [
@@ -1451,7 +1460,7 @@
       "venue_scope": "Binance_XAU_XAG_USDT_long_only_commodity_options_and_matching_TradFi_perpetuals"
     }
   ],
-  "result_sha256": "08576eb7bbf9f12cdb9e784ea9334d0db88c72d1afb665a87475a44f4dc9ebef",
+  "result_sha256": "29ef9296b8a07a6011f4325c0048805f5b36f790c5e3b75eecdb1b126c58d742",
   "schema_version": "structural-edge-priority-registry-v1",
   "terminal_do_not_repeat": [
     {
@@ -1610,6 +1619,6 @@
       "reason": "the_frozen_unseen_rank_251_to_1000_validation_used_explicit_win_partial_loss_statuses_across_6264_resolved_YES_positions_162_wallets_and_77_dates_but_the_opposite_side_gross_spread_proxy_lost_73368_711836_pUSD_before_maker_costs_and_was_negative_in_the_PNL_cohort_training_test_and_both_wallet_and_date_cluster_lower_bounds_do_not_repeat_leaderboard_mining"
     }
   ],
-  "updated_at_utc": "2026-08-27T04:03:55.2171926Z",
+  "updated_at_utc": "2026-08-27T04:13:24.3009035Z",
   "usage_rule": "advance_the_highest_ranked_hypothesis_whose_retry_trigger_is_satisfied_otherwise_do_not_repeat_a_blocked_or_terminal_screen"
 }

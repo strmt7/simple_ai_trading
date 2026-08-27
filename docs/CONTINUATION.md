@@ -908,7 +908,7 @@ grants paper, testnet, or live authority.
 
 The canonical structural-edge priority and retry-trigger registry is
 `docs/model-research/structural-edge-priority-registry-v1.json`, result SHA-256
-`08576eb7bbf9f12cdb9e784ea9334d0db88c72d1afb665a87475a44f4dc9ebef`.
+`29ef9296b8a07a6011f4325c0048805f5b36f790c5e3b75eecdb1b126c58d742`.
 Advance only the highest-ranked hypothesis whose trigger is actually satisfied.
 This prevents account-blocked or terminal screens from being rerun as if more
 snapshots could create an edge.
@@ -1860,7 +1860,7 @@ result SHA-256
 `64943efe0c6ad16f8d02f78548afef38f919448d2da87c7573e825a2eeefd6b9`.
 The structural registry remains at sixteen accepted scoped edges and now has
 result SHA-256
-`08576eb7bbf9f12cdb9e784ea9334d0db88c72d1afb665a87475a44f4dc9ebef`.
+`29ef9296b8a07a6011f4325c0048805f5b36f790c5e3b75eecdb1b126c58d742`.
 
 The complete Binance XAU/XAG Commodity Options versus matching TradFi
 perpetual lower-bound screen is terminal for the active 2026-08-27 and
@@ -1949,6 +1949,35 @@ SHA-256
 `docs/model-research/action-value/binance-lite-loan-stablecoin-yield-curve-v1-2026-08-27.json`,
 result SHA-256
 `65f223a245fa1bb65a8fd791275da0dbd71d3c52ee2d232ac1420feb198b129d`.
+
+## bStock Spot LP All-Symbol Rebate R&D
+
+The 2026-08-24 through 2026-10-18 bStock Spot Liquidity Provider promotion
+adds a separate bStock maker-share route into Binance's existing Spot LP tiers.
+The bStock weekly maker-share thresholds are 0.05%, 0.10%, 0.30%, and 0.60%
+for tiers 1 through 4. Their maker fees are 0, -0.0040%, -0.0060%, and
+-0.0080%, respectively. If the resulting bStock tier exceeds the participant's
+original category tier, Binance says the higher rebate applies across all
+symbols. The first review week ends `2026-08-30T23:59:00Z`; its tier is first
+effective from `2026-09-01T00:00:00Z`, so no positive rebate is credited now.
+
+This is a conditional all-symbol fee-overlay candidate only for independently
+existing, legitimate organic maker flow. The public source does not expose the
+same-account enrollment, original tier, bStock denominator, owned volumes,
+fills, adverse selection, inventory hedges, final rebate rows, or after-cost
+persistence. The manual trial requires more than 20 million USD of 30-day Spot
+volume but grants tier 1, whose positive rebate floor is zero. Never manufacture
+volume, self-deal, wash trade, or apply on the user's behalf. A maximum 0.8-bp
+rebate is not proof that bStock qualification or hedging is profitable.
+
+Do not fetch books. Not before the first effective week, and only with both
+designated credentials plus explicit signed GET-only authority, query the
+frozen liquidity-program overview, performance, weekly result, and rebate
+history. Join those rows only to already-existing owned organic maker flow;
+orders, applications, and volume generation remain forbidden. Canonical result:
+`docs/model-research/action-value/binance-bstock-spot-lp-all-symbol-rebate-overlay-candidate-v1-2026-08-27.json`,
+result SHA-256
+`d279f8ab88875c812e6691fa500fdfde741f2e2fbca19ee240b4c0d4a579d607`.
 
 ## Protected Local Work
 
