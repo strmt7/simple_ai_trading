@@ -1,0 +1,76 @@
+{
+  "schema_version": "binance-all-symbol-triangular-cycle-retained-contract-v1",
+  "status": "frozen_before_retained_cycle_outcome_access",
+  "frozen_at_utc": "2026-08-29T20:42:18.3716539Z",
+  "frozen_at_ms": 1788036138371,
+  "contract_sha256": "cc19bdd97167265e0831f84325624a623f83f2dc2d939491ed1c51859c0a38bb",
+  "purpose": "one zero-network rejection-first adjudication of every unique directed three-asset Binance Spot cycle in the already retained complete public graph",
+  "authority": {
+    "research_only": true,
+    "zero_network_requests": true,
+    "credentials_orders_and_account_mutations_permitted": false
+  },
+  "implementation": {
+    "path": "tools/adjudicate_binance_all_symbol_triangular_cycles_retained.py",
+    "sha256": "0e5ebcb5393f673f9732551397c31eb2c36ed57c5a1cae118d0726af910e5136"
+  },
+  "retained_inputs": {
+    "parent_result_path": "docs/model-research/action-value/binance-indirect-internal-conversion-screen-v1-2026-08-29.json",
+    "parent_result_sha256": "b3e7f724e2b1ce2cc7a8444d00632466196af6d89f139259164549e91d1f84bc",
+    "raw_directory": "data/edge-research/binance-indirect-internal-conversion-screen-v1/raw",
+    "manifest_sha256": "28b59e6e3eed238290b0dde2c916ba688f9c7d04b37ac0ff9189f90e3ea07d89",
+    "journal_sha256": "1d2a28f6bb4d1de1d493dc29028fd070cecb14893e7240d5d5baf22afdcec750",
+    "exchange_info_sha256": "28082cf5084b91eb06f051eff25957ede08c38ba28907705d0610bde35e6410d",
+    "book_ticker_response_count": 60,
+    "activity_path": "data/edge-research/binance-indirect-internal-conversion-activity-v1/ticker-24hr.json",
+    "activity_sha256": "fc753830c30bb09307c07eb2796cd63a462bd0fe75952ea7e546747cd18999d5",
+    "network_policy": "no new request; consume only the exact retained complete public responses above"
+  },
+  "universe": {
+    "definition": "every unique directed three-asset closed cycle constructible from active Spot pairs; cyclic rotations are one cycle and reverse direction remains distinct",
+    "valuation_gate": "every cycle asset must have a direct retained USDT conversion rate",
+    "static_cycle_selection_permitted": false
+  },
+  "activity_gate": {
+    "minimum_quote_changes_per_symbol": 5,
+    "minimum_24h_trade_count_per_symbol": 100,
+    "meaning": "rejection only; activity does not prove executable sequential fills"
+  },
+  "execution_model": {
+    "fee_scenarios": {
+      "zero_fee_upper_bound": "0",
+      "vip0_all_taker": "0.001"
+    },
+    "starting_usdt_sizes": [
+      "100",
+      "1000"
+    ],
+    "operational_stress_bips": "3",
+    "rounding": "sequential exact LOT_SIZE rounding for every leg",
+    "capacity": "each leg must fit within displayed top-of-book quantity after prior-leg rounding",
+    "residual": "all rounded residual input is independently valued in USDT and must not exceed 1 basis point of starting notional"
+  },
+  "candidate_gate": {
+    "required_valid_observations": 60,
+    "required_capacity_ok_observations": 60,
+    "minimum_positive_after_gates_observations": 48,
+    "minimum_positive_observations_per_15_sample_block": 12,
+    "minimum_median_stressed_profit_bips_exclusive": "0",
+    "ordering": "candidate and feasibility gates precede economic ranking"
+  },
+  "acceptance_boundary": {
+    "accepted_edge_by_this_adjudication": false,
+    "requires_before_acceptance": [
+      "exact account-specific fees and discounts",
+      "an independent non-overlapping prospective paper or owned-fill window",
+      "explicit sequential latency atomicity and unwind-loss controls",
+      "positive economics after every execution cost and operational stress"
+    ],
+    "prohibited_shortcuts": [
+      "treating a zero-fee upper-bound candidate as profitable",
+      "selecting a static cycle from this retained outcome",
+      "rerunning the same retained population after seeing the outcome",
+      "using credentials placing orders mutating accounts or creating volume"
+    ]
+  }
+}
