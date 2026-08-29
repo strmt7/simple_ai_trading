@@ -1776,6 +1776,18 @@ count the specialized NBA family. Canonical contract:
 result SHA-256
 `0838bea50b70a8d9e102f40146b2ddf041bc06db3039736d312b9f309c72fc6d`.
 
+A one-use current-sports discovery then tested the exact Polymarket event title
+`Colorado Rockies vs. Washington Nationals`, which the public spread page
+displayed as a current popular market. The frozen public Gamma keyset query
+returned HTTP 200 with zero events, no cursor, and no partial population. It
+made no price, book, account, or authenticated request. This terminalizes only
+that displayed title lead; do not adapt the title or rerun it. The broader
+cross-market exact-subset family remains open only when a future active pair has
+complete rules and a machine-proved payoff implication. Contract SHA-256:
+`99559dd57d8ba1520fd4f607c4e4e56cea1070a2798536941af10134e4376aed`;
+result SHA-256:
+`e5ce48b6b0521a5ba2fe58ae17316e703ab2155934a126e603eeadf81e219d9c`.
+
 Binance Launchpool is a distinct direction-independent candidate only for an
 independently already-held idle supported stablecoin. Current official guidance
 describes USDC/FDUSD-style pools, hourly accrual, early unlock with accrued
@@ -2140,7 +2152,7 @@ result SHA-256
 `64943efe0c6ad16f8d02f78548afef38f919448d2da87c7573e825a2eeefd6b9`.
 That checkpoint left seventeen accepted scoped edges. The current registry now
 has nineteen and result SHA-256
-`d3e31d80653d21aa7267f68d6ed392bebd10e1c5158765da6545056d2a94c68e`.
+`0a59b008453a6ff11a5d2402f037acb4fa331f0fb44dac95a60dbd9b6b73c7cf`.
 
 The complete Binance XAU/XAG Commodity Options versus matching TradFi
 perpetual lower-bound screen is terminal for the active 2026-08-27 and
@@ -2189,6 +2201,30 @@ without rewriting or rerunning the consumed observation. The runner and
 before HTTP. Never type a rounded or anticipated freeze time. Adjudication file
 SHA-256:
 `072d6b83c90a71a50bcf36cb310f0c933f4dfdc1b5e50bb3b7672a97f960f5ba`.
+
+The distinct same-venue `XAUUSDT` versus `PAXGUSDT` perpetual funding-and-
+basis spread is also terminal under the retained current architecture. The
+frozen two-request public history screen received 500 rows per symbol. Its
+original exact-millisecond join retained only 83 rows because the venue's
+independently published settlement timestamps differed by as much as 13 ms.
+The original contract and failed result remain immutable. A no-refetch
+adjudication aligned all 500 corresponding ordinal settlement slots within the
+frozen one-second tolerance, retained each leg's own funding time, rate, and
+mark, and evaluated both directions in training, validation, and test.
+
+The training-selected `long PAXG / short XAU` direction was `-296.9983`,
+`-151.9946`, and `-104.9276` bps in training, validation, and test after 40 bps
+round-trip execution stress and a 10% annual opportunity-cost hurdle on each
+capital leg. The opposite direction also failed every role. Do not paginate,
+rerun, or refit this tail; reopen only after a material funding, index, fee,
+margin, or product-architecture change. This corrected a reusable methodology
+error without spending another request and produced no accepted edge or trading
+authority. Contract SHA-256:
+`39367c3544711a6c206e8d9a3b98f1832ed2c912d8f113ad35872a1fb11e6f36`;
+original result SHA-256:
+`4cf430a7c5b6ce6ab57fd71979d705732e737cbcb116658705454b80daa025a9`;
+adjudication SHA-256:
+`46bf134d1be8b645d7f6272d651be8d3c0b6a8e5b2e7d2b4540f3609d6997a96`.
 
 The newly listed `DJTBUSDT` bStock and `DJTUSDT` TradFi perpetual were tested
 once as a symbol-only material universe addition to the existing bStock carry

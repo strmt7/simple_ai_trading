@@ -12,7 +12,7 @@ ARTIFACT = ROOT / "docs/model-research/action-value" / (
 )
 REGISTRY = ROOT / "docs/model-research/structural-edge-priority-registry-v1.json"
 ARTIFACT_HASH = "e0b6ed9311d2a022abee417a677b952e83cf918fc6b396804f5cba39fd83d4ed"
-REGISTRY_HASH = "7b03ee420b7874180732f28fc1c59903adbd82e147be268ea54e894f460bbda1"
+REGISTRY_HASH = "0a59b008453a6ff11a5d2402f037acb4fa331f0fb44dac95a60dbd9b6b73c7cf"
 
 
 def _load(path: Path) -> dict[str, object]:
@@ -72,4 +72,5 @@ def test_first_usd_deposit_reward_candidate_reconstructs_and_fails_closed() -> N
         "path": "docs/model-research/action-value/binance-first-usd-deposit-spcxb-reward-hedge-candidate-v1-2026-08-27.json",
         "result_sha256": ARTIFACT_HASH,
     } in hypothesis["canonical_artifacts"]
-    assert "first_USD_deposit_Promotion_A" in hypothesis["current_status"]
+    assert hypothesis["market_direction_forecast_required"] is False
+    assert "none_is_deployment_ready" in hypothesis["current_status"]

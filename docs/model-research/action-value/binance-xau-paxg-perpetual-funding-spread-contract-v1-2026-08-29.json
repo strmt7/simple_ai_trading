@@ -1,0 +1,123 @@
+{
+  "schema_version": "binance-xau-paxg-perpetual-funding-spread-contract-v1",
+  "status": "frozen_before_two_public_funding_history_requests",
+  "purpose": "test whether equal-initial-notional opposite Binance XAUUSDT and PAXGUSDT perpetual positions produce a persistent market-direction-independent funding spread after relative mark-basis drift and conservative hurdles",
+  "mechanism_evidence": {
+    "current_exchange_info_path": "data/binance-commodity-option-perpetual-lower-bound-v1/raw/futures-exchange-info.raw",
+    "current_exchange_info_sha256": "7d05e44574d676b0faf054ecd378b8898a7ff81bcd3ca518d1b57ab9b394e3be",
+    "required_rows": [
+      {
+        "symbol": "XAUUSDT",
+        "contractType": "TRADIFI_PERPETUAL",
+        "status": "TRADING",
+        "baseAsset": "XAU",
+        "quoteAsset": "USDT",
+        "underlyingType": "COMMODITY"
+      },
+      {
+        "symbol": "PAXGUSDT",
+        "contractType": "PERPETUAL",
+        "status": "TRADING",
+        "baseAsset": "PAXG",
+        "quoteAsset": "USDT",
+        "underlyingType": "COIN"
+      }
+    ],
+    "PAXG_primary_unit_source": "https://docs.paxos.com/guides/stablecoin/paxg",
+    "PAXG_unit": "one token represents one fine troy ounce of London Good Delivery gold",
+    "XAU_product_source": "https://www.binance.com/en/academy/articles/what-is-tokenized-gold",
+    "XAU_description": "Binance XAUUSDT is a USDT-settled gold perpetual rather than owned tokenized gold",
+    "exact_settlement_equivalence_claimed": false
+  },
+  "authority": {
+    "public_unauthenticated_read_only_only": true,
+    "credentials_accounts_orders_or_positions_permitted": false,
+    "paper_or_live_trading_authority": false,
+    "profitability_or_accepted_edge_claim_permitted": false
+  },
+  "historical_contract": {
+    "immutable_global_cutoff_exclusive_utc": "2026-08-14T00:00:00Z",
+    "endpoint": "https://fapi.binance.com/fapi/v1/fundingRate",
+    "requests": [
+      {
+        "symbol": "XAUUSDT",
+        "endTime": "1786665599999",
+        "limit": "1000"
+      },
+      {
+        "symbol": "PAXGUSDT",
+        "endTime": "1786665599999",
+        "limit": "1000"
+      }
+    ],
+    "maximum_requests": 2,
+    "maximum_cumulative_request_weight": 2,
+    "minimum_milliseconds_between_request_starts": 650,
+    "retry_permitted": false,
+    "raw_responses_retained_before_parsing": true,
+    "ordering": "ascending fundingTime within each response after validation",
+    "alignment": "exact common fundingTime only",
+    "expected_interval_hours": 8
+  },
+  "causal_analysis": {
+    "unit": "one_USDT_initial_notional_on_each_opposite_perpetual_leg",
+    "directions": [
+      "long_XAU_short_PAXG",
+      "long_PAXG_short_XAU"
+    ],
+    "selection": "choose the direction with the higher training net only",
+    "roles": {
+      "training_fraction": "0.60",
+      "validation_fraction": "0.20",
+      "test_fraction": "0.20"
+    },
+    "funding_cashflow": "fixed entry quantities times each settlement markPrice times signed fundingRate",
+    "relative_mark_basis_PnL": "fixed entry quantities marked from each role entry to role exit",
+    "round_trip_execution_stress_bips_of_one_leg_initial_notional": "40",
+    "annual_opportunity_cost_percent_per_capital_leg": "10",
+    "capital_legs": "2",
+    "candidate_gate": "selected direction strictly positive after all frozen hurdles in training validation and test with complete aligned common history and no unexpected gaps",
+    "accepted_edge": "never from this preflight; exact account fees margin liquidation index divergence capacity and prospective cross-regime recurrence remain required"
+  },
+  "one_use_outcomes": {
+    "negative_or_incomplete": "terminalize this historical preflight until a material funding index fee or product architecture change",
+    "positive_all_roles": "freeze a separate prospective synchronized basis funding liquidity and cross-regime study without trading",
+    "all_outcomes": "no credentials accounts positions orders or trading authority and accepted edge count unchanged"
+  },
+  "prohibited_shortcuts": [
+    "using_current_books_or_post_cutoff_funding",
+    "selecting_direction_on_validation_or_test",
+    "ignoring_relative_mark_basis_drift",
+    "assuming_PAXG_and_XAU_indices_are_exactly_redeemable_or atomic",
+    "using_leverage_as_edge",
+    "rerunning_or_relaxing_a_negative_consumed_preflight"
+  ],
+  "frozen_at_utc": "2026-08-29T14:30:16.490080Z",
+  "validated_current_inventory": {
+    "path": "data/binance-commodity-option-perpetual-lower-bound-v1/raw/futures-exchange-info.raw",
+    "sha256": "7d05e44574d676b0faf054ecd378b8898a7ff81bcd3ca518d1b57ab9b394e3be",
+    "symbols": [
+      {
+        "symbol": "XAUUSDT",
+        "contractType": "TRADIFI_PERPETUAL",
+        "status": "TRADING",
+        "baseAsset": "XAU",
+        "quoteAsset": "USDT",
+        "underlyingType": "COMMODITY"
+      },
+      {
+        "symbol": "PAXGUSDT",
+        "contractType": "PERPETUAL",
+        "status": "TRADING",
+        "baseAsset": "PAXG",
+        "quoteAsset": "USDT",
+        "underlyingType": "COIN"
+      }
+    ]
+  },
+  "template": {
+    "path": "docs/model-research/action-value/binance-xau-paxg-perpetual-funding-spread-template-v1-2026-08-29.json",
+    "sha256": "9b2575bec8f485c62e3d76c9555a8259b33efa5475a740ef95e78614af68d59c"
+  },
+  "contract_sha256": "39367c3544711a6c206e8d9a3b98f1832ed2c912d8f113ad35872a1fb11e6f36"
+}

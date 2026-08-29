@@ -149,6 +149,11 @@ override prose.
   ordering, timestamp phase, cursor progression, and cross-source alignment on
   retained evidence before continuing pagination; successful JSON parsing alone
   is not an aggregation preflight.
+- For cross-contract funding histories, audit the actual returned row ceiling,
+  ordinal settlement schedule, and timestamp skew before choosing a join. Do not
+  discard valid leg-specific cash flows merely because independently published
+  settlement timestamps differ by milliseconds; preserve the original failed
+  method and adjudicate from retained raw responses without an adaptive refetch.
 
 ## Working Method
 

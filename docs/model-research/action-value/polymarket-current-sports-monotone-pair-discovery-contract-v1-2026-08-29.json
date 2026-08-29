@@ -1,0 +1,64 @@
+{
+  "schema_version": "polymarket-current-sports-monotone-pair-discovery-contract-v1",
+  "status": "frozen_before_one_public_Gamma_request",
+  "purpose": "discover whether one currently advertised future active sports event contains same-game moneyline and spread markets whose exact rules could support a market-direction-independent payoff implication study",
+  "material_public_trigger": {
+    "satisfied": true,
+    "source_url": "https://polymarket.com/predictions/spread",
+    "observed_at_date_utc": "2026-08-29",
+    "displayed_event_title": "Colorado Rockies vs. Washington Nationals",
+    "displayed_state": "current popular spread market with a future end",
+    "why_existing_NBA_contract_does_not_cover_it": "the retained NBA family is explicitly offseason and this is a distinct current baseball event"
+  },
+  "authority": {
+    "public_unauthenticated_read_only_only": true,
+    "credentials_accounts_orders_wallets_or_transactions_permitted": false,
+    "paper_or_live_trading_authority": false,
+    "profitability_or_edge_acceptance_permitted": false
+  },
+  "source_contract": {
+    "documentation_url": "https://docs.polymarket.com/api-reference/events/list-events-keyset-pagination",
+    "method": "GET",
+    "endpoint": "https://gamma-api.polymarket.com/events/keyset",
+    "query": {
+      "closed": "false",
+      "title_search": "Colorado Rockies vs. Washington Nationals",
+      "limit": "20",
+      "order": "volume24hr",
+      "ascending": "false"
+    },
+    "maximum_requests": 1,
+    "retry_permitted": false,
+    "raw_response_retained_before_parsing": true,
+    "pagination_permitted": false,
+    "partial_population_if_next_cursor_present": true
+  },
+  "discovery_boundary": {
+    "exact_title_match_required": true,
+    "event_must_be_active_and_not_closed": true,
+    "retain_all_embedded_markets_without_price_or_book_access": true,
+    "candidate_requires_future_accepting_order_moneyline_and_spread_rows_with_complete_exact_rules": true,
+    "no_payoff_equivalence_inferred_from_title_market_type_or_line_alone": true,
+    "no_conditional_downstream_requests": true
+  },
+  "one_use_outcomes": {
+    "no_exact_active_event": "terminalize this displayed lead without another request",
+    "event_but_no_moneyline_spread_inventory": "terminalize the same-game implication lead for this event",
+    "possible_pair": "retain rules and inventory only; manually prove the exact joint payoff before separately freezing any CLOB book request",
+    "partial_keyset_page": "label population partial and do not paginate under this contract",
+    "all_outcomes": "accepted edge count unchanged and no account funded order paper or live action authorized"
+  },
+  "prohibited_shortcuts": [
+    "requesting_books_before_exact_rule_and_payoff_proof",
+    "assuming_a_spread_cover_implies_a_moneyline_win_without_rule_edge_case_review",
+    "treating_displayed_prices_or_Gamma_bestBid_bestAsk_as_executable_depth",
+    "adaptive_title_search_or_pagination_after_viewing_the_response",
+    "placing_or_simulating_orders_or_accessing_an_account"
+  ],
+  "frozen_at_utc": "2026-08-29T14:24:30.271231Z",
+  "template": {
+    "path": "docs/model-research/action-value/polymarket-current-sports-monotone-pair-discovery-template-v1-2026-08-29.json",
+    "sha256": "b1bdd3f050767adf1a7bd4180a31217745ff37370c1a90cb84d82f9f744e1b4f"
+  },
+  "contract_sha256": "99559dd57d8ba1520fd4f607c4e4e56cea1070a2798536941af10134e4376aed"
+}

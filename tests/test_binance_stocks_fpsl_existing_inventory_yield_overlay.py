@@ -20,7 +20,7 @@ EXPECTED_RESULT_SHA256 = (
     "3fe1801a6cbf442ab1ce79d1f3bd4586542d97414aea954b0bbd9a55a85453e1"
 )
 EXPECTED_REGISTRY_SHA256 = (
-    "7b03ee420b7874180732f28fc1c59903adbd82e147be268ea54e894f460bbda1"
+    "0a59b008453a6ff11a5d2402f037acb4fa331f0fb44dac95a60dbd9b6b73c7cf"
 )
 
 
@@ -84,4 +84,4 @@ def test_registry_tracks_fpsl_without_increasing_accepted_count() -> None:
         EXPECTED_RESULT_SHA256
     )
     assert "FPSL" in family["current_status"]
-    assert "explicit_user_authority" in family["next_action"]
+    assert "explicit_account_read_only_authority" in family["next_action"]

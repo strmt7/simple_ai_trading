@@ -16,7 +16,7 @@ EXPECTED_ARTIFACT_SHA256 = (
     "e11810a0215521cb5ad0c0c966340b4ff943760fda516e7841430fe057fe25fe"
 )
 EXPECTED_REGISTRY_SHA256 = (
-    "7b03ee420b7874180732f28fc1c59903adbd82e147be268ea54e894f460bbda1"
+    "0a59b008453a6ff11a5d2402f037acb4fa331f0fb44dac95a60dbd9b6b73c7cf"
 )
 
 
@@ -72,7 +72,8 @@ def test_registry_uses_resolution_without_weakening_execution_gates() -> None:
         ),
         "result_sha256": EXPECTED_ARTIFACT_SHA256,
     } in row["canonical_artifacts"]
-    assert "exact_account_access" in row["current_status"]
+    assert row["market_direction_forecast_required"] is False
+    assert "terminally_rejected" in row["current_status"]
     assert any(
         "retired_CLOB_V1_adapter" in shortcut
         for shortcut in row["prohibited_shortcuts"]

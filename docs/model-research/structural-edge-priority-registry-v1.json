@@ -1259,12 +1259,20 @@
         {
           "path": "docs/model-research/action-value/polymarket-cross-market-dependent-subset-parity-reopen-v1-2026-08-26.json",
           "result_sha256": "0838bea50b70a8d9e102f40146b2ddf041bc06db3039736d312b9f309c72fc6d"
+        },
+        {
+          "path": "docs/model-research/action-value/polymarket-current-sports-monotone-pair-discovery-contract-v1-2026-08-29.json",
+          "result_sha256": "99559dd57d8ba1520fd4f607c4e4e56cea1070a2798536941af10134e4376aed"
+        },
+        {
+          "path": "docs/model-research/action-value/polymarket-current-sports-monotone-pair-discovery-result-v1-2026-08-29.json",
+          "result_sha256": "e5ce48b6b0521a5ba2fe58ae17316e703ab2155934a126e603eeadf81e219d9c"
         }
       ],
-      "current_status": "materially_reopened_distinct_direction_independent_two_market_exact_multi_outcome_subset_equivalence_candidate_primary_historical_paper_enumerates_95156_71_USD_across_four_cross_market_pairs_but_uses_trade_VWAP_up_to_2_5_hour_forward_fill_no_current_fees_and_semantic_dependency_labels_current_executable_after_fee_recurrence_unproved_not_accepted_or_deployment_ready",
+      "current_status": "materially_reopened_distinct_direction_independent_two_market_exact_multi_outcome_subset_equivalence_candidate_primary_historical_paper_enumerates_95156_71_USD_across_four_cross_market_pairs_but_uses_trade_VWAP_up_to_2_5_hour_forward_fill_no_current_fees_and_semantic_dependency_labels_the_one_use_exact_current_displayed_Colorado_Rockies_vs_Washington_Nationals_title_search_returned_zero_events_and_stopped_without_book_or_price_requests_current_executable_after_fee_recurrence_unproved_not_accepted_or_deployment_ready",
       "market_direction_forecast_required": false,
       "mechanism": "polymarket_cross_market_exact_multi_outcome_subset_equivalence",
-      "next_action": "do_not_replay_historical_VWAP_or_semantic_pair_grids_when_a_future_active_pair_has_complete_rules_first_build_an_exhaustive_machine_checked_joint_payoff_table_then_run_only_one_public_read_only_all_leg_batch_book_current_fee_recurrence_contract_without_double_counting_the_NBA_subfamily",
+      "next_action": "do_not_replay_historical_VWAP_semantic_pair_grids_or_adaptively_retry_the_consumed_exact_baseball_title_when_a_future_active_pair_has_complete_rules_first_build_an_exhaustive_machine_checked_joint_payoff_table_then_run_only_one_public_read_only_all_leg_batch_book_current_fee_recurrence_contract_without_double_counting_the_NBA_subfamily",
       "priority_rank": 31,
       "prohibited_shortcuts": [
         "calling_the_39_6_million_USD_all_strategy_headline_cross_market_subset_profit",
@@ -1601,9 +1609,47 @@
       ],
       "retry_trigger": "new_official_XAU_or_XAG_commodity_option_listing_or_relisting_announcement_after_2026_08_29T13_58_50_782Z_or_material_option_fee_funding_basis_book_or_product_access_change",
       "venue_scope": "Binance_XAU_XAG_USDT_long_only_commodity_options_and_matching_TradFi_perpetuals"
+    },
+    {
+      "blocking_evidence": [
+        "material change in XAUUSDT or PAXGUSDT funding index fee margin or product architecture",
+        "source-proved economic equivalence between the XAUUSDT TradFi index and one fine troy ounce of PAXG after custody redemption and tracking basis",
+        "exact account commissions margin collateral liquidation and simultaneous two-leg execution costs",
+        "positive training validation test and every required regime slice after two-leg opportunity cost",
+        "owned synchronized fills funding cash flows and exits before any deployment or profitability claim"
+      ],
+      "canonical_artifacts": [
+        {
+          "path": "docs/model-research/action-value/binance-xau-paxg-perpetual-funding-spread-contract-v1-2026-08-29.json",
+          "result_sha256": "39367c3544711a6c206e8d9a3b98f1832ed2c912d8f113ad35872a1fb11e6f36"
+        },
+        {
+          "path": "docs/model-research/action-value/binance-xau-paxg-perpetual-funding-spread-result-v1-2026-08-29.json",
+          "result_sha256": "4cf430a7c5b6ce6ab57fd71979d705732e737cbcb116658705454b80daa025a9"
+        },
+        {
+          "path": "docs/model-research/action-value/binance-xau-paxg-perpetual-funding-spread-failure-adjudication-v1-2026-08-29.json",
+          "result_sha256": "46bf134d1be8b645d7f6272d651be8d3c0b6a8e5b2e7d2b4540f3609d6997a96"
+        }
+      ],
+      "current_status": "direction_independent_same_venue_XAUUSDT_PAXGUSDT_perpetual_funding_and_relative_basis_spread_rejected_from_the_complete_retained_500_settlement_slot_tail_the_original_exact_millisecond_join_discarded_417_valid_pairs_because_exchange_timestamps_differed_by_at_most_13_ms_but_the_no_refetch_ordinal_sensitivity_found_both_directions_negative_in_training_validation_and_test_after_40_bips_execution_and_two_10_percent_annual_capital_hurdles_selected_long_PAXG_short_XAU_net_negative_296_9983_negative_151_9946_and_negative_104_9276_bips_not_accepted_or_deployment_ready",
+      "market_direction_forecast_required": false,
+      "mechanism": "binance_XAUUSDT_PAXGUSDT_same_venue_perpetual_funding_basis_spread",
+      "next_action": "do_not_rerun_paginate_or_refit_the_retained_500_slot_tail_reopen_only_after_a_material_funding_index_fee_margin_or_product_architecture_change_then_preregister_a_fresh_complete_cash_flow_and_basis_test",
+      "priority_rank": 41,
+      "prohibited_shortcuts": [
+        "exact_timestamp_joining_independent_funding_histories_without_first_auditing_settlement_schedule_and_skew",
+        "treating_XAUUSDT_and_PAXGUSDT_as_identical_claims_without_source_proved_index_redemption_and_tracking_economics",
+        "crediting_funding_without_relative_entry_exit_basis",
+        "omitting_one_capital_leg_or_reusing_training_to_select_validation_or_test_direction",
+        "adaptive_pagination_refetch_or_outcome_aware_promotion_after_the_retained_complete_tail_failed",
+        "calling_gross_funding_spread_an_edge_or_deployment_ready"
+      ],
+      "retry_trigger": "material_XAUUSDT_or_PAXGUSDT_funding_index_fee_margin_or_product_architecture_change_after_2026_08_29T14_33_27_110Z",
+      "venue_scope": "Binance_USDT_margined_XAUUSDT_and_PAXGUSDT_perpetuals"
     }
   ],
-  "result_sha256": "7b03ee420b7874180732f28fc1c59903adbd82e147be268ea54e894f460bbda1",
+  "result_sha256": "0a59b008453a6ff11a5d2402f037acb4fa331f0fb44dac95a60dbd9b6b73c7cf",
   "schema_version": "structural-edge-priority-registry-v1",
   "terminal_do_not_repeat": [
     {
@@ -1770,8 +1816,13 @@
       "canonical_result_sha256": "23eb54dfd19890d984d73156ef05950f7362f8fffe081b93cc5d471f59f62755",
       "family": "binance_Hyperliquid_cross_venue_perpetual_funding_spread_current_extension",
       "reason": "the_exact_70_day_2026_06_18_through_2026_08_26_extension_had_full_hourly_coverage_but_the_primary_BTC_ETH_equal_weight_after_20_bips_and_exact_entry_exit_basis_annualized_only_1_2030087925_percent_and_every_asset_BTC_ETH_SOL_DOGE_trailed_the_same_timestamp_3_86_percent_DGS3MO_hurdle_do_not_refit_or_resample_until_a_material_venue_fee_funding_basis_or_hurdle_change_occurs"
+    },
+    {
+      "canonical_result_sha256": "46bf134d1be8b645d7f6272d651be8d3c0b6a8e5b2e7d2b4540f3609d6997a96",
+      "family": "binance_XAUUSDT_PAXGUSDT_same_venue_perpetual_funding_basis_spread",
+      "reason": "the_complete_retained_500_settlement_slot_tail_failed_both_directions_in_training_validation_and_test_after_40_bips_execution_and_two_10_percent_annual_capital_hurdles_do_not_rerun_paginate_or_refit_until_a_material_funding_index_fee_margin_or_product_architecture_change"
     }
   ],
-  "updated_at_utc": "2026-08-29T14:02:41Z",
+  "updated_at_utc": "2026-08-29T14:40:57Z",
   "usage_rule": "advance_the_highest_ranked_hypothesis_whose_retry_trigger_is_satisfied_otherwise_do_not_repeat_a_blocked_or_terminal_screen"
 }
