@@ -13,7 +13,7 @@ ARTIFACT = ROOT / "docs/model-research/action-value" / (
 )
 REGISTRY = ROOT / "docs/model-research/structural-edge-priority-registry-v1.json"
 EXPECTED_HASH = "70cfc7b2ae1cb256e7a8c08c9af33fa8524d2308a8c18400d5a2b7d93c966fe3"
-REGISTRY_HASH = "2baf1b76070e0ef9081f9eb5fba41f3977b5fd1aa74759ed85034947e9ad1c5a"
+REGISTRY_HASH = "671fa1498f9098357ac5c0f209c76351b0043cdcc1123dd8d8d062c92ac5c4a5"
 
 
 def _load(path: Path) -> dict[str, object]:
@@ -143,6 +143,36 @@ def test_registry_reopens_only_the_distinct_future_nba_recurrence_family() -> No
             ),
             "result_sha256": (
                 "cc657982abd9ede0f0f7b18787df32e62c69b7c3b3e547ade3f6f3ccb734ed46"
+            ),
+        },
+        {
+            "path": (
+                "docs/model-research/action-value/"
+                "polymarket-lynx-dream-exact-event-prefilter-contract-v1-"
+                "2026-08-29.json"
+            ),
+            "result_sha256": (
+                "d049290de090fd07be9f99d4f59704488447fb98013fc55d2c183d9f52a181c8"
+            ),
+        },
+        {
+            "path": (
+                "docs/model-research/action-value/"
+                "polymarket-lynx-dream-exact-event-prefilter-result-v1-"
+                "2026-08-29.json"
+            ),
+            "result_sha256": (
+                "c7629f0869bf7b1b9b6622cde42b0822f35e63386c9cb3e2e4364423fa4f7156"
+            ),
+        },
+        {
+            "path": (
+                "docs/model-research/action-value/"
+                "polymarket-lynx-dream-monotone-prefilter-adjudication-v1-"
+                "2026-08-29.json"
+            ),
+            "result_sha256": (
+                "61b3436b3367ba3442ebe777c8a506948243c6d3b6d6a4cb9346d2db3aaf335f"
             ),
         },
     ]

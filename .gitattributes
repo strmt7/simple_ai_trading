@@ -23,6 +23,7 @@ data/polymarket-current-mlb-exact-event-inventory-v1/** binary -eol
 data/polymarket-current-mlb-monotone-parity-v1/** binary -eol
 data/polymarket-current-wnba-exact-event-v1/** binary -eol
 data/polymarket-current-wnba-monotone-parity-v1/** binary -eol
+data/polymarket-lynx-dream-exact-event-prefilter-v1/** binary -eol
 data/polymarket-negrisk-one-no-v2-conversions-v1/** binary -eol
 data/binance-blvt-public-inventory-v1/** binary -eol
 data/polymarket-shutdown-house-identity-metadata-v1/** binary -eol

@@ -20,7 +20,7 @@ JOURNAL = DATA_ROOT / "request-journal.jsonl"
 REGISTRY = ROOT / "docs/model-research/structural-edge-priority-registry-v1.json"
 CONTRACT_HASH = "9189fd384c2185875a8682155f365eb79cfe5f1061016ca035b05dfc88545b9f"
 RESULT_HASH = "85c8ef364b03fb2fbf0aeebddec10d51abbdd608f56ff9c0dccb1835cacc2179"
-REGISTRY_HASH = "2baf1b76070e0ef9081f9eb5fba41f3977b5fd1aa74759ed85034947e9ad1c5a"
+REGISTRY_HASH = "671fa1498f9098357ac5c0f209c76351b0043cdcc1123dd8d8d062c92ac5c4a5"
 
 
 def _load(path: Path) -> dict[str, object]:
