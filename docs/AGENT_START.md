@@ -1636,7 +1636,7 @@ safety gate, blocks Stop, or submits an order.
   and `f032753b45c82b2e0945d1a8c0e0d5fc01f8fb1727cdad34e73064c7590417ba`.
 - The structural-edge registry now has 44 ranked hypotheses and 21
   narrowly accepted scoped overlays, and result SHA-256
-  `ff5b41b572833ff0eed459098a2f93d1d62fed03891616b9a1fa71bc832f887e`.
+  `0a34d7289331515f8e7b3f09e856fbc331ecbc3a91130fea20542a39ef211f60`.
 
 ## Task Routing
 
@@ -1711,6 +1711,7 @@ safety gate, blocks Stop, or submits an order.
 | Current USDT Flexible bonus overlay | `docs/model-research/action-value/binance-usdt-flexible-current-bonus-overlay-v1-2026-08-26.json` |
 | Existing USDe automatic holding reward | `docs/model-research/action-value/binance-usde-existing-holding-reward-edge-v1-2026-08-26.json` |
 | Organic third-party Polymarket builder-fee overlay | `docs/model-research/action-value/polymarket-organic-third-party-builder-fee-overlay-v1-2026-08-26.json` |
+| Polymarket organic Relayer gas subsidy and Builder-tier reward gate | `docs/model-research/action-value/polymarket-organic-relayer-gas-subsidy-and-builder-tier-reward-v1-2026-08-29.json` |
 | BFUSD reward-unit conflict gate | `docs/model-research/action-value/binance-bfusd-existing-holding-reward-unit-conflict-gate-v1-2026-08-26.json` |
 | Binance Smart Arbitrage terminal adjudication | `docs/model-research/action-value/binance-smart-arbitrage-terminal-family-adjudication-v1-2026-08-26.json` |
 | Organic Polymarket referral net-fee overlay | `docs/model-research/action-value/polymarket-organic-referral-net-fee-overlay-v1-2026-08-26.json` |
@@ -1803,3 +1804,31 @@ residual lineage, bounded chunks, exact monetary costs, and a strictly positive
 conservative inequality. Every approval, signature, submission, transaction,
 poll, or retry needs separate explicit authority. Canonical result SHA-256 is
 `5514bd931557b350579a07448db9c4e1f2664919efff48145861c8841f0bc7ea`.
+
+## Polymarket organic Relayer gas-subsidy overlay
+
+One frozen, public, unauthenticated request retained the current official
+Builder-tiers page. It proves that Polymarket subsidizes gas for supported
+smart-wallet Relayer operations: the Unverified tier currently allows 100
+transactions per day, Verified allows 10,000, Partner is unlimited, and the
+own-wallet FAQ describes an unlimited Relayer-key route. This is a material
+direction-independent cost-reduction candidate only on an independently required,
+otherwise-positive Deposit, Safe, or Proxy wallet operation. It cannot justify
+creating, splitting, retrying, or rerouting transactions, and its value is zero
+when no independently required activity exists.
+
+The public page also lists weekly USDC rewards and grants for Verified builders,
+but both are subject to approval and publish no rate, threshold, formula, cap,
+timing, or guaranteed award. Their public forward floor therefore remains zero;
+rate limits, support, marketing, and priority access are not cash edges. No
+credential, account, order, profile, key, signature, transaction, fund, or
+protected-capture state was accessed. The candidate is not accepted or
+deployment-ready: the frozen source contract forbids source-only promotion, and an
+exact active key, wallet type, remaining tier capacity, owned successful receipt,
+counterfactual same-action gas cost, and every setup and operating cost remain
+account-gated. Contract/result SHA-256 values are
+`87ff005cd29184501aa9bb17d450a1112f0f8324fe9ad7bd248c375f30b7698f`
+and `1c33e778d217ec5e7ef817e83af3186df7da0e5dd0cc75cb72464bfd97d18d49`.
+The registry remains at 44 hypotheses and 21 accepted scoped edges; its
+canonical SHA-256 is
+`0a34d7289331515f8e7b3f09e856fbc331ecbc3a91130fea20542a39ef211f60`.

@@ -3582,3 +3582,36 @@ separate authority. Contract/result SHA-256 values are
 and `5514bd931557b350579a07448db9c4e1f2664919efff48145861c8841f0bc7ea`.
 The accepted count remains 21, ranked count remains 44, and registry SHA-256 is
 `ff5b41b572833ff0eed459098a2f93d1d62fed03891616b9a1fa71bc832f887e`.
+
+## 2026-08-29 Polymarket organic Relayer gas-subsidy overlay
+
+One frozen public unauthenticated GET retained the current official Builder-tier
+page with a durable pre-request journal. The source proves that gas fees are
+subsidized for supported smart-wallet Relayer operations. The Unverified tier
+currently permits 100 Relayer transactions per day, Verified permits 10,000,
+Partner is unlimited, and the FAQ describes an unlimited own-wallet Relayer-key
+route. No market data, credential, account, order, profile, key, signature,
+transaction, fund, or protected-capture state was accessed.
+
+The narrow candidate value is only the exact avoided user-paid gas cost for an
+independently required, otherwise-positive supported Deposit, Safe, or Proxy
+wallet operation within the active account tier or own-wallet limit. Zero
+activity has zero value. Never create, enlarge, split, retry, or reroute an
+operation to consume sponsored gas, and never double-count the same gas line
+with builder fees, holding yield, rebates, or another mechanism. The candidate is
+not accepted, a standalone-profit claim, or deployment-ready: the frozen source
+contract forbids source-only promotion, and exact active-key state,
+wallet support, remaining capacity, an owned successful receipt, counterfactual
+same-action gas, and all setup and operating costs remain account-gated.
+
+Weekly USDC rewards and grants remain unaccepted with a zero public forward
+floor. Both are subject to approval and the page publishes no deterministic
+rate, threshold, allocation formula, cap, timing, or current owned award. The
+same applies to rate limits, support, marketing, and priority access: they are
+not cash edges. Reopen those candidates only on a deterministic published
+formula or an account-confirmed approved award under explicit read-only evidence
+authority. Contract/result SHA-256 values are
+`87ff005cd29184501aa9bb17d450a1112f0f8324fe9ad7bd248c375f30b7698f`
+and `1c33e778d217ec5e7ef817e83af3186df7da0e5dd0cc75cb72464bfd97d18d49`.
+The accepted count remains 21, ranked count remains 44, and registry SHA-256 is
+`0a34d7289331515f8e7b3f09e856fbc331ecbc3a91130fea20542a39ef211f60`.
