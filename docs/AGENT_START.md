@@ -629,8 +629,8 @@ safety gate, blocks Stop, or submits an order.
   result SHA-256
   `a6ff387d70d33c40951e36de93eff7c810b2291dbefff5ecb0f3953880fe7878`.
   Current public promotions add one conditional path, not a stable accepted
-  edge. Binance published an 8.07% effective APR for the first completed week
-  of its RLUSD/XRP campaign. It has no stated individual cap, but requires an
+  edge. Binance published 8.07% and then 5.78% effective APR for the first two
+  completed weeks of its RLUSD/XRP campaign. It has no stated individual cap, but requires an
   eligible account, RLUSD collateral, and at least 500 USD average daily genuine
   Margin or Futures volume; future weekly APRs are unknown and the campaign ends
   2026-09-11. Never manufacture volume to qualify. The contemporaneous USDT
@@ -643,8 +643,8 @@ safety gate, blocks Stop, or submits an order.
   triage:
   `binance-public-promotion-yield-triage-v1-2026-08-26.json`, result SHA-256
   `26efd481a5ff424ca17ec803bb6a1a3ae8949d1fe0fc31a03e20a35d08d031ac`.
-  Observe the fixed August 28 and September 4 RLUSD updates; do not extrapolate
-  one week, illustrative examples, or system timezone into profitability or
+  Observe the fixed September 4 and September 11 RLUSD updates; do not extrapolate
+  completed weeks, illustrative examples, or system timezone into profitability or
   account eligibility.
   Binance has also announced a USD1 Flexible promotion from 2026-08-27 through
   2026-09-25: 7% fixed Bonus Tiered APR on at most 1,500 USD1 plus an
@@ -904,25 +904,26 @@ safety gate, blocks Stop, or submits an order.
   authority exists. Continue public monitoring without touching Round 21.
 - The active Binance USD1/WLFI holding airdrop is accepted only for already-held
   idle USD1 in a published eligible account category. The current realized base
-  APR is 5.46%; the 6.55% boost is creditable only when at least 300 USD1 of
+  APR is 5.27% after three positive completed weeks; the current 6.33% boost is
+  creditable only when at least 300 USD1 of
   lowest-hourly daily Futures open interest already exists for an independently
   justified organic strategy. Simple Earn is not in the closed eligible-account
   list, so the same principal cannot receive both yields under the published
   contract. Credentials, region eligibility, exact account rates, reward-sale
   costs, and USD1 principal risk remain unresolved. Do not acquire USD1 or open
-  Futures exposure for this promotion. Refresh only on the fixed 2026-08-27,
-  2026-08-28, and 2026-09-04 triggers. Canonical gate:
+  Futures exposure for this promotion. The next and final public refresh is the
+  fixed 2026-09-04 trigger. Canonical gate:
   `binance-usd1-wlfi-holding-airdrop-gate-v1-2026-08-26.json`, result SHA-256
   `c67367932b440d6f4a23330a17c405c0e15b0021b0484575a0b0efcc6e9238a6`.
 - The mutually exclusive USD1 Simple Earn route is now separately accepted only
   for at most the first 1,500 USD1 that is independently already held idle. The
   logged-out public product page displayed `8.62% Max`, decomposed as a variable
-  `1.62%` Real-Time APR plus a fixed `7%` promotion bonus. The fixed bonus alone
-  exceeds the current `5.46%` holding-airdrop base by 154 annualized bps; after
-  forfeiting one airdrop day, its gross break-even is 3.5455 days. At a 1,500
-  USD1 balance, immediate fixed-bonus allocation beats the sensitivity of
-  waiting through the airdrop and then subscribing by only 0.5063 USD1, or
-  3.3753 bps. Never count both rewards on the same principal or infer that the
+  `1.62%` Real-Time APR plus a fixed `7%` promotion bonus. Against the latest
+  completed 5.27% holding-airdrop base, the fixed bonus has 173 annualized bps
+  of gross uplift and recovers one forfeited airdrop day in 3.0463 days. At a
+  1,500 USD1 balance, its same-week fixed-bonus sensitivity exceeds the latest
+  base airdrop by only 0.4977 USD1 before account and transition costs. Never
+  count both rewards on the same principal or infer that the
   displayed USD1/U/USDC/USDT rate ordering justifies a conversion. Exact account
   eligibility, capacity, liquidity need, transition cost, tax, and redemption
   timing must all be proved before any subscription, which requires separate

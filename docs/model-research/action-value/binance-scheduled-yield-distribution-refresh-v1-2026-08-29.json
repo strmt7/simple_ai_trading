@@ -1,0 +1,97 @@
+{
+  "adjudication": {
+    "accepted_edge_count_change": 0,
+    "rlusd_candidate_accepted": false,
+    "rlusd_reason": "The second completed-week effective APR fell from 8.07 percent to 5.78 percent, qualification remains account-specific and volume-gated, and the next-week public forward reward floor is zero.",
+    "usd1_existing_scoped_edge_retained": true,
+    "usd1_reason": "The third completed week remains positive for already-held eligible USD1, but its base APR fell to 5.27 percent and the fourth-week rate is explicitly unpublished. This is historical recurrence, not a guaranteed forward rate or deployment authority.",
+    "usd1_simple_earn_allocation_edge_retained": true
+  },
+  "authority": {
+    "account_access": false,
+    "credentials_used": false,
+    "funds_used": false,
+    "orders_or_mutations": 0,
+    "trading_authority": false
+  },
+  "contract": {
+    "path": "docs/model-research/action-value/binance-scheduled-yield-distribution-refresh-contract-v1-2026-08-29.json",
+    "sha256": "8d53bc8e38544f23ccb5da052d1abc328f98717f3aaaf4485aa99062d6f4a9c8"
+  },
+  "journal": {
+    "path": "data/binance-scheduled-yield-distribution-refresh-v1/journal.json",
+    "request_count": 2,
+    "retry_count": 0,
+    "sha256": "7bebaee9c559dc19428f7c94cd160a9cf35436136a3f6346709015774480ce78"
+  },
+  "result_sha256": "c5feb852830adadd497aa287460d1a3132e324fbbbdaa5f608890acebc43e252",
+  "rlusd": {
+    "account_and_economic_gates": [
+      "eligible jurisdiction and account state",
+      "already-held qualifying RLUSD after liability haircuts",
+      "at least 500 USD average daily independently genuine pre-existing Margin or Futures volume",
+      "exact acquisition exit spread slippage fees tax custody and opportunity cost",
+      "owned reward receipt and executable XRP sale"
+    ],
+    "commission_only_break_even_RLUSD_balance": "1262.9757785467128027681660541",
+    "completed_week_APRs_percent": [
+      "8.07",
+      "5.78"
+    ],
+    "latest_completed_reward_period": "2026-08-21T00:00:00Z/2026-08-28T00:00:00Z",
+    "latest_XRP_token_value_USD": "1.4534",
+    "next_distribution_date": "2026-09-04",
+    "next_distribution_rate_published": false,
+    "reward_per_1000_RLUSD_latest_week_USD": "1.1084931506849315068493150685",
+    "weekly_minimum_qualifying_notional_USD": "3500",
+    "weekly_reward_fraction_latest": "0.0011084931506849315068493151"
+  },
+  "schema_version": "binance-scheduled-yield-distribution-refresh-v1",
+  "sources": [
+    {
+      "article_code": "79f451fec45544f8ad941647165f22a8",
+      "body_sha256": "b10e1af463f99a308dc59d001ea66ceac3fae4cdf4ca49f5cab27e462bd89d5e",
+      "last_update_utc": "2026-08-28T08:19:00Z",
+      "raw_bytes": 132795,
+      "raw_path": "data/binance-scheduled-yield-distribution-refresh-v1/raw/usd1.json",
+      "raw_sha256": "29baa2d6d4c3e1903adc38f2e8dbaaf7677638fc255820f64db0fe14cb4a2901",
+      "title": "Extension to the USD1 Airdrop Campaign (2026-08-07)"
+    },
+    {
+      "article_code": "87614899ce0346beb103f58075d8c8cc",
+      "body_sha256": "ce595f2fe4e6a9342f85f04448c02229b1cbe7345ec40f0a8906a7b4044efdc9",
+      "last_update_utc": "2026-08-28T08:25:00Z",
+      "raw_bytes": 127531,
+      "raw_path": "data/binance-scheduled-yield-distribution-refresh-v1/raw/rlusd.json",
+      "raw_sha256": "fb92108c0532226fbcb8447d42d0f4e16808b5be774d15c18d8cea96108102f2",
+      "title": "Hold RLUSD in Binance Earn and Margin Accounts to Share 1 Million XRP in Rewards"
+    }
+  ],
+  "usd1": {
+    "base_APRs_percent_by_completed_distribution": [
+      "4.85",
+      "5.46",
+      "5.27"
+    ],
+    "boosted_APRs_percent_by_completed_distribution": [
+      "5.82",
+      "6.55",
+      "6.33"
+    ],
+    "fourth_distribution_date": "2026-09-04",
+    "fourth_distribution_rate_published": false,
+    "latest_completed_reward_period": "2026-08-21T00:00:00Z/2026-08-28T00:00:00Z",
+    "latest_WLFI_token_value_USD": "0.0593",
+    "latest_base_reward_per_1500_USD1_week_USD": "1.516027397260273972602739726",
+    "latest_base_weekly_reward_fraction": "0.0010106849315068493150684932",
+    "mutually_exclusive_fixed_7_percent_Simple_Earn_bonus_sensitivity": {
+      "annualized_uplift_over_latest_base_bips": "173",
+      "break_even_days_after_forfeiting_one_latest_base_airdrop_day": "3.0462427745664739884393063584",
+      "fixed_bonus_reward_per_1500_USD1_week_USD": "2.0136986301369863013698630137",
+      "one_forfeited_latest_base_airdrop_day_bips": "1.4438356164383561643835616438",
+      "same_week_bonus_minus_latest_base_per_1500_USD1_USD": "0.4976712328767123287671232877",
+      "warning": "This is a public sensitivity only. Exact account eligibility, remaining promotional capacity, transition timing, realized Real-Time APR, liquidity need, tax, and redemption cost remain unproved; never subscribe or move principal without separate authority."
+    }
+  },
+  "updated_at_utc": "2026-08-29T13:30:17Z"
+}

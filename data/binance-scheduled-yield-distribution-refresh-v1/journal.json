@@ -1,0 +1,41 @@
+{
+  "authority": {
+    "account_access": false,
+    "credentials_used": false,
+    "orders_or_mutations": 0,
+    "trading_authority": false
+  },
+  "completed_at_utc": "2026-08-29T13:30:17Z",
+  "contract_path": "docs/model-research/action-value/binance-scheduled-yield-distribution-refresh-contract-v1-2026-08-29.json",
+  "contract_sha256": "8d53bc8e38544f23ccb5da052d1abc328f98717f3aaaf4485aa99062d6f4a9c8",
+  "preflight_passed_after_request_1": true,
+  "request_count": 2,
+  "requests": [
+    {
+      "article_code": "79f451fec45544f8ad941647165f22a8",
+      "attempt_count": 1,
+      "body_sha256": "b10e1af463f99a308dc59d001ea66ceac3fae4cdf4ca49f5cab27e462bd89d5e",
+      "expected_article_identity_matched": true,
+      "label": "USD1_WLFI_third_distribution_update",
+      "method": "GET",
+      "raw_bytes": 132795,
+      "raw_path": "data/binance-scheduled-yield-distribution-refresh-v1/raw/usd1.json",
+      "raw_sha256": "29baa2d6d4c3e1903adc38f2e8dbaaf7677638fc255820f64db0fe14cb4a2901",
+      "status": "retained_and_parsed"
+    },
+    {
+      "article_code": "87614899ce0346beb103f58075d8c8cc",
+      "attempt_count": 1,
+      "body_sha256": "ce595f2fe4e6a9342f85f04448c02229b1cbe7345ec40f0a8906a7b4044efdc9",
+      "expected_article_identity_matched": true,
+      "label": "RLUSD_XRP_second_or_third_completed_week_update",
+      "method": "GET",
+      "raw_bytes": 127531,
+      "raw_path": "data/binance-scheduled-yield-distribution-refresh-v1/raw/rlusd.json",
+      "raw_sha256": "fb92108c0532226fbcb8447d42d0f4e16808b5be774d15c18d8cea96108102f2",
+      "status": "retained_and_parsed"
+    }
+  ],
+  "schema_version": "binance-scheduled-yield-distribution-refresh-journal-v1",
+  "terminal_status": "completed_without_retry"
+}

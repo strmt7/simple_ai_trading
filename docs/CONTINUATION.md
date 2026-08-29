@@ -573,8 +573,8 @@ diagnostics, not accepted edges.
   result SHA-256
   `566be5e515ac14d38377b6a6b42101cc9b8a65585142053791b759efbd77f6bb`.
   A current public-promotion triage then found a conditional, direction-neutral
-  RLUSD reward candidate. The first completed campaign week published 8.07%
-  effective APR with no stated individual cap, but participation requires an
+  RLUSD reward candidate. The first two completed campaign weeks published
+  8.07% and then 5.78% effective APR with no stated individual cap, but participation requires an
   eligible account, RLUSD collateral, and at least 500 USD average daily genuine
   Margin or Futures volume. Future weekly APRs are unknown and the campaign ends
   2026-09-11. Treat qualifying activity as zero incremental cost only when it is
@@ -586,8 +586,8 @@ diagnostics, not accepted edges.
   sentence names only USDT. No USDC start or end time is published there, so
   USDT's dates must not be transferred to USDC and its guaranteed forward public
   reward floor is zero. Neither public observation proves account eligibility.
-  Observe the scheduled 2026-08-28 and 2026-09-04 RLUSD updates without
-  extrapolating the first week. Canonical triage:
+  Observe the scheduled 2026-09-04 and 2026-09-11 RLUSD updates without
+  extrapolating the completed weeks. Canonical triage:
   `docs/model-research/action-value/binance-public-promotion-yield-triage-v1-2026-08-26.json`,
   result SHA-256
   `26efd481a5ff424ca17ec803bb6a1a3ae8949d1fe0fc31a03e20a35d08d031ac`.
@@ -967,7 +967,7 @@ grants paper, testnet, or live authority.
 
 The canonical structural-edge priority and retry-trigger registry is
 `docs/model-research/structural-edge-priority-registry-v1.json`, result SHA-256
-`12cf5446f5ff2521530672403e3926069b6dcc526f83f19f7ecfadcb7b7860d2`.
+`97d05d2f718f078bb6c890be30b65e64af5a9408419e8a3c58eedcc7452e80d8`.
 Advance only the highest-ranked hypothesis whose trigger is actually satisfied.
 This prevents account-blocked or terminal screens from being rerun as if more
 snapshots could create an edge.
@@ -1491,8 +1491,8 @@ include that mirrored own ask while the physical order is scored only once.
 The active Binance USD1/WLFI holding airdrop is now accepted only as a scoped,
 time-limited gross holding-yield edge for USD1 that is already held in an
 eligible published account category. The official extension reports 4.85% then
-5.46% realized base APR and 5.82% then 6.55% boosted APR through the first two
-weekly distributions. The boost requires the lowest hourly USD1 Futures open
+5.46% then 5.27% realized base APR and 5.82%, 6.55%, then 6.33% boosted APR
+through the first three weekly distributions. The boost requires the lowest hourly USD1 Futures open
 interest to remain at least 300 USD1 each day; never open or retain a position
 to farm it because the current boost adds only 2.0904 bips over seven days
 before funding, spread, basis, liquidation, margin, and operational costs.
@@ -1512,7 +1512,8 @@ bonus, or use the displayed USD1/U/USDC/USDT rate ordering to justify a
 conversion. These are public sensitivities, not account instructions:
 credentials are absent, region and product eligibility are unproved, USD1
 principal risk remains, and exact reward-sale costs are unknown. Refresh the
-third airdrop APR once on 2026-08-28 and the final airdrop once on 2026-09-04.
+final airdrop once on 2026-09-04; the 2026-08-28 refresh is consumed and must
+not be repeated.
 Canonical holding-airdrop gate:
 `docs/model-research/action-value/binance-usd1-wlfi-holding-airdrop-gate-v1-2026-08-26.json`,
 result SHA-256
@@ -1521,6 +1522,15 @@ Canonical allocation adjudication:
 `docs/model-research/action-value/binance-usd1-simple-earn-versus-holding-airdrop-allocation-edge-v1-2026-08-27.json`,
 result SHA-256
 `a4158bf059f4f5ad839b2f504c08c4afc65615260b4171533866f4c2337494e0`.
+The scheduled public distribution refresh is
+`docs/model-research/action-value/binance-scheduled-yield-distribution-refresh-v1-2026-08-29.json`,
+result SHA-256
+`c5feb852830adadd497aa287460d1a3132e324fbbbdaa5f608890acebc43e252`.
+At the latest 5.27% base, the mutually exclusive fixed 7% Simple Earn bonus has
+173 annualized bps of gross uplift, a 3.0463-day break-even after one forfeited
+airdrop day, and only 0.4977 USD1 same-week excess at the 1,500 USD1 cap before
+unproved account and transition costs. The RLUSD second completed-week APR fell
+from 8.07% to 5.78%; its next-week public reward floor remains zero.
 
 The current first-USD-deposit Promotion A is a distinct high-margin public
 candidate, not an accepted or recurring edge. It offers a 15 USD-equivalent
@@ -2105,7 +2115,7 @@ result SHA-256
 `64943efe0c6ad16f8d02f78548afef38f919448d2da87c7573e825a2eeefd6b9`.
 That checkpoint left seventeen accepted scoped edges. The current registry now
 has nineteen and result SHA-256
-`12cf5446f5ff2521530672403e3926069b6dcc526f83f19f7ecfadcb7b7860d2`.
+`97d05d2f718f078bb6c890be30b65e64af5a9408419e8a3c58eedcc7452e80d8`.
 
 The complete Binance XAU/XAG Commodity Options versus matching TradFi
 perpetual lower-bound screen is terminal for the active 2026-08-27 and

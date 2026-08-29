@@ -1,0 +1,49 @@
+{
+  "authority": {
+    "account_access": false,
+    "credentials_used": false,
+    "funds_used": false,
+    "orders_or_mutations": 0,
+    "trading_authority": false
+  },
+  "contract_sha256": "8d53bc8e38544f23ccb5da052d1abc328f98717f3aaaf4485aa99062d6f4a9c8",
+  "decision_rules": {
+    "rlusd": "Record only completed-week effective APRs and explicit term changes. Future reward floor remains zero, and qualification volume has zero incremental cost only when independently genuine and pre-existing.",
+    "usd1": "Record only an explicitly published third-distribution base APR, boosted APR, valuation, and eligibility changes. Compare with USD1 Simple Earn only as a mutually exclusive sensitivity on already-held idle principal; do not infer future rates or account eligibility.",
+    "unchanged_or_unparseable": "Retain the response and fail closed without adaptive URL, locale, article, or parameter retries."
+  },
+  "frozen_before_access": true,
+  "maximum_requests": 2,
+  "not_before_utc": "2026-08-28T00:00:00Z",
+  "parse_preflight": "After retaining request 1, require JSON object data.body and exact expected article identity before issuing request 2.",
+  "requests": [
+    {
+      "article_code": "79f451fec45544f8ad941647165f22a8",
+      "label": "USD1_WLFI_third_distribution_update",
+      "method": "GET",
+      "url": "https://www.binance.com/bapi/composite/v1/public/cms/article/detail/query?articleCode=79f451fec45544f8ad941647165f22a8"
+    },
+    {
+      "article_code": "87614899ce0346beb103f58075d8c8cc",
+      "label": "RLUSD_XRP_second_or_third_completed_week_update",
+      "method": "GET",
+      "url": "https://www.binance.com/bapi/composite/v1/public/cms/article/detail/query?articleCode=87614899ce0346beb103f58075d8c8cc"
+    }
+  ],
+  "retry_policy": "one_attempt_per_exact_request_no_retry",
+  "schema_version": "binance-scheduled-yield-distribution-refresh-contract-v1",
+  "security_classification": {
+    "account_or_mutation_semantics": false,
+    "classification": "public_unauthenticated_read_only_official_announcement_content",
+    "evidence": [
+      "The exact endpoint path is Binance's public CMS article-detail query and was already source-bound in the canonical USD1 and public-promotion artifacts.",
+      "The corresponding Binance announcement pages are public and expose no account parameters or mutation operation."
+    ],
+    "prior_artifacts": [
+      "docs/model-research/action-value/binance-usd1-wlfi-holding-airdrop-gate-v1-2026-08-26.json",
+      "docs/model-research/action-value/binance-public-promotion-yield-triage-v1-2026-08-26.json"
+    ]
+  },
+  "trigger": "The fixed 2026-08-28 USD1 third-distribution and RLUSD weekly-update observation date has passed.",
+  "updated_at_utc": "2026-08-29T13:28:39Z"
+}
