@@ -21,7 +21,7 @@ JOURNAL = ROOT / "data/polymarket-holding-yield-continuity-receipts-v8/journal.j
 REGISTRY = ROOT / "docs/model-research/structural-edge-priority-registry-v1.json"
 CONTRACT_HASH = "ace38fca480049601d876fb8ae781b5103372662e9294e78c5905d8162332b42"
 RESULT_HASH = "2eb7b434170afb195cc4f4faef8260ac4ec30b655c20fc07ee1bc9acbdfe090d"
-REGISTRY_HASH = "5b996bdea3cd8b6a9dec115a1936550df72713c8eca4292be5da02b28141d4bc"
+REGISTRY_HASH = "23479942f0f50760ad35df84f91707716d36ef06026c4ff664f618944e528680"
 
 
 def _load(path: Path) -> dict[str, object]:

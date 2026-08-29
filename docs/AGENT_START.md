@@ -1153,18 +1153,20 @@ safety gate, blocks Stop, or submits an order.
   adjudication preserved the consumed evidence without promotion. Do not retry
   this event. Adjudication SHA-256
   `1e75e049abb116955294d878830f940491fe4044f09c7e3564ad2761c0129178`.
-- A fresh Los Angeles Dodgers versus Detroit Tigers event proved the same
-  structural family can be rejected without spending a book request. One exact
-  public Gamma GET retained 17 active accepting markets. Exhaustive offline
-  parsing proved 24 same-event full-game and first-five margin and total-run
-  packages with a minimum one-pUSD payout per share, including 50-50
-  cancellation. Every displayed price sum was at or above the floor. The best,
-  the two opposing first-five -1.5 spread complements, summed to `1.010`: an
-  optimistic loss of `0.010` pUSD per share and `0.050` at five shares before
-  depth, fees, and delay. No CLOB or fee request was made. Do not resample this
-  exact event; apply this rejection-only Gamma gate before every future sports
-  depth screen. Canonical adjudication SHA-256
-  `5c1de89005404efd8db9a35903df7633f92f9deaaa4c71a639b07d44d8f25e71`.
+- A fresh Los Angeles Dodgers versus Detroit Tigers event initially proved 24
+  within-time-scope full-game and first-five margin and total-run packages.
+  Every one failed the Gamma rejection gate; the best displayed sum was
+  `1.010`. Preserve that narrower adjudication, but do not call it a complete
+  event lattice: it omitted cross-period implications. A separately frozen
+  retained-data correction proved that first-five runs cannot exceed full-game
+  runs, so full-game Over 6.5 plus first-five Under 6.5 pays at least one pUSD
+  per share. Its Gamma sum was `0.965`, an optimistic `0.035` pUSD per-share
+  lead that correctly triggered one exact two-token book batch. Current asks
+  were `0.44` and `0.96`: seven pUSD for five shares against a five-pUSD floor,
+  a two-pUSD zero-fee loss with 1.511 seconds book skew. Six-tick stress lacked
+  complete depth, so zero fee requests were needed. Do not resample this event.
+  Canonical cross-period result SHA-256
+  `fc01c54e9c04117067aa3b43ae194649b93efc12a5265fce508e64f082f320b2`.
 - Binance Launchpool is a distinct direction-independent candidate only for an
   independently already-held idle supported stablecoin. Current official
   guidance describes USDC/FDUSD-style pools, hourly rewards, early unlock with
@@ -1468,7 +1470,7 @@ safety gate, blocks Stop, or submits an order.
   `c09d62e98cd0df88622d4b98d9d8f01247121ccd786fffb580bc72429ef6bf30`.
 - The structural-edge registry now has 42 ranked hypotheses, still only 19
   narrowly accepted scoped overlays, and result SHA-256
-  `5b996bdea3cd8b6a9dec115a1936550df72713c8eca4292be5da02b28141d4bc`.
+  `23479942f0f50760ad35df84f91707716d36ef06026c4ff664f618944e528680`.
 
 ## Task Routing
 
@@ -1484,6 +1486,7 @@ safety gate, blocks Stop, or submits an order.
 | Current sports exact-title discovery terminal result | `docs/model-research/action-value/polymarket-current-sports-monotone-pair-discovery-result-v1-2026-08-29.json` |
 | Current BOS/NYY monotone-parity terminal adjudication | `docs/model-research/action-value/polymarket-current-mlb-monotone-parity-failure-adjudication-v1-2026-08-29.json` |
 | Current LAD/DET rejection-only monotone adjudication | `docs/model-research/action-value/polymarket-lad-det-monotone-prefilter-adjudication-v1-2026-08-29.json` |
+| Current LAD/DET cross-period total terminal result | `docs/model-research/action-value/polymarket-lad-det-cross-period-total-result-v1-2026-08-29.json` |
 | Current Toronto/Phoenix WNBA monotone-parity terminal result | `docs/model-research/action-value/polymarket-current-wnba-monotone-parity-result-v1-2026-08-29.json` |
 | Current Lynx/Dream WNBA rejection-only terminal adjudication | `docs/model-research/action-value/polymarket-lynx-dream-monotone-prefilter-adjudication-v1-2026-08-29.json` |
 | Binance retained CLOB box-parity terminal prefilter | `docs/model-research/action-value/binance-options-clob-box-retained-prefilter-v2-2026-08-29.json` |
