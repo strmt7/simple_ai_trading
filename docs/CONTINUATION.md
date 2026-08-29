@@ -1953,6 +1953,23 @@ and
 SHA-256
 `2776ff86fddf78e7e87860c6b9500cb237fce5af908a4840d351ae0cc2eff930`.
 
+The official 2026-08-28 launches of TEMUSDT, MRKUSDT, IONQUSDT, MARAUSDT,
+and PDDUSDT materially triggered one separately frozen delta rather than a
+repeat of the old population. Exactly five no-retry public native-stock quote
+streams were opened; all five timed out without a valid exact-ticker quote, so
+the contract correctly made zero futures or USDCUSDT requests. There is no
+matching native-stock/perpetual row, price screen, profit evidence, or account
+access from this delta. Do not rerun it. Reopen only for a new official listing
+that creates a previously unscreened exact ticker match, or a material native
+stock stream-architecture change. Canonical contract and result:
+`docs/model-research/action-value/binance-native-stock-new-tradfi-perpetual-contract-v1-2026-08-29.json`,
+SHA-256
+`37a3424645103a351c232ec7bf7c6e2cb4912be1e60bf136bc8cc170644f9adf`,
+and
+`docs/model-research/action-value/binance-native-stock-new-tradfi-perpetual-result-v1-2026-08-29.json`,
+SHA-256
+`d8b87863ea750386f1074daef988443a12390f0a36cfecc538765e00bded9a9f`.
+
 A new primary paper, *Taker vs. Maker Arbitrage*, distinguishes the execution
 mechanism in which an arbitrageur passively supplies one payoff-equivalent leg
 and, after that leg fills, aggressively completes the bundle. This materially
@@ -2465,13 +2482,14 @@ not grant account, funding, order, or transaction authority.
    population remains incomplete but the current all-symbol stream architecture
    has invalidated its KLAC-only recovery instruction. Do not run that recovery,
    treat the old discovery set as current, or promote the unretained exploratory
-   expanded screen. Reopen only after a material fee, basis, or stream-
-   architecture change capable of clearing costs, then preregister one
-   exhaustive current-population boundary, retain every raw native quote before
-   calculation, pair each with immediate perpetual and USDCUSDT books, and
-   charge stock, perpetual, conversion, exit, funding, orphan, and opportunity
-   costs. Stock disclaimer, account access, and every order remain separately
-   gated.
+   expanded screen. The separately frozen TEM/MRK/IONQ/MARA/PDD delta is also
+   consumed: all five native quote streams timed out and correctly caused zero
+   downstream GETs. Do not rerun it. Reopen only after a new official listing
+   creates a previously unscreened exact ticker match, or after a material
+   stream-architecture change; retain each raw native quote before pairing it
+   with immediate perpetual and USDCUSDT books, and charge stock, perpetual,
+   conversion, exit, funding, orphan, and opportunity costs. Stock disclaimer,
+   account access, and every order remain separately gated.
    VIP Earn is a distinct conditional idle-inventory overlay, not a reason to
    manufacture trading volume, borrow, buy BNB, or retain a volatile asset.
    Its public BTC/ETH/SOL listing is now exact enough to close the displayed-

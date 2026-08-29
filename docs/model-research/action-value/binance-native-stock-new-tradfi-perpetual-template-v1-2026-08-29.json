@@ -1,0 +1,76 @@
+{
+  "schema_version": "binance-native-stock-new-tradfi-perpetual-template-v1",
+  "status": "prefreeze_template_no_market_access_yet",
+  "purpose": "test only the five TradFi perpetuals officially launched on 2026-08-28 for an exact matching native Binance Stock quote and a market-direction-independent buy-stock short-perpetual entry lower bound",
+  "material_retry_trigger": {
+    "satisfied": true,
+    "official_announcement_url": "https://www.binance.com/en/support/announcement/detail/32ac927d1cbe4aa3b527eca1c401a98f",
+    "published_at_utc": "2026-08-28T07:30:00Z",
+    "launches": [
+      {"ticker": "TEM", "perpetual_symbol": "TEMUSDT", "launch_at_utc": "2026-08-28T09:00:00Z"},
+      {"ticker": "MRK", "perpetual_symbol": "MRKUSDT", "launch_at_utc": "2026-08-28T09:05:00Z"},
+      {"ticker": "IONQ", "perpetual_symbol": "IONQUSDT", "launch_at_utc": "2026-08-28T09:10:00Z"},
+      {"ticker": "MARA", "perpetual_symbol": "MARAUSDT", "launch_at_utc": "2026-08-28T09:15:00Z"},
+      {"ticker": "PDD", "perpetual_symbol": "PDDUSDT", "launch_at_utc": "2026-08-28T09:20:00Z"}
+    ],
+    "why_prior_snapshot_does_not_cover_it": "the retained fourteen-ticker native-stock parity contract was frozen on 2026-08-27 before these five TradFi perpetual launches"
+  },
+  "authority": {
+    "research_only": true,
+    "public_unauthenticated_sources_only": true,
+    "credentials_accounts_orders_quotes_transfers_or_disclaimer_actions_permitted": false,
+    "live_or_paper_trading_authority": false,
+    "profitability_or_accepted_edge_claim_permitted": false
+  },
+  "frozen_universe": [
+    {"ticker": "TEM", "perpetual_symbol": "TEMUSDT"},
+    {"ticker": "MRK", "perpetual_symbol": "MRKUSDT"},
+    {"ticker": "IONQ", "perpetual_symbol": "IONQUSDT"},
+    {"ticker": "MARA", "perpetual_symbol": "MARAUSDT"},
+    {"ticker": "PDD", "perpetual_symbol": "PDDUSDT"}
+  ],
+  "capture": {
+    "native_quote_stream_template": "wss://nbstream.binance.com/equity/ws/{TICKER}@quote",
+    "futures_book_ticker_template": "https://fapi.binance.com/fapi/v1/ticker/bookTicker?symbol={PERPETUAL_SYMBOL}",
+    "spot_fx_book_ticker_endpoint": "https://api.binance.com/api/v3/ticker/bookTicker?symbol=USDCUSDT",
+    "request_plan": "concurrently open exactly one no-retry native-stock quote WebSocket for each frozen ticker; only after a first valid exact-ticker quote concurrently request that row's exact perpetual book and USDCUSDT ask",
+    "websocket_timeout_seconds": 20,
+    "maximum_public_GET_requests": 10,
+    "maximum_public_websocket_connections": 5,
+    "retry_permitted": false,
+    "durable_raw_before_calculation": true,
+    "downstream_requests_for_absent_or_invalid_stock_quote": 0
+  },
+  "economics": {
+    "screen_quantity_shares": "1",
+    "native_order_direction": "buy_one_share_at_native_stock_best_ask_with_default_USDC_quote_asset",
+    "hedge_direction": "short_one_share_equivalent_at_matching_TradFi_perpetual_best_bid",
+    "perpetual_bid_USDC_equivalent": "perpetual_bid_USDT_divided_by_USDCUSDT_spot_best_ask",
+    "gross_entry_headroom_USDC": "perpetual_bid_USDC_equivalent_minus_native_stock_ask",
+    "labeled_pre_account_cost_stress_bps": "30",
+    "top_level_capacity_required_on_all_three_legs": true,
+    "no_exit_dividend_funding_reward_rebate_or_conversion_value_credited": true
+  },
+  "decision_boundary": {
+    "positive_public_candidate": "all three one-share capacities pass and entry headroom remains strictly positive after the frozen 30 bps stress",
+    "incomplete_population": "retain exact missing stock streams and observed rows but make no complete-universe economic rejection",
+    "zero_native_stock_matches": "stop without any futures or FX requests and require another official native-stock or TradFi-perpetual listing architecture trigger",
+    "accepted_edge": "never from this capture; exact account commissions stock access settlement short eligibility funding exit recurrence and orphan risk remain mandatory",
+    "all_outcomes": "accepted edge count remains unchanged and no authenticated funded quoted paper or live action is authorized"
+  },
+  "source_contracts": [
+    "https://www.binance.com/en/support/announcement/detail/32ac927d1cbe4aa3b527eca1c401a98f",
+    "https://developers.binance.com/en/docs/products/stocks/introduction",
+    "https://developers.binance.com/en/docs/products/stocks/market-data-general-info",
+    "https://developers.binance.com/en/docs/products/stocks/websocket-streams-general-info"
+  ],
+  "prohibited_shortcuts": [
+    "adding_tickers_after_viewing_any_quote",
+    "treating_a_last_or_reference_price_as_an_executable_stock_ask",
+    "treating_USDC_and_USDT_as_identical_without_the_executable_conversion_side",
+    "requesting_perpetual_or_FX_books_for_a_ticker_without_a_valid_native_stock_quote",
+    "assuming_atomic_legs_commissions_short_access_funding_exit_or_settlement",
+    "rerunning_an_incomplete_or_negative_one-use_capture_without_a_new_official_trigger",
+    "placing_or_simulating_an_order_accepting_a_stock_disclaimer_or_accessing_an_account"
+  ]
+}
