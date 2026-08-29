@@ -1,0 +1,113 @@
+{
+  "schema_version": "polymarket-source-selected-crypto-negrisk-series-contract-v1",
+  "status": "frozen_before_price_blind_series_discovery_or_event_outcome_access",
+  "frozen_at_utc": "2026-08-29T21:25:55.2967013Z",
+  "frozen_at_ms": 1788038755296,
+  "contract_path": "docs/model-research/action-value/polymarket-source-selected-crypto-negrisk-series-contract-v1-2026-08-29.json",
+  "contract_sha256": "a13f554d2b6b40dce3ea83236bff5cd99993f41aa1c988fe38eb99dc28d43f5e",
+  "purpose": "use official series metadata without embedded events or prices to select one recurring BTC ETH or SOL series independently of current outcomes then run one complete bounded fixed NegRisk rejection screen",
+  "hypothesis": "the first eligible server ordered recurring BTC ETH or SOL series in the frozen metadata page contains at least one exact fixed non-augmented NegRisk event ending in the nonoverlapping September 14 through September 21 window whose rejection-only Gamma all-YES sum is strictly below its pending one-pUSD complete-set floor",
+  "source_contracts": [
+    {
+      "url": "https://docs.polymarket.com/api-reference/series/list-series",
+      "use": "official public unauthenticated GET series catalog with order recurrence and exclude_events parameters"
+    },
+    {
+      "url": "https://docs.polymarket.com/api-reference/events/list-events-keyset-pagination",
+      "use": "official public unauthenticated GET keyset event catalog with series filter nested markets maximum limit and cursor completeness semantics"
+    }
+  ],
+  "series_discovery": {
+    "ascending": false,
+    "closed": false,
+    "exclude_events": true,
+    "limit": 100,
+    "offset": 0,
+    "order": "volume24hr",
+    "request_count": 1,
+    "url": "https://gamma-api.polymarket.com/series?limit=100&offset=0&order=volume24hr&ascending=false&closed=false&exclude_events=true"
+  },
+  "selection_rule": {
+    "accepted_asset_tokens_case_insensitive": ["bitcoin", "btc", "ethereum", "eth", "solana", "sol"],
+    "asset_match_fields": ["slug", "title", "subtitle", "ticker"],
+    "closed": false,
+    "active": true,
+    "archived_must_not_be_true": true,
+    "recurrence_must_be_nonempty": true,
+    "selected_row": "first_eligible_row_in_server_response_order",
+    "must_not_contain_events_field": true,
+    "selection_may_not_use_event_market_price_liquidity_or_candidate_data": true
+  },
+  "event_capture": {
+    "ascending": true,
+    "closed": false,
+    "end_date_max": "2026-09-21T23:59:59Z",
+    "end_date_min": "2026-09-14T00:00:00Z",
+    "limit": 500,
+    "order": "endDate",
+    "request_count_if_series_selected": 1,
+    "url_template": "https://gamma-api.polymarket.com/events/keyset?limit=500&order=endDate&ascending=true&closed=false&end_date_min=2026-09-14T00%3A00%3A00Z&end_date_max=2026-09-21T23%3A59%3A59Z&series_id={series_id}"
+  },
+  "stopping_rules": {
+    "accepted_edge_from_this_test": false,
+    "if_no_eligible_series": "stop after the single price-blind discovery request",
+    "if_event_next_cursor_present": "stop without pagination onchain books or fees and label selected-series population incomplete",
+    "if_no_strictly_sub_floor_fixed_negrisk_event": "stop without onchain books or fees",
+    "if_complete_and_candidate_exists": "freeze one separate onchain question-count conversion-fee and exact all-token depth proof for only the lowest displayed sum event",
+    "maximum_proof_candidates": 1,
+    "adjacent_hour_sweep": false,
+    "resample_consumed_2026_08_29_through_2026_09_07_populations": false
+  },
+  "authority": {
+    "account_requests": 0,
+    "book_requests": 0,
+    "credentials_used": false,
+    "fee_requests": 0,
+    "funds_used": false,
+    "maximum_public_unauthenticated_read_only_requests": 2,
+    "onchain_requests": 0,
+    "orders_or_transactions": 0,
+    "protected_capture_touched": false,
+    "signed_requests": 0,
+    "trading_authority": false
+  },
+  "implementations": [
+    {
+      "path": "tools/screen_polymarket_source_selected_crypto_negrisk_series.py",
+      "sha256": "0a7808cb5f1975dd1cb2a57591017cafe81bac3e329387363dd4ba5178fa0307"
+    },
+    {
+      "path": "tools/screen_polymarket_negrisk_complete_set_catalog.py",
+      "role": "fixed NegRisk event and complete-set price classification",
+      "sha256": "5d5dd88fe9f77be92063d4b55bbcb8dd1b96db06b99dd0d021774916cf2b5ae9"
+    },
+    {
+      "path": "tools/adjudicate_polymarket_exact_mlb_monotone_prefilter.py",
+      "role": "canonical hash and repository path validation",
+      "sha256": "958a44d78029b9a1eb69a3771ce18e53ac1ed3c7bc161c8e4318beedce2cf99f"
+    },
+    {
+      "path": "tools/screen_polymarket_exact_two_leg_package.py",
+      "role": "preaccess journaled public request and retained raw receipt",
+      "sha256": "ba7ebaa1fb5235ba026f7cf4cb21ff73ba19430fee4a4f678fbdea37635eb32f"
+    },
+    {
+      "path": "tools/screen_polymarket_mlb_cross_period_catalog.py",
+      "role": "strict UTC timestamp validation",
+      "sha256": "a916790e7e0320089b9f76c49aff43c072312f24599de351820d3fb872e6eddd"
+    }
+  ],
+  "outputs": {
+    "journal_path": "data/polymarket-source-selected-crypto-negrisk-series-v1/request-journal.jsonl",
+    "series_raw_path": "data/polymarket-source-selected-crypto-negrisk-series-v1/raw/series.json",
+    "events_raw_path": "data/polymarket-source-selected-crypto-negrisk-series-v1/raw/events.json",
+    "result_path": "docs/model-research/action-value/polymarket-source-selected-crypto-negrisk-series-result-v1-2026-08-29.json"
+  },
+  "prohibited_shortcuts": [
+    "viewing embedded events or prices before series selection",
+    "changing selection after viewing current event outcomes",
+    "following a cursor or changing the event window after viewing the selected series",
+    "treating Gamma prices as executable or source-proved conversion economics",
+    "requesting onchain books fees credentials accounts orders funds or protected capture state before the frozen gate permits it"
+  ]
+}
