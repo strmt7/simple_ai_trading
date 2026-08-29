@@ -21,7 +21,7 @@ EXPECTED_RESULT_SHA256 = (
     "3ecb4f39848719f788b6853bd90120d1809379b8d81b5419da4b1bbc957fec3d"
 )
 EXPECTED_REGISTRY_SHA256 = (
-    "7b03ee420b7874180732f28fc1c59903adbd82e147be268ea54e894f460bbda1"
+    "0a59b008453a6ff11a5d2402f037acb4fa331f0fb44dac95a60dbd9b6b73c7cf"
 )
 
 
@@ -141,5 +141,6 @@ def test_registry_tracks_high_margin_candidate_without_accepting_it() -> None:
     assert artifacts[ARTIFACT_PATH.relative_to(ROOT).as_posix()] == (
         EXPECTED_RESULT_SHA256
     )
-    assert "forward_reward_floor_is_zero" in candidate["current_status"]
-    assert "separate_high_impact_authority" in candidate["next_action"]
+    assert candidate["market_direction_forecast_required"] is False
+    assert "not_accepted_stable_or_deployment_ready" in candidate["current_status"]
+    assert "explicit_account_read_only_authority" in candidate["next_action"]

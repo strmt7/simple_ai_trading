@@ -31,7 +31,7 @@ NEW_JOURNAL = (
 )
 CONTRACT_HASH = "ec5d4855c69d3afa461838b674530936a07e646394540a1a2b30ae3ddaf77db1"
 RESULT_HASH = "2776ff86fddf78e7e87860c6b9500cb237fce5af908a4840d351ae0cc2eff930"
-REGISTRY_HASH = "7b03ee420b7874180732f28fc1c59903adbd82e147be268ea54e894f460bbda1"
+REGISTRY_HASH = "0a59b008453a6ff11a5d2402f037acb4fa331f0fb44dac95a60dbd9b6b73c7cf"
 NEW_TEMPLATE_HASH = "0b187e4db1a4d3cdb654da83ef83c61505c0822d92cee897cca90898cfe7c5f9"
 NEW_CONTRACT_HASH = "37a3424645103a351c232ec7bf7c6e2cb4912be1e60bf136bc8cc170644f9adf"
 NEW_RESULT_HASH = "d8b87863ea750386f1074daef988443a12390f0a36cfecc538765e00bded9a9f"
@@ -228,7 +228,7 @@ def test_registry_retires_stale_recoveries_and_consumed_delta() -> None:
     assert _canonical_hash(registry, "result_sha256") == REGISTRY_HASH
     assert registry["accepted_edge_count"] == 19
     hypotheses = registry["prioritized_hypotheses"]
-    assert [row["priority_rank"] for row in hypotheses] == list(range(1, 41))
+    assert [row["priority_rank"] for row in hypotheses] == list(range(1, 42))
     hypothesis = next(
         row
         for row in hypotheses

@@ -1126,6 +1126,14 @@ safety gate, blocks Stop, or submits an order.
   `polymarket-cross-market-dependent-subset-parity-reopen-v1-2026-08-26.json`,
   result SHA-256
   `0838bea50b70a8d9e102f40146b2ddf041bc06db3039736d312b9f309c72fc6d`.
+- The one-use exact current sports title lead `Colorado Rockies vs. Washington
+  Nationals` returned zero events from the public Gamma keyset endpoint and
+  stopped before prices or books. Do not adapt or rerun that title. It closes
+  only that displayed lead; the broader exact-subset family still waits for a
+  future active complete-rules pair. Contract SHA-256
+  `99559dd57d8ba1520fd4f607c4e4e56cea1070a2798536941af10134e4376aed`;
+  result SHA-256
+  `e5ce48b6b0521a5ba2fe58ae17316e703ab2155934a126e603eeadf81e219d9c`.
 - Binance Launchpool is a distinct direction-independent candidate only for an
   independently already-held idle supported stablecoin. Current official
   guidance describes USDC/FDUSD-style pools, hourly rewards, early unlock with
@@ -1338,6 +1346,16 @@ safety gate, blocks Stop, or submits an order.
   commit, or modify its process, worktree, state, database, or WAL.
   This protection applies only to that capture and its assets; it does not
   block separate read-only Polymarket research in the main worktree.
+- The same-venue `XAUUSDT`/`PAXGUSDT` perpetual funding-basis spread is
+  terminal under the retained architecture. The original exact-millisecond
+  join kept only 83 rows, but a no-refetch audit proved 500 corresponding
+  settlement slots with at most 13 ms skew. Both directions failed training,
+  validation, and test after 40 bps execution stress and two 10% annual capital
+  hurdles; the training-selected long-PAXG/short-XAU direction netted
+  `-296.9983`, `-151.9946`, and `-104.9276` bps. Do not paginate, rerun, or
+  refit; reopen only after material funding, index, fee, margin, or product-
+  architecture change. Adjudication SHA-256
+  `46bf134d1be8b645d7f6272d651be8d3c0b6a8e5b2e7d2b4540f3609d6997a96`.
 
 ## Task Routing
 
@@ -1350,6 +1368,8 @@ safety gate, blocks Stop, or submits an order.
 | Structural edge priorities | `docs/model-research/structural-edge-priority-registry-v1.json` |
 | Live NBA moneyline/spread implication candidate | `docs/model-research/action-value/polymarket-live-nba-moneyline-spread-combinatorial-parity-reopen-v1-2026-08-26.json` |
 | Cross-market exact dependent-subset parity candidate | `docs/model-research/action-value/polymarket-cross-market-dependent-subset-parity-reopen-v1-2026-08-26.json` |
+| Current sports exact-title discovery terminal result | `docs/model-research/action-value/polymarket-current-sports-monotone-pair-discovery-result-v1-2026-08-29.json` |
+| Binance XAU/PAXG funding-basis terminal adjudication | `docs/model-research/action-value/binance-xau-paxg-perpetual-funding-spread-failure-adjudication-v1-2026-08-29.json` |
 | Binance idle-stablecoin Launchpool reward candidate | `docs/model-research/action-value/binance-stablecoin-launchpool-idle-inventory-reward-candidate-v1-2026-08-26.json` |
 | Polymarket Combo RFQ versus CLOB Boolean parity candidate | `docs/model-research/action-value/polymarket-combo-rfq-boolean-parity-candidate-v1-2026-08-27.json` |
 | Polymarket terminal broad sports Combo requester-overround validation | `docs/model-research/action-value/polymarket-combo-maker-overround-validation-v1-2026-08-27.json` |

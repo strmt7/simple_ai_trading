@@ -40,7 +40,7 @@ DELTA_RAW = (
 )
 CONTRACT_HASH = "a1ecde2ac379d40fba81840cc9adf10dd731f29bd8b4eba030a6e71521158b94"
 RESULT_HASH = "3cbc79050473b456e4175239b687b0329bc1c7a66d3530842e524ac4200a0905"
-REGISTRY_HASH = "7b03ee420b7874180732f28fc1c59903adbd82e147be268ea54e894f460bbda1"
+REGISTRY_HASH = "0a59b008453a6ff11a5d2402f037acb4fa331f0fb44dac95a60dbd9b6b73c7cf"
 
 
 def _load(path: Path) -> dict[str, object]:
@@ -150,7 +150,7 @@ def test_registry_terminalizes_only_this_expiry_population() -> None:
     assert _canonical_hash(registry, "result_sha256") == REGISTRY_HASH
     assert registry["accepted_edge_count"] == 19
     assert [row["priority_rank"] for row in registry["prioritized_hypotheses"]] == list(
-        range(1, 41)
+        range(1, 42)
     )
     hypothesis = next(
         row

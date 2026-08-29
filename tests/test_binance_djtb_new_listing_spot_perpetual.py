@@ -29,7 +29,7 @@ RESULT_HASH = "2b85a6eca339799a6eb07ba48069e3a2943d97116a9320ce20400d260227e1be"
 DELTA_CONTRACT_HASH = "9755578775ee4082c394a4e6ae96b8ec0fa1b7946a2d4dc92383be6f562db0f8"
 DELTA_RESULT_HASH = "c343614b061e19ba32813b911d984630d8260cb3a46a1216389a63609a75925c"
 DELTA_RAW_HASH = "87aa11d459f9babcba9837743ab616fef4c066b20e209524b43ee383429cde3d"
-REGISTRY_HASH = "7b03ee420b7874180732f28fc1c59903adbd82e147be268ea54e894f460bbda1"
+REGISTRY_HASH = "0a59b008453a6ff11a5d2402f037acb4fa331f0fb44dac95a60dbd9b6b73c7cf"
 
 
 def _load(path: Path) -> dict[str, object]:
@@ -164,7 +164,7 @@ def test_registry_updates_existing_bstock_family_and_terminalizes_snapshot() -> 
     assert _canonical_hash(registry, "result_sha256") == REGISTRY_HASH
     assert registry["accepted_edge_count"] == 19
     assert [row["priority_rank"] for row in registry["prioritized_hypotheses"]] == list(
-        range(1, 41)
+        range(1, 42)
     )
     hypothesis = next(
         row

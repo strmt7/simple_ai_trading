@@ -34,7 +34,7 @@ EXPECTED_FEE_EVIDENCE_SHA256 = (
     "4842bebff1b6177b2053d0fdc40680a2224f01fb541d0efcc85b08f049f68184"
 )
 EXPECTED_REGISTRY_SHA256 = (
-    "7b03ee420b7874180732f28fc1c59903adbd82e147be268ea54e894f460bbda1"
+    "0a59b008453a6ff11a5d2402f037acb4fa331f0fb44dac95a60dbd9b6b73c7cf"
 )
 
 
@@ -154,7 +154,7 @@ def test_registry_records_candidate_without_inflating_accepted_edges() -> None:
     assert registry["accepted_edge_count"] == 19
     assert [
         row["priority_rank"] for row in registry["prioritized_hypotheses"]
-    ] == list(range(1, 41))
+    ] == list(range(1, 42))
     candidate = next(
         row
         for row in registry["prioritized_hypotheses"]
@@ -170,5 +170,6 @@ def test_registry_records_candidate_without_inflating_accepted_edges() -> None:
     assert artifacts[RESULT_PATH.relative_to(ROOT).as_posix()] == (
         EXPECTED_RESULT_SHA256
     )
-    assert "Lite_Loan_composite_remains_unaccepted" in candidate["current_status"]
+    assert candidate["market_direction_forecast_required"] is False
+    assert "none_is_deployment_ready" in candidate["current_status"]
     assert "separate_funded_authority" in candidate["next_action"]
