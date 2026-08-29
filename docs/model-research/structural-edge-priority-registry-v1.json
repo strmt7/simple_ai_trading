@@ -1561,12 +1561,24 @@
         {
           "path": "docs/model-research/action-value/binance-commodity-option-perpetual-lower-bound-v1-2026-08-27.json",
           "result_sha256": "3cbc79050473b456e4175239b687b0329bc1c7a66d3530842e524ac4200a0905"
+        },
+        {
+          "path": "docs/model-research/action-value/binance-commodity-option-expiry-delta-contract-v1-2026-08-29.json",
+          "result_sha256": "a56adbe108d92f8c63dac92825305e17f421ef4a2fddc4232a49fa07b336fc37"
+        },
+        {
+          "path": "docs/model-research/action-value/binance-commodity-option-expiry-delta-result-v1-2026-08-29.json",
+          "result_sha256": "42e7fc2fb8e999f948b2c219d61462ee2af7dbc1477cc4acc68e324d4dea5f1d"
+        },
+        {
+          "path": "docs/model-research/action-value/binance-commodity-option-expiry-delta-timestamp-adjudication-v1-2026-08-29.json",
+          "result_sha256": "072d6b83c90a71a50bcf36cb310f0c933f4dfdc1b5e50bb3b7672a97f960f5ba"
         }
       ],
-      "current_status": "market_direction_independent_long_option_plus_equal_opposite_commodity_perpetual_terminal_lower_bound_was_tested_across_all_92_active_XAU_XAG_options_73_had_positive_asks_zero_had_positive_gross_indicative_headroom_best_XAU_260827_4580_C_was_negative_11_1005015702_bips_before_the_frozen_33_5_bips_and_adverse_funding_stress_all_options_ticker_omitted_ask_quantity_so_zero_rows_were_executable_capacity_valid_not_accepted_or_deployment_ready",
+      "current_status": "market_direction_independent_long_option_plus_equal_opposite_commodity_perpetual_terminal_lower_bound_remains_rejected_the_one_use_2026_08_29_retry_trigger_observation_found_zero_active_TRADFI_OPTIONS_COMMODITY_XAU_XAG_rows_zero_new_expiries_and_only_removal_of_the_retained_2026_08_27_and_2026_08_28_expiries_so_it_stopped_after_one_public_exchangeInfo_GET_without_tickers_futures_books_premium_or_funding_the_contract_literal_freeze_timestamp_was_manually_anticipated_9_218_seconds_after_request_start_but_runner_control_flow_hash_bound_the_unchanged_contract_before_HTTP_and_the_separate_adjudication_preserves_the_metadata_error_without_rewrite_or_rerun_not_accepted_or_deployment_ready",
       "market_direction_forecast_required": false,
       "mechanism": "binance_long_commodity_option_opposite_perpetual_terminal_payoff_lower_bound",
-      "next_action": "do_not_resample_this_expiry_population_after_a_new_expiry_or_material_cost_funding_basis_book_or_access_change_freeze_one_all_ticker_prefilter_then_request_per_symbol_option_depth_only_for_rows_strictly_positive_after_the_same_conservative_stress",
+      "next_action": "do_not_poll_the_zero_active_inventory_reopen_only_after_a_new_official_XAU_or_XAG_commodity_option_listing_or_relisting_announcement_or_material_cost_funding_basis_book_or_access_change_then_freeze_one_exact_population_all_ticker_prefilter_and_request_per_symbol_option_depth_only_for_rows_strictly_positive_after_the_same_conservative_stress",
       "priority_rank": 40,
       "prohibited_shortcuts": [
         "using_option_mark_last_trade_model_or_exercise_price_instead_of_the_displayed_ask",
@@ -1574,13 +1586,15 @@
         "crediting_favorable_funding_or_ignoring_perpetual_exit_basis",
         "assuming_the_option_and_perpetual_entries_or_expiry_exit_are_atomic",
         "resampling_the_terminal_92_symbol_260827_260828_population",
+        "polling_the_zero_active_commodity_option_inventory_without_a_new_official_listing_or_relisting_trigger",
+        "typing_a_rounded_or_anticipated_frozen_at_utc_instead_of_capturing_and_mechanically_validating_the_actual_pre_access_UTC_instant",
         "calling_a_negative_gross_snapshot_an_edge_or_deployment_ready"
       ],
-      "retry_trigger": "new_listed_XAU_or_XAG_option_expiry_or_material_option_fee_funding_basis_book_or_product_access_change",
+      "retry_trigger": "new_official_XAU_or_XAG_commodity_option_listing_or_relisting_announcement_after_2026_08_29T13_58_50_782Z_or_material_option_fee_funding_basis_book_or_product_access_change",
       "venue_scope": "Binance_XAU_XAG_USDT_long_only_commodity_options_and_matching_TradFi_perpetuals"
     }
   ],
-  "result_sha256": "83dcc86f905b19679198a3dfe7b11d50b1377f7646ad287e647e4dc6d455e3aa",
+  "result_sha256": "d3e31d80653d21aa7267f68d6ed392bebd10e1c5158765da6545056d2a94c68e",
   "schema_version": "structural-edge-priority-registry-v1",
   "terminal_do_not_repeat": [
     {
@@ -1749,6 +1763,6 @@
       "reason": "the_exact_70_day_2026_06_18_through_2026_08_26_extension_had_full_hourly_coverage_but_the_primary_BTC_ETH_equal_weight_after_20_bips_and_exact_entry_exit_basis_annualized_only_1_2030087925_percent_and_every_asset_BTC_ETH_SOL_DOGE_trailed_the_same_timestamp_3_86_percent_DGS3MO_hurdle_do_not_refit_or_resample_until_a_material_venue_fee_funding_basis_or_hurdle_change_occurs"
     }
   ],
-  "updated_at_utc": "2026-08-29T13:52:37Z",
+  "updated_at_utc": "2026-08-29T14:02:41Z",
   "usage_rule": "advance_the_highest_ranked_hypothesis_whose_retry_trigger_is_satisfied_otherwise_do_not_repeat_a_blocked_or_terminal_screen"
 }

@@ -69,6 +69,9 @@ override prose.
   a rate, fee, eligibility rule, or effective date by page location, apparent
   recency, or convenience; preserve both sources and require an explicit
   effective-date source or realized post-change evidence before promotion.
+- Search-result snippets, locale mirrors, and cached previews are discovery
+  leads only. Open and retain the current primary page or endpoint before
+  source-binding a rate, fee, eligibility rule, inventory, or effective date.
 - A current official runtime registry that explicitly declares itself the
   single source of truth, together with a dated official deprecation or cutover
   notice, resolves an older repository deployment table for address selection.
@@ -124,6 +127,13 @@ override prose.
   exact economic identities. If a consumed one-use run exposes such a mismatch,
   preserve its journal and raw responses, fail closed, and do not spend a repair
   capture when the retained evidence cannot change the economic decision.
+- An outcome-sensitive contract timestamp must be generated from the actual UTC
+  clock before access, never typed as a rounded or anticipated time. The runner
+  must reject a missing, offset-free, unparsable, or future `frozen_at_utc`
+  before issuing its first request. If a retained run exposes timestamp metadata
+  error, preserve the original hash-bound contract and capture and adjudicate it
+  separately; never rewrite the consumed contract or rerun merely to repair
+  metadata.
 - Treat every conjunctive retry trigger literally: each event, time, authority,
   and data-state clause needs independent evidence before the triggered action.
   A passed date does not prove that a required market event occurred. If one

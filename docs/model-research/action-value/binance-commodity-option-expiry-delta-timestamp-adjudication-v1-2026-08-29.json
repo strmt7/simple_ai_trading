@@ -1,0 +1,41 @@
+{
+  "schema_version": "binance-commodity-option-expiry-delta-timestamp-adjudication-v1",
+  "created_at_utc": "2026-08-29T14:02:15Z",
+  "purpose": "preserve and adjudicate an impossible literal frozen_at_utc value without editing or repeating the consumed one-request public inventory observation",
+  "affected_contract": {
+    "path": "docs/model-research/action-value/binance-commodity-option-expiry-delta-contract-v1-2026-08-29.json",
+    "file_sha256": "a56adbe108d92f8c63dac92825305e17f421ef4a2fddc4232a49fa07b336fc37",
+    "literal_frozen_at_utc": "2026-08-29T13:59:00Z"
+  },
+  "affected_result": {
+    "path": "docs/model-research/action-value/binance-commodity-option-expiry-delta-result-v1-2026-08-29.json",
+    "result_sha256": "42e7fc2fb8e999f948b2c219d61462ee2af7dbc1477cc4acc68e324d4dea5f1d",
+    "request_started_at_ms": 1788011930782,
+    "request_started_at_utc": "2026-08-29T13:58:50.782Z",
+    "contract_hash_recorded_before_calculation": "a56adbe108d92f8c63dac92825305e17f421ef4a2fddc4232a49fa07b336fc37"
+  },
+  "adjudication": {
+    "literal_timestamp_valid": false,
+    "contract_mutated_after_access": false,
+    "public_request_repeated": false,
+    "operational_pre_access_freeze_preserved": true,
+    "reason": "the runner read and validated the exact contract bytes and computed their retained hash before issuing requests.get; the result binds those unchanged bytes while the impossible manually anticipated timestamp is metadata error rather than an adaptive contract mutation",
+    "economic_result_admissible": true,
+    "accepted_edge": false,
+    "profitability_claim": false,
+    "deployment_ready": false,
+    "repair_action": "preserve the consumed contract and raw response unchanged; add a pre-request programmatic future-timestamp rejection and prohibit manually anticipated freeze timestamps"
+  },
+  "retained_capture": {
+    "raw_response_sha256": "abe8ead861500779a43c501a883d1ce5d2827a8f671161de2d422abf89489841",
+    "request_journal_sha256": "da68aba44360d40d14b1169d9d160c24f047dae26cd378c217439d22a90f90cd",
+    "public_unauthenticated_GET_requests": 1,
+    "authenticated_requests": 0,
+    "orders_quotes_transfers_or_wallet_actions": 0
+  },
+  "implementation_correction": {
+    "path": "tools/check_binance_commodity_option_expiry_delta.py",
+    "pre_correction_file_sha256": "bef5cb29f4b1b549b180ed0744b763552f69a67cd9e45d8354aa9fbdf6128d95",
+    "required_behavior": "parse frozen_at_utc as timezone-aware ISO 8601 and fail before HTTP when it is absent malformed offset-free or later than request start"
+  }
+}

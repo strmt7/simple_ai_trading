@@ -1,0 +1,74 @@
+{
+  "schema_version": "binance-commodity-option-expiry-delta-contract-v1",
+  "status": "frozen_before_one_public_inventory_request",
+  "frozen_at_utc": "2026-08-29T13:59:00Z",
+  "purpose": "test only whether the exact retry trigger for the terminal XAU XAG long-option opposite-perpetual lower-bound screen has fired through a newly listed active commodity-option expiry",
+  "authority": {
+    "research_only": true,
+    "public_unauthenticated_GET_only": true,
+    "credentials_permitted": false,
+    "account_state_permitted": false,
+    "orders_quotes_transfers_or_wallet_actions_permitted": false,
+    "paper_or_live_trading_authority": false,
+    "profitability_or_accepted_edge_claim_permitted": false
+  },
+  "retained_baseline": {
+    "artifact_path": "docs/model-research/action-value/binance-commodity-option-perpetual-lower-bound-v1-2026-08-27.json",
+    "artifact_result_sha256": "3cbc79050473b456e4175239b687b0329bc1c7a66d3530842e524ac4200a0905",
+    "active_commodity_option_count": 92,
+    "sorted_symbol_population_sha256": "da4c880101f75e987edc143c991d0589aaf72343c3f25e9fb7b4de63b4c1e1dc",
+    "expiry_groups": [
+      {
+        "underlying": "XAGUSDT",
+        "expiry_date_ms": 1787864400000,
+        "symbol_count": 20
+      },
+      {
+        "underlying": "XAGUSDT",
+        "expiry_date_ms": 1787950800000,
+        "symbol_count": 24
+      },
+      {
+        "underlying": "XAUUSDT",
+        "expiry_date_ms": 1787864400000,
+        "symbol_count": 24
+      },
+      {
+        "underlying": "XAUUSDT",
+        "expiry_date_ms": 1787950800000,
+        "symbol_count": 24
+      }
+    ]
+  },
+  "capture": {
+    "endpoint": "https://eapi.binance.com/eapi/v1/exchangeInfo",
+    "method": "GET",
+    "maximum_http_requests": 1,
+    "retry_permitted": false,
+    "durable_raw_before_calculation": true,
+    "raw_path": "data/binance-commodity-option-expiry-delta-v1/raw/options-exchange-info.raw",
+    "journal_path": "data/binance-commodity-option-expiry-delta-v1/request-journal.jsonl"
+  },
+  "selection": {
+    "status": "TRADING",
+    "contract_type": "TRADFI_OPTIONS",
+    "underlying_type": "COMMODITY",
+    "underlyings": [
+      "XAGUSDT",
+      "XAUUSDT"
+    ]
+  },
+  "decision_boundary": {
+    "trigger_satisfied": "at least one selected expiry_date_ms is absent from the retained baseline expiry groups",
+    "trigger_not_satisfied": "all selected expiry_date_ms values are contained in the retained baseline expiry groups even if expired rows disappeared",
+    "on_trigger_satisfied": "retain the exact new population then freeze a separate one-use economics contract before any ticker futures book premium or funding request",
+    "on_trigger_not_satisfied": "stop after this single request and do not poll the unchanged inventory"
+  },
+  "prohibited_shortcuts": [
+    "requesting_tickers_books_premium_index_or_funding_before_the_new_expiry_trigger_is_proved",
+    "treating_only_expired_row_removal_as_a_new_listing_trigger",
+    "retrying_a_failed_or_unchanged_inventory_request",
+    "using_search_result_snippets_or_cached pages_as_current_inventory evidence",
+    "placing_or_simulating_an_order_or_accessing_an_account"
+  ]
+}

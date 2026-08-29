@@ -99,7 +99,7 @@ def test_extension_reconstructs_complete_sources_and_rejects_the_hurdle() -> Non
 
     registry = json.loads(REGISTRY.read_text(encoding="ascii"))
     registry_claimed = registry.pop("result_sha256")
-    assert registry_claimed == "83dcc86f905b19679198a3dfe7b11d50b1377f7646ad287e647e4dc6d455e3aa"
+    assert registry_claimed == "d3e31d80653d21aa7267f68d6ed392bebd10e1c5158765da6545056d2a94c68e"
     assert _sha256(_canonical(registry)) == registry_claimed
     terminal = {
         row["family"]: row for row in registry["terminal_do_not_repeat"]
