@@ -1563,18 +1563,24 @@
         "one minimum-notional nonaccepted Combo BUY quote and one minimum-size nonaccepted Combo SELL quote with exact total_required_e6 net_receive_e6 fees deadlines and terminal status",
         "one synchronized public CLOB book batch only after the RFQ quotes leave positive conservative headroom",
         "exact common size split merge collateral compression residual inventory relayer latency Last Look decline and orphan-risk economics",
-        "positive worst-episode after-cost economics across multiple independent event dates before any paper execution request"
+        "positive worst-episode after-cost economics across multiple independent event dates before any paper execution request",
+        "for the distinct collateral-release overlay independently existing owned compatible Combo positions and an account-specific plan with positive net_pusd_out required_pusd_input zero exact consumed-created residual lineage bounded truncation and exact monetary execution cost",
+        "a positive independently available use of released pUSD whose conservative time value exceeds approval execution retry truncation residual-position and operating costs without counting released principal as profit"
       ],
       "canonical_artifacts": [
         {
           "path": "docs/model-research/action-value/polymarket-combo-rfq-boolean-parity-candidate-v1-2026-08-27.json",
           "result_sha256": "08fb223f771c5793da944497f37f4067238e7fd2b40fa2427293dbf7b55c4116"
+        },
+        {
+          "path": "docs/model-research/action-value/polymarket-combo-collateral-release-overlay-candidate-v1-2026-08-29.json",
+          "result_sha256": "5514bd931557b350579a07448db9c4e1f2664919efff48145861c8841f0bc7ea"
         }
       ],
-      "current_status": "materially_new_direction_independent_exact_boolean_payoff_identity_between_two_underlying_CLOB_outcomes_and_Combo_YES_plus_complement_Combo_NO_survives_fractional_50_50_cancellation_current_public_catalog_contains_combo_enabled_same_game_WNBA_examples_but_no_approved_builder_authenticated_quote_executable_CLOB_batch_after_cost_recurrence_or_profit_is_proved_not_accepted_or_deployment_ready",
+      "current_status": "the_direction_independent_exact_boolean_RFQ_identity_remains_unpriced_and_a_distinct_source_proved_collateral_release_overlay_can_decompose_offsetting_independently_existing_Combo_positions_merge_complementary_exposure_into_pUSD_and_preserve_unmatched_exposure_in_residual_positions_but_owned_compatibility_plan_output_exact_monetary_cost_realized_transition_and_positive_after_cost_use_of_released_pUSD_are_absent_released_principal_is_not_profit_neither_submechanism_is_accepted_or_deployment_ready",
       "market_direction_forecast_required": false,
       "mechanism": "polymarket_combo_rfq_boolean_identity_against_underlying_clob",
-      "next_action": "only_when_approved_builder_credentials_and_explicit_quote_request_only_authority_exist_request_one_nonaccepted_minimum_BUY_and_SELL_quote_for_a_machine_proved_identity_then_fetch_CLOB_books_only_if_exact_RFQ_fields_leave_positive_conservative_headroom",
+      "next_action": "for_the_collateral_release_overlay_only_when_independently_existing_owned_compatible_Combo_positions_explicit_account_specific_plan_request_only_authority_and_an_exact_positive_use_of_released_pUSD_exist_request_one_plan_without_execution_then_require_positive_net_pusd_out_zero_required_pusd_input_complete_residual_lineage_bounded_chunks_exact_cost_units_and_strict_positive_conservative_time_value_for_the_RFQ_identity_only_when_approved_builder_credentials_and_explicit_quote_request_only_authority_exist_request_one_nonaccepted_minimum_BUY_and_SELL_quote_then_fetch_CLOB_books_only_if_exact_quotes_leave_positive_headroom",
       "priority_rank": 33,
       "prohibited_shortcuts": [
         "treating_catalog_outcome_prices_as_executable_Combo_quotes",
@@ -1583,10 +1589,13 @@
         "requesting_accepting_or_trading_without_separate_explicit_authority",
         "ignoring_split_merge_compression_collateral_fees_rounding_relayer_delay_or_residual_inventory",
         "assuming_two_RFQs_and_CLOB_legs_are_atomic",
+        "acquiring_restructuring_or_retaining_Combo_positions_only_to_manufacture_collateral_return",
+        "counting_released_pUSD_principal_as_profit_or_assuming_estimatedCost_is_a_pUSD_fee_or_a_zero_gas_example_guarantees_zero_total_cost",
+        "requesting_or_executing_an_account_specific_plan_approval_signature_or_transaction_without_its_exact_separate_authority",
         "calling_one_current_same_game_cohort_recurrence_profit_or_an_accepted_edge",
         "repeating_the_terminal_broad_combo_catalog_population_screen_instead_of_testing_only_the_exact_identity_when_its_quote_access_trigger_is_satisfied"
       ],
-      "retry_trigger": "approved_builder_credentials_plus_explicit_quote_request_only_authority_or_a_documented_public_unauthenticated_executable_Combo_quote_endpoint",
+      "retry_trigger": "for_collateral_release_independently_existing_owned_compatible_Combo_positions_plus_explicit_account_specific_plan_request_only_authority_plus_exact_positive_independently_available_use_of_released_pUSD_or_for_RFQ_parity_approved_builder_credentials_plus_explicit_quote_request_only_authority_or_a_documented_public_unauthenticated_executable_Combo_quote_endpoint",
       "venue_scope": "polymarket_combo_enabled_exact_relationship_markets_without_persistent_live_scope_broadening"
     },
     {
@@ -2065,7 +2074,7 @@
       "venue_scope": "Binance_Spot_direct_and_exactly_one_intermediary_routes_for_independently_required_organic_conversions_with_the_exactly_two_intermediary_extension_terminal_for_the_retained_population"
     }
   ],
-  "result_sha256": "a94c524d3c73dfdf52275b384b8c18d84314ceb53be57ae744df258cbe7cdef0",
+  "result_sha256": "ff5b41b572833ff0eed459098a2f93d1d62fed03891616b9a1fa71bc832f887e",
   "schema_version": "structural-edge-priority-registry-v1",
   "terminal_do_not_repeat": [
     {
@@ -2289,6 +2298,6 @@
       "reason": "the_one_use_current_official_llms_index_contained_80_top_level_English_markdown_pages_but_zero_distinct_economic_mechanisms_outside_existing_registry_families_do_not_refetch_this_snapshot_or_open_linked_pages_until_the_index_SHA_changes_and_an_offline_title_or_description_diff_identifies_a_genuinely_new_cash_flow_cost_reduction_settlement_right_or_executable_package"
     }
   ],
-  "updated_at_utc": "2026-08-29T22:52:10Z",
+  "updated_at_utc": "2026-08-29T23:13:09Z",
   "usage_rule": "advance_the_highest_ranked_hypothesis_whose_retry_trigger_is_satisfied_otherwise_do_not_repeat_a_blocked_or_terminal_screen"
 }

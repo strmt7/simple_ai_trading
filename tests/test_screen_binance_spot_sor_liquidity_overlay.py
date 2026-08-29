@@ -159,7 +159,7 @@ def test_one_request_terminal_result_reconstructs_retained_evidence() -> None:
     }
 
     assert _canonical_hash(registry, "result_sha256") == (
-        "a94c524d3c73dfdf52275b384b8c18d84314ceb53be57ae744df258cbe7cdef0"
+        "ff5b41b572833ff0eed459098a2f93d1d62fed03891616b9a1fa71bc832f887e"
     )
     terminal = {row["family"]: row for row in registry["terminal_do_not_repeat"]}
     assert (

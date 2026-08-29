@@ -1,0 +1,57 @@
+{
+  "schema_version": "polymarket-combo-collateral-release-overlay-source-contract-v1",
+  "status": "frozen_before_public_source_access",
+  "frozen_at_utc": "2026-08-29T23:09:16.5216228Z",
+  "contract_sha256": "3dcc72146293b5b76f078173392a7ec6dd14c6c3b4af2fef8110e1f310c55a59",
+  "purpose": "determine whether official Combo collateral return preserves the exact statewise payoff of independently existing compatible positions while releasing pUSD early, before any market-data or account request",
+  "novelty_boundary": {
+    "existing_rank_33_use": "collateral return was previously retained only as Combo RFQ decomposition residual-inventory and plan-workflow evidence",
+    "distinct_question": "whether an already-held compatible position has a deterministic exposure-preserving collateral-release right whose opportunity-cost value is direction independent",
+    "not_a_new_family_if_proved": "route the result as a capital-efficiency overlay joining existing rank-33 Combo mechanics and rank-1 idle-pUSD holding economics rather than duplicating either mechanism"
+  },
+  "authority": {
+    "public_unauthenticated_read_only_research": true,
+    "network_requests_permitted": 1,
+    "venue_market_data_requests_permitted": 0,
+    "credentials_permitted": false,
+    "account_state_permitted": false,
+    "orders_transactions_or_mutations_permitted": false,
+    "protected_capture_access_permitted": false,
+    "accepted_edge_from_source_stage_permitted": false
+  },
+  "source": {
+    "method": "GET",
+    "url": "https://docs.polymarket.com/trading/combos/collateral-return.md",
+    "endpoint_classification": "public unauthenticated static official documentation page; not an account market order quote or state-changing endpoint",
+    "request_body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "timeout_seconds": 30
+  },
+  "retention": {
+    "raw_path": "data/polymarket-combo-collateral-release-overlay-source-v1/raw/collateral-return.md",
+    "journal_path": "data/polymarket-combo-collateral-release-overlay-source-v1/request-journal.jsonl",
+    "intent_before_access": true,
+    "retain_http_error_body": true,
+    "bounded_console_output": true
+  },
+  "source_questions": [
+    "which exact position combinations are compatible and how compatibility is determined",
+    "what tokens or positions are consumed created or retained by the operation",
+    "whether every terminal outcome payoff is preserved before and after collateral return",
+    "how much pUSD is released and whether a remainder or residual position remains",
+    "whether the plan or execution endpoint requires authentication account state or a transaction",
+    "which fees gas relayer latency rounding failure and reversal costs are documented"
+  ],
+  "decision_rules": {
+    "reject_source_stage": "reject if exact exposure preservation release quantity eligibility or cost semantics are absent conflicting or conditional on acquiring new inventory",
+    "candidate_only": "retain a candidate only for independently existing compatible positions and only if the source proves exact statewise exposure preservation plus positive released pUSD; source evidence alone cannot prove after-cost value",
+    "economic_escalation": "after a source pass freeze one zero-network opportunity-cost inequality using no account inventory and no market data",
+    "promotion_boundary": "no accepted or deployment-ready edge without exact owned eligibility quantities operation cost realized state transition and a positive independently available use of released pUSD"
+  },
+  "stop_rules": [
+    "make exactly one documentation request and do not follow links",
+    "do not request Combo quotes catalogs books fees accounts balances plans execution endpoints or transactions",
+    "do not assume that plan generation or gasless execution is free or authorized",
+    "do not count collateral release as profit or double-count the released principal",
+    "preserve failures and do not rerun this source contract"
+  ]
+}

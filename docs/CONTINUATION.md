@@ -3267,7 +3267,7 @@ adjudication, v3 exact result, and final activity result SHA-256 values are
 and `cde72e05b1760d9fe23eb65e5bd5f59377230ac91095354936c2a84a9a3758ae`.
 The structural-edge registry now contains 44 ranked hypotheses and 21 accepted
 scoped overlays; its canonical SHA-256 is
-`a94c524d3c73dfdf52275b384b8c18d84314ceb53be57ae744df258cbe7cdef0`.
+`ff5b41b572833ff0eed459098a2f93d1d62fed03891616b9a1fa71bc832f887e`.
 
 ## Future WNBA Complete-Catalog Rejection Screen
 
@@ -3297,7 +3297,7 @@ The raw response and two-phase journal SHA-256 values are
 and `40a7edc61fcf5c3a42a8ab7aef65cf04703cde30989b7b23f23a915291620368`.
 The structural registry remains at 44 hypotheses and 21 accepted scoped edges;
 its canonical SHA-256 is
-`a94c524d3c73dfdf52275b384b8c18d84314ceb53be57ae744df258cbe7cdef0`.
+`ff5b41b572833ff0eed459098a2f93d1d62fed03891616b9a1fa71bc832f887e`.
 
 ## Sep 7 Hour-00 Fixed NegRisk Complete Rejection Screen
 
@@ -3511,7 +3511,7 @@ reconstructs the journal receipt; the gzip SHA-256 is
 `9f3f83fe1efcec7a0230dea646d2038fe5c0a32ae72de5c7e4f5ee7fd850304b`.
 The accepted-edge count remains 21 and the ranked-hypothesis count remains 44.
 The updated registry result SHA-256 is
-`a94c524d3c73dfdf52275b384b8c18d84314ceb53be57ae744df258cbe7cdef0`.
+`ff5b41b572833ff0eed459098a2f93d1d62fed03891616b9a1fa71bc832f887e`.
 The direct SOR evidence test and the one registry-coupled pass are clean; no
 broad CI, model, release, or repeated market request was run.
 
@@ -3543,4 +3543,42 @@ SHA-256 values are
 and `e56ce8f2a491d6da3f66b0d085381894ec0e7c078e4f4cfaf238d8e044fa281a`.
 The accepted-edge count remains 21, the ranked-hypothesis count remains 44,
 and the updated registry SHA-256 is
-`a94c524d3c73dfdf52275b384b8c18d84314ceb53be57ae744df258cbe7cdef0`.
+`ff5b41b572833ff0eed459098a2f93d1d62fed03891616b9a1fa71bc832f887e`.
+
+## 2026-08-29 Polymarket Combo collateral-release overlay
+
+One frozen public source-only GET retained the official Combo collateral-return
+page and a pre-request journal. The 44,910-byte response exactly matches the
+payload SHA retained on 2026-08-27, so no changed documentation or adaptive
+second request was needed. No Combo catalog, quote, book, fee, account, plan,
+credential, order, transaction, fund, or protected-capture path was accessed.
+
+The source proves the mechanism's exact economic boundary: compatible
+offsetting Combo positions are decomposed, complementary exposure merges into
+pUSD, and unmatched exposure remains in residual positions that preserve the
+wallet's remaining economic exposure. This makes earlier collateral release a
+direction-independent capital-efficiency candidate for positions that already
+exist independently. It is routed into rank 33 with the existing idle-pUSD or
+other exact opportunity-cost comparator, not added as a duplicate family.
+
+The candidate is not accepted or deployment-ready. Released pUSD is principal,
+not profit. The public source does not prove owned compatible inventory, exact
+`net_pusd_out`, the monetary unit or payer of `estimated_cost`, a universal
+zero-fee or gasless guarantee, execution success, or an independently available
+positive use of the released collateral. The zero-network gate is:
+`net_pusd_out * after_cost_annual_rate * usable_days / 365` must exceed every
+approval, execution, retry, truncation, residual-position, and operating cost.
+At a labeled 3.25% sensitivity, the maximum total cost is 2.6712328767 pUSD per
+1,000 released for 30 days and 8.0136986301 pUSD for 90 days.
+
+Reopen only with independently existing owned compatible positions, explicit
+account-specific plan-request-only authority, and an exact positive use of
+released pUSD. Request one plan without execution and fail closed unless it has
+positive `net_pusd_out`, zero `required_pusd_input`, complete residual lineage,
+bounded chunks, exact monetary costs, and strict positive conservative value.
+Every approval, signature, submission, transaction, poll, or retry requires
+separate authority. Contract/result SHA-256 values are
+`3dcc72146293b5b76f078173392a7ec6dd14c6c3b4af2fef8110e1f310c55a59`
+and `5514bd931557b350579a07448db9c4e1f2664919efff48145861c8841f0bc7ea`.
+The accepted count remains 21, ranked count remains 44, and registry SHA-256 is
+`ff5b41b572833ff0eed459098a2f93d1d62fed03891616b9a1fa71bc832f887e`.
