@@ -32,6 +32,7 @@ data/binance-blvt-public-inventory-v1/** binary -eol
 data/recent-structural-edge-literature-delta-v1/** binary -eol
 data/binance-one-way-arbitrage-paper-v1/** binary -eol
 data/polymarket-official-docs-mechanism-inventory-v1/** binary -eol
+data/polymarket-combo-collateral-release-overlay-source-v1/** binary -eol
 data/polymarket-shutdown-house-identity-metadata-v1/** binary -eol
 data/polymarket-shutdown-house-identity-parity-v1/** binary -eol
 data/polymarket-aca-house-identity-metadata-v1/** binary -eol

@@ -12,7 +12,7 @@ ARTIFACT = ROOT / "docs/model-research/action-value" / (
 )
 REGISTRY = ROOT / "docs/model-research/structural-edge-priority-registry-v1.json"
 EXPECTED_HASH = "08fb223f771c5793da944497f37f4067238e7fd2b40fa2427293dbf7b55c4116"
-REGISTRY_HASH = "a94c524d3c73dfdf52275b384b8c18d84314ceb53be57ae744df258cbe7cdef0"
+REGISTRY_HASH = "ff5b41b572833ff0eed459098a2f93d1d62fed03891616b9a1fa71bc832f887e"
 
 
 def _load(path: Path) -> dict[str, object]:
@@ -126,14 +126,20 @@ def test_registry_adds_only_trigger_gated_combo_identity_candidate() -> None:
     )
     assert row["priority_rank"] == 33
     assert row["market_direction_forecast_required"] is False
-    assert row["canonical_artifacts"] == [
-        {
-            "path": (
-                "docs/model-research/action-value/"
-                "polymarket-combo-rfq-boolean-parity-candidate-v1-2026-08-27.json"
-            ),
-            "result_sha256": EXPECTED_HASH,
-        }
-    ]
+    artifacts = {
+        artifact["path"]: artifact["result_sha256"]
+        for artifact in row["canonical_artifacts"]
+    }
+    assert artifacts[
+        "docs/model-research/action-value/"
+        "polymarket-combo-rfq-boolean-parity-candidate-v1-2026-08-27.json"
+    ] == EXPECTED_HASH
+    assert artifacts[
+        "docs/model-research/action-value/"
+        "polymarket-combo-collateral-release-overlay-candidate-v1-2026-08-29.json"
+    ] == "5514bd931557b350579a07448db9c4e1f2664919efff48145861c8841f0bc7ea"
     assert "quote_request_only" in row["retry_trigger"]
-    assert "not_accepted_or_deployment_ready" in row["current_status"]
+    assert "plan_request_only_authority" in row["retry_trigger"]
+    assert "neither_submechanism_is_accepted_or_deployment_ready" in row[
+        "current_status"
+    ]

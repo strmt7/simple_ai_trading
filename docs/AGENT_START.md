@@ -1636,7 +1636,7 @@ safety gate, blocks Stop, or submits an order.
   and `f032753b45c82b2e0945d1a8c0e0d5fc01f8fb1727cdad34e73064c7590417ba`.
 - The structural-edge registry now has 44 ranked hypotheses and 21
   narrowly accepted scoped overlays, and result SHA-256
-  `a94c524d3c73dfdf52275b384b8c18d84314ceb53be57ae744df258cbe7cdef0`.
+  `ff5b41b572833ff0eed459098a2f93d1d62fed03891616b9a1fa71bc832f887e`.
 
 ## Task Routing
 
@@ -1676,6 +1676,7 @@ safety gate, blocks Stop, or submits an order.
 | Polymarket/Binance TradFi-perpetual funding terminal adjudication | `docs/model-research/action-value/polymarket-binance-tradfi-perps-funding-history-shortfall-adjudication-v1-2026-08-29.json` |
 | Binance idle-stablecoin Launchpool reward candidate | `docs/model-research/action-value/binance-stablecoin-launchpool-idle-inventory-reward-candidate-v1-2026-08-26.json` |
 | Polymarket Combo RFQ versus CLOB Boolean parity candidate | `docs/model-research/action-value/polymarket-combo-rfq-boolean-parity-candidate-v1-2026-08-27.json` |
+| Polymarket Combo exposure-preserving collateral-release overlay | `docs/model-research/action-value/polymarket-combo-collateral-release-overlay-candidate-v1-2026-08-29.json` |
 | Polymarket terminal broad sports Combo requester-overround validation | `docs/model-research/action-value/polymarket-combo-maker-overround-validation-v1-2026-08-27.json` |
 | Binance bStock dividend/perpetual funding timing-gap candidate | `docs/model-research/action-value/binance-bstock-dividend-perp-funding-timing-gap-candidate-v1-2026-08-27.json` |
 | Binance bStock Spot LP all-symbol rebate overlay | `docs/model-research/action-value/binance-bstock-spot-lp-all-symbol-rebate-overlay-candidate-v1-2026-08-27.json` |
@@ -1751,7 +1752,7 @@ result SHA-256 values are
 and `895dc0eba4f72b9b08b19dbba245b20434e4db905fd4ded3ea70779733db6d47`.
 The registry remains at 44 hypotheses and 21 accepted scoped edges; its updated
 result SHA-256 is
-`a94c524d3c73dfdf52275b384b8c18d84314ceb53be57ae744df258cbe7cdef0`.
+`ff5b41b572833ff0eed459098a2f93d1d62fed03891616b9a1fa71bc832f887e`.
 
 ## Polymarket official-documentation novelty gate
 
@@ -1773,4 +1774,32 @@ SHA-256 is
 `e56ce8f2a491d6da3f66b0d085381894ec0e7c078e4f4cfaf238d8e044fa281a`.
 The registry remains at 44 hypotheses and 21 accepted scoped edges; its result
 SHA-256 is
-`a94c524d3c73dfdf52275b384b8c18d84314ceb53be57ae744df258cbe7cdef0`.
+`ff5b41b572833ff0eed459098a2f93d1d62fed03891616b9a1fa71bc832f887e`.
+
+## Polymarket Combo collateral-release overlay
+
+Current official documentation proves a distinct direction-independent
+capital-efficiency mechanism for independently existing compatible Combo
+positions. Collateral return decomposes offsetting positions, merges only their
+complementary exposure into pUSD, and leaves unmatched economic exposure in
+residual positions. The retained page is byte-identical to the source hashed on
+2026-08-27, but this checkpoint asks the previously unadjudicated capital-release
+question rather than treating the page only as RFQ plumbing.
+
+This is a material rank-33 candidate, not an accepted edge. `net_pusd_out` is
+released principal, not profit. Public evidence proves no owned compatible
+positions, exact plan output, monetary meaning of `estimated_cost`, universal
+gasless guarantee, successful transition, or positive after-cost use of the
+released pUSD. At an illustrative 3.25% annual comparator, 1,000 pUSD released
+for 30 days can justify at most 2.6712328767 pUSD of total execution and
+operating cost; for 90 days the ceiling is 8.0136986301 pUSD. These are
+sensitivities, not qualified current returns.
+
+Only when independently existing owned compatible positions, explicit
+account-specific plan-request-only authority, and an exact positive use of
+released pUSD all exist may one plan be requested without execution. Require
+positive `net_pusd_out`, zero `required_pusd_input`, complete consumed-created
+residual lineage, bounded chunks, exact monetary costs, and a strictly positive
+conservative inequality. Every approval, signature, submission, transaction,
+poll, or retry needs separate explicit authority. Canonical result SHA-256 is
+`5514bd931557b350579a07448db9c4e1f2664919efff48145861c8841f0bc7ea`.

@@ -1,0 +1,134 @@
+{
+  "schema_version": "polymarket-combo-collateral-release-overlay-candidate-v1",
+  "status": "material_direction_independent_account_gated_candidate_not_accepted",
+  "created_at_utc": "2026-08-29T23:10:44.0789727Z",
+  "result_sha256": "5514bd931557b350579a07448db9c4e1f2664919efff48145861c8841f0bc7ea",
+  "contract": {
+    "path": "docs/model-research/action-value/polymarket-combo-collateral-release-overlay-source-contract-v1.json",
+    "contract_sha256": "3dcc72146293b5b76f078173392a7ec6dd14c6c3b4af2fef8110e1f310c55a59"
+  },
+  "source": {
+    "method": "GET",
+    "url": "https://docs.polymarket.com/trading/combos/collateral-return.md",
+    "http_status": 200,
+    "raw_path": "data/polymarket-combo-collateral-release-overlay-source-v1/raw/collateral-return.md",
+    "raw_bytes": 44910,
+    "raw_sha256": "ea6c5c9133673b86bdf38d9645cbd95817e98bac4d26a4801c32004da0e75be1",
+    "journal_path": "data/polymarket-combo-collateral-release-overlay-source-v1/request-journal.jsonl",
+    "journal_sha256": "6108e9e0c014841726ca7a0ae9f72d934d8f40bab598eed86da596f6227b74e6",
+    "network_requests_used": 1,
+    "matches_prior_2026_08_27_payload_sha256": true
+  },
+  "mechanism": {
+    "name": "polymarket_combo_exposure_preserving_collateral_release",
+    "market_direction_forecast_required": false,
+    "eligible_inventory_boundary": "only independently existing compatible Combo positions already held for another justified reason",
+    "state_transition": "decompose offsetting Combo positions, merge complementary exposure into pUSD, and create residual positions for unmatched exposure",
+    "statewise_payoff_boundary": "the official source explicitly says only recombinable exposure is removed and residual positions preserve the wallet's remaining economic exposure",
+    "released_principal_boundary": "net_pusd_out and final_pusd report released collateral; released pUSD principal is not profit",
+    "economic_value": "earlier access to released pUSD can avoid capital occupancy or fund an independently available positive after-cost use while the unmatched Combo exposure remains",
+    "family_routing": "rank_33_Combo_mechanics_with_rank_1_idle_pUSD_or_other_exact_opportunity_cost_comparator_not_a_new_standalone_family"
+  },
+  "official_source_facts": {
+    "supported_wallet_types": [
+      "Deposit Wallet",
+      "Safe Wallet",
+      "Proxy Wallet"
+    ],
+    "unsupported_wallet_types": [
+      "EOA"
+    ],
+    "plan_fields_required_for_economic_adjudication": [
+      "block_number",
+      "starting_pusd",
+      "net_pusd_out",
+      "final_pusd",
+      "required_pusd_input",
+      "required_positions",
+      "position_summary.consumed",
+      "position_summary.created",
+      "operations",
+      "estimated_cost",
+      "truncated",
+      "router_call"
+    ],
+    "execution_requirements": [
+      "Relayer API key",
+      "wallet signer",
+      "pUSD and Combo-position trading approvals",
+      "signed exact router action",
+      "confirmation before requesting a subsequent plan"
+    ],
+    "failure_semantics": "a failed or stale plan must be discarded and replanned; truncated work requires separately confirmed chunks"
+  },
+  "source_gate": {
+    "exact_exposure_preservation_proved": true,
+    "positive_pUSD_release_possible_proved": true,
+    "independently_existing_owned_compatible_positions_proved": false,
+    "exact_owned_net_pusd_out_proved": false,
+    "exact_monetary_execution_cost_proved": false,
+    "fee_or_gasless_guarantee_proved": false,
+    "realized_successful_state_transition_proved": false,
+    "source_stage_passes_to_account_prequalification": true,
+    "accepted_edge": false,
+    "deployment_ready": false
+  },
+  "zero_network_economic_gate": {
+    "inequality": "net_pusd_out * independently_available_after_cost_annual_rate * usable_days / 365 - monetary_execution_cost - approval_cost - retry_and_truncation_cost - operational_cost - residual_position_exit_increment > 0",
+    "principal_accounting": "do not add net_pusd_out itself to profit because it is unlocked collateral principal",
+    "rate_sensitivity_only": {
+      "annual_rate": "0.0325",
+      "reason": "illustrative comparator only; it is not a qualified current account rate or a Combo-specific guarantee",
+      "break_even_total_cost_per_1000_pUSD_released": [
+        {
+          "usable_days": 1,
+          "pUSD": "0.08904109589041095890410958904"
+        },
+        {
+          "usable_days": 7,
+          "pUSD": "0.6232876712328767123287671233"
+        },
+        {
+          "usable_days": 30,
+          "pUSD": "2.671232876712328767123287671"
+        },
+        {
+          "usable_days": 90,
+          "pUSD": "8.013698630136986301369863014"
+        },
+        {
+          "usable_days": 180,
+          "pUSD": "16.02739726027397260273972603"
+        },
+        {
+          "usable_days": 365,
+          "pUSD": "32.5000"
+        }
+      ]
+    },
+    "public_forward_profit_floor_pUSD": "0",
+    "decision": "material_candidate_but_public_cost_and_owned_inventory_gates_block_acceptance"
+  },
+  "next_action": {
+    "retry_trigger": "independently existing owned compatible Combo positions plus explicit account-specific plan-request-only authority and exact positive independently available use of released pUSD",
+    "prequalification": "request one plan only, do not execute it, and require positive net_pusd_out, required_pusd_input zero, complete consumed-created residual lineage, nontruncated or bounded chunk count, exact estimated-cost unit, and strict positive conservative inequality",
+    "separate_authority": "every approval signature plan submission transaction polling retry or account mutation requires explicit separate authority",
+    "stop": "stop before market data because the economic value depends on owned plan output and costs rather than Combo quote or CLOB prices"
+  },
+  "prohibited_shortcuts": [
+    "acquiring or restructuring Combo positions solely to manufacture collateral return",
+    "counting released pUSD principal as profit",
+    "assuming estimatedCost is denominated in pUSD or paid by the user",
+    "assuming zero gas fields in one SDK example guarantee zero total cost across wallet types",
+    "assuming plan generation proves execution success or that a stale plan remains valid",
+    "ignoring residual positions approvals truncation retries latency tax or exit costs",
+    "double-counting rank-1 holding yield without exact current eligibility rate duration and independently available capacity"
+  ],
+  "authority_used": {
+    "public_unauthenticated_read_only": true,
+    "credentials": false,
+    "account_state": false,
+    "orders_transactions_or_mutations": false,
+    "protected_capture": false
+  }
+}
