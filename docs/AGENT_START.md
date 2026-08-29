@@ -1420,9 +1420,22 @@ safety gate, blocks Stop, or submits an order.
   Reuse the contract-driven exact-event runner rather than creating another
   event-specific metadata collector. Canonical adjudication SHA-256
   `61b3436b3367ba3442ebe777c8a506948243c6d3b6d6a4cb9346d2db3aaf335f`.
+- Binance same-expiry four-option CLOB box parity remains terminal. A later
+  zero-request audit reused the retained August 27 option catalog and all-
+  ticker payload, evaluated 10,382 complete BTC/ETH/SOL box directions, and
+  found zero gross-positive rows before fees, margin, legging, settlement, or
+  capital costs. The first frozen offline runner failed on 397 ticker rows
+  without `closeTime`; its immutable contract and error are preserved. The v2
+  repair maps a missing timestamp to an always-unsynchronized sentinel and
+  completed without network access. This mechanism was already in the terminal
+  registry from the August 25 depth screen, so no new ranked hypothesis was
+  created. Search prioritized and terminal registry families before building a
+  purportedly novel collector. Do not repeat box parity absent a material
+  price, fee, book, or product change. Canonical v2 result SHA-256
+  `a9b0e7a2aba9bda7f83b9515be587a17e6da69fa0bc987191a21f9d37e912d3b`.
 - The structural-edge registry now has 42 ranked hypotheses, still only 19
   narrowly accepted scoped overlays, and result SHA-256
-  `671fa1498f9098357ac5c0f209c76351b0043cdcc1123dd8d8d062c92ac5c4a5`.
+  `5dfe720ff8cb69f5489ef6deb47fffe2d1ae4d036f1c14a13fbb34daf961f14a`.
 
 ## Task Routing
 
@@ -1439,6 +1452,7 @@ safety gate, blocks Stop, or submits an order.
 | Current BOS/NYY monotone-parity terminal adjudication | `docs/model-research/action-value/polymarket-current-mlb-monotone-parity-failure-adjudication-v1-2026-08-29.json` |
 | Current Toronto/Phoenix WNBA monotone-parity terminal result | `docs/model-research/action-value/polymarket-current-wnba-monotone-parity-result-v1-2026-08-29.json` |
 | Current Lynx/Dream WNBA rejection-only terminal adjudication | `docs/model-research/action-value/polymarket-lynx-dream-monotone-prefilter-adjudication-v1-2026-08-29.json` |
+| Binance retained CLOB box-parity terminal prefilter | `docs/model-research/action-value/binance-options-clob-box-retained-prefilter-v2-2026-08-29.json` |
 | Resolved-leg House duplicate-payoff recurrence | `docs/model-research/action-value/polymarket-aca-house-maker-first-candidate-v1-2026-08-29.json` |
 | Binance XAU/PAXG funding-basis terminal adjudication | `docs/model-research/action-value/binance-xau-paxg-perpetual-funding-spread-failure-adjudication-v1-2026-08-29.json` |
 | Polymarket exact-one-NO V2 conversion failure adjudication | `docs/model-research/action-value/polymarket-negrisk-one-no-v2-conversion-failure-adjudication-v1-2026-08-29.json` |

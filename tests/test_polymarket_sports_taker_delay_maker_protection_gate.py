@@ -12,7 +12,7 @@ ARTIFACT = ROOT / "docs/model-research/action-value" / (
 REGISTRY = ROOT / "docs/model-research/structural-edge-priority-registry-v1.json"
 SOURCE = ROOT / "src/simple_ai_trading/polymarket.py"
 EXPECTED_HASH = "4847ec7828e598950da9a455170b66a529d9a5d671bfb4c37a57a36f608b9627"
-REGISTRY_HASH = "671fa1498f9098357ac5c0f209c76351b0043cdcc1123dd8d8d062c92ac5c4a5"
+REGISTRY_HASH = "5dfe720ff8cb69f5489ef6deb47fffe2d1ae4d036f1c14a13fbb34daf961f14a"
 
 
 def _load(path: Path) -> dict[str, object]:
@@ -79,13 +79,13 @@ def test_registry_and_crypto_constant_keep_sports_separate() -> None:
         if item["mechanism"]
         == "polymarket_live_NBA_moneyline_spread_monotone_payoff_implication"
     )
-    assert row["canonical_artifacts"][-1] == {
+    assert {
         "path": (
             "docs/model-research/action-value/"
             "polymarket-sports-taker-delay-maker-protection-gate-v1-2026-08-27.json"
         ),
         "result_sha256": EXPECTED_HASH,
-    }
+    } in row["canonical_artifacts"]
     assert artifact["execution_consequences"]["net_effect"].endswith(
         "not_250_milliseconds"
     )

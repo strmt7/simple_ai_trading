@@ -47,6 +47,13 @@ override prose.
   push, or hosted CI run before exploratory public requests. The stricter
   frozen one-use workflow remains mandatory for authenticated, account-specific,
   funded, order-capable, or state-changing operations.
+- Before treating a structural mechanism as novel, search both the prioritized
+  hypotheses and terminal screens in the structural-edge registry, then `rg`
+  mechanism aliases and payoff identities across retained artifacts and tools.
+  An existing terminal family may advance only on its literal retry trigger;
+  otherwise stop before building another collector. A zero-request retained-data
+  audit may be kept only when it materially strengthens or corrects the existing
+  adjudication, and it must update that family instead of creating a duplicate.
 - A frozen current-state screen terminalizes only its exact population, time,
   size, and source contract. Material new primary evidence of recurrent
   event-time violations may reopen a separately preregistered recurrence study;

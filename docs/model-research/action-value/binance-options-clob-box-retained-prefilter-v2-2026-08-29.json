@@ -1,0 +1,82 @@
+{
+  "adjudication": {
+    "accepted_edge": false,
+    "current_market_requests": 0,
+    "deployment_ready": false,
+    "next_action": "stop_without_current_market_requests",
+    "profitability_claim": false,
+    "status": "no_retained_synchronized_gross_positive_candidate"
+  },
+  "authority": {
+    "account_state_accessed": false,
+    "authenticated_requests": 0,
+    "credentials_used": false,
+    "funds_used": false,
+    "new_public_requests": 0,
+    "orders_quotes_transfers_or_wallet_actions": 0,
+    "paper_or_live_trading_authority": false,
+    "retained_public_responses_reused": 2
+  },
+  "contract": {
+    "path": "docs/model-research/action-value/binance-options-clob-box-retained-prefilter-contract-v2.json",
+    "sha256": "806b99257dd081fddef2fcaa5657776e9dfecee65dd52da1bba351052a062e81"
+  },
+  "gates": {
+    "accepted_edge_from_prefilter": false,
+    "candidate_only_if_positive_and_synchronized": true,
+    "deployment_ready_from_prefilter": false,
+    "fees_quantity_margin_leg_risk_settlement_and_capital_costs_applied_in_prefilter": false,
+    "gross_profit_strictly_positive_required": true,
+    "maximum_quote_age_ms": 60000,
+    "missing_closeTime_is_unsynchronized": true,
+    "non_crossed_bid_ask_required_for_all_four_legs": true,
+    "positive_bid_and_ask_required_for_all_four_legs": true,
+    "ticker_closeTime_is_only_a_frozen_synchronization_proxy": true
+  },
+  "implementation": {
+    "dependency": {
+      "path": "tools/screen_binance_options_clob_box_prefilter.py",
+      "sha256": "9557339a1d66d239725bb125098b1f43205060546255ea31f1d72dec9d99ba85"
+    },
+    "path": "tools/screen_binance_options_clob_box_prefilter_v2.py",
+    "sha256": "fdb4845cab1958605837c54af0c8b85b04c3acf143ed42b1656d4d554085a142"
+  },
+  "payoff_identity": {
+    "long_box": "buy_call_low_sell_call_high_buy_put_high_sell_put_low_pays_high_strike_minus_low_strike",
+    "market_direction_forecast_required": false,
+    "reverse_box": "sell_call_low_buy_call_high_sell_put_high_buy_put_low_pays_low_strike_minus_high_strike",
+    "settlement_state_coverage": "below_low_strike_between_strikes_and_at_or_above_high_strike_have_the_same_total_cashflow",
+    "unit_currency": "USDT"
+  },
+  "population": {
+    "eligible_option_symbol_count": 1410,
+    "evaluated_box_direction_count": 10382,
+    "gross_positive_count": 0,
+    "synchronized_count": 0,
+    "synchronized_gross_positive_count": 0,
+    "underlying_expiry_group_count": 22
+  },
+  "result_sha256": "a9b0e7a2aba9bda7f83b9515be587a17e6da69fa0bc987191a21f9d37e912d3b",
+  "retained_sources": {
+    "all_tickers": {
+      "completed_at_ms": 1787801241950,
+      "path": "data/binance-commodity-option-perpetual-lower-bound-v1/raw/options-all-tickers.raw",
+      "requested_at_ms": 1787801241208,
+      "sha256": "ae550eff1af3dce6738f410916f1ac07315a2ef2afa661af11eec4e56b756dbc",
+      "url": "https://eapi.binance.com/eapi/v1/ticker"
+    },
+    "exchange_info": {
+      "completed_at_ms": 1787801183347,
+      "path": "data/binance-commodity-option-perpetual-lower-bound-v1/raw/options-exchange-info.raw",
+      "requested_at_ms": 1787801182691,
+      "sha256": "81a8cb419821562c96537ec310e7043f40e2a63c7e96fb33d86a225f13b26449",
+      "url": "https://eapi.binance.com/eapi/v1/exchangeInfo"
+    },
+    "parent_result": {
+      "path": "docs/model-research/action-value/binance-commodity-option-perpetual-lower-bound-v1-2026-08-27.json",
+      "sha256": "3cbc79050473b456e4175239b687b0329bc1c7a66d3530842e524ac4200a0905"
+    }
+  },
+  "schema_version": "binance-options-clob-box-retained-prefilter-v1",
+  "top_optimistic_gross_positive_rows": []
+}
