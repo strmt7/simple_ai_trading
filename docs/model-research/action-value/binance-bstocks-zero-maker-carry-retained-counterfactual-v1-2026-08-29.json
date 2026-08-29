@@ -1,0 +1,81 @@
+{
+  "schema_version": "binance-bstocks-zero-maker-carry-retained-counterfactual-v1",
+  "created_at_utc": "2026-08-29T19:11:03.3128977Z",
+  "result_sha256": "2af1504748f51ad36c18c76162a91e82803395311932d73f1809d2781dfc4fb7",
+  "purpose": "test whether the current bStocks zero-maker promotion can reopen the terminal long-bStock short-matching-TradFi-perpetual funding family using only retained evidence and an intentionally impossible favorable cost ceiling",
+  "authority": {
+    "retained_data_only": true,
+    "new_http_requests": 0,
+    "credentials_used": false,
+    "account_state_accessed": false,
+    "orders_transfers_conversions_subscriptions_or_account_changes": 0,
+    "paper_or_live_trading_authority": false
+  },
+  "source_lineage": {
+    "promotion_trigger": {
+      "path": "docs/model-research/action-value/binance-aug28-public-structural-trigger-triage-v1-2026-08-29.json",
+      "result_sha256": "bca11d612042f9a859f53b71e425cd320cca5d4a5d7695cd1f0a0de539b0eea1",
+      "term": "zero maker fee on supported bStocks pairs through 2026-09-30T23:59:00Z"
+    },
+    "full_universe_predecessor": {
+      "path": "docs/model-research/action-value/binance-bstock-funding-full-universe-v1-2026-08-26.json",
+      "result_sha256": "ad3fbc7a09ff6b467955eeef8bf1e8df4ba7d20ca9e7659fcaf75069da622d3f",
+      "confirmation_eligible_count": 57,
+      "empirical_gate_pass_count": 0
+    },
+    "ranked_basket_predecessor": {
+      "path": "docs/model-research/action-value/binance-bstock-ranked-basket-v1-2026-08-26.json",
+      "result_sha256": "0cf6e3aae168e0c483634e78fd824a80be9e58269f02e9b01a6d9c9c46578a8f",
+      "training_selected_symbol_count": 12,
+      "selection": "top 20 percent by training net with equal notional weights before validation or test access"
+    }
+  },
+  "counterfactual_contract": {
+    "frozen_predecessor_round_trip_execution_stress_bips": "60",
+    "actual_public_fee_change": "bStocks maker fee becomes zero; no futures fee spread basis slippage latency margin capital or exit-role guarantee is removed",
+    "optimistic_fee_relief_ceiling_bips": "60",
+    "ceiling_reason": "erase the predecessor's entire two-leg round-trip execution stress even though the promotion removes only the otherwise applicable bStocks maker fee on qualifying owned maker fills",
+    "metric_transform": "add exactly 60 bips to each retained role-level net bootstrap lower bound and leave-one-out net; do not refit symbols weights roles or outcomes",
+    "acceptance_rule": "reopen only if validation and test mean bootstrap lower bound leave-one-out and positive-symbol gates can all become positive under this dominating upper bound",
+    "fresh_market_data_if_upper_bound_fails": "prohibited"
+  },
+  "retained_upper_bound": {
+    "validation": {
+      "original_mean_net_bips": "-81.80462067002790461694571283",
+      "upper_bound_mean_net_bips": "-21.80462067002790461694571283",
+      "original_cross_sectional_bootstrap_lower_bound_bips": "-102.0480030821917808219178082",
+      "upper_bound_cross_sectional_bootstrap_lower_bound_bips": "-42.0480030821917808219178082",
+      "original_worst_leave_one_symbol_out_net_bips": "-94.49344899162861491628614918",
+      "upper_bound_worst_leave_one_symbol_out_net_bips": "-34.49344899162861491628614918",
+      "upper_bound_positive_symbol_count": 3,
+      "selected_symbol_count": 12,
+      "passes": false
+    },
+    "test": {
+      "original_mean_net_bips": "-108.1975271953745983426348723",
+      "upper_bound_mean_net_bips": "-48.1975271953745983426348723",
+      "original_cross_sectional_bootstrap_lower_bound_bips": "-115.4780525299129037713512599",
+      "upper_bound_cross_sectional_bootstrap_lower_bound_bips": "-55.4780525299129037713512599",
+      "original_worst_leave_one_symbol_out_net_bips": "-110.7783063356164383561643835",
+      "upper_bound_worst_leave_one_symbol_out_net_bips": "-50.7783063356164383561643835",
+      "upper_bound_positive_symbol_count": 0,
+      "upper_bound_best_symbol_net_bips": "-19.8089566527143581938102486",
+      "selected_symbol_count": 12,
+      "passes": false
+    }
+  },
+  "adjudication": {
+    "accepted_edge": false,
+    "candidate_for_fresh_book_or_funding_study": false,
+    "deployment_ready": false,
+    "market_direction_forecast_required": false,
+    "profitability_claim": false,
+    "trading_authority": false,
+    "status": "terminal_family_not_reopened_by_bStocks_zero_maker_promotion_even_under_full_60_bip_execution_stress_erasure"
+  },
+  "retry_policy": {
+    "do_not_repeat": "the retained 57-symbol funding screen the 12-symbol ranked basket or current bStocks books for this fee promotion",
+    "reopen_only_for": "a material independently source-bound funding cash flow capital credit executable basis or atomic conversion change capable of exceeding the retained test upper-bound deficits plus exact account eligibility and costs",
+    "new_listing_policy_unchanged": "a new exact-multiplier bStock listing with a previously unscreened matching TradFi perpetual may still trigger its separately frozen one-symbol prefilter"
+  }
+}

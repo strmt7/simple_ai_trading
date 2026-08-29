@@ -655,6 +655,18 @@ diagnostics, not accepted edges.
   `docs/model-research/action-value/binance-bstock-ranked-basket-v1-2026-08-26.json`,
   SHA-256
   `0cf6e3aae168e0c483634e78fd824a80be9e58269f02e9b01a6d9c9c46578a8f`.
+  The current bStocks zero-maker promotion does not reopen this funding family.
+  A retained-data counterfactual erased the full frozen 60-bp two-leg execution
+  stress, an impossible upper bound because the promotion removes only the
+  otherwise applicable bStocks maker fee on qualifying fills. The selected
+  basket still lost `21.8046206700` bps in validation and `48.1975271954` bps
+  in test; cross-sectional bootstrap lower bounds remained `-42.0480030822`
+  and `-55.4780525299` bps, and test remained zero of 12 positive. No funding
+  or book request is justified for this promotion. Canonical retained
+  counterfactual:
+  `docs/model-research/action-value/binance-bstocks-zero-maker-carry-retained-counterfactual-v1-2026-08-29.json`,
+  SHA-256
+  `2af1504748f51ad36c18c76162a91e82803395311932d73f1809d2781dfc4fb7`.
   The funding family is terminal without parameter retry. Conversion parity
   remains account, executable-stock-quote, exact-cost, and permanent-scope
   gated. Neither path is an accepted edge and neither permits repeated polls.
@@ -982,7 +994,7 @@ grants paper, testnet, or live authority.
 
 The canonical structural-edge priority and retry-trigger registry is
 `docs/model-research/structural-edge-priority-registry-v1.json`, result SHA-256
-`e8c32ad724da73148aa1becc77fe413a243e11fa8f444d514b10e844f9089bfe`.
+`4b3828b49387edf1e26e8ff107221139f1d133c65ab85a8664f0ac08de84e5ad`.
 Advance only the highest-ranked hypothesis whose trigger is actually satisfied.
 This prevents account-blocked or terminal screens from being rerun as if more
 snapshots could create an edge.
@@ -2220,7 +2232,7 @@ result SHA-256
 `64943efe0c6ad16f8d02f78548afef38f919448d2da87c7573e825a2eeefd6b9`.
 That checkpoint left seventeen accepted scoped edges. The current registry now
 has twenty and result SHA-256
-`e8c32ad724da73148aa1becc77fe413a243e11fa8f444d514b10e844f9089bfe`.
+`4b3828b49387edf1e26e8ff107221139f1d133c65ab85a8664f0ac08de84e5ad`.
 
 The complete Binance XAU/XAG Commodity Options versus matching TradFi
 perpetual lower-bound screen is terminal for the active 2026-08-27 and
@@ -2522,7 +2534,7 @@ result SHA-256
 `85c8ef364b03fb2fbf0aeebddec10d51abbdd608f56ff9c0dccb1835cacc2179`.
 The structural registry now contains 42 ranked hypotheses and 20
 narrowly accepted scoped overlays, and has canonical result SHA-256
-`e8c32ad724da73148aa1becc77fe413a243e11fa8f444d514b10e844f9089bfe`.
+`4b3828b49387edf1e26e8ff107221139f1d133c65ab85a8664f0ac08de84e5ad`.
 
 The Round 21 sidecar worktree
 `C:\trader\simple_ai_trading-round21-sidecar-v2` remains protected through
@@ -2977,7 +2989,7 @@ adjudication, and exact-depth result SHA-256 values are respectively
 and `731ca32a06f8f1a42aaae9e326c2bd89379657e338231dd906b749790c15ddfa`.
 The structural-edge registry retains 42 hypotheses and 20 narrowly accepted
 scoped overlays; its new canonical SHA-256 is
-`e8c32ad724da73148aa1becc77fe413a243e11fa8f444d514b10e844f9089bfe`.
+`4b3828b49387edf1e26e8ff107221139f1d133c65ab85a8664f0ac08de84e5ad`.
 
 ## Future NFL Catalog Checkpoint
 
@@ -3087,7 +3099,7 @@ The resolved-leg House duplicate-payoff checkpoint, raw journals, source hashes,
 and directly affected registry lineage pass 12 focused tests with Ruff and
 Python compilation clean. The registry still contains 42 ranked hypotheses and
 20 accepted scoped overlays; its result SHA-256 is
-`e8c32ad724da73148aa1becc77fe413a243e11fa8f444d514b10e844f9089bfe`.
+`4b3828b49387edf1e26e8ff107221139f1d133c65ab85a8664f0ac08de84e5ad`.
 
 The exact-one-NO failure preservation and Binance BLVT current-inventory gate,
 including every registry-hash-coupled test, pass 199 focused tests with Ruff

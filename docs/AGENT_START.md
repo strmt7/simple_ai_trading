@@ -703,6 +703,14 @@ safety gate, blocks Stop, or submits an order.
   `ad3fbc7a09ff6b467955eeef8bf1e8df4ba7d20ca9e7659fcaf75069da622d3f`,
   and `binance-bstock-ranked-basket-v1-2026-08-26.json`, SHA
   `0cf6e3aae168e0c483634e78fd824a80be9e58269f02e9b01a6d9c9c46578a8f`.
+  The current bStocks zero-maker promotion still cannot reopen the family: even
+  erasing the entire 60-bp two-leg execution stress leaves the basket negative
+  by `21.8046206700` bps in validation and `48.1975271954` bps in test, with
+  negative bootstrap lower bounds and zero of 12 test symbols positive. No
+  funding or book refresh is allowed for this promotion. Canonical retained
+  counterfactual:
+  `binance-bstocks-zero-maker-carry-retained-counterfactual-v1-2026-08-29.json`,
+  SHA `2af1504748f51ad36c18c76162a91e82803395311932d73f1809d2781dfc4fb7`.
   The funding family is terminal: do not weaken, rerank, or resample it. The
   reference-conversion hypothesis remains account, quote, cost, and scope
   gated; neither result is an accepted edge.
@@ -1535,7 +1543,7 @@ safety gate, blocks Stop, or submits an order.
   `3e3ae8fd8c98c93c3e2194425db5992f06aed412e07d32333525601c2b34bc52`.
 - The structural-edge registry now has 42 ranked hypotheses and 20
   narrowly accepted scoped overlays, and result SHA-256
-  `e8c32ad724da73148aa1becc77fe413a243e11fa8f444d514b10e844f9089bfe`.
+  `4b3828b49387edf1e26e8ff107221139f1d133c65ab85a8664f0ac08de84e5ad`.
 
 ## Task Routing
 
@@ -1573,6 +1581,7 @@ safety gate, blocks Stop, or submits an order.
 | Polymarket terminal broad sports Combo requester-overround validation | `docs/model-research/action-value/polymarket-combo-maker-overround-validation-v1-2026-08-27.json` |
 | Binance bStock dividend/perpetual funding timing-gap candidate | `docs/model-research/action-value/binance-bstock-dividend-perp-funding-timing-gap-candidate-v1-2026-08-27.json` |
 | Binance bStock Spot LP all-symbol rebate overlay | `docs/model-research/action-value/binance-bstock-spot-lp-all-symbol-rebate-overlay-candidate-v1-2026-08-27.json` |
+| Binance bStocks zero-maker carry retained counterfactual | `docs/model-research/action-value/binance-bstocks-zero-maker-carry-retained-counterfactual-v1-2026-08-29.json` |
 | Binance existing-stock transfer reward overlay | `docs/model-research/action-value/binance-existing-stock-transfer-reward-overlay-candidate-v1-2026-08-27.json` |
 | Binance Stocks FPSL existing-inventory yield overlay | `docs/model-research/action-value/binance-stocks-fpsl-existing-inventory-yield-overlay-candidate-v1-2026-08-27.json` |
 | Binance NOK bStock dividend/perpetual under-debit candidate | `docs/model-research/action-value/binance-nok-bstock-dividend-perpetual-underdebit-candidate-v1-2026-08-27.json` |
