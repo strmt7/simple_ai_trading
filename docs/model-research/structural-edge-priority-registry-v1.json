@@ -1768,7 +1768,7 @@
       "venue_scope": "Binance_current_BLVT_Spot_and_primary_market_inventory"
     }
   ],
-  "result_sha256": "8a5df5625fab7d55762ff52923f1454d80a92126d6dce09ce4f5b9281779f6f9",
+  "result_sha256": "afa26a57c9ca4525021ef1d728993ecc52a427ac03e8ee3f48bd15ab0203bf71",
   "schema_version": "structural-edge-priority-registry-v1",
   "terminal_do_not_repeat": [
     {
@@ -1950,8 +1950,13 @@
       "canonical_result_sha256": "85c8ef364b03fb2fbf0aeebddec10d51abbdd608f56ff9c0dccb1835cacc2179",
       "family": "binance_BLVT_primary_market_NAV_spot_parity_current_inventory",
       "reason": "the_complete_public_exchangeInfo_inventory_contained_40_legacy_LEVERAGED_permission_symbols_but_zero_with_TRADING_status_so_no_current_subscribe_redeem_spot_parity_instrument_exists_do_not_poll_until_a_new_official_BLVT_listing_or_relisting"
+    },
+    {
+      "canonical_result_sha256": "c09d62e98cd0df88622d4b98d9d8f01247121ccd786fffb580bc72429ef6bf30",
+      "family": "binance_BTC_ETH_SOL_option_perpetual_conversion_reversal_retained_prefilter",
+      "reason": "the_consumed_v1_zero_request_test_wrongly_used_option_transaction_closeTime_as_quote_update_provenance_and_is_preserved_the_separately_frozen_v2_HTTP_observation_window_repair_found_71_synchronized_nominal_rows_across_all_1410_conversion_and_reversal_directions_but_zero_survived_exact_quantity_two_adverse_ticks_per_leg_35_5_bips_fee_and_expiry_basis_direction_specific_worst_retained_funding_and_two_notional_10_percent_annual_capital_stress_before_unavailable_option_depth_do_not_request_current_depth_or_repeat_this_snapshot_without_a_material_price_fee_book_funding_margin_or_product_change"
     }
   ],
-  "updated_at_utc": "2026-08-29T16:43:09.7834387+00:00",
+  "updated_at_utc": "2026-08-29T17:08:22.2460324+00:00",
   "usage_rule": "advance_the_highest_ranked_hypothesis_whose_retry_trigger_is_satisfied_otherwise_do_not_repeat_a_blocked_or_terminal_screen"
 }
