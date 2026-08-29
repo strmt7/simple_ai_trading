@@ -3267,7 +3267,7 @@ adjudication, v3 exact result, and final activity result SHA-256 values are
 and `cde72e05b1760d9fe23eb65e5bd5f59377230ac91095354936c2a84a9a3758ae`.
 The structural-edge registry now contains 44 ranked hypotheses and 21 accepted
 scoped overlays; its canonical SHA-256 is
-`98714cb8665d2132cb53670f09e73d11816cdbb7a9c3bc221dce4db4f865f98d`.
+`a94c524d3c73dfdf52275b384b8c18d84314ceb53be57ae744df258cbe7cdef0`.
 
 ## Future WNBA Complete-Catalog Rejection Screen
 
@@ -3297,7 +3297,7 @@ The raw response and two-phase journal SHA-256 values are
 and `40a7edc61fcf5c3a42a8ab7aef65cf04703cde30989b7b23f23a915291620368`.
 The structural registry remains at 44 hypotheses and 21 accepted scoped edges;
 its canonical SHA-256 is
-`98714cb8665d2132cb53670f09e73d11816cdbb7a9c3bc221dce4db4f865f98d`.
+`a94c524d3c73dfdf52275b384b8c18d84314ceb53be57ae744df258cbe7cdef0`.
 
 ## Sep 7 Hour-00 Fixed NegRisk Complete Rejection Screen
 
@@ -3511,6 +3511,36 @@ reconstructs the journal receipt; the gzip SHA-256 is
 `9f3f83fe1efcec7a0230dea646d2038fe5c0a32ae72de5c7e4f5ee7fd850304b`.
 The accepted-edge count remains 21 and the ranked-hypothesis count remains 44.
 The updated registry result SHA-256 is
-`98714cb8665d2132cb53670f09e73d11816cdbb7a9c3bc221dce4db4f865f98d`.
+`a94c524d3c73dfdf52275b384b8c18d84314ceb53be57ae744df258cbe7cdef0`.
 The direct SOR evidence test and the one registry-coupled pass are clean; no
 broad CI, model, release, or repeated market request was run.
+
+## 2026-08-29 Polymarket official-documentation novelty gate
+
+One frozen public unauthenticated GET retained the current official
+`https://docs.polymarket.com/llms.txt` index and a pre-request intent journal.
+The response was HTTP 200, 13,746 bytes, and contained 80 top-level English
+Markdown pages. The gate spent exactly its one allowed request and stopped
+before every linked page, market-data endpoint, credential, account, order,
+mutation, fund, and protected-capture path.
+
+The offline registry diff found zero distinct structural mechanism. Current
+reward, fee, resolution, negative-risk, position, Combo, and Perps pages map to
+existing ranked families. Session keys and matching-engine restart state are
+execution controls. Bridge routes add quoted conversion fees and delay but no
+documented discrepancy, rebate, yield, or settlement right. Mark price, index
+price, margin, liquidation, and market sessions are valuation and risk
+constraints. Combo collateral return is not novel: its exact source was already
+retained in rank 33's canonical Combo evidence.
+
+This snapshot is terminal and authorizes zero linked-page or market-data tests.
+Do not repeat it until the official index SHA changes from
+`68256fa9849e72626806cbc7373f726421fd6d62dddecc0ae3a8009595bd2b8d`
+and an offline title or description diff identifies a genuinely new cash flow,
+cost reduction, settlement right, or executable package. Contract and result
+SHA-256 values are
+`74932c7a4a14217d2dbf419203ae252cd8666cfae52b58f8ea59613d4adb8d3d`
+and `e56ce8f2a491d6da3f66b0d085381894ec0e7c078e4f4cfaf238d8e044fa281a`.
+The accepted-edge count remains 21, the ranked-hypothesis count remains 44,
+and the updated registry SHA-256 is
+`a94c524d3c73dfdf52275b384b8c18d84314ceb53be57ae744df258cbe7cdef0`.

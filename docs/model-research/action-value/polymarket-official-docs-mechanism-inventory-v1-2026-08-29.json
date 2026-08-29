@@ -1,0 +1,138 @@
+{
+  "schema_version": "polymarket-official-docs-mechanism-inventory-v1",
+  "status": "complete_no_novel_structural_mechanism",
+  "observed_at_utc": "2026-08-29T22:52:10.7641891Z",
+  "result_sha256": "e56ce8f2a491d6da3f66b0d085381894ec0e7c078e4f4cfaf238d8e044fa281a",
+  "contract": {
+    "path": "docs/model-research/action-value/polymarket-official-docs-mechanism-inventory-contract-v1.json",
+    "contract_sha256": "74932c7a4a14217d2dbf419203ae252cd8666cfae52b58f8ea59613d4adb8d3d"
+  },
+  "source": {
+    "url": "https://docs.polymarket.com/llms.txt",
+    "http_status": 200,
+    "raw_path": "data/polymarket-official-docs-mechanism-inventory-v1/raw/llms.txt",
+    "raw_bytes": 13746,
+    "raw_sha256": "68256fa9849e72626806cbc7373f726421fd6d62dddecc0ae3a8009595bd2b8d",
+    "journal_path": "data/polymarket-official-docs-mechanism-inventory-v1/request-journal.jsonl",
+    "journal_sha256": "c412d58fc0a756e4097c34e33b1a9ca2de4ca11d48e66ef4dc556332cedd2cb1",
+    "current_top_level_english_markdown_pages": 80,
+    "network_requests_used": 1
+  },
+  "classification": {
+    "distinct_novel_structural_mechanisms": 0,
+    "new_market_data_tests_authorized": 0,
+    "accepted_edges_added": 0,
+    "accepted_edge_count_after": 21,
+    "outcome": "the current official index contains no distinct economic cash flow cost reduction settlement right or executable package outside families already represented in the structural registry",
+    "registry_family_groups": [
+      {
+        "pages": [
+          "https://docs.polymarket.com/concepts/negative-risk.md",
+          "https://docs.polymarket.com/concepts/positions-tokens.md",
+          "https://docs.polymarket.com/concepts/pusd.md",
+          "https://docs.polymarket.com/concepts/resolution.md",
+          "https://docs.polymarket.com/trading/positions/how-positions-work.md",
+          "https://docs.polymarket.com/trading/positions/manage.md"
+        ],
+        "existing_priority_ranks": [
+          1,
+          2,
+          6,
+          7,
+          21
+        ],
+        "reason": "existing collateral holding negative-risk conversion finality redemption and resolution families"
+      },
+      {
+        "pages": [
+          "https://docs.polymarket.com/trading/fees.md",
+          "https://docs.polymarket.com/programs/taker-rebates.md",
+          "https://docs.polymarket.com/programs/maker-rebates.md",
+          "https://docs.polymarket.com/programs/liquidity-rewards.md",
+          "https://docs.polymarket.com/programs/referral-program.md",
+          "https://docs.polymarket.com/programs/builders/fees.md"
+        ],
+        "existing_priority_ranks": [
+          17,
+          22,
+          23,
+          24,
+          25
+        ],
+        "reason": "existing fee rebate liquidity reward referral and builder fee overlays"
+      },
+      {
+        "pages": [
+          "https://docs.polymarket.com/trading/positions/combinatorial.md",
+          "https://docs.polymarket.com/trading/combos/overview.md",
+          "https://docs.polymarket.com/trading/combos/market-makers.md",
+          "https://docs.polymarket.com/trading/combos/builders.md",
+          "https://docs.polymarket.com/trading/combos/collateral-return.md"
+        ],
+        "existing_priority_ranks": [
+          30,
+          31,
+          33
+        ],
+        "reason": "existing exact payoff implication subset equivalence and Combo RFQ identity family; collateral return was already retained in the rank-33 canonical source set"
+      },
+      {
+        "pages": [
+          "https://docs.polymarket.com/perps/learn-about-trading/fees.md",
+          "https://docs.polymarket.com/perps/learn-about-trading/margin.md",
+          "https://docs.polymarket.com/perps/learn-about-trading/liquidation-mechanics.md",
+          "https://docs.polymarket.com/perps/learn-about-trading/funding.md",
+          "https://docs.polymarket.com/perps/referral-program.md"
+        ],
+        "existing_priority_ranks": [
+          19,
+          20,
+          29,
+          43
+        ],
+        "reason": "existing Perps carry funding spread and authentic external referral families; margin and liquidation are cost and risk constraints rather than new cash flows"
+      }
+    ],
+    "non_edge_operational_groups": [
+      {
+        "pages": [
+          "https://docs.polymarket.com/trading/session-keys.md",
+          "https://docs.polymarket.com/trading/matching-engine.md"
+        ],
+        "reason": "authentication and restart-state execution controls do not create a payoff or cash flow"
+      },
+      {
+        "pages": [
+          "https://docs.polymarket.com/trading/bridge/deposit.md",
+          "https://docs.polymarket.com/trading/bridge/supported-assets.md",
+          "https://docs.polymarket.com/trading/bridge/quote.md",
+          "https://docs.polymarket.com/trading/bridge/withdraw.md",
+          "https://docs.polymarket.com/trading/bridge/status.md"
+        ],
+        "reason": "bridge routes convert and transfer collateral with quoted fees and delay but the index provides no price discrepancy rebate yield or settlement right"
+      },
+      {
+        "pages": [
+          "https://docs.polymarket.com/perps/learn-about-trading/mark-price.md",
+          "https://docs.polymarket.com/perps/learn-about-trading/index-price.md",
+          "https://docs.polymarket.com/perps/learn-about-trading/market-sessions.md"
+        ],
+        "reason": "valuation and session-state mechanics constrain execution and liquidation but are not standalone direction-independent edges"
+      }
+    ]
+  },
+  "decision": {
+    "promote_new_hypothesis": false,
+    "request_linked_pages": false,
+    "request_market_data": false,
+    "retry_trigger": "official llms.txt response SHA changes from 68256fa9849e72626806cbc7373f726421fd6d62dddecc0ae3a8009595bd2b8d and an offline title or description diff identifies a genuinely new economic mechanism outside the registry aliases",
+    "do_not_repeat": "do not re-fetch the same index or open linked pages from this snapshot; the source-only novelty gate ended before market data"
+  },
+  "authority_used": {
+    "public_unauthenticated_read_only": true,
+    "credentials": false,
+    "account_state": false,
+    "orders_or_mutations": false,
+    "protected_capture": false
+  }
+}

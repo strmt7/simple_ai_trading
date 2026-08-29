@@ -1,0 +1,64 @@
+{
+  "schema_version": "polymarket-official-docs-mechanism-inventory-contract-v1",
+  "status": "frozen_before_public_documentation_access",
+  "frozen_at_utc": "2026-08-29T22:51:09.2252243Z",
+  "contract_sha256": "74932c7a4a14217d2dbf419203ae252cd8666cfae52b58f8ea59613d4adb8d3d",
+  "purpose": "capture one current official Polymarket documentation index and identify genuinely new market-direction-independent reward fee settlement conversion or execution mechanisms before any market-data request",
+  "authority": {
+    "public_unauthenticated_read_only_research": true,
+    "network_requests_permitted": 1,
+    "venue_market_data_requests_permitted": 0,
+    "credentials_permitted": false,
+    "account_state_permitted": false,
+    "orders_or_mutations_permitted": false,
+    "protected_capture_access_permitted": false,
+    "accepted_edge_from_this_stage_permitted": false
+  },
+  "source": {
+    "method": "GET",
+    "url": "https://docs.polymarket.com/llms.txt",
+    "endpoint_classification": "public unauthenticated static official documentation index; not an account market order or state-changing endpoint",
+    "request_body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "timeout_seconds": 30
+  },
+  "retention": {
+    "raw_path": "data/polymarket-official-docs-mechanism-inventory-v1/raw/llms.txt",
+    "journal_path": "data/polymarket-official-docs-mechanism-inventory-v1/request-journal.jsonl",
+    "intent_before_access": true,
+    "retain_http_error_body": true,
+    "retain_complete_index": true,
+    "bounded_console_output": true
+  },
+  "offline_classification": {
+    "mechanism_terms": [
+      "affiliate",
+      "builder",
+      "conversion",
+      "fee",
+      "gasless",
+      "holding reward",
+      "incentive",
+      "liquidity reward",
+      "maker rebate",
+      "merge",
+      "negative risk",
+      "referral",
+      "relayer",
+      "reward",
+      "rfq",
+      "split",
+      "staking",
+      "yield"
+    ],
+    "candidate_boundary": "an official current page must describe a distinct economic cash flow cost reduction settlement right or executable package absent from mechanism aliases and canonical sources in the structural registry",
+    "duplicate_boundary": "a renamed page product surface or implementation guide for an existing payoff identity updates that family only and cannot create a new hypothesis",
+    "promotion_boundary": "none; a novel page may only nominate a separately frozen source and economic gate"
+  },
+  "stop_rules": [
+    "do not request any linked page until the complete retained index is deduplicated against the registry",
+    "do not request market data books fees accounts or orders in this stage",
+    "do not adapt terms after viewing the index",
+    "do not infer a cash flow from an SDK API or integration page title",
+    "preserve any HTTP or parse failure and do not rerun this contract"
+  ]
+}

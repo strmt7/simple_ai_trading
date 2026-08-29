@@ -12,7 +12,7 @@ ARTIFACT = ROOT / "docs/model-research/action-value" / (
 )
 REGISTRY = ROOT / "docs/model-research/structural-edge-priority-registry-v1.json"
 ARTIFACT_HASH = "f638cb6f565c1ee18c9dc065c5f4fc6506442f00833193d23c287bdf9d8ec74d"
-REGISTRY_HASH = "98714cb8665d2132cb53670f09e73d11816cdbb7a9c3bc221dce4db4f865f98d"
+REGISTRY_HASH = "a94c524d3c73dfdf52275b384b8c18d84314ceb53be57ae744df258cbe7cdef0"
 
 
 def _load(path: Path) -> dict[str, object]:
