@@ -124,6 +124,12 @@ override prose.
   exact economic identities. If a consumed one-use run exposes such a mismatch,
   preserve its journal and raw responses, fail closed, and do not spend a repair
   capture when the retained evidence cannot change the economic decision.
+- Treat every conjunctive retry trigger literally: each event, time, authority,
+  and data-state clause needs independent evidence before the triggered action.
+  A passed date does not prove that a required market event occurred. If one
+  public request is itself the preregistered event-discovery observation, label
+  it that way, freeze its one-use consequences, and never reinterpret a null
+  result as permission for an adaptive poll or conditional downstream capture.
 - Before claiming complete coverage from a paginated public catalog, prove a
   source-bound population/page ceiling or freeze an explicitly partial rank or
   cursor boundary. A non-null cursor at the request ceiling is incomplete, not

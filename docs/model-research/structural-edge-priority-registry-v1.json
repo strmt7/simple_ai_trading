@@ -1346,12 +1346,16 @@
         {
           "path": "docs/model-research/action-value/binance-bstock-dividend-perp-funding-timing-gap-candidate-v1-2026-08-27.json",
           "result_sha256": "c073b61271886a5add71c2578caa889dfb97b1245327ae746bd517a91e52530d"
+        },
+        {
+          "path": "docs/model-research/action-value/binance-glw-special-funding-trigger-result-v1-2026-08-29.json",
+          "result_sha256": "823448f115ecf7fe3e7fe8862855f40dfd351ed041fce2aa94196d069c8d585a"
         }
       ],
-      "current_status": "materially_new_market_direction_independent_GLW_weekend_ex_date_to_bStock_snapshot_timing_gap_candidate_only_if_the_actual_gross_dividend_perpetual_adjustment_precedes_the_bStock_snapshot_historical_AMAT_and_MSFT_rows_close_the_direct_same_day_capture_but_no_GLW_adjustment_post_adjustment_executable_books_positive_net_distribution_floor_after_cost_recurrence_or_profit_is_proved_not_accepted_or_deployment_ready",
+      "current_status": "one_use_2026_08_29_pre_snapshot_GLWUSDT_history_observation_retained_eight_Regular_rows_zero_Special_rows_and_zero_negative_rows_so_the_conditional_book_batch_was_prohibited_the_future_event_remains_unresolved_and_no_adjustment_post_adjustment_executable_books_positive_net_distribution_floor_after_cost_recurrence_or_profit_is_proved_not_accepted_or_deployment_ready",
       "market_direction_forecast_required": false,
       "mechanism": "binance_bstock_dividend_perpetual_funding_timing_gap",
-      "next_action": "after_2026_08_28_check_GLWUSDT_funding_history_once_and_only_if_an_actual_special_negative_row_matches_the_0_28_gross_dividend_within_one_micro_USDT_then_after_the_conversion_pause_capture_one_synchronized_public_depth_20_spot_perpetual_book_batch_before_the_deposit_withdrawal_pause",
+      "next_action": "do_not_repeat_the_consumed_pre_snapshot_observation_or_capture_2026_GLW_books_after_2026_08_31T00_00_00Z_freeze_one_terminal_history_reconciliation_for_mechanism_evidence_only_then_reopen_a_future_independent_weekend_event_only_under_a_new_prospective_contract",
       "priority_rank": 34,
       "prohibited_shortcuts": [
         "assuming_the_GLW_special_funding_timestamp_from_AMAT_and_MSFT",
@@ -1359,10 +1363,11 @@
         "crediting_the_0_28_gross_dividend_when_bStock_receives_only_net_reinvestment",
         "closing_and_reopening_the_perpetual_without_pricing_the_unhedged_entitlement_repricing_interval",
         "using_one_minute_closes_as_executable_or_synchronized_quotes",
+        "treating_the_passed_conversion_pause_as_proof_that_the_required_Special_row_had_occurred_or_polling_after_the_consumed_null_observation",
         "calling_one_calendar_gap_recurrence_profit_or_an_accepted_edge",
         "placing_orders_or_accessing_account_state_without_separate_explicit_authority"
       ],
-      "retry_trigger": "actual_GLWUSDT_special_negative_dividend_funding_row_observed_before_2026_08_31T00_00_00Z_and_2026_08_28T23_30_00Z_conversion_pause_passed",
+      "retry_trigger": "after_2026_08_31T00_00_00Z_freeze_one_terminal_GLWUSDT_history_reconciliation_for_mechanism_evidence_only_no_2026_GLW_book_capture",
       "venue_scope": "binance_GLWBUSDT_bStock_and_GLWUSDT_TradFi_perpetual_weekend_dividend_adjustment_timing_gap"
     },
     {
@@ -1570,7 +1575,7 @@
       "venue_scope": "Binance_XAU_XAG_USDT_long_only_commodity_options_and_matching_TradFi_perpetuals"
     }
   ],
-  "result_sha256": "97d05d2f718f078bb6c890be30b65e64af5a9408419e8a3c58eedcc7452e80d8",
+  "result_sha256": "44fdf0cba6b97bcf40c407bc78cedbdbf8051ff1b7e40267b5bc4db629abb22a",
   "schema_version": "structural-edge-priority-registry-v1",
   "terminal_do_not_repeat": [
     {
@@ -1739,6 +1744,6 @@
       "reason": "the_exact_70_day_2026_06_18_through_2026_08_26_extension_had_full_hourly_coverage_but_the_primary_BTC_ETH_equal_weight_after_20_bips_and_exact_entry_exit_basis_annualized_only_1_2030087925_percent_and_every_asset_BTC_ETH_SOL_DOGE_trailed_the_same_timestamp_3_86_percent_DGS3MO_hurdle_do_not_refit_or_resample_until_a_material_venue_fee_funding_basis_or_hurdle_change_occurs"
     }
   ],
-  "updated_at_utc": "2026-08-29T13:34:14Z",
+  "updated_at_utc": "2026-08-29T13:43:54Z",
   "usage_rule": "advance_the_highest_ranked_hypothesis_whose_retry_trigger_is_satisfied_otherwise_do_not_repeat_a_blocked_or_terminal_screen"
 }

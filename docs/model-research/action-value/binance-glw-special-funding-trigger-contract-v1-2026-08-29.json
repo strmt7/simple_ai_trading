@@ -1,0 +1,68 @@
+{
+  "acceptance": {
+    "declared_gross_dividend_per_share_usd": "0.28",
+    "funding_debit_formula": "abs(fundingRate) * markPrice",
+    "funding_time_must_be_before_ms": 1788134400000,
+    "history_gate": "exactly_one_row_with_symbol_GLWUSDT_rateType_Special_negative_fundingRate_and_per_unit_debit_within_tolerance",
+    "per_unit_debit_absolute_tolerance_usd": "0.000001",
+    "post_gate_rule": "Issue the frozen conditional batch only after the history response is durably retained and the exact history gate passes. Any missing field, non-200 response, absent book side, absent filter, or unmatched depth fails closed.",
+    "profitability_boundary": "The conditional book capture is diagnostic only. Public net bStock distribution remains floored at zero, so no accepted-edge or profitability claim is permitted without source-bound positive net distribution and complete entry, exit, funding, fee, tax, latency, capital, and operational costs."
+  },
+  "authority": {
+    "account_access": false,
+    "credentials_used": false,
+    "funds_used": false,
+    "orders_or_mutations": 0,
+    "trading_authority": false
+  },
+  "conditional_batch": [
+    {
+      "label": "GLWBUSDT_spot_depth20",
+      "method": "GET",
+      "url": "https://api.binance.com/api/v3/depth?symbol=GLWBUSDT&limit=20"
+    },
+    {
+      "label": "GLWUSDT_perpetual_depth20",
+      "method": "GET",
+      "url": "https://fapi.binance.com/fapi/v1/depth?symbol=GLWUSDT&limit=20"
+    },
+    {
+      "label": "GLWUSDT_current_funding",
+      "method": "GET",
+      "url": "https://fapi.binance.com/fapi/v1/premiumIndex?symbol=GLWUSDT"
+    },
+    {
+      "label": "GLWBUSDT_spot_filters",
+      "method": "GET",
+      "url": "https://api.binance.com/api/v3/exchangeInfo?symbol=GLWBUSDT"
+    },
+    {
+      "label": "GLWUSDT_perpetual_filters",
+      "method": "GET",
+      "url": "https://fapi.binance.com/fapi/v1/exchangeInfo"
+    }
+  ],
+  "conditional_batch_latest_finish_utc": "2026-08-30T23:30:00Z",
+  "contract_sha256": "6cc017e4060fa419b3746b2064d01da8f2ddd24d4839f204c1e519c56dec7d50",
+  "frozen_before_access": true,
+  "history_request": {
+    "label": "GLWUSDT_special_funding_history",
+    "method": "GET",
+    "url": "https://fapi.binance.com/fapi/v1/fundingRate?symbol=GLWUSDT&startTime=1787788800000&endTime=1788134400000&limit=100"
+  },
+  "maximum_requests": 6,
+  "not_before_utc": "2026-08-28T23:30:00Z",
+  "retry_policy": "one_attempt_per_exact_request_no_retry",
+  "schema_version": "binance-glw-special-funding-trigger-contract-v1",
+  "security_classification": {
+    "account_or_mutation_semantics": false,
+    "classification": "public_unauthenticated_read_only_official_market_data",
+    "official_documentation": [
+      "https://developers.binance.com/docs/derivatives/change-log",
+      "https://developers.binance.com/docs/derivatives/usds-margined-futures/market-data/rest-api/Get-Funding-Rate-History"
+    ]
+  },
+  "source_candidate": "docs/model-research/action-value/binance-bstock-dividend-perp-funding-timing-gap-candidate-v1-2026-08-27.json",
+  "trigger": "The GLW 2026-08-28 ex-date and 2026-08-28T23:30:00Z bStock conversion pause have passed, while the 2026-08-31T00:00:00Z bStock snapshot has not.",
+  "updated_at_utc": "2026-08-29T13:39:32Z"
+}

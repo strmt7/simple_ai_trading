@@ -10,9 +10,13 @@ ROOT = Path(__file__).resolve().parents[1]
 ARTIFACT = ROOT / "docs/model-research/action-value" / (
     "binance-bstock-dividend-perp-funding-timing-gap-candidate-v1-2026-08-27.json"
 )
+TRIGGER_RESULT = ROOT / "docs/model-research/action-value" / (
+    "binance-glw-special-funding-trigger-result-v1-2026-08-29.json"
+)
 REGISTRY = ROOT / "docs/model-research/structural-edge-priority-registry-v1.json"
 EXPECTED_HASH = "c073b61271886a5add71c2578caa889dfb97b1245327ae746bd517a91e52530d"
-REGISTRY_HASH = "97d05d2f718f078bb6c890be30b65e64af5a9408419e8a3c58eedcc7452e80d8"
+TRIGGER_RESULT_HASH = "823448f115ecf7fe3e7fe8862855f40dfd351ed041fce2aa94196d069c8d585a"
+REGISTRY_HASH = "44fdf0cba6b97bcf40c407bc78cedbdbf8051ff1b7e40267b5bc4db629abb22a"
 
 
 def _load(path: Path) -> dict[str, object]:
@@ -100,6 +104,21 @@ def test_only_glw_has_the_preregistered_weekend_gap() -> None:
     assert "net distribution floor remains zero" in gate["stop_conditions"]
 
 
+def test_glw_one_use_observation_blocks_conditional_books() -> None:
+    result = _load(TRIGGER_RESULT)
+
+    assert result["result_sha256"] == TRIGGER_RESULT_HASH
+    assert _canonical_hash(result) == TRIGGER_RESULT_HASH
+    assert result["history_row_count"] == 8
+    assert result["history_observed_rate_types"] == ["Regular"]
+    assert result["history_special_row_count"] == 0
+    assert result["conditional_batch_executed"] is False
+    assert result["request_count"] == 1
+    assert result["accepted_edge"] is False
+    assert result["profitability_claim"] is False
+    assert "terminal_history_reconciliation" in result["next_retry_trigger"]
+
+
 def test_registry_adds_candidate_and_closes_only_direct_family() -> None:
     registry = _load(REGISTRY)
 
@@ -116,7 +135,8 @@ def test_registry_adds_candidate_and_closes_only_direct_family() -> None:
     )
     assert candidate["priority_rank"] == 34
     assert candidate["market_direction_forecast_required"] is False
-    assert "actual_GLWUSDT_special_negative" in candidate["retry_trigger"]
+    assert "after_2026_08_31" in candidate["retry_trigger"]
+    assert candidate["canonical_artifacts"][-1]["result_sha256"] == TRIGGER_RESULT_HASH
     terminal = next(
         row
         for row in registry["terminal_do_not_repeat"]
