@@ -19,11 +19,12 @@ SMART_ARBITRAGE_PATH = ACTION_VALUE / (
     "binance-smart-arbitrage-terminal-family-adjudication-v1-2026-08-26.json"
 )
 BUILDER_HASH = "8c070b6a4b07070ffdd5ba703da1ca3788faffcb4d748633a18269dc02c17885"
+RELAYER_HASH = "1c33e778d217ec5e7ef817e83af3186df7da0e5dd0cc75cb72464bfd97d18d49"
 BFUSD_HASH = "54fe3d3e23a92290debdc67d1e7e19ecac6c06441c045f1aa21fe3e62558c03c"
 SMART_ARBITRAGE_HASH = (
     "03b652fcd7e50c0671abbfb73f68f69509a2e5d7f75d8166f6b74743eab630d3"
 )
-REGISTRY_HASH = "ff5b41b572833ff0eed459098a2f93d1d62fed03891616b9a1fa71bc832f887e"
+REGISTRY_HASH = "0a34d7289331515f8e7b3f09e856fbc331ecbc3a91130fea20542a39ef211f60"
 
 
 def _load(path: Path) -> dict[str, object]:
@@ -148,7 +149,15 @@ def test_registry_binds_new_edge_conflict_and_terminal_adjudication() -> None:
                 "polymarket-organic-third-party-builder-fee-overlay-v1-2026-08-26.json"
             ),
             "result_sha256": BUILDER_HASH,
-        }
+        },
+        {
+            "path": (
+                "docs/model-research/action-value/"
+                "polymarket-organic-relayer-gas-subsidy-and-builder-tier-"
+                "reward-v1-2026-08-29.json"
+            ),
+            "result_sha256": RELAYER_HASH,
+        },
     ]
 
     stable_yield = next(

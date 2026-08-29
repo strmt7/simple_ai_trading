@@ -1071,18 +1071,24 @@
         "independently existing bona fide third-party user flow with explicit fee disclosure and consent",
         "owned attributed matched notional exact fee accrual and wallet payout in pUSD",
         "matched-volume demand elasticity retention support compliance tax custody and operating costs",
-        "applicable jurisdiction consumer protection and Builder Program eligibility"
+        "applicable jurisdiction consumer protection and Builder Program eligibility",
+        "for the gas-subsidy submechanism exact supported wallet active Relayer key tier or own-wallet limit remaining capacity independently required operation owned successful receipt sponsored gas and no separate service fee or setup-cost deficit",
+        "for weekly USDC rewards or grants a deterministic published or account-approved formula threshold allocation cap timing award and owned payout"
       ],
       "canonical_artifacts": [
         {
           "path": "docs/model-research/action-value/polymarket-organic-third-party-builder-fee-overlay-v1-2026-08-26.json",
           "result_sha256": "8c070b6a4b07070ffdd5ba703da1ca3788faffcb4d748633a18269dc02c17885"
+        },
+        {
+          "path": "docs/model-research/action-value/polymarket-organic-relayer-gas-subsidy-and-builder-tier-reward-v1-2026-08-29.json",
+          "result_sha256": "1c33e778d217ec5e7ef817e83af3186df7da0e5dd0cc75cb72464bfd97d18d49"
         }
       ],
-      "current_status": "accepted_scoped_current_direction_independent_gross_pUSD_builder_fee_overlay_only_on_bona_fide_independently_existing_third_party_matched_orders_the_official_formula_is_notional_times_configured_rate_bps_over_10000_with_100_bps_taker_and_50_bps_maker_maxima_account_eligibility_active_rate_external_flow_owned_payout_demand_effects_and_all_costs_unproved_not_deployment_ready",
+      "current_status": "accepted_scoped_direction_independent_builder_fee_overlay_only_on_bona_fide_independently_existing_third_party_matched_orders_current_Relayer_gas_subsidy_is_a_distinct_unaccepted_cost_reduction_candidate_because_owned_active_key_operation_receipt_counterfactual_gas_and_all_costs_are_unproved_weekly_USDC_rewards_and_grants_have_zero_public_floor_because_both_are_subject_to_approval_and_publish_no_formula_not_deployment_ready",
       "market_direction_forecast_required": false,
       "mechanism": "polymarket_organic_third_party_builder_fee_overlay",
-      "next_action": "do_not_create_or_reroute_volume_when_explicit_read_only_account_authority_and_ephemeral_credentials_exist_prove_the_active_builder_code_fee_eligibility_configured_rates_owned_bona_fide_third_party_attributed_matches_and_pUSD_payouts_then_bind_demand_and_operating_costs_before_any_net_profit_claim",
+      "next_action": "do_not_create_reroute_or_split_volume_or_transactions_for_builder_fees_prove_active_builder_configuration_bona_fide_attributed_matches_and_owned_payouts_only_with_explicit_read_only_authority_for_gas_subsidy_only_when_an_independently_required_supported_operation_and_active_Relayer_key_already_exist_prove_wallet_tier_capacity_expected_saving_and_after_execution_owned_receipt_under_separate_transaction_authority_for_weekly_rewards_or_grants_wait_for_a_deterministic_public_formula_or_account_confirmed_award",
       "priority_rank": 24,
       "prohibited_shortcuts": [
         "operator_self_referral_related_party_wash_circular_or_manufactured_activity",
@@ -1090,10 +1096,13 @@
         "silently_charging_users_or_ignoring_required_disclosure_consent_and_legal_obligations",
         "crediting_maximum_rates_when_the_exact_active_configured_side_rate_is_unknown",
         "counting_unmatched_orders_leaderboard_volume_grants_weekly_discretionary_rewards_gas_subsidies_or_maker_rebates_as_builder_fees",
+        "creating_splitting_retrying_or_rerouting_transactions_only_to_consume_sponsored_gas_or_counting_sponsorship_when_the_action_would_not_otherwise_exist",
+        "crediting_weekly_USDC_rewards_grants_support_marketing_priority_access_or_rate_limits_as_cash_without_exact_owned_award_and_payout",
+        "double_counting_the_same_gas_cost_builder_fee_reward_or_operation_across_submechanisms",
         "calling_gross_builder_fee_after_cost_profit_without_owned_payout_and_demand_and_operating_costs"
       ],
-      "retry_trigger": "account_confirmed_active_positive_builder_fee_configuration_plus_independently_existing_bona_fide_third_party_flow_and_explicit_read_only_evidence_authority_separate_mutation_and_trading_authority_for_any_profile_rate_order_relayer_transfer_or_withdrawal_action",
-      "venue_scope": "polymarket_external_user_orders_routed_through_owned_application"
+      "retry_trigger": "for_builder_fees_account_confirmed_active_positive_configuration_plus_independently_existing_bona_fide_third_party_flow_and_explicit_read_only_evidence_authority_or_for_gas_subsidy_existing_active_Relayer_key_plus_independently_required_supported_wallet_operation_plus_explicit_read_only_prequalification_authority_or_for_weekly_rewards_and_grants_a_deterministic_public_formula_or_account_confirmed_approved_award_separate_authority_for_every_profile_key_rate_order_relayer_signature_transaction_transfer_or_withdrawal_action",
+      "venue_scope": "polymarket_external_user_orders_routed_through_owned_application_and_supported_smart_wallet_Relayer_operations"
     },
     {
       "blocking_evidence": [
@@ -2074,7 +2083,7 @@
       "venue_scope": "Binance_Spot_direct_and_exactly_one_intermediary_routes_for_independently_required_organic_conversions_with_the_exactly_two_intermediary_extension_terminal_for_the_retained_population"
     }
   ],
-  "result_sha256": "ff5b41b572833ff0eed459098a2f93d1d62fed03891616b9a1fa71bc832f887e",
+  "result_sha256": "0a34d7289331515f8e7b3f09e856fbc331ecbc3a91130fea20542a39ef211f60",
   "schema_version": "structural-edge-priority-registry-v1",
   "terminal_do_not_repeat": [
     {
@@ -2298,6 +2307,6 @@
       "reason": "the_one_use_current_official_llms_index_contained_80_top_level_English_markdown_pages_but_zero_distinct_economic_mechanisms_outside_existing_registry_families_do_not_refetch_this_snapshot_or_open_linked_pages_until_the_index_SHA_changes_and_an_offline_title_or_description_diff_identifies_a_genuinely_new_cash_flow_cost_reduction_settlement_right_or_executable_package"
     }
   ],
-  "updated_at_utc": "2026-08-29T23:13:09Z",
+  "updated_at_utc": "2026-08-29T23:23:47Z",
   "usage_rule": "advance_the_highest_ranked_hypothesis_whose_retry_trigger_is_satisfied_otherwise_do_not_repeat_a_blocked_or_terminal_screen"
 }

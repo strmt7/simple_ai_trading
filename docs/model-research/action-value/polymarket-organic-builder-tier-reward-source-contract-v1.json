@@ -1,0 +1,57 @@
+{
+  "schema_version": "polymarket-organic-builder-tier-reward-source-contract-v1",
+  "status": "frozen_before_public_source_access",
+  "frozen_at_utc": "2026-08-29T23:19:37.0995248Z",
+  "contract_sha256": "87ff005cd29184501aa9bb17d450a1112f0f8324fe9ad7bd248c375f30b7698f",
+  "purpose": "determine whether current Polymarket Builder tiers expose a deterministic direction-independent reward distinct from per-order builder fees for bona fide independently existing third-party flow",
+  "novelty_boundary": {
+    "existing_family": "rank 24 already accepts only configured builder fees on bona fide independently existing third-party matched orders",
+    "distinct_question": "whether tier rewards or grants create a separately measurable cash flow on the same authentic external flow",
+    "routing": "update rank 24 rather than create a duplicate builder family"
+  },
+  "authority": {
+    "public_unauthenticated_read_only_research": true,
+    "network_requests_permitted": 1,
+    "venue_market_data_requests_permitted": 0,
+    "credentials_permitted": false,
+    "account_state_permitted": false,
+    "orders_content_publication_referrals_or_mutations_permitted": false,
+    "protected_capture_access_permitted": false,
+    "accepted_edge_from_source_stage_permitted": false
+  },
+  "source": {
+    "method": "GET",
+    "url": "https://docs.polymarket.com/programs/builders/tiers.md",
+    "endpoint_classification": "public unauthenticated static official documentation page; not an account order profile or state-changing endpoint",
+    "request_body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "timeout_seconds": 30
+  },
+  "retention": {
+    "raw_path": "data/polymarket-organic-builder-tier-reward-source-v1/raw/tiers.md",
+    "journal_path": "data/polymarket-organic-builder-tier-reward-source-v1/request-journal.jsonl",
+    "intent_before_access": true,
+    "retain_http_error_body": true,
+    "bounded_console_output": true
+  },
+  "source_questions": [
+    "which tiers exist and what exact matched-volume or account conditions qualify",
+    "which rewards grants rebates credits or subsidies are published for each tier",
+    "whether reward amounts timing and payout are deterministic or discretionary",
+    "whether builder fees and tier rewards can coexist without double counting",
+    "whether self orders related parties wash flow or manufactured volume are excluded",
+    "which account region application compliance and ongoing-review gates remain"
+  ],
+  "decision_rules": {
+    "accepted_candidate": "only a published deterministic positive cash flow attached to independently existing bona fide external flow may pass to an economic gate",
+    "zero_public_floor": "a grant reward or support benefit described only as eligible possible available up to or discretionary has a zero public forward floor",
+    "organic_flow_only": "never create enlarge reroute subsidize or request trades to reach a tier or unlock a reward",
+    "promotion_boundary": "no accepted edge from documentation alone; exact owned tier attribution payout demand effects compliance and operating costs remain mandatory"
+  },
+  "stop_rules": [
+    "make exactly one documentation request and do not follow links",
+    "stop before market data builder profiles accounts orders or mutations",
+    "do not credit rate limits technical support or gas sponsorship as cash profit",
+    "do not use maximum grant language as an expected or guaranteed payout",
+    "preserve the result and do not rerun this source contract"
+  ]
+}

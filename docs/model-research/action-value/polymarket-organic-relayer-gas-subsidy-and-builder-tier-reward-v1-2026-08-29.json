@@ -1,0 +1,111 @@
+{
+  "schema_version": "polymarket-organic-relayer-gas-subsidy-and-builder-tier-reward-v1",
+  "status": "relayer_gas_cost_reduction_candidate_account_economics_unproved_weekly_rewards_and_grants_unaccepted",
+  "created_at_utc": "2026-08-29T23:20:26.2089466Z",
+  "result_sha256": "1c33e778d217ec5e7ef817e83af3186df7da0e5dd0cc75cb72464bfd97d18d49",
+  "contract": {
+    "path": "docs/model-research/action-value/polymarket-organic-builder-tier-reward-source-contract-v1.json",
+    "contract_sha256": "87ff005cd29184501aa9bb17d450a1112f0f8324fe9ad7bd248c375f30b7698f"
+  },
+  "source": {
+    "method": "GET",
+    "url": "https://docs.polymarket.com/programs/builders/tiers.md",
+    "http_status": 200,
+    "raw_path": "data/polymarket-organic-builder-tier-reward-source-v1/raw/tiers.md",
+    "raw_bytes": 6200,
+    "raw_sha256": "d4f39daa9d694fbd7aa7016c0bdfaf1578e0612bb0a52315986c3a14978bb8dc",
+    "journal_path": "data/polymarket-organic-builder-tier-reward-source-v1/request-journal.jsonl",
+    "journal_sha256": "a1261a607be8d325fffc97b92ccf270f156e576df22e1de3ff630fde7e7d0b0f",
+    "network_requests_used": 1
+  },
+  "official_tier_terms": {
+    "gasless_trading": "gas fees are subsidized for supported smart-wallet operations",
+    "unverified": {
+      "approval_required": false,
+      "daily_relayer_transaction_limit": 100,
+      "gas_subsidy_scope": "all Relayer transactions up to the daily limit"
+    },
+    "verified": {
+      "manual_approval_required": true,
+      "daily_relayer_transaction_limit": 10000,
+      "weekly_USDC_rewards": "based on volume and subject to approval",
+      "grants": "subject to approval"
+    },
+    "partner": {
+      "approval_required": true,
+      "daily_relayer_transaction_limit": "unlimited",
+      "other_benefits": "highest API limits elevated support marketing support and priority access"
+    },
+    "own_wallet_exception": "the FAQ says an account needing more Relay capacity only for its own wallet can obtain a Relayer API key for unlimited daily transactions"
+  },
+  "gas_subsidy_candidate": {
+    "accepted_edge": false,
+    "accepted_edge_count_change": 0,
+    "market_direction_forecast_required": false,
+    "standalone_profitability_claim": false,
+    "deployment_ready": false,
+    "public_forward_profit_floor_pUSD": "0",
+    "scope": "current Polymarket Relayer gas subsidy only on independently justified supported Deposit Safe or Proxy wallet operations within the exact current account tier or own-wallet Relayer-key limit without creating extra transactions to obtain the subsidy",
+    "gross_value_formula": "the exact user-paid gas cost avoided for the same independently required successful supported onchain action capped by the actual sponsored transaction cost and reduced by every profile key approval support compliance failure retry and operating cost",
+    "zero_activity_floor_pUSD": "0",
+    "account_gates": [
+      "exact supported wallet type and current active Relayer API key",
+      "exact tier or own-wallet limit and remaining capacity",
+      "the onchain action is independently required and positive before subsidy",
+      "owned successful relayed transaction and exact sponsored gas receipt",
+      "no separate Relayer service fee reimbursement clawback or unpriced setup cost",
+      "same-unit pUSD valuation only from an exact executable conversion when needed"
+    ],
+    "why_structural": "the subsidy reduces an onchain execution cost without depending on whether the underlying market rises or falls",
+    "why_not_accepted": "the frozen contract forbids source-stage promotion and public documentation proves neither an owned active key and eligible operation nor exact sponsored gas exact same-action counterfactual gas and all setup operating failure and conversion costs",
+    "why_not_standalone_profit": "no action means no saved gas and unnecessary actions destroy value rather than create it"
+  },
+  "unaccepted_tier_cash_rewards": {
+    "weekly_USDC_reward_candidate": true,
+    "grant_candidate": true,
+    "accepted_edge": false,
+    "public_forward_floor_USDC": "0",
+    "reason": "both benefits are subject to approval and the page publishes no rate threshold allocation formula cap payment schedule guaranteed duration or current account award",
+    "retry_trigger": "published deterministic weekly reward or grant formula with exact eligibility allocation cap timing and anti-abuse terms or account-confirmed approved award plus explicit read-only evidence authority"
+  },
+  "non_cash_features": {
+    "accepted_as_edges": false,
+    "items": [
+      "API rate limits",
+      "leaderboard visibility",
+      "Telegram channel",
+      "engineering support",
+      "marketing support",
+      "priority feature access"
+    ],
+    "reason": "technical capacity visibility and support have no source-bound deterministic cash value"
+  },
+  "family_routing": {
+    "priority_rank": 24,
+    "existing_mechanism": "polymarket_organic_third_party_builder_fee_overlay",
+    "relationship": "gas subsidy is a distinct cost-reduction submechanism while weekly rewards and grants remain zero-floor candidates; none may be double-counted as builder-fee revenue"
+  },
+  "prohibited_shortcuts": [
+    "creating enlarging splitting retrying or rerouting transactions solely to consume sponsored gas",
+    "creating or increasing third-party trading volume to obtain verification weekly rewards grants or higher limits",
+    "self trading related-party routing wash trading circular activity or inauthentic attribution",
+    "crediting weekly USDC rewards grants support marketing priority access or maximum limits as cash before exact owned award and payout",
+    "counting sponsored gas when the user would not otherwise have submitted the action",
+    "double-counting gas subsidy with builder fees holding yield maker rebates or another cost line",
+    "creating a builder profile API key approval or transaction without separate explicit authority",
+    "calling gross avoided gas after-cost profit without exact receipt counterfactual and operating costs"
+  ],
+  "next_action": {
+    "read_only_trigger": "existing active Relayer key plus an independently required supported wallet operation and explicit read-only account evidence authority",
+    "prequalification": "prove wallet support tier or own-wallet capacity current key state and exact expected gas-saving ceiling before the operation",
+    "execution_trigger": "separate explicit authority for the exact independently justified operation approval signature and submission",
+    "reconciliation": "bind the owned transaction receipt sponsored gas exact counterfactual same-action user gas and all setup retry support compliance and operating costs"
+  },
+  "authority_used": {
+    "public_unauthenticated_read_only": true,
+    "credentials": false,
+    "account_state": false,
+    "orders_content_publication_referrals_or_mutations": false,
+    "protected_capture": false
+  }
+}

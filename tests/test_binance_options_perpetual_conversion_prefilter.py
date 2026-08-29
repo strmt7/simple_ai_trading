@@ -45,7 +45,7 @@ STRESS_CONTRACT_HASH = (
     "5ac091035b9eeadda23292fa28631dcc7c8bb0b64e001faa34c94ffad5b6ecc5"
 )
 STRESS_RESULT_HASH = "c09d62e98cd0df88622d4b98d9d8f01247121ccd786fffb580bc72429ef6bf30"
-REGISTRY_HASH = "ff5b41b572833ff0eed459098a2f93d1d62fed03891616b9a1fa71bc832f887e"
+REGISTRY_HASH = "0a34d7289331515f8e7b3f09e856fbc331ecbc3a91130fea20542a39ef211f60"
 
 
 def _canonical_hash(payload: dict[str, object], field: str) -> str:
