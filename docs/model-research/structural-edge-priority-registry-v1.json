@@ -1222,7 +1222,7 @@
     },
     {
       "blocking_evidence": [
-        "future active NBA full-game same-game moneyline and spread pair with exact source-proved team handicap overtime push tie cancellation postponement forfeit and correction resolution mapping",
+        "future active NBA or WNBA full-game same-game moneyline and spread pair with exact source-proved team handicap overtime push tie cancellation postponement forfeit and correction resolution mapping",
         "current per-market feesEnabled feeSchedule rate exponent takerOnly rebateRate tick size minimum order size and acceptingOrders state",
         "exact per-market configured sports taker-delay duration and phase plus independently delayed leg state transitions",
         "recurrent synchronized batch-book all-taker violations after exact fee rounding displayed bottleneck depth and frozen latency cancellation orphan and external-cost stress",
@@ -1237,12 +1237,28 @@
         {
           "path": "docs/model-research/action-value/polymarket-sports-taker-delay-maker-protection-gate-v1-2026-08-27.json",
           "result_sha256": "4847ec7828e598950da9a455170b66a529d9a5d671bfb4c37a57a36f608b9627"
+        },
+        {
+          "path": "docs/model-research/action-value/polymarket-current-wnba-exact-event-contract-v1-2026-08-29.json",
+          "result_sha256": "d129e73e922fac53d16143f18914ffa8c1eaff3e0a8a11e9f3bf2696ff3c5eee"
+        },
+        {
+          "path": "docs/model-research/action-value/polymarket-current-wnba-exact-event-result-v1-2026-08-29.json",
+          "result_sha256": "6851d26788abfd175b75649e573d341696e570ce76bc235b0c5a6070bdd72167"
+        },
+        {
+          "path": "docs/model-research/action-value/polymarket-current-wnba-monotone-parity-contract-v1-2026-08-29.json",
+          "result_sha256": "7ed7007e5b6580100c4e3fe0495475be2742cc536372e8dfc953a19dba0f80c8"
+        },
+        {
+          "path": "docs/model-research/action-value/polymarket-current-wnba-monotone-parity-result-v1-2026-08-29.json",
+          "result_sha256": "cc657982abd9ede0f0f7b18787df32e62c69b7c3b3e547ade3f6f3ccb734ed46"
         }
       ],
-      "current_status": "materially_reopened_distinct_direction_independent_live_NBA_full_game_moneyline_spread_payoff_implication_candidate_primary_2026_paper_reports_290_executable_episodes_and_101_01_bips_median_under_a_now_stale_zero_fee_assumption_current_official_sports_category_taker_rate_is_0_05_current_primary_rules_add_an_uncancellable_configured_sports_delay_to_each_marketable_leg_with_conflicting_one_second_NBA_test_and_three_second_general_help_terms_and_conflicting_15_or_20_percent_sports_rebates_exact_market_fee_delay_recurrence_resolution_and_fill_evidence_unproved_not_accepted_or_deployment_ready",
+      "current_status": "distinct_direction_independent_live_NBA_WNBA_full_game_moneyline_spread_payoff_implication_candidate_first_exact_active_WNBA_extension_Toronto_Phoenix_proved_three_one_pUSD_floor_packages_but_one_synchronized_four_token_batch_with_2132_millisecond_book_skew_found_zero_positive_packages_best_actual_loss_0_42436_pUSD_best_one_second_sensitivity_loss_0_62356_pUSD_and_best_three_second_sensitivity_loss_1_02076_pUSD_no_fee_requests_needed_because_every_package_was_already_gross_negative_exact_event_terminal_not_accepted_or_deployment_ready",
       "market_direction_forecast_required": false,
       "mechanism": "polymarket_live_NBA_moneyline_spread_monotone_payoff_implication",
-      "next_action": "do_not_resample_the_current_offseason_when_future_active_NBA_full_game_events_exist_first_source_prove_exhaustive_pair_payoffs_exact_current_market_fees_and_the_configured_sports_delay_phase_then_run_one_public_read_only_synchronized_batch_book_recurrence_capture_under_the_frozen_all_taker_contract_with_independent_one_and_three_second_delay_sensitivities_and_no_rebate_credit",
+      "next_action": "do_not_resample_Toronto_Phoenix_for_future_active_NBA_or_WNBA_exact_pairs_first_source_prove_exhaustive_payoffs_then_use_retained_Gamma_outcomePrices_as_a_rejection_only_optimistic_gate_request_one_frozen_exact_depth_batch_only_when_at_least_one_displayed_package_sum_is_below_its_guaranteed_payout_floor_and_require_independent_positive_after_cost_recurrence_before_escalation",
       "priority_rank": 30,
       "prohibited_shortcuts": [
         "reusing_the_paper_zero_fee_median_as_current_profit",
@@ -1251,11 +1267,12 @@
         "forward_filling_stale_asynchronous_books_or_using_post_game_quotes",
         "using_itode_or_the_crypto_250_millisecond_constant_as_a_sports_delay_or_assuming_a_pending_delayed_order_can_be_cancelled",
         "treating_synchronized_books_or_batch_submission_as_atomic_two_leg_execution_or_choosing_15_or_20_percent_from_conflicting_sports_rebate_pages",
+        "requesting_CLOB_books_when_every_Gamma_displayed_package_sum_is_already_at_or_above_the_guaranteed_payout_floor_or_using_Gamma_prices_to_accept_or_promote",
         "crediting_midpoints_last_trades_uncapped_depth_maker_fees_or_rebates_without_causal_owned_fills",
         "calling_public_recurrence_profitable_without_owned_both_leg_fill_reconciliation_and_all_external_costs"
       ],
-      "retry_trigger": "first_future_active_accepting_orders_NBA_full_game_event_with_source_proved_same_game_moneyline_spread_payoff_implication_and_exact_current_market_fee_schedules",
-      "venue_scope": "polymarket_future_NBA_full_game_same_game_moneyline_and_point_spread_markets"
+      "retry_trigger": "first_future_active_accepting_orders_NBA_or_WNBA_full_game_event_with_source_proved_same_game_moneyline_spread_payoff_implication_exact_current_market_fee_schedules_and_at_least_one_rejection_only_Gamma_displayed_package_sum_below_its_guaranteed_payout_floor_or_a_material_sports_price_fee_delay_or_resolution_rule_change",
+      "venue_scope": "polymarket_future_NBA_and_WNBA_full_game_same_game_moneyline_and_point_spread_markets"
     },
     {
       "blocking_evidence": [
@@ -1735,7 +1752,7 @@
       "venue_scope": "Binance_current_BLVT_Spot_and_primary_market_inventory"
     }
   ],
-  "result_sha256": "7be2ae9f2883a72c6f492e57208cede33c7ad8733a947bf4a21b3825315b2443",
+  "result_sha256": "2baf1b76070e0ef9081f9eb5fba41f3977b5fd1aa74759ed85034947e9ad1c5a",
   "schema_version": "structural-edge-priority-registry-v1",
   "terminal_do_not_repeat": [
     {

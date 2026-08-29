@@ -14,7 +14,7 @@ ARTIFACT = ROOT / (
 REGISTRY = ROOT / "docs/model-research/structural-edge-priority-registry-v1.json"
 EXPECTED_HASH = "b97eed6a93070d5e29b26d1a47757c9be49e0296332c8019a64388ba936c3b6b"
 EXPECTED_REGISTRY_HASH = (
-    "7be2ae9f2883a72c6f492e57208cede33c7ad8733a947bf4a21b3825315b2443"
+    "2baf1b76070e0ef9081f9eb5fba41f3977b5fd1aa74759ed85034947e9ad1c5a"
 )
 
 

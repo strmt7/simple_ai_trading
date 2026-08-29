@@ -967,7 +967,7 @@ grants paper, testnet, or live authority.
 
 The canonical structural-edge priority and retry-trigger registry is
 `docs/model-research/structural-edge-priority-registry-v1.json`, result SHA-256
-`7be2ae9f2883a72c6f492e57208cede33c7ad8733a947bf4a21b3825315b2443`.
+`2baf1b76070e0ef9081f9eb5fba41f3977b5fd1aa74759ed85034947e9ad1c5a`.
 Advance only the highest-ranked hypothesis whose trigger is actually satisfied.
 This prevents account-blocked or terminal screens from being rerun as if more
 snapshots could create an edge.
@@ -2179,7 +2179,7 @@ result SHA-256
 `64943efe0c6ad16f8d02f78548afef38f919448d2da87c7573e825a2eeefd6b9`.
 That checkpoint left seventeen accepted scoped edges. The current registry now
 has nineteen and result SHA-256
-`7be2ae9f2883a72c6f492e57208cede33c7ad8733a947bf4a21b3825315b2443`.
+`2baf1b76070e0ef9081f9eb5fba41f3977b5fd1aa74759ed85034947e9ad1c5a`.
 
 The complete Binance XAU/XAG Commodity Options versus matching TradFi
 perpetual lower-bound screen is terminal for the active 2026-08-27 and
@@ -2481,7 +2481,7 @@ result SHA-256
 `85c8ef364b03fb2fbf0aeebddec10d51abbdd608f56ff9c0dccb1835cacc2179`.
 The structural registry now contains 42 ranked hypotheses, remains at 19
 narrowly accepted scoped overlays, and has canonical result SHA-256
-`7be2ae9f2883a72c6f492e57208cede33c7ad8733a947bf4a21b3825315b2443`.
+`2baf1b76070e0ef9081f9eb5fba41f3977b5fd1aa74759ed85034947e9ad1c5a`.
 
 The Round 21 sidecar worktree
 `C:\trader\simple_ai_trading-round21-sidecar-v2` remains protected through
@@ -2726,13 +2726,46 @@ ACA all-taker result SHA-256
 maker-first result SHA-256
 `900246f7bf066a8d310c6dcc6e9318edc1c6b83d4779f9b2f628c668e7d258e6`.
 
+## Current WNBA Monotone-Payoff Checkpoint
+
+The first exact active WNBA extension of the NBA moneyline/spread mechanism is
+terminal for Toronto Tempo versus Phoenix Mercury. One public Gamma event GET
+proved the exact moneyline, Phoenix -9.5, and Phoenix -8.5 rules, including
+overtime and 50-50 cancellation treatment. Exhaustive states prove three
+two-leg bundles with a minimum one-pUSD payout per share without forecasting
+the winner.
+
+The executable economics failed decisively. One frozen four-token CLOB batch
+had 2.132 seconds maximum book timestamp skew and zero positive packages. The
+best bundle, Phoenix -8.5 plus Toronto +9.5, lost `0.42436` pUSD at actual
+five-share depth, `0.62356` pUSD under the frozen one-second sensitivity, and
+`1.02076` pUSD under the three-second sensitivity. No fee endpoint was called:
+every package was already gross-negative. No credential, account, fund, order,
+transaction, or protected-capture asset was used.
+
+Do not resample this event. For every future NBA or WNBA exact pair, first
+prove the payoff identity, then use retained Gamma `outcomePrices` only as a
+rejection-only optimistic gate. If every displayed package sum is at or above
+its guaranteed payout floor, stop before CLOB books. Gamma prices can never
+accept or promote an edge. Only a package below the floor may advance to one
+frozen exact-depth batch, and escalation still requires an independently
+positive after-cost recurrence. Canonical event result SHA-256
+`6851d26788abfd175b75649e573d341696e570ce76bc235b0c5a6070bdd72167`;
+book result SHA-256
+`cc657982abd9ede0f0f7b18787df32e62c69b7c3b3e547ade3f6f3ccb734ed46`.
+
 ## Verification Scope
+
+The current WNBA metadata capture, payoff proof, synchronized book screen,
+negative adjudication, request journals, raw-response hashes, and registry
+lineage pass their focused tests with Ruff and Python compilation clean. The
+new rejection-only prefilter is now a hard efficiency gate for this family.
 
 The resolved-leg House duplicate-payoff checkpoint, raw journals, source hashes,
 and directly affected registry lineage pass 12 focused tests with Ruff and
 Python compilation clean. The registry still contains 42 ranked hypotheses and
 19 accepted scoped overlays; its result SHA-256 is
-`7be2ae9f2883a72c6f492e57208cede33c7ad8733a947bf4a21b3825315b2443`.
+`2baf1b76070e0ef9081f9eb5fba41f3977b5fd1aa74759ed85034947e9ad1c5a`.
 
 The exact-one-NO failure preservation and Binance BLVT current-inventory gate,
 including every registry-hash-coupled test, pass 199 focused tests with Ruff

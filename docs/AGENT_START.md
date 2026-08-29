@@ -1398,9 +1398,22 @@ safety gate, blocks Stop, or submits an order.
   study. No credential, account, book, order, subscription, redemption, or
   mutation was used. Canonical result SHA-256
   `85c8ef364b03fb2fbf0aeebddec10d51abbdd608f56ff9c0dccb1835cacc2179`.
+- The first exact active WNBA extension of the NBA moneyline/spread monotone-
+  payoff mechanism is terminal for Toronto Tempo versus Phoenix Mercury. Three
+  exhaustive two-leg packages guaranteed at least one pUSD per share, but one
+  synchronized four-token batch found zero positive packages. The best lost
+  `0.42436` pUSD at actual five-share depth, `0.62356` pUSD under the frozen
+  one-second sensitivity, and `1.02076` pUSD under the three-second
+  sensitivity. No fee request was needed because every package was already
+  gross-negative. Do not resample this event. For future NBA/WNBA pairs, use
+  retained Gamma `outcomePrices` only as a rejection-only optimistic gate and
+  stop before books unless at least one displayed package sum is below its
+  guaranteed payout. Never accept or promote from Gamma. Canonical book result
+  SHA-256
+  `cc657982abd9ede0f0f7b18787df32e62c69b7c3b3e547ade3f6f3ccb734ed46`.
 - The structural-edge registry now has 42 ranked hypotheses, still only 19
   narrowly accepted scoped overlays, and result SHA-256
-  `7be2ae9f2883a72c6f492e57208cede33c7ad8733a947bf4a21b3825315b2443`.
+  `2baf1b76070e0ef9081f9eb5fba41f3977b5fd1aa74759ed85034947e9ad1c5a`.
 
 ## Task Routing
 
@@ -1415,6 +1428,7 @@ safety gate, blocks Stop, or submits an order.
 | Cross-market exact dependent-subset parity candidate | `docs/model-research/action-value/polymarket-cross-market-dependent-subset-parity-reopen-v1-2026-08-26.json` |
 | Current sports exact-title discovery terminal result | `docs/model-research/action-value/polymarket-current-sports-monotone-pair-discovery-result-v1-2026-08-29.json` |
 | Current BOS/NYY monotone-parity terminal adjudication | `docs/model-research/action-value/polymarket-current-mlb-monotone-parity-failure-adjudication-v1-2026-08-29.json` |
+| Current Toronto/Phoenix WNBA monotone-parity terminal result | `docs/model-research/action-value/polymarket-current-wnba-monotone-parity-result-v1-2026-08-29.json` |
 | Resolved-leg House duplicate-payoff recurrence | `docs/model-research/action-value/polymarket-aca-house-maker-first-candidate-v1-2026-08-29.json` |
 | Binance XAU/PAXG funding-basis terminal adjudication | `docs/model-research/action-value/binance-xau-paxg-perpetual-funding-spread-failure-adjudication-v1-2026-08-29.json` |
 | Polymarket exact-one-NO V2 conversion failure adjudication | `docs/model-research/action-value/polymarket-negrisk-one-no-v2-conversion-failure-adjudication-v1-2026-08-29.json` |
