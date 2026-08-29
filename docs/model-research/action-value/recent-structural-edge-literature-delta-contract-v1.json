@@ -1,0 +1,76 @@
+{
+  "schema_version": "recent-structural-edge-literature-delta-contract-v1",
+  "status": "frozen_before_public_literature_access",
+  "frozen_at_utc": "2026-08-29T22:36:18.5739397Z",
+  "contract_sha256": "a3e8060af1e578196a69695dc1176af5710bfa2f86f72c44dd9e2ea12def5e94",
+  "purpose": "make one bounded primary-literature delta query for novel market-direction-independent prediction-market or crypto-exchange mechanisms without polling terminal venue data",
+  "authority": {
+    "public_unauthenticated_read_only_research": true,
+    "network_requests_permitted": 1,
+    "venue_market_data_requests_permitted": 0,
+    "credentials_permitted": false,
+    "account_state_permitted": false,
+    "orders_or_mutations_permitted": false,
+    "protected_capture_access_permitted": false,
+    "accepted_edge_from_this_stage_permitted": false
+  },
+  "implementation": {
+    "path": "tools/triage_recent_structural_edge_literature.py",
+    "sha256": "34f3fd4431278170f72384a9842d0d91a2598d9f20a0f13044ccad92dc36ee54"
+  },
+  "request": {
+    "method": "GET",
+    "endpoint_classification": "public unauthenticated arXiv Atom API query documented for metadata retrieval; not a venue endpoint and not state changing",
+    "url": "https://export.arxiv.org/api/query?search_query=%28all%3A%22prediction%20market%22%20OR%20all%3Apolymarket%20OR%20all%3A%22crypto%20exchange%22%20OR%20all%3Acryptocurrency%29%20AND%20%28all%3Aarbitrage%20OR%20all%3A%22market%20making%22%20OR%20all%3Afunding%20OR%20all%3Arebate%20OR%20all%3Ayield%20OR%20all%3Alatency%20OR%20all%3Aconversion%29&start=0&max_results=50&sortBy=submittedDate&sortOrder=descending",
+    "start": 0,
+    "max_results": 50,
+    "sort_by": "submittedDate",
+    "sort_order": "descending",
+    "timeout_seconds": 30,
+    "request_budget": 1,
+    "pagination_permitted": false
+  },
+  "classification": {
+    "published_not_before_utc": "2026-08-01T00:00:00Z",
+    "known_arxiv_ids": [
+      "2608.00666"
+    ],
+    "venue_keywords": [
+      "binance",
+      "crypto exchange",
+      "cryptocurrency",
+      "decentralized exchange",
+      "polymarket",
+      "prediction market"
+    ],
+    "structural_keywords": [
+      "arbitrage",
+      "basis",
+      "carry",
+      "conversion",
+      "cross-venue",
+      "fee",
+      "funding",
+      "latency",
+      "liquidity provision",
+      "market making",
+      "rebate",
+      "yield"
+    ],
+    "candidate_boundary": "a novel returned paper published on or after the cutoff must contain at least one venue keyword and one structural keyword",
+    "promotion_boundary": "none; every paper is only a lead and requires current official mechanism, executable cost, recurrence, and authority gates"
+  },
+  "retention": {
+    "raw_response_required_before_parsing": true,
+    "intent_journal_required_before_access": true,
+    "retain_all_returned_entries": true,
+    "bounded_console_output": true
+  },
+  "stop_rules": [
+    "do not follow pagination",
+    "do not request any venue data in this stage",
+    "do not adapt keywords after viewing results",
+    "do not call a paper or historical estimate an accepted or profitable edge",
+    "preserve any HTTP or parse failure and do not rerun this contract"
+  ]
+}

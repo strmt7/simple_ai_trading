@@ -16,7 +16,7 @@ TRIGGER_RESULT = ROOT / "docs/model-research/action-value" / (
 REGISTRY = ROOT / "docs/model-research/structural-edge-priority-registry-v1.json"
 EXPECTED_HASH = "c073b61271886a5add71c2578caa889dfb97b1245327ae746bd517a91e52530d"
 TRIGGER_RESULT_HASH = "823448f115ecf7fe3e7fe8862855f40dfd351ed041fce2aa94196d069c8d585a"
-REGISTRY_HASH = "fc0bddf222a1908db6c12df338dc26963f36514b01e37b5b31fc567760f19aca"
+REGISTRY_HASH = "98714cb8665d2132cb53670f09e73d11816cdbb7a9c3bc221dce4db4f865f98d"
 
 
 def _load(path: Path) -> dict[str, object]:

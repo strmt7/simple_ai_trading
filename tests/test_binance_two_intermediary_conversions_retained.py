@@ -8,7 +8,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 EVIDENCE = ROOT / "docs/model-research/action-value"
 REGISTRY = ROOT / "docs/model-research/structural-edge-priority-registry-v1.json"
-REGISTRY_HASH = "fc0bddf222a1908db6c12df338dc26963f36514b01e37b5b31fc567760f19aca"
+REGISTRY_HASH = "98714cb8665d2132cb53670f09e73d11816cdbb7a9c3bc221dce4db4f865f98d"
 
 CONTRACT_HASHES = {
     "binance-two-intermediary-conversion-retained-contract-v1.json": (
@@ -155,15 +155,14 @@ def test_registry_terminalizes_only_the_two_intermediary_extension() -> None:
     assert family["mechanism"] == (
         "binance_indirect_internal_conversion_route_savings_for_organic_flow"
     )
-    assert family["canonical_artifacts"][-1]["result_sha256"] == (
-        RESULT_HASHES[
-            "binance-two-intermediary-conversion-activity-adjudication-v1-2026-08-29.json"
-        ]
-    )
+    activity_hash = RESULT_HASHES[
+        "binance-two-intermediary-conversion-activity-adjudication-v1-2026-08-29.json"
+    ]
+    assert activity_hash in {
+        artifact["result_sha256"] for artifact in family["canonical_artifacts"]
+    }
     terminal = registry["terminal_do_not_repeat"][-1]
     assert terminal["family"] == (
         "binance_spot_exactly_two_intermediary_organic_conversion_extension"
     )
-    assert terminal["canonical_result_sha256"] == family["canonical_artifacts"][-1][
-        "result_sha256"
-    ]
+    assert terminal["canonical_result_sha256"] == activity_hash

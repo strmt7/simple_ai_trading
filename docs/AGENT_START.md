@@ -1581,6 +1581,18 @@ safety gate, blocks Stop, or submits an order.
   in `AGENTS.md`. Canonical final exact and activity result SHA-256 values are
   `0a5e37f2fb48c639334256e3118e3eeb2f17a548572faaf13d3849204404b45e`
   and `cde72e05b1760d9fe23eb65e5bd5f59377230ac91095354936c2a84a9a3758ae`.
+- A complete-for-cutoff primary-literature delta reviewed seven novel August
+  papers and found zero actionable structural leads. A separately frozen source
+  audit of arXiv `2607.09491v1` strengthens the existing one-intermediary
+  mechanism but does not reopen a collector. The paper inferred 402 million
+  two-trade Binance sequences from anonymized 2017-2023 fills and estimated
+  31.2 million USD after assumed 1.2/2.4-bip fees, but mean sequence profit was
+  only 0.15 USD maker/taker and 0.04 USD taker/taker. Its comparator was a two-
+  second VWAP, not synchronized depth, and exact fees, books, failed attempts,
+  fixed infrastructure, ownership, and unwind costs were unavailable. This is
+  the already-covered direct-versus-one-intermediary identity, not evidence for
+  the rejected three-trade extension. Canonical source adjudication SHA-256 is
+  `3f9684ed1986cd6cf676482069cda53846e336a15bc4b35141193b8e43406e65`.
 - Binance closed three-asset Spot cycles are terminal for the current retained
   complete public graph. One frozen zero-network pass covered all 3,480 unique
   directed cycles, 1,442 activity-qualified cycles, 60 complete books, 100 and
@@ -1624,7 +1636,7 @@ safety gate, blocks Stop, or submits an order.
   and `f032753b45c82b2e0945d1a8c0e0d5fc01f8fb1727cdad34e73064c7590417ba`.
 - The structural-edge registry now has 44 ranked hypotheses and 21
   narrowly accepted scoped overlays, and result SHA-256
-  `fc0bddf222a1908db6c12df338dc26963f36514b01e37b5b31fc567760f19aca`.
+  `98714cb8665d2132cb53670f09e73d11816cdbb7a9c3bc221dce4db4f865f98d`.
 
 ## Task Routing
 
@@ -1739,4 +1751,4 @@ result SHA-256 values are
 and `895dc0eba4f72b9b08b19dbba245b20434e4db905fd4ded3ea70779733db6d47`.
 The registry remains at 44 hypotheses and 21 accepted scoped edges; its updated
 result SHA-256 is
-`fc0bddf222a1908db6c12df338dc26963f36514b01e37b5b31fc567760f19aca`.
+`98714cb8665d2132cb53670f09e73d11816cdbb7a9c3bc221dce4db4f865f98d`.

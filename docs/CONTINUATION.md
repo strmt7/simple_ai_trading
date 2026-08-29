@@ -3224,6 +3224,36 @@ work, followed by a frozen lossless bound and bounded diagnostics when large.
 No network request, credential, account, order, mutation, or protected-capture
 access occurred in any of these retained-data stages.
 
+A subsequent one-request arXiv metadata delta was complete for papers published
+from `2026-08-01T00:00:00Z`: eight papers appeared, one already known paper was
+excluded, and all seven novel papers were adjudicated. Zero was an actionable
+market-direction-independent edge. The Binance archive paper reported negative
+net Sharpe; crypto mean reversion peaked near 1.3 bips gross against a 5-bip
+round-trip benchmark and is directional; the other five covered security, AML,
+cross-chain tracing, optimal-stopping theory, or consensus diagnostics without
+an executable positive payoff.
+
+The query also surfaced the older but previously unreconciled primary paper
+`A Truckload of Satoshis` (`arXiv:2607.09491v1`). One frozen PDF request proved
+that its OWA path is exactly two separate, non-atomic trades through one non-
+anchor intermediary. The paper inferred 402 million Binance sequences from
+anonymized settled trades ending in May 2023. Its 73.3 million USD gross and
+31.2 million USD fee-adjusted estimates use a two-second pre-trade VWAP rather
+than executable depth and assumed 1.2-bip maker and 2.4-bip taker fees. Mean
+fee-adjusted profit was only 0.15 USD maker/taker and 0.04 USD taker/taker; the
+paper could not identify exact fees, books, slippage, failed attempts, fixed
+infrastructure, ownership, or unwind costs and found declining margins.
+
+This source strengthens historical prevalence for the accepted fail-closed
+direct-versus-one-intermediary organic-conversion overlay, but it is not a new
+mechanism, a current profitability result, or evidence for the rejected exactly-
+two-intermediary three-trade extension. It does not satisfy the literal collector
+retry trigger. The literature query and PDF used two public read-only requests
+total and no venue data, credential, account, order, mutation, or protected state.
+Canonical literature result and paper adjudication SHA-256 values are
+`21c830177ae1e17f18c941a5630df56a2c3dec5c0f26acd14ff740275fe29b06`
+and `3f9684ed1986cd6cf676482069cda53846e336a15bc4b35141193b8e43406e65`.
+
 Canonical contract, screen result, activity contract, and adjudication SHA-256
 values are `dcd959d9d7ec0e1dffec47b910cece585c106b76b69feaaa9ca03ddcc7caa83a`,
 `b3e7f724e2b1ce2cc7a8444d00632466196af6d89f139259164549e91d1f84bc`,
@@ -3237,7 +3267,7 @@ adjudication, v3 exact result, and final activity result SHA-256 values are
 and `cde72e05b1760d9fe23eb65e5bd5f59377230ac91095354936c2a84a9a3758ae`.
 The structural-edge registry now contains 44 ranked hypotheses and 21 accepted
 scoped overlays; its canonical SHA-256 is
-`fc0bddf222a1908db6c12df338dc26963f36514b01e37b5b31fc567760f19aca`.
+`98714cb8665d2132cb53670f09e73d11816cdbb7a9c3bc221dce4db4f865f98d`.
 
 ## Future WNBA Complete-Catalog Rejection Screen
 
@@ -3267,7 +3297,7 @@ The raw response and two-phase journal SHA-256 values are
 and `40a7edc61fcf5c3a42a8ab7aef65cf04703cde30989b7b23f23a915291620368`.
 The structural registry remains at 44 hypotheses and 21 accepted scoped edges;
 its canonical SHA-256 is
-`fc0bddf222a1908db6c12df338dc26963f36514b01e37b5b31fc567760f19aca`.
+`98714cb8665d2132cb53670f09e73d11816cdbb7a9c3bc221dce4db4f865f98d`.
 
 ## Sep 7 Hour-00 Fixed NegRisk Complete Rejection Screen
 
@@ -3481,6 +3511,6 @@ reconstructs the journal receipt; the gzip SHA-256 is
 `9f3f83fe1efcec7a0230dea646d2038fe5c0a32ae72de5c7e4f5ee7fd850304b`.
 The accepted-edge count remains 21 and the ranked-hypothesis count remains 44.
 The updated registry result SHA-256 is
-`fc0bddf222a1908db6c12df338dc26963f36514b01e37b5b31fc567760f19aca`.
+`98714cb8665d2132cb53670f09e73d11816cdbb7a9c3bc221dce4db4f865f98d`.
 The direct SOR evidence test and the one registry-coupled pass are clean; no
 broad CI, model, release, or repeated market request was run.
