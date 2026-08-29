@@ -1,0 +1,2062 @@
+{
+  "schema_version": "binance-indirect-internal-conversion-screen-v1",
+  "status": "completed_research_only",
+  "contract_sha256": "dcd959d9d7ec0e1dffec47b910cece585c106b76b69feaaa9ca03ddcc7caa83a",
+  "captured_at_start_ns": 1788034917990916200,
+  "captured_at_end_ns": 1788035036582276600,
+  "capture_elapsed_ms": 118591,
+  "sample_count": 60,
+  "maximum_request_elapsed_ms": 619,
+  "directed_edges": 2716,
+  "direct_vs_one_intermediary_routes": 10440,
+  "evaluated_route_sizes": 20568,
+  "empirical_candidate_count": 20,
+  "empirical_candidates": [
+    {
+      "route_id": "EUR->USDC->WLFI_vs_EUR->WLFI",
+      "start_usdt": "1000",
+      "observations": 60,
+      "capacity_ok_observations": 60,
+      "positive_after_gates_observations": 60,
+      "positive_counts_by_15_sample_block": [
+        15,
+        15,
+        15,
+        15
+      ],
+      "minimum_stressed_savings_bips": "40.84315511217718816266410000",
+      "median_stressed_savings_bips": "40.84315511217718816266410000",
+      "maximum_stressed_savings_bips": "40.84315511217718816266410000",
+      "empirical_candidate": true
+    },
+    {
+      "route_id": "TRY->USDT->TOWNS_vs_TRY->TOWNS",
+      "start_usdt": "1000",
+      "observations": 60,
+      "capacity_ok_observations": 60,
+      "positive_after_gates_observations": 60,
+      "positive_counts_by_15_sample_block": [
+        15,
+        15,
+        15,
+        15
+      ],
+      "minimum_stressed_savings_bips": "39.47393492975967496853407000",
+      "median_stressed_savings_bips": "39.47393492975967496853407000",
+      "maximum_stressed_savings_bips": "39.47393492975967496853407000",
+      "empirical_candidate": true
+    },
+    {
+      "route_id": "TRY->USDT->SHELL_vs_TRY->SHELL",
+      "start_usdt": "1000",
+      "observations": 60,
+      "capacity_ok_observations": 60,
+      "positive_after_gates_observations": 60,
+      "positive_counts_by_15_sample_block": [
+        15,
+        15,
+        15,
+        15
+      ],
+      "minimum_stressed_savings_bips": "33.49940851658355915868319000",
+      "median_stressed_savings_bips": "33.49940851658355915868319000",
+      "maximum_stressed_savings_bips": "33.49940851658355915868319000",
+      "empirical_candidate": true
+    },
+    {
+      "route_id": "TRY->USDT->NOM_vs_TRY->NOM",
+      "start_usdt": "1000",
+      "observations": 60,
+      "capacity_ok_observations": 60,
+      "positive_after_gates_observations": 60,
+      "positive_counts_by_15_sample_block": [
+        15,
+        15,
+        15,
+        15
+      ],
+      "minimum_stressed_savings_bips": "30.02472895663456845498750000",
+      "median_stressed_savings_bips": "30.02472895663456845498750000",
+      "maximum_stressed_savings_bips": "30.02472895663456845498750000",
+      "empirical_candidate": true
+    },
+    {
+      "route_id": "TRY->USDT->PARTI_vs_TRY->PARTI",
+      "start_usdt": "1000",
+      "observations": 60,
+      "capacity_ok_observations": 60,
+      "positive_after_gates_observations": 60,
+      "positive_counts_by_15_sample_block": [
+        15,
+        15,
+        15,
+        15
+      ],
+      "minimum_stressed_savings_bips": "29.51164547724801099832769000",
+      "median_stressed_savings_bips": "29.51164547724801099832769000",
+      "maximum_stressed_savings_bips": "29.51164547724801099832769000",
+      "empirical_candidate": true
+    },
+    {
+      "route_id": "TRY->USDT->AI_vs_TRY->AI",
+      "start_usdt": "1000",
+      "observations": 60,
+      "capacity_ok_observations": 60,
+      "positive_after_gates_observations": 60,
+      "positive_counts_by_15_sample_block": [
+        15,
+        15,
+        15,
+        15
+      ],
+      "minimum_stressed_savings_bips": "21.61852656090551303577727000",
+      "median_stressed_savings_bips": "21.61852656090551303577727000",
+      "maximum_stressed_savings_bips": "21.61852656090551303577727000",
+      "empirical_candidate": true
+    },
+    {
+      "route_id": "TRY->USDT->TNSR_vs_TRY->TNSR",
+      "start_usdt": "1000",
+      "observations": 60,
+      "capacity_ok_observations": 60,
+      "positive_after_gates_observations": 60,
+      "positive_counts_by_15_sample_block": [
+        15,
+        15,
+        15,
+        15
+      ],
+      "minimum_stressed_savings_bips": "19.64697521720741608722384000",
+      "median_stressed_savings_bips": "19.64697521720741608722384000",
+      "maximum_stressed_savings_bips": "19.64697521720741608722384000",
+      "empirical_candidate": true
+    },
+    {
+      "route_id": "TRY->USDT->METIS_vs_TRY->METIS",
+      "start_usdt": "1000",
+      "observations": 60,
+      "capacity_ok_observations": 60,
+      "positive_after_gates_observations": 60,
+      "positive_counts_by_15_sample_block": [
+        15,
+        15,
+        15,
+        15
+      ],
+      "minimum_stressed_savings_bips": "16.75791888263341574374560000",
+      "median_stressed_savings_bips": "16.75791888263341574374560000",
+      "maximum_stressed_savings_bips": "16.75791888263341574374560000",
+      "empirical_candidate": true
+    },
+    {
+      "route_id": "TRY->USDT->APT_vs_TRY->APT",
+      "start_usdt": "1000",
+      "observations": 60,
+      "capacity_ok_observations": 60,
+      "positive_after_gates_observations": 57,
+      "positive_counts_by_15_sample_block": [
+        15,
+        15,
+        15,
+        12
+      ],
+      "minimum_stressed_savings_bips": "-6.689135779393320574409637000",
+      "median_stressed_savings_bips": "13.01874970367823912278522000",
+      "maximum_stressed_savings_bips": "13.01874970367823912278522000",
+      "empirical_candidate": true
+    },
+    {
+      "route_id": "TRY->USDT->GMT_vs_TRY->GMT",
+      "start_usdt": "1000",
+      "observations": 60,
+      "capacity_ok_observations": 60,
+      "positive_after_gates_observations": 60,
+      "positive_counts_by_15_sample_block": [
+        15,
+        15,
+        15,
+        15
+      ],
+      "minimum_stressed_savings_bips": "11.97468976870120093552013000",
+      "median_stressed_savings_bips": "11.97468976870120093552013000",
+      "maximum_stressed_savings_bips": "11.97468976870120093552013000",
+      "empirical_candidate": true
+    },
+    {
+      "route_id": "TRX->USDT->USD1_vs_TRX->USD1",
+      "start_usdt": "1000",
+      "observations": 60,
+      "capacity_ok_observations": 60,
+      "positive_after_gates_observations": 60,
+      "positive_counts_by_15_sample_block": [
+        15,
+        15,
+        15,
+        15
+      ],
+      "minimum_stressed_savings_bips": "11.60624944056114246518481000",
+      "median_stressed_savings_bips": "11.60624944056114246518481000",
+      "maximum_stressed_savings_bips": "11.60624944056114246518481000",
+      "empirical_candidate": true
+    },
+    {
+      "route_id": "TRY->USDT->EDU_vs_TRY->EDU",
+      "start_usdt": "1000",
+      "observations": 60,
+      "capacity_ok_observations": 60,
+      "positive_after_gates_observations": 60,
+      "positive_counts_by_15_sample_block": [
+        15,
+        15,
+        15,
+        15
+      ],
+      "minimum_stressed_savings_bips": "10.47978458984627865720765000",
+      "median_stressed_savings_bips": "10.47978458984627865720765000",
+      "maximum_stressed_savings_bips": "10.47978458984627865720765000",
+      "empirical_candidate": true
+    },
+    {
+      "route_id": "USDC->USDT->PNUT_vs_USDC->PNUT",
+      "start_usdt": "1000",
+      "observations": 60,
+      "capacity_ok_observations": 60,
+      "positive_after_gates_observations": 57,
+      "positive_counts_by_15_sample_block": [
+        12,
+        15,
+        15,
+        15
+      ],
+      "minimum_stressed_savings_bips": "-12.99994664895868332459567700",
+      "median_stressed_savings_bips": "6.58816974919102524009007000",
+      "maximum_stressed_savings_bips": "6.588169749191025240090070000",
+      "empirical_candidate": true
+    },
+    {
+      "route_id": "USDT->TRY->SKL_vs_USDT->SKL",
+      "start_usdt": "1000",
+      "observations": 60,
+      "capacity_ok_observations": 60,
+      "positive_after_gates_observations": 60,
+      "positive_counts_by_15_sample_block": [
+        15,
+        15,
+        15,
+        15
+      ],
+      "minimum_stressed_savings_bips": "6.042371716738342544291450000",
+      "median_stressed_savings_bips": "6.04237171673834254429145000",
+      "maximum_stressed_savings_bips": "6.042371716738342544291450000",
+      "empirical_candidate": true
+    },
+    {
+      "route_id": "USDT->TRY->SKL_vs_USDT->SKL",
+      "start_usdt": "100",
+      "observations": 60,
+      "capacity_ok_observations": 60,
+      "positive_after_gates_observations": 60,
+      "positive_counts_by_15_sample_block": [
+        15,
+        15,
+        15,
+        15
+      ],
+      "minimum_stressed_savings_bips": "6.041145734398049101174090000",
+      "median_stressed_savings_bips": "6.04114573439804910117409000",
+      "maximum_stressed_savings_bips": "6.041145734398049101174090000",
+      "empirical_candidate": true
+    },
+    {
+      "route_id": "USDC->TRY->PNUT_vs_USDC->PNUT",
+      "start_usdt": "1000",
+      "observations": 60,
+      "capacity_ok_observations": 60,
+      "positive_after_gates_observations": 57,
+      "positive_counts_by_15_sample_block": [
+        12,
+        15,
+        15,
+        15
+      ],
+      "minimum_stressed_savings_bips": "-37.09723262061148677800151800",
+      "median_stressed_savings_bips": "3.414364146804460668976260000",
+      "maximum_stressed_savings_bips": "3.414364146804460668976260000",
+      "empirical_candidate": true
+    },
+    {
+      "route_id": "SHIB->USDT->EUR_vs_SHIB->EUR",
+      "start_usdt": "1000",
+      "observations": 60,
+      "capacity_ok_observations": 60,
+      "positive_after_gates_observations": 60,
+      "positive_counts_by_15_sample_block": [
+        15,
+        15,
+        15,
+        15
+      ],
+      "minimum_stressed_savings_bips": "2.970804175766258692971220000",
+      "median_stressed_savings_bips": "2.970804175766258692971220000",
+      "maximum_stressed_savings_bips": "2.970804175766258692971220000",
+      "empirical_candidate": true
+    },
+    {
+      "route_id": "SHIB->USDC->EUR_vs_SHIB->EUR",
+      "start_usdt": "1000",
+      "observations": 60,
+      "capacity_ok_observations": 60,
+      "positive_after_gates_observations": 60,
+      "positive_counts_by_15_sample_block": [
+        15,
+        15,
+        15,
+        15
+      ],
+      "minimum_stressed_savings_bips": "2.969856538442632464578350000",
+      "median_stressed_savings_bips": "2.969856538442632464578350000",
+      "maximum_stressed_savings_bips": "2.969856538442632464578350000",
+      "empirical_candidate": true
+    },
+    {
+      "route_id": "USDT->TRY->ALPINE_vs_USDT->ALPINE",
+      "start_usdt": "100",
+      "observations": 60,
+      "capacity_ok_observations": 60,
+      "positive_after_gates_observations": 60,
+      "positive_counts_by_15_sample_block": [
+        15,
+        15,
+        15,
+        15
+      ],
+      "minimum_stressed_savings_bips": "2.441988784879761611687950000",
+      "median_stressed_savings_bips": "2.441988784879761611687950000",
+      "maximum_stressed_savings_bips": "2.441988784879761611687950000",
+      "empirical_candidate": true
+    },
+    {
+      "route_id": "TRY->USDT->HOME_vs_TRY->HOME",
+      "start_usdt": "1000",
+      "observations": 60,
+      "capacity_ok_observations": 60,
+      "positive_after_gates_observations": 60,
+      "positive_counts_by_15_sample_block": [
+        15,
+        15,
+        15,
+        15
+      ],
+      "minimum_stressed_savings_bips": "2.058150224078005926115230000",
+      "median_stressed_savings_bips": "2.058150224078005926115230000",
+      "maximum_stressed_savings_bips": "2.058150224078005926115230000",
+      "empirical_candidate": true
+    }
+  ],
+  "top_100_by_median_stressed_savings": [
+    {
+      "route_id": "FLOKI->USDT->IDR_vs_FLOKI->IDR",
+      "start_usdt": "100",
+      "observations": 60,
+      "capacity_ok_observations": 32,
+      "positive_after_gates_observations": 0,
+      "positive_counts_by_15_sample_block": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "minimum_stressed_savings_bips": "229.1729396807860774326521400",
+      "median_stressed_savings_bips": "233.1903110740461295501302800",
+      "maximum_stressed_savings_bips": "233.1903110740461295501302800",
+      "empirical_candidate": false
+    },
+    {
+      "route_id": "FLOKI->USDT->IDR_vs_FLOKI->IDR",
+      "start_usdt": "1000",
+      "observations": 60,
+      "capacity_ok_observations": 0,
+      "positive_after_gates_observations": 0,
+      "positive_counts_by_15_sample_block": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "minimum_stressed_savings_bips": "229.1709850384365386548436900",
+      "median_stressed_savings_bips": "233.1883294824371536858960600",
+      "maximum_stressed_savings_bips": "233.1883294824371536858960600",
+      "empirical_candidate": false
+    },
+    {
+      "route_id": "FLOKI->USDC->IDR_vs_FLOKI->IDR",
+      "start_usdt": "100",
+      "observations": 60,
+      "capacity_ok_observations": 0,
+      "positive_after_gates_observations": 0,
+      "positive_counts_by_15_sample_block": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "minimum_stressed_savings_bips": "229.1708361963390079441166400",
+      "median_stressed_savings_bips": "229.1719163004823911881661700",
+      "maximum_stressed_savings_bips": "233.1892861636175883237660900",
+      "empirical_candidate": false
+    },
+    {
+      "route_id": "FLOKI->USDC->IDR_vs_FLOKI->IDR",
+      "start_usdt": "1000",
+      "observations": 60,
+      "capacity_ok_observations": 0,
+      "positive_after_gates_observations": 0,
+      "positive_counts_by_15_sample_block": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "minimum_stressed_savings_bips": "229.1708552986659264655449700",
+      "median_stressed_savings_bips": "229.1708827280741396466798200",
+      "maximum_stressed_savings_bips": "233.1882270473583479941930800",
+      "empirical_candidate": false
+    },
+    {
+      "route_id": "IDR->USDT->SCR_vs_IDR->SCR",
+      "start_usdt": "1000",
+      "observations": 60,
+      "capacity_ok_observations": 0,
+      "positive_after_gates_observations": 0,
+      "positive_counts_by_15_sample_block": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "minimum_stressed_savings_bips": "47.71958030274490275468014000",
+      "median_stressed_savings_bips": "199.7870320109805294436308900",
+      "maximum_stressed_savings_bips": "203.2428535047042532053263800",
+      "empirical_candidate": false
+    },
+    {
+      "route_id": "IDR->USDT->SCR_vs_IDR->SCR",
+      "start_usdt": "100",
+      "observations": 60,
+      "capacity_ok_observations": 0,
+      "positive_after_gates_observations": 0,
+      "positive_counts_by_15_sample_block": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "minimum_stressed_savings_bips": "47.71911565011535190755002000",
+      "median_stressed_savings_bips": "199.7832354653594500201197400",
+      "maximum_stressed_savings_bips": "203.2387703338489995988740000",
+      "empirical_candidate": false
+    },
+    {
+      "route_id": "BNB->USDT->WAL_vs_BNB->WAL",
+      "start_usdt": "100",
+      "observations": 60,
+      "capacity_ok_observations": 58,
+      "positive_after_gates_observations": 0,
+      "positive_counts_by_15_sample_block": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "minimum_stressed_savings_bips": "187.5339672547692985777548300",
+      "median_stressed_savings_bips": "189.5823878422117657653843300",
+      "maximum_stressed_savings_bips": "190.6010710879415676990586000",
+      "empirical_candidate": false
+    },
+    {
+      "route_id": "BNB->USDC->WAL_vs_BNB->WAL",
+      "start_usdt": "100",
+      "observations": 60,
+      "capacity_ok_observations": 0,
+      "positive_after_gates_observations": 0,
+      "positive_counts_by_15_sample_block": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "minimum_stressed_savings_bips": "187.0942514203248206846685800",
+      "median_stressed_savings_bips": "189.4362172639544871996851700",
+      "maximum_stressed_savings_bips": "190.6065266826795972510603900",
+      "empirical_candidate": false
+    },
+    {
+      "route_id": "BNB->USDT->WAL_vs_BNB->WAL",
+      "start_usdt": "1000",
+      "observations": 60,
+      "capacity_ok_observations": 0,
+      "positive_after_gates_observations": 0,
+      "positive_counts_by_15_sample_block": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "minimum_stressed_savings_bips": "187.3583967694295505326229100",
+      "median_stressed_savings_bips": "189.4049005434576622406267600",
+      "maximum_stressed_savings_bips": "190.4275151902134239328682000",
+      "empirical_candidate": false
+    },
+    {
+      "route_id": "BNB->USDC->WAL_vs_BNB->WAL",
+      "start_usdt": "1000",
+      "observations": 60,
+      "capacity_ok_observations": 0,
+      "positive_after_gates_observations": 0,
+      "positive_counts_by_15_sample_block": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "minimum_stressed_savings_bips": "186.9173186971029871535800600",
+      "median_stressed_savings_bips": "189.2578314099634042519730600",
+      "maximum_stressed_savings_bips": "190.4309328368606714767678100",
+      "empirical_candidate": false
+    },
+    {
+      "route_id": "IDR->USDT->FLOKI_vs_IDR->FLOKI",
+      "start_usdt": "1000",
+      "observations": 60,
+      "capacity_ok_observations": 0,
+      "positive_after_gates_observations": 0,
+      "positive_counts_by_15_sample_block": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "minimum_stressed_savings_bips": "184.1765900547126492670707300",
+      "median_stressed_savings_bips": "184.1765900547126492670707300",
+      "maximum_stressed_savings_bips": "188.1746968697706947773468700",
+      "empirical_candidate": false
+    },
+    {
+      "route_id": "IDR->USDT->FLOKI_vs_IDR->FLOKI",
+      "start_usdt": "100",
+      "observations": 60,
+      "capacity_ok_observations": 0,
+      "positive_after_gates_observations": 0,
+      "positive_counts_by_15_sample_block": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "minimum_stressed_savings_bips": "184.1765403025027336384390500",
+      "median_stressed_savings_bips": "184.1765403025027336384390500",
+      "maximum_stressed_savings_bips": "188.1746504988855685610756900",
+      "empirical_candidate": false
+    },
+    {
+      "route_id": "IDR->USDC->FLOKI_vs_IDR->FLOKI",
+      "start_usdt": "100",
+      "observations": 60,
+      "capacity_ok_observations": 0,
+      "positive_after_gates_observations": 0,
+      "positive_counts_by_15_sample_block": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "minimum_stressed_savings_bips": "183.0276021894139738743454000",
+      "median_stressed_savings_bips": "183.0276021894139738743454000",
+      "maximum_stressed_savings_bips": "188.1746482677992175579976900",
+      "empirical_candidate": false
+    },
+    {
+      "route_id": "IDR->USDC->FLOKI_vs_IDR->FLOKI",
+      "start_usdt": "1000",
+      "observations": 60,
+      "capacity_ok_observations": 0,
+      "positive_after_gates_observations": 0,
+      "positive_counts_by_15_sample_block": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "minimum_stressed_savings_bips": "183.0256084337836900591210000",
+      "median_stressed_savings_bips": "183.0256084337836900591210000",
+      "maximum_stressed_savings_bips": "188.1746967210316039610402900",
+      "empirical_candidate": false
+    },
+    {
+      "route_id": "IDR->USDT->DOGS_vs_IDR->DOGS",
+      "start_usdt": "1000",
+      "observations": 60,
+      "capacity_ok_observations": 0,
+      "positive_after_gates_observations": 0,
+      "positive_counts_by_15_sample_block": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "minimum_stressed_savings_bips": "156.6133332798820054199488100",
+      "median_stressed_savings_bips": "159.1893002047736218741726500",
+      "maximum_stressed_savings_bips": "161.7665739673718975255551700",
+      "empirical_candidate": false
+    },
+    {
+      "route_id": "IDR->USDT->DOGS_vs_IDR->DOGS",
+      "start_usdt": "100",
+      "observations": 60,
+      "capacity_ok_observations": 0,
+      "positive_after_gates_observations": 0,
+      "positive_counts_by_15_sample_block": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "minimum_stressed_savings_bips": "156.6133247460632159813043400",
+      "median_stressed_savings_bips": "159.1892887430562459108941200",
+      "maximum_stressed_savings_bips": "161.7665622914093945923059300",
+      "empirical_candidate": false
+    },
+    {
+      "route_id": "IDR->USDC->DOGS_vs_IDR->DOGS",
+      "start_usdt": "100",
+      "observations": 60,
+      "capacity_ok_observations": 0,
+      "positive_after_gates_observations": 0,
+      "positive_counts_by_15_sample_block": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "minimum_stressed_savings_bips": "152.8932276979893273670175800",
+      "median_stressed_savings_bips": "155.4675939706697120131717000",
+      "maximum_stressed_savings_bips": "159.1892898073497955031256000",
+      "empirical_candidate": false
+    },
+    {
+      "route_id": "IDR->USDC->DOGS_vs_IDR->DOGS",
+      "start_usdt": "1000",
+      "observations": 60,
+      "capacity_ok_observations": 0,
+      "positive_after_gates_observations": 0,
+      "positive_counts_by_15_sample_block": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "minimum_stressed_savings_bips": "152.8911063477217363766033200",
+      "median_stressed_savings_bips": "155.4654767326203056200707700",
+      "maximum_stressed_savings_bips": "159.1893026791391158432968200",
+      "empirical_candidate": false
+    },
+    {
+      "route_id": "BNB->TRY->WAL_vs_BNB->WAL",
+      "start_usdt": "100",
+      "observations": 60,
+      "capacity_ok_observations": 1,
+      "positive_after_gates_observations": 0,
+      "positive_counts_by_15_sample_block": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "minimum_stressed_savings_bips": "125.3864872117685102420790300",
+      "median_stressed_savings_bips": "127.1780603377629535701204000",
+      "maximum_stressed_savings_bips": "128.9847743439677929486370500",
+      "empirical_candidate": false
+    },
+    {
+      "route_id": "BNB->TRY->WAL_vs_BNB->WAL",
+      "start_usdt": "1000",
+      "observations": 60,
+      "capacity_ok_observations": 0,
+      "positive_after_gates_observations": 0,
+      "positive_counts_by_15_sample_block": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "minimum_stressed_savings_bips": "125.0389761315858128694134400",
+      "median_stressed_savings_bips": "126.8264724347531324815701900",
+      "maximum_stressed_savings_bips": "128.6421761651034534537312300",
+      "empirical_candidate": false
+    },
+    {
+      "route_id": "DOGS->USDT->IDR_vs_DOGS->IDR",
+      "start_usdt": "100",
+      "observations": 60,
+      "capacity_ok_observations": 1,
+      "positive_after_gates_observations": 1,
+      "positive_counts_by_15_sample_block": [
+        1,
+        0,
+        0,
+        0
+      ],
+      "minimum_stressed_savings_bips": "95.55263295995542082859076000",
+      "median_stressed_savings_bips": "98.1144166632552226062535800",
+      "maximum_stressed_savings_bips": "100.6761840496135033821793900",
+      "empirical_candidate": false
+    },
+    {
+      "route_id": "DOGS->USDT->IDR_vs_DOGS->IDR",
+      "start_usdt": "1000",
+      "observations": 60,
+      "capacity_ok_observations": 0,
+      "positive_after_gates_observations": 0,
+      "positive_counts_by_15_sample_block": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "minimum_stressed_savings_bips": "95.55068683526000925360940000",
+      "median_stressed_savings_bips": "98.1124706650771422774343400",
+      "maximum_stressed_savings_bips": "100.6742531820007884712989200",
+      "empirical_candidate": false
+    },
+    {
+      "route_id": "DOGS->USDC->IDR_vs_DOGS->IDR",
+      "start_usdt": "100",
+      "observations": 60,
+      "capacity_ok_observations": 0,
+      "positive_after_gates_observations": 0,
+      "positive_counts_by_15_sample_block": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "minimum_stressed_savings_bips": "92.98920622849959590769088000",
+      "median_stressed_savings_bips": "95.5516236262613026827697300",
+      "maximum_stressed_savings_bips": "100.6751754460126112425622800",
+      "empirical_candidate": false
+    },
+    {
+      "route_id": "DOGS->USDC->IDR_vs_DOGS->IDR",
+      "start_usdt": "1000",
+      "observations": 60,
+      "capacity_ok_observations": 0,
+      "positive_after_gates_observations": 0,
+      "positive_counts_by_15_sample_block": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "minimum_stressed_savings_bips": "92.98875907221120205994304000",
+      "median_stressed_savings_bips": "95.5505859546755657860990600",
+      "maximum_stressed_savings_bips": "100.6741522943375059749322600",
+      "empirical_candidate": false
+    },
+    {
+      "route_id": "TRY->USDT->MAV_vs_TRY->MAV",
+      "start_usdt": "100",
+      "observations": 60,
+      "capacity_ok_observations": 60,
+      "positive_after_gates_observations": 0,
+      "positive_counts_by_15_sample_block": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "minimum_stressed_savings_bips": "89.21595116149757799743350000",
+      "median_stressed_savings_bips": "89.2159511614975779974335000",
+      "maximum_stressed_savings_bips": "89.21595116149757799743350000",
+      "empirical_candidate": false
+    },
+    {
+      "route_id": "TRY->USDT->MAV_vs_TRY->MAV",
+      "start_usdt": "1000",
+      "observations": 60,
+      "capacity_ok_observations": 22,
+      "positive_after_gates_observations": 22,
+      "positive_counts_by_15_sample_block": [
+        7,
+        0,
+        0,
+        15
+      ],
+      "minimum_stressed_savings_bips": "89.18621206165792361875891000",
+      "median_stressed_savings_bips": "89.1862120616579236187589100",
+      "maximum_stressed_savings_bips": "89.18621206165792361875891000",
+      "empirical_candidate": false
+    },
+    {
+      "route_id": "WAL->TRY->BNB_vs_WAL->BNB",
+      "start_usdt": "100",
+      "observations": 60,
+      "capacity_ok_observations": 1,
+      "positive_after_gates_observations": 0,
+      "positive_counts_by_15_sample_block": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "minimum_stressed_savings_bips": "81.00712244659179039283817000",
+      "median_stressed_savings_bips": "82.3664383575332502209169900",
+      "maximum_stressed_savings_bips": "83.72660473411982523756745000",
+      "empirical_candidate": false
+    },
+    {
+      "route_id": "WAL->TRY->BNB_vs_WAL->BNB",
+      "start_usdt": "1000",
+      "observations": 60,
+      "capacity_ok_observations": 0,
+      "positive_after_gates_observations": 0,
+      "positive_counts_by_15_sample_block": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "minimum_stressed_savings_bips": "80.97340898213211497706609000",
+      "median_stressed_savings_bips": "82.3329172068795100462685250",
+      "maximum_stressed_savings_bips": "83.69277463743411941886955000",
+      "empirical_candidate": false
+    },
+    {
+      "route_id": "BTC->FDUSD->DOGE_vs_BTC->DOGE",
+      "start_usdt": "100",
+      "observations": 60,
+      "capacity_ok_observations": 44,
+      "positive_after_gates_observations": 0,
+      "positive_counts_by_15_sample_block": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "minimum_stressed_savings_bips": "68.15698587130945775833197000",
+      "median_stressed_savings_bips": "68.4252793834625942229045400",
+      "maximum_stressed_savings_bips": "70.36262005411513783792771000",
+      "empirical_candidate": false
+    },
+    {
+      "route_id": "BTC->FDUSD->DOGE_vs_BTC->DOGE",
+      "start_usdt": "1000",
+      "observations": 60,
+      "capacity_ok_observations": 20,
+      "positive_after_gates_observations": 0,
+      "positive_counts_by_15_sample_block": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "minimum_stressed_savings_bips": "68.03832595937312561541636000",
+      "median_stressed_savings_bips": "68.2861749709307692906341400",
+      "maximum_stressed_savings_bips": "70.26154303905455366934618000",
+      "empirical_candidate": false
+    },
+    {
+      "route_id": "BTC->USDT->DOGE_vs_BTC->DOGE",
+      "start_usdt": "100",
+      "observations": 60,
+      "capacity_ok_observations": 60,
+      "positive_after_gates_observations": 0,
+      "positive_counts_by_15_sample_block": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "minimum_stressed_savings_bips": "66.84292374435247064214450000",
+      "median_stressed_savings_bips": "68.0768023283685435260625500",
+      "maximum_stressed_savings_bips": "69.25899392160555863412926000",
+      "empirical_candidate": false
+    },
+    {
+      "route_id": "BTC->USDT->DOGE_vs_BTC->DOGE",
+      "start_usdt": "1000",
+      "observations": 60,
+      "capacity_ok_observations": 59,
+      "positive_after_gates_observations": 0,
+      "positive_counts_by_15_sample_block": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "minimum_stressed_savings_bips": "66.72195790733090995830491000",
+      "median_stressed_savings_bips": "67.9385567178978737495200900",
+      "maximum_stressed_savings_bips": "69.11741201723691751940024000",
+      "empirical_candidate": false
+    },
+    {
+      "route_id": "BTC->TRY->DOGE_vs_BTC->DOGE",
+      "start_usdt": "100",
+      "observations": 60,
+      "capacity_ok_observations": 44,
+      "positive_after_gates_observations": 0,
+      "positive_counts_by_15_sample_block": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "minimum_stressed_savings_bips": "67.09908694780730281013312000",
+      "median_stressed_savings_bips": "67.4989548138648624445976400",
+      "maximum_stressed_savings_bips": "68.01891265146846321971963000",
+      "empirical_candidate": false
+    },
+    {
+      "route_id": "BTC->TRY->DOGE_vs_BTC->DOGE",
+      "start_usdt": "1000",
+      "observations": 60,
+      "capacity_ok_observations": 0,
+      "positive_after_gates_observations": 0,
+      "positive_counts_by_15_sample_block": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "minimum_stressed_savings_bips": "66.96874249115005336577984000",
+      "median_stressed_savings_bips": "67.3873513280766015159916800",
+      "maximum_stressed_savings_bips": "67.89542913387272738486432000",
+      "empirical_candidate": false
+    },
+    {
+      "route_id": "BTC->EUR->DOGE_vs_BTC->DOGE",
+      "start_usdt": "100",
+      "observations": 60,
+      "capacity_ok_observations": 35,
+      "positive_after_gates_observations": 0,
+      "positive_counts_by_15_sample_block": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "minimum_stressed_savings_bips": "66.23055336794264978601480000",
+      "median_stressed_savings_bips": "67.2762618748040999889037500",
+      "maximum_stressed_savings_bips": "68.96147324752967469493228000",
+      "empirical_candidate": false
+    },
+    {
+      "route_id": "BTC->EUR->DOGE_vs_BTC->DOGE",
+      "start_usdt": "1000",
+      "observations": 60,
+      "capacity_ok_observations": 0,
+      "positive_after_gates_observations": 0,
+      "positive_counts_by_15_sample_block": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "minimum_stressed_savings_bips": "66.09541940145303122791711000",
+      "median_stressed_savings_bips": "67.1639062994016741468906900",
+      "maximum_stressed_savings_bips": "68.82722412556013035382328000",
+      "empirical_candidate": false
+    },
+    {
+      "route_id": "WAL->USDC->BNB_vs_WAL->BNB",
+      "start_usdt": "100",
+      "observations": 60,
+      "capacity_ok_observations": 60,
+      "positive_after_gates_observations": 0,
+      "positive_counts_by_15_sample_block": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "minimum_stressed_savings_bips": "65.97728907297873868328606000",
+      "median_stressed_savings_bips": "67.1399952092233858995177500",
+      "maximum_stressed_savings_bips": "69.46728640189155587353768000",
+      "empirical_candidate": false
+    },
+    {
+      "route_id": "WAL->USDC->BNB_vs_WAL->BNB",
+      "start_usdt": "1000",
+      "observations": 60,
+      "capacity_ok_observations": 0,
+      "positive_after_gates_observations": 0,
+      "positive_counts_by_15_sample_block": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "minimum_stressed_savings_bips": "65.96421195107973364974572000",
+      "median_stressed_savings_bips": "67.1205516725318675336574200",
+      "maximum_stressed_savings_bips": "69.44848656253197387266640000",
+      "empirical_candidate": false
+    },
+    {
+      "route_id": "WAL->USDT->BNB_vs_WAL->BNB",
+      "start_usdt": "100",
+      "observations": 60,
+      "capacity_ok_observations": 60,
+      "positive_after_gates_observations": 0,
+      "positive_counts_by_15_sample_block": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "minimum_stressed_savings_bips": "65.99705850938123856400879000",
+      "median_stressed_savings_bips": "67.0162158046020824915584100",
+      "maximum_stressed_savings_bips": "69.05514822356456454976883000",
+      "empirical_candidate": false
+    },
+    {
+      "route_id": "WAL->USDT->BNB_vs_WAL->BNB",
+      "start_usdt": "1000",
+      "observations": 60,
+      "capacity_ok_observations": 60,
+      "positive_after_gates_observations": 19,
+      "positive_counts_by_15_sample_block": [
+        4,
+        15,
+        0,
+        0
+      ],
+      "minimum_stressed_savings_bips": "65.97058344518907693304966000",
+      "median_stressed_savings_bips": "66.9756820396553693221659800",
+      "maximum_stressed_savings_bips": "69.01465314843324816185601000",
+      "empirical_candidate": false
+    },
+    {
+      "route_id": "BTC->BRL->DOGE_vs_BTC->DOGE",
+      "start_usdt": "100",
+      "observations": 60,
+      "capacity_ok_observations": 1,
+      "positive_after_gates_observations": 0,
+      "positive_counts_by_15_sample_block": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "minimum_stressed_savings_bips": "64.70858219623544444030805000",
+      "median_stressed_savings_bips": "66.9578646989578059304268400",
+      "maximum_stressed_savings_bips": "68.23734831026911316095841000",
+      "empirical_candidate": false
+    },
+    {
+      "route_id": "BTC->BRL->DOGE_vs_BTC->DOGE",
+      "start_usdt": "1000",
+      "observations": 60,
+      "capacity_ok_observations": 0,
+      "positive_after_gates_observations": 0,
+      "positive_counts_by_15_sample_block": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "minimum_stressed_savings_bips": "64.57969218308359931213851000",
+      "median_stressed_savings_bips": "66.8425203332122978351747700",
+      "maximum_stressed_savings_bips": "68.09715558612545362049357000",
+      "empirical_candidate": false
+    },
+    {
+      "route_id": "BTC->USDC->DOGE_vs_BTC->DOGE",
+      "start_usdt": "100",
+      "observations": 60,
+      "capacity_ok_observations": 58,
+      "positive_after_gates_observations": 0,
+      "positive_counts_by_15_sample_block": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "minimum_stressed_savings_bips": "66.09087570573844044699513000",
+      "median_stressed_savings_bips": "66.6546059965400998748075600",
+      "maximum_stressed_savings_bips": "67.83545811911976727556888000",
+      "empirical_candidate": false
+    },
+    {
+      "route_id": "BTC->USDC->DOGE_vs_BTC->DOGE",
+      "start_usdt": "1000",
+      "observations": 60,
+      "capacity_ok_observations": 10,
+      "positive_after_gates_observations": 0,
+      "positive_counts_by_15_sample_block": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "minimum_stressed_savings_bips": "65.97040778781946619793696000",
+      "median_stressed_savings_bips": "66.5124008587110642448718800",
+      "maximum_stressed_savings_bips": "67.69249025915495717488653000",
+      "empirical_candidate": false
+    },
+    {
+      "route_id": "BTC->U->DOGE_vs_BTC->DOGE",
+      "start_usdt": "100",
+      "observations": 60,
+      "capacity_ok_observations": 4,
+      "positive_after_gates_observations": 0,
+      "positive_counts_by_15_sample_block": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "minimum_stressed_savings_bips": "64.21054617713163257676885000",
+      "median_stressed_savings_bips": "66.0032979242499896175702300",
+      "maximum_stressed_savings_bips": "68.36737332342393724170217000",
+      "empirical_candidate": false
+    },
+    {
+      "route_id": "BTC->U->DOGE_vs_BTC->DOGE",
+      "start_usdt": "1000",
+      "observations": 60,
+      "capacity_ok_observations": 0,
+      "positive_after_gates_observations": 0,
+      "positive_counts_by_15_sample_block": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "minimum_stressed_savings_bips": "64.07824419358994949224393000",
+      "median_stressed_savings_bips": "65.8647478073275849760321150",
+      "maximum_stressed_savings_bips": "68.22809348290604801510067000",
+      "empirical_candidate": false
+    },
+    {
+      "route_id": "BTC->USD1->DOGE_vs_BTC->DOGE",
+      "start_usdt": "100",
+      "observations": 60,
+      "capacity_ok_observations": 3,
+      "positive_after_gates_observations": 0,
+      "positive_counts_by_15_sample_block": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "minimum_stressed_savings_bips": "64.64857452679123515812247000",
+      "median_stressed_savings_bips": "65.8228652001845813037732700",
+      "maximum_stressed_savings_bips": "68.32982550526174519335565000",
+      "empirical_candidate": false
+    },
+    {
+      "route_id": "BTC->USD1->DOGE_vs_BTC->DOGE",
+      "start_usdt": "1000",
+      "observations": 60,
+      "capacity_ok_observations": 0,
+      "positive_after_gates_observations": 0,
+      "positive_counts_by_15_sample_block": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "minimum_stressed_savings_bips": "64.50934145502182762079935000",
+      "median_stressed_savings_bips": "65.6757973133919156101431100",
+      "maximum_stressed_savings_bips": "68.19002469839494448815931000",
+      "empirical_candidate": false
+    },
+    {
+      "route_id": "MAV->USDT->TRY_vs_MAV->TRY",
+      "start_usdt": "100",
+      "observations": 60,
+      "capacity_ok_observations": 42,
+      "positive_after_gates_observations": 0,
+      "positive_counts_by_15_sample_block": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "minimum_stressed_savings_bips": "64.88080036180449810393318000",
+      "median_stressed_savings_bips": "64.8808003618044981039331800",
+      "maximum_stressed_savings_bips": "64.88080036180449810393318000",
+      "empirical_candidate": false
+    },
+    {
+      "route_id": "MAV->USDT->TRY_vs_MAV->TRY",
+      "start_usdt": "1000",
+      "observations": 60,
+      "capacity_ok_observations": 0,
+      "positive_after_gates_observations": 0,
+      "positive_counts_by_15_sample_block": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "minimum_stressed_savings_bips": "64.68834293576630829760165000",
+      "median_stressed_savings_bips": "64.6883429357663082976016500",
+      "maximum_stressed_savings_bips": "64.68834293576630829760165000",
+      "empirical_candidate": false
+    },
+    {
+      "route_id": "U->USDT->\u5e01\u5b89\u4eba\u751f_vs_U->\u5e01\u5b89\u4eba\u751f",
+      "start_usdt": "100",
+      "observations": 60,
+      "capacity_ok_observations": 0,
+      "positive_after_gates_observations": 0,
+      "positive_counts_by_15_sample_block": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "minimum_stressed_savings_bips": "53.94259721719800472697421000",
+      "median_stressed_savings_bips": "56.8933848366520505983420500",
+      "maximum_stressed_savings_bips": "60.87712099691632540141236000",
+      "empirical_candidate": false
+    },
+    {
+      "route_id": "U->USDT->\u5e01\u5b89\u4eba\u751f_vs_U->\u5e01\u5b89\u4eba\u751f",
+      "start_usdt": "1000",
+      "observations": 60,
+      "capacity_ok_observations": 0,
+      "positive_after_gates_observations": 0,
+      "positive_counts_by_15_sample_block": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "minimum_stressed_savings_bips": "53.92033453232278452868093000",
+      "median_stressed_savings_bips": "56.8849378533675051116394900",
+      "maximum_stressed_savings_bips": "60.85719454903816926183031000",
+      "empirical_candidate": false
+    },
+    {
+      "route_id": "U->USDT->WLD_vs_U->WLD",
+      "start_usdt": "100",
+      "observations": 60,
+      "capacity_ok_observations": 58,
+      "positive_after_gates_observations": 0,
+      "positive_counts_by_15_sample_block": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "minimum_stressed_savings_bips": "50.97484604061935310401540000",
+      "median_stressed_savings_bips": "56.3203491363694961313320500",
+      "maximum_stressed_savings_bips": "60.02924281236696098268981000",
+      "empirical_candidate": false
+    },
+    {
+      "route_id": "U->USDT->WLD_vs_U->WLD",
+      "start_usdt": "1000",
+      "observations": 60,
+      "capacity_ok_observations": 0,
+      "positive_after_gates_observations": 0,
+      "positive_counts_by_15_sample_block": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "minimum_stressed_savings_bips": "50.94907101553747222625878000",
+      "median_stressed_savings_bips": "56.2911356208781518179170200",
+      "maximum_stressed_savings_bips": "60.01173125653925106806153000",
+      "empirical_candidate": false
+    },
+    {
+      "route_id": "BTC->IDR->DOGE_vs_BTC->DOGE",
+      "start_usdt": "100",
+      "observations": 60,
+      "capacity_ok_observations": 60,
+      "positive_after_gates_observations": 0,
+      "positive_counts_by_15_sample_block": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "minimum_stressed_savings_bips": "52.48268681348593501052434000",
+      "median_stressed_savings_bips": "55.2307879494095664908227700",
+      "maximum_stressed_savings_bips": "61.84091844507072246380838000",
+      "empirical_candidate": false
+    },
+    {
+      "route_id": "BTC->IDR->DOGE_vs_BTC->DOGE",
+      "start_usdt": "1000",
+      "observations": 60,
+      "capacity_ok_observations": 49,
+      "positive_after_gates_observations": 0,
+      "positive_counts_by_15_sample_block": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "minimum_stressed_savings_bips": "52.25392746611435261223571000",
+      "median_stressed_savings_bips": "55.0104124659069313168667200",
+      "maximum_stressed_savings_bips": "61.66300036628480779076684000",
+      "empirical_candidate": false
+    },
+    {
+      "route_id": "USD1->USDT->\u5e01\u5b89\u4eba\u751f_vs_USD1->\u5e01\u5b89\u4eba\u751f",
+      "start_usdt": "100",
+      "observations": 60,
+      "capacity_ok_observations": 0,
+      "positive_after_gates_observations": 0,
+      "positive_counts_by_15_sample_block": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "minimum_stressed_savings_bips": "52.94500043983517638151936000",
+      "median_stressed_savings_bips": "54.8899058142032086807244700",
+      "maximum_stressed_savings_bips": "60.75919753177456918990900000",
+      "empirical_candidate": false
+    },
+    {
+      "route_id": "USD1->USDT->\u5e01\u5b89\u4eba\u751f_vs_USD1->\u5e01\u5b89\u4eba\u751f",
+      "start_usdt": "1000",
+      "observations": 60,
+      "capacity_ok_observations": 0,
+      "positive_after_gates_observations": 0,
+      "positive_counts_by_15_sample_block": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "minimum_stressed_savings_bips": "52.91365250974811782545320000",
+      "median_stressed_savings_bips": "54.8880854545166177831306800",
+      "maximum_stressed_savings_bips": "60.76830750420534159485464000",
+      "empirical_candidate": false
+    },
+    {
+      "route_id": "U->USDT->OPN_vs_U->OPN",
+      "start_usdt": "100",
+      "observations": 60,
+      "capacity_ok_observations": 0,
+      "positive_after_gates_observations": 0,
+      "positive_counts_by_15_sample_block": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "minimum_stressed_savings_bips": "54.15711836408066515166111000",
+      "median_stressed_savings_bips": "54.1571183640806651516611100",
+      "maximum_stressed_savings_bips": "72.34277863962997522367247000",
+      "empirical_candidate": false
+    },
+    {
+      "route_id": "U->USDT->OPN_vs_U->OPN",
+      "start_usdt": "1000",
+      "observations": 60,
+      "capacity_ok_observations": 0,
+      "positive_after_gates_observations": 0,
+      "positive_counts_by_15_sample_block": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "minimum_stressed_savings_bips": "54.11800830243613143852215000",
+      "median_stressed_savings_bips": "54.1180083024361314385221500",
+      "maximum_stressed_savings_bips": "72.30427313938347924704622000",
+      "empirical_candidate": false
+    },
+    {
+      "route_id": "U->USDC->WLD_vs_U->WLD",
+      "start_usdt": "100",
+      "observations": 60,
+      "capacity_ok_observations": 50,
+      "positive_after_gates_observations": 0,
+      "positive_counts_by_15_sample_block": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "minimum_stressed_savings_bips": "48.31062475840114334694686000",
+      "median_stressed_savings_bips": "53.6443556529600948375301350",
+      "maximum_stressed_savings_bips": "58.98915780230640522660440000",
+      "empirical_candidate": false
+    },
+    {
+      "route_id": "U->USDC->WLD_vs_U->WLD",
+      "start_usdt": "1000",
+      "observations": 60,
+      "capacity_ok_observations": 0,
+      "positive_after_gates_observations": 0,
+      "positive_counts_by_15_sample_block": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "minimum_stressed_savings_bips": "48.28141177197265611548122000",
+      "median_stressed_savings_bips": "53.6199779146599645159552350",
+      "maximum_stressed_savings_bips": "58.96421566107820679217039000",
+      "empirical_candidate": false
+    },
+    {
+      "route_id": "ANIME->USDC->TRY_vs_ANIME->TRY",
+      "start_usdt": "100",
+      "observations": 60,
+      "capacity_ok_observations": 41,
+      "positive_after_gates_observations": 0,
+      "positive_counts_by_15_sample_block": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "minimum_stressed_savings_bips": "52.00380731279065456499780000",
+      "median_stressed_savings_bips": "52.0038073127906545649978000",
+      "maximum_stressed_savings_bips": "52.00380731279065456499780000",
+      "empirical_candidate": false
+    },
+    {
+      "route_id": "ANIME->USDC->TRY_vs_ANIME->TRY",
+      "start_usdt": "1000",
+      "observations": 60,
+      "capacity_ok_observations": 0,
+      "positive_after_gates_observations": 0,
+      "positive_counts_by_15_sample_block": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "minimum_stressed_savings_bips": "51.91334284467892729208918000",
+      "median_stressed_savings_bips": "51.9133428446789272920891800",
+      "maximum_stressed_savings_bips": "51.91334284467892729208918000",
+      "empirical_candidate": false
+    },
+    {
+      "route_id": "ANIME->USDT->TRY_vs_ANIME->TRY",
+      "start_usdt": "100",
+      "observations": 60,
+      "capacity_ok_observations": 60,
+      "positive_after_gates_observations": 0,
+      "positive_counts_by_15_sample_block": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "minimum_stressed_savings_bips": "50.04017589436124526517869000",
+      "median_stressed_savings_bips": "50.0401758943612452651786900",
+      "maximum_stressed_savings_bips": "50.04017589436124526517869000",
+      "empirical_candidate": false
+    },
+    {
+      "route_id": "ANIME->USDT->TRY_vs_ANIME->TRY",
+      "start_usdt": "1000",
+      "observations": 60,
+      "capacity_ok_observations": 43,
+      "positive_after_gates_observations": 0,
+      "positive_counts_by_15_sample_block": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "minimum_stressed_savings_bips": "49.84028761060633139574584000",
+      "median_stressed_savings_bips": "49.84028761060633139574584000",
+      "maximum_stressed_savings_bips": "49.84028761060633139574584000",
+      "empirical_candidate": false
+    },
+    {
+      "route_id": "U->TRY->WLD_vs_U->WLD",
+      "start_usdt": "100",
+      "observations": 60,
+      "capacity_ok_observations": 60,
+      "positive_after_gates_observations": 0,
+      "positive_counts_by_15_sample_block": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "minimum_stressed_savings_bips": "44.03204062004545261188930000",
+      "median_stressed_savings_bips": "49.67720927311631932810597500",
+      "maximum_stressed_savings_bips": "55.33089629604946652102291000",
+      "empirical_candidate": false
+    },
+    {
+      "route_id": "U->TRY->WLD_vs_U->WLD",
+      "start_usdt": "1000",
+      "observations": 60,
+      "capacity_ok_observations": 0,
+      "positive_after_gates_observations": 0,
+      "positive_counts_by_15_sample_block": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "minimum_stressed_savings_bips": "43.99918364270347691360562000",
+      "median_stressed_savings_bips": "49.64737933750907446812251000",
+      "maximum_stressed_savings_bips": "55.30507753625585427422537000",
+      "empirical_candidate": false
+    },
+    {
+      "route_id": "ARB->TRY->BTC_vs_ARB->BTC",
+      "start_usdt": "100",
+      "observations": 60,
+      "capacity_ok_observations": 58,
+      "positive_after_gates_observations": 0,
+      "positive_counts_by_15_sample_block": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "minimum_stressed_savings_bips": "47.65227199596475315917014000",
+      "median_stressed_savings_bips": "49.17651770569384324759479000",
+      "maximum_stressed_savings_bips": "49.67934498964208069794737000",
+      "empirical_candidate": false
+    },
+    {
+      "route_id": "ARB->TRY->BTC_vs_ARB->BTC",
+      "start_usdt": "1000",
+      "observations": 60,
+      "capacity_ok_observations": 9,
+      "positive_after_gates_observations": 0,
+      "positive_counts_by_15_sample_block": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "minimum_stressed_savings_bips": "47.58891447721618006035462000",
+      "median_stressed_savings_bips": "49.10953365594165666231890000",
+      "maximum_stressed_savings_bips": "49.61377272538926549802768000",
+      "empirical_candidate": false
+    },
+    {
+      "route_id": "HBAR->TRY->BTC_vs_HBAR->BTC",
+      "start_usdt": "100",
+      "observations": 60,
+      "capacity_ok_observations": 53,
+      "positive_after_gates_observations": 0,
+      "positive_counts_by_15_sample_block": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "minimum_stressed_savings_bips": "46.79404667753161832773104000",
+      "median_stressed_savings_bips": "47.29677625744475793480894000",
+      "maximum_stressed_savings_bips": "49.52091609995262274616902000",
+      "empirical_candidate": false
+    },
+    {
+      "route_id": "TRY->USDT->WAL_vs_TRY->WAL",
+      "start_usdt": "100",
+      "observations": 60,
+      "capacity_ok_observations": 60,
+      "positive_after_gates_observations": 0,
+      "positive_counts_by_15_sample_block": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "minimum_stressed_savings_bips": "47.27565510201389538025556000",
+      "median_stressed_savings_bips": "47.27565510201389538025556000",
+      "maximum_stressed_savings_bips": "47.27565510201389538025556000",
+      "empirical_candidate": false
+    },
+    {
+      "route_id": "HBAR->TRY->BTC_vs_HBAR->BTC",
+      "start_usdt": "1000",
+      "observations": 60,
+      "capacity_ok_observations": 11,
+      "positive_after_gates_observations": 0,
+      "positive_counts_by_15_sample_block": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "minimum_stressed_savings_bips": "46.74798593648005348337701000",
+      "median_stressed_savings_bips": "47.25204054506789733132899000",
+      "maximum_stressed_savings_bips": "49.50505429780117772091136000",
+      "empirical_candidate": false
+    },
+    {
+      "route_id": "TRY->USDT->WAL_vs_TRY->WAL",
+      "start_usdt": "1000",
+      "observations": 60,
+      "capacity_ok_observations": 0,
+      "positive_after_gates_observations": 0,
+      "positive_counts_by_15_sample_block": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "minimum_stressed_savings_bips": "47.21302277141063742869322000",
+      "median_stressed_savings_bips": "47.21302277141063742869322000",
+      "maximum_stressed_savings_bips": "47.21302277141063742869322000",
+      "empirical_candidate": false
+    },
+    {
+      "route_id": "HBAR->USDT->BTC_vs_HBAR->BTC",
+      "start_usdt": "100",
+      "observations": 60,
+      "capacity_ok_observations": 42,
+      "positive_after_gates_observations": 0,
+      "positive_counts_by_15_sample_block": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "minimum_stressed_savings_bips": "46.47643187539763509658237000",
+      "median_stressed_savings_bips": "46.78021014465819328758989000",
+      "maximum_stressed_savings_bips": "49.52168938579222206746904000",
+      "empirical_candidate": false
+    },
+    {
+      "route_id": "HBAR->USDT->BTC_vs_HBAR->BTC",
+      "start_usdt": "1000",
+      "observations": 60,
+      "capacity_ok_observations": 10,
+      "positive_after_gates_observations": 0,
+      "positive_counts_by_15_sample_block": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "minimum_stressed_savings_bips": "46.36628476444213926800832000",
+      "median_stressed_savings_bips": "46.67013263386251071466543000",
+      "maximum_stressed_savings_bips": "49.43423048475240859170455000",
+      "empirical_candidate": false
+    },
+    {
+      "route_id": "HBAR->USDC->BTC_vs_HBAR->BTC",
+      "start_usdt": "100",
+      "observations": 60,
+      "capacity_ok_observations": 0,
+      "positive_after_gates_observations": 0,
+      "positive_counts_by_15_sample_block": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "minimum_stressed_savings_bips": "44.82227341915481284462677000",
+      "median_stressed_savings_bips": "46.57748746363781394602469000",
+      "maximum_stressed_savings_bips": "49.70507515517057724569899000",
+      "empirical_candidate": false
+    },
+    {
+      "route_id": "HBAR->USDC->BTC_vs_HBAR->BTC",
+      "start_usdt": "1000",
+      "observations": 60,
+      "capacity_ok_observations": 0,
+      "positive_after_gates_observations": 0,
+      "positive_counts_by_15_sample_block": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "minimum_stressed_savings_bips": "44.76908359734605251302497000",
+      "median_stressed_savings_bips": "46.53223498925721351281768000",
+      "maximum_stressed_savings_bips": "49.67686193130714230863624000",
+      "empirical_candidate": false
+    },
+    {
+      "route_id": "EUR->USDT->EGLD_vs_EUR->EGLD",
+      "start_usdt": "100",
+      "observations": 60,
+      "capacity_ok_observations": 0,
+      "positive_after_gates_observations": 0,
+      "positive_counts_by_15_sample_block": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "minimum_stressed_savings_bips": "39.04048091786167746911709000",
+      "median_stressed_savings_bips": "45.47059544152725887845826000",
+      "maximum_stressed_savings_bips": "51.06179019862563516183677000",
+      "empirical_candidate": false
+    },
+    {
+      "route_id": "EUR->USDT->EGLD_vs_EUR->EGLD",
+      "start_usdt": "1000",
+      "observations": 60,
+      "capacity_ok_observations": 0,
+      "positive_after_gates_observations": 0,
+      "positive_counts_by_15_sample_block": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "minimum_stressed_savings_bips": "39.02672216278726489994961000",
+      "median_stressed_savings_bips": "45.46318599783107452231200000",
+      "maximum_stressed_savings_bips": "51.05993446800125094151530000",
+      "empirical_candidate": false
+    },
+    {
+      "route_id": "TRY->USDC->WAL_vs_TRY->WAL",
+      "start_usdt": "1000",
+      "observations": 60,
+      "capacity_ok_observations": 0,
+      "positive_after_gates_observations": 0,
+      "positive_counts_by_15_sample_block": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "minimum_stressed_savings_bips": "45.18085714751166010696555000",
+      "median_stressed_savings_bips": "45.18085714751166010696555000",
+      "maximum_stressed_savings_bips": "45.18085714751166010696555000",
+      "empirical_candidate": false
+    },
+    {
+      "route_id": "TRY->USDC->WAL_vs_TRY->WAL",
+      "start_usdt": "100",
+      "observations": 60,
+      "capacity_ok_observations": 0,
+      "positive_after_gates_observations": 0,
+      "positive_counts_by_15_sample_block": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "minimum_stressed_savings_bips": "45.18025984519933309194381000",
+      "median_stressed_savings_bips": "45.18025984519933309194381000",
+      "maximum_stressed_savings_bips": "45.18025984519933309194381000",
+      "empirical_candidate": false
+    },
+    {
+      "route_id": "U->USDC->\u5e01\u5b89\u4eba\u751f_vs_U->\u5e01\u5b89\u4eba\u751f",
+      "start_usdt": "100",
+      "observations": 60,
+      "capacity_ok_observations": 60,
+      "positive_after_gates_observations": 0,
+      "positive_counts_by_15_sample_block": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "minimum_stressed_savings_bips": "41.06182232683285315476989000",
+      "median_stressed_savings_bips": "45.02446881665555227067476000",
+      "maximum_stressed_savings_bips": "50.95658856903865285713181000",
+      "empirical_candidate": false
+    },
+    {
+      "route_id": "U->USDC->\u5e01\u5b89\u4eba\u751f_vs_U->\u5e01\u5b89\u4eba\u751f",
+      "start_usdt": "1000",
+      "observations": 60,
+      "capacity_ok_observations": 0,
+      "positive_after_gates_observations": 0,
+      "positive_counts_by_15_sample_block": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "minimum_stressed_savings_bips": "41.03272762970077269461119000",
+      "median_stressed_savings_bips": "44.99475787925719255214796000",
+      "maximum_stressed_savings_bips": "50.93862744376031529707366000",
+      "empirical_candidate": false
+    },
+    {
+      "route_id": "ARB->USDT->BTC_vs_ARB->BTC",
+      "start_usdt": "100",
+      "observations": 60,
+      "capacity_ok_observations": 60,
+      "positive_after_gates_observations": 0,
+      "positive_counts_by_15_sample_block": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "minimum_stressed_savings_bips": "43.48198514849966731490897000",
+      "median_stressed_savings_bips": "44.40094442499419174148310000",
+      "maximum_stressed_savings_bips": "44.70472696320677744276303000",
+      "empirical_candidate": false
+    },
+    {
+      "route_id": "ARB->USDT->BTC_vs_ARB->BTC",
+      "start_usdt": "1000",
+      "observations": 60,
+      "capacity_ok_observations": 60,
+      "positive_after_gates_observations": 0,
+      "positive_counts_by_15_sample_block": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "minimum_stressed_savings_bips": "43.35605696826046544264543000",
+      "median_stressed_savings_bips": "44.27501624412156263370931000",
+      "maximum_stressed_savings_bips": "44.57879878212475479786722000",
+      "empirical_candidate": false
+    },
+    {
+      "route_id": "ARB->USDC->BTC_vs_ARB->BTC",
+      "start_usdt": "100",
+      "observations": 60,
+      "capacity_ok_observations": 60,
+      "positive_after_gates_observations": 0,
+      "positive_counts_by_15_sample_block": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "minimum_stressed_savings_bips": "43.65945014524619507213265000",
+      "median_stressed_savings_bips": "44.07628802187944324626420000",
+      "maximum_stressed_savings_bips": "45.38298512614213721537873000",
+      "empirical_candidate": false
+    },
+    {
+      "route_id": "ARB->USDC->BTC_vs_ARB->BTC",
+      "start_usdt": "1000",
+      "observations": 60,
+      "capacity_ok_observations": 60,
+      "positive_after_gates_observations": 0,
+      "positive_counts_by_15_sample_block": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "minimum_stressed_savings_bips": "43.59805015130030566395817000",
+      "median_stressed_savings_bips": "44.00981916909466409660337000",
+      "maximum_stressed_savings_bips": "45.32474743621885535056272000",
+      "empirical_candidate": false
+    },
+    {
+      "route_id": "USD1->USDC->\u5e01\u5b89\u4eba\u751f_vs_USD1->\u5e01\u5b89\u4eba\u751f",
+      "start_usdt": "100",
+      "observations": 60,
+      "capacity_ok_observations": 59,
+      "positive_after_gates_observations": 0,
+      "positive_counts_by_15_sample_block": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "minimum_stressed_savings_bips": "41.16425691532420116882019000",
+      "median_stressed_savings_bips": "43.10688379359923866467187000",
+      "maximum_stressed_savings_bips": "49.04985340352464567512299000",
+      "empirical_candidate": false
+    },
+    {
+      "route_id": "USD1->USDC->\u5e01\u5b89\u4eba\u751f_vs_USD1->\u5e01\u5b89\u4eba\u751f",
+      "start_usdt": "1000",
+      "observations": 60,
+      "capacity_ok_observations": 0,
+      "positive_after_gates_observations": 0,
+      "positive_counts_by_15_sample_block": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "minimum_stressed_savings_bips": "41.12417626404456462710682000",
+      "median_stressed_savings_bips": "43.09629439873160837064473000",
+      "maximum_stressed_savings_bips": "49.04039785886905794976210000",
+      "empirical_candidate": false
+    },
+    {
+      "route_id": "HBAR->BNB->BTC_vs_HBAR->BTC",
+      "start_usdt": "100",
+      "observations": 60,
+      "capacity_ok_observations": 0,
+      "positive_after_gates_observations": 0,
+      "positive_counts_by_15_sample_block": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "minimum_stressed_savings_bips": "38.43547431650492436115608000",
+      "median_stressed_savings_bips": "41.20192312458627326499249000",
+      "maximum_stressed_savings_bips": "43.94704775421091762206646000",
+      "empirical_candidate": false
+    },
+    {
+      "route_id": "HBAR->BNB->BTC_vs_HBAR->BTC",
+      "start_usdt": "1000",
+      "observations": 60,
+      "capacity_ok_observations": 0,
+      "positive_after_gates_observations": 0,
+      "positive_counts_by_15_sample_block": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "minimum_stressed_savings_bips": "38.44030110604040181920587000",
+      "median_stressed_savings_bips": "41.20187274962738977005189000",
+      "maximum_stressed_savings_bips": "43.96371960754096756776678000",
+      "empirical_candidate": false
+    },
+    {
+      "route_id": "TRY->USDT->MORPHO_vs_TRY->MORPHO",
+      "start_usdt": "100",
+      "observations": 60,
+      "capacity_ok_observations": 0,
+      "positive_after_gates_observations": 0,
+      "positive_counts_by_15_sample_block": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "minimum_stressed_savings_bips": "29.30697245447848405741617000",
+      "median_stressed_savings_bips": "40.87724670930724652837156000",
+      "maximum_stressed_savings_bips": "41.73879322280698560718618000",
+      "empirical_candidate": false
+    },
+    {
+      "route_id": "EUR->USDT->WLFI_vs_EUR->WLFI",
+      "start_usdt": "100",
+      "observations": 60,
+      "capacity_ok_observations": 0,
+      "positive_after_gates_observations": 0,
+      "positive_counts_by_15_sample_block": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "minimum_stressed_savings_bips": "40.87248853599531313257217000",
+      "median_stressed_savings_bips": "40.87248853599531313257217000",
+      "maximum_stressed_savings_bips": "40.87248853599531313257217000",
+      "empirical_candidate": false
+    },
+    {
+      "route_id": "EUR->USDC->WLFI_vs_EUR->WLFI",
+      "start_usdt": "100",
+      "observations": 60,
+      "capacity_ok_observations": 60,
+      "positive_after_gates_observations": 0,
+      "positive_counts_by_15_sample_block": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "minimum_stressed_savings_bips": "40.87213131571583525902040000",
+      "median_stressed_savings_bips": "40.87213131571583525902040000",
+      "maximum_stressed_savings_bips": "40.87213131571583525902040000",
+      "empirical_candidate": false
+    },
+    {
+      "route_id": "TRY->USDT->MORPHO_vs_TRY->MORPHO",
+      "start_usdt": "1000",
+      "observations": 60,
+      "capacity_ok_observations": 0,
+      "positive_after_gates_observations": 0,
+      "positive_counts_by_15_sample_block": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "minimum_stressed_savings_bips": "29.28249444143006149405788000",
+      "median_stressed_savings_bips": "40.85745485901950930917333000",
+      "maximum_stressed_savings_bips": "41.71402817443272003262621000",
+      "empirical_candidate": false
+    },
+    {
+      "route_id": "EUR->USDT->WLFI_vs_EUR->WLFI",
+      "start_usdt": "1000",
+      "observations": 60,
+      "capacity_ok_observations": 0,
+      "positive_after_gates_observations": 0,
+      "positive_counts_by_15_sample_block": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "minimum_stressed_savings_bips": "40.84316583153024598240355000",
+      "median_stressed_savings_bips": "40.84316583153024598240355000",
+      "maximum_stressed_savings_bips": "40.84316583153024598240355000",
+      "empirical_candidate": false
+    },
+    {
+      "route_id": "EUR->USDC->WLFI_vs_EUR->WLFI",
+      "start_usdt": "1000",
+      "observations": 60,
+      "capacity_ok_observations": 60,
+      "positive_after_gates_observations": 60,
+      "positive_counts_by_15_sample_block": [
+        15,
+        15,
+        15,
+        15
+      ],
+      "minimum_stressed_savings_bips": "40.84315511217718816266410000",
+      "median_stressed_savings_bips": "40.84315511217718816266410000",
+      "maximum_stressed_savings_bips": "40.84315511217718816266410000",
+      "empirical_candidate": true
+    },
+    {
+      "route_id": "USD1->USDT->RE_vs_USD1->RE",
+      "start_usdt": "100",
+      "observations": 60,
+      "capacity_ok_observations": 0,
+      "positive_after_gates_observations": 0,
+      "positive_counts_by_15_sample_block": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "minimum_stressed_savings_bips": "38.68980783192192748683986000",
+      "median_stressed_savings_bips": "40.72371131753895818637095000",
+      "maximum_stressed_savings_bips": "44.80491625403029144936984000",
+      "empirical_candidate": false
+    },
+    {
+      "route_id": "USD1->USDT->RE_vs_USD1->RE",
+      "start_usdt": "1000",
+      "observations": 60,
+      "capacity_ok_observations": 0,
+      "positive_after_gates_observations": 0,
+      "positive_counts_by_15_sample_block": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "minimum_stressed_savings_bips": "38.67828157560687811402347000",
+      "median_stressed_savings_bips": "40.71934025254110170958803000",
+      "maximum_stressed_savings_bips": "44.80286247570499113529957000",
+      "empirical_candidate": false
+    }
+  ],
+  "accepted_edge": false,
+  "decision": "candidate_only_requires_account_fee_and_independent_execution_windows",
+  "raw_journal_sha256": "1d2a28f6bb4d1de1d493dc29028fd070cecb14893e7240d5d5baf22afdcec750",
+  "result_sha256": "b3e7f724e2b1ce2cc7a8444d00632466196af6d89f139259164549e91d1f84bc"
+}
