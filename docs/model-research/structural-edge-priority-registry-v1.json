@@ -1340,6 +1340,14 @@
           "result_sha256": "5c1de89005404efd8db9a35903df7633f92f9deaaa4c71a639b07d44d8f25e71"
         },
         {
+          "path": "docs/model-research/action-value/polymarket-lad-det-cross-period-total-contract-v1-2026-08-29.json",
+          "result_sha256": "fa936c2049de2a05f15215609f735fd1c789237a372671b0f89b324d5f487bff"
+        },
+        {
+          "path": "docs/model-research/action-value/polymarket-lad-det-cross-period-total-result-v1-2026-08-29.json",
+          "result_sha256": "fc01c54e9c04117067aa3b43ae194649b93efc12a5265fce508e64f082f320b2"
+        },
+        {
           "path": "docs/model-research/action-value/polymarket-shutdown-house-identity-metadata-contract-v1-2026-08-29.json",
           "result_sha256": "d716e9e6d95ab7f0aa9698b9d9f096f2f02a8bab9ddf81c9bdd09f3783e465a8"
         },
@@ -1364,7 +1372,7 @@
           "result_sha256": "900246f7bf066a8d310c6dcc6e9318edc1c6b83d4779f9b2f628c668e7d258e6"
         }
       ],
-      "current_status": "direction_independent_exact_subset_equivalence_family_remains_unaccepted_the_two_distinct_resolved_leg_House_control_instances_reproduced_the_payoff_identity_but_positive_economics_did_not_recur_and_the_distinct_current_Los_Angeles_Dodgers_Detroit_Tigers_event_proved_24_exact_full_game_and_first_five_margin_and_total_ladder_packages_with_a_one_pUSD_floor_but_all_Gamma_displayed_sums_were_at_or_above_one_the_best_first_five_margin_package_sum_was_1_010_an_optimistic_loss_of_0_010_per_share_and_0_050_at_five_shares_before_depth_fees_or_delay_so_zero_book_and_fee_requests_were_made_not_accepted_or_deployment_ready",
+      "current_status": "direction_independent_exact_subset_equivalence_family_remains_unaccepted_the_two_distinct_resolved_leg_House_control_instances_reproduced_the_payoff_identity_but_positive_economics_did_not_recur_the_preserved_LAD_DET_within_family_audit_proved_24_relations_but_omitted_the_cross_period_total_implication_a_separately_frozen_retained_data_correction_proved_full_game_Over_6_5_plus_first_five_Under_6_5_has_a_one_pUSD_floor_and_Gamma_sum_0_965_optimistic_profit_0_035_per_share_but_one_exact_two_token_book_batch_had_1_511_second_skew_and_actual_five_share_asks_0_44_plus_0_96_cost_7_pUSD_against_a_5_pUSD_floor_an_optimistic_zero_fee_loss_2_pUSD_six_tick_stress_lacked_complete_depth_and_zero_fee_requests_were_needed_not_accepted_or_deployment_ready",
       "market_direction_forecast_required": false,
       "mechanism": "polymarket_cross_market_exact_multi_outcome_subset_equivalence",
       "next_action": "do_not_spend_a_source_continuous_queue_capture_authenticated_probe_or_repeat_snapshot_on_the_resolved_leg_House_family_and_do_not_resample_BOS_NYY_or_LAD_DET_for_every_future_distinct_exact_rules_instance_first_use_retained_Gamma_outcomePrices_only_as_a_rejection_gate_stop_before_books_when_every_package_sum_is_at_or_above_its_guaranteed_floor_and_require_a_separately_frozen_exact_depth_screen_plus_independent_positive_after_cost_recurrence_before_any_order_capable_work",
@@ -1376,6 +1384,7 @@
         "using_trade_VWAP_midpoint_last_trade_forward_fill_or_post_event_quotes_as_executable_asks",
         "reusing_the_historical_fee_free_assumption_or_rolling_one_hour_user_fills_as_simultaneous_execution",
         "requesting_CLOB_books_when_every_exact_package_Gamma_displayed_sum_is_already_at_or_above_its_guaranteed_payout_floor_or_using_Gamma_prices_to_accept_or_promote",
+        "screening_only_within_identical_sports_time_scopes_or_treating_stale_Gamma_prices_as_current_executable_depth",
         "treating_a_repeated_payoff_identity_as_repeated_positive_economics_or_a_current_best_bid_as_an_owned_queue_censored_fill",
         "escalating_one_positive_maker_first_snapshot_to_order_capable_work_before_a_distinct_instance_survives_the_same_hedge_stress",
         "double_counting_the_same_NBA_episode_or_calling_public_recurrence_owned_profit"
@@ -1781,7 +1790,7 @@
       "venue_scope": "Binance_current_BLVT_Spot_and_primary_market_inventory"
     }
   ],
-  "result_sha256": "5b996bdea3cd8b6a9dec115a1936550df72713c8eca4292be5da02b28141d4bc",
+  "result_sha256": "23479942f0f50760ad35df84f91707716d36ef06026c4ff664f618944e528680",
   "schema_version": "structural-edge-priority-registry-v1",
   "terminal_do_not_repeat": [
     {

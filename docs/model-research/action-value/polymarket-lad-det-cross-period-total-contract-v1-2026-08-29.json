@@ -1,0 +1,153 @@
+{
+  "schema_version": "polymarket-exact-two-leg-package-contract-v1",
+  "frozen_at_utc": "2026-08-29T17:35:20.0403432Z",
+  "purpose": "test the retained LAD-DET cross-period total identity that full-game runs cannot be below first-five runs using one exact two-token current book batch",
+  "source_contracts": [
+    {
+      "url": "https://docs.polymarket.com/api-reference/market-data/get-order-books-request-body",
+      "use": "official public unauthenticated POST batch book contract"
+    },
+    {
+      "url": "https://docs.polymarket.com/api-reference/market-data/get-fee-rate-by-path-parameter",
+      "use": "official public unauthenticated current token fee-rate contract used only if the six-tick zero-fee stress remains positive"
+    }
+  ],
+  "contract_path": "docs/model-research/action-value/polymarket-lad-det-cross-period-total-contract-v1-2026-08-29.json",
+  "metadata_source": {
+    "path": "docs/model-research/action-value/polymarket-lad-det-exact-event-prefilter-result-v1-2026-08-29.json",
+    "file_sha256": "ef603340804f52f03a0700441cb601f965af278ad6ba7c4ea4ab49f3a4bc819f",
+    "result_sha256": "7d31545dfb4195b8ecc3fd19e8f2711e4634dd4cc259aa3a8d22f64402852593"
+  },
+  "markets": [
+    {
+      "name": "full_game_total_6_5",
+      "id": "3957246",
+      "question": "Los Angeles Dodgers vs. Detroit Tigers: O/U 6.5",
+      "sports_market_type": "totals",
+      "line": "6.5",
+      "condition_id": "0xc637f7839c7901ab46c78aed196507928fd85f60ee8ca12162ca9e9890b986e2",
+      "outcomes": ["Over", "Under"],
+      "outcome_prices": ["0.53", "0.47"],
+      "tokens": [
+        "88045821152178951870585129455677902172288851575257524719429957789461915925312",
+        "70453178495776300047760911563975740468331966995012771103636768565626641596510"
+      ],
+      "required_rule_fragments": [
+        "combine to score 7 or more runs in this game",
+        "If the combined total is less than 7, this market will resolve to \"Under\"",
+        "canceled entirely, with no make-up game, this market will resolve 50-50"
+      ]
+    },
+    {
+      "name": "first_five_total_6_5",
+      "id": "3964630",
+      "question": "Los Angeles Dodgers vs. Detroit Tigers: 1st 5 Innings O/U 6.5",
+      "sports_market_type": "baseball_team_first_five_total",
+      "line": "6.5",
+      "condition_id": "0xd23535d77eda9599de1c774059d6a13ea5a7bf71bcc04beef7168d3529bae0ca",
+      "outcomes": ["Over", "Under"],
+      "outcome_prices": ["0.565", "0.435"],
+      "tokens": [
+        "109405842642787093850957289752864134058957268669079392281916265821107615632266",
+        "59472176591657833957755632113204176469595642380181779526963556130219329347927"
+      ],
+      "required_rule_fragments": [
+        "combine to score 7 or more runs by the conclusion of the 5th inning",
+        "If the combined total is less than 7, this market will resolve to \"Under\"",
+        "canceled entirely, with no make-up game, this market will resolve 50-50"
+      ]
+    }
+  ],
+  "tokens": {
+    "full_game_over_6_5": {
+      "token_id": "88045821152178951870585129455677902172288851575257524719429957789461915925312",
+      "condition_id": "0xc637f7839c7901ab46c78aed196507928fd85f60ee8ca12162ca9e9890b986e2",
+      "gamma_price_pUSD": "0.53"
+    },
+    "first_five_under_6_5": {
+      "token_id": "59472176591657833957755632113204176469595642380181779526963556130219329347927",
+      "condition_id": "0xd23535d77eda9599de1c774059d6a13ea5a7bf71bcc04beef7168d3529bae0ca",
+      "gamma_price_pUSD": "0.435"
+    }
+  },
+  "package": {
+    "name": "full_game_over_6_5_plus_first_five_under_6_5",
+    "token_names": ["full_game_over_6_5", "first_five_under_6_5"]
+  },
+  "payoff_proof": {
+    "market_direction_forecast_required": false,
+    "invariant": "the cumulative full-game run total is never below the cumulative run total at the conclusion of the fifth inning",
+    "states": [
+      {
+        "state": "game_canceled_without_makeup",
+        "payouts": {"full_game_over_6_5": "0.5", "first_five_under_6_5": "0.5"}
+      },
+      {
+        "state": "first_five_runs_at_least_7_so_full_game_runs_at_least_7",
+        "payouts": {"full_game_over_6_5": "1", "first_five_under_6_5": "0"}
+      },
+      {
+        "state": "first_five_runs_below_7_and_full_game_runs_at_least_7",
+        "payouts": {"full_game_over_6_5": "1", "first_five_under_6_5": "1"}
+      },
+      {
+        "state": "full_game_runs_below_7_so_first_five_runs_below_7",
+        "payouts": {"full_game_over_6_5": "0", "first_five_under_6_5": "1"}
+      }
+    ],
+    "guaranteed_floor_per_share_pUSD": "1"
+  },
+  "gamma_prefilter": {
+    "role": "rejection_only_never_acceptance_or_promotion_evidence",
+    "displayed_price_sum_pUSD": "0.965",
+    "optimistic_profit_floor_per_share_before_execution_costs_pUSD": "0.035",
+    "passes_strictly_below_payout_gate": true
+  },
+  "execution": {
+    "quantity_shares_each_leg": "5",
+    "tick_size": "0.01",
+    "token_ids": [
+      "88045821152178951870585129455677902172288851575257524719429957789461915925312",
+      "59472176591657833957755632113204176469595642380181779526963556130219329347927"
+    ],
+    "book_request_count": 1,
+    "maximum_fee_requests": 2,
+    "fee_request_rule": "request both current token fee rates only if the complete five-share package remains gross-positive after six adverse ticks per leg",
+    "retry_count": 0,
+    "fee_schedule": {"exponent": 1, "rate": 0.05, "rebateRate": 0.15, "takerOnly": true},
+    "rebate_credit_pUSD": "0",
+    "metadata_secondsDelay_value_diagnostic_only": 0,
+    "stress_ticks": {"actual": 0, "delay_1s_sensitivity": 2, "delay_3s_sensitivity": 6},
+    "stress_note": "two and six adverse ticks per leg are frozen one-second and three-second sensitivities and are not claimed empirical bounds",
+    "candidate_stress_name": "delay_3s_sensitivity",
+    "maximum_book_timestamp_skew_ms": 5000,
+    "candidate_gate": "strictly positive five-pUSD guaranteed floor after complete displayed depth current exact fee rates six adverse ticks per leg zero rebate credit and no more than five seconds source skew"
+  },
+  "outputs": {
+    "result_path": "docs/model-research/action-value/polymarket-lad-det-cross-period-total-result-v1-2026-08-29.json",
+    "journal_path": "data/polymarket-lad-det-cross-period-total-v1/request-journal.jsonl",
+    "books_raw_path": "data/polymarket-lad-det-cross-period-total-v1/raw/books.json",
+    "fee_raw_root": "data/polymarket-lad-det-cross-period-total-v1/raw/fees"
+  },
+  "authority": {
+    "public_unauthenticated_read_only_requests_maximum": 3,
+    "credentials_used": false,
+    "signed_requests": 0,
+    "account_requests": 0,
+    "orders_or_transactions": 0,
+    "funds_used": false,
+    "protected_capture_touched": false,
+    "trading_authority": false
+  },
+  "stopping_rules": {
+    "failed_candidate_gate": "terminalize this exact event without refetch or retry",
+    "passed_candidate_gate": "candidate only and require one independent positive recurrence before any order-capable work",
+    "accepted_edge_from_one_snapshot": false,
+    "deployment_ready_from_one_snapshot": false
+  },
+  "implementation": {
+    "path": "tools/screen_polymarket_exact_two_leg_package.py",
+    "sha256": "ba7ebaa1fb5235ba026f7cf4cb21ff73ba19430fee4a4f678fbdea37635eb32f"
+  },
+  "contract_sha256": "fa936c2049de2a05f15215609f735fd1c789237a372671b0f89b324d5f487bff"
+}
