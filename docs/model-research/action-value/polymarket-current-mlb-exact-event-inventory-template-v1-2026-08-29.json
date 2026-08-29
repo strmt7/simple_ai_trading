@@ -1,0 +1,49 @@
+{
+  "schema_version": "polymarket-current-mlb-exact-event-inventory-template-v1",
+  "status": "prefreeze_template_no_api_access_yet",
+  "purpose": "test whether the exact current official Polymarket sports-page link for Boston Red Sox versus New York Yankees exposes active accepting moneyline and spread markets with complete rules suitable for a market-direction-independent monotone-payoff screen",
+  "material_public_trigger": {
+    "satisfied": true,
+    "official_page_url": "https://polymarket.com/sports/mlb/mlb-bos-nyy-2026-06-06",
+    "observed_at_utc": "2026-08-29T14:45:00Z",
+    "displayed_live_state": "current August 29 countdown with moneyline and spread inventory",
+    "displayed_primary_prices_are_discovery_only": true,
+    "slug_date_mismatch_requires_api_verification": "the official current page link retains a June 6 slug and June 6 rules while displaying an August 29 countdown; no identity or active-state assumption is permitted"
+  },
+  "authority": {
+    "public_unauthenticated_read_only_only": true,
+    "credentials_accounts_orders_wallets_or_transactions_permitted": false,
+    "paper_or_live_trading_authority": false,
+    "profitability_or_edge_acceptance_permitted": false
+  },
+  "source_contract": {
+    "documentation_url": "https://docs.polymarket.com/api-reference/events/get-event-by-slug",
+    "method": "GET",
+    "url": "https://gamma-api.polymarket.com/events/slug/mlb-bos-nyy-2026-06-06",
+    "maximum_requests": 1,
+    "retry_permitted": false,
+    "raw_response_retained_before_parsing": true
+  },
+  "discovery_boundary": {
+    "exact_slug_match_required": true,
+    "event_must_be_active_and_not_closed": true,
+    "retain_all_embedded_market_rules_and_identifiers": true,
+    "candidate_requires_active_accepting_moneyline_and_spread_rows": true,
+    "no_payoff_equivalence_inferred_from_page_labels_or_prices": true,
+    "Gamma_prices_are_not_executable_and_must_not_be_used": true,
+    "no_conditional_downstream_request": true
+  },
+  "one_use_outcomes": {
+    "missing_closed_or_mismatched_event": "terminalize this exact current page link without another request",
+    "no_active_moneyline_spread_inventory": "terminalize this exact page lead",
+    "possible_pair": "retain rules and identifiers then prove the exact joint payoff offline before separately freezing any CLOB book request",
+    "all_outcomes": "accepted edge count unchanged and no account funded order paper or live action authorized"
+  },
+  "prohibited_shortcuts": [
+    "changing the slug after viewing the response",
+    "using Gamma prices as executable asks or depth",
+    "assuming the displayed August 29 game is identical to the June 6 rule object",
+    "requesting CLOB books before exact-rule payoff proof",
+    "placing or simulating orders or accessing an account"
+  ]
+}

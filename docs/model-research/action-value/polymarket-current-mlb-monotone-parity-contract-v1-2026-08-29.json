@@ -1,0 +1,446 @@
+{
+  "schema_version": "polymarket-current-mlb-monotone-parity-contract-v1",
+  "status": "frozen_before_one_public_CLOB_batch_book_request",
+  "purpose": "test 37 exact same-game monotone payoff relations at five-share displayed depth after current per-market taker fees and two adverse ticks per leg",
+  "frozen_at_utc": "2026-08-29T14:54:38.625303Z",
+  "source_evidence": {
+    "event_result_path": "docs/model-research/action-value/polymarket-current-mlb-exact-event-inventory-result-v1-2026-08-29.json",
+    "event_result_sha256": "e274e3b05227022eb8c021fecdfa1a42e369ba30175ba906b24d6fd8459da80d",
+    "event_raw_path": "data/polymarket-current-mlb-exact-event-inventory-v1/raw/event.json",
+    "event_raw_sha256": "ac40ee9716f14123bbeb8904cfaaf2e0e86d2b88ff0555f5a79f1df9afa91fd3",
+    "event_slug": "mlb-bos-nyy-2026-06-06",
+    "active_scoped_market_count": 15
+  },
+  "payoff_proof": {
+    "relation": "subset event A is contained in superset event B",
+    "package": "buy B positive token plus buy A complement token",
+    "terminal_states_per_share": [
+      {
+        "state": "A_true",
+        "B_positive": "1",
+        "A_complement": "0",
+        "package": "1"
+      },
+      {
+        "state": "B_true_A_false",
+        "B_positive": "1",
+        "A_complement": "1",
+        "package": "2"
+      },
+      {
+        "state": "B_false",
+        "B_positive": "0",
+        "A_complement": "1",
+        "package": "1"
+      },
+      {
+        "state": "canceled_both_half",
+        "B_positive": "0.5",
+        "A_complement": "0.5",
+        "package": "1"
+      }
+    ],
+    "minimum_terminal_payout_pUSD": "5",
+    "relations": [
+      {
+        "family": "BOS_margin",
+        "superset_threshold": 1,
+        "subset_threshold": 2,
+        "superset_positive_outcome": "Boston Red Sox",
+        "superset_positive_token": "37710965300940401002130076167900941123808478497926312022865628128768175585167",
+        "subset_complement_outcome": "New York Yankees",
+        "subset_complement_token": "64255192416223803782566477720245353555178582398343031312178158996467616070925"
+      },
+      {
+        "family": "BOS_margin",
+        "superset_threshold": 1,
+        "subset_threshold": 3,
+        "superset_positive_outcome": "Boston Red Sox",
+        "superset_positive_token": "37710965300940401002130076167900941123808478497926312022865628128768175585167",
+        "subset_complement_outcome": "New York Yankees",
+        "subset_complement_token": "102431753679718629676988272776402052312946690331261865184816978502018815434726"
+      },
+      {
+        "family": "BOS_margin",
+        "superset_threshold": 1,
+        "subset_threshold": 4,
+        "superset_positive_outcome": "Boston Red Sox",
+        "superset_positive_token": "37710965300940401002130076167900941123808478497926312022865628128768175585167",
+        "subset_complement_outcome": "New York Yankees",
+        "subset_complement_token": "110040957315811000597684963118837229278204054698240745440758097187158683262277"
+      },
+      {
+        "family": "BOS_margin",
+        "superset_threshold": 2,
+        "subset_threshold": 3,
+        "superset_positive_outcome": "Boston Red Sox",
+        "superset_positive_token": "669170484093657976847176933657071654683437412182985865084473999137319696004",
+        "subset_complement_outcome": "New York Yankees",
+        "subset_complement_token": "102431753679718629676988272776402052312946690331261865184816978502018815434726"
+      },
+      {
+        "family": "BOS_margin",
+        "superset_threshold": 2,
+        "subset_threshold": 4,
+        "superset_positive_outcome": "Boston Red Sox",
+        "superset_positive_token": "669170484093657976847176933657071654683437412182985865084473999137319696004",
+        "subset_complement_outcome": "New York Yankees",
+        "subset_complement_token": "110040957315811000597684963118837229278204054698240745440758097187158683262277"
+      },
+      {
+        "family": "BOS_margin",
+        "superset_threshold": 3,
+        "subset_threshold": 4,
+        "superset_positive_outcome": "Boston Red Sox",
+        "superset_positive_token": "43613247717946474084291800004618669696747180018187275541376116475558955426172",
+        "subset_complement_outcome": "New York Yankees",
+        "subset_complement_token": "110040957315811000597684963118837229278204054698240745440758097187158683262277"
+      },
+      {
+        "family": "NYY_margin",
+        "superset_threshold": 1,
+        "subset_threshold": 2,
+        "superset_positive_outcome": "New York Yankees",
+        "superset_positive_token": "96836228201794844622945838043146844817568481033220546312063092006402562136679",
+        "subset_complement_outcome": "Boston Red Sox",
+        "subset_complement_token": "79304836036509228409967938239005199968619351350023475876399122113797544264537"
+      },
+      {
+        "family": "NYY_margin",
+        "superset_threshold": 1,
+        "subset_threshold": 3,
+        "superset_positive_outcome": "New York Yankees",
+        "superset_positive_token": "96836228201794844622945838043146844817568481033220546312063092006402562136679",
+        "subset_complement_outcome": "Boston Red Sox",
+        "subset_complement_token": "113824647737915338374676127837094653823823984000729583323544258387168403182912"
+      },
+      {
+        "family": "NYY_margin",
+        "superset_threshold": 1,
+        "subset_threshold": 4,
+        "superset_positive_outcome": "New York Yankees",
+        "superset_positive_token": "96836228201794844622945838043146844817568481033220546312063092006402562136679",
+        "subset_complement_outcome": "Boston Red Sox",
+        "subset_complement_token": "90328418396586714965803757005028761253601060815810574291227400429509276616573"
+      },
+      {
+        "family": "NYY_margin",
+        "superset_threshold": 1,
+        "subset_threshold": 5,
+        "superset_positive_outcome": "New York Yankees",
+        "superset_positive_token": "96836228201794844622945838043146844817568481033220546312063092006402562136679",
+        "subset_complement_outcome": "Boston Red Sox",
+        "subset_complement_token": "21766752415381204637385378285184702157009777667816875551009808536431564625971"
+      },
+      {
+        "family": "NYY_margin",
+        "superset_threshold": 2,
+        "subset_threshold": 3,
+        "superset_positive_outcome": "New York Yankees",
+        "superset_positive_token": "92374654664183743604747369470609132370319600567702702962619405328379735719953",
+        "subset_complement_outcome": "Boston Red Sox",
+        "subset_complement_token": "113824647737915338374676127837094653823823984000729583323544258387168403182912"
+      },
+      {
+        "family": "NYY_margin",
+        "superset_threshold": 2,
+        "subset_threshold": 4,
+        "superset_positive_outcome": "New York Yankees",
+        "superset_positive_token": "92374654664183743604747369470609132370319600567702702962619405328379735719953",
+        "subset_complement_outcome": "Boston Red Sox",
+        "subset_complement_token": "90328418396586714965803757005028761253601060815810574291227400429509276616573"
+      },
+      {
+        "family": "NYY_margin",
+        "superset_threshold": 2,
+        "subset_threshold": 5,
+        "superset_positive_outcome": "New York Yankees",
+        "superset_positive_token": "92374654664183743604747369470609132370319600567702702962619405328379735719953",
+        "subset_complement_outcome": "Boston Red Sox",
+        "subset_complement_token": "21766752415381204637385378285184702157009777667816875551009808536431564625971"
+      },
+      {
+        "family": "NYY_margin",
+        "superset_threshold": 3,
+        "subset_threshold": 4,
+        "superset_positive_outcome": "New York Yankees",
+        "superset_positive_token": "6292634587901337736215329830209773881469764126243543352845991255450365043545",
+        "subset_complement_outcome": "Boston Red Sox",
+        "subset_complement_token": "90328418396586714965803757005028761253601060815810574291227400429509276616573"
+      },
+      {
+        "family": "NYY_margin",
+        "superset_threshold": 3,
+        "subset_threshold": 5,
+        "superset_positive_outcome": "New York Yankees",
+        "superset_positive_token": "6292634587901337736215329830209773881469764126243543352845991255450365043545",
+        "subset_complement_outcome": "Boston Red Sox",
+        "subset_complement_token": "21766752415381204637385378285184702157009777667816875551009808536431564625971"
+      },
+      {
+        "family": "NYY_margin",
+        "superset_threshold": 4,
+        "subset_threshold": 5,
+        "superset_positive_outcome": "New York Yankees",
+        "superset_positive_token": "99308064474089211589433911020644795219307910923308375421940799277434774668484",
+        "subset_complement_outcome": "Boston Red Sox",
+        "subset_complement_token": "21766752415381204637385378285184702157009777667816875551009808536431564625971"
+      },
+      {
+        "family": "total_runs",
+        "superset_threshold": 6,
+        "subset_threshold": 7,
+        "superset_positive_outcome": "Over",
+        "superset_positive_token": "411784396535528811935470426415713868969177831225057223642920911654255334298",
+        "subset_complement_outcome": "Under",
+        "subset_complement_token": "15186719652316868639512647470911129966346404346066429880310489318606220842662"
+      },
+      {
+        "family": "total_runs",
+        "superset_threshold": 6,
+        "subset_threshold": 8,
+        "superset_positive_outcome": "Over",
+        "superset_positive_token": "411784396535528811935470426415713868969177831225057223642920911654255334298",
+        "subset_complement_outcome": "Under",
+        "subset_complement_token": "55493613511176998081819315048480012158342616545272583543226066833035560810012"
+      },
+      {
+        "family": "total_runs",
+        "superset_threshold": 6,
+        "subset_threshold": 9,
+        "superset_positive_outcome": "Over",
+        "superset_positive_token": "411784396535528811935470426415713868969177831225057223642920911654255334298",
+        "subset_complement_outcome": "Under",
+        "subset_complement_token": "9895097611697410479950333594702973431025230627336641447590897043720220092124"
+      },
+      {
+        "family": "total_runs",
+        "superset_threshold": 6,
+        "subset_threshold": 10,
+        "superset_positive_outcome": "Over",
+        "superset_positive_token": "411784396535528811935470426415713868969177831225057223642920911654255334298",
+        "subset_complement_outcome": "Under",
+        "subset_complement_token": "109328202386095886972600541953568638524792696049207827227646268234029865418104"
+      },
+      {
+        "family": "total_runs",
+        "superset_threshold": 6,
+        "subset_threshold": 11,
+        "superset_positive_outcome": "Over",
+        "superset_positive_token": "411784396535528811935470426415713868969177831225057223642920911654255334298",
+        "subset_complement_outcome": "Under",
+        "subset_complement_token": "33858802857945893001317385518284289046204202763488247469582949803342079609873"
+      },
+      {
+        "family": "total_runs",
+        "superset_threshold": 6,
+        "subset_threshold": 12,
+        "superset_positive_outcome": "Over",
+        "superset_positive_token": "411784396535528811935470426415713868969177831225057223642920911654255334298",
+        "subset_complement_outcome": "Under",
+        "subset_complement_token": "87700782626457381958470311980202046544171988420780571796927396661205657324921"
+      },
+      {
+        "family": "total_runs",
+        "superset_threshold": 7,
+        "subset_threshold": 8,
+        "superset_positive_outcome": "Over",
+        "superset_positive_token": "83341191485474668986797501318443160665212279713639215829007745452554261984259",
+        "subset_complement_outcome": "Under",
+        "subset_complement_token": "55493613511176998081819315048480012158342616545272583543226066833035560810012"
+      },
+      {
+        "family": "total_runs",
+        "superset_threshold": 7,
+        "subset_threshold": 9,
+        "superset_positive_outcome": "Over",
+        "superset_positive_token": "83341191485474668986797501318443160665212279713639215829007745452554261984259",
+        "subset_complement_outcome": "Under",
+        "subset_complement_token": "9895097611697410479950333594702973431025230627336641447590897043720220092124"
+      },
+      {
+        "family": "total_runs",
+        "superset_threshold": 7,
+        "subset_threshold": 10,
+        "superset_positive_outcome": "Over",
+        "superset_positive_token": "83341191485474668986797501318443160665212279713639215829007745452554261984259",
+        "subset_complement_outcome": "Under",
+        "subset_complement_token": "109328202386095886972600541953568638524792696049207827227646268234029865418104"
+      },
+      {
+        "family": "total_runs",
+        "superset_threshold": 7,
+        "subset_threshold": 11,
+        "superset_positive_outcome": "Over",
+        "superset_positive_token": "83341191485474668986797501318443160665212279713639215829007745452554261984259",
+        "subset_complement_outcome": "Under",
+        "subset_complement_token": "33858802857945893001317385518284289046204202763488247469582949803342079609873"
+      },
+      {
+        "family": "total_runs",
+        "superset_threshold": 7,
+        "subset_threshold": 12,
+        "superset_positive_outcome": "Over",
+        "superset_positive_token": "83341191485474668986797501318443160665212279713639215829007745452554261984259",
+        "subset_complement_outcome": "Under",
+        "subset_complement_token": "87700782626457381958470311980202046544171988420780571796927396661205657324921"
+      },
+      {
+        "family": "total_runs",
+        "superset_threshold": 8,
+        "subset_threshold": 9,
+        "superset_positive_outcome": "Over",
+        "superset_positive_token": "58487875082127755546675342740921318658918900560701324570898174835309241334315",
+        "subset_complement_outcome": "Under",
+        "subset_complement_token": "9895097611697410479950333594702973431025230627336641447590897043720220092124"
+      },
+      {
+        "family": "total_runs",
+        "superset_threshold": 8,
+        "subset_threshold": 10,
+        "superset_positive_outcome": "Over",
+        "superset_positive_token": "58487875082127755546675342740921318658918900560701324570898174835309241334315",
+        "subset_complement_outcome": "Under",
+        "subset_complement_token": "109328202386095886972600541953568638524792696049207827227646268234029865418104"
+      },
+      {
+        "family": "total_runs",
+        "superset_threshold": 8,
+        "subset_threshold": 11,
+        "superset_positive_outcome": "Over",
+        "superset_positive_token": "58487875082127755546675342740921318658918900560701324570898174835309241334315",
+        "subset_complement_outcome": "Under",
+        "subset_complement_token": "33858802857945893001317385518284289046204202763488247469582949803342079609873"
+      },
+      {
+        "family": "total_runs",
+        "superset_threshold": 8,
+        "subset_threshold": 12,
+        "superset_positive_outcome": "Over",
+        "superset_positive_token": "58487875082127755546675342740921318658918900560701324570898174835309241334315",
+        "subset_complement_outcome": "Under",
+        "subset_complement_token": "87700782626457381958470311980202046544171988420780571796927396661205657324921"
+      },
+      {
+        "family": "total_runs",
+        "superset_threshold": 9,
+        "subset_threshold": 10,
+        "superset_positive_outcome": "Over",
+        "superset_positive_token": "77199321860612511397808904836318319472808691500639566938565237469034135093884",
+        "subset_complement_outcome": "Under",
+        "subset_complement_token": "109328202386095886972600541953568638524792696049207827227646268234029865418104"
+      },
+      {
+        "family": "total_runs",
+        "superset_threshold": 9,
+        "subset_threshold": 11,
+        "superset_positive_outcome": "Over",
+        "superset_positive_token": "77199321860612511397808904836318319472808691500639566938565237469034135093884",
+        "subset_complement_outcome": "Under",
+        "subset_complement_token": "33858802857945893001317385518284289046204202763488247469582949803342079609873"
+      },
+      {
+        "family": "total_runs",
+        "superset_threshold": 9,
+        "subset_threshold": 12,
+        "superset_positive_outcome": "Over",
+        "superset_positive_token": "77199321860612511397808904836318319472808691500639566938565237469034135093884",
+        "subset_complement_outcome": "Under",
+        "subset_complement_token": "87700782626457381958470311980202046544171988420780571796927396661205657324921"
+      },
+      {
+        "family": "total_runs",
+        "superset_threshold": 10,
+        "subset_threshold": 11,
+        "superset_positive_outcome": "Over",
+        "superset_positive_token": "37005904787719840536348462304762162524463471332789053736336196642453027252416",
+        "subset_complement_outcome": "Under",
+        "subset_complement_token": "33858802857945893001317385518284289046204202763488247469582949803342079609873"
+      },
+      {
+        "family": "total_runs",
+        "superset_threshold": 10,
+        "subset_threshold": 12,
+        "superset_positive_outcome": "Over",
+        "superset_positive_token": "37005904787719840536348462304762162524463471332789053736336196642453027252416",
+        "subset_complement_outcome": "Under",
+        "subset_complement_token": "87700782626457381958470311980202046544171988420780571796927396661205657324921"
+      },
+      {
+        "family": "total_runs",
+        "superset_threshold": 11,
+        "subset_threshold": 12,
+        "superset_positive_outcome": "Over",
+        "superset_positive_token": "6717639513948672314777325379275055917033486352799749850924617039051853169358",
+        "subset_complement_outcome": "Under",
+        "subset_complement_token": "87700782626457381958470311980202046544171988420780571796927396661205657324921"
+      }
+    ]
+  },
+  "capture": {
+    "documentation_url": "https://docs.polymarket.com/api-reference/market-data/get-order-books-request-body",
+    "method": "POST",
+    "operation": "public unauthenticated read-only batch order-book retrieval",
+    "url": "https://clob.polymarket.com/books",
+    "request_count": 1,
+    "retry_permitted": false,
+    "token_count": 30,
+    "tokens": [
+      "411784396535528811935470426415713868969177831225057223642920911654255334298",
+      "669170484093657976847176933657071654683437412182985865084473999137319696004",
+      "6292634587901337736215329830209773881469764126243543352845991255450365043545",
+      "6717639513948672314777325379275055917033486352799749850924617039051853169358",
+      "9895097611697410479950333594702973431025230627336641447590897043720220092124",
+      "15186719652316868639512647470911129966346404346066429880310489318606220842662",
+      "21766752415381204637385378285184702157009777667816875551009808536431564625971",
+      "33858802857945893001317385518284289046204202763488247469582949803342079609873",
+      "37005904787719840536348462304762162524463471332789053736336196642453027252416",
+      "37710965300940401002130076167900941123808478497926312022865628128768175585167",
+      "43613247717946474084291800004618669696747180018187275541376116475558955426172",
+      "44546838907917879861244297614654615710188649529066714146344317246138822700836",
+      "53733154736578957369530642747813955322857206961380172586259445444581347323401",
+      "55493613511176998081819315048480012158342616545272583543226066833035560810012",
+      "58487875082127755546675342740921318658918900560701324570898174835309241334315",
+      "64255192416223803782566477720245353555178582398343031312178158996467616070925",
+      "77199321860612511397808904836318319472808691500639566938565237469034135093884",
+      "79304836036509228409967938239005199968619351350023475876399122113797544264537",
+      "83341191485474668986797501318443160665212279713639215829007745452554261984259",
+      "87700782626457381958470311980202046544171988420780571796927396661205657324921",
+      "90328418396586714965803757005028761253601060815810574291227400429509276616573",
+      "92374654664183743604747369470609132370319600567702702962619405328379735719953",
+      "92560997092173100171679492905310851686390341162430031935363137205539794961596",
+      "96836228201794844622945838043146844817568481033220546312063092006402562136679",
+      "99308064474089211589433911020644795219307910923308375421940799277434774668484",
+      "102431753679718629676988272776402052312946690331261865184816978502018815434726",
+      "105600091580627991244482625466288822635709808879741646663980026891009267648841",
+      "109328202386095886972600541953568638524792696049207827227646268234029865418104",
+      "110040957315811000597684963118837229278204054698240745440758097187158683262277",
+      "113824647737915338374676127837094653823823984000729583323544258387168403182912"
+    ],
+    "raw_response_retained_before_parsing": true
+  },
+  "economics": {
+    "quantity_shares_each_leg": "5",
+    "displayed_depth_only": true,
+    "fee_formula": "sum_per_fill_quantity_times_0_03_times_price_times_one_minus_price_rounded_up_to_0_00001_pUSD",
+    "fee_source": "each retained current market feeSchedule rate 0.03 exponent 1 takerOnly true",
+    "adverse_ticks_per_leg": 2,
+    "candidate_gate": "strictly positive guaranteed terminal floor after full displayed depth current taker fees and two adverse ticks on both legs",
+    "accepted_edge": "never from one snapshot; separately frozen recurrence across games timing and liquidity states plus owned fills and unwind are required"
+  },
+  "authority": {
+    "public_unauthenticated_market_data_only": true,
+    "credentials_accounts_orders_or_wallets_permitted": false,
+    "paper_or_live_trading_authority": false
+  },
+  "one_use_outcomes": {
+    "zero_candidates": "terminalize this exact event snapshot without retry",
+    "positive_candidates": "freeze a separate prospective multi-game recurrence study without trading",
+    "all_outcomes": "accepted edge count unchanged and no account order wallet or funded action authorized"
+  },
+  "implementation": {
+    "path": "tools/screen_polymarket_current_mlb_monotone_parity.py",
+    "sha256": "c180ee3de45352716fe29365f1d47a67815d884b92f56539f64cbc46b1ac1f49"
+  },
+  "contract_sha256": "231ebf5e9078bc14c8acd3d8274bc98c0200776621b830b64c689a34cdd204b8"
+}

@@ -18,7 +18,7 @@ REGISTRY_PATH = ROOT / "docs/model-research/structural-edge-priority-registry-v1
 EXPECTED_RESULT_SHA256 = (
     "591fb98b9a8e58365c67c4a281d1fda3de674b42f1f868a42d98acf2ab19ae68"
 )
-EXPECTED_REGISTRY_SHA256 = "0a59b008453a6ff11a5d2402f037acb4fa331f0fb44dac95a60dbd9b6b73c7cf"
+EXPECTED_REGISTRY_SHA256 = "fad104fc4e460bd0ff69e5b61df95050bbc0570d0af2f3eff64f8403b00b61bb"
 SIX_PLACES = Decimal("0.000001")
 
 

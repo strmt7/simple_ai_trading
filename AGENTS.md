@@ -154,6 +154,11 @@ override prose.
   discard valid leg-specific cash flows merely because independently published
   settlement timestamps differ by milliseconds; preserve the original failed
   method and adjudicate from retained raw responses without an adaptive refetch.
+- Before a one-use CLOB batch screen, preflight the actual book-array ordering
+  semantics or freeze acceptance of either strictly monotone direction. Do not
+  assume the documented bid or ask sort order; if a retained complete batch is
+  consistently reversed, preserve the consumed runner and adjudicate offline
+  without refetching or allowing the outcome-aware correction to promote it.
 
 ## Working Method
 
