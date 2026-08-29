@@ -206,6 +206,11 @@ override prose.
   their body, status, and completed receipt before raising. If the provider's
   bounded-history limits are not source-proved, freeze a conservative range;
   never learn the limit by adaptively retrying a consumed outcome query.
+- Before any one-use file-backed request, create and verify every raw-output and
+  journal parent directory before network access; the runner must independently
+  fail before HTTP if a destination parent is missing or unwritable. A curl
+  write error after response bytes arrive consumes the request and may not be
+  repaired by retrying the same source under a new filename or endpoint alias.
 - Treat a documented keyset `limit` as a ceiling, not proof that the service
   will return that many rows. A returned cursor makes the frozen population
   incomplete. Never follow it or depth-test a partial-page winner unless the

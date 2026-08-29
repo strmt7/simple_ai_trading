@@ -1,0 +1,57 @@
+{
+  "schema_version": "binance-stocks-fee-extension-source-contract-v1",
+  "status": "frozen_before_durable_public_source_access",
+  "frozen_at_utc": "2026-08-29T23:37:38.9563840Z",
+  "contract_sha256": "7747533e1014272e7e95a252c0f1d3dac76af0bc12cf27b52ea7c3c16f73fc2d",
+  "purpose": "bind the current official end time and exact fee tiers for the already accepted market-direction-independent Binance Stocks fee overlay without market data or account access",
+  "existing_family": {
+    "priority_rank": 5,
+    "mechanism": "binance_spot_fee_minimization_overlays",
+    "prior_artifact": "docs/model-research/action-value/binance-stocks-current-fee-overlay-edge-v1-2026-08-27.json",
+    "prior_promotion_end_utc": "2026-08-31T00:00:00Z",
+    "decision_boundary": "a later official end time updates duration only and must not increment the accepted-edge count or justify any order"
+  },
+  "authority": {
+    "public_unauthenticated_read_only_research": true,
+    "network_requests_permitted": 1,
+    "market_data_requests_permitted": 0,
+    "credentials_permitted": false,
+    "account_state_permitted": false,
+    "orders_transfers_conversions_subscriptions_or_mutations_permitted": false,
+    "protected_capture_access_permitted": false
+  },
+  "source": {
+    "method": "GET",
+    "url": "https://www.binance.com/bapi/composite/v1/public/cms/article/detail/query?articleCode=0a57193b957c4b8fb0d8d8f22ddb25a4",
+    "endpoint_classification": "public unauthenticated Binance CMS article-detail endpoint already source-bound in canonical repository artifacts; it exposes announcement content and is not account order trade or mutation state",
+    "request_body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "timeout_seconds": 30
+  },
+  "retention": {
+    "raw_path": "data/binance-stocks-fee-extension-source-v1/raw/article.json",
+    "journal_path": "data/binance-stocks-fee-extension-source-v1/request-journal.jsonl",
+    "intent_before_access": true,
+    "retain_http_error_body": true,
+    "bounded_console_output": true
+  },
+  "source_gates": {
+    "exact_article_identity_required": true,
+    "published_end_time_required": true,
+    "under_340_USD_old_and_new_flat_fees_required": true,
+    "340_USD_and_above_old_and_new_spread_rates_required": true,
+    "eligible_scope_and_change_risk_required": true
+  },
+  "decision_rules": {
+    "extension": "update the existing accepted overlay duration only when the official article unambiguously publishes a later end time with the same deterministic fee reductions",
+    "no_new_edge": "accepted_edge_count_change must remain zero",
+    "organic_flow_only": "never create enlarge split churn self-match or reroute an order to obtain the discount",
+    "exact_340_USD": "use the article's 340 USD and above tier for the extension while preserving the prior artifact as provenance for its earlier source conflict",
+    "promotion_boundary": "source terms alone do not prove account eligibility order preview realized fee or underlying trade profitability"
+  },
+  "stop_rules": [
+    "make exactly one CMS article request and do not follow links",
+    "stop before fee pages market data accounts orders or mutations",
+    "do not inspect the ENSO tournament or other announcements in this capture",
+    "preserve the response and do not rerun this contract"
+  ]
+}

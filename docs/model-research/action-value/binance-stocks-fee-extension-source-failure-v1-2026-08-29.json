@@ -1,0 +1,42 @@
+{
+  "schema_version": "binance-stocks-fee-extension-source-failure-v1",
+  "status": "one_use_source_capture_consumed_local_retention_failure_no_extension_promotion",
+  "created_at_utc": "2026-08-29T23:39:01.6213429Z",
+  "result_sha256": "498003b3f593cda600570099f9089bcb0db0a189e5c92c87e9395bd2afeb3ed8",
+  "contract": {
+    "path": "docs/model-research/action-value/binance-stocks-fee-extension-source-contract-v1.json",
+    "contract_sha256": "7747533e1014272e7e95a252c0f1d3dac76af0bc12cf27b52ea7c3c16f73fc2d"
+  },
+  "failure": {
+    "network_requests_used": 1,
+    "curl_exit_code": 23,
+    "http_status_proved": false,
+    "response_body_retained": false,
+    "raw_path": "data/binance-stocks-fee-extension-source-v1/raw/article.json",
+    "raw_file_exists": false,
+    "reason": "the raw output subdirectory did not exist so curl could not open the destination after receiving response bytes",
+    "journal_path": "data/binance-stocks-fee-extension-source-v1/request-journal.jsonl",
+    "journal_bytes": 873,
+    "journal_sha256": "846a670fba967596ae819406c7b375eba87101ba84727ad49a63135d4fbaa80d"
+  },
+  "adjudication": {
+    "official_web_discovery_observed_extension_through_2026_09_30T23_59_00Z": true,
+    "durable_source_gate_passed": false,
+    "accepted_edge_count_change": 0,
+    "existing_edge_duration_updated": false,
+    "profitability_claim": false,
+    "deployment_ready": false,
+    "market_data_requests": 0,
+    "account_or_credential_requests": 0,
+    "orders_or_mutations": 0,
+    "protected_capture_touched": false
+  },
+  "retry_policy": {
+    "one_use_contract_consumed": true,
+    "exact_CMS_request_must_not_be_retried": true,
+    "next_trigger": "a materially distinct official primary source that independently publishes the same fee extension or a later official fee term change; do not manufacture a second endpoint solely to repair retention"
+  },
+  "process_correction": {
+    "required_preflight": "before any one-use file-backed request create and verify every raw and journal parent directory and make the runner independently reject any missing destination before network access"
+  }
+}

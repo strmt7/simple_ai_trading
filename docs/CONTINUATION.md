@@ -3615,3 +3615,39 @@ authority. Contract/result SHA-256 values are
 and `1c33e778d217ec5e7ef817e83af3186df7da0e5dd0cc75cb72464bfd97d18d49`.
 The accepted count remains 21, ranked count remains 44, and registry SHA-256 is
 `0a34d7289331515f8e7b3f09e856fbc331ecbc3a91130fea20542a39ef211f60`.
+
+## 2026-08-29 Binance Stocks fee-extension source failure
+
+The rank-5 official term-change trigger fired when Binance published a Stocks
+fee-promotion extension through `2026-09-30T23:59:00Z`. The frozen one-request
+CMS capture was consumed, but curl exited `23` because its raw-output parent did
+not exist. No response body or HTTP status was durably retained, so the existing
+accepted overlay's earlier duration remains unchanged and the accepted-edge
+count remains 21. Do not retry the exact CMS request or repair it through an
+endpoint alias. Reopen only on a materially distinct official primary source or
+a later official fee change. Contract/result SHA-256 values are
+`7747533e1014272e7e95a252c0f1d3dac76af0bc12cf27b52ea7c3c16f73fc2d`
+and `498003b3f593cda600570099f9089bcb0db0a189e5c92c87e9395bd2afeb3ed8`.
+
+The failure exposed a reusable efficiency defect. Every one-use file-backed
+runner must now create and verify all raw and journal parents before HTTP; a
+post-response local write error consumes the request and may not be hidden by a
+second filename or endpoint alias.
+
+## 2026-08-29 Round 21 Binance sidecar terminal failure
+
+The protected boundary passed and the former process IDs are absent. The
+campaign lock accepted an exclusive read; the actual 17,620,807,680-byte
+database was located at the legacy sidecar path, had no WAL, and was not opened.
+All 17 segment receipts were reconciled from metadata: 16 are interrupted and
+the final segment failed in `finish_run` with a DuckDB memory-limit allocation
+error. Across them, 882,811,373 raw messages were recorded, but there are zero
+complete or degraded eligible segments. The contract-defined terminal-manifest
+command correctly rejected the campaign with `no eligible segment`.
+
+The campaign is terminally failed, source continuity did not pass, and no
+payload, outcome, model, profitability, account, credential, or order authority
+was admitted. Do not rerun or reuse its database, schedule, or failed lineage.
+Proceed only through the already frozen venue-separated prospective
+source-continuity recovery design. Canonical terminal-failure SHA-256 is
+`9e6790644a566dcfd6e786442a8da3a63c8837f991e766b418fea0df90d0cc8e`.
