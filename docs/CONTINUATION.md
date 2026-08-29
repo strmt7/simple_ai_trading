@@ -979,7 +979,7 @@ grants paper, testnet, or live authority.
 
 The canonical structural-edge priority and retry-trigger registry is
 `docs/model-research/structural-edge-priority-registry-v1.json`, result SHA-256
-`afa26a57c9ca4525021ef1d728993ecc52a427ac03e8ee3f48bd15ab0203bf71`.
+`5b996bdea3cd8b6a9dec115a1936550df72713c8eca4292be5da02b28141d4bc`.
 Advance only the highest-ranked hypothesis whose trigger is actually satisfied.
 This prevents account-blocked or terminal screens from being rerun as if more
 snapshots could create an edge.
@@ -2191,7 +2191,7 @@ result SHA-256
 `64943efe0c6ad16f8d02f78548afef38f919448d2da87c7573e825a2eeefd6b9`.
 That checkpoint left seventeen accepted scoped edges. The current registry now
 has nineteen and result SHA-256
-`afa26a57c9ca4525021ef1d728993ecc52a427ac03e8ee3f48bd15ab0203bf71`.
+`5b996bdea3cd8b6a9dec115a1936550df72713c8eca4292be5da02b28141d4bc`.
 
 The complete Binance XAU/XAG Commodity Options versus matching TradFi
 perpetual lower-bound screen is terminal for the active 2026-08-27 and
@@ -2493,7 +2493,7 @@ result SHA-256
 `85c8ef364b03fb2fbf0aeebddec10d51abbdd608f56ff9c0dccb1835cacc2179`.
 The structural registry now contains 42 ranked hypotheses, remains at 19
 narrowly accepted scoped overlays, and has canonical result SHA-256
-`afa26a57c9ca4525021ef1d728993ecc52a427ac03e8ee3f48bd15ab0203bf71`.
+`5b996bdea3cd8b6a9dec115a1936550df72713c8eca4292be5da02b28141d4bc`.
 
 The Round 21 sidecar worktree
 `C:\trader\simple_ai_trading-round21-sidecar-v2` remains protected through
@@ -2786,6 +2786,32 @@ the contract still consumed exactly one request. Future shell preconditions
 must parenthesize both operands and enable terminating errors; the runner must
 continue to enforce the same boundary independently.
 
+## Current MLB Rejection-Only Monotone Checkpoint
+
+The distinct Los Angeles Dodgers versus Detroit Tigers event validates the
+same rejection-first workflow beyond WNBA. One frozen public unauthenticated
+event-by-slug GET retained 17 active accepting markets and exact rules. No
+credential, account, protected-capture asset, book, fee, order, transaction, or
+fund was accessed.
+
+The reusable offline adjudicator parsed the moneyline plus full-game and
+first-five spread and total ladders. It exhaustively proved 24 two-leg packages
+whose minimum terminal payout is one pUSD per share, including 50-50
+cancellation: ten full-game margin, one first-five margin, three full-game
+total, and ten first-five total relations. Gamma `outcomePrices` were used only
+as an optimistic rejection gate. All 24 sums were at or above one. The closest
+package, the two first-five -1.5 spread complements, summed to `1.010`, losing
+`0.010` pUSD per share and `0.050` at five shares before depth, fees, sports
+delay, or leg risk. Therefore zero CLOB and fee requests were made.
+
+Do not resample LAD/DET. For every future exact sports event, prove the complete
+payoff lattice first and stop before books unless at least one displayed sum is
+strictly below its guaranteed payout floor. Gamma may reject but never accept
+or promote. Exact metadata result SHA-256
+`7d31545dfb4195b8ecc3fd19e8f2711e4634dd4cc259aa3a8d22f64402852593`;
+canonical adjudication SHA-256
+`5c1de89005404efd8db9a35903df7633f92f9deaaa4c71a639b07d44d8f25e71`.
+
 ## Binance Same-Expiry CLOB Box Checkpoint
 
 The same-expiry four-option fixed-payoff box mechanism was already terminal in
@@ -2875,7 +2901,7 @@ The resolved-leg House duplicate-payoff checkpoint, raw journals, source hashes,
 and directly affected registry lineage pass 12 focused tests with Ruff and
 Python compilation clean. The registry still contains 42 ranked hypotheses and
 19 accepted scoped overlays; its result SHA-256 is
-`afa26a57c9ca4525021ef1d728993ecc52a427ac03e8ee3f48bd15ab0203bf71`.
+`5b996bdea3cd8b6a9dec115a1936550df72713c8eca4292be5da02b28141d4bc`.
 
 The exact-one-NO failure preservation and Binance BLVT current-inventory gate,
 including every registry-hash-coupled test, pass 199 focused tests with Ruff
