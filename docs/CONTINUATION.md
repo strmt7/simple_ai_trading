@@ -3201,9 +3201,48 @@ values are `dcd959d9d7ec0e1dffec47b910cece585c106b76b69feaaa9ca03ddcc7caa83a`,
 and `0307a9dbfb26ca62e94ae01e5b5d40316340b686a60829e85f258c07e565678c`.
 The structural-edge registry now contains 44 ranked hypotheses and 21 accepted
 scoped overlays; its canonical SHA-256 is
-`9459be90ad52d85f8d23824b04aca3e39bc397c941b47735aca4342a78f00d82`.
+`da3ddaf82a2cb0929353460a7e09812b47f940e953a3f1da43b04f72a55c8488`.
+
+## Binance All-Symbol Triangular-Cycle Terminal Adjudication
+
+The existing retained complete Binance Spot graph was reused in one frozen
+zero-network rejection pass, avoiding another public capture. It enumerated
+all 3,480 unique directed three-asset cycles from 2,716 directed edges; cyclic
+rotations were deduplicated while reverse directions remained distinct. The
+frozen quote-change and 24-hour trade-count gates retained 1,442 cycles. Across
+60 complete book responses, 100 and 1,000 USDT starting sizes, and both a
+zero-fee upper bound and conservative VIP-0 all-taker fees, 5,648 evaluable
+cycle-size-fee rows received exact sequential lot rounding, displayed top-book
+capacity checks, residual USDT valuation, and 3 bips of operational stress.
+
+Zero rows passed the recurring candidate gate even with zero fees; VIP-0 also
+had zero candidates. This is therefore terminal for the current retained
+population, not a profitable edge. Do not repeat these books or spend account
+queries on this family absent a material Binance Spot fee, filter, order-batch,
+atomic-execution, or market-structure change that first reopens the gross upper
+bound. This strengthens the accepted indirect-routing result's boundary: the
+cost-saving organic-conversion overlay remains accepted, while standalone
+closed-cycle arbitrage does not.
+
+The consumed runner's `top_100_feasible_first` diagnostic label is inaccurate:
+it sorted candidates and then median economics but did not separately put
+capacity-feasible non-candidates ahead of infeasible rows. Candidate booleans
+and both zero counts were computed before sorting, so the defect changes no
+decision. The frozen runner and source result remain preserved, and no adaptive
+rerun was performed. Canonical contract, source-result, and adjudication hashes
+are `cc19bdd97167265e0831f84325624a623f83f2dc2d939491ed1c51859c0a38bb`,
+`30c5e00aa955ea3777f9b096b1fa1ae44d51318665561e4b6922f797f45706cc`,
+and `2fffd2044e72d1712ecdaa0c4e24cb829057ea2005c07e12129c443478b07902`.
 
 ## Verification Scope
+
+The frozen zero-network all-symbol triangular-cycle contract, deterministic
+retained-data runner, source result, defect-disclosing terminal adjudication,
+updated rank-16 lineage, and all registry-hash-coupled checks pass 267 focused
+tests across 69 files; one stale terminal-family count was updated and its
+exact test rerun passed. Ruff and Python compilation are clean for the changed
+Python scope. No market request, credential, account, order, protected capture,
+broad model suite, CI, or release workflow was used.
 
 The two-request holding-yield continuity monitor, its frozen contract, exact
 retained-row selection, preaccess request-body journals, two raw Polygon

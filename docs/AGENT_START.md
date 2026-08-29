@@ -1565,9 +1565,20 @@ safety gate, blocks Stop, or submits an order.
   VIP-0 fees as account fees, or treat the two-minute screen as a fill claim.
   Canonical adjudication SHA-256
   `0307a9dbfb26ca62e94ae01e5b5d40316340b686a60829e85f258c07e565678c`.
+- Binance closed three-asset Spot cycles are terminal for the current retained
+  complete public graph. One frozen zero-network pass covered all 3,480 unique
+  directed cycles, 1,442 activity-qualified cycles, 60 complete books, 100 and
+  1,000 USDT sizes, zero-fee and VIP-0 scenarios, exact lot rounding, displayed
+  capacity, residual value, and 3-bip stress. Zero rows passed even the recurring
+  zero-fee upper-bound gate. Do not resample or query account fees absent a
+  material fee, filter, batching, atomic-execution, or market-structure change.
+  The consumed diagnostic top-100 label overstated its feasibility ordering;
+  the sort occurred after candidate counting and did not change the terminal
+  decision. Canonical adjudication SHA-256
+  `2fffd2044e72d1712ecdaa0c4e24cb829057ea2005c07e12129c443478b07902`.
 - The structural-edge registry now has 44 ranked hypotheses and 21
   narrowly accepted scoped overlays, and result SHA-256
-  `9459be90ad52d85f8d23824b04aca3e39bc397c941b47735aca4342a78f00d82`.
+  `da3ddaf82a2cb0929353460a7e09812b47f940e953a3f1da43b04f72a55c8488`.
 
 ## Task Routing
 
@@ -1578,6 +1589,7 @@ safety gate, blocks Stop, or submits an order.
 | Polymarket model | `docs/model-research/polymarket/latest/README.md` |
 | Structural parity | `structural_parity.py`, `logical_parity.py`, and the three 2026-08-25 snapshots |
 | Structural edge priorities | `docs/model-research/structural-edge-priority-registry-v1.json` |
+| Binance all-symbol triangular-cycle terminal adjudication | `docs/model-research/action-value/binance-all-symbol-triangular-cycle-retained-adjudication-v1-2026-08-29.json` |
 | Binance indirect organic-conversion route savings | `docs/model-research/action-value/binance-indirect-internal-conversion-activity-adjudication-v1-2026-08-29.json` |
 | Live NBA moneyline/spread implication candidate | `docs/model-research/action-value/polymarket-live-nba-moneyline-spread-combinatorial-parity-reopen-v1-2026-08-26.json` |
 | Cross-market exact dependent-subset parity candidate | `docs/model-research/action-value/polymarket-cross-market-dependent-subset-parity-reopen-v1-2026-08-26.json` |

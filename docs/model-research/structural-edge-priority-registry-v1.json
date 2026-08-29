@@ -767,29 +767,34 @@
     },
     {
       "blocking_evidence": [
-        "same-account signed commission response for BTCUSDC BTCUSDT and USDCUSDT",
-        "all standard special tax side and discount components",
-        "fresh three-leg books and failure-bounded execution"
+        "a material fee filter order-batch atomic-execution or market-structure change that can reopen the zero-fee upper bound",
+        "same-account signed commission response for every reopened cycle symbol including all standard special tax side and discount components",
+        "fresh independently frozen three-leg books and failure-bounded execution only after the structural retry trigger"
       ],
       "canonical_artifacts": [
         {
           "path": "docs/model-research/action-value/binance-spot-triangle-account-fee-gate-v1.json",
           "result_sha256": "304a78180be3375a3453384ad71948c24e52ffeba2f1482cb97711e59aa4a688"
+        },
+        {
+          "path": "docs/model-research/action-value/binance-all-symbol-triangular-cycle-retained-adjudication-v1-2026-08-29.json",
+          "result_sha256": "2fffd2044e72d1712ecdaa0c4e24cb829057ea2005c07e12129c443478b07902"
         }
       ],
-      "current_status": "gross_upper_bound_only_0_646183_bps_and_equal_fee_break_even_only_0_215385_bps_per_leg",
+      "current_status": "terminal_current_complete_retained_graph_zero_of_3480_unique_directed_cycles_and_zero_of_1442_activity_qualified_cycles_passed_the_frozen_recurring_zero_fee_upper_bound_candidate_gate_across_60_books_100_and_1000_USDT_exact_rounding_displayed_capacity_residual_and_3_bip_stress",
       "market_direction_forecast_required": false,
       "mechanism": "three_leg_spot_conversion",
-      "next_action": "do_not_resample_books_until_exact_account_fees_first_prove_the_path_can_clear_the_frozen_break_even",
+      "next_action": "do_not_resample_the_same_population_or_query_account_fees_absent_a_material_structural_retry_trigger_that_first_reopens_the_gross_upper_bound",
       "priority_rank": 16,
       "prohibited_shortcuts": [
         "USD-M futures commission as spot fee",
         "public VIP tier as account fee",
         "unproved BNB discount",
-        "more book snapshots without fee feasibility"
+        "more book snapshots or account queries without a structural gross-upper-bound retry trigger",
+        "ranking positive median rows before capacity residual and recurrence feasibility gates"
       ],
-      "retry_trigger": "explicit_read_only_account_fee_authority_and_compounded_exact_fees_below_frozen_break_even",
-      "venue_scope": "binance_spot_btc_usdc_usdt"
+      "retry_trigger": "a_material_Binance_Spot_fee_filter_order_batch_atomic_execution_or_market_structure_change_then_an_independently_frozen_complete_graph_screen",
+      "venue_scope": "binance_spot_all_active_three_asset_cycles_with_direct_USDT_valuation"
     },
     {
       "blocking_evidence": [
@@ -1987,9 +1992,14 @@
       "venue_scope": "Binance_Spot_direct_and_exactly_one_intermediary_routes_for_independently_required_organic_conversions"
     }
   ],
-  "result_sha256": "9459be90ad52d85f8d23824b04aca3e39bc397c941b47735aca4342a78f00d82",
+  "result_sha256": "da3ddaf82a2cb0929353460a7e09812b47f940e953a3f1da43b04f72a55c8488",
   "schema_version": "structural-edge-priority-registry-v1",
   "terminal_do_not_repeat": [
+    {
+      "canonical_result_sha256": "2fffd2044e72d1712ecdaa0c4e24cb829057ea2005c07e12129c443478b07902",
+      "family": "binance_all_symbol_three_asset_spot_triangular_cycles_current_retained_population",
+      "reason": "zero_of_3480_unique_directed_cycles_and_zero_of_1442_activity_qualified_cycles_passed_the_frozen_recurring_zero_fee_upper_bound_candidate_gate_across_60_complete_books_100_and_1000_USDT_exact_rounding_displayed_capacity_residual_and_3_bip_stress"
+    },
     {
       "canonical_result_sha256": "2b85a6eca339799a6eb07ba48069e3a2943d97116a9320ce20400d260227e1be",
       "family": "binance_DJTBUSDT_DJTUSDT_first_new_listing_spot_perpetual_snapshot",
