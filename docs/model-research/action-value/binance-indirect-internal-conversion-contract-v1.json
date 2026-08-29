@@ -1,0 +1,92 @@
+{
+  "schema_version": "binance-indirect-internal-conversion-contract-v1",
+  "status": "frozen_before_public_book_outcome_access",
+  "frozen_at_utc": "2026-08-29T20:20:43.3632992Z",
+  "frozen_at_ms": 1788034843363,
+  "contract_sha256": "dcd959d9d7ec0e1dffec47b910cece585c106b76b69feaaa9ca03ddcc7caa83a",
+  "purpose": "one current all-symbol rejection-first screen for whether a two-leg Binance Spot route is cheaper than a direct pair for an independently required organic asset conversion",
+  "authority": {
+    "research_only": true,
+    "public_unauthenticated_gets_only": true,
+    "credentials_permitted": false,
+    "orders_permitted": false,
+    "account_or_balance_mutation_permitted": false,
+    "live_or_paper_authority_granted": false
+  },
+  "implementation": {
+    "path": "tools/screen_binance_indirect_internal_conversions.py",
+    "sha256": "715442eb4f2e9ebf1164f5eb596501ae624fa167239ef175722280dc6f68030d"
+  },
+  "source_boundary": {
+    "contemporaneous_primary_working_paper_doi": "https://doi.org/10.2139/ssrn.6453880",
+    "contemporaneous_title": "Network-Based Path Optimization for High-Frequency Cryptocurrency Arbitrage: Empirical Evidence",
+    "contemporaneous_abstract_scope": "January through December 2025 Binance data across 64 trading-pair groups; within-exchange alternative paths under conservative all-taker fees and slippage; the abstract says optimized risk-adjusted performance beats a baseline but does not prove absolute current profit",
+    "prior_primary_paper": "https://arxiv.org/abs/2002.12274",
+    "prior_empirical_finding": "historical Binance indirect internal conversions changed an already-intended A-to-B conversion through one intermediary and averaged 14.4 bips better than the direct conversion, while ordinary triangular arbitrage was rare and fee-constrained",
+    "source_raw_sha256": {
+      "crossref_doi_metadata": "d3abcaa9b1bee1f14ab8e19defaae1f7e173170bf8c17e1aa86d20bafadd2cb2",
+      "arxiv_pdf": "ba6553ff9c9c4b80146f5a4b4ab47a9ece4d9b913778715de92bd707f9dd7f12"
+    },
+    "classification": "cost_saving_overlay_for_organic_conversion_not_standalone_arbitrage_or_authority_to_create_volume"
+  },
+  "universe": {
+    "venue": "Binance Spot mainnet public market data",
+    "directed_edges": "every current TRADING spot symbol with MARKET order support and a positive MARKET_LOT_SIZE step or positive LOT_SIZE fallback",
+    "routes": "every ordered source-to-target direct edge with exactly one distinct intermediary and both indirect edges available",
+    "valuation_scope": "source intermediary and target must each have a current direct executable conversion to USDT; USDT values itself at one",
+    "selection_rule": "complete rule-defined population before book outcomes with no asset symbol or route chosen from results"
+  },
+  "capture": {
+    "exchange_info_endpoint": "GET https://api.binance.com/api/v3/exchangeInfo once",
+    "book_endpoint": "GET https://api.binance.com/api/v3/ticker/bookTicker for every current symbol in one response",
+    "sample_count": 60,
+    "interval_ms": 2000,
+    "minimum_elapsed_ms": 116000,
+    "maximum_request_elapsed_ms": 1500,
+    "retry_policy": "none after any retained successful response; transport failure rejects the run rather than changing the contract",
+    "raw_evidence": "write and hash each untouched response before parsing and append fsynced request receipts and top-ten derived rows",
+    "one_use_rule": "do not alter assets routes sizes fees stress thresholds or sample ordering after first book access and do not rerun an unchanged mechanism"
+  },
+  "execution_model": {
+    "direct_route": "one immediate taker leg at displayed top of book",
+    "indirect_route": "two sequential immediate taker legs at displayed top of book with no atomicity or fill claim",
+    "conservative_taker_fee_rate_per_leg": "0.001",
+    "fee_semantics": "deduct fee from each leg output; direct pays once and indirect pays twice; this is a public VIP-0 feasibility gate rather than same-account fee proof",
+    "starting_usdt_sizes": ["100", "1000"],
+    "quantity_rounding": "floor every submitted base quantity to positive MARKET_LOT_SIZE step otherwise positive LOT_SIZE step",
+    "capacity": "direct and both indirect legs must fit displayed top quantity",
+    "residuals": "retain source and intermediary residuals and value them through the same conservative direct-to-USDT side after one taker fee",
+    "maximum_indirect_residual_bips": "1",
+    "extra_leg_operational_stress_bips": "3",
+    "savings_definition": "indirect ending USDT-equivalent total value divided by direct ending USDT-equivalent total value minus one, less three bips stress",
+    "synchronization_caveat": "one HTTP response does not expose per-symbol source timestamps and sequential indirect execution is non-atomic"
+  },
+  "acceptance_boundary": {
+    "empirical_candidate_requires_for_one_route_and_size": [
+      "all 60 scheduled samples are valid and the capture lasts at least 116000 milliseconds",
+      "every public request completes within 1500 milliseconds",
+      "direct and both indirect legs fit displayed top quantity in all 60 samples",
+      "positive savings after exact rounding conservative fees residual valuation and three-bip stress in at least 48 of 60 samples",
+      "at least 12 positive samples in each consecutive 15-sample block",
+      "positive median stressed savings across all 60 samples"
+    ],
+    "accepted_edge_requires_additionally": [
+      "an independently required organic source-to-target conversion with no generated volume",
+      "same-account exact commissions discounts tax and special rates for all involved symbols",
+      "independent non-overlapping current windows across market and liquidity regimes",
+      "prospective paper or owned authorized execution proving sequential completion latency slippage residuals and realized savings",
+      "inventory opportunity custody tax and failure-unwind costs",
+      "fail-closed route comparison immediately before every independently justified conversion"
+    ],
+    "missing_additional_evidence_action": "retain as research-only candidate and keep accepted_edge false"
+  },
+  "prohibited_shortcuts": [
+    "calling route savings standalone arbitrage or profit without an organic conversion",
+    "creating rerouting splitting or wash volume to obtain a measured saving rebate or tier",
+    "treating a historical 14.4-bip average or better risk-adjusted performance as current absolute profit",
+    "using public VIP-0 fees as exact account fees",
+    "ignoring lot rounding top-level capacity residuals extra-leg latency adverse selection or partial completion",
+    "calling a two-minute public screen stable profitable accepted or deployment-ready",
+    "adaptively rerunning only favorable routes or weakening fees stress or recurrence gates"
+  ]
+}
