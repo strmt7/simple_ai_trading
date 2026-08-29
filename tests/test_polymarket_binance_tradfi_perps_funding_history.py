@@ -17,7 +17,7 @@ from tools.screen_polymarket_binance_tradfi_perps_funding_history import (
 ROOT = Path(__file__).resolve().parents[1]
 ACTION = ROOT / "docs/model-research/action-value"
 REGISTRY = ROOT / "docs/model-research/structural-edge-priority-registry-v1.json"
-REGISTRY_HASH = "659904cc23e3d91c5d8622c9a8274e0227818d506724a72cce071df285eb681e"
+REGISTRY_HASH = "9459be90ad52d85f8d23824b04aca3e39bc397c941b47735aca4342a78f00d82"
 
 
 def _canonical_hash(payload: dict[str, object]) -> str:
@@ -233,8 +233,8 @@ def test_registry_terminalizes_tradfi_cross_venue_funding_without_acceptance() -
     registry = json.loads(REGISTRY.read_text(encoding="ascii"))
     assert registry["result_sha256"] == REGISTRY_HASH
     assert _canonical_hash(registry) == REGISTRY_HASH
-    assert registry["accepted_edge_count"] == 20
-    assert len(registry["prioritized_hypotheses"]) == 43
+    assert registry["accepted_edge_count"] == 21
+    assert len(registry["prioritized_hypotheses"]) == 44
     hypothesis = next(
         value
         for value in registry["prioritized_hypotheses"]

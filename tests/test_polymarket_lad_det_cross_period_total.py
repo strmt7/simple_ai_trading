@@ -14,7 +14,7 @@ ROOT = Path(__file__).resolve().parents[1]
 ACTION_VALUE = ROOT / "docs/model-research/action-value"
 DATA = ROOT / "data/polymarket-lad-det-cross-period-total-v1"
 REGISTRY = ROOT / "docs/model-research/structural-edge-priority-registry-v1.json"
-REGISTRY_HASH = "659904cc23e3d91c5d8622c9a8274e0227818d506724a72cce071df285eb681e"
+REGISTRY_HASH = "9459be90ad52d85f8d23824b04aca3e39bc397c941b47735aca4342a78f00d82"
 
 
 def _load(path: Path) -> dict[str, object]:
@@ -143,4 +143,4 @@ def test_registry_preserves_the_omission_and_routes_the_cross_period_correction(
         "fa936c2049de2a05f15215609f735fd1c789237a372671b0f89b324d5f487bff",
         "fc01c54e9c04117067aa3b43ae194649b93efc12a5265fce508e64f082f320b2",
     } <= hashes
-    assert registry["accepted_edge_count"] == 20
+    assert registry["accepted_edge_count"] == 21

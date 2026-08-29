@@ -11,7 +11,7 @@ from tools.screen_polymarket_exact_two_leg_sports_package import _line_matches
 ROOT = Path(__file__).resolve().parents[1]
 ACTION_VALUE = ROOT / "docs/model-research/action-value"
 REGISTRY = ROOT / "docs/model-research/structural-edge-priority-registry-v1.json"
-REGISTRY_HASH = "659904cc23e3d91c5d8622c9a8274e0227818d506724a72cce071df285eb681e"
+REGISTRY_HASH = "9459be90ad52d85f8d23824b04aca3e39bc397c941b47735aca4342a78f00d82"
 
 
 def _load(path: Path) -> dict[str, object]:
@@ -163,4 +163,4 @@ def test_nullable_moneyline_line_and_registry_routing() -> None:
         "c387e389d852ab5571056a9f2e80f91c63ae6f1c124ca55291b0fc787b5faeae",
         "731ca32a06f8f1a42aaae9e326c2bd89379657e338231dd906b749790c15ddfa",
     } <= hashes
-    assert registry["accepted_edge_count"] == 20
+    assert registry["accepted_edge_count"] == 21

@@ -13,7 +13,7 @@ ROOT = Path(__file__).resolve().parents[1]
 ACTION_VALUE = ROOT / "docs/model-research/action-value"
 DATA = ROOT / "data/polymarket-future-mlb-cross-period-catalog-v1"
 REGISTRY = ROOT / "docs/model-research/structural-edge-priority-registry-v1.json"
-REGISTRY_HASH = "659904cc23e3d91c5d8622c9a8274e0227818d506724a72cce071df285eb681e"
+REGISTRY_HASH = "9459be90ad52d85f8d23824b04aca3e39bc397c941b47735aca4342a78f00d82"
 
 
 def _load(path: Path) -> dict[str, object]:
@@ -142,4 +142,4 @@ def test_registry_routes_partial_catalog_without_complete_population_claim() -> 
         "9b981f0e82c8d26272c1f5f1d7ff580576cae8734e3b697ef3932b4a295a4e14",
         "d3ba85e995753d781178fdf6144ac0cb7520d2b1830525cd4be1aad1a5b5b598",
     } <= hashes
-    assert registry["accepted_edge_count"] == 20
+    assert registry["accepted_edge_count"] == 21

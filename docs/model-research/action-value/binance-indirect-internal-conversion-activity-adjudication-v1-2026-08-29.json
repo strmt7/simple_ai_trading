@@ -1,0 +1,123 @@
+{
+  "schema_version": "binance-indirect-internal-conversion-activity-adjudication-v1",
+  "status": "completed_source_bound_scoped_mechanism_accepted_static_routes_unaccepted",
+  "created_at_utc": "2026-08-29T20:29:15.7907086Z",
+  "result_sha256": "0307a9dbfb26ca62e94ae01e5b5d40316340b686a60829e85f258c07e565678c",
+  "authority": {
+    "research_only": true,
+    "public_unauthenticated_gets_only": true,
+    "credentials_used": false,
+    "orders_or_account_mutations": false,
+    "protected_capture_accessed": false
+  },
+  "source_lineage": {
+    "screen_contract_sha256": "dcd959d9d7ec0e1dffec47b910cece585c106b76b69feaaa9ca03ddcc7caa83a",
+    "screen_result_sha256": "b3e7f724e2b1ce2cc7a8444d00632466196af6d89f139259164549e91d1f84bc",
+    "activity_contract_sha256": "b6331c1d7987b3a6093df2d4846368ccba634c27bf4967cd85f9c10e707fbd30",
+    "activity_response_sha256": "fc753830c30bb09307c07eb2796cd63a462bd0fe75952ea7e546747cd18999d5",
+    "activity_request_started_utc": "2026-08-29T20:26:37.2221220Z",
+    "activity_request_ended_utc": "2026-08-29T20:26:38.3896075Z",
+    "activity_request_elapsed_ms": 1164,
+    "prior_primary_paper_sha256": "ba6553ff9c9c4b80146f5a4b4ab47a9ece4d9b913778715de92bd707f9dd7f12",
+    "contemporaneous_doi_metadata_sha256": "d3abcaa9b1bee1f14ab8e19defaae1f7e173170bf8c17e1aa86d20bafadd2cb2"
+  },
+  "capture_level_gates": {
+    "scheduled_samples": 60,
+    "valid_samples": 60,
+    "capture_elapsed_ms": 118591,
+    "minimum_capture_elapsed_ms": 116000,
+    "maximum_observed_request_elapsed_ms": 619,
+    "maximum_permitted_request_elapsed_ms": 1500,
+    "all_passed": true
+  },
+  "population": {
+    "directed_spot_edges": 2716,
+    "direct_vs_one_intermediary_routes": 10440,
+    "route_sizes_evaluated": 20568,
+    "initial_empirical_route_size_candidates": 20,
+    "activity_survivors": 3,
+    "activity_rejections": 17
+  },
+  "activity_survivors": [
+    {
+      "route_id": "USDC->USDT->PNUT_vs_USDC->PNUT",
+      "start_usdt": "1000",
+      "median_stressed_savings_bips": "6.58816974919102524009007000",
+      "minimum_stressed_savings_bips": "-12.99994664895868332459567700",
+      "positive_observations": 57,
+      "symbols": ["PNUTUSDC", "USDCUSDT", "PNUTUSDT"],
+      "retained_quote_changes": [7, 53, 8],
+      "current_24h_trade_counts": [333, 279547, 11389],
+      "static_route_accepted": false
+    },
+    {
+      "route_id": "SHIB->USDT->EUR_vs_SHIB->EUR",
+      "start_usdt": "1000",
+      "median_stressed_savings_bips": "2.970804175766258692971220000",
+      "minimum_stressed_savings_bips": "2.970804175766258692971220000",
+      "positive_observations": 60,
+      "symbols": ["SHIBEUR", "SHIBUSDT", "EURUSDT"],
+      "retained_quote_changes": [13, 26, 7],
+      "current_24h_trade_counts": [403, 16686, 16073],
+      "static_route_accepted": false
+    },
+    {
+      "route_id": "SHIB->USDC->EUR_vs_SHIB->EUR",
+      "start_usdt": "1000",
+      "median_stressed_savings_bips": "2.969856538442632464578350000",
+      "minimum_stressed_savings_bips": "2.969856538442632464578350000",
+      "positive_observations": 60,
+      "symbols": ["SHIBEUR", "SHIBUSDC", "EURUSDC"],
+      "retained_quote_changes": [13, 9, 17],
+      "current_24h_trade_counts": [403, 3592, 17015],
+      "static_route_accepted": false
+    }
+  ],
+  "activity_rejections": [
+    {"route_id": "EUR->USDC->WLFI_vs_EUR->WLFI", "start_usdt": "1000", "reason": "WLFIEUR changed twice and had 30 current 24h trades"},
+    {"route_id": "TRY->USDT->TOWNS_vs_TRY->TOWNS", "start_usdt": "1000", "reason": "TOWNSTRY changed twice"},
+    {"route_id": "TRY->USDT->SHELL_vs_TRY->SHELL", "start_usdt": "1000", "reason": "SHELLTRY and SHELLUSDT changed fewer than five times"},
+    {"route_id": "TRY->USDT->NOM_vs_TRY->NOM", "start_usdt": "1000", "reason": "NOMTRY did not change"},
+    {"route_id": "TRY->USDT->PARTI_vs_TRY->PARTI", "start_usdt": "1000", "reason": "PARTITRY did not change"},
+    {"route_id": "TRY->USDT->AI_vs_TRY->AI", "start_usdt": "1000", "reason": "AITRY changed three times"},
+    {"route_id": "TRY->USDT->TNSR_vs_TRY->TNSR", "start_usdt": "1000", "reason": "TNSRTRY changed twice"},
+    {"route_id": "TRY->USDT->METIS_vs_TRY->METIS", "start_usdt": "1000", "reason": "METISTRY changed twice"},
+    {"route_id": "TRY->USDT->APT_vs_TRY->APT", "start_usdt": "1000", "reason": "APTTRY changed three times"},
+    {"route_id": "TRY->USDT->GMT_vs_TRY->GMT", "start_usdt": "1000", "reason": "GMTTRY changed once"},
+    {"route_id": "TRX->USDT->USD1_vs_TRX->USD1", "start_usdt": "1000", "reason": "TRXUSD1 had 11 current 24h trades"},
+    {"route_id": "TRY->USDT->EDU_vs_TRY->EDU", "start_usdt": "1000", "reason": "EDUTRY did not change"},
+    {"route_id": "USDT->TRY->SKL_vs_USDT->SKL", "start_usdt": "1000", "reason": "SKLUSDT changed once and SKLTRY did not change"},
+    {"route_id": "USDT->TRY->SKL_vs_USDT->SKL", "start_usdt": "100", "reason": "SKLUSDT changed once and SKLTRY did not change"},
+    {"route_id": "USDC->TRY->PNUT_vs_USDC->PNUT", "start_usdt": "1000", "reason": "PNUTTRY changed four times"},
+    {"route_id": "USDT->TRY->ALPINE_vs_USDT->ALPINE", "start_usdt": "100", "reason": "ALPINETRY changed once"},
+    {"route_id": "TRY->USDT->HOME_vs_TRY->HOME", "start_usdt": "1000", "reason": "HOMETRY changed three times"}
+  ],
+  "implementation_adjudication": {
+    "candidate_boolean_omission": "the consumed runner did not conjoin its run-level elapsed and request-latency gates inside each route candidate boolean",
+    "candidate_boolean_effect": "none because the separately verified run-level gates all passed",
+    "ranking_defect": "top_100_by_median_stressed_savings sorted infeasible high gross rows ahead of feasible rows",
+    "ranking_effect": "none on the empirical candidate set or activity adjudication; future wide screens must rank only after feasibility gates",
+    "repair_action": "preserve the implementation-hash-bound consumed runner and result without rerun; codify the corrected workflow rule"
+  },
+  "cross_time_evidence": {
+    "historical_2017_2019": "the primary Binance study found indirect conversions 14.4 bips better than direct conversion on average and used them for portfolio rebalancing rather than standalone arbitrage",
+    "historical_2025": "the contemporaneous working-paper abstract reports network path optimization across 64 Binance trading-pair groups under conservative all-taker fees and slippage, but only comparative risk-adjusted outperformance",
+    "current_2026": "the complete public graph produced three active route-size diagnostics after exact rounding, displayed capacity, conservative ten-bip fees per leg, residual valuation, three-bip stress, recurrence, quote-change, and 24-hour trade-count gates"
+  },
+  "decision": {
+    "market_direction_forecast_required": false,
+    "accepted_scoped_mechanism": true,
+    "accepted_edge_count_delta": 1,
+    "accepted_scope": "for an independently required legitimate same-account Binance Spot conversion only, compare the direct route with every one-intermediary route immediately before execution and choose an indirect route only when exact account fees, exact filters, fresh finite-size depth, residuals, extra-leg latency stress, partial-completion unwind, and opportunity costs remain strictly cheaper; otherwise use the direct route or abstain",
+    "not_accepted": [
+      "any static PNUT or SHIB route",
+      "standalone arbitrage or guaranteed profit",
+      "created split rerouted self-matched or wash volume",
+      "public VIP-0 fees as exact account fees",
+      "deployment readiness or authority to request credentials or place orders"
+    ],
+    "next_action": "do not repeat this public population screen on an unchanged mechanism; when a legitimate organic conversion is independently planned and explicit read-only account authority exists, freeze one exact-symbol commission prequalification, then require separate paper or funded order authority for prospective sequential execution and realized savings reconciliation"
+  },
+  "accepted_edge": true,
+  "deployment_ready": false
+}

@@ -12,7 +12,7 @@ Development belongs only on `main`; do not create another development branch.
   code-scanning, and secret-scanning alerts. Reverify the publication commit;
   zero alerts never proves zero undisclosed vulnerabilities.
 - The repository is beta `0.1.0-beta.1`. No model has production authority or a
-  demonstrated long-lived after-all-cost edge. Twenty narrowly scoped structural
+  demonstrated long-lived after-all-cost edge. Twenty-one narrowly scoped structural
   edges are accepted: Polymarket holding yield for existing idle on-platform
   pUSD; Polymarket pUSD taker-fee rebates only for independently justified
   legitimate organic BTC/ETH/SOL taker flow after the direct-wallet tier is
@@ -20,6 +20,10 @@ Development belongs only on `main`; do not create another development branch.
   Spot inventory; LDUSDT or independently existing RWUSD reward retention only
   for already-required USD-M Futures collateral under the exact applicable
   account haircut and limits;
+  fail-closed one-intermediary Binance Spot route savings only for an
+  independently required legitimate same-account organic conversion after
+  exact account fees, filters, fresh finite-size depth, residuals, extra-leg
+  stress, and failure-unwind costs remain strictly cheaper than the direct route;
   just-in-time BNB fee reduction; current quote-native BTC/ETH/SOL promotional
   fee reduction; the current TradFi perpetual zero-maker and reduced-taker fee
   overlay only for independently justified organic flow with the exact current
@@ -3143,6 +3147,62 @@ The structural-edge registry remains at 43 ranked hypotheses and 20 accepted
 scoped families; its canonical SHA-256 is
 `659904cc23e3d91c5d8622c9a8274e0227818d506724a72cce071df285eb681e`.
 
+## Binance Indirect Organic-Conversion Route Savings
+
+Two primary sources materially reopened a mechanism distinct from ordinary
+closed-cycle arbitrage. The 2020 Binance empirical study found that traders
+rebalancing from asset A to B through one intermediary obtained an exchange
+ratio 14.4 bips better than the direct pair on average, while ordinary
+triangular arbitrage remained fee-constrained. The 2026 working-paper metadata
+reports network path optimization under conservative all-taker fees and
+slippage across 64 Binance trading-pair groups during 2025, but proves only
+comparative risk-adjusted outperformance rather than current absolute profit.
+
+One frozen public unauthenticated screen therefore enumerated every current
+TRADING Spot edge and all direct-versus-one-intermediary routes before viewing
+books. Sixty complete all-symbol responses over 118.591 seconds covered 2,716
+directed edges, 10,440 routes, and 20,568 route-size evaluations at 100 and
+1,000 USDT. It charged a conservative 10-bip taker fee on every leg, exact lot
+rounding, displayed top-level capacity, source and intermediary residual value,
+and a further 3-bip extra-leg stress. Twenty route-size rows passed the frozen
+recurrence gate.
+
+The strongest headline rows were mostly stale fiat-quote displays. A separately
+frozen one-request activity gate required every direct and indirect symbol to
+change top-of-book state at least five times in the retained capture and report
+at least 100 trades in the current rolling 24-hour response. It rejected 17 of
+20 rows. Three diagnostics survived: USDC-to-PNUT through USDT at a 6.5881697492
+bip median stressed saving, and SHIB-to-EUR through USDT or USDC at about 2.97
+bips, all at 1,000 USDT displayed size. These are not static accepted routes or
+fill claims.
+
+The accepted edge is the general fail-closed cost-saving overlay only: when a
+legitimate same-account Spot conversion is independently required, compare the
+direct route with every one-intermediary route immediately before execution and
+use an indirect route only when exact account fees, filters, fresh finite-size
+depth, residuals, extra-leg latency stress, partial-completion unwind, and all
+other costs remain strictly cheaper. Otherwise use the direct route or abstain.
+Never create, split, reroute, self-match, or wash volume for this overlay, and
+never treat public VIP-0 fees as account evidence. No account, order, balance,
+credential, or protected capture was accessed.
+
+The consumed runner omitted its run-level elapsed and request-latency gates from
+the per-route candidate Boolean and sorted infeasible gross rows ahead of
+feasible candidates in a diagnostic top-100 table. Both run-level gates passed
+independently, so the omission did not change any candidate or decision. The
+runner and raw evidence remain preserved without a repair capture; `AGENTS.md`
+now requires every candidate Boolean to conjoin run- and row-level gates and
+requires wide screens to rank only after feasibility gates.
+
+Canonical contract, screen result, activity contract, and adjudication SHA-256
+values are `dcd959d9d7ec0e1dffec47b910cece585c106b76b69feaaa9ca03ddcc7caa83a`,
+`b3e7f724e2b1ce2cc7a8444d00632466196af6d89f139259164549e91d1f84bc`,
+`b6331c1d7987b3a6093df2d4846368ccba634c27bf4967cd85f9c10e707fbd30`,
+and `0307a9dbfb26ca62e94ae01e5b5d40316340b686a60829e85f258c07e565678c`.
+The structural-edge registry now contains 44 ranked hypotheses and 21 accepted
+scoped overlays; its canonical SHA-256 is
+`9459be90ad52d85f8d23824b04aca3e39bc397c941b47735aca4342a78f00d82`.
+
 ## Verification Scope
 
 The two-request holding-yield continuity monitor, its frozen contract, exact
@@ -3203,6 +3263,16 @@ suite: 261 tests across the same 67 files. Ruff and Python compilation are clean
 for the directly changed test, every canonical JSON hash reconstructs, and the
 retained raw response reconstructs its journal-bound payload hash. No broad
 model, CI, hosted, release, or repetitive market-data suite was run.
+
+The indirect-conversion screen, activity gate, source hashes, exact rounding,
+fee, capacity, residual, recurrence, and registry lineage cover 264 focused
+tests across 68 registry-coupled files. The combined pass found only four stale
+registry-length expectations; after their exact metadata correction, those four
+failures pass without repeating the already-passing 260 tests. Ruff is clean
+across all 70 changed Python files, Python compilation is clean for the frozen
+runner, all five canonical JSON hashes reconstruct, and the current activity
+response hash matches its adjudication. No broad model, CI, hosted, release, or
+repetitive market-data suite was run.
 
 The previous verbose handoff and chronology are preserved byte-for-byte in:
 
