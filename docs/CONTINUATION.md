@@ -3201,7 +3201,7 @@ values are `dcd959d9d7ec0e1dffec47b910cece585c106b76b69feaaa9ca03ddcc7caa83a`,
 and `0307a9dbfb26ca62e94ae01e5b5d40316340b686a60829e85f258c07e565678c`.
 The structural-edge registry now contains 44 ranked hypotheses and 21 accepted
 scoped overlays; its canonical SHA-256 is
-`2e70b7e226dc64a7aa39a6fbdd2524ff295f4b172513094ad66c1fcb700a1320`.
+`c0d7189c4848f248e6d3960954198e0f1e93c8e74acd2ed36a8830239bf86194`.
 
 ## Future WNBA Complete-Catalog Rejection Screen
 
@@ -3231,7 +3231,34 @@ The raw response and two-phase journal SHA-256 values are
 and `40a7edc61fcf5c3a42a8ab7aef65cf04703cde30989b7b23f23a915291620368`.
 The structural registry remains at 44 hypotheses and 21 accepted scoped edges;
 its canonical SHA-256 is
-`2e70b7e226dc64a7aa39a6fbdd2524ff295f4b172513094ad66c1fcb700a1320`.
+`c0d7189c4848f248e6d3960954198e0f1e93c8e74acd2ed36a8830239bf86194`.
+
+## Sep 7 Hour-00 Fixed NegRisk Complete Rejection Screen
+
+The rank-31 retry condition prescribed a prospectively fixed hourly or
+series-specific population, so one non-overlapping hour was frozen before
+access: `2026-09-07T00:00:00Z` through `00:59:59Z`. One public unauthenticated
+keyset request with the documented 500-event limit returned six events and no
+cursor, proving completeness under the frozen time filter. Five events were
+fixed non-augmented NegRisk sets; the Leagues Cup winner event was excluded by
+the frozen classification rules.
+
+Zero fixed sets had a Gamma all-YES sum below the one-pUSD payout floor. The
+best visible upper-bound row, Nacional Potosi/Blooming match winner, summed to
+`1.090` before any execution cost. The rejection-first gate therefore stopped
+with zero onchain, book, fee, account, credential, order, transaction, fund, or
+protected-capture requests. This is a terminal rejection for this population,
+not an edge claim. Do not sweep adjacent hours, narrow around the observed
+event, or adaptively continue any consumed page. Reopen only for a future
+source-selected nonadjacent or series-specific population whose selection is
+independent of these outcomes.
+
+Canonical contract and result SHA-256 values are
+`32dfa5e282f43204f73117fa2dba198c69171944bc41a85bf661e05789089439`
+and `92734472ed41bccdc1d88c947b218e05fa35827cad6b1711ec192c06cf60cc64`.
+The raw response and two-phase journal SHA-256 values are
+`4b0322846de9fd229591c460eaf1cb22d4b0ac4c9e6b52ac2f35c8a0bec99442`
+and `9349af5f5aee892fe5e16d710b55fefabef9ba63f36299b00bff4e1d90de8627`.
 
 ## Binance All-Symbol Triangular-Cycle Terminal Adjudication
 
@@ -3266,14 +3293,14 @@ and `2fffd2044e72d1712ecdaa0c4e24cb829057ea2005c07e12129c443478b07902`.
 
 ## Verification Scope
 
-The future-WNBA contract, compact complete-page result, two-phase request
-journal, raw response, exact payoff parser, rank-30 lineage, and all registry-
-hash-coupled checks pass 269 focused tests across 70 files. The single combined
-pass exposed only three stale registry wording or artifact-slice expectations;
-their exact tests and the two new direct checks pass after metadata updates.
-Ruff and Python compilation are clean for the changed Python scope. No book,
-fee, credential, account, order, fund, protected-capture, broad model, CI, or
-release workflow was used.
+The future-WNBA and Sep 7 hour-00 contracts, compact complete-page results,
+two-phase request journals, raw responses, exact payoff and fixed-NegRisk
+screens, rank-30/rank-31 lineage, and all registry-hash-coupled checks pass 270
+focused tests across 70 files in one combined pass. Ruff and Python compilation
+are clean for the two directly affected tests. The hourly result reconstructs
+its contract, canonical result, raw response, and journal hashes exactly. No
+onchain, book, fee, credential, account, order, fund, protected-capture, broad
+model, CI, or release workflow was used.
 
 The frozen zero-network all-symbol triangular-cycle contract, deterministic
 retained-data runner, source result, defect-disclosing terminal adjudication,
