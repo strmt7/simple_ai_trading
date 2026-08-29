@@ -32,7 +32,7 @@ REGISTRY = ROOT / "docs/model-research/structural-edge-priority-registry-v1.json
 CONTRACT_HASH = "39367c3544711a6c206e8d9a3b98f1832ed2c912d8f113ad35872a1fb11e6f36"
 RESULT_HASH = "4cf430a7c5b6ce6ab57fd71979d705732e737cbcb116658705454b80daa025a9"
 ADJUDICATION_HASH = "46bf134d1be8b645d7f6272d651be8d3c0b6a8e5b2e7d2b4540f3609d6997a96"
-REGISTRY_HASH = "d9698017a21be49e8f0b5c0021d4c1eeb1dff0a6482bab9badc0a8c76be5df4b"
+REGISTRY_HASH = "a661ba68ecdf87eaece27616e5ede3ca0864ca844b3f9553d7d0fd4a59f645f8"
 
 
 def _load(path: Path) -> dict[str, object]:

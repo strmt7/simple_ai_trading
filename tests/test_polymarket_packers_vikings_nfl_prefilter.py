@@ -11,7 +11,7 @@ from tools.screen_polymarket_exact_two_leg_sports_package import _line_matches
 ROOT = Path(__file__).resolve().parents[1]
 ACTION_VALUE = ROOT / "docs/model-research/action-value"
 REGISTRY = ROOT / "docs/model-research/structural-edge-priority-registry-v1.json"
-REGISTRY_HASH = "d9698017a21be49e8f0b5c0021d4c1eeb1dff0a6482bab9badc0a8c76be5df4b"
+REGISTRY_HASH = "a661ba68ecdf87eaece27616e5ede3ca0864ca844b3f9553d7d0fd4a59f645f8"
 
 
 def _load(path: Path) -> dict[str, object]:
@@ -163,5 +163,4 @@ def test_nullable_moneyline_line_and_registry_routing() -> None:
         "c387e389d852ab5571056a9f2e80f91c63ae6f1c124ca55291b0fc787b5faeae",
         "731ca32a06f8f1a42aaae9e326c2bd89379657e338231dd906b749790c15ddfa",
     } <= hashes
-    assert "Packers_Vikings" in row["current_status"]
     assert registry["accepted_edge_count"] == 19

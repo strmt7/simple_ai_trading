@@ -200,11 +200,20 @@ override prose.
   full-game totals can create cross-period implications; preserve a narrower
   consumed adjudication that missed one, then freeze the retained-data
   correction separately before any depth access.
+- In NFL margin lattices, a half-half-tie moneyline and favorite minus 0.5 can
+  share the same integer win threshold while differing in the actual-tie state.
+  Order them by exact statewise payout dominance; do not reject the event merely
+  as a duplicate threshold, and do not adaptively request depth after an offline
+  outcome-aware correction.
 - A rejection-only catalog result must retain every tested relation's exact
   identity, price sum, payout floor, and decision, not only candidate rows and
   aggregate counts. If a consumed runner omits rejected rows, preserve it and
   reconstruct the complete retained page offline without refetching before
   making a coverage or best-row claim.
+- Store large retained catalog artifacts as deterministic compact JSON (or a
+  partitioned row format) once canonical content is fixed. Do not spend Git,
+  review, or CI resources on whitespace expansion of thousands of evidence
+  rows, and never drop required relations merely to reduce file size.
 - PowerShell preflight guards must parenthesize each `Test-Path` operand and set
   terminating error behavior before a guarded one-use command. The runner must
   independently enforce the same one-use boundary, so a shell parser or

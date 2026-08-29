@@ -15,7 +15,7 @@ REGISTRY = ROOT / "docs/model-research/structural-edge-priority-registry-v1.json
 RAW = ROOT / ("docs/model-research/action-value/raw/polymarket-organic-taker-rebate-v1")
 EXPECTED_HASH = "6a3f907dbebd0c7cc894d95054231540e50cd8e28e6264840a2840be8ac72865"
 EXPECTED_REGISTRY_HASH = (
-    "d9698017a21be49e8f0b5c0021d4c1eeb1dff0a6482bab9badc0a8c76be5df4b"
+    "a661ba68ecdf87eaece27616e5ede3ca0864ca844b3f9553d7d0fd4a59f645f8"
 )
 PUSD = "0xc011a7e12a19f7b1f670d46f03b03f3342e82dfb"
 V2_EXCHANGE = "0xe111180000d2663c0091e4f400237545b87b996b"

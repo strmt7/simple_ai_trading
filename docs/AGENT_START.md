@@ -1492,9 +1492,23 @@ safety gate, blocks Stop, or submits an order.
   a distinct event to survive exact synchronized depth and current fees before
   escalation. Canonical exact-depth result SHA-256
   `731ca32a06f8f1a42aaae9e326c2bd89379657e338231dd906b749790c15ddfa`.
+- One complete future-NFL keyset request then covered the distinct
+  `2026-09-13T20:25:01Z` through `2026-09-21T23:59:59Z` window: 17 events
+  returned, 16 exactly parsed, 4,621 relations retained, and 674 Gamma-only
+  rejection-gate candidates. The precommitted strongest Commanders/Cowboys
+  Over 56.5 plus Under 58.5 row displayed `0.785`, but exact asks cost `7.55`
+  pUSD for five shares against a five-pUSD floor, a `2.55` pUSD zero-fee loss;
+  book timestamps were 25,189,367 ms apart and zero fee requests were spent.
+  A frozen offline Cowboys/Giants correction handled the shared-threshold
+  moneyline/minus-0.5 actual-tie distinction, retained 268 relations and four
+  more Gamma candidates, but granted no adaptive depth. Do not resample this
+  window. Canonical catalog, depth, and correction result SHA-256 values are
+  `7c4472e0a77cde09f5643a06a1326fbfc2cc1e5ec37641314d875a346e1a7754`,
+  `729d482f9a15b60b5345ba6c52ee75941a1f0751db2453e307c30f8872bbac35`,
+  and `37f79cc8a4f5f96fa395a729e85a793e12c2127e2124591db693c92b1b459928`.
 - The structural-edge registry now has 42 ranked hypotheses, still only 19
   narrowly accepted scoped overlays, and result SHA-256
-  `d9698017a21be49e8f0b5c0021d4c1eeb1dff0a6482bab9badc0a8c76be5df4b`.
+  `a661ba68ecdf87eaece27616e5ede3ca0864ca844b3f9553d7d0fd4a59f645f8`.
 
 ## Task Routing
 
@@ -1515,6 +1529,9 @@ safety gate, blocks Stop, or submits an order.
 | Current Toronto/Phoenix WNBA monotone-parity terminal result | `docs/model-research/action-value/polymarket-current-wnba-monotone-parity-result-v1-2026-08-29.json` |
 | Current Lynx/Dream WNBA rejection-only terminal adjudication | `docs/model-research/action-value/polymarket-lynx-dream-monotone-prefilter-adjudication-v1-2026-08-29.json` |
 | Current Packers/Vikings NFL exact-depth terminal result | `docs/model-research/action-value/polymarket-packers-vikings-tie-state-package-result-v1-2026-08-29.json` |
+| Future NFL complete catalog rejection screen | `docs/model-research/action-value/polymarket-future-nfl-monotone-catalog-result-v1-2026-08-29.json` |
+| Commanders/Cowboys NFL exact-depth terminal result | `docs/model-research/action-value/polymarket-commanders-cowboys-total-package-result-v1-2026-08-29.json` |
+| Cowboys/Giants NFL tie-collision correction | `docs/model-research/action-value/polymarket-cowboys-giants-tie-collision-correction-v1-2026-08-29.json` |
 | Binance retained CLOB box-parity terminal prefilter | `docs/model-research/action-value/binance-options-clob-box-retained-prefilter-v2-2026-08-29.json` |
 | Binance retained option/perpetual conversion terminal stress | `docs/model-research/action-value/binance-options-perpetual-conversion-retained-stress-v1-2026-08-29.json` |
 | Polymarket holding-yield latest retained receipt continuity | `docs/model-research/polymarket/complete-set-holding-yield-continuity-receipts-v8-2026-08-29.json` |
