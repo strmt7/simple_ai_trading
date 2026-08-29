@@ -1764,7 +1764,7 @@
       "venue_scope": "Binance_current_BLVT_Spot_and_primary_market_inventory"
     }
   ],
-  "result_sha256": "671fa1498f9098357ac5c0f209c76351b0043cdcc1123dd8d8d062c92ac5c4a5",
+  "result_sha256": "5dfe720ff8cb69f5489ef6deb47fffe2d1ae4d036f1c14a13fbb34daf961f14a",
   "schema_version": "structural-edge-priority-registry-v1",
   "terminal_do_not_repeat": [
     {
@@ -1813,9 +1813,9 @@
       "reason": "ticker candidates were negative at exact displayed minimum depth and stale"
     },
     {
-      "canonical_result_sha256": "e85b4e270e707c0faa47e3f373d6d345fce448fcbcbcf6a6f39bceec7d9eb229",
+      "canonical_result_sha256": "a9b0e7a2aba9bda7f83b9515be587a17e6da69fa0bc987191a21f9d37e912d3b",
       "family": "binance_option_box_parity",
-      "reason": "every ticker candidate lacked at least one required executable displayed side"
+      "reason": "the_later_zero_request_August_27_retained_all_ticker_prefilter_evaluated_10382_BTC_ETH_SOL_same_expiry_box_directions_and_found_zero_gross_positive_rows_before_fees_margin_leg_risk_settlement_or_capital_costs_the_earlier_August_25_depth_screen_also_had_zero_fresh_executable_positive_boxes_do_not_repeat_without_a_material_price_fee_book_or_product_change"
     },
     {
       "canonical_result_sha256": "8e30be61daaecabd3546e41cdc204d20b8ad38e0fc80c3c9aa96092266a3abe5",
@@ -1948,6 +1948,6 @@
       "reason": "the_complete_public_exchangeInfo_inventory_contained_40_legacy_LEVERAGED_permission_symbols_but_zero_with_TRADING_status_so_no_current_subscribe_redeem_spot_parity_instrument_exists_do_not_poll_until_a_new_official_BLVT_listing_or_relisting"
     }
   ],
-  "updated_at_utc": "2026-08-29T15:52:19.5715284Z",
+  "updated_at_utc": "2026-08-29T16:33:43.9916345+00:00",
   "usage_rule": "advance_the_highest_ranked_hypothesis_whose_retry_trigger_is_satisfied_otherwise_do_not_repeat_a_blocked_or_terminal_screen"
 }
