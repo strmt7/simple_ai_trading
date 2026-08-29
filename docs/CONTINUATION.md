@@ -967,7 +967,7 @@ grants paper, testnet, or live authority.
 
 The canonical structural-edge priority and retry-trigger registry is
 `docs/model-research/structural-edge-priority-registry-v1.json`, result SHA-256
-`97d05d2f718f078bb6c890be30b65e64af5a9408419e8a3c58eedcc7452e80d8`.
+`44fdf0cba6b97bcf40c407bc78cedbdbf8051ff1b7e40267b5bc4db629abb22a`.
 Advance only the highest-ranked hypothesis whose trigger is actually satisfied.
 This prevents account-blocked or terminal screens from being rerun as if more
 snapshots could create an edge.
@@ -1842,20 +1842,28 @@ pre-adjustment long bStock plus short perpetual has dividend contribution
 same-day capture or treat closing and reopening the short as a free hedge.
 
 GLW has a separate prospective ordering question: its Friday 2026-08-28
-ex-date precedes Binance's Monday 2026-08-31T00:00Z bStock snapshot. No special
-GLW funding row, post-adjustment executable book, positive net-distribution
-floor, recurrence, or profit is yet proved. After 2026-08-28, check public
-GLWUSDT funding history once without assuming the adjustment timestamp. Only
-if an actual negative row matches the `0.28` gross dividend within one
-micro-USDT and occurs before the bStock snapshot may one synchronized public
-depth-20 GLWBUSDT/GLWUSDT book batch run after the 2026-08-28T23:30Z conversion
-pause and before the 2026-08-30T23:30Z deposit-withdrawal pause. Gross headroom
-is diagnostic only; the current conservative net-distribution floor is zero.
+ex-date precedes Binance's Monday 2026-08-31T00:00Z bStock snapshot. The frozen
+one-use pre-snapshot observation ran on 2026-08-29 after the conversion pause.
+Its one public funding-history response retained eight rows from 2026-08-27T00Z
+through 2026-08-29T08Z: all were `Regular`, none was negative, and none was
+`Special`. The required exact `0.28`-matching adjustment gate therefore failed,
+so the five-request conditional synchronized depth, funding, and filter batch
+did not run. This result does not prove a later pre-snapshot adjustment cannot
+occur; it consumes the preregistered observation and prohibits opportunistic
+polling or a 2026 GLW book capture. After 2026-08-31T00:00Z, at most one newly
+frozen terminal history reconciliation may establish mechanism timing only.
+Any executable study must use a future independent weekend event under a new
+prospective contract. Gross headroom remains diagnostic only, and the current
+conservative net-distribution floor is zero.
 GS has no distinct weekend gap and remains inside the rejected direct family.
 Canonical candidate:
 `docs/model-research/action-value/binance-bstock-dividend-perp-funding-timing-gap-candidate-v1-2026-08-27.json`,
 result SHA-256
 `c073b61271886a5add71c2578caa889dfb97b1245327ae746bd517a91e52530d`.
+One-use observation result:
+`docs/model-research/action-value/binance-glw-special-funding-trigger-result-v1-2026-08-29.json`,
+result SHA-256
+`823448f115ecf7fe3e7fe8862855f40dfd351ed041fce2aa94196d069c8d585a`.
 
 NOK is a materially distinct non-US dividend exception. Nokia's primary source
 states a `0.0462` USD gross NYSE amount, 2026-07-27 ex-date, 2026-07-28 record
@@ -2115,7 +2123,7 @@ result SHA-256
 `64943efe0c6ad16f8d02f78548afef38f919448d2da87c7573e825a2eeefd6b9`.
 That checkpoint left seventeen accepted scoped edges. The current registry now
 has nineteen and result SHA-256
-`97d05d2f718f078bb6c890be30b65e64af5a9408419e8a3c58eedcc7452e80d8`.
+`44fdf0cba6b97bcf40c407bc78cedbdbf8051ff1b7e40267b5bc4db629abb22a`.
 
 The complete Binance XAU/XAG Commodity Options versus matching TradFi
 perpetual lower-bound screen is terminal for the active 2026-08-27 and
@@ -2393,13 +2401,13 @@ not grant account, funding, order, or transaction authority.
    Quote acceptance, account mutation, and any order remain separately gated.
    For Binance bStock dividends, do not repeat direct pre-adjustment long-bStock
    short-perpetual capture: historical AMAT and MSFT prove the short pays the
-   gross dividend while bStock receives only net reinvestment. For GLW, do not
-   poll before the 2026-08-28 ex-date or infer its adjustment time. Check public
-   funding history once after that date. A synchronized public book batch is
-   permitted only after an actual matching special debit occurs before the
-   snapshot, after the conversion pause, and before the deposit-withdrawal
-   pause. No account access, order, gross-dividend credit, or profit claim is
-   authorized.
+   gross dividend while bStock receives only net reinvestment. The frozen GLW
+   pre-snapshot history observation is now consumed: eight observed rows were
+   all `Regular`, so no conditional books ran. Do not poll it or attempt a 2026
+   GLW book capture. After the snapshot, freeze at most one terminal history
+   reconciliation for mechanism evidence only; any executable recurrence must
+   wait for a future independent weekend event. No account access, order,
+   gross-dividend credit, or profit claim is authorized.
    For the NOK under-debit exception, do not infer the net historical payout
    from the `0.0462` gross amount, current multiplier, or `lastCashAmount`, and
    do not poll the preliminary 2026-10-27 record date. Reopen only when Nokia's

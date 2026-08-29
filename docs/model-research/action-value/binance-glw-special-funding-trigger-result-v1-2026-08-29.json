@@ -1,0 +1,32 @@
+{
+  "accepted_edge": false,
+  "conditional_batch_executed": false,
+  "contract_sha256": "6cc017e4060fa419b3746b2064d01da8f2ddd24d4839f204c1e519c56dec7d50",
+  "deployment_ready": false,
+  "gate_status": "match_count_0",
+  "history_exact_matches": [],
+  "history_latest_row": {
+    "fundingRate": "0.00000000",
+    "fundingTime": 1787990400002,
+    "markPrice": "149.60724438",
+    "rateType": "Regular",
+    "symbol": "GLWUSDT"
+  },
+  "history_observed_rate_types": [
+    "Regular"
+  ],
+  "history_row_count": 8,
+  "history_special_row_count": 0,
+  "journal_path": "docs/model-research/action-value/binance-glw-special-funding-trigger-journal-v1-2026-08-29.json",
+  "journal_sha256": "1365d54a858a6f32125814935d7c6d85727d8a0c5340c19fb3eb0ad5cb81ba71",
+  "market_direction_forecast_required": false,
+  "profitability_claim": false,
+  "public_net_distribution_floor_usd": "0",
+  "next_retry_trigger": "after_2026_08_31T00_00_00Z_freeze_one_terminal_history_reconciliation_for_mechanism_evidence_only_no_2026_GLW_book_capture",
+  "request_count": 1,
+  "request_success": true,
+  "result_sha256": "823448f115ecf7fe3e7fe8862855f40dfd351ed041fce2aa94196d069c8d585a",
+  "schema_version": "binance-glw-special-funding-trigger-result-v1",
+  "status": "one_use_pre_snapshot_observation_consumed_no_matching_special_row_conditional_books_prohibited_future_event_unresolved",
+  "trading_authority": false
+}
