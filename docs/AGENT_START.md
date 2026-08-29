@@ -1367,6 +1367,20 @@ safety gate, blocks Stop, or submits an order.
   architecture change. Adjudication SHA-256
   `46bf134d1be8b645d7f6272d651be8d3c0b6a8e5b2e7d2b4540f3609d6997a96`.
 
+- Two distinct resolved-source combined events now prove a recurring exact
+  duplicate-payoff identity against the standalone 2026 House-control markets.
+  The shutdown-final-Yes instance exposed three positive maker-first
+  sensitivities after a two-tick hedge, led by `0.03092` pUSD on five shares for
+  a combined-Democratic maker role with 500 visible shares ahead, but its pair
+  timestamps were 35.484 seconds apart and no owned fill or subsequent hedge is
+  proved. The independent ACA-final-No instance stopped the escalation: all
+  four all-taker packages and all eight maker-first roles were negative after
+  the same stress; its best one-tick-improved role lost `0.11638` pUSD and had
+  11.173 seconds pair skew. The payoff identity recurs; positive economics do
+  not. Do not spend a source-continuous capture, credentials, or order-capable
+  work on this family until a material price, fee, rule, or market change.
+  Canonical ACA maker-first result SHA-256
+  `900246f7bf066a8d310c6dcc6e9318edc1c6b83d4779f9b2f628c668e7d258e6`.
 - The exact-one-NO NegRisk V2 event-log observation consumed its frozen public
   interval and failed HTTP 400 after retaining only the preliminary current-
   block receipt. Because the runner failed to save the HTTP error body or
@@ -1386,7 +1400,7 @@ safety gate, blocks Stop, or submits an order.
   `85c8ef364b03fb2fbf0aeebddec10d51abbdd608f56ff9c0dccb1835cacc2179`.
 - The structural-edge registry now has 42 ranked hypotheses, still only 19
   narrowly accepted scoped overlays, and result SHA-256
-  `6f5b4a277f1c3cea006de5d8a4a1cc6a7ba306b2689a37b2e93f1c44006fb7c2`.
+  `7be2ae9f2883a72c6f492e57208cede33c7ad8733a947bf4a21b3825315b2443`.
 
 ## Task Routing
 
@@ -1401,6 +1415,7 @@ safety gate, blocks Stop, or submits an order.
 | Cross-market exact dependent-subset parity candidate | `docs/model-research/action-value/polymarket-cross-market-dependent-subset-parity-reopen-v1-2026-08-26.json` |
 | Current sports exact-title discovery terminal result | `docs/model-research/action-value/polymarket-current-sports-monotone-pair-discovery-result-v1-2026-08-29.json` |
 | Current BOS/NYY monotone-parity terminal adjudication | `docs/model-research/action-value/polymarket-current-mlb-monotone-parity-failure-adjudication-v1-2026-08-29.json` |
+| Resolved-leg House duplicate-payoff recurrence | `docs/model-research/action-value/polymarket-aca-house-maker-first-candidate-v1-2026-08-29.json` |
 | Binance XAU/PAXG funding-basis terminal adjudication | `docs/model-research/action-value/binance-xau-paxg-perpetual-funding-spread-failure-adjudication-v1-2026-08-29.json` |
 | Polymarket exact-one-NO V2 conversion failure adjudication | `docs/model-research/action-value/polymarket-negrisk-one-no-v2-conversion-failure-adjudication-v1-2026-08-29.json` |
 | Binance BLVT current primary-market NAV-parity terminal gate | `docs/model-research/action-value/binance-blvt-primary-market-nav-parity-public-gate-v1-2026-08-29.json` |

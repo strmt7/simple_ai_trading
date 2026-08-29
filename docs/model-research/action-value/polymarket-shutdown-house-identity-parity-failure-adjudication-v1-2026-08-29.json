@@ -1,0 +1,218 @@
+{
+  "adjudication": {
+    "accepted_edge": false,
+    "current_executable_candidate_proved": false,
+    "deployment_ready": false,
+    "next_action": "do_not_rerun_this_snapshot_reopen_only_after_a_material_price_fee_rule_or_book_architecture_change",
+    "payoff_identity_proved": true,
+    "profitability_claim": false,
+    "same_snapshot_rerun_permitted": false,
+    "status": "terminal_rejected_under_consumed_snapshot"
+  },
+  "authority": {
+    "account_requests": 0,
+    "credentials_used": false,
+    "funds_used": false,
+    "orders_or_transactions": 0,
+    "protected_capture_touched": false,
+    "public_unauthenticated_read_only_requests_maximum": 9,
+    "signed_requests": 0,
+    "trading_authority": false
+  },
+  "contract": {
+    "path": "docs/model-research/action-value/polymarket-shutdown-house-identity-parity-contract-v1-2026-08-29.json",
+    "sha256": "eb5e772ec42dc0a5ade6a73051470476a85c9d89488e78916b5096f9207f5e7f"
+  },
+  "frozen_runner": {
+    "path": "tools/screen_polymarket_shutdown_house_identity_parity.py",
+    "preserved_unchanged": true,
+    "sha256": "acbc4aac0760eb6e0d011e97f3e34d25c8a22c427a281db4898687a1525ef321"
+  },
+  "implementation": {
+    "path": "tools/adjudicate_polymarket_shutdown_house_identity_parity_failure.py",
+    "sha256": "1a96f2cc602d4c2045d928abdebdf2ebb99a74a324070b290385981949bedcbb"
+  },
+  "payoff_proof": {
+    "duplicate_payoff_identity_count": 2,
+    "shutdown_final_yes": true,
+    "truth_table": [
+      {
+        "combined_Democratic_payoff": 1,
+        "combined_Republican_payoff": 0,
+        "house_state": "Democratic",
+        "shutdown_yes": true,
+        "standalone_Democratic_payoff": 1,
+        "standalone_Republican_payoff": 0
+      },
+      {
+        "combined_Democratic_payoff": 0,
+        "combined_Republican_payoff": 1,
+        "house_state": "Republican",
+        "shutdown_yes": true,
+        "standalone_Democratic_payoff": 0,
+        "standalone_Republican_payoff": 1
+      },
+      {
+        "combined_Democratic_payoff": 0,
+        "combined_Republican_payoff": 0,
+        "house_state": "Other",
+        "shutdown_yes": true,
+        "standalone_Democratic_payoff": 0,
+        "standalone_Republican_payoff": 0
+      }
+    ]
+  },
+  "result_sha256": "2d6b5ae638682d7cde02de51068e674a8f882b5bed0ce66de50da1f4280d717c",
+  "retained_books_diagnostic": {
+    "authority": "offline_sensitivity_only_because_the_frozen_timestamp_gate_failed_before_current_CLOB_fee_rate_cross_checks",
+    "best_package": "combined_democratic_YES_plus_house_democratic_NO",
+    "best_stressed_after_Gamma_fee_schedule_sensitivity_pUSD": "-0.06273",
+    "rows": [
+      {
+        "actual_after_Gamma_fee_schedule_sensitivity_pUSD": "0.04994",
+        "left_fill": {
+          "actual_cost_pUSD": "4.305",
+          "actual_fee_pUSD": "0.02394",
+          "fills": [
+            {
+              "ask_price": "0.861",
+              "quantity": "5",
+              "stressed_price": "0.863"
+            }
+          ],
+          "stressed_cost_pUSD": "4.315",
+          "stressed_fee_pUSD": "0.02365"
+        },
+        "name": "combined_democratic_YES_plus_house_democratic_NO",
+        "passes_frozen_candidate_gate": false,
+        "reason": "frozen_book_timestamp_skew_failed_and_stressed_floor_nonpositive",
+        "right_fill": {
+          "actual_cost_pUSD": "0.60",
+          "actual_fee_pUSD": "0.02112",
+          "fills": [
+            {
+              "ask_price": "0.12",
+              "quantity": "5",
+              "stressed_price": "0.14"
+            }
+          ],
+          "stressed_cost_pUSD": "0.70",
+          "stressed_fee_pUSD": "0.02408"
+        },
+        "stressed_after_Gamma_fee_schedule_sensitivity_pUSD": "-0.06273"
+      },
+      {
+        "actual_after_Gamma_fee_schedule_sensitivity_pUSD": "-0.25022",
+        "left_fill": {
+          "actual_cost_pUSD": "0.755",
+          "actual_fee_pUSD": "0.02564",
+          "fills": [
+            {
+              "ask_price": "0.151",
+              "quantity": "5",
+              "stressed_price": "0.153"
+            }
+          ],
+          "stressed_cost_pUSD": "0.765",
+          "stressed_fee_pUSD": "0.02592"
+        },
+        "name": "combined_democratic_NO_plus_house_democratic_YES",
+        "passes_frozen_candidate_gate": false,
+        "reason": "frozen_book_timestamp_skew_failed_and_stressed_floor_nonpositive",
+        "right_fill": {
+          "actual_cost_pUSD": "4.45",
+          "actual_fee_pUSD": "0.01958",
+          "fills": [
+            {
+              "ask_price": "0.89",
+              "quantity": "5",
+              "stressed_price": "0.91"
+            }
+          ],
+          "stressed_cost_pUSD": "4.55",
+          "stressed_fee_pUSD": "0.01638"
+        },
+        "stressed_after_Gamma_fee_schedule_sensitivity_pUSD": "-0.35730"
+      },
+      {
+        "actual_after_Gamma_fee_schedule_sensitivity_pUSD": "-0.19881",
+        "left_fill": {
+          "actual_cost_pUSD": "0.705",
+          "actual_fee_pUSD": "0.02423",
+          "fills": [
+            {
+              "ask_price": "0.141",
+              "quantity": "5",
+              "stressed_price": "0.143"
+            }
+          ],
+          "stressed_cost_pUSD": "0.715",
+          "stressed_fee_pUSD": "0.02452"
+        },
+        "name": "combined_republican_YES_plus_house_republican_NO",
+        "passes_frozen_candidate_gate": false,
+        "reason": "frozen_book_timestamp_skew_failed_and_stressed_floor_nonpositive",
+        "right_fill": {
+          "actual_cost_pUSD": "4.45",
+          "actual_fee_pUSD": "0.01958",
+          "fills": [
+            {
+              "ask_price": "0.89",
+              "quantity": "5",
+              "stressed_price": "0.91"
+            }
+          ],
+          "stressed_cost_pUSD": "4.55",
+          "stressed_fee_pUSD": "0.01638"
+        },
+        "stressed_after_Gamma_fee_schedule_sensitivity_pUSD": "-0.30590"
+      },
+      {
+        "actual_after_Gamma_fee_schedule_sensitivity_pUSD": "0.01111",
+        "left_fill": {
+          "actual_cost_pUSD": "4.345",
+          "actual_fee_pUSD": "0.02277",
+          "fills": [
+            {
+              "ask_price": "0.869",
+              "quantity": "5",
+              "stressed_price": "0.871"
+            }
+          ],
+          "stressed_cost_pUSD": "4.355",
+          "stressed_fee_pUSD": "0.02248"
+        },
+        "name": "combined_republican_NO_plus_house_republican_YES",
+        "passes_frozen_candidate_gate": false,
+        "reason": "frozen_book_timestamp_skew_failed_and_stressed_floor_nonpositive",
+        "right_fill": {
+          "actual_cost_pUSD": "0.60",
+          "actual_fee_pUSD": "0.02112",
+          "fills": [
+            {
+              "ask_price": "0.12",
+              "quantity": "5",
+              "stressed_price": "0.14"
+            }
+          ],
+          "stressed_cost_pUSD": "0.70",
+          "stressed_fee_pUSD": "0.02408"
+        },
+        "stressed_after_Gamma_fee_schedule_sensitivity_pUSD": "-0.10156"
+      }
+    ]
+  },
+  "retained_evidence": {
+    "book_count": 8,
+    "book_timestamp_max_ms": 1788017627192,
+    "book_timestamp_min_ms": 1788017591708,
+    "book_timestamp_skew_ms": 35484,
+    "books_path": "data/polymarket-shutdown-house-identity-parity-v1/raw/books.json",
+    "books_sha256": "248a739ef45fe5d75d3725a1ee0a4097f73ef25be92e4f99872185314828faa9",
+    "fee_requests_made": 0,
+    "frozen_maximum_book_timestamp_skew_ms": 5000,
+    "journal_path": "data/polymarket-shutdown-house-identity-parity-v1/request-journal.jsonl",
+    "journal_sha256": "e2dc0a70192a2635b1d2fee83cf846a51543ce27f8507a236c26080bd2ca0889"
+  },
+  "schema_version": "polymarket-shutdown-house-identity-parity-failure-adjudication-v1"
+}

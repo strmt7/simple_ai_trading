@@ -164,6 +164,11 @@ override prose.
   their body, status, and completed receipt before raising. If the provider's
   bounded-history limits are not source-proved, freeze a conservative range;
   never learn the limit by adaptively retrying a consumed outcome query.
+- An exact duplicate-payoff identity is a mechanism, not recurring positive
+  economics. Before spending a source-continuous capture or authenticated paper
+  probe on a maker-first lead, require one distinct resolved-leg instance to
+  remain positive after its frozen hedge stress. If the independent instance is
+  negative, stop the family until a material price, fee, rule, or market change.
 
 ## Working Method
 

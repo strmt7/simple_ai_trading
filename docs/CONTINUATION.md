@@ -967,7 +967,7 @@ grants paper, testnet, or live authority.
 
 The canonical structural-edge priority and retry-trigger registry is
 `docs/model-research/structural-edge-priority-registry-v1.json`, result SHA-256
-`6f5b4a277f1c3cea006de5d8a4a1cc6a7ba306b2689a37b2e93f1c44006fb7c2`.
+`7be2ae9f2883a72c6f492e57208cede33c7ad8733a947bf4a21b3825315b2443`.
 Advance only the highest-ranked hypothesis whose trigger is actually satisfied.
 This prevents account-blocked or terminal screens from being rerun as if more
 snapshots could create an edge.
@@ -2179,7 +2179,7 @@ result SHA-256
 `64943efe0c6ad16f8d02f78548afef38f919448d2da87c7573e825a2eeefd6b9`.
 That checkpoint left seventeen accepted scoped edges. The current registry now
 has nineteen and result SHA-256
-`6f5b4a277f1c3cea006de5d8a4a1cc6a7ba306b2689a37b2e93f1c44006fb7c2`.
+`7be2ae9f2883a72c6f492e57208cede33c7ad8733a947bf4a21b3825315b2443`.
 
 The complete Binance XAU/XAG Commodity Options versus matching TradFi
 perpetual lower-bound screen is terminal for the active 2026-08-27 and
@@ -2481,7 +2481,7 @@ result SHA-256
 `85c8ef364b03fb2fbf0aeebddec10d51abbdd608f56ff9c0dccb1835cacc2179`.
 The structural registry now contains 42 ranked hypotheses, remains at 19
 narrowly accepted scoped overlays, and has canonical result SHA-256
-`6f5b4a277f1c3cea006de5d8a4a1cc6a7ba306b2689a37b2e93f1c44006fb7c2`.
+`7be2ae9f2883a72c6f492e57208cede33c7ad8733a947bf4a21b3825315b2443`.
 
 The Round 21 sidecar worktree
 `C:\trader\simple_ai_trading-round21-sidecar-v2` remains protected through
@@ -2697,7 +2697,42 @@ not grant account, funding, order, or transaction authority.
    representative train/tune/test coverage, after-cost economic gates, and
    cross-regime gates pass. Walk-forward is not a substitute for those gates.
 
+## Resolved-Leg Duplicate-Payoff Checkpoint
+
+Two independent active Polymarket combined events now establish the same
+direction-independent payoff mechanism against the standalone 2026 House
+control markets. A final-Yes shutdown leg makes each `Shutdown & Party` outcome
+identical to the matching standalone party outcome; a final-No ACA-extension
+leg does the same for each `Not Extended & Party` outcome.
+
+The economics did not recur. In the shutdown instance, the retained batch had
+35.484 seconds source timestamp skew. Offline maker-first sensitivity found
+three positive roles after a two-tick hedge, but the most practical current role
+retained only `0.03092` pUSD on five shares with 500 visible shares ahead and no
+owned queue-censored fill or causal hedge. The independent ACA batch used one
+eight-token request, made no fee requests because every package was already
+gross-negative, and had 11.695 seconds total source skew. Every all-taker package
+was negative after fees and stress; the best lost `0.29046` pUSD. All eight
+maker-first roles were also negative, and the best one-tick-improved zero-queue
+sensitivity lost `0.11638` pUSD with 11.173 seconds pair skew.
+
+This closes the current escalation efficiently: a repeated payoff identity does
+not establish repeated positive economics. Do not spend another source-
+continuous capture, credentials, authenticated paper probe, or order-capable
+work on this family until a material price, fee, rule, or market change. The
+accepted-edge count remains 19 and no trading authority was opened. Canonical
+ACA all-taker result SHA-256
+`2c224485b3ee4647000e9cfc016a421c08fdb03c158716ca2b56e95fcca2a90b`;
+maker-first result SHA-256
+`900246f7bf066a8d310c6dcc6e9318edc1c6b83d4779f9b2f628c668e7d258e6`.
+
 ## Verification Scope
+
+The resolved-leg House duplicate-payoff checkpoint, raw journals, source hashes,
+and directly affected registry lineage pass 12 focused tests with Ruff and
+Python compilation clean. The registry still contains 42 ranked hypotheses and
+19 accepted scoped overlays; its result SHA-256 is
+`7be2ae9f2883a72c6f492e57208cede33c7ad8733a947bf4a21b3825315b2443`.
 
 The exact-one-NO failure preservation and Binance BLVT current-inventory gate,
 including every registry-hash-coupled test, pass 199 focused tests with Ruff

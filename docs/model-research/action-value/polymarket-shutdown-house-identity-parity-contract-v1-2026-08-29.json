@@ -1,0 +1,196 @@
+{
+  "schema_version": "polymarket-shutdown-house-identity-parity-contract-v1",
+  "frozen_at_utc": "2026-08-29T15:30:41.3476246Z",
+  "purpose": "test four exact five-share duplicate-payoff packages created by the final-Yes shutdown condition across the combined and standalone House-control markets",
+  "source_contracts": [
+    {
+      "url": "https://docs.polymarket.com/api-reference/market-data/get-order-books-request-body",
+      "use": "official public unauthenticated POST batch book contract"
+    },
+    {
+      "url": "https://docs.polymarket.com/api-reference/market-data/get-fee-rate-by-path-parameter",
+      "use": "official public unauthenticated current token fee-rate contract"
+    }
+  ],
+  "metadata_sources": [
+    {
+      "name": "combined",
+      "path": "data/polymarket-shutdown-house-identity-metadata-v1/raw/combined-event.json",
+      "sha256": "24ce691bc54a4f4c99e4c41773da4d62edda9c0366559648c244ab12b10d0dc7"
+    },
+    {
+      "name": "house",
+      "path": "data/polymarket-shutdown-house-identity-metadata-v1/raw/house-event.json",
+      "sha256": "1a05c1837c209e454e7df1926dd4fe023b45e9a9cd51018f4e0558958b6e0682"
+    },
+    {
+      "name": "shutdown",
+      "path": "data/polymarket-shutdown-house-identity-metadata-v1/raw/shutdown-event.json",
+      "sha256": "a08d227c3987429cc5db7c4f904bb7202b2f5f75a079d319d9972a59ef61a919"
+    }
+  ],
+  "payoff_proof": {
+    "shutdown_event_slug": "will-there-be-another-us-government-shutdown-by-january-31",
+    "shutdown_market_id": "680392",
+    "shutdown_final_outcome": "Yes",
+    "required_combined_rule_links": [
+      "https://polymarket.com/event/will-there-be-another-us-government-shutdown-by-january-31?",
+      "https://polymarket.com/event/which-party-will-win-the-house-in-2026?"
+    ],
+    "house_states": [
+      "Democratic",
+      "Republican",
+      "Other"
+    ],
+    "identity": "with shutdown fixed Yes, indicator(shutdown and party) equals indicator(party) for Democratic and Republican states including the Other complement",
+    "minimum_payout_package": "buy YES on either duplicate condition and NO on the other at equal size"
+  },
+  "markets": [
+    {
+      "name": "combined_democratic",
+      "event": "combined",
+      "id": "902977",
+      "question": "Will there be another US government shutdown by January 31 and will the Democratic Party win the House in 2026?",
+      "group_item_title": "Shutdown & Democratic Party",
+      "condition_id": "0x9317b943475e9d550402f328a1ea9cb5f69a616ffd471cffb0a4978ac22a8c3c",
+      "tokens": [
+        "15689686886751503596101237420370183711471277577409636291649038082667298900424",
+        "25220835365413209491969904256647930650029213607453756083524562317815305581068"
+      ],
+      "tick_size": "0.001"
+    },
+    {
+      "name": "house_democratic",
+      "event": "house",
+      "id": "562802",
+      "question": "Will the Democratic Party control the House after the 2026 Midterm elections?",
+      "group_item_title": "Democratic Party",
+      "condition_id": "0xd5d9fc47718bd553592d126b1fa5e87183d27f3936975b0c04cc0f2dec1f1bb4",
+      "tokens": [
+        "83247781037352156539108067944461291821683755894607244160607042790356561625563",
+        "33156410999665902694791064431724433042010245771106314074312009703157423879038"
+      ],
+      "tick_size": "0.01"
+    },
+    {
+      "name": "combined_republican",
+      "event": "combined",
+      "id": "902978",
+      "question": "Will there be another US government shutdown by January 31 and will the Republican Party win the House in 2026?",
+      "group_item_title": "Shutdown & Republican Party",
+      "condition_id": "0x02df71403f5136e9c803231cb8e2333a1b9f575bb51792bd91bde8dfe4242220",
+      "tokens": [
+        "7260898789894357029125496858687239455895982991960101057661276207034711999138",
+        "73792458639425453239483287253334661502793797450424846433489414207671979352064"
+      ],
+      "tick_size": "0.001"
+    },
+    {
+      "name": "house_republican",
+      "event": "house",
+      "id": "562803",
+      "question": "Will the Republican Party control the House after the 2026 Midterm elections?",
+      "group_item_title": "Republican Party",
+      "condition_id": "0x4e4f77e7dbf4cab666e9a1943674d7ae66348e862df03ea6f44b11eb95731928",
+      "tokens": [
+        "65139230827417363158752884968303867495725894165574887635816574090175320800482",
+        "17371217118862125782438074585166210555214661810823929795910191856905580975576"
+      ],
+      "tick_size": "0.01"
+    }
+  ],
+  "packages": [
+    {
+      "name": "combined_democratic_YES_plus_house_democratic_NO",
+      "markets": [
+        "combined_democratic",
+        "house_democratic"
+      ],
+      "tokens": [
+        "15689686886751503596101237420370183711471277577409636291649038082667298900424",
+        "33156410999665902694791064431724433042010245771106314074312009703157423879038"
+      ]
+    },
+    {
+      "name": "combined_democratic_NO_plus_house_democratic_YES",
+      "markets": [
+        "combined_democratic",
+        "house_democratic"
+      ],
+      "tokens": [
+        "25220835365413209491969904256647930650029213607453756083524562317815305581068",
+        "83247781037352156539108067944461291821683755894607244160607042790356561625563"
+      ]
+    },
+    {
+      "name": "combined_republican_YES_plus_house_republican_NO",
+      "markets": [
+        "combined_republican",
+        "house_republican"
+      ],
+      "tokens": [
+        "7260898789894357029125496858687239455895982991960101057661276207034711999138",
+        "17371217118862125782438074585166210555214661810823929795910191856905580975576"
+      ]
+    },
+    {
+      "name": "combined_republican_NO_plus_house_republican_YES",
+      "markets": [
+        "combined_republican",
+        "house_republican"
+      ],
+      "tokens": [
+        "73792458639425453239483287253334661502793797450424846433489414207671979352064",
+        "65139230827417363158752884968303867495725894165574887635816574090175320800482"
+      ]
+    }
+  ],
+  "execution": {
+    "quantity_shares_each_leg": "5",
+    "tokens": [
+      "15689686886751503596101237420370183711471277577409636291649038082667298900424",
+      "25220835365413209491969904256647930650029213607453756083524562317815305581068",
+      "83247781037352156539108067944461291821683755894607244160607042790356561625563",
+      "33156410999665902694791064431724433042010245771106314074312009703157423879038",
+      "7260898789894357029125496858687239455895982991960101057661276207034711999138",
+      "73792458639425453239483287253334661502793797450424846433489414207671979352064",
+      "65139230827417363158752884968303867495725894165574887635816574090175320800482",
+      "17371217118862125782438074585166210555214661810823929795910191856905580975576"
+    ],
+    "book_request_count": 1,
+    "fee_request_rule": "query each distinct token only when its package has full five-share displayed depth and gross cost below the five-pUSD payout",
+    "maximum_fee_requests": 8,
+    "retry_count": 0,
+    "fee_schedule": {
+      "exponent": 1,
+      "rate": 0.04,
+      "takerOnly": true,
+      "rebateRate": 0.25
+    },
+    "expected_token_base_fee": 1000,
+    "adverse_ticks_per_leg": 2,
+    "maximum_book_timestamp_skew_ms": 5000,
+    "candidate_gate": "strictly positive five-pUSD terminal payout floor after full displayed depth exact taker fee curves and two adverse ticks per leg"
+  },
+  "authority": {
+    "public_unauthenticated_read_only_requests_maximum": 9,
+    "credentials_used": false,
+    "signed_requests": 0,
+    "account_requests": 0,
+    "orders_or_transactions": 0,
+    "funds_used": false,
+    "protected_capture_touched": false,
+    "trading_authority": false
+  },
+  "stopping_rules": {
+    "zero_stressed_positive_packages": "terminalize the exact snapshot and wait for a material price fee rule or book change",
+    "one_or_more_stressed_positive_packages": "candidate only; freeze one short bounded public recurrence capture before any account or order work",
+    "accepted_edge_from_one_snapshot": false,
+    "deployment_ready_from_one_snapshot": false
+  },
+  "implementation": {
+    "path": "tools/screen_polymarket_shutdown_house_identity_parity.py",
+    "sha256": "acbc4aac0760eb6e0d011e97f3e34d25c8a22c427a281db4898687a1525ef321"
+  },
+  "contract_sha256": "eb5e772ec42dc0a5ade6a73051470476a85c9d89488e78916b5096f9207f5e7f"
+}
