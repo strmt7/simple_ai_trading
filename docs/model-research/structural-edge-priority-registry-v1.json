@@ -600,6 +600,10 @@
           "result_sha256": "0cf6e3aae168e0c483634e78fd824a80be9e58269f02e9b01a6d9c9c46578a8f"
         },
         {
+          "path": "docs/model-research/action-value/binance-bstocks-zero-maker-carry-retained-counterfactual-v1-2026-08-29.json",
+          "result_sha256": "2af1504748f51ad36c18c76162a91e82803395311932d73f1809d2781dfc4fb7"
+        },
+        {
           "path": "docs/model-research/action-value/binance-djtb-new-listing-spot-perpetual-contract-v1.json",
           "result_sha256": "087b06191378fa949ac62340d9f3e5c625aa31feff71bba3c7fd20cae1155ee8"
         },
@@ -624,10 +628,10 @@
           "result_sha256": "3fe1801a6cbf442ab1ce79d1f3bd4586542d97414aea954b0bbd9a55a85453e1"
         }
       ],
-      "current_status": "the_2026_08_29_one_use_bStock_inventory_delta_was_byte_identical_to_the_hash_bound_68_row_DJTB_baseline_with_zero_added_or_removed_tickers_so_the_conditional_futures_metadata_request_did_not_run_and_no_public_listing_trigger_exists_the_full_66_match_screen_and_DJTB_listing_remain_rejected_the_existing_stock_transfer_and_FPSL_candidates_both_retain_zero_public_forward_income_floors_until_exact_owned_account_and_after_cost_evidence_exists_not_accepted_stable_or_deployment_ready",
+      "current_status": "the_2026_08_29_one_use_bStock_inventory_delta_was_byte_identical_to_the_hash_bound_68_row_DJTB_baseline_with_zero_added_or_removed_tickers_so_the_conditional_futures_metadata_request_did_not_run_and_no_public_listing_trigger_exists_the_full_66_match_screen_and_DJTB_listing_remain_rejected_the_current_bStocks_zero_maker_promotion_does_not_reopen_funding_carry_even_under_an_impossible_full_60_bip_execution_stress_erasure_the_training_ranked_basket_stays_negative_validation_21_8046206700_and_test_48_1975271954_bips_with_bootstrap_lower_bounds_negative_42_0480030822_and_55_4780525299_bips_and_test_zero_of_12_positive_the_existing_stock_transfer_and_FPSL_candidates_both_retain_zero_public_forward_income_floors_until_exact_owned_account_and_after_cost_evidence_exists_not_accepted_stable_or_deployment_ready",
       "market_direction_forecast_required": false,
       "mechanism": "bstock_reference_conversion_and_delta_neutral_perpetual_funding",
-      "next_action": "do_not_poll_the_unchanged_68_row_bStock_inventory_wait_for_a_new_official_bStock_listing_announcement_and_matching_previously_unscreened_TradFi_perpetual_before_one_symbol_only_public_prefilter_or_require_explicit_account_read_only_authority_for_the_separate_stock_transfer_FPSL_or_permanent_scope_questions",
+      "next_action": "do_not_poll_the_unchanged_68_row_bStock_inventory_or_refresh_funding_or_books_for_the_current_zero_maker_promotion_wait_for_a_new_official_bStock_listing_announcement_and_matching_previously_unscreened_TradFi_perpetual_before_one_symbol_only_public_prefilter_or_require_explicit_account_read_only_authority_for_the_separate_stock_transfer_FPSL_or_permanent_scope_questions",
       "priority_rank": 12,
       "prohibited_shortcuts": [
         "external_reference_price_as_an_executable_stock_quote",
@@ -637,6 +641,7 @@
         "campaign_rewards_self_trading_or_wash_volume_as_persistent_edge",
         "changing_the_BTC_ETH_SOL_execution_scope_from_a_research_snapshot",
         "resampling_DJTBUSDT_DJTUSDT_or_any_previously_screened_bStock_pair_without_a_material_trigger",
+        "subtracting_only_selected_fee_components_then_refitting_the_terminal_funding_basket_after_even_full_60_bip_stress_erasure_failed_validation_and_test",
         "polling_the_byte_identical_68_row_bStock_inventory_without_a_new_official_listing_announcement",
         "inferring_stock_transfer_account_region_from_host_timezone_or_crediting_a_first_come_pool_without_live_account_evidence",
         "transferring_or_buying_stock_only_to_chase_the_reward_or_submitting_any_transfer_without_separate_explicit_authority",
@@ -646,7 +651,7 @@
         "treating_FPSL_enrollment_as_guaranteed_lending_or_calling_gross_interest_profit_before_owned_after_cost_distribution_recurrence",
         "enabling_FPSL_or_answering_suitability_questions_without_separate_explicit_user_authority"
       ],
-      "retry_trigger": "explicit_read_only_Binance_Stocks_account_authority_before_the_2026_09_30_activity_end_to_prove_region_first_transfer_live_pool_and_existing_settled_inventory_FPSL_availability_or_new_official_exact_multiplier_bStock_listing_announcement_after_2026_08_29T13_50_30Z_with_a_matching_previously_unscreened_TradFi_perpetual_for_one_symbol_only_public_prefilter_or_explicit_permanent_bStock_scope_authority_plus_eligible_same_account_read_only_stock_quote_conversion_and_commission_evidence",
+      "retry_trigger": "explicit_read_only_Binance_Stocks_account_authority_before_the_2026_09_30_activity_end_to_prove_region_first_transfer_live_pool_and_existing_settled_inventory_FPSL_availability_or_new_official_exact_multiplier_bStock_listing_announcement_after_2026_08_29T13_50_30Z_with_a_matching_previously_unscreened_TradFi_perpetual_for_one_symbol_only_public_prefilter_or_for_the_terminal_funding_family_a_material_funding_cash_flow_capital_credit_executable_basis_or_atomic_conversion_change_capable_of_exceeding_the_retained_test_upper_bound_deficits_plus_exact_account_eligibility_and_costs_or_explicit_permanent_bStock_scope_authority_plus_eligible_same_account_read_only_stock_quote_conversion_and_commission_evidence",
       "venue_scope": "binance_bstocks_stocks_existing_stock_transfer_reward_existing_inventory_FPSL_yield_and_matching_tradifi_perpetuals_research_only"
     },
     {
@@ -1880,7 +1885,7 @@
       "venue_scope": "Binance_current_BLVT_Spot_and_primary_market_inventory"
     }
   ],
-  "result_sha256": "e8c32ad724da73148aa1becc77fe413a243e11fa8f444d514b10e844f9089bfe",
+  "result_sha256": "4b3828b49387edf1e26e8ff107221139f1d133c65ab85a8664f0ac08de84e5ad",
   "schema_version": "structural-edge-priority-registry-v1",
   "terminal_do_not_repeat": [
     {
