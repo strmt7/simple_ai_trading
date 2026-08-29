@@ -1,0 +1,178 @@
+{
+  "adjudication": {
+    "accepted_edge": false,
+    "deployment_ready": false,
+    "next_action": "terminalize_this_exact_event_without_refetch_or_retry",
+    "passes_frozen_candidate_gate": false,
+    "profitability_claim": false
+  },
+  "authority": {
+    "account_requests": 0,
+    "credentials_used": false,
+    "funds_used": false,
+    "orders_or_transactions": 0,
+    "protected_capture_touched": false,
+    "public_unauthenticated_read_only_requests_maximum": 3,
+    "signed_requests": 0,
+    "trading_authority": false
+  },
+  "capture": {
+    "book_receipt": {
+      "completed_at_ms": 1788026958283,
+      "method": "POST",
+      "name": "exact-two-token-book-batch",
+      "phase": "completed",
+      "raw_path": "data/polymarket-packers-vikings-tie-state-package-v1/raw/books.json",
+      "request_body_sha256": "8f83b695c69a12d46e2b86b90324eb9d14da89b6a0c418879d1c9098337cffe2",
+      "requested_at_ms": 1788026958188,
+      "response_bytes": 2017,
+      "response_sha256": "430f9ae42b6fcbff066ce142aea17968c4b69a52d26fc908adbaf3605fdb4d49",
+      "status_code": 200,
+      "url": "https://clob.polymarket.com/books"
+    },
+    "book_timestamp_skew_ms": 10049940,
+    "fee_receipts": {},
+    "within_frozen_skew_gate": false
+  },
+  "contract": {
+    "path": "docs/model-research/action-value/polymarket-packers-vikings-tie-state-package-contract-v1-2026-08-29.json",
+    "sha256": "9eb26db000b0bc64182bf202959d9de003a550b5b812eaec256fcc95cd9f1b4c"
+  },
+  "created_at_utc": "2026-08-29T18:09:18.284946Z",
+  "economics": {
+    "actual": {
+      "adverse_ticks_per_leg": 0,
+      "after_current_fee_profit_floor_pUSD": null,
+      "cost_pUSD": "5.4",
+      "current_fee_pUSD": null,
+      "fills": [
+        {
+          "cost_pUSD": "2.75",
+          "fee_pUSD": null,
+          "fills": [
+            {
+              "price_pUSD": "0.55",
+              "quantity_shares": "5"
+            }
+          ]
+        },
+        {
+          "cost_pUSD": "2.65",
+          "fee_pUSD": null,
+          "fills": [
+            {
+              "price_pUSD": "0.53",
+              "quantity_shares": "5"
+            }
+          ]
+        }
+      ],
+      "optimistic_zero_fee_profit_floor_pUSD": "-0.4"
+    },
+    "delay_1s_sensitivity": {
+      "adverse_ticks_per_leg": 2,
+      "after_current_fee_profit_floor_pUSD": null,
+      "cost_pUSD": "5.6",
+      "current_fee_pUSD": null,
+      "fills": [
+        {
+          "cost_pUSD": "2.85",
+          "fee_pUSD": null,
+          "fills": [
+            {
+              "price_pUSD": "0.57",
+              "quantity_shares": "5"
+            }
+          ]
+        },
+        {
+          "cost_pUSD": "2.75",
+          "fee_pUSD": null,
+          "fills": [
+            {
+              "price_pUSD": "0.55",
+              "quantity_shares": "5"
+            }
+          ]
+        }
+      ],
+      "optimistic_zero_fee_profit_floor_pUSD": "-0.6"
+    },
+    "delay_3s_sensitivity": {
+      "adverse_ticks_per_leg": 6,
+      "after_current_fee_profit_floor_pUSD": null,
+      "cost_pUSD": "6",
+      "current_fee_pUSD": null,
+      "fills": [
+        {
+          "cost_pUSD": "3.05",
+          "fee_pUSD": null,
+          "fills": [
+            {
+              "price_pUSD": "0.61",
+              "quantity_shares": "5"
+            }
+          ]
+        },
+        {
+          "cost_pUSD": "2.95",
+          "fee_pUSD": null,
+          "fills": [
+            {
+              "price_pUSD": "0.59",
+              "quantity_shares": "5"
+            }
+          ]
+        }
+      ],
+      "optimistic_zero_fee_profit_floor_pUSD": "-1"
+    }
+  },
+  "gamma_prefilter": {
+    "displayed_price_sum_pUSD": "0.895",
+    "optimistic_profit_floor_per_share_before_execution_costs_pUSD": "0.105",
+    "passes_strictly_below_payout_gate": true,
+    "role": "rejection_only_never_acceptance_or_promotion_evidence"
+  },
+  "implementation": {
+    "path": "tools/screen_polymarket_exact_two_leg_sports_package.py",
+    "sha256": "03e899073767678cfe1ca69e01cef8a53d6999fa6774cab089c6b23a0037a579"
+  },
+  "payoff_proof": {
+    "guaranteed_floor_per_share_pUSD": "1",
+    "invariant": "a Packers win pays Packers plus 0.5; a Vikings win pays Vikings moneyline; an actual tie pays Packers plus 0.5 in full and the Vikings moneyline at one-half; cancellation pays both legs at one-half",
+    "market_direction_forecast_required": false,
+    "states": [
+      {
+        "payouts": {
+          "packers_plus_0_5": "1",
+          "vikings_moneyline": "0"
+        },
+        "state": "packers_win"
+      },
+      {
+        "payouts": {
+          "packers_plus_0_5": "0",
+          "vikings_moneyline": "1"
+        },
+        "state": "vikings_win"
+      },
+      {
+        "payouts": {
+          "packers_plus_0_5": "1",
+          "vikings_moneyline": "0.5"
+        },
+        "state": "game_ends_in_tie"
+      },
+      {
+        "payouts": {
+          "packers_plus_0_5": "0.5",
+          "vikings_moneyline": "0.5"
+        },
+        "state": "game_canceled_without_makeup"
+      }
+    ]
+  },
+  "result_sha256": "731ca32a06f8f1a42aaae9e326c2bd89379657e338231dd906b749790c15ddfa",
+  "schema_version": "polymarket-exact-two-leg-package-result-v1"
+}

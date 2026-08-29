@@ -2910,6 +2910,46 @@ margin, or product change. Stress contract SHA-256
 canonical result SHA-256
 `c09d62e98cd0df88622d4b98d9d8f01247121ccd786fffb580bc72429ef6bf30`.
 
+## Current NFL Tie-State Monotone Checkpoint
+
+Packers versus Vikings is the first exact NFL extension of the same-game
+moneyline/spread monotone-payoff family. One frozen public unauthenticated
+event-by-slug request retained 34 active accepting markets: one moneyline, nine
+spreads, and 24 totals. No credential, account, protected-capture asset, order,
+transaction, or fund was accessed.
+
+A separately frozen zero-network adjudication modeled final score margin as an
+integer, retained actual-game tie and cancellation as explicit states, and
+enumerated all 321 ordered threshold relations across the compatible full-game
+margin and total families. Every relation pays at least one pUSD per share.
+Four retained Gamma sums were below that floor. The strongest was the Packers
+outcome in Vikings -0.5 (equivalent to Packers +0.5) plus Vikings moneyline:
+Gamma displayed `0.375 + 0.52 = 0.895`, an optimistic `0.105` pUSD per-share
+floor before execution costs. In an actual tie, that package pays `1.5`; in a
+Packers win, Vikings win, or cancellation it pays at least one.
+
+One frozen exact two-token book batch tested that strongest candidate. Exact
+five-share asks were `0.55` and `0.53`, costing `5.400` pUSD against the
+five-pUSD floor: a `0.400` pUSD zero-fee loss. The frozen two-tick sensitivity
+lost `0.600` pUSD, and the books' source timestamps were 10,049,940 ms apart.
+The package was already gross-negative and outside the five-second skew gate,
+so zero fee requests were made. This is not an accepted or deployment-ready
+edge.
+
+Do not resample Packers/Vikings. The reusable exact-depth runner now supports
+nullable moneyline lines without changing prior frozen implementations. For a
+distinct future NBA, WNBA, or NFL event, first prove every payoff relation and
+use Gamma only as a rejection gate. Request one exact-depth batch only for a
+strictly sub-floor displayed package, then require synchronized after-fee
+positive recurrence before any order-capable work. Canonical metadata,
+adjudication, and exact-depth result SHA-256 values are respectively
+`8ebf70181290234c1c05f4659245d2c8c1502fd4a02eaa93dff9a4f60e375c6e`,
+`c387e389d852ab5571056a9f2e80f91c63ae6f1c124ca55291b0fc787b5faeae`,
+and `731ca32a06f8f1a42aaae9e326c2bd89379657e338231dd906b749790c15ddfa`.
+The structural-edge registry retains 42 hypotheses and 19 narrowly accepted
+scoped overlays; its new canonical SHA-256 is
+`d9698017a21be49e8f0b5c0021d4c1eeb1dff0a6482bab9badc0a8c76be5df4b`.
+
 ## Verification Scope
 
 The two-request holding-yield continuity monitor, its frozen contract, exact
@@ -2924,6 +2964,12 @@ Phoenix book screen, Lynx-Dream rejection-only stop, request journals, raw-
 response hashes, reusable exact-event runner, and registry lineage pass their
 focused tests with Ruff and Python compilation clean. The rejection-only
 prefilter is now a hard efficiency gate for this family.
+
+The Packers-Vikings exact capture, complete 321-relation NFL payoff proof,
+strongest-candidate book screen, nullable-moneyline runner, raw journals, and
+registry lineage pass the focused NFL/WNBA/MLB checks. All 244 tests carrying
+the current registry hash pass once, and Ruff is clean for the changed tools
+and directly affected tests. No broad model, CI, or release suite was repeated.
 
 The resolved-leg House duplicate-payoff checkpoint, raw journals, source hashes,
 and directly affected registry lineage pass 12 focused tests with Ruff and
