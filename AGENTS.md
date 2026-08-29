@@ -177,6 +177,10 @@ and verify reproducibly. Do not load upstream `EXAMPLES.md`.
    Generated charts and prose are not result authority.
 7. Format code before generating implementation-hash-bound evidence; later
    source edits require regeneration.
+8. Before freezing a one-use runner, execute its import-only or `--help`
+   preflight through the same entry mode used for capture. A runner that imports
+   `tools.*` must be invoked as `python -m tools.<module>` from the repository
+   root; do not discover that path difference after freezing evidence.
 
 Do not broadly read the README, historical round designs, generated SVG, or
 large CSV files. The detailed workflow and imported-tool provenance are in

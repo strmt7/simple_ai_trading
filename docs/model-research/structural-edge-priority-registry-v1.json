@@ -1477,7 +1477,7 @@
     },
     {
       "blocking_evidence": [
-      "a new preregistered exhaustive current-population contract that proves the native-stock universe boundary and retains every raw quote before joining matching TradFi perpetual and USDCUSDT books",
+        "a new preregistered exhaustive current-population contract that proves the native-stock universe boundary and retains every raw quote before joining matching TradFi perpetual and USDCUSDT books",
         "exact account native-stock and perpetual commissions plus stock short eligibility and settlement rules",
         "entry exit funding basis margin liquidation stablecoin conversion and non-atomic orphan costs",
         "multiple independent complete-population positive after-cost observations across regular extended 24-hour volatility liquidity and latency states",
@@ -1491,23 +1491,32 @@
         {
           "path": "docs/model-research/action-value/binance-native-stock-perpetual-parity-v1-2026-08-27.json",
           "result_sha256": "2776ff86fddf78e7e87860c6b9500cb237fce5af908a4840d351ae0cc2eff930"
+        },
+        {
+          "path": "docs/model-research/action-value/binance-native-stock-new-tradfi-perpetual-contract-v1-2026-08-29.json",
+          "result_sha256": "37a3424645103a351c232ec7bf7c6e2cb4912be1e60bf136bc8cc170644f9adf"
+        },
+        {
+          "path": "docs/model-research/action-value/binance-native-stock-new-tradfi-perpetual-result-v1-2026-08-29.json",
+          "result_sha256": "d8b87863ea750386f1074daef988443a12390f0a36cfecc538765e00bded9a9f"
         }
       ],
-    "current_status": "old_frozen_14_symbol_native_stock_TradFi_perpetual_population_remains_incomplete_and_unaccepted_with_13_observed_rows_zero_surviving_30_bips_stress_but_current_official_all_symbol_Stocks_stream_architecture_materially_expanded_the_discoverable_population_and_invalidated_the_KLAC_only_completeness_assumption_an_exploratory_expanded_public_screen_found_no_after_public_fee_positive_row_but_did_not_retain_a_canonical_raw_population_so_it_cannot_terminalize_the_current_universe_or_support_profit_not_deployment_ready",
+      "current_status": "old_frozen_14_symbol_native_stock_TradFi_perpetual_population_remains_incomplete_and_unaccepted_with_13_observed_rows_zero_surviving_30_bips_stress_the_2026_08_28_official_TEM_MRK_IONQ_MARA_PDD_TradFi_perpetual_launch_materially_triggered_one_exact_five_ticker_delta_but_all_five_native_stock_quote_streams_timed_out_so_zero_matching_rows_and_zero_downstream_futures_or_FX_GETs_exist_current_all_symbol_native_stock_population_still_lacks_a_canonical_retained_complete_join_no_profit_or_deployment_claim",
       "market_direction_forecast_required": false,
       "mechanism": "binance_native_stock_USDC_TradFi_perpetual_USDT_parity",
-    "next_action": "do_not_run_a_KLAC_only_recovery_or_claim_the_old_14_symbol_set_is_current_only_after_a_material_fee_basis_or_stream_architecture_change_preregister_one_exhaustive_current-population_capture_with_a_source_bound_completion_rule_retain_raw_native_quotes_before_calculation_join_each_to_immediate_perpetual_and_USDCUSDT_books_and_charge_current_stock_perpetual_conversion_exit_funding_orphan_and_opportunity_costs",
+      "next_action": "do_not_rerun_the_consumed_five_ticker_delta_or_KLAC_recovery_wait_for_a_new_official_native_stock_or_TradFi_perpetual_listing_that_creates_a_previously_unscreened_exact_ticker_match_or_a_material_stream_architecture_change_then_preregister_only_the_new_exact_population_retain_raw_native_quotes_before_calculation_and_charge_stock_perpetual_conversion_exit_funding_orphan_and_opportunity_costs",
       "priority_rank": 38,
       "prohibited_shortcuts": [
         "using_native_price_stream_last_values_as_executable_quotes",
         "treating_USDC_USDT_or_USD1_as_identical_without_executable_conversion",
-      "treating_the_old_14_symbol_discovery_or_one_KLAC_row_as_the_current_complete_population",
-      "promoting_or_terminalizing_the_ad_hoc_expanded_screen_without_retained_raw_population_evidence",
+        "treating_the_old_14_symbol_discovery_or_one_KLAC_row_as_the_current_complete_population",
+        "promoting_or_terminalizing_the_ad_hoc_expanded_screen_without_retained_raw_population_evidence",
+        "rerunning_the_consumed_TEM_MRK_IONQ_MARA_PDD_delta_without_a_new_official_trigger",
         "ignoring_one_share_displayed_capacity_or_non_atomic_leg_risk",
         "calling_an_incomplete_snapshot_recurrence_profit_or_an_accepted_edge",
         "accepting_the_stock_disclaimer_accessing_an_account_or_placing_orders_without_separate_explicit_authority"
       ],
-    "retry_trigger": "material_current_stock_fee_basis_or_official_stream_architecture_change_capable_of_clearing_costs_then_one_preregistered_exhaustive_current_population_capture_with_retained_raw_evidence",
+      "retry_trigger": "new_official_native_stock_or_TradFi_perpetual_listing_that_creates_a_previously_unscreened_exact_ticker_match_or_material_stream_architecture_change",
       "venue_scope": "Binance_native_US_stocks_default_USDC_quote_and_matching_USDT_TradFi_perpetuals"
     },
     {
@@ -1594,7 +1603,7 @@
       "venue_scope": "Binance_XAU_XAG_USDT_long_only_commodity_options_and_matching_TradFi_perpetuals"
     }
   ],
-  "result_sha256": "d3e31d80653d21aa7267f68d6ed392bebd10e1c5158765da6545056d2a94c68e",
+  "result_sha256": "7b03ee420b7874180732f28fc1c59903adbd82e147be268ea54e894f460bbda1",
   "schema_version": "structural-edge-priority-registry-v1",
   "terminal_do_not_repeat": [
     {
