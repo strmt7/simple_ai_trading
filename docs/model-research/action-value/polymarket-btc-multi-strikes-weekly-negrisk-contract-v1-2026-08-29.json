@@ -1,0 +1,94 @@
+{
+  "schema_version": "polymarket-negrisk-complete-set-catalog-contract-v1",
+  "status": "frozen_after_price_blind_series_metadata_before_series_event_outcome_access",
+  "frozen_at_utc": "2026-08-29T21:28:10.3571967Z",
+  "frozen_at_ms": 1788038890357,
+  "contract_path": "docs/model-research/action-value/polymarket-btc-multi-strikes-weekly-negrisk-contract-v1-2026-08-29.json",
+  "contract_sha256": "ca2f7b556207a0d2d04c006ed502bf35a673a87642e0e5dd443227af8aba82d2",
+  "purpose": "screen the first retained price-blind recurring BTC series whose title declares a multi-strike structure over one nonadjacent series-specific future window before any onchain or book work",
+  "hypothesis": "series 45 BTC Multi Strikes Weekly contains at least one exact fixed non-augmented NegRisk event ending after the consumed September 7 hour-00 population and by September 21 whose rejection-only Gamma all-YES sum is strictly below its pending one-pUSD complete-set floor",
+  "source_contracts": [
+    {
+      "url": "https://docs.polymarket.com/api-reference/series/list-series",
+      "use": "official public unauthenticated series metadata with exclude_events semantics"
+    },
+    {
+      "url": "https://docs.polymarket.com/api-reference/events/list-events-keyset-pagination",
+      "use": "official public unauthenticated GET keyset event catalog with series filter nested markets and cursor completeness semantics"
+    }
+  ],
+  "price_blind_series_selection": {
+    "retained_raw_path": "data/polymarket-source-selected-crypto-negrisk-series-v1/raw/series.json",
+    "retained_raw_sha256": "f28b1e8d97d4f918fe0640faf7d8dc7594344675892a379db6df820e0cd37a34",
+    "embedded_events_or_prices": false,
+    "selected_series_id": "45",
+    "selected_series_title": "BTC Multi Strikes Weekly",
+    "selected_series_slug": "btc-multi-strikes-weekly",
+    "selected_series_recurrence": "daily",
+    "selection_rule": "first_server_ordered_eligible_BTC_ETH_SOL_series_after_short_horizon_binary_up_or_down_series_whose_metadata_title_explicitly_declares_a_multi_strike_structure"
+  },
+  "capture": {
+    "ascending": true,
+    "closed": false,
+    "end_date_max": "2026-09-21T23:59:59Z",
+    "end_date_min": "2026-09-07T01:00:00Z",
+    "limit": 500,
+    "order": "endDate",
+    "request_count": 1,
+    "url": "https://gamma-api.polymarket.com/events/keyset?limit=500&order=endDate&ascending=true&closed=false&end_date_min=2026-09-07T01%3A00%3A00Z&end_date_max=2026-09-21T23%3A59%3A59Z&series_id=45"
+  },
+  "stopping_rules": {
+    "accepted_edge_from_catalog": false,
+    "if_next_cursor_present": "stop without adaptive pagination onchain or depth access and label the series-specific population incomplete",
+    "if_no_strictly_sub_floor_event": "stop without onchain books or fees",
+    "if_population_complete_and_candidates_exist": "freeze one separate onchain question-count conversion-fee and exact all-token depth proof for only the lowest displayed sum event",
+    "maximum_proof_candidates": 1,
+    "adjacent_hour_sweep": false,
+    "resample_consumed_2026_08_29_through_2026_09_07_populations": false
+  },
+  "authority": {
+    "account_requests": 0,
+    "book_requests": 0,
+    "credentials_used": false,
+    "fee_requests": 0,
+    "funds_used": false,
+    "onchain_requests": 0,
+    "orders_or_transactions": 0,
+    "protected_capture_touched": false,
+    "public_unauthenticated_read_only_requests": 1,
+    "signed_requests": 0,
+    "trading_authority": false
+  },
+  "implementations": [
+    {
+      "path": "tools/screen_polymarket_negrisk_complete_set_catalog.py",
+      "sha256": "5d5dd88fe9f77be92063d4b55bbcb8dd1b96db06b99dd0d021774916cf2b5ae9"
+    },
+    {
+      "path": "tools/adjudicate_polymarket_exact_mlb_monotone_prefilter.py",
+      "role": "canonical hash and repository path validation",
+      "sha256": "958a44d78029b9a1eb69a3771ce18e53ac1ed3c7bc161c8e4318beedce2cf99f"
+    },
+    {
+      "path": "tools/screen_polymarket_exact_two_leg_package.py",
+      "role": "preaccess journaled public request and retained raw receipt",
+      "sha256": "ba7ebaa1fb5235ba026f7cf4cb21ff73ba19430fee4a4f678fbdea37635eb32f"
+    },
+    {
+      "path": "tools/screen_polymarket_mlb_cross_period_catalog.py",
+      "role": "strict UTC timestamp validation",
+      "sha256": "a916790e7e0320089b9f76c49aff43c072312f24599de351820d3fb872e6eddd"
+    }
+  ],
+  "outputs": {
+    "journal_path": "data/polymarket-btc-multi-strikes-weekly-negrisk-v1/request-journal.jsonl",
+    "raw_path": "data/polymarket-btc-multi-strikes-weekly-negrisk-v1/raw/events.json",
+    "result_path": "docs/model-research/action-value/polymarket-btc-multi-strikes-weekly-negrisk-result-v1-2026-08-29.json"
+  },
+  "prohibited_shortcuts": [
+    "changing the selected series or time window after viewing the response",
+    "following a cursor or narrowing around any candidate",
+    "treating Gamma price sums as executable or source-proved conversion economics",
+    "requesting onchain proof books fees credentials accounts orders funds or protected capture state before the frozen gate permits it"
+  ]
+}
