@@ -1,0 +1,56 @@
+{
+  "schema_version": "binance-blvt-primary-market-nav-parity-contract-v1",
+  "frozen_at_utc": "2026-08-29T15:14:58Z",
+  "purpose": "prequalify whether currently trading Binance Leveraged Tokens leave a distinct market-direction-hedgeable primary-market NAV versus spot parity mechanism worth an explicitly authorized GET-only tokenInfo study",
+  "source_contracts": [
+    {
+      "url": "https://raw.githubusercontent.com/binance/binance-api-swagger/master/spot_api.yaml",
+      "use": "current official OpenAPI schema classifies BLVT tokenInfo as API-key MARKET_DATA and exposes NAV current baskets real leverage funding rate current purchase and redemption fee percentages and daily limits"
+    },
+    {
+      "url": "https://github.com/binance/binance-spot-api-docs/blob/master/faqs/market_data_only.md",
+      "use": "current official public market-data contract permits unauthenticated exchangeInfo reads through data-api.binance.vision"
+    }
+  ],
+  "mechanism": {
+    "market_direction_forecast_required": false,
+    "subscribe_then_sell_spot_identity": "subscribe at current NAV plus exact purchase fee then sell the same BLVT token on spot while hedging the current basket exposure",
+    "buy_spot_then_redeem_identity": "buy the same BLVT token on spot then redeem at current NAV minus exact redemption fee while hedging the current basket exposure",
+    "gross_subscribe_gate": "spot executable bid minus NAV purchase charge must be positive before spot fee hedge entry and exit funding slippage delay and stress",
+    "gross_redeem_gate": "NAV redemption proceed minus spot executable ask must be positive before spot fee hedge entry and exit funding slippage delay and stress",
+    "why_not_yet_direction_independent": "real leverage and current basket can rebalance; subscription redemption and hedge are non-atomic and account-specific, so exact basket quantity delay and hedge completion must be bound before any neutral claim"
+  },
+  "capture": {
+    "method": "GET",
+    "url": "https://data-api.binance.vision/api/v3/exchangeInfo",
+    "request_count": 1,
+    "retry_count": 0,
+    "purpose": "retain the complete public exchange inventory and admit only current symbols carrying the official LEVERAGED permission",
+    "raw_path": "data/binance-blvt-public-inventory-v1/raw/exchange-info.json",
+    "journal_path": "data/binance-blvt-public-inventory-v1/request-journal.jsonl"
+  },
+  "authority": {
+    "public_unauthenticated_read_only_requests": 1,
+    "credentials_used": false,
+    "signed_requests": 0,
+    "account_requests": 0,
+    "tokenInfo_requests": 0,
+    "spot_or_futures_book_requests": 0,
+    "subscriptions_or_redemptions": 0,
+    "orders_placed": 0,
+    "funds_used": false,
+    "trading_authority": false
+  },
+  "stopping_rules": {
+    "zero_current_trading_leveraged_symbols": "terminalize the public inventory until a new official BLVT listing",
+    "positive_current_inventory": "record a candidate only; tokenInfo requires an ephemeral API key and explicit GET-only authority, and no spot or futures book may be requested until the exact NAV and fee prefilter is positive",
+    "positive_NAV_prefilter": "freeze a separate synchronized all-cost study before any books and require exact basket hedge quantity primary-market processing delay spot and hedge fees funding slippage orphan capacity and stress",
+    "mutation_boundary": "subscription redemption spot order futures order transfer and account change each require separate explicit authority",
+    "accepted_edge_from_this_contract": false
+  },
+  "implementation": {
+    "path": "tools/capture_binance_blvt_public_inventory.py",
+    "sha256": "feefe8d90b5da469e78e27fd540f4d6c971e325c455cc640f7aac1aa3b9fa51a"
+  },
+  "contract_sha256": "9189fd384c2185875a8682155f365eb79cfe5f1061016ca035b05dfc88545b9f"
+}

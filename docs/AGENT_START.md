@@ -1367,6 +1367,27 @@ safety gate, blocks Stop, or submits an order.
   architecture change. Adjudication SHA-256
   `46bf134d1be8b645d7f6272d651be8d3c0b6a8e5b2e7d2b4540f3609d6997a96`.
 
+- The exact-one-NO NegRisk V2 event-log observation consumed its frozen public
+  interval and failed HTTP 400 after retaining only the preliminary current-
+  block receipt. Because the runner failed to save the HTTP error body or
+  completed receipt, the provider cause is unknown and neither conversion
+  presence nor absence is proved. Do not retry the interval or substitute a
+  provider. Every future one-use HTTP request must durably prejournal method,
+  URL, and exact body hash, then retain HTTP error status and body before
+  raising. Canonical failure result SHA-256
+  `7c976cd84795718b63463ea4e32ebeddaf51e807fc5ebe9aa8cb49b476541e19`.
+- Binance BLVT primary-market NAV/spot parity is terminal for the current
+  inventory. One public `exchangeInfo` response contained 3,685 symbols and 40
+  legacy `LEVERAGED`-permission symbols, but zero with `TRADING` status. Do not
+  poll it. Reopen only after a new official BLVT listing or relisting, and then
+  require explicit GET-only authority for API-key `tokenInfo` before any book
+  study. No credential, account, book, order, subscription, redemption, or
+  mutation was used. Canonical result SHA-256
+  `85c8ef364b03fb2fbf0aeebddec10d51abbdd608f56ff9c0dccb1835cacc2179`.
+- The structural-edge registry now has 42 ranked hypotheses, still only 19
+  narrowly accepted scoped overlays, and result SHA-256
+  `6f5b4a277f1c3cea006de5d8a4a1cc6a7ba306b2689a37b2e93f1c44006fb7c2`.
+
 ## Task Routing
 
 | Work | Read first |
@@ -1381,6 +1402,8 @@ safety gate, blocks Stop, or submits an order.
 | Current sports exact-title discovery terminal result | `docs/model-research/action-value/polymarket-current-sports-monotone-pair-discovery-result-v1-2026-08-29.json` |
 | Current BOS/NYY monotone-parity terminal adjudication | `docs/model-research/action-value/polymarket-current-mlb-monotone-parity-failure-adjudication-v1-2026-08-29.json` |
 | Binance XAU/PAXG funding-basis terminal adjudication | `docs/model-research/action-value/binance-xau-paxg-perpetual-funding-spread-failure-adjudication-v1-2026-08-29.json` |
+| Polymarket exact-one-NO V2 conversion failure adjudication | `docs/model-research/action-value/polymarket-negrisk-one-no-v2-conversion-failure-adjudication-v1-2026-08-29.json` |
+| Binance BLVT current primary-market NAV-parity terminal gate | `docs/model-research/action-value/binance-blvt-primary-market-nav-parity-public-gate-v1-2026-08-29.json` |
 | Binance idle-stablecoin Launchpool reward candidate | `docs/model-research/action-value/binance-stablecoin-launchpool-idle-inventory-reward-candidate-v1-2026-08-26.json` |
 | Polymarket Combo RFQ versus CLOB Boolean parity candidate | `docs/model-research/action-value/polymarket-combo-rfq-boolean-parity-candidate-v1-2026-08-27.json` |
 | Polymarket terminal broad sports Combo requester-overround validation | `docs/model-research/action-value/polymarket-combo-maker-overround-validation-v1-2026-08-27.json` |

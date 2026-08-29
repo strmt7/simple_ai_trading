@@ -967,7 +967,7 @@ grants paper, testnet, or live authority.
 
 The canonical structural-edge priority and retry-trigger registry is
 `docs/model-research/structural-edge-priority-registry-v1.json`, result SHA-256
-`d3e31d80653d21aa7267f68d6ed392bebd10e1c5158765da6545056d2a94c68e`.
+`6f5b4a277f1c3cea006de5d8a4a1cc6a7ba306b2689a37b2e93f1c44006fb7c2`.
 Advance only the highest-ranked hypothesis whose trigger is actually satisfied.
 This prevents account-blocked or terminal screens from being rerun as if more
 snapshots could create an edge.
@@ -2179,7 +2179,7 @@ result SHA-256
 `64943efe0c6ad16f8d02f78548afef38f919448d2da87c7573e825a2eeefd6b9`.
 That checkpoint left seventeen accepted scoped edges. The current registry now
 has nineteen and result SHA-256
-`fad104fc4e460bd0ff69e5b61df95050bbc0570d0af2f3eff64f8403b00b61bb`.
+`6f5b4a277f1c3cea006de5d8a4a1cc6a7ba306b2689a37b2e93f1c44006fb7c2`.
 
 The complete Binance XAU/XAG Commodity Options versus matching TradFi
 perpetual lower-bound screen is terminal for the active 2026-08-27 and
@@ -2453,6 +2453,36 @@ found no frozen-only top-level source symbol. One still-valid AI edge-floor
 regression test was integrated manually; the stale activation-era publication
 and all bulk-copy paths remain rejected. Keep the worktree frozen.
 
+The 2026-08-29 exact-one-NO NegRisk V2 event-log observation consumed its
+frozen one-use public request after the prior adapter-address evidence
+materially opened that blocker. The preliminary `eth_blockNumber` receipt
+retained block `92874137`, but the exact `eth_getLogs` request failed HTTP 400.
+The frozen runner did not retain the HTTP error body or completed receipt, so
+the cause is unknown and the outcome proves neither presence nor absence of an
+exact one-NO conversion. Do not retry that interval or switch providers.
+Canonical failure adjudication:
+`docs/model-research/action-value/polymarket-negrisk-one-no-v2-conversion-failure-adjudication-v1-2026-08-29.json`,
+result SHA-256
+`7c976cd84795718b63463ea4e32ebeddaf51e807fc5ebe9aa8cb49b476541e19`.
+Every future one-use HTTP runner must journal method, URL, and exact request-
+body hash before access, then retain HTTP error status and body before raising.
+
+The distinct Binance BLVT primary-market NAV-versus-spot parity hypothesis is
+terminal for the current inventory. One frozen unauthenticated public
+`exchangeInfo` request returned 3,685 symbols and 40 legacy symbols carrying
+the `LEVERAGED` permission, but zero had `TRADING` status. No current BLVT
+therefore exists for subscription, redemption, or spot parity; no API key,
+`tokenInfo`, book, account, order, or mutation was used. Do not poll the
+unchanged inventory. Reopen only after a new official BLVT listing or relisting,
+then require explicit GET-only authority for the API-key-classified
+`tokenInfo` prefilter before any separately frozen book study. Canonical result:
+`docs/model-research/action-value/binance-blvt-primary-market-nav-parity-public-gate-v1-2026-08-29.json`,
+result SHA-256
+`85c8ef364b03fb2fbf0aeebddec10d51abbdd608f56ff9c0dccb1835cacc2179`.
+The structural registry now contains 42 ranked hypotheses, remains at 19
+narrowly accepted scoped overlays, and has canonical result SHA-256
+`6f5b4a277f1c3cea006de5d8a4a1cc6a7ba306b2689a37b2e93f1c44006fb7c2`.
+
 The Round 21 sidecar worktree
 `C:\trader\simple_ai_trading-round21-sidecar-v2` remains protected through
 `2026-08-29T23:40:00Z`. Its process IDs are ephemeral. Do not touch it until a
@@ -2472,7 +2502,16 @@ not grant account, funding, order, or transaction authority.
 2. Keep the completed model-dev three-way audit frozen. Do not bulk-integrate
    stale or divergent files; reevaluate a specific path only when a current task
    requires it.
-3. Do not rerun rejected Binance elevated-funding spot/perpetual carry or the
+3. Do not rerun the consumed exact-one-NO NegRisk V2 log interval: its HTTP 400
+   lacks a retained provider body and therefore cannot be diagnosed or treated
+   as absence.
+   Reopen only on materially new exact one-NO access, cost, or causal unwind
+   evidence under a separately frozen contract. Do not poll Binance BLVT
+   inventory: zero current `TRADING` leveraged-token symbols makes the NAV
+   parity mechanism unavailable. Reopen it only after a new official BLVT
+   listing or relisting, then stop after the API-key `tokenInfo` prefilter unless
+   explicit GET-only authority exists and the exact NAV/fee gap is positive.
+   Do not rerun rejected Binance elevated-funding spot/perpetual carry or the
    terminal one-use broad-current-liquidity-selected crypto funding preflight,
    the terminal 70-day Binance-Hyperliquid cross-venue funding-spread extension
    without a material venue-fee funding basis or hurdle change,
@@ -2659,6 +2698,12 @@ not grant account, funding, order, or transaction authority.
    cross-regime gates pass. Walk-forward is not a substitute for those gates.
 
 ## Verification Scope
+
+The exact-one-NO failure preservation and Binance BLVT current-inventory gate,
+including every registry-hash-coupled test, pass 199 focused tests with Ruff
+and Python compilation clean. Both new result hashes, both frozen contracts,
+their implementation hashes, retained raw responses, and request journals
+reconstruct exactly; the accepted-edge count remains 19.
 
 The Binance-option/Polymarket-threshold gate and registry propagation pass 23
 focused tests with Ruff clean; both changed JSON result hashes reconstruct.

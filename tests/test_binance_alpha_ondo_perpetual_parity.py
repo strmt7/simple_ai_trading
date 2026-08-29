@@ -14,7 +14,7 @@ REGISTRY = ROOT / "docs/model-research/structural-edge-priority-registry-v1.json
 IMPLEMENTATION = ROOT / "tools/screen_binance_alpha_ondo_perpetual_parity.py"
 CONTRACT_HASH = "2f08c6b0a8509d9d51db7716d5dde499c3a1937b68eafe77b2970e4da8311b59"
 RESULT_HASH = "a3d474e9010b92c9454a5bc04b5a7f586656c8bc5842cecc61baaa508c2d8bc3"
-REGISTRY_HASH = "fad104fc4e460bd0ff69e5b61df95050bbc0570d0af2f3eff64f8403b00b61bb"
+REGISTRY_HASH = "6f5b4a277f1c3cea006de5d8a4a1cc6a7ba306b2689a37b2e93f1c44006fb7c2"
 
 
 def _load(path: Path) -> dict[str, object]:
