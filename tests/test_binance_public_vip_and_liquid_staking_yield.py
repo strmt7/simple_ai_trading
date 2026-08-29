@@ -20,7 +20,7 @@ STAKING_ARTIFACT = (
 REGISTRY = ROOT / "docs/model-research/structural-edge-priority-registry-v1.json"
 VIP_HASH = "cd41cad8e0053b9d41ddda64fd4ad8a86a163307ddcc9fabc805c56b9c5028c9"
 STAKING_HASH = "b7fc84d0be3968d31afeb801b7a40ee0d382724b11281c28733a8145d12ee035"
-REGISTRY_HASH = "ebce99afa23c826f41acec8670dc8259274d62e64d71d255a3645c119f776c95"
+REGISTRY_HASH = "d9698017a21be49e8f0b5c0021d4c1eeb1dff0a6482bab9badc0a8c76be5df4b"
 
 
 def _load(path: Path) -> dict[str, object]:

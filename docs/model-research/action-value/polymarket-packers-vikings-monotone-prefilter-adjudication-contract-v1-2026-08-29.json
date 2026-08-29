@@ -1,0 +1,47 @@
+{
+  "authority": {
+    "book_requests": 0,
+    "fee_requests": 0,
+    "network_requests": 0,
+    "orders_or_transactions": 0,
+    "protected_capture_touched": false,
+    "trading_authority": false
+  },
+  "contract_path": "docs/model-research/action-value/polymarket-packers-vikings-monotone-prefilter-adjudication-contract-v1-2026-08-29.json",
+  "contract_sha256": "9621ca3a327f1f057be6ee560c250063ddd9af48785dc1ed7c4ad3114dea61df",
+  "frozen_at_utc": "2026-08-29T18:05:21.8129777Z",
+  "hypothesis": "all deterministic subset relations across the exact active NFL moneyline spread and total ladders have a one-pUSD minimum package payout after explicit game-tie and cancellation states; retained Gamma prices are rejection-only and at least one package may sum strictly below its payout floor",
+  "implementations": [
+    {
+      "path": "tools/adjudicate_polymarket_exact_nfl_monotone_prefilter.py",
+      "sha256": "6e7119c7827d04435378136fcca3e13378f752d9da102ea88c6a65ce4d9885cd"
+    },
+    {
+      "path": "tools/adjudicate_polymarket_exact_mlb_monotone_prefilter.py",
+      "role": "shared_canonical_hash_market_gate_and_payoff_relation_algebra",
+      "sha256": "958a44d78029b9a1eb69a3771ce18e53ac1ed3c7bc161c8e4318beedce2cf99f"
+    }
+  ],
+  "metadata_source": {
+    "file_sha256": "19c80a025641436b3d8eb8d24cf489216db70b5892ee9feeb0b9c05fca79b733",
+    "path": "docs/model-research/action-value/polymarket-packers-vikings-exact-event-prefilter-result-v1-2026-08-29.json",
+    "raw_response_sha256": "ca97f6fe1e435ecbd165d81aa65685431903eda1106b7ed53865ddb5426aeefa",
+    "result_sha256": "8ebf70181290234c1c05f4659245d2c8c1502fd4a02eaa93dff9a4f60e375c6e"
+  },
+  "output_path": "docs/model-research/action-value/polymarket-packers-vikings-monotone-prefilter-adjudication-v1-2026-08-29.json",
+  "purpose": "zero-network complete NFL monotone payoff-lattice proof and retained-Gamma rejection gate before any exact-depth access",
+  "scope": {
+    "event_slug": "nfl-gb-min-2026-09-13",
+    "families": [
+      "full_game_margin_including_moneyline",
+      "full_game_total"
+    ],
+    "game_margin_states": "all_integers_including_zero_tie",
+    "separate_cancellation_state": true,
+    "tested_relations": "every_ordered_pair_of_distinct_thresholds_within_each_compatible_family"
+  },
+  "terminal_decision": {
+    "if_any_displayed_price_sum_is_strictly_below_its_proven_floor": "retain_every_relation_then_freeze_at_most_one_exact_two_token_depth_and_fee_screen",
+    "otherwise": "terminalize_this_exact_event_without_books_fees_or_retry"
+  }
+}

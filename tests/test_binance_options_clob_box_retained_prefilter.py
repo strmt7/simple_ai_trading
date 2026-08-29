@@ -19,7 +19,7 @@ RESULT = ROOT / (
 REGISTRY = ROOT / "docs/model-research/structural-edge-priority-registry-v1.json"
 CONTRACT_HASH = "806b99257dd081fddef2fcaa5657776e9dfecee65dd52da1bba351052a062e81"
 RESULT_HASH = "a9b0e7a2aba9bda7f83b9515be587a17e6da69fa0bc987191a21f9d37e912d3b"
-REGISTRY_HASH = "ebce99afa23c826f41acec8670dc8259274d62e64d71d255a3645c119f776c95"
+REGISTRY_HASH = "d9698017a21be49e8f0b5c0021d4c1eeb1dff0a6482bab9badc0a8c76be5df4b"
 
 
 def _canonical_hash(payload: dict[str, object], field: str) -> str:

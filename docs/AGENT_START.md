@@ -1479,9 +1479,22 @@ safety gate, blocks Stop, or submits an order.
   material price, fee, book, funding, margin, or product change. Canonical
   stress result SHA-256
   `c09d62e98cd0df88622d4b98d9d8f01247121ccd786fffb580bc72429ef6bf30`.
+- The first exact NFL extension of the sports moneyline/spread monotone-payoff
+  family is terminal for Packers versus Vikings. One exact public Gamma event
+  response retained 34 active markets. A zero-network adjudication proved all
+  321 within-family threshold relations, including NFL tie and cancellation
+  states; four passed the rejection-only Gamma gate. The strongest package was
+  Packers +0.5 plus Vikings moneyline at a displayed `0.895` sum for a one-pUSD
+  floor. One frozen exact two-token book batch then found asks of `0.55` and
+  `0.53`: five shares cost `5.400` pUSD, a `0.400` pUSD loss before fees, while
+  book timestamps were 10,049,940 ms apart. Zero fee requests were spent. Do
+  not resample this game. Gamma may reject but never accept or promote; require
+  a distinct event to survive exact synchronized depth and current fees before
+  escalation. Canonical exact-depth result SHA-256
+  `731ca32a06f8f1a42aaae9e326c2bd89379657e338231dd906b749790c15ddfa`.
 - The structural-edge registry now has 42 ranked hypotheses, still only 19
   narrowly accepted scoped overlays, and result SHA-256
-  `ebce99afa23c826f41acec8670dc8259274d62e64d71d255a3645c119f776c95`.
+  `d9698017a21be49e8f0b5c0021d4c1eeb1dff0a6482bab9badc0a8c76be5df4b`.
 
 ## Task Routing
 
@@ -1501,6 +1514,7 @@ safety gate, blocks Stop, or submits an order.
 | Future MLB cross-period partial-page adjudication | `docs/model-research/action-value/polymarket-future-mlb-cross-period-catalog-adjudication-v1-2026-08-29.json` |
 | Current Toronto/Phoenix WNBA monotone-parity terminal result | `docs/model-research/action-value/polymarket-current-wnba-monotone-parity-result-v1-2026-08-29.json` |
 | Current Lynx/Dream WNBA rejection-only terminal adjudication | `docs/model-research/action-value/polymarket-lynx-dream-monotone-prefilter-adjudication-v1-2026-08-29.json` |
+| Current Packers/Vikings NFL exact-depth terminal result | `docs/model-research/action-value/polymarket-packers-vikings-tie-state-package-result-v1-2026-08-29.json` |
 | Binance retained CLOB box-parity terminal prefilter | `docs/model-research/action-value/binance-options-clob-box-retained-prefilter-v2-2026-08-29.json` |
 | Binance retained option/perpetual conversion terminal stress | `docs/model-research/action-value/binance-options-perpetual-conversion-retained-stress-v1-2026-08-29.json` |
 | Polymarket holding-yield latest retained receipt continuity | `docs/model-research/polymarket/complete-set-holding-yield-continuity-receipts-v8-2026-08-29.json` |

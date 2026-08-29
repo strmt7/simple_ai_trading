@@ -1226,7 +1226,7 @@
     },
     {
       "blocking_evidence": [
-        "future active NBA or WNBA full-game same-game moneyline and spread pair with exact source-proved team handicap overtime push tie cancellation postponement forfeit and correction resolution mapping",
+        "future active NBA WNBA or NFL full-game same-game moneyline and spread pair with exact source-proved team handicap overtime push tie cancellation postponement forfeit and correction resolution mapping",
         "current per-market feesEnabled feeSchedule rate exponent takerOnly rebateRate tick size minimum order size and acceptingOrders state",
         "exact per-market configured sports taker-delay duration and phase plus independently delayed leg state transitions",
         "recurrent synchronized batch-book all-taker violations after exact fee rounding displayed bottleneck depth and frozen latency cancellation orphan and external-cost stress",
@@ -1269,12 +1269,36 @@
         {
           "path": "docs/model-research/action-value/polymarket-lynx-dream-monotone-prefilter-adjudication-v1-2026-08-29.json",
           "result_sha256": "61b3436b3367ba3442ebe777c8a506948243c6d3b6d6a4cb9346d2db3aaf335f"
+        },
+        {
+          "path": "docs/model-research/action-value/polymarket-packers-vikings-exact-event-prefilter-contract-v1-2026-08-29.json",
+          "result_sha256": "adf268674779dd882dd0879ce29e168f540a3af316d8adb0233f9de74e896172"
+        },
+        {
+          "path": "docs/model-research/action-value/polymarket-packers-vikings-exact-event-prefilter-result-v1-2026-08-29.json",
+          "result_sha256": "8ebf70181290234c1c05f4659245d2c8c1502fd4a02eaa93dff9a4f60e375c6e"
+        },
+        {
+          "path": "docs/model-research/action-value/polymarket-packers-vikings-monotone-prefilter-adjudication-contract-v1-2026-08-29.json",
+          "result_sha256": "9621ca3a327f1f057be6ee560c250063ddd9af48785dc1ed7c4ad3114dea61df"
+        },
+        {
+          "path": "docs/model-research/action-value/polymarket-packers-vikings-monotone-prefilter-adjudication-v1-2026-08-29.json",
+          "result_sha256": "c387e389d852ab5571056a9f2e80f91c63ae6f1c124ca55291b0fc787b5faeae"
+        },
+        {
+          "path": "docs/model-research/action-value/polymarket-packers-vikings-tie-state-package-contract-v1-2026-08-29.json",
+          "result_sha256": "9eb26db000b0bc64182bf202959d9de003a550b5b812eaec256fcc95cd9f1b4c"
+        },
+        {
+          "path": "docs/model-research/action-value/polymarket-packers-vikings-tie-state-package-result-v1-2026-08-29.json",
+          "result_sha256": "731ca32a06f8f1a42aaae9e326c2bd89379657e338231dd906b749790c15ddfa"
         }
       ],
-      "current_status": "distinct_direction_independent_live_NBA_WNBA_full_game_moneyline_spread_payoff_implication_candidate_two_exact_active_WNBA_extensions_are_negative_Toronto_Phoenix_synchronized_four_token_batch_found_zero_positive_packages_best_actual_loss_0_42436_pUSD_and_Lynx_Dream_exact_guaranteed_package_was_rejected_before_books_at_a_1_080_Gamma_displayed_sum_for_a_1_000_pUSD_floor_optimistic_loss_0_080_per_share_and_0_400_at_five_shares_before_execution_costs_no_fee_or_book_requests_needed_for_the_second_event_not_accepted_or_deployment_ready",
+      "current_status": "distinct_direction_independent_live_NBA_WNBA_NFL_full_game_moneyline_spread_payoff_implication_candidate_three_exact_extensions_are_negative_the_Packers_Vikings_NFL_tie_state_extension_proved_321_complete_within_family_relations_and_four_rejection_gate_candidates_best_Gamma_sum_0_895_for_a_1_000_floor_but_the_strongest_exact_five_share_package_cost_5_400_pUSD_at_current_asks_for_a_0_400_zero_fee_loss_and_5_600_after_two_adverse_ticks_with_10049940_ms_book_timestamp_skew_no_fee_requests_accepted_edge_or_deployment_readiness",
       "market_direction_forecast_required": false,
       "mechanism": "polymarket_live_NBA_moneyline_spread_monotone_payoff_implication",
-      "next_action": "do_not_resample_Toronto_Phoenix_for_future_active_NBA_or_WNBA_exact_pairs_first_source_prove_exhaustive_payoffs_then_use_retained_Gamma_outcomePrices_as_a_rejection_only_optimistic_gate_request_one_frozen_exact_depth_batch_only_when_at_least_one_displayed_package_sum_is_below_its_guaranteed_payout_floor_and_require_independent_positive_after_cost_recurrence_before_escalation",
+      "next_action": "do_not_resample_Toronto_Phoenix_Lynx_Dream_or_Packers_Vikings_for_future_active_NBA_WNBA_or_NFL_exact_pairs_first_source_prove_exhaustive_payoffs_including_actual_tie_and_cancellation_states_then_use_retained_Gamma_outcomePrices_as_a_rejection_only_optimistic_gate_request_one_frozen_exact_depth_batch_only_when_at_least_one_displayed_package_sum_is_below_its_guaranteed_payout_floor_and_require_independent_positive_after_cost_recurrence_before_escalation",
       "priority_rank": 30,
       "prohibited_shortcuts": [
         "reusing_the_paper_zero_fee_median_as_current_profit",
@@ -1287,8 +1311,8 @@
         "crediting_midpoints_last_trades_uncapped_depth_maker_fees_or_rebates_without_causal_owned_fills",
         "calling_public_recurrence_profitable_without_owned_both_leg_fill_reconciliation_and_all_external_costs"
       ],
-      "retry_trigger": "first_future_active_accepting_orders_NBA_or_WNBA_full_game_event_with_source_proved_same_game_moneyline_spread_payoff_implication_exact_current_market_fee_schedules_and_at_least_one_rejection_only_Gamma_displayed_package_sum_below_its_guaranteed_payout_floor_or_a_material_sports_price_fee_delay_or_resolution_rule_change",
-      "venue_scope": "polymarket_future_NBA_and_WNBA_full_game_same_game_moneyline_and_point_spread_markets"
+      "retry_trigger": "first_future_distinct_active_accepting_orders_NBA_WNBA_or_NFL_full_game_event_with_source_proved_same_game_moneyline_spread_payoff_implication_exact_current_market_fee_schedules_and_at_least_one_rejection_only_Gamma_displayed_package_sum_below_its_guaranteed_payout_floor_or_a_material_sports_price_fee_delay_or_resolution_rule_change",
+      "venue_scope": "polymarket_future_NBA_WNBA_and_NFL_full_game_same_game_moneyline_and_point_spread_markets"
     },
     {
       "blocking_evidence": [
@@ -1803,7 +1827,7 @@
       "venue_scope": "Binance_current_BLVT_Spot_and_primary_market_inventory"
     }
   ],
-  "result_sha256": "ebce99afa23c826f41acec8670dc8259274d62e64d71d255a3645c119f776c95",
+  "result_sha256": "d9698017a21be49e8f0b5c0021d4c1eeb1dff0a6482bab9badc0a8c76be5df4b",
   "schema_version": "structural-edge-priority-registry-v1",
   "terminal_do_not_repeat": [
     {

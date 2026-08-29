@@ -13,7 +13,7 @@ ARTIFACT = ROOT / "docs/model-research/action-value" / (
 )
 REGISTRY = ROOT / "docs/model-research/structural-edge-priority-registry-v1.json"
 EXPECTED_HASH = "70cfc7b2ae1cb256e7a8c08c9af33fa8524d2308a8c18400d5a2b7d93c966fe3"
-REGISTRY_HASH = "ebce99afa23c826f41acec8670dc8259274d62e64d71d255a3645c119f776c95"
+REGISTRY_HASH = "d9698017a21be49e8f0b5c0021d4c1eeb1dff0a6482bab9badc0a8c76be5df4b"
 
 
 def _load(path: Path) -> dict[str, object]:
@@ -90,7 +90,7 @@ def test_registry_reopens_only_the_distinct_future_nba_recurrence_family() -> No
     assert row["mechanism"] == (
         "polymarket_live_NBA_moneyline_spread_monotone_payoff_implication"
     )
-    assert row["canonical_artifacts"] == [
+    assert row["canonical_artifacts"][:9] == [
         {
             "path": (
                 "docs/model-research/action-value/"
@@ -173,6 +173,68 @@ def test_registry_reopens_only_the_distinct_future_nba_recurrence_family() -> No
             ),
             "result_sha256": (
                 "61b3436b3367ba3442ebe777c8a506948243c6d3b6d6a4cb9346d2db3aaf335f"
+            ),
+        },
+    ]
+    assert row["canonical_artifacts"][-6:] == [
+        {
+            "path": (
+                "docs/model-research/action-value/"
+                "polymarket-packers-vikings-exact-event-prefilter-contract-v1-"
+                "2026-08-29.json"
+            ),
+            "result_sha256": (
+                "adf268674779dd882dd0879ce29e168f540a3af316d8adb0233f9de74e896172"
+            ),
+        },
+        {
+            "path": (
+                "docs/model-research/action-value/"
+                "polymarket-packers-vikings-exact-event-prefilter-result-v1-"
+                "2026-08-29.json"
+            ),
+            "result_sha256": (
+                "8ebf70181290234c1c05f4659245d2c8c1502fd4a02eaa93dff9a4f60e375c6e"
+            ),
+        },
+        {
+            "path": (
+                "docs/model-research/action-value/"
+                "polymarket-packers-vikings-monotone-prefilter-adjudication-"
+                "contract-v1-2026-08-29.json"
+            ),
+            "result_sha256": (
+                "9621ca3a327f1f057be6ee560c250063ddd9af48785dc1ed7c4ad3114dea61df"
+            ),
+        },
+        {
+            "path": (
+                "docs/model-research/action-value/"
+                "polymarket-packers-vikings-monotone-prefilter-adjudication-v1-"
+                "2026-08-29.json"
+            ),
+            "result_sha256": (
+                "c387e389d852ab5571056a9f2e80f91c63ae6f1c124ca55291b0fc787b5faeae"
+            ),
+        },
+        {
+            "path": (
+                "docs/model-research/action-value/"
+                "polymarket-packers-vikings-tie-state-package-contract-v1-"
+                "2026-08-29.json"
+            ),
+            "result_sha256": (
+                "9eb26db000b0bc64182bf202959d9de003a550b5b812eaec256fcc95cd9f1b4c"
+            ),
+        },
+        {
+            "path": (
+                "docs/model-research/action-value/"
+                "polymarket-packers-vikings-tie-state-package-result-v1-"
+                "2026-08-29.json"
+            ),
+            "result_sha256": (
+                "731ca32a06f8f1a42aaae9e326c2bd89379657e338231dd906b749790c15ddfa"
             ),
         },
     ]
