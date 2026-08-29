@@ -16,7 +16,7 @@ TRIGGER_TRIAGE = ROOT / "docs/model-research/action-value" / (
 REGISTRY = ROOT / "docs/model-research/structural-edge-priority-registry-v1.json"
 ARTIFACT_HASH = "d4f02be559d9267abbea28ccefb48f4886f375b359ce7274b90b6585b828160a"
 TRIGGER_TRIAGE_HASH = "bca11d612042f9a859f53b71e425cd320cca5d4a5d7695cd1f0a0de539b0eea1"
-REGISTRY_HASH = "e712a9086d31944b42f93270256c393c6d8ab38997c20b7f8638cd4aa9088a34"
+REGISTRY_HASH = "659904cc23e3d91c5d8622c9a8274e0227818d506724a72cce071df285eb681e"
 
 
 def _load(path: Path) -> dict[str, object]:

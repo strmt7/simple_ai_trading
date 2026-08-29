@@ -1,0 +1,131 @@
+{
+  "schema_version": "binance-rwusd-futures-margin-yield-reconciliation-v1",
+  "created_at_utc": "2026-08-29T19:59:03Z",
+  "result_sha256": "e4f455511516babe956f4aa459648a032fb77f86c3253fd47d4f15317da72063",
+  "contract": {
+    "path": "docs/model-research/action-value/binance-rwusd-futures-margin-yield-reconciliation-contract-v1.json",
+    "contract_sha256": "9f2539c76c1f0f16619b0967fe26ae3cd1988447ee44a869c1d68e7eb3cf9f62",
+    "public_get_count": 1,
+    "retry_count": 0
+  },
+  "authority": {
+    "public_unauthenticated_research_only": true,
+    "credentials_used": false,
+    "account_state_accessed": false,
+    "orders_transfers_subscriptions_redemptions_or_trades": 0,
+    "trading_authority": false
+  },
+  "source_binding": {
+    "official_article": {
+      "article_code": "176c768a6dd94e8aad95fbb3a021bf95",
+      "article_id": 255910,
+      "publish_time_utc": "2025-11-11T03:00:06.893Z",
+      "title": "RWUSD Updates: Now Supported as a Margin Asset on Binance Futures",
+      "url": "https://www.binance.com/bapi/composite/v1/public/cms/article/detail/query?articleCode=176c768a6dd94e8aad95fbb3a021bf95",
+      "requested_before_utc": "2026-08-29T19:57:18.202Z",
+      "observed_at_utc": "2026-08-29T19:57:18.767Z",
+      "raw_path": "data/edge-research/binance-rwusd-futures-margin-yield-reconciliation-v1/article-detail.raw.json",
+      "raw_response_bytes": 107892,
+      "raw_response_sha256": "a110158bca3811194357da5eb2d15e76515fb78be2bf9c09e5d2f1060a105355",
+      "journal_path": "data/edge-research/binance-rwusd-futures-margin-yield-reconciliation-v1/request-journal.json",
+      "journal_sha256": "33f836756b5906d769e0389a908569c8790a03a9c436435924fa168f2e5f4915"
+    },
+    "retained_current_margin_inventory": {
+      "path": "docs/model-research/action-value/raw/binance-bnb-fee-discount-hedge-v1/03-futures-exchange-info.json",
+      "response_sha256": "7f37ca1727a599cdec8f7c56460f2c4f4188f3ebe63ba330afeb5845f90b8785",
+      "server_time_utc": "2026-08-25T16:00:11.015Z",
+      "RWUSD_marginAvailable": true,
+      "RWUSD_autoAssetExchange": "0"
+    },
+    "current_public_rate_and_bonus": {
+      "path": "docs/model-research/action-value/binance-rwusd-existing-vip-bonus-overlay-gate-v1-2026-08-26.json",
+      "result_sha256": "076f428ea9bccc0dc9c1a0c605ac469db27fedb7941ac6728260cf98da667e51",
+      "base_apr_percent": "3.36",
+      "base_rate_observation_utc_date": "2026-08-26",
+      "VIP_bonus_excluded_from_this_reconciliation": true
+    }
+  },
+  "provenance_correction": {
+    "status": "embedded_contract_timestamp_invalid_but_contract_file_and_hash_preceded_request",
+    "contract_embedded_frozen_at_utc": "2026-08-29T19:58:00Z",
+    "contract_file_creation_time_utc": "2026-08-29T19:56:32Z",
+    "contract_file_final_hash_binding_time_utc": "2026-08-29T19:56:43Z",
+    "request_started_utc": "2026-08-29T19:57:18.202Z",
+    "correction_rule": "Preserve the original contract bytes and hash. Do not use the invalid embedded timestamp as evidence; use the retained raw response and journal as source evidence, and classify the reconciliation as deterministic primary-source semantics rather than a statistical outcome-sensitive fit.",
+    "accepted_edge_effect": "No acceptance depends on the invalid embedded timestamp or on a selected quantitative market outcome."
+  },
+  "official_semantic_reconciliation": {
+    "pass": true,
+    "facts": {
+      "RWUSD_supported_as_USD_M_Futures_margin": true,
+      "supported_modes": [
+        "Multi-Assets Mode",
+        "Portfolio Margin Mode"
+      ],
+      "daily_RWUSD_rewards_continue_on_RWUSD_margin_balance_in_USD_M_Futures_account": true,
+      "published_standard_portfolio_margin_collateral_value_ratio_percent": "99.9",
+      "portfolio_margin_pro_first_tier": {
+        "floor_RWUSD": "0",
+        "cap_RWUSD": "1200000",
+        "collateral_ratio_percent": "99.9"
+      },
+      "portfolio_margin_pro_second_tier": {
+        "floor_RWUSD": "1200000",
+        "cap_RWUSD": "2000000",
+        "collateral_ratio_percent": "97.5"
+      },
+      "above_2000000_portfolio_margin_pro_collateral_ratio_percent": "0",
+      "liquidation_may_trigger_auto_exchange": true,
+      "redemption_requires_transfer_to_spot_and_returns_USDC": true,
+      "not_supported_for": [
+        "COIN-M Futures",
+        "Grid Trading",
+        "Copy Trading",
+        "Binance Margin"
+      ]
+    },
+    "rate_adjudication": "The historical article's 4% figure is excluded. The only rate used is the separately source-bound current 3.36% public base APR from 2026-08-26.",
+    "current_ratio_adjudication": "The 99.9% and 97.5% ratios are published product semantics from 2025-11-11, not exact current account evidence. Current public exchange information independently confirms only that RWUSD remains margin-available."
+  },
+  "economics": {
+    "edge_identity": "Preserve current RWUSD base yield while RWUSD replaces otherwise required plain USD-M Futures margin for an independently justified after-cost Futures strategy.",
+    "market_direction_forecast_required": false,
+    "standalone_strategy": false,
+    "current_public_base_apr_percent": "3.36",
+    "current_public_base_reward_bips_per_22_days": "20.25205479",
+    "current_public_base_reward_RWUSD_per_1000_over_22_days": "2.02520548",
+    "published_99_9_percent_ratio_sensitivity": {
+      "extra_principal_fraction_per_unit_of_effective_margin": "0.001001001001",
+      "annual_alternative_yield_stress_percent_on_extra_principal_only": "10",
+      "annual_extra_principal_opportunity_cost_percent_of_effective_margin": "0.01001001001",
+      "base_apr_after_that_labeled_sensitivity_percent": "3.34998998999"
+    },
+    "VIP_bonus_handling": "Credit zero here. The already-accepted time-limited VIP bonus remains a separate mutually compatible overlay only after exact account and balance-scope eligibility is proved; never double-count it.",
+    "new_subscription_economics": "not_tested_and_not_accepted"
+  },
+  "verdict": {
+    "accepted_edge": true,
+    "accepted_scope": "RWUSD already independently held and eligible, serving only as margin already required by a separately justified after-cost USD-M Futures strategy, while rewards demonstrably continue and the exact current account collateral ratio, limit and risk budget are respected.",
+    "accepted_as_extension_of_existing_reward_bearing_futures_margin_family": true,
+    "accepted_edge_count_increment": 0,
+    "after_direct_cost": true,
+    "after_every_external_cost_and_best_alternative_yield": false,
+    "deployment_ready": false,
+    "future_profit_guaranteed": false,
+    "profitability_claim": false,
+    "status": "accepted_scoped_public_structural_RWUSD_reward_retaining_USD_M_margin_overlay"
+  },
+  "fail_closed_boundaries": [
+    "Never subscribe to or retain RWUSD solely for this overlay.",
+    "Never open, enlarge or keep a Futures position solely to earn RWUSD rewards.",
+    "Never treat the historical 4% article rate or collateral ratios as exact current account values.",
+    "Never count the current VIP bonus twice or assume the bonus measures Futures balances without exact account evidence.",
+    "Never ignore the collateral haircut, transfer limits, liquidation auto-exchange, USDC redemption, delay, custody, tax, issuer and operating risks.",
+    "Never call RWUSD a stablecoin, tokenized RWA, direct Treasury claim or guaranteed principal outside the product terms."
+  ],
+  "next_action": {
+    "public": "Refresh only after a material official RWUSD rate, reward-retention, margin-eligibility, collateral-ratio, transfer-limit, liquidation, auto-exchange or redemption change.",
+    "signed_read_only": "Only when both designated ephemeral credentials and explicit read-only account authority exist, freeze one prequalification for exact account eligibility, RWUSD position lineage, current base and VIP rates, Futures balance reward rows, current collateral ratio and transfer limit.",
+    "funded": "Any subscription, redemption, transfer or trade requires separate explicit funded authority."
+  }
+}

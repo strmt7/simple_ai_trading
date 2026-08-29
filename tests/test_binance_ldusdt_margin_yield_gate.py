@@ -12,8 +12,13 @@ PATH = (
     / "docs/model-research/action-value/binance-ldusdt-margin-yield-gate-v1-2026-08-26.json"
 )
 REGISTRY_PATH = ROOT / "docs/model-research/structural-edge-priority-registry-v1.json"
+RWUSD_PATH = ROOT / (
+    "docs/model-research/action-value/"
+    "binance-rwusd-futures-margin-yield-reconciliation-v1-2026-08-29.json"
+)
 EXPECTED_HASH = "6c2b81a8067faac80efb56f586d89bc308cb69b4fae0ec8504adc3aa2f3ff49d"
-EXPECTED_REGISTRY_HASH = "e712a9086d31944b42f93270256c393c6d8ab38997c20b7f8638cd4aa9088a34"
+EXPECTED_RWUSD_HASH = "e4f455511516babe956f4aa459648a032fb77f86c3253fd47d4f15317da72063"
+EXPECTED_REGISTRY_HASH = "659904cc23e3d91c5d8622c9a8274e0227818d506724a72cce071df285eb681e"
 
 
 def _load(path: Path = PATH) -> dict[str, object]:
@@ -100,9 +105,31 @@ def test_registry_prioritizes_the_accepted_scoped_increment() -> None:
     lead = next(
         row
         for row in hypotheses
-        if row["mechanism"] == "ldusdt_reward_bearing_futures_margin_increment"
+        if row["mechanism"] == "binance_reward_bearing_futures_margin_increment"
     )
     assert lead["priority_rank"] == 4
     assert lead["market_direction_forecast_required"] is False
     assert lead["canonical_artifacts"][0]["result_sha256"] == EXPECTED_HASH
+    assert lead["canonical_artifacts"][1]["result_sha256"] == EXPECTED_RWUSD_HASH
     assert registry["accepted_edge_count"] == 20
+
+
+def test_rwusd_extension_is_hash_bound_scoped_and_nonduplicative() -> None:
+    artifact = _load(RWUSD_PATH)
+    assert artifact["result_sha256"] == EXPECTED_RWUSD_HASH
+    assert _embedded_hash(artifact) == EXPECTED_RWUSD_HASH
+    assert artifact["official_semantic_reconciliation"]["pass"] is True
+    assert artifact["source_binding"]["retained_current_margin_inventory"][
+        "RWUSD_marginAvailable"
+    ] is True
+    assert artifact["economics"]["current_public_base_apr_percent"] == "3.36"
+    assert Decimal(
+        artifact["economics"]["published_99_9_percent_ratio_sensitivity"][
+            "base_apr_after_that_labeled_sensitivity_percent"
+        ]
+    ) > 0
+    assert artifact["verdict"]["accepted_edge_count_increment"] == 0
+    assert artifact["verdict"]["deployment_ready"] is False
+    assert artifact["provenance_correction"]["status"].startswith(
+        "embedded_contract_timestamp_invalid"
+    )

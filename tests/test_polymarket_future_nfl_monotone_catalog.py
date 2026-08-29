@@ -9,7 +9,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 ACTION_VALUE = ROOT / "docs/model-research/action-value"
 REGISTRY = ROOT / "docs/model-research/structural-edge-priority-registry-v1.json"
-REGISTRY_HASH = "e712a9086d31944b42f93270256c393c6d8ab38997c20b7f8638cd4aa9088a34"
+REGISTRY_HASH = "659904cc23e3d91c5d8622c9a8274e0227818d506724a72cce071df285eb681e"
 
 
 def _load(path: Path) -> dict[str, object]:
