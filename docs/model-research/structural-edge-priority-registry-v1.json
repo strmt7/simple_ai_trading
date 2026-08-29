@@ -1439,12 +1439,20 @@
         {
           "path": "docs/model-research/action-value/polymarket-near-expiry-negrisk-complete-set-catalog-result-v1-2026-08-29.json",
           "result_sha256": "96610d7cba90a2dc97489bd70c95b7d03568d5b89017ace1e8c92829c70cee14"
+        },
+        {
+          "path": "docs/model-research/action-value/polymarket-sep6-negrisk-complete-set-catalog-contract-v1-2026-08-29.json",
+          "result_sha256": "18d513c0b54c6155897ae435cf9f4b8a0ef327f6072d39b122ebd4579b7f0972"
+        },
+        {
+          "path": "docs/model-research/action-value/polymarket-sep6-negrisk-complete-set-catalog-result-v1-2026-08-29.json",
+          "result_sha256": "3e3ae8fd8c98c93c3e2194425db5992f06aed412e07d32333525601c2b34bc52"
         }
       ],
-      "current_status": "direction_independent_exact_multioutcome_family_remains_unaccepted_the_resolved_leg_House_controls_failed_positive_economic_recurrence_LAD_DET_cross_period_exact_depth_lost_2_pUSD_before_fees_and_the_future_MLB_page_was_partial_with_zero_Gamma_candidates_a_distinct_near_expiry_all_category_fixed_NegRisk_keyset_request_asked_for_500_but_returned_100_plus_a_cursor_so_is_explicitly_incomplete_it_retained_49_fixed_events_and_24_Gamma_only_sub_floor_all_YES_rows_led_by_Lyon_Le_Havre_exact_score_at_0_945_but_the_frozen_contract_set_proof_candidate_null_and_prohibited_adaptive_pagination_onchain_books_and_fees_no_edge_profit_or_deployment_claim",
+      "current_status": "direction_independent_exact_multioutcome_family_remains_unaccepted_the_resolved_leg_House_controls_failed_positive_economic_recurrence_LAD_DET_cross_period_exact_depth_lost_2_pUSD_before_fees_and_the_future_MLB_page_was_partial_with_zero_Gamma_candidates_the_consumed_2026_08_29T18_41_26Z_through_2026_09_05T23_59_59Z_all_category_fixed_NegRisk_window_returned_100_plus_cursor_with_49_fixed_events_24_Gamma_candidates_and_no_proof_a_prospectively_distinct_2026_09_06_UTC_daily_window_also_returned_exactly_100_plus_cursor_with_57_fixed_events_and_two_Gamma_only_candidates_led_by_Dallas_Sporting_Kansas_City_at_0_985_both_contracts_set_proof_candidate_null_and_spent_zero_onchain_book_or_fee_requests_no_edge_profit_or_deployment_claim",
       "market_direction_forecast_required": false,
       "mechanism": "polymarket_cross_market_exact_multi_outcome_subset_equivalence",
-      "next_action": "do_not_resample_or_adaptively_continue_the_consumed_MLB_or_2026_08_29T18_41_26Z_through_2026_09_05T23_59_59Z_NegRisk_pages_and_do_not_depth_test_their_outcome_aware_best_rows_for_a_distinct_future_window_prefreeze_a_narrow_complete_keyset_population_or_a_fixed_cursor_budget_independent_of_results_then_use_Gamma_only_to_reject_require_exact_onchain_question_count_and_conversion_fee_before_one_precommitted_all_token_book_batch_and_independent_after_cost_recurrence_before_order_capable_work",
+      "next_action": "do_not_resample_or_adaptively_continue_the_consumed_MLB_2026_08_29T18_41_26Z_through_2026_09_05T23_59_59Z_or_2026_09_06_UTC_NegRisk_pages_and_do_not_depth_test_their_outcome_aware_best_rows_for_a_distinct_future_window_prefreeze_an_hourly_or_series_specific_complete_keyset_population_or_a_fixed_cursor_budget_independent_of_results_then_use_Gamma_only_to_reject_require_exact_onchain_question_count_and_conversion_fee_before_one_precommitted_all_token_book_batch_and_independent_after_cost_recurrence_before_order_capable_work",
       "priority_rank": 31,
       "prohibited_shortcuts": [
         "calling_the_39_6_million_USD_all_strategy_headline_cross_market_subset_profit",
@@ -1460,7 +1468,7 @@
         "escalating_one_positive_maker_first_snapshot_to_order_capable_work_before_a_distinct_instance_survives_the_same_hedge_stress",
         "double_counting_the_same_NBA_episode_or_calling_public_recurrence_owned_profit"
       ],
-      "retry_trigger": "material_price_fee_rule_or_market_change_in_the_resolved_leg_House_family_or_a_future_distinct_fixed_NegRisk_window_with_a_prospectively_complete_population_exact_onchain_exhaustiveness_zero_or_bounded_conversion_fee_and_at_least_one_Gamma_only_sub_floor_all_YES_sum_or_a_distinct_active_accepting_orders_market_pair_with_complete_exact_rules_deterministic_subset_indicator_equality_and_optimistic_current_economics_not_already_covered_by_the_specialized_NBA_family",
+      "retry_trigger": "material_price_fee_rule_or_market_change_in_the_resolved_leg_House_family_or_a_future_distinct_hourly_or_series_specific_fixed_NegRisk_window_with_a_prospectively_complete_population_exact_onchain_exhaustiveness_zero_or_bounded_conversion_fee_and_at_least_one_Gamma_only_sub_floor_all_YES_sum_or_a_distinct_active_accepting_orders_market_pair_with_complete_exact_rules_deterministic_subset_indicator_equality_and_optimistic_current_economics_not_already_covered_by_the_specialized_NBA_family",
       "venue_scope": "polymarket_fixed_NegRisk_multioutcome_complete_sets_and_two_separately_traded_exact_rule_multioutcome_markets"
     },
     {
@@ -1861,7 +1869,7 @@
       "venue_scope": "Binance_current_BLVT_Spot_and_primary_market_inventory"
     }
   ],
-  "result_sha256": "6062ef4cb774983d86d7edd5dad7adcaafa31a8202d37ec777e12fc33028d157",
+  "result_sha256": "ec41ae27eb0699809acabc273620059516a35c09ec6f7cf33520eecbf19ea78e",
   "schema_version": "structural-edge-priority-registry-v1",
   "terminal_do_not_repeat": [
     {

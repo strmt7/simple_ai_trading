@@ -2948,7 +2948,7 @@ adjudication, and exact-depth result SHA-256 values are respectively
 and `731ca32a06f8f1a42aaae9e326c2bd89379657e338231dd906b749790c15ddfa`.
 The structural-edge registry retains 42 hypotheses and 19 narrowly accepted
 scoped overlays; its new canonical SHA-256 is
-`6062ef4cb774983d86d7edd5dad7adcaafa31a8202d37ec777e12fc33028d157`.
+`ec41ae27eb0699809acabc273620059516a35c09ec6f7cf33520eecbf19ea78e`.
 
 ## Future NFL Catalog Checkpoint
 
@@ -3018,6 +3018,20 @@ Contract/result SHA-256 values are
 `d5b81adb03fd4fe322d9a54fbacbe15aa8a6a7e55512aa71e9aa361617f2c6e6` and
 `96610d7cba90a2dc97489bd70c95b7d03568d5b89017ace1e8c92829c70cee14`.
 
+A prospectively distinct follow-up narrowed the population to the single
+`2026-09-06` UTC end-date window, wholly outside the consumed range. Even that
+one-day window returned exactly 100 events plus a cursor. It retained 57 fixed
+NegRisk events and two Gamma-only sub-floor indications: Dallas/Sporting Kansas
+City at `0.985` and Fluminense/Vasco da Gama at `0.990`. The contract again set
+`proof_candidate=null`; zero on-chain, book, or fee requests were made. This
+confirms that an all-category daily window is not prospectively complete under
+the observed effective page size. Do not narrow repeatedly in response to page
+results. The next distinct retry must precommit an hourly or series-specific
+window, or an outcome-independent cursor budget, before its first request.
+Follow-up contract/result SHA-256 values are
+`18d513c0b54c6155897ae435cf9f4b8a0ef327f6072d39b122ebd4579b7f0972` and
+`3e3ae8fd8c98c93c3e2194425db5992f06aed412e07d32333525601c2b34bc52`.
+
 ## Verification Scope
 
 The two-request holding-yield continuity monitor, its frozen contract, exact
@@ -3037,7 +3051,7 @@ The Packers-Vikings exact capture, future NFL catalog, Commanders/Cowboys depth
 screen, Cowboys/Giants tie-state correction, near-expiry fixed NegRisk partial
 catalog, complete retained payoff proofs, raw journals, and registry lineage
 pass the focused structural checks. The registry-hash-coupled suite passes all
-251 focused tests across 66 files. Ruff is clean for the changed tools and
+252 focused tests across 66 files. Ruff is clean for the changed tools and
 directly affected tests. No broad model, CI, or release suite was repeated.
 
 The resolved-leg House duplicate-payoff checkpoint, raw journals, source hashes,

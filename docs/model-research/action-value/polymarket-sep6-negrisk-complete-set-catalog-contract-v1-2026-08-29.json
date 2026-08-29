@@ -1,0 +1,70 @@
+{
+  "authority": {
+    "account_requests": 0,
+    "book_requests": 0,
+    "credentials_used": false,
+    "fee_requests": 0,
+    "funds_used": false,
+    "onchain_requests": 0,
+    "orders_or_transactions": 0,
+    "protected_capture_touched": false,
+    "public_unauthenticated_read_only_requests": 1,
+    "signed_requests": 0,
+    "trading_authority": false
+  },
+  "capture": {
+    "ascending": true,
+    "closed": false,
+    "end_date_max": "2026-09-06T23:59:59Z",
+    "end_date_min": "2026-09-06T00:00:00Z",
+    "limit": 500,
+    "order": "endDate",
+    "request_count": 1,
+    "url": "https://gamma-api.polymarket.com/events/keyset?limit=500&order=endDate&ascending=true&closed=false&end_date_min=2026-09-06T00%3A00%3A00Z&end_date_max=2026-09-06T23%3A59%3A59Z"
+  },
+  "contract_path": "docs/model-research/action-value/polymarket-sep6-negrisk-complete-set-catalog-contract-v1-2026-08-29.json",
+  "contract_sha256": "18d513c0b54c6155897ae435cf9f4b8a0ef327f6072d39b122ebd4579b7f0972",
+  "frozen_at_utc": "2026-08-29T18:49:32.9655766Z",
+  "hypothesis": "at least one exact fixed non_augmented NegRisk event ending in the distinct September_6_UTC window has a retained Gamma all_YES displayed price sum strictly below its one_pUSD complete_set payout floor",
+  "implementations": [
+    {
+      "path": "tools/screen_polymarket_negrisk_complete_set_catalog.py",
+      "sha256": "5d5dd88fe9f77be92063d4b55bbcb8dd1b96db06b99dd0d021774916cf2b5ae9"
+    },
+    {
+      "path": "tools/adjudicate_polymarket_exact_mlb_monotone_prefilter.py",
+      "role": "canonical_hash_and_repo_path_validation",
+      "sha256": "958a44d78029b9a1eb69a3771ce18e53ac1ed3c7bc161c8e4318beedce2cf99f"
+    },
+    {
+      "path": "tools/screen_polymarket_exact_two_leg_package.py",
+      "role": "preaccess_journaled_public_request_and_raw_receipt",
+      "sha256": "ba7ebaa1fb5235ba026f7cf4cb21ff73ba19430fee4a4f678fbdea37635eb32f"
+    },
+    {
+      "path": "tools/screen_polymarket_mlb_cross_period_catalog.py",
+      "role": "strict_UTC_timestamp_validation",
+      "sha256": "a916790e7e0320089b9f76c49aff43c072312f24599de351820d3fb872e6eddd"
+    }
+  ],
+  "outputs": {
+    "journal_path": "data/polymarket-sep6-negrisk-complete-set-catalog-v1/request-journal.jsonl",
+    "raw_path": "data/polymarket-sep6-negrisk-complete-set-catalog-v1/raw/events.json",
+    "result_path": "docs/model-research/action-value/polymarket-sep6-negrisk-complete-set-catalog-result-v1-2026-08-29.json"
+  },
+  "purpose": "screen one distinct narrow near_expiry event window for exact fixed NegRisk complete_set candidates after the broader window exposed an effective 100_event page",
+  "source_contracts": [
+    {
+      "url": "https://docs.polymarket.com/api-reference/events/list-events-keyset-pagination",
+      "use": "official public GET event catalog with maximum 500 accepted limit end_date filters nested markets and cursor completeness semantics"
+    }
+  ],
+  "stopping_rules": {
+    "accepted_edge_from_catalog": false,
+    "if_next_cursor_present": "stop_without_adaptive_pagination_onchain_or_depth_access_and_label_the_window_incomplete",
+    "if_no_strictly_sub_floor_event": "stop_without_onchain_books_or_fees",
+    "if_population_complete_and_candidates_exist": "freeze_one_separate_onchain_question_count_conversion_fee_and_exact_all_token_depth_proof_for_only_the_lowest_displayed_sum_event",
+    "maximum_proof_candidates": 1,
+    "resample_consumed_August_29_through_September_5_window": false
+  }
+}
