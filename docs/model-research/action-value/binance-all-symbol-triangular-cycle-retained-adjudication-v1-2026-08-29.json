@@ -1,0 +1,40 @@
+{
+  "schema_version": "binance-all-symbol-triangular-cycle-retained-adjudication-v1",
+  "status": "terminal_current_retained_population",
+  "result_sha256": "2fffd2044e72d1712ecdaa0c4e24cb829057ea2005c07e12129c443478b07902",
+  "source_result": {
+    "path": "docs/model-research/action-value/binance-all-symbol-triangular-cycle-retained-v1-2026-08-29.json",
+    "result_sha256": "30c5e00aa955ea3777f9b096b1fa1ae44d51318665561e4b6922f797f45706cc"
+  },
+  "population": {
+    "directed_edges": 2716,
+    "unique_directed_three_asset_cycles": 3480,
+    "activity_qualified_cycles": 1442,
+    "evaluated_cycle_size_fee_scenarios": 5648,
+    "retained_book_observations": 60,
+    "starting_usdt_sizes": [
+      "100",
+      "1000"
+    ]
+  },
+  "decision": {
+    "zero_fee_upper_bound_candidate_count": 0,
+    "vip0_all_taker_candidate_count": 0,
+    "accepted_edge": false,
+    "market_direction_forecast_required": false,
+    "meaning": "no current recurring gross-positive all-symbol triangular cycle survived exact rounding displayed capacity residual three-bip stress and frozen activity gates even before fees",
+    "retry_trigger": "a material Binance Spot fee filter order-batch atomic-execution or market-structure change; do not resample the same retained population"
+  },
+  "post_consumption_defect_disclosure": {
+    "field": "top_100_feasible_first",
+    "defect": "the consumed runner sorted candidate rows then median economics but did not separately sort capacity-feasible non-candidates ahead of infeasible rows",
+    "impact": "diagnostic ranking only; cycle enumeration evaluation candidate booleans and both zero candidate counts were computed before sorting and are unchanged",
+    "repair_policy": "preserve the frozen runner and source result; do not rerun or outcome-select from the same retained books"
+  },
+  "prohibited_shortcuts": [
+    "claiming profitable triangular arbitrage from a positive median row that failed displayed capacity residual or recurrence gates",
+    "repeating this same retained all-symbol population without an exact retry trigger",
+    "using public VIP0 fees as exact account fees",
+    "using credentials placing orders mutating accounts or touching protected capture state"
+  ]
+}
