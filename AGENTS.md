@@ -183,6 +183,11 @@ override prose.
   their body, status, and completed receipt before raising. If the provider's
   bounded-history limits are not source-proved, freeze a conservative range;
   never learn the limit by adaptively retrying a consumed outcome query.
+- Treat a documented keyset `limit` as a ceiling, not proof that the service
+  will return that many rows. A returned cursor makes the frozen population
+  incomplete. Never follow it or depth-test a partial-page winner unless the
+  cursor budget was fixed independently of outcomes before the first request;
+  prefer a narrower distinct window that is prospectively complete.
 - An exact duplicate-payoff identity is a mechanism, not recurring positive
   economics. Before spending a source-continuous capture or authenticated paper
   probe on a maker-first lead, require one distinct resolved-leg instance to

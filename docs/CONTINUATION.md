@@ -2948,7 +2948,7 @@ adjudication, and exact-depth result SHA-256 values are respectively
 and `731ca32a06f8f1a42aaae9e326c2bd89379657e338231dd906b749790c15ddfa`.
 The structural-edge registry retains 42 hypotheses and 19 narrowly accepted
 scoped overlays; its new canonical SHA-256 is
-`a661ba68ecdf87eaece27616e5ede3ca0864ca844b3f9553d7d0fd4a59f645f8`.
+`6062ef4cb774983d86d7edd5dad7adcaafa31a8202d37ec777e12fc33028d157`.
 
 ## Future NFL Catalog Checkpoint
 
@@ -2988,6 +2988,36 @@ Cowboys/Giants correction contract/result SHA-256 values are
 `d481f24cd43703c4ed094631ebdbae8daa2588d92b7ecca93dc2aee4cd3195f0` and
 `37f79cc8a4f5f96fa395a729e85a793e12c2127e2124591db693c92b1b459928`.
 
+## Near-Expiry Fixed NegRisk Complete-Set Checkpoint
+
+The old BTC/ETH/SOL structural-parity runner was not reused because it requests
+books for every discovered event and predates durable preaccess journaling. A
+new rejection-first contract instead froze one all-category keyset request for
+events ending from `2026-08-29T18:41:26Z` through `2026-09-05T23:59:59Z`.
+It requested the documented maximum `limit=500`, retained the raw response and
+two-phase journal, and prohibited on-chain, book, fee, credential, account,
+order, fund, or protected-capture access.
+
+The service returned 100 events plus a cursor. Therefore the population is
+explicitly incomplete even though the official contract documents 500 as the
+maximum accepted limit. The partial page retained classifications for all 100
+events, exactly screened 49 fixed non-augmented NegRisk events, and found 24
+Gamma all-YES sums below the provisional one-pUSD complete-set floor. The
+lowest displayed sum was `0.9450` across 17 Olympique Lyonnais/Le Havre exact-
+score outcomes, an optimistic `0.0550` pUSD before execution costs. This is not
+executable evidence: exact on-chain question-count and conversion-fee proof was
+not requested, and Gamma prices remain rejection-only.
+
+The frozen contract required `proof_candidate=null` whenever a cursor is
+present. No adaptive pagination, on-chain query, CLOB book, or fee request was
+made, and no edge was accepted. Do not continue this consumed cursor or depth-
+test its outcome-aware best row. A future distinct study must prefreeze either a
+narrow window that returns no cursor or a cursor budget independent of results,
+then prove on-chain exhaustiveness before one precommitted all-token book batch.
+Contract/result SHA-256 values are
+`d5b81adb03fd4fe322d9a54fbacbe15aa8a6a7e55512aa71e9aa361617f2c6e6` and
+`96610d7cba90a2dc97489bd70c95b7d03568d5b89017ace1e8c92829c70cee14`.
+
 ## Verification Scope
 
 The two-request holding-yield continuity monitor, its frozen contract, exact
@@ -3004,11 +3034,11 @@ focused tests with Ruff and Python compilation clean. The rejection-only
 prefilter is now a hard efficiency gate for this family.
 
 The Packers-Vikings exact capture, future NFL catalog, Commanders/Cowboys depth
-screen, Cowboys/Giants tie-state correction, complete retained payoff proofs,
-raw journals, and registry lineage pass the focused NFL/WNBA/MLB checks. The
-registry-hash-coupled suite passes all 248 focused tests across 65 files. Ruff
-is clean for the changed tools and directly affected tests. No broad model,
-CI, or release suite was repeated.
+screen, Cowboys/Giants tie-state correction, near-expiry fixed NegRisk partial
+catalog, complete retained payoff proofs, raw journals, and registry lineage
+pass the focused structural checks. The registry-hash-coupled suite passes all
+251 focused tests across 66 files. Ruff is clean for the changed tools and
+directly affected tests. No broad model, CI, or release suite was repeated.
 
 The resolved-leg House duplicate-payoff checkpoint, raw journals, source hashes,
 and directly affected registry lineage pass 12 focused tests with Ruff and

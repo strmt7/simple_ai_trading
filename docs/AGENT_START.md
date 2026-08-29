@@ -1506,9 +1506,18 @@ safety gate, blocks Stop, or submits an order.
   `7c4472e0a77cde09f5643a06a1326fbfc2cc1e5ec37641314d875a346e1a7754`,
   `729d482f9a15b60b5345ba6c52ee75941a1f0751db2453e307c30f8872bbac35`,
   and `37f79cc8a4f5f96fa395a729e85a793e12c2127e2124591db693c92b1b459928`.
+- A distinct all-category near-expiry fixed NegRisk screen requested the
+  documented 500-event keyset maximum but received 100 events plus a cursor,
+  so it is explicitly incomplete. It retained all 100 classifications, 49
+  fixed event screens, and 24 Gamma-only sub-floor all-YES rows. The lowest was
+  the 17-outcome Lyon/Le Havre exact-score event at `0.9450`, but the frozen
+  contract set `proof_candidate=null` and spent zero on-chain, book, and fee
+  requests. Do not continue the consumed cursor or depth-test its outcome-aware
+  winner. Canonical result SHA-256
+  `96610d7cba90a2dc97489bd70c95b7d03568d5b89017ace1e8c92829c70cee14`.
 - The structural-edge registry now has 42 ranked hypotheses, still only 19
   narrowly accepted scoped overlays, and result SHA-256
-  `a661ba68ecdf87eaece27616e5ede3ca0864ca844b3f9553d7d0fd4a59f645f8`.
+  `6062ef4cb774983d86d7edd5dad7adcaafa31a8202d37ec777e12fc33028d157`.
 
 ## Task Routing
 
@@ -1532,6 +1541,7 @@ safety gate, blocks Stop, or submits an order.
 | Future NFL complete catalog rejection screen | `docs/model-research/action-value/polymarket-future-nfl-monotone-catalog-result-v1-2026-08-29.json` |
 | Commanders/Cowboys NFL exact-depth terminal result | `docs/model-research/action-value/polymarket-commanders-cowboys-total-package-result-v1-2026-08-29.json` |
 | Cowboys/Giants NFL tie-collision correction | `docs/model-research/action-value/polymarket-cowboys-giants-tie-collision-correction-v1-2026-08-29.json` |
+| Near-expiry fixed NegRisk incomplete complete-set catalog | `docs/model-research/action-value/polymarket-near-expiry-negrisk-complete-set-catalog-result-v1-2026-08-29.json` |
 | Binance retained CLOB box-parity terminal prefilter | `docs/model-research/action-value/binance-options-clob-box-retained-prefilter-v2-2026-08-29.json` |
 | Binance retained option/perpetual conversion terminal stress | `docs/model-research/action-value/binance-options-perpetual-conversion-retained-stress-v1-2026-08-29.json` |
 | Polymarket holding-yield latest retained receipt continuity | `docs/model-research/polymarket/complete-set-holding-yield-continuity-receipts-v8-2026-08-29.json` |
