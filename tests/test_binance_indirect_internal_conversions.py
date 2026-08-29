@@ -23,7 +23,7 @@ EXPECTED_ADJUDICATION_HASH = (
     "0307a9dbfb26ca62e94ae01e5b5d40316340b686a60829e85f258c07e565678c"
 )
 EXPECTED_REGISTRY_HASH = (
-    "0511b6dbb8f560470335fb6146edade7a50c3f24406c529f03a3f1fca769409b"
+    "fc0bddf222a1908db6c12df338dc26963f36514b01e37b5b31fc567760f19aca"
 )
 
 
@@ -135,6 +135,6 @@ def test_registry_adds_the_indirect_organic_conversion_overlay_once() -> None:
         "binance_indirect_internal_conversion_route_savings_for_organic_flow"
     )
     assert family["market_direction_forecast_required"] is False
-    assert family["canonical_artifacts"][-1]["result_sha256"] == (
-        EXPECTED_ADJUDICATION_HASH
-    )
+    assert EXPECTED_ADJUDICATION_HASH in {
+        artifact["result_sha256"] for artifact in family["canonical_artifacts"]
+    }

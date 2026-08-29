@@ -145,6 +145,11 @@ override prose.
   every omitted gate actually passed. In wide screens, rank and display feasible
   rows only after latency, capacity, freshness, residual, fee, and stress gates;
   infeasible gross headline rows must not appear ahead of actionable candidates.
+- Before an exhaustive graph or path extension, compute the rule-only topology
+  cardinality and worst-case retained-output size before freezing. If either is
+  large, freeze a lossless optimistic rejection bound and bounded diagnostics;
+  retain every actual candidate and rejection identity required by the decision,
+  but never allocate one summary object per provably rejected route-size row.
 - After a consumed runner fails, inventory every already-saved raw response for
   observations beyond the failed decision boundary before requesting anything
   again. An exact retained row may support a separately frozen, materially

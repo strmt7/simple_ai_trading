@@ -1,0 +1,70 @@
+{
+  "schema_version": "binance-two-intermediary-conversion-activity-contract-v1",
+  "status": "frozen_before_retained_activity_outcome_access",
+  "frozen_at_utc": "2026-08-29T22:20:58.2233507Z",
+  "contract_sha256": "d6ef2834993afa3e9b26bb04504e397b2f19338fcbad10953ddb0c58f19c0700",
+  "purpose": "apply the already-retained source-continuous quote-change and current 24-hour trade-count rejection gates to every exact three-leg candidate without inspecting identities first or issuing a request",
+  "authority": {
+    "retained_public_data_only": true,
+    "network_requests_permitted": false,
+    "credentials_permitted": false,
+    "account_state_permitted": false,
+    "orders_or_mutations_permitted": false,
+    "protected_capture_access_permitted": false
+  },
+  "implementation": {
+    "path": "tools/adjudicate_binance_two_intermediary_conversion_activity.py",
+    "sha256": "044bd34afcf88ba5f0717d9d8b2577c06b86c928b8930d03519d7767cfed090e"
+  },
+  "parent_result": {
+    "path": "docs/model-research/action-value/binance-two-intermediary-conversion-retained-v3-2026-08-29.json",
+    "result_sha256": "0a5e37f2fb48c639334256e3118e3eeb2f17a548572faaf13d3849204404b45e",
+    "file_sha256": "e15dcc6b72c8004781d0a9bd3f6681ca96047657b38b0c01e47575d89d872ada",
+    "candidate_set": "all 253 exact empirical route-size candidates with no additions omissions ranking filter or identity inspection"
+  },
+  "retained_source": {
+    "result_path": "docs/model-research/action-value/binance-indirect-internal-conversion-screen-v1-2026-08-29.json",
+    "result_sha256": "b3e7f724e2b1ce2cc7a8444d00632466196af6d89f139259164549e91d1f84bc",
+    "result_file_sha256": "e9fc2c7f6d83c5d6cd6326766353b8e91ada05636ba407bb3fa6db1efc34d1b1",
+    "raw_directory": "data/edge-research/binance-indirect-internal-conversion-screen-v1/raw",
+    "journal_sha256": "1d2a28f6bb4d1de1d493dc29028fd070cecb14893e7240d5d5baf22afdcec750",
+    "sample_count": 60
+  },
+  "retained_activity": {
+    "contract_path": "docs/model-research/action-value/binance-indirect-internal-conversion-activity-contract-v1.json",
+    "contract_sha256": "b6331c1d7987b3a6093df2d4846368ccba634c27bf4967cd85f9c10e707fbd30",
+    "result_path": "docs/model-research/action-value/binance-indirect-internal-conversion-activity-adjudication-v1-2026-08-29.json",
+    "result_sha256": "0307a9dbfb26ca62e94ae01e5b5d40316340b686a60829e85f258c07e565678c",
+    "result_file_sha256": "ad51a872f1ac3ad6921e2cf8c0a222c0ccd1dff1066698e220c7afd217e2fa44",
+    "raw_path": "data/edge-research/binance-indirect-internal-conversion-activity-v1/ticker-24hr.json",
+    "raw_sha256": "fc753830c30bb09307c07eb2796cd63a462bd0fe75952ea7e546747cd18999d5",
+    "capture_level_gates_already_passed": true,
+    "reuse_rule": "do not refetch the same rolling activity population"
+  },
+  "activity_gates": {
+    "required_symbols": "the direct symbol and all three exact three-leg path symbols",
+    "minimum_quote_changes": 5,
+    "quote_change_definition": "count a change when bid price bid quantity ask price or ask quantity differs from the preceding retained full-book response",
+    "minimum_24h_trade_count": 100,
+    "ticker_presence": "each required symbol must have one valid retained 24-hour row",
+    "interpretation": "stale and inactive display rejection only; never proof of fills quote age or sequential completion"
+  },
+  "survivor_boundary": {
+    "accepted_scoped_mechanism_extension": "if at least one exact parent candidate passes every activity gate, extend the already-accepted organic-conversion comparison from best direct-or-one-intermediary to best direct-or-one-or-two-intermediary under the same fail-closed account and execution boundary",
+    "static_route_accepted": false,
+    "deployment_ready": false,
+    "profitability_claim": false,
+    "next_evidence": "exact account symbol commissions plus one future independent non-overlapping prospective paper or separately authorized owned sequential completion window for an independently required legitimate organic conversion"
+  },
+  "retention": {
+    "keep_every_tested_candidate": "retain identity size four symbol activity values economics and pass or reject decision for all 253 rows",
+    "never_keep_only_survivors": true
+  },
+  "prohibited_shortcuts": [
+    "promoting a static route because it survives activity",
+    "treating activity as fillability latency atomicity or realized savings",
+    "dropping rejected candidates or weakening thresholds",
+    "creating splitting rerouting self-matched or wash volume",
+    "requesting credentials accounts orders funds or protected capture state"
+  ]
+}

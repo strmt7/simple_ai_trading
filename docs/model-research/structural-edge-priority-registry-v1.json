@@ -1982,7 +1982,7 @@
     },
     {
       "blocking_evidence": [
-        "same-account exact standard special tax discount and BNB-paid commissions for the direct and both indirect symbols",
+        "same-account exact standard special tax discount and BNB-paid commissions for the direct and every shorter-route symbol",
         "one independently required legitimate same-account organic source-to-target Spot conversion",
         "fresh finite-size depth with exact filters residual accounting extra-leg latency and partial-completion unwind costs immediately before that conversion",
         "independent non-overlapping prospective paper or authorized owned execution windows proving sequential completion and realized savings",
@@ -2004,27 +2004,60 @@
         {
           "path": "docs/model-research/action-value/binance-indirect-internal-conversion-activity-adjudication-v1-2026-08-29.json",
           "result_sha256": "0307a9dbfb26ca62e94ae01e5b5d40316340b686a60829e85f258c07e565678c"
+        },
+        {
+          "path": "docs/model-research/action-value/binance-two-intermediary-conversion-retained-contract-v1.json",
+          "result_sha256": "3ebefe96fede2847dfeaa9fda5f72f1cc5429d3e74bb0271c070f6a970099455"
+        },
+        {
+          "path": "docs/model-research/action-value/binance-two-intermediary-conversion-retained-v1-resource-adjudication-2026-08-29.json",
+          "result_sha256": "be1bfdb40200f0e0acb26fcd1413a9c39e3ab34d61161550794fc429fe50cddd"
+        },
+        {
+          "path": "docs/model-research/action-value/binance-two-intermediary-conversion-retained-contract-v2.json",
+          "result_sha256": "ff2583bd787ec3cf259112bae6a9415b0f522a7409c6632f652869db1ce8d2a7"
+        },
+        {
+          "path": "docs/model-research/action-value/binance-two-intermediary-conversion-retained-v2-source-gate-adjudication-2026-08-29.json",
+          "result_sha256": "d23724ee0d088ac1965e96612557039a576f73724a1b630d2e434536ef0b2079"
+        },
+        {
+          "path": "docs/model-research/action-value/binance-two-intermediary-conversion-retained-contract-v3.json",
+          "result_sha256": "649d5b0a46a5ec70419709faee2cff1ef8d3e4d0816074376e8fcf53f161138f"
+        },
+        {
+          "path": "docs/model-research/action-value/binance-two-intermediary-conversion-retained-v3-2026-08-29.json",
+          "result_sha256": "0a5e37f2fb48c639334256e3118e3eeb2f17a548572faaf13d3849204404b45e"
+        },
+        {
+          "path": "docs/model-research/action-value/binance-two-intermediary-conversion-activity-contract-v1.json",
+          "result_sha256": "d6ef2834993afa3e9b26bb04504e397b2f19338fcbad10953ddb0c58f19c0700"
+        },
+        {
+          "path": "docs/model-research/action-value/binance-two-intermediary-conversion-activity-adjudication-v1-2026-08-29.json",
+          "result_sha256": "cde72e05b1760d9fe23eb65e5bd5f59377230ac91095354936c2a84a9a3758ae"
         }
       ],
-      "current_status": "accepted_scoped_market_direction_forecast_independent_cost_saving_overlay_for_an_independently_required_legitimate_same_account_organic_Binance_Spot_conversion_only_the_complete_current_public_graph_evaluated_10440_direct_versus_one_intermediary_routes_at_100_and_1000_USDT_and_found_20_route_size_candidates_after_conservative_10_bip_per_leg_fees_exact_rounding_displayed_capacity_residual_valuation_3_bip_extra_leg_stress_and_60_sample_recurrence_the_separately_frozen_activity_gate_rejected_17_and_retained_three_current_diagnostics_USDC_USDT_PNUT_at_6_5881697492_median_stressed_bips_and_SHIB_USDT_or_USDC_EUR_at_about_2_97_bips_but_no_static_route_account_fee_fill_or_deployment_claim_is_accepted",
+      "current_status": "accepted_scoped_market_direction_forecast_independent_cost_saving_overlay_for_an_independently_required_legitimate_same_account_organic_Binance_Spot_conversion_only_the_complete_current_public_graph_evaluated_10440_direct_versus_exactly_one_intermediary_routes_at_100_and_1000_USDT_and_the_activity_gate_retained_three_nonstatic_diagnostics_the_zero_network_exactly_two_intermediary_extension_then_evaluated_1064216_routes_and_2128432_route_size_rows_a_lossless_optimistic_bound_reduced_exact_work_to_16051_rows_and_253_exact_recurring_incremental_candidates_but_every_candidate_failed_the_retained_five_quote_change_gate_and_18_also_failed_the_100_trade_gate_across_174_required_symbols_so_the_three_leg_extension_is_terminal_for_this_population_and_no_live_collector_static_route_profitability_or_deployment_claim_is_accepted",
       "market_direction_forecast_required": false,
       "mechanism": "binance_indirect_internal_conversion_route_savings_for_organic_flow",
-      "next_action": "do_not_repeat_the_complete_public_population_screen_on_an_unchanged_mechanism_when_a_legitimate_organic_conversion_is_independently_planned_and_explicit_read_only_account_authority_exists_freeze_one_exact_symbol_commission_prequalification_then_require_separate_paper_or_funded_order_authority_for_prospective_sequential_execution_and_realized_savings_reconciliation",
+      "next_action": "do_not_build_a_three_leg_live_collector_or_repeat_the_complete_retained_extension_on_unchanged_activity_when_a_legitimate_organic_conversion_is_independently_planned_and_explicit_read_only_account_authority_exists_limit_prequalification_to_the_accepted_direct_versus_exactly_one_intermediary_overlay_then_require_separate_paper_or_funded_order_authority_for_prospective_sequential_execution_and_realized_savings_reconciliation_reopen_exactly_two_intermediaries_only_after_a_material_fee_filter_activity_or_execution_architecture_change",
       "priority_rank": 44,
       "prohibited_shortcuts": [
         "calling_route_savings_standalone_arbitrage_or_guaranteed_profit",
         "creating_splitting_rerouting_self_matched_or_wash_volume",
         "treating_the_current_PNUT_or_SHIB_diagnostics_as_static_routes",
+        "promoting_any_of_the_253_exactly_two_intermediary_candidates_after_every_one_failed_the_retained_activity_gate",
         "using_public_VIP_0_fees_as_exact_account_fees",
         "ignoring_rounding_capacity_residuals_extra_leg_latency_adverse_selection_or_partial_completion",
         "ranking_infeasible_gross_rows_ahead_of_feasible_after_gate_candidates",
         "placing_orders_or_mutating_accounts_without_separate_explicit_authority"
       ],
-      "retry_trigger": "an_independently_planned_legitimate_same_account_organic_Spot_conversion_plus_explicit_read_only_exact_symbol_commission_authority_or_a_material_Binance_Spot_fee_filter_order_batch_or_execution_architecture_change",
-      "venue_scope": "Binance_Spot_direct_and_exactly_one_intermediary_routes_for_independently_required_organic_conversions"
+      "retry_trigger": "for_the_accepted_shorter_overlay_an_independently_planned_legitimate_same_account_organic_Spot_conversion_plus_explicit_read_only_exact_symbol_commission_authority_for_the_exact_direct_and_one_intermediary_symbols_for_the_rejected_exactly_two_intermediary_extension_only_a_material_Binance_Spot_fee_filter_activity_order_batch_or_execution_architecture_change",
+      "venue_scope": "Binance_Spot_direct_and_exactly_one_intermediary_routes_for_independently_required_organic_conversions_with_the_exactly_two_intermediary_extension_terminal_for_the_retained_population"
     }
   ],
-  "result_sha256": "0511b6dbb8f560470335fb6146edade7a50c3f24406c529f03a3f1fca769409b",
+  "result_sha256": "fc0bddf222a1908db6c12df338dc26963f36514b01e37b5b31fc567760f19aca",
   "schema_version": "structural-edge-priority-registry-v1",
   "terminal_do_not_repeat": [
     {
@@ -2236,8 +2269,13 @@
       "canonical_result_sha256": "895dc0eba4f72b9b08b19dbba245b20434e4db905fd4ded3ea70779733db6d47",
       "family": "binance_spot_SOR_liquidity_overlay_current_production_configuration",
       "reason": "official_current_documentation_defines_SOR_but_the_one_use_public_production_exchangeInfo_response_containing_3685_symbols_omitted_the_optional_sors_field_so_zero_scoped_groups_zero_book_requests_and_zero_signed_account_or_order_requests_were_needed_do_not_poll_until_a_material_official_or_live_exchangeInfo_SOR_configuration_change"
+    },
+    {
+      "canonical_result_sha256": "cde72e05b1760d9fe23eb65e5bd5f59377230ac91095354936c2a84a9a3758ae",
+      "family": "binance_spot_exactly_two_intermediary_organic_conversion_extension",
+      "reason": "the_zero_network_retained_extension_evaluated_1064216_routes_and_2128432_route_size_rows_then_found_253_exact_recurring_incremental_candidates_but_all_253_failed_the_five_quote_change_activity_gate_and_18_also_failed_the_100_trade_gate_across_174_required_symbols_do_not_build_a_three_leg_live_collector_or_repeat_without_a_material_fee_filter_activity_or_execution_architecture_change"
     }
   ],
-  "updated_at_utc": "2026-08-29T21:47:00Z",
+  "updated_at_utc": "2026-08-29T22:27:07Z",
   "usage_rule": "advance_the_highest_ranked_hypothesis_whose_retry_trigger_is_satisfied_otherwise_do_not_repeat_a_blocked_or_terminal_screen"
 }

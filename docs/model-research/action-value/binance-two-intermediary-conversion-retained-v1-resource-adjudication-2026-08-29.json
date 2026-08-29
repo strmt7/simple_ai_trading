@@ -1,0 +1,45 @@
+{
+  "schema_version": "binance-two-intermediary-conversion-retained-v1-resource-adjudication-v1",
+  "status": "consumed_implementation_aborted_before_result_for_unbounded_summary_retention",
+  "created_at_utc": "2026-08-29T22:11:44.0650261Z",
+  "result_sha256": "be1bfdb40200f0e0acb26fcd1413a9c39e3ab34d61161550794fc429fe50cddd",
+  "contract": {
+    "path": "docs/model-research/action-value/binance-two-intermediary-conversion-retained-contract-v1.json",
+    "contract_sha256": "3ebefe96fede2847dfeaa9fda5f72f1cc5429d3e74bb0271c070f6a970099455"
+  },
+  "implementation": {
+    "path": "tools/adjudicate_binance_two_intermediary_conversions_retained.py",
+    "sha256": "eccdfa85424aa8afc92996797de3cbb60ecad2f12a34a152b45e3a72cf6eed8f"
+  },
+  "observations": {
+    "process_id": 63964,
+    "observed_process_start_local_without_subseconds": "2026-08-30T00:02:48+02:00",
+    "interrupted_at_utc": "2026-08-29T22:11:44.0650261Z",
+    "exit_code": 1,
+    "terminal_exception": "KeyboardInterrupt",
+    "complete_topology_path_count_from_independent_rule_only_count": 1064216,
+    "possible_route_size_summaries": 2128432,
+    "observed_working_set_bytes_before_interruption": 846594048,
+    "output_created": false
+  },
+  "failure": {
+    "cause": "the implementation retained one summary object for every complete route-size row and evaluated exact Decimal rounding before a lossless optimistic rejection prefilter",
+    "economic_contract_changed": false,
+    "market_outcome_reported_before_interruption": false,
+    "one_use_market_request_consumed": false,
+    "required_correction": "preserve the v1 implementation and contract; freeze a separate v2 retained-only adjudicator that vectorizes a mathematically optimistic rejection bound, streams bounded diagnostics, and applies the identical exact economic gates only to upper-bound survivors"
+  },
+  "authority": {
+    "network_requests": 0,
+    "credentials_used": false,
+    "account_state_accessed": false,
+    "orders_or_mutations": 0,
+    "protected_capture_accessed": false
+  },
+  "verdict": {
+    "accepted_edge": false,
+    "profitability_claim": false,
+    "v1_may_not_be_rerun": true,
+    "retained_data_v2_permitted": true
+  }
+}
