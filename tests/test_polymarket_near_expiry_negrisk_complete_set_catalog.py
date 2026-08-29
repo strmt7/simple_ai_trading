@@ -7,29 +7,77 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
-CONTRACT = ROOT / "docs/model-research/action-value/polymarket-near-expiry-negrisk-complete-set-catalog-contract-v1-2026-08-29.json"
-RESULT = ROOT / "docs/model-research/action-value/polymarket-near-expiry-negrisk-complete-set-catalog-result-v1-2026-08-29.json"
-RAW = ROOT / "data/polymarket-near-expiry-negrisk-complete-set-catalog-v1/raw/events.json"
-JOURNAL = ROOT / "data/polymarket-near-expiry-negrisk-complete-set-catalog-v1/request-journal.jsonl"
+CONTRACT = (
+    ROOT
+    / "docs/model-research/action-value/polymarket-near-expiry-negrisk-complete-set-catalog-contract-v1-2026-08-29.json"
+)
+RESULT = (
+    ROOT
+    / "docs/model-research/action-value/polymarket-near-expiry-negrisk-complete-set-catalog-result-v1-2026-08-29.json"
+)
+RAW = (
+    ROOT / "data/polymarket-near-expiry-negrisk-complete-set-catalog-v1/raw/events.json"
+)
+JOURNAL = (
+    ROOT
+    / "data/polymarket-near-expiry-negrisk-complete-set-catalog-v1/request-journal.jsonl"
+)
 REGISTRY = ROOT / "docs/model-research/structural-edge-priority-registry-v1.json"
 CONTRACT_HASH = "d5b81adb03fd4fe322d9a54fbacbe15aa8a6a7e55512aa71e9aa361617f2c6e6"
 RESULT_HASH = "96610d7cba90a2dc97489bd70c95b7d03568d5b89017ace1e8c92829c70cee14"
 RAW_HASH = "1dd21f815a4564cb42711842b80c91e46d6b6a799dcefe2911d0a30e10ab61f2"
-SEP6_CONTRACT = ROOT / "docs/model-research/action-value/polymarket-sep6-negrisk-complete-set-catalog-contract-v1-2026-08-29.json"
-SEP6_RESULT = ROOT / "docs/model-research/action-value/polymarket-sep6-negrisk-complete-set-catalog-result-v1-2026-08-29.json"
+SEP6_CONTRACT = (
+    ROOT
+    / "docs/model-research/action-value/polymarket-sep6-negrisk-complete-set-catalog-contract-v1-2026-08-29.json"
+)
+SEP6_RESULT = (
+    ROOT
+    / "docs/model-research/action-value/polymarket-sep6-negrisk-complete-set-catalog-result-v1-2026-08-29.json"
+)
 SEP6_RAW = ROOT / "data/polymarket-sep6-negrisk-complete-set-catalog-v1/raw/events.json"
-SEP6_JOURNAL = ROOT / "data/polymarket-sep6-negrisk-complete-set-catalog-v1/request-journal.jsonl"
+SEP6_JOURNAL = (
+    ROOT / "data/polymarket-sep6-negrisk-complete-set-catalog-v1/request-journal.jsonl"
+)
 SEP6_CONTRACT_HASH = "18d513c0b54c6155897ae435cf9f4b8a0ef327f6072d39b122ebd4579b7f0972"
 SEP6_RESULT_HASH = "3e3ae8fd8c98c93c3e2194425db5992f06aed412e07d32333525601c2b34bc52"
 SEP6_RAW_HASH = "f430490f592cf58297c5f5f118b3fabc32488faa82b5b07b60815279bdc61050"
-HOUR00_CONTRACT = ROOT / "docs/model-research/action-value/polymarket-sep7-hour00-negrisk-complete-set-catalog-contract-v1-2026-08-29.json"
-HOUR00_RESULT = ROOT / "docs/model-research/action-value/polymarket-sep7-hour00-negrisk-complete-set-catalog-result-v1-2026-08-29.json"
-HOUR00_RAW = ROOT / "data/polymarket-sep7-hour00-negrisk-complete-set-catalog-v1/raw/events.json"
-HOUR00_JOURNAL = ROOT / "data/polymarket-sep7-hour00-negrisk-complete-set-catalog-v1/request-journal.jsonl"
-HOUR00_CONTRACT_HASH = "32dfa5e282f43204f73117fa2dba198c69171944bc41a85bf661e05789089439"
+HOUR00_CONTRACT = (
+    ROOT
+    / "docs/model-research/action-value/polymarket-sep7-hour00-negrisk-complete-set-catalog-contract-v1-2026-08-29.json"
+)
+HOUR00_RESULT = (
+    ROOT
+    / "docs/model-research/action-value/polymarket-sep7-hour00-negrisk-complete-set-catalog-result-v1-2026-08-29.json"
+)
+HOUR00_RAW = (
+    ROOT / "data/polymarket-sep7-hour00-negrisk-complete-set-catalog-v1/raw/events.json"
+)
+HOUR00_JOURNAL = (
+    ROOT
+    / "data/polymarket-sep7-hour00-negrisk-complete-set-catalog-v1/request-journal.jsonl"
+)
+HOUR00_CONTRACT_HASH = (
+    "32dfa5e282f43204f73117fa2dba198c69171944bc41a85bf661e05789089439"
+)
 HOUR00_RESULT_HASH = "92734472ed41bccdc1d88c947b218e05fa35827cad6b1711ec192c06cf60cc64"
 HOUR00_RAW_HASH = "4b0322846de9fd229591c460eaf1cb22d4b0ac4c9e6b52ac2f35c8a0bec99442"
-REGISTRY_HASH = "c0d7189c4848f248e6d3960954198e0f1e93c8e74acd2ed36a8830239bf86194"
+SOURCE_SELECTED_CONTRACT = (
+    ROOT
+    / "docs/model-research/action-value/polymarket-source-selected-crypto-negrisk-series-contract-v1-2026-08-29.json"
+)
+SOURCE_SELECTED_RESULT = (
+    ROOT
+    / "docs/model-research/action-value/polymarket-source-selected-crypto-negrisk-series-result-v1-2026-08-29.json"
+)
+MULTI_STRIKES_CONTRACT = (
+    ROOT
+    / "docs/model-research/action-value/polymarket-btc-multi-strikes-weekly-negrisk-contract-v1-2026-08-29.json"
+)
+MULTI_STRIKES_RESULT = (
+    ROOT
+    / "docs/model-research/action-value/polymarket-btc-multi-strikes-weekly-negrisk-result-v1-2026-08-29.json"
+)
+REGISTRY_HASH = "f9bb0f6582fca306d3083a8ad3aadeaa020936949702176b585ea6f926e87e08"
 
 
 def _load(path: Path) -> dict[str, object]:
@@ -54,7 +102,9 @@ def _canonical_hash(payload: dict[str, object], field: str) -> str:
 def test_partial_catalog_is_hash_bound_and_stops_before_escalation() -> None:
     contract = _load(CONTRACT)
     result = _load(RESULT)
-    journal = [json.loads(line) for line in JOURNAL.read_text(encoding="ascii").splitlines()]
+    journal = [
+        json.loads(line) for line in JOURNAL.read_text(encoding="ascii").splitlines()
+    ]
 
     assert contract["contract_sha256"] == CONTRACT_HASH
     assert _canonical_hash(contract, "contract_sha256") == CONTRACT_HASH
@@ -135,7 +185,9 @@ def test_distinct_daily_window_remains_partial_and_spends_no_proof_requests() ->
     assert result["authority"]["fee_requests"] == 0
 
 
-def test_nonoverlapping_hourly_window_is_complete_and_rejected_before_escalation() -> None:
+def test_nonoverlapping_hourly_window_is_complete_and_rejected_before_escalation() -> (
+    None
+):
     contract = _load(HOUR00_CONTRACT)
     result = _load(HOUR00_RESULT)
     journal = [
@@ -178,7 +230,7 @@ def test_registry_routes_partial_page_without_accepting_an_edge() -> None:
         == "polymarket_cross_market_exact_multi_outcome_subset_equivalence"
     )
     artifacts = row["canonical_artifacts"]
-    assert artifacts[-6:] == [
+    assert artifacts[-10:] == [
         {"path": CONTRACT.relative_to(ROOT).as_posix(), "result_sha256": CONTRACT_HASH},
         {"path": RESULT.relative_to(ROOT).as_posix(), "result_sha256": RESULT_HASH},
         {
@@ -197,7 +249,23 @@ def test_registry_routes_partial_page_without_accepting_an_edge() -> None:
             "path": HOUR00_RESULT.relative_to(ROOT).as_posix(),
             "result_sha256": HOUR00_RESULT_HASH,
         },
+        {
+            "path": SOURCE_SELECTED_CONTRACT.relative_to(ROOT).as_posix(),
+            "result_sha256": "a13f554d2b6b40dce3ea83236bff5cd99993f41aa1c988fe38eb99dc28d43f5e",
+        },
+        {
+            "path": SOURCE_SELECTED_RESULT.relative_to(ROOT).as_posix(),
+            "result_sha256": "73ae75ccf391a30ef592f649f63ef535e29865e1234bbff03021c806fd75268b",
+        },
+        {
+            "path": MULTI_STRIKES_CONTRACT.relative_to(ROOT).as_posix(),
+            "result_sha256": "ca2f7b556207a0d2d04c006ed502bf35a673a87642e0e5dd443227af8aba82d2",
+        },
+        {
+            "path": MULTI_STRIKES_RESULT.relative_to(ROOT).as_posix(),
+            "result_sha256": "f032753b45c82b2e0945d1a8c0e0d5fc01f8fb1727cdad34e73064c7590417ba",
+        },
     ]
-    assert "zero_Gamma_sub_floor_candidates" in row["current_status"]
-    assert "do_not_sweep_adjacent_hours" in row["next_action"]
+    assert "complete_series_specific_catalog_was_also_empty" in row["current_status"]
+    assert "do_not_repeat_either_empty_forward_series_query" in row["next_action"]
     assert registry["accepted_edge_count"] == 21

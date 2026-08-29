@@ -1593,9 +1593,22 @@ safety gate, blocks Stop, or submits an order.
   book, fee, account, order, or fund requests. Do not sweep adjacent hours or
   narrow around these outcomes. Canonical result SHA-256
   `92734472ed41bccdc1d88c947b218e05fa35827cad6b1711ec192c06cf60cc64`.
+- A price-blind official series catalog selected `BTC Up or Down 5m` without
+  embedded events or prices, but its fixed September 14 through September 21
+  event window returned zero rows. A distinct retained-metadata selection of
+  series 45, `BTC Multi Strikes Weekly`, also returned zero events in its fixed
+  September 7 01:00 through September 21 window. Both catalogs were complete
+  and used zero onchain, book, fee, credential, account, order, fund, or
+  protected-capture requests. Series recurrence, title, update time, and volume
+  are not forward-deployment evidence. Do not repeat either empty query. Reopen
+  only on an explicit new fixed-NegRisk event deployment or not before
+  `2026-09-20T00:00:00Z` for one distinct September 22 through September 28
+  series-45 discovery. Canonical result SHA-256 values are
+  `73ae75ccf391a30ef592f649f63ef535e29865e1234bbff03021c806fd75268b`
+  and `f032753b45c82b2e0945d1a8c0e0d5fc01f8fb1727cdad34e73064c7590417ba`.
 - The structural-edge registry now has 44 ranked hypotheses and 21
   narrowly accepted scoped overlays, and result SHA-256
-  `c0d7189c4848f248e6d3960954198e0f1e93c8e74acd2ed36a8830239bf86194`.
+  `f9bb0f6582fca306d3083a8ad3aadeaa020936949702176b585ea6f926e87e08`.
 
 ## Task Routing
 
