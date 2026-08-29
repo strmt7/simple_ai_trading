@@ -1,0 +1,79 @@
+{
+  "schema_version": "polymarket-negrisk-complete-set-catalog-contract-v1",
+  "status": "frozen_before_nonoverlapping_hourly_catalog_outcome_access",
+  "frozen_at_utc": "2026-08-29T21:07:53.5158291Z",
+  "frozen_at_ms": 1788037673515,
+  "contract_path": "docs/model-research/action-value/polymarket-sep7-hour00-negrisk-complete-set-catalog-contract-v1-2026-08-29.json",
+  "contract_sha256": "32dfa5e282f43204f73117fa2dba198c69171944bc41a85bf661e05789089439",
+  "purpose": "one prospectively fixed hourly all-category window outside both consumed multi-day and September 6 populations to prove effective keyset completeness before any onchain or book work",
+  "hypothesis": "at least one exact fixed non-augmented NegRisk event ending from 2026-09-07T00:00:00Z through 2026-09-07T00:59:59Z has a rejection-only Gamma all-YES sum strictly below its pending one-pUSD complete-set floor",
+  "source_contracts": [
+    {
+      "url": "https://docs.polymarket.com/api-reference/events/list-events-keyset-pagination",
+      "use": "official public unauthenticated GET keyset endpoint maximum accepted limit 500 end-date filters nested markets and cursor completeness semantics"
+    }
+  ],
+  "capture": {
+    "ascending": true,
+    "closed": false,
+    "end_date_max": "2026-09-07T00:59:59Z",
+    "end_date_min": "2026-09-07T00:00:00Z",
+    "limit": 500,
+    "order": "endDate",
+    "request_count": 1,
+    "url": "https://gamma-api.polymarket.com/events/keyset?limit=500&order=endDate&ascending=true&closed=false&end_date_min=2026-09-07T00%3A00%3A00Z&end_date_max=2026-09-07T00%3A59%3A59Z"
+  },
+  "stopping_rules": {
+    "accepted_edge_from_catalog": false,
+    "if_next_cursor_present": "stop without adaptive pagination onchain or depth access and label the hourly population incomplete",
+    "if_no_strictly_sub_floor_event": "stop without onchain books or fees",
+    "if_population_complete_and_candidates_exist": "freeze one separate onchain question-count conversion-fee and exact all-token depth proof for only the lowest displayed sum event",
+    "maximum_proof_candidates": 1,
+    "resample_consumed_2026_08_29_through_2026_09_06_populations": false
+  },
+  "authority": {
+    "account_requests": 0,
+    "book_requests": 0,
+    "credentials_used": false,
+    "fee_requests": 0,
+    "funds_used": false,
+    "onchain_requests": 0,
+    "orders_or_transactions": 0,
+    "protected_capture_touched": false,
+    "public_unauthenticated_read_only_requests": 1,
+    "signed_requests": 0,
+    "trading_authority": false
+  },
+  "implementations": [
+    {
+      "path": "tools/screen_polymarket_negrisk_complete_set_catalog.py",
+      "sha256": "5d5dd88fe9f77be92063d4b55bbcb8dd1b96db06b99dd0d021774916cf2b5ae9"
+    },
+    {
+      "path": "tools/adjudicate_polymarket_exact_mlb_monotone_prefilter.py",
+      "role": "canonical hash and repository path validation",
+      "sha256": "958a44d78029b9a1eb69a3771ce18e53ac1ed3c7bc161c8e4318beedce2cf99f"
+    },
+    {
+      "path": "tools/screen_polymarket_exact_two_leg_package.py",
+      "role": "preaccess journaled public request and retained raw receipt",
+      "sha256": "ba7ebaa1fb5235ba026f7cf4cb21ff73ba19430fee4a4f678fbdea37635eb32f"
+    },
+    {
+      "path": "tools/screen_polymarket_mlb_cross_period_catalog.py",
+      "role": "strict UTC timestamp validation",
+      "sha256": "a916790e7e0320089b9f76c49aff43c072312f24599de351820d3fb872e6eddd"
+    }
+  ],
+  "outputs": {
+    "journal_path": "data/polymarket-sep7-hour00-negrisk-complete-set-catalog-v1/request-journal.jsonl",
+    "raw_path": "data/polymarket-sep7-hour00-negrisk-complete-set-catalog-v1/raw/events.json",
+    "result_path": "docs/model-research/action-value/polymarket-sep7-hour00-negrisk-complete-set-catalog-result-v1-2026-08-29.json"
+  },
+  "prohibited_shortcuts": [
+    "changing the hour or following a cursor after viewing the response",
+    "narrowing around candidates from consumed August 29 through September 6 pages",
+    "treating Gamma price sums as executable or source-proved conversion economics",
+    "requesting onchain proof books fees credentials accounts orders funds or protected capture state before the frozen gate permits it"
+  ]
+}
