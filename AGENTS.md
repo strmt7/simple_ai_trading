@@ -67,6 +67,11 @@ override prose.
   a current primary API contract. Never infer that an endpoint is public from
   its path, product name, nearby public endpoints, or an unauthenticated error;
   if the security classification is absent or contradictory, do not call it.
+- Documentation that a venue supports a feature does not prove that the live
+  production configuration currently deploys it. For Binance Spot SOR, require
+  the current public `exchangeInfo.sors` configuration before requesting books
+  or considering a signed test order; an absent optional field is a terminal
+  configuration result until a material official or live configuration change.
 - HTTP `GET` does not prove read-only semantics. Classify account mutation from
   the documented operation as well as the verb; Binance
   `/sapi/v1/soft-staking/set` changes activation state and requires separate

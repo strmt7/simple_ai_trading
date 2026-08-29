@@ -3201,7 +3201,7 @@ values are `dcd959d9d7ec0e1dffec47b910cece585c106b76b69feaaa9ca03ddcc7caa83a`,
 and `0307a9dbfb26ca62e94ae01e5b5d40316340b686a60829e85f258c07e565678c`.
 The structural-edge registry now contains 44 ranked hypotheses and 21 accepted
 scoped overlays; its canonical SHA-256 is
-`f9bb0f6582fca306d3083a8ad3aadeaa020936949702176b585ea6f926e87e08`.
+`0511b6dbb8f560470335fb6146edade7a50c3f24406c529f03a3f1fca769409b`.
 
 ## Future WNBA Complete-Catalog Rejection Screen
 
@@ -3231,7 +3231,7 @@ The raw response and two-phase journal SHA-256 values are
 and `40a7edc61fcf5c3a42a8ab7aef65cf04703cde30989b7b23f23a915291620368`.
 The structural registry remains at 44 hypotheses and 21 accepted scoped edges;
 its canonical SHA-256 is
-`f9bb0f6582fca306d3083a8ad3aadeaa020936949702176b585ea6f926e87e08`.
+`0511b6dbb8f560470335fb6146edade7a50c3f24406c529f03a3f1fca769409b`.
 
 ## Sep 7 Hour-00 Fixed NegRisk Complete Rejection Screen
 
@@ -3425,3 +3425,26 @@ The previous verbose handoff and chronology are preserved byte-for-byte in:
   (SHA-256 `2ba0ee28f38a9f5d2a177cf4b270fe924517e88f6a9511dd7acb3507ab7907c5`)
 - `docs/archive/agent-history/CONTINUATION-before-2026-08-23-closeout.md.txt`
   (SHA-256 `2170f14bcfdf49674c576b8fd7d42aa02dc4569c48ba1f643ec6ad43c8d30b18`)
+
+## 2026-08-29 Binance Spot SOR configuration result
+
+The novel native-SOR liquidity-overlay hypothesis was frozen before outcome
+access, then rejected at its cheapest live gate. The single public production
+`exchangeInfo` response was HTTP 200 and contained 3,685 symbols, but omitted
+the optional `sors` configuration field documented by Binance. The runner
+stopped immediately: zero scoped BTC/ETH/SOL groups, zero `bookTicker`
+requests, zero candidates, and no credential, signed, account, order, fund, or
+protected-capture access.
+
+The exact result is terminal until a material official or live SOR
+configuration change; documented feature availability alone is not a retry
+trigger. Git retains the 17,532,885-byte raw response as deterministic lossless
+gzip rather than a wasteful uncompressed blob. The decompressed SHA-256
+`658d03279eea9a2384171eb56e151541407ae7407c123c700c9902d5e9f56c9d`
+reconstructs the journal receipt; the gzip SHA-256 is
+`9f3f83fe1efcec7a0230dea646d2038fe5c0a32ae72de5c7e4f5ee7fd850304b`.
+The accepted-edge count remains 21 and the ranked-hypothesis count remains 44.
+The updated registry result SHA-256 is
+`0511b6dbb8f560470335fb6146edade7a50c3f24406c529f03a3f1fca769409b`.
+The direct SOR evidence test and the one registry-coupled pass are clean; no
+broad CI, model, release, or repeated market request was run.

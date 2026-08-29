@@ -1608,7 +1608,7 @@ safety gate, blocks Stop, or submits an order.
   and `f032753b45c82b2e0945d1a8c0e0d5fc01f8fb1727cdad34e73064c7590417ba`.
 - The structural-edge registry now has 44 ranked hypotheses and 21
   narrowly accepted scoped overlays, and result SHA-256
-  `f9bb0f6582fca306d3083a8ad3aadeaa020936949702176b585ea6f926e87e08`.
+  `0511b6dbb8f560470335fb6146edade7a50c3f24406c529f03a3f1fca769409b`.
 
 ## Task Routing
 
@@ -1702,3 +1702,25 @@ safety gate, blocks Stop, or submits an order.
 Before editing, verify `git status`, `git worktree list`, active processes,
 scheduled tasks, `origin/main`, open alerts, and the exact evidence boundary.
 Never infer current host state from an old PID or archived note.
+
+## Binance Spot SOR production-configuration terminal screen
+
+The frozen public SOR screen consumed one unauthenticated production
+`exchangeInfo` request. Binance's current documentation defines Smart Order
+Routing and names the optional `sors` field as its live configuration source,
+but the retained 17,532,885-byte response covering 3,685 symbols omitted that
+field. The runner therefore stopped with zero scoped groups before the optional
+all-symbol book request. It used no credentials, signed endpoint, account,
+order, funds, or protected Polymarket state.
+
+This exact production snapshot has no public gross SOR candidate. Do not poll
+or proceed to a signed test merely because the feature is documented. Retry
+only after a material official or live `exchangeInfo` SOR-configuration change.
+The raw response is retained losslessly as deterministic gzip; its decompressed
+SHA-256 is bound to the response journal and result receipt. The contract and
+result SHA-256 values are
+`93b9f984ff4ae347cc6ca15b9a79e5f9baf60ce3287e3e81ce5694613be0790a`
+and `895dc0eba4f72b9b08b19dbba245b20434e4db905fd4ded3ea70779733db6d47`.
+The registry remains at 44 hypotheses and 21 accepted scoped edges; its updated
+result SHA-256 is
+`0511b6dbb8f560470335fb6146edade7a50c3f24406c529f03a3f1fca769409b`.
