@@ -2948,7 +2948,45 @@ adjudication, and exact-depth result SHA-256 values are respectively
 and `731ca32a06f8f1a42aaae9e326c2bd89379657e338231dd906b749790c15ddfa`.
 The structural-edge registry retains 42 hypotheses and 19 narrowly accepted
 scoped overlays; its new canonical SHA-256 is
-`d9698017a21be49e8f0b5c0021d4c1eeb1dff0a6482bab9badc0a8c76be5df4b`.
+`a661ba68ecdf87eaece27616e5ede3ca0864ca844b3f9553d7d0fd4a59f645f8`.
+
+## Future NFL Catalog Checkpoint
+
+One frozen public unauthenticated keyset request screened the complete NFL
+window from `2026-09-13T20:25:01Z` through `2026-09-21T23:59:59Z`, beginning
+one second after the already-consumed Packers/Vikings event. The response
+returned 17 events with no next cursor. The v1 runner exactly parsed 16 events,
+retained all 4,621 monotone-payoff relations, and found 674 rows below their
+guaranteed payout floor using Gamma prices solely as a rejection gate. The
+precommitted strongest row was Commanders/Cowboys Over 56.5 plus Under 58.5:
+Gamma displayed `0.285 + 0.500 = 0.785` against a one-pUSD floor.
+
+One separately frozen exact two-token book batch tested only that row. The
+five-share asks were `0.54` and `0.97`, costing `7.55` pUSD against the five-pUSD
+floor, a `2.55` pUSD zero-fee loss. The two-tick sensitivity lost `2.75` pUSD,
+the six-tick path lacked depth, and source timestamps were 25,189,367 ms apart.
+Because the package was gross-negative and outside the five-second skew gate,
+zero fee requests were made. No candidate was accepted or promoted.
+
+The excluded Cowboys/Giants event exposed a v1 modeling inefficiency: its
+half-half-tie moneyline and Cowboys -0.5 market share integer win threshold one
+but differ at an actual tie. A frozen zero-network correction ordered the
+moneyline as the statewise superset, retained 268 complete relations, and found
+four additional Gamma-only candidates. Outcome-aware correction did not grant
+adaptive depth authority, so no book or fee request followed. Do not resample
+this window. Retry this family only on a distinct event outside it or a material
+price, fee, delay, or resolution-rule change, and precommit the single strongest
+package before exact depth.
+
+Catalog contract/result SHA-256 values are
+`3dc5413c76517eaf14c62d23b42fcd040c8f6f9f53b78c6e75f8a9f7e59de608` and
+`7c4472e0a77cde09f5643a06a1326fbfc2cc1e5ec37641314d875a346e1a7754`.
+Commanders/Cowboys contract/result SHA-256 values are
+`0d6fba26dc1656c90e2cf78a0224e215c525364f201b8995c36439d391834292` and
+`729d482f9a15b60b5345ba6c52ee75941a1f0751db2453e307c30f8872bbac35`.
+Cowboys/Giants correction contract/result SHA-256 values are
+`d481f24cd43703c4ed094631ebdbae8daa2588d92b7ecca93dc2aee4cd3195f0` and
+`37f79cc8a4f5f96fa395a729e85a793e12c2127e2124591db693c92b1b459928`.
 
 ## Verification Scope
 
@@ -2965,11 +3003,12 @@ response hashes, reusable exact-event runner, and registry lineage pass their
 focused tests with Ruff and Python compilation clean. The rejection-only
 prefilter is now a hard efficiency gate for this family.
 
-The Packers-Vikings exact capture, complete 321-relation NFL payoff proof,
-strongest-candidate book screen, nullable-moneyline runner, raw journals, and
-registry lineage pass the focused NFL/WNBA/MLB checks. All 244 tests carrying
-the current registry hash pass once, and Ruff is clean for the changed tools
-and directly affected tests. No broad model, CI, or release suite was repeated.
+The Packers-Vikings exact capture, future NFL catalog, Commanders/Cowboys depth
+screen, Cowboys/Giants tie-state correction, complete retained payoff proofs,
+raw journals, and registry lineage pass the focused NFL/WNBA/MLB checks. The
+registry-hash-coupled suite passes all 248 focused tests across 65 files. Ruff
+is clean for the changed tools and directly affected tests. No broad model,
+CI, or release suite was repeated.
 
 The resolved-leg House duplicate-payoff checkpoint, raw journals, source hashes,
 and directly affected registry lineage pass 12 focused tests with Ruff and

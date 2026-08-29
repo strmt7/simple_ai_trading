@@ -13,7 +13,7 @@ ARTIFACT = ROOT / "docs/model-research/action-value" / (
 )
 REGISTRY = ROOT / "docs/model-research/structural-edge-priority-registry-v1.json"
 EXPECTED_HASH = "70cfc7b2ae1cb256e7a8c08c9af33fa8524d2308a8c18400d5a2b7d93c966fe3"
-REGISTRY_HASH = "d9698017a21be49e8f0b5c0021d4c1eeb1dff0a6482bab9badc0a8c76be5df4b"
+REGISTRY_HASH = "a661ba68ecdf87eaece27616e5ede3ca0864ca844b3f9553d7d0fd4a59f645f8"
 
 
 def _load(path: Path) -> dict[str, object]:
@@ -176,7 +176,7 @@ def test_registry_reopens_only_the_distinct_future_nba_recurrence_family() -> No
             ),
         },
     ]
-    assert row["canonical_artifacts"][-6:] == [
+    assert row["canonical_artifacts"][-12:-6] == [
         {
             "path": (
                 "docs/model-research/action-value/"
@@ -235,6 +235,66 @@ def test_registry_reopens_only_the_distinct_future_nba_recurrence_family() -> No
             ),
             "result_sha256": (
                 "731ca32a06f8f1a42aaae9e326c2bd89379657e338231dd906b749790c15ddfa"
+            ),
+        },
+    ]
+    assert row["canonical_artifacts"][-6:] == [
+        {
+            "path": (
+                "docs/model-research/action-value/"
+                "polymarket-future-nfl-monotone-catalog-contract-v1-2026-08-29.json"
+            ),
+            "result_sha256": (
+                "3dc5413c76517eaf14c62d23b42fcd040c8f6f9f53b78c6e75f8a9f7e59de608"
+            ),
+        },
+        {
+            "path": (
+                "docs/model-research/action-value/"
+                "polymarket-future-nfl-monotone-catalog-result-v1-2026-08-29.json"
+            ),
+            "result_sha256": (
+                "7c4472e0a77cde09f5643a06a1326fbfc2cc1e5ec37641314d875a346e1a7754"
+            ),
+        },
+        {
+            "path": (
+                "docs/model-research/action-value/"
+                "polymarket-commanders-cowboys-total-package-contract-v1-"
+                "2026-08-29.json"
+            ),
+            "result_sha256": (
+                "0d6fba26dc1656c90e2cf78a0224e215c525364f201b8995c36439d391834292"
+            ),
+        },
+        {
+            "path": (
+                "docs/model-research/action-value/"
+                "polymarket-commanders-cowboys-total-package-result-v1-"
+                "2026-08-29.json"
+            ),
+            "result_sha256": (
+                "729d482f9a15b60b5345ba6c52ee75941a1f0751db2453e307c30f8872bbac35"
+            ),
+        },
+        {
+            "path": (
+                "docs/model-research/action-value/"
+                "polymarket-cowboys-giants-tie-collision-correction-contract-v1-"
+                "2026-08-29.json"
+            ),
+            "result_sha256": (
+                "d481f24cd43703c4ed094631ebdbae8daa2588d92b7ecca93dc2aee4cd3195f0"
+            ),
+        },
+        {
+            "path": (
+                "docs/model-research/action-value/"
+                "polymarket-cowboys-giants-tie-collision-correction-v1-"
+                "2026-08-29.json"
+            ),
+            "result_sha256": (
+                "37f79cc8a4f5f96fa395a729e85a793e12c2127e2124591db693c92b1b459928"
             ),
         },
     ]

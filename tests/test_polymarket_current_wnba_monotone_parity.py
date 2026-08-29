@@ -10,7 +10,7 @@ ROOT = Path(__file__).resolve().parents[1]
 ACTION_VALUE = ROOT / "docs/model-research/action-value"
 DATA = ROOT / "data"
 REGISTRY = ROOT / "docs/model-research/structural-edge-priority-registry-v1.json"
-REGISTRY_HASH = "d9698017a21be49e8f0b5c0021d4c1eeb1dff0a6482bab9badc0a8c76be5df4b"
+REGISTRY_HASH = "a661ba68ecdf87eaece27616e5ede3ca0864ca844b3f9553d7d0fd4a59f645f8"
 
 
 def _load(path: Path) -> dict[str, object]:
@@ -144,7 +144,8 @@ def test_registry_requires_rejection_only_prefilter_before_another_book_batch() 
 
     assert row["priority_rank"] == 30
     assert "WNBA" in row["venue_scope"]
-    assert "rejection_only" in row["next_action"]
+    assert "Gamma_only_as_a_rejection_gate" in row["next_action"]
+    assert "outside_that_window" in row["next_action"]
     assert "below_its_guaranteed_payout_floor" in row["retry_trigger"]
     assert any(
         "using_Gamma_prices_to_accept_or_promote" in shortcut

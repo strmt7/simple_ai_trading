@@ -1,0 +1,204 @@
+{
+  "authority": {
+    "account_requests": 0,
+    "credentials_used": false,
+    "funds_used": false,
+    "orders_or_transactions": 0,
+    "protected_capture_touched": false,
+    "public_unauthenticated_read_only_requests_maximum": 3,
+    "signed_requests": 0,
+    "trading_authority": false
+  },
+  "catalog_candidate": {
+    "displayed_price_sum_per_share_pUSD": "0.785",
+    "event_slug": "nfl-was-dal-2026-09-20",
+    "family": "full_game_total",
+    "subset_complement_market_id": "3920043",
+    "subset_threshold": 59,
+    "superset_positive_market_id": "3517025",
+    "superset_threshold": 57
+  },
+  "contract_path": "docs/model-research/action-value/polymarket-commanders-cowboys-total-package-contract-v1-2026-08-29.json",
+  "contract_sha256": "0d6fba26dc1656c90e2cf78a0224e215c525364f201b8995c36439d391834292",
+  "execution": {
+    "book_request_count": 1,
+    "candidate_gate": "strictly positive five-pUSD guaranteed floor after complete displayed depth current exact fee rates two adverse ticks per leg zero rebate credit and no more than five seconds source skew",
+    "candidate_stress_name": "delay_1s_sensitivity",
+    "fee_request_rule": "request both current token fee rates only if the complete five-share package remains gross-positive after two adverse ticks per leg",
+    "fee_schedule": {
+      "exponent": 1,
+      "rate": 0.05,
+      "rebateRate": 0.15,
+      "takerOnly": true
+    },
+    "maximum_book_timestamp_skew_ms": 5000,
+    "maximum_fee_requests": 2,
+    "metadata_secondsDelay_values": [
+      1,
+      1
+    ],
+    "quantity_shares_each_leg": "5",
+    "rebate_credit_pUSD": "0",
+    "retry_count": 0,
+    "stress_note": "two and six adverse ticks per leg are frozen one-second and three-second sensitivities and are not claimed empirical bounds; both markets declare a one-second delay",
+    "stress_ticks": {
+      "actual": 0,
+      "delay_1s_sensitivity": 2,
+      "delay_3s_sensitivity": 6
+    },
+    "tick_size": "0.01",
+    "token_ids": [
+      "32042446394721964237454148031058166749258690349892676798824518374089419403860",
+      "45747173653196462196915166516082602487353791077419403453047472017436754083635"
+    ]
+  },
+  "frozen_at_utc": "2026-08-29T18:21:58.3147364Z",
+  "gamma_prefilter": {
+    "displayed_price_sum_pUSD": "0.785",
+    "optimistic_profit_floor_per_share_before_execution_costs_pUSD": "0.215",
+    "passes_strictly_below_payout_gate": true,
+    "role": "rejection_only_never_acceptance_or_promotion_evidence"
+  },
+  "implementation": {
+    "path": "tools/screen_polymarket_exact_two_leg_catalog_package.py",
+    "sha256": "9c52a1980a54fc27d4b90156a58c1c952121c6d0381803dca3252192c8511078"
+  },
+  "markets": [
+    {
+      "condition_id": "0x0f6fe4d9ca6595fd59abcd02a2abada325b212382ff0a8019c08c2f7bf8c8f74",
+      "id": "3517025",
+      "line": "56.5",
+      "name": "total_56_5",
+      "outcome_prices": [
+        "0.285",
+        "0.715"
+      ],
+      "outcomes": [
+        "Over",
+        "Under"
+      ],
+      "question": "Commanders vs. Cowboys: O/U 56.5",
+      "required_rule_fragments": [
+        "combine to score 57 or more points in this game",
+        "combined total is less than 57",
+        "canceled entirely, with no make-up game, this market will resolve 50-50"
+      ],
+      "sports_market_type": "totals",
+      "tokens": [
+        "32042446394721964237454148031058166749258690349892676798824518374089419403860",
+        "74448668688969221502110438410296876620988303786076840892837208817073626353046"
+      ]
+    },
+    {
+      "condition_id": "0xbbf40b314ae257629ba49245a7a86bc6209253e0130dab96396ade0f44668d13",
+      "id": "3920043",
+      "line": "58.5",
+      "name": "total_58_5",
+      "outcome_prices": [
+        "0.5",
+        "0.5"
+      ],
+      "outcomes": [
+        "Over",
+        "Under"
+      ],
+      "question": "Commanders vs. Cowboys: O/U 58.5",
+      "required_rule_fragments": [
+        "combine to score 59 or more points in this game",
+        "combined total is less than 59",
+        "canceled entirely, with no make-up game, this market will resolve 50-50"
+      ],
+      "sports_market_type": "totals",
+      "tokens": [
+        "71500497472567194176004533910008685507636982692780366849937373861637515385945",
+        "45747173653196462196915166516082602487353791077419403453047472017436754083635"
+      ]
+    }
+  ],
+  "metadata_source": {
+    "event_slug": "nfl-was-dal-2026-09-20",
+    "raw_path": "data/polymarket-future-nfl-monotone-catalog-v1/raw/events.json",
+    "raw_sha256": "54611964aeaa68d133a252ec3ed3476f5072fef9ad33ec9308c7726266d21e3f",
+    "result_file_sha256": "1c5c51832ee5951cef58606f10564c38a50f4d032c81bd0947416df9d75b2db9",
+    "result_path": "docs/model-research/action-value/polymarket-future-nfl-monotone-catalog-result-v1-2026-08-29.json",
+    "result_sha256": "7c4472e0a77cde09f5643a06a1326fbfc2cc1e5ec37641314d875a346e1a7754"
+  },
+  "outputs": {
+    "books_raw_path": "data/polymarket-commanders-cowboys-total-package-v1/raw/books.json",
+    "fee_raw_root": "data/polymarket-commanders-cowboys-total-package-v1/raw/fees",
+    "journal_path": "data/polymarket-commanders-cowboys-total-package-v1/request-journal.jsonl",
+    "result_path": "docs/model-research/action-value/polymarket-commanders-cowboys-total-package-result-v1-2026-08-29.json"
+  },
+  "package": {
+    "name": "commanders_cowboys_over_56_5_plus_under_58_5",
+    "token_names": [
+      "over_56_5",
+      "under_58_5"
+    ]
+  },
+  "payoff_proof": {
+    "guaranteed_floor_per_share_pUSD": "1",
+    "invariant": "an integer NFL total below 57 pays Under 58.5; a total of 57 or 58 pays both legs; a total at or above 59 pays Over 56.5; cancellation pays each leg at one-half",
+    "market_direction_forecast_required": false,
+    "states": [
+      {
+        "payouts": {
+          "over_56_5": "0",
+          "under_58_5": "1"
+        },
+        "state": "combined_score_below_57"
+      },
+      {
+        "payouts": {
+          "over_56_5": "1",
+          "under_58_5": "1"
+        },
+        "state": "combined_score_57_or_58"
+      },
+      {
+        "payouts": {
+          "over_56_5": "1",
+          "under_58_5": "0"
+        },
+        "state": "combined_score_at_least_59"
+      },
+      {
+        "payouts": {
+          "over_56_5": "0.5",
+          "under_58_5": "0.5"
+        },
+        "state": "game_canceled_without_makeup"
+      }
+    ]
+  },
+  "purpose": "test the precommitted strongest distinct future NFL catalog package using one exact two-token current book batch",
+  "schema_version": "polymarket-exact-two-leg-package-contract-v1",
+  "source_contracts": [
+    {
+      "url": "https://docs.polymarket.com/api-reference/market-data/get-order-books-request-body",
+      "use": "official public unauthenticated POST batch book contract"
+    },
+    {
+      "url": "https://docs.polymarket.com/api-reference/market-data/get-fee-rate-by-path-parameter",
+      "use": "official public unauthenticated current token fee-rate contract used only if the two-tick zero-fee stress remains positive"
+    }
+  ],
+  "stopping_rules": {
+    "accepted_edge_from_one_snapshot": false,
+    "deployment_ready_from_one_snapshot": false,
+    "failed_candidate_gate": "terminalize this exact event without refetch or retry",
+    "passed_candidate_gate": "candidate only and require one further independent positive recurrence before any order-capable work"
+  },
+  "tokens": {
+    "over_56_5": {
+      "condition_id": "0x0f6fe4d9ca6595fd59abcd02a2abada325b212382ff0a8019c08c2f7bf8c8f74",
+      "gamma_price_pUSD": "0.285",
+      "token_id": "32042446394721964237454148031058166749258690349892676798824518374089419403860"
+    },
+    "under_58_5": {
+      "condition_id": "0xbbf40b314ae257629ba49245a7a86bc6209253e0130dab96396ade0f44668d13",
+      "gamma_price_pUSD": "0.5",
+      "token_id": "45747173653196462196915166516082602487353791077419403453047472017436754083635"
+    }
+  }
+}

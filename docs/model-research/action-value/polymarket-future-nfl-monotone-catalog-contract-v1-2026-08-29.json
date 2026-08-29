@@ -1,0 +1,75 @@
+{
+  "authority": {
+    "account_requests": 0,
+    "book_requests": 0,
+    "credentials_used": false,
+    "fee_requests": 0,
+    "funds_used": false,
+    "orders_or_transactions": 0,
+    "protected_capture_touched": false,
+    "public_unauthenticated_read_only_requests": 1,
+    "signed_requests": 0,
+    "trading_authority": false
+  },
+  "capture": {
+    "ascending": true,
+    "closed": false,
+    "limit": 500,
+    "order": "startTime",
+    "request_count": 1,
+    "series_id": "12185",
+    "start_time_max": "2026-09-21T23:59:59Z",
+    "start_time_min": "2026-09-13T20:25:01Z",
+    "url": "https://gamma-api.polymarket.com/events/keyset?limit=500&order=startTime&ascending=true&closed=false&start_time_min=2026-09-13T20%3A25%3A01Z&start_time_max=2026-09-21T23%3A59%3A59Z&series_id=12185"
+  },
+  "contract_path": "docs/model-research/action-value/polymarket-future-nfl-monotone-catalog-contract-v1-2026-08-29.json",
+  "contract_sha256": "3dc5413c76517eaf14c62d23b42fcd040c8f6f9f53b78c6e75f8a9f7e59de608",
+  "frozen_at_utc": "2026-08-29T18:19:57.1258170Z",
+  "hypothesis": "at least one distinct future NFL moneyline spread or total monotone two-leg package in the bounded post-Packers-Vikings window has a retained Gamma displayed price sum strictly below its one-pUSD minimum terminal payout",
+  "implementations": [
+    {
+      "path": "tools/screen_polymarket_nfl_monotone_catalog.py",
+      "sha256": "cfd36fb3c4fce63dd46d3c903d4a9795efc3a6bed86fbd3b21c542f521745237"
+    },
+    {
+      "path": "tools/adjudicate_polymarket_exact_nfl_monotone_prefilter.py",
+      "role": "NFL_rule_and_tie_state_parser",
+      "sha256": "6e7119c7827d04435378136fcca3e13378f752d9da102ea88c6a65ce4d9885cd"
+    },
+    {
+      "path": "tools/adjudicate_polymarket_exact_mlb_monotone_prefilter.py",
+      "role": "canonical_hash_and_payoff_relation_algebra",
+      "sha256": "958a44d78029b9a1eb69a3771ce18e53ac1ed3c7bc161c8e4318beedce2cf99f"
+    },
+    {
+      "path": "tools/screen_polymarket_exact_two_leg_package.py",
+      "role": "preaccess_journaled_public_request_and_raw_receipt",
+      "sha256": "ba7ebaa1fb5235ba026f7cf4cb21ff73ba19430fee4a4f678fbdea37635eb32f"
+    },
+    {
+      "path": "tools/screen_polymarket_mlb_cross_period_catalog.py",
+      "role": "strict_UTC_timestamp_validation",
+      "sha256": "a916790e7e0320089b9f76c49aff43c072312f24599de351820d3fb872e6eddd"
+    }
+  ],
+  "outputs": {
+    "journal_path": "data/polymarket-future-nfl-monotone-catalog-v1/request-journal.jsonl",
+    "raw_path": "data/polymarket-future-nfl-monotone-catalog-v1/raw/events.json",
+    "result_path": "docs/model-research/action-value/polymarket-future-nfl-monotone-catalog-result-v1-2026-08-29.json"
+  },
+  "purpose": "screen a bounded distinct future NFL population in one public request while retaining every exact tested relation and escalating at most one strongest package",
+  "source_contracts": [
+    {
+      "url": "https://docs.polymarket.com/api-reference/events/list-events-keyset-pagination",
+      "use": "official public GET keyset event catalog with maximum 500 result page series filter nested markets fee schedules and cursor completeness semantics"
+    }
+  ],
+  "stopping_rules": {
+    "accepted_edge_from_catalog": false,
+    "if_next_cursor_present": "stop_without_adaptive_pagination_or_depth_access_and_label_the_window_incomplete",
+    "if_no_strictly_sub_floor_relation": "stop_without_books_or_fees",
+    "if_population_complete_and_candidates_exist": "freeze_one_exact_depth_and_current_fee_screen_for_only_the_lowest_displayed_sum_distinct_package",
+    "maximum_depth_candidates": 1,
+    "resample_packers_vikings": false
+  }
+}

@@ -1,0 +1,46 @@
+{
+  "authority": {
+    "book_requests": 0,
+    "fee_requests": 0,
+    "network_requests": 0,
+    "orders_or_transactions": 0,
+    "protected_capture_touched": false,
+    "trading_authority": false
+  },
+  "contract_path": "docs/model-research/action-value/polymarket-cowboys-giants-tie-collision-correction-contract-v1-2026-08-29.json",
+  "contract_sha256": "d481f24cd43703c4ed094631ebdbae8daa2588d92b7ecca93dc2aee4cd3195f0",
+  "frozen_at_utc": "2026-08-29T18:25:05.3382401Z",
+  "implementations": [
+    {
+      "path": "tools/adjudicate_polymarket_nfl_catalog_tie_collision.py",
+      "sha256": "4d6bd832197cc218495299a5b8a45d188d1e1c217aa8c6820e19d6b4c8498964"
+    },
+    {
+      "path": "tools/adjudicate_polymarket_exact_nfl_monotone_prefilter.py",
+      "role": "retained_NFL_total_parser",
+      "sha256": "6e7119c7827d04435378136fcca3e13378f752d9da102ea88c6a65ce4d9885cd"
+    },
+    {
+      "path": "tools/adjudicate_polymarket_exact_mlb_monotone_prefilter.py",
+      "role": "canonical_hash_market_gate_and_payoff_relation_algebra",
+      "sha256": "958a44d78029b9a1eb69a3771ce18e53ac1ed3c7bc161c8e4318beedce2cf99f"
+    }
+  ],
+  "output_path": "docs/model-research/action-value/polymarket-cowboys-giants-tie-collision-correction-v1-2026-08-29.json",
+  "purpose": "correct the retained Cowboys-Giants exclusion by explicitly ordering the half-half-tie moneyline above favorite-minus-0.5 at their shared integer win threshold without network or depth access",
+  "source": {
+    "catalog_raw_path": "data/polymarket-future-nfl-monotone-catalog-v1/raw/events.json",
+    "catalog_raw_sha256": "54611964aeaa68d133a252ec3ed3476f5072fef9ad33ec9308c7726266d21e3f",
+    "catalog_result_file_sha256": "1c5c51832ee5951cef58606f10564c38a50f4d032c81bd0947416df9d75b2db9",
+    "catalog_result_path": "docs/model-research/action-value/polymarket-future-nfl-monotone-catalog-result-v1-2026-08-29.json",
+    "catalog_result_sha256": "7c4472e0a77cde09f5643a06a1326fbfc2cc1e5ec37641314d875a346e1a7754",
+    "event_slug": "nfl-dal-nyg-2026-09-14"
+  },
+  "stopping_rules": {
+    "depth_access": false,
+    "network_access": false,
+    "preserve_v1_exclusion": true,
+    "promotion_from_outcome_aware_correction": false,
+    "retain_every_corrected_relation": true
+  }
+}

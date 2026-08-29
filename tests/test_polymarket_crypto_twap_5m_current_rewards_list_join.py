@@ -100,7 +100,7 @@ def test_complete_current_rewards_list_has_no_exact_five_minute_join() -> None:
 
     registry = json.loads(REGISTRY.read_text(encoding="ascii"))
     registry_claimed = registry.pop("result_sha256")
-    assert registry_claimed == "d9698017a21be49e8f0b5c0021d4c1eeb1dff0a6482bab9badc0a8c76be5df4b"
+    assert registry_claimed == "a661ba68ecdf87eaece27616e5ede3ca0864ca844b3f9553d7d0fd4a59f645f8"
     assert _sha256(_canonical(registry)) == registry_claimed
     reward_family = next(
         row
