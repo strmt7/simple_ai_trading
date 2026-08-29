@@ -20,7 +20,7 @@ JOURNAL = DATA_ROOT / "request-journal.jsonl"
 REGISTRY = ROOT / "docs/model-research/structural-edge-priority-registry-v1.json"
 CONTRACT_HASH = "9189fd384c2185875a8682155f365eb79cfe5f1061016ca035b05dfc88545b9f"
 RESULT_HASH = "85c8ef364b03fb2fbf0aeebddec10d51abbdd608f56ff9c0dccb1835cacc2179"
-REGISTRY_HASH = "4b3828b49387edf1e26e8ff107221139f1d133c65ab85a8664f0ac08de84e5ad"
+REGISTRY_HASH = "e712a9086d31944b42f93270256c393c6d8ab38997c20b7f8638cd4aa9088a34"
 
 
 def _load(path: Path) -> dict[str, object]:
@@ -107,9 +107,14 @@ def test_registry_records_terminal_blvt_mechanism_without_acceptance() -> None:
     assert _canonical_hash(registry, "result_sha256") == REGISTRY_HASH
     assert registry["accepted_edge_count"] == 20
     assert [row["priority_rank"] for row in registry["prioritized_hypotheses"]] == list(
-        range(1, 43)
+        range(1, 44)
     )
-    row = registry["prioritized_hypotheses"][-1]
+    row = next(
+        value
+        for value in registry["prioritized_hypotheses"]
+        if value["mechanism"]
+        == "binance_BLVT_primary_market_NAV_subscription_redemption_spot_parity_with_exact_basket_hedge"
+    )
     assert row["priority_rank"] == 42
     assert row["mechanism"] == (
         "binance_BLVT_primary_market_NAV_subscription_redemption_spot_parity_with_"

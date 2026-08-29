@@ -1,0 +1,435 @@
+{
+  "schema_version": "polymarket-binance-tradfi-perps-funding-history-shortfall-adjudication-v1",
+  "created_at_utc": "2026-08-29T19:41:18.636129Z",
+  "contract": {
+    "path": "docs/model-research/action-value/polymarket-binance-tradfi-perps-funding-history-shortfall-adjudication-contract-v1.json",
+    "result_sha256": "f06981e97236a0c577a626b882cc72f69383752112f8c0ffab8e04e1b7b9e480"
+  },
+  "consumed_source": {
+    "result_path": "docs/model-research/action-value/polymarket-binance-tradfi-perps-funding-history-v1-2026-08-29.json",
+    "result_file_sha256": "ca7d83a1ce1e3bc356f851626068e48674823a7d566f6178a271a1706be3dee2",
+    "result_sha256": "ad896a698edd65b42b039f84d1b037cf67302c7b2bb7ae59e9008f45328939bb",
+    "journal_path": "data/polymarket-binance-tradfi-perps-funding-history-v1/journal.json",
+    "journal_file_sha256": "28d7810aed27d21eb6b25f97e4fe2e2332732b17945fd202f3c34bf064449936"
+  },
+  "authority": {
+    "account_state_accessed": false,
+    "authenticated_requests": 0,
+    "credentials_used": false,
+    "network_requests": 0,
+    "orders_transfers_or_account_mutations": 0,
+    "paper_or_live_trading_authority": false
+  },
+  "diagnostics": {
+    "SKHYNIX": {
+      "alignment_diagnostics": {
+        "maximum_observed_timestamp_phase_skew_ms": 1002,
+        "normalized_binance_funding_hours": 26,
+        "normalized_binance_kline_hours": 96,
+        "normalized_polymarket_funding_hours": 95
+      },
+      "economic_role_pass_on_actual_retained_rows": false,
+      "fixed_orientation": "short_polymarket_long_binance",
+      "original_frozen_minimum_rows": 12,
+      "original_status": "evaluated",
+      "retained_aligned_rows": 26,
+      "retained_diagnostic": {
+        "aligned_count": 26,
+        "cross_regime_pass": false,
+        "economic_role_pass": false,
+        "first_timestamp_ms": 1787702400000,
+        "historical_persistence_candidate": false,
+        "last_timestamp_ms": 1788004800000,
+        "regimes": {
+          "down": {
+            "count": 12,
+            "positive_count": 4,
+            "sum_gross_carry_bips": "-34.93300000"
+          },
+          "high_volatility": {
+            "count": 13,
+            "positive_count": 6,
+            "sum_gross_carry_bips": "-16.36810000"
+          },
+          "low_volatility": {
+            "count": 13,
+            "positive_count": 6,
+            "sum_gross_carry_bips": "-1.61060000"
+          },
+          "sideways": {
+            "count": 5,
+            "positive_count": 2,
+            "sum_gross_carry_bips": "1.13950000"
+          },
+          "up": {
+            "count": 9,
+            "positive_count": 6,
+            "sum_gross_carry_bips": "15.81480000"
+          }
+        },
+        "roles": {
+          "training": {
+            "count": 13,
+            "gross_carry_bips": "-18.47960000",
+            "net_after_execution_and_capital_bips": "-50.35174611872146118721461187",
+            "opportunity_hurdle_bips": "11.87214611872146118721461187",
+            "passes": false,
+            "positive_count": 4
+          },
+          "validation": {
+            "count": 6,
+            "gross_carry_bips": "-8.66290000",
+            "net_after_execution_and_capital_bips": "-34.14235205479452054794520548",
+            "opportunity_hurdle_bips": "5.479452054794520547945205479",
+            "passes": false,
+            "positive_count": 3
+          },
+          "test": {
+            "count": 7,
+            "gross_carry_bips": "9.16380000",
+            "net_after_execution_and_capital_bips": "-17.22889406392694063926940639",
+            "opportunity_hurdle_bips": "6.392694063926940639269406393",
+            "passes": false,
+            "positive_count": 5
+          }
+        },
+        "sign_consistency": "0.4615384615384615384615384615",
+        "status": "evaluated",
+        "total_gross_carry_bips": "-17.97870000",
+        "total_net_after_execution_and_capital_bips": "-61.72299223744292237442922374",
+        "total_opportunity_hurdle_bips": "23.74429223744292237442922374",
+        "worst_leave_one_settlement_out_net_bips": "-72.96705022831050228310502283"
+      }
+    },
+    "CRWV": {
+      "alignment_diagnostics": {
+        "maximum_observed_timestamp_phase_skew_ms": 131,
+        "normalized_binance_funding_hours": 11,
+        "normalized_binance_kline_hours": 96,
+        "normalized_polymarket_funding_hours": 95
+      },
+      "economic_role_pass_on_actual_retained_rows": false,
+      "fixed_orientation": "long_polymarket_short_binance",
+      "original_frozen_minimum_rows": 12,
+      "original_status": "insufficient_aligned_history",
+      "retained_aligned_rows": 11,
+      "retained_diagnostic": {
+        "aligned_count": 11,
+        "cross_regime_pass": false,
+        "economic_role_pass": false,
+        "first_timestamp_ms": 1787702400000,
+        "historical_persistence_candidate": false,
+        "last_timestamp_ms": 1787990400000,
+        "regimes": {
+          "down": {
+            "count": 7,
+            "positive_count": 0,
+            "sum_gross_carry_bips": "-3.12980000"
+          },
+          "high_volatility": {
+            "count": 6,
+            "positive_count": 0,
+            "sum_gross_carry_bips": "-3.00000000"
+          },
+          "low_volatility": {
+            "count": 5,
+            "positive_count": 1,
+            "sum_gross_carry_bips": "0.91650000"
+          },
+          "sideways": {
+            "count": 1,
+            "positive_count": 0,
+            "sum_gross_carry_bips": "-0.50000000"
+          },
+          "up": {
+            "count": 3,
+            "positive_count": 1,
+            "sum_gross_carry_bips": "1.54630000"
+          }
+        },
+        "roles": {
+          "training": {
+            "count": 5,
+            "gross_carry_bips": "-2.12980000",
+            "net_after_execution_and_capital_bips": "-26.69601004566210045662100457",
+            "opportunity_hurdle_bips": "4.566210045662100456621004566",
+            "passes": false,
+            "positive_count": 0
+          },
+          "validation": {
+            "count": 3,
+            "gross_carry_bips": "-1.50000000",
+            "net_after_execution_and_capital_bips": "-24.23972602739726027397260274",
+            "opportunity_hurdle_bips": "2.739726027397260273972602740",
+            "passes": false,
+            "positive_count": 0
+          },
+          "test": {
+            "count": 3,
+            "gross_carry_bips": "1.54630000",
+            "net_after_execution_and_capital_bips": "-21.19342602739726027397260274",
+            "opportunity_hurdle_bips": "2.739726027397260273972602740",
+            "passes": false,
+            "positive_count": 1
+          }
+        },
+        "sign_consistency": "0.09090909090909090909090909091",
+        "status": "evaluated",
+        "total_gross_carry_bips": "-2.08350000",
+        "total_net_after_execution_and_capital_bips": "-32.12916210045662100456621005",
+        "total_opportunity_hurdle_bips": "10.04566210045662100456621005",
+        "worst_leave_one_settlement_out_net_bips": "-33.76222009132420091324200913"
+      }
+    },
+    "ARM": {
+      "alignment_diagnostics": {
+        "maximum_observed_timestamp_phase_skew_ms": 131,
+        "normalized_binance_funding_hours": 11,
+        "normalized_binance_kline_hours": 96,
+        "normalized_polymarket_funding_hours": 95
+      },
+      "economic_role_pass_on_actual_retained_rows": false,
+      "fixed_orientation": "short_polymarket_long_binance",
+      "original_frozen_minimum_rows": 12,
+      "original_status": "insufficient_aligned_history",
+      "retained_aligned_rows": 11,
+      "retained_diagnostic": {
+        "aligned_count": 11,
+        "cross_regime_pass": false,
+        "economic_role_pass": false,
+        "first_timestamp_ms": 1787702400000,
+        "historical_persistence_candidate": false,
+        "last_timestamp_ms": 1787990400000,
+        "regimes": {
+          "down": {
+            "count": 6,
+            "positive_count": 6,
+            "sum_gross_carry_bips": "3.96450000"
+          },
+          "high_volatility": {
+            "count": 6,
+            "positive_count": 5,
+            "sum_gross_carry_bips": "0.25540000"
+          },
+          "low_volatility": {
+            "count": 5,
+            "positive_count": 5,
+            "sum_gross_carry_bips": "5.16060000"
+          },
+          "sideways": {
+            "count": 3,
+            "positive_count": 3,
+            "sum_gross_carry_bips": "3.50060000"
+          },
+          "up": {
+            "count": 2,
+            "positive_count": 1,
+            "sum_gross_carry_bips": "-2.04910000"
+          }
+        },
+        "roles": {
+          "training": {
+            "count": 5,
+            "gross_carry_bips": "1.39330000",
+            "net_after_execution_and_capital_bips": "-23.17291004566210045662100457",
+            "opportunity_hurdle_bips": "4.566210045662100456621004566",
+            "passes": false,
+            "positive_count": 4
+          },
+          "validation": {
+            "count": 3,
+            "gross_carry_bips": "1.96430000",
+            "net_after_execution_and_capital_bips": "-20.77542602739726027397260274",
+            "opportunity_hurdle_bips": "2.739726027397260273972602740",
+            "passes": false,
+            "positive_count": 3
+          },
+          "test": {
+            "count": 3,
+            "gross_carry_bips": "2.05840000",
+            "net_after_execution_and_capital_bips": "-20.68132602739726027397260274",
+            "opportunity_hurdle_bips": "2.739726027397260273972602740",
+            "passes": false,
+            "positive_count": 3
+          }
+        },
+        "sign_consistency": "0.9090909090909090909090909091",
+        "status": "evaluated",
+        "total_gross_carry_bips": "5.41600000",
+        "total_net_after_execution_and_capital_bips": "-24.62966210045662100456621005",
+        "total_opportunity_hurdle_bips": "10.04566210045662100456621005",
+        "worst_leave_one_settlement_out_net_bips": "-25.20502009132420091324200913"
+      }
+    },
+    "HOOD": {
+      "alignment_diagnostics": {
+        "maximum_observed_timestamp_phase_skew_ms": 131,
+        "normalized_binance_funding_hours": 11,
+        "normalized_binance_kline_hours": 96,
+        "normalized_polymarket_funding_hours": 95
+      },
+      "economic_role_pass_on_actual_retained_rows": false,
+      "fixed_orientation": "short_polymarket_long_binance",
+      "original_frozen_minimum_rows": 12,
+      "original_status": "insufficient_aligned_history",
+      "retained_aligned_rows": 11,
+      "retained_diagnostic": {
+        "aligned_count": 11,
+        "cross_regime_pass": false,
+        "economic_role_pass": false,
+        "first_timestamp_ms": 1787702400000,
+        "historical_persistence_candidate": false,
+        "last_timestamp_ms": 1787990400000,
+        "regimes": {
+          "down": {
+            "count": 6,
+            "positive_count": 3,
+            "sum_gross_carry_bips": "-1.67100000"
+          },
+          "high_volatility": {
+            "count": 6,
+            "positive_count": 2,
+            "sum_gross_carry_bips": "-3.14490000"
+          },
+          "low_volatility": {
+            "count": 5,
+            "positive_count": 3,
+            "sum_gross_carry_bips": "1.40620000"
+          },
+          "sideways": {
+            "count": 1,
+            "positive_count": 1,
+            "sum_gross_carry_bips": "0.49000000"
+          },
+          "up": {
+            "count": 4,
+            "positive_count": 1,
+            "sum_gross_carry_bips": "-0.55770000"
+          }
+        },
+        "roles": {
+          "training": {
+            "count": 5,
+            "gross_carry_bips": "-0.74060000",
+            "net_after_execution_and_capital_bips": "-25.30681004566210045662100457",
+            "opportunity_hurdle_bips": "4.566210045662100456621004566",
+            "passes": false,
+            "positive_count": 1
+          },
+          "validation": {
+            "count": 3,
+            "gross_carry_bips": "0.46090000",
+            "net_after_execution_and_capital_bips": "-22.27882602739726027397260274",
+            "opportunity_hurdle_bips": "2.739726027397260273972602740",
+            "passes": false,
+            "positive_count": 2
+          },
+          "test": {
+            "count": 3,
+            "gross_carry_bips": "-1.45900000",
+            "net_after_execution_and_capital_bips": "-24.19872602739726027397260274",
+            "opportunity_hurdle_bips": "2.739726027397260273972602740",
+            "passes": false,
+            "positive_count": 2
+          }
+        },
+        "sign_consistency": "0.4545454545454545454545454545",
+        "status": "evaluated",
+        "total_gross_carry_bips": "-1.73870000",
+        "total_net_after_execution_and_capital_bips": "-31.78436210045662100456621005",
+        "total_opportunity_hurdle_bips": "10.04566210045662100456621005",
+        "worst_leave_one_settlement_out_net_bips": "-31.42832009132420091324200913"
+      }
+    },
+    "MSTR": {
+      "alignment_diagnostics": {
+        "maximum_observed_timestamp_phase_skew_ms": 131,
+        "normalized_binance_funding_hours": 11,
+        "normalized_binance_kline_hours": 96,
+        "normalized_polymarket_funding_hours": 95
+      },
+      "economic_role_pass_on_actual_retained_rows": false,
+      "fixed_orientation": "short_polymarket_long_binance",
+      "original_frozen_minimum_rows": 12,
+      "original_status": "insufficient_aligned_history",
+      "retained_aligned_rows": 11,
+      "retained_diagnostic": {
+        "aligned_count": 11,
+        "cross_regime_pass": false,
+        "economic_role_pass": false,
+        "first_timestamp_ms": 1787702400000,
+        "historical_persistence_candidate": false,
+        "last_timestamp_ms": 1787990400000,
+        "regimes": {
+          "down": {
+            "count": 5,
+            "positive_count": 2,
+            "sum_gross_carry_bips": "-1.59020000"
+          },
+          "high_volatility": {
+            "count": 6,
+            "positive_count": 3,
+            "sum_gross_carry_bips": "-8.16380000"
+          },
+          "low_volatility": {
+            "count": 5,
+            "positive_count": 2,
+            "sum_gross_carry_bips": "-2.14310000"
+          },
+          "sideways": {
+            "count": 1,
+            "positive_count": 0,
+            "sum_gross_carry_bips": "-1.62000000"
+          },
+          "up": {
+            "count": 5,
+            "positive_count": 3,
+            "sum_gross_carry_bips": "-7.09670000"
+          }
+        },
+        "roles": {
+          "training": {
+            "count": 5,
+            "gross_carry_bips": "-7.32070000",
+            "net_after_execution_and_capital_bips": "-31.88691004566210045662100457",
+            "opportunity_hurdle_bips": "4.566210045662100456621004566",
+            "passes": false,
+            "positive_count": 3
+          },
+          "validation": {
+            "count": 3,
+            "gross_carry_bips": "-1.00750000",
+            "net_after_execution_and_capital_bips": "-23.74722602739726027397260274",
+            "opportunity_hurdle_bips": "2.739726027397260273972602740",
+            "passes": false,
+            "positive_count": 2
+          },
+          "test": {
+            "count": 3,
+            "gross_carry_bips": "-1.97870000",
+            "net_after_execution_and_capital_bips": "-24.71842602739726027397260274",
+            "opportunity_hurdle_bips": "2.739726027397260273972602740",
+            "passes": false,
+            "positive_count": 0
+          }
+        },
+        "sign_consistency": "0.4545454545454545454545454545",
+        "status": "evaluated",
+        "total_gross_carry_bips": "-10.30690000",
+        "total_net_after_execution_and_capital_bips": "-40.35256210045662100456621005",
+        "total_opportunity_hurdle_bips": "10.04566210045662100456621005",
+        "worst_leave_one_settlement_out_net_bips": "-40.36342009132420091324200913"
+      }
+    }
+  },
+  "adjudication": {
+    "accepted_edge": false,
+    "candidate_for_books": false,
+    "deployment_ready": false,
+    "all_symbols_economically_rejected_on_actual_retained_rows": true,
+    "status": "retained_actual_rows_reject_every_symbol"
+  },
+  "interpretation_boundary": "This zero-network diagnostic cannot repair the consumed twelve-row sample gate or promote a candidate. It may only strengthen rejection.",
+  "next_action": "request_no_books_and_do_not_repeat_this_family_absent_a_material_funding_fee_session_or_instrument_change",
+  "result_sha256": "5e67277ad30b9f0164a3987804162ed2d1cdabb820e7e258d6a0b79748cf7d06"
+}

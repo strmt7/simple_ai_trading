@@ -19,7 +19,7 @@ RESULT = ROOT / (
 REGISTRY = ROOT / "docs/model-research/structural-edge-priority-registry-v1.json"
 CONTRACT_HASH = "806b99257dd081fddef2fcaa5657776e9dfecee65dd52da1bba351052a062e81"
 RESULT_HASH = "a9b0e7a2aba9bda7f83b9515be587a17e6da69fa0bc987191a21f9d37e912d3b"
-REGISTRY_HASH = "4b3828b49387edf1e26e8ff107221139f1d133c65ab85a8664f0ac08de84e5ad"
+REGISTRY_HASH = "e712a9086d31944b42f93270256c393c6d8ab38997c20b7f8638cd4aa9088a34"
 
 
 def _canonical_hash(payload: dict[str, object], field: str) -> str:
@@ -82,7 +82,7 @@ def test_existing_terminal_family_is_updated_without_duplicate_rank() -> None:
 
     assert registry["result_sha256"] == REGISTRY_HASH
     assert _canonical_hash(registry, "result_sha256") == REGISTRY_HASH
-    assert len(registry["prioritized_hypotheses"]) == 42
+    assert len(registry["prioritized_hypotheses"]) == 43
     assert registry["accepted_edge_count"] == 20
     terminal = [
         row

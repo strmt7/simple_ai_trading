@@ -1,0 +1,242 @@
+{
+  "schema_version": "polymarket-binance-tradfi-perps-funding-history-v1",
+  "created_at_utc": "2026-08-29T19:38:35.021558Z",
+  "contract": {
+    "path": "docs/model-research/action-value/polymarket-binance-tradfi-perps-funding-history-contract-v1.json",
+    "result_sha256": "6059d02dbda9e6a314f3fc79793f8d21ba3c3040803da033bd81ead3d2b872de"
+  },
+  "authority": {
+    "account_state_accessed": false,
+    "authenticated_requests": 0,
+    "credentials_used": false,
+    "http_get_requests": 15,
+    "orders_transfers_or_account_mutations": 0,
+    "paper_or_live_trading_authority": false
+  },
+  "economics": {
+    "orientation": "fixed independently by the current prefilter and never selected or inverted after history access",
+    "funding_join": "sum the eight Polymarket hourly funding observations ending at each Binance settlement and subtract the complete Binance Regular plus Special settlement cash flow",
+    "price_regime_path": "use eight consecutive Binance one-hour symbol klines ending immediately before each funding settlement",
+    "maximum_timestamp_phase_skew_ms": 60000,
+    "execution_hurdle_bips": "20",
+    "annual_opportunity_hurdle_bips_per_leg": "500",
+    "capital_legs": 2,
+    "minimum_aligned_rows": 12,
+    "role_split": "oldest 50 percent training, next half of the remainder validation, newest remainder test; expected 6 3 3 at twelve rows",
+    "role_gate": "each role independently has positive cumulative funding carry after one 20-bip round-trip hurdle and elapsed two-leg capital cost",
+    "minimum_regime_rows": 2,
+    "direction_regimes": "up above 0.25 percent, down below negative 0.25 percent, and sideways inclusive between those bounds",
+    "volatility_regimes": "high at or above the full-window median absolute eight-hour return and low below it",
+    "regime_gate": "every direction and volatility slice has at least two rows and positive gross fixed-orientation carry",
+    "persistence_gate": "role gate and regime gate pass, sign consistency is at least 75 percent, and the worst leave-one-settlement-out full-window result remains positive after execution and capital hurdles",
+    "unmodeled_before_any_edge_claim": [
+      "pUSD USDT executable conversion basis fees custody and delay",
+      "synchronized executable entry and exit depth and fill probability",
+      "exact account fee tiers and owned fill roles",
+      "cross-session index and mark divergence and settlement architecture",
+      "dividends corporate actions halts liquidation insurance and auto-deleveraging",
+      "choppy liquidity and latency stress with prospective paper fills"
+    ]
+  },
+  "selected_symbols": [
+    "SKHYNIX",
+    "CRWV",
+    "ARM",
+    "HOOD",
+    "MSTR"
+  ],
+  "symbol_results": {
+    "SKHYNIX": {
+      "alignment_diagnostics": {
+        "maximum_observed_timestamp_phase_skew_ms": 1002,
+        "normalized_binance_funding_hours": 26,
+        "normalized_binance_kline_hours": 96,
+        "normalized_polymarket_funding_hours": 95
+      },
+      "binance_rate_type_counts": {
+        "Regular": 26,
+        "Special": 1
+      },
+      "fixed_orientation": "short_polymarket_long_binance",
+      "prefilter_spread_bips_per_8h": "8.94880000",
+      "result": {
+        "aligned_count": 26,
+        "cross_regime_pass": false,
+        "economic_role_pass": false,
+        "first_timestamp_ms": 1787702400000,
+        "historical_persistence_candidate": false,
+        "last_timestamp_ms": 1788004800000,
+        "regimes": {
+          "down": {
+            "count": 12,
+            "positive_count": 4,
+            "sum_gross_carry_bips": "-34.93300000"
+          },
+          "high_volatility": {
+            "count": 13,
+            "positive_count": 6,
+            "sum_gross_carry_bips": "-16.36810000"
+          },
+          "low_volatility": {
+            "count": 13,
+            "positive_count": 6,
+            "sum_gross_carry_bips": "-1.61060000"
+          },
+          "sideways": {
+            "count": 5,
+            "positive_count": 2,
+            "sum_gross_carry_bips": "1.13950000"
+          },
+          "up": {
+            "count": 9,
+            "positive_count": 6,
+            "sum_gross_carry_bips": "15.81480000"
+          }
+        },
+        "roles": {
+          "training": {
+            "count": 13,
+            "gross_carry_bips": "-18.47960000",
+            "net_after_execution_and_capital_bips": "-50.35174611872146118721461187",
+            "opportunity_hurdle_bips": "11.87214611872146118721461187",
+            "passes": false,
+            "positive_count": 4
+          },
+          "validation": {
+            "count": 6,
+            "gross_carry_bips": "-8.66290000",
+            "net_after_execution_and_capital_bips": "-34.14235205479452054794520548",
+            "opportunity_hurdle_bips": "5.479452054794520547945205479",
+            "passes": false,
+            "positive_count": 3
+          },
+          "test": {
+            "count": 7,
+            "gross_carry_bips": "9.16380000",
+            "net_after_execution_and_capital_bips": "-17.22889406392694063926940639",
+            "opportunity_hurdle_bips": "6.392694063926940639269406393",
+            "passes": false,
+            "positive_count": 5
+          }
+        },
+        "sign_consistency": "0.4615384615384615384615384615",
+        "status": "evaluated",
+        "total_gross_carry_bips": "-17.97870000",
+        "total_net_after_execution_and_capital_bips": "-61.72299223744292237442922374",
+        "total_opportunity_hurdle_bips": "23.74429223744292237442922374",
+        "worst_leave_one_settlement_out_net_bips": "-72.96705022831050228310502283"
+      },
+      "source_counts": {
+        "binance_funding_settlements": 27,
+        "binance_klines": 96,
+        "polymarket_hourly_funding": 95
+      }
+    },
+    "CRWV": {
+      "alignment_diagnostics": {
+        "maximum_observed_timestamp_phase_skew_ms": 131,
+        "normalized_binance_funding_hours": 11,
+        "normalized_binance_kline_hours": 96,
+        "normalized_polymarket_funding_hours": 95
+      },
+      "binance_rate_type_counts": {
+        "Regular": 11
+      },
+      "fixed_orientation": "long_polymarket_short_binance",
+      "prefilter_spread_bips_per_8h": "7.27760000",
+      "result": {
+        "aligned_count": 11,
+        "cross_regime_pass": false,
+        "economic_role_pass": false,
+        "status": "insufficient_aligned_history"
+      },
+      "source_counts": {
+        "binance_funding_settlements": 11,
+        "binance_klines": 96,
+        "polymarket_hourly_funding": 95
+      }
+    },
+    "ARM": {
+      "alignment_diagnostics": {
+        "maximum_observed_timestamp_phase_skew_ms": 131,
+        "normalized_binance_funding_hours": 11,
+        "normalized_binance_kline_hours": 96,
+        "normalized_polymarket_funding_hours": 95
+      },
+      "binance_rate_type_counts": {
+        "Regular": 11
+      },
+      "fixed_orientation": "short_polymarket_long_binance",
+      "prefilter_spread_bips_per_8h": "4.86560000",
+      "result": {
+        "aligned_count": 11,
+        "cross_regime_pass": false,
+        "economic_role_pass": false,
+        "status": "insufficient_aligned_history"
+      },
+      "source_counts": {
+        "binance_funding_settlements": 11,
+        "binance_klines": 96,
+        "polymarket_hourly_funding": 95
+      }
+    },
+    "HOOD": {
+      "alignment_diagnostics": {
+        "maximum_observed_timestamp_phase_skew_ms": 131,
+        "normalized_binance_funding_hours": 11,
+        "normalized_binance_kline_hours": 96,
+        "normalized_polymarket_funding_hours": 95
+      },
+      "binance_rate_type_counts": {
+        "Regular": 11
+      },
+      "fixed_orientation": "short_polymarket_long_binance",
+      "prefilter_spread_bips_per_8h": "4.84240000",
+      "result": {
+        "aligned_count": 11,
+        "cross_regime_pass": false,
+        "economic_role_pass": false,
+        "status": "insufficient_aligned_history"
+      },
+      "source_counts": {
+        "binance_funding_settlements": 11,
+        "binance_klines": 96,
+        "polymarket_hourly_funding": 95
+      }
+    },
+    "MSTR": {
+      "alignment_diagnostics": {
+        "maximum_observed_timestamp_phase_skew_ms": 131,
+        "normalized_binance_funding_hours": 11,
+        "normalized_binance_kline_hours": 96,
+        "normalized_polymarket_funding_hours": 95
+      },
+      "binance_rate_type_counts": {
+        "Regular": 11
+      },
+      "fixed_orientation": "short_polymarket_long_binance",
+      "prefilter_spread_bips_per_8h": "4.55170000",
+      "result": {
+        "aligned_count": 11,
+        "cross_regime_pass": false,
+        "economic_role_pass": false,
+        "status": "insufficient_aligned_history"
+      },
+      "source_counts": {
+        "binance_funding_settlements": 11,
+        "binance_klines": 96,
+        "polymarket_hourly_funding": 95
+      }
+    }
+  },
+  "role_only_survivors": [],
+  "historical_persistence_candidates": [],
+  "adjudication": {
+    "accepted_edge": false,
+    "candidate_for_books": false,
+    "deployment_ready": false,
+    "status": "bounded_history_rejected_before_books"
+  },
+  "next_action": "do_not_request_books_for_this_snapshot_selected_population_without_a_material_funding_fee_session_or_instrument_change",
+  "result_sha256": "ad896a698edd65b42b039f84d1b037cf67302c7b2bb7ae59e9008f45328939bb"
+}

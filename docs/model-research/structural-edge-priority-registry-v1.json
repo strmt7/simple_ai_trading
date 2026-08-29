@@ -1883,9 +1883,60 @@
       ],
       "retry_trigger": "new_official_Binance_Leveraged_Token_Spot_listing_or_relisting_after_2026_08_29T15_17_17_035897Z_or_material_BLVT_fee_API_or_product_architecture_change",
       "venue_scope": "Binance_current_BLVT_Spot_and_primary_market_inventory"
+    },
+    {
+      "blocking_evidence": [
+        "a material Polymarket or Binance TradFi perpetual funding cash-flow fee session or instrument change",
+        "a new prospectively complete fixed-orientation funding history whose training validation test and every required market regime remain positive after execution conversion and two-leg capital costs",
+        "source-bound pUSD USDT executable conversion basis fees custody and delay",
+        "synchronized executable entry and exit depth exact account fees margin liquidation and non-atomic orphan costs",
+        "positive prospective owned paper cash flows across independent sessions liquidity volatility and latency states before any deployment claim"
+      ],
+      "canonical_artifacts": [
+        {
+          "path": "docs/model-research/action-value/polymarket-binance-tradfi-perps-funding-prefilter-contract-v1.json",
+          "result_sha256": "b566862fd25b0fb485a5a20fb01b71f0cc0c43dd9cb5ca9bfede1e1b4fe0957e"
+        },
+        {
+          "path": "docs/model-research/action-value/polymarket-binance-tradfi-perps-funding-prefilter-v1-2026-08-29.json",
+          "result_sha256": "9e2d5843a986f02f757aa56641c5cb38c35500e62cb2a1804984dea7793a1859"
+        },
+        {
+          "path": "docs/model-research/action-value/polymarket-binance-tradfi-perps-funding-history-contract-v1.json",
+          "result_sha256": "6059d02dbda9e6a314f3fc79793f8d21ba3c3040803da033bd81ead3d2b872de"
+        },
+        {
+          "path": "docs/model-research/action-value/polymarket-binance-tradfi-perps-funding-history-v1-2026-08-29.json",
+          "result_sha256": "ad896a698edd65b42b039f84d1b037cf67302c7b2bb7ae59e9008f45328939bb"
+        },
+        {
+          "path": "docs/model-research/action-value/polymarket-binance-tradfi-perps-funding-history-shortfall-adjudication-contract-v1.json",
+          "result_sha256": "f06981e97236a0c577a626b882cc72f69383752112f8c0ffab8e04e1b7b9e480"
+        },
+        {
+          "path": "docs/model-research/action-value/polymarket-binance-tradfi-perps-funding-history-shortfall-adjudication-v1-2026-08-29.json",
+          "result_sha256": "5e67277ad30b9f0164a3987804162ed2d1cdabb820e7e258d6a0b79748cf7d06"
+        }
+      ],
+      "current_status": "market_direction_independent_fixed_orientation_cross_venue_Polymarket_and_Binance_TradFi_perpetual_funding_spread_terminal_for_the_frozen_current_top_five_SKHYNIX_CRWV_ARM_HOOD_MSTR_the_current_prefilter_found_seven_of_36_matches_above_the_conservative_threshold_but_the_bounded_history_and_zero_network_retained_shortfall_adjudication_found_every_symbol_failed_training_validation_and_test_after_20_bips_execution_and_two_500_bip_annual_capital_hurdles_ARM_was_least_negative_at_negative_24_6296621005_bips_full_window_and_below_negative_20_68_bips_in_every_role_no_books_conversion_credentials_accounts_orders_or_protected_capture_assets_were_used_not_accepted_or_deployment_ready",
+      "market_direction_forecast_required": false,
+      "mechanism": "polymarket_binance_TradFi_perpetual_fixed_orientation_cross_venue_funding_spread",
+      "next_action": "do_not_request_books_or_repeat_the_frozen_top_five_and_window_reopen_only_after_a_material_funding_cash_flow_fee_session_or_instrument_change_capable_of_clearing_the_retained_role_deficits_then_preregister_one_complete_fixed_orientation_history_before_any_depth_or_account_access",
+      "priority_rank": 43,
+      "prohibited_shortcuts": [
+        "selecting_or_inverting_orientation_after_viewing_history",
+        "treating_one_current_funding_snapshot_as_stable_carry",
+        "dropping_Binance_Special_dividend_funding_rows_or_cross_session_basis_risk",
+        "ignoring_pUSD_USDT_conversion_execution_or_two_capital_legs",
+        "requesting_books_after_every_fixed_orientation_role_failed",
+        "repairing_the_consumed_twelve_row_gate_into_a_promotion_from_eleven_rows",
+        "calling_gross_funding_spread_an_edge_or_deployment_ready"
+      ],
+      "retry_trigger": "material_Polymarket_or_Binance_TradFi_perpetual_funding_cash_flow_fee_market_session_instrument_conversion_or_execution_architecture_change_capable_of_clearing_the_retained_training_validation_and_test_deficits_after_2026_08_29T19_38_48Z",
+      "venue_scope": "Polymarket_Perps_and_Binance_USDT_margined_TradFi_perpetuals_with_exact_non_crypto_base_asset_matches"
     }
   ],
-  "result_sha256": "4b3828b49387edf1e26e8ff107221139f1d133c65ab85a8664f0ac08de84e5ad",
+  "result_sha256": "e712a9086d31944b42f93270256c393c6d8ab38997c20b7f8638cd4aa9088a34",
   "schema_version": "structural-edge-priority-registry-v1",
   "terminal_do_not_repeat": [
     {
@@ -2072,8 +2123,13 @@
       "canonical_result_sha256": "c09d62e98cd0df88622d4b98d9d8f01247121ccd786fffb580bc72429ef6bf30",
       "family": "binance_BTC_ETH_SOL_option_perpetual_conversion_reversal_retained_prefilter",
       "reason": "the_consumed_v1_zero_request_test_wrongly_used_option_transaction_closeTime_as_quote_update_provenance_and_is_preserved_the_separately_frozen_v2_HTTP_observation_window_repair_found_71_synchronized_nominal_rows_across_all_1410_conversion_and_reversal_directions_but_zero_survived_exact_quantity_two_adverse_ticks_per_leg_35_5_bips_fee_and_expiry_basis_direction_specific_worst_retained_funding_and_two_notional_10_percent_annual_capital_stress_before_unavailable_option_depth_do_not_request_current_depth_or_repeat_this_snapshot_without_a_material_price_fee_book_funding_margin_or_product_change"
+    },
+    {
+      "canonical_result_sha256": "5e67277ad30b9f0164a3987804162ed2d1cdabb820e7e258d6a0b79748cf7d06",
+      "family": "polymarket_binance_TradFi_perpetual_fixed_orientation_cross_venue_funding_spread_top_five_snapshot",
+      "reason": "the_current_prefilter_selected_SKHYNIX_CRWV_ARM_HOOD_and_MSTR_but_every_fixed_orientation_symbol_failed_training_validation_and_test_after_20_bips_execution_and_two_500_bip_annual_capital_hurdles_ARM_was_least_negative_at_negative_24_6296621005_bips_full_window_do_not_request_books_or_repeat_without_a_material_funding_fee_session_instrument_conversion_or_execution_change"
     }
   ],
-  "updated_at_utc": "2026-08-29T17:08:22.2460324+00:00",
+  "updated_at_utc": "2026-08-29T19:42:07.3604763+00:00",
   "usage_rule": "advance_the_highest_ranked_hypothesis_whose_retry_trigger_is_satisfied_otherwise_do_not_repeat_a_blocked_or_terminal_screen"
 }

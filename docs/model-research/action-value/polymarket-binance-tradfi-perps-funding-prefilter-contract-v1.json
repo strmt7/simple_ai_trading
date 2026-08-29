@@ -1,0 +1,104 @@
+{
+  "schema_version": "polymarket-binance-tradfi-perps-funding-prefilter-contract-v1",
+  "frozen_at_utc": "2026-08-29T19:27:40.0250360Z",
+  "result_sha256": "b566862fd25b0fb485a5a20fb01b71f0cc0c43dd9cb5ca9bfede1e1b4fe0957e",
+  "purpose": "test whether any exact non-crypto Polymarket Perps and Binance TradFi perpetual match has enough current funding separation to justify a separately frozen historical persistence study without requesting books or predicting market direction",
+  "implementation_path": "tools/screen_polymarket_binance_tradfi_perps_funding_prefilter.py",
+  "implementation_sha256": "773c482a96ba3fdf2b9a73b6260a0d44ea6dcb29bc5b21105e44dc741576a627",
+  "authority": {
+    "public_unauthenticated_market_data_only": true,
+    "credentials_permitted": false,
+    "account_state_permitted": false,
+    "orders_transfers_or_account_mutations_permitted": false,
+    "paper_or_live_trading_authority": false
+  },
+  "novelty_and_retained_preflight": {
+    "registry_alias_search_result": "no existing Polymarket Perps non-crypto funding comparison against Binance TradFi perpetuals",
+    "retained_polymarket_instruments": {
+      "path": "data/polymarket-binance-perps-oi-carry-v1/response-01-polymarket-instruments.json",
+      "sha256": "c740a018e2995dd1ed0343b965f86f0f1914a951867ccc9e6513b3e351090aeb",
+      "captured_at_utc": "2026-08-26T12:41:53Z"
+    },
+    "retained_binance_exchange_info": {
+      "path": "data/binance-djtb-new-listing-spot-perpetual-v1/raw/futures-exchange-info.raw",
+      "sha256": "f1a532eecb75825997102c00d61366568571625547bee8e874358fc752ea08bf",
+      "captured_at_utc": "2026-08-27T03:44:40Z"
+    },
+    "retained_exact_match_count": 36,
+    "retained_exact_match_rule": "Polymarket category equity index or commodity with base_asset X joins Binance symbol XUSDT only when status TRADING and contractType TRADIFI_PERPETUAL"
+  },
+  "source_boundary": {
+    "polymarket_market_data_contract": "https://docs.polymarket.com/perps/market-data",
+    "polymarket_funding_contract": "https://docs.polymarket.com/perps/learn-about-trading/funding",
+    "polymarket_market_sessions_contract": "https://docs.polymarket.com/perps/learn-about-trading/market-sessions",
+    "polymarket_fee_contract": "https://docs.polymarket.com/perps/learn-about-trading/fees",
+    "binance_market_data_contract": "https://developers.binance.com/docs/derivatives/usds-margined-futures/market-data/rest-api/24hr-Ticker-Price-Change-Statistics",
+    "binance_tradfi_fee_overlay_lineage": {
+      "path": "docs/model-research/action-value/binance-aug28-public-structural-trigger-triage-v1-2026-08-29.json",
+      "result_sha256": "bca11d612042f9a859f53b71e425cd320cca5d4a5d7695cd1f0a0de539b0eea1"
+    },
+    "security_classification": "all four requests are explicit public market-data GETs documented for public clients; no account endpoint is called"
+  },
+  "economics": {
+    "polymarket_funding_interval": "1h",
+    "binance_tradfi_funding_interval": "8h",
+    "normalization": "compare eight consecutive Polymarket hourly-rate equivalents with one Binance eight-hour rate; the current snapshot multiplies the Polymarket hourly rate by eight only as a rejection-first prefilter",
+    "orientation": "take the absolute current funding-rate difference and label the receiving leg; do not refit direction after historical access",
+    "prospective_history_horizon_days": "7",
+    "prospective_history_eight_hour_intervals": "21",
+    "round_trip_execution_conversion_and_fee_hurdle_bips": "20",
+    "annual_opportunity_hurdle_bips_per_leg": "500",
+    "two_leg_seven_day_opportunity_hurdle_bips": "19.17808219178082191780821918",
+    "total_seven_day_hurdle_bips": "39.17808219178082191780821918",
+    "prefilter_threshold_bips_per_8h": "1.865622961513372472276581866",
+    "unmodeled_before_acceptance": [
+      "pUSD USDT executable conversion basis fees custody and delay",
+      "synchronized executable entry and exit depth",
+      "exact account fee tiers and owned fill roles",
+      "cross-session index and mark divergence",
+      "dividend special funding corporate actions halts liquidations insurance and auto-deleveraging",
+      "cross-regime persistence and prospective paper fills"
+    ]
+  },
+  "request_contract": {
+    "maximum_get_requests": 4,
+    "maximum_followup_symbols": 5,
+    "raw_directory": "data/polymarket-binance-tradfi-perps-funding-prefilter-v1",
+    "raw_persistence": "persist the exact request plan before access and each raw response plus receipt metadata before parsing",
+    "requests": [
+      {
+        "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "label": "polymarket-instruments",
+        "method": "GET",
+        "url": "https://api.perpetuals.polymarket.com/v1/info/instruments"
+      },
+      {
+        "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "label": "polymarket-tickers",
+        "method": "GET",
+        "url": "https://api.perpetuals.polymarket.com/v1/info/tickers"
+      },
+      {
+        "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "label": "binance-exchange-info",
+        "method": "GET",
+        "url": "https://fapi.binance.com/fapi/v1/exchangeInfo"
+      },
+      {
+        "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "label": "binance-premium-index",
+        "method": "GET",
+        "url": "https://fapi.binance.com/fapi/v1/premiumIndex"
+      }
+    ],
+    "retry_policy": "none; preserve every response and failure, and never adaptively add books or history to this contract"
+  },
+  "acceptance_boundary": {
+    "accepted_edge": false,
+    "books_permitted": false,
+    "history_permitted": false,
+    "history_candidate_requires": "at least one exact current match at or above the frozen 1.865622961513372472276581866 bips per eight-hour hurdle",
+    "positive_prefilter_action": "select at most five symbols by frozen current spread rank for a separately frozen bounded historical funding-only contract",
+    "failed_prefilter_action": "do not request history or books until a material funding fee session or instrument change"
+  }
+}

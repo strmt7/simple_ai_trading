@@ -1,0 +1,40 @@
+{
+  "schema_version": "polymarket-binance-tradfi-perps-funding-history-shortfall-adjudication-contract-v1",
+  "frozen_at_utc": "2026-08-29T19:40:41.143752Z",
+  "result_sha256": "f06981e97236a0c577a626b882cc72f69383752112f8c0ffab8e04e1b7b9e480",
+  "purpose": "use only the already retained responses to determine whether the four eleven-row sample shortfalls also fail the unchanged economic role gates; the adjudication may strengthen rejection but can never repair the consumed minimum-row gate or promote a candidate",
+  "implementation_path": "tools/adjudicate_polymarket_binance_tradfi_perps_funding_history_shortfall.py",
+  "implementation_sha256": "611937c6d94aa63b90bb47985ff87d669decbf506ea50e044596890dad26f8c6",
+  "consumed_source": {
+    "result_path": "docs/model-research/action-value/polymarket-binance-tradfi-perps-funding-history-v1-2026-08-29.json",
+    "result_file_sha256": "ca7d83a1ce1e3bc356f851626068e48674823a7d566f6178a271a1706be3dee2",
+    "result_sha256": "ad896a698edd65b42b039f84d1b037cf67302c7b2bb7ae59e9008f45328939bb",
+    "journal_path": "data/polymarket-binance-tradfi-perps-funding-history-v1/journal.json",
+    "journal_file_sha256": "28d7810aed27d21eb6b25f97e4fe2e2332732b17945fd202f3c34bf064449936"
+  },
+  "authority": {
+    "network_requests_permitted": false,
+    "credentials_permitted": false,
+    "account_state_permitted": false,
+    "books_permitted": false,
+    "orders_transfers_or_account_mutations_permitted": false,
+    "paper_or_live_trading_authority": false,
+    "protected_round21_sidecar_touched": false
+  },
+  "method": {
+    "orientation": "reuse each frozen prefilter orientation without refit",
+    "cash_flows": "reuse exact retained Polymarket hourly and Binance Regular plus Special funding rows",
+    "costs": "reuse the 20-bip round-trip execution hurdle and 500-bip annual opportunity hurdle on each of two capital legs",
+    "role_split": "apply the unchanged deterministic splitter to the actual retained aligned count; eleven rows become five training three validation and three test",
+    "minimum_aligned_rows_for_diagnostic_only": 1,
+    "original_minimum_aligned_rows_remains_binding": 12,
+    "promotion_prohibited": true
+  },
+  "decision": {
+    "all_symbols_fail_economic_role_gate": "terminalize the exact family before books and do not repeat absent a material funding fee session or instrument change",
+    "any_symbol_passes_economic_role_gate": "preserve only as a sample-shortfall lead; wait for a prospectively distinct complete window and request no books",
+    "accepted_edge": false,
+    "candidate_for_books": false,
+    "deployment_ready": false
+  }
+}

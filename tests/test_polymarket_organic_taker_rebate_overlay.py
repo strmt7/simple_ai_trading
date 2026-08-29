@@ -15,7 +15,7 @@ REGISTRY = ROOT / "docs/model-research/structural-edge-priority-registry-v1.json
 RAW = ROOT / ("docs/model-research/action-value/raw/polymarket-organic-taker-rebate-v1")
 EXPECTED_HASH = "6a3f907dbebd0c7cc894d95054231540e50cd8e28e6264840a2840be8ac72865"
 EXPECTED_REGISTRY_HASH = (
-    "4b3828b49387edf1e26e8ff107221139f1d133c65ab85a8664f0ac08de84e5ad"
+    "e712a9086d31944b42f93270256c393c6d8ab38997c20b7f8638cd4aa9088a34"
 )
 PUSD = "0xc011a7e12a19f7b1f670d46f03b03f3342e82dfb"
 V2_EXCHANGE = "0xe111180000d2663c0091e4f400237545b87b996b"
@@ -178,7 +178,7 @@ def test_promotion_is_scoped_non_authorizing_and_registered_as_edge_ten() -> Non
     assert _embedded_hash(registry) == EXPECTED_REGISTRY_HASH
     assert registry["accepted_edge_count"] == 20
     hypotheses = registry["prioritized_hypotheses"]
-    assert [row["priority_rank"] for row in hypotheses] == list(range(1, 43))
+    assert [row["priority_rank"] for row in hypotheses] == list(range(1, 44))
     candidate = next(
         row
         for row in hypotheses

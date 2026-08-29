@@ -12,7 +12,7 @@ ARTIFACT = ROOT / "docs/model-research/action-value" / (
 )
 REGISTRY = ROOT / "docs/model-research/structural-edge-priority-registry-v1.json"
 EXPECTED_HASH = "8a29116879fd90cb0f8fc11d9780a8dccbff8afc2d3ea685e671921f651e64d1"
-REGISTRY_HASH = "4b3828b49387edf1e26e8ff107221139f1d133c65ab85a8664f0ac08de84e5ad"
+REGISTRY_HASH = "e712a9086d31944b42f93270256c393c6d8ab38997c20b7f8638cd4aa9088a34"
 
 
 def _load(path: Path) -> dict[str, object]:
@@ -83,7 +83,7 @@ def test_registry_accepts_referral_pro_without_crediting_performance_tiers() -> 
     assert _canonical_hash(registry) == REGISTRY_HASH
     assert registry["accepted_edge_count"] == 20
     assert [row["priority_rank"] for row in registry["prioritized_hypotheses"]] == list(
-        range(1, 43)
+        range(1, 44)
     )
     row = next(
         row

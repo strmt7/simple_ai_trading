@@ -12,7 +12,7 @@ ARTIFACT = ROOT / "docs/model-research/action-value" / (
 )
 REGISTRY = ROOT / "docs/model-research/structural-edge-priority-registry-v1.json"
 EXPECTED_HASH = "08fb223f771c5793da944497f37f4067238e7fd2b40fa2427293dbf7b55c4116"
-REGISTRY_HASH = "4b3828b49387edf1e26e8ff107221139f1d133c65ab85a8664f0ac08de84e5ad"
+REGISTRY_HASH = "e712a9086d31944b42f93270256c393c6d8ab38997c20b7f8638cd4aa9088a34"
 
 
 def _load(path: Path) -> dict[str, object]:
@@ -116,7 +116,7 @@ def test_registry_adds_only_trigger_gated_combo_identity_candidate() -> None:
     assert _canonical_hash(registry) == REGISTRY_HASH
     assert registry["accepted_edge_count"] == 20
     assert [row["priority_rank"] for row in registry["prioritized_hypotheses"]] == list(
-        range(1, 43)
+        range(1, 44)
     )
     row = next(
         item
