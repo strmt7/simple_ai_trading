@@ -1636,7 +1636,7 @@ safety gate, blocks Stop, or submits an order.
   and `f032753b45c82b2e0945d1a8c0e0d5fc01f8fb1727cdad34e73064c7590417ba`.
 - The structural-edge registry now has 44 ranked hypotheses and 21
   narrowly accepted scoped overlays, and result SHA-256
-  `98714cb8665d2132cb53670f09e73d11816cdbb7a9c3bc221dce4db4f865f98d`.
+  `a94c524d3c73dfdf52275b384b8c18d84314ceb53be57ae744df258cbe7cdef0`.
 
 ## Task Routing
 
@@ -1751,4 +1751,26 @@ result SHA-256 values are
 and `895dc0eba4f72b9b08b19dbba245b20434e4db905fd4ded3ea70779733db6d47`.
 The registry remains at 44 hypotheses and 21 accepted scoped edges; its updated
 result SHA-256 is
-`98714cb8665d2132cb53670f09e73d11816cdbb7a9c3bc221dce4db4f865f98d`.
+`a94c524d3c73dfdf52275b384b8c18d84314ceb53be57ae744df258cbe7cdef0`.
+
+## Polymarket official-documentation novelty gate
+
+One frozen public unauthenticated request retained the complete current
+`llms.txt` index before any linked page or market-data access. Its 80 top-level
+English Markdown pages add zero distinct economic mechanism outside the
+registry. Reward, fee, resolution, position, Combo, and Perps pages map to
+existing families. Session keys, matching-engine restarts, bridge routes, mark
+price, index price, and market sessions are operational or risk constraints,
+not standalone cash flows. In particular, Combo collateral return was already
+retained in rank 33 and cannot be promoted again under a new name.
+
+Do not re-fetch this exact index or open linked pages from it. Retry only if the
+official `llms.txt` SHA changes from
+`68256fa9849e72626806cbc7373f726421fd6d62dddecc0ae3a8009595bd2b8d`
+and an offline title or description diff identifies a genuinely new cash flow,
+cost reduction, settlement right, or executable package. Canonical result
+SHA-256 is
+`e56ce8f2a491d6da3f66b0d085381894ec0e7c078e4f4cfaf238d8e044fa281a`.
+The registry remains at 44 hypotheses and 21 accepted scoped edges; its result
+SHA-256 is
+`a94c524d3c73dfdf52275b384b8c18d84314ceb53be57ae744df258cbe7cdef0`.

@@ -2065,7 +2065,7 @@
       "venue_scope": "Binance_Spot_direct_and_exactly_one_intermediary_routes_for_independently_required_organic_conversions_with_the_exactly_two_intermediary_extension_terminal_for_the_retained_population"
     }
   ],
-  "result_sha256": "98714cb8665d2132cb53670f09e73d11816cdbb7a9c3bc221dce4db4f865f98d",
+  "result_sha256": "a94c524d3c73dfdf52275b384b8c18d84314ceb53be57ae744df258cbe7cdef0",
   "schema_version": "structural-edge-priority-registry-v1",
   "terminal_do_not_repeat": [
     {
@@ -2282,8 +2282,13 @@
       "canonical_result_sha256": "cde72e05b1760d9fe23eb65e5bd5f59377230ac91095354936c2a84a9a3758ae",
       "family": "binance_spot_exactly_two_intermediary_organic_conversion_extension",
       "reason": "the_zero_network_retained_extension_evaluated_1064216_routes_and_2128432_route_size_rows_then_found_253_exact_recurring_incremental_candidates_but_all_253_failed_the_five_quote_change_activity_gate_and_18_also_failed_the_100_trade_gate_across_174_required_symbols_do_not_build_a_three_leg_live_collector_or_repeat_without_a_material_fee_filter_activity_or_execution_architecture_change"
+    },
+    {
+      "canonical_result_sha256": "e56ce8f2a491d6da3f66b0d085381894ec0e7c078e4f4cfaf238d8e044fa281a",
+      "family": "polymarket_official_documentation_mechanism_inventory_snapshot",
+      "reason": "the_one_use_current_official_llms_index_contained_80_top_level_English_markdown_pages_but_zero_distinct_economic_mechanisms_outside_existing_registry_families_do_not_refetch_this_snapshot_or_open_linked_pages_until_the_index_SHA_changes_and_an_offline_title_or_description_diff_identifies_a_genuinely_new_cash_flow_cost_reduction_settlement_right_or_executable_package"
     }
   ],
-  "updated_at_utc": "2026-08-29T22:43:27Z",
+  "updated_at_utc": "2026-08-29T22:52:10Z",
   "usage_rule": "advance_the_highest_ranked_hypothesis_whose_retry_trigger_is_satisfied_otherwise_do_not_repeat_a_blocked_or_terminal_screen"
 }

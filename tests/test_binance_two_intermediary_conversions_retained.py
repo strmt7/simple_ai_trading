@@ -8,7 +8,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 EVIDENCE = ROOT / "docs/model-research/action-value"
 REGISTRY = ROOT / "docs/model-research/structural-edge-priority-registry-v1.json"
-REGISTRY_HASH = "98714cb8665d2132cb53670f09e73d11816cdbb7a9c3bc221dce4db4f865f98d"
+REGISTRY_HASH = "a94c524d3c73dfdf52275b384b8c18d84314ceb53be57ae744df258cbe7cdef0"
 
 CONTRACT_HASHES = {
     "binance-two-intermediary-conversion-retained-contract-v1.json": (
@@ -161,7 +161,12 @@ def test_registry_terminalizes_only_the_two_intermediary_extension() -> None:
     assert activity_hash in {
         artifact["result_sha256"] for artifact in family["canonical_artifacts"]
     }
-    terminal = registry["terminal_do_not_repeat"][-1]
+    terminal = next(
+        row
+        for row in registry["terminal_do_not_repeat"]
+        if row["family"]
+        == "binance_spot_exactly_two_intermediary_organic_conversion_extension"
+    )
     assert terminal["family"] == (
         "binance_spot_exactly_two_intermediary_organic_conversion_extension"
     )
