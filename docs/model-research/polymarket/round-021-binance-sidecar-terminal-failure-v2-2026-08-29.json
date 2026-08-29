@@ -1,0 +1,96 @@
+{
+  "schema_version": "polymarket-round21-binance-sidecar-terminal-failure-v2",
+  "status": "terminal_campaign_failed_zero_eligible_segments_no_model_or_edge_claim",
+  "verified_at_utc": "2026-08-29T23:47:05.4259695Z",
+  "artifact_sha256": "9e6790644a566dcfd6e786442a8da3a63c8837f991e766b418fea0df90d0cc8e",
+  "campaign": {
+    "worktree": "C:/trader/simple_ai_trading-round21-sidecar-v2",
+    "repository_commit_oid": "4a5912574a9157d79fecc53bf68ed6f01bb8dac8",
+    "plan_path": "data/round21-binance-sidecar-campaign-plan-v2.json",
+    "plan_sha256": "a0a0508c5e1b5c0d55d66cf98186b0e815e674d9a95c4318f3303337378fa518",
+    "scheduled_end_ms": 1788046800000,
+    "observed_relation": "after_campaign"
+  },
+  "terminal_process_and_storage_audit": {
+    "previously_observed_process_ids": [
+      9356,
+      9368
+    ],
+    "live_previous_process_ids": [],
+    "campaign_lock_exclusive_read_succeeded": true,
+    "state_path": "C:/trader/simple_ai_trading-round21-sidecar-v2/data/round21-binance-sidecar-campaign-state-v2/campaign-state.json",
+    "state_file_sha256": "95fe416024424f40e7f3f743ef7ebd2f43257386234161c1f27dbcc6eefe942c",
+    "state_artifact_sha256": "ab37d025a1ec0d9087c499b3eec45603bce283d8d21542de3983d41b039665dc",
+    "state_phase": "finalized",
+    "state_status": "failed",
+    "state_observed_at_ms": 1788046810208,
+    "database_path": "C:/trader/simple_ai_trading-round21-sidecar/data/round21-binance-sidecar.duckdb",
+    "database_bytes": 17620807680,
+    "database_last_write_utc": "2026-08-29T23:40:12.9972862Z",
+    "database_opened": false,
+    "database_payload_or_outcomes_accessed": false,
+    "wal_exists": false,
+    "campaign_status_terminal_segment_count": 17,
+    "campaign_status_resource_block": null
+  },
+  "segment_terminal_receipt": {
+    "segment_count": 17,
+    "interrupted_segment_count": 16,
+    "failed_segment_count": 1,
+    "complete_or_degraded_eligible_segment_count": 0,
+    "total_raw_message_count": 882811373,
+    "first_started_at_ms": 1785455737686,
+    "last_ended_at_ms": 1788046801514,
+    "ordered_segment_artifact_sha256": [
+      "7ac037e8c5fce2d1208d04df03833b3e37d21dde570a451bb8af16f4b1b471f4",
+      "f8eb2059884ecf374f62ab098bc1b827455091099c2831ae98ba8f187ee97856",
+      "765858d4679d1d0b7fedc5ce173f4b0e160264a136f526f50cf5d327d0944f59",
+      "f3c9b1d2be18139fe1a03c0b91a059e0e1b79082b0547c421cdd7ebd93e86966",
+      "d3c1dd8563f6a4337c0fab2c13651fd7fc94ebeb12e3732d70dcea2a11e29e7f",
+      "8dee6f5d28965ae8cba3459359e9e251bc58726d360c4dd74304a5f22aec4cb7",
+      "9a71798e631eca43bc9b022cd939736c91ccef0265a0d3b3626ed00ca9f5a0e8",
+      "eada5306075fef78b24baad7c461c7a41349f6f0f8cef1f8e3205b6bf4f54cc9",
+      "cd924dd317e9aba50df4ceded18570707f1b9035d6abd0e70a174c32d3259d44",
+      "cf506da8d104b06fe43188ffff887ebedace3369c4475307b989937c2a38ee20",
+      "91489ec898872991c4b6dc41a0d084d3c70c662916ebda58f3aa5c3bfbf1de91",
+      "0a9ad45a9ba646825496eb4ad1fd8b1956ca5292598877a40c574a71a77dbe4b",
+      "08f85f60c84a678864ad09e47c05a1fee76dd083a0841908a231ad66b83977be",
+      "7d7a69c35889ccc9f18634f248a39dbbac51daf154f38d1189a52d6dba749683",
+      "f79449f983d3c69e12e9a204b6c8564711313468ebb7a7bf1f47d1af1417ee09",
+      "f64e61b02ff4f26183e72653df53d6312a16b43fcc46bb19f1730648f30340b5",
+      "51c80e944a28a97ee9a411c0a75514f178aeffd8ed01e2f1b9103aa3a403996a"
+    ],
+    "last_segment": {
+      "segment_index": 16,
+      "run_id": "548f562bfb3e4d51b0326dde62a31af2",
+      "raw_message_count": 11947444,
+      "report_sha256": "92ab2da248e2eb316a46b39251805e0e78eb1f329d3e4048191fd136693fc922",
+      "manifest_sha256": "4edb67f45a03bf08dc8a1bebf9eee833ad4b47d1d0353a1aefc2498b894b264e",
+      "failure": "finish_run OutOfMemoryException while allocating 256 KiB at the frozen 488.2 MiB DuckDB memory limit",
+      "terminal_integrity_audit_complete": false
+    }
+  },
+  "terminal_manifest_attempt": {
+    "contract_defined_command_used": true,
+    "capture_payload_opened": false,
+    "outcome_or_model_data_opened": false,
+    "output_created": false,
+    "result": "RuntimeError: Round 21 sidecar terminal has no eligible segment"
+  },
+  "adjudication": {
+    "terminal_boundary_verified": true,
+    "campaign_source_continuity_passed": false,
+    "model_data_eligible": false,
+    "profitability_claim": false,
+    "accepted_edge_count_change": 0,
+    "retry_same_campaign": false,
+    "next_action": "use the frozen prospective source-continuity recovery design to prepare venue-separated Round 77 Binance and Round 30 Polymarket activation contracts; do not reuse this database, WAL lineage, schedule, or any interrupted or failed segment"
+  },
+  "authority": {
+    "credentials_used": false,
+    "account_state_accessed": false,
+    "orders_or_mutations": false,
+    "paper_trading_authority": false,
+    "live_trading_authority": false
+  }
+}

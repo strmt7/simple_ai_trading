@@ -1832,3 +1832,25 @@ and `1c33e778d217ec5e7ef817e83af3186df7da0e5dd0cc75cb72464bfd97d18d49`.
 The registry remains at 44 hypotheses and 21 accepted scoped edges; its
 canonical SHA-256 is
 `0a34d7289331515f8e7b3f09e856fbc331ecbc3a91130fea20542a39ef211f60`.
+
+## Binance Stocks extension capture and Round 21 sidecar terminal state
+
+The official Binance Stocks fee-extension trigger was observed, but its frozen
+one-use CMS capture failed locally with curl exit `23` before any response body
+or HTTP status was retained. Do not retry that request or use an endpoint alias
+as a repair. The accepted overlay's prior duration remains unchanged; canonical
+failure SHA-256 is
+`498003b3f593cda600570099f9089bcb0db0a189e5c92c87e9395bd2afeb3ed8`.
+All one-use file-backed runners must verify writable raw and journal parent
+directories before network access.
+
+The Round 21 Binance sidecar is no longer protected or running; its scheduled
+boundary passed. Its terminal metadata contains 17 segments: 16 interrupted and
+one failed during `finish_run` at the frozen DuckDB memory limit, leaving zero
+eligible segments. The database exists at the legacy sidecar path, has no WAL,
+and was not opened during the audit. The terminal-manifest command correctly
+rejected the campaign, so source continuity, model eligibility, and profitability
+all remain false. Never reuse or rerun this campaign. Continue only through the
+venue-separated prospective source-continuity recovery design. Canonical
+terminal-failure SHA-256 is
+`9e6790644a566dcfd6e786442a8da3a63c8837f991e766b418fea0df90d0cc8e`.
