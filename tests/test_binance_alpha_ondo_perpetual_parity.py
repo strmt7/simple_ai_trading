@@ -14,7 +14,7 @@ REGISTRY = ROOT / "docs/model-research/structural-edge-priority-registry-v1.json
 IMPLEMENTATION = ROOT / "tools/screen_binance_alpha_ondo_perpetual_parity.py"
 CONTRACT_HASH = "2f08c6b0a8509d9d51db7716d5dde499c3a1937b68eafe77b2970e4da8311b59"
 RESULT_HASH = "a3d474e9010b92c9454a5bc04b5a7f586656c8bc5842cecc61baaa508c2d8bc3"
-REGISTRY_HASH = "ec41ae27eb0699809acabc273620059516a35c09ec6f7cf33520eecbf19ea78e"
+REGISTRY_HASH = "e8c32ad724da73148aa1becc77fe413a243e11fa8f444d514b10e844f9089bfe"
 
 
 def _load(path: Path) -> dict[str, object]:
@@ -107,7 +107,7 @@ def test_registry_terminalizes_only_the_current_snapshot() -> None:
 
     assert registry["result_sha256"] == REGISTRY_HASH
     assert _canonical_hash(registry, "result_sha256") == REGISTRY_HASH
-    assert registry["accepted_edge_count"] == 19
+    assert registry["accepted_edge_count"] == 20
     hypothesis = next(
         row
         for row in registry["prioritized_hypotheses"]

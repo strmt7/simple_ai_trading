@@ -20,7 +20,7 @@ EXPECTED_RESULT_SHA256 = (
     "d279f8ab88875c812e6691fa500fdfde741f2e2fbca19ee240b4c0d4a579d607"
 )
 EXPECTED_REGISTRY_SHA256 = (
-    "ec41ae27eb0699809acabc273620059516a35c09ec6f7cf33520eecbf19ea78e"
+    "e8c32ad724da73148aa1becc77fe413a243e11fa8f444d514b10e844f9089bfe"
 )
 
 
@@ -93,7 +93,7 @@ def test_registry_records_overlay_without_increasing_accepted_count() -> None:
 
     assert registry["result_sha256"] == EXPECTED_REGISTRY_SHA256
     assert _embedded_hash(registry) == EXPECTED_REGISTRY_SHA256
-    assert registry["accepted_edge_count"] == 19
+    assert registry["accepted_edge_count"] == 20
     candidate = next(
         row
         for row in registry["prioritized_hypotheses"]

@@ -15,7 +15,7 @@ ROOT = Path(__file__).resolve().parents[1]
 ACTION_VALUE = ROOT / "docs/model-research/action-value"
 DATA = ROOT / "data/polymarket-lad-det-exact-event-prefilter-v1"
 REGISTRY = ROOT / "docs/model-research/structural-edge-priority-registry-v1.json"
-REGISTRY_HASH = "ec41ae27eb0699809acabc273620059516a35c09ec6f7cf33520eecbf19ea78e"
+REGISTRY_HASH = "e8c32ad724da73148aa1becc77fe413a243e11fa8f444d514b10e844f9089bfe"
 
 
 def _load(path: Path) -> dict[str, object]:
@@ -179,4 +179,4 @@ def test_registry_routes_the_exact_event_to_the_existing_subset_family() -> None
         "7d31545dfb4195b8ecc3fd19e8f2711e4634dd4cc259aa3a8d22f64402852593",
         "5c1de89005404efd8db9a35903df7633f92f9deaaa4c71a639b07d44d8f25e71",
     } <= hashes
-    assert registry["accepted_edge_count"] == 19
+    assert registry["accepted_edge_count"] == 20

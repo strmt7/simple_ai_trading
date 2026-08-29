@@ -10,7 +10,7 @@ ROOT = Path(__file__).resolve().parents[1]
 ACTION_VALUE = ROOT / "docs/model-research/action-value"
 DATA = ROOT / "data/polymarket-lynx-dream-exact-event-prefilter-v1"
 REGISTRY = ROOT / "docs/model-research/structural-edge-priority-registry-v1.json"
-REGISTRY_HASH = "ec41ae27eb0699809acabc273620059516a35c09ec6f7cf33520eecbf19ea78e"
+REGISTRY_HASH = "e8c32ad724da73148aa1becc77fe413a243e11fa8f444d514b10e844f9089bfe"
 
 
 def _load(path: Path) -> dict[str, object]:
@@ -120,4 +120,4 @@ def test_registry_retains_both_negative_wnba_extensions() -> None:
         "cc657982abd9ede0f0f7b18787df32e62c69b7c3b3e547ade3f6f3ccb734ed46",
         "61b3436b3367ba3442ebe777c8a506948243c6d3b6d6a4cb9346d2db3aaf335f",
     } <= hashes
-    assert registry["accepted_edge_count"] == 19
+    assert registry["accepted_edge_count"] == 20

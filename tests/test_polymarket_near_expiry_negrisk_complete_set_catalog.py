@@ -22,7 +22,7 @@ SEP6_JOURNAL = ROOT / "data/polymarket-sep6-negrisk-complete-set-catalog-v1/requ
 SEP6_CONTRACT_HASH = "18d513c0b54c6155897ae435cf9f4b8a0ef327f6072d39b122ebd4579b7f0972"
 SEP6_RESULT_HASH = "3e3ae8fd8c98c93c3e2194425db5992f06aed412e07d32333525601c2b34bc52"
 SEP6_RAW_HASH = "f430490f592cf58297c5f5f118b3fabc32488faa82b5b07b60815279bdc61050"
-REGISTRY_HASH = "ec41ae27eb0699809acabc273620059516a35c09ec6f7cf33520eecbf19ea78e"
+REGISTRY_HASH = "e8c32ad724da73148aa1becc77fe413a243e11fa8f444d514b10e844f9089bfe"
 
 
 def _load(path: Path) -> dict[str, object]:
@@ -153,4 +153,4 @@ def test_registry_routes_partial_page_without_accepting_an_edge() -> None:
     ]
     assert "both_contracts_set_proof_candidate_null" in row["current_status"]
     assert "do_not_resample_or_adaptively_continue" in row["next_action"]
-    assert registry["accepted_edge_count"] == 19
+    assert registry["accepted_edge_count"] == 20

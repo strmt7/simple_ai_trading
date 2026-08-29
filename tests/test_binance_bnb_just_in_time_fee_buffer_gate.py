@@ -14,7 +14,7 @@ ARTIFACT = ROOT / (
 REGISTRY = ROOT / "docs/model-research/structural-edge-priority-registry-v1.json"
 EXPECTED_HASH = "b97eed6a93070d5e29b26d1a47757c9be49e0296332c8019a64388ba936c3b6b"
 EXPECTED_REGISTRY_HASH = (
-    "ec41ae27eb0699809acabc273620059516a35c09ec6f7cf33520eecbf19ea78e"
+    "e8c32ad724da73148aa1becc77fe413a243e11fa8f444d514b10e844f9089bfe"
 )
 
 
@@ -106,7 +106,7 @@ def test_public_minimums_and_registry_promotion_are_exact() -> None:
     registry = _load(REGISTRY)
     assert registry["result_sha256"] == EXPECTED_REGISTRY_HASH
     assert _embedded_hash(registry) == EXPECTED_REGISTRY_HASH
-    assert registry["accepted_edge_count"] == 19
+    assert registry["accepted_edge_count"] == 20
     hypotheses = registry["prioritized_hypotheses"]
     assert [row["priority_rank"] for row in hypotheses] == list(range(1, 43))
     candidate = next(

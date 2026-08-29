@@ -18,7 +18,7 @@ REGISTRY_PATH = ROOT / "docs/model-research/structural-edge-priority-registry-v1
 EXPECTED_RESULT_SHA256 = (
     "591fb98b9a8e58365c67c4a281d1fda3de674b42f1f868a42d98acf2ab19ae68"
 )
-EXPECTED_REGISTRY_SHA256 = "ec41ae27eb0699809acabc273620059516a35c09ec6f7cf33520eecbf19ea78e"
+EXPECTED_REGISTRY_SHA256 = "e8c32ad724da73148aa1becc77fe413a243e11fa8f444d514b10e844f9089bfe"
 SIX_PLACES = Decimal("0.000001")
 
 
@@ -126,7 +126,7 @@ def test_registry_terminalizes_stack_without_changing_idle_yield_acceptance() ->
 
     assert registry["result_sha256"] == EXPECTED_REGISTRY_SHA256
     assert _embedded_hash(registry) == EXPECTED_REGISTRY_SHA256
-    assert registry["accepted_edge_count"] == 19
+    assert registry["accepted_edge_count"] == 20
     idle = next(row for row in registry["prioritized_hypotheses"] if row["priority_rank"] == 3)
     assert any(
         row["result_sha256"] == artifact["result_sha256"]

@@ -12,7 +12,7 @@ Development belongs only on `main`; do not create another development branch.
   code-scanning, and secret-scanning alerts. Reverify the publication commit;
   zero alerts never proves zero undisclosed vulnerabilities.
 - The repository is beta `0.1.0-beta.1`. No model has production authority or a
-  demonstrated long-lived after-all-cost edge. Nineteen narrowly scoped structural
+  demonstrated long-lived after-all-cost edge. Twenty narrowly scoped structural
   edges are accepted: Polymarket holding yield for existing idle on-platform
   pUSD; Polymarket pUSD taker-fee rebates only for independently justified
   legitimate organic BTC/ETH/SOL taker flow after the direct-wallet tier is
@@ -23,7 +23,10 @@ Development belongs only on `main`; do not create another development branch.
   overlay only for independently justified organic flow with the exact current
   symbol and actual fill role; the current Binance Stocks promotional trading-
   spread reduction only for independently justified organic direct-stock flow
-  with the exact previewed order tier and realized fee; USD1/WLFI holding-airdrop
+  with the exact previewed order tier and realized fee; the current bStocks zero-
+  maker fee only for independently justified organic maker flow through
+  `2026-09-30T23:59:00Z`, with the exact owned fill role and counterfactual
+  account fee; USD1/WLFI holding-airdrop
   yield; the fixed USD1 Simple Earn
   bonus on at most the first 1,500 independently already-held idle USD1 only
   when its mutually exclusive balance-specific route beats the airdrop; U
@@ -979,7 +982,7 @@ grants paper, testnet, or live authority.
 
 The canonical structural-edge priority and retry-trigger registry is
 `docs/model-research/structural-edge-priority-registry-v1.json`, result SHA-256
-`ebce99afa23c826f41acec8670dc8259274d62e64d71d255a3645c119f776c95`.
+`e8c32ad724da73148aa1becc77fe413a243e11fa8f444d514b10e844f9089bfe`.
 Advance only the highest-ranked hypothesis whose trigger is actually satisfied.
 This prevents account-blocked or terminal screens from being rerun as if more
 snapshots could create an edge.
@@ -1983,6 +1986,32 @@ unproved, so the overlay is not deployment-ready. Canonical result:
 SHA-256
 `d4f02be559d9267abbea28ccefb48f4886f375b359ce7274b90b6585b828160a`.
 
+A distinct bStocks fee overlay is now accepted in the same deliberately narrow
+way. Binance's 2026-08-28 announcement extends zero maker fees on all supported
+bStocks pairs through `2026-09-30T23:59:00Z`. Credit only the exact otherwise
+applicable account maker fee on an owned qualifying maker fill from an
+independently justified organic bStocks order. A bot order, post-only
+submission, or displayed strategy does not prove maker execution. Never create
+or enlarge volume, use the fee to rescue a negative trade, or double-count it
+with BNB discounts or liquidity-provider rebates. Account eligibility, exact
+counterfactual commission, owned fill role, realized zero fee, and every
+underlying trade cost remain unproved, so this is neither standalone profit nor
+deployment-ready. The same source added bStocks to several trading bots, but
+automation is not a new payoff. Canonical trigger triage:
+`docs/model-research/action-value/binance-aug28-public-structural-trigger-triage-v1-2026-08-29.json`,
+SHA-256
+`bca11d612042f9a859f53b71e425cd320cca5d4a5d7695cd1f0a0de539b0eea1`.
+
+The announced TradFi perpetual mark-price update effective
+`2026-08-31T08:15:00Z` changes Price 2's basis moving-average window from 30 to
+60 one-second observations. It changes mark-path and liquidation behavior, but
+publishes no fee, funding cash flow, payout, atomic execution, principal
+subsidy, or conversion right. Do not rerun terminal TradFi parity or XAU/PAXG
+carry screens for this smoothing alone. Reopen only if an effective change
+alters a frozen cash-flow, fee, margin, executable-conversion, or quantitatively
+binding liquidation gate. The current Binance Trading Bots guide likewise adds
+no Smart Arbitrage subsidy, so that terminal family remains closed.
+
 The older native-stock/TradFi-perpetual parity screen remains an incomplete
 result for its frozen 14-symbol population. Thirteen rows completed and zero
 survived the 30 bps stress; NBIS led gross at 27.5414636448 bps but failed
@@ -2190,8 +2219,8 @@ requires separate explicit authority. Canonical triage:
 result SHA-256
 `64943efe0c6ad16f8d02f78548afef38f919448d2da87c7573e825a2eeefd6b9`.
 That checkpoint left seventeen accepted scoped edges. The current registry now
-has nineteen and result SHA-256
-`ebce99afa23c826f41acec8670dc8259274d62e64d71d255a3645c119f776c95`.
+has twenty and result SHA-256
+`e8c32ad724da73148aa1becc77fe413a243e11fa8f444d514b10e844f9089bfe`.
 
 The complete Binance XAU/XAG Commodity Options versus matching TradFi
 perpetual lower-bound screen is terminal for the active 2026-08-27 and
@@ -2491,9 +2520,9 @@ then require explicit GET-only authority for the API-key-classified
 `docs/model-research/action-value/binance-blvt-primary-market-nav-parity-public-gate-v1-2026-08-29.json`,
 result SHA-256
 `85c8ef364b03fb2fbf0aeebddec10d51abbdd608f56ff9c0dccb1835cacc2179`.
-The structural registry now contains 42 ranked hypotheses, remains at 19
+The structural registry now contains 42 ranked hypotheses and 20
 narrowly accepted scoped overlays, and has canonical result SHA-256
-`ebce99afa23c826f41acec8670dc8259274d62e64d71d255a3645c119f776c95`.
+`e8c32ad724da73148aa1becc77fe413a243e11fa8f444d514b10e844f9089bfe`.
 
 The Round 21 sidecar worktree
 `C:\trader\simple_ai_trading-round21-sidecar-v2` remains protected through
@@ -2946,9 +2975,9 @@ adjudication, and exact-depth result SHA-256 values are respectively
 `8ebf70181290234c1c05f4659245d2c8c1502fd4a02eaa93dff9a4f60e375c6e`,
 `c387e389d852ab5571056a9f2e80f91c63ae6f1c124ca55291b0fc787b5faeae`,
 and `731ca32a06f8f1a42aaae9e326c2bd89379657e338231dd906b749790c15ddfa`.
-The structural-edge registry retains 42 hypotheses and 19 narrowly accepted
+The structural-edge registry retains 42 hypotheses and 20 narrowly accepted
 scoped overlays; its new canonical SHA-256 is
-`ec41ae27eb0699809acabc273620059516a35c09ec6f7cf33520eecbf19ea78e`.
+`e8c32ad724da73148aa1becc77fe413a243e11fa8f444d514b10e844f9089bfe`.
 
 ## Future NFL Catalog Checkpoint
 
@@ -3057,8 +3086,8 @@ directly affected tests. No broad model, CI, or release suite was repeated.
 The resolved-leg House duplicate-payoff checkpoint, raw journals, source hashes,
 and directly affected registry lineage pass 12 focused tests with Ruff and
 Python compilation clean. The registry still contains 42 ranked hypotheses and
-19 accepted scoped overlays; its result SHA-256 is
-`ebce99afa23c826f41acec8670dc8259274d62e64d71d255a3645c119f776c95`.
+20 accepted scoped overlays; its result SHA-256 is
+`e8c32ad724da73148aa1becc77fe413a243e11fa8f444d514b10e844f9089bfe`.
 
 The exact-one-NO failure preservation and Binance BLVT current-inventory gate,
 including every registry-hash-coupled test, pass 199 focused tests with Ruff
