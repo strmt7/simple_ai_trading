@@ -169,6 +169,12 @@ override prose.
   probe on a maker-first lead, require one distinct resolved-leg instance to
   remain positive after its frozen hedge stress. If the independent instance is
   negative, stop the family until a material price, fee, rule, or market change.
+- For an exact sports monotone-payoff package, use retained Gamma
+  `outcomePrices` only as a rejection-only optimistic gate after proving market
+  identity and resolution semantics. If every package's displayed price sum is
+  at or above its guaranteed payout floor, stop before requesting CLOB books.
+  Gamma prices may never accept, promote, or prove executable profitability;
+  only a package below the floor may advance to one frozen exact-depth screen.
 
 ## Working Method
 

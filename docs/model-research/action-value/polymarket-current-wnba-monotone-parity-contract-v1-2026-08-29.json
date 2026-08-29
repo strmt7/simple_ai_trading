@@ -1,0 +1,213 @@
+{
+  "schema_version": "polymarket-current-wnba-monotone-parity-contract-v1",
+  "frozen_at_utc": "2026-08-29T16:02:32.0042058Z",
+  "purpose": "test three exact five-share guaranteed-payout packages across the active Toronto-Phoenix moneyline and nested spread markets",
+  "source_contracts": [
+    {
+      "url": "https://docs.polymarket.com/api-reference/market-data/get-order-books-request-body",
+      "use": "official public unauthenticated POST batch book contract"
+    },
+    {
+      "url": "https://docs.polymarket.com/api-reference/market-data/get-fee-rate-by-path-parameter",
+      "use": "official public unauthenticated current token fee-rate contract"
+    }
+  ],
+  "metadata_source": {
+    "path": "data/polymarket-current-wnba-exact-event-v1/raw/event.json",
+    "sha256": "c9172a258cedc488794f466cae33dab65481e0634cec32be6d2d73aef44bdced"
+  },
+  "event": {
+    "slug": "wnba-tor-phx-2026-08-29",
+    "scheduled_start_utc": "2026-08-30T02:00:00Z"
+  },
+  "markets": [
+    {
+      "name": "moneyline",
+      "id": "3625609",
+      "question": "Toronto Tempo vs. Phoenix Mercury",
+      "sports_market_type": "moneyline",
+      "line": null,
+      "condition_id": "0x5c1b328066fd9dc608c9f966c8f49ac3528f9a7520f8ad8ac5cbe3da4c570848",
+      "outcomes": ["Toronto Tempo", "Phoenix Mercury"],
+      "tokens": [
+        "79301686897090368203985317751392417664621070747641872536900030832374907915089",
+        "62635041595807117372685766530104518320688887521207051254527365499067337410929"
+      ],
+      "required_rule_fragments": [
+        "If the Toronto Tempo win",
+        "If the Phoenix Mercury win",
+        "canceled entirely, with no make-up game, this market will resolve 50-50",
+        "including any overtime periods"
+      ]
+    },
+    {
+      "name": "spread_9_5",
+      "id": "3965356",
+      "question": "Spread: Phoenix Mercury (-9.5)",
+      "sports_market_type": "spreads",
+      "line": -9.5,
+      "condition_id": "0xb62770904f8a5ece95554085a38d6a937ad93dcfc5f6b5f22aa81b4976867e1a",
+      "outcomes": ["Phoenix Mercury", "Toronto Tempo"],
+      "tokens": [
+        "96025113742611791650502627109492211827268340689384047203449231168462764743419",
+        "113835976474449814054885824683967934684022834745445962796816595471652392703031"
+      ],
+      "required_rule_fragments": [
+        "win the game by 10 or more points",
+        "Otherwise, this market will resolve to \"Toronto Tempo\"",
+        "canceled entirely, with no make-up game, this market will resolve 50-50"
+      ]
+    },
+    {
+      "name": "spread_8_5",
+      "id": "3973783",
+      "question": "Spread: Phoenix Mercury (-8.5)",
+      "sports_market_type": "spreads",
+      "line": -8.5,
+      "condition_id": "0x3c7de584bdd599d9feb1668d6466737e4ce0b82d947e382ae399e9acd49e328f",
+      "outcomes": ["Phoenix Mercury", "Toronto Tempo"],
+      "tokens": [
+        "39393658568181675248263328905754642111162826717593691250024889013876114972746",
+        "4429082211886965503941285434198705062966897443342163773185596318109596099232"
+      ],
+      "required_rule_fragments": [
+        "win the game by 9 or more points",
+        "Otherwise, this market will resolve to \"Toronto Tempo\"",
+        "canceled entirely, with no make-up game, this market will resolve 50-50"
+      ]
+    }
+  ],
+  "tokens": {
+    "phoenix_moneyline": {
+      "token_id": "62635041595807117372685766530104518320688887521207051254527365499067337410929",
+      "condition_id": "0x5c1b328066fd9dc608c9f966c8f49ac3528f9a7520f8ad8ac5cbe3da4c570848"
+    },
+    "tempo_spread_9_5": {
+      "token_id": "113835976474449814054885824683967934684022834745445962796816595471652392703031",
+      "condition_id": "0xb62770904f8a5ece95554085a38d6a937ad93dcfc5f6b5f22aa81b4976867e1a"
+    },
+    "phoenix_spread_8_5": {
+      "token_id": "39393658568181675248263328905754642111162826717593691250024889013876114972746",
+      "condition_id": "0x3c7de584bdd599d9feb1668d6466737e4ce0b82d947e382ae399e9acd49e328f"
+    },
+    "tempo_spread_8_5": {
+      "token_id": "4429082211886965503941285434198705062966897443342163773185596318109596099232",
+      "condition_id": "0x3c7de584bdd599d9feb1668d6466737e4ce0b82d947e382ae399e9acd49e328f"
+    }
+  },
+  "payoff_proof": {
+    "market_direction_forecast_required": false,
+    "states": [
+      {
+        "state": "game_canceled_without_makeup",
+        "payouts": {
+          "phoenix_moneyline": "0.5",
+          "tempo_spread_9_5": "0.5",
+          "phoenix_spread_8_5": "0.5",
+          "tempo_spread_8_5": "0.5"
+        }
+      },
+      {
+        "state": "toronto_wins_or_tie",
+        "payouts": {
+          "phoenix_moneyline": "0",
+          "tempo_spread_9_5": "1",
+          "phoenix_spread_8_5": "0",
+          "tempo_spread_8_5": "1"
+        }
+      },
+      {
+        "state": "phoenix_wins_by_1_through_8",
+        "payouts": {
+          "phoenix_moneyline": "1",
+          "tempo_spread_9_5": "1",
+          "phoenix_spread_8_5": "0",
+          "tempo_spread_8_5": "1"
+        }
+      },
+      {
+        "state": "phoenix_wins_by_9",
+        "payouts": {
+          "phoenix_moneyline": "1",
+          "tempo_spread_9_5": "1",
+          "phoenix_spread_8_5": "1",
+          "tempo_spread_8_5": "0"
+        }
+      },
+      {
+        "state": "phoenix_wins_by_10_or_more",
+        "payouts": {
+          "phoenix_moneyline": "1",
+          "tempo_spread_9_5": "0",
+          "phoenix_spread_8_5": "1",
+          "tempo_spread_8_5": "0"
+        }
+      }
+    ],
+    "guaranteed_floor_per_share_pUSD": "1"
+  },
+  "packages": [
+    {
+      "name": "phoenix_moneyline_plus_tempo_spread_9_5",
+      "token_names": ["phoenix_moneyline", "tempo_spread_9_5"]
+    },
+    {
+      "name": "phoenix_moneyline_plus_tempo_spread_8_5",
+      "token_names": ["phoenix_moneyline", "tempo_spread_8_5"]
+    },
+    {
+      "name": "phoenix_spread_8_5_plus_tempo_spread_9_5",
+      "token_names": ["phoenix_spread_8_5", "tempo_spread_9_5"]
+    }
+  ],
+  "execution": {
+    "quantity_shares_each_leg": "5",
+    "token_ids": [
+      "62635041595807117372685766530104518320688887521207051254527365499067337410929",
+      "113835976474449814054885824683967934684022834745445962796816595471652392703031",
+      "39393658568181675248263328905754642111162826717593691250024889013876114972746",
+      "4429082211886965503941285434198705062966897443342163773185596318109596099232"
+    ],
+    "book_request_count": 1,
+    "fee_request_rule": "query a token only when its package has full displayed five-share depth and gross cost below the five-pUSD payout",
+    "maximum_fee_requests": 4,
+    "retry_count": 0,
+    "fee_schedule": {
+      "exponent": 1,
+      "rate": 0.05,
+      "rebateRate": 0.15,
+      "takerOnly": true
+    },
+    "rebate_credit_pUSD": "0",
+    "sports_order_delay_seconds": 1,
+    "stress_ticks": {
+      "actual": 0,
+      "delay_1s_sensitivity": 2,
+      "delay_3s_sensitivity": 6
+    },
+    "stress_note": "two and six adverse ticks per leg are frozen sensitivities for one and three seconds and are not claimed as empirical bounds",
+    "maximum_book_timestamp_skew_ms": 5000,
+    "candidate_gate": "strictly positive guaranteed five-pUSD payout floor after full displayed depth exact taker fee curve six adverse ticks per leg no rebate credit and no more than five seconds source skew"
+  },
+  "authority": {
+    "public_unauthenticated_read_only_requests_maximum": 5,
+    "credentials_used": false,
+    "signed_requests": 0,
+    "account_requests": 0,
+    "orders_or_transactions": 0,
+    "funds_used": false,
+    "protected_capture_touched": false,
+    "trading_authority": false
+  },
+  "stopping_rules": {
+    "zero_positive_packages": "terminalize this exact event without another snapshot",
+    "one_or_more_positive_packages": "candidate only; require one independent positive WNBA recurrence before any order-capable work",
+    "accepted_edge_from_one_snapshot": false,
+    "deployment_ready_from_one_snapshot": false
+  },
+  "implementation": {
+    "path": "tools/screen_polymarket_current_wnba_monotone_parity.py",
+    "sha256": "814cf3b62e7b38e07f44dc4070309f75eabf81e954031f0021a3e36c0eb7cdc7"
+  },
+  "contract_sha256": "7ed7007e5b6580100c4e3fe0495475be2742cc536372e8dfc953a19dba0f80c8"
+}

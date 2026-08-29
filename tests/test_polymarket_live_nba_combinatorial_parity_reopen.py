@@ -13,7 +13,7 @@ ARTIFACT = ROOT / "docs/model-research/action-value" / (
 )
 REGISTRY = ROOT / "docs/model-research/structural-edge-priority-registry-v1.json"
 EXPECTED_HASH = "70cfc7b2ae1cb256e7a8c08c9af33fa8524d2308a8c18400d5a2b7d93c966fe3"
-REGISTRY_HASH = "7be2ae9f2883a72c6f492e57208cede33c7ad8733a947bf4a21b3825315b2443"
+REGISTRY_HASH = "2baf1b76070e0ef9081f9eb5fba41f3977b5fd1aa74759ed85034947e9ad1c5a"
 
 
 def _load(path: Path) -> dict[str, object]:
@@ -107,6 +107,42 @@ def test_registry_reopens_only_the_distinct_future_nba_recurrence_family() -> No
             ),
             "result_sha256": (
                 "4847ec7828e598950da9a455170b66a529d9a5d671bfb4c37a57a36f608b9627"
+            ),
+        },
+        {
+            "path": (
+                "docs/model-research/action-value/"
+                "polymarket-current-wnba-exact-event-contract-v1-2026-08-29.json"
+            ),
+            "result_sha256": (
+                "d129e73e922fac53d16143f18914ffa8c1eaff3e0a8a11e9f3bf2696ff3c5eee"
+            ),
+        },
+        {
+            "path": (
+                "docs/model-research/action-value/"
+                "polymarket-current-wnba-exact-event-result-v1-2026-08-29.json"
+            ),
+            "result_sha256": (
+                "6851d26788abfd175b75649e573d341696e570ce76bc235b0c5a6070bdd72167"
+            ),
+        },
+        {
+            "path": (
+                "docs/model-research/action-value/"
+                "polymarket-current-wnba-monotone-parity-contract-v1-2026-08-29.json"
+            ),
+            "result_sha256": (
+                "7ed7007e5b6580100c4e3fe0495475be2742cc536372e8dfc953a19dba0f80c8"
+            ),
+        },
+        {
+            "path": (
+                "docs/model-research/action-value/"
+                "polymarket-current-wnba-monotone-parity-result-v1-2026-08-29.json"
+            ),
+            "result_sha256": (
+                "cc657982abd9ede0f0f7b18787df32e62c69b7c3b3e547ade3f6f3ccb734ed46"
             ),
         },
     ]
