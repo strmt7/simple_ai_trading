@@ -3194,14 +3194,50 @@ runner and raw evidence remain preserved without a repair capture; `AGENTS.md`
 now requires every candidate Boolean to conjoin run- and row-level gates and
 requires wide screens to rank only after feasibility gates.
 
+A frozen zero-network extension then exhaustively compared every direct route
+with exactly two intermediaries against the already accepted best direct-or-one-
+intermediary comparator on the same 60 complete books. The population contained
+1,064,216 routes and 2,128,432 route-size rows. A mathematically optimistic,
+lossless rejection bound reduced exact evaluation to 16,051 rows; exact lot
+rounding, displayed capacity, residual valuation, 10-bip-per-leg fees, 6-bip
+three-leg stress, and the unchanged recurrence gates left 253 apparent
+incremental candidates.
+
+A separately frozen retained activity adjudication applied the existing five
+top-book-change and 100-current-24-hour-trade floors to every required direct and
+three-leg symbol. All 253 candidates failed the quote-change floor; 18 also
+failed the trade-count floor. The 174-symbol population is therefore terminal
+with zero survivors. Most large nominal gains depended on stale TRY books. Do
+not build a live three-leg collector, treat any row as a static route, or spend
+account or order access on this extension. Reopen exactly two intermediaries
+only after a material fee, filter, activity, batching, or execution-architecture
+change. The accepted direct-versus-exactly-one-intermediary overlay is unchanged.
+
+The first extension implementation was intentionally stopped before output after
+its one-object-per-route-size summaries reached about 847 MB. The second used the
+lossless bound but failed closed before output because its survivor mask omitted
+the already-required finite direct-to-USDT valuation for both intermediary
+residuals. Both consumed attempts are preserved and may not be rerun. The third
+added only that frozen source gate and completed. `AGENTS.md` now requires
+topology cardinality and worst-case retained-output sizing before exhaustive path
+work, followed by a frozen lossless bound and bounded diagnostics when large.
+No network request, credential, account, order, mutation, or protected-capture
+access occurred in any of these retained-data stages.
+
 Canonical contract, screen result, activity contract, and adjudication SHA-256
 values are `dcd959d9d7ec0e1dffec47b910cece585c106b76b69feaaa9ca03ddcc7caa83a`,
 `b3e7f724e2b1ce2cc7a8444d00632466196af6d89f139259164549e91d1f84bc`,
 `b6331c1d7987b3a6093df2d4846368ccba634c27bf4967cd85f9c10e707fbd30`,
 and `0307a9dbfb26ca62e94ae01e5b5d40316340b686a60829e85f258c07e565678c`.
+The exactly-two-intermediary v1 resource adjudication, v2 source-gate
+adjudication, v3 exact result, and final activity result SHA-256 values are
+`be1bfdb40200f0e0acb26fcd1413a9c39e3ab34d61161550794fc429fe50cddd`,
+`d23724ee0d088ac1965e96612557039a576f73724a1b630d2e434536ef0b2079`,
+`0a5e37f2fb48c639334256e3118e3eeb2f17a548572faaf13d3849204404b45e`,
+and `cde72e05b1760d9fe23eb65e5bd5f59377230ac91095354936c2a84a9a3758ae`.
 The structural-edge registry now contains 44 ranked hypotheses and 21 accepted
 scoped overlays; its canonical SHA-256 is
-`0511b6dbb8f560470335fb6146edade7a50c3f24406c529f03a3f1fca769409b`.
+`fc0bddf222a1908db6c12df338dc26963f36514b01e37b5b31fc567760f19aca`.
 
 ## Future WNBA Complete-Catalog Rejection Screen
 
@@ -3231,7 +3267,7 @@ The raw response and two-phase journal SHA-256 values are
 and `40a7edc61fcf5c3a42a8ab7aef65cf04703cde30989b7b23f23a915291620368`.
 The structural registry remains at 44 hypotheses and 21 accepted scoped edges;
 its canonical SHA-256 is
-`0511b6dbb8f560470335fb6146edade7a50c3f24406c529f03a3f1fca769409b`.
+`fc0bddf222a1908db6c12df338dc26963f36514b01e37b5b31fc567760f19aca`.
 
 ## Sep 7 Hour-00 Fixed NegRisk Complete Rejection Screen
 
@@ -3445,6 +3481,6 @@ reconstructs the journal receipt; the gzip SHA-256 is
 `9f3f83fe1efcec7a0230dea646d2038fe5c0a32ae72de5c7e4f5ee7fd850304b`.
 The accepted-edge count remains 21 and the ranked-hypothesis count remains 44.
 The updated registry result SHA-256 is
-`0511b6dbb8f560470335fb6146edade7a50c3f24406c529f03a3f1fca769409b`.
+`fc0bddf222a1908db6c12df338dc26963f36514b01e37b5b31fc567760f19aca`.
 The direct SOR evidence test and the one registry-coupled pass are clean; no
 broad CI, model, release, or repeated market request was run.

@@ -1565,6 +1565,22 @@ safety gate, blocks Stop, or submits an order.
   VIP-0 fees as account fees, or treat the two-minute screen as a fill claim.
   Canonical adjudication SHA-256
   `0307a9dbfb26ca62e94ae01e5b5d40316340b686a60829e85f258c07e565678c`.
+- The zero-network exactly-two-intermediary extension is terminal for the same
+  retained population. It exhaustively covered 1,064,216 routes and 2,128,432
+  route-size rows. A lossless optimistic bound reduced exact work to 16,051
+  rows; exact rounding, capacity, residual, fee, extra-leg stress, and recurrence
+  left 253 apparent incremental candidates versus the best direct-or-one-
+  intermediary comparator. Every candidate failed the retained five-change
+  activity gate, and 18 also failed the 100-trade gate across 174 required
+  symbols. Do not build a three-leg live collector or promote the stale TRY-
+  heavy rows. Reopen only after a material fee, filter, activity, batching, or
+  execution-architecture change. The first exhaustive implementation was
+  stopped before output because its per-row summaries consumed about 847 MB;
+  the second failed closed on a missing finite residual-valuation source gate.
+  Both are preserved, were not rerun, and caused the topology/output-size rule
+  in `AGENTS.md`. Canonical final exact and activity result SHA-256 values are
+  `0a5e37f2fb48c639334256e3118e3eeb2f17a548572faaf13d3849204404b45e`
+  and `cde72e05b1760d9fe23eb65e5bd5f59377230ac91095354936c2a84a9a3758ae`.
 - Binance closed three-asset Spot cycles are terminal for the current retained
   complete public graph. One frozen zero-network pass covered all 3,480 unique
   directed cycles, 1,442 activity-qualified cycles, 60 complete books, 100 and
@@ -1608,7 +1624,7 @@ safety gate, blocks Stop, or submits an order.
   and `f032753b45c82b2e0945d1a8c0e0d5fc01f8fb1727cdad34e73064c7590417ba`.
 - The structural-edge registry now has 44 ranked hypotheses and 21
   narrowly accepted scoped overlays, and result SHA-256
-  `0511b6dbb8f560470335fb6146edade7a50c3f24406c529f03a3f1fca769409b`.
+  `fc0bddf222a1908db6c12df338dc26963f36514b01e37b5b31fc567760f19aca`.
 
 ## Task Routing
 
@@ -1723,4 +1739,4 @@ result SHA-256 values are
 and `895dc0eba4f72b9b08b19dbba245b20434e4db905fd4ded3ea70779733db6d47`.
 The registry remains at 44 hypotheses and 21 accepted scoped edges; its updated
 result SHA-256 is
-`0511b6dbb8f560470335fb6146edade7a50c3f24406c529f03a3f1fca769409b`.
+`fc0bddf222a1908db6c12df338dc26963f36514b01e37b5b31fc567760f19aca`.

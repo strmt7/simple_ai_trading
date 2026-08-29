@@ -1,0 +1,73 @@
+{
+  "schema_version": "binance-two-intermediary-conversion-retained-contract-v1",
+  "status": "frozen_before_retained_outcome_access",
+  "frozen_at_utc": "2026-08-29T22:01:57.9022188Z",
+  "contract_sha256": "3ebefe96fede2847dfeaa9fda5f72f1cc5429d3e74bb0271c070f6a970099455",
+  "purpose": "zero-network rejection-first test of whether an exactly three-leg Binance Spot conversion through two distinct intermediaries improves on the best feasible direct or exactly one-intermediary route for an independently required organic conversion",
+  "authority": {
+    "retained_public_data_only": true,
+    "network_requests_permitted": false,
+    "credentials_permitted": false,
+    "account_state_permitted": false,
+    "orders_or_mutations_permitted": false,
+    "protected_capture_access_permitted": false
+  },
+  "implementation": {
+    "path": "tools/adjudicate_binance_two_intermediary_conversions_retained.py",
+    "sha256": "eccdfa85424aa8afc92996797de3cbb60ecad2f12a34a152b45e3a72cf6eed8f",
+    "dependency_path": "tools/screen_binance_indirect_internal_conversions.py",
+    "dependency_sha256": "715442eb4f2e9ebf1164f5eb596501ae624fa167239ef175722280dc6f68030d"
+  },
+  "retained_source": {
+    "result_path": "docs/model-research/action-value/binance-indirect-internal-conversion-screen-v1-2026-08-29.json",
+    "result_sha256": "b3e7f724e2b1ce2cc7a8444d00632466196af6d89f139259164549e91d1f84bc",
+    "result_file_sha256": "e9fc2c7f6d83c5d6cd6326766353b8e91ada05636ba407bb3fa6db1efc34d1b1",
+    "raw_directory": "data/edge-research/binance-indirect-internal-conversion-screen-v1/raw",
+    "journal_sha256": "1d2a28f6bb4d1de1d493dc29028fd070cecb14893e7240d5d5baf22afdcec750",
+    "sample_count": 60,
+    "source_contract_frozen_before_outcome_access": true,
+    "reuse_rule": "verify every retained response against its durable receipt and issue zero HTTP requests"
+  },
+  "universe": {
+    "direct_edges": "every retained current TRADING Binance Spot directed edge with MARKET support and positive lot step",
+    "three_leg_paths": "every direct source-to-target pair having source-to-first-intermediary, first-to-second-intermediary, and second-to-target edges with four distinct assets",
+    "comparator": "at each saved snapshot and size use the greater of the feasible direct route and every feasible exactly one-intermediary route under the same fees, rounding, residual, capacity, and per-extra-leg stress",
+    "selection_rule": "enumerate the complete rule-defined population before viewing any two-intermediary outcome and never select assets or paths from the retained one-intermediary candidates"
+  },
+  "execution_model": {
+    "starting_usdt_sizes": ["100", "1000"],
+    "conservative_taker_fee_rate_per_leg": "0.001",
+    "per_extra_leg_operational_stress_bips": "3",
+    "three_leg_total_operational_stress_bips": "6",
+    "quantity_rounding": "floor each submitted base quantity to the retained positive MARKET_LOT_SIZE step or LOT_SIZE fallback",
+    "capacity": "direct and all path legs must fit their displayed retained top quantity",
+    "residuals": "retain source and both intermediary residuals and value each through its same-snapshot conservative direct-to-USDT side after one taker fee",
+    "maximum_path_residual_bips": "1",
+    "incremental_savings_definition": "three-leg ending USDT-equivalent value versus the direct route less six bips, minus the maximum of zero and every feasible one-intermediary saving versus direct less three bips",
+    "non_atomicity": "all indirect routes are sequential and hypothetical; retained simultaneous top books prove neither completion nor fills"
+  },
+  "acceptance_boundary": {
+    "empirical_candidate_requires": [
+      "all 60 retained snapshots evaluate with a feasible displayed-capacity direct route",
+      "all three path legs fit displayed top quantity in all 60 snapshots",
+      "combined source and two-intermediary residual value is at most one bip in all 60 snapshots",
+      "strictly positive incremental savings over the best shorter feasible route in at least 48 of 60 snapshots",
+      "at least 12 positive incremental observations in each consecutive 15-snapshot block",
+      "strictly positive median incremental savings across all 60 snapshots"
+    ],
+    "accepted_edge_requires_additionally": [
+      "an independently required legitimate same-account organic conversion without generated volume",
+      "exact same-account commissions discounts taxes filters and balances for every involved symbol",
+      "fresh finite-size depth immediately before the organic conversion",
+      "prospective paper or separately authorized owned evidence of sequential completion latency slippage residuals and failure unwind",
+      "positive recurrence across independent non-overlapping liquidity volatility and latency regimes"
+    ],
+    "missing_additional_evidence_action": "keep accepted_edge false"
+  },
+  "stop_rules": [
+    "if zero empirical candidates survive do not build or run a three-leg live collector on this retained mechanism",
+    "do not weaken the best-shorter-route comparator fees residual capacity stress or recurrence gates after outcome access",
+    "do not treat cost savings as standalone arbitrage or create split rerouted self-matched or wash volume",
+    "do not access credentials accounts orders funds or protected capture state"
+  ]
+}

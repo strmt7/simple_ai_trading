@@ -1,0 +1,36 @@
+{
+  "schema_version": "binance-two-intermediary-conversion-retained-v2-source-gate-adjudication-v1",
+  "status": "consumed_implementation_failed_closed_before_result",
+  "created_at_utc": "2026-08-29T22:16:40.8370140Z",
+  "result_sha256": "d23724ee0d088ac1965e96612557039a576f73724a1b630d2e434536ef0b2079",
+  "contract": {
+    "path": "docs/model-research/action-value/binance-two-intermediary-conversion-retained-contract-v2.json",
+    "contract_sha256": "ff2583bd787ec3cf259112bae6a9415b0f522a7409c6632f652869db1ce8d2a7"
+  },
+  "implementation": {
+    "path": "tools/adjudicate_binance_two_intermediary_conversions_retained_v2.py",
+    "sha256": "36a41db06e28bd8b39775e6eaf51e17e2bd58daa21e7f9c09f1e29d06f628f42"
+  },
+  "failure": {
+    "terminal_exception": "decimal.InvalidOperation",
+    "operation": "compare_NaN_intermediary_residual_bips_to_the_one_bip_gate",
+    "cause": "the optimistic mask proved path and direct-price availability but omitted the already-frozen requirement that both intermediary residual assets have finite direct-to-USDT valuation",
+    "market_outcome_reported": false,
+    "output_created": false,
+    "economic_population_or_gate_change_required": false,
+    "required_correction": "preserve v2 and freeze v3 with both intermediary USDT-rate arrays mechanically finite before an optimistic survivor can enter exact evaluation"
+  },
+  "authority": {
+    "network_requests": 0,
+    "credentials_used": false,
+    "account_state_accessed": false,
+    "orders_or_mutations": 0,
+    "protected_capture_accessed": false
+  },
+  "verdict": {
+    "accepted_edge": false,
+    "profitability_claim": false,
+    "v2_may_not_be_rerun": true,
+    "retained_data_v3_permitted": true
+  }
+}
