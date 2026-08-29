@@ -1,0 +1,279 @@
+{
+  "adjudication": {
+    "accepted_edge": false,
+    "best_role": {
+      "hedge_market": "combined_democratic",
+      "maker_market": "house_democratic",
+      "package": "combined_democratic_YES_plus_house_democratic_NO",
+      "pair_source_timestamp_skew_ms": 35484,
+      "stressed_profit_sensitivity_pUSD": "0.11135",
+      "visible_queue_ahead_shares": "21135.09"
+    },
+    "candidate_edge": true,
+    "deployment_ready": false,
+    "next_action": "freeze_one_source_continuous_queue_censored_public_capture_for_the_best_role_then_require_explicit_authenticated_paper_authority_before_any_order",
+    "positive_two_tick_hedge_sensitivity_count": 3,
+    "profitability_claim": false,
+    "reason": "retained_current_books_show_direction_independent_stressed_headroom_but_do_not_prove_source_continuity_queue_fill_or_causally_subsequent_hedge"
+  },
+  "authority": {
+    "account_requests": 0,
+    "credentials_used": false,
+    "funds_used": false,
+    "orders_or_transactions": 0,
+    "protected_capture_touched": false,
+    "public_unauthenticated_read_only_requests_maximum": 9,
+    "signed_requests": 0,
+    "trading_authority": false
+  },
+  "implementation": {
+    "path": "tools/analyze_polymarket_shutdown_house_maker_first.py",
+    "sha256": "8bbf84999a6d01aecb2a4c227c9819f79d12ba732e8922bd98586923fd795c86"
+  },
+  "market_direction_forecast_required": false,
+  "mechanism": "rest_one_five_share_bid_on_one_of_two_exact_duplicate_payoff_tokens_then_buy_the_complement_of_the_other_immediately_after_an_owned_fill",
+  "result_sha256": "efaf6af75551973611f321af37895bc2a85b7318a2ca16c351cec973af8df4f8",
+  "retained_books": {
+    "path": "data/polymarket-shutdown-house-identity-parity-v1/raw/books.json",
+    "sha256": "248a739ef45fe5d75d3725a1ee0a4097f73ef25be92e4f99872185314828faa9"
+  },
+  "rows": [
+    {
+      "actual_after_fee_profit_sensitivity_pUSD": "0.13388",
+      "hedge_fill": {
+        "actual_cost_pUSD": "0.60",
+        "actual_fee_pUSD": "0.02112",
+        "fills": [
+          {
+            "ask_price": "0.12",
+            "quantity": "5",
+            "stressed_price": "0.14"
+          }
+        ],
+        "stressed_cost_pUSD": "0.70",
+        "stressed_fee_pUSD": "0.02408"
+      },
+      "hedge_market": "house_democratic",
+      "hedge_token": "33156410999665902694791064431724433042010245771106314074312009703157423879038",
+      "maker_bid_price": "0.849",
+      "maker_fee_pUSD": "0",
+      "maker_market": "combined_democratic",
+      "maker_token": "15689686886751503596101237420370183711471277577409636291649038082667298900424",
+      "package": "combined_democratic_YES_plus_house_democratic_NO",
+      "pair_source_timestamp_skew_ms": 35484,
+      "positive_stressed_economic_lead": true,
+      "queue_censored_fill_proved": false,
+      "source_continuity_proved": false,
+      "two_tick_hedge_stressed_profit_sensitivity_pUSD": "0.03092",
+      "visible_queue_ahead_shares": "500"
+    },
+    {
+      "actual_after_fee_profit_sensitivity_pUSD": "0.12106",
+      "hedge_fill": {
+        "actual_cost_pUSD": "4.305",
+        "actual_fee_pUSD": "0.02394",
+        "fills": [
+          {
+            "ask_price": "0.861",
+            "quantity": "5",
+            "stressed_price": "0.863"
+          }
+        ],
+        "stressed_cost_pUSD": "4.315",
+        "stressed_fee_pUSD": "0.02365"
+      },
+      "hedge_market": "combined_democratic",
+      "hedge_token": "15689686886751503596101237420370183711471277577409636291649038082667298900424",
+      "maker_bid_price": "0.11",
+      "maker_fee_pUSD": "0",
+      "maker_market": "house_democratic",
+      "maker_token": "33156410999665902694791064431724433042010245771106314074312009703157423879038",
+      "package": "combined_democratic_YES_plus_house_democratic_NO",
+      "pair_source_timestamp_skew_ms": 35484,
+      "positive_stressed_economic_lead": true,
+      "queue_censored_fill_proved": false,
+      "source_continuity_proved": false,
+      "two_tick_hedge_stressed_profit_sensitivity_pUSD": "0.11135",
+      "visible_queue_ahead_shares": "21135.09"
+    },
+    {
+      "actual_after_fee_profit_sensitivity_pUSD": "-0.16458",
+      "hedge_fill": {
+        "actual_cost_pUSD": "4.45",
+        "actual_fee_pUSD": "0.01958",
+        "fills": [
+          {
+            "ask_price": "0.89",
+            "quantity": "5",
+            "stressed_price": "0.91"
+          }
+        ],
+        "stressed_cost_pUSD": "4.55",
+        "stressed_fee_pUSD": "0.01638"
+      },
+      "hedge_market": "house_democratic",
+      "hedge_token": "83247781037352156539108067944461291821683755894607244160607042790356561625563",
+      "maker_bid_price": "0.139",
+      "maker_fee_pUSD": "0",
+      "maker_market": "combined_democratic",
+      "maker_token": "25220835365413209491969904256647930650029213607453756083524562317815305581068",
+      "package": "combined_democratic_NO_plus_house_democratic_YES",
+      "pair_source_timestamp_skew_ms": 35484,
+      "positive_stressed_economic_lead": false,
+      "queue_censored_fill_proved": false,
+      "source_continuity_proved": false,
+      "two_tick_hedge_stressed_profit_sensitivity_pUSD": "-0.26138",
+      "visible_queue_ahead_shares": "60.1"
+    },
+    {
+      "actual_after_fee_profit_sensitivity_pUSD": "-0.18064",
+      "hedge_fill": {
+        "actual_cost_pUSD": "0.755",
+        "actual_fee_pUSD": "0.02564",
+        "fills": [
+          {
+            "ask_price": "0.151",
+            "quantity": "5",
+            "stressed_price": "0.153"
+          }
+        ],
+        "stressed_cost_pUSD": "0.765",
+        "stressed_fee_pUSD": "0.02592"
+      },
+      "hedge_market": "combined_democratic",
+      "hedge_token": "25220835365413209491969904256647930650029213607453756083524562317815305581068",
+      "maker_bid_price": "0.88",
+      "maker_fee_pUSD": "0",
+      "maker_market": "house_democratic",
+      "maker_token": "83247781037352156539108067944461291821683755894607244160607042790356561625563",
+      "package": "combined_democratic_NO_plus_house_democratic_YES",
+      "pair_source_timestamp_skew_ms": 35484,
+      "positive_stressed_economic_lead": false,
+      "queue_censored_fill_proved": false,
+      "source_continuity_proved": false,
+      "two_tick_hedge_stressed_profit_sensitivity_pUSD": "-0.19092",
+      "visible_queue_ahead_shares": "20447.9"
+    },
+    {
+      "actual_after_fee_profit_sensitivity_pUSD": "-0.12458",
+      "hedge_fill": {
+        "actual_cost_pUSD": "4.45",
+        "actual_fee_pUSD": "0.01958",
+        "fills": [
+          {
+            "ask_price": "0.89",
+            "quantity": "5",
+            "stressed_price": "0.91"
+          }
+        ],
+        "stressed_cost_pUSD": "4.55",
+        "stressed_fee_pUSD": "0.01638"
+      },
+      "hedge_market": "house_republican",
+      "hedge_token": "17371217118862125782438074585166210555214661810823929795910191856905580975576",
+      "maker_bid_price": "0.131",
+      "maker_fee_pUSD": "0",
+      "maker_market": "combined_republican",
+      "maker_token": "7260898789894357029125496858687239455895982991960101057661276207034711999138",
+      "package": "combined_republican_YES_plus_house_republican_NO",
+      "pair_source_timestamp_skew_ms": 8622,
+      "positive_stressed_economic_lead": false,
+      "queue_censored_fill_proved": false,
+      "source_continuity_proved": false,
+      "two_tick_hedge_stressed_profit_sensitivity_pUSD": "-0.22138",
+      "visible_queue_ahead_shares": "64"
+    },
+    {
+      "actual_after_fee_profit_sensitivity_pUSD": "-0.12923",
+      "hedge_fill": {
+        "actual_cost_pUSD": "0.705",
+        "actual_fee_pUSD": "0.02423",
+        "fills": [
+          {
+            "ask_price": "0.141",
+            "quantity": "5",
+            "stressed_price": "0.143"
+          }
+        ],
+        "stressed_cost_pUSD": "0.715",
+        "stressed_fee_pUSD": "0.02452"
+      },
+      "hedge_market": "combined_republican",
+      "hedge_token": "7260898789894357029125496858687239455895982991960101057661276207034711999138",
+      "maker_bid_price": "0.88",
+      "maker_fee_pUSD": "0",
+      "maker_market": "house_republican",
+      "maker_token": "17371217118862125782438074585166210555214661810823929795910191856905580975576",
+      "package": "combined_republican_YES_plus_house_republican_NO",
+      "pair_source_timestamp_skew_ms": 8622,
+      "positive_stressed_economic_lead": false,
+      "queue_censored_fill_proved": false,
+      "source_continuity_proved": false,
+      "two_tick_hedge_stressed_profit_sensitivity_pUSD": "-0.13952",
+      "visible_queue_ahead_shares": "34692.94"
+    },
+    {
+      "actual_after_fee_profit_sensitivity_pUSD": "0.08388",
+      "hedge_fill": {
+        "actual_cost_pUSD": "0.60",
+        "actual_fee_pUSD": "0.02112",
+        "fills": [
+          {
+            "ask_price": "0.12",
+            "quantity": "5",
+            "stressed_price": "0.14"
+          }
+        ],
+        "stressed_cost_pUSD": "0.70",
+        "stressed_fee_pUSD": "0.02408"
+      },
+      "hedge_market": "house_republican",
+      "hedge_token": "65139230827417363158752884968303867495725894165574887635816574090175320800482",
+      "maker_bid_price": "0.859",
+      "maker_fee_pUSD": "0",
+      "maker_market": "combined_republican",
+      "maker_token": "73792458639425453239483287253334661502793797450424846433489414207671979352064",
+      "package": "combined_republican_NO_plus_house_republican_YES",
+      "pair_source_timestamp_skew_ms": 8622,
+      "positive_stressed_economic_lead": false,
+      "queue_censored_fill_proved": false,
+      "source_continuity_proved": false,
+      "two_tick_hedge_stressed_profit_sensitivity_pUSD": "-0.01908",
+      "visible_queue_ahead_shares": "5"
+    },
+    {
+      "actual_after_fee_profit_sensitivity_pUSD": "0.08223",
+      "hedge_fill": {
+        "actual_cost_pUSD": "4.345",
+        "actual_fee_pUSD": "0.02277",
+        "fills": [
+          {
+            "ask_price": "0.869",
+            "quantity": "5",
+            "stressed_price": "0.871"
+          }
+        ],
+        "stressed_cost_pUSD": "4.355",
+        "stressed_fee_pUSD": "0.02248"
+      },
+      "hedge_market": "combined_republican",
+      "hedge_token": "73792458639425453239483287253334661502793797450424846433489414207671979352064",
+      "maker_bid_price": "0.11",
+      "maker_fee_pUSD": "0",
+      "maker_market": "house_republican",
+      "maker_token": "65139230827417363158752884968303867495725894165574887635816574090175320800482",
+      "package": "combined_republican_NO_plus_house_republican_YES",
+      "pair_source_timestamp_skew_ms": 8622,
+      "positive_stressed_economic_lead": true,
+      "queue_censored_fill_proved": false,
+      "source_continuity_proved": false,
+      "two_tick_hedge_stressed_profit_sensitivity_pUSD": "0.07252",
+      "visible_queue_ahead_shares": "13760.71"
+    }
+  ],
+  "schema_version": "polymarket-shutdown-house-maker-first-candidate-v1",
+  "source_contract": {
+    "path": "docs/model-research/action-value/polymarket-shutdown-house-identity-parity-contract-v1-2026-08-29.json",
+    "sha256": "eb5e772ec42dc0a5ade6a73051470476a85c9d89488e78916b5096f9207f5e7f"
+  }
+}

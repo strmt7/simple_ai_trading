@@ -1293,12 +1293,36 @@
         {
           "path": "docs/model-research/action-value/polymarket-current-mlb-monotone-parity-failure-adjudication-v1-2026-08-29.json",
           "result_sha256": "1e75e049abb116955294d878830f940491fe4044f09c7e3564ad2761c0129178"
+        },
+        {
+          "path": "docs/model-research/action-value/polymarket-shutdown-house-identity-metadata-contract-v1-2026-08-29.json",
+          "result_sha256": "d716e9e6d95ab7f0aa9698b9d9f096f2f02a8bab9ddf81c9bdd09f3783e465a8"
+        },
+        {
+          "path": "docs/model-research/action-value/polymarket-shutdown-house-identity-parity-failure-adjudication-v1-2026-08-29.json",
+          "result_sha256": "2d6b5ae638682d7cde02de51068e674a8f882b5bed0ce66de50da1f4280d717c"
+        },
+        {
+          "path": "docs/model-research/action-value/polymarket-shutdown-house-maker-first-candidate-v1-2026-08-29.json",
+          "result_sha256": "efaf6af75551973611f321af37895bc2a85b7318a2ca16c351cec973af8df4f8"
+        },
+        {
+          "path": "docs/model-research/action-value/polymarket-aca-house-identity-metadata-contract-v1-2026-08-29.json",
+          "result_sha256": "6e7a435dc2d6b8f38964226c88bc5d006cdc1d71bfb7ef47abc9fa5e49ea4c8b"
+        },
+        {
+          "path": "docs/model-research/action-value/polymarket-aca-house-identity-parity-result-v1-2026-08-29.json",
+          "result_sha256": "2c224485b3ee4647000e9cfc016a421c08fdb03c158716ca2b56e95fcca2a90b"
+        },
+        {
+          "path": "docs/model-research/action-value/polymarket-aca-house-maker-first-candidate-v1-2026-08-29.json",
+          "result_sha256": "900246f7bf066a8d310c6dcc6e9318edc1c6b83d4779f9b2f628c668e7d258e6"
         }
       ],
-      "current_status": "materially_reopened_direction_independent_exact_subset_equivalence_family_the_one_use_current_postponed_Boston_Red_Sox_New_York_Yankees_event_proved_16_active_accepting_markets_and_37_exact_moneyline_spread_and_total_threshold_relations_but_zero_five_share_packages_were_positive_after_current_0_03_fee_curves_displayed_depth_and_two_adverse_ticks_per_leg_best_NYY_margin_4_to_5_lost_0_53262_pUSD_on_a_5_pUSD_floor_the_CLOB_batch_returned_all_30_ask_arrays_strictly_descending_contrary_to_the_documented_ascending_order_so_the_original_runner_failed_and_the_no_refetch_outcome_aware_adjudication_cannot_promote_not_accepted_or_deployment_ready",
+      "current_status": "direction_independent_exact_subset_equivalence_family_now_includes_two_distinct_resolved_leg_House_control_duplicate_payoff_instances_the_shutdown_instance_had_three_positive_maker_first_two_tick_hedge_sensitivities_with_the_best_practical_combined_Democratic_maker_role_at_0_03092_pUSD_for_five_shares_and_500_visible_queue_but_35_484_second_source_skew_and_no_owned_fill_or_causal_hedge_the_independent_ACA_final_No_instance_reproduced_the_exact_payoff_identity_but_all_four_all_taker_packages_and_all_eight_maker_first_roles_were_negative_after_fee_and_two_tick_hedge_stress_best_one_tick_improved_role_lost_0_11638_pUSD_with_11_173_second_pair_skew_positive_economics_did_not_recur_not_accepted_or_deployment_ready",
       "market_direction_forecast_required": false,
       "mechanism": "polymarket_cross_market_exact_multi_outcome_subset_equivalence",
-      "next_action": "do_not_refetch_or_retry_the_consumed_BOS_NYY_event_and_do_not_replay_historical_VWAP_or_semantic_pair_grids_reopen_only_for_a_future_distinct_active_complete_rules_pair_then_freeze_acceptance_of_either_strict_book_ordering_direction_before_one_public_batch_and_require_positive_current_fee_depth_and_adverse_tick_economics_without_double_counting_the_NBA_subfamily",
+      "next_action": "do_not_spend_a_source_continuous_queue_capture_authenticated_probe_or_repeat_snapshot_on_the_resolved_leg_House_family_reopen_only_after_a_material_price_fee_rule_or_market_change_or_a_new_distinct_exact_rules_instance_with_optimistic_current_economics_then_require_independent_positive_recurrence_before_any_order_capable_work",
       "priority_rank": 31,
       "prohibited_shortcuts": [
         "calling_the_39_6_million_USD_all_strategy_headline_cross_market_subset_profit",
@@ -1306,9 +1330,11 @@
         "truncating_estimating_ignoring_or_synthesizing_outcomes_or_prices",
         "using_trade_VWAP_midpoint_last_trade_forward_fill_or_post_event_quotes_as_executable_asks",
         "reusing_the_historical_fee_free_assumption_or_rolling_one_hour_user_fills_as_simultaneous_execution",
+        "treating_a_repeated_payoff_identity_as_repeated_positive_economics_or_a_current_best_bid_as_an_owned_queue_censored_fill",
+        "escalating_one_positive_maker_first_snapshot_to_order_capable_work_before_a_distinct_instance_survives_the_same_hedge_stress",
         "double_counting_the_same_NBA_episode_or_calling_public_recurrence_owned_profit"
       ],
-      "retry_trigger": "future_active_accepting_orders_market_pair_with_complete_exact_rules_and_deterministic_multi_outcome_subset_indicator_equality_not_already_covered_by_the_specialized_NBA_family",
+      "retry_trigger": "material_price_fee_rule_or_market_change_in_the_resolved_leg_House_family_or_a_future_distinct_active_accepting_orders_market_pair_with_complete_exact_rules_deterministic_subset_indicator_equality_and_optimistic_current_economics_not_already_covered_by_the_specialized_NBA_family",
       "venue_scope": "polymarket_two_separately_traded_exact_rule_multi_outcome_markets"
     },
     {
@@ -1709,7 +1735,7 @@
       "venue_scope": "Binance_current_BLVT_Spot_and_primary_market_inventory"
     }
   ],
-  "result_sha256": "6f5b4a277f1c3cea006de5d8a4a1cc6a7ba306b2689a37b2e93f1c44006fb7c2",
+  "result_sha256": "7be2ae9f2883a72c6f492e57208cede33c7ad8733a947bf4a21b3825315b2443",
   "schema_version": "structural-edge-priority-registry-v1",
   "terminal_do_not_repeat": [
     {
@@ -1893,6 +1919,6 @@
       "reason": "the_complete_public_exchangeInfo_inventory_contained_40_legacy_LEVERAGED_permission_symbols_but_zero_with_TRADING_status_so_no_current_subscribe_redeem_spot_parity_instrument_exists_do_not_poll_until_a_new_official_BLVT_listing_or_relisting"
     }
   ],
-  "updated_at_utc": "2026-08-29T15:17:17.035897Z",
+  "updated_at_utc": "2026-08-29T15:52:19.5715284Z",
   "usage_rule": "advance_the_highest_ranked_hypothesis_whose_retry_trigger_is_satisfied_otherwise_do_not_repeat_a_blocked_or_terminal_screen"
 }

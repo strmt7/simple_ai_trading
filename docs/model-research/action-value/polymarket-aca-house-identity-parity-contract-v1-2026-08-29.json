@@ -1,0 +1,181 @@
+{
+  "schema_version": "polymarket-aca-house-identity-parity-contract-v1",
+  "frozen_at_utc": "2026-08-29T15:44:07.5043758Z",
+  "purpose": "test four exact five-share duplicate-payoff packages created by the final-No ACA condition across an independent combined event and the standalone House-control markets",
+  "source_contracts": [
+    {
+      "url": "https://docs.polymarket.com/api-reference/market-data/get-order-books-request-body",
+      "use": "official public unauthenticated POST batch book contract"
+    },
+    {
+      "url": "https://docs.polymarket.com/api-reference/market-data/get-fee-rate-by-path-parameter",
+      "use": "official public unauthenticated current token fee-rate contract"
+    }
+  ],
+  "metadata_sources": [
+    {
+      "name": "combined",
+      "path": "data/polymarket-aca-house-identity-metadata-v1/raw/combined-event.json",
+      "sha256": "c69fdc7a0bd68b5e0c125b59e4f26319ec62347d1b983a0b8295a017494e0633"
+    },
+    {
+      "name": "house",
+      "path": "data/polymarket-aca-house-identity-metadata-v1/raw/house-event.json",
+      "sha256": "5a6ea39cccfdd33c47ba9dd19707d5d7b8844f229826bae1813b213207384052"
+    },
+    {
+      "name": "aca",
+      "path": "data/polymarket-aca-house-identity-metadata-v1/raw/aca-event.json",
+      "sha256": "befd11454b9f1cb1d9dd12a903452f3035bc6935daad6d0fa2e7405fbda55e63"
+    }
+  ],
+  "payoff_proof": {
+    "aca_event_slug": "enhanced-aca-premium-tax-credits-extended-in-2025",
+    "aca_market_id": "702083",
+    "aca_final_outcome": "No",
+    "required_combined_rule_links": [
+      "https://polymarket.com/event/enhanced-aca-premium-tax-credits-extended-in-2025?",
+      "https://polymarket.com/event/which-party-will-win-the-house-in-2026?"
+    ],
+    "house_states": ["Democratic", "Republican", "Other"],
+    "identity": "with ACA extension fixed No, indicator(not extended and party) equals indicator(party) for Democratic and Republican states including the Other complement",
+    "minimum_payout_package": "buy YES on either duplicate condition and NO on the other at equal size"
+  },
+  "markets": [
+    {
+      "name": "combined_democratic",
+      "event": "combined",
+      "id": "902970",
+      "question": "Will ACA premium tax credits not be extended and will the Democratic Party win the House in 2026?",
+      "group_item_title": "Not Extended & Democratic Party",
+      "condition_id": "0xb1dd35e85b6a712dbd1049c0bd4e7637d7bfea7e1020a12d761732418a279d37",
+      "tokens": [
+        "86645756284795141132717911088354383841969587463930039724769631564209585656220",
+        "100728648643824331517551299729912114537167401103552759417052764717048551539704"
+      ],
+      "tick_size": "0.01"
+    },
+    {
+      "name": "house_democratic",
+      "event": "house",
+      "id": "562802",
+      "question": "Will the Democratic Party control the House after the 2026 Midterm elections?",
+      "group_item_title": "Democratic Party",
+      "condition_id": "0xd5d9fc47718bd553592d126b1fa5e87183d27f3936975b0c04cc0f2dec1f1bb4",
+      "tokens": [
+        "83247781037352156539108067944461291821683755894607244160607042790356561625563",
+        "33156410999665902694791064431724433042010245771106314074312009703157423879038"
+      ],
+      "tick_size": "0.01"
+    },
+    {
+      "name": "combined_republican",
+      "event": "combined",
+      "id": "902971",
+      "question": "Will ACA premium tax credits not be extended and will the Republican Party win the House in 2026?",
+      "group_item_title": "Not Extended & Republican Party",
+      "condition_id": "0x00b4efa709503b5ceb106866f1bccfe18161896d04c7081ade933ef499aa0b5c",
+      "tokens": [
+        "115547965254589717477302714731707428306077506093378906371871917513936079189495",
+        "113362064187878114983530693949765692863802190773316794950672152523095804083141"
+      ],
+      "tick_size": "0.01"
+    },
+    {
+      "name": "house_republican",
+      "event": "house",
+      "id": "562803",
+      "question": "Will the Republican Party control the House after the 2026 Midterm elections?",
+      "group_item_title": "Republican Party",
+      "condition_id": "0x4e4f77e7dbf4cab666e9a1943674d7ae66348e862df03ea6f44b11eb95731928",
+      "tokens": [
+        "65139230827417363158752884968303867495725894165574887635816574090175320800482",
+        "17371217118862125782438074585166210555214661810823929795910191856905580975576"
+      ],
+      "tick_size": "0.01"
+    }
+  ],
+  "packages": [
+    {
+      "name": "combined_democratic_YES_plus_house_democratic_NO",
+      "markets": ["combined_democratic", "house_democratic"],
+      "tokens": [
+        "86645756284795141132717911088354383841969587463930039724769631564209585656220",
+        "33156410999665902694791064431724433042010245771106314074312009703157423879038"
+      ]
+    },
+    {
+      "name": "combined_democratic_NO_plus_house_democratic_YES",
+      "markets": ["combined_democratic", "house_democratic"],
+      "tokens": [
+        "100728648643824331517551299729912114537167401103552759417052764717048551539704",
+        "83247781037352156539108067944461291821683755894607244160607042790356561625563"
+      ]
+    },
+    {
+      "name": "combined_republican_YES_plus_house_republican_NO",
+      "markets": ["combined_republican", "house_republican"],
+      "tokens": [
+        "115547965254589717477302714731707428306077506093378906371871917513936079189495",
+        "17371217118862125782438074585166210555214661810823929795910191856905580975576"
+      ]
+    },
+    {
+      "name": "combined_republican_NO_plus_house_republican_YES",
+      "markets": ["combined_republican", "house_republican"],
+      "tokens": [
+        "113362064187878114983530693949765692863802190773316794950672152523095804083141",
+        "65139230827417363158752884968303867495725894165574887635816574090175320800482"
+      ]
+    }
+  ],
+  "execution": {
+    "quantity_shares_each_leg": "5",
+    "tokens": [
+      "86645756284795141132717911088354383841969587463930039724769631564209585656220",
+      "100728648643824331517551299729912114537167401103552759417052764717048551539704",
+      "83247781037352156539108067944461291821683755894607244160607042790356561625563",
+      "33156410999665902694791064431724433042010245771106314074312009703157423879038",
+      "115547965254589717477302714731707428306077506093378906371871917513936079189495",
+      "113362064187878114983530693949765692863802190773316794950672152523095804083141",
+      "65139230827417363158752884968303867495725894165574887635816574090175320800482",
+      "17371217118862125782438074585166210555214661810823929795910191856905580975576"
+    ],
+    "book_request_count": 1,
+    "fee_request_rule": "query each distinct token only when its package has full five-share displayed depth and gross cost below the five-pUSD payout",
+    "maximum_fee_requests": 8,
+    "retry_count": 0,
+    "fee_schedule": {
+      "exponent": 1,
+      "rate": 0.04,
+      "takerOnly": true,
+      "rebateRate": 0.25
+    },
+    "expected_token_base_fee": 1000,
+    "adverse_ticks_per_leg": 2,
+    "maximum_book_timestamp_skew_ms": 5000,
+    "candidate_gate": "strictly positive five-pUSD terminal payout floor after full displayed depth exact taker fee curves two adverse ticks per leg and no more than five seconds source timestamp skew"
+  },
+  "authority": {
+    "public_unauthenticated_read_only_requests_maximum": 9,
+    "credentials_used": false,
+    "signed_requests": 0,
+    "account_requests": 0,
+    "orders_or_transactions": 0,
+    "funds_used": false,
+    "protected_capture_touched": false,
+    "trading_authority": false
+  },
+  "stopping_rules": {
+    "zero_stressed_positive_packages": "retain offline maker-first sensitivity only and terminalize this exact snapshot",
+    "one_or_more_stressed_positive_packages": "candidate only; source-continuous queue-censored validation remains mandatory",
+    "timestamp_skew_failure": "retain the complete batch and fee audit as diagnostic evidence but reject the executable candidate without refetching",
+    "accepted_edge_from_one_snapshot": false,
+    "deployment_ready_from_one_snapshot": false
+  },
+  "implementation": {
+    "path": "tools/screen_polymarket_aca_house_identity_parity.py",
+    "sha256": "da8d9966c28b81a596d981869ce4c8be335ec021f5c54e375dbca40bdacce5f6"
+  },
+  "contract_sha256": "c92b5266bd70ba9e9c7d2a0c4a4982c11c43eaccb71650beedcfd33968a771b6"
+}

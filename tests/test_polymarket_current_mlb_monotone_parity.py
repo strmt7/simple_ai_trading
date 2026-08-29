@@ -40,7 +40,7 @@ PARITY_CONTRACT_HASH = (
     "231ebf5e9078bc14c8acd3d8274bc98c0200776621b830b64c689a34cdd204b8"
 )
 ADJUDICATION_HASH = "1e75e049abb116955294d878830f940491fe4044f09c7e3564ad2761c0129178"
-REGISTRY_HASH = "6f5b4a277f1c3cea006de5d8a4a1cc6a7ba306b2689a37b2e93f1c44006fb7c2"
+REGISTRY_HASH = "7be2ae9f2883a72c6f492e57208cede33c7ad8733a947bf4a21b3825315b2443"
 
 
 def _load(path: Path) -> dict[str, object]:
@@ -176,12 +176,16 @@ def test_registry_terminalizes_only_this_exact_event_snapshot() -> None:
         if item["mechanism"]
         == "polymarket_cross_market_exact_multi_outcome_subset_equivalence"
     )
-    assert [item["result_sha256"] for item in row["canonical_artifacts"][-4:]] == [
-        EVENT_CONTRACT_HASH,
-        EVENT_RESULT_HASH,
-        PARITY_CONTRACT_HASH,
-        ADJUDICATION_HASH,
-    ]
+    artifacts = {
+        item["path"]: item["result_sha256"] for item in row["canonical_artifacts"]
+    }
+    assert artifacts[EVENT_CONTRACT.relative_to(ROOT).as_posix()] == EVENT_CONTRACT_HASH
+    assert artifacts[EVENT_RESULT.relative_to(ROOT).as_posix()] == EVENT_RESULT_HASH
+    assert (
+        artifacts[PARITY_CONTRACT.relative_to(ROOT).as_posix()]
+        == PARITY_CONTRACT_HASH
+    )
+    assert artifacts[ADJUDICATION.relative_to(ROOT).as_posix()] == ADJUDICATION_HASH
     terminal = next(
         item
         for item in registry["terminal_do_not_repeat"]
