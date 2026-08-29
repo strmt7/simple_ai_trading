@@ -1348,6 +1348,18 @@
           "result_sha256": "fc01c54e9c04117067aa3b43ae194649b93efc12a5265fce508e64f082f320b2"
         },
         {
+          "path": "docs/model-research/action-value/polymarket-future-mlb-cross-period-catalog-contract-v1-2026-08-29.json",
+          "result_sha256": "b39b5f66ddb67dc634c76c6244769bb3b01a6c18098f11ca5d6d999a55cc58ba"
+        },
+        {
+          "path": "docs/model-research/action-value/polymarket-future-mlb-cross-period-catalog-result-v1-2026-08-29.json",
+          "result_sha256": "9b981f0e82c8d26272c1f5f1d7ff580576cae8734e3b697ef3932b4a295a4e14"
+        },
+        {
+          "path": "docs/model-research/action-value/polymarket-future-mlb-cross-period-catalog-adjudication-v1-2026-08-29.json",
+          "result_sha256": "d3ba85e995753d781178fdf6144ac0cb7520d2b1830525cd4be1aad1a5b5b598"
+        },
+        {
           "path": "docs/model-research/action-value/polymarket-shutdown-house-identity-metadata-contract-v1-2026-08-29.json",
           "result_sha256": "d716e9e6d95ab7f0aa9698b9d9f096f2f02a8bab9ddf81c9bdd09f3783e465a8"
         },
@@ -1372,10 +1384,10 @@
           "result_sha256": "900246f7bf066a8d310c6dcc6e9318edc1c6b83d4779f9b2f628c668e7d258e6"
         }
       ],
-      "current_status": "direction_independent_exact_subset_equivalence_family_remains_unaccepted_the_two_distinct_resolved_leg_House_control_instances_reproduced_the_payoff_identity_but_positive_economics_did_not_recur_the_preserved_LAD_DET_within_family_audit_proved_24_relations_but_omitted_the_cross_period_total_implication_a_separately_frozen_retained_data_correction_proved_full_game_Over_6_5_plus_first_five_Under_6_5_has_a_one_pUSD_floor_and_Gamma_sum_0_965_optimistic_profit_0_035_per_share_but_one_exact_two_token_book_batch_had_1_511_second_skew_and_actual_five_share_asks_0_44_plus_0_96_cost_7_pUSD_against_a_5_pUSD_floor_an_optimistic_zero_fee_loss_2_pUSD_six_tick_stress_lacked_complete_depth_and_zero_fee_requests_were_needed_not_accepted_or_deployment_ready",
+      "current_status": "direction_independent_exact_subset_equivalence_family_remains_unaccepted_the_two_distinct_resolved_leg_House_control_instances_reproduced_the_payoff_identity_but_positive_economics_did_not_recur_the_preserved_LAD_DET_within_family_audit_proved_24_relations_but_omitted_the_cross_period_total_implication_a_separately_frozen_correction_proved_the_identity_but_current_depth_lost_2_pUSD_before_fees_a_distinct_one_request_future_MLB_catalog_screen_then_hit_its_100_event_limit_and_is_explicitly_partial_with_92_future_events_only_5_exact_shared_threshold_relations_zero_below_floor_candidates_and_best_Gamma_sum_1_260_optimistic_loss_0_260_per_share_the_consumed_result_omitted_rejected_rows_but_a_zero_refetch_offline_adjudication_preserved_all_five_sums_no_books_or_fees_were_requested_not_accepted_or_deployment_ready",
       "market_direction_forecast_required": false,
       "mechanism": "polymarket_cross_market_exact_multi_outcome_subset_equivalence",
-      "next_action": "do_not_spend_a_source_continuous_queue_capture_authenticated_probe_or_repeat_snapshot_on_the_resolved_leg_House_family_and_do_not_resample_BOS_NYY_or_LAD_DET_for_every_future_distinct_exact_rules_instance_first_use_retained_Gamma_outcomePrices_only_as_a_rejection_gate_stop_before_books_when_every_package_sum_is_at_or_above_its_guaranteed_floor_and_require_a_separately_frozen_exact_depth_screen_plus_independent_positive_after_cost_recurrence_before_any_order_capable_work",
+      "next_action": "do_not_spend_a_source_continuous_queue_capture_authenticated_probe_or_repeat_snapshot_on_the_resolved_leg_House_family_do_not_resample_BOS_NYY_or_LAD_DET_and_do_not_adaptively_paginate_the_consumed_100_row_MLB_page_for_every_future_distinct_exact_rules_instance_first_use_retained_Gamma_outcomePrices_only_as_a_rejection_gate_stop_before_books_when_every_package_sum_is_at_or_above_its_guaranteed_floor_and_require_a_separately_frozen_exact_depth_screen_plus_independent_positive_after_cost_recurrence_before_any_order_capable_work",
       "priority_rank": 31,
       "prohibited_shortcuts": [
         "calling_the_39_6_million_USD_all_strategy_headline_cross_market_subset_profit",
@@ -1385,6 +1397,7 @@
         "reusing_the_historical_fee_free_assumption_or_rolling_one_hour_user_fills_as_simultaneous_execution",
         "requesting_CLOB_books_when_every_exact_package_Gamma_displayed_sum_is_already_at_or_above_its_guaranteed_payout_floor_or_using_Gamma_prices_to_accept_or_promote",
         "screening_only_within_identical_sports_time_scopes_or_treating_stale_Gamma_prices_as_current_executable_depth",
+        "claiming_complete_current_catalog_coverage_at_the_exact_page_limit_or_retaining_only_candidates_without_every_tested_relation_sum",
         "treating_a_repeated_payoff_identity_as_repeated_positive_economics_or_a_current_best_bid_as_an_owned_queue_censored_fill",
         "escalating_one_positive_maker_first_snapshot_to_order_capable_work_before_a_distinct_instance_survives_the_same_hedge_stress",
         "double_counting_the_same_NBA_episode_or_calling_public_recurrence_owned_profit"
@@ -1790,7 +1803,7 @@
       "venue_scope": "Binance_current_BLVT_Spot_and_primary_market_inventory"
     }
   ],
-  "result_sha256": "23479942f0f50760ad35df84f91707716d36ef06026c4ff664f618944e528680",
+  "result_sha256": "ebce99afa23c826f41acec8670dc8259274d62e64d71d255a3645c119f776c95",
   "schema_version": "structural-edge-priority-registry-v1",
   "terminal_do_not_repeat": [
     {

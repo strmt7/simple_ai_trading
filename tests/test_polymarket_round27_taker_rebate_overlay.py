@@ -20,7 +20,7 @@ CAPTURE = POLYMARKET / ("round-027-stage0-mechanics-capture-result-v1-2026-08-15
 REGISTRY = ROOT / "docs/model-research/structural-edge-priority-registry-v1.json"
 EXPECTED_HASH = "948f47d9d0c2fb6cbf441da1147ae07006a897f307141dfd6ae25c85e47f13d2"
 EXPECTED_REGISTRY_HASH = (
-    "23479942f0f50760ad35df84f91707716d36ef06026c4ff664f618944e528680"
+    "ebce99afa23c826f41acec8670dc8259274d62e64d71d255a3645c119f776c95"
 )
 
 

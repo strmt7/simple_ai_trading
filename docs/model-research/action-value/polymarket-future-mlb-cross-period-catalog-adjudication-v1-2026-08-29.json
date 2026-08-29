@@ -1,0 +1,345 @@
+{
+  "adjudication": {
+    "accepted_edge": false,
+    "deployment_ready": false,
+    "next_action": "do_not_adaptively_paginate_or_request_books_for_this_consumed_page",
+    "profitability_claim": false,
+    "status": "retained_partial_page_rejected_before_books_and_fees"
+  },
+  "authority": {
+    "account_requests": 0,
+    "book_requests": 0,
+    "credentials_used": false,
+    "fee_requests": 0,
+    "funds_used": false,
+    "offline_adjudication": true,
+    "orders_or_transactions": 0,
+    "protected_capture_touched": false,
+    "public_unauthenticated_read_only_requests": 1,
+    "signed_requests": 0,
+    "trading_authority": false
+  },
+  "complete_retained_page_screen": {
+    "best_relation": {
+      "event_id": "895506",
+      "event_slug": "mlb-ari-sf-2026-08-29",
+      "event_title": "Arizona Diamondbacks vs. San Francisco Giants",
+      "first_five_under": {
+        "condition_id": "0x8867410122a3db0bd0a2875d8a590d5c23b858966cdd34d1418f0b9efd62b6af",
+        "fee_schedule": {
+          "exponent": 1,
+          "rate": 0.05,
+          "rebateRate": 0.15,
+          "takerOnly": true
+        },
+        "line": "6.5",
+        "market_id": "3973395",
+        "market_slug": "mlb-ari-sf-2026-08-29-f5-total-6pt5",
+        "minimum_order_size": "5",
+        "over_price_pUSD": "0.375",
+        "over_token_id": "54425935999996656797207597353271984819300157861693115049451006759096481155896",
+        "taker_base_fee": 1000,
+        "tick_size": "0.01",
+        "under_price_pUSD": "0.625",
+        "under_token_id": "9587219071374018477336946053826976844628707460985925980894052038414651002396"
+      },
+      "full_game_over": {
+        "condition_id": "0x75a3963654099107996316b11f2555a4542e6d99ce66bb75a1e92c39b1f36506",
+        "fee_schedule": {
+          "exponent": 1,
+          "rate": 0.05,
+          "rebateRate": 0.15,
+          "takerOnly": true
+        },
+        "line": "6.5",
+        "market_id": "3973403",
+        "market_slug": "mlb-ari-sf-2026-08-29-total-6pt5",
+        "minimum_order_size": "5",
+        "over_price_pUSD": "0.635",
+        "over_token_id": "11254569295323546933039036575990425572174975121117231151726499565352809983916",
+        "taker_base_fee": 1000,
+        "tick_size": "0.01",
+        "under_price_pUSD": "0.365",
+        "under_token_id": "34111481962529917666516500902539813641130686286689810393316309195606665055941"
+      },
+      "gamma_displayed_price_sum_pUSD": "1.260",
+      "guaranteed_floor_per_share_pUSD": "1",
+      "line": "6.5",
+      "optimistic_profit_floor_per_share_before_execution_costs_pUSD": "-0.260",
+      "passes_strictly_below_payout_gate": false,
+      "start_time_utc": "2026-08-30T02:05:00Z"
+    },
+    "candidate_count_strictly_below_payout_floor": 0,
+    "exact_cross_period_relation_count": 5,
+    "relations": [
+      {
+        "event_id": "895506",
+        "event_slug": "mlb-ari-sf-2026-08-29",
+        "event_title": "Arizona Diamondbacks vs. San Francisco Giants",
+        "first_five_under": {
+          "condition_id": "0x8867410122a3db0bd0a2875d8a590d5c23b858966cdd34d1418f0b9efd62b6af",
+          "fee_schedule": {
+            "exponent": 1,
+            "rate": 0.05,
+            "rebateRate": 0.15,
+            "takerOnly": true
+          },
+          "line": "6.5",
+          "market_id": "3973395",
+          "market_slug": "mlb-ari-sf-2026-08-29-f5-total-6pt5",
+          "minimum_order_size": "5",
+          "over_price_pUSD": "0.375",
+          "over_token_id": "54425935999996656797207597353271984819300157861693115049451006759096481155896",
+          "taker_base_fee": 1000,
+          "tick_size": "0.01",
+          "under_price_pUSD": "0.625",
+          "under_token_id": "9587219071374018477336946053826976844628707460985925980894052038414651002396"
+        },
+        "full_game_over": {
+          "condition_id": "0x75a3963654099107996316b11f2555a4542e6d99ce66bb75a1e92c39b1f36506",
+          "fee_schedule": {
+            "exponent": 1,
+            "rate": 0.05,
+            "rebateRate": 0.15,
+            "takerOnly": true
+          },
+          "line": "6.5",
+          "market_id": "3973403",
+          "market_slug": "mlb-ari-sf-2026-08-29-total-6pt5",
+          "minimum_order_size": "5",
+          "over_price_pUSD": "0.635",
+          "over_token_id": "11254569295323546933039036575990425572174975121117231151726499565352809983916",
+          "taker_base_fee": 1000,
+          "tick_size": "0.01",
+          "under_price_pUSD": "0.365",
+          "under_token_id": "34111481962529917666516500902539813641130686286689810393316309195606665055941"
+        },
+        "gamma_displayed_price_sum_pUSD": "1.260",
+        "guaranteed_floor_per_share_pUSD": "1",
+        "line": "6.5",
+        "optimistic_profit_floor_per_share_before_execution_costs_pUSD": "-0.260",
+        "passes_strictly_below_payout_gate": false,
+        "start_time_utc": "2026-08-30T02:05:00Z"
+      },
+      {
+        "event_id": "587239",
+        "event_slug": "mlb-sf-atl-2026-06-18",
+        "event_title": "San Francisco Giants vs. Atlanta Braves",
+        "first_five_under": {
+          "condition_id": "0xd5729795a028c96d89c4650934120d617761aecfb4a00325c0683eb6bdb5ff99",
+          "fee_schedule": {
+            "exponent": 1,
+            "rate": 0.03,
+            "rebateRate": 0.25,
+            "takerOnly": true
+          },
+          "line": "5.5",
+          "market_id": "2584823",
+          "market_slug": "mlb-sf-atl-2026-06-18-f5-total-5pt5",
+          "minimum_order_size": "5",
+          "over_price_pUSD": "0.44",
+          "over_token_id": "77942846576791501222785593071387925813122601956312917972684149428078987351861",
+          "taker_base_fee": 1000,
+          "tick_size": "0.01",
+          "under_price_pUSD": "0.56",
+          "under_token_id": "78405738571446280032734919429754258681928825876371038073547381620855344167635"
+        },
+        "full_game_over": {
+          "condition_id": "0xd0ec28604b35c01e775b57f6049dcbbe3234e97b9e9f776c7668cc6fd0b30f43",
+          "fee_schedule": {
+            "exponent": 1,
+            "rate": 0.03,
+            "rebateRate": 0.25,
+            "takerOnly": true
+          },
+          "line": "5.5",
+          "market_id": "2590182",
+          "market_slug": "mlb-sf-atl-2026-06-18-total-5pt5",
+          "minimum_order_size": "5",
+          "over_price_pUSD": "0.75",
+          "over_token_id": "72134770543571471708166576115880152458137803380417140089465124290730971778561",
+          "taker_base_fee": 1000,
+          "tick_size": "0.01",
+          "under_price_pUSD": "0.25",
+          "under_token_id": "106285420857177801723736754043123666078156542730297995571965145784370202605357"
+        },
+        "gamma_displayed_price_sum_pUSD": "1.31",
+        "guaranteed_floor_per_share_pUSD": "1",
+        "line": "5.5",
+        "optimistic_profit_floor_per_share_before_execution_costs_pUSD": "-0.31",
+        "passes_strictly_below_payout_gate": false,
+        "start_time_utc": "2026-08-31T22:05:00Z"
+      },
+      {
+        "event_id": "587239",
+        "event_slug": "mlb-sf-atl-2026-06-18",
+        "event_title": "San Francisco Giants vs. Atlanta Braves",
+        "first_five_under": {
+          "condition_id": "0x7b0eedff5e6883540c725ea17160bbb634d68c77fc2104a1206d0e51dafd1bc1",
+          "fee_schedule": {
+            "exponent": 1,
+            "rate": 0.03,
+            "rebateRate": 0.25,
+            "takerOnly": true
+          },
+          "line": "6.5",
+          "market_id": "2584824",
+          "market_slug": "mlb-sf-atl-2026-06-18-f5-total-6pt5",
+          "minimum_order_size": "5",
+          "over_price_pUSD": "0.335",
+          "over_token_id": "112029882364182876029130308735601719542982178971001411183082146503404557158403",
+          "taker_base_fee": 1000,
+          "tick_size": "0.01",
+          "under_price_pUSD": "0.665",
+          "under_token_id": "95619267752555831477190753479014064343581300547296685616981361219480320684436"
+        },
+        "full_game_over": {
+          "condition_id": "0x3b8a6d66107eee1cb776639505369db6973dddfce0f7c569e62bb644bfa72ff2",
+          "fee_schedule": {
+            "exponent": 1,
+            "rate": 0.03,
+            "rebateRate": 0.25,
+            "takerOnly": true
+          },
+          "line": "6.5",
+          "market_id": "2590183",
+          "market_slug": "mlb-sf-atl-2026-06-18-total-6pt5",
+          "minimum_order_size": "5",
+          "over_price_pUSD": "0.705",
+          "over_token_id": "57295299541558685621460478870053888714447648023039702356317526561106139812028",
+          "taker_base_fee": 1000,
+          "tick_size": "0.01",
+          "under_price_pUSD": "0.295",
+          "under_token_id": "80390853584775737503551401782301899918166338368026465927123725931314706276662"
+        },
+        "gamma_displayed_price_sum_pUSD": "1.370",
+        "guaranteed_floor_per_share_pUSD": "1",
+        "line": "6.5",
+        "optimistic_profit_floor_per_share_before_execution_costs_pUSD": "-0.370",
+        "passes_strictly_below_payout_gate": false,
+        "start_time_utc": "2026-08-31T22:05:00Z"
+      },
+      {
+        "event_id": "895497",
+        "event_slug": "mlb-sea-tor-2026-08-29",
+        "event_title": "Seattle Mariners vs. Toronto Blue Jays",
+        "first_five_under": {
+          "condition_id": "0xc16446e5b6730f1ea0d96c80ea87b5ecfd6602beab65844042f2d19dea59e566",
+          "fee_schedule": {
+            "exponent": 1,
+            "rate": 0.05,
+            "rebateRate": 0.15,
+            "takerOnly": true
+          },
+          "line": "6.5",
+          "market_id": "3964651",
+          "market_slug": "mlb-sea-tor-2026-08-29-f5-total-6pt5",
+          "minimum_order_size": "5",
+          "over_price_pUSD": "0.24",
+          "over_token_id": "96029193252648106928738287334179901306738113824405393935230183518325112058600",
+          "taker_base_fee": 1000,
+          "tick_size": "0.01",
+          "under_price_pUSD": "0.76",
+          "under_token_id": "94846344610483417711139110121028714683221275920700683817708906748180303507493"
+        },
+        "full_game_over": {
+          "condition_id": "0x595efba711f2e16635d18ecf93117b1036efe264f4f2c4c7c99645233e1bef25",
+          "fee_schedule": {
+            "exponent": 1,
+            "rate": 0.05,
+            "rebateRate": 0.15,
+            "takerOnly": true
+          },
+          "line": "6.5",
+          "market_id": "3957252",
+          "market_slug": "mlb-sea-tor-2026-08-29-total-6pt5",
+          "minimum_order_size": "5",
+          "over_price_pUSD": "0.615",
+          "over_token_id": "17400035683345622617629854670959443051522380452528217106977354508509973710964",
+          "taker_base_fee": 1000,
+          "tick_size": "0.01",
+          "under_price_pUSD": "0.385",
+          "under_token_id": "49929360865015721298841777284113016856149371534135965645110516220474620712995"
+        },
+        "gamma_displayed_price_sum_pUSD": "1.375",
+        "guaranteed_floor_per_share_pUSD": "1",
+        "line": "6.5",
+        "optimistic_profit_floor_per_share_before_execution_costs_pUSD": "-0.375",
+        "passes_strictly_below_payout_gate": false,
+        "start_time_utc": "2026-08-29T19:07:00Z"
+      },
+      {
+        "event_id": "895502",
+        "event_slug": "mlb-sd-tb-2026-08-29",
+        "event_title": "San Diego Padres vs. Tampa Bay Rays",
+        "first_five_under": {
+          "condition_id": "0x7f9b8e2642be7d8640771f63515093d7bf1140c80692ee527a47b0c26c9e090e",
+          "fee_schedule": {
+            "exponent": 1,
+            "rate": 0.05,
+            "rebateRate": 0.15,
+            "takerOnly": true
+          },
+          "line": "6.5",
+          "market_id": "3965191",
+          "market_slug": "mlb-sd-tb-2026-08-29-f5-total-6pt5",
+          "minimum_order_size": "5",
+          "over_price_pUSD": "0.25",
+          "over_token_id": "106903798903209838213759730742387954829861580236642572736516726685598826866487",
+          "taker_base_fee": 1000,
+          "tick_size": "0.01",
+          "under_price_pUSD": "0.75",
+          "under_token_id": "107393420635886176987853021457563503740745290442209860028369425535889318311871"
+        },
+        "full_game_over": {
+          "condition_id": "0x7295124238467db2aa0608d9f408241d7f10d97eeedb5811488f3251728b29eb",
+          "fee_schedule": {
+            "exponent": 1,
+            "rate": 0.05,
+            "rebateRate": 0.15,
+            "takerOnly": true
+          },
+          "line": "6.5",
+          "market_id": "3957257",
+          "market_slug": "mlb-sd-tb-2026-08-29-total-6pt5",
+          "minimum_order_size": "5",
+          "over_price_pUSD": "0.655",
+          "over_token_id": "21417792063688395329405476595100954004526054191671761416733411534241082958153",
+          "taker_base_fee": 1000,
+          "tick_size": "0.01",
+          "under_price_pUSD": "0.345",
+          "under_token_id": "113110635459202242001166481690790330272241391223830373149724380481312314780610"
+        },
+        "gamma_displayed_price_sum_pUSD": "1.405",
+        "guaranteed_floor_per_share_pUSD": "1",
+        "line": "6.5",
+        "optimistic_profit_floor_per_share_before_execution_costs_pUSD": "-0.405",
+        "passes_strictly_below_payout_gate": false,
+        "start_time_utc": "2026-08-29T20:10:00Z"
+      }
+    ]
+  },
+  "consumed_result": {
+    "path": "docs/model-research/action-value/polymarket-future-mlb-cross-period-catalog-result-v1-2026-08-29.json",
+    "preserved": true,
+    "sha256": "9b981f0e82c8d26272c1f5f1d7ff580576cae8734e3b697ef3932b4a295a4e14"
+  },
+  "created_at_utc": "2026-08-29T17:45:41.929648Z",
+  "implementation": {
+    "path": "tools/adjudicate_polymarket_mlb_cross_period_catalog.py",
+    "sha256": "971fccaf381fd3e0295ff24e12d26361d560e327dda3b3725f957580cf6901bd"
+  },
+  "population": {
+    "future_event_count_at_completed_request": 92,
+    "limit": 100,
+    "partial": true,
+    "returned_event_count": 100
+  },
+  "result_sha256": "d3ba85e995753d781178fdf6144ac0cb7520d2b1830525cd4be1aad1a5b5b598",
+  "retained_raw": {
+    "path": "data/polymarket-future-mlb-cross-period-catalog-v1/raw/events.json",
+    "refetch_count": 0,
+    "sha256": "5a14b8109e232f5d9ff0b6ad9bb933372072848a141ce8555c1f212e4bd597fc"
+  },
+  "schema_version": "polymarket-mlb-cross-period-catalog-adjudication-v1"
+}

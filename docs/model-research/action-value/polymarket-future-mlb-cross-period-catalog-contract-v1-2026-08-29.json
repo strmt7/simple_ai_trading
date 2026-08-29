@@ -1,0 +1,72 @@
+{
+  "schema_version": "polymarket-mlb-cross-period-catalog-contract-v1",
+  "frozen_at_utc": "2026-08-29T17:43:48.2796006Z",
+  "purpose": "screen the complete first bounded current active MLB Gamma page once for future-event same-threshold full-game Over plus first-five Under guaranteed-payout packages without event-by-event polling",
+  "source_contracts": [
+    {
+      "url": "https://docs.polymarket.com/api-reference/events/list-events",
+      "use": "official public unauthenticated GET events contract documenting tag_id active closed limit offset order and ascending filters"
+    },
+    {
+      "path": "data/polymarket-lad-det-exact-event-prefilter-v1/raw/event.json",
+      "sha256": "144d66b5520a4091ed5bb201043c8cd599537b105e4b406e7c6e4f5d60fac005",
+      "use": "retained exact official Gamma event response binding MLB tag id 100381"
+    }
+  ],
+  "contract_path": "docs/model-research/action-value/polymarket-future-mlb-cross-period-catalog-contract-v1-2026-08-29.json",
+  "capture": {
+    "method": "GET",
+    "public_unauthenticated": true,
+    "read_only": true,
+    "retry_count": 0,
+    "tag_id": 100381,
+    "active": true,
+    "closed": false,
+    "limit": 100,
+    "offset": 0,
+    "order": "startTime",
+    "ascending": true,
+    "url": "https://gamma-api.polymarket.com/events?tag_id=100381&active=true&closed=false&limit=100&offset=0&order=startTime&ascending=true"
+  },
+  "population": {
+    "future_only": "event startTime must be strictly after the retained request completed_at_ms",
+    "complete_rule": "returned count strictly below the frozen limit of 100",
+    "partial_rule": "returned count equal to 100 is explicitly partial and cannot support a complete-population claim"
+  },
+  "payoff_identity": {
+    "market_direction_forecast_required": false,
+    "relation": "at an identical half-run threshold cumulative full-game runs are never below cumulative first-five runs so full-game Over plus first-five Under pays at least one pUSD per share",
+    "cancellation": "both exact markets must state 50-50 cancellation so the package still pays one pUSD per share"
+  },
+  "decision_rules": {
+    "gamma_price_role": "rejection_only_optimistic_gate_never_acceptance_or_promotion_evidence",
+    "candidate": "exact future active accepting full-game and first-five total markets with identical line complete rules and displayed price sum strictly below one",
+    "deterministic_best": "largest optimistic per-share headroom then earliest startTime event slug and numeric line",
+    "book_request_count": 0,
+    "fee_request_count": 0,
+    "next_if_candidate": "freeze one exact-depth screen for only the deterministic best candidate",
+    "next_if_none": "stop without any book or fee request"
+  },
+  "outputs": {
+    "result_path": "docs/model-research/action-value/polymarket-future-mlb-cross-period-catalog-result-v1-2026-08-29.json",
+    "raw_path": "data/polymarket-future-mlb-cross-period-catalog-v1/raw/events.json",
+    "journal_path": "data/polymarket-future-mlb-cross-period-catalog-v1/request-journal.jsonl"
+  },
+  "authority": {
+    "public_unauthenticated_read_only_requests": 1,
+    "credentials_used": false,
+    "signed_requests": 0,
+    "account_requests": 0,
+    "book_requests": 0,
+    "fee_requests": 0,
+    "orders_or_transactions": 0,
+    "funds_used": false,
+    "protected_capture_touched": false,
+    "trading_authority": false
+  },
+  "implementation": {
+    "path": "tools/screen_polymarket_mlb_cross_period_catalog.py",
+    "sha256": "a916790e7e0320089b9f76c49aff43c072312f24599de351820d3fb872e6eddd"
+  },
+  "contract_sha256": "b39b5f66ddb67dc634c76c6244769bb3b01a6c18098f11ca5d6d999a55cc58ba"
+}

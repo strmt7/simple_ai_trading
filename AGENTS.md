@@ -200,6 +200,11 @@ override prose.
   full-game totals can create cross-period implications; preserve a narrower
   consumed adjudication that missed one, then freeze the retained-data
   correction separately before any depth access.
+- A rejection-only catalog result must retain every tested relation's exact
+  identity, price sum, payout floor, and decision, not only candidate rows and
+  aggregate counts. If a consumed runner omits rejected rows, preserve it and
+  reconstruct the complete retained page offline without refetching before
+  making a coverage or best-row claim.
 - PowerShell preflight guards must parenthesize each `Test-Path` operand and set
   terminating error behavior before a guarded one-use command. The runner must
   independently enforce the same one-use boundary, so a shell parser or

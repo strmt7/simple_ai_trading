@@ -1,0 +1,57 @@
+{
+  "adjudication": {
+    "accepted_edge": false,
+    "deployment_ready": false,
+    "next_action": "stop_without_any_book_or_fee_request",
+    "profitability_claim": false
+  },
+  "authority": {
+    "account_requests": 0,
+    "book_requests": 0,
+    "credentials_used": false,
+    "fee_requests": 0,
+    "funds_used": false,
+    "orders_or_transactions": 0,
+    "protected_capture_touched": false,
+    "public_unauthenticated_read_only_requests": 1,
+    "signed_requests": 0,
+    "trading_authority": false
+  },
+  "capture": {
+    "limit": 100,
+    "offset": 0,
+    "population_complete_under_frozen_filter": false,
+    "receipt": {
+      "completed_at_ms": 1788025473079,
+      "method": "GET",
+      "name": "future-mlb-cross-period-catalog",
+      "phase": "completed",
+      "raw_path": "data/polymarket-future-mlb-cross-period-catalog-v1/raw/events.json",
+      "request_body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "requested_at_ms": 1788025472905,
+      "response_bytes": 4906201,
+      "response_sha256": "5a14b8109e232f5d9ff0b6ad9bb933372072848a141ce8555c1f212e4bd597fc",
+      "status_code": 200,
+      "url": "https://gamma-api.polymarket.com/events?tag_id=100381&active=true&closed=false&limit=100&offset=0&order=startTime&ascending=true"
+    },
+    "returned_event_count": 100
+  },
+  "contract": {
+    "path": "docs/model-research/action-value/polymarket-future-mlb-cross-period-catalog-contract-v1-2026-08-29.json",
+    "sha256": "b39b5f66ddb67dc634c76c6244769bb3b01a6c18098f11ca5d6d999a55cc58ba"
+  },
+  "created_at_utc": "2026-08-29T17:44:33.101449Z",
+  "implementation": {
+    "path": "tools/screen_polymarket_mlb_cross_period_catalog.py",
+    "sha256": "a916790e7e0320089b9f76c49aff43c072312f24599de351820d3fb872e6eddd"
+  },
+  "result_sha256": "9b981f0e82c8d26272c1f5f1d7ff580576cae8734e3b697ef3932b4a295a4e14",
+  "schema_version": "polymarket-mlb-cross-period-catalog-result-v1",
+  "screen": {
+    "best_candidate": null,
+    "candidate_count_strictly_below_payout_floor": 0,
+    "candidates": [],
+    "exact_cross_period_relation_count": 5,
+    "future_event_count_at_completed_request": 92
+  }
+}

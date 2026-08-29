@@ -1167,6 +1167,17 @@ safety gate, blocks Stop, or submits an order.
   complete depth, so zero fee requests were needed. Do not resample this event.
   Canonical cross-period result SHA-256
   `fc01c54e9c04117067aa3b43ae194649b93efc12a5265fce508e64f082f320b2`.
+- One bounded current MLB catalog request then screened this cross-period
+  identity without event-by-event polling. The response hit the frozen
+  100-event limit, so it is explicitly partial, not complete current coverage.
+  Ninety-two events were future-dated at receipt time; only five exposed exact
+  shared full-game/first-five total thresholds. Zero had a displayed sum below
+  one. The best was Arizona-San Francisco at `1.260`, already an optimistic
+  `0.260` pUSD per-share loss before books, fees, or delay. The consumed result
+  retained counts and candidates but omitted rejected rows; a zero-refetch
+  offline adjudication preserved all five sums. Do not adaptively paginate this
+  page or request books. Canonical adjudication SHA-256
+  `d3ba85e995753d781178fdf6144ac0cb7520d2b1830525cd4be1aad1a5b5b598`.
 - Binance Launchpool is a distinct direction-independent candidate only for an
   independently already-held idle supported stablecoin. Current official
   guidance describes USDC/FDUSD-style pools, hourly rewards, early unlock with
@@ -1470,7 +1481,7 @@ safety gate, blocks Stop, or submits an order.
   `c09d62e98cd0df88622d4b98d9d8f01247121ccd786fffb580bc72429ef6bf30`.
 - The structural-edge registry now has 42 ranked hypotheses, still only 19
   narrowly accepted scoped overlays, and result SHA-256
-  `23479942f0f50760ad35df84f91707716d36ef06026c4ff664f618944e528680`.
+  `ebce99afa23c826f41acec8670dc8259274d62e64d71d255a3645c119f776c95`.
 
 ## Task Routing
 
@@ -1487,6 +1498,7 @@ safety gate, blocks Stop, or submits an order.
 | Current BOS/NYY monotone-parity terminal adjudication | `docs/model-research/action-value/polymarket-current-mlb-monotone-parity-failure-adjudication-v1-2026-08-29.json` |
 | Current LAD/DET rejection-only monotone adjudication | `docs/model-research/action-value/polymarket-lad-det-monotone-prefilter-adjudication-v1-2026-08-29.json` |
 | Current LAD/DET cross-period total terminal result | `docs/model-research/action-value/polymarket-lad-det-cross-period-total-result-v1-2026-08-29.json` |
+| Future MLB cross-period partial-page adjudication | `docs/model-research/action-value/polymarket-future-mlb-cross-period-catalog-adjudication-v1-2026-08-29.json` |
 | Current Toronto/Phoenix WNBA monotone-parity terminal result | `docs/model-research/action-value/polymarket-current-wnba-monotone-parity-result-v1-2026-08-29.json` |
 | Current Lynx/Dream WNBA rejection-only terminal adjudication | `docs/model-research/action-value/polymarket-lynx-dream-monotone-prefilter-adjudication-v1-2026-08-29.json` |
 | Binance retained CLOB box-parity terminal prefilter | `docs/model-research/action-value/binance-options-clob-box-retained-prefilter-v2-2026-08-29.json` |
