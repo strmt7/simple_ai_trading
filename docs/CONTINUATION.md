@@ -967,7 +967,7 @@ grants paper, testnet, or live authority.
 
 The canonical structural-edge priority and retry-trigger registry is
 `docs/model-research/structural-edge-priority-registry-v1.json`, result SHA-256
-`83dcc86f905b19679198a3dfe7b11d50b1377f7646ad287e647e4dc6d455e3aa`.
+`d3e31d80653d21aa7267f68d6ed392bebd10e1c5158765da6545056d2a94c68e`.
 Advance only the highest-ranked hypothesis whose trigger is actually satisfied.
 This prevents account-blocked or terminal screens from being rerun as if more
 snapshots could create an edge.
@@ -2123,7 +2123,7 @@ result SHA-256
 `64943efe0c6ad16f8d02f78548afef38f919448d2da87c7573e825a2eeefd6b9`.
 That checkpoint left seventeen accepted scoped edges. The current registry now
 has nineteen and result SHA-256
-`83dcc86f905b19679198a3dfe7b11d50b1377f7646ad287e647e4dc6d455e3aa`.
+`d3e31d80653d21aa7267f68d6ed392bebd10e1c5158765da6545056d2a94c68e`.
 
 The complete Binance XAU/XAG Commodity Options versus matching TradFi
 perpetual lower-bound screen is terminal for the active 2026-08-27 and
@@ -2152,6 +2152,26 @@ Canonical result:
 `docs/model-research/action-value/binance-commodity-option-perpetual-lower-bound-v1-2026-08-27.json`,
 result SHA-256
 `3cbc79050473b456e4175239b687b0329bc1c7a66d3530842e524ac4200a0905`.
+
+A frozen 2026-08-29 retry-trigger observation then found zero active
+`TRADFI_OPTIONS`/`COMMODITY` XAU or XAG rows. Both retained 2026-08-27 and
+2026-08-28 expiries had disappeared and no new expiry existed, so the runner
+stopped after its single public `exchangeInfo` GET. It did not request option
+tickers, futures metadata, books, premium index, or funding. Do not poll the
+empty inventory; reopen only after a new official XAU/XAG Commodity Options
+listing or relisting announcement, or a material fee, funding, basis, book, or
+access change. Result SHA-256:
+`42e7fc2fb8e999f948b2c219d61462ee2af7dbc1477cc4acc68e324d4dea5f1d`.
+
+The contract's literal `frozen_at_utc` was manually anticipated and lands
+9.218 seconds after the retained request start. The original contract and raw
+capture remain unchanged: runner control flow read and hash-bound the exact
+contract before HTTP, so a separate adjudication preserves the metadata error
+without rewriting or rerunning the consumed observation. The runner and
+`AGENTS.md` now reject missing, malformed, offset-free, or future freeze times
+before HTTP. Never type a rounded or anticipated freeze time. Adjudication file
+SHA-256:
+`072d6b83c90a71a50bcf36cb310f0c933f4dfdc1b5e50bb3b7672a97f960f5ba`.
 
 The newly listed `DJTBUSDT` bStock and `DJTUSDT` TradFi perpetual were tested
 once as a symbol-only material universe addition to the existing bStock carry
