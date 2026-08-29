@@ -1,0 +1,80 @@
+{
+  "candidate_annual_rates": [
+    "0.0325",
+    "0.04"
+  ],
+  "cases": [
+    {
+      "asset": "BTC",
+      "condition_id": "0x024b68f77bfc019341ee3db8f57c103334e4b9430bba4746d8c94aafd8b36fee",
+      "shares_per_outcome": "150",
+      "wallet": "0x3fb5c98d825651d7efd2bd48a5d02c2d86c96f2f"
+    },
+    {
+      "asset": "ETH",
+      "condition_id": "0x201f51d2d892c41c5bfa6568a0a2f93ab2ea426e87dddfd5fb0191f7ec34a441",
+      "shares_per_outcome": "440",
+      "wallet": "0x40db77fc612f07c73e9d4dde5f9fdeb154406c09"
+    },
+    {
+      "asset": "SOL",
+      "condition_id": "0x488999d62b8760a76d4e00e784f354a3bd03947c36073562ce65c0f3864185b3",
+      "shares_per_outcome": "591.11",
+      "wallet": "0xaa898d69f9abc17f0fdea7999e4c8d60beae2c28"
+    }
+  ],
+  "conflict_snapshot_ms": 1787743531109,
+  "contract_path": "docs/model-research/polymarket/complete-set-holding-yield-post-conflict-contract-v7-2026-08-29.json",
+  "contract_result_sha256": "a8519183d418dcab02184cf57b2d900c1b7740ce1b72670bd8fbea71f798d132",
+  "created_at_utc": "2026-08-29T13:01:44.9336355Z",
+  "data_api_activity_url": "https://data-api.polymarket.com/activity",
+  "data_api_positions_url": "https://data-api.polymarket.com/positions",
+  "decision_rule": {
+    "account_continuity": "each exact YES and NO balance must remain equal mergeable and unchanged and no non-YIELD wallet activity may occur during the selected interval",
+    "distribution_selection": "for each wallet select the second chronological YIELD row after the conflict snapshot so its preceding daily interval is wholly post-conflict",
+    "rate_resolution": "each selected payout must map under four-decimal round-down to exactly one frozen candidate annual rate and integer hourly sample count from zero through twenty-four and all three wallets must resolve to the same rate",
+    "receipt_reconciliation": "each selected YIELD row must reconcile to one successful Polygon pUSD transfer from the exact holding-yield distributor to the exact wallet",
+    "unresolved_behavior": "any balance change pagination ceiling non-daily interval non-YIELD activity receipt mismatch ambiguous rate or cross-wallet disagreement keeps the current operating rate unqualified"
+  },
+  "implementation": {
+    "path": "tools/reconcile_polymarket_holding_yield_post_conflict.py",
+    "sha256": "76a1d90d83d50f42e2c252b0f5ad3c6f6426724968c6364b07ca5e67e38b842a"
+  },
+  "not_before_ms": 1787876400000,
+  "polygon_rpc_url": "https://polygon.drpc.org",
+  "prior_conflict_artifact": {
+    "path": "docs/model-research/polymarket/complete-set-holding-yield-rate-conflict-gate-v6-2026-08-26.json",
+    "result_sha256": "17c23b1bf821256a573b8685ea4c5725d1c1315a4ca6449395e75635b51678d9"
+  },
+  "purpose": "freeze_the_one_use_public_reconciliation_of_the_first_daily_distribution_interval_wholly_postdating_the_3_25_vs_4_percent_primary_source_conflict",
+  "request_contract": {
+    "conditional_receipt_requests": 3,
+    "data_api_get_requests": 6,
+    "maximum_total_requests": 9,
+    "pagination": "one_limit_500_offset_0_response_per_exact_wallet and fail closed if any response reaches the limit",
+    "repeat_policy": "one use only; existing output journal or raw directory prohibits reuse"
+  },
+  "schema_version": "polymarket-holding-yield-post-conflict-reconciliation-v7-contract",
+  "source_contracts": [
+    {
+      "classification": "official public unauthenticated read-only positions endpoint",
+      "documentation_url": "https://docs.polymarket.com/api-reference/core/get-current-positions-for-a-user",
+      "method": "GET",
+      "url": "https://data-api.polymarket.com/positions"
+    },
+    {
+      "classification": "official public unauthenticated read-only user activity endpoint",
+      "documentation_url": "https://docs.polymarket.com/api-reference/core/get-user-activity",
+      "method": "GET",
+      "url": "https://data-api.polymarket.com/activity"
+    },
+    {
+      "classification": "officially listed public Polygon JSON-RPC endpoint used only for eth_getTransactionReceipt",
+      "documentation_url": "https://docs.polygon.technology/pos/reference/rpc-endpoints",
+      "method": "POST",
+      "rpc_method": "eth_getTransactionReceipt",
+      "url": "https://polygon.drpc.org"
+    }
+  ],
+  "trading_authority": false
+}

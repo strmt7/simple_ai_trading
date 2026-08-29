@@ -912,6 +912,21 @@ diagnostics, not accepted edges.
   `docs/model-research/polymarket/complete-set-holding-yield-rate-conflict-gate-v6-2026-08-26.json`,
   SHA-256
   `17c23b1bf821256a573b8685ea4c5725d1c1315a4ca6449395e75635b51678d9`.
+  The frozen one-use post-conflict refresh was consumed on 2026-08-29 and
+  failed closed after five of nine requests. BTC and ETH retained exact equal
+  mergeable balances, no non-YIELD activity during the selected daily
+  intervals, and their first wholly post-conflict payouts of 0.0133 and 0.0391
+  pUSD each uniquely map to 24 sampled hours at 3.25%, not 4%. The runner then
+  stopped because SOL's separately rounded displayed current values summed to
+  591.1099 rather than its exact 591.11 equal-share balance. That 0.0001 pUSD
+  difference was an unstated implementation gate, not a balance change. No SOL
+  activity or receipt request was made, so the current rate remains fail-closed
+  unqualified; do not repair or rerun because the retained 3.25% evidence cannot
+  improve the v5 economics against a 3.25% alternative. Canonical failure
+  adjudication:
+  `docs/model-research/polymarket/complete-set-holding-yield-post-conflict-v7-failure-adjudication-2026-08-29.json`,
+  SHA-256
+  `448b068aa5c1b34c6012a5fadafa449ed9ef125afc310b7901b9f68285510f71`.
   A separate frozen valuation-uplift screen covered every currently eligible
   BTC/ETH/SOL market in four public requests. All 55 markets returned both
   token midpoints, and every equal YES-plus-NO complete set summed to exactly
@@ -945,7 +960,7 @@ grants paper, testnet, or live authority.
 
 The canonical structural-edge priority and retry-trigger registry is
 `docs/model-research/structural-edge-priority-registry-v1.json`, result SHA-256
-`aca1295421ba83a9a0e97a305baaf0f62371d6d2ea95526f671ec1877a0de035`.
+`1f15f9bf95e6600439dea9ce4c52aeaa4f53e41c619fe092414b44e777713ae1`.
 Advance only the highest-ranked hypothesis whose trigger is actually satisfied.
 This prevents account-blocked or terminal screens from being rerun as if more
 snapshots could create an edge.
@@ -2083,7 +2098,7 @@ result SHA-256
 `64943efe0c6ad16f8d02f78548afef38f919448d2da87c7573e825a2eeefd6b9`.
 That checkpoint left seventeen accepted scoped edges. The current registry now
 has nineteen and result SHA-256
-`aca1295421ba83a9a0e97a305baaf0f62371d6d2ea95526f671ec1877a0de035`.
+`1f15f9bf95e6600439dea9ce4c52aeaa4f53e41c619fe092414b44e777713ae1`.
 
 The complete Binance XAU/XAG Commodity Options versus matching TradFi
 perpetual lower-bound screen is terminal for the active 2026-08-27 and

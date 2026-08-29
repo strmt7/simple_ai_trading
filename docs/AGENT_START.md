@@ -39,6 +39,19 @@ safety gate, blocks Stop, or submits an order.
 
 ## Research State
 
+- The one-use Polymarket holding-yield post-conflict refresh is consumed and
+  must not be rerun. It failed closed after five of nine public requests on an
+  unstated exact-current-value gate: SOL's equal mergeable 591.11-share pair
+  displayed separately rounded values totaling 591.1099. Retained BTC and ETH
+  rows nevertheless each uniquely match 24 sampled hours at 3.25%, not 4%, for
+  the first wholly post-conflict interval. Because SOL activity and all three
+  receipts were not requested, the current rate remains unqualified. A repair
+  capture cannot change the frozen v5 economic rejection versus a 3.25%
+  alternative, so reopen only after a material rate, program, payout, or
+  comparator change. Canonical adjudication:
+  `complete-set-holding-yield-post-conflict-v7-failure-adjudication-2026-08-29.json`,
+  SHA-256
+  `448b068aa5c1b34c6012a5fadafa449ed9ef125afc310b7901b9f68285510f71`.
 - Binance Stocks FPSL is a materially distinct direction-independent overlay
   for U.S.-listed stocks or ETFs that are already independently owned and fully
   settled. The current FAQ says actual loaned shares accrue interest daily and
