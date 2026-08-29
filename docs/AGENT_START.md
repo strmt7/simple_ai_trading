@@ -52,6 +52,15 @@ safety gate, blocks Stop, or submits an order.
   `complete-set-holding-yield-post-conflict-v7-failure-adjudication-2026-08-29.json`,
   SHA-256
   `448b068aa5c1b34c6012a5fadafa449ed9ef125afc310b7901b9f68285510f71`.
+  The consumed activity payloads also contained one later daily BTC and ETH
+  `YIELD` row. A distinct two-request monitor reused those exact rows and
+  retained equal mergeable positions, then reconciled both transactions to
+  successful exact pUSD transfers from the holding-yield distributor. The
+  intervals were 86,474 and 86,724 seconds and the amounts repeated at 0.0133
+  and 0.0391 pUSD. This strengthens payout continuity but does not repair v7,
+  qualify the current three-wallet rate, authorize new capital, or establish
+  deployment readiness. Canonical continuity result SHA-256
+  `2eb7b434170afb195cc4f4faef8260ac4ec30b655c20fc07ee1bc9acbdfe090d`.
 - Binance Stocks FPSL is a materially distinct direction-independent overlay
   for U.S.-listed stocks or ETFs that are already independently owned and fully
   settled. The current FAQ says actual loaned shares accrue interest daily and
@@ -1435,7 +1444,7 @@ safety gate, blocks Stop, or submits an order.
   `a9b0e7a2aba9bda7f83b9515be587a17e6da69fa0bc987191a21f9d37e912d3b`.
 - The structural-edge registry now has 42 ranked hypotheses, still only 19
   narrowly accepted scoped overlays, and result SHA-256
-  `5dfe720ff8cb69f5489ef6deb47fffe2d1ae4d036f1c14a13fbb34daf961f14a`.
+  `8a5df5625fab7d55762ff52923f1454d80a92126d6dce09ce4f5b9281779f6f9`.
 
 ## Task Routing
 
@@ -1453,6 +1462,7 @@ safety gate, blocks Stop, or submits an order.
 | Current Toronto/Phoenix WNBA monotone-parity terminal result | `docs/model-research/action-value/polymarket-current-wnba-monotone-parity-result-v1-2026-08-29.json` |
 | Current Lynx/Dream WNBA rejection-only terminal adjudication | `docs/model-research/action-value/polymarket-lynx-dream-monotone-prefilter-adjudication-v1-2026-08-29.json` |
 | Binance retained CLOB box-parity terminal prefilter | `docs/model-research/action-value/binance-options-clob-box-retained-prefilter-v2-2026-08-29.json` |
+| Polymarket holding-yield latest retained receipt continuity | `docs/model-research/polymarket/complete-set-holding-yield-continuity-receipts-v8-2026-08-29.json` |
 | Resolved-leg House duplicate-payoff recurrence | `docs/model-research/action-value/polymarket-aca-house-maker-first-candidate-v1-2026-08-29.json` |
 | Binance XAU/PAXG funding-basis terminal adjudication | `docs/model-research/action-value/binance-xau-paxg-perpetual-funding-spread-failure-adjudication-v1-2026-08-29.json` |
 | Polymarket exact-one-NO V2 conversion failure adjudication | `docs/model-research/action-value/polymarket-negrisk-one-no-v2-conversion-failure-adjudication-v1-2026-08-29.json` |

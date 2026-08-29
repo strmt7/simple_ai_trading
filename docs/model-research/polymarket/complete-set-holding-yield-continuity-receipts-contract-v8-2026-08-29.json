@@ -1,0 +1,99 @@
+{
+  "schema_version": "polymarket-holding-yield-continuity-receipts-v8-contract",
+  "frozen_at_utc": "2026-08-29T16:41:03.8553275+00:00",
+  "purpose": "reconcile the latest additional BTC and ETH daily YIELD rows already retained by the consumed v7 run to exact public Polygon pUSD transfers without refetching positions or activity",
+  "contract_path": "docs/model-research/polymarket/complete-set-holding-yield-continuity-receipts-contract-v8-2026-08-29.json",
+  "parent_evidence": {
+    "consumed_contract": {
+      "path": "docs/model-research/polymarket/complete-set-holding-yield-post-conflict-contract-v7-2026-08-29.json",
+      "result_sha256": "a8519183d418dcab02184cf57b2d900c1b7740ce1b72670bd8fbea71f798d132"
+    },
+    "failure_adjudication": {
+      "path": "docs/model-research/polymarket/complete-set-holding-yield-post-conflict-v7-failure-adjudication-2026-08-29.json",
+      "result_sha256": "448b068aa5c1b34c6012a5fadafa449ed9ef125afc310b7901b9f68285510f71"
+    },
+    "distinct_question": "whether the one additional daily BTC and ETH YIELD row already present after each v7 selected row has an exact successful distributor transfer receipt",
+    "does_not_repair_or_rerun_v7": true
+  },
+  "cases": [
+    {
+      "asset": "BTC",
+      "wallet": "0x3fb5c98d825651d7efd2bd48a5d02c2d86c96f2f",
+      "condition_id": "0x024b68f77bfc019341ee3db8f57c103334e4b9430bba4746d8c94aafd8b36fee",
+      "shares_per_outcome": "150",
+      "prior_yield_timestamp": 1787876056,
+      "selected_yield_timestamp": 1787962530,
+      "selected_amount_pusd": "0.0133",
+      "selected_transaction_hash": "0xdbe725d8cdb7a6ff591a212289d8ae5f1bab5391392aa6180952b95055764163",
+      "activity_source": {
+        "path": "data/polymarket-holding-yield-post-conflict-v7/raw/btc-activity.raw",
+        "sha256": "489788838e7c9a706adfa34cd166a4078c2da2fe4d9851fbc314d9934fb19b61"
+      },
+      "positions_source": {
+        "path": "data/polymarket-holding-yield-post-conflict-v7/raw/btc-positions.raw",
+        "sha256": "ebe08e99e8d51d6bcdb8dc1766aa414a110b6de1af7d34a8395aca7f7193f78a"
+      }
+    },
+    {
+      "asset": "ETH",
+      "wallet": "0x40db77fc612f07c73e9d4dde5f9fdeb154406c09",
+      "condition_id": "0x201f51d2d892c41c5bfa6568a0a2f93ab2ea426e87dddfd5fb0191f7ec34a441",
+      "shares_per_outcome": "440",
+      "prior_yield_timestamp": 1787875821,
+      "selected_yield_timestamp": 1787962545,
+      "selected_amount_pusd": "0.0391",
+      "selected_transaction_hash": "0x476fd621cc20dab68c2210b364c8972c805bf63ba347efbe2714658e99ed32df",
+      "activity_source": {
+        "path": "data/polymarket-holding-yield-post-conflict-v7/raw/eth-activity.raw",
+        "sha256": "5e2555a2ef2b25eab4457b47158763900eedfe57929b98ac614b2daba7179710"
+      },
+      "positions_source": {
+        "path": "data/polymarket-holding-yield-post-conflict-v7/raw/eth-positions.raw",
+        "sha256": "f957a6eaee19bef900bf06a90fd1aa6495361759f43aaf6c2acc1e9472e393f4"
+      }
+    }
+  ],
+  "selection_gates": {
+    "exact_retained_row_required": true,
+    "unchanged_equal_mergeable_pair_required": true,
+    "no_other_wallet_activity_in_interval_required": true,
+    "daily_interval_seconds_inclusive": [
+      82800,
+      90000
+    ],
+    "exact_successful_pusd_transfer_from_holding_yield_distributor_required": true,
+    "rate_requalification_attempted": false,
+    "adaptive_transaction_selection": false
+  },
+  "polygon_rpc_url": "https://polygon.drpc.org",
+  "source_contract": {
+    "classification": "officially listed public Polygon JSON-RPC endpoint used only for eth_getTransactionReceipt",
+    "documentation_url": "https://docs.polygon.technology/pos/reference/rpc-endpoints",
+    "method": "POST",
+    "rpc_method": "eth_getTransactionReceipt",
+    "url": "https://polygon.drpc.org",
+    "source_bound_by_parent_contract_on_utc_date": "2026-08-29"
+  },
+  "request_contract": {
+    "exact_total_requests": 2,
+    "one_receipt_per_frozen_case": true,
+    "journal_method_url_and_body_hash_before_access": true,
+    "retain_http_error_body_status_and_completion_before_raising": true,
+    "repeat_policy": "one use only; existing output journal or raw directory prohibits reuse"
+  },
+  "authority": {
+    "public_unauthenticated_read_only": true,
+    "new_public_requests": 2,
+    "credentials_used": false,
+    "account_state_accessed": false,
+    "funds_used": false,
+    "orders_or_transactions_submitted": 0,
+    "protected_capture_assets_touched": false,
+    "trading_authority": false
+  },
+  "implementation": {
+    "path": "tools/reconcile_polymarket_holding_yield_continuity_receipts.py",
+    "sha256": "793d7dc9a20647420b0aa9ea0be7eed632265873c68f748ba64253cc6252c3e0"
+  },
+  "contract_sha256": "ace38fca480049601d876fb8ae781b5103372662e9294e78c5905d8162332b42"
+}
