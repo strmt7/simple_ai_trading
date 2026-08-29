@@ -1134,6 +1134,16 @@ safety gate, blocks Stop, or submits an order.
   `99559dd57d8ba1520fd4f607c4e4e56cea1070a2798536941af10134e4376aed`;
   result SHA-256
   `e5ce48b6b0521a5ba2fe58ae17316e703ab2155934a126e603eeadf81e219d9c`.
+- The distinct current postponed BOS/NYY MLB event proved 16 active accepting
+  markets and 37 exact monotone moneyline, spread, and total-run relations. A
+  single public 30-token batch found zero positive five-share guaranteed
+  packages after the exact current `0.03` fee curves, displayed depth, and two
+  adverse ticks per leg; the best still lost `0.53262` pUSD on a five-pUSD
+  floor. All 30 ask arrays were strictly descending contrary to the documented
+  ascending order, so the original runner failed and a no-refetch outcome-aware
+  adjudication preserved the consumed evidence without promotion. Do not retry
+  this event. Adjudication SHA-256
+  `1e75e049abb116955294d878830f940491fe4044f09c7e3564ad2761c0129178`.
 - Binance Launchpool is a distinct direction-independent candidate only for an
   independently already-held idle supported stablecoin. Current official
   guidance describes USDC/FDUSD-style pools, hourly rewards, early unlock with
@@ -1369,6 +1379,7 @@ safety gate, blocks Stop, or submits an order.
 | Live NBA moneyline/spread implication candidate | `docs/model-research/action-value/polymarket-live-nba-moneyline-spread-combinatorial-parity-reopen-v1-2026-08-26.json` |
 | Cross-market exact dependent-subset parity candidate | `docs/model-research/action-value/polymarket-cross-market-dependent-subset-parity-reopen-v1-2026-08-26.json` |
 | Current sports exact-title discovery terminal result | `docs/model-research/action-value/polymarket-current-sports-monotone-pair-discovery-result-v1-2026-08-29.json` |
+| Current BOS/NYY monotone-parity terminal adjudication | `docs/model-research/action-value/polymarket-current-mlb-monotone-parity-failure-adjudication-v1-2026-08-29.json` |
 | Binance XAU/PAXG funding-basis terminal adjudication | `docs/model-research/action-value/binance-xau-paxg-perpetual-funding-spread-failure-adjudication-v1-2026-08-29.json` |
 | Binance idle-stablecoin Launchpool reward candidate | `docs/model-research/action-value/binance-stablecoin-launchpool-idle-inventory-reward-candidate-v1-2026-08-26.json` |
 | Polymarket Combo RFQ versus CLOB Boolean parity candidate | `docs/model-research/action-value/polymarket-combo-rfq-boolean-parity-candidate-v1-2026-08-27.json` |

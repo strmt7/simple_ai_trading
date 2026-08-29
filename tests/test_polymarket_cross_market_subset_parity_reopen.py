@@ -29,7 +29,7 @@ SPORTS_CONTRACT_HASH = (
     "99559dd57d8ba1520fd4f607c4e4e56cea1070a2798536941af10134e4376aed"
 )
 SPORTS_RESULT_HASH = "e5ce48b6b0521a5ba2fe58ae17316e703ab2155934a126e603eeadf81e219d9c"
-REGISTRY_HASH = "0a59b008453a6ff11a5d2402f037acb4fa331f0fb44dac95a60dbd9b6b73c7cf"
+REGISTRY_HASH = "fad104fc4e460bd0ff69e5b61df95050bbc0570d0af2f3eff64f8403b00b61bb"
 
 
 def _load(path: Path) -> dict[str, object]:
@@ -121,7 +121,7 @@ def test_registry_adds_only_exact_truth_table_subset_candidate() -> None:
     assert row["mechanism"] == (
         "polymarket_cross_market_exact_multi_outcome_subset_equivalence"
     )
-    assert row["canonical_artifacts"] == [
+    assert row["canonical_artifacts"][:3] == [
         {
             "path": (
                 "docs/model-research/action-value/"

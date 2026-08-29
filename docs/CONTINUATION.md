@@ -1788,6 +1788,33 @@ complete rules and a machine-proved payoff implication. Contract SHA-256:
 result SHA-256:
 `e5ce48b6b0521a5ba2fe58ae17316e703ab2155934a126e603eeadf81e219d9c`.
 
+A distinct current official MLB page then exposed the postponed Boston Red Sox
+versus New York Yankees June 6 event with an August 29 countdown. One exact
+public slug request proved that the event remained active and open with all 16
+embedded markets accepting orders: moneyline, NRFI, seven spreads, and seven
+totals. The retained rules machine-prove 37 monotone subset relations across
+the moneyline, team-margin ladders, and total-run ladder. For subset `A` inside
+superset `B`, buying `B` plus the complement of `A` pays at least one pUSD per
+share in `A`, `B`-only, outside-`B`, and both-market cancellation states.
+
+The frozen one-request public CLOB batch retained all 30 exact books. Every ask
+array was strictly descending even though the current API reference describes
+ascending asks, so the frozen runner failed before economics. The runner,
+contract, journal, and raw response remain unchanged. A no-refetch offline
+adjudication reversed only the fully audited retained arrays and is explicitly
+outcome-aware and promotion-ineligible. All 37 five-share packages were
+negative after each market's current `0.03`, exponent-one taker fee, displayed
+depth, and two adverse ticks per leg. The best, Yankees margin at least four
+versus at least five, still lost `0.53262` pUSD against a five-pUSD guaranteed
+floor. Do not refetch or retry this event. Reopen only for a distinct future
+active complete-rules pair, with both strict book-order directions accepted in
+the contract before access. Inventory result SHA-256:
+`e274e3b05227022eb8c021fecdfa1a42e369ba30175ba906b24d6fd8459da80d`;
+batch contract SHA-256:
+`231ebf5e9078bc14c8acd3d8274bc98c0200776621b830b64c689a34cdd204b8`;
+adjudication SHA-256:
+`1e75e049abb116955294d878830f940491fe4044f09c7e3564ad2761c0129178`.
+
 Binance Launchpool is a distinct direction-independent candidate only for an
 independently already-held idle supported stablecoin. Current official guidance
 describes USDC/FDUSD-style pools, hourly accrual, early unlock with accrued
@@ -2152,7 +2179,7 @@ result SHA-256
 `64943efe0c6ad16f8d02f78548afef38f919448d2da87c7573e825a2eeefd6b9`.
 That checkpoint left seventeen accepted scoped edges. The current registry now
 has nineteen and result SHA-256
-`0a59b008453a6ff11a5d2402f037acb4fa331f0fb44dac95a60dbd9b6b73c7cf`.
+`fad104fc4e460bd0ff69e5b61df95050bbc0570d0af2f3eff64f8403b00b61bb`.
 
 The complete Binance XAU/XAG Commodity Options versus matching TradFi
 perpetual lower-bound screen is terminal for the active 2026-08-27 and
