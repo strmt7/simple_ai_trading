@@ -2024,7 +2024,7 @@
       "venue_scope": "Binance_Spot_direct_and_exactly_one_intermediary_routes_for_independently_required_organic_conversions"
     }
   ],
-  "result_sha256": "f9bb0f6582fca306d3083a8ad3aadeaa020936949702176b585ea6f926e87e08",
+  "result_sha256": "0511b6dbb8f560470335fb6146edade7a50c3f24406c529f03a3f1fca769409b",
   "schema_version": "structural-edge-priority-registry-v1",
   "terminal_do_not_repeat": [
     {
@@ -2231,8 +2231,13 @@
       "canonical_result_sha256": "5e67277ad30b9f0164a3987804162ed2d1cdabb820e7e258d6a0b79748cf7d06",
       "family": "polymarket_binance_TradFi_perpetual_fixed_orientation_cross_venue_funding_spread_top_five_snapshot",
       "reason": "the_current_prefilter_selected_SKHYNIX_CRWV_ARM_HOOD_and_MSTR_but_every_fixed_orientation_symbol_failed_training_validation_and_test_after_20_bips_execution_and_two_500_bip_annual_capital_hurdles_ARM_was_least_negative_at_negative_24_6296621005_bips_full_window_do_not_request_books_or_repeat_without_a_material_funding_fee_session_instrument_conversion_or_execution_change"
+    },
+    {
+      "canonical_result_sha256": "895dc0eba4f72b9b08b19dbba245b20434e4db905fd4ded3ea70779733db6d47",
+      "family": "binance_spot_SOR_liquidity_overlay_current_production_configuration",
+      "reason": "official_current_documentation_defines_SOR_but_the_one_use_public_production_exchangeInfo_response_containing_3685_symbols_omitted_the_optional_sors_field_so_zero_scoped_groups_zero_book_requests_and_zero_signed_account_or_order_requests_were_needed_do_not_poll_until_a_material_official_or_live_exchangeInfo_SOR_configuration_change"
     }
   ],
-  "updated_at_utc": "2026-08-29T21:30:26.7309484+00:00",
+  "updated_at_utc": "2026-08-29T21:47:00Z",
   "usage_rule": "advance_the_highest_ranked_hypothesis_whose_retry_trigger_is_satisfied_otherwise_do_not_repeat_a_blocked_or_terminal_screen"
 }
