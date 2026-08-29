@@ -40,7 +40,7 @@ PARITY_CONTRACT_HASH = (
     "231ebf5e9078bc14c8acd3d8274bc98c0200776621b830b64c689a34cdd204b8"
 )
 ADJUDICATION_HASH = "1e75e049abb116955294d878830f940491fe4044f09c7e3564ad2761c0129178"
-REGISTRY_HASH = "659904cc23e3d91c5d8622c9a8274e0227818d506724a72cce071df285eb681e"
+REGISTRY_HASH = "9459be90ad52d85f8d23824b04aca3e39bc397c941b47735aca4342a78f00d82"
 
 
 def _load(path: Path) -> dict[str, object]:
@@ -169,7 +169,7 @@ def test_registry_terminalizes_only_this_exact_event_snapshot() -> None:
 
     assert registry["result_sha256"] == REGISTRY_HASH
     assert _canonical_hash(registry, "result_sha256") == REGISTRY_HASH
-    assert registry["accepted_edge_count"] == 20
+    assert registry["accepted_edge_count"] == 21
     row = next(
         item
         for item in registry["prioritized_hypotheses"]

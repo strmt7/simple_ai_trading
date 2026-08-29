@@ -21,7 +21,7 @@ EXPECTED_RESULT_SHA256 = (
     "3ecb4f39848719f788b6853bd90120d1809379b8d81b5419da4b1bbc957fec3d"
 )
 EXPECTED_REGISTRY_SHA256 = (
-    "659904cc23e3d91c5d8622c9a8274e0227818d506724a72cce071df285eb681e"
+    "9459be90ad52d85f8d23824b04aca3e39bc397c941b47735aca4342a78f00d82"
 )
 
 
@@ -127,7 +127,7 @@ def test_registry_tracks_high_margin_candidate_without_accepting_it() -> None:
 
     assert registry["result_sha256"] == EXPECTED_REGISTRY_SHA256
     assert _embedded_hash(registry) == EXPECTED_REGISTRY_SHA256
-    assert registry["accepted_edge_count"] == 20
+    assert registry["accepted_edge_count"] == 21
     candidate = next(
         row
         for row in registry["prioritized_hypotheses"]

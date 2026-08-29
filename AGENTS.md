@@ -134,6 +134,12 @@ override prose.
   exact economic identities. If a consumed one-use run exposes such a mismatch,
   preserve its journal and raw responses, fail closed, and do not spend a repair
   capture when the retained evidence cannot change the economic decision.
+- A candidate boolean must mechanically conjoin every frozen run-level gate as
+  well as every row-level gate. If a consumed runner omits a run-level gate,
+  preserve it and adjudicate the retained values separately; never rerun when
+  every omitted gate actually passed. In wide screens, rank and display feasible
+  rows only after latency, capacity, freshness, residual, fee, and stress gates;
+  infeasible gross headline rows must not appear ahead of actionable candidates.
 - After a consumed runner fails, inventory every already-saved raw response for
   observations beyond the failed decision boundary before requesting anything
   again. An exact retained row may support a separately frozen, materially

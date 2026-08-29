@@ -18,7 +18,7 @@ RWUSD_PATH = ROOT / (
 )
 EXPECTED_HASH = "6c2b81a8067faac80efb56f586d89bc308cb69b4fae0ec8504adc3aa2f3ff49d"
 EXPECTED_RWUSD_HASH = "e4f455511516babe956f4aa459648a032fb77f86c3253fd47d4f15317da72063"
-EXPECTED_REGISTRY_HASH = "659904cc23e3d91c5d8622c9a8274e0227818d506724a72cce071df285eb681e"
+EXPECTED_REGISTRY_HASH = "9459be90ad52d85f8d23824b04aca3e39bc397c941b47735aca4342a78f00d82"
 
 
 def _load(path: Path = PATH) -> dict[str, object]:
@@ -101,7 +101,7 @@ def test_registry_prioritizes_the_accepted_scoped_increment() -> None:
     assert registry["result_sha256"] == EXPECTED_REGISTRY_HASH
     assert _embedded_hash(registry) == EXPECTED_REGISTRY_HASH
     hypotheses = registry["prioritized_hypotheses"]
-    assert [row["priority_rank"] for row in hypotheses] == list(range(1, 44))
+    assert [row["priority_rank"] for row in hypotheses] == list(range(1, 45))
     lead = next(
         row
         for row in hypotheses
@@ -111,7 +111,7 @@ def test_registry_prioritizes_the_accepted_scoped_increment() -> None:
     assert lead["market_direction_forecast_required"] is False
     assert lead["canonical_artifacts"][0]["result_sha256"] == EXPECTED_HASH
     assert lead["canonical_artifacts"][1]["result_sha256"] == EXPECTED_RWUSD_HASH
-    assert registry["accepted_edge_count"] == 20
+    assert registry["accepted_edge_count"] == 21
 
 
 def test_rwusd_extension_is_hash_bound_scoped_and_nonduplicative() -> None:
