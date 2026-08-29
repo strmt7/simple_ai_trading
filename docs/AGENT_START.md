@@ -1411,9 +1411,18 @@ safety gate, blocks Stop, or submits an order.
   guaranteed payout. Never accept or promote from Gamma. Canonical book result
   SHA-256
   `cc657982abd9ede0f0f7b18787df32e62c69b7c3b3e547ade3f6f3ccb734ed46`.
+- The rejection-only gate then stopped Minnesota Lynx versus Atlanta Dream
+  without a CLOB or fee request. Exact retained rules prove Minnesota
+  moneyline plus Atlanta +2.5 has a one-pUSD floor, but Gamma's displayed sum
+  was `1.080`: an optimistic loss of `0.080` per share and `0.400` at five
+  shares before execution costs. This second distinct active WNBA extension is
+  terminal absent a material price, fee, delay, or resolution-rule change.
+  Reuse the contract-driven exact-event runner rather than creating another
+  event-specific metadata collector. Canonical adjudication SHA-256
+  `61b3436b3367ba3442ebe777c8a506948243c6d3b6d6a4cb9346d2db3aaf335f`.
 - The structural-edge registry now has 42 ranked hypotheses, still only 19
   narrowly accepted scoped overlays, and result SHA-256
-  `2baf1b76070e0ef9081f9eb5fba41f3977b5fd1aa74759ed85034947e9ad1c5a`.
+  `671fa1498f9098357ac5c0f209c76351b0043cdcc1123dd8d8d062c92ac5c4a5`.
 
 ## Task Routing
 
@@ -1429,6 +1438,7 @@ safety gate, blocks Stop, or submits an order.
 | Current sports exact-title discovery terminal result | `docs/model-research/action-value/polymarket-current-sports-monotone-pair-discovery-result-v1-2026-08-29.json` |
 | Current BOS/NYY monotone-parity terminal adjudication | `docs/model-research/action-value/polymarket-current-mlb-monotone-parity-failure-adjudication-v1-2026-08-29.json` |
 | Current Toronto/Phoenix WNBA monotone-parity terminal result | `docs/model-research/action-value/polymarket-current-wnba-monotone-parity-result-v1-2026-08-29.json` |
+| Current Lynx/Dream WNBA rejection-only terminal adjudication | `docs/model-research/action-value/polymarket-lynx-dream-monotone-prefilter-adjudication-v1-2026-08-29.json` |
 | Resolved-leg House duplicate-payoff recurrence | `docs/model-research/action-value/polymarket-aca-house-maker-first-candidate-v1-2026-08-29.json` |
 | Binance XAU/PAXG funding-basis terminal adjudication | `docs/model-research/action-value/binance-xau-paxg-perpetual-funding-spread-failure-adjudication-v1-2026-08-29.json` |
 | Polymarket exact-one-NO V2 conversion failure adjudication | `docs/model-research/action-value/polymarket-negrisk-one-no-v2-conversion-failure-adjudication-v1-2026-08-29.json` |

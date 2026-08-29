@@ -1253,9 +1253,21 @@
         {
           "path": "docs/model-research/action-value/polymarket-current-wnba-monotone-parity-result-v1-2026-08-29.json",
           "result_sha256": "cc657982abd9ede0f0f7b18787df32e62c69b7c3b3e547ade3f6f3ccb734ed46"
+        },
+        {
+          "path": "docs/model-research/action-value/polymarket-lynx-dream-exact-event-prefilter-contract-v1-2026-08-29.json",
+          "result_sha256": "d049290de090fd07be9f99d4f59704488447fb98013fc55d2c183d9f52a181c8"
+        },
+        {
+          "path": "docs/model-research/action-value/polymarket-lynx-dream-exact-event-prefilter-result-v1-2026-08-29.json",
+          "result_sha256": "c7629f0869bf7b1b9b6622cde42b0822f35e63386c9cb3e2e4364423fa4f7156"
+        },
+        {
+          "path": "docs/model-research/action-value/polymarket-lynx-dream-monotone-prefilter-adjudication-v1-2026-08-29.json",
+          "result_sha256": "61b3436b3367ba3442ebe777c8a506948243c6d3b6d6a4cb9346d2db3aaf335f"
         }
       ],
-      "current_status": "distinct_direction_independent_live_NBA_WNBA_full_game_moneyline_spread_payoff_implication_candidate_first_exact_active_WNBA_extension_Toronto_Phoenix_proved_three_one_pUSD_floor_packages_but_one_synchronized_four_token_batch_with_2132_millisecond_book_skew_found_zero_positive_packages_best_actual_loss_0_42436_pUSD_best_one_second_sensitivity_loss_0_62356_pUSD_and_best_three_second_sensitivity_loss_1_02076_pUSD_no_fee_requests_needed_because_every_package_was_already_gross_negative_exact_event_terminal_not_accepted_or_deployment_ready",
+      "current_status": "distinct_direction_independent_live_NBA_WNBA_full_game_moneyline_spread_payoff_implication_candidate_two_exact_active_WNBA_extensions_are_negative_Toronto_Phoenix_synchronized_four_token_batch_found_zero_positive_packages_best_actual_loss_0_42436_pUSD_and_Lynx_Dream_exact_guaranteed_package_was_rejected_before_books_at_a_1_080_Gamma_displayed_sum_for_a_1_000_pUSD_floor_optimistic_loss_0_080_per_share_and_0_400_at_five_shares_before_execution_costs_no_fee_or_book_requests_needed_for_the_second_event_not_accepted_or_deployment_ready",
       "market_direction_forecast_required": false,
       "mechanism": "polymarket_live_NBA_moneyline_spread_monotone_payoff_implication",
       "next_action": "do_not_resample_Toronto_Phoenix_for_future_active_NBA_or_WNBA_exact_pairs_first_source_prove_exhaustive_payoffs_then_use_retained_Gamma_outcomePrices_as_a_rejection_only_optimistic_gate_request_one_frozen_exact_depth_batch_only_when_at_least_one_displayed_package_sum_is_below_its_guaranteed_payout_floor_and_require_independent_positive_after_cost_recurrence_before_escalation",
@@ -1752,7 +1764,7 @@
       "venue_scope": "Binance_current_BLVT_Spot_and_primary_market_inventory"
     }
   ],
-  "result_sha256": "2baf1b76070e0ef9081f9eb5fba41f3977b5fd1aa74759ed85034947e9ad1c5a",
+  "result_sha256": "671fa1498f9098357ac5c0f209c76351b0043cdcc1123dd8d8d062c92ac5c4a5",
   "schema_version": "structural-edge-priority-registry-v1",
   "terminal_do_not_repeat": [
     {

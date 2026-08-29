@@ -175,6 +175,10 @@ override prose.
   at or above its guaranteed payout floor, stop before requesting CLOB books.
   Gamma prices may never accept, promote, or prove executable profitability;
   only a package below the floor may advance to one frozen exact-depth screen.
+- PowerShell preflight guards must parenthesize each `Test-Path` operand and set
+  terminating error behavior before a guarded one-use command. The runner must
+  independently enforce the same one-use boundary, so a shell parser or
+  non-terminating-error mistake cannot consume a duplicate request.
 
 ## Working Method
 

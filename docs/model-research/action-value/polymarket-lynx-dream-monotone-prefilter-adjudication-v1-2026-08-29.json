@@ -1,0 +1,125 @@
+{
+  "schema_version": "polymarket-sports-monotone-gamma-rejection-adjudication-v1",
+  "created_at_utc": "2026-08-29T16:16:38.9405700Z",
+  "source": {
+    "metadata_contract_path": "docs/model-research/action-value/polymarket-lynx-dream-exact-event-prefilter-contract-v1-2026-08-29.json",
+    "metadata_contract_sha256": "d049290de090fd07be9f99d4f59704488447fb98013fc55d2c183d9f52a181c8",
+    "metadata_result_path": "docs/model-research/action-value/polymarket-lynx-dream-exact-event-prefilter-result-v1-2026-08-29.json",
+    "metadata_result_sha256": "c7629f0869bf7b1b9b6622cde42b0822f35e63386c9cb3e2e4364423fa4f7156",
+    "raw_event_path": "data/polymarket-lynx-dream-exact-event-prefilter-v1/raw/event.json",
+    "raw_event_sha256": "d87b3fd43633a72a4d6f33edc1a40d77acd0c51ec11fec99ccf1d1048511f4d3"
+  },
+  "event": {
+    "id": "863449",
+    "slug": "wnba-min-atl-2026-08-30",
+    "title": "Minnesota Lynx vs. Atlanta Dream",
+    "scheduled_start_utc": "2026-08-30T19:00:00Z",
+    "active": true,
+    "closed": false
+  },
+  "markets": {
+    "moneyline": {
+      "id": "3656597",
+      "condition_id": "0x1b62972b94ec33d8a8183a9434eac641247f7f3d8c6c796ee667cd87a7661e11",
+      "outcomes": [
+        "Minnesota Lynx",
+        "Atlanta Dream"
+      ],
+      "outcome_prices": [
+        "0.575",
+        "0.425"
+      ],
+      "seconds_delay": 1,
+      "fee_schedule": {
+        "exponent": 1,
+        "rate": 0.05,
+        "rebateRate": 0.15,
+        "takerOnly": true
+      }
+    },
+    "spread": {
+      "id": "3967325",
+      "condition_id": "0x037a65680e5ebd1bce98937225770bc04d844896050f9a659f44b8d75a319165",
+      "line": "-2.5",
+      "outcomes": [
+        "Minnesota Lynx",
+        "Atlanta Dream"
+      ],
+      "outcome_prices": [
+        "0.495",
+        "0.505"
+      ],
+      "seconds_delay": 1,
+      "fee_schedule": {
+        "exponent": 1,
+        "rate": 0.05,
+        "rebateRate": 0.15,
+        "takerOnly": true
+      }
+    }
+  },
+  "payoff_proof": {
+    "package": [
+      "Minnesota Lynx moneyline",
+      "Atlanta Dream spread +2.5"
+    ],
+    "market_direction_forecast_required": false,
+    "states": [
+      {
+        "state": "game_canceled_without_makeup",
+        "moneyline_payout": "0.5",
+        "spread_payout": "0.5",
+        "package_payout": "1"
+      },
+      {
+        "state": "Atlanta_wins",
+        "moneyline_payout": "0",
+        "spread_payout": "1",
+        "package_payout": "1"
+      },
+      {
+        "state": "Minnesota_wins_by_1_or_2",
+        "moneyline_payout": "1",
+        "spread_payout": "1",
+        "package_payout": "2"
+      },
+      {
+        "state": "Minnesota_wins_by_3_or_more",
+        "moneyline_payout": "1",
+        "spread_payout": "0",
+        "package_payout": "1"
+      }
+    ],
+    "guaranteed_payout_floor_per_share_pUSD": "1"
+  },
+  "rejection_only_gamma_prefilter": {
+    "moneyline_displayed_price_pUSD": "0.575",
+    "spread_displayed_price_pUSD": "0.505",
+    "package_displayed_price_sum_pUSD": "1.080",
+    "optimistic_profit_floor_per_share_before_execution_costs_pUSD": "-0.080",
+    "optimistic_profit_floor_at_five_shares_before_execution_costs_pUSD": "-0.400",
+    "passes_strictly_below_payout_gate": false,
+    "gamma_can_support_acceptance_or_promotion": false
+  },
+  "adjudication": {
+    "accepted_edge": false,
+    "deployment_ready": false,
+    "profitability_claim": false,
+    "current_positive_package_count": 0,
+    "status": "terminal_exact_event_rejected_before_books_and_fees",
+    "next_action": "do_not_resample_this_event_without_a_material_price_fee_delay_or_resolution_rule_change"
+  },
+  "authority": {
+    "public_unauthenticated_read_only_requests": 1,
+    "book_requests": 0,
+    "fee_requests": 0,
+    "credentials_used": false,
+    "signed_requests": 0,
+    "account_requests": 0,
+    "orders_or_transactions": 0,
+    "funds_used": false,
+    "protected_capture_touched": false,
+    "trading_authority": false
+  },
+  "result_sha256": "61b3436b3367ba3442ebe777c8a506948243c6d3b6d6a4cb9346d2db3aaf335f"
+}
