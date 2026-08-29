@@ -1,0 +1,100 @@
+{
+  "schema_version": "binance-spot-sor-liquidity-overlay-contract-v1",
+  "status": "frozen_before_current_public_SOR_configuration_or_book_outcome_access",
+  "frozen_at_utc": "2026-08-29T21:40:10.5537609Z",
+  "frozen_at_ms": 1788039610553,
+  "contract_path": "docs/model-research/action-value/binance-spot-sor-liquidity-overlay-contract-v1-2026-08-29.json",
+  "contract_sha256": "93b9f984ff4ae347cc6ca15b9a79e5f9baf60ce3287e3e81ce5694613be0790a",
+  "purpose": "test whether native Binance Spot Smart Order Routing currently exposes a direction-independent gross liquidity improvement for independently required organic BTC ETH or SOL taker flow before any account fee or order request",
+  "hypothesis": "at least one current BTC ETH or SOL SOR configuration has a complete 100 or 1000 submitted-quote top-level comparison whose native server-side interchangeable-quote routing improves the original symbol by strictly more than one bip before account-specific commissions",
+  "source_contracts": [
+    {
+      "url": "https://developers.binance.com/en/docs/products/spot/faqs/sor_faq",
+      "use": "official current SOR semantics same-base interchangeable fixed-one-to-one quote assets original submitted quote settlement best eligible price levels partial-fill behavior and exchangeInfo configuration source"
+    },
+    {
+      "url": "https://developers.binance.com/en/docs/catalog/core-trading-spot-trading/api/rest-api/general-endpoints",
+      "use": "official public unauthenticated exchange information endpoint"
+    },
+    {
+      "url": "https://developers.binance.com/en/docs/catalog/core-trading-spot-trading/api/rest-api/market-data-endpoints",
+      "use": "official public unauthenticated all-symbol book ticker endpoint"
+    },
+    {
+      "url": "https://developers.binance.com/en/docs/catalog/core-trading-spot-trading/api/rest-api/trade",
+      "use": "official signed SOR test-order endpoint with computeCommissionRates and separate live TRADE endpoint classification"
+    }
+  ],
+  "capture": {
+    "book_ticker_url": "https://api.binance.com/api/v3/ticker/bookTicker",
+    "exchange_info_url": "https://api.binance.com/api/v3/exchangeInfo",
+    "maximum_request_count": 2
+  },
+  "screen": {
+    "candidate_threshold_bips_strictly_greater_than": "1",
+    "notional_sizes_in_submitted_quote": ["100", "1000"],
+    "scoped_base_assets": ["BTC", "ETH", "SOL"],
+    "sides": ["BUY", "SELL"],
+    "top_level_only": true
+  },
+  "economic_model": {
+    "quote_asset_conversion_rate": "official_SOR_fixed_one_to_one_interchangeability_and_settlement_in_submitted_quote",
+    "normal_comparator": "same_base_quantity_against_only_the_submitted_symbol_top_level",
+    "SOR_route": "same_base_quantity_greedily_across_each_configured_symbols_best_top_level",
+    "public_commission_credit": "zero",
+    "candidate_role": "gross_rejection_or_account_prequalification_only_never_acceptance_profitability_or_fill_evidence",
+    "why_one_bip": "avoid_escalating_rounding_or_negligible_top_level_differences_before_exact_account_commission"
+  },
+  "stopping_rules": {
+    "accepted_edge_from_public_screen": false,
+    "if_sors_absent_or_no_scoped_group": "stop_after_exchangeInfo_without_book_request",
+    "if_no_complete_row_above_one_bip": "stop_without_credentials_account_test_order_or_live_order",
+    "if_public_candidate_exists": "require_both_designated_ephemeral_credentials_and_explicit_signed_test_only_authority_for_one_independently_required_organic_order_sor_order_test_with_computeCommissionRates_then_separate_order_authority_and_owned_allocation_reconciliation",
+    "repeat_current_snapshot": false
+  },
+  "authority": {
+    "account_requests": 0,
+    "credentials_used": false,
+    "funds_used": false,
+    "orders_or_transactions": 0,
+    "protected_capture_touched": false,
+    "public_unauthenticated_read_only_requests_maximum": 2,
+    "signed_requests": 0,
+    "trading_authority": false
+  },
+  "implementations": [
+    {
+      "path": "tools/screen_binance_spot_sor_liquidity_overlay.py",
+      "sha256": "b2f1628ba16487e3270dbc5ea1eb45c3efb75c200649949e34767f15e8d1338a"
+    },
+    {
+      "path": "tools/adjudicate_polymarket_exact_mlb_monotone_prefilter.py",
+      "role": "canonical hash and repository path validation",
+      "sha256": "958a44d78029b9a1eb69a3771ce18e53ac1ed3c7bc161c8e4318beedce2cf99f"
+    },
+    {
+      "path": "tools/screen_polymarket_exact_two_leg_package.py",
+      "role": "preaccess intent journal raw response and completed receipt",
+      "sha256": "ba7ebaa1fb5235ba026f7cf4cb21ff73ba19430fee4a4f678fbdea37635eb32f"
+    },
+    {
+      "path": "tools/screen_polymarket_mlb_cross_period_catalog.py",
+      "role": "strict UTC frozen timestamp validation",
+      "sha256": "a916790e7e0320089b9f76c49aff43c072312f24599de351820d3fb872e6eddd"
+    }
+  ],
+  "outputs": {
+    "book_ticker_raw_path": "data/binance-spot-sor-liquidity-overlay-v1/raw/bookTicker.json",
+    "exchange_info_raw_path": "data/binance-spot-sor-liquidity-overlay-v1/raw/exchangeInfo.json",
+    "journal_path": "data/binance-spot-sor-liquidity-overlay-v1/request-journal.jsonl",
+    "result_path": "docs/model-research/action-value/binance-spot-sor-liquidity-overlay-result-v1-2026-08-29.json"
+  },
+  "prohibited_shortcuts": [
+    "treating_fixed_one_to_one_interchangeability_as_a_general_external_stablecoin_parity_claim",
+    "crediting_a_public_commission_rate_or_assuming_promotional_fees_transfer_between_submitted_and_allocation_symbols",
+    "calling_top_level_displayed_capacity_an_owned_fill_or_recurrent_saving",
+    "placing_or_testing_an_order_without_explicit_endpoint-specific_authority",
+    "using_credentials_from_history_logs_artifacts_or_prompts",
+    "touching_the_protected_Polymarket_capture"
+  ]
+}
