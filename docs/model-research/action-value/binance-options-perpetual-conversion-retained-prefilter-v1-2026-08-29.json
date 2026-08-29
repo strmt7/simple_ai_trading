@@ -1,0 +1,633 @@
+{
+  "adjudication": {
+    "accepted_edge": false,
+    "current_market_requests": 0,
+    "deployment_ready": false,
+    "next_action": "stop_without_current_market_requests",
+    "profitability_claim": false,
+    "status": "no_retained_synchronized_gross_positive_candidate"
+  },
+  "authority": {
+    "account_state_accessed": false,
+    "authenticated_requests": 0,
+    "credentials_used": false,
+    "funds_used": false,
+    "new_public_requests": 0,
+    "orders_quotes_transfers_or_wallet_actions": 0,
+    "paper_or_live_trading_authority": false,
+    "retained_public_responses_reused": 4
+  },
+  "contract": {
+    "path": "docs/model-research/action-value/binance-options-perpetual-conversion-retained-prefilter-contract-v1.json",
+    "sha256": "493c558dc191dafb9e6789db9279a70f4d82eb5e89cef45f833515f806c09ac8"
+  },
+  "gates": {
+    "accepted_edge_from_prefilter": false,
+    "candidate_only_if_positive_and_synchronized": true,
+    "deployment_ready_from_prefilter": false,
+    "fees_quantity_depth_margin_funding_expiry_basis_leg_risk_settlement_and_capital_costs_applied_in_prefilter": false,
+    "gross_profit_strictly_positive_required": true,
+    "maximum_cross_source_skew_ms": 5000,
+    "maximum_option_quote_age_ms": 60000,
+    "missing_option_closeTime_is_unsynchronized": true,
+    "required_entry_sides_strictly_positive": true
+  },
+  "identity": {
+    "conversion_short_perpetual": "buy_call_at_ask_plus_sell_put_at_bid_plus_sell_perpetual_at_bid_has_optimistic_expiry_profit_F_bid_minus_K_minus_C_ask_plus_P_bid_if_the_perpetual_closes_at_the_option_settlement_underlying",
+    "market_direction_forecast_required": false,
+    "perpetual_expiry_basis_is_not_assumed_zero_for_promotion": true,
+    "reversal_long_perpetual": "sell_call_at_bid_plus_buy_put_at_ask_plus_buy_perpetual_at_ask_has_optimistic_expiry_profit_K_minus_F_ask_plus_C_bid_minus_P_ask_if_the_perpetual_closes_at_the_option_settlement_underlying",
+    "unit_currency": "USDT"
+  },
+  "implementation": {
+    "path": "tools/screen_binance_options_perpetual_conversion_prefilter.py",
+    "sha256": "cd17bf418ba83cd1b6055056f2d4542c9c4b45ce00ce1ee3941237f8a122fd04"
+  },
+  "population": {
+    "complete_call_put_strike_count": 705,
+    "eligible_option_symbol_count": 1410,
+    "evaluated_direction_count": 1410,
+    "executable_side_direction_count": 1077,
+    "gross_positive_count": 71,
+    "synchronized_count": 0,
+    "synchronized_gross_positive_count": 0
+  },
+  "result_sha256": "c7dfb805da6d55bb3fcccb48cb45baa7bb3044f0d304f26dfc1dd67b3bc7529f",
+  "retained_sources": {
+    "futures_all_book_tickers": {
+      "completed_at_ms": 1787801242847,
+      "path": "data/binance-commodity-option-perpetual-lower-bound-v1/raw/futures-all-book-tickers.raw",
+      "requested_at_ms": 1787801242616,
+      "sha256": "13a288b242261c14e1662e36ab672c255045940a054338595179db64d986b9fe",
+      "url": "https://fapi.binance.com/fapi/v1/ticker/bookTicker"
+    },
+    "futures_exchange_info": {
+      "completed_at_ms": 1787801242601,
+      "path": "data/binance-commodity-option-perpetual-lower-bound-v1/raw/futures-exchange-info.raw",
+      "requested_at_ms": 1787801241957,
+      "sha256": "7d05e44574d676b0faf054ecd378b8898a7ff81bcd3ca518d1b57ab9b394e3be",
+      "url": "https://fapi.binance.com/fapi/v1/exchangeInfo"
+    },
+    "options_all_tickers": {
+      "completed_at_ms": 1787801241950,
+      "path": "data/binance-commodity-option-perpetual-lower-bound-v1/raw/options-all-tickers.raw",
+      "requested_at_ms": 1787801241208,
+      "sha256": "ae550eff1af3dce6738f410916f1ac07315a2ef2afa661af11eec4e56b756dbc",
+      "url": "https://eapi.binance.com/eapi/v1/ticker"
+    },
+    "options_exchange_info": {
+      "completed_at_ms": 1787801183347,
+      "path": "data/binance-commodity-option-perpetual-lower-bound-v1/raw/options-exchange-info.raw",
+      "requested_at_ms": 1787801182691,
+      "sha256": "81a8cb419821562c96537ec310e7043f40e2a63c7e96fb33d86a225f13b26449",
+      "url": "https://eapi.binance.com/eapi/v1/exchangeInfo"
+    },
+    "parent_result": {
+      "path": "docs/model-research/action-value/binance-commodity-option-perpetual-lower-bound-v1-2026-08-27.json",
+      "sha256": "3cbc79050473b456e4175239b687b0329bc1c7a66d3530842e524ac4200a0905"
+    }
+  },
+  "schema_version": "binance-options-perpetual-conversion-retained-prefilter-v1",
+  "top_optimistic_gross_positive_rows": [
+    {
+      "call_close_time_ms": 1787612768261,
+      "common_minimum_quantity": "0.01",
+      "direction": "reversal_long_perpetual",
+      "expiry_date_ms": 1798185600000,
+      "futures_book_age_ms": 417,
+      "futures_book_time_ms": 1787801242430,
+      "gross_profit_at_common_minimum_USDT": "10.87700",
+      "gross_profit_per_unit_USDT": "1087.700",
+      "maximum_cross_source_skew_ms": 211417576,
+      "maximum_option_quote_age_ms": 211417096,
+      "optimistic_only": true,
+      "passes_frozen_synchronization_gate": false,
+      "put_close_time_ms": 1787589824854,
+      "roles": {
+        "BTC-261225-88000-C": "sell_call_at_bid",
+        "BTC-261225-88000-P": "buy_put_at_ask",
+        "BTCUSDT": "buy_perpetual_at_ask"
+      },
+      "strike_USDT": "88000.000",
+      "symbols": [
+        "BTC-261225-88000-C",
+        "BTC-261225-88000-P",
+        "BTCUSDT"
+      ],
+      "underlying": "BTCUSDT"
+    },
+    {
+      "call_close_time_ms": 1787772389225,
+      "common_minimum_quantity": "0.01",
+      "direction": "reversal_long_perpetual",
+      "expiry_date_ms": 1798185600000,
+      "futures_book_age_ms": 417,
+      "futures_book_time_ms": 1787801242430,
+      "gross_profit_at_common_minimum_USDT": "10.37700",
+      "gross_profit_per_unit_USDT": "1037.700",
+      "maximum_cross_source_skew_ms": 142688855,
+      "maximum_option_quote_age_ms": 142688375,
+      "optimistic_only": true,
+      "passes_frozen_synchronization_gate": false,
+      "put_close_time_ms": 1787658553575,
+      "roles": {
+        "BTC-261225-76000-C": "sell_call_at_bid",
+        "BTC-261225-76000-P": "buy_put_at_ask",
+        "BTCUSDT": "buy_perpetual_at_ask"
+      },
+      "strike_USDT": "76000.000",
+      "symbols": [
+        "BTC-261225-76000-C",
+        "BTC-261225-76000-P",
+        "BTCUSDT"
+      ],
+      "underlying": "BTCUSDT"
+    },
+    {
+      "call_close_time_ms": 1787795092254,
+      "common_minimum_quantity": "0.01",
+      "direction": "reversal_long_perpetual",
+      "expiry_date_ms": 1798185600000,
+      "futures_book_age_ms": 417,
+      "futures_book_time_ms": 1787801242430,
+      "gross_profit_at_common_minimum_USDT": "10.37700",
+      "gross_profit_per_unit_USDT": "1037.700",
+      "maximum_cross_source_skew_ms": 12459668,
+      "maximum_option_quote_age_ms": 12459188,
+      "optimistic_only": true,
+      "passes_frozen_synchronization_gate": false,
+      "put_close_time_ms": 1787788782762,
+      "roles": {
+        "BTC-261225-80000-C": "sell_call_at_bid",
+        "BTC-261225-80000-P": "buy_put_at_ask",
+        "BTCUSDT": "buy_perpetual_at_ask"
+      },
+      "strike_USDT": "80000.000",
+      "symbols": [
+        "BTC-261225-80000-C",
+        "BTC-261225-80000-P",
+        "BTCUSDT"
+      ],
+      "underlying": "BTCUSDT"
+    },
+    {
+      "call_close_time_ms": 1787660249561,
+      "common_minimum_quantity": "0.01",
+      "direction": "reversal_long_perpetual",
+      "expiry_date_ms": 1798185600000,
+      "futures_book_age_ms": 417,
+      "futures_book_time_ms": 1787801242430,
+      "gross_profit_at_common_minimum_USDT": "10.37700",
+      "gross_profit_per_unit_USDT": "1037.700",
+      "maximum_cross_source_skew_ms": 140992869,
+      "maximum_option_quote_age_ms": 140992389,
+      "optimistic_only": true,
+      "passes_frozen_synchronization_gate": false,
+      "put_close_time_ms": 1787700450810,
+      "roles": {
+        "BTC-261225-84000-C": "sell_call_at_bid",
+        "BTC-261225-84000-P": "buy_put_at_ask",
+        "BTCUSDT": "buy_perpetual_at_ask"
+      },
+      "strike_USDT": "84000.000",
+      "symbols": [
+        "BTC-261225-84000-C",
+        "BTC-261225-84000-P",
+        "BTCUSDT"
+      ],
+      "underlying": "BTCUSDT"
+    },
+    {
+      "call_close_time_ms": 1787750128927,
+      "common_minimum_quantity": "0.01",
+      "direction": "reversal_long_perpetual",
+      "expiry_date_ms": 1798185600000,
+      "futures_book_age_ms": 417,
+      "futures_book_time_ms": 1787801242430,
+      "gross_profit_at_common_minimum_USDT": "10.37700",
+      "gross_profit_per_unit_USDT": "1037.700",
+      "maximum_cross_source_skew_ms": 226402431,
+      "maximum_option_quote_age_ms": 226401951,
+      "optimistic_only": true,
+      "passes_frozen_synchronization_gate": false,
+      "put_close_time_ms": 1787574839999,
+      "roles": {
+        "BTC-261225-85000-C": "sell_call_at_bid",
+        "BTC-261225-85000-P": "buy_put_at_ask",
+        "BTCUSDT": "buy_perpetual_at_ask"
+      },
+      "strike_USDT": "85000.000",
+      "symbols": [
+        "BTC-261225-85000-C",
+        "BTC-261225-85000-P",
+        "BTCUSDT"
+      ],
+      "underlying": "BTCUSDT"
+    },
+    {
+      "call_close_time_ms": 1787644868324,
+      "common_minimum_quantity": "0.01",
+      "direction": "reversal_long_perpetual",
+      "expiry_date_ms": 1798185600000,
+      "futures_book_age_ms": 417,
+      "futures_book_time_ms": 1787801242430,
+      "gross_profit_at_common_minimum_USDT": "10.32700",
+      "gross_profit_per_unit_USDT": "1032.700",
+      "maximum_cross_source_skew_ms": 156374106,
+      "maximum_option_quote_age_ms": 156373626,
+      "optimistic_only": true,
+      "passes_frozen_synchronization_gate": false,
+      "put_close_time_ms": 1787645860682,
+      "roles": {
+        "BTC-261225-78000-C": "sell_call_at_bid",
+        "BTC-261225-78000-P": "buy_put_at_ask",
+        "BTCUSDT": "buy_perpetual_at_ask"
+      },
+      "strike_USDT": "78000.000",
+      "symbols": [
+        "BTC-261225-78000-C",
+        "BTC-261225-78000-P",
+        "BTCUSDT"
+      ],
+      "underlying": "BTCUSDT"
+    },
+    {
+      "call_close_time_ms": 1787620250822,
+      "common_minimum_quantity": "0.01",
+      "direction": "reversal_long_perpetual",
+      "expiry_date_ms": 1798185600000,
+      "futures_book_age_ms": 417,
+      "futures_book_time_ms": 1787801242430,
+      "gross_profit_at_common_minimum_USDT": "10.32700",
+      "gross_profit_per_unit_USDT": "1032.700",
+      "maximum_cross_source_skew_ms": 180991608,
+      "maximum_option_quote_age_ms": 180991128,
+      "optimistic_only": true,
+      "passes_frozen_synchronization_gate": false,
+      "put_close_time_ms": 1787627477473,
+      "roles": {
+        "BTC-261225-82000-C": "sell_call_at_bid",
+        "BTC-261225-82000-P": "buy_put_at_ask",
+        "BTCUSDT": "buy_perpetual_at_ask"
+      },
+      "strike_USDT": "82000.000",
+      "symbols": [
+        "BTC-261225-82000-C",
+        "BTC-261225-82000-P",
+        "BTCUSDT"
+      ],
+      "underlying": "BTCUSDT"
+    },
+    {
+      "call_close_time_ms": 1787314760316,
+      "common_minimum_quantity": "0.01",
+      "direction": "reversal_long_perpetual",
+      "expiry_date_ms": 1798185600000,
+      "futures_book_age_ms": 417,
+      "futures_book_time_ms": 1787801242430,
+      "gross_profit_at_common_minimum_USDT": "10.32700",
+      "gross_profit_per_unit_USDT": "1032.700",
+      "maximum_cross_source_skew_ms": 486482114,
+      "maximum_option_quote_age_ms": 486481634,
+      "optimistic_only": true,
+      "passes_frozen_synchronization_gate": false,
+      "put_close_time_ms": 1787583317429,
+      "roles": {
+        "BTC-261225-86000-C": "sell_call_at_bid",
+        "BTC-261225-86000-P": "buy_put_at_ask",
+        "BTCUSDT": "buy_perpetual_at_ask"
+      },
+      "strike_USDT": "86000.000",
+      "symbols": [
+        "BTC-261225-86000-C",
+        "BTC-261225-86000-P",
+        "BTCUSDT"
+      ],
+      "underlying": "BTCUSDT"
+    },
+    {
+      "call_close_time_ms": 1787791955639,
+      "common_minimum_quantity": "0.01",
+      "direction": "reversal_long_perpetual",
+      "expiry_date_ms": 1793347200000,
+      "futures_book_age_ms": 417,
+      "futures_book_time_ms": 1787801242430,
+      "gross_profit_at_common_minimum_USDT": "5.22700",
+      "gross_profit_per_unit_USDT": "522.700",
+      "maximum_cross_source_skew_ms": 16906508,
+      "maximum_option_quote_age_ms": 16906028,
+      "optimistic_only": true,
+      "passes_frozen_synchronization_gate": false,
+      "put_close_time_ms": 1787784335922,
+      "roles": {
+        "BTC-261030-80000-C": "sell_call_at_bid",
+        "BTC-261030-80000-P": "buy_put_at_ask",
+        "BTCUSDT": "buy_perpetual_at_ask"
+      },
+      "strike_USDT": "80000.000",
+      "symbols": [
+        "BTC-261030-80000-C",
+        "BTC-261030-80000-P",
+        "BTCUSDT"
+      ],
+      "underlying": "BTCUSDT"
+    },
+    {
+      "call_close_time_ms": 1787691815032,
+      "common_minimum_quantity": "0.01",
+      "direction": "reversal_long_perpetual",
+      "expiry_date_ms": 1793347200000,
+      "futures_book_age_ms": 417,
+      "futures_book_time_ms": 1787801242430,
+      "gross_profit_at_common_minimum_USDT": "5.17700",
+      "gross_profit_per_unit_USDT": "517.700",
+      "maximum_cross_source_skew_ms": 109427398,
+      "maximum_option_quote_age_ms": 109426918,
+      "optimistic_only": true,
+      "passes_frozen_synchronization_gate": false,
+      "put_close_time_ms": 1787793605513,
+      "roles": {
+        "BTC-261030-79000-C": "sell_call_at_bid",
+        "BTC-261030-79000-P": "buy_put_at_ask",
+        "BTCUSDT": "buy_perpetual_at_ask"
+      },
+      "strike_USDT": "79000.000",
+      "symbols": [
+        "BTC-261030-79000-C",
+        "BTC-261030-79000-P",
+        "BTCUSDT"
+      ],
+      "underlying": "BTCUSDT"
+    },
+    {
+      "call_close_time_ms": 1787737785962,
+      "common_minimum_quantity": "0.01",
+      "direction": "reversal_long_perpetual",
+      "expiry_date_ms": 1793347200000,
+      "futures_book_age_ms": 417,
+      "futures_book_time_ms": 1787801242430,
+      "gross_profit_at_common_minimum_USDT": "5.17700",
+      "gross_profit_per_unit_USDT": "517.700",
+      "maximum_cross_source_skew_ms": 94682011,
+      "maximum_option_quote_age_ms": 94681531,
+      "optimistic_only": true,
+      "passes_frozen_synchronization_gate": false,
+      "put_close_time_ms": 1787706560419,
+      "roles": {
+        "BTC-261030-81000-C": "sell_call_at_bid",
+        "BTC-261030-81000-P": "buy_put_at_ask",
+        "BTCUSDT": "buy_perpetual_at_ask"
+      },
+      "strike_USDT": "81000.000",
+      "symbols": [
+        "BTC-261030-81000-C",
+        "BTC-261030-81000-P",
+        "BTCUSDT"
+      ],
+      "underlying": "BTCUSDT"
+    },
+    {
+      "call_close_time_ms": 1787788490715,
+      "common_minimum_quantity": "0.01",
+      "direction": "reversal_long_perpetual",
+      "expiry_date_ms": 1793347200000,
+      "futures_book_age_ms": 417,
+      "futures_book_time_ms": 1787801242430,
+      "gross_profit_at_common_minimum_USDT": "5.17700",
+      "gross_profit_per_unit_USDT": "517.700",
+      "maximum_cross_source_skew_ms": 44314650,
+      "maximum_option_quote_age_ms": 44314170,
+      "optimistic_only": true,
+      "passes_frozen_synchronization_gate": false,
+      "put_close_time_ms": 1787756927780,
+      "roles": {
+        "BTC-261030-82000-C": "sell_call_at_bid",
+        "BTC-261030-82000-P": "buy_put_at_ask",
+        "BTCUSDT": "buy_perpetual_at_ask"
+      },
+      "strike_USDT": "82000.000",
+      "symbols": [
+        "BTC-261030-82000-C",
+        "BTC-261030-82000-P",
+        "BTCUSDT"
+      ],
+      "underlying": "BTCUSDT"
+    },
+    {
+      "call_close_time_ms": 1787583800777,
+      "common_minimum_quantity": "0.01",
+      "direction": "reversal_long_perpetual",
+      "expiry_date_ms": 1806048000000,
+      "futures_book_age_ms": 417,
+      "futures_book_time_ms": 1787801242430,
+      "gross_profit_at_common_minimum_USDT": "5.17700",
+      "gross_profit_per_unit_USDT": "517.700",
+      "maximum_cross_source_skew_ms": 317470159,
+      "maximum_option_quote_age_ms": 317469679,
+      "optimistic_only": true,
+      "passes_frozen_synchronization_gate": false,
+      "put_close_time_ms": 1787483772271,
+      "roles": {
+        "BTC-270326-64000-C": "sell_call_at_bid",
+        "BTC-270326-64000-P": "buy_put_at_ask",
+        "BTCUSDT": "buy_perpetual_at_ask"
+      },
+      "strike_USDT": "64000.000",
+      "symbols": [
+        "BTC-270326-64000-C",
+        "BTC-270326-64000-P",
+        "BTCUSDT"
+      ],
+      "underlying": "BTCUSDT"
+    },
+    {
+      "call_close_time_ms": 1787797044068,
+      "common_minimum_quantity": "0.01",
+      "direction": "reversal_long_perpetual",
+      "expiry_date_ms": 1793347200000,
+      "futures_book_age_ms": 417,
+      "futures_book_time_ms": 1787801242430,
+      "gross_profit_at_common_minimum_USDT": "5.12700",
+      "gross_profit_per_unit_USDT": "512.700",
+      "maximum_cross_source_skew_ms": 6105359,
+      "maximum_option_quote_age_ms": 6104879,
+      "optimistic_only": true,
+      "passes_frozen_synchronization_gate": false,
+      "put_close_time_ms": 1787795137071,
+      "roles": {
+        "BTC-261030-78000-C": "sell_call_at_bid",
+        "BTC-261030-78000-P": "buy_put_at_ask",
+        "BTCUSDT": "buy_perpetual_at_ask"
+      },
+      "strike_USDT": "78000.000",
+      "symbols": [
+        "BTC-261030-78000-C",
+        "BTC-261030-78000-P",
+        "BTCUSDT"
+      ],
+      "underlying": "BTCUSDT"
+    },
+    {
+      "call_close_time_ms": 1787753650309,
+      "common_minimum_quantity": "0.01",
+      "direction": "reversal_long_perpetual",
+      "expiry_date_ms": 1793347200000,
+      "futures_book_age_ms": 417,
+      "futures_book_time_ms": 1787801242430,
+      "gross_profit_at_common_minimum_USDT": "5.12700",
+      "gross_profit_per_unit_USDT": "512.700",
+      "maximum_cross_source_skew_ms": 47592121,
+      "maximum_option_quote_age_ms": 47591641,
+      "optimistic_only": true,
+      "passes_frozen_synchronization_gate": false,
+      "put_close_time_ms": 1787756059232,
+      "roles": {
+        "BTC-261030-83000-C": "sell_call_at_bid",
+        "BTC-261030-83000-P": "buy_put_at_ask",
+        "BTCUSDT": "buy_perpetual_at_ask"
+      },
+      "strike_USDT": "83000.000",
+      "symbols": [
+        "BTC-261030-83000-C",
+        "BTC-261030-83000-P",
+        "BTCUSDT"
+      ],
+      "underlying": "BTCUSDT"
+    },
+    {
+      "call_close_time_ms": 1787795152487,
+      "common_minimum_quantity": "0.01",
+      "direction": "reversal_long_perpetual",
+      "expiry_date_ms": 1793347200000,
+      "futures_book_age_ms": 417,
+      "futures_book_time_ms": 1787801242430,
+      "gross_profit_at_common_minimum_USDT": "4.87700",
+      "gross_profit_per_unit_USDT": "487.700",
+      "maximum_cross_source_skew_ms": 123029126,
+      "maximum_option_quote_age_ms": 123028646,
+      "optimistic_only": true,
+      "passes_frozen_synchronization_gate": false,
+      "put_close_time_ms": 1787678213304,
+      "roles": {
+        "BTC-261030-84000-C": "sell_call_at_bid",
+        "BTC-261030-84000-P": "buy_put_at_ask",
+        "BTCUSDT": "buy_perpetual_at_ask"
+      },
+      "strike_USDT": "84000.000",
+      "symbols": [
+        "BTC-261030-84000-C",
+        "BTC-261030-84000-P",
+        "BTCUSDT"
+      ],
+      "underlying": "BTCUSDT"
+    },
+    {
+      "call_close_time_ms": 1787740780167,
+      "common_minimum_quantity": "0.01",
+      "direction": "reversal_long_perpetual",
+      "expiry_date_ms": 1793347200000,
+      "futures_book_age_ms": 417,
+      "futures_book_time_ms": 1787801242430,
+      "gross_profit_at_common_minimum_USDT": "4.47700",
+      "gross_profit_per_unit_USDT": "447.700",
+      "maximum_cross_source_skew_ms": 60462263,
+      "maximum_option_quote_age_ms": 60461783,
+      "optimistic_only": true,
+      "passes_frozen_synchronization_gate": false,
+      "put_close_time_ms": 1787793913328,
+      "roles": {
+        "BTC-261030-77000-C": "sell_call_at_bid",
+        "BTC-261030-77000-P": "buy_put_at_ask",
+        "BTCUSDT": "buy_perpetual_at_ask"
+      },
+      "strike_USDT": "77000.000",
+      "symbols": [
+        "BTC-261030-77000-C",
+        "BTC-261030-77000-P",
+        "BTCUSDT"
+      ],
+      "underlying": "BTCUSDT"
+    },
+    {
+      "call_close_time_ms": 1787784159207,
+      "common_minimum_quantity": "0.01",
+      "direction": "reversal_long_perpetual",
+      "expiry_date_ms": 1790323200000,
+      "futures_book_age_ms": 417,
+      "futures_book_time_ms": 1787801242430,
+      "gross_profit_at_common_minimum_USDT": "2.12700",
+      "gross_profit_per_unit_USDT": "212.700",
+      "maximum_cross_source_skew_ms": 17083223,
+      "maximum_option_quote_age_ms": 17082743,
+      "optimistic_only": true,
+      "passes_frozen_synchronization_gate": false,
+      "put_close_time_ms": 1787800305453,
+      "roles": {
+        "BTC-260925-78000-C": "sell_call_at_bid",
+        "BTC-260925-78000-P": "buy_put_at_ask",
+        "BTCUSDT": "buy_perpetual_at_ask"
+      },
+      "strike_USDT": "78000.000",
+      "symbols": [
+        "BTC-260925-78000-C",
+        "BTC-260925-78000-P",
+        "BTCUSDT"
+      ],
+      "underlying": "BTCUSDT"
+    },
+    {
+      "call_close_time_ms": 1787788475989,
+      "common_minimum_quantity": "0.01",
+      "direction": "reversal_long_perpetual",
+      "expiry_date_ms": 1790323200000,
+      "futures_book_age_ms": 417,
+      "futures_book_time_ms": 1787801242430,
+      "gross_profit_at_common_minimum_USDT": "2.12700",
+      "gross_profit_per_unit_USDT": "212.700",
+      "maximum_cross_source_skew_ms": 12766441,
+      "maximum_option_quote_age_ms": 12765961,
+      "optimistic_only": true,
+      "passes_frozen_synchronization_gate": false,
+      "put_close_time_ms": 1787800346712,
+      "roles": {
+        "BTC-260925-79000-C": "sell_call_at_bid",
+        "BTC-260925-79000-P": "buy_put_at_ask",
+        "BTCUSDT": "buy_perpetual_at_ask"
+      },
+      "strike_USDT": "79000.000",
+      "symbols": [
+        "BTC-260925-79000-C",
+        "BTC-260925-79000-P",
+        "BTCUSDT"
+      ],
+      "underlying": "BTCUSDT"
+    },
+    {
+      "call_close_time_ms": 1787788147694,
+      "common_minimum_quantity": "0.01",
+      "direction": "reversal_long_perpetual",
+      "expiry_date_ms": 1790323200000,
+      "futures_book_age_ms": 417,
+      "futures_book_time_ms": 1787801242430,
+      "gross_profit_at_common_minimum_USDT": "2.12700",
+      "gross_profit_per_unit_USDT": "212.700",
+      "maximum_cross_source_skew_ms": 13094736,
+      "maximum_option_quote_age_ms": 13094256,
+      "optimistic_only": true,
+      "passes_frozen_synchronization_gate": false,
+      "put_close_time_ms": 1787798751493,
+      "roles": {
+        "BTC-260925-80000-C": "sell_call_at_bid",
+        "BTC-260925-80000-P": "buy_put_at_ask",
+        "BTCUSDT": "buy_perpetual_at_ask"
+      },
+      "strike_USDT": "80000.000",
+      "symbols": [
+        "BTC-260925-80000-C",
+        "BTC-260925-80000-P",
+        "BTCUSDT"
+      ],
+      "underlying": "BTCUSDT"
+    }
+  ]
+}

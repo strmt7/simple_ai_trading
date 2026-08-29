@@ -1442,9 +1442,21 @@ safety gate, blocks Stop, or submits an order.
   purportedly novel collector. Do not repeat box parity absent a material
   price, fee, book, or product change. Canonical v2 result SHA-256
   `a9b0e7a2aba9bda7f83b9515be587a17e6da69fa0bc987191a21f9d37e912d3b`.
+- Binance BTC/ETH/SOL option/perpetual conversion and reversal parity is
+  terminal for the retained August 27 snapshot. Preserve the consumed v1
+  timestamp-semantics error: Options ticker `closeTime` was incorrectly treated
+  as quote-update time. A separately frozen zero-network v2 used the 1.639-
+  second HTTP observation-window skew and found 71 synchronized nominal rows
+  across all 1,410 directions. A complete offline stress then applied exact
+  quantity lattices, two adverse ticks per leg, 35.5 bips fee/basis cost,
+  direction-specific worst retained funding, and a two-notional capital hurdle;
+  zero rows survived and no current depth was requested. Do not repeat absent a
+  material price, fee, book, funding, margin, or product change. Canonical
+  stress result SHA-256
+  `c09d62e98cd0df88622d4b98d9d8f01247121ccd786fffb580bc72429ef6bf30`.
 - The structural-edge registry now has 42 ranked hypotheses, still only 19
   narrowly accepted scoped overlays, and result SHA-256
-  `8a5df5625fab7d55762ff52923f1454d80a92126d6dce09ce4f5b9281779f6f9`.
+  `afa26a57c9ca4525021ef1d728993ecc52a427ac03e8ee3f48bd15ab0203bf71`.
 
 ## Task Routing
 
@@ -1462,6 +1474,7 @@ safety gate, blocks Stop, or submits an order.
 | Current Toronto/Phoenix WNBA monotone-parity terminal result | `docs/model-research/action-value/polymarket-current-wnba-monotone-parity-result-v1-2026-08-29.json` |
 | Current Lynx/Dream WNBA rejection-only terminal adjudication | `docs/model-research/action-value/polymarket-lynx-dream-monotone-prefilter-adjudication-v1-2026-08-29.json` |
 | Binance retained CLOB box-parity terminal prefilter | `docs/model-research/action-value/binance-options-clob-box-retained-prefilter-v2-2026-08-29.json` |
+| Binance retained option/perpetual conversion terminal stress | `docs/model-research/action-value/binance-options-perpetual-conversion-retained-stress-v1-2026-08-29.json` |
 | Polymarket holding-yield latest retained receipt continuity | `docs/model-research/polymarket/complete-set-holding-yield-continuity-receipts-v8-2026-08-29.json` |
 | Resolved-leg House duplicate-payoff recurrence | `docs/model-research/action-value/polymarket-aca-house-maker-first-candidate-v1-2026-08-29.json` |
 | Binance XAU/PAXG funding-basis terminal adjudication | `docs/model-research/action-value/binance-xau-paxg-perpetual-funding-spread-failure-adjudication-v1-2026-08-29.json` |

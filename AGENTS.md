@@ -166,6 +166,13 @@ override prose.
   discard valid leg-specific cash flows merely because independently published
   settlement timestamps differ by milliseconds; preserve the original failed
   method and adjudicate from retained raw responses without an adaptive refetch.
+- Source-bind the documented semantics of every timestamp before using it as
+  quote freshness or cross-source synchronization. A ticker transaction time,
+  rolling-window close time, event time, or HTTP receipt is not automatically a
+  best-bid/ask update time. Preserve a consumed test that used the wrong field,
+  then freeze any retained-data correction separately; use HTTP request bounds
+  only as observation-window provenance and never as proof of the book's last
+  internal update.
 - Before a one-use CLOB batch screen, preflight the actual book-array ordering
   semantics or freeze acceptance of either strictly monotone direction. Do not
   assume the documented bid or ask sort order; if a retained complete batch is

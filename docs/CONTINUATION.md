@@ -979,7 +979,7 @@ grants paper, testnet, or live authority.
 
 The canonical structural-edge priority and retry-trigger registry is
 `docs/model-research/structural-edge-priority-registry-v1.json`, result SHA-256
-`8a5df5625fab7d55762ff52923f1454d80a92126d6dce09ce4f5b9281779f6f9`.
+`afa26a57c9ca4525021ef1d728993ecc52a427ac03e8ee3f48bd15ab0203bf71`.
 Advance only the highest-ranked hypothesis whose trigger is actually satisfied.
 This prevents account-blocked or terminal screens from being rerun as if more
 snapshots could create an edge.
@@ -2191,7 +2191,7 @@ result SHA-256
 `64943efe0c6ad16f8d02f78548afef38f919448d2da87c7573e825a2eeefd6b9`.
 That checkpoint left seventeen accepted scoped edges. The current registry now
 has nineteen and result SHA-256
-`8a5df5625fab7d55762ff52923f1454d80a92126d6dce09ce4f5b9281779f6f9`.
+`afa26a57c9ca4525021ef1d728993ecc52a427ac03e8ee3f48bd15ab0203bf71`.
 
 The complete Binance XAU/XAG Commodity Options versus matching TradFi
 perpetual lower-bound screen is terminal for the active 2026-08-27 and
@@ -2493,7 +2493,7 @@ result SHA-256
 `85c8ef364b03fb2fbf0aeebddec10d51abbdd608f56ff9c0dccb1835cacc2179`.
 The structural registry now contains 42 ranked hypotheses, remains at 19
 narrowly accepted scoped overlays, and has canonical result SHA-256
-`8a5df5625fab7d55762ff52923f1454d80a92126d6dce09ce4f5b9281779f6f9`.
+`afa26a57c9ca4525021ef1d728993ecc52a427ac03e8ee3f48bd15ab0203bf71`.
 
 The Round 21 sidecar worktree
 `C:\trader\simple_ai_trading-round21-sidecar-v2` remains protected through
@@ -2815,6 +2815,47 @@ timestamp as unconditionally unsynchronized without changing the economic or
 canonical result SHA-256
 `a9b0e7a2aba9bda7f83b9515be587a17e6da69fa0bc987191a21f9d37e912d3b`.
 
+## Binance Option/Perpetual Conversion Checkpoint
+
+A distinct zero-network retained screen tested every BTC, ETH, and SOL same-
+strike call/put pair against its matching linear USDT perpetual. The conversion
+and reversal payoff algebra is market-direction-forecast independent, but a
+perpetual must still be closed at option expiry; funding, expiry basis, margin,
+and three-leg execution therefore remain economic risks rather than a fixed
+payoff identity.
+
+The first frozen implementation made a timestamp-semantics mistake: it treated
+the Options ticker `closeTime` as best-bid/ask update time. Binance's official
+Options schema instead labels the corresponding ticker timestamp as transaction
+time and does not document it as quote-update provenance. Preserve v1 and its
+canonical result SHA-256
+`c7dfb805da6d55bb3fcccb48cb45baa7bb3044f0d304f26dfc1dd67b3bc7529f`;
+do not reinterpret its zero synchronized count. A separately frozen v2 changed
+only synchronization provenance. It used the retained HTTP request intervals as
+observation windows, kept `closeTime` diagnostic-only, and measured 1.639
+seconds maximum possible observation skew. V2 found 71 synchronized nominal
+gross-positive directions among all 1,410 directions: 35 BTC reversals, 34 ETH
+reversals, and two SOL conversions. V2 contract SHA-256
+`5cbcc2f302b78da934d63801a58c56e640670e4b31935a6e2542536360502ee5`;
+canonical result SHA-256
+`1adf3c51cd008d40744c8ae91e1e4865e9e19e7dbb1ae9a0995e2b2676b3bd58`.
+
+None advanced to current depth. A third frozen offline gate covered all 71
+rows using the exact common quantity lattice, two adverse ticks on each of the
+three legs, 4 bips for two option taker fees, 1.5 bips for one settlement fee,
+10 bips for the perpetual round trip, 20 bips expiry-basis stress,
+direction-specific worst retained 500-event BTC/ETH/SOL funding stress at 1.25
+times entry notional, and a two-notional 10 percent annual capital hurdle. Zero
+rows survived. The best BTC, SOL, and ETH rows ended at respectively
+`-37.4697460101`, `-44.0814249716`, and `-59.4016381237` bips before option
+depth, account-bound commissions, or owned fills. No current endpoint,
+credential, account, order, or fund was used. Do not repeat this retained
+snapshot or request current depth absent a material price, fee, book, funding,
+margin, or product change. Stress contract SHA-256
+`5ac091035b9eeadda23292fa28631dcc7c8bb0b64e001faa34c94ffad5b6ecc5`;
+canonical result SHA-256
+`c09d62e98cd0df88622d4b98d9d8f01247121ccd786fffb580bc72429ef6bf30`.
+
 ## Verification Scope
 
 The two-request holding-yield continuity monitor, its frozen contract, exact
@@ -2834,7 +2875,7 @@ The resolved-leg House duplicate-payoff checkpoint, raw journals, source hashes,
 and directly affected registry lineage pass 12 focused tests with Ruff and
 Python compilation clean. The registry still contains 42 ranked hypotheses and
 19 accepted scoped overlays; its result SHA-256 is
-`8a5df5625fab7d55762ff52923f1454d80a92126d6dce09ce4f5b9281779f6f9`.
+`afa26a57c9ca4525021ef1d728993ecc52a427ac03e8ee3f48bd15ab0203bf71`.
 
 The exact-one-NO failure preservation and Binance BLVT current-inventory gate,
 including every registry-hash-coupled test, pass 199 focused tests with Ruff
@@ -2844,6 +2885,9 @@ reconstruct exactly; the accepted-edge count remains 19.
 
 The Binance-option/Polymarket-threshold gate and registry propagation pass 23
 focused tests with Ruff clean; both changed JSON result hashes reconstruct.
+The Binance option/perpetual conversion v1 preservation, v2 timestamp-semantics
+repair, complete 71-row retained stress, exact quantity lattice, source hashes,
+and terminal registry routing pass their focused tests without network access.
 The focused Round 75 closeout passes 20 tests. The cross-regime promotion change
 passes 62 affected tests before final publication checks. Run the smallest
 affected checks during development, then full CI once before publication. Do
