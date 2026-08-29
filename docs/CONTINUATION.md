@@ -967,7 +967,7 @@ grants paper, testnet, or live authority.
 
 The canonical structural-edge priority and retry-trigger registry is
 `docs/model-research/structural-edge-priority-registry-v1.json`, result SHA-256
-`44fdf0cba6b97bcf40c407bc78cedbdbf8051ff1b7e40267b5bc4db629abb22a`.
+`83dcc86f905b19679198a3dfe7b11d50b1377f7646ad287e647e4dc6d455e3aa`.
 Advance only the highest-ranked hypothesis whose trigger is actually satisfied.
 This prevents account-blocked or terminal screens from being rerun as if more
 snapshots could create an edge.
@@ -2123,7 +2123,7 @@ result SHA-256
 `64943efe0c6ad16f8d02f78548afef38f919448d2da87c7573e825a2eeefd6b9`.
 That checkpoint left seventeen accepted scoped edges. The current registry now
 has nineteen and result SHA-256
-`44fdf0cba6b97bcf40c407bc78cedbdbf8051ff1b7e40267b5bc4db629abb22a`.
+`83dcc86f905b19679198a3dfe7b11d50b1377f7646ad287e647e4dc6d455e3aa`.
 
 The complete Binance XAU/XAG Commodity Options versus matching TradFi
 perpetual lower-bound screen is terminal for the active 2026-08-27 and
@@ -2167,6 +2167,20 @@ execution gates remain separate. Canonical result:
 `docs/model-research/action-value/binance-djtb-new-listing-spot-perpetual-v1-2026-08-27.json`,
 SHA-256
 `2b85a6eca339799a6eb07ba48069e3a2943d97116a9320ce20400d260227e1be`.
+
+The frozen 2026-08-29 inventory-delta observation then tested only whether a
+new exact-multiplier listing trigger existed after DJTB. Its single public
+bStock inventory response was byte-identical to the retained DJTB baseline:
+68 rows, SHA-256
+`87aa11d459f9babcba9837743ab616fef4c066b20e209524b43ee383429cde3d`,
+with zero added or removed tickers. The conditional full futures metadata
+request therefore did not run; no funding or books were requested. Do not poll
+this unchanged registry. Reopen public listing research only after a new
+official bStock listing announcement names a previously unscreened matching
+TradFi perpetual. Canonical delta result:
+`docs/model-research/action-value/binance-bstock-inventory-delta-result-v1-2026-08-29.json`,
+result SHA-256
+`c343614b061e19ba32813b911d984630d8260cb3a46a1216389a63609a75925c`.
 
 The DJT contract's manually entered `frozen_at_utc` was incorrectly
 future-dated. The original contract hash is preserved; correction artifact
@@ -2408,6 +2422,10 @@ not grant account, funding, order, or transaction authority.
    reconciliation for mechanism evidence only; any executable recurrence must
    wait for a future independent weekend event. No account access, order,
    gross-dividend credit, or profit claim is authorized.
+   The separate bStock listing inventory refresh is also consumed and matched
+   the 68-row DJTB baseline byte-for-byte. Do not poll it. A new official bStock
+   listing announcement plus a previously unscreened matching TradFi perpetual
+   is required before another one-symbol public prefilter.
    For the NOK under-debit exception, do not infer the net historical payout
    from the `0.0462` gross amount, current multiplier, or `lastCashAmount`, and
    do not poll the preliminary 2026-10-27 record date. Reopen only when Nokia's

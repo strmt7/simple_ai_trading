@@ -14,12 +14,22 @@ CORRECTION = ACTION_VALUE / "binance-djtb-new-listing-contract-timestamp-correct
 RESULT = (
     ACTION_VALUE / "binance-djtb-new-listing-spot-perpetual-v1-2026-08-27.json"
 )
+DELTA_CONTRACT = (
+    ACTION_VALUE / "binance-bstock-inventory-delta-contract-v1-2026-08-29.json"
+)
+DELTA_RESULT = (
+    ACTION_VALUE / "binance-bstock-inventory-delta-result-v1-2026-08-29.json"
+)
+DELTA_RAW = ROOT / "data/binance-bstock-inventory-delta-v1/raw/bstock_inventory.json"
 REGISTRY = ROOT / "docs/model-research/structural-edge-priority-registry-v1.json"
 IMPLEMENTATION = ROOT / "tools/screen_binance_djtb_new_listing_spot_perpetual.py"
 CONTRACT_HASH = "087b06191378fa949ac62340d9f3e5c625aa31feff71bba3c7fd20cae1155ee8"
 CORRECTION_HASH = "692ee1f9a0374726b0adeccbe4fcd710c9c3a86d49b4b33210a8c34b2c79c4d3"
 RESULT_HASH = "2b85a6eca339799a6eb07ba48069e3a2943d97116a9320ce20400d260227e1be"
-REGISTRY_HASH = "44fdf0cba6b97bcf40c407bc78cedbdbf8051ff1b7e40267b5bc4db629abb22a"
+DELTA_CONTRACT_HASH = "9755578775ee4082c394a4e6ae96b8ec0fa1b7946a2d4dc92383be6f562db0f8"
+DELTA_RESULT_HASH = "c343614b061e19ba32813b911d984630d8260cb3a46a1216389a63609a75925c"
+DELTA_RAW_HASH = "87aa11d459f9babcba9837743ab616fef4c066b20e209524b43ee383429cde3d"
+REGISTRY_HASH = "83dcc86f905b19679198a3dfe7b11d50b1377f7646ad287e647e4dc6d455e3aa"
 
 
 def _load(path: Path) -> dict[str, object]:
@@ -127,6 +137,26 @@ def test_all_capacity_valid_sizes_are_negative_before_and_after_stress() -> None
     assert result["adjudication"]["profitability_claim"] is False
 
 
+def test_inventory_delta_is_frozen_unchanged_and_stops_before_futures() -> None:
+    contract = _load(DELTA_CONTRACT)
+    result = _load(DELTA_RESULT)
+
+    assert contract["contract_sha256"] == DELTA_CONTRACT_HASH
+    assert _canonical_hash(contract, "contract_sha256") == DELTA_CONTRACT_HASH
+    assert contract["maximum_requests"] == 2
+    assert contract["retry_policy"] == "one_attempt_per_exact_request_no_retry"
+    assert result["result_sha256"] == DELTA_RESULT_HASH
+    assert _canonical_hash(result, "result_sha256") == DELTA_RESULT_HASH
+    assert result["baseline_row_count"] == result["current_row_count"] == 68
+    assert result["new_tickers"] == []
+    assert result["removed_tickers"] == []
+    assert result["matching_unscreened_pairs"] == []
+    assert result["conditional_request_executed"] is False
+    assert result["request_count"] == 1
+    assert result["public_prefilter_trigger_satisfied"] is False
+    assert hashlib.sha256(DELTA_RAW.read_bytes()).hexdigest() == DELTA_RAW_HASH
+
+
 def test_registry_updates_existing_bstock_family_and_terminalizes_snapshot() -> None:
     registry = _load(REGISTRY)
 
@@ -142,9 +172,14 @@ def test_registry_updates_existing_bstock_family_and_terminalizes_snapshot() -> 
         if row["mechanism"]
         == "bstock_reference_conversion_and_delta_neutral_perpetual_funding"
     )
-    assert "new_exact_multiplier_bStock_listing" in hypothesis["retry_trigger"]
+    assert "new_official_exact_multiplier_bStock_listing" in hypothesis["retry_trigger"]
+    assert "do_not_poll" in hypothesis["next_action"]
     assert any(
         artifact["result_sha256"] == RESULT_HASH
+        for artifact in hypothesis["canonical_artifacts"]
+    )
+    assert any(
+        artifact["result_sha256"] == DELTA_RESULT_HASH
         for artifact in hypothesis["canonical_artifacts"]
     )
     terminal = next(

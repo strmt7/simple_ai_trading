@@ -592,6 +592,10 @@
           "result_sha256": "2b85a6eca339799a6eb07ba48069e3a2943d97116a9320ce20400d260227e1be"
         },
         {
+          "path": "docs/model-research/action-value/binance-bstock-inventory-delta-result-v1-2026-08-29.json",
+          "result_sha256": "c343614b061e19ba32813b911d984630d8260cb3a46a1216389a63609a75925c"
+        },
+        {
           "path": "docs/model-research/action-value/binance-existing-stock-transfer-reward-overlay-candidate-v1-2026-08-27.json",
           "result_sha256": "3ecb4f39848719f788b6853bd90120d1809379b8d81b5419da4b1bbc957fec3d"
         },
@@ -600,10 +604,10 @@
           "result_sha256": "3fe1801a6cbf442ab1ce79d1f3bd4586542d97414aea954b0bbd9a55a85453e1"
         }
       ],
-      "current_status": "full_66_match_60_exact_multiplier_screen_and_the_new_DJTB_exact_multiplier_listing_are_rejected_the_distinct_existing_stock_transfer_reward_is_a_time_limited_high_margin_public_candidate_with_fixed_bonus_250_150_66_67_40_25_and_20_bips_at_the_six_transfer_thresholds_and_the_first_three_remain_positive_after_an_illustrative_10_percent_annual_21_day_hurdle_but_its_forward_reward_floor_is_zero_the_materially_new_FPSL_candidate_can_add_direction_independent_monthly_lending_income_only_to_independently_existing_settled_Binance_Stocks_inventory_but_its_public_forward_income_floor_is_also_zero_until_actual_loan_demand_rate_user_share_owned_distributions_and_every_incremental_tax_SIPC_custody_counterparty_and_operating_cost_are_proved_neither_candidate_is_accepted_stable_or_deployment_ready",
+      "current_status": "the_2026_08_29_one_use_bStock_inventory_delta_was_byte_identical_to_the_hash_bound_68_row_DJTB_baseline_with_zero_added_or_removed_tickers_so_the_conditional_futures_metadata_request_did_not_run_and_no_public_listing_trigger_exists_the_full_66_match_screen_and_DJTB_listing_remain_rejected_the_existing_stock_transfer_and_FPSL_candidates_both_retain_zero_public_forward_income_floors_until_exact_owned_account_and_after_cost_evidence_exists_not_accepted_stable_or_deployment_ready",
       "market_direction_forecast_required": false,
       "mechanism": "bstock_reference_conversion_and_delta_neutral_perpetual_funding",
-      "next_action": "before_any_stock_transfer_or_FPSL_change_require_explicit_account_read_only_authority_to_prove_exact_region_KYC_Stocks_access_existing_settled_inventory_first_transfer_status_live_pool_and_current_FPSL_availability_then_present_the_exact_owned_inventory_cost_and_risk_decision_to_the_user_stock_transfer_submission_requires_separate_high_impact_authority_and_enabling_FPSL_requires_separate_explicit_user_authority_do_not_retry_prior_bStock_funding_or_DJTB_state",
+      "next_action": "do_not_poll_the_unchanged_68_row_bStock_inventory_wait_for_a_new_official_bStock_listing_announcement_and_matching_previously_unscreened_TradFi_perpetual_before_one_symbol_only_public_prefilter_or_require_explicit_account_read_only_authority_for_the_separate_stock_transfer_FPSL_or_permanent_scope_questions",
       "priority_rank": 12,
       "prohibited_shortcuts": [
         "external_reference_price_as_an_executable_stock_quote",
@@ -613,6 +617,7 @@
         "campaign_rewards_self_trading_or_wash_volume_as_persistent_edge",
         "changing_the_BTC_ETH_SOL_execution_scope_from_a_research_snapshot",
         "resampling_DJTBUSDT_DJTUSDT_or_any_previously_screened_bStock_pair_without_a_material_trigger",
+        "polling_the_byte_identical_68_row_bStock_inventory_without_a_new_official_listing_announcement",
         "inferring_stock_transfer_account_region_from_host_timezone_or_crediting_a_first_come_pool_without_live_account_evidence",
         "transferring_or_buying_stock_only_to_chase_the_reward_or_submitting_any_transfer_without_separate_explicit_authority",
         "crediting_transfer_fee_reimbursement_as_profit_without_actual_eligible_fees_or_assuming_IBKR_origin_is_eligible",
@@ -621,7 +626,7 @@
         "treating_FPSL_enrollment_as_guaranteed_lending_or_calling_gross_interest_profit_before_owned_after_cost_distribution_recurrence",
         "enabling_FPSL_or_answering_suitability_questions_without_separate_explicit_user_authority"
       ],
-      "retry_trigger": "explicit_read_only_Binance_Stocks_account_authority_before_the_2026_09_30_activity_end_to_prove_region_first_transfer_live_pool_and_existing_settled_inventory_FPSL_availability_or_new_exact_multiplier_bStock_listing_with_a_matching_previously_unscreened_TradFi_perpetual_for_one_symbol_only_public_prefilter_or_explicit_permanent_bStock_scope_authority_plus_eligible_same_account_read_only_stock_quote_conversion_and_commission_evidence",
+      "retry_trigger": "explicit_read_only_Binance_Stocks_account_authority_before_the_2026_09_30_activity_end_to_prove_region_first_transfer_live_pool_and_existing_settled_inventory_FPSL_availability_or_new_official_exact_multiplier_bStock_listing_announcement_after_2026_08_29T13_50_30Z_with_a_matching_previously_unscreened_TradFi_perpetual_for_one_symbol_only_public_prefilter_or_explicit_permanent_bStock_scope_authority_plus_eligible_same_account_read_only_stock_quote_conversion_and_commission_evidence",
       "venue_scope": "binance_bstocks_stocks_existing_stock_transfer_reward_existing_inventory_FPSL_yield_and_matching_tradifi_perpetuals_research_only"
     },
     {
@@ -1575,7 +1580,7 @@
       "venue_scope": "Binance_XAU_XAG_USDT_long_only_commodity_options_and_matching_TradFi_perpetuals"
     }
   ],
-  "result_sha256": "44fdf0cba6b97bcf40c407bc78cedbdbf8051ff1b7e40267b5bc4db629abb22a",
+  "result_sha256": "83dcc86f905b19679198a3dfe7b11d50b1377f7646ad287e647e4dc6d455e3aa",
   "schema_version": "structural-edge-priority-registry-v1",
   "terminal_do_not_repeat": [
     {
@@ -1744,6 +1749,6 @@
       "reason": "the_exact_70_day_2026_06_18_through_2026_08_26_extension_had_full_hourly_coverage_but_the_primary_BTC_ETH_equal_weight_after_20_bips_and_exact_entry_exit_basis_annualized_only_1_2030087925_percent_and_every_asset_BTC_ETH_SOL_DOGE_trailed_the_same_timestamp_3_86_percent_DGS3MO_hurdle_do_not_refit_or_resample_until_a_material_venue_fee_funding_basis_or_hurdle_change_occurs"
     }
   ],
-  "updated_at_utc": "2026-08-29T13:43:54Z",
+  "updated_at_utc": "2026-08-29T13:52:37Z",
   "usage_rule": "advance_the_highest_ranked_hypothesis_whose_retry_trigger_is_satisfied_otherwise_do_not_repeat_a_blocked_or_terminal_screen"
 }

@@ -1,0 +1,23 @@
+{
+  "accepted_edge": false,
+  "baseline_row_count": 68,
+  "conditional_request_executed": false,
+  "contract_sha256": "9755578775ee4082c394a4e6ae96b8ec0fa1b7946a2d4dc92383be6f562db0f8",
+  "current_row_count": 68,
+  "deployment_ready": false,
+  "journal_path": "docs/model-research/action-value/binance-bstock-inventory-delta-journal-v1-2026-08-29.json",
+  "journal_sha256": "375525a3a1c8483d8303018d3a078bbaadcbcab003abbcc6d6eb7d88c6718d6f",
+  "market_direction_forecast_required": false,
+  "matching_unscreened_pairs": [],
+  "new_exact_multiplier_tickers": [],
+  "new_tickers": [],
+  "next_selected_ticker": null,
+  "profitability_claim": false,
+  "public_prefilter_trigger_satisfied": false,
+  "removed_tickers": [],
+  "request_count": 1,
+  "result_sha256": "c343614b061e19ba32813b911d984630d8260cb3a46a1216389a63609a75925c",
+  "schema_version": "binance-bstock-inventory-delta-result-v1",
+  "status": "no_new_bstock_rows_inventory_trigger_not_satisfied",
+  "trading_authority": false
+}

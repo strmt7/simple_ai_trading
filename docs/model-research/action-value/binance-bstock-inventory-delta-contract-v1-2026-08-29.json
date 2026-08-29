@@ -1,0 +1,55 @@
+{
+  "authority": {
+    "account_state_permitted": false,
+    "credentials_permitted": false,
+    "funded_or_order_actions_permitted": false,
+    "profitability_or_accepted_edge_claim_permitted": false,
+    "public_unauthenticated_GET_only": true,
+    "trading_authority": false
+  },
+  "baseline": {
+    "path": "data/binance-djtb-new-listing-spot-perpetual-v1/raw/bstock-list.raw",
+    "response_bytes": 14867,
+    "response_sha256": "87aa11d459f9babcba9837743ab616fef4c066b20e209524b43ee383429cde3d",
+    "row_count": 68,
+    "status": "latest_retained_inventory_including_the_already_screened_DJTB_listing"
+  },
+  "conditional_request": {
+    "condition": "at_least_one_new_ticker_not_in_the_hash_bound_baseline_has_decimal_multiplier_exactly_equal_to_one",
+    "label": "futures_exchange_info",
+    "method": "GET",
+    "url": "https://fapi.binance.com/fapi/v1/exchangeInfo"
+  },
+  "contract_sha256": "9755578775ee4082c394a4e6ae96b8ec0fa1b7946a2d4dc92383be6f562db0f8",
+  "decision_rules": {
+    "exact_multiplier": "Decimal(multiplier) == Decimal(1)",
+    "matching_future": "symbol_equals_ticker_plus_USDT_and_contractType_equals_TRADIFI_PERPETUAL_and_status_equals_TRADING_and_underlyingType_equals_EQUITY",
+    "no_new_exact_matching_pair": "retain_the_inventory_delta_and_stop_without_funding_books_or_account_access",
+    "new_exact_matching_pairs": "report_all_matches_but_select_only_the_lexicographically_first_ticker_for_a_separate_newly_frozen_one_symbol_public_prefilter_no_funding_or_books_in_this_discovery",
+    "row_identity": "ticker_is_unique_and_each_row_must_have_type_3_symbol_asset_cs_multiplier_contractAddress_chainId_and_d"
+  },
+  "frozen_before_access": true,
+  "inventory_request": {
+    "label": "bstock_inventory",
+    "method": "GET",
+    "url": "https://www.binance.com/bapi/defi/v1/public/wallet-direct/buw/wallet/market/token/rwa/stock/detail/list/ai?type=3"
+  },
+  "maximum_requests": 2,
+  "purpose": "test_only_whether_a_genuinely_new_exact_multiplier_bStock_with_a_previously_unscreened_matching_TradFi_perpetual_exists_since_the_retained_DJTB_inventory",
+  "retry_policy": "one_attempt_per_exact_request_no_retry",
+  "schema_version": "binance-bstock-inventory-delta-contract-v1",
+  "security_classification": {
+    "account_or_mutation_semantics": false,
+    "bstock_inventory_evidence": [
+      "The exact GET URL and operation are hash-bound in the canonical 2026-08-26 full-universe and 2026-08-27 DJTB public artifacts, both of which retained successful zero-credential responses.",
+      "The request has no account identifier, signature, credential, order, transfer, conversion, or mutation parameter. Classification relies on those retained exact-method outcomes rather than the path name alone."
+    ],
+    "classification": "public_unauthenticated_read_only_official_product_inventory_and_market_metadata",
+    "futures_exchange_info_documentation": "https://developers.binance.com/docs/derivatives/usds-margined-futures/market-data/rest-api/Exchange-Information",
+    "prior_artifacts": [
+      "docs/model-research/action-value/binance-bstock-funding-full-universe-v1-2026-08-26.json",
+      "docs/model-research/action-value/binance-djtb-new-listing-spot-perpetual-v1-2026-08-27.json"
+    ]
+  },
+  "updated_at_utc": "2026-08-29T13:48:47Z"
+}
