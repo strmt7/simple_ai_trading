@@ -21,7 +21,7 @@ EXPECTED_ARTIFACT_HASH = (
     "d4e02d2d1cc6b0a598265af734b29f62aec6145bc5a1cc3b3d65771ba2031d2a"
 )
 EXPECTED_REGISTRY_HASH = (
-    "ec41ae27eb0699809acabc273620059516a35c09ec6f7cf33520eecbf19ea78e"
+    "e8c32ad724da73148aa1becc77fe413a243e11fa8f444d514b10e844f9089bfe"
 )
 EXPECTED_TERMINAL_HASH = (
     "613453649f84407d6216e72228bdb16005b0a5c290c6bd58fa522007de5317e5"
@@ -216,7 +216,7 @@ def test_registry_binds_the_exact_event_scope_without_promoting_the_edge() -> No
     assert candidate["retry_trigger"].startswith(
         "materially_new_primary_evidence_that_changes_queue_attribution"
     )
-    assert registry["accepted_edge_count"] == 19
+    assert registry["accepted_edge_count"] == 20
     assert artifact["research_decision"]["accepted_edge_count_change"] == 0
     assert (
         artifact["prospective_fill_and_unwind_capture"]["active_result_claim"] is False

@@ -29,7 +29,7 @@ SPORTS_CONTRACT_HASH = (
     "99559dd57d8ba1520fd4f607c4e4e56cea1070a2798536941af10134e4376aed"
 )
 SPORTS_RESULT_HASH = "e5ce48b6b0521a5ba2fe58ae17316e703ab2155934a126e603eeadf81e219d9c"
-REGISTRY_HASH = "ec41ae27eb0699809acabc273620059516a35c09ec6f7cf33520eecbf19ea78e"
+REGISTRY_HASH = "e8c32ad724da73148aa1becc77fe413a243e11fa8f444d514b10e844f9089bfe"
 
 
 def _load(path: Path) -> dict[str, object]:
@@ -107,7 +107,7 @@ def test_registry_adds_only_exact_truth_table_subset_candidate() -> None:
 
     assert registry["result_sha256"] == REGISTRY_HASH
     assert _canonical_hash(registry) == REGISTRY_HASH
-    assert registry["accepted_edge_count"] == 19
+    assert registry["accepted_edge_count"] == 20
     assert [row["priority_rank"] for row in registry["prioritized_hypotheses"]] == list(
         range(1, 43)
     )

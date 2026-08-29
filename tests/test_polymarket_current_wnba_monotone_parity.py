@@ -10,7 +10,7 @@ ROOT = Path(__file__).resolve().parents[1]
 ACTION_VALUE = ROOT / "docs/model-research/action-value"
 DATA = ROOT / "data"
 REGISTRY = ROOT / "docs/model-research/structural-edge-priority-registry-v1.json"
-REGISTRY_HASH = "ec41ae27eb0699809acabc273620059516a35c09ec6f7cf33520eecbf19ea78e"
+REGISTRY_HASH = "e8c32ad724da73148aa1becc77fe413a243e11fa8f444d514b10e844f9089bfe"
 
 
 def _load(path: Path) -> dict[str, object]:
@@ -151,4 +151,4 @@ def test_registry_requires_rejection_only_prefilter_before_another_book_batch() 
         "using_Gamma_prices_to_accept_or_promote" in shortcut
         for shortcut in row["prohibited_shortcuts"]
     )
-    assert registry["accepted_edge_count"] == 19
+    assert registry["accepted_edge_count"] == 20

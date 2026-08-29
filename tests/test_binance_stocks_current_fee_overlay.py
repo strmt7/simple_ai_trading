@@ -10,9 +10,13 @@ ROOT = Path(__file__).resolve().parents[1]
 ARTIFACT = ROOT / "docs/model-research/action-value" / (
     "binance-stocks-current-fee-overlay-edge-v1-2026-08-27.json"
 )
+TRIGGER_TRIAGE = ROOT / "docs/model-research/action-value" / (
+    "binance-aug28-public-structural-trigger-triage-v1-2026-08-29.json"
+)
 REGISTRY = ROOT / "docs/model-research/structural-edge-priority-registry-v1.json"
 ARTIFACT_HASH = "d4f02be559d9267abbea28ccefb48f4886f375b359ce7274b90b6585b828160a"
-REGISTRY_HASH = "ec41ae27eb0699809acabc273620059516a35c09ec6f7cf33520eecbf19ea78e"
+TRIGGER_TRIAGE_HASH = "bca11d612042f9a859f53b71e425cd320cca5d4a5d7695cd1f0a0de539b0eea1"
+REGISTRY_HASH = "e8c32ad724da73148aa1becc77fe413a243e11fa8f444d514b10e844f9089bfe"
 
 
 def _load(path: Path) -> dict[str, object]:
@@ -63,7 +67,7 @@ def test_stocks_fee_overlay_reconstructs_savings_and_fail_closed_boundaries() ->
     registry = _load(REGISTRY)
     assert registry["result_sha256"] == REGISTRY_HASH
     assert _canonical_hash(registry) == REGISTRY_HASH
-    assert registry["accepted_edge_count"] == 19
+    assert registry["accepted_edge_count"] == 20
     hypothesis = next(
         row
         for row in registry["prioritized_hypotheses"]
@@ -74,3 +78,37 @@ def test_stocks_fee_overlay_reconstructs_savings_and_fail_closed_boundaries() ->
         "result_sha256": ARTIFACT_HASH,
     } in hypothesis["canonical_artifacts"]
     assert "Binance_Stocks" in hypothesis["current_status"]
+
+
+def test_bstocks_zero_maker_extension_is_scoped_and_does_not_reopen_terminal_families() -> None:
+    triage = _load(TRIGGER_TRIAGE)
+
+    assert triage["result_sha256"] == TRIGGER_TRIAGE_HASH
+    assert _canonical_hash(triage) == TRIGGER_TRIAGE_HASH
+    assert triage["authority"]["orders_transfers_conversions_subscriptions_or_account_changes"] == 0
+    bstocks = triage["adjudications"]["bstocks_zero_maker_fee_extension"]
+    assert bstocks["accepted_edge"] is True
+    assert bstocks["standalone_profitability_claim"] is False
+    assert bstocks["promotion_end_utc"] == "2026-09-30T23:59:00Z"
+    assert bstocks["credited_order_role"] == "maker_only"
+    assert "Grid" in " ".join(bstocks["prohibited_shortcuts"])
+
+    mark_change = triage["adjudications"]["tradfi_mark_price_basis_window_change"]
+    assert mark_change["accepted_edge"] is False
+    assert mark_change["decision"] == "no_structural_edge_retry"
+    assert mark_change["effective_at_utc"] == "2026-08-31T08:15:00Z"
+    smart = triage["adjudications"]["smart_arbitrage_refresh"]
+    assert smart["accepted_edge"] is False
+    assert smart["decision"] == "terminal_family_not_reopened"
+
+    registry = _load(REGISTRY)
+    hypothesis = next(
+        row
+        for row in registry["prioritized_hypotheses"]
+        if row["mechanism"] == "binance_spot_fee_minimization_overlays"
+    )
+    assert {
+        "path": "docs/model-research/action-value/binance-aug28-public-structural-trigger-triage-v1-2026-08-29.json",
+        "result_sha256": TRIGGER_TRIAGE_HASH,
+    } in hypothesis["canonical_artifacts"]
+    assert "2026_09_30T23_59_00Z" in hypothesis["current_status"]

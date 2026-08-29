@@ -9,7 +9,7 @@ from typing import Any
 ROOT = Path(__file__).resolve().parents[1]
 ACTION = ROOT / "docs/model-research/action-value"
 REGISTRY = ROOT / "docs/model-research/structural-edge-priority-registry-v1.json"
-REGISTRY_HASH = "ec41ae27eb0699809acabc273620059516a35c09ec6f7cf33520eecbf19ea78e"
+REGISTRY_HASH = "e8c32ad724da73148aa1becc77fe413a243e11fa8f444d514b10e844f9089bfe"
 
 
 def _sha256(payload: bytes) -> str:
@@ -118,4 +118,4 @@ def test_registry_terminalizes_resolved_leg_family_without_promotion() -> None:
     )
     assert row["priority_rank"] == 31
     assert "remains_unaccepted" in row["current_status"]
-    assert registry["accepted_edge_count"] == 19
+    assert registry["accepted_edge_count"] == 20

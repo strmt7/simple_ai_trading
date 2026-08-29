@@ -32,7 +32,8 @@ REGISTRY = ROOT / "docs/model-research/structural-edge-priority-registry-v1.json
 CONTRACT_HASH = "39367c3544711a6c206e8d9a3b98f1832ed2c912d8f113ad35872a1fb11e6f36"
 RESULT_HASH = "4cf430a7c5b6ce6ab57fd71979d705732e737cbcb116658705454b80daa025a9"
 ADJUDICATION_HASH = "46bf134d1be8b645d7f6272d651be8d3c0b6a8e5b2e7d2b4540f3609d6997a96"
-REGISTRY_HASH = "ec41ae27eb0699809acabc273620059516a35c09ec6f7cf33520eecbf19ea78e"
+TRIGGER_TRIAGE_HASH = "bca11d612042f9a859f53b71e425cd320cca5d4a5d7695cd1f0a0de539b0eea1"
+REGISTRY_HASH = "e8c32ad724da73148aa1becc77fe413a243e11fa8f444d514b10e844f9089bfe"
 
 
 def _load(path: Path) -> dict[str, object]:
@@ -145,7 +146,7 @@ def test_registry_terminalizes_the_failed_gold_spread_without_acceptance() -> No
 
     assert registry["result_sha256"] == REGISTRY_HASH
     assert _canonical_hash(registry, "result_sha256") == REGISTRY_HASH
-    assert registry["accepted_edge_count"] == 19
+    assert registry["accepted_edge_count"] == 20
     assert [row["priority_rank"] for row in registry["prioritized_hypotheses"]] == list(
         range(1, 43)
     )
@@ -162,5 +163,7 @@ def test_registry_terminalizes_the_failed_gold_spread_without_acceptance() -> No
         CONTRACT_HASH,
         RESULT_HASH,
         ADJUDICATION_HASH,
+        TRIGGER_TRIAGE_HASH,
     ]
     assert "do_not_rerun_paginate_or_refit" in row["next_action"]
+    assert "30_to_60_second_mark_basis_smoothing_alone" in row["next_action"]

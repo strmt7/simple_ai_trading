@@ -1,0 +1,85 @@
+{
+  "schema_version": "binance-aug28-public-structural-trigger-triage-v1",
+  "created_at_utc": "2026-08-29T18:59:33.5928146Z",
+  "result_sha256": "bca11d612042f9a859f53b71e425cd320cca5d4a5d7695cd1f0a0de539b0eea1",
+  "purpose": "adjudicate the newest public Binance announcements against literal structural-edge retry triggers without resampling terminal market data",
+  "authority": {
+    "public_unauthenticated_read_only_research": true,
+    "credentials_used": false,
+    "account_state_accessed": false,
+    "orders_transfers_conversions_subscriptions_or_account_changes": 0,
+    "paper_or_live_trading_authority": false
+  },
+  "discovery_boundary": {
+    "official_latest_articles_page": "https://www.binance.com/en/support/announcement",
+    "observed_at_utc": "2026-08-29T18:59:33.5928146Z",
+    "latest_article_titles_considered": [
+      "Important Updates on Mark Price Calculation of TradFi Perpetual Contracts (2026-08-31)",
+      "Binance Adds bStocks to Spot Trading Bots and Extends Zero Maker Fee Promotion - 2026-08-28"
+    ]
+  },
+  "adjudications": {
+    "bstocks_zero_maker_fee_extension": {
+      "accepted_edge": true,
+      "accepted_edge_count_change": 1,
+      "market_direction_forecast_required": false,
+      "standalone_profitability_claim": false,
+      "deployment_ready": false,
+      "published_at_utc": "2026-08-28T02:00:00Z",
+      "effective_product_scope": "all supported bStocks trading pairs for eligible users",
+      "promotion_end_utc": "2026-09-30T23:59:00Z",
+      "credited_order_role": "maker_only",
+      "gross_incremental_value": "the otherwise applicable exact account maker fee on an owned qualifying maker fill; public monetary value remains zero until that counterfactual fee is source-bound",
+      "accepted_scope": "current zero maker fee only on independently justified organic bStocks maker flow without changing symbol timing size quote inventory or order role to chase the promotion",
+      "account_gates": [
+        "eligible jurisdiction and verified account",
+        "exact supported bStocks pair and current promotion",
+        "owned order proved maker rather than merely post-only at submission",
+        "exact counterfactual account maker commission and realized zero fee",
+        "underlying trade independently positive after spread slippage latency settlement tax opportunity and inventory costs"
+      ],
+      "prohibited_shortcuts": [
+        "creating enlarging churning self-matching or wash-trading volume",
+        "assuming a Spot Grid DCA or Rebalancing Bot order receives maker treatment",
+        "double-counting zero maker fees with BNB discounts liquidity-provider rebates or other rewards",
+        "using the promotion to rescue a negative underlying trade or wrapper-parity screen",
+        "carrying the fee beyond the published end without a fresh exact source"
+      ],
+      "source_url": "https://www.binance.com/en/support/announcement/detail/4fea39f8b6e54e1b88e388fc90ce323e"
+    },
+    "tradfi_mark_price_basis_window_change": {
+      "accepted_edge": false,
+      "market_direction_forecast_required": false,
+      "profitability_claim": false,
+      "deployment_ready": false,
+      "published_at_utc": "2026-08-28T08:45:00Z",
+      "effective_at_utc": "2026-08-31T08:15:00Z",
+      "before": "Price 2 equals Price Index plus a 30-second moving average of one-second bid-ask midpoint basis observations",
+      "after": "Price 2 equals Price Index plus a one-minute moving average of sixty one-second bid-ask midpoint basis observations",
+      "unchanged": [
+        "mark price remains the median of Price 1 Price 2 and Contract Price",
+        "non-TradFi perpetual Price 2 remains on the 30-second basis window"
+      ],
+      "decision": "no_structural_edge_retry",
+      "reason": "basis-window smoothing changes mark-path and liquidation behavior but publishes no new fee funding cash flow payout atomic execution principal subsidy or conversion right; it cannot by itself repair a terminal after-cost deficit",
+      "retry_refinement": "reopen a terminal TradFi parity or carry family only when an effective change alters its frozen payoff cash flows fees margin funding index executable conversion or a quantitatively binding liquidation gate",
+      "source_url": "https://www.binance.com/en/support/announcement/detail/1e9c1d2dff0b4d48a04c09f84a39fcb8"
+    },
+    "smart_arbitrage_refresh": {
+      "accepted_edge": false,
+      "profitability_claim": false,
+      "deployment_ready": false,
+      "decision": "terminal_family_not_reopened",
+      "reason": "the current 2026 Binance Trading Bots guide still describes simultaneous spot and futures funding-rate arbitrage as an automated strategy and publishes no unique fee rebate execution guarantee principal subsidy or capital credit",
+      "canonical_predecessor_sha256": "03b652fcd7e50c0671abbfb73f68f69509a2e5d7f75d8166f6b74743eab630d3",
+      "source_url": "https://academy.binance.com/en/articles/your-guide-to-binance-trading-bots"
+    }
+  },
+  "portfolio_decision": {
+    "accepted_new_scoped_edge_count": 1,
+    "accepted_new_scoped_edge": "bStocks_zero_maker_fee_on_independently_justified_organic_maker_flow_through_2026_09_30T23_59_00Z",
+    "new_quantitative_market_data_requests": 0,
+    "terminal_replays_avoided": 2,
+    "orders_or_account_mutations": 0
+  }
+}
