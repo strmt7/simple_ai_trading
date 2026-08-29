@@ -12,12 +12,19 @@ ARTIFACT_PATH = (
     ROOT / "docs/model-research/action-value/"
     "polymarket-negrisk-maker-input-gate-v1-2026-08-26.json"
 )
+TERMINAL_PATH = (
+    ROOT / "docs/model-research/action-value/"
+    "polymarket-negrisk-maker-input-prospective-terminal-v1-2026-08-29.json"
+)
 REGISTRY_PATH = ROOT / "docs/model-research/structural-edge-priority-registry-v1.json"
 EXPECTED_ARTIFACT_HASH = (
     "d4e02d2d1cc6b0a598265af734b29f62aec6145bc5a1cc3b3d65771ba2031d2a"
 )
 EXPECTED_REGISTRY_HASH = (
-    "1f15f9bf95e6600439dea9ce4c52aeaa4f53e41c619fe092414b44e777713ae1"
+    "12cf5446f5ff2521530672403e3926069b6dcc526f83f19f7ecfadcb7b7860d2"
+)
+EXPECTED_TERMINAL_HASH = (
+    "613453649f84407d6216e72228bdb16005b0a5c290c6bd58fa522007de5317e5"
 )
 
 
@@ -147,6 +154,37 @@ def test_every_tracked_source_receipt_reconstructs_exactly() -> None:
                 assert len(decompressed) == receipt["decompressed_bytes"]
 
 
+def test_prospective_terminal_capture_fails_duration_continuity_and_queue() -> None:
+    terminal = _load(TERMINAL_PATH)
+
+    assert terminal["result_sha256"] == EXPECTED_TERMINAL_HASH
+    assert _embedded_hash(terminal) == EXPECTED_TERMINAL_HASH
+    assert terminal["adjudication"] == {
+        **terminal["adjudication"],
+        "accepted_edge": False,
+        "causally_subsequent_output_unwind_evaluated": False,
+        "same_contract_rerun_permitted": False,
+    }
+    capture = terminal["capture_terminal"]
+    assert Decimal(capture["elapsed_seconds"]) < Decimal(capture["planned_seconds"])
+    assert capture["source_continuity_admitted"] is False
+    assert capture["terminal_error"].startswith("ConnectionClosedError:")
+    queue = terminal["queue_censored_input_audit"]
+    assert queue["five_share_fill_proved"] is False
+    assert queue["twenty_share_fill_proved"] is False
+    assert Decimal(queue["quantity_beyond_initial_visible_queue_shares"]) < 5
+
+    for receipt in terminal["tracked_evidence"]:
+        payload = (ROOT / receipt["path"]).read_bytes()
+        assert len(payload) == receipt["stored_bytes"]
+        assert hashlib.sha256(payload).hexdigest() == receipt["stored_sha256"]
+        decompressed = gzip.decompress(payload)
+        assert len(decompressed) == receipt["decompressed_bytes"]
+        assert hashlib.sha256(decompressed).hexdigest() == (
+            receipt["decompressed_sha256"]
+        )
+
+
 def test_registry_binds_the_exact_event_scope_without_promoting_the_edge() -> None:
     artifact = _load(ARTIFACT_PATH)
     registry = _load(REGISTRY_PATH)
@@ -162,10 +200,22 @@ def test_registry_binds_the_exact_event_scope_without_promoting_the_edge() -> No
     assert candidate["venue_scope"] == (
         "polymarket_event_106981_bitcoin_gold_sp500_fixed_non_augmented_negative_risk"
     )
-    assert candidate["canonical_artifacts"][0] == {
-        "path": ARTIFACT_PATH.relative_to(ROOT).as_posix(),
-        "result_sha256": artifact["result_sha256"],
-    }
+    assert candidate["canonical_artifacts"][:2] == [
+        {
+            "path": TERMINAL_PATH.relative_to(ROOT).as_posix(),
+            "result_sha256": EXPECTED_TERMINAL_HASH,
+        },
+        {
+            "path": ARTIFACT_PATH.relative_to(ROOT).as_posix(),
+            "result_sha256": artifact["result_sha256"],
+        },
+    ]
+    assert candidate["current_status"].startswith(
+        "terminally_rejected_under_the_consumed_one_use_prospective_contract"
+    )
+    assert candidate["retry_trigger"].startswith(
+        "materially_new_primary_evidence_that_changes_queue_attribution"
+    )
     assert registry["accepted_edge_count"] == 19
     assert artifact["research_decision"]["accepted_edge_count_change"] == 0
     assert (

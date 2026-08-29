@@ -1,0 +1,107 @@
+{
+  "adjudication": {
+    "accepted_edge": false,
+    "accepted_edge_count_change": 0,
+    "causally_subsequent_output_unwind_evaluated": false,
+    "reason": "The input-fill gate failed before output economics: the capture ended after 22.726091435 percent of its frozen duration with a transport error and no source-continuity admission, while the only mirrored 0.82 execution exceeded the initially visible queue by 1.246314 shares, below both frozen sizes.",
+    "same_contract_rerun_permitted": false,
+    "status": "terminal_rejected_incomplete_discontinuous_and_no_queue_censored_fill"
+  },
+  "authority": {
+    "account_channel_used": false,
+    "credentials_used": false,
+    "funds_used": false,
+    "orders_or_conversions": 0,
+    "trading_authority": false
+  },
+  "capture_contract": {
+    "contract_internal_sha256": "9d32e66b6d150434e4b978daafa1ea9482066230f253da4c86eb9a18504717da",
+    "contract_path": "docs/model-research/action-value/raw/polymarket-negrisk-maker-input-v1/prospective-contract.json",
+    "contract_stored_sha256": "6a8b08e5af532d91f83fac0fb6c46e0f2d691a95fee926f55f9e4dbfdd45324d",
+    "duration_seconds": 86400,
+    "event_id": "106981",
+    "frozen_before_capture": true,
+    "quantities_shares": [
+      "5",
+      "20"
+    ],
+    "target_input": "Bitcoin NO passive buy at 0.82",
+    "token_count": 6
+  },
+  "capture_terminal": {
+    "coverage_percent": "22.726091435",
+    "elapsed_seconds": "19635.343",
+    "ended_at_ms": 1787786536075,
+    "evaluation_count_per_quantity": 690,
+    "frame_count": 2342,
+    "gross_positive_record_count_before_fees_and_external_costs": 1593,
+    "planned_seconds": 86400,
+    "source_continuity_admitted": false,
+    "started_at_ms": 1787766900732,
+    "summary_internal_result_sha256": "da9456cbfd4cd0eba4e97b74eb9a9634b4b8dd4fac2b95f4e44d563d19dee4f4",
+    "terminal_error": "ConnectionClosedError:no close frame received or sent"
+  },
+  "do_not_repeat": [
+    "Do not restart or duplicate the consumed one-use 24-hour capture under the same contract.",
+    "Do not treat repeated evaluations of unchanged positive book state as independent fills or recurrence.",
+    "Do not fetch or decode the mirrored transaction receipt because the conservative queue gate and continuity gate already fail.",
+    "Do not calculate a post-fill output unwind after the input-fill gate fails.",
+    "Do not infer owned order access, conversion access, latency, approval state, external cost, or cash-realized profit from public market-channel data."
+  ],
+  "implementation_failure": {
+    "effect": "A single recoverable or unrecoverable WebSocket close wrote a terminal summary after 19635.343 seconds instead of enforcing the frozen 86400-second observation window.",
+    "lesson": "A time-bounded one-use WebSocket contract must preregister reconnect behavior, maximum unobserved gaps, duration accounting, and terminal acceptance before launch; otherwise a transport close consumes the test and fails closed.",
+    "runner_path_untracked_research_only": ".tmp/run_negrisk_maker_input_prospective.py"
+  },
+  "queue_censored_input_audit": {
+    "direct_Bitcoin_NO_last_trade_at_0_82_count": 0,
+    "five_share_fill_proved": false,
+    "five_share_shortfall_after_initial_visible_queue": "3.753686",
+    "initial_Bitcoin_NO_0_82_visible_bid_shares": "98.74",
+    "initial_book_received_wall_ms": 1787766900945,
+    "initial_book_source_age_ms_at_receipt": 1153257,
+    "initial_book_source_timestamp_ms": 1787765747688,
+    "mirrored_execution": {
+      "Bitcoin_YES_asset_id": "108251591904413063139495882252154135107497878738832930637657538583440424739851",
+      "price": "0.18",
+      "received_wall_ms": 1787772656163,
+      "side": "BUY",
+      "size_shares": "99.986314",
+      "source_timestamp_ms": 1787772655931,
+      "transaction_hash": "0xb70ae3b882d6928cf3102f02b99ba63f23b49d3785c318b1d67599cbcec2153a"
+    },
+    "mirrored_NO_0_82_level_removed_at_source_timestamp_ms": 1787772655788,
+    "quantity_beyond_initial_visible_queue_shares": "1.246314",
+    "twenty_share_fill_proved": false,
+    "twenty_share_shortfall_after_initial_visible_queue": "18.753686",
+    "warning": "The complement event and mirrored price-level removal show a 0.82-equivalent execution, but public aggregate books cannot identify queue ownership or cancellations. The conservative frozen gate therefore credits only executed quantity beyond the full initially visible queue and proves neither frozen order size filled."
+  },
+  "result_sha256": "613453649f84407d6216e72228bdb16005b0a5c290c6bd58fa522007de5317e5",
+  "retry_trigger": "Only materially new primary evidence that changes queue attribution, exact one-NO conversion access, same-unit external cost, or repeated causal post-fill unwind economics may reopen a separately frozen study. Authenticated or order-capable work still requires explicit separate authority.",
+  "schema_version": "polymarket-negrisk-maker-input-prospective-terminal-v1",
+  "source_contracts": [
+    {
+      "purpose": "The public market channel defines full-book, price-change, and last-trade events.",
+      "url": "https://docs.polymarket.com/api-reference/wss/market"
+    }
+  ],
+  "tracked_evidence": [
+    {
+      "compression": "gzip_mtime_0",
+      "decompressed_bytes": 904838,
+      "decompressed_sha256": "8ded72d5a0686aa75478f678d1b9ad22bf943be8c0f5517c530ab1fa9e7b6385",
+      "path": "docs/model-research/action-value/raw/polymarket-negrisk-maker-input-v1/prospective-terminal-raw-frames.jsonl.gz",
+      "stored_bytes": 112107,
+      "stored_sha256": "2398792221c40533f24a3c7f1b840544b35cdbc54bb82f552ffcf94ce955a6a2"
+    },
+    {
+      "compression": "gzip_mtime_0",
+      "decompressed_bytes": 1594732,
+      "decompressed_sha256": "52d274f4af6c774bccf631a51a66603d299cfe925fcd95b91cfab432a2667c84",
+      "path": "docs/model-research/action-value/raw/polymarket-negrisk-maker-input-v1/prospective-terminal-summary.json.gz",
+      "stored_bytes": 79356,
+      "stored_sha256": "45ce2d600ebd2e71f1ab269ebf2c6a8f172166b1fd914c9c3145060b3e899d65"
+    }
+  ],
+  "updated_at_utc": "2026-08-29T13:23:59Z"
+}
