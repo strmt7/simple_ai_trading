@@ -1,0 +1,60 @@
+{
+  "adjudication": {
+    "absence_of_conversion_proved": false,
+    "accepted_edge": false,
+    "deployment_ready": false,
+    "exact_one_no_conversion_observed": false,
+    "material_public_retry_trigger_satisfied": false,
+    "next_action": "do_not_retry_this_interval; advance_the_next_ranked_satisfied_trigger_and_require_future_one_use_HTTP_runners_to_prejournal_request_identity_and_retain_HTTP_error_bodies",
+    "profitability_claim": false,
+    "status": "terminal_failed_closed_without_hypothesis_observation"
+  },
+  "authority": {
+    "account_requests": 0,
+    "credentials_used": false,
+    "funds_used": false,
+    "orders_or_conversions_submitted": 0,
+    "protected_capture_touched": false,
+    "public_unauthenticated_read_only_rpc": true,
+    "signed_requests": 0,
+    "trading_authority": false
+  },
+  "contract": {
+    "path": "docs/model-research/action-value/polymarket-negrisk-one-no-v2-conversion-contract-v1-2026-08-29.json",
+    "sha256": "7d8c556225aa5905ca302b7c9409768c8b546a0dc41597ad083c573ce41fd640"
+  },
+  "created_at_utc": "2026-08-29T15:11:50.015839Z",
+  "failure_diagnosis": {
+    "adaptive_retry_or_provider_substitution_permitted": false,
+    "exact_provider_reason_known": false,
+    "reason": "urllib raised HTTPError before the runner wrote the response body or journal receipt; without that body, attributing the error to block range, topic syntax, provider policy, or another cause would be an assumption",
+    "terminal_error": "HTTP_400_on_the_single_frozen_eth_getLogs_request",
+    "workflow_defect": "the frozen runner retained only successful HTTP responses despite the contract requiring raw-response retention on failure"
+  },
+  "frozen_runner": {
+    "path": "tools/capture_polymarket_negrisk_one_no_v2_conversions.py",
+    "preserved_unchanged": true,
+    "sha256": "515caf8f6a955f0b99994265bd8f140192dcc9c3bbf121eb598d1466e0df54b6"
+  },
+  "implementation": {
+    "path": "tools/adjudicate_polymarket_negrisk_one_no_v2_conversion_failure.py",
+    "sha256": "42ef50b2263e7bcf0d41dc8130a3a770059ee99be30ae4bbb64680b03d3ac348"
+  },
+  "result_sha256": "7c976cd84795718b63463ea4e32ebeddaf51e807fc5ebe9aa8cb49b476541e19",
+  "retained_evidence": {
+    "block_number_raw_path": "data/polymarket-negrisk-one-no-v2-conversions-v1/raw/block-number.json",
+    "block_number_raw_sha256": "6570498e40b6eff3592dfa5ddd2f9c8518983e608a4ee4ac7220400524ddc6a2",
+    "completed_request_count": 1,
+    "derived_block_span": 165795,
+    "derived_finality_lagged_to_block": 92873881,
+    "frozen_from_block": 92708087,
+    "journal_path": "data/polymarket-negrisk-one-no-v2-conversions-v1/request-journal.jsonl",
+    "journal_sha256": "2168e01929bd3f7cbaf5af1fb2e76cf01f53a3ddb3606eb2a215554cc22a2d02",
+    "observed_latest_block": 92874137,
+    "reconstructed_second_request_body_sha256": "324288c0453c41672146c7738084cc81df1024edbf27e30fe2d3ae9f1d646e18",
+    "second_request_receipt_retained": false,
+    "second_response_body_retained": false,
+    "second_response_status_observed_by_process": 400
+  },
+  "schema_version": "polymarket-negrisk-one-no-v2-conversion-failure-adjudication-v1"
+}

@@ -32,7 +32,7 @@ REGISTRY = ROOT / "docs/model-research/structural-edge-priority-registry-v1.json
 CONTRACT_HASH = "39367c3544711a6c206e8d9a3b98f1832ed2c912d8f113ad35872a1fb11e6f36"
 RESULT_HASH = "4cf430a7c5b6ce6ab57fd71979d705732e737cbcb116658705454b80daa025a9"
 ADJUDICATION_HASH = "46bf134d1be8b645d7f6272d651be8d3c0b6a8e5b2e7d2b4540f3609d6997a96"
-REGISTRY_HASH = "fad104fc4e460bd0ff69e5b61df95050bbc0570d0af2f3eff64f8403b00b61bb"
+REGISTRY_HASH = "6f5b4a277f1c3cea006de5d8a4a1cc6a7ba306b2689a37b2e93f1c44006fb7c2"
 
 
 def _load(path: Path) -> dict[str, object]:
@@ -147,9 +147,13 @@ def test_registry_terminalizes_the_failed_gold_spread_without_acceptance() -> No
     assert _canonical_hash(registry, "result_sha256") == REGISTRY_HASH
     assert registry["accepted_edge_count"] == 19
     assert [row["priority_rank"] for row in registry["prioritized_hypotheses"]] == list(
-        range(1, 42)
+        range(1, 43)
     )
-    row = registry["prioritized_hypotheses"][-1]
+    row = next(
+        item
+        for item in registry["prioritized_hypotheses"]
+        if item["priority_rank"] == 41
+    )
     assert row["priority_rank"] == 41
     assert row["mechanism"] == (
         "binance_XAUUSDT_PAXGUSDT_same_venue_perpetual_funding_basis_spread"

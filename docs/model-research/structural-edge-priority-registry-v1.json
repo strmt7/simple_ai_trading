@@ -100,12 +100,20 @@
         {
           "path": "docs/model-research/action-value/polymarket-negrisk-v2-adapter-address-resolution-v1-2026-08-27.json",
           "result_sha256": "e11810a0215521cb5ad0c0c966340b4ff943760fda516e7841430fe057fe25fe"
+        },
+        {
+          "path": "docs/model-research/action-value/polymarket-negrisk-one-no-v2-conversion-contract-v1-2026-08-29.json",
+          "result_sha256": "7d8c556225aa5905ca302b7c9409768c8b546a0dc41597ad083c573ce41fd640"
+        },
+        {
+          "path": "docs/model-research/action-value/polymarket-negrisk-one-no-v2-conversion-failure-adjudication-v1-2026-08-29.json",
+          "result_sha256": "7c976cd84795718b63463ea4e32ebeddaf51e807fc5ebe9aa8cb49b476541e19"
         }
       ],
-      "current_status": "terminally_rejected_under_the_consumed_one_use_prospective_contract_the_promised_24_hour_six_token_capture_ended_after_19635_343_seconds_or_22_726091435_percent_on_ConnectionClosedError_and_did_not_admit_source_continuity_the_only_0_82_equivalent_execution_was_a_99_986314_share_Bitcoin_YES_buy_that_removed_the_mirrored_Bitcoin_NO_0_82_bid_but_exceeded_the_initial_98_74_share_visible_queue_by_only_1_246314_shares_so_neither_the_frozen_5_nor_20_share_hypothetical_order_was_queue_censored_filled_and_no_causal_output_unwind_or_after_cost_edge_is_admissible",
+      "current_status": "terminally_rejected_under_the_consumed_one_use_prospective_contract_the_promised_24_hour_six_token_capture_ended_after_19635_343_seconds_or_22_726091435_percent_on_ConnectionClosedError_and_did_not_admit_source_continuity_the_only_0_82_equivalent_execution_was_a_99_986314_share_Bitcoin_YES_buy_that_removed_the_mirrored_Bitcoin_NO_0_82_bid_but_exceeded_the_initial_98_74_share_visible_queue_by_only_1_246314_shares_so_neither_the_frozen_5_nor_20_share_hypothetical_order_was_queue_censored_filled_and_no_causal_output_unwind_or_after_cost_edge_is_admissible_the_separately_triggered_exact_V2_one_NO_event_log_observation_consumed_its_one_use_request_but_failed_HTTP_400_without_a_retained_error_body_so_it_proves_neither_conversion_presence_nor_absence_and_cannot_be_retried_this_interval",
       "market_direction_forecast_required": false,
       "mechanism": "polymarket_negative_risk_NO_to_YES_converter_recurrence",
-      "next_action": "do_not_rerun_the_consumed_capture_advance_the_next_ranked_satisfied_trigger_and_reopen_only_on_materially_new_primary_evidence_that_changes_queue_attribution_exact_one_NO_conversion_access_same_unit_external_cost_or_repeated_causal_post_fill_unwind_economics_authenticated_or_order_capable_work_requires_explicit_separate_authority",
+      "next_action": "do_not_rerun_either_consumed_public_capture_or_the_failed_exact_one_NO_log_query_advance_the_next_ranked_satisfied_trigger_and_reopen_only_on_materially_new_primary_evidence_that_changes_queue_attribution_exact_one_NO_conversion_access_same_unit_external_cost_or_repeated_causal_post_fill_unwind_economics_authenticated_or_order_capable_work_requires_explicit_separate_authority",
       "priority_rank": 2,
       "prohibited_shortcuts": [
         "calling_historical_mark_to_market_converter_profit_current_cash_realized_profit",
@@ -120,6 +128,8 @@
         "calling_output_maker_economics_locked_without_pre_existing_inventory_and_holding_risk",
         "using_the_stale_repository_README_or_retired_CLOB_V1_adapter_as_the_current_user_facing_pUSD_relayer_target_after_the_official_registry_and_dated_changelog_resolved_the_runtime_address",
         "counting_an_index7_all_three_NO_conversion_as_an_observed_candidate_one_NO_conversion",
+        "interpreting_an_HTTP_400_without_a_retained_provider_body_as_conversion_absence_or_a_known_block_range_limit",
+        "adaptively_retrying_or_switching_providers_after_a_consumed_outcome_sensitive_event_log_query",
         "calling_a_pUSD_minus_USDT_sensitivity_same_unit_after_cost_profit",
         "ignoring_augmented_or_non_exhaustive_event_risk_conversion_fees_CLOB_fees_latency_atomicity_or_capacity",
         "placing_orders_approvals_or_conversions_without_separate_explicit_authority"
@@ -1663,9 +1673,43 @@
       ],
       "retry_trigger": "material_XAUUSDT_or_PAXGUSDT_funding_index_fee_margin_or_product_architecture_change_after_2026_08_29T14_33_27_110Z",
       "venue_scope": "Binance_USDT_margined_XAUUSDT_and_PAXGUSDT_perpetuals"
+    },
+    {
+      "blocking_evidence": [
+        "a new officially active Binance Leveraged Token Spot listing or relisting",
+        "ephemeral Binance API key and explicit GET-only authority for current BLVT tokenInfo NAV basket leverage funding purchase and redemption fees and limits",
+        "strictly positive executable NAV fee prefilter before any separate spot or hedge book access",
+        "exact current basket hedge quantity rebalance processing delay commissions funding slippage orphan capacity and adverse stress",
+        "owned synchronized subscription or redemption spot and hedge cash flows only after separate explicit mutation and order authority"
+      ],
+      "canonical_artifacts": [
+        {
+          "path": "docs/model-research/action-value/binance-blvt-primary-market-nav-parity-contract-v1-2026-08-29.json",
+          "result_sha256": "9189fd384c2185875a8682155f365eb79cfe5f1061016ca035b05dfc88545b9f"
+        },
+        {
+          "path": "docs/model-research/action-value/binance-blvt-primary-market-nav-parity-public-gate-v1-2026-08-29.json",
+          "result_sha256": "85c8ef364b03fb2fbf0aeebddec10d51abbdd608f56ff9c0dccb1835cacc2179"
+        }
+      ],
+      "current_status": "market_direction_hedgeable_primary_market_NAV_parity_mechanism_is_terminal_for_the_current_public_inventory_Binance_exchangeInfo_returned_3685_symbols_and_40_legacy_LEVERAGED_permission_symbols_but_zero_with_TRADING_status_so_no_active_token_exists_for_subscription_redemption_or_spot_parity_no_tokenInfo_books_credentials_accounts_orders_or_mutations_were_used_not_accepted_or_deployment_ready",
+      "market_direction_forecast_required": false,
+      "mechanism": "binance_BLVT_primary_market_NAV_subscription_redemption_spot_parity_with_exact_basket_hedge",
+      "next_action": "do_not_poll_the_unchanged_inventory_reopen_only_after_a_new_official_BLVT_spot_listing_or_relisting_then_freeze_one_public_inventory_refresh_and_only_if_active_request_explicit_GET_only_tokenInfo_authority_before_any_books",
+      "priority_rank": 42,
+      "prohibited_shortcuts": [
+        "treating_a_legacy_LEVERAGED_permission_symbol_as_currently_tradable_when_status_is_not_TRADING",
+        "calling_subscribe_or_redeem_direction_independent_without_exact_current_basket_hedge_and_rebalance_risk",
+        "requesting_API_key_tokenInfo_without_explicit_GET_only_authority",
+        "requesting_spot_or_futures_books_before_a_strictly_positive_NAV_fee_prefilter",
+        "placing_a_subscription_redemption_spot_or_futures_order_without_separate_explicit_authority",
+        "calling_a_primary_market_spread_profitable_before_every_fee_delay_funding_slippage_orphan_capacity_and_stress"
+      ],
+      "retry_trigger": "new_official_Binance_Leveraged_Token_Spot_listing_or_relisting_after_2026_08_29T15_17_17_035897Z_or_material_BLVT_fee_API_or_product_architecture_change",
+      "venue_scope": "Binance_current_BLVT_Spot_and_primary_market_inventory"
     }
   ],
-  "result_sha256": "fad104fc4e460bd0ff69e5b61df95050bbc0570d0af2f3eff64f8403b00b61bb",
+  "result_sha256": "6f5b4a277f1c3cea006de5d8a4a1cc6a7ba306b2689a37b2e93f1c44006fb7c2",
   "schema_version": "structural-edge-priority-registry-v1",
   "terminal_do_not_repeat": [
     {
@@ -1842,8 +1886,13 @@
       "canonical_result_sha256": "1e75e049abb116955294d878830f940491fe4044f09c7e3564ad2761c0129178",
       "family": "polymarket_current_BOS_NYY_moneyline_spread_totals_monotone_parity_snapshot",
       "reason": "all_37_exact_five_share_monotone_payoff_packages_failed_after_current_market_fee_curves_displayed_depth_and_two_adverse_ticks_per_leg_best_NYY_margin_4_to_5_lost_0_53262_pUSD_on_a_5_pUSD_floor_do_not_refetch_or_retry_this_event"
+    },
+    {
+      "canonical_result_sha256": "85c8ef364b03fb2fbf0aeebddec10d51abbdd608f56ff9c0dccb1835cacc2179",
+      "family": "binance_BLVT_primary_market_NAV_spot_parity_current_inventory",
+      "reason": "the_complete_public_exchangeInfo_inventory_contained_40_legacy_LEVERAGED_permission_symbols_but_zero_with_TRADING_status_so_no_current_subscribe_redeem_spot_parity_instrument_exists_do_not_poll_until_a_new_official_BLVT_listing_or_relisting"
     }
   ],
-  "updated_at_utc": "2026-08-29T14:59:36Z",
+  "updated_at_utc": "2026-08-29T15:17:17.035897Z",
   "usage_rule": "advance_the_highest_ranked_hypothesis_whose_retry_trigger_is_satisfied_otherwise_do_not_repeat_a_blocked_or_terminal_screen"
 }
