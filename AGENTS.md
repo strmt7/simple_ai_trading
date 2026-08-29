@@ -134,6 +134,11 @@ override prose.
   exact economic identities. If a consumed one-use run exposes such a mismatch,
   preserve its journal and raw responses, fail closed, and do not spend a repair
   capture when the retained evidence cannot change the economic decision.
+- After a consumed runner fails, inventory every already-saved raw response for
+  observations beyond the failed decision boundary before requesting anything
+  again. An exact retained row may support a separately frozen, materially
+  distinct public follow-up such as receipt reconciliation, but that follow-up
+  may not repair, reinterpret, or complete the consumed contract's adjudication.
 - An outcome-sensitive contract timestamp must be generated from the actual UTC
   clock before access, never typed as a rounded or anticipated time. The runner
   must reject a missing, offset-free, unparsable, or future `frozen_at_utc`

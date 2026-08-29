@@ -52,9 +52,13 @@
         {
           "path": "docs/model-research/polymarket/complete-set-holding-yield-post-conflict-v7-failure-adjudication-2026-08-29.json",
           "result_sha256": "448b068aa5c1b34c6012a5fadafa449ed9ef125afc310b7901b9f68285510f71"
+        },
+        {
+          "path": "docs/model-research/polymarket/complete-set-holding-yield-continuity-receipts-v8-2026-08-29.json",
+          "result_sha256": "2eb7b434170afb195cc4f4faef8260ac4ec30b655c20fc07ee1bc9acbdfe090d"
         }
       ],
-      "current_status": "accepted_scoped_historical_after_direct_cost_edge_BTC_ETH_SOL_1039_pUSD_42_of_42_positive_daily_YIELD_payments_3_1820_percent_realized_rate_positive_through_3_percent_alternative_before_external_friction_one_use_post_conflict_run_failed_closed_after_5_of_9_requests_on_an_uncontracted_0_0001_pUSD_display_rounding_equality_retained_BTC_ETH_first_wholly_post_conflict_payouts_each_uniquely_match_3_25_percent_and_reject_4_percent_but_SOL_activity_and_all_3_receipts_were_not_requested_so_current_rate_remains_fail_closed_unqualified_no_repair_capture_because_3_25_percent_cannot_improve_v5_economics_not_deployment_ready",
+      "current_status": "accepted_scoped_historical_after_direct_cost_edge_BTC_ETH_SOL_1039_pUSD_42_of_42_positive_daily_YIELD_payments_3_1820_percent_realized_rate_positive_through_3_percent_alternative_before_external_friction_one_use_post_conflict_run_failed_closed_after_5_of_9_requests_on_an_uncontracted_0_0001_pUSD_display_rounding_equality_retained_BTC_ETH_first_wholly_post_conflict_payouts_each_uniquely_match_3_25_percent_and_reject_4_percent_the_distinct_latest_retained_BTC_ETH_daily_rows_then_reconciled_to_exact_successful_distributor_pUSD_transfers_at_86474_and_86724_second_intervals_using_only_two_public_receipt_requests_but_SOL_activity_and_full_three_wallet_rate_reconciliation_remain_incomplete_current_rate_remains_fail_closed_unqualified_no_repair_capture_not_deployment_ready",
       "market_direction_forecast_required": false,
       "mechanism": "complete_set_holding_reward",
       "next_action": "do_not_rerun_or_repair_the_consumed_public_refresh_on_the_unchanged_mechanism_only_after_2026_08_29T23_40_00Z_and_with_explicit_authenticated_and_funded_authority_run_one_owned_minimum_size_split_hold_merge_and_full_cost_study_or_reopen_public_rate_research_after_a_material_official_rate_program_payout_or_economic_comparator_change",
@@ -1764,7 +1768,7 @@
       "venue_scope": "Binance_current_BLVT_Spot_and_primary_market_inventory"
     }
   ],
-  "result_sha256": "5dfe720ff8cb69f5489ef6deb47fffe2d1ae4d036f1c14a13fbb34daf961f14a",
+  "result_sha256": "8a5df5625fab7d55762ff52923f1454d80a92126d6dce09ce4f5b9281779f6f9",
   "schema_version": "structural-edge-priority-registry-v1",
   "terminal_do_not_repeat": [
     {
@@ -1948,6 +1952,6 @@
       "reason": "the_complete_public_exchangeInfo_inventory_contained_40_legacy_LEVERAGED_permission_symbols_but_zero_with_TRADING_status_so_no_current_subscribe_redeem_spot_parity_instrument_exists_do_not_poll_until_a_new_official_BLVT_listing_or_relisting"
     }
   ],
-  "updated_at_utc": "2026-08-29T16:33:43.9916345+00:00",
+  "updated_at_utc": "2026-08-29T16:43:09.7834387+00:00",
   "usage_rule": "advance_the_highest_ranked_hypothesis_whose_retry_trigger_is_satisfied_otherwise_do_not_repeat_a_blocked_or_terminal_screen"
 }

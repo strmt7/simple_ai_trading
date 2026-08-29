@@ -934,6 +934,18 @@ diagnostics, not accepted edges.
   `docs/model-research/polymarket/complete-set-holding-yield-post-conflict-v7-failure-adjudication-2026-08-29.json`,
   SHA-256
   `448b068aa5c1b34c6012a5fadafa449ed9ef125afc310b7901b9f68285510f71`.
+  V7's already retained BTC and ETH activity payloads each contained one later
+  daily `YIELD` row beyond the selected rate-conflict interval. A distinct
+  frozen monitor made exactly two public Polygon receipt requests and no Data
+  API requests. Both rows reconciled to successful exact pUSD transfers from
+  the holding-yield distributor: BTC paid 0.0133 pUSD after 86,474 seconds and
+  ETH paid 0.0391 pUSD after 86,724 seconds. This is additional current payout-
+  mechanism continuity, not a v7 repair or three-wallet rate qualification;
+  current-rate, external-cost, ownership, and deployment gates remain closed.
+  Canonical continuity result:
+  `docs/model-research/polymarket/complete-set-holding-yield-continuity-receipts-v8-2026-08-29.json`,
+  SHA-256
+  `2eb7b434170afb195cc4f4faef8260ac4ec30b655c20fc07ee1bc9acbdfe090d`.
   A separate frozen valuation-uplift screen covered every currently eligible
   BTC/ETH/SOL market in four public requests. All 55 markets returned both
   token midpoints, and every equal YES-plus-NO complete set summed to exactly
@@ -967,7 +979,7 @@ grants paper, testnet, or live authority.
 
 The canonical structural-edge priority and retry-trigger registry is
 `docs/model-research/structural-edge-priority-registry-v1.json`, result SHA-256
-`5dfe720ff8cb69f5489ef6deb47fffe2d1ae4d036f1c14a13fbb34daf961f14a`.
+`8a5df5625fab7d55762ff52923f1454d80a92126d6dce09ce4f5b9281779f6f9`.
 Advance only the highest-ranked hypothesis whose trigger is actually satisfied.
 This prevents account-blocked or terminal screens from being rerun as if more
 snapshots could create an edge.
@@ -2179,7 +2191,7 @@ result SHA-256
 `64943efe0c6ad16f8d02f78548afef38f919448d2da87c7573e825a2eeefd6b9`.
 That checkpoint left seventeen accepted scoped edges. The current registry now
 has nineteen and result SHA-256
-`5dfe720ff8cb69f5489ef6deb47fffe2d1ae4d036f1c14a13fbb34daf961f14a`.
+`8a5df5625fab7d55762ff52923f1454d80a92126d6dce09ce4f5b9281779f6f9`.
 
 The complete Binance XAU/XAG Commodity Options versus matching TradFi
 perpetual lower-bound screen is terminal for the active 2026-08-27 and
@@ -2481,7 +2493,7 @@ result SHA-256
 `85c8ef364b03fb2fbf0aeebddec10d51abbdd608f56ff9c0dccb1835cacc2179`.
 The structural registry now contains 42 ranked hypotheses, remains at 19
 narrowly accepted scoped overlays, and has canonical result SHA-256
-`5dfe720ff8cb69f5489ef6deb47fffe2d1ae4d036f1c14a13fbb34daf961f14a`.
+`8a5df5625fab7d55762ff52923f1454d80a92126d6dce09ce4f5b9281779f6f9`.
 
 The Round 21 sidecar worktree
 `C:\trader\simple_ai_trading-round21-sidecar-v2` remains protected through
@@ -2805,6 +2817,13 @@ canonical result SHA-256
 
 ## Verification Scope
 
+The two-request holding-yield continuity monitor, its frozen contract, exact
+retained-row selection, preaccess request-body journals, two raw Polygon
+receipts, distributor-transfer reconciliation, and updated rank-one registry
+lineage pass their focused tests. All registry-hash-coupled tests pass with
+Ruff and Python compilation clean. The accepted-edge count remains 19 and no
+current-rate, account, funded, or deployment gate was opened.
+
 The two current WNBA metadata captures, payoff proofs, synchronized Toronto-
 Phoenix book screen, Lynx-Dream rejection-only stop, request journals, raw-
 response hashes, reusable exact-event runner, and registry lineage pass their
@@ -2815,7 +2834,7 @@ The resolved-leg House duplicate-payoff checkpoint, raw journals, source hashes,
 and directly affected registry lineage pass 12 focused tests with Ruff and
 Python compilation clean. The registry still contains 42 ranked hypotheses and
 19 accepted scoped overlays; its result SHA-256 is
-`5dfe720ff8cb69f5489ef6deb47fffe2d1ae4d036f1c14a13fbb34daf961f14a`.
+`8a5df5625fab7d55762ff52923f1454d80a92126d6dce09ce4f5b9281779f6f9`.
 
 The exact-one-NO failure preservation and Binance BLVT current-inventory gate,
 including every registry-hash-coupled test, pass 199 focused tests with Ruff
