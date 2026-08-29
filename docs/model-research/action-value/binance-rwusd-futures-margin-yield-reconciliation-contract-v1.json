@@ -1,0 +1,60 @@
+{
+  "schema_version": "binance-rwusd-futures-margin-yield-reconciliation-contract-v1",
+  "status": "frozen_before_exact_primary_source_reconciliation",
+  "frozen_at_utc": "2026-08-29T19:58:00Z",
+  "contract_sha256": "9f2539c76c1f0f16619b0967fe26ae3cd1988447ee44a869c1d68e7eb3cf9f62",
+  "purpose": "reconcile once whether official Binance terms explicitly preserve RWUSD daily rewards while the same RWUSD balance serves as USD-M Futures margin, without using credentials or requesting market data",
+  "authority": {
+    "research_only": true,
+    "public_unauthenticated_gets_only": true,
+    "credentials_permitted": false,
+    "account_state_permitted": false,
+    "orders_transfers_subscriptions_redemptions_or_trades_permitted": false,
+    "profitability_claim_permitted": false
+  },
+  "prior_evidence": {
+    "retained_exchange_info_path": "docs/model-research/action-value/raw/binance-bnb-fee-discount-hedge-v1/03-futures-exchange-info.json",
+    "retained_exchange_info_sha256": "7f37ca1727a599cdec8f7c56460f2c4f4188f3ebe63ba330afeb5845f90b8785",
+    "retained_exchange_info_server_time_utc": "2026-08-25T16:00:11.015Z",
+    "retained_exchange_info_required_fact": "RWUSD marginAvailable must equal true",
+    "existing_current_rate_artifact": "docs/model-research/action-value/binance-rwusd-existing-vip-bonus-overlay-gate-v1-2026-08-26.json",
+    "existing_current_rate_result_sha256": "076f428ea9bccc0dc9c1a0c605ac469db27fedb7941ac6728260cf98da667e51"
+  },
+  "source_contract": {
+    "maximum_public_get_requests": 1,
+    "retries_permitted": false,
+    "method": "GET",
+    "url": "https://www.binance.com/bapi/composite/v1/public/cms/article/detail/query?articleCode=176c768a6dd94e8aad95fbb3a021bf95",
+    "expected_article_code": "176c768a6dd94e8aad95fbb3a021bf95",
+    "expected_title": "RWUSD Updates: Now Supported as a Margin Asset on Binance Futures",
+    "raw_response_written_before_parse": true,
+    "durable_request_journal_written_before_semantic_adjudication": true,
+    "transport_or_schema_failure_action": "retain_the_raw_response_and_journal_then_stop_without_retry"
+  },
+  "semantic_pass_gate": {
+    "all_required": [
+      "official article identity matches the expected code and title",
+      "official article states RWUSD is supported as USD-M Futures margin",
+      "official article states daily RWUSD rewards continue on the RWUSD margin balance in the USD-M Futures account",
+      "official article identifies at least one applicable collateral ratio or haircut boundary",
+      "retained public exchange information independently marks RWUSD marginAvailable true"
+    ],
+    "fail_closed_on_ambiguity": true
+  },
+  "economic_boundary": {
+    "accepted_if_passed": "scoped collateral-capital-efficiency overlay only when RWUSD is already independently required or held and Futures margin is already required by a separately justified after-cost strategy",
+    "not_accepted": [
+      "new RWUSD subscription",
+      "opening or enlarging a Futures position",
+      "chasing VIP status or manufacturing volume",
+      "double-counting the same RWUSD base or VIP reward",
+      "assuming an historical collateral ratio is the exact current account ratio",
+      "deployment readiness or guaranteed profit"
+    ]
+  },
+  "decision_boundary": {
+    "pass_action": "record the structural overlay and its unresolved current-account haircut, eligibility, liquidation, auto-exchange, redemption, tax and operating gates without further public requests",
+    "fail_action": "terminalize the proposed RWUSD Futures reward-retention extension until materially changed official terms",
+    "retry_trigger": "material official RWUSD reward, Futures-margin eligibility, collateral-ratio, liquidation, auto-exchange or redemption-term change"
+  }
+}

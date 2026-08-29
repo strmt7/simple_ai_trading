@@ -17,7 +17,9 @@ Development belongs only on `main`; do not create another development branch.
   pUSD; Polymarket pUSD taker-fee rebates only for independently justified
   legitimate organic BTC/ETH/SOL taker flow after the direct-wallet tier is
   effective; Binance Soft Staking yield for already-held idle non-order ETH/SOL
-  Spot inventory; LDUSDT yield only for already-required futures collateral;
+  Spot inventory; LDUSDT or independently existing RWUSD reward retention only
+  for already-required USD-M Futures collateral under the exact applicable
+  account haircut and limits;
   just-in-time BNB fee reduction; current quote-native BTC/ETH/SOL promotional
   fee reduction; the current TradFi perpetual zero-maker and reduced-taker fee
   overlay only for independently justified organic flow with the exact current
@@ -3106,6 +3108,41 @@ Follow-up contract/result SHA-256 values are
 `18d513c0b54c6155897ae435cf9f4b8a0ef327f6072d39b122ebd4579b7f0972` and
 `3e3ae8fd8c98c93c3e2194425db5992f06aed412e07d32333525601c2b34bc52`.
 
+## RWUSD Reward-Retaining Futures Margin Reconciliation
+
+A source-first audit reused the retained `2026-08-25` USD-M exchange-information
+response instead of spending another market-data request. That response still
+marks RWUSD `marginAvailable=true`. One exact public unauthenticated request then
+retained Binance's official RWUSD Futures-margin announcement and a durable
+journal. The announcement explicitly says RWUSD remains reward-bearing on the
+margin balance in the USD-M Futures account, supports Multi-Assets and Portfolio
+Margin modes, and published a 99.9% standard collateral value ratio plus
+Portfolio Margin Pro tiers. It also says liquidation may trigger auto-exchange
+and redemption requires transfer back to Spot for USDC.
+
+The historical article's 4% rate is excluded. The separately source-bound
+current public base APR is 3.36%, or 20.25205479 bips over 22 days. At the
+published 99.9% ratio, assigning a labeled 10% annual alternative yield only to
+the extra 0.1001001% principal leaves 3.34998998999% annual base yield. This is
+accepted only as an extension of the existing reward-bearing Futures-margin
+family: RWUSD must already be independently held, and the margin must already be
+required by a separately justified after-cost USD-M Futures strategy. It does
+not increase the accepted-edge count. Never subscribe, retain, transfer, redeem,
+or trade to obtain this overlay; never double-count the existing VIP bonus; and
+never treat the historical rate or haircut as exact current account evidence.
+
+The frozen contract contains an invalid manually entered `19:58:00Z` timestamp.
+It is preserved rather than rewritten. Filesystem evidence shows the contract
+was created at `19:56:32Z` and hash-bound at `19:56:43Z`, before the single
+request started at `19:57:18.202Z`; the result explicitly records this
+provenance defect and treats the pass as deterministic primary-source semantics,
+not a statistical outcome-sensitive fit. Canonical contract/result SHA-256
+values are `9f2539c76c1f0f16619b0967fe26ae3cd1988447ee44a869c1d68e7eb3cf9f62`
+and `e4f455511516babe956f4aa459648a032fb77f86c3253fd47d4f15317da72063`.
+The structural-edge registry remains at 43 ranked hypotheses and 20 accepted
+scoped families; its canonical SHA-256 is
+`659904cc23e3d91c5d8622c9a8274e0227818d506724a72cce071df285eb681e`.
+
 ## Verification Scope
 
 The two-request holding-yield continuity monitor, its frozen contract, exact
@@ -3157,6 +3194,15 @@ terminal registry routing, and protected-capture non-access pass 11 directly
 focused tests. The single registry-hash-coupled pass covers 260 tests across 67
 files with Ruff and Python compilation clean. No broad model, CI, hosted,
 release, or repetitive market-data suite was run.
+
+The RWUSD deterministic primary-source reconciliation, retained raw response and
+journal hashes, current margin-inventory reuse, current-rate isolation,
+nonduplicative reward-bearing-margin family routing, and explicit provenance
+correction pass the one directly affected test plus the registry-hash-coupled
+suite: 261 tests across the same 67 files. Ruff and Python compilation are clean
+for the directly changed test, every canonical JSON hash reconstructs, and the
+retained raw response reconstructs its journal-bound payload hash. No broad
+model, CI, hosted, release, or repetitive market-data suite was run.
 
 The previous verbose handoff and chronology are preserved byte-for-byte in:
 
