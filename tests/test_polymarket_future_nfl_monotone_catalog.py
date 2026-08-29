@@ -9,7 +9,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 ACTION_VALUE = ROOT / "docs/model-research/action-value"
 REGISTRY = ROOT / "docs/model-research/structural-edge-priority-registry-v1.json"
-REGISTRY_HASH = "da3ddaf82a2cb0929353460a7e09812b47f940e953a3f1da43b04f72a55c8488"
+REGISTRY_HASH = "2e70b7e226dc64a7aa39a6fbdd2524ff295f4b172513094ad66c1fcb700a1320"
 
 
 def _load(path: Path) -> dict[str, object]:
@@ -164,5 +164,5 @@ def test_registry_routes_catalog_and_correction_without_acceptance() -> None:
         "729d482f9a15b60b5345ba6c52ee75941a1f0751db2453e307c30f8872bbac35",
         "37f79cc8a4f5f96fa395a729e85a793e12c2127e2124591db693c92b1b459928",
     } <= hashes
-    assert "25189367_ms_book_skew" in row["current_status"]
+    assert "25189367_ms_skew" in row["current_status"]
     assert registry["accepted_edge_count"] == 21
