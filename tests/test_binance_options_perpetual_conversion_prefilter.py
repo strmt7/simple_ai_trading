@@ -45,7 +45,7 @@ STRESS_CONTRACT_HASH = (
     "5ac091035b9eeadda23292fa28631dcc7c8bb0b64e001faa34c94ffad5b6ecc5"
 )
 STRESS_RESULT_HASH = "c09d62e98cd0df88622d4b98d9d8f01247121ccd786fffb580bc72429ef6bf30"
-REGISTRY_HASH = "2e70b7e226dc64a7aa39a6fbdd2524ff295f4b172513094ad66c1fcb700a1320"
+REGISTRY_HASH = "c0d7189c4848f248e6d3960954198e0f1e93c8e74acd2ed36a8830239bf86194"
 
 
 def _canonical_hash(payload: dict[str, object], field: str) -> str:
@@ -309,7 +309,7 @@ def test_terminal_registry_entry_is_unique_and_accepted_count_is_unchanged() -> 
     assert registry["result_sha256"] == REGISTRY_HASH
     assert _canonical_hash(registry, "result_sha256") == REGISTRY_HASH
     assert len(registry["prioritized_hypotheses"]) == 44
-    assert len(registry["terminal_do_not_repeat"]) == 40
+    assert len(registry["terminal_do_not_repeat"]) == 41
     assert registry["accepted_edge_count"] == 21
     terminal = [
         row

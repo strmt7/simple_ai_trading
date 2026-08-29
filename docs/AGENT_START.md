@@ -1584,9 +1584,18 @@ safety gate, blocks Stop, or submits an order.
   fee requests. Do not resample this window or narrow around its outcomes.
   Canonical result SHA-256
   `fd0a9e844a7ad7d1a6eb5372c961ff82ea52d3c72a8c558ba191a53bace02cef`.
+- One prospectively fixed non-overlapping NegRisk hour from
+  `2026-09-07T00:00:00Z` through `00:59:59Z` returned six events without a
+  cursor and therefore a complete frozen population. Five were fixed,
+  non-augmented NegRisk sets; none had a Gamma all-YES sum below one pUSD.
+  The best, Nacional Potosi/Blooming match winner, summed to `1.090` before
+  execution costs. The rejection-first gate therefore spent zero onchain,
+  book, fee, account, order, or fund requests. Do not sweep adjacent hours or
+  narrow around these outcomes. Canonical result SHA-256
+  `92734472ed41bccdc1d88c947b218e05fa35827cad6b1711ec192c06cf60cc64`.
 - The structural-edge registry now has 44 ranked hypotheses and 21
   narrowly accepted scoped overlays, and result SHA-256
-  `2e70b7e226dc64a7aa39a6fbdd2524ff295f4b172513094ad66c1fcb700a1320`.
+  `c0d7189c4848f248e6d3960954198e0f1e93c8e74acd2ed36a8830239bf86194`.
 
 ## Task Routing
 
@@ -1615,6 +1624,7 @@ safety gate, blocks Stop, or submits an order.
 | Cowboys/Giants NFL tie-collision correction | `docs/model-research/action-value/polymarket-cowboys-giants-tie-collision-correction-v1-2026-08-29.json` |
 | Near-expiry fixed NegRisk incomplete complete-set catalog | `docs/model-research/action-value/polymarket-near-expiry-negrisk-complete-set-catalog-result-v1-2026-08-29.json` |
 | Sep 6 fixed NegRisk incomplete daily catalog | `docs/model-research/action-value/polymarket-sep6-negrisk-complete-set-catalog-result-v1-2026-08-29.json` |
+| Sep 7 hour-00 fixed NegRisk complete rejection catalog | `docs/model-research/action-value/polymarket-sep7-hour00-negrisk-complete-set-catalog-result-v1-2026-08-29.json` |
 | Binance retained CLOB box-parity terminal prefilter | `docs/model-research/action-value/binance-options-clob-box-retained-prefilter-v2-2026-08-29.json` |
 | Binance retained option/perpetual conversion terminal stress | `docs/model-research/action-value/binance-options-perpetual-conversion-retained-stress-v1-2026-08-29.json` |
 | Polymarket holding-yield latest retained receipt continuity | `docs/model-research/polymarket/complete-set-holding-yield-continuity-receipts-v8-2026-08-29.json` |

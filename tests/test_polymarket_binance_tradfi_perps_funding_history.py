@@ -17,7 +17,7 @@ from tools.screen_polymarket_binance_tradfi_perps_funding_history import (
 ROOT = Path(__file__).resolve().parents[1]
 ACTION = ROOT / "docs/model-research/action-value"
 REGISTRY = ROOT / "docs/model-research/structural-edge-priority-registry-v1.json"
-REGISTRY_HASH = "2e70b7e226dc64a7aa39a6fbdd2524ff295f4b172513094ad66c1fcb700a1320"
+REGISTRY_HASH = "c0d7189c4848f248e6d3960954198e0f1e93c8e74acd2ed36a8830239bf86194"
 
 
 def _canonical_hash(payload: dict[str, object]) -> str:

@@ -1479,12 +1479,20 @@
         {
           "path": "docs/model-research/action-value/polymarket-sep6-negrisk-complete-set-catalog-result-v1-2026-08-29.json",
           "result_sha256": "3e3ae8fd8c98c93c3e2194425db5992f06aed412e07d32333525601c2b34bc52"
+        },
+        {
+          "path": "docs/model-research/action-value/polymarket-sep7-hour00-negrisk-complete-set-catalog-contract-v1-2026-08-29.json",
+          "result_sha256": "32dfa5e282f43204f73117fa2dba198c69171944bc41a85bf661e05789089439"
+        },
+        {
+          "path": "docs/model-research/action-value/polymarket-sep7-hour00-negrisk-complete-set-catalog-result-v1-2026-08-29.json",
+          "result_sha256": "92734472ed41bccdc1d88c947b218e05fa35827cad6b1711ec192c06cf60cc64"
         }
       ],
-      "current_status": "direction_independent_exact_multioutcome_family_remains_unaccepted_the_resolved_leg_House_controls_failed_positive_economic_recurrence_LAD_DET_cross_period_exact_depth_lost_2_pUSD_before_fees_and_the_future_MLB_page_was_partial_with_zero_Gamma_candidates_the_consumed_2026_08_29T18_41_26Z_through_2026_09_05T23_59_59Z_all_category_fixed_NegRisk_window_returned_100_plus_cursor_with_49_fixed_events_24_Gamma_candidates_and_no_proof_a_prospectively_distinct_2026_09_06_UTC_daily_window_also_returned_exactly_100_plus_cursor_with_57_fixed_events_and_two_Gamma_only_candidates_led_by_Dallas_Sporting_Kansas_City_at_0_985_both_contracts_set_proof_candidate_null_and_spent_zero_onchain_book_or_fee_requests_no_edge_profit_or_deployment_claim",
+      "current_status": "direction_independent_exact_multioutcome_family_remains_unaccepted_the_prescribed_nonoverlapping_2026_09_07T00_00_00Z_through_00_59_59Z_hourly_remedy_returned_six_events_without_cursor_five_fixed_NegRisk_sets_and_zero_Gamma_sub_floor_candidates_best_Nacional_Potosi_Blooming_match_winner_sum_was_1_090_before_execution_costs_so_zero_onchain_books_or_fees_the_prior_broad_and_2026_09_06_daily_pages_remain_incomplete_with_outcome_aware_candidates_prohibited_resolved_leg_House_controls_failed_recurrence_and_LAD_DET_exact_depth_lost_2_pUSD_before_fees_no_edge_profit_or_deployment_claim",
       "market_direction_forecast_required": false,
       "mechanism": "polymarket_cross_market_exact_multi_outcome_subset_equivalence",
-      "next_action": "do_not_resample_or_adaptively_continue_the_consumed_MLB_2026_08_29T18_41_26Z_through_2026_09_05T23_59_59Z_or_2026_09_06_UTC_NegRisk_pages_and_do_not_depth_test_their_outcome_aware_best_rows_for_a_distinct_future_window_prefreeze_an_hourly_or_series_specific_complete_keyset_population_or_a_fixed_cursor_budget_independent_of_results_then_use_Gamma_only_to_reject_require_exact_onchain_question_count_and_conversion_fee_before_one_precommitted_all_token_book_batch_and_independent_after_cost_recurrence_before_order_capable_work",
+      "next_action": "do_not_resample_adaptively_continue_or_narrow_the_consumed_2026_08_29_through_2026_09_06_pages_or_the_complete_2026_09_07_hour00_window_and_do_not_sweep_adjacent_hours_reopen_only_for_a_prospectively_distinct_source_selected_series_or_nonadjacent_population_independent_of_these_outcomes_then_use_Gamma_only_to_reject_require_exact_onchain_question_count_and_conversion_fee_before_one_precommitted_all_token_book_batch_and_independent_after_cost_recurrence_before_order_capable_work",
       "priority_rank": 31,
       "prohibited_shortcuts": [
         "calling_the_39_6_million_USD_all_strategy_headline_cross_market_subset_profit",
@@ -1500,7 +1508,7 @@
         "escalating_one_positive_maker_first_snapshot_to_order_capable_work_before_a_distinct_instance_survives_the_same_hedge_stress",
         "double_counting_the_same_NBA_episode_or_calling_public_recurrence_owned_profit"
       ],
-      "retry_trigger": "material_price_fee_rule_or_market_change_in_the_resolved_leg_House_family_or_a_future_distinct_hourly_or_series_specific_fixed_NegRisk_window_with_a_prospectively_complete_population_exact_onchain_exhaustiveness_zero_or_bounded_conversion_fee_and_at_least_one_Gamma_only_sub_floor_all_YES_sum_or_a_distinct_active_accepting_orders_market_pair_with_complete_exact_rules_deterministic_subset_indicator_equality_and_optimistic_current_economics_not_already_covered_by_the_specialized_NBA_family",
+      "retry_trigger": "material_price_fee_rule_or_market_change_in_the_resolved_leg_House_family_or_a_future_source_selected_nonadjacent_or_series_specific_fixed_NegRisk_population_outside_every_consumed_window_with_prospectively_complete_coverage_exact_onchain_exhaustiveness_zero_or_bounded_conversion_fee_and_at_least_one_Gamma_only_sub_floor_all_YES_sum_or_a_distinct_active_accepting_orders_market_pair_with_complete_exact_rules_deterministic_subset_indicator_equality_and_optimistic_current_economics_not_already_covered_by_the_specialized_NBA_family",
       "venue_scope": "polymarket_fixed_NegRisk_multioutcome_complete_sets_and_two_separately_traded_exact_rule_multioutcome_markets"
     },
     {
@@ -2000,7 +2008,7 @@
       "venue_scope": "Binance_Spot_direct_and_exactly_one_intermediary_routes_for_independently_required_organic_conversions"
     }
   ],
-  "result_sha256": "2e70b7e226dc64a7aa39a6fbdd2524ff295f4b172513094ad66c1fcb700a1320",
+  "result_sha256": "c0d7189c4848f248e6d3960954198e0f1e93c8e74acd2ed36a8830239bf86194",
   "schema_version": "structural-edge-priority-registry-v1",
   "terminal_do_not_repeat": [
     {
@@ -2012,6 +2020,11 @@
       "canonical_result_sha256": "fd0a9e844a7ad7d1a6eb5372c961ff82ea52d3c72a8c558ba191a53bace02cef",
       "family": "polymarket_future_WNBA_2026_08_30T19_00_01Z_through_2026_09_02T23_59_59Z_monotone_payoff_catalog",
       "reason": "the_complete_three_event_population_contained_two_exact_moneyline_spread_relations_but_Golden_State_Portland_cost_1_165_and_Connecticut_Dallas_cost_1_365_per_share_against_a_1_pUSD_floor_before_execution_costs_so_zero_books_and_zero_fees_were_requested"
+    },
+    {
+      "canonical_result_sha256": "92734472ed41bccdc1d88c947b218e05fa35827cad6b1711ec192c06cf60cc64",
+      "family": "polymarket_2026_09_07_hour00_fixed_NegRisk_complete_set_catalog",
+      "reason": "the_complete_six_event_hourly_population_had_five_fixed_NegRisk_sets_and_zero_Gamma_sub_floor_all_YES_candidates_the_best_match_winner_sum_was_1_090_before_execution_costs_so_zero_onchain_book_and_fee_requests_were_spent"
     },
     {
       "canonical_result_sha256": "2b85a6eca339799a6eb07ba48069e3a2943d97116a9320ce20400d260227e1be",

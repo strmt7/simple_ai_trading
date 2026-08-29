@@ -22,7 +22,14 @@ SEP6_JOURNAL = ROOT / "data/polymarket-sep6-negrisk-complete-set-catalog-v1/requ
 SEP6_CONTRACT_HASH = "18d513c0b54c6155897ae435cf9f4b8a0ef327f6072d39b122ebd4579b7f0972"
 SEP6_RESULT_HASH = "3e3ae8fd8c98c93c3e2194425db5992f06aed412e07d32333525601c2b34bc52"
 SEP6_RAW_HASH = "f430490f592cf58297c5f5f118b3fabc32488faa82b5b07b60815279bdc61050"
-REGISTRY_HASH = "2e70b7e226dc64a7aa39a6fbdd2524ff295f4b172513094ad66c1fcb700a1320"
+HOUR00_CONTRACT = ROOT / "docs/model-research/action-value/polymarket-sep7-hour00-negrisk-complete-set-catalog-contract-v1-2026-08-29.json"
+HOUR00_RESULT = ROOT / "docs/model-research/action-value/polymarket-sep7-hour00-negrisk-complete-set-catalog-result-v1-2026-08-29.json"
+HOUR00_RAW = ROOT / "data/polymarket-sep7-hour00-negrisk-complete-set-catalog-v1/raw/events.json"
+HOUR00_JOURNAL = ROOT / "data/polymarket-sep7-hour00-negrisk-complete-set-catalog-v1/request-journal.jsonl"
+HOUR00_CONTRACT_HASH = "32dfa5e282f43204f73117fa2dba198c69171944bc41a85bf661e05789089439"
+HOUR00_RESULT_HASH = "92734472ed41bccdc1d88c947b218e05fa35827cad6b1711ec192c06cf60cc64"
+HOUR00_RAW_HASH = "4b0322846de9fd229591c460eaf1cb22d4b0ac4c9e6b52ac2f35c8a0bec99442"
+REGISTRY_HASH = "c0d7189c4848f248e6d3960954198e0f1e93c8e74acd2ed36a8830239bf86194"
 
 
 def _load(path: Path) -> dict[str, object]:
@@ -128,6 +135,38 @@ def test_distinct_daily_window_remains_partial_and_spends_no_proof_requests() ->
     assert result["authority"]["fee_requests"] == 0
 
 
+def test_nonoverlapping_hourly_window_is_complete_and_rejected_before_escalation() -> None:
+    contract = _load(HOUR00_CONTRACT)
+    result = _load(HOUR00_RESULT)
+    journal = [
+        json.loads(line)
+        for line in HOUR00_JOURNAL.read_text(encoding="ascii").splitlines()
+    ]
+    assert contract["contract_sha256"] == HOUR00_CONTRACT_HASH
+    assert _canonical_hash(contract, "contract_sha256") == HOUR00_CONTRACT_HASH
+    assert result["result_sha256"] == HOUR00_RESULT_HASH
+    assert _canonical_hash(result, "result_sha256") == HOUR00_RESULT_HASH
+    assert hashlib.sha256(HOUR00_RAW.read_bytes()).hexdigest() == HOUR00_RAW_HASH
+    assert [row["phase"] for row in journal] == ["intent", "completed"]
+    assert journal[1]["response_sha256"] == HOUR00_RAW_HASH
+
+    capture = result["capture"]
+    screen = result["screen"]
+    assert capture["returned_event_count"] == 6
+    assert capture["next_cursor_present"] is False
+    assert capture["population_complete_under_frozen_filter"] is True
+    assert screen["fixed_negrisk_event_count"] == 5
+    assert screen["candidate_count_strictly_below_payout_floor"] == 0
+    assert screen["proof_candidate"] is None
+    assert screen["best_candidate"] is None
+    assert result["adjudication"]["status"] == (
+        "complete_window_rejected_before_onchain_books_and_fees"
+    )
+    assert result["authority"]["onchain_requests"] == 0
+    assert result["authority"]["book_requests"] == 0
+    assert result["authority"]["fee_requests"] == 0
+
+
 def test_registry_routes_partial_page_without_accepting_an_edge() -> None:
     registry = _load(REGISTRY)
     assert registry["result_sha256"] == REGISTRY_HASH
@@ -139,7 +178,7 @@ def test_registry_routes_partial_page_without_accepting_an_edge() -> None:
         == "polymarket_cross_market_exact_multi_outcome_subset_equivalence"
     )
     artifacts = row["canonical_artifacts"]
-    assert artifacts[-4:] == [
+    assert artifacts[-6:] == [
         {"path": CONTRACT.relative_to(ROOT).as_posix(), "result_sha256": CONTRACT_HASH},
         {"path": RESULT.relative_to(ROOT).as_posix(), "result_sha256": RESULT_HASH},
         {
@@ -150,7 +189,15 @@ def test_registry_routes_partial_page_without_accepting_an_edge() -> None:
             "path": SEP6_RESULT.relative_to(ROOT).as_posix(),
             "result_sha256": SEP6_RESULT_HASH,
         },
+        {
+            "path": HOUR00_CONTRACT.relative_to(ROOT).as_posix(),
+            "result_sha256": HOUR00_CONTRACT_HASH,
+        },
+        {
+            "path": HOUR00_RESULT.relative_to(ROOT).as_posix(),
+            "result_sha256": HOUR00_RESULT_HASH,
+        },
     ]
-    assert "both_contracts_set_proof_candidate_null" in row["current_status"]
-    assert "do_not_resample_or_adaptively_continue" in row["next_action"]
+    assert "zero_Gamma_sub_floor_candidates" in row["current_status"]
+    assert "do_not_sweep_adjacent_hours" in row["next_action"]
     assert registry["accepted_edge_count"] == 21
