@@ -1,0 +1,53 @@
+{
+  "schema_version": "binance-indirect-internal-conversion-activity-contract-v1",
+  "status": "frozen_before_public_24h_activity_outcome_access",
+  "frozen_at_utc": "2026-08-29T20:25:50.3273450Z",
+  "frozen_at_ms": 1788035150327,
+  "contract_sha256": "b6331c1d7987b3a6093df2d4846368ccba634c27bf4967cd85f9c10e707fbd30",
+  "purpose": "one source-continuous activity rejection gate for every empirical route-size candidate from the consumed indirect internal conversion screen",
+  "authority": {
+    "research_only": true,
+    "public_unauthenticated_gets_only": true,
+    "credentials_orders_and_account_mutations_permitted": false
+  },
+  "parent_result": {
+    "path": "docs/model-research/action-value/binance-indirect-internal-conversion-screen-v1-2026-08-29.json",
+    "result_sha256": "b3e7f724e2b1ce2cc7a8444d00632466196af6d89f139259164549e91d1f84bc",
+    "candidate_set": "all 20 empirical route-size candidates exactly as published with no additions or outcome-selected omissions"
+  },
+  "request": {
+    "endpoint": "GET https://api.binance.com/api/v3/ticker/24hr once for the complete current symbol population",
+    "raw_path": "data/edge-research/binance-indirect-internal-conversion-activity-v1/ticker-24hr.json",
+    "maximum_request_elapsed_ms": 1500,
+    "retry_policy": "none after a retained successful response",
+    "one_use_rule": "do not change candidate membership activity thresholds or retained-capture freshness rules after access"
+  },
+  "retained_capture_freshness_gate": {
+    "definition": "count a symbol change when any displayed bid price bid quantity ask price or ask quantity differs from the preceding one of the 60 retained two-second full-book responses",
+    "minimum_changes_per_direct_and_indirect_symbol": 5,
+    "interpretation": "supplementary stale-display rejection only and never proof of fill or quote age"
+  },
+  "rolling_activity_gate": {
+    "minimum_24h_trade_count_per_direct_and_indirect_symbol": 100,
+    "required_ticker_window": "all three exact symbols must have one valid current 24h ticker row",
+    "interpretation": "activity rejection only and never proof that displayed capacity was executable sequentially"
+  },
+  "survivor_boundary": {
+    "requires": [
+      "parent route-size candidate passed every frozen fee rounding capacity residual stress recurrence and capture-level gate",
+      "all three exact symbols changed displayed top-of-book state at least five times in the retained capture",
+      "all three exact symbols report at least 100 trades in the one current 24-hour response",
+      "the 24-hour request completes within 1500 milliseconds"
+    ],
+    "meaning": "current independently testable organic-conversion route candidate only",
+    "accepted_edge": false,
+    "next_evidence": "one future independent non-overlapping prospective window using exact same-account fees and only an independently required organic conversion; no static-route or deployment claim"
+  },
+  "prohibited_shortcuts": [
+    "promoting a route because it survived this activity gate",
+    "treating trade count or quote changes as fillability latency or sequential completion",
+    "dropping losing candidates or weakening thresholds after the response",
+    "requesting credentials placing orders or creating conversion volume",
+    "rerunning the same 24-hour activity gate on an unchanged mechanism"
+  ]
+}
