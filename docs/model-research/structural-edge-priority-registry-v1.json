@@ -1340,6 +1340,7 @@
     },
     {
       "blocking_evidence": [
+        "a prospectively frozen complete fixed NegRisk event population page with no outcome-aware cursor continuation plus exact on-chain question count and conversion fee before any all-YES book request",
         "future active separately traded market pair with complete exact outcome sets resolution sources and exceptional settlement rules",
         "machine_proved exhaustive joint-state equality between one subset indicator in each market without LLM semantic or historical likelihood admission",
         "current per-market fee status fee schedules tick sizes minimum order sizes and acceptingOrders state for every leg",
@@ -1430,12 +1431,20 @@
         {
           "path": "docs/model-research/action-value/polymarket-aca-house-maker-first-candidate-v1-2026-08-29.json",
           "result_sha256": "900246f7bf066a8d310c6dcc6e9318edc1c6b83d4779f9b2f628c668e7d258e6"
+        },
+        {
+          "path": "docs/model-research/action-value/polymarket-near-expiry-negrisk-complete-set-catalog-contract-v1-2026-08-29.json",
+          "result_sha256": "d5b81adb03fd4fe322d9a54fbacbe15aa8a6a7e55512aa71e9aa361617f2c6e6"
+        },
+        {
+          "path": "docs/model-research/action-value/polymarket-near-expiry-negrisk-complete-set-catalog-result-v1-2026-08-29.json",
+          "result_sha256": "96610d7cba90a2dc97489bd70c95b7d03568d5b89017ace1e8c92829c70cee14"
         }
       ],
-      "current_status": "direction_independent_exact_subset_equivalence_family_remains_unaccepted_the_two_distinct_resolved_leg_House_control_instances_reproduced_the_payoff_identity_but_positive_economics_did_not_recur_the_preserved_LAD_DET_within_family_audit_proved_24_relations_but_omitted_the_cross_period_total_implication_a_separately_frozen_correction_proved_the_identity_but_current_depth_lost_2_pUSD_before_fees_a_distinct_one_request_future_MLB_catalog_screen_then_hit_its_100_event_limit_and_is_explicitly_partial_with_92_future_events_only_5_exact_shared_threshold_relations_zero_below_floor_candidates_and_best_Gamma_sum_1_260_optimistic_loss_0_260_per_share_the_consumed_result_omitted_rejected_rows_but_a_zero_refetch_offline_adjudication_preserved_all_five_sums_no_books_or_fees_were_requested_not_accepted_or_deployment_ready",
+      "current_status": "direction_independent_exact_multioutcome_family_remains_unaccepted_the_resolved_leg_House_controls_failed_positive_economic_recurrence_LAD_DET_cross_period_exact_depth_lost_2_pUSD_before_fees_and_the_future_MLB_page_was_partial_with_zero_Gamma_candidates_a_distinct_near_expiry_all_category_fixed_NegRisk_keyset_request_asked_for_500_but_returned_100_plus_a_cursor_so_is_explicitly_incomplete_it_retained_49_fixed_events_and_24_Gamma_only_sub_floor_all_YES_rows_led_by_Lyon_Le_Havre_exact_score_at_0_945_but_the_frozen_contract_set_proof_candidate_null_and_prohibited_adaptive_pagination_onchain_books_and_fees_no_edge_profit_or_deployment_claim",
       "market_direction_forecast_required": false,
       "mechanism": "polymarket_cross_market_exact_multi_outcome_subset_equivalence",
-      "next_action": "do_not_spend_a_source_continuous_queue_capture_authenticated_probe_or_repeat_snapshot_on_the_resolved_leg_House_family_do_not_resample_BOS_NYY_or_LAD_DET_and_do_not_adaptively_paginate_the_consumed_100_row_MLB_page_for_every_future_distinct_exact_rules_instance_first_use_retained_Gamma_outcomePrices_only_as_a_rejection_gate_stop_before_books_when_every_package_sum_is_at_or_above_its_guaranteed_floor_and_require_a_separately_frozen_exact_depth_screen_plus_independent_positive_after_cost_recurrence_before_any_order_capable_work",
+      "next_action": "do_not_resample_or_adaptively_continue_the_consumed_MLB_or_2026_08_29T18_41_26Z_through_2026_09_05T23_59_59Z_NegRisk_pages_and_do_not_depth_test_their_outcome_aware_best_rows_for_a_distinct_future_window_prefreeze_a_narrow_complete_keyset_population_or_a_fixed_cursor_budget_independent_of_results_then_use_Gamma_only_to_reject_require_exact_onchain_question_count_and_conversion_fee_before_one_precommitted_all_token_book_batch_and_independent_after_cost_recurrence_before_order_capable_work",
       "priority_rank": 31,
       "prohibited_shortcuts": [
         "calling_the_39_6_million_USD_all_strategy_headline_cross_market_subset_profit",
@@ -1446,12 +1455,13 @@
         "requesting_CLOB_books_when_every_exact_package_Gamma_displayed_sum_is_already_at_or_above_its_guaranteed_payout_floor_or_using_Gamma_prices_to_accept_or_promote",
         "screening_only_within_identical_sports_time_scopes_or_treating_stale_Gamma_prices_as_current_executable_depth",
         "claiming_complete_current_catalog_coverage_at_the_exact_page_limit_or_retaining_only_candidates_without_every_tested_relation_sum",
+        "adaptively_following_a_keyset_cursor_or_depth_testing_the_best_partial_page_row_after_the_documented_500_request_returns_an_effective_100_event_page",
         "treating_a_repeated_payoff_identity_as_repeated_positive_economics_or_a_current_best_bid_as_an_owned_queue_censored_fill",
         "escalating_one_positive_maker_first_snapshot_to_order_capable_work_before_a_distinct_instance_survives_the_same_hedge_stress",
         "double_counting_the_same_NBA_episode_or_calling_public_recurrence_owned_profit"
       ],
-      "retry_trigger": "material_price_fee_rule_or_market_change_in_the_resolved_leg_House_family_or_a_future_distinct_active_accepting_orders_market_pair_with_complete_exact_rules_deterministic_subset_indicator_equality_and_optimistic_current_economics_not_already_covered_by_the_specialized_NBA_family",
-      "venue_scope": "polymarket_two_separately_traded_exact_rule_multi_outcome_markets"
+      "retry_trigger": "material_price_fee_rule_or_market_change_in_the_resolved_leg_House_family_or_a_future_distinct_fixed_NegRisk_window_with_a_prospectively_complete_population_exact_onchain_exhaustiveness_zero_or_bounded_conversion_fee_and_at_least_one_Gamma_only_sub_floor_all_YES_sum_or_a_distinct_active_accepting_orders_market_pair_with_complete_exact_rules_deterministic_subset_indicator_equality_and_optimistic_current_economics_not_already_covered_by_the_specialized_NBA_family",
+      "venue_scope": "polymarket_fixed_NegRisk_multioutcome_complete_sets_and_two_separately_traded_exact_rule_multioutcome_markets"
     },
     {
       "blocking_evidence": [
@@ -1851,7 +1861,7 @@
       "venue_scope": "Binance_current_BLVT_Spot_and_primary_market_inventory"
     }
   ],
-  "result_sha256": "a661ba68ecdf87eaece27616e5ede3ca0864ca844b3f9553d7d0fd4a59f645f8",
+  "result_sha256": "6062ef4cb774983d86d7edd5dad7adcaafa31a8202d37ec777e12fc33028d157",
   "schema_version": "structural-edge-priority-registry-v1",
   "terminal_do_not_repeat": [
     {

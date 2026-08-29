@@ -29,7 +29,7 @@ SPORTS_CONTRACT_HASH = (
     "99559dd57d8ba1520fd4f607c4e4e56cea1070a2798536941af10134e4376aed"
 )
 SPORTS_RESULT_HASH = "e5ce48b6b0521a5ba2fe58ae17316e703ab2155934a126e603eeadf81e219d9c"
-REGISTRY_HASH = "a661ba68ecdf87eaece27616e5ede3ca0864ca844b3f9553d7d0fd4a59f645f8"
+REGISTRY_HASH = "6062ef4cb774983d86d7edd5dad7adcaafa31a8202d37ec777e12fc33028d157"
 
 
 def _load(path: Path) -> dict[str, object]:
@@ -139,7 +139,7 @@ def test_registry_adds_only_exact_truth_table_subset_candidate() -> None:
             "result_sha256": SPORTS_RESULT_HASH,
         },
     ]
-    assert "machine_proved" in row["blocking_evidence"][1]
+    assert any("machine_proved" in item for item in row["blocking_evidence"])
 
 
 def test_one_use_current_sports_lead_stops_before_any_book_request() -> None:
