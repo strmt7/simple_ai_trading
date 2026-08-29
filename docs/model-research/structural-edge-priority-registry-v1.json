@@ -2036,9 +2036,17 @@
         {
           "path": "docs/model-research/action-value/binance-two-intermediary-conversion-activity-adjudication-v1-2026-08-29.json",
           "result_sha256": "cde72e05b1760d9fe23eb65e5bd5f59377230ac91095354936c2a84a9a3758ae"
+        },
+        {
+          "path": "docs/model-research/action-value/binance-one-way-arbitrage-paper-source-contract-v1.json",
+          "result_sha256": "8399fe07a3445c056a627c3c923f379ff6da416ea86ab4555ba932638c6e9c97"
+        },
+        {
+          "path": "docs/model-research/action-value/binance-one-way-arbitrage-paper-source-adjudication-v1-2026-08-29.json",
+          "result_sha256": "3f9684ed1986cd6cf676482069cda53846e336a15bc4b35141193b8e43406e65"
         }
       ],
-      "current_status": "accepted_scoped_market_direction_forecast_independent_cost_saving_overlay_for_an_independently_required_legitimate_same_account_organic_Binance_Spot_conversion_only_the_complete_current_public_graph_evaluated_10440_direct_versus_exactly_one_intermediary_routes_at_100_and_1000_USDT_and_the_activity_gate_retained_three_nonstatic_diagnostics_the_zero_network_exactly_two_intermediary_extension_then_evaluated_1064216_routes_and_2128432_route_size_rows_a_lossless_optimistic_bound_reduced_exact_work_to_16051_rows_and_253_exact_recurring_incremental_candidates_but_every_candidate_failed_the_retained_five_quote_change_gate_and_18_also_failed_the_100_trade_gate_across_174_required_symbols_so_the_three_leg_extension_is_terminal_for_this_population_and_no_live_collector_static_route_profitability_or_deployment_claim_is_accepted",
+      "current_status": "accepted_scoped_market_direction_forecast_independent_cost_saving_overlay_for_an_independently_required_legitimate_same_account_organic_Binance_Spot_conversion_only_the_complete_current_public_graph_evaluated_10440_direct_versus_exactly_one_intermediary_routes_at_100_and_1000_USDT_and_the_activity_gate_retained_three_nonstatic_diagnostics_a_new_primary_paper_source_audit_strengthens_historical_mechanism_prevalence_with_402_million_inferred_two_trade_one_intermediary_Binance_sequences_but_uses_2017_to_2023_anonymized_trades_inferred_linkage_a_two_second_VWAP_comparator_1_2_and_2_4_bip_fee_assumptions_no_books_failed_attempts_fixed_infrastructure_or_owned_account_fees_and_only_0_15_and_0_04_USD_mean_fee_adjusted_profit_per_sequence_so_it_does_not_reopen_a_collector_the_zero_network_exactly_two_intermediary_extension_evaluated_1064216_routes_and_2128432_route_size_rows_a_lossless_optimistic_bound_reduced_exact_work_to_16051_rows_and_253_exact_recurring_incremental_candidates_but_every_candidate_failed_the_retained_five_quote_change_gate_and_18_also_failed_the_100_trade_gate_across_174_required_symbols_so_the_three_leg_extension_is_terminal_for_this_population_and_no_live_collector_static_route_profitability_or_deployment_claim_is_accepted",
       "market_direction_forecast_required": false,
       "mechanism": "binance_indirect_internal_conversion_route_savings_for_organic_flow",
       "next_action": "do_not_build_a_three_leg_live_collector_or_repeat_the_complete_retained_extension_on_unchanged_activity_when_a_legitimate_organic_conversion_is_independently_planned_and_explicit_read_only_account_authority_exists_limit_prequalification_to_the_accepted_direct_versus_exactly_one_intermediary_overlay_then_require_separate_paper_or_funded_order_authority_for_prospective_sequential_execution_and_realized_savings_reconciliation_reopen_exactly_two_intermediaries_only_after_a_material_fee_filter_activity_or_execution_architecture_change",
@@ -2057,7 +2065,7 @@
       "venue_scope": "Binance_Spot_direct_and_exactly_one_intermediary_routes_for_independently_required_organic_conversions_with_the_exactly_two_intermediary_extension_terminal_for_the_retained_population"
     }
   ],
-  "result_sha256": "fc0bddf222a1908db6c12df338dc26963f36514b01e37b5b31fc567760f19aca",
+  "result_sha256": "98714cb8665d2132cb53670f09e73d11816cdbb7a9c3bc221dce4db4f865f98d",
   "schema_version": "structural-edge-priority-registry-v1",
   "terminal_do_not_repeat": [
     {
@@ -2276,6 +2284,6 @@
       "reason": "the_zero_network_retained_extension_evaluated_1064216_routes_and_2128432_route_size_rows_then_found_253_exact_recurring_incremental_candidates_but_all_253_failed_the_five_quote_change_activity_gate_and_18_also_failed_the_100_trade_gate_across_174_required_symbols_do_not_build_a_three_leg_live_collector_or_repeat_without_a_material_fee_filter_activity_or_execution_architecture_change"
     }
   ],
-  "updated_at_utc": "2026-08-29T22:27:07Z",
+  "updated_at_utc": "2026-08-29T22:43:27Z",
   "usage_rule": "advance_the_highest_ranked_hypothesis_whose_retry_trigger_is_satisfied_otherwise_do_not_repeat_a_blocked_or_terminal_screen"
 }

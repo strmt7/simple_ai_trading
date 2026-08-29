@@ -1,0 +1,50 @@
+{
+  "schema_version": "binance-one-way-arbitrage-paper-source-contract-v1",
+  "status": "frozen_before_primary_paper_access",
+  "frozen_at_utc": "2026-08-29T22:38:45.2803809Z",
+  "contract_sha256": "8399fe07a3445c056a627c3c923f379ff6da416ea86ab4555ba932638c6e9c97",
+  "purpose": "retrieve the exact primary paper surfaced by the frozen literature query and determine whether its one-way-arbitrage definition or economics materially reopen the Binance organic-routing family",
+  "authority": {
+    "public_unauthenticated_read_only_research": true,
+    "network_requests_permitted": 1,
+    "venue_market_data_requests_permitted": 0,
+    "credentials_permitted": false,
+    "account_state_permitted": false,
+    "orders_or_mutations_permitted": false,
+    "protected_capture_access_permitted": false,
+    "accepted_edge_from_this_stage_permitted": false
+  },
+  "source": {
+    "arxiv_id": "2607.09491v1",
+    "title": "A Truckload of Satoshis: Detecting and Measuring One-Way Arbitrage in the Wild",
+    "method": "GET",
+    "url": "https://arxiv.org/pdf/2607.09491v1",
+    "endpoint_classification": "public unauthenticated arXiv primary-paper PDF retrieval; not a venue endpoint and not state changing",
+    "request_body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "timeout_seconds": 30
+  },
+  "retention": {
+    "raw_path": "data/binance-one-way-arbitrage-paper-v1/raw/2607.09491v1.pdf",
+    "journal_path": "data/binance-one-way-arbitrage-paper-v1/request-journal.jsonl",
+    "intent_before_access": true,
+    "retain_http_error_body": true
+  },
+  "questions": [
+    "what exact trade path length and linkage define one-way arbitrage",
+    "whether profit is cash realized or inferred from public trades and later valuation",
+    "which fees latency inventory capital and failed-leg costs are included",
+    "whether the evidence isolates recurring executable conditions available prospectively",
+    "whether any result materially changes the retained direct one-intermediary or exactly-two-intermediary decisions"
+  ],
+  "decision_boundary": {
+    "reopen": "only a source-proved distinct path or recurrent prospective condition with after-fee economics not already tested may enter a separately frozen current gate",
+    "reject": "historical aggregate inferred profit sub-dollar sequences declining economics or missing prospective execution attribution cannot reopen a collector",
+    "promotion": "none; the paper cannot accept an edge or grant account order or trading authority"
+  },
+  "stop_rules": [
+    "do not retry or follow alternate paper mirrors if this request fails",
+    "do not request venue books or histories from this stage",
+    "do not treat inferred historical sequences as owned fills or after-all-cost profit",
+    "preserve the raw PDF and journal before interpretation"
+  ]
+}

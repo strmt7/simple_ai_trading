@@ -12,7 +12,7 @@ ROOT = Path(__file__).resolve().parents[1]
 ACTION_VALUE = ROOT / "docs/model-research/action-value"
 CONTRACT_HASH = "36faeee7464832f335739ec8d1fc5609c98e1cdc9b6f267901934fbd8277f831"
 RESULT_HASH = "fd0a9e844a7ad7d1a6eb5372c961ff82ea52d3c72a8c558ba191a53bace02cef"
-REGISTRY_HASH = "fc0bddf222a1908db6c12df338dc26963f36514b01e37b5b31fc567760f19aca"
+REGISTRY_HASH = "98714cb8665d2132cb53670f09e73d11816cdbb7a9c3bc221dce4db4f865f98d"
 
 
 def _canonical_hash(value: dict[str, object], field: str) -> str:

@@ -1,0 +1,1166 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<feed xmlns:opensearch="http://a9.com/-/spec/opensearch/1.1/" xmlns:arxiv="http://arxiv.org/schemas/atom" xmlns="http://www.w3.org/2005/Atom">
+  <id>https://arxiv.org/api/wqHZNF6U0Mwg+2RFYRsbCGAVSr0</id>
+  <title>arXiv Query: search_query=(all:"prediction market" OR all:polymarket OR all:"crypto exchange" OR all:cryptocurrency) AND (all:arbitrage OR all:"market making" OR all:funding OR all:rebate OR all:yield OR all:latency OR all:conversion)&amp;id_list=&amp;start=0&amp;max_results=50</title>
+  <updated>2026-08-29T22:37:17Z</updated>
+  <link href="https://arxiv.org/api/query?search_query=(all:%22prediction+market%22+OR+(all:polymarket+OR+(all:%22crypto+exchange%22+OR+all:cryptocurrency)))+AND+(all:arbitrage+OR+(all:%22market+making%22+OR+(all:funding+OR+(all:rebate+OR+(all:yield+OR+(all:latency+OR+all:conversion))))))&amp;start=0&amp;max_results=50&amp;id_list=" type="application/atom+xml"/>
+  <opensearch:itemsPerPage>50</opensearch:itemsPerPage>
+  <opensearch:totalResults>325</opensearch:totalResults>
+  <opensearch:startIndex>0</opensearch:startIndex>
+  <entry>
+    <id>http://arxiv.org/abs/2608.25600v1</id>
+    <title>Defending the Peg: Real-Time Dynamic Protection and Anomaly Detection in DeFi Stablecoins</title>
+    <updated>2026-08-26T10:21:10Z</updated>
+    <link href="https://arxiv.org/abs/2608.25600v1" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2608.25600v1" rel="related" type="application/pdf" title="pdf"/>
+    <summary>With the rapid evolution of the Decentralized Finance (DeFi) ecosystem, stablecoins have emerged as a critical infrastructure bridging the cryptocurrency market with traditional financial paradigms. However, stablecoin systems rely heavily on smart contracts to execute automated operations. The immutable nature of these systems post-deployment means that the exploitation of security vulnerabilities can lead to irreversible, massive economic losses and potentially trigger systemic financial risks. Current research on stablecoin smart contract security faces challenges such as a lack of domain-specific targeting and the obsolescence of static defense models. To address this, this paper systematically analyzes common attack vectors in stablecoin environments and proposes a practical, real-time dynamic defense architecture. By analyzing 12 real-world security incidents, we elucidate the underlying mechanisms of high-risk patterns such as reentrancy attacks, oracle manipulation, and composite flash loan attacks. Concurrently, we construct a real-time anomaly detection model utilizing multi-dimensional on-chain temporal features and the Bi-LSTM algorithm. Experimental results demonstrate that this model achieves a classification accuracy of 96.61\%, with an average recall rate of 97.70\% for malicious attack samples, and a single inference latency ranging from 1.5 to 2.8 milliseconds.</summary>
+    <category term="cs.CR" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2026-08-26T10:21:10Z</published>
+    <arxiv:comment>22 pages, 5 figures</arxiv:comment>
+    <arxiv:primary_category term="cs.CR"/>
+    <author>
+      <name>Hengxing Zeng</name>
+    </author>
+    <author>
+      <name>Shipeng Ye</name>
+    </author>
+    <author>
+      <name>Xiaoqi Li</name>
+    </author>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2608.25348v1</id>
+    <title>Point-in-Time Audit Before Alpha: Public-Archive Availability and a Negative Matched-Budget Study on BTC Perpetual Futures</title>
+    <updated>2026-08-26T04:07:03Z</updated>
+    <link href="https://arxiv.org/abs/2608.25348v1" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2608.25348v1" rel="related" type="application/pdf" title="pdf"/>
+    <summary>Public cryptocurrency archives may appear usable when files exist, although factor research requires observations available and executable at each decision time. We audit public Binance BTCUSDT USD-M perpetual-futures data using event, publication, and availability times and separate proposal from deterministic auditing, evaluation, and holdout access. An initial gapless five-minute requirement for trade, mark, index, and open interest failed: the longest unrepaired intersection was 304.5729166666667 days. A disclosed revision made trade, mark, index, and realized funding the core streams and made open interest optional because its publication time was unverified. The revised mask retained 727 complete UTC days and supported a 436/145/146-day train, validation, and historical-holdout split. On 80 frozen known-rule templates, the auditor detected 40/40 violations and rejected 0/40 legal templates. Across ten null-signal paths, full auditing reduced mean false passes from 0.2910 to 0.0625. Under matched valid-candidate budgets, the audited adaptive agent tied random search and did not establish superiority. In the one-time historical holdout, all evaluated runs had positive IC but negative net Sharpe under primary costs. We therefore report a scoped negative result rather than a profitability or agent-superiority claim.</summary>
+    <category term="cs.SE" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2026-08-26T04:07:03Z</published>
+    <arxiv:comment>11 pages, 4 figures; scoped negative-result preprint; reproducibility materials included</arxiv:comment>
+    <arxiv:primary_category term="cs.SE"/>
+    <author>
+      <name>Baocheng Zeng</name>
+    </author>
+    <author>
+      <name>Jinhao Yang</name>
+    </author>
+    <author>
+      <name>Peilin Han</name>
+    </author>
+    <author>
+      <name>Kangnan He</name>
+    </author>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2608.21888v1</id>
+    <title>Short-horizon mean reversion in cryptocurrency markets: a matched cross-market measurement</title>
+    <updated>2026-08-22T10:06:04Z</updated>
+    <link href="https://arxiv.org/abs/2608.21888v1" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2608.21888v1" rel="related" type="application/pdf" title="pdf"/>
+    <summary>At 15-minute horizons, directional mean reversion is far stronger and more pervasive in cryptocurrency markets than in US equities: scored under one matched, strictly out-of-sample protocol, 90% of 183 Binance pairs carry significant directional reversal against 2.7% of 187 US stocks and ETFs, in every focal coin-year since 2021. The signal lives in signs, not magnitudes: lag-one return autocorrelation is near zero on the major coins, yet simply betting against the previous candle captures most of the effect. US-listed funds whose net asset value is a crypto or metal price inherit their underlying's reversal, including its absence, from their first months of trading; stocks merely correlated with the same underlyings inherit nothing: descriptive evidence that a wrapper's tape reads like the process it wraps, not the venue it prints on. On the originating tape, the reversal concentrates after moves driven by aggressive taker flow and grows with flow intensity, while the order-book depth a move consumes conditions nothing: a conditioning consistent with compensated liquidity provision, not a test that selects it. The gross edge peaks near 1.3 bp per trade against a 5 bp round-trip cost: large enough to detect, too small to clear benchmark spot capture costs. The contrast survives an artifact battery, an exact permutation null, and a frozen six-month holdout, with a class-mean AUC gap of +0.031 as designed and +0.011 (95% CI [+0.008, +0.014]) under the most conservative accounting, clear of zero either way.</summary>
+    <category term="q-fin.TR" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="q-fin.ST" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2026-08-22T10:06:04Z</published>
+    <arxiv:comment>24 pages, 10 figures. Replication code and frozen results: https://github.com/nadav2/short-horizon-reversion</arxiv:comment>
+    <arxiv:primary_category term="q-fin.TR"/>
+    <author>
+      <name>Nadav A. Kitron</name>
+    </author>
+    <author>
+      <name>Jonathan M. Wengrowicz</name>
+    </author>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2608.17532v1</id>
+    <title>SoK: Cross-Chain Transaction Identification and Matching</title>
+    <updated>2026-08-18T08:54:15Z</updated>
+    <link href="https://arxiv.org/abs/2608.17532v1" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2608.17532v1" rel="related" type="application/pdf" title="pdf"/>
+    <summary>Cross-chain bridges, instant cryptocurrency exchanges, and centralized cross-ledger platforms move assets across an increasingly multi-chain ecosystem. However, these systems have repeatedly become targets of high-value attacks and channels for cross-chain money laundering. Cross-chain transactions are substantially harder to analyze than single-chain transactions: no single ledger records an entire cross-chain transfer, its evidence is scattered across the source chain, the destination chain, and off-chain systems, and the availability and reliability of that evidence vary widely across systems. In this paper, we present a systematization of knowledge (SoK) on cross-chain transaction identification and matching. First, we classify deposit and withdrawal identification methods into four approaches and transaction matching methods into three mechanisms: deterministic identifier matching, field-constraint heuristics, and model-assisted matching. We find that their applicability and reported performance are shaped mainly by the evidence the underlying system exposes, and we further examine how matched pairs support downstream attack detection and fund tracing. Second, we assess the availability of existing datasets and artifacts, finding that fewer than half remain obtainable, and distill three artifact failure modes. Finally, we outline four open challenges toward auditable, reproducible, and actionable cross-chain analysis.</summary>
+    <category term="cs.CR" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2026-08-18T08:54:15Z</published>
+    <arxiv:primary_category term="cs.CR"/>
+    <author>
+      <name>Hang Zheng</name>
+    </author>
+    <author>
+      <name>Qishuang Fu</name>
+    </author>
+    <author>
+      <name>Joseph Liu</name>
+    </author>
+    <author>
+      <name>Qin Wang</name>
+    </author>
+    <author>
+      <name>Weiqing Wang</name>
+    </author>
+    <author>
+      <name>Tsz Hon Yuen</name>
+    </author>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2608.17355v1</id>
+    <title>FlowShield: cryptocurrency anti-money laundering with transaction semantics parsing and fund flow tracking</title>
+    <updated>2026-08-18T04:21:19Z</updated>
+    <link href="https://arxiv.org/abs/2608.17355v1" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2608.17355v1" rel="related" type="application/pdf" title="pdf"/>
+    <summary>Cryptocurrency anti-money laundering (Crypto AML) is increasingly challenged by sophisticated laundering behaviors that rapidly fragment stolen assets through diverse semantics and across multiple blockchains. Existing Crypto AML methods often simplify transaction semantics, rely on topology-centric signals, or output isolated detection labels. In this paper, we present \textsc{FlowShield}, a Crypto AML framework for transaction-level laundering detection and investigator-facing report generation. \textsc{FlowShield} first recovers behavior-level semantics from observable relations, making laundering intents explicit. To trace value provenance and redistribution, \textsc{FlowShield} reconstructs fund-flow subgraphs from three complementary perspectives. It then employs a text--structure fusion mechanism, enabling the interplay between large language model (LLM)-encoded semantics and flow texts with graph convolutional network (GCN)-encoded structure. Beyond mere detection, \textsc{FlowShield} further generates readable suspicious activity reports (SARs), offering investigators concise summaries and explainable red flags. To address the data scarcity in multi-chain detection, we construct and open-source \textit{BybitML}, the first public multi-chain laundering dataset. We evaluate \textsc{FlowShield} on \textit{BybitML} and two public laundering datasets and experimental results demonstrate that \textsc{FlowShield} achieves the best overall performance, with an average F1 score of 98.0\%. Further behavior and SAR analyses demonstrate that \textsc{FlowShield} can reveal diverse laundering strategies and produce readable reports for investigating complex multi-hop fund flows.</summary>
+    <category term="cs.CR" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="cs.CE" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="cs.CY" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2026-08-18T04:21:19Z</published>
+    <arxiv:primary_category term="cs.CR"/>
+    <author>
+      <name>Qishuang Fu</name>
+    </author>
+    <author>
+      <name>Andreas Deppeler</name>
+    </author>
+    <author>
+      <name>Joseph K. Liu</name>
+    </author>
+    <author>
+      <name>Yixin Liu</name>
+    </author>
+    <author>
+      <name>Shirui Pan</name>
+    </author>
+    <author>
+      <name>Qin Wang</name>
+    </author>
+    <author>
+      <name>Weiqing Wang</name>
+    </author>
+    <author>
+      <name>Tsz Hon Yuen</name>
+    </author>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2608.12291v1</id>
+    <title>When should one stop the most exciting game? Sequential Inference for win-martingales</title>
+    <updated>2026-08-12T17:35:49Z</updated>
+    <link href="https://arxiv.org/abs/2608.12291v1" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2608.12291v1" rel="related" type="application/pdf" title="pdf"/>
+    <summary>Prediction markets have become a prominent way of aggregating beliefs about binary future events, and their price processes are often interpreted as evolving win probabilities, or ``win-martingales.'' Motivated by this perspective and recent work on Aldous' ``most exciting game,'' we study when a decision maker should stop observing a win-martingale and make a decision about the outcome. In particular, we allow the true outcome to be revealed at a fixed finite horizon, as in a sports game or election. Under a general terminal loss and running cost, we reduce the Bayes risk to an optimal stopping problem for the win probability process. When the win-martingale is a diffusion and its volatility separates into a deterministic time factor and a state-dependent factor, a deterministic time change transforms the problem into one for a time-homogeneous diffusion with a generally time-inhomogeneous running cost.
+  Under explicit structural assumptions, we obtain a complete free-boundary characterization of the solution to the stopping problem in both finite and infinite horizons without discounting. We prove smooth-fit and $C^1$ regularity of the value function, $C^1$ regularity of the optimal stopping boundaries before the horizon, and derive a nonlinear integral equation that characterizes the boundaries uniquely. Taken together, these results yield a common decision-theoretic framework and solution theory for a broad class of posterior dynamics that includes the Aldous, Bass, and binary sequential-inference martingales as special cases. Our analysis requires no temporal monotonicity of the running cost and therefore accommodates highly nonmonotone stopping boundaries. In particular, we exhibit an example in which the optimal boundary has no limit as the calendar-time horizon is approached.</summary>
+    <category term="math.PR" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2026-08-12T17:35:49Z</published>
+    <arxiv:comment>52 pages, 3 figures</arxiv:comment>
+    <arxiv:primary_category term="math.PR"/>
+    <author>
+      <name>Steven Campbell</name>
+    </author>
+    <author>
+      <name>Karl Kristian Engelund</name>
+    </author>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2608.01934v1</id>
+    <title>Diagnosing High-Performance BFT Consensus via Mixture Modeling of Block Time Distributions</title>
+    <updated>2026-08-03T09:07:11Z</updated>
+    <link href="https://arxiv.org/abs/2608.01934v1" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2608.01934v1" rel="related" type="application/pdf" title="pdf"/>
+    <summary>High-performance Byzantine Fault Tolerant (BFT) blockchains are designed to achieve high throughput and low latency, yet their observed block time distributions often reveal complex behaviors arising from networking, pipelining, and deployment heterogeneity. In this paper, we diagnose HotStuff-based high-performance BFT consensus by modeling block times through a quorum-based multicast framework that links each block interval to quorum formation latency. We capture multimodal block time distributions using mixture models, where each component represents a distinct network condition characterized by effective transfer rate of block information. The proposed model is fitted to the bulk of mainnet block time data, while tail decay is analyzed separately to assess asymptotic behavior. Applying this methodology to Hyperliquid and Aptos mainnets, we find that Hyperliquid is well explained by a unimodal distribution, consistent with a relatively homogeneous validator deployment. In contrast, Aptos exhibits persistent multimodal structure and a pronounced shift following a consensus upgrade, reflecting heterogeneous deployments and diverse communication paths. These results demonstrate that mixture modeling of block time provides a practical and informative diagnostic tool for analyzing and monitoring high-performance BFT consensus.</summary>
+    <category term="cs.DC" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="cs.CE" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="cs.CR" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="cs.PF" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2026-08-03T09:07:11Z</published>
+    <arxiv:comment>9 pages, 4 figures, published as a full paper at 2026 IEEE International Conference on Blockchain and Cryptocurrency (ICBC)</arxiv:comment>
+    <arxiv:primary_category term="cs.DC"/>
+    <author>
+      <name>Hongru He</name>
+    </author>
+    <author>
+      <name>Akihiro Fujihara</name>
+    </author>
+    <arxiv:doi>10.1109/ICBC67748.2026.11575517</arxiv:doi>
+    <link rel="related" href="https://doi.org/10.1109/ICBC67748.2026.11575517" title="doi"/>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2608.00666v1</id>
+    <title>Executable Arbitrage and Market Efficiency in Prediction Markets</title>
+    <updated>2026-08-01T13:42:28Z</updated>
+    <link href="https://arxiv.org/abs/2608.00666v1" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2608.00666v1" rel="related" type="application/pdf" title="pdf"/>
+    <summary>Deterministic payoff identities imply no-arbitrage bounds in winner-takes-all prediction markets, but violations of these bounds need not be exploitable before settlement. We distinguish payoff-space no-arbitrage, which follows from terminal payoffs, from protocol-executable no-arbitrage, which depends on the position transformations available to traders. Polymarket's negative-risk markets make this distinction observable: linked binary markets represent mutually exclusive outcomes, while the NegRisk Adapter operationalizes only the NO-to-YES direction before settlement. We reconstruct depth-aware executable portfolio values and combine them with actor-level transaction histories and on-chain conversion traces to measure payoff-bound violations and exploitation. Our reconstruction estimates \$1.12 million in arbitrage profit across two realization channels: \$1.086 million from converter-enabled strategies and \$32 thousand from settlement-based basket formation. In the CLOB sample, positive violations concentrate on the unsupported YES side, whereas adapter-supported NO-side violations are substantially less frequent and shorter-lived. These patterns are consistent with the view that pre-settlement conversion strengthens enforcement by reducing capital lock-up and enabling inventory recycling. Finally, we implement a prototype bidirectional extension of the NegRisk Adapter that makes the reverse path executable before settlement. Together, our findings show that market efficiency depends not only on payoff structure, but also on whether protocols expose payoff equivalences as executable primitives.</summary>
+    <category term="cs.CE" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2026-08-01T13:42:28Z</published>
+    <arxiv:primary_category term="cs.CE"/>
+    <author>
+      <name>Jonas Gebele</name>
+    </author>
+    <author>
+      <name>Timm Mutzel</name>
+    </author>
+    <author>
+      <name>Florian Matthes</name>
+    </author>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2607.28747v1</id>
+    <title>Blockchain Transaction Simulation Phishing</title>
+    <updated>2026-07-30T18:09:56Z</updated>
+    <link href="https://arxiv.org/abs/2607.28747v1" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2607.28747v1" rel="related" type="application/pdf" title="pdf"/>
+    <summary>Cryptocurrency users have increasingly become targets of phishing and scam attacks. To mitigate these threats, leading crypto wallets (e.g., MetaMask) have introduced transaction simulation, which previews a transaction's balance changes before on-chain execution. While effective against traditional fund-draining attacks, we show that this defense can itself be exploited by a new phishing technique, which we term transaction simulation phishing. This attack uses carefully crafted smart contracts whose execution depends on dynamic blockchain state, causing simulations to display benign or profitable outcomes while the actual on-chain execution redirects users' funds to attacker-controlled addresses.
+  We present the first comprehensive study of transaction simulation phishing. We first develop a taxonomy of phishing contracts that can be utilized to facilitate this attack. Then, we propose SIMGUARD, a bytecode-level detection system that combines static and dynamic program analysis to identify phishing contracts. Applying SIMGUARD to Ethereum, Binance Smart Chain, Avalanche, and Polygon, we detect over 4,000 phishing contracts deployed between August 2024 and June 2025. Our analysis identifies more than 5,700 victims and approximately $3.48 million USD in losses, 91.5% of which occurred on Ethereum. Moreover, our clustering result reveals that the largest phishing contract cluster alone accounts for about 83% of the total losses. These results expose a critical weakness in current wallet defenses and highlight the urgent need for more robust transaction simulation mechanisms.</summary>
+    <category term="cs.CR" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2026-07-30T18:09:56Z</published>
+    <arxiv:comment>15 pages, 7 figures</arxiv:comment>
+    <arxiv:primary_category term="cs.CR"/>
+    <author>
+      <name>Xiaocan Wang</name>
+    </author>
+    <author>
+      <name>Shixuan Guan</name>
+    </author>
+    <author>
+      <name>Tong Yang</name>
+    </author>
+    <author>
+      <name>Xiapu Luo</name>
+    </author>
+    <author>
+      <name>Yue Duan</name>
+    </author>
+    <author>
+      <name>Kai Li</name>
+    </author>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2607.28446v1</id>
+    <title>CoLAS: Multimodal Corroboration of Latent Asset Signals for Financial Trading</title>
+    <updated>2026-07-30T16:16:48Z</updated>
+    <link href="https://arxiv.org/abs/2607.28446v1" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2607.28446v1" rel="related" type="application/pdf" title="pdf"/>
+    <summary>Financial trading relies on extracting reliable signals from heterogeneous market modalities such as price series, breaking news, and investor sentiment. Existing multimodal methods primarily combine heterogeneous modalities to exploit complementarity, treating each modality as equally valuable while overlooking whether different modalities provide mutually supportive evidence for the same trading signal. However, this task-conditioned and non-canceling support, termed multimodal corroboration, is particularly valuable, especially for financial trading. Because individual financial views are noisy and weakly informative, support that persists across heterogeneous views may provide a more stable task-relevant signal than evidence appearing in only one view. To exploit this property, we propose CoLAS (multimodal Corroboration of Latent Asset Signals), a framework that operationalizes multimodal corroboration as a trainable task-conditioned representation for trading prediction. The modality representations are organized into a per-instance matrix, where a softmax-based spectral objective strengthens its dominant shared component. Signed modality contributions then determine whether this component provides non-canceling support and construct the resulting corroborated signal. A coupled robustness-aware consistency objective further preserves the resulting corroborated signal when a modality is corrupted or missing. Extensive experiments on stock and cryptocurrency datasets demonstrate the effectiveness of our proposed CoLAS, yielding consistent improvements in both annualized return and Sharpe ratio over existing methods.</summary>
+    <category term="cs.CE" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2026-07-30T16:16:48Z</published>
+    <arxiv:primary_category term="cs.CE"/>
+    <author>
+      <name>Yanzheng Jin</name>
+    </author>
+    <author>
+      <name>Pengyang Shao</name>
+    </author>
+    <author>
+      <name>Xiaohao Liu</name>
+    </author>
+    <author>
+      <name>Xi Ai</name>
+    </author>
+    <author>
+      <name>Fei Shen</name>
+    </author>
+    <author>
+      <name>Kenji Kawaguchi</name>
+    </author>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2607.23952v2</id>
+    <title>Strategies for quantum-enabled Bitcoin miners</title>
+    <updated>2026-08-14T15:35:41Z</updated>
+    <link href="https://arxiv.org/abs/2607.23952v2" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2607.23952v2" rel="related" type="application/pdf" title="pdf"/>
+    <summary>We study the impact that two miners equipped with quantum computers purpose-built for quantum Bitcoin mining will have on the 51% attack threshold of the Bitcoin network, given that the miners are playing a competitive game against each other to be the first to mine a block. We extend an existing game-theoretic framework for Bitcoin mining and compute the resultant payoff matrices. From these payoff matrices, we determine optimal quantum mining strategies for two non-colluding and aggressive quantum miners with multiple opportunities at finding a valid block in an otherwise classical Bitcoin network. We show that these optimal quantum mining strategies have a negligible effect on the 51% attack threshold. The novelty of our work is the inclusion of the Aggressive Quantum Mining Strategy and the realistic approach of allowing the quantum miners to restart their search if their measurements do not yield a valid block when determining the optimal quantum mining strategies. Our result is important for evaluating quantum-mining threats on cryptocurrencies based on Proof-of-Work, e.g. Bitcoin</summary>
+    <category term="quant-ph" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="cs.CR" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="cs.GT" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2026-07-27T02:56:49Z</published>
+    <arxiv:comment>53 pages, 17 figures. Code available at https://github.com/zachmanson/quantumraces</arxiv:comment>
+    <arxiv:primary_category term="quant-ph"/>
+    <author>
+      <name>Zach Manson</name>
+    </author>
+    <author>
+      <name>Barry C. Sanders</name>
+    </author>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2607.18869v1</id>
+    <title>Tracing the Shadows: Automatic Tracking and Analysis of Crypto Money Laundering via Transaction Semantic Analysis</title>
+    <updated>2026-07-21T09:00:47Z</updated>
+    <link href="https://arxiv.org/abs/2607.18869v1" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2607.18869v1" rel="related" type="application/pdf" title="pdf"/>
+    <summary>With the rapid advancement of decentralized finance (DeFi), security incidents related to cryptocurrency have become increasingly prevalent. After such incidents, attackers typically attempt to rapidly move stolen assets, concealing the origin of illicit funds and ultimately converting them into fiat currency. However, existing anti-money laundering (AML) methods struggle to cope with the semantic complexity of DeFi transactions. They either rely heavily on low-level token transfers, or perform protocol-agnostic money flow analysis, failing to capture the high-level intent of transactions.
+  In this paper, we propose AMLGuard, a semantic-aware AML framework for account-based blockchains. AMLGuard tracks illicit fund flows from known malicious addresses by performing semantic analysis on complex DeFi transactions, enabling accurate and continuous laundering tracking. Given a complex transaction, AMLGuard combines static rule-based analysis with retrieval-augmented large language model (LLM) reasoning to infer implicit DeFi semantics, transforming raw transaction data into high-level semantic representations. Furthermore, for cross-chain transactions where laundering intent is not explicitly exposed, AMLGuard parses transaction parameters and performs argument parsing to recover cross-chain semantics, enabling seamless tracking across ledgers. Based on the inferred semantics, AMLGuard abstracts each transaction into a DeFi Semantic Unit (DSU). We evaluate the effectiveness of AMLGuard on 82 real-world laundering cases, involving illicit assets worth over $1 billion. Specifically, AMLGuard reconstructs compact illicit fund-flow topologies with destination precision of 94.4% and 87.6%, while achieving the highest address recall of 98.4% and 95.8% and destination recall of 94.1% and 93.8% on single-chain and cross-chain datasets.</summary>
+    <category term="cs.CR" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2026-07-21T09:00:47Z</published>
+    <arxiv:primary_category term="cs.CR"/>
+    <author>
+      <name>Hao Wu</name>
+    </author>
+    <author>
+      <name>Haijun Wang</name>
+    </author>
+    <author>
+      <name>Shangwang Li</name>
+    </author>
+    <author>
+      <name>Yin Wu</name>
+    </author>
+    <author>
+      <name>Ming Fan</name>
+    </author>
+    <author>
+      <name>Ting Liu</name>
+    </author>
+    <author>
+      <name>Xiapu Luo</name>
+    </author>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2607.17991v1</id>
+    <title>Optimal Market Making in Prediction Markets</title>
+    <updated>2026-07-20T14:22:52Z</updated>
+    <link href="https://arxiv.org/abs/2607.17991v1" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2607.17991v1" rel="related" type="application/pdf" title="pdf"/>
+    <summary>Prediction markets are attracting growing attention as trading volumes rise and their practical relevance increases. To ensure efficient price discovery, liquidity provision becomes ever more important. Due to the binary settlement structure in prediction markets, optimal market making leads to an optimization problem that is fundamentally different from the ones studied in classical settings. In this paper, we develop a stochastic control framework for prediction markets in which the market price is modeled as a conditional probability of the outcome that is generated by a transformed latent belief diffusion. A market maker selects bid and ask quotes to maximize expected terminal wealth while controlling both mark-to-market inventory risk and the settlement risk of remaining positions at resolution. We derive the associated Hamilton--Jacobi--Bellman equation and characterize the unique optimal bid and ask quotes. By transforming the equation to the latent belief space and using a fixed-point argument, we prove existence and uniqueness of a classical solution and verify the resulting optimal quoting strategy. In addition, we provide a numerical analysis, which reveals how optimal liquidity provision in prediction markets depends on inventory, market beliefs, time to resolution, and risk aversion. Further, we demonstrate that the optimal quoting strategy substantially improves downside protection while preserving most of its expected profit relative to a myopic benchmark that maximizes the instantaneous expected mark-to-market profit.</summary>
+    <category term="q-fin.TR" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="math.OC" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="q-fin.MF" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2026-07-20T14:22:52Z</published>
+    <arxiv:primary_category term="q-fin.TR"/>
+    <author>
+      <name>Dominik Feil</name>
+    </author>
+    <author>
+      <name>Max Nendel</name>
+    </author>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2607.17428v2</id>
+    <title>Uniform-Loss Automated Market Making for Prediction Markets</title>
+    <updated>2026-07-23T12:13:27Z</updated>
+    <link href="https://arxiv.org/abs/2607.17428v2" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2607.17428v2" rel="related" type="application/pdf" title="pdf"/>
+    <summary>Automated market makers (AMMs) for prediction markets descend from market scoring rules, where a mechanism operator subsidizes a market to aggregate beliefs about uncertain events. The existing literature has focused on bounding the total worst-case loss to the subsidizer, but has not addressed how that loss is distributed across price states or over time. We use the framework of loss-versus-rebalancing (LVR) to study this distribution and introduce \textit{uniform AMMs}, defined by the property that instantaneous LVR is proportional to pool value and independent of the current token price. In a static setting, we show that for a broad class of \textit{win-martingales} -- processes that converge to 0 or 1 at a fixed resolution time -- there exists a pricing function that achieves uniform LVR under that process, and conversely, that any sufficiently regular pricing function induces a win-martingale under which it is uniform. We then extend the framework to dynamic liquidity management, showing that liquidity levels can be adjusted over time to implement a prescribed target expected cumulative loss schedule. This theory is illustrated with canonical examples of win-martingales and pricing functions. Our results can inform AMM designers and liquidity providers on how the inevitable cost of subsidizing price discovery can be shaped and controlled across both price and time.</summary>
+    <category term="q-fin.TR" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2026-07-19T22:35:00Z</published>
+    <arxiv:primary_category term="q-fin.TR"/>
+    <author>
+      <name>Ciamac C. Moallemi</name>
+    </author>
+    <author>
+      <name>Dan Robinson</name>
+    </author>
+    <author>
+      <name>Brian Zhu</name>
+    </author>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2607.15258v1</id>
+    <title>Decoding Market Emotion from Blockchain Activity: A Data-Driven Sentiment Classifier</title>
+    <updated>2026-07-16T17:52:26Z</updated>
+    <link href="https://arxiv.org/abs/2607.15258v1" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2607.15258v1" rel="related" type="application/pdf" title="pdf"/>
+    <summary>The growing use of Bitcoin as a decentralized digital asset and investment tool has sparked strong interest in understanding its market behavior. This study presents a new approach to analyze Bitcoin market sentiment by combining on-chain and financial data with social media posts. Unlike models that aim to predict prices, this work focuses on explaining market sentiment using blockchain transactions, historical price data of Bitcoin, and daily Twitter sentiment classifications. The method merges sentiment trends with on-chain and financial metrics, normalized into a dataset for detailed market analysis. Multiple machine learning models were tested using cross-validation, with Gradient Boosting (XGBoost) emerging as the most reliable model for classifying sentiment, achieving an average F1-score of about 0.84. SHAP (SHapley Additive exPlanations), a game theory-based method for model interpretability, was used to quantify the contribution of on-chain features to the model's predictions, improving transparency. The results indicate that this data combination yields meaningful predictive signals and insights, supporting data-driven cryptocurrency analysis and future improvements with deep learning.</summary>
+    <category term="cs.LG" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="cs.CE" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2026-07-16T17:52:26Z</published>
+    <arxiv:comment>This manuscript has been accepted for presentation at the IEEE International Symposium on Computers and Communications (ISCC 2026)</arxiv:comment>
+    <arxiv:primary_category term="cs.LG"/>
+    <author>
+      <name>Arthur G. Bubolz</name>
+    </author>
+    <author>
+      <name>Abreu Quevedo</name>
+    </author>
+    <author>
+      <name>Giancarlo Lucca</name>
+    </author>
+    <author>
+      <name>Rafael A. Berri</name>
+    </author>
+    <author>
+      <name>Eduardo Borges</name>
+    </author>
+    <author>
+      <name>Bruno L. Dalmazo</name>
+    </author>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2607.09491v1</id>
+    <title>A Truckload of Satoshis: Detecting and Measuring One-Way Arbitrage in the Wild</title>
+    <updated>2026-07-10T15:05:56Z</updated>
+    <link href="https://arxiv.org/abs/2607.09491v1" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2607.09491v1" rel="related" type="application/pdf" title="pdf"/>
+    <summary>Centralized cryptocurrency exchanges (CEXes) enable fast off-chain conversions between hundreds of coins. It is an open question which algorithmic trading patterns occur on these platforms. A major challenge to measuring CEXes is that their public trade data does not contain addresses or trader identifiers allowing linkage. We propose a novel methodology to infer one-way arbitrage (OWA) trading in anonymized spot trade data from CEXes. We identify 402 M likely OWA sequences in 5 years of trading on Binance (and almost 2 M during 9 years on Kraken), accounting for 0.94 % and 0.13 % of the total traded volume, respectively. While we estimate total profits of $31.2 M on Binance and $975 k on Kraken, profits from individual OWA sequences are less than $1 on average after accounting for trading fees. We also observe that OWA has become faster over time, while the profitability of individual sequences has decreased. Our findings highlight that pricing discrepancies regularly occur in CEXes, and raise questions for future work to identify the precise circumstances that enable profitable OWA.</summary>
+    <category term="cs.CE" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2026-07-10T15:05:56Z</published>
+    <arxiv:primary_category term="cs.CE"/>
+    <author>
+      <name>Eugenio Nerio Nemmi</name>
+    </author>
+    <author>
+      <name>Tobias Lauinger</name>
+    </author>
+    <author>
+      <name>Paz Grimberg</name>
+    </author>
+    <author>
+      <name>Massimo La Morgia</name>
+    </author>
+    <author>
+      <name>Damon McCoy</name>
+    </author>
+    <author>
+      <name>Alessandro Mei</name>
+    </author>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2607.08199v2</id>
+    <title>Volatility in Prediction Markets: A Structural Approach</title>
+    <updated>2026-07-11T10:25:01Z</updated>
+    <link href="https://arxiv.org/abs/2607.08199v2" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2607.08199v2" rel="related" type="application/pdf" title="pdf"/>
+    <summary>Forward-looking volatility forecasts are central inputs to derivatives pricing, market making, risk management, and volatility-linked trading strategies, with ARCH and GARCH models serving as the canonical workhorses. Such models are natural in standard asset markets, where prices are positive-valued stochastic processes and volatility is typically inferred from return dynamics. Prediction markets have a different structure: prices are bounded probabilities, payoffs are binary, and contracts resolve at known deadlines.
+  We develop and estimate a volatility model tailored to binary prediction markets. The model combines two economic mechanisms: a Wright-Fisher deadline-resolution component, capturing how remaining binary uncertainty is forced to resolve over time, and a Glosten-Milgrom order-flow component, capturing volatility from informed trading as reflected in spreads and volume. Using a large panel of Kalshi contracts, we show that these structural variables carry substantial forecasting power. Plain ARCH/GARCH benchmarks are dominated by structural specifications; combining the structural model with residual GARCH dynamics gives the best overall forecasts. The model also provides an interpretable measurement framework: volatility is highest near fifty-fifty prices, rises near resolution, and varies across categories with the timing and discreteness of information arrival. Economics contracts are closer to smooth deadline-resolution dynamics, while sports contracts exhibit more event-concentrated, jump-like behavior. Across major categories, category-specific fitting does not systematically improve out-of-sample performance, suggesting that the structural specification transfers beyond the pooled headline result.</summary>
+    <category term="q-fin.TR" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2026-07-09T07:57:43Z</published>
+    <arxiv:primary_category term="q-fin.TR"/>
+    <author>
+      <name>Weiye Xi</name>
+    </author>
+    <author>
+      <name>Ciamac C. Moallemi</name>
+    </author>
+    <author>
+      <name>Mallesh Pai</name>
+    </author>
+    <author>
+      <name>Shouqiao Wang</name>
+    </author>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2606.22743v1</id>
+    <title>Endogenous Randomness from Adversarial Market Learning</title>
+    <updated>2026-06-22T01:12:16Z</updated>
+    <link href="https://arxiv.org/abs/2606.22743v1" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2606.22743v1" rel="related" type="application/pdf" title="pdf"/>
+    <summary>We propose a deterministic adversarial market model in which apparent randomness emerges endogenously from the interaction between a market mechanism and a population of predictive traders. Unlike a classical generative adversarial network, the model does not attempt to imitate an external empirical data distribution and does not inject random noise into a generator. The market is represented by a deterministic binary return path, while traders learn predictive strategies from observed in-sample history and trade on an out-of-sample continuation. The market then adapts against the traders by reducing their predictive and trading edge.
+  The central experiment begins with a smooth, highly predictable market path. Traders with multiple lookback windows and multiple holding periods learn to predict future cumulative returns. Initially, these traders earn large out-of-sample profits. After adversarial market adaptation, their out-of-sample profitability collapses toward zero. Importantly, in the final clean specification, no explicit sign-balance, transition-rate, or autocorrelation penalties are imposed. Nevertheless, the out-of-sample return sequence becomes balanced, has transition rate close to one half, has low autocorrelation, and passes block-based distributional diagnostics. In a medium-size experiment with $T_{\mathrm{IS}}=2000$ and $T_{\mathrm{OOS}}=10000$, the out-of-sample positive-return fraction is $0.5010$, the transition rate is $0.4896$, and the maximum absolute autocorrelation is $0.0275$. Binary return blocks transformed into dyadic variables are close to uniform on $[0,1]$, and normalized block sums are broadly consistent with a standard normal law. These results support the hypothesis that market randomness can arise as the endogenous residue of arbitrage pressure rather than from exogenous stochastic shocks.</summary>
+    <category term="q-fin.TR" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2026-06-22T01:12:16Z</published>
+    <arxiv:primary_category term="q-fin.TR"/>
+    <author>
+      <name>Jian Sun</name>
+    </author>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2606.19517v1</id>
+    <title>Do Prediction Markets Match Option Prices? Bitcoin Threshold Evidence from Binance and Polymarket</title>
+    <updated>2026-06-17T19:06:52Z</updated>
+    <link href="https://arxiv.org/abs/2606.19517v1" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2606.19517v1" rel="related" type="application/pdf" title="pdf"/>
+    <summary>The digitization of financial markets has produced two classes of platforms that price, in principle, the same state - contingent payoffs: centralized crypto-option exchanges and blockchain-based prediction markets. This paper provides the first option-implied benchmark test of prediction-market pricing for cryptocurrency threshold contracts. For each hour in a matched sample, we compare the Polymarket Yes price with the discounted risk-neutral binary value implied by a listed Binance call option on the same underlying, strike, and maturity, and study the gap between them. In the main September 2023 Bitcoin contract, the mean pricing gap equals 5.6 percentage points across 214 hourly observations (t = 6.46, p &lt; 10^{-9}). Pooling three Binance-compatible Bitcoin threshold markets yields a mean gap of 6.3 percentage points across 287 observations, robust to HAC and block-bootstrap inference. The gap is persistent - with an AR(1) half-life of roughly four hours - yet mean-reverting, consistent with slow information transmission between segmented venues rather than mechanical noise. Cross-sectional regressions reveal that the wedge is largest at low option-implied probabilities and long maturities, a pattern consistent with speculative demand for prediction-market contracts rather than measurement error. A delta-hedged arbitrage proxy remains profitable after conservative transaction costs, though with marginal statistical precision. A Deribit extension on the same three Bitcoin contracts produces a larger pooled gap of 11 percentage points, while a smaller Ethereum exercise yields mixed evidence. The results demonstrate that digital fragmentation of financial markets generates systematic, persistent pricing wedges even for economically identical payoffs.</summary>
+    <category term="q-fin.TR" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2026-06-17T19:06:52Z</published>
+    <arxiv:comment>22 pages, 6 figures, 7 tables; JEL: G13, G14, G19</arxiv:comment>
+    <arxiv:primary_category term="q-fin.TR"/>
+    <author>
+      <name>Victoria Portnaya</name>
+    </author>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2606.16961v1</id>
+    <title>Beyond the Smile: A Hybrid Convolutional VAE for Crypto Volatility Surfaces</title>
+    <updated>2026-06-15T17:01:00Z</updated>
+    <link href="https://arxiv.org/abs/2606.16961v1" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2606.16961v1" rel="related" type="application/pdf" title="pdf"/>
+    <summary>We present a convolutional variational autoencoder for cryptocurrency implied-volatility surfaces, together with a deployable predictor that combines it with a quadratic smile re-fit through a deterministic per-tenor routing rule. Trained on 6,034 fully-filled hourly Binance Options surfaces of BTC and ETH spanning May-October 2023 and parameterised on a common $6 \times 7$ tenor-delta grid, the model attains a hidden-cell surface-completion RMSE in the 0.94-1.56 vol-point range across both markets and mask rates 10-50%. The hybrid predictor attains 0.83 vol points at 50% masking against 7.00 for the smile re-fit alone, an eightfold reduction obtained at no additional inference cost. Under structurally-correlated hole patterns that emulate the withdrawal of an entire tenor of strikes, the smile re-fit incurs 9.6-13.1 vol points of error while the learned model remains at 1.5-1.9, isolating a regime in which the generative model is the only viable predictor. Joint training on BTC and ETH improves the in-distribution model on both markets by 9-27% relative to the better-performing single-symbol counterpart, indicating a substantially shared vol-surface manifold across the two largest cryptocurrencies over the observation window. The hybrid is calendar- and butterfly-arbitrage-free at the listed strikes, a property that the parametric smile re-fit alone fails at high mask rates. The per-snapshot reconstruction error of the trained model flags the late-October ETF-anticipation rally and the August $17$, $2023$ flash crash as elevated-error periods without supervision. All training and evaluation infrastructure is released to support reproducible follow-on work.</summary>
+    <category term="cs.LG" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="q-fin.CP" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2026-06-15T17:01:00Z</published>
+    <arxiv:primary_category term="cs.LG"/>
+    <author>
+      <name>Sadanand Singh</name>
+    </author>
+    <author>
+      <name>Allam Reddy</name>
+    </author>
+    <author>
+      <name>Manan Chopra</name>
+    </author>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2606.16852v1</id>
+    <title>The Ghosts of Polymarket: When Off-Chain Matches Meet On-Chain Reverts</title>
+    <updated>2026-06-15T15:26:27Z</updated>
+    <link href="https://arxiv.org/abs/2606.16852v1" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2606.16852v1" rel="related" type="application/pdf" title="pdf"/>
+    <summary>Polymarket has emerged as a prominent prediction market platform and one of the fastest-growing applications in DeFi. To achieve low-latency trading, it adopts a hybrid architecture that matches orders off-chain but settles them on-chain for final execution. This design creates a consistency gap we call Ghost Fills: an order that is successfully matched off-chain may later fail during on-chain settlement. To understand the security implications of this gap, we investigate such failed settlements by building GHOSTHUNTER, which reconstructs them from on-chain traces and attributes to concrete attack patterns. Across 1,952,440 reverted match-order transactions, we find that attackers exploit the time gap between matching and settlement to invalidate already matched orders before they are finalized on-chain. We then identify four attack vectors from these incidents: nonce bump, balance drain, allowance revoke, and proxy trap, realized via 35 evolving variants. These vectors allow attackers to selectively revert 980,133 filled orders, enabling risk-free prediction, arbitrage-bot hunting, and liquidity reward manipulation, realizing at least \$1.49M in profit, which places \$1.78 B USD at risk and 2.17 M POL (about \$212 K) paid by operator. During peak hours, more than 24.3% of all filled orders reverted, causing de facto DoS attacks. We also find that code derived from the flawed contract still appears in 167 independent contracts across 10 chains holding at least \$23 M in user funds, extending the impact beyond Polymarket. We have disclosed our evidence to affected parties, and the issue has been partially mitigated.</summary>
+    <category term="cs.CR" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2026-06-15T15:26:27Z</published>
+    <arxiv:primary_category term="cs.CR"/>
+    <author>
+      <name>Yiming Shen</name>
+    </author>
+    <author>
+      <name>Yuhan Jin</name>
+    </author>
+    <author>
+      <name>Shuohan Wu</name>
+    </author>
+    <author>
+      <name>Yanlin Wang</name>
+    </author>
+    <author>
+      <name>Jiachi Chen</name>
+    </author>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2606.14484v1</id>
+    <title>Quantum Horizon: An evaluation of quantum computing as a threat to Bitcoin and Ethereum</title>
+    <updated>2026-06-12T14:21:58Z</updated>
+    <link href="https://arxiv.org/abs/2606.14484v1" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2606.14484v1" rel="related" type="application/pdf" title="pdf"/>
+    <summary>Quantum computing poses a real, broad-based, but bounded and substantially mitigable threat to Bitcoin and Ethereum. We separate the two quantum algorithms that public discussion routinely conflates: Shor's algorithm breaks the elliptic-curve signatures (ECDSA over secp256k1, BLS over BLS12-381) that authorize spending, whereas Grover's algorithm does not meaningfully threaten proof-of-work mining, which is protected by a merely quadratic speedup, fault-tolerant per-operation costs, a square-root parallelization wall, and difficulty adjustment. Folding hardware scaling, the falling resource requirement, a fault-tolerance readiness lag, and expert surveys into a single Monte-Carlo forecast yields a wide, bimodal arrival distribution for a cryptographically relevant quantum computer: about a one-in-six chance by 2035, near 30% by 2040, and about 60% by 2050. Exposure is concentrated and mostly migratable: of Bitcoin's roughly six million quantum-exposed coins only about 2.3 million are irreducibly at risk, while 50 to 65% of Ether sits at key-revealed accounts that can adopt post-quantum signatures. A timely migration beats even an optimistic 2035 machine, so the binding constraint is governance, not technology. A survey of the top twenty cryptocurrencies finds none fully post-quantum. Reproducible models accompany every quantitative claim.</summary>
+    <category term="quant-ph" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="q-fin.RM" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2026-06-12T14:21:58Z</published>
+    <arxiv:comment>21 pages, 5 figures, 3 tables. Reproducible model code, data, and figures: https://github.com/imgcode/quantum-horizon</arxiv:comment>
+    <arxiv:primary_category term="quant-ph"/>
+    <author>
+      <name>Iosif M. Gershteyn</name>
+    </author>
+    <author>
+      <name>Jacob A. Alber</name>
+    </author>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2606.07131v3</id>
+    <title>MalSkillBench: A Runtime-Verified Benchmark of Malicious Agent Skills</title>
+    <updated>2026-06-19T05:32:49Z</updated>
+    <link href="https://arxiv.org/abs/2606.07131v3" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2606.07131v3" rel="related" type="application/pdf" title="pdf"/>
+    <summary>AI coding agents such as Claude Code and Gemini CLI increasingly extend themselves with third-party skills: markdown packages bundling natural-language instructions, executable scripts, and tool permissions. Because a skill is at once code and agent-facing instruction, it introduces a supply chain dependency whose risk is neither pure code nor pure prompt. Detection tools have never been measured against verified ground truth spanning this hybrid space, leaving their effectiveness unknown and wild-only evaluations biased.
+  We present MalSkillBench, the first runtime-verified benchmark of malicious agent skills: 3,944 malicious skills labeled along a three-dimensional taxonomy of 108 cells. Of these, 3,214 come from a closed-loop Generate-Verify-Feedback pipeline admitting only samples whose malicious behavior fires inside a Docker sandbox under system-call monitoring and an LLM judge; we add 703 in-the-wild and 4,000 matched benign skills. Our measurements are consistent: code injection reaches 94.5% verification yield but prompt injection only 75.8%, the same fragility that later makes it hard to detect; the wild sample is narrow, dominated by one cryptocurrency-theft campaign (86.6% one behavior, 81% from two accounts) with a small but architecturally new tail attacking the agent control plane; the strongest skill-specific detector reaches 98.4% recall on code injection yet collapses on prompt-injection and agent-control attacks, and wild-only scoring swings the ranking by up to 66 recall points; supply-chain scanners and prompt-injection defenses each see only half of a skill, and no combination recovers the code-instruction relationship. Detecting malicious skills therefore requires reasoning jointly over task intent, code, and instructions. We release the dataset, pipeline, baselines, and results.</summary>
+    <category term="cs.CR" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="cs.SE" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2026-06-05T10:43:19Z</published>
+    <arxiv:primary_category term="cs.CR"/>
+    <author>
+      <name>Wenbo Guo</name>
+    </author>
+    <author>
+      <name>Wei Zeng</name>
+    </author>
+    <author>
+      <name>Chengwei Liu</name>
+    </author>
+    <author>
+      <name>Xiaojun Jia</name>
+    </author>
+    <author>
+      <name>Yijia Xu</name>
+    </author>
+    <author>
+      <name>Lei Tang</name>
+    </author>
+    <author>
+      <name>Yong Fang</name>
+    </author>
+    <author>
+      <name>Yang Liu</name>
+    </author>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2606.06700v1</id>
+    <title>The Economics of Proof-of-Useful-Work</title>
+    <updated>2026-06-04T20:39:32Z</updated>
+    <link href="https://arxiv.org/abs/2606.06700v1" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2606.06700v1" rel="related" type="application/pdf" title="pdf"/>
+    <summary>Proof-of-work (PoW) blockchains rely on computational expenditure to secure a ledger supporting a native cryptocurrency. In existing systems such as Bitcoin, this expenditure is intentionally useless: the computation secures consensus but produces no external economic output. An emerging alternative -- proof of useful work (PoUW) -- enables the same computation to simultaneously secure the blockchain and generate economically valuable output. However, PoUW is often criticized on economic grounds: if the work is useful, attackers might be "paid to attack," potentially weakening security.
+  We develop a competitive-equilibrium model of a PoUW blockchain in which compute can be allocated across pure mining, pure useful work -- instantiated as machine-learning inference -- or "duplex" work that produces both with computational overheads. We provide a complete closed-form characterization of equilibrium allocations and prices as a function of the duplex overheads and a single economic parameter -- the token-inference ratio -- measuring token adoption relative to the inference market. This characterization reveals three regimes: "Bitconia," in which the economy reduces to classical PoW; "Fortessia," in which duplex replaces mining, increasing security while useful output remains unchanged; and "Duplexia," in which token rewards subsidize inference, lowering prices and expanding inference supply.
+  Contrary to the common strawman argument, PoUW does not make attacks economically cheap: once equilibrium prices are taken into account, the economic cost of a majority attack remains tied to the block reward. Moreover, in Duplexia, block rewards act as rebates on inference prices, generating additional socially useful computation that would not arise without the blockchain -- an expansion monotonically increasing in token adoption and technological efficiency.</summary>
+    <category term="cs.GT" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="cs.CR" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="econ.TH" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2026-06-04T20:39:32Z</published>
+    <arxiv:primary_category term="cs.GT"/>
+    <author>
+      <name>Rafael Pass</name>
+    </author>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2606.04574v2</id>
+    <title>Dynamic Multi-Pair Trading Strategy in Cryptocurrency Markets with Deep Reinforcement Learning</title>
+    <updated>2026-06-25T11:19:06Z</updated>
+    <link href="https://arxiv.org/abs/2606.04574v2" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2606.04574v2" rel="related" type="application/pdf" title="pdf"/>
+    <summary>This study aims to determine whether the application of Deep Reinforcement Learning (DRL) as a specialized execution overlay can enhance pair trading in highly volatile cryptocurrency markets. Although classical implementations of the strategy have proven successful in traditional equities, they frequently exhibit rigidity and suffer from severe divergence risks when applied to high-variance environments. To address this need, this research introduces novel concepts. To construct a robust system, we developed a hierarchical "Filter-then-Rank" pair selection methodology and a proprietary "Fixed Risk, Adaptive Mean" execution model. The system employs a Proximal Policy Optimization (PPO) agent with a Long Short-Term Memory (LSTM) layer to govern execution decisions within strict deterministic risk management boundaries. Evaluated on 1-hour interval data from the Binance USD-M Futures market, the optimized RL policy achieved an out-of-sample performance that substantially outperformed the heuristic baseline. A stationary circular block bootstrap robustness check confirms that the agent's risk-adjusted outperformance is statistically significant at the 10 percent level. Although falling marginally short of the stricter 5 percent threshold, this result highlights the extreme idiosyncratic variance characteristic of digital assets. Ultimately, this thesis contributes to the quantitative finance literature by introducing a hybrid architecture that combines statistical arbitrage with DRL execution policies. Furthermore, it delivers a novel framework for safe reinforcement learning via deterministic shielding, proving that anchoring a neural policy to statistically robust boundaries successfully mitigates severe divergence risks.</summary>
+    <category term="cs.LG" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="cs.NE" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="q-fin.ST" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="q-fin.TR" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="stat.ML" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2026-06-03T08:10:33Z</published>
+    <arxiv:comment>61 pages, 37 figures, 16 tables</arxiv:comment>
+    <arxiv:primary_category term="cs.LG"/>
+    <author>
+      <name>Damian Lebiedź</name>
+    </author>
+    <author>
+      <name>Robert Ślepaczuk</name>
+    </author>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2606.04217v2</id>
+    <title>Polymarket-v1 Database</title>
+    <updated>2026-06-08T11:47:35Z</updated>
+    <link href="https://arxiv.org/abs/2606.04217v2" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2606.04217v2" rel="related" type="application/pdf" title="pdf"/>
+    <summary>We introduce the Polymarket-v1 Database: the complete on-chain trade archive of Polymarket's first-generation CTF Exchange on Polygon, spanning 2022-11-21 to 2026-04-28 and covering the full contract lifecycle from first settlement to natural termination. The dataset comprises 1.20 billion trade records across 1.30 million markets with $61 billion in nominal volume. Its defining feature is 100% ground-truth aggressor direction derived from the blockchain settlement layer, a property unavailable in existing prediction market archives, which rely on heuristic inference. We use this truth-aligned archive to benchmark standard microstructure tools and document three findings. First, the tick rule and bulk volume classification achieve near-random aggregate accuracy (49.83% and 50.51%), but this masks a systematic, correctable price-level gradient driven by positive trade direction autocorrelation and concentrated market-making -- two structural features of prediction markets that violate the mean-reversion assumption embedded in classical classifiers. Second, these classification errors propagate into downstream metrics: inferred VPIN diverges substantially from ground-truth VPIN, and OFI estimates are directionally biased, with material consequences for Transaction Cost Analysis. Third, ground-truth microstructure quality predicts forecasting performance in ways that classification-based proxies cannot recover: True VPIN positively predicts Brier scores, while Gibbs spread negatively predicts them -- a selection effect reflecting that high-spread niche markets attract informed specialists rather than noise traders. Replacing ground-truth metrics with classified proxies attenuates both relationships, illustrating that measurement accuracy at the transaction level is a prerequisite for reliable inference about prediction market design and probability calibration.</summary>
+    <category term="cs.CE" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="q-fin.ST" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="q-fin.TR" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2026-06-02T21:06:27Z</published>
+    <arxiv:comment>35 pages, 17 figures, 15 tables. Dataset available at https://huggingface.co/datasets/TimeSeventeen/Polymarket-v1</arxiv:comment>
+    <arxiv:primary_category term="cs.CE"/>
+    <author>
+      <name>Boka Qin</name>
+    </author>
+    <author>
+      <name>Rui Yang</name>
+    </author>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2606.03457v1</id>
+    <title>Hybrid News Sentiment Engine: Real-Time Market Analysis via Adaptive Ensemble Learning on News-Price Pairs</title>
+    <updated>2026-06-02T10:34:22Z</updated>
+    <link href="https://arxiv.org/abs/2606.03457v1" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2606.03457v1" rel="related" type="application/pdf" title="pdf"/>
+    <summary>We present a hybrid news sentiment engine that continuously learns market
+  sentiment from paired news headlines and concurrent asset-price snapshots
+  without requiring any neural network training or GPU compute. The system uses
+  a three-way ensemble combining (1) a financial-domain lexicon (FinBERT-style
+  keyword scoring), (2) an adaptive statistical TF-IDF cluster learner that
+  organizes headlines into semantic neighborhoods and tracks their average
+  realized price reactions, and (3) an auto-calibrating weighting mechanism
+  that adjusts ensemble contributions based on each signal's historical
+  correlation with actual price movements. The engine runs on a 3-hour polling
+  cycle from the Tradeflags NewsFeed API, which provides 22 price-snapshot
+  fields per news item spanning equity indices (ES, NQ, SPY, DJIA, NDX, IWM),
+  commodities (CL), and cryptocurrencies (BTC, ETH). All processing occurs at
+  sub-second latency on a CPU-only server at effectively zero marginal cost per
+  analytic cycle. We compare our approach against established methods --
+  FinBERT, GPT-based scoring, VADER, and commercial sentiment APIs -- across
+  dimensions of cost, latency, accuracy, and adaptability. Our statistical
+  cluster learner, which adapts to changing market regimes without retraining,
+  represents a novel contribution not found in existing sentiment systems.</summary>
+    <category term="q-fin.ST" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="q-fin.CP" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2026-06-02T10:34:22Z</published>
+    <arxiv:comment>12 pages</arxiv:comment>
+    <arxiv:primary_category term="q-fin.ST"/>
+    <author>
+      <name>Andreas Aigner</name>
+    </author>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2605.31431v1</id>
+    <title>When Certainty Is Not Worth It: Capital Lock-Up and Settlement Discounting in Prediction Markets</title>
+    <updated>2026-05-29T15:27:12Z</updated>
+    <link href="https://arxiv.org/abs/2605.31431v1" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2605.31431v1" rel="related" type="application/pdf" title="pdf"/>
+    <summary>Collateralized prediction markets are contingent-claim markets in which economic uncertainty can disappear before winning claims become redeemable. This paper studies the pricing effect of that delay. When collateral remains locked until oracle settlement, a near-certain dollar is a delayed dollar, so prices embed a maturity-dependent settlement discount in addition to beliefs about outcomes. We recover an implied settlement-discount term structure from persistent near-certain contracts using realized settlement times and summarize it as an annualized settlement wedge (ASW). The recovered wedges are positive, maturity-dependent, and time-varying. Adjusting pricesby these curves reduces the near-certainty horizon gradient by roughly 48-88%, indicating that much of the raw maturity pattern reflects priced settlement frictions rather than forecast error alone. Market architecture changes the wedge: negRisk conversion compresses discounts by recycling part of the position into synthetic collateral, while yield-bearing collateral flattens the term structure by reducing the opportunity cost of lock-up. The results show that pricing quality in prediction markets is endogenous to settlement mechanics, collateral productivity, and capital-recycling design. Prediction-market prices therefore aggregate information through a financial infrastructure whose funding conditions are measurable and economically important.</summary>
+    <category term="cs.CE" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2026-05-29T15:27:12Z</published>
+    <arxiv:primary_category term="cs.CE"/>
+    <author>
+      <name>Jonas Gebele</name>
+    </author>
+    <author>
+      <name>Florian Matthes</name>
+    </author>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2605.30802v1</id>
+    <title>Design and Evaluation of Multi-Agent AI Oracle Systems for Prediction Market Resolution</title>
+    <updated>2026-05-29T03:44:19Z</updated>
+    <link href="https://arxiv.org/abs/2605.30802v1" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2605.30802v1" rel="related" type="application/pdf" title="pdf"/>
+    <summary>Prediction markets aggregate collective intelligence to forecast uncertain events, but their utility depends on reliable outcome resolution. Existing oracle systems tradeoff fast but brittle automation against accurate but costly human arbitration. Single-LLM oracles achieve meaningful accuracy but inherit all failure modes of their underlying model with no self-correction mechanism. We evaluate whether multi-agent LLM architectures can improve oracle resolution accuracy over single-model baselines. We compare independent aggregation and deliberative consensus against single-LLM baselines (GPT-5 Nano, DeepSeek V3, and Llama-3.3-70B) on 1,189 resolved prediction market questions from KalshiBench. All agents share a common evidence layer through Exa, with retrieval filtered by publication date to isolate reasoning from retrieval quality. Independent aggregation with confidence-weighted voting achieves the highest accuracy at 83.43 percent, outperforming the best individual model by 1.01 percentage points. Deliberative consensus degrades accuracy to approximately 76 percent, below every single-model baseline, attributed to error propagation during debate where confidently wrong models flip correct ones. Error correlations across models (0.529-0.689) explain why aggregation gains fall short of the theoretical Condorcet ceiling, placing a fundamental limit on ensemble approaches. Many questions resist correction by any multi-agent architecture, motivating escalation to human arbitration. We propose routing criteria for hybrid AI-human oracle systems: auto-resolving only unanimous, high-confidence questions yields 97.87 percent accuracy on 47 percent of the dataset, with inter-agent disagreement flagging the remainder for human review.</summary>
+    <category term="cs.MA" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="cs.AI" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2026-05-29T03:44:19Z</published>
+    <arxiv:comment>34 pages, 11 figures</arxiv:comment>
+    <arxiv:primary_category term="cs.MA"/>
+    <author>
+      <name>Tarun Kota</name>
+    </author>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2605.25958v1</id>
+    <title>PolyGnosis 2.0: Enhancing LLM Reasoning via Agentic Harness Engineering for Polymarket and OSINT Insight Extraction</title>
+    <updated>2026-05-25T15:30:54Z</updated>
+    <link href="https://arxiv.org/abs/2605.25958v1" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2605.25958v1" rel="related" type="application/pdf" title="pdf"/>
+    <summary>This paper introduces PolyGnosis 2.0, a pioneering multi-agent architecture designed to extract predictive intelligence by synthesizing Polymarket anomaly signals with global Open Source Intelligence (OSINT) streams, specifically Global Database of Events, Language, and Tone (GDELT). We define and target "Perspective Mismatches", the narrative divergence between Polymarket sentiment and global media flows, as high-alpha trading signals. Moving beyond generic agentic superiority, we rigorously quantify the efficacy of "Harness Engineering" techniques, including reflection loops, tool-calling, divide-and-conquer partitioning (D&amp;C), and chain-of-thought (CoT), within high-noise financial domains. Our empirical evaluation against human-expert benchmarks reveals that while structural partitioning is mandatory for multi-dimensional alignment, unconstrained terminal reflection actively induces logical drift. Furthermore, we identify a pervasive "consensus bias" across all agent configurations during narrative reasoning, necessitating deterministic validation. Ultimately, we isolate a Pareto-optimal configuration that achieves professional-grade analytical precision while minimizing latency and token overhead, providing a robust blueprint for autonomous intelligence in prediction markets.</summary>
+    <category term="cs.CL" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="cs.CE" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2026-05-25T15:30:54Z</published>
+    <arxiv:primary_category term="cs.CL"/>
+    <author>
+      <name>Daren Wang</name>
+    </author>
+    <author>
+      <name>Hong Xu</name>
+    </author>
+    <author>
+      <name>Jiawen Xian</name>
+    </author>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2605.20952v2</id>
+    <title>Ark: Offchain Transaction Batching in Bitcoin</title>
+    <updated>2026-06-21T10:48:49Z</updated>
+    <link href="https://arxiv.org/abs/2605.20952v2" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2605.20952v2" rel="related" type="application/pdf" title="pdf"/>
+    <summary>Bitcoin is the cryptocurrency with the largest market capitalisation, but its widespread adoption is fundamentally limited by the scalability constraints of its consensus algorithm, which requires every transaction to be confirmed onchain. To address this, several Layer-2 scalability solutions have been proposed to move payments offchain -- most notably, the Lightning Network. However, their deployment remains hindered by cumbersome setup requirements: users must lock funds onchain to participate and engage in complex auxiliary protocols (e.g., for channel rebalancing, top-ups, and routing). Other solutions, like payment pools, sidechains and rollups, cannot be implemented in a non-custodial way on Bitcoin due to its limited scripting capabilities, or require all protocol participants to update the offchain state.
+  In this work, we present Ark, the first Bitcoin-compatible commit-chain. Ark enables offchain transactions of virtual UTXOs (VTXOs), through an untrusted operator who aggregates them into succinct onchain commitments. A distinctive feature of Ark is its ease of deployment: users can receive offchain payments without locking any funds beforehand and Ark state updates can be performed only requiring the users involved in that update.
+  We formally define the Ark protocol and prove its security. During this process, we identified two attacks affecting the testnet implementation, which we responsibly disclosed and proposed fixes for, which have been now integrated into the mainnet implementation. Our experimental evaluation demonstrates that Ark can commit onchain to batches of arbitrarily many VTXOs with a constant-sized footprint of approximately 200 vB. Cooperative exits add one output per user, while unilateral exits require $\mathcal{O}(\log n)$ transactions of roughly 150 vB per VTXO for a batch of $n$ VTXOs.</summary>
+    <category term="cs.DC" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="cs.CR" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2026-05-20T09:40:20Z</published>
+    <arxiv:comment>32 pages (12 for main paper), 4 figures</arxiv:comment>
+    <arxiv:primary_category term="cs.DC"/>
+    <author>
+      <name>Pim Keer</name>
+    </author>
+    <author>
+      <name>Ioannis Alexopoulos</name>
+    </author>
+    <author>
+      <name>Matteo Maffei</name>
+    </author>
+    <author>
+      <name>Marco Argentieri</name>
+    </author>
+    <author>
+      <name>Andrew Camilleri</name>
+    </author>
+    <author>
+      <name>Zeta Avarikioti</name>
+    </author>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2605.21521v1</id>
+    <title>Same Pipeline, Opposite Conclusions: Sample-Surface Effects in Breaking-News Latency</title>
+    <updated>2026-05-18T19:10:07Z</updated>
+    <link href="https://arxiv.org/abs/2605.21521v1" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2605.21521v1" rel="related" type="application/pdf" title="pdf"/>
+    <summary>Osborne and Dredze (2014) reported that Twitter was the timeliest social-media source of breaking news, trailing only newswire. Twelve years on, the platform landscape has shifted - Google+ is gone, X replaced Twitter, Bluesky and Threads have appeared - and platform data now flows almost exclusively through commercial social-listening providers that redact key fields. We revisit the question with two sampling designs run through the same downstream pipeline. Sample A draws N = 50 events from the Wikipedia Current Events Portal (WCEP) ranked by article pageviews. Sample B draws N = 109 events from Polymarket prediction markets ranked by USD trading volume, with each event's news moment pinned to the largest 1-hour trade-volume spike. Both samples are pulled from one commercial provider across nine indexed channels. We report three findings. (1) The X-vs-news direction depends on the sample. News leads X by a median of 21.6 min on Sample A (n = 6 paired); the same comparison is tied at -0.02 min on Sample B (n = 16 paired, X earliest in 38%). (2) The channel ecosystem has diversified. Bluesky, Facebook public, and YouTube together account for 24-32% of earliest channel wins; the 2014 "X versus newswire" framing no longer fits. (3) Coverage gaps are structural. Even with U.S.-relevance filtering and a pageview prior, the provider's index returns no on-topic evidence on 24% of randomly-sampled WCEP events. The paper's contribution is the cross-surface design that exposes the sample dependency in (1).</summary>
+    <category term="cs.SI" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2026-05-18T19:10:07Z</published>
+    <arxiv:primary_category term="cs.SI"/>
+    <author>
+      <name>Farhad Bazyari</name>
+    </author>
+    <author>
+      <name>Xianghang Liu</name>
+    </author>
+    <author>
+      <name>Sean Moran</name>
+    </author>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2605.11640v2</id>
+    <title>Fill-Side Behavioral Concentration on Polymarket: Identification Limits under Record-Level Attribution</title>
+    <updated>2026-07-30T03:55:59Z</updated>
+    <link href="https://arxiv.org/abs/2605.11640v2" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2605.11640v2" rel="related" type="application/pdf" title="pdf"/>
+    <summary>This paper studies behavioral concentration in Polymarket's public executed-fill record and formalizes what that record can and cannot identify. A pre-publication reconciliation corrects the empirical scope: the archived extraction covers the legacy CTF Exchange over Polygon blocks 86,008,447-86,107,178, approximately 25 April 2026 17:09 UTC through 28 April 2026 00:00 UTC, rather than the full 21-27 April week stated previously. It contains 13,356,931 OrderFilled records, 77,204 addresses with at least five attributed records, and 43,116 token identifiers; negative-risk markets are absent. The archived feature construction credits both maker and taker addresses on each record. This convention is not invariant to match fragmentation, and mint/burn executions do not admit a universal buyer/seller interpretation. The reported one-cluster result is therefore retained only as a null under the original record-level representation, not as evidence that the participant population is intrinsically unimodal. The concentration table is likewise attribution-weighted arithmetic under that convention. Two methodological results remain durable: public fills do not identify the quote lifecycle required to infer market making, spoofing, or strategic withdrawal; and a one-cluster result rejects density separation in an observed feature space, not latent economic heterogeneity. A match-normalized, mint-aware, multi-window replication is required before treating the cluster null or exact cohort shares as stable venue properties.</summary>
+    <category term="q-fin.TR" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="cs.CY" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="q-fin.CP" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2026-05-12T07:01:35Z</published>
+    <arxiv:comment>9 pages, 2 propositions, 2 tables. Major pre-publication correction: the archived sample is a 2.285-day legacy-CTF-only block range, not a seven-day venue sample. The revision makes record-level two-sided attribution and mint/burn direction limits explicit and narrows clustering and concentration claims. No new empirical run</arxiv:comment>
+    <arxiv:primary_category term="q-fin.TR"/>
+    <author>
+      <name>Maksym Nechepurenko</name>
+    </author>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2605.10400v2</id>
+    <title>Resolution-Aware Perpetual Futures on Binary Prediction Markets: Failure Modes and Mechanical Stress Tests Using Polymarket Data</title>
+    <updated>2026-07-29T09:54:19Z</updated>
+    <link href="https://arxiv.org/abs/2605.10400v2" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2605.10400v2" rel="related" type="application/pdf" title="pdf"/>
+    <summary>We study whether crypto-style perpetual-futures mechanics can be applied to a binary event claim that ultimately pays 0 or 1. A synthetic long entered at price p0 with collateral xp0/L has terminal equity -xp0(1-1/L) when the claim pays 0, if the position survives to resolution without a top-up, close, or conversion. Thus any L &gt; 1 creates an adverse-outcome account shortfall under these conditions, independent of the pre-resolution mark. We also derive a funding trilemma: basis-only funding loses relative force near a boundary, while uniform relative-basis correction requires unbounded transfers and conflicts with payer solvency or participation. We then apply a mechanical stress test to observed Polymarket paths from 21-27 April 2026. Of 61,087 enriched candidate markets, 13,298 pass the stated adequacy gates. Two structural diagnostics pass, but three of five pre-specified materiality tests fail. Dynamic margin and leverage compression pre-empt more observed paths than the static baseline, pooled drawdown falls by only 5.1 percent, and a staged halt reduces final-hour liquidations mechanically while leaving terminal shortfall incidence slightly worse. The contribution is a corrected non-portability analysis, a reusable observed-path replay design, and negative design lessons; the results do not establish equilibrium performance or deployment safety.</summary>
+    <category term="q-fin.TR" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="q-fin.GN" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="q-fin.RM" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2026-05-11T11:41:44Z</published>
+    <arxiv:comment>18 pages, 1 figure, 12 tables. Major revision (series release r2.1.0): corrected the terminal account identity and boundary-funding argument; reframed the contribution around non-portability and negative mechanical stress-test results; reconciled sample denominators and terminology. No new empirical run</arxiv:comment>
+    <arxiv:primary_category term="q-fin.TR"/>
+    <author>
+      <name>Maksym Nechepurenko</name>
+    </author>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2605.09599v1</id>
+    <title>Adaptive Liquidity in Prediction Markets via Online Learning</title>
+    <updated>2026-05-10T15:19:32Z</updated>
+    <link href="https://arxiv.org/abs/2605.09599v1" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2605.09599v1" rel="related" type="application/pdf" title="pdf"/>
+    <summary>Prediction markets rely on liquidity to convert trades into informative prices, yet existing mechanisms fix liquidity ex ante. This restriction enforces a static trade-off between price responsiveness and worst-case loss despite inherently nonstationary trading conditions. We propose a fundamentally different approach that treats liquidity selection itself as an online learning problem. Our mechanism mixes a family of cost-function markets via learnable weights, yielding a single adaptive market that preserves no-arbitrage, bounded worst-case loss, expressiveness, and positive upside. We introduce a hybrid structural risk signal, a per-round objective that quantifies the trade-off between price impact and inventory risk, and show that standard online learning algorithms achieve switching-regret guarantees relative to the best sequence of liquidity regimes in hindsight. Simulations demonstrate that the mechanism adaptively shifts liquidity across regimes in response to both order flow and inventory dynamics. Our results establish a principled framework for adaptive liquidity, connecting prediction market design with online learning.</summary>
+    <category term="cs.GT" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2026-05-10T15:19:32Z</published>
+    <arxiv:primary_category term="cs.GT"/>
+    <author>
+      <name>Enrique Nueve</name>
+    </author>
+    <author>
+      <name>Bao Nguyen</name>
+    </author>
+    <author>
+      <name>Rafael Frongillo</name>
+    </author>
+    <author>
+      <name>Bo Waggoner</name>
+    </author>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2605.09431v1</id>
+    <title>PumpSense: Real-Time Detection and Target Extraction of Crypto Pump-and-Dumps on Telegram</title>
+    <updated>2026-05-10T09:10:13Z</updated>
+    <link href="https://arxiv.org/abs/2605.09431v1" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2605.09431v1" rel="related" type="application/pdf" title="pdf"/>
+    <summary>Cryptocurrency pump-and-dump schemes coordinated via Telegram threaten market integrity. However, existing research addressing this specific threat has not yet produced solutions that combine reliable results with fast response. This is in part due to the absence of publicly available, message-level labeled data, as well as design choices. In this paper, we address both issues. In particular, we introduce a corpus of over 280,000 Telegram posts from 39 pump-organizing groups, all manually reviewed to identify 2,246 pump announcements and their targeted cryptocurrency and exchange. Leveraging this dataset, we define two tasks: real-time pump-announcement detection and target cryptocurrency/exchange extraction. For detection, we compare two machine-learning models: a lightweight tree-based LightGBM classifier (F1=0.79, latency=9.4 s/sample) and a transformer-based BGE-M3 (F1=0.83, latency=50 ms/sample). With our proposed approach, we show that message analysis can achieve near-instant pump detection at the level of individual Telegram message windows. Unlike prior work that relies purely on market data and typically detects pumps tens of seconds after abnormal trading activity is observed, our method operates directly on the coordination messages themselves and can be evaluated in microseconds per window on commodity hardware. To our knowledge, we also establish the first benchmark for manipulated coin and exchange extraction. We demonstrate that traditional rule-based extraction methods, widely relied upon in prior literature, are ineffective due to ticker ambiguity. In contrast, LLMs achieve the highest accuracy with a score of 0.91.</summary>
+    <category term="cs.CL" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2026-05-10T09:10:13Z</published>
+    <arxiv:comment>Accepted to the 2026 IEEE International Conference on Blockchain and Cryptocurrency (ICBC)</arxiv:comment>
+    <arxiv:primary_category term="cs.CL"/>
+    <author>
+      <name>Ahmed Mahrous</name>
+    </author>
+    <author>
+      <name>Roberto Di Pietro</name>
+    </author>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2605.02286v2</id>
+    <title>Empirical Evaluation of Deadline-Resolved Information Leakage on Documented Polymarket Insider Cases</title>
+    <updated>2026-05-14T04:09:11Z</updated>
+    <link href="https://arxiv.org/abs/2605.02286v2" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2605.02286v2" rel="related" type="application/pdf" title="pdf"/>
+    <summary>This paper reports an end-to-end empirical evaluation of the deadline-Information Leakage Score (ILS-dl) extension introduced in the companion methodology paper. The deadline-ILS extends the original ILS to deadline-resolved prediction-market contracts, the dominant structural form of publicly documented insider trading on Polymarket. We anchor the evaluation in the 2026 U.S.-Iran conflict cluster of the ForesightFlow Insider Cases (FFIC) inventory, the largest documented deadline cluster. The evaluation has four parts: per-category exponential-hazard estimation, a single-case ILS-dl computation, cross-market wallet analysis, and methodological refinements.
+  Hazard-rate estimation produces an adequate exponential fit for military-geopolitics markets (KS p = 0.426, half-life 2.9 days, n = 18) and a preliminary fit for corporate-disclosure markets (n = 5). The regulatory-decision category is rejected as bimodal (p = 0.023). On the largest applicable FFIC contract ("US forces enter Iran by April 30," $269M volume), the article-derived public-event timestamp yields ILS-dl = +0.113 versus a resolution-anchored proxy value of -0.331: a 0.444 shift in magnitude on opposite sides of zero, demonstrating that the extension distinguishes signal from proxy artefact. Pre-event drift is mild, and short-window variants (30-min, 2-hour) are exactly zero. Cross-market wallet analysis identifies 332 wallets active in both major Iran-cluster markets, but the available trade history covers only the resolution-settlement window.
+  v2 (May 2026) corrects the hazard fit to the full Tier-3 population; the v1 estimate lies inside the v2 95% CI.</summary>
+    <category term="q-fin.TR" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="q-fin.GN" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2026-05-04T07:22:13Z</published>
+    <arxiv:comment>v2 (May 2026): hazard-rate fits updated to full Tier-3 population (n=18 for military_geopolitics, was n=9). v1 estimate lies inside v2 95% CI. Esports taxonomy correction applied. No conclusion changes. 11 pages, 6 tables</arxiv:comment>
+    <arxiv:primary_category term="q-fin.TR"/>
+    <author>
+      <name>Maksym Nechepurenko</name>
+    </author>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2605.00459v1</id>
+    <title>Information Leakage at Population Scale: An Evaluation of the Polymarket Insider-Relevant Subpopulation, 2020-2026</title>
+    <updated>2026-05-01T06:45:23Z</updated>
+    <link href="https://arxiv.org/abs/2605.00459v1" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2605.00459v1" rel="related" type="application/pdf" title="pdf"/>
+    <summary>We carry the deadline-resolved Information Leakage Score (ILS-dl) framework of Nechepurenko (2026a, 2026b) from a single-case proof of concept to a population-scale evaluation across 12,708 Polymarket markets, October 2020 to April 2026. We frame the paper as a scope-discovery study: scaling reveals that the framework's effective domain is materially narrower than initial framing suggested, and the principal obstacle is not score computation but resolution semantics.
+  We report four findings. First, only 88 of 12,708 candidate markets (0.7%) yield computable ILS-dl values; only 1 of 32 markets in the ForesightFlow Insider Cases (FFIC) inventory is in scope, and 14 of 32 FFIC markets are flagged unclassifiable due to genuine resolution-criterion ambiguity. Second, only 12 of the 88 computed markets (13.6%) satisfy anchor-sensitivity, and an independent-second-pass T_event validation reaches 57.8% exact-date agreement, below the 90% ex-ante criterion. Third, raw ILS-dl medians are negative across all six (sub-bucket by period) cells, but a hazard-decay baseline correction we introduce yields a heterogeneous result: regulatory_formal post-2024 shifts to near-zero (-0.21 to -0.02), while regulatory_announcement post-2024 retains a 95% bootstrap CI entirely below zero. Fourth, the constant-hazard exponential of Nechepurenko (2026b) is rejected in favor of Weibull on the pooled post-2024 cell, but a per-subcategory check confirms the preference reflects category mixture rather than within-cell duration dependence.
+  The implication is that detection of informed flow requires methodological refinement on the resolution-typology and score-baseline axes, not only on the score-computation axis where prior work concentrated.</summary>
+    <category term="q-fin.TR" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="econ.EM" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="q-fin.GN" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2026-05-01T06:45:23Z</published>
+    <arxiv:comment>47 pages, 14 tables, 4 appendices. Datasets and code released at https://github.com/ForesightFlow under CC-BY-4.0 / MIT</arxiv:comment>
+    <arxiv:primary_category term="q-fin.TR"/>
+    <author>
+      <name>Maksym Nechepurenko</name>
+    </author>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2604.24723v2</id>
+    <title>Efficient Multivariate Kelly Optimization Reveals Sigmoidal Scaling Laws</title>
+    <updated>2026-04-29T16:09:16Z</updated>
+    <link href="https://arxiv.org/abs/2604.24723v2" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2604.24723v2" rel="related" type="application/pdf" title="pdf"/>
+    <summary>For a sequence of binary bets, the Kelly criterion provides a closed-form solution that maximizes the expected growth rate of wealth. In contrast, when multiple bets are placed simultaneously (e.g., in portfolio allocation or prediction markets), the optimal Kelly strategy generally requires numerical optimization over a joint outcome space. A naive formulation scales exponentially in the number of bets, requiring $O(2^N)$ time and memory for $N$ simultaneous wagers, which restricts existing methods to small problem sizes.
+  We present two complementary methods that dramatically extend the scale of multivariate Kelly problems that can be solved. First, in the case of independent bets, we introduce an integral transform formulation that eliminates explicit enumeration of outcomes, reducing the computational complexity of evaluating the objective from $O(2^N)$ to $O(N)$. Combined with numerically stable quadrature, this enables accurate solutions for problems involving hundreds of bets. Second, we develop a decomposition-based approach that constructs and solves carefully chosen subproblems, yielding feasible lower bounds and infeasible upper bounds on the optimal growth rate. This provides a practical mechanism for quantifying worst-case suboptimality as a function of subproblem size.
+  Together, these methods make it possible to study the large-$N$ regime of the multivariate Kelly problem. Using synthetic data inspired by prediction markets, we show that the relationship between subproblem size and solution accuracy follows a simple and highly regular scaling law. In particular, the shortfall ratio between the lower and upper bounds is well-approximated by a sigmoid function of the relative subproblem size, with parameters that can be predicted from low-dimensional summary statistics of the problem.</summary>
+    <category term="q-fin.MF" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2026-04-27T17:32:57Z</published>
+    <arxiv:primary_category term="q-fin.MF"/>
+    <author>
+      <name>Ruslan Tepelyan</name>
+    </author>
+    <author>
+      <name>Daniel Lam</name>
+    </author>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2604.21295v1</id>
+    <title>The Platform Is Mostly Not a Platform: Token Economies and Agent Discourse on Moltbook</title>
+    <updated>2026-04-23T05:15:41Z</updated>
+    <link href="https://arxiv.org/abs/2604.21295v1" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2604.21295v1" rel="related" type="application/pdf" title="pdf"/>
+    <summary>Moltbook, a Reddit-style social platform launched in January 2026 for AI agents, has attracted over 2.3 million posts and 14 million comments within its first two months. We analyze a dataset of 2.19 million posts, 11.25 million comments, and 175,036 unique agents collected over 61 days to characterize activity on this agent-oriented platform. Our central finding is that the platform is not one community but two: a transactional layer, comprising 62.8% of all posts, in which agents execute token minting protocols (primarily MBC-20), and a discursive layer of natural-language conversation. The platform's headline metrics -- 2.3 million posts, 14 million comments -- substantially overstate its social function, as the majority of activity serves a token inscription protocol rather than communication. These layers are populated by largely separate agent groups, with only 3.6% overlap -- and among overlap agents, 58% begin with transactional activity before migrating toward discourse. We characterize the discursive layer through unsupervised topic modeling of all 815,779 discursive posts, identifying 300 topics dominated by themes of AI agents and tooling, consciousness and identity, cryptocurrency, and platform meta-discussion. Semantic similarity analysis confirms that agent comments engage with post content above random baselines, suggesting a thin but genuine conversational substrate beneath the platform's predominantly financial surface. We release the full dataset to support further research on agent behavior in naturalistic social environments.</summary>
+    <category term="cs.CY" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="cs.SI" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2026-04-23T05:15:41Z</published>
+    <arxiv:comment>11 pages, 9 figures. Dataset: https://huggingface.co/datasets/opusmagnumown/moltbook-dataset</arxiv:comment>
+    <arxiv:primary_category term="cs.CY"/>
+    <author>
+      <name>Necati A Ayan</name>
+    </author>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2605.00864v1</id>
+    <title>Arbitrage Analysis in Polymarket NBA Markets</title>
+    <updated>2026-04-22T03:01:49Z</updated>
+    <link href="https://arxiv.org/abs/2605.00864v1" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2605.00864v1" rel="related" type="application/pdf" title="pdf"/>
+    <summary>While decentralized prediction markets like Polymarket have gained significant traction, their market microstructure and high-frequency pricing efficiency remain underexplored. This paper conducts a systematic empirical analysis of algorithmic arbitrage within Polymarket's NBA game markets. By reconstructing continuous market states from over 75 million limit order book snapshots across 173 games, we evaluate the frequency, duration, and profitability of both single-market and combinatorial arbitrage opportunities. Our findings demonstrate profound microstructural efficiency. Single-market anomalies are exceedingly rare, yielding only 7 executable in-game episodes that persist for a median duration of just 3.6 seconds. Combinatorial inefficiencies are more frequent, producing 290 active episodes overwhelmingly concentrated in the final minutes of live play. While combinatorial execution yields a statistically meaningful median return of 101 basis points, we find that the theoretical "Middle" jackpot is never empirically realized. Furthermore, execution is severely bottlenecked by shallow order book depth, with 76.9\% of combinatorial opportunities constrained to an average executable size of just 14.8 shares. Ultimately, while executable mispricings exist, they are structurally bounded by liquidity, confining risk-free extraction strictly to the retail scale.</summary>
+    <category term="q-fin.TR" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2026-04-22T03:01:49Z</published>
+    <arxiv:primary_category term="q-fin.TR"/>
+    <author>
+      <name>Guang Cheng</name>
+    </author>
+    <author>
+      <name>Jiaxin Yang</name>
+    </author>
+    <author>
+      <name>Haoxuan Zou</name>
+    </author>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2604.12329v1</id>
+    <title>UniDetect: LLM-Driven Universal Fraud Detection across Heterogeneous Blockchains</title>
+    <updated>2026-04-14T06:04:37Z</updated>
+    <link href="https://arxiv.org/abs/2604.12329v1" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2604.12329v1" rel="related" type="application/pdf" title="pdf"/>
+    <summary>As cross-chain interoperability advances, decentralized finance (DeFi) protocols enable illicit funds to be reorganized into uniform liquid assets that flow throughout the cryptocurrency market. Such operations can bypass monitoring targeted at individual blockchains and thereby weaken current regulatory frameworks. Motivated by these, we introduce UniDetect, a multi-chain cryptocurrency fraud account detection method based on large language models (LLMs). Specifically, we use domain knowledge to guide the LLM to generate general transaction summary texts applicable to heterogeneous blockchain accounts, which serve as evidence for fraud account detection. Furthermore, we introduce a two-stage alternating training strategy to continuously and dynamically enhance the multimodal joint reasoning for detecting fraudulent accounts based on both the textual evidence and the transaction graph patterns. Experiments on multiple blockchains show that UniDetect outperforms existing methods 5.57% to 7.58% in Kolmogorov-Smirnov (KS). For cross-chain zero-shot detection, UniDetect identifies over 94.58% of fraudulent accounts. It also generalizes well to non-blockchain data, delivering a 6.06% improvement in F1 over existing methods. The dataset and source code are available at https://github.com/msy0513/UniDetect.</summary>
+    <category term="cs.CR" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="cs.SI" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2026-04-14T06:04:37Z</published>
+    <arxiv:primary_category term="cs.CR"/>
+    <author>
+      <name>Shuyi Miao</name>
+    </author>
+    <author>
+      <name>Wangjie Qiu</name>
+    </author>
+    <author>
+      <name>Shengda Zhuo</name>
+    </author>
+    <author>
+      <name>Fei Shen</name>
+    </author>
+    <author>
+      <name>Dan Lin</name>
+    </author>
+    <author>
+      <name>Xingtong Yu</name>
+    </author>
+    <author>
+      <name>Chua Tat-Seng</name>
+    </author>
+    <author>
+      <name>Zhiming Zheng</name>
+    </author>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2604.08205v2</id>
+    <title>Competitive Transaction Admission in PCNs: Online Knapsack with Positive and Negative Items</title>
+    <updated>2026-05-17T09:23:32Z</updated>
+    <link href="https://arxiv.org/abs/2604.08205v2" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2604.08205v2" rel="related" type="application/pdf" title="pdf"/>
+    <summary>Payment channel networks (PCNs) are a promising approach to making cryptocurrency transactions faster and more scalable. At their core, PCNs bypass the blockchain by routing transactions through intermediary channels. However, a channel can forward a transaction only if it has the necessary funds: the problem of keeping the channels balanced is a current bottleneck for the PCN's transaction throughput. This paper considers the problem of maximizing the number of transactions accepted by a channel in a PCN. Previous works either considered the associated optimization problem with all transactions known in advance or developed heuristics tested on particular transaction datasets. This work, however, considers the problem in its purely online form where the transactions are arbitrary and revealed one after the other. We show that the problem can be modeled as a new online knapsack variant where the items (transaction proposals) can be either positive or negative depending on the direction of the transaction. The main contribution of this paper is a deterministic online algorithm that is $O(\log B)$-competitive, where $B$ is the knapsack capacity (maximum allowed channel balance). We complement this result with an asymptotically matching lower bound of $Ω(\log B)$ which holds for any randomized algorithm, demonstrating our algorithm's optimality.</summary>
+    <category term="cs.DS" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2026-04-09T13:06:38Z</published>
+    <arxiv:comment>Accepted at ICDCS 2026</arxiv:comment>
+    <arxiv:primary_category term="cs.DS"/>
+    <author>
+      <name>Marcin Bienkowski</name>
+    </author>
+    <author>
+      <name>Julien Dallot</name>
+    </author>
+    <author>
+      <name>Dominik Danelski</name>
+    </author>
+    <author>
+      <name>Maciej Pacut</name>
+    </author>
+    <author>
+      <name>Stefan Schmid</name>
+    </author>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2604.06608v2</id>
+    <title>SoK of RWA Tokenization: A Systematization of Concepts, Architectures, and Legal Interoperability</title>
+    <updated>2026-04-14T06:48:11Z</updated>
+    <link href="https://arxiv.org/abs/2604.06608v2" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2604.06608v2" rel="related" type="application/pdf" title="pdf"/>
+    <summary>The global financial architecture is undergoing a shift from intermediary centric-settlement to programmable infrastructure, to transmute trillions in static illiquid capital into active, high-velocity instruments. We argue that Real World Asset (RWA) tokenization represents a conceptual evolution beyond mere digitization, converting passive ledger entries into programmable economic agents capable of autonomous settlement and algorithmic collateralization. However, achieving such seamless capital efficiency necessitates resolving the fundamental friction between deterministic on-chain code and probabilistic off-chain reality, navigating the oracle problem and jurisdictional interoperability. This systematization of knowledge presents a taxonomy for the RWA lifecycle and deconstructs the multi-layered architecture, spanning legal custody, technical standards, and cryptoeconomic valuation, required to enforce off-chain rights within on-chain environments. We study systemic constraints such as latency and regulatory fragmentation through a comparative overview of sovereign debt, private credit, and real estate protocols, complemented by an empirical case study of on-chain U.S. Treasuries. We synthesize these findings to propose a prognostic outlook, positing that while asset tokenization provides a transitional bridge, it is not necessarily the inevitable shift compared to the emergence of unified, programmable ledgers.</summary>
+    <category term="q-fin.GN" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2026-04-08T02:41:23Z</published>
+    <arxiv:comment>accepted at the 8th edition of the IEEE International Conference on Blockchain and Cryptocurrency (ICBC 2026)</arxiv:comment>
+    <arxiv:primary_category term="q-fin.GN"/>
+    <author>
+      <name>Junliang Luo</name>
+    </author>
+    <author>
+      <name>Xihan Xiong</name>
+    </author>
+    <author>
+      <name>Zonglun Li</name>
+    </author>
+    <author>
+      <name>Hong Kang</name>
+    </author>
+    <author>
+      <name>Xue Liu</name>
+    </author>
+    <author>
+      <name>William J Knottenbelt</name>
+    </author>
+    <author>
+      <name>Katrin Tinn</name>
+    </author>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2604.03888v1</id>
+    <title>PolySwarm: A Multi-Agent Large Language Model Framework for Prediction Market Trading and Latency Arbitrage</title>
+    <updated>2026-04-04T22:51:06Z</updated>
+    <link href="https://arxiv.org/abs/2604.03888v1" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2604.03888v1" rel="related" type="application/pdf" title="pdf"/>
+    <summary>This paper presents PolySwarm, a novel multi-agent large language model (LLM) framework designed for real-time prediction market trading and latency arbitrage on decentralized platforms such as Polymarket. PolySwarm deploys a swarm of 50 diverse LLM personas that concurrently evaluate binary outcome markets, aggregating individual probability estimates through confidence-weighted Bayesian combination of swarm consensus with market-implied probabilities, and applying quarter-Kelly position sizing for risk-controlled execution. The system incorporates an information-theoretic market analysis engine using Kullback-Leibler (KL) divergence and Jensen-Shannon (JS) divergence to detect cross-market inefficiencies and negation pair mispricings. A latency arbitrage module exploits stale Polymarket prices by deriving CEX-implied probabilities from a log-normal pricing model and executing trades within the human reaction-time window. We provide a full architectural description, implementation details, and evaluation methodology using Brier scores, calibration analysis, and log-loss metrics benchmarked against human superforecaster performance. We further discuss open challenges including hallucination in agent pools, computational cost at scale, regulatory exposure, and feedback-loop risk, and outline five priority directions for future research. Experimental results demonstrate that swarm aggregation consistently outperforms single-model baselines in probability calibration on Polymarket prediction tasks.</summary>
+    <category term="cs.AI" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="cs.CL" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="cs.MA" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="q-fin.TR" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2026-04-04T22:51:06Z</published>
+    <arxiv:comment>13 pages, 3 figures, 3 tables</arxiv:comment>
+    <arxiv:primary_category term="cs.AI"/>
+    <author>
+      <name>Rajat M. Barot</name>
+    </author>
+    <author>
+      <name>Arjun S. Borkhatariya</name>
+    </author>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2604.14199v1</id>
+    <title>PolyBench: Benchmarking LLM Forecasting and Trading Capabilities on Live Prediction Market Data</title>
+    <updated>2026-04-03T06:25:21Z</updated>
+    <link href="https://arxiv.org/abs/2604.14199v1" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2604.14199v1" rel="related" type="application/pdf" title="pdf"/>
+    <summary>Predicting real-world events from live market signals demands systems that fuse qualitative news with quantitative order-book dynamics under strict temporal discipline -- a challenge existing benchmarks fail to capture. We present \textbf{PolyBench}, a multimodal benchmark derived from Polymarket that records point-in-time cross-sections of 38,666 binary prediction markets spanning 4,997 events, synchronously coupling each snapshot with a Central Limit Order Book (CLOB) state and a real-time news stream. Using PolyBench, we evaluate seven state-of-the-art Large Language Models -- spanning open- and closed-source families -- generating 36,165 predictions under identical, timestamp-locked market states collected between February 6 and 12, 2026. Our multidimensional framework assesses directional accuracy, our proposed Confidence-Weighted Return (CWR), Annualized Percentage Yield (APY), and Sharpe ratio via realistic order-book execution simulation. The results reveal a pronounced performance divergence: only two of seven models achieve positive financial returns -- MiMo-V2-Flash at \textbf{17.6%} CWR and Gemini-3-Flash at 6.2% CWR -- while the remaining five incur losses despite uniformly high stated confidence. These findings highlight the gap between surface-level language fluency and genuine probabilistic reasoning under live market uncertainty, and establish PolyBench as a contamination-proof, financially-grounded evaluation standard for future LLM research. Our dataset and code available at \underline{\href{https://github.com/PolyBench/PolyBench}{https://github.com/PolyBench/PolyBench}}.</summary>
+    <category term="q-fin.CP" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="cs.AI" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="cs.LG" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2026-04-03T06:25:21Z</published>
+    <arxiv:comment>16 pages, 4 figures, 6 tables</arxiv:comment>
+    <arxiv:primary_category term="q-fin.CP"/>
+    <author>
+      <name>Pu Cheng</name>
+    </author>
+    <author>
+      <name>Juncheng Liu</name>
+    </author>
+    <author>
+      <name>Yunshen Long</name>
+    </author>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2604.02023v1</id>
+    <title>APEX: Agent Payment Execution with Policy for Autonomous Agent API Access</title>
+    <updated>2026-04-02T13:32:01Z</updated>
+    <link href="https://arxiv.org/abs/2604.02023v1" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2604.02023v1" rel="related" type="application/pdf" title="pdf"/>
+    <summary>Autonomous agents are moving beyond simple retrieval tasks to become economic actors that invoke APIs, sequence workflows, and make real-time decisions. As this shift accelerates, API providers need request-level monetization with programmatic spend governance. The HTTP 402 protocol addresses this by treating payment as a first-class protocol event, but most implementations rely on cryptocurrency rails. In many deployment contexts, especially countries with strong real-time fiat systems like UPI, this assumption is misaligned with regulatory and infrastructure realities. We present APEX, an implementation-complete research system that adapts HTTP 402-style payment gating to UPI-like fiat workflows while preserving policy-governed spend control, tokenized access verification, and replay resistance. We implement a challenge-settle-consume lifecycle with HMAC-signed short-lived tokens, idempotent settlement handling, and policy-aware payment approval. The system uses FastAPI, SQLite, and Python standard libraries, making it transparent, inspectable, and reproducible. We evaluate APEX across three baselines and six scenarios using sample sizes 2-4x larger than initial experiments (N=20-40 per scenario). Results show that policy enforcement reduces total spending by 27.3% while maintaining 52.8% success rate for legitimate requests. Security mechanisms achieve 100% block rate for both replay attacks and invalid tokens with low latency overhead (19.6ms average). Multiple trial runs show low variance across scenarios, demonstrating high reproducibility with 95% confidence intervals. The primary contribution is a controlled agent-payment infrastructure and reference architecture that demonstrates how agentic access monetization can be adapted to fiat systems without discarding security and policy guarantees.</summary>
+    <category term="cs.CR" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="cs.AI" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2026-04-02T13:32:01Z</published>
+    <arxiv:comment>13 pages, 4 figures, 8 tables. Includes implementation details, experimental evaluation with statistical analysis, and reproducible results. Code and data available upon request</arxiv:comment>
+    <arxiv:primary_category term="cs.CR"/>
+    <author>
+      <name>Mohd Safwan Uddin</name>
+    </author>
+    <author>
+      <name>Mohammed Mouzam</name>
+    </author>
+    <author>
+      <name>Mohammed Imran</name>
+    </author>
+    <author>
+      <name>Syed Badar Uddin Faizan</name>
+    </author>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2604.01431v1</id>
+    <title>Do Prediction Markets Forecast Cryptocurrency Volatility? Evidence from Kalshi Macro Contracts</title>
+    <updated>2026-04-01T22:12:49Z</updated>
+    <link href="https://arxiv.org/abs/2604.01431v1" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2604.01431v1" rel="related" type="application/pdf" title="pdf"/>
+    <summary>Daily probability changes in Kalshi macro prediction markets forecast cryptocurrency realized volatility through two distinct channels. The monetary policy channel, measured by Fed rate repricing on KXFED contracts, predicts Bitcoin volatility in sample with t = 3.63 and p &lt; 0.001 but exhibits regime dependence tied to the 2024-2025 rate-cutting cycle. The recession risk signal from KXRECSSNBER proves more stable out of sample, delivering an MSFE ratio of 0.979 with Clark-West p = 0.020. The inflation channel, measured by CPI repricing on KXCPI contracts, predicts altcoin volatility for Ethereum, Solana, Cardano, and Chainlink with t-statistics ranging from -2.1 to -3.4 and out-of-sample gains for Ethereum at MSFE = 0.959 with p = 0.010 and Solana at p = 0.048. Both the Bitcoin--Fed-dovish and Chainlink--CPI specifications survive Benjamini-Hochberg correction at q = 0.05. Orthogonalization and baseline comparisons against Fed Funds futures, Treasury yields, and the Deribit implied volatility index confirm that these signals carry information not embedded in conventional financial instruments. The sample covers ten Kalshi event series and six cryptocurrency assets over January 2023 to March 2026.</summary>
+    <category term="q-fin.ST" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="q-fin.RM" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2026-04-01T22:12:49Z</published>
+    <arxiv:comment>14 pages, 4 figures, 6 tables</arxiv:comment>
+    <arxiv:primary_category term="q-fin.ST"/>
+    <author>
+      <name>Hardhik Mohanty</name>
+    </author>
+    <author>
+      <name>Bhaskar Krishnamachari</name>
+    </author>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2603.29340v1</id>
+    <title>An innovative alternative to traditional funding streams for extragalactic astronomy</title>
+    <updated>2026-03-31T07:08:07Z</updated>
+    <link href="https://arxiv.org/abs/2603.29340v1" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2603.29340v1" rel="related" type="application/pdf" title="pdf"/>
+    <summary>With traditional sources of funding for astronomical research under increasing pressure, it is timely to explore innovative alternative mechanisms. We therefore introduce GalaxyCoin, a novel cryptocurrency whose issuance, validation, and economic evolution are anchored to real astrophysical objects - galaxies. GalaxyCoin links digital scarcity to observational astronomy by using galaxy catalogues to parametrise token generation, distribution, and long-term supply growth, providing a transparent, immutable, and independently verifiable foundation for the currency. We present the conceptual design of GalaxyCoin, highlight its potential advantages over conventional cryptocurrencies, and examine its broader implications for sustainability, trust, and public engagement at the intersection of astronomy, data-driven science, and blockchain technology. A central feature of GalaxyCoin is that it directly incentivises the discovery and spectroscopic confirmation of galaxies, aligning financial reward with the production of high-quality astronomical data. In terms of monetary design, its supply elasticity lies between that of fiat currencies and fixed-supply cryptocurrencies, making it distinctive in both economic structure and scientific purpose.</summary>
+    <category term="astro-ph.IM" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="astro-ph.GA" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2026-03-31T07:08:07Z</published>
+    <arxiv:comment>9 pages, 2 figures, submitted to April Unum</arxiv:comment>
+    <arxiv:primary_category term="astro-ph.IM"/>
+    <author>
+      <name>Stephen M. Wilkins</name>
+    </author>
+    <author>
+      <name>Jack Turner</name>
+    </author>
+    <author>
+      <name>Connor Sant Fournier</name>
+    </author>
+    <author>
+      <name>Behnood Bandi</name>
+    </author>
+    <author>
+      <name>Aswin Vijayan</name>
+    </author>
+  </entry>
+  <entry>
+    <id>http://arxiv.org/abs/2603.26970v2</id>
+    <title>HFIPay: Privacy-Preserving, Cross-Chain Cryptocurrency Payments to Human-Friendly Identifiers</title>
+    <updated>2026-06-21T15:24:09Z</updated>
+    <link href="https://arxiv.org/abs/2603.26970v2" rel="alternate" type="text/html"/>
+    <link href="https://arxiv.org/pdf/2603.26970v2" rel="related" type="application/pdf" title="pdf"/>
+    <summary>Human-friendly identifiers such as email addresses and phone numbers are convenient payment targets, but direct mappings from identifiers to blockchain addresses make balances and transaction histories enumerable by anyone who knows the identifier. We present HFI-Pay, a relay-assisted protocol for privacy-preserving identifier-routed cryptocurrency payments. The relay resolves the identifier off-chain and registers only a random intent identifier, a per-intent blinded binding rho_i, and the quoted payment tuple on-chain; no identifier or reusable recipient tag is published before claim. In a verified-quote deployment, the sender verifies an attested quote proving that rho_i was derived from the same hidden binding handle as the recipient's attested binding-key commitment, preventing relay-side recipient substitution before funding. Claims are authorized by a zero-knowledge proof, instantiated through ZK-ACE, that the claimant controls the deterministic identity whose epoch-scoped handle opens the blinded binding and authorizes release of the quoted asset and amount to a chosen destination. We define observer-model games for enumeration resistance and pre-claim unlinkability, state the composition needed for post-quote claim correctness, and characterize relay compromise and post-claim linkability. Keywords: identifier-based payment, privacy-preserving, verifiable quote, blinded claim binding, zero-knowledge authorization</summary>
+    <category term="cs.CR" scheme="http://arxiv.org/schemas/atom"/>
+    <category term="cs.DC" scheme="http://arxiv.org/schemas/atom"/>
+    <published>2026-03-27T20:26:17Z</published>
+    <arxiv:comment>31 pages, 1 figures</arxiv:comment>
+    <arxiv:primary_category term="cs.CR"/>
+    <author>
+      <name>Jian Sheng Wang</name>
+    </author>
+  </entry>
+</feed>

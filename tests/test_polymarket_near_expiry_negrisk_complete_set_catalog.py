@@ -77,7 +77,7 @@ MULTI_STRIKES_RESULT = (
     ROOT
     / "docs/model-research/action-value/polymarket-btc-multi-strikes-weekly-negrisk-result-v1-2026-08-29.json"
 )
-REGISTRY_HASH = "fc0bddf222a1908db6c12df338dc26963f36514b01e37b5b31fc567760f19aca"
+REGISTRY_HASH = "98714cb8665d2132cb53670f09e73d11816cdbb7a9c3bc221dce4db4f865f98d"
 
 
 def _load(path: Path) -> dict[str, object]:
