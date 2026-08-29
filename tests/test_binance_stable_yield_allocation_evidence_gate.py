@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+from decimal import Decimal
 from pathlib import Path
 
 
@@ -20,6 +21,13 @@ PROMOTION_TRIAGE_PATH = (
     / "action-value"
     / "binance-public-promotion-yield-triage-v1-2026-08-26.json"
 )
+REFRESH_PATH = (
+    ROOT
+    / "docs"
+    / "model-research"
+    / "action-value"
+    / "binance-scheduled-yield-distribution-refresh-v1-2026-08-29.json"
+)
 REGISTRY_PATH = (
     ROOT / "docs" / "model-research" / "structural-edge-priority-registry-v1.json"
 )
@@ -27,10 +35,13 @@ EXPECTED_RESULT_SHA256 = (
     "3096867474c4b5a0b3f893645bac68081ceb3783ad14393261e6d88793b64a8a"
 )
 EXPECTED_REGISTRY_SHA256 = (
-    "12cf5446f5ff2521530672403e3926069b6dcc526f83f19f7ecfadcb7b7860d2"
+    "97d05d2f718f078bb6c890be30b65e64af5a9408419e8a3c58eedcc7452e80d8"
 )
 EXPECTED_PROMOTION_TRIAGE_SHA256 = (
     "26efd481a5ff424ca17ec803bb6a1a3ae8949d1fe0fc31a03e20a35d08d031ac"
+)
+EXPECTED_REFRESH_SHA256 = (
+    "c5feb852830adadd497aa287460d1a3132e324fbbbdaa5f608890acebc43e252"
 )
 
 
@@ -110,7 +121,11 @@ def test_registry_prioritizes_candidate_without_opening_authority() -> None:
     )
     assert candidate["priority_rank"] == 8
     assert candidate["market_direction_forecast_required"] is False
-    assert candidate["canonical_artifacts"][:4] == [
+    assert candidate["canonical_artifacts"][:5] == [
+        {
+            "path": REFRESH_PATH.relative_to(ROOT).as_posix(),
+            "result_sha256": EXPECTED_REFRESH_SHA256,
+        },
         {
             "path": (
                 "docs/model-research/action-value/"
@@ -179,3 +194,28 @@ def test_public_promotion_triage_is_conditional_and_not_accepted() -> None:
     assert "period_end_utc" not in usdc
     assert "maximum_14_day_bonus_usd" not in usdc
     assert artifact["source_binding_correction"]["venue_requests_added"] == 0
+
+
+def test_scheduled_distribution_refresh_retains_raw_and_updates_rates() -> None:
+    refresh = _load(REFRESH_PATH)
+
+    assert refresh["result_sha256"] == EXPECTED_REFRESH_SHA256
+    assert _embedded_hash(refresh) == EXPECTED_REFRESH_SHA256
+    assert refresh["adjudication"]["accepted_edge_count_change"] == 0
+    assert refresh["adjudication"]["rlusd_candidate_accepted"] is False
+    assert refresh["usd1"]["base_APRs_percent_by_completed_distribution"] == [
+        "4.85",
+        "5.46",
+        "5.27",
+    ]
+    assert refresh["rlusd"]["completed_week_APRs_percent"] == ["8.07", "5.78"]
+    sensitivity = refresh["usd1"][
+        "mutually_exclusive_fixed_7_percent_Simple_Earn_bonus_sensitivity"
+    ]
+    assert sensitivity["annualized_uplift_over_latest_base_bips"] == "173"
+    assert Decimal(sensitivity["break_even_days_after_forfeiting_one_latest_base_airdrop_day"]) < 3.05
+
+    for source in refresh["sources"]:
+        payload = (ROOT / source["raw_path"]).read_bytes()
+        assert len(payload) == source["raw_bytes"]
+        assert hashlib.sha256(payload).hexdigest() == source["raw_sha256"]
