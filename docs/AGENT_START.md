@@ -1541,9 +1541,21 @@ safety gate, blocks Stop, or submits an order.
   hourly or series-specific window, never repeated outcome-aware narrowing.
   Canonical follow-up result SHA-256
   `3e3ae8fd8c98c93c3e2194425db5992f06aed412e07d32333525601c2b34bc52`.
-- The structural-edge registry now has 42 ranked hypotheses and 20
+- The exact non-crypto Polymarket/Binance TradFi-perpetual funding family is
+  terminal for the frozen current top five. A four-request rejection prefilter
+  joined 36 exact current instruments and advanced SKHYNIX, CRWV, ARM, HOOD,
+  and MSTR without books. The 15-request bounded history plus a separately
+  frozen zero-network shortfall adjudication then found every fixed orientation
+  failed training, validation, and test after 20 bips execution and two 500-bip
+  annual capital hurdles. ARM was least negative at `-24.6296621005` bips over
+  the full retained window and below `-20.68` bips in every role. No conversion,
+  book, credential, account, order, or protected-capture asset was accessed.
+  Do not repeat absent a material funding cash-flow, fee, session, instrument,
+  conversion, or execution-architecture change. Canonical result SHA-256
+  `5e67277ad30b9f0164a3987804162ed2d1cdabb820e7e258d6a0b79748cf7d06`.
+- The structural-edge registry now has 43 ranked hypotheses and 20
   narrowly accepted scoped overlays, and result SHA-256
-  `4b3828b49387edf1e26e8ff107221139f1d133c65ab85a8664f0ac08de84e5ad`.
+  `e712a9086d31944b42f93270256c393c6d8ab38997c20b7f8638cd4aa9088a34`.
 
 ## Task Routing
 
@@ -1576,6 +1588,7 @@ safety gate, blocks Stop, or submits an order.
 | Binance XAU/PAXG funding-basis terminal adjudication | `docs/model-research/action-value/binance-xau-paxg-perpetual-funding-spread-failure-adjudication-v1-2026-08-29.json` |
 | Polymarket exact-one-NO V2 conversion failure adjudication | `docs/model-research/action-value/polymarket-negrisk-one-no-v2-conversion-failure-adjudication-v1-2026-08-29.json` |
 | Binance BLVT current primary-market NAV-parity terminal gate | `docs/model-research/action-value/binance-blvt-primary-market-nav-parity-public-gate-v1-2026-08-29.json` |
+| Polymarket/Binance TradFi-perpetual funding terminal adjudication | `docs/model-research/action-value/polymarket-binance-tradfi-perps-funding-history-shortfall-adjudication-v1-2026-08-29.json` |
 | Binance idle-stablecoin Launchpool reward candidate | `docs/model-research/action-value/binance-stablecoin-launchpool-idle-inventory-reward-candidate-v1-2026-08-26.json` |
 | Polymarket Combo RFQ versus CLOB Boolean parity candidate | `docs/model-research/action-value/polymarket-combo-rfq-boolean-parity-candidate-v1-2026-08-27.json` |
 | Polymarket terminal broad sports Combo requester-overround validation | `docs/model-research/action-value/polymarket-combo-maker-overround-validation-v1-2026-08-27.json` |

@@ -34,7 +34,7 @@ EXPECTED_FEE_EVIDENCE_SHA256 = (
     "4842bebff1b6177b2053d0fdc40680a2224f01fb541d0efcc85b08f049f68184"
 )
 EXPECTED_REGISTRY_SHA256 = (
-    "4b3828b49387edf1e26e8ff107221139f1d133c65ab85a8664f0ac08de84e5ad"
+    "e712a9086d31944b42f93270256c393c6d8ab38997c20b7f8638cd4aa9088a34"
 )
 
 
@@ -154,7 +154,7 @@ def test_registry_records_candidate_without_inflating_accepted_edges() -> None:
     assert registry["accepted_edge_count"] == 20
     assert [
         row["priority_rank"] for row in registry["prioritized_hypotheses"]
-    ] == list(range(1, 43))
+    ] == list(range(1, 44))
     candidate = next(
         row
         for row in registry["prioritized_hypotheses"]

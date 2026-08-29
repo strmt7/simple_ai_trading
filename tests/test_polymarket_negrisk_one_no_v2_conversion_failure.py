@@ -25,7 +25,7 @@ CONTRACT_HASH = "7d8c556225aa5905ca302b7c9409768c8b546a0dc41597ad083c573ce41fd64
 ADJUDICATION_HASH = (
     "7c976cd84795718b63463ea4e32ebeddaf51e807fc5ebe9aa8cb49b476541e19"
 )
-REGISTRY_HASH = "4b3828b49387edf1e26e8ff107221139f1d133c65ab85a8664f0ac08de84e5ad"
+REGISTRY_HASH = "e712a9086d31944b42f93270256c393c6d8ab38997c20b7f8638cd4aa9088a34"
 
 
 def _load(path: Path) -> dict[str, object]:
@@ -110,7 +110,7 @@ def test_registry_binds_failure_without_reopening_or_promotion() -> None:
     assert _canonical_hash(registry, "result_sha256") == REGISTRY_HASH
     assert registry["accepted_edge_count"] == 20
     assert [row["priority_rank"] for row in registry["prioritized_hypotheses"]] == list(
-        range(1, 43)
+        range(1, 44)
     )
     row = registry["prioritized_hypotheses"][1]
     assert row["priority_rank"] == 2

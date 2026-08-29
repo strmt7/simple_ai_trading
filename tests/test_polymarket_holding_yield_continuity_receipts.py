@@ -21,7 +21,7 @@ JOURNAL = ROOT / "data/polymarket-holding-yield-continuity-receipts-v8/journal.j
 REGISTRY = ROOT / "docs/model-research/structural-edge-priority-registry-v1.json"
 CONTRACT_HASH = "ace38fca480049601d876fb8ae781b5103372662e9294e78c5905d8162332b42"
 RESULT_HASH = "2eb7b434170afb195cc4f4faef8260ac4ec30b655c20fc07ee1bc9acbdfe090d"
-REGISTRY_HASH = "4b3828b49387edf1e26e8ff107221139f1d133c65ab85a8664f0ac08de84e5ad"
+REGISTRY_HASH = "e712a9086d31944b42f93270256c393c6d8ab38997c20b7f8638cd4aa9088a34"
 
 
 def _load(path: Path) -> dict[str, object]:
@@ -131,7 +131,7 @@ def test_registry_preserves_scope_and_adds_continuity_artifact() -> None:
     assert registry["result_sha256"] == REGISTRY_HASH
     assert _canonical_hash(registry, "result_sha256") == REGISTRY_HASH
     assert registry["accepted_edge_count"] == 20
-    assert len(registry["prioritized_hypotheses"]) == 42
+    assert len(registry["prioritized_hypotheses"]) == 43
     row = registry["prioritized_hypotheses"][0]
     assert row["mechanism"] == "complete_set_holding_reward"
     assert row["canonical_artifacts"][-1] == {

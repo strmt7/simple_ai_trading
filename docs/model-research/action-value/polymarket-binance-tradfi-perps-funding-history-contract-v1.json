@@ -1,0 +1,196 @@
+{
+  "schema_version": "polymarket-binance-tradfi-perps-funding-history-contract-v1",
+  "frozen_at_utc": "2026-08-29T19:36:40.319467Z",
+  "result_sha256": "6059d02dbda9e6a314f3fc79793f8d21ba3c3040803da033bd81ead3d2b872de",
+  "purpose": "test whether the five frozen current-funding leaders retain the same receiving-leg orientation through a bounded four-day history before spending any request on books, fees, conversion, credentials, or accounts",
+  "implementation_path": "tools/screen_polymarket_binance_tradfi_perps_funding_history.py",
+  "implementation_sha256": "a1d99b1cbe66f0f26c333c86268813436beae5b0e3d9fb694ae6783fa1cf432f",
+  "dependency": {
+    "path": "tools/screen_polymarket_binance_tradfi_perps_funding_prefilter.py",
+    "sha256": "773c482a96ba3fdf2b9a73b6260a0d44ea6dcb29bc5b21105e44dc741576a627"
+  },
+  "prefilter_lineage": {
+    "path": "docs/model-research/action-value/polymarket-binance-tradfi-perps-funding-prefilter-v1-2026-08-29.json",
+    "result_sha256": "9e2d5843a986f02f757aa56641c5cb38c35500e62cb2a1804984dea7793a1859",
+    "selection_rule": "use the first five exact matches by frozen current absolute funding separation only; preserve each current receiving-leg orientation without historical refit"
+  },
+  "selected_symbols": [
+    "SKHYNIX",
+    "CRWV",
+    "ARM",
+    "HOOD",
+    "MSTR"
+  ],
+  "authority": {
+    "public_unauthenticated_market_data_only": true,
+    "credentials_permitted": false,
+    "account_state_permitted": false,
+    "books_permitted": false,
+    "orders_transfers_or_account_mutations_permitted": false,
+    "paper_or_live_trading_authority": false,
+    "protected_round21_sidecar_touched": false
+  },
+  "source_boundary": {
+    "polymarket_funding_history_contract": "https://docs.polymarket.com/perps/market-data#list-funding-history",
+    "polymarket_funding_mechanics": "https://docs.polymarket.com/perps/learn-about-trading/funding",
+    "polymarket_market_sessions": "https://docs.polymarket.com/perps/learn-about-trading/market-sessions",
+    "binance_funding_history_contract": "https://developers.binance.com/en/docs/catalog/core-trading-derivatives-trading-usd-s-m-futures/api/rest-api/market-data#get-funding-rate-history",
+    "binance_kline_contract": "https://developers.binance.com/en/docs/catalog/core-trading-derivatives-trading-usd-s-m-futures/api/rest-api/market-data#kline-candlestick-data",
+    "security_classification": "all fifteen requests are documented public market-data GETs with no API key or signature",
+    "timestamp_semantics": "Polymarket funding rows and Binance funding rows expose epoch-millisecond funding observations; Binance klines are keyed by open time",
+    "binance_special_rate_rule": "sum Regular and Special dividend funding rows at the same normalized settlement hour because both are cash-flow components",
+    "polymarket_page_ceiling": 100,
+    "binance_funding_limit_ceiling": 1000,
+    "binance_kline_limit_ceiling": 1500
+  },
+  "economics": {
+    "orientation": "fixed independently by the current prefilter and never selected or inverted after history access",
+    "funding_join": "sum the eight Polymarket hourly funding observations ending at each Binance settlement and subtract the complete Binance Regular plus Special settlement cash flow",
+    "price_regime_path": "use eight consecutive Binance one-hour symbol klines ending immediately before each funding settlement",
+    "maximum_timestamp_phase_skew_ms": 60000,
+    "execution_hurdle_bips": "20",
+    "annual_opportunity_hurdle_bips_per_leg": "500",
+    "capital_legs": 2,
+    "minimum_aligned_rows": 12,
+    "role_split": "oldest 50 percent training, next half of the remainder validation, newest remainder test; expected 6 3 3 at twelve rows",
+    "role_gate": "each role independently has positive cumulative funding carry after one 20-bip round-trip hurdle and elapsed two-leg capital cost",
+    "minimum_regime_rows": 2,
+    "direction_regimes": "up above 0.25 percent, down below negative 0.25 percent, and sideways inclusive between those bounds",
+    "volatility_regimes": "high at or above the full-window median absolute eight-hour return and low below it",
+    "regime_gate": "every direction and volatility slice has at least two rows and positive gross fixed-orientation carry",
+    "persistence_gate": "role gate and regime gate pass, sign consistency is at least 75 percent, and the worst leave-one-settlement-out full-window result remains positive after execution and capital hurdles",
+    "unmodeled_before_any_edge_claim": [
+      "pUSD USDT executable conversion basis fees custody and delay",
+      "synchronized executable entry and exit depth and fill probability",
+      "exact account fee tiers and owned fill roles",
+      "cross-session index and mark divergence and settlement architecture",
+      "dividends corporate actions halts liquidation insurance and auto-deleveraging",
+      "choppy liquidity and latency stress with prospective paper fills"
+    ]
+  },
+  "request_contract": {
+    "maximum_get_requests": 15,
+    "raw_directory": "data/polymarket-binance-tradfi-perps-funding-history-v1",
+    "raw_persistence": "persist the complete exact request plan before access and every raw response plus receipt metadata before parsing",
+    "history_window": {
+      "polymarket_start_utc": "2026-08-25T17:00:00Z",
+      "polymarket_start_timestamp_ms": 1787677200000,
+      "binance_funding_start_utc": "2026-08-26T00:00:00Z",
+      "binance_funding_start_timestamp_ms": 1787702400000,
+      "binance_kline_start_utc": "2026-08-25T16:00:00Z",
+      "binance_kline_start_timestamp_ms": 1787673600000,
+      "end_utc": "2026-08-29T16:00:00Z",
+      "end_timestamp_ms": 1788019200000,
+      "binance_kline_end_utc": "2026-08-29T15:59:59.999Z",
+      "binance_kline_end_timestamp_ms": 1788019199999,
+      "expected_polymarket_hourly_rows": 96,
+      "expected_regular_binance_settlements_per_symbol": 12,
+      "expected_binance_one_hour_klines": 96
+    },
+    "documented_rate_limit_budget": {
+      "binance_funding_requests": "5 of the shared 500 requests per 5 minutes",
+      "binance_kline_request_weight": 25,
+      "pacing": "sequential exact-plan requests with no retry; the complete budget is far below the documented limits"
+    },
+    "requests": [
+      {
+        "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "label": "polymarket-skhynix-funding",
+        "method": "GET",
+        "url": "https://api.perpetuals.polymarket.com/v1/info/funding?instrument_id=14&start_timestamp=1787677200000&end_timestamp=1788019200000"
+      },
+      {
+        "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "label": "binance-skhynix-funding",
+        "method": "GET",
+        "url": "https://fapi.binance.com/fapi/v1/fundingRate?symbol=SKHYNIXUSDT&startTime=1787702400000&endTime=1788019200000&limit=1000"
+      },
+      {
+        "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "label": "binance-skhynix-klines",
+        "method": "GET",
+        "url": "https://fapi.binance.com/fapi/v1/klines?symbol=SKHYNIXUSDT&interval=1h&startTime=1787673600000&endTime=1788019199999&limit=1000"
+      },
+      {
+        "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "label": "polymarket-crwv-funding",
+        "method": "GET",
+        "url": "https://api.perpetuals.polymarket.com/v1/info/funding?instrument_id=53&start_timestamp=1787677200000&end_timestamp=1788019200000"
+      },
+      {
+        "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "label": "binance-crwv-funding",
+        "method": "GET",
+        "url": "https://fapi.binance.com/fapi/v1/fundingRate?symbol=CRWVUSDT&startTime=1787702400000&endTime=1788019200000&limit=1000"
+      },
+      {
+        "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "label": "binance-crwv-klines",
+        "method": "GET",
+        "url": "https://fapi.binance.com/fapi/v1/klines?symbol=CRWVUSDT&interval=1h&startTime=1787673600000&endTime=1788019199999&limit=1000"
+      },
+      {
+        "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "label": "polymarket-arm-funding",
+        "method": "GET",
+        "url": "https://api.perpetuals.polymarket.com/v1/info/funding?instrument_id=26&start_timestamp=1787677200000&end_timestamp=1788019200000"
+      },
+      {
+        "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "label": "binance-arm-funding",
+        "method": "GET",
+        "url": "https://fapi.binance.com/fapi/v1/fundingRate?symbol=ARMUSDT&startTime=1787702400000&endTime=1788019200000&limit=1000"
+      },
+      {
+        "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "label": "binance-arm-klines",
+        "method": "GET",
+        "url": "https://fapi.binance.com/fapi/v1/klines?symbol=ARMUSDT&interval=1h&startTime=1787673600000&endTime=1788019199999&limit=1000"
+      },
+      {
+        "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "label": "polymarket-hood-funding",
+        "method": "GET",
+        "url": "https://api.perpetuals.polymarket.com/v1/info/funding?instrument_id=36&start_timestamp=1787677200000&end_timestamp=1788019200000"
+      },
+      {
+        "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "label": "binance-hood-funding",
+        "method": "GET",
+        "url": "https://fapi.binance.com/fapi/v1/fundingRate?symbol=HOODUSDT&startTime=1787702400000&endTime=1788019200000&limit=1000"
+      },
+      {
+        "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "label": "binance-hood-klines",
+        "method": "GET",
+        "url": "https://fapi.binance.com/fapi/v1/klines?symbol=HOODUSDT&interval=1h&startTime=1787673600000&endTime=1788019199999&limit=1000"
+      },
+      {
+        "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "label": "polymarket-mstr-funding",
+        "method": "GET",
+        "url": "https://api.perpetuals.polymarket.com/v1/info/funding?instrument_id=37&start_timestamp=1787677200000&end_timestamp=1788019200000"
+      },
+      {
+        "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "label": "binance-mstr-funding",
+        "method": "GET",
+        "url": "https://fapi.binance.com/fapi/v1/fundingRate?symbol=MSTRUSDT&startTime=1787702400000&endTime=1788019200000&limit=1000"
+      },
+      {
+        "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "label": "binance-mstr-klines",
+        "method": "GET",
+        "url": "https://fapi.binance.com/fapi/v1/klines?symbol=MSTRUSDT&interval=1h&startTime=1787673600000&endTime=1788019199999&limit=1000"
+      }
+    ],
+    "retry_policy": "none; preserve every response and failure, never adapt symbols windows URLs or downstream book access after seeing outcomes"
+  },
+  "acceptance_boundary": {
+    "accepted_edge": false,
+    "deployment_ready": false,
+    "candidate_for_books": false,
+    "positive_history_action": "retain only as a preliminary persistence candidate and require a separately frozen conversion fee and synchronized depth screen for only the surviving symbols",
+    "failed_history_action": "request no books and do not repeat this selected population and window absent a material funding fee session or instrument change"
+  }
+}

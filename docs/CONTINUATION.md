@@ -994,7 +994,7 @@ grants paper, testnet, or live authority.
 
 The canonical structural-edge priority and retry-trigger registry is
 `docs/model-research/structural-edge-priority-registry-v1.json`, result SHA-256
-`4b3828b49387edf1e26e8ff107221139f1d133c65ab85a8664f0ac08de84e5ad`.
+`e712a9086d31944b42f93270256c393c6d8ab38997c20b7f8638cd4aa9088a34`.
 Advance only the highest-ranked hypothesis whose trigger is actually satisfied.
 This prevents account-blocked or terminal screens from being rerun as if more
 snapshots could create an edge.
@@ -2232,7 +2232,7 @@ result SHA-256
 `64943efe0c6ad16f8d02f78548afef38f919448d2da87c7573e825a2eeefd6b9`.
 That checkpoint left seventeen accepted scoped edges. The current registry now
 has twenty and result SHA-256
-`4b3828b49387edf1e26e8ff107221139f1d133c65ab85a8664f0ac08de84e5ad`.
+`e712a9086d31944b42f93270256c393c6d8ab38997c20b7f8638cd4aa9088a34`.
 
 The complete Binance XAU/XAG Commodity Options versus matching TradFi
 perpetual lower-bound screen is terminal for the active 2026-08-27 and
@@ -2532,9 +2532,38 @@ then require explicit GET-only authority for the API-key-classified
 `docs/model-research/action-value/binance-blvt-primary-market-nav-parity-public-gate-v1-2026-08-29.json`,
 result SHA-256
 `85c8ef364b03fb2fbf0aeebddec10d51abbdd608f56ff9c0dccb1835cacc2179`.
-The structural registry now contains 42 ranked hypotheses and 20
+
+The exact non-crypto Polymarket/Binance TradFi-perpetual funding family is
+terminal for the frozen current top five. A retained zero-request instrument
+join found 36 exact current matches. One frozen four-request public prefilter
+advanced SKHYNIX, CRWV, ARM, HOOD, and MSTR from seven rows above the
+conservative 1.8656229615-bip per-eight-hour history threshold. The next frozen
+contract spent exactly 15 public unauthenticated GETs on only those five:
+Polymarket hourly funding, Binance Regular-plus-Special funding, and Binance
+one-hour klines. It requested no books, conversion, credentials, account state,
+orders, funds, or protected-capture assets.
+
+SKHYNIX returned 26 normalized settlements and was negative in training and
+validation. The other four returned 11 rather than the frozen 12-row minimum,
+so the consumed result correctly rejected them as insufficient rather than
+pretending to prove economic failure. A separately frozen zero-network
+adjudication then reused only the hash-bound saved responses and could strengthen
+rejection but never repair or promote the sample shortfall. Every fixed
+orientation failed training, validation, and test after the unchanged 20-bip
+round-trip hurdle and two 500-bip annual capital hurdles. ARM was least negative:
+`-24.6296621005` bips full-window, with training, validation, and test netting
+`-23.1729100457`, `-20.7754260274`, and `-20.6813260274` bips. Do not request
+books or repeat the selected population and window. Reopen only after a material
+funding cash-flow, fee, market-session, instrument, conversion, or execution-
+architecture change capable of clearing the retained role deficits. Prefilter,
+history, and retained adjudication result SHA-256 values are respectively
+`9e2d5843a986f02f757aa56641c5cb38c35500e62cb2a1804984dea7793a1859`,
+`ad896a698edd65b42b039f84d1b037cf67302c7b2bb7ae59e9008f45328939bb`,
+and `5e67277ad30b9f0164a3987804162ed2d1cdabb820e7e258d6a0b79748cf7d06`.
+
+The structural registry now contains 43 ranked hypotheses and 20
 narrowly accepted scoped overlays, and has canonical result SHA-256
-`4b3828b49387edf1e26e8ff107221139f1d133c65ab85a8664f0ac08de84e5ad`.
+`e712a9086d31944b42f93270256c393c6d8ab38997c20b7f8638cd4aa9088a34`.
 
 The Round 21 sidecar worktree
 `C:\trader\simple_ai_trading-round21-sidecar-v2` remains protected through
@@ -2564,6 +2593,10 @@ not grant account, funding, order, or transaction authority.
    parity mechanism unavailable. Reopen it only after a new official BLVT
    listing or relisting, then stop after the API-key `tokenInfo` prefilter unless
    explicit GET-only authority exists and the exact NAV/fee gap is positive.
+   Do not repeat the Polymarket/Binance TradFi-perpetual current top-five
+   funding screen: every fixed orientation failed the unchanged economic role
+   gates. Reopen only on its material funding, fee, session, instrument,
+   conversion, or execution-architecture trigger.
    Do not rerun rejected Binance elevated-funding spot/perpetual carry or the
    terminal one-use broad-current-liquidity-selected crypto funding preflight,
    the terminal 70-day Binance-Hyperliquid cross-venue funding-spread extension
@@ -2987,9 +3020,9 @@ adjudication, and exact-depth result SHA-256 values are respectively
 `8ebf70181290234c1c05f4659245d2c8c1502fd4a02eaa93dff9a4f60e375c6e`,
 `c387e389d852ab5571056a9f2e80f91c63ae6f1c124ca55291b0fc787b5faeae`,
 and `731ca32a06f8f1a42aaae9e326c2bd89379657e338231dd906b749790c15ddfa`.
-The structural-edge registry retains 42 hypotheses and 20 narrowly accepted
+The structural-edge registry retains 43 hypotheses and 20 narrowly accepted
 scoped overlays; its new canonical SHA-256 is
-`4b3828b49387edf1e26e8ff107221139f1d133c65ab85a8664f0ac08de84e5ad`.
+`e712a9086d31944b42f93270256c393c6d8ab38997c20b7f8638cd4aa9088a34`.
 
 ## Future NFL Catalog Checkpoint
 
@@ -3097,9 +3130,9 @@ directly affected tests. No broad model, CI, or release suite was repeated.
 
 The resolved-leg House duplicate-payoff checkpoint, raw journals, source hashes,
 and directly affected registry lineage pass 12 focused tests with Ruff and
-Python compilation clean. The registry still contains 42 ranked hypotheses and
+Python compilation clean. The registry still contains 43 ranked hypotheses and
 20 accepted scoped overlays; its result SHA-256 is
-`4b3828b49387edf1e26e8ff107221139f1d133c65ab85a8664f0ac08de84e5ad`.
+`e712a9086d31944b42f93270256c393c6d8ab38997c20b7f8638cd4aa9088a34`.
 
 The exact-one-NO failure preservation and Binance BLVT current-inventory gate,
 including every registry-hash-coupled test, pass 199 focused tests with Ruff
@@ -3116,6 +3149,14 @@ The focused Round 75 closeout passes 20 tests. The cross-regime promotion change
 passes 62 affected tests before final publication checks. Run the smallest
 affected checks during development, then full CI once before publication. Do
 not repeat unchanged expensive suites between adjacent edits.
+
+The Polymarket/Binance TradFi-perpetual prefilter, bounded history, retained
+shortfall adjudication, all six canonical contracts/results, fixed orientation,
+Regular-plus-Special cash-flow aggregation, source and implementation hashes,
+terminal registry routing, and protected-capture non-access pass 11 directly
+focused tests. The single registry-hash-coupled pass covers 260 tests across 67
+files with Ruff and Python compilation clean. No broad model, CI, hosted,
+release, or repetitive market-data suite was run.
 
 The previous verbose handoff and chronology are preserved byte-for-byte in:
 
