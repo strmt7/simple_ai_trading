@@ -1,0 +1,121 @@
+{
+  "adjudication": {
+    "accepted_historical_scoped_edge_preserved": true,
+    "current_operating_rate_qualified": false,
+    "deployment_ready": false,
+    "do_not_repeat_unchanged_contract": true,
+    "future_profit_guaranteed": false,
+    "public_profit_floor_for_new_capital_pusd": "0",
+    "retained_evidence_rejects_four_percent_for_two_wallets": true,
+    "status": "one_use_reconciliation_failed_closed_after_five_requests_retained_BTC_ETH_evidence_uniquely_supports_3_25_percent_but_full_three_wallet_receipt_gate_is_incomplete"
+  },
+  "authority": {
+    "credentials_used": false,
+    "funds_used": false,
+    "orders_or_transactions_submitted": 0,
+    "public_unauthenticated_read_only": true,
+    "trading_authority": false
+  },
+  "contract": {
+    "path": "docs/model-research/polymarket/complete-set-holding-yield-post-conflict-contract-v7-2026-08-29.json",
+    "result_sha256": "a8519183d418dcab02184cf57b2d900c1b7740ce1b72670bd8fbea71f798d132"
+  },
+  "created_at_utc": "2026-08-29T13:08:37.9017726Z",
+  "failure": {
+    "actual_request_count": 5,
+    "error": "SOL complete-set current value differs",
+    "failed_at_ms": 1788008841266,
+    "journal_path": "data/polymarket-holding-yield-post-conflict-v7/journal.json",
+    "journal_sha256": "648d2790a23de8b50d992c49f098a0c0dc44328b5d6f31d02f0476886b0372a0",
+    "planned_request_count": 9,
+    "remaining_requests_not_attempted": 4,
+    "state": "failed"
+  },
+  "implementation_correction": {
+    "contract_required_balance_rule": "each exact YES and NO balance must remain equal mergeable and unchanged",
+    "false_failure_arithmetic": {
+      "displayed_NO_current_value_pusd": "579.5833",
+      "displayed_YES_current_value_pusd": "11.5266",
+      "displayed_sum_pusd": "591.1099",
+      "equal_mergeable_shares_per_outcome": "591.11",
+      "rounding_difference_pusd": "-0.0001"
+    },
+    "mistake": "the runner added exact equality between separately four-decimal displayed currentValue rows and exact shares even though the frozen decision rule required only unchanged equal mergeable balances",
+    "preservation_rule": "do not edit the consumed implementation because its exact SHA-256 is contract-bound",
+    "workflow_change": "future outcome-sensitive runners must mechanically enumerate their runtime gates in the frozen contract and may not add a stricter economic or data gate that is absent from the contract"
+  },
+  "offline_retained_evidence": [
+    {
+      "asset": "BTC",
+      "candidate_rate_sample_matches": [
+        {
+          "annual_rate": "0.0325",
+          "sampled_hours": 24
+        }
+      ],
+      "condition_id": "0x024b68f77bfc019341ee3db8f57c103334e4b9430bba4746d8c94aafd8b36fee",
+      "first_post_conflict_distribution_timestamp": 1787789434,
+      "no_non_yield_activity_during_selected_interval": true,
+      "position_row_count": 46,
+      "selected_amount_pusd": "0.0133",
+      "selected_interval_seconds": 86622,
+      "selected_pair_unchanged_equal_and_mergeable": true,
+      "selected_transaction_hash": "0x309d2faae94f2d7068ae6604a7d4a0a791f1fe864992e882e99c909cdcab9214",
+      "selected_wholly_post_conflict_distribution_timestamp": 1787876056,
+      "shares_per_outcome": "150"
+    },
+    {
+      "asset": "ETH",
+      "candidate_rate_sample_matches": [
+        {
+          "annual_rate": "0.0325",
+          "sampled_hours": 24
+        }
+      ],
+      "condition_id": "0x201f51d2d892c41c5bfa6568a0a2f93ab2ea426e87dddfd5fb0191f7ec34a441",
+      "first_post_conflict_distribution_timestamp": 1787789835,
+      "no_non_yield_activity_during_selected_interval": true,
+      "position_row_count": 2,
+      "selected_amount_pusd": "0.0391",
+      "selected_interval_seconds": 85986,
+      "selected_pair_unchanged_equal_and_mergeable": true,
+      "selected_transaction_hash": "0x851b0f5dd9bf7498a33bc1a168114befae8cb2d03b531587c642c1b365348b76",
+      "selected_wholly_post_conflict_distribution_timestamp": 1787875821,
+      "shares_per_outcome": "440"
+    }
+  ],
+  "raw_sources": [
+    {
+      "bytes": 7192,
+      "path": "data/polymarket-holding-yield-post-conflict-v7/raw/btc-activity.raw",
+      "sha256": "489788838e7c9a706adfa34cd166a4078c2da2fe4d9851fbc314d9934fb19b61"
+    },
+    {
+      "bytes": 46756,
+      "path": "data/polymarket-holding-yield-post-conflict-v7/raw/btc-positions.raw",
+      "sha256": "ebe08e99e8d51d6bcdb8dc1766aa414a110b6de1af7d34a8395aca7f7193f78a"
+    },
+    {
+      "bytes": 320025,
+      "path": "data/polymarket-holding-yield-post-conflict-v7/raw/eth-activity.raw",
+      "sha256": "5e2555a2ef2b25eab4457b47158763900eedfe57929b98ac614b2daba7179710"
+    },
+    {
+      "bytes": 1902,
+      "path": "data/polymarket-holding-yield-post-conflict-v7/raw/eth-positions.raw",
+      "sha256": "f957a6eaee19bef900bf06a90fd1aa6495361759f43aaf6c2acc1e9472e393f4"
+    },
+    {
+      "bytes": 1923,
+      "path": "data/polymarket-holding-yield-post-conflict-v7/raw/sol-positions.raw",
+      "sha256": "23441b747f6e3875198acf692a279bba6315a189e845f4902744c49686fff963"
+    }
+  ],
+  "result_sha256": "448b068aa5c1b34c6012a5fadafa449ed9ef125afc310b7901b9f68285510f71",
+  "retry_policy": {
+    "economics": "the retained two-wallet evidence points to 3.25 percent which does not improve the frozen v5 conclusion that none of the three realized cases beats a 3.25 percent alternative before external friction",
+    "next_trigger": "do not spend a repair capture on the unchanged mechanism; reopen only for a material official rate program payout or economic-comparator change",
+    "one_use_contract_consumed": true
+  },
+  "schema_version": "polymarket-holding-yield-post-conflict-v7-failure-adjudication"
+}

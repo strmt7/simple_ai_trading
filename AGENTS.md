@@ -113,6 +113,12 @@ override prose.
   compare `DateTime.UtcNow` directly with a parsed local-kind `DateTime`; its
   tick comparison can wait past the frozen UTC boundary without issuing a
   request.
+- An outcome-sensitive runner may enforce only gates mechanically enumerated in
+  its frozen contract. Do not add an unstated stricter price, mark, balance, or
+  data-quality equality in implementation; displayed rounded fields are not
+  exact economic identities. If a consumed one-use run exposes such a mismatch,
+  preserve its journal and raw responses, fail closed, and do not spend a repair
+  capture when the retained evidence cannot change the economic decision.
 - Before claiming complete coverage from a paginated public catalog, prove a
   source-bound population/page ceiling or freeze an explicitly partial rank or
   cursor boundary. A non-null cursor at the request ceiling is incomplete, not

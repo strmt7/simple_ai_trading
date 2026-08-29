@@ -10,12 +10,29 @@ ARTIFACT = ROOT / (
     "docs/model-research/polymarket/"
     "complete-set-holding-yield-rate-conflict-gate-v6-2026-08-26.json"
 )
+POST_CONFLICT_CONTRACT = ROOT / (
+    "docs/model-research/polymarket/"
+    "complete-set-holding-yield-post-conflict-contract-v7-2026-08-29.json"
+)
+POST_CONFLICT_ADJUDICATION = ROOT / (
+    "docs/model-research/polymarket/"
+    "complete-set-holding-yield-post-conflict-v7-failure-adjudication-2026-08-29.json"
+)
+POST_CONFLICT_JOURNAL = ROOT / (
+    "data/polymarket-holding-yield-post-conflict-v7/journal.json"
+)
 REGISTRY = ROOT / "docs/model-research/structural-edge-priority-registry-v1.json"
 EXPECTED_RESULT_HASH = (
     "17c23b1bf821256a573b8685ea4c5725d1c1315a4ca6449395e75635b51678d9"
 )
 EXPECTED_REGISTRY_HASH = (
-    "aca1295421ba83a9a0e97a305baaf0f62371d6d2ea95526f671ec1877a0de035"
+    "1f15f9bf95e6600439dea9ce4c52aeaa4f53e41c619fe092414b44e777713ae1"
+)
+EXPECTED_POST_CONFLICT_CONTRACT_HASH = (
+    "a8519183d418dcab02184cf57b2d900c1b7740ce1b72670bd8fbea71f798d132"
+)
+EXPECTED_POST_CONFLICT_ADJUDICATION_HASH = (
+    "448b068aa5c1b34c6012a5fadafa449ed9ef125afc310b7901b9f68285510f71"
 )
 
 
@@ -84,5 +101,45 @@ def test_registry_routes_the_conflict_gate_without_promoting_four_percent() -> N
         "path": ARTIFACT.relative_to(ROOT).as_posix(),
         "result_sha256": EXPECTED_RESULT_HASH,
     } in holding["canonical_artifacts"]
-    assert "source_conflict_unresolved" in holding["current_status"]
-    assert "not_before_2026_08_28T00_20_00Z" in holding["retry_trigger"]
+    assert "current_rate_remains_fail_closed_unqualified" in holding["current_status"]
+    assert "do_not_rerun_or_repair" in holding["next_action"]
+    assert "material_official_rate_program_payout" in holding["retry_trigger"]
+
+
+def test_consumed_post_conflict_refresh_is_preserved_and_not_repeated() -> None:
+    contract = json.loads(POST_CONFLICT_CONTRACT.read_text(encoding="utf-8"))
+    claimed_contract = contract.pop("contract_result_sha256")
+    assert claimed_contract == EXPECTED_POST_CONFLICT_CONTRACT_HASH
+    assert _canonical_hash({**contract, "result_sha256": claimed_contract}) == claimed_contract
+
+    result = json.loads(POST_CONFLICT_ADJUDICATION.read_text(encoding="utf-8"))
+    assert result["result_sha256"] == EXPECTED_POST_CONFLICT_ADJUDICATION_HASH
+    assert _canonical_hash(result) == EXPECTED_POST_CONFLICT_ADJUDICATION_HASH
+    assert result["failure"]["actual_request_count"] == 5
+    assert result["failure"]["remaining_requests_not_attempted"] == 4
+    assert result["implementation_correction"]["false_failure_arithmetic"] == {
+        "displayed_NO_current_value_pusd": "579.5833",
+        "displayed_YES_current_value_pusd": "11.5266",
+        "displayed_sum_pusd": "591.1099",
+        "equal_mergeable_shares_per_outcome": "591.11",
+        "rounding_difference_pusd": "-0.0001",
+    }
+    assert {
+        case["asset"]: case["candidate_rate_sample_matches"] for case in result["offline_retained_evidence"]
+    } == {
+        "BTC": [{"annual_rate": "0.0325", "sampled_hours": 24}],
+        "ETH": [{"annual_rate": "0.0325", "sampled_hours": 24}],
+    }
+    for source in result["raw_sources"]:
+        raw = (ROOT / source["path"]).read_bytes()
+        assert len(raw) == source["bytes"]
+        assert hashlib.sha256(raw).hexdigest() == source["sha256"]
+
+    journal = json.loads(POST_CONFLICT_JOURNAL.read_text(encoding="utf-8"))
+    assert journal["state"] == "failed"
+    assert journal["request_count"] == 5
+    assert not (
+        ROOT
+        / "docs/model-research/polymarket/"
+        "complete-set-holding-yield-post-conflict-v7-2026-08-29.json"
+    ).exists()
