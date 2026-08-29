@@ -1,9 +1,31 @@
 from __future__ import annotations
 
-import json
 from decimal import Decimal
+import hashlib
+import json
+from pathlib import Path
 
 from tools.screen_polymarket_wnba_monotone_catalog import _screen_event
+
+
+ROOT = Path(__file__).resolve().parents[1]
+ACTION_VALUE = ROOT / "docs/model-research/action-value"
+CONTRACT_HASH = "36faeee7464832f335739ec8d1fc5609c98e1cdc9b6f267901934fbd8277f831"
+RESULT_HASH = "fd0a9e844a7ad7d1a6eb5372c961ff82ea52d3c72a8c558ba191a53bace02cef"
+REGISTRY_HASH = "2e70b7e226dc64a7aa39a6fbdd2524ff295f4b172513094ad66c1fcb700a1320"
+
+
+def _canonical_hash(value: dict[str, object], field: str) -> str:
+    body = dict(value)
+    body.pop(field)
+    payload = json.dumps(
+        body,
+        ensure_ascii=True,
+        separators=(",", ":"),
+        sort_keys=True,
+        allow_nan=False,
+    ).encode("ascii")
+    return hashlib.sha256(payload).hexdigest()
 
 
 def _market(
@@ -88,3 +110,60 @@ def test_screen_event_proves_wnba_moneyline_spread_floor() -> None:
     assert relation["minimum_terminal_payout_per_share_pUSD"] == Decimal("1")
     assert relation["displayed_price_sum_per_share_pUSD"] == Decimal("1.15")
     assert relation["passes_strictly_below_payout_gate"] is False
+
+
+def test_complete_future_window_stops_before_books_and_updates_existing_family() -> None:
+    contract = json.loads(
+        (
+            ACTION_VALUE
+            / "polymarket-future-wnba-monotone-catalog-contract-v1-2026-08-29.json"
+        ).read_text(encoding="utf-8")
+    )
+    result = json.loads(
+        (
+            ACTION_VALUE
+            / "polymarket-future-wnba-monotone-catalog-result-v1-2026-08-29.json"
+        ).read_text(encoding="utf-8")
+    )
+    assert contract["contract_sha256"] == CONTRACT_HASH
+    assert _canonical_hash(contract, "contract_sha256") == CONTRACT_HASH
+    assert result["result_sha256"] == RESULT_HASH
+    assert _canonical_hash(result, "result_sha256") == RESULT_HASH
+    assert result["capture"]["returned_event_count"] == 3
+    assert result["capture"]["population_complete_under_frozen_filter"] is True
+    assert result["screen"]["complete_relation_count"] == 2
+    assert result["screen"]["candidate_count_strictly_below_payout_floor"] == 0
+    assert result["screen"]["depth_candidate"] is None
+    assert result["authority"]["book_requests"] == 0
+    assert result["authority"]["fee_requests"] == 0
+    assert result["adjudication"]["accepted_edge"] is False
+
+    raw = ROOT / "data/polymarket-future-wnba-monotone-catalog-v1/raw/events.json"
+    journal = ROOT / (
+        "data/polymarket-future-wnba-monotone-catalog-v1/request-journal.jsonl"
+    )
+    assert hashlib.sha256(raw.read_bytes()).hexdigest() == (
+        "1b989cf0b2edf79445c73ce616149c2696cff96c6f6dd7d89c310f770d4004e3"
+    )
+    assert hashlib.sha256(journal.read_bytes()).hexdigest() == (
+        "40a7edc61fcf5c3a42a8ab7aef65cf04703cde30989b7b23f23a915291620368"
+    )
+
+    registry = json.loads(
+        (ROOT / "docs/model-research/structural-edge-priority-registry-v1.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    assert registry["result_sha256"] == REGISTRY_HASH
+    assert _canonical_hash(registry, "result_sha256") == REGISTRY_HASH
+    assert registry["accepted_edge_count"] == 21
+    family = next(
+        row
+        for row in registry["prioritized_hypotheses"]
+        if row["priority_rank"] == 30
+    )
+    assert family["canonical_artifacts"][-1]["result_sha256"] == RESULT_HASH
+    assert any(
+        row["canonical_result_sha256"] == RESULT_HASH
+        for row in registry["terminal_do_not_repeat"]
+    )

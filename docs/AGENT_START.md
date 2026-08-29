@@ -1576,9 +1576,17 @@ safety gate, blocks Stop, or submits an order.
   the sort occurred after candidate counting and did not change the terminal
   decision. Canonical adjudication SHA-256
   `2fffd2044e72d1712ecdaa0c4e24cb829057ea2005c07e12129c443478b07902`.
+- One distinct complete WNBA window from `2026-08-30T19:00:01Z` through
+  `2026-09-02T23:59:59Z` returned three events. Two exact moneyline/spread
+  packages were provable, but Golden State/Portland displayed `1.165` and
+  Connecticut/Dallas `1.365` against a one-pUSD payout floor. The third event
+  had no exact relation. The rejection-first gate therefore spent zero book and
+  fee requests. Do not resample this window or narrow around its outcomes.
+  Canonical result SHA-256
+  `fd0a9e844a7ad7d1a6eb5372c961ff82ea52d3c72a8c558ba191a53bace02cef`.
 - The structural-edge registry now has 44 ranked hypotheses and 21
   narrowly accepted scoped overlays, and result SHA-256
-  `da3ddaf82a2cb0929353460a7e09812b47f940e953a3f1da43b04f72a55c8488`.
+  `2e70b7e226dc64a7aa39a6fbdd2524ff295f4b172513094ad66c1fcb700a1320`.
 
 ## Task Routing
 
@@ -1600,6 +1608,7 @@ safety gate, blocks Stop, or submits an order.
 | Future MLB cross-period partial-page adjudication | `docs/model-research/action-value/polymarket-future-mlb-cross-period-catalog-adjudication-v1-2026-08-29.json` |
 | Current Toronto/Phoenix WNBA monotone-parity terminal result | `docs/model-research/action-value/polymarket-current-wnba-monotone-parity-result-v1-2026-08-29.json` |
 | Current Lynx/Dream WNBA rejection-only terminal adjudication | `docs/model-research/action-value/polymarket-lynx-dream-monotone-prefilter-adjudication-v1-2026-08-29.json` |
+| Future WNBA complete catalog rejection screen | `docs/model-research/action-value/polymarket-future-wnba-monotone-catalog-result-v1-2026-08-29.json` |
 | Current Packers/Vikings NFL exact-depth terminal result | `docs/model-research/action-value/polymarket-packers-vikings-tie-state-package-result-v1-2026-08-29.json` |
 | Future NFL complete catalog rejection screen | `docs/model-research/action-value/polymarket-future-nfl-monotone-catalog-result-v1-2026-08-29.json` |
 | Commanders/Cowboys NFL exact-depth terminal result | `docs/model-research/action-value/polymarket-commanders-cowboys-total-package-result-v1-2026-08-29.json` |

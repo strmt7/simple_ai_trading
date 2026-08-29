@@ -1341,12 +1341,20 @@
         {
           "path": "docs/model-research/action-value/polymarket-cowboys-giants-tie-collision-correction-v1-2026-08-29.json",
           "result_sha256": "37f79cc8a4f5f96fa395a729e85a793e12c2127e2124591db693c92b1b459928"
+        },
+        {
+          "path": "docs/model-research/action-value/polymarket-future-wnba-monotone-catalog-contract-v1-2026-08-29.json",
+          "result_sha256": "36faeee7464832f335739ec8d1fc5609c98e1cdc9b6f267901934fbd8277f831"
+        },
+        {
+          "path": "docs/model-research/action-value/polymarket-future-wnba-monotone-catalog-result-v1-2026-08-29.json",
+          "result_sha256": "fd0a9e844a7ad7d1a6eb5372c961ff82ea52d3c72a8c558ba191a53bace02cef"
         }
       ],
-      "current_status": "distinct_direction_independent_NBA_WNBA_NFL_moneyline_spread_and_total_monotone_payoff_family_remains_unaccepted_one_complete_2026_09_13T20_25_01Z_through_2026_09_21T23_59_59Z_NFL_catalog_page_returned_17_events_v1_exactly_parsed_16_and_retained_4621_relations_with_674_Gamma_rejection_gate_candidates_the_precommitted_best_Commanders_Cowboys_Over_56_5_plus_Under_58_5_displayed_0_785_but_exact_five_share_asks_cost_7_550_pUSD_for_a_2_550_zero_fee_loss_and_25189367_ms_book_skew_zero_fee_requests_the_excluded_Cowboys_Giants_shared_threshold_tie_collision_was_corrected_offline_with_268_relations_and_four_more_Gamma_candidates_but_no_outcome_aware_depth_escalation_accepted_edge_or_deployment_readiness",
+      "current_status": "distinct_direction_independent_NBA_WNBA_NFL_moneyline_spread_and_total_monotone_payoff_family_remains_unaccepted_the_complete_nonoverlapping_2026_08_30T19_00_01Z_through_2026_09_02T23_59_59Z_WNBA_catalog_returned_three_events_two_exact_relations_and_zero_Gamma_sub_floor_candidates_Golden_State_Portland_displayed_1_165_and_Connecticut_Dallas_1_365_against_the_1_pUSD_floor_so_zero_books_or_fees_the_prior_complete_NFL_catalog_retained_4621_relations_and_674_Gamma_candidates_but_its_precommitted_Commanders_Cowboys_exact_depth_lost_2_550_pUSD_zero_fee_with_25189367_ms_skew_no_accepted_edge_or_deployment_readiness",
       "market_direction_forecast_required": false,
       "mechanism": "polymarket_live_NBA_moneyline_spread_monotone_payoff_implication",
-      "next_action": "do_not_resample_Toronto_Phoenix_Lynx_Dream_Packers_Vikings_Commanders_Cowboys_or_the_consumed_2026_09_13T20_25_01Z_through_2026_09_21T23_59_59Z_NFL_window_for_a_future_distinct_active_NBA_WNBA_or_NFL_event_outside_that_window_first_source_prove_exhaustive_payoffs_with_moneyline_tie_collisions_ordered_explicitly_then_use_Gamma_only_as_a_rejection_gate_request_one_frozen_exact_depth_batch_for_the_precommitted_strongest_package_and_require_independent_synchronized_after_fee_positive_recurrence_before_escalation",
+      "next_action": "do_not_resample_Toronto_Phoenix_Lynx_Dream_or_the_consumed_2026_08_30T19_00_01Z_through_2026_09_02T23_59_59Z_WNBA_window_and_do_not_resample_Packers_Vikings_Commanders_Cowboys_or_the_consumed_NFL_window_for_a_future_distinct_event_outside_all_consumed_populations_first_source_prove_exhaustive_payoffs_then_use_Gamma_only_as_a_rejection_gate_request_one_frozen_exact_depth_batch_for_the_precommitted_strongest_sub_floor_package_and_require_independent_synchronized_after_fee_positive_recurrence_before_escalation",
       "priority_rank": 30,
       "prohibited_shortcuts": [
         "reusing_the_paper_zero_fee_median_as_current_profit",
@@ -1359,7 +1367,7 @@
         "crediting_midpoints_last_trades_uncapped_depth_maker_fees_or_rebates_without_causal_owned_fills",
         "calling_public_recurrence_profitable_without_owned_both_leg_fill_reconciliation_and_all_external_costs"
       ],
-      "retry_trigger": "first_future_distinct_active_accepting_orders_NBA_WNBA_or_NFL_full_game_event_outside_the_consumed_2026_09_13T20_25_01Z_through_2026_09_21T23_59_59Z_NFL_window_with_source_proved_same_game_moneyline_spread_or_total_payoff_implication_exact_current_market_fee_schedules_and_at_least_one_rejection_only_Gamma_displayed_package_sum_below_its_guaranteed_payout_floor_or_a_material_sports_price_fee_delay_or_resolution_rule_change",
+      "retry_trigger": "first_future_distinct_active_accepting_orders_NBA_WNBA_or_NFL_full_game_event_outside_the_consumed_WNBA_2026_08_30T19_00_01Z_through_2026_09_02T23_59_59Z_and_NFL_2026_09_13T20_25_01Z_through_2026_09_21T23_59_59Z_windows_with_source_proved_same_game_moneyline_spread_or_total_payoff_implication_exact_current_market_fee_schedules_and_at_least_one_rejection_only_Gamma_displayed_package_sum_below_its_guaranteed_payout_floor_or_a_material_sports_price_fee_delay_or_resolution_rule_change",
       "venue_scope": "polymarket_future_NBA_WNBA_and_NFL_full_game_same_game_moneyline_and_point_spread_markets"
     },
     {
@@ -1992,13 +2000,18 @@
       "venue_scope": "Binance_Spot_direct_and_exactly_one_intermediary_routes_for_independently_required_organic_conversions"
     }
   ],
-  "result_sha256": "da3ddaf82a2cb0929353460a7e09812b47f940e953a3f1da43b04f72a55c8488",
+  "result_sha256": "2e70b7e226dc64a7aa39a6fbdd2524ff295f4b172513094ad66c1fcb700a1320",
   "schema_version": "structural-edge-priority-registry-v1",
   "terminal_do_not_repeat": [
     {
       "canonical_result_sha256": "2fffd2044e72d1712ecdaa0c4e24cb829057ea2005c07e12129c443478b07902",
       "family": "binance_all_symbol_three_asset_spot_triangular_cycles_current_retained_population",
       "reason": "zero_of_3480_unique_directed_cycles_and_zero_of_1442_activity_qualified_cycles_passed_the_frozen_recurring_zero_fee_upper_bound_candidate_gate_across_60_complete_books_100_and_1000_USDT_exact_rounding_displayed_capacity_residual_and_3_bip_stress"
+    },
+    {
+      "canonical_result_sha256": "fd0a9e844a7ad7d1a6eb5372c961ff82ea52d3c72a8c558ba191a53bace02cef",
+      "family": "polymarket_future_WNBA_2026_08_30T19_00_01Z_through_2026_09_02T23_59_59Z_monotone_payoff_catalog",
+      "reason": "the_complete_three_event_population_contained_two_exact_moneyline_spread_relations_but_Golden_State_Portland_cost_1_165_and_Connecticut_Dallas_cost_1_365_per_share_against_a_1_pUSD_floor_before_execution_costs_so_zero_books_and_zero_fees_were_requested"
     },
     {
       "canonical_result_sha256": "2b85a6eca339799a6eb07ba48069e3a2943d97116a9320ce20400d260227e1be",

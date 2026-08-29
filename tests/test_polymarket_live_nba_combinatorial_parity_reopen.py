@@ -13,7 +13,7 @@ ARTIFACT = ROOT / "docs/model-research/action-value" / (
 )
 REGISTRY = ROOT / "docs/model-research/structural-edge-priority-registry-v1.json"
 EXPECTED_HASH = "70cfc7b2ae1cb256e7a8c08c9af33fa8524d2308a8c18400d5a2b7d93c966fe3"
-REGISTRY_HASH = "da3ddaf82a2cb0929353460a7e09812b47f940e953a3f1da43b04f72a55c8488"
+REGISTRY_HASH = "2e70b7e226dc64a7aa39a6fbdd2524ff295f4b172513094ad66c1fcb700a1320"
 
 
 def _load(path: Path) -> dict[str, object]:
@@ -176,7 +176,7 @@ def test_registry_reopens_only_the_distinct_future_nba_recurrence_family() -> No
             ),
         },
     ]
-    assert row["canonical_artifacts"][-12:-6] == [
+    assert row["canonical_artifacts"][-14:-8] == [
         {
             "path": (
                 "docs/model-research/action-value/"
@@ -238,7 +238,7 @@ def test_registry_reopens_only_the_distinct_future_nba_recurrence_family() -> No
             ),
         },
     ]
-    assert row["canonical_artifacts"][-6:] == [
+    assert row["canonical_artifacts"][-8:-2] == [
         {
             "path": (
                 "docs/model-research/action-value/"
@@ -297,6 +297,10 @@ def test_registry_reopens_only_the_distinct_future_nba_recurrence_family() -> No
                 "37f79cc8a4f5f96fa395a729e85a793e12c2127e2124591db693c92b1b459928"
             ),
         },
+    ]
+    assert [item["result_sha256"] for item in row["canonical_artifacts"][-2:]] == [
+        "36faeee7464832f335739ec8d1fc5609c98e1cdc9b6f267901934fbd8277f831",
+        "fd0a9e844a7ad7d1a6eb5372c961ff82ea52d3c72a8c558ba191a53bace02cef",
     ]
     terminal = next(
         item

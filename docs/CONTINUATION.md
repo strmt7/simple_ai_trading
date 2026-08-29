@@ -3201,7 +3201,37 @@ values are `dcd959d9d7ec0e1dffec47b910cece585c106b76b69feaaa9ca03ddcc7caa83a`,
 and `0307a9dbfb26ca62e94ae01e5b5d40316340b686a60829e85f258c07e565678c`.
 The structural-edge registry now contains 44 ranked hypotheses and 21 accepted
 scoped overlays; its canonical SHA-256 is
-`da3ddaf82a2cb0929353460a7e09812b47f940e953a3f1da43b04f72a55c8488`.
+`2e70b7e226dc64a7aa39a6fbdd2524ff295f4b172513094ad66c1fcb700a1320`.
+
+## Future WNBA Complete-Catalog Rejection Screen
+
+The rank-30 exact-payoff sports family had a literal distinct-event trigger, so
+one frozen public keyset request covered WNBA starts strictly after the already
+consumed Minnesota/Atlanta event: `2026-08-30T19:00:01Z` through
+`2026-09-02T23:59:59Z`. The documented maximum 500-event limit returned three
+events with no cursor, proving completeness under the frozen series and time
+filters. The request was public and unauthenticated; it touched no books, fees,
+credentials, accounts, orders, funds, or protected capture state.
+
+Golden State/Portland and Connecticut/Dallas each exposed one machine-proved
+moneyline/spread package with a one-pUSD payout floor over every integer final
+margin and cancellation. Their rejection-only Gamma sums were `1.165` and
+`1.365`; Los Angeles/Seattle had no exact monotone relation. Thus zero of two
+relations was even optimistically sub-floor, and the frozen gate stopped before
+all book and fee requests. Do not resample, narrow, or follow this population.
+Only a future distinct NBA, WNBA, or NFL event outside every consumed window
+with a machine-proved implication and a strict Gamma sub-floor package may
+advance to one separately frozen depth batch.
+
+Canonical contract and result SHA-256 values are
+`36faeee7464832f335739ec8d1fc5609c98e1cdc9b6f267901934fbd8277f831`
+and `fd0a9e844a7ad7d1a6eb5372c961ff82ea52d3c72a8c558ba191a53bace02cef`.
+The raw response and two-phase journal SHA-256 values are
+`1b989cf0b2edf79445c73ce616149c2696cff96c6f6dd7d89c310f770d4004e3`
+and `40a7edc61fcf5c3a42a8ab7aef65cf04703cde30989b7b23f23a915291620368`.
+The structural registry remains at 44 hypotheses and 21 accepted scoped edges;
+its canonical SHA-256 is
+`2e70b7e226dc64a7aa39a6fbdd2524ff295f4b172513094ad66c1fcb700a1320`.
 
 ## Binance All-Symbol Triangular-Cycle Terminal Adjudication
 
@@ -3235,6 +3265,15 @@ are `cc19bdd97167265e0831f84325624a623f83f2dc2d939491ed1c51859c0a38bb`,
 and `2fffd2044e72d1712ecdaa0c4e24cb829057ea2005c07e12129c443478b07902`.
 
 ## Verification Scope
+
+The future-WNBA contract, compact complete-page result, two-phase request
+journal, raw response, exact payoff parser, rank-30 lineage, and all registry-
+hash-coupled checks pass 269 focused tests across 70 files. The single combined
+pass exposed only three stale registry wording or artifact-slice expectations;
+their exact tests and the two new direct checks pass after metadata updates.
+Ruff and Python compilation are clean for the changed Python scope. No book,
+fee, credential, account, order, fund, protected-capture, broad model, CI, or
+release workflow was used.
 
 The frozen zero-network all-symbol triangular-cycle contract, deterministic
 retained-data runner, source result, defect-disclosing terminal adjudication,
