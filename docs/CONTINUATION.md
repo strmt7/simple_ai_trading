@@ -979,7 +979,7 @@ grants paper, testnet, or live authority.
 
 The canonical structural-edge priority and retry-trigger registry is
 `docs/model-research/structural-edge-priority-registry-v1.json`, result SHA-256
-`23479942f0f50760ad35df84f91707716d36ef06026c4ff664f618944e528680`.
+`ebce99afa23c826f41acec8670dc8259274d62e64d71d255a3645c119f776c95`.
 Advance only the highest-ranked hypothesis whose trigger is actually satisfied.
 This prevents account-blocked or terminal screens from being rerun as if more
 snapshots could create an edge.
@@ -2191,7 +2191,7 @@ result SHA-256
 `64943efe0c6ad16f8d02f78548afef38f919448d2da87c7573e825a2eeefd6b9`.
 That checkpoint left seventeen accepted scoped edges. The current registry now
 has nineteen and result SHA-256
-`23479942f0f50760ad35df84f91707716d36ef06026c4ff664f618944e528680`.
+`ebce99afa23c826f41acec8670dc8259274d62e64d71d255a3645c119f776c95`.
 
 The complete Binance XAU/XAG Commodity Options versus matching TradFi
 perpetual lower-bound screen is terminal for the active 2026-08-27 and
@@ -2493,7 +2493,7 @@ result SHA-256
 `85c8ef364b03fb2fbf0aeebddec10d51abbdd608f56ff9c0dccb1835cacc2179`.
 The structural registry now contains 42 ranked hypotheses, remains at 19
 narrowly accepted scoped overlays, and has canonical result SHA-256
-`23479942f0f50760ad35df84f91707716d36ef06026c4ff664f618944e528680`.
+`ebce99afa23c826f41acec8670dc8259274d62e64d71d255a3645c119f776c95`.
 
 The Round 21 sidecar worktree
 `C:\trader\simple_ai_trading-round21-sidecar-v2` remains protected through
@@ -2821,6 +2821,25 @@ or promote. Exact metadata result SHA-256
 cross-period result SHA-256
 `fc01c54e9c04117067aa3b43ae194649b93efc12a5265fce508e64f082f320b2`.
 
+The next rejection-first extension used one bounded active-MLB catalog request
+instead of polling events individually. It ordered the frozen first page by
+start time and filtered events to `startTime` strictly after the retained
+request completion. The response equaled the 100-event ceiling, so coverage is
+explicitly partial and cannot support a complete-current-population claim.
+Within that page, 92 events were future-dated and only five had exact shared
+full-game and first-five total thresholds with complete rules. None cleared the
+strict Gamma gate. Displayed package sums were `1.260`, `1.31`, `1.370`,
+`1.375`, and `1.405`; the best already lost an optimistic `0.260` pUSD per
+share before depth, fees, or delay. Zero books and fees were requested.
+
+The consumed catalog result retained aggregate counts and candidate rows but
+not the five rejected relation rows. Preserve it. A zero-network, zero-refetch
+adjudication reconstructed all five exact identities and sums from the saved
+raw page. Future rejection screens must retain every tested relation, not only
+candidates. Do not adaptively request offset 100 under this consumed design.
+Canonical catalog adjudication SHA-256
+`d3ba85e995753d781178fdf6144ac0cb7520d2b1830525cd4be1aad1a5b5b598`.
+
 ## Binance Same-Expiry CLOB Box Checkpoint
 
 The same-expiry four-option fixed-payoff box mechanism was already terminal in
@@ -2910,7 +2929,7 @@ The resolved-leg House duplicate-payoff checkpoint, raw journals, source hashes,
 and directly affected registry lineage pass 12 focused tests with Ruff and
 Python compilation clean. The registry still contains 42 ranked hypotheses and
 19 accepted scoped overlays; its result SHA-256 is
-`23479942f0f50760ad35df84f91707716d36ef06026c4ff664f618944e528680`.
+`ebce99afa23c826f41acec8670dc8259274d62e64d71d255a3645c119f776c95`.
 
 The exact-one-NO failure preservation and Binance BLVT current-inventory gate,
 including every registry-hash-coupled test, pass 199 focused tests with Ruff

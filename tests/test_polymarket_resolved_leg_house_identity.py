@@ -9,7 +9,7 @@ from typing import Any
 ROOT = Path(__file__).resolve().parents[1]
 ACTION = ROOT / "docs/model-research/action-value"
 REGISTRY = ROOT / "docs/model-research/structural-edge-priority-registry-v1.json"
-REGISTRY_HASH = "23479942f0f50760ad35df84f91707716d36ef06026c4ff664f618944e528680"
+REGISTRY_HASH = "ebce99afa23c826f41acec8670dc8259274d62e64d71d255a3645c119f776c95"
 
 
 def _sha256(payload: bytes) -> str:
