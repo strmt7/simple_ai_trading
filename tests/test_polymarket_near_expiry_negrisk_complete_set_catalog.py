@@ -15,7 +15,14 @@ REGISTRY = ROOT / "docs/model-research/structural-edge-priority-registry-v1.json
 CONTRACT_HASH = "d5b81adb03fd4fe322d9a54fbacbe15aa8a6a7e55512aa71e9aa361617f2c6e6"
 RESULT_HASH = "96610d7cba90a2dc97489bd70c95b7d03568d5b89017ace1e8c92829c70cee14"
 RAW_HASH = "1dd21f815a4564cb42711842b80c91e46d6b6a799dcefe2911d0a30e10ab61f2"
-REGISTRY_HASH = "6062ef4cb774983d86d7edd5dad7adcaafa31a8202d37ec777e12fc33028d157"
+SEP6_CONTRACT = ROOT / "docs/model-research/action-value/polymarket-sep6-negrisk-complete-set-catalog-contract-v1-2026-08-29.json"
+SEP6_RESULT = ROOT / "docs/model-research/action-value/polymarket-sep6-negrisk-complete-set-catalog-result-v1-2026-08-29.json"
+SEP6_RAW = ROOT / "data/polymarket-sep6-negrisk-complete-set-catalog-v1/raw/events.json"
+SEP6_JOURNAL = ROOT / "data/polymarket-sep6-negrisk-complete-set-catalog-v1/request-journal.jsonl"
+SEP6_CONTRACT_HASH = "18d513c0b54c6155897ae435cf9f4b8a0ef327f6072d39b122ebd4579b7f0972"
+SEP6_RESULT_HASH = "3e3ae8fd8c98c93c3e2194425db5992f06aed412e07d32333525601c2b34bc52"
+SEP6_RAW_HASH = "f430490f592cf58297c5f5f118b3fabc32488faa82b5b07b60815279bdc61050"
+REGISTRY_HASH = "ec41ae27eb0699809acabc273620059516a35c09ec6f7cf33520eecbf19ea78e"
 
 
 def _load(path: Path) -> dict[str, object]:
@@ -89,6 +96,38 @@ def test_every_screened_event_reconstructs_its_gamma_sum() -> None:
     )
 
 
+def test_distinct_daily_window_remains_partial_and_spends_no_proof_requests() -> None:
+    contract = _load(SEP6_CONTRACT)
+    result = _load(SEP6_RESULT)
+    journal = [
+        json.loads(line)
+        for line in SEP6_JOURNAL.read_text(encoding="ascii").splitlines()
+    ]
+    assert contract["contract_sha256"] == SEP6_CONTRACT_HASH
+    assert _canonical_hash(contract, "contract_sha256") == SEP6_CONTRACT_HASH
+    assert result["result_sha256"] == SEP6_RESULT_HASH
+    assert _canonical_hash(result, "result_sha256") == SEP6_RESULT_HASH
+    assert hashlib.sha256(SEP6_RAW.read_bytes()).hexdigest() == SEP6_RAW_HASH
+    assert [row["phase"] for row in journal] == ["intent", "completed"]
+    assert journal[1]["response_sha256"] == SEP6_RAW_HASH
+
+    capture = result["capture"]
+    screen = result["screen"]
+    assert capture["returned_event_count"] == 100
+    assert capture["next_cursor_present"] is True
+    assert capture["population_complete_under_frozen_filter"] is False
+    assert screen["fixed_negrisk_event_count"] == 57
+    assert screen["candidate_count_strictly_below_payout_floor"] == 2
+    assert screen["proof_candidate"] is None
+    best = screen["best_candidate"]
+    assert best["event_slug"] == "mls-dal-skc-2026-09-05"
+    assert best["market_count"] == 3
+    assert Decimal(best["displayed_all_yes_sum_pUSD"]) == Decimal("0.985")
+    assert result["authority"]["onchain_requests"] == 0
+    assert result["authority"]["book_requests"] == 0
+    assert result["authority"]["fee_requests"] == 0
+
+
 def test_registry_routes_partial_page_without_accepting_an_edge() -> None:
     registry = _load(REGISTRY)
     assert registry["result_sha256"] == REGISTRY_HASH
@@ -100,10 +139,18 @@ def test_registry_routes_partial_page_without_accepting_an_edge() -> None:
         == "polymarket_cross_market_exact_multi_outcome_subset_equivalence"
     )
     artifacts = row["canonical_artifacts"]
-    assert artifacts[-2:] == [
+    assert artifacts[-4:] == [
         {"path": CONTRACT.relative_to(ROOT).as_posix(), "result_sha256": CONTRACT_HASH},
         {"path": RESULT.relative_to(ROOT).as_posix(), "result_sha256": RESULT_HASH},
+        {
+            "path": SEP6_CONTRACT.relative_to(ROOT).as_posix(),
+            "result_sha256": SEP6_CONTRACT_HASH,
+        },
+        {
+            "path": SEP6_RESULT.relative_to(ROOT).as_posix(),
+            "result_sha256": SEP6_RESULT_HASH,
+        },
     ]
-    assert "returned_100_plus_a_cursor" in row["current_status"]
+    assert "both_contracts_set_proof_candidate_null" in row["current_status"]
     assert "do_not_resample_or_adaptively_continue" in row["next_action"]
     assert registry["accepted_edge_count"] == 19

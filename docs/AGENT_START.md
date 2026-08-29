@@ -1515,9 +1515,16 @@ safety gate, blocks Stop, or submits an order.
   requests. Do not continue the consumed cursor or depth-test its outcome-aware
   winner. Canonical result SHA-256
   `96610d7cba90a2dc97489bd70c95b7d03568d5b89017ace1e8c92829c70cee14`.
+  A distinct single-day `2026-09-06` UTC window also returned 100 plus cursor,
+  with 57 fixed events and only two Gamma candidates led by Dallas/Sporting
+  Kansas City at `0.985`; it likewise spent zero proof requests. Daily all-
+  category windows are still incomplete. Retry only with a prospectively fixed
+  hourly or series-specific window, never repeated outcome-aware narrowing.
+  Canonical follow-up result SHA-256
+  `3e3ae8fd8c98c93c3e2194425db5992f06aed412e07d32333525601c2b34bc52`.
 - The structural-edge registry now has 42 ranked hypotheses, still only 19
   narrowly accepted scoped overlays, and result SHA-256
-  `6062ef4cb774983d86d7edd5dad7adcaafa31a8202d37ec777e12fc33028d157`.
+  `ec41ae27eb0699809acabc273620059516a35c09ec6f7cf33520eecbf19ea78e`.
 
 ## Task Routing
 
@@ -1542,6 +1549,7 @@ safety gate, blocks Stop, or submits an order.
 | Commanders/Cowboys NFL exact-depth terminal result | `docs/model-research/action-value/polymarket-commanders-cowboys-total-package-result-v1-2026-08-29.json` |
 | Cowboys/Giants NFL tie-collision correction | `docs/model-research/action-value/polymarket-cowboys-giants-tie-collision-correction-v1-2026-08-29.json` |
 | Near-expiry fixed NegRisk incomplete complete-set catalog | `docs/model-research/action-value/polymarket-near-expiry-negrisk-complete-set-catalog-result-v1-2026-08-29.json` |
+| Sep 6 fixed NegRisk incomplete daily catalog | `docs/model-research/action-value/polymarket-sep6-negrisk-complete-set-catalog-result-v1-2026-08-29.json` |
 | Binance retained CLOB box-parity terminal prefilter | `docs/model-research/action-value/binance-options-clob-box-retained-prefilter-v2-2026-08-29.json` |
 | Binance retained option/perpetual conversion terminal stress | `docs/model-research/action-value/binance-options-perpetual-conversion-retained-stress-v1-2026-08-29.json` |
 | Polymarket holding-yield latest retained receipt continuity | `docs/model-research/polymarket/complete-set-holding-yield-continuity-receipts-v8-2026-08-29.json` |
