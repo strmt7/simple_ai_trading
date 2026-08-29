@@ -108,6 +108,11 @@ override prose.
   If an unchanged mechanism already fails an economic gate, do not spend another
   capture merely to repair sample count unless a precommitted decision could
   still change.
+- Before launching a one-use WebSocket capture, freeze reconnect behavior,
+  maximum unobserved gaps, duration accounting, and terminal acceptance. A
+  transport close that ends the runner before its frozen duration consumes the
+  test and fails closed; never silently call the shorter file complete or rerun
+  it under the same contract.
 - In Windows/PowerShell capture wrappers, compare absolute instants with
   `DateTimeOffset` or normalize both operands to UTC before comparison. Never
   compare `DateTime.UtcNow` directly with a parsed local-kind `DateTime`; its

@@ -74,13 +74,17 @@
     },
     {
       "blocking_evidence": [
-        "terminal audit of the active frozen 24-hour six-token maker-input fill-and-unwind capture without using its partial file",
+        "a separately triggered source-continuous recurrence capture only after materially new queue attribution or causal post-fill economics because the consumed one-use capture terminated after 22_726091435_percent with no admitted continuity",
         "owned or explicitly queue-censored Bitcoin NO maker fills joined to the first causally subsequent Gold YES and S&P 500 YES executable output books",
         "repeated independent adapter-supported maker-input positive episodes across non-overlapping time volatility and liquidity regimes",
         "exact current minimum order size displayed depth CLOB fee and on-chain event conversion fee at every episode",
         "authenticated candidate index-set conversion accessibility approvals exact user-paid or relayer-paid same-unit pUSD cost latency adverse-selection capacity and cash-realized output reconciliation"
       ],
       "canonical_artifacts": [
+        {
+          "path": "docs/model-research/action-value/polymarket-negrisk-maker-input-prospective-terminal-v1-2026-08-29.json",
+          "result_sha256": "613453649f84407d6216e72228bdb16005b0a5c290c6bd58fa522007de5317e5"
+        },
         {
           "path": "docs/model-research/action-value/polymarket-negrisk-maker-input-gate-v1-2026-08-26.json",
           "result_sha256": "d4e02d2d1cc6b0a598265af734b29f62aec6145bc5a1cc3b3d65771ba2031d2a"
@@ -98,10 +102,10 @@
           "result_sha256": "e11810a0215521cb5ad0c0c966340b4ff943760fda516e7841430fe057fe25fe"
         }
       ],
-      "current_status": "highest_priority_market_direction_independent_candidate_one_five_minute_22_event_live_capture_found_one_positive_event_frame_at_5_and_20_shares_but_all_taker_was_negative_after_fees_maker_input_was_positive_by_only_0_00740_and_0_02960_pUSD_before_external_costs_an_exact_recent_receipt_proved_66_72_Bitcoin_NO_shares_filled_as_maker_at_0_82_and_current_official_single_source_of_truth_registry_plus_dated_V1_relayer_retirement_current_source_and_one_successful_index7_conversion_resolved_the_V2_pUSD_collateral_adapter_identity_and_proved_the_V2_to_legacy_route_but_reusing_479446_whole_outer_transaction_gas_units_at_one_current_gas_and_POLUSDT_ask_sensitivity_rejected_5_shares_and_left_only_0_009257_pUSD_minus_USDT_at_20_shares_before_other_costs_queue_post_fill_output_books_candidate_index_set_exact_account_access_user_charge_latency_and_after_cost_profit_remain_unproved",
+      "current_status": "terminally_rejected_under_the_consumed_one_use_prospective_contract_the_promised_24_hour_six_token_capture_ended_after_19635_343_seconds_or_22_726091435_percent_on_ConnectionClosedError_and_did_not_admit_source_continuity_the_only_0_82_equivalent_execution_was_a_99_986314_share_Bitcoin_YES_buy_that_removed_the_mirrored_Bitcoin_NO_0_82_bid_but_exceeded_the_initial_98_74_share_visible_queue_by_only_1_246314_shares_so_neither_the_frozen_5_nor_20_share_hypothetical_order_was_queue_censored_filled_and_no_causal_output_unwind_or_after_cost_edge_is_admissible",
       "market_direction_forecast_required": false,
       "mechanism": "polymarket_negative_risk_NO_to_YES_converter_recurrence",
-      "next_action": "leave_the_active_frozen_24_hour_six_token_capture_untouched_and_terminally_audit_only_after_completion_the_5_share_direct_gas_branch_is_rejected_for_20_shares_if_a_Bitcoin_NO_sell_fill_reaches_0_82_join_queue_censored_entry_to_the_first_causally_subsequent_Gold_YES_and_SP500_YES_taker_unwind_then_reject_on_no_fill_stale_or_discontinuous_books_nonpositive_after_fee_unwind_or_any_unbound_candidate_index_set_account_access_same_unit_user_charge_latency_approval_adverse_selection_or_external_cost",
+      "next_action": "do_not_rerun_the_consumed_capture_advance_the_next_ranked_satisfied_trigger_and_reopen_only_on_materially_new_primary_evidence_that_changes_queue_attribution_exact_one_NO_conversion_access_same_unit_external_cost_or_repeated_causal_post_fill_unwind_economics_authenticated_or_order_capable_work_requires_explicit_separate_authority",
       "priority_rank": 2,
       "prohibited_shortcuts": [
         "calling_historical_mark_to_market_converter_profit_current_cash_realized_profit",
@@ -110,6 +114,8 @@
         "inventing_depth_before_every_token_has_an_authoritative_full_book",
         "counting_two_quantity_evaluations_of_one_frame_as_two_states_or_recurrence",
         "calling_a_transport_clean_subscription_source_continuous_when_cross_token_source_timestamps_are_stale_or_skewed",
+        "calling_a_WebSocket_capture_complete_after_a_transport_close_shortens_its_frozen_duration",
+        "crediting_a_mirrored_trade_as_a_queue_censored_fill_when_executed_size_does_not_clear_the_visible_queue_plus_the_frozen_order_size",
         "filtering_aggregate_Data_API_trade_prices_as_price_level_maker_fill_probability",
         "calling_output_maker_economics_locked_without_pre_existing_inventory_and_holding_risk",
         "using_the_stale_repository_README_or_retired_CLOB_V1_adapter_as_the_current_user_facing_pUSD_relayer_target_after_the_official_registry_and_dated_changelog_resolved_the_runtime_address",
@@ -118,7 +124,7 @@
         "ignoring_augmented_or_non_exhaustive_event_risk_conversion_fees_CLOB_fees_latency_atomicity_or_capacity",
         "placing_orders_approvals_or_conversions_without_separate_explicit_authority"
       ],
-      "retry_trigger": "one_frozen_24_hour_six_token_prospective_capture_is_active_do_not_start_a_duplicate_use_only_its_terminal_result",
+      "retry_trigger": "materially_new_primary_evidence_that_changes_queue_attribution_exact_one_NO_conversion_access_same_unit_external_cost_or_repeated_causal_post_fill_unwind_economics_for_a_separately_frozen_public_study_or_explicit_separate_authority_for_authenticated_or_order_capable_work",
       "venue_scope": "polymarket_event_106981_bitcoin_gold_sp500_fixed_non_augmented_negative_risk"
     },
     {
@@ -1559,7 +1565,7 @@
       "venue_scope": "Binance_XAU_XAG_USDT_long_only_commodity_options_and_matching_TradFi_perpetuals"
     }
   ],
-  "result_sha256": "1f15f9bf95e6600439dea9ce4c52aeaa4f53e41c619fe092414b44e777713ae1",
+  "result_sha256": "12cf5446f5ff2521530672403e3926069b6dcc526f83f19f7ecfadcb7b7860d2",
   "schema_version": "structural-edge-priority-registry-v1",
   "terminal_do_not_repeat": [
     {
@@ -1728,6 +1734,6 @@
       "reason": "the_exact_70_day_2026_06_18_through_2026_08_26_extension_had_full_hourly_coverage_but_the_primary_BTC_ETH_equal_weight_after_20_bips_and_exact_entry_exit_basis_annualized_only_1_2030087925_percent_and_every_asset_BTC_ETH_SOL_DOGE_trailed_the_same_timestamp_3_86_percent_DGS3MO_hurdle_do_not_refit_or_resample_until_a_material_venue_fee_funding_basis_or_hurdle_change_occurs"
     }
   ],
-  "updated_at_utc": "2026-08-29T13:08:37Z",
+  "updated_at_utc": "2026-08-29T13:23:59Z",
   "usage_rule": "advance_the_highest_ranked_hypothesis_whose_retry_trigger_is_satisfied_otherwise_do_not_repeat_a_blocked_or_terminal_screen"
 }

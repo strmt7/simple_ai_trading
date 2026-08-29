@@ -302,9 +302,16 @@ safety gate, blocks Stop, or submits an order.
   One frozen 24-hour public capture of only the six event tokens was launched
   under contract SHA-256
   `9d32e66b6d150434e4b978daafa1ea9482066230f253da4c86eb9a18504717da`.
-  Verify its process and terminal file before acting; never use its partial raw
-  file, restart it, or start a duplicate. It may only decide queue-censored fill
-  and causally subsequent unwind feasibility, not trading authority.
+  Its terminal file is now audited: the connection closed after only
+  `19635.343` seconds, or `22.726091435%`, so source continuity and the frozen
+  24-hour duration both failed. The only 0.82-equivalent execution exceeded the
+  initially visible 98.74-share queue by `1.246314` shares, below both the five-
+  and twenty-share frozen orders. No queue-censored input fill or causal output
+  unwind is admissible. Do not restart the consumed contract. Canonical terminal
+  adjudication:
+  `polymarket-negrisk-maker-input-prospective-terminal-v1-2026-08-29.json`,
+  result SHA-256
+  `613453649f84407d6216e72228bdb16005b0a5c290c6bd58fa522007de5317e5`.
   A separate current organic-taker overlay is accepted only as a pUSD fee
   reduction on independently justified legitimate BTC/ETH/SOL taker flow. One
   complete public UTC day contained 1,202 BTC/ETH/SOL and other crypto taker

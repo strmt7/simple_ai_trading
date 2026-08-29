@@ -267,12 +267,19 @@ diagnostics, not accepted edges.
   At that earlier checkpoint, accepted edges were thirteen. One frozen 24-hour public capture of only the six
   event tokens was launched under internal contract SHA-256
   `9d32e66b6d150434e4b978daafa1ea9482066230f253da4c86eb9a18504717da`.
-  Before acting, verify the process and terminal artifact. Never consume its
-  partial raw file, restart it, or launch a duplicate. Its only decision is
-  whether a queue-censored 0.82 fill can be joined to the first causally
-  subsequent twenty-share output unwind. The no-rebate five-share direct-gas
-  sensitivity is negative; a hypothetical tier-adjusted cross-unit sensitivity
-  does not replace the protected post-fill evidence.
+  That terminal artifact is now audited. The connection closed after
+  `19635.343` seconds (`22.726091435%` of the frozen duration), so continuity
+  failed. One 99.986314-share Bitcoin-YES buy removed the mirrored Bitcoin-NO
+  0.82 bid, but it cleared only `1.246314` shares beyond the initially visible
+  98.74-share queue. That is insufficient for either the five- or twenty-share
+  frozen hypothetical order, so no queue-censored input fill and no causal
+  output unwind are admissible. Never restart or duplicate this consumed
+  contract. The no-rebate five-share direct-gas sensitivity remains negative;
+  a hypothetical tier-adjusted cross-unit sensitivity does not replace the
+  failed post-fill gate. Canonical terminal adjudication:
+  `docs/model-research/action-value/polymarket-negrisk-maker-input-prospective-terminal-v1-2026-08-29.json`,
+  result SHA-256
+  `613453649f84407d6216e72228bdb16005b0a5c290c6bd58fa522007de5317e5`.
   A separate retained-data binary complete-set rescore found a new historical
   candidate without another venue request. The five-hour 2026-08-15 Round 27
   cohort covered 53 BTC five-minute markets; its zero-tier path exactly
@@ -960,7 +967,7 @@ grants paper, testnet, or live authority.
 
 The canonical structural-edge priority and retry-trigger registry is
 `docs/model-research/structural-edge-priority-registry-v1.json`, result SHA-256
-`1f15f9bf95e6600439dea9ce4c52aeaa4f53e41c619fe092414b44e777713ae1`.
+`12cf5446f5ff2521530672403e3926069b6dcc526f83f19f7ecfadcb7b7860d2`.
 Advance only the highest-ranked hypothesis whose trigger is actually satisfied.
 This prevents account-blocked or terminal screens from being rerun as if more
 snapshots could create an edge.
@@ -2098,7 +2105,7 @@ result SHA-256
 `64943efe0c6ad16f8d02f78548afef38f919448d2da87c7573e825a2eeefd6b9`.
 That checkpoint left seventeen accepted scoped edges. The current registry now
 has nineteen and result SHA-256
-`1f15f9bf95e6600439dea9ce4c52aeaa4f53e41c619fe092414b44e777713ae1`.
+`12cf5446f5ff2521530672403e3926069b6dcc526f83f19f7ecfadcb7b7860d2`.
 
 The complete Binance XAU/XAG Commodity Options versus matching TradFi
 perpetual lower-bound screen is terminal for the active 2026-08-27 and
