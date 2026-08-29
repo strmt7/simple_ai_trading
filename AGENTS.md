@@ -158,6 +158,13 @@ override prose.
   public request is itself the preregistered event-discovery observation, label
   it that way, freeze its one-use consequences, and never reinterpret a null
   result as permission for an adaptive poll or conditional downstream capture.
+- A recurring-series title, recurrence label, recent update, or volume does not
+  prove that future events are deployed. For a source-selected future series,
+  either source-prove an actual event deployment before the outcome request or
+  make one bounded event-discovery request its own terminal stage. An empty
+  catalog may reopen only on its explicit deployment or nonoverlapping
+  not-before trigger; never refine immediately from a short-horizon binary
+  series to another unproved forward horizon.
 - Before claiming complete coverage from a paginated public catalog, prove a
   source-bound population/page ceiling or freeze an explicitly partial rank or
   cursor boundary. A non-null cursor at the request ceiling is incomplete, not

@@ -1487,12 +1487,28 @@
         {
           "path": "docs/model-research/action-value/polymarket-sep7-hour00-negrisk-complete-set-catalog-result-v1-2026-08-29.json",
           "result_sha256": "92734472ed41bccdc1d88c947b218e05fa35827cad6b1711ec192c06cf60cc64"
+        },
+        {
+          "path": "docs/model-research/action-value/polymarket-source-selected-crypto-negrisk-series-contract-v1-2026-08-29.json",
+          "result_sha256": "a13f554d2b6b40dce3ea83236bff5cd99993f41aa1c988fe38eb99dc28d43f5e"
+        },
+        {
+          "path": "docs/model-research/action-value/polymarket-source-selected-crypto-negrisk-series-result-v1-2026-08-29.json",
+          "result_sha256": "73ae75ccf391a30ef592f649f63ef535e29865e1234bbff03021c806fd75268b"
+        },
+        {
+          "path": "docs/model-research/action-value/polymarket-btc-multi-strikes-weekly-negrisk-contract-v1-2026-08-29.json",
+          "result_sha256": "ca2f7b556207a0d2d04c006ed502bf35a673a87642e0e5dd443227af8aba82d2"
+        },
+        {
+          "path": "docs/model-research/action-value/polymarket-btc-multi-strikes-weekly-negrisk-result-v1-2026-08-29.json",
+          "result_sha256": "f032753b45c82b2e0945d1a8c0e0d5fc01f8fb1727cdad34e73064c7590417ba"
         }
       ],
-      "current_status": "direction_independent_exact_multioutcome_family_remains_unaccepted_the_prescribed_nonoverlapping_2026_09_07T00_00_00Z_through_00_59_59Z_hourly_remedy_returned_six_events_without_cursor_five_fixed_NegRisk_sets_and_zero_Gamma_sub_floor_candidates_best_Nacional_Potosi_Blooming_match_winner_sum_was_1_090_before_execution_costs_so_zero_onchain_books_or_fees_the_prior_broad_and_2026_09_06_daily_pages_remain_incomplete_with_outcome_aware_candidates_prohibited_resolved_leg_House_controls_failed_recurrence_and_LAD_DET_exact_depth_lost_2_pUSD_before_fees_no_edge_profit_or_deployment_claim",
+      "current_status": "direction_independent_exact_multioutcome_family_remains_unaccepted_after_the_complete_2026_09_07_hour00_rejection_a_price_blind_official_series_metadata_request_selected_BTC_Up_or_Down_5m_but_its_frozen_2026_09_14_through_2026_09_21_event_window_was_empty_a_distinct_retained_metadata_selection_then_fixed_series_45_BTC_Multi_Strikes_Weekly_for_2026_09_07T01_00_00Z_through_2026_09_21_and_that_complete_series_specific_catalog_was_also_empty_so_recurrence_title_and_volume_do_not_prove_forward_event_deployment_zero_onchain_books_fees_accounts_or_credentials_were_used_and_no_edge_profit_or_deployment_claim_exists",
       "market_direction_forecast_required": false,
       "mechanism": "polymarket_cross_market_exact_multi_outcome_subset_equivalence",
-      "next_action": "do_not_resample_adaptively_continue_or_narrow_the_consumed_2026_08_29_through_2026_09_06_pages_or_the_complete_2026_09_07_hour00_window_and_do_not_sweep_adjacent_hours_reopen_only_for_a_prospectively_distinct_source_selected_series_or_nonadjacent_population_independent_of_these_outcomes_then_use_Gamma_only_to_reject_require_exact_onchain_question_count_and_conversion_fee_before_one_precommitted_all_token_book_batch_and_independent_after_cost_recurrence_before_order_capable_work",
+      "next_action": "do_not_repeat_either_empty_forward_series_query_or_resample_adaptively_continue_or_narrow_any_consumed_population_recurrence_title_and_volume_are_not_deployment_evidence_advance_other_ranked_triggers_and_reopen_series_specific_research_only_after_an_explicit_new_event_deployment_trigger_or_not_before_2026_09_20T00_00_00Z_for_one_distinct_2026_09_22_through_2026_09_28_series_45_discovery_then_use_Gamma_only_to_reject_and_require_exact_onchain_question_count_and_conversion_fee_before_one_precommitted_all_token_book_batch",
       "priority_rank": 31,
       "prohibited_shortcuts": [
         "calling_the_39_6_million_USD_all_strategy_headline_cross_market_subset_profit",
@@ -1508,7 +1524,7 @@
         "escalating_one_positive_maker_first_snapshot_to_order_capable_work_before_a_distinct_instance_survives_the_same_hedge_stress",
         "double_counting_the_same_NBA_episode_or_calling_public_recurrence_owned_profit"
       ],
-      "retry_trigger": "material_price_fee_rule_or_market_change_in_the_resolved_leg_House_family_or_a_future_source_selected_nonadjacent_or_series_specific_fixed_NegRisk_population_outside_every_consumed_window_with_prospectively_complete_coverage_exact_onchain_exhaustiveness_zero_or_bounded_conversion_fee_and_at_least_one_Gamma_only_sub_floor_all_YES_sum_or_a_distinct_active_accepting_orders_market_pair_with_complete_exact_rules_deterministic_subset_indicator_equality_and_optimistic_current_economics_not_already_covered_by_the_specialized_NBA_family",
+      "retry_trigger": "material_price_fee_rule_or_market_change_in_the_resolved_leg_House_family_or_explicit_official_deployment_of_a_new_fixed_NegRisk_event_in_a_source_selected_nonconsumed_series_or_not_before_2026_09_20T00_00_00Z_for_one_separately_frozen_distinct_series_45_window_from_2026_09_22_through_2026_09_28_or_a_distinct_active_accepting_orders_market_pair_with_complete_exact_rules_deterministic_subset_indicator_equality_and_optimistic_current_economics_not_already_covered_by_the_specialized_NBA_family",
       "venue_scope": "polymarket_fixed_NegRisk_multioutcome_complete_sets_and_two_separately_traded_exact_rule_multioutcome_markets"
     },
     {
@@ -2008,7 +2024,7 @@
       "venue_scope": "Binance_Spot_direct_and_exactly_one_intermediary_routes_for_independently_required_organic_conversions"
     }
   ],
-  "result_sha256": "c0d7189c4848f248e6d3960954198e0f1e93c8e74acd2ed36a8830239bf86194",
+  "result_sha256": "f9bb0f6582fca306d3083a8ad3aadeaa020936949702176b585ea6f926e87e08",
   "schema_version": "structural-edge-priority-registry-v1",
   "terminal_do_not_repeat": [
     {
@@ -2217,6 +2233,6 @@
       "reason": "the_current_prefilter_selected_SKHYNIX_CRWV_ARM_HOOD_and_MSTR_but_every_fixed_orientation_symbol_failed_training_validation_and_test_after_20_bips_execution_and_two_500_bip_annual_capital_hurdles_ARM_was_least_negative_at_negative_24_6296621005_bips_full_window_do_not_request_books_or_repeat_without_a_material_funding_fee_session_instrument_conversion_or_execution_change"
     }
   ],
-  "updated_at_utc": "2026-08-29T20:30:43.0244989+00:00",
+  "updated_at_utc": "2026-08-29T21:30:26.7309484+00:00",
   "usage_rule": "advance_the_highest_ranked_hypothesis_whose_retry_trigger_is_satisfied_otherwise_do_not_repeat_a_blocked_or_terminal_screen"
 }

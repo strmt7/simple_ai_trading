@@ -3201,7 +3201,7 @@ values are `dcd959d9d7ec0e1dffec47b910cece585c106b76b69feaaa9ca03ddcc7caa83a`,
 and `0307a9dbfb26ca62e94ae01e5b5d40316340b686a60829e85f258c07e565678c`.
 The structural-edge registry now contains 44 ranked hypotheses and 21 accepted
 scoped overlays; its canonical SHA-256 is
-`c0d7189c4848f248e6d3960954198e0f1e93c8e74acd2ed36a8830239bf86194`.
+`f9bb0f6582fca306d3083a8ad3aadeaa020936949702176b585ea6f926e87e08`.
 
 ## Future WNBA Complete-Catalog Rejection Screen
 
@@ -3231,7 +3231,7 @@ The raw response and two-phase journal SHA-256 values are
 and `40a7edc61fcf5c3a42a8ab7aef65cf04703cde30989b7b23f23a915291620368`.
 The structural registry remains at 44 hypotheses and 21 accepted scoped edges;
 its canonical SHA-256 is
-`c0d7189c4848f248e6d3960954198e0f1e93c8e74acd2ed36a8830239bf86194`.
+`f9bb0f6582fca306d3083a8ad3aadeaa020936949702176b585ea6f926e87e08`.
 
 ## Sep 7 Hour-00 Fixed NegRisk Complete Rejection Screen
 
@@ -3259,6 +3259,35 @@ and `92734472ed41bccdc1d88c947b218e05fa35827cad6b1711ec192c06cf60cc64`.
 The raw response and two-phase journal SHA-256 values are
 `4b0322846de9fd229591c460eaf1cb22d4b0ac4c9e6b52ac2f35c8a0bec99442`
 and `9349af5f5aee892fe5e16d710b55fefabef9ba63f36299b00bff4e1d90de8627`.
+
+## Price-Blind Crypto Series Deployment Gate
+
+The next rank-31 pass used the official series endpoint with
+`exclude_events=true`, so selection saw no event, market, or price outcome. The
+first recurring BTC/ETH/SOL row in server `volume24hr` order was series 10684,
+`BTC Up or Down 5m`. Its prospectively frozen September 14 through September
+21 keyset request returned zero events and no cursor. This was a clean null
+deployment observation, not a market or edge rejection.
+
+Retained price-blind metadata also identified the first structurally relevant
+multi-strike row: series 45, `BTC Multi Strikes Weekly`. One separately frozen
+series-specific request covered September 7 01:00 through September 21 and
+also returned zero events without a cursor. Both stages stopped with zero
+onchain, book, fee, credential, account, order, transaction, fund, or protected
+capture access. No profitability or deployment claim exists.
+
+The important correction is now executable policy: recurrence labels, titles,
+update timestamps, and volume do not prove forward event deployment. Do not
+repeat either empty query or immediately refine another undeployed horizon.
+Reopen only if an official event deployment is independently visible, or not
+before `2026-09-20T00:00:00Z` for one separately frozen nonoverlapping series-45
+window covering September 22 through September 28. Canonical contract/result
+SHA-256 pairs are
+`a13f554d2b6b40dce3ea83236bff5cd99993f41aa1c988fe38eb99dc28d43f5e` /
+`73ae75ccf391a30ef592f649f63ef535e29865e1234bbff03021c806fd75268b`
+and
+`ca2f7b556207a0d2d04c006ed502bf35a673a87642e0e5dd443227af8aba82d2` /
+`f032753b45c82b2e0945d1a8c0e0d5fc01f8fb1727cdad34e73064c7590417ba`.
 
 ## Binance All-Symbol Triangular-Cycle Terminal Adjudication
 
@@ -3292,6 +3321,17 @@ are `cc19bdd97167265e0831f84325624a623f83f2dc2d939491ed1c51859c0a38bb`,
 and `2fffd2044e72d1712ecdaa0c4e24cb829057ea2005c07e12129c443478b07902`.
 
 ## Verification Scope
+
+The price-blind series selector, both empty event catalogs, four canonical
+contract/result hashes, three retained raw-response hashes, journals, updated
+rank-31 routing, and the new deployment-evidence instruction pass four direct
+source-bound tests. The registry hash change covered 270 focused tests across
+70 registry-coupled files in one pass: 269 passed and one stale six-artifact
+tail expectation failed; after extending that exact expectation to the four new
+artifacts, the corrected test plus the four direct tests pass. Ruff is clean
+for the new tool and two directly affected tests. No market request was repeated
+for verification, and no broad model, CI, hosted, release, account, order, fund,
+or protected-capture workflow ran.
 
 The future-WNBA and Sep 7 hour-00 contracts, compact complete-page results,
 two-phase request journals, raw responses, exact payoff and fixed-NegRisk
