@@ -491,6 +491,10 @@
           "result_sha256": "a4158bf059f4f5ad839b2f504c08c4afc65615260b4171533866f4c2337494e0"
         },
         {
+          "path": "docs/model-research/action-value/binance-usd1-simple-earn-remaining-horizon-stress-v1-2026-08-30.json",
+          "result_sha256": "669fd50772087cb81a4d1e9439e5666a75b5c1ed9de68b1e8b27cb360f2d5934"
+        },
+        {
           "path": "docs/model-research/action-value/binance-first-usd-deposit-spcxb-reward-hedge-candidate-v1-2026-08-27.json",
           "result_sha256": "e0b6ed9311d2a022abee417a677b952e83cf918fc6b396804f5cba39fd83d4ed"
         },
@@ -527,10 +531,10 @@
           "result_sha256": "54fe3d3e23a92290debdc67d1e7e19ecac6c06441c045f1aa21fe3e62558c03c"
         }
       ],
-      "current_status": "accepted_scoped_time_limited_USD1_holding_airdrop_for_identical_already_held_principal_now_has_three_positive_completed_base_APRs_4_85_5_46_and_5_27_percent_but_the_fourth_week_rate_is_explicitly_unpublished_plus_accepted_scoped_mutually_exclusive_fixed_7_percent_USD1_Simple_Earn_bonus_on_at_most_the_first_1500_independently_already_held_idle_USD1_latest_base_comparison_is_173_bips_gross_uplift_and_3_046242775_day_break_even_after_one_forfeited_airdrop_day_before_unproved_account_and_transition_costs_the_distinct_RLUSD_candidate_fell_from_8_07_to_5_78_percent_completed_week_APR_and_remains_unaccepted_with_zero_public_forward_floor_accepted_U_Flexible_RWUSD_VIP_USDT_Flexible_and_USDe_existing_inventory_overlays_remain_all_require_exact_account_eligibility_and_none_is_deployment_ready",
+      "current_status": "accepted_scoped_time_limited_USD1_holding_airdrop_for_identical_already_held_principal_now_has_three_positive_completed_base_APRs_4_85_5_46_and_5_27_percent_but_the_fourth_week_rate_is_explicitly_unpublished_plus_accepted_scoped_mutually_exclusive_fixed_7_percent_USD1_Simple_Earn_bonus_on_at_most_the_first_1500_independently_already_held_idle_USD1_latest_base_comparison_is_173_bips_gross_uplift_and_3_046242775_day_break_even_after_one_forfeited_airdrop_day_before_unproved_account_and_transition_costs_but_the_2026_08_30_remaining_horizon_stress_leaves_only_1_5162802791_bips_or_0_2274420419_quote_units_before_every_unproved_other_cost_and_turns_negative_for_new_subscriptions_on_2026_09_02_under_unchanged_inputs_the_distinct_RLUSD_candidate_fell_from_8_07_to_5_78_percent_completed_week_APR_and_remains_unaccepted_with_zero_public_forward_floor_accepted_U_Flexible_RWUSD_VIP_USDT_Flexible_and_USDe_existing_inventory_overlays_remain_all_require_exact_account_eligibility_and_none_is_deployment_ready",
       "market_direction_forecast_required": false,
       "mechanism": "same_account_stable_value_yield_allocation",
-      "next_action": "do_not_repeat_the_consumed_2026_08_28_refresh_on_2026_09_04_capture_the_final_USD1_and_third_RLUSD_completed_week_rates_once_before_2026_09_14T23_59_00Z_only_if_both_designated_credentials_and_explicit_read_only_account_evidence_authority_exist_prequalify_first_USD_deposit_Promotion_A_and_current_USD1_Simple_Earn_eligibility_capacity_and_position_without_registering_depositing_converting_subscribing_trading_or_hedging_require_separate_funded_authority_for_every_mutation",
+      "next_action": "do_not_repeat_the_consumed_2026_08_28_refresh_or_roll_the_remaining_horizon_stress_daily_before_2026_09_02_only_if_both_designated_credentials_and_explicit_signed_GET_only_account_evidence_authority_exist_prequalify_current_USD1_Simple_Earn_eligibility_capacity_exact_rates_fees_and_sold_out_state_without_converting_or_subscribing_otherwise_treat_unchanged_late_entry_economics_as_negative_from_2026_09_02_on_2026_09_04_capture_the_final_USD1_and_third_RLUSD_completed_week_rates_once_before_2026_09_14T23_59_00Z_only_if_both_designated_credentials_and_explicit_read_only_account_evidence_authority_exist_prequalify_first_USD_deposit_Promotion_A_require_separate_funded_authority_for_every_registration_deposit_conversion_subscription_redemption_transfer_trade_or_hedge",
       "priority_rank": 8,
       "prohibited_shortcuts": [
         "logged-out marketing APR as account rate evidence",
@@ -542,7 +546,7 @@
         "extrapolating_one_RLUSD_reward_week_or_an_illustrative_example_into_future_APR",
         "extrapolating_two_completed_RLUSD_weeks_or_three_completed_USD1_weeks_into_the_next_unpublished_rate",
         "calling_a_temporary_USD1_bonus_a_stable_edge_or_ignoring_issuer_peg_redemption_and_reserve_freshness_risk",
-        "calling_USDT_to_USD1_acquisition_for_the_activated_Simple_Earn_offer_an_after_cost_edge_when_only_0_96835_bips_remain_before_unproved_account_costs_and_peg_or_redemption_risk",
+        "calling_USDT_to_USD1_acquisition_or_the_current_remaining_horizon_Simple_Earn_case_an_after_cost_edge_when_only_1_5162802791_bips_remain_before_unproved_account_conversion_redemption_issuer_tax_custody_and_operating_costs_and_the_same_frozen_case_turns_negative_for_new_subscriptions_on_2026_09_02",
         "applying_the_USD1_Simple_Earn_7_percent_bonus_above_1500_USD1_or_ignoring_the_balance_specific_mutually_exclusive_airdrop_comparison",
         "crediting_the_first_USD_deposit_SPCXB_reward_before_account_confirmed_first_time_eligibility_first_come_capacity_task_completion_and_deterministic_entitlement_or_pre_hedging_an_unproved_reward",
         "calling_the_Lite_Loan_USD1_composite_profitable_stable_or_accepted_when_only_1_1079_to_1_3278_historical_stress_bips_remain",
@@ -2343,7 +2347,7 @@
       "venue_scope": "Binance_Spot_direct_and_exactly_one_intermediary_routes_for_independently_required_organic_conversions_with_the_exactly_two_intermediary_extension_terminal_for_the_retained_population"
     }
   ],
-  "result_sha256": "e71ec77c3a06164f35249879f22300f9c8d3b46a1020d6b96f271c4c6fb5b661",
+  "result_sha256": "9d4902c9608c358d212e329d9f2aa74e726d7187a218fd4123ed0cec0fe2d123",
   "schema_version": "structural-edge-priority-registry-v1",
   "terminal_do_not_repeat": [
     {
@@ -2632,6 +2636,6 @@
       "reason": "the_new_twenty_six_bin_event_had_two_closed_nonaccepting_losing_bins_and_twenty_four_active_accepting_bins_whose_optimistic_all_YES_Gamma_displayed_sum_was_1_0055_pUSD_or_negative_0_0055_pUSD_headroom_before_fees_so_no_books_or_conversion_screen_are_justified_do_not_refetch_alias_or_repeat_the_exact_event"
     }
   ],
-  "updated_at_utc": "2026-08-30T07:40:22.4978550Z",
+  "updated_at_utc": "2026-08-30T08:08:35.3343497Z",
   "usage_rule": "advance_the_highest_ranked_hypothesis_whose_retry_trigger_is_satisfied_otherwise_do_not_repeat_a_blocked_or_terminal_screen"
 }

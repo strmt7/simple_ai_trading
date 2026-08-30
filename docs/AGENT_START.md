@@ -1066,6 +1066,18 @@ safety gate, blocks Stop, or submits an order.
   `binance-usd1-simple-earn-versus-holding-airdrop-allocation-edge-v1-2026-08-27.json`,
   result SHA-256
   `a4158bf059f4f5ad839b2f504c08c4afc65615260b4171533866f4c2337494e0`.
+  A zero-network remaining-horizon correction now prevents the activation-day
+  28-day stress margin from being treated as current. For a 2026-08-30 new
+  allocation, the unchanged fixed case leaves only 1.5162802791 bips, or
+  0.2274420419 quote units at the 1,500 cap, before every unproved account,
+  conversion, redemption, issuer, tax, custody, and operating cost. It leaves
+  only 0.0550930645 bips for a 2026-09-01 subscription and turns negative on
+  2026-09-02 even before those costs. Do not roll this calculation or refresh
+  books daily. Before the sign change, only both designated credentials plus
+  explicit signed GET-only authority could justify account prequalification;
+  every subscription or conversion remains separately unauthorized. Canonical
+  stress SHA-256 is
+  `669fd50772087cb81a4d1e9439e5666a75b5c1ed9de68b1e8b27cb360f2d5934`.
 - The current first-USD-deposit Promotion A is a distinct high-margin but
   unaccepted action-gated candidate for a genuinely first-time eligible user.
   It advertises a 15 USD-equivalent SPCXB voucher to the first 1,000 users who
