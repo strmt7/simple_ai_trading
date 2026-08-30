@@ -2457,3 +2457,39 @@ SHA-256 is
 Accepted edges become 23, ranked hypotheses remain 44, and terminal families
 remain 55. Registry SHA-256 is
 `a1fc3c10482909d2c77dbb20ca13dae3eb73e465fa96dcfb20dd0ede17337573`.
+
+## Binance Link-and-Trade realized partner-rebate overlay
+
+The retained current official Link-and-Trade Spot API evidence contains a
+second ledger distinct from the already accepted own-client kickback route.
+Signed `GET /sapi/v1/apiReferral/rebate/recentRecord` is explicitly the partner
+rebate record and binds `income` and `asset` to customer, symbol, order, trade,
+commission, and distribution lineage. No documentation example value is owned
+income or a forward rate.
+
+The twenty-eighth accepted scoped edge is only exact realized positive partner
+rebate income from independently existing bona fide external Spot client flow
+under an already active disclosed relationship, after owned payout
+reconciliation and every incremental platform, disclosure, consent, compliance,
+support, demand-elasticity, tax, custody, settlement, conversion, and operating
+cost. Its public forward floor is zero; it is not deployment-ready and proves
+no current account eligibility, flow, rate, payout, or profit.
+
+Do not create, customize, solicit, relink, reroute, or manufacture customer or
+trade flow. Advance only when both designated credentials, explicit signed
+GET-only authority, an already active disclosed partner relationship, exact
+legitimate customer identity, and an independently existing bona fide external
+Spot latest-seven-day reporting question all coexist. Every relationship,
+customer, referral, account, subaccount, API-key, permission, commission,
+transfer, order, trade, withdrawal, or other mutation remains separately
+unauthorized. This does not accept the separate Exchange Link broker-rebate
+candidate.
+
+One discovery-only direct GET to the Exchange Link documentation root returned
+HTTP 202 with zero bytes but was not durably request-bound. It is excluded from
+all evidence and must not be retried or used. Canonical partner result SHA-256
+is `b859a815f0243285d7a01e2f002f77655fbcb25b07f46873e5de68b3ebfa8dd0`;
+frontier SHA-256 is
+`f84ac384ef3f4edfaa9f3a98e3588223ba3b4c6dd0b1389bbc11e4ece09a8b26`;
+registry SHA-256 is
+`e3cb85b3bf7920d32fd8a521690b2bffdb475d540225adf13031795249176b9a`.

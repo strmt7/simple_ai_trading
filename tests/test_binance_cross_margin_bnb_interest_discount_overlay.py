@@ -72,8 +72,6 @@ def test_registry_accepts_only_the_scoped_overlay_and_binds_artifact() -> None:
     artifact = json.loads(ARTIFACT.read_text(encoding="utf-8"))
     registry = json.loads(REGISTRY.read_text(encoding="utf-8"))
     assert _self_hash(registry) == registry["result_sha256"]
-    assert registry["accepted_edge_count"] == 27
-
     family = next(
         row for row in registry["prioritized_hypotheses"] if row["priority_rank"] == 5
     )

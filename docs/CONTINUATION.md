@@ -5003,3 +5003,43 @@ canonical exact-depth result SHA-256 is
 Accepted edges remain 27, ranked hypotheses remain 44, and terminal families
 become 64. Registry SHA-256 becomes
 `b55f6a20ac311bca6ff68facae3015a2aa5da53fa6e6ae74208eaf4c3c613732`.
+
+## Binance Link-and-Trade realized partner-rebate overlay
+
+An efficient zero-new-venue-request adjudication reused the already retained
+current official Link-and-Trade Spot rendered extraction and Agent Native API
+index. The exact signed partner route is
+`GET /sapi/v1/apiReferral/rebate/recentRecord`; unlike the separate own-client
+kickback route, it carries customer, order, trade, commission, and distribution
+lineage together with `income` and `asset`.
+
+This establishes the twenty-eighth narrow direction-independent structural
+edge only as exact realized positive partner-rebate income from independently
+existing bona fide external Spot client flow under an already active disclosed
+relationship after exact owned-payout reconciliation and every incremental
+cost. The public forward floor remains zero. No account entitlement, active
+relationship, client flow, rate, owned income, after-cost current profit, or
+deployment readiness was proved; no credentials, signed request, account,
+order, trade, fund, or mutation was accessed.
+
+Never create, customize, solicit, relink, reroute, split, churn, self-match, or
+manufacture customer or trade flow, and never double count a fee, trade,
+customer, distribution, or payout across Link-and-Trade kickback, Referral Pro,
+CAAS, Exchange Link, Square, Builder, maker rebate, fee discount, or promotion.
+Advance only when both designated credentials, explicit signed GET-only
+authority, an already active disclosed Link-and-Trade partner relationship,
+exact legitimate customer identity, and an independently existing bona fide
+external Spot latest-seven-day reporting question all coexist. All mutations
+remain separately unauthorized. The separate Exchange Link candidate remains
+unaccepted.
+
+One exploratory direct Exchange Link documentation-root GET returned HTTP 202
+with zero bytes without durable request-bound retention. It is excluded from
+every claim, recorded as an efficiency/process miss, and must not be retried or
+used to alter the Exchange Link decision. Canonical partner result SHA-256 is
+`b859a815f0243285d7a01e2f002f77655fbcb25b07f46873e5de68b3ebfa8dd0`;
+accepted edges become 28, ranked hypotheses remain 44, and terminal families
+remain 64. Frontier SHA-256 becomes
+`f84ac384ef3f4edfaa9f3a98e3588223ba3b4c6dd0b1389bbc11e4ece09a8b26`;
+registry SHA-256 becomes
+`e3cb85b3bf7920d32fd8a521690b2bffdb475d540225adf13031795249176b9a`.
