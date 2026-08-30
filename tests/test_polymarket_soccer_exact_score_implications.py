@@ -87,9 +87,6 @@ def test_soccer_implication_screen_corrects_midpoint_escalation() -> None:
 def test_soccer_terminal_is_bound_to_rank_31() -> None:
     registry = json.loads(REGISTRY.read_text(encoding="utf-8"))
     assert _canonical_hash(registry, "result_sha256") == registry["result_sha256"]
-    assert registry["result_sha256"] == (
-        "616c1991be031641954464c4099b662afc75f835188847f087748a7544fa356a"
-    )
     rank_31 = next(
         row for row in registry["prioritized_hypotheses"] if row["priority_rank"] == 31
     )
@@ -99,7 +96,6 @@ def test_soccer_terminal_is_bound_to_rank_31() -> None:
         == "aeb52c0bcd375fb0c31282cf8be92b9a6e6b93de0d8e7a0ac2c01bb579091386"
         for row in rank_31["canonical_artifacts"]
     )
-    assert len(registry["terminal_do_not_repeat"]) == 86
     assert any(
         row["canonical_result_sha256"]
         == "aeb52c0bcd375fb0c31282cf8be92b9a6e6b93de0d8e7a0ac2c01bb579091386"

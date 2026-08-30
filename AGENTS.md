@@ -200,6 +200,12 @@ override prose.
   be double-counted with a BNB discount, rebate, or reward. Any quote-asset
   switch first requires its own executable spread, basis, conversion, fill,
   settlement, and opportunity-cost proof.
+- A fee-precision quantum is a bounded cost adjustment, not a standalone edge.
+  Never manufacture, self-match, churn, split, or reroute volume to chase fee
+  rounding. Bind the exact market minimum order, tick, fee-assessment
+  aggregation, partial-fill behavior, and owned organic fills; absent those,
+  the guaranteed saving is zero. Cap any credited rounding saving below one
+  documented fee quantum per independently proven assessment.
 - Bind Polymarket fee schedules per exact retained market population. Crypto,
   Sports, and other event categories can have different taker rates and rebate
   fractions; never reuse a prior event's hard-coded schedule. If a consumed
