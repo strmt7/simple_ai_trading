@@ -1772,6 +1772,19 @@ safety gate, blocks Stop, or submits an order.
   the already-covered direct-versus-one-intermediary identity, not evidence for
   the rejected three-trade extension. Canonical source adjudication SHA-256 is
   `3f9684ed1986cd6cf676482069cda53846e336a15bc4b35141193b8e43406e65`.
+- The standalone statistical-spread interpretation of SSRN `6453880` is now
+  separately triaged from the accepted organic-conversion saving. A retained
+  independent replication reports that 2026-H1 capacity-constrained PnL fell
+  about 90% from 2025, every one of the 42 profitable 2025 paths supported at
+  most 25 USD per trade under its five-percent volume rule, 78% of intended
+  trade minutes had no executable volume on the thinnest leg, and zero of 86
+  profitable routes had perpetuals on every required leg. Its only scalable
+  BTC-FDUSD and ETH-BTC examples both lost money. The review exposes no code,
+  exact route outputs, books, owned fees, or fills, so it proves neither current
+  profit nor a complete falsification. Do not build another minute-bar route-
+  spread collector without reproducible route-level evidence or a material fee,
+  instrument, or executable-capacity change. Canonical triage SHA-256 is
+  `ba9d063f78b027f6aab5e45723f5dc4ea2e9df1303de4f493e780ee07d4425b7`.
 - Binance closed three-asset Spot cycles are terminal for the current retained
   complete public graph. One frozen zero-network pass covered all 3,480 unique
   directed cycles, 1,442 activity-qualified cycles, 60 complete books, 100 and

@@ -18,9 +18,23 @@ ADJUDICATION = ROOT / (
     "docs/model-research/action-value/"
     "binance-indirect-internal-conversion-activity-adjudication-v1-2026-08-29.json"
 )
+SPREAD_TRIAGE = ROOT / (
+    "docs/model-research/action-value/"
+    "binance-direct-indirect-spread-replication-triage-v1-2026-08-30.json"
+)
+SPREAD_TRIAGE_CONTRACT = ROOT / (
+    "docs/model-research/action-value/"
+    "binance-direct-indirect-spread-replication-triage-contract-v1-2026-08-30.json"
+)
 REGISTRY = ROOT / "docs/model-research/structural-edge-priority-registry-v1.json"
 EXPECTED_ADJUDICATION_HASH = (
     "0307a9dbfb26ca62e94ae01e5b5d40316340b686a60829e85f258c07e565678c"
+)
+EXPECTED_SPREAD_TRIAGE_HASH = (
+    "ba9d063f78b027f6aab5e45723f5dc4ea2e9df1303de4f493e780ee07d4425b7"
+)
+EXPECTED_SPREAD_TRIAGE_CONTRACT_HASH = (
+    "8844cbab660ac00fc119089bc81c0d56348ac2086285ee9296b0c4d80ff10151"
 )
 EXPECTED_REGISTRY_HASH = json.loads(
     (ROOT / "docs/model-research/structural-edge-priority-registry-v1.json").read_text(
@@ -175,3 +189,47 @@ def test_registry_adds_the_indirect_organic_conversion_overlay_once() -> None:
     assert EXPECTED_ADJUDICATION_HASH in {
         artifact["result_sha256"] for artifact in family["canonical_artifacts"]
     }
+
+
+def test_standalone_route_spread_replication_stays_fail_closed() -> None:
+    contract = _load(SPREAD_TRIAGE_CONTRACT)
+    assert contract["contract_sha256"] == EXPECTED_SPREAD_TRIAGE_CONTRACT_HASH
+    assert (
+        _embedded_hash(contract, "contract_sha256")
+        == EXPECTED_SPREAD_TRIAGE_CONTRACT_HASH
+    )
+    triage = _load(SPREAD_TRIAGE)
+    assert triage["result_sha256"] == EXPECTED_SPREAD_TRIAGE_HASH
+    assert _embedded_hash(triage, "result_sha256") == EXPECTED_SPREAD_TRIAGE_HASH
+    assert triage["contract"]["sha256"] == EXPECTED_SPREAD_TRIAGE_CONTRACT_HASH
+    assert triage["adjudication"]["accepted_edge"] is False
+    assert triage["adjudication"]["book_or_account_request_justified"] is False
+    assert triage["adjudication"]["public_after_all_cost_profit_floor_usdt"] == 0
+
+    execution = triage["replication_evidence"]["execution_and_capacity"]
+    assert execution["all_2025_profitable_paths_max_usd_per_trade"] == 25
+    assert (
+        execution["target_trade_minutes_with_zero_executable_thinnest_leg_percent"]
+        == 78
+    )
+    assert execution["profitable_routes_checked_for_complete_perpetual_legs"] == 86
+    assert execution["profitable_routes_with_perpetual_on_every_leg"] == 0
+    assert all(
+        row["profitable"] is False for row in execution["scalable_route_examples"]
+    )
+
+    registry = _load(REGISTRY)
+    assert _embedded_hash(registry, "result_sha256") == registry["result_sha256"]
+    family = registry["prioritized_hypotheses"][-1]
+    assert EXPECTED_SPREAD_TRIAGE_HASH in {
+        artifact["result_sha256"] for artifact in family["canonical_artifacts"]
+    }
+    terminals = {
+        row["family"]: row["canonical_result_sha256"]
+        for row in registry["terminal_do_not_repeat"]
+    }
+    terminal_family = (
+        "binance_direct_versus_indirect_route_standalone_statistical_spread_"
+        "secondary_replication_2026_08_30"
+    )
+    assert terminals[terminal_family] == EXPECTED_SPREAD_TRIAGE_HASH

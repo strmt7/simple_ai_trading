@@ -1,0 +1,51 @@
+{
+  "authority": {
+    "account_access_permitted": false,
+    "credentials_permitted": false,
+    "funded_actions_permitted": false,
+    "orders_permitted": false,
+    "public_unauthenticated_read_only_research": true
+  },
+  "contract_sha256": "8844cbab660ac00fc119089bc81c0d56348ac2086285ee9296b0c4d80ff10151",
+  "decision_boundary": {
+    "accepted_edge_requires": [
+      "current source-bound executable Binance books rather than one-minute bars",
+      "every direct and indirect leg exists in the required execution instrument",
+      "strictly positive after exact owned fees, displayed depth, latency, residual, funding, margin, liquidation, and opportunity costs",
+      "positive non-overlapping forward evidence with no route selection look-ahead",
+      "capacity large enough to exceed fixed operating costs"
+    ],
+    "publication_claim_limit": "This request may classify the literature lead and its independent replication only. It cannot prove current profit or justify a venue book, account, credential, order, or fund request.",
+    "terminal_if": [
+      "the independent replication reports that current forward performance materially decayed",
+      "the profitable paths require costs below ordinary executable Spot fees",
+      "the profitable paths lack material executable capacity",
+      "the required perpetual instruments do not exist on every route leg"
+    ]
+  },
+  "frozen_at_utc": "2026-08-30T09:33:31.8162110Z",
+  "purpose": "Determine whether the standalone direct-versus-indirect Binance spread strategy described by SSRN 6453880 is a distinct current scalable edge or a terminal statistical extension of the already screened organic conversion-route family.",
+  "request": {
+    "expected_content_terms": [
+      "A Crypto Arbitrage That Actually Works",
+      "perpetual futures",
+      "5% of the volume",
+      "2026",
+      "BTC",
+      "ETH"
+    ],
+    "method": "GET",
+    "raw_path": "data/edge-research/binance-direct-indirect-spread-replication-v1/source.html",
+    "retry_policy": "one exact canonical-page request; no alias, locale, cache, or adaptive retry",
+    "url": "https://noisemostly.substack.com/p/a-crypto-arbitrage-that-actually"
+  },
+  "schema_version": "binance-direct-indirect-spread-replication-triage-contract-v1",
+  "source_context": {
+    "already_retained_primary_metadata": "data/edge-research/binance-indirect-conversion-source-review-v1/crossref-10.2139-ssrn.6453880.json",
+    "already_screened_family": "binance_indirect_internal_conversion_route_savings_for_organic_flow",
+    "discovery_only_source": "https://noisemostly.substack.com/feed",
+    "paper_doi": "https://doi.org/10.2139/ssrn.6453880",
+    "paper_title": "Network-Based Path Optimization for High-Frequency Cryptocurrency Arbitrage: Empirical Evidence"
+  },
+  "status": "frozen_before_one_public_source_request"
+}
