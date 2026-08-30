@@ -373,6 +373,12 @@ and verify reproducibly. Do not load upstream `EXAMPLES.md`.
    do not rerun or rewrite the consumed contract; preserve the exact consumed
    implementation in an immutable hash-bound sidecar, restore the reusable path,
    and record both bindings in the terminal artifact.
+10. Discovery and search surfaces may select an exact current primary source
+    but never supply its economic values. If the one-use retained primary bytes
+    disagree in currency, rate, scope, or formatting, preserve the failed
+    contract and consumed response, exclude every discovery value, and perform
+    at most one zero-network adjudication of the retained bytes. Never refetch,
+    alias, or loosen the consumed contract to recover the expected answer.
 
 Do not broadly read the README, historical round designs, generated SVG, or
 large CSV files. The detailed workflow and imported-tool provenance are in

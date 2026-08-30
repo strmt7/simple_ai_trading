@@ -5133,3 +5133,49 @@ Canonical result SHA-256 is
 Accepted edges remain 29, ranked hypotheses remain 44, terminal families remain
 64, and registry SHA-256 becomes
 `fe3116d77f82ef88f2ab929b8e71ec67ee029a7399a526e4b98edd9e45c81ef7`.
+
+## Polymarket all-category realized maker-rebate scope extension
+
+The current official Maker Rebates program is materially broader than the
+retained crypto-only accepted overlay, firing rank 17's literal program-change
+trigger. A frozen one-use public unauthenticated GET of the exact official
+Markdown source retained 5,945 bytes. The source gate failed and must not be
+retried: discovery exposed stale or differently rendered USDC and 25% Sports
+values, while retained current primary bytes say pUSD and 15% Sports; Markdown
+table padding, bold text, and escaping caused the other literal phrase misses.
+Every discovery value is excluded from economics.
+
+The retained bytes mechanically prove daily pUSD rebates, a 1 pUSD accrued
+payout threshold, zero maker fees, per-market competition, a discretionary
+pool fraction, and these current eligible-category terms: Crypto 20% rebate on
+a 0.07 taker-fee rate; Sports 15% on 0.05; Finance, Politics, Mentions, and Tech
+25% on 0.04; Economics, Culture, Weather, and Other / General 25% on 0.05.
+Geopolitics is fee-free and excluded.
+
+This is a scope extension of the already accepted exact-realized maker-rebate
+identity, not a thirtieth edge. Credit only an exact positive owned daily pUSD
+rebate from independently justified legitimate organic maker fills after every
+inventory, adverse-selection, hedge, execution, latency, cancellation,
+compliance, tax, custody, operating, and capacity cost. The public forward
+floor is zero; no market-making strategy, fill quality, account eligibility,
+owned income, profitability beyond the realized increment, or deployment
+readiness is proved. No credentials, account, wallet, order, cancel, hedge,
+trade, fund, or mutation was accessed.
+
+Never use discovery values, create quotes or volume for rebates, infer queue or
+fill quality, rescue a negative base strategy, double-count another reward, or
+repeat or alias the consumed source request. Reopen public research only on a
+material official fee, rebate, distribution, minimum-payout, category,
+currency, or execution-architecture change. Account reconciliation requires an
+independently existing owned legitimate maker fill and explicit read-only
+evidence authority; every state change remains separately unauthorized.
+
+Canonical failed contract SHA-256 is
+`d59f9f93359ff82add45272ab43c02f095b87da334ada6ddcc240786a72a1bb0`;
+retained Markdown SHA-256 is
+`8d2c6562bd1b3376bc3fc1557a60efef5aa3c1d856c7f8dcc405139a07e9ba2a`;
+canonical scope-extension result SHA-256 is
+`d37aeac00dca154bbf0d676c3696a688bc7ee6cef9e8118730ffb5be05fb2550`.
+Accepted edges remain 29, ranked hypotheses remain 44, terminal families remain
+64, and registry SHA-256 becomes
+`44a63556d0a8d680661a82743fbdc0eb0bed2a50d75f1679689d72258af6ce41`.

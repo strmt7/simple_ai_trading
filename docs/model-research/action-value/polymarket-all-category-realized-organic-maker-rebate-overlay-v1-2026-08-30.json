@@ -1,0 +1,111 @@
+{
+  "schema_version": "polymarket-all-category-realized-organic-maker-rebate-overlay-v1",
+  "created_at_utc": "2026-08-30T13:26:00Z",
+  "source_binding": {
+    "failed_one_use_contract": {
+      "path": "docs/model-research/action-value/polymarket-all-category-maker-rebate-source-contract-v1-2026-08-30.json",
+      "file_sha256": "53221a42f3ce516035864329d42eb053dc0f75e5f7b9dc20bec7ea41a9b3fb61",
+      "contract_sha256": "d59f9f93359ff82add45272ab43c02f095b87da334ada6ddcc240786a72a1bb0"
+    },
+    "failed_source_gate_result": {
+      "path": "docs/model-research/action-value/polymarket-all-category-maker-rebate-source-result-v1-2026-08-30.json",
+      "file_sha256": "90c40f3c821da29125db53b1543ee0a6fe8e3c62fa1ffda3d743a53802a4a75b",
+      "result_sha256": "b60c4eba32e3b2f3e0867357db0475609f34ac3b92790c8dc4696c770b32fe4e"
+    },
+    "retained_current_official_markdown": {
+      "path": "docs/model-research/polymarket/raw/all-category-maker-rebate-source-v1-2026-08-30/01-maker-rebates.raw.md",
+      "file_sha256": "8d2c6562bd1b3376bc3fc1557a60efef5aa3c1d856c7f8dcc405139a07e9ba2a",
+      "response_bytes": 5945,
+      "source_url": "https://docs.polymarket.com/market-makers/maker-rebates.md"
+    },
+    "request_journal": {
+      "path": "docs/model-research/polymarket/raw/all-category-maker-rebate-source-v1-2026-08-30/00-request-journal.jsonl",
+      "file_sha256": "7c2adbbe7ee4c7edeeb853ae6a86a541e5643308c87d33c37df91e4936af040e"
+    },
+    "prior_crypto_only_overlay": {
+      "path": "docs/model-research/action-value/polymarket-crypto-maker-rebate-realized-organic-flow-overlay-v1-2026-08-30.json",
+      "file_sha256": "fc2a7df5733b03d41029223a4396e9988fc5161f533a04ce67ddb8e4d2ac0dd0",
+      "result_sha256": "a8db5f3c823c8b1caffa6b0032282647dbb1e7fb014f8923821c1b1fe97d1c81"
+    }
+  },
+  "failed_contract_adjudication": {
+    "source_gate_passed": false,
+    "no_retry_or_alias": true,
+    "discovery_values_excluded": true,
+    "semantic_drift_found": [
+      "The retained current source uses pUSD rather than the discovery surface's USDC wording.",
+      "The retained current Sports maker-rebate fraction is 15 percent rather than the discovery surface's 25 percent."
+    ],
+    "format_drift_found": "The Markdown table padding and bold or escaped text caused several literal phrase misses.",
+    "retained_bytes_still_usable_offline": true
+  },
+  "current_program_contract": {
+    "currency": "pUSD",
+    "payment_frequency": "daily",
+    "minimum_accrued_payout_pusd": "1",
+    "competition_scope": "per_market",
+    "allocation_identity": "own_fee_equivalent_divided_by_total_market_fee_equivalent_times_rebate_pool",
+    "fee_equivalent_identity": "filled_shares_times_category_taker_fee_rate_times_price_times_one_minus_price",
+    "maker_fee_rate": "0",
+    "rebate_fraction_is_discretionary": true,
+    "eligible_categories": [
+      {"category": "Crypto", "taker_fee_rate": "0.07", "maker_rebate_fraction": "0.20"},
+      {"category": "Sports", "taker_fee_rate": "0.05", "maker_rebate_fraction": "0.15"},
+      {"category": "Finance", "taker_fee_rate": "0.04", "maker_rebate_fraction": "0.25"},
+      {"category": "Politics", "taker_fee_rate": "0.04", "maker_rebate_fraction": "0.25"},
+      {"category": "Economics", "taker_fee_rate": "0.05", "maker_rebate_fraction": "0.25"},
+      {"category": "Culture", "taker_fee_rate": "0.05", "maker_rebate_fraction": "0.25"},
+      {"category": "Weather", "taker_fee_rate": "0.05", "maker_rebate_fraction": "0.25"},
+      {"category": "Other / General", "taker_fee_rate": "0.05", "maker_rebate_fraction": "0.25"},
+      {"category": "Mentions", "taker_fee_rate": "0.04", "maker_rebate_fraction": "0.25"},
+      {"category": "Tech", "taker_fee_rate": "0.04", "maker_rebate_fraction": "0.25"}
+    ],
+    "excluded_category": {"category": "Geopolitics", "reason": "fee_free_and_no_maker_rebate"}
+  },
+  "adjudication": {
+    "accepted_edge": true,
+    "accepted_edge_count_before": 29,
+    "accepted_edge_count_after": 29,
+    "scope_extension_not_new_edge": true,
+    "accepted_scope": "Exact realized positive owned pUSD maker rebates from independently justified legitimate organic maker fills in current fee-enabled Crypto Sports Finance Politics Economics Culture Weather Other or General Mentions and Tech markets, only after every incremental inventory adverse-selection hedge execution latency cancellation compliance tax custody operating and strategy-capacity cost.",
+    "market_direction_forecast_required_for_incremental_rebate": false,
+    "standalone_market_making_strategy_accepted": false,
+    "fresh_hypothetical_order_profit_proved": false,
+    "public_forward_profit_floor_pusd": "0",
+    "deployment_ready": false,
+    "profitability_claim": false,
+    "status": "accepted_scope_extension_for_exact_realized_positive_owned_all_category_maker_rebate_cash_only"
+  },
+  "realization_gate": {
+    "independent_base_strategy": "Every contributing maker fill must be independently justified and positive after all direct costs without counting a future rebate.",
+    "owned_cash_evidence": "Credit only an exact positive owned daily pUSD rebate reconciled to exact maker fills, exact per-market fee-enabled category and fee schedule at match time, and exact owned payout after it remains positive net of every incremental cost.",
+    "no_forward_rate": "The discretionary pool fraction and unknown per-market denominator make the public forward payout floor zero.",
+    "state_change_authorized": false
+  },
+  "prohibited_shortcuts": [
+    "do_not_create_quote_fill_or_volume_to_chase_rebates",
+    "do_not_count_public_or_other_wallet_rebates_as_owned_income",
+    "do_not_credit_nominal_fee_equivalent_or_estimated_pool_share_before_exact_owned_payment",
+    "do_not_use_rebates_to_rescue_an_unprofitable_unsupported_or_directional_base_strategy",
+    "do_not_assume_queue_position_fill_probability_inventory_hedge_or_cancellation_quality",
+    "do_not_use_the_stale_discovery_USDC_or_25_percent_Sports_values",
+    "do_not_double_count_liquidity_rewards_builder_fees_referrals_or_other_programs",
+    "do_not_place_cancel_modify_or_hedge_any_order_without_separate_explicit_authority"
+  ],
+  "authority": {
+    "public_unauthenticated_documentation_requests": 1,
+    "credentials_used": false,
+    "account_or_wallet_state_accessed": false,
+    "signed_requests": 0,
+    "orders_or_cancellations": 0,
+    "funded_actions": 0,
+    "state_changes": 0,
+    "trading_authority": false
+  },
+  "retry_contract": {
+    "account_evidence": "Only after independently existing legitimate organic owned maker fills and explicit read-only evidence authority reconcile exact fill identity category daily positive owned pUSD payout and every incremental cost.",
+    "public_research": "Only on a material official fee rate rebate fraction distribution minimum payout eligible category currency or execution architecture change.",
+    "funded_work": "Every order cancel transfer withdrawal hedge or account change requires separate explicit authority."
+  },
+  "result_sha256": "d37aeac00dca154bbf0d676c3696a688bc7ee6cef9e8118730ffb5be05fb2550"
+}

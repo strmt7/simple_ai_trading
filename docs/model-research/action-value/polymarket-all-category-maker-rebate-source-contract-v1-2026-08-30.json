@@ -1,0 +1,80 @@
+{
+  "schema_version": "public-source-capture-contract-v1",
+  "frozen_at_utc": "2026-08-30T13:22:35.2056967Z",
+  "contract_path": "docs/model-research/action-value/polymarket-all-category-maker-rebate-source-contract-v1-2026-08-30.json",
+  "trigger": {
+    "registry_rank": 17,
+    "literal_trigger": "another program change with prevalidation source journaling",
+    "material_change": "The current official Maker Rebates documentation exposes category-wide fee-funded rebates beyond the retained crypto-only accepted overlay.",
+    "discovery_values_are_economic_inputs": false
+  },
+  "question": "Does one current official byte-retainable Polymarket source bind daily maker rebates, the exact eligible fee-enabled categories, their rebate fractions, per-market competition, payout threshold, and discretionary-rate limitation strongly enough to extend the existing realized organic maker-rebate overlay without accepting market making?",
+  "request_name": "polymarket-current-all-category-maker-rebate-terms",
+  "request": {
+    "method": "GET",
+    "url": "https://docs.polymarket.com/market-makers/maker-rebates.md",
+    "count": 1,
+    "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "endpoint_classification": {
+    "operation": "download the public official Maker Rebates documentation as Markdown",
+    "security": "public unauthenticated static documentation GET",
+    "preflight": "The exact .md route returned text/markdown during discovery preflight; discovery content is not admitted into economics."
+  },
+  "response_byte_ceiling": 1000000,
+  "required_utf8_phrases": [
+    "Maker Rebates Program",
+    "Paid daily in USDC",
+    "A minimum accrued rebate of $1 USDC is required for a payout.",
+    "Crypto | 20%",
+    "Sports | 25%",
+    "Finance | 25%",
+    "Politics | 25%",
+    "Economics | 25%",
+    "Culture | 25%",
+    "Weather | 25%",
+    "Other / General | 25%",
+    "Mentions | 25%",
+    "Tech | 25%",
+    "Geopolitics | —",
+    "Totals are calculated per market",
+    "rebate percentage is at the sole discretion of Polymarket"
+  ],
+  "decision": {
+    "source_gate_only": "Every exact program, category, payout, competition, and discretion phrase must exist in the single retained current Markdown response.",
+    "accepted_edge": false,
+    "profitability_proved": false,
+    "conditional_next_step": "If the gate passes, create a successor to the existing crypto-only realized maker-rebate overlay. Keep the accepted count unchanged and accept only exact positive owned rebate cash from independently justified legitimate organic maker fills after every incremental cost. Do not accept, simulate, or initiate a market-making strategy."
+  },
+  "outputs": {
+    "raw_path": "docs/model-research/polymarket/raw/all-category-maker-rebate-source-v1-2026-08-30/01-maker-rebates.raw.md",
+    "journal_path": "docs/model-research/polymarket/raw/all-category-maker-rebate-source-v1-2026-08-30/00-request-journal.jsonl",
+    "result_path": "docs/model-research/action-value/polymarket-all-category-maker-rebate-source-result-v1-2026-08-30.json"
+  },
+  "authority": {
+    "account_requests": 0,
+    "credentials_used": false,
+    "funds_used": false,
+    "orders_or_transactions": 0,
+    "protected_capture_touched": false,
+    "public_unauthenticated_read_only_requests": 1,
+    "signed_requests": 0,
+    "trading_authority": false
+  },
+  "implementations": [
+    {
+      "path": "tools/capture_public_source_contract.py",
+      "sha256": "d566a5a379c659c3da144d5e28449ebac9c01493bd39646f9cc3a6e697a83566"
+    },
+    {
+      "path": "tools/screen_polymarket_exact_two_leg_package.py",
+      "sha256": "ba7ebaa1fb5235ba026f7cf4cb21ff73ba19430fee4a4f678fbdea37635eb32f"
+    },
+    {
+      "path": "tools/adjudicate_polymarket_exact_mlb_monotone_prefilter.py",
+      "sha256": "958a44d78029b9a1eb69a3771ce18e53ac1ed3c7bc161c8e4318beedce2cf99f"
+    }
+  ],
+  "retry_policy": "This exact current Markdown GET is one-use. Preserve any HTTP error, format mismatch, or missing-term response and do not retry an alias. A passing source gate proves only the program contract and may extend only the exact-realized rebate overlay; it never proves forward income, fill quality, market-making profitability, eligibility, ownership, or deployment readiness.",
+  "contract_sha256": "d59f9f93359ff82add45272ab43c02f095b87da334ada6ddcc240786a72a1bb0"
+}
