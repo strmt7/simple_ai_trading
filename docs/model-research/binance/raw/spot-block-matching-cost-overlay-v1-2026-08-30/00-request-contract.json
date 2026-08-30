@@ -1,0 +1,57 @@
+{
+  "schema_version": "1.0",
+  "frozen_at_utc": "2026-08-30T00:03:29.8430348Z",
+  "purpose": "Source-bind the current public Binance Spot Block Matching mechanism, fee schedule, eligibility, settlement, and API security classes before any economic claim.",
+  "requests": [
+    {
+      "ordinal": 1,
+      "method": "GET",
+      "url": "https://developers.binance.com/en/docs/products/spot-block-matching/Introduction.md",
+      "raw_output": "01-introduction.raw.md",
+      "headers_output": "01-introduction.headers.txt"
+    },
+    {
+      "ordinal": 2,
+      "method": "GET",
+      "url": "https://developers.binance.com/en/docs/products/spot-block-matching/general-info.md",
+      "raw_output": "02-general-info.raw.md",
+      "headers_output": "02-general-info.headers.txt"
+    },
+    {
+      "ordinal": 3,
+      "method": "GET",
+      "url": "https://developers.binance.com/en/docs/llms.txt",
+      "raw_output": "03-agent-native-index.raw.txt",
+      "headers_output": "03-agent-native-index.headers.txt"
+    },
+    {
+      "ordinal": 4,
+      "method": "GET",
+      "url": "https://www.binance.com/en-IN/support/faq/detail/cc66271ed16f4e24a26a0dedd90e00c8",
+      "raw_output": "04-official-faq.raw.html",
+      "headers_output": "04-official-faq.headers.txt"
+    }
+  ],
+  "request_body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "bounds": {
+    "maximum_requests": 4,
+    "timeout_seconds_per_request": 30,
+    "maximum_response_bytes_per_request": 5000000,
+    "retry_allowed": false
+  },
+  "decision_rule": {
+    "candidate": "Current primary sources must prove off-book execution, exact maker and taker fees, master-account whitelisting, allowed-price bounds, and immediate settlement. The mechanism may remain only a conditional cost-saving candidate when an independently required bilateral Spot trade has an exact negotiated price that is cheaper than the executable public-book counterfactual after account fees and all costs.",
+    "reject": "Reject any public positive-profit floor if exact account eligibility, pair, size, negotiated price, counterparty, counterfactual depth, account fees, settlement, or realized owned fill is absent."
+  },
+  "prohibited_actions": [
+    "credential use",
+    "whitelisting request",
+    "counterparty contact",
+    "order placement",
+    "order acceptance",
+    "order cancellation",
+    "trade",
+    "transfer",
+    "withdrawal"
+  ]
+}

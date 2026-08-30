@@ -1,0 +1,17 @@
+HTTP/1.1 202 Accepted
+Server: CloudFront
+Date: Sat, 29 Aug 2026 23:59:49 GMT
+Content-Length: 0
+Connection: keep-alive
+x-amzn-waf-action: challenge
+Cache-Control: no-store, max-age=0
+Content-Type: text/html; charset=UTF-8
+Access-Control-Allow-Origin: *
+Access-Control-Max-Age: 86400
+Access-Control-Allow-Methods: OPTIONS,GET,POST
+Access-Control-Expose-Headers: x-amzn-waf-action
+X-Cache: Error from cloudfront
+Via: 1.1 f53b3202e0ea067aceb3f31ee0552e92.cloudfront.net (CloudFront)
+X-Amz-Cf-Pop: ZRH55-P2
+X-Amz-Cf-Id: aH9HsZakGyHDuLf_xPyl7UzOHiXTFXZUt8MffQXQvHjUDlPi2fKqPA==
+

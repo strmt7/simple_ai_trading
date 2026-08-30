@@ -3651,3 +3651,54 @@ was admitted. Do not rerun or reuse its database, schedule, or failed lineage.
 Proceed only through the already frozen venue-separated prospective
 source-continuity recovery design. Canonical terminal-failure SHA-256 is
 `9e6790644a566dcfd6e786442a8da3a63c8837f991e766b418fea0df90d0cc8e`.
+
+## 2026-08-30 Binance Spot Block Matching cost overlay
+
+Current official sources prove a materially distinct direction-independent
+execution path for an independently required large bilateral Spot trade.
+Whitelisted master accounts can trade directly off the public order book;
+settlement is immediate to the master Spot account. The current CMS FAQ, last
+updated `2026-07-20T07:50:00Z`, charges both maker and taker `0.025%` (`2.5`
+bips), provides no market-maker rebate, gives a block request a default
+30-minute validity, and permits creation up to 10% above or below the current
+market price. The current Agent Native API index classifies symbols and order
+history as signed `USER_DATA`, while place, take, cancel, and extend are
+`TRADE` operations.
+
+The fetched general-information page embedded credential-shaped authentication
+examples, so its raw body is intentionally excluded from version control under
+the repository's stricter credential-hygiene rule. Its original response hash
+remains in the request journal and candidate retention exception, but none of
+its example values are reproduced or source-bound. The current FAQ,
+introduction, and Agent Native index independently support every admitted term.
+
+This is a material rank-5 cost-reduction candidate, not an accepted or stable
+edge. At 100,000 quote notional, the fee-only saving versus counterfactual Spot
+fees of 10, 7.5, and 5 bips is 75, 50, and 25 quote units; versus 2.5 bips it is
+zero, and versus a zero-fee pair it loses 25. Those are rejection-first
+sensitivities only. The permitted price band is much wider than every fee
+saving, and public sources prove no whitelist, supported pair or minimum,
+authentic counterparty, negotiated price, same-time finite-size book,
+account-specific Spot fee, fee rounding, failure cost, or owned fill. The
+public forward profit floor remains zero.
+
+Do not contact VIP coverage or a counterparty, request whitelisting, relay a
+settlement key, or place, take, cancel, or extend an order. Reopen only when an
+independently planned legitimate large bilateral master-account Spot trade,
+existing whitelist, authentic counterparty, exact pair/quantity/side/time, both
+designated ephemeral credentials, and explicit signed read-only authority all
+exist, or after a material official term change. Prequalify symbols, minimum,
+and exact counterfactual account fee once, then reject before any order unless
+the same-quantity block path is strictly cheaper than fresh finite-size public
+book execution after every cost. Every order action requires separate explicit
+trade authority. Canonical candidate SHA-256 is
+`2d9c4872a6ecd707716cd8d769eb20cb715c1ed7feb61e7e560a5efdb169dc57`.
+
+The earlier low-value-asset documentation request was separately consumed by a
+CloudFront WAF challenge (`HTTP 202`, zero body bytes). It source-binds no
+target, fee, balance, quote, or positive economics and may not be retried or
+repaired through an alias. Canonical failure SHA-256 is
+`e2fc005dda76af1a6aad7eb29ca09db19023f0aaa5ae64eff944cc0ef75ee48a`.
+The accepted-edge count remains 21, the ranked-hypothesis count remains 44, and
+the updated registry SHA-256 is
+`0416a75158adf12ca08e6dc2d529efa29db53300715ba06f7c04378dcfa2a396`.

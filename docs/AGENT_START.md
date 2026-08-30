@@ -1404,11 +1404,11 @@ safety gate, blocks Stop, or submits an order.
   `cross-venue-prediction-parity-screen-v1-2026-08-25.json`, result SHA-256
   `628e63106bc3c0e28c36dcad094b7d7ac500ecd14dfff827287030c2dbbb3d72`;
   no edge or trading authority exists.
-- The independent Round 21 sidecar remains protected until
-  `2026-08-29T23:40:00Z`. Do not stop, restart, stage, clean, reset, switch,
-  commit, or modify its process, worktree, state, database, or WAL.
-  This protection applies only to that capture and its assets; it does not
-  block separate read-only Polymarket research in the main worktree.
+- The independent Round 21 sidecar boundary passed at
+  `2026-08-29T23:40:00Z`; no capture process remains and its terminal failure is
+  documented below. Do not reopen, reuse, or modify its failed database, WAL,
+  lineage, schedule, or capture assets. This preserved failed evidence does not
+  block research, staging, commits, or pushes in the main worktree.
 - The same-venue `XAUUSDT`/`PAXGUSDT` perpetual funding-basis spread is
   terminal under the retained architecture. The original exact-millisecond
   join kept only 83 rows, but a no-refetch audit proved 500 corresponding
@@ -1854,3 +1854,39 @@ all remain false. Never reuse or rerun this campaign. Continue only through the
 venue-separated prospective source-continuity recovery design. Canonical
 terminal-failure SHA-256 is
 `9e6790644a566dcfd6e786442a8da3a63c8837f991e766b418fea0df90d0cc8e`.
+
+## Binance Spot Block Matching cost overlay
+
+Current official sources prove a direction-independent off-book execution
+candidate for an independently required large bilateral Spot trade. The
+current CMS FAQ charges both maker and taker 2.5 bips, offers no market-maker
+rebate, permits the creation price within 10% of market, and settles immediately
+to a whitelisted master Spot account. Current API documentation makes symbols
+and order-history operations signed `USER_DATA`; place, take, cancel, and extend
+are `TRADE` operations.
+
+The fetched general-information page embedded credential-shaped authentication
+examples. Its raw body is deliberately excluded from version control; its
+original response hash is preserved only in the journal and candidate retention
+exception. No example value is reproduced or used as evidence, and the FAQ,
+introduction, and Agent Native index cover the admitted terms.
+
+This is not accepted or deployment-ready. The exact negotiated price dominates
+the small fee saving, and no whitelist, supported pair/minimum, authentic
+counterparty, account Spot fee, same-time finite-size book, failure cost, or
+owned fill is proved. At 100,000 quote notional, fee-only savings versus 10,
+7.5, and 5-bip Spot fees are 75, 50, and 25 quote units; the saving is zero at
+2.5 bips and negative on a zero-fee pair. Never contact VIP coverage or a
+counterparty, request whitelisting, relay a settlement key, or act on an order
+without separate explicit authority. Reopen only under rank 5's exact
+read-only prequalification trigger, and require separate trade authority for
+every order operation. Canonical candidate SHA-256 is
+`2d9c4872a6ecd707716cd8d769eb20cb715c1ed7feb61e7e560a5efdb169dc57`.
+
+The separate low-value-asset documentation request was consumed by a WAF
+challenge with `HTTP 202` and zero body bytes. It proves no edge and may not be
+retried or repaired through an alias. Canonical failure SHA-256 is
+`e2fc005dda76af1a6aad7eb29ca09db19023f0aaa5ae64eff944cc0ef75ee48a`.
+The registry remains at 44 hypotheses and 21 accepted scoped edges; its
+canonical SHA-256 is
+`0416a75158adf12ca08e6dc2d529efa29db53300715ba06f7c04378dcfa2a396`.

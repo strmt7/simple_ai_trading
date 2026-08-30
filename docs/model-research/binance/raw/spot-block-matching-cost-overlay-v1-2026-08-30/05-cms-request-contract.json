@@ -1,0 +1,30 @@
+{
+  "schema_version": "1.0",
+  "frozen_at_utc": "2026-08-30T00:04:31.8357180Z",
+  "purpose": "Retain the current official Spot Block Matching FAQ fee and settlement terms from Binance's public CMS after the user-facing page returned a WAF challenge to curl.",
+  "request": {
+    "method": "GET",
+    "url": "https://www.binance.com/bapi/composite/v1/public/cms/article/detail/query?articleCode=cc66271ed16f4e24a26a0dedd90e00c8",
+    "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "authentication": "none",
+    "documented_semantics": "public official CMS article detail"
+  },
+  "bounds": {
+    "maximum_requests": 1,
+    "timeout_seconds": 30,
+    "maximum_response_bytes": 5000000,
+    "retry_allowed": false
+  },
+  "decision_rule": {
+    "advance": "The retained primary response must identify the same FAQ article and state exact maker and taker fees, whitelisted master-account eligibility, price bounds, and settlement behavior.",
+    "reject": "Stop if the response is missing, partial, ambiguous, or does not bind those terms."
+  },
+  "prohibited_actions": [
+    "credential use",
+    "whitelisting request",
+    "order placement",
+    "order acceptance",
+    "trade",
+    "account mutation"
+  ]
+}
