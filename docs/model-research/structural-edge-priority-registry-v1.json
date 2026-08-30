@@ -2627,7 +2627,7 @@
       "venue_scope": "Binance_Spot_direct_and_exactly_one_intermediary_routes_for_independently_required_organic_conversions_with_the_exactly_two_intermediary_extension_terminal_for_the_retained_population"
     }
   ],
-  "result_sha256": "d49940b750e9fc4d8416840185136d1fcefbc734d12473ad4c00fe76ea2d8f89",
+  "result_sha256": "61e32583121d421bb15294fd2c092443b611a79a2f8e799c3292395e9b8a0bbd",
   "schema_version": "structural-edge-priority-registry-v1",
   "terminal_do_not_repeat": [
     {
@@ -3029,8 +3029,13 @@
       "canonical_result_sha256": "d1a75d29bc7d48154f2006a335a401d7451a6ad58c36b12127b387581f3c3ac3",
       "family": "binance_BTC_ETH_SOL_displayed_funding_estimate_known_at_entry_lock_2026_08_30",
       "reason": "three_frozen_public_history_GETs_plus_one_retained_baseline_reconciled_nine_BTC_ETH_SOL_displayed_lastFundingRate_observations_at_16264_to_23801_second_lead_times_six_of_nine_changed_before_realization_with_absolute_errors_up_to_0_6266_bips_so_the_displayed_estimate_was_not_a_transfer_locked_at_those_observed_entry_times_do_not_request_books_fees_accounts_credentials_orders_or_funds_reopen_only_on_an_official_fixed_at_entry_contract_or_a_separately_preregistered_near_finality_executable_study_whose_guaranteed_transfer_clears_every_cost"
+    },
+    {
+      "canonical_result_sha256": "894cf7c6903a90a4225ddb8a264df039fffaafa1370885a298163a055ce950ff",
+      "family": "binance_BTC_ETH_SOL_near_finality_single_funding_capture_retained_gross_prefilter_2026_08_30",
+      "reason": "a_zero_network_hash_bound_audit_of_500_retained_realized_settlements_per_BTCUSDT_ETHUSDT_and_SOLUSDT_from_2026_03_13T16_00_00Z_through_2026_08_27T00_00_00Z_found_zero_of_1500_absolute_rates_strictly_above_even_the_4_bip_diagnostic_gross_floor_and_a_3_981_bip_global_maximum_far_below_the_existing_frozen_32_bip_two_leg_round_trip_stress_do_not_spend_a_near_finality_stream_or_book_capture_on_current_evidence_reopen_only_when_a_public_displayed_absolute_scoped_rate_exceeds_32_bips_or_material_exact_account_fee_and_execution_evidence_supports_a_separately_frozen_lower_all_in_gate"
     }
   ],
-  "updated_at_utc": "2026-08-30T18:03:30.7368934Z",
+  "updated_at_utc": "2026-08-30T18:18:51.1916186Z",
   "usage_rule": "advance_the_highest_ranked_hypothesis_whose_retry_trigger_is_satisfied_otherwise_do_not_repeat_a_blocked_or_terminal_screen"
 }

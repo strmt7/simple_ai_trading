@@ -5723,3 +5723,25 @@ result SHA-256 is
 Accepted edges remain 29, ranked hypotheses remain 44, terminal families become
 80, and registry SHA-256 becomes
 `d49940b750e9fc4d8416840185136d1fcefbc734d12473ad4c00fe76ea2d8f89`.
+
+### Near-finality funding capture prefilter
+
+A zero-network, hash-bound audit reused the retained 500 realized settlements
+per BTCUSDT, ETHUSDT, and SOLUSDT from 2026-03-13 16:00 UTC through 2026-08-27
+00:00 UTC. Maximum absolute funding was 1.2276, 2.2976, and 3.9810 basis
+points, respectively. Zero of 1,500 rows exceeded even a 4-basis-point gross
+diagnostic, and none approached the already-frozen 32-basis-point two-leg
+round-trip stress.
+
+Do not spend a near-finality stream or book capture on the current evidence.
+This is a research-spend rejection, not a universal statement about future
+extreme funding. Reopen only when a public displayed absolute scoped rate first
+exceeds 32 basis points, or when material exact account-fee and execution
+evidence supports a separately frozen lower all-in gate. No network, account,
+credential, testnet, order, fund, or protected-capture access occurred.
+
+Canonical result SHA-256 is
+`894cf7c6903a90a4225ddb8a264df039fffaafa1370885a298163a055ce950ff`.
+Accepted edges remain 29, ranked hypotheses remain 44, terminal families become
+81, and registry SHA-256 becomes
+`61e32583121d421bb15294fd2c092443b611a79a2f8e799c3292395e9b8a0bbd`.

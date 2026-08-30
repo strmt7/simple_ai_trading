@@ -18,6 +18,10 @@ from tools.adjudicate_binance_funding_estimate_lock import (  # noqa: E402
 ACTION = ROOT / "docs/model-research/action-value"
 CONTRACT = ACTION / "binance-funding-estimate-lock-contract-v1-2026-08-30.json"
 RESULT = ACTION / "binance-funding-estimate-lock-result-v1-2026-08-30.json"
+PREFILTER = (
+    ACTION
+    / "binance-btc-eth-sol-near-finality-funding-capture-prefilter-v1-2026-08-30.json"
+)
 REGISTRY = ROOT / "docs/model-research/structural-edge-priority-registry-v1.json"
 
 
@@ -83,3 +87,40 @@ def test_registry_terminalizes_exact_family_without_rerouting_ranked_work() -> N
     )
     assert terminal["canonical_result_sha256"] == result["result_sha256"]
     assert "do_not_request_books" in terminal["reason"]
+
+
+def test_retained_funding_prefilter_rejects_unnecessary_live_capture() -> None:
+    prefilter = _load(PREFILTER)
+    registry = json.loads(REGISTRY.read_text(encoding="utf-8"))
+
+    assert _canonical_hash(prefilter, "result_sha256") == prefilter["result_sha256"]
+    reconstructed = []
+    for source in prefilter["sources"]["retained_funding_history"]:
+        raw = ROOT / source["path"]
+        assert hashlib.sha256(raw.read_bytes()).hexdigest() == source["sha256"]
+        rows = json.loads(raw.read_bytes())
+        absolute_bips = [abs(Decimal(row["fundingRate"]) * 10_000) for row in rows]
+        reconstructed.append(
+            (
+                source["symbol"],
+                len(rows),
+                max(absolute_bips),
+                sum(value > Decimal("4") for value in absolute_bips),
+                sum(value > Decimal("32") for value in absolute_bips),
+            )
+        )
+
+    assert reconstructed == [
+        ("BTCUSDT", 500, Decimal("1.22760000"), 0, 0),
+        ("ETHUSDT", 500, Decimal("2.29760000"), 0, 0),
+        ("SOLUSDT", 500, Decimal("3.98100000"), 0, 0),
+    ]
+    assert prefilter["evaluation"]["combined_row_count"] == 1500
+    assert prefilter["adjudication"]["near_finality_capture_permitted_now"] is False
+    terminal = next(
+        row
+        for row in registry["terminal_do_not_repeat"]
+        if row["family"]
+        == "binance_BTC_ETH_SOL_near_finality_single_funding_capture_retained_gross_prefilter_2026_08_30"
+    )
+    assert terminal["canonical_result_sha256"] == prefilter["result_sha256"]
