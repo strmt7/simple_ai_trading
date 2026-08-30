@@ -2775,3 +2775,35 @@ result SHA-256 is
 Accepted edges remain 29, ranked hypotheses remain 44, terminal families become
 70, and registry SHA-256 is
 `d2d24730180c4b4c9182a4f694a906cab819e1f93633ac04ddc834af5f6d3d31`.
+
+## Polymarket Ethereum threshold-ladder exact payoff rejection
+
+The current eleven-market "Ethereum above ___ on September 4?" event exposed a
+new exact direction-independent payoff family. For thresholds `L < H`, one
+`YES(L)` plus one `NO(H)` share has an optimistic one-pUSD floor when every
+independent condition applies the common rule consistently, and pays 2 pUSD
+only when the close is strictly above `L` and at or below `H`. Independent
+condition disputes, cancellations, or inconsistent resolutions are additional
+downside and remain unbound.
+
+One frozen exact Gamma GET retained the complete active event and tested all 55
+lower-higher packages. The best was `YES(2,900) + NO(3,000)` at a displayed
+1.0015 pUSD, already 0.0015 pUSD above its floor before fees. No book, fee,
+on-chain, account, credential, order, fund, or protected-capture request was
+made. Do not repeat this event or cherry-pick its current BTC or SOL siblings.
+Reopen only for a distinct active BTC, ETH, or SOL ladder outside every consumed
+event whose complete exact rules and rejection-only Gamma screen contain at
+least one displayed package strictly below the optimistic 1 pUSD floor; any
+later candidate must also source-bind independent-condition resolution risk.
+
+Canonical contract SHA-256 is
+`0737aa5e76be4151213f1a6174eca525e32ec7c46e7e4347842e6ac41c8a7331`;
+canonical result SHA-256 is
+`42c122e54bd9a7299cc9e739724fabd4cd76716dd3bdfe76c039a1bab8014d2a`;
+raw Gamma SHA-256 is
+`84a0536e067b5f72a5a4c9fc1ac4a215316b51a742a5f7e781ab37e7fbe5b1be`.
+Canonical zero-network terminal adjudication SHA-256 is
+`25f90c75b9d8657e44b27ebab8dd4c26fb3434a306a6dbd9e35fdc2fdd53419d`.
+Accepted edges remain 29, ranked hypotheses remain 44, terminal families become
+71, and registry SHA-256 is
+`fdfaac8e3bc873bd07e44e89efb290ebc0bbd7766157d11b6b614875345adead`.

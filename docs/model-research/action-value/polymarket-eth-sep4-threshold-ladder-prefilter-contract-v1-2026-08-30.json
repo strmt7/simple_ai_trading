@@ -1,0 +1,77 @@
+{
+  "schema_version": "polymarket-exact-crypto-threshold-ladder-prefilter-contract-v1",
+  "frozen_at_utc": "2026-08-30T15:19:18.2237955Z",
+  "contract_path": "docs/model-research/action-value/polymarket-eth-sep4-threshold-ladder-prefilter-contract-v1-2026-08-30.json",
+  "trigger": {
+    "registry_route": "new_unregistered_exact_within_event_crypto_threshold_monotone_payoff_family",
+    "deployment_evidence": "The current official Polymarket event page exposed the active Ethereum September 4 threshold ladder before freeze. Discovery prices are excluded from every decision.",
+    "outcomes_viewed_before_freeze": true,
+    "discovery_values_are_economic_inputs": false
+  },
+  "question": "Does the exact current Ethereum September 4 threshold ladder contain any rejection-only Gamma displayed package where YES at a lower threshold plus NO at a higher threshold costs strictly less than its exact one-pUSD payout floor?",
+  "event_slug": "ethereum-above-on-september-4-2026",
+  "event_title": "Ethereum above ___ on September 4?",
+  "expected_thresholds": [
+    "2000",
+    "2100",
+    "2200",
+    "2300",
+    "2400",
+    "2500",
+    "2600",
+    "2700",
+    "2800",
+    "2900",
+    "3000"
+  ],
+  "required_rule_fragments": [
+    "ETH/USDT 12:00 in the ET timezone (noon)",
+    "final \"Close\" price higher than the price specified in the title",
+    "not according to other exchanges or trading pairs"
+  ],
+  "payoff_identity": {
+    "package": "buy one YES share at threshold L and one NO share at threshold H where L is strictly less than H",
+    "state_below_or_equal_L": "YES_L pays 0 and NO_H pays 1",
+    "state_strictly_above_L_and_below_or_equal_H": "YES_L pays 1 and NO_H pays 1",
+    "state_strictly_above_H": "YES_L pays 1 and NO_H pays 0",
+    "guaranteed_floor_pUSD_per_share_pair": "1",
+    "market_direction_forecast_required": false
+  },
+  "request": {
+    "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "count": 1,
+    "method": "GET",
+    "url": "https://gamma-api.polymarket.com/events/slug/ethereum-above-on-september-4-2026"
+  },
+  "decision": {
+    "source_gate": "Require the exact slug, title, eleven thresholds, active accepting binary markets, common exact resolution fragments, token identities, and valid displayed prices.",
+    "rejection_only_gate": "Rank all 55 lower-YES plus higher-NO packages and stop before books unless at least one displayed sum is strictly below 1 pUSD.",
+    "book_gate_if_triggered": "A displayed candidate authorizes only a separately frozen exact two-token batch with contract-bound exact fee schedule, minimum size, tick, freshness, one-adverse-tick stress, and complete costs. Gamma can never accept or promote the edge.",
+    "accepted_edge": false,
+    "profitability_proved": false
+  },
+  "outputs": {
+    "raw_path": "data/polymarket-eth-sep4-threshold-ladder-prefilter-v1/raw/event.json",
+    "journal_path": "data/polymarket-eth-sep4-threshold-ladder-prefilter-v1/request-journal.jsonl",
+    "result_path": "docs/model-research/action-value/polymarket-eth-sep4-threshold-ladder-prefilter-result-v1-2026-08-30.json"
+  },
+  "authority": {
+    "account_requests": 0,
+    "book_requests": 0,
+    "credentials_used": false,
+    "fee_requests": 0,
+    "funds_used": false,
+    "onchain_requests": 0,
+    "orders_or_transactions": 0,
+    "protected_capture_touched": false,
+    "public_unauthenticated_read_only_requests": 1,
+    "signed_requests": 0,
+    "trading_authority": false
+  },
+  "implementation": {
+    "path": "tools/screen_polymarket_exact_crypto_threshold_ladder.py",
+    "sha256": "92a64c11a2cf9a749c22593e81571d3ed43fe6bc7af749b679b69af3a110eeb4"
+  },
+  "retry_policy": "This exact event GET is one-use. Preserve any response, mismatch, partial population, or calculation failure and do not retry the event, an alias, another threshold subset, or a favorable sibling merely to obtain a candidate. Reopen the family only for a distinct active BTC ETH or SOL ladder outside every consumed event with complete exact rules and at least one rejection-only displayed package strictly below its payout floor, or a material fee, rule, delay, or execution change.",
+  "contract_sha256": "0737aa5e76be4151213f1a6174eca525e32ec7c46e7e4347842e6ac41c8a7331"
+}

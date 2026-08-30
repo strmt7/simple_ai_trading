@@ -351,6 +351,15 @@ override prose.
   current rule and model `EXECUTION_RULE_PRICE_RANGE_EXCEEDED` residual quantity
   only when a separately frozen candidate materially depends on unbounded taker
   execution or exact residual-expiry behavior.
+- In an exact Polymarket crypto threshold ladder whose common rules resolve YES
+  only when the same source value is strictly above its threshold, `YES(L)`
+  plus `NO(H)` for `L < H` has a one-pUSD optimistic rule-consistent floor and
+  pays two pUSD only between the thresholds. Independent condition disputes,
+  cancellations, or inconsistent resolutions are additional downside, not part
+  of that floor. Screen every lower-higher pair from one exact complete event;
+  Gamma is rejection-only. Do not request books unless at least one displayed
+  sum is strictly below one pUSD, and never cherry-pick a sibling ladder after
+  a consumed complete event fails that gate.
 
 ## Working Method
 
