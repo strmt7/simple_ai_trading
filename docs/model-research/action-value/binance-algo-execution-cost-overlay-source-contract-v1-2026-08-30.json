@@ -1,0 +1,69 @@
+{
+  "schema_version": "public-source-capture-contract-v1",
+  "frozen_at_utc": "2026-08-30T12:07:40.1224464Z",
+  "contract_path": "docs/model-research/action-value/binance-algo-execution-cost-overlay-source-contract-v1-2026-08-30.json",
+  "trigger": {
+    "registry_route": "rank_5_binance_spot_fee_and_execution_cost_minimization_overlays",
+    "novelty_evidence": "zero-network comparison of the retained current official Agent Native index against all ranked and terminal mechanism aliases found no existing Binance Spot TWAP or USD-M Futures TWAP/VP execution-cost overlay",
+    "discovery_values_are_economic_inputs": false
+  },
+  "question": "Does the current official Binance Algo Trading OpenAPI schema bind native Spot TWAP plus USD-M Futures TWAP and Volume Participation execution paths and their child-order fee evidence strongly enough to register a direction-independent organic-flow execution-cost candidate without claiming savings?",
+  "request_name": "binance-algo-trading-current-openapi-schema",
+  "request": {
+    "method": "GET",
+    "url": "https://developers.binance.com/en/docs/catalog/advanced-trading-algo-trading/api/rest-api/1.0.0/schema.yaml",
+    "count": 1,
+    "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "endpoint_classification": {
+    "operation": "download the public official Algo Trading OpenAPI schema",
+    "security": "public unauthenticated static documentation GET",
+    "source_contract": "the current official Binance catalog exposes this exact schema download from its public Algo Trading API reference"
+  },
+  "response_byte_ceiling": 2000000,
+  "required_utf8_phrases": [
+    "/sapi/v1/algo/futures/newOrderTwap",
+    "/sapi/v1/algo/futures/newOrderVp",
+    "/sapi/v1/algo/spot/newOrderTwap",
+    "/sapi/v1/algo/futures/subOrders",
+    "feeAmt",
+    "timeInForce"
+  ],
+  "decision": {
+    "source_gate_only": "Every exact endpoint and child-order evidence phrase must exist in the one retained current schema.",
+    "accepted_edge": false,
+    "profitability_proved": false,
+    "conditional_next_step": "Register only a conditional execution-cost candidate for an independently required organic BTC ETH or SOL Spot or USD-M order. Advance only with explicit testnet or paper order authority, exact account fees, a precommitted direct-execution benchmark, identical quantity and decision time, and complete child-order reconciliation."
+  },
+  "outputs": {
+    "raw_path": "docs/model-research/binance/raw/algo-execution-cost-overlay-v1-2026-08-30/01-current-openapi-schema.raw.yaml",
+    "journal_path": "docs/model-research/binance/raw/algo-execution-cost-overlay-v1-2026-08-30/00-request-journal.jsonl",
+    "result_path": "docs/model-research/action-value/binance-algo-execution-cost-overlay-source-result-v1-2026-08-30.json"
+  },
+  "authority": {
+    "account_requests": 0,
+    "credentials_used": false,
+    "funds_used": false,
+    "orders_or_transactions": 0,
+    "protected_capture_touched": false,
+    "public_unauthenticated_read_only_requests": 1,
+    "signed_requests": 0,
+    "trading_authority": false
+  },
+  "implementations": [
+    {
+      "path": "tools/capture_public_source_contract.py",
+      "sha256": "d566a5a379c659c3da144d5e28449ebac9c01493bd39646f9cc3a6e697a83566"
+    },
+    {
+      "path": "tools/screen_polymarket_exact_two_leg_package.py",
+      "sha256": "ba7ebaa1fb5235ba026f7cf4cb21ff73ba19430fee4a4f678fbdea37635eb32f"
+    },
+    {
+      "path": "tools/adjudicate_polymarket_exact_mlb_monotone_prefilter.py",
+      "sha256": "958a44d78029b9a1eb69a3771ce18e53ac1ed3c7bc161c8e4318beedce2cf99f"
+    }
+  ],
+  "retry_policy": "This exact current schema GET is one-use. Preserve any HTTP error or missing-term response and do not retry an alias. A passing source gate proves only product architecture, never savings, fill quality, account eligibility, or profitability.",
+  "contract_sha256": "1a695f4daab084cbc449963580e0d498d097f18831878b333325909e0d688379"
+}
