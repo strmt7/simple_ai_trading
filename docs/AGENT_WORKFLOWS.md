@@ -172,6 +172,14 @@ costs. Do not implement a signed collector while either designated ephemeral
 credential variable is absent. Subscription or redemption is a separate funded
 stage and requires new explicit authority after the read-only gate passes.
 
+Binance Yield Arena is only a discovery and routing surface. Search retained
+artifacts by the exact Arena article code, product, asset, and payoff identity
+before another web or signed request. Decompose every offer into its underlying
+Simple Earn, staking, holding-promotion, or conditional-conversion family; never
+compare the Arena headline as one APR or build an Arena-level collector. The
+signed activities endpoint is justified only for an exact product/account
+question under explicit GET-only authority, not for browsing for an edge.
+
 For Binance liquid-staking-token conversion parity, do not sample WBETH or
 BNSOL books before same-account signed evidence proves the current conversion
 ratio, redemption quota, enabled state, commission, delay, and account

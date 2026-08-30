@@ -5861,3 +5861,24 @@ Triage result SHA-256 is
 Accepted edges remain 29, ranked hypotheses remain 44, terminal families remain
 83, and registry SHA-256 becomes
 `3aa7aef92c7ed41622aef16d0cea9f45f82925813d590a27d278f85a516eff32`.
+
+## Binance Yield Arena discovery routing correction
+
+Yield Arena is not a distinct cash-flow mechanism or a comparable headline APR.
+The repository already retained the current August 26 article; a subsequent
+search rediscovered it because the surface was not explicitly routed. It mixes
+Simple Earn, ETH/SOL staking, Dual Investment, and other products whose exact
+payoff, cap, term, eligibility, redemption, and risk must be adjudicated in
+their existing families. Search the exact article code, product, asset, and
+payoff identity before another web or signed request.
+
+The official Agent Native index classifies
+`GET /sapi/v1/earn/arena/activities` as USER_DATA. Do not call it to browse for
+an edge. It may be used only for an exact account/product reconciliation after
+explicit GET-only authority exists. Do not build an Arena-level collector or
+reopen a family because the Arena brand or `Up to` headline changes. Canonical
+routing addendum SHA-256 is
+`b01792aabe04989b4e65fb5ae00719249fa6186f7c5bd345c59a3ea9b4d8ff66`.
+Accepted edges remain 29, ranked hypotheses remain 44, terminal families remain
+83, and registry SHA-256 becomes
+`8262b29c4ba9b6eb322beb91d18a9c44756355b451374292904aa569e7c81941`.
