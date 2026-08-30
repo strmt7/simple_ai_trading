@@ -4830,3 +4830,37 @@ signed GET-only authority exist. Canonical sensitivity SHA-256 is
 Accepted edges remain 27, ranked hypotheses remain 44, and terminal families
 become 59. Registry SHA-256 becomes
 `a4d7119d665b2410939a07f1306091b396592aa98e9635abd57b4ac3809aa165`.
+
+## Polymarket Clemson vs. LSU exact CFB monotone rejection
+
+The next bounded official-source sweep found no new Binance bStock, TradFi,
+Launchpool stablecoin-pool, commodity-option, or leveraged-token listing trigger.
+Rank 30 then advanced one distinct CFB event outside every consumed event and
+catalog window: Clemson vs. LSU on 2026-09-05. The event was selected as the
+first exact result in a bounded public search without using discovery prices as
+economic inputs. One frozen public Gamma GET retained 17,203 bytes, four active
+accepting markets (moneyline, two spreads, and one total), and exact tie and
+cancellation rules. No credential, account, protected capture, book, fee,
+order, transaction, or fund access occurred.
+
+The first zero-network football adjudication failed on a parser defect: it
+required the unobserved phrase `if the LSU win`, while the retained CFB rule says
+`if LSU win`. The failed contract remains immutable. A separately frozen CFB
+grammar correction reused the exact retained bytes with zero refetches and now
+binds both teams' win text, each exact spread threshold, its complementary
+outcome, and cancellation semantics before producing any payoff relation.
+
+The corrected complete lattice proved three exact relations and found zero
+Gamma displayed packages strictly below the 1 pUSD payout floor. The best
+displayed package cost 1.045 pUSD, or negative 0.045 pUSD optimistic headroom
+before taker fees, spread, slippage, latency, and partial-fill risk. Therefore no
+book or fee request is justified, the exact event is terminal, and the sports
+family remains unaccepted. Do not repeat Clemson-LSU; advance only a future
+distinct event whose rejection-only Gamma package is already strictly sub-floor
+or a material sports price, fee, delay, or resolution-rule change.
+
+Canonical corrected result SHA-256 is
+`a32e77230d1ec6b48e69e500183c6400d3acf796efbd17acb8853183977d6da2`.
+Accepted edges remain 27, ranked hypotheses remain 44, and terminal families
+become 60. Registry SHA-256 becomes
+`6edc1fe45b6bb6a156dffbec4ff5de2b05f5e0a221fca8c862612cf0b07c1ac1`.

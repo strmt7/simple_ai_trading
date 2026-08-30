@@ -1,0 +1,52 @@
+{
+  "authority": {
+    "account_requests": 0,
+    "authenticated_requests": 0,
+    "book_or_price_requests": 0,
+    "credentials_used": false,
+    "orders_trades_cancels_or_funds": 0,
+    "protected_capture_accessed": false,
+    "public_unauthenticated_event_requests": 1
+  },
+  "capture": {
+    "method": "GET",
+    "public_unauthenticated": true,
+    "read_only": true,
+    "retry_count": 0,
+    "url": "https://gamma-api.polymarket.com/events/slug/cfb-clmsn-lsu-2026-09-05"
+  },
+  "contract_path": "docs/model-research/action-value/polymarket-clemson-lsu-exact-event-contract-v1-2026-08-30.json",
+  "contract_sha256": "7e2fdbe04bbee08d21bb21905388ba8d62283df87b859bbecf61c414890334b6",
+  "decision_contract": {
+    "continue_offline_only_if": "The exact event is active and open with active accepting moneyline and spread markets.",
+    "continue_to_books_only_if": "Exact rules prove a deterministic payoff implication and at least one complete rejection-only Gamma displayed package is strictly below its guaranteed payout floor.",
+    "stop_if": [
+      "the exact event or required market types are absent",
+      "the exact rules do not prove a deterministic payoff implication",
+      "every exact displayed package is at or above its guaranteed payout floor"
+    ]
+  },
+  "event_slug": "cfb-clmsn-lsu-2026-09-05",
+  "frozen_at_utc": "2026-08-30T11:22:37.6212735Z",
+  "implementation": {
+    "path": "tools/capture_polymarket_exact_sports_event.py",
+    "sha256": "a1f431d9ef181123a8f47840b9cf894aa3e8b6b09b18acadf643ac7f32e61606"
+  },
+  "outputs": {
+    "journal_path": "docs/model-research/polymarket/raw/clemson-lsu-exact-event-v1-2026-08-30/request-journal.jsonl",
+    "raw_path": "docs/model-research/polymarket/raw/clemson-lsu-exact-event-v1-2026-08-30/event.raw.json",
+    "result_path": "docs/model-research/action-value/polymarket-clemson-lsu-exact-event-result-v1-2026-08-30.json"
+  },
+  "purpose": "one-use public exact-event capture for a distinct CFB monotone-payoff rejection screen outside every consumed event and catalog window",
+  "schema_version": "polymarket-exact-sports-event-source-contract-v1",
+  "selection": {
+    "economic_values_used": false,
+    "rule": "first exact Polymarket CFB event result in the bounded public search after excluding the consumed Ball State Ohio State event",
+    "source_url": "https://polymarket.com/sports/cfb/cfb-clmsn-lsu-2026-09-05"
+  },
+  "source_contract": {
+    "documentation_url": "https://docs.polymarket.com/api-reference/events/get-event-by-slug",
+    "discovery_values_are_economic_inputs": false,
+    "discovery_url": "https://polymarket.com/sports/cfb/cfb-clmsn-lsu-2026-09-05"
+  }
+}
