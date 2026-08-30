@@ -1,0 +1,33 @@
+{
+  "schema_version": "polymarket-catalog-candidate-metadata-contract-v1",
+  "frozen_at_utc": "2026-08-30T18:57:53.6098294Z",
+  "contract_path": "docs/model-research/action-value/polymarket-mercyhurst-nmsu-catalog-metadata-contract-v1-2026-08-30.json",
+  "purpose": "extract the precommitted deterministic best September 6 CFB package and its exact active market metadata from retained bytes without network access",
+  "selected_event": {
+    "event_id": "913009",
+    "event_slug": "cfb-mhud34ce7-nmxst-2026-09-05"
+  },
+  "required_market_ids": [
+    "3993652",
+    "4004661"
+  ],
+  "source_result": {
+    "path": "docs/model-research/action-value/polymarket-cfb-september-6-complete-monotone-catalog-result-v1-2026-08-30.json",
+    "result_sha256": "9ca30ccdce00d7a0928fea85eab35e6da2dbdbb9b4c9b339d3a9f5ee1151bc02"
+  },
+  "raw_source": {
+    "path": "data/polymarket-cfb-september-6-complete-monotone-catalog-v1/raw/events.json",
+    "sha256": "cfa743ae611ee05b8281f222d0a3b45065f0cc1a1844a16596f3412536ddc040"
+  },
+  "output_path": "docs/model-research/action-value/polymarket-mercyhurst-nmsu-catalog-metadata-v1-2026-08-30.json",
+  "implementation": {
+    "path": "tools/extract_polymarket_catalog_candidate_metadata.py",
+    "sha256": "35db3e71b14d8556efce2bb1f07e6d04480c5989403f7c64e82fdfaf28dccdd8"
+  },
+  "authority": {
+    "network_requests": 0,
+    "credentials_used": false,
+    "orders_or_transactions": 0
+  },
+  "contract_sha256": "23bc4465eda396bdc56fb14319af93f080051f7c5dc67b926ff223fbac73a1f0"
+}

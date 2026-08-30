@@ -1,0 +1,128 @@
+{
+  "adjudication": {
+    "accepted_edge": false,
+    "deployment_ready": false,
+    "next_action": "terminalize_this_exact_event_without_refetch_or_retry",
+    "passes_frozen_candidate_gate": false,
+    "pre_age_candidate_gate_passed": false,
+    "profitability_claim": false
+  },
+  "authority": {
+    "account_requests": 0,
+    "credentials_used": false,
+    "funds_used": false,
+    "orders_or_transactions": 0,
+    "protected_capture_touched": false,
+    "public_unauthenticated_read_only_requests_maximum": 3,
+    "signed_requests": 0,
+    "trading_authority": false
+  },
+  "capture": {
+    "book_receipt": {
+      "completed_at_ms": 1788116433050,
+      "method": "POST",
+      "name": "exact-two-token-book-batch",
+      "phase": "completed",
+      "raw_path": "data/polymarket-mercyhurst-nmsu-margin-monotone-package-v1/raw/books.json",
+      "request_body_sha256": "56302c1b5ee02f2a476a1210c09438f8524cb06426295f1945e195e1cc69ad0c",
+      "requested_at_ms": 1788116432170,
+      "response_bytes": 939,
+      "response_sha256": "a0412f7dccf2dbf87ebfa7d88e67aadfbd0dd09fbd8cf61d37e46922dda961d2",
+      "status_code": 200,
+      "url": "https://clob.polymarket.com/books"
+    },
+    "book_timestamp_skew_ms": 337138,
+    "fee_receipts": {},
+    "maximum_book_age_ms": 5000,
+    "newest_book_age_at_completion_ms": 1426179,
+    "oldest_book_age_at_completion_ms": 1763317,
+    "source_time_not_future": true,
+    "within_frozen_age_gate": false,
+    "within_frozen_skew_gate": false
+  },
+  "contract": {
+    "path": "docs/model-research/action-value/polymarket-mercyhurst-nmsu-margin-monotone-package-contract-v1-2026-08-30.json",
+    "sha256": "28756a8e168ef943a78886cb0e30cf2943e92db7fb82bcc13c050c08120b6240"
+  },
+  "created_at_utc": "2026-08-30T19:00:33.051926Z",
+  "economics": {
+    "actual": {
+      "adverse_ticks_per_leg": 0,
+      "after_current_fee_profit_floor_pUSD": null,
+      "cost_pUSD": "9.8",
+      "current_fee_pUSD": null,
+      "fills": [
+        {
+          "cost_pUSD": "4.9",
+          "fee_pUSD": null,
+          "fills": [
+            {
+              "price_pUSD": "0.98",
+              "quantity_shares": "5"
+            }
+          ]
+        },
+        {
+          "cost_pUSD": "4.9",
+          "fee_pUSD": null,
+          "fills": [
+            {
+              "price_pUSD": "0.98",
+              "quantity_shares": "5"
+            }
+          ]
+        }
+      ],
+      "optimistic_zero_fee_profit_floor_pUSD": "-4.8"
+    },
+    "delay_1s_sensitivity": null,
+    "delay_3s_sensitivity": null
+  },
+  "gamma_prefilter": {
+    "displayed_price_sum_pUSD": "0.995",
+    "optimistic_profit_floor_per_share_before_execution_costs_pUSD": "0.005",
+    "passes_strictly_below_payout_gate": true,
+    "role": "rejection_only_never_acceptance_or_promotion_evidence"
+  },
+  "implementation": {
+    "path": "tools/screen_polymarket_exact_two_leg_sports_package_v2.py",
+    "sha256": "c95941420e91f9b6ed5da0f3132ba055231ce7a1dc4a5afde31d2d3f585b94db"
+  },
+  "payoff_proof": {
+    "guaranteed_floor_per_share_pUSD": "1",
+    "invariant": "New Mexico State margins at or below 28 pay Mercyhurst plus 29.5; exactly 29 pays both legs; margins at or above 30 pay New Mexico State minus 28.5; cancellation pays each leg one-half",
+    "market_direction_forecast_required": false,
+    "states": [
+      {
+        "payouts": {
+          "mercyhurst_plus_29_5": "1",
+          "new_mexico_state_minus_28_5": "0"
+        },
+        "state": "new_mexico_state_margin_at_most_28"
+      },
+      {
+        "payouts": {
+          "mercyhurst_plus_29_5": "1",
+          "new_mexico_state_minus_28_5": "1"
+        },
+        "state": "new_mexico_state_margin_exactly_29"
+      },
+      {
+        "payouts": {
+          "mercyhurst_plus_29_5": "0",
+          "new_mexico_state_minus_28_5": "1"
+        },
+        "state": "new_mexico_state_margin_at_least_30"
+      },
+      {
+        "payouts": {
+          "mercyhurst_plus_29_5": "0.5",
+          "new_mexico_state_minus_28_5": "0.5"
+        },
+        "state": "game_canceled_without_makeup"
+      }
+    ]
+  },
+  "result_sha256": "3cb7ae40ad0397d13bb2dfd5cae43ff8d4a815a18f076fe343e144ac8f7df1e2",
+  "schema_version": "polymarket-exact-two-leg-package-result-v2"
+}
