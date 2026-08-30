@@ -1,0 +1,12 @@
+{
+  "schema_version": "local-unconsumed-preflight-error-v1",
+  "observed_before_utc": "2026-08-30T20:35:47.8720042Z",
+  "command": "uv run --locked python -m tools.capture_public_source_contract --contract docs/model-research/action-value/binance-spot-sbe-depth-latency-overlay-source-contract-v1-2026-08-30.json",
+  "error": "RuntimeError: frozen_at_utc is invalid or in the future",
+  "cause": "the_initial_contract_used_a_rounded_2026_08_30T20_36_00Z_timestamp_that_was_still_in_the_future_at_local_validation",
+  "request_sent": false,
+  "output_paths_created": false,
+  "credentials_used": false,
+  "orders_or_transactions": 0,
+  "correction": "replace_the_rounded_time_with_the_exact_observed_UTC_clock_recompute_the_contract_hash_and_invoke_the_same_request_once"
+}

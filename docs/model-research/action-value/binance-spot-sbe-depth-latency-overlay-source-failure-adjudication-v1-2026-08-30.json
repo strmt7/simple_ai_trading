@@ -1,0 +1,117 @@
+{
+  "schema_version": "binance-spot-sbe-depth-latency-overlay-source-failure-adjudication-v1",
+  "created_at_utc": "2026-08-30T20:36:56.3892729Z",
+  "question": "Does Binance Spot SBE market data provide a stable market-direction-independent information-freshness edge over ordinary JSON market data for independently required BTC, ETH, or SOL execution?",
+  "consumed_source_gate": {
+    "passed": false,
+    "missing_literal_phrase": "An API Key is necessary for access.",
+    "retained_representation": "**An API Key is necessary for access**.",
+    "failure_class": "uncontracted_Markdown_bold_delimiter_difference",
+    "economic_semantics_present": true,
+    "refetch_or_contract_repair_allowed": false,
+    "offline_adjudication_allowed": true
+  },
+  "retained_current_terms": {
+    "production_base_endpoint": "stream-sbe.binance.com_or_stream-sbe.binance.com_9443",
+    "api_key_required": true,
+    "key_type": "Ed25519_only",
+    "timestamp_or_signature_required_for_connection": false,
+    "extra_api_key_permission_required": false,
+    "symbol_whitelist_affects_access": false,
+    "ip_whitelist_enforced_when_configured": true,
+    "connection_lifetime_hours": 24,
+    "timestamp_unit": "microseconds",
+    "client_request_limit_per_second": 5,
+    "maximum_streams_per_connection": 1024,
+    "maximum_connection_attempts_per_five_minutes_per_IP": 300,
+    "server_ping_interval_seconds": 20,
+    "pong_timeout_seconds": 60,
+    "diff_depth_stream": "<symbol>@depth",
+    "diff_depth_update_interval_ms": 20,
+    "partial_top_20_stream": "<symbol>@depth20",
+    "partial_top_20_update_interval_ms": 50,
+    "best_bid_ask_stream": "<symbol>@bestBidAsk",
+    "best_bid_ask_update_speed": "real_time",
+    "best_bid_ask_auto_culling": true,
+    "decoder_schema": "sbe/schemas/stream_1_0.xml",
+    "local_order_book_required_for_diff_depth": true
+  },
+  "retained_json_comparator": {
+    "diff_depth_streams": [
+      "<symbol>@depth",
+      "<symbol>@depth@100ms"
+    ],
+    "fastest_diff_depth_update_interval_ms": 100,
+    "partial_depth_fastest_update_interval_ms": 100,
+    "book_ticker_update_speed": "real_time"
+  },
+  "nominal_cadence_comparison": {
+    "SBE_diff_depth_updates_per_one_fastest_JSON_interval": 5,
+    "documented_interval_reduction_ms": 80,
+    "documented_interval_reduction_fraction": "0.8",
+    "applies_to": "depth_aware_local_book_updates_only",
+    "does_not_apply_to": "top_of_book_nominal_update_speed_because_both_SBE_bestBidAsk_and_JSON_bookTicker_are_documented_real_time",
+    "end_to_end_arrival_latency_claim": false,
+    "interpretation": "The 20 ms SBE cadence is a real official information architecture advantage over 100 ms JSON depth for depth-aware decisions, but cadence is not measured arrival latency and does not itself prove better fills or money."
+  },
+  "blocking_evidence": [
+    "a_separately_provisioned_Ed25519_API_key_available_only_through_the_designated_ephemeral_environment_and_explicit_read_only_public_market_data_authority",
+    "byte_exact_stream_1_0_decoder_validation_and_local_book_snapshot_plus_diff_continuity",
+    "one_precommitted_simultaneous_same_host_same_symbol_SBE_and_JSON_capture_with_source_event_times_monotonic_receive_times_reconnect_rules_and_no_orders",
+    "separate_depth_aware_and_top_of_book_comparators_so_real_time_book_ticker_is_not_misrepresented_as_100_ms",
+    "prospective_owned_or_paper_execution_join_proving_that_incremental_freshness_reduces_slippage_adverse_selection_or_rejections_after_every_decoder_network_and_operating_cost",
+    "BTC_ETH_SOL_cross_regime_persistence_and_capacity_without_using_future_updates_in_decisions"
+  ],
+  "adjudication": {
+    "accepted_edge": false,
+    "candidate": true,
+    "deployment_ready": false,
+    "market_direction_forecast_required": false,
+    "profitability_claim": false,
+    "standalone_documented_cadence_profit_claim_terminal": true,
+    "standalone_after_cost_profit_floor_USDT": "0",
+    "current_status": "direction_independent_depth_freshness_candidate_only_for_independently_required_depth_aware_BTC_ETH_or_SOL_execution",
+    "next_action": "do_not_refetch_or_alias_the_consumed_documentation_source_only_when_a_designated_ephemeral_Ed25519_key_and_explicit_read_only_market_data_authority_exist_freeze_one_same_host_same_symbol_SBE_20ms_versus_JSON_100ms_dual_feed_capture_with_decoder_continuity_event_time_receive_time_reconnect_and_gap_gates_no_orders_then_require_a_separate_owned_or_paper_depth_aware_execution_join_before_crediting_money",
+    "retry_trigger": "designated_ephemeral_Ed25519_API_key_plus_explicit_read_only_public_market_data_authority_for_a_precommitted_same_host_same_symbol_SBE_20ms_versus_JSON_100ms_dual_feed_capture_or_a_material_official_SBE_JSON_cadence_authentication_schema_auto_culling_or_testnet_support_change"
+  },
+  "authority": {
+    "account_requests": 0,
+    "credentials_used": false,
+    "funds_used": false,
+    "orders_or_transactions": 0,
+    "public_unauthenticated_read_only_requests": 1,
+    "signed_requests": 0,
+    "trading_authority": false
+  },
+  "sources": {
+    "consumed_contract": {
+      "path": "docs/model-research/action-value/binance-spot-sbe-depth-latency-overlay-source-contract-v1-2026-08-30.json",
+      "contract_sha256": "f98a50e3425b9c06d55a662a44dca31a67864b6081f12b471d3f0f25ce507250"
+    },
+    "consumed_source_result": {
+      "path": "docs/model-research/action-value/binance-spot-sbe-depth-latency-overlay-source-result-v1-2026-08-30.json",
+      "result_sha256": "09aeb2f82b1a94fb002041d4d4c094b262c5d62c13fe73e69801a898ee7b4d9d",
+      "file_sha256": "90bb6f8664d7aafed36776e22480da2c77abaeb52b16bd5131180750c4b93e7a"
+    },
+    "retained_SBE_source": {
+      "path": "docs/model-research/binance/raw/spot-sbe-depth-latency-overlay-v1-2026-08-30/01-sbe-market-data-streams.raw.md",
+      "sha256": "3e945f522c279e0dcb894b25b4933cbb5165ab488a7014356dbe496eb5b54a41",
+      "relevant_lines": [11, 13, 14, 15, 16, 17, 18, 19, 38, 39, 74, 80, 83, 87, 97, 99, 105, 107]
+    },
+    "retained_JSON_source": {
+      "path": "docs/model-research/binance/raw/spot-block-trade-public-price-concession-v1-2026-08-30/01-web-socket-streams.raw.md",
+      "sha256": "32bf73a0bed3b75e3ca981fdbaf48c53544bbdfb5944ef8ed1c4d7af9aceba0a",
+      "relevant_lines": [532, 538, 573, 576, 578, 599, 602, 604]
+    },
+    "retained_changelog": {
+      "path": "docs/model-research/binance/raw/spot-block-trade-public-price-concession-v1-2026-08-30/03-spot-changelog.raw.md",
+      "sha256": "e6da6a7bb729ec5b1aa6d3c97684bb2a1e4d3a64231b007edea42c6cceef7681",
+      "relevant_lines": [3, 5, 7, 11, 13, 14]
+    },
+    "local_unconsumed_preflight_error": {
+      "path": "docs/model-research/binance/raw/spot-sbe-depth-latency-overlay-v1-2026-08-30/00-local-preflight-error.json",
+      "sha256": "834f495013f68acee094a8bdf780f132c3ab782d75f885823625a378dc5f8b6a"
+    }
+  },
+  "result_sha256": "6b01c825831657d8dac8a33efb196bbd63d64698288e15cf9b1ff27be9b4aa77"
+}

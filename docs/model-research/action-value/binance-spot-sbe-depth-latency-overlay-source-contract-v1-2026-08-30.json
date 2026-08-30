@@ -1,0 +1,64 @@
+{
+  "schema_version": "public-source-capture-contract-v1",
+  "frozen_at_utc": "2026-08-30T20:35:47.8720042Z",
+  "contract_path": "docs/model-research/action-value/binance-spot-sbe-depth-latency-overlay-source-contract-v1-2026-08-30.json",
+  "trigger": {
+    "registry_rank": 5,
+    "literal_trigger": "material official Spot execution or market-data architecture change for an independently required BTC ETH or SOL execution comparator",
+    "material_change": "The retained current official changelog says Binance Spot SBE Diff Depth and FIX SBE incremental depth changed from 25 ms to 20 ms on 2026-08-04, while retained JSON Diff Depth remains 100 ms at its fastest documented cadence; no SBE market-data execution overlay exists in the structural registry.",
+    "outcomes_viewed_before_freeze": true,
+    "discovery_values_are_economic_inputs": false
+  },
+  "question": "What exact current official access, authentication, stream, cadence, schema, lifecycle, and failure constraints govern Binance Spot SBE market data, and can they support a direction-independent depth-freshness candidate without account or order access?",
+  "request_name": "binance-spot-sbe-depth-latency-official-contract",
+  "request": {
+    "method": "GET",
+    "url": "https://raw.githubusercontent.com/binance/binance-spot-api-docs/3027e2ed79b8fd25e763b4b56d970374b85bba1e/sbe-market-data-streams.md",
+    "count": 1,
+    "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "endpoint_classification": {
+    "operation": "retain one immutable official static SBE market-data contract at the current Binance Spot documentation commit",
+    "security": "public unauthenticated static documentation GET",
+    "preflight": "The exact pinned URL is static, credential-free, absent from repository request journals, bounded below 100 KB, and distinct from any market-data stream or account access."
+  },
+  "response_byte_ceiling": 100000,
+  "required_utf8_phrases": [
+    "# SBE Market Data Streams",
+    "An API Key is necessary for access.",
+    "Only Ed25519 keys are allowed.",
+    "No extra API key permissions are necessary to access public market data.",
+    "### Diff. Depth Streams",
+    "**Update Speed:**",
+    "A single connection can listen to a maximum of 1024 streams."
+  ],
+  "decision": {
+    "source_gate_only": "Require stable access and stream identity phrases, not the favorable numeric cadence. Extract the exact Diff Depth cadence, credentials, connection lifecycle, limits, and local-book requirements only after immutable retention.",
+    "accepted_edge": false,
+    "profitability_proved": false,
+    "conditional_next_step": "If the retained current source confirms a lower depth update interval than the retained current JSON source, preserve a rank-5 direction-independent market-data freshness candidate. Any dual-feed measurement requires a separately provisioned Ed25519 key in the designated environment, explicit read-only market-data authority, a precommitted same-symbol comparison, source timestamps, continuity gates, decoder validation, and zero order access."
+  },
+  "outputs": {
+    "raw_path": "docs/model-research/binance/raw/spot-sbe-depth-latency-overlay-v1-2026-08-30/01-sbe-market-data-streams.raw.md",
+    "journal_path": "docs/model-research/binance/raw/spot-sbe-depth-latency-overlay-v1-2026-08-30/00-request-journal.jsonl",
+    "result_path": "docs/model-research/action-value/binance-spot-sbe-depth-latency-overlay-source-result-v1-2026-08-30.json"
+  },
+  "authority": {
+    "account_requests": 0,
+    "credentials_used": false,
+    "funds_used": false,
+    "orders_or_transactions": 0,
+    "protected_capture_touched": false,
+    "public_unauthenticated_read_only_requests": 1,
+    "signed_requests": 0,
+    "trading_authority": false
+  },
+  "implementations": [
+    {
+      "path": "tools/capture_public_source_contract.py",
+      "sha256": "d566a5a379c659c3da144d5e28449ebac9c01493bd39646f9cc3a6e697a83566"
+    }
+  ],
+  "retry_policy": "This exact pinned static source request is one-use for the current architecture question. Preserve any response or failure and do not retry an alias. Documentation can establish nominal cadence and access constraints only, never actual arrival latency, fill advantage, profitability, or order authority.",
+  "contract_sha256": "f98a50e3425b9c06d55a662a44dca31a67864b6081f12b471d3f0f25ce507250"
+}
