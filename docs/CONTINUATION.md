@@ -4131,3 +4131,40 @@ and `2dcaa72b8a9643b3f6652691f7395ac5405cd6f15ee88e57ce45af1f69b0dc6b`.
 Accepted edges remain 21, ranked hypotheses remain 44, terminal families become
 54, and registry SHA-256 is
 `f6b73019910d57daf98764d78a80e487421ae73525499ad1c4e5600ab6018d4f`.
+
+## Polymarket BTC September 5 paired-maker reward rejection
+
+Rank 17's distinct source-selected exact-allocation trigger fired for `Will the
+price of Bitcoin be above $72,000 on September 5?`. The source-only prefilter
+correctly excluded all discovery-page values from economics. Exact Gamma and
+the exact sponsored-condition endpoint reconciled the same two tokens, 50-share
+reward minimum, 4.5-cent maximum spread, zero maker fee, and one active dated
+configuration paying 1.99972 pUSD per day. No book was requested until that
+reconciliation passed.
+
+The separately frozen two-token book request completed in 240 ms, but the two
+internally agreeing timestamps were 30,871 ms old, so current executable
+economics remain unqualified. The retained best-bid join nevertheless provides
+a terminal optimistic rejection for that exact observation: 2.05 pUSD gross if
+both 50-share legs filled, versus 46.80 pUSD maximum one-sided settlement loss.
+Even the impossible assumption that one maker captured 100% of every remaining
+reward produced only 12.923014 pUSD, covering 27.61% of the orphan loss before
+competition, adverse selection, queueing, cancellation latency, or hedge cost.
+
+Do not refetch this exact market or treat its stale book as current. The new
+generic source prefilter prevents the prior discovery-value hard-gate error,
+and the retained-source book runner uses the full remaining pool as a cheap
+rejection bound before any repetitive scoring or paper capture. A zero-request
+audit caught one implementation omission: the consumed runner had not compared
+the reward row's ordered token IDs to Gamma. Both retained exact sources do
+contain the same ordered YES/NO IDs, so the omitted gate passed; the reusable
+runner now enforces it before future book access, without refetching or changing
+the rejection. Correction SHA-256 is
+`61df67471329b0e4a1273deea0fbbba9d918d3e11559b3dc26f6f462f69691a4`.
+No credentials, accounts, orders, cancellations, funds, or protected captures
+were accessed.
+Accepted edges remain 21, ranked hypotheses remain 44, and terminal families
+become 55. Canonical retained adjudication SHA-256 is
+`1153ef2f90345be8ebfda5b0c2fd3f02a56dc0dad854edf251e21370a9677743`;
+registry SHA-256 is
+`d82fe12b7ec4fb7765bdbad781ac7fc6ef1e6bf26da84882ab42f139411bb6fd`.

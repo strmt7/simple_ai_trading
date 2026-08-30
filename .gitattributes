@@ -55,6 +55,9 @@ docs/model-research/polymarket/raw/elon-posts-40-64-paired-maker-reward-screen-v
 docs/model-research/polymarket/elon-posts-40-64-retained-source-book-*.json text eol=lf
 docs/model-research/polymarket/raw/elon-posts-40-64-retained-source-book-screen-v1-2026-08-30/** binary -eol
 docs/model-research/polymarket/elon-posts-40-64-best-bid-join-*.json text eol=lf
+docs/model-research/polymarket/btc-above-72k-sep5-*.json text eol=lf
+docs/model-research/polymarket/raw/btc-above-72k-sep5-exact-reward-source-v1-2026-08-30/** binary -eol
+docs/model-research/polymarket/raw/btc-above-72k-sep5-retained-reward-book-v1-2026-08-30/** binary -eol
 docs/model-research/action-value/round-075-frozen-v4-source/**/*.txt text eol=lf
 docs/archive/agent-history/*.md.txt text eol=lf
 docs/optimization/iteration-progress/**/*.csv text eol=lf
