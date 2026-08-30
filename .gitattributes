@@ -55,6 +55,7 @@ data/polymarket-sol-sep4-range-threshold-coverage-prefilter-v1/** binary -eol
 data/polymarket-sol-sep4-range-threshold-coverage-books-v1/** binary -eol
 data/polymarket-sol-sep4-cross-event-rewards-v1/** binary -eol
 data/polymarket-crypto-current-event-delta-v1/** binary -eol
+data/polymarket-crypto-current-event-delta-v2/** binary -eol
 data/polymarket-crypto-interval-composition-trades-v1/** binary -eol
 docs/model-research/binance/raw/** binary -eol
 docs/model-research/binance/spot-primary-peg-execution-overlay-*.json text eol=lf

@@ -39,6 +39,12 @@ nonoverlapping delta. The 2026 execution window is closed, so no book capture is
 permitted regardless of the history outcome; this can establish mechanism
 timing only and cannot establish profit.
 
+The consumed Polymarket created-event delta after
+`2026-08-30T16:07:16.021321Z` hit the endpoint's effective 100-row cap before
+crossing its cutoff. It screened zero packages and authorized no books. Never
+paginate, narrow, refresh, alias, or repeat it; a future delta must first prove
+its worst-case arrivals fit below the observed cap.
+
 ## Non-Negotiable Gates
 
 - Aggregate performance is not an all-market edge. Promotion requires causal

@@ -79,6 +79,10 @@ override prose.
   otherwise stop before building another collector. A zero-request retained-data
   audit may be kept only when it materially strengthens or corrects the existing
   adjudication, and it must update that family instead of creating a duplicate.
+- Before freezing any request for an existing family, inspect its complete
+  registry row: canonical artifacts, current status, next action, every
+  prohibited shortcut, and the literal retry trigger. A compact rank/trigger
+  projection is triage only and cannot authorize access.
 - Family-specific tests must not pin the mutable whole-registry SHA-256 or the
   mutable global accepted-edge count. Verify the registry's embedded canonical
   self-hash plus the family's exact artifact, rank, scope, and terminal or retry
@@ -259,6 +263,11 @@ override prose.
   source-bound population/page ceiling or freeze an explicitly partial rank or
   cursor boundary. A non-null cursor at the request ceiling is incomplete, not
   a zero-candidate universe, and does not justify a larger adaptive rerun.
+- For a time-delta catalog, preflight worst-case arrivals from the densest
+  retained tail against the venue's observed effective page cap, not the larger
+  requested limit. Require capacity headroom to cross the frozen cutoff; if the
+  bound cannot fit, do not spend the request until a documented server filter or
+  explicitly partial decision can answer the question.
 - For weighted or rate-limited APIs, freeze both the cumulative request weight
   and a limit-derived pacing schedule. After the first retained page, validate
   ordering, timestamp phase, cursor progression, and cross-source alignment on
