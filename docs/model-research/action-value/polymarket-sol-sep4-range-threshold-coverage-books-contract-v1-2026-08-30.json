@@ -1,0 +1,151 @@
+{
+  "schema_version": "polymarket-crypto-range-threshold-books-contract-v1",
+  "frozen_at_utc": "2026-08-30T15:44:43.3802982Z",
+  "contract_path": "docs/model-research/action-value/polymarket-sol-sep4-range-threshold-coverage-books-contract-v1-2026-08-30.json",
+  "purpose": "Test only the precommitted Solana September 4 NO above 150 plus YES greater-than-150 package using one exact current two-token public book batch.",
+  "prefilter_source": {
+    "path": "docs/model-research/action-value/polymarket-sol-sep4-range-threshold-coverage-prefilter-result-v1-2026-08-30.json",
+    "file_sha256": "d6349c7f0dd6663226f28cfd4d60c122804564b2bf146a5c2adf372cf43b83e2",
+    "result_sha256": "8efba9e824fb125bd4a5be654704c6f47d62ddc1fd8b38006fad06ac52247417"
+  },
+  "gamma_prefilter": {
+    "strict_displayed_candidate_count": 1,
+    "role": "rejection_only_never_acceptance_or_promotion_evidence",
+    "package": {
+      "boundary": "150",
+      "direction": "upper_coverage",
+      "displayed_price_sum_pUSD": "0.9855",
+      "optimistic_displayed_headroom_pUSD": "0.0145",
+      "optimistic_rule_consistent_payout_floor_pUSD": "1",
+      "passes_strict_displayed_gross_gate": true,
+      "range_displayed_price_sum_pUSD": "0.005",
+      "range_labels": [">150"],
+      "range_yes_market_ids": ["3953633"],
+      "range_yes_token_ids": [
+        "55397778786906764124591876314117646959769608288933053156326438526426351789052"
+      ],
+      "threshold_displayed_price_pUSD": "0.9805",
+      "threshold_market_id": "3953630",
+      "threshold_side": "NO",
+      "threshold_token_id": "106108726305158646816266439666850212627584951909528412509160867463216247970254"
+    }
+  },
+  "package": {
+    "name": "no_strictly_above_150_plus_yes_higher_range_150",
+    "token_names": [
+      "threshold_150_no",
+      "range_over_150_yes"
+    ]
+  },
+  "tokens": {
+    "threshold_150_no": {
+      "condition_id": "0x261bc97c8f55aa489c261bc718da3435f6209600e10c5907a03aefd402fd21ae",
+      "gamma_market_id": "3953630",
+      "gamma_price_pUSD": "0.9805",
+      "neg_risk": false,
+      "question": "Will the price of Solana be above $150 on September 4?",
+      "side": "NO",
+      "token_id": "106108726305158646816266439666850212627584951909528412509160867463216247970254"
+    },
+    "range_over_150_yes": {
+      "condition_id": "0x36e25d3240372eb358b84c4640b6eefff34a0cf0cfb6e7d8084ae46e82857606",
+      "gamma_market_id": "3953633",
+      "gamma_price_pUSD": "0.005",
+      "neg_risk": true,
+      "question": "Will the price of Solana be greater than $150 on September 4?",
+      "side": "YES",
+      "token_id": "55397778786906764124591876314117646959769608288933053156326438526426351789052"
+    }
+  },
+  "payoff_proof": {
+    "optimistic_rule_consistent_floor_pUSD": "1",
+    "market_direction_forecast_required": false,
+    "invariant": "Both conditions use the same Binance SOL/USDT noon-ET close; strict-above threshold NO pays at x <= 150 while the higher range bracket YES pays at x >= 150 under consistent application of the exact-boundary rule.",
+    "states": [
+      {
+        "state": "close_below_150",
+        "payouts": {"threshold_150_no": "1", "range_over_150_yes": "0"}
+      },
+      {
+        "state": "close_exactly_150",
+        "payouts": {"threshold_150_no": "1", "range_over_150_yes": "1"}
+      },
+      {
+        "state": "close_above_150",
+        "payouts": {"threshold_150_no": "0", "range_over_150_yes": "1"}
+      }
+    ],
+    "unqualified_risk": "Independent condition disputes cancellations inconsistent resolutions source divergence and settlement delay can weaken this optimistic common-rule floor; a positive snapshot cannot accept or promote the edge."
+  },
+  "execution": {
+    "book_request_count": 1,
+    "candidate_gate": "strictly positive five-pUSD optimistic common-rule floor after complete displayed depth current exact fees one adverse tick per leg no rebate credit no more than five seconds source skew and no more than five seconds oldest-book age",
+    "candidate_stress_name": "one_adverse_tick",
+    "fee_request_rule": "Request both current token fee rates only if the complete five-share package remains gross-positive after one adverse tick per leg.",
+    "fee_schedule": {
+      "exponent": 1,
+      "rate": 0.07,
+      "rebateRate": 0.2,
+      "takerOnly": true
+    },
+    "maximum_book_age_ms": 5000,
+    "maximum_book_timestamp_skew_ms": 5000,
+    "maximum_fee_requests": 2,
+    "quantity_shares_each_leg": "5",
+    "rebate_credit_pUSD": "0",
+    "retry_count": 0,
+    "stress_ticks": {
+      "actual": 0,
+      "one_adverse_tick": 1,
+      "five_adverse_ticks": 5
+    },
+    "tick_size": "0.001"
+  },
+  "implementation": {
+    "path": "tools/screen_polymarket_crypto_range_threshold_books.py",
+    "sha256": "78b2b85369b7efc9d930eea085ee079e38163313fca82ee820238af70eef8231"
+  },
+  "dependency_implementations": [
+    {
+      "path": "tools/screen_polymarket_exact_two_leg_package.py",
+      "sha256": "ba7ebaa1fb5235ba026f7cf4cb21ff73ba19430fee4a4f678fbdea37635eb32f"
+    },
+    {
+      "path": "src/simple_ai_trading/polymarket_fees.py",
+      "sha256": "4002aa8008874708931cc182f352adf436a65baee24e23bfc72617acdf127c8d"
+    }
+  ],
+  "outputs": {
+    "books_raw_path": "data/polymarket-sol-sep4-range-threshold-coverage-books-v1/raw/books.json",
+    "fee_raw_root": "data/polymarket-sol-sep4-range-threshold-coverage-books-v1/raw/fees",
+    "journal_path": "data/polymarket-sol-sep4-range-threshold-coverage-books-v1/request-journal.jsonl",
+    "result_path": "docs/model-research/action-value/polymarket-sol-sep4-range-threshold-coverage-books-result-v1-2026-08-30.json"
+  },
+  "source_contracts": [
+    {
+      "url": "https://docs.polymarket.com/api-reference/market-data/get-order-books-request-body",
+      "use": "official public unauthenticated POST batch book contract"
+    },
+    {
+      "url": "https://docs.polymarket.com/api-reference/market-data/get-fee-rate-by-path-parameter",
+      "use": "official public unauthenticated current token fee-rate contract used only if one-tick zero-fee stress remains positive"
+    }
+  ],
+  "stopping_rules": {
+    "accepted_edge_from_one_snapshot": false,
+    "deployment_ready_from_one_snapshot": false,
+    "failed_candidate_gate": "terminalize this exact pair without refetch or retry",
+    "passed_candidate_gate": "candidate only; require independent recurrence and exact exceptional-settlement plus resolution-risk qualification before any order-capable work"
+  },
+  "authority": {
+    "account_requests": 0,
+    "credentials_used": false,
+    "funds_used": false,
+    "orders_or_transactions": 0,
+    "protected_capture_touched": false,
+    "public_unauthenticated_read_only_requests_maximum": 3,
+    "signed_requests": 0,
+    "trading_authority": false
+  },
+  "contract_sha256": "5f0ff60c030abef0a5cc68b0926090de29dc3cbc3f9c55bb9ccd9cc20f68d331"
+}

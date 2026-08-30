@@ -2831,3 +2831,31 @@ Canonical boundary adjudication SHA-256 is
 Accepted edges remain 29, ranked hypotheses remain 44, terminal families become
 72, and registry SHA-256 is
 `f0f70eb60bc1ca13d899a3c01930bdc37838c874e875636722c5bd2039f1eec1`.
+
+## Polymarket Solana cross-event coverage depth rejection
+
+The distinct nonconsumed September 4 Solana range and strict-above events fired
+rank 31's exact cross-event coverage trigger. Two frozen Gamma GETs retained
+both complete eleven-market populations and exhaustively screened the two valid
+coverage directions at all ten shared boundaries. Exactly one source-only row
+cleared the displayed floor: threshold `NO(150)` plus range `YES(>150)` at
+0.9855 pUSD versus a one-pUSD optimistic common-rule floor.
+
+One separately frozen two-token public book batch rejected it. Five shares per
+leg cost 5.04 pUSD against a 5 pUSD floor even at zero fee, and 5.05 pUSD after
+one adverse tick per leg. The books were 4,655,213 ms old and 7,949 ms skewed.
+Because actual zero-fee depth was already negative, zero fee-rate requests were
+made. Do not refetch either event or the book, repair freshness, request fees,
+or select a consumed ETH/BTC sibling.
+
+Prefilter contract SHA-256 is
+`38b02e051962f979c90564318928bcb216c13aca5fe6847eceb8d0398a9abe23`;
+prefilter result SHA-256 is
+`8efba9e824fb125bd4a5be654704c6f47d62ddc1fd8b38006fad06ac52247417`;
+book contract SHA-256 is
+`5f0ff60c030abef0a5cc68b0926090de29dc3cbc3f9c55bb9ccd9cc20f68d331`;
+book result SHA-256 is
+`5bc1e557a85af2588d7b319476e7ef9d4f2afe2c9103100f2a56a41864a9ef81`.
+Accepted edges remain 29, ranked hypotheses remain 44, terminal families become
+73, and registry SHA-256 is
+`932ff844edcda13efc17bd48569c1cd4b5f25abd0f2c0c3747dae696d1b19649`.
