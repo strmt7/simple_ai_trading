@@ -4197,3 +4197,33 @@ SHA-256 is
 Accepted edges remain 21, ranked hypotheses remain 44, and terminal families
 remain 55. Registry SHA-256 is
 `4bf91c297d3c41583874fe77c3b1c456736bc2809c4bfdac320edd8124f62005`.
+
+## Binance Spot STP TRANSFER internal-reallocation preflight
+
+One frozen public official-FAQ request exposed a distinct direction-independent
+mechanism. For different accounts sharing a `tradeGroupId`, when both maker and
+taker specify `TRANSFER`, Binance applies `DECREMENT` and transfers the last
+prevented base quantity and notional between the accounts. The already-retained
+production `exchangeInfo` allows `TRANSFER` on BTCUSDT, ETHUSDT, and SOLUSDT,
+while defaulting all three to `EXPIRE_MAKER`.
+
+The retained example conserves aggregate inventory exactly: maker changes are
++0.2 BTC and -0.04 USDT, taker changes are -0.2 BTC and +0.04 USDT, and both
+aggregate changes are zero. Both executed quantities are zero, the taker has no
+fills, and the FAQ says its commission and price examples are fictional. The
+maker remains open with reduced available quantity, so this is an internal
+reallocation and queue-continuity candidate, not an accepted or profitable
+edge. The official API index proves ordinary Universal Transfer exists, but its
+exact fee, latency, atomicity, limits, and safety comparator remains unbound.
+
+No credentials, account request, order, cancellation, or funds were used. Do
+not manufacture self-crosses. Advance only with designated credentials,
+explicit signed GET-only `tradeGroupId` authority, and an independently
+existing legitimate BTC/ETH/SOL cross-account rebalance whose exact ordinary
+internal-transfer comparator leaves positive incremental value. A testnet or
+paper `TRANSFER` order requires separate explicit authority; mainnet remains
+unauthorized. Canonical preflight SHA-256 is
+`59da62dccab340bcae63b2ad34697f49caa7e381a7a06755e50adafba2d8d118`.
+Accepted edges remain 21, ranked hypotheses remain 44, and terminal families
+remain 55. Registry SHA-256 is
+`8813fbc12ea5fe5ad5eb38630c7faba9c1a740389266ad27bb0c5db41759c52a`.
