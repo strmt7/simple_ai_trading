@@ -2774,7 +2774,7 @@
       "venue_scope": "Binance_Spot_direct_and_exactly_one_intermediary_routes_for_independently_required_organic_conversions_with_the_exactly_two_intermediary_extension_terminal_for_the_retained_population"
     }
   ],
-  "result_sha256": "1dbc873f6e01abee4d816add72e890112c61a39411300ccff206f13f6af88ef4",
+  "result_sha256": "0f43e2b26b9c339dde0db00401122bd1339ad77713df076444e3bcd5b3f9246b",
   "schema_version": "structural-edge-priority-registry-v1",
   "terminal_do_not_repeat": [
     {
@@ -3232,8 +3232,13 @@
       "canonical_result_sha256": "177d9d119c8a57c86df03b136bdfc2c880b0220ac50c51bce20e84cbe21f1755",
       "family": "binance_Spot_FIX_automatic_cancel_on_disconnect_and_standalone_profit_claim_2026_08_30",
       "reason": "the_consumed_pinned_official_FIX_contract_documents_UNORDERED_multi_inflight_processing_should_offer_better_performance_and_FIX_ExecutionReport_push_should_give_better_performance_plus_account_wide_symbol_mass_cancel_but_documents_no_automatic_cancel_on_disconnect_and_no_non_live_order_entry_support_measured_latency_stale_fill_avoidance_fee_or_after_cost_value_the_automatic_disconnect_cancellation_and_standalone_profit_claims_are_terminal_while_the_FIX_UNORDERED_execution_risk_candidate_remains_rank_5_only_under_its_literal_non_live_Ed25519_FIX_API_comparator_trigger"
+    },
+    {
+      "canonical_result_sha256": "1b344ebc26d348d00d32663e7d365e1812dd09d2010656ab53338d4c01fd2bd9",
+      "family": "binance_EURI_issuer_redemption_parity_current_retained_population_2026_08_30",
+      "reason": "the_official_issuer_source_proves_a_one_EUR_per_EURI_at_par_redemption_identity_and_Binance_availability_but_not_repository_account_access_fees_timing_capacity_or_completion_all_60_hash_bound_retained_EUREURI_books_showed_the_same_1_0001_bid_and_1_0003_ask_with_zero_quote_changes_the_one_bip_gross_bid_discount_loses_two_bips_after_the_frozen_three_bip_operational_stress_and_loses_9_001_bips_at_VIP0_before_that_stress_and_before_every_transfer_redemption_delay_failure_tax_custody_or_alternative_yield_cost_do_not_repeat_the_issuer_page_or_exact_population_and_do_not_poll_reopen_only_on_a_material_official_issuer_or_Binance_access_fee_timing_continuity_change_or_an_independently_observed_event_driven_discount_above_25_bips_then_freeze_one_finite_size_book_and_bind_every_account_and_redemption_cost"
     }
   ],
-  "updated_at_utc": "2026-08-30T20:52:11.2249261Z",
+  "updated_at_utc": "2026-08-30T21:28:46.3855999Z",
   "usage_rule": "advance_the_highest_ranked_hypothesis_whose_retry_trigger_is_satisfied_otherwise_do_not_repeat_a_blocked_or_terminal_screen"
 }

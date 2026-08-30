@@ -56,6 +56,13 @@ override prose.
   they can answer that question. Settlement consistency supports only the payoff
   identity; it never proves sub-floor acquisition, atomic execution, fees,
   capacity, owned fills, or profit.
+- An issuer's at-par mint or redemption right proves only the payoff identity.
+  Before any venue refresh, reuse retained finite-size spreads and reject unless
+  the executable gap exceeds account fees plus transfer, redemption, delay,
+  failure, compliance, custody, operating, tax, and alternative-yield costs.
+  Never infer repository-account access, eligibility, timing, capacity, or
+  completion from the legal right; event-triggered discounts require one frozen
+  finite-size book, not venue polling.
 - A documented comma-separated multi-market query can still exceed the venue's
   practical backend limit. If a frozen one-use request times out, preserve the
   exact response and journal and terminalize that population; never split,
