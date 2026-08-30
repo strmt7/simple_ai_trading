@@ -2673,7 +2673,7 @@
       "venue_scope": "Binance_Spot_direct_and_exactly_one_intermediary_routes_for_independently_required_organic_conversions_with_the_exactly_two_intermediary_extension_terminal_for_the_retained_population"
     }
   ],
-  "result_sha256": "1aad977a7ca40e38e040b24e99518aea23b4f29d7c961aa0b9143f0ad38b8a54",
+  "result_sha256": "3aa7aef92c7ed41622aef16d0cea9f45f82925813d590a27d278f85a516eff32",
   "schema_version": "structural-edge-priority-registry-v1",
   "terminal_do_not_repeat": [
     {
@@ -2999,7 +2999,13 @@
     {
       "canonical_result_sha256": "61a65f1f81b7109a6f959a53f8b780e88582b1338ec0cc512ef6784020da029f",
       "family": "binance_BTC_ETH_SOL_same_venue_cross_sectional_perpetual_funding_dispersion_2026_08_30",
-      "reason": "the_zero_request_capital_sensitivity_explicitly_challenged_the_unlevered_two_leg_hurdle_yet_a_continuous_validation_plus_test_hold_credited_with_impossible_interval_perfect_foresight_zero_switching_only_32_bips_entry_exit_and_optimistic_equal_5x_leverage_still_lost_18_840831506849315068493150692_bips_break_even_requires_more_than_12_9536779944653097611862238x_before_relative_price_liquidation_and_every_omitted_cost_so_do_not_build_a_fixed_orientation_or_price_model_reopen_only_on_a_source_bound_material_funding_fee_execution_portfolio_margin_netting_or_capital_change_that_clears_the_full_risk_adjusted_deficit"
+      "reason": "the_zero_request_capital_sensitivity_explicitly_challenged_the_unlevered_two_leg_hurdle_yet_a_continuous_validation_plus_test_hold_credited_with_impossible_interval_perfect_foresight_zero_switching_only_32_bips_entry_exit_and_optimistic_equal_5x_leverage_still_lost_18_840831506849315068493150692_bips_break_even_requires_more_than_12_9536779944653097611862238x_before_relative_price_liquidation_and_every_omitted_cost_the_new_August_26_SSRN_durable_edge_paper_is_only_a_discovery_lead_whose_abstract_describes_three_losing_years_of_six_and_price_spread_dominating_the_coupon_without_a_source_bound_exact_method_so_it_does_not_reopen_or_create_a_distinct_family_do_not_build_a_fixed_orientation_price_or_literature_alias_model_reopen_only_on_a_source_bound_material_funding_fee_execution_portfolio_margin_netting_or_capital_change_that_clears_the_full_risk_adjusted_deficit",
+      "supporting_artifacts": [
+        {
+          "path": "docs/model-research/action-value/binance-cross-sectional-funding-durable-edge-paper-triage-v1-2026-08-30.json",
+          "result_sha256": "919f4183dc70edd28158f9729872de1701a081bd579cd31f80f3761029fd1c18"
+        }
+      ]
     },
     {
       "canonical_result_sha256": "610c9c3c92add0ea5ebd02b6c0a2ab48005da3de312fe7b499a9aa211f022d86",
@@ -3092,6 +3098,6 @@
       "reason": "the_one_request_complete_September_6_CFB_catalog_returned_24_events_retained_31_exact_relations_across_15_rule_complete_events_and_found_two_Gamma_sub_floor_candidates_but_the_precommitted_best_Mercyhurst_plus_29_5_plus_New_Mexico_State_minus_28_5_five_share_exact_depth_cost_9_8_pUSD_for_a_5_pUSD_floor_lost_4_8_pUSD_before_fees_and_books_were_1763317_ms_old_with_337138_ms_skew_no_fee_request_was_justified_do_not_repeat_paginate_narrow_refetch_or_select_the_other_observed_candidate_reopen_only_on_a_future_distinct_event_outside_every_consumed_population_under_the_literal_rank_30_trigger"
     }
   ],
-  "updated_at_utc": "2026-08-30T19:01:04.3880122Z",
+  "updated_at_utc": "2026-08-30T19:13:15.5146373Z",
   "usage_rule": "advance_the_highest_ranked_hypothesis_whose_retry_trigger_is_satisfied_otherwise_do_not_repeat_a_blocked_or_terminal_screen"
 }

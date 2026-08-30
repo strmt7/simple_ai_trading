@@ -28,6 +28,9 @@ SENSITIVITY = BASE / (
     "binance-btc-eth-sol-cross-sectional-funding-dispersion-capital-sensitivity-"
     "v1-2026-08-30.json"
 )
+PAPER_TRIAGE = BASE / (
+    "binance-cross-sectional-funding-durable-edge-paper-triage-v1-2026-08-30.json"
+)
 REGISTRY = ROOT / "docs/model-research/structural-edge-priority-registry-v1.json"
 
 
@@ -165,3 +168,29 @@ def test_terminal_rejection_blocks_price_requests_without_acceptance() -> None:
     )
     assert family["canonical_result_sha256"] == sensitivity["result_sha256"]
     assert "perfect_foresight" in family["reason"]
+
+
+def test_new_paper_alias_is_bound_without_reopening_or_resampling() -> None:
+    triage = json.loads(PAPER_TRIAGE.read_text(encoding="utf-8"))
+    sensitivity = json.loads(SENSITIVITY.read_text(encoding="ascii"))
+    registry = json.loads(REGISTRY.read_text(encoding="utf-8"))
+
+    assert _self_hash(triage, "result_sha256") == triage["result_sha256"]
+    assert triage["paper_discovery"]["economic_values_source_bound"] is False
+    assert triage["decision"]["new_ranked_hypothesis"] is False
+    assert triage["decision"]["existing_terminal_family_reopened"] is False
+    assert triage["decision"]["market_or_price_request_justified"] is False
+    assert triage["efficiency_correction"]["new_market_data_requests"] == 0
+    assert triage["efficiency_correction"]["new_model_or_backtest_runs"] == 0
+
+    family = next(
+        row
+        for row in registry["terminal_do_not_repeat"]
+        if row["family"] == "binance_BTC_ETH_SOL_same_venue_cross_sectional_"
+        "perpetual_funding_dispersion_2026_08_30"
+    )
+    assert family["canonical_result_sha256"] == sensitivity["result_sha256"]
+    assert {
+        "path": PAPER_TRIAGE.relative_to(ROOT).as_posix(),
+        "result_sha256": triage["result_sha256"],
+    } in family["supporting_artifacts"]
