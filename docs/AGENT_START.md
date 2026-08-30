@@ -12,7 +12,7 @@ operating contract. Historical handoff text is archived under
 | Development branch | `main` only |
 | Binance | BTC, ETH, and SOL; paper or testnet/Demo only |
 | Polymarket | Independent BTC 5-minute/15-minute research; disabled by default |
-| Accepted edges | Twenty-six scoped structural edges. The canonical complete scopes, counts, and retry gates are in `docs/model-research/structural-edge-priority-registry-v1.json`; none is deployment-ready or fully account-and-external-cost-qualified. |
+| Accepted edges | Twenty-seven scoped structural edges. The canonical complete scopes, counts, and retry gates are in `docs/model-research/structural-edge-priority-registry-v1.json`; none is deployment-ready or fully account-and-external-cost-qualified. |
 | Live-money authority | None |
 | Historical cutoff | `2026-08-14T00:00:00Z` |
 
@@ -562,6 +562,16 @@ safety gate, blocks Stop, or submits an order.
   authority for one `0.01` USDT maximum fully consuming reconciliation. The
   reverse public minimum is `0.000014` BNB, so do not assume a partial residual
   from the minimum inbound buffer is independently unwindable.
+  A distinct current Cross Margin overlay accepts only the exact 5% interest
+  reduction on an independently existing legitimate borrow when enough BNB is
+  already held in the same Cross Margin account for unrelated reasons and every
+  incremental cost is lower than the saving. Current official account evidence
+  exposes signed read-only `interestBNBBurn` status and converted-interest rows;
+  the toggle itself is a signed POST and remains unauthorized. Isolated and
+  Portfolio Margin, new borrowing, BNB acquisition or retention, and double
+  counting with trading-fee discounts are excluded. The public monetary floor
+  is zero and deployment readiness remains false. Canonical overlay SHA-256 is
+  `38aa0313cdd71a2613f3850267e71acd9d44006dd2699e4c00f801ffca8772f8`.
   A second, non-overlapping Binance fee overlay is accepted for already-intended
   quote-native BTC/ETH/SOL Spot flow. The current official table lists zero
   maker fees on all six FDUSD and U pairs; VIP2-9 additionally receive zero U

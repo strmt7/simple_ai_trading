@@ -11,7 +11,7 @@ FRONTIER = ROOT / (
     "docs/model-research/action-value/"
     "accepted-market-independent-yield-frontier-v1-2026-08-30.json"
 )
-RESULT_HASH = "53c5a99573dcc97d85caf07f42e84818d649107b2ff4fa18af52c0b9eb505c6a"
+RESULT_HASH = "e07814f91757306617b0152eaf3df81ebf162f4dfbd89d52bc59bf297a106309"
 
 
 def _load(path: Path) -> dict[str, object]:
@@ -51,17 +51,17 @@ def test_population_is_complete_without_inflating_acceptance() -> None:
     population = frontier["population"]
     decision = frontier["portfolio_decision"]
 
-    assert population["registry_accepted_edge_count"] == 26
+    assert population["registry_accepted_edge_count"] == 27
     assert population["yield_and_capital_efficiency_edges_included"] == 9
     assert (
         population[
             "organic_flow_fee_referral_creator_and_financing_cost_overlays_excluded"
         ]
-        == 17
+        == 18
     )
     assert population["population_complete_for_registry_accepted_yield_edges"] is True
     assert decision["new_accepted_edge_count"] == 0
-    assert decision["accepted_edge_count_after_frontier"] == 26
+    assert decision["accepted_edge_count_after_frontier"] == 27
     assert decision["deployment_ready_edge_count"] == 0
 
 
