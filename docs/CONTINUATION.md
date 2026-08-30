@@ -12,7 +12,7 @@ Development belongs only on `main`; do not create another development branch.
   code-scanning, and secret-scanning alerts. Reverify the publication commit;
   zero alerts never proves zero undisclosed vulnerabilities.
 - The repository is beta `0.1.0-beta.1`. No model has production authority or a
-  demonstrated long-lived after-all-cost edge. Twenty-three narrowly scoped structural
+  demonstrated long-lived after-all-cost edge. Twenty-four narrowly scoped structural
   edges are accepted: Polymarket holding yield for existing idle on-platform
   pUSD; Polymarket pUSD taker-fee rebates only for independently justified
   legitimate organic BTC/ETH/SOL taker flow after the direct-wallet tier is
@@ -57,13 +57,22 @@ Development belongs only on `main`; do not create another development branch.
   borrowing, leverage, or collateral exposure; and exact realized positive
   Binance CAAS markup trade commission only from independently existing bona
   fide external client trades under an already active disclosed fee group and
-  markup configuration after every incremental cost. Each Binance
+  markup configuration after every incremental cost; and exact realized
+  positive own-account Binance Link-and-Trade kickback income only from
+  independently justified legitimate organic Spot flow on an already linked
+  rebate-working account after balance reconciliation and every incremental
+  cost. Each Binance
   edge is limited to independently required inventory or organic flow under its
   canonical account, liquidity, cost, and non-manufactured-volume gates.
   A current BTC Simple Earn Flexible product is only an extension candidate:
   its public `0.27% Max` headline is a hidden-tier `0.02% + 0.25%` breakdown,
   not a whole-balance rate, and exact account tiers, costs, and eligibility are
   unproved. It does not increase the accepted count.
+  Binance Exchange Link Spot and Futures commission rebates are a distinct
+  unaccepted candidate: the retained current official index proves exact
+  endpoint names, but exact security classification, schema, eligibility, rate,
+  organic flow, owned payout, and all costs remain unproved. It also does not
+  increase the accepted count.
   None is deployment-ready. Binance remains paper/testnet/Demo; Polymarket
   remains independent, disabled by default, and unpromoted.
 - The one historical cutoff is `2026-08-14T00:00:00Z`. Do not move it or fetch
@@ -4501,3 +4510,38 @@ Canonical terminal SHA-256 is
 Accepted edges remain 24, ranked hypotheses remain 44, and terminal families
 become 57. Registry SHA-256 becomes
 `c03acc97b09440a4def55447f2fc1d62e410bfc9f77b6aae97b58d7cb2eee155`.
+
+## Binance Exchange Link organic commission-rebate candidate
+
+A zero-new-venue-request audit of the retained current official Agent Native
+index found a previously unregistered mechanism under rank 24. Binance lists
+Exchange Link as a separate account, asset, and commission-data product and
+names exact Spot and Futures commission-rebate record endpoints. These are not
+the adjacent Link-and-Trade `apiReferral` client-kickback and partner-rebate
+routes, CAAS markup reports, Referral Pro commissions, market-maker rebates, or
+Institutional Loan interest rebates.
+
+This is a direction-independent candidate only. The retained index does not
+bind either exact endpoint's security classification, parameters, response
+fields, time-window semantics, eligibility, rate, trade lineage, distribution
+asset or timing, reversal or clawback state, owned payout, or incremental cost.
+Bounded current primary-source searches exposed no separately indexable exact
+schema. The public forward floor is therefore zero, the accepted count remains
+24, and no profitability or deployment claim is admitted.
+
+No venue API, credential, signed request, account, client, subaccount, API key,
+permission, commission change, order, trade, transfer, withdrawal, or fund was
+accessed. Do not infer that either `GET` is public, read-only, `USER_DATA`, or
+`TRADE` from its verb, path, neighboring endpoints, or product name. Reopen
+first on a materially new byte-retainable current primary contract binding the
+exact endpoint security, schema, and semantics. Any later signed reconciliation
+also requires both designated credentials, explicit signed GET-only authority,
+an independently existing legitimate Exchange Link reporting question, an
+already active disclosed relationship, and bona fide external flow; every
+mutation or trading action remains separately unauthorized.
+
+Canonical candidate SHA-256 is
+`245ef96228dccf51194f0e10176ffa39676ec4e5e07f78a2daefa1205b2fde3a`.
+Accepted edges remain 24, ranked hypotheses remain 44, and terminal families
+remain 57. Registry SHA-256 becomes
+`e71ec77c3a06164f35249879f22300f9c8d3b46a1020d6b96f271c4c6fb5b661`.

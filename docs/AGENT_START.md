@@ -108,6 +108,18 @@ safety gate, blocks Stop, or submits an order.
   link, customization, order, trade, transfer, or mutation remains separately
   unauthorized. Canonical result SHA-256 is
   `ada551b385d9040e4126ee0e73e1dd1f417b103e6c5c5f7c567411ab913ff065`.
+- Binance Exchange Link commission rebates are a distinct direction-independent
+  candidate under the existing organic platform-fee family. The retained
+  current official index names separate Spot and Futures commission-rebate
+  record endpoints, but it does not bind either endpoint's exact security
+  class, parameters, response schema, eligibility, rate, payout, or costs. The
+  public floor is zero and the candidate is not accepted. Do not infer access
+  semantics from `GET`, create or change subaccounts, API keys, permissions,
+  commissions, transfers, or trading flow. Reopen first on a byte-retainable
+  current primary exact endpoint contract; any later signed reconciliation also
+  requires explicit GET-only authority and independently existing bona fide
+  external flow. Canonical candidate SHA-256 is
+  `245ef96228dccf51194f0e10176ffa39676ec4e5e07f78a2daefa1205b2fde3a`.
 - Binance Prediction Trading exposes a distinct direction-independent
   collateral-carry lead through per-market `isYieldBearing` metadata alongside
   vendor, chain, collateral, fee, and slippage fields. It is not an accepted
