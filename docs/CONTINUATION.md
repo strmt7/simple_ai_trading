@@ -3559,7 +3559,52 @@ The accepted-edge count remains 21, ranked count remains 44, and registry
 SHA-256 is
 `8ef8e033e169084a57237321d13467f05486152c2b713cc478023372efc6b877`.
 
+## Binance Spot Amend-Keep-Priority Candidate
+
+One frozen official FAQ GET returned HTTP 200 with 4,705 bytes and was durably
+retained. The run failed because two required raw-Markdown phrases did not
+predeclare formatting normalization: the source inserted bold delimiters around
+one clause and backticks around `amendAllowed`. The request is consumed and was
+not retried. A separate zero-network adjudication removes only those exact
+formatting delimiters and preserves the failed contract and journal.
+
+The retained source proves that reducing an existing order quantity in place
+keeps its same-price time priority while cancel-replace loses priority and
+executes behind existing same-price orders. A failed amendment leaves the order
+unchanged; the amend adds zero to the unfilled-order count and has request
+weight four. The already retained complete production exchangeInfo snapshot
+contains 3,685 symbols and independently has BTCUSDT, ETHUSDT, and SOLUSDT in
+`TRADING` state with `amendAllowed=true` and a ten-amend filter for each. No new
+exchangeInfo or book request was made.
+
+This is a material direction-independent execution candidate, not an accepted
+or deployment-ready edge. Queue priority is only a weak dominance identity for
+the same existing order, price, and reduced quantity. Public evidence proves no
+owned organic reduction, success acknowledgement, counterfactual incremental
+fill, adverse selection, latency, commission, or after-cost cash value; the
+public profit floor is zero. The endpoint is `TRADE`. Advance only with an
+independently required existing simple scoped maker-order reduction and
+separate explicit testnet or paper order authority, or after a material source
+or configuration change. Contract and adjudication SHA-256 values are
+`020d741a6d19bc4c6038a3fedcbea5fdb0cbd01c433c62127453c7892a144c38`
+and
+`c17217ff011d6ff48b4c0cf48cc6c8e49c27319c811be407cadebdd2e8d7faeb`.
+Accepted edges remain 21, ranked hypotheses remain 44, and registry SHA-256 is
+`e9e25be7ae77d25c2f98b30b734c64f85259e73059405e938be77c776bd0a066`.
+
 ## Verification Scope
+
+The amend-keep-priority contract, consumed one-request failure journal, exact
+raw source, formatting-normalized offline adjudication, retained 17.5-MB
+production configuration identity, three exact scoped symbol rows, rank-five
+lineage, and reusable Markdown-gate correction pass three direct tests. The
+prior RPI family test now checks exact artifact membership rather than mutable
+tail position. All 326 registry-coupled tests pass in one focused run. Ruff is
+clean for the changed Python scope. The staged-blob audit also reconstructs the
+one CRLF worktree source validated before access from its durable LF Git blob;
+no economic field changes. No FAQ or exchangeInfo request was repeated, and no
+book, credential, account, amendment, cancellation, replacement, order, fund,
+or protected-capture workflow ran.
 
 The pUSD-to-USDT contract, four pre-request journal rows, two native Markdown
 sources, exact current supported-assets population, quote response, conversion

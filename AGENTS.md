@@ -95,6 +95,13 @@ override prose.
   that the exact route returns the required contract bytes. Preserve HTTP 202
   with an empty body as a consumed null response; do not retry an alias to
   manufacture the rendered text.
+- Freeze text gates against the exact retained representation. For Markdown,
+  either include formatting delimiters literally or preregister one mechanical
+  normalization before access; raw substring checks do not ignore bold or
+  inline-code markers. If a consumed response contains the required semantics
+  but fails only on an uncontracted formatting difference, preserve the failed
+  contract and journal, adjudicate the retained bytes offline, and never refetch
+  merely to repair the phrase gate.
 - A current official runtime registry that explicitly declares itself the
   single source of truth, together with a dated official deprecation or cutover
   notice, resolves an older repository deployment table for address selection.

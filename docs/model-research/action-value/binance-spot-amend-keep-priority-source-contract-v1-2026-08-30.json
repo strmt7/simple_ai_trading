@@ -1,0 +1,71 @@
+{
+  "schema_version": "binance-spot-amend-keep-priority-source-v1-contract",
+  "frozen_at_utc": "2026-08-30T03:32:50.6218755Z",
+  "purpose": "Source-gate whether reducing an independently existing Binance Spot maker order in place preserves queue priority and is currently configured for BTCUSDT, ETHUSDT, and SOLUSDT before any account, book, or order access.",
+  "scoped_symbols": [
+    "BTCUSDT",
+    "ETHUSDT",
+    "SOLUSDT"
+  ],
+  "public_source": {
+    "url": "https://raw.githubusercontent.com/binance/binance-spot-api-docs/master/faqs/order_amend_keep_priority.md",
+    "required_text_casefolded": [
+      "modify (amend) an existing order without losing order book priority",
+      "reduce the quantity of the order",
+      "time priority is lost",
+      "the amended order keeps its time priority",
+      "requests charge 0 for unfilled order count",
+      "the order amend request is rejected and the order remains unchanged",
+      "amendAllowed set to `true`"
+    ]
+  },
+  "retained_exchange_info": {
+    "path": "data/binance-spot-sor-liquidity-overlay-v1/raw/exchangeInfo.json.gz",
+    "gzip_sha256": "9f3f83fe1efcec7a0230dea646d2038fe5c0a32ae72de5c7e4f5ee7fd850304b",
+    "payload_sha256": "658d03279eea9a2384171eb56e151541407ae7407c123c700c9902d5e9f56c9d",
+    "response_bytes": 17532885,
+    "requested_at_ms": 1788039681818,
+    "completed_at_ms": 1788039684062,
+    "use": "current production exchangeInfo retained before mechanism discovery; select only exact BTCUSDT ETHUSDT SOLUSDT configuration and amendment filters"
+  },
+  "retained_sources": [
+    {
+      "path": "docs/model-research/binance/raw/spot-block-matching-cost-overlay-v1-2026-08-30/03-agent-native-index.raw.txt",
+      "sha256": "944e132d3523c8a03abcac2f7ddb85802107e45161470885b7a8785fd4fdb15d",
+      "use": "official native index classifies PUT api v3 order amend keepPriority as TRADE and links the exact FAQ"
+    },
+    {
+      "path": "docs/model-research/binance/raw/spot-block-trade-public-price-concession-v1-2026-08-30/03-spot-changelog.raw.md",
+      "sha256": "e6da6a7bb729ec5b1aa6d3c97684bb2a1e4d3a64231b007edea42c6cceef7681",
+      "use": "official changelog binds all-symbol activation on 2025-05-07 and request weight four"
+    },
+    {
+      "path": "data/binance-spot-sor-liquidity-overlay-v1/raw/exchangeInfo.json.gz",
+      "sha256": "9f3f83fe1efcec7a0230dea646d2038fe5c0a32ae72de5c7e4f5ee7fd850304b",
+      "use": "lossless retained production configuration payload"
+    },
+    {
+      "path": "docs/model-research/action-value/binance-spot-sor-liquidity-overlay-result-v1-2026-08-29.json",
+      "sha256": "03071b746344de64091cfe876039d78d17ff65f82f8d5bf82b7ba50d7c9327f0",
+      "use": "request receipt and decompressed response identity for the retained production configuration"
+    }
+  ],
+  "frozen_decision_rules": {
+    "source_gate": "Require every exact FAQ phrase and the retained changelog activation and request-weight source before adjudication.",
+    "configuration_gate": "Require exactly one retained production row for each scoped symbol with status TRADING, amendAllowed true, and exactly one MAX_NUM_ORDER_AMENDS filter equal to ten.",
+    "candidate_identity": "For the same existing order, same price, and same reduced quantity, successful in-place amendment weakly dominates cancel-replace on queue position without predicting market direction.",
+    "promotion_gate": "Source and configuration evidence alone cannot quantify cash value or promote an edge. Require an independently necessary owned maker order reduction, exact queue and fill counterfactual, latency, adverse selection, fees, and after-cost value under separately authorized testnet or paper execution.",
+    "failure": "Any source, hash, phrase, decompression, schema, symbol, status, configuration, or filter mismatch consumes the source test and stops without retry or network substitute."
+  },
+  "authority": {
+    "allowed": "One public unauthenticated read-only GET of the exact official GitHub FAQ plus zero-network parsing of already retained production exchangeInfo.",
+    "prohibited": "No live exchangeInfo refresh, book, trade, account, credential, signature, amendment, cancellation, replacement, order, balance, fund, or protected-capture access. The documented amend endpoint is TRADE and every use requires separate explicit testnet or paper order authority.",
+    "one_use": true,
+    "max_public_requests": 1
+  },
+  "implementation": {
+    "path": "tools/research_binance_spot_amend_keep_priority.py",
+    "sha256": "370c14a2de66497dbc84f8566737d2ec455d1e996a45bb81d04d9fdba2a3baae"
+  },
+  "contract_sha256": "020d741a6d19bc4c6038a3fedcbea5fdb0cbd01c433c62127453c7892a144c38"
+}
