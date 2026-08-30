@@ -24,14 +24,21 @@
     "official_mechanism_evidence": "Current official Binance material describes unified margin across Spot, Futures, and Options plus cross-margining and position netting to reduce required margin. Current official account schema separates collateral-rate-adjusted accountEquity from actualEquity and reports accountInitialMargin.",
     "quantitative_boundary": "The exact current asset collateral rate, tier, leverage, eligibility, liquidation buffer, and negative-balance interest are not public unauthenticated evidence. The sensitivity therefore removes only one labeled opportunity-cost leg as an optimistic upper bound and does not assert that actual Portfolio Margin collateral is free or fully credited."
   },
+  "delta_mode_adjudication": {
+    "endpoint_presence": "The retained current official Agent Native index lists GET /sapi/v1/portfolio/delta-mode as USER_DATA and POST /sapi/v1/portfolio/delta-mode as TRADE.",
+    "novel_trigger": false,
+    "reason": "Delta Mode endpoint presence predates this sensitivity and supplies no public quantitative margin reduction, collateral credit, eligibility, liquidation, or cost contract. The sensitivity already grants the stronger optimistic counterfactual of deleting one complete capital-opportunity-cost leg, yet no symbol is positive in training, validation, and test and every family-adjusted bootstrap lower bound remains negative.",
+    "request_decision": "No status request, mode switch, account query, book request, credential use, order, transfer, or fund mutation is justified. GET status would reveal only account configuration, while POST would mutate a TRADE-class setting without proving economic benefit.",
+    "reopen_boundary": "Only a material official Delta Mode semantic or quantitative margin-offset change capable of clearing the retained training and test deficits, or explicit signed GET-only authority for an independently required account-specific comparison after exact public semantics are bound, can reopen this family."
+  },
   "limitations": [
     "The original population was selected by current liquidity and applied to trailing history, so it cannot promote a forward edge.",
-    "The sensitivity does not model exact Portfolio Margin SPAN or delta-mode offsets, collateral tiers, concentration add-ons, negative-balance interest, liquidation buffers, or account eligibility.",
+    "The sensitivity does not model exact Portfolio Margin SPAN or Delta Mode offsets, collateral tiers, concentration add-ons, negative-balance interest, liquidation buffers, or account eligibility; endpoint presence alone does not define any of them.",
     "Funding history does not bind synchronized executable spot and perpetual entry or exit basis, depth, fills, or exact owned-account fees.",
     "The current collateral-rate endpoint is labeled MARKET_DATA but its official schema requires an X-MBX-APIKEY header; the tiered endpoint is signed USER_DATA.",
     "The official Academy and Developer Docs pages were observed through public web research, while direct durable curl captures returned empty HTTP 202 responses; those empty captures support no content claim."
   ],
-  "result_sha256": "b31cc92f4fad9dad7d8d0ea98c3275605b16069afc0d6d5882e75501025f7d14",
+  "result_sha256": "a2f6c75512ebb3d6b613594cb4cf03ce7473bdcc7a4227cd3a99cbdfd47d7a6d",
   "schema_version": "binance-portfolio-margin-capital-netting-sensitivity-v1",
   "sensitivity": {
     "best_role_results": {
@@ -120,7 +127,7 @@
     "retained_official_agent_native_index": {
       "path": "docs/model-research/binance/raw/spot-block-matching-cost-overlay-v1-2026-08-30/03-agent-native-index.raw.txt",
       "relevant_lines": [
-        "1121-1137",
+        "1119-1137",
         "1144-1187"
       ],
       "sha256": "944e132d3523c8a03abcac2f7ddb85802107e45161470885b7a8785fd4fdb15d"
@@ -139,7 +146,7 @@
     "do_not_repeat": "Do not resample, refit, paginate, or request books for the retained 17-symbol current-liquidity-selected history under unchanged economics.",
     "reopen_only_on": [
       "a prospectively complete point-in-time universe with materially different funding persistence after the retained cutoff",
-      "a material Binance fee, collateral, margin-offset, funding, or execution-architecture change capable of clearing the retained training and test deficits",
+      "a material Binance fee, collateral, Delta Mode or other margin-offset, funding, or execution-architecture change capable of clearing the retained training and test deficits",
       "either an official public no-key collateral table or designated ephemeral Binance credentials plus explicit signed GET-only authority to bind exact same-account Portfolio Margin eligibility, collateral tiers, leverage, negative-balance interest, and account costs"
     ]
   }

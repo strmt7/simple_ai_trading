@@ -76,6 +76,11 @@ override prose.
   keys and private-key blocks; if they do, preserve the response receipt hash,
   mechanically extract and hash-bind only the exact required secret-free section,
   and remove the unrelated full payload. Never commit public example secrets.
+- Before any public research request, search retained request journals and source
+  bindings for the exact canonical method and URL. Reuse a same-day successful
+  immutable response unless the registered retry trigger requires a fresh mutable
+  observation. A different output path or research label does not make the same
+  request novel.
 - Before treating a structural mechanism as novel, search both the prioritized
   hypotheses and terminal screens in the structural-edge registry, then `rg`
   mechanism aliases and payoff identities across retained artifacts and tools.
