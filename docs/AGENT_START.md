@@ -96,6 +96,14 @@ crossing its cutoff. It screened zero packages and authorized no books. Never
 paginate, narrow, refresh, alias, or repeat it; a future delta must first prove
 its worst-case arrivals fit below the observed cap.
 
+The retained August 29 soccer population is now exhausted across the remaining
+exact-score cross-family surface. Seven complete match families produced 1,428
+rule-proved exact-score links to first scorer, BTTS, full-game totals, and team
+totals. Every relation had side-specific rejection prices and zero were strictly
+below the one-pUSD floor; the best only equaled one pUSD before books, fees, or
+execution. Do not rebuild or reprice this population. Reopen only on the rank-31
+future-distinct-event trigger.
+
 ## Non-Negotiable Gates
 
 - Aggregate performance is not an all-market edge. Promotion requires causal

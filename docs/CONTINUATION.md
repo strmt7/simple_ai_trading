@@ -6329,3 +6329,38 @@ Accepted edges remain 29, ranked hypotheses remain 45, terminal families become
 `5725f87d7ec56260da65504449f5b4431b72f1d2e6d2f1637fb30f1736eeb85e`,
 and the rebound durability-audit SHA-256 is
 `dd2d50abedb7b10a79a0b0e941b46b74b41e386fcb704b71afbf97c5a3873d0f`.
+
+## Polymarket soccer exact-score cross-family graph
+
+A frozen zero-network audit closed the remaining exact-score logical-arbitrage
+surface in the immutable August 29 soccer page. Seven match families had a
+complete base event, exact-score event, first-to-score event, and more-markets
+event. The audit exhaustively generated 1,428 distinct rule-proved packages:
+14 exact 0-0/Neither equivalences, 7 Under 0.5-to-exact-0-0 implications,
+42 one-sided exact-score-to-first-scorer implications, 105 exact-score-to-BTTS
+implications, 630 exact-score-to-full-total implications, and 630
+exact-score-to-team-total implications.
+
+All 1,428 packages had complete side-specific `bestAsk` or conservative
+`1 - bestBid` rejection evidence. Zero were strictly below the one-pUSD payoff
+floor. The best, NO Neither-first-to-score plus YES exact 0-0 for
+Oud-Heverlee Leuven versus Standard Liege, equaled exactly 1.000 pUSD before a
+current book, fees, synchronization, or external costs. The games have ended,
+so no historical or current book request was allowed regardless of the result.
+
+Do not rebuild, reprice, or refetch this population. A future soccer event can
+advance only when its exact common horizon, postponement, cancellation, and
+resolution rules preserve the payoff floor and at least one side-specific
+rejection-only package is strictly sub-floor; then freeze one exact live book
+batch. No network, credential, account, order, fund, transaction, or protected
+capture was accessed.
+
+The contract SHA-256 is
+`f9f88d1d76172e0ebbc8c00a9593b25f3b75673f89612b9c1a3d968e6e291482`;
+the result SHA-256 is
+`a0d76c05979cde7b30f1ffc912e554f6405beb82e534eaa9b5410f073ef7d42f`.
+Accepted edges remain 29, ranked hypotheses remain 45, terminal families become
+94, registry SHA-256 becomes
+`3ee674e0dbc81c965ca1afba65c6b3a032f1cdeb271b856b3b7b268510d6af1f`,
+and the rebound durability-audit SHA-256 is
+`c2a6a0d5d0dcc17fb0827ee41631c9e654d9c07b6bd733d46087d0a576e20637`.
