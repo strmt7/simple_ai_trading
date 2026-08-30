@@ -2143,12 +2143,16 @@
         {
           "path": "docs/model-research/action-value/binance-glw-special-funding-trigger-result-v1-2026-08-29.json",
           "result_sha256": "823448f115ecf7fe3e7fe8862855f40dfd351ed041fce2aa94196d069c8d585a"
+        },
+        {
+          "path": "docs/model-research/action-value/binance-glw-special-funding-terminal-reconciliation-contract-v2-2026-08-30.json",
+          "result_sha256": "69fcc8494299f8acea738e278ec5c1ae3df9f05f7d9469e7d25c701d1a1c0f7b"
         }
       ],
-      "current_status": "one_use_2026_08_29_pre_snapshot_GLWUSDT_history_observation_retained_eight_Regular_rows_zero_Special_rows_and_zero_negative_rows_so_the_conditional_book_batch_was_prohibited_the_future_event_remains_unresolved_and_no_adjustment_post_adjustment_executable_books_positive_net_distribution_floor_after_cost_recurrence_or_profit_is_proved_not_accepted_or_deployment_ready",
+      "current_status": "one_use_2026_08_29_pre_snapshot_GLWUSDT_history_observation_retained_eight_Regular_rows_zero_Special_rows_and_zero_negative_rows_so_the_conditional_book_batch_was_prohibited_the_future_event_remains_unresolved_and_one_exact_nonoverlapping_terminal_history_delta_is_frozen_but_prohibited_before_2026_08_31T00_10_00Z_no_2026_GLW_book_capture_adjustment_post_adjustment_execution_positive_net_distribution_floor_after_cost_recurrence_or_profit_is_proved_not_accepted_or_deployment_ready",
       "market_direction_forecast_required": false,
       "mechanism": "binance_bstock_dividend_perpetual_funding_timing_gap",
-      "next_action": "do_not_repeat_the_consumed_pre_snapshot_observation_or_capture_2026_GLW_books_after_2026_08_31T00_00_00Z_freeze_one_terminal_history_reconciliation_for_mechanism_evidence_only_then_reopen_a_future_independent_weekend_event_only_under_a_new_prospective_contract",
+      "next_action": "wait_until_2026_08_31T00_10_00Z_then_run_only_the_frozen_one_request_nonoverlapping_GLWUSDT_terminal_history_delta_for_mechanism_evidence_preserve_every_failure_no_2026_GLW_book_capture_then_reopen_only_a_future_independent_weekend_event_under_a_new_prospective_contract",
       "priority_rank": 34,
       "prohibited_shortcuts": [
         "assuming_the_GLW_special_funding_timestamp_from_AMAT_and_MSFT",
@@ -2160,7 +2164,7 @@
         "calling_one_calendar_gap_recurrence_profit_or_an_accepted_edge",
         "placing_orders_or_accessing_account_state_without_separate_explicit_authority"
       ],
-      "retry_trigger": "after_2026_08_31T00_00_00Z_freeze_one_terminal_GLWUSDT_history_reconciliation_for_mechanism_evidence_only_no_2026_GLW_book_capture",
+      "retry_trigger": "at_or_after_2026_08_31T00_10_00Z_run_only_binance_glw_special_funding_terminal_reconciliation_contract_v2_2026_08_30_once_for_mechanism_evidence_only_no_2026_GLW_book_capture",
       "venue_scope": "binance_GLWBUSDT_bStock_and_GLWUSDT_TradFi_perpetual_weekend_dividend_adjustment_timing_gap"
     },
     {
@@ -2617,7 +2621,7 @@
       "venue_scope": "Binance_Spot_direct_and_exactly_one_intermediary_routes_for_independently_required_organic_conversions_with_the_exactly_two_intermediary_extension_terminal_for_the_retained_population"
     }
   ],
-  "result_sha256": "809c82d3233fb76b8fa41c1ba1cd7e7cb168ee8932a71098870d5f5b7e2ab04a",
+  "result_sha256": "d0c2933e29f08fb9379ef19e47d2ea118eeabbdba5c488bf6f88df0fb785919a",
   "schema_version": "structural-edge-priority-registry-v1",
   "terminal_do_not_repeat": [
     {
@@ -3011,6 +3015,6 @@
       "reason": "one_frozen_public_unauthenticated_GET_for_48_exact_condition_IDs_returned_HTTP_408_after_about_seven_seconds_and_exposed_zero_trade_rows_the_raw_error_and_journal_are_retained_do_not_retry_split_narrow_paginate_reorder_or_alias_this_consumed_historical_population_historical_trades_would_not_have_proved_atomic_owned_execution_even_if_returned"
     }
   ],
-  "updated_at_utc": "2026-08-30T16:58:00Z",
+  "updated_at_utc": "2026-08-30T17:20:43Z",
   "usage_rule": "advance_the_highest_ranked_hypothesis_whose_retry_trigger_is_satisfied_otherwise_do_not_repeat_a_blocked_or_terminal_screen"
 }

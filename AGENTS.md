@@ -230,6 +230,11 @@ override prose.
   again. An exact retained row may support a separately frozen, materially
   distinct public follow-up such as receipt reconciliation, but that follow-up
   may not repair, reinterpret, or complete the consumed contract's adjudication.
+- A future-event terminal reconciliation must start strictly after the last
+  retained source row and end only at the exact preregistered post-boundary
+  allowance. Once the executable event window has closed, never request books
+  merely to reconstruct a missed opportunity; terminal history is mechanism
+  evidence only and a future episode requires a new prospective contract.
 - An outcome-sensitive contract timestamp must be generated from the actual UTC
   clock before access, never typed as a rounded or anticipated time. The runner
   must reject a missing, offset-free, unparsable, or future `frozen_at_utc`

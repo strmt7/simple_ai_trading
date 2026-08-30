@@ -20,6 +20,13 @@ Development belongs only on `main`; do not create another development branch.
   rejection-only sub-floor gate, then freeze a prospective exact live CLOB
   package capture. No account, credential, order, fund, on-chain, or protected
   capture access occurred.
+- The GLWUSDT terminal special-funding reconciliation is preregistered, not yet
+  runnable. At or after `2026-08-31T00:10:00Z`, run only the frozen one-request
+  nonoverlapping history delta in
+  `binance-glw-special-funding-terminal-reconciliation-contract-v2-2026-08-30.json`.
+  It may establish mechanism timing only: the 2026 execution window is closed,
+  book capture is prohibited, and profitability remains rejected. Preserve any
+  failure and do not retry, paginate, alias, or extend the interval.
 
 ## Closeout State
 

@@ -1,0 +1,79 @@
+{
+  "schema_version": "binance-glw-special-funding-terminal-reconciliation-v2-contract",
+  "contract_path": "docs/model-research/action-value/binance-glw-special-funding-terminal-reconciliation-contract-v2-2026-08-30.json",
+  "frozen_at_utc": "2026-08-30T17:16:51Z",
+  "not_before_utc": "2026-08-31T00:10:00Z",
+  "question": "Did GLWUSDT publish a negative Special funding row before or at the 2026-08-31 bStock snapshot and did its per-unit debit match the declared 0.28 USD gross dividend?",
+  "retained_sources": [
+    {
+      "path": "docs/model-research/action-value/binance-bstock-dividend-perp-funding-timing-gap-candidate-v1-2026-08-27.json",
+      "sha256": "8e037fc6b10d7229b556960211260da8d357631f4beae9526b0ed9f790820511"
+    },
+    {
+      "path": "docs/model-research/action-value/binance-glw-special-funding-trigger-contract-v1-2026-08-29.json",
+      "sha256": "5e9fddf0a968b20d9d9c7afec71a6fa02360eeba339eabf3c081543fac2231c1"
+    },
+    {
+      "path": "docs/model-research/action-value/binance-glw-special-funding-trigger-result-v1-2026-08-29.json",
+      "sha256": "9053c975425d404cd9c6fffed9e2a4478540700dbfcaf77e01af97f38a3d4aba"
+    },
+    {
+      "path": "data/binance-glw-special-funding-trigger-v1/raw/GLWUSDT_special_funding_history.json",
+      "sha256": "0abadfc01938b0832eef352855bfb7381901abbee256b7cb2b266c094f36bdc3"
+    },
+    {
+      "path": "docs/model-research/action-value/binance-glw-special-funding-trigger-journal-v1-2026-08-29.json",
+      "sha256": "b39f5476df39346b15add403646cfc000f03119a1c382e45e0e028f1986926c7"
+    },
+    {
+      "path": "docs/model-research/binance/raw/spot-block-matching-cost-overlay-v1-2026-08-30/03-agent-native-index.raw.txt",
+      "sha256": "944e132d3523c8a03abcac2f7ddb85802107e45161470885b7a8785fd4fdb15d"
+    }
+  ],
+  "request": {
+    "method": "GET",
+    "url": "https://fapi.binance.com/fapi/v1/fundingRate?symbol=GLWUSDT&startTime=1787990400003&endTime=1788134460000&limit=100",
+    "symbol": "GLWUSDT",
+    "start_time_ms": 1787990400003,
+    "end_time_ms": 1788134460000,
+    "limit": 100,
+    "timeout_seconds": 20,
+    "request_budget": 1,
+    "retry_permitted": false,
+    "pagination_permitted": false,
+    "endpoint_classification": "The retained current official Binance Agent Native index classifies GET /fapi/v1/fundingRate as public Funding Rate History market data. This request is unauthenticated read-only and non-mutating."
+  },
+  "decision": {
+    "prior_retained_row_count": 8,
+    "prior_latest_funding_time_ms": 1787990400002,
+    "delta_start_time_ms": 1787990400003,
+    "delta_end_time_ms": 1788134460000,
+    "bstock_snapshot_time_ms": 1788134400000,
+    "gross_dividend_per_share_usd": "0.28",
+    "absolute_tolerance_usd": "0.000001",
+    "matching_row": "rateType equals Special fundingRate is negative and abs(abs(fundingRate)*markPrice-0.28) is at most 0.000001 USD",
+    "timing_rule": "fundingTime strictly below 1788134400000 is pre-snapshot; equal or greater is at-or-after snapshot",
+    "book_rule": "No book filter premium index account credential or order request is permitted regardless of the history outcome because the 2026 GLW execution window is over and the conservative net bStock distribution floor remains zero.",
+    "promotion_rule": "Never accept or call profitable. This terminal reconciliation can establish only whether the special funding mechanism occurred and its timing."
+  },
+  "outputs": {
+    "raw_path": "data/binance-glw-special-funding-terminal-reconciliation-v2/raw/GLWUSDT-funding-history-delta.json",
+    "journal_path": "data/binance-glw-special-funding-terminal-reconciliation-v2/request-journal.jsonl",
+    "result_path": "docs/model-research/action-value/binance-glw-special-funding-terminal-reconciliation-result-v2-2026-08-31.json"
+  },
+  "authority": {
+    "public_unauthenticated_read_only_requests": 1,
+    "account_requests": 0,
+    "credentials_used": false,
+    "funds_used": false,
+    "orders_or_transactions": 0,
+    "book_or_price_requests": 0,
+    "trading_authority": false
+  },
+  "implementation": {
+    "path": "tools/reconcile_binance_glw_special_funding_history.py",
+    "sha256": "8e17b427fc6c59a77b9679c7eecb4c62845f0bdf18dd8d7863ddfe03bb50d46b"
+  },
+  "retry_policy": "Run once at or after the not-before time. Preserve every response or failure. Do not retry narrow paginate alias reorder extend the interval request books or repair the consumed result. A future independent corporate-action episode requires a new contract.",
+  "contract_sha256": "69fcc8494299f8acea738e278ec5c1ae3df9f05f7d9469e7d25c701d1a1c0f7b"
+}
