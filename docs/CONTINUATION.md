@@ -5194,3 +5194,46 @@ canonical scope-extension result SHA-256 is
 Accepted edges remain 29, ranked hypotheses remain 44, terminal families remain
 64, and registry SHA-256 becomes
 `44a63556d0a8d680661a82743fbdc0eb0bed2a50d75f1679689d72258af6ce41`.
+
+## Binance Agentic Wallet and Alpha-versus-Spot rejection-first triage
+
+The unregistered Agentic Wallet organic-conversion lead was tested only at its
+source boundary. A frozen public official `market-order.md` GET retained 8,816
+bytes and matched four of five preregistered phrases, including the exact
+non-executing quote command. It failed closed because Binance's retained primary
+failure wording differed from the discovery rendering. Do not rewrite, alias,
+or retry the source contract, and do not admit discovery fee values. Reopen only
+on a material byte-retainable official fee or quote change, or with an
+independently required exact conversion, an active Wallet session, and explicit
+quote-only authority; stop before swap.
+
+The first local direct-path capture invocation failed during import, before any
+request and before any output existed. The preserved corrected entry mode is
+`uv run python -m tools.capture_public_source_contract` from the repository
+root. This repeats the already-correct `AGENTS.md` package-import rule so the
+same operator error is not repeated.
+
+The next genuinely distinct lead was Binance Alpha-versus-Spot same-token
+parity. One frozen complete public Alpha token-list GET retained 665 tokens.
+Deterministic zero-book prequalification found 398 live Alpha rows, only five
+live rows marked `listingCex` with a nonempty `cexCoinName`, and zero active
+Spot pairs for those five across USDT, USDC, FDUSD, USD1, BTC, or BNB in the
+retained 2026-08-29 Spot inventory. No price, book, account, credential, order,
+transfer, fund, protected capture, or mutation was accessed. The current family
+is terminal before books. Reopen only when a material token-list, Spot-listing,
+or transfer-architecture change creates a source-proved exact transferable
+overlap; then apply an optimistic cost bound before any depth request.
+
+Canonical Wallet contract SHA-256 is
+`3fe1995cd5a03b7df5e8e60cd5e66bfc35ca908e6367f8e392f782ccf514537b`;
+Wallet source result SHA-256 is
+`610c9c3c92add0ea5ebd02b6c0a2ab48005da3de312fe7b499a9aa211f022d86`.
+Canonical Alpha token-list contract SHA-256 is
+`38cc393602c78f1935fb5097ddb158da73bc6e5d0f01f9eb30e5522ec947d14c`;
+token-list source result SHA-256 is
+`a738d4e628a7e66d705e7f1d3d527bb64fc07ee988f7bd1527d1d4fddd746233`;
+canonical parity prefilter SHA-256 is
+`ee7653904a54848775236b72c8319e5fc6889b34753ea4ed2d964f085c5a6d85`.
+Accepted edges remain 29, ranked hypotheses remain 44, terminal families become
+67, and registry SHA-256 becomes
+`5ec42c3de1890f6c9f5e4ecc027b892b3c6f7323eeb813a4db821c1f2b67d2cd`.

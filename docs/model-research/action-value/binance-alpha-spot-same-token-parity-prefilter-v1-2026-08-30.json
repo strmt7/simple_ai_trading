@@ -1,0 +1,131 @@
+{
+  "schema_version": "binance-alpha-spot-same-token-parity-prefilter-v1",
+  "created_at_utc": "2026-08-30T14:02:30Z",
+  "hypothesis": {
+    "mechanism": "buy an exactly identical transferable token on Binance Alpha and sell it on Binance Spot, or the reverse, only when synchronized executable depth clears every fee transfer settlement latency failure and capital cost",
+    "market_direction_forecast_required": false,
+    "rejection_first_question": "Does the complete current Alpha token inventory contain even one currently live exact CEX mapping with an active Binance Spot pair before any book request?"
+  },
+  "sources": {
+    "alpha_token_list": {
+      "capture_result_path": "docs/model-research/action-value/binance-alpha-spot-same-token-parity-token-list-result-v1-2026-08-30.json",
+      "capture_result_sha256": "a738d4e628a7e66d705e7f1d3d527bb64fc07ee988f7bd1527d1d4fddd746233",
+      "captured_at_utc": "2026-08-30T14:01:29.905471Z",
+      "raw_path": "docs/model-research/binance/raw/alpha-spot-same-token-parity-v1-2026-08-30/01-alpha-token-list.raw.json",
+      "raw_sha256": "7d232c1680fff9c62ca7e62dcf14cfbe236a4e6b8c5e71effd66c58e30679268",
+      "source_gate_passed": true
+    },
+    "spot_exchange_info": {
+      "capture_result_path": "docs/model-research/action-value/binance-spot-sor-liquidity-overlay-result-v1-2026-08-29.json",
+      "capture_result_sha256": "895dc0eba4f72b9b08b19dbba245b20434e4db905fd4ded3ea70779733db6d47",
+      "captured_at_utc": "2026-08-29T21:41:24.062Z",
+      "raw_path": "data/binance-spot-sor-liquidity-overlay-v1/raw/exchangeInfo.json",
+      "raw_sha256": "658d03279eea9a2384171eb56e151541407ae7407c123c700c9902d5e9f56c9d"
+    }
+  },
+  "prefilter": {
+    "alpha_token_count": 665,
+    "alpha_currently_live_definition": "offline is false and offsell is false",
+    "alpha_currently_live_count": 398,
+    "alpha_currently_live_cex_mapped_definition": "currently live plus listingCex is true and cexCoinName is nonempty",
+    "alpha_currently_live_cex_mapped_count": 5,
+    "spot_active_pair_definition": "status equals TRADING and baseAsset equals the exact Alpha cexCoinName",
+    "spot_quotes_checked": [
+      "USDT",
+      "USDC",
+      "FDUSD",
+      "USD1",
+      "BTC",
+      "BNB"
+    ],
+    "current_exact_alpha_spot_pair_candidate_count": 0,
+    "current_exact_alpha_spot_pair_candidate_with_canTransfer_true_count": 0,
+    "live_cex_mapped_rows": [
+      {
+        "alpha_id": "ALPHA_787",
+        "alpha_symbol": "MSTRon",
+        "cex_coin_name": "MSTRONBSC",
+        "chain": "BSC",
+        "can_transfer": true,
+        "active_spot_quotes": []
+      },
+      {
+        "alpha_id": "ALPHA_781",
+        "alpha_symbol": "COINon",
+        "cex_coin_name": "COINONBSC",
+        "chain": "BSC",
+        "can_transfer": true,
+        "active_spot_quotes": []
+      },
+      {
+        "alpha_id": "ALPHA_745",
+        "alpha_symbol": "TSLAon",
+        "cex_coin_name": "TSLAONBSC",
+        "chain": "BSC",
+        "can_transfer": true,
+        "active_spot_quotes": []
+      },
+      {
+        "alpha_id": "ALPHA_742",
+        "alpha_symbol": "CRCLon",
+        "cex_coin_name": "CRCLONBSC",
+        "chain": "BSC",
+        "can_transfer": true,
+        "active_spot_quotes": []
+      },
+      {
+        "alpha_id": "ALPHA_177",
+        "alpha_symbol": "DOOD",
+        "cex_coin_name": "DOOD",
+        "chain": "BSC",
+        "can_transfer": false,
+        "active_spot_quotes": []
+      }
+    ],
+    "alpha_book_requests_sent": 0,
+    "spot_book_requests_sent": 0,
+    "reason_to_stop": "zero exact simultaneously listed Alpha-versus-Spot candidates makes every price request incapable of proving this current family"
+  },
+  "economics": {
+    "gross_profit_floor_evaluated": false,
+    "after_cost_profit_floor_evaluated": false,
+    "reason": "no exact same-token executable candidate exists in the retained current inventories",
+    "uncredited_costs": [
+      "Alpha service and trading fees",
+      "Spot exact account commissions",
+      "on-chain gas and transfer fees",
+      "price impact and slippage",
+      "cross-ledger settlement and custody delay",
+      "partial completion failure and unwind",
+      "capital opportunity and inventory risk"
+    ]
+  },
+  "adjudication": {
+    "status": "current_complete_alpha_token_population_has_zero_exact_active_spot_pair_candidates_terminal_before_books",
+    "accepted_edge": false,
+    "deployment_ready": false,
+    "profitability_claim": false,
+    "stable_edge_claim": false,
+    "trading_authority": false
+  },
+  "authority": {
+    "account_requests": 0,
+    "authenticated_requests": 0,
+    "credentials_used": false,
+    "funded_actions": 0,
+    "orders_or_transfers_submitted": 0,
+    "protected_capture_touched": false,
+    "public_unauthenticated_read_only_requests_new_for_this_prefilter": 1
+  },
+  "retry_policy": {
+    "trigger": "a material Binance Alpha token-list change that creates a currently live listingCex exact cexCoinName mapping with an active Binance Spot pair and source-proved transferability, or a material Spot listing or Alpha transfer architecture change",
+    "next_action": "on the exact trigger, freeze one complete token-list and Spot-inventory delta first; request depth only when at least one exact transferable overlap survives, then apply a lossless optimistic fee-and-transfer bound before any synchronized book escalation",
+    "do_not_repeat": "do not poll Alpha or Spot books for the five consumed live CEX-mapped rows and do not infer identity from a ticker string when cexCoinName or transferability is absent"
+  },
+  "limitations": [
+    "The retained Spot inventory preceded the Alpha token list by about sixteen hours, so the verdict is scoped to this paired retained inventory and must reopen on a material listing delta.",
+    "listingCex and cexCoinName are mapping inputs, not proof that Alpha and Spot balances are mutually deliverable without conversion or delay.",
+    "No price profitability fill or deployment claim was evaluated because the exact mapping prefilter returned zero candidates."
+  ],
+  "result_sha256": "ee7653904a54848775236b72c8319e5fc6889b34753ea4ed2d964f085c5a6d85"
+}

@@ -2496,7 +2496,7 @@
       "venue_scope": "Binance_Spot_direct_and_exactly_one_intermediary_routes_for_independently_required_organic_conversions_with_the_exactly_two_intermediary_extension_terminal_for_the_retained_population"
     }
   ],
-  "result_sha256": "c587b4e6e492b962ff8afbdab31b9e72840ca82cf594cfb320d56b632d179f70",
+  "result_sha256": "5ec42c3de1890f6c9f5e4ecc027b892b3c6f7323eeb813a4db821c1f2b67d2cd",
   "schema_version": "structural-edge-priority-registry-v1",
   "terminal_do_not_repeat": [
     {
@@ -2823,8 +2823,18 @@
       "canonical_result_sha256": "7a14b4f5d870d9f53a728f07d1c04f762dbb368eec9756e85a6bc7bd1944a397",
       "family": "binance_BTC_ETH_SOL_same_venue_cross_sectional_perpetual_funding_dispersion_2026_08_30",
       "reason": "the_zero_request_210_row_per_asset_209_decision_test_rejected_the_exact_family_before_price_capture_even_the_perfect_foresight_zero_execution_maximum_minus_minimum_funding_oracle_failed_the_two_leg_capital_hurdle_in_3_of_3_roles_by_151_7836022831050228310502284_51_80332876712328767123287673_and_57_77722876712328767123287673_bips_and_the_causal_lagged_strategy_failed_3_of_3_roles_after_turnover_do_not_resample_the_same_population_or_add_a_price_model_to_rescue_it_reopen_only_on_a_material_funding_schedule_rate_mechanism_fee_margin_portfolio_netting_atomic_execution_or_capital_treatment_change_capable_of_clearing_the_oracle_deficits"
+    },
+    {
+      "canonical_result_sha256": "610c9c3c92add0ea5ebd02b6c0a2ab48005da3de312fe7b499a9aa211f022d86",
+      "family": "binance_Agentic_Wallet_organic_conversion_quote_source_gate_2026_08_30",
+      "reason": "the_frozen_one_use_current_official_market_order_reference_retained_8816_bytes_and_bound_the_nonexecuting_exact_quantity_quote_operation_but_failed_the_five_phrase_source_gate_4_of_5_because_the_primary_failure_wording_had_materially_changed_from_the_discovery_surface_preserve_the_failed_gate_exclude_discovery_fee_values_and_do_not_retry_alias_or_register_savings_reopen_only_on_a_material_byte_retainable_fee_or_quote_contract_change_or_an_independently_required_exact_conversion_plus_active_session_and_explicit_quote_only_authority_then_stop_before_swap"
+    },
+    {
+      "canonical_result_sha256": "ee7653904a54848775236b72c8319e5fc6889b34753ea4ed2d964f085c5a6d85",
+      "family": "binance_Alpha_versus_Spot_same_token_parity_current_inventory_2026_08_30",
+      "reason": "the_complete_current_665_token_Alpha_list_had_398_live_rows_but_only_five_live_listingCex_rows_with_nonempty_cexCoinName_and_zero_had_any_active_Binance_Spot_pair_across_USDT_USDC_FDUSD_USD1_BTC_or_BNB_so_zero_Alpha_or_Spot_book_requests_were_justified_do_not_poll_the_consumed_five_rows_or_infer_identity_from_ticker_aliases_reopen_only_on_a_material_Alpha_token_list_Spot_listing_or_transfer_architecture_change_that_creates_an_exact_transferable_overlap"
     }
   ],
-  "updated_at_utc": "2026-08-30T13:40:17.4615195Z",
+  "updated_at_utc": "2026-08-30T14:03:30Z",
   "usage_rule": "advance_the_highest_ranked_hypothesis_whose_retry_trigger_is_satisfied_otherwise_do_not_repeat_a_blocked_or_terminal_screen"
 }
