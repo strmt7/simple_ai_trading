@@ -1754,6 +1754,34 @@ Canonical result SHA-256 is
 the registry SHA-256 is
 `8ef8e033e169084a57237321d13467f05486152c2b713cc478023372efc6b877`.
 
+## Binance Spot Amend-Keep-Priority Candidate
+
+Official retained evidence now proves a direction-independent execution
+candidate for an independently required reduction of an existing simple Spot
+maker order. A successful in-place quantity reduction keeps the same-price time
+priority; cancel-replace loses that priority and moves behind existing orders.
+Failed amendments leave the order unchanged, each amendment adds zero to the
+unfilled-order count, and its request weight is four. The retained production
+exchangeInfo snapshot has BTCUSDT, ETHUSDT, and SOLUSDT trading with
+`amendAllowed=true` and `MAX_NUM_ORDER_AMENDS=10` for each.
+
+This is not accepted, cash-valued, or deployment-ready. Public evidence proves
+no independently required owned reduction, queue counterfactual, incremental
+fill, success acknowledgement, adverse selection, latency, commission, or
+after-cost value, so its public forward profit floor is zero. The amendment
+endpoint is `TRADE`; do not call it without separate explicit testnet or paper
+order authority. Reopen only for an existing scoped maker order that already
+needs a same-price quantity reduction, or after a material semantics, weight,
+filter, or production-configuration change.
+
+The one source request was retained but its frozen raw-Markdown phrase gate
+failed on bold and inline-code delimiters. It was not retried; the exact bytes
+were adjudicated offline and the reusable Markdown-gate rule was corrected.
+Canonical adjudication SHA-256 is
+`c17217ff011d6ff48b4c0cf48cc6c8e49c27319c811be407cadebdd2e8d7faeb`;
+the current registry SHA-256 is
+`e9e25be7ae77d25c2f98b30b734c64f85259e73059405e938be77c776bd0a066`.
+
 ## Task Routing
 
 | Work | Read first |

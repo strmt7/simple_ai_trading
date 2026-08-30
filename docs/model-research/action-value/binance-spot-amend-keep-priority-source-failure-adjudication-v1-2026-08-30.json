@@ -1,0 +1,116 @@
+{
+  "schema_version": "binance-spot-amend-keep-priority-source-failure-adjudication-v1",
+  "created_at_utc": "2026-08-30T03:34:15.1218435Z",
+  "purpose": "Preserve the consumed literal-Markdown source-gate failure and adjudicate the exact retained source and production configuration without another request.",
+  "consumed_run": {
+    "contract_path": "docs/model-research/action-value/binance-spot-amend-keep-priority-source-contract-v1-2026-08-30.json",
+    "contract_sha256": "020d741a6d19bc4c6038a3fedcbea5fdb0cbd01c433c62127453c7892a144c38",
+    "contract_file_sha256": "513d7c8ea7f96a10743c0a4dd1e79bd3109ed5980d8ff3eefccacd4643450fb3",
+    "implementation_path": "tools/research_binance_spot_amend_keep_priority.py",
+    "implementation_sha256": "370c14a2de66497dbc84f8566737d2ec455d1e996a45bb81d04d9fdba2a3baae",
+    "journal_path": "data/binance-spot-amend-keep-priority-source-v1/journal.json",
+    "journal_sha256": "481697560e9fe67368e2e8e416c7707805cb58fcc724e713327f17c01d4797c8",
+    "request_count": 1,
+    "status": "failed_after_HTTP_200_retention_on_two_literal_Markdown_phrase_mismatches",
+    "error_type": "ValueError",
+    "missing_literal_phrases": [
+      "modify (amend) an existing order without losing order book priority",
+      "amendAllowed set to `true`"
+    ],
+    "retained_source_line_ending_reconstruction": {
+      "path": "docs/model-research/action-value/binance-spot-sor-liquidity-overlay-result-v1-2026-08-29.json",
+      "frozen_worktree_sha256": "03071b746344de64091cfe876039d78d17ff65f82f8d5bf82b7ba50d7c9327f0",
+      "durable_git_blob_sha256": "3e6f527b942f2830e47e957db166ac2ec5b713eb7d9d5afdda3c81ea7c1183d6",
+      "reconstruction": "replace every LF in the durable Git blob with CRLF; the reconstructed bytes exactly match the hash validated before access",
+      "economic_fields_changed": false
+    },
+    "retry_consumed_request": false
+  },
+  "retained_public_source": {
+    "path": "data/binance-spot-amend-keep-priority-source-v1/raw/order_amend_keep_priority.raw.md",
+    "url": "https://raw.githubusercontent.com/binance/binance-spot-api-docs/master/faqs/order_amend_keep_priority.md",
+    "status_code": 200,
+    "response_bytes": 4705,
+    "response_sha256": "b0b6fe9961e8aa71c46d76b985578c544306a764f8ab7c7d4c59322935fab8cb",
+    "methodology_error": {
+      "cause": "the contract compared case-folded raw Markdown without predeclared formatting normalization",
+      "first_difference": "the official source inserts Markdown bold delimiters around without losing order book priority",
+      "second_difference": "the official source wraps amendAllowed in backticks while the frozen phrase omitted its opening backtick",
+      "correction": "preserve the failed contract and journal; remove only bold and inline-code delimiters in a separately tested offline representation; never refetch"
+    }
+  },
+  "offline_retained_source_facts": {
+    "allowed_change": "reduce_existing_order_quantity_only",
+    "successful_amend_modifies_order_in_place": true,
+    "successful_amend_keeps_time_priority_at_the_same_price": true,
+    "cancel_replace_loses_time_priority_and_executes_after_existing_same_price_orders": true,
+    "failed_amend_is_rejected_and_leaves_the_order_unchanged": true,
+    "unfilled_order_count_per_amend": 0,
+    "request_weight": 4,
+    "symbols_expose_amendAllowed": true
+  },
+  "retained_production_configuration": {
+    "source_path": "data/binance-spot-sor-liquidity-overlay-v1/raw/exchangeInfo.json.gz",
+    "gzip_sha256": "9f3f83fe1efcec7a0230dea646d2038fe5c0a32ae72de5c7e4f5ee7fd850304b",
+    "decompressed_sha256": "658d03279eea9a2384171eb56e151541407ae7407c123c700c9902d5e9f56c9d",
+    "requested_at_ms": 1788039681818,
+    "completed_at_ms": 1788039684062,
+    "complete_symbol_count": 3685,
+    "scoped_rows": [
+      {
+        "symbol": "BTCUSDT",
+        "status": "TRADING",
+        "amendAllowed": true,
+        "maxNumOrderAmends": 10
+      },
+      {
+        "symbol": "ETHUSDT",
+        "status": "TRADING",
+        "amendAllowed": true,
+        "maxNumOrderAmends": 10
+      },
+      {
+        "symbol": "SOLUSDT",
+        "status": "TRADING",
+        "amendAllowed": true,
+        "maxNumOrderAmends": 10
+      }
+    ],
+    "configuration_gate_passed": true,
+    "live_exchangeInfo_request_count": 0
+  },
+  "economic_adjudication": {
+    "market_direction_forecast_required": false,
+    "structural_identity": "for one existing simple maker order at the same price and same reduced quantity a successful in-place amend weakly dominates cancel-replace on queue position",
+    "public_forward_profit_floor_quote_units": "0",
+    "direct_cash_fee_publicly_proven_zero": false,
+    "request_weight_is_a_capacity_cost": true,
+    "profitability_claim": false,
+    "value_quantified": false,
+    "missing_value_evidence": [
+      "independently_required_owned_simple_maker_order_quantity_reduction",
+      "exact queue ahead and behind at the amendment decision",
+      "owned success acknowledgement before relying on the reduced exposure",
+      "same-price fill that occurs before the cancel-replace counterfactual would regain priority",
+      "maker commission rebate adverse selection latency failure and operating costs",
+      "cross-regime recurrence of positive owned after-cost value"
+    ]
+  },
+  "adjudication": {
+    "status": "material_direction_independent_execution_candidate_blocked_before_any_order_probe",
+    "accepted_edge": false,
+    "accepted_edge_count_change": 0,
+    "accepted_edge_count_after_adjudication": 21,
+    "deployment_ready": false,
+    "reason": "official retained evidence proves queue-priority preservation and current BTCUSDT ETHUSDT SOLUSDT availability but not a cash-valued owned counterfactual or after-cost profit",
+    "next_trigger": "an independently required existing simple BTCUSDT ETHUSDT or SOLUSDT maker-order quantity reduction plus explicit testnet-or-paper order authority and exact owned acknowledgement queue fill and counterfactual reconciliation or a material official semantics request-weight filter or production-configuration change",
+    "do_not_repeat": "do not repeat the official FAQ GET or refresh exchangeInfo on unchanged evidence and never call the TRADE amendment endpoint without separate explicit authority"
+  },
+  "authority": {
+    "network_requests_admitted": 1,
+    "network_requests_completed": 1,
+    "credentials_accounts_books_orders_mutations_funds_or_protected_capture_accessed": false,
+    "trade_authority": false
+  },
+  "result_sha256": "c17217ff011d6ff48b4c0cf48cc6c8e49c27319c811be407cadebdd2e8d7faeb"
+}

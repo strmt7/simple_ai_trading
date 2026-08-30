@@ -82,10 +82,10 @@ def test_registry_self_hash_and_rpi_family_update_reconstruct() -> None:
         for item in registry["prioritized_hypotheses"]
         if item["mechanism"] == "binance_spot_fee_minimization_overlays"
     )
-    assert row["canonical_artifacts"][-1] == {
+    assert {
         "path": ADJUDICATION.relative_to(ROOT).as_posix(),
         "result_sha256": RESULT_HASH,
-    }
+    } in row["canonical_artifacts"]
     terminal = next(
         item
         for item in registry["terminal_do_not_repeat"]
