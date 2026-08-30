@@ -1,0 +1,45 @@
+{
+  "schema_version": "1.0",
+  "frozen_at_utc": "2026-08-30T00:23:53.6142014Z",
+  "authority": "public_unauthenticated_read_only_official_documentation_only",
+  "hypothesis": "Binance's officially deployed public Spot block-trade stream can expose exact block settlement prices and source timestamps without credentials, making a bounded public price-concession preflight possible for the existing Spot Block Matching cost-overlay candidate.",
+  "requests": [
+    {
+      "method": "GET",
+      "url": "https://raw.githubusercontent.com/binance/binance-spot-api-docs/master/web-socket-streams.md",
+      "purpose": "Bind the current public stream base URL, blockTrade stream name, update speed, and payload fields.",
+      "output": "01-web-socket-streams.raw.md"
+    },
+    {
+      "method": "GET",
+      "url": "https://raw.githubusercontent.com/binance/binance-spot-api-docs/master/faqs/market_data_only.md",
+      "purpose": "Bind that data-stream.binance.vision serves public market data without authentication and exposes the documented market streams.",
+      "output": "02-market-data-only.raw.md"
+    },
+    {
+      "method": "GET",
+      "url": "https://raw.githubusercontent.com/binance/binance-spot-api-docs/master/CHANGELOG.md",
+      "purpose": "Bind the official deployment date and feature identity for the blockTrade stream.",
+      "output": "03-spot-changelog.raw.md"
+    }
+  ],
+  "request_body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "transport": {
+    "follow_redirects": true,
+    "connect_timeout_seconds": 10,
+    "max_time_seconds": 30,
+    "user_agent": "simple-ai-trading-public-research/1.0"
+  },
+  "admission": {
+    "candidate_only_if": [
+      "the current official stream documentation contains <symbol>@blockTrade with price quantity trade time and maker-side fields",
+      "the current official market-data-only documentation states that the selected WebSocket domain requires no authentication",
+      "the current official changelog proves production rollout rather than documentation-only support"
+    ],
+    "reject_if": "Any source is absent, contradictory, credential-gated, or does not bind the required semantics.",
+    "profitability_claim_allowed": false,
+    "orders_or_account_mutations_allowed": false
+  },
+  "one_use": true,
+  "retry_policy": "Each exact URL is consumed once. Preserve HTTP errors and do not repair an outcome through a locale, branch, mirror, or filename alias."
+}

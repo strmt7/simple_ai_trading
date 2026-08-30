@@ -1890,3 +1890,23 @@ retried or repaired through an alias. Canonical failure SHA-256 is
 The registry remains at 44 hypotheses and 21 accepted scoped edges; its
 canonical SHA-256 is
 `0416a75158adf12ca08e6dc2d529efa29db53300715ba06f7c04378dcfa2a396`.
+
+## Binance public Spot block-trade price preflight
+
+Official current sources prove the production `<symbol>@blockTrade` market
+stream is real-time, unauthenticated on the market-data-only domain, and exposes
+exact price, quantity, trade time, event time, block ID, and buyer-maker
+identity. The one-use public BTCUSDT/ETHUSDT/SOLUSDT capture completed for
+1,205.0309999999954 seconds with zero reconnects and 3,368 ordinary ticker
+events, but zero block-trade events. Consequently it produced zero causal
+price-concession rows and failed the frozen recurrent-observation gate.
+
+Do not repeat or expand this public preflight before
+`2026-08-31T00:28:14.5427794Z` unless a material official stream, fee, pair,
+whitelist, settlement, or block-volume change occurs. This exact zero-event
+window does not prove the stream has no future activity and does not reject the
+parent account-gated mechanism, but it leaves the public forward profit floor
+at zero. Canonical preflight SHA-256 is
+`b7d60e0d9f3e30b2a62663ff1290be77e6309ac33a7d48776b6f5ea1c8dcfe68`;
+registry SHA-256 is
+`6e0c9d33e909ec980af5fa65d8ed2cdaebd8dd3fa576671165fe0a331f7af817`.

@@ -3702,3 +3702,33 @@ repaired through an alias. Canonical failure SHA-256 is
 The accepted-edge count remains 21, the ranked-hypothesis count remains 44, and
 the updated registry SHA-256 is
 `0416a75158adf12ca08e6dc2d529efa29db53300715ba06f7c04378dcfa2a396`.
+
+## 2026-08-30 Binance public Spot block-trade price preflight
+
+Official Binance Spot documentation proves a production, real-time
+`<symbol>@blockTrade` stream with event time, trade time, symbol, exact price,
+quantity, block-trade ID, and buyer-maker identity. The official
+market-data-only guide explicitly makes those streams available without
+authentication on `data-stream.binance.vision`; the changelog scheduled the
+production rollout for `2026-05-12T07:00:00Z`.
+
+A frozen one-use connection observed only `BTCUSDT`, `ETHUSDT`, and `SOLUSDT`
+block-trade and ticker streams for 1,205.0309999999954 seconds, with no
+reconnects. The complete raw response retained 1,188 BTC, 1,122 ETH, and 1,058
+SOL ticker messages, proving the connection and ordinary market-data flow were
+live, but it contained zero block-trade events. Therefore there was no exact
+price, quantity, side, causal pre-trade quote join, or economic row. The frozen
+gate requiring three recurrent same-symbol-and-side observations with a
+positive price-concession lower bound failed.
+
+This result neither proves the stream has no future capacity nor disproves the
+account-gated Block Matching mechanism. It rejects only an immediate repeated
+public capture under unchanged conditions. Do not repeat or expand the public
+preflight before `2026-08-31T00:28:14.5427794Z`, unless a material official
+stream, fee, pair, whitelist, settlement, or block-volume change occurs. The
+public forward profit floor remains zero; every authenticated or trade-capable
+path retains its existing authority gates. Canonical preflight SHA-256 is
+`b7d60e0d9f3e30b2a62663ff1290be77e6309ac33a7d48776b6f5ea1c8dcfe68`.
+The accepted-edge count remains 21, the ranked-hypothesis count remains 44, and
+the registry SHA-256 is
+`6e0c9d33e909ec980af5fa65d8ed2cdaebd8dd3fa576671165fe0a331f7af817`.

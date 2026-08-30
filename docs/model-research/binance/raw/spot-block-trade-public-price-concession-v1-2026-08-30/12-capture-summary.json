@@ -1,0 +1,24 @@
+{
+  "analyzable_block_trade_count": 0,
+  "block_counts": {
+    "BTCUSDT": 0,
+    "ETHUSDT": 0,
+    "SOLUSDT": 0
+  },
+  "block_trade_count": 0,
+  "completed_at_utc": "2026-08-30T00:49:03.119469Z",
+  "elapsed_seconds": 1205.0309999999954,
+  "favorable_zero_public_fee_lower_bound_counts": {
+    "buyer": 0,
+    "seller": 0
+  },
+  "reconnects_attempted": 0,
+  "rows": [],
+  "started_at_utc": "2026-08-30T00:28:58.096242Z",
+  "target_block_trades": 12,
+  "ticker_counts": {
+    "BTCUSDT": 1188,
+    "ETHUSDT": 1122,
+    "SOLUSDT": 1058
+  }
+}
