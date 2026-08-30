@@ -1601,12 +1601,40 @@
         {
           "path": "docs/model-research/action-value/polymarket-btc-multi-strikes-weekly-negrisk-result-v1-2026-08-29.json",
           "result_sha256": "f032753b45c82b2e0945d1a8c0e0d5fc01f8fb1727cdad34e73064c7590417ba"
+        },
+        {
+          "path": "docs/model-research/action-value/polymarket-elon-aug31-sep2-exact-negrisk-prefilter-contract-v1-2026-08-30.json",
+          "result_sha256": "e11ea740aac94adf121d298f335724ca7799b5cb43902dc52eeb9c1c697d4c0c"
+        },
+        {
+          "path": "docs/model-research/action-value/polymarket-elon-aug31-sep2-exact-negrisk-prefilter-result-v1-2026-08-30.json",
+          "result_sha256": "63fb913d9f56034879ccee6bc43d531d4a5e805550db99ec6331e31051c680aa"
+        },
+        {
+          "path": "docs/model-research/action-value/polymarket-elon-aug31-sep2-exact-negrisk-books-contract-v1-2026-08-30.json",
+          "result_sha256": "32658d289f7cf7a5026ab8debc9dd0f178ec82c96a5821bdb42e0f7eeac6e260"
+        },
+        {
+          "path": "docs/model-research/action-value/polymarket-elon-aug31-sep2-exact-negrisk-books-v1-preflight-failure-2026-08-30.json",
+          "result_sha256": "fb562b32287caee9842e0dac48aad3bd16f8cf6e2c45d78dca11ce2dde0f9078"
+        },
+        {
+          "path": "docs/model-research/action-value/polymarket-elon-aug31-sep2-exact-negrisk-books-v1-runner-lineage-reconstruction-v1-2026-08-30.json",
+          "result_sha256": "dbfa67537e141344d5d0b15c62944eec3ef72da2c7cb945c61303085b4b40bc5"
+        },
+        {
+          "path": "docs/model-research/action-value/polymarket-elon-aug31-sep2-exact-negrisk-books-contract-v2-2026-08-30.json",
+          "result_sha256": "5668b83501a39be8e23429ac406a6fe043b7d60e17cc6b4246b0731f0d5bcf5d"
+        },
+        {
+          "path": "docs/model-research/action-value/polymarket-elon-aug31-sep2-exact-negrisk-books-result-v2-2026-08-30.json",
+          "result_sha256": "4601f3980f14ccb4130fbdc36862def5abdd47f46e9f48c7da25113c72fe33a2"
         }
       ],
-      "current_status": "direction_independent_exact_multioutcome_family_remains_unaccepted_after_the_complete_2026_09_07_hour00_rejection_a_price_blind_official_series_metadata_request_selected_BTC_Up_or_Down_5m_but_its_frozen_2026_09_14_through_2026_09_21_event_window_was_empty_a_distinct_retained_metadata_selection_then_fixed_series_45_BTC_Multi_Strikes_Weekly_for_2026_09_07T01_00_00Z_through_2026_09_21_and_that_complete_series_specific_catalog_was_also_empty_so_recurrence_title_and_volume_do_not_prove_forward_event_deployment_zero_onchain_books_fees_accounts_or_credentials_were_used_and_no_edge_profit_or_deployment_claim_exists",
+      "current_status": "direction_independent_exact_multioutcome_family_remains_unaccepted_after_the_complete_2026_09_07_hour00_rejection_and_two_empty_forward_series_queries_the_distinct_officially_deployed_ten_bin_Elon_August_31_to_September_2_fixed_NegRisk_event_then_fired_the_literal_new_event_trigger_one_exact_Gamma_GET_showed_a_1_0130_pUSD_all_YES_sum_rejecting_that_path_but_a_0_0130_pUSD_displayed_one_NO_to_other_YES_gap_for_every_source_market_the_separately_frozen_exact_twenty_token_batch_was_fresh_at_297_ms_old_129_ms_skew_and_121_ms_request_elapsed_but_the_best_five_share_path_lost_0_075_pUSD_before_fees_0_23977_after_current_Gamma_taker_fees_and_0_61792_after_one_adverse_tick_per_leg_so_zero_fee_rate_onchain_account_credential_order_or_fund_requests_were_needed_and_the_exact_event_is_terminal_not_an_edge_profit_or_deployment_claim",
       "market_direction_forecast_required": false,
       "mechanism": "polymarket_cross_market_exact_multi_outcome_subset_equivalence",
-      "next_action": "do_not_repeat_either_empty_forward_series_query_or_resample_adaptively_continue_or_narrow_any_consumed_population_recurrence_title_and_volume_are_not_deployment_evidence_advance_other_ranked_triggers_and_reopen_series_specific_research_only_after_an_explicit_new_event_deployment_trigger_or_not_before_2026_09_20T00_00_00Z_for_one_distinct_2026_09_22_through_2026_09_28_series_45_discovery_then_use_Gamma_only_to_reject_and_require_exact_onchain_question_count_and_conversion_fee_before_one_precommitted_all_token_book_batch",
+      "next_action": "do_not_repeat_the_Elon_August_31_to_September_2_Gamma_or_book_requests_do_not_repeat_either_empty_forward_series_query_or_resample_adaptively_continue_or_narrow_any_consumed_population_advance_other_ranked_triggers_and_reopen_only_after_another_explicit_new_fixed_NegRisk_event_deployment_or_not_before_2026_09_20T00_00_00Z_for_one_distinct_2026_09_22_through_2026_09_28_series_45_discovery_then_use_Gamma_only_to_reject_and_require_a_strict_positive_exact_depth_and_fee_gate_before_any_onchain_or_account_request",
       "priority_rank": 31,
       "prohibited_shortcuts": [
         "calling_the_39_6_million_USD_all_strategy_headline_cross_market_subset_profit",
@@ -1620,7 +1648,8 @@
         "adaptively_following_a_keyset_cursor_or_depth_testing_the_best_partial_page_row_after_the_documented_500_request_returns_an_effective_100_event_page",
         "treating_a_repeated_payoff_identity_as_repeated_positive_economics_or_a_current_best_bid_as_an_owned_queue_censored_fill",
         "escalating_one_positive_maker_first_snapshot_to_order_capable_work_before_a_distinct_instance_survives_the_same_hedge_stress",
-        "double_counting_the_same_NBA_episode_or_calling_public_recurrence_owned_profit"
+        "double_counting_the_same_NBA_episode_or_calling_public_recurrence_owned_profit",
+        "repeating_the_consumed_Elon_August_31_to_September_2_exact_Gamma_or_twenty_token_book_batch_or_selecting_only_favorable_bins"
       ],
       "retry_trigger": "material_price_fee_rule_or_market_change_in_the_resolved_leg_House_family_or_explicit_official_deployment_of_a_new_fixed_NegRisk_event_in_a_source_selected_nonconsumed_series_or_not_before_2026_09_20T00_00_00Z_for_one_separately_frozen_distinct_series_45_window_from_2026_09_22_through_2026_09_28_or_a_distinct_active_accepting_orders_market_pair_with_complete_exact_rules_deterministic_subset_indicator_equality_and_optimistic_current_economics_not_already_covered_by_the_specialized_NBA_family",
       "venue_scope": "polymarket_fixed_NegRisk_multioutcome_complete_sets_and_two_separately_traded_exact_rule_multioutcome_markets"
@@ -2177,7 +2206,7 @@
       "venue_scope": "Binance_Spot_direct_and_exactly_one_intermediary_routes_for_independently_required_organic_conversions_with_the_exactly_two_intermediary_extension_terminal_for_the_retained_population"
     }
   ],
-  "result_sha256": "a375476e54a0a2949e6954d04384f72f11157f73238af61209a393c9362725c8",
+  "result_sha256": "5e34a52a6e0eebf48d5c4ae397bcb1893c10389116425d057b580a2a05013c40",
   "schema_version": "structural-edge-priority-registry-v1",
   "terminal_do_not_repeat": [
     {
@@ -2439,8 +2468,13 @@
       "canonical_result_sha256": "98b74abfcb213a8d1bd554fc1bfec9044d6a6a3990abd800bef92f29437533b3",
       "family": "polymarket_pUSD_to_Binance_USDT_fixed_bonus_opportunity_cost_2026_08_30",
       "reason": "the_exact_public_500_pUSD_to_Polygon_USDT_quote_returned_only_492_459811_USDT_a_150_80378_bip_optimistic_one_way_loss_versus_at_most_0_4856127333_USDT_or_9_712254665_bips_of_remaining_fixed_bonus_and_only_0_0993054837_USDT_or_1_986109674_bips_incremental_to_realized_holding_yield_before_Binance_deposit_return_conversion_eligibility_capacity_custody_tax_or_operating_costs_do_not_move_pUSD_for_this_bonus_or_repeat_the_quote_without_a_material_bridge_quote_or_bonus_term_change"
+    },
+    {
+      "canonical_result_sha256": "4601f3980f14ccb4130fbdc36862def5abdd47f46e9f48c7da25113c72fe33a2",
+      "family": "polymarket_Elon_August_31_to_September_2_exact_fixed_NegRisk_parity_2026_08_30",
+      "reason": "the_new_ten_bin_event_had_a_1_3_cent_displayed_one_NO_conversion_lead_but_the_fresh_complete_twenty_token_batch_best_five_share_path_lost_0_075_pUSD_before_fees_0_23977_after_current_Gamma_taker_fees_and_0_61792_after_one_adverse_tick_per_leg_do_not_repeat_the_exact_event_or_select_only_favorable_bins"
     }
   ],
-  "updated_at_utc": "2026-08-30T03:57:10.4779605Z",
+  "updated_at_utc": "2026-08-30T04:17:05.1439339Z",
   "usage_rule": "advance_the_highest_ranked_hypothesis_whose_retry_trigger_is_satisfied_otherwise_do_not_repeat_a_blocked_or_terminal_screen"
 }

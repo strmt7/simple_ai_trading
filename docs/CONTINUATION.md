@@ -4057,3 +4057,46 @@ SHA-256 is
 The accepted-edge count remains 21, the ranked-hypothesis count remains 44, and
 the updated registry SHA-256 is
 `a375476e54a0a2949e6954d04384f72f11157f73238af61209a393c9362725c8`.
+
+## 2026-08-30 Polymarket Elon fixed-NegRisk exact parity rejection
+
+Current official discovery exposed a newly deployed, previously unconsumed
+August 31–September 2 Elon post-count event. This fired rank 31's literal new
+fixed-NegRisk deployment trigger. One frozen exact Gamma GET retained all ten
+active compatible outcome markets. Their displayed all-YES sum was 1.0130 pUSD,
+rejecting the guaranteed-payout purchase path, but each one-NO-to-other-YES
+identity showed a 0.0130 pUSD displayed gap. That was a source-only lead, never
+executable or profitable evidence.
+
+A separately frozen single POST retained all 20 exact CLOB books. The response
+passed every run-level gate: 121 ms request elapsed, 297 ms oldest-book age,
+129 ms timestamp skew, exact token/condition identities, matching minimums and
+ticks, and complete five-share depth evaluation. The best path lost 0.075 pUSD
+before fees. Current Gamma taker fees widened the loss to 0.23977 pUSD, and one
+adverse tick on every leg widened it to 0.61792 pUSD. All evaluated views had
+zero profitable paths, so the screen stopped before fee-rate, adapter, Polygon,
+account, credential, order, transaction, or fund access.
+
+The exact event is terminal. Do not repeat either source request, reorder or
+subset the books, select favorable bins, or reinterpret the 1.3-cent displayed
+gap as executable. Reopen rank 31 only on another literal distinct deployment
+or its other existing material triggers.
+
+The frozen v1 book contract was not consumed: full local preflight failed on an
+ASCII-only reader before a request journal or network access existed. The raw
+Gamma source contains valid UTF-8 punctuation. The failure is preserved with
+canonical SHA-256
+`fb562b32287caee9842e0dac48aad3bd16f8cf6e2c45d78dca11ce2dde0f9078`.
+The corrected v2 loader parses JSON bytes and passed the complete retained-input
+and contract path before freezing. `AGENTS.md` now requires that full path, not
+only `--help`, before any retained-input one-use contract. The original frozen
+runner remains mechanically reconstructable from the corrected runner with one
+exact replacement; canonical lineage SHA-256 is
+`dbfa67537e141344d5d0b15c62944eec3ef72da2c7cb945c61303085b4b40bc5`.
+
+Canonical prefilter and exact-book result SHA-256 values are
+`63fb913d9f56034879ccee6bc43d531d4a5e805550db99ec6331e31051c680aa`
+and `4601f3980f14ccb4130fbdc36862def5abdd47f46e9f48c7da25113c72fe33a2`.
+Accepted edges remain 21, ranked hypotheses remain 44, terminal families become
+53, and registry SHA-256 is
+`5e34a52a6e0eebf48d5c4ae397bcb1893c10389116425d057b580a2a05013c40`.

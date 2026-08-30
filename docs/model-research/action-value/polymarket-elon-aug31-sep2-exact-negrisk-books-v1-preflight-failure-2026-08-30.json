@@ -1,0 +1,26 @@
+{
+  "schema_version": "polymarket-exact-negrisk-books-preflight-failure-v1",
+  "created_at_utc": "2026-08-30T04:13:25.4945794Z",
+  "contract": {
+    "path": "docs/model-research/action-value/polymarket-elon-aug31-sep2-exact-negrisk-books-contract-v1-2026-08-30.json",
+    "sha256": "32658d289f7cf7a5026ab8debc9dd0f178ec82c96a5821bdb42e0f7eeac6e260"
+  },
+  "frozen_runner_sha256": "0d687e13cb7a6092665e321d977af9a804e3160d0d56d22b335f4049c1797d74",
+  "phase": "full_retained_input_contract_preflight",
+  "error_type": "UnicodeDecodeError",
+  "error": "The frozen v1 runner attempted to decode the retained exact Gamma event as ASCII; the source contains valid UTF-8 punctuation.",
+  "request_consumed": false,
+  "request_journal_created": false,
+  "raw_book_response_created": false,
+  "result_created": false,
+  "credentials_used": false,
+  "account_requests": 0,
+  "book_requests": 0,
+  "signed_requests": 0,
+  "orders_or_transactions": 0,
+  "funds_used": false,
+  "protected_capture_touched": false,
+  "correction": "Parse retained JSON from bytes so the JSON decoder handles UTF-8, run full retained-input contract validation before freezing v2, and never invoke the frozen v1 contract again.",
+  "economic_adjudication": "No book evidence or economic result exists under v1. The source-only 0.0130 pUSD displayed lead remains unchanged and unpromoted.",
+  "result_sha256": "fb562b32287caee9842e0dac48aad3bd16f8cf6e2c45d78dca11ce2dde0f9078"
+}

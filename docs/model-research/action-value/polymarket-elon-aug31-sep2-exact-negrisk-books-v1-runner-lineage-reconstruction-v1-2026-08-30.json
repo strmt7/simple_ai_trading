@@ -1,0 +1,19 @@
+{
+  "schema_version": "polymarket-exact-negrisk-books-v1-runner-lineage-reconstruction-v1",
+  "created_at_utc": "2026-08-30T04:20:31.8267690Z",
+  "failed_contract_sha256": "32658d289f7cf7a5026ab8debc9dd0f178ec82c96a5821bdb42e0f7eeac6e260",
+  "preflight_failure_result_sha256": "fb562b32287caee9842e0dac48aad3bd16f8cf6e2c45d78dca11ce2dde0f9078",
+  "current_runner": {
+    "path": "tools/screen_polymarket_exact_negrisk_books.py",
+    "sha256": "f42a5d7d2dfce934f7095a3a05e42f74a6142073d368d7221ffd3d553052d988"
+  },
+  "mechanical_reconstruction": {
+    "occurrence_count_required": 1,
+    "replace_exact": "value = json.loads(path.read_bytes())",
+    "with_exact": "value = json.loads(path.read_text(encoding=\"ascii\"))",
+    "reconstructed_frozen_v1_runner_sha256": "0d687e13cb7a6092665e321d977af9a804e3160d0d56d22b335f4049c1797d74"
+  },
+  "authority": "zero_network_source_lineage_only",
+  "economic_effect": "none",
+  "result_sha256": "dbfa67537e141344d5d0b15c62944eec3ef72da2c7cb945c61303085b4b40bc5"
+}
