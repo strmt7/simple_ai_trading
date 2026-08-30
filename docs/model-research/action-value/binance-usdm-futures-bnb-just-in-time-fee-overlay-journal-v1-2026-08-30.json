@@ -1,0 +1,30 @@
+{
+  "completed_logical_request_count": 1,
+  "contract": {
+    "contract_sha256": "db7b740de65ae9097c85cbae2a4dc93f44db9f13dce09efd98447e598b97d21f",
+    "path": "docs/model-research/action-value/binance-usdm-futures-bnb-just-in-time-fee-overlay-source-contract-v1-2026-08-30.json"
+  },
+  "journal_sha256": "18197304167763addeee8fc5b3fc3d630cd85803a738c4e3d1752b43162876ed",
+  "next_request": null,
+  "request": {
+    "classification": "public_unauthenticated_read_only_documentation_GET",
+    "final_url_after_redirect": "https://www.binance.com/en/academy/articles/how-to-calculate-transaction-fees-on-binance",
+    "method": "GET",
+    "received_after_utc": "2026-08-30T06:25:39.7584903Z",
+    "requested_before_utc": "2026-08-30T06:25:38.7840858Z",
+    "requested_url": "https://academy.binance.com/en/articles/how-to-calculate-transaction-fees-on-binance",
+    "response": {
+      "payload_bytes": 2035,
+      "payload_sha256": "c038958ecdbd393f11ee3096e5bf3a6a86cd47981f9117f9233e34722155e361",
+      "raw_path": "docs/model-research/action-value/raw/binance-usdm-futures-bnb-just-in-time-fee-overlay-v1-2026-08-30/01-official-fee-guide.raw.html",
+      "required_term_matches": {
+        "futures fees by 10%": false,
+        "futures: fees are charged in the margin asset": false,
+        "use bnb to pay fees": false
+      },
+      "status_code": 202
+    }
+  },
+  "schema_version": "binance-usdm-futures-bnb-just-in-time-fee-overlay-journal-v1",
+  "status": "consumed_source_gate_failed_no_retry_or_alias"
+}

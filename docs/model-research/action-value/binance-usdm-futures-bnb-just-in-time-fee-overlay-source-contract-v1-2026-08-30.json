@@ -1,0 +1,55 @@
+{
+  "authority": {
+    "account_requests": 0,
+    "credentials_used": false,
+    "orders_or_trades": 0,
+    "protected_capture_accessed": false,
+    "public_unauthenticated_read_only_requests": 1,
+    "state_changes": 0
+  },
+  "contract_sha256": "db7b740de65ae9097c85cbae2a4dc93f44db9f13dce09efd98447e598b97d21f",
+  "decision_contract": {
+    "accept_only_if": "The current official source explicitly states a positive USD-M Futures trading-fee reduction for paying fees with BNB, the retained current official API index independently exposes signed status lookup and a separate state-changing toggle, and the scope is limited to independently justified organic BTC ETH or SOL USD-M flow whose exact positive standard commission remains larger after every BNB acquisition holding residual and reconciliation cost.",
+    "fail_closed_if": [
+      "the current official page does not contain every required term",
+      "the discount is not explicitly applicable to Futures trading fees",
+      "the required BNB would be acquired or retained before an independently justified organic trade exists",
+      "account eligibility exact symbol commission actual discount or realized fee payment is inferred from public sources"
+    ],
+    "public_forward_profit_floor": "0",
+    "prohibited": [
+      "creating enlarging churning or rerouting volume for the discount",
+      "using the discount to rescue an otherwise unprofitable trade",
+      "enabling or disabling BNB fee burn without separate explicit state-change authority",
+      "placing or modifying any order",
+      "holding a standing BNB inventory"
+    ]
+  },
+  "frozen_at_utc": "2026-08-30T06:24:59.6103639Z",
+  "public_source": {
+    "classification": "public_unauthenticated_read_only_documentation_GET",
+    "maximum_response_bytes": 3000000,
+    "method": "GET",
+    "required_text_casefolded": [
+      "use bnb to pay fees",
+      "futures fees by 10%",
+      "futures: fees are charged in the margin asset"
+    ],
+    "url": "https://academy.binance.com/en/articles/how-to-calculate-transaction-fees-on-binance"
+  },
+  "retained_sources": {
+    "agent_native_endpoint_index": {
+      "path": "docs/model-research/binance/raw/spot-block-matching-cost-overlay-v1-2026-08-30/03-agent-native-index.raw.txt",
+      "required_identities": [
+        "GET /fapi/v1/feeBurn - Get BNB Burn Status (USER_DATA)",
+        "POST /fapi/v1/feeBurn - Toggle BNB Burn On Futures Trade (TRADE)"
+      ],
+      "sha256": "944e132d3523c8a03abcac2f7ddb85802107e45161470885b7a8785fd4fdb15d"
+    },
+    "spot_just_in_time_bnb_economics": {
+      "path": "docs/model-research/action-value/binance-bnb-just-in-time-fee-buffer-gate-v1-2026-08-26.json",
+      "result_sha256": "b97eed6a93070d5e29b26d1a47757c9be49e0296332c8019a64388ba936c3b6b"
+    }
+  },
+  "schema_version": "binance-usdm-futures-bnb-just-in-time-fee-overlay-source-contract-v1"
+}

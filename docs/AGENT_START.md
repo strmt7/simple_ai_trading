@@ -72,6 +72,18 @@ safety gate, blocks Stop, or submits an order.
   prohibited before `2026-08-31T02:15:30Z` absent a material terms change.
   Canonical receipt result SHA-256
   `4e57d6c0216886144fb89f8ae69b11a2eee4db37149ce6c956adecf293b7b927`.
+- A distinct USD-M Futures BNB fee-reduction lead remains unaccepted. The
+  retained current official API index proves a signed `GET /fapi/v1/feeBurn`
+  status query and a separately state-changing `POST /fapi/v1/feeBurn` toggle,
+  but the frozen exact current public fee-guide request returned HTTP 202 with
+  2,035 bytes and zero of three required discount terms. Do not repeat or alias
+  that request, infer the cached 10% publication text as source-bound current
+  account economics, acquire standing BNB, or toggle fee burn. Reopen only on
+  a materially new byte-retainable official source or both designated
+  credentials, explicit signed GET-only authority, and an independently planned
+  legitimate organic BTC/ETH/SOL USD-M positive-commission question. Every
+  toggle remains separately unauthorized. Canonical adjudication SHA-256 is
+  `3a2c7358757491c8e0e9d737a76583756596db59346c5877a7bcfc1ca9e300b4`.
 - Binance Stocks FPSL is a materially distinct direction-independent overlay
   for U.S.-listed stocks or ETFs that are already independently owned and fully
   settled. The current FAQ says actual loaned shares accrue interest daily and

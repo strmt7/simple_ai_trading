@@ -1,0 +1,52 @@
+{
+  "authority": {
+    "accepted_edge": false,
+    "account_state_accessed": false,
+    "credentials_used": false,
+    "live_or_paper_trading_authority": false,
+    "orders_or_trades": 0,
+    "profitability_claim": false,
+    "protected_capture_accessed": false,
+    "public_unauthenticated_read_only_logical_requests": 1,
+    "state_changes": 0
+  },
+  "candidate_identity": {
+    "description": "A bounded just-in-time BNB fee buffer for imminent independently justified organic BTC ETH or SOL USD-M Futures fills, with no standing BNB inventory and no volume created for the discount.",
+    "directional_forecast_required": false,
+    "economic_identity": "direct_reduction_of_an_already_required_positive_futures_trading_commission",
+    "separate_from_spot_edge": "The account setting, fee ledger, product, and signed API endpoints are USD-M Futures-specific even though the bounded BNB acquisition and residual controls can reuse the accepted Spot just-in-time framework."
+  },
+  "created_at_utc": "2026-08-30T06:25:39.7584903Z",
+  "decision": {
+    "accepted_edge": false,
+    "deployment_ready": false,
+    "future_profit_guaranteed": false,
+    "public_forward_profit_floor": "0",
+    "reason": "The frozen exact current official page request returned HTTP 202 with 2035 bytes and none of the three preregistered terms needed to bind the fee reduction. Cached public search extraction is sufficient to retain the lead but not to override the frozen source gate or prove account eligibility realized payment and every cost.",
+    "status": "material_direction_independent_cost_reduction_lead_failed_exact_public_source_gate"
+  },
+  "frozen_public_source_outcome": {
+    "contract_path": "docs/model-research/action-value/binance-usdm-futures-bnb-just-in-time-fee-overlay-source-contract-v1-2026-08-30.json",
+    "contract_sha256": "db7b740de65ae9097c85cbae2a4dc93f44db9f13dce09efd98447e598b97d21f",
+    "journal_path": "docs/model-research/action-value/binance-usdm-futures-bnb-just-in-time-fee-overlay-journal-v1-2026-08-30.json",
+    "payload_bytes": 2035,
+    "payload_sha256": "c038958ecdbd393f11ee3096e5bf3a6a86cd47981f9117f9233e34722155e361",
+    "raw_path": "docs/model-research/action-value/raw/binance-usdm-futures-bnb-just-in-time-fee-overlay-v1-2026-08-30/01-official-fee-guide.raw.html",
+    "required_terms_found": 0,
+    "required_terms_total": 3,
+    "status_code": 202
+  },
+  "retained_current_official_api_contract": {
+    "index_path": "docs/model-research/binance/raw/spot-block-matching-cost-overlay-v1-2026-08-30/03-agent-native-index.raw.txt",
+    "index_sha256": "944e132d3523c8a03abcac2f7ddb85802107e45161470885b7a8785fd4fdb15d",
+    "read_only_status": "GET /fapi/v1/feeBurn - Get BNB Burn Status (USER_DATA)",
+    "state_changing_toggle": "POST /fapi/v1/feeBurn - Toggle BNB Burn On Futures Trade (TRADE)"
+  },
+  "result_sha256": "3a2c7358757491c8e0e9d737a76583756596db59346c5877a7bcfc1ca9e300b4",
+  "retry_contract": {
+    "next_action": "Do not repeat or alias the consumed page request. Reopen only on a materially new byte-retainable current official USD-M Futures fee-discount source, or when both designated credentials and explicit signed GET-only authority exist for an independently planned legitimate organic BTC ETH or SOL USD-M fee question. Even then, exact status, exact positive standard commission, BNB acquisition cost, full prompt consumption, residual, actual owned fee ledger, and every incremental cost must be reconciled before acceptance. Enabling or disabling fee burn remains a separate state-changing action requiring separate explicit authority.",
+    "retry_trigger": "material_new_byte_retainable_official_USDM_BNB_fee_discount_terms_or_both_designated_credentials_plus_explicit_signed_GET_only_authority_plus_an_independently_planned_legitimate_organic_BTC_ETH_or_SOL_USDM_positive_commission_question",
+    "terminal_without_trigger": true
+  },
+  "schema_version": "binance-usdm-futures-bnb-just-in-time-fee-overlay-source-failure-adjudication-v1"
+}
