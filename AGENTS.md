@@ -197,6 +197,10 @@ override prose.
   large, freeze a lossless optimistic rejection bound and bounded diagnostics;
   retain every actual candidate and rejection identity required by the decision,
   but never allocate one summary object per provably rejected route-size row.
+- Fixed-NegRisk multi-NO conversion value is additive after a base path. Optimize
+  its exact best subset algebraically and use bounded meet-in-the-middle only when
+  an exact profitable-path count is required; never enumerate all `2^n - 1`
+  subsets. Preflight the supported outcome ceiling before requesting books.
 - After a consumed runner fails, inventory every already-saved raw response for
   observations beyond the failed decision boundary before requesting anything
   again. An exact retained row may support a separately frozen, materially

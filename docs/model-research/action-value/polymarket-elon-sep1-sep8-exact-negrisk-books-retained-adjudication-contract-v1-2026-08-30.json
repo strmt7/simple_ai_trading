@@ -1,0 +1,57 @@
+{
+  "schema_version": "polymarket-exact-negrisk-books-retained-adjudication-contract-v1",
+  "frozen_at_utc": "2026-08-30T11:54:54.1836783Z",
+  "contract_path": "docs/model-research/action-value/polymarket-elon-sep1-sep8-exact-negrisk-books-retained-adjudication-contract-v1-2026-08-30.json",
+  "question": "Using only the completed immutable 52-token book response, what is the exact best fixed-NegRisk path after current Gamma taker fees and one adverse tick per leg when conversion subsets are optimized without exhaustive enumeration?",
+  "consumed_runner_failure": {
+    "network_request_completed": true,
+    "original_result_written": false,
+    "reason": "the original generic runner attempted 2^26-1 conversion subsets per screen and was stopped after durable response retention",
+    "correction": "exact additive subset optimization plus bounded meet-in-the-middle profitable-path counting over the immutable response",
+    "refetch_permitted": false
+  },
+  "retained_sources": {
+    "books_contract_path": "docs/model-research/action-value/polymarket-elon-sep1-sep8-exact-negrisk-books-contract-v1-2026-08-30.json",
+    "books_contract_sha256": "7c17af7db0af9df36c81bad7897341c0d1c53bc2b587135aec02836e3b28a0a3",
+    "books_raw_path": "data/polymarket-elon-sep1-sep8-exact-negrisk-books-v1/raw/books.json",
+    "books_raw_sha256": "571aae1e4c7570d8623712eaed1754b8a0bbb731ff9ed54d8b4948c4e6372896",
+    "books_journal_path": "data/polymarket-elon-sep1-sep8-exact-negrisk-books-v1/request-journal.jsonl",
+    "books_journal_sha256": "1eeace70626ffa11bba883f7d15a908e66e74283b3d18e8326b34bb92cb96bd7"
+  },
+  "decision": {
+    "candidate": "the retained batch must pass its original freshness gates and the exact best path must remain strictly positive after current Gamma taker fees and one adverse tick on every leg",
+    "accepted_edge": false,
+    "profitability_proved": false,
+    "conditional_next_step": "Only a retained-data source candidate may advance to a separately frozen pinned adapter fee, gas, failure, latency, atomicity, and owned paper execution proof."
+  },
+  "output_path": "docs/model-research/action-value/polymarket-elon-sep1-sep8-exact-negrisk-books-retained-adjudication-result-v1-2026-08-30.json",
+  "authority": {
+    "account_requests": 0,
+    "book_batch_requests": 0,
+    "credentials_used": false,
+    "funds_used": false,
+    "gamma_requests": 0,
+    "onchain_requests": 0,
+    "orders_or_transactions": 0,
+    "protected_capture_touched": false,
+    "public_unauthenticated_read_only_requests": 0,
+    "signed_requests": 0,
+    "trading_authority": false
+  },
+  "implementations": [
+    {
+      "path": "tools/adjudicate_polymarket_exact_negrisk_books_retained.py",
+      "sha256": "2426022e00a6856010960cc677c1bc7110a35395c192e29aab217a9206905914"
+    },
+    {
+      "path": "src/simple_ai_trading/structural_parity.py",
+      "sha256": "256fd1b6281e1473f5d37999075e7bb3728a2a8192ec7e3e972af9600b228c30"
+    },
+    {
+      "path": "tools/screen_polymarket_exact_negrisk_books.py",
+      "sha256": "660c2bf223a641fcd7e9749cea5004aad45c4d7cca786cc0876438f99b35eff8"
+    }
+  ],
+  "retry_policy": "This retained-data adjudication is one-use and performs zero network requests. Preserve the original consumed contract, raw response, and journal. Never refetch, reorder, shorten, or select favorable books to repair the stopped computation.",
+  "contract_sha256": "7804aa5442b62745462307b021709cc80b98dac13524c14792ea2b20070581cd"
+}

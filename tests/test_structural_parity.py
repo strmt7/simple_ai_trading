@@ -129,6 +129,34 @@ def test_no_conversion_checks_every_subset_and_finds_best_path() -> None:
     assert screen.best_no_conversion.net_quote == Decimal("3.40")
 
 
+def test_no_conversion_optimizes_26_outcomes_without_enumerating_every_path() -> None:
+    outcomes = tuple(
+        _outcome(
+            f"Outcome {index:02d}",
+            yes_bid="0.04",
+            yes_ask="0.05",
+            no_ask="0.95",
+        )
+        for index in range(26)
+    )
+
+    screen = screen_negative_risk_parity(
+        outcomes,
+        quantity=Decimal("5"),
+        conversion_fee_bips=0,
+    )
+
+    conversion_count = (1 << 26) - 1
+    assert screen.evaluated_path_count == conversion_count + 2
+    assert screen.executable_path_count == conversion_count + 2
+    assert screen.profitable_path_count == conversion_count + 1
+    assert screen.best_no_conversion is not None
+    assert screen.best_no_conversion.selected_no_outcomes == tuple(
+        outcome.label for outcome in outcomes
+    )
+    assert screen.best_no_conversion.net_quote == Decimal("1.50")
+
+
 def test_nonzero_conversion_fee_fails_closed() -> None:
     outcomes = (
         _outcome("A", yes_bid="0.19", yes_ask="0.20", no_ask="0.81"),

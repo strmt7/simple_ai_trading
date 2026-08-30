@@ -3,13 +3,16 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from bisect import bisect_right
 from decimal import Decimal, InvalidOperation
-from itertools import combinations
 from itertools import permutations
 from typing import Sequence
 
 from .paper_execution import BookLevel
 from .polymarket_fees import PolymarketFeeModel
+
+
+MAX_EXACT_NEGATIVE_RISK_CONVERSION_VARIABLES = 32
 
 
 def _decimal(value: object, *, name: str, positive: bool = False) -> Decimal:
@@ -424,48 +427,96 @@ def screen_negative_risk_parity(
             initial_outlay_quote=requested_quantity,
         )
 
+    outcome_count = len(normalized)
+    evaluated_conversions = (1 << outcome_count) - 1
+    forced_selected = tuple(
+        index
+        for index, (no_fill, yes_fill) in enumerate(zip(no_buys, yes_sells, strict=True))
+        if no_fill is not None and yes_fill is None
+    )
+    forced_unselected = tuple(
+        index
+        for index, (no_fill, yes_fill) in enumerate(zip(no_buys, yes_sells, strict=True))
+        if no_fill is None and yes_fill is not None
+    )
+    variable = tuple(
+        index
+        for index, (no_fill, yes_fill) in enumerate(zip(no_buys, yes_sells, strict=True))
+        if no_fill is not None and yes_fill is not None
+    )
+    disconnected = any(
+        no_fill is None and yes_fill is None
+        for no_fill, yes_fill in zip(no_buys, yes_sells, strict=True)
+    )
+    if len(variable) > MAX_EXACT_NEGATIVE_RISK_CONVERSION_VARIABLES:
+        raise RuntimeError(
+            "negative-risk exact profitable-path counting exceeds the bounded variable ceiling"
+        )
+
     best_no_conversion: NegativeRiskParityPath | None = None
     executable_conversions = 0
     profitable_conversions = 0
-    evaluated_conversions = 0
-    outcome_count = len(normalized)
-    for selected_count in range(1, outcome_count + 1):
-        for selected_indices in combinations(range(outcome_count), selected_count):
-            evaluated_conversions += 1
-            selected = frozenset(selected_indices)
-            selected_fills = tuple(no_buys[index] for index in selected_indices)
-            complement_fills = tuple(
-                yes_sells[index]
-                for index in range(outcome_count)
-                if index not in selected
-            )
-            if any(fill is None for fill in (*selected_fills, *complement_fills)):
-                continue
-            executable_conversions += 1
-            no_fills = tuple(fill for fill in selected_fills if fill is not None)
-            yes_fills = tuple(fill for fill in complement_fills if fill is not None)
-            no_cost = sum((fill.buy_cost for fill in no_fills), Decimal("0"))
-            sale_value = sum((fill.sell_value for fill in yes_fills), Decimal("0"))
-            collateral = requested_quantity * Decimal(selected_count - 1)
-            path = NegativeRiskParityPath(
-                mechanism="buy_no_convert_sell_complement_yes",
-                selected_no_outcomes=tuple(
-                    normalized[index].label for index in selected_indices
-                ),
-                net_quote=collateral + sale_value - no_cost,
-                taker_fees_quote=sum(
-                    (fill.taker_fee_quote for fill in (*no_fills, *yes_fills)),
-                    Decimal("0"),
-                ),
-                initial_outlay_quote=no_cost,
-            )
-            if path.net_quote > 0:
-                profitable_conversions += 1
-            if (
-                best_no_conversion is None
-                or path.net_quote > best_no_conversion.net_quote
-            ):
-                best_no_conversion = path
+    if not disconnected and (forced_selected or variable):
+        base_net = requested_quantity * Decimal(len(forced_selected) - 1)
+        base_net += sum(
+            (yes_sells[index].sell_value for index in (*forced_unselected, *variable)),
+            Decimal("0"),
+        )
+        base_net -= sum(
+            (no_buys[index].buy_cost for index in forced_selected), Decimal("0")
+        )
+        deltas = tuple(
+            requested_quantity
+            - no_buys[index].buy_cost
+            - yes_sells[index].sell_value
+            for index in variable
+        )
+        selected = set(forced_selected)
+        selected.update(index for index, delta in zip(variable, deltas, strict=True) if delta > 0)
+        if not selected:
+            selected.add(max(variable, key=lambda index: deltas[variable.index(index)]))
+        selected_indices = tuple(sorted(selected))
+        selected_fills = tuple(no_buys[index] for index in selected_indices)
+        complement_fills = tuple(
+            yes_sells[index]
+            for index in range(outcome_count)
+            if index not in selected
+        )
+        no_fills = tuple(fill for fill in selected_fills if fill is not None)
+        yes_fills = tuple(fill for fill in complement_fills if fill is not None)
+        no_cost = sum((fill.buy_cost for fill in no_fills), Decimal("0"))
+        sale_value = sum((fill.sell_value for fill in yes_fills), Decimal("0"))
+        best_no_conversion = NegativeRiskParityPath(
+            mechanism="buy_no_convert_sell_complement_yes",
+            selected_no_outcomes=tuple(
+                normalized[index].label for index in selected_indices
+            ),
+            net_quote=(
+                requested_quantity * Decimal(len(selected_indices) - 1)
+                + sale_value
+                - no_cost
+            ),
+            taker_fees_quote=sum(
+                (fill.taker_fee_quote for fill in (*no_fills, *yes_fills)),
+                Decimal("0"),
+            ),
+            initial_outlay_quote=no_cost,
+        )
+        executable_conversions = (1 << len(variable)) - (0 if forced_selected else 1)
+
+        midpoint = len(deltas) // 2
+        left_sums = [Decimal("0")]
+        for delta in deltas[:midpoint]:
+            left_sums += [value + delta for value in left_sums]
+        right_sums = [Decimal("0")]
+        for delta in deltas[midpoint:]:
+            right_sums += [value + delta for value in right_sums]
+        right_sums.sort()
+        for left in left_sums:
+            cutoff = bisect_right(right_sums, -base_net - left)
+            profitable_conversions += len(right_sums) - cutoff
+        if not forced_selected and base_net > 0:
+            profitable_conversions -= 1
 
     direct_paths = tuple(
         path for path in (buy_all_yes_hold, mint_all_yes_sell) if path is not None
