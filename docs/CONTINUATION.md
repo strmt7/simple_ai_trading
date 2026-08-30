@@ -4371,3 +4371,37 @@ Canonical adjudication SHA-256 is
 Accepted edges remain 23, ranked hypotheses remain 44, and terminal families
 remain 55. Registry SHA-256 becomes
 `38450f4fa1720247e0b1717ac1d6022e1a1a3f95e473c65ae5b39deda17cc720`.
+
+## Binance Link-and-Trade realized client kickback overlay
+
+The retained current Agent Native index and one predeclared official rendered
+source extraction exposed a registry-absent direct-cost mechanism. The signed
+client-side `/sapi/v1/apiReferral/kickback/recentRecord` route returns `income`,
+`asset`, `symbol`, and `time` for the latest seven days. It is distinct from the
+explicitly named partner-rebate route, which accepts customer selection and
+returns customer, order, trade, distribution, and commission lineage. The
+adjacent signed client-status route returns `rebateWorking` and referrer lineage.
+
+The edge is accepted only as exact realized positive own-account kickback income
+from independently justified legitimate organic Spot trading on an already
+linked rebate-working account, after exact owned balance reconciliation and
+every incremental fee, tax, support, compliance, settlement, and operating cost.
+The underlying trade must remain positive without the kickback. Documentation
+examples are not rate, eligibility, income, or profitability evidence; the
+public forward floor is zero and this is not deployment-ready.
+
+No credentials, signed request, account state, linking, customization, order,
+trade, transfer, fund, or mutation was used. Advance only when both designated
+credentials, explicit signed GET-only authority, the already linked account and
+known agent code, and an exact latest-seven-day organic kickback question all
+exist. Never open, relink, customize, reroute, split, churn, self-match, or trade
+for kickback, and never double count partner rebate, referral commission, fee
+discounts, or promotions. Canonical result SHA-256 is
+`ada551b385d9040e4126ee0e73e1dd1f417b103e6c5c5f7c567411ab913ff065`.
+Accepted edges become 24, ranked hypotheses remain 44, and terminal families
+remain 55. Registry SHA-256 becomes
+`8888314ada1411b74b2b6417201f6cee13733d713527f22c07abfa4ab1900864`.
+The accepted yield frontier still contains nine yield rows and now excludes 15
+non-yield organic-flow, fee, referral, creator, and financing overlays; its
+canonical SHA-256 becomes
+`5f638281d9df79456a5a909f4da07e6375ff46404a8a63fceb7f96899a5a74c2`.

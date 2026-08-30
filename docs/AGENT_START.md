@@ -12,7 +12,7 @@ operating contract. Historical handoff text is archived under
 | Development branch | `main` only |
 | Binance | BTC, ETH, and SOL; paper or testnet/Demo only |
 | Polymarket | Independent BTC 5-minute/15-minute research; disabled by default |
-| Accepted edges | Twenty-three scoped structural edges: Polymarket complete-set holding yield for existing idle on-platform pUSD; Polymarket pUSD taker-fee rebates only for independently justified legitimate organic BTC/ETH/SOL taker flow after the direct-wallet tier is effective; Polymarket builder fees only on bona fide independently existing third-party orders routed through an owned app with an account-confirmed active disclosed positive rate; Polymarket referral rewards only for authentic external referrals when the account already independently cleared the lifetime-volume threshold; Polymarket Perps referral fee share only for authentic external traders within account-confirmed available invites and without volume-based invite unlocking; Binance Soft Staking yield for already-held idle non-order ETH/SOL Spot inventory; LDUSDT or independently existing RWUSD reward retention only for already-required USD-M Futures collateral under the exact applicable account haircut and limits; just-in-time BNB fee reduction only for independently justified organic Spot flow; current quote-native BTC/ETH/SOL promotional fee reduction without quote acquisition or extra volume; the current TradFi perpetual zero-maker and reduced-taker fee overlay only for independently justified organic flow with the exact current symbol and actual fill role; the current Binance Stocks promotional trading-spread reduction only for independently justified organic direct-stock flow with the exact previewed order tier and realized fee; the current bStocks zero-maker fee only for independently justified organic maker flow through `2026-09-30T23:59:00Z`, with the exact owned fill role and counterfactual account fee; USD1/WLFI holding-airdrop yield only for already-held eligible USD1; the fixed USD1 Simple Earn bonus only on the first 1,500 independently already-held idle USD1 when its mutually exclusive balance-specific route beats the holding airdrop after all transition and opportunity costs; U Flexible yield only for already-held eligible non-EEA U; the automatic RWUSD VIP bonus only on independently required existing RWUSD; current USDT Flexible bonus yield only for independently held idle eligible USDT; the current automatic USDe holding reward only for eligible USDe already independently held on Binance for at least 24 hours; Binance Square's base 20% Write to Earn commission only on authentic external readers' independently existing eligible fee-bearing trades attributed to genuinely useful content; Binance Referral Pro's base 20% Spot/Margin and 10% one-year Futures fee commission only for authentic independently acquired new external users; exact realized monthly Binance Institutional Loan interest rebates only on an independently required existing eligible loan when KYB VIP eligibility and the applicable performance target were independently satisfied without creating trading volume, Open Interest, Net Asset Value, borrowing, leverage, or collateral exposure; exact realized positive Binance CAAS markup trade commission only from independently existing bona fide external client trades under an already active disclosed fee group and markup configuration after every incremental cost; and fail-closed one-intermediary Binance Spot route savings only for an independently required legitimate same-account organic conversion after exact account fees, filters, fresh finite-size depth, residuals, extra-leg stress, and failure-unwind costs remain strictly cheaper than the direct route. None is deployment-ready or fully account-and-external-cost-qualified. |
+| Accepted edges | Twenty-four scoped structural edges. The canonical complete scopes, counts, and retry gates are in `docs/model-research/structural-edge-priority-registry-v1.json`; none is deployment-ready or fully account-and-external-cost-qualified. |
 | Live-money authority | None |
 | Historical cutoff | `2026-08-14T00:00:00Z` |
 
@@ -96,6 +96,18 @@ safety gate, blocks Stop, or submits an order.
   existing BNSOL; claiming still requires separate authority. Canonical
   adjudication SHA-256 is
   `f0b6b4df8632b1cc302bdb24189c4336968be1fa9b94d1f7792205f46450c466`.
+- Binance Link-and-Trade client kickbacks are accepted only as exact realized
+  positive own-account income from independently justified legitimate organic
+  Spot trades on an already linked account with `rebateWorking` true. The
+  current official rendered contract distinguishes the client kickback route
+  from the explicitly named partner-rebate route and binds client income,
+  asset, symbol, and time. Public rate, account eligibility, owned income, and
+  forward profit remain unproved, so the public floor is zero. Never open,
+  relink, customize, churn, reroute, or trade for kickback. Signed reconciliation
+  requires both designated credentials and explicit GET-only authority; every
+  link, customization, order, trade, transfer, or mutation remains separately
+  unauthorized. Canonical result SHA-256 is
+  `ada551b385d9040e4126ee0e73e1dd1f417b103e6c5c5f7c567411ab913ff065`.
 - Binance Stocks FPSL is a materially distinct direction-independent overlay
   for U.S.-listed stocks or ETFs that are already independently owned and fully
   settled. The current FAQ says actual loaned shares accrue interest daily and

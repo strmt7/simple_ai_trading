@@ -1,0 +1,50 @@
+{
+  "authority": {
+    "account_requests": 0,
+    "credentials_used": false,
+    "linked_accounts_or_referrals_created": 0,
+    "orders_or_trades": 0,
+    "protected_capture_accessed": false,
+    "public_rendered_documentation_reads": 1,
+    "state_changes": 0
+  },
+  "contract_sha256": "006e9feffb6ee4162039e43ae0ebd676d2c0c6a0fb64e88478b51d06d1eb620d",
+  "decision_contract": {
+    "accept_only_if": "The exact current official rendered Link and Trade Spot API page proves that the kickback record is client-beneficiary value distinct from the partner rebate record and binds a realized reward asset amount and event or trade lineage. Acceptance is limited to exact positive realized kickback from independently justified legitimate organic Spot activity on an already linked account after every incremental fee tax support compliance settlement and operating cost.",
+    "fail_closed_if": [
+      "the beneficiary cannot be distinguished from the partner",
+      "the response cannot bind realized positive asset amount and lineage",
+      "documentation examples would be needed as current account rate eligibility or owned income",
+      "account creation linking referral customization or extra trading volume is needed"
+    ],
+    "public_forward_profit_floor": "0",
+    "prohibited": [
+      "opening relinking or customizing an account to chase kickback",
+      "creating enlarging splitting churning self-matching or rerouting volume",
+      "double counting the client kickback with partner rebate referral commission fee discount or promotion",
+      "calling any signed endpoint without explicit GET-only authority",
+      "placing orders or changing account or referral state"
+    ]
+  },
+  "frozen_at_utc": "2026-08-30T06:45:23.2243823Z",
+  "rendered_source": {
+    "classification": "official_public_unauthenticated_web_rendered_documentation_read",
+    "method": "GET",
+    "required_facts": [
+      "exact_kickback_recent_record_endpoint_and_title",
+      "exact_partner_rebate_recent_record_endpoint_and_distinct_title",
+      "client_beneficiary_semantics",
+      "realized_reward_asset_and_amount_fields",
+      "event_or_trade_lineage_fields",
+      "authorization_classification"
+    ],
+    "url": "https://developers.binance.com/en/docs/catalog/vip-and-institutional-link-and-trade/api/rest-api/spot"
+  },
+  "retained_source": {
+    "agent_native_endpoint_index": {
+      "path": "docs/model-research/binance/raw/spot-block-matching-cost-overlay-v1-2026-08-30/03-agent-native-index.raw.txt",
+      "sha256": "944e132d3523c8a03abcac2f7ddb85802107e45161470885b7a8785fd4fdb15d"
+    }
+  },
+  "schema_version": "binance-link-trade-existing-client-kickback-overlay-rendered-source-contract-v1"
+}

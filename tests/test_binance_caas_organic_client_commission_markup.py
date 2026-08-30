@@ -101,4 +101,3 @@ def test_narrow_realized_markup_overlay_is_accepted_without_mutation_authority()
         "path": ARTIFACT.relative_to(ROOT).as_posix(),
         "result_sha256": artifact["result_sha256"],
     } in family["canonical_artifacts"]
-    assert registry["accepted_edge_count"] == 23
