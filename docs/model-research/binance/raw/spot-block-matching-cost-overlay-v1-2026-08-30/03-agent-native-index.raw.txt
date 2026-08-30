@@ -1,0 +1,2120 @@
+# Binance Developer Docs
+
+> Documentation files for Large Language Models
+
+## Documentation
+
+- [/introduction](/en/docs/introduction.md)
+- [SDKs & Tools](/en/docs/sdks-tools/overview.md)
+- [Agent Native](/en/docs/agent-native/overview.md)
+- [/agent-native/mcp-server](/en/docs/agent-native/mcp-server.md)
+- [/agent-native/llms-txt](/en/docs/agent-native/llms-txt.md)
+- [Binance CLI](/en/docs/sdks-tools/tools/binance-cli.md)
+- [Asymmetric Key Generator](/en/docs/sdks-tools/tools/asymmetric-key-generator.md)
+- [SBE Sample App (Rust)](/en/docs/sdks-tools/sample-apps/sbe-rust.md)
+- [SBE Sample App (Java)](/en/docs/sdks-tools/sample-apps/sbe-java.md)
+- [SBE Sample App (C++)](/en/docs/sdks-tools/sample-apps/sbe-cpp.md)
+- [Postman Collections](/en/docs/sdks-tools/postman/collections.md)
+- [Binance Skills Hub](/en/docs/sdks-tools/integrations/skills-hub.md)
+- [Binance for ChatGPT](/en/docs/sdks-tools/integrations/chatgpt.md)
+- [Rust](/en/docs/sdks-tools/connectors/rust.md)
+- [Ruby](/en/docs/sdks-tools/connectors/ruby.md)
+- [Python](/en/docs/sdks-tools/connectors/python.md)
+- [PHP](/en/docs/sdks-tools/connectors/php.md)
+- [JavaScript](/en/docs/sdks-tools/connectors/javascript.md)
+- [Java](/en/docs/sdks-tools/connectors/java.md)
+- [Go](/en/docs/sdks-tools/connectors/go.md)
+- [FIX (Python)](/en/docs/sdks-tools/connectors/fix-python.md)
+- [.NET](/en/docs/sdks-tools/connectors/dotnet.md)
+- [Binance MCP Server](/en/docs/agent-native/mcp-server/agentic.md)
+- [Binance Web3 ON-Chain API Specification](/en/docs/products/web3-task-verification/on-chain-verification.md)
+- [Binance Web3 API Specification](/en/docs/products/web3-task-verification/apis.md)
+- [DApp Self-Testing Manual](/en/docs/products/web3-dapp/self-testing.md)
+- [DApp Self-Listing Manual](/en/docs/products/web3-dapp/self-listing.md)
+- [Web3 DApp Platform Operation Rules](/en/docs/products/web3-dapp/operation-rules.md)
+- [Tron Provider](/en/docs/products/web3-connect/tron-provider.md)
+- [Ton Provider](/en/docs/products/web3-connect/ton-provider.md)
+- [Sui Provider](/en/docs/products/web3-connect/sui-provider.md)
+- [Solana Provider](/en/docs/products/web3-connect/solana-provider.md)
+- [Movement Network](/en/docs/products/web3-connect/movement-network.md)
+- [Binance Wallet SDK](/en/docs/products/web3-connect/introduction.md)
+- [EVM-Compatible Provider](/en/docs/products/web3-connect/evm-compatible-provider.md)
+- [Cosmos Provider](/en/docs/products/web3-connect/cosmos-provider.md)
+- [Bitcoin Provider](/en/docs/products/web3-connect/bitcoin-provider.md)
+- [Avail Provider](/en/docs/products/web3-connect/avail-provider.md)
+- [Aptos Provider](/en/docs/products/web3-connect/aptos-provider.md)
+- [Supported Skills](/en/docs/products/wallet-skills/supported-skills.md)
+- [Binance Wallet Skills](/en/docs/products/wallet-skills/overview.md)
+- [/products/wallet/quick-start](/en/docs/products/wallet/quick-start.md)
+- [/products/wallet/general-info](/en/docs/products/wallet/general-info.md)
+- [/products/wallet/error-code](/en/docs/products/wallet/error-code.md)
+- [/products/wallet/change-log](/en/docs/products/wallet/change-log.md)
+- [/products/wallet/Introduction](/en/docs/products/wallet/Introduction.md)
+- [/products/w3w-prediction/change-log](/en/docs/products/w3w-prediction/change-log.md)
+- [/products/vip-loan/quick-start](/en/docs/products/vip-loan/quick-start.md)
+- [/products/vip-loan/general-info](/en/docs/products/vip-loan/general-info.md)
+- [/products/vip-loan/error-code](/en/docs/products/vip-loan/error-code.md)
+- [/products/vip-loan/change-log](/en/docs/products/vip-loan/change-log.md)
+- [/products/vip-loan/Introduction](/en/docs/products/vip-loan/Introduction.md)
+- [/products/vip-service/change-log](/en/docs/products/vip-service/change-log.md)
+- [/products/vip-caas/quick-start](/en/docs/products/vip-caas/quick-start.md)
+- [/products/vip-caas/general-info](/en/docs/products/vip-caas/general-info.md)
+- [/products/vip-caas/change-log](/en/docs/products/vip-caas/change-log.md)
+- [/products/sub-account/quick-start](/en/docs/products/sub-account/quick-start.md)
+- [/products/sub-account/general-info](/en/docs/products/sub-account/general-info.md)
+- [/products/sub-account/error-code](/en/docs/products/sub-account/error-code.md)
+- [/products/sub-account/change-log](/en/docs/products/sub-account/change-log.md)
+- [/products/sub-account/Introduction](/en/docs/products/sub-account/Introduction.md)
+- [/products/stocks/websocket-streams-general-info](/en/docs/products/stocks/websocket-streams-general-info.md)
+- [/products/stocks/quick-start](/en/docs/products/stocks/quick-start.md)
+- [/products/stocks/market-data-general-info](/en/docs/products/stocks/market-data-general-info.md)
+- [/products/stocks/introduction](/en/docs/products/stocks/introduction.md)
+- [/products/stocks/general-info](/en/docs/products/stocks/general-info.md)
+- [/products/stocks/error-code](/en/docs/products/stocks/error-code.md)
+- [/products/stocks/common-definition](/en/docs/products/stocks/common-definition.md)
+- [/products/stocks/change-log](/en/docs/products/stocks/change-log.md)
+- [/products/staking/quick-start](/en/docs/products/staking/quick-start.md)
+- [/products/staking/general-info](/en/docs/products/staking/general-info.md)
+- [/products/staking/error-code](/en/docs/products/staking/error-code.md)
+- [/products/staking/change-log](/en/docs/products/staking/change-log.md)
+- [/products/staking/Introduction](/en/docs/products/staking/Introduction.md)
+- [/products/spot-block-matching/quick-start](/en/docs/products/spot-block-matching/quick-start.md)
+- [/products/spot-block-matching/general-info](/en/docs/products/spot-block-matching/general-info.md)
+- [/products/spot-block-matching/error-code](/en/docs/products/spot-block-matching/error-code.md)
+- [/products/spot-block-matching/change-log](/en/docs/products/spot-block-matching/change-log.md)
+- [/products/spot-block-matching/Introduction](/en/docs/products/spot-block-matching/Introduction.md)
+- [/products/simple-earn/quick-start](/en/docs/products/simple-earn/quick-start.md)
+- [/products/simple-earn/general-info](/en/docs/products/simple-earn/general-info.md)
+- [/products/simple-earn/error-code](/en/docs/products/simple-earn/error-code.md)
+- [/products/simple-earn/change-log](/en/docs/products/simple-earn/change-log.md)
+- [/products/simple-earn/Introduction](/en/docs/products/simple-earn/Introduction.md)
+- [/products/spot/web-socket-streams](/en/docs/products/spot/web-socket-streams.md)
+- [/products/spot/web-socket-api](/en/docs/products/spot/web-socket-api.md)
+- [/products/spot/user-data-stream](/en/docs/products/spot/user-data-stream.md)
+- [/products/spot/sbe-market-data-streams](/en/docs/products/spot/sbe-market-data-streams.md)
+- [/products/spot/rest-api](/en/docs/products/spot/rest-api.md)
+- [/products/spot/fix-api](/en/docs/products/spot/fix-api.md)
+- [/products/spot/filters](/en/docs/products/spot/filters.md)
+- [/products/spot/errors](/en/docs/products/spot/errors.md)
+- [/products/spot/enums](/en/docs/products/spot/enums.md)
+- [/products/spot/PROD-TERMS-OF-USE](/en/docs/products/spot/PROD-TERMS-OF-USE.md)
+- [/products/spot/CHANGELOG](/en/docs/products/spot/CHANGELOG.md)
+- [/products/pay/quick-start](/en/docs/products/pay/quick-start.md)
+- [/products/pay/general-info](/en/docs/products/pay/general-info.md)
+- [/products/pay/error-code](/en/docs/products/pay/error-code.md)
+- [/products/pay/change-log](/en/docs/products/pay/change-log.md)
+- [/products/pay/Introduction](/en/docs/products/pay/Introduction.md)
+- [/products/rebate/quick-start](/en/docs/products/rebate/quick-start.md)
+- [/products/rebate/general-info](/en/docs/products/rebate/general-info.md)
+- [/products/rebate/error-code](/en/docs/products/rebate/error-code.md)
+- [/products/rebate/change-log](/en/docs/products/rebate/change-log.md)
+- [/products/rebate/Introduction](/en/docs/products/rebate/Introduction.md)
+- [DApp Self-Testing Manual](/en/docs/products/open-platform/self-testing-op.md)
+- [DApp Self-Listing Manual](/en/docs/products/open-platform/self-listing-op.md)
+- [How to Create an Airdrop Campaign on Binance Web3 Open Platform?](/en/docs/products/open-platform/airdrop-creation.md)
+- [/products/onchainpay-x402/quick-start](/en/docs/products/onchainpay-x402/quick-start.md)
+- [/products/onchainpay-x402/introduction](/en/docs/products/onchainpay-x402/introduction.md)
+- [/products/onchainpay-x402/integration-guideline](/en/docs/products/onchainpay-x402/integration-guideline.md)
+- [/products/onchainpay-x402/change-log](/en/docs/products/onchainpay-x402/change-log.md)
+- [/products/onchainpay-x402/b402-bazaar](/en/docs/products/onchainpay-x402/b402-bazaar.md)
+- [/products/onchain/overview](/en/docs/products/onchain/overview.md)
+- [/products/mining/quick-start](/en/docs/products/mining/quick-start.md)
+- [/products/mining/general-info](/en/docs/products/mining/general-info.md)
+- [/products/mining/error-code](/en/docs/products/mining/error-code.md)
+- [/products/mining/change-log](/en/docs/products/mining/change-log.md)
+- [/products/mining/Introduction](/en/docs/products/mining/Introduction.md)
+- [TypeScript Support](/en/docs/products/mini-program/typescript.md)
+- [Tutorial: Create a weather app by mini program](/en/docs/products/mini-program/tutorial.md)
+- [Quick Start](/en/docs/products/mini-program/quick-start.md)
+- [Mini Program Platform Operation Rules](/en/docs/products/mini-program/operation-rules.md)
+- [Mini Program Platform Merchant Enrollment](/en/docs/products/mini-program/merchant-enrollment.md)
+- [CLI](/en/docs/products/mini-program/cli.md)
+- [Mini Programs Audit Rules](/en/docs/products/mini-program/audit-rules.md)
+- [Announcement](/en/docs/products/mini-program/announcement.md)
+- [About Mini Program](/en/docs/products/mini-program/about-mini-program.md)
+- [Integrate Binance Login with your web application](/en/docs/products/login/web-integration.md)
+- [Binance Login (OAuth2)](/en/docs/products/login/introduction.md)
+- [Integrate Binance Login with your App](/en/docs/products/login/app-integration.md)
+- [/products/link-plus/change-log](/en/docs/products/link-plus/change-log.md)
+- [/products/margin-trading/trade-data-stream](/en/docs/products/margin-trading/trade-data-stream.md)
+- [/products/margin-trading/risk-data-stream](/en/docs/products/margin-trading/risk-data-stream.md)
+- [/products/margin-trading/listen-token-data-stream](/en/docs/products/margin-trading/listen-token-data-stream.md)
+- [/products/margin-trading/general-info](/en/docs/products/margin-trading/general-info.md)
+- [/products/margin-trading/error-code](/en/docs/products/margin-trading/error-code.md)
+- [/products/margin-trading/common-definition](/en/docs/products/margin-trading/common-definition.md)
+- [/products/margin-trading/change-log](/en/docs/products/margin-trading/change-log.md)
+- [/products/margin-trading/best-practice](/en/docs/products/margin-trading/best-practice.md)
+- [/products/margin-trading/Introduction](/en/docs/products/margin-trading/Introduction.md)
+- [/products/link-and-trade/Introduction](/en/docs/products/link-and-trade/Introduction.md)
+- [/products/kyc-saas/Introduction](/en/docs/products/kyc-saas/Introduction.md)
+- [/products/kyc-saas/Faq](/en/docs/products/kyc-saas/Faq.md)
+- [/products/kyc-saas/Error-Code](/en/docs/products/kyc-saas/Error-Code.md)
+- [/products/institutional-loan/quick-start](/en/docs/products/institutional-loan/quick-start.md)
+- [/products/institutional-loan/general-info](/en/docs/products/institutional-loan/general-info.md)
+- [/products/institutional-loan/error-code](/en/docs/products/institutional-loan/error-code.md)
+- [/products/institutional-loan/common-definition](/en/docs/products/institutional-loan/common-definition.md)
+- [/products/institutional-loan/change-log](/en/docs/products/institutional-loan/change-log.md)
+- [/products/institutional-loan/Introduction](/en/docs/products/institutional-loan/Introduction.md)
+- [/products/gift-card/quick-start](/en/docs/products/gift-card/quick-start.md)
+- [/products/gift-card/general-info](/en/docs/products/gift-card/general-info.md)
+- [/products/gift-card/error-code](/en/docs/products/gift-card/error-code.md)
+- [/products/gift-card/change-log](/en/docs/products/gift-card/change-log.md)
+- [/products/gift-card/Introduction](/en/docs/products/gift-card/Introduction.md)
+- [/products/fund-account/introduction](/en/docs/products/fund-account/introduction.md)
+- [/products/fund-account/change-log](/en/docs/products/fund-account/change-log.md)
+- [/products/fiat/quick-start](/en/docs/products/fiat/quick-start.md)
+- [/products/fiat/general-info](/en/docs/products/fiat/general-info.md)
+- [/products/fiat/error-code](/en/docs/products/fiat/error-code.md)
+- [/products/fiat/change-log](/en/docs/products/fiat/change-log.md)
+- [/products/fiat/Introduction](/en/docs/products/fiat/Introduction.md)
+- [/products/exchange-link/Introduction](/en/docs/products/exchange-link/Introduction.md)
+- [/products/derivatives-trading-usds-futures/websocket-api-general-info](/en/docs/products/derivatives-trading-usds-futures/websocket-api-general-info.md)
+- [/products/derivatives-trading-usds-futures/user-data-streams](/en/docs/products/derivatives-trading-usds-futures/user-data-streams.md)
+- [/products/derivatives-trading-usds-futures/quick-start](/en/docs/products/derivatives-trading-usds-futures/quick-start.md)
+- [/products/derivatives-trading-usds-futures/general-info](/en/docs/products/derivatives-trading-usds-futures/general-info.md)
+- [/products/derivatives-trading-usds-futures/error-code](/en/docs/products/derivatives-trading-usds-futures/error-code.md)
+- [/products/derivatives-trading-usds-futures/common-definition](/en/docs/products/derivatives-trading-usds-futures/common-definition.md)
+- [/products/derivatives-trading-usds-futures/change-log](/en/docs/products/derivatives-trading-usds-futures/change-log.md)
+- [/products/derivatives-trading-usds-futures/Introduction](/en/docs/products/derivatives-trading-usds-futures/Introduction.md)
+- [/products/derivatives-trading-portfolio-margin-pro/user-data-streams](/en/docs/products/derivatives-trading-portfolio-margin-pro/user-data-streams.md)
+- [/products/derivatives-trading-portfolio-margin-pro/quick-start](/en/docs/products/derivatives-trading-portfolio-margin-pro/quick-start.md)
+- [/products/derivatives-trading-portfolio-margin-pro/general-info](/en/docs/products/derivatives-trading-portfolio-margin-pro/general-info.md)
+- [/products/derivatives-trading-portfolio-margin-pro/error-code](/en/docs/products/derivatives-trading-portfolio-margin-pro/error-code.md)
+- [/products/derivatives-trading-portfolio-margin-pro/change-log](/en/docs/products/derivatives-trading-portfolio-margin-pro/change-log.md)
+- [/products/derivatives-trading-portfolio-margin-pro/Introduction](/en/docs/products/derivatives-trading-portfolio-margin-pro/Introduction.md)
+- [/products/derivatives-trading-portfolio-margin/user-data-streams](/en/docs/products/derivatives-trading-portfolio-margin/user-data-streams.md)
+- [/products/derivatives-trading-portfolio-margin/quick-start](/en/docs/products/derivatives-trading-portfolio-margin/quick-start.md)
+- [/products/derivatives-trading-portfolio-margin/general-info](/en/docs/products/derivatives-trading-portfolio-margin/general-info.md)
+- [/products/derivatives-trading-portfolio-margin/error-code](/en/docs/products/derivatives-trading-portfolio-margin/error-code.md)
+- [/products/derivatives-trading-portfolio-margin/common-definition](/en/docs/products/derivatives-trading-portfolio-margin/common-definition.md)
+- [/products/derivatives-trading-portfolio-margin/change-log](/en/docs/products/derivatives-trading-portfolio-margin/change-log.md)
+- [/products/derivatives-trading-portfolio-margin/Introduction](/en/docs/products/derivatives-trading-portfolio-margin/Introduction.md)
+- [/products/derivatives-trading-options/user-data-streams](/en/docs/products/derivatives-trading-options/user-data-streams.md)
+- [/products/derivatives-trading-options/quick-start](/en/docs/products/derivatives-trading-options/quick-start.md)
+- [/products/derivatives-trading-options/general-info](/en/docs/products/derivatives-trading-options/general-info.md)
+- [/products/derivatives-trading-options/error-code](/en/docs/products/derivatives-trading-options/error-code.md)
+- [/products/derivatives-trading-options/common-definition](/en/docs/products/derivatives-trading-options/common-definition.md)
+- [/products/derivatives-trading-options/change-log](/en/docs/products/derivatives-trading-options/change-log.md)
+- [/products/derivatives-trading-options/Introduction](/en/docs/products/derivatives-trading-options/Introduction.md)
+- [/products/crypto-loan/quick-start](/en/docs/products/crypto-loan/quick-start.md)
+- [/products/crypto-loan/general-info](/en/docs/products/crypto-loan/general-info.md)
+- [/products/crypto-loan/error-code](/en/docs/products/crypto-loan/error-code.md)
+- [/products/crypto-loan/change-log](/en/docs/products/crypto-loan/change-log.md)
+- [/products/crypto-loan/Introduction](/en/docs/products/crypto-loan/Introduction.md)
+- [/products/copy-trading/quick-start](/en/docs/products/copy-trading/quick-start.md)
+- [/products/copy-trading/general-info](/en/docs/products/copy-trading/general-info.md)
+- [/products/copy-trading/error-code](/en/docs/products/copy-trading/error-code.md)
+- [/products/copy-trading/change-log](/en/docs/products/copy-trading/change-log.md)
+- [/products/copy-trading/Introduction](/en/docs/products/copy-trading/Introduction.md)
+- [/products/derivatives-trading-coin-futures/websocket-api-general-info](/en/docs/products/derivatives-trading-coin-futures/websocket-api-general-info.md)
+- [/products/derivatives-trading-coin-futures/user-data-streams](/en/docs/products/derivatives-trading-coin-futures/user-data-streams.md)
+- [/products/derivatives-trading-coin-futures/quick-start](/en/docs/products/derivatives-trading-coin-futures/quick-start.md)
+- [/products/derivatives-trading-coin-futures/general-info](/en/docs/products/derivatives-trading-coin-futures/general-info.md)
+- [/products/derivatives-trading-coin-futures/error-code](/en/docs/products/derivatives-trading-coin-futures/error-code.md)
+- [/products/derivatives-trading-coin-futures/common-definition](/en/docs/products/derivatives-trading-coin-futures/common-definition.md)
+- [/products/derivatives-trading-coin-futures/change-log](/en/docs/products/derivatives-trading-coin-futures/change-log.md)
+- [/products/derivatives-trading-coin-futures/Introduction](/en/docs/products/derivatives-trading-coin-futures/Introduction.md)
+- [/products/derivatives-trading-coin-futures/Important-CM-UM-Integration-Notice](/en/docs/products/derivatives-trading-coin-futures/Important-CM-UM-Integration-Notice.md)
+- [/products/convert/quick-start](/en/docs/products/convert/quick-start.md)
+- [/products/convert/general-info](/en/docs/products/convert/general-info.md)
+- [/products/convert/error-code](/en/docs/products/convert/error-code.md)
+- [/products/convert/change-log](/en/docs/products/convert/change-log.md)
+- [/products/convert/Introduction](/en/docs/products/convert/Introduction.md)
+- [/products/connect-prime/quick-start](/en/docs/products/connect-prime/quick-start.md)
+- [/products/connect-prime/introduction](/en/docs/products/connect-prime/introduction.md)
+- [/products/connect-prime/integration-guideline](/en/docs/products/connect-prime/integration-guideline.md)
+- [/products/connect-prime/change-log](/en/docs/products/connect-prime/change-log.md)
+- [/products/connect-2.0/quick-start](/en/docs/products/connect-2.0/quick-start.md)
+- [/products/connect-2.0/product-scope](/en/docs/products/connect-2.0/product-scope.md)
+- [/products/connect-2.0/introduction](/en/docs/products/connect-2.0/introduction.md)
+- [/products/connect-2.0/change-log](/en/docs/products/connect-2.0/change-log.md)
+- [/products/connect-2.0/authentication-and-signing](/en/docs/products/connect-2.0/authentication-and-signing.md)
+- [/products/connect-2.0/account-and-credentials](/en/docs/products/connect-2.0/account-and-credentials.md)
+- [/products/c2c/quick-start](/en/docs/products/c2c/quick-start.md)
+- [/products/c2c/general-info](/en/docs/products/c2c/general-info.md)
+- [/products/c2c/error-code](/en/docs/products/c2c/error-code.md)
+- [/products/c2c/change-log](/en/docs/products/c2c/change-log.md)
+- [/products/c2c/Introduction](/en/docs/products/c2c/Introduction.md)
+- [OAuth 2.0 Scopes (Permissions) for Binance APIs](/en/docs/products/binance-open-api/scopes.md)
+- [OAuth 2.0 APIs for Binance APIs](/en/docs/products/binance-open-api/apis.md)
+- [Tech Service Provider Notification](/en/docs/products/binance-pay-merchant/webhook-tech-service-provider.md)
+- [Share Account Id Notification](/en/docs/products/binance-pay-merchant/webhook-shareinfo-account-id.md)
+- [Binance Pay: Refund Order Notification](/en/docs/products/binance-pay-merchant/webhook-refund.md)
+- [Webhook query certificate](/en/docs/products/binance-pay-merchant/webhook-query-certificate.md)
+- [Batch Payout Notification](/en/docs/products/binance-pay-merchant/webhook-payout.md)
+- [Payout Non-binance user Notification](/en/docs/products/binance-pay-merchant/webhook-payout-non-binance.md)
+- [Merchant QR Code Notification](/en/docs/products/binance-pay-merchant/webhook-merchant-qr-code.md)
+- [Direct Debit/Pre Authorization Notification](/en/docs/products/binance-pay-merchant/webhook-directdebit-contract.md)
+- [Webhook Common Rules](/en/docs/products/binance-pay-merchant/webhook-common.md)
+- [Binance Pay: Balance Report Notification](/en/docs/products/binance-pay-merchant/webhook-balance-report.md)
+- [Binance Pay API: Release Note V1.0.1](/en/docs/products/binance-pay-merchant/release-note-v1-0-1.md)
+- [Binance Pay: Order Notification](/en/docs/products/binance-pay-merchant/order-notification.md)
+- [OAuth API : Create Collection](/en/docs/products/binance-pay-merchant/oauth-api-collection-create.md)
+- [OAuth API : Query Supported Currency](/en/docs/products/binance-pay-merchant/oauth-api-c2c-currency-query.md)
+- [Merchant API References | Binance Pay](/en/docs/products/binance-pay-merchant/introduction.md): Learn how Binance Pay works, download the SDK, and learn about the API specifications here.
+- [FAQ](/en/docs/products/binance-pay-merchant/fap.md)
+- [Collection Notification](/en/docs/products/binance-pay-merchant/collection-notification.md)
+- [Binance Pay API: Changelog](/en/docs/products/binance-pay-merchant/changelog.md)
+- [Binance Pay API: Release Note V1.0.1](/en/docs/products/binance-pay-merchant/autogen_index.md)
+- [Binance Pay API: Authentication](/en/docs/products/binance-pay-merchant/authentication.md)
+- [Integrate Binance Pay with your App](/en/docs/products/binance-pay-merchant/app-integration.md)
+- [Transfer Fund](/en/docs/products/binance-pay-merchant/api-wallet-transfer.md)
+- [Query Transfer Result](/en/docs/products/binance-pay-merchant/api-wallet-transfer-query.md)
+- [Query Authentication Record](/en/docs/products/binance-pay-merchant/api-technical-service-provider-query-record.md)
+- [Query Scopes](/en/docs/products/binance-pay-merchant/api-technical-service-provider-query-config.md)
+- [Get Request Record](/en/docs/products/binance-pay-merchant/api-technical-service-provider-get-record.md)
+- [Create Authorization Request](/en/docs/products/binance-pay-merchant/api-technical-service-provider-create-record.md)
+- [Query SubMerchant](/en/docs/products/binance-pay-merchant/api-submerchant-query.md)
+- [Modify SubMerchant](/en/docs/products/binance-pay-merchant/api-submerchant-modify.md)
+- [Create SubMerchant](/en/docs/products/binance-pay-merchant/api-submerchant-add.md)
+- [Share Account Id](/en/docs/products/binance-pay-merchant/api-shareinfo-account-id.md)
+- [Submit Split](/en/docs/products/binance-pay-merchant/api-profitshare-submit-split.md)
+- [Split Return](/en/docs/products/binance-pay-merchant/api-profitshare-split-return.md)
+- [Query Split](/en/docs/products/binance-pay-merchant/api-profitshare-query-split.md)
+- [Query Receiver](/en/docs/products/binance-pay-merchant/api-profitshare-query-receiver.md)
+- [Delete Receiver](/en/docs/products/binance-pay-merchant/api-profitshare-delete-receiver.md)
+- [Add Receiver](/en/docs/products/binance-pay-merchant/api-profitshare-add-receiver.md)
+- [Batch Payout](/en/docs/products/binance-pay-merchant/api-payout.md)
+- [Payout Validate Receiver](/en/docs/products/binance-pay-merchant/api-payout-validate-receiver.md)
+- [Payout Query](/en/docs/products/binance-pay-merchant/api-payout-query.md)
+- [Refund Order](/en/docs/products/binance-pay-merchant/api-order-refund.md)
+- [Query Refund](/en/docs/products/binance-pay-merchant/api-order-refund-query.md)
+- [Query Order](/en/docs/products/binance-pay-merchant/api-order-query.md)
+- [Query Order](/en/docs/products/binance-pay-merchant/api-order-query-v2.md)
+- [Payment Payer Verification](/en/docs/products/binance-pay-merchant/api-order-payer-verification.md)
+- [Create Order (Deprecated)](/en/docs/products/binance-pay-merchant/api-order-create.md)
+- [Create Order](/en/docs/products/binance-pay-merchant/api-order-create-v3.md)
+- [Create Order](/en/docs/products/binance-pay-merchant/api-order-create-v2.md)
+- [Close Order](/en/docs/products/binance-pay-merchant/api-order-close.md)
+- [Download Report](/en/docs/products/binance-pay-merchant/api-download-report.md)
+- [Download Balance Report](/en/docs/products/binance-pay-merchant/api-download-balance-report.md)
+- [Query Balance Report](/en/docs/products/binance-pay-merchant/api-download-balance-report-query.md)
+- [Direct Debit/Pre Authorization Terminate Contract](/en/docs/products/binance-pay-merchant/api-directdebit-terminate-contract.md)
+- [Direct Debit/Pre Authorization Query Contract](/en/docs/products/binance-pay-merchant/api-directdebit-query-contract.md)
+- [Direct Debit Payment Notification](/en/docs/products/binance-pay-merchant/api-directdebit-pay-notify.md)
+- [Direct Debit/Pre Authorization Payment ](/en/docs/products/binance-pay-merchant/api-directdebit-pay-apply.md)
+- [Direct Debit/Pre Authorization Create Contract](/en/docs/products/binance-pay-merchant/api-directdebit-create-contract.md)
+- [Query Quote](/en/docs/products/binance-pay-merchant/api-convert-query-trade-order.md)
+- [List All Convert Pairs](/en/docs/products/binance-pay-merchant/api-convert-get-to-selector.md)
+- [Send Quote](/en/docs/products/binance-pay-merchant/api-convert-get-quote.md)
+- [Execute Quote](/en/docs/products/binance-pay-merchant/api-convert-execute-quote.md)
+- [API Specification Common Rules](/en/docs/products/binance-pay-merchant/api-common.md)
+- [Query Collection Result](/en/docs/products/binance-pay-merchant/api-collection-result-query.md)
+- [Wallet Balance Query](/en/docs/products/binance-pay-merchant/api-balance-query.md)
+- [Wallet Balance Query V2](/en/docs/products/binance-pay-merchant/api-balance-query-v2.md)
+- [/products/binance-link/change-log](/en/docs/products/binance-link/change-log.md)
+- [Binance Account Bound Token](/en/docs/products/bab-token/introduction.md)
+- [APIs Spec](/en/docs/products/bab-token/apis-spec.md)
+- [/products/announcements/general-info](/en/docs/products/announcements/general-info.md)
+- [/products/announcements/cms-log](/en/docs/products/announcements/cms-log.md)
+- [/products/announcements/announcement](/en/docs/products/announcements/announcement.md)
+- [/products/alpha/websocket-market-data](/en/docs/products/alpha/websocket-market-data.md)
+- [/products/alpha/quick-start](/en/docs/products/alpha/quick-start.md)
+- [/products/alpha/introduction](/en/docs/products/alpha/introduction.md)
+- [/products/alpha/general-info](/en/docs/products/alpha/general-info.md)
+- [/products/alpha/error-code](/en/docs/products/alpha/error-code.md)
+- [/products/alpha/change-log](/en/docs/products/alpha/change-log.md)
+- [/products/algo/quick-start](/en/docs/products/algo/quick-start.md)
+- [/products/algo/general-info](/en/docs/products/algo/general-info.md)
+- [/products/algo/error-code](/en/docs/products/algo/error-code.md)
+- [/products/algo/change-log](/en/docs/products/algo/change-log.md)
+- [/products/algo/Introduction](/en/docs/products/algo/Introduction.md)
+- [Binance Agentic Wallet](/en/docs/products/agentic-wallet/welcome.md)
+- [/products/advanced-earn/quick-start](/en/docs/products/advanced-earn/quick-start.md)
+- [/products/advanced-earn/general-info](/en/docs/products/advanced-earn/general-info.md)
+- [/products/advanced-earn/error-code](/en/docs/products/advanced-earn/error-code.md)
+- [/products/advanced-earn/change-log](/en/docs/products/advanced-earn/change-log.md)
+- [/products/advanced-earn/Introduction](/en/docs/products/advanced-earn/Introduction.md)
+- [/products/wallet/travel-rule/withdraw-questionnaire](/en/docs/products/wallet/travel-rule/withdraw-questionnaire.md)
+- [/products/wallet/travel-rule/deposit-questionnaire](/en/docs/products/wallet/travel-rule/deposit-questionnaire.md)
+- [/products/wallet/travel-rule/appendix](/en/docs/products/wallet/travel-rule/appendix.md)
+- [/products/w3w-prediction/websocket-api/wallet-events](/en/docs/products/w3w-prediction/websocket-api/wallet-events.md)
+- [/products/w3w-prediction/websocket-api/orderbook](/en/docs/products/w3w-prediction/websocket-api/orderbook.md)
+- [/products/w3w-prediction/websocket-api/integration-guide](/en/docs/products/w3w-prediction/websocket-api/integration-guide.md)
+- [/products/spot/testnet/web-socket-streams](/en/docs/products/spot/testnet/web-socket-streams.md)
+- [/products/spot/testnet/web-socket-api](/en/docs/products/spot/testnet/web-socket-api.md)
+- [/products/spot/testnet/user-data-stream](/en/docs/products/spot/testnet/user-data-stream.md)
+- [/products/spot/testnet/sbe-market-data-streams](/en/docs/products/spot/testnet/sbe-market-data-streams.md)
+- [/products/spot/testnet/rest-api](/en/docs/products/spot/testnet/rest-api.md)
+- [/products/spot/testnet/general-info](/en/docs/products/spot/testnet/general-info.md)
+- [/products/spot/testnet/fix-api](/en/docs/products/spot/testnet/fix-api.md)
+- [/products/spot/testnet/filters](/en/docs/products/spot/testnet/filters.md)
+- [/products/spot/testnet/errors](/en/docs/products/spot/testnet/errors.md)
+- [/products/spot/testnet/enums](/en/docs/products/spot/testnet/enums.md)
+- [/products/spot/testnet/TESTNET-TERMS-OF-USE](/en/docs/products/spot/testnet/TESTNET-TERMS-OF-USE.md)
+- [/products/spot/testnet/CHANGELOG](/en/docs/products/spot/testnet/CHANGELOG.md)
+- [/products/spot/faqs/trailing-stop-faq](/en/docs/products/spot/faqs/trailing-stop-faq.md)
+- [/products/spot/faqs/stp_faq](/en/docs/products/spot/faqs/stp_faq.md)
+- [/products/spot/faqs/spot_glossary](/en/docs/products/spot/faqs/spot_glossary.md)
+- [/products/spot/faqs/sor_faq](/en/docs/products/spot/faqs/sor_faq.md)
+- [/products/spot/faqs/sbe_faq](/en/docs/products/spot/faqs/sbe_faq.md)
+- [/products/spot/faqs/price_range_execution_rules](/en/docs/products/spot/faqs/price_range_execution_rules.md)
+- [/products/spot/faqs/pegged_orders](/en/docs/products/spot/faqs/pegged_orders.md)
+- [/products/spot/faqs/order_count_decrement](/en/docs/products/spot/faqs/order_count_decrement.md)
+- [/products/spot/faqs/order_amend_keep_priority](/en/docs/products/spot/faqs/order_amend_keep_priority.md)
+- [/products/spot/faqs/opo](/en/docs/products/spot/faqs/opo.md)
+- [/products/spot/faqs/market_orders_faq](/en/docs/products/spot/faqs/market_orders_faq.md)
+- [/products/spot/faqs/market_data_only](/en/docs/products/spot/faqs/market_data_only.md)
+- [/products/spot/faqs/commission_faq](/en/docs/products/spot/faqs/commission_faq.md)
+- [/products/spot/faqs/api_key_types](/en/docs/products/spot/faqs/api_key_types.md)
+- [/products/spot/demo-mode/general-info](/en/docs/products/spot/demo-mode/general-info.md)
+- [/products/spot/demo-mode/DEMO-TERMS-OF-USE](/en/docs/products/spot/demo-mode/DEMO-TERMS-OF-USE.md)
+- [/products/spot/demo-mode/CHANGELOG](/en/docs/products/spot/demo-mode/CHANGELOG.md)
+- [/products/onchainpay-x402/open-apis-v2/4.permit2-signing](/en/docs/products/onchainpay-x402/open-apis-v2/4.permit2-signing.md)
+- [/products/onchainpay-x402/open-apis-v2/3.settle-payment](/en/docs/products/onchainpay-x402/open-apis-v2/3.settle-payment.md)
+- [/products/onchainpay-x402/open-apis-v2/2.verify-payment](/en/docs/products/onchainpay-x402/open-apis-v2/2.verify-payment.md)
+- [/products/onchainpay-x402/open-apis-v2/1.get-supported-configurations](/en/docs/products/onchainpay-x402/open-apis-v2/1.get-supported-configurations.md)
+- [/products/onchainpay-x402/open-apis-v2/0.overview](/en/docs/products/onchainpay-x402/open-apis-v2/0.overview.md)
+- [/products/onchainpay-x402/open-apis/3.settle-payment](/en/docs/products/onchainpay-x402/open-apis/3.settle-payment.md)
+- [/products/onchainpay-x402/open-apis/2.verify-payment](/en/docs/products/onchainpay-x402/open-apis/2.verify-payment.md)
+- [/products/onchainpay-x402/open-apis/1.get-supported-configurations](/en/docs/products/onchainpay-x402/open-apis/1.get-supported-configurations.md)
+- [/products/onchainpay-x402/open-apis/0.overview](/en/docs/products/onchainpay-x402/open-apis/0.overview.md)
+- [/products/onchainpay-x402/basics/9.supported-payment-methods](/en/docs/products/onchainpay-x402/basics/9.supported-payment-methods.md)
+- [/products/onchainpay-x402/basics/8.typical-integration-flow](/en/docs/products/onchainpay-x402/basics/8.typical-integration-flow.md)
+- [/products/onchainpay-x402/basics/7.payment-status](/en/docs/products/onchainpay-x402/basics/7.payment-status.md)
+- [/products/onchainpay-x402/basics/6.apply-developer-account](/en/docs/products/onchainpay-x402/basics/6.apply-developer-account.md)
+- [/products/onchainpay-x402/basics/5.error-code](/en/docs/products/onchainpay-x402/basics/5.error-code.md)
+- [/products/onchainpay-x402/basics/4.base-urls](/en/docs/products/onchainpay-x402/basics/4.base-urls.md)
+- [/products/onchainpay-x402/basics/3.request-signing](/en/docs/products/onchainpay-x402/basics/3.request-signing.md)
+- [/products/onchainpay-x402/basics/2.common-response](/en/docs/products/onchainpay-x402/basics/2.common-response.md)
+- [/products/onchainpay-x402/basics/1.common-request-headers](/en/docs/products/onchainpay-x402/basics/1.common-request-headers.md)
+- [UploadFile](/en/docs/products/mini-program/openservice/upload-file.md)
+- [UpdateSKU](/en/docs/products/mini-program/openservice/update-sku.md)
+- [Description of External Interface Signature Authentication Algorithm](/en/docs/products/mini-program/openservice/signature.md)
+- [SendPushMessage](/en/docs/products/mini-program/openservice/send-push-message.md)
+- [Preparation](/en/docs/products/mini-program/openservice/preparation.md)
+- [Open Service](/en/docs/products/mini-program/openservice/open-service.md)
+- [ListSKUs](/en/docs/products/mini-program/openservice/list-skus.md)
+- [GetUserPayId](/en/docs/products/mini-program/openservice/get-user-pay-id.md)
+- [GetSKU](/en/docs/products/mini-program/openservice/get-sku.md)
+- [GetUserOpenId](/en/docs/products/mini-program/openservice/get-open-data.md)
+- [GetFileStatus](/en/docs/products/mini-program/openservice/get-file-status.md)
+- [CreateSKUInAudit](/en/docs/products/mini-program/openservice/create-sku-in-audit.md)
+- [BroadcastMessage](/en/docs/products/mini-program/openservice/broadcast-message.md)
+- [Appendix](/en/docs/products/mini-program/openservice/appendix.md)
+- [ActivateSKU](/en/docs/products/mini-program/openservice/activate-sku.md)
+- [Workspace Member Management](/en/docs/products/mini-program/management/workspace-member-management.md)
+- [Webview Template Feature](/en/docs/products/mini-program/management/webview-template-feature.md)
+- [How To Set A Trial Version](/en/docs/products/mini-program/management/trial-version.md)
+- [Mini Program Version Lifecycle](/en/docs/products/mini-program/management/mini-program-version-lifecycle.md)
+- [Management Portal](/en/docs/products/mini-program/management/management.md)
+- [How to complete the kyb process](/en/docs/products/mini-program/management/kyb.md)
+- [Mini Progrram Gray Release](/en/docs/products/mini-program/management/gray-release.md)
+- [Multiple Versions Compatible Solution](/en/docs/products/mini-program/management/compatibility.md)
+- [Upload to mini program platform](/en/docs/products/mini-program/devtools/upload.md)
+- [Toolbar](/en/docs/products/mini-program/devtools/toolbar.md)
+- [Storage Panel](/en/docs/products/mini-program/devtools/storage.md)
+- [Startup Page](/en/docs/products/mini-program/devtools/startup-page.md)
+- [Source Map](/en/docs/products/mini-program/devtools/sourcemap.md)
+- [Simulator](/en/docs/products/mini-program/devtools/simulator.md)
+- [Settings](/en/docs/products/mini-program/devtools/settings.md)
+- [Remote Debug](/en/docs/products/mini-program/devtools/remote-debug.md)
+- [Preview the Developing Application on the Device](/en/docs/products/mini-program/devtools/preview.md)
+- [Overview](/en/docs/products/mini-program/devtools/overview.md)
+- [Logical Layer Memory Debugging](/en/docs/products/mini-program/devtools/memory.md)
+- [Main Page](/en/docs/products/mini-program/devtools/main-page.md)
+- [Local Panels](/en/docs/products/mini-program/devtools/local-panels.md)
+- [FAQ](/en/docs/products/mini-program/devtools/faq.md)
+- [Download Stable Version](/en/docs/products/mini-program/devtools/download-stable.md)
+- [Download Developer Version](/en/docs/products/mini-program/devtools/download-rc.md)
+- [Download Nightly Version](/en/docs/products/mini-program/devtools/download-nightly.md)
+- [How to Use Devtools](/en/docs/products/mini-program/devtools/devtool.md)
+- [Custom Compilation](/en/docs/products/mini-program/devtools/custom-compilation.md)
+- [Render Template Earlier](/en/docs/products/mini-program/framework/static-template.md)
+- [Skeleton](/en/docs/products/mini-program/framework/skeleton.md)
+- [Scene Value](/en/docs/products/mini-program/framework/scene-value.md)
+- [Router](/en/docs/products/mini-program/framework/router.md)
+- [Initial Rendering Cache](/en/docs/products/mini-program/framework/rendering-cache.md)
+- [Project Configuration File](/en/docs/products/mini-program/framework/project-configuration.md)
+- [Overview](/en/docs/products/mini-program/framework/overview.md)
+- [Lifecycle](/en/docs/products/mini-program/framework/lifecycle.md)
+- [FAQ](/en/docs/products/mini-program/framework/faq.md)
+- [Extended](/en/docs/products/mini-program/framework/extended.md)
+- [Download Stable Version](/en/docs/products/mini-program/framework/download-stable.md)
+- [Download Development Version](/en/docs/products/mini-program/framework/download-development.md)
+- [Custom Component](/en/docs/products/mini-program/framework/custom-component.md)
+- [Configuration](/en/docs/products/mini-program/framework/configuration.md)
+- [BNS](/en/docs/products/mini-program/framework/bns.md)
+- [/products/link-and-trade/Fast-API/Introduction](/en/docs/products/link-and-trade/Fast-API/Introduction.md)
+- [/products/kyc-saas/general/Webhook-Notifications](/en/docs/products/kyc-saas/general/Webhook-Notifications.md)
+- [/products/kyc-saas/general/Request-Specifications](/en/docs/products/kyc-saas/general/Request-Specifications.md)
+- [/products/kyc-saas/general/Overall-Workflow](/en/docs/products/kyc-saas/general/Overall-Workflow.md)
+- [/products/derivatives-trading-usds-futures/websocket-market-streams/Live-Subscribing-Unsubscribing-to-streams](/en/docs/products/derivatives-trading-usds-futures/websocket-market-streams/Live-Subscribing-Unsubscribing-to-streams.md)
+- [/products/derivatives-trading-usds-futures/websocket-market-streams/Important-WebSocket-Change-Notice](/en/docs/products/derivatives-trading-usds-futures/websocket-market-streams/Important-WebSocket-Change-Notice.md)
+- [/products/derivatives-trading-usds-futures/websocket-market-streams/How-to-manage-a-local-order-book-correctly](/en/docs/products/derivatives-trading-usds-futures/websocket-market-streams/How-to-manage-a-local-order-book-correctly.md)
+- [/products/derivatives-trading-usds-futures/websocket-market-streams/Connect](/en/docs/products/derivatives-trading-usds-futures/websocket-market-streams/Connect.md)
+- [/products/derivatives-trading-usds-futures/faq/stp-faq](/en/docs/products/derivatives-trading-usds-futures/faq/stp-faq.md)
+- [/products/derivatives-trading-options/websocket-market-streams/Live-Subscribing-Unsubscribing-to-streams](/en/docs/products/derivatives-trading-options/websocket-market-streams/Live-Subscribing-Unsubscribing-to-streams.md)
+- [/products/derivatives-trading-options/websocket-market-streams/How-to-manage-a-local-order-book-correctly](/en/docs/products/derivatives-trading-options/websocket-market-streams/How-to-manage-a-local-order-book-correctly.md)
+- [/products/derivatives-trading-options/websocket-market-streams/Connect](/en/docs/products/derivatives-trading-options/websocket-market-streams/Connect.md)
+- [/products/derivatives-trading-options/faq/stp-faq](/en/docs/products/derivatives-trading-options/faq/stp-faq.md)
+- [/products/derivatives-trading-coin-futures/websocket-market-streams/Live-Subscribing-Unsubscribing-to-streams](/en/docs/products/derivatives-trading-coin-futures/websocket-market-streams/Live-Subscribing-Unsubscribing-to-streams.md)
+- [/products/derivatives-trading-coin-futures/websocket-market-streams/How-to-manage-a-local-order-book-correctly](/en/docs/products/derivatives-trading-coin-futures/websocket-market-streams/How-to-manage-a-local-order-book-correctly.md)
+- [/products/derivatives-trading-coin-futures/websocket-market-streams/Connect](/en/docs/products/derivatives-trading-coin-futures/websocket-market-streams/Connect.md)
+- [/products/derivatives-trading-coin-futures/portfolio-margin-endpoints/General-Info](/en/docs/products/derivatives-trading-coin-futures/portfolio-margin-endpoints/General-Info.md)
+- [/products/connect-prime/webhook/webhook](/en/docs/products/connect-prime/webhook/webhook.md)
+- [/products/connect-prime/open-apis/9.get-balance](/en/docs/products/connect-prime/open-apis/9.get-balance.md)
+- [/products/connect-prime/open-apis/8.get-transaction-list](/en/docs/products/connect-prime/open-apis/8.get-transaction-list.md)
+- [/products/connect-prime/open-apis/7.get-single-transaction](/en/docs/products/connect-prime/open-apis/7.get-single-transaction.md)
+- [/products/connect-prime/open-apis/6.execute-quote](/en/docs/products/connect-prime/open-apis/6.execute-quote.md)
+- [/products/connect-prime/open-apis/5.get-quote](/en/docs/products/connect-prime/open-apis/5.get-quote.md)
+- [/products/connect-prime/open-apis/4.get-fiat-crypto-amount-limit](/en/docs/products/connect-prime/open-apis/4.get-fiat-crypto-amount-limit.md)
+- [/products/connect-prime/open-apis/3.get-trading-pair](/en/docs/products/connect-prime/open-apis/3.get-trading-pair.md)
+- [/products/connect-prime/open-apis/2.get-crypto-list-for-sell](/en/docs/products/connect-prime/open-apis/2.get-crypto-list-for-sell.md)
+- [/products/connect-prime/open-apis/12.get-discover-price](/en/docs/products/connect-prime/open-apis/12.get-discover-price.md)
+- [/products/connect-prime/open-apis/11.get-kline-data](/en/docs/products/connect-prime/open-apis/11.get-kline-data.md)
+- [/products/connect-prime/open-apis/10.get-symbol-detail](/en/docs/products/connect-prime/open-apis/10.get-symbol-detail.md)
+- [/products/connect-prime/open-apis/1.get-fiat-list-for-buy](/en/docs/products/connect-prime/open-apis/1.get-fiat-list-for-buy.md)
+- [/products/connect-prime/open-apis/0.overview](/en/docs/products/connect-prime/open-apis/0.overview.md)
+- [/products/connect-prime/basics/9.typical-sell-flow](/en/docs/products/connect-prime/basics/9.typical-sell-flow.md)
+- [/products/connect-prime/basics/8.typical-buy-flow](/en/docs/products/connect-prime/basics/8.typical-buy-flow.md)
+- [/products/connect-prime/basics/7.order-status](/en/docs/products/connect-prime/basics/7.order-status.md)
+- [/products/connect-prime/basics/6.apply-developer-account](/en/docs/products/connect-prime/basics/6.apply-developer-account.md)
+- [/products/connect-prime/basics/5.error-code](/en/docs/products/connect-prime/basics/5.error-code.md)
+- [/products/connect-prime/basics/4.base-urls](/en/docs/products/connect-prime/basics/4.base-urls.md)
+- [/products/connect-prime/basics/3.request-signing](/en/docs/products/connect-prime/basics/3.request-signing.md)
+- [/products/connect-prime/basics/2.common-response](/en/docs/products/connect-prime/basics/2.common-response.md)
+- [/products/connect-prime/basics/10.merchant-side-API-requirements](/en/docs/products/connect-prime/basics/10.merchant-side-API-requirements.md)
+- [/products/connect-prime/basics/1.common-request-headers](/en/docs/products/connect-prime/basics/1.common-request-headers.md)
+- [/products/connect-2.0/webhook/webhook](/en/docs/products/connect-2.0/webhook/webhook.md)
+- [/products/connect-2.0/send-primary-mode/send-primary-mode](/en/docs/products/connect-2.0/send-primary-mode/send-primary-mode.md)
+- [/products/connect-2.0/sandbox/4.order-status-transition](/en/docs/products/connect-2.0/sandbox/4.order-status-transition.md)
+- [/products/connect-2.0/sandbox/3.place-buy-any-token-order](/en/docs/products/connect-2.0/sandbox/3.place-buy-any-token-order.md)
+- [/products/connect-2.0/sandbox/2.place-convert-feature-order](/en/docs/products/connect-2.0/sandbox/2.place-convert-feature-order.md)
+- [/products/connect-2.0/sandbox/1.place-order](/en/docs/products/connect-2.0/sandbox/1.place-order.md)
+- [/products/connect-2.0/sandbox/0.overview](/en/docs/products/connect-2.0/sandbox/0.overview.md)
+- [/products/connect-2.0/off-ramp-sell-apis/5.get-payment-method-list-v2](/en/docs/products/connect-2.0/off-ramp-sell-apis/5.get-payment-method-list-v2.md)
+- [/products/connect-2.0/off-ramp-sell-apis/4.pre-order](/en/docs/products/connect-2.0/off-ramp-sell-apis/4.pre-order.md)
+- [/products/connect-2.0/off-ramp-sell-apis/3.get-estimated-quote](/en/docs/products/connect-2.0/off-ramp-sell-apis/3.get-estimated-quote.md)
+- [/products/connect-2.0/off-ramp-sell-apis/2.get-payment-method-list](/en/docs/products/connect-2.0/off-ramp-sell-apis/2.get-payment-method-list.md)
+- [/products/connect-2.0/off-ramp-sell-apis/1.get-trading-pairs](/en/docs/products/connect-2.0/off-ramp-sell-apis/1.get-trading-pairs.md)
+- [/products/connect-2.0/on-ramp-buy-apis/8.get-p2p-trading-pairs](/en/docs/products/connect-2.0/on-ramp-buy-apis/8.get-p2p-trading-pairs.md)
+- [/products/connect-2.0/on-ramp-buy-apis/7.get-payment-method-list-v2](/en/docs/products/connect-2.0/on-ramp-buy-apis/7.get-payment-method-list-v2.md)
+- [/products/connect-2.0/on-ramp-buy-apis/6.query-order-details](/en/docs/products/connect-2.0/on-ramp-buy-apis/6.query-order-details.md)
+- [/products/connect-2.0/on-ramp-buy-apis/5.pre-order](/en/docs/products/connect-2.0/on-ramp-buy-apis/5.pre-order.md)
+- [/products/connect-2.0/on-ramp-buy-apis/4.get-estimated-quote](/en/docs/products/connect-2.0/on-ramp-buy-apis/4.get-estimated-quote.md)
+- [/products/connect-2.0/on-ramp-buy-apis/3.get-payment-method-list](/en/docs/products/connect-2.0/on-ramp-buy-apis/3.get-payment-method-list.md)
+- [/products/connect-2.0/on-ramp-buy-apis/2.get-crypto-networks](/en/docs/products/connect-2.0/on-ramp-buy-apis/2.get-crypto-networks.md)
+- [/products/connect-2.0/on-ramp-buy-apis/1.get-trading-pairs](/en/docs/products/connect-2.0/on-ramp-buy-apis/1.get-trading-pairs.md)
+- [/products/connect-2.0/on-ramp-buy-apis/0.typical-flow](/en/docs/products/connect-2.0/on-ramp-buy-apis/0.typical-flow.md)
+- [/products/connect-2.0/deposit/6.deposit-status](/en/docs/products/connect-2.0/deposit/6.deposit-status.md)
+- [/products/connect-2.0/deposit/5.deposit-webhook](/en/docs/products/connect-2.0/deposit/5.deposit-webhook.md)
+- [/products/connect-2.0/deposit/4.report-deposit](/en/docs/products/connect-2.0/deposit/4.report-deposit.md)
+- [/products/connect-2.0/deposit/3.query-authorization](/en/docs/products/connect-2.0/deposit/3.query-authorization.md)
+- [/products/connect-2.0/deposit/2.initiate-deposit](/en/docs/products/connect-2.0/deposit/2.initiate-deposit.md)
+- [/products/connect-2.0/deposit/1.get-crypto-networks](/en/docs/products/connect-2.0/deposit/1.get-crypto-networks.md)
+- [/products/connect-2.0/deposit/0.typical-flow](/en/docs/products/connect-2.0/deposit/0.typical-flow.md)
+- [/products/connect-2.0/core-integration-apis/0.overview](/en/docs/products/connect-2.0/core-integration-apis/0.overview.md)
+- [/products/connect-2.0/convert/1.convert](/en/docs/products/connect-2.0/convert/1.convert.md)
+- [/products/connect-2.0/compliance-refund-data-sharing/3.refund-data-fields](/en/docs/products/connect-2.0/compliance-refund-data-sharing/3.refund-data-fields.md)
+- [/products/connect-2.0/compliance-refund-data-sharing/2.user-data-fields](/en/docs/products/connect-2.0/compliance-refund-data-sharing/2.user-data-fields.md)
+- [/products/connect-2.0/compliance-refund-data-sharing/1.use-cases-and-eligibility](/en/docs/products/connect-2.0/compliance-refund-data-sharing/1.use-cases-and-eligibility.md)
+- [/products/connect-2.0/buy-any-token/1.buy-any-token](/en/docs/products/connect-2.0/buy-any-token/1.buy-any-token.md)
+- [/products/connect-2.0/basics/9.customization](/en/docs/products/connect-2.0/basics/9.customization.md)
+- [/products/connect-2.0/basics/8.landing-page-and-redirection](/en/docs/products/connect-2.0/basics/8.landing-page-and-redirection.md)
+- [/products/connect-2.0/basics/7.order-status](/en/docs/products/connect-2.0/basics/7.order-status.md)
+- [/products/connect-2.0/basics/6.apply-developer-account](/en/docs/products/connect-2.0/basics/6.apply-developer-account.md)
+- [/products/connect-2.0/basics/5.error-code](/en/docs/products/connect-2.0/basics/5.error-code.md)
+- [/products/connect-2.0/basics/4.base-urls](/en/docs/products/connect-2.0/basics/4.base-urls.md)
+- [/products/connect-2.0/basics/3.request-signing](/en/docs/products/connect-2.0/basics/3.request-signing.md)
+- [/products/connect-2.0/basics/2.common-response](/en/docs/products/connect-2.0/basics/2.common-response.md)
+- [/products/connect-2.0/basics/10.restricted-industries](/en/docs/products/connect-2.0/basics/10.restricted-industries.md)
+- [/products/connect-2.0/basics/1.common-request-headers](/en/docs/products/connect-2.0/basics/1.common-request-headers.md)
+- [/products/common/sapi/quick-start](/en/docs/products/common/sapi/quick-start.md)
+- [/products/common/sapi/general-info](/en/docs/products/common/sapi/general-info.md)
+- [/products/common/sapi/error-code](/en/docs/products/common/sapi/error-code.md)
+- [/products/common/sapi/contact-us](/en/docs/products/common/sapi/contact-us.md)
+- [/products/common/sapi/change-log](/en/docs/products/common/sapi/change-log.md)
+- [/products/common/derivatives-trading/quick-start](/en/docs/products/common/derivatives-trading/quick-start.md)
+- [/products/common/derivatives-trading/change-log](/en/docs/products/common/derivatives-trading/change-log.md)
+- [/products/common/derivatives-trading/Introduction](/en/docs/products/common/derivatives-trading/Introduction.md)
+- [/products/common/binance-link/change-log](/en/docs/products/common/binance-link/change-log.md)
+- [/products/common/advanced-earn/change-log](/en/docs/products/common/advanced-earn/change-log.md)
+- [/products/common/advanced-earn/Introduction](/en/docs/products/common/advanced-earn/Introduction.md)
+- [Security & Settings](/en/docs/products/agentic-wallet/use-cases/security-settings.md)
+- [Use Cases Overview](/en/docs/products/agentic-wallet/use-cases/overview.md)
+- [Minimal Tutorial](/en/docs/products/agentic-wallet/use-cases/minimal-tutorial.md)
+- [Automated Trading Strategies](/en/docs/products/agentic-wallet/use-cases/automated-strategies.md)
+- [Skills Reference](/en/docs/products/agentic-wallet/reference/skills.md)
+- [Install Agentic Wallet](/en/docs/products/agentic-wallet/quickstart/install-agentic-wallet.md)
+- [WidgetSlot](/en/docs/products/mini-program/framework/components/WidgetSlot.md)
+- [WebView](/en/docs/products/mini-program/framework/components/WebView.md)
+- [View](/en/docs/products/mini-program/framework/components/View.md)
+- [Video](/en/docs/products/mini-program/framework/components/Video.md)
+- [textarea](/en/docs/products/mini-program/framework/components/TextArea.md)
+- [Text](/en/docs/products/mini-program/framework/components/Text.md)
+- [Switch](/en/docs/products/mini-program/framework/components/Switch.md)
+- [SwiperSlide](/en/docs/products/mini-program/framework/components/SwiperItem.md)
+- [swiper](/en/docs/products/mini-program/framework/components/Swiper.md)
+- [svg](/en/docs/products/mini-program/framework/components/Svg.md)
+- [StickySectionr](/en/docs/products/mini-program/framework/components/StickySection.md)
+- [StickyHeader](/en/docs/products/mini-program/framework/components/StickyHeader.md)
+- [SortableItem](/en/docs/products/mini-program/framework/components/SortableItem.md)
+- [SortableHandle](/en/docs/products/mini-program/framework/components/SortableHandle.md)
+- [Sortable](/en/docs/products/mini-program/framework/components/Sortable.md)
+- [slider](/en/docs/products/mini-program/framework/components/Slider.md)
+- [scroll-view](/en/docs/products/mini-program/framework/components/ScrollView.md)
+- [ScrollViewItem](/en/docs/products/mini-program/framework/components/ScrollItem.md)
+- [root-portal](/en/docs/products/mini-program/framework/components/RootPortal.md)
+- [rich-text](/en/docs/products/mini-program/framework/components/RichText.md)
+- [radio-group](/en/docs/products/mini-program/framework/components/RadioGroup.md)
+- [radio](/en/docs/products/mini-program/framework/components/Radio.md)
+- [picker-view](/en/docs/products/mini-program/framework/components/PickerViewColumn.md)
+- [picker-view](/en/docs/products/mini-program/framework/components/PickerView.md)
+- [nested-scroll-view](/en/docs/products/mini-program/framework/components/NestedScrollView.md)
+- [nested-scroll-body](/en/docs/products/mini-program/framework/components/NestedScrollBody.md)
+- [navigator](/en/docs/products/mini-program/framework/components/Navigator.md)
+- [markdown](/en/docs/products/mini-program/framework/components/Markdown.md)
+- [lottie](/en/docs/products/mini-program/framework/components/Lottie.md)
+- [label](/en/docs/products/mini-program/framework/components/Label.md)
+- [input](/en/docs/products/mini-program/framework/components/Input.md)
+- [image](/en/docs/products/mini-program/framework/components/Image.md)
+- [icon](/en/docs/products/mini-program/framework/components/Icon.md)
+- [Form](/en/docs/products/mini-program/framework/components/Form.md)
+- [Video](/en/docs/products/mini-program/framework/components/FlutterVideo.md)
+- [text-span](/en/docs/products/mini-program/framework/components/FlutterTextSpan.md)
+- [Text](/en/docs/products/mini-program/framework/components/FlutterText.md)
+- [SwiperItem](/en/docs/products/mini-program/framework/components/FlutterSwiperItem.md)
+- [swiper](/en/docs/products/mini-program/framework/components/FlutterSwiper.md)
+- [Svg](/en/docs/products/mini-program/framework/components/FlutterSvg.md)
+- [scroll-view](/en/docs/products/mini-program/framework/components/FlutterScrollView.md)
+- [markdown](/en/docs/products/mini-program/framework/components/FlutterMarkdown.md)
+- [Image](/en/docs/products/mini-program/framework/components/FlutterImage.md)
+- [flex](/en/docs/products/mini-program/framework/components/FlutterFlex.md)
+- [TextArea](/en/docs/products/mini-program/framework/components/FlutterDeprecatedTextArea.md)
+- [ContextMenuItem](/en/docs/products/mini-program/framework/components/FlutterContextMenuItem.md)
+- [ContextMenu](/en/docs/products/mini-program/framework/components/FlutterContextMenu.md)
+- [Container](/en/docs/products/mini-program/framework/components/FlutterContainer.md)
+- [editor](/en/docs/products/mini-program/framework/components/Editor.md)
+- [DualSlider](/en/docs/products/mini-program/framework/components/DualSlider.md)
+- [Drawer](/en/docs/products/mini-program/framework/components/Drawer.md)
+- [TextArea](/en/docs/products/mini-program/framework/components/DeprecatedTextArea.md)
+- [Input](/en/docs/products/mini-program/framework/components/DeprecatedInput.md)
+- [DeprecatedCanvas](/en/docs/products/mini-program/framework/components/DeprecatedCanvas.md)
+- [CheckboxGroup](/en/docs/products/mini-program/framework/components/CheckboxGroup.md)
+- [Checkbox](/en/docs/products/mini-program/framework/components/Checkbox.md)
+- [Chart](/en/docs/products/mini-program/framework/components/Chart.md)
+- [Camera](/en/docs/products/mini-program/framework/components/Camera.md)
+- [Button](/en/docs/products/mini-program/framework/components/Button.md)
+- [/products/common/derivatives-trading/futures-data/general-info](/en/docs/products/common/derivatives-trading/futures-data/general-info.md)
+- [/products/common/derivatives-trading/futures-data/error-code](/en/docs/products/common/derivatives-trading/futures-data/error-code.md)
+- [Wallet Operations](/en/docs/products/agentic-wallet/use-cases/basics/wallet-operations.md)
+- [Send Tokens](/en/docs/products/agentic-wallet/use-cases/basics/send-tokens.md)
+- [Stock Trading (Tokenized Securities)](/en/docs/products/agentic-wallet/use-cases/trading/stock-trading.md)
+- [Prediction Market](/en/docs/products/agentic-wallet/use-cases/trading/prediction-market.md)
+- [Market Order (Swap)](/en/docs/products/agentic-wallet/use-cases/trading/market-order.md)
+- [Limit Order](/en/docs/products/agentic-wallet/use-cases/trading/limit-order.md)
+- [DeFi](/en/docs/products/agentic-wallet/use-cases/trading/defi.md)
+- [bn.createWorker](/en/docs/products/mini-program/framework/api/worker/createWorker.md)
+- [bn.createSelectorQuery](/en/docs/products/mini-program/framework/api/views/createSelectorQuery.md)
+- [bn.createIntersectionObserver](/en/docs/products/mini-program/framework/api/views/createIntersectionObserver.md)
+- [bn.setStorageSync](/en/docs/products/mini-program/framework/api/storage/setStorageSync.md)
+- [bn.setStorage](/en/docs/products/mini-program/framework/api/storage/setStorage.md)
+- [bn.removeStorageSync](/en/docs/products/mini-program/framework/api/storage/removeStorageSync.md)
+- [bn.removeStorage](/en/docs/products/mini-program/framework/api/storage/removeStorage.md)
+- [bn.getStorageSync](/en/docs/products/mini-program/framework/api/storage/getStorageSync.md)
+- [bn.getStorageInfoSync](/en/docs/products/mini-program/framework/api/storage/getStorageInfoSync.md)
+- [bn.getStorageInfo](/en/docs/products/mini-program/framework/api/storage/getStorageInfo.md)
+- [bn.getStorage](/en/docs/products/mini-program/framework/api/storage/getStorage.md)
+- [bn.clearStorageSync](/en/docs/products/mini-program/framework/api/storage/clearStorageSync.md)
+- [bn.clearStorage](/en/docs/products/mini-program/framework/api/storage/clearStorage.md)
+- [bn.openSetting](/en/docs/products/mini-program/framework/api/settings/openSetting.md)
+- [bn.getSetting](/en/docs/products/mini-program/framework/api/settings/getSetting.md)
+- [bn.authorize](/en/docs/products/mini-program/framework/api/settings/authorize.md)
+- [bn.switchTab](/en/docs/products/mini-program/framework/api/routing/switchTab.md)
+- [bn.redirectTo](/en/docs/products/mini-program/framework/api/routing/redirectTo.md)
+- [bn.reLaunch](/en/docs/products/mini-program/framework/api/routing/reLaunch.md)
+- [bn.navigateToMiniProgram](/en/docs/products/mini-program/framework/api/routing/navigateToMiniProgram.md)
+- [bn.navigateToDeepLink](/en/docs/products/mini-program/framework/api/routing/navigateToDeepLink.md)
+- [bn.navigateTo](/en/docs/products/mini-program/framework/api/routing/navigateTo.md)
+- [bn.navigateBackMiniProgram](/en/docs/products/mini-program/framework/api/routing/navigateBackMiniProgram.md)
+- [bn.navigateBack](/en/docs/products/mini-program/framework/api/routing/navigateBack.md)
+- [bn.exitMiniProgram](/en/docs/products/mini-program/framework/api/routing/exitMiniProgram.md)
+- [bn.beforeRouteChange](/en/docs/products/mini-program/framework/api/routing/beforeRouteChange.md)
+- [bn.setPageScrollable](/en/docs/products/mini-program/framework/api/openapis/setPageScrollable.md)
+- [bn.scanCode](/en/docs/products/mini-program/framework/api/openapis/scanCode.md)
+- [bn.requestSubscribeMessage](/en/docs/products/mini-program/framework/api/openapis/requestSubscribeMessage.md)
+- [bn.requestPayment](/en/docs/products/mini-program/framework/api/openapis/requestPayment.md)
+- [bn.requestBinanceCardInfo](/en/docs/products/mini-program/framework/api/openapis/requestBinanceCardInfo.md)
+- [bn.preloadFlutterView](/en/docs/products/mini-program/framework/api/openapis/preloadFlutterView.md)
+- [bn.makePhoneCall](/en/docs/products/mini-program/framework/api/openapis/makePhoneCall.md)
+- [bn.login](/en/docs/products/mini-program/framework/api/openapis/login.md)
+- [bn.isLoggedIn](/en/docs/products/mini-program/framework/api/openapis/isLoggedIn.md)
+- [bn.initUniversalWeb3Provider](/en/docs/products/mini-program/framework/api/openapis/initUniversalWeb3Provider.md)
+- [bn.getWeb3Provider](/en/docs/products/mini-program/framework/api/openapis/getWeb3Provider.md)
+- [bn.getWalletHub](/en/docs/products/mini-program/framework/api/openapis/getWalletHub.md)
+- [bn.getWalletConnectorContext](/en/docs/products/mini-program/framework/api/openapis/getWalletConnectorContext.md)
+- [bn.getUserProfile](/en/docs/products/mini-program/framework/api/openapis/getUserProfile.md)
+- [bn.getUserOpenid](/en/docs/products/mini-program/framework/api/openapis/getUserOpenid.md)
+- [bn.getUserKycStatus](/en/docs/products/mini-program/framework/api/openapis/getUserKycStatus.md)
+- [bn.getUniversalWeb3Provider](/en/docs/products/mini-program/framework/api/openapis/getUniversalWeb3Provider.md)
+- [bn.getMpcProvider](/en/docs/products/mini-program/framework/api/openapis/getMpcProvider.md)
+- [bn.ensureLoggedIn](/en/docs/products/mini-program/framework/api/openapis/ensureLoggedIn.md)
+- [bn.dateTimeFormat](/en/docs/products/mini-program/framework/api/openapis/dateTimeFormat.md)
+- [bn.checkBinanceCardAvailable](/en/docs/products/mini-program/framework/api/openapis/checkBinanceCardAvailable.md)
+- [bn.authCapture](/en/docs/products/mini-program/framework/api/openapis/authCapture.md)
+- [bn.uploadFile](/en/docs/products/mini-program/framework/api/network/uploadFile.md)
+- [bn.setBackgroundFetchToken](/en/docs/products/mini-program/framework/api/network/setBackgroundFetchToken.md)
+- [bn.revokeBufferURL](/en/docs/products/mini-program/framework/api/network/revokeBufferURL.md)
+- [bn.request](/en/docs/products/mini-program/framework/api/network/request.md)
+- [bn.onBackgroundFetchData](/en/docs/products/mini-program/framework/api/network/onBackgroundFetchData.md)
+- [bn.getPrefetchCacheSync](/en/docs/products/mini-program/framework/api/network/getPrefetchCacheSync.md)
+- [bn.getBackgroundFetchToken](/en/docs/products/mini-program/framework/api/network/getBackgroundFetchToken.md)
+- [bn.getBackgroundFetchData](/en/docs/products/mini-program/framework/api/network/getBackgroundFetchData.md)
+- [bn.downloadFile](/en/docs/products/mini-program/framework/api/network/downloadFile.md)
+- [bn.createUDPSocket](/en/docs/products/mini-program/framework/api/network/createUDPSocket.md)
+- [bn.createEventSource](/en/docs/products/mini-program/framework/api/network/createEventSource.md)
+- [bn.createBufferURL](/en/docs/products/mini-program/framework/api/network/createBufferURL.md)
+- [bn.connectSocket](/en/docs/products/mini-program/framework/api/network/connectSocket.md)
+- [bn.setInnerAudioOption](/en/docs/products/mini-program/framework/api/media/setInnerAudioOption.md)
+- [bn.saveImageToPhotosAlbum](/en/docs/products/mini-program/framework/api/media/saveImageToPhotosAlbum.md)
+- [bn.previewImage](/en/docs/products/mini-program/framework/api/media/previewImage.md)
+- [bn.openDocument](/en/docs/products/mini-program/framework/api/media/openDocument.md)
+- [bn.onAudioInterruptionEnd](/en/docs/products/mini-program/framework/api/media/onAudioInterruptionEnd.md)
+- [bn.onAudioInterruptionBegin](/en/docs/products/mini-program/framework/api/media/onAudioInterruptionBegin.md)
+- [bn.offAudioInterruptionEnd](/en/docs/products/mini-program/framework/api/media/offAudioInterruptionEnd.md)
+- [bn.offAudioInterruptionBegin](/en/docs/products/mini-program/framework/api/media/offAudioInterruptionBegin.md)
+- [bn.getImageInfo](/en/docs/products/mini-program/framework/api/media/getImageInfo.md)
+- [bn.createVideoContext](/en/docs/products/mini-program/framework/api/media/createVideoContext.md)
+- [bn.createLottieContext](/en/docs/products/mini-program/framework/api/media/createLottieContext.md)
+- [bn.createInnerAudioContext](/en/docs/products/mini-program/framework/api/media/createInnerAudioContext.md)
+- [bn.createContext](/en/docs/products/mini-program/framework/api/media/createContext.md)
+- [bn.createChartContext](/en/docs/products/mini-program/framework/api/media/createChartContext.md)
+- [bn.createCameraContext](/en/docs/products/mini-program/framework/api/media/createCameraContext.md)
+- [bn.chooseMedia](/en/docs/products/mini-program/framework/api/media/chooseMedia.md)
+- [bn.chooseImage](/en/docs/products/mini-program/framework/api/media/chooseImage.md)
+- [bn.chooseFile](/en/docs/products/mini-program/framework/api/media/chooseFile.md)
+- [bn.stopLocationUpdate](/en/docs/products/mini-program/framework/api/location/stopLocationUpdate.md)
+- [bn.startLocationUpdate](/en/docs/products/mini-program/framework/api/location/startLocationUpdate.md)
+- [bn.openLocation](/en/docs/products/mini-program/framework/api/location/openLocation.md)
+- [bn.onLocationChange](/en/docs/products/mini-program/framework/api/location/onLocationChange.md)
+- [bn.offLocationChange](/en/docs/products/mini-program/framework/api/location/offLocationChange.md)
+- [bn.getLocation](/en/docs/products/mini-program/framework/api/location/getLocation.md)
+- [bn.chooseLocation](/en/docs/products/mini-program/framework/api/location/chooseLocation.md)
+- [bn.onKeyboardHeightChange](/en/docs/products/mini-program/framework/api/keyboard/onKeyboardHeightChange.md)
+- [bn.offKeyboardHeightChange](/en/docs/products/mini-program/framework/api/keyboard/offKeyboardHeightChange.md)
+- [bn.hideKeyboard](/en/docs/products/mini-program/framework/api/keyboard/hideKeyboard.md)
+- [bn.getSelectedTextRange](/en/docs/products/mini-program/framework/api/keyboard/getSelectedTextRange.md)
+- [bn.updatePageUrl](/en/docs/products/mini-program/framework/api/interface/updatePageUrl.md)
+- [bn.stopPullDownRefresh](/en/docs/products/mini-program/framework/api/interface/stopPullDownRefresh.md)
+- [bn.startPullDownRefresh](/en/docs/products/mini-program/framework/api/interface/startPullDownRefresh.md)
+- [bn.showToast](/en/docs/products/mini-program/framework/api/interface/showToast.md)
+- [bn.showTabBarRedDot](/en/docs/products/mini-program/framework/api/interface/showTabBarRedDot.md)
+- [bn.showTabBar](/en/docs/products/mini-program/framework/api/interface/showTabBar.md)
+- [bn.showSharePanelV2](/en/docs/products/mini-program/framework/api/interface/showSharePanelV2.md)
+- [bn.showSharePanel](/en/docs/products/mini-program/framework/api/interface/showSharePanel.md)
+- [bn.showShareMenu](/en/docs/products/mini-program/framework/api/interface/showShareMenu.md)
+- [bn.showSettingPanel](/en/docs/products/mini-program/framework/api/interface/showSettingPanel.md)
+- [bn.showModal](/en/docs/products/mini-program/framework/api/interface/showModal.md)
+- [bn.showLoading](/en/docs/products/mini-program/framework/api/interface/showLoading.md)
+- [bn.showDiagnosticPage](/en/docs/products/mini-program/framework/api/interface/showDiagnosticPage.md)
+- [bn.showControlButton](/en/docs/products/mini-program/framework/api/interface/showControlButton.md)
+- [bn.showBackButton](/en/docs/products/mini-program/framework/api/interface/showBackButton.md)
+- [bn.showActionSheet](/en/docs/products/mini-program/framework/api/interface/showActionSheet.md)
+- [bn.setTabBarItemList](/en/docs/products/mini-program/framework/api/interface/setTabBarItemList.md)
+- [bn.setTabBarItem](/en/docs/products/mini-program/framework/api/interface/setTabBarItem.md)
+- [bn.setNavigationBarTitle](/en/docs/products/mini-program/framework/api/interface/setNavigationBarTitle.md)
+- [bn.setNavigationBarColor](/en/docs/products/mini-program/framework/api/interface/setNavigationBarColor.md)
+- [bn.setControlButton](/en/docs/products/mini-program/framework/api/interface/setControlButton.md)
+- [bn.removeWidgetSkeleton](/en/docs/products/mini-program/framework/api/interface/removeWidgetSkeleton.md)
+- [bn.onTabSwitched](/en/docs/products/mini-program/framework/api/interface/onTabSwitched.md)
+- [bn.offTabSwitched](/en/docs/products/mini-program/framework/api/interface/offTabSwitched.md)
+- [bn.hideToast](/en/docs/products/mini-program/framework/api/interface/hideToast.md)
+- [bn.hideTabBarRedDot](/en/docs/products/mini-program/framework/api/interface/hideTabBarRedDot.md)
+- [bn.hideTabBar](/en/docs/products/mini-program/framework/api/interface/hideTabBar.md)
+- [bn.hideShareMenu](/en/docs/products/mini-program/framework/api/interface/hideShareMenu.md)
+- [bn.hideLoading](/en/docs/products/mini-program/framework/api/interface/hideLoading.md)
+- [bn.hideHomeButton](/en/docs/products/mini-program/framework/api/interface/hideHomeButton.md)
+- [bn.hideControlButton](/en/docs/products/mini-program/framework/api/interface/hideControlButton.md)
+- [bn.hideBackButton](/en/docs/products/mini-program/framework/api/interface/hideBackButton.md)
+- [bn.createWebview](/en/docs/products/mini-program/framework/api/interface/createWebview.md)
+- [bn.addEventListenerToBody](/en/docs/products/mini-program/framework/api/interface/addEventListenerToBody.md)
+- [bn.loadFontFace](/en/docs/products/mini-program/framework/api/font/loadFontFace.md)
+- [bn.getFileSystemManager](/en/docs/products/mini-program/framework/api/filesystem/getFileSystemManager.md)
+- [bn.vibrateShort](/en/docs/products/mini-program/framework/api/device/vibrateShort.md)
+- [bn.vibrateLong](/en/docs/products/mini-program/framework/api/device/vibrateLong.md)
+- [bn.stopGyroscope](/en/docs/products/mini-program/framework/api/device/stopGyroscope.md)
+- [bn.stopDeviceMotionListening](/en/docs/products/mini-program/framework/api/device/stopDeviceMotionListening.md)
+- [bn.stopCompass](/en/docs/products/mini-program/framework/api/device/stopCompass.md)
+- [bn.stopAccelerometer](/en/docs/products/mini-program/framework/api/device/stopAccelerometer.md)
+- [bn.startGyroscope](/en/docs/products/mini-program/framework/api/device/startGyroscope.md)
+- [bn.startDeviceMotionListening](/en/docs/products/mini-program/framework/api/device/startDeviceMotionListening.md)
+- [bn.startCompass](/en/docs/products/mini-program/framework/api/device/startCompass.md)
+- [bn.startAccelerometer](/en/docs/products/mini-program/framework/api/device/startAccelerometer.md)
+- [bn.setKeepScreenOn](/en/docs/products/mini-program/framework/api/device/setKeepScreenOn.md)
+- [bn.setClipboardData](/en/docs/products/mini-program/framework/api/device/setClipboardData.md)
+- [bn.onNetworkStatusChange](/en/docs/products/mini-program/framework/api/device/onNetworkStatusChange.md)
+- [bn.onMemoryWarning](/en/docs/products/mini-program/framework/api/device/onMemoryWarning.md)
+- [bn.onGyroscopeChange](/en/docs/products/mini-program/framework/api/device/onGyroscopeChange.md)
+- [bn.onDeviceOrientationChange](/en/docs/products/mini-program/framework/api/device/onDeviceOrientationChange.md)
+- [bn.onDeviceMotionChange](/en/docs/products/mini-program/framework/api/device/onDeviceMotionChange.md)
+- [bn.onCompassChange](/en/docs/products/mini-program/framework/api/device/onCompassChange.md)
+- [bn.onAccelerometerChange](/en/docs/products/mini-program/framework/api/device/onAccelerometerChange.md)
+- [bn.offNetworkStatusChange](/en/docs/products/mini-program/framework/api/device/offNetworkStatusChange.md)
+- [bn.offMemoryWarning](/en/docs/products/mini-program/framework/api/device/offMemoryWarning.md)
+- [bn.offGyroscopeChange](/en/docs/products/mini-program/framework/api/device/offGyroscopeChange.md)
+- [bn.offDeviceOrientationChange](/en/docs/products/mini-program/framework/api/device/offDeviceOrientationChange.md)
+- [bn.offDeviceMotionChange](/en/docs/products/mini-program/framework/api/device/offDeviceMotionChange.md)
+- [bn.offCompassChange](/en/docs/products/mini-program/framework/api/device/offCompassChange.md)
+- [bn.offAccelerometerChange](/en/docs/products/mini-program/framework/api/device/offAccelerometerChange.md)
+- [bn.getNetworkType](/en/docs/products/mini-program/framework/api/device/getNetworkType.md)
+- [bn.getClipboardData](/en/docs/products/mini-program/framework/api/device/getClipboardData.md)
+- [bn.removeEventListenerFromBody](/en/docs/products/mini-program/framework/api/basics/removeEventListenerFromBody.md)
+- [bn.pageScrollTo](/en/docs/products/mini-program/framework/api/basics/pageScrollTo.md)
+- [bn.openWidget](/en/docs/products/mini-program/framework/api/basics/openWidget.md)
+- [bn.onUnhandledRejection](/en/docs/products/mini-program/framework/api/basics/onUnhandledRejection.md)
+- [bn.onThemeChange](/en/docs/products/mini-program/framework/api/basics/onThemeChange.md)
+- [bn.onPageNotFound](/en/docs/products/mini-program/framework/api/basics/onPageNotFound.md)
+- [bn.onError](/en/docs/products/mini-program/framework/api/basics/onError.md)
+- [bn.onCopy](/en/docs/products/mini-program/framework/api/basics/onCopy.md)
+- [bn.onAppShow](/en/docs/products/mini-program/framework/api/basics/onAppShow.md)
+- [bn.onAppHide](/en/docs/products/mini-program/framework/api/basics/onAppHide.md)
+- [bn.onAddToFavorites](/en/docs/products/mini-program/framework/api/basics/onAddToFavorites.md)
+- [bn.on](/en/docs/products/mini-program/framework/api/basics/on.md)
+- [bn.offUnhandledRejection](/en/docs/products/mini-program/framework/api/basics/offUnhandledRejection.md)
+- [bn.offThemeChange](/en/docs/products/mini-program/framework/api/basics/offThemeChange.md)
+- [bn.offPageNotFound](/en/docs/products/mini-program/framework/api/basics/offPageNotFound.md)
+- [bn.offError](/en/docs/products/mini-program/framework/api/basics/offError.md)
+- [bn.offCopy](/en/docs/products/mini-program/framework/api/basics/offCopy.md)
+- [bn.offAppShow](/en/docs/products/mini-program/framework/api/basics/offAppShow.md)
+- [bn.offAppHide](/en/docs/products/mini-program/framework/api/basics/offAppHide.md)
+- [bn.offAddToFavorites](/en/docs/products/mini-program/framework/api/basics/offAddToFavorites.md)
+- [bn.off](/en/docs/products/mini-program/framework/api/basics/off.md)
+- [bn.handleCrossAppMessage](/en/docs/products/mini-program/framework/api/basics/handleCrossAppMessage.md)
+- [bn.getWindowInfo](/en/docs/products/mini-program/framework/api/basics/getWindowInfo.md)
+- [bn.getUserInfo](/en/docs/products/mini-program/framework/api/basics/getUserInfo.md)
+- [bn.getUpdateManager](/en/docs/products/mini-program/framework/api/basics/getUpdateManager.md)
+- [bn.getSystemInfoSync](/en/docs/products/mini-program/framework/api/basics/getSystemInfoSync.md)
+- [bn.getSystemInfo](/en/docs/products/mini-program/framework/api/basics/getSystemInfo.md)
+- [bn.getRandomValues](/en/docs/products/mini-program/framework/api/basics/getRandomValues.md)
+- [bn.getPerformance](/en/docs/products/mini-program/framework/api/basics/getPerformance.md)
+- [bn.getLaunchOptionsSync](/en/docs/products/mini-program/framework/api/basics/getLaunchOptionsSync.md)
+- [bn.getEnterOptionsSync](/en/docs/products/mini-program/framework/api/basics/getEnterOptionsSync.md)
+- [bn.getDeviceInfo](/en/docs/products/mini-program/framework/api/basics/getDeviceInfo.md)
+- [bn.getAppBaseInfo](/en/docs/products/mini-program/framework/api/basics/getAppBaseInfo.md)
+- [bn.env](/en/docs/products/mini-program/framework/api/basics/env.md)
+- [bn.enableSheetGesture](/en/docs/products/mini-program/framework/api/basics/enableSheetGesture.md)
+- [bn.createOffscreenCanvas](/en/docs/products/mini-program/framework/api/basics/createOffscreenCanvas.md)
+- [bn.closeWidget](/en/docs/products/mini-program/framework/api/basics/closeWidget.md)
+- [bn.canvasToTempFilePath](/en/docs/products/mini-program/framework/api/basics/canvasToTempFilePath.md)
+- [bn.canIUseCustom](/en/docs/products/mini-program/framework/api/basics/canIUseCustom.md)
+- [bn.canIUse](/en/docs/products/mini-program/framework/api/basics/canIUse.md)
+- [bn.callSync](/en/docs/products/mini-program/framework/api/basics/callSync.md)
+- [bn.callAnotherApp](/en/docs/products/mini-program/framework/api/basics/callAnotherApp.md)
+- [bn.callAll](/en/docs/products/mini-program/framework/api/basics/callAll.md)
+- [bn.call](/en/docs/products/mini-program/framework/api/basics/call.md)
+- [bn.addPhoneRepeatCalendar](/en/docs/products/mini-program/framework/api/basics/addPhoneRepeatCalendar.md)
+- [bn.addPhoneCalendar](/en/docs/products/mini-program/framework/api/basics/addPhoneCalendar.md)
+- [bn.MPApiError](/en/docs/products/mini-program/framework/api/basics/MPApiError.md)
+
+## API Reference
+
+### Algo Trading REST API (1.0.0)
+
+Programmatic access to Binance’s execution algorithms for creating and managing Spot and Futures algo orders.
+
+- `DELETE /sapi/v1/algo/futures/order` — Cancel Futures Algo Order (TRADE)
+- `GET /sapi/v1/algo/futures/openOrders` — Query Current Futures Algo Open Orders (USER_DATA)
+- `GET /sapi/v1/algo/futures/historicalOrders` — Query Historical Futures Algo Orders (USER_DATA)
+- `GET /sapi/v1/algo/futures/subOrders` — Query Futures Sub Orders (USER_DATA)
+- `POST /sapi/v1/algo/futures/newOrderTwap` — Time-Weighted Futures Average Price (Twap) New Order (TRADE)
+- `POST /sapi/v1/algo/futures/newOrderVp` — Volume Participation (VP) New Order (TRADE)
+- `DELETE /sapi/v1/algo/spot/order` — Cancel Spot Algo Order (TRADE)
+- `GET /sapi/v1/algo/spot/openOrders` — Query Current Spot Algo Open Orders (USER_DATA)
+- `GET /sapi/v1/algo/spot/historicalOrders` — Query Historical Spot Algo Orders (USER_DATA)
+- `GET /sapi/v1/algo/spot/subOrders` — Query Spot Sub Orders (USER_DATA)
+- `POST /sapi/v1/algo/spot/newOrderTwap` — Time-Weighted Spot Average Price(Twap) New Order (TRADE)
+
+### Alpha Trading REST API (1.0.0)
+
+APIs for Binance Alpha Trading.
+
+- `GET /bapi/defi/v1/public/alpha-trade/agg-trades` — Aggregated Trades
+- `GET /bapi/defi/v1/public/alpha-trade/fullDepth` — Full Depth
+- `GET /bapi/defi/v1/public/alpha-trade/get-exchange-info` — Get Exchange Info
+- `GET /bapi/defi/v1/public/alpha-trade/klines` — Klines
+- `GET /bapi/defi/v1/public/alpha-trade/ticker` — Ticker
+- `GET /bapi/defi/v1/public/wallet-direct/buw/wallet/cex/alpha/all/token/list` — Token List
+
+### Alpha WebSocket Market Streams (1.0.0)
+
+Access Alpha market streams over WebSocket.
+
+- `POST /{symbol}@aggTrade` — Aggregate Trade Stream
+- `POST /!bookTicker` — All Book Ticker Stream
+- `POST /!miniTicker@arr` — All Mini Ticker Stream
+- `POST /!ticker@arr` — All Ticker Stream
+- `POST /came@allTokens@ticker24` — All Tokens 24h Ticker Stream
+- `POST /{symbol}@bookTicker` — Book Ticker Stream
+- `POST /{symbol}@depth{levels}@{interval}` — Partial Depth Stream
+- `POST /{symbol}@fulldepth@{interval}` — Full Depth Stream
+- `POST /{symbol}@kline_{interval}` — Kline Stream
+- `POST /came@{contractAddress}@{chainId}@kline_{interval}` — Contract Kline Stream
+- `POST /{symbol}@miniTicker` — Mini Ticker Stream
+- `POST /{symbol}@ticker` — Ticker Stream
+- `POST /{symbol}@trade` — Trade Stream
+
+### Stocks Trading REST API (1.0.0)
+
+REST APIs for Binance Stocks Trading. All endpoints under `/sapi/v1/equity/*`.
+
+- `GET /sapi/v1/equity/market/exchangeInfo` — Exchange Info (MARKET_DATA)
+- `GET /sapi/v1/equity/market/tokenized-assets` — Tokenized Assets (MARKET_DATA)
+- `GET /sapi/v1/equity/market/quote` — Latest Quote (MARKET_DATA)
+- `POST /sapi/v1/equity/order/place` — Place Equity Order (TRADE)
+- `POST /sapi/v1/equity/order/cancel` — Cancel Equity Order (TRADE)
+- `POST /sapi/v1/equity/order/cancel-all` — Cancel All Equity Orders (TRADE)
+- `GET /sapi/v1/equity/order/open-orders` — Current Open Orders (USER_DATA)
+- `GET /sapi/v1/equity/order/history` — Equity Order History (USER_DATA)
+- `GET /sapi/v1/equity/order/detail` — Equity Order Detail (USER_DATA)
+- `GET /sapi/v1/equity/trade/history` — Equity Trade History (USER_DATA)
+- `POST /sapi/v1/equity/tokenized/mint` — Tokenized Mint (TRADE)
+- `POST /sapi/v1/equity/tokenized/redeem` — Tokenized Redeem (TRADE)
+- `GET /sapi/v1/equity/tokenized/convert-status` — Tokenized Convert Status (USER_DATA)
+- `GET /sapi/v1/equity/tokenized/history` — Tokenized Convert History (USER_DATA)
+- `POST /sapi/v1/equity/account/disclaimer` — Sign US Equity Disclaimer (TRADE)
+- `POST /sapi/v1/equity/listenKey` — Create / Renew Listen Key (USER_STREAM)
+
+### Stocks Trading WebSocket Streams (1.0.0)
+
+WebSocket stream definitions for Binance Stocks Trading. Base URL: wss://nbstream.binance.com/equity
+
+- `POST /price` — Price Stream
+- `POST /{symbol}@quote` — Quote Stream
+- `POST /{symbol}@kline_{interval}` — Kline Stream
+- `POST /calendar` — Calendar Stream
+- `POST /{symbol}@tradability` — Tradability Stream
+- `POST /{symbol}@tradingStatus` — Trading Status Stream
+- `POST /{listenKey}@orderReport` — Order Report Stream
+
+### C2C REST API (1.0.0)
+
+Query fiat transaction history via the C2C REST API.
+
+- `GET /sapi/v1/c2c/orderMatch/listUserOrderHistory` — Get C2C Trade History (USER_DATA)
+
+### Convert REST API (1.0.0)
+
+Request quotes and execute cryptocurrency conversions via the Convert REST API.
+
+- `GET /sapi/v1/convert/exchangeInfo` — List All Convert Pairs
+- `GET /sapi/v1/convert/assetInfo` — Query order quantity precision per asset (USER_DATA)
+- `POST /sapi/v1/convert/acceptQuote` — Accept Quote (TRADE)
+- `POST /sapi/v1/convert/limit/cancelOrder` — Cancel limit order (TRADE)
+- `GET /sapi/v1/convert/tradeFlow` — Get Convert Trade History (USER_DATA)
+- `GET /sapi/v1/convert/orderStatus` — Order status (USER_DATA)
+- `POST /sapi/v1/convert/limit/placeOrder` — Place limit order (TRADE)
+- `GET /sapi/v1/convert/limit/queryOpenOrders` — Query limit open orders (USER_DATA)
+- `POST /sapi/v1/convert/getQuote` — Send Quote Request (TRADE)
+
+### Copy Trading REST API (1.0.0)
+
+Automate lead trading via the Copy Trading API.
+
+- `GET /sapi/v1/copyTrading/futures/userStatus` — Get Futures Lead Trader Status (TRADE)
+- `GET /sapi/v1/copyTrading/futures/leadSymbol` — Get Futures Lead Trading Symbol Whitelist (USER_DATA)
+
+### Crypto Loan REST API (1.0.0)
+
+Access Binance Crypto Loans to query assets, subscribe to loans, and manage loan positions.
+
+- `GET /sapi/v2/loan/flexible/repay/rate` — Check Collateral Flexible Repay Rate (USER_DATA)
+- `POST /sapi/v2/loan/flexible/adjust/ltv` — Flexible Loan Adjust LTV (TRADE)
+- `POST /sapi/v2/loan/flexible/borrow` — Flexible Loan Borrow (TRADE)
+- `POST /sapi/v2/loan/flexible/repay` — Flexible Loan Repay (TRADE)
+- `GET /sapi/v2/loan/flexible/loanable/data` — Get Flexible Loan Assets Data (USER_DATA)
+- `GET /sapi/v2/loan/flexible/borrow/history` — Get Flexible Loan Borrow History (USER_DATA)
+- `GET /sapi/v2/loan/flexible/collateral/data` — Get Flexible Loan Collateral Assets Data (USER_DATA)
+- `GET /sapi/v2/loan/interestRateHistory` — Get Flexible Loan Interest Rate History (USER_DATA)
+- `GET /sapi/v2/loan/flexible/liquidation/history` — Get Flexible Loan Liquidation History (USER_DATA)
+- `GET /sapi/v2/loan/flexible/ltv/adjustment/history` — Get Flexible Loan LTV Adjustment History (USER_DATA)
+- `GET /sapi/v2/loan/flexible/ongoing/orders` — Get Flexible Loan Ongoing Orders (USER_DATA)
+- `GET /sapi/v2/loan/flexible/repay/history` — Get Flexible Loan Repayment History (USER_DATA)
+- `GET /sapi/v1/loan/income` — Get Crypto Loans Income History (USER_DATA)
+- `GET /sapi/v1/loan/borrow/history` — Get Loan Borrow History (USER_DATA)
+- `GET /sapi/v1/loan/ltv/adjustment/history` — Get Loan LTV Adjustment History (USER_DATA)
+- `GET /sapi/v1/loan/repay/history` — Get Loan Repayment History (USER_DATA)
+
+### Futures (COIN-M) REST API (1.0.0)
+
+Access market data, manage accounts, and trade COIN-M perpetual and delivery futures.
+
+- `GET /dapi/v1/account` — Account Information (USER_DATA)
+- `GET /dapi/v1/balance` — Futures Account Balance (USER_DATA)
+- `GET /dapi/v1/positionSide/dual` — Get Current Position Mode (USER_DATA)
+- `POST /dapi/v1/positionSide/dual` — Change Position Mode (TRADE)
+- `GET /dapi/v1/order/asyn` — Get Download Id For Futures Order History (USER_DATA)
+- `GET /dapi/v1/trade/asyn` — Get Download Id For Futures Trade History (USER_DATA)
+- `GET /dapi/v1/income/asyn` — Get Download Id For Futures Transaction History (USER_DATA)
+- `GET /dapi/v1/order/asyn/id` — Get Futures Order History Download Link by Id (USER_DATA)
+- `GET /dapi/v1/trade/asyn/id` — Get Futures Trade Download Link by Id (USER_DATA)
+- `GET /dapi/v1/income/asyn/id` — Get Futures Transaction History Download Link by Id (USER_DATA)
+- `GET /dapi/v1/income` — Get Income History (USER_DATA)
+- `GET /dapi/v1/leverageBracket` — Notional Bracket for Pair (USER_DATA)
+- `GET /dapi/v2/leverageBracket` — Notional Bracket for Symbol (USER_DATA)
+- `GET /dapi/v1/commissionRate` — User Commission Rate (USER_DATA)
+- `GET /futures/data/basis` — Basis
+- `GET /dapi/v1/time` — Check Server time
+- `GET /dapi/v1/aggTrades` — Compressed/Aggregate Trades List
+- `GET /dapi/v1/continuousKlines` — Continuous Contract Kline/Candlestick Data
+- `GET /dapi/v1/exchangeInfo` — Exchange Information
+- `GET /dapi/v1/fundingRate` — Get Funding Rate History of Perpetual Futures
+- `GET /dapi/v1/fundingInfo` — Get Funding Rate Info
+- `GET /dapi/v1/premiumIndex` — Index Price and Mark Price
+- `GET /dapi/v1/indexPriceKlines` — Index Price Kline/Candlestick Data
+- `GET /dapi/v1/klines` — Kline/Candlestick Data
+- `GET /futures/data/globalLongShortAccountRatio` — Long/Short Ratio
+- `GET /dapi/v1/markPriceKlines` — Mark Price Kline/Candlestick Data
+- `GET /dapi/v1/historicalTrades` — Old Trades Lookup (MARKET_DATA)
+- `GET /dapi/v1/openInterest` — Open Interest
+- `GET /futures/data/openInterestHist` — Open Interest Statistics
+- `GET /dapi/v1/depth` — Order Book
+- `GET /dapi/v1/premiumIndexKlines` — Premium index Kline Data
+- `GET /dapi/v1/constituents` — Query Index Price Constituents
+- `GET /dapi/v1/trades` — Recent Trades List
+- `GET /dapi/v1/ticker/bookTicker` — Symbol Order Book Ticker
+- `GET /dapi/v1/ticker/price` — Symbol Price Ticker
+- `GET /futures/data/takerBuySellVol` — Taker Buy/Sell Volume
+- `GET /dapi/v1/ping` — Test Connectivity
+- `GET /dapi/v1/ticker/24hr` — 24hr Ticker Price Change Statistics
+- `GET /futures/data/topLongShortAccountRatio` — Top Trader Long/Short Account Ratio
+- `GET /futures/data/topLongShortPositionRatio` — Top Trader Long/Short Position Ratio
+- `GET /dapi/v1/userTrades` — Account Trade List (USER_DATA)
+- `GET /dapi/v1/allOrders` — All Orders (USER_DATA)
+- `POST /dapi/v1/countdownCancelAll` — Auto-Cancel All Open Orders (TRADE)
+- `DELETE /dapi/v1/allOpenOrders` — Cancel All Open Orders (TRADE)
+- `PUT /dapi/v1/batchOrders` — Modify Multiple Orders (TRADE)
+- `POST /dapi/v1/batchOrders` — Place Multiple Orders (TRADE)
+- `DELETE /dapi/v1/batchOrders` — Cancel Multiple Orders (TRADE)
+- `GET /dapi/v1/order` — Query Order (USER_DATA)
+- `PUT /dapi/v1/order` — Modify Order (TRADE)
+- `POST /dapi/v1/order` — New Order (TRADE)
+- `DELETE /dapi/v1/order` — Cancel Order (TRADE)
+- `POST /dapi/v1/leverage` — Change Initial Leverage (TRADE)
+- `POST /dapi/v1/marginType` — Change Margin Type (TRADE)
+- `GET /dapi/v1/openOrders` — Current All Open Orders (USER_DATA)
+- `GET /dapi/v1/orderAmendment` — Get Order Modify History (USER_DATA)
+- `GET /dapi/v1/positionMargin/history` — Get Position Margin Change History (TRADE)
+- `POST /dapi/v1/positionMargin` — Modify Isolated Position Margin (TRADE)
+- `GET /dapi/v1/adlQuantile` — Position ADL Quantile Estimation (USER_DATA)
+- `GET /dapi/v1/positionRisk` — Position Information (USER_DATA)
+- `GET /dapi/v1/openOrder` — Query Current Open Order (USER_DATA)
+- `GET /dapi/v1/forceOrders` — User's Force Orders (USER_DATA)
+- `PUT /dapi/v1/listenKey` — Keepalive User Data Stream (USER_STREAM)
+- `POST /dapi/v1/listenKey` — Start User Data Stream (USER_STREAM)
+- `DELETE /dapi/v1/listenKey` — Close User Data Stream (USER_STREAM)
+
+### Futures (COIN-M) WebSocket API (1.0.0)
+
+Access market data, manage accounts, and trade COIN-M perpetual and delivery futures.
+
+- `POST /account.status` — Account Information (USER_DATA)
+- `POST /account.balance` — Futures Account Balance (USER_DATA)
+- `POST /order.cancel` — Cancel Order (TRADE)
+- `POST /order.modify` — Modify Order (TRADE)
+- `POST /order.place` — New Order (TRADE)
+- `POST /account.position` — Position Information (USER_DATA)
+- `POST /order.status` — Query Order (USER_DATA)
+- `POST /userDataStream.stop` — Close User Data Stream (USER_STREAM)
+- `POST /userDataStream.ping` — Keepalive User Data Stream (USER_STREAM)
+- `POST /userDataStream.start` — Start User Data Stream (USER_STREAM)
+
+### Futures (COIN-M) WebSocket Market Streams (1.0.0)
+
+Access market data, manage accounts, and trade COIN-M perpetual and delivery futures.
+
+- `POST /{symbol}@aggTrade` — Aggregate Trade Streams
+- `POST /!bookTicker` — All Book Tickers Stream
+- `POST /!forceOrder@arr` — All Market Liquidation Order Streams
+- `POST /!miniTicker@arr` — All Market Mini Tickers Stream
+- `POST /!ticker@arr` — All Market Tickers Streams
+- `POST /{pair}_{contractType}@continuousKline_{interval}` — Continuous Contract Kline/Candlestick Streams
+- `POST /!contractInfo` — Contract Info Stream
+- `POST /{symbol}@depth@{updateSpeed}` — Diff. Book Depth Streams
+- `POST /{pair}@indexPriceKline_{interval}` — Index Kline/Candlestick Streams
+- `POST /{pair}@indexPrice@{updateSpeed}` — Index Price Stream
+- `POST /{symbol}@bookTicker` — Individual Symbol Book Ticker Streams
+- `POST /{symbol}@miniTicker` — Individual Symbol Mini Ticker Stream
+- `POST /{symbol}@ticker` — Individual Symbol Ticker Streams
+- `POST /{symbol}@kline_{interval}` — Kline/Candlestick Streams
+- `POST /{symbol}@forceOrder` — Market Liquidation Order Streams
+- `POST /{symbol}@markPriceKline_{interval}` — Mark Price Kline/Candlestick Streams
+- `POST /{pair}@markPrice@{updateSpeed}` — Mark Price of All Symbols of a Pair
+- `POST /{symbol}@markPrice@{updateSpeed}` — Mark Price Stream
+- `POST /{symbol}@depth{levels}@{updateSpeed}` — Partial Book Depth Streams
+
+### Options REST API (1.0.0)
+
+Access market data, manage accounts, and trade Binance Options.
+
+- `GET /eapi/v1/bill` — Account Funding Flow (USER_DATA)
+- `GET /eapi/v1/marginAccount` — Option Margin Account Information (USER_DATA)
+- `GET /eapi/v1/time` — Check Server Time
+- `GET /eapi/v1/exchangeInfo` — Exchange Information
+- `GET /eapi/v1/exerciseHistory` — Historical Exercise Records
+- `GET /eapi/v1/index` — Index Price
+- `GET /eapi/v1/klines` — Kline/Candlestick Data
+- `GET /eapi/v1/openInterest` — Open Interest
+- `GET /eapi/v1/mark` — Option Mark Price
+- `GET /eapi/v1/depth` — Order Book
+- `GET /eapi/v1/blockTrades` — Recent Block Trades List
+- `GET /eapi/v1/trades` — Recent Trades List
+- `GET /eapi/v1/ping` — Test Connectivity
+- `GET /eapi/v1/ticker` — 24hr Ticker Price Change Statistics
+- `GET /eapi/v1/block/order/execute` — Query Block Trade Details (USER_DATA)
+- `POST /eapi/v1/block/order/execute` — Accept Block Trade Order (TRADE)
+- `GET /eapi/v1/block/user-trades` — Account Block Trade List (USER_DATA)
+- `PUT /eapi/v1/block/order/create` — Extend Block Trade Order (TRADE)
+- `POST /eapi/v1/block/order/create` — New Block Trade Order (TRADE)
+- `DELETE /eapi/v1/block/order/create` — Cancel Block Trade Order (TRADE)
+- `GET /eapi/v1/block/order/orders` — Query Block Trade Order (TRADE)
+- `POST /eapi/v1/countdownCancelAllHeartBeat` — Auto-Cancel All Open Orders (Kill-Switch) Heartbeat (TRADE)
+- `GET /eapi/v1/countdownCancelAll` — Get Auto-Cancel All Open Orders (Kill-Switch) Config (TRADE)
+- `POST /eapi/v1/countdownCancelAll` — Set Auto-Cancel All Open Orders (Kill-Switch) Config (TRADE)
+- `GET /eapi/v1/mmp` — Get Market Maker Protection Config (TRADE)
+- `POST /eapi/v1/mmpReset` — Reset Market Maker Protection Config (TRADE)
+- `POST /eapi/v1/mmpSet` — Set Market Maker Protection Config (TRADE)
+- `GET /eapi/v1/userTrades` — Account Trade List (USER_DATA)
+- `DELETE /eapi/v1/allOpenOrdersByUnderlying` — Cancel All Option Orders By Underlying (TRADE)
+- `DELETE /eapi/v1/allOpenOrders` — Cancel all Option orders on specific symbol (TRADE)
+- `POST /eapi/v1/batchOrders` — Place Multiple Orders (TRADE)
+- `DELETE /eapi/v1/batchOrders` — Cancel Multiple Option Orders (TRADE)
+- `GET /eapi/v1/order` — Query Single Order (TRADE)
+- `POST /eapi/v1/order` — New Order (TRADE)
+- `DELETE /eapi/v1/order` — Cancel Option Order (TRADE)
+- `GET /eapi/v1/position` — Option Position Information (USER_DATA)
+- `GET /eapi/v1/openOrders` — Query Current Open Option Orders (USER_DATA)
+- `GET /eapi/v1/historyOrders` — Query Option Order History (TRADE)
+- `POST /eapi/v1/stock/contract` — TradFi Options Contract (USER_DATA)
+- `GET /eapi/v1/commission` — User Commission (USER_DATA)
+- `GET /eapi/v1/exerciseRecord` — User Exercise Record (USER_DATA)
+- `PUT /eapi/v1/listenKey` — Keepalive User Data Stream (USER_STREAM)
+- `POST /eapi/v1/listenKey` — Start User Data Stream (USER_STREAM)
+- `DELETE /eapi/v1/listenKey` — Close User Data Stream (USER_STREAM)
+
+### Options WebSocket Market Streams (1.0.0)
+
+Access market data, manage accounts, and trade Binance Options.
+
+- `POST /!index@arr` — Index Price Streams
+- `POST /{symbol}@kline_{interval}` — Kline/Candlestick Streams
+- `POST /{underlying}@optionMarkPrice` — Option Mark Price
+- `POST /!optionSymbol` — New Symbol Info
+- `POST /{underlying}@openInterest@{expirationDate}` — Open Interest
+- `POST /{symbol}@depth@{updateSpeed}` — Diff Book Depth Streams
+- `POST /{symbol}@bookTicker` — Individual Symbol Book Ticker Streams
+- `POST /{symbol}@depth{level}@{updateSpeed}` — Partial Book Depth Streams
+- `POST /{symbol}@optionTicker{expirationDate}` — 24-hour TICKER
+- `POST /{symbol}@optionTrade` — Trade Streams
+
+### Portfolio Margin Pro REST API (1.0.0)
+
+Access advanced account management and high-frequency trading with Binance Portfolio Margin Pro.
+
+- `POST /sapi/v1/portfolio/bnb-transfer` — BNB transfer (USER_DATA)
+- `GET /sapi/v1/portfolio/repay-futures-switch` — Get Auto-repay-futures Status (USER_DATA)
+- `POST /sapi/v1/portfolio/repay-futures-switch` — Change Auto-repay-futures Status (TRADE)
+- `POST /sapi/v1/portfolio/auto-collection` — Fund Auto-collection (USER_DATA)
+- `POST /sapi/v1/portfolio/asset-collection` — Fund Collection by Asset (USER_DATA)
+- `GET /sapi/v1/portfolio/delta-mode` — Get Delta Mode Status (USER_DATA)
+- `POST /sapi/v1/portfolio/delta-mode` — Switch Delta Mode (TRADE)
+- `GET /sapi/v1/portfolio/balance` — Get Portfolio Margin Pro Account Balance (USER_DATA)
+- `GET /sapi/v1/portfolio/account` — Get Portfolio Margin Pro Account Info (USER_DATA)
+- `GET /sapi/v2/portfolio/account` — Get Portfolio Margin Pro SPAN Account Info (USER_DATA)
+- `GET /sapi/v1/portfolio/earn-asset-balance` — Get Transferable Earn Asset Balance for Portfolio Margin (USER_DATA)
+- `POST /sapi/v1/portfolio/repay` — Portfolio Margin Pro Bankruptcy Loan Repay (TRADE)
+- `GET /sapi/v1/portfolio/pmLoan` — Query Portfolio Margin Pro Bankruptcy Loan Amount (USER_DATA)
+- `GET /sapi/v1/portfolio/pmloan-history` — Query Portfolio Margin Pro Bankruptcy Loan Repay History (USER_DATA)
+- `GET /sapi/v1/portfolio/interest-history` — Query Portfolio Margin Pro Negative Balance Interest History (USER_DATA)
+- `POST /sapi/v1/portfolio/repay-futures-negative-balance` — Repay futures Negative Balance (USER_DATA)
+- `POST /sapi/v1/portfolio/earn-asset-transfer` — Transfer LDUSDT/RWUSD for Portfolio Margin (TRADE)
+- `GET /sapi/v1/portfolio/margin-call-level` — Get Margin Call Level (USER_DATA)
+- `POST /sapi/v1/portfolio/margin-call-level` — Set Margin Call Level (USER_DATA)
+- `DELETE /sapi/v1/portfolio/margin-call-level` — Delete Margin Call Level (USER_DATA)
+- `GET /sapi/v1/portfolio/margin-asset-leverage` — Get Portfolio Margin Asset Leverage (USER_DATA)
+- `GET /sapi/v1/portfolio/collateralRate` — Portfolio Margin Collateral Rate (MARKET_DATA)
+- `GET /sapi/v2/portfolio/collateralRate` — Portfolio Margin Pro Tiered Collateral Rate (USER_DATA)
+- `GET /sapi/v1/portfolio/asset-index-price` — Query Portfolio Margin Asset Index Price (MARKET_DATA)
+
+### Portfolio Margin Pro WebSocket Market Streams (1.0.0)
+
+Access advanced account management and high-frequency trading with Binance Portfolio Margin Pro.
+
+
+### Portfolio Margin REST API (1.0.0)
+
+Access account information, manage margin positions, and trade with Binance Portfolio Margin.
+
+- `GET /papi/v1/balance` — Account Balance (USER_DATA)
+- `GET /papi/v1/account` — Account Information (USER_DATA)
+- `POST /papi/v1/bnb-transfer` — BNB transfer (TRADE)
+- `GET /papi/v1/repay-futures-switch` — Get Auto-repay-futures Status (USER_DATA)
+- `POST /papi/v1/repay-futures-switch` — Change Auto-repay-futures Status (TRADE)
+- `POST /papi/v1/cm/leverage` — Change CM Initial Leverage (TRADE)
+- `GET /papi/v1/cm/positionSide/dual` — Get CM Current Position Mode (USER_DATA)
+- `POST /papi/v1/cm/positionSide/dual` — Change CM Position Mode (TRADE)
+- `POST /papi/v1/um/leverage` — Change UM Initial Leverage (TRADE)
+- `GET /papi/v1/um/positionSide/dual` — Get UM Current Position Mode (USER_DATA)
+- `POST /papi/v1/um/positionSide/dual` — Change UM Position Mode (TRADE)
+- `GET /papi/v1/cm/leverageBracket` — CM Notional and Leverage Brackets (USER_DATA)
+- `POST /papi/v1/auto-collection` — Fund Auto-collection (TRADE)
+- `POST /papi/v1/asset-collection` — Fund Collection by Asset (TRADE)
+- `GET /papi/v1/cm/account` — Get CM Account Detail (USER_DATA)
+- `GET /papi/v1/cm/income` — Get CM Income History (USER_DATA)
+- `GET /papi/v1/um/order/asyn` — Get Download Id For UM Futures Order History (USER_DATA)
+- `GET /papi/v1/um/trade/asyn` — Get Download Id For UM Futures Trade History (USER_DATA)
+- `GET /papi/v1/um/income/asyn` — Get Download Id For UM Futures Transaction History (USER_DATA)
+- `GET /papi/v1/margin/marginInterestHistory` — Get Margin Borrow/Loan Interest History (USER_DATA)
+- `GET /papi/v1/um/account` — Get UM Account Detail (USER_DATA)
+- `GET /papi/v2/um/account` — Get UM Account Detail V2 (USER_DATA)
+- `GET /papi/v1/um/order/asyn/id` — Get UM Futures Order Download Link by Id (USER_DATA)
+- `GET /papi/v1/um/trade/asyn/id` — Get UM Futures Trade Download Link by Id (USER_DATA)
+- `GET /papi/v1/um/income/asyn/id` — Get UM Futures Transaction Download Link by Id (USER_DATA)
+- `GET /papi/v1/um/income` — Get UM Income History (USER_DATA)
+- `GET /papi/v1/cm/commissionRate` — Get User Commission Rate for CM (USER_DATA)
+- `GET /papi/v1/um/commissionRate` — Get User Commission Rate for UM (USER_DATA)
+- `GET /papi/v1/margin/maxBorrowable` — Margin Max Borrow (USER_DATA)
+- `GET /papi/v1/um/apiTradingStatus` — Portfolio Margin UM Trading Quantitative Rules Indicators (USER_DATA)
+- `GET /papi/v1/cm/positionRisk` — Query CM Position Information (USER_DATA)
+- `GET /papi/v1/margin/marginLoan` — Query Margin Loan Record (USER_DATA)
+- `GET /papi/v1/margin/maxWithdraw` — Query Margin Max Withdraw (USER_DATA)
+- `GET /papi/v1/margin/repayLoan` — Query Margin repay Record (USER_DATA)
+- `GET /papi/v1/portfolio/interest-history` — Query Portfolio Margin Negative Balance Interest History (USER_DATA)
+- `GET /papi/v1/um/positionRisk` — Query UM Position Information (USER_DATA)
+- `GET /papi/v1/portfolio/negative-balance-exchange-record` — Query User Negative Balance Auto Exchange Record (USER_DATA)
+- `GET /papi/v1/rateLimit/order` — Query User Rate Limit (USER_DATA)
+- `POST /papi/v1/repay-futures-negative-balance` — Repay futures Negative Balance (USER_DATA)
+- `GET /papi/v1/um/accountConfig` — UM Futures Account Configuration (USER_DATA)
+- `GET /papi/v1/um/symbolConfig` — UM Futures Symbol Configuration (USER_DATA)
+- `GET /papi/v1/um/leverageBracket` — UM Notional and Leverage Brackets (USER_DATA)
+- `GET /papi/v1/ping` — Test Connectivity
+- `DELETE /papi/v1/cm/conditional/allOpenOrders` — Cancel All CM Open Conditional Orders (TRADE)
+- `DELETE /papi/v1/cm/allOpenOrders` — Cancel All CM Open Orders (TRADE)
+- `DELETE /papi/v1/um/conditional/allOpenOrders` — Cancel All UM Open Conditional Orders - Deprecated (TRADE)
+- `DELETE /papi/v1/um/allOpenOrders` — Cancel All UM Open Orders (TRADE)
+- `POST /papi/v1/cm/conditional/order` — New CM Conditional Order (TRADE)
+- `DELETE /papi/v1/cm/conditional/order` — Cancel CM Conditional Order (TRADE)
+- `GET /papi/v1/cm/order` — Query CM Order (USER_DATA)
+- `PUT /papi/v1/cm/order` — Modify CM Order (TRADE)
+- `POST /papi/v1/cm/order` — New CM Order (TRADE)
+- `DELETE /papi/v1/cm/order` — Cancel CM Order (TRADE)
+- `DELETE /papi/v1/margin/allOpenOrders` — Cancel Margin Account All Open Orders on a Symbol (TRADE)
+- `GET /papi/v1/margin/orderList` — Query Margin Account's OCO (USER_DATA)
+- `DELETE /papi/v1/margin/orderList` — Cancel Margin Account OCO Orders (TRADE)
+- `GET /papi/v1/margin/order` — Query Margin Account Order (USER_DATA)
+- `POST /papi/v1/margin/order` — New Margin Order (TRADE)
+- `DELETE /papi/v1/margin/order` — Cancel Margin Account Order (TRADE)
+- `POST /papi/v1/um/conditional/order` — New UM Conditional Order - Deprecated (TRADE)
+- `DELETE /papi/v1/um/conditional/order` — Cancel UM Conditional Order - Deprecated (TRADE)
+- `GET /papi/v1/um/order` — Query UM Order (USER_DATA)
+- `PUT /papi/v1/um/order` — Modify UM Order (TRADE)
+- `POST /papi/v1/um/order` — New UM Order (TRADE)
+- `DELETE /papi/v1/um/order` — Cancel UM Order (TRADE)
+- `GET /papi/v1/cm/userTrades` — CM Account Trade List (USER_DATA)
+- `GET /papi/v1/cm/adlQuantile` — CM Position ADL Quantile Estimation (USER_DATA)
+- `GET /papi/v1/um/feeBurn` — Get UM Futures BNB Burn Status (USER_DATA)
+- `POST /papi/v1/um/feeBurn` — Toggle BNB Burn On UM Futures Trade (TRADE)
+- `POST /papi/v1/marginLoan` — Margin Account Borrow (MARGIN)
+- `POST /papi/v1/margin/order/oco` — Margin Account New OCO (TRADE)
+- `POST /papi/v1/repayLoan` — Margin Account Repay (MARGIN)
+- `POST /papi/v1/margin/repay-debt` — Margin Account Repay Debt (TRADE)
+- `GET /papi/v1/margin/myTrades` — Margin Account Trade List (USER_DATA)
+- `GET /papi/v1/cm/conditional/allOrders` — Query All CM Conditional Orders (USER_DATA)
+- `GET /papi/v1/cm/allOrders` — Query All CM Orders (USER_DATA)
+- `GET /papi/v1/cm/conditional/openOrders` — Query All Current CM Open Conditional Orders (USER_DATA)
+- `GET /papi/v1/cm/openOrders` — Query All Current CM Open Orders (USER_DATA)
+- `GET /papi/v1/um/conditional/openOrders` — Query All Current UM Open Conditional Orders - Deprecated (USER_DATA)
+- `GET /papi/v1/um/openOrders` — Query All Current UM Open Orders (USER_DATA)
+- `GET /papi/v1/margin/allOrders` — Query All Margin Account Orders (USER_DATA)
+- `GET /papi/v1/um/conditional/allOrders` — Query All UM Conditional Orders - Deprecated (USER_DATA)
+- `GET /papi/v1/um/allOrders` — Query All UM Orders (USER_DATA)
+- `GET /papi/v1/cm/conditional/orderHistory` — Query CM Conditional Order History (USER_DATA)
+- `GET /papi/v1/cm/orderAmendment` — Query CM Modify Order History (TRADE)
+- `GET /papi/v1/cm/conditional/openOrder` — Query Current CM Open Conditional Order (USER_DATA)
+- `GET /papi/v1/cm/openOrder` — Query Current CM Open Order (USER_DATA)
+- `GET /papi/v1/margin/openOrders` — Query Current Margin Open Order (USER_DATA)
+- `GET /papi/v1/um/conditional/openOrder` — Query Current UM Open Conditional Order - Deprecated (USER_DATA)
+- `GET /papi/v1/um/openOrder` — Query Current UM Open Order (USER_DATA)
+- `GET /papi/v1/margin/allOrderList` — Query Margin Account's all OCO (USER_DATA)
+- `GET /papi/v1/margin/openOrderList` — Query Margin Account's Open OCO (USER_DATA)
+- `GET /papi/v1/um/conditional/orderHistory` — Query UM Conditional Order History - Deprecated (USER_DATA)
+- `GET /papi/v1/um/orderAmendment` — Query UM Modify Order History (TRADE)
+- `GET /papi/v1/cm/forceOrders` — Query User's CM Force Orders (USER_DATA)
+- `GET /papi/v1/margin/forceOrders` — Query User's Margin Force Orders (USER_DATA)
+- `GET /papi/v1/um/forceOrders` — Query User's UM Force Orders (USER_DATA)
+- `GET /papi/v1/um/userTrades` — UM Account Trade List (USER_DATA)
+- `GET /papi/v1/um/adlQuantile` — UM Position ADL Quantile Estimation (USER_DATA)
+- `POST /papi/v1/um/algo/order` — New UM Algo Order (TRADE)
+- `DELETE /papi/v1/um/algo/order` — Cancel UM Algo Order (TRADE)
+- `DELETE /papi/v1/um/algo/allOpenOrders` — Cancel All UM Algo Open Orders (TRADE)
+- `GET /papi/v1/um/algo/algoOrder` — Query Current UM Open Algo Order (USER_DATA)
+- `GET /papi/v1/um/algo/openAlgoOrders` — Query All Current UM Open Algo Orders (USER_DATA)
+- `GET /papi/v1/um/algo/allAlgoOrders` — Query UM Algo Order History (USER_DATA)
+- `POST /papi/v1/um/stock/contract` — Futures TradFi Perps Contract (USER_DATA)
+- `PUT /papi/v1/listenKey` — Keepalive User Data Stream (USER_STREAM)
+- `POST /papi/v1/listenKey` — Start User Data Stream (USER_STREAM)
+- `DELETE /papi/v1/listenKey` — Close User Data Stream (USER_STREAM)
+
+### Portfolio Margin WebSocket Market Streams (1.0.0)
+
+Access account information, manage margin positions, and trade with Binance Portfolio Margin.
+
+
+### Futures (USDⓈ-M) REST API (1.0.0)
+
+Access market data, manage accounts, and trade USDⓈ-M perpetual futures.
+
+- `GET /fapi/v2/account` — Account Information V2 (USER_DATA)
+- `GET /fapi/v3/account` — Account Information V3 (USER_DATA)
+- `GET /fapi/v2/balance` — Futures Account Balance V2 (USER_DATA)
+- `GET /fapi/v3/balance` — Futures Account Balance V3 (USER_DATA)
+- `GET /fapi/v1/accountConfig` — Futures Account Configuration (USER_DATA)
+- `GET /fapi/v1/apiTradingStatus` — Futures Trading Quantitative Rules Indicators (USER_DATA)
+- `GET /fapi/v1/feeBurn` — Get BNB Burn Status (USER_DATA)
+- `POST /fapi/v1/feeBurn` — Toggle BNB Burn On Futures Trade (TRADE)
+- `GET /fapi/v1/multiAssetsMargin` — Get Current Multi-Assets Mode (USER_DATA)
+- `POST /fapi/v1/multiAssetsMargin` — Change Multi-Assets Mode (TRADE)
+- `GET /fapi/v1/positionSide/dual` — Get Current Position Mode (USER_DATA)
+- `POST /fapi/v1/positionSide/dual` — Change Position Mode (TRADE)
+- `GET /fapi/v1/order/asyn` — Get Download Id For Futures Order History (USER_DATA)
+- `GET /fapi/v1/trade/asyn` — Get Download Id For Futures Trade History (USER_DATA)
+- `GET /fapi/v1/income/asyn` — Get Download Id For Futures Transaction History (USER_DATA)
+- `GET /fapi/v1/order/asyn/id` — Get Futures Order History Download Link by Id (USER_DATA)
+- `GET /fapi/v1/trade/asyn/id` — Get Futures Trade Download Link by Id (USER_DATA)
+- `GET /fapi/v1/income/asyn/id` — Get Futures Transaction History Download Link by Id (USER_DATA)
+- `GET /fapi/v1/income` — Get Income History (USER_DATA)
+- `GET /fapi/v1/leverageBracket` — Notional and Leverage Brackets (USER_DATA)
+- `GET /fapi/v1/rateLimit/order` — Query User Rate Limit (USER_DATA)
+- `GET /fapi/v1/symbolConfig` — Symbol Configuration (USER_DATA)
+- `GET /fapi/v1/commissionRate` — User Commission Rate (USER_DATA)
+- `POST /fapi/v1/convert/acceptQuote` — Accept the offered quote (USER_DATA)
+- `GET /fapi/v1/convert/exchangeInfo` — List All Convert Pairs
+- `GET /fapi/v1/convert/orderStatus` — Order status (USER_DATA)
+- `POST /fapi/v1/convert/getQuote` — Send Quote Request (USER_DATA)
+- `GET /fapi/v1/symbolAdlRisk` — ADL Risk
+- `GET /futures/data/basis` — Basis
+- `GET /fapi/v1/time` — Check Server Time
+- `GET /fapi/v1/indexInfo` — Composite Index Symbol Information
+- `GET /fapi/v1/aggTrades` — Compressed/Aggregate Trades List
+- `GET /fapi/v1/continuousKlines` — Continuous Contract Kline/Candlestick Data
+- `GET /fapi/v1/exchangeInfo` — Exchange Information
+- `GET /fapi/v1/fundingRate` — Get Funding Rate History
+- `GET /fapi/v1/fundingInfo` — Get Funding Rate Info
+- `GET /fapi/v1/indexPriceKlines` — Index Price Kline/Candlestick Data
+- `GET /fapi/v1/klines` — Kline/Candlestick Data
+- `GET /futures/data/globalLongShortAccountRatio` — Long/Short Ratio
+- `GET /fapi/v1/premiumIndex` — Mark Price
+- `GET /fapi/v1/markPriceKlines` — Mark Price Kline/Candlestick Data
+- `GET /fapi/v1/assetIndex` — Multi-Assets Mode Asset Index
+- `GET /fapi/v1/historicalTrades` — Old Trades Lookup (MARKET_DATA)
+- `GET /fapi/v1/openInterest` — Open Interest
+- `GET /futures/data/openInterestHist` — Open Interest Statistics
+- `GET /fapi/v1/depth` — Order Book
+- `GET /fapi/v1/premiumIndexKlines` — Premium index Kline Data
+- `GET /futures/data/delivery-price` — Quarterly Contract Settlement Price
+- `GET /fapi/v1/constituents` — Query Index Price Constituents
+- `GET /fapi/v1/insuranceBalance` — Query Insurance Fund Balance Snapshot
+- `GET /fapi/v1/trades` — Recent Trades List
+- `GET /fapi/v1/rpiDepth` — RPI Order Book
+- `GET /fapi/v1/ticker/bookTicker` — Symbol Order Book Ticker
+- `GET /fapi/v1/ticker/price` — Symbol Price Ticker
+- `GET /fapi/v2/ticker/price` — Symbol Price Ticker V2
+- `GET /futures/data/takerlongshortRatio` — Taker Buy/Sell Volume
+- `GET /fapi/v1/ping` — Test Connectivity
+- `GET /fapi/v1/ticker/24hr` — 24hr Ticker Price Change Statistics
+- `GET /futures/data/topLongShortAccountRatio` — Top Trader Long/Short Account Ratio (MARKET_DATA)
+- `GET /futures/data/topLongShortPositionRatio` — Top Trader Long/Short Position Ratio (MARKET_DATA)
+- `GET /fapi/v1/tradingSchedule` — Trading Schedule
+- `GET /fapi/v1/pmAccountInfo` — Classic Portfolio Margin Account Information (USER_DATA)
+- `GET /fapi/v1/userTrades` — Account Trade List (USER_DATA)
+- `GET /fapi/v1/allOrders` — All Orders (USER_DATA)
+- `POST /fapi/v1/countdownCancelAll` — Auto-Cancel All Open Orders (TRADE)
+- `GET /fapi/v1/algoOrder` — Query Algo Order (USER_DATA)
+- `POST /fapi/v1/algoOrder` — New Algo Order (TRADE)
+- `DELETE /fapi/v1/algoOrder` — Cancel Algo Order (TRADE)
+- `DELETE /fapi/v1/algoOpenOrders` — Cancel All Algo Open Orders (TRADE)
+- `DELETE /fapi/v1/allOpenOrders` — Cancel All Open Orders (TRADE)
+- `PUT /fapi/v1/batchOrders` — Modify Multiple Orders (TRADE)
+- `POST /fapi/v1/batchOrders` — Place Multiple Orders (TRADE)
+- `DELETE /fapi/v1/batchOrders` — Cancel Multiple Orders (TRADE)
+- `GET /fapi/v1/order` — Query Order (USER_DATA)
+- `PUT /fapi/v1/order` — Modify Order (TRADE)
+- `POST /fapi/v1/order` — New Order (TRADE)
+- `DELETE /fapi/v1/order` — Cancel Order (TRADE)
+- `POST /fapi/v1/leverage` — Change Initial Leverage (TRADE)
+- `POST /fapi/v1/marginType` — Change Margin Type (TRADE)
+- `GET /fapi/v1/openAlgoOrders` — Current All Algo Open Orders (USER_DATA)
+- `GET /fapi/v1/openOrders` — Current All Open Orders (USER_DATA)
+- `POST /fapi/v1/stock/contract` — Futures TradFi Perps Contract (USER_DATA)
+- `GET /fapi/v1/orderAmendment` — Get Order Modify History (USER_DATA)
+- `GET /fapi/v1/positionMargin/history` — Get Position Margin Change History (TRADE)
+- `POST /fapi/v1/positionMargin` — Modify Isolated Position Margin (TRADE)
+- `GET /fapi/v1/adlQuantile` — Position ADL Quantile Estimation (USER_DATA)
+- `GET /fapi/v2/positionRisk` — Position Information V2 (USER_DATA)
+- `GET /fapi/v3/positionRisk` — Position Information V3 (USER_DATA)
+- `GET /fapi/v1/allAlgoOrders` — Query All Algo Orders (USER_DATA)
+- `GET /fapi/v1/openOrder` — Query Current Open Order (USER_DATA)
+- `POST /fapi/v1/order/test` — Test Order (TRADE)
+- `GET /fapi/v1/forceOrders` — User's Force Orders (USER_DATA)
+- `PUT /fapi/v1/listenKey` — Keepalive User Data Stream (USER_STREAM)
+- `POST /fapi/v1/listenKey` — Start User Data Stream (USER_STREAM)
+- `DELETE /fapi/v1/listenKey` — Close User Data Stream (USER_STREAM)
+
+### Futures (USDⓈ-M) WebSocket API (1.0.0)
+
+Access market data, manage accounts, and trade USDⓈ-M perpetual futures.
+
+- `POST /account.status` — Account Information (USER_DATA)
+- `POST /v2/account.status` — Account Information V2 (USER_DATA)
+- `POST /account.balance` — Futures Account Balance (USER_DATA)
+- `POST /v2/account.balance` — Futures Account Balance V2 (USER_DATA)
+- `POST /depth` — Order Book
+- `POST /ticker.book` — Symbol Order Book Ticker
+- `POST /ticker.price` — Symbol Price Ticker
+- `POST /algoOrder.cancel` — Cancel Algo Order (TRADE)
+- `POST /order.cancel` — Cancel Order (TRADE)
+- `POST /order.modify` — Modify Order (TRADE)
+- `POST /algoOrder.place` — New Algo Order (TRADE)
+- `POST /order.place` — New Order (TRADE)
+- `POST /account.position` — Position Information (USER_DATA)
+- `POST /v2/account.position` — Position Information V2 (USER_DATA)
+- `POST /order.status` — Query Order (USER_DATA)
+- `POST /userDataStream.stop` — Close User Data Stream (USER_STREAM)
+- `POST /userDataStream.ping` — Keepalive User Data Stream (USER_STREAM)
+- `POST /userDataStream.start` — Start User Data Stream (USER_STREAM)
+
+### Futures (USDⓈ-M) WebSocket Market Streams (1.0.0)
+
+Access market data, manage accounts, and trade USDⓈ-M perpetual futures.
+
+- `POST /{symbol}@aggTrade` — Aggregate Trade Streams
+- `POST /!forceOrder@arr` — All Market Liquidation Order Streams
+- `POST /!miniTicker@arr` — All Market Mini Tickers Stream
+- `POST /!ticker@arr` — All Market Tickers Streams
+- `POST /{symbol}@compositeIndex` — Composite Index Symbol Information Streams
+- `POST /{pair}_{contractType}@continuousKline_{interval}` — Continuous Contract Kline/Candlestick Streams
+- `POST /!contractInfo` — Contract Info Stream
+- `POST /{symbol}@miniTicker` — Individual Symbol Mini Ticker Stream
+- `POST /{symbol}@ticker` — Individual Symbol Ticker Streams
+- `POST /{symbol}@kline_{interval}` — Kline/Candlestick Streams
+- `POST /{symbol}@forceOrder` — Liquidation Order Streams
+- `POST /{symbol}@markPrice@{updateSpeed}` — Mark Price Stream
+- `POST /!markPrice@arr@{updateSpeed}` — Mark Price Stream for All market
+- `POST /!assetIndex@arr` — Multi-Assets Mode Asset Index
+- `POST /tradingSession` — Trading Session Stream
+- `POST /!bookTicker` — All Book Tickers Stream
+- `POST /{symbol}@depth@{updateSpeed}` — Diff. Book Depth Streams
+- `POST /{symbol}@bookTicker` — Individual Symbol Book Ticker Streams
+- `POST /{symbol}@depth{levels}@{updateSpeed}` — Partial Book Depth Streams
+- `POST /{symbol}@rpiDepth@500ms` — RPI Diff. Book Depth Streams
+
+### Discount Buy REST API (1.0.0)
+
+Query products, request quotes, and subscribe to Advanced Earn Discount Buy strategies.
+
+- `GET /sapi/v1/accumulator/product/list` — Get Discount Buy product list
+- `GET /sapi/v1/accumulator/product/sum-holding` — Check Discount Buy accounts (USER_DATA)
+- `GET /sapi/v1/accumulator/product/position/list` — Get Discount Buy positions (USER_DATA)
+- `POST /sapi/v1/accumulator/product/subscribe` — Subscribe Discount Buy products (USER_DATA)
+
+### Dual Investment REST API (1.0.0)
+
+Query products, request quotes, and subscribe to Advanced Earn Dual Investment strategies.
+
+- `GET /sapi/v1/dci/product/list` — Get Dual Investment product list
+- `POST /sapi/v1/dci/product/auto_compound/edit-status` — Change Auto-Compound status (USER_DATA)
+- `GET /sapi/v1/dci/product/accounts` — Check Dual Investment accounts (USER_DATA)
+- `GET /sapi/v1/dci/product/positions` — Get Dual Investment positions (USER_DATA)
+- `POST /sapi/v1/dci/product/subscribe` — Subscribe Dual Investment products (USER_DATA)
+
+### Exchange Link REST API (1.0.0)
+
+Manage Exchange Link accounts, assets, and commission data via the Exchange Link API.
+
+- `POST /sapi/v1/broker/subAccountApi/permission` — Change Sub Account API Permission
+- `GET /sapi/v1/broker/subAccount` — Query Sub Account
+- `POST /sapi/v1/broker/subAccount` — Create a Sub Account
+- `DELETE /sapi/v1/broker/subAccount` — Delete Sub Account
+- `GET /sapi/v1/broker/subAccountApi` — Query Sub Account Api Key
+- `POST /sapi/v1/broker/subAccountApi` — Create Api Key for Sub Account
+- `DELETE /sapi/v1/broker/subAccountApi` — Delete Sub Account Api Key
+- `DELETE /sapi/v1/broker/subAccountApi/ipRestriction/ipList` — Delete IP Restriction for Sub Account API Key
+- `POST /sapi/v1/broker/subAccount/futures` — Enable Futures for Sub Account
+- `POST /sapi/v1/broker/subAccount/bnbBurn/marginInterest` — Enable Or Disable BNB Burn for Sub Account Margin Interest
+- `POST /sapi/v1/broker/subAccount/bnbBurn/spot` — Enable Or Disable BNB Burn for Sub Account SPOT and MARGIN
+- `POST /sapi/v1/broker/subAccountApi/permission/universalTransfer` — Enable Universal Transfer Permission for Sub Account API Key
+- `GET /sapi/v1/broker/subAccount/bnbBurn/status` — Get BNB Burn Status for Sub Account
+- `GET /sapi/v1/broker/subAccountApi/ipRestriction` — Get IP Restriction for Sub Account API Key
+- `GET /sapi/v1/broker/info` — Link Account Information (USER_DATA)
+- `POST /sapi/v2/broker/subAccountApi/ipRestriction` — Update IP Restriction for Sub-Account API Key (For Master Account) (USER_DATA)
+- `POST /sapi/v1/broker/futures/accountTransfer` — Futures Transfer for Link Sub Account (For Master Account) (USER_DATA)
+- `GET /sapi/v1/broker/subAccount/depositHist` — Get Sub Account Deposit History
+- `GET /sapi/v2/broker/subAccount/depositHist` — Get Sub Account Deposit History V2
+- `GET /sapi/v3/broker/subAccount/futuresSummary` — Query Sub Account Futures Asset Info (V3)
+- `GET /sapi/v1/broker/subAccount/marginSummary` — Query Sub Account Margin Asset Info
+- `GET /sapi/v1/broker/subAccount/spotSummary` — Query Sub Account Spot Asset Info
+- `GET /sapi/v1/broker/transfer/futures` — Query Sub Account Transfer History（FUTURES）
+- `POST /sapi/v1/broker/transfer/futures` — Sub Account Transfer（FUTURES）
+- `GET /sapi/v1/broker/transfer` — Query Sub Account Transfer History（SPOT）
+- `POST /sapi/v1/broker/transfer` — Sub Account Transfer（SPOT）
+- `GET /sapi/v1/broker/universalTransfer` — Query Universal Transfer History
+- `POST /sapi/v1/broker/universalTransfer` — Universal Transfer
+- `GET /sapi/v1/broker/subAccountApi/commission/coinFutures` — Query Sub Account COIN-Ⓜ Futures Commission Adjustment
+- `POST /sapi/v1/broker/subAccountApi/commission/coinFutures` — Change Sub Account COIN-Ⓜ Futures Commission Adjustment
+- `POST /sapi/v1/broker/subAccountApi/commission` — Change Sub Account Commission
+- `GET /sapi/v1/broker/subAccountApi/commission/futures` — Query Sub Account USDT-Ⓜ Futures Commission Adjustment
+- `POST /sapi/v1/broker/subAccountApi/commission/futures` — Change Sub Account USDT-Ⓜ Futures Commission Adjustment
+- `GET /sapi/v1/broker/rebate/recentRecord` — Query Spot Commission Rebate Recent Record
+- `GET /sapi/v1/broker/rebate/futures/recentRecord` — Query Broker Futures Commission Rebate Record
+
+### Fiat REST API (1.0.0)
+
+Query Binance fiat deposit and withdrawal history.
+
+- `POST /sapi/v1/fiat/deposit` — Deposit (TRADE)
+- `POST /sapi/v2/fiat/withdraw` — Fiat Withdraw (TRADE)
+- `GET /sapi/v1/fiat/orders` — Get Fiat Deposit/Withdraw History (USER_DATA)
+- `GET /sapi/v1/fiat/payments` — Get Fiat Payments History (USER_DATA)
+- `GET /sapi/v1/fiat/get-order-detail` — Get Order Detail (USER_DATA)
+
+### Fund Account REST API (1.0.0)
+
+Query account information and manage Binance Fund Account operations.
+
+- `GET /sapi/v1/vip/fund-info/fund-info-basic-info` — Query Fund Info for Fund Manager
+- `GET /sapi/v1/vip/fund-info/fund-nav-info` — Query Fund NAV History
+- `GET /sapi/v1/vip/fund-info/fund-investor-his-info` — Query Investor Operation History
+- `GET /sapi/v1/capital-connect/redemption/calendar` — Redemption Calendar
+- `GET /sapi/v2/portfolio-account/trading-team/portfolio-basic-info` — Query Portfolio Basic Info for Trading Team V2
+- `GET /sapi/v2/portfolio-account/trading-team/portfolio-nav-info` — Query Portfolio NAV History for Trading Team V2
+- `GET /sapi/v2/portfolio-account/trading-team/investor-portfolio-his-info` — Query Investor Operation History for Trading Team V2
+- `GET /sapi/v1/portfolio-account/investor/portfolio-nav-info` — Query Portfolio NAV History for Investor
+- `GET /sapi/v2/capital-connect/trading-team/redemption/calendar` — Redemption Calendar V2
+
+### Gift Card REST API (1.0.0)
+
+Create, redeem, and check the value of Binance crypto gift cards.
+
+- `POST /sapi/v1/giftcard/buyCode` — Create a dual-token gift card (fixed value, discount feature) (TRADE)
+- `POST /sapi/v1/giftcard/createCode` — Create a single-token gift card (USER_DATA)
+- `GET /sapi/v1/giftcard/cryptography/rsa-public-key` — Fetch RSA Public Key (USER_DATA)
+- `GET /sapi/v1/giftcard/buyCode/token-limit` — Fetch Token Limit (USER_DATA)
+- `POST /sapi/v1/giftcard/redeemCode` — Redeem a Binance Gift Card (USER_DATA)
+- `GET /sapi/v1/giftcard/verify` — Verify Binance Gift Card by Gift Card Number (USER_DATA)
+
+### Institutional Loan REST API (1.0.0)
+
+Access institutional loan services for portfolio margin and futures trading.
+
+- `POST /sapi/v1/margin/loan-group/edit-member` — Add Collateral Accounts (TRADE)
+- `GET /sapi/v1/margin/loan-group` — Query One Risk Unit Detail (USER_DATA)
+- `DELETE /sapi/v1/margin/loan-group` — Close Risk Unit (TRADE)
+- `GET /sapi/v1/margin/loan-groups/closed` — Query Closed Risk Unit Record (USER_DATA)
+- `GET /sapi/v1/margin/loan-groups/activated` — Query Active Risk Units (USER_DATA)
+- `GET /sapi/v1/margin/loan-group/ltv-details` — Query Risk Unit Details (USER_DATA)
+- `POST /sapi/v1/margin/loan-group/borrow` — Risk Unit Borrow (TRADE)
+- `GET /sapi/v1/margin/loan-group/borrow-repay` — Risk Unit Borrow/Repay Records (USER_DATA)
+- `GET /sapi/v1/margin/loan-group/interest-history` — Risk Unit Interest History (USER_DATA)
+- `POST /sapi/v1/margin/loan-group/repay` — Risk Unit Repay (TRADE)
+- `GET /sapi/v1/margin/loan-group/interest-rebate-balance` — Query Interest Rebate Balance (USER_DATA)
+- `GET /sapi/v1/margin/loan-group/interest-rebate-balance/records` — Query Interest Rebate Balance Records (USER_DATA)
+- `GET /sapi/v1/margin/loan-group/max-borrowable` — Query Loan Group Max Borrowable (USER_DATA)
+- `GET /sapi/v1/margin/loan-group/force-liquidation` — Get Risk Unit Force Liquidation Record (USER_DATA)
+- `GET /sapi/v1/margin/loan-group/force-liquidation-transfer-record` — Query Risk Unit Forced Liquidation Transfer Records (USER_DATA)
+- `POST /sapi/v1/margin/loan-group/transfer-out` — Risk Unit Transfer (TRADE)
+
+### KYC SaaS REST API (1.0.0)
+
+Integrate identity verification and manage KYC workflows via the Binance Link KYC API.
+
+- `POST /bapi/ekyc/v2/public/ekyc/customer/check-kyc-status` — Check KYC Status
+- `POST /bapi/ekyc/v2/public/ekyc/customer/page-query-rfi-records` — Kyc RFI Records Query API
+- `POST /bapi/ekyc/v2/public/ekyc/customer/submit-rfi-record` — Kyc RFI Record Submit API
+- `POST /bapi/ekyc/v2/public/ekyc/customer/share-kyc-data` — KYC Sharing
+- `POST /bapi/ekyc/v2/public/ekyc/customer/add-account-info-list` — Link Multiple Accounts
+- `POST /bapi/ekyc/v2/public/ekyc/customer/query-submit-rfi-result` — Query Kyc RFI Record Submit Result API
+- `POST /bapi/ekyc/v2/public/ekyc/customer/inner-query-kyc-status` — Query KYC status By Broker SubAccountId
+- `POST /bapi/ekyc/v2/public/ekyc/customer/query-kyc-info` — Query KYC status By EntityCustomerId
+- `POST /bapi/ekyc/v2/public/ekyc/customer/query-linked-accounts` — Query Linked Accounts Info
+- `POST /bapi/ekyc/v2/public/ekyc/customer/query-share-data-status` — Query Share KYC Info Status API
+- `POST /bapi/ekyc/v2/public/ekyc/customer/refused-kyc-data` — Refused User KYC Data
+- `POST /bapi/ekyc/v2/public/ekyc/customer/unlink-kyc-data` — Unlink User KYC Data
+
+### Link and Trade REST API (1.0.0)
+
+Place and manage Spot and Futures trades for linked accounts via the Binance Link API.
+
+- `POST /v1/api-key/create` — Create API key for User
+- `GET /v1/api-key/user-status` — Get User Status
+- `GET /papi/v1/apiReferral/userCustomization` — Get User Customize Id (PAPI)
+- `POST /papi/v1/apiReferral/userCustomization` — Customize Id For PAPI Client (USER_DATA)
+- `GET /fapi/v1/apiReferral/userCustomization` — Get User's Customize Id (Futures) (USER_DATA)
+- `POST /fapi/v1/apiReferral/userCustomization` — Customize Id For Futures Client (USER_DATA)
+- `GET /fapi/v1/apiReferral/customization` — Get Futures Client Email Customized Id (USER_DATA)
+- `POST /fapi/v1/apiReferral/customization` — Partner Customize Id For Futures Client (USER_DATA)
+- `GET /fapi/v1/income` — Get Income History (USER_DATA)
+- `GET /fapi/v1/apiReferral/overview` — Get Rebate Data Overview (USER_DATA)
+- `GET /fapi/v1/apiReferral/rebateVol` — Get Rebate Volume (USER_DATA)
+- `GET /fapi/v1/apiReferral/traderSummary` — Get Trader Detail (USER_DATA)
+- `GET /fapi/v1/apiReferral/traderNum` — Get Trader Number (USER_DATA)
+- `GET /fapi/v1/apiReferral/tradeVol` — Get User Trade Volume (USER_DATA)
+- `GET /papi/v1/apiReferral/ifNewUser` — Query PAPI Client New User Status (USER_DATA)
+- `GET /fapi/v1/apiReferral/ifNewUser` — Query Futures Client New User Status (USER_DATA)
+- `GET /sapi/v1/apiReferral/userCustomization` — Get User’s Customize Id (Spot) (USER_DATA)
+- `POST /sapi/v1/apiReferral/userCustomization` — Customize Id For Spot Client (USER_DATA)
+- `GET /sapi/v1/apiReferral/customization` — Get Client Email Customized Id (USER_DATA)
+- `POST /sapi/v1/apiReferral/customization` — Partner Customize Id For Client (USER_DATA)
+- `GET /sapi/v1/apiReferral/ifNewUser` — Query Client If The New User (Spot) (USER_DATA)
+- `GET /sapi/v1/apiReferral/kickback/recentRecord` — Query Rebate Recent Record
+- `GET /sapi/v1/apiReferral/rebate/recentRecord` — Query Partner Rebate Recent Record
+
+### Link Plus REST API (1.0.0)
+
+Manage advanced account operations and trading services for Binance Link Plus partners.
+
+- `POST /sapi/v1/vip/link-plus/subgroups/{groupId}/accounts` — Add Accounts to Sub-Groups
+- `POST /sapi/v1/vip/link-plus/subgroups` — Create New Sub-Groups
+- `GET /sapi/v1/vip/link-plus/overview` — Query Link Plus Overview
+- `GET /sapi/v1/vip/liquidity-programs/subgroups/overview` — Query Liquidity Program Overview for Sub-Groups
+- `GET /sapi/v1/vip/liquidity-programs/subgroups/performance` — Query Liquidity Program Performance for Sub-Groups
+- `GET /sapi/v1/vip/liquidity-programs/subgroups/weekly-result` — Query Liquidity Program Weekly Results for Sub-Groups
+- `GET /sapi/v1/vip/link-plus/subgroups/detail` — Query Sub-Groups Details
+- `PUT /sapi/v1/vip/link-plus/subgroups/{groupId}/name` — Update Name of Sub-Groups
+
+### Margin REST API (1.0.0)
+
+Access account information, borrow and repay assets, and trade with Binance Margin.
+
+- `POST /sapi/v1/margin/max-leverage` — Adjust cross margin max leverage (USER_DATA)
+- `GET /sapi/v1/margin/isolated/account` — Query Isolated Margin Account Info (USER_DATA)
+- `POST /sapi/v1/margin/isolated/account` — Enable Isolated Margin Account (TRADE)
+- `DELETE /sapi/v1/margin/isolated/account` — Disable Isolated Margin Account (TRADE)
+- `GET /sapi/v1/bnbBurn` — Get BNB Burn Status (USER_DATA)
+- `GET /sapi/v1/margin/tradeCoeff` — Get Summary of Margin account (USER_DATA)
+- `GET /sapi/v1/margin/capital-flow` — Query Cross Isolated Margin Capital Flow (USER_DATA)
+- `GET /sapi/v1/margin/account` — Query Cross Margin Account Details (USER_DATA)
+- `GET /sapi/v1/margin/crossMarginData` — Query Cross Margin Fee Data (USER_DATA)
+- `GET /sapi/v1/margin/isolated/accountLimit` — Query Enabled Isolated Margin Account Limit (USER_DATA)
+- `GET /sapi/v1/margin/isolatedMarginData` — Query Isolated Margin Fee Data (USER_DATA)
+- `GET /sapi/v1/margin/next-hourly-interest-rate` — Get future hourly interest rate (USER_DATA)
+- `GET /sapi/v1/margin/interestHistory` — Get Interest History (USER_DATA)
+- `GET /sapi/v1/margin/borrow-repay` — Query borrow/repay records in Margin account (USER_DATA)
+- `POST /sapi/v1/margin/borrow-repay` — Margin account borrow/repay (USER_DATA)
+- `GET /sapi/v1/margin/interestRateHistory` — Query Margin Interest Rate History (USER_DATA)
+- `GET /sapi/v1/margin/maxBorrowable` — Query Max Borrow (USER_DATA)
+- `GET /sapi/v1/margin/crossMarginCollateralRatio` — Cross margin collateral ratio (MARKET_DATA)
+- `GET /sapi/v1/margin/allPairs` — Get All Cross Margin Pairs (MARKET_DATA)
+- `GET /sapi/v1/margin/isolated/allPairs` — Get All Isolated Margin Symbol (MARKET_DATA)
+- `GET /sapi/v1/margin/allAssets` — Get All Margin Assets (MARKET_DATA)
+- `GET /sapi/v1/margin/delist-schedule` — Get Delist Schedule (MARKET_DATA)
+- `GET /sapi/v1/margin/limit-price-pairs` — Get Limit Price Pairs (MARKET_DATA)
+- `GET /sapi/v1/margin/list-schedule` — Get list Schedule (MARKET_DATA)
+- `GET /sapi/v1/margin/risk-based-liquidation-ratio` — Get Margin Asset Risk-Based Liquidation Ratio (MARKET_DATA)
+- `GET /sapi/v1/margin/restricted-asset` — Get Margin Restricted Assets (MARKET_DATA)
+- `GET /sapi/v1/margin/isolatedMarginTier` — Query Isolated Margin Tier Data (USER_DATA)
+- `GET /sapi/v1/margin/leverageBracket` — Query Liability Coin Leverage Bracket in Cross Margin Pro Mode (MARKET_DATA)
+- `GET /sapi/v1/margin/available-inventory` — Query Margin Available Inventory (USER_DATA)
+- `GET /sapi/v1/margin/priceIndex` — Query Margin PriceIndex (MARKET_DATA)
+- `PUT /sapi/v1/margin/listen-key` — Keepalive User Data Stream (USER_STREAM)
+- `POST /sapi/v1/margin/listen-key` — Start User Data Stream (USER_STREAM)
+- `DELETE /sapi/v1/margin/listen-key` — Close User Data Stream (USER_STREAM)
+- `GET /sapi/v1/margin/apiKey` — Query Special key(Low Latency Trading) (TRADE)
+- `POST /sapi/v1/margin/apiKey` — Create Special Key(Low-Latency Trading) (TRADE)
+- `DELETE /sapi/v1/margin/apiKey` — Delete Special Key(Low-Latency Trading) (TRADE)
+- `PUT /sapi/v1/margin/apiKey/ip` — Edit ip for Special Key(Low-Latency Trading) (TRADE)
+- `POST /sapi/v1/margin/exit-special-key-mode` — Exit Special Key Mode (TRADE)
+- `GET /sapi/v1/margin/forceLiquidationRec` — Get Force Liquidation Record (USER_DATA)
+- `GET /sapi/v1/margin/exchange-small-liability` — Get Small Liability Exchange Coin List (USER_DATA)
+- `POST /sapi/v1/margin/exchange-small-liability` — Small Liability Exchange (MARGIN)
+- `GET /sapi/v1/margin/exchange-small-liability-history` — Get Small Liability Exchange History (USER_DATA)
+- `GET /sapi/v1/margin/openOrders` — Query Margin Account's Open Orders (USER_DATA)
+- `DELETE /sapi/v1/margin/openOrders` — Margin Account Cancel all Open Orders on a Symbol (TRADE)
+- `GET /sapi/v1/margin/orderList` — Query Margin Account's OCO (USER_DATA)
+- `DELETE /sapi/v1/margin/orderList` — Margin Account Cancel OCO (TRADE)
+- `GET /sapi/v1/margin/order` — Query Margin Account's Order (USER_DATA)
+- `POST /sapi/v1/margin/order` — Margin Account New Order (TRADE)
+- `DELETE /sapi/v1/margin/order` — Margin Account Cancel Order (TRADE)
+- `POST /sapi/v1/margin/order/oco` — Margin Account New OCO (TRADE)
+- `POST /sapi/v1/margin/order/oto` — Margin Account New OTO (TRADE)
+- `POST /sapi/v1/margin/order/otoco` — Margin Account New OTOCO (TRADE)
+- `POST /sapi/v1/margin/manual-liquidation` — Margin Manual Liquidation (TRADE)
+- `GET /sapi/v1/margin/rateLimit/order` — Query Current Margin Order Count Usage (TRADE)
+- `GET /sapi/v1/margin/allOrderList` — Query Margin Account's all OCO (USER_DATA)
+- `GET /sapi/v1/margin/allOrders` — Query Margin Account's All Orders (USER_DATA)
+- `GET /sapi/v1/margin/openOrderList` — Query Margin Account's Open OCO (USER_DATA)
+- `GET /sapi/v1/margin/myTrades` — Query Margin Account's Trade List (USER_DATA)
+- `GET /sapi/v1/margin/myPreventedMatches` — Query Prevented Matches (USER_DATA)
+- `GET /sapi/v1/margin/api-key-list` — Query Special key List(Low Latency Trading) (TRADE)
+- `GET /sapi/v1/margin/liquidation-loan` — Query Liquidation Loan (USER_DATA)
+- `POST /sapi/v1/margin/liquidation-loan/repay` — Liquidation Loan Repay (MARGIN)
+- `GET /sapi/v1/margin/liquidation-loan/repay-history` — Query Liquidation Loan Repay History (USER_DATA)
+- `GET /sapi/v1/margin/transfer` — Get Cross Margin Transfer History (USER_DATA)
+- `GET /sapi/v1/margin/maxTransferable` — Query Max Transfer-Out Amount (USER_DATA)
+
+### Margin WebSocket Market Streams (1.0.0)
+
+Access account information, borrow and repay assets, and trade with Binance Margin.
+
+
+### Mining REST API (1.0.0)
+
+Query mining status, earnings, and account data via the Binance Pool API.
+
+- `GET /sapi/v1/mining/statistics/user/list` — Account List (USER_DATA)
+- `GET /sapi/v1/mining/pub/algoList` — Acquiring Algorithm (MARKET_DATA)
+- `GET /sapi/v1/mining/pub/coinList` — Acquiring CoinName (MARKET_DATA)
+- `POST /sapi/v1/mining/hash-transfer/config/cancel` — Cancel hashrate resale configuration (USER_DATA)
+- `GET /sapi/v1/mining/payment/list` — Earnings List (USER_DATA)
+- `GET /sapi/v1/mining/payment/other` — Extra Bonus List (USER_DATA)
+- `GET /sapi/v1/mining/hash-transfer/profit/details` — Hashrate Resale Detail (USER_DATA)
+- `GET /sapi/v1/mining/hash-transfer/config/details/list` — Hashrate Resale List (USER_DATA)
+- `POST /sapi/v1/mining/hash-transfer/config` — Hashrate Resale Request (USER_DATA)
+- `GET /sapi/v1/mining/payment/uid` — Mining Account Earning (USER_DATA)
+- `GET /sapi/v1/mining/worker/detail` — Request for Detail Miner List (USER_DATA)
+- `GET /sapi/v1/mining/worker/list` — Request for Miner List (USER_DATA)
+- `GET /sapi/v1/mining/statistics/user/status` — Statistic List (USER_DATA)
+
+### Binance Pay REST API (1.0.0)
+
+Query Binance Pay transaction history.
+
+- `GET /sapi/v1/pay/transactions` — Get Pay Trade History
+
+### Rebate REST API (1.0.0)
+
+Query spot trading rebate history records.
+
+- `GET /sapi/v1/rebate/taxQuery` — Get Spot Rebate History Records (USER_DATA)
+
+### Simple Earn REST API (1.0.0)
+
+Earn rewards by subscribing to flexible or locked Simple Earn products.
+
+- `GET /sapi/v1/bfusd/account` — Get BFUSD Account (USER_DATA)
+- `GET /sapi/v1/bfusd/quota` — Get BFUSD Quota Details (USER_DATA)
+- `GET /sapi/v1/bfusd/history/rateHistory` — Get BFUSD Rate History (USER_DATA)
+- `GET /sapi/v1/bfusd/history/redemptionHistory` — Get BFUSD Redemption History (USER_DATA)
+- `GET /sapi/v1/bfusd/history/rewardsHistory` — Get BFUSD Rewards History (USER_DATA)
+- `GET /sapi/v1/bfusd/history/subscriptionHistory` — Get BFUSD subscription history (USER_DATA)
+- `POST /sapi/v1/bfusd/redeem` — Redeem BFUSD (TRADE)
+- `POST /sapi/v1/bfusd/subscribe` — Subscribe BFUSD (TRADE)
+- `GET /sapi/v1/simple-earn/flexible/history/collateralRecord` — Get Collateral Record (USER_DATA)
+- `GET /sapi/v1/simple-earn/flexible/personalLeftQuota` — Get Flexible Personal Left Quota (USER_DATA)
+- `GET /sapi/v1/simple-earn/flexible/position` — Get Flexible Product Position (USER_DATA)
+- `GET /sapi/v1/simple-earn/flexible/history/redemptionRecord` — Get Flexible Redemption Record (USER_DATA)
+- `GET /sapi/v1/simple-earn/flexible/history/rewardsRecord` — Get Flexible Rewards History (USER_DATA)
+- `GET /sapi/v1/simple-earn/flexible/subscriptionPreview` — Get Flexible Subscription Preview (USER_DATA)
+- `GET /sapi/v1/simple-earn/flexible/history/subscriptionRecord` — Get Flexible Subscription Record (USER_DATA)
+- `GET /sapi/v1/simple-earn/locked/personalLeftQuota` — Get Locked Personal Left Quota (USER_DATA)
+- `GET /sapi/v1/simple-earn/locked/position` — Get Locked Product Position (USER_DATA)
+- `GET /sapi/v1/simple-earn/locked/history/redemptionRecord` — Get Locked Redemption Record (USER_DATA)
+- `GET /sapi/v1/simple-earn/locked/history/rewardsRecord` — Get Locked Rewards History (USER_DATA)
+- `GET /sapi/v1/simple-earn/locked/subscriptionPreview` — Get Locked Subscription Preview (USER_DATA)
+- `GET /sapi/v1/simple-earn/locked/history/subscriptionRecord` — Get Locked Subscription Record (USER_DATA)
+- `GET /sapi/v1/simple-earn/flexible/history/rateHistory` — Get Rate History (USER_DATA)
+- `GET /sapi/v1/simple-earn/flexible/list` — Get Simple Earn Flexible Product List (USER_DATA)
+- `GET /sapi/v1/simple-earn/locked/list` — Get Simple Earn Locked Product List (USER_DATA)
+- `POST /sapi/v1/simple-earn/flexible/redeem` — Redeem Flexible Product (TRADE)
+- `POST /sapi/v1/simple-earn/locked/redeem` — Redeem Locked Product (TRADE)
+- `POST /sapi/v1/simple-earn/flexible/setAutoSubscribe` — Set Flexible Auto Subscribe (USER_DATA)
+- `POST /sapi/v1/simple-earn/locked/setAutoSubscribe` — Set Locked Auto Subscribe (USER_DATA)
+- `POST /sapi/v1/simple-earn/locked/setRedeemOption` — Set Locked Product Redeem Option (USER_DATA)
+- `GET /sapi/v1/simple-earn/account` — Simple Account (USER_DATA)
+- `POST /sapi/v1/simple-earn/flexible/subscribe` — Subscribe Flexible Product (TRADE)
+- `POST /sapi/v1/simple-earn/locked/subscribe` — Subscribe Locked Product (TRADE)
+- `GET /sapi/v1/rwusd/account` — Get RWUSD Account (USER_DATA)
+- `GET /sapi/v1/rwusd/quota` — Get RWUSD Quota Details (USER_DATA)
+- `GET /sapi/v1/rwusd/history/rateHistory` — Get RWUSD Rate History (USER_DATA)
+- `GET /sapi/v1/rwusd/history/redemptionHistory` — Get RWUSD Redemption History (USER_DATA)
+- `GET /sapi/v1/rwusd/history/rewardsHistory` — Get RWUSD Rewards History (USER_DATA)
+- `GET /sapi/v1/rwusd/history/subscriptionHistory` — Get RWUSD subscription history (USER_DATA)
+- `POST /sapi/v1/rwusd/redeem` — Redeem RWUSD (TRADE)
+- `POST /sapi/v1/rwusd/subscribe` — Subscribe RWUSD (TRADE)
+- `GET /sapi/v1/earn/arena/activities` — Get Yield Arena Activities (USER_DATA)
+
+### Spot REST API (1.0.0)
+
+Access market data, manage accounts, and trade on Binance Spot.
+
+- `GET /api/v3/account/commission` — Query Commission Rates (USER_DATA)
+- `GET /api/v3/allOrderList` — Query all Order lists (USER_DATA)
+- `GET /api/v3/allOrders` — All orders (USER_DATA)
+- `GET /api/v3/account` — Account information (USER_DATA)
+- `GET /api/v3/openOrders` — Current open orders (USER_DATA)
+- `DELETE /api/v3/openOrders` — Cancel All Open Orders on a Symbol (TRADE)
+- `GET /api/v3/order` — Query order (USER_DATA)
+- `POST /api/v3/order` — New order (TRADE)
+- `DELETE /api/v3/order` — Cancel order (TRADE)
+- `GET /api/v3/orderList` — Query Order list (USER_DATA)
+- `DELETE /api/v3/orderList` — Cancel Order list (TRADE)
+- `GET /api/v3/myAllocations` — Query Allocations (USER_DATA)
+- `GET /api/v3/myFilters` — Query relevant filters (USER_DATA)
+- `GET /api/v3/myPreventedMatches` — Query Prevented Matches (USER_DATA)
+- `GET /api/v3/myTrades` — Account trade list (USER_DATA)
+- `GET /api/v3/openOrderList` — Query Open Order lists (USER_DATA)
+- `GET /api/v3/order/amendments` — Query Order Amendments (USER_DATA)
+- `GET /api/v3/rateLimit/order` — Query Unfilled Order Count (USER_DATA)
+- `GET /api/v3/exchangeInfo` — Exchange information
+- `GET /api/v3/executionRules` — Query Execution Rules
+- `GET /api/v3/ping` — Test connectivity
+- `GET /api/v3/time` — Check server time
+- `GET /api/v3/aggTrades` — Compressed/Aggregate trades list
+- `GET /api/v3/avgPrice` — Current average price
+- `GET /api/v3/depth` — Order book
+- `GET /api/v3/trades` — Recent trades list
+- `GET /api/v3/historicalTrades` — Old trade lookup
+- `GET /api/v3/historicalBlockTrades` — Historical Block Trades (MARKET_DATA)
+- `GET /api/v3/klines` — Kline/Candlestick data
+- `GET /api/v3/ticker` — Rolling window price change statistics
+- `GET /api/v3/ticker/24hr` — 24hr ticker price change statistics
+- `GET /api/v3/ticker/bookTicker` — Symbol order book ticker
+- `GET /api/v3/ticker/price` — Symbol price ticker
+- `GET /api/v3/ticker/tradingDay` — Trading Day Ticker
+- `GET /api/v3/uiKlines` — UIKlines
+- `GET /api/v3/referencePrice` — Query Reference Price
+- `GET /api/v3/referencePrice/calculation` — Query Reference Price Calculation
+- `PUT /api/v3/order/amend/keepPriority` — Order Amend Keep Priority (TRADE)
+- `POST /api/v3/order/cancelReplace` — Cancel an Existing Order and Send a New Order (TRADE)
+- `POST /api/v3/orderList/oco` — New Order list - OCO (TRADE)
+- `POST /api/v3/orderList/opo` — New Order List - OPO (TRADE)
+- `POST /api/v3/orderList/opoco` — New Order List - OPOCO (TRADE)
+- `POST /api/v3/orderList/oto` — New Order list - OTO (TRADE)
+- `POST /api/v3/orderList/otoco` — New Order list - OTOCO (TRADE)
+- `POST /api/v3/order/oco` — New OCO - Deprecated (TRADE)
+- `POST /api/v3/order/test` — Test new order (TRADE)
+- `POST /api/v3/sor/order` — New order using SOR (TRADE)
+- `POST /api/v3/sor/order/test` — Test new order using SOR (TRADE)
+
+### Spot WebSocket API (1.0.0)
+
+Access market data, manage accounts, and trade on Binance Spot.
+
+- `POST /account.commission` — Account Commission Rates (USER_DATA)
+- `POST /account.rateLimits.orders` — Unfilled Order Count (USER_DATA)
+- `POST /account.status` — Account information (USER_DATA)
+- `POST /allOrderLists` — Account order list history (USER_DATA)
+- `POST /allOrders` — Account order history (USER_DATA)
+- `POST /myAllocations` — Account allocations (USER_DATA)
+- `POST /myFilters` — Query Relevant Filters (USER_DATA)
+- `POST /myPreventedMatches` — Account prevented matches (USER_DATA)
+- `POST /myTrades` — Account trade history (USER_DATA)
+- `POST /openOrderLists.status` — Current open Order lists (USER_DATA)
+- `POST /openOrders.status` — Current open orders (USER_DATA)
+- `POST /order.amendments` — Query Order Amendments (USER_DATA)
+- `POST /orderList.status` — Query Order list (USER_DATA)
+- `POST /order.status` — Query order (USER_DATA)
+- `POST /session.logon` — Log in with API key (USER_DATA)
+- `POST /session.logout` — Log out of the session
+- `POST /session.status` — Query session status
+- `POST /exchangeInfo` — Exchange information
+- `POST /executionRules` — Query Execution Rules
+- `POST /ping` — Test connectivity
+- `POST /time` — Check server time
+- `POST /avgPrice` — Current average price
+- `POST /depth` — Order book
+- `POST /klines` — Klines
+- `POST /ticker` — Rolling window price change statistics
+- `POST /ticker.24hr` — 24hr ticker price change statistics
+- `POST /ticker.book` — Symbol order book ticker
+- `POST /ticker.price` — Symbol price ticker
+- `POST /ticker.tradingDay` — Trading Day Ticker
+- `POST /trades.aggregate` — Aggregate trades
+- `POST /trades.historical` — Historical trades
+- `POST /blockTrades.historical` — Historical Block Trades
+- `POST /trades.recent` — Recent trades
+- `POST /uiKlines` — UI Klines
+- `POST /referencePrice` — Query Reference Price
+- `POST /referencePrice.calculation` — Query Reference Price Calculation
+- `POST /openOrders.cancelAll` — Cancel open orders (TRADE)
+- `POST /order.amend.keepPriority` — Order Amend Keep Priority (TRADE)
+- `POST /order.cancel` — Cancel order (TRADE)
+- `POST /order.cancelReplace` — Cancel and replace order (TRADE)
+- `POST /orderList.cancel` — Cancel Order list (TRADE)
+- `POST /orderList.place` — Place new OCO - Deprecated (TRADE)
+- `POST /orderList.place.oco` — Place new Order list - OCO (TRADE)
+- `POST /orderList.place.opo` — OPO (TRADE)
+- `POST /orderList.place.opoco` — OPOCO (TRADE)
+- `POST /orderList.place.oto` — Place new Order list - OTO (TRADE)
+- `POST /orderList.place.otoco` — Place new Order list - OTOCO (TRADE)
+- `POST /order.place` — Place new order (TRADE)
+- `POST /order.test` — Test new order (TRADE)
+- `POST /sor.order.place` — Place new order using SOR (TRADE)
+- `POST /sor.order.test` — Test new order using SOR (TRADE)
+- `POST /session.subscriptions` — Listing all subscriptions
+- `POST /userDataStream.subscribe` — Subscribe to User Data Stream
+- `POST /userDataStream.subscribe.signature` — Subscribe to User Data Stream through signature subscription (USER_STREAM)
+- `POST /userDataStream.unsubscribe` — WebSocket Unsubscribe from User Data Stream
+
+### Spot WebSocket Market Streams (1.0.0)
+
+Access market data, manage accounts, and trade on Binance Spot.
+
+- `POST /{symbol}@aggTrade` — Aggregate Trade Streams
+- `POST /!ticker_{windowSize}@arr` — All Market Rolling Window Statistics Streams
+- `POST /!miniTicker@arr` — All Market Mini Tickers Stream
+- `POST /{symbol}@avgPrice` — Average Price
+- `POST /{symbol}@bookTicker` — Individual Symbol Book Ticker Streams
+- `POST /{symbol}@depth@{updateSpeed}` — Diff. Depth Stream
+- `POST /{symbol}@kline_{interval}` — Kline/Candlestick Streams for UTC
+- `POST /{symbol}@kline_{interval}@+08:00` — Kline/Candlestick Streams with timezone offset
+- `POST /{symbol}@miniTicker` — Individual Symbol Mini Ticker Stream
+- `POST /{symbol}@depth{levels}@{updateSpeed}` — WebSocket Partial Book Depth Streams
+- `POST /{symbol}@referencePrice` — Reference Price Streams
+- `POST /{symbol}@ticker_{windowSize}` — Individual Symbol Rolling Window Statistics Streams
+- `POST /{symbol}@ticker` — Individual Symbol Ticker Streams
+- `POST /{symbol}@trade` — Trade Streams
+- `POST /{symbol}@blockTrade` — Block Trade Streams
+
+### Spot Block Matching REST API (1.0.0)
+
+Execute off-exchange Spot trades with minimal market impact.
+
+- `POST /sapi/v1/block-match/order/cancel` — Order Cancel (TRADE)
+- `POST /sapi/v1/block-match/order/extend` — Order Extend (TRADE)
+- `POST /sapi/v1/block-match/order/place` — Order Place (TRADE)
+- `POST /sapi/v1/block-match/order/take` — Order Take (TRADE)
+- `GET /sapi/v1/block-match/order/query-open-order` — Query open order (USER_DATA)
+- `GET /sapi/v1/block-match/order/query-order-history` — Query Order History (USER_DATA)
+- `POST /sapi/v1/block-match/symbols` — Symbols (USER_DATA)
+
+### Staking REST API (1.0.0)
+
+Subscribe to staking products, track positions, and query rewards via the Binance Staking API.
+
+- `GET /sapi/v2/eth-staking/account` — ETH Staking account (USER_DATA)
+- `GET /sapi/v1/eth-staking/eth/quota` — Get current ETH staking quota (USER_DATA)
+- `GET /sapi/v1/eth-staking/eth/history/redemptionHistory` — Get ETH redemption history (USER_DATA)
+- `GET /sapi/v1/eth-staking/eth/history/stakingHistory` — Get ETH staking history (USER_DATA)
+- `GET /sapi/v1/eth-staking/eth/history/rateHistory` — Get WBETH Rate History (USER_DATA)
+- `GET /sapi/v1/eth-staking/eth/history/wbethRewardsHistory` — Get WBETH rewards history (USER_DATA)
+- `GET /sapi/v1/eth-staking/wbeth/history/unwrapHistory` — Get WBETH unwrap history (USER_DATA)
+- `GET /sapi/v1/eth-staking/wbeth/history/wrapHistory` — Get WBETH wrap history (USER_DATA)
+- `POST /sapi/v1/eth-staking/eth/redeem` — Redeem ETH (TRADE)
+- `POST /sapi/v2/eth-staking/eth/stake` — Subscribe ETH Staking (TRADE)
+- `POST /sapi/v1/eth-staking/wbeth/wrap` — Wrap BETH (TRADE)
+- `GET /sapi/v1/onchain-yields/locked/personalLeftQuota` — Get On-chain Yields Locked Personal Left Quota (USER_DATA)
+- `GET /sapi/v1/onchain-yields/locked/list` — Get On-chain Yields Locked Product List (USER_DATA)
+- `GET /sapi/v1/onchain-yields/locked/position` — Get On-chain Yields Locked Product Position (USER_DATA)
+- `GET /sapi/v1/onchain-yields/locked/history/redemptionRecord` — Get On-chain Yields Locked Redemption Record (USER_DATA)
+- `GET /sapi/v1/onchain-yields/locked/history/rewardsRecord` — Get On-chain Yields Locked Rewards History (USER_DATA)
+- `GET /sapi/v1/onchain-yields/locked/subscriptionPreview` — Get On-chain Yields Locked Subscription Preview (USER_DATA)
+- `GET /sapi/v1/onchain-yields/locked/history/subscriptionRecord` — Get On-chain Yields Locked Subscription Record (USER_DATA)
+- `GET /sapi/v1/onchain-yields/account` — On-chain Yields Account (USER_DATA)
+- `POST /sapi/v1/onchain-yields/locked/redeem` — Redeem On-chain Yields Locked Product (TRADE)
+- `POST /sapi/v1/onchain-yields/locked/setAutoSubscribe` — Set On-chain Yields Locked Auto Subscribe (USER_DATA)
+- `POST /sapi/v1/onchain-yields/locked/setRedeemOption` — Set On-chain Yields Locked Product Redeem Option (USER_DATA)
+- `POST /sapi/v1/onchain-yields/locked/subscribe` — Subscribe On-chain Yields Locked Product (TRADE)
+- `GET /sapi/v1/soft-staking/list` — Get Soft Staking Product List (USER_DATA)
+- `GET /sapi/v1/soft-staking/history/rewardsRecord` — Get Soft Staking Rewards History (USER_DATA)
+- `GET /sapi/v1/soft-staking/set` — Set Soft Staking (USER_DATA)
+- `POST /sapi/v1/sol-staking/sol/claim` — Claim Boost Rewards (TRADE)
+- `GET /sapi/v1/sol-staking/sol/history/rateHistory` — Get BNSOL Rate History (USER_DATA)
+- `GET /sapi/v1/sol-staking/sol/history/bnsolRewardsHistory` — Get BNSOL rewards history (USER_DATA)
+- `GET /sapi/v1/sol-staking/sol/history/boostRewardsHistory` — Get Boost Rewards History (USER_DATA)
+- `GET /sapi/v1/sol-staking/sol/history/redemptionHistory` — Get SOL redemption history (USER_DATA)
+- `GET /sapi/v1/sol-staking/sol/history/stakingHistory` — Get SOL staking history (USER_DATA)
+- `GET /sapi/v1/sol-staking/sol/quota` — Get SOL staking quota details (USER_DATA)
+- `GET /sapi/v1/sol-staking/sol/history/unclaimedRewards` — Get Unclaimed Rewards (USER_DATA)
+- `POST /sapi/v1/sol-staking/sol/redeem` — Redeem SOL (TRADE)
+- `GET /sapi/v1/sol-staking/account` — SOL Staking account (USER_DATA)
+- `POST /sapi/v1/sol-staking/sol/stake` — Subscribe SOL Staking (TRADE)
+
+### Sub Account REST API (1.0.0)
+
+Create and manage sub-accounts, control permissions, and transfer assets via the Sub Account API.
+
+- `POST /sapi/v1/sub-account/virtualSubAccount` — Create a Virtual Sub-account (For Master Account) (USER_DATA)
+- `POST /sapi/v1/sub-account/futures/enable` — Enable Futures for Sub-account (For Master Account) (USER_DATA)
+- `POST /sapi/v1/sub-account/eoptions/enable` — Enable Options for Sub-account (For Master Account) (USER_DATA)
+- `GET /sapi/v1/sub-account/futures/positionRisk` — Get Futures Position-Risk of Sub-account (For Master Account) (USER_DATA)
+- `GET /sapi/v2/sub-account/futures/positionRisk` — Get Futures Position-Risk of Sub-account V2 (For Master Account) (USER_DATA)
+- `GET /sapi/v1/sub-account/status` — Get Sub-account's Status on Margin Or Futures (For Master Account) (USER_DATA)
+- `GET /sapi/v1/sub-account/list` — Query Sub-account List (For Master Account) (USER_DATA)
+- `GET /sapi/v1/sub-account/transaction-statistics` — Query Sub-account Transaction Statistics (For Master Account) (USER_DATA)
+- `POST /sapi/v2/sub-account/subAccountApi/ipRestriction` — Add IP Restriction for Sub-Account API key (For Master Account) (USER_DATA)
+- `GET /sapi/v1/sub-account/subAccountApi` — Query Sub-account API Key (For Master Account) (USER_DATA)
+- `POST /sapi/v1/sub-account/subAccountApi` — Create Sub-account API Key (For Master Account) (USER_DATA)
+- `DELETE /sapi/v1/sub-account/subAccountApi` — Delete Sub-account API Key (For Master Account) (USER_DATA)
+- `DELETE /sapi/v1/sub-account/subAccountApi/ipRestriction/ipList` — Delete IP List For a Sub-account API Key (For Master Account) (USER_DATA)
+- `GET /sapi/v1/sub-account/subAccountApi/ipRestriction` — Get IP Restriction for a Sub-account API Key (For Master Account) (USER_DATA)
+- `POST /sapi/v1/sub-account/subAccountApiPermission` — Modify Sub-account API Key Permission (For Master Account) (USER_DATA)
+- `POST /sapi/v1/sub-account/futures/transfer` — Futures Transfer for Sub-account (For Master Account) (USER_DATA)
+- `GET /sapi/v1/sub-account/futures/account` — Get Detail on Sub-account's Futures Account (For Master Account) (USER_DATA)
+- `GET /sapi/v2/sub-account/futures/account` — Get Detail on Sub-account's Futures Account V2 (For Master Account) (USER_DATA)
+- `GET /sapi/v1/sub-account/margin/account` — Get Detail on Sub-account's Margin Account (For Master Account) (USER_DATA)
+- `GET /sapi/v1/sub-account/futures/move-position` — Get Move Position History for Sub-account (For Master Account) (USER_DATA)
+- `POST /sapi/v1/sub-account/futures/move-position` — Move Position for Sub-account (For Master Account) (USER_DATA)
+- `GET /sapi/v1/capital/deposit/subAddress` — Get Sub-account Deposit Address (For Master Account) (USER_DATA)
+- `GET /sapi/v1/capital/deposit/subHisrec` — Get Sub-account Deposit History (For Master Account) (USER_DATA)
+- `GET /sapi/v1/sub-account/futures/accountSummary` — Get Summary of Sub-account's Futures Account (For Master Account) (USER_DATA)
+- `GET /sapi/v2/sub-account/futures/accountSummary` — Get Summary of Sub-account's Futures Account V2 (For Master Account) (USER_DATA)
+- `GET /sapi/v1/sub-account/margin/accountSummary` — Get Summary of Sub-account's Margin Account (For Master Account) (USER_DATA)
+- `POST /sapi/v1/sub-account/margin/transfer` — Margin Transfer for Sub-account (For Master Account) (USER_DATA)
+- `GET /sapi/v3/sub-account/assets` — Query Sub-account Assets (For Master Account) (USER_DATA)
+- `GET /sapi/v4/sub-account/assets` — Query Sub-account Assets V4 (For Master Account) (USER_DATA)
+- `GET /sapi/v1/sub-account/futures/internalTransfer` — Query Sub-account Futures Asset Transfer History (For Master Account) (USER_DATA)
+- `POST /sapi/v1/sub-account/futures/internalTransfer` — Sub-account Futures Asset Transfer (For Master Account) (USER_DATA)
+- `GET /sapi/v1/sub-account/spotSummary` — Query Sub-account Spot Assets Summary (For Master Account) (USER_DATA)
+- `GET /sapi/v1/sub-account/sub/transfer/history` — Query Sub-account Spot Asset Transfer History (For Master Account) (USER_DATA)
+- `GET /sapi/v1/sub-account/universalTransfer` — Query Universal Transfer History (For Master Account) (USER_DATA)
+- `POST /sapi/v1/sub-account/universalTransfer` — Universal Transfer (For Master Account) (USER_DATA)
+- `GET /sapi/v1/sub-account/transfer/subUserHistory` — Sub-account Transfer History (For Sub-account) (USER_DATA)
+- `POST /sapi/v1/sub-account/transfer/subToMaster` — Transfer to Master (For Sub-account) (USER_DATA)
+- `POST /sapi/v1/sub-account/transfer/subToSub` — Transfer to Sub-account of Same Master (For Sub-account) (USER_DATA)
+- `POST /sapi/v1/managed-subaccount/deposit` — Deposit Assets Into The Managed Sub-account (For Investor Master Account) (USER_DATA)
+- `GET /sapi/v1/managed-subaccount/deposit/address` — Get Managed Sub-account Deposit Address (For Investor Master Account) (USER_DATA)
+- `GET /sapi/v1/managed-subaccount/asset` — Query Managed Sub-account Asset Details (For Investor Master Account) (USER_DATA)
+- `GET /sapi/v1/managed-subaccount/fetch-future-asset` — Query Managed Sub-account Futures Asset Details (For Investor Master Account) (USER_DATA)
+- `GET /sapi/v1/managed-subaccount/info` — Query Managed Sub-account List (For Investor) (USER_DATA)
+- `GET /sapi/v1/managed-subaccount/marginAsset` — Query Managed Sub-account Margin Asset Details (For Investor Master Account) (USER_DATA)
+- `GET /sapi/v1/managed-subaccount/accountSnapshot` — Query Managed Sub-account Snapshot (For Investor Master Account) (USER_DATA)
+- `GET /sapi/v1/managed-subaccount/queryTransLogForInvestor` — Query Managed Sub Account Transfer Log For Investor Master Account (USER_DATA)
+- `GET /sapi/v1/managed-subaccount/queryTransLogForTradeParent` — Query Managed Sub Account Transfer Log For Trading Team Master Account (USER_DATA)
+- `GET /sapi/v1/managed-subaccount/query-trans-log` — Query Managed Sub Account Transfer Log (For Trading Team Sub Account) (USER_DATA)
+- `POST /sapi/v1/managed-subaccount/withdraw` — Withdrawl Assets From The Managed Sub-account (For Investor Master Account) (USER_DATA)
+
+### VIP Loan REST API (1.0.0)
+
+Access over-collateralized loan services, manage positions, and monitor collateral via the VIP Loan API.
+
+- `GET /sapi/v1/loan/vip/request/interestRate` — Get Borrow Interest Rate (USER_DATA)
+- `GET /sapi/v1/loan/vip/collateral/data` — Get Collateral Asset Data (USER_DATA)
+- `GET /sapi/v1/loan/vip/loanable/data` — Get Loanable Assets Data (USER_DATA)
+- `GET /sapi/v1/loan/vip/interestRateHistory` — Get VIP Loan Interest Rate History (USER_DATA)
+- `GET /sapi/v1/loan/vip/fixed/market` — Query VIP Loan Fixed Rate Market (USER_DATA)
+- `POST /sapi/v1/loan/vip/borrow` — VIP Loan Borrow (TRADE)
+- `POST /sapi/v1/loan/vip/fixed/borrow` — VIP Loan Fixed Rate Borrow (TRADE)
+- `POST /sapi/v1/loan/vip/renew` — VIP Loan Renew (TRADE)
+- `POST /sapi/v1/loan/vip/repay` — VIP Loan Repay (TRADE)
+- `GET /sapi/v1/loan/vip/collateral/account` — Check VIP Loan Collateral Account (USER_DATA)
+- `GET /sapi/v1/loan/vip/accruedInterest` — Get VIP Loan Accrued Interest (USER_DATA)
+- `GET /sapi/v1/loan/vip/ongoing/orders` — Get VIP Loan Ongoing Orders (USER_DATA)
+- `GET /sapi/v1/loan/vip/repay/history` — Get VIP Loan Repayment History (USER_DATA)
+- `GET /sapi/v1/loan/vip/request/data` — Query Application Status (USER_DATA)
+
+### VIP Service REST API (1.0.0)
+
+Query VIP account configuration, fee tiers, rate limits, and commission settings via the VIP Service API.
+
+- `GET /sapi/v1/vip/vip-portal/futures/ip-whitelists` — Query Futures IP Whitelists
+- `POST /sapi/v1/vip/vip-portal/futures/ip-whitelists` — Add Futures IP Whitelists
+- `DELETE /sapi/v1/vip/vip-portal/futures/ip-whitelists` — Remove Futures IP Whitelists
+- `GET /sapi/v1/vip/vip-portal/futures/rate-limits/ips` — Query Futures IP Rate Limits
+- `GET /sapi/v1/vip/vip-portal/futures/rate-limits/ips/pages` — Query Futures IP Rate Limits With Pagination
+- `GET /sapi/v1/vip/vip-portal/futures/rate-limits/orders` — Query Futures USER ORDER Rate Limits
+- `GET /sapi/v1/vip/vip-portal/futures/rate-limits/orders/pages` — Query Futures USER ORDER Rate Limits With Pagination
+- `GET /sapi/v1/vip/liquidity-programs/overview` — Query Liquidity Program Overview
+- `GET /sapi/v1/vip/liquidity-programs/performance` — Query Liquidity Program Performance
+- `GET /sapi/v1/vip/liquidity-programs/weekly-result` — Query Liquidity Program Weekly Results
+- `GET /sapi/v1/commission/queryCommissionFee` — Query Symbol Commission Fee
+
+### VIP CAAS REST API (1.0.0)
+
+Crypto-as-a-Service Commission Markup APIs.
+
+- `GET /sapi/v1/vip/caas/commission/fee-groups` — Query Fee Groups (USER_DATA)
+- `POST /sapi/v1/vip/caas/commission/fee-groups` — Create Fee Group (TRADE)
+- `DELETE /sapi/v1/vip/caas/commission/fee-groups` — Delete Fee Group (TRADE)
+- `PUT /sapi/v1/vip/caas/commission/fee-groups/commission` — Update Fee Group Commission (TRADE)
+- `GET /sapi/v1/vip/caas/commission/fee-groups/members` — Query Fee Group Members (USER_DATA)
+- `POST /sapi/v1/vip/caas/commission/fee-groups/members` — Assign Members to Fee Group (TRADE)
+- `DELETE /sapi/v1/vip/caas/commission/fee-groups/members` — Unassign Members from Fee Group (TRADE)
+- `GET /sapi/v1/vip/caas/commission/member-fee-group` — Query One Member's Fee Group (USER_DATA)
+- `GET /sapi/v1/vip/caas/commission/markup-trade-aggregations` — Query Markup Trade Commission Aggregation Reportings (USER_DATA)
+- `GET /sapi/v1/vip/caas/commission/markup-trade-details` — Query Markup Trade Detail Reportings (USER_DATA)
+
+### Wallet REST API (1.0.0)
+
+Query balances, manage assets, and perform wallet operations via the Binance Wallet API.
+
+- `GET /sapi/v1/account/apiTradingStatus` — Account API Trading Status (USER_DATA)
+- `GET /sapi/v1/account/info` — Account info (USER_DATA)
+- `GET /sapi/v1/account/status` — Account Status (USER_DATA)
+- `GET /sapi/v1/accountSnapshot` — Daily Account Snapshot (USER_DATA)
+- `POST /sapi/v1/account/disableFastWithdrawSwitch` — Disable Fast Withdraw Switch (USER_DATA)
+- `POST /sapi/v1/account/enableFastWithdrawSwitch` — Enable Fast Withdraw Switch (USER_DATA)
+- `GET /sapi/v1/account/apiRestrictions` — Get API Key Permission (USER_DATA)
+- `GET /sapi/v1/asset/assetDetail` — Asset Detail (USER_DATA)
+- `GET /sapi/v1/asset/assetDividend` — Asset Dividend Record (USER_DATA)
+- `POST /sapi/v1/asset/dust-convert/convert` — Dust Convert (USER_DATA)
+- `POST /sapi/v1/asset/dust-convert/query-convertible-assets` — Dust Convertible Assets (USER_DATA)
+- `GET /sapi/v1/asset/dribblet` — DustLog (USER_DATA)
+- `POST /sapi/v1/asset/dust` — Dust Transfer (USER_DATA)
+- `POST /sapi/v1/asset/get-funding-asset` — Funding Wallet (USER_DATA)
+- `GET /sapi/v1/spot/asset/tags` — Get Spot Asset Tags (MARKET_DATA)
+- `POST /sapi/v1/asset/dust-btc` — Get Assets That Can Be Converted Into BNB (USER_DATA)
+- `GET /sapi/v1/asset/ledger-transfer/cloud-mining/queryByPage` — Get Cloud-Mining payment and refund history (USER_DATA)
+- `GET /sapi/v1/spot/open-symbol-list` — Get Open Symbol List (MARKET_DATA)
+- `GET /sapi/v1/asset/custody/transfer-history` — Query User Delegation History(For Master Account) (USER_DATA)
+- `GET /sapi/v1/asset/transfer` — Query User Universal Transfer History (USER_DATA)
+- `POST /sapi/v1/asset/transfer` — User Universal Transfer (USER_DATA)
+- `GET /sapi/v1/asset/wallet/balance` — Query User Wallet Balance (USER_DATA)
+- `POST /sapi/v1/bnbBurn` — Toggle BNB Burn On Spot Trade And Margin Interest (USER_DATA)
+- `GET /sapi/v1/asset/tradeFee` — Trade Fee (USER_DATA)
+- `POST /sapi/v3/asset/getUserAsset` — User Asset (USER_DATA)
+- `GET /sapi/v1/capital/config/getall` — All Coins' Information (USER_DATA)
+- `GET /sapi/v1/capital/deposit/address` — Deposit Address(supporting network) (USER_DATA)
+- `GET /sapi/v1/capital/deposit/hisrec` — Deposit History (supporting network) (USER_DATA)
+- `GET /sapi/v1/capital/deposit/address/list` — Fetch deposit address list with network (USER_DATA)
+- `GET /sapi/v1/capital/withdraw/address/list` — Fetch withdraw address list (USER_DATA)
+- `GET /sapi/v1/capital/withdraw/quota` — Fetch withdraw quota (USER_DATA)
+- `POST /sapi/v1/capital/deposit/credit-apply` — One click arrival deposit apply (for expired address deposit) (USER_DATA)
+- `POST /sapi/v1/capital/withdraw/apply` — Withdraw (USER_DATA)
+- `GET /sapi/v1/capital/withdraw/history` — Withdraw History (supporting network) (USER_DATA)
+- `GET /sapi/v1/spot/delist-schedule` — Get Spot Delist Schedule (MARKET_DATA)
+- `GET /sapi/v1/system/status` — System Status
+- `POST /sapi/v1/localentity/broker/withdraw/apply` — Broker Withdraw (for brokers of local entities that require travel rule) (USER_DATA)
+- `GET /sapi/v1/localentity/questionnaire-requirements` — Check Questionnaire Requirements (for local entities that require travel rule) (supporting network) (USER_DATA)
+- `GET /sapi/v1/localentity/country/list` — Get Country List (USER_DATA)
+- `GET /sapi/v1/localentity/deposit/history` — Deposit History Travel Rule (for local entities that required travel rule) (supporting network) (USER_DATA)
+- `GET /sapi/v2/localentity/deposit/history` — Deposit History V2 (for local entities that required travel rule) (supporting network) (USER_DATA)
+- `GET /sapi/v1/addressVerify/list` — Fetch address verification list (USER_DATA)
+- `GET /sapi/v1/localentity/region/list` — Get Region List (USER_DATA)
+- `PUT /sapi/v1/localentity/broker/deposit/provide-info` — Submit Deposit Questionnaire Broker (For local entities that require travel rule) (supporting network) (USER_DATA)
+- `PUT /sapi/v1/localentity/deposit/provide-info` — Submit Deposit Questionnaire (For local entities that require travel rule) (supporting network) (USER_DATA)
+- `PUT /sapi/v2/localentity/deposit/provide-info` — Submit Deposit Questionnaire V2 (For local entities that require travel rule) (supporting network) (USER_DATA)
+- `GET /sapi/v1/localentity/vasp` — VASP list (for local entities that require travel rule) (supporting network) (USER_DATA)
+- `GET /sapi/v1/localentity/withdraw/history` — Withdraw History Travel Rule (supporting network) (USER_DATA)
+- `GET /sapi/v2/localentity/withdraw/history` — Withdraw History V2 (for local entities that require travel rule) (supporting network) (USER_DATA)
+- `POST /sapi/v1/localentity/withdraw/apply` — Withdraw Travel Rule (USER_DATA)
+
+### Prediction Trading REST API (1.0.0)
+
+Place and manage prediction market orders, query positions, and transfer funds via the Prediction Trading REST API.
+
+- `GET /sapi/v1/w3w/wallet/prediction/category/list` — List Prediction Categories
+- `GET /sapi/v1/w3w/wallet/prediction/market/list` — List Prediction Markets
+- `GET /sapi/v1/w3w/wallet/prediction/market/search` — Market Search
+- `GET /sapi/v1/w3w/wallet/prediction/market/detail` — Get Market Detail
+- `GET /sapi/v1/w3w/wallet/prediction/order-book` — Query Order Book
+- `GET /sapi/v1/w3w/wallet/prediction/order-book/last-trade-price` — Query Last Trade Price
+- `GET /sapi/v1/w3w/wallet/prediction/wallet/list` — List Prediction Wallets (PREDICTION_TRADE)
+- `GET /sapi/v1/w3w/wallet/prediction/pnl/portfolio` — Get Portfolio (PREDICTION_TRADE)
+- `GET /sapi/v1/w3w/wallet/prediction/quota/limit/status` — Get Quota Status (PREDICTION_TRADE)
+- `GET /sapi/v1/w3w/wallet/prediction/balance/payment-options` — Query Payment Option Balances (PREDICTION_TRADE)
+- `POST /sapi/v1/w3w/wallet/prediction/trade/get-quote` — Get Quote (PREDICTION_TRADE)
+- `POST /sapi/v1/w3w/wallet/prediction/trade/place-order-bundle` — Place Order (PREDICTION_TRADE)
+- `POST /sapi/v1/w3w/wallet/prediction/trade/batch-cancel` — Batch Cancel Orders (PREDICTION_TRADE)
+- `GET /sapi/v1/w3w/wallet/prediction/order/list` — Query Active Orders (PREDICTION_TRADE)
+- `GET /sapi/v1/w3w/wallet/prediction/order/history` — Query Order History (PREDICTION_TRADE)
+- `GET /sapi/v1/w3w/wallet/prediction/position/list` — Query Positions (PREDICTION_TRADE)
+- `GET /sapi/v1/w3w/wallet/prediction/position/filter` — Query Positions by Filter (PREDICTION_TRADE)
+- `GET /sapi/v1/w3w/wallet/prediction/position/token` — Get Position by Token (PREDICTION_TRADE)
+- `GET /sapi/v1/w3w/wallet/prediction/pnl/query` — Query PnL (PREDICTION_TRADE)
+- `GET /sapi/v1/w3w/wallet/prediction/position/settled-history` — Query Settled Position History (PREDICTION_TRADE)
+- `POST /sapi/v1/w3w/wallet/prediction/batch-redeem` — Batch Redeem (PREDICTION_TRADE)
+- `GET /sapi/v1/w3w/wallet/prediction/redeem/status` — Get Redeem Status (PREDICTION_TRADE)
+- `POST /sapi/v1/w3w/wallet/prediction/transfer/inbound` — Create Inbound Transfer (PREDICTION_TRADE)
+- `POST /sapi/v1/w3w/wallet/prediction/transfer/outbound` — Create Outbound Transfer (PREDICTION_TRADE)
+- `GET /sapi/v1/w3w/wallet/prediction/transfer/list` — Query Transfer List (PREDICTION_TRADE)
+- `GET /sapi/v1/w3w/wallet/prediction/transfer/status` — Query Transfer Status (PREDICTION_TRADE)
+- `POST /sapi/v1/w3w/wallet/prediction/deposit/apply` — Apply MM Deposit (PREDICTION_TRADE)
+- `POST /sapi/v1/w3w/wallet/prediction/withdraw/apply` — Apply MM Withdraw (PREDICTION_TRADE)
+- `POST /sapi/v1/w3w/wallet/prediction/otc/blocktrade/create` — Create OTC Blocktrade (PREDICTION_TRADE)
+- `POST /sapi/v1/w3w/wallet/prediction/otc/blocktrade/list` — List OTC Blocktrades (PREDICTION_TRADE)
+- `POST /sapi/v1/w3w/wallet/prediction/otc/blocktrade/detail` — Get OTC Blocktrade Detail (PREDICTION_TRADE)
+- `POST /sapi/v1/w3w/wallet/prediction/otc/blocktrade/events` — Get OTC Blocktrade Events (PREDICTION_TRADE)
+- `POST /sapi/v1/w3w/wallet/prediction/otc/blocktrade/preview` — Preview OTC Blocktrade (PREDICTION_TRADE)
+- `POST /sapi/v1/w3w/wallet/prediction/otc/blocktrade/fulfil` — Fulfil OTC Blocktrade (PREDICTION_TRADE)
+- `POST /sapi/v1/w3w/wallet/prediction/otc/blocktrade/remove` — Remove OTC Blocktrades (PREDICTION_TRADE)
+- `POST /sapi/v1/w3w/wallet/prediction/otc/blocktrade/reserved-balances` — Get OTC Reserved Balances (PREDICTION_TRADE)

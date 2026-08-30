@@ -233,9 +233,11 @@
         "account regional symbol promotional tax rebate and precision behavior",
         "fresh current official promotional pair and exact maker_or_taker role plus account and region availability",
         "owned promotional fill commission reconciliation without quote acquisition VIP chasing extra volume or double counting",
-      "current Binance VIP level Growth Track external VIP proof or Reactivation Track 2025 history and exact approved VIP 6 effective interval",
-      "exact account fee-bearing organic future volume by symbol role discount and promotion before valuing VIP 6 for Six",
-      "fresh exact Binance Stocks symbol tradability jurisdiction order preview applicable fee tier and realized owned fee reconciliation"
+        "current Binance VIP level Growth Track external VIP proof or Reactivation Track 2025 history and exact approved VIP 6 effective interval",
+        "exact account fee-bearing organic future volume by symbol role discount and promotion before valuing VIP 6 for Six",
+        "fresh exact Binance Stocks symbol tradability jurisdiction order preview applicable fee tier and realized owned fee reconciliation",
+        "existing Spot Block Matching master-account whitelist exact supported pair minimum authentic counterparty and negotiated price",
+        "same-time same-quantity finite-size public-book counterfactual exact account Spot fee and every block settlement latency failure and operating cost"
       ],
       "canonical_artifacts": [
         {
@@ -250,23 +252,27 @@
           "path": "docs/model-research/action-value/binance-vip6-for-six-organic-fee-overlay-candidate-v1-2026-08-27.json",
           "result_sha256": "f638cb6f565c1ee18c9dc065c5f4fc6506442f00833193d23c287bdf9d8ec74d"
         },
-      {
-        "path": "docs/model-research/action-value/binance-tradfi-perpetual-current-fee-overlay-edge-v1-2026-08-27.json",
-        "result_sha256": "705cb3da615c1873623e7f5be31f0d8cf672c3db9635a5ba971407cf6e715b6c"
-      },
-      {
-        "path": "docs/model-research/action-value/binance-stocks-current-fee-overlay-edge-v1-2026-08-27.json",
-        "result_sha256": "d4f02be559d9267abbea28ccefb48f4886f375b359ce7274b90b6585b828160a"
-      },
-      {
-        "path": "docs/model-research/action-value/binance-aug28-public-structural-trigger-triage-v1-2026-08-29.json",
-        "result_sha256": "bca11d612042f9a859f53b71e425cd320cca5d4a5d7695cd1f0a0de539b0eea1"
-      }
-    ],
-    "current_status": "five_accepted_scoped_fee_reductions_BNB_just_in_time_buffer_for_positive_standard_commission_current_quote_native_BTC_ETH_SOL_spot_promotions_zero_maker_on_FDUSD_and_U_VIP2_9_zero_taker_on_U_and_zero_maker_taker_on_USD1_plus_regular_USDC_taker_saving_0_5_bips_without_BNB_or_0_375_with_BNB_current_TradFi_perpetual_zero_maker_for_all_displayed_levels_plus_reduced_taker_rates_current_Binance_Stocks_saving_5_bips_strictly_above_340_USD_or_0_18_USD_per_order_strictly_below_340_USD_until_2026_08_31T00_00_00Z_and_current_bStocks_zero_maker_fee_until_2026_09_30T23_59_00Z_all_only_on_independently_justified_organic_flow_with_exactly_340_USD_unresolved_and_bStocks_exact_owned_maker_fill_counterfactual_account_fee_account_eligibility_and_all_costs_unproved_the_distinct_VIP_6_for_Six_promotion_is_a_material_unaccepted_account_gated_candidate_with_current_gross_savings_of_15_to_710_USD_per_million_USD_of_organic_flow_across_the_scoped_tier_role_and_discount_examples_but_zero_public_forward_floor_until_track_eligibility_selection_approval_effective_interval_exact_account_fees_future_organic_volume_and_all_costs_are_proved_not_deployment_ready",
+        {
+          "path": "docs/model-research/action-value/binance-tradfi-perpetual-current-fee-overlay-edge-v1-2026-08-27.json",
+          "result_sha256": "705cb3da615c1873623e7f5be31f0d8cf672c3db9635a5ba971407cf6e715b6c"
+        },
+        {
+          "path": "docs/model-research/action-value/binance-stocks-current-fee-overlay-edge-v1-2026-08-27.json",
+          "result_sha256": "d4f02be559d9267abbea28ccefb48f4886f375b359ce7274b90b6585b828160a"
+        },
+        {
+          "path": "docs/model-research/action-value/binance-aug28-public-structural-trigger-triage-v1-2026-08-29.json",
+          "result_sha256": "bca11d612042f9a859f53b71e425cd320cca5d4a5d7695cd1f0a0de539b0eea1"
+        },
+        {
+          "path": "docs/model-research/action-value/binance-spot-block-matching-organic-cost-overlay-candidate-v1-2026-08-30.json",
+          "result_sha256": "2d9c4872a6ecd707716cd8d769eb20cb715c1ed7feb61e7e560a5efdb169dc57"
+        }
+      ],
+      "current_status": "five_accepted_scoped_fee_reductions_BNB_just_in_time_buffer_for_positive_standard_commission_current_quote_native_BTC_ETH_SOL_spot_promotions_zero_maker_on_FDUSD_and_U_VIP2_9_zero_taker_on_U_and_zero_maker_taker_on_USD1_plus_regular_USDC_taker_saving_0_5_bips_without_BNB_or_0_375_with_BNB_current_TradFi_perpetual_zero_maker_for_all_displayed_levels_plus_reduced_taker_rates_current_Binance_Stocks_saving_5_bips_strictly_above_340_USD_or_0_18_USD_per_order_strictly_below_340_USD_until_2026_08_31T00_00_00Z_and_current_bStocks_zero_maker_fee_until_2026_09_30T23_59_00Z_all_only_on_independently_justified_organic_flow_with_exactly_340_USD_unresolved_and_bStocks_exact_owned_maker_fill_counterfactual_account_fee_account_eligibility_and_all_costs_unproved_the_distinct_VIP_6_for_Six_promotion_is_a_material_unaccepted_account_gated_candidate_with_current_gross_savings_of_15_to_710_USD_per_million_USD_of_organic_flow_across_the_scoped_tier_role_and_discount_examples_plus_a_material_unaccepted_Spot_Block_Matching_candidate_with_current_2_5_bip_fees_for_both_sides_off_book_execution_and_immediate_master_account_settlement_but_zero_public_forward_floor_until_whitelist_pair_minimum_authentic_counterparty_negotiated_price_same_quantity_book_account_fee_and_every_cost_are_proved_not_deployment_ready",
       "market_direction_forecast_required": false,
       "mechanism": "binance_spot_fee_minimization_overlays",
-    "next_action": "for_an_otherwise_authorized_organic_order_refresh_the_exact_official_spot_pair_TradFi_perpetual_Binance_Stocks_or_bStocks_fee_source_once_apply_only_the_exact_actual_fill_role_or_previewed_stock_order_tier_and_reconcile_the_owned_realized_fee_without_conversion_or_double_counting_treat_exactly_340_USD_as_unresolved_until_previewed_and_never_assume_a_bStocks_bot_order_is_maker_else_when_both_credentials_and_explicit_signed_GET_only_authority_exist_prequalify_current_Binance_VIP_tier_exact_symbol_role_commissions_2025_VIP_history_and_any_already_applied_VIP_6_adjustment_without_applying_contacting_or_disclosing_external_records_if_a_separate_user_authorized_Growth_Track_evaluation_is_requested_require_user_supplied_current_external_VIP_3_plus_evidence_and_value_only_independently_planned_fee_bearing_volume_then_require_separate_authority_for_every_application_contact_record_disclosure_borrow_trade_or_reconciliation",
+      "next_action": "for_an_otherwise_authorized_organic_order_refresh_the_exact_official_spot_pair_TradFi_perpetual_Binance_Stocks_or_bStocks_fee_source_once_apply_only_the_exact_actual_fill_role_or_previewed_stock_order_tier_and_reconcile_the_owned_realized_fee_without_conversion_or_double_counting_treat_exactly_340_USD_as_unresolved_until_previewed_and_never_assume_a_bStocks_bot_order_is_maker_else_when_both_credentials_and_explicit_signed_GET_only_authority_exist_prequalify_current_Binance_VIP_tier_exact_symbol_role_commissions_2025_VIP_history_and_any_already_applied_VIP_6_adjustment_without_applying_contacting_or_disclosing_external_records_if_a_separate_user_authorized_Growth_Track_evaluation_is_requested_require_user_supplied_current_external_VIP_3_plus_evidence_and_value_only_independently_planned_fee_bearing_volume_for_Spot_Block_Matching_only_when_an_independently_planned_legitimate_large_bilateral_master_account_trade_existing_whitelist_authentic_counterparty_exact_pair_quantity_side_and_time_all_exist_use_explicit_signed_read_only_authority_to_prove_symbols_minimum_and_account_fee_then_reject_before_any_order_unless_the_same_quantity_block_path_is_strictly_cheaper_than_fresh_finite_size_book_execution_after_every_cost_separate_authority_is_required_for_every_application_contact_record_disclosure_borrow_place_take_cancel_extend_trade_or_reconciliation",
       "priority_rank": 5,
       "prohibited_shortcuts": [
         "manufacturing_enlarging_churning_self_matching_or_wash_trading_volume",
@@ -286,12 +292,14 @@
         "assuming_a_bStocks_Grid_DCA_or_Rebalancing_Bot_order_is_maker_or_using_bots_to_create_volume",
         "carrying_the_bStocks_zero_maker_fee_beyond_2026_09_30T23_59_00Z_or_double_counting_it_with_BNB_or_LP_rebates",
         "carrying_a_current_TradFi_fee_rate_beyond_its_last_refresh_or_inventing_an_unpublished_promotion_end",
-      "sizing_a_stock_order_to_cross_340_USD_only_to_chase_the_fee_tier_or_assuming_either_tier_at_exactly_340_USD",
-      "carrying_the_Binance_Stocks_promotion_beyond_2026_08_31T00_00_00Z_or_ignoring_quote_conversion_spread",
-      "calling_the_capped_incremental_cost_policy_risk_free_arbitrage_or_guaranteed_profit"
-    ],
-    "retry_trigger": "otherwise_authorized_independently_positive_organic_TradFi_perpetual_spot_direct_stock_or_bStocks_flow_with_one_fresh_exact_fee_source_or_fresh_official_fee_or_VIP_6_for_Six_term_change_or_both_SIMPLE_AI_TRADING_BINANCE_MAINNET_API_KEY_and_SIMPLE_AI_TRADING_BINANCE_MAINNET_API_SECRET_available_with_explicit_signed_GET_only_authority_for_current_tier_commission_history_and_existing_upgrade_state_or_user_supplied_external_VIP_3_plus_evidence_with_explicit_Growth_Track_evaluation_authority_before_2026_10_16T23_59_59Z",
-    "venue_scope": "binance_BTC_ETH_SOL_spot_TradFi_perpetual_direct_Stocks_bStocks_and_USD_M_organic_fee_flow_USDC_FDUSD_U_USD1_quotes_USDT_to_BNB_Convert_and_VIP_6_for_Six"
+        "sizing_a_stock_order_to_cross_340_USD_only_to_chase_the_fee_tier_or_assuming_either_tier_at_exactly_340_USD",
+        "carrying_the_Binance_Stocks_promotion_beyond_2026_08_31T00_00_00Z_or_ignoring_quote_conversion_spread",
+        "calling_the_capped_incremental_cost_policy_risk_free_arbitrage_or_guaranteed_profit",
+        "treating_Spot_Block_Matching_off_book_execution_as_automatically_cheaper_or_ignoring_its_2_5_bip_fee_price_band_counterparty_whitelist_and_no_rebate_terms",
+        "contacting_vip_or_a_counterparty_requesting_whitelisting_relaying_a_settlement_key_or_placing_taking_canceling_or_extending_a_block_order_without_separate_explicit_authority"
+      ],
+      "retry_trigger": "otherwise_authorized_independently_positive_organic_TradFi_perpetual_spot_direct_stock_or_bStocks_flow_with_one_fresh_exact_fee_source_or_fresh_official_fee_or_VIP_6_for_Six_term_change_or_both_SIMPLE_AI_TRADING_BINANCE_MAINNET_API_KEY_and_SIMPLE_AI_TRADING_BINANCE_MAINNET_API_SECRET_available_with_explicit_signed_GET_only_authority_for_current_tier_commission_history_and_existing_upgrade_state_or_user_supplied_external_VIP_3_plus_evidence_with_explicit_Growth_Track_evaluation_authority_before_2026_10_16T23_59_59Z_or_for_Spot_Block_Matching_both_designated_credentials_explicit_signed_read_only_authority_an_independently_planned_legitimate_large_bilateral_master_account_Spot_trade_existing_whitelist_authentic_counterparty_and_frozen_exact_pair_quantity_side_and_decision_time_or_a_material_official_block_fee_pair_minimum_whitelist_API_settlement_or_price_band_change",
+      "venue_scope": "binance_BTC_ETH_SOL_spot_TradFi_perpetual_direct_Stocks_bStocks_and_USD_M_organic_fee_flow_USDC_FDUSD_U_USD1_quotes_USDT_to_BNB_Convert_VIP_6_for_Six_and_whitelisted_master_account_Spot_Block_Matching"
     },
     {
       "blocking_evidence": [
@@ -2083,7 +2091,7 @@
       "venue_scope": "Binance_Spot_direct_and_exactly_one_intermediary_routes_for_independently_required_organic_conversions_with_the_exactly_two_intermediary_extension_terminal_for_the_retained_population"
     }
   ],
-  "result_sha256": "0a34d7289331515f8e7b3f09e856fbc331ecbc3a91130fea20542a39ef211f60",
+  "result_sha256": "0416a75158adf12ca08e6dc2d529efa29db53300715ba06f7c04378dcfa2a396",
   "schema_version": "structural-edge-priority-registry-v1",
   "terminal_do_not_repeat": [
     {
@@ -2305,8 +2313,13 @@
       "canonical_result_sha256": "e56ce8f2a491d6da3f66b0d085381894ec0e7c078e4f4cfaf238d8e044fa281a",
       "family": "polymarket_official_documentation_mechanism_inventory_snapshot",
       "reason": "the_one_use_current_official_llms_index_contained_80_top_level_English_markdown_pages_but_zero_distinct_economic_mechanisms_outside_existing_registry_families_do_not_refetch_this_snapshot_or_open_linked_pages_until_the_index_SHA_changes_and_an_offline_title_or_description_diff_identifies_a_genuinely_new_cash_flow_cost_reduction_settlement_right_or_executable_package"
+    },
+    {
+      "canonical_result_sha256": "e2fc005dda76af1a6aad7eb29ca09db19023f0aaa5ae64eff944cc0ef75ee48a",
+      "family": "binance_low_value_asset_residual_recovery_exact_documentation_source_capture",
+      "reason": "the_exact_one_use_current_Wallet_asset_documentation_GET_returned_a_CloudFront_WAF_challenge_HTTP_202_with_zero_body_bytes_so_no_target_asset_service_charge_account_inventory_quote_or_executable_alternative_value_was_source_bound_do_not_retry_or_repair_the_consumed_URL_through_a_locale_or_filename_alias_reopen_only_on_a_material_official_product_or_API_change_or_a_separately_frozen_authorized_nonmutating_account_query"
     }
   ],
-  "updated_at_utc": "2026-08-29T23:23:47Z",
+  "updated_at_utc": "2026-08-30T00:06:21Z",
   "usage_rule": "advance_the_highest_ranked_hypothesis_whose_retry_trigger_is_satisfied_otherwise_do_not_repeat_a_blocked_or_terminal_screen"
 }

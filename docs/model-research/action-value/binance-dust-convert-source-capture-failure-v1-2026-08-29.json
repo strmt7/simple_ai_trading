@@ -1,0 +1,53 @@
+{
+  "schema_version": "1.0",
+  "created_at_utc": "2026-08-30T00:06:21.1061298Z",
+  "authority": {
+    "public_unauthenticated_requests": 1,
+    "signed_requests": 0,
+    "credentials_used": false,
+    "orders_placed": false,
+    "funds_used": false,
+    "account_mutations": false
+  },
+  "hypothesis": "Current Binance low-value asset conversion might recover otherwise nontradable residual balances into a useful target asset without taking a market-direction view.",
+  "consumed_request": {
+    "method": "GET",
+    "url": "https://developers.binance.com/en/docs/catalog/core-trading-wallet/api/rest-api/asset",
+    "completed_at_utc": "2026-08-29T23:59:49.4923248Z",
+    "http_status": 202,
+    "curl_exit_code": 0,
+    "response_bytes": 0,
+    "response_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "headers_sha256": "476d2b15aa8ee31c8766a6e2110223961ce5ae5b759f2ddeeea00bdf0d5bb370",
+    "terminal_observation": "CloudFront returned an x-amzn-waf-action challenge with an empty body. The exact request was consumed and was not retried."
+  },
+  "source_binding": {
+    "request_contract": {
+      "path": "docs/model-research/binance/raw/dust-convert-current-api-v1-2026-08-29/00-request-contract.json",
+      "file_sha256": "065a369218cfcd1cbf630166033da653e881cf75de030d11a35e2c992dd8f835"
+    },
+    "request_journal": {
+      "path": "docs/model-research/binance/raw/dust-convert-current-api-v1-2026-08-29/00-request-journal.jsonl",
+      "file_sha256": "69f159bd2af7549b9643c604c353c4ae2bfdfac0af3cba1d55026fec6d308e03"
+    },
+    "response_headers": "docs/model-research/binance/raw/dust-convert-current-api-v1-2026-08-29/01-official-wallet-asset-api.headers.txt",
+    "empty_response_body": "docs/model-research/binance/raw/dust-convert-current-api-v1-2026-08-29/01-official-wallet-asset-api.raw.html"
+  },
+  "adjudication": {
+    "accepted_edge": false,
+    "candidate_retained": false,
+    "public_after_cost_profit_floor": "0",
+    "reason": "The consumed response retained no primary-source terms, supported target assets, account inventory, conversion quote, service charge, or executable alternative value. No profitable or stable recovery claim can be source-bound.",
+    "exact_request_retry_allowed": false,
+    "endpoint_alias_repair_allowed": false
+  },
+  "retry_trigger": "A material official low-value-conversion product or API change documented at a distinct canonical primary source, or both designated ephemeral credentials plus explicit read-only authority for a separately frozen non-mutating convertible-assets query. Conversion itself always requires separate balance-mutation authority.",
+  "prohibited_actions": [
+    "retrying the consumed documentation URL",
+    "repairing the failure through a locale or filename alias",
+    "assuming a supported stable target",
+    "assuming the displayed example service charge is the account rate",
+    "converting any balance without explicit separate mutation authority"
+  ],
+  "result_sha256": "e2fc005dda76af1a6aad7eb29ca09db19023f0aaa5ae64eff944cc0ef75ee48a"
+}

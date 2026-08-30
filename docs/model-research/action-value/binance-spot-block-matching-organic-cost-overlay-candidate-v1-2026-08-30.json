@@ -1,0 +1,169 @@
+{
+  "schema_version": "1.0",
+  "created_at_utc": "2026-08-30T00:06:21.1061298Z",
+  "authority": {
+    "public_unauthenticated_requests": 5,
+    "signed_requests": 0,
+    "credentials_used": false,
+    "whitelisting_requested": false,
+    "counterparties_contacted": false,
+    "orders_placed_or_accepted": 0,
+    "funds_used": false,
+    "account_mutations": false
+  },
+  "edge_identity": {
+    "mechanism": "Binance Spot Block Matching cost reduction for an independently required large bilateral Spot trade",
+    "market_direction_forecast_required": false,
+    "not_a_standalone_strategy": true,
+    "direction_independence": "The candidate compares two execution paths for the same already-required side, symbol, quantity, and decision time. Any saving comes from a lower all-in execution cost, not from predicting the asset's price direction.",
+    "scope": "Whitelisted Binance master accounts and currently supported Spot Block Matching pairs only."
+  },
+  "current_primary_terms": {
+    "off_order_book": true,
+    "bilateral_whitelisted_maker_and_taker": true,
+    "master_account_only": true,
+    "maker_fee_fraction": "0.00025",
+    "taker_fee_fraction": "0.00025",
+    "maker_fee_bps": "2.5",
+    "taker_fee_bps": "2.5",
+    "market_maker_rebate_available": false,
+    "default_acceptance_validity_minutes": 30,
+    "maker_price_band_at_creation_fraction": "0.10",
+    "price_band_can_drift_before_acceptance": true,
+    "settlement": "immediate_to_master_spot_account_after_trade",
+    "api_security": {
+      "symbols": "POST /sapi/v1/block-match/symbols USER_DATA",
+      "open_orders": "GET /sapi/v1/block-match/order/query-open-order USER_DATA",
+      "order_history": "GET /sapi/v1/block-match/order/query-order-history USER_DATA",
+      "place": "POST /sapi/v1/block-match/order/place TRADE",
+      "take": "POST /sapi/v1/block-match/order/take TRADE",
+      "cancel": "POST /sapi/v1/block-match/order/cancel TRADE",
+      "extend": "POST /sapi/v1/block-match/order/extend TRADE"
+    }
+  },
+  "rejection_first_economics": {
+    "block_fee_bps_each_side": "2.5",
+    "sensitivity_only_fee_savings_at_100000_quote_notional": [
+      {
+        "counterfactual_spot_fee_bps": "10",
+        "gross_fee_saving_quote": "75",
+        "maximum_adverse_block_price_delta_bps_before_slippage_and_other_costs": "7.5"
+      },
+      {
+        "counterfactual_spot_fee_bps": "7.5",
+        "gross_fee_saving_quote": "50",
+        "maximum_adverse_block_price_delta_bps_before_slippage_and_other_costs": "5"
+      },
+      {
+        "counterfactual_spot_fee_bps": "5",
+        "gross_fee_saving_quote": "25",
+        "maximum_adverse_block_price_delta_bps_before_slippage_and_other_costs": "2.5"
+      },
+      {
+        "counterfactual_spot_fee_bps": "2.5",
+        "gross_fee_saving_quote": "0",
+        "maximum_adverse_block_price_delta_bps_before_slippage_and_other_costs": "0"
+      },
+      {
+        "counterfactual_spot_fee_bps": "0",
+        "gross_fee_saving_quote": "-25",
+        "maximum_adverse_block_price_delta_bps_before_slippage_and_other_costs": "-2.5"
+      }
+    ],
+    "sensitivity_formula": "notional_quote * (counterfactual_spot_fee_bps - 2.5) / 10000",
+    "actual_buy_gate": "exact_public_book_cost_for_the_same_quantity_including_account_fee minus exact_block_purchase_cost_including_block_fee minus every incremental_block_cost must be strictly positive",
+    "actual_sell_gate": "exact_block_sale_proceeds_after_block_fee minus exact_public_book_proceeds_for_the_same_quantity_after_account_fee minus every_incremental_block_cost must be strictly positive",
+    "public_forward_profit_floor_quote": "0",
+    "why_zero": "Public sources do not prove the account is whitelisted, the pair and minimum are supported, an authentic counterparty exists, the negotiated price, the same-time finite-size public-book counterfactual, exact account Spot fees, fee asset and rounding, failure costs, or an owned fill. The allowed creation band is far wider than any fee saving."
+  },
+  "candidate_gate": {
+    "all_required_before_read_only_prequalification": [
+      "An independently required large bilateral Spot trade already exists without counting this mechanism.",
+      "Both designated ephemeral Binance credentials are present and explicit signed read-only authority is granted.",
+      "The master account is already whitelisted; no contact, application, or disclosure is inferred.",
+      "The exact pair, quantity, side, authentic counterparty, and target decision time are fixed independently of any outcome query."
+    ],
+    "read_only_prequalification_only": [
+      "Request the documented USER_DATA symbols operation once and prove the exact pair and minimum.",
+      "Read the exact account and symbol Spot commission counterfactual without changing settings.",
+      "Freeze a same-quantity finite-size public-book comparison and every fee, rounding, settlement, latency, failure, counterparty, and operating cost.",
+      "Reject before any order if the exact maximum price concession plus block fee cannot remain strictly cheaper than the public-book counterfactual."
+    ],
+    "separate_trade_authority_required_for": [
+      "placing a block order",
+      "accepting a settlement key",
+      "canceling or extending a block order",
+      "any public-book hedge or fallback",
+      "any transfer or withdrawal"
+    ],
+    "post_trade_evidence_if_separately_authorized": [
+      "owned block order and fill identity",
+      "exact fee asset and amount",
+      "immediate master Spot balance settlement",
+      "same-time counterfactual depth and account fee",
+      "all failure, delay, counterparty, and operating costs"
+    ]
+  },
+  "source_binding": {
+    "request_contract": {
+      "path": "docs/model-research/binance/raw/spot-block-matching-cost-overlay-v1-2026-08-30/00-request-contract.json",
+      "file_sha256": "9c653d50cb043f5a1c8e8e4dcc62bbed22d25eebb5b5154564b7a4ec2e214010"
+    },
+    "cms_request_contract": {
+      "path": "docs/model-research/binance/raw/spot-block-matching-cost-overlay-v1-2026-08-30/05-cms-request-contract.json",
+      "file_sha256": "338ef7a8199fe1fc9df75f5bf136740048caae8128a509b74559a4696aac054e"
+    },
+    "request_journal": {
+      "path": "docs/model-research/binance/raw/spot-block-matching-cost-overlay-v1-2026-08-30/00-request-journal.jsonl",
+      "file_sha256": "0e697a15faa707791f132ed8942c2a2289d8533169d90868e83f251722077e34"
+    },
+    "official_introduction": {
+      "url": "https://developers.binance.com/en/docs/products/spot-block-matching/Introduction.md",
+      "path": "docs/model-research/binance/raw/spot-block-matching-cost-overlay-v1-2026-08-30/01-introduction.raw.md",
+      "file_sha256": "80b72febfc4cd646ca1b86e03f00bb0d1ae66fa3085fb884b0bbcd90258d71db"
+    },
+    "official_agent_native_index": {
+      "url": "https://developers.binance.com/en/docs/llms.txt",
+      "path": "docs/model-research/binance/raw/spot-block-matching-cost-overlay-v1-2026-08-30/03-agent-native-index.raw.txt",
+      "file_sha256": "944e132d3523c8a03abcac2f7ddb85802107e45161470885b7a8785fd4fdb15d"
+    },
+    "official_current_faq_cms": {
+      "url": "https://www.binance.com/bapi/composite/v1/public/cms/article/detail/query?articleCode=cc66271ed16f4e24a26a0dedd90e00c8",
+      "path": "docs/model-research/binance/raw/spot-block-matching-cost-overlay-v1-2026-08-30/05-official-faq-cms.raw.json",
+      "file_sha256": "d7b1d9f779423ccc8cb8c7bae550cf84b9902adadd0d572c929c7bbc91a9eb33",
+      "article_code": "cc66271ed16f4e24a26a0dedd90e00c8",
+      "publish_at_utc": "2025-04-01T14:00:00Z",
+      "last_update_at_utc": "2026-07-20T07:50:00Z"
+    },
+    "consumed_waf_response": {
+      "path": "docs/model-research/binance/raw/spot-block-matching-cost-overlay-v1-2026-08-30/04-official-faq.raw.html",
+      "http_status": 202,
+      "response_bytes": 0,
+      "file_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "adjudication": "consumed_no_retry_not_evidence_for_terms"
+    }
+  },
+  "source_hygiene": {
+    "cached_rendered_page_admitted": false,
+    "retention_exception": {
+      "url": "https://developers.binance.com/en/docs/products/spot-block-matching/general-info.md",
+      "original_response_sha256": "487d6b93802b68e7b48422650b945965ba48f55d9c472b6ecbd308b707a0cf28",
+      "raw_body_committed": false,
+      "reason": "The official page embeds credential-shaped authentication examples. Repository credential hygiene overrides raw-body retention; no example value is reproduced or source-bound. The response is not required for the candidate terms or API classifications."
+    },
+    "policy": "A stale crawler rendering that reported different fees was used only to discover the current CMS source. It is not retained primary evidence and does not create a current fee conflict. The current CMS last-update metadata and payload bind the 2.5-bps maker and taker rates for this candidate.",
+    "future_refresh": "Reopen public terms only on a material official fee, pair, minimum, whitelist, API, settlement, or price-band change."
+  },
+  "verdict": {
+    "accepted_edge": false,
+    "candidate_status": "material_direction_independent_execution_cost_reduction_candidate_public_forward_floor_zero",
+    "after_direct_cost_gate": false,
+    "after_every_external_cost_and_account_condition": false,
+    "deployment_ready": false,
+    "profitability_proved": false,
+    "stable_edge_proved": false,
+    "reason": "The 2.5-bps fee is structurally competitive for some accounts and large organic trades, but the exact negotiated price and account-specific public-book counterfactual dominate the economics and are absent."
+  },
+  "retry_trigger": "Both designated ephemeral Binance credentials plus explicit signed read-only authority, an independently planned legitimate large bilateral master-account Spot trade, an already whitelisted account, an authentic counterparty, and a frozen exact pair quantity side and decision time; or a material official block fee pair minimum whitelist API settlement or price-band change. Separate explicit trade authority remains mandatory for every place take cancel extend hedge or fallback action.",
+  "result_sha256": "2d9c4872a6ecd707716cd8d769eb20cb715c1ed7feb61e7e560a5efdb169dc57"
+}

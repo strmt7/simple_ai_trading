@@ -1,0 +1,31 @@
+{
+  "schema_version": "1.0",
+  "frozen_at_utc": "2026-08-29T23:59:07.1289330Z",
+  "purpose": "Source-bind the current official Binance Wallet REST API contract for low-value asset conversion before assessing residual-balance recovery economics.",
+  "request": {
+    "method": "GET",
+    "url": "https://developers.binance.com/en/docs/catalog/core-trading-wallet/api/rest-api/asset",
+    "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "authentication": "none",
+    "documented_semantics": "public developer documentation read"
+  },
+  "bounds": {
+    "maximum_requests": 1,
+    "timeout_seconds": 30,
+    "maximum_response_bytes": 5000000,
+    "retry_allowed": false
+  },
+  "decision_rule": {
+    "advance": "The retained current primary source must document a non-mutating query for convertible low-value balances, expose the target asset and exact service-charge inputs, and separately document that conversion itself mutates balances.",
+    "reject": "Stop if the current source lacks any of those distinctions or if a public after-cost recovery claim would require assuming account inventory, target eligibility, or an unquoted conversion rate."
+  },
+  "prohibited_actions": [
+    "authenticated request",
+    "dust conversion",
+    "balance mutation",
+    "trade",
+    "transfer",
+    "withdrawal",
+    "credential use"
+  ]
+}

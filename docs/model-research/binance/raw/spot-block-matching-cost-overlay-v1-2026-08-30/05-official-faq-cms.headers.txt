@@ -1,0 +1,21 @@
+HTTP/1.1 200 OK
+Content-Type: application/json;charset=UTF-8
+Content-Length: 12023
+Connection: keep-alive
+Date: Sun, 30 Aug 2026 00:05:01 GMT
+Via: 1.1 tesla, 1.1 9387e49a667da819325933dac5aba75e.cloudfront.net (CloudFront)
+Cache-Control: public, max-age=120
+ETag: W/"06d2bab249a8459b83471f511bfb9f15e"
+x-http2-stream-id: 424095
+x-http2-stream-weight: 16
+access-control-allow-origin: *
+X-Frame-Options: SAMEORIGIN
+X-Xss-Protection: 1; mode=block
+X-Content-Type-Options: nosniff
+Referrer-Policy: origin-when-cross-origin
+Strict-Transport-Security: max-age=31536000; includeSubdomains
+Vary: accept-encoding
+X-Cache: Miss from cloudfront
+X-Amz-Cf-Pop: ZRH52-P1
+X-Amz-Cf-Id: gtM-40kpxTloNEwNwOW2V6AhGUdHGvVvLLX52X67OPtH283HBmHqOg==
+
