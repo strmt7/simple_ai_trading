@@ -1,0 +1,57 @@
+{
+  "schema_version": "polymarket-holding-yield-payout-receipt-v10-contract",
+  "frozen_at_utc": "2026-08-30T02:21:44.3585839Z",
+  "purpose": "reconcile the exact new BTC YIELD row selected by the consumed v9 pulse to one successful exact public Polygon pUSD transfer",
+  "contract_path": "docs/model-research/polymarket/complete-set-holding-yield-payout-receipt-contract-v10-2026-08-30.json",
+  "parent_result": {
+    "path": "docs/model-research/polymarket/complete-set-holding-yield-payout-pulse-v9-2026-08-30.json",
+    "result_sha256": "47f7d6a9f264cc9740a3c809f245b340cb726e3d715c97a4824832c0a4f2b6ae"
+  },
+  "payout": {
+    "asset": "BTC",
+    "prior_timestamp": 1787962530,
+    "selected_timestamp": 1788048820,
+    "selected_at_utc": "2026-08-30T00:13:40Z",
+    "interval_seconds": 86290,
+    "amount_pusd": "0.0133"
+  },
+  "transaction_hash": "0xc1682058e75cda65542b311964468eaa00c44b27401de609467842aa9045e95b",
+  "expected_transfer": {
+    "token": "0xc011a7e12a19f7b1f670d46f03b03f3342e82dfb",
+    "from": "0x607c8c9866ef3b4665c5a384188706be738d8bf8",
+    "to": "0x3fb5c98d825651d7efd2bd48a5d02c2d86c96f2f",
+    "amount_pusd": "0.0133",
+    "token_decimals": 6
+  },
+  "selection_gates": {
+    "exact_frozen_transaction_required": true,
+    "successful_receipt_required": true,
+    "exact_distributor_token_wallet_and_amount_transfer_required": true,
+    "adaptive_transaction_selection": false,
+    "rate_requalification_attempted": false
+  },
+  "request": {
+    "method": "POST",
+    "url": "https://polygon.drpc.org",
+    "rpc_method": "eth_getTransactionReceipt",
+    "exact_total_requests": 1,
+    "journal_method_url_and_body_hash_before_access": true,
+    "retain_http_error_body_status_and_completion_before_raising": true,
+    "repeat_policy": "one use only; existing output journal or raw path prohibits reuse"
+  },
+  "authority": {
+    "public_unauthenticated_read_only": true,
+    "new_public_requests": 1,
+    "credentials_used": false,
+    "account_state_accessed": false,
+    "funds_used": false,
+    "orders_or_transactions_submitted": 0,
+    "protected_capture_assets_touched": false,
+    "trading_authority": false
+  },
+  "implementation": {
+    "path": "tools/reconcile_polymarket_holding_yield_payout_receipt.py",
+    "sha256": "ff31cd85210acf55eed95b4c192470ed0af6abeced69e53ec924434c9343a859"
+  },
+  "contract_sha256": "5e7073f0e6dc72126dca9c48c5181ab9cf8bc974ace12cd7042202aaefce9c4d"
+}

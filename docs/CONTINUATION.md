@@ -967,6 +967,20 @@ diagnostics, not accepted edges.
   `docs/model-research/polymarket/complete-set-holding-yield-continuity-receipts-v8-2026-08-29.json`,
   SHA-256
   `2eb7b434170afb195cc4f4faef8260ac4ec30b655c20fc07ee1bc9acbdfe090d`.
+  The next retained daily-window trigger was later satisfied. A frozen
+  one-request BTC activity pulse found exactly one new `YIELD` row for 0.0133
+  pUSD at `2026-08-30T00:13:40Z`, an 86,290-second interval. The pulse stopped
+  before receipt access. One separately frozen transaction-specific Polygon
+  receipt request then reconciled the exact successful distributor-to-wallet
+  pUSD transfer. BTC now has 18 observed positive rows. This is stronger
+  current payout continuity, not a v7 repair, full three-wallet current-rate
+  qualification, deployment authority, or positive public profit floor for
+  new capital. Do not repeat v9 or v10; absent a material official terms
+  change, no next single-wallet continuity pulse is allowed before
+  `2026-08-31T02:15:30Z`. Canonical receipt result:
+  `docs/model-research/polymarket/complete-set-holding-yield-payout-receipt-v10-2026-08-30.json`,
+  SHA-256
+  `4e57d6c0216886144fb89f8ae69b11a2eee4db37149ce6c956adecf293b7b927`.
   A separate frozen valuation-uplift screen covered every currently eligible
   BTC/ETH/SOL market in four public requests. All 55 markets returned both
   token midpoints, and every equal YES-plus-NO complete set summed to exactly
@@ -1524,7 +1538,7 @@ but risked 26 pUSD orphan loss. Even observed displayed competition required
 `facecfaa3b92d905c700083c7b8afe153adc495403ceabc91e417bdb248d059b`.
 The accepted-edge count remains 21, the ranked-hypothesis count remains 44, and
 the registry SHA-256 is
-`66b03aa1311ee3b0565e9dc4e973f157aa9626af23b5f675bc60119d668dd311`.
+`b876dc08b7d462a1dd738927ba52b4b7d2806a61840c2812314bee0913e3e29f`.
 
 The Binance option workflow adds a request-efficiency contract learned from a
 failed exploratory confirmation: fetch the contract catalog once, fetch the
@@ -3838,4 +3852,4 @@ reward days under observed competition and 4,306.850 under 100-times stress,
 against 3.693 days remaining. Canonical rejection SHA-256 is
 `facecfaa3b92d905c700083c7b8afe153adc495403ceabc91e417bdb248d059b`;
 registry SHA-256 is
-`66b03aa1311ee3b0565e9dc4e973f157aa9626af23b5f675bc60119d668dd311`.
+`b876dc08b7d462a1dd738927ba52b4b7d2806a61840c2812314bee0913e3e29f`.
