@@ -1,0 +1,114 @@
+{
+  "schema_version": "polymarket-retained-cross-event-rewards-contract-v1",
+  "contract_path": "docs/model-research/action-value/polymarket-sol-sep4-cross-event-rewards-contract-v1-2026-08-30.json",
+  "frozen_at_utc": "2026-08-30T16:00:00Z",
+  "capture": {
+    "activation_window_minutes": 30
+  },
+  "retained_sources": {
+    "range_event": {
+      "path": "data/polymarket-sol-sep4-range-threshold-coverage-prefilter-v1/raw/range-event.json",
+      "sha256": "c6691133d1e66d3e29fc10e862941f81013b0a64f47407676053263c2082ac90"
+    },
+    "threshold_event": {
+      "path": "data/polymarket-sol-sep4-range-threshold-coverage-prefilter-v1/raw/threshold-event.json",
+      "sha256": "16dca2cbf5209e59f995dde73402b30dfd44462de7c68c41efcaad85f2731a7c"
+    },
+    "books": {
+      "path": "data/polymarket-sol-sep4-range-threshold-coverage-books-v1/raw/books.json",
+      "sha256": "23a27a8ba6bd3e19a3fdea97a13e71464befd601a291d2d83cc461c7a1ccfc5a"
+    }
+  },
+  "candidates": [
+    {
+      "name": "range_over_150_yes",
+      "source_name": "range_event",
+      "event_slug": "solana-price-on-september-4-2026",
+      "gamma_market_id": "3953633",
+      "market_slug": "will-the-price-of-solana-be-greater-than-150-on-september-4-2026",
+      "question": "Will the price of Solana be greater than $150 on September 4?",
+      "condition_id": "0x36e25d3240372eb358b84c4640b6eefff34a0cf0cfb6e7d8084ae46e82857606",
+      "outcomes": [
+        "Yes",
+        "No"
+      ],
+      "tokens": [
+        "55397778786906764124591876314117646959769608288933053156326438526426351789052",
+        "31476706587765774492134854396280343288334006648586053719606944337706109288699"
+      ],
+      "reward_minimum_size_shares": "50",
+      "reward_maximum_spread_cents": "4.5"
+    },
+    {
+      "name": "threshold_150_no",
+      "source_name": "threshold_event",
+      "event_slug": "solana-above-on-september-4-2026",
+      "gamma_market_id": "3953630",
+      "market_slug": "solana-above-150-on-september-4-2026",
+      "question": "Will the price of Solana be above $150 on September 4?",
+      "condition_id": "0x261bc97c8f55aa489c261bc718da3435f6209600e10c5907a03aefd402fd21ae",
+      "outcomes": [
+        "Yes",
+        "No"
+      ],
+      "tokens": [
+        "19249510853991892404797320782412860697583420870437552189252374849204823648316",
+        "106108726305158646816266439666850212627584951909528412509160867463216247970254"
+      ],
+      "reward_minimum_size_shares": "50",
+      "reward_maximum_spread_cents": "4.5"
+    }
+  ],
+  "request_contract": {
+    "method": "GET",
+    "endpoint_pattern": "https://clob.polymarket.com/rewards/markets/{condition_id}",
+    "params": {
+      "sponsored": "true"
+    },
+    "terminal_cursor": "LTE=",
+    "response_byte_ceiling": 2000000,
+    "maximum_request_count": 2,
+    "official_contract_url": "https://docs.polymarket.com/api-reference/rewards/get-raw-rewards-for-a-specific-market"
+  },
+  "optimistic_rejection_bound": {
+    "quantity_shares_each_leg": "50",
+    "common_rule_floor_per_share_pUSD": "1",
+    "maker_quotes": {
+      "range_over_150_yes": {
+        "token_id": "55397778786906764124591876314117646959769608288933053156326438526426351789052",
+        "tick_size": "0.001",
+        "construction": "best_ask_minus_one_tick_when_no_bid",
+        "price_pUSD": "0.009"
+      },
+      "threshold_150_no": {
+        "token_id": "106108726305158646816266439666850212627584951909528412509160867463216247970254",
+        "tick_size": "0.001",
+        "construction": "best_bid_plus_one_tick",
+        "price_pUSD": "0.964"
+      }
+    },
+    "both_fill_cost_pUSD": "48.65",
+    "both_fill_gross_pUSD": "1.35",
+    "maximum_one_leg_orphan_loss_pUSD": "48.2",
+    "survival_rule": "The sum of 100 percent of both exact sponsored pools through the shared market horizon must strictly exceed the maximum one-leg orphan settlement loss. Equality rejects. Real reward share, queue, competition, adverse selection, fill asymmetry, cancellation latency, and unwind costs are deliberately omitted, so failure is terminal for this retained package."
+  },
+  "implementation": {
+    "path": "tools/screen_polymarket_retained_cross_event_rewards.py",
+    "sha256": "dd4822b8dec4bf8fd1ba5814a68650d4780ea6a92e320040f5b704745fc81a6e"
+  },
+  "authority": {
+    "public_unauthenticated_read_only_requests": 2,
+    "credentials_used": false,
+    "account_or_portfolio_reads": 0,
+    "orders_or_cancellations": 0,
+    "funded_actions": 0,
+    "protected_partial_state_reads": 0,
+    "trading_authority": false
+  },
+  "one_use_policy": {
+    "same_exact_requests_may_be_repeated": false,
+    "raw_responses_and_request_journals_must_be_retained": true,
+    "validation_failure_consumes_the_contract": true
+  },
+  "contract_sha256": "6064ab6bb733f82dab2ef3fc8f9ea3e4ffeebb3cc2f005f91d41275e6aa1a2ae"
+}

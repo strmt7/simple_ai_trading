@@ -2859,3 +2859,28 @@ book result SHA-256 is
 Accepted edges remain 29, ranked hypotheses remain 44, terminal families become
 73, and registry SHA-256 is
 `932ff844edcda13efc17bd48569c1cd4b5f25abd0f2c0c3747dae696d1b19649`.
+
+## Polymarket Solana cross-event sponsored-reward rejection
+
+The retained September 4 Solana `NO(above 150)` plus `YES(higher range 150)`
+package was also screened as a distinct rank-17 maker-reward overlay without
+refreshing its stale books. At the exact 50-share reward minimum, one-tick
+maker quotes reconstructed a 1.35 pUSD optimistic both-fill gross but a 48.20
+pUSD maximum one-leg orphan settlement loss.
+
+Two frozen unauthenticated `sponsored=true` condition GETs each returned a
+complete empty population. The maximum publicly proven remaining reward pool
+is therefore zero, not the Gamma `rewardsMinSize=50` and
+`rewardsMaxSpread=4.5` metadata. No Gamma or book refresh, fee request, account,
+credential, order, fund, or protected-capture access occurred. Do not repeat
+either condition or refresh the books. Reopen only after a material exact
+funded-program change; any survivor must first prove that even its optimistic
+full remaining pool strictly exceeds maximum orphan loss.
+
+Contract SHA-256 is
+`6064ab6bb733f82dab2ef3fc8f9ea3e4ffeebb3cc2f005f91d41275e6aa1a2ae`;
+result SHA-256 is
+`97471d6fe9148ba2e4fd818902e0fb33e4f796c7115cd6494c2a35be0bbebeaf`.
+Accepted edges remain 29, ranked hypotheses remain 44, terminal families become
+74, and registry SHA-256 is
+`67a955835c85b8d4d7f11d34bf67e6ed4932a09ab8d0ad1c54e52941cf36bb40`.
