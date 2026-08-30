@@ -3732,3 +3732,40 @@ path retains its existing authority gates. Canonical preflight SHA-256 is
 The accepted-edge count remains 21, the ranked-hypothesis count remains 44, and
 the registry SHA-256 is
 `6e0c9d33e909ec980af5fa65d8ed2cdaebd8dd3fa576671165fe0a331f7af817`.
+
+## 2026-08-30 Binance Convert Limit Order Simple Earn overlay
+
+The current official FAQ proves a distinct direction-independent
+capital-efficiency mechanism. For an independently required Convert Limit
+Order, the user may elect to place the source asset in Simple Earn Flexible
+instead of freezing it without rewards in Spot. Successful enrollment leaves
+the funds in Simple Earn until execution or a separate redemption after
+cancellation or expiry. Cancellation alone does not redeem them.
+
+This benefit carries a directly coupled execution risk. Personal subscription
+and daily redemption quotas apply; delayed or failed redemption prevents the
+order from executing, and an unavailable or already redeemed asset causes
+automatic cancellation. Reaching the displayed limit price does not guarantee
+a fill because Convert quote price, depth, liquidity, and immediate asset
+availability still govern execution. Regional eligibility also varies.
+
+The candidate remains unaccepted with a zero public forward reward floor. The
+FAQ publishes no exact eligible BTC/ETH/SOL rate, tier, cap, minimum, accrual
+start, distribution timing, account quota, or guaranteed redemption. At the
+retained BTC `0.27% Max` sensitivity, one day earns only `0.0739726` bips and
+seven days `0.5178082` bips before costs; one bip of missed-fill shortfall takes
+`13.5185` days to recover. At the displayed `0.02%` base component, recovery
+takes `182.5` days. These are rejection-only sensitivities, not account rates.
+
+Advance only when an exact BTC, ETH, or SOL Convert Limit Order is independently
+required and its pair, source amount, limit price, maximum wait, and missed-fill
+stress are frozen, both designated credentials exist, and signed read-only
+authority is explicit. Reject unless the exact conservative account reward
+strictly exceeds every subscription, redemption, delay, missed-fill, tax,
+custody, alternative-yield, and operating cost. Creating the order, checking
+the Earn box, subscribing, redeeming, canceling, transferring, or trading each
+requires separate explicit authority. Canonical candidate SHA-256 is
+`3b33ca4ef8c03a609bef1665ccfc2104a3f6585033770f0bb99ec3c5699949f8`.
+The accepted-edge count remains 21, the ranked-hypothesis count remains 44, and
+the registry SHA-256 is
+`546904123e0985aa23d7f3c58567dd2b8e877681b48e560512e4b15b9082721b`.

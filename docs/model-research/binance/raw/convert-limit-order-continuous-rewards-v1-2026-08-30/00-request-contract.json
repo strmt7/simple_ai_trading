@@ -1,0 +1,35 @@
+{
+  "schema_version": "1.0",
+  "frozen_at_utc": "2026-08-30T00:55:59.5481913Z",
+  "authority": "public_unauthenticated_read_only_official_cms_only",
+  "method": "GET",
+  "url": "https://www.binance.com/bapi/composite/v1/public/cms/article/detail/query?articleCode=de7bae694a564005b7ebc5f4693ab865",
+  "request_body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "discovery_provenance": "The exact article code and title appeared in the relatedArticles array of the already retained current official Binance Spot Block Matching CMS response.",
+  "hypothesis": "An independently required Binance Convert Limit Order may retain a direction-independent reward stream while its source asset is reserved, reducing the opportunity cost of waiting without changing the conversion side, amount, or price.",
+  "question": "Do current official terms bind the exact eligible assets, reward base, rate or formula, accrual start and end, distribution timing, order-state exclusions, product interactions, fees, and account eligibility strongly enough to establish a positive public forward reward floor?",
+  "transport": {
+    "follow_redirects": true,
+    "connect_timeout_seconds": 10,
+    "max_time_seconds": 30,
+    "user_agent": "simple-ai-trading-public-research/1.0"
+  },
+  "outputs": {
+    "headers": "01-official-cms.headers.txt",
+    "body": "01-official-cms.raw.json"
+  },
+  "admission": {
+    "material_candidate_only_if": [
+      "rewards apply automatically to funds reserved by an independently required Convert Limit Order",
+      "the eligible source asset and exact reward base are bound",
+      "a deterministic positive rate floor or executable current rate and every cap are bound",
+      "accrual timing cancellation fill expiry and distribution semantics are bound",
+      "the reward is not double-counted with Simple Earn Soft Staking or another inaccessible program"
+    ],
+    "public_forward_floor_zero_if": "The page uses may, variable, estimated, discretionary, account-specific, unsupported-asset, or otherwise unbounded terms, or omits any rate, eligibility, accrual, cap, fee, or interaction needed for an after-cost value.",
+    "accepted_edge_allowed": false,
+    "orders_or_account_mutations_allowed": false
+  },
+  "one_use": true,
+  "retry_policy": "The exact CMS URL is consumed once. Preserve HTTP errors and do not repair through a locale, rendered-page, search-cache, or article alias."
+}

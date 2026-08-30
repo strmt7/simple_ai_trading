@@ -1,0 +1,141 @@
+{
+  "schema_version": "1.0",
+  "created_at_utc": "2026-08-30T00:58:09.1777952Z",
+  "authority": {
+    "public_unauthenticated_requests": 1,
+    "signed_requests": 0,
+    "credentials_used": false,
+    "account_queries": 0,
+    "convert_orders_created": 0,
+    "simple_earn_subscriptions_or_redemptions": 0,
+    "funds_used": false,
+    "account_mutations": false
+  },
+  "edge_identity": {
+    "mechanism": "Retain Simple Earn Flexible rewards on BTC, ETH, or SOL source assets while an independently required Binance Convert Limit Order waits for execution.",
+    "market_direction_forecast_required": false,
+    "not_a_standalone_strategy": true,
+    "direction_independence": "The overlay compares the same independently selected Convert source asset, target asset, amount, limit price, and validity with and without the optional Earn enrollment. It cannot justify choosing a conversion, price, amount, or waiting horizon.",
+    "scope": "BTC, ETH, or SOL source assets only when the exact asset is currently eligible for a Simple Earn Flexible Product and the conversion is independently required."
+  },
+  "current_primary_terms": {
+    "earn_enrollment_optional": true,
+    "enrolled_asset_location": "Simple Earn Flexible Product rather than frozen Spot balance",
+    "personal_subscription_quota_applies": true,
+    "failed_simple_earn_subscription_effect": "Convert Limit Order is not created",
+    "successful_subscription_effect": "Funds remain in Simple Earn Flexible until order execution or a separate redemption after cancellation or expiry",
+    "failed_redemption_effect": "Convert Limit Order is not executed",
+    "redeemed_or_unavailable_asset_effect": "System automatically cancels the Convert Limit Order",
+    "cancellation_effect": "Cancellation does not redeem the asset; it remains in Simple Earn Flexible until separately redeemed",
+    "limit_hit_fill_guaranteed": false,
+    "fill_dependencies": [
+      "Convert quoted price",
+      "specified limit price",
+      "market depth",
+      "liquidity",
+      "immediate asset availability or successful Simple Earn redemption"
+    ],
+    "daily_redemption_limits_apply": true,
+    "exceptional_redemption_delays_possible": true,
+    "regional_eligibility_required": true,
+    "public_exact_asset_rate_or_positive_floor_published_in_this_contract": false,
+    "public_accrual_start_and_distribution_schedule_published_in_this_contract": false
+  },
+  "rejection_first_economics": {
+    "incremental_identity": "actual_same_asset_rewards_accrued_and_distributed_during_the_exact_order_wait minus any incremental_subscription_redemption_rounding_tax_custody_and_operating_cost minus realized_or_stressed_missed_fill_shortfall_from_redemption_delay_or_failure minus displaced_alternative_yield",
+    "strict_gate": "The exact lower-bound reward for the independently fixed waiting horizon must be strictly greater than every incremental cost and the precommitted missed-fill stress without changing the order or retaining the asset longer for rewards.",
+    "public_forward_reward_floor_bps": "0",
+    "why_zero": "The current feature terms publish no exact eligible BTC, ETH, or SOL Simple Earn rate, tier, cap, minimum, accrual start, distribution schedule, account quota, or guaranteed redemption. The order can miss execution when redemption is delayed or fails.",
+    "sensitivity_only_reward_bps": [
+      {
+        "annual_rate_percent": "0.02",
+        "one_day_reward_bps": "0.005479452054794520547945205479",
+        "seven_day_reward_bps": "0.03835616438356164383561643835",
+        "days_to_offset_one_bp_missed_fill": "182.5",
+        "provenance": "retained BTC Simple Earn displayed base component; not an account rate or a guaranteed Convert-enrolled rate"
+      },
+      {
+        "annual_rate_percent": "0.27",
+        "one_day_reward_bps": "0.07397260273972602739726027397",
+        "seven_day_reward_bps": "0.5178082191780821917808219178",
+        "days_to_offset_one_bp_missed_fill": "13.51851851851851851851851852",
+        "provenance": "retained BTC Simple Earn displayed maximum; explicitly not credited to full principal"
+      },
+      {
+        "annual_rate_percent": "0.5",
+        "one_day_reward_bps": "0.1369863013698630136986301370",
+        "seven_day_reward_bps": "0.9589041095890410958904109590",
+        "days_to_offset_one_bp_missed_fill": "7.3",
+        "provenance": "generic sensitivity only; not a current Convert-enrolled account rate"
+      },
+      {
+        "annual_rate_percent": "5",
+        "one_day_reward_bps": "1.369863013698630136986301370",
+        "seven_day_reward_bps": "9.589041095890410958904109590",
+        "days_to_offset_one_bp_missed_fill": "0.73",
+        "provenance": "generic sensitivity only; not a current Convert-enrolled account rate"
+      }
+    ],
+    "sensitivity_formula": "reward_bps = annual_rate_fraction * waiting_days / 365 * 10000",
+    "interpretation": "At the retained BTC 0.27% maximum, seven full days produce only 0.517808 bps before every cost; a one-bp missed-fill shortfall would require 13.5185 days to recover. The displayed 0.02% base would require 182.5 days. Therefore exact redemption and fill risk dominates low-rate short-horizon cases."
+  },
+  "candidate_gate": {
+    "all_required_before_read_only_prequalification": [
+      "An exact BTC, ETH, or SOL Convert Limit Order is independently required with pair, side, source amount, limit price, and maximum wait fixed without reference to rewards.",
+      "Both designated ephemeral Binance credentials are present and explicit signed read-only authority is granted.",
+      "The exact source asset, account region, Simple Earn Flexible product, personal quota, minimum, tier, current rate, accrual start, distribution timing, and redemption state are read without mutation.",
+      "A missed-fill stress is frozen from the order's independent economic purpose before any order-capable action."
+    ],
+    "strict_pretrade_rejection": "Reject Earn enrollment unless its exact conservative reward through the independently fixed horizon exceeds subscription, redemption, delay, missed-fill, tax, custody, alternative-yield, and operating costs while the underlying conversion remains independently positive.",
+    "separate_explicit_authority_required_for": [
+      "creating the Convert Limit Order",
+      "checking the Earn enrollment box",
+      "subscribing or redeeming Simple Earn",
+      "canceling or replacing the order",
+      "any transfer, deposit, withdrawal, or trade"
+    ],
+    "post_action_evidence_if_separately_authorized": [
+      "owned Convert order identity and exact lifecycle timestamps",
+      "owned Simple Earn subscription principal and rate tiers",
+      "owned reward accrual and distribution",
+      "redemption request and availability at trigger time",
+      "owned fill or missed-fill outcome and exact counterfactual",
+      "all fees, rounding, delay, tax, custody, and operating costs"
+    ]
+  },
+  "source_binding": {
+    "request_contract": {
+      "path": "docs/model-research/binance/raw/convert-limit-order-continuous-rewards-v1-2026-08-30/00-request-contract.json",
+      "file_sha256": "4700087241772479f2b62bddf9e5c98d6f961247661d5e6c8ece57d52966ace9"
+    },
+    "request_journal": {
+      "path": "docs/model-research/binance/raw/convert-limit-order-continuous-rewards-v1-2026-08-30/00-request-journal.jsonl",
+      "file_sha256": "87c2d37b5ed601ee7b1b0fd8ae88bceb534894a19aa96e29c382cae37f9be147"
+    },
+    "official_current_cms": {
+      "url": "https://www.binance.com/bapi/composite/v1/public/cms/article/detail/query?articleCode=de7bae694a564005b7ebc5f4693ab865",
+      "path": "docs/model-research/binance/raw/convert-limit-order-continuous-rewards-v1-2026-08-30/01-official-cms.raw.json",
+      "file_sha256": "3c6f9bd31c0cc38780503c180a5bea22986af73a7985e8aeb271a7aa616a1bc8",
+      "article_code": "de7bae694a564005b7ebc5f4693ab865",
+      "publish_at_utc": "2025-10-30T23:59:59.702000Z",
+      "last_update_at_utc": "2026-04-20T19:16:00Z"
+    },
+    "retained_btc_simple_earn_rate_sensitivity": {
+      "path": "docs/model-research/action-value/binance-btc-simple-earn-idle-yield-candidate-v1-2026-08-26.json",
+      "canonical_result_sha256": "193495029148d0022fe1bf4158442226705a7f62a22dbf0eafdbf9a53bece785",
+      "use": "0.02% displayed base component and 0.27% displayed maximum for rejection-only sensitivities; neither is credited as a guaranteed account rate"
+    }
+  },
+  "verdict": {
+    "accepted_edge": false,
+    "candidate_status": "material_direction_independent_capital_efficiency_candidate_public_forward_floor_zero",
+    "after_direct_cost_gate": false,
+    "after_every_external_cost_and_account_condition": false,
+    "deployment_ready": false,
+    "profitability_proved": false,
+    "stable_edge_proved": false,
+    "reason": "The product contract genuinely preserves access to Simple Earn Flexible rewards while an independently required Convert Limit Order waits, but it can also prevent execution when redemption is unavailable. Public evidence supplies neither the exact positive rate nor a bounded missed-fill cost."
+  },
+  "retry_trigger": "Both designated ephemeral Binance credentials plus explicit signed read-only authority and an independently required exact BTC ETH or SOL Convert Limit Order with pair source amount limit price maximum waiting horizon and missed-fill stress frozen before access; or a material official eligible-asset rate quota accrual redemption fill or regional term change. Every order subscription redemption cancellation transfer or trade requires separate explicit authority.",
+  "result_sha256": "3b33ca4ef8c03a609bef1665ccfc2104a3f6585033770f0bb99ec3c5699949f8"
+}
