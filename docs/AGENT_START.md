@@ -3082,3 +3082,24 @@ collector, backtest, or hypothesis. Canonical routing addendum SHA-256 is
 Accepted edges remain 29, ranked hypotheses remain 44, terminal families remain
 83, and registry SHA-256 becomes
 `8262b29c4ba9b6eb322beb91d18a9c44756355b451374292904aa569e7c81941`.
+
+## Polymarket September 7 CFB monotone rejection
+
+A current primary Polymarket event page exposed SMU vs. Florida State on
+September 7 with moneyline, spread, total, and complete rules, satisfying rank
+30's literal first-distinct-event trigger outside the consumed September 3-6
+CFB window. One frozen exact September 7 keyset GET returned a complete one-event
+population and machine-proved one valid moneyline/spread monotone relation.
+
+The only relation cost 1.09 pUSD at rejection-only Gamma prices for a 1 pUSD
+minimum payout, already negative by 0.09 pUSD before execution costs. There were
+zero strict sub-floor candidates, so no book or fee request was permitted. Do
+not repeat, paginate, narrow, refetch, or request books for this population.
+Reopen rank 30 only for its next literal distinct-event trigger outside every
+consumed window. Contract SHA-256 is
+`391356fc6d94e3e6c5407502afc94f81be4d4a3ea6192c1368dace613644bf19`;
+result SHA-256 is
+`5cba2d835c600d8eec6b8f27a7010a535b72292680d5a558fb44f29316a3c796`.
+Accepted edges remain 29, ranked hypotheses remain 44, terminal families become
+84, and registry SHA-256 becomes
+`7c4c4ecc062a4cda012958571fcc477e304d38e0f00f8c67aecd37ae4a031645`.
