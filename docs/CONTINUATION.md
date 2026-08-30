@@ -5528,3 +5528,39 @@ both raw reward payloads have SHA-256
 Accepted edges remain 29, ranked hypotheses remain 44, terminal families become
 74, and registry SHA-256 becomes
 `67a955835c85b8d4d7f11d34bf67e6ed4932a09ab8d0ad1c54e52941cf36bb40`.
+
+## Polymarket September 6 BTC/ETH/SOL range-threshold delta rejection
+
+At `2026-08-30T16:08Z`, ranks 1 through 30 had no in-scope public retry trigger
+and the protected holding-yield and GLWUSDT boundaries had not arrived. One
+documented public unauthenticated Gamma keyset GET therefore tested whether a
+new rank-31 crypto surface had appeared. The newest-first response retained 100
+open crypto events from `16:07:16Z` through `15:37:42Z`; 85 were newer than the
+prior `15:46:52Z` checkpoint. Because the retained page crossed that cutoff,
+the new-event delta is complete even though the API returned a cursor.
+
+The delta exposed six simultaneous September 6 events: one complete range and
+one complete strict-above event for each of BTC, ETH, and SOL. Before accessing
+their displayed prices, a frozen hash-bound offline contract preregistered all
+labels, exact Binance close rules, shared boundaries, both valid coverage
+directions, and global tie-breaking. It evaluated 52 packages: 20 BTC, 20 ETH,
+and 12 SOL. Zero were strictly below their optimistic common-rule one-pUSD
+floor. The global best was BTC `NO(above 88,000) + YES(>88,000)` at exactly
+1.0 pUSD; ETH's best was 1.095 and SOL's was 2.0.
+
+No exact-event refetch, cursor continuation, book, fee, on-chain, account,
+credential, order, fund, or protected Polymarket request occurred. Do not
+repeat this delta or its September 6 events, follow the retained cursor, or
+request books for an exactly-at-floor row. A later simultaneous sibling set
+must be screened completely from one retained population and only its global
+strictly sub-floor row may authorize a separately frozen depth batch.
+
+Contract SHA-256 is
+`f2642e0577b422e62e7c4df30eb16ff85c09b741017146dae233c782963b928b`;
+result SHA-256 is
+`cc4cb32adcafba2da3d48cc8325d7af8a2bfd39c0892ceeb1ec1def939e173f9`;
+raw delta SHA-256 is
+`4f9aadb6a95bdf2612845b3e3bc96146cc1ea5f23b3cb6bf8815ccb43c8ce087`.
+Accepted edges remain 29, ranked hypotheses remain 44, terminal families become
+75, and registry SHA-256 becomes
+`bb1b929151474ac48c146e335ce0533f459fb09705ab4feae4c3e5bb76dd81e2`.

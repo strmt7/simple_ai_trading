@@ -2884,3 +2884,29 @@ result SHA-256 is
 Accepted edges remain 29, ranked hypotheses remain 44, terminal families become
 74, and registry SHA-256 is
 `67a955835c85b8d4d7f11d34bf67e6ed4932a09ab8d0ad1c54e52941cf36bb40`.
+
+## Polymarket September 6 crypto range/threshold delta rejection
+
+One documented newest-first crypto keyset GET retained 100 open events. Its
+oldest row preceded the prior rank-31 checkpoint, so the 85 newer events form a
+complete delta despite the server returning a nonterminal cursor. That delta
+contained all six newly deployed September 6 BTC, ETH, and SOL range and
+strict-above events.
+
+A frozen zero-network screen evaluated both valid coverage directions at every
+shared boundary: 20 BTC, 20 ETH, and 12 SOL packages. Zero of 52 displayed sums
+were strictly below the optimistic one-pUSD common-rule floor. The global best,
+BTC `NO(above 88,000) + YES(>88,000)`, was exactly 1.0 pUSD before fees. No
+book, fee, on-chain, account, credential, order, fund, or protected-capture
+request was justified. Do not follow the cursor, repeat this delta, screen only
+one sibling asset, or request books for an exactly-at-floor row.
+
+Contract SHA-256 is
+`f2642e0577b422e62e7c4df30eb16ff85c09b741017146dae233c782963b928b`;
+result SHA-256 is
+`cc4cb32adcafba2da3d48cc8325d7af8a2bfd39c0892ceeb1ec1def939e173f9`;
+raw delta SHA-256 is
+`4f9aadb6a95bdf2612845b3e3bc96146cc1ea5f23b3cb6bf8815ccb43c8ce087`.
+Accepted edges remain 29, ranked hypotheses remain 44, terminal families become
+75, and registry SHA-256 is
+`bb1b929151474ac48c146e335ce0533f459fb09705ab4feae4c3e5bb76dd81e2`.

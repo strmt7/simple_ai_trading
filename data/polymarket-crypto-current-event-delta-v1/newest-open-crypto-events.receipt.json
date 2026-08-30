@@ -1,0 +1,1 @@
+{"elapsed_ms":410,"final_url":"https://gamma-api.polymarket.com/events/keyset?limit=200&order=createdAt&ascending=false&closed=false&tag_slug=crypto","method":"GET","payload_bytes":1006771,"payload_sha256":"4f9aadb6a95bdf2612845b3e3bc96146cc1ea5f23b3cb6bf8815ccb43c8ce087","received_after_ms":1788106238754,"requested_before_ms":1788106238344,"retry_after":null,"status_code":200}
