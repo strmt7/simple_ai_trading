@@ -1,0 +1,81 @@
+{
+  "adjudication": {
+    "accepted_edge": true,
+    "accepted_edge_count_after": 29,
+    "accepted_edge_count_before": 28,
+    "accepted_scope": "Exact realized positive Binance Copy Trading Lead Trader profit share from independently existing authentic followers' profitable copied closes on independently justified legitimate BTC ETH or SOL Spot or Futures trades in an already active lead portfolio, only after owned payout reconciliation and every incremental fee slippage tax compliance support disclosure settlement operating and strategy-capacity cost.",
+    "account_eligibility_rate_followers_or_owned_income_proved": false,
+    "deployment_ready": false,
+    "future_profit_guaranteed": false,
+    "market_direction_forecast_required_for_incremental_profit_share": false,
+    "profitability_claim": false,
+    "public_forward_profit_floor": "0",
+    "status": "accepted_narrow_realized_lead_trader_profit_share_identity_without_account_rate_followers_owned_payout_or_underlying_strategy_acceptance"
+  },
+  "authority": {
+    "account_or_copy_trading_state_accessed": false,
+    "applications_enrollments_portfolios_or_followers_created": 0,
+    "credentials_used": false,
+    "orders_or_trades": 0,
+    "paper_or_live_trading_authority": false,
+    "signed_requests": 0,
+    "state_changes": 0
+  },
+  "created_at_utc": "2026-08-30T12:52:37.7561632Z",
+  "distinctness": {
+    "from_affiliate_referral_and_platform_fee_programs": "The payment is a share of an authentic follower's realized profit from a copied close, not a percentage of trading fees, a client markup, a partner rebate, a referral commission, or a creator attribution fee.",
+    "from_lead_trader_own_pnl": "The incremental accepted value is only an owned follower-profit-share payout; the lead trader's own trading PnL remains governed by the repository cross-regime acceptance contract and is not accepted by this artifact.",
+    "from_market_direction_alpha": "The incremental share identity requires no additional direction forecast after an independently justified trade and authentic copied close already exist, but it provides no evidence that the underlying strategy is profitable across regimes."
+  },
+  "economic_contract": {
+    "accepted_value_identity": "positive_owned_follower_profit_share_payout_minus_all_incremental_fee_slippage_tax_compliance_support_disclosure_settlement_operating_and_strategy_capacity_costs",
+    "authentic_follower_gate": "Every follower relationship and copied trade must arise independently and remain bona fide unrelated and fully disclosed without solicitation manufacture or related-party activity for the purpose of collecting profit share.",
+    "independent_underlying_strategy_gate": "Every contributing BTC ETH or SOL Spot or Futures trade must be independently justified and accepted across all required regimes after every direct cost without counting follower profit share.",
+    "public_forward_floor_quote_units": "0",
+    "rate_assumption": "none",
+    "realization_gate": "An exact positive owned payout must reconcile to exact authentic follower profitable-close attribution and remain positive after every incremental cost without double counting referral fee rebate creator or partner income."
+  },
+  "prohibited_shortcuts": [
+    "using_follower_profit_share_to_rescue_or_promote_an_unprofitable_unsupported_or_directional_underlying_strategy",
+    "creating_soliciting_incentivizing_enlarging_churning_self_matching_wash_or_related_party_follower_activity",
+    "opening_applying_enrolling_or_publishing_a_lead_portfolio_under_research_authority",
+    "assuming_region_account_performance_activity_capacity_follower_rate_attribution_or_payout_eligibility",
+    "treating_article_examples_profile_displays_or_configurable_rates_as_owned_income",
+    "double_counting_the_same_trade_fee_profit_follower_or_payout_across_copy_trading_referral_CAAS_Link_Square_Builder_rebate_discount_or_promotion",
+    "calling_the_documented_futures_userStatus_GET_under_read_only_authority_because_the_current_official_API_index_classifies_it_TRADE",
+    "placing_copying_modifying_or_closing_any_order_or_position_without_separate_explicit_testnet_or_paper_authority"
+  ],
+  "result_sha256": "6a5acab5c5b9561fa08fedae5b782198db87e8aa8a5c6172f0c4e0fadc3ef7c0",
+  "source_binding": {
+    "rendered_contract": {
+      "contract_sha256": "90d61004b2f8c4f81a179a0180f3d9afa7c0872df6b9f5cbf80c92aa478e852b",
+      "path": "docs/model-research/action-value/binance-copy-trading-lead-profit-share-rendered-source-contract-v1-2026-08-30.json"
+    },
+    "rendered_evidence": {
+      "path": "docs/model-research/action-value/binance-copy-trading-lead-profit-share-rendered-evidence-v1-2026-08-30.json",
+      "rendered_evidence_sha256": "32a61a3f5fb00df8ca9b998d39878d5687492d35a454e219dd0104e7a4f9e692"
+    },
+    "retained_current_official_api_index": {
+      "path": "docs/model-research/binance/raw/spot-block-matching-cost-overlay-v1-2026-08-30/03-agent-native-index.raw.txt",
+      "required_fragments": [
+        "Automate lead trading via the Copy Trading API.",
+        "GET /sapi/v1/copyTrading/futures/userStatus",
+        "Get Futures Lead Trader Status (TRADE)",
+        "GET /sapi/v1/copyTrading/futures/leadSymbol",
+        "Get Futures Lead Trading Symbol Whitelist (USER_DATA)"
+      ],
+      "sha256": "944e132d3523c8a03abcac2f7ddb85802107e45161470885b7a8785fd4fdb15d"
+    }
+  },
+  "account_reconciliation": {
+    "advance_only_when": [
+      "the lead portfolio already exists for independent reasons",
+      "an independently accepted BTC ETH or SOL Spot or Futures strategy and authentic follower copied close already exist",
+      "explicit account-specific evidence authority covers the exact profit-share payout record or statement",
+      "every incremental compliance support disclosure tax settlement operating and strategy-capacity cost can be bounded"
+    ],
+    "state_changes_authorized": false,
+    "stop_before": "every application enrollment profile publication follower contact incentive portfolio setting allocation transfer order position or other mutation"
+  },
+  "schema_version": "binance-copy-trading-realized-organic-follower-profit-share-overlay-v1"
+}

@@ -1,8 +1,8 @@
 {
   "schema_version": "accepted-market-independent-yield-frontier-v1",
   "created_at_utc": "2026-08-30T03:07:15Z",
-  "updated_at_utc": "2026-08-30T12:40:51.8940626Z",
-  "result_sha256": "f84ac384ef3f4edfaa9f3a98e3588223ba3b4c6dd0b1389bbc11e4ece09a8b26",
+  "updated_at_utc": "2026-08-30T12:52:37.7561632Z",
+  "result_sha256": "bc2db7e81a2e14fee68dc9f57041d226843fefabc0cc47e81db10985e04d84d3",
   "purpose": "rank_the_nine_accepted_market_direction_independent_yield_and_capital_efficiency_overlays_by_evidence_strength_current_gross_opportunity_and_remaining_deployment_gates_using_only_hash_bound_repository_artifacts_as_economic_inputs",
   "authority": {
     "venue_HTTP_requests": 0,
@@ -32,9 +32,9 @@
   ],
   "discovery_evidence_rule": "search_and_rendered_web_results_are_discovery_only_not_hash_bound_economic_inputs_and_did_not_change_any_rate_cost_or_acceptance_claim",
   "population": {
-    "registry_accepted_edge_count": 28,
+    "registry_accepted_edge_count": 29,
     "yield_and_capital_efficiency_edges_included": 9,
-    "organic_flow_fee_referral_creator_and_financing_cost_overlays_excluded": 19,
+    "organic_flow_fee_referral_creator_and_financing_cost_overlays_excluded": 20,
     "population_complete_for_registry_accepted_yield_edges": true,
     "owned_realized_cash_recurrence_edge_count": 1,
     "public_historical_or_fixed_term_gross_evidence_only_edge_count": 8,
@@ -354,7 +354,7 @@
       "stable_acquisition_profit_proved": false
     },
     "new_accepted_edge_count": 0,
-    "accepted_edge_count_after_frontier": 28,
+    "accepted_edge_count_after_frontier": 29,
     "profitability_claim_beyond_source_scopes": false,
     "current_owned_after_all_incremental_cost_profitable_edge_count": 0,
     "deployment_ready_edge_count": 0,

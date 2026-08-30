@@ -1,0 +1,56 @@
+{
+  "authority": {
+    "account_or_copy_trading_requests": 0,
+    "applications_enrollments_portfolios_followers_orders_or_trades": 0,
+    "credentials_used": false,
+    "public_rendered_documentation_reads": 1,
+    "state_changes": 0
+  },
+  "contract_sha256": "90d61004b2f8c4f81a179a0180f3d9afa7c0872df6b9f5cbf80c92aa478e852b",
+  "decision_contract": {
+    "accept_only_if": "The exact current official rendered source binds lead-trader profit share to an authentic follower's profitable copied close and proves that the lead trader can set the share rate. Acceptance is limited to exact realized positive owned profit share from independently justified legitimate BTC ETH or SOL Spot or Futures trades in an already active lead portfolio with independently existing authentic followers after every incremental fee slippage tax compliance support disclosure settlement operational and strategy-capacity cost.",
+    "fail_closed_if": [
+      "the payment is not conditioned on a profitable copied follower close",
+      "the source does not distinguish lead-trader profit share from the lead trader's own trading PnL",
+      "an example or displayed rate would be needed as current account entitlement or owned income",
+      "application enrollment follower solicitation portfolio creation or additional trading would be needed"
+    ],
+    "public_forward_profit_floor": "0",
+    "prohibited": [
+      "using profit share to rescue an unprofitable underlying strategy",
+      "creating enlarging churning self matching wash or related-party follower activity",
+      "soliciting or onboarding followers or opening a lead portfolio under research authority",
+      "assuming regional account performance activity capacity follower rate attribution or payout eligibility",
+      "placing copying changing or closing any order or position",
+      "calling GET /sapi/v1/copyTrading/futures/userStatus because the current official API index classifies it TRADE"
+    ]
+  },
+  "frozen_at_utc": "2026-08-30T12:51:54.8226987Z",
+  "rendered_source": {
+    "classification": "official_public_unauthenticated_web_rendered_educational_product_source",
+    "method": "GET",
+    "required_facts": [
+      "spot_and_futures_product_scope",
+      "lead_trader_application_and_profit_share_semantics",
+      "lead_trader_sets_share_rate",
+      "follower_profitable_close_is_payment_trigger",
+      "regional_and_performance_eligibility_remain_conditional",
+      "trading_risk_and_no_future_performance_guarantee"
+    ],
+    "url": "https://academy.binance.com/en/articles/your-guide-to-binance-copy-trading"
+  },
+  "retained_source": {
+    "agent_native_endpoint_index": {
+      "path": "docs/model-research/binance/raw/spot-block-matching-cost-overlay-v1-2026-08-30/03-agent-native-index.raw.txt",
+      "required_fragments": [
+        "Automate lead trading via the Copy Trading API.",
+        "GET /sapi/v1/copyTrading/futures/userStatus",
+        "Get Futures Lead Trader Status (TRADE)",
+        "GET /sapi/v1/copyTrading/futures/leadSymbol",
+        "Get Futures Lead Trading Symbol Whitelist (USER_DATA)"
+      ],
+      "sha256": "944e132d3523c8a03abcac2f7ddb85802107e45161470885b7a8785fd4fdb15d"
+    }
+  },
+  "schema_version": "binance-copy-trading-lead-profit-share-rendered-source-contract-v1"
+}

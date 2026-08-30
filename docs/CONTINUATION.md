@@ -5043,3 +5043,54 @@ remain 64. Frontier SHA-256 becomes
 `f84ac384ef3f4edfaa9f3a98e3588223ba3b4c6dd0b1389bbc11e4ece09a8b26`;
 registry SHA-256 becomes
 `e3cb85b3bf7920d32fd8a521690b2bffdb475d540225adf13031795249176b9a`.
+
+## Binance Copy Trading realized Lead Trader profit-share overlay
+
+The next official material-trigger sweep found no current Binance or Polymarket
+rate, listing, fee, reward, or product change that satisfied a terminal
+family's literal reopen condition. A zero-request novelty audit of the retained
+current Binance Agent Native API index instead found an unregistered Copy
+Trading mechanism. One frozen public official rendered read then proved that
+Copy Trading covers Spot and Futures, Lead Traders set their profit-share rate,
+and an authentic follower pays a share when closing a profitable copied
+position. Qualification, performance, activity, verification, and regional
+availability remain conditional, and the source explicitly rejects any future
+performance guarantee.
+
+This is the twenty-ninth narrow direction-independent structural edge only as
+exact realized positive owned Lead Trader profit share from independently
+existing authentic followers' profitable copied closes on an independently
+cross-regime accepted legitimate BTC, ETH, or SOL Spot or Futures strategy in
+an already active lead portfolio, after every incremental fee, slippage, tax,
+compliance, support, disclosure, settlement, operating, and strategy-capacity
+cost. Its public forward floor is zero. No account, portfolio, follower, rate,
+copied close, payout, current after-cost profit, or deployment readiness was
+accessed or proved; no credentials, account request, order, trade, fund, or
+mutation occurred.
+
+Do not use profit share to rescue an unprofitable or unsupported strategy;
+apply, enroll, publish, or change a lead portfolio; solicit, incentivize, churn,
+self-match, wash, or manufacture followers or copied activity; or place/copy
+trades. The retained current API index classifies
+`GET /sapi/v1/copyTrading/futures/userStatus` as `TRADE`, so never call it under
+read-only authority. Advance only when an already active lead portfolio, an
+independently accepted strategy, an authentic existing follower, an exact
+profitable copied close, and explicit account-specific payout-evidence
+authority all coexist. Every state change remains separately unauthorized.
+
+Focused verification exposed and removed one older family test's coupling to
+the mutable global accepted-edge count. New and prior family tests now verify
+their artifact-local count transition and canonical registry binding without
+forcing unrelated edits on the next valid discovery.
+
+Canonical contract SHA-256 is
+`90d61004b2f8c4f81a179a0180f3d9afa7c0872df6b9f5cbf80c92aa478e852b`;
+rendered evidence SHA-256 is
+`32a61a3f5fb00df8ca9b998d39878d5687492d35a454e219dd0104e7a4f9e692`;
+edge SHA-256 is
+`6a5acab5c5b9561fa08fedae5b782198db87e8aa8a5c6172f0c4e0fadc3ef7c0`.
+Accepted edges become 29, ranked hypotheses remain 44, and terminal families
+remain 64. Frontier SHA-256 becomes
+`bc2db7e81a2e14fee68dc9f57041d226843fefabc0cc47e81db10985e04d84d3`;
+registry SHA-256 becomes
+`20f029bbdc6fc31a496f47f74ff3cf59c81b8cf89c522b41e80d72823861cb1a`.
