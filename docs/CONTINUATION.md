@@ -12,7 +12,7 @@ Development belongs only on `main`; do not create another development branch.
   code-scanning, and secret-scanning alerts. Reverify the publication commit;
   zero alerts never proves zero undisclosed vulnerabilities.
 - The repository is beta `0.1.0-beta.1`. No model has production authority or a
-  demonstrated long-lived after-all-cost edge. Twenty-two narrowly scoped structural
+  demonstrated long-lived after-all-cost edge. Twenty-three narrowly scoped structural
   edges are accepted: Polymarket holding yield for existing idle on-platform
   pUSD; Polymarket pUSD taker-fee rebates only for independently justified
   legitimate organic BTC/ETH/SOL taker flow after the direct-wallet tier is
@@ -54,7 +54,10 @@ Development belongs only on `main`; do not create another development branch.
   interest rebates only on an independently required existing eligible loan when
   KYB VIP eligibility and the applicable performance target were independently
   satisfied without creating trading volume, Open Interest, Net Asset Value,
-  borrowing, leverage, or collateral exposure. Each Binance
+  borrowing, leverage, or collateral exposure; and exact realized positive
+  Binance CAAS markup trade commission only from independently existing bona
+  fide external client trades under an already active disclosed fee group and
+  markup configuration after every incremental cost. Each Binance
   edge is limited to independently required inventory or organic flow under its
   canonical account, liquidity, cost, and non-manufactured-volume gates.
   A current BTC Simple Earn Flexible product is only an extension candidate:
@@ -4263,3 +4266,51 @@ SHA-256 is
 Accepted edges become 22, ranked hypotheses remain 44, and terminal families
 remain 55. Registry SHA-256 is
 `e4ec302a1cc32a57ec1d68cf00ab5d99cbc22d74b80fbc3c68da242485899fd4`.
+
+## Binance CAAS realized organic-client commission markup
+
+A zero-new-venue-data audit of the retained current official API index exposed
+a registry-absent mechanism: Binance Crypto-as-a-Service has signed `USER_DATA`
+queries for fee groups, members, markup-trade commission aggregations, and exact
+markup-trade details. Fee-group creation or deletion, commission updates, and
+member assignment or removal are separately classified `TRADE` operations.
+
+The edge is accepted only as exact realized positive markup commission from
+independently existing bona fide external client trades under an already active
+disclosed configuration after every incremental platform, disclosure, consent,
+compliance, support, demand-elasticity, tax, custody, settlement, and operating
+cost. It is not a standalone strategy or public forward-profit claim. Public
+floor remains zero because partner eligibility, active fee group, exact rate,
+member lineage, client flow, realization, payout, and all costs are absent.
+Creating, rerouting, splitting, churning, self-matching, soliciting, or assigning
+activity for commission is prohibited.
+
+The one frozen public dynamic-document preflight returned HTTP 200 but contained
+the already known generic security document, zero required CAAS or commission
+terms, and credential-shaped examples. It was consumed and failed closed; the
+response hash is retained, the raw body is excluded from Git, and no alias or
+retry is permitted. No credential, account, client, fee-group, member, order,
+trade, fund, or mutation was accessed. Signed reporting may advance only when
+both designated credentials, explicit signed GET-only authority, an independently
+existing legitimate CAAS reporting question, an already active disclosed fee
+group, and bona fide external client flow all exist. Every mutation, onboarding,
+contact, order, trade, transfer, or withdrawal requires separate authority.
+
+Canonical result SHA-256 is
+`d1656eeccbcf780a2e71190d5f969db07a33548f58de940b55867d494dddebd2`.
+Accepted edges become 23, ranked hypotheses remain 44, and terminal families
+remain 55. Registry SHA-256 is
+`a1fc3c10482909d2c77dbb20ca13dae3eb73e465fa96dcfb20dd0ede17337573`.
+
+The affected integrity run also exposed two avoidable global-churn defects in
+older Polymarket tests. One family test hard-pinned a historical whole-registry
+hash even though it only needed the current registry self-hash and one terminal
+family. A consumed pUSD-to-USDT contract pointed at the mutable current yield-
+frontier path, so later legitimate accepted-edge updates broke reconstruction.
+The historical contract and result remain untouched; the exact consumed
+frontier bytes were recovered from Git into an immutable hash-bound sidecar,
+and the test now resolves only that consumed source through the sidecar while
+the live frontier remains current. `AGENTS.md` now requires immutable snapshots
+before any outcome-sensitive contract binds a registry, frontier, manifest, or
+rolling artifact. Snapshot adjudication result SHA-256 is
+`8105343e417aea4084debb50a7ffe3a90b1c7c7bedf83da920961601ba152b23`.

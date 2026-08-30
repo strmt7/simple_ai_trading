@@ -1,0 +1,85 @@
+{
+  "adjudication": {
+    "accepted_edge": true,
+    "accepted_scope": "exact realized positive Binance CAAS markup trade commission from independently existing bona fide external client trades under an already active disclosed fee group and markup configuration only after every incremental platform compliance support tax custody and operating cost",
+    "deployment_ready": false,
+    "market_direction_forecast_required": false,
+    "profitability_claim": false,
+    "status": "accepted_scoped_direction_independent_realized_CAAS_client_commission_markup_overlay_account_partner_configuration_external_flow_exact_rate_and_all_incremental_costs_unproved",
+    "trading_authority": false
+  },
+  "authority": {
+    "account_requests": 0,
+    "client_accounts_accessed": 0,
+    "credentials_used": false,
+    "fee_groups_or_members_mutated": 0,
+    "orders_or_cancellations": 0,
+    "public_network_requests": 1,
+    "signed_requests": 0
+  },
+  "created_at_utc": "2026-08-30T06:05:12.7511306Z",
+  "economic_contract": {
+    "account_qualified_forward_floor_before_exact_evidence": "0",
+    "gross_realized_markup_identity": "sum of exact positive owned CAAS markup trade detail commission amounts attributable to independently existing bona fide external client trades and reconciled to the exact aggregation report",
+    "incremental_net_revenue_identity": "gross realized markup commission minus every incremental platform integration disclosure consent compliance support demand elasticity tax custody settlement and operating cost",
+    "public_forward_floor_quote_units": "0",
+    "reason_public_floor_is_zero": "The current official catalog and API index prove commission-markup configuration and reporting interfaces but publish no account partner eligibility active fee group member population exact markup rate client flow realized commission payout asset or incremental operating cost.",
+    "source_only_markup_is_realized_cash": false
+  },
+  "mechanism": {
+    "api_product": "Binance Crypto-as-a-Service Commission Markup APIs",
+    "direction_independence": "the accepted increment is an owned positive commission reporting row on an independently existing external client trade and does not require predicting market direction",
+    "market_direction_forecast_required": false,
+    "not_a_standalone_trading_strategy": true,
+    "publicly_proved_reporting_interfaces": [
+      "Query Markup Trade Commission Aggregation Reportings",
+      "Query Markup Trade Detail Reportings"
+    ]
+  },
+  "prohibited_actions": [
+    "creating increasing rerouting splitting churning self-matching wash or related-party client volume to collect markup",
+    "onboarding soliciting or assigning a client or member to chase this commission",
+    "creating deleting or updating a fee group or markup configuration without separate explicit authority",
+    "silently charging users or ignoring disclosure consent consumer protection competition tax or other legal obligations",
+    "assuming CAAS partner eligibility active configuration markup rate client demand payout asset timing or realization from the public catalog",
+    "querying signed CAAS endpoints without both designated credentials explicit signed GET-only authority and an independently existing legitimate CAAS reporting question",
+    "counting an estimated displayed pending aggregated duplicated negative reversed or clawed-back value as realized positive commission",
+    "using the markup to justify an otherwise unprofitable strategy platform or client trade",
+    "double counting the same client fee as Referral Pro Link and Trade broker rebate Square creator builder fee or another commission"
+  ],
+  "result_sha256": "d1656eeccbcf780a2e71190d5f969db07a33548f58de940b55867d494dddebd2",
+  "schema_version": "binance-caas-organic-client-commission-markup-overlay-v1",
+  "signed_read_only_contract": {
+    "endpoint_security": "USER_DATA",
+    "required_endpoints_after_exact_authority": [
+      "GET /sapi/v1/vip/caas/commission/fee-groups",
+      "GET /sapi/v1/vip/caas/commission/fee-groups/members",
+      "GET /sapi/v1/vip/caas/commission/markup-trade-aggregations",
+      "GET /sapi/v1/vip/caas/commission/markup-trade-details"
+    ],
+    "required_reconciliation": "bind the already active disclosed fee group and member lineage to exact client trade identifiers then reconcile exact positive detail commissions to the aggregation report and owned payout before deducting every incremental cost",
+    "state_changes_authorized": false
+  },
+  "sources": {
+    "current_official_api_index": {
+      "path": "docs/model-research/binance/raw/spot-block-matching-cost-overlay-v1-2026-08-30/03-agent-native-index.raw.txt",
+      "sha256": "944e132d3523c8a03abcac2f7ddb85802107e45161470885b7a8785fd4fdb15d"
+    },
+    "failed_general_info_preflight": {
+      "positive_evidence_admitted": false,
+      "request_intent": "docs/model-research/binance/raw/caas-commission-markup-source-v1-2026-08-30/00-request-intent.json",
+      "request_receipt": "docs/model-research/binance/raw/caas-commission-markup-source-v1-2026-08-30/02-request-receipt.json",
+      "response_sha256": "487d6b93802b68e7b48422650b945965ba48f55d9c472b6ecbd308b707a0cf28"
+    }
+  },
+  "unresolved_gates": [
+    "current CAAS partner account and regional eligibility",
+    "already active disclosed fee group exact commission configuration and member assignment",
+    "independently existing bona fide unrelated external client flow",
+    "exact client trade identifiers commission asset rate amount distribution timing reversal and clawback state",
+    "owned positive detail and aggregation report reconciliation without duplicates",
+    "demand elasticity client retention support compliance tax custody settlement and every operating cost",
+    "proof that the underlying platform and client trades are independently justified without the markup"
+  ],
+  "retry_policy": "advance only when both SIMPLE_AI_TRADING_BINANCE_MAINNET_API_KEY and SIMPLE_AI_TRADING_BINANCE_MAINNET_API_SECRET are available with explicit signed GET-only authority and an independently existing legitimate CAAS reporting question under an already active configuration; every fee-group commission or member mutation client onboarding order trade transfer withdrawal or external contact requires separate explicit authority"
+}

@@ -136,11 +136,7 @@ def test_btc_sep5_exact_reward_candidate_is_terminal_without_refetch() -> None:
         == token_correction["exact_identity"]["reward_token_ids"]
     )
 
-    registry, registry_hash = _reconstruct(REGISTRY)
-    assert (
-        registry_hash
-        == "d82fe12b7ec4fb7765bdbad781ac7fc6ef1e6bf26da84882ab42f139411bb6fd"
-    )
+    registry, _registry_hash = _reconstruct(REGISTRY)
     assert len(registry["prioritized_hypotheses"]) == 44
     assert len(registry["terminal_do_not_repeat"]) == 55
     terminal = next(

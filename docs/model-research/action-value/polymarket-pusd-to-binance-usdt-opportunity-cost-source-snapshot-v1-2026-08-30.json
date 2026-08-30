@@ -1,0 +1,25 @@
+{
+  "schema_version": "polymarket-pusd-to-binance-usdt-opportunity-cost-source-snapshot-v1",
+  "created_at_utc": "2026-08-30T06:13:19.6056378Z",
+  "purpose": "Preserve the exact immutable frontier bytes consumed by the frozen pUSD-to-USDT opportunity-cost contract after the live current frontier legitimately advanced.",
+  "authority": {
+    "network_requests": 0,
+    "credentials_used": false,
+    "account_or_market_state_accessed": false
+  },
+  "source_mapping": {
+    "contract_path": "docs/model-research/action-value/polymarket-pusd-to-binance-usdt-opportunity-cost-contract-v1-2026-08-30.json",
+    "mutable_original_path": "docs/model-research/action-value/accepted-market-independent-yield-frontier-v1-2026-08-30.json",
+    "expected_sha256": "7f200101abfc135b301965ad3f39d062abab78ecf221aaf2f34d5ab17293bb31",
+    "immutable_snapshot_path": "docs/model-research/action-value/raw/accepted-market-independent-yield-frontier-v1-at-pusd-opportunity-cost-freeze-2026-08-30.json",
+    "immutable_snapshot_sha256": "7f200101abfc135b301965ad3f39d062abab78ecf221aaf2f34d5ab17293bb31",
+    "recovered_from_git_commit": "7a932f0c999d4a5f5daf23b301c51e206a8f6e9e"
+  },
+  "adjudication": {
+    "historical_contract_or_result_changed": false,
+    "economic_decision_changed": false,
+    "current_frontier_rolled_back": false,
+    "repair": "test the consumed expected hash against the immutable snapshot while continuing to test the live frontier independently through its current self-hash"
+  },
+  "result_sha256": "8105343e417aea4084debb50a7ffe3a90b1c7c7bedf83da920961601ba152b23"
+}

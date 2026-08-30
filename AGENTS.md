@@ -60,6 +60,13 @@ override prose.
   state; keep exact global registry hashes and accepted counts only in central
   registry/frontier integrity and the newly accepted family's proof. This
   prevents every valid discovery from forcing unrelated test edits.
+- Outcome-sensitive contracts must never bind a mutable current registry,
+  frontier, manifest, or rolling artifact path as their only retained source.
+  Snapshot the exact consumed bytes under an immutable source path before
+  access. If an older contract already points at a mutable path, preserve the
+  contract and outcome, recover the exact expected bytes into a hash-bound
+  immutable sidecar, and verify that sidecar instead of rolling back current
+  state or blindly updating the historical expected hash.
 - A frozen current-state screen terminalizes only its exact population, time,
   size, and source contract. Material new primary evidence of recurrent
   event-time violations may reopen a separately preregistered recurrence study;
