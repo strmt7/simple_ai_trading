@@ -2120,3 +2120,31 @@ fund, or protected-capture boundary changed. Canonical follow-up SHA-256 is
 `9fa2c8893d73ea7b1bf0efb70c284a20d606866798c121defca131985e84c056`;
 registry SHA-256 is
 `a375476e54a0a2949e6954d04384f72f11157f73238af61209a393c9362725c8`.
+
+## Polymarket Elon fixed-NegRisk exact parity rejection
+
+The newly deployed August 31–September 2 Elon post-count event fired rank 31's
+literal distinct fixed-NegRisk trigger. One exact Gamma GET confirmed ten active
+compatible bins. The displayed all-YES sum was 1.0130 pUSD, so that guaranteed-
+payout route failed, while every one-NO-to-other-YES identity showed a 0.0130
+pUSD source-only gap. Gamma remained rejection-only and did not promote it.
+
+One separately frozen complete 20-token CLOB batch then passed freshness at
+121 ms request time, 297 ms oldest-book age, and 129 ms cross-book skew. At the
+five-share minimum, the best path lost 0.075 pUSD even before fees, 0.23977 pUSD
+after current Gamma taker fees, and 0.61792 pUSD after one adverse tick per leg.
+No fee-rate, on-chain, account, credential, order, or fund request was needed.
+The exact event is terminal and must not be retried or selectively resampled.
+
+The first frozen book contract never reached the network because its full local
+preflight exposed an ASCII-only retained-JSON reader. Its unconsumed failure is
+preserved; v2 parsed the UTF-8 source from bytes and passed the full contract
+validator before access. `AGENTS.md` now requires full retained-input parsing,
+not just imports or `--help`, before a one-use freeze. The frozen v1 runner is
+mechanically reconstructable by one exact replacement, bound by lineage SHA-256
+`dbfa67537e141344d5d0b15c62944eec3ef72da2c7cb945c61303085b4b40bc5`.
+Canonical exact-book
+result SHA-256 is
+`4601f3980f14ccb4130fbdc36862def5abdd47f46e9f48c7da25113c72fe33a2`;
+registry SHA-256 is
+`5e34a52a6e0eebf48d5c4ae397bcb1893c10389116425d057b580a2a05013c40`.

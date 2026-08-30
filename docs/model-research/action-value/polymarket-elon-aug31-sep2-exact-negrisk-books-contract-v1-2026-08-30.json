@@ -1,0 +1,89 @@
+{
+  "schema_version": "polymarket-exact-negrisk-books-contract-v1",
+  "frozen_at_utc": "2026-08-30T04:11:48.0172701Z",
+  "contract_path": "docs/model-research/action-value/polymarket-elon-aug31-sep2-exact-negrisk-books-contract-v1-2026-08-30.json",
+  "event_slug": "elon-musk-of-tweets-august-31-september-2-2026",
+  "question": "At the exact five-share minimum, does any fixed-NegRisk complete-set or buy-NO-convert-sell-complement-YES path remain strictly positive after current Gamma taker fees and one adverse tick on every leg, before gas, latency, atomicity, or owned execution?",
+  "retained_sources": {
+    "prefilter_contract_path": "docs/model-research/action-value/polymarket-elon-aug31-sep2-exact-negrisk-prefilter-contract-v1-2026-08-30.json",
+    "prefilter_contract_sha256": "e11ea740aac94adf121d298f335724ca7799b5cb43902dc52eeb9c1c697d4c0c",
+    "prefilter_result_path": "docs/model-research/action-value/polymarket-elon-aug31-sep2-exact-negrisk-prefilter-result-v1-2026-08-30.json",
+    "prefilter_result_sha256": "63fb913d9f56034879ccee6bc43d531d4a5e805550db99ec6331e31051c680aa",
+    "event_raw_path": "data/polymarket-elon-aug31-sep2-exact-negrisk-prefilter-v1/raw/event.json",
+    "event_raw_sha256": "9d50b387c15a56ac82df8b519237a8c3db711764754ea2415816f14c0e820835"
+  },
+  "quantity_shares": "5",
+  "quantity_basis": "Every retained exact market has orderMinSize 5; the runner rejects any Gamma or CLOB minimum mismatch.",
+  "conversion_fee_bips": 0,
+  "conversion_fee_role": "optimistic rejection-only assumption; positive results require exact on-chain adapter fee and gas proof",
+  "adverse_ticks_per_leg": 1,
+  "freshness": {
+    "request_max_elapsed_ms": 5000,
+    "book_max_event_age_ms": 5000,
+    "book_max_timestamp_skew_ms": 2000
+  },
+  "request": {
+    "method": "POST",
+    "url": "https://clob.polymarket.com/books",
+    "count": 1,
+    "body_sha256": "81ca6d158ed762f319595d6f004bab0dbe0cb6338f89a7f41247542e18d75971"
+  },
+  "token_ids": [
+    "51641366058943919952284270925800929442717370239819007591053800787003907153229",
+    "19124068153560126044699760272910605183216909491171637384398285715982037598651",
+    "13726980072427854406373973857645256428802692463289173666699970367002980362069",
+    "78147499133376223435597122749337777093897437211710154476952705691771601083849",
+    "42329978863144824662945610766825870506493132007560166357621814782194718300701",
+    "98535084288076878640338061184693013337627048114749077036413250986240665785954",
+    "47352806241360485858794942296980798036554165018805505778405439807338572865265",
+    "94073954918475799286287394596771514465381334460844088944809893235922904261014",
+    "94677742720937994627446195651925815786275185783956680436676360452973750248950",
+    "41198648451205601726103418474219982970982490621014176320792254572408801475774",
+    "62144062021036601298035355698694381754672438509259554916417953971375127670613",
+    "995558981567706083964368760364368814157466149682173910754342467889241842762",
+    "70219616055069250162583576668439098490073549406981622356962322142717289576078",
+    "1017508439998341285061436465674336422334515440875561250121344519052233969462",
+    "31458411119710545243951681554507777305143796725153777599647273206870088128368",
+    "7499792659489402972766519554411370157282026631601006948236509339661552495304",
+    "42841098141071691565447529338638887618272181527556740356231434383250936805016",
+    "19206006300954228835230869132820040672539616218323656070311858268016699791737",
+    "16635858349402775777954839490479227163337327267734275630427767565880006623063",
+    "17102516255413907265678717737099538743118357889341546041350126914739729342770"
+  ],
+  "decision": {
+    "source_only_candidate": "fresh exact batch plus a strictly positive best path after current Gamma fees without stress and after one adverse tick on every leg",
+    "accepted_edge": false,
+    "profitability_proved": false,
+    "conditional_next_step": "Only a source-only candidate may advance to separately frozen current fee-rate cross-check, pinned adapter question count and fee, gas, transaction failure, latency, atomicity, and owned paper execution proof."
+  },
+  "outputs": {
+    "raw_path": "data/polymarket-elon-aug31-sep2-exact-negrisk-books-v1/raw/books.json",
+    "journal_path": "data/polymarket-elon-aug31-sep2-exact-negrisk-books-v1/request-journal.jsonl",
+    "result_path": "docs/model-research/action-value/polymarket-elon-aug31-sep2-exact-negrisk-books-result-v1-2026-08-30.json"
+  },
+  "authority": {
+    "account_requests": 0,
+    "book_batch_requests": 1,
+    "credentials_used": false,
+    "fee_requests": 0,
+    "funds_used": false,
+    "gamma_requests": 0,
+    "onchain_requests": 0,
+    "orders_or_transactions": 0,
+    "protected_capture_touched": false,
+    "public_unauthenticated_read_only_requests": 1,
+    "signed_requests": 0,
+    "trading_authority": false
+  },
+  "implementations": [
+    {"path": "tools/screen_polymarket_exact_negrisk_books.py", "sha256": "0d687e13cb7a6092665e321d977af9a804e3160d0d56d22b335f4049c1797d74"},
+    {"path": "src/simple_ai_trading/structural_parity.py", "sha256": "f7048945d0ed800f7246672ae56e50d3ce5d6f87d52674ce029937247b295163"},
+    {"path": "src/simple_ai_trading/polymarket_fees.py", "sha256": "4002aa8008874708931cc182f352adf436a65baee24e23bfc72617acdf127c8d"},
+    {"path": "tools/screen_polymarket_exact_two_leg_package.py", "sha256": "ba7ebaa1fb5235ba026f7cf4cb21ff73ba19430fee4a4f678fbdea37635eb32f"},
+    {"path": "tools/screen_polymarket_negrisk_complete_set_catalog.py", "sha256": "5d5dd88fe9f77be92063d4b55bbcb8dd1b96db06b99dd0d021774916cf2b5ae9"},
+    {"path": "tools/screen_polymarket_structural_parity.py", "sha256": "ab684a33d8965a25c446826eec63807f74eeee056d4be35ea163cd752d43ab64"},
+    {"path": "tools/adjudicate_polymarket_exact_mlb_monotone_prefilter.py", "sha256": "958a44d78029b9a1eb69a3771ce18e53ac1ed3c7bc161c8e4318beedce2cf99f"}
+  ],
+  "retry_policy": "This exact twenty-token batch is one-use. A stale, incomplete, identity-mismatched, or nonpositive response is consumed and cannot be retried, reordered, shortened, or replaced with selective favorable books. A positive source-only result still cannot promote or authorize execution.",
+  "contract_sha256": "32658d289f7cf7a5026ab8debc9dd0f178ec82c96a5821bdb42e0f7eeac6e260"
+}

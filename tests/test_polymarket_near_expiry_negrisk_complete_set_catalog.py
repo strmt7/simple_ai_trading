@@ -234,7 +234,7 @@ def test_registry_routes_partial_page_without_accepting_an_edge() -> None:
         == "polymarket_cross_market_exact_multi_outcome_subset_equivalence"
     )
     artifacts = row["canonical_artifacts"]
-    assert artifacts[-10:] == [
+    expected_artifacts = [
         {"path": CONTRACT.relative_to(ROOT).as_posix(), "result_sha256": CONTRACT_HASH},
         {"path": RESULT.relative_to(ROOT).as_posix(), "result_sha256": RESULT_HASH},
         {
@@ -270,6 +270,8 @@ def test_registry_routes_partial_page_without_accepting_an_edge() -> None:
             "result_sha256": "f032753b45c82b2e0945d1a8c0e0d5fc01f8fb1727cdad34e73064c7590417ba",
         },
     ]
-    assert "complete_series_specific_catalog_was_also_empty" in row["current_status"]
+    artifact_positions = [artifacts.index(item) for item in expected_artifacts]
+    assert artifact_positions == sorted(artifact_positions)
+    assert "two_empty_forward_series_queries" in row["current_status"]
     assert "do_not_repeat_either_empty_forward_series_query" in row["next_action"]
     assert registry["accepted_edge_count"] == 21

@@ -324,7 +324,11 @@ and verify reproducibly. Do not load upstream `EXAMPLES.md`.
    repository, prefer `uv run python` so the `uv.lock` dependencies are present;
    never substitute the Windows Store `python` alias or an unverified global
    interpreter. Verify every required transport import before freezing the
-   contract. A runner that imports `tools.*` must be invoked as
+   contract. For a retained-input runner, also parse every hash-bound raw input
+   through the exact production loader and exercise the full pre-network
+   contract validator before freezing; `--help` proves only imports and CLI
+   wiring, not encoding or retained-schema compatibility. A runner that imports
+   `tools.*` must be invoked as
    `uv run python -m tools.<module>` from the repository root; do not discover a
    runtime, dependency, or module-path difference after freezing evidence. If a
    pre-main import still fails, journal it as a local unconsumed preflight error
