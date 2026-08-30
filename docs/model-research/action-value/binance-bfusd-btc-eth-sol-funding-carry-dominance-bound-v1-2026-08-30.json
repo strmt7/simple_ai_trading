@@ -1,0 +1,156 @@
+{
+  "adjudication": {
+    "accepted_edge": false,
+    "account_book_or_market_request_justified": false,
+    "deployment_ready": false,
+    "market_direction_forecast_required": false,
+    "profitability_claim": false,
+    "public_after_all_cost_profit_floor_usdt": "0",
+    "stable_profitability_proved": false,
+    "status": "retained_BTC_ETH_SOL_funding_carry_rejected_by_BFUSD_dominance_bound_without_resampling"
+  },
+  "authority": {
+    "account_state_accessed": false,
+    "credentials_used": false,
+    "new_market_data_requests": 0,
+    "orders_transfers_subscriptions_redemptions_or_mutations": 0,
+    "paper_or_live_trading_authority": false,
+    "public_rendered_product_page_reads": 1
+  },
+  "created_at_utc": "2026-08-30T13:09:33.7228308Z",
+  "current_public_page_observation": {
+    "checked_at_utc": "2026-08-30T13:09:33.7228308Z",
+    "classification": "discovery_only_current_official_rendered_page_not_a_hash_bound_numeric_input",
+    "numeric_APR_admitted": false,
+    "observed_facts": [
+      "7D_Avg_APR_Last_Day_APR_180D_APR_and_CVR_rendered_as_placeholders",
+      "BFUSD_holding_rewards_do_not_disqualify_users_from_funding_fees_on_their_own_hedging_strategies",
+      "Futures_Spot_Funding_PM_Trading_Bots_and_Margin_holdings_are_included_in_reward_snapshots"
+    ],
+    "rendered_line_ranges": [
+      "6-31",
+      "120-151"
+    ],
+    "url": "https://www.binance.com/en/bfusd"
+  },
+  "dominance_identity": {
+    "BFUSD_adjusted_net_bips": "retained_two_leg_net_bips + BFUSD_APR_percent * 100 * role_duration_days / 365",
+    "BFUSD_adjusted_slice_net_bips": "retained_slice_net_bips + BFUSD_APR_percent * 100 * role_duration_days / 365 * slice_observation_count / role_observation_count",
+    "full_one_leg_removal_equivalent_APR_percent": "10",
+    "necessary_APR_percent": "max(0,-retained_metric_bips) * 365 / (100 * role_duration_days * metric_observation_fraction)",
+    "reason_portfolio_margin_is_an_upper_bound_through_10_percent": "The frozen carry contract charges 10 percent annual opportunity cost per capital leg. Optimistically deleting one entire leg therefore grants the same improvement as a 10 percent BFUSD reward on that leg and dominates every BFUSD rate at or below 10 percent before BFUSD conversion redemption eligibility quota custody or account costs.",
+    "strict_gate": "all role net family-adjusted bootstrap and every required regime slice must be strictly positive; the necessary APR thresholds do not by themselves clear maximum drawdown positive-week concentration account eligibility or external-cost gates"
+  },
+  "necessary_BFUSD_APR_percent_by_symbol_and_role": [
+    {
+      "binding_gate": "training_family_adjusted_bootstrap_lower_bound",
+      "economic_threshold_APR_percent": "22.043729313747448871671343924872017019554327212376",
+      "role": "training",
+      "symbol": "BTC"
+    },
+    {
+      "binding_gate": "validation_stress_volatility_slice",
+      "economic_threshold_APR_percent": "19.148235370355279945291422313942960531901920452928",
+      "role": "validation",
+      "symbol": "BTC"
+    },
+    {
+      "binding_gate": "test_family_adjusted_bootstrap_lower_bound",
+      "economic_threshold_APR_percent": "17.790760848465806144767920938835724084968636393651",
+      "role": "test",
+      "symbol": "BTC"
+    },
+    {
+      "binding_gate": "training_family_adjusted_bootstrap_lower_bound",
+      "economic_threshold_APR_percent": "22.182779615874284269099551393884798666736261759310",
+      "role": "training",
+      "symbol": "ETH"
+    },
+    {
+      "binding_gate": "validation_family_adjusted_bootstrap_lower_bound",
+      "economic_threshold_APR_percent": "21.763292873840367918517486202160173957091347768314",
+      "role": "validation",
+      "symbol": "ETH"
+    },
+    {
+      "binding_gate": "test_family_adjusted_bootstrap_lower_bound",
+      "economic_threshold_APR_percent": "19.636832299747800208158194593701203802328931499328",
+      "role": "test",
+      "symbol": "ETH"
+    },
+    {
+      "binding_gate": "training_stress_volatility_slice",
+      "economic_threshold_APR_percent": "26.559786897626502461323578873066001616614695000713",
+      "role": "training",
+      "symbol": "SOL"
+    },
+    {
+      "binding_gate": "validation_family_adjusted_bootstrap_lower_bound",
+      "economic_threshold_APR_percent": "24.438211957244074194040195867009186497737507238203",
+      "role": "validation",
+      "symbol": "SOL"
+    },
+    {
+      "binding_gate": "test_sideways_slice",
+      "economic_threshold_APR_percent": "22.854864092891635418043433689019308177694212633722",
+      "role": "test",
+      "symbol": "SOL"
+    }
+  ],
+  "necessary_symbol_level_APR_thresholds_percent": {
+    "BTC": "22.043729313747448871671343924872017019554327212376",
+    "ETH": "22.182779615874284269099551393884798666736261759310",
+    "SOL": "26.559786897626502461323578873066001616614695000713"
+  },
+  "prohibited_shortcuts": [
+    "resampling_refitting_or_requesting_books_for_the_consumed_17_symbol_population",
+    "treating_a_displayed_placeholder_or_the_2026_08_26_rate_as_current",
+    "assuming_BFUSD_rate_quota_account_eligibility_collateral_ratio_reward_balance_conversion_or_redemption_terms",
+    "calling_the_necessary_APR_threshold_sufficient_or_deployment_ready",
+    "ignoring_maximum_drawdown_positive_week_concentration_basis_slippage_liquidation_conversion_redemption_tax_custody_or_operating_costs",
+    "subscribing_redeeming_transferring_or_trading_BFUSD_or_any_hedge_leg_without_separate_explicit_authority"
+  ],
+  "result_sha256": "477a4db3c7f9c594ea8c351ce8f0a766280f062437c8089758d6137fbdd54d86",
+  "source_binding": [
+    {
+      "file_sha256": "7fc7c8be2d41c2089a57c7a268874254655acd7983ccb380b0a98577a4b64fae",
+      "path": "docs/model-research/action-value/binance-broad-crypto-funding-carry-preflight-v1-2026-08-27.json",
+      "result_sha256": "095009a36a5c6a8a5a2dfdfb3e57ebe6183721bb84600518552ccf6d463617c8",
+      "use": "exact retained 17-symbol funding roles economic gates and BTC ETH SOL regime slices"
+    },
+    {
+      "file_sha256": "6dd0df4474fe4b269ea204ddfa788363a8aa3efb97ae64a6651c43b82c84386b",
+      "path": "docs/model-research/action-value/binance-portfolio-margin-capital-netting-sensitivity-v1-2026-08-30.json",
+      "result_sha256": "b31cc92f4fad9dad7d8d0ea98c3275605b16069afc0d6d5882e75501025f7d14",
+      "use": "existing optimistic full 10 percent capital-leg removal dominance result"
+    },
+    {
+      "file_sha256": "bd7b79d786d2498b0ab7898458081ac4ecfc0890dd2a4f3b6a89370733600304",
+      "path": "docs/model-research/action-value/polymarket-perps-binance-bfusd-collateral-stack-gate-v1-2026-08-26.json",
+      "result_sha256": "a6ff387d70d33c40951e36de93eff7c810b2291dbefff5ecb0f3953880fe7878",
+      "use": "last hash-bound 5.12 percent last-day and 5.03 percent seven-day BFUSD displayed rates and product risks not a current-rate claim"
+    }
+  ],
+  "stress_results": {
+    "at_last_hash_bound_5_12_percent_APR": {
+      "positive_family_adjusted_bootstrap_role_count": 0,
+      "positive_regime_slice_count": 0,
+      "positive_role_net_count": 0,
+      "required_regime_slice_count": 72,
+      "role_count": 9
+    },
+    "at_optimistic_full_one_leg_10_percent_APR": {
+      "positive_family_adjusted_bootstrap_role_count": 0,
+      "positive_regime_slice_count": 0,
+      "positive_role_net_count": 0,
+      "required_regime_slice_count": 72,
+      "role_count": 9
+    }
+  },
+  "terminal_boundary": {
+    "next_trigger": "for_BTC_a_new_source_bound_BFUSD_APR_strictly_above_22_043729313747448871671343924872017_percent_or_for_ETH_strictly_above_22_182779615874284269099551393884799_percent_or_for_SOL_strictly_above_26_559786897626502461323578873066002_percent_plus_source_bound_same_period_BFUSD_reward_history_and_distribution_semantics_capable_of_recomputing_drawdown_and_concentration_or_a_material_funding_execution_fee_basis_margin_or_capital_cost_change_that_can_clear_the_retained_deficit",
+    "rate_trigger_is_necessary_not_sufficient": true,
+    "resample_current_population": false
+  },
+  "schema_version": "binance-bfusd-btc-eth-sol-funding-carry-dominance-bound-v1"
+}
