@@ -1,0 +1,52 @@
+{
+  "authority": {
+    "account_requests": 0,
+    "claim_or_other_state_changes": 0,
+    "credentials_used": false,
+    "orders_or_trades": 0,
+    "protected_capture_accessed": false,
+    "public_unauthenticated_read_only_requests": 1
+  },
+  "contract_sha256": "516c24215876193bea7f0552b86e8c7c2180d86dc343c1d636f5a134f83a7350",
+  "decision_contract": {
+    "accept_only_if": "The exact current official SOL Staking API page independently proves that Boost APR Airdrop Rewards are separate from base BNSOL rewards, binds reward asset amount BNSOL holding and success state, and exposes signed read-only rate history boost history and unclaimed-reward evidence separately from the TRADE claim action. Acceptance is limited to exact realized positive successful reward value on BNSOL already held for independent reasons after every incremental claim tax custody liquidity and operating cost.",
+    "fail_closed_if": [
+      "any required term is absent from the retained response",
+      "documentation example values are needed as current rate account entitlement or owned reward evidence",
+      "BNSOL must be acquired retained staked or moved to chase the reward",
+      "claim success distribution success reward ownership or after-cost positivity is inferred rather than exactly reconciled"
+    ],
+    "public_forward_profit_floor": "0",
+    "prohibited": [
+      "buying staking or retaining SOL or BNSOL for a boost reward",
+      "treating example boostAPR or reward amounts as current or owned",
+      "calling the signed read-only endpoints without explicit authority",
+      "calling the claim endpoint without separate explicit state-change authority",
+      "double counting boost rewards inside the BNSOL conversion ratio or base staking reward"
+    ]
+  },
+  "frozen_at_utc": "2026-08-30T06:36:48.6974530Z",
+  "public_source": {
+    "classification": "public_unauthenticated_read_only_documentation_GET",
+    "maximum_response_bytes": 10000000,
+    "method": "GET",
+    "required_text_casefolded": [
+      "claim boost apr airdrop rewards",
+      "/sapi/v1/sol-staking/sol/history/ratehistory",
+      "boostapr",
+      "/sapi/v1/sol-staking/sol/history/boostrewardshistory",
+      "distribute",
+      "bnsolholding",
+      "/sapi/v1/sol-staking/sol/history/unclaimedrewards",
+      "rewardsasset"
+    ],
+    "url": "https://developers.binance.com/en/docs/catalog/investment-and-services-staking/api/rest-api/sol-staking"
+  },
+  "retained_source": {
+    "agent_native_endpoint_index": {
+      "path": "docs/model-research/binance/raw/spot-block-matching-cost-overlay-v1-2026-08-30/03-agent-native-index.raw.txt",
+      "sha256": "944e132d3523c8a03abcac2f7ddb85802107e45161470885b7a8785fd4fdb15d"
+    }
+  },
+  "schema_version": "binance-bnsol-boost-airdrop-existing-holding-overlay-source-contract-v1"
+}

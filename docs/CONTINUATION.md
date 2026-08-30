@@ -4343,3 +4343,31 @@ fund, or mutation was used. Canonical adjudication SHA-256 is
 Accepted edges remain 23, ranked hypotheses remain 44, and terminal families
 remain 55. Registry SHA-256 becomes
 `9e3ceff615c795156ec151f209d9b6c391a9ea50184baa1bee78108f6eb2cb7b`.
+
+## Binance BNSOL Boost APR airdrop existing-holding lead
+
+The current official web-rendered SOL Staking schema exposes a separate Boost
+APR airdrop mechanism: rate history contains boost reward fields, boost history
+distinguishes `CLAIM` and `DISTRIBUTE` and returns reward token, amount, BNSOL
+holding, and status, while unclaimed rewards return amount and reward asset.
+The claim endpoint is separately signed `TRADE`. This is economically distinct
+from the BNSOL conversion ratio and base staking reward, but no public example
+is current account entitlement or owned reward evidence.
+
+The one frozen raw source-retention request returned HTTP 202, 2,038 bytes, and
+zero of eight required terms. It is consumed and must not be retried through an
+alias. The raw response and journal are retained, the rendered extraction is
+discovery-only, and the public forward floor is zero. No credentials, account
+request, staking, claim, order, trade, fund, or mutation was used.
+
+Reopen only on materially new byte-retainable official terms, or when both
+designated credentials, explicit signed GET-only authority, and independently
+existing BNSOL held for unrelated reasons all exist. Read exact rate history,
+`CLAIM` and `DISTRIBUTE` history, unclaimed rewards, base rewards, and holding;
+reject unless positive value is non-double-counted and survives every cost.
+Claiming remains a separate state change requiring separate authority.
+Canonical adjudication SHA-256 is
+`f0b6b4df8632b1cc302bdb24189c4336968be1fa9b94d1f7792205f46450c466`.
+Accepted edges remain 23, ranked hypotheses remain 44, and terminal families
+remain 55. Registry SHA-256 becomes
+`38450f4fa1720247e0b1717ac1d6022e1a1a3f95e473c65ae5b39deda17cc720`.

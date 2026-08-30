@@ -47,6 +47,13 @@ override prose.
   push, or hosted CI run before exploratory public requests. The stricter
   frozen one-use workflow remains mandatory for authenticated, account-specific,
   funded, order-capable, or state-changing operations.
+- Raw non-browser requests to rendered Binance Academy and product-documentation
+  pages have repeatedly returned HTTP 202 shells of about 2 KB with none of the
+  visible economic or schema terms. Do not use such a dynamic page as the sole
+  positive source in a one-use contract when the retained Agent Native index,
+  a machine-readable primary schema, or a predeclared rendered field extraction
+  can answer the question. If an exact dynamic page is nevertheless uniquely
+  necessary and fails this way, retain the response and stop without URL aliases.
 - Before treating a structural mechanism as novel, search both the prioritized
   hypotheses and terminal screens in the structural-edge registry, then `rg`
   mechanism aliases and payoff identities across retained artifacts and tools.
