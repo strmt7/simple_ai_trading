@@ -4020,3 +4020,40 @@ against 3.693 days remaining. Canonical rejection SHA-256 is
 `facecfaa3b92d905c700083c7b8afe153adc495403ceabc91e417bdb248d059b`;
 registry SHA-256 is
 `de28d80cc4b0b9cd1bd3f9954cb840dcaefe46fcc0fdf9ac3fd53218169370cb`.
+
+## 2026-08-30 Binance public Spot block-trade follow-up
+
+Rank 5's literal nonoverlapping public retry boundary passed. One separately
+frozen five-minute connection reused the existing hash-bound official stream,
+market-data-only, changelog, and 2.5-bip fee evidence. It made no new
+documentation GET, signed request, account query, book request, order, contact,
+settlement action, or fund movement.
+
+The transport completed with no reconnects after 305.0 elapsed seconds and
+retained 292 BTCUSDT, 233 ETHUSDT, and 207 SOLUSDT ticker messages. It contained
+zero `blockTrade` events, zero analyzable rows, and zero positive price-
+concession lower bounds. Cumulatively, both complete nonoverlapping observations
+span 1,510.0309999999954 seconds and 4,100 healthy ticker messages with zero
+public block events. That evidence does not prove private Block Matching
+capacity or future activity is zero, but it cannot support recurrence, access,
+price concession, profitability, or stability. The public forward profit floor
+remains zero.
+
+Time-only daily polling is now rejected as an inefficient unchanged question.
+Do not repeat before `2026-09-06T03:47:16.3134381Z` unless a material official
+stream, fee, pair, whitelist, settlement, block-volume, or observed public-event
+change occurs. The account-gated parent may still advance only under its full
+independently planned trade, whitelist, counterparty, credential, and explicit
+signed read-only authority trigger; every trade-capable action still requires
+separate authority.
+
+The initial local invocation used an unverified global Python interpreter and
+failed to import `websockets` before runner entry or network access. The journal
+preserves that unconsumed local failure; the locked `uv` project runtime then
+passed. `AGENTS.md` now requires the exact locked runtime and transport imports
+to be preflighted before freezing a one-use contract. Canonical follow-up
+SHA-256 is
+`9fa2c8893d73ea7b1bf0efb70c284a20d606866798c121defca131985e84c056`.
+The accepted-edge count remains 21, the ranked-hypothesis count remains 44, and
+the updated registry SHA-256 is
+`a375476e54a0a2949e6954d04384f72f11157f73238af61209a393c9362725c8`.

@@ -320,9 +320,15 @@ and verify reproducibly. Do not load upstream `EXAMPLES.md`.
 7. Format code before generating implementation-hash-bound evidence; later
    source edits require regeneration.
 8. Before freezing a one-use runner, execute its import-only or `--help`
-   preflight through the same entry mode used for capture. A runner that imports
-   `tools.*` must be invoked as `python -m tools.<module>` from the repository
-   root; do not discover that path difference after freezing evidence.
+   preflight through the same locked entry mode used for capture. In this
+   repository, prefer `uv run python` so the `uv.lock` dependencies are present;
+   never substitute the Windows Store `python` alias or an unverified global
+   interpreter. Verify every required transport import before freezing the
+   contract. A runner that imports `tools.*` must be invoked as
+   `uv run python -m tools.<module>` from the repository root; do not discover a
+   runtime, dependency, or module-path difference after freezing evidence. If a
+   pre-main import still fails, journal it as a local unconsumed preflight error
+   before any corrected invocation.
 
 Do not broadly read the README, historical round designs, generated SVG, or
 large CSV files. The detailed workflow and imported-tool provenance are in

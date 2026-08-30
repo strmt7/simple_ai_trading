@@ -1,0 +1,134 @@
+{
+  "schema_version": "1.0",
+  "created_at_utc": "2026-08-30T03:54:32.8862984Z",
+  "authority": {
+    "public_unauthenticated_documentation_gets": 0,
+    "reused_hash_bound_primary_source_sets": 1,
+    "public_unauthenticated_websocket_connections": 1,
+    "signed_requests": 0,
+    "credentials_used": false,
+    "account_queries": 0,
+    "orders_or_settlement_actions": 0,
+    "funds_used": false,
+    "account_mutations": false
+  },
+  "edge_identity": {
+    "parent_mechanism": "Binance Spot Block Matching cost reduction for an independently required large bilateral Spot trade",
+    "public_follow_up": "One nonoverlapping time-triggered observation of already-settled public block-trade prices against causal pre-trade public best quotes.",
+    "market_direction_forecast_required": false,
+    "not_a_standalone_strategy": true,
+    "scope": "BTCUSDT, ETHUSDT, and SOLUSDT on the public market-data-only WebSocket domain."
+  },
+  "trigger_adjudication": {
+    "prior_not_before_utc": "2026-08-31T00:28:14.5427794Z",
+    "follow_up_frozen_at_utc": "2026-08-30T03:47:16.3134381Z",
+    "trigger_passed": true,
+    "reason": "The current UTC instant was later than the literal nonoverlapping not-before boundary. No earlier-change exception was used."
+  },
+  "current_primary_source_reuse": {
+    "source_result_sha256": "b7d60e0d9f3e30b2a62663ff1290be77e6309ac33a7d48776b6f5ea1c8dcfe68",
+    "block_trade_stream_deployed": true,
+    "stream_name": "<symbol>@blockTrade",
+    "update_speed": "real_time",
+    "market_data_only_domain": "wss://data-stream.binance.vision",
+    "authentication_required": false,
+    "why_no_source_refresh": "The retry trigger was elapsed time, not a source change. The exact official stream, payload, domain, rollout, and fee evidence was already hash-bound, so another documentation GET would add cost without changing the question."
+  },
+  "local_preflight": {
+    "first_invocation_reached_runner_main": false,
+    "first_invocation_network_request_consumed": false,
+    "first_invocation_error": "ModuleNotFoundError: No module named 'websockets'",
+    "correct_runtime": "uv project environment",
+    "locked_websockets_version": "15.0.1",
+    "methodology_correction": "Verify the repository runtime and required transport dependency before invoking a frozen one-use runner. A pre-import failure is not a consumed venue request, but it is avoidable operator overhead and remains journaled."
+  },
+  "frozen_capture": {
+    "started_at_utc": "2026-08-30T03:48:54.521562Z",
+    "completed_at_utc": "2026-08-30T03:53:59.525064Z",
+    "elapsed_seconds": 305.0,
+    "duration_gate_seconds": 300,
+    "target_block_trades": 3,
+    "reconnects_attempted": 0,
+    "ticker_counts": {
+      "BTCUSDT": 292,
+      "ETHUSDT": 233,
+      "SOLUSDT": 207,
+      "total": 732
+    },
+    "block_trade_counts": {
+      "BTCUSDT": 0,
+      "ETHUSDT": 0,
+      "SOLUSDT": 0,
+      "total": 0
+    },
+    "analyzable_block_trade_count": 0,
+    "favorable_zero_public_fee_lower_bound_counts": {
+      "buyer": 0,
+      "seller": 0
+    },
+    "transport_complete": true,
+    "source_continuity": "The three ordinary ticker streams delivered through the frozen duration. No transport close, reconnect, unexpected stream, or unexpected event occurred."
+  },
+  "cumulative_public_observation": {
+    "window_count": 2,
+    "total_elapsed_seconds": 1510.0309999999954,
+    "total_ticker_messages": 4100,
+    "total_block_trade_events": 0,
+    "total_analyzable_rows": 0,
+    "allowed_inference": "No recurrent public BTCUSDT, ETHUSDT, or SOLUSDT block-trade flow was observed in either complete window.",
+    "prohibited_inference": "This does not prove the production stream, private Block Matching capacity, whitelist access, future event rate, or future price concession is zero."
+  },
+  "economic_adjudication": {
+    "material_follow_up_gate": "All three target events must be analyzable and at least three distinct block IDs in one fixed symbol-and-side bucket must have a strictly positive lower-bound saving after the 2.5-bps block fee against an optimistically zero-fee causal public best quote.",
+    "material_follow_up_gate_passed": false,
+    "reason": "The second exact complete capture also contained zero blockTrade events, so there was no price, quantity, side, causal quote join, or economic row to evaluate.",
+    "public_forward_profit_floor_quote": "0",
+    "public_price_concession_proved": false,
+    "after_cost_profitability_proved": false,
+    "stability_proved": false,
+    "deployment_ready": false,
+    "accepted_edge": false
+  },
+  "efficiency_adjudication": {
+    "daily_time_only_polling_justified": false,
+    "reason": "Two complete nonoverlapping windows retained 4,100 healthy ticker messages but zero block events and zero economic rows. Repeating the same passive question daily would spend operator time and storage without a changed mechanism or observed public event.",
+    "next_time_only_not_before_utc": "2026-09-06T03:47:16.3134381Z",
+    "earlier_reopening_requires": "A material official stream, fee, pair, whitelist, settlement, block-volume, or observed public-event change."
+  },
+  "source_binding": {
+    "prior_source_bound_result": {
+      "path": "docs/model-research/action-value/binance-spot-block-trade-public-price-concession-preflight-v1-2026-08-30.json",
+      "file_sha256": "fc4b9c20023a9d890eeef6f5d99fc48ba8a261a70bbe5cc19f84201e84f1e751",
+      "result_sha256": "b7d60e0d9f3e30b2a62663ff1290be77e6309ac33a7d48776b6f5ea1c8dcfe68"
+    },
+    "capture_contract": {
+      "path": "docs/model-research/binance/raw/spot-block-trade-public-price-concession-v2-2026-08-30/10-capture-contract.json",
+      "file_sha256": "00e24ea259475149575570e315187a5625a48c074c339c625f48492e80b9f9cc"
+    },
+    "capture_journal": {
+      "path": "docs/model-research/binance/raw/spot-block-trade-public-price-concession-v2-2026-08-30/10-capture-journal.jsonl",
+      "file_sha256": "b20cf37aca6e0cb476bdb03653c4473b9191c9dc896c83415031d2a661cfd05d"
+    },
+    "raw_public_stream": {
+      "path": "docs/model-research/binance/raw/spot-block-trade-public-price-concession-v2-2026-08-30/11-public-stream.raw.jsonl",
+      "file_sha256": "fd65265122299e0a5ca2530da7f0c0d2f8945388be71fc4668b912c413ce2138"
+    },
+    "capture_summary": {
+      "path": "docs/model-research/binance/raw/spot-block-trade-public-price-concession-v2-2026-08-30/12-capture-summary.json",
+      "file_sha256": "36a0f2bb7e2cd602cf924511793e79cb52469ad7bb5c2bbb6c92e02ea212bb0f"
+    },
+    "runner": {
+      "path": "tools/capture_binance_block_trade_price_preflight.py",
+      "file_sha256": "57df3a9b13db1e7d85ed0656ef352dea615659f5edb15752b780f46c7c584e4a"
+    }
+  },
+  "verdict": {
+    "candidate_status": "existing_material_direction_independent_cost_overlay_public_recurrence_follow_up_failed_zero_observed_blocks",
+    "parent_candidate_retained": true,
+    "public_time_only_follow_up_allowed_now": false,
+    "accepted_edge_count_delta": 0,
+    "ranked_hypothesis_count_delta": 0
+  },
+  "retry_trigger": "Do not repeat a time-only public blockTrade observation before 2026-09-06T03:47:16.3134381Z. Reopen earlier only on a material official stream, fee, pair, whitelist, settlement, block-volume, or observed public-event change. The parent candidate may still advance under its existing conjunctive trigger: both designated credentials, explicit signed read-only authority, an independently planned legitimate large bilateral master-account Spot trade, existing whitelist, authentic counterparty, and frozen exact pair, quantity, side, and decision time. Every trade, settlement, contact, or account mutation requires separate explicit authority.",
+  "result_sha256": "9fa2c8893d73ea7b1bf0efb70c284a20d606866798c121defca131985e84c056"
+}
