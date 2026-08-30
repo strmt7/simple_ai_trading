@@ -54,6 +54,12 @@ override prose.
   a machine-readable primary schema, or a predeclared rendered field extraction
   can answer the question. If an exact dynamic page is nevertheless uniquely
   necessary and fails this way, retain the response and stop without URL aliases.
+- Search the retained official Agent Native index and exact safe source sections
+  before downloading a multi-megabyte complete reference. Secret-scan any full
+  documentation response before staging because public examples can contain API
+  keys and private-key blocks; if they do, preserve the response receipt hash,
+  mechanically extract and hash-bind only the exact required secret-free section,
+  and remove the unrelated full payload. Never commit public example secrets.
 - Before treating a structural mechanism as novel, search both the prioritized
   hypotheses and terminal screens in the structural-edge registry, then `rg`
   mechanism aliases and payoff identities across retained artifacts and tools.

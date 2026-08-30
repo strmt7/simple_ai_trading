@@ -5260,3 +5260,47 @@ Canonical sensitivity result SHA-256 is
 Accepted edges remain 29, ranked hypotheses remain 44, terminal families remain
 67, and registry SHA-256 becomes
 `d840ca77bf9f250a87fbc4d5a8423f98d94f1494a18d7863eebfc83812bc030f`.
+
+## Binance fixed-value Gift Card false-discount rejection
+
+The current official catalog exposed a previously unregistered,
+direction-independent-looking dual-token fixed-value Gift Card mechanism. One
+frozen public complete-reference GET received 8,000,456 bytes and passed all six
+source phrases. A bounded hash-bound extraction proved that its Gift Card
+family contains exactly six documented endpoints and no non-mutating exact
+positive-discount quote.
+
+Do not treat the endpoint title's parenthetical "discount feature" as an edge.
+The operative example debits 100 USDT plus a minting fee and later redeems only
+BTC equivalent to exactly 100 USDT. Its optimistic gross value difference is
+zero and its net upper bound is the negative minting fee before every remaining
+cost. The only creation operation that could reveal realized economics is the
+state-changing `TRADE` `buyCode`; it also requires KYB, Funding Wallet balance,
+and withdrawal-enabled API authority. No credential, account, token-limit,
+verify, purchase, redemption, order, fund, or protected-capture request is
+justified.
+
+Reopen only after a material official Gift Card architecture or terms change
+documents a non-mutating exact quote whose face value strictly exceeds payment,
+minting fee, and every eligibility, transfer, expiry, conversion, custody, tax,
+failure, and opportunity cost. Credentials or purchase authority alone are not
+retry triggers.
+
+The unrelated full response contained public illustrative API-key values and
+private-key blocks and therefore was removed before staging. The request journal
+and capture result preserve its exact byte count and response hash; the exact
+2,716-byte Gift Card section had zero secret-pattern matches and is retained
+byte-for-byte. Search the retained Agent Native index and safe sections before
+another large documentation request, and secret-scan the response before staging.
+
+Canonical source contract SHA-256 is
+`49fd6dd8121e9132335669eb75f33d28f799f2c7471c5ba0a0042313a6d812ec`;
+source result SHA-256 is
+`631e9ec81519a1adbe970e0820ebcf53aad289c9b5965876d9c7b273bd3c2180`;
+raw response SHA-256 is
+`c785b773eb2f36e87fd077891461320e60cb1aeedc8cec42e268e134e1b68d8a`;
+canonical terminal result SHA-256 is
+`316e3182ce6a33287463d1c9c6d32a9bd3066bb49740c68d83e5ad717bf36868`.
+Accepted edges remain 29, ranked hypotheses remain 44, terminal families become
+68, and registry SHA-256 becomes
+`4814e73d89db659d602ad3ed5901f5b94add2b70c8daa51a635ff275ffebddb5`.

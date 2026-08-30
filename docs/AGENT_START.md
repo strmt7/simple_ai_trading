@@ -2675,3 +2675,43 @@ Canonical sensitivity result SHA-256 is
 Accepted edges remain 29, ranked hypotheses remain 44, terminal families remain
 67, and registry SHA-256 is
 `d840ca77bf9f250a87fbc4d5a8423f98d94f1494a18d7863eebfc83812bc030f`.
+
+## Binance fixed-value Gift Card false-discount rejection
+
+A novel direction-independent-looking Gift Card lead was frozen against the
+current complete official Binance API reference. The 8,000,456-byte capture
+passed all six architecture phrases, and its retained exact 72-line Gift Card
+section contains exactly six documented endpoints. None provides a
+non-mutating exact positive-discount quote.
+
+The title's parenthetical "discount feature" is not positive buyer economics.
+The operative example says a fixed-value BTC card costs 100 USDT plus a minting
+fee and redeems into BTC equivalent to exactly 100 USDT. Thus the most
+optimistic gross value difference is zero and net value is at most the negative
+minting fee before every other cost. `buyCode` is a `TRADE` operation requiring
+KYB, sufficient Funding Wallet balance, and an API key with withdrawals enabled.
+Do not request credentials, token limits, verification, purchase, or redemption.
+
+Reopen only if an official architecture or terms change documents a
+non-mutating exact quote whose face redemption value strictly exceeds payment,
+minting fee, and every remaining cost. Credentials or purchase authority alone
+are not triggers.
+
+The unrelated full reference contained public illustrative API-key values and
+private-key blocks, so it was not committed. Its receipt hash remains durable;
+the exact 2,716-byte secret-free Gift Card section was mechanically extracted
+and retained byte-for-byte. Search the retained Agent Native index and safe
+sections before any future full-reference request, and secret-scan every large
+documentation capture before staging.
+
+Canonical source contract SHA-256 is
+`49fd6dd8121e9132335669eb75f33d28f799f2c7471c5ba0a0042313a6d812ec`;
+source result SHA-256 is
+`631e9ec81519a1adbe970e0820ebcf53aad289c9b5965876d9c7b273bd3c2180`;
+raw response SHA-256 is
+`c785b773eb2f36e87fd077891461320e60cb1aeedc8cec42e268e134e1b68d8a`;
+canonical terminal result SHA-256 is
+`316e3182ce6a33287463d1c9c6d32a9bd3066bb49740c68d83e5ad717bf36868`.
+Accepted edges remain 29, ranked hypotheses remain 44, terminal families become
+68, and registry SHA-256 is
+`4814e73d89db659d602ad3ed5901f5b94add2b70c8daa51a635ff275ffebddb5`.
