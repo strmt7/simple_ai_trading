@@ -11,7 +11,7 @@ FRONTIER = ROOT / (
     "docs/model-research/action-value/"
     "accepted-market-independent-yield-frontier-v1-2026-08-30.json"
 )
-RESULT_HASH = "e07814f91757306617b0152eaf3df81ebf162f4dfbd89d52bc59bf297a106309"
+RESULT_HASH = "aed37a0d9527c4c02b63cf1b7bffb7a061e4236e246d3098ab27328ee51f8a58"
 
 
 def _load(path: Path) -> dict[str, object]:
@@ -62,7 +62,37 @@ def test_population_is_complete_without_inflating_acceptance() -> None:
     assert population["population_complete_for_registry_accepted_yield_edges"] is True
     assert decision["new_accepted_edge_count"] == 0
     assert decision["accepted_edge_count_after_frontier"] == 27
+    assert population["owned_realized_cash_recurrence_edge_count"] == 1
+    assert population["public_after_all_incremental_cost_positive_floor_edge_count"] == 0
+    assert population["owned_account_qualified_edge_count"] == 0
+    assert decision["current_owned_after_all_incremental_cost_profitable_edge_count"] == 0
     assert decision["deployment_ready_edge_count"] == 0
+
+
+def test_current_web_checks_are_discovery_only() -> None:
+    frontier = _load(FRONTIER)
+
+    assert frontier["authority"]["venue_HTTP_requests"] == 0
+    assert frontier["authority"]["source_bound_economic_inputs_refreshed"] == 0
+    assert frontier["authority"]["public_web_discovery_batches"] == 3
+    assert all(
+        row["material_yield_or_structural_profitability_trigger_found"] is False
+        for row in frontier["discovery_only_current_source_checks"]
+    )
+
+
+def test_profitability_ladder_separates_scoped_acceptance_from_owned_profit() -> None:
+    frontier = _load(FRONTIER)
+    rows = frontier["profitability_evidence_ladder"]
+
+    assert [row["rank"] for row in rows] == [1, 2, 3, 4]
+    assert sum(row["edge_count"] for row in rows[:2]) == 9
+    assert rows[0]["edge_ids"] == ["polymarket_complete_set_holding_yield"]
+    assert rows[2]["edge_count"] == 0
+    assert rows[3]["edge_count"] == 0
+    assert frontier["portfolio_decision"]["immediate_research_spend"].startswith(
+        "none_no_exact_public_retry_trigger"
+    )
 
 
 def test_polymarket_leads_on_realized_stability_not_headline_apr() -> None:

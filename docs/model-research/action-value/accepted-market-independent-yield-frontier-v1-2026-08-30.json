@@ -1,24 +1,49 @@
 {
   "schema_version": "accepted-market-independent-yield-frontier-v1",
   "created_at_utc": "2026-08-30T03:07:15Z",
-  "updated_at_utc": "2026-08-30T08:59:21.0557977Z",
-  "result_sha256": "e07814f91757306617b0152eaf3df81ebf162f4dfbd89d52bc59bf297a106309",
-  "purpose": "rank_the_nine_accepted_market_direction_independent_yield_and_capital_efficiency_overlays_by_evidence_strength_current_gross_opportunity_and_remaining_deployment_gates_without_new_network_or_account_access",
+  "updated_at_utc": "2026-08-30T09:14:18.1679476Z",
+  "result_sha256": "aed37a0d9527c4c02b63cf1b7bffb7a061e4236e246d3098ab27328ee51f8a58",
+  "purpose": "rank_the_nine_accepted_market_direction_independent_yield_and_capital_efficiency_overlays_by_evidence_strength_current_gross_opportunity_and_remaining_deployment_gates_using_only_hash_bound_repository_artifacts_as_economic_inputs",
   "authority": {
-    "network_requests": 0,
+    "venue_HTTP_requests": 0,
+    "public_web_discovery_batches": 3,
+    "source_bound_economic_inputs_refreshed": 0,
     "credentials_used": false,
     "account_state_accessed": false,
     "orders_transfers_conversions_subscriptions_redemptions_or_mutations": 0,
     "paper_or_live_trading_authority": false,
     "protected_capture_accessed": false
   },
+  "discovery_only_current_source_checks": [
+    {
+      "source": "Binance_derivatives_change_log",
+      "url": "https://developers.binance.com/en/docs/products/derivatives-trading-usds-futures/change-log",
+      "checked_at_utc": "2026-08-30T09:14:18.1679476Z",
+      "latest_relevant_visible_entry_utc": "2026-08-26",
+      "material_yield_or_structural_profitability_trigger_found": false
+    },
+    {
+      "source": "Polymarket_change_log",
+      "url": "https://docs.polymarket.com/changelog",
+      "checked_at_utc": "2026-08-30T09:14:18.1679476Z",
+      "latest_visible_entry_utc": "2026-05-18",
+      "material_yield_or_structural_profitability_trigger_found": false
+    }
+  ],
+  "discovery_evidence_rule": "search_and_rendered_web_results_are_discovery_only_not_hash_bound_economic_inputs_and_did_not_change_any_rate_cost_or_acceptance_claim",
   "population": {
     "registry_accepted_edge_count": 27,
     "yield_and_capital_efficiency_edges_included": 9,
     "organic_flow_fee_referral_creator_and_financing_cost_overlays_excluded": 18,
     "population_complete_for_registry_accepted_yield_edges": true,
+    "owned_realized_cash_recurrence_edge_count": 1,
+    "public_historical_or_fixed_term_gross_evidence_only_edge_count": 8,
+    "owned_account_qualified_edge_count": 0,
+    "public_after_all_incremental_cost_positive_floor_edge_count": 0,
+    "deployment_ready_edge_count": 0,
     "shared_scope": "identical_principal_or_asset_already_independently_held_or_required_no_acquisition_borrow_volume_creation_or_market_direction_forecast",
-    "shared_deployment_state": "none_is_deployment_ready_or_fully_account_and_external_cost_qualified"
+    "shared_deployment_state": "none_is_deployment_ready_or_fully_account_and_external_cost_qualified",
+    "interpretation_rule": "accepted_means_the_mechanism_and_its_narrow_scope_passed_the_repository_edge_contract_it_does_not_mean_a_current_owned_account_can_execute_it_profitably"
   },
   "source_artifacts": [
     {
@@ -88,6 +113,51 @@
       "file_sha256": "e8ce2b95f0c0a74c0306a4a95ac01eb11ea32c0c5bb056f3af7b7f27eabc90dd",
       "path": "docs/model-research/action-value/binance-u-flexible-remaining-horizon-stress-v1-2026-08-30.json",
       "result_sha256": "d9be584383bdbf4e45f570987103e9d380358b2ba08aafc865ccecfc4b2c225e"
+    }
+  ],
+  "profitability_evidence_ladder": [
+    {
+      "rank": 1,
+      "evidence_class": "owned_realized_recurrent_cash_after_source_bound_direct_cost",
+      "edge_count": 1,
+      "edge_ids": [
+        "polymarket_complete_set_holding_yield"
+      ],
+      "what_is_proved": "positive_owned_recurrent_cash_payments_and_positive_economics_through_a_three_percent_alternative_yield_under_the_exact_historical_scope",
+      "what_is_not_proved": "current_three_wallet_rate_external_friction_current_capacity_or_an_owned_split_hold_merge_cycle"
+    },
+    {
+      "rank": 2,
+      "evidence_class": "long_public_history_or_fixed_published_gross_terms_without_owned_account_reconciliation",
+      "edge_count": 8,
+      "edge_ids": [
+        "binance_ldusdt_required_margin_yield",
+        "binance_usd1_simple_earn_fixed_bonus",
+        "binance_u_flexible_existing_balance_bonus",
+        "binance_usd1_wlfi_holding_airdrop",
+        "binance_usde_existing_holding_reward",
+        "binance_rwusd_existing_vip_bonus",
+        "binance_usdt_flexible_existing_balance_bonus",
+        "binance_eth_sol_soft_staking"
+      ],
+      "what_is_proved": "a_direction_independent_gross_reward_or_cost_identity_exists_inside_each_exact_existing_inventory_or_required_collateral_scope",
+      "what_is_not_proved": "owned_eligibility_capacity_realized_payout_and_complete_incremental_costs"
+    },
+    {
+      "rank": 3,
+      "evidence_class": "current_owned_account_after_all_incremental_cost_positive_floor",
+      "edge_count": 0,
+      "edge_ids": [],
+      "what_is_proved": "nothing_at_this_evidence_level",
+      "what_is_not_proved": "every_current_account_eligibility_capacity_liquidity_custody_tax_redemption_and_opportunity_cost_gate_for_any_row"
+    },
+    {
+      "rank": 4,
+      "evidence_class": "deployment_ready",
+      "edge_count": 0,
+      "edge_ids": [],
+      "what_is_proved": "nothing_at_this_evidence_level",
+      "what_is_not_proved": "paper_or_live_authority_and_complete_owned_execution_reconciliation"
     }
   ],
   "evidence_strength_frontier": [
@@ -286,8 +356,10 @@
     "new_accepted_edge_count": 0,
     "accepted_edge_count_after_frontier": 27,
     "profitability_claim_beyond_source_scopes": false,
+    "current_owned_after_all_incremental_cost_profitable_edge_count": 0,
     "deployment_ready_edge_count": 0,
-    "next_research_spend": "at_or_after_2026_08_30T19_00_01Z_advance_only_the_precommitted_distinct_WNBA_structural_window_if_every_frozen_gate_is_satisfied_then_refresh_only_the_rank_1_Polymarket_single_wallet_continuity_pulse_not_before_2026_08_31T02_15_30Z_absent_a_material_change_do_not_roll_USD1_or_U_remaining_horizon_stresses_daily",
+    "immediate_research_spend": "none_no_exact_public_retry_trigger_is_currently_satisfied_and_the_consumed_WNBA_window_must_not_be_repeated",
+    "next_research_spend": "after_2026_08_31T00_00_00Z_run_only_the_frozen_terminal_GLWUSDT_history_reconciliation_for_mechanism_evidence_without_books_then_not_before_2026_08_31T02_15_30Z_run_only_one_distinct_rank_1_Polymarket_single_wallet_continuity_pulse_absent_a_material_change_do_not_roll_USD1_or_U_remaining_horizon_stresses_daily",
     "prohibited_shortcuts": [
       "acquiring_borrowing_or_retaining_an_asset_for_any_existing_balance_only_edge",
       "treating_a_published_APR_as_owned_realized_profit",
