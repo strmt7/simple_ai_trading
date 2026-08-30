@@ -28,9 +28,7 @@ SCHEMA = "polymarket-exact-negrisk-event-prefilter-result-v1"
 def _expected_market_count(contract: dict[str, Any]) -> int:
     value = contract.get("expected_market_count")
     if isinstance(value, bool) or not isinstance(value, int) or not 2 <= value <= 100:
-        raise RuntimeError(
-            "expected market count must be an integer from 2 through 100"
-        )
+        raise RuntimeError("expected market count must be an integer from 2 through 100")
     return value
 
 
@@ -77,9 +75,7 @@ def _validate_contract(contract: dict[str, Any], contract_path: Path) -> None:
             raise RuntimeError(f"implementation hash mismatch: {path.name}")
 
 
-def _conversion_rows(
-    event: dict[str, Any],
-) -> tuple[dict[str, Any], list[dict[str, Any]]]:
+def _conversion_rows(event: dict[str, Any]) -> tuple[dict[str, Any], list[dict[str, Any]]]:
     screened = _screen_event(event)
     total = Decimal(screened["displayed_all_yes_sum_pUSD"])
     rows: list[dict[str, Any]] = []
@@ -93,30 +89,13 @@ def _conversion_rows(
                 "source_label": leg["label"],
                 "displayed_no_input_pUSD": format(no, "f"),
                 "displayed_other_yes_output_sum_pUSD": format(other_yes, "f"),
-                "optimistic_displayed_conversion_gap_pUSD": format(other_yes - no, "f"),
+                "optimistic_displayed_conversion_gap_pUSD": format(
+                    other_yes - no, "f"
+                ),
                 "passes_strict_positive_displayed_gap": other_yes > no,
             }
         )
     return screened, rows
-
-
-def _screen_compatible_event(
-    event: dict[str, Any], expected_market_count: int
-) -> tuple[bool, dict[str, Any] | None, list[dict[str, Any]], str | None]:
-    fixed_negrisk = _eligible_event(event)
-    screened: dict[str, Any] | None = None
-    conversions: list[dict[str, Any]] = []
-    compatibility_failure: str | None = None
-    if fixed_negrisk:
-        try:
-            screened, conversions = _conversion_rows(event)
-        except (KeyError, RuntimeError, ValueError, ArithmeticError) as exc:
-            compatibility_failure = str(exc)
-        if screened is not None and screened["market_count"] != expected_market_count:
-            compatibility_failure = "exact event market count changed"
-            screened = None
-            conversions = []
-    return fixed_negrisk, screened, conversions, compatibility_failure
 
 
 def main() -> None:
@@ -150,21 +129,25 @@ def main() -> None:
     if event.get("slug") != contract["event_slug"]:
         raise RuntimeError("exact event slug mismatch")
 
-    fixed_negrisk, screened, conversions, compatibility_failure = (
-        _screen_compatible_event(event, _expected_market_count(contract))
-    )
+    fixed_negrisk = _eligible_event(event)
+    screened: dict[str, Any] | None = None
+    conversions: list[dict[str, Any]] = []
+    if fixed_negrisk:
+        screened, conversions = _conversion_rows(event)
+        if screened["market_count"] != _expected_market_count(contract):
+            raise RuntimeError("exact event market count changed")
     all_yes_candidate = bool(
         screened is not None and screened["passes_strictly_below_payout_gate"]
     )
     conversion_candidate_count = sum(
         bool(row["passes_strict_positive_displayed_gap"]) for row in conversions
     )
-    source_only_candidate = compatibility_failure is None and (
-        all_yes_candidate or conversion_candidate_count > 0
-    )
+    source_only_candidate = all_yes_candidate or conversion_candidate_count > 0
     result: dict[str, Any] = {
         "schema_version": SCHEMA,
-        "created_at_utc": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
+        "created_at_utc": datetime.now(timezone.utc).isoformat().replace(
+            "+00:00", "Z"
+        ),
         "contract": {
             "path": contract["contract_path"],
             "sha256": contract["contract_sha256"],
@@ -173,7 +156,6 @@ def main() -> None:
             "receipt": receipt,
             "event_slug": contract["event_slug"],
             "fixed_negrisk": fixed_negrisk,
-            "compatibility_failure": compatibility_failure,
         },
         "screen": {
             "event": screened,
@@ -188,13 +170,9 @@ def main() -> None:
                 "not_fixed_negrisk_rejected"
                 if not fixed_negrisk
                 else (
-                    "incompatible_or_unavailable_market_rejected_before_books"
-                    if compatibility_failure is not None
-                    else (
-                        "source_only_candidate_requires_separate_exact_depth_fee_and_conversion_proof"
-                        if source_only_candidate
-                        else "rejected_before_books_fees_and_onchain_requests"
-                    )
+                    "source_only_candidate_requires_separate_exact_depth_fee_and_conversion_proof"
+                    if source_only_candidate
+                    else "rejected_before_books_fees_and_onchain_requests"
                 )
             ),
             "accepted_edge": False,
@@ -224,7 +202,6 @@ def main() -> None:
                 ),
                 "all_yes_candidate": all_yes_candidate,
                 "positive_displayed_conversion_candidate_count": conversion_candidate_count,
-                "compatibility_failure": compatibility_failure,
                 "payloads_printed": 0,
             },
             sort_keys=True,

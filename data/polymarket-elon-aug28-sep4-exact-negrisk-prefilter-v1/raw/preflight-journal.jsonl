@@ -1,0 +1,1 @@
+{"attempted_at_utc":"2026-08-30T07:36:53.7800978Z","command_shape":"uv run python tools/screen_polymarket_exact_negrisk_event.py --help","error":"ModuleNotFoundError: No module named 'tools'","network_requests":0,"outcome":"local_pre_main_import_failure_unconsumed","retry_scope":"corrected invocation must use uv run python -m tools.screen_polymarket_exact_negrisk_event"}

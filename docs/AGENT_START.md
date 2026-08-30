@@ -131,6 +131,15 @@ safety gate, blocks Stop, or submits an order.
   displayed package is strictly below its guaranteed payout floor. Canonical
   terminal SHA-256 is
   `13eb2d843260b2e05d693f82ddc6f3efcbae51e83d61f5fe06693be56c2c30a5`.
+- The distinct 26-bin Elon August 28-September 4 fixed-NegRisk event fired rank
+  31, but its one exact Gamma response already had two closed nonaccepting
+  losing bins. The remaining 24 accepting YES prices summed to 1.0055 pUSD, so
+  even the most optimistic retained complete-set interpretation lost 0.0055
+  pUSD before fees and no book was requested. The consumed runner failed on the
+  partial resolution after retaining raw evidence; its exact bytes are in an
+  immutable sidecar and the reusable runner now returns a fail-closed diagnostic
+  for that state. Do not refetch this event. Canonical terminal SHA-256 is
+  `d22954b0611b7bd8210dbc8d59bf1f9a645c118331da057d80585b364ed0c0ac`.
 - Binance Stocks FPSL is a materially distinct direction-independent overlay
   for U.S.-listed stocks or ETFs that are already independently owned and fully
   settled. The current FAQ says actual loaned shares accrue interest daily and
