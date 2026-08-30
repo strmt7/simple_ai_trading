@@ -2493,3 +2493,44 @@ frontier SHA-256 is
 `f84ac384ef3f4edfaa9f3a98e3588223ba3b4c6dd0b1389bbc11e4ece09a8b26`;
 registry SHA-256 is
 `e3cb85b3bf7920d32fd8a521690b2bffdb475d540225adf13031795249176b9a`.
+
+## Binance Copy Trading realized Lead Trader profit-share overlay
+
+A bounded current official-source sweep found no material Binance or Polymarket
+rate, listing, fee, reward, or product trigger worth reopening. The retained
+current Binance Agent Native API index then exposed an unregistered Copy
+Trading family, and one frozen official rendered product read bound its exact
+economic mechanism: Binance supports Spot and Futures Lead Traders; an
+experienced trader can apply, set a profit-share rate, and receive that share
+when an authentic follower closes a profitable copied position. The same source
+states that qualification and regional access are conditional, market risk
+remains, and past performance does not guarantee future performance.
+
+The twenty-ninth accepted scoped edge is only exact realized positive owned
+Lead Trader profit share from independently existing authentic followers'
+profitable copied closes on an independently cross-regime accepted legitimate
+BTC, ETH, or SOL Spot or Futures strategy in an already active lead portfolio,
+after every incremental fee, slippage, tax, compliance, support, disclosure,
+settlement, operating, and strategy-capacity cost. The public forward floor is
+zero. No account eligibility, portfolio, follower, configured rate, copied
+close, owned payout, current profit, or deployment readiness was proved.
+
+Never use the share to rescue an unprofitable or unsupported strategy, create
+or solicit followers, manufacture related-party or wash activity, apply,
+enroll, publish, or alter a lead portfolio, or place or copy trades. Binance's
+current API index classifies the Futures Lead Trader status `GET` as `TRADE`, so
+read-only authority is insufficient. Advance only from an already active
+portfolio plus an independently accepted strategy, authentic existing follower,
+exact profitable copied close, and explicit account-specific payout-evidence
+authority; every state change remains separately unauthorized.
+
+Canonical contract SHA-256 is
+`90d61004b2f8c4f81a179a0180f3d9afa7c0872df6b9f5cbf80c92aa478e852b`;
+rendered evidence SHA-256 is
+`32a61a3f5fb00df8ca9b998d39878d5687492d35a454e219dd0104e7a4f9e692`;
+edge SHA-256 is
+`6a5acab5c5b9561fa08fedae5b782198db87e8aa8a5c6172f0c4e0fadc3ef7c0`;
+frontier SHA-256 is
+`bc2db7e81a2e14fee68dc9f57041d226843fefabc0cc47e81db10985e04d84d3`;
+registry SHA-256 is
+`20f029bbdc6fc31a496f47f74ff3cf59c81b8cf89c522b41e80d72823861cb1a`.

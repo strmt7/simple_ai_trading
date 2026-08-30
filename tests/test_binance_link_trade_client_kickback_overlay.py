@@ -145,7 +145,9 @@ def test_partner_rebate_is_a_distinct_fail_closed_realized_overlay() -> None:
     decision = partner["adjudication"]
     authority = partner["authority"]
     assert decision["accepted_edge"] is True
-    assert decision["accepted_edge_count_after"] == registry["accepted_edge_count"]
+    assert decision["accepted_edge_count_after"] == (
+        decision["accepted_edge_count_before"] + 1
+    )
     assert decision["market_direction_forecast_required"] is False
     assert decision["owned_income_proved"] is False
     assert decision["profitability_claim"] is False

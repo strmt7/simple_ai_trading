@@ -1,0 +1,74 @@
+{
+  "admission": {
+    "account_eligibility_rate_followers_or_owned_income_proved": false,
+    "exact_current_product_semantics_admitted": true,
+    "market_direction_independent_profit_share_identity_proved": true,
+    "page_examples_or_profile_values_admitted_as_economics": false
+  },
+  "contract": {
+    "contract_sha256": "90d61004b2f8c4f81a179a0180f3d9afa7c0872df6b9f5cbf80c92aa478e852b",
+    "path": "docs/model-research/action-value/binance-copy-trading-lead-profit-share-rendered-source-contract-v1-2026-08-30.json"
+  },
+  "observed_at_utc": "2026-08-30T12:52:37.7561632Z",
+  "rendered_evidence_sha256": "32a61a3f5fb00df8ca9b998d39878d5687492d35a454e219dd0104e7a4f9e692",
+  "rendered_source": {
+    "content_type": "text/html",
+    "crawled_label": "today",
+    "method": "official_public_unauthenticated_web_rendered_documentation_read",
+    "redirected_url": "https://www.binance.com/en/academy/articles/your-guide-to-binance-copy-trading",
+    "source_title": "Your Guide to Binance Copy Trading",
+    "source_updated_date": "2026-06-26",
+    "total_rendered_lines": 348,
+    "url": "https://academy.binance.com/en/articles/your-guide-to-binance-copy-trading"
+  },
+  "requirement_results": {
+    "follower_profitable_close_is_payment_trigger": {
+      "evidence": "Followers pay a portion of profits when they close a profitable copied position and the FAQ repeats that the lead trader receives the configured share on a profitable copied close.",
+      "line_ranges": [
+        "179-182",
+        "206-208"
+      ],
+      "passed": true
+    },
+    "lead_trader_application_and_profit_share_semantics": {
+      "evidence": "Experienced traders can apply to become Lead Traders and earn profit-sharing from followers.",
+      "line_range": "179-182",
+      "passed": true
+    },
+    "lead_trader_sets_share_rate": {
+      "evidence": "The lead trader sets the profit-share rate.",
+      "line_ranges": [
+        "179-182",
+        "206-208"
+      ],
+      "passed": true
+    },
+    "regional_and_performance_eligibility_remain_conditional": {
+      "evidence": "Qualification may include performance activity volume and verification requirements and regional availability varies.",
+      "line_ranges": [
+        "181-182",
+        "197-199"
+      ],
+      "passed": true
+    },
+    "spot_and_futures_product_scope": {
+      "evidence": "The source explicitly states that Binance Copy Trading and the Lead Trader program cover both Spot and Futures.",
+      "line_ranges": [
+        "111-116",
+        "123-124",
+        "181-182"
+      ],
+      "passed": true
+    },
+    "trading_risk_and_no_future_performance_guarantee": {
+      "evidence": "The source says past performance is not a guarantee, copy trading does not remove market risk, no strategy works in all conditions, and future Lead Trader performance can change.",
+      "line_ranges": [
+        "130-141",
+        "183-192",
+        "212-215"
+      ],
+      "passed": true
+    }
+  },
+  "schema_version": "binance-copy-trading-lead-profit-share-rendered-evidence-v1"
+}
