@@ -1,0 +1,153 @@
+{
+  "schema_version": "binance-funding-estimate-lock-v1-contract",
+  "frozen_at_utc": "2026-08-30T18:00:43.7509516Z",
+  "contract_path": "docs/model-research/action-value/binance-funding-estimate-lock-contract-v1-2026-08-30.json",
+  "purpose": "test whether Binance BTC ETH and SOL displayed funding estimates were fixed at entry-like lead times by reconciling three retained snapshots to later realized public funding history",
+  "question": "Across three pre-funding snapshots and nine BTC ETH SOL observations, did every displayed lastFundingRate equal the later realized funding transfer exactly?",
+  "novelty": {
+    "registry_alias_search": "zero known_at_entry funding_estimate next_funding_estimate lastFundingRate or predicted_funding matches in the current structural-edge registry",
+    "literature_lead": "Funding Timing and No-Arbitrage Bounds in Decentralized Perpetual Markets distinguishes funding fixed at entry from forward-looking estimates; this contract tests only the analogous empirical prerequisite on retained Binance observations",
+    "literature_url": "https://papers.ssrn.com/sol3/papers.cfm?abstract_id=6805838"
+  },
+  "endpoint_classification": {
+    "method": "GET",
+    "operation": "Get Funding Rate History",
+    "security": "public unauthenticated read-only USD-M Futures market data",
+    "primary_contract_url": "https://developers.binance.com/en/docs/catalog/core-trading-derivatives-trading-usd-s-m-futures/api/rest-api/market-data",
+    "change_log_url": "https://developers.binance.com/docs/derivatives/change-log"
+  },
+  "retained_sources": [
+    {
+      "name": "snapshot_2026_08_25",
+      "path": "docs/model-research/action-value/binance-cross-stablecoin-funding-snapshot-v1-2026-08-25.json",
+      "sha256": "f4e294e20541f2d4aa1b78679f9583a7e5c0a0570d7e31ff478477d9a0583410"
+    },
+    {
+      "name": "snapshot_2026_08_27",
+      "path": "data/binance-commodity-option-perpetual-lower-bound-v1/raw/futures-all-premium-index.raw",
+      "sha256": "0c2feb28ca24c0aba7063b20fe9fdc66e17afb4156173de21e3e58ce75197ad9"
+    },
+    {
+      "name": "snapshot_2026_08_29",
+      "path": "data/polymarket-binance-tradfi-perps-funding-prefilter-v1/response-04-binance-premium-index.json",
+      "sha256": "60436652bd6d60545e31c4eb9352ea4c7243d2607b3ffe949949bc6029fa8286"
+    },
+    {
+      "name": "baseline_BTCUSDT_funding",
+      "path": "data/binance-broad-crypto-funding-carry-preflight-v1/raw/07-funding-btcusdt.raw",
+      "sha256": "6b4219597b85ee51a7b0601ba1399b2775a4ca1356fe3db48c459376fad9b9a8"
+    },
+    {
+      "name": "baseline_ETHUSDT_funding",
+      "path": "data/binance-broad-crypto-funding-carry-preflight-v1/raw/08-funding-ethusdt.raw",
+      "sha256": "73901ed47ae67f544b586133083ed8aefde10dcf52bd2a8574f4e05c0863d6cc"
+    },
+    {
+      "name": "baseline_SOLUSDT_funding",
+      "path": "data/binance-broad-crypto-funding-carry-preflight-v1/raw/09-funding-solusdt.raw",
+      "sha256": "fd94adb008bca4e083a8097fa3c675134ccb06fb2936546ee86d6b7fbe62d297"
+    }
+  ],
+  "episodes": [
+    {
+      "name": "2026_08_25_16_00",
+      "snapshot_source": "snapshot_2026_08_25",
+      "snapshot_time_ms": 1787649799000,
+      "funding_time_ms": 1787673600000,
+      "funding_source_kind": "retained",
+      "estimates": [
+        {"symbol": "BTCUSDT", "estimate": "0.00010000", "funding_source": "baseline_BTCUSDT_funding"},
+        {"symbol": "ETHUSDT", "estimate": "0.00006601", "funding_source": "baseline_ETHUSDT_funding"},
+        {"symbol": "SOLUSDT", "estimate": "0.00010000", "funding_source": "baseline_SOLUSDT_funding"}
+      ]
+    },
+    {
+      "name": "2026_08_27_08_00",
+      "snapshot_source": "snapshot_2026_08_27",
+      "snapshot_time_ms": 1787801241000,
+      "funding_time_ms": 1787817600000,
+      "funding_source_kind": "captured",
+      "estimates": [
+        {"symbol": "BTCUSDT", "estimate": "0.00003734"},
+        {"symbol": "ETHUSDT", "estimate": "0.00009929"},
+        {"symbol": "SOLUSDT", "estimate": "0.00010000"}
+      ]
+    },
+    {
+      "name": "2026_08_30_00_00",
+      "snapshot_source": "snapshot_2026_08_29",
+      "snapshot_time_ms": 1788031736000,
+      "funding_time_ms": 1788048000000,
+      "funding_source_kind": "captured",
+      "estimates": [
+        {"symbol": "BTCUSDT", "estimate": "0.00010000"},
+        {"symbol": "ETHUSDT", "estimate": "0.00002033"},
+        {"symbol": "SOLUSDT", "estimate": "-0.00012787"}
+      ]
+    }
+  ],
+  "requests": [
+    {
+      "name": "BTCUSDT-funding-history-reconciliation",
+      "symbol": "BTCUSDT",
+      "method": "GET",
+      "url": "https://fapi.binance.com/fapi/v1/fundingRate?symbol=BTCUSDT&startTime=1787817600000&endTime=1788048001000&limit=100",
+      "start_time_ms": 1787817600000,
+      "end_time_ms": 1788048001000,
+      "limit": 100,
+      "timeout_seconds": 20,
+      "output_key": "BTCUSDT_raw_path"
+    },
+    {
+      "name": "ETHUSDT-funding-history-reconciliation",
+      "symbol": "ETHUSDT",
+      "method": "GET",
+      "url": "https://fapi.binance.com/fapi/v1/fundingRate?symbol=ETHUSDT&startTime=1787817600000&endTime=1788048001000&limit=100",
+      "start_time_ms": 1787817600000,
+      "end_time_ms": 1788048001000,
+      "limit": 100,
+      "timeout_seconds": 20,
+      "output_key": "ETHUSDT_raw_path"
+    },
+    {
+      "name": "SOLUSDT-funding-history-reconciliation",
+      "symbol": "SOLUSDT",
+      "method": "GET",
+      "url": "https://fapi.binance.com/fapi/v1/fundingRate?symbol=SOLUSDT&startTime=1787817600000&endTime=1788048001000&limit=100",
+      "start_time_ms": 1787817600000,
+      "end_time_ms": 1788048001000,
+      "limit": 100,
+      "timeout_seconds": 20,
+      "output_key": "SOLUSDT_raw_path"
+    }
+  ],
+  "decision": {
+    "funding_time_tolerance_ms": 1000,
+    "rejection": "If any displayed estimate differs from the later realized rate, reject treating lastFundingRate as a transfer locked at the retained snapshot lead time.",
+    "non_rejection": "Even if all nine observations match, retain only a historical mechanism lead; do not infer future locking, fees, execution, capacity, basis, liquidation, or profit.",
+    "book_gate": "No outcome permits a book, fee, account, credential, order, or fund request from this contract."
+  },
+  "outputs": {
+    "BTCUSDT_raw_path": "data/binance-funding-estimate-lock-v1/raw/BTCUSDT-funding-history.json",
+    "ETHUSDT_raw_path": "data/binance-funding-estimate-lock-v1/raw/ETHUSDT-funding-history.json",
+    "SOLUSDT_raw_path": "data/binance-funding-estimate-lock-v1/raw/SOLUSDT-funding-history.json",
+    "journal_path": "data/binance-funding-estimate-lock-v1/request-journal.jsonl",
+    "result_path": "docs/model-research/action-value/binance-funding-estimate-lock-result-v1-2026-08-30.json"
+  },
+  "implementation": {
+    "path": "tools/adjudicate_binance_funding_estimate_lock.py",
+    "sha256": "ba3740ce63010b854f292ce284cf95d507864e12ce5a28a72f2f246319c59c48"
+  },
+  "authority": {
+    "public_unauthenticated_read_only_requests": 3,
+    "credentials_used": false,
+    "testnet_credentials_received_but_not_used": true,
+    "account_requests": 0,
+    "book_or_fee_requests": 0,
+    "orders_or_transactions": 0,
+    "funds_used": false,
+    "trading_authority": false
+  },
+  "retry_policy": "one use only; preserve every failure and never retry narrow paginate reorder alias or replace a symbol after access",
+  "contract_sha256": "46d0bbf9e48b090332653d8b5cfe38b2350fc8ce3d8b2fd0100addc10916c8df"
+}
