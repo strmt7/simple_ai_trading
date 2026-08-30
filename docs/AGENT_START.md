@@ -2534,3 +2534,36 @@ frontier SHA-256 is
 `bc2db7e81a2e14fee68dc9f57041d226843fefabc0cc47e81db10985e04d84d3`;
 registry SHA-256 is
 `20f029bbdc6fc31a496f47f74ff3cf59c81b8cf89c522b41e80d72823861cb1a`.
+
+## Binance BFUSD BTC/ETH/SOL funding-carry dominance bound
+
+Do not run another BFUSD-funded spot-perpetual carry backtest on the retained
+population. A zero-new-market-request audit proved that the existing optimistic
+Portfolio Margin sensitivity is a strict upper bound for every BFUSD APR at or
+below 10%: the frozen carry contract charges 10% annual opportunity cost per
+capital leg, and that sensitivity already deleted one complete leg.
+
+At both the last hash-bound 5.12% BFUSD last-day APR and an optimistic 10% APR,
+zero of nine BTC/ETH/SOL training, validation, and test roles has positive net
+economics, zero family-adjusted bootstrap lower bounds are positive, and zero of
+72 mandatory regime slices are positive. Necessary but not sufficient BFUSD
+APRs are strictly above 22.04372931374745% for BTC, 22.18277961587428% for ETH,
+and 26.55978689762650% for SOL. Drawdown, positive-week concentration, basis,
+fees, slippage, liquidation, account eligibility, conversion, redemption, and
+all external costs remain additional gates.
+
+The current official BFUSD page confirms daily rewards can stack with the
+holder's own hedging funding fees and that several account types enter reward
+snapshots, but its current numerical APR and collateral fields rendered as
+placeholders. No current rate is admitted. Reopen only after a new source-bound
+rate strictly clears the applicable necessary threshold together with
+source-bound same-period reward history and distribution semantics, or after a
+material funding, execution, fee, basis, margin, or capital-cost change capable
+of clearing the retained deficit. Never resample this population or request
+books merely to test BFUSD.
+
+Canonical result SHA-256 is
+`477a4db3c7f9c594ea8c351ce8f0a766280f062437c8089758d6137fbdd54d86`;
+accepted edges remain 29, ranked hypotheses remain 44, terminal families remain
+64, and registry SHA-256 is
+`fe3116d77f82ef88f2ab929b8e71ec67ee029a7399a526e4b98edd9e45c81ef7`.

@@ -5094,3 +5094,42 @@ remain 64. Frontier SHA-256 becomes
 `bc2db7e81a2e14fee68dc9f57041d226843fefabc0cc47e81db10985e04d84d3`;
 registry SHA-256 becomes
 `20f029bbdc6fc31a496f47f74ff3cf59c81b8cf89c522b41e80d72823861cb1a`.
+
+## Binance BFUSD BTC/ETH/SOL funding-carry dominance bound
+
+The next actual-trading audit stopped before new market data because a stronger
+retained upper bound already exists. The broad funding contract charges 10%
+annual opportunity cost per capital leg. The later Portfolio Margin sensitivity
+optimistically deleted one complete leg, so it grants exactly the same economic
+improvement as a 10% BFUSD APR and dominates every lower BFUSD rate before
+conversion, redemption, eligibility, quota, collateral, tax, custody, or
+operating costs.
+
+An exact zero-request recomputation of the retained BTC, ETH, and SOL funding
+roles found that both the last hash-bound 5.12% BFUSD last-day APR and an
+optimistic 10% APR leave zero of nine training/validation/test role nets, zero
+family-adjusted bootstrap lower bounds, and zero of 72 required bullish,
+bearish, sideways, directional, choppy, and volatility slices positive.
+Necessary—not sufficient—BFUSD APR thresholds are strictly above
+22.04372931374745% for BTC, 22.18277961587428% for ETH, and
+26.55978689762650% for SOL. Existing drawdown and positive-week-concentration
+failures plus all execution and account gates still remain above those rates.
+
+One current official rendered BFUSD page read confirmed that holding rewards do
+not disqualify the holder from funding fees on their own hedging strategy and
+that Futures, Spot, Funding, Portfolio Margin, Trading Bots, and Margin holdings
+enter the reward snapshot. Its current numeric APR and collateral fields were
+placeholders, so no current rate was admitted and no trigger fired. No venue
+API, credential, account, book, order, trade, transfer, subscription,
+redemption, fund, or mutation was accessed.
+
+Do not resample the retained 17-symbol population or request books. Reopen only
+with a new source-bound BFUSD APR strictly above the applicable necessary
+threshold plus same-period reward history and distribution semantics capable of
+recomputing drawdown and concentration, or a material funding, fee, execution,
+basis, margin, or capital-cost change capable of clearing the retained deficit.
+Canonical result SHA-256 is
+`477a4db3c7f9c594ea8c351ce8f0a766280f062437c8089758d6137fbdd54d86`.
+Accepted edges remain 29, ranked hypotheses remain 44, terminal families remain
+64, and registry SHA-256 becomes
+`fe3116d77f82ef88f2ab929b8e71ec67ee029a7399a526e4b98edd9e45c81ef7`.

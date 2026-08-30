@@ -22,6 +22,9 @@ EXPECTED_ARTIFACT_HASH = (
 EXPECTED_FUNDING_HASH = (
     "095009a36a5c6a8a5a2dfdfb3e57ebe6183721bb84600518552ccf6d463617c8"
 )
+EXPECTED_TERMINAL_SUCCESSOR_HASH = (
+    "477a4db3c7f9c594ea8c351ce8f0a766280f062437c8089758d6137fbdd54d86"
+)
 
 
 def _load(path: Path) -> dict[str, object]:
@@ -113,9 +116,6 @@ def test_portfolio_margin_sensitivity_is_terminal_and_not_promoted() -> None:
         if row["family"]
         == "binance_broad_crypto_spot_perpetual_funding_carry_portfolio_margin_single_capital_leg_sensitivity_2026_08_30"
     )
-    assert terminal["canonical_result_sha256"] == EXPECTED_ARTIFACT_HASH
-    assert "zero_of_17_symbols_positive" in terminal["reason"]
-    assert (
-        "zero_of_51_family_adjusted_bootstrap_lower_bounds_positive"
-        in terminal["reason"]
-    )
+    assert terminal["canonical_result_sha256"] == EXPECTED_TERMINAL_SUCCESSOR_HASH
+    assert "zero_of_9_BTC_ETH_SOL_roles" in terminal["reason"]
+    assert "zero_family_adjusted_bootstrap_bounds" in terminal["reason"]
