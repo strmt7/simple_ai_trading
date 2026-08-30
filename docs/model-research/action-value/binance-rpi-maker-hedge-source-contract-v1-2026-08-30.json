@@ -1,0 +1,57 @@
+{
+  "schema_version": "binance-rpi-maker-hedge-source-v1-contract",
+  "frozen_at_utc": "2026-08-30T02:53:23.8361007Z",
+  "contract_sha256": "bf2523afeca36bf38d20aa2a61e04a8984bca5fc3e221ff854090ad748f1c0e8",
+  "purpose": "source_gate_RPI_maker_first_hedge_before_any_market_data",
+  "implementation": {
+    "path": "tools/research_binance_rpi_maker_hedge.py",
+    "sha256": "1127239bdf76d3c2ddfdbbe7fec8a7d52394be22bef7132e1a71e895d9efaf16"
+  },
+  "public_sources": [
+    {
+      "name": "binance_usdm_market_data",
+      "url": "https://developers.binance.com/en/docs/catalog/core-trading-derivatives-trading-usd-s-m-futures/api/rest-api/market-data",
+      "classification": "public_unauthenticated_read_only_documentation_GET",
+      "required_text_casefolded": [
+        "/fapi/v1/rpidepth",
+        "crossed price levels are hidden",
+        "isrpitrade"
+      ]
+    },
+    {
+      "name": "binance_derivatives_change_log",
+      "url": "https://developers.binance.com/docs/derivatives/change-log",
+      "classification": "public_unauthenticated_read_only_documentation_GET",
+      "required_text_casefolded": [
+        "/fapi/v1/commissionrate",
+        "rpi commisson fee",
+        "/fapi/v1/rpidepth"
+      ]
+    }
+  ],
+  "retained_sources": {
+    "agent_native_endpoint_index": {
+      "path": "docs/model-research/binance/raw/spot-block-matching-cost-overlay-v1-2026-08-30/03-agent-native-index.raw.txt",
+      "sha256": "944e132d3523c8a03abcac2f7ddb85802107e45161470885b7a8785fd4fdb15d",
+      "required_identity": "GET /fapi/v1/commissionRate is USER_DATA"
+    }
+  },
+  "decision_contract": {
+    "advance_to_public_rpi_depth_now_only_if": "an_exact_public_commission_or_conservative_source_bound_fee_ceiling_can_leave_positive_after_cost_headroom_for_an_independently_required_equal_base_hedge",
+    "reject_public_depth_now_if": "the_only_exact_RPI_commission_is_account_specific_USER_DATA_and_no_designated_credentials_or_explicit_signed_GET_only_authority_exist",
+    "never_infer": [
+      "an_owned_fill_from_visible_RPI_depth",
+      "direction_independence_from_a_standalone_RPI_fill",
+      "profitability_before_exact_RPI_commission_taker_hedge_fee_latency_funding_orphan_and_adverse_selection_costs"
+    ]
+  },
+  "authority": {
+    "public_unauthenticated_read_only_documentation_requests": 2,
+    "venue_market_data_requests": 0,
+    "credentials_used": false,
+    "account_state_accessed": false,
+    "orders_transfers_conversions_or_mutations": 0,
+    "paper_or_live_trading_authority": false,
+    "protected_capture_accessed": false
+  }
+}

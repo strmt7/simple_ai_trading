@@ -40,6 +40,7 @@ data/polymarket-aca-house-identity-metadata-v1/** binary -eol
 data/polymarket-aca-house-identity-parity-v1/** binary -eol
 data/binance-stocks-fee-extension-source-v1/** binary -eol
 data/binance-tsm-bstock-dividend-underdebit-v1/raw/** binary -eol
+data/binance-rpi-maker-hedge-source-gate-v1/** binary -eol
 docs/model-research/binance/raw/** binary -eol
 docs/model-research/polymarket/current-rewards-population-delta-*.json text eol=lf
 docs/model-research/polymarket/raw/current-rewards-population-delta-v1-2026-08-30/** binary -eol

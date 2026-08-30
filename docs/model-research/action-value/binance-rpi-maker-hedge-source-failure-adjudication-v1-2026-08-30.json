@@ -1,0 +1,73 @@
+{
+  "schema_version": "binance-rpi-maker-hedge-source-failure-adjudication-v1",
+  "created_at_utc": "2026-08-30T02:55:25Z",
+  "result_sha256": "82245f341e23ab2e8c8e9e3bd4d47805e88aebc3b39f6ac1a6360067491be7ef",
+  "purpose": "preserve_and_fail_closed_the_consumed_RPI_documentation_source_gate_without_retrying_or_switching_aliases",
+  "consumed_contract": {
+    "path": "docs/model-research/action-value/binance-rpi-maker-hedge-source-contract-v1-2026-08-30.json",
+    "contract_sha256": "bf2523afeca36bf38d20aa2a61e04a8984bca5fc3e221ff854090ad748f1c0e8",
+    "file_sha256": "9d47ffba2e495935f3c60d12a925dacf8b5a0b2e9fec97436852410b16f9493e"
+  },
+  "consumed_evidence": {
+    "journal": {
+      "path": "data/binance-rpi-maker-hedge-source-gate-v1/journal.json",
+      "sha256": "6aeb9f1b813c1f6ca554786ef7570ec83ab89205d939e4eff4d8ce871d0115d7",
+      "state": "failed",
+      "planned_request_count": 2,
+      "issued_request_count": 1
+    },
+    "first_request": {
+      "method": "GET",
+      "url": "https://developers.binance.com/en/docs/catalog/core-trading-derivatives-trading-usd-s-m-futures/api/rest-api/market-data",
+      "status_code": 202,
+      "response_bytes": 0,
+      "raw_path": "data/binance-rpi-maker-hedge-source-gate-v1/raw/binance_usdm_market_data.raw.html",
+      "raw_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "second_request": {
+      "url": "https://developers.binance.com/docs/derivatives/change-log",
+      "issued": false
+    }
+  },
+  "retained_preexisting_evidence": {
+    "path": "docs/model-research/binance/raw/spot-block-matching-cost-overlay-v1-2026-08-30/03-agent-native-index.raw.txt",
+    "sha256": "944e132d3523c8a03abcac2f7ddb85802107e45161470885b7a8785fd4fdb15d",
+    "bounded_facts": [
+      "line_1289_names_GET_fapi_v1_commissionRate_as_USER_DATA",
+      "line_1318_names_GET_fapi_v1_rpiDepth_as_RPI_Order_Book"
+    ],
+    "does_not_prove": [
+      "current_RPI_commission_value",
+      "an_owned_RPI_fill",
+      "after_cost_headroom",
+      "stable_cross_regime_profitability"
+    ]
+  },
+  "adjudication": {
+    "status": "terminal_source_capture_failure_HTTP_202_empty_body_before_market_data",
+    "accepted_edge": false,
+    "deployment_ready": false,
+    "market_direction_forecast_required": false,
+    "profitability_claim": false,
+    "public_after_cost_profit_floor_bips": "0",
+    "rpi_depth_requests_made": 0,
+    "ordinary_book_requests_made": 0,
+    "commission_requests_made": 0,
+    "reason": "the_frozen_primary_page_returned_HTTP_202_with_zero_bytes_so_none_of_its_required_RPI_semantics_were_source_bound_and_the_exact_RPI_commission_remains_account_specific_USER_DATA",
+    "do_not_repeat": "do_not_retry_the_same_page_or_switch_to_an_alias_to_repair_this_consumed_contract",
+    "retry_trigger": "material_new_official_byte_retainable_RPI_fee_or_execution_contract_or_both_designated_Binance_credentials_plus_explicit_signed_GET_only_commission_authority_for_an_independently_positive_organic_equal_base_hedge_question;_every_order_requires_separate_trade_authority"
+  },
+  "methodology_correction": {
+    "mistake": "treating_a_browser_renderable_dynamic_documentation_route_as_if_a_direct_HTTP_GET_would_return_the_rendered_contract_bytes",
+    "correction": "for_dynamic_documentation_use_an_existing_hash_bound_native_index_or_preflight_byte_retainability_before_freezing_any_outcome_sensitive_source_contract_and_treat_HTTP_202_empty_as_a_consumed_null_response"
+  },
+  "authority": {
+    "public_unauthenticated_read_only_documentation_requests": 1,
+    "venue_market_data_requests": 0,
+    "credentials_used": false,
+    "account_state_accessed": false,
+    "orders_transfers_conversions_or_mutations": 0,
+    "paper_or_live_trading_authority": false,
+    "protected_capture_accessed": false
+  }
+}

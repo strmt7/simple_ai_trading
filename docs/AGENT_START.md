@@ -1694,6 +1694,23 @@ safety gate, blocks Stop, or submits an order.
   narrowly accepted scoped overlays, and result SHA-256
   `0a34d7289331515f8e7b3f09e856fbc331ecbc3a91130fea20542a39ef211f60`.
 
+## Binance RPI maker-hedge source gate
+
+The distinct USD-M RPI execution architecture is not an accepted edge. The
+retained native index proves that `commissionRate` is account `USER_DATA` and
+that an RPI order-book endpoint exists, but the frozen primary documentation
+GET returned HTTP 202 with an empty body before any market data. Do not retry
+the page, switch aliases, or request `rpiDepth` without exact account RPI
+commission and an independently positive organic equal-base hedge question.
+Visible depth never proves an owned fill, and every RPI or hedge order requires
+separate authority. Canonical failure result SHA-256 is
+`82245f341e23ab2e8c8e9e3bd4d47805e88aebc3b39f6ac1a6360067491be7ef`.
+
+For dynamic documentation, never assume that browser rendering means a direct
+HTTP client will receive the rendered contract. Prefer a hash-bound native
+index or preflight byte-retainability before freezing an outcome-sensitive
+source capture; HTTP 202 with zero bytes is a consumed null response.
+
 ## Task Routing
 
 | Work | Read first |

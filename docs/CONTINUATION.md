@@ -3465,6 +3465,38 @@ are `cc19bdd97167265e0831f84325624a623f83f2dc2d939491ed1c51859c0a38bb`,
 `30c5e00aa955ea3777f9b096b1fa1ae44d51318665561e4b6922f797f45706cc`,
 and `2fffd2044e72d1712ecdaa0c4e24cb829057ea2005c07e12129c443478b07902`.
 
+## Binance RPI Maker-Hedge Source Gate
+
+A distinct USD-M Retail Price Improvement execution lead was source-gated
+before any book request. The retained native endpoint index identifies
+`GET /fapi/v1/commissionRate` as `USER_DATA` and names
+`GET /fapi/v1/rpiDepth` as the RPI order book, but it does not provide the
+account's exact RPI commission, an owned fill, or after-cost economics. The
+frozen current primary documentation GET then returned HTTP 202 with an empty
+body. Its required rendered semantics were therefore not source-bound, the
+second documentation request was not sent, and zero RPI-depth, ordinary-book,
+commission, credential, account, order, mutation, or protected-capture requests
+were made.
+
+Do not retry that dynamic page or switch aliases. RPI remains an unaccepted
+maker-first hedge lead with a zero public profit floor. Reopen only on a
+material official byte-retainable RPI fee or execution contract, or when both
+designated credentials and explicit signed GET-only commission authority exist
+for an independently positive organic equal-base hedge question. Every RPI or
+hedge order still requires separate trade authority. Canonical failure
+adjudication:
+`docs/model-research/action-value/binance-rpi-maker-hedge-source-failure-adjudication-v1-2026-08-30.json`,
+result SHA-256
+`82245f341e23ab2e8c8e9e3bd4d47805e88aebc3b39f6ac1a6360067491be7ef`.
+
+The methodology correction is durable: a browser-renderable dynamic docs route
+is not presumed byte-retainable. Use an already hash-bound native index or
+preflight exact response bytes before freezing a source contract, and preserve
+HTTP 202 with zero bytes as a consumed null response.
+
+The structural registry remains at 44 ranked hypotheses and 21 accepted scoped
+overlays; its terminal source-capture entries now total 51.
+
 ## Verification Scope
 
 The price-blind series selector, both empty event catalogs, four canonical
