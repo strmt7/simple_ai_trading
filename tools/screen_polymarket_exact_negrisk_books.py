@@ -62,8 +62,7 @@ def _retained_event(contract: dict[str, Any]) -> dict[str, Any]:
     if (
         _canonical_hash(source_contract, "contract_sha256")
         != retained["prefilter_contract_sha256"]
-        or source_contract["contract_sha256"]
-        != retained["prefilter_contract_sha256"]
+        or source_contract["contract_sha256"] != retained["prefilter_contract_sha256"]
         or _canonical_hash(source_result, "result_sha256")
         != retained["prefilter_result_sha256"]
         or source_result["result_sha256"] != retained["prefilter_result_sha256"]
@@ -81,7 +80,9 @@ def _retained_event(contract: dict[str, Any]) -> dict[str, Any]:
 def _tokens(event: dict[str, Any]) -> list[str]:
     values: list[str] = []
     for market in event["markets"]:
-        values.extend(str(value) for value in _json_array(market["clobTokenIds"], "tokens"))
+        values.extend(
+            str(value) for value in _json_array(market["clobTokenIds"], "tokens")
+        )
     expected = len(event["markets"]) * 2
     if (
         not 4 <= expected <= 200
@@ -99,7 +100,10 @@ def _validate_contract(contract: dict[str, Any], contract_path: Path) -> dict[st
     if contract_path != _root_path(contract["contract_path"]):
         raise RuntimeError("contract path mismatch")
     _validate_instant(contract.get("frozen_at_utc"), "frozen_at_utc")
-    if contract.get("quantity_shares") != "5" or contract.get("adverse_ticks_per_leg") != 1:
+    if (
+        contract.get("quantity_shares") != "5"
+        or contract.get("adverse_ticks_per_leg") != 1
+    ):
         raise RuntimeError("quantity or adverse-tick stress changed")
     if contract.get("conversion_fee_bips") != 0:
         raise RuntimeError("unproved conversion fee changed")
@@ -146,23 +150,49 @@ def _validate_contract(contract: dict[str, Any], contract_path: Path) -> dict[st
     return event
 
 
-def _fee_model(market: dict[str, Any]) -> PolymarketFeeModel:
+LEGACY_FEE_SCHEDULE = {
+    "exponent": 1,
+    "rate": 0.05,
+    "rebateRate": 0.25,
+    "takerOnly": True,
+}
+
+
+def _fee_model(
+    market: dict[str, Any], expected_fee_schedule: dict[str, Any] | None = None
+) -> PolymarketFeeModel:
+    expected = expected_fee_schedule or LEGACY_FEE_SCHEDULE
     schedule = market.get("feeSchedule")
     if (
         market.get("feesEnabled") is not True
         or not isinstance(schedule, dict)
-        or schedule != {
-            "exponent": 1,
-            "rate": 0.05,
-            "rebateRate": 0.25,
-            "takerOnly": True,
-        }
+        or schedule != expected
+        or set(expected) != {"exponent", "rate", "rebateRate", "takerOnly"}
+        or isinstance(expected.get("exponent"), bool)
+        or not isinstance(expected.get("exponent"), int)
+        or expected["exponent"] < 0
+        or isinstance(expected.get("rate"), bool)
+        or not isinstance(expected.get("rate"), (int, float))
+        or not 0 < Decimal(str(expected["rate"])) < 1
+        or isinstance(expected.get("rebateRate"), bool)
+        or not isinstance(expected.get("rebateRate"), (int, float))
+        or not 0 <= Decimal(str(expected["rebateRate"])) <= 1
+        or expected.get("takerOnly") is not True
     ):
         raise RuntimeError("exact current fee schedule differs")
-    return PolymarketFeeModel(True, Decimal("0.05"), 1, True)
+    return PolymarketFeeModel(
+        True,
+        Decimal(str(expected["rate"])),
+        int(expected["exponent"]),
+        True,
+    )
 
 
-def _outcomes(event: dict[str, Any], books: dict[str, dict[str, Any]]) -> tuple[NegativeRiskOutcome, ...]:
+def _outcomes(
+    event: dict[str, Any],
+    books: dict[str, dict[str, Any]],
+    expected_fee_schedule: dict[str, Any] | None = None,
+) -> tuple[NegativeRiskOutcome, ...]:
     parsed: list[NegativeRiskOutcome] = []
     market_id = str(event["negRiskMarketID"]).lower()
     for market in event["markets"]:
@@ -173,9 +203,15 @@ def _outcomes(event: dict[str, Any], books: dict[str, dict[str, Any]]) -> tuple[
         tick = Decimal(str(market["orderPriceMinTickSize"]))
         if (
             str(market["negRiskMarketID"]).lower() != market_id
-            or any(str(book.get("market") or "").lower() != condition_id for book in (yes, no))
+            or any(
+                str(book.get("market") or "").lower() != condition_id
+                for book in (yes, no)
+            )
             or any(book.get("neg_risk") is not True for book in (yes, no))
-            or any(Decimal(str(book.get("min_order_size"))) != minimum for book in (yes, no))
+            or any(
+                Decimal(str(book.get("min_order_size"))) != minimum
+                for book in (yes, no)
+            )
             or any(Decimal(str(book.get("tick_size"))) != tick for book in (yes, no))
         ):
             raise RuntimeError("book and retained event identities differ")
@@ -185,13 +221,15 @@ def _outcomes(event: dict[str, Any], books: dict[str, dict[str, Any]]) -> tuple[
                 yes_bids=_levels(yes, "bids"),
                 yes_asks=_levels(yes, "asks"),
                 no_asks=_levels(no, "asks"),
-                fee_model=_fee_model(market),
+                fee_model=_fee_model(market, expected_fee_schedule),
             ).validated()
         )
     return tuple(parsed)
 
 
-def _stress_levels(levels: tuple[BookLevel, ...], delta: Decimal) -> tuple[BookLevel, ...]:
+def _stress_levels(
+    levels: tuple[BookLevel, ...], delta: Decimal
+) -> tuple[BookLevel, ...]:
     stressed = tuple(
         BookLevel(price=level.price + delta, quantity=level.quantity)
         for level in levels
@@ -200,7 +238,9 @@ def _stress_levels(levels: tuple[BookLevel, ...], delta: Decimal) -> tuple[BookL
     return tuple(sorted(stressed, key=lambda level: level.price, reverse=delta < 0))
 
 
-def _stressed_outcomes(event: dict[str, Any], outcomes: tuple[NegativeRiskOutcome, ...]) -> tuple[NegativeRiskOutcome, ...]:
+def _stressed_outcomes(
+    event: dict[str, Any], outcomes: tuple[NegativeRiskOutcome, ...]
+) -> tuple[NegativeRiskOutcome, ...]:
     stressed: list[NegativeRiskOutcome] = []
     for market, outcome in zip(event["markets"], outcomes, strict=True):
         tick = Decimal(str(market["orderPriceMinTickSize"]))
@@ -271,7 +311,9 @@ def main() -> None:
     expected_book_count = len(contract["token_ids"])
     if not isinstance(rows, list) or len(rows) != expected_book_count:
         raise RuntimeError("book batch response count differs")
-    books = {str(row.get("asset_id") or ""): row for row in rows if isinstance(row, dict)}
+    books = {
+        str(row.get("asset_id") or ""): row for row in rows if isinstance(row, dict)
+    }
     if set(books) != set(contract["token_ids"]) or len(books) != expected_book_count:
         raise RuntimeError("book batch token identities differ")
     timestamps = [int(str(book.get("timestamp"))) for book in books.values()]
@@ -285,7 +327,12 @@ def main() -> None:
         and 0 <= age_ms <= freshness["book_max_event_age_ms"]
         and skew_ms <= freshness["book_max_timestamp_skew_ms"]
     )
-    outcomes = _outcomes(event, books)
+    expected_fee_schedule = contract.get("expected_fee_schedule")
+    if expected_fee_schedule is not None and not isinstance(
+        expected_fee_schedule, dict
+    ):
+        raise RuntimeError("expected fee schedule must be an object")
+    outcomes = _outcomes(event, books, expected_fee_schedule)
     quantity = Decimal(contract["quantity_shares"])
     gross = screen_negative_risk_parity(
         tuple(replace(outcome, fee_model=ZERO_FEE) for outcome in outcomes),
@@ -310,7 +357,10 @@ def main() -> None:
     result: dict[str, Any] = {
         "schema_version": SCHEMA,
         "created_at_utc": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
-        "contract": {"path": contract["contract_path"], "sha256": contract["contract_sha256"]},
+        "contract": {
+            "path": contract["contract_path"],
+            "sha256": contract["contract_sha256"],
+        },
         "capture": {
             "receipt": receipt,
             "request_elapsed_ms": elapsed_ms,
@@ -340,11 +390,15 @@ def main() -> None:
             "profitability_claim": False,
         },
         "authority": contract["authority"],
-        "implementation": {"path": "tools/screen_polymarket_exact_negrisk_books.py", "sha256": _sha256(Path(__file__).read_bytes())},
+        "implementation": {
+            "path": "tools/screen_polymarket_exact_negrisk_books.py",
+            "sha256": _sha256(Path(__file__).read_bytes()),
+        },
     }
     result["result_sha256"] = _canonical_hash(result, "result_sha256")
     paths["result_path"].write_text(
-        json.dumps(result, sort_keys=True, separators=(",", ":"), ensure_ascii=True) + "\n",
+        json.dumps(result, sort_keys=True, separators=(",", ":"), ensure_ascii=True)
+        + "\n",
         encoding="ascii",
         newline="\n",
     )
@@ -352,9 +406,15 @@ def main() -> None:
         json.dumps(
             {
                 "freshness_passed": freshness_passed,
-                "gross_best_net": gross.best_path.net_quote if gross.best_path else None,
-                "after_fee_best_net": after_fee.best_path.net_quote if after_fee.best_path else None,
-                "stressed_best_net": stressed.best_path.net_quote if stressed.best_path else None,
+                "gross_best_net": gross.best_path.net_quote
+                if gross.best_path
+                else None,
+                "after_fee_best_net": after_fee.best_path.net_quote
+                if after_fee.best_path
+                else None,
+                "stressed_best_net": stressed.best_path.net_quote
+                if stressed.best_path
+                else None,
                 "candidate": candidate,
                 "payloads_printed": 0,
             },

@@ -5304,3 +5304,42 @@ canonical terminal result SHA-256 is
 Accepted edges remain 29, ranked hypotheses remain 44, terminal families become
 68, and registry SHA-256 becomes
 `4814e73d89db659d602ad3ed5901f5b94add2b70c8daa51a635ff275ffebddb5`.
+
+## Polymarket Bitcoin September 4 fixed-NegRisk depth rejection
+
+The newly deployed eleven-bin "Bitcoin price on September 4?" event fired rank
+31's literal new fixed-NegRisk trigger. A frozen exact Gamma GET retained the
+complete active event and exposed a 3.0075 pUSD displayed all-YES sum plus eleven
+positive rejection-only one-NO conversion identities. This justified exactly
+one separately frozen public 22-token CLOB batch; no discovery price entered
+the calculation.
+
+The batch completed and is durable. The original runner then stopped before
+writing a result because it had reused an older event's exact 5% fee schedule,
+while all eleven retained Crypto markets use a 7% taker rate and 20% rebate
+fraction. No request was repeated. A frozen zero-network adjudication against
+the immutable books found the best five-share path at -3.730 pUSD under zero
+fees, -3.81628 pUSD after the exact retained current taker fees, and -4.07770
+pUSD after one adverse tick on every leg, with zero profitable paths in every
+view. The batch also failed freshness at 141,591 ms age and 129,032 ms skew, but
+freshness cannot reverse the already-negative zero-fee optimistic bound.
+
+The reusable book runner and retained adjudicator now accept a contract-bound
+exact event fee schedule, preserving historical defaults only for already
+consumed contracts. Do not repeat this event's Gamma or book request, refetch to
+repair the consumed fee/freshness failure, or request adapters, chain state,
+accounts, credentials, orders, or funds. Advance another literal trigger.
+
+Prefilter contract SHA-256 is
+`4f931ca8c7c94d68c6fc36ea77868bf6e285f4f33d062aed491d140cc048b5c8`;
+prefilter result SHA-256 is
+`a8fa32e0ec3cc51c35670df5c2dc1c5b0fa1dc02ba281958c56ded4953922cbf`;
+book contract SHA-256 is
+`96fabc2319bb25cf9ee000edd8c9dbe72f3d20ce82ee891ffe4c97993e6917a6`;
+retained adjudication contract SHA-256 is
+`197b4b8ebe2c4fb1f8c440aa3e08b9aa22aa60424471a677e581688f6031c0ed`;
+canonical terminal result SHA-256 is
+`426b53310b6f46ea39312b4d06f404453ceac2b98863efeee91aa9d592120208`.
+Accepted edges remain 29, ranked hypotheses remain 44, terminal families become
+69, and registry SHA-256 becomes
+`087468040a17520bde05b3dd2e8bf2df94a3608176d9aad6b190382e043d858e`.

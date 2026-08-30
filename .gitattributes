@@ -47,6 +47,8 @@ data/polymarket-elon-aug31-sep2-exact-negrisk-prefilter-v1/** binary -eol
 data/polymarket-elon-aug31-sep2-exact-negrisk-books-v2/** binary -eol
 data/polymarket-nyc-mayor-sep1-sep8-exact-negrisk-prefilter-v1/** binary -eol
 data/polymarket-nyc-mayor-sep1-sep8-exact-negrisk-books-v1/** binary -eol
+data/polymarket-btc-sep4-price-range-exact-negrisk-prefilter-v1/** binary -eol
+data/polymarket-btc-sep4-price-range-exact-negrisk-books-v1/** binary -eol
 docs/model-research/binance/raw/** binary -eol
 docs/model-research/binance/spot-primary-peg-execution-overlay-*.json text eol=lf
 docs/model-research/binance/spot-stp-transfer-structural-value-preflight-*.json text eol=lf
