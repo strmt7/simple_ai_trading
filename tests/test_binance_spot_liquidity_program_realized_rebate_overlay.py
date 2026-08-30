@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from decimal import Decimal
 import hashlib
 import json
 from pathlib import Path
@@ -9,7 +8,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 ARTIFACT = ROOT / (
     "docs/model-research/action-value/"
-    "polymarket-crypto-maker-rebate-realized-organic-flow-overlay-v1-2026-08-30.json"
+    "binance-spot-liquidity-program-realized-organic-maker-rebate-overlay-v1-2026-08-30.json"
 )
 REGISTRY = ROOT / "docs/model-research/structural-edge-priority-registry-v1.json"
 
@@ -40,37 +39,39 @@ def test_artifact_and_retained_sources_reconstruct() -> None:
         assert json.loads(payload)["result_sha256"] == source["result_sha256"]
 
 
-def test_realized_overlay_does_not_promote_standalone_market_making() -> None:
+def test_realized_overlay_does_not_promote_or_double_count_base_flow() -> None:
     artifact = json.loads(ARTIFACT.read_text(encoding="utf-8"))
-    adjudication = artifact["adjudication"]
-    recurrence = artifact["public_recurrence_evidence"]
+    decision = artifact["adjudication"]
+    economics = artifact["economic_contract"]
+    overlap = artifact["overlap_adjudication"]
 
-    assert adjudication["accepted_edge"] is True
-    assert adjudication["market_direction_forecast_required"] is False
-    assert adjudication["standalone_market_making_strategy_accepted"] is False
-    assert adjudication["fresh_hypothetical_order_profit_proved"] is False
-    assert adjudication["public_forward_profit_floor_pusd"] == "0"
-    assert recurrence["public_program_payment_recurrence_proved"] is True
-    assert recurrence["fresh_hypothetical_order_payout_floor_pusd"] == "0"
-    assert recurrence["wallets_with_positive_receipts"] == 10
-    assert recurrence["wallets_with_all_fourteen_utc_dates"] == 8
-    assert Decimal(recurrence["scoped_wallet_day_btc_eth_sol_rebate_pusd"]) > 0
+    assert decision["accepted_edge"] is True
+    assert decision["market_direction_forecast_required"] is False
+    assert decision["standalone_market_making_strategy_accepted"] is False
+    assert decision["fresh_hypothetical_order_profit_proved"] is False
+    assert decision["public_forward_profit_floor_quote_units"] == "0"
+    assert economics["rate_assumption"] == "none"
+    assert economics["realized_spot_rebate_history_security"] == "USER_DATA"
+    assert overlap["accepted_bStocks_zero_maker_fee_overlay_distinct"] is True
+    assert overlap["bnb_discount_distinct"] is True
+    assert artifact["authority"]["official_venue_API_requests"] == 0
     assert artifact["authority"]["orders_or_cancels"] == 0
-    assert artifact["authority"]["signed_or_venue_API_requests"] == 0
 
 
 def test_registry_accepts_only_the_scoped_overlay_and_binds_artifact() -> None:
     artifact = json.loads(ARTIFACT.read_text(encoding="utf-8"))
     registry = json.loads(REGISTRY.read_text(encoding="utf-8"))
     assert _self_hash(registry) == registry["result_sha256"]
+    assert registry["accepted_edge_count"] == 26
+
     family = next(
-        row for row in registry["prioritized_hypotheses"] if row["priority_rank"] == 17
+        row for row in registry["prioritized_hypotheses"] if row["priority_rank"] == 15
     )
-    assert family["mechanism"] == "paired_maker_rebates_and_liquidity_rewards"
+    assert family["mechanism"] == "spot_market_maker_rebates"
     assert {
         "path": ARTIFACT.relative_to(ROOT).as_posix(),
         "result_sha256": artifact["result_sha256"],
     } in family["canonical_artifacts"]
-    assert "exact realized positive Polymarket crypto maker rebates" in registry[
+    assert "exact realized positive Binance Spot Liquidity Program" in registry[
         "accepted_edge_scope"
     ]

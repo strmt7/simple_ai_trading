@@ -12,7 +12,7 @@ Development belongs only on `main`; do not create another development branch.
   code-scanning, and secret-scanning alerts. Reverify the publication commit;
   zero alerts never proves zero undisclosed vulnerabilities.
 - The repository is beta `0.1.0-beta.1`. No model has production authority or a
-  demonstrated long-lived after-all-cost edge. Twenty-five narrowly scoped structural
+  demonstrated long-lived after-all-cost edge. Twenty-six narrowly scoped structural
   edges are accepted: Polymarket holding yield for existing idle on-platform
   pUSD; Polymarket pUSD taker-fee rebates only for independently justified
   legitimate organic BTC/ETH/SOL taker flow after the direct-wallet tier is
@@ -34,7 +34,9 @@ Development belongs only on `main`; do not create another development branch.
   with the exact previewed order tier and realized fee; the current bStocks zero-
   maker fee only for independently justified organic maker flow through
   `2026-09-30T23:59:00Z`, with the exact owned fill role and counterfactual
-  account fee; USD1/WLFI holding-airdrop
+  account fee; exact realized positive Binance Spot Liquidity Program final
+  rebates only on independently justified legitimate organic owned maker fills
+  after every incremental cost; USD1/WLFI holding-airdrop
   yield; the fixed USD1 Simple Earn
   bonus on at most the first 1,500 independently already-held idle USD1 only
   when its mutually exclusive balance-specific route beats the airdrop; U
@@ -4659,3 +4661,34 @@ remain 57. Current frontier SHA-256 becomes
 `05d423fdfa461f22a88ff1d3887804c2dc40080d7a18f4fa63e6b91381ee140d`;
 registry SHA-256 becomes
 `6f1ead1fd1609f6da6c0ab762a236974b86c967ca31e5d9b7bdc4e4b776687c7`.
+
+## Binance realized organic Spot Liquidity Program rebate overlay
+
+The retained current public program gate proves zero maker fees after
+enrollment and higher tiers displaying 0.4, 0.6, and 0.8-bip rebates. It also
+binds account-specific overview, performance, weekly final-rebate, and Spot
+rebate-history endpoints. The symbol commission endpoint explicitly excludes
+both the Liquidity Program rebate and BNB discount effects.
+
+The earlier adjudication correctly refused to accept a standalone market-making
+strategy without account enrollment, owned fills, queue, adverse-selection,
+inventory, unwind, and complete P&L evidence. It was too broad in also rejecting
+an exact final positive cash rebate on independently justified organic maker
+flow. The repository now accepts only that realized incremental receipt after
+every enrollment, capital-turnover, hedge, slippage, inventory, opportunity,
+tax, compliance, and operating cost.
+
+The public schedule and 0.8-bip maximum are not owned income. Zero maker fees,
+BNB discounts, bStocks promotions, symbol-commission savings, and a final
+rebate may each be counted at most once. No application, account, credential,
+signed request, venue API, order, cancel, amend, transfer, withdrawal, or fund
+was used. The public forward floor is zero, the standalone strategy remains
+unaccepted, and deployment readiness remains false.
+
+Canonical overlay SHA-256 is
+`13c0a9468e439f9163ede0b5824c9b065737078ece0cba5f2b348fb402ef01d4`.
+Accepted edges become 26, ranked hypotheses remain 44, and terminal families
+remain 57. Current frontier SHA-256 becomes
+`53c5a99573dcc97d85caf07f42e84818d649107b2ff4fa18af52c0b9eb505c6a`;
+registry SHA-256 becomes
+`e9b79af6bd9ad29564aff297daa2ea7375f71f42df3757761d72fd4e20d09995`.

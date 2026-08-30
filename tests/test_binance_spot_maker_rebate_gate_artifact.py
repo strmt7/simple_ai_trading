@@ -14,7 +14,7 @@ ARTIFACT_PATH = (
     / "binance-spot-maker-rebate-account-evidence-gate-v1.json"
 )
 EXPECTED_RESULT_SHA256 = (
-    "19e6d69f73a1f723680aec51b82709ab912e7437f6e7889e89fc74ff834ac88f"
+    "d2adda1c5ab4b561e0c238e1e874cc72edaee15ebadafbb76703251f9cd99e10"
 )
 
 
