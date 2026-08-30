@@ -1,0 +1,66 @@
+{
+  "authority": {
+    "credentials_accounts_orders_funds_or_transactions_permitted": false,
+    "network_requests": 0,
+    "trading_authority": false
+  },
+  "contract_path": "docs/model-research/action-value/polymarket-soccer-half-result-superhedge-contract-v1-2026-08-30.json",
+  "contract_sha256": "c46aed6f2003ae1e6222ca774c0a0040b0f2fa3a14ba59462937f7aa2a7d08f4",
+  "frozen_at_utc": "2026-08-30T22:01:18.7026087Z",
+  "implementation": {
+    "path": "tools/adjudicate_polymarket_soccer_half_result_superhedges.py",
+    "sha256": "3a2c1448cf1e03b30ea764ae6eb4eff5639e02c53acebc00095e849d8c1c8e9d"
+  },
+  "output_path": "docs/model-research/action-value/polymarket-soccer-half-result-superhedge-result-v1-2026-08-30.json",
+  "price_contract": {
+    "candidate_requires_sum_strictly_below_one_pUSD": true,
+    "gamma_role": "rejection_only_never_acceptance_or_promotion_evidence",
+    "no_acquisition_proxy": "one minus YES bestBid",
+    "yes_acquisition_proxy": "YES bestAsk"
+  },
+  "purpose": "Exhaust the previously untested full-game, halftime-result, and second-half-result logical superhedges in every complete retained soccer triple before spending a current venue request.",
+  "relation_contracts": [
+    {
+      "family": "half_result_conjunction_implies_full_game_result",
+      "ordinary_settlement": "NO first-half result plus NO second-half result plus YES implied full-game result pays at least one pUSD whenever the two half results jointly imply the full result",
+      "valid_role_triples": [
+        "home_home_implies_home",
+        "home_draw_implies_home",
+        "draw_home_implies_home",
+        "away_away_implies_away",
+        "away_draw_implies_away",
+        "draw_away_implies_away",
+        "draw_draw_implies_draw"
+      ]
+    },
+    {
+      "family": "full_game_team_win_implies_at_least_one_half_win",
+      "ordinary_settlement": "NO full-game team win plus YES first-half team win plus YES second-half team win pays at least one pUSD because positive total goal differential requires a positive differential in at least one half",
+      "valid_roles": ["home", "away"]
+    }
+  ],
+  "retained_parent_result": {
+    "file_sha256": "9ed9ad5577e63f638720adbf9cfda2e0d06d87ec6d2b7f30173820d41330e197",
+    "path": "docs/model-research/action-value/polymarket-near-expiry-negrisk-complete-set-catalog-result-v1-2026-08-29.json",
+    "result_sha256": "96610d7cba90a2dc97489bd70c95b7d03568d5b89017ace1e8c92829c70cee14"
+  },
+  "retained_raw_source": {
+    "file_sha256": "1dd21f815a4564cb42711842b80c91e46d6b6a799dcefe2911d0a30e10ab61f2",
+    "global_population_complete": false,
+    "path": "data/polymarket-near-expiry-negrisk-complete-set-catalog-v1/raw/events.json",
+    "population_scope": "every complete base plus halftime-result plus second-half-result soccer triple in the immutable response"
+  },
+  "rule_contract": {
+    "cancellation": "team win markets resolve NO and draw markets resolve YES across the three horizons, preserving a one-pUSD floor for both relation families",
+    "half_result_no_data_fallback": "each half-result binary market resolves 50-50 after 48 hours without acceptable data, so the two half-result legs alone pay one pUSD",
+    "ordinary": "full-game differential equals first-half differential plus second-half differential",
+    "postponement": "all three market families remain open until the match is completed"
+  },
+  "schema_version": "polymarket-soccer-half-result-superhedge-contract-v1",
+  "stopping_rules": {
+    "accepted_edge_from_retained_gamma": false,
+    "one_or_more_strict_candidates": "freeze only one current exact book batch for the deterministic best row",
+    "profitability_or_deployment_claim_from_retained_gamma": false,
+    "zero_strict_candidates": "stop without any venue request"
+  }
+}
