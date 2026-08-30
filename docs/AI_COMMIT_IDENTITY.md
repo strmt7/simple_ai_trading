@@ -37,4 +37,6 @@ On PowerShell, use Git format delimiters such as `%x09`; a backtick inside a
 single-quoted Git format string is literal and can make a field-splitting audit
 silently inspect zero records. Fail closed unless every parsed identity record
 has the expected commit, author, author-email, committer, and committer-email
-fields.
+fields. Keep multiline `%B` commit text out of that delimited identity record;
+inspect co-author trailers in a separate command so message newlines cannot
+change the parsed field count.
