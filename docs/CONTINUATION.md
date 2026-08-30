@@ -4892,3 +4892,40 @@ is `fd6373bba5d18b07d4286e9b96f643741afede5c960d490a91438bf77cf67d3d`.
 Accepted edges remain 27, ranked hypotheses remain 44, and terminal families
 become 61. Registry SHA-256 becomes
 `90508047f15e556c7a59ea37628c3127103e7e76f1e4af68a51639d0cf5a6073`.
+
+## Polymarket Elon September 1-8 fixed-NegRisk depth rejection
+
+Rank 31's literal new-deployment trigger fired for the distinct 26-bin `Elon
+Musk # tweets September 1 - September 8, 2026?` event. The discovery page was
+used only to select the exact event; none of its displayed values entered the
+economics. One frozen public Gamma GET retained 104,604 bytes and confirmed all
+26 active accepting fixed-NegRisk markets. The complete displayed YES sum was
+1.0305 pUSD. Although all 26 displayed one-NO conversion identities remained
+source-only leads, that prefilter could not establish executable economics.
+
+One separately frozen public 52-token CLOB batch then retained 110,476 bytes in
+507 ms. It failed the frozen freshness gate because the oldest book timestamp
+was 59,170 ms old and cross-book timestamp skew was 52,902 ms. The original
+generic adjudicator exposed an efficiency defect after the response was already
+durable: it attempted all `2^26 - 1` conversion subsets three times. The owned
+processes were stopped without refetching. The completed raw response and exact
+two-row request journal remain immutable.
+
+A separately frozen zero-network adjudication replaced exhaustive enumeration
+with the exact additive best-subset identity and bounded meet-in-the-middle
+profitable-path counting. On the retained batch, only the complete all-YES path
+was executable. At five shares its best net was negative 0.425 pUSD before fees,
+negative 0.66440 pUSD after current Gamma taker fees, and negative 1.12694 pUSD
+after one adverse tick per leg. The event is therefore terminal on both
+freshness and economics before any adapter, on-chain, credential, account,
+order, transaction, or fund request.
+
+The reusable optimizer now evaluates the exact best path without exponential
+enumeration, enforces a 32-variable pre-request ceiling for exact path counting,
+and documents the required module invocation. Do not repeat this event's Gamma
+or book requests, restart the exhaustive runner, or select favorable bins.
+Canonical retained adjudication result SHA-256 is
+`8391ecd524d0db9c312f51e627f391d95797cf9f5d32f569fd31210fe064bc83`.
+Accepted edges remain 27, ranked hypotheses remain 44, and terminal families
+become 62. Registry SHA-256 becomes
+`163cfbca723f1b84620e09853d698dd194e61d416c34fa71b2079a9e927c2313`.

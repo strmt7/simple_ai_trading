@@ -1,4 +1,4 @@
-"""Screen one retained exact fixed-NegRisk event with one CLOB book batch."""
+"""Screen one exact NegRisk event; run as ``python -m tools.<module>``."""
 
 from __future__ import annotations
 
@@ -13,6 +13,7 @@ from typing import Any
 from simple_ai_trading.paper_execution import BookLevel
 from simple_ai_trading.polymarket_fees import PolymarketFeeModel
 from simple_ai_trading.structural_parity import (
+    MAX_EXACT_NEGATIVE_RISK_CONVERSION_VARIABLES,
     NegativeRiskOutcome,
     NegativeRiskParityPath,
     NegativeRiskParityScreen,
@@ -118,6 +119,10 @@ def _validate_contract(contract: dict[str, Any], contract_path: Path) -> dict[st
     }:
         raise RuntimeError("authority boundary changed")
     event = _retained_event(contract)
+    if len(event.get("markets", ())) > MAX_EXACT_NEGATIVE_RISK_CONVERSION_VARIABLES:
+        raise RuntimeError(
+            "exact event exceeds the bounded negative-risk conversion ceiling"
+        )
     tokens = _tokens(event)
     body = json.dumps(
         [{"token_id": token} for token in tokens],
