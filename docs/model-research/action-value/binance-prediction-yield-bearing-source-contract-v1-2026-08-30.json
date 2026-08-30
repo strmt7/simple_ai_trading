@@ -1,0 +1,59 @@
+{
+  "authority": {
+    "account_requests": 0,
+    "credentials_used": false,
+    "orders_trades_transfers_or_redemptions": 0,
+    "prediction_market_requests": 0,
+    "protected_polymarket_capture_accessed": false,
+    "public_unauthenticated_documentation_requests": 1
+  },
+  "contract_sha256": "f52c8879a2f33c7f95c1804ea14381fb80c79d76a69261e484e189efb7694a4c",
+  "decision_contract": {
+    "candidate_only_if": "The exact current official machine-readable Prediction Trading schema binds isYieldBearing alongside vendor chain collateral fee and slippage fields and confirms that market list and detail require signed timestamps. The result remains a candidate until exact current account-authorized market metadata and terms bind the yield recipient rate base accrual distribution redemption and every cost.",
+    "fail_closed_if": [
+      "any required endpoint or schema field is absent",
+      "either scoped endpoint lacks a required signed timestamp and security scheme",
+      "example values are needed as current market or account economics",
+      "yield ownership rate base accrual distribution or redemption is inferred"
+    ],
+    "public_forward_profit_floor": "0"
+  },
+  "frozen_at_utc": "2026-08-30T07:03:26.5057802Z",
+  "implementation": {
+    "path": "tools/research_binance_prediction_yield_bearing.py",
+    "sha256": "4dc3b7f4012dc5e63c443bdbbc188ea4c6a0d611046eb3b07e63087ed13a0c8c"
+  },
+  "public_source": {
+    "classification": "public_unauthenticated_read_only_official_documentation_schema_GET",
+    "maximum_response_bytes": 5000000,
+    "method": "GET",
+    "required_text": [
+      "/sapi/v1/w3w/wallet/prediction/market/list",
+      "/sapi/v1/w3w/wallet/prediction/market/detail",
+      "isYieldBearing",
+      "feeRateBps",
+      "slippageBps",
+      "vendor",
+      "chainId",
+      "collateral"
+    ],
+    "url": "https://developers.binance.com/en/docs/catalog/web3-wallet-prediction-trading/api/rest-api/1.0.0/schema.yaml"
+  },
+  "required_schema_fields": [
+    "isYieldBearing",
+    "feeRateBps",
+    "slippageBps",
+    "vendor",
+    "chainId",
+    "collateral"
+  ],
+  "retained_source": {
+    "path": "docs/model-research/binance/raw/spot-block-matching-cost-overlay-v1-2026-08-30/03-agent-native-index.raw.txt",
+    "sha256": "944e132d3523c8a03abcac2f7ddb85802107e45161470885b7a8785fd4fdb15d"
+  },
+  "schema_version": "binance-prediction-yield-bearing-source-contract-v1",
+  "scoped_endpoints": [
+    "/sapi/v1/w3w/wallet/prediction/market/list",
+    "/sapi/v1/w3w/wallet/prediction/market/detail"
+  ]
+}
