@@ -114,6 +114,19 @@ override prose.
   research lead, not after-cost profit. Separate the cash-realized core from
   mark-to-market inventory and bind every unwind, fee, delay, and capacity cost
   before using it in an edge claim.
+- Accepted-edge count is a scope ledger, not a profitability score. Portfolio
+  reviews must separate source-demonstrated recurring direct cash, same-principal
+  yield or capital overlays, pre-existing-activity savings or rebates, and
+  external-user or client revenue. Prioritize the first class and material
+  improvements to its account, cost, capacity, and persistence evidence. Never
+  present the other three as standalone market profit or spend requests and
+  tests merely increasing their count.
+- Call an edge stable and current only when the exact account is qualified, the
+  mechanism is currently available, positive after every external cost and best
+  feasible alternative, and its recurrence is demonstrated without an
+  unresolved time-limited or material rate dependency. Historical payouts,
+  public APRs, acceptance predicates, and fee schedules do not satisfy this
+  standard by themselves.
 - Before every venue HTTP request, classify the exact endpoint and method from
   a current primary API contract. Never infer that an endpoint is public from
   its path, product name, nearby public endpoints, or an unauthenticated error;
