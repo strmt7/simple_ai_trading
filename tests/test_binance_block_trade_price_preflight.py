@@ -17,9 +17,13 @@ sys.modules[MODULE_NAME] = TOOL
 SPEC.loader.exec_module(TOOL)
 LatestTicker = TOOL.LatestTicker
 evaluate_block_trade = TOOL.evaluate_block_trade
-ARTIFACT = ROOT / (
+ARTIFACT_V1 = ROOT / (
     "docs/model-research/action-value/"
     "binance-spot-block-trade-public-price-concession-preflight-v1-2026-08-30.json"
+)
+ARTIFACT_V2 = ROOT / (
+    "docs/model-research/action-value/"
+    "binance-spot-block-trade-public-price-concession-follow-up-v2-2026-08-30.json"
 )
 REGISTRY = ROOT / "docs/model-research/structural-edge-priority-registry-v1.json"
 
@@ -100,7 +104,7 @@ def test_evaluate_block_trade_rejects_future_source_ticker() -> None:
 
 
 def test_zero_event_preflight_is_source_bound_and_fail_closed() -> None:
-    result = json.loads(ARTIFACT.read_text(encoding="utf-8"))
+    result = json.loads(ARTIFACT_V1.read_text(encoding="utf-8"))
     result_hash = _canonical_hash(result)
     assert result_hash == (
         "b7d60e0d9f3e30b2a62663ff1290be77e6309ac33a7d48776b6f5ea1c8dcfe68"
@@ -129,3 +133,47 @@ def test_zero_event_preflight_is_source_bound_and_fail_closed() -> None:
         binding["result_sha256"] == result_hash
         for binding in rank_five["canonical_artifacts"]
     )
+
+
+def test_time_triggered_follow_up_closes_daily_polling_fail_closed() -> None:
+    result = json.loads(ARTIFACT_V2.read_text(encoding="utf-8"))
+    result_hash = _canonical_hash(result)
+    assert result_hash == (
+        "9fa2c8893d73ea7b1bf0efb70c284a20d606866798c121defca131985e84c056"
+    )
+
+    for binding in result["source_binding"].values():
+        payload = (ROOT / binding["path"]).read_bytes()
+        assert hashlib.sha256(payload).hexdigest() == binding["file_sha256"]
+
+    assert result["trigger_adjudication"]["trigger_passed"] is True
+    assert result["local_preflight"]["first_invocation_reached_runner_main"] is False
+    assert (
+        result["local_preflight"]["first_invocation_network_request_consumed"]
+        is False
+    )
+    capture = result["frozen_capture"]
+    assert capture["transport_complete"] is True
+    assert capture["ticker_counts"]["total"] == 732
+    assert capture["block_trade_counts"]["total"] == 0
+    cumulative = result["cumulative_public_observation"]
+    assert cumulative["window_count"] == 2
+    assert cumulative["total_elapsed_seconds"] == 1510.0309999999954
+    assert cumulative["total_ticker_messages"] == 4100
+    assert cumulative["total_block_trade_events"] == 0
+    assert result["economic_adjudication"]["accepted_edge"] is False
+    assert result["efficiency_adjudication"]["daily_time_only_polling_justified"] is False
+    assert result["efficiency_adjudication"]["next_time_only_not_before_utc"] == (
+        "2026-09-06T03:47:16.3134381Z"
+    )
+
+    registry = json.loads(REGISTRY.read_text(encoding="utf-8"))
+    _canonical_hash(registry)
+    rank_five = next(
+        row for row in registry["prioritized_hypotheses"] if row["priority_rank"] == 5
+    )
+    assert any(
+        binding["result_sha256"] == result_hash
+        for binding in rank_five["canonical_artifacts"]
+    )
+    assert "2026_09_06T03_47_16_3134381Z" in rank_five["retry_trigger"]

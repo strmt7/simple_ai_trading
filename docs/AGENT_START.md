@@ -2096,3 +2096,27 @@ remain 21. Canonical rejection SHA-256:
 `facecfaa3b92d905c700083c7b8afe153adc495403ceabc91e417bdb248d059b`;
 registry SHA-256:
 `de28d80cc4b0b9cd1bd3f9954cb840dcaefe46fcc0fdf9ac3fd53218169370cb`.
+
+## Binance public Spot block-trade follow-up
+
+Rank 5's literal nonoverlapping time trigger fired. A second frozen public
+BTCUSDT/ETHUSDT/SOLUSDT observation reused the existing hash-bound official
+stream and fee sources, made no documentation or account requests, and ran for
+305.0 elapsed seconds with zero reconnects. It retained 732 healthy ticker
+messages but zero `blockTrade` events, analyzable rows, or price concessions.
+Together, the two complete windows now cover 1,510.0309999999954 seconds and
+4,100 ticker messages with zero public block events.
+
+This does not disprove private Block Matching activity or the parent
+account-gated cost candidate. It leaves the public profit floor at zero and
+rejects daily time-only polling as wasteful. Do not repeat before
+`2026-09-06T03:47:16.3134381Z` unless a material official stream, fee, pair,
+whitelist, settlement, block-volume, or observed public-event change occurs.
+The first local invocation used an unverified global interpreter and failed on
+the `websockets` import before runner entry or network access; the locked `uv`
+runtime succeeded, and the durable workflow now requires that exact runtime
+preflight before freezing one-use evidence. No credential, order, account,
+fund, or protected-capture boundary changed. Canonical follow-up SHA-256 is
+`9fa2c8893d73ea7b1bf0efb70c284a20d606866798c121defca131985e84c056`;
+registry SHA-256 is
+`a375476e54a0a2949e6954d04384f72f11157f73238af61209a393c9362725c8`.
