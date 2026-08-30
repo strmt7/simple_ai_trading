@@ -31,6 +31,30 @@ PACKAGE_RESULT = ACTION / (
 CATALOG_DATA = ROOT / "data/polymarket-cfb-september-5-complete-monotone-catalog-v1"
 PACKAGE_DATA = ROOT / "data/polymarket-fordham-ndsu-total-monotone-package-v1"
 REGISTRY = ROOT / "docs/model-research/structural-edge-priority-registry-v1.json"
+SEPT6_CATALOG_CONTRACT = ACTION / (
+    "polymarket-cfb-september-6-complete-monotone-catalog-contract-v1-2026-08-30.json"
+)
+SEPT6_CATALOG_RESULT = ACTION / (
+    "polymarket-cfb-september-6-complete-monotone-catalog-result-v1-2026-08-30.json"
+)
+SEPT6_METADATA_CONTRACT = ACTION / (
+    "polymarket-mercyhurst-nmsu-catalog-metadata-contract-v1-2026-08-30.json"
+)
+SEPT6_METADATA = ACTION / (
+    "polymarket-mercyhurst-nmsu-catalog-metadata-v1-2026-08-30.json"
+)
+SEPT6_PACKAGE_CONTRACT = ACTION / (
+    "polymarket-mercyhurst-nmsu-margin-monotone-package-contract-v1-2026-08-30.json"
+)
+SEPT6_PACKAGE_RESULT = ACTION / (
+    "polymarket-mercyhurst-nmsu-margin-monotone-package-result-v1-2026-08-30.json"
+)
+SEPT6_CATALOG_DATA = ROOT / (
+    "data/polymarket-cfb-september-6-complete-monotone-catalog-v1"
+)
+SEPT6_PACKAGE_DATA = ROOT / (
+    "data/polymarket-mercyhurst-nmsu-margin-monotone-package-v1"
+)
 
 
 def _load(path: Path) -> dict[str, object]:
@@ -142,8 +166,11 @@ def test_registry_terminalizes_exact_population_without_global_count_pinning() -
         "path": PACKAGE_RESULT.relative_to(ROOT).as_posix(),
         "result_sha256": result["result_sha256"],
     } in family["canonical_artifacts"]
-    assert "2026_09_05T23_59_59Z" in family["retry_trigger"]
-    assert "other_five_observed_September_5" in family["prohibited_shortcuts"][-1]
+    assert "2026_09_06T23_59_59Z" in family["retry_trigger"]
+    assert any(
+        "other_five_observed_September_5" in shortcut
+        for shortcut in family["prohibited_shortcuts"]
+    )
     terminal = next(
         row
         for row in registry["terminal_do_not_repeat"]
@@ -153,3 +180,77 @@ def test_registry_terminalizes_exact_population_without_global_count_pinning() -
     rules = (ROOT / "AGENTS.md").read_text(encoding="utf-8")
     assert "oldest-book-age ceiling" in rules
     assert "freeze one deterministic candidate ordering" in rules
+
+
+def test_september6_complete_catalog_precommits_one_depth_candidate() -> None:
+    contract = _load(SEPT6_CATALOG_CONTRACT)
+    result = _load(SEPT6_CATALOG_RESULT)
+    raw = (SEPT6_CATALOG_DATA / "raw/events.json").read_bytes()
+    journal = [
+        json.loads(row)
+        for row in (SEPT6_CATALOG_DATA / "request-journal.jsonl")
+        .read_text()
+        .splitlines()
+    ]
+
+    assert _self_hash(contract, "contract_sha256") == contract["contract_sha256"]
+    assert _self_hash(result, "result_sha256") == result["result_sha256"]
+    assert [row["phase"] for row in journal] == ["intent", "completed"]
+    assert journal[-1]["response_sha256"] == _sha256(raw)
+    assert result["capture"]["population_complete_under_frozen_filter"] is True
+    assert result["capture"]["returned_event_count"] == 24
+    screen = result["screen"]
+    assert screen["included_event_count"] == 15
+    assert screen["complete_relation_count"] == len(screen["relations"]) == 31
+    assert screen["candidate_count_strictly_below_payout_floor"] == 2
+    assert screen["depth_candidate"]["event_slug"] == (
+        "cfb-mhud34ce7-nmxst-2026-09-05"
+    )
+    assert Decimal(screen["depth_candidate"]["displayed_price_sum_per_share_pUSD"]) == Decimal("0.995")
+
+
+def test_september6_best_package_fails_depth_before_fee_access() -> None:
+    artifacts = (
+        (SEPT6_METADATA_CONTRACT, "contract_sha256"),
+        (SEPT6_METADATA, "result_sha256"),
+        (SEPT6_PACKAGE_CONTRACT, "contract_sha256"),
+        (SEPT6_PACKAGE_RESULT, "result_sha256"),
+    )
+    for path, field in artifacts:
+        payload = _load(path)
+        assert _self_hash(payload, field) == payload[field]
+
+    metadata = _load(SEPT6_METADATA)
+    result = _load(SEPT6_PACKAGE_RESULT)
+    books = (SEPT6_PACKAGE_DATA / "raw/books.json").read_bytes()
+    journal = [
+        json.loads(row)
+        for row in (SEPT6_PACKAGE_DATA / "request-journal.jsonl")
+        .read_text()
+        .splitlines()
+    ]
+    assert metadata["selection"]["event_id"] == "913009"
+    assert [row["phase"] for row in journal] == ["intent", "completed"]
+    assert journal[-1]["response_sha256"] == _sha256(books)
+    assert result["capture"]["fee_receipts"] == {}
+    assert result["capture"]["oldest_book_age_at_completion_ms"] == 1763317
+    assert result["capture"]["book_timestamp_skew_ms"] == 337138
+    assert Decimal(result["economics"]["actual"]["cost_pUSD"]) == Decimal("9.8")
+    assert Decimal(
+        result["economics"]["actual"]["optimistic_zero_fee_profit_floor_pUSD"]
+    ) == Decimal("-4.8")
+    assert result["adjudication"]["passes_frozen_candidate_gate"] is False
+
+    registry = _load(REGISTRY)
+    assert _self_hash(registry, "result_sha256") == registry["result_sha256"]
+    family = next(
+        row for row in registry["prioritized_hypotheses"] if row["priority_rank"] == 30
+    )
+    assert {
+        "path": SEPT6_PACKAGE_RESULT.relative_to(ROOT).as_posix(),
+        "result_sha256": result["result_sha256"],
+    } in family["canonical_artifacts"]
+    assert any(
+        row["canonical_result_sha256"] == result["result_sha256"]
+        for row in registry["terminal_do_not_repeat"]
+    )

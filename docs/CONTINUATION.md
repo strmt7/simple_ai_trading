@@ -5802,3 +5802,36 @@ Accepted edges remain 29, ranked hypotheses remain 44, terminal families become
 `2dd5aeb4e2649c12e6f62105dfb0e6472539fc080a5fb41507f02ee3072b189e`.
 No account, credential, signed request, book, order, funds, testnet endpoint, or
 protected capture was touched.
+
+### September 6 CFB exact monotone-payoff screen
+
+The first distinct active CFB population outside the consumed September 3-5
+windows fired rank 30. One frozen public Gamma keyset request for the complete
+`2026-09-06T00:00:00Z` through `2026-09-06T23:59:59Z` start-time population
+returned 24 events with no cursor. Fifteen rule-complete events produced 31
+exact full-game margin or total monotone relations and two rejection-only Gamma
+packages below their one-pUSD payoff floors.
+
+The deterministic best was Mercyhurst +29.5 plus New Mexico State -28.5 at a
+displayed 0.995 pUSD per paired share. Its exact five-share two-token batch then
+cost 9.8 pUSD for a guaranteed 5 pUSD floor, losing 4.8 pUSD before fees. The
+books were also 1,763,317 ms old and 337,138 ms skewed. The two-tick stress had
+insufficient complete depth, so no fee request was justified. Do not refetch the
+event, repeat or narrow the September 6 population, or select the other observed
+candidate after the precommitted winner failed.
+
+Catalog contract SHA-256 is
+`91954283c2cfb0ce9647e3c108ea9bbaa2c06a4abd55e10c8fc67ddb7e14e6ba`;
+catalog result SHA-256 is
+`9ca30ccdce00d7a0928fea85eab35e6da2dbdbb9b4c9b339d3a9f5ee1151bc02`.
+Metadata contract and result SHA-256 are
+`23bc4465eda396bdc56fb14319af93f080051f7c5dc67b926ff223fbac73a1f0`
+and `e8bf6417b0c296bffb04a998d18959a175f5c7f3a0961c54e82c2a6da1ddb97b`.
+Package contract and result SHA-256 are
+`28756a8e168ef943a78886cb0e30cf2943e92db7fb82bcc13c050c08120b6240`
+and `3cb7ae40ad0397d13bb2dfd5cae43ff8d4a815a18f076fe343e144ac8f7df1e2`.
+Accepted edges remain 29, ranked hypotheses remain 44, terminal families become
+83, and registry SHA-256 becomes
+`1aad977a7ca40e38e040b24e99518aea23b4f29d7c961aa0b9143f0ad38b8a54`.
+No credentials, accounts, orders, funds, fee endpoints, testnet endpoints, or
+protected captures were touched.

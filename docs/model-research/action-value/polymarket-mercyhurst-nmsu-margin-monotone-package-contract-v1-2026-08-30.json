@@ -1,0 +1,207 @@
+{
+  "schema_version": "polymarket-exact-two-leg-package-contract-v2",
+  "frozen_at_utc": "2026-08-30T18:59:08.6865427Z",
+  "contract_path": "docs/model-research/action-value/polymarket-mercyhurst-nmsu-margin-monotone-package-contract-v1-2026-08-30.json",
+  "purpose": "test only the precommitted best complete-catalog CFB package using one exact two-token current book batch",
+  "metadata_source": {
+    "path": "docs/model-research/action-value/polymarket-mercyhurst-nmsu-catalog-metadata-v1-2026-08-30.json",
+    "file_sha256": "65e8279a1bad9c6a162d582cd99c66c5ae87b72541e2948f9b886e94da6b8872",
+    "result_sha256": "e8bf6417b0c296bffb04a998d18959a175f5c7f3a0961c54e82c2a6da1ddb97b"
+  },
+  "gamma_prefilter": {
+    "displayed_price_sum_pUSD": "0.995",
+    "optimistic_profit_floor_per_share_before_execution_costs_pUSD": "0.005",
+    "passes_strictly_below_payout_gate": true,
+    "role": "rejection_only_never_acceptance_or_promotion_evidence"
+  },
+  "markets": [
+    {
+      "condition_id": "0xe793faa113fe497e2ed5eb7f7b5fa1b413fa32b196bbb1fc75c303a394ab364d",
+      "id": "3993652",
+      "line": "-29.5",
+      "name": "new_mexico_state_minus_29_5",
+      "outcome_prices": [
+        "0.5",
+        "0.495"
+      ],
+      "outcomes": [
+        "New Mexico State",
+        "Mercyhurst"
+      ],
+      "question": "Spread: New Mexico State (-29.5)",
+      "required_rule_fragments": [
+        "resolve to \"New Mexico State\" if New Mexico State win the game by 30 or more points",
+        "Otherwise, this market will resolve to \"Mercyhurst\"",
+        "canceled entirely, with no make-up game, this market will resolve 50-50"
+      ],
+      "sports_market_type": "spreads",
+      "tokens": [
+        "108737257115761027010038816441391952304543249348255328369864230165048544850167",
+        "7761366732626500853142084378277323557216076167384579500930398281194732006073"
+      ]
+    },
+    {
+      "condition_id": "0x24df1c597c20cbc6bf5608d130c8d70204c18745a126514f24a5f738f92ce7a6",
+      "id": "4004661",
+      "line": "-28.5",
+      "name": "new_mexico_state_minus_28_5",
+      "outcome_prices": [
+        "0.5",
+        "0.5"
+      ],
+      "outcomes": [
+        "New Mexico State",
+        "Mercyhurst"
+      ],
+      "question": "Spread: New Mexico State (-28.5)",
+      "required_rule_fragments": [
+        "resolve to \"New Mexico State\" if New Mexico State win the game by 29 or more points",
+        "Otherwise, this market will resolve to \"Mercyhurst\"",
+        "canceled entirely, with no make-up game, this market will resolve 50-50"
+      ],
+      "sports_market_type": "spreads",
+      "tokens": [
+        "32989750612589346951879456320280431089022522227028034266573323829922974751944",
+        "65808790798206758035590435573072392015546314664240533513877767757537262079295"
+      ]
+    }
+  ],
+  "package": {
+    "name": "mercyhurst_plus_29_5_plus_new_mexico_state_minus_28_5",
+    "token_names": [
+      "mercyhurst_plus_29_5",
+      "new_mexico_state_minus_28_5"
+    ]
+  },
+  "tokens": {
+    "mercyhurst_plus_29_5": {
+      "condition_id": "0xe793faa113fe497e2ed5eb7f7b5fa1b413fa32b196bbb1fc75c303a394ab364d",
+      "gamma_price_pUSD": "0.495",
+      "token_id": "7761366732626500853142084378277323557216076167384579500930398281194732006073"
+    },
+    "new_mexico_state_minus_28_5": {
+      "condition_id": "0x24df1c597c20cbc6bf5608d130c8d70204c18745a126514f24a5f738f92ce7a6",
+      "gamma_price_pUSD": "0.5",
+      "token_id": "32989750612589346951879456320280431089022522227028034266573323829922974751944"
+    }
+  },
+  "payoff_proof": {
+    "guaranteed_floor_per_share_pUSD": "1",
+    "invariant": "New Mexico State margins at or below 28 pay Mercyhurst plus 29.5; exactly 29 pays both legs; margins at or above 30 pay New Mexico State minus 28.5; cancellation pays each leg one-half",
+    "market_direction_forecast_required": false,
+    "states": [
+      {
+        "state": "new_mexico_state_margin_at_most_28",
+        "payouts": {
+          "mercyhurst_plus_29_5": "1",
+          "new_mexico_state_minus_28_5": "0"
+        }
+      },
+      {
+        "state": "new_mexico_state_margin_exactly_29",
+        "payouts": {
+          "mercyhurst_plus_29_5": "1",
+          "new_mexico_state_minus_28_5": "1"
+        }
+      },
+      {
+        "state": "new_mexico_state_margin_at_least_30",
+        "payouts": {
+          "mercyhurst_plus_29_5": "0",
+          "new_mexico_state_minus_28_5": "1"
+        }
+      },
+      {
+        "state": "game_canceled_without_makeup",
+        "payouts": {
+          "mercyhurst_plus_29_5": "0.5",
+          "new_mexico_state_minus_28_5": "0.5"
+        }
+      }
+    ]
+  },
+  "execution": {
+    "book_request_count": 1,
+    "candidate_gate": "strictly positive five-pUSD guaranteed floor after complete displayed depth current exact fees two adverse ticks per leg no rebate credit no more than five seconds source skew and no more than five seconds oldest-book age",
+    "candidate_stress_name": "delay_1s_sensitivity",
+    "fee_request_rule": "request both current token fee rates only if the complete five-share package remains gross-positive after two adverse ticks per leg",
+    "fee_schedule": {
+      "exponent": 1,
+      "rate": 0.05,
+      "rebateRate": 0.15,
+      "takerOnly": true
+    },
+    "maximum_book_age_ms": 5000,
+    "maximum_book_timestamp_skew_ms": 5000,
+    "maximum_fee_requests": 2,
+    "metadata_secondsDelay_values": [
+      1,
+      1
+    ],
+    "quantity_shares_each_leg": "5",
+    "rebate_credit_pUSD": "0",
+    "retry_count": 0,
+    "stress_note": "two and six adverse ticks per leg are frozen one-second and three-second sensitivities and are not claimed empirical bounds; both metadata rows declare one-second delay",
+    "stress_ticks": {
+      "actual": 0,
+      "delay_1s_sensitivity": 2,
+      "delay_3s_sensitivity": 6
+    },
+    "tick_size": "0.01",
+    "token_ids": [
+      "7761366732626500853142084378277323557216076167384579500930398281194732006073",
+      "32989750612589346951879456320280431089022522227028034266573323829922974751944"
+    ]
+  },
+  "implementation": {
+    "path": "tools/screen_polymarket_exact_two_leg_sports_package_v2.py",
+    "sha256": "c95941420e91f9b6ed5da0f3132ba055231ce7a1dc4a5afde31d2d3f585b94db"
+  },
+  "dependency_implementations": [
+    {
+      "path": "tools/screen_polymarket_exact_two_leg_sports_package.py",
+      "sha256": "03e899073767678cfe1ca69e01cef8a53d6999fa6774cab089c6b23a0037a579"
+    },
+    {
+      "path": "tools/screen_polymarket_exact_two_leg_package.py",
+      "sha256": "ba7ebaa1fb5235ba026f7cf4cb21ff73ba19430fee4a4f678fbdea37635eb32f"
+    },
+    {
+      "path": "src/simple_ai_trading/polymarket_fees.py",
+      "sha256": "4002aa8008874708931cc182f352adf436a65baee24e23bfc72617acdf127c8d"
+    }
+  ],
+  "outputs": {
+    "books_raw_path": "data/polymarket-mercyhurst-nmsu-margin-monotone-package-v1/raw/books.json",
+    "fee_raw_root": "data/polymarket-mercyhurst-nmsu-margin-monotone-package-v1/raw/fees",
+    "journal_path": "data/polymarket-mercyhurst-nmsu-margin-monotone-package-v1/request-journal.jsonl",
+    "result_path": "docs/model-research/action-value/polymarket-mercyhurst-nmsu-margin-monotone-package-result-v1-2026-08-30.json"
+  },
+  "source_contracts": [
+    {
+      "url": "https://docs.polymarket.com/api-reference/market-data/get-order-books-request-body",
+      "use": "official public unauthenticated POST batch book contract"
+    },
+    {
+      "url": "https://docs.polymarket.com/api-reference/market-data/get-fee-rate-by-path-parameter",
+      "use": "official public unauthenticated current token fee-rate contract used only if the two-tick zero-fee stress remains positive"
+    }
+  ],
+  "stopping_rules": {
+    "accepted_edge_from_one_snapshot": false,
+    "deployment_ready_from_one_snapshot": false,
+    "failed_candidate_gate": "terminalize this exact event without refetch or retry",
+    "passed_candidate_gate": "candidate only and require one independent positive recurrence before any order-capable work"
+  },
+  "authority": {
+    "account_requests": 0,
+    "credentials_used": false,
+    "funds_used": false,
+    "orders_or_transactions": 0,
+    "protected_capture_touched": false,
+    "public_unauthenticated_read_only_requests_maximum": 3,
+    "signed_requests": 0,
+    "trading_authority": false
+  },
+  "contract_sha256": "28756a8e168ef943a78886cb0e30cf2943e92db7fb82bcc13c050c08120b6240"
+}
