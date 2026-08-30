@@ -1,0 +1,68 @@
+{
+  "schema_version": "public-source-capture-contract-v1",
+  "frozen_at_utc": "2026-08-30T21:36:27.2325632Z",
+  "contract_path": "docs/model-research/action-value/binance-tusd-redemption-parity-source-contract-v1-2026-08-30.json",
+  "trigger": {
+    "registry_novelty": "No ranked or terminal registry family names TUSD issuer redemption parity, TrueUSD redemption, or the TUSDUSDT issuer route.",
+    "retained_market_prefilter": "All 60 retained Binance TUSDUSDT top-of-book observations show one 0.99810000 bid and 0.99830000 ask; the 17-bip ask-side gross discount is the strongest unregistered issuer-parity lead in the retained stablecoin inventory.",
+    "discovery_values_are_economic_inputs": false
+  },
+  "question": "Does one current official issuer source bind TUSD redemption access, minimum size, timing, issuer fee, compliance, and Binance availability strongly enough to adjudicate the already-retained 17-bip TUSDUSDT ask-side gap without accounts, credentials, orders, transfers, or a new market request?",
+  "request_name": "trueusd-current-redemption-terms",
+  "request": {
+    "method": "GET",
+    "url": "https://www.tusd.io/",
+    "count": 1,
+    "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "endpoint_classification": {
+    "operation": "download one public static official issuer page",
+    "security": "public unauthenticated read-only HTTPS documentation GET",
+    "source_role": "redemption terms only; no issuer account, application, mint, redemption, transfer, quote, Binance account, or trading action"
+  },
+  "response_byte_ceiling": 2000000,
+  "required_utf8_phrases": [
+    "Mint and Redeem our stablecoins with one-click and without fees",
+    "Send TrueUSD (minimum $1,000) to your unique redemption address.",
+    "Our banking partner generally issues a wire to your bank account within 1 business day",
+    "KYC and AML requirements",
+    "including Binance"
+  ],
+  "decision": {
+    "source_gate_only": "Every exact no-issuer-fee, minimum-size, typical-wire-time, compliance, and Binance-availability phrase must exist in the one retained response.",
+    "accepted_edge": false,
+    "profitability_proved": false,
+    "conditional_next_step": "Only if the source gate passes, consume the exact hash-bound retained 60-snapshot TUSDUSDT population once. Compute finite-size ask acquisition under zero fee and VIP0 taker fee, require at least 1,000 net redeemable TUSD, and reject any stable or after-all-cost claim unless the remaining buffer exceeds Binance withdrawal, chain transfer, issuer and bank wire, delay, failure, compliance, custody, tax, infrastructure, and alternative-yield costs."
+  },
+  "outputs": {
+    "raw_path": "docs/model-research/binance/raw/tusd-redemption-parity-source-v1-2026-08-30/01-trueusd-home.raw.html",
+    "journal_path": "docs/model-research/binance/raw/tusd-redemption-parity-source-v1-2026-08-30/00-request-journal.jsonl",
+    "result_path": "docs/model-research/action-value/binance-tusd-redemption-parity-source-result-v1-2026-08-30.json"
+  },
+  "authority": {
+    "account_requests": 0,
+    "credentials_used": false,
+    "funds_used": false,
+    "orders_or_transactions": 0,
+    "protected_capture_touched": false,
+    "public_unauthenticated_read_only_requests": 1,
+    "signed_requests": 0,
+    "trading_authority": false
+  },
+  "implementations": [
+    {
+      "path": "tools/capture_public_source_contract.py",
+      "sha256": "d566a5a379c659c3da144d5e28449ebac9c01493bd39646f9cc3a6e697a83566"
+    },
+    {
+      "path": "tools/screen_polymarket_exact_two_leg_package.py",
+      "sha256": "374fcc3c3485c466b4929a91256450bdc7db70f93ef4c6bda627e05fe8938327"
+    },
+    {
+      "path": "tools/adjudicate_polymarket_exact_mlb_monotone_prefilter.py",
+      "sha256": "958a44d78029b9a1eb69a3771ce18e53ac1ed3c7bc161c8e4318beedce2cf99f"
+    }
+  ],
+  "retry_policy": "This exact official issuer GET is one-use. Preserve any redirect, HTTP error, block, format mismatch, or missing phrase and do not retry an alias. A pass proves only stated public redemption terms, never this repository account's issuer or Binance eligibility, exact external costs, completion, capacity, after-cost profit, or deployment readiness.",
+  "contract_sha256": "6e4b479ca6139759fad5b2eb4df2f5f981a8a7a047af8a949d736050c31d377d"
+}

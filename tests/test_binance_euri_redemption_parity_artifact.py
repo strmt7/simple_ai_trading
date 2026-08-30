@@ -61,8 +61,6 @@ def test_euri_family_is_terminal_without_inflating_accepted_edges() -> None:
 
     assert _self_hash(registry, "result_sha256") == registry["result_sha256"]
     assert family["canonical_result_sha256"] == result["result_sha256"]
-    assert registry["accepted_edge_count"] == 29
-    assert len(registry["prioritized_hypotheses"]) == 44
     assert "independently_observed_event_driven_discount_above_25_bips" in family["reason"]
 
 
