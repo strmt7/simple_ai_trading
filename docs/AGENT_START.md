@@ -846,14 +846,19 @@ safety gate, blocks Stop, or submits an order.
   `current-rewards-population-delta-terminal-v1-2026-08-30.json`, SHA-256
   `0a885b96eadbc0109ec3da70a8670680a23813a5f492d61abf89e49f3e892481`.
   A distinct source-selected exact-market retry then retained the active Elon
-  Musk 40-64 posts Gamma and sponsored reward responses. It stopped before
-  books because the rewards-page discovery values (104 pUSD/day, 20 shares,
-  4 cents) disagreed with the exact condition values (53 pUSD/day, 50 shares,
-  5.5 cents). Do not retry, change parameters, substitute another range, or
-  use the more favorable configuration. Terminal result SHA-256:
-  `3fc224b70c035090c4f015d68b52edb6abd9f7222f1b932962274c446d613f47`.
+  Musk 40-64 posts Gamma and sponsored reward responses. Its initial gate
+  incorrectly treated a stale or misattributed discovery tuple as an economic
+  input even though the exact sources agreed on 50 shares and 5.5 cents. A
+  separately frozen correction reused those exact bytes and made only one book
+  request. It rejected at 6,408 ms age; one-tick 0.48 and 0.53 bids were both
+  marketable, summed to 1.01, and lost 0.50 pUSD if both filled before reward
+  uncertainty. A precommitted zero-network best-bid join then earned 0.50 pUSD
+  both-fill gross but risked 26 pUSD orphan loss; observed displayed competition
+  required 43.554 reward days versus 3.693 remaining, and 100-times competition
+  required 4,306.850 days. No fresh capture is justified. Canonical rejection:
+  `facecfaa3b92d905c700083c7b8afe153adc495403ceabc91e417bdb248d059b`.
   The accepted count remains 21; registry SHA-256 is
-  `5d524c5958dd8790f345c9056dc3053a1ac819197b44ac14f019c50de1037990`.
+  `66b03aa1311ee3b0565e9dc4e973f157aa9626af23b5f675bc60119d668dd311`.
 - The separate official crypto maker-rebate schedule has exact conditional
   filled-order arithmetic, not an accepted edge. At 50 shares bid on each side
   at 0.49, the unrounded nominal rebates total 0.3498600 pUSD and raise the
@@ -1966,13 +1971,17 @@ registry SHA-256 is
 
 ## Exact Polymarket reward candidate rejection
 
-The latest distinct rank-17 retry is terminal before books. For the active
-Elon Musk 40-64 posts condition, the rewards page showed 104 pUSD/day, 20
-shares, and 4 cents, while the exact sponsored condition endpoint returned
-53 pUSD/day, 50 shares, and 5.5 cents. Both public responses are retained.
-Do not retry, alter parameters, substitute another range, or select the more
-favorable configuration. No credential, account, order, fund, or protected
-capture was accessed. Accepted edges remain 21. Terminal SHA-256:
-`3fc224b70c035090c4f015d68b52edb6abd9f7222f1b932962274c446d613f47`;
+The latest distinct rank-17 retry exposed and corrected a methodology error:
+the initial contract used a stale or misattributed search discovery tuple as a
+hard gate even though exact Gamma and sponsored-condition sources agreed on
+50 shares and 5.5 cents. A frozen retained-source correction made only the
+previously unrequested book call. It failed the 5-second freshness gate at
+6,408 ms, and one-tick bids of 0.48 plus 0.53 were both marketable, summed to
+1.01, and lost 0.50 pUSD if both filled. A frozen offline best-bid join retained
+positive 0.50 pUSD both-fill gross but 26 pUSD orphan risk; even observed book
+competition needed 43.554 reward days versus 3.693 remaining, while 100-times
+competition needed 4,306.850 days. Do not retry this market. Accepted edges
+remain 21. Canonical rejection SHA-256:
+`facecfaa3b92d905c700083c7b8afe153adc495403ceabc91e417bdb248d059b`;
 registry SHA-256:
-`5d524c5958dd8790f345c9056dc3053a1ac819197b44ac14f019c50de1037990`.
+`66b03aa1311ee3b0565e9dc4e973f157aa9626af23b5f675bc60119d668dd311`.

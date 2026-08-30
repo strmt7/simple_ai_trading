@@ -1,0 +1,69 @@
+{
+  "authority": {
+    "credentials_used": false,
+    "funded_actions": 0,
+    "orders_or_cancellations": 0,
+    "public_unauthenticated_read_only": true
+  },
+  "candidate": {
+    "condition_id": "0x27ad260f65f1fb035fa22660ea8a79fa72bc9f3c2432a56fc63defae40701d94",
+    "market_slug": "elon-musk-of-tweets-august-31-september-2-2026-40-64",
+    "question": "Will Elon Musk post 40-64 tweets from August 31 to September 2, 2026?",
+    "reward_daily_rate_pUSD": "53",
+    "reward_maximum_spread_cents": "5.5",
+    "reward_minimum_size_shares": "50"
+  },
+  "capture": {
+    "book_timestamp_skew_ms": 0,
+    "freshness_passed": false,
+    "oldest_book_event_age_ms": 6408,
+    "request_elapsed_ms": 225
+  },
+  "completed_at_utc": "2026-08-30T02:02:27.870790+00:00",
+  "offline_rejection": {
+    "both_fill_gross_profit_pUSD": "-0.50",
+    "combined_one_tick_improved_bid": "1.01",
+    "no_best_ask": "0.53",
+    "no_best_bid": "0.52",
+    "no_one_tick_improved_bid": "0.53",
+    "no_quote_would_be_marketable": true,
+    "quantity_shares": "50",
+    "yes_best_ask": "0.48",
+    "yes_best_bid": "0.47",
+    "yes_one_tick_improved_bid": "0.48",
+    "yes_quote_would_be_marketable": true
+  },
+  "result_sha256": "30daf7346fe284953d1bb2fc3c9bbb25e6910f0e3fb44b5a467e711f17e13a50",
+  "schema_version": "polymarket-retained-exact-source-book-terminal-v1",
+  "source_correction": {
+    "correct_gate": "exact Gamma and exact sponsored-condition reward sources agree on 50-share minimum size and 5.5-cent maximum spread",
+    "discovery_snippet_used_as_economic_input": false,
+    "prior_104_pUSD_20_share_4_cent_tuple": "stale_or_misattributed_discovery_only",
+    "prior_terminal_artifact_status": "preserved_consumed_contract_failure_but_superseded_as_source_conflict_interpretation",
+    "repeated_gamma_or_reward_requests": 0
+  },
+  "sources": {
+    "books": {
+      "payload_bytes": 3908,
+      "payload_sha256": "8c89016d2bc47d0ca85f1b13a642b6e21cf7f7f8b3491a967faa9d6dfb6bc74e",
+      "raw_path": "docs/model-research/polymarket/raw/elon-posts-40-64-retained-source-book-screen-v1-2026-08-30/01-two-token-books.raw",
+      "status_code": 200,
+      "url": "https://clob.polymarket.com/books"
+    },
+    "contract_file_sha256": "7562ecc3398f4b0daee86623563fc7230cd031a7da9fe11b97db375e55842e3c",
+    "contract_path": "docs/model-research/polymarket/elon-posts-40-64-retained-source-book-contract-v1-2026-08-30.json",
+    "contract_result_sha256": "186e4fc73ae2e84954cbd922a3509add6cfbac8062c5a894e6334bf74aeacf49",
+    "retained_gamma_payload_sha256": "60bc944abae44dadba7eb221552bcec63b9a0fb632514a0f1fbcb990033e9321",
+    "retained_reward_payload_sha256": "06cc2b73201acc6ea2178536d6cc1028319f78d7ffd935ea77d50ad9c5754c1f",
+    "tool_sha256": "a6833064bcb6c996f880efd63606390a3d36bf4d2375783488449e66ca63ab4b"
+  },
+  "verdict": {
+    "accepted_edge": false,
+    "profitability_claim": false,
+    "publicly_proven_reward_payout_floor_pUSD": "0",
+    "reason": "frozen freshness failed and the retained one-tick paired quote was marketable with combined cost above guaranteed payout",
+    "retry_permitted": false,
+    "status": "terminal_rejected_stale_and_gross_negative_before_reward_share_model",
+    "trading_authority": false
+  }
+}

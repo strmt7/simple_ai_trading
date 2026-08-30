@@ -1508,20 +1508,23 @@ endpoint before access. Canonical contract and terminal result SHA-256 values:
 `c6aef4b1395e6a0c311a6a64b4e679d6dafbd6ac3e7b50860585e230ca0c9484` and
 `0a885b96eadbc0109ec3da70a8670680a23813a5f492d61abf89e49f3e892481`.
 
-A genuinely distinct exact-market retry was then source-selected from the live
-official rewards page before endpoint access: the active Elon Musk 40-64 posts
-market ending September 2. Its frozen one-use screen retained exact Gamma and
-`sponsored=true` reward responses, then stopped before books because the page's
-discovery values did not reconcile. The page showed 104 pUSD/day, 20 shares,
-and a 4-cent maximum spread; the exact condition returned one terminal active
-configuration at 53 pUSD/day, 50 shares, and 5.5 cents. Do not retry, change
-parameters, substitute another range, or choose the more favorable values.
-No book, fee follow-up, account, credential, or order request was made; the
-public payout floor remains zero. Canonical terminal result SHA-256:
-`3fc224b70c035090c4f015d68b52edb6abd9f7222f1b932962274c446d613f47`.
+A genuinely distinct exact-market retry was then source-selected for the active
+Elon Musk 40-64 posts market. The first frozen attempt correctly retained exact
+Gamma and `sponsored=true` reward responses but incorrectly treated a stale or
+misattributed 104 pUSD/20-share/4-cent discovery tuple as an economic equality
+gate. The exact sources actually agreed on 50 shares and 5.5 cents; the exact
+reward rate was 53 pUSD/day. A separately frozen correction reused those bytes
+without refetching and made the one previously unrequested book call. It failed
+freshness at 6,408 ms, while one-tick 0.48 and 0.53 bids were both marketable,
+summed to 1.01, and lost 0.50 pUSD if both filled before reward uncertainty.
+A separately frozen zero-network best-bid join earned 0.50 pUSD both-fill gross
+but risked 26 pUSD orphan loss. Even observed displayed competition required
+43.554 reward days versus 3.693 remaining; 100-times competition required
+4,306.850 days. Do not retry or justify a fresh capture. Canonical rejection:
+`facecfaa3b92d905c700083c7b8afe153adc495403ceabc91e417bdb248d059b`.
 The accepted-edge count remains 21, the ranked-hypothesis count remains 44, and
 the registry SHA-256 is
-`5d524c5958dd8790f345c9056dc3053a1ac819197b44ac14f019c50de1037990`.
+`66b03aa1311ee3b0565e9dc4e973f157aa9626af23b5f675bc60119d668dd311`.
 
 The Binance option workflow adds a request-efficiency contract learned from a
 failed exploratory confirmation: fetch the contract catalog once, fetch the
@@ -3817,18 +3820,22 @@ the registry SHA-256 is
 ## 2026-08-30 Exact Polymarket Reward Candidate Rejection
 
 The rank-17 distinct exact-market retry trigger fired for the active Elon Musk
-40-64 posts market. Its frozen one-use public screen retained one exact Gamma
-response and one exact `sponsored=true` reward response, then stopped before
-books. The rewards-page discovery values (104 pUSD/day, 20 shares, 4 cents)
-did not reconcile to the exact condition values (53 pUSD/day, 50 shares,
-5.5 cents). The exact response was terminal in one page and had one active
-dated configuration; no retry, alternate parameter, replacement range, or
-favorable-value selection is admissible.
+40-64 posts market. The first frozen attempt retained one exact Gamma response
+and one exact `sponsored=true` reward response, but its discovery-value equality
+gate was wrong: the exact sources agreed on 50 shares and 5.5 cents, while the
+104 pUSD/20-share/4-cent search tuple was stale or misattributed discovery.
+A separately frozen correction reused those retained bytes and made only the
+previously unrequested book call. The response failed freshness at 6,408 ms;
+one-tick 0.48 and 0.53 bids were both marketable, summed to 1.01, and would lose
+0.50 pUSD if both filled before reward uncertainty. No retry is admissible.
 
 No account, credential, order, cancellation, fund, or protected-capture state
 was accessed. Publicly proven payout remains zero and the accepted-edge count
 remains 21. Continue with the highest-ranked hypothesis whose literal trigger
-is satisfied; do not repeat this market. Terminal result SHA-256 is
-`3fc224b70c035090c4f015d68b52edb6abd9f7222f1b932962274c446d613f47`;
+is satisfied; do not repeat this market. The zero-network best-bid alternative
+also failed: 0.50 pUSD both-fill gross versus 26 pUSD orphan loss needed 43.554
+reward days under observed competition and 4,306.850 under 100-times stress,
+against 3.693 days remaining. Canonical rejection SHA-256 is
+`facecfaa3b92d905c700083c7b8afe153adc495403ceabc91e417bdb248d059b`;
 registry SHA-256 is
-`5d524c5958dd8790f345c9056dc3053a1ac819197b44ac14f019c50de1037990`.
+`66b03aa1311ee3b0565e9dc4e973f157aa9626af23b5f675bc60119d668dd311`.

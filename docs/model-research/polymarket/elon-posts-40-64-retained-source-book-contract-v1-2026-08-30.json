@@ -1,0 +1,87 @@
+{
+  "authority": {
+    "accepted_edge": false,
+    "credentials_permitted": false,
+    "funded_actions_permitted": false,
+    "live_trading_authority": false,
+    "orders_or_cancellations_permitted": false,
+    "profitability_claim": false
+  },
+  "candidate": {
+    "condition_id": "0x27ad260f65f1fb035fa22660ea8a79fa72bc9f3c2432a56fc63defae40701d94",
+    "event_end_utc": "2026-09-02T16:00:00+00:00",
+    "market_slug": "elon-musk-of-tweets-august-31-september-2-2026-40-64",
+    "no_token_id": "19124068153560126044699760272910605183216909491171637384398285715982037598651",
+    "question": "Will Elon Musk post 40-64 tweets from August 31 to September 2, 2026?",
+    "yes_token_id": "51641366058943919952284270925800929442717370239819007591053800787003907153229"
+  },
+  "capture": {
+    "activation_window_minutes": 30,
+    "book_max_event_age_ms": 5000,
+    "book_max_timestamp_skew_ms": 1000,
+    "one_attempt_only": true,
+    "request_max_elapsed_ms": 2000,
+    "retry_or_replacement_permitted": false
+  },
+  "decision": {
+    "accepted_edge_possible": false,
+    "advance_to_prospective_paper_capture_only_when": [
+      "fresh_two_token_book_identity_and_execution_parameters_pass",
+      "one_tick_improved_equal_50_share_bids_are_nonmarketable_and_sum_below_one",
+      "both_fill_gross_profit_is_positive",
+      "one_hundred_times_displayed_book_competition_payback_does_not_exceed_remaining_reward_days"
+    ],
+    "publicly_proven_reward_payout_floor_pUSD": "0",
+    "stress_multipliers": [
+      1,
+      10,
+      100
+    ]
+  },
+  "frozen_at_utc": "2026-08-30T02:00:02.3600122+00:00",
+  "hypothesis": {
+    "market_direction_dependency": "both-fill YES plus NO complete-set economics are direction-neutral but every orphan fill is directional",
+    "statement": "paired resting YES and NO bids may capture complete-set spread plus liquidity rewards without forecasting market direction",
+    "status": "unobserved_under_this_contract"
+  },
+  "quote_rule": {
+    "maximum_spread_cents": "5.5",
+    "post_quote_midpoint_method": "conditional top midpoint including complementary own ask",
+    "price": "best displayed bid plus one 0.01 tick",
+    "quantity_shares": "50",
+    "require_combined_bid_below_one": true,
+    "require_nonmarketable": true
+  },
+  "request_contract": {
+    "books_endpoint": "https://clob.polymarket.com/books",
+    "maximum_public_requests": 1,
+    "response_byte_ceiling": 8388608
+  },
+  "result_sha256": "186e4fc73ae2e84954cbd922a3509add6cfbac8062c5a894e6334bf74aeacf49",
+  "retained_exact_sources": {
+    "gamma": {
+      "expected_maker_fee_zero": true,
+      "expected_minimum_order_size_shares": "5",
+      "expected_reward_maximum_spread_cents": "5.5",
+      "expected_reward_minimum_size_shares": "50",
+      "expected_tick_size": "0.01",
+      "path": "docs/model-research/polymarket/raw/elon-posts-40-64-paired-maker-reward-screen-v1-2026-08-30/01-exact-gamma-market.raw",
+      "sha256": "60bc944abae44dadba7eb221552bcec63b9a0fb632514a0f1fbcb990033e9321"
+    },
+    "reward": {
+      "expected_active_configuration_count": 1,
+      "expected_daily_rate_pUSD": "53",
+      "expected_maximum_spread_cents": "5.5",
+      "expected_minimum_size_shares": "50",
+      "expected_terminal_cursor": "LTE=",
+      "path": "docs/model-research/polymarket/raw/elon-posts-40-64-paired-maker-reward-screen-v1-2026-08-30/02-exact-sponsored-reward.raw",
+      "sha256": "06cc2b73201acc6ea2178536d6cc1028319f78d7ffd935ea77d50ad9c5754c1f"
+    }
+  },
+  "source_correction": {
+    "discovery_values_are_economic_inputs": false,
+    "reason": "the earlier search-result tuple was stale or misattributed; exact retained Gamma and exact sponsored condition sources agree on size and spread",
+    "repeated_gamma_or_reward_requests_permitted": false
+  },
+  "schema_version": "polymarket-retained-exact-source-book-contract-v1"
+}
