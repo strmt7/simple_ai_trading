@@ -1,0 +1,82 @@
+{
+  "adjudication": {
+    "accepted_edge": false,
+    "after_all_cost_profit_floor_usd": "0",
+    "deployment_ready": false,
+    "market_direction_forecast_required": false,
+    "profitability_claim": false,
+    "stable_edge": false,
+    "status": "TUSD_is_the_strongest_retained_source_admitted_issuer_parity_lead_but_remains_unaccepted_and_below_the_frozen_event_trigger_after_known_cost_sensitivities"
+  },
+  "authority": {
+    "account_requests": 0,
+    "credentials_used": false,
+    "funds_used": false,
+    "network_requests": 0,
+    "orders_or_transactions": 0,
+    "protected_capture_touched": false,
+    "signed_requests": 0,
+    "trading_authority": false
+  },
+  "created_at_utc": "2026-08-30T21:48:28.3088683Z",
+  "method": {
+    "cross_unit_pairs_are_not_ranked": true,
+    "gross_parity_sensitivity": "For same-unit USD pairs, compare buying base at ask and exiting base at hypothetical par with sourcing base at hypothetical par and selling at bid; retain the better gross basis-point sensitivity. This assumes neither issuer access nor one-for-one convertibility and cannot establish profit.",
+    "issuer_source_admission": "Only TUSD and EURI rows have current retained primary issuer redemption sources. Every other row is a price diagnostic and cannot authorize issuer research, access assumptions, or economics by itself.",
+    "latest_snapshot": "bookTicker-059.json",
+    "observation_count": 60,
+    "operational_stress_bips": "3",
+    "pair_count": 20,
+    "same_unit_ranked_pair_count": 16,
+    "vip0_taker_fee_fraction_sensitivity": "0.001"
+  },
+  "retained_frontier": [
+    {"symbol":"TUSDUSDT","bid":"0.99810000","ask":"0.99830000","best_direction":"buy_base_at_ask_then_par_exit_base","gross_best_parity_sensitivity_bips":"17.02894921366322748672744000","issuer_identity_source_bound":true,"economic_status":"ranked_candidate_external_costs_and_USDT_bank_USD_bridge_unproved"},
+    {"symbol":"FDUSDUSDT","bid":"0.99860000","ask":"0.99870000","best_direction":"buy_base_at_ask_then_par_exit_base","gross_best_parity_sensitivity_bips":"13.016921998598177630920196","issuer_identity_source_bound":false,"economic_status":"diagnostic_only"},
+    {"symbol":"FDUSDUSDC","bid":"0.99870000","ask":"0.99880000","best_direction":"buy_base_at_ask_then_par_exit_base","gross_best_parity_sensitivity_bips":"12.014417300760913095714858","issuer_identity_source_bound":false,"economic_status":"diagnostic_only"},
+    {"symbol":"RLUSDU","bid":"1.00100000","ask":"1.00120000","best_direction":"par_source_base_then_sell_at_bid","gross_best_parity_sensitivity_bips":"10","issuer_identity_source_bound":false,"economic_status":"diagnostic_only"},
+    {"symbol":"RLUSDUSDT","bid":"1.00060000","ask":"1.00070000","best_direction":"par_source_base_then_sell_at_bid","gross_best_parity_sensitivity_bips":"6","issuer_identity_source_bound":false,"economic_status":"diagnostic_only"},
+    {"symbol":"UUSDC","bid":"0.99950000","ask":"0.99960000","best_direction":"buy_base_at_ask_then_par_exit_base","gross_best_parity_sensitivity_bips":"4.001600640256102440976391","issuer_identity_source_bound":false,"economic_status":"diagnostic_only"},
+    {"symbol":"BFUSDUSDT","bid":"0.99960000","ask":"0.99970000","best_direction":"buy_base_at_ask_then_par_exit_base","gross_best_parity_sensitivity_bips":"3.000900270081024307292188","issuer_identity_source_bound":false,"economic_status":"diagnostic_only"},
+    {"symbol":"UUSDT","bid":"0.99960000","ask":"0.99970000","best_direction":"buy_base_at_ask_then_par_exit_base","gross_best_parity_sensitivity_bips":"3.000900270081024307292188","issuer_identity_source_bound":false,"economic_status":"diagnostic_only"},
+    {"symbol":"USD1U","bid":"1.00030000","ask":"1.00040000","best_direction":"par_source_base_then_sell_at_bid","gross_best_parity_sensitivity_bips":"3","issuer_identity_source_bound":false,"economic_status":"diagnostic_only"},
+    {"symbol":"USD1USDT","bid":"0.99989000","ask":"0.99990000","best_direction":"buy_base_at_ask_then_par_exit_base","gross_best_parity_sensitivity_bips":"1.000100010001000100010001","issuer_identity_source_bound":false,"economic_status":"diagnostic_only"},
+    {"symbol":"EUREURI","bid":"1.00010000","ask":"1.00030000","best_direction":"sell_EUR_at_bid_then_redeem_EURI_at_par","gross_best_parity_sensitivity_bips":"1.00000000","issuer_identity_source_bound":true,"economic_status":"terminal_negative_after_operational_stress_or_VIP0_before_external_costs"},
+    {"symbol":"USDEUSDT","bid":"1.00010000","ask":"1.00020000","best_direction":"par_source_base_then_sell_at_bid","gross_best_parity_sensitivity_bips":"1","issuer_identity_source_bound":false,"economic_status":"diagnostic_only"},
+    {"symbol":"USD1USDC","bid":"0.99990000","ask":"1.00000000","best_direction":"buy_base_at_ask_then_par_exit_base","gross_best_parity_sensitivity_bips":"0","issuer_identity_source_bound":false,"economic_status":"diagnostic_only"},
+    {"symbol":"USDCUSDT","bid":"1.00000000","ask":"1.00001000","best_direction":"par_source_base_then_sell_at_bid","gross_best_parity_sensitivity_bips":"0","issuer_identity_source_bound":false,"economic_status":"diagnostic_only"},
+    {"symbol":"USDEUSDC","bid":"1.00000000","ask":"1.00010000","best_direction":"par_source_base_then_sell_at_bid","gross_best_parity_sensitivity_bips":"0","issuer_identity_source_bound":false,"economic_status":"diagnostic_only"},
+    {"symbol":"BFUSDUSDC","bid":"0.99960000","ask":"1.00040000","best_direction":"buy_base_at_ask_then_par_exit_base","gross_best_parity_sensitivity_bips":"-3.998400639744102359056377","issuer_identity_source_bound":false,"economic_status":"diagnostic_only"},
+    {"symbol":"EURIUSDC","bid":"1.15630000","ask":"1.15750000","best_direction":null,"gross_best_parity_sensitivity_bips":null,"issuer_identity_source_bound":true,"economic_status":"cross_unit_EUR_USD_conversion_not_bound"},
+    {"symbol":"EURIUSDT","bid":"1.15740000","ask":"1.15750000","best_direction":null,"gross_best_parity_sensitivity_bips":null,"issuer_identity_source_bound":true,"economic_status":"cross_unit_EUR_USD_conversion_not_bound"},
+    {"symbol":"EURUSDC","bid":"1.15760000","ask":"1.15770000","best_direction":null,"gross_best_parity_sensitivity_bips":null,"issuer_identity_source_bound":false,"economic_status":"cross_unit_EUR_USD_conversion_not_bound"},
+    {"symbol":"EURUSDT","bid":"1.15760000","ask":"1.15770000","best_direction":null,"gross_best_parity_sensitivity_bips":null,"issuer_identity_source_bound":false,"economic_status":"cross_unit_EUR_USD_conversion_not_bound"}
+  ],
+  "selection": {
+    "event_reopen_threshold_bips": "25",
+    "highest_retained_gross_source_admitted_pair": "TUSDUSDT",
+    "highest_retained_gross_source_admitted_parity_sensitivity_bips": "17.02894921366322748672744000",
+    "new_issuer_source_requests_justified": 0,
+    "reason": "TUSD is already the strongest same-unit retained lead and its 17.0289-bip gross sensitivity falls to 7.0119 bips after VIP0 and 4.0119 bips after the frozen three-bip stress before every external cost. Lower-ranked diagnostic rows cannot dominate it without materially better independently observed pricing or complete source-bound issuer and cost terms.",
+    "selected_existing_hypothesis_rank": 45
+  },
+  "limitations": [
+    "The frontier is a deterministic audit of retained August 29 books, not a current quote or recurrence sample.",
+    "Nineteen of twenty pairs had identical bid and ask prices across all 60 observations; UUSDT changed once. Persistence at a historical level is not event-time recurrence.",
+    "A one-dollar parity sensitivity does not prove issuer mint or redemption rights, repository-account eligibility, completed settlement, or a same-unit executable bridge.",
+    "No row is positive after every venue, transfer, network, banking, delay, failure, compliance, custody, tax, infrastructure, and alternative-yield cost.",
+    "Do not source-bind issuers sequentially from this diagnostic ranking. Reopen the existing rank-45 family only on its literal material-change, complete-cost, or independently observed greater-than-25-bip event trigger."
+  ],
+  "result_sha256": "d9e327b427adf37ea0ee6a0ac8bdfc8e91966a5802926cfe0d0113ed10856e1f",
+  "schema_version": "binance-stablecoin-issuer-parity-retained-frontier-v1",
+  "source_binding": {
+    "euri_adjudication_path": "docs/model-research/action-value/binance-euri-redemption-parity-retained-adjudication-v1-2026-08-30.json",
+    "euri_adjudication_result_sha256": "1b344ebc26d348d00d32663e7d365e1812dd09d2010656ab53338d4c01fd2bd9",
+    "retained_book_directory": "data/edge-research/binance-indirect-internal-conversion-screen-v1/raw",
+    "retained_book_manifest_sha256": "28b59e6e3eed238290b0dde2c916ba688f9c7d04b37ac0ff9189f90e3ea07d89",
+    "retained_parent_result_path": "docs/model-research/action-value/binance-indirect-internal-conversion-screen-v1-2026-08-29.json",
+    "retained_parent_result_sha256": "b3e7f724e2b1ce2cc7a8444d00632466196af6d89f139259164549e91d1f84bc",
+    "tusd_candidate_path": "docs/model-research/action-value/binance-tusd-redemption-parity-retained-candidate-v1-2026-08-30.json",
+    "tusd_candidate_result_sha256": "6403c2d269e8cc682b6f6d63a612e5e7de00fed50902b2797c4c1e999ed37eb5"
+  }
+}

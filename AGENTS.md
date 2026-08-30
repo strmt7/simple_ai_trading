@@ -63,6 +63,12 @@ override prose.
   Never infer repository-account access, eligibility, timing, capacity, or
   completion from the legal right; event-triggered discounts require one frozen
   finite-size book, not venue polling.
+- Before researching another stablecoin issuer one by one, construct or consult
+  the complete retained same-unit parity frontier and source-bind only a row that
+  can materially dominate the strongest admitted candidate after the frozen fee
+  and operational hurdle. A lower gross diagnostic quote is not a reason to
+  spend another issuer request; update the existing issuer-dislocation family
+  instead of multiplying duplicate hypotheses.
 - A documented comma-separated multi-market query can still exceed the venue's
   practical backend limit. If a frozen one-use request times out, preserve the
   exact response and journal and terminalize that population; never split,

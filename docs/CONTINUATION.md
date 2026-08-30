@@ -6258,3 +6258,35 @@ Accepted edges remain 29, ranked hypotheses become 45, terminal families become
 `b96faacc247e021a4d1775a0e412da2c59fc3adc5a081e68fc042d54d2474637`,
 and the source-bound durability-audit SHA-256 is
 `7d322edf9c9ca6c3d47909ad375c789fc9d1e2029468d0874cbd147069c904d8`.
+
+## Binance retained stablecoin issuer-parity frontier
+
+A zero-network frontier now prevents sequential issuer-by-issuer research on
+weaker retained quotes. It exhaustively inspected all 20 trading pairs whose
+base and quote assets are in the retained USD-stable, EURI, or EUR set across
+the same 60 August 29 all-symbol book snapshots. Sixteen same-unit pairs were
+ranked under an explicitly non-economic par sensitivity; four EUR/USD pairs
+remain cross-unit and unranked. Nineteen pairs had identical bid and ask prices
+in all 60 snapshots; only UUSDT changed once, so this is historical persistence
+rather than event-time recurrence.
+
+TUSDUSDT is the strongest source-admitted retained lead at 17.0289492137 basis
+points gross. The next diagnostics are FDUSDUSDT at 13.0169219986 basis points,
+FDUSDUSDC at 12.0144173008 basis points, and RLUSDU at 10 basis points, but their
+issuer identities and complete costs were deliberately not source-bound. None
+can dominate the already-admitted TUSD candidate from retained pricing alone.
+TUSD still falls to 7.0119 basis points after the public VIP0 sensitivity and
+4.0119 basis points after the frozen three-basis-point operational stress before
+every external cost and its unproved USDT-to-bank-USD bridge.
+
+Do not spend issuer requests one row at a time. Reopen the existing rank-45
+issuer-dislocation family only if a candidate can materially dominate the
+frontier through a non-polling independently observed event above 25 basis
+points, complete exact account-and-cost evidence, or a material official term
+change. The new artifact SHA-256 is
+`d9e327b427adf37ea0ee6a0ac8bdfc8e91966a5802926cfe0d0113ed10856e1f`.
+Accepted edges remain 29, ranked hypotheses remain 45, and terminal families
+remain 92. Registry SHA-256 becomes
+`4c9d7ec1eae56de0ba4301f5f8072a39907887fc0822580c298efbf18edd9dd2`;
+the rebound durability-audit SHA-256 is
+`398db39349738346ffeac68333cd092ddcc6b2f67d0cb8cf9e00ef495b315c31`.

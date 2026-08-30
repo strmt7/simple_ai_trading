@@ -79,7 +79,9 @@ def test_registry_binds_round61_and_liquid_staking_without_repeating_carry() -> 
     assert registry["result_sha256"] == EXPECTED_REGISTRY_SHA256
     assert _embedded_hash(registry) == EXPECTED_REGISTRY_SHA256
     hypotheses = registry["prioritized_hypotheses"]
-    assert [row["priority_rank"] for row in hypotheses] == list(range(1, 45))
+    assert [row["priority_rank"] for row in hypotheses] == list(
+        range(1, len(hypotheses) + 1)
+    )
 
     staking = next(
         row

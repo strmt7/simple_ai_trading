@@ -2793,9 +2793,13 @@
         {
           "path": "docs/model-research/action-value/binance-tusd-redemption-parity-retained-candidate-v1-2026-08-30.json",
           "result_sha256": "6403c2d269e8cc682b6f6d63a612e5e7de00fed50902b2797c4c1e999ed37eb5"
+        },
+        {
+          "path": "docs/model-research/action-value/binance-stablecoin-issuer-parity-retained-frontier-v1-2026-08-30.json",
+          "result_sha256": "d9e327b427adf37ea0ee6a0ac8bdfc8e91966a5802926cfe0d0113ed10856e1f"
         }
       ],
-      "current_status": "unaccepted_direction_independent_event_driven_issuer_redemption_candidate_the_current_official_TrueUSD_page_states_no_issuer_fee_a_1000_TUSD_minimum_KYC_AML_and_a_typical_one_business_day_wire_while_all_60_retained_TUSDUSDT_books_show_the_same_0_9983_ask_the_17_0289_bip_gross_one_USDT_equals_one_USD_sensitivity_falls_to_7_0119_bips_after_VIP0_and_4_0119_bips_after_the_frozen_operational_stress_before_every_withdrawal_chain_bank_wire_delay_failure_compliance_custody_tax_infrastructure_alternative_yield_and_USDT_to_USD_conversion_cost_public_after_all_cost_floor_zero_not_stable_not_deployment_ready",
+      "current_status": "unaccepted_direction_independent_event_driven_issuer_redemption_candidate_a_complete_zero_network_retained_frontier_confirms_TUSDUSDT_is_the_strongest_source_admitted_same_unit_parity_lead_at_17_0289_bips_gross_ahead_of_every_lower_unadmitted_diagnostic_row_but_it_falls_to_7_0119_bips_after_VIP0_and_4_0119_bips_after_the_frozen_operational_stress_before_every_withdrawal_chain_bank_wire_delay_failure_compliance_custody_tax_infrastructure_alternative_yield_and_USDT_to_USD_conversion_cost_public_after_all_cost_floor_zero_not_stable_not_deployment_ready",
       "market_direction_forecast_required": false,
       "mechanism": "binance_stablecoin_issuer_redemption_parity_event_dislocation",
       "next_action": "do_not_repeat_the_TrueUSD_page_or_exact_retained_60_book_population_and_do_not_poll_TUSDUSDT_reopen_only_on_a_material_official_TUSD_minimum_fee_timing_access_continuity_or_Binance_listing_withdrawal_fee_change_or_with_exact_account_qualified_issuer_access_Binance_fee_withdrawal_network_bank_wire_and_same_unit_USDT_to_USD_comparator_evidence_or_after_an_independently_observed_event_driven_TUSD_ask_discount_above_25_bips_then_freeze_one_finite_size_book_and_require_every_cost_before_any_order_withdrawal_redemption_or_account_action",
@@ -2806,13 +2810,14 @@
         "using_public_VIP0_as_exact_account_fee",
         "ignoring_withdrawal_chain_wire_correspondent_delay_failure_compliance_custody_tax_or_opportunity_cost",
         "polling_or_repeat_capturing_the_same_17_bip_level",
+        "source_binding_lower_gross_stablecoin_issuer_rows_sequentially_without_a_materially_dominant_independently_observed_event_or_complete_cost_advantage",
         "placing_orders_withdrawing_redeeming_submitting_KYC_or_mutating_accounts_without_separate_explicit_authority"
       ],
       "retry_trigger": "material_official_TUSD_redemption_or_Binance_listing_fee_withdrawal_change_or_exact_account_qualified_issuer_and_every_same_unit_cost_evidence_or_an_independently_observed_event_driven_TUSD_ask_discount_above_25_bips_from_a_non_polling_source",
       "venue_scope": "Binance_TUSDUSDT_Spot_and_TrueUSD_bank_USD_redemption"
     }
   ],
-  "result_sha256": "b96faacc247e021a4d1775a0e412da2c59fc3adc5a081e68fc042d54d2474637",
+  "result_sha256": "4c9d7ec1eae56de0ba4301f5f8072a39907887fc0822580c298efbf18edd9dd2",
   "schema_version": "structural-edge-priority-registry-v1",
   "terminal_do_not_repeat": [
     {
