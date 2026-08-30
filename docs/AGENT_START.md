@@ -41,6 +41,18 @@ aggregation and fragment control are unproved; every zeroed assessment saves
 strictly less than 0.00001 pUSD. Never split, churn, self-match, or manufacture
 volume for rounding.
 
+Binance Spot OPO and OPOCO are a real direction-independent execution candidate,
+not standalone profit. Pinned official terms prove the pending sell uses the
+working buy's received quantity with commission and lot adjustment, needs no
+pre-funded pending sell, and removes one post-fill client submission from the
+frozen sequential comparator. Retained production and one exact frozen public
+Testnet response both expose OTO, OPO, and OCO support on BTCUSDT, ETHUSDT, and
+SOLUSDT. The pending order activates only after full fill, so partial fills are
+unprotected, and no monetary latency, fill, fee, or profit floor is proved.
+Do not repeat the Testnet configuration request. Any order experiment requires
+separate explicit Spot testnet order authority and an independently required
+minimum-size organic buy-then-sell comparator.
+
 The Polymarket BTC/ETH/SOL interval-composition family has a mechanically
 verified one-pUSD payoff floor across all 50 packages in 25 retained aligned
 settlements, with zero violations. It remains unaccepted: the current displayed

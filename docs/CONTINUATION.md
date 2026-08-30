@@ -5,6 +5,23 @@ Development belongs only on `main`; do not create another development branch.
 
 ## Latest Edge R&D Checkpoint
 
+- Binance Spot OPO and OPOCO now have a source-bound received-quantity execution
+  candidate. Pinned official terms prove that only the working BUY balance is
+  required, received funds are locked, the contingent SELL quantity accounts
+  for commission and lot filters, and the exchange activates it after the BUY
+  fully fills. One exact frozen public Testnet `exchangeInfo` response confirmed
+  current OTO, OPO, and OCO support on BTCUSDT, ETHUSDT, and SOLUSDT, matching
+  the retained production flags and core filters. This removes one post-fill
+  client submission from a frozen manual sequential comparator and avoids
+  pre-funding the pending sell, but partial fills remain unprotected and zero
+  monetary latency, fill, fee, or after-cost profit floor is proved. The
+  standalone-profit claim is terminal; the rank-5 overlay may advance only with
+  separate explicit Spot testnet order authority plus an independently required
+  minimum-size organic buy-then-sell question and an identical-quantity manual
+  comparator. Do not repeat, narrow, reorder, or alias the consumed Testnet
+  configuration request. Canonical candidate SHA-256 is
+  `4680faf2b4b4e36466cbc7ace4de2a2214430cbe4a5d537a3997e3f43bc47cc8`.
+
 - The exact Polymarket BTC/ETH/SOL interval-composition identity now has a
   retained settlement audit across 25 aligned sets, 100 terminal markets, and
   50 direction-independent four-leg packages. Every package paid at least its
@@ -6005,3 +6022,34 @@ capture was accessed. Canonical result SHA-256 is
 Accepted edges remain 29, ranked hypotheses remain 44, terminal families become
 87, and registry SHA-256 becomes
 `2dcff4f6fcf1c3d40ac78eb3a09dd963303349203fc290381046111e762afa83`.
+
+## Binance Spot OPO and OPOCO received-quantity execution candidate
+
+Pinned official Binance Spot terms prove a structural buy-then-sell execution
+mechanism that does not require market-direction prediction. OPO and OPOCO need
+only the working BUY balance, lock the resulting received funds, account for
+commission, adjust the contingent SELL quantity to lot filters, and unlock any
+unused residual. Relative to the frozen manual sequential comparator, this
+removes one post-fill client order submission and the need to pre-fund the
+pending sell.
+
+One frozen public unauthenticated Testnet `exchangeInfo` request returned 5,891
+bytes and confirmed `TRADING`, `otoAllowed=true`, `opoAllowed=true`, and
+`ocoAllowed=true` for BTCUSDT, ETHUSDT, and SOLUSDT. Their minimum quantities,
+step sizes, five-USDT minimum notionals, 200-order limits, and 20-order-list
+limits match the retained production snapshot. Do not repeat, reorder, narrow,
+expand, or alias that exact Testnet request.
+
+This is not accepted profit. The contingent sell activates only after the
+working buy fully fills, so partial fills remain unprotected. The mechanism is
+same-symbol BUY-then-SELL only and proves no exit fill, price improvement, fee
+reduction, millisecond advantage, or monetary profit floor. Its standalone
+profit claim is terminal while the rank-5 execution overlay remains a candidate.
+Advance it only with separate explicit Spot testnet order authority and an
+independently required minimum-size BTCUSDT, ETHUSDT, or SOLUSDT organic
+buy-then-sell question against a precommitted identical-quantity manual
+sequential comparator. Canonical result SHA-256 is
+`4680faf2b4b4e36466cbc7ace4de2a2214430cbe4a5d537a3997e3f43bc47cc8`.
+Accepted edges remain 29, ranked hypotheses remain 44, terminal families become
+88, and registry SHA-256 becomes
+`0e01f791af46253ebfc7cd82f86f145fef738e9d4a4bbf46454f2c1d66fbb48e`.
