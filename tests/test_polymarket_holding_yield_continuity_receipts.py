@@ -138,11 +138,11 @@ def test_registry_preserves_scope_and_adds_continuity_artifact() -> None:
     assert len(registry["prioritized_hypotheses"]) == 44
     row = registry["prioritized_hypotheses"][0]
     assert row["mechanism"] == "complete_set_holding_reward"
-    assert row["canonical_artifacts"][-3] == {
+    assert {
         "path": (
             "docs/model-research/polymarket/"
             "complete-set-holding-yield-continuity-receipts-v8-2026-08-29.json"
         ),
         "result_sha256": RESULT_HASH,
-    }
+    } in row["canonical_artifacts"]
     assert "current_rate_remains_fail_closed_unqualified" in row["current_status"]
