@@ -11,7 +11,7 @@ FRONTIER = ROOT / (
     "docs/model-research/action-value/"
     "accepted-market-independent-yield-frontier-v1-2026-08-30.json"
 )
-RESULT_HASH = "bc2db7e81a2e14fee68dc9f57041d226843fefabc0cc47e81db10985e04d84d3"
+RESULT_HASH = "1c346600a0bc2a439aa868fba51ed0bf939a48011dbc021ef107bcb5c9771040"
 
 
 def _load(path: Path) -> dict[str, object]:
@@ -74,7 +74,7 @@ def test_current_web_checks_are_discovery_only() -> None:
 
     assert frontier["authority"]["venue_HTTP_requests"] == 0
     assert frontier["authority"]["source_bound_economic_inputs_refreshed"] == 0
-    assert frontier["authority"]["public_web_discovery_batches"] == 3
+    assert frontier["authority"]["public_web_discovery_batches"] == 5
     assert all(
         row["material_yield_or_structural_profitability_trigger_found"] is False
         for row in frontier["discovery_only_current_source_checks"]
@@ -92,6 +92,9 @@ def test_profitability_ladder_separates_scoped_acceptance_from_owned_profit() ->
     assert rows[3]["edge_count"] == 0
     assert frontier["portfolio_decision"]["immediate_research_spend"].startswith(
         "none_no_exact_public_retry_trigger"
+    )
+    assert frontier["portfolio_decision"]["next_research_spend"].startswith(
+        "at_or_after_2026_08_31T00_10_00Z"
     )
 
 

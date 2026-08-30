@@ -5680,3 +5680,17 @@ artifact SHA-256
 Accepted edges remain 29, ranked hypotheses remain 44, terminal families become
 78, and registry SHA-256 becomes
 `809c82d3233fb76b8fa41c1ba1cd7e7cb168ee8932a71098870d5f5b7e2ab04a`.
+
+### Exact GLW time-gate instruction correction
+
+The accepted market-independent yield frontier had a stale early summary of
+the GLW terminal reconciliation gate. The frozen executable contract and full
+rank-34 registry row are authoritative: the one-use request is prohibited
+before `2026-08-31T00:10:00Z`, not merely before midnight. The frontier is now
+corrected to the exact later instant.
+
+Two new discovery-only search batches found no material official September
+2026 bStock dividend or Special-funding episode. Do not convert that null search
+into adaptive requests. Immediate research spend remains zero until an exact
+trigger fires. Corrected frontier SHA-256 is
+`1c346600a0bc2a439aa868fba51ed0bf939a48011dbc021ef107bcb5c9771040`.

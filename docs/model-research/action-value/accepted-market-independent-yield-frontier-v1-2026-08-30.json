@@ -1,12 +1,12 @@
 {
   "schema_version": "accepted-market-independent-yield-frontier-v1",
   "created_at_utc": "2026-08-30T03:07:15Z",
-  "updated_at_utc": "2026-08-30T12:52:37.7561632Z",
-  "result_sha256": "bc2db7e81a2e14fee68dc9f57041d226843fefabc0cc47e81db10985e04d84d3",
+  "updated_at_utc": "2026-08-30T17:49:06.4816552Z",
+  "result_sha256": "1c346600a0bc2a439aa868fba51ed0bf939a48011dbc021ef107bcb5c9771040",
   "purpose": "rank_the_nine_accepted_market_direction_independent_yield_and_capital_efficiency_overlays_by_evidence_strength_current_gross_opportunity_and_remaining_deployment_gates_using_only_hash_bound_repository_artifacts_as_economic_inputs",
   "authority": {
     "venue_HTTP_requests": 0,
-    "public_web_discovery_batches": 3,
+    "public_web_discovery_batches": 5,
     "source_bound_economic_inputs_refreshed": 0,
     "credentials_used": false,
     "account_state_accessed": false,
@@ -27,6 +27,13 @@
       "url": "https://docs.polymarket.com/changelog",
       "checked_at_utc": "2026-08-30T09:14:18.1679476Z",
       "latest_visible_entry_utc": "2026-05-18",
+      "material_yield_or_structural_profitability_trigger_found": false
+    },
+    {
+      "source": "Binance_official_bStocks_forward_corporate_action_discovery",
+      "url": "https://www.binance.com/en/support/announcement",
+      "checked_at_utc": "2026-08-30T17:49:06.4816552Z",
+      "query_scope": "two_distinct_search_batches_for_new_September_2026_bStock_dividend_or_special_funding_announcements",
       "material_yield_or_structural_profitability_trigger_found": false
     }
   ],
@@ -359,7 +366,7 @@
     "current_owned_after_all_incremental_cost_profitable_edge_count": 0,
     "deployment_ready_edge_count": 0,
     "immediate_research_spend": "none_no_exact_public_retry_trigger_is_currently_satisfied_and_the_consumed_WNBA_window_must_not_be_repeated",
-    "next_research_spend": "after_2026_08_31T00_00_00Z_run_only_the_frozen_terminal_GLWUSDT_history_reconciliation_for_mechanism_evidence_without_books_then_not_before_2026_08_31T02_15_30Z_run_only_one_distinct_rank_1_Polymarket_single_wallet_continuity_pulse_absent_a_material_change_do_not_roll_USD1_or_U_remaining_horizon_stresses_daily",
+    "next_research_spend": "at_or_after_2026_08_31T00_10_00Z_run_only_the_frozen_terminal_GLWUSDT_history_reconciliation_for_mechanism_evidence_without_books_then_not_before_2026_08_31T02_15_30Z_run_only_one_distinct_rank_1_Polymarket_single_wallet_continuity_pulse_absent_a_material_change_do_not_roll_USD1_or_U_remaining_horizon_stresses_daily",
     "prohibited_shortcuts": [
       "acquiring_borrowing_or_retaining_an_asset_for_any_existing_balance_only_edge",
       "treating_a_published_APR_as_owned_realized_profit",
