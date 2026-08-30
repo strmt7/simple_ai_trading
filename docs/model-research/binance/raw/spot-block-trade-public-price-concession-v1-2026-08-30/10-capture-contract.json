@@ -1,0 +1,63 @@
+{
+  "schema_version": "1.0",
+  "frozen_at_utc": "2026-08-30T00:28:14.5427794Z",
+  "authority": "public_unauthenticated_market_data_only",
+  "runner": "tools/capture_binance_block_trade_price_preflight.py",
+  "runner_sha256": "57df3a9b13db1e7d85ed0656ef352dea615659f5edb15752b780f46c7c584e4a",
+  "method": "WEBSOCKET_CONNECT",
+  "stream_url": "wss://data-stream.binance.vision/stream?streams=btcusdt@blockTrade/btcusdt@ticker/ethusdt@blockTrade/ethusdt@ticker/solusdt@blockTrade/solusdt@ticker",
+  "request_body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "symbols": [
+    "BTCUSDT",
+    "ETHUSDT",
+    "SOLUSDT"
+  ],
+  "streams": [
+    "btcusdt@blockTrade",
+    "btcusdt@ticker",
+    "ethusdt@blockTrade",
+    "ethusdt@ticker",
+    "solusdt@blockTrade",
+    "solusdt@ticker"
+  ],
+  "duration_seconds": 1200,
+  "target_block_trades": 12,
+  "maximum_ticker_age_ms": 2000,
+  "block_fee_bps_each_side": "2.5",
+  "reconnects_allowed": 0,
+  "raw_output": "11-public-stream.raw.jsonl",
+  "summary_output": "12-capture-summary.json",
+  "journal": "10-capture-journal.jsonl",
+  "question": "Does the newly documented public stream recurrently expose BTCUSDT, ETHUSDT, or SOLUSDT Spot block trades whose already-settled price, after the 2.5-bps block fee, is strictly better for one side than a causal pre-trade public best quote even when the public-book fee is optimistically zero?",
+  "causal_join": {
+    "ticker_must_be_received_before_block": true,
+    "ticker_event_time_must_not_exceed_block_trade_time": true,
+    "maximum_block_trade_time_minus_ticker_event_time_ms": 2000,
+    "future_tickers_allowed": false,
+    "http_receipt_time_used_as_quote_freshness": false
+  },
+  "economics": {
+    "buyer_zero_public_fee_lower_bound_saving_bps": "(best_ask - block_price * (1 + 2.5 / 10000)) / best_ask * 10000",
+    "seller_zero_public_fee_lower_bound_saving_bps": "(block_price * (1 - 2.5 / 10000) - best_bid) / best_bid * 10000",
+    "why_lower_bound": "For the same positive quantity, the average public-book buy price cannot be below the contemporaneous best ask and the average public-book sell price cannot be above the contemporaneous best bid. A strictly positive value therefore survives unknown depth under an optimistically zero public fee, but says nothing about account access, counterparty availability, negotiation causality, or future recurrence."
+  },
+  "terminal_gates": {
+    "transport_complete": "The connection remains valid until 1200 seconds or 12 block trades; any earlier close consumes and fails the capture.",
+    "analyzable_row": "Exact documented identities and positive numeric values plus a prior causal ticker no more than 2000 ms old and a strictly uncrossed best bid and ask.",
+    "material_follow_up_candidate": "At least three analyzable distinct block IDs in one fixed symbol-and-side bucket have a strictly positive zero-public-fee lower-bound saving.",
+    "accepted_edge": false,
+    "profitability_proved": false,
+    "stability_proved": false
+  },
+  "retry_policy": "This exact connection is one-use. If it completes with fewer than three qualifying observations, do not immediately repeat it; reopen only after 2026-08-31T00:28:14.5427794Z or a material official stream, fee, pair, whitelist, settlement, or block-volume change. A transport failure may not be repaired under this contract.",
+  "prohibited": [
+    "credentials",
+    "account endpoints",
+    "historicalBlockTrades without its required MARKET_DATA authority",
+    "orders or settlement keys",
+    "contacting counterparties or Binance",
+    "public depth requests",
+    "adaptive symbol or duration expansion",
+    "promotion from public observations"
+  ]
+}

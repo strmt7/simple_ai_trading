@@ -1,0 +1,133 @@
+{
+  "schema_version": "1.0",
+  "created_at_utc": "2026-08-30T00:49:31.4117155Z",
+  "authority": {
+    "public_unauthenticated_documentation_gets": 3,
+    "public_unauthenticated_websocket_connections": 1,
+    "signed_requests": 0,
+    "credentials_used": false,
+    "account_queries": 0,
+    "orders_or_settlement_actions": 0,
+    "funds_used": false,
+    "account_mutations": false
+  },
+  "edge_identity": {
+    "parent_mechanism": "Binance Spot Block Matching cost reduction for an independently required large bilateral Spot trade",
+    "public_preflight": "Observe already-settled public block-trade prices against causal pre-trade public best quotes without credentials.",
+    "market_direction_forecast_required": false,
+    "not_a_standalone_strategy": true,
+    "scope": "BTCUSDT, ETHUSDT, and SOLUSDT on the public market-data-only WebSocket domain."
+  },
+  "current_primary_source_result": {
+    "block_trade_stream_deployed": true,
+    "stream_name": "<symbol>@blockTrade",
+    "update_speed": "real_time",
+    "payload_fields_bound": [
+      "event_type",
+      "event_time",
+      "symbol",
+      "block_trade_id",
+      "price",
+      "quantity",
+      "trade_time",
+      "buyer_is_maker"
+    ],
+    "market_data_only_domain": "wss://data-stream.binance.vision",
+    "authentication_required": false,
+    "production_rollout_not_before_utc": "2026-05-12T07:00:00Z"
+  },
+  "frozen_capture": {
+    "started_at_utc": "2026-08-30T00:28:58.096242Z",
+    "completed_at_utc": "2026-08-30T00:49:03.119469Z",
+    "elapsed_seconds": 1205.0309999999954,
+    "duration_gate_seconds": 1200,
+    "target_block_trades": 12,
+    "reconnects_attempted": 0,
+    "ticker_counts": {
+      "BTCUSDT": 1188,
+      "ETHUSDT": 1122,
+      "SOLUSDT": 1058,
+      "total": 3368
+    },
+    "block_trade_counts": {
+      "BTCUSDT": 0,
+      "ETHUSDT": 0,
+      "SOLUSDT": 0,
+      "total": 0
+    },
+    "analyzable_block_trade_count": 0,
+    "favorable_zero_public_fee_lower_bound_counts": {
+      "buyer": 0,
+      "seller": 0
+    },
+    "transport_complete": true,
+    "source_continuity": "The three ordinary ticker streams delivered throughout the full duration. No transport close, reconnect, or unexpected event occurred."
+  },
+  "economic_adjudication": {
+    "material_follow_up_gate": "At least three analyzable distinct block IDs in one fixed symbol-and-side bucket must have a strictly positive lower-bound saving after the 2.5-bps block fee against an optimistically zero-fee causal public best quote.",
+    "material_follow_up_gate_passed": false,
+    "reason": "The exact complete capture contained zero blockTrade events, so there was no price, quantity, side, causal quote join, or economic row to evaluate.",
+    "empirical_observed_block_trade_rate": "0 events across 1205.0309999999954 seconds for the frozen three-symbol population",
+    "capacity_inference": "No future event rate or production capacity is inferred from one zero-event interval. The result only rejects an immediate repeated capture under unchanged conditions.",
+    "public_forward_profit_floor_quote": "0",
+    "public_price_concession_proved": false,
+    "after_cost_profitability_proved": false,
+    "stability_proved": false,
+    "deployment_ready": false,
+    "accepted_edge": false
+  },
+  "source_binding": {
+    "source_request_contract": {
+      "path": "docs/model-research/binance/raw/spot-block-trade-public-price-concession-v1-2026-08-30/00-source-request-contract.json",
+      "file_sha256": "410b6d236c308d62d8da2439a10ac1ca12b3e338d1e8a67abdd88d1c1e625fa5"
+    },
+    "source_request_journal": {
+      "path": "docs/model-research/binance/raw/spot-block-trade-public-price-concession-v1-2026-08-30/00-source-request-journal.jsonl",
+      "file_sha256": "e0053de3630e85b9f60e8a4e80c2835ac85d3984d1a72676d41a17311be0cf17"
+    },
+    "official_websocket_streams": {
+      "url": "https://raw.githubusercontent.com/binance/binance-spot-api-docs/master/web-socket-streams.md",
+      "path": "docs/model-research/binance/raw/spot-block-trade-public-price-concession-v1-2026-08-30/01-web-socket-streams.raw.md",
+      "file_sha256": "32bf73a0bed3b75e3ca981fdbaf48c53544bbdfb5944ef8ed1c4d7af9aceba0a"
+    },
+    "official_market_data_only": {
+      "url": "https://raw.githubusercontent.com/binance/binance-spot-api-docs/master/faqs/market_data_only.md",
+      "path": "docs/model-research/binance/raw/spot-block-trade-public-price-concession-v1-2026-08-30/02-market-data-only.raw.md",
+      "file_sha256": "57d608507426215c43f11907c07ed693f02725840d9ee4d6630f134de402b6da"
+    },
+    "official_spot_changelog": {
+      "url": "https://raw.githubusercontent.com/binance/binance-spot-api-docs/master/CHANGELOG.md",
+      "path": "docs/model-research/binance/raw/spot-block-trade-public-price-concession-v1-2026-08-30/03-spot-changelog.raw.md",
+      "file_sha256": "e6da6a7bb729ec5b1aa6d3c97684bb2a1e4d3a64231b007edea42c6cceef7681"
+    },
+    "capture_contract": {
+      "path": "docs/model-research/binance/raw/spot-block-trade-public-price-concession-v1-2026-08-30/10-capture-contract.json",
+      "file_sha256": "c5b8d3b1a89b335ab5a635ca121e691738e8e2aee2f86cdb188916048ec48ad0"
+    },
+    "capture_journal": {
+      "path": "docs/model-research/binance/raw/spot-block-trade-public-price-concession-v1-2026-08-30/10-capture-journal.jsonl",
+      "file_sha256": "61da60382b553f3f975f36d9d48c7ffa707819d3df00947ff38c0535f8bc63f1"
+    },
+    "raw_public_stream": {
+      "path": "docs/model-research/binance/raw/spot-block-trade-public-price-concession-v1-2026-08-30/11-public-stream.raw.jsonl",
+      "file_sha256": "e2a9e4470b0f58191da63c2f35b9dba558051767e95752d07993d1253c3015ce"
+    },
+    "capture_summary": {
+      "path": "docs/model-research/binance/raw/spot-block-trade-public-price-concession-v1-2026-08-30/12-capture-summary.json",
+      "file_sha256": "caf5f445e37f1242915c8a2fea3e5ca4eb5b315477fe352466f8d5564a8a68c4"
+    },
+    "runner": {
+      "path": "tools/capture_binance_block_trade_price_preflight.py",
+      "file_sha256": "57df3a9b13db1e7d85ed0656ef352dea615659f5edb15752b780f46c7c584e4a"
+    }
+  },
+  "verdict": {
+    "candidate_status": "existing_material_direction_independent_cost_overlay_unadvanced_public_preflight_zero_observed_blocks",
+    "parent_candidate_retained": true,
+    "public_preflight_immediate_repeat_allowed": false,
+    "accepted_edge_count_delta": 0,
+    "ranked_hypothesis_count_delta": 0
+  },
+  "retry_trigger": "Do not repeat the public blockTrade preflight before 2026-08-31T00:28:14.5427794Z. Reopen earlier only on a material official stream fee pair whitelist settlement or block-volume change. The parent candidate may also advance under its existing conjunctive trigger: both designated credentials, explicit signed read-only authority, an independently planned legitimate large bilateral master-account Spot trade, existing whitelist, authentic counterparty, and frozen exact pair quantity side and decision time. Every trade, settlement, contact, or account mutation still requires separate explicit authority.",
+  "result_sha256": "b7d60e0d9f3e30b2a62663ff1290be77e6309ac33a7d48776b6f5ea1c8dcfe68"
+}
