@@ -1,0 +1,11 @@
+{
+  "credentials_used": false,
+  "elapsed_seconds": "0.493031",
+  "method": "GET",
+  "payload_bytes": 26839,
+  "payload_sha256": "bcc42479c7a0eb923dbe98588848787dc1b624aaa0cba2f154bfd5649611d711",
+  "received_after_utc": "2026-08-30T05:28:02.7026879Z",
+  "requested_before_utc": "2026-08-30T05:28:02.1790080Z",
+  "status_code": 200,
+  "url": "https://raw.githubusercontent.com/binance/binance-spot-api-docs/master/faqs/stp_faq.md"
+}

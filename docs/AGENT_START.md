@@ -2218,3 +2218,32 @@ unauthorized. Canonical candidate SHA-256 is
 Accepted edges remain 21, ranked hypotheses remain 44, and terminal families
 remain 55. Registry SHA-256 is
 `4bf91c297d3c41583874fe77c3b1c456736bc2809c4bfdac320edd8124f62005`.
+
+## Binance Spot STP TRANSFER internal-reallocation preflight
+
+The current official STP FAQ proves a distinct direction-independent mechanism:
+when two different accounts in the same `tradeGroupId` would self-match and
+both orders specify `TRANSFER`, Binance applies `DECREMENT` and transfers the
+last prevented base quantity and notional between the accounts. The retained
+production configuration allows `TRANSFER` on BTCUSDT, ETHUSDT, and SOLUSDT;
+their default remains `EXPIRE_MAKER`.
+
+The official example is cash-conserving, not profit: the maker gains 0.2 BTC
+and loses 0.04 USDT while the taker loses 0.2 BTC and gains 0.04 USDT. Aggregate
+BTC and USDT changes are both zero, both executed quantities are zero, and the
+FAQ warns that its commission and price examples are fictional. The maker
+remains open after a 0.2 prevented quantity, which is an execution-architecture
+lead, but no cash edge exists without an independently required cross-account
+rebalance and a strictly inferior ordinary internal-transfer comparator.
+
+Do not manufacture crossing orders, count the transfer as volume or a fill, or
+query account state. Advance only with both designated credentials, explicit
+signed GET-only `tradeGroupId` authority, and an independently existing
+legitimate BTC/ETH/SOL cross-account rebalance whose exact internal-transfer
+comparator leaves positive incremental value. Any testnet or paper order needs
+separate explicit order authority; mainnet remains unauthorized. Canonical
+preflight SHA-256 is
+`59da62dccab340bcae63b2ad34697f49caa7e381a7a06755e50adafba2d8d118`.
+Accepted edges remain 21, ranked hypotheses remain 44, and terminal families
+remain 55. Registry SHA-256 is
+`8813fbc12ea5fe5ad5eb38630c7faba9c1a740389266ad27bb0c5db41759c52a`.

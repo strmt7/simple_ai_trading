@@ -1,0 +1,117 @@
+{
+  "authority": {
+    "account_requests": 0,
+    "credentials_used": false,
+    "funded_actions": 0,
+    "orders_or_cancellations": 0,
+    "public_network_requests": 1,
+    "signed_requests": 0
+  },
+  "created_at_utc": "2026-08-30T05:29:16.8046465Z",
+  "economic_identity": {
+    "aggregate_base_change": "0",
+    "aggregate_quote_change": "0",
+    "example_is_live_fee_evidence": false,
+    "example_maker_base_change": "0.2",
+    "example_maker_quote_change": "-0.04",
+    "example_prevented_notional": "0.04",
+    "example_price": "0.2",
+    "example_taker_base_change": "-0.2",
+    "example_taker_quote_change": "0.04",
+    "maker_executed_quantity": "0.00000000",
+    "maker_order_remains_open": true,
+    "maker_prevented_quantity": "0.20000000",
+    "taker_executed_quantity": "0.00000000",
+    "taker_fill_count": 0,
+    "taker_order_status": "EXPIRED_IN_MATCH",
+    "why_not_profit": "The documented transfer only reallocates the same aggregate BTC and USDT between related accounts. It creates no aggregate cash flow, and the FAQ explicitly says its commission and price examples are fictional."
+  },
+  "market_direction_forecast_required": false,
+  "mechanism": "Binance_Spot_STP_TRANSFER_internal_trade_group_inventory_reallocation",
+  "official_semantics": {
+    "different_accounts_same_trade_group": "TRANSFER adds a balance transfer of the last prevented quantity and notional to DECREMENT behavior",
+    "effective_mode_gate": "both maker and taker orders must specify TRANSFER; otherwise a TRANSFER taker falls back to DECREMENT",
+    "prevented_match_is_trade": false,
+    "same_account_behavior": "TRANSFER is identical to DECREMENT",
+    "stp_trigger": "orders from the same account or tradeGroupId would otherwise match"
+  },
+  "ordinary_internal_transfer_comparator": {
+    "exact_fee_latency_limit_and_atomicity_bound": false,
+    "official_api_exists": true,
+    "query_endpoint": "GET /sapi/v1/sub-account/universalTransfer",
+    "transfer_endpoint": "POST /sapi/v1/sub-account/universalTransfer"
+  },
+  "production_configuration": {
+    "exchange_server_time_ms": 1788039682768,
+    "symbols": {
+      "BTCUSDT": {
+        "allowed_modes": [
+          "EXPIRE_TAKER",
+          "EXPIRE_MAKER",
+          "EXPIRE_BOTH",
+          "DECREMENT",
+          "TRANSFER"
+        ],
+        "default_mode": "EXPIRE_MAKER",
+        "status": "TRADING"
+      },
+      "ETHUSDT": {
+        "allowed_modes": [
+          "EXPIRE_TAKER",
+          "EXPIRE_MAKER",
+          "EXPIRE_BOTH",
+          "DECREMENT",
+          "TRANSFER"
+        ],
+        "default_mode": "EXPIRE_MAKER",
+        "status": "TRADING"
+      },
+      "SOLUSDT": {
+        "allowed_modes": [
+          "EXPIRE_TAKER",
+          "EXPIRE_MAKER",
+          "EXPIRE_BOTH",
+          "DECREMENT",
+          "TRANSFER"
+        ],
+        "default_mode": "EXPIRE_MAKER",
+        "status": "TRADING"
+      }
+    }
+  },
+  "result_sha256": "59da62dccab340bcae63b2ad34697f49caa7e381a7a06755e50adafba2d8d118",
+  "schema_version": "binance-spot-stp-transfer-structural-value-preflight-v1",
+  "sources": {
+    "current_exchange_info": {
+      "path": "data/binance-spot-sor-liquidity-overlay-v1/raw/exchangeInfo.json",
+      "sha256": "658d03279eea9a2384171eb56e151541407ae7407c123c700c9902d5e9f56c9d"
+    },
+    "official_stp_faq": {
+      "path": "docs/model-research/binance/raw/spot-stp-structural-value-preflight-v1-2026-08-30/01-official-stp-faq.raw.md",
+      "sha256": "bcc42479c7a0eb923dbe98588848787dc1b624aaa0cba2f154bfd5649611d711"
+    },
+    "ordinary_internal_transfer_index": {
+      "path": "docs/model-research/binance/raw/spot-block-matching-cost-overlay-v1-2026-08-30/03-agent-native-index.raw.txt",
+      "sha256": "944e132d3523c8a03abcac2f7ddb85802107e45161470885b7a8785fd4fdb15d"
+    },
+    "request_intent": "docs/model-research/binance/raw/spot-stp-structural-value-preflight-v1-2026-08-30/00-request-intent.json",
+    "request_receipt": "docs/model-research/binance/raw/spot-stp-structural-value-preflight-v1-2026-08-30/02-request-receipt.json"
+  },
+  "verdict": {
+    "accepted_edge": false,
+    "deployment_ready": false,
+    "ordinary_internal_transfer_comparator_bound": false,
+    "profitability_claim": false,
+    "public_forward_profit_floor_quote_units": "0",
+    "status": "direction_independent_internal_reallocation_candidate_not_profit_evidence",
+    "trading_authority": false
+  },
+  "why_fail_closed": [
+    "The public example conserves aggregate base and quote balances and is not a trade, so it cannot create same-owner aggregate profit.",
+    "The current default is EXPIRE_MAKER rather than TRANSFER, and account trade-group membership is unproved.",
+    "The exact fee or accounting treatment of a production TRANSFER is not bound by the FAQ's fictional example.",
+    "The official API index proves that ordinary sub-account Universal Transfer and its history query exist, but their exact fee, latency, atomicity, limits, and safety comparator is not bound, so no incremental cost saving is proved.",
+    "No owned maker queue, independently required cross-account inventory rebalance, prevented match, or realized cash saving exists."
+  ],
+  "next_trigger": "both designated credentials plus explicit signed GET-only account authority and an independently existing legitimate cross-account BTC ETH or SOL inventory rebalance whose exact ordinary internal-transfer comparator leaves positive incremental value; any testnet or paper TRANSFER order and cancellation require separate explicit order authority, and mainnet remains unauthorized"
+}
