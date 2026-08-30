@@ -6146,7 +6146,7 @@ compatible and was not used. Canonical result SHA-256 is
 `177d9d119c8a57c86df03b136bdfc2c880b0220ac50c51bce20e84cbe21f1755`.
 Accepted edges remain 29, ranked hypotheses remain 44, terminal families become
 90, and registry SHA-256 becomes
-`1dbc873f6e01abee4d816add72e890112c61a39411300ccff206f13f6af88ef4`.
+`0f43e2b26b9c339dde0db00401122bd1339ad77713df076444e3bcd5b3f9246b`.
 
 ## Accepted-edge profitability and durability audit
 
@@ -6183,4 +6183,36 @@ merely accumulating organic-flow discounts, acceptance predicates, or referral
 programs. The Polymarket rank-one not-before remains
 `2026-08-31T02:15:30Z`; unchanged Binance triangle, stablecoin-cycle, and official
 documentation inventory screens remain consumed. Canonical audit SHA-256 is
-`30c622d280e280019c537cfcabc1d5e59d5617d1e905b278f6fb1403b293a0ad`.
+`c5c4f9c9751f7b434be1c66cece2bee41ceb06aac3b0c0e3a70a7f76342f0618`.
+
+## Binance EURI issuer-redemption parity terminal
+
+A distinct primary-source lead established a real direction-independent payoff
+identity: Banking Circle states that EURI holders have a right to redeem at any
+time at par, one EUR per EURI, and identifies Binance availability. One frozen
+public unauthenticated source request retained that exact issuer statement. It
+does not prove this repository's access, onboarding, eligibility, limits, fees,
+transfer support, timing, capacity, continuity, or completed redemptions.
+
+No new market request was needed. The hash-bound August 29 Binance population
+already contains 60 EUREURI top-of-book observations; all 60 show the same
+1.00010000 bid and 1.00030000 ask with zero quote changes, despite 3,675
+reported 24-hour trades. Selling 1,000 EUR at the retained bid yields only
+0.1000 EUR, or one basis point, before redemption costs. The route loses 0.2000
+EUR after the frozen three-basis-point operational stress and loses 0.9001 EUR
+under a VIP0 0.1-percent fee before that stress. Transfer, redemption, banking,
+delay, failure, compliance, custody, tax, infrastructure, and alternative-yield
+costs remain adverse and unproved.
+
+The exact retained population is terminal, not an edge. Do not poll EUREURI or
+repeat the issuer page. Reopen only on a material issuer or Binance access,
+fee, timing, or continuity change, or an independently observed event-driven
+discount above 25 basis points; then freeze one finite-size book and bind every
+account and redemption cost. No credential, account, order, fund, transaction,
+or protected capture was used. Canonical adjudication SHA-256 is
+`1b344ebc26d348d00d32663e7d365e1812dd09d2010656ab53338d4c01fd2bd9`.
+Accepted edges remain 29, ranked hypotheses remain 44, terminal families become
+91, registry SHA-256 is
+`0f43e2b26b9c339dde0db00401122bd1339ad77713df076444e3bcd5b3f9246b`,
+and the source-bound durability-audit SHA-256 is
+`c5c4f9c9751f7b434be1c66cece2bee41ceb06aac3b0c0e3a70a7f76342f0618`.

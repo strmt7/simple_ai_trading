@@ -1,0 +1,82 @@
+{
+  "adjudication": {
+    "accepted_edge": false,
+    "after_all_cost_profit_floor_eur": "0",
+    "deployment_ready": false,
+    "market_direction_forecast_required": false,
+    "profitability_claim": false,
+    "stable_edge": false,
+    "status": "terminal_current_retained_population_one_bip_gross_is_negative_after_operational_stress_or_vip0_fee_before_redemption_costs"
+  },
+  "authority": {
+    "account_requests": 0,
+    "credentials_used": false,
+    "funds_used": false,
+    "new_market_data_requests": 0,
+    "orders_or_transactions": 0,
+    "protected_capture_touched": false,
+    "public_issuer_source_requests": 1,
+    "signed_requests": 0,
+    "trading_authority": false
+  },
+  "created_at_utc": "2026-08-30T21:26:25.9165340Z",
+  "current_retained_population": {
+    "activity_24h_trade_count": 3675,
+    "ask_price_euri_per_eur": "1.00030000",
+    "ask_quantity_eur": "41838.70000000",
+    "bid_price_euri_per_eur": "1.00010000",
+    "bid_quantity_eur": "41430.30000000",
+    "book_observation_count": 60,
+    "book_quote_change_count": 0,
+    "exchange_status": "TRADING",
+    "pair": "EUREURI",
+    "same_bid_ask_in_every_observation": true
+  },
+  "discovery_only_primary_research_lead": {
+    "admitted_into_current_economics": false,
+    "paper_title": "Stablecoins on Unstable Venues: A MiCA Depeg Episode",
+    "paper_url": "https://papers.ssrn.com/sol3/papers.cfm?abstract_id=7051198",
+    "role": "novelty and future-event mechanism lead only; no discovery value is used as a current price, cost, access, capacity, or profit input"
+  },
+  "economics_at_1000_eur": {
+    "gross_euri_from_selling_eur_at_bid": "1000.10000000",
+    "gross_profit_bips_if_every_euri_redeems_at_par_with_zero_other_cost": "1.00000000",
+    "gross_profit_eur_if_every_euri_redeems_at_par_with_zero_other_cost": "0.10000000",
+    "operational_stress_bips": "3",
+    "profit_after_zero_fee_and_operational_stress_bips": "-2.00000000",
+    "profit_after_zero_fee_and_operational_stress_eur": "-0.20000000",
+    "vip0_taker_fee_fraction": "0.001",
+    "vip0_fee_euri_on_received_amount": "1.00010000",
+    "vip0_profit_before_operational_stress_bips": "-9.00100000",
+    "vip0_profit_before_operational_stress_eur": "-0.90010000",
+    "vip0_profit_with_operational_stress_bips": "-12.00100000",
+    "vip0_profit_with_operational_stress_eur": "-1.20010000"
+  },
+  "limitations": [
+    "The issuer source proves a legal at-par redemption identity, not retail or repository-account access, onboarding, eligibility, limits, fees, transfer support, timing, completion, or operational continuity.",
+    "The retained Binance books are a 60-observation historical current-state population from 2026-08-29 and do not prove a future spread.",
+    "All 60 retained top-of-book observations were identical, so the sample supplies zero quote-change evidence despite 3,675 reported 24-hour trades.",
+    "Blockchain transfer, Binance withdrawal, issuer redemption, bank receipt, delay, failure, tax, custody, compliance, account, infrastructure, and alternative-yield costs are all unproved and credited as adverse rather than zero.",
+    "No new capital, EURI acquisition, redemption, transfer, issuer application, Binance order, or account action is authorized."
+  ],
+  "result_sha256": "1b344ebc26d348d00d32663e7d365e1812dd09d2010656ab53338d4c01fd2bd9",
+  "retry_policy": {
+    "do_not_repeat": "Do not repeat the official issuer page or the exact retained 60-book population and do not poll EUREURI for a one-bip spread.",
+    "literal_trigger": "Reopen only after a material official issuer redemption access fee timing or continuity change, a material Binance EURI listing fee or venue-access change, or an independently observed event-driven EUREURI discount above 25 bips from a source that is not repeated venue polling; then freeze one finite-size current book and require exact account fee plus issuer-access and full redemption-cost evidence before any state-changing authority."
+  },
+  "schema_version": "binance-euri-redemption-parity-retained-adjudication-v1",
+  "source_binding": {
+    "issuer_raw_response_sha256": "1c8176a4f8c8f8bc613173ed8715c6d7341ea6db78dff0bb52d5595a3d5891c2",
+    "issuer_request_journal_sha256": "a87368f1a55868dcb7d555546a965718edf63064a16d84a28a75fa9915b6d58b",
+    "issuer_source_contract_path": "docs/model-research/action-value/binance-euri-redemption-parity-source-contract-v1-2026-08-30.json",
+    "issuer_source_contract_sha256": "b3041f61a59d14e0a6c37fa125254790e3aa95e963b9aa8f79e131ee63434089",
+    "issuer_source_result_path": "docs/model-research/action-value/binance-euri-redemption-parity-source-result-v1-2026-08-30.json",
+    "issuer_source_result_sha256": "2073da28bd90c824b31e8231db26bcc91a9db472920dace7f6d1265853447e94",
+    "retained_activity_path": "data/edge-research/binance-indirect-internal-conversion-activity-v1/ticker-24hr.json",
+    "retained_activity_sha256": "fc753830c30bb09307c07eb2796cd63a462bd0fe75952ea7e546747cd18999d5",
+    "retained_book_directory": "data/edge-research/binance-indirect-internal-conversion-screen-v1/raw",
+    "retained_book_manifest_sha256": "28b59e6e3eed238290b0dde2c916ba688f9c7d04b37ac0ff9189f90e3ea07d89",
+    "retained_parent_result_path": "docs/model-research/action-value/binance-indirect-internal-conversion-screen-v1-2026-08-29.json",
+    "retained_parent_result_sha256": "b3e7f724e2b1ce2cc7a8444d00632466196af6d89f139259164549e91d1f84bc"
+  }
+}
