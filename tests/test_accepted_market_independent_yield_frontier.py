@@ -11,7 +11,7 @@ FRONTIER = ROOT / (
     "docs/model-research/action-value/"
     "accepted-market-independent-yield-frontier-v1-2026-08-30.json"
 )
-RESULT_HASH = "53afed572c779113de6e9760f319ad7fb7a2d1e1958997139793142cf241fbe7"
+RESULT_HASH = "e3e6941790079587e3a21bf0894e165963cc871b9165821fd7b00600fc3c4dec"
 
 
 def _load(path: Path) -> dict[str, object]:

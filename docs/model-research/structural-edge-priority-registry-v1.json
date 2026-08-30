@@ -515,6 +515,10 @@
           "result_sha256": "6f44b65e5aa85d33cc02e8611a372162cf00f4162fdff99828a31cf498ced6f9"
         },
         {
+          "path": "docs/model-research/action-value/binance-u-flexible-remaining-horizon-stress-v1-2026-08-30.json",
+          "result_sha256": "d9be584383bdbf4e45f570987103e9d380358b2ba08aafc865ccecfc4b2c225e"
+        },
+        {
           "path": "docs/model-research/action-value/binance-rwusd-existing-vip-bonus-overlay-gate-v1-2026-08-26.json",
           "result_sha256": "076f428ea9bccc0dc9c1a0c605ac469db27fedb7941ac6728260cf98da667e51"
         },
@@ -2347,7 +2351,7 @@
       "venue_scope": "Binance_Spot_direct_and_exactly_one_intermediary_routes_for_independently_required_organic_conversions_with_the_exactly_two_intermediary_extension_terminal_for_the_retained_population"
     }
   ],
-  "result_sha256": "9d4902c9608c358d212e329d9f2aa74e726d7187a218fd4123ed0cec0fe2d123",
+  "result_sha256": "beaa24adc3a5550185f0b387818565d7a0bb5bbddea4520ca71a101afce4baaf",
   "schema_version": "structural-edge-priority-registry-v1",
   "terminal_do_not_repeat": [
     {
@@ -2636,6 +2640,6 @@
       "reason": "the_new_twenty_six_bin_event_had_two_closed_nonaccepting_losing_bins_and_twenty_four_active_accepting_bins_whose_optimistic_all_YES_Gamma_displayed_sum_was_1_0055_pUSD_or_negative_0_0055_pUSD_headroom_before_fees_so_no_books_or_conversion_screen_are_justified_do_not_refetch_alias_or_repeat_the_exact_event"
     }
   ],
-  "updated_at_utc": "2026-08-30T08:08:35.3343497Z",
+  "updated_at_utc": "2026-08-30T08:22:49.3606261Z",
   "usage_rule": "advance_the_highest_ranked_hypothesis_whose_retry_trigger_is_satisfied_otherwise_do_not_repeat_a_blocked_or_terminal_screen"
 }

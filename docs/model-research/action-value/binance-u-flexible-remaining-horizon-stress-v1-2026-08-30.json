@@ -1,0 +1,126 @@
+{
+  "adjudication": {
+    "accepted_edge_count_change": 0,
+    "accepted_existing_holding_scope_unchanged": true,
+    "acquisition_candidate_accepted": false,
+    "current_fixed_bonus_margin_positive_before_unproved_other_costs": true,
+    "deployment_ready": false,
+    "market_direction_forecast_required": false,
+    "profitability_claim": false,
+    "public_after_all_cost_floor_bips": "0",
+    "stable_acquisition_edge_proved": false,
+    "status": "retained_source_current_horizon_correction_strengthens_rejection_of_USDT_to_U_acquisition",
+    "trading_authority": "none"
+  },
+  "authority": {
+    "account_requests": 0,
+    "credentials_used": false,
+    "funded_actions": 0,
+    "new_network_requests": 0,
+    "orders_conversions_subscriptions_or_redemptions": 0
+  },
+  "created_at_utc": "2026-08-30T08:21:13.1595384Z",
+  "current_remaining_horizon_case": {
+    "first_bonus_accrual_date_if_subscribed_on_capture_date": "2026-08-31",
+    "historical_basis_plus_displayed_spread_stress_bips": "16.97354665",
+    "incremental_fixed_reward_before_stress_bips": "19.671232876712328767123287671232876712328767123288",
+    "incremental_fixed_reward_before_stress_quote_units": "9.835616438356164383561643835616438356164383561644",
+    "maximum_unproved_other_costs_before_nonpositive_bips": "2.697686226712328767123287671232876712328767123288",
+    "maximum_unproved_other_costs_before_nonpositive_quote_units": "1.348843113356164383561643835616438356164383561644",
+    "remaining_u_fixed_bonus_accrual_days": 15,
+    "remaining_usdt_fixed_bonus_accrual_days": 8,
+    "stress_quote_units": "8.486773325",
+    "subscription_date": "2026-08-30",
+    "variable_u_realtime_apr_sensitivity_margin_after_stress_bips": "4.752480747260273972602739726027397260273972602740"
+  },
+  "day_boundary": {
+    "daily_cases": [
+      {
+        "incremental_fixed_reward_before_stress_bips": "19.671232876712328767123287671232876712328767123288",
+        "margin_after_historical_basis_and_spread_stress_bips": "2.697686226712328767123287671232876712328767123288",
+        "remaining_u_fixed_bonus_days": 15,
+        "remaining_usdt_fixed_bonus_days": 8,
+        "subscription_date": "2026-08-30"
+      },
+      {
+        "incremental_fixed_reward_before_stress_bips": "18.410958904109589041095890410958904109589041095890",
+        "margin_after_historical_basis_and_spread_stress_bips": "1.437412254109589041095890410958904109589041095890",
+        "remaining_u_fixed_bonus_days": 14,
+        "remaining_usdt_fixed_bonus_days": 7,
+        "subscription_date": "2026-08-31"
+      },
+      {
+        "incremental_fixed_reward_before_stress_bips": "17.150684931506849315068493150684931506849315068493",
+        "margin_after_historical_basis_and_spread_stress_bips": "0.177138281506849315068493150684931506849315068493",
+        "remaining_u_fixed_bonus_days": 13,
+        "remaining_usdt_fixed_bonus_days": 6,
+        "subscription_date": "2026-09-01"
+      },
+      {
+        "incremental_fixed_reward_before_stress_bips": "15.890410958904109589041095890410958904109589041095",
+        "margin_after_historical_basis_and_spread_stress_bips": "-1.083135691095890410958904109589041095890410958905",
+        "remaining_u_fixed_bonus_days": 12,
+        "remaining_usdt_fixed_bonus_days": 5,
+        "subscription_date": "2026-09-02"
+      },
+      {
+        "incremental_fixed_reward_before_stress_bips": "14.630136986301369863013698630136986301369863013699",
+        "margin_after_historical_basis_and_spread_stress_bips": "-2.343409663698630136986301369863013698630136986301",
+        "remaining_u_fixed_bonus_days": 11,
+        "remaining_usdt_fixed_bonus_days": 4,
+        "subscription_date": "2026-09-03"
+      }
+    ],
+    "first_subscription_date_negative_before_every_unproved_other_cost": "2026-09-02",
+    "last_subscription_date_positive_before_every_unproved_other_cost": "2026-09-01",
+    "one_day_accrual_lag_applied": true,
+    "rule": "U and USDT bonus accrual starts at 00:00 UTC on the day after subscription; each campaign end date is counted only when it is on or after that first accrual date"
+  },
+  "economic_contract": {
+    "basis_stress_bips": "15.97284616",
+    "basis_stress_is_not_a_future_loss_bound": true,
+    "basis_stress_role": "worst retained 19-day UUSDT close return from the activation artifact; retained only as a sensitivity and not refreshed",
+    "comparison_formula": "(0.08-0.03)*remaining_U_days/365*10000-(500/5000)*0.04*remaining_USDT_bonus_days/365*10000-(15.97284616+1.00070049)",
+    "current_displayed_round_trip_spread_bips": "1.00070049",
+    "current_displayed_spread_is_from_activation_capture_not_refreshed": true,
+    "principal_cap_u": "5000",
+    "u_fixed_bonus_apr_percent": "8",
+    "u_promotion_end_utc": "2026-09-14T23:59:59Z",
+    "u_realtime_apr_credited_to_primary_case": false,
+    "u_realtime_apr_percent_sensitivity": "0.5",
+    "u_realtime_rate_is_approximate_variable_and_not_a_current_floor": true,
+    "usdt_alternative_fixed_bonus_apr_percent": "4",
+    "usdt_alternative_fixed_bonus_cap": "500",
+    "usdt_alternative_fixed_bonus_end_utc": "2026-09-07T23:59:59Z",
+    "usdt_alternative_realtime_apr_percent_assumption": "3",
+    "usdt_realtime_rate_is_approximate_variable_and_not_a_current_floor": true
+  },
+  "prohibited_shortcuts": [
+    "do_not_describe_the_positive_sensitivity_margin_as_an_after_all_cost_profit_floor",
+    "do_not_treat_the_retained_historical_basis_move_as_a_future_loss_bound",
+    "do_not_credit_the_approximate_variable_U_realtime_APR_to_the_primary_case",
+    "do_not_refresh_market_data_or_roll_this_stress_daily_without_the_literal_retry_trigger",
+    "do_not_buy_convert_subscribe_redeem_or_move_U_or_USDT_without_separate_explicit_authority"
+  ],
+  "result_sha256": "d9be584383bdbf4e45f570987103e9d380358b2ba08aafc865ccecfc4b2c225e",
+  "schema_version": "1.0.0",
+  "sources": [
+    {
+      "file_sha256": "e3cb033736bec54e4f92f2648bf569c355c6273c89f7190b39154ff983a7cfd4",
+      "path": "docs/model-research/action-value/binance-u-flexible-idle-holding-yield-gate-v1-2026-08-26.json",
+      "result_sha256": "6f44b65e5aa85d33cc02e8611a372162cf00f4162fdff99828a31cf498ced6f9",
+      "role": "frozen_U_promotion_terms_spread_and_historical_basis_stress"
+    },
+    {
+      "file_sha256": "d7be9195975f03c70d3729c573ebb425404e3080e9b5cc234024e3772458fa0f",
+      "path": "docs/model-research/action-value/binance-usd1-simple-earn-remaining-horizon-stress-v1-2026-08-30.json",
+      "result_sha256": "669fd50772087cb81a4d1e9439e5666a75b5c1ed9de68b1e8b27cb360f2d5934",
+      "role": "current_retained_USDT_alternative_campaign_horizon_contract"
+    }
+  ],
+  "time_sensitive_next_action": {
+    "do_not_roll_daily": true,
+    "public_refresh": "only on a published U Flexible term rate quota fee reserve attestation or redemption-contract change, or capture campaign termination once after 2026-09-14T23:59:59Z",
+    "reason": "the fixed-only acquisition sensitivity crosses below zero for a 2026-09-02 subscription before every unproved cost, so another unchanged time-only calculation cannot establish a stable purchase edge"
+  }
+}
