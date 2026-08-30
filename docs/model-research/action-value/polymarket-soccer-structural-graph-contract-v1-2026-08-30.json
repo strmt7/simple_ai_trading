@@ -1,0 +1,71 @@
+{
+  "schema_version": "polymarket-soccer-structural-graph-contract-v1",
+  "frozen_at_utc": "2026-08-30T19:58:18.9029757Z",
+  "contract_path": "docs/model-research/action-value/polymarket-soccer-structural-graph-contract-v1-2026-08-30.json",
+  "purpose": "Exhaust every rule-proved retained soccer exact-score, first-to-score, full-game total, BTTS, and draw implication before spending another venue request.",
+  "retained_source": {
+    "path": "data/polymarket-sep6-negrisk-complete-set-catalog-v1/raw/events.json",
+    "sha256": "f430490f592cf58297c5f5f118b3fabc32488faa82b5b07b60815279bdc61050",
+    "capture_role": "immutable retained public Gamma response; side-specific prices are rejection-only",
+    "global_population_complete": false,
+    "bounded_population": "every complete base-plus-suffix soccer event family present in the retained 100-event page"
+  },
+  "relation_contracts": [
+    {
+      "family": "exact_score_implies_full_game_result",
+      "package": "NO explicit exact score plus YES implied home draw or away result",
+      "cancellation": "exact score resolves 0-0 while full-game result resolves draw"
+    },
+    {
+      "family": "neither_first_to_score_implies_full_game_draw",
+      "package": "NO neither-first-to-score plus YES full-game draw",
+      "cancellation": "first-to-score resolves Neither while full-game result resolves draw"
+    },
+    {
+      "family": "full_game_total_monotone",
+      "package": "Over lower half-goal threshold plus Under higher half-goal threshold",
+      "cancellation": "both total markets resolve 50-50"
+    },
+    {
+      "family": "both_teams_to_score_implies_over_1_5",
+      "package": "NO BTTS plus Over 1.5",
+      "cancellation": "both markets resolve 50-50"
+    },
+    {
+      "family": "under_0_5_implies_full_game_draw",
+      "package": "Over 0.5 plus YES full-game draw",
+      "cancellation": "total resolves 50-50 while full-game result resolves draw"
+    }
+  ],
+  "price_contract": {
+    "first_outcome_acquisition_proxy": "bestAsk",
+    "second_outcome_acquisition_proxy": "1 minus first-outcome bestBid",
+    "missing_side_specific_field": "retain the relation but block escalation",
+    "outcomePrices_role": "not used because midpoint-like values cannot authorize a book",
+    "candidate_requires_proxy_sum_strictly_below_one_pUSD": true,
+    "candidate_selection": [
+      "lowest side-specific proxy sum",
+      "relation family",
+      "base slug",
+      "market ids"
+    ]
+  },
+  "output_path": "docs/model-research/action-value/polymarket-soccer-structural-graph-result-v1-2026-08-30.json",
+  "implementation": {
+    "path": "tools/adjudicate_polymarket_soccer_structural_graph.py",
+    "sha256": "32add0641e85d5f8cbc360f8c5969b56c386e3441a35246c18728844d765c0bc"
+  },
+  "authority": {
+    "network_requests": 0,
+    "credentials_accounts_orders_funds_or_transactions_permitted": false,
+    "trading_authority": false
+  },
+  "stopping_rules": {
+    "zero_strict_candidates": "stop without any venue request",
+    "one_or_more_strict_candidates": "freeze only one current exact book batch for the deterministic best row",
+    "missing_prices_cannot_be_filled_by_adaptive_requests": true,
+    "accepted_edge_from_retained_Gamma": false,
+    "profitability_or_deployment_claim_from_retained_Gamma": false
+  },
+  "contract_sha256": "ebd6309bc16e9bbb140f77f5c31854c5ab4ac2f553c2864da77b50282bee7774"
+}

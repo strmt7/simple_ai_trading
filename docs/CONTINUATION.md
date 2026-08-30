@@ -5949,3 +5949,29 @@ and `aeb52c0bcd375fb0c31282cf8be92b9a6e6b93de0d8e7a0ac2c01bb579091386`.
 Accepted edges remain 29, ranked hypotheses remain 44, terminal families become
 85, and registry SHA-256 becomes
 `7c4d62403212f9826a8bf9f972647a3c56df6671d78cab99af35b9781e8da115`.
+
+### Retained soccer structural graph rejection
+
+A distinct zero-network graph then exhausted every supported soccer relation
+in the same immutable retained page: 11 main/exact-score pairs, 10
+main/first-to-score pairs, and 7 main/more-markets pairs. The graph covered 305
+rule-proved packages across exact score to full-game result, Neither-first to
+draw, monotone full-game totals, BTTS to Over 1.5, and Under 0.5 to draw.
+Cancellation was explicit in every payoff family, including 50-50 totals and
+BTTS settlements.
+
+Side-specific `bestAsk` or complement-proxy evidence was complete for 197
+relations; zero were strictly below their one-pUSD floor. The deterministic
+best was NO exact FC Dallas 1-3 plus YES Sporting Kansas City at 1.15 pUSD.
+The other 108 relations lacked at least one side-specific field and remain
+fail-closed; do not fill them with `outcomePrices` or adaptive requests. No
+Gamma, book, fee, account, credential, order, fund, or protected request was
+made.
+
+Contract SHA-256 is
+`ebd6309bc16e9bbb140f77f5c31854c5ab4ac2f553c2864da77b50282bee7774`;
+result SHA-256 is
+`6c54fcb7e8031a1c6cf43c969b445fa12e955368283922edf4d1b7782fb0c60b`.
+Accepted edges remain 29, ranked hypotheses remain 44, terminal families become
+86, and registry SHA-256 becomes
+`616c1991be031641954464c4099b662afc75f835188847f087748a7544fa356a`.
