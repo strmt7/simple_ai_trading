@@ -377,6 +377,12 @@ override prose.
   Precommit deterministic tie-breaking; never book-test one asset while hiding
   an equal or worse sibling, and stop when the global best merely equals its
   optimistic payout floor before fees.
+- Before spending another market request, enumerate every distinct exact-payoff
+  family that one retained complete population can test. Freeze each family
+  separately before examining its economic rows, reuse only the hash-bound raw
+  bytes, and preserve independent terminal outcomes. Reuse is an efficiency
+  gain, not permission to combine hypotheses, adapt gates, or promote one
+  family's displayed prices as another family's executable depth.
 - Before refreshing books for a Polymarket maker-reward overlay, reconstruct the
   exact minimum-size one-leg orphan loss from retained evidence and reconcile
   each exact condition with `sponsored=true`. Gamma reward minimum and spread
