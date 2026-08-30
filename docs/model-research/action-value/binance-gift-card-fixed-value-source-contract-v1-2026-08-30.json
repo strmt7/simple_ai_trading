@@ -1,0 +1,70 @@
+{
+  "schema_version": "public-source-capture-contract-v1",
+  "frozen_at_utc": "2026-08-30T14:26:44.4886217Z",
+  "contract_path": "docs/model-research/action-value/binance-gift-card-fixed-value-source-contract-v1-2026-08-30.json",
+  "trigger": {
+    "registry_route": "new_distinct_direction_independent_fixed_face_value_discount_mechanism",
+    "novelty_evidence": "Exact alias searches across the ranked registry, terminal families, continuation history, retained artifacts, and tools found no Binance dual-token fixed-value Gift Card discount family.",
+    "outcomes_viewed_before_freeze": true,
+    "discovery_values_are_economic_inputs": false
+  },
+  "question": "Does the current official Binance API reference expose a non-mutating quote or other read-only operation that reveals the exact dual-token fixed-value Gift Card discount before the TRADE purchase, thereby permitting an after-cost same-token face-value discount prefilter without buying or redeeming a card?",
+  "request_name": "binance-current-complete-agent-native-api-reference",
+  "request": {
+    "method": "GET",
+    "url": "https://developers.binance.com/en/docs/llms-full.txt",
+    "count": 1,
+    "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "endpoint_classification": {
+    "operation": "download the public official complete Binance API documentation reference",
+    "security": "public unauthenticated static documentation GET",
+    "source_contract": "The current Binance Developer Documentation catalog identifies llms-full.txt as its Agent Native complete documentation source. The retained current llms.txt index already classifies buyCode as TRADE, token-limit and verify as USER_DATA, and redeemCode as USER_DATA."
+  },
+  "response_byte_ceiling": 8388608,
+  "required_utf8_phrases": [
+    "Create a dual-token gift card (fixed value, discount feature)",
+    "/sapi/v1/giftcard/buyCode",
+    "/sapi/v1/giftcard/buyCode/token-limit",
+    "/sapi/v1/giftcard/redeemCode",
+    "baseToken",
+    "faceToken"
+  ],
+  "decision": {
+    "source_gate_only": "Every exact architecture phrase must exist in the one retained current official complete reference. The downstream adjudication must enumerate the complete Gift Card endpoint section and may credit a measurable pre-purchase discount only if a documented non-mutating operation returns the exact rate or exact payment and face amounts.",
+    "accepted_edge": false,
+    "profitability_proved": false,
+    "conditional_next_step": "If and only if the retained current source proves a non-mutating exact-discount observation, register a read-only account-gated prefilter for an independently legitimate Gift Card use and require exact same-unit redemption value, fees, limits, eligibility, transferability, expiry, tax, custody, failure-unwind, and opportunity costs before any funded action. Otherwise terminalize the public family before credentials, purchase, redemption, or account mutation."
+  },
+  "outputs": {
+    "raw_path": "docs/model-research/binance/raw/gift-card-fixed-value-v1-2026-08-30/01-complete-api-reference.raw.txt",
+    "journal_path": "docs/model-research/binance/raw/gift-card-fixed-value-v1-2026-08-30/00-request-journal.jsonl",
+    "result_path": "docs/model-research/action-value/binance-gift-card-fixed-value-source-result-v1-2026-08-30.json"
+  },
+  "authority": {
+    "account_requests": 0,
+    "credentials_used": false,
+    "funds_used": false,
+    "orders_or_transactions": 0,
+    "protected_capture_touched": false,
+    "public_unauthenticated_read_only_requests": 1,
+    "signed_requests": 0,
+    "trading_authority": false
+  },
+  "implementations": [
+    {
+      "path": "tools/capture_public_source_contract.py",
+      "sha256": "d566a5a379c659c3da144d5e28449ebac9c01493bd39646f9cc3a6e697a83566"
+    },
+    {
+      "path": "tools/screen_polymarket_exact_two_leg_package.py",
+      "sha256": "ba7ebaa1fb5235ba026f7cf4cb21ff73ba19430fee4a4f678fbdea37635eb32f"
+    },
+    {
+      "path": "tools/adjudicate_polymarket_exact_mlb_monotone_prefilter.py",
+      "sha256": "958a44d78029b9a1eb69a3771ce18e53ac1ed3c7bc161c8e4318beedce2cf99f"
+    }
+  ],
+  "retry_policy": "This exact current complete-reference GET is one-use. Preserve every HTTP error, over-ceiling response, or missing-term result and never retry an alias merely to change rendering. Discovery values are excluded from economics. A passing source gate proves only documented architecture and cannot prove a positive discount, account eligibility, redeemability, profitability, or deployment readiness.",
+  "contract_sha256": "49fd6dd8121e9132335669eb75f33d28f799f2c7471c5ba0a0042313a6d812ec"
+}

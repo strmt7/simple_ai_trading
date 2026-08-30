@@ -2496,7 +2496,7 @@
       "venue_scope": "Binance_Spot_direct_and_exactly_one_intermediary_routes_for_independently_required_organic_conversions_with_the_exactly_two_intermediary_extension_terminal_for_the_retained_population"
     }
   ],
-  "result_sha256": "d840ca77bf9f250a87fbc4d5a8423f98d94f1494a18d7863eebfc83812bc030f",
+  "result_sha256": "4814e73d89db659d602ad3ed5901f5b94add2b70c8daa51a635ff275ffebddb5",
   "schema_version": "structural-edge-priority-registry-v1",
   "terminal_do_not_repeat": [
     {
@@ -2833,8 +2833,13 @@
       "canonical_result_sha256": "ee7653904a54848775236b72c8319e5fc6889b34753ea4ed2d964f085c5a6d85",
       "family": "binance_Alpha_versus_Spot_same_token_parity_current_inventory_2026_08_30",
       "reason": "the_complete_current_665_token_Alpha_list_had_398_live_rows_but_only_five_live_listingCex_rows_with_nonempty_cexCoinName_and_zero_had_any_active_Binance_Spot_pair_across_USDT_USDC_FDUSD_USD1_BTC_or_BNB_so_zero_Alpha_or_Spot_book_requests_were_justified_do_not_poll_the_consumed_five_rows_or_infer_identity_from_ticker_aliases_reopen_only_on_a_material_Alpha_token_list_Spot_listing_or_transfer_architecture_change_that_creates_an_exact_transferable_overlap"
+    },
+    {
+      "canonical_result_sha256": "316e3182ce6a33287463d1c9c6d32a9bd3066bb49740c68d83e5ad717bf36868",
+      "family": "binance_dual_token_fixed_value_Gift_Card_buyer_discount_2026_08_30",
+      "reason": "the_frozen_complete_current_official_reference_proved_the_title_discount_label_has_zero_positive_buyer_payoff_the_operative_example_debits_100_USDT_plus_minting_fee_and_redeems_only_BTC_equivalent_to_100_USDT_all_six_documented_endpoints_were_exhaustively_classified_and_none_exposes_a_nonmutating_exact_positive_discount_buyCode_is_TRADE_requires_KYB_funding_balance_and_withdrawal_enabled_API_key_so_do_not_request_credentials_token_limits_verify_purchase_or_redemption_reopen_only_on_a_material_official_architecture_or_terms_change_with_a_nonmutating_quote_whose_exact_face_value_strictly_exceeds_payment_fee_and_every_cost"
     }
   ],
-  "updated_at_utc": "2026-08-30T14:17:18Z",
+  "updated_at_utc": "2026-08-30T14:29:18Z",
   "usage_rule": "advance_the_highest_ranked_hypothesis_whose_retry_trigger_is_satisfied_otherwise_do_not_repeat_a_blocked_or_terminal_screen"
 }

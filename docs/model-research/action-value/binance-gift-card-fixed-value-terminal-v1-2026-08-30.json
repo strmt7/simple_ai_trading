@@ -1,0 +1,136 @@
+{
+  "schema_version": "binance-gift-card-fixed-value-terminal-v1",
+  "created_at_utc": "2026-08-30T14:29:18.9475005Z",
+  "question": "Does Binance dual-token fixed-value Gift Card creation provide a measurable market-direction-independent discount that can be proved positive before any purchase or redemption?",
+  "source_binding": {
+    "contract_path": "docs/model-research/action-value/binance-gift-card-fixed-value-source-contract-v1-2026-08-30.json",
+    "contract_file_sha256": "6108103659e677dd8a0d993f3926d19ba76621337479c6d7ca45412ce4c449c9",
+    "contract_canonical_sha256": "49fd6dd8121e9132335669eb75f33d28f799f2c7471c5ba0a0042313a6d812ec",
+    "source_result_path": "docs/model-research/action-value/binance-gift-card-fixed-value-source-result-v1-2026-08-30.json",
+    "source_result_file_sha256": "f1d14de6b7a5cf6bdb733c2a33706171e0fbe38094f9fe8b9d3d8b6ba6976d9b",
+    "source_result_canonical_sha256": "631e9ec81519a1adbe970e0820ebcf53aad289c9b5965876d9c7b273bd3c2180",
+    "capture_response_byte_count": 8000456,
+    "capture_response_sha256": "c785b773eb2f36e87fd077891461320e60cb1aeedc8cec42e268e134e1b68d8a",
+    "retained_safe_section_path": "docs/model-research/binance/raw/gift-card-fixed-value-v1-2026-08-30/02-gift-card-section.raw.txt",
+    "retained_safe_section_file_sha256": "cbe717018ade77d841b47486774bcef4bf5f0e4403544d9512eecd979cad12ac",
+    "request_journal_path": "docs/model-research/binance/raw/gift-card-fixed-value-v1-2026-08-30/00-request-journal.jsonl",
+    "request_journal_file_sha256": "da607d3fbf7324bfe64ca945eca7c4370c5ba10296cc001d5b4049fc3526bc15",
+    "retained_agent_native_index_path": "docs/model-research/binance/raw/spot-block-matching-cost-overlay-v1-2026-08-30/03-agent-native-index.raw.txt",
+    "retained_agent_native_index_file_sha256": "944e132d3523c8a03abcac2f7ddb85802107e45161470885b7a8785fd4fdb15d"
+  },
+  "bounded_extraction": {
+    "definition": "Take raw UTF-8 bytes from the first byte of the exact buyCode heading through but excluding the next LF LF horizontal-rule marker after the verify operation.",
+    "start_byte_inclusive": 7870006,
+    "end_byte_exclusive": 7872722,
+    "byte_count": 2716,
+    "line_count": 72,
+    "endpoint_heading_count": 6,
+    "sha256": "cbe717018ade77d841b47486774bcef4bf5f0e4403544d9512eecd979cad12ac"
+  },
+  "retention_safety": {
+    "full_response_committed": false,
+    "reason": "The unrelated complete reference contained public illustrative API-key values and private-key blocks prohibited by repository policy. The exact Gift Card section matched zero secret patterns and is retained byte-for-byte.",
+    "full_response_secret_pattern_counts": {
+      "api_key_field_values": 178,
+      "aws_style_access_keys": 2,
+      "private_key_blocks": 6,
+      "secret_key_field_values": 32
+    },
+    "retained_section_secret_pattern_match_count": 0,
+    "provenance": "The two-entry durable journal and canonical capture result preserve the original response byte count and SHA-256; the retained section's raw offsets and SHA-256 bind it to that capture."
+  },
+  "documented_cash_flow": {
+    "base_token": "USDT",
+    "face_token_example": "BTC",
+    "creation_example": "Pay 100 USDT plus a minting fee for a fixed-value BTC gift card.",
+    "redemption_example": "Receive BTC equivalent to 100 USDT upon redemption.",
+    "funding_wallet_debit": "The baseToken amount in the card plus the fee is deducted after successful creation.",
+    "optimistic_gross_value_difference_base_units": "0",
+    "net_value_upper_bound": "negative_minting_fee_less_than_or_equal_to_zero",
+    "dominance_conclusion": "Even assigning zero to every unbound cost, documented redemption value does not exceed documented baseToken principal. The exact family cannot have a strictly positive buyer discount before the minting fee."
+  },
+  "complete_endpoint_adjudication": [
+    {
+      "method": "POST",
+      "path": "/sapi/v1/giftcard/buyCode",
+      "documented_security": "TRADE",
+      "operation": "Create a dual-token fixed-value card and debit baseToken amount plus fee.",
+      "reveals_non_mutating_exact_discount": false,
+      "state_change": true
+    },
+    {
+      "method": "POST",
+      "path": "/sapi/v1/giftcard/createCode",
+      "documented_security": "USER_DATA",
+      "operation": "Create a single-token card.",
+      "reveals_non_mutating_exact_discount": false,
+      "state_change": true
+    },
+    {
+      "method": "GET",
+      "path": "/sapi/v1/giftcard/cryptography/rsa-public-key",
+      "documented_security": "USER_DATA",
+      "operation": "Fetch the daily RSA public key used to encrypt a card code.",
+      "reveals_non_mutating_exact_discount": false,
+      "state_change": false
+    },
+    {
+      "method": "GET",
+      "path": "/sapi/v1/giftcard/buyCode/token-limit",
+      "documented_security": "USER_DATA",
+      "operation": "Verify available stablecoin-denominated card tokens and their limitations.",
+      "reveals_non_mutating_exact_discount": false,
+      "state_change": false
+    },
+    {
+      "method": "POST",
+      "path": "/sapi/v1/giftcard/redeemCode",
+      "documented_security": "USER_DATA",
+      "operation": "Redeem an existing card and deposit coins into the funding wallet.",
+      "reveals_non_mutating_exact_discount": false,
+      "state_change": true
+    },
+    {
+      "method": "GET",
+      "path": "/sapi/v1/giftcard/verify",
+      "documented_security": "USER_DATA",
+      "operation": "Verify whether an existing card number is valid.",
+      "reveals_non_mutating_exact_discount": false,
+      "state_change": false
+    }
+  ],
+  "eligibility_and_access": {
+    "binance_account_required": true,
+    "KYB_required": true,
+    "sufficient_funding_wallet_balance_required": true,
+    "api_key_with_withdrawals_enabled_required_for_purchase": true,
+    "public_discount_quote_exists_in_complete_documented_endpoint_family": false
+  },
+  "gates": {
+    "strictly_positive_optimistic_gross_buyer_discount": false,
+    "strictly_positive_after_minting_fee_value": false,
+    "non_mutating_exact_discount_observation_available": false,
+    "credential_or_account_request_justified": false,
+    "purchase_or_redemption_justified": false,
+    "stable_profitability_proved": false
+  },
+  "adjudication": {
+    "accepted_edge": false,
+    "deployment_ready": false,
+    "status": "terminal_before_credentials_or_purchase",
+    "decision": "Reject the exact Binance dual-token fixed-value Gift Card buyer-discount family. The title's parenthetical discount label is not a positive payoff: the operative example charges the full 100 USDT face value plus a minting fee and redeems only BTC equivalent to 100 USDT. None of the six documented endpoints exposes a non-mutating exact positive discount.",
+    "retry_trigger": "Reopen only on a material official Gift Card architecture or terms change that documents a non-mutating exact quote whose face redemption value strictly exceeds baseToken payment after minting fee and every eligibility, transfer, expiry, conversion, custody, tax, failure, and opportunity cost. Credentials, balances, or purchase authority alone are not retry triggers."
+  },
+  "authority": {
+    "account_requests": 0,
+    "books_or_price_requests": 0,
+    "credentials_used": false,
+    "funds_used": false,
+    "orders_or_transactions": 0,
+    "protected_capture_touched": false,
+    "public_unauthenticated_read_only_requests": 1,
+    "signed_requests": 0,
+    "trading_authority": false
+  },
+  "result_sha256": "316e3182ce6a33287463d1c9c6d32a9bd3066bb49740c68d83e5ad717bf36868"
+}
