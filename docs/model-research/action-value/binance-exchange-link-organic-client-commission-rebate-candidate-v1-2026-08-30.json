@@ -1,0 +1,90 @@
+{
+  "adjudication": {
+    "accepted_edge": false,
+    "candidate_scope": "exact realized positive Binance Exchange Link Spot or Futures commission rebate attributable to independently existing bona fide external client or subaccount trades only after exact owned payout reconciliation and every incremental platform disclosure consent compliance support tax custody settlement conversion and operating cost",
+    "deployment_ready": false,
+    "market_direction_forecast_required": false,
+    "profitability_claim": false,
+    "status": "direction_independent_exchange_link_commission_rebate_candidate_exact_schema_security_eligibility_rate_organic_flow_owned_payout_and_all_incremental_costs_unproved",
+    "trading_authority": false
+  },
+  "authority": {
+    "account_requests": 0,
+    "api_keys_or_subaccounts_created": 0,
+    "commission_configuration_changes": 0,
+    "credentials_used": false,
+    "official_venue_api_requests": 0,
+    "orders_or_cancellations": 0,
+    "signed_requests": 0,
+    "transfers_or_withdrawals": 0
+  },
+  "created_at_utc": "2026-08-30T07:50:15.7733924Z",
+  "economic_contract": {
+    "account_qualified_forward_floor_before_exact_evidence": "0",
+    "candidate_realized_rebate_identity": "sum of exact positive owned Exchange Link Spot and Futures commission rebate records attributable to independently existing bona fide external client or subaccount trades and reconciled to exact trade commission lineage and owned payout",
+    "incremental_net_revenue_identity": "realized owned Exchange Link commission rebates minus every incremental platform integration disclosure consent compliance support demand elasticity tax custody settlement conversion and operating cost",
+    "public_forward_floor_quote_units": "0",
+    "reason_public_floor_is_zero": "The retained current official index proves a separate Exchange Link commission-data product and two rebate-history endpoints but does not bind either endpoint's exact security class response schema eligibility rate trade lineage distribution asset timing reversal or clawback state owned payout or any incremental cost.",
+    "source_only_endpoint_presence_is_realized_cash": false
+  },
+  "mechanism": {
+    "api_product": "Binance Exchange Link REST API",
+    "direction_independence": "a genuinely owned positive rebate on independently existing bona fide external trading flow would be an incremental commission overlay and would not require forecasting market direction",
+    "exact_endpoint_titles": [
+      "Query Spot Commission Rebate Recent Record",
+      "Query Broker Futures Commission Rebate Record"
+    ],
+    "market_direction_forecast_required": false,
+    "not_a_standalone_trading_strategy": true,
+    "novelty_boundary": "separate from Link-and-Trade client kickback and partner rebate apiReferral endpoints CAAS markup reporting Referral Pro Square creator Builder Fees Spot market-maker rebates and Institutional Loan interest rebates"
+  },
+  "prohibited_actions": [
+    "creating deleting or modifying a Link subaccount API key permission IP restriction fee or commission configuration to chase a rebate",
+    "creating increasing rerouting splitting churning self-matching wash related-party or solicited client or subaccount volume to collect commission rebate",
+    "enabling Futures BNB burn or universal transfer permissions transferring assets or placing orders without separate explicit authority",
+    "assuming the rebate endpoints are public read-only USER_DATA or TRADE from their GET method product location or adjacent endpoint classification",
+    "assuming Exchange Link eligibility account status rate trade lineage payout asset timing realization or profitability from endpoint names",
+    "querying either rebate endpoint before a current primary contract binds its exact security classification method parameters and response schema",
+    "counting estimated displayed pending aggregated duplicated negative reversed clawed-back or non-owned values as realized positive rebate",
+    "using a rebate to justify an otherwise unprofitable platform client relationship or trade",
+    "double counting the same commission across Exchange Link Link-and-Trade CAAS Referral Pro Square market-maker Builder or other programs"
+  ],
+  "result_sha256": "245ef96228dccf51194f0e10176ffa39676ec4e5e07f78a2daefa1205b2fde3a",
+  "schema_version": "binance-exchange-link-organic-client-commission-rebate-candidate-v1",
+  "source_contract": {
+    "exact_evidence_lines": [
+      {
+        "line": 1430,
+        "text": "### Exchange Link REST API (1.0.0)"
+      },
+      {
+        "line": 1432,
+        "text": "Manage Exchange Link accounts, assets, and commission data via the Exchange Link API."
+      },
+      {
+        "line": 1467,
+        "text": "- `GET /sapi/v1/broker/rebate/recentRecord` — Query Spot Commission Rebate Recent Record"
+      },
+      {
+        "line": 1468,
+        "text": "- `GET /sapi/v1/broker/rebate/futures/recentRecord` — Query Broker Futures Commission Rebate Record"
+      }
+    ],
+    "exact_endpoint_security_classification_bound": false,
+    "retained_current_official_api_index": {
+      "path": "docs/model-research/binance/raw/spot-block-matching-cost-overlay-v1-2026-08-30/03-agent-native-index.raw.txt",
+      "sha256": "944e132d3523c8a03abcac2f7ddb85802107e45161470885b7a8785fd4fdb15d"
+    }
+  },
+  "unresolved_gates": [
+    "current primary exact endpoint security classification method parameters response fields and pagination or time-window semantics",
+    "current Exchange Link partner account regional and product eligibility",
+    "already active disclosed client or subaccount relationship and exact commission configuration",
+    "independently existing bona fide unrelated external Spot or Futures flow",
+    "exact trade commission rebate asset rate amount distribution timing reversal and clawback lineage",
+    "owned positive payout and balance reconciliation without duplicates or cross-program double counting",
+    "demand elasticity client retention support compliance tax custody settlement conversion and every operating cost",
+    "proof that the underlying platform relationship and trades are independently justified without the rebate"
+  ],
+  "retry_policy": "advance only after a materially new byte-retainable current official contract binds either exact rebate endpoint's security classification parameters response schema and semantics; any later signed GET-only reconciliation additionally requires both designated credentials explicit signed GET-only authority an independently existing legitimate Exchange Link reporting question an already active disclosed configuration and bona fide external flow; every subaccount API-key permission commission BNB-burn Futures transfer universal-transfer order trade withdrawal onboarding or external-contact action requires separate explicit authority"
+}
