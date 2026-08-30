@@ -1,0 +1,83 @@
+{
+  "adjudication": {
+    "accepted_edge": true,
+    "accepted_scope": "exact_realized_positive_pUSD_crypto_maker_rebate_on_independently_justified_legitimate_organic_owned_BTC_ETH_or_SOL_maker_fills_after_every_incremental_cost",
+    "accepted_edge_count_after": 25,
+    "accepted_edge_count_before": 24,
+    "deployment_ready": false,
+    "fresh_hypothetical_order_profit_proved": false,
+    "market_direction_forecast_required": false,
+    "profitability_claim_beyond_exact_realized_incremental_scope": false,
+    "public_forward_profit_floor_pusd": "0",
+    "standalone_market_making_strategy_accepted": false,
+    "status": "accepted_scoped_realized_organic_crypto_maker_rebate_overlay_without_accepting_the_underlying_market_making_strategy",
+    "trading_authority": "none"
+  },
+  "authority": {
+    "account_or_owned_wallet_state_accessed": false,
+    "credentials_used": false,
+    "funded_actions": 0,
+    "new_source_bytes_bound_to_this_adjudication": 0,
+    "orders_or_cancels": 0,
+    "signed_or_venue_API_requests": 0
+  },
+  "created_at_utc": "2026-08-30T08:34:20.5863910Z",
+  "economic_contract": {
+    "crypto_maker_fee_rate": "0",
+    "crypto_maker_rebate_fraction": "0.20",
+    "crypto_taker_fee_rate": "0.07",
+    "daily_payout": true,
+    "fee_equivalent_formula": "shares*0.07*price*(1-price)",
+    "incremental_rebate_formula_before_rounding": "0.20*shares*0.07*price*(1-price)",
+    "minimum_accrued_payout_pusd": "1",
+    "rate_is_discretionary_and_not_a_forward_floor": true
+  },
+  "overlap_adjudication": {
+    "builder_fee_overlay_distinct": true,
+    "liquidity_reward_program_distinct": true,
+    "paired_maker_strategy_distinct": true,
+    "paired_maker_strategy_remains_rejected": true,
+    "reason": "the_base_strategy_requires_queue_fill_inventory_adverse_selection_latency_and_unwind_evidence_whereas_this_overlay_accepts_only_an_exact_owned_positive_cash_receipt_after_an_independently_justified_organic_maker_fill",
+    "taker_fee_rebate_overlay_distinct": true
+  },
+  "prohibited_shortcuts": [
+    "do_not_create_quote_or_manufacture_volume_to_chase_the_rebate",
+    "do_not_count_public_other_wallet_receipts_as_owned_income",
+    "do_not_credit_a_nominal_or_estimated_rebate_before_exact_owned_payment",
+    "do_not_use_the_rebate_to_rescue_an_otherwise_unjustified_or_negative_base_strategy",
+    "do_not_infer_queue_position_fill_probability_inventory_cost_or_after_cost_market_making_profit_from_rebate_recurrence",
+    "do_not_place_cancel_or_modify_any_order_without_separate_explicit_authority"
+  ],
+  "public_recurrence_evidence": {
+    "aggregate_rebate_pusd_across_ten_public_top_volume_wallets": "234881.8839",
+    "fresh_hypothetical_order_payout_floor_pusd": "0",
+    "public_program_payment_recurrence_proved": true,
+    "scoped_wallet_day_btc_eth_sol_rebate_pusd": "7017.331032",
+    "scoped_wallet_day_btc_eth_sol_rows": 668,
+    "scoped_wallet_day_share_of_wallet_total": "0.9410066751749133415618889251",
+    "top_volume_wallets_observed": 10,
+    "wallets_with_all_fourteen_utc_dates": 8,
+    "wallets_with_positive_receipts": 10
+  },
+  "result_sha256": "a8db5f3c823c8b1caffa6b0032282647dbb1e7fb014f8923821c1b1fe97d1c81",
+  "retry_contract": {
+    "account_evidence": "only_after_an_independently_existing_owned_legitimate_organic_BTC_ETH_or_SOL_maker_fill_and_explicit_read_only_evidence_authority_reconcile_exact_fill_identity_rebate_date_positive_owned_payout_and_every_incremental_cost",
+    "funded_work": "every_order_cancel_transfer_withdrawal_or_account_change_requires_separate_explicit_authority",
+    "public_research": "only_on_a_material_official_fee_rebate_distribution_minimum_payout_market_scope_or_execution_architecture_change"
+  },
+  "schema_version": "1.0.0",
+  "sources": [
+    {
+      "file_sha256": "0ee4a0fa19093bc24a48950f1286acd3a96f390762b40f4d73ffe405a020add5",
+      "path": "docs/model-research/polymarket/crypto-maker-rebate-economics-v1.json",
+      "result_sha256": "09f67265772716873c625ada816140332430697894f30af22c05bd0dd6422c8a",
+      "role": "retained_official_crypto_maker_rebate_contract"
+    },
+    {
+      "file_sha256": "961c637caaaeac843cd93ad6eb7004d3339d6c0b35588dbbaaaa51846f99b5b2",
+      "path": "docs/model-research/polymarket/crypto-maker-rebate-public-recurrence-v2-2026-08-26.json",
+      "result_sha256": "c992e0e1febc1a9789289cb129c166280ee0192cab203d3a6935a8c40e949612",
+      "role": "retained_public_cash_payment_recurrence_and_fresh_order_floor"
+    }
+  ]
+}
