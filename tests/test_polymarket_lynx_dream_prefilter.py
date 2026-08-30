@@ -114,8 +114,7 @@ def test_registry_retains_both_negative_wnba_extensions() -> None:
     row = next(
         item
         for item in registry["prioritized_hypotheses"]
-        if item["mechanism"]
-        == "polymarket_live_NBA_moneyline_spread_monotone_payoff_implication"
+        if item["priority_rank"] == 30
     )
 
     hashes = {artifact["result_sha256"] for artifact in row["canonical_artifacts"]}

@@ -4435,3 +4435,39 @@ and redemption cost. Canonical failure adjudication SHA-256 is
 Accepted edges remain 24, ranked hypotheses remain 44, and terminal families
 remain 55. Registry SHA-256 becomes
 `aec184ae571d27d933003fc9dac056241d11fe01bb40ed16dac9a86c77cddd3b`.
+
+## Polymarket Ball State vs. Ohio State exact CFB monotone rejection
+
+A newly indexed September 5 college-football event materially extended the
+direction-independent sports monotone-payoff family beyond its consumed
+NBA/WNBA/NFL populations. One frozen exact Gamma event request returned an
+active Ball State vs. Ohio State event with three accepting markets: moneyline,
+Ohio State -50.5 spread, and 56.5 total. All three currently use the same
+fee-enabled 5% taker-only curve, and the source shows a one-second sports delay.
+
+The complete offline payoff reduction retained nine feasible rule classes:
+Ball State win, Ohio State win by 1-50, Ohio State win by at least 51, and an
+actual tie, each split by total under/over 57, plus cancellation. A nonnegative
+linear superhedge over all six outcome tokens found a minimum Gamma displayed
+cost of exactly 1.0000 pUSD; one optimum is simply one Over plus one Under
+share. The nontrivial monotone package of Ohio State moneyline plus Ball State
++50.5 cost 1.5015 pUSD. Therefore no package was strictly below its guaranteed
+payout floor even before taker fees, spread, slippage, latency, or partial-fill
+risk. Gamma remained rejection-only and no CLOB book was requested.
+
+The exact event-specific capture implementation had temporarily occupied an
+existing reusable runner path. Its consumed bytes are now retained in an
+immutable hash-bound sidecar, the reusable runner is restored byte-for-byte,
+and the terminal artifact binds both. The request and frozen contract were not
+rewritten or repeated. `AGENTS.md` now requires a tracked-path ownership check
+before adding any one-use runner.
+
+The exact event is terminal. Do not refetch it or generalize one null event into
+a family rejection. Reopen only for a distinct active NBA, WNBA, NFL, or CFB
+event outside every consumed population after exact rules, tie/cancellation
+states, and fee schedules are bound and Gamma exposes at least one package
+strictly below its guaranteed payout floor. Canonical terminal SHA-256 is
+`13eb2d843260b2e05d693f82ddc6f3efcbae51e83d61f5fe06693be56c2c30a5`.
+Accepted edges remain 24, ranked hypotheses remain 44, and terminal families
+become 56. Registry SHA-256 becomes
+`2d2e24457ea117c094c82f2259ed75970e29666391a1575d285b5e4275d83080`.

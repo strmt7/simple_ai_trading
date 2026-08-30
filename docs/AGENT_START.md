@@ -120,6 +120,17 @@ safety gate, blocks Stop, or submits an order.
   yield contract, or both designated credentials plus explicit signed GET-only
   Prediction Trading metadata authority. Canonical failure adjudication SHA-256
   is `e0049982adfdb631bb71bc7ebaf957d0a96336b42f269783ec99d4812e12bafc`.
+- A materially new Ball State vs. Ohio State college-football deployment
+  extended the sports monotone-payoff family beyond its consumed NBA/WNBA/NFL
+  windows. Exact Gamma exposed active moneyline, Ohio State -50.5 spread, and
+  56.5 total markets. A complete nine-state score/tie/cancellation-aware
+  nonnegative superhedge screen found a minimum displayed cost of exactly
+  1.0000 pUSD, leaving zero strict gross headroom before fees or execution
+  costs. No book was requested. Do not repeat this event; advance another sports
+  event only when exact rules and current fees are source-bound and a Gamma
+  displayed package is strictly below its guaranteed payout floor. Canonical
+  terminal SHA-256 is
+  `13eb2d843260b2e05d693f82ddc6f3efcbae51e83d61f5fe06693be56c2c30a5`.
 - Binance Stocks FPSL is a materially distinct direction-independent overlay
   for U.S.-listed stocks or ETFs that are already independently owned and fully
   settled. The current FAQ says actual loaned shares accrue interest daily and

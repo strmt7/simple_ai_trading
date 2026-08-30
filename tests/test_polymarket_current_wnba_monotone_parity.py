@@ -142,8 +142,7 @@ def test_registry_requires_rejection_only_prefilter_before_another_book_batch() 
     row = next(
         item
         for item in registry["prioritized_hypotheses"]
-        if item["mechanism"]
-        == "polymarket_live_NBA_moneyline_spread_monotone_payoff_implication"
+        if item["priority_rank"] == 30
     )
 
     assert row["priority_rank"] == 30

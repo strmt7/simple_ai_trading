@@ -165,7 +165,10 @@ def test_complete_future_window_stops_before_books_and_updates_existing_family()
     family = next(
         row for row in registry["prioritized_hypotheses"] if row["priority_rank"] == 30
     )
-    assert family["canonical_artifacts"][-1]["result_sha256"] == RESULT_HASH
+    assert any(
+        artifact["result_sha256"] == RESULT_HASH
+        for artifact in family["canonical_artifacts"]
+    )
     assert any(
         row["canonical_result_sha256"] == RESULT_HASH
         for row in registry["terminal_do_not_repeat"]

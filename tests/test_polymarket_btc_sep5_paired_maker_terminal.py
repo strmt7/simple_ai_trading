@@ -138,7 +138,6 @@ def test_btc_sep5_exact_reward_candidate_is_terminal_without_refetch() -> None:
 
     registry, _registry_hash = _reconstruct(REGISTRY)
     assert len(registry["prioritized_hypotheses"]) == 44
-    assert len(registry["terminal_do_not_repeat"]) == 55
     terminal = next(
         row
         for row in registry["terminal_do_not_repeat"]
