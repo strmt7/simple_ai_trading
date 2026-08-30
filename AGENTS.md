@@ -367,6 +367,10 @@ override prose.
   has an optimistic common-rule one-pUSD floor. Screen that weaker cross-event
   coverage identity only on a distinct nonconsumed same-source, same-instant
   pair with complete boundary rules and contemporaneous frozen populations.
+  Exhaust both valid directions at every shared boundary: threshold NO plus
+  cumulative upper-range YES, and threshold YES plus lower bins through the
+  starting bin. Gamma is rejection-only; if exact depth is already negative at
+  zero fee, stop before fee endpoints and never refetch stale or skewed books.
 
 ## Working Method
 

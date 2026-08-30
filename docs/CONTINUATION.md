@@ -5458,3 +5458,40 @@ Canonical boundary adjudication SHA-256 is
 Accepted edges remain 29, ranked hypotheses remain 44, terminal families become
 72, and registry SHA-256 becomes
 `f0f70eb60bc1ca13d899a3c01930bdc37838c874e875636722c5bd2039f1eec1`.
+
+## Polymarket Solana September 4 cross-event coverage rejection
+
+The official September 4 Solana range and strict-above events were a distinct,
+nonconsumed same-source pair and fired rank 31's new coverage trigger. A frozen
+two-request Gamma screen retained both complete eleven-market populations and
+tested both valid directions at every one of the ten shared boundaries. Of all
+20 packages, only `NO(above 150)` plus `YES(higher range 150)` cleared the
+rejection-only displayed gate, costing 0.9855 pUSD versus its optimistic
+common-rule one-pUSD floor.
+
+The precommitted exact two-token book batch rejected the apparent 145-bp
+headroom. Five shares per leg cost 5.04 pUSD against a 5 pUSD floor at actual
+asks, a 0.04 pUSD zero-fee loss. One adverse tick per leg increased cost to
+5.05 pUSD; the five-tick package was not fillable below one pUSD per share. The
+book timestamps were also 4,655,213 ms old and 7,949 ms apart, failing both
+five-second gates. Since actual zero-fee depth was already negative, no fee
+endpoint was requested.
+
+Do not repeat either Gamma event, the exact book batch, or repair the stale and
+skewed snapshot; do not request fees or cherry-pick the now-consumed ETH/BTC
+siblings. Reopen only for a literal distinct nonconsumed same-observation pair
+whose complete frozen population contains a strict displayed sub-floor package,
+then require fresh synchronized exact depth, fees, resolution risk, and every
+cost before any account or order-capable work.
+
+Prefilter contract SHA-256 is
+`38b02e051962f979c90564318928bcb216c13aca5fe6847eceb8d0398a9abe23`;
+prefilter result SHA-256 is
+`8efba9e824fb125bd4a5be654704c6f47d62ddc1fd8b38006fad06ac52247417`;
+book contract SHA-256 is
+`5f0ff60c030abef0a5cc68b0926090de29dc3cbc3f9c55bb9ccd9cc20f68d331`;
+book result SHA-256 is
+`5bc1e557a85af2588d7b319476e7ef9d4f2afe2c9103100f2a56a41864a9ef81`.
+Accepted edges remain 29, ranked hypotheses remain 44, terminal families become
+73, and registry SHA-256 becomes
+`932ff844edcda13efc17bd48569c1cd4b5f25abd0f2c0c3747dae696d1b19649`.
