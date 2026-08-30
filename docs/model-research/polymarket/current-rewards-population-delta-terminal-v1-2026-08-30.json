@@ -1,0 +1,108 @@
+{
+  "authority": {
+    "account_accessed": false,
+    "credentials_used": false,
+    "funded_actions": 0,
+    "market_metadata_requests": 0,
+    "order_book_requests": 0,
+    "orders_or_cancellations": 0,
+    "public_unauthenticated_get_requests": 4
+  },
+  "completed_at_utc": "2026-08-30T01:32:04.130557+00:00",
+  "correction": {
+    "instruction_change": "An omitted parameter in a newer official client method does not prove that its default response is aggregation-equivalent to an older filtered response. Population deltas require identical source semantics, not merely the same endpoint path.",
+    "mistake": "The frozen contract compared the current official v2 no-parameter method with a prior sponsored=true baseline before independently proving that the two aggregation contracts were equivalent.",
+    "resource_inefficiency": "The four-page ceiling was frozen without a source-proved current population ceiling; all four pages returned the maximum 500 rows and the fourth cursor remained nonterminal.",
+    "runner_gap": "The runner retained every intent raw response and receipt but did not automatically emit a terminal artifact when the post-request page-completeness gate raised. This adjudication closes that gap without any refetch."
+  },
+  "frozen_contract": {
+    "file_sha256": "f882295cbe2eac322fdffc7f6cb0ce5132121fe2a045259681b82149f6aa9982",
+    "path": "docs/model-research/polymarket/current-rewards-population-delta-contract-v1-2026-08-30.json",
+    "result_sha256": "c6aef4b1395e6a0c311a6a64b4e679d6dafbd6ac3e7b50860585e230ca0c9484"
+  },
+  "offline_retained_diagnostic": {
+    "baseline_overlap_count": 4,
+    "baseline_overlap_rows_changed_count": 4,
+    "complete_population": false,
+    "duplicate_condition_count": 0,
+    "last_next_cursor": "MjAwMA==",
+    "maximum_total_daily_rate_pUSD": "333.333333",
+    "minimum_positive_total_daily_rate_pUSD": "0.001",
+    "positive_total_daily_rate_count": 2000,
+    "prior_filtered_baseline_count": 54,
+    "retained_not_in_baseline_count": 1996,
+    "retained_unique_condition_count": 2000
+  },
+  "result_sha256": "0a885b96eadbc0109ec3da70a8670680a23813a5f492d61abf89e49f3e892481",
+  "schema_version": "polymarket-current-rewards-population-delta-terminal-v1",
+  "source_contract_adjudication": {
+    "current_official_v2_commit": "215fc63a8fd6ec3a10c7edb73997c9772d8686d3",
+    "current_official_v2_method": "PublicClient.get_current_rewards sends next_cursor only",
+    "current_source_configuration": "default_current_rewards_without_sponsored_filter",
+    "prior_baseline_configuration": "current_rewards_with_sponsored=true",
+    "source_configurations_comparable": false,
+    "terminal_reason": "The retained current response is incomplete after 2000 rows and is not aggregation-equivalent to the 54-row filtered baseline. Neither a complete population delta nor an economic candidate can be admitted."
+  },
+  "sources": {
+    "baseline_path": "docs/model-research/polymarket/raw/crypto-twap-5m-current-rewards-list-join-v1-2026-08-27/02-current-rewards-page-01.raw",
+    "baseline_response_sha256": "16a77685f17dc44dd7785563556bd090f8a77b38812722e79fe1563f4bb3b22b",
+    "capture_tool_path": "tools/capture_polymarket_current_rewards_delta.py",
+    "capture_tool_sha256": "e82c64ba1e5332be67e527c1621db0a16a54bc517ac13ef454a44076f5894499",
+    "official_v2_client_url": "https://github.com/Polymarket/py-clob-client-v2/blob/215fc63a8fd6ec3a10c7edb73997c9772d8686d3/py_clob_client_v2/client.py",
+    "requests": [
+      {
+        "intent_file_sha256": "9d386fb6896c86cfe53b83d05415a8ba11d0a5eb5747e6dbbbeb492631c8bb83",
+        "page": 1,
+        "raw_path": "docs/model-research/polymarket/raw/current-rewards-population-delta-v1-2026-08-30/01-current-rewards.raw",
+        "receipt_file_sha256": "741aa246d0060b03d105c54def624e2d43a7c50e89dff522f18be7ec44d60617",
+        "response_bytes": 175369,
+        "response_sha256": "110a6a709464be039bef601cb6ad4b34832beecc4a3fb2857d972832b94e1db4",
+        "row_count": 500,
+        "status_code": 200,
+        "url": "https://clob.polymarket.com/rewards/markets/current?next_cursor=MA%3D%3D"
+      },
+      {
+        "intent_file_sha256": "8ae052e62eaa37effc013a3049fe1691a3a27f0ccf97c3841ceff88fea9350d2",
+        "page": 2,
+        "raw_path": "docs/model-research/polymarket/raw/current-rewards-population-delta-v1-2026-08-30/02-current-rewards.raw",
+        "receipt_file_sha256": "cebbb2c9608429d4e3bcb435925d1245830a9cb2c6d648cc6aa789d52a978f38",
+        "response_bytes": 175525,
+        "response_sha256": "4c7e73d4c9861abcc1137e9b5338b97e8c810ca4f4cb536618c648b798f5c2e5",
+        "row_count": 500,
+        "status_code": 200,
+        "url": "https://clob.polymarket.com/rewards/markets/current?next_cursor=NTAw"
+      },
+      {
+        "intent_file_sha256": "3b711c1b3bdc1f2f936a1073386b7d9cbf2615cb4c7dfb90ca9338bd019c7e93",
+        "page": 3,
+        "raw_path": "docs/model-research/polymarket/raw/current-rewards-population-delta-v1-2026-08-30/03-current-rewards.raw",
+        "receipt_file_sha256": "3ccbb735b1ca3e63758647498471335c829749b5e9bfc7b641a7a1f1033c379f",
+        "response_bytes": 175340,
+        "response_sha256": "91d932b18fac32478e7123fa5d99ba8aede5ca71498561c5c1e652e38977b6f5",
+        "row_count": 500,
+        "status_code": 200,
+        "url": "https://clob.polymarket.com/rewards/markets/current?next_cursor=MTAwMA%3D%3D"
+      },
+      {
+        "intent_file_sha256": "cd81e3007bffbeeca6540d680941ebd6da255870b7093cd3e6afc1bc4271dda5",
+        "page": 4,
+        "raw_path": "docs/model-research/polymarket/raw/current-rewards-population-delta-v1-2026-08-30/04-current-rewards.raw",
+        "receipt_file_sha256": "d3fe14fdcad76fca0da7469ae586a34a283f11911ee5b4b1cac4d77997c2acd2",
+        "response_bytes": 175365,
+        "response_sha256": "11e686b40318a1dbf6be2f0fdcd7c2b09ac867cc822060ac11873c7d43fe0dd2",
+        "row_count": 500,
+        "status_code": 200,
+        "url": "https://clob.polymarket.com/rewards/markets/current?next_cursor=MTUwMA%3D%3D"
+      }
+    ]
+  },
+  "verdict": {
+    "accepted_edge": false,
+    "books_requested": false,
+    "market_metadata_requested": false,
+    "profitability_claim": false,
+    "publicly_proven_reward_payout_floor_pUSD": "0",
+    "retry_trigger": "A current primary source must explicitly define aggregation and filter semantics that make a bounded population comparable, or a distinct exact per-market dated reward endpoint must be source-selected before access.",
+    "status": "terminal_incomplete_noncomparable_source_contract_drift"
+  }
+}

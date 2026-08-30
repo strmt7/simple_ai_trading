@@ -40,6 +40,8 @@ data/polymarket-aca-house-identity-metadata-v1/** binary -eol
 data/polymarket-aca-house-identity-parity-v1/** binary -eol
 data/binance-stocks-fee-extension-source-v1/** binary -eol
 docs/model-research/binance/raw/** binary -eol
+docs/model-research/polymarket/current-rewards-population-delta-*.json text eol=lf
+docs/model-research/polymarket/raw/current-rewards-population-delta-v1-2026-08-30/** binary -eol
 docs/model-research/action-value/round-075-frozen-v4-source/**/*.txt text eol=lf
 docs/archive/agent-history/*.md.txt text eol=lf
 docs/optimization/iteration-progress/**/*.csv text eol=lf

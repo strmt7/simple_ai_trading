@@ -1486,6 +1486,31 @@ only when a genuinely new public response supplies an exact per-market dated
 daily allocation or the official program allocation changes again; never infer
 a daily rate by dividing the monthly cap.
 
+The 2026-08-30 official rewards-page discovery signal did not justify a new
+economic screen by itself. A frozen one-use source-contract delta attempted the
+current official v2 client's default `/rewards/markets/current` method, which
+sends `next_cursor` but no `sponsored=true` parameter. Every one of the four
+allowed pages returned its maximum 500 rows, and the fourth response still had
+the nonterminal offset-2,000 cursor. The retained 2,000 rows are complete only
+for the consumed prefix, not for the current rewards population.
+
+That default response also cannot be compared as a population delta with the
+prior complete 54-row `sponsored=true` baseline: only four baseline condition
+IDs appeared in the retained prefix, all four row representations differed,
+and 1,996 prefix identities were not in the filtered baseline. An omitted
+parameter in a newer client method is not proof of aggregation equivalence.
+The run therefore stopped before Gamma metadata, books, fees, accounts, or
+economic selection; the public payout floor remains zero. Do not follow the
+cursor, retry another page budget, or select a partial-page winner. Reopen only
+after a current primary source explicitly defines bounded comparable filter and
+aggregation semantics, or source-selects a distinct exact per-market dated
+endpoint before access. Canonical contract and terminal result SHA-256 values:
+`c6aef4b1395e6a0c311a6a64b4e679d6dafbd6ac3e7b50860585e230ca0c9484` and
+`0a885b96eadbc0109ec3da70a8670680a23813a5f492d61abf89e49f3e892481`.
+The accepted-edge count remains 21, the ranked-hypothesis count remains 44, and
+the registry SHA-256 is
+`9d8d19faac706767258bfd494cec2842d22607e9ca7c23d6094a38a498e54fb6`.
+
 The Binance option workflow adds a request-efficiency contract learned from a
 failed exploratory confirmation: fetch the contract catalog once, fetch the
 all-symbol ticker once for discovery, and request depth only for ticker-positive
