@@ -1,0 +1,21 @@
+{
+  "schema_version": "1.0",
+  "method": "GET",
+  "url": "https://developers.binance.com/en/docs/catalog/advanced-trading-derivatives-trading-portfolio-margin/api/rest-api/account",
+  "request_body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "authentication": "none",
+  "requested_before_utc": "2026-08-30T11:09:20.7025884Z",
+  "response_path": "docs/model-research/binance/raw/portfolio-margin-capital-netting-v1-2026-08-30/07-official-developer-docs.raw.html",
+  "headers_path": "docs/model-research/binance/raw/portfolio-margin-capital-netting-v1-2026-08-30/08-official-developer-docs.headers.txt",
+  "received_after_utc": "2026-08-30T11:09:42.4302397Z",
+  "status_code": 202,
+  "effective_url": "https://developers.binance.com/en/docs/catalog/advanced-trading-derivatives-trading-portfolio-margin/api/rest-api/account",
+  "response_bytes": 0,
+  "response_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "headers_bytes": 590,
+  "headers_sha256": "eb22509090f479180495cb1c7d14bdedee42cb06490bd8cf7ae05f2b153a7462",
+  "status": "terminal_empty_http_202",
+  "response_retained": true,
+  "claims_allowed": false,
+  "retry_allowed": false
+}

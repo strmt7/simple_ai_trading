@@ -1,0 +1,21 @@
+{
+  "schema_version": "1.0",
+  "method": "GET",
+  "url": "https://academy.binance.com/en/articles/binance-ai-agent-skills-hub-13-new-skills",
+  "request_body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "authentication": "none",
+  "requested_before_utc": "2026-08-30T11:08:33.9577875Z",
+  "response_path": "docs/model-research/binance/raw/portfolio-margin-capital-netting-v1-2026-08-30/04-official-academy.raw.html",
+  "headers_path": "docs/model-research/binance/raw/portfolio-margin-capital-netting-v1-2026-08-30/05-official-academy.headers.txt",
+  "received_after_utc": "2026-08-30T11:08:57.2780239Z",
+  "status_code": 202,
+  "effective_url": "https://www.binance.com/en/academy/articles/binance-ai-agent-skills-hub-13-new-skills",
+  "response_bytes": 0,
+  "response_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "headers_bytes": 1279,
+  "headers_sha256": "7c7ec1afedb22197fbc8ea8fedac38f3de1cdbb169d392e64fac8201a4421044",
+  "status": "terminal_empty_http_202",
+  "response_retained": true,
+  "claims_allowed": false,
+  "retry_allowed": false
+}

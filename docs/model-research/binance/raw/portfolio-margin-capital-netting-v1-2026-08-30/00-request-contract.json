@@ -1,0 +1,37 @@
+{
+  "schema_version": "1.0",
+  "frozen_at_utc": "2026-08-30T11:05:51.6388605Z",
+  "authority": "public_unauthenticated_read_only_official_cms_only",
+  "method": "GET",
+  "url": "https://www.binance.com/bapi/composite/v1/public/cms/article/detail/query?articleCode=bddd924496d74ecd8820a6d95585ccee",
+  "request_body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "discovery_provenance": "The exact FAQ code appears in the already retained current official RWUSD margin announcement and resolves to Introduction to Binance Portfolio Margin Mode.",
+  "hypothesis": "A long spot asset held inside Binance Portfolio Margin can contribute collateral equity against a matching short USD-M perpetual, reducing the duplicated-capital hurdle of direction-neutral funding carry without borrowing the spot asset.",
+  "question": "Do current official terms prove that Spot, USD-M Futures, COIN-M Futures, and Options balances and risks share one collateral pool, and that a delta-offsetting spot-long/perpetual-short portfolio receives a lower initial-margin requirement than separately funded legs?",
+  "bounds": {
+    "maximum_requests": 1,
+    "timeout_seconds": 30,
+    "maximum_response_bytes": 5000000,
+    "retry_allowed": false
+  },
+  "outputs": {
+    "body": "01-official-faq.raw.json",
+    "journal": "02-request-journal.json"
+  },
+  "decision_rule": {
+    "advance": "The response must identify the intended FAQ and explicitly bind the cross-product collateral pool, spot asset treatment, portfolio offset or risk-netting mechanics, collateral haircuts, and initial-margin semantics strongly enough to revise the existing two-capital-leg carry denominator.",
+    "reject": "Fail closed if the response is missing, partial, ambiguous, stale, or proves only account consolidation or leverage without exact risk-offset semantics. A live collateral-rate table or account-specific Portfolio Margin eligibility must remain unproven without an authorized current API-key read.",
+    "accepted_edge_allowed": false
+  },
+  "prohibited_actions": [
+    "credential use",
+    "signed endpoint access",
+    "Portfolio Margin enrollment",
+    "asset transfer",
+    "borrowing",
+    "order placement",
+    "trade",
+    "account mutation"
+  ],
+  "one_use": true
+}

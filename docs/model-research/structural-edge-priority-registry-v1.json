@@ -2374,7 +2374,7 @@
       "venue_scope": "Binance_Spot_direct_and_exactly_one_intermediary_routes_for_independently_required_organic_conversions_with_the_exactly_two_intermediary_extension_terminal_for_the_retained_population"
     }
   ],
-  "result_sha256": "46eee6375a04b6226db08e6ee5ddc59c530b8c991840feefc6e145b48059c0fd",
+  "result_sha256": "a4d7119d665b2410939a07f1306091b396592aa98e9635abd57b4ac3809aa165",
   "schema_version": "structural-edge-priority-registry-v1",
   "terminal_do_not_repeat": [
     {
@@ -2666,8 +2666,13 @@
       "canonical_result_sha256": "ba9d063f78b027f6aab5e45723f5dc4ea2e9df1303de4f493e780ee07d4425b7",
       "family": "binance_direct_versus_indirect_route_standalone_statistical_spread_secondary_replication_2026_08_30",
       "reason": "the_retained_independent_replication_reports_that_2026_H1_capacity_constrained_PnL_fell_about_90_percent_from_2025_every_2025_profitable_path_was_at_most_25_USD_per_trade_78_percent_of_target_minutes_had_zero_executable_thinnest_leg_volume_zero_of_86_profitable_routes_had_perpetuals_on_every_leg_and_the_only_scalable_BTC_FDUSD_and_ETH_BTC_routes_lost_money_do_not_build_a_new_minute_bar_collector_without_reproducible_route_outputs_or_a_material_fee_instrument_or_capacity_change"
+    },
+    {
+      "canonical_result_sha256": "b31cc92f4fad9dad7d8d0ea98c3275605b16069afc0d6d5882e75501025f7d14",
+      "family": "binance_broad_crypto_spot_perpetual_funding_carry_portfolio_margin_single_capital_leg_sensitivity_2026_08_30",
+      "reason": "current_official_Binance_material_supports_unified_Spot_Futures_Options_margin_cross_margining_and_position_netting_so_the_prior_duplicated_capital_assumption_was_sensitized_but_even_optimistically_removing_one_of_two_10_percent_annual_capital_hurdles_left_zero_of_17_symbols_positive_in_training_validation_and_test_zero_of_51_family_adjusted_bootstrap_lower_bounds_positive_and_best_training_TUT_negative_22_6368803653_bips_and_best_test_PYTH_negative_31_3614004566_bips_do_not_resample_the_retained_population_or_request_books_exact_current_collateral_tiers_eligibility_and_costs_remain_key_gated"
     }
   ],
-  "updated_at_utc": "2026-08-30T09:37:00.0845446Z",
+  "updated_at_utc": "2026-08-30T11:12:16.8666744Z",
   "usage_rule": "advance_the_highest_ranked_hypothesis_whose_retry_trigger_is_satisfied_otherwise_do_not_repeat_a_blocked_or_terminal_screen"
 }
