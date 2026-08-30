@@ -1,0 +1,37 @@
+{
+  "schema_version": "polymarket-crypto-interval-composition-pre-economic-failure-v1",
+  "created_at_utc": "2026-08-30T16:35:02Z",
+  "contract": {
+    "path": "docs/model-research/action-value/polymarket-crypto-interval-composition-contract-v1-2026-08-30.json",
+    "sha256": "925045d42cac0ba8b4ff0c7cdb6c0c07c70e02fbbf4c3d8ec6389559850152ba"
+  },
+  "implementation": {
+    "path": "tools/adjudicate_polymarket_crypto_interval_composition.py",
+    "sha256": "7cf4ef95f6eb644f601603b955a563ce150258904e8b1e40d83ac546e208096c"
+  },
+  "failure": {
+    "stage": "retained_schema_validation_before_economic_rows",
+    "exception_type": "RuntimeError",
+    "message": "interval outcomes must be an array",
+    "cause": "The wrapper imported a native-array-only helper, while Gamma serializes outcomes, outcomePrices, and clobTokenIds as JSON strings in this retained event response.",
+    "economic_price_values_accessed": false,
+    "result_output_created": false,
+    "contract_consumed_for_economic_decision": false
+  },
+  "correction_boundary": {
+    "raw_refetch_allowed": false,
+    "reuse_same_hash_bound_raw_bytes": true,
+    "required_change": "Parse the three known Gamma JSON-list fields fail-closed before numeric evaluation, preflight their exact retained types, and freeze a new implementation-hash-bound v2 contract.",
+    "adaptive_gate_change_allowed": false
+  },
+  "authority": {
+    "account_requests": 0,
+    "credentials_used": false,
+    "funds_used": false,
+    "network_requests": 0,
+    "orders_or_transactions": 0,
+    "protected_capture_touched": false,
+    "trading_authority": false
+  },
+  "result_sha256": "c7d758f352be3d2ae9d1f4c2957f82fa3926a7a7837f4db0ae315397182cdc83"
+}

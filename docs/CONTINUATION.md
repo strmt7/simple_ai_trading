@@ -5593,3 +5593,40 @@ result SHA-256 is
 Accepted edges remain 29, ranked hypotheses remain 44, terminal families become
 76, and registry SHA-256 becomes
 `dd82fabad42807a602c020f43d58dc7c7c37bad67b41eda47004dc4f64afd5a2`.
+
+## Polymarket BTC/ETH/SOL exact interval-composition rejection
+
+The retained delta exposed an unconsumed direction-independent identity across
+three adjacent 5-minute TWAP markets and their exactly covering 15-minute
+market for each of BTC, ETH, and SOL. Prior hash-bound prospective evidence
+proves source-continuous opening and closing TWAP values. Therefore three `Up`
+intervals imply covering `Up`, and three strict `Down` intervals imply covering
+`Down`. Buying the complement of each premise plus the implied covering outcome
+creates two exact rule-consistent four-leg packages per asset with a one-pUSD
+payout floor.
+
+The v1 offline wrapper stopped before economic rows because Gamma's nested list
+fields were JSON strings rather than native arrays. Zero requests occurred and
+no output was created. The failure is preserved rather than hidden. After an
+exact representation preflight, a new implementation-hash-bound v2 contract
+changed only the field decoder and reused the same immutable raw bytes.
+
+The corrected zero-request screen exhausted all six packages. BTC, ETH, and SOL
+up-chain costs were each 1.990 pUSD; down-chain costs were each 2.010 pUSD. Zero
+were strictly below the one-pUSD floor. No book, fee, on-chain, credential,
+account, order, fund, or protected-capture access was justified. Do not repeat
+the 11:45–12:00 ET set. Reopen only for a distinct exactly aligned interval
+partition with source-proved value continuity, complete equality semantics, and
+a strict rejection-only sub-floor package.
+
+V1 contract SHA-256 is
+`925045d42cac0ba8b4ff0c7cdb6c0c07c70e02fbbf4c3d8ec6389559850152ba`;
+failure SHA-256 is
+`c7d758f352be3d2ae9d1f4c2957f82fa3926a7a7837f4db0ae315397182cdc83`;
+v2 contract SHA-256 is
+`ceaf67b3de430e41369470188a466d30f1dc6f0879ab94ab9361acc59488f449`;
+result SHA-256 is
+`6ef1b3acc9c4a234bc7826395bca02397351c9e168d7d010145752dad33b7747`.
+Accepted edges remain 29, ranked hypotheses remain 44, terminal families become
+77, and registry SHA-256 becomes
+`869416f212c475915411f2aa4b70ae08b61d89fc0c1e8e54843c941b67b82241`.

@@ -383,6 +383,18 @@ override prose.
   bytes, and preserve independent terminal outcomes. Reuse is an efficiency
   gain, not permission to combine hypotheses, adapt gates, or promote one
   family's displayed prices as another family's executable depth.
+- For aligned binary interval markets that use one source-continuous opening
+  and closing value, three adjacent `Up` intervals imply the covering interval
+  is `Up`, and three adjacent `Down` intervals imply the covering interval is
+  `Down`. This authorizes rejection-only transitive packages only after exact
+  partitioning, source/value continuity, and equality semantics are proved;
+  matching titles or nominal horizons alone prove nothing. Screen every scoped
+  asset and both directions, then apply one deterministic global gate.
+- Gamma may encode `outcomes`, `outcomePrices`, and `clobTokenIds` as JSON
+  strings inside otherwise parsed event objects. A retained-input preflight
+  must assert the exact representation and exercise the production field
+  decoder before an implementation-hash-bound contract is frozen. Preserve a
+  pre-economic local failure and freeze a new contract; never rewrite it away.
 - Before refreshing books for a Polymarket maker-reward overlay, reconstruct the
   exact minimum-size one-leg orphan loss from retained evidence and reconcile
   each exact condition with `sponsored=true`. Gamma reward minimum and spread

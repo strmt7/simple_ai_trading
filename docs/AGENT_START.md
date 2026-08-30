@@ -2932,3 +2932,30 @@ result SHA-256 is
 Accepted edges remain 29, ranked hypotheses remain 44, terminal families become
 76, and registry SHA-256 is
 `dd82fabad42807a602c020f43d58dc7c7c37bad67b41eda47004dc4f64afd5a2`.
+
+## Polymarket exact TWAP interval-composition rejection
+
+The retained crypto delta also exposed three adjacent 5-minute markets and one
+exactly covering 15-minute market for BTC, ETH, and SOL. Source-bound opening
+and closing TWAP continuity proves two forecast-free transitive four-leg payout
+floors per asset. The first offline wrapper failed before prices because Gamma
+nested lists were JSON strings; that zero-request failure is preserved. A
+preflighted v2 decoder then screened the same immutable bytes.
+
+All six packages failed: each up-chain cost 1.990 pUSD and each down-chain cost
+2.010 pUSD for a one-pUSD floor. No book, fee, account, credential, order, fund,
+or protected-capture request was justified. Do not repeat the 11:45–12:00 ET
+set. Reopen only for a distinct exact partition with source/value continuity,
+complete tie semantics, and a strict displayed sub-floor package.
+
+V1 contract SHA-256 is
+`925045d42cac0ba8b4ff0c7cdb6c0c07c70e02fbbf4c3d8ec6389559850152ba`;
+failure SHA-256 is
+`c7d758f352be3d2ae9d1f4c2957f82fa3926a7a7837f4db0ae315397182cdc83`;
+v2 contract SHA-256 is
+`ceaf67b3de430e41369470188a466d30f1dc6f0879ab94ab9361acc59488f449`;
+result SHA-256 is
+`6ef1b3acc9c4a234bc7826395bca02397351c9e168d7d010145752dad33b7747`.
+Accepted edges remain 29, ranked hypotheses remain 44, terminal families become
+77, and registry SHA-256 is
+`869416f212c475915411f2aa4b70ae08b61d89fc0c1e8e54843c941b67b82241`.

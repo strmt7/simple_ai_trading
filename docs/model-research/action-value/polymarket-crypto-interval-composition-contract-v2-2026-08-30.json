@@ -1,0 +1,30 @@
+{
+  "schema_version": "polymarket-crypto-interval-composition-contract-v2",
+  "contract_path": "docs/model-research/action-value/polymarket-crypto-interval-composition-contract-v2-2026-08-30.json",
+  "frozen_at_utc": "2026-08-30T16:37:31Z",
+  "base_contract": {
+    "path": "docs/model-research/action-value/polymarket-crypto-interval-composition-contract-v1-2026-08-30.json",
+    "canonical_sha256": "925045d42cac0ba8b4ff0c7cdb6c0c07c70e02fbbf4c3d8ec6389559850152ba"
+  },
+  "correction": {
+    "failure_artifact_path": "docs/model-research/action-value/polymarket-crypto-interval-composition-v1-pre-economic-failure-2026-08-30.json",
+    "failure_result_sha256": "c7d758f352be3d2ae9d1f4c2957f82fa3926a7a7837f4db0ae315397182cdc83",
+    "scope": "Parse Gamma outcomes outcomePrices and clobTokenIds JSON strings without changing the frozen population payoff identity rejection gate tie break raw bytes or authority.",
+    "retained_type_preflight": "All twelve exact markets expose String String String for the three fields and the corrected JSON-list helper passed an import-mode synthetic parse before freeze."
+  },
+  "output_path": "docs/model-research/action-value/polymarket-crypto-interval-composition-result-v2-2026-08-30.json",
+  "authority": {
+    "account_requests": 0,
+    "credentials_used": false,
+    "funds_used": false,
+    "network_requests": 0,
+    "orders_or_transactions": 0,
+    "protected_capture_touched": false,
+    "trading_authority": false
+  },
+  "implementation": {
+    "path": "tools/adjudicate_polymarket_crypto_interval_composition.py",
+    "sha256": "96da826f2a78191c7b14c06297d5fb894da5ca9b02311d90a1d58df5b476f315"
+  },
+  "contract_sha256": "ceaf67b3de430e41369470188a466d30f1dc6f0879ab94ab9361acc59488f449"
+}
