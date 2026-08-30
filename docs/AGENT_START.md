@@ -84,6 +84,18 @@ safety gate, blocks Stop, or submits an order.
   legitimate organic BTC/ETH/SOL USD-M positive-commission question. Every
   toggle remains separately unauthorized. Canonical adjudication SHA-256 is
   `3a2c7358757491c8e0e9d737a76583756596db59346c5877a7bcfc1ca9e300b4`.
+- BNSOL Boost APR airdrop rewards are a distinct existing-holding lead, not an
+  accepted edge. The current official web-rendered schema separates base BNSOL
+  rewards from boost rate history, `CLAIM`/`DISTRIBUTE` history, unclaimed
+  rewards, and the `TRADE` claim action. The frozen raw page request returned
+  HTTP 202 with 2,038 bytes and zero of eight required terms, so rendered schema
+  examples are discovery only and the public floor is zero. Do not repeat or
+  alias that page, buy or retain BNSOL, double count rewards, call signed reads,
+  or claim. Reopen only on a new byte-retainable official source or both
+  designated credentials, explicit signed GET-only authority, and independently
+  existing BNSOL; claiming still requires separate authority. Canonical
+  adjudication SHA-256 is
+  `f0b6b4df8632b1cc302bdb24189c4336968be1fa9b94d1f7792205f46450c466`.
 - Binance Stocks FPSL is a materially distinct direction-independent overlay
   for U.S.-listed stocks or ETFs that are already independently owned and fully
   settled. The current FAQ says actual loaned shares accrue interest daily and

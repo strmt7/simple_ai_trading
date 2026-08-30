@@ -1,0 +1,71 @@
+{
+  "authority": {
+    "accepted_edge": false,
+    "account_state_accessed": false,
+    "claim_or_other_state_changes": 0,
+    "credentials_used": false,
+    "orders_or_trades": 0,
+    "profitability_claim": false,
+    "protected_capture_accessed": false,
+    "public_unauthenticated_read_only_logical_requests": 1
+  },
+  "candidate_identity": {
+    "description": "Exact positive Boost APR airdrop reward value attributable to BNSOL already held for independent reasons, separate from the BNSOL conversion ratio and base staking reward, after every incremental claim tax custody liquidity and operating cost.",
+    "directional_forecast_required": false,
+    "economic_identity": "incremental_reward_distribution_on_independently_existing_liquid_staking_inventory",
+    "public_forward_profit_floor": "0"
+  },
+  "created_at_utc": "2026-08-30T06:37:31.2909888Z",
+  "decision": {
+    "accepted_edge": false,
+    "deployment_ready": false,
+    "future_profit_guaranteed": false,
+    "reason": "The frozen exact local source request returned HTTP 202 with 2038 bytes and none of eight preregistered terms. The official web-rendered discovery establishes a serious lead but is not a retained raw response and cannot override the exact source contract or prove account entitlement realized reward or after-cost value.",
+    "status": "material_direction_independent_existing_holding_reward_lead_failed_exact_public_source_retention_gate"
+  },
+  "discovery_only_web_rendered_evidence": {
+    "admitted_as_positive_acceptance_evidence": false,
+    "observed_at_utc": "2026-08-30T06:35:00Z",
+    "source_url": "https://developers.binance.com/en/docs/catalog/investment-and-services-staking/api/rest-api/sol-staking",
+    "structured_facts": [
+      "The rate-history response has a boostRewards array with boostAPR and rewardsAsset fields.",
+      "The boost-history query distinguishes CLAIM and DISTRIBUTE and returns token amount bnsolHolding and status.",
+      "The unclaimed-reward query returns amount and rewardsAsset.",
+      "The claim endpoint is signed TRADE and requires separate Spot and Margin Trading API-key permission."
+    ],
+    "web_extraction_line_ranges": [
+      "63-127",
+      "224-283",
+      "437-585",
+      "1048-1130"
+    ]
+  },
+  "frozen_public_source_outcome": {
+    "contract_path": "docs/model-research/action-value/binance-bnsol-boost-airdrop-existing-holding-overlay-source-contract-v1-2026-08-30.json",
+    "contract_sha256": "516c24215876193bea7f0552b86e8c7c2180d86dc343c1d636f5a134f83a7350",
+    "journal_path": "docs/model-research/action-value/binance-bnsol-boost-airdrop-existing-holding-overlay-journal-v1-2026-08-30.json",
+    "payload_bytes": 2038,
+    "payload_sha256": "ab9709b4962ccf47e21959a0bee8b8d92b4f181049877b2c44c8f4546bc37a6d",
+    "raw_path": "docs/model-research/action-value/raw/binance-bnsol-boost-airdrop-existing-holding-overlay-v1-2026-08-30/01-official-sol-staking-api.raw.html",
+    "required_terms_found": 0,
+    "required_terms_total": 8,
+    "status_code": 202
+  },
+  "retained_current_official_api_index": {
+    "path": "docs/model-research/binance/raw/spot-block-matching-cost-overlay-v1-2026-08-30/03-agent-native-index.raw.txt",
+    "required_endpoint_fragments": [
+      "POST /sapi/v1/sol-staking/sol/claim",
+      "GET /sapi/v1/sol-staking/sol/history/bnsolRewardsHistory",
+      "GET /sapi/v1/sol-staking/sol/history/boostRewardsHistory",
+      "GET /sapi/v1/sol-staking/sol/history/unclaimedRewards"
+    ],
+    "sha256": "944e132d3523c8a03abcac2f7ddb85802107e45161470885b7a8785fd4fdb15d"
+  },
+  "result_sha256": "f0b6b4df8632b1cc302bdb24189c4336968be1fa9b94d1f7792205f46450c466",
+  "retry_contract": {
+    "next_action": "Do not repeat or alias the consumed page. Reopen only on materially new byte-retainable official boost-reward terms, or when both designated credentials, explicit signed GET-only authority, and independently existing BNSOL held for unrelated reasons all exist. Read only rate history boost CLAIM and DISTRIBUTE history unclaimed rewards BNSOL base rewards and account holding; reject unless exact positive non-double-counted after-cost value exists. Claiming remains a separate TRADE state change requiring separate explicit authority.",
+    "retry_trigger": "material_new_byte_retainable_official_BNSOL_boost_reward_terms_or_both_designated_credentials_plus_explicit_signed_GET_only_authority_plus_independently_existing_BNSOL_held_for_unrelated_reasons",
+    "terminal_without_trigger": true
+  },
+  "schema_version": "binance-bnsol-boost-airdrop-existing-holding-overlay-source-failure-adjudication-v1"
+}

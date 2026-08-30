@@ -1,0 +1,34 @@
+{
+  "completed_logical_request_count": 1,
+  "contract": {
+    "contract_sha256": "516c24215876193bea7f0552b86e8c7c2180d86dc343c1d636f5a134f83a7350",
+    "path": "docs/model-research/action-value/binance-bnsol-boost-airdrop-existing-holding-overlay-source-contract-v1-2026-08-30.json"
+  },
+  "journal_sha256": "f4f8e88f867bd9dfc6a24c4dfe2e7aece71c1bd44405b47cebc6f2cd7f9490c4",
+  "next_request": null,
+  "request": {
+    "classification": "public_unauthenticated_read_only_documentation_GET",
+    "final_url": "https://developers.binance.com/en/docs/catalog/investment-and-services-staking/api/rest-api/sol-staking",
+    "method": "GET",
+    "received_after_utc": "2026-08-30T06:37:31.2909888Z",
+    "requested_before_utc": "2026-08-30T06:37:31.1728160Z",
+    "response": {
+      "payload_bytes": 2038,
+      "payload_sha256": "ab9709b4962ccf47e21959a0bee8b8d92b4f181049877b2c44c8f4546bc37a6d",
+      "raw_path": "docs/model-research/action-value/raw/binance-bnsol-boost-airdrop-existing-holding-overlay-v1-2026-08-30/01-official-sol-staking-api.raw.html",
+      "required_term_matches": {
+        "/sapi/v1/sol-staking/sol/history/boostrewardshistory": false,
+        "/sapi/v1/sol-staking/sol/history/ratehistory": false,
+        "/sapi/v1/sol-staking/sol/history/unclaimedrewards": false,
+        "bnsolholding": false,
+        "boostapr": false,
+        "claim boost apr airdrop rewards": false,
+        "distribute": false,
+        "rewardsasset": false
+      },
+      "status_code": 202
+    }
+  },
+  "schema_version": "binance-bnsol-boost-airdrop-existing-holding-overlay-journal-v1",
+  "status": "consumed_source_gate_failed_no_retry_or_alias"
+}
