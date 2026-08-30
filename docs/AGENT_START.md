@@ -2807,3 +2807,27 @@ Canonical zero-network terminal adjudication SHA-256 is
 Accepted edges remain 29, ranked hypotheses remain 44, terminal families become
 71, and registry SHA-256 is
 `fdfaac8e3bc873bd07e44e89efb290ebc0bbd7766157d11b6b614875345adead`.
+
+## Polymarket Bitcoin cross-event range/threshold boundary gate
+
+The current official surface deploys a Bitcoin September 4 strict-above
+threshold event over the same Binance BTC/USDT noon-ET close used by the
+retained fixed-NegRisk range event. It does not create the tempting exact
+subset equality. At a close exactly equal to threshold `T`, threshold YES is
+zero while the higher range bin is one. The exact equality gate therefore
+fails before any outcome-sensitive request.
+
+The weaker package `NO(T)` plus every range-bin YES at or above `T` has an
+optimistic common-rule one-pUSD floor and pays two only at exact equality. That
+is a new structural research lead, not current economics: the exact range Gamma
+request is consumed, discovery prices are excluded, and no refetch is permitted
+merely to synchronize it. Reopen only on a distinct nonconsumed same-source,
+same-instant BTC/ETH/SOL range-plus-threshold pair with complete rules,
+contemporaneous frozen populations, and a displayed package strictly below one
+pUSD before exact depth, fees, resolution risk, and every cost.
+
+Canonical boundary adjudication SHA-256 is
+`e7290745dac6aac63a0363a98ac9596280548de7093e4ff7261f34cc95eb3ca8`.
+Accepted edges remain 29, ranked hypotheses remain 44, terminal families become
+72, and registry SHA-256 is
+`f0f70eb60bc1ca13d899a3c01930bdc37838c874e875636722c5bd2039f1eec1`.

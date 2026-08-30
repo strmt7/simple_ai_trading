@@ -5424,3 +5424,37 @@ Canonical zero-network terminal adjudication SHA-256 is
 Accepted edges remain 29, ranked hypotheses remain 44, terminal families become
 71, and registry SHA-256 becomes
 `fdfaac8e3bc873bd07e44e89efb290ebc0bbd7766157d11b6b614875345adead`.
+
+## Polymarket Bitcoin cross-event range/threshold boundary rejection
+
+The newly deployed official "Bitcoin above ___ on September 4?" surface and
+the retained "Bitcoin price on September 4?" fixed-NegRisk event refer to the
+same Binance BTC/USDT one-minute close at noon ET. The apparently exact mapping
+between a strict-above threshold and cumulative upper range bins is false at an
+observable boundary: at `x = T`, threshold YES is zero while the higher range
+bin is one. Rank 31's deterministic subset-indicator equality trigger therefore
+does not fire.
+
+A weaker direction-independent coverage package survives under consistent
+rules: `NO(T)` plus every range YES beginning at `T` or higher pays one pUSD
+below `T`, two at exact equality, and one above `T`. Independent condition
+disputes, cancellations, resolution divergence, and delay remain additional
+downside. Current economics were deliberately not manufactured: the exact BTC
+range Gamma request is consumed, the official-page values were discovery only,
+and no venue endpoint, book, fee, on-chain, account, credential, order, fund, or
+protected-capture request occurred.
+
+Do not refetch either September 4 event or use discovery prices. Reopen this
+coverage relation only on a distinct nonconsumed BTC, ETH, or SOL range-plus-
+threshold pair with the same exact source observation, complete boundary and
+exceptional-settlement rules, contemporaneous frozen complete populations, and
+at least one rejection-only displayed `NO(T)` plus cumulative upper-range YES
+sum strictly below the optimistic one-pUSD floor. Any survivor still requires
+exact simultaneous depth, fee, size, freshness, adverse-tick, cancellation,
+resolution, and all-cost proof.
+
+Canonical boundary adjudication SHA-256 is
+`e7290745dac6aac63a0363a98ac9596280548de7093e4ff7261f34cc95eb3ca8`.
+Accepted edges remain 29, ranked hypotheses remain 44, terminal families become
+72, and registry SHA-256 becomes
+`f0f70eb60bc1ca13d899a3c01930bdc37838c874e875636722c5bd2039f1eec1`.

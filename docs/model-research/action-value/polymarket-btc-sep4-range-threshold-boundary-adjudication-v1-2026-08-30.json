@@ -1,0 +1,75 @@
+{
+  "schema_version": "polymarket-crypto-range-threshold-boundary-adjudication-v1",
+  "created_at_utc": "2026-08-30T15:32:58.2720811Z",
+  "question": "Do the Bitcoin September 4 fixed-NegRisk range bins and same-observation strict-above threshold markets satisfy the exact deterministic subset-indicator equality required to justify a current cross-event parity screen?",
+  "sources": {
+    "retained_range_event": {
+      "path": "data/polymarket-btc-sep4-price-range-exact-negrisk-prefilter-v1/raw/event.json",
+      "sha256": "335c6297ccf49d966fb1cbebe244b2feec77edbea67e83b127ade3eb6a99f1e9",
+      "rule": "The Binance BTC/USDT one-minute close at noon ET resolves exact values between brackets to the higher range bracket."
+    },
+    "retained_threshold_rule_template": {
+      "path": "data/polymarket-eth-sep4-threshold-ladder-prefilter-v1/raw/event.json",
+      "sha256": "84a0536e067b5f72a5a4c9fc1ac4a215316b51a742a5f7e781ab37e7fbe5b1be",
+      "rule": "A threshold YES requires the same venue candle close to be strictly higher than the named threshold; equality resolves NO."
+    },
+    "current_exact_btc_threshold_deployment_discovery": {
+      "url": "https://polymarket.com/event/bitcoin-above-on-september-4-2026",
+      "observed_title": "Bitcoin above ___ on September 4?",
+      "role": "official deployment and rule discovery only; displayed values were excluded from every economic calculation and no raw response was retained"
+    }
+  },
+  "mechanical_boundary_proof": {
+    "definitions": {
+      "threshold_yes_T": "1 when x > T and 0 when x <= T",
+      "cumulative_upper_range_T": "the sum of the mutually exclusive range-bin YES indicators whose covered values begin at T; it is 1 when x >= T because equality enters the higher bracket"
+    },
+    "states": [
+      {
+        "state": "x_below_T",
+        "threshold_yes_T": 0,
+        "threshold_no_T": 1,
+        "cumulative_upper_range_T": 0,
+        "no_threshold_plus_upper_range_payout": 1
+      },
+      {
+        "state": "x_equals_T",
+        "threshold_yes_T": 0,
+        "threshold_no_T": 1,
+        "cumulative_upper_range_T": 1,
+        "no_threshold_plus_upper_range_payout": 2
+      },
+      {
+        "state": "x_above_T",
+        "threshold_yes_T": 1,
+        "threshold_no_T": 0,
+        "cumulative_upper_range_T": 1,
+        "no_threshold_plus_upper_range_payout": 1
+      }
+    ],
+    "exact_subset_indicator_equality": false,
+    "dominance_relation": "threshold_yes_T <= cumulative_upper_range_T for every source-consistent state, with strict inequality at x = T",
+    "surviving_coverage_identity": "threshold_no_T plus every upper-range YES has an optimistic rule-consistent one-pUSD floor and pays two pUSD only at x = T",
+    "exceptional_settlement_limit": "Independent condition disputes, cancellations, inconsistent resolutions, or source divergence can weaken the optimistic common-rule floor and remain unqualified."
+  },
+  "adjudication": {
+    "status": "current_pair_rejected_before_outcome_sensitive_market_data",
+    "reason": "The current pair fails rank 31's deterministic subset-indicator equality gate. The weaker coverage identity is a distinct research lead, but the exact Bitcoin range Gamma request is already consumed and may not be refetched merely to synchronize prices; discovery values are not economic evidence.",
+    "public_unauthenticated_search_requests": 1,
+    "venue_http_requests": 0,
+    "book_requests": 0,
+    "fee_requests": 0,
+    "onchain_requests": 0,
+    "account_requests": 0,
+    "signed_requests": 0,
+    "credentials_used": false,
+    "orders_or_transactions": 0,
+    "funds_used": false,
+    "protected_capture_touched": false,
+    "accepted_edge": false,
+    "deployment_ready": false,
+    "profitability_claim": false
+  },
+  "retry_policy": "Do not refetch either consumed September 4 event or use search-result prices. Reopen only for a distinct nonconsumed BTC, ETH, or SOL range-plus-threshold pair that uses the same exact source observation, has complete boundary and exceptional-settlement rules, is captured contemporaneously under a frozen complete-population contract, and has at least one rejection-only displayed NO(T) plus cumulative upper-range YES sum strictly below the optimistic one-pUSD floor. Any survivor still requires exact simultaneous books, fees, size, freshness, adverse-tick, cancellation, resolution, and all-cost proof.",
+  "result_sha256": "e7290745dac6aac63a0363a98ac9596280548de7093e4ff7261f34cc95eb3ca8"
+}
