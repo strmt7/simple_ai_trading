@@ -23,14 +23,15 @@ safety gate, blocks Stop, or submits an order.
 
 ### Latest efficient structural screen
 
-The frozen zero-request BTC/ETH/SOL same-venue funding-dispersion test is
-terminally rejected. Across 210 retained Binance funding rows per asset and 209
-causal decisions, even a perfect-foresight, zero-execution maximum-minus-minimum
-funding oracle failed the two-leg capital hurdle in training, validation, and
-test by `151.7836022831050228310502284`, `51.80332876712328767123287673`, and
-`57.77722876712328767123287673` bips respectively. The causal lagged strategy
-also failed all roles. No price, book, account, credential, or trading request
-was justified or made; do not resample this exact retained population.
+The Polymarket BTC/ETH/SOL interval-composition family has a mechanically
+verified one-pUSD payoff floor across all 50 packages in 25 retained aligned
+settlements, with zero violations. It remains unaccepted: the current displayed
+best package cost 1.990 pUSD and no atomic executable sub-floor acquisition is
+proved. One separately frozen 48-condition historical trade request returned
+HTTP 408 before exposing any row. Never retry, split, narrow, paginate, reorder,
+or alias that consumed population. Reopen only for a future distinct aligned
+population that passes a strict rejection-only sub-floor gate, followed by a
+prospectively frozen exact live CLOB package capture.
 
 ## Non-Negotiable Gates
 
@@ -2948,6 +2949,22 @@ or protected-capture request was justified. Do not repeat the 11:45–12:00 ET
 set. Reopen only for a distinct exact partition with source/value continuity,
 complete tie semantics, and a strict displayed sub-floor package.
 
+A distinct one-use historical execution-persistence contract then selected 12
+non-overlapping BTC/ETH/SOL aligned sets, 48 exact conditions, and 24 packages
+from retained August 26 markets. Its only Data API trade request returned HTTP
+408 after about seven seconds and exposed zero rows. The raw 48-byte error and
+request journal are retained. This exact query is terminal: do not retry, split,
+narrow, paginate, reorder, or alias it.
+
+Without another request, a separately frozen retained-settlement audit tested
+all 25 complete aligned sets available across the six immutable sources: 100
+terminal markets and 50 packages. All 50 realized payouts met the one-pUSD
+floor; the realized range was one to three pUSD. This strengthens the structural
+payoff identity but proves neither sub-floor acquisition, atomic execution,
+fees, capacity, owned fills, profit, nor deployment readiness. Only a future
+distinct aligned population with strict rejection-only sub-floor economics may
+trigger a prospective exact live CLOB package capture.
+
 V1 contract SHA-256 is
 `925045d42cac0ba8b4ff0c7cdb6c0c07c70e02fbbf4c3d8ec6389559850152ba`;
 failure SHA-256 is
@@ -2956,6 +2973,16 @@ v2 contract SHA-256 is
 `ceaf67b3de430e41369470188a466d30f1dc6f0879ab94ab9361acc59488f449`;
 result SHA-256 is
 `6ef1b3acc9c4a234bc7826395bca02397351c9e168d7d010145752dad33b7747`.
+Historical-trade contract SHA-256 is
+`799d310c2fd56098fb8cd208e79dc88a338462dfb6ee0ee4f2c9db28d951c65d`;
+failure SHA-256 is
+`5dcacfa8c9f1b953a9fa28e380e43cfb8c0107361426f67d5b4adeb83dabdfb1`;
+settlement contract SHA-256 is
+`268301993f1ace29a9bf99d936be5f74101e26e72b61b25e2a272d7ee7146747`;
+settlement result SHA-256 is
+`81a86ae5a71708516b9f23fbbae0b51cbf337691c64c655e4eb03508a032d84a`.
+Consumed runner byte lineage SHA-256 is
+`c8fde55efcd61e8fa376d3b5184ca6013f816cf8d74f1f706aad11032e0c297b`.
 Accepted edges remain 29, ranked hypotheses remain 44, terminal families become
-77, and registry SHA-256 is
-`869416f212c475915411f2aa4b70ae08b61d89fc0c1e8e54843c941b67b82241`.
+78, and registry SHA-256 is
+`809c82d3233fb76b8fa41c1ba1cd7e7cb168ee8932a71098870d5f5b7e2ab04a`.

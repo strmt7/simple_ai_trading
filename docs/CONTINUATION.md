@@ -5,18 +5,21 @@ Development belongs only on `main`; do not create another development branch.
 
 ## Latest Edge R&D Checkpoint
 
-- The frozen zero-network BTC/ETH/SOL same-venue funding-dispersion test used
-  210 retained Binance funding rows per asset and 209 causal decisions. Its
-  perfect-foresight, zero-execution funding oracle still missed the frozen
-  two-leg capital hurdle by `151.7836022831050228310502284` bips in training,
-  `51.80332876712328767123287673` in validation, and
-  `57.77722876712328767123287673` in test. The causal lagged strategy lost
-  `2094.011602283105022831050236`, `687.4387287671232876712328758`, and
-  `483.2568287671232876712328758` bips after frozen execution and capital
-  hurdles. The exact family is terminal; no price, book, account, credential,
-  or trading request was made or justified. Reopen only after a material
-  funding-mechanism, fee, margin, portfolio-netting, or capital-cost change
-  capable of clearing the perfect-foresight deficits.
+- The exact Polymarket BTC/ETH/SOL interval-composition identity now has a
+  retained settlement audit across 25 aligned sets, 100 terminal markets, and
+  50 direction-independent four-leg packages. Every package paid at least its
+  one-pUSD floor; observed payouts ranged from one to three pUSD. This supports
+  the payoff identity, not profitability: the current displayed screen still
+  had a 1.990 pUSD best package for a one-pUSD floor, and no atomic executable
+  sub-floor acquisition is proved.
+- The separately frozen one-use historical trade test made one public
+  unauthenticated request for 48 exact condition IDs. It returned HTTP 408 and
+  exposed zero trade rows. Preserve the raw error and journal; never retry,
+  split, narrow, paginate, reorder, or alias that consumed population. Reopen
+  only for a future distinct aligned population that first passes a strict
+  rejection-only sub-floor gate, then freeze a prospective exact live CLOB
+  package capture. No account, credential, order, fund, on-chain, or protected
+  capture access occurred.
 
 ## Closeout State
 
@@ -5630,3 +5633,36 @@ result SHA-256 is
 Accepted edges remain 29, ranked hypotheses remain 44, terminal families become
 77, and registry SHA-256 becomes
 `869416f212c475915411f2aa4b70ae08b61d89fc0c1e8e54843c941b67b82241`.
+
+### Interval-composition persistence and settlement follow-up
+
+A separately frozen one-use historical persistence test selected 12
+non-overlapping BTC/ETH/SOL aligned sets from retained August 26 markets: 48
+exact conditions and 24 packages. Its only public unauthenticated Data API
+trade request returned HTTP 408 after about seven seconds and exposed zero
+trade rows. The raw 48-byte error and request journal are retained. Never retry,
+split, narrow, paginate, reorder, or alias this consumed population.
+
+A distinct zero-network contract then audited every complete aligned set across
+the six immutable retained market sources. All 50 packages in 25 sets and 100
+terminal markets paid at least the one-pUSD floor; observed payouts ranged from
+one to three pUSD. This materially supports the payoff identity but proves
+neither sub-floor acquisition, atomic execution, fees, capacity, owned fills,
+profit, nor deployment readiness. Reopen only for a future distinct aligned
+population that first passes a strict rejection-only sub-floor gate, then freeze
+one prospective exact live CLOB package capture.
+
+Historical-trade contract SHA-256 is
+`799d310c2fd56098fb8cd208e79dc88a338462dfb6ee0ee4f2c9db28d951c65d`;
+failure SHA-256 is
+`5dcacfa8c9f1b953a9fa28e380e43cfb8c0107361426f67d5b4adeb83dabdfb1`;
+settlement contract SHA-256 is
+`268301993f1ace29a9bf99d936be5f74101e26e72b61b25e2a272d7ee7146747`;
+settlement result SHA-256 is
+`81a86ae5a71708516b9f23fbbae0b51cbf337691c64c655e4eb03508a032d84a`.
+The exact pre-format runner bytes remain reconstructable through lineage
+artifact SHA-256
+`c8fde55efcd61e8fa376d3b5184ca6013f816cf8d74f1f706aad11032e0c297b`.
+Accepted edges remain 29, ranked hypotheses remain 44, terminal families become
+78, and registry SHA-256 becomes
+`809c82d3233fb76b8fa41c1ba1cd7e7cb168ee8932a71098870d5f5b7e2ab04a`.

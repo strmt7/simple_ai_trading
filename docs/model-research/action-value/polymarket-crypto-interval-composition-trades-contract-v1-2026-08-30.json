@@ -1,0 +1,78 @@
+{
+  "schema_version": "polymarket-crypto-interval-composition-trades-contract-v1",
+  "contract_path": "docs/model-research/action-value/polymarket-crypto-interval-composition-trades-contract-v1-2026-08-30.json",
+  "frozen_at_utc": "2026-08-30T16:48:36Z",
+  "question": "Across four non-overlapping retained hourly cohorts, did any exact BTC, ETH, or SOL interval-composition package have all four minimum-size taker-buy trade prints within one second at a gross price sum strictly below its one-pUSD payout floor?",
+  "prior_payoff_evidence": {
+    "path": "docs/model-research/action-value/polymarket-crypto-interval-composition-result-v2-2026-08-30.json",
+    "result_sha256": "6ef1b3acc9c4a234bc7826395bca02397351c9e168d7d010145752dad33b7747",
+    "role": "exact forecast-independent interval transitivity and current-population rejection"
+  },
+  "retained_market_sources": [
+    {"path": "data/polymarket-resolution-reward-v1/recent-ended-closed-crypto-markets.raw.json", "sha256": "f873fd89a8e9e9b6e00c8dace9df17bbcc3c38c91bcdc9040794f8ef87c0e19a"},
+    {"path": "data/polymarket-finalized-redemption-latency-v1/prior-page-markets.raw.json", "sha256": "9a0a4a74a1dafc3b056db33d6ea0775e661defecdf8581aae54daa452d172c14"},
+    {"path": "data/polymarket-finalized-redemption-latency-v1/prior-hour-page-markets.raw.json", "sha256": "fda709705d09e889296460309b3b3414f2f3af805abba0bd4d2e64d6b542a3e7"},
+    {"path": "data/polymarket-finalized-redemption-latency-v1/hour-09-markets.raw.json", "sha256": "abf3b06ab6be8576a46b471b7c382c36efd9af8667519aabe30479e4ed59287c"},
+    {"path": "data/polymarket-finalized-redemption-latency-v1/hour-10-markets.raw.json", "sha256": "47c6c1f5b5aa77b04bbfb676dc3858d67e146ae1717afecd9ef028af27307d09"},
+    {"path": "data/polymarket-finalized-redemption-latency-v1/hour-11-markets.raw.json", "sha256": "1f4f4e75bac6ae367ca9186c17dfacab83788e9ae8f7c3e46d21c3a57cff8c23"}
+  ],
+  "selection": {
+    "rule": "Use the complete BTC ETH SOL aligned sets beginning at 08:45 09:45 10:45 and 11:45 UTC on 2026-08-26. These four non-overlapping hourly cohorts were fixed from retained market metadata before trade access.",
+    "trade_outcomes_viewed_before_freeze": false,
+    "trade_values_viewed_before_freeze": false
+  },
+  "selected_start_epochs": [1787733900, 1787737500, 1787741100, 1787744700],
+  "assets": ["BTC", "ETH", "SOL"],
+  "official_source": {
+    "documentation_url": "https://docs.polymarket.com/api-reference/core/get-trades-for-a-user-or-markets",
+    "openapi_url": "https://docs.polymarket.com/api-reference/data-api-openapi.yaml",
+    "retained_documentation_path": "docs/model-research/action-value/raw/polymarket-organic-taker-rebate-v1/11-api-trades.html",
+    "retained_documentation_sha256": "8649b32d6a3ce6f6a3176dccee45b3256e7349ead3429a073ecf6994149e42ca",
+    "source_contract": "GET /trades accepts a comma-separated market condition-ID array, limit at most 10000, offset, takerOnly, and side."
+  },
+  "request": {
+    "base_url": "https://data-api.polymarket.com/trades",
+    "expected": {
+      "base_url": "https://data-api.polymarket.com/trades",
+      "limit": "10000",
+      "offset": "0",
+      "takerOnly": "true",
+      "market_condition_count": 48,
+      "market_csv_sha256": "2e14fb1d22abf4fa0b278b0e48e225a41ceaed36ceda4615a703d49513b69acc"
+    }
+  },
+  "decision": {
+    "expected_market_count": 48,
+    "expected_set_count": 12,
+    "expected_package_count": 24,
+    "minimum_trade_size_shares": "exact maximum market minimum, expected five",
+    "synchronization_window_seconds": 1,
+    "strict_signal_gate": "Every package token must have a taker BUY row at or above minimum size within one second and their price sum must be strictly below one pUSD.",
+    "complete_response_gate": "Response row count must be strictly below the 10000 row limit; equality is incomplete and authorizes no retry or claim.",
+    "historical_role": "rejection-only recurrence signal, never atomic owned execution or executable-depth proof",
+    "conditional_next_step": "Only a strict signal may schedule one separately frozen prospective exact CLOB capture on a distinct aligned future set.",
+    "accepted_edge": false,
+    "profitability_proved": false
+  },
+  "outputs": {
+    "raw_path": "data/polymarket-crypto-interval-composition-trades-v1/raw/trades.json",
+    "journal_path": "data/polymarket-crypto-interval-composition-trades-v1/request-journal.jsonl",
+    "result_path": "docs/model-research/action-value/polymarket-crypto-interval-composition-trades-result-v1-2026-08-30.json"
+  },
+  "authority": {
+    "account_requests": 0,
+    "credentials_used": false,
+    "funds_used": false,
+    "network_requests": 1,
+    "orders_or_transactions": 0,
+    "protected_capture_touched": false,
+    "public_unauthenticated_read_only_requests": 1,
+    "trading_authority": false
+  },
+  "implementation": {
+    "path": "tools/screen_polymarket_crypto_interval_composition_trades.py",
+    "sha256": "ed9e65217e200549afbd76f691036e1a7c75cd1ef2389f8d91478649fb55eedf"
+  },
+  "retry_policy": "This exact 48-condition trade request is one-use. Preserve any empty partial limit-hit mismatched or failed response and do not paginate narrow alias or refetch to obtain a signal.",
+  "contract_sha256": "799d310c2fd56098fb8cd208e79dc88a338462dfb6ee0ee4f2c9db28d951c65d"
+}
