@@ -1,0 +1,119 @@
+{
+  "schema_version": "binance-spot-fix-unordered-execution-risk-candidate-v1",
+  "created_at_utc": "2026-08-30T20:52:11.2249261Z",
+  "question": "Can Binance Spot FIX order entry provide a stable direction-independent execution or stale-order-risk advantage for independently required BTC, ETH, or SOL orders?",
+  "retained_current_terms": {
+    "venue_scope": "Spot_only",
+    "order_entry_endpoint": "tcp+tls://fix-oe.binance.com:9000",
+    "tls_required": true,
+    "SNI_and_hostname_validation_required_for_reliable_connectivity": true,
+    "key_type": "Ed25519_only",
+    "required_permission": "FIX_API",
+    "message_handling_modes": [
+      "UNORDERED",
+      "SEQUENTIAL"
+    ],
+    "unordered_official_characterization": "should_offer_better_performance_when_multiple_messages_are_in_flight",
+    "execution_report_official_characterization": "FIX_API_should_give_better_performance_for_ExecutionReport_push",
+    "order_entry_message_limit_per_connection": {
+      "messages": 10000,
+      "seconds": 10
+    },
+    "order_entry_connection_attempt_limit": {
+      "attempts": 15,
+      "seconds": 30
+    },
+    "maximum_concurrent_order_entry_connections_per_account": 10,
+    "unfilled_order_count_scope": "account_not_connection",
+    "mass_cancel_scope": "one_symbol_all_account_orders_including_orders_from_other_connections",
+    "minimum_heartbeat_seconds": 5,
+    "maximum_heartbeat_seconds": 60,
+    "maintenance_signal": "News_message_every_10_seconds_until_disconnection",
+    "backend_timeout_seconds": 10,
+    "backend_timeout_execution_status": "unknown_until_user_data_or_order_status_reconciliation",
+    "drop_copy_delay_seconds": 1,
+    "testnet_or_demo_FIX_order_entry_support_in_retained_source": false
+  },
+  "hypothesis_adjudication": {
+    "automatic_cancel_on_disconnect_documented": false,
+    "automatic_cancel_on_disconnect_profit_claim_terminal": true,
+    "unordered_multi_inflight_execution_candidate": true,
+    "faster_execution_report_candidate": true,
+    "cross_connection_symbol_mass_cancel_risk_control": true,
+    "market_direction_forecast_required": false,
+    "accepted_edge": false,
+    "deployment_ready": false,
+    "profitability_claim": false,
+    "standalone_after_cost_profit_floor_USDT": "0",
+    "interpretation": "The retained current official contract establishes exchange-native concurrency, response, and mass-cancel controls, but it does not document automatic order cancellation when a FIX session disconnects. Better performance is qualitative, not a measured latency or fill floor."
+  },
+  "blocking_evidence": [
+    "material_official_Spot_testnet_or_Demo_FIX_order_entry_support_or_a_repo_scope_change_separately_authorized_by_the_user",
+    "a_separately_provisioned_Ed25519_key_with_FIX_API_permission_available_only_through_the_designated_ephemeral_environment",
+    "explicit_separate_testnet_Demo_or_paper_FIX_session_and_order_authority_for_an_independently_required_BTCUSDT_ETHUSDT_or_SOLUSDT_order_flow",
+    "one_precommitted_same_host_same_symbol_FIX_UNORDERED_versus_WebSocket_or_REST_comparator_with_identical_order_intents_message_inflight_count_source_and_receive_clocks",
+    "owned_ack_execution_report_cancel_and_fill_lineage_with_timeout_unknown_state_reconciliation",
+    "strictly_positive_after_cost_latency_stale_fill_adverse_selection_or_rejection_value_across_regimes_and_capacity"
+  ],
+  "prohibited_shortcuts": [
+    "treating_disconnect_or_logout_as_automatic_order_cancellation",
+    "calling_should_offer_better_performance_a_measured_latency_fill_or_profit_floor",
+    "using_the_one_second_delayed_Drop_Copy_session_as_a_low_latency_execution_report_comparator",
+    "multiplying_per_connection_message_limits_by_ten_without_account_unfilled_order_and_matching_engine_limits",
+    "using_the_user_supplied_non_Ed25519_testnet_credential_for_FIX",
+    "opening_a_production_FIX_API_session_or_placing_canceling_or_mass_canceling_orders_without_separate_explicit_authority"
+  ],
+  "adjudication": {
+    "current_status": "direction_independent_FIX_UNORDERED_execution_report_and_cross_connection_symbol_mass_cancel_candidate_only",
+    "next_action": "do_not_repeat_or_alias_the_consumed_FIX_source_only_on_confirmed_Spot_testnet_or_Demo_FIX_order_entry_support_with_a_designated_ephemeral_Ed25519_FIX_API_key_and_explicit_separate_session_plus_order_authority_freeze_one_same_host_same_symbol_multi_inflight_FIX_UNORDERED_versus_non_FIX_comparator_and_reject_unless_owned_after_cost_value_is_strictly_positive",
+    "retry_trigger": "material_official_Spot_testnet_or_Demo_FIX_order_entry_support_or_FIX_message_handling_execution_report_mass_cancel_permission_limit_or_disconnect_semantics_change_or_confirmed_supported_non_live_FIX_paper_harness_plus_a_designated_ephemeral_Ed25519_FIX_API_key_explicit_separate_session_and_order_authority_and_an_independently_required_BTCUSDT_ETHUSDT_or_SOLUSDT_multi_inflight_comparator"
+  },
+  "authority": {
+    "account_requests": 0,
+    "credentials_used": false,
+    "funds_used": false,
+    "orders_or_transactions": 0,
+    "protected_capture_touched": false,
+    "public_unauthenticated_read_only_requests": 1,
+    "signed_requests": 0,
+    "trading_authority": false
+  },
+  "sources": {
+    "contract": {
+      "path": "docs/model-research/action-value/binance-spot-fix-session-risk-overlay-source-contract-v1-2026-08-30.json",
+      "contract_sha256": "c24d5ec6864d2cde0300362f9916dc2f3d640310d7b9289c8ccf798ef45e9f90",
+      "file_sha256": "e1cea5844e911310cae34fdfe808044b130e85082a7b45c5f359fabc04ca79c5"
+    },
+    "source_result": {
+      "path": "docs/model-research/action-value/binance-spot-fix-session-risk-overlay-source-result-v1-2026-08-30.json",
+      "result_sha256": "644f989972e911fe04ef70e848cbdd7fc609e742accdcf14b8d7d73253f039b9",
+      "file_sha256": "08e808959b9ba205a07ea595c55a166222428dacbd21f121d7f434932d825a7d"
+    },
+    "source_receipt": {
+      "original_uncommitted_path": "docs/model-research/binance/raw/spot-fix-session-risk-overlay-v1-2026-08-30/01-fix-api.raw.md",
+      "response_bytes": 168282,
+      "response_sha256": "21c02540a73f749a9ff8dae4900ed9f3123bf221ec6fcf6235e0d71b89ffa863",
+      "disposition": "full_payload_removed_after_verified_secret_free_extraction_because_it_contained_an_unrelated_public_example_private_key"
+    },
+    "retained_FIX_excerpt": {
+      "path": "docs/model-research/binance/raw/spot-fix-session-risk-overlay-v1-2026-08-30/01-fix-api.secret-free-excerpt.raw.md",
+      "sha256": "bbfe12cad637e474eb41ed69abe9294090b7e31c24fc93b92d7aa1e1afafa60d",
+      "original_source_line_ranges": [
+        [75, 224],
+        [319, 360],
+        [700, 716],
+        [915, 940]
+      ]
+    },
+    "secret_free_extraction_manifest": {
+      "path": "docs/model-research/binance/raw/spot-fix-session-risk-overlay-v1-2026-08-30/02-secret-free-extraction-manifest.json",
+      "manifest_sha256": "d8f4536270e600f43ebc3a6b06c9688b34ab001dfc540d9eb5ba62fd60ac80eb",
+      "file_sha256": "14b99eb080f68ad3fd46d307b187c5e9a58b69b96698d5756519b37b82f53148"
+    },
+    "request_journal": {
+      "path": "docs/model-research/binance/raw/spot-fix-session-risk-overlay-v1-2026-08-30/00-request-journal.jsonl",
+      "sha256": "4f72cb02de2f3a4e9856dc4698509c02df7861f7b44a7044fae59f2fc4884b4c"
+    }
+  },
+  "result_sha256": "177d9d119c8a57c86df03b136bdfc2c880b0220ac50c51bce20e84cbe21f1755"
+}

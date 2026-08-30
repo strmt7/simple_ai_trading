@@ -37,6 +37,20 @@ Development belongs only on `main`; do not create another development branch.
   SHA-256 is
   `6b01c825831657d8dac8a33efb196bbd63d64698288e15cf9b1ff27be9b4aa77`.
 
+- Binance Spot FIX now has a source-bound execution-risk candidate. The retained
+  current official contract says `UNORDERED` should perform better with multiple
+  messages in flight, FIX ExecutionReport push should perform better, and one
+  mass-cancel message cancels every account order on one symbol across
+  connections. It documents no automatic cancel-on-disconnect, no non-live
+  order-entry support, and no measured latency, fill, or profit floor. The
+  168,282-byte receipt hash is preserved, while only a mechanically extracted
+  15,222-byte secret-free exact excerpt is committed because the unrelated full
+  official document contains a public example private key. The
+  candidate requires confirmed non-live support, an ephemeral Ed25519 key with
+  `FIX_API`, separate session and order authority, and an identical-intent
+  multi-flight comparator. Canonical candidate SHA-256 is
+  `177d9d119c8a57c86df03b136bdfc2c880b0220ac50c51bce20e84cbe21f1755`.
+
 - The exact Polymarket BTC/ETH/SOL interval-composition identity now has a
   retained settlement audit across 25 aligned sets, 100 terminal markets, and
   50 direction-independent four-leg packages. Every package paid at least its
@@ -6098,3 +6112,38 @@ orders. Canonical adjudication SHA-256 is
 Accepted edges remain 29, ranked hypotheses remain 44, terminal families become
 89, and registry SHA-256 becomes
 `46f24a32204c23ba68189cfa2cae8d0b55e17b5665e3c616708cba26867827c5`.
+
+## Binance Spot FIX unordered execution-risk candidate
+
+The frozen one-use current official FIX source retained 168,282 bytes and passed
+all six neutral identity/authentication/lifecycle phrases. Its receipt hash is
+preserved, but repository policy prohibited committing an unrelated illustrative
+private-key block in the full document. A byte-exact 15,222-byte excerpt from
+four preidentified relevant line ranges is hash-bound by a secret-free extraction
+manifest; the full payload was removed and must not be refetched. The excerpt
+establishes a real
+execution architecture: `UNORDERED` message handling should offer better
+performance with multiple client messages in flight; FIX ExecutionReport push
+should offer better performance; order entry permits 10,000 messages per 10
+seconds per connection and up to 10 concurrent connections; and one symbol mass
+cancel covers all account orders, including orders from other connections.
+
+The adversarial shortcut failed: the source never documents automatic
+cancel-on-disconnect. It instead requires the client to handle maintenance News,
+heartbeat failures, Logout, reconnection, and unknown execution status after a
+10-second backend timeout. Unfilled-order counts remain account-wide, Drop Copy
+is delayed one second, order entry requires an Ed25519 key with `FIX_API`, and
+the retained contract exposes only production hostnames. Better performance is
+qualitative, not a measured latency, fill, stale-loss, fee, or profit floor.
+
+Do not repeat or alias the source. Reopen only after confirmed Spot testnet or
+Demo FIX order-entry support or a material official semantics change; execution
+work additionally needs a designated ephemeral Ed25519 `FIX_API` key, explicit
+separate session and order authority, an independently required BTCUSDT,
+ETHUSDT, or SOLUSDT multi-flight flow, and a precommitted same-host identical
+non-FIX comparator. The HMAC-style testnet credential supplied in chat is not
+compatible and was not used. Canonical result SHA-256 is
+`177d9d119c8a57c86df03b136bdfc2c880b0220ac50c51bce20e84cbe21f1755`.
+Accepted edges remain 29, ranked hypotheses remain 44, terminal families become
+90, and registry SHA-256 becomes
+`1dbc873f6e01abee4d816add72e890112c61a39411300ccff206f13f6af88ef4`.

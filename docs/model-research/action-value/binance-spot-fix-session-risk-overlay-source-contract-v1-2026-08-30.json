@@ -1,0 +1,63 @@
+{
+  "schema_version": "public-source-capture-contract-v1",
+  "frozen_at_utc": "2026-08-30T20:49:41.8373449Z",
+  "contract_path": "docs/model-research/action-value/binance-spot-fix-session-risk-overlay-source-contract-v1-2026-08-30.json",
+  "trigger": {
+    "registry_rank": 5,
+    "literal_trigger": "material official Spot execution architecture for an independently required BTC ETH or SOL execution comparator",
+    "material_change": "The retained current official Spot changelog documents active FIX order-entry and market-data architecture, while an offline exact-alias novelty audit found no FIX order-entry, session-risk, or cancel-on-disconnect family in the ranked or terminal structural registry.",
+    "outcomes_viewed_before_freeze": false,
+    "discovery_values_are_economic_inputs": false
+  },
+  "question": "What exact current official authentication, session lifecycle, disconnect behavior, order-entry scope, throttling, and operational constraints govern Binance Spot FIX order entry, and can any exchange-managed session control reduce stale-order exposure without predicting market direction?",
+  "request_name": "binance-spot-fix-session-risk-official-contract",
+  "request": {
+    "method": "GET",
+    "url": "https://raw.githubusercontent.com/binance/binance-spot-api-docs/3027e2ed79b8fd25e763b4b56d970374b85bba1e/fix-api.md",
+    "count": 1,
+    "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "endpoint_classification": {
+    "operation": "retain one immutable official static FIX API contract at the current Binance Spot documentation commit",
+    "security": "public unauthenticated static documentation GET",
+    "preflight": "The exact pinned URL is static, credential-free, absent from repository request journals, bounded below 500 KB, and distinct from a FIX connection, account request, or order action."
+  },
+  "response_byte_ceiling": 500000,
+  "required_utf8_phrases": [
+    "# FIX API",
+    "General API Information",
+    "FIX Order Entry",
+    "Ed25519",
+    "Logon",
+    "Logout"
+  ],
+  "decision": {
+    "source_gate_only": "Require only stable source identity, connection-family, authentication-family, and lifecycle terms; do not require any favorable disconnect, latency, or throttle term. Extract exact semantics only after immutable retention.",
+    "accepted_edge": false,
+    "profitability_proved": false,
+    "conditional_next_step": "If the retained source defines an exchange-managed session control that can reduce stale-order exposure, preserve it only as a direction-independent execution-risk candidate. Any value test requires a separately provisioned compatible key, explicit paper or Spot testnet session authority, a precommitted disconnect scenario, an identical REST or WebSocket control, and zero live-money authority."
+  },
+  "outputs": {
+    "raw_path": "docs/model-research/binance/raw/spot-fix-session-risk-overlay-v1-2026-08-30/01-fix-api.raw.md",
+    "journal_path": "docs/model-research/binance/raw/spot-fix-session-risk-overlay-v1-2026-08-30/00-request-journal.jsonl",
+    "result_path": "docs/model-research/action-value/binance-spot-fix-session-risk-overlay-source-result-v1-2026-08-30.json"
+  },
+  "authority": {
+    "account_requests": 0,
+    "credentials_used": false,
+    "funds_used": false,
+    "orders_or_transactions": 0,
+    "protected_capture_touched": false,
+    "public_unauthenticated_read_only_requests": 1,
+    "signed_requests": 0,
+    "trading_authority": false
+  },
+  "implementations": [
+    {
+      "path": "tools/capture_public_source_contract.py",
+      "sha256": "d566a5a379c659c3da144d5e28449ebac9c01493bd39646f9cc3a6e697a83566"
+    }
+  ],
+  "retry_policy": "This exact pinned static source request is one-use for the current FIX session-risk question. Preserve any response or failure and do not retry an alias. Documentation can establish mechanism and constraints only, never actual latency, stale-fill avoidance, profitability, or order authority.",
+  "contract_sha256": "c24d5ec6864d2cde0300362f9916dc2f3d640310d7b9289c8ccf798ef45e9f90"
+}
