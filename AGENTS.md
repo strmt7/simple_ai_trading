@@ -169,6 +169,12 @@ override prose.
   be double-counted with a BNB discount, rebate, or reward. Any quote-asset
   switch first requires its own executable spread, basis, conversion, fill,
   settlement, and opportunity-cost proof.
+- Bind Polymarket fee schedules per exact retained market population. Crypto,
+  Sports, and other event categories can have different taker rates and rebate
+  fractions; never reuse a prior event's hard-coded schedule. If a consumed
+  book request exposes schedule drift after raw retention, preserve the failed
+  runner and adjudicate the immutable response once against a separately frozen
+  exact schedule instead of refetching for a cleaner result.
 - Before freezing a time-bounded prospective capture, prove that its duration,
   phase alignment, retained observation tail, and required source timestamps can
   supply every minimum-sample gate. Elapsed duration and zero transport gaps do

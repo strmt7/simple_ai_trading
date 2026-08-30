@@ -1907,12 +1907,32 @@
         {
           "path": "docs/model-research/action-value/polymarket-elon-sep1-sep8-exact-negrisk-books-retained-adjudication-result-v1-2026-08-30.json",
           "result_sha256": "8391ecd524d0db9c312f51e627f391d95797cf9f5d32f569fd31210fe064bc83"
+        },
+        {
+          "path": "docs/model-research/action-value/polymarket-btc-sep4-price-range-exact-negrisk-prefilter-contract-v1-2026-08-30.json",
+          "result_sha256": "4f931ca8c7c94d68c6fc36ea77868bf6e285f4f33d062aed491d140cc048b5c8"
+        },
+        {
+          "path": "docs/model-research/action-value/polymarket-btc-sep4-price-range-exact-negrisk-prefilter-result-v1-2026-08-30.json",
+          "result_sha256": "a8fa32e0ec3cc51c35670df5c2dc1c5b0fa1dc02ba281958c56ded4953922cbf"
+        },
+        {
+          "path": "docs/model-research/action-value/polymarket-btc-sep4-price-range-exact-negrisk-books-contract-v1-2026-08-30.json",
+          "result_sha256": "96fabc2319bb25cf9ee000edd8c9dbe72f3d20ce82ee891ffe4c97993e6917a6"
+        },
+        {
+          "path": "docs/model-research/action-value/polymarket-btc-sep4-price-range-exact-negrisk-books-retained-adjudication-contract-v1-2026-08-30.json",
+          "result_sha256": "197b4b8ebe2c4fb1f8c440aa3e08b9aa22aa60424471a677e581688f6031c0ed"
+        },
+        {
+          "path": "docs/model-research/action-value/polymarket-btc-sep4-price-range-exact-negrisk-books-retained-adjudication-result-v1-2026-08-30.json",
+          "result_sha256": "426b53310b6f46ea39312b4d06f404453ceac2b98863efeee91aa9d592120208"
         }
       ],
-      "current_status": "direction_independent_exact_multioutcome_family_remains_unaccepted_the_distinct_Elon_September_1_to_September_8_twenty_six_bin_fixed_NegRisk_event_fired_the_literal_new_deployment_trigger_but_its_complete_displayed_all_YES_sum_was_1_0305_pUSD_and_the_one_completed_fifty_two_token_batch_failed_freshness_then_the_exact_retained_depth_best_path_lost_0_66440_pUSD_after_current_Gamma_taker_fees_and_1_12694_pUSD_after_one_adverse_tick_at_five_shares_the_original_exhaustive_runner_was_stopped_after_durable_capture_and_replaced_without_refetch_by_exact_bounded_additive_optimization_no_onchain_account_credential_order_or_fund_request_was_justified_and_the_exact_event_is_terminal",
+      "current_status": "direction_independent_exact_multioutcome_family_remains_unaccepted_the_distinct_Bitcoin_September_4_eleven_bin_fixed_NegRisk_event_fired_the_literal_new_deployment_trigger_its_complete_Gamma_displayed_all_YES_sum_was_3_0075_pUSD_and_all_11_one_NO_conversion_identities_passed_the_rejection_only_displayed_gate_the_one_completed_twenty_two_token_batch_then_exposed_a_legacy_5_percent_fee_schedule_assumption_and_was_adjudicated_without_refetch_against_the_exact_retained_7_percent_Crypto_taker_schedule_the_batch_failed_freshness_at_141591_ms_age_and_129032_ms_skew_but_the_best_five_share_path_already_lost_3_730_pUSD_at_zero_fee_3_81628_pUSD_after_current_fees_and_4_07770_pUSD_after_one_adverse_tick_with_zero_profitable_paths_so_no_refresh_onchain_account_credential_order_or_fund_request_is_justified_and_the_exact_event_is_terminal",
       "market_direction_forecast_required": false,
       "mechanism": "polymarket_cross_market_exact_multi_outcome_subset_equivalence",
-      "next_action": "do_not_repeat_the_Elon_August_28_to_September_4_Elon_September_1_to_September_8_NYC_Mayor_September_1_to_September_8_or_Elon_August_31_to_September_2_Gamma_or_book_requests_do_not_repeat_either_empty_forward_series_query_or_resample_adaptively_continue_or_narrow_any_consumed_population_advance_other_ranked_triggers_and_reopen_only_after_another_explicit_new_fixed_NegRisk_event_deployment_or_not_before_2026_09_20T00_00_00Z_for_one_distinct_2026_09_22_through_2026_09_28_series_45_discovery_then_use_Gamma_only_to_reject_and_require_a_strict_positive_exact_depth_and_fee_gate_before_any_onchain_or_account_request",
+      "next_action": "do_not_repeat_the_Bitcoin_September_4_Elon_August_28_to_September_4_Elon_September_1_to_September_8_NYC_Mayor_September_1_to_September_8_or_Elon_August_31_to_September_2_Gamma_or_book_requests_do_not_repeat_either_empty_forward_series_query_or_resample_adaptively_continue_or_narrow_any_consumed_population_advance_other_ranked_triggers_and_reopen_only_after_another_explicit_new_fixed_NegRisk_event_deployment_or_not_before_2026_09_20T00_00_00Z_for_one_distinct_2026_09_22_through_2026_09_28_series_45_discovery_then_use_Gamma_only_to_reject_and_require_a_strict_positive_exact_depth_and_fee_gate_before_any_onchain_or_account_request",
       "priority_rank": 31,
       "prohibited_shortcuts": [
         "calling_the_39_6_million_USD_all_strategy_headline_cross_market_subset_profit",
@@ -1930,7 +1950,8 @@
         "repeating_the_consumed_Elon_August_31_to_September_2_exact_Gamma_or_twenty_token_book_batch_or_selecting_only_favorable_bins",
         "repeating_the_consumed_NYC_Mayor_September_1_to_September_8_exact_Gamma_or_twenty_two_token_book_batch_or_treating_the_0_9855_displayed_sum_as_executable",
         "repeating_the_consumed_Elon_August_28_to_September_4_exact_Gamma_or_requesting_books_after_the_retained_active_all_YES_sum_was_1_0055_pUSD",
-        "repeating_the_consumed_Elon_September_1_to_September_8_exact_Gamma_or_fifty_two_token_book_batch_or_restarting_the_exhaustive_subset_runner_or_selecting_only_favorable_bins"
+        "repeating_the_consumed_Elon_September_1_to_September_8_exact_Gamma_or_fifty_two_token_book_batch_or_restarting_the_exhaustive_subset_runner_or_selecting_only_favorable_bins",
+        "repeating_the_consumed_Bitcoin_September_4_exact_Gamma_or_twenty_two_token_book_batch_or_refetching_to_repair_the_fee_schedule_or_freshness_failure"
       ],
       "retry_trigger": "material_price_fee_rule_or_market_change_in_the_resolved_leg_House_family_or_explicit_official_deployment_of_a_new_fixed_NegRisk_event_in_a_source_selected_nonconsumed_series_or_not_before_2026_09_20T00_00_00Z_for_one_separately_frozen_distinct_series_45_window_from_2026_09_22_through_2026_09_28_or_a_distinct_active_accepting_orders_market_pair_with_complete_exact_rules_deterministic_subset_indicator_equality_and_optimistic_current_economics_not_already_covered_by_the_specialized_NBA_family",
       "venue_scope": "polymarket_fixed_NegRisk_multioutcome_complete_sets_and_two_separately_traded_exact_rule_multioutcome_markets"
@@ -2496,7 +2517,7 @@
       "venue_scope": "Binance_Spot_direct_and_exactly_one_intermediary_routes_for_independently_required_organic_conversions_with_the_exactly_two_intermediary_extension_terminal_for_the_retained_population"
     }
   ],
-  "result_sha256": "4814e73d89db659d602ad3ed5901f5b94add2b70c8daa51a635ff275ffebddb5",
+  "result_sha256": "087468040a17520bde05b3dd2e8bf2df94a3608176d9aad6b190382e043d858e",
   "schema_version": "structural-edge-priority-registry-v1",
   "terminal_do_not_repeat": [
     {
@@ -2838,8 +2859,13 @@
       "canonical_result_sha256": "316e3182ce6a33287463d1c9c6d32a9bd3066bb49740c68d83e5ad717bf36868",
       "family": "binance_dual_token_fixed_value_Gift_Card_buyer_discount_2026_08_30",
       "reason": "the_frozen_complete_current_official_reference_proved_the_title_discount_label_has_zero_positive_buyer_payoff_the_operative_example_debits_100_USDT_plus_minting_fee_and_redeems_only_BTC_equivalent_to_100_USDT_all_six_documented_endpoints_were_exhaustively_classified_and_none_exposes_a_nonmutating_exact_positive_discount_buyCode_is_TRADE_requires_KYB_funding_balance_and_withdrawal_enabled_API_key_so_do_not_request_credentials_token_limits_verify_purchase_or_redemption_reopen_only_on_a_material_official_architecture_or_terms_change_with_a_nonmutating_quote_whose_exact_face_value_strictly_exceeds_payment_fee_and_every_cost"
+    },
+    {
+      "canonical_result_sha256": "426b53310b6f46ea39312b4d06f404453ceac2b98863efeee91aa9d592120208",
+      "family": "polymarket_Bitcoin_September_4_price_range_exact_fixed_NegRisk_depth_2026_08_30",
+      "reason": "the_new_eleven_bin_Bitcoin_closing_price_event_displayed_all_YES_sum_was_3_0075_pUSD_and_passed_all_11_rejection_only_one_NO_conversion_identities_but_the_completed_twenty_two_token_batch_failed_freshness_and_the_zero_network_exact_retained_adjudication_found_zero_profitable_paths_the_best_five_share_path_lost_3_730_pUSD_even_at_zero_fee_3_81628_pUSD_after_the_exact_7_percent_Crypto_taker_schedule_and_4_07770_pUSD_after_one_adverse_tick_do_not_repeat_Gamma_or_books_refetch_to_repair_the_consumed_legacy_fee_gate_or_treat_displayed_prices_as_executable"
     }
   ],
-  "updated_at_utc": "2026-08-30T14:29:18Z",
+  "updated_at_utc": "2026-08-30T14:52:00Z",
   "usage_rule": "advance_the_highest_ranked_hypothesis_whose_retry_trigger_is_satisfied_otherwise_do_not_repeat_a_blocked_or_terminal_screen"
 }

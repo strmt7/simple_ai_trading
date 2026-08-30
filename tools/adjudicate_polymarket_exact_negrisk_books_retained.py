@@ -39,7 +39,9 @@ def _load_object(path: Path) -> dict[str, Any]:
 def _load_journal(path: Path) -> list[dict[str, Any]]:
     rows = [json.loads(line) for line in path.read_text(encoding="ascii").splitlines()]
     if len(rows) != 2 or any(not isinstance(row, dict) for row in rows):
-        raise RuntimeError("request journal must contain exact intent and completion rows")
+        raise RuntimeError(
+            "request journal must contain exact intent and completion rows"
+        )
     return rows
 
 
@@ -130,10 +132,14 @@ def main() -> None:
     rows = json.loads(raw)
     if not isinstance(rows, list) or len(rows) != len(source_contract["token_ids"]):
         raise RuntimeError("retained book batch count differs")
-    books = {str(row.get("asset_id") or ""): row for row in rows if isinstance(row, dict)}
+    books = {
+        str(row.get("asset_id") or ""): row for row in rows if isinstance(row, dict)
+    }
     if set(books) != set(source_contract["token_ids"]):
         raise RuntimeError("retained book identities differ")
-    journal = _load_journal(_root_path(contract["retained_sources"]["books_journal_path"]))
+    journal = _load_journal(
+        _root_path(contract["retained_sources"]["books_journal_path"])
+    )
     receipt = journal[-1]
     timestamps = [int(str(book.get("timestamp"))) for book in books.values()]
     completed_ms = int(receipt["completed_at_ms"])
@@ -146,7 +152,10 @@ def main() -> None:
         and 0 <= age_ms <= freshness["book_max_event_age_ms"]
         and skew_ms <= freshness["book_max_timestamp_skew_ms"]
     )
-    outcomes = _outcomes(event, books)
+    expected_fee_schedule = contract.get("expected_fee_schedule")
+    if not isinstance(expected_fee_schedule, dict):
+        raise RuntimeError("expected fee schedule must be an object")
+    outcomes = _outcomes(event, books, expected_fee_schedule)
     quantity = Decimal(source_contract["quantity_shares"])
     gross = screen_negative_risk_parity(
         tuple(replace(outcome, fee_model=ZERO_FEE) for outcome in outcomes),
@@ -171,7 +180,10 @@ def main() -> None:
     result: dict[str, Any] = {
         "schema_version": SCHEMA,
         "created_at_utc": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
-        "contract": {"path": contract["contract_path"], "sha256": contract["contract_sha256"]},
+        "contract": {
+            "path": contract["contract_path"],
+            "sha256": contract["contract_sha256"],
+        },
         "retained_capture": {
             "response_sha256": receipt["response_sha256"],
             "response_bytes": receipt["response_bytes"],
@@ -206,7 +218,8 @@ def main() -> None:
     }
     result["result_sha256"] = _canonical_hash(result, "result_sha256")
     result_path.write_text(
-        json.dumps(result, sort_keys=True, separators=(",", ":"), ensure_ascii=True) + "\n",
+        json.dumps(result, sort_keys=True, separators=(",", ":"), ensure_ascii=True)
+        + "\n",
         encoding="ascii",
         newline="\n",
     )
@@ -214,9 +227,15 @@ def main() -> None:
         json.dumps(
             {
                 "freshness_passed": freshness_passed,
-                "gross_best_net": gross.best_path.net_quote if gross.best_path else None,
-                "after_fee_best_net": after_fee.best_path.net_quote if after_fee.best_path else None,
-                "stressed_best_net": stressed.best_path.net_quote if stressed.best_path else None,
+                "gross_best_net": gross.best_path.net_quote
+                if gross.best_path
+                else None,
+                "after_fee_best_net": after_fee.best_path.net_quote
+                if after_fee.best_path
+                else None,
+                "stressed_best_net": stressed.best_path.net_quote
+                if stressed.best_path
+                else None,
                 "candidate": candidate,
                 "network_requests": 0,
                 "payloads_printed": 0,
