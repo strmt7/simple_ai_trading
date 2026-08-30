@@ -4749,3 +4749,35 @@ the terminal GLWUSDT history reconciliation after `2026-08-31T00:00:00Z`
 without books, followed by at most one distinct rank-1 Polymarket single-wallet
 continuity pulse not before `2026-08-31T02:15:30Z`. Do not roll the USD1 or U
 remaining-horizon stresses daily.
+
+## Binance direct-versus-indirect standalone spread triage
+
+The paper metadata for SSRN `6453880` was already retained under rank 44, but
+its abstract did not distinguish an organic conversion saving from a standalone
+statistical spread. One frozen canonical-page request retained an independent
+replication that resolves that classification without requesting Binance data.
+The standalone strategy longs direct-route value and shorts indirect-route
+value; it is direction-independent in identity but is not a current scalable
+edge.
+
+The replication reports that capacity-constrained PnL fell from about 4,500 USD
+in 2025 to about 250 USD in 2026-H1, a roughly 90% decline. Every one of the 42
+profitable 2025 paths supported at most 25 USD per trade under its five-percent
+volume rule, the median was about 6 USD, and 78% of intended trade minutes had
+no executable volume on the thinnest leg. Zero of 86 profitable routes had a
+perpetual on every required leg, while the only scalable examples, BTC-FDUSD and
+ETH-BTC, both lost money. The estimated edge also required all-in cost below
+about seven bips per leg.
+
+This secondary review supplies no public code, exact route-level output, books,
+owned fees, or fills. It therefore justifies neither a current profitability
+claim nor a broad permanent rejection, but it does reject spending resources on
+another minute-bar collector under unchanged evidence. The accepted rank-44
+scope remains only the fail-closed saving on an independently required organic
+conversion. Reopen the standalone spread only on reproducible route-level audit
+evidence, a material fee or perpetual-leg listing change, or current executable
+capacity sufficient to clear fixed costs. Canonical triage SHA-256 is
+`ba9d063f78b027f6aab5e45723f5dc4ea2e9df1303de4f493e780ee07d4425b7`.
+Accepted edges remain 27, ranked hypotheses remain 44, and terminal families
+become 58. Registry SHA-256 becomes
+`46eee6375a04b6226db08e6ee5ddc59c530b8c991840feefc6e145b48059c0fd`.

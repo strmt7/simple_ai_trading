@@ -1,0 +1,102 @@
+{
+  "adjudication": {
+    "accepted_edge": false,
+    "book_or_account_request_justified": false,
+    "deployment_ready": false,
+    "market_direction_forecast_required": false,
+    "profitability_claim": false,
+    "public_after_all_cost_profit_floor_usdt": 0,
+    "status": "independent_replication_supports_historical_statistical_route_spread_but_rejects_current_scalability_and_does_not_justify_a_new_collector"
+  },
+  "authority": {
+    "account_state_accessed": false,
+    "credentials_used": false,
+    "funds_used": false,
+    "orders_or_transactions_submitted": false,
+    "public_unauthenticated_requests": 1,
+    "trading_authority": false
+  },
+  "contract": {
+    "path": "docs/model-research/action-value/binance-direct-indirect-spread-replication-triage-contract-v1-2026-08-30.json",
+    "sha256": "8844cbab660ac00fc119089bc81c0d56348ac2086285ee9296b0c4d80ff10151"
+  },
+  "created_at_utc": "2026-08-30T09:34:27.3111648Z",
+  "mechanism_identity": {
+    "distinct_from_accepted_rank_44_scope": "The accepted rank-44 scope compares routes only for an independently required organic same-account conversion. This triage concerns a standalone z-score spread that longs direct-route value and shorts indirect-route value.",
+    "paper_doi": "https://doi.org/10.2139/ssrn.6453880",
+    "paper_title": "Network-Based Path Optimization for High-Frequency Cryptocurrency Arbitrage: Empirical Evidence",
+    "venue": "Binance",
+    "why_market_direction_independent": "The proposed spread compares alternative conversion paths for the same terminal asset value rather than forecasting the asset's outright direction."
+  },
+  "replication_evidence": {
+    "capacity_rule": "maximum five percent participation in the thinnest leg's per-minute volume",
+    "current_forward_decay": {
+      "capacity_constrained_pnl_2025_usd_approx": 4500,
+      "capacity_constrained_pnl_2026_h1_usd_approx": 250,
+      "capacity_constrained_pnl_drop_percent_approx": 90,
+      "fixed_strategy_median_path_sharpe_by_period": [
+        10.6,
+        4.4,
+        0.2
+      ],
+      "optimized_strategy_median_path_sharpe_by_period": [
+        15.0,
+        5.2,
+        1.6
+      ],
+      "period_order": [
+        "2024",
+        "2025",
+        "2026_H1"
+      ],
+      "profitable_2025_paths_still_profitable_2026_percent": 73,
+      "surviving_2026_median_return_percent": 12.5
+    },
+    "execution_and_capacity": {
+      "all_2025_profitable_paths_max_usd_per_trade": 25,
+      "median_profitable_path_usd_per_trade_approx": 6,
+      "profitable_routes_checked_for_complete_perpetual_legs": 86,
+      "profitable_routes_with_perpetual_on_every_leg": 0,
+      "required_total_cost_ceiling_bips_per_leg_approx": 7,
+      "scalable_route_examples": [
+        {
+          "capacity_usd_per_trade_approx": 12000,
+          "profitable": false,
+          "route": "BTC_FDUSD"
+        },
+        {
+          "capacity_usd_per_trade_approx": 1600,
+          "profitable": false,
+          "route": "ETH_BTC"
+        }
+      ],
+      "target_trade_minutes_with_zero_executable_thinnest_leg_percent": 78
+    },
+    "method_scope": {
+      "paper_benchmark_period": "2025",
+      "replication_data": "Binance public one-minute OHLCV archive",
+      "replication_extension": "2024 through 2026-H1",
+      "replication_symbol_count": 162,
+      "triangular_groups": 64
+    },
+    "source_claim_limit": "The independent review says its audit code is available only on request. The retained article supplies summarized results, not reproducible code, exact route identities, executable books, owned fees, or fills."
+  },
+  "result_sha256": "ba9d063f78b027f6aab5e45723f5dc4ea2e9df1303de4f493e780ee07d4425b7",
+  "source": {
+    "canonical_url": "https://noisemostly.substack.com/p/a-crypto-arbitrage-that-actually",
+    "completed_at_utc": "2026-08-30T09:34:27.3111648Z",
+    "raw_bytes": 200769,
+    "raw_path_local_ignored": "data/edge-research/binance-direct-indirect-spread-replication-v1/source.html",
+    "raw_sha256": "1a13a7b032c715152ccbc8f78c7641b6a2a07c0769193299dbbbc526348fc9c4",
+    "status_code": 200
+  },
+  "schema_version": "binance-direct-indirect-spread-replication-triage-v1",
+  "terminal_boundary": {
+    "do_not_build": "Do not build a new minute-bar or route-spread collector from this paper or review under unchanged evidence.",
+    "reopen_only_on": [
+      "public reproducible audit code and exact route-level outputs that survive a no-look-ahead reconstruction",
+      "a material Binance fee or instrument-listing change that puts every required leg below the approximately seven-bip all-in ceiling",
+      "current source-bound executable depth proving capacity beyond fixed costs on a preregistered route population"
+    ]
+  }
+}
