@@ -64,6 +64,16 @@ required sentence; preserve and adjudicate those retained bytes, never refetch
 or alias them. Advance only with a designated ephemeral Ed25519 key, explicit
 read-only market-data authority, and a precommitted same-host dual-feed capture.
 
+Binance Spot FIX is a separate direction-independent execution-risk candidate.
+The retained current official contract says `UNORDERED` should perform better
+with multiple messages in flight, FIX ExecutionReport push should perform
+better, and one FIX mass-cancel message covers every account order on one symbol
+across connections. It does not document automatic cancel-on-disconnect, any
+non-live order-entry endpoint, or a measured latency, fill, or profit floor.
+Do not repeat the source. Reopen only under the literal non-live Ed25519
+`FIX_API` session-and-order comparator trigger; the supplied HMAC-style testnet
+credential is incompatible and must not be used.
+
 The Polymarket BTC/ETH/SOL interval-composition family has a mechanically
 verified one-pUSD payoff floor across all 50 packages in 25 retained aligned
 settlements, with zero violations. It remains unaccepted: the current displayed

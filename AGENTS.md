@@ -219,6 +219,13 @@ override prose.
   ticker are documented real-time. Bind key type, decoder, source and receive
   clocks, continuity, reconnects, gaps, host path, decision timing, and owned or
   paper execution before crediting any freshness value.
+- A FIX session disconnect, Logout, or heartbeat failure does not imply exchange
+  cancellation of resting orders unless an exact retained contract says so.
+  Treat Binance FIX `UNORDERED` and "better performance" language as qualitative
+  candidates only. Bind non-live venue support, Ed25519 `FIX_API` permission,
+  TLS/SNI, message-handling mode, in-flight count, clocks, acknowledgements,
+  unknown timeout reconciliation, account-wide limits, mass-cancel scope, and an
+  identical non-FIX comparator before crediting latency or stale-order value.
 - Bind Polymarket fee schedules per exact retained market population. Crypto,
   Sports, and other event categories can have different taker rates and rebate
   fractions; never reuse a prior event's hard-coded schedule. If a consumed
