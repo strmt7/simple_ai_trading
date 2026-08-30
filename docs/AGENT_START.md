@@ -2567,3 +2567,35 @@ Canonical result SHA-256 is
 accepted edges remain 29, ranked hypotheses remain 44, terminal families remain
 64, and registry SHA-256 is
 `fe3116d77f82ef88f2ab929b8e71ec67ee029a7399a526e4b98edd9e45c81ef7`.
+
+## Polymarket all-category realized maker-rebate scope extension
+
+Rank 17's literal program-change trigger fired because the current official
+Maker Rebates source covers ten fee-enabled categories, materially broader than
+the retained crypto-only accepted overlay. One frozen public unauthenticated
+Markdown GET retained 5,945 bytes. Its phrase gate failed and is consumed: the
+discovery surface said USDC and a 25% Sports rebate, while the retained current
+primary bytes say pUSD and 15%; Markdown padding and emphasis caused additional
+literal misses. Do not refetch, alias, or rewrite that contract.
+
+A zero-network retained-byte adjudication excludes every discovery value and
+extends the existing edge—without increasing the accepted count—to exact
+realized positive owned pUSD maker rebates from independently justified
+legitimate organic fills in Crypto, Sports, Finance, Politics, Economics,
+Culture, Weather, Other / General, Mentions, and Tech markets after every
+incremental cost. Current source rates are 20% Crypto, 15% Sports, and 25% for
+the other eligible categories; maker fees are zero. Geopolitics is fee-free and
+excluded. Allocation is per market, rates are discretionary, and the public
+forward floor remains zero. This does not accept market making, fill quality,
+account eligibility, owned income, or deployment readiness, and authorizes no
+order, cancel, hedge, wallet, account, or funded action.
+
+Canonical failed contract SHA-256 is
+`d59f9f93359ff82add45272ab43c02f095b87da334ada6ddcc240786a72a1bb0`;
+the retained current Markdown SHA-256 is
+`8d2c6562bd1b3376bc3fc1557a60efef5aa3c1d856c7f8dcc405139a07e9ba2a`;
+the canonical scope-extension result SHA-256 is
+`d37aeac00dca154bbf0d676c3696a688bc7ee6cef9e8118730ffb5be05fb2550`.
+Accepted edges remain 29, ranked hypotheses remain 44, terminal families remain
+64, and registry SHA-256 is
+`44a63556d0a8d680661a82743fbdc0eb0bed2a50d75f1679689d72258af6ce41`.

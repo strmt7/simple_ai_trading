@@ -48,11 +48,6 @@ REGISTRY_PATH = (
 EXPECTED_RESULT_SHA256 = (
     "c992e0e1febc1a9789289cb129c166280ee0192cab203d3a6935a8c40e949612"
 )
-EXPECTED_REGISTRY_SHA256 = json.loads(
-    (ROOT / "docs/model-research/structural-edge-priority-registry-v1.json").read_text(
-        encoding="utf-8"
-    )
-)["result_sha256"]
 EXPECTED_MAKER_FIRST_SHA256 = (
     "4fe308ddeb6fd080bbd8548347a095762d8fc67eb5820fb0c7b3c2d6b7430d69"
 )
@@ -197,8 +192,7 @@ def test_current_crypto_taker_delay_rejects_stale_250ms_assumption() -> None:
 def test_registry_tracks_recurrence_without_increasing_accepted_edges() -> None:
     registry = _load(REGISTRY_PATH)
 
-    assert registry["result_sha256"] == EXPECTED_REGISTRY_SHA256
-    assert _embedded_hash(registry) == EXPECTED_REGISTRY_SHA256
+    assert _embedded_hash(registry) == registry["result_sha256"]
     candidate = next(
         row
         for row in registry["prioritized_hypotheses"]
