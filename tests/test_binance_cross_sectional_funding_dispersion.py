@@ -24,6 +24,10 @@ CONTRACT = BASE / (
 RESULT = BASE / (
     "binance-btc-eth-sol-cross-sectional-funding-dispersion-result-v1-2026-08-30.json"
 )
+SENSITIVITY = BASE / (
+    "binance-btc-eth-sol-cross-sectional-funding-dispersion-capital-sensitivity-"
+    "v1-2026-08-30.json"
+)
 REGISTRY = ROOT / "docs/model-research/structural-edge-priority-registry-v1.json"
 
 
@@ -128,9 +132,25 @@ def test_causal_roles_and_perfect_foresight_bound_reconstruct() -> None:
 
 def test_terminal_rejection_blocks_price_requests_without_acceptance() -> None:
     result = json.loads(RESULT.read_text(encoding="ascii"))
+    sensitivity = json.loads(SENSITIVITY.read_text(encoding="ascii"))
     registry = json.loads(REGISTRY.read_text(encoding="utf-8"))
 
     assert _self_hash(registry, "result_sha256") == registry["result_sha256"]
+    assert _self_hash(sensitivity, "result_sha256") == sensitivity["result_sha256"]
+    assert sensitivity["source_binding"]["parent_result_canonical_sha256"] == (
+        result["result_sha256"]
+    )
+    assert (
+        sensitivity["gates"][
+            "fixed_orientation_rescue_clears_super_optimistic_5x_bound"
+        ]
+        is False
+    )
+    assert Decimal(
+        sensitivity["calculations_bips"][
+            "super_optimistic_combined_holdout_net_at_5x"
+        ]
+    ) < 0
     assert result["adjudication"]["accepted_edge"] is False
     assert result["adjudication"]["stable_profitability_proved"] is False
     assert result["gates"]["price_capture_justified"] is False
@@ -143,5 +163,5 @@ def test_terminal_rejection_blocks_price_requests_without_acceptance() -> None:
         if row["family"] == "binance_BTC_ETH_SOL_same_venue_cross_sectional_"
         "perpetual_funding_dispersion_2026_08_30"
     )
-    assert family["canonical_result_sha256"] == result["result_sha256"]
-    assert "perfect_foresight_zero_execution" in family["reason"]
+    assert family["canonical_result_sha256"] == sensitivity["result_sha256"]
+    assert "perfect_foresight" in family["reason"]

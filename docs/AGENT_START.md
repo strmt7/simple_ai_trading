@@ -2652,3 +2652,26 @@ canonical parity prefilter SHA-256 is
 Accepted edges remain 29, ranked hypotheses remain 44, terminal families become
 67, and registry SHA-256 is
 `5ec42c3de1890f6c9f5e4ecc027b892b3c6f7323eeb813a4db821c1f2b67d2cd`.
+
+## Cross-sectional funding capital-sensitivity correction
+
+The BTC/ETH/SOL same-venue funding-dispersion rejection did not merely defend
+its original unlevered two-leg capital rule. A zero-request sensitivity audit
+gave a continuous validation-plus-test hold every favorable assumption: the
+sum of interval-by-interval perfect-foresight funding maxima, zero switching,
+only the frozen 32 bips two-leg entry and exit, and optimistic equal 5x
+leverage. That impossible upper bound still loses
+18.840831506849315068493150692 bips.
+
+Break-even requires more than 12.9536779944653097611862238x equal leverage
+before relative-price and basis PnL, liquidation risk, or any omitted cost. A
+fixed orientation is dominated by the oracle, so do not request price history
+or build a fixed-orientation rescue. Reopen only on a source-bound material
+funding, fee, execution, portfolio-margin, netting, or capital-treatment change
+that clears the full risk-adjusted deficit; leverage alone is not a trigger.
+
+Canonical sensitivity result SHA-256 is
+`61a65f1f81b7109a6f959a53f8b780e88582b1338ec0cc512ef6784020da029f`.
+Accepted edges remain 29, ranked hypotheses remain 44, terminal families remain
+67, and registry SHA-256 is
+`d840ca77bf9f250a87fbc4d5a8423f98d94f1494a18d7863eebfc83812bc030f`.
