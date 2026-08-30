@@ -360,6 +360,13 @@ override prose.
   Gamma is rejection-only. Do not request books unless at least one displayed
   sum is strictly below one pUSD, and never cherry-pick a sibling ladder after
   a consumed complete event fails that gate.
+- Do not equate a strict-above threshold indicator with cumulative range bins
+  when exact boundary values resolve to the higher bin. At `x = T`, threshold
+  YES is zero while the cumulative upper-range indicator is one. The exact
+  equality gate therefore fails; only `NO(T)` plus all upper-range YES claims
+  has an optimistic common-rule one-pUSD floor. Screen that weaker cross-event
+  coverage identity only on a distinct nonconsumed same-source, same-instant
+  pair with complete boundary rules and contemporaneous frozen populations.
 
 ## Working Method
 
