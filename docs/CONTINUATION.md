@@ -4314,3 +4314,32 @@ the live frontier remains current. `AGENTS.md` now requires immutable snapshots
 before any outcome-sensitive contract binds a registry, frontier, manifest, or
 rolling artifact. Snapshot adjudication result SHA-256 is
 `8105343e417aea4084debb50a7ffe3a90b1c7c7bedf83da920961601ba152b23`.
+
+## Binance USD-M Futures BNB fee-reduction source gate
+
+The retained current official API index exposed a registry-absent, direction-
+independent direct-cost lead: signed `GET /fapi/v1/feeBurn` reads the USD-M
+Futures BNB-burn status, while `POST /fapi/v1/feeBurn` is separately classified
+`TRADE`. A cached official publication indicated a 10% Futures trading-fee
+reduction when BNB fee payment is enabled, so one exact public source request
+was frozen before access to bind that rate.
+
+The exact request failed closed: it returned HTTP 202, 2,035 bytes, and zero of
+the three preregistered terms. The raw response and durable journal are retained.
+The cached extraction is a lead, not admissible current-rate or account evidence,
+and the public forward floor remains zero. Do not repeat or alias the consumed
+page, acquire or retain standing BNB, create volume, toggle fee burn, or use the
+discount to rescue an otherwise unprofitable trade.
+
+Reopen only after a materially new byte-retainable current official source, or
+when both designated credentials, explicit signed GET-only authority, and an
+independently planned legitimate organic BTC/ETH/SOL USD-M positive-commission
+question all exist. Exact status, positive standard commission, BNB acquisition,
+full prompt consumption, residual, owned realized fee ledger, and every
+incremental cost must then reconcile. Any toggle still requires separate
+explicit state-change authority. No credential, account request, order, trade,
+fund, or mutation was used. Canonical adjudication SHA-256 is
+`3a2c7358757491c8e0e9d737a76583756596db59346c5877a7bcfc1ca9e300b4`.
+Accepted edges remain 23, ranked hypotheses remain 44, and terminal families
+remain 55. Registry SHA-256 becomes
+`9e3ceff615c795156ec151f209d9b6c391a9ea50184baa1bee78108f6eb2cb7b`.
