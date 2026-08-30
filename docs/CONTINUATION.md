@@ -5495,3 +5495,36 @@ book result SHA-256 is
 Accepted edges remain 29, ranked hypotheses remain 44, terminal families become
 73, and registry SHA-256 becomes
 `932ff844edcda13efc17bd48569c1cd4b5f25abd0f2c0c3747dae696d1b19649`.
+
+## Polymarket Solana September 4 sponsored-reward overlay rejection
+
+The retained `NO(above 150)` plus `YES(higher range 150)` package was reused
+only as immutable input to a distinct rank-17 liquidity-reward question; its
+stale books were not refreshed. At the exact 50-share minimum, retained
+one-tick maker quotes reconstruct a 48.65 pUSD combined cost, 1.35 pUSD
+optimistic both-fill gross, and 48.20 pUSD maximum one-leg orphan loss.
+
+The frozen runner made exactly two public unauthenticated read-only requests:
+one `sponsored=true` reward GET for each exact condition. Both returned HTTP
+200, terminal `LTE=` cursors, and zero rows. Thus the maximum public remaining
+pool is 0 pUSD. Gamma's minimum-size and spread fields are eligibility metadata,
+not funding evidence. No Gamma, book, fee, on-chain, account, credential,
+order, fund, or protected Polymarket capture request was made.
+
+Do not repeat either condition or refresh these books. Reopen only on a material
+exact funded-program change. For every future maker-reward overlay, first prove
+from retained economics and exact sponsored sources that an impossible 100
+percent share of all remaining pools strictly exceeds maximum minimum-size
+orphan loss; otherwise stop before books and account work. Invoke the reusable
+runner as a module (`python -m tools.screen_polymarket_retained_cross_event_rewards`),
+not as a file path.
+
+Contract SHA-256 is
+`6064ab6bb733f82dab2ef3fc8f9ea3e4ffeebb3cc2f005f91d41275e6aa1a2ae`;
+result SHA-256 is
+`97471d6fe9148ba2e4fd818902e0fb33e4f796c7115cd6494c2a35be0bbebeaf`;
+both raw reward payloads have SHA-256
+`cb1463591af370d3e3eb39e1dc5821bb1ae64d7dde15ba0748011273b32e9148`.
+Accepted edges remain 29, ranked hypotheses remain 44, terminal families become
+74, and registry SHA-256 becomes
+`67a955835c85b8d4d7f11d34bf67e6ed4932a09ab8d0ad1c54e52941cf36bb40`.

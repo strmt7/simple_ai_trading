@@ -21,6 +21,12 @@ BOOK_CONTRACT = ACTION / (
 BOOK_RESULT = ACTION / (
     "polymarket-sol-sep4-range-threshold-coverage-books-result-v1-2026-08-30.json"
 )
+REWARD_CONTRACT = ACTION / (
+    "polymarket-sol-sep4-cross-event-rewards-contract-v1-2026-08-30.json"
+)
+REWARD_RESULT = ACTION / (
+    "polymarket-sol-sep4-cross-event-rewards-result-v1-2026-08-30.json"
+)
 REGISTRY = ROOT / "docs/model-research/structural-edge-priority-registry-v1.json"
 
 
@@ -112,3 +118,59 @@ def test_registry_routes_exact_terminal_family_without_mutable_global_pins() -> 
     )
     assert terminal["canonical_result_sha256"] == result["result_sha256"]
     assert "no_fee_request_was_justified" in terminal["reason"]
+
+
+def test_exact_sponsored_reward_overlay_rejects_two_empty_pools() -> None:
+    contract = _load(REWARD_CONTRACT)
+    result = _load(REWARD_RESULT)
+
+    assert _canonical_hash(contract, "contract_sha256") == contract["contract_sha256"]
+    assert _canonical_hash(result, "result_sha256") == result["result_sha256"]
+    assert result["contract"]["sha256"] == contract["contract_sha256"]
+    assert result["optimistic_rejection_bound"][
+        "maximum_one_leg_orphan_loss_pUSD"
+    ] == "48.2"
+    assert result["optimistic_rejection_bound"][
+        "maximum_remaining_reward_pool_pUSD"
+    ] == "0"
+    assert all(
+        row["exact_row_count"] == 0
+        for row in result["exact_rewards"].values()
+    )
+    assert result["authority"]["public_unauthenticated_read_only_requests"] == 2
+    assert result["authority"]["orders_or_cancellations"] == 0
+    assert result["adjudication"]["accepted_edge"] is False
+    for name in ("range_over_150_yes", "threshold_150_no"):
+        raw = ROOT / (
+            "data/polymarket-sol-sep4-cross-event-rewards-v1/"
+            f"reward-{name}.raw"
+        )
+        assert _sha(raw) == (
+            "cb1463591af370d3e3eb39e1dc5821bb1ae64d7dde15ba0748011273b32e9148"
+        )
+
+
+def test_registry_routes_reward_overlay_to_rank_17_and_exact_terminal() -> None:
+    registry = _load(REGISTRY)
+    result = _load(REWARD_RESULT)
+
+    assert _canonical_hash(registry, "result_sha256") == registry["result_sha256"]
+    rank_17 = next(
+        row
+        for row in registry["prioritized_hypotheses"]
+        if row["priority_rank"] == 17
+    )
+    assert any(
+        artifact["result_sha256"] == result["result_sha256"]
+        for artifact in rank_17["canonical_artifacts"]
+    )
+    terminal = next(
+        row
+        for row in registry["terminal_do_not_repeat"]
+        if row["family"]
+        == "polymarket_Solana_September_4_cross_event_exact_sponsored_reward_overlay_2026_08_30"
+    )
+    assert terminal["canonical_result_sha256"] == result["result_sha256"]
+    assert "maximum_publicly_proven_remaining_reward_pool_is_zero" in terminal[
+        "reason"
+    ]

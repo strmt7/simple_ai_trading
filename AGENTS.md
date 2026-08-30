@@ -371,6 +371,13 @@ override prose.
   cumulative upper-range YES, and threshold YES plus lower bins through the
   starting bin. Gamma is rejection-only; if exact depth is already negative at
   zero fee, stop before fee endpoints and never refetch stale or skewed books.
+- Before refreshing books for a Polymarket maker-reward overlay, reconstruct the
+  exact minimum-size one-leg orphan loss from retained evidence and reconcile
+  each exact condition with `sponsored=true`. Gamma reward minimum and spread
+  fields are eligibility metadata, not funding proof. If even an impossible
+  100 percent share of every remaining exact pool does not strictly exceed the
+  maximum orphan loss, or an exact sponsored population is empty, stop without
+  refreshing books, accessing an account, or repeating the condition.
 
 ## Working Method
 
