@@ -1,0 +1,87 @@
+{
+  "adjudication": {
+    "accepted_edge": false,
+    "after_all_cost_profit_floor_usd": "0",
+    "deployment_ready": false,
+    "market_direction_forecast_required": false,
+    "profitability_claim": false,
+    "stable_edge": false,
+    "status": "candidate_17_bip_gross_and_4_bip_after_vip0_plus_operational_stress_sensitivity_before_every_external_and_USDT_USD_conversion_cost"
+  },
+  "authority": {
+    "account_requests": 0,
+    "credentials_used": false,
+    "funds_used": false,
+    "new_market_data_requests": 0,
+    "orders_or_transactions": 0,
+    "protected_capture_touched": false,
+    "public_issuer_source_requests": 1,
+    "signed_requests": 0,
+    "trading_authority": false
+  },
+  "created_at_utc": "2026-08-30T21:39:00Z",
+  "current_retained_population": {
+    "activity_24h_base_volume_tusd": "48598.00000000",
+    "activity_24h_trade_count": 2399,
+    "ask_price_usdt_per_tusd": "0.99830000",
+    "ask_quantity_max_tusd": "2258.00000000",
+    "ask_quantity_min_tusd": "2246.00000000",
+    "bid_price_usdt_per_tusd": "0.99810000",
+    "book_observation_count": 60,
+    "book_price_change_count": 0,
+    "pair": "TUSDUSDT",
+    "same_bid_ask_in_every_observation": true,
+    "unique_full_top_of_book_count": 3
+  },
+  "economics_at_1000_usdt": {
+    "gross_tusd_acquired_at_ask": "1001.702894921366322748672744",
+    "gross_usd_profit_bips_under_unproved_one_usdt_equals_one_usd_sensitivity": "17.02894921366322748672744000",
+    "gross_usd_profit_under_unproved_one_usdt_equals_one_usd_sensitivity": "1.702894921366322748672744",
+    "issuer_stated_minimum_redemption_tusd": "1000",
+    "net_tusd_after_vip0_fee": "1000.701192026444956425924071",
+    "operational_stress_bips": "3",
+    "profit_after_vip0_and_operational_stress_bips_sensitivity": "4.011920264449564259240710000",
+    "profit_after_vip0_and_operational_stress_usd_sensitivity": "0.401192026444956425924071",
+    "profit_after_vip0_before_operational_stress_bips_sensitivity": "7.011920264449564259240710000",
+    "profit_after_vip0_before_operational_stress_usd_sensitivity": "0.701192026444956425924071",
+    "vip0_taker_fee_fraction": "0.001",
+    "vip0_taker_fee_tusd": "1.001702894921366322748672744"
+  },
+  "economics_at_conservative_retained_top_ask_size": {
+    "gross_discount_usdt_under_unproved_one_usdt_equals_one_usd_sensitivity": "3.818200000000",
+    "net_redeemable_tusd_after_vip0_fee": "2243.75400000000",
+    "profit_after_vip0_and_operational_stress_usd_sensitivity": "0.899545460000",
+    "profit_after_vip0_before_operational_stress_bips_sensitivity": "7.011920264449564259240709206",
+    "profit_after_vip0_before_operational_stress_usd_sensitivity": "1.572200000000",
+    "tusd_quantity": "2246.00000000",
+    "usdt_input_at_ask": "2242.181800000000"
+  },
+  "limitations": [
+    "The official issuer page states no issuer mint or redemption fee, a 1,000-TUSD minimum, KYC and AML requirements, and a typical one-business-day bank wire; it does not prove this repository account's issuer access, approval, limits, continued service, or completed redemption.",
+    "TUSD is acquired in USDT but redeemed to bank USD. A one-for-one USDT-to-USD value is an explicitly unproved sensitivity, not an executable same-unit bridge or profit input.",
+    "Binance account fee, TUSD withdrawal network and fee, blockchain transfer, receiving-bank wire fee, correspondent fee, issuer or bank delay, failure, compliance, custody, tax, infrastructure, and alternative-yield costs are unproved and not credited as zero.",
+    "All 60 retained price observations were identical, so the sample demonstrates persistence at one historical level but zero price-change recurrence or event-time capture evidence.",
+    "The 17-bip gross sensitivity falls to 7.0119 bips after VIP0 and 4.0119 bips after the frozen operational stress before every external cost; it is a narrow research candidate, not stable or after-all-cost profit.",
+    "No TUSD or USDT acquisition, issuer signup, KYC submission, withdrawal, redemption, bank transfer, Binance order, or account action is authorized."
+  ],
+  "result_sha256": "6403c2d269e8cc682b6f6d63a612e5e7de00fed50902b2797c4c1e999ed37eb5",
+  "retry_policy": {
+    "do_not_repeat": "Do not repeat the official issuer page or exact retained 60-book population and do not poll TUSDUSDT for the same 17-bip level.",
+    "literal_trigger": "Reopen on a material official TUSD redemption minimum fee timing access continuity or Binance listing withdrawal fee change; or with exact account-qualified issuer access exact Binance account fee and withdrawal network fee exact receiving-bank and wire costs plus an executable USDT-to-bank-USD comparator; or after an independently observed event-driven TUSD ask discount above 25 bips from a non-polling source, then freeze one finite-size book and require every same-unit cost before any state-changing authority."
+  },
+  "schema_version": "binance-tusd-redemption-parity-retained-candidate-v1",
+  "source_binding": {
+    "issuer_raw_response_sha256": "49aa68a493433a80cc31134fb095e9fec13df609937471f5ff350b8e219de530",
+    "issuer_request_journal_sha256": "95527af0c45616699c60cc83db0f2146c85806e8c9c79db79a699f9b3647ca41",
+    "issuer_source_contract_path": "docs/model-research/action-value/binance-tusd-redemption-parity-source-contract-v1-2026-08-30.json",
+    "issuer_source_contract_sha256": "6e4b479ca6139759fad5b2eb4df2f5f981a8a7a047af8a949d736050c31d377d",
+    "issuer_source_result_path": "docs/model-research/action-value/binance-tusd-redemption-parity-source-result-v1-2026-08-30.json",
+    "issuer_source_result_sha256": "b3a5a0f4c7c88342917ec807a57e025b203d2d0e8feedad67b3eec1f3e46c2b5",
+    "retained_activity_path": "data/edge-research/binance-indirect-internal-conversion-activity-v1/ticker-24hr.json",
+    "retained_activity_sha256": "fc753830c30bb09307c07eb2796cd63a462bd0fe75952ea7e546747cd18999d5",
+    "retained_book_directory": "data/edge-research/binance-indirect-internal-conversion-screen-v1/raw",
+    "retained_book_manifest_sha256": "28b59e6e3eed238290b0dde2c916ba688f9c7d04b37ac0ff9189f90e3ea07d89",
+    "retained_parent_result_path": "docs/model-research/action-value/binance-indirect-internal-conversion-screen-v1-2026-08-29.json",
+    "retained_parent_result_sha256": "b3e7f724e2b1ce2cc7a8444d00632466196af6d89f139259164549e91d1f84bc"
+  }
+}

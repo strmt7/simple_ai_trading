@@ -6216,3 +6216,45 @@ Accepted edges remain 29, ranked hypotheses remain 44, terminal families become
 `0f43e2b26b9c339dde0db00401122bd1339ad77713df076444e3bcd5b3f9246b`,
 and the source-bound durability-audit SHA-256 is
 `c5c4f9c9751f7b434be1c66cece2bee41ceb06aac3b0c0e3a70a7f76342f0618`.
+
+## Binance TUSD issuer-redemption event-dislocation candidate
+
+A stronger distinct issuer-parity lead was selected from retained data before
+any new market request. All 60 August 29 TUSDUSDT top-of-book observations had
+the same 0.99810000 bid and 0.99830000 ask; top ask quantity ranged from 2,246
+to 2,258 TUSD. The retained 24-hour activity row reported 2,399 trades and
+48,598 TUSD of volume. This is a persistent historical level in the frozen
+population, not evidence of quote-change or event-time recurrence.
+
+One frozen public unauthenticated official TrueUSD request retained current
+terms stating no issuer mint or redemption fee, a 1,000-TUSD minimum redemption,
+KYC and AML requirements, a typical one-business-day bank wire after receipt,
+and Binance availability. Those terms do not establish repository-account
+approval, exact limits, continuity, or completed redemption.
+
+At the retained ask, 1,000 USDT purchases 1,001.7028949214 TUSD before fees.
+Under the explicitly unproved one-USDT-equals-one-bank-USD sensitivity, this is
+17.0289492137 basis points gross. A VIP0 taker fee leaves 1,000.7011920264 TUSD,
+or 7.0119202644 basis points, and the frozen three-basis-point operational stress
+leaves only 4.0119202644 basis points. At the conservative retained top ask size,
+the remaining buffer after VIP0 and stress is only 0.89954546 USD.
+
+This is not accepted, stable, after-all-cost profit, or deployment-ready. The
+input is USDT while redemption pays bank USD; the same-unit executable bridge,
+exact Binance account fee, withdrawal network and fee, receiving-bank and
+correspondent wire costs, delay, failure, compliance, custody, tax,
+infrastructure, and displaced-yield costs are unproved and cannot be credited as
+zero. Do not repeat the issuer page, repeat the exact population, or poll the
+pair. Reopen only on a material issuer or Binance term change, complete exact
+account-and-same-unit cost evidence, or an independently observed event-driven
+TUSD ask discount above 25 basis points; then freeze one finite-size book before
+any separately authorized action.
+
+No credential, account, order, withdrawal, redemption, fund, transaction, or
+protected capture was used. Canonical candidate SHA-256 is
+`6403c2d269e8cc682b6f6d63a612e5e7de00fed50902b2797c4c1e999ed37eb5`.
+Accepted edges remain 29, ranked hypotheses become 45, terminal families become
+92, registry SHA-256 is
+`b96faacc247e021a4d1775a0e412da2c59fc3adc5a081e68fc042d54d2474637`,
+and the source-bound durability-audit SHA-256 is
+`7d322edf9c9ca6c3d47909ad375c789fc9d1e2029468d0874cbd147069c904d8`.
