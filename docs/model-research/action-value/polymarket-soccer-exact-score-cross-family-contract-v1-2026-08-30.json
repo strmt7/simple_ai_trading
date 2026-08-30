@@ -1,0 +1,98 @@
+{
+  "schema_version": "polymarket-soccer-exact-score-cross-family-contract-v1",
+  "frozen_at_utc": "2026-08-30T22:19:34.9785770Z",
+  "contract_path": "docs/model-research/action-value/polymarket-soccer-exact-score-cross-family-contract-v1-2026-08-30.json",
+  "purpose": "Exhaust every rule-complete retained exact-score implication into first-scorer, both-teams-to-score, full-game-total, and team-total markets before viewing any cross-family price sum.",
+  "distinctness": {
+    "prior_graph": "The prior retained graph tested exact-score to full-game result, neither-first-scorer to draw, total monotonicity, BTTS to Over 1.5, and Under 0.5 to draw; it did not enumerate exact-score links to first scorer, BTTS, full totals, or team totals.",
+    "half_result_graph": "The separate half-result graph tests first-half plus second-half result identities and does not consume these cross-family exact-score relations.",
+    "this_graph": "This graph exhausts exact score versus first-scorer, BTTS, full-total, and team-total payoff identities only within complete same-match retained event families."
+  },
+  "retained_source": {
+    "path": "data/polymarket-near-expiry-negrisk-complete-set-catalog-v1/raw/events.json",
+    "sha256": "1dd21f815a4564cb42711842b80c91e46d6b6a799dcefe2911d0a30e10ab61f2",
+    "global_population_complete": false,
+    "population_scope": "Every complete base plus exact-score plus first-to-score plus more-markets soccer family in the immutable 100-event response."
+  },
+  "prior_adjudication": {
+    "path": "docs/model-research/action-value/polymarket-soccer-structural-graph-result-v1-2026-08-30.json",
+    "file_sha256": "38759e3605fad839987ae87efaee62a79710dfb77a9c58ab64b9e1ee3f9535da",
+    "result_sha256": "6c54fcb7e8031a1c6cf43c969b445fa12e955368283922edf4d1b7782fb0c60b"
+  },
+  "relation_contracts": [
+    {
+      "family": "exact_zero_zero_equivalent_neither_first_to_score",
+      "legs": "NO exact 0-0 plus YES Neither",
+      "ordinary_floor_pUSD": "1",
+      "cancellation_floor_pUSD": "1"
+    },
+    {
+      "family": "neither_first_to_score_equivalent_exact_zero_zero",
+      "legs": "NO Neither plus YES exact 0-0",
+      "ordinary_floor_pUSD": "1",
+      "cancellation_floor_pUSD": "1"
+    },
+    {
+      "family": "under_zero_point_five_implies_exact_zero_zero",
+      "legs": "YES exact 0-0 plus YES Over 0.5",
+      "ordinary_floor_pUSD": "1",
+      "cancellation_floor_pUSD": "1.5"
+    },
+    {
+      "family": "one_sided_exact_score_implies_first_scorer",
+      "legs": "NO exact one-sided positive score plus YES the only scoring team scores first",
+      "ordinary_floor_pUSD": "1",
+      "cancellation_floor_pUSD": "1"
+    },
+    {
+      "family": "nonzero_exact_score_implies_btts_side",
+      "legs": "NO exact nonzero score plus YES the mechanically implied BTTS side",
+      "ordinary_floor_pUSD": "1",
+      "cancellation_floor_pUSD": "1.5"
+    },
+    {
+      "family": "nonzero_exact_score_implies_full_game_total_side",
+      "legs": "NO exact nonzero score plus YES the mechanically implied side of every retained full-game total",
+      "ordinary_floor_pUSD": "1",
+      "cancellation_floor_pUSD": "1.5"
+    },
+    {
+      "family": "nonzero_exact_score_implies_team_total_side",
+      "legs": "NO exact nonzero score plus YES the mechanically implied side of every retained team total",
+      "ordinary_floor_pUSD": "1",
+      "cancellation_floor_pUSD": "1.5"
+    }
+  ],
+  "price_contract": {
+    "yes_acquisition_proxy": "first-outcome bestAsk",
+    "no_acquisition_proxy": "1 minus first-outcome bestBid",
+    "missing_side_specific_price": "fail closed and do not substitute outcomePrices",
+    "candidate_requires_sum_strictly_below_one_pUSD": true,
+    "retained_prices_are_rejection_only": true,
+    "retained_prices_cannot_accept_or_promote": true
+  },
+  "stopping_rules": {
+    "zero_strict_candidates": "Terminalize this retained population without any venue request.",
+    "one_or_more_strict_candidates": "Retain all strict rows but rank deterministically by lowest proxy sum. Because every retained match has ended, make no request; pre-register one future distinct active equivalent relation before any exact book access.",
+    "current_or_historical_book_request": false,
+    "adaptive_refit_cherry_pick_or_source_refresh": false
+  },
+  "implementation": {
+    "path": "tools/adjudicate_polymarket_soccer_exact_score_cross_family.py",
+    "sha256": "0abd088d8b6b0da9d24f5a66f4e8f1eb0dfca343ebc2b5ac0b684d83fe2a61e7",
+    "dependency": {
+      "path": "tools/adjudicate_polymarket_soccer_structural_graph.py",
+      "sha256": "32add0641e85d5f8cbc360f8c5969b56c386e3441a35246c18728844d765c0bc"
+    }
+  },
+  "output_path": "docs/model-research/action-value/polymarket-soccer-exact-score-cross-family-result-v1-2026-08-30.json",
+  "authority": {
+    "network_requests": 0,
+    "credentials_used": false,
+    "account_state_accessed": false,
+    "orders_quotes_wallets_funds_or_transactions": 0,
+    "protected_capture_touched": false,
+    "trading_authority": false
+  },
+  "contract_sha256": "f9f88d1d76172e0ebbc8c00a9593b25f3b75673f89612b9c1a3d968e6e291482"
+}

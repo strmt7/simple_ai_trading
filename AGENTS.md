@@ -265,6 +265,13 @@ override prose.
   available or use `1 - YES bestBid` only as a conservative rejection proxy.
   Missing side-specific ask evidence blocks escalation, and every surviving
   row still requires an exact current book batch before any economic claim.
+- Treat soccer exact-score implications as one cross-family graph, not a reason
+  to rebuild collectors market by market. The retained August 29 population
+  already exhausts match result, first scorer, BTTS, full-total, team-total,
+  halftime-result, and second-half-result identities. Reopen only on a distinct
+  active event whose exact common rules preserve the payoff floor and whose
+  side-specific rejection prices are strictly below it; stale event prices and
+  `outcomePrices` never authorize a book.
 - Before freezing a time-bounded prospective capture, prove that its duration,
   phase alignment, retained observation tail, and required source timestamps can
   supply every minimum-sample gate. Elapsed duration and zero transport gaps do
