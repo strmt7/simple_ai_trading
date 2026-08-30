@@ -1,0 +1,184 @@
+{
+  "adjudication": {
+    "accepted_edge": false,
+    "deployment_ready": false,
+    "next_action": "terminalize_this_exact_event_without_refetch_or_retry",
+    "passes_frozen_candidate_gate": false,
+    "pre_age_candidate_gate_passed": false,
+    "profitability_claim": false
+  },
+  "authority": {
+    "account_requests": 0,
+    "credentials_used": false,
+    "funds_used": false,
+    "orders_or_transactions": 0,
+    "protected_capture_touched": false,
+    "public_unauthenticated_read_only_requests_maximum": 3,
+    "signed_requests": 0,
+    "trading_authority": false
+  },
+  "capture": {
+    "book_receipt": {
+      "completed_at_ms": 1788092948385,
+      "method": "POST",
+      "name": "exact-two-token-book-batch",
+      "phase": "completed",
+      "raw_path": "data/polymarket-fordham-ndsu-total-monotone-package-v1/raw/books.json",
+      "request_body_sha256": "60907b57c48f3b4a9d397f28e5af3dd78ed7cdb350347972836efe7888988c26",
+      "requested_at_ms": 1788092948285,
+      "response_bytes": 1325,
+      "response_sha256": "b36714069c78a4e3d30f9c3fc3348ff42bccc41608394b6b2eb5dc4de6bf01a6",
+      "status_code": 200,
+      "url": "https://clob.polymarket.com/books"
+    },
+    "book_timestamp_skew_ms": 148059,
+    "fee_receipts": {},
+    "maximum_book_age_ms": 5000,
+    "newest_book_age_at_completion_ms": 152285,
+    "oldest_book_age_at_completion_ms": 300344,
+    "source_time_not_future": true,
+    "within_frozen_age_gate": false,
+    "within_frozen_skew_gate": false
+  },
+  "contract": {
+    "path": "docs/model-research/action-value/polymarket-fordham-ndsu-total-monotone-package-contract-v1-2026-08-30.json",
+    "sha256": "b40cf9e252f63ae589980f1c4e5850a99028112b14a689b6a17d54551640db5a"
+  },
+  "created_at_utc": "2026-08-30T12:29:08.386432Z",
+  "economics": {
+    "actual": {
+      "adverse_ticks_per_leg": 0,
+      "after_current_fee_profit_floor_pUSD": null,
+      "cost_pUSD": "9.2",
+      "current_fee_pUSD": null,
+      "fills": [
+        {
+          "cost_pUSD": "4.6",
+          "fee_pUSD": null,
+          "fills": [
+            {
+              "price_pUSD": "0.92",
+              "quantity_shares": "5"
+            }
+          ]
+        },
+        {
+          "cost_pUSD": "4.6",
+          "fee_pUSD": null,
+          "fills": [
+            {
+              "price_pUSD": "0.92",
+              "quantity_shares": "5"
+            }
+          ]
+        }
+      ],
+      "optimistic_zero_fee_profit_floor_pUSD": "-4.2"
+    },
+    "delay_1s_sensitivity": {
+      "adverse_ticks_per_leg": 2,
+      "after_current_fee_profit_floor_pUSD": null,
+      "cost_pUSD": "9.4",
+      "current_fee_pUSD": null,
+      "fills": [
+        {
+          "cost_pUSD": "4.7",
+          "fee_pUSD": null,
+          "fills": [
+            {
+              "price_pUSD": "0.94",
+              "quantity_shares": "5"
+            }
+          ]
+        },
+        {
+          "cost_pUSD": "4.7",
+          "fee_pUSD": null,
+          "fills": [
+            {
+              "price_pUSD": "0.94",
+              "quantity_shares": "5"
+            }
+          ]
+        }
+      ],
+      "optimistic_zero_fee_profit_floor_pUSD": "-4.4"
+    },
+    "delay_3s_sensitivity": {
+      "adverse_ticks_per_leg": 6,
+      "after_current_fee_profit_floor_pUSD": null,
+      "cost_pUSD": "9.8",
+      "current_fee_pUSD": null,
+      "fills": [
+        {
+          "cost_pUSD": "4.9",
+          "fee_pUSD": null,
+          "fills": [
+            {
+              "price_pUSD": "0.98",
+              "quantity_shares": "5"
+            }
+          ]
+        },
+        {
+          "cost_pUSD": "4.9",
+          "fee_pUSD": null,
+          "fills": [
+            {
+              "price_pUSD": "0.98",
+              "quantity_shares": "5"
+            }
+          ]
+        }
+      ],
+      "optimistic_zero_fee_profit_floor_pUSD": "-4.8"
+    }
+  },
+  "gamma_prefilter": {
+    "displayed_price_sum_pUSD": "0.960",
+    "optimistic_profit_floor_per_share_before_execution_costs_pUSD": "0.040",
+    "passes_strictly_below_payout_gate": true,
+    "role": "rejection_only_never_acceptance_or_promotion_evidence"
+  },
+  "implementation": {
+    "path": "tools/screen_polymarket_exact_two_leg_sports_package_v2.py",
+    "sha256": "c95941420e91f9b6ed5da0f3132ba055231ce7a1dc4a5afde31d2d3f585b94db"
+  },
+  "payoff_proof": {
+    "guaranteed_floor_per_share_pUSD": "1",
+    "invariant": "totals at or below 56 pay Under 57.5; exactly 57 pays both legs; totals at or above 58 pay Over 56.5; cancellation pays each leg one-half",
+    "market_direction_forecast_required": false,
+    "states": [
+      {
+        "payouts": {
+          "over_56_5": "0",
+          "under_57_5": "1"
+        },
+        "state": "combined_total_at_most_56"
+      },
+      {
+        "payouts": {
+          "over_56_5": "1",
+          "under_57_5": "1"
+        },
+        "state": "combined_total_exactly_57"
+      },
+      {
+        "payouts": {
+          "over_56_5": "1",
+          "under_57_5": "0"
+        },
+        "state": "combined_total_at_least_58"
+      },
+      {
+        "payouts": {
+          "over_56_5": "0.5",
+          "under_57_5": "0.5"
+        },
+        "state": "game_canceled_without_makeup"
+      }
+    ]
+  },
+  "result_sha256": "8d2f9e8a5f00fa84c4291822692712151cb51bc7bdc7a659d12aa13f788361a1",
+  "schema_version": "polymarket-exact-two-leg-package-result-v2"
+}

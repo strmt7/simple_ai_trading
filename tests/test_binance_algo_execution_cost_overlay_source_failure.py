@@ -111,7 +111,11 @@ def test_failure_adjudication_is_fail_closed_source_bound_and_registered() -> No
     assert family["algo_execution_cost_retry_trigger"] == artifact["retry_contract"][
         "retry_trigger"
     ]
-    terminal = registry["terminal_do_not_repeat"][-1]
+    terminal = next(
+        row
+        for row in registry["terminal_do_not_repeat"]
+        if row["canonical_result_sha256"] == artifact["result_sha256"]
+    )
     assert terminal["canonical_result_sha256"] == artifact["result_sha256"]
     assert terminal["family"] == (
         "binance_Algo_Trading_current_OpenAPI_schema_source_gate_2026_08_30"

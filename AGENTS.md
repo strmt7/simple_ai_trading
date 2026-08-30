@@ -260,6 +260,15 @@ override prose.
   assume the documented bid or ask sort order; if a retained complete batch is
   consistently reversed, preserve the consumed runner and adjudicate offline
   without refetching or allowing the outcome-aware correction to promote it.
+- Every current multi-book candidate gate must mechanically conjoin both a
+  source-bound oldest-book-age ceiling and a cross-book timestamp-skew ceiling.
+  Synchronization alone does not make uniformly stale books current; a displayed
+  metadata price never substitutes for executable depth.
+- When one complete catalog produces multiple outcome-sensitive candidates,
+  freeze one deterministic candidate ordering before the first depth request.
+  Failure of that selected candidate consumes the catalog escalation: do not
+  cherry-pick runners-up from the already-observed catalog without a literal new
+  event, source, recurrence, or material economics trigger.
 - Before every one-use HTTP request, durably journal the method, URL, and exact
   request-body hash before access. Catch HTTP error responses as evidence: save
   their body, status, and completed receipt before raising. If the provider's
