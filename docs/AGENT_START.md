@@ -2189,3 +2189,32 @@ Canonical adjudication SHA-256 is
 `1153ef2f90345be8ebfda5b0c2fd3f02a56dc0dad854edf251e21370a9677743`;
 accepted edges remain 21 and terminal families become 55. Registry SHA-256 is
 `d82fe12b7ec4fb7765bdbad781ac7fc6ef1e6bf26da84882ab42f139411bb6fd`.
+
+## Binance Spot PRIMARY_PEG execution overlay candidate
+
+Current official Binance Spot documentation proves that `PRIMARY_PEG` derives
+price from the same-side best book price at matching-engine arrival and that a
+`LIMIT_MAKER` pegged order queues after existing orders at that price. The
+already-retained production `exchangeInfo` snapshot independently proves
+`pegInstructionsAllowed=true`, `LIMIT_MAKER`, and `TRADING` for BTCUSDT,
+ETHUSDT, and SOLUSDT.
+
+A zero-new-market-request audit reused the two retained public ticker windows.
+At a frozen one-second observation lag, a fixed-price `LIMIT_MAKER` would have
+crossed the later opposite quote in 416 of 3,365 discovery comparisons (12.36%)
+and 31 of 729 validation comparisons (4.25%). Every symbol in both windows had
+at least one such deterministic rejection counterfactual. This is a recurrent,
+direction-independent order-acceptance candidate, not profit evidence: the
+public samples do not prove subsecond state, acknowledgements, queue position,
+fills, spread capture, adverse selection, or PnL.
+
+Do not place or cancel an order on this evidence. Advance only with explicit
+separate Binance Spot testnet or paper authority for one minimum-size
+`PRIMARY_PEG LIMIT_MAKER` acknowledgement-and-cancel comparison against a
+frozen fixed-price counterfactual, or after a material official pegged-order
+semantics, filter, fee, or production-configuration change. Mainnet remains
+unauthorized. Canonical candidate SHA-256 is
+`605d5b195f43bbb9976a5bd3d239388aa918110a6860669da480fa7949b789a2`.
+Accepted edges remain 21, ranked hypotheses remain 44, and terminal families
+remain 55. Registry SHA-256 is
+`4bf91c297d3c41583874fe77c3b1c456736bc2809c4bfdac320edd8124f62005`.
