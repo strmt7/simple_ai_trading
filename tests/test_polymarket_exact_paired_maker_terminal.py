@@ -99,7 +99,7 @@ def test_discovery_gate_failure_is_preserved_and_corrected() -> None:
     assert best_bid["verdict"]["fresh_capture_justified"] is False
 
     registry, registry_hash = _reconstruct(REGISTRY)
-    assert registry_hash == "66b03aa1311ee3b0565e9dc4e973f157aa9626af23b5f675bc60119d668dd311"
+    assert registry_hash == "b876dc08b7d462a1dd738927ba52b4b7d2806a61840c2812314bee0913e3e29f"
     assert registry["accepted_edge_count"] == 21
     terminal_row = next(
         row

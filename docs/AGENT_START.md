@@ -61,6 +61,17 @@ safety gate, blocks Stop, or submits an order.
   qualify the current three-wallet rate, authorize new capital, or establish
   deployment readiness. Canonical continuity result SHA-256
   `2eb7b434170afb195cc4f4faef8260ac4ec30b655c20fc07ee1bc9acbdfe090d`.
+  After the next 25-hour payout window closed, a frozen one-request BTC pulse
+  found exactly one later `YIELD` row: 0.0133 pUSD at
+  `2026-08-30T00:13:40Z`, 86,290 seconds after the prior row. A separately
+  frozen one-request Polygon receipt check reconciled its exact successful
+  pUSD transfer from the holding-yield distributor. This extends observed BTC
+  continuity to 18 positive rows without repairing v7, qualifying the
+  three-wallet current rate, or opening a forward new-capital profit floor.
+  Do not repeat either consumed check; the next distinct single-wallet pulse is
+  prohibited before `2026-08-31T02:15:30Z` absent a material terms change.
+  Canonical receipt result SHA-256
+  `4e57d6c0216886144fb89f8ae69b11a2eee4db37149ce6c956adecf293b7b927`.
 - Binance Stocks FPSL is a materially distinct direction-independent overlay
   for U.S.-listed stocks or ETFs that are already independently owned and fully
   settled. The current FAQ says actual loaned shares accrue interest daily and
@@ -858,7 +869,7 @@ safety gate, blocks Stop, or submits an order.
   required 4,306.850 days. No fresh capture is justified. Canonical rejection:
   `facecfaa3b92d905c700083c7b8afe153adc495403ceabc91e417bdb248d059b`.
   The accepted count remains 21; registry SHA-256 is
-  `66b03aa1311ee3b0565e9dc4e973f157aa9626af23b5f675bc60119d668dd311`.
+  `b876dc08b7d462a1dd738927ba52b4b7d2806a61840c2812314bee0913e3e29f`.
 - The separate official crypto maker-rebate schedule has exact conditional
   filled-order arithmetic, not an accepted edge. At 50 shares bid on each side
   at 0.49, the unrounded nominal rebates total 0.3498600 pUSD and raise the
@@ -1984,4 +1995,4 @@ competition needed 4,306.850 days. Do not retry this market. Accepted edges
 remain 21. Canonical rejection SHA-256:
 `facecfaa3b92d905c700083c7b8afe153adc495403ceabc91e417bdb248d059b`;
 registry SHA-256:
-`66b03aa1311ee3b0565e9dc4e973f157aa9626af23b5f675bc60119d668dd311`.
+`b876dc08b7d462a1dd738927ba52b4b7d2806a61840c2812314bee0913e3e29f`.
