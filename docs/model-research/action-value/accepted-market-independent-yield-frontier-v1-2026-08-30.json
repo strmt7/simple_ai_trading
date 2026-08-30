@@ -1,8 +1,8 @@
 {
   "schema_version": "accepted-market-independent-yield-frontier-v1",
   "created_at_utc": "2026-08-30T03:07:15Z",
-  "updated_at_utc": "2026-08-30T08:08:35.3343497Z",
-  "result_sha256": "53afed572c779113de6e9760f319ad7fb7a2d1e1958997139793142cf241fbe7",
+  "updated_at_utc": "2026-08-30T08:22:49.3606261Z",
+  "result_sha256": "e3e6941790079587e3a21bf0894e165963cc871b9165821fd7b00600fc3c4dec",
   "purpose": "rank_the_nine_accepted_market_direction_independent_yield_and_capital_efficiency_overlays_by_evidence_strength_current_gross_opportunity_and_remaining_deployment_gates_without_new_network_or_account_access",
   "authority": {
     "network_requests": 0,
@@ -82,6 +82,12 @@
       "file_sha256": "d7be9195975f03c70d3729c573ebb425404e3080e9b5cc234024e3772458fa0f",
       "path": "docs/model-research/action-value/binance-usd1-simple-earn-remaining-horizon-stress-v1-2026-08-30.json",
       "result_sha256": "669fd50772087cb81a4d1e9439e5666a75b5c1ed9de68b1e8b27cb360f2d5934"
+    },
+    {
+      "edge_id": "binance_u_flexible_existing_holding_yield",
+      "file_sha256": "e8ce2b95f0c0a74c0306a4a95ac01eb11ea32c0c5bb056f3af7b7f27eabc90dd",
+      "path": "docs/model-research/action-value/binance-u-flexible-remaining-horizon-stress-v1-2026-08-30.json",
+      "result_sha256": "d9be584383bdbf4e45f570987103e9d380358b2ba08aafc865ccecfc4b2c225e"
     }
   ],
   "evidence_strength_frontier": [
@@ -270,11 +276,18 @@
       "public_after_all_cost_floor_bips": "0",
       "stable_profit_proved": false
     },
+    "u_flexible_current_remaining_horizon_stress": {
+      "acquisition_edge_accepted": false,
+      "first_negative_subscription_date_before_unproved_other_costs": "2026-09-02",
+      "fixed_bonus_margin_before_unproved_other_costs_bips": "2.697686226712328767123287671232876712328767123288",
+      "public_after_all_cost_floor_bips": "0",
+      "stable_acquisition_profit_proved": false
+    },
     "new_accepted_edge_count": 0,
     "accepted_edge_count_after_frontier": 24,
     "profitability_claim_beyond_source_scopes": false,
     "deployment_ready_edge_count": 0,
-    "next_research_spend": "at_the_literal_next_trigger_refresh_only_the_rank_1_Polymarket_single_wallet_continuity_pulse_before_2026_09_02_prequalify_the_current_USD1_fixed_bonus_only_if_both_designated_credentials_and_explicit_signed_GET_only_authority_exist_otherwise_do_not_roll_the_stress_daily_and_treat_unchanged_late_entry_economics_as_negative",
+    "next_research_spend": "at_or_after_2026_08_30T19_00_01Z_advance_only_the_precommitted_distinct_WNBA_structural_window_if_every_frozen_gate_is_satisfied_then_refresh_only_the_rank_1_Polymarket_single_wallet_continuity_pulse_not_before_2026_08_31T02_15_30Z_absent_a_material_change_do_not_roll_USD1_or_U_remaining_horizon_stresses_daily",
     "prohibited_shortcuts": [
       "acquiring_borrowing_or_retaining_an_asset_for_any_existing_balance_only_edge",
       "treating_a_published_APR_as_owned_realized_profit",

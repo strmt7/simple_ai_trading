@@ -1099,16 +1099,22 @@ safety gate, blocks Stop, or submits an order.
   `e0b6ed9311d2a022abee417a677b952e83cf918fc6b396804f5cba39fd83d4ed`.
 - The Binance U Flexible promotion is accepted only for already-held idle U in
   an eligible non-EEA master account: regular users receive a public headline
-  8.5% APR on the first 5,000 U through 2026-09-14. Buying U for the promotion
-  is rejected because only 10.3422 bips remain after the current USDT
-  alternative, displayed zero-fee spread, and worst observed 19-day close move
-  before issuer and account risks. The issuer's terms give ordinary secondary
+  8.5% APR on the first 5,000 U through 2026-09-14. A zero-request current-
+  horizon correction does not credit the approximate variable 0.5% component:
+  for a 2026-08-30 subscription, the fixed 8% bonus leaves only 2.6976862267
+  bips or 1.3488431134 quote units after the retained USDT alternative,
+  displayed spread, and worst observed 19-day close move, before every unproved
+  cost. The unchanged sensitivity turns negative for a 2026-09-02 subscription.
+  Buying U for the promotion remains rejected. The issuer's terms give ordinary secondary
   holders no direct redemption right or reserve claim, and its homepage lists
   only a December 2025 attestation. Do not infer region from the host timezone,
-  acquire U for the reward, or call the promotion stable or deployment-ready.
+  acquire U for the reward, roll this stress daily, or call the promotion stable
+  or deployment-ready.
   Canonical gate: `binance-u-flexible-idle-holding-yield-gate-v1-2026-08-26.json`,
   result SHA-256
   `6f44b65e5aa85d33cc02e8611a372162cf00f4162fdff99828a31cf498ced6f9`.
+  Canonical current-horizon stress SHA-256 is
+  `d9be584383bdbf4e45f570987103e9d380358b2ba08aafc865ccecfc4b2c225e`.
 - The RWUSD VIP extension is accepted only as an automatic bonus on RWUSD
   already held for an independent reason: 1.1452 bips over 22 days for VIP 1-3
   up to 30,000 RWUSD or 4.5808 bips for VIP 4-9 up to 200,000 RWUSD. Do not

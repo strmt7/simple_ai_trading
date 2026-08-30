@@ -4591,3 +4591,37 @@ remain 57. Current frontier SHA-256 becomes
 `53afed572c779113de6e9760f319ad7fb7a2d1e1958997139793142cf241fbe7`;
 registry SHA-256 becomes
 `9d4902c9608c358d212e329d9f2aa74e726d7187a218fd4123ed0cec0fe2d123`.
+
+## Binance U Flexible remaining-horizon correction
+
+The activation artifact's 10.3422-bip acquisition sensitivity used a
+2026-08-26 subscription and nineteen U reward days. A distinct zero-request
+correction preserved its promotion terms, displayed UUSDT spread, and worst
+retained nineteen-day close move, then applied only the elapsed accrual days and
+the competing USDT promotion's own published end date.
+
+For a 2026-08-30 subscription, accrual begins August 31 and leaves fifteen U
+fixed-bonus days versus eight USDT fixed-bonus days. The primary case credits
+only U's fixed 8% bonus, not its approximate variable 0.5% component. Its
+incremental reward is 19.6712328767 bips before the retained 16.97354665-bip
+spread-plus-basis sensitivity. Only 2.6976862267 bips or 1.3488431134 quote
+units at the 5,000 U cap remain before every unproved account, issuer,
+redemption, custody, tax, settlement, and operating cost. The same case leaves
+0.1771382815 bips for a September 1 subscription and becomes negative on
+September 2 before those costs.
+
+This does not change the accepted existing-holding scope and does not accept a
+USDT-to-U purchase. Stable acquisition profit is not proved and the public
+after-all-cost floor remains zero. No network, credential, account, conversion,
+subscription, redemption, transfer, order, or fund was used. Do not roll this
+calculation or refresh its retained market inputs daily. Reopen only on the
+literal published term, rate, quota, fee, reserve-attestation, redemption-
+contract, or post-campaign trigger.
+
+Canonical stress SHA-256 is
+`d9be584383bdbf4e45f570987103e9d380358b2ba08aafc865ccecfc4b2c225e`.
+Accepted edges remain 24, ranked hypotheses remain 44, and terminal families
+remain 57. Current frontier SHA-256 becomes
+`e3e6941790079587e3a21bf0894e165963cc871b9165821fd7b00600fc3c4dec`;
+registry SHA-256 becomes
+`beaa24adc3a5550185f0b387818565d7a0bb5bbddea4520ca71a101afce4baaf`.
