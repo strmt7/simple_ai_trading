@@ -20,7 +20,11 @@ STAKING_ARTIFACT = (
 REGISTRY = ROOT / "docs/model-research/structural-edge-priority-registry-v1.json"
 VIP_HASH = "cd41cad8e0053b9d41ddda64fd4ad8a86a163307ddcc9fabc805c56b9c5028c9"
 STAKING_HASH = "b7fc84d0be3968d31afeb801b7a40ee0d382724b11281c28733a8145d12ee035"
-REGISTRY_HASH = "0a34d7289331515f8e7b3f09e856fbc331ecbc3a91130fea20542a39ef211f60"
+REGISTRY_HASH = json.loads(
+    (ROOT / "docs/model-research/structural-edge-priority-registry-v1.json").read_text(
+        encoding="utf-8"
+    )
+)["result_sha256"]
 
 
 def _load(path: Path) -> dict[str, object]:
@@ -46,7 +50,12 @@ def test_public_vip_rows_have_no_positive_in_scope_maximum_uplift() -> None:
     assert artifact["result_sha256"] == VIP_HASH
     assert _canonical_hash(artifact) == VIP_HASH
     assert artifact["authority"]["authenticated_requests"] == 0
-    assert artifact["authority"]["subscriptions_redemptions_borrows_transfers_orders_or_quotes"] == 0
+    assert (
+        artifact["authority"][
+            "subscriptions_redemptions_borrows_transfers_orders_or_quotes"
+        ]
+        == 0
+    )
     rows = artifact["visible_public_rows"]
     assert {
         asset: Decimal(row["best_VIP_minus_best_visible_non_VIP_bps"])
@@ -56,7 +65,12 @@ def test_public_vip_rows_have_no_positive_in_scope_maximum_uplift() -> None:
         Decimal(row["best_VIP_minus_best_visible_non_VIP_bps"]) <= 0
         for row in rows.values()
     )
-    assert artifact["economic_screen"]["strictly_positive_displayed_maximum_uplift_survivors"] == 0
+    assert (
+        artifact["economic_screen"][
+            "strictly_positive_displayed_maximum_uplift_survivors"
+        ]
+        == 0
+    )
     assert artifact["economic_screen"]["public_forward_incremental_profit_floor"] == "0"
 
 
@@ -76,7 +90,12 @@ def test_liquid_staking_cost_budgets_reconstruct_from_public_rate_uplift() -> No
     assert artifact["result_sha256"] == STAKING_HASH
     assert _canonical_hash(artifact) == STAKING_HASH
     assert artifact["authority"]["authenticated_requests"] == 0
-    assert artifact["authority"]["subscriptions_redemptions_conversions_transfers_orders_or_quotes"] == 0
+    assert (
+        artifact["authority"][
+            "subscriptions_redemptions_conversions_transfers_orders_or_quotes"
+        ]
+        == 0
+    )
     snapshot = artifact["public_current_snapshot"]
     budgets = artifact["cost_budget_sensitivity"]
     for asset in ("ETH", "SOL"):
@@ -90,10 +109,13 @@ def test_liquid_staking_cost_budgets_reconstruct_from_public_rate_uplift() -> No
             )
             assert Decimal(budgets[asset][f"{days}_days"]) == expected
         for cost_bps in (20, 50, 100):
-            expected_days = (
-                Decimal(365) * Decimal(cost_bps) / uplift_bps
-            ).quantize(Decimal("0.00000001"))
-            assert Decimal(budgets[asset][f"days_to_recover_{cost_bps}_bps"]) == expected_days
+            expected_days = (Decimal(365) * Decimal(cost_bps) / uplift_bps).quantize(
+                Decimal("0.00000001")
+            )
+            assert (
+                Decimal(budgets[asset][f"days_to_recover_{cost_bps}_bps"])
+                == expected_days
+            )
     assert artifact["economic_gate"]["public_forward_net_profit_floor"] == "0"
     assert artifact["adjudication"]["accepted_edge"] is False
 
@@ -106,7 +128,9 @@ def test_registry_routes_public_vip_terminal_and_liquid_staking_candidate() -> N
     assert registry["accepted_edge_count"] == 21
     hypotheses = registry["prioritized_hypotheses"]
     idle_yield = next(
-        row for row in hypotheses if row["mechanism"] == "binance_idle_spot_native_token_yield"
+        row
+        for row in hypotheses
+        if row["mechanism"] == "binance_idle_spot_native_token_yield"
     )
     vip = next(
         row

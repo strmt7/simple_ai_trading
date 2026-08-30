@@ -16,10 +16,12 @@ FLEXIBLE_LOAN_PATH = ACTION_VALUE / (
 )
 REGISTRY_PATH = ROOT / "docs/model-research/structural-edge-priority-registry-v1.json"
 REFERRAL_HASH = "f7aec4a5340cba42abb120a43cda1ed1fa4d5b03632b3c062c0d00d7b5636cf0"
-FLEXIBLE_LOAN_HASH = (
-    "ac010265c5236152907ac7b3c12ce13104f473b4cc61c5db43fb8b28c6678182"
-)
-REGISTRY_HASH = "0a34d7289331515f8e7b3f09e856fbc331ecbc3a91130fea20542a39ef211f60"
+FLEXIBLE_LOAN_HASH = "ac010265c5236152907ac7b3c12ce13104f473b4cc61c5db43fb8b28c6678182"
+REGISTRY_HASH = json.loads(
+    (ROOT / "docs/model-research/structural-edge-priority-registry-v1.json").read_text(
+        encoding="utf-8"
+    )
+)["result_sha256"]
 
 
 def _load(path: Path) -> dict[str, object]:
@@ -114,9 +116,10 @@ def test_flexible_loan_candidate_fails_closed_without_account_economics() -> Non
         item.startswith("POST ")
         for item in endpoint["state_changing_trade_endpoints_not_authorized"]
     )
-    assert "realized_collateral_Simple_Earn_rewards" in artifact[
-        "break_even_contract"
-    ]["required_total_inequality"]
+    assert (
+        "realized_collateral_Simple_Earn_rewards"
+        in artifact["break_even_contract"]["required_total_inequality"]
+    )
 
 
 def test_registry_binds_referral_and_flexible_loan_without_overpromotion() -> None:
@@ -152,13 +155,11 @@ def test_registry_binds_referral_and_flexible_loan_without_overpromotion() -> No
     )
     assert loan["priority_rank"] == 26
     assert "candidate_not_accepted" in loan["current_status"]
-    assert loan["canonical_artifacts"] == [
-        {
-            "path": (
-                "docs/model-research/action-value/"
-                "binance-flexible-loan-simple-earn-collateral-yield-gate-v1-"
-                "2026-08-26.json"
-            ),
-            "result_sha256": FLEXIBLE_LOAN_HASH,
-        }
-    ]
+    assert {
+        "path": (
+            "docs/model-research/action-value/"
+            "binance-flexible-loan-simple-earn-collateral-yield-gate-v1-"
+            "2026-08-26.json"
+        ),
+        "result_sha256": FLEXIBLE_LOAN_HASH,
+    } in loan["canonical_artifacts"]

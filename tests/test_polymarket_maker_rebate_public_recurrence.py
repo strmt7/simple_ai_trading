@@ -48,9 +48,11 @@ REGISTRY_PATH = (
 EXPECTED_RESULT_SHA256 = (
     "c992e0e1febc1a9789289cb129c166280ee0192cab203d3a6935a8c40e949612"
 )
-EXPECTED_REGISTRY_SHA256 = (
-    "b876dc08b7d462a1dd738927ba52b4b7d2806a61840c2812314bee0913e3e29f"
-)
+EXPECTED_REGISTRY_SHA256 = json.loads(
+    (ROOT / "docs/model-research/structural-edge-priority-registry-v1.json").read_text(
+        encoding="utf-8"
+    )
+)["result_sha256"]
 EXPECTED_MAKER_FIRST_SHA256 = (
     "4fe308ddeb6fd080bbd8548347a095762d8fc67eb5820fb0c7b3c2d6b7430d69"
 )
@@ -97,9 +99,12 @@ def test_public_recurrence_hash_and_authority_reconstruct() -> None:
     assert artifact["authority"]["orders_submitted"] == 0
     assert artifact["adjudication"]["public_program_payment_recurrence_proved"]
     assert not artifact["adjudication"]["accepted_edge"]
-    assert artifact["adjudication"][
-        "publicly_proven_payout_for_a_fresh_hypothetical_order"
-    ] == "0"
+    assert (
+        artifact["adjudication"][
+            "publicly_proven_payout_for_a_fresh_hypothetical_order"
+        ]
+        == "0"
+    )
 
 
 def test_exact_wallet_day_is_joined_to_btc_eth_sol_markets() -> None:
@@ -123,9 +128,7 @@ def test_cohort_recurrence_does_not_promote_diagnostic_ratio() -> None:
 
     assert week["wallet_count"] == 10
     assert week["wallets_with_receipts_on_all_7_utc_dates"] == 10
-    assert Decimal(
-        week["aggregate_receipt_to_crypto_volume_bips_diagnostic_only"]
-    ) > 0
+    assert Decimal(week["aggregate_receipt_to_crypto_volume_bips_diagnostic_only"]) > 0
     assert any(
         "Receipt-to-volume figures are diagnostics" in limitation
         for limitation in artifact["limitations"]
@@ -148,12 +151,10 @@ def test_maker_first_diagnostic_rejects_stable_edge_claim() -> None:
     assert not candidate["adjudication"]["accepted_edge"]
     assert candidate["adjudication"]["public_after_cost_profit_floor_pusd"] == "0"
     assert diagnostic["results"]["overall"]["sequence_count"] == 159
-    assert diagnostic["results"]["overall"][
-        "current_fee_sensitive_positive_count"
-    ] == 75
-    assert diagnostic["results"]["overall"][
-        "aggregate_current_fee_sensitive_pnl"
-    ] < 0
+    assert (
+        diagnostic["results"]["overall"]["current_fee_sensitive_positive_count"] == 75
+    )
+    assert diagnostic["results"]["overall"]["aggregate_current_fee_sensitive_pnl"] < 0
     assert diagnostic["results"]["zero_sequence_assets"] == ["SOL"]
     assert not diagnostic["verdict"]["market_direction_independent_edge_proved"]
 
@@ -166,12 +167,15 @@ def test_manipulation_regime_gate_rejects_five_minute_all_situation_edge() -> No
     assert not gate["adjudication"]["accepted_edge"]
     assert gate["adjudication"]["public_after_cost_profit_floor_pusd"] == "0"
     five_minute = gate["exact_five_minute_evidence"]
-    assert Decimal(
-        five_minute["manipulated_cycles"]["market_maker_total_reported_PnL_usd"]
-    ) < 0
-    assert Decimal(
-        five_minute["normal_cycles"]["market_maker_total_reported_PnL_usd"]
-    ) > 0
+    assert (
+        Decimal(
+            five_minute["manipulated_cycles"]["market_maker_total_reported_PnL_usd"]
+        )
+        < 0
+    )
+    assert (
+        Decimal(five_minute["normal_cycles"]["market_maker_total_reported_PnL_usd"]) > 0
+    )
     assert gate["prospective_population_and_risk_gate"]["first_cohort"] == (
         "BTC_ETH_SOL_fifteen_minute_only"
     )
@@ -206,23 +210,38 @@ def test_registry_tracks_recurrence_without_increasing_accepted_edges() -> None:
         artifact["path"]: artifact["result_sha256"]
         for artifact in candidate["canonical_artifacts"]
     }
-    assert artifacts_by_path[
-        "docs/model-research/polymarket/"
-        "crypto-maker-rebate-public-recurrence-v2-2026-08-26.json"
-    ] == EXPECTED_RESULT_SHA256
-    assert artifacts_by_path[
-        "docs/model-research/action-value/"
-        "polymarket-maker-first-taker-hedge-complete-set-candidate-v1-2026-08-27.json"
-    ] == EXPECTED_MAKER_FIRST_SHA256
-    assert artifacts_by_path[
-        "docs/model-research/action-value/"
-        "polymarket-maker-execution-manipulation-regime-gate-v1-2026-08-27.json"
-    ] == EXPECTED_MANIPULATION_GATE_SHA256
-    assert artifacts_by_path[
-        "docs/model-research/polymarket/"
-        "crypto-twap-liquidity-reward-screen-contract-v1.json"
-    ] == EXPECTED_TWAP_CONTRACT_SHA256
-    assert artifacts_by_path[
-        "docs/model-research/polymarket/"
-        "crypto-twap-liquidity-reward-screen-attempt1-failure-v1.json"
-    ] == EXPECTED_TWAP_FAILURE_SHA256
+    assert (
+        artifacts_by_path[
+            "docs/model-research/polymarket/"
+            "crypto-maker-rebate-public-recurrence-v2-2026-08-26.json"
+        ]
+        == EXPECTED_RESULT_SHA256
+    )
+    assert (
+        artifacts_by_path[
+            "docs/model-research/action-value/"
+            "polymarket-maker-first-taker-hedge-complete-set-candidate-v1-2026-08-27.json"
+        ]
+        == EXPECTED_MAKER_FIRST_SHA256
+    )
+    assert (
+        artifacts_by_path[
+            "docs/model-research/action-value/"
+            "polymarket-maker-execution-manipulation-regime-gate-v1-2026-08-27.json"
+        ]
+        == EXPECTED_MANIPULATION_GATE_SHA256
+    )
+    assert (
+        artifacts_by_path[
+            "docs/model-research/polymarket/"
+            "crypto-twap-liquidity-reward-screen-contract-v1.json"
+        ]
+        == EXPECTED_TWAP_CONTRACT_SHA256
+    )
+    assert (
+        artifacts_by_path[
+            "docs/model-research/polymarket/"
+            "crypto-twap-liquidity-reward-screen-attempt1-failure-v1.json"
+        ]
+        == EXPECTED_TWAP_FAILURE_SHA256
+    )

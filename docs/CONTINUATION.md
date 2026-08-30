@@ -1538,7 +1538,7 @@ but risked 26 pUSD orphan loss. Even observed displayed competition required
 `facecfaa3b92d905c700083c7b8afe153adc495403ceabc91e417bdb248d059b`.
 The accepted-edge count remains 21, the ranked-hypothesis count remains 44, and
 the registry SHA-256 is
-`b876dc08b7d462a1dd738927ba52b4b7d2806a61840c2812314bee0913e3e29f`.
+`de28d80cc4b0b9cd1bd3f9954cb840dcaefe46fcc0fdf9ac3fd53218169370cb`.
 
 The Binance option workflow adds a request-efficiency contract learned from a
 failed exploratory confirmation: fetch the contract catalog once, fetch the
@@ -2016,6 +2016,20 @@ NOKB announcement. Canonical candidate:
 `docs/model-research/action-value/binance-nok-bstock-dividend-perpetual-underdebit-candidate-v1-2026-08-27.json`,
 result SHA-256
 `79118e0e9a32a17d0d79040746068b94e6ec545179958a29dc45f3b8771434bb`.
+
+The next declared non-US recurrence comparator is already terminal without a
+current Binance request. TSMC's official dividend pages set the prior
+2026-06-11 ADR payment at 0.939325 USD gross and 0.742067 USD net of at-source
+withholding, while the next ex-date is 2026-09-16 with an estimated 1.11 USD
+gross ADR payment. Retained TSMUSDT funding contains exactly one `Special` row
+at the prior ex-date: -0.00233910 at a 407.23 mark. The matched short debit was
+0.952551693 USDT, leaving -0.013226693 versus the gross dividend and
+-0.210484693 versus the net dividend before every ordinary funding, execution,
+basis, fee, tax, and capital cost. No current funding or books were requested;
+do not repeat the September TSM event. Canonical result:
+`docs/model-research/action-value/binance-tsm-bstock-dividend-underdebit-v1-2026-08-30.json`,
+result SHA-256
+`82acc3529620f1d9c728eac24ea0fb256f228e4065650c766dff057d198a5e60`.
 
 A separate exact three-wrapper screen normalized current Ondo tokenized-stock
 point values by `sharesMultiplier` and matched them to bStock Spot and stock
@@ -2724,6 +2738,10 @@ not grant account, funding, order, or transaction authority.
    Board resolves an exact new amount and Binance publishes a matching NOKB
    announcement; close the historical multiplier event lineage before any
    prospective event-time capture.
+   Do not generalize NOK to TSM: the source-selected 2026-09-16 TSM event is
+   terminal because the prior exact Special short debit exceeded both the
+   prior gross and net ADR dividend before all other costs. No TSM book or
+   funding refresh is allowed for that event.
    For Ondo/bStock/stock-perpetual wrapper parity, Binance Alpha public full
    depth has now closed the missing executable-looking ask question. Do not
    repeat either the old point screen or the frozen four-contract Alpha book
@@ -3852,4 +3870,4 @@ reward days under observed competition and 4,306.850 under 100-times stress,
 against 3.693 days remaining. Canonical rejection SHA-256 is
 `facecfaa3b92d905c700083c7b8afe153adc495403ceabc91e417bdb248d059b`;
 registry SHA-256 is
-`b876dc08b7d462a1dd738927ba52b4b7d2806a61840c2812314bee0913e3e29f`.
+`de28d80cc4b0b9cd1bd3f9954cb840dcaefe46fcc0fdf9ac3fd53218169370cb`.

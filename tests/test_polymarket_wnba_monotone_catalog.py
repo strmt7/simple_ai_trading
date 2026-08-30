@@ -12,7 +12,11 @@ ROOT = Path(__file__).resolve().parents[1]
 ACTION_VALUE = ROOT / "docs/model-research/action-value"
 CONTRACT_HASH = "36faeee7464832f335739ec8d1fc5609c98e1cdc9b6f267901934fbd8277f831"
 RESULT_HASH = "fd0a9e844a7ad7d1a6eb5372c961ff82ea52d3c72a8c558ba191a53bace02cef"
-REGISTRY_HASH = "0a34d7289331515f8e7b3f09e856fbc331ecbc3a91130fea20542a39ef211f60"
+REGISTRY_HASH = json.loads(
+    (ROOT / "docs/model-research/structural-edge-priority-registry-v1.json").read_text(
+        encoding="utf-8"
+    )
+)["result_sha256"]
 
 
 def _canonical_hash(value: dict[str, object], field: str) -> str:
@@ -112,7 +116,9 @@ def test_screen_event_proves_wnba_moneyline_spread_floor() -> None:
     assert relation["passes_strictly_below_payout_gate"] is False
 
 
-def test_complete_future_window_stops_before_books_and_updates_existing_family() -> None:
+def test_complete_future_window_stops_before_books_and_updates_existing_family() -> (
+    None
+):
     contract = json.loads(
         (
             ACTION_VALUE
@@ -150,17 +156,15 @@ def test_complete_future_window_stops_before_books_and_updates_existing_family()
     )
 
     registry = json.loads(
-        (ROOT / "docs/model-research/structural-edge-priority-registry-v1.json").read_text(
-            encoding="utf-8"
-        )
+        (
+            ROOT / "docs/model-research/structural-edge-priority-registry-v1.json"
+        ).read_text(encoding="utf-8")
     )
     assert registry["result_sha256"] == REGISTRY_HASH
     assert _canonical_hash(registry, "result_sha256") == REGISTRY_HASH
     assert registry["accepted_edge_count"] == 21
     family = next(
-        row
-        for row in registry["prioritized_hypotheses"]
-        if row["priority_rank"] == 30
+        row for row in registry["prioritized_hypotheses"] if row["priority_rank"] == 30
     )
     assert family["canonical_artifacts"][-1]["result_sha256"] == RESULT_HASH
     assert any(

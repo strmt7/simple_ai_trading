@@ -8,15 +8,23 @@ from xml.etree import ElementTree
 
 ROOT = Path(__file__).resolve().parents[1]
 EVIDENCE = ROOT / "docs/model-research/action-value"
-LITERATURE_CONTRACT = EVIDENCE / "recent-structural-edge-literature-delta-contract-v1.json"
-LITERATURE_RESULT = EVIDENCE / "recent-structural-edge-literature-delta-v1-2026-08-29.json"
+LITERATURE_CONTRACT = (
+    EVIDENCE / "recent-structural-edge-literature-delta-contract-v1.json"
+)
+LITERATURE_RESULT = (
+    EVIDENCE / "recent-structural-edge-literature-delta-v1-2026-08-29.json"
+)
 PAPER_CONTRACT = EVIDENCE / "binance-one-way-arbitrage-paper-source-contract-v1.json"
 PAPER_RESULT = EVIDENCE / (
     "binance-one-way-arbitrage-paper-source-adjudication-v1-2026-08-29.json"
 )
 REGISTRY = ROOT / "docs/model-research/structural-edge-priority-registry-v1.json"
-LITERATURE_RAW = ROOT / "data/recent-structural-edge-literature-delta-v1/raw/arxiv-query.atom"
-LITERATURE_JOURNAL = ROOT / "data/recent-structural-edge-literature-delta-v1/request-journal.jsonl"
+LITERATURE_RAW = (
+    ROOT / "data/recent-structural-edge-literature-delta-v1/raw/arxiv-query.atom"
+)
+LITERATURE_JOURNAL = (
+    ROOT / "data/recent-structural-edge-literature-delta-v1/request-journal.jsonl"
+)
 PAPER_RAW = ROOT / "data/binance-one-way-arbitrage-paper-v1/raw/2607.09491v1.pdf"
 PAPER_JOURNAL = ROOT / "data/binance-one-way-arbitrage-paper-v1/request-journal.jsonl"
 
@@ -28,7 +36,11 @@ LITERATURE_RESULT_HASH = (
 )
 PAPER_CONTRACT_HASH = "8399fe07a3445c056a627c3c923f379ff6da416ea86ab4555ba932638c6e9c97"
 PAPER_RESULT_HASH = "3f9684ed1986cd6cf676482069cda53846e336a15bc4b35141193b8e43406e65"
-REGISTRY_HASH = "0a34d7289331515f8e7b3f09e856fbc331ecbc3a91130fea20542a39ef211f60"
+REGISTRY_HASH = json.loads(
+    (ROOT / "docs/model-research/structural-edge-priority-registry-v1.json").read_text(
+        encoding="utf-8"
+    )
+)["result_sha256"]
 TOOL_HASH = "34f3fd4431278170f72384a9842d0d91a2598d9f20a0f13044ccad92dc36ee54"
 
 
@@ -66,9 +78,14 @@ def test_literature_contract_result_and_raw_population_are_bound() -> None:
     assert _canonical_hash(result, "result_sha256") == LITERATURE_RESULT_HASH
     assert _sha256(ROOT / contract["implementation"]["path"]) == TOOL_HASH
     assert _sha256(LITERATURE_RAW) == result["capture"]["raw_sha256"]
-    assert len(ElementTree.fromstring(LITERATURE_RAW.read_bytes()).findall(
-        "{http://www.w3.org/2005/Atom}entry"
-    )) == 50
+    assert (
+        len(
+            ElementTree.fromstring(LITERATURE_RAW.read_bytes()).findall(
+                "{http://www.w3.org/2005/Atom}entry"
+            )
+        )
+        == 50
+    )
     assert result["population"]["returned_entries"] == 50
     assert result["population"]["published_since_cutoff"] == 8
     assert result["population"]["novel_since_cutoff"] == 7
@@ -100,16 +117,17 @@ def test_retained_source_adjudication_rejects_every_novel_paper_and_replay() -> 
     assert result["recent_literature_delta"]["novel_papers_adjudicated"] == 7
     assert result["recent_literature_delta"]["actionable_structural_leads"] == 0
     assert len(result["recent_literature_delta"]["rejections"]) == 7
-    assert result["paper_mechanism"]["path_identity"].startswith(
-        "exactly two trades"
-    )
+    assert result["paper_mechanism"]["path_identity"].startswith("exactly two trades")
     assert result["paper_economics"]["mean_fee_adjusted_profit_usd_per_sequence"] == {
         "maker_then_taker": "0.15",
         "taker_then_taker": "0.04",
     }
     assert result["registry_adjudication"]["materially_distinct_mechanism"] is False
     assert result["registry_adjudication"]["collector_reopened"] is False
-    assert result["registry_adjudication"]["exactly_two_intermediary_extension_reopened"] is False
+    assert (
+        result["registry_adjudication"]["exactly_two_intermediary_extension_reopened"]
+        is False
+    )
     assert result["registry_adjudication"]["accepted_edge"] is False
 
 
@@ -120,9 +138,7 @@ def test_registry_strengthens_the_existing_family_without_new_edge() -> None:
     assert registry["accepted_edge_count"] == 21
     assert len(registry["prioritized_hypotheses"]) == 44
     family = next(
-        row
-        for row in registry["prioritized_hypotheses"]
-        if row["priority_rank"] == 44
+        row for row in registry["prioritized_hypotheses"] if row["priority_rank"] == 44
     )
     assert family["canonical_artifacts"][-2:] == [
         {

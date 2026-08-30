@@ -9,7 +9,11 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 ACTION_VALUE = ROOT / "docs/model-research/action-value"
 REGISTRY = ROOT / "docs/model-research/structural-edge-priority-registry-v1.json"
-REGISTRY_HASH = "0a34d7289331515f8e7b3f09e856fbc331ecbc3a91130fea20542a39ef211f60"
+REGISTRY_HASH = json.loads(
+    (ROOT / "docs/model-research/structural-edge-priority-registry-v1.json").read_text(
+        encoding="utf-8"
+    )
+)["result_sha256"]
 
 
 def _load(path: Path) -> dict[str, object]:
@@ -48,7 +52,9 @@ def test_bounded_catalog_is_complete_one_request_and_retains_every_relation() ->
         for line in (
             ROOT
             / "data/polymarket-future-nfl-monotone-catalog-v1/request-journal.jsonl"
-        ).read_text().splitlines()
+        )
+        .read_text()
+        .splitlines()
     ]
 
     assert contract["contract_sha256"] == (
@@ -91,7 +97,9 @@ def test_precommitted_best_catalog_candidate_fails_exact_depth_before_fees() -> 
         for line in (
             ROOT
             / "data/polymarket-commanders-cowboys-total-package-v1/request-journal.jsonl"
-        ).read_text().splitlines()
+        )
+        .read_text()
+        .splitlines()
     ]
 
     assert contract["contract_sha256"] == (
@@ -141,9 +149,12 @@ def test_tie_collision_is_corrected_offline_without_adaptive_depth() -> None:
         "moneyline_with_half_half_tie",
         "integer_margin_threshold",
     ]
-    assert result["rejection_only_gamma_prefilter"][
-        "candidate_count_strictly_below_payout_floor"
-    ] == 4
+    assert (
+        result["rejection_only_gamma_prefilter"][
+            "candidate_count_strictly_below_payout_floor"
+        ]
+        == 4
+    )
     assert result["authority"]["network_requests"] == 0
     assert result["authority"]["book_requests"] == 0
 

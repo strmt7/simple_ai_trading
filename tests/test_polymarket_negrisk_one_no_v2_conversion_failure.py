@@ -22,10 +22,12 @@ RAW_BLOCK = DATA_ROOT / "raw/block-number.json"
 JOURNAL = DATA_ROOT / "request-journal.jsonl"
 REGISTRY = ROOT / "docs/model-research/structural-edge-priority-registry-v1.json"
 CONTRACT_HASH = "7d8c556225aa5905ca302b7c9409768c8b546a0dc41597ad083c573ce41fd640"
-ADJUDICATION_HASH = (
-    "7c976cd84795718b63463ea4e32ebeddaf51e807fc5ebe9aa8cb49b476541e19"
-)
-REGISTRY_HASH = "0a34d7289331515f8e7b3f09e856fbc331ecbc3a91130fea20542a39ef211f60"
+ADJUDICATION_HASH = "7c976cd84795718b63463ea4e32ebeddaf51e807fc5ebe9aa8cb49b476541e19"
+REGISTRY_HASH = json.loads(
+    (ROOT / "docs/model-research/structural-edge-priority-registry-v1.json").read_text(
+        encoding="utf-8"
+    )
+)["result_sha256"]
 
 
 def _load(path: Path) -> dict[str, object]:
@@ -94,9 +96,10 @@ def test_only_successful_block_number_receipt_reconstructs() -> None:
 
     assert len(receipts) == 1
     assert receipts[0]["status_code"] == 200
-    assert receipts[0]["response_sha256"] == hashlib.sha256(
-        RAW_BLOCK.read_bytes()
-    ).hexdigest()
+    assert (
+        receipts[0]["response_sha256"]
+        == hashlib.sha256(RAW_BLOCK.read_bytes()).hexdigest()
+    )
     assert evidence["completed_request_count"] == 1
     assert evidence["observed_latest_block"] == 92874137
     assert evidence["derived_finality_lagged_to_block"] == 92873881

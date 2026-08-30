@@ -9,7 +9,11 @@ from typing import Any
 ROOT = Path(__file__).resolve().parents[1]
 ACTION = ROOT / "docs/model-research/action-value"
 REGISTRY = ROOT / "docs/model-research/structural-edge-priority-registry-v1.json"
-REGISTRY_HASH = "0a34d7289331515f8e7b3f09e856fbc331ecbc3a91130fea20542a39ef211f60"
+REGISTRY_HASH = json.loads(
+    (ROOT / "docs/model-research/structural-edge-priority-registry-v1.json").read_text(
+        encoding="utf-8"
+    )
+)["result_sha256"]
 
 
 def _sha256(payload: bytes) -> str:
@@ -50,9 +54,9 @@ def test_frozen_contracts_and_results_reconstruct() -> None:
         payload = _load(ACTION / name)
         assert _canonical_hash(payload, "contract_sha256") == payload["contract_sha256"]
         implementation = ROOT / payload["implementation"]["path"]
-        assert _sha256(implementation.read_bytes()) == payload["implementation"][
-            "sha256"
-        ]
+        assert (
+            _sha256(implementation.read_bytes()) == payload["implementation"]["sha256"]
+        )
     for name in result_names:
         payload = _load(ACTION / name)
         assert _canonical_hash(payload, "result_sha256") == payload["result_sha256"]
@@ -66,7 +70,10 @@ def test_public_request_journals_bind_every_retained_response() -> None:
         ROOT / "data/polymarket-aca-house-identity-parity-v1",
     )
     for data_root in roots:
-        rows = [json.loads(line) for line in (data_root / "request-journal.jsonl").read_text().splitlines()]
+        rows = [
+            json.loads(line)
+            for line in (data_root / "request-journal.jsonl").read_text().splitlines()
+        ]
         intents = [row for row in rows if row["phase"] == "intent"]
         completed = [row for row in rows if row["phase"] == "completed"]
         assert len(intents) == len(completed)

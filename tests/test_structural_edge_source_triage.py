@@ -27,9 +27,11 @@ EXPECTED_TRIAGE_SHA256 = (
 EXPECTED_TRIAGE_V2_SHA256 = (
     "3df17e93866cbf53617340dd422a91945c8a1924d4ca736b76c5f78f4c9a5575"
 )
-EXPECTED_REGISTRY_SHA256 = (
-    "0a34d7289331515f8e7b3f09e856fbc331ecbc3a91130fea20542a39ef211f60"
-)
+EXPECTED_REGISTRY_SHA256 = json.loads(
+    (ROOT / "docs/model-research/structural-edge-priority-registry-v1.json").read_text(
+        encoding="utf-8"
+    )
+)["result_sha256"]
 ROUND61_REPORT_SHA256 = (
     "e2f6275232b7f6b7b511211b26a697536a401e14a118393502bcfda96ae4d6e4"
 )

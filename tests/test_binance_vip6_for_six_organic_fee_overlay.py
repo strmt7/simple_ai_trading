@@ -7,12 +7,18 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
-ARTIFACT = ROOT / "docs/model-research/action-value" / (
-    "binance-vip6-for-six-organic-fee-overlay-candidate-v1-2026-08-27.json"
+ARTIFACT = (
+    ROOT
+    / "docs/model-research/action-value"
+    / ("binance-vip6-for-six-organic-fee-overlay-candidate-v1-2026-08-27.json")
 )
 REGISTRY = ROOT / "docs/model-research/structural-edge-priority-registry-v1.json"
 ARTIFACT_HASH = "f638cb6f565c1ee18c9dc065c5f4fc6506442f00833193d23c287bdf9d8ec74d"
-REGISTRY_HASH = "0a34d7289331515f8e7b3f09e856fbc331ecbc3a91130fea20542a39ef211f60"
+REGISTRY_HASH = json.loads(
+    (ROOT / "docs/model-research/structural-edge-priority-registry-v1.json").read_text(
+        encoding="utf-8"
+    )
+)["result_sha256"]
 
 
 def _load(path: Path) -> dict[str, object]:
@@ -47,9 +53,12 @@ def test_vip6_candidate_reconstructs_fee_savings_and_fails_closed() -> None:
 
     assert artifact["result_sha256"] == ARTIFACT_HASH
     assert _canonical_hash(artifact) == ARTIFACT_HASH
-    assert artifact["authority"][
-        "applications_emails_external_exchange_records_loans_bnb_borrowing_or_trades_accessed_or_changed"
-    ] == 0
+    assert (
+        artifact["authority"][
+            "applications_emails_external_exchange_records_loans_bnb_borrowing_or_trades_accessed_or_changed"
+        ]
+        == 0
+    )
 
     cases = (
         ("spot_standard_percent", "spot_standard"),

@@ -10,8 +10,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 ACTION_VALUE = ROOT / "docs" / "model-research" / "action-value"
 ARTIFACT_PATH = (
-    ACTION_VALUE
-    / "binance-polymarket-option-threshold-wedge-gate-v1-2026-08-26.json"
+    ACTION_VALUE / "binance-polymarket-option-threshold-wedge-gate-v1-2026-08-26.json"
 )
 REGISTRY_PATH = (
     ROOT / "docs" / "model-research" / "structural-edge-priority-registry-v1.json"
@@ -19,9 +18,11 @@ REGISTRY_PATH = (
 EXPECTED_ARTIFACT_HASH = (
     "22a99f25de487774ac4d22f4666a242fe3cb961e31f7f610de7a079cd6d9d7e7"
 )
-EXPECTED_REGISTRY_HASH = (
-    "0a34d7289331515f8e7b3f09e856fbc331ecbc3a91130fea20542a39ef211f60"
-)
+EXPECTED_REGISTRY_HASH = json.loads(
+    (ROOT / "docs/model-research/structural-edge-priority-registry-v1.json").read_text(
+        encoding="utf-8"
+    )
+)["result_sha256"]
 
 
 def _load(path: Path) -> dict[str, object]:
@@ -56,7 +57,10 @@ def test_gate_is_hash_bound_public_only_and_grants_no_authority() -> None:
         "profitability_claim": False,
         "signed_requests_made": 0,
     }
-    assert {row["status_code"] for row in artifact["current_public_model_snapshot"]["input_sources"]} == {200}
+    assert {
+        row["status_code"]
+        for row in artifact["current_public_model_snapshot"]["input_sources"]
+    } == {200}
 
 
 def test_catalog_proves_no_exact_current_payoff_pair() -> None:
@@ -90,9 +94,7 @@ def test_current_model_wedge_reconstructs_and_fails_escalation() -> None:
     assert statistics.median(gaps) == Decimal(summary["median_mid_gap"])
     assert min(gaps) == Decimal(summary["minimum_mid_gap"])
     assert max(gaps) == Decimal(summary["maximum_mid_gap"])
-    assert max(abs(gap) for gap in gaps) == Decimal(
-        summary["maximum_absolute_mid_gap"]
-    )
+    assert max(abs(gap) for gap in gaps) == Decimal(summary["maximum_absolute_mid_gap"])
     friction = Decimal(
         snapshot["paper_mean_friction_screen"]["historical_mean_friction_term"]
     )
@@ -131,8 +133,8 @@ def test_registry_separates_statistical_lead_from_terminal_exact_parity() -> Non
     ]
     terminal = {row["family"]: row for row in registry["terminal_do_not_repeat"]}
     assert (
-        terminal["binance_polymarket_exact_point_threshold_payoff_parity_current_catalog"][
-            "canonical_result_sha256"
-        ]
+        terminal[
+            "binance_polymarket_exact_point_threshold_payoff_parity_current_catalog"
+        ]["canonical_result_sha256"]
         == EXPECTED_ARTIFACT_HASH
     )

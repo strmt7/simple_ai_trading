@@ -33,9 +33,11 @@ EXPECTED_RESULT_SHA256 = (
 EXPECTED_FEE_EVIDENCE_SHA256 = (
     "4842bebff1b6177b2053d0fdc40680a2224f01fb541d0efcc85b08f049f68184"
 )
-EXPECTED_REGISTRY_SHA256 = (
-    "0a34d7289331515f8e7b3f09e856fbc331ecbc3a91130fea20542a39ef211f60"
-)
+EXPECTED_REGISTRY_SHA256 = json.loads(
+    (ROOT / "docs/model-research/structural-edge-priority-registry-v1.json").read_text(
+        encoding="utf-8"
+    )
+)["result_sha256"]
 
 
 def _load(path: Path) -> dict[str, object]:
@@ -72,11 +74,13 @@ def test_contract_and_result_reconstruct_from_the_frozen_evidence() -> None:
     assert result["result_sha256"] == EXPECTED_RESULT_SHA256
     assert _embedded_hash(result) == EXPECTED_RESULT_SHA256
     assert contract["frozen_at_utc"] < result["raw_evidence"]["requested_before_utc"]
-    assert result["raw_evidence"]["requested_before_utc"] < (
-        result["raw_evidence"]["received_after_utc"]
+    assert (
+        result["raw_evidence"]["requested_before_utc"]
+        < (result["raw_evidence"]["received_after_utc"])
     )
-    assert result["raw_evidence"]["requested_before_utc"] < (
-        contract["source_bound_inputs"]["lite_loan_promotion"]["end_utc"]
+    assert (
+        result["raw_evidence"]["requested_before_utc"]
+        < (contract["source_bound_inputs"]["lite_loan_promotion"]["end_utc"])
     )
     assert all(
         result["raw_evidence"]["requested_before_utc"] < row["promotion_end_utc"]
@@ -132,8 +136,9 @@ def test_only_usd1_survives_the_fixed_bonus_historical_stress_gate() -> None:
     }
     for evaluation in routes["USD1"]["evaluations"]:
         loan = evaluation["loan_amount_USDT"]
-        assert Decimal(evaluation["stressed_net_bips_of_loan"]) == (
-            expected_usd1_stressed_bips[loan]
+        assert (
+            Decimal(evaluation["stressed_net_bips_of_loan"])
+            == (expected_usd1_stressed_bips[loan])
         )
         assert Decimal(evaluation["stressed_net_USDT"]) > 0
         assert evaluation["entry_capacity_valid"] is True
@@ -152,17 +157,16 @@ def test_registry_records_candidate_without_inflating_accepted_edges() -> None:
     assert registry["result_sha256"] == EXPECTED_REGISTRY_SHA256
     assert _embedded_hash(registry) == EXPECTED_REGISTRY_SHA256
     assert registry["accepted_edge_count"] == 21
-    assert [
-        row["priority_rank"] for row in registry["prioritized_hypotheses"]
-    ] == list(range(1, 45))
+    assert [row["priority_rank"] for row in registry["prioritized_hypotheses"]] == list(
+        range(1, 45)
+    )
     candidate = next(
         row
         for row in registry["prioritized_hypotheses"]
         if row["mechanism"] == "same_account_stable_value_yield_allocation"
     )
     artifacts = {
-        row["path"]: row["result_sha256"]
-        for row in candidate["canonical_artifacts"]
+        row["path"]: row["result_sha256"] for row in candidate["canonical_artifacts"]
     }
     assert artifacts[CONTRACT_PATH.relative_to(ROOT).as_posix()] == (
         EXPECTED_CONTRACT_SHA256

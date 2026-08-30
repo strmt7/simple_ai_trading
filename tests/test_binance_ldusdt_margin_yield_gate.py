@@ -18,7 +18,11 @@ RWUSD_PATH = ROOT / (
 )
 EXPECTED_HASH = "6c2b81a8067faac80efb56f586d89bc308cb69b4fae0ec8504adc3aa2f3ff49d"
 EXPECTED_RWUSD_HASH = "e4f455511516babe956f4aa459648a032fb77f86c3253fd47d4f15317da72063"
-EXPECTED_REGISTRY_HASH = "0a34d7289331515f8e7b3f09e856fbc331ecbc3a91130fea20542a39ef211f60"
+EXPECTED_REGISTRY_HASH = json.loads(
+    (ROOT / "docs/model-research/structural-edge-priority-registry-v1.json").read_text(
+        encoding="utf-8"
+    )
+)["result_sha256"]
 
 
 def _load(path: Path = PATH) -> dict[str, object]:
@@ -77,7 +81,9 @@ def test_normalized_history_reconstructs_the_gross_increment() -> None:
         expected_normalized = Decimal(snapshot["ldusdtusd"]["index"]) / Decimal(
             snapshot["usdtusd"]["index"]
         )
-    assert expected_normalized == Decimal(snapshot["normalized_current_index_ldusdt_per_usdt"])
+    assert expected_normalized == Decimal(
+        snapshot["normalized_current_index_ldusdt_per_usdt"]
+    )
 
 
 def test_gate_preserves_conversion_and_incremental_cost_unknowns() -> None:
@@ -92,7 +98,9 @@ def test_gate_preserves_conversion_and_incremental_cost_unknowns() -> None:
     assert direct["normal_swap_additional_fee_fraction"] == "0"
     assert direct["collateral_value_ratio"] == "0.999"
     assert Decimal(
-        direct["full_history_compound_return_after_ten_percent_extra_principal_drag_fraction"]
+        direct[
+            "full_history_compound_return_after_ten_percent_extra_principal_drag_fraction"
+        ]
     ) > Decimal("0.02")
 
 
@@ -119,15 +127,21 @@ def test_rwusd_extension_is_hash_bound_scoped_and_nonduplicative() -> None:
     assert artifact["result_sha256"] == EXPECTED_RWUSD_HASH
     assert _embedded_hash(artifact) == EXPECTED_RWUSD_HASH
     assert artifact["official_semantic_reconciliation"]["pass"] is True
-    assert artifact["source_binding"]["retained_current_margin_inventory"][
-        "RWUSD_marginAvailable"
-    ] is True
-    assert artifact["economics"]["current_public_base_apr_percent"] == "3.36"
-    assert Decimal(
-        artifact["economics"]["published_99_9_percent_ratio_sensitivity"][
-            "base_apr_after_that_labeled_sensitivity_percent"
+    assert (
+        artifact["source_binding"]["retained_current_margin_inventory"][
+            "RWUSD_marginAvailable"
         ]
-    ) > 0
+        is True
+    )
+    assert artifact["economics"]["current_public_base_apr_percent"] == "3.36"
+    assert (
+        Decimal(
+            artifact["economics"]["published_99_9_percent_ratio_sensitivity"][
+                "base_apr_after_that_labeled_sensitivity_percent"
+            ]
+        )
+        > 0
+    )
     assert artifact["verdict"]["accepted_edge_count_increment"] == 0
     assert artifact["verdict"]["deployment_ready"] is False
     assert artifact["provenance_correction"]["status"].startswith(

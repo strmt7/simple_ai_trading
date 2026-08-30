@@ -54,6 +54,11 @@ override prose.
   otherwise stop before building another collector. A zero-request retained-data
   audit may be kept only when it materially strengthens or corrects the existing
   adjudication, and it must update that family instead of creating a duplicate.
+- Family-specific tests must not pin the mutable whole-registry SHA-256. Verify
+  the registry's embedded canonical self-hash plus the family's exact artifact,
+  rank, scope, and terminal or retry state; keep any exact global registry hash
+  pin in one registry-integrity test only. This prevents every evidence update
+  from forcing unrelated test edits.
 - A frozen current-state screen terminalizes only its exact population, time,
   size, and source contract. Material new primary evidence of recurrent
   event-time violations may reopen a separately preregistered recurrence study;

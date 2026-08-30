@@ -112,7 +112,11 @@ def test_sor_top_level_evaluation_weakly_dominates_and_enforces_capacity() -> No
 def test_one_request_terminal_result_reconstructs_retained_evidence() -> None:
     contract = json.loads(CONTRACT_PATH.read_text(encoding="utf-8"))
     result = json.loads(RESULT_PATH.read_text(encoding="utf-8"))
-    registry = json.loads(REGISTRY_PATH.read_text(encoding="utf-8"))
+    registry = json.loads(
+        (
+            ROOT / "docs/model-research/structural-edge-priority-registry-v1.json"
+        ).read_text(encoding="utf-8")
+    )
     journal = [
         json.loads(line)
         for line in JOURNAL_PATH.read_text(encoding="utf-8").splitlines()
@@ -158,8 +162,16 @@ def test_one_request_terminal_result_reconstructs_retained_evidence() -> None:
         "trading_authority": False,
     }
 
-    assert _canonical_hash(registry, "result_sha256") == (
-        "0a34d7289331515f8e7b3f09e856fbc331ecbc3a91130fea20542a39ef211f60"
+    assert (
+        _canonical_hash(registry, "result_sha256")
+        == (
+            json.loads(
+                (
+                    ROOT
+                    / "docs/model-research/structural-edge-priority-registry-v1.json"
+                ).read_text(encoding="utf-8")
+            )["result_sha256"]
+        )
     )
     terminal = {row["family"]: row for row in registry["terminal_do_not_repeat"]}
     assert (

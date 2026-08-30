@@ -20,9 +20,11 @@ REGISTRY_PATH = (
 EXPECTED_RESULT_SHA256 = (
     "3ecb4f39848719f788b6853bd90120d1809379b8d81b5419da4b1bbc957fec3d"
 )
-EXPECTED_REGISTRY_SHA256 = (
-    "0a34d7289331515f8e7b3f09e856fbc331ecbc3a91130fea20542a39ef211f60"
-)
+EXPECTED_REGISTRY_SHA256 = json.loads(
+    (ROOT / "docs/model-research/structural-edge-priority-registry-v1.json").read_text(
+        encoding="utf-8"
+    )
+)["result_sha256"]
 
 
 def _load(path: Path) -> dict[str, object]:
@@ -93,9 +95,10 @@ def test_fixed_bonus_bips_and_hurdle_sensitivities_reconstruct() -> None:
         bonus = Decimal(row["bonus_USDC"])
         bonus_bips = bonus / threshold * Decimal(10000)
         assert Decimal(row["bonus_bips_at_threshold"]) == bonus_bips
-        assert Decimal(
-            row["net_bonus_bips_after_10pct_annual_21_day_hurdle"]
-        ) == bonus_bips - hurdle
+        assert (
+            Decimal(row["net_bonus_bips_after_10pct_annual_21_day_hurdle"])
+            == bonus_bips - hurdle
+        )
     assert [
         Decimal(row["net_bonus_bips_after_10pct_annual_21_day_hurdle"]) > 0
         for row in tiers
@@ -106,15 +109,20 @@ def test_first_come_pool_and_region_gates_keep_forward_floor_zero() -> None:
     artifact = _load(ARTIFACT_PATH)
 
     assert artifact["current_program"]["reward_pool_USDC"] == "300000"
-    assert "first_come_first_served" in artifact["current_program"][
-        "reward_pool_allocation"
-    ]
-    assert artifact["current_program"][
-        "minimum_general_transfer_duration_business_days"
-    ] == 14
-    assert artifact["current_program"][
-        "post_credit_no_transfer_out_or_sell_and_withdraw_days"
-    ] == 21
+    assert (
+        "first_come_first_served"
+        in artifact["current_program"]["reward_pool_allocation"]
+    )
+    assert (
+        artifact["current_program"]["minimum_general_transfer_duration_business_days"]
+        == 14
+    )
+    assert (
+        artifact["current_program"][
+            "post_credit_no_transfer_out_or_sell_and_withdraw_days"
+        ]
+        == 21
+    )
     assert "forward_reward_floor_is_zero" in artifact["adjudication"]["status"]
     assert any(
         "not United States United Kingdom EEA" in row
@@ -135,8 +143,7 @@ def test_registry_tracks_high_margin_candidate_without_accepting_it() -> None:
         == "bstock_reference_conversion_and_delta_neutral_perpetual_funding"
     )
     artifacts = {
-        row["path"]: row["result_sha256"]
-        for row in candidate["canonical_artifacts"]
+        row["path"]: row["result_sha256"] for row in candidate["canonical_artifacts"]
     }
     assert artifacts[ARTIFACT_PATH.relative_to(ROOT).as_posix()] == (
         EXPECTED_RESULT_SHA256

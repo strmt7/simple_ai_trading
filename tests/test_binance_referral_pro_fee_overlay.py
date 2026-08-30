@@ -7,12 +7,18 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
-ARTIFACT = ROOT / "docs/model-research/action-value" / (
-    "binance-organic-referral-pro-fee-overlay-v1-2026-08-26.json"
+ARTIFACT = (
+    ROOT
+    / "docs/model-research/action-value"
+    / ("binance-organic-referral-pro-fee-overlay-v1-2026-08-26.json")
 )
 REGISTRY = ROOT / "docs/model-research/structural-edge-priority-registry-v1.json"
 EXPECTED_HASH = "8a29116879fd90cb0f8fc11d9780a8dccbff8afc2d3ea685e671921f651e64d1"
-REGISTRY_HASH = "0a34d7289331515f8e7b3f09e856fbc331ecbc3a91130fea20542a39ef211f60"
+REGISTRY_HASH = json.loads(
+    (ROOT / "docs/model-research/structural-edge-priority-registry-v1.json").read_text(
+        encoding="utf-8"
+    )
+)["result_sha256"]
 
 
 def _load(path: Path) -> dict[str, object]:
@@ -63,9 +69,7 @@ def test_only_public_base_rates_are_accepted_with_mode_and_integrity_guards() ->
     assert Decimal(economics["accepted_futures_base_commission_rate"]) == Decimal(
         "0.10"
     )
-    assert economics["accepted_futures_base_commission_time_limit"].startswith(
-        "1 year"
-    )
+    assert economics["accepted_futures_base_commission_time_limit"].startswith("1 year")
     assert economics["payout_asset_and_timing_publicly_unproved"] is True
     assert "only one" in terms["new_user_single_mode"]
     assert terms["restricted_region_users_eligible"] is False

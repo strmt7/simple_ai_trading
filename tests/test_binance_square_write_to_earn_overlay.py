@@ -7,12 +7,18 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
-ARTIFACT = ROOT / "docs/model-research/action-value" / (
-    "binance-square-organic-write-to-earn-fee-overlay-v1-2026-08-26.json"
+ARTIFACT = (
+    ROOT
+    / "docs/model-research/action-value"
+    / ("binance-square-organic-write-to-earn-fee-overlay-v1-2026-08-26.json")
 )
 REGISTRY = ROOT / "docs/model-research/structural-edge-priority-registry-v1.json"
 EXPECTED_HASH = "29ec95146998535fde295dfc830a2639b9d10964e7f9e36c17e44e628dc454d1"
-REGISTRY_HASH = "0a34d7289331515f8e7b3f09e856fbc331ecbc3a91130fea20542a39ef211f60"
+REGISTRY_HASH = json.loads(
+    (ROOT / "docs/model-research/structural-edge-priority-registry-v1.json").read_text(
+        encoding="utf-8"
+    )
+)["result_sha256"]
 
 
 def _load(path: Path) -> dict[str, object]:
@@ -57,12 +63,14 @@ def test_only_base_commission_is_accepted_with_threshold_and_integrity_guards() 
     economics = artifact["economics"]
     terms = artifact["eligibility_and_terms"]
 
-    assert Decimal(economics["accepted_base_commission_rate_of_reader_trading_fee"]) == (
-        Decimal("0.20")
-    )
+    assert Decimal(
+        economics["accepted_base_commission_rate_of_reader_trading_fee"]
+    ) == (Decimal("0.20"))
     assert Decimal(1) * Decimal(
         economics["accepted_base_commission_rate_of_reader_trading_fee"]
-    ) == Decimal(economics["accepted_gross_USDC_per_1_USDC_equivalent_eligible_reader_fee"])
+    ) == Decimal(
+        economics["accepted_gross_USDC_per_1_USDC_equivalent_eligible_reader_fee"]
+    )
     assert economics["minimum_weekly_payout_USDC"] == "0.1"
     assert economics["sub_threshold_balance_carry_forward"] is False
     assert terms["content_reward_lifetime_days"] == 7
@@ -70,7 +78,10 @@ def test_only_base_commission_is_accepted_with_threshold_and_integrity_guards() 
     assert terms["zero_fee_trades_eligible"] is False
     prohibited = " ".join(artifact["prohibited_actions"])
     assert "manufactured reader trading" in prohibited
-    assert "encouraging unnecessary unsuitable leveraged or loss-making trades" in prohibited
+    assert (
+        "encouraging unnecessary unsuitable leveraged or loss-making trades"
+        in prohibited
+    )
     assert "double-counting the same reader fee" in prohibited
 
 

@@ -1,0 +1,87 @@
+{
+  "schema_version": "binance-tsm-bstock-dividend-underdebit-v1-contract",
+  "frozen_at_utc": "2026-08-30T02:35:16.8410154Z",
+  "purpose": "reject the upcoming TSMB dividend plus equal TSMUSDT short hedge before books when the prior exact TSM Special funding debit already consumed the dividend",
+  "issuer_sources": [
+    {
+      "name": "tsmc_4q25_prior_dividend",
+      "url": "https://investor.tsmc.com/english/dividends/4q25",
+      "required_text": [
+        "2026/06/11",
+        "0.9393250",
+        "0.7420670"
+      ]
+    },
+    {
+      "name": "tsmc_1q26_upcoming_dividend",
+      "url": "https://investor.tsmc.com/english/dividends/1q26",
+      "required_text": [
+        "2026/09/16",
+        "NT$7.00",
+        "US$1.11"
+      ]
+    }
+  ],
+  "retained_sources": {
+    "bstock_inventory": {
+      "path": "data/binance-bstock-reference-parity-v1/raw/bstock-token-list.raw",
+      "sha256": "4a5316cca64664312c93ec4e28706bcc641b43f0c686123b14981f75017d07c3"
+    },
+    "futures_exchange_info": {
+      "path": "data/binance-bstock-reference-parity-v1/raw/futures-exchange-info.raw",
+      "sha256": "894df6efaff4796993667bea5582069c04d993a110d804749d1b2136ea31dc20"
+    },
+    "tsm_funding_history": {
+      "path": "data/binance-bstock-funding-full-universe-v1/raw/funding-tsmusdt.raw",
+      "sha256": "4cccbcdfbe61525345a80d6d8644c089603f6916442e0e5c6cbd0dd6f1f03759"
+    }
+  },
+  "historical_event": {
+    "ex_dividend_date": "2026-06-11",
+    "issuer_gross_dividend_usd_per_adr": "0.9393250",
+    "issuer_net_dividend_usd_per_adr": "0.7420670",
+    "window_start_ms": 1781049600000,
+    "window_end_ms": 1781395199999,
+    "required_special_row_count": 1
+  },
+  "upcoming_event": {
+    "ex_dividend_date": "2026-09-16",
+    "record_date_adr": "2026-09-16",
+    "distribution_date_adr": "2026-10-08",
+    "cash_dividend_ntd_per_common_share": "7.00",
+    "estimated_cash_dividend_usd_per_adr": "1.11",
+    "exact_net_distribution_known": false,
+    "prospective_public_profit_floor_usdt": "0"
+  },
+  "decision_contract": {
+    "advance_to_books_only_if_prior_gross_dividend_minus_exact_special_short_debit_is_strictly_positive": true,
+    "advance_to_books_only_if_prior_net_dividend_minus_exact_special_short_debit_is_strictly_positive": true,
+    "stop_before_current_funding_or_books_if_either_headroom_is_nonpositive": true,
+    "ordinary_funding_execution_basis_fees_tax_withholding_and_opportunity_costs_are_additional_costs": true,
+    "future_special_funding_or_multiplier_is_not_inferred_from_history": true
+  },
+  "funding_api_documentation_url": "https://developers.binance.com/en/docs/catalog/core-trading-derivatives-trading-usd-s-m-futures/api/rest-api/market-data",
+  "request_contract": {
+    "exact_total_requests": 2,
+    "only_official_TSMC_issuer_pages": true,
+    "journal_before_each_access": true,
+    "retain_http_error_body_status_and_completion_before_raising": true,
+    "no_Binance_requests": true,
+    "no_book_requests": true,
+    "repeat_policy": "one use only; existing raw journal or output path prohibits reuse"
+  },
+  "authority": {
+    "public_unauthenticated_read_only": true,
+    "new_public_requests": 2,
+    "credentials_used": false,
+    "account_state_accessed": false,
+    "funds_used": false,
+    "orders_or_transactions_submitted": 0,
+    "trading_authority": false
+  },
+  "implementation": {
+    "path": "tools/screen_binance_tsm_bstock_dividend_underdebit.py",
+    "sha256": "2444d8d6cc820a7cde0f5be8da94eab50979d02b3e014fc5419f3755d623701c"
+  },
+  "contract_sha256": "4c2bfffa8b67e53328f1fde9a9395fc210613635ae624c450c9ca631a3d9553e"
+}

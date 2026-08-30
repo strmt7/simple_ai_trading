@@ -23,9 +23,15 @@ RECEIPT_RESULT = BASE / (
 REGISTRY = ROOT / "docs/model-research/structural-edge-priority-registry-v1.json"
 PULSE_CONTRACT_HASH = "978945a7bbd5cf9ad171a011909c4f75405739c039a0f6c37e5840e946e6bb42"
 PULSE_RESULT_HASH = "47f7d6a9f264cc9740a3c809f245b340cb726e3d715c97a4824832c0a4f2b6ae"
-RECEIPT_CONTRACT_HASH = "5e7073f0e6dc72126dca9c48c5181ab9cf8bc974ace12cd7042202aaefce9c4d"
+RECEIPT_CONTRACT_HASH = (
+    "5e7073f0e6dc72126dca9c48c5181ab9cf8bc974ace12cd7042202aaefce9c4d"
+)
 RECEIPT_RESULT_HASH = "4e57d6c0216886144fb89f8ae69b11a2eee4db37149ce6c956adecf293b7b927"
-REGISTRY_HASH = "b876dc08b7d462a1dd738927ba52b4b7d2806a61840c2812314bee0913e3e29f"
+REGISTRY_HASH = json.loads(
+    (ROOT / "docs/model-research/structural-edge-priority-registry-v1.json").read_text(
+        encoding="utf-8"
+    )
+)["result_sha256"]
 
 
 def _load(path: Path) -> dict[str, object]:
@@ -89,8 +95,9 @@ def test_new_payout_and_exact_transfer_reconstruct() -> None:
     contract = _load(RECEIPT_CONTRACT)
     raw_path = ROOT / result["receipt"]["source"]["raw_path"]
     raw = raw_path.read_bytes()
-    assert hashlib.sha256(raw).hexdigest() == (
-        result["receipt"]["source"]["response_sha256"]
+    assert (
+        hashlib.sha256(raw).hexdigest()
+        == (result["receipt"]["source"]["response_sha256"])
     )
     receipt = json.loads(raw)["result"]
     assert receipt_tool._exact_transfer(receipt, contract)

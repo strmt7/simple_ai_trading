@@ -20,9 +20,11 @@ REGISTRY_PATH = ROOT / "docs/model-research/structural-edge-priority-registry-v1
 EXPECTED_ARTIFACT_HASH = (
     "d4e02d2d1cc6b0a598265af734b29f62aec6145bc5a1cc3b3d65771ba2031d2a"
 )
-EXPECTED_REGISTRY_HASH = (
-    "0a34d7289331515f8e7b3f09e856fbc331ecbc3a91130fea20542a39ef211f60"
-)
+EXPECTED_REGISTRY_HASH = json.loads(
+    (ROOT / "docs/model-research/structural-edge-priority-registry-v1.json").read_text(
+        encoding="utf-8"
+    )
+)["result_sha256"]
 EXPECTED_TERMINAL_HASH = (
     "613453649f84407d6216e72228bdb16005b0a5c290c6bd58fa522007de5317e5"
 )
@@ -111,8 +113,7 @@ def test_current_whole_transaction_gas_sensitivity_recomputes_exactly() -> None:
         "current_whole_transaction_gas_sensitivity"
     ]
     raw_root = (
-        ROOT
-        / "docs/model-research/action-value/raw/polymarket-negrisk-maker-input-v2"
+        ROOT / "docs/model-research/action-value/raw/polymarket-negrisk-maker-input-v2"
     )
     gas = _load(raw_root / "current-polygon-gas-station.json")
     ticker = _load(raw_root / "current-binance-polusdt-book-ticker.json")
@@ -125,8 +126,9 @@ def test_current_whole_transaction_gas_sensitivity_recomputes_exactly() -> None:
     gas_cost_usdt = gas_cost_pol * Decimal(ticker["askPrice"])
 
     assert str(gas_cost_pol) == sensitivity["reused_whole_transaction_gas_cost_pol"]
-    assert str(gas_cost_usdt) == (
-        sensitivity["reused_whole_transaction_gas_cost_usdt_sensitivity"]
+    assert (
+        str(gas_cost_usdt)
+        == (sensitivity["reused_whole_transaction_gas_cost_usdt_sensitivity"])
     )
     assert Decimal("0.00740") - gas_cost_usdt == Decimal(
         sensitivity["margin_5_pusd_minus_usdt_sensitivity"]
@@ -180,8 +182,8 @@ def test_prospective_terminal_capture_fails_duration_continuity_and_queue() -> N
         assert hashlib.sha256(payload).hexdigest() == receipt["stored_sha256"]
         decompressed = gzip.decompress(payload)
         assert len(decompressed) == receipt["decompressed_bytes"]
-        assert hashlib.sha256(decompressed).hexdigest() == (
-            receipt["decompressed_sha256"]
+        assert (
+            hashlib.sha256(decompressed).hexdigest() == (receipt["decompressed_sha256"])
         )
 
 

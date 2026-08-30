@@ -8,7 +8,11 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 EVIDENCE = ROOT / "docs/model-research/action-value"
 REGISTRY = ROOT / "docs/model-research/structural-edge-priority-registry-v1.json"
-REGISTRY_HASH = "0a34d7289331515f8e7b3f09e856fbc331ecbc3a91130fea20542a39ef211f60"
+REGISTRY_HASH = json.loads(
+    (ROOT / "docs/model-research/structural-edge-priority-registry-v1.json").read_text(
+        encoding="utf-8"
+    )
+)["result_sha256"]
 
 CONTRACT_HASHES = {
     "binance-two-intermediary-conversion-retained-contract-v1.json": (
@@ -146,9 +150,7 @@ def test_registry_terminalizes_only_the_two_intermediary_extension() -> None:
     assert registry["result_sha256"] == REGISTRY_HASH
     assert _embedded_hash(registry, "result_sha256") == REGISTRY_HASH
     family = next(
-        row
-        for row in registry["prioritized_hypotheses"]
-        if row["priority_rank"] == 44
+        row for row in registry["prioritized_hypotheses"] if row["priority_rank"] == 44
     )
     assert registry["accepted_edge_count"] == 21
     assert len(registry["prioritized_hypotheses"]) == 44

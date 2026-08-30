@@ -23,9 +23,11 @@ EXPECTED_CONTRACT_HASH = (
     "e487ee1ca43dec3f7e237ea2a19b1b068c1510603622af13e9fc7f4f23209bc7"
 )
 EXPECTED_TOOL_HASH = "2218e58e3a0a562305a3a418bfbf9647a51076f66fa5556151eee58d326463df"
-EXPECTED_REGISTRY_HASH = (
-    "0a34d7289331515f8e7b3f09e856fbc331ecbc3a91130fea20542a39ef211f60"
-)
+EXPECTED_REGISTRY_HASH = json.loads(
+    (ROOT / "docs/model-research/structural-edge-priority-registry-v1.json").read_text(
+        encoding="utf-8"
+    )
+)["result_sha256"]
 EXPECTED_TERMINAL_REASON = (
     "zero_of_two_public_candidates_passed_and_every_BTC_and_ETH_training_"
     "validation_and_test_role_was_negative_after_frozen_execution_two_leg_"

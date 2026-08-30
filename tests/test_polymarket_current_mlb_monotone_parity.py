@@ -40,7 +40,11 @@ PARITY_CONTRACT_HASH = (
     "231ebf5e9078bc14c8acd3d8274bc98c0200776621b830b64c689a34cdd204b8"
 )
 ADJUDICATION_HASH = "1e75e049abb116955294d878830f940491fe4044f09c7e3564ad2761c0129178"
-REGISTRY_HASH = "0a34d7289331515f8e7b3f09e856fbc331ecbc3a91130fea20542a39ef211f60"
+REGISTRY_HASH = json.loads(
+    (ROOT / "docs/model-research/structural-edge-priority-registry-v1.json").read_text(
+        encoding="utf-8"
+    )
+)["result_sha256"]
 
 
 def _load(path: Path) -> dict[str, object]:
@@ -182,8 +186,7 @@ def test_registry_terminalizes_only_this_exact_event_snapshot() -> None:
     assert artifacts[EVENT_CONTRACT.relative_to(ROOT).as_posix()] == EVENT_CONTRACT_HASH
     assert artifacts[EVENT_RESULT.relative_to(ROOT).as_posix()] == EVENT_RESULT_HASH
     assert (
-        artifacts[PARITY_CONTRACT.relative_to(ROOT).as_posix()]
-        == PARITY_CONTRACT_HASH
+        artifacts[PARITY_CONTRACT.relative_to(ROOT).as_posix()] == PARITY_CONTRACT_HASH
     )
     assert artifacts[ADJUDICATION.relative_to(ROOT).as_posix()] == ADJUDICATION_HASH
     terminal = next(

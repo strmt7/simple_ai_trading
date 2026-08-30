@@ -14,7 +14,11 @@ ARTIFACT = (
 )
 REGISTRY = ROOT / "docs/model-research/structural-edge-priority-registry-v1.json"
 ARTIFACT_HASH = "a4158bf059f4f5ad839b2f504c08c4afc65615260b4171533866f4c2337494e0"
-REGISTRY_HASH = "0a34d7289331515f8e7b3f09e856fbc331ecbc3a91130fea20542a39ef211f60"
+REGISTRY_HASH = json.loads(
+    (ROOT / "docs/model-research/structural-edge-priority-registry-v1.json").read_text(
+        encoding="utf-8"
+    )
+)["result_sha256"]
 
 
 def _load(path: Path) -> dict[str, object]:
@@ -34,15 +38,25 @@ def _canonical_hash(payload: dict[str, object]) -> str:
     return hashlib.sha256(encoded).hexdigest()
 
 
-def test_usd1_allocation_edge_is_hash_bound_action_free_and_mutually_exclusive() -> None:
+def test_usd1_allocation_edge_is_hash_bound_action_free_and_mutually_exclusive() -> (
+    None
+):
     artifact = _load(ARTIFACT)
 
     assert artifact["result_sha256"] == ARTIFACT_HASH
     assert _canonical_hash(artifact) == ARTIFACT_HASH
     assert artifact["authority"]["authenticated_requests"] == 0
-    assert artifact["authority"]["subscriptions_redemptions_conversions_transfers_orders_or_quotes"] == 0
+    assert (
+        artifact["authority"][
+            "subscriptions_redemptions_conversions_transfers_orders_or_quotes"
+        ]
+        == 0
+    )
     terms = artifact["source_bound_terms"]
-    assert terms["holding_airdrop_eligible_account_categories_include_Simple_Earn"] is False
+    assert (
+        terms["holding_airdrop_eligible_account_categories_include_Simple_Earn"]
+        is False
+    )
     assert terms["same_principal_can_receive_both_rewards"] is False
     assert artifact["accepted_scope"] == {
         "accepted_edge": True,
@@ -85,10 +99,19 @@ def test_usd1_fixed_and_current_rate_allocation_math_reconstructs() -> None:
     assert Decimal(fixed["incremental_reward_usd1_per_365_days"]) == principal * (
         bonus - airdrop
     ) / Decimal(100)
-    assert Decimal(full["maximum_balance_where_capped_bonus_plus_current_realtime_rate_exceeds_current_airdrop_rate_usd1"]) == principal * bonus / (
-        airdrop - realtime
+    assert Decimal(
+        full[
+            "maximum_balance_where_capped_bonus_plus_current_realtime_rate_exceeds_current_airdrop_rate_usd1"
+        ]
+    ) == principal * bonus / (airdrop - realtime)
+    assert (
+        Decimal(
+            fixed[
+                "maximum_balance_where_capped_fixed_bonus_exceeds_current_airdrop_rate_usd1"
+            ]
+        )
+        == principal * bonus / airdrop
     )
-    assert Decimal(fixed["maximum_balance_where_capped_fixed_bonus_exceeds_current_airdrop_rate_usd1"]) == principal * bonus / airdrop
 
 
 def test_immediate_fixed_bonus_sensitivity_reconstructs() -> None:
@@ -110,8 +133,13 @@ def test_immediate_fixed_bonus_sensitivity_reconstructs() -> None:
     assert Decimal(sensitivity["immediate_fixed_bonus_reward_usd1"]) == immediate
     assert Decimal(sensitivity["wait_airdrop_reward_usd1_equivalent"]) == wait_airdrop
     assert Decimal(sensitivity["delayed_fixed_bonus_reward_usd1"]) == delayed
-    assert Decimal(sensitivity["immediate_fixed_bonus_advantage_usd1_equivalent"]) == advantage
-    assert Decimal(sensitivity["immediate_fixed_bonus_advantage_bps_of_principal"]) == advantage / principal * Decimal(10000)
+    assert (
+        Decimal(sensitivity["immediate_fixed_bonus_advantage_usd1_equivalent"])
+        == advantage
+    )
+    assert Decimal(
+        sensitivity["immediate_fixed_bonus_advantage_bps_of_principal"]
+    ) == advantage / principal * Decimal(10000)
 
 
 def test_registry_promotes_only_the_scoped_existing_usd1_allocation() -> None:
