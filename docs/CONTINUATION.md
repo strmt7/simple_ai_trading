@@ -4864,3 +4864,31 @@ Canonical corrected result SHA-256 is
 Accepted edges remain 27, ranked hypotheses remain 44, and terminal families
 become 60. Registry SHA-256 becomes
 `6edc1fe45b6bb6a156dffbec4ff5de2b05f5e0a221fca8c862612cf0b07c1ac1`.
+
+## Polymarket complete September 3-4 CFB monotone catalog rejection
+
+Rank 30 advanced with one complete CFB catalog instead of another hand-picked
+event. The frozen start-time window was 2026-09-03T00:00:00Z through
+2026-09-04T23:59:59Z, ending before the consumed Ball State-Ohio State and
+Clemson-LSU September 5 events. One public unauthenticated keyset GET used the
+documented maximum 500-event page size, retained 240,237 raw bytes, and returned
+18 events with no continuation cursor. No adaptive pagination or narrowing was
+performed.
+
+Thirteen events had complete rule-compatible moneyline, spread, or total
+lattices. Five were excluded because they had no exact monotone relation. The
+screen retained all 19 proved relations and found zero Gamma displayed packages
+strictly below the 1 pUSD guaranteed payout floor. The best rejection-only row
+was the San Jose State-Eastern Michigan full-game total package at 1.02 pUSD,
+or negative 0.02 pUSD optimistic headroom before taker fees, spread, slippage,
+latency, and partial-fill risk. Therefore the window is terminal before any
+book, fee, credential, account, order, fund, or protected-capture access.
+
+Do not repeat, paginate, narrow, or depth-test this exact CFB window. Reopen the
+sports family only for a future distinct event outside every consumed event and
+window whose rejection-only Gamma package is already strictly sub-floor, or a
+material price, fee, delay, or resolution-rule change. Canonical result SHA-256
+is `fd6373bba5d18b07d4286e9b96f643741afede5c960d490a91438bf77cf67d3d`.
+Accepted edges remain 27, ranked hypotheses remain 44, and terminal families
+become 61. Registry SHA-256 becomes
+`90508047f15e556c7a59ea37628c3127103e7e76f1e4af68a51639d0cf5a6073`.
