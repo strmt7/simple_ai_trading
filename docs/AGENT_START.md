@@ -23,6 +23,15 @@ safety gate, blocks Stop, or submits an order.
 
 ### Latest efficient structural screen
 
+The retained Los Angeles Galaxy versus New England Revolution event pair proved
+16 exact-score-to-full-game-result payoff implications, but also exposed a
+request-efficiency bug: Gamma `outcomePrices` made the best package appear to
+cost 0.750 pUSD while side-specific fields already implied 1.260 pUSD. The one
+consumed current book confirmed a 6.20-pUSD five-share cost for a 5-pUSD floor
+before fees and was stale and skewed. Never use `outcomePrices` alone to
+authorize a book. Use YES `bestAsk` and a direct NO ask or conservative
+`1 - YES bestBid` rejection proxy first. The exact soccer pair is terminal.
+
 The Polymarket BTC/ETH/SOL interval-composition family has a mechanically
 verified one-pUSD payoff floor across all 50 packages in 25 retained aligned
 settlements, with zero violations. It remains unaccepted: the current displayed

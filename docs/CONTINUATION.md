@@ -5902,3 +5902,50 @@ result SHA-256 is
 Accepted edges remain 29, ranked hypotheses remain 44, terminal families become
 84, and registry SHA-256 becomes
 `7c4c4ecc062a4cda012958571fcc477e304d38e0f00f8c67aecd37ae4a031645`.
+
+## Polymarket soccer exact-score implication rejection and prefilter correction
+
+A zero-network retained audit tested all 16 explicit exact-score implications
+in the Los Angeles Galaxy versus New England Revolution event pair. Under the
+aligned regulation, source, postponement, and cancellation rules, buying NO on
+an explicit score plus YES on its implied full-game result has a common-rule
+one-pUSD floor. The first representation contract stopped before economic rows
+because its exact cancellation literal omitted the retained word `to`; the
+failure is preserved and v2 changed only that literal.
+
+V2 found ten apparent strict candidates from Gamma `outcomePrices` and selected
+NO 0-0 plus YES draw at 0.750 pUSD. The one frozen current two-token book batch
+rejected it decisively: five shares cost 6.20 pUSD for a 5.00-pUSD floor before
+fees. The oldest book was 4,361,793 ms old and cross-book skew was 4,104,742 ms.
+No fee request was justified, and the exact event may not be refetched, retried,
+or replaced by another retained candidate.
+
+The consumed result exposed an avoidable methodology defect. The retained
+exact-score object already reported a YES best bid of 0.01, implying a 0.99 NO
+ask rejection proxy, while the draw market reported a 0.27 YES best ask. Their
+1.26-pUSD side-specific proxy already rejected the package; the 0.505
+`outcomePrices` NO value was midpoint-like diagnostics, not acquisition cost.
+The corrected v3 zero-network screen uses YES `bestAsk` plus `1 - YES bestBid`
+for the NO rejection proxy and rejects all 16 relations; the best is 1.26 pUSD.
+The generic two-leg verifier now also enforces oldest-book age in its final
+candidate boolean, supports NegRisk legs, and supports markets with null lines.
+`AGENTS.md` now prohibits using `outcomePrices` alone to authorize books.
+
+V1 contract and failure SHA-256 values are
+`5b53f0298a5eaaae7441a23f26c3dd22174d1d9657894fef503079142c5876bb`
+and `9bc9712f78c0553dc30a02a0b6bde2d8cc88c269b833611207dd61a21865e0a3`.
+V2 contract and result SHA-256 values are
+`2dd021d474e3af9b987bde8163b78658d8c09cf92120d1553205fdeabc99703b`
+and `f37cca192e911922e102c6284353694f9d7569f78f53ed2466ac2264817d8138`.
+Book contract and result SHA-256 values are
+`0b23820f6438e78e93ff0234f400f35c88a506d38630a4a5ff03cbd594ff70cc`
+and `ba775fe53af1d69c9db3239a834e7e86a3f4e08837d6967e0da7eb32f19da8fa`.
+The retained journal-lineage SHA-256 is
+`3aa77d400d2e5822707e20f23775de0a40419da210f79aa86d8ead9115eb43a1`;
+future two-leg results bind the final journal hash directly.
+V3 contract and result SHA-256 values are
+`66ceb9889b95dce357614a9bca36bdfbb2895b4b112066ad4edc149d1293469f`
+and `aeb52c0bcd375fb0c31282cf8be92b9a6e6b93de0d8e7a0ac2c01bb579091386`.
+Accepted edges remain 29, ranked hypotheses remain 44, terminal families become
+85, and registry SHA-256 becomes
+`7c4d62403212f9826a8bf9f972647a3c56df6671d78cab99af35b9781e8da115`.

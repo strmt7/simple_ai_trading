@@ -1,0 +1,126 @@
+{
+  "adjudication": {
+    "accepted_edge": false,
+    "deployment_ready": false,
+    "next_action": "terminalize_this_exact_event_without_refetch_or_retry",
+    "passes_frozen_candidate_gate": false,
+    "profitability_claim": false
+  },
+  "authority": {
+    "account_requests": 0,
+    "credentials_used": false,
+    "funds_used": false,
+    "orders_or_transactions": 0,
+    "protected_capture_touched": false,
+    "public_unauthenticated_read_only_requests_maximum": 3,
+    "signed_requests": 0,
+    "trading_authority": false
+  },
+  "capture": {
+    "book_receipt": {
+      "completed_at_ms": 1788119048390,
+      "method": "POST",
+      "name": "exact-two-token-book-batch",
+      "phase": "completed",
+      "raw_path": "data/polymarket-soccer-zero-zero-draw-books-v1/raw/books.json",
+      "request_body_sha256": "c3b1d2b2c7aa4baf3df1f87d8fad7ec6fd810501886846dfb6dac115e33f0939",
+      "requested_at_ms": 1788119047514,
+      "response_bytes": 2209,
+      "response_sha256": "c814560ec0542e3c3407ce107ded679415205fda9e3b653e587a2de4ba0ccb58",
+      "status_code": 200,
+      "url": "https://clob.polymarket.com/books"
+    },
+    "book_timestamp_skew_ms": 4104742,
+    "fee_receipts": {},
+    "oldest_book_age_ms": 4361793,
+    "within_frozen_age_gate": false,
+    "within_frozen_skew_gate": false
+  },
+  "contract": {
+    "path": "docs/model-research/action-value/polymarket-soccer-zero-zero-draw-books-contract-v1-2026-08-30.json",
+    "sha256": "0b23820f6438e78e93ff0234f400f35c88a506d38630a4a5ff03cbd594ff70cc"
+  },
+  "created_at_utc": "2026-08-30T19:44:08.400724Z",
+  "economics": {
+    "actual": {
+      "adverse_ticks_per_leg": 0,
+      "after_current_fee_profit_floor_pUSD": null,
+      "cost_pUSD": "6.2",
+      "current_fee_pUSD": null,
+      "fills": [
+        {
+          "cost_pUSD": "4.95",
+          "fee_pUSD": null,
+          "fills": [
+            {
+              "price_pUSD": "0.99",
+              "quantity_shares": "5"
+            }
+          ]
+        },
+        {
+          "cost_pUSD": "1.25",
+          "fee_pUSD": null,
+          "fills": [
+            {
+              "price_pUSD": "0.25",
+              "quantity_shares": "5"
+            }
+          ]
+        }
+      ],
+      "optimistic_zero_fee_profit_floor_pUSD": "-1.2"
+    },
+    "five_adverse_ticks": null,
+    "one_adverse_tick": null
+  },
+  "gamma_prefilter": {
+    "displayed_price_sum_pUSD": "0.75",
+    "optimistic_headroom_pUSD": "0.25",
+    "role": "rejection_only_never_acceptance_or_promotion_evidence",
+    "strict_displayed_candidate_count": 10,
+    "tested_relation_count": 16
+  },
+  "implementation": {
+    "path": "tools/screen_polymarket_exact_two_leg_package.py",
+    "sha256": "e1d2f89ae061fe302301615563829a32c02a2d0797cb85ea3fb375ce063debac"
+  },
+  "payoff_proof": {
+    "guaranteed_floor_per_share_pUSD": "1",
+    "invariant": "NO(0-0 exact score) plus YES(draw) pays one on 0-0, two on every other draw, and one on every non-draw; cancellation also pays one because exact score resolves 0-0 and full-game result resolves draw.",
+    "market_direction_forecast_required": false,
+    "states": [
+      {
+        "payouts": {
+          "exact_score_zero_zero_no": "0",
+          "full_game_draw_yes": "1"
+        },
+        "state": "zero_zero"
+      },
+      {
+        "payouts": {
+          "exact_score_zero_zero_no": "1",
+          "full_game_draw_yes": "1"
+        },
+        "state": "other_draw"
+      },
+      {
+        "payouts": {
+          "exact_score_zero_zero_no": "1",
+          "full_game_draw_yes": "0"
+        },
+        "state": "non_draw"
+      },
+      {
+        "payouts": {
+          "exact_score_zero_zero_no": "0",
+          "full_game_draw_yes": "1"
+        },
+        "state": "canceled_no_makeup"
+      }
+    ],
+    "unqualified_risk": "Independent condition disputes, inconsistent resolutions, oracle error, settlement delay, non-atomic execution, and capital opportunity cost can weaken the common-rule floor."
+  },
+  "result_sha256": "ba775fe53af1d69c9db3239a834e7e86a3f4e08837d6967e0da7eb32f19da8fa",
+  "schema_version": "polymarket-exact-two-leg-package-result-v1"
+}
