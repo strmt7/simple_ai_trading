@@ -4100,3 +4100,34 @@ and `4601f3980f14ccb4130fbdc36862def5abdd47f46e9f48c7da25113c72fe33a2`.
 Accepted edges remain 21, ranked hypotheses remain 44, terminal families become
 53, and registry SHA-256 is
 `5e34a52a6e0eebf48d5c4ae397bcb1893c10389116425d057b580a2a05013c40`.
+
+## 2026-08-30 Polymarket NYC Mayor fixed-NegRisk exact parity rejection
+
+Polymarket's current official event page exposed a previously unconsumed NYC
+Mayor September 1-8 post-count event, opened August 29 with eleven mutually
+exclusive outcomes. This fired rank 31's literal distinct fixed-NegRisk
+deployment trigger. One frozen exact Gamma GET confirmed the fixed event and a
+displayed all-YES sum of 0.9855 pUSD, leaving 0.0145 pUSD of source-only gross
+headroom. Gamma remained rejection-only and did not establish executable depth.
+
+A separately frozen complete 22-token CLOB batch then eliminated the lead. The
+request itself took 121 ms, but the oldest book was 92,065 ms old and cross-book
+timestamp skew was 91,385 ms, so the frozen freshness gate failed. More
+decisively, the best five-share all-YES path lost 0.45 pUSD even before fees,
+0.54928 pUSD after current Gamma taker fees, and 0.69638 pUSD after one adverse
+tick per leg. Every view had zero profitable paths. No adapter, fee-rate,
+on-chain, account, credential, order, transaction, or fund request was needed.
+
+The exact event is terminal. Do not repeat either request, selectively refresh
+books, or reinterpret the displayed 1.45-cent gap as executable. The reusable
+prefilter now validates an exact contract-bound outcome count instead of a
+ten-bin special case, and the book runner derives the complete token population
+instead of assuming twenty tokens. Historical frozen implementations remain
+bound to their original commit hashes.
+
+Canonical prefilter and exact-book result SHA-256 values are
+`c4d9b8ce130881d65a7711dc4cc9e48d9d56085d9e07bd15736d44a63ab13bf1`
+and `2dcaa72b8a9643b3f6652691f7395ac5405cd6f15ee88e57ce45af1f69b0dc6b`.
+Accepted edges remain 21, ranked hypotheses remain 44, terminal families become
+54, and registry SHA-256 is
+`f6b73019910d57daf98764d78a80e487421ae73525499ad1c4e5600ab6018d4f`.

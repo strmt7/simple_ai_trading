@@ -81,7 +81,13 @@ def _tokens(event: dict[str, Any]) -> list[str]:
     values: list[str] = []
     for market in event["markets"]:
         values.extend(str(value) for value in _json_array(market["clobTokenIds"], "tokens"))
-    if len(values) != 20 or len(set(values)) != 20 or any(not value.isdigit() for value in values):
+    expected = len(event["markets"]) * 2
+    if (
+        not 4 <= expected <= 200
+        or len(values) != expected
+        or len(set(values)) != expected
+        or any(not value.isdigit() for value in values)
+    ):
         raise RuntimeError("exact token population differs")
     return values
 
@@ -251,16 +257,17 @@ def main() -> None:
         method="POST",
         url=contract["request"]["url"],
         body=body,
-        name="exact-negrisk-twenty-token-books",
+        name="exact-negrisk-complete-token-books",
         raw_path=paths["raw_path"],
         raw_relative_path=contract["outputs"]["raw_path"],
         journal_path=paths["journal_path"],
     )
     rows = json.loads(raw)
-    if not isinstance(rows, list) or len(rows) != 20:
+    expected_book_count = len(contract["token_ids"])
+    if not isinstance(rows, list) or len(rows) != expected_book_count:
         raise RuntimeError("book batch response count differs")
     books = {str(row.get("asset_id") or ""): row for row in rows if isinstance(row, dict)}
-    if set(books) != set(contract["token_ids"]) or len(books) != 20:
+    if set(books) != set(contract["token_ids"]) or len(books) != expected_book_count:
         raise RuntimeError("book batch token identities differ")
     timestamps = [int(str(book.get("timestamp"))) for book in books.values()]
     completed_ms = int(receipt["completed_at_ms"])
