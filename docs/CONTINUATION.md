@@ -3497,6 +3497,38 @@ HTTP 202 with zero bytes as a consumed null response.
 The structural registry remains at 44 ranked hypotheses and 21 accepted scoped
 overlays; its terminal source-capture entries now total 51.
 
+## Accepted Market-Independent Yield Frontier
+
+A zero-network portfolio audit now ranks all nine accepted yield and capital-
+efficiency overlays separately from the twelve accepted fee, referral, creator,
+and organic-flow overlays. It does not add an edge or loosen any gate. All nine
+remain existing-balance or already-required-capital overlays; none authorizes
+asset acquisition, borrowing, retention, subscription, transfer, conversion,
+or trading, and none is deployment-ready.
+
+The strongest stable edge remains Polymarket complete-set holding yield because
+it is the only row with owned recurrent cash payments, 42 positive daily
+payments out of 42 possible across BTC, ETH, and SOL, a demonstrated 1,039 pUSD
+principal, direct split/merge cost identity, and positive retained economics
+through a 3% alternative annual yield. Its realized portfolio rate was
+3.1820191118%; the retained economics turn negative at a 3.25% alternative
+before external friction. The strongest long-history Binance overlay remains
+LDUSDT yield on collateral already required by an independently justified
+futures strategy: 505 daily closes over 504 days, 2.0109050595% compound
+annualized appreciation, and positive retained haircut sensitivities. The
+strongest source-bound current fixed-bonus allocation is the 7% USD1 Simple
+Earn bonus on at most the first 1,500 already-held idle USD1 through the
+published 2026-09-25 end, subject to exact account eligibility and capacity.
+
+The fixed-bonus account-prequalification urgency order, if designated
+credentials and explicit read-only authority later exist, is USDT through
+September 7, U through September 14, RWUSD VIP bonus through September 17, and
+USD1 Simple Earn through September 25. This is an evidence-routing order, not
+an instruction to acquire, subscribe, or move principal. Canonical frontier:
+`docs/model-research/action-value/accepted-market-independent-yield-frontier-v1-2026-08-30.json`,
+result SHA-256
+`e99021f9b49c13f4cfb894d01c4125a5604ae7bf4cf9e7b20f2c204f6a91b8e0`.
+
 ## Verification Scope
 
 The price-blind series selector, both empty event catalogs, four canonical

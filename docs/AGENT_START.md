@@ -1711,6 +1711,26 @@ HTTP client will receive the rendered contract. Prefer a hash-bound native
 index or preflight byte-retainability before freezing an outcome-sensitive
 source capture; HTTP 202 with zero bytes is a consumed null response.
 
+## Accepted market-independent yield frontier
+
+The canonical zero-network frontier for all nine accepted yield and capital-
+efficiency overlays is
+`docs/model-research/action-value/accepted-market-independent-yield-frontier-v1-2026-08-30.json`,
+result SHA-256
+`e99021f9b49c13f4cfb894d01c4125a5604ae7bf4cf9e7b20f2c204f6a91b8e0`.
+It excludes the twelve accepted organic-flow fee, referral, and creator
+overlays and adds no accepted edge.
+
+Polymarket complete-set holding yield remains strongest on realized stability:
+42 of 42 positive daily payments across BTC, ETH, and SOL, 1,039 pUSD
+demonstrated principal, and 3.1820191118% realized annualized portfolio yield.
+It remains positive through a 3% alternative yield and negative at 3.25%
+before external friction. Binance LDUSDT is the strongest long-history
+incremental overlay, but only for collateral already required by an independent
+futures strategy. USD1 Simple Earn is the strongest fixed current bonus
+allocation only for at most 1,500 already-held idle eligible USD1. None of the
+nine rows is an acquisition edge or deployment-ready.
+
 ## Task Routing
 
 | Work | Read first |
