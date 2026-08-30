@@ -4168,3 +4168,32 @@ become 55. Canonical retained adjudication SHA-256 is
 `1153ef2f90345be8ebfda5b0c2fd3f02a56dc0dad854edf251e21370a9677743`;
 registry SHA-256 is
 `d82fe12b7ec4fb7765bdbad781ac7fc6ef1e6bf26da84882ab42f139411bb6fd`.
+
+## Binance Spot PRIMARY_PEG execution overlay candidate
+
+Official current Binance documentation and the retained production
+`exchangeInfo` snapshot jointly establish `PRIMARY_PEG LIMIT_MAKER` support on
+BTCUSDT, ETHUSDT, and SOLUSDT. The order derives its price from the same-side
+best quote at matching-engine arrival and joins behind existing orders at that
+price.
+
+The efficient offline screen made zero new market requests and reused the two
+retained public ticker windows. At a frozen one-second lag, deterministic
+fixed-price crossing/rejection counterfactuals occurred in 416 of 3,365
+discovery comparisons (12.36%) and 31 of 729 validation comparisons (4.25%),
+with at least one observation in every symbol and window. This supports a
+recurrent direction-independent order-acceptance overlay candidate only. It
+does not establish subsecond state, acknowledgement, queue priority, fills,
+spread capture, adverse selection, after-cost profit, or deployment readiness.
+
+No credential, account, order, cancellation, fund, or protected Polymarket
+state was accessed. Advance only with explicit separate Spot testnet or paper
+authority for one minimum-size `PRIMARY_PEG LIMIT_MAKER` acknowledgement and
+cancel comparison against a frozen fixed-price counterfactual, or after a
+material official pegged-order semantics, filter, fee, or production-
+configuration change. No mainnet authority exists. Canonical candidate
+SHA-256 is
+`605d5b195f43bbb9976a5bd3d239388aa918110a6860669da480fa7949b789a2`.
+Accepted edges remain 21, ranked hypotheses remain 44, and terminal families
+remain 55. Registry SHA-256 is
+`4bf91c297d3c41583874fe77c3b1c456736bc2809c4bfdac320edd8124f62005`.
