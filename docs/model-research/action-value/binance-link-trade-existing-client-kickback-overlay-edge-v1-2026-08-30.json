@@ -1,0 +1,92 @@
+{
+  "adjudication": {
+    "accepted_edge": true,
+    "accepted_scope": "Exact realized positive own-account Link-and-Trade kickback income from independently justified legitimate organic Spot trading on an already linked account with rebateWorking true, only after exact asset balance reconciliation and every incremental fee tax support compliance settlement and operating cost.",
+    "after_every_external_cost_and_account_condition": false,
+    "deployment_ready": false,
+    "future_profit_guaranteed": false,
+    "market_direction_forecast_required": false,
+    "profitability_claim": false,
+    "public_forward_profit_floor": "0",
+    "status": "accepted_narrow_realized_client_kickback_overlay_without_public_rate_account_entitlement_or_trading_authority"
+  },
+  "authority": {
+    "account_or_trade_history_accessed": false,
+    "accounts_linked_or_customized": 0,
+    "credentials_used": false,
+    "orders_or_trades": 0,
+    "paper_or_live_trading_authority": false,
+    "public_rendered_documentation_reads": 1,
+    "signed_requests": 0,
+    "state_changes": 0
+  },
+  "created_at_utc": "2026-08-30T06:46:50.3754517Z",
+  "distinctness": {
+    "from_partner_rebate": "The own-account kickback route has no customer selector and returns only income asset symbol and time; the separate explicitly named partner route accepts customerId and returns customer order trade distribution and commission lineage.",
+    "from_referral_pro": "This scope values a rebate received by the already linked trading client on its own independently required organic Spot flow, not commission earned by recruiting or referring an external user.",
+    "from_spot_fee_discounts": "This is post-trade income recorded by a dedicated kickback ledger, not an assumed reduction of standard commission and not a reason to choose a quote asset or BNB payment route."
+  },
+  "economic_contract": {
+    "accepted_value_identity": "positive_owned_kickback_income_in_asset_minus_all_incremental_fee_tax_support_compliance_settlement_and_operating_costs",
+    "exact_event_identity": [
+      "income",
+      "asset",
+      "symbol",
+      "time"
+    ],
+    "independent_underlying_trade_gate": "Every contributing Spot trade must have been independently justified and after-cost positive without counting the kickback.",
+    "public_forward_floor_quote_units": "0",
+    "realization_gate": "The positive record must reconcile to the same owned account asset balance or distribution ledger without double counting any partner rebate referral commission fee discount or promotion.",
+    "rate_assumption": "none"
+  },
+  "novelty_audit": {
+    "alias_search_terms": [
+      "apiReferral/kickback/recentRecord",
+      "client kickback",
+      "trading fee kickback",
+      "kickback rebate"
+    ],
+    "existing_non_raw_matches_before_artifact": 0,
+    "mechanism_was_registered_before_this_artifact": false
+  },
+  "prohibited_shortcuts": [
+    "opening_relinking_or_customizing_an_account_to_chase_kickback",
+    "creating_enlarging_splitting_churning_self_matching_or_rerouting_volume",
+    "treating_documentation_example_income_as_current_owned_or_repeatable",
+    "assuming_rebateWorking_rate_region_agent_or_symbol_eligibility",
+    "double_counting_client_kickback_with_partner_rebate_referral_commission_fee_discount_or_promotion",
+    "calling_any_signed_endpoint_without_explicit_GET_only_authority",
+    "placing_an_order_or_changing_account_referral_or_API_state"
+  ],
+  "rendered_source": {
+    "contract_path": "docs/model-research/action-value/binance-link-trade-existing-client-kickback-overlay-rendered-source-contract-v1-2026-08-30.json",
+    "contract_sha256": "006e9feffb6ee4162039e43ae0ebd676d2c0c6a0fb64e88478b51d06d1eb620d",
+    "evidence_path": "docs/model-research/action-value/binance-link-trade-existing-client-kickback-overlay-rendered-evidence-v1-2026-08-30.json",
+    "evidence_sha256": "6b51695bad27909167d28d8c161b2807e8b39646c197f5b0fb5ebdd782e5b235",
+    "url": "https://developers.binance.com/en/docs/catalog/vip-and-institutional-link-and-trade/api/rest-api/spot"
+  },
+  "retained_current_official_api_index": {
+    "path": "docs/model-research/binance/raw/spot-block-matching-cost-overlay-v1-2026-08-30/03-agent-native-index.raw.txt",
+    "required_endpoint_fragments": [
+      "GET /sapi/v1/apiReferral/ifNewUser",
+      "GET /sapi/v1/apiReferral/kickback/recentRecord",
+      "GET /sapi/v1/apiReferral/rebate/recentRecord"
+    ],
+    "sha256": "944e132d3523c8a03abcac2f7ddb85802107e45161470885b7a8785fd4fdb15d"
+  },
+  "result_sha256": "ada551b385d9040e4126ee0e73e1dd1f417b103e6c5c5f7c567411ab913ff065",
+  "signed_read_only_reconciliation": {
+    "advance_only_when": [
+      "both designated ephemeral credentials exist",
+      "explicit signed GET-only authority is granted",
+      "the account was already linked for independent reasons and the exact API agent code is already legitimately known",
+      "there is an exact independently justified organic Spot kickback question within the endpoint's latest-seven-day horizon"
+    ],
+    "first_gate": "GET /sapi/v1/apiReferral/ifNewUser must report rebateWorking true and exact existing referrer lineage without any customization or linking action.",
+    "income_gate": "GET /sapi/v1/apiReferral/kickback/recentRecord must return an exact positive income asset symbol and time record attributable to the scoped organic activity.",
+    "owned_reconciliation": "Read-only owned Spot trade and asset-balance evidence must reconcile the record without using or disclosing unrelated account data.",
+    "state_changes_authorized": false,
+    "stop_before": "every account creation linking customization order trade transfer withdrawal or other mutation"
+  },
+  "schema_version": "binance-link-trade-existing-client-kickback-overlay-edge-v1"
+}

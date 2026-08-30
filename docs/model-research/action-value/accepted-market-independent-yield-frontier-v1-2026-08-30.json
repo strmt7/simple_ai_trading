@@ -1,7 +1,7 @@
 {
   "schema_version": "accepted-market-independent-yield-frontier-v1",
   "created_at_utc": "2026-08-30T03:07:15Z",
-  "result_sha256": "eab78d09a82438350682bdd32968b881507ba6037e3e1ce20d34f24765c7de56",
+  "result_sha256": "5f638281d9df79456a5a909f4da07e6375ff46404a8a63fceb7f96899a5a74c2",
   "purpose": "rank_the_nine_accepted_market_direction_independent_yield_and_capital_efficiency_overlays_by_evidence_strength_current_gross_opportunity_and_remaining_deployment_gates_without_new_network_or_account_access",
   "authority": {
     "network_requests": 0,
@@ -12,9 +12,9 @@
     "protected_capture_accessed": false
   },
   "population": {
-    "registry_accepted_edge_count": 23,
+    "registry_accepted_edge_count": 24,
     "yield_and_capital_efficiency_edges_included": 9,
-    "organic_flow_fee_referral_creator_and_financing_cost_overlays_excluded": 14,
+    "organic_flow_fee_referral_creator_and_financing_cost_overlays_excluded": 15,
     "population_complete_for_registry_accepted_yield_edges": true,
     "shared_scope": "identical_principal_or_asset_already_independently_held_or_required_no_acquisition_borrow_volume_creation_or_market_direction_forecast",
     "shared_deployment_state": "none_is_deployment_ready_or_fully_account_and_external_cost_qualified"
@@ -250,7 +250,7 @@
     "strongest_long_history_binance_edge": "binance_ldusdt_required_margin_yield",
     "strongest_current_fixed_bonus_allocation": "binance_usd1_simple_earn_fixed_bonus",
     "new_accepted_edge_count": 0,
-    "accepted_edge_count_after_frontier": 23,
+    "accepted_edge_count_after_frontier": 24,
     "profitability_claim_beyond_source_scopes": false,
     "deployment_ready_edge_count": 0,
     "next_research_spend": "at_the_literal_next_trigger_refresh_only_the_rank_1_Polymarket_single_wallet_continuity_pulse_then_prequalify_fixed_Binance_bonus_accounts_only_if_designated_credentials_and_explicit_read_only_authority_exist_before_their_published_expiries",

@@ -1,0 +1,72 @@
+{
+  "admission": {
+    "account_rate_or_eligibility_proved": false,
+    "documentation_example_values_admitted": false,
+    "exact_current_api_contract_admitted": true,
+    "owned_income_proved": false
+  },
+  "contract": {
+    "contract_sha256": "006e9feffb6ee4162039e43ae0ebd676d2c0c6a0fb64e88478b51d06d1eb620d",
+    "path": "docs/model-research/action-value/binance-link-trade-existing-client-kickback-overlay-rendered-source-contract-v1-2026-08-30.json"
+  },
+  "observed_at_utc": "2026-08-30T06:46:50.3754517Z",
+  "rendered_source": {
+    "content_type": "text/html",
+    "crawled_label": "today",
+    "method": "official_public_unauthenticated_web_rendered_documentation_read",
+    "source_title": "Spot - Link and Trade REST API | Binance Developer Docs",
+    "total_rendered_lines": 747,
+    "url": "https://developers.binance.com/en/docs/catalog/vip-and-institutional-link-and-trade/api/rest-api/spot"
+  },
+  "rendered_evidence_sha256": "6b51695bad27909167d28d8c161b2807e8b39646c197f5b0fb5ebdd782e5b235",
+  "requirement_results": {
+    "authorization_classification": {
+      "evidence": "Both record sections state that a signature must be included.",
+      "line_ranges": [
+        "492-504",
+        "595-607"
+      ],
+      "passed": true
+    },
+    "client_beneficiary_semantics": {
+      "evidence": "The own-record route follows the signed client-status response containing rebateWorking and referrerId, omits customer selection, and is immediately contrasted with the explicitly named partner route that accepts customerId and returns customer order trade and commission lineage.",
+      "inference_from_official_schema_design": true,
+      "line_ranges": [
+        "403-485",
+        "492-588",
+        "595-740"
+      ],
+      "passed": true
+    },
+    "event_or_trade_lineage_fields": {
+      "client_fields": [
+        "symbol",
+        "time"
+      ],
+      "line_range": "567-577",
+      "passed": true,
+      "trade_id_available_on_client_route": false
+    },
+    "exact_kickback_recent_record_endpoint_and_title": {
+      "endpoint": "GET /sapi/v1/apiReferral/kickback/recentRecord",
+      "line_range": "492-504",
+      "passed": true,
+      "title": "Query Rebate Recent Record"
+    },
+    "exact_partner_rebate_recent_record_endpoint_and_distinct_title": {
+      "endpoint": "GET /sapi/v1/apiReferral/rebate/recentRecord",
+      "line_range": "595-607",
+      "passed": true,
+      "title": "Query Partner Rebate Recent Record"
+    },
+    "realized_reward_asset_and_amount_fields": {
+      "fields": [
+        "income",
+        "asset"
+      ],
+      "line_range": "545-565",
+      "passed": true
+    }
+  },
+  "schema_version": "binance-link-trade-existing-client-kickback-overlay-rendered-evidence-v1"
+}
