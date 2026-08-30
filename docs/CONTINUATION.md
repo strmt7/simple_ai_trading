@@ -3495,7 +3495,7 @@ preflight exact response bytes before freezing a source contract, and preserve
 HTTP 202 with zero bytes as a consumed null response.
 
 The structural registry remains at 44 ranked hypotheses and 21 accepted scoped
-overlays; its terminal source-capture entries now total 51.
+overlays; its terminal source-capture entries now total 52.
 
 ## Accepted Market-Independent Yield Frontier
 
@@ -3529,7 +3529,47 @@ an instruction to acquire, subscribe, or move principal. Canonical frontier:
 result SHA-256
 `e99021f9b49c13f4cfb894d01c4125a5604ae7bf4cf9e7b20f2c204f6a91b8e0`.
 
+## pUSD-to-USDT Fixed-Bonus Opportunity-Cost Rejection
+
+One frozen public sequence used the hash-bound official native Markdown index,
+retained the current quote and supported-assets contracts, made one current
+supported-assets GET, and then one exact 500 pUSD to Polygon USDT quote. All
+four requests were public and unauthenticated. The quote estimated 492.459811
+USDT output: a 7.540189-USDT or 150.80378-bip optimistic one-way loss.
+
+The maximally favorable remaining 4% fixed bonus through
+`2026-09-07T23:59:59Z` is only 0.4856127333 USDT or 9.712254665 bips. Charging
+the realized 3.1820191118% pUSD holding-yield opportunity cost leaves only
+0.0993054837 or 1.986109674 bips of incremental headroom. The one-way quote
+loss is 15.527 times the entire fixed bonus and 75.929 times the incremental
+advantage before any Binance deposit, return conversion, eligibility, capacity,
+custody, tax, or operating cost. The cross-venue acquisition route is rejected
+before account access.
+
+This does not reject the accepted USDT bonus overlay for independently already-
+held idle eligible USDT. Do not move pUSD for this promotion or repeat the quote
+without a material bridge-quote or bonus-term change. No credential, account,
+deposit or withdrawal address, order, subscription, approval, transfer,
+transaction, fund, or protected-capture state was accessed. Contract and result
+SHA-256 values are
+`1098e4af17f5269ae1e233b3bcf1fa339f0da45eb8b87a2b3fa327e6ca6fd011`
+and
+`98b74abfcb213a8d1bd554fc1bfec9044d6a6a3990abd800bef92f29437533b3`.
+The accepted-edge count remains 21, ranked count remains 44, and registry
+SHA-256 is
+`8ef8e033e169084a57237321d13467f05486152c2b713cc478023372efc6b877`.
+
 ## Verification Scope
+
+The pUSD-to-USDT contract, four pre-request journal rows, two native Markdown
+sources, exact current supported-assets population, quote response, conversion
+and reward arithmetic, rank-one lineage, and terminal no-repeat entry pass the
+two direct source-bound tests. All 323 registry-coupled tests pass in one
+focused run. Ruff and Python compilation are clean for the changed Python
+scope, the current Polymarket publication manifest still reconstructs, and
+`git diff --check` is clean. No quote was repeated, and no broad model, CI,
+hosted, release, credential, account, address-generation, order, subscription,
+transfer, transaction, fund, or protected-capture workflow ran.
 
 The price-blind series selector, both empty event catalogs, four canonical
 contract/result hashes, three retained raw-response hashes, journals, updated

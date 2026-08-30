@@ -1,0 +1,79 @@
+{
+  "schema_version": "polymarket-pusd-to-binance-usdt-opportunity-cost-v1-contract",
+  "frozen_at_utc": "2026-08-30T03:18:04.8421811Z",
+  "purpose": "Use one exact public executable conversion estimate to reject or retain moving the capped 500 pUSD principal into the current fixed Binance USDT Flexible bonus before any account or transaction access.",
+  "amount_pusd": "500",
+  "fixed_bonus_apr_percent": "4",
+  "bonus_end_utc": "2026-09-07T23:59:59Z",
+  "holding_yield_apr_percent": "3.182019111783308125945277053",
+  "supported_assets_url": "https://bridge.polymarket.com/supported-assets",
+  "quote_url": "https://bridge.polymarket.com/quote",
+  "documentation_sources": [
+    {
+      "name": "supported-assets-doc",
+      "url": "https://docs.polymarket.com/trading/bridge/supported-assets.md",
+      "required_text_casefolded": [
+        "https://bridge.polymarket.com/supported-assets",
+        "supportedAssets",
+        "Supported assets change over time"
+      ]
+    },
+    {
+      "name": "quote-doc",
+      "url": "https://docs.polymarket.com/trading/bridge/quote.md",
+      "required_text_casefolded": [
+        "POST https://bridge.polymarket.com/quote",
+        "estToTokenBaseUnit",
+        "Quotes are estimates"
+      ]
+    }
+  ],
+  "quote_request": {
+    "fromAmountBaseUnit": "500000000",
+    "fromChainId": "137",
+    "fromTokenAddress": "0xC011a7E12a19f7B1f670d46F03B03f3342E82DFB",
+    "recipientAddress": "0x17eC161f126e82A8ba337f4022d574DBEaFef575",
+    "toChainId": "137"
+  },
+  "retained_sources": [
+    {
+      "path": "data/polymarket-official-docs-mechanism-inventory-v1/raw/llms.txt",
+      "sha256": "68256fa9849e72626806cbc7373f726421fd6d62dddecc0ae3a8009595bd2b8d",
+      "use": "hash-bound official native Markdown route index for the exact two documentation pages"
+    },
+    {
+      "path": "docs/model-research/action-value/accepted-market-independent-yield-frontier-v1-2026-08-30.json",
+      "sha256": "7f200101abfc135b301965ad3f39d062abab78ecf221aaf2f34d5ab17293bb31",
+      "use": "exact accepted-yield frontier and realized pUSD holding-yield opportunity-cost rate"
+    },
+    {
+      "path": "docs/model-research/action-value/binance-usdt-flexible-current-bonus-overlay-v1-2026-08-26.json",
+      "sha256": "fe201ab3ec7c7c3600294a16df2e684a6d62b313130fbf468673c52e5b5f59d7",
+      "use": "source-bound fixed 4 percent bonus, 500 USDT cap, and exact published end"
+    },
+    {
+      "path": "docs/model-research/action-value/polymarket-pusd-external-parity-v1-2026-08-26.json",
+      "sha256": "d108480a293f26f5b89b9a57f19cfd4d6c4e6a4cd67437a5f91d3826e56fa0f8",
+      "use": "existing pUSD token identity and rejected onchain parity routes"
+    }
+  ],
+  "frozen_decision_rules": {
+    "selection": "Select exactly one current supported-assets row with chainId 137 and token symbol USDT, require six decimals, then make exactly one 500 pUSD quote to that address.",
+    "optimism": "Use the full interval from frozen_at_utc through the published bonus end, immediate bonus accrual, the estimated rather than minimum quote output, no return conversion, and no Binance deposit cost. These choices maximize the bonus route before account access.",
+    "rejection": "Reject moving pUSD for the bonus when the optimistic one-way conversion loss alone strictly exceeds the entire remaining fixed 4 percent bonus reward. Also report the stronger incremental comparison after the realized pUSD holding-yield opportunity cost.",
+    "promotion": "No public quote may promote the switch. Account eligibility, capacity, deposit support, exact variable base APR, transition timing, custody, tax, return conversion, and operating costs remain mandatory.",
+    "failure": "Any missing documentation phrase, absent or ambiguous Polygon USDT row, HTTP error, schema drift, or parse failure consumes this contract and stops without retry or endpoint alias."
+  },
+  "authority": {
+    "allowed": "Four public unauthenticated read-only requests: two native Markdown documentation GETs named by the retained official index, one supported-assets GET, and conditionally one quote POST that only computes an estimate.",
+    "quote_recipient": "The recipient is the official documentation example used only as a quote parameter; no address is generated and no funds are sent.",
+    "prohibited": "No credential, account, deposit address, withdrawal address, order, subscription, approval, signature, transfer, transaction, status poll, retry, fund movement, or protected capture access.",
+    "one_use": true,
+    "max_public_requests": 4
+  },
+  "implementation": {
+    "path": "tools/screen_polymarket_pusd_to_usdt_opportunity_cost.py",
+    "sha256": "0e2f69e96f0ac12f9b8951731e62f249f8bd1ced354284f957984ed586da3957"
+  },
+  "contract_sha256": "1098e4af17f5269ae1e233b3bcf1fa339f0da45eb8b87a2b3fa327e6ca6fd011"
+}

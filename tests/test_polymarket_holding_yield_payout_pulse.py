@@ -111,15 +111,13 @@ def test_registry_keeps_edge_scoped_and_source_bound() -> None:
     assert registry["result_sha256"] == REGISTRY_HASH
     assert _canonical_hash(registry, "result_sha256") == REGISTRY_HASH
     row = registry["prioritized_hypotheses"][0]
-    assert row["canonical_artifacts"][-2:] == [
-        {
-            "path": PULSE_RESULT.relative_to(ROOT).as_posix(),
-            "result_sha256": PULSE_RESULT_HASH,
-        },
-        {
-            "path": RECEIPT_RESULT.relative_to(ROOT).as_posix(),
-            "result_sha256": RECEIPT_RESULT_HASH,
-        },
-    ]
+    assert {
+        "path": PULSE_RESULT.relative_to(ROOT).as_posix(),
+        "result_sha256": PULSE_RESULT_HASH,
+    } in row["canonical_artifacts"]
+    assert {
+        "path": RECEIPT_RESULT.relative_to(ROOT).as_posix(),
+        "result_sha256": RECEIPT_RESULT_HASH,
+    } in row["canonical_artifacts"]
     assert "current_rate_remains_fail_closed_unqualified" in row["current_status"]
     assert "2026_08_31T02_15_30Z" in row["retry_trigger"]

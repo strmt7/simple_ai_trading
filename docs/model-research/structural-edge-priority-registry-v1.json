@@ -13,7 +13,7 @@
       "blocking_evidence": [
         "owned split-origin equal YES and NO balance lineage before deployment",
         "owned full split-to-merge cash flow before deployment",
-        "every external cost alternative cash yield and capacity before expanding beyond already-idle on-platform pUSD",
+        "every still-unbound external cost alternative cash yield and capacity before expanding beyond already-idle on-platform pUSD; the exact capped pUSD-to-Polygon-USDT route is now rejected by its one-way quote alone",
         "prospective persistence and program-change monitoring"
       ],
       "canonical_artifacts": [
@@ -64,12 +64,16 @@
       {
         "path": "docs/model-research/polymarket/complete-set-holding-yield-payout-receipt-v10-2026-08-30.json",
         "result_sha256": "4e57d6c0216886144fb89f8ae69b11a2eee4db37149ce6c956adecf293b7b927"
+      },
+      {
+        "path": "docs/model-research/action-value/polymarket-pusd-to-binance-usdt-opportunity-cost-gate-v1-2026-08-30.json",
+        "result_sha256": "98b74abfcb213a8d1bd554fc1bfec9044d6a6a3990abd800bef92f29437533b3"
       }
     ],
-    "current_status": "accepted_scoped_historical_after_direct_cost_edge_BTC_ETH_SOL_1039_pUSD_42_of_42_positive_daily_YIELD_payments_3_1820_percent_realized_rate_positive_through_3_percent_alternative_before_external_friction_one_use_post_conflict_run_failed_closed_after_5_of_9_requests_on_an_uncontracted_0_0001_pUSD_display_rounding_equality_retained_BTC_ETH_first_wholly_post_conflict_payouts_each_uniquely_match_3_25_percent_and_reject_4_percent_the_distinct_latest_retained_BTC_ETH_daily_rows_then_reconciled_to_exact_successful_distributor_pUSD_transfers_at_86474_and_86724_second_intervals_a_new_triggered_one_request_BTC_pulse_found_the_next_0_0133_pUSD_YIELD_row_at_an_86290_second_interval_and_one_separately_frozen_receipt_request_reconciled_the_exact_successful_distributor_transfer_extending_single_wallet_continuity_to_18_positive_rows_but_SOL_activity_and_full_three_wallet_rate_reconciliation_remain_incomplete_current_rate_remains_fail_closed_unqualified_no_repair_capture_not_deployment_ready",
+    "current_status": "accepted_scoped_historical_after_direct_cost_edge_BTC_ETH_SOL_1039_pUSD_42_of_42_positive_daily_YIELD_payments_3_1820_percent_realized_rate_positive_through_3_percent_alternative_before_external_friction_one_use_post_conflict_run_failed_closed_after_5_of_9_requests_on_an_uncontracted_0_0001_pUSD_display_rounding_equality_retained_BTC_ETH_first_wholly_post_conflict_payouts_each_uniquely_match_3_25_percent_and_reject_4_percent_the_distinct_latest_retained_BTC_ETH_daily_rows_then_reconciled_to_exact_successful_distributor_pUSD_transfers_at_86474_and_86724_second_intervals_a_new_triggered_one_request_BTC_pulse_found_the_next_0_0133_pUSD_YIELD_row_at_an_86290_second_interval_and_one_separately_frozen_receipt_request_reconciled_the_exact_successful_distributor_transfer_extending_single_wallet_continuity_to_18_positive_rows_the_exact_public_500_pUSD_to_Polygon_USDT_quote_outputs_492_459811_USDT_and_loses_150_80378_bips_versus_only_0_4856127333_USDT_maximum_remaining_fixed_bonus_and_0_0993054837_incremental_reward_after_holding_yield_so_that_cross_venue_switch_is_rejected_before_account_access_but_SOL_activity_and_full_three_wallet_rate_reconciliation_remain_incomplete_current_rate_remains_fail_closed_unqualified_no_repair_capture_not_deployment_ready",
       "market_direction_forecast_required": false,
       "mechanism": "complete_set_holding_reward",
-    "next_action": "do_not_rerun_or_repair_consumed_v7_or_repeat_consumed_v9_v10_on_unchanged_evidence_wait_for_material_official_terms_economics_or_cross_asset_payout_change_and_do_not_run_another_single_wallet_continuity_pulse_before_2026_08_31T02_15_30Z_only_with_explicit_authenticated_and_funded_authority_run_one_owned_minimum_size_split_hold_merge_and_full_cost_study",
+    "next_action": "do_not_rerun_or_repair_consumed_v7_repeat_consumed_v9_v10_or_repeat_the_rejected_pUSD_to_USDT_quote_on_unchanged_evidence_wait_for_material_official_terms_economics_bridge_quote_or_cross_asset_payout_change_and_do_not_run_another_single_wallet_continuity_pulse_before_2026_08_31T02_15_30Z_only_with_explicit_authenticated_and_funded_authority_run_one_owned_minimum_size_split_hold_merge_and_full_cost_study",
       "priority_rank": 1,
       "prohibited_shortcuts": [
         "Gamma holdingRewardsEnabled as account eligibility",
@@ -2163,7 +2167,7 @@
       "venue_scope": "Binance_Spot_direct_and_exactly_one_intermediary_routes_for_independently_required_organic_conversions_with_the_exactly_two_intermediary_extension_terminal_for_the_retained_population"
     }
   ],
-  "result_sha256": "2f1f406c7ad013d1a5509ca73e9507897bcf810e71de70f2492ae88a520ad057",
+  "result_sha256": "8ef8e033e169084a57237321d13467f05486152c2b713cc478023372efc6b877",
   "schema_version": "structural-edge-priority-registry-v1",
   "terminal_do_not_repeat": [
     {
@@ -2420,8 +2424,13 @@
       "canonical_result_sha256": "82245f341e23ab2e8c8e9e3bd4d47805e88aebc3b39f6ac1a6360067491be7ef",
       "family": "binance_RPI_maker_hedge_dynamic_documentation_source_capture_2026_08_30",
       "reason": "the_frozen_primary_market_data_documentation_GET_returned_HTTP_202_with_zero_body_bytes_before_any_rpiDepth_or_ordinary_book_request_so_required_RPI_semantics_and_after_cost_economics_were_not_source_bound_do_not_retry_the_same_route_or_an_alias_reopen_only_on_a_material_byte_retainable_official_contract_or_exact_account_commission_authority_with_an_independently_positive_organic_hedge_question"
+    },
+    {
+      "canonical_result_sha256": "98b74abfcb213a8d1bd554fc1bfec9044d6a6a3990abd800bef92f29437533b3",
+      "family": "polymarket_pUSD_to_Binance_USDT_fixed_bonus_opportunity_cost_2026_08_30",
+      "reason": "the_exact_public_500_pUSD_to_Polygon_USDT_quote_returned_only_492_459811_USDT_a_150_80378_bip_optimistic_one_way_loss_versus_at_most_0_4856127333_USDT_or_9_712254665_bips_of_remaining_fixed_bonus_and_only_0_0993054837_USDT_or_1_986109674_bips_incremental_to_realized_holding_yield_before_Binance_deposit_return_conversion_eligibility_capacity_custody_tax_or_operating_costs_do_not_move_pUSD_for_this_bonus_or_repeat_the_quote_without_a_material_bridge_quote_or_bonus_term_change"
     }
   ],
-  "updated_at_utc": "2026-08-30T02:57:12Z",
+  "updated_at_utc": "2026-08-30T03:21:26Z",
   "usage_rule": "advance_the_highest_ranked_hypothesis_whose_retry_trigger_is_satisfied_otherwise_do_not_repeat_a_blocked_or_terminal_screen"
 }

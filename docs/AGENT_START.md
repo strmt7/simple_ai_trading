@@ -1731,6 +1731,29 @@ futures strategy. USD1 Simple Earn is the strongest fixed current bonus
 allocation only for at most 1,500 already-held idle eligible USD1. None of the
 nine rows is an acquisition edge or deployment-ready.
 
+## pUSD-to-USDT Fixed-Bonus Opportunity-Cost Rejection
+
+One frozen four-request public sequence retained the native Markdown contracts,
+current supported-assets population, and one exact 500 pUSD to Polygon USDT
+quote. The quote estimated 492.459811 USDT output: a 7.540189-USDT or
+150.80378-bip optimistic one-way loss. Through the fixed bonus end, the entire
+remaining 4% bonus can return at most 0.4856127333 USDT or 9.712254665 bips;
+after the realized 3.1820191118% pUSD holding-yield opportunity cost, its
+incremental headroom is only 0.0993054837 or 1.986109674 bips. The quoted loss
+is therefore 15.527 times the full bonus and 75.929 times its incremental
+advantage before Binance deposit, return conversion, eligibility, capacity,
+custody, tax, or operating costs.
+
+This rejects only acquiring USDT from pUSD for the capped promotion. It does
+not reject the accepted bonus overlay on independently already-held idle
+eligible USDT. Do not repeat the quote without a material bridge-quote or bonus-
+term change. No credential, account, address generation, order, subscription,
+approval, transfer, transaction, fund, or protected capture was accessed.
+Canonical result SHA-256 is
+`98b74abfcb213a8d1bd554fc1bfec9044d6a6a3990abd800bef92f29437533b3`;
+the registry SHA-256 is
+`8ef8e033e169084a57237321d13467f05486152c2b713cc478023372efc6b877`.
+
 ## Task Routing
 
 | Work | Read first |
