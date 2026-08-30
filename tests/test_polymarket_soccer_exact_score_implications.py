@@ -88,7 +88,7 @@ def test_soccer_terminal_is_bound_to_rank_31() -> None:
     registry = json.loads(REGISTRY.read_text(encoding="utf-8"))
     assert _canonical_hash(registry, "result_sha256") == registry["result_sha256"]
     assert registry["result_sha256"] == (
-        "7c4d62403212f9826a8bf9f972647a3c56df6671d78cab99af35b9781e8da115"
+        "616c1991be031641954464c4099b662afc75f835188847f087748a7544fa356a"
     )
     rank_31 = next(
         row for row in registry["prioritized_hypotheses"] if row["priority_rank"] == 31
@@ -99,7 +99,33 @@ def test_soccer_terminal_is_bound_to_rank_31() -> None:
         == "aeb52c0bcd375fb0c31282cf8be92b9a6e6b93de0d8e7a0ac2c01bb579091386"
         for row in rank_31["canonical_artifacts"]
     )
-    assert len(registry["terminal_do_not_repeat"]) == 85
-    assert registry["terminal_do_not_repeat"][-1]["canonical_result_sha256"] == (
-        "aeb52c0bcd375fb0c31282cf8be92b9a6e6b93de0d8e7a0ac2c01bb579091386"
+    assert len(registry["terminal_do_not_repeat"]) == 86
+    assert any(
+        row["canonical_result_sha256"]
+        == "aeb52c0bcd375fb0c31282cf8be92b9a6e6b93de0d8e7a0ac2c01bb579091386"
+        for row in registry["terminal_do_not_repeat"]
     )
+
+
+def test_retained_soccer_graph_exhausts_supported_relations() -> None:
+    contract = _load(
+        "polymarket-soccer-structural-graph-contract-v1-2026-08-30.json"
+    )
+    result = _load(
+        "polymarket-soccer-structural-graph-result-v1-2026-08-30.json"
+    )
+    assert _canonical_hash(contract, "contract_sha256") == contract["contract_sha256"]
+    assert _canonical_hash(result, "result_sha256") == result["result_sha256"]
+    assert result["population"] == {
+        "main_exact_score_pairs": 11,
+        "main_first_to_score_pairs": 10,
+        "main_more_markets_pairs": 7,
+        "tested_relation_count": 305,
+        "side_specific_price_complete_count": 197,
+        "missing_side_specific_price_count": 108,
+    }
+    assert result["screen"]["strict_side_specific_candidate_count"] == 0
+    assert result["screen"]["best_price_complete_relation"][
+        "rejection_proxy_sum_pUSD"
+    ] == "1.15"
+    assert result["authority"]["network_requests"] == 0
