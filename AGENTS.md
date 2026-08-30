@@ -213,6 +213,12 @@ override prose.
   owned fills, and a precommitted sequential comparator before valuing its lower
   capital requirement or removed client request. Feature support alone proves
   no latency, fee, fill, price-improvement, or profit floor.
+- A published market-data update interval is not measured arrival latency or
+  profit. Compare like-for-like streams: Binance SBE Diff Depth is documented at
+  20 ms versus JSON Diff Depth at 100 ms, but both SBE best bid/ask and JSON book
+  ticker are documented real-time. Bind key type, decoder, source and receive
+  clocks, continuity, reconnects, gaps, host path, decision timing, and owned or
+  paper execution before crediting any freshness value.
 - Bind Polymarket fee schedules per exact retained market population. Crypto,
   Sports, and other event categories can have different taker rates and rebate
   fractions; never reuse a prior event's hard-coded schedule. If a consumed

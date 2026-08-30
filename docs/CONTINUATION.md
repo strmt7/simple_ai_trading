@@ -22,6 +22,21 @@ Development belongs only on `main`; do not create another development branch.
   configuration request. Canonical candidate SHA-256 is
   `4680faf2b4b4e36466cbc7ace4de2a2214430cbe4a5d537a3997e3f43bc47cc8`.
 
+- Binance Spot SBE Diff Depth is a second source-bound direction-independent
+  execution-information candidate. The retained current official SBE source
+  documents 20 ms depth updates, microsecond timestamps, and a 50 ms top-20
+  stream versus the retained JSON source's fastest 100 ms depth cadence. It
+  requires an Ed25519 API key but no extra market-data permission. Both SBE
+  best bid/ask and JSON book ticker are documented real-time, so the nominal
+  depth cadence cannot be carried into a top-of-book or monetary claim. The
+  one-use source gate failed only because bold Markdown delimiters wrapped one
+  required phrase; retained bytes were adjudicated offline and must not be
+  refetched or aliased. Advance only with a designated ephemeral Ed25519 key,
+  explicit read-only market-data authority, a byte-exact decoder, and a
+  precommitted same-host same-symbol dual-feed capture. Canonical adjudication
+  SHA-256 is
+  `6b01c825831657d8dac8a33efb196bbd63d64698288e15cf9b1ff27be9b4aa77`.
+
 - The exact Polymarket BTC/ETH/SOL interval-composition identity now has a
   retained settlement audit across 25 aligned sets, 100 terminal markets, and
   50 direction-independent four-leg packages. Every package paid at least its
@@ -6053,3 +6068,33 @@ sequential comparator. Canonical result SHA-256 is
 Accepted edges remain 29, ranked hypotheses remain 44, terminal families become
 88, and registry SHA-256 becomes
 `0e01f791af46253ebfc7cd82f86f145fef738e9d4a4bbf46454f2c1d66fbb48e`.
+
+## Binance Spot SBE depth-freshness candidate
+
+The current pinned official SBE market-data contract documents a real nominal
+depth cadence advantage: SBE Diff Depth publishes every 20 ms, while the
+retained JSON Diff Depth contract's fastest stream is 100 ms. SBE partial top-20
+depth is 50 ms, all SBE timestamps are in microseconds, and one connection can
+carry 1,024 streams. Access requires an Ed25519 API key in the connection header
+but no extra API permission, timestamp, or signature.
+
+The one-use documentation capture retained 4,981 bytes but failed its literal
+source gate because the contract required `An API Key is necessary for access.`
+while the Markdown bytes contain `**An API Key is necessary for access**.`.
+Preserve that consumed failure; do not refetch, alias, or loosen it. A prior
+local invocation also failed before any request because its rounded freeze time
+was still in the future; that unconsumed preflight error is retained separately,
+and the corrected contract used the exact observed UTC clock.
+
+This remains unaccepted. A 20 ms publication interval is not an 80 ms measured
+arrival lead, and both SBE best bid/ask and JSON book ticker are documented
+real-time. No Ed25519 credential, decoder proof, source continuity, simultaneous
+same-host comparator, owned or paper fill, or after-cost monetary value exists.
+The documentation-only profit claim is terminal. Advance the rank-5 candidate
+only with a designated ephemeral Ed25519 key, explicit read-only market-data
+authority, and one precommitted same-symbol SBE-versus-JSON capture with no
+orders. Canonical adjudication SHA-256 is
+`6b01c825831657d8dac8a33efb196bbd63d64698288e15cf9b1ff27be9b4aa77`.
+Accepted edges remain 29, ranked hypotheses remain 44, terminal families become
+89, and registry SHA-256 becomes
+`46f24a32204c23ba68189cfa2cae8d0b55e17b5665e3c616708cba26867827c5`.

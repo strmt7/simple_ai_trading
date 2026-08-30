@@ -53,6 +53,17 @@ Do not repeat the Testnet configuration request. Any order experiment requires
 separate explicit Spot testnet order authority and an independently required
 minimum-size organic buy-then-sell comparator.
 
+Binance Spot SBE Diff Depth is a distinct direction-independent freshness
+candidate: the retained current official source documents 20 ms updates versus
+the retained JSON Diff Depth source's fastest 100 ms cadence. Do not call that
+an 80 ms arrival lead or profit. Both SBE best bid/ask and JSON book ticker are
+documented real-time, SBE access requires an Ed25519 API key, and decoder,
+continuity, receive-time, fill, and cost evidence are absent. The consumed
+official source gate failed only because Markdown bold delimiters wrapped one
+required sentence; preserve and adjudicate those retained bytes, never refetch
+or alias them. Advance only with a designated ephemeral Ed25519 key, explicit
+read-only market-data authority, and a precommitted same-host dual-feed capture.
+
 The Polymarket BTC/ETH/SOL interval-composition family has a mechanically
 verified one-pUSD payoff floor across all 50 packages in 25 retained aligned
 settlements, with zero violations. It remains unaccepted: the current displayed
