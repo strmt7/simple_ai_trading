@@ -1,0 +1,79 @@
+{
+  "schema_version": "polymarket-exact-crypto-threshold-ladder-terminal-adjudication-v1",
+  "created_at_utc": "2026-08-30T15:23:39.4341692Z",
+  "purpose": "Adjudicate the consumed Ethereum September 4 threshold-ladder prefilter without refetch and explicitly separate the rule-consistent payout identity from independent-condition resolution risk.",
+  "sources": {
+    "contract": {
+      "path": "docs/model-research/action-value/polymarket-eth-sep4-threshold-ladder-prefilter-contract-v1-2026-08-30.json",
+      "sha256": "0737aa5e76be4151213f1a6174eca525e32ec7c46e7e4347842e6ac41c8a7331"
+    },
+    "prefilter_result": {
+      "path": "docs/model-research/action-value/polymarket-eth-sep4-threshold-ladder-prefilter-result-v1-2026-08-30.json",
+      "sha256": "42c122e54bd9a7299cc9e739724fabd4cd76716dd3bdfe76c039a1bab8014d2a"
+    },
+    "raw_event": {
+      "path": "data/polymarket-eth-sep4-threshold-ladder-prefilter-v1/raw/event.json",
+      "sha256": "84a0536e067b5f72a5a4c9fc1ac4a215316b51a742a5f7e781ab37e7fbe5b1be",
+      "bytes": 37477
+    },
+    "request_journal": {
+      "path": "data/polymarket-eth-sep4-threshold-ladder-prefilter-v1/request-journal.jsonl",
+      "sha256": "b06553b207ad6c276a08262c08319836b36ec7523f9aa8f9c6c902f693414944"
+    }
+  },
+  "payoff_adjudication": {
+    "rule_consistent_identity": "If every market applies the common Binance ETHUSDT close rule consistently, YES at lower threshold L plus NO at higher threshold H pays 1 pUSD when the close is at or below L, 2 pUSD when it is strictly above L and at or below H, and 1 pUSD when it is strictly above H.",
+    "optimistic_rule_consistent_floor_pUSD": "1",
+    "absolute_cross_condition_guarantee_proved": false,
+    "unbound_resolution_risks": [
+      "independent condition proposal or dispute divergence",
+      "market-specific cancellation or exceptional settlement",
+      "oracle or resolution-operator inconsistency",
+      "settlement delay and capital lock"
+    ],
+    "effect_on_current_decision": "These risks can only weaken the package as a guaranteed-floor claim. The complete event already fails before books against the more optimistic rule-consistent one-pUSD floor, so the rejection is unchanged and no refetch is justified."
+  },
+  "screen": {
+    "threshold_count": 11,
+    "complete_pair_count": 55,
+    "strict_displayed_candidate_count": 0,
+    "best_rule_consistent_package": {
+      "lower_threshold": "2900",
+      "higher_threshold": "3000",
+      "displayed_price_sum_pUSD": "1.0015",
+      "optimistic_rule_consistent_floor_pUSD": "1",
+      "gross_deficit_before_fees_pUSD": "0.0015"
+    },
+    "book_request_justified": false
+  },
+  "future_gate": {
+    "displayed_prefilter": "Require a distinct complete exact event and at least one rejection-only displayed package strictly below the optimistic rule-consistent floor.",
+    "resolution_gate": "Before acceptance or promotion, source-bind every leg's exceptional settlement cancellation proposal dispute and resolution semantics and price the residual independent-condition divergence and settlement-delay risk.",
+    "execution_gate": "Then require a separately frozen synchronized exact two-token depth batch, contract-bound fee schedule, minimum size, freshness, adverse-tick stress, capacity, orphan-fill unwind, and every external cost.",
+    "gamma_role": "rejection_only"
+  },
+  "adjudication": {
+    "status": "terminal_exact_event_rejected_against_optimistic_rule_consistent_floor_before_books",
+    "accepted_edge": false,
+    "deployment_ready": false,
+    "profitability_claim": false,
+    "terminal_family_count_change": 1,
+    "reopen_only_on": "a distinct active BTC ETH or SOL threshold ladder outside every consumed event with complete exact rules and a rejection-only displayed lower-YES plus higher-NO sum strictly below the optimistic rule-consistent floor, or a material fee rule resolution delay or execution change"
+  },
+  "authority": {
+    "network_requests": 0,
+    "credentials_used": false,
+    "accounts_accessed": false,
+    "orders_or_mutations": 0,
+    "funds_used": false,
+    "protected_polymarket_capture_touched": false
+  },
+  "prohibited_shortcuts": [
+    "calling independent conditions an absolute guaranteed package without resolution-risk qualification",
+    "repeating the consumed event to repair the omitted wording",
+    "requesting books after the optimistic displayed floor already failed",
+    "cherry-picking the current BTC or SOL sibling ladder",
+    "using Gamma displayed prices as executable acceptance evidence"
+  ],
+  "result_sha256": "25f90c75b9d8657e44b27ebab8dd4c26fb3434a306a6dbd9e35fdc2fdd53419d"
+}

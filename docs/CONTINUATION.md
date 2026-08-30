@@ -5381,3 +5381,46 @@ canonical terminal result SHA-256 is
 Accepted edges remain 29, ranked hypotheses remain 44, terminal families become
 70, and registry SHA-256 becomes
 `d2d24730180c4b4c9182a4f694a906cab819e1f93633ac04ddc834af5f6d3d31`.
+
+## Polymarket Ethereum exact monotone threshold-ladder rejection
+
+The current official event surface exposed a previously unregistered exact
+within-event crypto payoff identity. In a ladder whose common rules resolve YES
+only when the same Binance close is strictly above its threshold, buying
+`YES(L)` and `NO(H)` for `L < H` pays 1 pUSD below or at `L`, 2 pUSD strictly
+above `L` through `H`, and 1 pUSD above `H` when every independent condition
+applies the common source rule consistently. This is an optimistic one-pUSD
+rule-consistent floor without predicting market direction; independent disputes,
+cancellations, inconsistent resolutions, and settlement delay are additional
+downside and were not proved away.
+
+A frozen one-use Gamma GET of "Ethereum above ___ on September 4?" retained all
+11 exact active thresholds from 2,000 through 3,000 and exhaustively tested all
+55 lower-higher packages. The best rejection-only pair was `YES(2,900) +
+NO(3,000)` at 1.0015 pUSD, already 0.0015 pUSD above its floor before fees. Zero
+packages cleared the strict gross gate, so no book, fee, on-chain, account,
+credential, order, fund, or protected Polymarket capture request was justified.
+
+Do not repeat, narrow, or refetch this event, and do not cherry-pick the current
+BTC or SOL sibling ladders after the complete ETH population failed. Reopen the
+family only for a distinct active BTC, ETH, or SOL ladder outside every consumed
+event with complete exact common rules and at least one rejection-only Gamma
+displayed `YES(L) + NO(H)` sum strictly below the optimistic 1 pUSD floor. Gamma
+remains rejection-only; any candidate still requires source-bound exceptional
+settlement and independent-condition resolution risk plus a separately frozen
+exact two-token batch, contract-bound fee schedule, minimum size, freshness,
+adverse-tick stress, and all costs.
+
+Canonical contract SHA-256 is
+`0737aa5e76be4151213f1a6174eca525e32ec7c46e7e4347842e6ac41c8a7331`;
+canonical result SHA-256 is
+`42c122e54bd9a7299cc9e739724fabd4cd76716dd3bdfe76c039a1bab8014d2a`;
+raw Gamma SHA-256 is
+`84a0536e067b5f72a5a4c9fc1ac4a215316b51a742a5f7e781ab37e7fbe5b1be`;
+request journal SHA-256 is
+`b06553b207ad6c276a08262c08319836b36ec7523f9aa8f9c6c902f693414944`.
+Canonical zero-network terminal adjudication SHA-256 is
+`25f90c75b9d8657e44b27ebab8dd4c26fb3434a306a6dbd9e35fdc2fdd53419d`.
+Accepted edges remain 29, ranked hypotheses remain 44, terminal families become
+71, and registry SHA-256 becomes
+`fdfaac8e3bc873bd07e44e89efb290ebc0bbd7766157d11b6b614875345adead`.
