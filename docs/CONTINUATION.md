@@ -27,6 +27,13 @@ Development belongs only on `main`; do not create another development branch.
   It may establish mechanism timing only: the 2026 execution window is closed,
   book capture is prohibited, and profitability remains rejected. Preserve any
   failure and do not retry, paginate, alias, or extend the interval.
+- A distinct Polymarket created-event delta after
+  `2026-08-30T16:07:16.021321Z` consumed one public request and returned the
+  endpoint's effective 100-row cap with a non-null cursor; all 100 rows were
+  newer than the cutoff. The population was therefore incomplete, zero packages
+  were screened, and no book or fee request was authorized. Never paginate,
+  narrow, refresh, alias, or repeat this delta. Future time-delta catalogs must
+  prove worst-case arrivals fit below the observed cap before access.
 
 ## Closeout State
 
