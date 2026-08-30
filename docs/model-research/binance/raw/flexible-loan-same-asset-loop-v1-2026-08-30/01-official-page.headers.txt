@@ -1,0 +1,35 @@
+HTTP/1.1 301 Moved Permanently
+Content-Length: 0
+Connection: keep-alive
+Date: Sun, 30 Aug 2026 01:16:47 GMT
+Strict-Transport-Security: max-age=31536000; includeSubdomains
+K8scluster: master
+Location: https://www.binance.com/en/academy/articles/what-is-a-binance-flexible-loan
+X-Gateway: traefik
+X-Trace-Id: ee0310200eba4cdeae04f7ea6120cc08
+X-Traefik-Duration: 0.00
+X-Frame-Options: SAMEORIGIN
+X-Content-Type-Options: nosniff
+Referrer-Policy: origin-when-cross-origin
+X-Cache: Miss from cloudfront
+Via: 1.1 fff826c4760294142d4ae4bea736a00c.cloudfront.net (CloudFront)
+X-Amz-Cf-Pop: ZRH52-P1
+X-Amz-Cf-Id: LUgByi4TSZUF3noai5C8KVABNj-T8uGBfDDO71BP2x4onB28OT-f8g==
+
+HTTP/1.1 202 Accepted
+Server: CloudFront
+Date: Sun, 30 Aug 2026 01:16:47 GMT
+Content-Length: 0
+Connection: keep-alive
+x-amzn-waf-action: challenge
+Cache-Control: no-store, max-age=0
+Content-Type: text/html; charset=UTF-8
+Access-Control-Allow-Origin: *
+Access-Control-Max-Age: 86400
+Access-Control-Allow-Methods: OPTIONS,GET,POST
+Access-Control-Expose-Headers: x-amzn-waf-action
+X-Cache: Error from cloudfront
+Via: 1.1 16a83c328ec1b5af4d0dc28e1e3a8198.cloudfront.net (CloudFront)
+X-Amz-Cf-Pop: ZRH52-P1
+X-Amz-Cf-Id: u97LwvTzucpjQPignrKgzTatV4SR5Q8m0UIXpvZX2pwmyVexD9G0DA==
+

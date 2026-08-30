@@ -1057,14 +1057,21 @@ safety gate, blocks Stop, or submits an order.
   `f7aec4a5340cba42abb120a43cda1ed1fa4d5b03632b3c062c0d00d7b5636cf0`.
 - Binance Flexible Loan collateral-yield retention is a candidate, not an
   accepted edge. Current official sources say Simple Earn Flexible collateral
-  continues earning, but all current asset, rate, LTV, position, income, and
-  reward inputs are signed USER_DATA. The designated credentials are absent;
-  no signed request was sent and the public after-cost floor is zero. Do not
-  borrow, subscribe, repay, adjust LTV, acquire collateral, use leverage, or
-  double-count idle yield. Canonical gate:
+  continues earning. The direct direction-independent same-asset loop fails its
+  first product gate: the live official page explicitly says the collateral and
+  loan cryptocurrency cannot be the same, while the newer 2026 overview does
+  not reverse that restriction. Two reciprocal cross-asset isolated loans are
+  not an equivalent workaround because either position can liquidate under an
+  opposing price path. All current asset, rate, LTV, position, income, and reward
+  inputs remain signed USER_DATA. The designated credentials are absent; no
+  signed request was sent and the public after-cost floor is zero. Do not borrow,
+  subscribe, repay, adjust LTV, acquire collateral, use leverage, or double-count
+  idle yield. Canonical gate and same-asset adjudication:
   `binance-flexible-loan-simple-earn-collateral-yield-gate-v1-2026-08-26.json`,
+  result SHA-256 `ac010265c5236152907ac7b3c12ce13104f473b4cc61c5db43fb8b28c6678182`;
+  `binance-flexible-loan-same-asset-loop-adjudication-v1-2026-08-30.json`,
   result SHA-256
-  `ac010265c5236152907ac7b3c12ce13104f473b4cc61c5db43fb8b28c6678182`.
+  `7106bb072533327d3154c773ba2c1969ff7891df6ec16d314f2d8f1b410f48e6`.
 - Binance Advanced Earn Discount Buy and Dual Investment are terminal for the
   market-situation-independent search. Their nominal APR accompanies locked,
   settlement-price-dependent conversion: Discount Buy can use 50% or 100% of
@@ -1716,6 +1723,7 @@ safety gate, blocks Stop, or submits an order.
 | Binance Smart Arbitrage terminal adjudication | `docs/model-research/action-value/binance-smart-arbitrage-terminal-family-adjudication-v1-2026-08-26.json` |
 | Organic Polymarket referral net-fee overlay | `docs/model-research/action-value/polymarket-organic-referral-net-fee-overlay-v1-2026-08-26.json` |
 | Binance Flexible Loan collateral-yield gate | `docs/model-research/action-value/binance-flexible-loan-simple-earn-collateral-yield-gate-v1-2026-08-26.json` |
+| Binance Flexible Loan same-asset loop adjudication | `docs/model-research/action-value/binance-flexible-loan-same-asset-loop-adjudication-v1-2026-08-30.json` |
 | Binance Advanced Earn conditional-conversion terminal adjudication | `docs/model-research/action-value/binance-advanced-earn-conditional-conversion-terminal-adjudication-v1-2026-08-26.json` |
 | Binance Square organic Write to Earn fee overlay | `docs/model-research/action-value/binance-square-organic-write-to-earn-fee-overlay-v1-2026-08-26.json` |
 | Binance organic Referral Pro fee overlay | `docs/model-research/action-value/binance-organic-referral-pro-fee-overlay-v1-2026-08-26.json` |

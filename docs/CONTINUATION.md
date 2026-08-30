@@ -1708,15 +1708,22 @@ result SHA-256
 Binance Flexible Loan collateral-yield retention is a distinct candidate, not
 an accepted edge. Current official sources say Simple Earn Flexible collateral
 continues earning while pledged to an isolated overcollateralized open-term
-loan, but exact current collateral and loan eligibility, reward and interest
-rates, LTV thresholds, positions, income, and owned rewards are all signed
-USER_DATA. The designated ephemeral credentials are absent, so no signed request
-was sent and the public after-cost floor is zero. Never borrow, subscribe, repay,
-adjust LTV, acquire collateral, reinvest loan proceeds, or double-count idle
-yield. Canonical gate:
+loan. A direct market-direction-independent same-asset loop is not publicly
+available: the live official page explicitly says same-cryptocurrency
+collateral-loan pairs are unsupported, and the newer 2026 overview does not
+reverse that rule. Two reciprocal cross-asset isolated positions are not the
+same mechanism and retain independent path-dependent liquidation risk. Exact
+current collateral and loan eligibility, reward and interest rates, LTV
+thresholds, positions, income, and owned rewards are all signed USER_DATA. The
+designated ephemeral credentials are absent, so no signed request was sent and
+the public after-cost floor is zero. Never borrow, subscribe, repay, adjust LTV,
+acquire collateral, reinvest loan proceeds, or double-count idle yield.
+Canonical gate and same-asset adjudication:
 `docs/model-research/action-value/binance-flexible-loan-simple-earn-collateral-yield-gate-v1-2026-08-26.json`,
+result SHA-256 `ac010265c5236152907ac7b3c12ce13104f473b4cc61c5db43fb8b28c6678182`;
+`docs/model-research/action-value/binance-flexible-loan-same-asset-loop-adjudication-v1-2026-08-30.json`,
 result SHA-256
-`ac010265c5236152907ac7b3c12ce13104f473b4cc61c5db43fb8b28c6678182`.
+`7106bb072533327d3154c773ba2c1969ff7891df6ec16d314f2d8f1b410f48e6`.
 
 Binance Advanced Earn Discount Buy and Dual Investment are terminal for this
 market-situation-independent search. Discount Buy is a locked non-principal-
