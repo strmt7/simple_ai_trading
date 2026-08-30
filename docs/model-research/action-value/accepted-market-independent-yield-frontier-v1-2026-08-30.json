@@ -1,0 +1,266 @@
+{
+  "schema_version": "accepted-market-independent-yield-frontier-v1",
+  "created_at_utc": "2026-08-30T03:07:15Z",
+  "result_sha256": "e99021f9b49c13f4cfb894d01c4125a5604ae7bf4cf9e7b20f2c204f6a91b8e0",
+  "purpose": "rank_the_nine_accepted_market_direction_independent_yield_and_capital_efficiency_overlays_by_evidence_strength_current_gross_opportunity_and_remaining_deployment_gates_without_new_network_or_account_access",
+  "authority": {
+    "network_requests": 0,
+    "credentials_used": false,
+    "account_state_accessed": false,
+    "orders_transfers_conversions_subscriptions_redemptions_or_mutations": 0,
+    "paper_or_live_trading_authority": false,
+    "protected_capture_accessed": false
+  },
+  "population": {
+    "registry_accepted_edge_count": 21,
+    "yield_and_capital_efficiency_edges_included": 9,
+    "organic_flow_fee_referral_and_creator_overlays_excluded": 12,
+    "population_complete_for_registry_accepted_yield_edges": true,
+    "shared_scope": "identical_principal_or_asset_already_independently_held_or_required_no_acquisition_borrow_volume_creation_or_market_direction_forecast",
+    "shared_deployment_state": "none_is_deployment_ready_or_fully_account_and_external_cost_qualified"
+  },
+  "source_artifacts": [
+    {
+      "edge_id": "polymarket_complete_set_holding_yield",
+      "path": "docs/model-research/polymarket/complete-set-holding-yield-net-economics-v5-2026-08-26.json",
+      "file_sha256": "1940e94f9568621c74be279661b7795b85b0e27d65708eca535acac7d51a6c31",
+      "result_sha256": "dff80903a20d9bfc8e3402eea01dad8a8f5ee39b0427690514cc30b9fe9dcb85"
+    },
+    {
+      "edge_id": "binance_ldusdt_required_margin_yield",
+      "path": "docs/model-research/action-value/binance-ldusdt-margin-yield-gate-v1-2026-08-26.json",
+      "file_sha256": "372f341450b9d475d38a630771f696a21b4838d3c6b4ab9f9ddaf2afe3e607ce",
+      "result_sha256": "6c2b81a8067faac80efb56f586d89bc308cb69b4fae0ec8504adc3aa2f3ff49d"
+    },
+    {
+      "edge_id": "binance_usd1_simple_earn_fixed_bonus",
+      "path": "docs/model-research/action-value/binance-usd1-simple-earn-versus-holding-airdrop-allocation-edge-v1-2026-08-27.json",
+      "file_sha256": "db514e67a700ca181bf3f47e505d88d91f1f6dfbaf50ea5a43ab454cd431364f",
+      "result_sha256": "a4158bf059f4f5ad839b2f504c08c4afc65615260b4171533866f4c2337494e0"
+    },
+    {
+      "edge_id": "binance_u_flexible_existing_balance_bonus",
+      "path": "docs/model-research/action-value/binance-u-flexible-idle-holding-yield-gate-v1-2026-08-26.json",
+      "file_sha256": "e3cb033736bec54e4f92f2648bf569c355c6273c89f7190b39154ff983a7cfd4",
+      "result_sha256": "6f44b65e5aa85d33cc02e8611a372162cf00f4162fdff99828a31cf498ced6f9"
+    },
+    {
+      "edge_id": "binance_usd1_wlfi_holding_airdrop",
+      "path": "docs/model-research/action-value/binance-usd1-wlfi-holding-airdrop-gate-v1-2026-08-26.json",
+      "file_sha256": "66d5bdcd83418d1c4b369110ed70158e2068578f2ab843da9605613fceed8c70",
+      "result_sha256": "c67367932b440d6f4a23330a17c405c0e15b0021b0484575a0b0efcc6e9238a6"
+    },
+    {
+      "edge_id": "binance_usde_existing_holding_reward",
+      "path": "docs/model-research/action-value/binance-usde-existing-holding-reward-edge-v1-2026-08-26.json",
+      "file_sha256": "19efbb7f41e410faebc920e86621356978fd763d37a35bc25a9c7ad6ee7443c5",
+      "result_sha256": "4640635514ad43ed846660c204a95c0d59ed75ac3ccbf5f17a0b70f3d5726f6a"
+    },
+    {
+      "edge_id": "binance_rwusd_existing_vip_bonus",
+      "path": "docs/model-research/action-value/binance-rwusd-existing-vip-bonus-overlay-gate-v1-2026-08-26.json",
+      "file_sha256": "457d21762530f785e212f48e3ac8b50ffb70c564a980146b9fc5a86179d631a2",
+      "result_sha256": "076f428ea9bccc0dc9c1a0c605ac469db27fedb7941ac6728260cf98da667e51"
+    },
+    {
+      "edge_id": "binance_usdt_flexible_existing_balance_bonus",
+      "path": "docs/model-research/action-value/binance-usdt-flexible-current-bonus-overlay-v1-2026-08-26.json",
+      "file_sha256": "fe201ab3ec7c7c3600294a16df2e684a6d62b313130fbf468673c52e5b5f59d7",
+      "result_sha256": "0126a1feef4e8bb5c46a7b7cab45e2471857a2e105fe0f41d73d4710b6abceda"
+    },
+    {
+      "edge_id": "binance_eth_sol_soft_staking",
+      "path": "docs/model-research/action-value/binance-soft-staking-idle-spot-yield-gate-v1-2026-08-26.json",
+      "file_sha256": "a97f41cfaefb7c1a763260a46b12c60c4c9622abed2c857336127150eaeffd32",
+      "result_sha256": "9ded119650ed1679795cca8616935015bc8bf48850bfcc509ba28486e94bd9a7"
+    }
+  ],
+  "evidence_strength_frontier": [
+    {
+      "rank": 1,
+      "edge_id": "polymarket_complete_set_holding_yield",
+      "evidence_class": "owned_wallet_realized_cash_recurrence_and_direct_cost_identity",
+      "economic_evidence": {
+        "demonstrated_principal_pusd": "1039",
+        "observed_days": 14,
+        "positive_daily_payments": 42,
+        "possible_daily_payments": 42,
+        "observed_reward_pusd": "1.2681",
+        "principal_weighted_realized_annualized_rate_percent": "3.182019111783308125945277053",
+        "conservative_cross_asset_realized_rate_floor_percent": "3.156380952380952380952380953",
+        "positive_after_three_percent_alternative_yield": true,
+        "positive_after_three_point_two_five_percent_alternative_yield": false
+      },
+      "stability_strength": "only_frontier_row_with_owned_recurrent_cash_payments_across_BTC_ETH_SOL_and_source_bound_zero_direct_split_merge_cost",
+      "binding_gap": "external_friction_best_available_cash_yield_current_eligibility_capacity_and_an_owned_split_to_merge_cycle",
+      "next_public_action": "one_distinct_single_wallet_continuity_pulse_not_before_2026_08_31T02_15_30Z_unless_material_terms_or_cross_asset_payout_change"
+    },
+    {
+      "rank": 2,
+      "edge_id": "binance_ldusdt_required_margin_yield",
+      "evidence_class": "long_public_index_history_and_official_zero_normal_swap_fee",
+      "economic_evidence": {
+        "aligned_daily_closes": 505,
+        "elapsed_days": 504,
+        "compound_annualized_return_percent": "2.01090505946087",
+        "cumulative_return_percent": "2.78728995537161893183999857",
+        "positive_days": 389,
+        "negative_days": 115,
+        "collateral_value_ratio_percent": "99.9",
+        "annualized_return_after_ten_percent_extra_principal_drag_percent": "2.000895049450859989989989997"
+      },
+      "stability_strength": "longest_retained_positive_history_and_positive_after_the_exact_99_9_percent_haircut_sensitivity",
+      "binding_gap": "only_incremental_for_collateral_already_required_by_an_independently_profitable_futures_strategy_and_account_conversion_unwind_liquidation_auto_exchange_and_alternative_yield_remain_unproved",
+      "next_public_action": "none_until_material_public_term_or_index_change_or_designated_credentials_plus_explicit_read_only_account_authority"
+    },
+    {
+      "rank": 3,
+      "edge_id": "binance_usd1_wlfi_holding_airdrop",
+      "evidence_class": "completed_campaign_distribution_rates_plus_current_reward_liquidation_sensitivity",
+      "economic_evidence": {
+        "first_completed_base_apr_percent": "4.85",
+        "second_completed_base_apr_percent": "5.46",
+        "second_completed_boosted_apr_percent": "6.55",
+        "second_week_base_reward_bips_after_observed_reward_price_haircut": "10.19153383",
+        "published_campaign_end_utc": "2026-09-04T00:00:00Z"
+      },
+      "stability_strength": "two_completed_distribution_rates_and_a_source_bound_reward_sale_haircut_support_recurrence",
+      "binding_gap": "eligible_existing_USD1_account_balance_owned_distribution_exact_sale_fee_and_principal_issuer_peg_custody_and_redemption_risks",
+      "next_public_action": "do_not_poll_before_a_new_distribution_or_material_campaign_term_change"
+    },
+    {
+      "rank": 4,
+      "edge_id": "binance_usd1_simple_earn_fixed_bonus",
+      "evidence_class": "fixed_published_bonus_terms_and_mutually_exclusive_same_balance_allocation_algebra",
+      "economic_evidence": {
+        "fixed_bonus_apr_percent": "7",
+        "bonus_principal_cap_usd1": "1500",
+        "published_promotion_end_utc": "2026-09-25T23:59:59Z",
+        "fixed_bonus_increment_over_current_airdrop_apr_percentage_points": "1.54",
+        "gross_break_even_days_after_one_forfeited_airdrop_day": "3.545454545454545454545454545"
+      },
+      "stability_strength": "fixed_bonus_component_exact_cap_and_end_are_stronger_than_the_variable_realtime_rate",
+      "binding_gap": "account_eligibility_capacity_existing_idle_USD1_transition_delay_and_every_opportunity_cost",
+      "next_public_action": "none_without_material_terms_change_or_designated_credentials_plus_explicit_read_only_account_authority"
+    },
+    {
+      "rank": 5,
+      "edge_id": "binance_u_flexible_existing_balance_bonus",
+      "evidence_class": "fixed_published_bonus_terms_with_public_market_and_issuer_risk_rejection_of_acquisition",
+      "economic_evidence": {
+        "regular_user_bonus_apr_percent": "8",
+        "regular_user_bonus_cap_U": "5000",
+        "published_promotion_end_utc": "2026-09-14T23:59:59Z",
+        "headline_total_apr_percent": "8.5",
+        "acquisition_edge_accepted": false
+      },
+      "stability_strength": "fixed_bonus_is_same_token_increment_only_for_U_already_held",
+      "binding_gap": "non_EEA_account_eligibility_quota_external_cost_and_material_U_issuer_reserve_redemption_insolvency_custody_and_depeg_risks",
+      "next_public_action": "none_without_material_terms_change_or_designated_credentials_plus_explicit_read_only_account_authority"
+    },
+    {
+      "rank": 6,
+      "edge_id": "binance_usde_existing_holding_reward",
+      "evidence_class": "published_automatic_same_asset_reward_terms_without_owned_distribution",
+      "economic_evidence": {
+        "current_reference_apr_percent": "4",
+        "seven_day_reward_bips": "7.671232876712328767123287671",
+        "daily_reward_usde_per_1000": "0.1095890410958904109589041096",
+        "published_campaign_end": "until_further_notice",
+        "published_daily_reward_limit": "none"
+      },
+      "stability_strength": "automatic_same_asset_reward_and_no_published_cap_or_fixed_end",
+      "binding_gap": "rate_is_discretionary_and_account_KYC_jurisdiction_existing_balance_24_hour_duration_owned_distribution_principal_and_external_costs_are_unproved",
+      "next_public_action": "only_after_material_public_term_change_or_designated_credentials_plus_explicit_read_only_account_authority"
+    },
+    {
+      "rank": 7,
+      "edge_id": "binance_rwusd_existing_vip_bonus",
+      "evidence_class": "fixed_time_limited_incremental_bonus_terms_on_existing_required_RWUSD",
+      "economic_evidence": {
+        "vip_1_to_3_bonus_apr_percent": "0.19",
+        "vip_1_to_3_cap_RWUSD": "30000",
+        "vip_4_to_9_bonus_apr_percent": "0.76",
+        "vip_4_to_9_cap_RWUSD": "200000",
+        "published_promotion_end_utc": "2026-09-17T23:59:00Z",
+        "maximum_vip_4_to_9_incremental_bonus_RWUSD_over_original_22_day_window": "91.61643836"
+      },
+      "stability_strength": "incremental_bonus_requires_no_new_principal_action_inside_the_accepted_scope",
+      "binding_gap": "existing_independently_required_RWUSD_eligible_master_account_VIP_level_daily_low_balance_owned_distribution_and_principal_risk",
+      "next_public_action": "none_without_material_terms_change_or_designated_credentials_plus_explicit_read_only_account_authority"
+    },
+    {
+      "rank": 8,
+      "edge_id": "binance_usdt_flexible_existing_balance_bonus",
+      "evidence_class": "fixed_same_asset_bonus_terms_without_account_activation_or_owned_reward",
+      "economic_evidence": {
+        "global_bonus_apr_percent": "4",
+        "global_bonus_cap_USDT": "500",
+        "published_global_promotion_end_utc": "2026-09-07T23:59:59Z",
+        "variable_realtime_apr_credited_in_fixed_bonus_economics": false
+      },
+      "stability_strength": "same_asset_fixed_bonus_avoids_principal_conversion_and_depeg_basis",
+      "binding_gap": "verified_master_account_eligibility_capacity_subscription_transition_reward_history_and_prompt_liquidity_opportunity_cost",
+      "next_public_action": "none_without_material_terms_change_or_designated_credentials_plus_explicit_read_only_account_authority"
+    },
+    {
+      "rank": 9,
+      "edge_id": "binance_eth_sol_soft_staking",
+      "evidence_class": "published_automatic_native_token_rate_and_operational_contract_without_owned_reward",
+      "economic_evidence": {
+        "estimated_eth_apr_percent": "0.5",
+        "estimated_sol_apr_percent": "0.5",
+        "reward_cadence": "daily",
+        "rate_fixed": false
+      },
+      "stability_strength": "incremental_native_token_reward_for_identical_already_held_idle_inventory",
+      "binding_gap": "account_eligibility_activation_mutation_current_signed_rate_cap_owned_rewards_and_exclusion_of_pending_orders_auto_subscribe_and_prompt_liquidity_inventory",
+      "next_public_action": "none_without_official_rate_or_eligibility_change_or_designated_credentials_plus_explicit_read_only_authority"
+    }
+  ],
+  "current_fixed_bonus_urgency_frontier": [
+    {
+      "priority": 1,
+      "edge_id": "binance_usdt_flexible_existing_balance_bonus",
+      "published_end_utc": "2026-09-07T23:59:59Z",
+      "reason": "earliest_fixed_same_asset_bonus_expiry_and_low_principal_cap"
+    },
+    {
+      "priority": 2,
+      "edge_id": "binance_u_flexible_existing_balance_bonus",
+      "published_end_utc": "2026-09-14T23:59:59Z",
+      "reason": "high_fixed_bonus_and_cap_but_material_principal_risk_prohibits_acquisition"
+    },
+    {
+      "priority": 3,
+      "edge_id": "binance_rwusd_existing_vip_bonus",
+      "published_end_utc": "2026-09-17T23:59:00Z",
+      "reason": "automatic_increment_only_if_required_RWUSD_and_VIP_status_already_exist"
+    },
+    {
+      "priority": 4,
+      "edge_id": "binance_usd1_simple_earn_fixed_bonus",
+      "published_end_utc": "2026-09-25T23:59:59Z",
+      "reason": "largest_source_bound_fixed_same_principal_bonus_spread_over_the_current_USD1_airdrop_comparator"
+    }
+  ],
+  "portfolio_decision": {
+    "strongest_stable_edge": "polymarket_complete_set_holding_yield",
+    "reason": "it_is_the_only_accepted_yield_row_with_owned_recurrent_cash_payments_cross_asset_recurrence_direct_cost_identity_and_positive_economics_through_a_three_percent_alternative_yield",
+    "strongest_long_history_binance_edge": "binance_ldusdt_required_margin_yield",
+    "strongest_current_fixed_bonus_allocation": "binance_usd1_simple_earn_fixed_bonus",
+    "new_accepted_edge_count": 0,
+    "accepted_edge_count_after_frontier": 21,
+    "profitability_claim_beyond_source_scopes": false,
+    "deployment_ready_edge_count": 0,
+    "next_research_spend": "at_the_literal_next_trigger_refresh_only_the_rank_1_Polymarket_single_wallet_continuity_pulse_then_prequalify_fixed_Binance_bonus_accounts_only_if_designated_credentials_and_explicit_read_only_authority_exist_before_their_published_expiries",
+    "prohibited_shortcuts": [
+      "acquiring_borrowing_or_retaining_an_asset_for_any_existing_balance_only_edge",
+      "treating_a_published_APR_as_owned_realized_profit",
+      "ignoring_principal_issuer_custody_redemption_liquidity_tax_or_opportunity_cost",
+      "double_counting_mutually_exclusive_USD1_balance_locations",
+      "opening_or_enlarging_a_futures_position_for_LDUSDT_or_RWUSD_rewards",
+      "activating_subscribing_redeeming_transferring_converting_or_ordering_without_separate_authority"
+    ]
+  }
+}
