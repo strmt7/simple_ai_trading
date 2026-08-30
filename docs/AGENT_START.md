@@ -2148,3 +2148,23 @@ result SHA-256 is
 `4601f3980f14ccb4130fbdc36862def5abdd47f46e9f48c7da25113c72fe33a2`;
 registry SHA-256 is
 `5e34a52a6e0eebf48d5c4ae397bcb1893c10389116425d057b580a2a05013c40`.
+
+## Polymarket NYC Mayor fixed-NegRisk exact parity rejection
+
+The newly deployed NYC Mayor September 1-8 post-count event fired rank 31's
+literal distinct fixed-NegRisk trigger. Its exact eleven-outcome Gamma payload
+displayed an all-YES sum of 0.9855 pUSD, a 1.45-cent source-only lead.
+
+One separately frozen complete 22-token CLOB batch rejected it. Although the
+request completed in 121 ms, the oldest book was 92,065 ms old and timestamp
+skew was 91,385 ms. The best five-share all-YES path lost 0.45 pUSD before
+fees, 0.54928 pUSD after current Gamma taker fees, and 0.69638 pUSD after one
+adverse tick per leg. No on-chain, account, credential, order, transaction, or
+fund access occurred. Do not repeat or selectively refresh this exact event.
+
+The reusable runners now accept the contract-bound outcome count and derive the
+complete token population instead of carrying ten-market and twenty-token
+special cases. Canonical exact-book result SHA-256 is
+`2dcaa72b8a9643b3f6652691f7395ac5405cd6f15ee88e57ce45af1f69b0dc6b`;
+registry SHA-256 is
+`f6b73019910d57daf98764d78a80e487421ae73525499ad1c4e5600ab6018d4f`.

@@ -25,6 +25,13 @@ ROOT = Path(__file__).resolve().parents[1]
 SCHEMA = "polymarket-exact-negrisk-event-prefilter-result-v1"
 
 
+def _expected_market_count(contract: dict[str, Any]) -> int:
+    value = contract.get("expected_market_count")
+    if isinstance(value, bool) or not isinstance(value, int) or not 2 <= value <= 100:
+        raise RuntimeError("expected market count must be an integer from 2 through 100")
+    return value
+
+
 def _validate_contract(contract: dict[str, Any], contract_path: Path) -> None:
     if _canonical_hash(contract, "contract_sha256") != contract.get("contract_sha256"):
         raise RuntimeError("contract hash mismatch")
@@ -39,8 +46,7 @@ def _validate_contract(contract: dict[str, Any], contract_path: Path) -> None:
     slug = contract.get("event_slug")
     if not isinstance(slug, str) or not slug:
         raise RuntimeError("event slug is missing")
-    if contract.get("expected_market_count") != 10:
-        raise RuntimeError("expected market count changed")
+    _expected_market_count(contract)
     expected_url = f"https://gamma-api.polymarket.com/events/slug/{slug}"
     if contract.get("request") != {
         "body_sha256": _sha256(b""),
@@ -128,7 +134,7 @@ def main() -> None:
     conversions: list[dict[str, Any]] = []
     if fixed_negrisk:
         screened, conversions = _conversion_rows(event)
-        if screened["market_count"] != contract["expected_market_count"]:
+        if screened["market_count"] != _expected_market_count(contract):
             raise RuntimeError("exact event market count changed")
     all_yes_candidate = bool(
         screened is not None and screened["passes_strictly_below_payout_gate"]

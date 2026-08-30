@@ -1,0 +1,69 @@
+{
+  "schema_version": "polymarket-exact-negrisk-event-prefilter-contract-v1",
+  "frozen_at_utc": "2026-08-30T04:28:07.6994134Z",
+  "contract_path": "docs/model-research/action-value/polymarket-nyc-mayor-sep1-sep8-exact-negrisk-prefilter-contract-v1-2026-08-30.json",
+  "trigger": {
+    "registry_rank": 31,
+    "literal_trigger": "explicit official deployment of a new fixed NegRisk event in a source-selected nonconsumed series",
+    "discovery_event_url": "https://polymarket.com/event/nyc-mayor-of-tweets-september-1-september-8-2026",
+    "official_page_market_opened_date": "2026-08-29",
+    "official_page_outcome_count": 11,
+    "discovery_values_are_economic_inputs": false,
+    "prior_exact_event_consumed": false
+  },
+  "question": "Does the newly deployed exact eleven-bin NYC Mayor September 1 to September 8 event pass a rejection-only optimistic fixed-NegRisk complete-set or one-NO-to-other-YES displayed-price gate before any book, fee, on-chain, account, or order request?",
+  "event_slug": "nyc-mayor-of-tweets-september-1-september-8-2026",
+  "expected_market_count": 11,
+  "request": {
+    "method": "GET",
+    "url": "https://gamma-api.polymarket.com/events/slug/nyc-mayor-of-tweets-september-1-september-8-2026",
+    "count": 1,
+    "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "rejection_only_economics": {
+    "all_yes_identity": "one YES share from every exact fixed-NegRisk bin has a one-pUSD guaranteed payout floor pending exact execution proof",
+    "one_no_identity": "one NO share in a fixed-NegRisk market converts into one YES share in every other outcome market pending exact adapter and execution proof",
+    "all_yes_gate": "Gamma displayed all-YES sum must be strictly below 1 pUSD to remain a source-only candidate",
+    "one_no_gate": "For at least one source market, the Gamma displayed sum of all other YES prices must be strictly above that market's displayed NO price to remain a source-only converter candidate",
+    "gamma_role": "rejection only; it cannot prove executable prices, conversion access, fees, profitability, stability, or promotion",
+    "conditional_next_step": "Only a strict positive source-only gate may justify a separately frozen exact depth, fee, adapter, conversion, and unwind proof. This run requests none of them."
+  },
+  "outputs": {
+    "raw_path": "data/polymarket-nyc-mayor-sep1-sep8-exact-negrisk-prefilter-v1/raw/event.json",
+    "journal_path": "data/polymarket-nyc-mayor-sep1-sep8-exact-negrisk-prefilter-v1/request-journal.jsonl",
+    "result_path": "docs/model-research/action-value/polymarket-nyc-mayor-sep1-sep8-exact-negrisk-prefilter-result-v1-2026-08-30.json"
+  },
+  "authority": {
+    "account_requests": 0,
+    "book_requests": 0,
+    "credentials_used": false,
+    "fee_requests": 0,
+    "funds_used": false,
+    "onchain_requests": 0,
+    "orders_or_transactions": 0,
+    "protected_capture_touched": false,
+    "public_unauthenticated_read_only_requests": 1,
+    "signed_requests": 0,
+    "trading_authority": false
+  },
+  "implementations": [
+    {
+      "path": "tools/screen_polymarket_exact_negrisk_event.py",
+      "sha256": "5d1b7c1849ce78b879a333bd59feff6db414b6aa6ad992cb26254a0ea354fe4e"
+    },
+    {
+      "path": "tools/screen_polymarket_negrisk_complete_set_catalog.py",
+      "sha256": "5d5dd88fe9f77be92063d4b55bbcb8dd1b96db06b99dd0d021774916cf2b5ae9"
+    },
+    {
+      "path": "tools/screen_polymarket_exact_two_leg_package.py",
+      "sha256": "ba7ebaa1fb5235ba026f7cf4cb21ff73ba19430fee4a4f678fbdea37635eb32f"
+    },
+    {
+      "path": "tools/adjudicate_polymarket_exact_mlb_monotone_prefilter.py",
+      "sha256": "958a44d78029b9a1eb69a3771ce18e53ac1ed3c7bc161c8e4318beedce2cf99f"
+    }
+  ],
+  "retry_policy": "This exact event GET is one-use. Do not refetch it, substitute a slug alias, request books, or choose another event based on its outcome. A source-only rejection is terminal for this event absent a material price, fee, rule, adapter, or market-state change. A source-only candidate requires a separately frozen proof and still cannot promote an edge.",
+  "contract_sha256": "4dfcb72442a0833d4e48d1c9fda492e7d3b2536960e27225bf285768dfa3846e"
+}

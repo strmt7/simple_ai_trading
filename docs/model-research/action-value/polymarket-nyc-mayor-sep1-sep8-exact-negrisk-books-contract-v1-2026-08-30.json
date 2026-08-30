@@ -1,0 +1,91 @@
+{
+  "schema_version": "polymarket-exact-negrisk-books-contract-v3",
+  "frozen_at_utc": "2026-08-30T04:31:14.4837442Z",
+  "contract_path": "docs/model-research/action-value/polymarket-nyc-mayor-sep1-sep8-exact-negrisk-books-contract-v1-2026-08-30.json",
+  "event_slug": "nyc-mayor-of-tweets-september-1-september-8-2026",
+  "question": "At the exact five-share minimum, does the newly deployed eleven-outcome fixed-NegRisk all-YES complete set remain strictly positive after current Gamma taker fees and one adverse tick on every leg, before gas, latency, atomicity, or owned execution?",
+  "retained_sources": {
+    "prefilter_contract_path": "docs/model-research/action-value/polymarket-nyc-mayor-sep1-sep8-exact-negrisk-prefilter-contract-v1-2026-08-30.json",
+    "prefilter_contract_sha256": "4dfcb72442a0833d4e48d1c9fda492e7d3b2536960e27225bf285768dfa3846e",
+    "prefilter_result_path": "docs/model-research/action-value/polymarket-nyc-mayor-sep1-sep8-exact-negrisk-prefilter-result-v1-2026-08-30.json",
+    "prefilter_result_sha256": "c4d9b8ce130881d65a7711dc4cc9e48d9d56085d9e07bd15736d44a63ab13bf1",
+    "event_raw_path": "data/polymarket-nyc-mayor-sep1-sep8-exact-negrisk-prefilter-v1/raw/event.json",
+    "event_raw_sha256": "99022e9d48c00122513a3e78667ff5e08db88366b4efe329d46372d06d1b40d5"
+  },
+  "quantity_shares": "5",
+  "quantity_basis": "Every retained exact market has orderMinSize 5; the runner rejects any Gamma or CLOB minimum mismatch.",
+  "conversion_fee_bips": 0,
+  "conversion_fee_role": "optimistic rejection-only assumption; positive conversion results require exact on-chain adapter fee and gas proof",
+  "adverse_ticks_per_leg": 1,
+  "freshness": {
+    "request_max_elapsed_ms": 5000,
+    "book_max_event_age_ms": 5000,
+    "book_max_timestamp_skew_ms": 2000
+  },
+  "request": {
+    "method": "POST",
+    "url": "https://clob.polymarket.com/books",
+    "count": 1,
+    "body_sha256": "235dd187558b2c21b820b8b1a6a384af9be19f9c73af51db9cf77c6fa810461c"
+  },
+  "token_ids": [
+    "21027929703924302098238637048305394588185999492954069319316095822781893990231",
+    "81688909235140767301118854428491724804151945133547576673936099946464583178725",
+    "92758941259388014388559978625790713876894013585875232093518243721589333145659",
+    "13935575220711120235160747606823963361629148067698730485171023913296281817372",
+    "113539628261506213630657934465502831100397927094670928731557171358586281440364",
+    "25930582413589779786868260035989619213417450732790939348550350913584085646064",
+    "2063727657260535584566170219641818069797374660397662356405403999729591359930",
+    "84462019853971048177893726911378791191417388366975394692360829701085695962309",
+    "79559572704176893913982158657435567720768198980102523228569828260816477140812",
+    "790660029998320742035163907644679503178080560280103767386617607141654452473",
+    "38042210118085926794082694796277722641850828717924631974806244397034201165292",
+    "37802793930781881382317681666899300303048046267309948691968684704853108989127",
+    "47289047258830107528715610637777505157321760352508889917905197189437015106213",
+    "51330219888835692424351180102542630417275021690157537586867945204779791735559",
+    "69748818515044110255727277847550281540089757673853857981458266621025047631776",
+    "82053176721678482038513398374732528497314340189581889084442354714091501964215",
+    "112066132730491906906627106833481893089833137381638417452911386888111869651260",
+    "4720747671106011005122066102587382459882473277417917551163799658553181813568",
+    "27650332539866904828094013424012285577789170112894915994251655308466398311502",
+    "15524962868958585017380571749007941771095813939563055895479060347606901826179",
+    "35728312668468628389363338832798293937351380742036731327833869797954622281429",
+    "31136328035886084554215467127733174707181483883468036661990781165706743087582"
+  ],
+  "decision": {
+    "source_only_candidate": "fresh exact batch plus a strictly positive best path after current Gamma fees without stress and after one adverse tick on every leg",
+    "accepted_edge": false,
+    "profitability_proved": false,
+    "conditional_next_step": "Only a source-only candidate may advance to separately frozen current fee-rate cross-check, pinned adapter question count and fee, gas, transaction failure, latency, atomicity, and owned paper execution proof."
+  },
+  "outputs": {
+    "raw_path": "data/polymarket-nyc-mayor-sep1-sep8-exact-negrisk-books-v1/raw/books.json",
+    "journal_path": "data/polymarket-nyc-mayor-sep1-sep8-exact-negrisk-books-v1/request-journal.jsonl",
+    "result_path": "docs/model-research/action-value/polymarket-nyc-mayor-sep1-sep8-exact-negrisk-books-result-v1-2026-08-30.json"
+  },
+  "authority": {
+    "account_requests": 0,
+    "book_batch_requests": 1,
+    "credentials_used": false,
+    "fee_requests": 0,
+    "funds_used": false,
+    "gamma_requests": 0,
+    "onchain_requests": 0,
+    "orders_or_transactions": 0,
+    "protected_capture_touched": false,
+    "public_unauthenticated_read_only_requests": 1,
+    "signed_requests": 0,
+    "trading_authority": false
+  },
+  "implementations": [
+    {"path": "tools/screen_polymarket_exact_negrisk_books.py", "sha256": "82272b9e7bd6939057df29cd582c1b3c9abfe18b911315f6ef1b6f6c5426f6ac"},
+    {"path": "src/simple_ai_trading/structural_parity.py", "sha256": "f7048945d0ed800f7246672ae56e50d3ce5d6f87d52674ce029937247b295163"},
+    {"path": "src/simple_ai_trading/polymarket_fees.py", "sha256": "4002aa8008874708931cc182f352adf436a65baee24e23bfc72617acdf127c8d"},
+    {"path": "tools/screen_polymarket_exact_two_leg_package.py", "sha256": "ba7ebaa1fb5235ba026f7cf4cb21ff73ba19430fee4a4f678fbdea37635eb32f"},
+    {"path": "tools/screen_polymarket_negrisk_complete_set_catalog.py", "sha256": "5d5dd88fe9f77be92063d4b55bbcb8dd1b96db06b99dd0d021774916cf2b5ae9"},
+    {"path": "tools/screen_polymarket_structural_parity.py", "sha256": "ab684a33d8965a25c446826eec63807f74eeee056d4be35ea163cd752d43ab64"},
+    {"path": "tools/adjudicate_polymarket_exact_mlb_monotone_prefilter.py", "sha256": "958a44d78029b9a1eb69a3771ce18e53ac1ed3c7bc161c8e4318beedce2cf99f"}
+  ],
+  "retry_policy": "This exact twenty-two-token batch is one-use. A stale, incomplete, identity-mismatched, or nonpositive response is consumed and cannot be retried, reordered, shortened, or replaced with selective favorable books. A positive source-only result still cannot promote or authorize execution.",
+  "contract_sha256": "98415cb0803b4d9c3a05b12c3a528a78831dbc535b39f1957d8edf3e88cddfc1"
+}
