@@ -1167,12 +1167,16 @@
         {
           "path": "docs/model-research/action-value/binance-flexible-loan-simple-earn-collateral-yield-gate-v1-2026-08-26.json",
           "result_sha256": "ac010265c5236152907ac7b3c12ce13104f473b4cc61c5db43fb8b28c6678182"
+        },
+        {
+          "path": "docs/model-research/action-value/binance-flexible-loan-same-asset-loop-adjudication-v1-2026-08-30.json",
+          "result_sha256": "7106bb072533327d3154c773ba2c1969ff7891df6ec16d314f2d8f1b410f48e6"
         }
       ],
-      "current_status": "candidate_not_accepted_current_official_sources_say_existing_Simple_Earn_Flexible_collateral_continues_earning_while_securing_an_isolated_overcollateralized_open_term_Flexible_Loan_but_every_current_asset_rate_LTV_position_income_and_reward_input_is_signed_USER_DATA_the_designated_credentials_are_absent_and_the_public_after_cost_floor_is_zero",
+      "current_status": "candidate_not_accepted_current_official_sources_say_existing_Simple_Earn_Flexible_collateral_continues_earning_while_securing_an_isolated_overcollateralized_open_term_Flexible_Loan_but_the_direction_independent_direct_same_asset_loop_is_publicly_blocked_because_the_live_official_page_explicitly_says_same_cryptocurrency_collateral_loan_pairs_are_not_supported_and_the_newer_2026_overview_does_not_reverse_that_rule_a_reciprocal_two_position_workaround_remains_cross_asset_isolated_and_liquidation_path_sensitive_every_current_asset_rate_LTV_position_income_and_reward_input_is_signed_USER_DATA_the_designated_credentials_are_absent_and_the_public_after_cost_floor_is_zero",
       "market_direction_forecast_required": false,
       "mechanism": "binance_flexible_loan_simple_earn_collateral_yield_retention",
-      "next_action": "do_not_borrow_subscribe_repay_or_adjust_LTV_if_both_designated_ephemeral_credentials_become_available_under_explicit_read_only_authority_freeze_one_bounded_exact_asset_position_interest_and_reward_prequalification_then_stop_before_every_TRADE_or_balance_mutation",
+      "next_action": "do_not_research_or_attempt_a_direct_same_cryptocurrency_loop_unless_a_material_current_official_or_signed_pair_eligibility_source_explicitly_reverses_the_restriction_for_an_independently_existing_cross_asset_Flexible_Loan_question_only_if_both_designated_ephemeral_credentials_become_available_under_explicit_read_only_authority_freeze_one_bounded_exact_asset_position_interest_and_reward_prequalification_then_stop_before_every_TRADE_or_balance_mutation",
       "priority_rank": 26,
       "prohibited_shortcuts": [
         "borrowing_or_acquiring_collateral_to_create_the_reward",
@@ -1180,9 +1184,11 @@
         "ignoring_variable_interest_LTV_liquidation_collateral_basis_and_opportunity_costs",
         "double_counting_the_same_Simple_Earn_reward_as_idle_and_loan_collateral_yield",
         "using_loan_proceeds_reinvestment_or_leverage_as_the_edge",
+        "assuming_same_cryptocurrency_collateral_and_debt_are_supported",
+        "calling_two_reciprocal_isolated_cross_asset_loans_same_asset_or_market_direction_independent",
         "calling_collateral_rewards_profitable_loan_economics_before_the_full_exact_unit_break_even_passes"
       ],
-      "retry_trigger": "both_SIMPLE_AI_TRADING_BINANCE_MAINNET_API_KEY_and_SIMPLE_AI_TRADING_BINANCE_MAINNET_API_SECRET_available_with_explicit_read_only_authority_and_an_independently_existing_or_required_Flexible_Loan_question",
+      "retry_trigger": "both_SIMPLE_AI_TRADING_BINANCE_MAINNET_API_KEY_and_SIMPLE_AI_TRADING_BINANCE_MAINNET_API_SECRET_available_with_explicit_read_only_authority_and_an_independently_existing_or_required_cross_asset_Flexible_Loan_question_or_a_material_current_official_or_signed_pair_eligibility_source_explicitly_permits_the_exact_same_collateral_and_loan_cryptocurrency",
       "venue_scope": "binance_Flexible_Loans_and_Simple_Earn_Flexible_collateral"
     },
     {
@@ -2104,7 +2110,7 @@
       "venue_scope": "Binance_Spot_direct_and_exactly_one_intermediary_routes_for_independently_required_organic_conversions_with_the_exactly_two_intermediary_extension_terminal_for_the_retained_population"
     }
   ],
-  "result_sha256": "546904123e0985aa23d7f3c58567dd2b8e877681b48e560512e4b15b9082721b",
+  "result_sha256": "24590f41839501fb0e5fb4e9d594ca92463dd0de5481a27e4a8d656b727dd528",
   "schema_version": "structural-edge-priority-registry-v1",
   "terminal_do_not_repeat": [
     {
@@ -2336,8 +2342,13 @@
       "canonical_result_sha256": "b7d60e0d9f3e30b2a62663ff1290be77e6309ac33a7d48776b6f5ea1c8dcfe68",
       "family": "binance_BTC_ETH_SOL_public_blockTrade_price_concession_preflight_exact_2026_08_30_window",
       "reason": "the_complete_1205_0309999999954_second_market_data_only_capture_retained_1188_BTCUSDT_1122_ETHUSDT_and_1058_SOLUSDT_ticker_events_with_zero_reconnects_but_zero_blockTrade_events_zero_causal_price_rows_and_zero_positive_zero_public_fee_lower_bound_concessions_do_not_repeat_or_expand_before_2026_08_31T00_28_14_5427794Z_or_a_material_official_stream_fee_pair_whitelist_settlement_or_block_volume_change"
+    },
+    {
+      "canonical_result_sha256": "7106bb072533327d3154c773ba2c1969ff7891df6ec16d314f2d8f1b410f48e6",
+      "family": "binance_Flexible_Loan_direct_same_cryptocurrency_collateral_debt_loop",
+      "reason": "the_live_official_page_explicitly_says_same_cryptocurrency_collateral_loan_pairs_are_not_supported_and_the_newer_2026_overview_does_not_reverse_that_rule_so_the_required_first_conjunct_fails_before_rates_LTVs_or_economics_do_not_research_or_attempt_the_direct_loop_without_a_material_current_official_or_signed_pair_eligibility_reversal"
     }
   ],
-  "updated_at_utc": "2026-08-30T00:58:09Z",
+  "updated_at_utc": "2026-08-30T01:17:03Z",
   "usage_rule": "advance_the_highest_ranked_hypothesis_whose_retry_trigger_is_satisfied_otherwise_do_not_repeat_a_blocked_or_terminal_screen"
 }

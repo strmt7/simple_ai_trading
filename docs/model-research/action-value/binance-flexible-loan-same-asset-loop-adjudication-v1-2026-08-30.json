@@ -1,0 +1,83 @@
+{
+  "schema_version": "binance-flexible-loan-same-asset-loop-adjudication-v1",
+  "created_at_utc": "2026-08-30T01:17:03.5311194Z",
+  "result_sha256": "7106bb072533327d3154c773ba2c1969ff7891df6ec16d314f2d8f1b410f48e6",
+  "purpose": "rejection_first_direction_independent_same_asset_recursive_yield_screen",
+  "distinctness": {
+    "canonical_family": "binance_flexible_loan_simple_earn_collateral_yield_retention",
+    "question": "Can the exact borrowed cryptocurrency also be the Simple Earn collateral in one Flexible Loan position so price direction cancels and only reward minus interest remains?",
+    "not_a_new_family": true,
+    "reason": "This is an exact product-eligibility refinement of the existing collateral-yield family, not a separate edge."
+  },
+  "authority": {
+    "credentials_used": false,
+    "signed_requests": 0,
+    "account_requests": 0,
+    "loan_orders": 0,
+    "subscriptions_or_redemptions": 0,
+    "trades_or_transfers": 0,
+    "funds_used": false
+  },
+  "public_sources": [
+    {
+      "url": "https://www.binance.com/en/academy/articles/what-is-a-binance-flexible-loan",
+      "observed_at_utc": "2026-08-30T01:14:54Z",
+      "page_updated": "2023-06-12",
+      "role": "official_live_page_explicit_same_cryptocurrency_pair_rule_interest_accrual_and_liquidation_terms",
+      "source_facts": [
+        "same-cryptocurrency collateral-loan pairs are not supported",
+        "interest is added to the outstanding loan every minute at the rate for that minute",
+        "current LTV at or above liquidation LTV triggers partial liquidation and a 90 percent hard cap triggers full liquidation",
+        "liquidation charges 2 percent of the loan amount"
+      ],
+      "freshness_caveat": "The live official page is still published but its displayed update date is 2023-06-12; the newer 2026-06-26 official overview confirms reward retention and isolated overcollateralization but does not explicitly restate or reverse the same-asset restriction."
+    },
+    {
+      "url": "https://academy.binance.com/ky-KG/articles/a-beginners-guide-to-binance-loans",
+      "observed_at_utc": "2026-08-26T21:09:41Z",
+      "page_updated": "2026-06-26",
+      "raw_html_sha256": "77df5b72ebc7ba5f0c3e568184724a253db38166f38471b80213da5babb976e0",
+      "role": "newer_official_overview_confirms_collateral_reward_retention_open_term_isolated_overcollateralization_and_LTV_risk"
+    },
+    {
+      "url": "https://developers.binance.com/en/docs/catalog",
+      "observed_at_utc": "2026-08-30T01:15:48Z",
+      "role": "current_official_API_catalog_confirms_Crypto_Loan_is_account_management_not_public_market_data"
+    }
+  ],
+  "direct_source_retention": {
+    "contract_path": "docs/model-research/binance/raw/flexible-loan-same-asset-loop-v1-2026-08-30/00-request-contract.json",
+    "contract_sha256": "159889aeda17c4dfb59ee558872f0bd4b6747a1bab22bac327659c336134feaf",
+    "journal_path": "docs/model-research/binance/raw/flexible-loan-same-asset-loop-v1-2026-08-30/00-request-journal.jsonl",
+    "journal_sha256": "989e9355c0aefacf3a2648b4ab47a88a515bfe6f432132688dc6193f3f279076",
+    "headers_path": "docs/model-research/binance/raw/flexible-loan-same-asset-loop-v1-2026-08-30/01-official-page.headers.txt",
+    "method": "GET",
+    "status_code": 202,
+    "response_bytes": 0,
+    "raw_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "headers_sha256": "6338cb7467ed84de4ab515a06ec012315ed5be9c6a7702bc2149f385cad98b8b",
+    "terminal_interpretation": "The frozen direct retention request received a WAF 202 with an empty body and was not retried. Browser source extraction supplies the current public text, while the retained response proves only the direct-request failure."
+  },
+  "mechanical_adjudication": {
+    "required_first_conjunct": "exact_same_cryptocurrency_collateral_loan_pair_supported",
+    "public_support_proved": false,
+    "current_public_counterevidence": "live_official_page_explicitly_says_same_cryptocurrency_pairs_are_not_supported",
+    "rate_or_LTV_request_justified": false,
+    "economic_calculation_justified": false,
+    "candidate_edge": false,
+    "accepted_edge": false,
+    "deployment_ready": false,
+    "profitability_claim": false
+  },
+  "reciprocal_cross_asset_workaround": {
+    "example": "collateral_A_borrow_B_plus_collateral_B_borrow_A",
+    "same_asset_loop_equivalent": false,
+    "reason": "Each loan remains isolated and cross-asset. Opposite price moves can liquidate either position independently even when aggregate delta is small, and every reward rate, borrowing rate, LTV, pair eligibility, quota, and balance is account-specific.",
+    "canonical_disposition": "remains_inside_the_existing_cross_asset_Flexible_Loan_candidate_and_requires_the_already_frozen_signed_GET_only_prequalification; it is not a market-situation-independent public edge"
+  },
+  "retry_policy": {
+    "same_asset_submechanism": "reopen only after a material current official product or signed pair-eligibility source explicitly permits the exact same collateral and loan cryptocurrency",
+    "cross_asset_family": "retain the existing credential-and-explicit-read-only-authority gate for exact account rates, LTVs, positions, income, and rewards",
+    "prohibited": "do not borrow repay adjust LTV subscribe redeem transfer convert or trade without separate explicit funded authority"
+  }
+}
