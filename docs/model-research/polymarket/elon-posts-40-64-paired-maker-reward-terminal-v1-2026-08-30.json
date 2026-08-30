@@ -1,0 +1,82 @@
+{
+  "authority": {
+    "credentials_used": false,
+    "funded_actions": 0,
+    "orders_or_cancellations": 0,
+    "public_unauthenticated_read_only": true
+  },
+  "candidate": {
+    "condition_id": "0x27ad260f65f1fb035fa22660ea8a79fa72bc9f3c2432a56fc63defae40701d94",
+    "event_slug": "elon-musk-of-tweets-august-31-september-2-2026",
+    "market_slug": "elon-musk-of-tweets-august-31-september-2-2026-40-64",
+    "question": "Will Elon Musk post 40-64 tweets from August 31 to September 2, 2026?"
+  },
+  "completed_at_utc": "2026-08-30T01:50:46.232414+00:00",
+  "discovery_page_values": {
+    "displayed_maximum_spread_cents": "4",
+    "displayed_minimum_size_shares": "20",
+    "displayed_total_daily_reward_pUSD": "104",
+    "status": "discovery_only_not_exact_source_binding"
+  },
+  "exact_source_values": {
+    "active_reward_configuration": {
+      "end_date": "2500-12-31",
+      "id": 1693257,
+      "rate_per_day_pUSD": "53",
+      "start_date": "2026-08-29"
+    },
+    "gamma": {
+      "accepting_orders": true,
+      "active": true,
+      "closed": false,
+      "end_date_utc": "2026-09-02T16:00:00Z",
+      "maker_fee_zero_explicit": true,
+      "minimum_order_size_shares": "5",
+      "minimum_tick_size": "0.01",
+      "reward_maximum_spread_cents": "5.5",
+      "reward_minimum_size_shares": "50",
+      "taker_fee_rate": "0.05",
+      "taker_only_fee": true
+    },
+    "reward_endpoint": {
+      "market_competitiveness": "11.565889",
+      "next_cursor": "LTE=",
+      "reward_maximum_spread_cents": "5.5",
+      "reward_minimum_size_shares": "50",
+      "row_count": 1,
+      "total_active_daily_rate_pUSD": "53"
+    }
+  },
+  "result_sha256": "3fc224b70c035090c4f015d68b52edb6abd9f7222f1b932962274c446d613f47",
+  "schema_version": "polymarket-exact-paired-maker-reward-terminal-v1",
+  "sources": {
+    "contract_file_sha256": "faf204b9da7642d7427d11a5b8a2ba0de0f474800d2184f5512778ae994855cb",
+    "contract_path": "docs/model-research/polymarket/elon-posts-40-64-paired-maker-reward-contract-v1-2026-08-30.json",
+    "contract_result_sha256": "84bdca31e7f39ac18f38a4c980c3d43015637e1a817b62232a2746fca19bbe94",
+    "gamma": {
+      "payload_bytes": 7763,
+      "payload_sha256": "60bc944abae44dadba7eb221552bcec63b9a0fb632514a0f1fbcb990033e9321",
+      "raw_path": "docs/model-research/polymarket/raw/elon-posts-40-64-paired-maker-reward-screen-v1-2026-08-30/01-exact-gamma-market.raw",
+      "status_code": 200,
+      "url": "https://gamma-api.polymarket.com/markets?closed=false&slug=elon-musk-of-tweets-august-31-september-2-2026-40-64"
+    },
+    "reward": {
+      "payload_bytes": 1003,
+      "payload_sha256": "06cc2b73201acc6ea2178536d6cc1028319f78d7ffd935ea77d50ad9c5754c1f",
+      "raw_path": "docs/model-research/polymarket/raw/elon-posts-40-64-paired-maker-reward-screen-v1-2026-08-30/02-exact-sponsored-reward.raw",
+      "status_code": 200,
+      "url": "https://clob.polymarket.com/rewards/markets/0x27ad260f65f1fb035fa22660ea8a79fa72bc9f3c2432a56fc63defae40701d94?sponsored=true"
+    },
+    "tool_sha256": "5a78428fd85a24a16b1afd925d87217558765e3af61ccbdfeb8e7f03d737e4cf"
+  },
+  "verdict": {
+    "accepted_edge": false,
+    "books_requested": false,
+    "profitability_claim": false,
+    "publicly_proven_reward_payout_floor_pUSD": "0",
+    "reason": "live rewards-page discovery values did not reconcile to the exact sponsored market reward configuration",
+    "retry_permitted": false,
+    "status": "rejected_source_configuration_mismatch_before_books",
+    "trading_authority": false
+  }
+}

@@ -109,6 +109,12 @@ override prose.
   Never compare populations across different parameterizations without an
   explicit current semantics contract; source-contract drift is terminal, not
   permission to discover the new population ceiling by adaptive pagination.
+- Treat values surfaced by a rewards page or search result as discovery only.
+  Before requesting a book, reconcile the exact condition ID, sponsored daily
+  rate, minimum size, and maximum spread through the exact market endpoint.
+  Any mismatch is terminal for that frozen candidate and does not authorize a
+  retry, parameter change, replacement market, or use of either more favorable
+  configuration.
 - Cross-token cost and reward comparisons must use a source-bound executable
   conversion into one exact unit. A one-for-one stablecoin assumption or a
   different quote currency is a labeled sensitivity only and cannot support an
