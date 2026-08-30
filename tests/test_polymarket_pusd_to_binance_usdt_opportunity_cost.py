@@ -15,9 +15,12 @@ RESULT = ROOT / (
     "docs/model-research/action-value/"
     "polymarket-pusd-to-binance-usdt-opportunity-cost-gate-v1-2026-08-30.json"
 )
-JOURNAL = (
-    ROOT / "data/polymarket-pusd-to-binance-usdt-opportunity-cost-v1/journal.json"
+SOURCE_SNAPSHOT = ROOT / (
+    "docs/model-research/action-value/"
+    "polymarket-pusd-to-binance-usdt-opportunity-cost-source-snapshot-v1-"
+    "2026-08-30.json"
 )
+JOURNAL = ROOT / "data/polymarket-pusd-to-binance-usdt-opportunity-cost-v1/journal.json"
 REGISTRY = ROOT / "docs/model-research/structural-edge-priority-registry-v1.json"
 
 
@@ -41,18 +44,28 @@ def _self_hash(payload: dict[str, object], field: str) -> str:
     return _sha256(_canonical(body))
 
 
-def test_opportunity_cost_quote_reconstructs_and_rejects_before_account_access() -> None:
+def test_opportunity_cost_reconstructs_and_rejects_before_account_access() -> None:
     contract = json.loads(CONTRACT.read_text(encoding="ascii"))
     result = json.loads(RESULT.read_text(encoding="ascii"))
     journal = json.loads(JOURNAL.read_text(encoding="ascii"))
+    source_snapshot = json.loads(SOURCE_SNAPSHOT.read_text(encoding="ascii"))
 
     assert _self_hash(contract, "contract_sha256") == contract["contract_sha256"]
+    assert (
+        _self_hash(source_snapshot, "result_sha256") == source_snapshot["result_sha256"]
+    )
     implementation = contract["implementation"]
-    assert _sha256((ROOT / implementation["path"]).read_bytes()) == implementation[
-        "sha256"
-    ]
+    assert (
+        _sha256((ROOT / implementation["path"]).read_bytes())
+        == implementation["sha256"]
+    )
+    mapping = source_snapshot["source_mapping"]
     for source in contract["retained_sources"]:
-        assert _sha256((ROOT / source["path"]).read_bytes()) == source["sha256"]
+        source_path = ROOT / source["path"]
+        if source["path"] == mapping["mutable_original_path"]:
+            source_path = ROOT / mapping["immutable_snapshot_path"]
+            assert source["sha256"] == mapping["expected_sha256"]
+        assert _sha256(source_path.read_bytes()) == source["sha256"]
 
     assert journal["state"] == "completed"
     assert journal["contract_sha256"] == contract["contract_sha256"]
@@ -73,8 +86,7 @@ def test_opportunity_cost_quote_reconstructs_and_rejects_before_account_access()
 
     assets = json.loads(
         (
-            ROOT
-            / "data/polymarket-pusd-to-binance-usdt-opportunity-cost-v1/raw/"
+            ROOT / "data/polymarket-pusd-to-binance-usdt-opportunity-cost-v1/raw/"
             "supported-assets.raw.json"
         ).read_text(encoding="utf-8")
     )
@@ -94,8 +106,7 @@ def test_opportunity_cost_quote_reconstructs_and_rejects_before_account_access()
 
     quote = json.loads(
         (
-            ROOT
-            / "data/polymarket-pusd-to-binance-usdt-opportunity-cost-v1/raw/"
+            ROOT / "data/polymarket-pusd-to-binance-usdt-opportunity-cost-v1/raw/"
             "quote.raw.json"
         ).read_text(encoding="utf-8")
     )
@@ -107,7 +118,9 @@ def test_opportunity_cost_quote_reconstructs_and_rejects_before_account_access()
     assert Decimal(result["route"]["estimated_conversion_loss_bips"]) == (
         loss / amount * Decimal(10_000)
     )
-    assert loss > Decimal(result["economics"]["optimistic_full_fixed_bonus_reward_usdt"])
+    assert loss > Decimal(
+        result["economics"]["optimistic_full_fixed_bonus_reward_usdt"]
+    )
     assert Decimal(
         result["economics"]["optimistic_full_fixed_bonus_reward_usdt"]
     ) > Decimal(

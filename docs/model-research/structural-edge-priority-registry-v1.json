@@ -1,6 +1,6 @@
 {
-  "accepted_edge_count": 22,
-  "accepted_edge_scope": "twenty-two scoped structural edges: Polymarket complete-set holding yield for existing idle on-platform pUSD; Polymarket pUSD taker-fee rebates only for independently justified legitimate organic BTC ETH SOL taker flow after the direct-wallet tier is effective; Polymarket builder fees only on bona fide independently existing third-party orders routed through an owned app with an account-confirmed active disclosed positive rate; Polymarket referral rewards only for authentic external referrals when the account independently cleared the lifetime-volume threshold; Polymarket Perps referral fee share only for authentic external traders within account-confirmed available invites and without volume-based invite unlocking; Binance Soft Staking yield for already-held idle non-order ETH SOL Spot inventory; LDUSDT or independently existing RWUSD reward retention only for already-required USD-M Futures collateral with the exact applicable account haircut and limits; just-in-time BNB fee reduction only for independently justified organic Spot flow; current quote-native BTC ETH SOL promotional fee reduction without quote acquisition or extra volume; current TradFi perpetual zero-maker and reduced-taker fee overlay only for independently justified organic flow with the exact current symbol and actual fill role; current Binance Stocks promotional trading-spread reduction only for independently justified organic direct-stock flow with the exact current order tier and realized fee; current bStocks zero-maker fee only for independently justified organic maker flow through 2026-09-30T23:59:00Z with exact owned fill role and counterfactual account fee; USD1 WLFI holding-airdrop yield only for already-held eligible USD1; current fixed USD1 Simple Earn bonus only on at most the first 1500 independently already-held idle USD1 under a mutually exclusive balance-specific holding-airdrop comparison; U Flexible yield only for already-held eligible non-EEA U; automatic RWUSD VIP bonus only on independently required existing RWUSD; current USDT Flexible bonus yield only for independently held idle eligible USDT; current automatic USDe holding reward only for eligible USDe already independently held on Binance for at least 24 hours; Binance Square base 20 percent Write to Earn commission only on authentic external readers independently existing eligible fee-bearing trades attributed to genuinely useful content; Binance Referral Pro base 20 percent Spot Margin and 10 percent one-year Futures fee commission only for authentic independently acquired new external users; exact realized monthly Binance Institutional Loan interest rebates only on an independently required existing eligible loan when KYB VIP eligibility and the applicable performance target were independently satisfied without creating trading volume Open Interest Net Asset Value borrowing leverage or collateral exposure; and fail-closed one-intermediary Binance Spot route savings only for an independently required legitimate same-account organic conversion after exact account fees filters fresh finite-size depth residuals extra-leg stress and failure-unwind costs remain strictly cheaper than the direct route; none is deployment-ready or fully account-and-external-cost-qualified",
+  "accepted_edge_count": 23,
+  "accepted_edge_scope": "twenty-three scoped structural edges: Polymarket complete-set holding yield for existing idle on-platform pUSD; Polymarket pUSD taker-fee rebates only for independently justified legitimate organic BTC ETH SOL taker flow after the direct-wallet tier is effective; Polymarket builder fees only on bona fide independently existing third-party orders routed through an owned app with an account-confirmed active disclosed positive rate; Polymarket referral rewards only for authentic external referrals when the account independently cleared the lifetime-volume threshold; Polymarket Perps referral fee share only for authentic external traders within account-confirmed available invites and without volume-based invite unlocking; Binance Soft Staking yield for already-held idle non-order ETH SOL Spot inventory; LDUSDT or independently existing RWUSD reward retention only for already-required USD-M Futures collateral with the exact applicable account haircut and limits; just-in-time BNB fee reduction only for independently justified organic Spot flow; current quote-native BTC ETH SOL promotional fee reduction without quote acquisition or extra volume; current TradFi perpetual zero-maker and reduced-taker fee overlay only for independently justified organic flow with the exact current symbol and actual fill role; current Binance Stocks promotional trading-spread reduction only for independently justified organic direct-stock flow with the exact current order tier and realized fee; current bStocks zero-maker fee only for independently justified organic maker flow through 2026-09-30T23:59:00Z with exact owned fill role and counterfactual account fee; USD1 WLFI holding-airdrop yield only for already-held eligible USD1; current fixed USD1 Simple Earn bonus only on at most the first 1500 independently already-held idle USD1 under a mutually exclusive balance-specific holding-airdrop comparison; U Flexible yield only for already-held eligible non-EEA U; automatic RWUSD VIP bonus only on independently required existing RWUSD; current USDT Flexible bonus yield only for independently held idle eligible USDT; current automatic USDe holding reward only for eligible USDe already independently held on Binance for at least 24 hours; Binance Square base 20 percent Write to Earn commission only on authentic external readers independently existing eligible fee-bearing trades attributed to genuinely useful content; Binance Referral Pro base 20 percent Spot Margin and 10 percent one-year Futures fee commission only for authentic independently acquired new external users; exact realized monthly Binance Institutional Loan interest rebates only on an independently required existing eligible loan when KYB VIP eligibility and the applicable performance target were independently satisfied without creating trading volume Open Interest Net Asset Value borrowing leverage or collateral exposure; exact realized positive Binance CAAS markup trade commission only from independently existing bona fide external client trades under an already active disclosed fee group and markup configuration after every incremental cost; and fail-closed one-intermediary Binance Spot route savings only for an independently required legitimate same-account organic conversion after exact account fees filters fresh finite-size depth residuals extra-leg stress and failure-unwind costs remain strictly cheaper than the direct route; none is deployment-ready or fully account-and-external-cost-qualified",
   "authority": {
     "live_trading_authority": false,
     "paper_trading_authority": false,
@@ -53,27 +53,27 @@
           "path": "docs/model-research/polymarket/complete-set-holding-yield-post-conflict-v7-failure-adjudication-2026-08-29.json",
           "result_sha256": "448b068aa5c1b34c6012a5fadafa449ed9ef125afc310b7901b9f68285510f71"
         },
-      {
-        "path": "docs/model-research/polymarket/complete-set-holding-yield-continuity-receipts-v8-2026-08-29.json",
-        "result_sha256": "2eb7b434170afb195cc4f4faef8260ac4ec30b655c20fc07ee1bc9acbdfe090d"
-      },
-      {
-        "path": "docs/model-research/polymarket/complete-set-holding-yield-payout-pulse-v9-2026-08-30.json",
-        "result_sha256": "47f7d6a9f264cc9740a3c809f245b340cb726e3d715c97a4824832c0a4f2b6ae"
-      },
-      {
-        "path": "docs/model-research/polymarket/complete-set-holding-yield-payout-receipt-v10-2026-08-30.json",
-        "result_sha256": "4e57d6c0216886144fb89f8ae69b11a2eee4db37149ce6c956adecf293b7b927"
-      },
-      {
-        "path": "docs/model-research/action-value/polymarket-pusd-to-binance-usdt-opportunity-cost-gate-v1-2026-08-30.json",
-        "result_sha256": "98b74abfcb213a8d1bd554fc1bfec9044d6a6a3990abd800bef92f29437533b3"
-      }
-    ],
-    "current_status": "accepted_scoped_historical_after_direct_cost_edge_BTC_ETH_SOL_1039_pUSD_42_of_42_positive_daily_YIELD_payments_3_1820_percent_realized_rate_positive_through_3_percent_alternative_before_external_friction_one_use_post_conflict_run_failed_closed_after_5_of_9_requests_on_an_uncontracted_0_0001_pUSD_display_rounding_equality_retained_BTC_ETH_first_wholly_post_conflict_payouts_each_uniquely_match_3_25_percent_and_reject_4_percent_the_distinct_latest_retained_BTC_ETH_daily_rows_then_reconciled_to_exact_successful_distributor_pUSD_transfers_at_86474_and_86724_second_intervals_a_new_triggered_one_request_BTC_pulse_found_the_next_0_0133_pUSD_YIELD_row_at_an_86290_second_interval_and_one_separately_frozen_receipt_request_reconciled_the_exact_successful_distributor_transfer_extending_single_wallet_continuity_to_18_positive_rows_the_exact_public_500_pUSD_to_Polygon_USDT_quote_outputs_492_459811_USDT_and_loses_150_80378_bips_versus_only_0_4856127333_USDT_maximum_remaining_fixed_bonus_and_0_0993054837_incremental_reward_after_holding_yield_so_that_cross_venue_switch_is_rejected_before_account_access_but_SOL_activity_and_full_three_wallet_rate_reconciliation_remain_incomplete_current_rate_remains_fail_closed_unqualified_no_repair_capture_not_deployment_ready",
+        {
+          "path": "docs/model-research/polymarket/complete-set-holding-yield-continuity-receipts-v8-2026-08-29.json",
+          "result_sha256": "2eb7b434170afb195cc4f4faef8260ac4ec30b655c20fc07ee1bc9acbdfe090d"
+        },
+        {
+          "path": "docs/model-research/polymarket/complete-set-holding-yield-payout-pulse-v9-2026-08-30.json",
+          "result_sha256": "47f7d6a9f264cc9740a3c809f245b340cb726e3d715c97a4824832c0a4f2b6ae"
+        },
+        {
+          "path": "docs/model-research/polymarket/complete-set-holding-yield-payout-receipt-v10-2026-08-30.json",
+          "result_sha256": "4e57d6c0216886144fb89f8ae69b11a2eee4db37149ce6c956adecf293b7b927"
+        },
+        {
+          "path": "docs/model-research/action-value/polymarket-pusd-to-binance-usdt-opportunity-cost-gate-v1-2026-08-30.json",
+          "result_sha256": "98b74abfcb213a8d1bd554fc1bfec9044d6a6a3990abd800bef92f29437533b3"
+        }
+      ],
+      "current_status": "accepted_scoped_historical_after_direct_cost_edge_BTC_ETH_SOL_1039_pUSD_42_of_42_positive_daily_YIELD_payments_3_1820_percent_realized_rate_positive_through_3_percent_alternative_before_external_friction_one_use_post_conflict_run_failed_closed_after_5_of_9_requests_on_an_uncontracted_0_0001_pUSD_display_rounding_equality_retained_BTC_ETH_first_wholly_post_conflict_payouts_each_uniquely_match_3_25_percent_and_reject_4_percent_the_distinct_latest_retained_BTC_ETH_daily_rows_then_reconciled_to_exact_successful_distributor_pUSD_transfers_at_86474_and_86724_second_intervals_a_new_triggered_one_request_BTC_pulse_found_the_next_0_0133_pUSD_YIELD_row_at_an_86290_second_interval_and_one_separately_frozen_receipt_request_reconciled_the_exact_successful_distributor_transfer_extending_single_wallet_continuity_to_18_positive_rows_the_exact_public_500_pUSD_to_Polygon_USDT_quote_outputs_492_459811_USDT_and_loses_150_80378_bips_versus_only_0_4856127333_USDT_maximum_remaining_fixed_bonus_and_0_0993054837_incremental_reward_after_holding_yield_so_that_cross_venue_switch_is_rejected_before_account_access_but_SOL_activity_and_full_three_wallet_rate_reconciliation_remain_incomplete_current_rate_remains_fail_closed_unqualified_no_repair_capture_not_deployment_ready",
       "market_direction_forecast_required": false,
       "mechanism": "complete_set_holding_reward",
-    "next_action": "do_not_rerun_or_repair_consumed_v7_repeat_consumed_v9_v10_or_repeat_the_rejected_pUSD_to_USDT_quote_on_unchanged_evidence_wait_for_material_official_terms_economics_bridge_quote_or_cross_asset_payout_change_and_do_not_run_another_single_wallet_continuity_pulse_before_2026_08_31T02_15_30Z_only_with_explicit_authenticated_and_funded_authority_run_one_owned_minimum_size_split_hold_merge_and_full_cost_study",
+      "next_action": "do_not_rerun_or_repair_consumed_v7_repeat_consumed_v9_v10_or_repeat_the_rejected_pUSD_to_USDT_quote_on_unchanged_evidence_wait_for_material_official_terms_economics_bridge_quote_or_cross_asset_payout_change_and_do_not_run_another_single_wallet_continuity_pulse_before_2026_08_31T02_15_30Z_only_with_explicit_authenticated_and_funded_authority_run_one_owned_minimum_size_split_hold_merge_and_full_cost_study",
       "priority_rank": 1,
       "prohibited_shortcuts": [
         "Gamma holdingRewardsEnabled as account eligibility",
@@ -85,7 +85,7 @@
         "public_wallet_split_origin_as_owned_account_eligibility_or_cost_evidence",
         "repairing_a_consumed_one_use_refresh_when_retained_evidence_cannot_change_the_economic_decision"
       ],
-    "retry_trigger": "material_official_rate_program_cross_asset_payout_or_economic_comparator_change_for_public_research_or_not_before_2026_08_31T02_15_30Z_for_one_distinct_single_wallet_continuity_pulse_then_explicit_separate_authority_for_authenticated_or_funded_work",
+      "retry_trigger": "material_official_rate_program_cross_asset_payout_or_economic_comparator_change_for_public_research_or_not_before_2026_08_31T02_15_30Z_for_one_distinct_single_wallet_continuity_pulse_then_explicit_separate_authority_for_authenticated_or_funded_work",
       "venue_scope": "polymarket_btc_eth_sol"
     },
     {
@@ -1197,7 +1197,9 @@
         "matched-volume demand elasticity retention support compliance tax custody and operating costs",
         "applicable jurisdiction consumer protection and Builder Program eligibility",
         "for the gas-subsidy submechanism exact supported wallet active Relayer key tier or own-wallet limit remaining capacity independently required operation owned successful receipt sponsored gas and no separate service fee or setup-cost deficit",
-        "for weekly USDC rewards or grants a deterministic published or account-approved formula threshold allocation cap timing award and owned payout"
+        "for weekly USDC rewards or grants a deterministic published or account-approved formula threshold allocation cap timing award and owned payout",
+        "for Binance CAAS current partner and regional eligibility already active disclosed fee group exact markup configuration and member assignment",
+        "independently existing bona fide unrelated external CAAS client flow exact positive detail and aggregation reporting owned payout and every incremental platform compliance support tax custody and operating cost"
       ],
       "canonical_artifacts": [
         {
@@ -1207,12 +1209,16 @@
         {
           "path": "docs/model-research/action-value/polymarket-organic-relayer-gas-subsidy-and-builder-tier-reward-v1-2026-08-29.json",
           "result_sha256": "1c33e778d217ec5e7ef817e83af3186df7da0e5dd0cc75cb72464bfd97d18d49"
+        },
+        {
+          "path": "docs/model-research/action-value/binance-caas-organic-client-commission-markup-overlay-v1-2026-08-30.json",
+          "result_sha256": "d1656eeccbcf780a2e71190d5f969db07a33548f58de940b55867d494dddebd2"
         }
       ],
-      "current_status": "accepted_scoped_direction_independent_builder_fee_overlay_only_on_bona_fide_independently_existing_third_party_matched_orders_current_Relayer_gas_subsidy_is_a_distinct_unaccepted_cost_reduction_candidate_because_owned_active_key_operation_receipt_counterfactual_gas_and_all_costs_are_unproved_weekly_USDC_rewards_and_grants_have_zero_public_floor_because_both_are_subject_to_approval_and_publish_no_formula_not_deployment_ready",
+      "current_status": "accepted_scoped_direction_independent_platform_fee_overlays_only_for_Polymarket_bona_fide_independently_existing_third_party_matched_orders_with_exact_owned_builder_payout_and_Binance_CAAS_exact_realized_positive_markup_commission_from_independently_existing_bona_fide_external_client_trades_under_an_already_active_disclosed_configuration_Relayer_gas_subsidy_weekly_USDC_rewards_and_grants_remain_unaccepted_public_forward_floor_zero_none_deployment_ready",
       "market_direction_forecast_required": false,
-      "mechanism": "polymarket_organic_third_party_builder_fee_overlay",
-      "next_action": "do_not_create_reroute_or_split_volume_or_transactions_for_builder_fees_prove_active_builder_configuration_bona_fide_attributed_matches_and_owned_payouts_only_with_explicit_read_only_authority_for_gas_subsidy_only_when_an_independently_required_supported_operation_and_active_Relayer_key_already_exist_prove_wallet_tier_capacity_expected_saving_and_after_execution_owned_receipt_under_separate_transaction_authority_for_weekly_rewards_or_grants_wait_for_a_deterministic_public_formula_or_account_confirmed_award",
+      "mechanism": "organic_third_party_platform_fee_overlays",
+      "next_action": "do_not_create_reroute_split_or_manufacture_orders_transactions_or_client_flow_for_Polymarket_builder_fees_prove_active_builder_configuration_bona_fide_attributed_matches_and_owned_payouts_only_with_explicit_read_only_authority_for_Binance_CAAS_only_when_both_designated_credentials_explicit_signed_GET_only_authority_an_independently_existing_legitimate_reporting_question_and_an_already_active_disclosed_fee_group_with_bona_fide_external_flow_all_exist_reconcile_fee_group_member_exact_positive_markup_trade_details_aggregation_and_owned_payout_after_every_incremental_cost_stop_before_every_group_commission_or_member_mutation_client_onboarding_order_trade_transfer_withdrawal_or_contact_for_gas_subsidy_only_when_an_independently_required_supported_operation_and_active_Relayer_key_already_exist_prove_wallet_tier_capacity_expected_saving_and_after_execution_owned_receipt_under_separate_transaction_authority_for_weekly_rewards_or_grants_wait_for_a_deterministic_public_formula_or_account_confirmed_award",
       "priority_rank": 24,
       "prohibited_shortcuts": [
         "operator_self_referral_related_party_wash_circular_or_manufactured_activity",
@@ -1223,10 +1229,13 @@
         "creating_splitting_retrying_or_rerouting_transactions_only_to_consume_sponsored_gas_or_counting_sponsorship_when_the_action_would_not_otherwise_exist",
         "crediting_weekly_USDC_rewards_grants_support_marketing_priority_access_or_rate_limits_as_cash_without_exact_owned_award_and_payout",
         "double_counting_the_same_gas_cost_builder_fee_reward_or_operation_across_submechanisms",
-        "calling_gross_builder_fee_after_cost_profit_without_owned_payout_and_demand_and_operating_costs"
+        "calling_gross_builder_fee_after_cost_profit_without_owned_payout_and_demand_and_operating_costs",
+        "creating increasing rerouting splitting churning self-matching wash related-party or solicited CAAS client volume to collect markup",
+        "creating deleting updating or assigning a CAAS fee group commission or member under read-only or research authority",
+        "double counting one client fee across CAAS Referral Pro Link and Trade Square builder or other commission programs"
       ],
-      "retry_trigger": "for_builder_fees_account_confirmed_active_positive_configuration_plus_independently_existing_bona_fide_third_party_flow_and_explicit_read_only_evidence_authority_or_for_gas_subsidy_existing_active_Relayer_key_plus_independently_required_supported_wallet_operation_plus_explicit_read_only_prequalification_authority_or_for_weekly_rewards_and_grants_a_deterministic_public_formula_or_account_confirmed_approved_award_separate_authority_for_every_profile_key_rate_order_relayer_signature_transaction_transfer_or_withdrawal_action",
-      "venue_scope": "polymarket_external_user_orders_routed_through_owned_application_and_supported_smart_wallet_Relayer_operations"
+      "retry_trigger": "for_Polymarket_builder_fees_account_confirmed_active_positive_configuration_plus_independently_existing_bona_fide_third_party_flow_and_explicit_read_only_evidence_authority_or_for_Binance_CAAS_both_designated_credentials_explicit_signed_GET_only_authority_an_independently_existing_legitimate_reporting_question_and_an_already_active_disclosed_fee_group_with_bona_fide_external_client_flow_or_for_gas_subsidy_existing_active_Relayer_key_plus_independently_required_supported_wallet_operation_plus_explicit_read_only_prequalification_authority_or_for_weekly_rewards_and_grants_a_deterministic_public_formula_or_account_confirmed_approved_award_separate_authority_for_every_profile_key_rate_fee_group_commission_member_order_relayer_signature_transaction_transfer_or_withdrawal_action",
+      "venue_scope": "Polymarket external user orders routed through an owned application and supported smart-wallet Relayer operations plus Binance CAAS bona fide external client trades under an already active disclosed configuration"
     },
     {
       "blocking_evidence": [
@@ -2273,7 +2282,7 @@
       "venue_scope": "Binance_Spot_direct_and_exactly_one_intermediary_routes_for_independently_required_organic_conversions_with_the_exactly_two_intermediary_extension_terminal_for_the_retained_population"
     }
   ],
-  "result_sha256": "e4ec302a1cc32a57ec1d68cf00ab5d99cbc22d74b80fbc3c68da242485899fd4",
+  "result_sha256": "a1fc3c10482909d2c77dbb20ca13dae3eb73e465fa96dcfb20dd0ede17337573",
   "schema_version": "structural-edge-priority-registry-v1",
   "terminal_do_not_repeat": [
     {
@@ -2552,6 +2561,6 @@
       "reason": "exact_Gamma_and_sponsored_condition_sources_reconciled_at_50_shares_4_5_cents_and_1_99972_pUSD_per_day_but_the_consumed_two_token_book_was_30871_ms_old_and_the_retained_best_bid_join_had_only_2_05_pUSD_both_fill_gross_against_46_80_pUSD_maximum_orphan_loss_while_even_100_percent_of_all_remaining_rewards_was_only_12_923014_pUSD_do_not_refetch_or_treat_the_snapshot_as_current_executable_economics"
     }
   ],
-  "updated_at_utc": "2026-08-30T05:45:41.3501248Z",
+  "updated_at_utc": "2026-08-30T06:07:01.012877Z",
   "usage_rule": "advance_the_highest_ranked_hypothesis_whose_retry_trigger_is_satisfied_otherwise_do_not_repeat_a_blocked_or_terminal_screen"
 }

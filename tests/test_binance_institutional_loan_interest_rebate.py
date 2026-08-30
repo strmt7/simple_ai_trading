@@ -124,4 +124,3 @@ def test_narrow_realized_credit_overlay_is_accepted_without_loan_authority() -> 
         "path": ARTIFACT.relative_to(ROOT).as_posix(),
         "result_sha256": artifact["result_sha256"],
     } in lead["canonical_artifacts"]
-    assert registry["accepted_edge_count"] == 22

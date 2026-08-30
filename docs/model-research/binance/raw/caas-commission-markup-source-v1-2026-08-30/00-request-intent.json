@@ -1,0 +1,34 @@
+{
+  "schema_version": 1,
+  "frozen_at_utc": "2026-08-30T06:02:22.6374986Z",
+  "purpose": "Retain one current official public Binance CAAS documentation page to determine whether the already retained official API catalog's commission-markup reporting endpoints describe a structurally distinct, market-direction-independent realized commission overlay.",
+  "request": {
+    "method": "GET",
+    "url": "https://developers.binance.com/en/docs/products/vip-caas/general-info.md",
+    "security_classification": "public Binance developer documentation page; no venue API endpoint, key, signature, cookie, account, or mutation",
+    "maximum_requests": 1
+  },
+  "precommitted_decision": {
+    "required_source_terms": [
+      "CAAS",
+      "commission"
+    ],
+    "acceptance_boundary": "The page may establish only public mechanism and access provenance. Any accepted economic overlay must be limited to exact realized positive markup commission from independently existing bona fide external client trades under an already active account configuration, net of every incremental cost.",
+    "fail_closed_if": [
+      "the response is not HTTP 200",
+      "the retained body is empty",
+      "the required mechanism terms are absent",
+      "the source requires using credential examples as evidence",
+      "the mechanism would require creating client volume, changing markup, onboarding users, opening positions, placing orders, or mutating any account"
+    ]
+  },
+  "prohibited_actions": [
+    "authenticated request",
+    "account query",
+    "fee-group creation deletion or update",
+    "member assignment or removal",
+    "client onboarding or solicitation",
+    "order or trade",
+    "transfer or withdrawal"
+  ]
+}

@@ -1,0 +1,17 @@
+{
+  "schema_version": 1,
+  "method": "GET",
+  "url": "https://developers.binance.com/en/docs/products/vip-caas/general-info.md",
+  "requested_at_utc": "2026-08-30T06:02:56.9318607Z",
+  "completed_at_utc": "2026-08-30T06:02:57.3003417Z",
+  "curl_exit_code": 0,
+  "status_code": 200,
+  "elapsed_seconds": "0.337450",
+  "payload_bytes": 33326,
+  "payload_sha256": "487d6b93802b68e7b48422650b945965ba48f55d9c472b6ecbd308b707a0cf28",
+  "credentials_used": false,
+  "account_or_state_accessed": false,
+  "decision": "consumed_fail_closed_generic_security_document_zero_required_CAAS_or_commission_terms_no_retry_or_alias",
+  "raw_body_committed": false,
+  "retention_exception": "The response is the already known generic Binance security document and contains credential-shaped authentication examples. Repository credential hygiene overrides raw-body retention; its hash and outcome are retained, no example value is reproduced or source-bound, and the page is not used as positive mechanism evidence."
+}

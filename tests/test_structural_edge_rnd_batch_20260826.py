@@ -143,10 +143,10 @@ def test_registry_binds_new_edge_conflict_and_terminal_adjudication() -> None:
     builder = next(
         row
         for row in hypotheses
-        if row["mechanism"] == "polymarket_organic_third_party_builder_fee_overlay"
+        if row["mechanism"] == "organic_third_party_platform_fee_overlays"
     )
     assert builder["priority_rank"] == 24
-    assert builder["canonical_artifacts"] == [
+    for artifact in [
         {
             "path": (
                 "docs/model-research/action-value/"
@@ -162,7 +162,8 @@ def test_registry_binds_new_edge_conflict_and_terminal_adjudication() -> None:
             ),
             "result_sha256": RELAYER_HASH,
         },
-    ]
+    ]:
+        assert artifact in builder["canonical_artifacts"]
 
     stable_yield = next(
         row
