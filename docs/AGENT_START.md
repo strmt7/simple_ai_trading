@@ -12,7 +12,7 @@ operating contract. Historical handoff text is archived under
 | Development branch | `main` only |
 | Binance | BTC, ETH, and SOL; paper or testnet/Demo only |
 | Polymarket | Independent BTC 5-minute/15-minute research; disabled by default |
-| Accepted edges | Twenty-seven scoped structural edges. The canonical complete scopes, counts, and retry gates are in `docs/model-research/structural-edge-priority-registry-v1.json`; none is deployment-ready or fully account-and-external-cost-qualified. |
+| Accepted edges | Twenty-nine scoped structural edges. The canonical complete scopes, counts, and retry gates are in `docs/model-research/structural-edge-priority-registry-v1.json`; none is deployment-ready or fully account-and-external-cost-qualified. |
 | Live-money authority | None |
 | Historical cutoff | `2026-08-14T00:00:00Z` |
 
@@ -20,6 +20,17 @@ No model, AI component, backtest, capture, or paper result may be described as
 profitable without reproducible source-bound after-cost evidence. AI may veto
 or reduce risk only; it never creates positions, selects leverage, overrides a
 safety gate, blocks Stop, or submits an order.
+
+### Latest efficient structural screen
+
+The frozen zero-request BTC/ETH/SOL same-venue funding-dispersion test is
+terminally rejected. Across 210 retained Binance funding rows per asset and 209
+causal decisions, even a perfect-foresight, zero-execution maximum-minus-minimum
+funding oracle failed the two-leg capital hurdle in training, validation, and
+test by `151.7836022831050228310502284`, `51.80332876712328767123287673`, and
+`57.77722876712328767123287673` bips respectively. The causal lagged strategy
+also failed all roles. No price, book, account, credential, or trading request
+was justified or made; do not resample this exact retained population.
 
 ## Non-Negotiable Gates
 

@@ -3,6 +3,21 @@
 This is the authoritative handoff. Verify every drift-prone claim before acting.
 Development belongs only on `main`; do not create another development branch.
 
+## Latest Edge R&D Checkpoint
+
+- The frozen zero-network BTC/ETH/SOL same-venue funding-dispersion test used
+  210 retained Binance funding rows per asset and 209 causal decisions. Its
+  perfect-foresight, zero-execution funding oracle still missed the frozen
+  two-leg capital hurdle by `151.7836022831050228310502284` bips in training,
+  `51.80332876712328767123287673` in validation, and
+  `57.77722876712328767123287673` in test. The causal lagged strategy lost
+  `2094.011602283105022831050236`, `687.4387287671232876712328758`, and
+  `483.2568287671232876712328758` bips after frozen execution and capital
+  hurdles. The exact family is terminal; no price, book, account, credential,
+  or trading request was made or justified. Reopen only after a material
+  funding-mechanism, fee, margin, portfolio-netting, or capital-cost change
+  capable of clearing the perfect-foresight deficits.
+
 ## Closeout State
 
 - The last fully hosted-verified baseline before this structural-parity
@@ -12,7 +27,7 @@ Development belongs only on `main`; do not create another development branch.
   code-scanning, and secret-scanning alerts. Reverify the publication commit;
   zero alerts never proves zero undisclosed vulnerabilities.
 - The repository is beta `0.1.0-beta.1`. No model has production authority or a
-  demonstrated long-lived after-all-cost edge. Twenty-seven narrowly scoped structural
+  demonstrated long-lived after-all-cost edge. Twenty-nine narrowly scoped structural
   edges are accepted: Polymarket holding yield for existing idle on-platform
   pUSD; Polymarket pUSD taker-fee rebates only for independently justified
   legitimate organic BTC/ETH/SOL taker flow after the direct-wallet tier is
@@ -85,13 +100,13 @@ Development belongs only on `main`; do not create another development branch.
 - The one historical cutoff is `2026-08-14T00:00:00Z`. Do not move it or fetch
   the newest history on each iteration. Prospective experiments remain isolated
   from that frozen snapshot.
-- A 2026-08-25 identity audit found that the already-shared commits
-  `187c9531ab796c5c583b6fe9a50ed03c1127dde5` and
-  `ac8e29e661bf3c259c0347c8637304684f520faa` used the prohibited
-  `Codex <codex@users.noreply.github.com>` author and committer instead of the
-  required `AI agent <>`. Older main history also contains legacy prohibited
-  AI-style identities. This is surfaced, not repaired: do not force-rewrite
-  shared history without explicit approval. Identity audit and commit are now
+- A delimiter-safe 2026-08-30 identity audit found 656 already-shared `main`
+  commits with legacy prohibited AI-style identities and 1,496 commits with the
+  required `AI agent <>` identity. The most recent prohibited commit was 102
+  commits behind `181000ac6e3d55434f2a6f076b4ad8ca0144ab37`; there were no
+  local PR-head refs, and a fresh anonymous-contributor API response contained
+  zero anonymous rows. This is surfaced, not repaired: do not force-rewrite
+  shared history without explicit approval. Identity audit and commit are
   separate gates; inspect the audit result before any mutating Git command.
 
 ## Round 75 Terminal Verdict

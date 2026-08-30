@@ -248,6 +248,12 @@ override prose.
   discard valid leg-specific cash flows merely because independently published
   settlement timestamps differ by milliseconds; preserve the original failed
   method and adjudicate from retained raw responses without an adaptive refetch.
+- Before acquiring price or book data for a funding-only dispersion candidate,
+  compute the outcome-dominating perfect-foresight maximum-minus-minimum funding
+  bound with zero execution cost and the full frozen capital hurdle. If that
+  bound fails any preregistered role, terminalize the exact funding family and
+  do not request prices; forecast-dependent price alpha is a separate family
+  and cannot rescue a failed funding edge.
 - Source-bind the documented semantics of every timestamp before using it as
   quote freshness or cross-source synchronization. A ticker transaction time,
   rolling-window close time, event time, or HTTP receipt is not automatically a
