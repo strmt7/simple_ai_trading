@@ -5745,3 +5745,24 @@ Canonical result SHA-256 is
 Accepted edges remain 29, ranked hypotheses remain 44, terminal families become
 81, and registry SHA-256 becomes
 `61e32583121d421bb15294fd2c092443b611a79a2f8e799c3292395e9b8a0bbd`.
+
+### Binance Delta Mode alias reconciliation and request-efficiency correction
+
+The current official Agent Native index exposes Portfolio Margin Pro Delta Mode
+through a `USER_DATA` status GET and a `TRADE`-class switch POST. This is not a
+new capital-efficiency trigger. The retained Portfolio Margin sensitivity had
+already granted the strictly stronger optimistic counterfactual of deleting one
+complete capital-opportunity-cost leg; zero symbols remained positive in
+training, validation, and test, and every family-adjusted bootstrap lower bound
+remained negative. Endpoint presence supplies no quantitative offset, collateral,
+eligibility, liquidation, or cost semantics. No credentials, status request,
+mode switch, books, account state, orders, transfers, or funds were used.
+
+Do not create a separate Delta Mode hypothesis or query account status from the
+name alone. Reopen the existing family only on a material official semantic or
+quantitative margin-offset change capable of clearing its retained deficits, or
+after exact public semantics plus explicit signed GET-only authority support an
+independently required account-specific comparison. A redundant same-day GET of
+the exact Agent Native index was detected before staging and removed; future
+public research must deduplicate the canonical method and URL against retained
+same-day successful captures before access.

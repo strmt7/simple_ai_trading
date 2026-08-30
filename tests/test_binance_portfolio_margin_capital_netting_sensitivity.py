@@ -17,7 +17,7 @@ FUNDING = ROOT / (
 )
 REGISTRY = ROOT / "docs/model-research/structural-edge-priority-registry-v1.json"
 EXPECTED_ARTIFACT_HASH = (
-    "b31cc92f4fad9dad7d8d0ea98c3275605b16069afc0d6d5882e75501025f7d14"
+    "a2f6c75512ebb3d6b613594cb4cf03ce7473bdcc7a4227cd3a99cbdfd47d7a6d"
 )
 EXPECTED_FUNDING_HASH = (
     "095009a36a5c6a8a5a2dfdfb3e57ebe6183721bb84600518552ccf6d463617c8"
