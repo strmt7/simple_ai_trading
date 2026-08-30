@@ -184,6 +184,10 @@ override prose.
   ordering, timestamp phase, cursor progression, and cross-source alignment on
   retained evidence before continuing pagination; successful JSON parsing alone
   is not an aggregation preflight.
+- When searching retained minified JSON, JSONL, HTML, or other potentially
+  single-line raw evidence, use filename-only matches, a bounded parser, or
+  aggregate counts. Never let `rg -n` print an unbounded matching payload line
+  to the console; raw retention is not permission to flood logs or prompts.
 - For cross-contract funding histories, audit the actual returned row ceiling,
   ordinal settlement schedule, and timestamp skew before choosing a join. Do not
   discard valid leg-specific cash flows merely because independently published

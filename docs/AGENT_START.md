@@ -1910,3 +1910,26 @@ at zero. Canonical preflight SHA-256 is
 `b7d60e0d9f3e30b2a62663ff1290be77e6309ac33a7d48776b6f5ea1c8dcfe68`;
 registry SHA-256 is
 `6e0c9d33e909ec980af5fa65d8ed2cdaebd8dd3fa576671165fe0a331f7af817`.
+
+## Binance Convert Limit Order Simple Earn overlay
+
+Current official terms prove that an independently required Convert Limit Order
+can optionally keep its source asset in Simple Earn Flexible while waiting,
+instead of freezing the same funds without rewards in Spot. This is a material
+direction-independent rank-3 capital-efficiency candidate, but it is not
+accepted. Subscription quota applies, cancellation does not redeem the asset,
+and delayed or failed redemption prevents execution; a limit-price touch also
+does not guarantee a fill.
+
+The public forward floor is zero because the feature FAQ binds no exact
+BTC/ETH/SOL rate, tier, cap, accrual start, distribution schedule, account quota,
+or guaranteed redemption. At the retained BTC `0.27% Max`, seven days amount to
+only `0.5178082` bips before costs and one bip of missed-fill loss needs
+`13.5185` days to recover; the `0.02%` base component needs `182.5` days. Do not
+create or extend a conversion to chase this reward. Advance only under the exact
+rank-3 read-only trigger, and require separate authority for every order,
+subscription, redemption, cancellation, transfer, or trade. Canonical candidate
+SHA-256 is
+`3b33ca4ef8c03a609bef1665ccfc2104a3f6585033770f0bb99ec3c5699949f8`;
+registry SHA-256 is
+`546904123e0985aa23d7f3c58567dd2b8e877681b48e560512e4b15b9082721b`.
