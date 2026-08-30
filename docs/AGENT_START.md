@@ -33,6 +33,12 @@ or alias that consumed population. Reopen only for a future distinct aligned
 population that passes a strict rejection-only sub-floor gate, followed by a
 prospectively frozen exact live CLOB package capture.
 
+The GLWUSDT terminal special-funding reconciliation is frozen but prohibited
+before `2026-08-31T00:10:00Z`. When due, run only its exact one-request
+nonoverlapping delta. The 2026 execution window is closed, so no book capture is
+permitted regardless of the history outcome; this can establish mechanism
+timing only and cannot establish profit.
+
 ## Non-Negotiable Gates
 
 - Aggregate performance is not an all-market edge. Promotion requires causal

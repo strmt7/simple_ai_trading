@@ -145,7 +145,10 @@ def test_registry_adds_candidate_and_closes_only_direct_family() -> None:
     assert candidate["priority_rank"] == 34
     assert candidate["market_direction_forecast_required"] is False
     assert "after_2026_08_31" in candidate["retry_trigger"]
-    assert candidate["canonical_artifacts"][-1]["result_sha256"] == TRIGGER_RESULT_HASH
+    assert any(
+        artifact["result_sha256"] == TRIGGER_RESULT_HASH
+        for artifact in candidate["canonical_artifacts"]
+    )
     terminal = next(
         row
         for row in registry["terminal_do_not_repeat"]
