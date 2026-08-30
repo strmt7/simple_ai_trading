@@ -17,9 +17,44 @@ ARTIFACT = BASE / (
     "polymarket-all-category-realized-organic-maker-rebate-overlay-"
     "v1-2026-08-30.json"
 )
+CONFLICT_ADJUDICATION = BASE / (
+    "polymarket-sports-maker-rebate-source-conflict-adjudication-"
+    "v1-2026-08-30.json"
+)
+CONFLICT_SOURCE_ARTIFACTS = (
+    (
+        BASE
+        / "polymarket-sports-maker-rebate-current-source-conflict-contract-v1-2026-08-30.json",
+        "contract_sha256",
+    ),
+    (
+        BASE
+        / "polymarket-sports-maker-rebate-current-source-conflict-result-v1-2026-08-30.json",
+        "result_sha256",
+    ),
+    (
+        BASE
+        / "polymarket-sports-maker-rebate-cross-source-conflict-contract-v1-2026-08-30.json",
+        "contract_sha256",
+    ),
+    (
+        BASE
+        / "polymarket-sports-maker-rebate-cross-source-conflict-source-result-v1-2026-08-30.json",
+        "result_sha256",
+    ),
+)
 RAW = ROOT / (
     "docs/model-research/polymarket/raw/"
     "all-category-maker-rebate-source-v1-2026-08-30/01-maker-rebates.raw.md"
+)
+CURRENT_REBATE_RAW = ROOT / (
+    "docs/model-research/polymarket/raw/"
+    "sports-maker-rebate-current-source-conflict-v1-2026-08-30/"
+    "01-maker-rebates.raw.md"
+)
+CURRENT_FEES_RAW = ROOT / (
+    "docs/model-research/polymarket/raw/"
+    "sports-maker-rebate-cross-source-conflict-v1-2026-08-30/01-fees.raw.md"
 )
 REGISTRY = ROOT / "docs/model-research/structural-edge-priority-registry-v1.json"
 
@@ -56,13 +91,25 @@ def test_one_use_failure_and_retained_bytes_are_source_bound() -> None:
     contract = json.loads(CONTRACT.read_bytes())
     result = json.loads(SOURCE_RESULT.read_bytes())
     artifact = json.loads(ARTIFACT.read_bytes())
+    conflict = json.loads(CONFLICT_ADJUDICATION.read_bytes())
 
     assert _self_hash(contract, "contract_sha256") == contract["contract_sha256"]
     assert _self_hash(result, "result_sha256") == result["result_sha256"]
     assert _self_hash(artifact, "result_sha256") == artifact["result_sha256"]
+    assert _self_hash(conflict, "result_sha256") == conflict["result_sha256"]
     assert result["source_gate"]["passed"] is False
     assert artifact["failed_contract_adjudication"]["no_retry_or_alias"] is True
     assert artifact["failed_contract_adjudication"]["discovery_values_excluded"] is True
+
+    for path, field in CONFLICT_SOURCE_ARTIFACTS:
+        payload = json.loads(path.read_bytes())
+        assert _self_hash(payload, field) == payload[field]
+
+    for binding in conflict["source_binding"].values():
+        if "file_sha256" not in binding:
+            continue
+        payload = (ROOT / binding["path"]).read_bytes()
+        assert hashlib.sha256(payload).hexdigest() == binding["file_sha256"]
 
     for binding in artifact["source_binding"].values():
         payload = (ROOT / binding["path"]).read_bytes()
@@ -110,6 +157,32 @@ def test_current_primary_markdown_reconstructs_exact_category_terms() -> None:
     assert "sole discretion of Polymarket" in markdown
 
 
+def test_current_sports_sources_fail_closed_on_cash_label_conflict() -> None:
+    artifact = json.loads(ARTIFACT.read_bytes())
+    conflict = json.loads(CONFLICT_ADJUDICATION.read_bytes())
+    rebate_markdown = CURRENT_REBATE_RAW.read_text(encoding="utf-8")
+    fees_markdown = CURRENT_FEES_RAW.read_text(encoding="utf-8")
+    rebate_rows = _table(
+        rebate_markdown, "| Category        | Maker Rebate | Distribution Method |"
+    )
+    fee_rows = _table(
+        fees_markdown,
+        "| Category        | Taker Fee Rate | Maker Fee Rate | Maker Rebate |",
+    )
+
+    assert rebate_rows["Sports"] == ["15%", "Fee-curve weighted"]
+    assert fee_rows["Sports"] == ["0.05", "0", "15%"]
+    assert "Paid daily in pUSD" in rebate_markdown
+    assert "Taker fees are calculated in USDC" in fees_markdown
+    assert conflict["adjudication"][
+        "public_sports_rebate_fraction_for_forward_economics"
+    ] is None
+    assert conflict["adjudication"]["public_forward_profit_floor"] == "0"
+    assert "asset actually received" in conflict["realization_rule"]
+    assert artifact["current_program_contract"]["currency"].startswith("fail_closed")
+    assert "asset actually received" in artifact["adjudication"]["accepted_scope"]
+
+
 def test_scope_extension_keeps_fail_closed_count_and_registry_binding() -> None:
     artifact = json.loads(ARTIFACT.read_bytes())
     registry = json.loads(REGISTRY.read_bytes())
@@ -131,6 +204,11 @@ def test_scope_extension_keeps_fail_closed_count_and_registry_binding() -> None:
     assert {
         "path": ARTIFACT.relative_to(ROOT).as_posix(),
         "result_sha256": artifact["result_sha256"],
+    } in family["canonical_artifacts"]
+    conflict = json.loads(CONFLICT_ADJUDICATION.read_bytes())
+    assert {
+        "path": CONFLICT_ADJUDICATION.relative_to(ROOT).as_posix(),
+        "result_sha256": conflict["result_sha256"],
     } in family["canonical_artifacts"]
     assert "current_fee_enabled_Crypto_Sports" in family[
         "realized_rebate_scope_extension"
