@@ -4929,3 +4929,37 @@ Canonical retained adjudication result SHA-256 is
 Accepted edges remain 27, ranked hypotheses remain 44, and terminal families
 become 62. Registry SHA-256 becomes
 `163cfbca723f1b84620e09853d698dd194e61d416c34fa71b2079a9e927c2313`.
+
+## Binance Algo Trading execution-cost source gate
+
+A zero-network comparison of the retained current official Binance API index
+against every ranked and terminal mechanism found one distinct structural lead:
+exchange-native Spot TWAP plus USD-M Futures TWAP and Volume Participation.
+These algorithms could reduce market impact only for an independently required
+legitimate BTC, ETH, or SOL execution; they do not create profitable flow and
+are not an accepted edge.
+
+One frozen public unauthenticated GET targeted the exact current official Algo
+Trading OpenAPI schema. The request returned HTTP 202 with zero bytes. The raw
+empty response and two-row intent/completion journal are retained, and none of
+the six preregistered endpoint or child-order evidence terms passed. The exact
+request is consumed: do not retry it, switch to an alias, or use rendered
+discovery values to override the failed source gate.
+
+The public forward saving floor is zero. Public documentation preserves only a
+candidate architecture; it does not prove savings, maker/taker mix, extra algo
+fees, fill quality, testnet support, account eligibility, or positive after-cost
+value. Reopen only on a materially new byte-retainable official execution or fee
+source. A historical signed child-order read additionally requires both
+designated credentials, explicit GET-only authority, and an independently
+existing legitimate algo order. Any prospective comparison requires confirmed
+testnet or paper support, separate explicit order authority, independently
+required flow, and a precommitted identical-quantity direct-execution benchmark.
+No credential, account, order, transaction, fund, or protected-capture access
+occurred.
+
+Canonical failure adjudication SHA-256 is
+`621f03ae812f57e9c8994e6073adc4153ca6eb447e9db61bad3bebc36e0b242f`.
+Accepted edges remain 27, ranked hypotheses remain 44, and terminal families
+become 63. Registry SHA-256 becomes
+`49e909d549f015918690c14c1062021ca39c10c1ddeadce2ecacf0db8571bb37`.

@@ -1,0 +1,69 @@
+{
+  "schema_version": "binance-algo-execution-cost-overlay-source-failure-adjudication-v1",
+  "created_at_utc": "2026-08-30T12:10:14.4809683Z",
+  "candidate_identity": {
+    "description": "Exchange-native Spot TWAP and USD-M Futures TWAP or Volume Participation may reduce market impact for an independently required legitimate BTC ETH or SOL execution.",
+    "directional_forecast_required": false,
+    "economic_identity": "conditional_execution_cost_reduction_on_preexisting_organic_flow",
+    "independence_limit": "The mechanism does not create profitable flow and must never be used to manufacture volume."
+  },
+  "frozen_public_source_outcome": {
+    "contract_path": "docs/model-research/action-value/binance-algo-execution-cost-overlay-source-contract-v1-2026-08-30.json",
+    "contract_canonical_sha256": "1a695f4daab084cbc449963580e0d498d097f18831878b333325909e0d688379",
+    "contract_file_sha256": "d535c26f73a0069cd8e0d3e0c9a354883dd8d48f40a6cae394cb3bdf3fa013a2",
+    "journal_path": "docs/model-research/binance/raw/algo-execution-cost-overlay-v1-2026-08-30/00-request-journal.jsonl",
+    "journal_sha256": "234def2950a4c4e7cb572d4323a1e402c968c1567be533ab9f07cc57d51663f1",
+    "raw_path": "docs/model-research/binance/raw/algo-execution-cost-overlay-v1-2026-08-30/01-current-openapi-schema.raw.yaml",
+    "raw_bytes": 0,
+    "raw_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "required_terms_found": 0,
+    "required_terms_total": 6,
+    "status_code": 202,
+    "source_gate_passed": false
+  },
+  "discovery_evidence_not_admitted_as_economics": {
+    "current_official_catalog_url": "https://developers.binance.com/en/docs/catalog",
+    "current_official_futures_rendered_url": "https://developers.binance.com/en/docs/catalog/advanced-trading-algo-trading/api/rest-api/future-algo",
+    "current_official_spot_rendered_url": "https://developers.binance.com/en/docs/catalog/advanced-trading-algo-trading/api/rest-api/spot-algo",
+    "retained_index_path": "docs/model-research/binance/raw/spot-block-matching-cost-overlay-v1-2026-08-30/03-agent-native-index.raw.txt",
+    "retained_index_sha256": "944e132d3523c8a03abcac2f7ddb85802107e45161470885b7a8785fd4fdb15d",
+    "observed_architecture": [
+      "POST /sapi/v1/algo/spot/newOrderTwap is a signed TRADE route.",
+      "POST /sapi/v1/algo/futures/newOrderTwap is a signed USD-M Futures TRADE route.",
+      "POST /sapi/v1/algo/futures/newOrderVp is a signed USD-M Futures TRADE route.",
+      "GET /sapi/v1/algo/futures/subOrders exposes child-order fee amount fee asset average price and time-in-force fields."
+    ],
+    "unproved": [
+      "execution-cost saving versus an identical-quantity direct execution at the same decision time",
+      "fill policy maker or taker mix extra algo fees and account eligibility",
+      "testnet or paper support and exact current symbol constraints",
+      "positive after-cost cash value and repeatability"
+    ]
+  },
+  "decision": {
+    "accepted_edge": false,
+    "deployment_ready": false,
+    "future_profit_guaranteed": false,
+    "profitability_proved": false,
+    "public_forward_saving_floor": "0",
+    "status": "material_direction_independent_execution_cost_candidate_failed_exact_public_source_gate",
+    "reason": "The frozen one-use exact schema request returned HTTP 202 with zero bytes and none of six preregistered terms. Rendered official documentation and the retained index preserve a distinct mechanism lead but cannot prove any saving or override the failed source gate."
+  },
+  "authority": {
+    "account_state_accessed": false,
+    "credentials_used": false,
+    "funds_used": false,
+    "live_or_paper_trading_authority": false,
+    "orders_or_trades": 0,
+    "protected_capture_accessed": false,
+    "public_unauthenticated_read_only_logical_requests": 1,
+    "signed_requests": 0,
+    "state_changes": 0
+  },
+  "retry_contract": {
+    "next_action": "Do not repeat or alias the consumed schema request. Reopen public research only on a materially new byte-retainable official execution or fee source. A signed historical child-order read additionally requires both designated credentials explicit signed GET-only authority and an independently existing legitimate algo order. Any prospective benchmark requires confirmed testnet or paper support separate explicit order authority an independently required legitimate BTC ETH or SOL execution and a precommitted identical-quantity direct-execution comparator; stop before every mainnet order or account mutation.",
+    "retry_trigger": "material_new_byte_retainable_official_algo_execution_or_fee_source_or_both_designated_credentials_plus_explicit_signed_GET_only_authority_plus_an_independently_existing_legitimate_algo_order_or_confirmed_testnet_or_paper_support_plus_separate_explicit_order_authority_plus_an_independently_required_legitimate_BTC_ETH_or_SOL_execution_with_a_precommitted_identical_quantity_direct_execution_comparator",
+    "terminal_without_trigger": true
+  },
+  "result_sha256": "621f03ae812f57e9c8994e6073adc4153ca6eb447e9db61bad3bebc36e0b242f"
+}
