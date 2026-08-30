@@ -6147,3 +6147,40 @@ compatible and was not used. Canonical result SHA-256 is
 Accepted edges remain 29, ranked hypotheses remain 44, terminal families become
 90, and registry SHA-256 becomes
 `1dbc873f6e01abee4d816add72e890112c61a39411300ccff206f13f6af88ef4`.
+
+## Accepted-edge profitability and durability audit
+
+A zero-network audit corrected the main R&D routing metric. The registry's 29
+accepted scopes are not 29 equally profitable strategies: they comprise one
+source-demonstrated recurring direct-cash edge, eight same-principal yield or
+capital overlays, twelve savings or rebate overlays that require independently
+existing internal activity, and eight external-user or client revenue overlays.
+Only eight scopes can add cash without an independently required trade, borrow,
+loan, conversion, or external user; all eight still require already-held idle
+principal or another pre-existing balance condition.
+
+Polymarket complete-set holding yield remains the strongest direct-cash result:
+42 of 42 positive daily payouts across BTC, ETH, and SOL on 1,039 pUSD produced
+1.2681 pUSD after direct split/merge principal loss and user gas, a
+principal-weighted 3.1820191118 percent realized annualized rate. It is not a
+stable deployment claim: the current rate remains fail-closed unqualified,
+public-wallet evidence is not owned-account qualification, external friction is
+not fully bound, and the public new-capital after-all-cost floor is zero.
+
+Binance LDUSDT is the strongest historical persistence overlay, with 505 aligned
+daily closes over 504 days and a 2.0109050595 percent compound annualized index
+increment. It remains non-standalone because it applies only to collateral
+already required by a separately profitable USD-M Futures strategy. After the
+retained ten-percent annual opportunity-cost sensitivity on only the extra
+principal required by the 99.9-percent collateral ratio, the historical
+increment is 2.0008950495 percent; exact account cash flows and external costs
+remain unproved.
+
+The strict current stable, account-qualified, after-all-cost edge count is zero.
+Future work must seek Tier-A recurring direct cash or materially improve Tier-A
+account, cost, capacity, and persistence evidence. Do not spend captures or tests
+merely accumulating organic-flow discounts, acceptance predicates, or referral
+programs. The Polymarket rank-one not-before remains
+`2026-08-31T02:15:30Z`; unchanged Binance triangle, stablecoin-cycle, and official
+documentation inventory screens remain consumed. Canonical audit SHA-256 is
+`30c622d280e280019c537cfcabc1d5e59d5617d1e905b278f6fb1403b293a0ad`.
