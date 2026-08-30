@@ -55,6 +55,15 @@ SEPT6_CATALOG_DATA = ROOT / (
 SEPT6_PACKAGE_DATA = ROOT / (
     "data/polymarket-mercyhurst-nmsu-margin-monotone-package-v1"
 )
+SEPT7_CATALOG_CONTRACT = ACTION / (
+    "polymarket-cfb-september-7-complete-monotone-catalog-contract-v1-2026-08-30.json"
+)
+SEPT7_CATALOG_RESULT = ACTION / (
+    "polymarket-cfb-september-7-complete-monotone-catalog-result-v1-2026-08-30.json"
+)
+SEPT7_CATALOG_DATA = ROOT / (
+    "data/polymarket-cfb-september-7-complete-monotone-catalog-v1"
+)
 
 
 def _load(path: Path) -> dict[str, object]:
@@ -166,7 +175,6 @@ def test_registry_terminalizes_exact_population_without_global_count_pinning() -
         "path": PACKAGE_RESULT.relative_to(ROOT).as_posix(),
         "result_sha256": result["result_sha256"],
     } in family["canonical_artifacts"]
-    assert "2026_09_06T23_59_59Z" in family["retry_trigger"]
     assert any(
         "other_five_observed_September_5" in shortcut
         for shortcut in family["prohibited_shortcuts"]
@@ -248,6 +256,54 @@ def test_september6_best_package_fails_depth_before_fee_access() -> None:
     )
     assert {
         "path": SEPT6_PACKAGE_RESULT.relative_to(ROOT).as_posix(),
+        "result_sha256": result["result_sha256"],
+    } in family["canonical_artifacts"]
+    assert any(
+        row["canonical_result_sha256"] == result["result_sha256"]
+        for row in registry["terminal_do_not_repeat"]
+    )
+
+
+def test_september7_complete_catalog_rejects_before_books_and_fees() -> None:
+    contract = _load(SEPT7_CATALOG_CONTRACT)
+    result = _load(SEPT7_CATALOG_RESULT)
+    raw = (SEPT7_CATALOG_DATA / "raw/events.json").read_bytes()
+    journal = [
+        json.loads(row)
+        for row in (SEPT7_CATALOG_DATA / "request-journal.jsonl")
+        .read_text()
+        .splitlines()
+    ]
+
+    assert _self_hash(contract, "contract_sha256") == contract["contract_sha256"]
+    assert _self_hash(result, "result_sha256") == result["result_sha256"]
+    assert [row["phase"] for row in journal] == ["intent", "completed"]
+    assert journal[-1]["response_sha256"] == _sha256(raw)
+    assert result["capture"]["population_complete_under_frozen_filter"] is True
+    assert result["capture"]["returned_event_count"] == 1
+    screen = result["screen"]
+    assert screen["included_event_count"] == 1
+    assert screen["complete_relation_count"] == len(screen["relations"]) == 1
+    assert screen["candidate_count_strictly_below_payout_floor"] == 0
+    assert screen["depth_candidate"] is None
+    assert screen["best_relation"]["event_slug"] == "cfb-smu-flst-2026-09-07"
+    assert Decimal(
+        screen["best_relation"]["displayed_price_sum_per_share_pUSD"]
+    ) == Decimal("1.09")
+    assert result["adjudication"]["next_action"] == (
+        "stop_without_any_book_or_fee_request"
+    )
+    assert result["authority"]["book_requests"] == 0
+    assert result["authority"]["fee_requests"] == 0
+
+    registry = _load(REGISTRY)
+    assert _self_hash(registry, "result_sha256") == registry["result_sha256"]
+    family = next(
+        row for row in registry["prioritized_hypotheses"] if row["priority_rank"] == 30
+    )
+    assert "2026_09_07T23_59_59Z" in family["retry_trigger"]
+    assert {
+        "path": SEPT7_CATALOG_RESULT.relative_to(ROOT).as_posix(),
         "result_sha256": result["result_sha256"],
     } in family["canonical_artifacts"]
     assert any(

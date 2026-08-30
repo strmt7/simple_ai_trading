@@ -1,0 +1,116 @@
+{
+  "schema_version": "polymarket-cfb-monotone-catalog-contract-v1",
+  "status": "frozen_before_future_cfb_catalog_outcome_access",
+  "frozen_at_utc": "2026-08-30T19:27:19.9130825Z",
+  "contract_path": "docs/model-research/action-value/polymarket-cfb-september-7-complete-monotone-catalog-contract-v1-2026-08-30.json",
+  "contract_sha256": "391356fc6d94e3e6c5407502afc94f81be4d4a3ea6192c1368dace613644bf19",
+  "purpose": "one nonoverlapping complete-population rejection screen for exact CFB full-game margin and total monotone payoff packages",
+  "trigger": {
+    "registry_rank": 30,
+    "literal_retry_trigger": "the first future distinct active accepting-orders CFB full-game event outside all consumed exact events and the consumed 2026-09-03 through 2026-09-06 window, with source-proved payoff implication and a rejection-only Gamma package strictly below its payout floor",
+    "population_role": "one prospectively fixed catalog discovery observation; a null result permits no adaptive poll",
+    "source_selected_event_evidence": [
+      {
+        "slug": "cfb-smu-flst-2026-09-07",
+        "url": "https://polymarket.com/event/cfb-smu-flst-2026-09-07",
+        "discovery_only_observation": "current primary event page exposes September 7 moneyline, SMU minus 2.5 spread, total 52.5, accepting purchase surfaces, and complete moneyline spread total cancellation and tie rules; displayed page prices are excluded from economics"
+      }
+    ],
+    "nonoverlap_proof": "the frozen 2026-09-07 UTC start-time window begins strictly after the consumed 2026-09-03T00:00:00Z through 2026-09-06T23:59:59Z CFB window and excludes every previously consumed exact event"
+  },
+  "current_primary_contracts": [
+    {
+      "url": "https://docs.polymarket.com/api-reference/events/list-events-keyset-pagination",
+      "role": "public unauthenticated GET keyset endpoint fields filters cursor semantics and maximum limit 500"
+    },
+    {
+      "url": "https://docs.polymarket.com/market-data/overview",
+      "role": "Gamma market and event metadata are public market-data discovery"
+    }
+  ],
+  "population_capacity_preflight": {
+    "observed_complete_prior_day_event_count": 24,
+    "frozen_limit": 500,
+    "headroom_events": 476,
+    "decision": "the immediately prior complete one-day CFB population used 4.8 percent of the frozen endpoint limit; any returned cursor still fails closed without pagination"
+  },
+  "capture": {
+    "closed": false,
+    "tag_slug": "cfb",
+    "series_id": "12756",
+    "start_time_min": "2026-09-07T00:00:00Z",
+    "start_time_max": "2026-09-07T23:59:59Z",
+    "limit": 500,
+    "order": "startTime",
+    "ascending": true,
+    "request_count": 1
+  },
+  "payoff_gate": {
+    "admissible_market_families": [
+      "full_game_moneyline_and_spread_integer_margin_thresholds_with_half_half_game_tie",
+      "full_game_over_under_integer_total_thresholds"
+    ],
+    "required_states": "every reachable integer terminal margin or total plus cancellation",
+    "minimum_package_payout_per_paired_share_pUSD": "1",
+    "gamma_role": "rejection only; outcomePrices cannot accept promote or prove executable profitability",
+    "candidate_definition": "displayed Gamma price sum strictly below the machine-proved minimum payout floor"
+  },
+  "escalation": {
+    "incomplete_page": "stop without following a cursor or requesting books",
+    "complete_page_zero_candidate": "stop without books or fee requests",
+    "complete_page_positive_candidates": "precommit only the lowest-price exact package then freeze one separate exact token-depth and fee screen",
+    "accepted_edge_by_this_contract": false,
+    "independent_positive_recurrence_required": true
+  },
+  "authority": {
+    "account_requests": 0,
+    "book_requests": 0,
+    "credentials_used": false,
+    "fee_requests": 0,
+    "funds_used": false,
+    "orders_or_transactions": 0,
+    "protected_capture_touched": false,
+    "public_unauthenticated_read_only_requests": 1,
+    "signed_requests": 0,
+    "trading_authority": false
+  },
+  "implementations": [
+    {
+      "path": "tools/screen_polymarket_cfb_monotone_catalog.py",
+      "sha256": "d26ef14fe6178e209ceb1ec98c37d7797e054108d623de3ba16e8fb3e2fd2467"
+    },
+    {
+      "path": "tools/adjudicate_polymarket_exact_cfb_monotone_prefilter.py",
+      "sha256": "8413cac195bae8c96076da0de1d74f2b0c8c95b0f6172445f2e9c1f297067e74"
+    },
+    {
+      "path": "tools/adjudicate_polymarket_exact_nfl_monotone_prefilter.py",
+      "sha256": "6e7119c7827d04435378136fcca3e13378f752d9da102ea88c6a65ce4d9885cd"
+    },
+    {
+      "path": "tools/adjudicate_polymarket_exact_mlb_monotone_prefilter.py",
+      "sha256": "958a44d78029b9a1eb69a3771ce18e53ac1ed3c7bc161c8e4318beedce2cf99f"
+    },
+    {
+      "path": "tools/screen_polymarket_exact_two_leg_package.py",
+      "sha256": "ba7ebaa1fb5235ba026f7cf4cb21ff73ba19430fee4a4f678fbdea37635eb32f"
+    },
+    {
+      "path": "tools/screen_polymarket_mlb_cross_period_catalog.py",
+      "sha256": "a916790e7e0320089b9f76c49aff43c072312f24599de351820d3fb872e6eddd"
+    }
+  ],
+  "outputs": {
+    "raw_path": "data/polymarket-cfb-september-7-complete-monotone-catalog-v1/raw/events.json",
+    "journal_path": "data/polymarket-cfb-september-7-complete-monotone-catalog-v1/request-journal.jsonl",
+    "result_path": "docs/model-research/action-value/polymarket-cfb-september-7-complete-monotone-catalog-result-v1-2026-08-30.json"
+  },
+  "prohibited_shortcuts": [
+    "adaptive polling narrowing pagination or depth selection after viewing this catalog",
+    "including any event whose UTC start time is outside the frozen September 7 window",
+    "assuming league event market or payoff identity from a title alone",
+    "treating Gamma prices as executable asks",
+    "requesting books or fees without a complete page and strict sub-floor candidate",
+    "credentials accounts orders funds or protected capture access"
+  ]
+}

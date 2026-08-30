@@ -5882,3 +5882,23 @@ routing addendum SHA-256 is
 Accepted edges remain 29, ranked hypotheses remain 44, terminal families remain
 83, and registry SHA-256 becomes
 `8262b29c4ba9b6eb322beb91d18a9c44756355b451374292904aa569e7c81941`.
+
+## Polymarket September 7 CFB monotone rejection
+
+The current primary SMU vs. Florida State event page supplied the exact
+nonoverlapping rank-30 trigger: a September 7 CFB game with moneyline, spread,
+total, active purchase surfaces, and complete resolution rules. One frozen
+public September 7 keyset GET returned exactly that event, no cursor, and one
+machine-proved moneyline/spread monotone relation.
+
+Its rejection-only Gamma sum was 1.09 pUSD—SMU 0.59 plus Florida State 0.50—
+against a 1 pUSD minimum payout. The optimistic floor was therefore negative
+0.09 pUSD before depth, fees, or any external cost. Zero candidates cleared the
+strict sub-floor gate, so no book or fee endpoint was called. Do not repeat,
+paginate, narrow, refetch, or request books for September 7. Contract SHA-256 is
+`391356fc6d94e3e6c5407502afc94f81be4d4a3ea6192c1368dace613644bf19`;
+result SHA-256 is
+`5cba2d835c600d8eec6b8f27a7010a535b72292680d5a558fb44f29316a3c796`.
+Accepted edges remain 29, ranked hypotheses remain 44, terminal families become
+84, and registry SHA-256 becomes
+`7c4c4ecc062a4cda012958571fcc477e304d38e0f00f8c67aecd37ae4a031645`.
