@@ -2168,3 +2168,24 @@ special cases. Canonical exact-book result SHA-256 is
 `2dcaa72b8a9643b3f6652691f7395ac5405cd6f15ee88e57ce45af1f69b0dc6b`;
 registry SHA-256 is
 `f6b73019910d57daf98764d78a80e487421ae73525499ad1c4e5600ab6018d4f`.
+
+## Polymarket BTC September 5 paired-maker reward rejection
+
+Rank 17's distinct source-selected exact-allocation trigger fired for the BTC
+above 72,000 on September 5 market. Exact Gamma and the sponsored-condition
+endpoint reconciled two tokens, a 50-share minimum, 4.5-cent spread, zero maker
+fee, and 1.99972 pUSD/day without using discovery-page values. The separately
+frozen book was 30,871 ms old, so it does not qualify current execution. Its
+retained best-bid observation still rejected the exact snapshot: 2.05 pUSD
+both-fill gross, 46.80 pUSD maximum orphan loss, and only 12.923014 pUSD even
+under the impossible assumption of capturing the entire remaining reward pool.
+Do not refetch this exact market. A zero-request correction verified that the
+retained Gamma and reward rows contain the same ordered YES/NO token IDs and
+updated the reusable runner to enforce that previously omitted cross-source
+gate. Correction SHA-256 is
+`61df67471329b0e4a1273deea0fbbba9d918d3e11559b3dc26f6f462f69691a4`.
+No credential, account, order, fund, or protected-capture boundary changed.
+Canonical adjudication SHA-256 is
+`1153ef2f90345be8ebfda5b0c2fd3f02a56dc0dad854edf251e21370a9677743`;
+accepted edges remain 21 and terminal families become 55. Registry SHA-256 is
+`d82fe12b7ec4fb7765bdbad781ac7fc6ef1e6bf26da84882ab42f139411bb6fd`.
