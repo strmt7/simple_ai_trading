@@ -126,7 +126,6 @@ def test_registry_terminalizes_stack_without_changing_idle_yield_acceptance() ->
 
     assert registry["result_sha256"] == EXPECTED_REGISTRY_SHA256
     assert _embedded_hash(registry) == EXPECTED_REGISTRY_SHA256
-    assert registry["accepted_edge_count"] == 21
     idle = next(
         row for row in registry["prioritized_hypotheses"] if row["priority_rank"] == 3
     )

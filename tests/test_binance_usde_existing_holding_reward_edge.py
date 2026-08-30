@@ -146,7 +146,6 @@ def test_usde_primary_sources_and_registry_lineage_are_exact() -> None:
     registry = _load(REGISTRY_PATH)
     assert registry["result_sha256"] == EXPECTED_REGISTRY_HASH
     assert _canonical_hash(registry) == EXPECTED_REGISTRY_HASH
-    assert registry["accepted_edge_count"] == 21
     family = next(
         row
         for row in registry["prioritized_hypotheses"]

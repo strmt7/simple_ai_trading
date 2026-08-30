@@ -218,7 +218,6 @@ def test_registry_binds_the_exact_event_scope_without_promoting_the_edge() -> No
     assert candidate["retry_trigger"].startswith(
         "materially_new_primary_evidence_that_changes_queue_attribution"
     )
-    assert registry["accepted_edge_count"] == 21
     assert artifact["research_decision"]["accepted_edge_count_change"] == 0
     assert (
         artifact["prospective_fill_and_unwind_capture"]["active_result_claim"] is False

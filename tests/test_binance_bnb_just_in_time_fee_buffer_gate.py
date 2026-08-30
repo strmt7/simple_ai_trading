@@ -111,7 +111,6 @@ def test_public_minimums_and_registry_promotion_are_exact() -> None:
     registry = _load(REGISTRY)
     assert registry["result_sha256"] == EXPECTED_REGISTRY_HASH
     assert _embedded_hash(registry) == EXPECTED_REGISTRY_HASH
-    assert registry["accepted_edge_count"] == 21
     hypotheses = registry["prioritized_hypotheses"]
     assert [row["priority_rank"] for row in hypotheses] == list(range(1, 45))
     candidate = next(

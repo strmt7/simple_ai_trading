@@ -1,6 +1,6 @@
 {
-  "accepted_edge_count": 21,
-  "accepted_edge_scope": "twenty-one scoped structural edges: Polymarket complete-set holding yield for existing idle on-platform pUSD; Polymarket pUSD taker-fee rebates only for independently justified legitimate organic BTC ETH SOL taker flow after the direct-wallet tier is effective; Polymarket builder fees only on bona fide independently existing third-party orders routed through an owned app with an account-confirmed active disclosed positive rate; Polymarket referral rewards only for authentic external referrals when the account independently cleared the lifetime-volume threshold; Polymarket Perps referral fee share only for authentic external traders within account-confirmed available invites and without volume-based invite unlocking; Binance Soft Staking yield for already-held idle non-order ETH SOL Spot inventory; LDUSDT or independently existing RWUSD reward retention only for already-required USD-M Futures collateral with the exact applicable account haircut and limits; just-in-time BNB fee reduction only for independently justified organic Spot flow; current quote-native BTC ETH SOL promotional fee reduction without quote acquisition or extra volume; current TradFi perpetual zero-maker and reduced-taker fee overlay only for independently justified organic flow with the exact current symbol and actual fill role; current Binance Stocks promotional trading-spread reduction only for independently justified organic direct-stock flow with the exact current order tier and realized fee; current bStocks zero-maker fee only for independently justified organic maker flow through 2026-09-30T23:59:00Z with exact owned fill role and counterfactual account fee; USD1 WLFI holding-airdrop yield only for already-held eligible USD1; current fixed USD1 Simple Earn bonus only on at most the first 1500 independently already-held idle USD1 under a mutually exclusive balance-specific holding-airdrop comparison; U Flexible yield only for already-held eligible non-EEA U; automatic RWUSD VIP bonus only on independently required existing RWUSD; current USDT Flexible bonus yield only for independently held idle eligible USDT; current automatic USDe holding reward only for eligible USDe already independently held on Binance for at least 24 hours; Binance Square base 20 percent Write to Earn commission only on authentic external readers independently existing eligible fee-bearing trades attributed to genuinely useful content; Binance Referral Pro base 20 percent Spot Margin and 10 percent one-year Futures fee commission only for authentic independently acquired new external users; and fail-closed one-intermediary Binance Spot route savings only for an independently required legitimate same-account organic conversion after exact account fees filters fresh finite-size depth residuals extra-leg stress and failure-unwind costs remain strictly cheaper than the direct route; none is deployment-ready or fully account-and-external-cost-qualified",
+  "accepted_edge_count": 22,
+  "accepted_edge_scope": "twenty-two scoped structural edges: Polymarket complete-set holding yield for existing idle on-platform pUSD; Polymarket pUSD taker-fee rebates only for independently justified legitimate organic BTC ETH SOL taker flow after the direct-wallet tier is effective; Polymarket builder fees only on bona fide independently existing third-party orders routed through an owned app with an account-confirmed active disclosed positive rate; Polymarket referral rewards only for authentic external referrals when the account independently cleared the lifetime-volume threshold; Polymarket Perps referral fee share only for authentic external traders within account-confirmed available invites and without volume-based invite unlocking; Binance Soft Staking yield for already-held idle non-order ETH SOL Spot inventory; LDUSDT or independently existing RWUSD reward retention only for already-required USD-M Futures collateral with the exact applicable account haircut and limits; just-in-time BNB fee reduction only for independently justified organic Spot flow; current quote-native BTC ETH SOL promotional fee reduction without quote acquisition or extra volume; current TradFi perpetual zero-maker and reduced-taker fee overlay only for independently justified organic flow with the exact current symbol and actual fill role; current Binance Stocks promotional trading-spread reduction only for independently justified organic direct-stock flow with the exact current order tier and realized fee; current bStocks zero-maker fee only for independently justified organic maker flow through 2026-09-30T23:59:00Z with exact owned fill role and counterfactual account fee; USD1 WLFI holding-airdrop yield only for already-held eligible USD1; current fixed USD1 Simple Earn bonus only on at most the first 1500 independently already-held idle USD1 under a mutually exclusive balance-specific holding-airdrop comparison; U Flexible yield only for already-held eligible non-EEA U; automatic RWUSD VIP bonus only on independently required existing RWUSD; current USDT Flexible bonus yield only for independently held idle eligible USDT; current automatic USDe holding reward only for eligible USDe already independently held on Binance for at least 24 hours; Binance Square base 20 percent Write to Earn commission only on authentic external readers independently existing eligible fee-bearing trades attributed to genuinely useful content; Binance Referral Pro base 20 percent Spot Margin and 10 percent one-year Futures fee commission only for authentic independently acquired new external users; exact realized monthly Binance Institutional Loan interest rebates only on an independently required existing eligible loan when KYB VIP eligibility and the applicable performance target were independently satisfied without creating trading volume Open Interest Net Asset Value borrowing leverage or collateral exposure; and fail-closed one-intermediary Binance Spot route savings only for an independently required legitimate same-account organic conversion after exact account fees filters fresh finite-size depth residuals extra-leg stress and failure-unwind costs remain strictly cheaper than the direct route; none is deployment-ready or fully account-and-external-cost-qualified",
   "authority": {
     "live_trading_authority": false,
     "paper_trading_authority": false,
@@ -1264,7 +1264,8 @@
         "exact independently required loan asset quantity variable interest history and duration",
         "exact pledged Simple Earn collateral position reward tiers and owned reward history",
         "initial margin-call and liquidation LTV with collateral and borrowed-asset stress",
-        "liquidation fee repayment conversion capital opportunity custody tax and operational costs"
+        "liquidation fee repayment conversion capital opportunity custody tax and operational costs",
+        "for the accepted Institutional Loan rebate overlay exact current account KYB VIP regional enrollment applicable independently satisfied performance target existing eligible loan asset principal month charged interest successful rebate record and every incremental cost"
       ],
       "canonical_artifacts": [
         {
@@ -1274,12 +1275,16 @@
         {
           "path": "docs/model-research/action-value/binance-flexible-loan-same-asset-loop-adjudication-v1-2026-08-30.json",
           "result_sha256": "7106bb072533327d3154c773ba2c1969ff7891df6ec16d314f2d8f1b410f48e6"
+        },
+        {
+          "path": "docs/model-research/action-value/binance-institutional-loan-interest-rebate-overlay-v1-2026-08-30.json",
+          "result_sha256": "e8e17c66a238878e722aa635f1517b685c00fcc9b288c72df3d934a8c235e59c"
         }
       ],
-      "current_status": "candidate_not_accepted_current_official_sources_say_existing_Simple_Earn_Flexible_collateral_continues_earning_while_securing_an_isolated_overcollateralized_open_term_Flexible_Loan_but_the_direction_independent_direct_same_asset_loop_is_publicly_blocked_because_the_live_official_page_explicitly_says_same_cryptocurrency_collateral_loan_pairs_are_not_supported_and_the_newer_2026_overview_does_not_reverse_that_rule_a_reciprocal_two_position_workaround_remains_cross_asset_isolated_and_liquidation_path_sensitive_every_current_asset_rate_LTV_position_income_and_reward_input_is_signed_USER_DATA_the_designated_credentials_are_absent_and_the_public_after_cost_floor_is_zero",
+      "current_status": "Flexible_Loan_collateral_yield_candidate_not_accepted_current_official_sources_say_existing_Simple_Earn_Flexible_collateral_continues_earning_but_the_direction_independent_direct_same_asset_loop_is_blocked_and_every_exact_rate_LTV_position_income_and_reward_input_is_signed_USER_DATA_plus_one_accepted_scoped_direction_independent_Institutional_Loan_cost_overlay_the_Binance_issued_release_effective_2026_06_01_says_KYB_VIP_borrowers_may_qualify_for_full_monthly_interest_rebates_on_USDT_USDC_BTC_or_U_up_to_10_million_USD_via_independently_met_incremental_trading_volume_share_Open_Interest_or_Net_Asset_Value_targets_and_the_current_official_API_index_exposes_interest_rebate_balance_and_record_endpoints_but_public_forward_value_is_zero_until_exact_account_eligibility_target_interest_realized_credit_and_every_incremental_cost_are_proved",
       "market_direction_forecast_required": false,
-      "mechanism": "binance_flexible_loan_simple_earn_collateral_yield_retention",
-      "next_action": "do_not_research_or_attempt_a_direct_same_cryptocurrency_loop_unless_a_material_current_official_or_signed_pair_eligibility_source_explicitly_reverses_the_restriction_for_an_independently_existing_cross_asset_Flexible_Loan_question_only_if_both_designated_ephemeral_credentials_become_available_under_explicit_read_only_authority_freeze_one_bounded_exact_asset_position_interest_and_reward_prequalification_then_stop_before_every_TRADE_or_balance_mutation",
+      "mechanism": "binance_loan_interest_rebate_and_collateral_yield_overlays",
+      "next_action": "for_Flexible_Loan_do_not_research_or_attempt_a_direct_same_cryptocurrency_loop_unless_a_material_current_official_or_signed_pair_eligibility_source_reverses_the_restriction_for_an_independently_existing_cross_asset_question_for_Institutional_Loan_only_when_both_designated_credentials_explicit_signed_GET_only_authority_and_an_independently_existing_legitimate_loan_question_exist_freeze_one_bounded_active_risk_unit_interest_rebate_balance_and_rebate_record_reconciliation_credit_only_exact_realized_cash_after_every_incremental_cost_and_stop_before_every_application_enrollment_borrow_repay_transfer_collateral_order_trade_or_account_manager_contact",
       "priority_rank": 26,
       "prohibited_shortcuts": [
         "borrowing_or_acquiring_collateral_to_create_the_reward",
@@ -1289,10 +1294,14 @@
         "using_loan_proceeds_reinvestment_or_leverage_as_the_edge",
         "assuming_same_cryptocurrency_collateral_and_debt_are_supported",
         "calling_two_reciprocal_isolated_cross_asset_loans_same_asset_or_market_direction_independent",
-        "calling_collateral_rewards_profitable_loan_economics_before_the_full_exact_unit_break_even_passes"
+        "calling_collateral_rewards_profitable_loan_economics_before_the_full_exact_unit_break_even_passes",
+        "borrowing_increasing_leverage_or_retaining_an_Institutional_Loan_to_chase_an_interest_rebate",
+        "manufacturing_trading_volume_Open_Interest_or_Net_Asset_Value_or_assuming_an_unpublished_performance_threshold",
+        "counting_a_pending_displayed_estimated_or_source_only_full_rebate_before_an_exact_successful_owned_credit_record",
+        "contacting_an_account_manager_applying_enrolling_or_querying_signed_loan_state_without_separate_exact_authority"
       ],
-      "retry_trigger": "both_SIMPLE_AI_TRADING_BINANCE_MAINNET_API_KEY_and_SIMPLE_AI_TRADING_BINANCE_MAINNET_API_SECRET_available_with_explicit_read_only_authority_and_an_independently_existing_or_required_cross_asset_Flexible_Loan_question_or_a_material_current_official_or_signed_pair_eligibility_source_explicitly_permits_the_exact_same_collateral_and_loan_cryptocurrency",
-      "venue_scope": "binance_Flexible_Loans_and_Simple_Earn_Flexible_collateral"
+      "retry_trigger": "both_SIMPLE_AI_TRADING_BINANCE_MAINNET_API_KEY_and_SIMPLE_AI_TRADING_BINANCE_MAINNET_API_SECRET_available_with_explicit_signed_GET_only_authority_and_either_an_independently_existing_or_required_cross_asset_Flexible_Loan_question_or_an_independently_existing_legitimate_Institutional_Loan_interest_rebate_question_or_a_material_current_official_or_signed_Flexible_Loan_pair_eligibility_or_Institutional_Loan_rebate_target_asset_cap_accounting_distribution_or_program_change",
+      "venue_scope": "binance_Flexible_Loans_Simple_Earn_Flexible_collateral_and_Institutional_Loan_interest_rebates"
     },
     {
       "blocking_evidence": [
@@ -2264,7 +2273,7 @@
       "venue_scope": "Binance_Spot_direct_and_exactly_one_intermediary_routes_for_independently_required_organic_conversions_with_the_exactly_two_intermediary_extension_terminal_for_the_retained_population"
     }
   ],
-  "result_sha256": "8813fbc12ea5fe5ad5eb38630c7faba9c1a740389266ad27bb0c5db41759c52a",
+  "result_sha256": "e4ec302a1cc32a57ec1d68cf00ab5d99cbc22d74b80fbc3c68da242485899fd4",
   "schema_version": "structural-edge-priority-registry-v1",
   "terminal_do_not_repeat": [
     {
@@ -2543,6 +2552,6 @@
       "reason": "exact_Gamma_and_sponsored_condition_sources_reconciled_at_50_shares_4_5_cents_and_1_99972_pUSD_per_day_but_the_consumed_two_token_book_was_30871_ms_old_and_the_retained_best_bid_join_had_only_2_05_pUSD_both_fill_gross_against_46_80_pUSD_maximum_orphan_loss_while_even_100_percent_of_all_remaining_rewards_was_only_12_923014_pUSD_do_not_refetch_or_treat_the_snapshot_as_current_executable_economics"
     }
   ],
-  "updated_at_utc": "2026-08-30T05:35:46.6985092Z",
+  "updated_at_utc": "2026-08-30T05:45:41.3501248Z",
   "usage_rule": "advance_the_highest_ranked_hypothesis_whose_retry_trigger_is_satisfied_otherwise_do_not_repeat_a_blocked_or_terminal_screen"
 }

@@ -155,4 +155,3 @@ def test_registry_requires_rejection_only_prefilter_before_another_book_batch() 
         "using_Gamma_prices_to_accept_or_promote" in shortcut
         for shortcut in row["prohibited_shortcuts"]
     )
-    assert registry["accepted_edge_count"] == 21

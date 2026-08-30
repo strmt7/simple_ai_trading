@@ -1,0 +1,100 @@
+{
+  "adjudication": {
+    "accepted_edge": true,
+    "accepted_scope": "exact realized monthly Institutional Loan interest rebate credited on an independently required existing eligible loan only when KYB VIP eligibility and the applicable performance target were independently satisfied without creating or enlarging trading volume open interest net asset value borrowing leverage or collateral exposure",
+    "deployment_ready": false,
+    "market_direction_forecast_required": false,
+    "profitability_claim": false,
+    "status": "accepted_scoped_direction_independent_realized_institutional_loan_interest_rebate_overlay_account_eligibility_target_exact_interest_credit_and_all_incremental_costs_unproved",
+    "trading_authority": false
+  },
+  "authority": {
+    "account_requests": 0,
+    "credentials_used": false,
+    "funded_actions": 0,
+    "loan_or_collateral_actions": 0,
+    "orders_or_cancellations": 0,
+    "public_network_requests": 1,
+    "signed_requests": 0
+  },
+  "created_at_utc": "2026-08-30T05:42:42.9118128Z",
+  "economic_contract": {
+    "account_qualified_forward_floor_before_exact_evidence": "0",
+    "credit_ceiling": "the lesser of exact eligible monthly interest charged and exact realized rebate credited after every account-specific program limit",
+    "incremental_net_saving_identity": "exact realized eligible interest rebate credit minus every incremental target attainment account operating tax and opportunity cost",
+    "public_forward_floor_quote_units": "0",
+    "reason_public_floor_is_zero": "The issuer release says borrowers may qualify but publishes no performance thresholds, enrollment state, account eligibility decision, calculation period, distribution date, termination date, or realized credit.",
+    "source_only_full_rebate_is_realized_cash": false
+  },
+  "issuer_terms": {
+    "access": "all KYB-verified VIP clients; the availability paragraph specifies VIP 1 and above",
+    "effective_at_utc": "2026-06-01T00:00:00Z",
+    "eligible_borrow_assets": [
+      "USDT",
+      "USDC",
+      "BTC",
+      "U"
+    ],
+    "institutional_loan_limits_usd": {
+      "maximum": "10000000",
+      "minimum": "1000000"
+    },
+    "liquidation_warning": "all Institutional Lending Account balance may be liquidated if prices move against the borrower",
+    "performance_target_alternatives": [
+      "incremental trading volume share",
+      "Open Interest",
+      "Net Asset Value"
+    ],
+    "program": "Binance Institutional Loan Interest Rebate Program",
+    "rebate_description": "borrowers may qualify for full monthly interest rebates",
+    "rebate_scope_cap_usd": "10000000"
+  },
+  "prohibited_actions": [
+    "borrowing increasing leverage or retaining a loan to chase the rebate",
+    "manufacturing enlarging churning self-matching or wash trading volume or Open Interest",
+    "moving or retaining assets solely to satisfy a Net Asset Value target",
+    "assuming eligibility a performance threshold full rebate enrollment duration or payment from the public release",
+    "contacting an account manager applying enrolling or disclosing records without separate explicit authority",
+    "querying signed account endpoints without both designated credentials and explicit signed GET-only authority",
+    "counting a pending displayed or estimated balance as realized cash",
+    "using the rebate to rescue an independently unprofitable loan trade or collateral strategy",
+    "double counting the credit against referral rebates fee promotions yield or another interest subsidy"
+  ],
+  "result_sha256": "e8e17c66a238878e722aa635f1517b685c00fcc9b288c72df3d934a8c235e59c",
+  "schema_version": "binance-institutional-loan-interest-rebate-overlay-v1",
+  "signed_read_only_contract": {
+    "endpoint_security": "USER_DATA",
+    "required_endpoints_after_exact_authority": [
+      "GET /sapi/v1/margin/loan-groups/activated",
+      "GET /sapi/v1/margin/loan-group/interest-history",
+      "GET /sapi/v1/margin/loan-group/interest-rebate-balance",
+      "GET /sapi/v1/margin/loan-group/interest-rebate-balance/records"
+    ],
+    "required_reconciliation": "match exact loan asset principal and month to charged interest and a successful realized rebate record; deduct every incremental target and operating cost",
+    "state_changes_authorized": false
+  },
+  "sources": {
+    "current_official_api_index": {
+      "path": "docs/model-research/binance/raw/spot-block-matching-cost-overlay-v1-2026-08-30/03-agent-native-index.raw.txt",
+      "sha256": "944e132d3523c8a03abcac2f7ddb85802107e45161470885b7a8785fd4fdb15d"
+    },
+    "issuer_distributed_release": {
+      "authorship_gate": "News provided by Binance",
+      "path": "docs/model-research/binance/raw/institutional-loan-interest-rebate-source-v1-2026-08-30/01-binance-issued-release.raw.html",
+      "sha256": "98a1358fff0d81be68885a59325a10b0a4e08f5fc3b97af451131132a3461bd3"
+    },
+    "request_intent": "docs/model-research/binance/raw/institutional-loan-interest-rebate-source-v1-2026-08-30/00-request-intent.json",
+    "request_receipt": "docs/model-research/binance/raw/institutional-loan-interest-rebate-source-v1-2026-08-30/02-request-receipt.json"
+  },
+  "unresolved_gates": [
+    "current account KYB VIP and regional eligibility",
+    "active program enrollment and exact applicable performance target threshold",
+    "proof that the target was satisfied independently of the rebate",
+    "existing independently required eligible loan asset principal and interest period",
+    "exact charged monthly interest and successful rebate balance record",
+    "rebate calculation cap distribution timing expiration clawback and tax treatment",
+    "every incremental account operating compliance and opportunity cost",
+    "liquidation and collateral risk of the underlying loan remains separate and cannot be netted away"
+  ],
+  "retry_policy": "advance only when both SIMPLE_AI_TRADING_BINANCE_MAINNET_API_KEY and SIMPLE_AI_TRADING_BINANCE_MAINNET_API_SECRET are available with explicit signed GET-only authority and an independently existing legitimate Institutional Loan question; any application enrollment borrowing repayment transfer collateral order trade or account-manager contact requires separate explicit authority"
+}

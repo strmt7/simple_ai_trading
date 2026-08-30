@@ -1,0 +1,11 @@
+{
+  "credentials_used": false,
+  "elapsed_seconds": "1.093252",
+  "method": "GET",
+  "payload_bytes": 190613,
+  "payload_sha256": "98a1358fff0d81be68885a59325a10b0a4e08f5fc3b97af451131132a3461bd3",
+  "received_after_utc": "2026-08-30T05:40:50.6680547Z",
+  "requested_before_utc": "2026-08-30T05:40:49.5482308Z",
+  "status_code": 200,
+  "url": "https://www.prnewswire.co.uk/news-releases/binance-expands-institutional-loan-access-to-all-kyb-verified-vip-clients-adds-interest-rebates-higher-leverage-and-fixed-rate-options-302768001.html"
+}

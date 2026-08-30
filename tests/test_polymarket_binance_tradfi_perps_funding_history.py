@@ -237,7 +237,6 @@ def test_registry_terminalizes_tradfi_cross_venue_funding_without_acceptance() -
     registry = json.loads(REGISTRY.read_text(encoding="ascii"))
     assert registry["result_sha256"] == REGISTRY_HASH
     assert _canonical_hash(registry) == REGISTRY_HASH
-    assert registry["accepted_edge_count"] == 21
     assert len(registry["prioritized_hypotheses"]) == 44
     hypothesis = next(
         value

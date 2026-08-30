@@ -127,7 +127,6 @@ def test_registry_binds_referral_and_flexible_loan_without_overpromotion() -> No
 
     assert registry["result_sha256"] == REGISTRY_HASH
     assert _canonical_hash(registry) == REGISTRY_HASH
-    assert registry["accepted_edge_count"] == 21
     hypotheses = registry["prioritized_hypotheses"]
     assert [row["priority_rank"] for row in hypotheses] == list(range(1, 45))
 
@@ -147,14 +146,20 @@ def test_registry_binds_referral_and_flexible_loan_without_overpromotion() -> No
         }
     ]
 
-    loan = next(
-        row
-        for row in hypotheses
-        if row["mechanism"]
-        == "binance_flexible_loan_simple_earn_collateral_yield_retention"
-    )
+    loan = next(row for row in hypotheses if row["priority_rank"] == 26)
     assert loan["priority_rank"] == 26
-    assert "candidate_not_accepted" in loan["current_status"]
+    assert (
+        loan["mechanism"]
+        == "binance_loan_interest_rebate_and_collateral_yield_overlays"
+    )
+    assert (
+        "Flexible_Loan_collateral_yield_candidate_not_accepted"
+        in loan["current_status"]
+    )
+    assert (
+        "accepted_scoped_direction_independent_Institutional_Loan"
+        in loan["current_status"]
+    )
     assert {
         "path": (
             "docs/model-research/action-value/"

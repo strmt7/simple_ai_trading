@@ -1,0 +1,11 @@
+{
+  "access_note": "The issuer-distributed release was already opened during public discovery. This request retains that exact page for provenance only and has no outcome-sensitive acceptance gate.",
+  "authority": "public_unauthenticated_read_only",
+  "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "frozen_at_utc": "2026-08-30T05:40:29.4158766Z",
+  "method": "GET",
+  "promotion_boundary": "No source-only profitability or deployment promotion; exact account eligibility, independently met target, loan principal, charged interest, rebate record, and all alternative costs remain mandatory.",
+  "purpose": "Retain the Binance-issued PR Newswire release that defines Institutional Loan interest-rebate scope and effective date.",
+  "response_byte_ceiling": 1000000,
+  "url": "https://www.prnewswire.co.uk/news-releases/binance-expands-institutional-loan-access-to-all-kyb-verified-vip-clients-adds-interest-rebates-higher-leverage-and-fixed-rate-options-302768001.html"
+}

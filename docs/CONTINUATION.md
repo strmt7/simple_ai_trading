@@ -12,7 +12,7 @@ Development belongs only on `main`; do not create another development branch.
   code-scanning, and secret-scanning alerts. Reverify the publication commit;
   zero alerts never proves zero undisclosed vulnerabilities.
 - The repository is beta `0.1.0-beta.1`. No model has production authority or a
-  demonstrated long-lived after-all-cost edge. Twenty-one narrowly scoped structural
+  demonstrated long-lived after-all-cost edge. Twenty-two narrowly scoped structural
   edges are accepted: Polymarket holding yield for existing idle on-platform
   pUSD; Polymarket pUSD taker-fee rebates only for independently justified
   legitimate organic BTC/ETH/SOL taker flow after the direct-wallet tier is
@@ -50,7 +50,11 @@ Development belongs only on `main`; do not create another development branch.
   one-year Futures fee commission only for authentic independently acquired new
   external users; and Polymarket Perps' separate 20% fee share only for authentic
   external traders within account-confirmed available invites without volume-
-  based invite unlocking. Each Binance
+  based invite unlocking; and exact realized monthly Binance Institutional Loan
+  interest rebates only on an independently required existing eligible loan when
+  KYB VIP eligibility and the applicable performance target were independently
+  satisfied without creating trading volume, Open Interest, Net Asset Value,
+  borrowing, leverage, or collateral exposure. Each Binance
   edge is limited to independently required inventory or organic flow under its
   canonical account, liquidity, cost, and non-manufactured-volume gates.
   A current BTC Simple Earn Flexible product is only an extension candidate:
@@ -3500,8 +3504,9 @@ overlays; its terminal source-capture entries now total 52.
 ## Accepted Market-Independent Yield Frontier
 
 A zero-network portfolio audit now ranks all nine accepted yield and capital-
-efficiency overlays separately from the twelve accepted fee, referral, creator,
-and organic-flow overlays. It does not add an edge or loosen any gate. All nine
+efficiency overlays separately from the thirteen accepted fee, referral,
+creator, financing-cost, and organic-flow overlays. It does not add an edge or
+loosen any gate. All nine
 remain existing-balance or already-required-capital overlays; none authorizes
 asset acquisition, borrowing, retention, subscription, transfer, conversion,
 or trading, and none is deployment-ready.
@@ -3527,7 +3532,7 @@ USD1 Simple Earn through September 25. This is an evidence-routing order, not
 an instruction to acquire, subscribe, or move principal. Canonical frontier:
 `docs/model-research/action-value/accepted-market-independent-yield-frontier-v1-2026-08-30.json`,
 result SHA-256
-`e99021f9b49c13f4cfb894d01c4125a5604ae7bf4cf9e7b20f2c204f6a91b8e0`.
+`7a7fa5ed15ab63bfd0c4d5d2ce65888391a72c4e73eea69e7f7c1fcf01a13fb8`.
 
 ## pUSD-to-USDT Fixed-Bonus Opportunity-Cost Rejection
 
@@ -4227,3 +4232,34 @@ unauthorized. Canonical preflight SHA-256 is
 Accepted edges remain 21, ranked hypotheses remain 44, and terminal families
 remain 55. Registry SHA-256 is
 `8813fbc12ea5fe5ad5eb38630c7faba9c1a740389266ad27bb0c5db41759c52a`.
+
+## Binance Institutional Loan realized interest-rebate overlay
+
+The retained current official API index contains previously unregistered signed
+`USER_DATA` endpoints for Institutional Loan interest history, interest-rebate
+balance, and rebate records. The Binance-issued release retained through one
+public provenance request says that, effective June 1, 2026, KYB VIP borrowers
+may qualify for full monthly interest rebates on USDT, USDC, BTC, or U borrowing
+up to 10 million USD by meeting performance targets tied to incremental trading-
+volume share, Open Interest, or Net Asset Value.
+
+This is accepted only as a narrow, direction-independent realized-credit edge
+on an independently required existing eligible loan. Before exact account
+evidence, the public forward floor is zero because target thresholds, enrollment,
+eligibility, charged interest, credit calculation, distribution timing, and
+successful payment are absent. The rebate may never justify borrowing, leverage,
+collateral retention, target-chasing volume, Open Interest, or Net Asset Value,
+and it cannot rescue an unprofitable loan or trading strategy. The issuer warns
+that the entire Institutional Lending Account balance may be liquidated.
+
+No credentials, account request, loan, collateral action, order, or fund access
+occurred. Advance only with both designated credentials, explicit signed
+GET-only authority, and an independently existing legitimate Institutional Loan
+question. Reconcile the exact active risk unit, month, charged interest, rebate
+balance, and successful rebate record after all incremental costs. Every state
+change and account-manager contact requires separate authority. Canonical result
+SHA-256 is
+`e8e17c66a238878e722aa635f1517b685c00fcc9b288c72df3d934a8c235e59c`.
+Accepted edges become 22, ranked hypotheses remain 44, and terminal families
+remain 55. Registry SHA-256 is
+`e4ec302a1cc32a57ec1d68cf00ab5d99cbc22d74b80fbc3c68da242485899fd4`.

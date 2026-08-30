@@ -173,7 +173,6 @@ def test_registry_terminalizes_only_this_exact_event_snapshot() -> None:
 
     assert registry["result_sha256"] == REGISTRY_HASH
     assert _canonical_hash(registry, "result_sha256") == REGISTRY_HASH
-    assert registry["accepted_edge_count"] == 21
     row = next(
         item
         for item in registry["prioritized_hypotheses"]

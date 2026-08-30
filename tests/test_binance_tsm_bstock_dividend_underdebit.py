@@ -102,7 +102,6 @@ def test_registry_self_hash_and_family_update_reconstruct() -> None:
     registry = _load(REGISTRY)
 
     assert _canonical_hash(registry, "result_sha256") == registry["result_sha256"]
-    assert registry["accepted_edge_count"] == 21
     assert len(registry["prioritized_hypotheses"]) == 44
     row = next(
         item

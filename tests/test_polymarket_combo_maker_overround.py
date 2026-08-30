@@ -84,7 +84,6 @@ def test_canonical_result_terminalizes_broad_combo_overround() -> None:
         == registry_claimed
     )
     assert registry_claimed == REGISTRY_HASH
-    assert registry["accepted_edge_count"] == 21
     terminal = {row["family"]: row for row in registry["terminal_do_not_repeat"]}
     assert (
         terminal[

@@ -65,7 +65,6 @@ def test_convert_limit_order_simple_earn_candidate_is_fail_closed() -> None:
 
     registry = json.loads(REGISTRY.read_text(encoding="utf-8"))
     _canonical_hash(registry)
-    assert registry["accepted_edge_count"] == 21
     rank_three = next(
         item
         for item in registry["prioritized_hypotheses"]

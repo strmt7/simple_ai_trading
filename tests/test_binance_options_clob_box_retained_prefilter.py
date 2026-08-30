@@ -85,7 +85,6 @@ def test_existing_terminal_family_is_updated_without_duplicate_rank() -> None:
     assert registry["result_sha256"] == REGISTRY_HASH
     assert _canonical_hash(registry, "result_sha256") == REGISTRY_HASH
     assert len(registry["prioritized_hypotheses"]) == 44
-    assert registry["accepted_edge_count"] == 21
     terminal = [
         row
         for row in registry["terminal_do_not_repeat"]

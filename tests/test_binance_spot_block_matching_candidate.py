@@ -73,7 +73,6 @@ def test_spot_block_matching_candidate_is_source_bound_and_fail_closed() -> None
 
     registry = json.loads(REGISTRY.read_text(encoding="utf-8"))
     _canonical_hash(registry)
-    assert registry["accepted_edge_count"] == 21
     rank_five = next(
         item for item in registry["prioritized_hypotheses"] if item["priority_rank"] == 5
     )

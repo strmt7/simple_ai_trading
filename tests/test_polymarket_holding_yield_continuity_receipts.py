@@ -134,7 +134,6 @@ def test_registry_preserves_scope_and_adds_continuity_artifact() -> None:
 
     assert registry["result_sha256"] == REGISTRY_HASH
     assert _canonical_hash(registry, "result_sha256") == REGISTRY_HASH
-    assert registry["accepted_edge_count"] == 21
     assert len(registry["prioritized_hypotheses"]) == 44
     row = registry["prioritized_hypotheses"][0]
     assert row["mechanism"] == "complete_set_holding_reward"

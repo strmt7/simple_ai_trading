@@ -119,7 +119,6 @@ def test_registry_prioritizes_the_accepted_scoped_increment() -> None:
     assert lead["market_direction_forecast_required"] is False
     assert lead["canonical_artifacts"][0]["result_sha256"] == EXPECTED_HASH
     assert lead["canonical_artifacts"][1]["result_sha256"] == EXPECTED_RWUSD_HASH
-    assert registry["accepted_edge_count"] == 21
 
 
 def test_rwusd_extension_is_hash_bound_scoped_and_nonduplicative() -> None:

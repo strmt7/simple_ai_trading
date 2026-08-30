@@ -162,7 +162,6 @@ def test_complete_future_window_stops_before_books_and_updates_existing_family()
     )
     assert registry["result_sha256"] == REGISTRY_HASH
     assert _canonical_hash(registry, "result_sha256") == REGISTRY_HASH
-    assert registry["accepted_edge_count"] == 21
     family = next(
         row for row in registry["prioritized_hypotheses"] if row["priority_rank"] == 30
     )

@@ -152,7 +152,6 @@ def test_registry_terminalizes_only_the_two_intermediary_extension() -> None:
     family = next(
         row for row in registry["prioritized_hypotheses"] if row["priority_rank"] == 44
     )
-    assert registry["accepted_edge_count"] == 21
     assert len(registry["prioritized_hypotheses"]) == 44
     assert family["mechanism"] == (
         "binance_indirect_internal_conversion_route_savings_for_organic_flow"

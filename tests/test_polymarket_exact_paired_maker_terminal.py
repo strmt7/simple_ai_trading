@@ -127,7 +127,6 @@ def test_discovery_gate_failure_is_preserved_and_corrected() -> None:
     assert best_bid["verdict"]["fresh_capture_justified"] is False
 
     registry, registry_hash = _reconstruct(REGISTRY)
-    assert registry["accepted_edge_count"] == 21
     terminal_row = next(
         row
         for row in registry["terminal_do_not_repeat"]

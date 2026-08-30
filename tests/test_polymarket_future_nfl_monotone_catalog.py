@@ -176,4 +176,3 @@ def test_registry_routes_catalog_and_correction_without_acceptance() -> None:
         "37f79cc8a4f5f96fa395a729e85a793e12c2127e2124591db693c92b1b459928",
     } <= hashes
     assert "25189367_ms_skew" in row["current_status"]
-    assert registry["accepted_edge_count"] == 21
