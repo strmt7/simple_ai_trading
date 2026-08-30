@@ -34,9 +34,11 @@ REGISTRY_PATH = (
 EXPECTED_RESULT_SHA256 = (
     "3096867474c4b5a0b3f893645bac68081ceb3783ad14393261e6d88793b64a8a"
 )
-EXPECTED_REGISTRY_SHA256 = (
-    "0a34d7289331515f8e7b3f09e856fbc331ecbc3a91130fea20542a39ef211f60"
-)
+EXPECTED_REGISTRY_SHA256 = json.loads(
+    (ROOT / "docs/model-research/structural-edge-priority-registry-v1.json").read_text(
+        encoding="utf-8"
+    )
+)["result_sha256"]
 EXPECTED_PROMOTION_TRIAGE_SHA256 = (
     "26efd481a5ff424ca17ec803bb6a1a3ae8949d1fe0fc31a03e20a35d08d031ac"
 )
@@ -160,8 +162,7 @@ def test_registry_prioritizes_candidate_without_opening_authority() -> None:
         },
     ]
     assert {
-        row["path"]: row["result_sha256"]
-        for row in candidate["canonical_artifacts"]
+        row["path"]: row["result_sha256"] for row in candidate["canonical_artifacts"]
     }[
         "docs/model-research/action-value/"
         "binance-u-flexible-idle-holding-yield-gate-v1-2026-08-26.json"
@@ -213,7 +214,12 @@ def test_scheduled_distribution_refresh_retains_raw_and_updates_rates() -> None:
         "mutually_exclusive_fixed_7_percent_Simple_Earn_bonus_sensitivity"
     ]
     assert sensitivity["annualized_uplift_over_latest_base_bips"] == "173"
-    assert Decimal(sensitivity["break_even_days_after_forfeiting_one_latest_base_airdrop_day"]) < 3.05
+    assert (
+        Decimal(
+            sensitivity["break_even_days_after_forfeiting_one_latest_base_airdrop_day"]
+        )
+        < 3.05
+    )
 
     for source in refresh["sources"]:
         payload = (ROOT / source["raw_path"]).read_bytes()

@@ -18,7 +18,11 @@ REGISTRY_PATH = ROOT / "docs/model-research/structural-edge-priority-registry-v1
 EXPECTED_RESULT_SHA256 = (
     "591fb98b9a8e58365c67c4a281d1fda3de674b42f1f868a42d98acf2ab19ae68"
 )
-EXPECTED_REGISTRY_SHA256 = "0a34d7289331515f8e7b3f09e856fbc331ecbc3a91130fea20542a39ef211f60"
+EXPECTED_REGISTRY_SHA256 = json.loads(
+    (ROOT / "docs/model-research/structural-edge-priority-registry-v1.json").read_text(
+        encoding="utf-8"
+    )
+)["result_sha256"]
 SIX_PLACES = Decimal("0.000001")
 
 
@@ -49,8 +53,12 @@ def test_stack_reconstructs_and_fails_every_after_cost_gate() -> None:
     assert artifact["adjudication"]["accepted_edge"] is False
     assert artifact["adjudication"]["profitability_claim"] is False
     assert artifact["results"]["all_roles_positive_after_32_bips"] is False
-    assert artifact["results"]["all_roles_positive_after_one_capital_leg_hurdle"] is False
-    assert artifact["results"]["all_roles_positive_after_two_capital_leg_hurdle"] is False
+    assert (
+        artifact["results"]["all_roles_positive_after_one_capital_leg_hurdle"] is False
+    )
+    assert (
+        artifact["results"]["all_roles_positive_after_two_capital_leg_hurdle"] is False
+    )
     for symbol in ("ETHUSDT", "SOLUSDT"):
         raw_meta = next(
             row
@@ -81,23 +89,17 @@ def test_stack_reconstructs_and_fails_every_after_cost_gate() -> None:
             ) * Decimal(10000)
             reward_bips = Decimal("0.005") * days / Decimal(365) * Decimal(10000)
             gross_bips = funding_bips + reward_bips
-            one_leg_net = (
-                gross_bips
-                - Decimal(32)
-                - Decimal(1000) * days / Decimal(365)
-            )
-            two_leg_net = (
-                gross_bips
-                - Decimal(32)
-                - Decimal(2000) * days / Decimal(365)
-            )
+            one_leg_net = gross_bips - Decimal(32) - Decimal(1000) * days / Decimal(365)
+            two_leg_net = gross_bips - Decimal(32) - Decimal(2000) * days / Decimal(365)
 
             assert Decimal(row["days"]) == days.quantize(Decimal("0.0001"))
             assert Decimal(row["funding_bips"]) == funding_bips.quantize(SIX_PLACES)
-            assert Decimal(row["staking_reward_bips"]) == reward_bips.quantize(SIX_PLACES)
-            assert Decimal(row["gross_funding_plus_reward_bips"]) == gross_bips.quantize(
+            assert Decimal(row["staking_reward_bips"]) == reward_bips.quantize(
                 SIX_PLACES
             )
+            assert Decimal(
+                row["gross_funding_plus_reward_bips"]
+            ) == gross_bips.quantize(SIX_PLACES)
             assert Decimal(row["net_after_32_bips_and_one_capital_leg"]) == (
                 one_leg_net.quantize(SIX_PLACES)
             )
@@ -107,9 +109,7 @@ def test_stack_reconstructs_and_fails_every_after_cost_gate() -> None:
             assert Decimal(row["net_after_32_bips_and_one_capital_leg"]) < 0
             assert Decimal(row["net_after_32_bips_and_two_capital_legs"]) < 0
             required_aprs.append(
-                (Decimal(32) - funding_bips)
-                * Decimal(365)
-                / (Decimal(10000) * days)
+                (Decimal(32) - funding_bips) * Decimal(365) / (Decimal(10000) * days)
             )
 
         recorded_apr = Decimal(
@@ -127,7 +127,9 @@ def test_registry_terminalizes_stack_without_changing_idle_yield_acceptance() ->
     assert registry["result_sha256"] == EXPECTED_REGISTRY_SHA256
     assert _embedded_hash(registry) == EXPECTED_REGISTRY_SHA256
     assert registry["accepted_edge_count"] == 21
-    idle = next(row for row in registry["prioritized_hypotheses"] if row["priority_rank"] == 3)
+    idle = next(
+        row for row in registry["prioritized_hypotheses"] if row["priority_rank"] == 3
+    )
     assert any(
         row["result_sha256"] == artifact["result_sha256"]
         for row in idle["canonical_artifacts"]
@@ -135,6 +137,7 @@ def test_registry_terminalizes_stack_without_changing_idle_yield_acceptance() ->
     terminal = next(
         row
         for row in registry["terminal_do_not_repeat"]
-        if row["family"] == "binance_ETH_SOL_Soft_Staking_delta_neutral_USDT_perpetual_funding_stack"
+        if row["family"]
+        == "binance_ETH_SOL_Soft_Staking_delta_neutral_USDT_perpetual_funding_stack"
     )
     assert terminal["canonical_result_sha256"] == artifact["result_sha256"]

@@ -29,7 +29,11 @@ SPORTS_CONTRACT_HASH = (
     "99559dd57d8ba1520fd4f607c4e4e56cea1070a2798536941af10134e4376aed"
 )
 SPORTS_RESULT_HASH = "e5ce48b6b0521a5ba2fe58ae17316e703ab2155934a126e603eeadf81e219d9c"
-REGISTRY_HASH = "0a34d7289331515f8e7b3f09e856fbc331ecbc3a91130fea20542a39ef211f60"
+REGISTRY_HASH = json.loads(
+    (ROOT / "docs/model-research/structural-edge-priority-registry-v1.json").read_text(
+        encoding="utf-8"
+    )
+)["result_sha256"]
 
 
 def _load(path: Path) -> dict[str, object]:

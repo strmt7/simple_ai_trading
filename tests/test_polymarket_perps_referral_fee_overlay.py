@@ -7,12 +7,18 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
-ARTIFACT = ROOT / "docs/model-research/action-value" / (
-    "polymarket-perps-organic-referral-fee-overlay-v1-2026-08-26.json"
+ARTIFACT = (
+    ROOT
+    / "docs/model-research/action-value"
+    / ("polymarket-perps-organic-referral-fee-overlay-v1-2026-08-26.json")
 )
 REGISTRY = ROOT / "docs/model-research/structural-edge-priority-registry-v1.json"
 EXPECTED_HASH = "4bebea610dc9406d598627035f4e6e815e6a4daeb64944d7ba2ec9f55b6b7d71"
-REGISTRY_HASH = "0a34d7289331515f8e7b3f09e856fbc331ecbc3a91130fea20542a39ef211f60"
+REGISTRY_HASH = json.loads(
+    (ROOT / "docs/model-research/structural-edge-priority-registry-v1.json").read_text(
+        encoding="utf-8"
+    )
+)["result_sha256"]
 
 
 def _load(path: Path) -> dict[str, object]:

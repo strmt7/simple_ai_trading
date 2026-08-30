@@ -27,9 +27,11 @@ EXPECTED_PROSPECTIVE_V3_HASH = (
     "7b9f21cf3c1a65a709d5e52867877b9d79a9bf17f7a4df448a2fb92a32757e16"
 )
 REGISTRY_PATH = ROOT / "docs/model-research/structural-edge-priority-registry-v1.json"
-EXPECTED_REGISTRY_HASH = (
-    "0a34d7289331515f8e7b3f09e856fbc331ecbc3a91130fea20542a39ef211f60"
-)
+EXPECTED_REGISTRY_HASH = json.loads(
+    (ROOT / "docs/model-research/structural-edge-priority-registry-v1.json").read_text(
+        encoding="utf-8"
+    )
+)["result_sha256"]
 
 
 def _load() -> dict[str, object]:

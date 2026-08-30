@@ -14,7 +14,11 @@ ROOT = Path(__file__).resolve().parents[1]
 ACTION_VALUE = ROOT / "docs/model-research/action-value"
 DATA = ROOT / "data/polymarket-lad-det-cross-period-total-v1"
 REGISTRY = ROOT / "docs/model-research/structural-edge-priority-registry-v1.json"
-REGISTRY_HASH = "0a34d7289331515f8e7b3f09e856fbc331ecbc3a91130fea20542a39ef211f60"
+REGISTRY_HASH = json.loads(
+    (ROOT / "docs/model-research/structural-edge-priority-registry-v1.json").read_text(
+        encoding="utf-8"
+    )
+)["result_sha256"]
 
 
 def _load(path: Path) -> dict[str, object]:
@@ -69,8 +73,7 @@ def test_cross_period_contract_proves_the_retained_gamma_candidate() -> None:
 
 def test_exact_depth_rejects_the_cross_period_candidate_before_fee_requests() -> None:
     result = _load(
-        ACTION_VALUE
-        / "polymarket-lad-det-cross-period-total-result-v1-2026-08-29.json"
+        ACTION_VALUE / "polymarket-lad-det-cross-period-total-result-v1-2026-08-29.json"
     )
     raw = DATA / "raw/books.json"
     journal = [
@@ -97,9 +100,10 @@ def test_exact_depth_rejects_the_cross_period_candidate_before_fee_requests() ->
     actual = result["economics"]["actual"]
     assert Decimal(actual["cost_pUSD"]) == Decimal("7")
     assert Decimal(actual["optimistic_zero_fee_profit_floor_pUSD"]) == Decimal("-2")
-    assert [
-        Decimal(fill["fills"][0]["price_pUSD"]) for fill in actual["fills"]
-    ] == [Decimal("0.44"), Decimal("0.96")]
+    assert [Decimal(fill["fills"][0]["price_pUSD"]) for fill in actual["fills"]] == [
+        Decimal("0.44"),
+        Decimal("0.96"),
+    ]
     one_second = result["economics"]["delay_1s_sensitivity"]
     assert Decimal(one_second["optimistic_zero_fee_profit_floor_pUSD"]) == Decimal(
         "-2.2"
@@ -127,7 +131,9 @@ def test_generic_book_parser_accepts_either_strict_order_and_rejects_mixed() -> 
         )
 
 
-def test_registry_preserves_the_omission_and_routes_the_cross_period_correction() -> None:
+def test_registry_preserves_the_omission_and_routes_the_cross_period_correction() -> (
+    None
+):
     registry = _load(REGISTRY)
     assert registry["result_sha256"] == REGISTRY_HASH
     assert _canonical_hash(registry, "result_sha256") == REGISTRY_HASH

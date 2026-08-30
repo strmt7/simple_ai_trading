@@ -7,16 +7,24 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
-ARTIFACT = ROOT / "docs/model-research/action-value" / (
-    "binance-bstock-dividend-perp-funding-timing-gap-candidate-v1-2026-08-27.json"
+ARTIFACT = (
+    ROOT
+    / "docs/model-research/action-value"
+    / ("binance-bstock-dividend-perp-funding-timing-gap-candidate-v1-2026-08-27.json")
 )
-TRIGGER_RESULT = ROOT / "docs/model-research/action-value" / (
-    "binance-glw-special-funding-trigger-result-v1-2026-08-29.json"
+TRIGGER_RESULT = (
+    ROOT
+    / "docs/model-research/action-value"
+    / ("binance-glw-special-funding-trigger-result-v1-2026-08-29.json")
 )
 REGISTRY = ROOT / "docs/model-research/structural-edge-priority-registry-v1.json"
 EXPECTED_HASH = "c073b61271886a5add71c2578caa889dfb97b1245327ae746bd517a91e52530d"
 TRIGGER_RESULT_HASH = "823448f115ecf7fe3e7fe8862855f40dfd351ed041fce2aa94196d069c8d585a"
-REGISTRY_HASH = "0a34d7289331515f8e7b3f09e856fbc331ecbc3a91130fea20542a39ef211f60"
+REGISTRY_HASH = json.loads(
+    (ROOT / "docs/model-research/structural-edge-priority-registry-v1.json").read_text(
+        encoding="utf-8"
+    )
+)["result_sha256"]
 
 
 def _load(path: Path) -> dict[str, object]:
@@ -86,7 +94,10 @@ def test_direct_capture_is_negative_before_other_costs() -> None:
     assert net - gross == -deductions
     assert "N-D=-F<0" in contract["direct_pre_adjustment_pair"]
     assert contract["public_net_distribution_floor"] == "0"
-    assert "cannot credit the dividend twice" in contract["why_close_and_reopen_is_not_a_free_shortcut"]
+    assert (
+        "cannot credit the dividend twice"
+        in contract["why_close_and_reopen_is_not_a_free_shortcut"]
+    )
 
 
 def test_only_glw_has_the_preregistered_weekend_gap() -> None:
@@ -130,8 +141,7 @@ def test_registry_adds_candidate_and_closes_only_direct_family() -> None:
     candidate = next(
         row
         for row in hypotheses
-        if row["mechanism"]
-        == "binance_bstock_dividend_perpetual_funding_timing_gap"
+        if row["mechanism"] == "binance_bstock_dividend_perpetual_funding_timing_gap"
     )
     assert candidate["priority_rank"] == 34
     assert candidate["market_direction_forecast_required"] is False

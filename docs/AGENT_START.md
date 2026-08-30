@@ -869,7 +869,7 @@ safety gate, blocks Stop, or submits an order.
   required 4,306.850 days. No fresh capture is justified. Canonical rejection:
   `facecfaa3b92d905c700083c7b8afe153adc495403ceabc91e417bdb248d059b`.
   The accepted count remains 21; registry SHA-256 is
-  `b876dc08b7d462a1dd738927ba52b4b7d2806a61840c2812314bee0913e3e29f`.
+  `de28d80cc4b0b9cd1bd3f9954cb840dcaefe46fcc0fdf9ac3fd53218169370cb`.
 - The separate official crypto maker-rebate schedule has exact conditional
   filled-order arithmetic, not an accepted edge. At 50 shares bid on each side
   at 0.49, the unrounded nominal rebates total 0.3498600 pUSD and raise the
@@ -1308,6 +1308,17 @@ safety gate, blocks Stop, or submits an order.
   `binance-nok-bstock-dividend-perpetual-underdebit-candidate-v1-2026-08-27.json`,
   result SHA-256
   `79118e0e9a32a17d0d79040746068b94e6ec545179958a29dc45f3b8771434bb`.
+- The independent TSM recurrence comparator rejects the next declared non-US
+  event before any current funding or book request. TSMC's official pages set
+  the prior ADR dividend at 0.939325 USD gross and 0.742067 USD after
+  withholding, and the upcoming ex-date at `2026-09-16` with an estimated
+  1.11 USD gross ADR dividend. Retained TSMUSDT history contains one exact
+  `Special` row on the prior ex-date: -0.233910% at a 407.23 mark, debiting a
+  matched short 0.952551693 USDT. That already exceeds both prior dividend
+  amounts before ordinary funding, execution, basis, fees, and capital costs.
+  Do not capture TSM books or funding for the September event. Canonical result
+  SHA-256
+  `82acc3529620f1d9c728eac24ea0fb256f228e4065650c766dff057d198a5e60`.
 - A public exact-ticker screen normalized Ondo, bStock Spot, and stock
   perpetual wrappers by each Ondo `sharesMultiplier`. Sixty tickers overlapped;
   41 had a positive point gap and ten were at least 10 bps, led by AXTI at
@@ -1729,6 +1740,7 @@ safety gate, blocks Stop, or submits an order.
 | Binance existing-stock transfer reward overlay | `docs/model-research/action-value/binance-existing-stock-transfer-reward-overlay-candidate-v1-2026-08-27.json` |
 | Binance Stocks FPSL existing-inventory yield overlay | `docs/model-research/action-value/binance-stocks-fpsl-existing-inventory-yield-overlay-candidate-v1-2026-08-27.json` |
 | Binance NOK bStock dividend/perpetual under-debit candidate | `docs/model-research/action-value/binance-nok-bstock-dividend-perpetual-underdebit-candidate-v1-2026-08-27.json` |
+| Binance TSM bStock dividend/perpetual recurrence rejection | `docs/model-research/action-value/binance-tsm-bstock-dividend-underdebit-v1-2026-08-30.json` |
 | Binance Ondo/bStock/stock-perpetual wrapper parity candidate | `docs/model-research/action-value/binance-ondo-bstock-stock-perpetual-wrapper-parity-candidate-v1-2026-08-27.json` |
 | Binance Alpha/Ondo/stock-perpetual exact-book terminal screen | `docs/model-research/action-value/binance-alpha-ondo-perpetual-parity-v1-2026-08-27.json` |
 | Binance native-stock/TradFi-perpetual parity incomplete screen | `docs/model-research/action-value/binance-native-stock-perpetual-parity-v1-2026-08-27.json` |
@@ -1995,4 +2007,4 @@ competition needed 4,306.850 days. Do not retry this market. Accepted edges
 remain 21. Canonical rejection SHA-256:
 `facecfaa3b92d905c700083c7b8afe153adc495403ceabc91e417bdb248d059b`;
 registry SHA-256:
-`b876dc08b7d462a1dd738927ba52b4b7d2806a61840c2812314bee0913e3e29f`.
+`de28d80cc4b0b9cd1bd3f9954cb840dcaefe46fcc0fdf9ac3fd53218169370cb`.

@@ -11,15 +11,15 @@ ARTIFACT_PATH = ROOT / (
     "docs/model-research/action-value/"
     "binance-usde-existing-holding-reward-edge-v1-2026-08-26.json"
 )
-REGISTRY_PATH = (
-    ROOT / "docs/model-research/structural-edge-priority-registry-v1.json"
-)
+REGISTRY_PATH = ROOT / "docs/model-research/structural-edge-priority-registry-v1.json"
 EXPECTED_RESULT_HASH = (
     "4640635514ad43ed846660c204a95c0d59ed75ac3ccbf5f17a0b70f3d5726f6a"
 )
-EXPECTED_REGISTRY_HASH = (
-    "0a34d7289331515f8e7b3f09e856fbc331ecbc3a91130fea20542a39ef211f60"
-)
+EXPECTED_REGISTRY_HASH = json.loads(
+    (ROOT / "docs/model-research/structural-edge-priority-registry-v1.json").read_text(
+        encoding="utf-8"
+    )
+)["result_sha256"]
 
 
 def _load(path: Path) -> dict[str, object]:

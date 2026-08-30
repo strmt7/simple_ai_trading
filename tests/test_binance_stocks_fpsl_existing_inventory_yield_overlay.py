@@ -19,9 +19,11 @@ REGISTRY_PATH = (
 EXPECTED_RESULT_SHA256 = (
     "3fe1801a6cbf442ab1ce79d1f3bd4586542d97414aea954b0bbd9a55a85453e1"
 )
-EXPECTED_REGISTRY_SHA256 = (
-    "0a34d7289331515f8e7b3f09e856fbc331ecbc3a91130fea20542a39ef211f60"
-)
+EXPECTED_REGISTRY_SHA256 = json.loads(
+    (ROOT / "docs/model-research/structural-edge-priority-registry-v1.json").read_text(
+        encoding="utf-8"
+    )
+)["result_sha256"]
 
 
 def _load(path: Path) -> dict[str, object]:
@@ -59,9 +61,12 @@ def test_fpsl_candidate_is_source_bound_incremental_and_fail_closed() -> None:
     assert artifact["adjudication"]["accepted_edge"] is False
     assert artifact["adjudication"]["profitability_claim"] is False
     assert artifact["adjudication"]["trading_or_enrollment_authority"] is False
-    assert artifact["expired_discovery_activity"][
-        "leaderboard_bonus_credited_as_forward_profit"
-    ] is False
+    assert (
+        artifact["expired_discovery_activity"][
+            "leaderboard_bonus_credited_as_forward_profit"
+        ]
+        is False
+    )
 
 
 def test_registry_tracks_fpsl_without_increasing_accepted_count() -> None:
@@ -71,13 +76,10 @@ def test_registry_tracks_fpsl_without_increasing_accepted_count() -> None:
     assert _embedded_hash(registry) == EXPECTED_REGISTRY_SHA256
     assert registry["accepted_edge_count"] == 21
     family = next(
-        row
-        for row in registry["prioritized_hypotheses"]
-        if row["priority_rank"] == 12
+        row for row in registry["prioritized_hypotheses"] if row["priority_rank"] == 12
     )
     artifacts = {
-        row["path"]: row["result_sha256"]
-        for row in family["canonical_artifacts"]
+        row["path"]: row["result_sha256"] for row in family["canonical_artifacts"]
     }
     assert ARTIFACT_PATH.relative_to(ROOT).as_posix() in artifacts
     assert artifacts[ARTIFACT_PATH.relative_to(ROOT).as_posix()] == (

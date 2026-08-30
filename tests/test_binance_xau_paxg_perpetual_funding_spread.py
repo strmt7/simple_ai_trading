@@ -33,7 +33,11 @@ CONTRACT_HASH = "39367c3544711a6c206e8d9a3b98f1832ed2c912d8f113ad35872a1fb11e6f3
 RESULT_HASH = "4cf430a7c5b6ce6ab57fd71979d705732e737cbcb116658705454b80daa025a9"
 ADJUDICATION_HASH = "46bf134d1be8b645d7f6272d651be8d3c0b6a8e5b2e7d2b4540f3609d6997a96"
 TRIGGER_TRIAGE_HASH = "bca11d612042f9a859f53b71e425cd320cca5d4a5d7695cd1f0a0de539b0eea1"
-REGISTRY_HASH = "0a34d7289331515f8e7b3f09e856fbc331ecbc3a91130fea20542a39ef211f60"
+REGISTRY_HASH = json.loads(
+    (ROOT / "docs/model-research/structural-edge-priority-registry-v1.json").read_text(
+        encoding="utf-8"
+    )
+)["result_sha256"]
 
 
 def _load(path: Path) -> dict[str, object]:

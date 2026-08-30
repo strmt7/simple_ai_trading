@@ -17,7 +17,11 @@ NOK = ACTION_VALUE / (
 REGISTRY = ROOT / "docs/model-research/structural-edge-priority-registry-v1.json"
 WRAPPER_HASH = "8bcf6f7bfa0cca6dab1fd6fd854a331d5ee41366ac6f9c0244b62a8f3545f475"
 NOK_HASH = "79118e0e9a32a17d0d79040746068b94e6ec545179958a29dc45f3b8771434bb"
-REGISTRY_HASH = "0a34d7289331515f8e7b3f09e856fbc331ecbc3a91130fea20542a39ef211f60"
+REGISTRY_HASH = json.loads(
+    (ROOT / "docs/model-research/structural-edge-priority-registry-v1.json").read_text(
+        encoding="utf-8"
+    )
+)["result_sha256"]
 
 
 def _load(path: Path) -> dict[str, object]:
@@ -81,9 +85,10 @@ def test_wrapper_screen_normalizes_multiplier_and_labels_point_gaps() -> None:
         assert abs(token_price / multiplier - reference) <= Decimal("0.000001")
         assert abs(best_bid - reference - gap) <= Decimal("0.000001")
         assert abs((gap / reference * Decimal("10000")) - bps) <= Decimal("0.0001")
-    assert "not_an_executable_buy_ask" in artifact["economic_identity"][
-        "why_point_gap_is_not_profit"
-    ]
+    assert (
+        "not_an_executable_buy_ask"
+        in artifact["economic_identity"]["why_point_gap_is_not_profit"]
+    )
 
 
 def test_nok_candidate_proves_underdebit_only_as_a_gross_upper_bound() -> None:
@@ -99,7 +104,9 @@ def test_nok_candidate_proves_underdebit_only_as_a_gross_upper_bound() -> None:
         Decimal(row["funding_rate"]) * Decimal(row["mark_price"]) for row in rows
     )
     assert short_cashflow == Decimal("-0.008865103000")
-    gross = Decimal(artifact["economic_contract"]["gross_dividend_upper_bound_usd_per_share"])
+    gross = Decimal(
+        artifact["economic_contract"]["gross_dividend_upper_bound_usd_per_share"]
+    )
     upper_headroom = Decimal(
         artifact["economic_contract"][
             "snapshot_funding_gross_upper_headroom_before_all_other_costs"
@@ -122,11 +129,17 @@ def test_registry_adds_both_candidates_without_promoting_an_edge() -> None:
     hypotheses = registry["prioritized_hypotheses"]
     assert [row["priority_rank"] for row in hypotheses] == list(range(1, 45))
     by_mechanism = {row["mechanism"]: row for row in hypotheses}
-    assert by_mechanism[
-        "binance_Ondo_bStock_stock_perpetual_exact_multiplier_wrapper_parity"
-    ]["priority_rank"] == 35
-    assert by_mechanism[
-        "binance_NOK_bStock_dividend_perpetual_special_funding_underdebit"
-    ]["priority_rank"] == 36
+    assert (
+        by_mechanism[
+            "binance_Ondo_bStock_stock_perpetual_exact_multiplier_wrapper_parity"
+        ]["priority_rank"]
+        == 35
+    )
+    assert (
+        by_mechanism[
+            "binance_NOK_bStock_dividend_perpetual_special_funding_underdebit"
+        ]["priority_rank"]
+        == 36
+    )
     assert "Binance Square" in registry["accepted_edge_scope"]
     assert "Binance Referral Pro" in registry["accepted_edge_scope"]

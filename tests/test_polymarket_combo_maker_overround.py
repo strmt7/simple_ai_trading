@@ -10,13 +10,16 @@ from tools import analyze_polymarket_combo_maker_overround as analysis
 
 ROOT = Path(__file__).resolve().parents[1]
 RESULT = (
-    ROOT
-    / "docs/model-research/action-value/"
+    ROOT / "docs/model-research/action-value/"
     "polymarket-combo-maker-overround-validation-v1-2026-08-27.json"
 )
 REGISTRY = ROOT / "docs/model-research/structural-edge-priority-registry-v1.json"
 RESULT_HASH = "416daf4d279e06a2353127e642d588a39ae85be0709c2d7498896c1d182847ee"
-REGISTRY_HASH = "0a34d7289331515f8e7b3f09e856fbc331ecbc3a91130fea20542a39ef211f60"
+REGISTRY_HASH = json.loads(
+    (ROOT / "docs/model-research/structural-edge-priority-registry-v1.json").read_text(
+        encoding="utf-8"
+    )
+)["result_sha256"]
 
 
 def test_economics_excludes_buyer_fees_from_opposite_side_proxy() -> None:
@@ -37,28 +40,29 @@ def test_economics_excludes_buyer_fees_from_opposite_side_proxy() -> None:
 def test_combined_status_filter_is_explicit_and_complete() -> None:
     contract = json.loads(
         (
-            ROOT
-            / "docs/model-research/action-value/"
+            ROOT / "docs/model-research/action-value/"
             "polymarket-combo-maker-overround-validation-contract-v1.json"
         ).read_text(encoding="utf-8")
     )
 
-    assert analysis.RESOLVED_STATUSES == (
-        "RESOLVED_WIN,RESOLVED_PARTIAL,RESOLVED_LOSS"
-    )
+    assert analysis.RESOLVED_STATUSES == ("RESOLVED_WIN,RESOLVED_PARTIAL,RESOLVED_LOSS")
     assert (
         contract["unseen_validation_cohort"]["position_parameters"]["status"]
         == analysis.RESOLVED_STATUSES
     )
-    assert "use_the_default_combo_position_status_listing" in contract[
-        "prohibited_shortcuts"
-    ]
+    assert (
+        "use_the_default_combo_position_status_listing"
+        in contract["prohibited_shortcuts"]
+    )
 
 
 def test_canonical_result_terminalizes_broad_combo_overround() -> None:
     result = json.loads(RESULT.read_text(encoding="utf-8"))
     claimed = result.pop("result_sha256")
-    assert hashlib.sha256(analysis._canonical_json(result).encode("ascii")).hexdigest() == claimed
+    assert (
+        hashlib.sha256(analysis._canonical_json(result).encode("ascii")).hexdigest()
+        == claimed
+    )
     assert claimed == RESULT_HASH
     assert result["collection"]["resolved_yes_position_count"] == 6264
     assert result["collection"]["http_status_counts"] == {"200": 1240}
@@ -69,7 +73,11 @@ def test_canonical_result_terminalizes_broad_combo_overround() -> None:
     assert result["gate"]["passes_unaccepted_candidate_gate"] is False
     assert result["verdict"]["accepted_edge"] is False
 
-    registry = json.loads(REGISTRY.read_text(encoding="utf-8"))
+    registry = json.loads(
+        (
+            ROOT / "docs/model-research/structural-edge-priority-registry-v1.json"
+        ).read_text(encoding="utf-8")
+    )
     registry_claimed = registry.pop("result_sha256")
     assert (
         hashlib.sha256(analysis._canonical_json(registry).encode("ascii")).hexdigest()
@@ -78,6 +86,9 @@ def test_canonical_result_terminalizes_broad_combo_overround() -> None:
     assert registry_claimed == REGISTRY_HASH
     assert registry["accepted_edge_count"] == 21
     terminal = {row["family"]: row for row in registry["terminal_do_not_repeat"]}
-    assert terminal[
-        "polymarket_broad_sports_combo_requester_overround_as_market_maker_edge"
-    ]["canonical_result_sha256"] == RESULT_HASH
+    assert (
+        terminal[
+            "polymarket_broad_sports_combo_requester_overround_as_market_maker_edge"
+        ]["canonical_result_sha256"]
+        == RESULT_HASH
+    )

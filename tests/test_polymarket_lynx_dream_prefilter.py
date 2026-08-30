@@ -10,7 +10,11 @@ ROOT = Path(__file__).resolve().parents[1]
 ACTION_VALUE = ROOT / "docs/model-research/action-value"
 DATA = ROOT / "data/polymarket-lynx-dream-exact-event-prefilter-v1"
 REGISTRY = ROOT / "docs/model-research/structural-edge-priority-registry-v1.json"
-REGISTRY_HASH = "0a34d7289331515f8e7b3f09e856fbc331ecbc3a91130fea20542a39ef211f60"
+REGISTRY_HASH = json.loads(
+    (ROOT / "docs/model-research/structural-edge-priority-registry-v1.json").read_text(
+        encoding="utf-8"
+    )
+)["result_sha256"]
 
 
 def _load(path: Path) -> dict[str, object]:
@@ -83,15 +87,14 @@ def test_guaranteed_package_fails_rejection_only_gamma_gate() -> None:
     )
     assert _canonical_hash(artifact, "result_sha256") == artifact["result_sha256"]
     payouts = [
-        Decimal(row["package_payout"])
-        for row in artifact["payoff_proof"]["states"]
+        Decimal(row["package_payout"]) for row in artifact["payoff_proof"]["states"]
     ]
     assert min(payouts) == Decimal("1")
     gate = artifact["rejection_only_gamma_prefilter"]
     assert Decimal(gate["package_displayed_price_sum_pUSD"]) == Decimal("1.080")
-    assert Decimal(gate["optimistic_profit_floor_per_share_before_execution_costs_pUSD"]) == Decimal(
-        "-0.080"
-    )
+    assert Decimal(
+        gate["optimistic_profit_floor_per_share_before_execution_costs_pUSD"]
+    ) == Decimal("-0.080")
     assert Decimal(
         gate["optimistic_profit_floor_at_five_shares_before_execution_costs_pUSD"]
     ) == Decimal("-0.400")

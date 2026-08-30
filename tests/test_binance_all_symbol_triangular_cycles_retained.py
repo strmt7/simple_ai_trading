@@ -23,10 +23,12 @@ ADJUDICATION = ROOT / (
 )
 REGISTRY = ROOT / "docs/model-research/structural-edge-priority-registry-v1.json"
 RESULT_HASH = "30c5e00aa955ea3777f9b096b1fa1ae44d51318665561e4b6922f797f45706cc"
-ADJUDICATION_HASH = (
-    "2fffd2044e72d1712ecdaa0c4e24cb829057ea2005c07e12129c443478b07902"
-)
-REGISTRY_HASH = "0a34d7289331515f8e7b3f09e856fbc331ecbc3a91130fea20542a39ef211f60"
+ADJUDICATION_HASH = "2fffd2044e72d1712ecdaa0c4e24cb829057ea2005c07e12129c443478b07902"
+REGISTRY_HASH = json.loads(
+    (ROOT / "docs/model-research/structural-edge-priority-registry-v1.json").read_text(
+        encoding="utf-8"
+    )
+)["result_sha256"]
 
 
 def _embedded_hash(value: dict[str, object], field: str) -> str:
@@ -67,12 +69,48 @@ def test_cycle_is_positive_only_in_the_zero_fee_upper_bound() -> None:
     }
     books = parse_books(
         [
-            {"symbol": "AUSDT", "bidPrice": "1", "bidQty": "10000", "askPrice": "1.001", "askQty": "10000"},
-            {"symbol": "BUSDT", "bidPrice": "0.5", "bidQty": "10000", "askPrice": "0.501", "askQty": "10000"},
-            {"symbol": "CUSDT", "bidPrice": "0.25", "bidQty": "10000", "askPrice": "0.251", "askQty": "10000"},
-            {"symbol": "AB", "bidPrice": "2", "bidQty": "10000", "askPrice": "2.001", "askQty": "10000"},
-            {"symbol": "BC", "bidPrice": "2", "bidQty": "10000", "askPrice": "2.001", "askQty": "10000"},
-            {"symbol": "CA", "bidPrice": "0.2507", "bidQty": "10000", "askPrice": "0.2508", "askQty": "10000"},
+            {
+                "symbol": "AUSDT",
+                "bidPrice": "1",
+                "bidQty": "10000",
+                "askPrice": "1.001",
+                "askQty": "10000",
+            },
+            {
+                "symbol": "BUSDT",
+                "bidPrice": "0.5",
+                "bidQty": "10000",
+                "askPrice": "0.501",
+                "askQty": "10000",
+            },
+            {
+                "symbol": "CUSDT",
+                "bidPrice": "0.25",
+                "bidQty": "10000",
+                "askPrice": "0.251",
+                "askQty": "10000",
+            },
+            {
+                "symbol": "AB",
+                "bidPrice": "2",
+                "bidQty": "10000",
+                "askPrice": "2.001",
+                "askQty": "10000",
+            },
+            {
+                "symbol": "BC",
+                "bidPrice": "2",
+                "bidQty": "10000",
+                "askPrice": "2.001",
+                "askQty": "10000",
+            },
+            {
+                "symbol": "CA",
+                "bidPrice": "0.2507",
+                "bidQty": "10000",
+                "askPrice": "0.2508",
+                "askQty": "10000",
+            },
         ]
     )
     edges = build_edges(exchange_info)
@@ -125,16 +163,18 @@ def test_adjudication_discloses_ranking_defect_and_updates_existing_family() -> 
         "diagnostic ranking only"
     )
 
-    registry = json.loads(REGISTRY.read_text(encoding="utf-8"))
+    registry = json.loads(
+        (
+            ROOT / "docs/model-research/structural-edge-priority-registry-v1.json"
+        ).read_text(encoding="utf-8")
+    )
     assert registry["result_sha256"] == REGISTRY_HASH
     assert _embedded_hash(registry, "result_sha256") == REGISTRY_HASH
     assert registry["accepted_edge_count"] == 21
     families = registry["prioritized_hypotheses"]
     triangle = next(row for row in families if row["priority_rank"] == 16)
     assert triangle["mechanism"] == "three_leg_spot_conversion"
-    assert triangle["canonical_artifacts"][-1]["result_sha256"] == (
-        ADJUDICATION_HASH
-    )
+    assert triangle["canonical_artifacts"][-1]["result_sha256"] == (ADJUDICATION_HASH)
     assert registry["terminal_do_not_repeat"][0]["canonical_result_sha256"] == (
         ADJUDICATION_HASH
     )

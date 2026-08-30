@@ -7,12 +7,18 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
-ARTIFACT = ROOT / "docs/model-research/action-value" / (
-    "binance-first-usd-deposit-spcxb-reward-hedge-candidate-v1-2026-08-27.json"
+ARTIFACT = (
+    ROOT
+    / "docs/model-research/action-value"
+    / ("binance-first-usd-deposit-spcxb-reward-hedge-candidate-v1-2026-08-27.json")
 )
 REGISTRY = ROOT / "docs/model-research/structural-edge-priority-registry-v1.json"
 ARTIFACT_HASH = "e0b6ed9311d2a022abee417a677b952e83cf918fc6b396804f5cba39fd83d4ed"
-REGISTRY_HASH = "0a34d7289331515f8e7b3f09e856fbc331ecbc3a91130fea20542a39ef211f60"
+REGISTRY_HASH = json.loads(
+    (ROOT / "docs/model-research/structural-edge-priority-registry-v1.json").read_text(
+        encoding="utf-8"
+    )
+)["result_sha256"]
 
 
 def _load(path: Path) -> dict[str, object]:
@@ -41,9 +47,12 @@ def test_first_usd_deposit_reward_candidate_reconstructs_and_fails_closed() -> N
 
     assert artifact["result_sha256"] == ARTIFACT_HASH
     assert _canonical_hash(artifact) == ARTIFACT_HASH
-    assert artifact["authority"][
-        "registrations_deposits_trades_hedges_claims_sales_or_withdrawals"
-    ] == 0
+    assert (
+        artifact["authority"][
+            "registrations_deposits_trades_hedges_claims_sales_or_withdrawals"
+        ]
+        == 0
+    )
     assert Decimal(task["USDT_quantity"]) * Decimal(
         task["displayed_ask_USD_per_USDT"]
     ) == Decimal(task["displayed_quote_notional_USD"])

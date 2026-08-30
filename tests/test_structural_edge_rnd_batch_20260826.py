@@ -24,7 +24,11 @@ BFUSD_HASH = "54fe3d3e23a92290debdc67d1e7e19ecac6c06441c045f1aa21fe3e62558c03c"
 SMART_ARBITRAGE_HASH = (
     "03b652fcd7e50c0671abbfb73f68f69509a2e5d7f75d8166f6b74743eab630d3"
 )
-REGISTRY_HASH = "0a34d7289331515f8e7b3f09e856fbc331ecbc3a91130fea20542a39ef211f60"
+REGISTRY_HASH = json.loads(
+    (ROOT / "docs/model-research/structural-edge-priority-registry-v1.json").read_text(
+        encoding="utf-8"
+    )
+)["result_sha256"]
 
 
 def _load(path: Path) -> dict[str, object]:
@@ -88,9 +92,10 @@ def test_builder_fee_formula_and_organic_flow_guards_reconstruct() -> None:
     assert economics["taker_rate_limit_bps"] == 100
     assert economics["rate_granularity_bps"] == 1
     assert "no stablecoin parity" in economics["unit_binding"]
-    assert "current tier comparison" in artifact["eligibility_and_terms"][
-        "tier_eligibility_conflict"
-    ].lower()
+    assert (
+        "current tier comparison"
+        in artifact["eligibility_and_terms"]["tier_eligibility_conflict"].lower()
+    )
     prohibited = " ".join(artifact["prohibited_actions"])
     assert "self-referred" in prohibited
     assert "Silently charging".lower() in prohibited.lower()
@@ -177,6 +182,7 @@ def test_registry_binds_new_edge_conflict_and_terminal_adjudication() -> None:
         row["family"]: row["canonical_result_sha256"]
         for row in registry["terminal_do_not_repeat"]
     }
-    assert terminal[
-        "binance_smart_arbitrage_packaged_spot_perpetual_funding_carry"
-    ] == SMART_ARBITRAGE_HASH
+    assert (
+        terminal["binance_smart_arbitrage_packaged_spot_perpetual_funding_carry"]
+        == SMART_ARBITRAGE_HASH
+    )

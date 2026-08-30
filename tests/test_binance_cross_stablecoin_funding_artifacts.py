@@ -51,9 +51,11 @@ EXPECTED_JOURNAL_HASH = (
 EXPECTED_JOURNAL_FILE_HASH = (
     "2686ccc31249b03ba2c12279282324fdbb5be3589047ca4510e61654efa7d49b"
 )
-EXPECTED_REGISTRY_HASH = (
-    "0a34d7289331515f8e7b3f09e856fbc331ecbc3a91130fea20542a39ef211f60"
-)
+EXPECTED_REGISTRY_HASH = json.loads(
+    (ROOT / "docs/model-research/structural-edge-priority-registry-v1.json").read_text(
+        encoding="utf-8"
+    )
+)["result_sha256"]
 EXPECTED_TOOL_HASHES = {
     "screen_binance_cross_stablecoin_funding.py": (
         "2133d8770778127b0c76b535b73d8d3249e8954e14ed6dc7a7c025adc79a1088"

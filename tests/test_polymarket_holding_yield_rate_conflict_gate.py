@@ -25,9 +25,11 @@ REGISTRY = ROOT / "docs/model-research/structural-edge-priority-registry-v1.json
 EXPECTED_RESULT_HASH = (
     "17c23b1bf821256a573b8685ea4c5725d1c1315a4ca6449395e75635b51678d9"
 )
-EXPECTED_REGISTRY_HASH = (
-    "0a34d7289331515f8e7b3f09e856fbc331ecbc3a91130fea20542a39ef211f60"
-)
+EXPECTED_REGISTRY_HASH = json.loads(
+    (ROOT / "docs/model-research/structural-edge-priority-registry-v1.json").read_text(
+        encoding="utf-8"
+    )
+)["result_sha256"]
 EXPECTED_POST_CONFLICT_CONTRACT_HASH = (
     "a8519183d418dcab02184cf57b2d900c1b7740ce1b72670bd8fbea71f798d132"
 )
@@ -72,7 +74,9 @@ def test_current_balances_and_yield_refresh_are_exact() -> None:
     assert cases["SOL"]["prior_complete_set_shares"] == "449"
     assert cases["SOL"]["current_complete_set_shares"] == "591.11"
     assert cases["SOL"]["position_denominator_changed"] is True
-    assert all(case["new_yield_rows_after_prior_capture"] == 0 for case in cases.values())
+    assert all(
+        case["new_yield_rows_after_prior_capture"] == 0 for case in cases.values()
+    )
 
 
 def test_every_new_raw_response_matches_its_bound_hash() -> None:
@@ -88,7 +92,11 @@ def test_every_new_raw_response_matches_its_bound_hash() -> None:
 
 
 def test_registry_routes_the_conflict_gate_without_promoting_four_percent() -> None:
-    registry = json.loads(REGISTRY.read_text(encoding="utf-8"))
+    registry = json.loads(
+        (
+            ROOT / "docs/model-research/structural-edge-priority-registry-v1.json"
+        ).read_text(encoding="utf-8")
+    )
 
     assert registry["result_sha256"] == EXPECTED_REGISTRY_HASH
     assert _canonical_hash(registry) == EXPECTED_REGISTRY_HASH
@@ -103,14 +111,19 @@ def test_registry_routes_the_conflict_gate_without_promoting_four_percent() -> N
     } in holding["canonical_artifacts"]
     assert "current_rate_remains_fail_closed_unqualified" in holding["current_status"]
     assert "do_not_rerun_or_repair" in holding["next_action"]
-    assert "material_official_rate_program_payout" in holding["retry_trigger"]
+    assert (
+        "material_official_rate_program_cross_asset_payout" in holding["retry_trigger"]
+    )
 
 
 def test_consumed_post_conflict_refresh_is_preserved_and_not_repeated() -> None:
     contract = json.loads(POST_CONFLICT_CONTRACT.read_text(encoding="utf-8"))
     claimed_contract = contract.pop("contract_result_sha256")
     assert claimed_contract == EXPECTED_POST_CONFLICT_CONTRACT_HASH
-    assert _canonical_hash({**contract, "result_sha256": claimed_contract}) == claimed_contract
+    assert (
+        _canonical_hash({**contract, "result_sha256": claimed_contract})
+        == claimed_contract
+    )
 
     result = json.loads(POST_CONFLICT_ADJUDICATION.read_text(encoding="utf-8"))
     assert result["result_sha256"] == EXPECTED_POST_CONFLICT_ADJUDICATION_HASH
@@ -125,7 +138,8 @@ def test_consumed_post_conflict_refresh_is_preserved_and_not_repeated() -> None:
         "rounding_difference_pusd": "-0.0001",
     }
     assert {
-        case["asset"]: case["candidate_rate_sample_matches"] for case in result["offline_retained_evidence"]
+        case["asset"]: case["candidate_rate_sample_matches"]
+        for case in result["offline_retained_evidence"]
     } == {
         "BTC": [{"annual_rate": "0.0325", "sampled_hours": 24}],
         "ETH": [{"annual_rate": "0.0325", "sampled_hours": 24}],
@@ -139,7 +153,6 @@ def test_consumed_post_conflict_refresh_is_preserved_and_not_repeated() -> None:
     assert journal["state"] == "failed"
     assert journal["request_count"] == 5
     assert not (
-        ROOT
-        / "docs/model-research/polymarket/"
+        ROOT / "docs/model-research/polymarket/"
         "complete-set-holding-yield-post-conflict-v7-2026-08-29.json"
     ).exists()

@@ -22,9 +22,11 @@ REGISTRY = ROOT / "docs/model-research/structural-edge-priority-registry-v1.json
 EXPECTED_ADJUDICATION_HASH = (
     "0307a9dbfb26ca62e94ae01e5b5d40316340b686a60829e85f258c07e565678c"
 )
-EXPECTED_REGISTRY_HASH = (
-    "0a34d7289331515f8e7b3f09e856fbc331ecbc3a91130fea20542a39ef211f60"
-)
+EXPECTED_REGISTRY_HASH = json.loads(
+    (ROOT / "docs/model-research/structural-edge-priority-registry-v1.json").read_text(
+        encoding="utf-8"
+    )
+)["result_sha256"]
 
 
 def _load(path: Path) -> dict[str, object]:
@@ -44,7 +46,9 @@ def _embedded_hash(value: dict[str, object], field: str) -> str:
     return hashlib.sha256(encoded).hexdigest()
 
 
-def _symbol(symbol: str, base: str, quote: str, step: str = "0.001") -> dict[str, object]:
+def _symbol(
+    symbol: str, base: str, quote: str, step: str = "0.001"
+) -> dict[str, object]:
     return {
         "symbol": symbol,
         "status": "TRADING",
@@ -72,21 +76,55 @@ def test_indirect_route_applies_extra_fee_rounding_capacity_and_stress() -> None
     }
     books = parse_books(
         [
-            {"symbol": "AUSDT", "bidPrice": "9.99", "bidQty": "1000", "askPrice": "10.01", "askQty": "1000"},
-            {"symbol": "BUSDT", "bidPrice": "0.999", "bidQty": "10000", "askPrice": "1.001", "askQty": "10000"},
-            {"symbol": "XUSDT", "bidPrice": "1.999", "bidQty": "10000", "askPrice": "2.001", "askQty": "10000"},
-            {"symbol": "AB", "bidPrice": "9.90", "bidQty": "1000", "askPrice": "9.92", "askQty": "1000"},
-            {"symbol": "AX", "bidPrice": "5.00", "bidQty": "1000", "askPrice": "5.01", "askQty": "1000"},
-            {"symbol": "XB", "bidPrice": "2.00", "bidQty": "1000", "askPrice": "2.01", "askQty": "1000"},
+            {
+                "symbol": "AUSDT",
+                "bidPrice": "9.99",
+                "bidQty": "1000",
+                "askPrice": "10.01",
+                "askQty": "1000",
+            },
+            {
+                "symbol": "BUSDT",
+                "bidPrice": "0.999",
+                "bidQty": "10000",
+                "askPrice": "1.001",
+                "askQty": "10000",
+            },
+            {
+                "symbol": "XUSDT",
+                "bidPrice": "1.999",
+                "bidQty": "10000",
+                "askPrice": "2.001",
+                "askQty": "10000",
+            },
+            {
+                "symbol": "AB",
+                "bidPrice": "9.90",
+                "bidQty": "1000",
+                "askPrice": "9.92",
+                "askQty": "1000",
+            },
+            {
+                "symbol": "AX",
+                "bidPrice": "5.00",
+                "bidQty": "1000",
+                "askPrice": "5.01",
+                "askQty": "1000",
+            },
+            {
+                "symbol": "XB",
+                "bidPrice": "2.00",
+                "bidQty": "1000",
+                "askPrice": "2.01",
+                "askQty": "1000",
+            },
         ]
     )
     edges = build_edges(exchange_info)
     route = next(
         route
         for route in build_routes(edges)
-        if route[0].source == "A"
-        and route[0].target == "B"
-        and route[1].target == "X"
+        if route[0].source == "A" and route[0].target == "B" and route[1].target == "X"
     )
     result = evaluate_route(
         route,

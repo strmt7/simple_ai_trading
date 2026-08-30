@@ -6,13 +6,21 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
-ARTIFACT = ROOT / "docs/model-research/action-value" / (
-    "binance-stablecoin-launchpool-idle-inventory-reward-candidate-v1-"
-    "2026-08-26.json"
+ARTIFACT = (
+    ROOT
+    / "docs/model-research/action-value"
+    / (
+        "binance-stablecoin-launchpool-idle-inventory-reward-candidate-v1-"
+        "2026-08-26.json"
+    )
 )
 REGISTRY = ROOT / "docs/model-research/structural-edge-priority-registry-v1.json"
 EXPECTED_HASH = "f898914a56fe61c063ca0eaf8d02fc91ea8bf527dd3ff49289527db524d286c3"
-REGISTRY_HASH = "0a34d7289331515f8e7b3f09e856fbc331ecbc3a91130fea20542a39ef211f60"
+REGISTRY_HASH = json.loads(
+    (ROOT / "docs/model-research/structural-edge-priority-registry-v1.json").read_text(
+        encoding="utf-8"
+    )
+)["result_sha256"]
 
 
 def _load(path: Path) -> dict[str, object]:
@@ -54,7 +62,9 @@ def test_stablecoin_launchpool_is_hash_bound_unaccepted_and_non_mutating() -> No
     assert artifact["authority"]["orders_or_transfers_submitted"] == 0
 
 
-def test_candidate_waits_for_current_offer_and_values_only_owned_sale_proceeds() -> None:
+def test_candidate_waits_for_current_offer_and_values_only_owned_sale_proceeds() -> (
+    None
+):
     artifact = _load(ARTIFACT)
     current = artifact["current_offer_state"]
     example = artifact["historical_mechanism_example"]

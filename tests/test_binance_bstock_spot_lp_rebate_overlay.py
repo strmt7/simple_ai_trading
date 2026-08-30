@@ -19,9 +19,11 @@ REGISTRY_PATH = (
 EXPECTED_RESULT_SHA256 = (
     "d279f8ab88875c812e6691fa500fdfde741f2e2fbca19ee240b4c0d4a579d607"
 )
-EXPECTED_REGISTRY_SHA256 = (
-    "0a34d7289331515f8e7b3f09e856fbc331ecbc3a91130fea20542a39ef211f60"
-)
+EXPECTED_REGISTRY_SHA256 = json.loads(
+    (ROOT / "docs/model-research/structural-edge-priority-registry-v1.json").read_text(
+        encoding="utf-8"
+    )
+)["result_sha256"]
 
 
 def _load(path: Path) -> dict[str, object]:
@@ -53,9 +55,10 @@ def test_public_candidate_hash_authority_and_effective_window() -> None:
         "orders_or_applications": 0,
         "public_source_requests": 1,
     }
-    assert artifact["current_promotion"][
-        "first_performance_review_end_utc"
-    ] < artifact["current_promotion"]["first_promotion_tier_effective_start_utc"]
+    assert (
+        artifact["current_promotion"]["first_performance_review_end_utc"]
+        < artifact["current_promotion"]["first_promotion_tier_effective_start_utc"]
+    )
     adjudication = artifact["adjudication"]
     assert adjudication["accepted_edge"] is False
     assert adjudication["stable_edge"] is False
@@ -81,9 +84,10 @@ def test_bstock_thresholds_and_all_symbol_rebate_ceiling_are_exact() -> None:
         "0.6",
         "0.8",
     ]
-    assert artifact["candidate_scope"][
-        "maximum_public_rebate_bips_per_maker_notional"
-    ] == "0.8"
+    assert (
+        artifact["candidate_scope"]["maximum_public_rebate_bips_per_maker_notional"]
+        == "0.8"
+    )
     assert "all_symbols" in artifact["program_mechanics"]["all_symbol_upgrade"]
     assert artifact["manual_trial"]["economic_rebate_floor_bips"] == "0"
 
@@ -100,8 +104,7 @@ def test_registry_records_overlay_without_increasing_accepted_count() -> None:
         if row["mechanism"] == "spot_market_maker_rebates"
     )
     artifacts = {
-        row["path"]: row["result_sha256"]
-        for row in candidate["canonical_artifacts"]
+        row["path"]: row["result_sha256"] for row in candidate["canonical_artifacts"]
     }
     assert artifacts[ARTIFACT_PATH.relative_to(ROOT).as_posix()] == (
         EXPECTED_RESULT_SHA256

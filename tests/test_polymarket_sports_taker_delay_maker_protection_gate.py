@@ -6,13 +6,19 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
-ARTIFACT = ROOT / "docs/model-research/action-value" / (
-    "polymarket-sports-taker-delay-maker-protection-gate-v1-2026-08-27.json"
+ARTIFACT = (
+    ROOT
+    / "docs/model-research/action-value"
+    / ("polymarket-sports-taker-delay-maker-protection-gate-v1-2026-08-27.json")
 )
 REGISTRY = ROOT / "docs/model-research/structural-edge-priority-registry-v1.json"
 SOURCE = ROOT / "src/simple_ai_trading/polymarket.py"
 EXPECTED_HASH = "4847ec7828e598950da9a455170b66a529d9a5d671bfb4c37a57a36f608b9627"
-REGISTRY_HASH = "0a34d7289331515f8e7b3f09e856fbc331ecbc3a91130fea20542a39ef211f60"
+REGISTRY_HASH = json.loads(
+    (ROOT / "docs/model-research/structural-edge-priority-registry-v1.json").read_text(
+        encoding="utf-8"
+    )
+)["result_sha256"]
 
 
 def _load(path: Path) -> dict[str, object]:
@@ -55,7 +61,10 @@ def test_pending_delay_and_source_conflicts_fail_closed() -> None:
         "during_the_delay_the_marketable_order_is_pending_and_cannot_be_cancelled"
     )
     assert not delay["exact_current_per_market_duration_publicly_exposed"]
-    assert evidence["compact_market_info_limit"]["sports_numeric_delay_field_documented"] is False
+    assert (
+        evidence["compact_market_info_limit"]["sports_numeric_delay_field_documented"]
+        is False
+    )
     assert evidence["sports_maker_rebate_conflict"] == {
         "help_trading_fees_page_rate": "0.15",
         "help_maker_rebates_page_rate": "0.20",

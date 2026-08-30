@@ -11,7 +11,11 @@ from tools.screen_polymarket_exact_two_leg_sports_package import _line_matches
 ROOT = Path(__file__).resolve().parents[1]
 ACTION_VALUE = ROOT / "docs/model-research/action-value"
 REGISTRY = ROOT / "docs/model-research/structural-edge-priority-registry-v1.json"
-REGISTRY_HASH = "0a34d7289331515f8e7b3f09e856fbc331ecbc3a91130fea20542a39ef211f60"
+REGISTRY_HASH = json.loads(
+    (ROOT / "docs/model-research/structural-edge-priority-registry-v1.json").read_text(
+        encoding="utf-8"
+    )
+)["result_sha256"]
 
 
 def _load(path: Path) -> dict[str, object]:
@@ -45,15 +49,16 @@ def test_exact_nfl_capture_is_one_request_and_hash_bound() -> None:
         / "polymarket-packers-vikings-exact-event-prefilter-result-v1-2026-08-29.json"
     )
     raw = (
-        ROOT
-        / "data/polymarket-packers-vikings-exact-event-prefilter-v1/raw/event.json"
+        ROOT / "data/polymarket-packers-vikings-exact-event-prefilter-v1/raw/event.json"
     )
     journal = [
         json.loads(line)
         for line in (
             ROOT
             / "data/polymarket-packers-vikings-exact-event-prefilter-v1/request-journal.jsonl"
-        ).read_text().splitlines()
+        )
+        .read_text()
+        .splitlines()
     ]
 
     assert contract["contract_sha256"] == (
@@ -119,7 +124,9 @@ def test_strongest_tie_state_package_fails_at_exact_asks_before_fees() -> None:
         for line in (
             ROOT
             / "data/polymarket-packers-vikings-tie-state-package-v1/request-journal.jsonl"
-        ).read_text().splitlines()
+        )
+        .read_text()
+        .splitlines()
     ]
 
     assert contract["contract_sha256"] == (

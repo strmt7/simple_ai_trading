@@ -7,12 +7,18 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
-ARTIFACT = ROOT / "docs/model-research/action-value" / (
-    "polymarket-combo-rfq-boolean-parity-candidate-v1-2026-08-27.json"
+ARTIFACT = (
+    ROOT
+    / "docs/model-research/action-value"
+    / ("polymarket-combo-rfq-boolean-parity-candidate-v1-2026-08-27.json")
 )
 REGISTRY = ROOT / "docs/model-research/structural-edge-priority-registry-v1.json"
 EXPECTED_HASH = "08fb223f771c5793da944497f37f4067238e7fd2b40fa2427293dbf7b55c4116"
-REGISTRY_HASH = "0a34d7289331515f8e7b3f09e856fbc331ecbc3a91130fea20542a39ef211f60"
+REGISTRY_HASH = json.loads(
+    (ROOT / "docs/model-research/structural-edge-priority-registry-v1.json").read_text(
+        encoding="utf-8"
+    )
+)["result_sha256"]
 
 
 def _load(path: Path) -> dict[str, object]:
@@ -73,7 +79,9 @@ def test_boolean_identity_survives_ordinary_and_fractional_terminal_values() -> 
 
     identity = artifact["exact_payoff_identity"]
     assert identity["terminal_state_scope"].startswith("all A and B values in [0,1]")
-    assert "0.25 + 0.75 = 1.0" in identity["why_the_full_identity_survives_cancellation"]
+    assert (
+        "0.25 + 0.75 = 1.0" in identity["why_the_full_identity_survives_cancellation"]
+    )
     assert "0.25" in identity["why_naive_implication_is_rejected"]
 
 
@@ -130,16 +138,22 @@ def test_registry_adds_only_trigger_gated_combo_identity_candidate() -> None:
         artifact["path"]: artifact["result_sha256"]
         for artifact in row["canonical_artifacts"]
     }
-    assert artifacts[
-        "docs/model-research/action-value/"
-        "polymarket-combo-rfq-boolean-parity-candidate-v1-2026-08-27.json"
-    ] == EXPECTED_HASH
-    assert artifacts[
-        "docs/model-research/action-value/"
-        "polymarket-combo-collateral-release-overlay-candidate-v1-2026-08-29.json"
-    ] == "5514bd931557b350579a07448db9c4e1f2664919efff48145861c8841f0bc7ea"
+    assert (
+        artifacts[
+            "docs/model-research/action-value/"
+            "polymarket-combo-rfq-boolean-parity-candidate-v1-2026-08-27.json"
+        ]
+        == EXPECTED_HASH
+    )
+    assert (
+        artifacts[
+            "docs/model-research/action-value/"
+            "polymarket-combo-collateral-release-overlay-candidate-v1-2026-08-29.json"
+        ]
+        == "5514bd931557b350579a07448db9c4e1f2664919efff48145861c8841f0bc7ea"
+    )
     assert "quote_request_only" in row["retry_trigger"]
     assert "plan_request_only_authority" in row["retry_trigger"]
-    assert "neither_submechanism_is_accepted_or_deployment_ready" in row[
-        "current_status"
-    ]
+    assert (
+        "neither_submechanism_is_accepted_or_deployment_ready" in row["current_status"]
+    )

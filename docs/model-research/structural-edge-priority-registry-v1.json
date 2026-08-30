@@ -1764,24 +1764,29 @@
         {
           "path": "docs/model-research/action-value/binance-nok-bstock-dividend-perpetual-underdebit-candidate-v1-2026-08-27.json",
           "result_sha256": "79118e0e9a32a17d0d79040746068b94e6ec545179958a29dc45f3b8771434bb"
+        },
+        {
+          "path": "docs/model-research/action-value/binance-tsm-bstock-dividend-underdebit-v1-2026-08-30.json",
+          "result_sha256": "82acc3529620f1d9c728eac24ea0fb256f228e4065650c766dff057d198a5e60"
         }
       ],
-      "current_status": "materially_new_market_direction_independent_non_US_NOKB_dividend_perpetual_underdebit_candidate_two_snapshot_funding_debits_totaled_0_008865103_USDT_against_the_0_0462_USD_gross_dividend_but_net_multiplier_increment_executable_books_after_cost_recurrence_entitlement_and_authority_are_unproved_not_accepted_or_deployment_ready",
+      "current_status": "materially_new_market_direction_independent_non_US_NOKB_dividend_perpetual_underdebit_candidate_two_snapshot_funding_debits_totaled_0_008865103_USDT_against_the_0_0462_USD_gross_dividend_but_net_multiplier_increment_executable_books_after_cost_recurrence_entitlement_and_authority_are_unproved_the_independent_upcoming_2026_09_16_TSMB_event_failed_the_rejection_first_recurrence_screen_because_the_prior_exact_TSMUSDT_Special_short_debit_was_0_952551693_USDT_exceeding_both_the_0_939325_gross_and_0_742067_net_ADR_dividend_so_no_TSM_books_or_current_funding_were_requested_not_accepted_or_deployment_ready",
       "market_direction_forecast_required": false,
       "mechanism": "binance_NOK_bStock_dividend_perpetual_special_funding_underdebit",
-      "next_action": "do_not_poll_wait_for_a_new_official_Nokia_board_resolution_with_exact_amount_and_matching_Binance_NOKB_announcement_then_preregister_one_public_event_time_multiplier_funding_and_executable_depth_capture_after_historical_multiplier_lineage_is_closed",
+      "next_action": "do_not_poll_or_screen_the_2026_09_16_TSM_event_wait_for_a_new_official_Nokia_board_resolution_with_exact_amount_and_matching_Binance_NOKB_announcement_then_preregister_one_public_event_time_multiplier_funding_and_executable_depth_capture_after_historical_multiplier_lineage_is_closed",
       "priority_rank": 36,
       "prohibited_shortcuts": [
         "crediting_the_gross_0_0462_USD_dividend_as_the_net_bStock_distribution",
         "treating_current_lastCashAmount_or_multiplier_as_historical_owned_payout_evidence",
         "using_one_minute_closes_as_executable_or_synchronized_quotes",
         "assuming_only_two_funding_rows_or_ignoring_later_funding_and_basis",
+        "assuming_the_NOK_underdebit_generalizes_to_other_non_US_dividends_after_TSM_special_funding_exceeded_the_gross_dividend",
         "manufacturing_volume_or_assuming_liquidity_program_enrollment",
         "calling_one_NOK_exception_recurrence_profit_or_an_accepted_edge",
         "placing_orders_or_accessing_account_state_without_separate_authority"
       ],
       "retry_trigger": "new_official_Nokia_board_resolution_with_exact_per_share_amount_plus_matching_official_Binance_NOKB_dividend_announcement",
-      "venue_scope": "Binance_NOKBUSDT_bStock_and_NOKUSDT_TradFi_perpetual_dividend_adjustment"
+      "venue_scope": "Binance_NOKBUSDT_bStock_and_NOKUSDT_TradFi_perpetual_dividend_adjustment_with_TSMB_TSMUSDT_recurrence_comparator"
     },
     {
       "blocking_evidence": [
@@ -2153,7 +2158,7 @@
       "venue_scope": "Binance_Spot_direct_and_exactly_one_intermediary_routes_for_independently_required_organic_conversions_with_the_exactly_two_intermediary_extension_terminal_for_the_retained_population"
     }
   ],
-  "result_sha256": "b876dc08b7d462a1dd738927ba52b4b7d2806a61840c2812314bee0913e3e29f",
+  "result_sha256": "de28d80cc4b0b9cd1bd3f9954cb840dcaefe46fcc0fdf9ac3fd53218169370cb",
   "schema_version": "structural-edge-priority-registry-v1",
   "terminal_do_not_repeat": [
     {
@@ -2400,8 +2405,13 @@
       "canonical_result_sha256": "facecfaa3b92d905c700083c7b8afe153adc495403ceabc91e417bdb248d059b",
       "family": "polymarket_Elon_40_to_64_exact_paired_maker_reward_configuration_2026_08_30",
       "reason": "the_initial_discovery_tuple_gate_was_a_methodology_error_because_exact_retained_Gamma_and_sponsored_condition_sources_agreed_the_corrected_one_request_book_screen_was_6408_ms_old_and_one_tick_0_48_plus_0_53_quotes_were_marketable_and_lost_0_50_pUSD_if_both_filled_the_precommitted_zero_network_best_bid_join_rule_earned_0_50_pUSD_both_fill_gross_but_risked_26_pUSD_orphan_loss_and_even_observed_displayed_competition_required_43_554156_reward_days_versus_3_692733_remaining_while_100x_required_4306_849570_days_do_not_retry_or_resample_this_market"
+    },
+    {
+      "canonical_result_sha256": "82acc3529620f1d9c728eac24ea0fb256f228e4065650c766dff057d198a5e60",
+      "family": "binance_TSMB_2026_09_16_dividend_perpetual_underdebit_candidate",
+      "reason": "the_official_TSMC_2026_09_16_event_is_upcoming_but_the_prior_2026_06_11_exact_TSMUSDT_Special_funding_row_debited_a_matched_short_0_952551693_USDT_which_exceeded_the_0_939325_gross_and_0_742067_net_ADR_dividend_before_ordinary_funding_execution_basis_fees_tax_or_capital_costs_so_no_current_funding_or_books_are_justified_do_not_repeat_this_event"
     }
   ],
-  "updated_at_utc": "2026-08-30T02:23:26Z",
+  "updated_at_utc": "2026-08-30T02:37:42Z",
   "usage_rule": "advance_the_highest_ranked_hypothesis_whose_retry_trigger_is_satisfied_otherwise_do_not_repeat_a_blocked_or_terminal_screen"
 }

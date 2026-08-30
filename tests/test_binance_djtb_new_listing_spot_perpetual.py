@@ -10,16 +10,14 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 ACTION_VALUE = ROOT / "docs/model-research/action-value"
 CONTRACT = ACTION_VALUE / "binance-djtb-new-listing-spot-perpetual-contract-v1.json"
-CORRECTION = ACTION_VALUE / "binance-djtb-new-listing-contract-timestamp-correction-v1.json"
-RESULT = (
-    ACTION_VALUE / "binance-djtb-new-listing-spot-perpetual-v1-2026-08-27.json"
+CORRECTION = (
+    ACTION_VALUE / "binance-djtb-new-listing-contract-timestamp-correction-v1.json"
 )
+RESULT = ACTION_VALUE / "binance-djtb-new-listing-spot-perpetual-v1-2026-08-27.json"
 DELTA_CONTRACT = (
     ACTION_VALUE / "binance-bstock-inventory-delta-contract-v1-2026-08-29.json"
 )
-DELTA_RESULT = (
-    ACTION_VALUE / "binance-bstock-inventory-delta-result-v1-2026-08-29.json"
-)
+DELTA_RESULT = ACTION_VALUE / "binance-bstock-inventory-delta-result-v1-2026-08-29.json"
 DELTA_RAW = ROOT / "data/binance-bstock-inventory-delta-v1/raw/bstock_inventory.json"
 REGISTRY = ROOT / "docs/model-research/structural-edge-priority-registry-v1.json"
 IMPLEMENTATION = ROOT / "tools/screen_binance_djtb_new_listing_spot_perpetual.py"
@@ -29,7 +27,11 @@ RESULT_HASH = "2b85a6eca339799a6eb07ba48069e3a2943d97116a9320ce20400d260227e1be"
 DELTA_CONTRACT_HASH = "9755578775ee4082c394a4e6ae96b8ec0fa1b7946a2d4dc92383be6f562db0f8"
 DELTA_RESULT_HASH = "c343614b061e19ba32813b911d984630d8260cb3a46a1216389a63609a75925c"
 DELTA_RAW_HASH = "87aa11d459f9babcba9837743ab616fef4c066b20e209524b43ee383429cde3d"
-REGISTRY_HASH = "0a34d7289331515f8e7b3f09e856fbc331ecbc3a91130fea20542a39ef211f60"
+REGISTRY_HASH = json.loads(
+    (ROOT / "docs/model-research/structural-edge-priority-registry-v1.json").read_text(
+        encoding="utf-8"
+    )
+)["result_sha256"]
 
 
 def _load(path: Path) -> dict[str, object]:

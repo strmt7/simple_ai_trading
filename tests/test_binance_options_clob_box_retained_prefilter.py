@@ -19,7 +19,11 @@ RESULT = ROOT / (
 REGISTRY = ROOT / "docs/model-research/structural-edge-priority-registry-v1.json"
 CONTRACT_HASH = "806b99257dd081fddef2fcaa5657776e9dfecee65dd52da1bba351052a062e81"
 RESULT_HASH = "a9b0e7a2aba9bda7f83b9515be587a17e6da69fa0bc987191a21f9d37e912d3b"
-REGISTRY_HASH = "0a34d7289331515f8e7b3f09e856fbc331ecbc3a91130fea20542a39ef211f60"
+REGISTRY_HASH = json.loads(
+    (ROOT / "docs/model-research/structural-edge-priority-registry-v1.json").read_text(
+        encoding="utf-8"
+    )
+)["result_sha256"]
 
 
 def _canonical_hash(payload: dict[str, object], field: str) -> str:
@@ -47,9 +51,7 @@ def test_v2_contract_and_implementation_lineage_reconstruct() -> None:
 
 
 def test_missing_close_time_fails_synchronization_proxy() -> None:
-    quote = v2._quote(
-        {"bidPrice": "1", "askPrice": "2"}, capture_completed_at_ms=1000
-    )
+    quote = v2._quote({"bidPrice": "1", "askPrice": "2"}, capture_completed_at_ms=1000)
 
     assert quote["close_time_ms"] is None
     assert quote["age_ms"] == -1

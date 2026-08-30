@@ -7,16 +7,24 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
-ARTIFACT = ROOT / "docs/model-research/action-value" / (
-    "binance-stocks-current-fee-overlay-edge-v1-2026-08-27.json"
+ARTIFACT = (
+    ROOT
+    / "docs/model-research/action-value"
+    / ("binance-stocks-current-fee-overlay-edge-v1-2026-08-27.json")
 )
-TRIGGER_TRIAGE = ROOT / "docs/model-research/action-value" / (
-    "binance-aug28-public-structural-trigger-triage-v1-2026-08-29.json"
+TRIGGER_TRIAGE = (
+    ROOT
+    / "docs/model-research/action-value"
+    / ("binance-aug28-public-structural-trigger-triage-v1-2026-08-29.json")
 )
 REGISTRY = ROOT / "docs/model-research/structural-edge-priority-registry-v1.json"
 ARTIFACT_HASH = "d4f02be559d9267abbea28ccefb48f4886f375b359ce7274b90b6585b828160a"
 TRIGGER_TRIAGE_HASH = "bca11d612042f9a859f53b71e425cd320cca5d4a5d7695cd1f0a0de539b0eea1"
-REGISTRY_HASH = "0a34d7289331515f8e7b3f09e856fbc331ecbc3a91130fea20542a39ef211f60"
+REGISTRY_HASH = json.loads(
+    (ROOT / "docs/model-research/structural-edge-priority-registry-v1.json").read_text(
+        encoding="utf-8"
+    )
+)["result_sha256"]
 
 
 def _load(path: Path) -> dict[str, object]:
@@ -53,15 +61,26 @@ def test_stocks_fee_overlay_reconstructs_savings_and_fail_closed_boundaries() ->
         Decimal(above["normal_trading_spread_percent"])
         - Decimal(above["promotional_trading_spread_percent"])
     ) * Decimal("100")
-    assert Decimal(savings["strictly_above_340_USD"]["basis_points_of_order_notional"]) == expected_bps
-    assert Decimal(savings["strictly_above_340_USD"]["USD_per_1000000_USD_organic_notional"]) == expected_bps * Decimal("100")
+    assert (
+        Decimal(savings["strictly_above_340_USD"]["basis_points_of_order_notional"])
+        == expected_bps
+    )
+    assert Decimal(
+        savings["strictly_above_340_USD"]["USD_per_1000000_USD_organic_notional"]
+    ) == expected_bps * Decimal("100")
 
     below = terms["strictly_below_340_USD"]
-    expected_flat_saving = Decimal(below["normal_trading_spread_USD_per_order"]) - Decimal(
-        below["promotional_trading_spread_USD_per_order"]
+    expected_flat_saving = Decimal(
+        below["normal_trading_spread_USD_per_order"]
+    ) - Decimal(below["promotional_trading_spread_USD_per_order"])
+    assert (
+        Decimal(savings["strictly_below_340_USD"]["USD_per_order"])
+        == expected_flat_saving
     )
-    assert Decimal(savings["strictly_below_340_USD"]["USD_per_order"]) == expected_flat_saving
-    assert terms["exactly_340_USD"]["status"] == "unresolved_due_to_overlapping_inclusive_page_labels"
+    assert (
+        terms["exactly_340_USD"]["status"]
+        == "unresolved_due_to_overlapping_inclusive_page_labels"
+    )
     assert Decimal(savings["exactly_340_USD"]["precredited_saving"]) == 0
 
     registry = _load(REGISTRY)
@@ -80,12 +99,19 @@ def test_stocks_fee_overlay_reconstructs_savings_and_fail_closed_boundaries() ->
     assert "Binance_Stocks" in hypothesis["current_status"]
 
 
-def test_bstocks_zero_maker_extension_is_scoped_and_does_not_reopen_terminal_families() -> None:
+def test_bstocks_zero_maker_extension_is_scoped_and_does_not_reopen_terminal_families() -> (
+    None
+):
     triage = _load(TRIGGER_TRIAGE)
 
     assert triage["result_sha256"] == TRIGGER_TRIAGE_HASH
     assert _canonical_hash(triage) == TRIGGER_TRIAGE_HASH
-    assert triage["authority"]["orders_transfers_conversions_subscriptions_or_account_changes"] == 0
+    assert (
+        triage["authority"][
+            "orders_transfers_conversions_subscriptions_or_account_changes"
+        ]
+        == 0
+    )
     bstocks = triage["adjudications"]["bstocks_zero_maker_fee_extension"]
     assert bstocks["accepted_edge"] is True
     assert bstocks["standalone_profitability_claim"] is False

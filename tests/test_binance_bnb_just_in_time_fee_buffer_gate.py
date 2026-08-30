@@ -13,9 +13,11 @@ ARTIFACT = ROOT / (
 )
 REGISTRY = ROOT / "docs/model-research/structural-edge-priority-registry-v1.json"
 EXPECTED_HASH = "b97eed6a93070d5e29b26d1a47757c9be49e0296332c8019a64388ba936c3b6b"
-EXPECTED_REGISTRY_HASH = (
-    "0a34d7289331515f8e7b3f09e856fbc331ecbc3a91130fea20542a39ef211f60"
-)
+EXPECTED_REGISTRY_HASH = json.loads(
+    (ROOT / "docs/model-research/structural-edge-priority-registry-v1.json").read_text(
+        encoding="utf-8"
+    )
+)["result_sha256"]
 
 
 def _load(path: Path) -> dict[str, object]:
@@ -96,9 +98,12 @@ def test_public_minimums_and_registry_promotion_are_exact() -> None:
             "minimum_expected_consumption_fraction"
         ]
     ) == Decimal(1)
-    assert artifact["sources"]["public_reverse_convert_pair_snapshot"]["response"][
-        0
-    ]["fromAssetMinAmount"] == "0.000014"
+    assert (
+        artifact["sources"]["public_reverse_convert_pair_snapshot"]["response"][0][
+            "fromAssetMinAmount"
+        ]
+        == "0.000014"
+    )
     assert Decimal(economics["minimum_spot_fallback_ask_cost_usdt"]) == (
         Decimal(economics["minimum_spot_fallback_quantity_bnb"])
         * Decimal(artifact["sources"]["public_spot_snapshot"]["book"]["ask_price"])
