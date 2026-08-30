@@ -189,6 +189,10 @@
         {
           "path": "docs/model-research/action-value/binance-bnsol-boost-airdrop-existing-holding-overlay-source-failure-adjudication-v1-2026-08-30.json",
           "result_sha256": "f0b6b4df8632b1cc302bdb24189c4336968be1fa9b94d1f7792205f46450c466"
+        },
+        {
+          "path": "docs/model-research/action-value/binance-yield-arena-discovery-routing-addendum-v1-2026-08-30.json",
+          "result_sha256": "b01792aabe04989b4e65fb5ae00719249fa6186f7c5bd345c59a3ea9b4d8ff66"
         }
       ],
       "current_status": "accepted_scoped_current_idle_spot_native_token_yield_for_ETH_and_SOL_Soft_Staking_only_plus_unaccepted_BTC_Simple_Earn_extension_candidate_the_distinct_delta_neutral_Soft_Staking_short_perpetual_extension_is_terminal_and_the_materially_stronger_existing_idle_liquid_staking_candidate_now_displays_2_20_percent_ETH_and_4_65_percent_SOL_or_170_and_415_bips_gross_uplift_over_0_50_percent_Soft_Staking_plus_a_material_unaccepted_Convert_Limit_Order_capital_efficiency_candidate_that_can_keep_an_independently_required_BTC_ETH_or_SOL_source_asset_in_Simple_Earn_Flexible_while_waiting_but_has_zero_public_forward_floor_and_can_miss_execution_when_redemption_is_delayed_or_fails_plus_a_distinct_unaccepted_BNSOL_Boost_APR_airdrop_existing_holding_lead_whose_web_rendered_official_schema_separates_rate_history_boost_history_unclaimed_rewards_and_TRADE_claim_but_whose_frozen_exact_raw_source_returned_HTTP_202_with_2038_bytes_and_zero_of_eight_required_terms_all_exact_account_rate_quota_accrual_redemption_fill_reward_and_cost_evidence_remain_unproved_not_accepted_or_deployment_ready",
@@ -209,7 +213,8 @@
         "creating_or_extending_a_Convert_Limit_Order_to_chase_Simple_Earn_rewards_or_assuming_limit_price_touch_guarantees_fill",
         "crediting_Convert_waiting_rewards_without_exact_source_asset_product_quota_rate_accrual_distribution_redemption_and_missed_fill_evidence",
         "retrying_or_aliasing_the_consumed_BNSOL_Boost_dynamic_page_or_using_web_rendered_example_values_as_current_rate_entitlement_or_owned_reward_evidence",
-        "double_counting_BNSOL_Boost_rewards_inside_the_conversion_ratio_or_base_reward_or_claiming_without_separate_explicit_state_change_authority"
+        "double_counting_BNSOL_Boost_rewards_inside_the_conversion_ratio_or_base_reward_or_claiming_without_separate_explicit_state_change_authority",
+        "treating_Yield_Arena_as_a_distinct_edge_or_comparable_headline_APR_instead_of_routing_each_exact_product_to_its_existing_family"
       ],
       "retry_trigger": "official_BTC_Simple_Earn_ETH_SOL_Soft_Staking_liquid_staking_or_Convert_Limit_Order_Earn_eligible_asset_rate_tier_quota_accrual_redemption_fill_fee_or_eligibility_change_or_both_SIMPLE_AI_TRADING_BINANCE_MAINNET_API_KEY_and_SIMPLE_AI_TRADING_BINANCE_MAINNET_API_SECRET_available_with_explicit_GET_only_account_evidence_authority_or_for_BNSOL_Boost_a_material_new_byte_retainable_official_reward_source_or_both_designated_credentials_explicit_signed_GET_only_authority_and_independently_existing_BNSOL_held_for_unrelated_reasons_or_for_the_Convert_overlay_both_credentials_explicit_signed_read_only_authority_and_an_independently_required_exact_BTC_ETH_or_SOL_Convert_Limit_Order_with_pair_source_amount_limit_price_maximum_wait_and_missed_fill_stress_frozen_delta_neutral_extension_remains_closed_unless_its_separate_material_economic_trigger_fires",
       "venue_scope": "binance_BTC_Simple_Earn_ETH_SOL_Spot_Soft_Staking_ETH_SOL_liquid_staking_BNSOL_Boost_rewards_and_BTC_ETH_SOL_source_asset_Convert_Limit_Order_with_optional_Simple_Earn_Flexible"
@@ -551,6 +556,10 @@
         {
           "path": "docs/model-research/action-value/binance-bfusd-existing-holding-reward-unit-conflict-gate-v1-2026-08-26.json",
           "result_sha256": "54fe3d3e23a92290debdc67d1e7e19ecac6c06441c045f1aa21fe3e62558c03c"
+        },
+        {
+          "path": "docs/model-research/action-value/binance-yield-arena-discovery-routing-addendum-v1-2026-08-30.json",
+          "result_sha256": "b01792aabe04989b4e65fb5ae00719249fa6186f7c5bd345c59a3ea9b4d8ff66"
         }
       ],
       "current_status": "accepted_scoped_time_limited_USD1_holding_airdrop_for_identical_already_held_principal_now_has_three_positive_completed_base_APRs_4_85_5_46_and_5_27_percent_but_the_fourth_week_rate_is_explicitly_unpublished_plus_accepted_scoped_mutually_exclusive_fixed_7_percent_USD1_Simple_Earn_bonus_on_at_most_the_first_1500_independently_already_held_idle_USD1_latest_base_comparison_is_173_bips_gross_uplift_and_3_046242775_day_break_even_after_one_forfeited_airdrop_day_before_unproved_account_and_transition_costs_but_the_2026_08_30_remaining_horizon_stress_leaves_only_1_5162802791_bips_or_0_2274420419_quote_units_before_every_unproved_other_cost_and_turns_negative_for_new_subscriptions_on_2026_09_02_under_unchanged_inputs_the_distinct_RLUSD_candidate_fell_from_8_07_to_5_78_percent_completed_week_APR_and_remains_unaccepted_with_zero_public_forward_floor_accepted_U_Flexible_RWUSD_VIP_USDT_Flexible_and_USDe_existing_inventory_overlays_remain_all_require_exact_account_eligibility_and_none_is_deployment_ready",
@@ -595,7 +604,8 @@
         "assuming_public_Convert_bounds_or_a_displayed_spread_prove_an_executable_fee_free_round_trip",
         "inferring_jurisdiction_or_account_eligibility_from_system_timezone",
         "calling direction-neutral market-invariant or risk-free",
-        "freezing another signed collector while credentials are absent"
+        "freezing another signed collector while credentials are absent",
+        "treating_Yield_Arena_as_a_distinct_edge_or_comparable_headline_APR_instead_of_routing_each_exact_product_to_its_existing_family"
       ],
       "retry_trigger": "before_2026_09_14T23_59_00Z_both_SIMPLE_AI_TRADING_BINANCE_MAINNET_API_KEY_and_SIMPLE_AI_TRADING_BINANCE_MAINNET_API_SECRET_available_with_explicit_read_only_account_evidence_authority_for_first_USD_deposit_Promotion_A_and_current_USD1_Simple_Earn_state_or_a_material_new_first_deposit_reward_capacity_fee_eligibility_valuation_or_distribution_term_or_2026_09_04_USD1_final_and_RLUSD_third_distribution_updates_or_published_USD1_Simple_Earn_U_RWUSD_USDT_or_USDe_rate_quota_fee_product_eligibility_snapshot_distribution_or_redemption_change_or_an_explicit_effective_BFUSD_reward_asset_reconciliation_or_2026_09_07_USDT_global_campaign_end_or_2026_09_14_U_campaign_end_or_2026_09_17_RWUSD_campaign_end_or_2026_09_21_USDT_regional_campaign_end",
       "venue_scope": "binance_bfusd_rwusd_rlusd_usd1_usdt_usde_Lite_Loan_first_USD_deposit_SPCXB_reward_and_same_currency_cash_alternatives"
@@ -2673,7 +2683,7 @@
       "venue_scope": "Binance_Spot_direct_and_exactly_one_intermediary_routes_for_independently_required_organic_conversions_with_the_exactly_two_intermediary_extension_terminal_for_the_retained_population"
     }
   ],
-  "result_sha256": "3aa7aef92c7ed41622aef16d0cea9f45f82925813d590a27d278f85a516eff32",
+  "result_sha256": "8262b29c4ba9b6eb322beb91d18a9c44756355b451374292904aa569e7c81941",
   "schema_version": "structural-edge-priority-registry-v1",
   "terminal_do_not_repeat": [
     {
@@ -3098,6 +3108,6 @@
       "reason": "the_one_request_complete_September_6_CFB_catalog_returned_24_events_retained_31_exact_relations_across_15_rule_complete_events_and_found_two_Gamma_sub_floor_candidates_but_the_precommitted_best_Mercyhurst_plus_29_5_plus_New_Mexico_State_minus_28_5_five_share_exact_depth_cost_9_8_pUSD_for_a_5_pUSD_floor_lost_4_8_pUSD_before_fees_and_books_were_1763317_ms_old_with_337138_ms_skew_no_fee_request_was_justified_do_not_repeat_paginate_narrow_refetch_or_select_the_other_observed_candidate_reopen_only_on_a_future_distinct_event_outside_every_consumed_population_under_the_literal_rank_30_trigger"
     }
   ],
-  "updated_at_utc": "2026-08-30T19:13:15.5146373Z",
+  "updated_at_utc": "2026-08-30T19:20:17.5895377Z",
   "usage_rule": "advance_the_highest_ranked_hypothesis_whose_retry_trigger_is_satisfied_otherwise_do_not_repeat_a_blocked_or_terminal_screen"
 }

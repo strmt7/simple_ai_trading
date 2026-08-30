@@ -1,0 +1,89 @@
+{
+  "schema_version": "binance-yield-arena-discovery-routing-addendum-v1",
+  "created_at_utc": "2026-08-30T19:20:17.5895377Z",
+  "purpose": "Prevent Binance Yield Arena from being mistaken for a distinct market-independent edge or used to duplicate product-specific research.",
+  "retained_sources": [
+    {
+      "path": "docs/model-research/action-value/binance-public-promotion-yield-triage-v1-2026-08-26.json",
+      "file_sha256": "f6db7ae377d0987afd2973a909179bf903319595d221c50a994ed3e56f7907d8",
+      "result_sha256": "26efd481a5ff424ca17ec803bb6a1a3ae8949d1fe0fc31a03e20a35d08d031ac",
+      "use": "already retained current August 26 Yield Arena article and exact product-level promotion adjudication"
+    },
+    {
+      "path": "docs/model-research/binance/raw/spot-block-matching-cost-overlay-v1-2026-08-30/03-agent-native-index.raw.txt",
+      "file_sha256": "944e132d3523c8a03abcac2f7ddb85802107e45161470885b7a8785fd4fdb15d",
+      "use": "current official Agent Native index classifying GET /sapi/v1/earn/arena/activities as USER_DATA and naming it Get Yield Arena Activities"
+    }
+  ],
+  "discovery_research": {
+    "public_search_batches": 3,
+    "venue_http_requests": 0,
+    "account_or_signed_requests": 0,
+    "current_economic_values_admitted": false,
+    "observations": [
+      "an official historical Binance announcement describes Yield Arena as a catalog spanning Simple Earn, ETH Staking, SOL Staking, Dual Investment, and other products",
+      "the repository already retained and adjudicated the August 26 2026 Yield Arena article before this search",
+      "two date-targeted current searches returned no exact August 2026 primary result and therefore supplied no new rate, cap, term, eligibility, or product evidence"
+    ],
+    "role": "alias_and_routing_discovery_only"
+  },
+  "routing_contract": {
+    "yield_arena_is_distinct_cash_flow": false,
+    "yield_arena_headline_apr_is_edge_evidence": false,
+    "endpoint_role": "authenticated_product_activity_discovery_and_account_reconciliation_only_after_an_exact_product_question_and_explicit_GET_only_authority_exist",
+    "product_routes": [
+      {
+        "surface": "Simple Earn or fixed holding promotion",
+        "route": "existing rank 3 native-token yield or rank 8 stable-value allocation family by exact asset and product"
+      },
+      {
+        "surface": "ETH Staking or SOL Staking",
+        "route": "existing rank 3 native-token or liquid-staking yield family"
+      },
+      {
+        "surface": "Dual Investment or Discount Buy",
+        "route": "existing terminal conditional-conversion family unless its literal distinct-subsidy or complete executable option-equivalent retry trigger fires"
+      },
+      {
+        "surface": "any other offer",
+        "route": "search registry and retained artifacts by exact product name, asset, payoff identity, article code, and endpoint before any new request"
+      }
+    ],
+    "required_offer_fields_before_economics": [
+      "exact product and asset",
+      "base and bonus rate semantics",
+      "tier and principal cap",
+      "minimum and sold-out or capacity state",
+      "effective start and end",
+      "account and regional eligibility",
+      "subscription redemption settlement and early-exit terms",
+      "conditional conversion or principal-loss payoff when applicable",
+      "exact owned-account realization and all incremental costs"
+    ]
+  },
+  "decision": {
+    "new_ranked_hypothesis": false,
+    "new_accepted_edge": false,
+    "deployment_ready": false,
+    "profitability_claim": false,
+    "market_or_price_request_justified": false,
+    "signed_activity_request_justified": false,
+    "status": "existing_discovery_surface_routed_without_duplicate_edge_family",
+    "reason": "Yield Arena aggregates products with different payoff, lockup, eligibility, and risk semantics. Its headline cannot be evaluated as one edge, and the current repository already contains the exact August 26 offer triage. Product-level routing preserves any real incentive while preventing duplicate collectors, APR cherry-picking, and conditional-conversion exposure from being mislabeled as stable yield.",
+    "retry_trigger": "A materially new exact product offer may advance only through its existing product family or, after exhaustive alias checking, a genuinely distinct source-bound payoff mechanism. Yield Arena branding or a changed headline alone is not a trigger."
+  },
+  "efficiency_correction": {
+    "duplicate_candidate_created": false,
+    "collector_or_backtest_created": false,
+    "future_instruction": "Before searching Yield Arena online, search retained artifacts by Yield Arena, the exact article code, exact product, asset, and payoff identity. Use the arena only to discover an underlying product; never model or rank the arena itself."
+  },
+  "authority": {
+    "credentials_used": false,
+    "funds_used": false,
+    "orders_or_transactions": 0,
+    "protected_capture_touched": false,
+    "signed_requests": 0,
+    "trading_authority": false
+  },
+  "result_sha256": "b01792aabe04989b4e65fb5ae00719249fa6186f7c5bd345c59a3ea9b4d8ff66"
+}

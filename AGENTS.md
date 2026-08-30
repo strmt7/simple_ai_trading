@@ -159,6 +159,12 @@ override prose.
   and fees before promotion. A public calculator is only a sensitivity: if its
   horizon, tier, or campaign state is not source-exposed, do not reverse-engineer
   those terms from outputs or call the estimate realized economics.
+- Treat Binance Yield Arena as a product-discovery surface, never as a distinct
+  edge or one comparable APR. Before searching it, alias-check the exact article
+  code, product, asset, and payoff identity against retained artifacts. Route
+  each offer into its existing Simple Earn, staking, holding-promotion, or
+  conditional-conversion family and bind that product's exact terms; Arena
+  branding or a changed headline alone is not a retry trigger.
 - Promotion dates stated for one named asset or product do not flow into adjacent
   rows in a current-offers table. Bind each asset's own effective start and end;
   without them its guaranteed forward public reward floor is zero, even when a
