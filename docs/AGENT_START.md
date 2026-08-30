@@ -2755,3 +2755,23 @@ canonical terminal result SHA-256 is
 Accepted edges remain 29, ranked hypotheses remain 44, terminal families become
 69, and registry SHA-256 is
 `087468040a17520bde05b3dd2e8bf2df94a3608176d9aad6b190382e043d858e`.
+
+## Binance Spot Price Range Execution Rule terminal screen
+
+One frozen current official FAQ GET retained 7,999 bytes and passed all seven
+source phrases. The rule is an exchange-set taker price cap, not a standalone
+edge: a marketable `LIMIT IOC` or `LIMIT FOK` with the user's worst acceptable
+price provides the same or tighter protection for either side, so the rule's
+incremental payoff upper bound is zero in every market direction. No live
+`executionRules`, `referencePrice`, account, credential, order, fund, or
+protected capture request was made.
+
+Do not poll the public rule endpoints merely to compare with an avoidably
+unbounded `MARKET` order. Source-bind current rule state only for a separately
+frozen candidate that materially depends on unbounded taker execution or exact
+`EXECUTION_RULE_PRICE_RANGE_EXCEEDED` residual behavior. Canonical terminal
+result SHA-256 is
+`6716c320effd97f20ebe84536366e0308ca7089b1ef15d4c6f601c232182a10d`.
+Accepted edges remain 29, ranked hypotheses remain 44, terminal families become
+70, and registry SHA-256 is
+`d2d24730180c4b4c9182a4f694a906cab819e1f93633ac04ddc834af5f6d3d31`.
