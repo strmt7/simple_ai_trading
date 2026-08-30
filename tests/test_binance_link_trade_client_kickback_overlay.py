@@ -120,12 +120,14 @@ def test_kickback_edge_updates_only_the_non_yield_population() -> None:
         "path": ARTIFACT.relative_to(ROOT).as_posix(),
         "result_sha256": artifact["result_sha256"],
     } in family["canonical_artifacts"]
-    assert registry["accepted_edge_count"] == 24
-    assert frontier["population"]["registry_accepted_edge_count"] == 24
-    assert frontier["population"]["yield_and_capital_efficiency_edges_included"] == 9
-    assert (
-        frontier["population"][
-            "organic_flow_fee_referral_creator_and_financing_cost_overlays_excluded"
-        ]
-        == 15
+    population = frontier["population"]
+    assert population["registry_accepted_edge_count"] == registry[
+        "accepted_edge_count"
+    ]
+    assert population["yield_and_capital_efficiency_edges_included"] == 9
+    assert population[
+        "organic_flow_fee_referral_creator_and_financing_cost_overlays_excluded"
+    ] == (
+        population["registry_accepted_edge_count"]
+        - population["yield_and_capital_efficiency_edges_included"]
     )

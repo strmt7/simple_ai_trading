@@ -12,7 +12,7 @@ operating contract. Historical handoff text is archived under
 | Development branch | `main` only |
 | Binance | BTC, ETH, and SOL; paper or testnet/Demo only |
 | Polymarket | Independent BTC 5-minute/15-minute research; disabled by default |
-| Accepted edges | Twenty-four scoped structural edges. The canonical complete scopes, counts, and retry gates are in `docs/model-research/structural-edge-priority-registry-v1.json`; none is deployment-ready or fully account-and-external-cost-qualified. |
+| Accepted edges | Twenty-five scoped structural edges. The canonical complete scopes, counts, and retry gates are in `docs/model-research/structural-edge-priority-registry-v1.json`; none is deployment-ready or fully account-and-external-cost-qualified. |
 | Live-money authority | None |
 | Historical cutoff | `2026-08-14T00:00:00Z` |
 
@@ -951,7 +951,7 @@ safety gate, blocks Stop, or submits an order.
   The accepted count remains 21; registry SHA-256 is
   `de28d80cc4b0b9cd1bd3f9954cb840dcaefe46fcc0fdf9ac3fd53218169370cb`.
 - The separate official crypto maker-rebate schedule has exact conditional
-  filled-order arithmetic, not an accepted edge. At 50 shares bid on each side
+  filled-order arithmetic, not an accepted standalone market-making edge. At 50 shares bid on each side
   at 0.49, the unrounded nominal rebates total 0.3498600 pUSD and raise the
   conditional both-fill value from 1.00 to 1.3498600 pUSD. Public evidence still
   proves no positive payout lower bound, queue position, fill probability, or
@@ -966,10 +966,17 @@ safety gate, blocks Stop, or submits an order.
   daily total, across 5m, 15m, and 4h markets. Public activity omits fills,
   queue, capital, adverse selection, inventory, and orphan P&L, and wallet-level
   receipt-to-volume ratios mix incompatible public fields. The fresh-order
-  payout floor therefore remains zero and no edge is accepted. Canonical
+  payout floor therefore remains zero and no standalone strategy is accepted. Canonical
   recurrence:
   `crypto-maker-rebate-public-recurrence-v2-2026-08-26.json`, result SHA-256
   `c992e0e1febc1a9789289cb129c166280ee0192cab203d3a6935a8c40e949612`.
+  A zero-request scope correction now accepts only the exact realized positive
+  pUSD rebate on independently justified legitimate organic owned BTC/ETH/SOL
+  maker fills after every incremental cost. It does not credit a nominal
+  rebate, authorize a quote, accept the underlying strategy, or let the rebate
+  rescue negative base economics. The public forward floor remains zero.
+  Canonical overlay SHA-256 is
+  `a8db5f3c823c8b1caffa6b0032282647dbb1e7fb014f8923821c1b1fe97d1c81`.
   Do not poll public wallets again unless terms change. After the protected
   boundary, only owned authenticated fills and complete after-cost inventory
   reconciliation can decide this candidate.

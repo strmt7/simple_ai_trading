@@ -12,11 +12,13 @@ Development belongs only on `main`; do not create another development branch.
   code-scanning, and secret-scanning alerts. Reverify the publication commit;
   zero alerts never proves zero undisclosed vulnerabilities.
 - The repository is beta `0.1.0-beta.1`. No model has production authority or a
-  demonstrated long-lived after-all-cost edge. Twenty-four narrowly scoped structural
+  demonstrated long-lived after-all-cost edge. Twenty-five narrowly scoped structural
   edges are accepted: Polymarket holding yield for existing idle on-platform
   pUSD; Polymarket pUSD taker-fee rebates only for independently justified
   legitimate organic BTC/ETH/SOL taker flow after the direct-wallet tier is
-  effective; Binance Soft Staking yield for already-held idle non-order ETH/SOL
+  effective; exact realized positive Polymarket crypto maker rebates only on
+  independently justified legitimate organic owned BTC/ETH/SOL maker fills
+  after every incremental cost; Binance Soft Staking yield for already-held idle non-order ETH/SOL
   Spot inventory; LDUSDT or independently existing RWUSD reward retention only
   for already-required USD-M Futures collateral under the exact applicable
   account haircut and limits;
@@ -4625,3 +4627,35 @@ remain 57. Current frontier SHA-256 becomes
 `e3e6941790079587e3a21bf0894e165963cc871b9165821fd7b00600fc3c4dec`;
 registry SHA-256 becomes
 `beaa24adc3a5550185f0b387818565d7a0bb5bbddea4520ca71a101afce4baaf`.
+
+## Polymarket realized organic crypto maker-rebate overlay
+
+The retained official contract gives BTC/ETH/SOL crypto makers a zero maker fee
+and a daily nominal rebate equal to 20% of the taker-fee-equivalent formula,
+subject to a one-pUSD accrued-payment minimum and a discretionary rate. The
+retained recurrence study then observed positive `MAKER_REBATE` receipts for
+all ten public top-volume wallets, eight on all fourteen UTC dates, totaling
+234,881.8839 pUSD. One exhaustively joined wallet-day contained 668 BTC/ETH/SOL
+rows and 7,017.331032 pUSD of rebate cash.
+
+The earlier adjudication correctly rejected a standalone maker strategy because
+public payments do not prove owned fills, queue position, quote duration,
+inventory, adverse selection, latency, orphan risk, or complete P&L. It was too
+broad in rejecting the incremental cash overlay as well. The repository now
+accepts only an exact realized positive owned rebate on an independently
+justified legitimate organic BTC/ETH/SOL maker fill after every incremental
+cost. A nominal estimate, another wallet's receipt, manufactured volume, or a
+rebate used to rescue negative base economics does not qualify.
+
+The public forward floor remains zero, the standalone market-making strategy
+remains rejected, and deployment readiness remains false. No credential,
+account, owned wallet, venue API, order, cancel, transfer, withdrawal, or fund
+was accessed. Every order-capable action still requires separate authority.
+
+Canonical overlay SHA-256 is
+`a8db5f3c823c8b1caffa6b0032282647dbb1e7fb014f8923821c1b1fe97d1c81`.
+Accepted edges become 25, ranked hypotheses remain 44, and terminal families
+remain 57. Current frontier SHA-256 becomes
+`05d423fdfa461f22a88ff1d3887804c2dc40080d7a18f4fa63e6b91381ee140d`;
+registry SHA-256 becomes
+`6f1ead1fd1609f6da6c0ab762a236974b86c967ca31e5d9b7bdc4e4b776687c7`.

@@ -1,8 +1,8 @@
 {
   "schema_version": "accepted-market-independent-yield-frontier-v1",
   "created_at_utc": "2026-08-30T03:07:15Z",
-  "updated_at_utc": "2026-08-30T08:22:49.3606261Z",
-  "result_sha256": "e3e6941790079587e3a21bf0894e165963cc871b9165821fd7b00600fc3c4dec",
+  "updated_at_utc": "2026-08-30T08:34:20.5863910Z",
+  "result_sha256": "05d423fdfa461f22a88ff1d3887804c2dc40080d7a18f4fa63e6b91381ee140d",
   "purpose": "rank_the_nine_accepted_market_direction_independent_yield_and_capital_efficiency_overlays_by_evidence_strength_current_gross_opportunity_and_remaining_deployment_gates_without_new_network_or_account_access",
   "authority": {
     "network_requests": 0,
@@ -13,9 +13,9 @@
     "protected_capture_accessed": false
   },
   "population": {
-    "registry_accepted_edge_count": 24,
+    "registry_accepted_edge_count": 25,
     "yield_and_capital_efficiency_edges_included": 9,
-    "organic_flow_fee_referral_creator_and_financing_cost_overlays_excluded": 15,
+    "organic_flow_fee_referral_creator_and_financing_cost_overlays_excluded": 16,
     "population_complete_for_registry_accepted_yield_edges": true,
     "shared_scope": "identical_principal_or_asset_already_independently_held_or_required_no_acquisition_borrow_volume_creation_or_market_direction_forecast",
     "shared_deployment_state": "none_is_deployment_ready_or_fully_account_and_external_cost_qualified"
@@ -284,7 +284,7 @@
       "stable_acquisition_profit_proved": false
     },
     "new_accepted_edge_count": 0,
-    "accepted_edge_count_after_frontier": 24,
+    "accepted_edge_count_after_frontier": 25,
     "profitability_claim_beyond_source_scopes": false,
     "deployment_ready_edge_count": 0,
     "next_research_spend": "at_or_after_2026_08_30T19_00_01Z_advance_only_the_precommitted_distinct_WNBA_structural_window_if_every_frozen_gate_is_satisfied_then_refresh_only_the_rank_1_Polymarket_single_wallet_continuity_pulse_not_before_2026_08_31T02_15_30Z_absent_a_material_change_do_not_roll_USD1_or_U_remaining_horizon_stresses_daily",
