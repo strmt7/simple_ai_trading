@@ -1,0 +1,76 @@
+{
+  "schema_version": "binance-cross-sectional-funding-durable-edge-paper-triage-v1",
+  "created_at_utc": "2026-08-30T19:12:17.3678055Z",
+  "purpose": "Determine whether the newly discovered SSRN paper titled Risk Control as the Durable Edge supplies a distinct stable Binance BTC ETH SOL direction-independent edge or changes the retained terminal cross-sectional funding-dispersion decision.",
+  "paper_discovery": {
+    "title": "Risk Control as the Durable Edge: Loss Filtering, Profit-Armed Ratchets, and Market-Neutral Carry When Direction Fails",
+    "author": "Alexandr Dashyan",
+    "ssrn_abstract_id": "7345542",
+    "official_abstract_url": "https://papers.ssrn.com/sol3/papers.cfm?abstract_id=7345542",
+    "posted_date_reported_by_discovery_surface": "2026-08-26",
+    "access_role": "web_search_rendered_primary_abstract_page_discovery_only_not_byte_retained",
+    "economic_values_source_bound": false,
+    "discovery_only_observations_not_used_as_repository_economic_inputs": [
+      "the abstract describes a cross-sectional dollar-neutral funding-carry sleeve with beta close to zero",
+      "the abstract says the sleeve loses in three of six calendar years",
+      "the abstract says the steady funding coupon is only six to fifteen percent annually while the crowded-name price spread makes and loses the rest",
+      "the abstract explicitly says none of the presented mechanisms reliably makes money"
+    ]
+  },
+  "retained_authoritative_evidence": [
+    {
+      "path": "docs/model-research/action-value/binance-btc-eth-sol-cross-sectional-funding-dispersion-contract-v1-2026-08-30.json",
+      "file_sha256": "5f6d7412755bfbcda3d105c48caae1a9734d517bf43d288ecbd74a6fff0d2bc1",
+      "canonical_sha256": "a91a2922110e4e38ae468d48a9c213c58f13bfe466460bf1e9ab1293b7dd446b"
+    },
+    {
+      "path": "docs/model-research/action-value/binance-btc-eth-sol-cross-sectional-funding-dispersion-result-v1-2026-08-30.json",
+      "file_sha256": "0f8b59d113e867410e30520bc633418c838c4ae962e9757e63b4ab66c1345373",
+      "canonical_sha256": "7a14b4f5d870d9f53a728f07d1c04f762dbb368eec9756e85a6bc7bd1944a397"
+    },
+    {
+      "path": "docs/model-research/action-value/binance-btc-eth-sol-cross-sectional-funding-dispersion-capital-sensitivity-v1-2026-08-30.json",
+      "file_sha256": "83dfcdfb415fec358f05ee15ab8808178a392799432ceab92995a831481f3e06",
+      "canonical_sha256": "61a65f1f81b7109a6f959a53f8b780e88582b1338ec0cc512ef6784020da029f"
+    }
+  ],
+  "scope_mapping": {
+    "paper_method_fully_source_bound": false,
+    "paper_exact_symbols_fees_turnover_selection_and_price_spread_rules_known": false,
+    "candidate_alias": "cross_sectional_dollar_neutral_perpetual_funding_carry",
+    "existing_repository_family": "binance_BTC_ETH_SOL_same_venue_cross_sectional_perpetual_funding_dispersion_2026_08_30",
+    "repository_scope": "BTC ETH and SOL Binance USD-M perpetual pairs only",
+    "repository_dominance_result": "Even an impossible interval-perfect-foresight funding orientation with zero switching cost, only 32 bips entry and exit, and optimistic equal 5x leverage lost 18.840831506849315068493150692 bips across validation plus test before relative-price liquidation and operating costs.",
+    "broader_price_spread_component": "not_a_stable_funding_coupon_and_outside_the_current_BTC_ETH_SOL_funding_only_dominance_claim_without_exact_source_bound_method_and_cross_regime_evidence"
+  },
+  "decision": {
+    "new_ranked_hypothesis": false,
+    "new_accepted_edge": false,
+    "deployment_ready": false,
+    "profitability_claim": false,
+    "market_or_price_request_justified": false,
+    "existing_terminal_family_reopened": false,
+    "status": "literature_alias_does_not_reopen_terminal_family",
+    "reason": "The paper discovery does not expose a source-bound exact method and its abstract describes materially unstable returns driven mostly by relative-price spread rather than a stable funding coupon. The retained scoped Binance BTC ETH SOL dominance bound is stronger for funding-only economics and remains negative under impossible foresight and optimistic leverage. Building or resampling another cross-sectional funding model would duplicate a terminal family without satisfying its literal retry trigger.",
+    "retry_trigger": "A source-bound material Binance funding fee execution portfolio-margin netting or capital-treatment change must first clear the retained full-risk deficit, or a fully source-bound materially distinct method must prove that it is not the terminal funding-dispersion family before any new market request."
+  },
+  "efficiency_correction": {
+    "new_venue_http_requests": 0,
+    "new_market_data_requests": 0,
+    "new_model_or_backtest_runs": 0,
+    "duplicate_collector_or_strategy_implementation_created": false,
+    "future_instruction": "Search this triage and the structural-edge registry before implementing any literature-described cross-sectional or dollar-neutral funding sleeve. Do not treat a paper title, Sharpe estimate, beta estimate, or market-neutral label as a distinct mechanism."
+  },
+  "authority": {
+    "account_requests": 0,
+    "books_or_price_requests": 0,
+    "credentials_used": false,
+    "funds_used": false,
+    "orders_or_transactions": 0,
+    "protected_capture_touched": false,
+    "public_unauthenticated_read_only_requests": 0,
+    "signed_requests": 0,
+    "trading_authority": false
+  },
+  "result_sha256": "919f4183dc70edd28158f9729872de1701a081bd579cd31f80f3761029fd1c18"
+}

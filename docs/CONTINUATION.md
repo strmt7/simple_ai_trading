@@ -5835,3 +5835,29 @@ Accepted edges remain 29, ranked hypotheses remain 44, terminal families become
 `1aad977a7ca40e38e040b24e99518aea23b4f29d7c961aa0b9143f0ad38b8a54`.
 No credentials, accounts, orders, funds, fee endpoints, testnet endpoints, or
 protected captures were touched.
+
+### Cross-sectional funding literature alias correction
+
+A new SSRN discovery lead, *Risk Control as the Durable Edge*, describes a
+cross-sectional dollar-neutral funding-carry sleeve. The rendered official
+abstract is discovery only and was not used as a source-bound economic input:
+it reports three losing calendar years out of six, says the steady funding
+coupon is only 6-15 percent annually while the crowded-name price spread makes
+and loses the rest, and explicitly disclaims reliable profitability. Its exact
+symbols, selection, turnover, fees, and price-spread rules were not retained.
+
+This does not create or reopen a strategy family. The existing BTC/ETH/SOL
+Binance funding-dispersion dominance bound remains stronger for the scoped
+funding-only question: impossible interval-perfect-foresight orientation, zero
+switching cost, only 32 bips entry and exit, and optimistic equal 5x leverage
+still lost 18.840831506849315068493150692 bips across validation plus test
+before relative-price, liquidation, and operating costs. No market request,
+model, backtest, collector, credentials, account, order, funds, testnet endpoint,
+or protected capture was used. Search the new triage before implementing any
+literature-described cross-sectional or dollar-neutral funding sleeve.
+
+Triage result SHA-256 is
+`919f4183dc70edd28158f9729872de1701a081bd579cd31f80f3761029fd1c18`.
+Accepted edges remain 29, ranked hypotheses remain 44, terminal families remain
+83, and registry SHA-256 becomes
+`3aa7aef92c7ed41622aef16d0cea9f45f82925813d590a27d278f85a516eff32`.
