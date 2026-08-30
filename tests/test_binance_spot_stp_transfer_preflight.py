@@ -120,4 +120,3 @@ def test_current_configuration_and_rank_five_lineage_reconstruct() -> None:
         "result_sha256": artifact["result_sha256"],
     } in rank_five["canonical_artifacts"]
     assert "STP_TRANSFER" in rank_five["retry_trigger"]
-    assert registry["accepted_edge_count"] == 21

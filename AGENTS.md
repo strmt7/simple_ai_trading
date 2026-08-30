@@ -54,11 +54,12 @@ override prose.
   otherwise stop before building another collector. A zero-request retained-data
   audit may be kept only when it materially strengthens or corrects the existing
   adjudication, and it must update that family instead of creating a duplicate.
-- Family-specific tests must not pin the mutable whole-registry SHA-256. Verify
-  the registry's embedded canonical self-hash plus the family's exact artifact,
-  rank, scope, and terminal or retry state; keep any exact global registry hash
-  pin in one registry-integrity test only. This prevents every evidence update
-  from forcing unrelated test edits.
+- Family-specific tests must not pin the mutable whole-registry SHA-256 or the
+  mutable global accepted-edge count. Verify the registry's embedded canonical
+  self-hash plus the family's exact artifact, rank, scope, and terminal or retry
+  state; keep exact global registry hashes and accepted counts only in central
+  registry/frontier integrity and the newly accepted family's proof. This
+  prevents every valid discovery from forcing unrelated test edits.
 - A frozen current-state screen terminalizes only its exact population, time,
   size, and source contract. Material new primary evidence of recurrent
   event-time violations may reopen a separately preregistered recurrence study;
@@ -341,6 +342,9 @@ large CSV files. The detailed workflow and imported-tool provenance are in
 
 ## Verification
 
+- Invoke repository tests as `uv run python -m pytest`; the `uv run pytest`
+  console entry may omit the repository root and cause false collection errors
+  for tests that import `tools.*`.
 - During iteration, run the smallest focused test and Ruff check. Every new
   branch needs a direct assertion, including normal and fallback error paths.
 - At a behavior checkpoint, run the complete affected-domain suite once.

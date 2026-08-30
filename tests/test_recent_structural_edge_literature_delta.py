@@ -135,7 +135,6 @@ def test_registry_strengthens_the_existing_family_without_new_edge() -> None:
     registry = _load(REGISTRY)
     assert registry["result_sha256"] == REGISTRY_HASH
     assert _canonical_hash(registry, "result_sha256") == REGISTRY_HASH
-    assert registry["accepted_edge_count"] == 21
     assert len(registry["prioritized_hypotheses"]) == 44
     family = next(
         row for row in registry["prioritized_hypotheses"] if row["priority_rank"] == 44

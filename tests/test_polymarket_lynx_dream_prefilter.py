@@ -123,4 +123,3 @@ def test_registry_retains_both_negative_wnba_extensions() -> None:
         "cc657982abd9ede0f0f7b18787df32e62c69b7c3b3e547ade3f6f3ccb734ed46",
         "61b3436b3367ba3442ebe777c8a506948243c6d3b6d6a4cb9346d2db3aaf335f",
     } <= hashes
-    assert registry["accepted_edge_count"] == 21

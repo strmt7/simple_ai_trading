@@ -181,4 +181,3 @@ def test_one_request_terminal_result_reconstructs_retained_evidence() -> None:
         == result["result_sha256"]
     )
     assert len(registry["prioritized_hypotheses"]) == 44
-    assert registry["accepted_edge_count"] == 21

@@ -125,4 +125,3 @@ def test_registry_terminalizes_resolved_leg_family_without_promotion() -> None:
     )
     assert row["priority_rank"] == 31
     assert "remains_unaccepted" in row["current_status"]
-    assert registry["accepted_edge_count"] == 21

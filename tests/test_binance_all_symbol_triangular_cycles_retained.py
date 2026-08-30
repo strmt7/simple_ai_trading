@@ -170,7 +170,6 @@ def test_adjudication_discloses_ranking_defect_and_updates_existing_family() -> 
     )
     assert registry["result_sha256"] == REGISTRY_HASH
     assert _embedded_hash(registry, "result_sha256") == REGISTRY_HASH
-    assert registry["accepted_edge_count"] == 21
     families = registry["prioritized_hypotheses"]
     triangle = next(row for row in families if row["priority_rank"] == 16)
     assert triangle["mechanism"] == "three_leg_spot_conversion"

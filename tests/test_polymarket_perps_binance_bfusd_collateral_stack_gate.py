@@ -68,5 +68,4 @@ def test_registry_points_to_current_bfusd_gate_without_promotion() -> None:
 
     assert candidate["canonical_artifacts"][-1]["result_sha256"] == EXPECTED_HASH
     assert candidate["priority_rank"] == 20
-    assert registry["accepted_edge_count"] == 21
     assert registry["authority"]["profitability_claim"] is False

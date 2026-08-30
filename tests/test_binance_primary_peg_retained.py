@@ -131,5 +131,4 @@ def test_rank_five_registry_lineage_is_fail_closed() -> None:
     } in rank_five["canonical_artifacts"]
     assert any("PRIMARY_PEG" in item for item in rank_five["blocking_evidence"])
     assert "testnet_or_paper" in rank_five["retry_trigger"]
-    assert registry["accepted_edge_count"] == 21
     assert len(registry["prioritized_hypotheses"]) == 44

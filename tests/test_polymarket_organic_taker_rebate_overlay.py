@@ -178,7 +178,6 @@ def test_promotion_is_scoped_non_authorizing_and_registered_as_edge_ten() -> Non
 
     assert registry["result_sha256"] == EXPECTED_REGISTRY_HASH
     assert _embedded_hash(registry) == EXPECTED_REGISTRY_HASH
-    assert registry["accepted_edge_count"] == 21
     hypotheses = registry["prioritized_hypotheses"]
     assert [row["priority_rank"] for row in hypotheses] == list(range(1, 45))
     candidate = next(

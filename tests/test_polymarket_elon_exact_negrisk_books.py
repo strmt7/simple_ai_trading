@@ -303,5 +303,4 @@ def test_registry_terminalizes_only_the_exact_event() -> None:
         == "polymarket_NYC_Mayor_September_1_to_September_8_exact_fixed_NegRisk_parity_2026_08_30"
     )
     assert nyc_terminal["canonical_result_sha256"] == NYC_BOOK_RESULT_HASH
-    assert registry["accepted_edge_count"] == 21
     assert "full pre-network" in (ROOT / "AGENTS.md").read_text(encoding="utf-8")

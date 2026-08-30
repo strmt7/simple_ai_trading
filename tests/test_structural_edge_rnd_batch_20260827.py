@@ -122,7 +122,6 @@ def test_registry_adds_only_trigger_gated_combo_identity_candidate() -> None:
 
     assert registry["result_sha256"] == REGISTRY_HASH
     assert _canonical_hash(registry) == REGISTRY_HASH
-    assert registry["accepted_edge_count"] == 21
     assert [row["priority_rank"] for row in registry["prioritized_hypotheses"]] == list(
         range(1, 45)
     )

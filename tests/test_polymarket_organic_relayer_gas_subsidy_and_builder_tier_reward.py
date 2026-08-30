@@ -88,7 +88,6 @@ def test_registry_routes_relayer_overlay_without_new_family() -> None:
     result = json.loads(RESULT.read_text(encoding="utf-8"))
     registry = json.loads(REGISTRY.read_text(encoding="utf-8"))
     _canonical_hash(registry, "result_sha256")
-    assert registry["accepted_edge_count"] == 21
     assert len(registry["prioritized_hypotheses"]) == 44
 
     family = next(

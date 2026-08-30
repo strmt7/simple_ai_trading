@@ -149,4 +149,3 @@ def test_registry_preserves_the_omission_and_routes_the_cross_period_correction(
         "fa936c2049de2a05f15215609f735fd1c789237a372671b0f89b324d5f487bff",
         "fc01c54e9c04117067aa3b43ae194649b93efc12a5265fce508e64f082f320b2",
     } <= hashes
-    assert registry["accepted_edge_count"] == 21

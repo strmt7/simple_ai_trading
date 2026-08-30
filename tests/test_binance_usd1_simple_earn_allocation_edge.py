@@ -147,7 +147,6 @@ def test_registry_promotes_only_the_scoped_existing_usd1_allocation() -> None:
 
     assert registry["result_sha256"] == REGISTRY_HASH
     assert _canonical_hash(registry) == REGISTRY_HASH
-    assert registry["accepted_edge_count"] == 21
     hypothesis = next(
         row
         for row in registry["prioritized_hypotheses"]

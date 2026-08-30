@@ -170,4 +170,3 @@ def test_nullable_moneyline_line_and_registry_routing() -> None:
         "c387e389d852ab5571056a9f2e80f91c63ae6f1c124ca55291b0fc787b5faeae",
         "731ca32a06f8f1a42aaae9e326c2bd89379657e338231dd906b749790c15ddfa",
     } <= hashes
-    assert registry["accepted_edge_count"] == 21

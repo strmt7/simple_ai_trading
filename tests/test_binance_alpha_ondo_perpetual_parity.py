@@ -111,7 +111,6 @@ def test_registry_terminalizes_only_the_current_snapshot() -> None:
 
     assert registry["result_sha256"] == REGISTRY_HASH
     assert _canonical_hash(registry, "result_sha256") == REGISTRY_HASH
-    assert registry["accepted_edge_count"] == 21
     hypothesis = next(
         row
         for row in registry["prioritized_hypotheses"]

@@ -315,7 +315,6 @@ def test_terminal_registry_entry_is_unique_and_accepted_count_is_unchanged() -> 
     assert len(registry["prioritized_hypotheses"]) == 44
     families = [row["family"] for row in registry["terminal_do_not_repeat"]]
     assert len(families) == len(set(families))
-    assert registry["accepted_edge_count"] == 21
     terminal = [
         row
         for row in registry["terminal_do_not_repeat"]

@@ -81,7 +81,6 @@ def test_registry_and_crypto_constant_keep_sports_separate() -> None:
 
     assert registry["result_sha256"] == REGISTRY_HASH
     assert _canonical_hash(registry) == REGISTRY_HASH
-    assert registry["accepted_edge_count"] == 21
     row = next(
         item
         for item in registry["prioritized_hypotheses"]

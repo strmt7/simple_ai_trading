@@ -86,7 +86,6 @@ def test_stocks_fee_overlay_reconstructs_savings_and_fail_closed_boundaries() ->
     registry = _load(REGISTRY)
     assert registry["result_sha256"] == REGISTRY_HASH
     assert _canonical_hash(registry) == REGISTRY_HASH
-    assert registry["accepted_edge_count"] == 21
     hypothesis = next(
         row
         for row in registry["prioritized_hypotheses"]

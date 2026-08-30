@@ -274,4 +274,3 @@ def test_registry_routes_partial_page_without_accepting_an_edge() -> None:
     assert artifact_positions == sorted(artifact_positions)
     assert "two_empty_forward_series_queries" in row["current_status"]
     assert "do_not_repeat_either_empty_forward_series_query" in row["next_action"]
-    assert registry["accepted_edge_count"] == 21

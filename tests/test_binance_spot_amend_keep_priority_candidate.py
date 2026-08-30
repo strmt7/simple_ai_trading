@@ -139,7 +139,6 @@ def test_retained_production_configuration_and_rank_five_lineage_reconstruct() -
         "path": ADJUDICATION.relative_to(ROOT).as_posix(),
         "result_sha256": adjudication["result_sha256"],
     } in rank_five["canonical_artifacts"]
-    assert registry["accepted_edge_count"] == 21
     assert adjudication["adjudication"]["accepted_edge"] is False
     assert adjudication["economic_adjudication"]["public_forward_profit_floor_quote_units"] == "0"
 

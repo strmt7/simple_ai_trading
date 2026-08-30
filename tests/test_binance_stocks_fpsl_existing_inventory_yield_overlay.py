@@ -74,7 +74,6 @@ def test_registry_tracks_fpsl_without_increasing_accepted_count() -> None:
 
     assert registry["result_sha256"] == EXPECTED_REGISTRY_SHA256
     assert _embedded_hash(registry) == EXPECTED_REGISTRY_SHA256
-    assert registry["accepted_edge_count"] == 21
     family = next(
         row for row in registry["prioritized_hypotheses"] if row["priority_rank"] == 12
     )

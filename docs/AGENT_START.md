@@ -12,7 +12,7 @@ operating contract. Historical handoff text is archived under
 | Development branch | `main` only |
 | Binance | BTC, ETH, and SOL; paper or testnet/Demo only |
 | Polymarket | Independent BTC 5-minute/15-minute research; disabled by default |
-| Accepted edges | Twenty-one scoped structural edges: Polymarket complete-set holding yield for existing idle on-platform pUSD; Polymarket pUSD taker-fee rebates only for independently justified legitimate organic BTC/ETH/SOL taker flow after the direct-wallet tier is effective; Polymarket builder fees only on bona fide independently existing third-party orders routed through an owned app with an account-confirmed active disclosed positive rate; Polymarket referral rewards only for authentic external referrals when the account already independently cleared the lifetime-volume threshold; Polymarket Perps referral fee share only for authentic external traders within account-confirmed available invites and without volume-based invite unlocking; Binance Soft Staking yield for already-held idle non-order ETH/SOL Spot inventory; LDUSDT or independently existing RWUSD reward retention only for already-required USD-M Futures collateral under the exact applicable account haircut and limits; just-in-time BNB fee reduction only for independently justified organic Spot flow; current quote-native BTC/ETH/SOL promotional fee reduction without quote acquisition or extra volume; the current TradFi perpetual zero-maker and reduced-taker fee overlay only for independently justified organic flow with the exact current symbol and actual fill role; the current Binance Stocks promotional trading-spread reduction only for independently justified organic direct-stock flow with the exact previewed order tier and realized fee; the current bStocks zero-maker fee only for independently justified organic maker flow through `2026-09-30T23:59:00Z`, with the exact owned fill role and counterfactual account fee; USD1/WLFI holding-airdrop yield only for already-held eligible USD1; the fixed USD1 Simple Earn bonus only on the first 1,500 independently already-held idle USD1 when its mutually exclusive balance-specific route beats the holding airdrop after all transition and opportunity costs; U Flexible yield only for already-held eligible non-EEA U; the automatic RWUSD VIP bonus only on independently required existing RWUSD; current USDT Flexible bonus yield only for independently held idle eligible USDT; the current automatic USDe holding reward only for eligible USDe already independently held on Binance for at least 24 hours; Binance Square's base 20% Write to Earn commission only on authentic external readers' independently existing eligible fee-bearing trades attributed to genuinely useful content; Binance Referral Pro's base 20% Spot/Margin and 10% one-year Futures fee commission only for authentic independently acquired new external users; and fail-closed one-intermediary Binance Spot route savings only for an independently required legitimate same-account organic conversion after exact account fees, filters, fresh finite-size depth, residuals, extra-leg stress, and failure-unwind costs remain strictly cheaper than the direct route. None is deployment-ready or fully account-and-external-cost-qualified. |
+| Accepted edges | Twenty-two scoped structural edges: Polymarket complete-set holding yield for existing idle on-platform pUSD; Polymarket pUSD taker-fee rebates only for independently justified legitimate organic BTC/ETH/SOL taker flow after the direct-wallet tier is effective; Polymarket builder fees only on bona fide independently existing third-party orders routed through an owned app with an account-confirmed active disclosed positive rate; Polymarket referral rewards only for authentic external referrals when the account already independently cleared the lifetime-volume threshold; Polymarket Perps referral fee share only for authentic external traders within account-confirmed available invites and without volume-based invite unlocking; Binance Soft Staking yield for already-held idle non-order ETH/SOL Spot inventory; LDUSDT or independently existing RWUSD reward retention only for already-required USD-M Futures collateral under the exact applicable account haircut and limits; just-in-time BNB fee reduction only for independently justified organic Spot flow; current quote-native BTC/ETH/SOL promotional fee reduction without quote acquisition or extra volume; the current TradFi perpetual zero-maker and reduced-taker fee overlay only for independently justified organic flow with the exact current symbol and actual fill role; the current Binance Stocks promotional trading-spread reduction only for independently justified organic direct-stock flow with the exact previewed order tier and realized fee; the current bStocks zero-maker fee only for independently justified organic maker flow through `2026-09-30T23:59:00Z`, with the exact owned fill role and counterfactual account fee; USD1/WLFI holding-airdrop yield only for already-held eligible USD1; the fixed USD1 Simple Earn bonus only on the first 1,500 independently already-held idle USD1 when its mutually exclusive balance-specific route beats the holding airdrop after all transition and opportunity costs; U Flexible yield only for already-held eligible non-EEA U; the automatic RWUSD VIP bonus only on independently required existing RWUSD; current USDT Flexible bonus yield only for independently held idle eligible USDT; the current automatic USDe holding reward only for eligible USDe already independently held on Binance for at least 24 hours; Binance Square's base 20% Write to Earn commission only on authentic external readers' independently existing eligible fee-bearing trades attributed to genuinely useful content; Binance Referral Pro's base 20% Spot/Margin and 10% one-year Futures fee commission only for authentic independently acquired new external users; exact realized monthly Binance Institutional Loan interest rebates only on an independently required existing eligible loan when KYB VIP eligibility and the applicable performance target were independently satisfied without creating trading volume, Open Interest, Net Asset Value, borrowing, leverage, or collateral exposure; and fail-closed one-intermediary Binance Spot route savings only for an independently required legitimate same-account organic conversion after exact account fees, filters, fresh finite-size depth, residuals, extra-leg stress, and failure-unwind costs remain strictly cheaper than the direct route. None is deployment-ready or fully account-and-external-cost-qualified. |
 | Live-money authority | None |
 | Historical cutoff | `2026-08-14T00:00:00Z` |
 
@@ -1717,9 +1717,9 @@ The canonical zero-network frontier for all nine accepted yield and capital-
 efficiency overlays is
 `docs/model-research/action-value/accepted-market-independent-yield-frontier-v1-2026-08-30.json`,
 result SHA-256
-`e99021f9b49c13f4cfb894d01c4125a5604ae7bf4cf9e7b20f2c204f6a91b8e0`.
-It excludes the twelve accepted organic-flow fee, referral, and creator
-overlays and adds no accepted edge.
+`7a7fa5ed15ab63bfd0c4d5d2ce65888391a72c4e73eea69e7f7c1fcf01a13fb8`.
+It excludes the thirteen accepted organic-flow fee, referral, creator, and
+financing-cost overlays and adds no accepted edge.
 
 Polymarket complete-set holding yield remains strongest on realized stability:
 42 of 42 positive daily payments across BTC, ETH, and SOL, 1,039 pUSD
@@ -2247,3 +2247,36 @@ preflight SHA-256 is
 Accepted edges remain 21, ranked hypotheses remain 44, and terminal families
 remain 55. Registry SHA-256 is
 `8813fbc12ea5fe5ad5eb38630c7faba9c1a740389266ad27bb0c5db41759c52a`.
+
+## Binance Institutional Loan realized interest-rebate overlay
+
+A zero-request offline audit of the retained current official API index exposed
+an unregistered economic mechanism: Institutional Loan has signed `USER_DATA`
+endpoints for interest history, interest-rebate balance, and rebate records. A
+single provenance-only public capture then retained an issuer-distributed
+Binance release. Effective `2026-06-01T00:00:00Z`, qualifying KYB VIP borrowers
+may receive full monthly interest rebates for USDT, USDC, BTC, or U borrowing up
+to 10 million USD by meeting targets tied to incremental trading-volume share,
+Open Interest, or Net Asset Value.
+
+This is the twenty-second accepted scoped direction-independent edge, but only
+as exact realized cash credited against an independently required existing
+eligible loan after its performance target was independently satisfied. The
+public forward floor is zero: thresholds, enrollment, account eligibility,
+charged interest, payment timing, and realized credit are unproved. Never
+borrow, increase leverage, retain collateral, manufacture volume or Open
+Interest, or move assets to chase the rebate. The underlying loan can liquidate
+the complete Institutional Lending Account balance and remains economically
+separate from this incremental credit.
+
+Advance only when both designated credentials, explicit signed GET-only
+authority, and an independently existing legitimate Institutional Loan question
+all exist. Reconcile one active risk unit, exact monthly interest, rebate
+balance, and successful rebate record; deduct every incremental cost. Any
+application, enrollment, borrowing, repayment, transfer, collateral, order,
+trade, or account-manager contact requires separate authority. Canonical result
+SHA-256 is
+`e8e17c66a238878e722aa635f1517b685c00fcc9b288c72df3d934a8c235e59c`.
+Accepted edges become 22, ranked hypotheses remain 44, and terminal families
+remain 55. Registry SHA-256 is
+`e4ec302a1cc32a57ec1d68cf00ab5d99cbc22d74b80fbc3c68da242485899fd4`.

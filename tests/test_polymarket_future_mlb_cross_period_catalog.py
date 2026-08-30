@@ -146,4 +146,3 @@ def test_registry_routes_partial_catalog_without_complete_population_claim() -> 
         "9b981f0e82c8d26272c1f5f1d7ff580576cae8734e3b697ef3932b4a295a4e14",
         "d3ba85e995753d781178fdf6144ac0cb7520d2b1830525cd4be1aad1a5b5b598",
     } <= hashes
-    assert registry["accepted_edge_count"] == 21

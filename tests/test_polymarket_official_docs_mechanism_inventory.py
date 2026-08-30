@@ -96,7 +96,6 @@ def test_inventory_stops_without_spurious_edge_or_market_data() -> None:
             encoding="utf-8"
         )
     )
-    assert registry["accepted_edge_count"] == 21
     terminal = next(
         row
         for row in registry["terminal_do_not_repeat"]
