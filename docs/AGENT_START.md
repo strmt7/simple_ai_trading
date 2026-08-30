@@ -3013,3 +3013,31 @@ they did not authorize another request or alter economics. Current immediate
 research spend remains zero until an exact trigger fires. Canonical corrected
 frontier SHA-256 is
 `1c346600a0bc2a439aa868fba51ed0bf939a48011dbc021ef107bcb5c9771040`.
+
+## Binance displayed funding estimate is not locked hours before funding
+
+A primary-literature lead, *Funding Timing and No-Arbitrage Bounds in
+Decentralized Perpetual Markets*
+(`https://papers.ssrn.com/sol3/papers.cfm?abstract_id=6805838`), suggested a
+strict structural distinction: funding can support a known-at-entry carry only
+when the applicable transfer is fixed at entry. One frozen, one-use public
+Binance reconciliation compared nine
+retained BTCUSDT, ETHUSDT, and SOLUSDT displayed estimates with their eventual
+funding rows. At lead times from 16,264 to 23,801 seconds, six of nine estimates
+changed; the largest absolute change was 0.6266 basis points. The three exact
+matches were all the positive `0.00010000` cap and do not establish a general
+lock.
+
+This is a terminal rejection of the observed hours-ahead estimate-lock premise,
+not an edge and not authorization to trade. No book, fee, account, credential,
+order, fund, or testnet request was made. Reopen only for an official
+fixed-at-entry rule or a separately preregistered near-finality executable study
+with positive conservative after-cost guaranteed headroom.
+
+Contract SHA-256 is
+`46d0bbf9e48b090332653d8b5cfe38b2350fc8ce3d8b2fd0100addc10916c8df`;
+result SHA-256 is
+`d1a75d29bc7d48154f2006a335a401d7451a6ad58c36b12127b387581f3c3ac3`.
+Accepted edges remain 29, ranked hypotheses remain 44, terminal families become
+80, and registry SHA-256 becomes
+`d49940b750e9fc4d8416840185136d1fcefbc734d12473ad4c00fe76ea2d8f89`.

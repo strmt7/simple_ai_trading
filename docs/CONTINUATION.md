@@ -5694,3 +5694,31 @@ Two new discovery-only search batches found no material official September
 into adaptive requests. Immediate research spend remains zero until an exact
 trigger fires. Corrected frontier SHA-256 is
 `1c346600a0bc2a439aa868fba51ed0bf939a48011dbc021ef107bcb5c9771040`.
+
+### Binance funding-estimate known-at-entry rejection
+
+A primary-literature lead, *Funding Timing and No-Arbitrage Bounds in
+Decentralized Perpetual Markets*
+(`https://papers.ssrn.com/sol3/papers.cfm?abstract_id=6805838`), suggested testing
+whether displayed perpetual funding could be treated as a fixed transfer at
+entry. A frozen one-use public reconciliation used three Binance funding-history
+GETs and the retained
+2026-08-25, 2026-08-27, and 2026-08-29 BTCUSDT/ETHUSDT/SOLUSDT snapshots. Across
+nine observations at 16,264-23,801 seconds before funding, six displayed values
+changed before settlement. Maximum absolute change was 0.6266 basis points.
+The three exact matches were all the positive `0.00010000` cap; they do not
+prove a general lock.
+
+The hours-ahead estimate-lock premise is terminal and must not be promoted or
+retested on this population. No books, accounts, credentials, orders, funds, or
+testnet endpoints were touched. Reopen only on an official fixed-at-entry rule
+or a separately preregistered near-finality executable study whose conservative
+guaranteed transfer clears all costs.
+
+Contract SHA-256 is
+`46d0bbf9e48b090332653d8b5cfe38b2350fc8ce3d8b2fd0100addc10916c8df`;
+result SHA-256 is
+`d1a75d29bc7d48154f2006a335a401d7451a6ad58c36b12127b387581f3c3ac3`.
+Accepted edges remain 29, ranked hypotheses remain 44, terminal families become
+80, and registry SHA-256 becomes
+`d49940b750e9fc4d8416840185136d1fcefbc734d12473ad4c00fe76ea2d8f89`.

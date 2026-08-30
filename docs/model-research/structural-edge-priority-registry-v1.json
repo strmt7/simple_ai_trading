@@ -2627,7 +2627,7 @@
       "venue_scope": "Binance_Spot_direct_and_exactly_one_intermediary_routes_for_independently_required_organic_conversions_with_the_exactly_two_intermediary_extension_terminal_for_the_retained_population"
     }
   ],
-  "result_sha256": "2da29e25c4b2d55d2f8391c90d10794428ef1b79f6555cced2e1e265af91767f",
+  "result_sha256": "d49940b750e9fc4d8416840185136d1fcefbc734d12473ad4c00fe76ea2d8f89",
   "schema_version": "structural-edge-priority-registry-v1",
   "terminal_do_not_repeat": [
     {
@@ -3024,8 +3024,13 @@
       "canonical_result_sha256": "08289177bc8d91b9d7791cd606463b80a5b2c894ea56c0a5e7aab607329c758c",
       "family": "polymarket_BTC_ETH_SOL_created_event_interval_composition_delta_after_2026_08_30T16_07_16_021321Z",
       "reason": "one_frozen_public_unauthenticated_newest_first_GET_returned_the_effective_100_event_cap_with_a_non_null_cursor_and_all_100_rows_newer_than_the_frozen_cutoff_so_the_nonoverlapping_delta_was_incomplete_zero_packages_were_screened_and_no_book_fee_account_credential_order_or_fund_request_was_permitted_do_not_paginate_narrow_refresh_alias_or_repeat_this_consumed_delta"
+    },
+    {
+      "canonical_result_sha256": "d1a75d29bc7d48154f2006a335a401d7451a6ad58c36b12127b387581f3c3ac3",
+      "family": "binance_BTC_ETH_SOL_displayed_funding_estimate_known_at_entry_lock_2026_08_30",
+      "reason": "three_frozen_public_history_GETs_plus_one_retained_baseline_reconciled_nine_BTC_ETH_SOL_displayed_lastFundingRate_observations_at_16264_to_23801_second_lead_times_six_of_nine_changed_before_realization_with_absolute_errors_up_to_0_6266_bips_so_the_displayed_estimate_was_not_a_transfer_locked_at_those_observed_entry_times_do_not_request_books_fees_accounts_credentials_orders_or_funds_reopen_only_on_an_official_fixed_at_entry_contract_or_a_separately_preregistered_near_finality_executable_study_whose_guaranteed_transfer_clears_every_cost"
     }
   ],
-  "updated_at_utc": "2026-08-30T17:37:30Z",
+  "updated_at_utc": "2026-08-30T18:03:30.7368934Z",
   "usage_rule": "advance_the_highest_ranked_hypothesis_whose_retry_trigger_is_satisfied_otherwise_do_not_repeat_a_blocked_or_terminal_screen"
 }
