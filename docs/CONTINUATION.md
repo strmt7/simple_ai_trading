@@ -12,7 +12,7 @@ Development belongs only on `main`; do not create another development branch.
   code-scanning, and secret-scanning alerts. Reverify the publication commit;
   zero alerts never proves zero undisclosed vulnerabilities.
 - The repository is beta `0.1.0-beta.1`. No model has production authority or a
-  demonstrated long-lived after-all-cost edge. Twenty-six narrowly scoped structural
+  demonstrated long-lived after-all-cost edge. Twenty-seven narrowly scoped structural
   edges are accepted: Polymarket holding yield for existing idle on-platform
   pUSD; Polymarket pUSD taker-fee rebates only for independently justified
   legitimate organic BTC/ETH/SOL taker flow after the direct-wallet tier is
@@ -26,7 +26,10 @@ Development belongs only on `main`; do not create another development branch.
   independently required legitimate same-account organic conversion after
   exact account fees, filters, fresh finite-size depth, residuals, extra-leg
   stress, and failure-unwind costs remain strictly cheaper than the direct route;
-  just-in-time BNB fee reduction; current quote-native BTC/ETH/SOL promotional
+  just-in-time BNB fee reduction; the exact 5% Cross Margin interest reduction
+  only on an independently existing legitimate borrow when sufficient BNB is
+  already held in the same Cross Margin account for unrelated reasons and every
+  incremental cost is lower than the discount; current quote-native BTC/ETH/SOL promotional
   fee reduction; the current TradFi perpetual zero-maker and reduced-taker fee
   overlay only for independently justified organic flow with the exact current
   symbol and actual fill role; the current Binance Stocks promotional trading-
@@ -4692,3 +4695,39 @@ remain 57. Current frontier SHA-256 becomes
 `53c5a99573dcc97d85caf07f42e84818d649107b2ff4fa18af52c0b9eb505c6a`;
 registry SHA-256 becomes
 `e9b79af6bd9ad29564aff297daa2ea7375f71f42df3757761d72fd4e20d09995`.
+
+## Binance Cross Margin BNB interest discount overlay
+
+Current official Binance Academy material, updated 2026-06-26 and retained
+byte-for-byte on 2026-08-30, states that holding BNB in the margin account and
+enabling the discount provides a 5% reduction on Cross Margin interest. The
+same source separately states a 25% margin trading-fee discount; the two values
+must never be conflated or double counted.
+
+Current official API contracts expose signed read-only
+`GET /sapi/v1/bnbBurn` status with the `interestBNBBurn` field and signed
+read-only `GET /sapi/v1/margin/interestHistory`. Omitting `isolatedSymbol`
+selects Cross Margin history, while `PERIODIC_CONVERTED` and
+`ON_BORROW_CONVERTED` identify interest converted into BNB. The current toggle
+is `POST /sapi/v1/bnbBurn`, a mutation that was not called and remains behind
+separate explicit authority.
+
+The accepted scope is only the exact incremental saving on an independently
+existing legitimate Cross Margin borrow when enough BNB was already held in
+that same account for unrelated reasons. Credit requires `interestBNBBurn=true`,
+exact converted-interest rows, a source-bound undiscounted counterfactual, the
+actual BNB debit, and subtraction of conversion, transfer, spread, price,
+opportunity, tax, compliance, rounding, and operating costs. Isolated Margin,
+Portfolio Margin, new borrowing, trading, BNB acquisition or retention, and
+using the discount to claim the underlying leveraged strategy profitable are
+excluded. The public forward monetary floor is zero and deployment readiness
+remains false.
+
+No credential, account, venue API, order, borrow, repay, transfer, toggle, or
+fund was accessed. Canonical overlay SHA-256 is
+`38aa0313cdd71a2613f3850267e71acd9d44006dd2699e4c00f801ffca8772f8`.
+Accepted edges become 27, ranked hypotheses remain 44, and terminal families
+remain 57. Current frontier SHA-256 becomes
+`e07814f91757306617b0152eaf3df81ebf162f4dfbd89d52bc59bf297a106309`;
+registry SHA-256 becomes
+`59bd2c2b7b0c5a0faff86ef76bebcbbaa5b3965d93cb779a8ce5de8abab3fbd1`.

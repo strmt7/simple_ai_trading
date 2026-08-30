@@ -1,0 +1,110 @@
+{
+  "adjudication": {
+    "accepted_edge": true,
+    "accepted_edge_count_after": 27,
+    "accepted_edge_count_before": 26,
+    "accepted_scope": "exact_5_percent_Binance_Cross_Margin_interest_reduction_only_on_an_independently_existing_legitimate_borrow_when_sufficient_BNB_is_already_held_in_the_same_Cross_Margin_account_for_unrelated_reasons_and_every_incremental_cost_is_lower_than_the_discount",
+    "deployment_ready": false,
+    "fresh_borrow_or_trade_profit_proved": false,
+    "market_direction_forecast_required": false,
+    "profitability_claim_beyond_exact_incremental_scope": false,
+    "public_forward_profit_floor_quote_units": "0",
+    "status": "accepted_scoped_deterministic_cross_margin_interest_cost_reduction_without_authorizing_borrowing_trading_or_BNB_acquisition",
+    "trading_authority": "none"
+  },
+  "authority": {
+    "account_state_accessed": false,
+    "credentials_used": false,
+    "funded_actions": 0,
+    "official_venue_API_requests": 0,
+    "orders_borrows_repays_or_mutations": 0,
+    "signed_requests": 0
+  },
+  "created_at_utc": "2026-08-30T08:59:21.0557977Z",
+  "economic_contract": {
+    "discount_fraction": "0.05",
+    "discounted_cross_margin_interest_fraction": "0.95",
+    "gross_saving_identity": "0_05_times_the_exact_undiscounted_Cross_Margin_interest_value_in_one_source_bound_quote_unit",
+    "incremental_net_identity": "gross_interest_saving_minus_BNB_acquisition_transfer_conversion_spread_price_exposure_opportunity_tax_compliance_and_operating_costs",
+    "isolated_margin_included": false,
+    "portfolio_margin_included": false,
+    "public_monetary_floor_quote_units": "0",
+    "rate_assumption_beyond_current_official_discount": "none",
+    "underlying_borrow_profitability_accepted": false
+  },
+  "exact_account_reconciliation": {
+    "already_enabled_status": "GET /sapi/v1/bnbBurn must return interestBNBBurn true before any value is credited",
+    "already_held_BNB": "same_account evidence must prove enough independently existing free BNB in Cross Margin before each charge without acquisition transfer or retention caused by this overlay",
+    "counterfactual": "reconstruct the undiscounted raw-asset interest from exact principal interestRate accrual timestamp and venue rounding then convert it into the same quote unit at the source-bound accrual-time valuation",
+    "history": "GET /sapi/v1/margin/interestHistory must return Cross Margin rows with no isolatedSymbol and exact PERIODIC_CONVERTED or ON_BORROW_CONVERTED types plus asset rawAsset principal interest interestRate and txId",
+    "net_gate": "credit only the exact positive same-account saving that remains after every incremental cost and do not reuse it as a trading-fee BNB discount or any other rebate"
+  },
+  "prohibited_shortcuts": [
+    "do_not_borrow_trade_hold_transfer_or_acquire_BNB_to_create_or_enlarge_the_discount",
+    "do_not_apply_the_5_percent_rate_to_Isolated_Margin_Portfolio_Margin_or_any_non_Cross_Margin_interest",
+    "do_not_credit_the_public_rate_without_interestBNBBurn_true_exact_converted_interest_history_and_same_account_BNB_balance_reconciliation",
+    "do_not_ignore_BNB_conversion_price_exposure_opportunity_tax_transfer_rounding_or_operating_costs",
+    "do_not_double_count_the_saving_with_the_25_percent_margin_trading_fee_discount_Spot_fee_discount_referral_VIP_promotion_rebate_or_reward",
+    "do_not_use_the_discount_to_claim_that_an_underlying_margin_trade_borrow_or_leveraged_strategy_is_profitable",
+    "do_not_call_POST_sapi_v1_bnbBurn_or_any_order_borrow_repay_transfer_or_account_mutation_without_separate_explicit_authority"
+  ],
+  "result_sha256": "38aa0313cdd71a2613f3850267e71acd9d44006dd2699e4c00f801ffca8772f8",
+  "retry_contract": {
+    "account_evidence": "only_when_both_designated_credentials_explicit_signed_GET_only_authority_and_an_independently_existing_legitimate_Cross_Margin_borrow_question_exist_read_bnbBurn_status_interestHistory_and_same_account_BNB_balance_without_mutation",
+    "mutation": "if_interestBNBBurn_is_false_stop_every_enable_disable_borrow_repay_transfer_order_or_trade_requires_separate_explicit_authority",
+    "public_research": "only_on_a_material_official_discount_scope_payment_asset_interest_accounting_API_or_eligibility_change"
+  },
+  "schema_version": "binance-cross-margin-bnb-interest-discount-overlay-v1",
+  "sources": [
+    {
+      "facts": {
+        "cross_margin_interest_discount_fraction": "0.05",
+        "margin_trading_fee_discount_fraction_separate": "0.25",
+        "requires_BNB_in_margin_account": true,
+        "requires_discount_feature_enabled": true
+      },
+      "journal_external_path": "C:/trader/research-cache/binance-cross-margin-bnb-interest-discount-2026-08-30/journal.json",
+      "journal_sha256": "741c550653837dd2baa8714c6306b34c9ccdf3c9e335b5b497be504908f419dd",
+      "page_updated_date": "2026-06-26",
+      "raw_external_path": "C:/trader/research-cache/binance-cross-margin-bnb-interest-discount-2026-08-30/academy.raw.html",
+      "raw_response_bytes": 485847,
+      "raw_response_sha256": "94e4ad2879f859a18db83fe13e9f790b1fc3b72c3c3cccae4f0d965bc9b7cdac",
+      "retrieved_at_utc": "2026-08-30T08:59:21.0557977Z",
+      "role": "current_official_discount_rate_scope_and_BNB_balance_requirement",
+      "url": "https://academy.binance.com/ky-KG/articles/what-is-binance-margin-and-how-to-use-it"
+    },
+    {
+      "facts": {
+        "endpoint": "GET /sapi/v1/bnbBurn",
+        "response_field": "interestBNBBurn",
+        "security_type": "USER_DATA",
+        "signed_read_only": true
+      },
+      "retrieved_at_utc": "2026-08-30T08:59:21.0557977Z",
+      "role": "current_official_read_only_enabled_status_contract",
+      "url": "https://developers.binance.com/en/docs/catalog/core-trading-margin-trading/api/rest-api/account"
+    },
+    {
+      "facts": {
+        "converted_cross_margin_types": [
+          "PERIODIC_CONVERTED",
+          "ON_BORROW_CONVERTED"
+        ],
+        "cross_margin_selected_when_isolatedSymbol_omitted": true,
+        "endpoint": "GET /sapi/v1/margin/interestHistory",
+        "maximum_query_interval_days": 30,
+        "maximum_record_age_days": 90,
+        "security_type": "USER_DATA",
+        "signed_read_only": true
+      },
+      "retrieved_at_utc": "2026-08-30T08:59:21.0557977Z",
+      "role": "current_official_exact_realized_converted_interest_evidence_contract",
+      "url": "https://developers.binance.com/en/docs/catalog/core-trading-margin-trading/api/rest-api/borrow-repay"
+    },
+    {
+      "file_sha256": "c785b773eb2f36e87fd077891461320e60cb1aeedc8cec42e268e134e1b68d8a",
+      "path": "C:/trader/research-cache/binance-exchange-link-2026-08-30/llms-full.txt",
+      "role": "retained_current_official_Agent_Native_aggregate_confirming_GET_status_POST_toggle_and_interest_history_operation_classes"
+    }
+  ]
+}
