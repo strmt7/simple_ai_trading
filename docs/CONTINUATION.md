@@ -4781,3 +4781,52 @@ capacity sufficient to clear fixed costs. Canonical triage SHA-256 is
 Accepted edges remain 27, ranked hypotheses remain 44, and terminal families
 become 58. Registry SHA-256 becomes
 `46eee6375a04b6226db08e6ee5ddc59c530b8c991840feefc6e145b48059c0fd`.
+
+## Binance Portfolio Margin capital-netting sensitivity
+
+Current official Binance material now makes one important correction to prior
+spot-perpetual carry screens: Portfolio Margin provides unified margin across
+Spot, Futures, and Options and uses cross-margining and position netting to
+reduce required margin. The current account schema also distinguishes
+collateral-rate-adjusted `accountEquity` from unadjusted `actualEquity` and
+reports `accountInitialMargin`. A matched owned-spot long and USD-M perpetual
+short therefore should not be rejected merely by assuming two fully separate
+cash collateral pools.
+
+This is a capital-efficiency mechanism, not a profitability result. The exact
+current asset collateral rate, tier, leverage, eligibility, negative-balance
+interest, liquidation buffer, and owned account fees remain unproved. Binance
+labels `GET /sapi/v1/portfolio/collateralRate` as `MARKET_DATA`, but its current
+official schema still requires an `X-MBX-APIKEY`; the tiered endpoint is signed
+`USER_DATA`. No credential, account, Portfolio Margin enrollment, transfer,
+borrow, order, trade, or fund was accessed.
+
+A zero-network sensitivity reused the frozen 17-symbol broad funding result and
+optimistically removed one of its two 10%-annual opportunity-cost legs while
+preserving the 32-bip execution stress and every observed funding path. Only
+one of 51 role rows became nominally positive: TUTUSDT validation at
+`20.5190204528` bips, but its family-adjusted bootstrap lower bound remained
+`-39.7220795472` bips. The best training row remained TUTUSDT at
+`-22.6368803653` bips and the best test row remained PYTHUSDT at
+`-31.3614004566` bips. Zero of 17 symbols was positive in training,
+validation, and test; zero of 51 family-adjusted bootstrap lower bounds was
+positive. Portfolio Margin therefore does not rescue this retained population.
+
+One frozen CMS request was consumed but its response was lost after access when
+an ephemeral orchestration decoder was unavailable; it was not retried or
+repaired through an alias. Two separately prejournaled direct documentation
+captures returned empty HTTP 202 responses and support no content claim. The
+reusable correction is now explicit in `AGENTS.md`: never consume one-use HTTP
+inside an ephemeral memory-only callback; preflight the full byte-to-durable-
+file path and let the client atomically retain the raw body and receipt.
+
+Do not resample, refit, paginate, or request books for this retained 17-symbol
+population. Reopen only on a prospectively complete point-in-time universe, a
+material funding/fee/collateral/margin/execution change capable of clearing the
+retained training and test deficits, or exact same-account read-only Portfolio
+Margin evidence after both designated ephemeral credentials and explicit
+signed GET-only authority exist. Canonical sensitivity SHA-256 is
+`b31cc92f4fad9dad7d8d0ea98c3275605b16069afc0d6d5882e75501025f7d14`.
+Accepted edges remain 27, ranked hypotheses remain 44, and terminal families
+become 59. Registry SHA-256 becomes
+`a4d7119d665b2410939a07f1306091b396592aa98e9635abd57b4ac3809aa165`.

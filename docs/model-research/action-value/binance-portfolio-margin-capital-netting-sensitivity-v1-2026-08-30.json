@@ -1,0 +1,146 @@
+{
+  "adjudication": {
+    "accepted_edge": false,
+    "account_or_book_request_justified": false,
+    "deployment_ready": false,
+    "market_direction_forecast_required": false,
+    "profitability_claim": false,
+    "public_after_all_cost_profit_floor_usdt": 0,
+    "stable_profitability_proved": false,
+    "status": "portfolio_margin_materially_corrects_the_duplicated_capital_assumption_but_the_retained_broad_funding_population_remains_terminal_even_under_an_optimistic_single_capital_leg_sensitivity"
+  },
+  "authority": {
+    "account_state_accessed": false,
+    "credentials_used": false,
+    "funds_used": false,
+    "orders_or_transactions_submitted": false,
+    "public_unauthenticated_research_only": true,
+    "trading_authority": false
+  },
+  "created_at_utc": "2026-08-30T11:12:16.8666744Z",
+  "economic_identity": {
+    "construction": "own one unit of a supported Spot asset inside Portfolio Margin and short equal notional of the matching USD-M perpetual",
+    "direction_neutrality": "the equal-notional spot-long and perpetual-short offset first-order outright price exposure; funding, basis, fees, liquidation, collateral haircuts, and non-atomic execution remain",
+    "official_mechanism_evidence": "Current official Binance material describes unified margin across Spot, Futures, and Options plus cross-margining and position netting to reduce required margin. Current official account schema separates collateral-rate-adjusted accountEquity from actualEquity and reports accountInitialMargin.",
+    "quantitative_boundary": "The exact current asset collateral rate, tier, leverage, eligibility, liquidation buffer, and negative-balance interest are not public unauthenticated evidence. The sensitivity therefore removes only one labeled opportunity-cost leg as an optimistic upper bound and does not assert that actual Portfolio Margin collateral is free or fully credited."
+  },
+  "limitations": [
+    "The original population was selected by current liquidity and applied to trailing history, so it cannot promote a forward edge.",
+    "The sensitivity does not model exact Portfolio Margin SPAN or delta-mode offsets, collateral tiers, concentration add-ons, negative-balance interest, liquidation buffers, or account eligibility.",
+    "Funding history does not bind synchronized executable spot and perpetual entry or exit basis, depth, fills, or exact owned-account fees.",
+    "The current collateral-rate endpoint is labeled MARKET_DATA but its official schema requires an X-MBX-APIKEY header; the tiered endpoint is signed USER_DATA.",
+    "The official Academy and Developer Docs pages were observed through public web research, while direct durable curl captures returned empty HTTP 202 responses; those empty captures support no content claim."
+  ],
+  "result_sha256": "b31cc92f4fad9dad7d8d0ea98c3275605b16069afc0d6d5882e75501025f7d14",
+  "schema_version": "binance-portfolio-margin-capital-netting-sensitivity-v1",
+  "sensitivity": {
+    "best_role_results": {
+      "test": {
+        "best_family_adjusted_bootstrap_lower_bound_bips": "-35.49680045662100456621004563",
+        "best_net_after_execution_and_one_capital_leg_bips": "-31.36140045662100456621004563",
+        "duration_days": "16.66666666666666666666666667",
+        "gross_funding_bips": "46.30070000",
+        "one_leg_capital_hurdle_bips": "45.66210045662100456621004567",
+        "symbol": "PYTHUSDT"
+      },
+      "training": {
+        "best_family_adjusted_bootstrap_lower_bound_bips": "-26.4032803652968036529680365",
+        "best_net_after_execution_and_one_capital_leg_bips": "-22.6368803652968036529680365",
+        "duration_days": "49.83333333333333333333333333",
+        "gross_funding_bips": "145.89280000",
+        "one_leg_capital_hurdle_bips": "136.5296803652968036529680365",
+        "symbol": "TUTUSDT"
+      },
+      "validation": {
+        "best_family_adjusted_bootstrap_lower_bound_bips": "-39.72207954718417047184170469",
+        "best_net_after_execution_and_one_capital_leg_bips": "20.51902045281582952815829531",
+        "duration_days": "16.50000003472222222222222222",
+        "gross_funding_bips": "97.72450000",
+        "one_leg_capital_hurdle_bips": "45.20547954718417047184170471",
+        "symbol": "TUTUSDT"
+      }
+    },
+    "counterfactual_formula": {
+      "one_leg_bootstrap_lower_bound_bips": "published_two_leg_bootstrap_lower_bound_bips + published_two_leg_capital_hurdle_bips / 2",
+      "one_leg_capital_hurdle_bips": "published_two_leg_capital_hurdle_bips / 2",
+      "one_leg_net_bips": "published_two_leg_net_bips + published_two_leg_capital_hurdle_bips / 2"
+    },
+    "frozen_inputs_preserved": {
+      "annual_opportunity_hurdle_bips_per_capital_leg": "1000",
+      "round_trip_execution_stress_bips": "32"
+    },
+    "population": {
+      "positive_one_leg_bootstrap_role_count": 0,
+      "positive_one_leg_net_role_count": 1,
+      "role_count": 51,
+      "selected_symbol_count": 17,
+      "symbols_positive_in_all_roles_after_one_leg_bootstrap": 0,
+      "symbols_positive_in_all_roles_after_one_leg_net": 0
+    },
+    "why_terminal_for_this_population": "Only TUTUSDT validation becomes nominally positive, while its training and test roles remain negative and every family-adjusted bootstrap lower bound remains negative. No symbol is positive in training, validation, and test under the optimistic one-leg denominator."
+  },
+  "source_binding": {
+    "current_official_web_observations": [
+      {
+        "access_completed_by_utc": "2026-08-30T11:12:16.8666744Z",
+        "claim_scope": "Unified margin across Spot, Futures, and Options; cross-margining and position netting can reduce required margin.",
+        "raw_retention": "web_tool_view_only_direct_curl_capture_returned_empty_http_202",
+        "url": "https://academy.binance.com/en/articles/binance-ai-agent-skills-hub-13-new-skills"
+      },
+      {
+        "access_completed_by_utc": "2026-08-30T11:12:16.8666744Z",
+        "claim_scope": "Portfolio Margin account reports collateral-rate-adjusted accountEquity, unadjusted actualEquity, accountInitialMargin, and accountMaintMargin.",
+        "raw_retention": "web_tool_view_only_direct_curl_capture_returned_empty_http_202",
+        "url": "https://developers.binance.com/en/docs/catalog/advanced-trading-derivatives-trading-portfolio-margin/api/rest-api/account"
+      },
+      {
+        "access_completed_by_utc": "2026-08-30T11:12:16.8666744Z",
+        "claim_scope": "Portfolio Margin collateral rate is GET /sapi/v1/portfolio/collateralRate, labeled MARKET_DATA but requiring X-MBX-APIKEY; tiered rates are signed USER_DATA.",
+        "raw_retention": "web_tool_view_only_with_endpoint_identity_independently_present_in_retained_agent_native_index",
+        "url": "https://developers.binance.com/en/docs/catalog/advanced-trading-derivatives-trading-portfolio-margin-pro/api/rest-api/market-data"
+      }
+    ],
+    "durable_capture_receipts": [
+      {
+        "path": "docs/model-research/binance/raw/portfolio-margin-capital-netting-v1-2026-08-30/02-request-journal.json",
+        "sha256": "526ac4258442f9238ed55e29f9f50dffcce2041094e4f0b3d6270a487b720f96",
+        "status": "one_use_CMS_response_not_retained_due_post_response_decoder_failure_no_retry"
+      },
+      {
+        "path": "docs/model-research/binance/raw/portfolio-margin-capital-netting-v1-2026-08-30/03-academy-request-journal.json",
+        "sha256": "56cb68d485b4af35cec51197256078629418cc3cba0e0e4ecab5cfdc64153f83",
+        "status": "terminal_empty_http_202"
+      },
+      {
+        "path": "docs/model-research/binance/raw/portfolio-margin-capital-netting-v1-2026-08-30/06-developer-docs-request-journal.json",
+        "sha256": "c9c21ef0b2fcc778e6aa5bbbc89256ec23e7082e714d3cb9b3a5b5925d12dee6",
+        "status": "terminal_empty_http_202"
+      }
+    ],
+    "retained_official_agent_native_index": {
+      "path": "docs/model-research/binance/raw/spot-block-matching-cost-overlay-v1-2026-08-30/03-agent-native-index.raw.txt",
+      "relevant_lines": [
+        "1121-1137",
+        "1144-1187"
+      ],
+      "sha256": "944e132d3523c8a03abcac2f7ddb85802107e45161470885b7a8785fd4fdb15d"
+    },
+    "retained_funding_contract": {
+      "contract_result_sha256": "7a2c34c4f9c0d44bcd6bed4564d33cda89831ab9a60341ac7ca23cc452231ed1",
+      "path": "docs/model-research/action-value/binance-broad-crypto-funding-carry-preflight-contract-v1.json"
+    },
+    "retained_funding_result": {
+      "file_sha256": "7fc7c8be2d41c2089a57c7a268874254655acd7983ccb380b0a98577a4b64fae",
+      "path": "docs/model-research/action-value/binance-broad-crypto-funding-carry-preflight-v1-2026-08-27.json",
+      "result_sha256": "095009a36a5c6a8a5a2dfdfb3e57ebe6183721bb84600518552ccf6d463617c8"
+    }
+  },
+  "terminal_boundary": {
+    "do_not_repeat": "Do not resample, refit, paginate, or request books for the retained 17-symbol current-liquidity-selected history under unchanged economics.",
+    "reopen_only_on": [
+      "a prospectively complete point-in-time universe with materially different funding persistence after the retained cutoff",
+      "a material Binance fee, collateral, margin-offset, funding, or execution-architecture change capable of clearing the retained training and test deficits",
+      "either an official public no-key collateral table or designated ephemeral Binance credentials plus explicit signed GET-only authority to bind exact same-account Portfolio Margin eligibility, collateral tiers, leverage, negative-balance interest, and account costs"
+    ]
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "schema_version": "1.0",
+  "method": "GET",
+  "url": "https://www.binance.com/bapi/composite/v1/public/cms/article/detail/query?articleCode=bddd924496d74ecd8820a6d95585ccee",
+  "authentication": "none",
+  "request_attempted": true,
+  "one_use_consumed": true,
+  "retries": 0,
+  "retention_status": "failed_closed",
+  "failure_observed_at_utc": "2026-08-30T11:07:03.5985429Z",
+  "failure_stage": "post_response_in_memory_decode_before_apply_patch",
+  "failure": "The orchestration runtime did not provide atob; the response envelope was lost when the isolated script ended.",
+  "response_retained": false,
+  "response_claims_allowed": false,
+  "retry_allowed": false,
+  "next_action": "Do not call the exact CMS URL again. Use separately discovered official public sources, and preflight the complete synthetic capture/serialization path before any future one-use request."
+}

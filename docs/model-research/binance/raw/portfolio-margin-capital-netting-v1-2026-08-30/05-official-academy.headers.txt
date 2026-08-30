@@ -1,0 +1,35 @@
+HTTP/1.1 301 Moved Permanently
+Content-Length: 0
+Connection: keep-alive
+Date: Sun, 30 Aug 2026 11:08:56 GMT
+Strict-Transport-Security: max-age=31536000; includeSubdomains
+K8scluster: master
+Location: https://www.binance.com/en/academy/articles/binance-ai-agent-skills-hub-13-new-skills
+X-Gateway: traefik
+X-Trace-Id: 2bb3c2f3db9c4e3db1335cc942fbecd4
+X-Traefik-Duration: 0.00
+X-Frame-Options: SAMEORIGIN
+X-Content-Type-Options: nosniff
+Referrer-Policy: origin-when-cross-origin
+X-Cache: Miss from cloudfront
+Via: 1.1 872b6c6386f72e0a184f269a807a0404.cloudfront.net (CloudFront)
+X-Amz-Cf-Pop: FCO50-P8
+X-Amz-Cf-Id: Rj-pOUdZXEbU1s3LF1V4K3ajFkLjuDY6JZV_cHvrIIFbtaOMM9gu-Q==
+
+HTTP/1.1 202 Accepted
+Server: CloudFront
+Date: Sun, 30 Aug 2026 11:08:57 GMT
+Content-Length: 0
+Connection: keep-alive
+x-amzn-waf-action: challenge
+Cache-Control: no-store, max-age=0
+Content-Type: text/html; charset=UTF-8
+Access-Control-Allow-Origin: *
+Access-Control-Max-Age: 86400
+Access-Control-Allow-Methods: OPTIONS,GET,POST
+Access-Control-Expose-Headers: x-amzn-waf-action
+X-Cache: Error from cloudfront
+Via: 1.1 6e7646661433d9302347589877e5a0ea.cloudfront.net (CloudFront)
+X-Amz-Cf-Pop: FCO50-P9
+X-Amz-Cf-Id: uRE96WJ8sh6zvzPkpvh34DuCu70RSeYEwqvnfL8p_IK83JxMpduDew==
+

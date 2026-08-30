@@ -266,6 +266,11 @@ override prose.
   fail before HTTP if a destination parent is missing or unwritable. A curl
   write error after response bytes arrive consumes the request and may not be
   repaired by retrying the same source under a new filename or endpoint alias.
+- Do not consume a one-use request inside an ephemeral orchestration callback
+  that retains the response only in process memory. Preflight the complete
+  byte-to-durable-file path on synthetic UTF-8 bytes, prejournal the request,
+  and make the HTTP client itself atomically persist the raw body and receipt;
+  an unavailable decoder or callback failure after access is a consumed run.
 - Treat a documented keyset `limit` as a ceiling, not proof that the service
   will return that many rows. A returned cursor makes the frozen population
   incomplete. Never follow it or depth-test a partial-page winner unless the
