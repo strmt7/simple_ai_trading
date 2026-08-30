@@ -6290,3 +6290,42 @@ remain 92. Registry SHA-256 becomes
 `4c9d7ec1eae56de0ba4301f5f8072a39907887fc0822580c298efbf18edd9dd2`;
 the rebound durability-audit SHA-256 is
 `398db39349738346ffeac68333cd092ddcc6b2f67d0cb8cf9e00ef495b315c31`.
+
+## Polymarket soccer half-result/full-result superhedge graph
+
+A distinct zero-network audit found and exhausted two previously untested
+direction-independent soccer payoff families in the immutable August 29
+near-expiry page. Ten match families contained a complete base match,
+halftime-result, and second-half-result event triple. The audit proved 70
+three-leg conjunction superhedges: when the two half results jointly imply the
+full result, buying NO on both half outcomes plus YES on the implied full result
+pays at least one pUSD. It also proved 20 reverse-union superhedges: a full-game
+team win requires that team to win at least one half, so NO full-game win plus
+YES first-half win plus YES second-half win pays at least one pUSD.
+
+The one-pUSD floor survives cancellation because team-win markets resolve NO
+and draw markets resolve YES. It also survives the half-market no-data fallback
+because both half legs resolve 50-50. The v1 representation contract required a
+literal 48-hour fallback and stopped before output on two retained Belgian
+families that instead say 24 hours. That failure is preserved. V2 changed only
+the literal gate to accept the exact retained 24-or-48-hour variants; both have
+the same 50-50 economics and no source was refetched.
+
+All 90 relations had complete side-specific rejection prices and zero were
+strictly below the floor. The best was NO Parma full-game win plus YES Parma
+halftime lead plus YES Parma second-half win at 1.12 pUSD for a one-pUSD floor,
+an optimistic 0.12-pUSD loss before books, fees, synchronization, or external
+cost. Therefore no current book, fee, account, credential, order, fund, or
+protected request was justified. Do not repeat this retained population.
+
+The v1 contract/failure SHA-256 values are
+`c46aed6f2003ae1e6222ca774c0a0040b0f2fa3a14ba59462937f7aa2a7d08f4`
+and `5aa4e2491a913a7bbe1509b4665d60bd7c32a5e0c53b88faf0fff38ebec1c12c`.
+The v2 contract/result SHA-256 values are
+`f778b8f774beea52ff1860d89c28412aae15e8692198612b075ee426460df5a3`
+and `1db8d0bd47e4141bff551421df2d923bfe63545d807779e702a95ceeddb17c3f`.
+Accepted edges remain 29, ranked hypotheses remain 45, terminal families become
+93, registry SHA-256 becomes
+`5725f87d7ec56260da65504449f5b4431b72f1d2e6d2f1637fb30f1736eeb85e`,
+and the rebound durability-audit SHA-256 is
+`dd2d50abedb7b10a79a0b0e941b46b74b41e386fcb704b71afbf97c5a3873d0f`.
