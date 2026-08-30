@@ -1,0 +1,115 @@
+{
+  "adjudication": {
+    "accepted_edge": true,
+    "accepted_edge_count_after": 28,
+    "accepted_edge_count_before": 27,
+    "accepted_scope": "Exact realized positive Link-and-Trade partner rebate income attributable by customer order trade and distribution lineage to independently existing bona fide external Spot client flow under an already active disclosed relationship, only after owned payout reconciliation and every incremental platform disclosure consent compliance support demand-elasticity tax custody settlement conversion and operating cost.",
+    "deployment_ready": false,
+    "future_profit_guaranteed": false,
+    "market_direction_forecast_required": false,
+    "owned_income_proved": false,
+    "profitability_claim": false,
+    "public_forward_profit_floor": "0",
+    "status": "accepted_narrow_exact_realized_partner_rebate_identity_without_public_rate_account_entitlement_client_flow_or_owned_payout"
+  },
+  "authority": {
+    "account_client_trade_or_payout_history_accessed": false,
+    "credentials_used": false,
+    "linked_accounts_referrals_or_customer_ids_created_or_modified": 0,
+    "orders_or_trades": 0,
+    "paper_or_live_trading_authority": false,
+    "signed_requests": 0,
+    "state_changes": 0
+  },
+  "created_at_utc": "2026-08-30T12:40:51.8940626Z",
+  "distinctness": {
+    "from_client_kickback": "The partner route is explicitly titled Query Partner Rebate Recent Record, accepts customerId, and returns customer order trade distribution and commission lineage; the separate own-client kickback route has no customer selector and returns only income asset symbol and time.",
+    "from_exchange_link": "This artifact is limited to the exact Link-and-Trade apiReferral partner ledger. It does not resolve or accept the separate Exchange Link broker rebate candidate or any broker endpoint.",
+    "from_referral_pro_and_other_programs": "No Referral Pro, CAAS, Exchange Link, Square, Builder, market-maker, client-kickback, fee-discount, or promotional value may be credited from the same fee, trade, customer, distribution, or payout row without independently proved disjoint attribution."
+  },
+  "economic_contract": {
+    "accepted_value_identity": "positive_owned_partner_rebate_income_in_asset_minus_all_incremental_platform_disclosure_consent_compliance_support_demand_elasticity_tax_custody_settlement_conversion_and_operating_costs",
+    "exact_record_identity": [
+      "customerId",
+      "income",
+      "asset",
+      "symbol",
+      "time",
+      "orderId",
+      "tradeId",
+      "distributeTime",
+      "commissionAsset",
+      "commission",
+      "convertPrice"
+    ],
+    "independent_underlying_flow_gate": "Every contributing external client trade and the platform relationship must already exist for bona fide reasons and remain independently viable without counting the rebate.",
+    "public_forward_floor_quote_units": "0",
+    "rate_assumption": "none",
+    "realization_gate": "Every positive income row must reconcile to an owned distribution or asset balance and to exact disjoint customer order trade and commission lineage after every incremental cost."
+  },
+  "prohibited_shortcuts": [
+    "creating_customizing_relinking_or_rerouting_a_relationship_customer_or_referral_to_chase_rebate",
+    "soliciting_manufacturing_enlarging_splitting_churning_self_matching_wash_or_related_party_volume",
+    "treating_documentation_example_income_as_current_owned_repeatable_or_after_cost",
+    "assuming_partner_region_customer_symbol_rate_or_payout_eligibility",
+    "double_counting_the_same_fee_trade_customer_distribution_or_payout_across_any_program",
+    "calling_any_signed_endpoint_without_explicit_GET_only_authority",
+    "placing_orders_or_changing_account_customer_referral_API_key_permission_commission_transfer_or_withdrawal_state"
+  ],
+  "result_sha256": "b859a815f0243285d7a01e2f002f77655fbcb25b07f46873e5de68b3ebfa8dd0",
+  "signed_read_only_reconciliation": {
+    "advance_only_when": [
+      "both designated ephemeral credentials exist",
+      "explicit signed GET-only authority is granted",
+      "an already active disclosed Link-and-Trade partner relationship and exact legitimate customer identity already exist",
+      "an independently existing bona fide external Spot client flow creates an exact latest-seven-day reporting question"
+    ],
+    "endpoint": "GET /sapi/v1/apiReferral/rebate/recentRecord",
+    "query_contract": {
+      "customerId": "optional exact existing customer only",
+      "limit": "required and at most 500",
+      "recvWindow": "optional",
+      "startTime_endTime": "both or neither and at most seven days",
+      "timestamp": "required"
+    },
+    "state_changes_authorized": false,
+    "stop_before": "every relationship customer referral account subaccount API key permission commission BNB burn transfer order trade withdrawal or other mutation"
+  },
+  "source_binding": {
+    "current_official_rendered_page": {
+      "admitted_facts": "signed endpoint query window and exact response-field schema only",
+      "documentation_example_values_admitted_as_economics": false,
+      "method": "official_public_unauthenticated_web_rendered_documentation_read",
+      "observed_at_utc": "2026-08-30T12:37:34.7709740Z",
+      "response_fields": [
+        "customerId",
+        "email",
+        "income",
+        "asset",
+        "symbol",
+        "time",
+        "orderId",
+        "tradeId",
+        "distributeTime",
+        "commissionAsset",
+        "commission",
+        "convertPrice"
+      ],
+      "signed_request_required": true,
+      "title": "Query Partner Rebate Recent Record",
+      "url": "https://developers.binance.com/en/docs/catalog/vip-and-institutional-link-and-trade/api/rest-api/spot"
+    },
+    "previous_hash_bound_rendered_extraction": {
+      "path": "docs/model-research/action-value/binance-link-trade-existing-client-kickback-overlay-rendered-evidence-v1-2026-08-30.json",
+      "required_partner_endpoint": "GET /sapi/v1/apiReferral/rebate/recentRecord",
+      "required_partner_line_range": "595-740",
+      "rendered_evidence_sha256": "6b51695bad27909167d28d8c161b2807e8b39646c197f5b0fb5ebdd782e5b235"
+    },
+    "retained_current_official_api_index": {
+      "path": "docs/model-research/binance/raw/spot-block-matching-cost-overlay-v1-2026-08-30/03-agent-native-index.raw.txt",
+      "required_fragment": "GET /sapi/v1/apiReferral/rebate/recentRecord",
+      "sha256": "944e132d3523c8a03abcac2f7ddb85802107e45161470885b7a8785fd4fdb15d"
+    }
+  },
+  "schema_version": "binance-link-trade-partner-rebate-realized-organic-client-overlay-edge-v1"
+}

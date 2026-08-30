@@ -19,6 +19,10 @@ ARTIFACT = BASE / (
     "binance-link-trade-existing-client-kickback-overlay-"
     "edge-v1-2026-08-30.json"
 )
+PARTNER_ARTIFACT = BASE / (
+    "binance-link-trade-partner-rebate-realized-organic-client-"
+    "overlay-edge-v1-2026-08-30.json"
+)
 REGISTRY = ROOT / "docs/model-research/structural-edge-priority-registry-v1.json"
 FRONTIER = BASE / "accepted-market-independent-yield-frontier-v1-2026-08-30.json"
 
@@ -131,3 +135,41 @@ def test_kickback_edge_updates_only_the_non_yield_population() -> None:
         population["registry_accepted_edge_count"]
         - population["yield_and_capital_efficiency_edges_included"]
     )
+
+
+def test_partner_rebate_is_a_distinct_fail_closed_realized_overlay() -> None:
+    partner = json.loads(PARTNER_ARTIFACT.read_text(encoding="ascii"))
+    registry = json.loads(REGISTRY.read_text(encoding="utf-8"))
+
+    assert _self_hash(partner, "result_sha256") == partner["result_sha256"]
+    decision = partner["adjudication"]
+    authority = partner["authority"]
+    assert decision["accepted_edge"] is True
+    assert decision["accepted_edge_count_after"] == registry["accepted_edge_count"]
+    assert decision["market_direction_forecast_required"] is False
+    assert decision["owned_income_proved"] is False
+    assert decision["profitability_claim"] is False
+    assert decision["deployment_ready"] is False
+    assert decision["public_forward_profit_floor"] == "0"
+    assert authority["credentials_used"] is False
+    assert authority["signed_requests"] == 0
+    assert authority["state_changes"] == 0
+    assert partner["economic_contract"]["rate_assumption"] == "none"
+    assert partner["signed_read_only_reconciliation"][
+        "state_changes_authorized"
+    ] is False
+
+    family = next(
+        row
+        for row in registry["prioritized_hypotheses"]
+        if row["mechanism"] == "organic_third_party_platform_fee_overlays"
+    )
+    assert family["priority_rank"] == 24
+    assert {
+        "path": PARTNER_ARTIFACT.relative_to(ROOT).as_posix(),
+        "result_sha256": partner["result_sha256"],
+    } in family["canonical_artifacts"]
+    assert "Link-and-Trade partner rebate income" in registry["accepted_edge_scope"]
+    assert "must_not_be_retried" in family[
+        "excluded_unretained_exchange_link_discovery"
+    ]
