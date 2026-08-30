@@ -1,0 +1,36 @@
+{
+  "schema_version": "polymarket-soccer-exact-score-implication-preflight-failure-v1",
+  "created_at_utc": "2026-08-30T19:41:00Z",
+  "contract": {
+    "path": "docs/model-research/action-value/polymarket-soccer-exact-score-implication-contract-v1-2026-08-30.json",
+    "sha256": "5b53f0298a5eaaae7441a23f26c3dd22174d1d9657894fef503079142c5876bb"
+  },
+  "retained_source": {
+    "path": "data/polymarket-sep6-negrisk-complete-set-catalog-v1/raw/events.json",
+    "sha256": "f430490f592cf58297c5f5f118b3fabc32488faa82b5b07b60815279bdc61050"
+  },
+  "implementation": {
+    "path": "tools/adjudicate_polymarket_soccer_exact_score_implications.py",
+    "sha256_at_failure": "76d249f82d2e69d136d0e18112a3e6a01d6544c16a1b6bcefef3657a18a6afc4"
+  },
+  "failure": {
+    "phase": "zero_network_retained_representation_preflight",
+    "message": "zero-zero cancellation alignment changed",
+    "cause": "the match-result rule says will resolve to Yes while the v1 literal omitted the word to",
+    "economic_rows_evaluated": 0,
+    "output_created": false
+  },
+  "authority": {
+    "network_requests": 0,
+    "credentials_used": false,
+    "accounts_orders_funds_or_transactions": 0,
+    "trading_authority": false
+  },
+  "adjudication": {
+    "accepted_edge": false,
+    "profitability_claim": false,
+    "deployment_ready": false,
+    "next_action": "freeze a v2 contract changing only the retained literal representation gate"
+  },
+  "result_sha256": "9bc9712f78c0553dc30a02a0b6bde2d8cc88c269b833611207dd61a21865e0a3"
+}

@@ -206,6 +206,13 @@ override prose.
   book request exposes schedule drift after raw retention, preserve the failed
   runner and adjudicate the immutable response once against a separately frozen
   exact schedule instead of refetching for a cleaner result.
+- Polymarket Gamma `outcomePrices` can behave like midpoint diagnostics while
+  the same market exposes a materially different `bestAsk`. Never let
+  `outcomePrices` alone authorize a CLOB request. For a YES leg, require the
+  retained side-specific `bestAsk`; for a NO leg, require a direct NO ask when
+  available or use `1 - YES bestBid` only as a conservative rejection proxy.
+  Missing side-specific ask evidence blocks escalation, and every surviving
+  row still requires an exact current book batch before any economic claim.
 - Before freezing a time-bounded prospective capture, prove that its duration,
   phase alignment, retained observation tail, and required source timestamps can
   supply every minimum-sample gate. Elapsed duration and zero transport gaps do

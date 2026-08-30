@@ -224,10 +224,20 @@ def _validate_metadata(contract: dict[str, Any]) -> dict[str, Any]:
         outcomes = json.loads(market["outcomes"])
         prices = json.loads(market["outcomePrices"])
         tokens = json.loads(market["clobTokenIds"])
+        expected_line = definition.get("line")
+        observed_line = market.get("line")
+        line_matches = (
+            expected_line is None and observed_line is None
+        ) or (
+            expected_line is not None
+            and observed_line is not None
+            and Decimal(str(observed_line)) == Decimal(str(expected_line))
+        )
+        expected_neg_risk = bool(definition.get("neg_risk", False))
         if not (
             market["question"] == definition["question"]
             and market["sportsMarketType"] == definition["sports_market_type"]
-            and Decimal(str(market["line"])) == Decimal(definition["line"])
+            and line_matches
             and market["conditionId"] == definition["condition_id"]
             and outcomes == definition["outcomes"]
             and prices == definition["outcome_prices"]
@@ -236,7 +246,7 @@ def _validate_metadata(contract: dict[str, Any]) -> dict[str, Any]:
             and market["closed"] is False
             and market["acceptingOrders"] is True
             and market["enableOrderBook"] is True
-            and market["negRisk"] is False
+            and market["negRisk"] is expected_neg_risk
             and market["feeSchedule"] == contract["execution"]["fee_schedule"]
             and market["takerBaseFee"] == 1000
             and Decimal(str(market["orderMinSize"]))
@@ -320,13 +330,14 @@ def main() -> None:
         book = books[definition["token_id"]]
         if not (
             str(book["market"]).lower() == definition["condition_id"]
-            and book["neg_risk"] is False
+            and book["neg_risk"] is bool(definition.get("neg_risk", False))
             and Decimal(str(book["min_order_size"])) <= quantity
             and Decimal(str(book["tick_size"])) == tick_size
         ):
             raise RuntimeError(f"book identity changed: {name}")
         timestamps.append(int(book["timestamp"]))
     skew_ms = max(timestamps) - min(timestamps)
+    oldest_book_age_ms = int(book_receipt["completed_at_ms"]) - min(timestamps)
 
     zero_fee_fills: dict[str, list[dict[str, Any] | None]] = {}
     for stress_name, adverse_ticks in contract["execution"]["stress_ticks"].items():
@@ -411,9 +422,14 @@ def main() -> None:
         }
 
     synchronized = skew_ms <= contract["execution"]["maximum_book_timestamp_skew_ms"]
+    maximum_book_age_ms = int(
+        contract["execution"].get("maximum_book_age_ms", 5000)
+    )
+    fresh = 0 <= oldest_book_age_ms <= maximum_book_age_ms
     final = economics[final_stress_name]
     passes = bool(
         synchronized
+        and fresh
         and final is not None
         and final["after_current_fee_profit_floor_pUSD"] is not None
         and final["after_current_fee_profit_floor_pUSD"] > 0
@@ -430,8 +446,14 @@ def main() -> None:
         "capture": {
             "book_receipt": book_receipt,
             "fee_receipts": fee_receipts,
+            "request_journal": {
+                "path": contract["outputs"]["journal_path"],
+                "sha256": _sha256(journal_path.read_bytes()),
+            },
             "book_timestamp_skew_ms": skew_ms,
             "within_frozen_skew_gate": synchronized,
+            "oldest_book_age_ms": oldest_book_age_ms,
+            "within_frozen_age_gate": fresh,
         },
         "payoff_proof": contract["payoff_proof"],
         "gamma_prefilter": contract["gamma_prefilter"],
