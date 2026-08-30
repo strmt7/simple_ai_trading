@@ -2517,7 +2517,7 @@
       "venue_scope": "Binance_Spot_direct_and_exactly_one_intermediary_routes_for_independently_required_organic_conversions_with_the_exactly_two_intermediary_extension_terminal_for_the_retained_population"
     }
   ],
-  "result_sha256": "087468040a17520bde05b3dd2e8bf2df94a3608176d9aad6b190382e043d858e",
+  "result_sha256": "d2d24730180c4b4c9182a4f694a906cab819e1f93633ac04ddc834af5f6d3d31",
   "schema_version": "structural-edge-priority-registry-v1",
   "terminal_do_not_repeat": [
     {
@@ -2864,8 +2864,13 @@
       "canonical_result_sha256": "426b53310b6f46ea39312b4d06f404453ceac2b98863efeee91aa9d592120208",
       "family": "polymarket_Bitcoin_September_4_price_range_exact_fixed_NegRisk_depth_2026_08_30",
       "reason": "the_new_eleven_bin_Bitcoin_closing_price_event_displayed_all_YES_sum_was_3_0075_pUSD_and_passed_all_11_rejection_only_one_NO_conversion_identities_but_the_completed_twenty_two_token_batch_failed_freshness_and_the_zero_network_exact_retained_adjudication_found_zero_profitable_paths_the_best_five_share_path_lost_3_730_pUSD_even_at_zero_fee_3_81628_pUSD_after_the_exact_7_percent_Crypto_taker_schedule_and_4_07770_pUSD_after_one_adverse_tick_do_not_repeat_Gamma_or_books_refetch_to_repair_the_consumed_legacy_fee_gate_or_treat_displayed_prices_as_executable"
+    },
+    {
+      "canonical_result_sha256": "6716c320effd97f20ebe84536366e0308ca7089b1ef15d4c6f601c232182a10d",
+      "family": "binance_Spot_Price_Range_Execution_Rule_safety_control_2026_08_30",
+      "reason": "the_frozen_current_official_FAQ_proved_that_the_rule_is_an_exchange_set_taker_price_range_around_a_reference_price_and_expires_out_of_range_residual_quantity_but_an_otherwise_identical_user_bounded_marketable_LIMIT_IOC_or_FOK_order_can_impose_the_same_or_a_tighter_worst_price_on_each_side_so_the_rule_has_zero_positive_standalone_payoff_upper_bound_do_not_poll_executionRules_or_referencePrice_as_an_edge_reopen_only_on_a_material_rule_or_order_type_change_that_adds_positive_cash_consideration_strictly_better_price_or_protection_unavailable_through_a_user_bounded_order"
     }
   ],
-  "updated_at_utc": "2026-08-30T14:52:00Z",
+  "updated_at_utc": "2026-08-30T15:08:00Z",
   "usage_rule": "advance_the_highest_ranked_hypothesis_whose_retry_trigger_is_satisfied_otherwise_do_not_repeat_a_blocked_or_terminal_screen"
 }

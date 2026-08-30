@@ -5343,3 +5343,41 @@ canonical terminal result SHA-256 is
 Accepted edges remain 29, ranked hypotheses remain 44, terminal families become
 69, and registry SHA-256 becomes
 `087468040a17520bde05b3dd2e8bf2df94a3608176d9aad6b190382e043d858e`.
+
+## Binance Spot Price Range Execution Rule dominance rejection
+
+A current official-source sweep exposed an unregistered, direction-independent-
+looking Spot execution mechanism. One frozen public official FAQ GET retained
+7,999 bytes and passed all seven preregistered semantics phrases. No Binance
+venue endpoint, live configuration, credential, account, order, trade, fund, or
+protected Polymarket capture was accessed.
+
+The rule constrains taker execution around an exchange reference price and
+expires out-of-range residual quantity. It is a safety control, not a positive
+standalone edge. For a buy with worst acceptable price `P`, an otherwise
+identical marketable `LIMIT IOC` or `LIMIT FOK` with limit `P` cannot fill above
+`P`; the sell identity is symmetric. The exchange rule can impose only an
+additional, possibly looser cap. Its incremental payoff upper bound versus that
+user-bounded comparator is therefore zero for every market direction and every
+live multiplier or reference price.
+
+Do not request or poll `GET /api/v3/executionRules` or `referencePrice` merely
+to compare against an avoidably unbounded `MARKET` order. Query exact current
+configuration only inside a separately frozen candidate whose economic decision
+materially relies on unbounded taker execution or exact residual-expiry
+semantics, and then model `EXECUTION_RULE_PRICE_RANGE_EXCEEDED`. Reopen this
+family only if an official rule or order-type change adds positive cash
+consideration, a strictly better executable price, or protection unavailable
+through a user-bounded order.
+
+Canonical source contract SHA-256 is
+`53381cf5bc5e8328283dcf06efdcdb7630466b8becb25451405f219588ba7569`;
+source result SHA-256 is
+`2866f68ea2dd0b7fb460fd132da19fc278cab30e6b8cb1db55f92f857a3281a3`;
+raw FAQ SHA-256 is
+`ec6fa180dc99ea1f1846f8e310caa958c8f0ff33fec65a1b94160113f25259d7`;
+canonical terminal result SHA-256 is
+`6716c320effd97f20ebe84536366e0308ca7089b1ef15d4c6f601c232182a10d`.
+Accepted edges remain 29, ranked hypotheses remain 44, terminal families become
+70, and registry SHA-256 becomes
+`d2d24730180c4b4c9182a4f694a906cab819e1f93633ac04ddc834af5f6d3d31`.

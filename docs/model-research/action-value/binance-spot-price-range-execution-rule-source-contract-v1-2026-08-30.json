@@ -1,0 +1,79 @@
+{
+  "schema_version": "public-source-capture-contract-v1",
+  "frozen_at_utc": "2026-08-30T15:06:30.7904488Z",
+  "contract_path": "docs/model-research/action-value/binance-spot-price-range-execution-rule-source-contract-v1-2026-08-30.json",
+  "trigger": {
+    "registry_route": "new_unregistered_direction_independent_spot_execution_safety_mechanism",
+    "novelty_evidence": "The ranked and terminal structural-edge registry plus retained artifact alias search contained no Price Range Execution Rule family. The retained current Agent Native index independently lists the public executionRules and referencePrice routes.",
+    "outcomes_viewed_before_freeze": true,
+    "discovery_values_are_economic_inputs": false
+  },
+  "question": "Does the current official Binance Spot rule create positive incremental economic value over an otherwise identical user-bounded marketable limit order, or is it only an exchange-set taker safety cap?",
+  "request_name": "binance-spot-price-range-execution-rule-current-official-faq",
+  "request": {
+    "method": "GET",
+    "url": "https://raw.githubusercontent.com/binance/binance-spot-api-docs/master/faqs/price_range_execution_rules.md",
+    "count": 1,
+    "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "endpoint_classification": {
+    "operation": "download the public official Binance Spot API FAQ",
+    "security": "public unauthenticated static documentation GET",
+    "source_contract": "The official binance/binance-spot-api-docs repository states that its documented endpoints and semantics are official and supported. This capture does not call any venue endpoint."
+  },
+  "response_byte_ceiling": 100000,
+  "required_utf8_phrases": [
+    "Execution rules are trading rules that are enforced at the time of order execution.",
+    "The only execution rule currently available is the Price Range rule.",
+    "This rule ensures that trades may only be executed at prices within and equal to a price range around a reference price.",
+    "GET /api/v3/executionRules",
+    "The Price Range Execution Rule is not enforced on the symbol.",
+    "When an order enters its taker phase, the reference price is recalculated to set the execution price limits for the order's entire taker phase.",
+    "EXECUTION_RULE_PRICE_RANGE_EXCEEDED"
+  ],
+  "retained_sources": [
+    {
+      "path": "docs/model-research/binance/raw/spot-block-matching-cost-overlay-v1-2026-08-30/03-agent-native-index.raw.txt",
+      "sha256": "944e132d3523c8a03abcac2f7ddb85802107e45161470885b7a8785fd4fdb15d",
+      "use": "current official native index classifies GET /api/v3/executionRules, GET /api/v3/referencePrice, and GET /api/v3/referencePrice/calculation without USER_DATA or TRADE security labels"
+    }
+  ],
+  "decision": {
+    "source_gate_only": "Every exact semantics phrase must exist in the one retained current official FAQ.",
+    "dominance_test": "For a buy taker intent with worst acceptable price P, an otherwise identical LIMIT IOC or LIMIT FOK with limit P cannot execute above P; for a sell it cannot execute below P. The exchange-set rule can only impose an additional possibly looser cap or expire residual quantity. It cannot create a positive price improvement or cash payout versus that user-bounded comparator.",
+    "accepted_edge": false,
+    "profitability_proved": false,
+    "terminal_if_source_passes": "Classify the rule as an execution-safety constraint with zero positive standalone payoff. Do not request live symbol rules merely to confirm configuration because configuration cannot reverse the dominance result. Model the rule only when a future candidate materially relies on unbounded MARKET taker execution or exact residual-expiry behavior."
+  },
+  "outputs": {
+    "raw_path": "docs/model-research/binance/raw/spot-price-range-execution-rule-v1-2026-08-30/01-price-range-execution-rule-faq.raw.md",
+    "journal_path": "docs/model-research/binance/raw/spot-price-range-execution-rule-v1-2026-08-30/00-request-journal.jsonl",
+    "result_path": "docs/model-research/action-value/binance-spot-price-range-execution-rule-source-result-v1-2026-08-30.json"
+  },
+  "authority": {
+    "account_requests": 0,
+    "credentials_used": false,
+    "funds_used": false,
+    "orders_or_transactions": 0,
+    "protected_capture_touched": false,
+    "public_unauthenticated_read_only_requests": 1,
+    "signed_requests": 0,
+    "trading_authority": false
+  },
+  "implementations": [
+    {
+      "path": "tools/capture_public_source_contract.py",
+      "sha256": "d566a5a379c659c3da144d5e28449ebac9c01493bd39646f9cc3a6e697a83566"
+    },
+    {
+      "path": "tools/screen_polymarket_exact_two_leg_package.py",
+      "sha256": "ba7ebaa1fb5235ba026f7cf4cb21ff73ba19430fee4a4f678fbdea37635eb32f"
+    },
+    {
+      "path": "tools/adjudicate_polymarket_exact_mlb_monotone_prefilter.py",
+      "sha256": "958a44d78029b9a1eb69a3771ce18e53ac1ed3c7bc161c8e4318beedce2cf99f"
+    }
+  ],
+  "retry_policy": "This exact current FAQ GET is one-use. Preserve any HTTP error or missing-term response and do not retry an alias. Because the source outcome was viewed before freeze, a passing gate proves only current architecture and cannot prove live symbol configuration, account behavior, savings, fill quality, or deployment readiness.",
+  "contract_sha256": "53381cf5bc5e8328283dcf06efdcdb7630466b8becb25451405f219588ba7569"
+}

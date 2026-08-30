@@ -343,6 +343,15 @@ override prose.
   independently enforce the same one-use boundary, so a shell parser or
   non-terminating-error mistake cannot consume a duplicate request.
 
+- Binance Spot's Price Range Execution Rule is an execution-safety constraint,
+  not a standalone edge: an otherwise identical marketable `LIMIT IOC` or
+  `LIMIT FOK` order can impose the same or a tighter user-selected worst price.
+  Do not poll `executionRules` or `referencePrice` merely to credit avoided
+  slippage against an avoidably unbounded `MARKET` order. Source-bind the exact
+  current rule and model `EXECUTION_RULE_PRICE_RANGE_EXCEEDED` residual quantity
+  only when a separately frozen candidate materially depends on unbounded taker
+  execution or exact residual-expiry behavior.
+
 ## Working Method
 
 Use the pinned Karpathy baseline from

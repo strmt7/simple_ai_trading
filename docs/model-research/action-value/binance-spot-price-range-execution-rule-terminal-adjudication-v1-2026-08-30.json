@@ -1,0 +1,110 @@
+{
+  "schema_version": "binance-spot-price-range-execution-rule-terminal-adjudication-v1",
+  "created_at_utc": "2026-08-30T15:08:00.6103265Z",
+  "purpose": "Determine whether Binance Spot's Price Range Execution Rule is a direction-independent positive-payoff mechanism or only a safety constraint, without spending a live venue-configuration request.",
+  "novelty_audit": {
+    "prioritized_hypotheses_searched": true,
+    "terminal_families_searched": true,
+    "artifact_aliases_searched": [
+      "executionRules",
+      "referencePrice",
+      "Price Range Execution Rule",
+      "EXECUTION_RULE_PRICE_RANGE_EXCEEDED"
+    ],
+    "existing_family_found": false,
+    "classification": "new_unregistered_execution_safety_mechanism"
+  },
+  "sources": {
+    "frozen_contract": {
+      "path": "docs/model-research/action-value/binance-spot-price-range-execution-rule-source-contract-v1-2026-08-30.json",
+      "sha256": "53381cf5bc5e8328283dcf06efdcdb7630466b8becb25451405f219588ba7569"
+    },
+    "capture_result": {
+      "path": "docs/model-research/action-value/binance-spot-price-range-execution-rule-source-result-v1-2026-08-30.json",
+      "sha256": "2866f68ea2dd0b7fb460fd132da19fc278cab30e6b8cb1db55f92f857a3281a3",
+      "source_gate_passed": true
+    },
+    "official_faq": {
+      "path": "docs/model-research/binance/raw/spot-price-range-execution-rule-v1-2026-08-30/01-price-range-execution-rule-faq.raw.md",
+      "sha256": "ec6fa180dc99ea1f1846f8e310caa958c8f0ff33fec65a1b94160113f25259d7",
+      "bytes": 7999
+    },
+    "request_journal": {
+      "path": "docs/model-research/binance/raw/spot-price-range-execution-rule-v1-2026-08-30/00-request-journal.jsonl",
+      "sha256": "10418d4b4fcd07b2185fe48e28407864c3c05e940ee786846ad2ae77bdb86b0c"
+    },
+    "agent_native_index": {
+      "path": "docs/model-research/binance/raw/spot-block-matching-cost-overlay-v1-2026-08-30/03-agent-native-index.raw.txt",
+      "sha256": "944e132d3523c8a03abcac2f7ddb85802107e45161470885b7a8785fd4fdb15d",
+      "classification": "GET /api/v3/executionRules, GET /api/v3/referencePrice, and GET /api/v3/referencePrice/calculation are listed without USER_DATA or TRADE labels"
+    }
+  },
+  "official_mechanism": {
+    "scope": "execution-time taker price constraint around a continually changing reference price",
+    "only_current_rule_type": "PRICE_RANGE",
+    "activation_requirements": [
+      "the symbol has a PRICE_RANGE rule",
+      "the symbol has a non-null reference price",
+      "the relevant side and direction multiplier is present"
+    ],
+    "limit_freeze_point": "the reference price is recalculated when the order enters its taker phase and its execution limits then apply for that taker phase",
+    "outside_range_behavior": "the taker order expires with EXECUTION_RULE_PRICE_RANGE_EXCEEDED",
+    "examples_are_live_configuration_evidence": false
+  },
+  "dominance_proof": {
+    "buy": {
+      "user_intent": "execute quantity q only at prices less than or equal to worst acceptable price P",
+      "comparator": "otherwise identical marketable LIMIT IOC or LIMIT FOK buy with limit P",
+      "guarantee": "every comparator fill price is less than or equal to P regardless of the exchange-set Price Range rule",
+      "incremental_rule_payoff_upper_bound": "0"
+    },
+    "sell": {
+      "user_intent": "execute quantity q only at prices greater than or equal to worst acceptable price P",
+      "comparator": "otherwise identical marketable LIMIT IOC or LIMIT FOK sell with limit P",
+      "guarantee": "every comparator fill price is greater than or equal to P regardless of the exchange-set Price Range rule",
+      "incremental_rule_payoff_upper_bound": "0"
+    },
+    "residual_quantity": "The rule can expire residual taker quantity beyond its exchange-set range. The user-bounded comparator can impose the same or a tighter explicit bound and therefore weakly dominates the rule as a price-protection mechanism.",
+    "market_order_comparison": "Avoiding an extreme fill versus an unbounded MARKET order is safety value, not an independently positive edge, because the user can choose the bounded comparator before submission.",
+    "fees_or_direction_needed": false
+  },
+  "request_efficiency": {
+    "live_execution_rules_requested": false,
+    "live_reference_price_requested": false,
+    "reason": "No possible BTCUSDT, ETHUSDT, or SOLUSDT configuration can make the exchange-set cap positively dominate an otherwise identical user-bounded order. A live configuration request cannot change the terminal economic classification.",
+    "future_configuration_use": "Query exact current public rule and reference-price state only inside a separately frozen candidate whose decision materially relies on unbounded MARKET execution or exact residual-expiry semantics."
+  },
+  "adjudication": {
+    "status": "terminal_safety_control_not_standalone_market_edge",
+    "accepted_edge": false,
+    "accepted_edge_count_change": 0,
+    "market_direction_forecast_required": false,
+    "positive_standalone_payoff_proved": false,
+    "deployment_ready": false,
+    "profitability_claim": false,
+    "terminal_family_count_change": 1,
+    "reopen_only_on": "a material official rule or order-type change that gives the exchange rule positive cash consideration, strictly better executable price, or a protection unavailable through a user-bounded order; ordinary live multiplier or reference-price changes do not qualify"
+  },
+  "platform_correction": {
+    "required_behavior": "Any future candidate that intentionally uses an unbounded MARKET taker path must source-bind current executionRules and referencePrice state and model EXECUTION_RULE_PRICE_RANGE_EXCEEDED residual quantity.",
+    "not_required": "Do not add a collector or generic polling loop for strategies that already use explicit limit prices."
+  },
+  "authority": {
+    "public_official_source_gets": 1,
+    "venue_api_requests": 0,
+    "credentials_used": false,
+    "signed_requests": 0,
+    "accounts_accessed": false,
+    "orders_or_mutations": 0,
+    "funds_used": false,
+    "protected_polymarket_capture_touched": false
+  },
+  "prohibited_shortcuts": [
+    "calling exchange-imposed slippage protection profit",
+    "comparing only with an avoidably unbounded MARKET order",
+    "assuming the fictional FAQ values are live BTC ETH or SOL configuration",
+    "polling executionRules or referencePrice without a decision-changing candidate",
+    "ignoring residual expiry in a future MARKET-order execution model"
+  ],
+  "result_sha256": "6716c320effd97f20ebe84536366e0308ca7089b1ef15d4c6f601c232182a10d"
+}
