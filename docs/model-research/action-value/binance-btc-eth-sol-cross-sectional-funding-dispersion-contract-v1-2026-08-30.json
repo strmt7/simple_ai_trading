@@ -1,0 +1,111 @@
+{
+  "schema_version": "binance-cross-sectional-funding-dispersion-preflight-contract-v1",
+  "frozen_at_utc": "2026-08-30T13:37:09.2558188Z",
+  "contract_path": "docs/model-research/action-value/binance-btc-eth-sol-cross-sectional-funding-dispersion-contract-v1-2026-08-30.json",
+  "question": "Can a causal same-venue market-direction-neutral BTC ETH SOL USD-M perpetual strategy that holds long the lowest lagged funding contract and short the highest lagged funding contract clear execution, two-leg capital, persistence, drawdown, bootstrap, and chronological role gates before any price-history request?",
+  "novelty": {
+    "registry_search": "No ranked or terminal family contains cross-sectional funding dispersion, long-lowest short-highest funding, or dynamic funding-pair switching.",
+    "distinct_from_spot_perpetual_carry": "Both legs are USD-M perpetuals and the signal is cross-sectional lagged funding dispersion rather than fixed short-perpetual plus spot carry.",
+    "distinct_from_cross_venue_funding_spread": "Both legs are on Binance and the pair is selected causally among BTC ETH and SOL rather than using fixed Binance-Hyperliquid orientations.",
+    "outcomes_viewed_before_freeze": false
+  },
+  "sources": [
+    {
+      "asset": "BTC",
+      "symbol": "BTCUSDT",
+      "path": "docs/model-research/action-value/raw/binance-hyperliquid-cross-venue-funding-spread-extension-v1-2026-08-27/binance-btc-funding.raw",
+      "file_sha256": "07c8544df4941a9dd463ae27cb09e247df3e99fbd27b31c2076be49aa2a87e4e"
+    },
+    {
+      "asset": "ETH",
+      "symbol": "ETHUSDT",
+      "path": "docs/model-research/action-value/raw/binance-hyperliquid-cross-venue-funding-spread-extension-v1-2026-08-27/binance-eth-funding.raw",
+      "file_sha256": "ffed21b173e50080c11a56eaff5fe44ecf58545d25b179602177d71501e064be"
+    },
+    {
+      "asset": "SOL",
+      "symbol": "SOLUSDT",
+      "path": "docs/model-research/action-value/raw/binance-hyperliquid-cross-venue-funding-spread-extension-v1-2026-08-27/binance-sol-funding.raw",
+      "file_sha256": "77cdf3421cb25f0300d72697deed6286298841543af4b0c06afbb2f1bfec9c9d"
+    }
+  ],
+  "lineage": {
+    "retained_parent_path": "docs/model-research/action-value/binance-hyperliquid-cross-venue-funding-spread-extension-v1-2026-08-27.json",
+    "retained_parent_file_sha256": "0757b0a6849a258c871810df380adaad03d93b01cbced1b1c512603e82bbfb02",
+    "retained_parent_result_sha256": "23eb54dfd19890d984d73156ef05950f7362f8fffe081b93cc5d471f59f62755",
+    "source_endpoint_contract": "The retained current official Agent Native index classifies GET /fapi/v1/fundingRate as Funding Rate History and GET /fapi/v1/klines as Kline/Candlestick Data. This preflight makes zero requests."
+  },
+  "population": {
+    "assets": ["BTC", "ETH", "SOL"],
+    "source_row_count": 210,
+    "decision_interval_count": 209,
+    "interval_hours": 8,
+    "maximum_cross_asset_skew_ms": 1000,
+    "maximum_schedule_jitter_ms": 1000,
+    "start_utc_inclusive": "2026-06-18T00:00:00Z",
+    "end_utc_inclusive": "2026-08-26T16:00:00Z"
+  },
+  "signal": {
+    "formation": "At funding settlement t, use only rates settled at t. For the next interval, hold +1 notional in the alphabetically tie-broken lowest-rate asset and -1 notional in the highest-rate asset.",
+    "cash_flow": "At settlement t+1, funding cash in bips is 10000 times realized_rate_short minus realized_rate_long.",
+    "lookahead": false,
+    "position_gross_notional": "2",
+    "price_pnl_included": false,
+    "price_pnl_rule": "This is a funding-component preflight. A failure prohibits price requests because any positive result would then require a separate relative-price forecast rather than establish a stable funding edge."
+  },
+  "perfect_foresight_dominance_bound": {
+    "definition": "Within each interval, select the realized highest rate short and realized lowest rate long with perfect foresight, charge zero execution, and subtract only the frozen two-leg capital hurdle.",
+    "purpose": "If this upper bound fails a chronological role, no causal selector over the same two-leg population can make the funding component clear that role's capital hurdle."
+  },
+  "roles": {
+    "training": {"start": 0, "stop": 125},
+    "validation": {"start": 125, "stop": 167},
+    "test": {"start": 167, "stop": 209}
+  },
+  "economics": {
+    "one_way_execution_bips": "8",
+    "execution_interpretation": "Charge 8 bips for every unit of position opened, closed, or switched. Initial two-leg entry plus terminal two-leg exit costs 32 bips before any switching.",
+    "annual_capital_hurdle_percent_per_leg": "10",
+    "capital_interpretation": "Charge 10 percent annual opportunity cost independently on each of the two unit-notional legs.",
+    "funding_rate_unit": "fraction_of_position_notional"
+  },
+  "bootstrap": {
+    "block_intervals": 21,
+    "block_duration": "7_days",
+    "resamples": 2000,
+    "seed": 20260830,
+    "lower_tail": "Bonferroni-adjusted one-sided 95 percent across three roles"
+  },
+  "gates": {
+    "required_roles": ["training", "validation", "test"],
+    "net_after_frozen_hurdles_must_be_positive": true,
+    "family_adjusted_block_bootstrap_lower_bound_must_be_positive": true,
+    "maximum_positive_week_concentration": "0.5",
+    "maximum_net_drawdown_bips": "100",
+    "price_capture_requires_every_perfect_foresight_and_causal_role_to_pass": true
+  },
+  "decision": {
+    "pass": "Freeze one separate retained mark-price causal cross-regime adjudication without new market requests because each funding row already includes markPrice. Do not accept or deploy from this preflight.",
+    "fail": "Reject this exact funding-dispersion family before every new price, book, fee, account, credential, order, or fund request. A future price-only relative-value model is a distinct forecast-dependent hypothesis and may not rescue the funding edge.",
+    "accepted_edge": false,
+    "profitability_proved": false
+  },
+  "network_requests": 0,
+  "output_path": "docs/model-research/action-value/binance-btc-eth-sol-cross-sectional-funding-dispersion-result-v1-2026-08-30.json",
+  "authority": {
+    "account_requests": 0,
+    "books_or_price_requests": 0,
+    "credentials_used": false,
+    "funds_used": false,
+    "orders_or_transactions": 0,
+    "protected_capture_touched": false,
+    "public_unauthenticated_read_only_requests": 0,
+    "signed_requests": 0,
+    "trading_authority": false
+  },
+  "implementation": {
+    "path": "tools/adjudicate_binance_cross_sectional_funding_dispersion.py",
+    "sha256": "ed8cd40db305c0288e446d9b16c94f0e28d683db2a42ea6dc8f6254afc8d9cca"
+  },
+  "contract_sha256": "a91a2922110e4e38ae468d48a9c213c58f13bfe466460bf1e9ab1293b7dd446b"
+}
