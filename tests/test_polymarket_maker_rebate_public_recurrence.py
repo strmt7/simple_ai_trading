@@ -49,7 +49,7 @@ EXPECTED_RESULT_SHA256 = (
     "c992e0e1febc1a9789289cb129c166280ee0192cab203d3a6935a8c40e949612"
 )
 EXPECTED_REGISTRY_SHA256 = (
-    "0a34d7289331515f8e7b3f09e856fbc331ecbc3a91130fea20542a39ef211f60"
+    "66b03aa1311ee3b0565e9dc4e973f157aa9626af23b5f675bc60119d668dd311"
 )
 EXPECTED_MAKER_FIRST_SHA256 = (
     "4fe308ddeb6fd080bbd8548347a095762d8fc67eb5820fb0c7b3c2d6b7430d69"
@@ -199,7 +199,7 @@ def test_registry_tracks_recurrence_without_increasing_accepted_edges() -> None:
     candidate = next(
         row
         for row in registry["prioritized_hypotheses"]
-        if row["mechanism"] == "paired_crypto_maker_rebates_and_twap_liquidity_rewards"
+        if row["mechanism"] == "paired_maker_rebates_and_liquidity_rewards"
     )
     assert candidate["priority_rank"] == 17
     artifacts_by_path = {

@@ -1,0 +1,89 @@
+{
+  "authority": {
+    "credentials_used": false,
+    "funded_actions": 0,
+    "network_requests": 0,
+    "orders_or_cancellations": 0
+  },
+  "candidate": {
+    "condition_id": "0x27ad260f65f1fb035fa22660ea8a79fa72bc9f3c2432a56fc63defae40701d94",
+    "market_slug": "elon-musk-of-tweets-august-31-september-2-2026-40-64",
+    "question": "Will Elon Musk post 40-64 tweets from August 31 to September 2, 2026?",
+    "reward_daily_rate_pUSD": "53",
+    "reward_maximum_spread_cents": "5.5",
+    "reward_minimum_size_shares": "50"
+  },
+  "conditional_score": {
+    "no_midpoint": "0.525",
+    "no_own_order_score": "41.32231404958677685950413223",
+    "old_displayed_competition_q_one": "845.5312396694214876033057850",
+    "old_displayed_competition_q_two": "2781.884958677685950413223142",
+    "old_displayed_competition_total": "3627.416198347107438016528927",
+    "own_minimum_score": "41.32231404958677685950413223",
+    "stress": {
+      "1": {
+        "daily_reward_equivalent_pUSD": "0.5969579563187166187868841170",
+        "instantaneous_share": "0.01126335766639087959975253051",
+        "orphan_payback_days": "43.55415607547169811320754720"
+      },
+      "10": {
+        "daily_reward_equivalent_pUSD": "0.06030713033276609736128768329",
+        "instantaneous_share": "0.001137870383637096176628069496",
+        "orphan_payback_days": "431.1264664150943396226415096"
+      },
+      "100": {
+        "daily_reward_equivalent_pUSD": "0.006036895317228141973927173080",
+        "instantaneous_share": "0.0001139036852307196598854183600",
+        "orphan_payback_days": "4306.849569811320754716981133"
+      }
+    },
+    "yes_midpoint": "0.475",
+    "yes_own_order_score": "41.32231404958677685950413223"
+  },
+  "economics": {
+    "both_fill_gross_profit_pUSD": "0.50",
+    "combined_bid": "0.99",
+    "maximum_orphan_settlement_loss_pUSD": "26.00",
+    "no_bid": "0.52",
+    "quantity_shares": "50",
+    "remaining_reward_days": "3.692733171296296296296296296",
+    "yes_bid": "0.47"
+  },
+  "result_sha256": "facecfaa3b92d905c700083c7b8afe153adc495403ceabc91e417bdb248d059b",
+  "schema_version": "polymarket-retained-best-bid-join-v1",
+  "selection_integrity": {
+    "book_level_sizes_inspected_before_contract_freeze": false,
+    "displayed_top_prices_inspected_before_contract_freeze": true,
+    "quote_rule": "join_each_displayed_best_bid_without_price_improvement",
+    "stress_multipliers_frozen_before_depth_sizes": [
+      1,
+      10,
+      100
+    ]
+  },
+  "sources": {
+    "arithmetic_module_path": "src/simple_ai_trading/polymarket_liquidity_rewards.py",
+    "arithmetic_module_sha256": "9176eff0a8eb16d110fee86a8c6d71184f21919944d230606cb5505e0a209d19",
+    "book_payload_sha256": "8c89016d2bc47d0ca85f1b13a642b6e21cf7f7f8b3491a967faa9d6dfb6bc74e",
+    "book_raw_path": "docs/model-research/polymarket/raw/elon-posts-40-64-retained-source-book-screen-v1-2026-08-30/01-two-token-books.raw",
+    "contract_file_sha256": "f4cef0d0168a41df932d8384b1906fbddecf2b30b5f7a8583ab20e081eaaec78",
+    "contract_path": "docs/model-research/polymarket/elon-posts-40-64-best-bid-join-contract-v1-2026-08-30.json",
+    "contract_result_sha256": "e75d8216a78b48610df0bf0f0799b5fba3e93262b614e32600d1e1e3ac39d5a7",
+    "reward_payload_sha256": "06cc2b73201acc6ea2178536d6cc1028319f78d7ffd935ea77d50ad9c5754c1f"
+  },
+  "verdict": {
+    "accepted_edge": false,
+    "fresh_capture_justified": false,
+    "profitability_claim": false,
+    "publicly_proven_reward_payout_floor_pUSD": "0",
+    "reason": "even observed displayed competition requires 43.554 reward days to cover 26 pUSD orphan loss versus 3.693 days remaining and the 100x stress requires 4306.850 days",
+    "status": "terminal_rejected_observed_and_stressed_reward_payback_exceeds_horizon",
+    "trading_authority": false
+  },
+  "limitations": [
+    "The retained books were 6408 milliseconds old and cannot establish current execution.",
+    "Public levels do not expose maker identities, queue position, persistence, random reward samples, fills, or final payout normalization.",
+    "The midpoint is an explicitly conditional top-of-book construction because the public size-cutoff-adjusted midpoint algorithm is not fully specified.",
+    "The public reward payout floor remains zero and one-sided fills create directional inventory."
+  ]
+}

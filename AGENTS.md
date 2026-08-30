@@ -109,12 +109,15 @@ override prose.
   Never compare populations across different parameterizations without an
   explicit current semantics contract; source-contract drift is terminal, not
   permission to discover the new population ceiling by adaptive pagination.
-- Treat values surfaced by a rewards page or search result as discovery only.
-  Before requesting a book, reconcile the exact condition ID, sponsored daily
-  rate, minimum size, and maximum spread through the exact market endpoint.
-  Any mismatch is terminal for that frozen candidate and does not authorize a
-  retry, parameter change, replacement market, or use of either more favorable
-  configuration.
+- Treat values surfaced by a rewards page or search result as discovery only;
+  never require them to equal exact API values or use them in economics. Before
+  requesting a book, reconcile condition ID, token identity, minimum size, and
+  maximum spread between exact Gamma and exact sponsored-condition responses,
+  and take the dated daily rate only from that exact reward response. A mismatch
+  between those exact sources is terminal for the frozen candidate and does not
+  authorize a retry, parameter change, replacement market, or favorable-value
+  selection. A stale or misattributed discovery snippet is a methodology error,
+  not evidence that agreeing exact sources conflict.
 - Cross-token cost and reward comparisons must use a source-bound executable
   conversion into one exact unit. A one-for-one stablecoin assumption or a
   different quote currency is a labeled sensitivity only and cannot support an

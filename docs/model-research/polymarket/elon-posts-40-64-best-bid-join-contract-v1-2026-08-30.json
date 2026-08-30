@@ -1,0 +1,56 @@
+{
+  "authority": {
+    "accepted_edge": false,
+    "live_or_paper_trading_authority": false,
+    "orders_or_cancellations_permitted": false,
+    "profitability_claim": false
+  },
+  "candidate": {
+    "condition_id": "0x27ad260f65f1fb035fa22660ea8a79fa72bc9f3c2432a56fc63defae40701d94",
+    "event_end_utc": "2026-09-02T16:00:00+00:00",
+    "maximum_spread_cents": "5.5",
+    "no_quote": "0.52",
+    "quantity_shares": "50",
+    "reward_daily_rate_pUSD": "53",
+    "yes_quote": "0.47"
+  },
+  "decision": {
+    "accepted_edge_possible": false,
+    "future_fresh_capture_eligible_only_when": [
+      "both_fill_gross_profit_is_positive",
+      "quotes_are_nonmarketable_and_sum_below_one",
+      "one_hundred_times_displayed_book_competition_payback_does_not_exceed_remaining_reward_days"
+    ],
+    "otherwise": "terminal_rejection_without_another_book_request",
+    "publicly_proven_reward_payout_floor_pUSD": "0",
+    "stress_multipliers": [
+      1,
+      10,
+      100
+    ]
+  },
+  "frozen_at_utc": "2026-08-30T02:08:52.8371435+00:00",
+  "method": {
+    "book_levels_inspected_before_freeze": false,
+    "displayed_top_prices_inspected_before_freeze": true,
+    "network_requests_permitted": 0,
+    "post_quote_midpoint": "midpoint of own bid and minimum of displayed best ask or complementary paired own ask",
+    "quote_rule": "join each displayed best bid without price improvement",
+    "score_formula": "documented quadratic order score plus Qmin single-side adjustment",
+    "stress_rule": "multiply retained displayed old Q1 plus Q2 competition by 1 10 and 100 while holding own Qmin fixed"
+  },
+  "result_sha256": "e75d8216a78b48610df0bf0f0799b5fba3e93262b614e32600d1e1e3ac39d5a7",
+  "retained_sources": {
+    "book": {
+      "captured_oldest_event_age_ms": 6408,
+      "path": "docs/model-research/polymarket/raw/elon-posts-40-64-retained-source-book-screen-v1-2026-08-30/01-two-token-books.raw",
+      "sha256": "8c89016d2bc47d0ca85f1b13a642b6e21cf7f7f8b3491a967faa9d6dfb6bc74e"
+    },
+    "reward": {
+      "active_end_utc": "2501-01-01T00:00:00+00:00",
+      "path": "docs/model-research/polymarket/raw/elon-posts-40-64-paired-maker-reward-screen-v1-2026-08-30/02-exact-sponsored-reward.raw",
+      "sha256": "06cc2b73201acc6ea2178536d6cc1028319f78d7ffd935ea77d50ad9c5754c1f"
+    }
+  },
+  "schema_version": "polymarket-retained-best-bid-join-contract-v1"
+}
