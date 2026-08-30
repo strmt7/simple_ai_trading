@@ -1028,26 +1028,33 @@
       "blocking_evidence": [
         "read-only Binance Prediction Trading API access",
         "exact independent payout-rule equivalence rather than shared-book mirroring",
-        "fresh executable books fees collateral FX transfers settlement and custody costs"
+        "fresh executable books fees collateral FX transfers settlement and custody costs",
+        "exact yield recipient rate base accrual distribution redemption and current true isYieldBearing market evidence"
       ],
       "canonical_artifacts": [
         {
           "path": "docs/model-research/action-value/cross-venue-prediction-parity-screen-v1-2026-08-25.json",
           "result_sha256": "628e63106bc3c0e28c36dcad094b7d7ac500ecd14dfff827287030c2dbbb3d72"
+        },
+        {
+          "path": "docs/model-research/action-value/binance-prediction-yield-bearing-source-failure-adjudication-v1-2026-08-30.json",
+          "result_sha256": "e0049982adfdb631bb71bc7ebaf957d0a96336b42f269783ec99d4812e12bafc"
         }
       ],
-      "current_status": "terminal_before_market_access_official_auth_contract_mismatch_and_no_credentials_authorized",
+      "current_status": "terminal_before_market_access_current_detailed_official_schema_requires_signed_timestamps_and_no_credentials_are_available_or_authorized_the_same_rendered_schema_exposes_a_distinct_per_market_isYieldBearing_field_alongside_vendor_chain_collateral_fee_and_slippage_metadata_but_does_not_define_yield_recipient_rate_base_accrual_distribution_redemption_or_after_cost_value_the_one_frozen_machine_readable_schema_capture_returned_HTTP_202_with_zero_bytes_and_zero_required_terms_so_it_is_consumed_without_alias_or_retry",
       "market_direction_forecast_required": false,
-      "mechanism": "cross_venue_prediction_complete_set",
-      "next_action": "none_without_explicit_read_only_credential_authority_and_a_new_authenticated_contract",
+      "mechanism": "cross_venue_prediction_complete_set_and_prediction_collateral_yield_overlay",
+      "next_action": "none_without_both_designated_credentials_explicit_signed_GET_only_Prediction_Trading_market_metadata_authority_and_a_new_authenticated_contract_or_a_materially_new_byte_retainable_current_official_source_that_defines_the_complete_yield_economics",
       "priority_rank": 18,
       "prohibited_shortcuts": [
         "generated no-authorization label without live preflight",
         "title equality as payout equality",
         "shared vendor condition or order book as independent venue",
-        "stored credential inspection without authority"
+        "stored credential inspection without authority",
+        "treating_isYieldBearing_true_as_user_owned_positive_or_non_double_counted_yield",
+        "retrying_the_consumed_schema_URL_or_an_alias"
       ],
-      "retry_trigger": "explicit_read_only_Binance_Prediction_credential_authority",
+      "retry_trigger": "both_designated_credentials_plus_explicit_signed_GET_only_Binance_Prediction_Trading_market_metadata_authority_or_a_materially_new_byte_retainable_current_official_source_that_defines_yield_recipient_rate_base_accrual_distribution_and_redemption",
       "venue_scope": "binance_prediction_and_polymarket_btc_eth_sol"
     },
     {
@@ -2306,7 +2313,7 @@
       "venue_scope": "Binance_Spot_direct_and_exactly_one_intermediary_routes_for_independently_required_organic_conversions_with_the_exactly_two_intermediary_extension_terminal_for_the_retained_population"
     }
   ],
-  "result_sha256": "8888314ada1411b74b2b6417201f6cee13733d713527f22c07abfa4ab1900864",
+  "result_sha256": "aec184ae571d27d933003fc9dac056241d11fe01bb40ed16dac9a86c77cddd3b",
   "schema_version": "structural-edge-priority-registry-v1",
   "terminal_do_not_repeat": [
     {
@@ -2585,6 +2592,6 @@
       "reason": "exact_Gamma_and_sponsored_condition_sources_reconciled_at_50_shares_4_5_cents_and_1_99972_pUSD_per_day_but_the_consumed_two_token_book_was_30871_ms_old_and_the_retained_best_bid_join_had_only_2_05_pUSD_both_fill_gross_against_46_80_pUSD_maximum_orphan_loss_while_even_100_percent_of_all_remaining_rewards_was_only_12_923014_pUSD_do_not_refetch_or_treat_the_snapshot_as_current_executable_economics"
     }
   ],
-  "updated_at_utc": "2026-08-30T06:07:01.012877Z",
+  "updated_at_utc": "2026-08-30T07:07:24.7499849Z",
   "usage_rule": "advance_the_highest_ranked_hypothesis_whose_retry_trigger_is_satisfied_otherwise_do_not_repeat_a_blocked_or_terminal_screen"
 }

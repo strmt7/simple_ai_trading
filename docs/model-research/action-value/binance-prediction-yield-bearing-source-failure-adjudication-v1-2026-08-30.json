@@ -1,0 +1,64 @@
+{
+  "adjudication": {
+    "accepted_edge": false,
+    "accepted_edge_count_change": 0,
+    "deployment_ready": false,
+    "market_direction_forecast_required": false,
+    "profitability_claim": false,
+    "retry_trigger": "both_designated_credentials_plus_explicit_signed_GET_only_Binance_Prediction_Trading_market_metadata_authority_or_a_materially_new_byte_retainable_current_official_source_that_defines_yield_recipient_rate_base_accrual_distribution_and_redemption",
+    "status": "distinct_prediction_collateral_carry_lead_source_gate_consumed_and_failed_before_any_market_or_account_access"
+  },
+  "authority": {
+    "account_requests": 0,
+    "credentials_used": false,
+    "orders_trades_transfers_or_redemptions": 0,
+    "prediction_market_requests": 0,
+    "protected_polymarket_capture_accessed": false,
+    "public_unauthenticated_documentation_requests": 1
+  },
+  "created_at_utc": "2026-08-30T07:06:36.6996208Z",
+  "discovery_only_current_official_rendered_schema": {
+    "economic_fields": [
+      "vendor",
+      "chainId",
+      "collateral",
+      "feeRateBps",
+      "slippageBps",
+      "isYieldBearing"
+    ],
+    "market_detail_path": "/sapi/v1/w3w/wallet/prediction/market/detail",
+    "market_list_path": "/sapi/v1/w3w/wallet/prediction/market/list",
+    "rendered_authorization": "both endpoints require a signed timestamp",
+    "source_limitation": "rendered extraction identifies a distinct lead and security boundary but is not retained economic or account evidence",
+    "url": "https://developers.binance.com/en/docs/catalog/web3-wallet-prediction-trading/api/rest-api/market-data"
+  },
+  "economic_boundary": {
+    "candidate_identity": "exact_realized_yield_credited_to_independently_justified_prediction_collateral_minus_every_incremental_fee_basis_conversion_settlement_custody_tax_and_operating_cost",
+    "direction_independent": true,
+    "public_forward_profit_floor": "0",
+    "reason_not_accepted": "a per-market boolean does not define or prove the yield recipient rate base accrual distribution redemption current true market account entitlement or after-cost value"
+  },
+  "prohibited": [
+    "retrying_the_consumed_schema_URL_or_an_alias",
+    "treating_isYieldBearing_true_as_user_owned_or_positive_yield",
+    "using_schema_example_values_as_current_market_economics",
+    "calling_any_signed_prediction_endpoint_without_explicit_authority",
+    "funding_trading_transferring_redeeming_or_reconfiguring_an_account",
+    "double_counting_Polymarket_holding_yield_or_vendor_level_yield"
+  ],
+  "result_sha256": "e0049982adfdb631bb71bc7ebaf957d0a96336b42f269783ec99d4812e12bafc",
+  "retained_request": {
+    "completed_http_status": 202,
+    "journal_path": "docs/model-research/binance/raw/prediction-yield-bearing-schema-v1-2026-08-30/request-journal.json",
+    "raw_path": "docs/model-research/binance/raw/prediction-yield-bearing-schema-v1-2026-08-30/prediction-trading-schema.raw.yaml",
+    "response_bytes": 0,
+    "response_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "required_terms_found": 0,
+    "url": "https://developers.binance.com/en/docs/catalog/web3-wallet-prediction-trading/api/rest-api/1.0.0/schema.yaml"
+  },
+  "schema_version": "binance-prediction-yield-bearing-source-failure-adjudication-v1",
+  "source_contract": {
+    "path": "docs/model-research/action-value/binance-prediction-yield-bearing-source-contract-v1-2026-08-30.json",
+    "sha256": "f52c8879a2f33c7f95c1804ea14381fb80c79d76a69261e484e189efb7694a4c"
+  }
+}

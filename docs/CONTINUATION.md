@@ -4405,3 +4405,33 @@ The accepted yield frontier still contains nine yield rows and now excludes 15
 non-yield organic-flow, fee, referral, creator, and financing overlays; its
 canonical SHA-256 becomes
 `5f638281d9df79456a5a909f4da07e6375ff46404a8a63fceb7f96899a5a74c2`.
+
+## Binance Prediction Trading yield-bearing collateral lead
+
+The current official rendered Prediction Trading schema exposes a previously
+unregistered direction-independent carry lead. Market list and detail include a
+per-market `isYieldBearing` boolean alongside vendor, chain, collateral,
+`feeRateBps`, and `slippageBps`. Both endpoints explicitly require a signed
+timestamp. This metadata is structurally relevant because a genuinely credited
+yield on independently justified prediction collateral could offset part of
+capital lock-up without forecasting market direction.
+
+The lead is not an edge. The schema does not define the yield recipient, rate,
+base, accrual clock, distribution, redemption, current true market, account
+entitlement, or non-double-counted after-cost value. The exact public
+machine-readable schema URL was frozen before access, but returned HTTP 202 with
+zero bytes and zero required terms. That one-use source request is consumed and
+must not be retried through an alias. No Binance Prediction market, account,
+wallet, quote, order book, order, position, transfer, redemption, OTC, fund, or
+protected Polymarket request occurred.
+
+Reopen only when a materially new byte-retainable current official source binds
+the complete yield economics, or when both designated credentials and explicit
+signed GET-only Prediction Trading market-metadata authority exist. Even then,
+never treat `isYieldBearing=true` as user-owned positive yield without exact
+account evidence and every fee, basis, conversion, custody, settlement, tax,
+and redemption cost. Canonical failure adjudication SHA-256 is
+`e0049982adfdb631bb71bc7ebaf957d0a96336b42f269783ec99d4812e12bafc`.
+Accepted edges remain 24, ranked hypotheses remain 44, and terminal families
+remain 55. Registry SHA-256 becomes
+`aec184ae571d27d933003fc9dac056241d11fe01bb40ed16dac9a86c77cddd3b`.

@@ -108,6 +108,18 @@ safety gate, blocks Stop, or submits an order.
   link, customization, order, trade, transfer, or mutation remains separately
   unauthorized. Canonical result SHA-256 is
   `ada551b385d9040e4126ee0e73e1dd1f417b103e6c5c5f7c567411ab913ff065`.
+- Binance Prediction Trading exposes a distinct direction-independent
+  collateral-carry lead through per-market `isYieldBearing` metadata alongside
+  vendor, chain, collateral, fee, and slippage fields. It is not an accepted
+  edge: the current detailed official schema requires signed timestamps for
+  market list and detail, defines none of the yield recipient, rate, base,
+  accrual, distribution, or redemption economics, and both designated
+  credentials are absent. The frozen machine-readable schema retention request
+  returned HTTP 202 with zero bytes and is consumed; do not retry its URL or an
+  alias. Reopen only with a materially new byte-retainable complete official
+  yield contract, or both designated credentials plus explicit signed GET-only
+  Prediction Trading metadata authority. Canonical failure adjudication SHA-256
+  is `e0049982adfdb631bb71bc7ebaf957d0a96336b42f269783ec99d4812e12bafc`.
 - Binance Stocks FPSL is a materially distinct direction-independent overlay
   for U.S.-listed stocks or ETFs that are already independently owned and fully
   settled. The current FAQ says actual loaned shares accrue interest daily and
