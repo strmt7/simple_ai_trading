@@ -1,0 +1,143 @@
+{
+  "adjudication": {
+    "accepted_edge": false,
+    "accepted_edge_count_change": 0,
+    "book_requests_justified": false,
+    "deployment_ready": false,
+    "market_direction_forecast_required": false,
+    "profitability_claim": false,
+    "status": "terminal_exact_CFB_event_rejected_by_complete_Gamma_displayed_superhedge_lower_bound_before_books"
+  },
+  "authority": {
+    "account_requests": 0,
+    "authenticated_requests": 0,
+    "book_or_price_requests": 0,
+    "credentials_used": false,
+    "orders_trades_cancels_or_funds": 0,
+    "protected_capture_accessed": false,
+    "public_unauthenticated_event_requests": 1
+  },
+  "created_at_utc": "2026-08-30T07:17:21.2978494Z",
+  "event": {
+    "active_accepting_market_count": 3,
+    "game_id": 70900766,
+    "slug": "cfb-ballst-ohiost-2026-09-05",
+    "sports_market_types": [
+      "moneyline",
+      "spreads",
+      "totals"
+    ],
+    "start_time_utc": "2026-09-05T16:30:00Z",
+    "title": "Ball State vs. Ohio State"
+  },
+  "exact_rule_reduction": {
+    "cancellation_state": "all_three_binary_markets_resolve_50_50",
+    "moneyline": "Ball_State_wins_or_Ohio_State_wins_with_an_actual_tie_resolving_50_50",
+    "spread": "Ohio_State_if_Ohio_State_wins_by_at_least_51_otherwise_Ball_State",
+    "state_classes": [
+      {
+        "name": "Ball_State_win_total_under_57",
+        "payout_vector": [1, 0, 0, 1, 0, 1]
+      },
+      {
+        "name": "Ball_State_win_total_at_least_57",
+        "payout_vector": [1, 0, 0, 1, 1, 0]
+      },
+      {
+        "name": "Ohio_State_win_by_1_to_50_total_under_57",
+        "payout_vector": [0, 1, 0, 1, 0, 1]
+      },
+      {
+        "name": "Ohio_State_win_by_1_to_50_total_at_least_57",
+        "payout_vector": [0, 1, 0, 1, 1, 0]
+      },
+      {
+        "name": "Ohio_State_win_by_at_least_51_total_under_57",
+        "payout_vector": [0, 1, 1, 0, 0, 1]
+      },
+      {
+        "name": "Ohio_State_win_by_at_least_51_total_at_least_57",
+        "payout_vector": [0, 1, 1, 0, 1, 0]
+      },
+      {
+        "name": "actual_tie_total_under_57",
+        "payout_vector": [0.5, 0.5, 0, 1, 0, 1]
+      },
+      {
+        "name": "actual_tie_total_at_least_57",
+        "payout_vector": [0.5, 0.5, 0, 1, 1, 0]
+      },
+      {
+        "name": "cancellation",
+        "payout_vector": [0.5, 0.5, 0.5, 0.5, 0.5, 0.5]
+      }
+    ],
+    "token_order": [
+      "Ball_State_moneyline",
+      "Ohio_State_moneyline",
+      "Ohio_State_minus_50_5",
+      "Ball_State_plus_50_5",
+      "Over_56_5",
+      "Under_56_5"
+    ],
+    "total": "Over_if_combined_score_is_at_least_57_otherwise_Under"
+  },
+  "gamma_displayed_prices": {
+    "Ball_State_moneyline": "0.0035",
+    "Ball_State_plus_50_5": "0.505",
+    "Ohio_State_minus_50_5": "0.495",
+    "Ohio_State_moneyline": "0.9965",
+    "Over_56_5": "0.495",
+    "Under_56_5": "0.505",
+    "source_role": "rejection_only_not_executable_depth"
+  },
+  "implementation_recovery": {
+    "frozen_contract_expected_path": "tools/capture_polymarket_exact_sports_event.py",
+    "frozen_contract_expected_sha256": "83042a107b67813241fbf44e8c660540ec9152454943ac3e8b46f938d936f2f6",
+    "immutable_consumed_sidecar_path": "docs/model-research/polymarket/raw/ball-state-ohio-state-exact-event-v1-2026-08-30/capture-polymarket-exact-sports-event-consumed.py",
+    "immutable_consumed_sidecar_sha256": "83042a107b67813241fbf44e8c660540ec9152454943ac3e8b46f938d936f2f6",
+    "recovery_reason": "the_event_specific_implementation_had_temporarily_replaced_a_tracked_reusable_runner_so_the_exact_consumed_bytes_were_preserved_without_rerunning_or_rewriting_the_frozen_contract",
+    "restored_reusable_path": "tools/capture_polymarket_exact_sports_event.py",
+    "restored_reusable_sha256": "a1f431d9ef181123a8f47840b9cf894aa3e8b6b09b18acadf643ac7f32e61606"
+  },
+  "prohibited": [
+    "requesting_books_after_the_strict_displayed_lower_bound_gate_failed",
+    "treating_Gamma_outcomePrices_as_executable_quotes",
+    "repeating_or_selectively_refreshing_the_exact_event",
+    "omitting_tie_cancellation_fee_delay_or_partial_fill_states",
+    "claiming_a_CFB_or_general_sports_monotone_edge_from_one_terminal_event"
+  ],
+  "result_sha256": "13eb2d843260b2e05d693f82ddc6f3efcbae51e83d61f5fe06693be56c2c30a5",
+  "source": {
+    "contract_path": "docs/model-research/action-value/polymarket-ball-state-ohio-state-exact-event-contract-v1-2026-08-30.json",
+    "contract_sha256": "bdc3bd9c8badc4ac4cbe5a46278517fddf49669f1c21e780f6cca865b40791fb",
+    "result_path": "docs/model-research/action-value/polymarket-ball-state-ohio-state-exact-event-result-v1-2026-08-30.json",
+    "result_sha256": "e44606563cb64063384b4037a87fffc601ab3a883c68845fe6c9e92daa722c36"
+  },
+  "superhedge_screen": {
+    "displayed_price_vector": [0.0035, 0.9965, 0.495, 0.505, 0.495, 0.505],
+    "dual_lower_bound_certificate": {
+      "state_weights": {
+        "Ball_State_win_total_under_57": "0.0035",
+        "Ohio_State_win_by_1_to_50_total_under_57": "0.5015",
+        "Ohio_State_win_by_at_least_51_total_at_least_57": "0.4950"
+      },
+      "weights_sum": "1.0000",
+      "weighted_token_payout_vector": [0.0035, 0.9965, 0.495, 0.505, 0.495, 0.505],
+      "why_it_proves_the_floor": "every_nonnegative_portfolio_paying_at_least_1_in_each_state_costs_at_least_the_1_0000_sum_of_these_nonnegative_state_weights_because_their_weighted_token_payouts_equal_the_displayed_price_vector"
+    },
+    "fee_schedule": {
+      "exponent": 1,
+      "rate": "0.05",
+      "rebateRate": "0.15",
+      "takerOnly": true
+    },
+    "minimum_nonnegative_displayed_cost_for_at_least_1_pUSD_in_every_state": "1.0000",
+    "one_optimal_quantity_vector": [0, 0, 0, 0, 1, 1],
+    "optimizer": "linear_program_over_the_nine_exact_rule_state_classes",
+    "strict_gross_headroom_pUSD": "0.0000",
+    "strict_pre_book_gate_passed": false,
+    "taker_fees_spread_slippage_latency_and_partial_fills_can_only_worsen_the_bound": true
+  },
+  "schema_version": "polymarket-ball-state-ohio-state-monotone-superhedge-terminal-v1"
+}

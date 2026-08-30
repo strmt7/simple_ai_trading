@@ -1537,12 +1537,24 @@
         {
           "path": "docs/model-research/action-value/polymarket-future-wnba-monotone-catalog-result-v1-2026-08-29.json",
           "result_sha256": "fd0a9e844a7ad7d1a6eb5372c961ff82ea52d3c72a8c558ba191a53bace02cef"
+        },
+        {
+          "path": "docs/model-research/action-value/polymarket-ball-state-ohio-state-exact-event-contract-v1-2026-08-30.json",
+          "result_sha256": "bdc3bd9c8badc4ac4cbe5a46278517fddf49669f1c21e780f6cca865b40791fb"
+        },
+        {
+          "path": "docs/model-research/action-value/polymarket-ball-state-ohio-state-exact-event-result-v1-2026-08-30.json",
+          "result_sha256": "e44606563cb64063384b4037a87fffc601ab3a883c68845fe6c9e92daa722c36"
+        },
+        {
+          "path": "docs/model-research/action-value/polymarket-ball-state-ohio-state-monotone-superhedge-terminal-v1-2026-08-30.json",
+          "result_sha256": "13eb2d843260b2e05d693f82ddc6f3efcbae51e83d61f5fe06693be56c2c30a5"
         }
       ],
-      "current_status": "distinct_direction_independent_NBA_WNBA_NFL_moneyline_spread_and_total_monotone_payoff_family_remains_unaccepted_the_complete_nonoverlapping_2026_08_30T19_00_01Z_through_2026_09_02T23_59_59Z_WNBA_catalog_returned_three_events_two_exact_relations_and_zero_Gamma_sub_floor_candidates_Golden_State_Portland_displayed_1_165_and_Connecticut_Dallas_1_365_against_the_1_pUSD_floor_so_zero_books_or_fees_the_prior_complete_NFL_catalog_retained_4621_relations_and_674_Gamma_candidates_but_its_precommitted_Commanders_Cowboys_exact_depth_lost_2_550_pUSD_zero_fee_with_25189367_ms_skew_no_accepted_edge_or_deployment_readiness",
+      "current_status": "distinct_direction_independent_NBA_WNBA_NFL_and_CFB_moneyline_spread_and_total_monotone_payoff_family_remains_unaccepted_the_complete_nonoverlapping_2026_08_30T19_00_01Z_through_2026_09_02T23_59_59Z_WNBA_catalog_returned_three_events_two_exact_relations_and_zero_Gamma_sub_floor_candidates_Golden_State_Portland_displayed_1_165_and_Connecticut_Dallas_1_365_against_the_1_pUSD_floor_so_zero_books_or_fees_the_prior_complete_NFL_catalog_retained_4621_relations_and_674_Gamma_candidates_but_its_precommitted_Commanders_Cowboys_exact_depth_lost_2_550_pUSD_zero_fee_with_25189367_ms_skew_the_materially_new_Ball_State_Ohio_State_CFB_event_exposed_active_moneyline_minus_50_5_spread_and_56_5_total_markets_but_a_complete_nine_state_tie_and_cancellation_aware_nonnegative_superhedge_screen_found_a_minimum_Gamma_displayed_cost_of_exactly_1_0000_pUSD_with_zero_strict_headroom_before_fees_so_no_book_request_no_accepted_edge_or_deployment_readiness",
       "market_direction_forecast_required": false,
-      "mechanism": "polymarket_live_NBA_moneyline_spread_monotone_payoff_implication",
-      "next_action": "do_not_resample_Toronto_Phoenix_Lynx_Dream_or_the_consumed_2026_08_30T19_00_01Z_through_2026_09_02T23_59_59Z_WNBA_window_and_do_not_resample_Packers_Vikings_Commanders_Cowboys_or_the_consumed_NFL_window_for_a_future_distinct_event_outside_all_consumed_populations_first_source_prove_exhaustive_payoffs_then_use_Gamma_only_as_a_rejection_gate_request_one_frozen_exact_depth_batch_for_the_precommitted_strongest_sub_floor_package_and_require_independent_synchronized_after_fee_positive_recurrence_before_escalation",
+      "mechanism": "polymarket_sports_moneyline_spread_total_monotone_payoff_implication",
+      "next_action": "do_not_resample_Toronto_Phoenix_Lynx_Dream_Ball_State_Ohio_State_or_the_consumed_2026_08_30T19_00_01Z_through_2026_09_02T23_59_59Z_WNBA_window_and_do_not_resample_Packers_Vikings_Commanders_Cowboys_or_the_consumed_NFL_window_for_a_future_distinct_event_outside_all_consumed_populations_first_source_prove_exhaustive_payoffs_then_use_Gamma_only_as_a_rejection_gate_request_one_frozen_exact_depth_batch_for_the_precommitted_strongest_strictly_sub_floor_package_and_require_independent_synchronized_after_fee_positive_recurrence_before_escalation",
       "priority_rank": 30,
       "prohibited_shortcuts": [
         "reusing_the_paper_zero_fee_median_as_current_profit",
@@ -1555,8 +1567,8 @@
         "crediting_midpoints_last_trades_uncapped_depth_maker_fees_or_rebates_without_causal_owned_fills",
         "calling_public_recurrence_profitable_without_owned_both_leg_fill_reconciliation_and_all_external_costs"
       ],
-      "retry_trigger": "first_future_distinct_active_accepting_orders_NBA_WNBA_or_NFL_full_game_event_outside_the_consumed_WNBA_2026_08_30T19_00_01Z_through_2026_09_02T23_59_59Z_and_NFL_2026_09_13T20_25_01Z_through_2026_09_21T23_59_59Z_windows_with_source_proved_same_game_moneyline_spread_or_total_payoff_implication_exact_current_market_fee_schedules_and_at_least_one_rejection_only_Gamma_displayed_package_sum_below_its_guaranteed_payout_floor_or_a_material_sports_price_fee_delay_or_resolution_rule_change",
-      "venue_scope": "polymarket_future_NBA_WNBA_and_NFL_full_game_same_game_moneyline_and_point_spread_markets"
+      "retry_trigger": "first_future_distinct_active_accepting_orders_NBA_WNBA_NFL_or_CFB_full_game_event_outside_all_consumed_exact_events_and_the_consumed_WNBA_2026_08_30T19_00_01Z_through_2026_09_02T23_59_59Z_and_NFL_2026_09_13T20_25_01Z_through_2026_09_21T23_59_59Z_windows_with_source_proved_same_game_moneyline_spread_or_total_payoff_implication_exact_current_market_fee_schedules_and_at_least_one_rejection_only_Gamma_displayed_package_sum_strictly_below_its_guaranteed_payout_floor_or_a_material_sports_price_fee_delay_or_resolution_rule_change",
+      "venue_scope": "polymarket_future_NBA_WNBA_NFL_and_CFB_full_game_same_game_moneyline_point_spread_and_total_markets"
     },
     {
       "blocking_evidence": [
@@ -2313,7 +2325,7 @@
       "venue_scope": "Binance_Spot_direct_and_exactly_one_intermediary_routes_for_independently_required_organic_conversions_with_the_exactly_two_intermediary_extension_terminal_for_the_retained_population"
     }
   ],
-  "result_sha256": "aec184ae571d27d933003fc9dac056241d11fe01bb40ed16dac9a86c77cddd3b",
+  "result_sha256": "2d2e24457ea117c094c82f2259ed75970e29666391a1575d285b5e4275d83080",
   "schema_version": "structural-edge-priority-registry-v1",
   "terminal_do_not_repeat": [
     {
@@ -2590,8 +2602,13 @@
       "canonical_result_sha256": "1153ef2f90345be8ebfda5b0c2fd3f02a56dc0dad854edf251e21370a9677743",
       "family": "polymarket_BTC_above_72000_September_5_exact_paired_maker_reward_2026_08_30",
       "reason": "exact_Gamma_and_sponsored_condition_sources_reconciled_at_50_shares_4_5_cents_and_1_99972_pUSD_per_day_but_the_consumed_two_token_book_was_30871_ms_old_and_the_retained_best_bid_join_had_only_2_05_pUSD_both_fill_gross_against_46_80_pUSD_maximum_orphan_loss_while_even_100_percent_of_all_remaining_rewards_was_only_12_923014_pUSD_do_not_refetch_or_treat_the_snapshot_as_current_executable_economics"
+    },
+    {
+      "canonical_result_sha256": "13eb2d843260b2e05d693f82ddc6f3efcbae51e83d61f5fe06693be56c2c30a5",
+      "family": "polymarket_Ball_State_Ohio_State_September_5_exact_CFB_monotone_superhedge_2026_08_30",
+      "reason": "the_new_active_CFB_event_had_moneyline_minus_50_5_spread_and_56_5_total_markets_but_the_complete_nine_state_tie_and_cancellation_aware_nonnegative_superhedge_screen_found_a_minimum_Gamma_displayed_cost_of_exactly_1_0000_pUSD_with_zero_strict_headroom_before_taker_fees_spread_slippage_latency_or_partial_fills_do_not_request_books_or_repeat_the_exact_event"
     }
   ],
-  "updated_at_utc": "2026-08-30T07:07:24.7499849Z",
+  "updated_at_utc": "2026-08-30T07:19:31.6917531Z",
   "usage_rule": "advance_the_highest_ranked_hypothesis_whose_retry_trigger_is_satisfied_otherwise_do_not_repeat_a_blocked_or_terminal_screen"
 }

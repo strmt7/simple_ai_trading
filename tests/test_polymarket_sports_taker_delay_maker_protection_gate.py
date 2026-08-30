@@ -84,8 +84,7 @@ def test_registry_and_crypto_constant_keep_sports_separate() -> None:
     row = next(
         item
         for item in registry["prioritized_hypotheses"]
-        if item["mechanism"]
-        == "polymarket_live_NBA_moneyline_spread_monotone_payoff_implication"
+        if item["priority_rank"] == 30
     )
     assert {
         "path": (

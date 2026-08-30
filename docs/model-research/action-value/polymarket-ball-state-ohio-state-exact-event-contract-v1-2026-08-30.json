@@ -1,0 +1,41 @@
+{
+  "authority": {
+    "account_requests": 0,
+    "authenticated_requests": 0,
+    "book_or_price_requests": 0,
+    "credentials_used": false,
+    "orders_trades_cancels_or_funds": 0,
+    "protected_capture_accessed": false,
+    "public_unauthenticated_event_requests": 1
+  },
+  "capture": {
+    "classification": "public_unauthenticated_read_only_Gamma_event_GET",
+    "maximum_requests": 1,
+    "maximum_response_bytes": 3000000,
+    "method": "GET",
+    "retry_permitted": false,
+    "url": "https://gamma-api.polymarket.com/events/slug/cfb-ballst-ohiost-2026-09-05"
+  },
+  "contract_sha256": "bdc3bd9c8badc4ac4cbe5a46278517fddf49669f1c21e780f6cca865b40791fb",
+  "decision_contract": {
+    "continue_offline_only_if": "The exact event is active and open with active accepting moneyline and spread markets.",
+    "continue_to_books_only_if": "Exact rules prove a deterministic payoff implication and the exact Gamma displayed two-leg package is strictly below its guaranteed payout floor after current market fees. Gamma remains rejection-only and cannot establish executable depth.",
+    "stop_if": [
+      "the exact event or required market types are absent",
+      "the exact rules do not prove a deterministic payoff implication",
+      "every exact displayed package is at or above its guaranteed payout floor"
+    ]
+  },
+  "event_slug": "cfb-ballst-ohiost-2026-09-05",
+  "frozen_at_utc": "2026-08-30T07:14:07.6857036Z",
+  "implementation": {
+    "path": "tools/capture_polymarket_exact_sports_event.py",
+    "sha256": "83042a107b67813241fbf44e8c660540ec9152454943ac3e8b46f938d936f2f6"
+  },
+  "schema_version": "polymarket-exact-sports-event-source-contract-v1",
+  "source_contract": {
+    "documentation_url": "https://docs.polymarket.com/api-reference/events/get-event-by-slug",
+    "discovery_url": "https://polymarket.com/sports/cfb/cfb-ballst-ohiost-2026-09-05",
+    "discovery_values_are_economic_inputs": false
+  }
+}

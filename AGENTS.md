@@ -348,6 +348,13 @@ and verify reproducibly. Do not load upstream `EXAMPLES.md`.
    runtime, dependency, or module-path difference after freezing evidence. If a
    pre-main import still fails, journal it as a local unconsumed preflight error
    before any corrected invocation.
+9. Before adding a runner at a reusable-looking path, check path ownership with
+   `git ls-files --error-unmatch <path>`. Never replace a tracked generic runner
+   with a one-event implementation: pass it a new frozen contract or use a
+   separately named wrapper. If replacement is discovered only after a request,
+   do not rerun or rewrite the consumed contract; preserve the exact consumed
+   implementation in an immutable hash-bound sidecar, restore the reusable path,
+   and record both bindings in the terminal artifact.
 
 Do not broadly read the README, historical round designs, generated SVG, or
 large CSV files. The detailed workflow and imported-tool provenance are in
