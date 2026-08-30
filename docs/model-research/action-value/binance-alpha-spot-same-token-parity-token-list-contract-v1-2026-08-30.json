@@ -1,0 +1,66 @@
+{
+  "schema_version": "public-source-capture-contract-v1",
+  "frozen_at_utc": "2026-08-30T14:00:45.5313951Z",
+  "contract_path": "docs/model-research/action-value/binance-alpha-spot-same-token-parity-token-list-contract-v1-2026-08-30.json",
+  "trigger": {
+    "registry_route": "new_distinct_direction_independent_Binance_Alpha_versus_Spot_same_token_parity",
+    "novelty_evidence": "zero-network repository search found one specialized Alpha ONDO-wrapper versus TradFi-perpetual family but no Alpha order-book versus Binance Spot same-token executable parity family",
+    "outcomes_viewed_before_freeze": false,
+    "discovery_values_are_economic_inputs": false
+  },
+  "question": "Does the current complete public Binance Alpha token list expose exact Alpha identifiers plus token symbols and contract identity strongly enough to prequalify same-token Alpha-versus-Spot settlement mappings before any order-book request?",
+  "request_name": "binance-alpha-current-complete-token-list",
+  "request": {
+    "method": "GET",
+    "url": "https://www.binance.com/bapi/defi/v1/public/wallet-direct/buw/wallet/cex/alpha/all/token/list",
+    "count": 1,
+    "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "endpoint_classification": {
+    "operation": "download the complete public Binance Alpha token list",
+    "security": "public unauthenticated market-data GET listed by the official Alpha Trading API catalog",
+    "source_contract": "the retained current official Binance Agent Native catalog identifies this exact token-list endpoint as public Alpha market data"
+  },
+  "response_byte_ceiling": 10000000,
+  "required_utf8_phrases": [
+    "\"code\":\"000000\"",
+    "\"data\":["
+  ],
+  "decision": {
+    "source_gate_only": "The one retained response must be a successful nonempty current public token-list envelope.",
+    "accepted_edge": false,
+    "profitability_proved": false,
+    "conditional_next_step": "Without requesting any Alpha or Spot books, deterministically map current Alpha identifiers to token symbols and contract addresses, compare only against the already-retained current Spot exchange inventory, reject aliases and unproved settlement identities, and advance only exact overlaps to a separately frozen lossless optimistic cost bound."
+  },
+  "outputs": {
+    "raw_path": "docs/model-research/binance/raw/alpha-spot-same-token-parity-v1-2026-08-30/01-alpha-token-list.raw.json",
+    "journal_path": "docs/model-research/binance/raw/alpha-spot-same-token-parity-v1-2026-08-30/00-request-journal.jsonl",
+    "result_path": "docs/model-research/action-value/binance-alpha-spot-same-token-parity-token-list-result-v1-2026-08-30.json"
+  },
+  "authority": {
+    "account_requests": 0,
+    "credentials_used": false,
+    "funds_used": false,
+    "orders_or_transactions": 0,
+    "protected_capture_touched": false,
+    "public_unauthenticated_read_only_requests": 1,
+    "signed_requests": 0,
+    "trading_authority": false
+  },
+  "implementations": [
+    {
+      "path": "tools/capture_public_source_contract.py",
+      "sha256": "d566a5a379c659c3da144d5e28449ebac9c01493bd39646f9cc3a6e697a83566"
+    },
+    {
+      "path": "tools/screen_polymarket_exact_two_leg_package.py",
+      "sha256": "ba7ebaa1fb5235ba026f7cf4cb21ff73ba19430fee4a4f678fbdea37635eb32f"
+    },
+    {
+      "path": "tools/adjudicate_polymarket_exact_mlb_monotone_prefilter.py",
+      "sha256": "958a44d78029b9a1eb69a3771ce18e53ac1ed3c7bc161c8e4318beedce2cf99f"
+    }
+  ],
+  "retry_policy": "This exact complete token-list GET is one-use. Preserve any HTTP error empty response or missing-term result and do not retry an alias. A passing source gate proves only mapping inputs, never cross-route transferability executable parity profitability or deployment readiness.",
+  "contract_sha256": "38cc393602c78f1935fb5097ddb158da73bc6e5d0f01f9eb30e5522ec947d14c"
+}

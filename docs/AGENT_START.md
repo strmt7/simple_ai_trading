@@ -2610,3 +2610,45 @@ the canonical scope-extension result SHA-256 is
 Accepted edges remain 29, ranked hypotheses remain 44, terminal families remain
 64, and registry SHA-256 is
 `44a63556d0a8d680661a82743fbdc0eb0bed2a50d75f1679689d72258af6ce41`.
+
+## Binance Agentic Wallet and Alpha-versus-Spot rejection-first triage
+
+Do not register Agentic Wallet conversion savings from the consumed current
+source. The frozen official `market-order.md` GET retained 8,816 bytes and
+proved that `market-order quote` is non-executing, but the exact five-phrase
+gate failed 4/5 because the primary failure wording had changed from the
+discovery rendering. Preserve the failed gate, exclude every discovery fee
+value, and do not retry an alias. Reopen only on a material byte-retainable fee
+or quote-contract change, or when an independently required exact conversion,
+active Wallet session, and explicit quote-only authority coexist; stop before
+every swap.
+
+One local direct-path invocation failed at import before any request or output.
+The corrected and required entry mode is
+`uv run python -m tools.capture_public_source_contract` from the repository
+root, matching the existing `AGENTS.md` rule. Do not repeat the direct-path
+form.
+
+A distinct Binance Alpha-versus-Spot same-token parity prefilter then used one
+frozen public token-list GET and the retained current Spot inventory. The
+complete Alpha response contained 665 tokens, 398 live rows, and only five live
+`listingCex` rows with nonempty `cexCoinName`; none had an active Spot pair in
+USDT, USDC, FDUSD, USD1, BTC, or BNB. Therefore zero exact candidates and zero
+Alpha or Spot book requests were justified. Do not poll those five rows or
+infer asset identity from ticker text. Reopen only on a material Alpha token
+list, Spot listing, or transfer-architecture change that creates an exact
+transferable overlap.
+
+Canonical Wallet contract SHA-256 is
+`3fe1995cd5a03b7df5e8e60cd5e66bfc35ca908e6367f8e392f782ccf514537b`;
+Wallet source result SHA-256 is
+`610c9c3c92add0ea5ebd02b6c0a2ab48005da3de312fe7b499a9aa211f022d86`.
+Canonical Alpha token-list contract SHA-256 is
+`38cc393602c78f1935fb5097ddb158da73bc6e5d0f01f9eb30e5522ec947d14c`;
+token-list source result SHA-256 is
+`a738d4e628a7e66d705e7f1d3d527bb64fc07ee988f7bd1527d1d4fddd746233`;
+canonical parity prefilter SHA-256 is
+`ee7653904a54848775236b72c8319e5fc6889b34753ea4ed2d964f085c5a6d85`.
+Accepted edges remain 29, ranked hypotheses remain 44, terminal families become
+67, and registry SHA-256 is
+`5ec42c3de1890f6c9f5e4ecc027b892b3c6f7323eeb813a4db821c1f2b67d2cd`.

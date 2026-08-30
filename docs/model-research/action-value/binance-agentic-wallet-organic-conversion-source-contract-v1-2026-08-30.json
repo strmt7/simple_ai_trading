@@ -1,0 +1,69 @@
+{
+  "schema_version": "public-source-capture-contract-v1",
+  "frozen_at_utc": "2026-08-30T13:56:57.0555528Z",
+  "contract_path": "docs/model-research/action-value/binance-agentic-wallet-organic-conversion-source-contract-v1-2026-08-30.json",
+  "trigger": {
+    "registry_route": "new_distinct_direction_independent_organic_conversion_cost_overlay",
+    "novelty_evidence": "zero-network alias search of the ranked registry and terminal families found no existing Binance Agentic Wallet on-chain quote-versus-centralized-route conversion-cost comparator",
+    "outcomes_viewed_before_freeze": true,
+    "discovery_values_are_economic_inputs": false
+  },
+  "question": "Does the current official Binance Agentic Wallet reference expose a non-executing exact-quantity quote operation and explicitly distinguish it from the state-changing swap operation strongly enough to register a conditional organic-conversion cost candidate without claiming savings?",
+  "request_name": "binance-agentic-wallet-current-market-order-reference",
+  "request": {
+    "method": "GET",
+    "url": "https://raw.githubusercontent.com/binance/binance-skills-hub/main/skills/binance-web3/binance-agentic-wallet/references/market-order.md",
+    "count": 1,
+    "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "endpoint_classification": {
+    "operation": "download the public official Agentic Wallet market-order reference",
+    "security": "public unauthenticated static documentation GET",
+    "source_contract": "the official Binance Skills Hub repository publishes this reference and distinguishes quote from swap syntax"
+  },
+  "response_byte_ceiling": 500000,
+  "required_utf8_phrases": [
+    "## `market-order quote`",
+    "Get a swap quote without executing the trade.",
+    "baw market-order quote --fromTokenQty",
+    "## `market-order swap`",
+    "An order can still fail due to price movement exceeding slippage tolerance, insufficient liquidity, or network issues."
+  ],
+  "decision": {
+    "source_gate_only": "Every exact quote-versus-swap and failure-risk phrase must exist in the one retained current official reference.",
+    "accepted_edge": false,
+    "profitability_proved": false,
+    "conditional_next_step": "Register only a conditional cost-saving candidate for an independently required legitimate organic BTC ETH SOL or stablecoin conversion. Advance only with an active Agentic Wallet session, explicit quote-only read authority, an exact token chain and quantity, and a same-time same-quantity centralized Spot or Convert comparator after service fees gas price impact slippage transfer custody failure unwind and opportunity costs. Stop before swap."
+  },
+  "outputs": {
+    "raw_path": "docs/model-research/binance/raw/agentic-wallet-organic-conversion-v1-2026-08-30/01-market-order-reference.raw.md",
+    "journal_path": "docs/model-research/binance/raw/agentic-wallet-organic-conversion-v1-2026-08-30/00-request-journal.jsonl",
+    "result_path": "docs/model-research/action-value/binance-agentic-wallet-organic-conversion-source-result-v1-2026-08-30.json"
+  },
+  "authority": {
+    "account_requests": 0,
+    "credentials_used": false,
+    "funds_used": false,
+    "orders_or_transactions": 0,
+    "protected_capture_touched": false,
+    "public_unauthenticated_read_only_requests": 1,
+    "signed_requests": 0,
+    "trading_authority": false
+  },
+  "implementations": [
+    {
+      "path": "tools/capture_public_source_contract.py",
+      "sha256": "d566a5a379c659c3da144d5e28449ebac9c01493bd39646f9cc3a6e697a83566"
+    },
+    {
+      "path": "tools/screen_polymarket_exact_two_leg_package.py",
+      "sha256": "ba7ebaa1fb5235ba026f7cf4cb21ff73ba19430fee4a4f678fbdea37635eb32f"
+    },
+    {
+      "path": "tools/adjudicate_polymarket_exact_mlb_monotone_prefilter.py",
+      "sha256": "958a44d78029b9a1eb69a3771ce18e53ac1ed3c7bc161c8e4318beedce2cf99f"
+    }
+  ],
+  "retry_policy": "This exact current reference GET is one-use. Preserve any HTTP error or missing-term response and do not retry an alias. Because the reference outcome was viewed before freeze, even a passing source gate proves only current product architecture and can never prove savings profitability fill quality account eligibility or deployment readiness.",
+  "contract_sha256": "3fe1995cd5a03b7df5e8e60cd5e66bfc35ca908e6367f8e392f782ccf514537b"
+}
