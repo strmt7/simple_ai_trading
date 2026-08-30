@@ -5766,3 +5766,39 @@ independently required account-specific comparison. A redundant same-day GET of
 the exact Agent Native index was detected before staging and removed; future
 public research must deduplicate the canonical method and URL against retained
 same-day successful captures before access.
+
+### Polymarket Sports maker-rebate source-conflict adjudication
+
+The literal official-source conflict trigger fired. One exact refresh of the
+canonical Maker Rebates Markdown was byte-identical to the retained same-day
+source and states a 15 percent Sports maker rebate paid in pUSD. One separately
+frozen exact developer Fees Markdown request also states 15 percent for Sports,
+but describes fees in USDC. Its frozen source gate failed only because two
+expected phrases had changed or disappeared; the raw response remains retained
+for offline conflict adjudication and the consumed request was not retried. The
+previously documented Help Center surface reports 20 percent for Sports.
+
+Therefore the existing all-category maker-rebate overlay remains accepted only
+as the same exact-realized-cash edge: credit an exact positive owned payment in
+the asset actually received, joined to independently justified legitimate
+organic maker fills, exact effective market parameters at match time, conversion
+basis, and every incremental cost. No public 15, 20, or 25 percent Sports rate
+and no pUSD or USDC label may be used for forward profit. The public forward
+floor remains zero; this is not a new edge, a market-making strategy, or a
+deployment-ready claim.
+
+Maker Rebates refresh contract SHA-256 is
+`90157b82de207c7a03b704b2dd6a86a7d04ca8798bcaa5588c1d71a7aaf23b5e`;
+its result SHA-256 is
+`fe8e63e5fb766614eca5af040492a1ff646d32c1ca9ceab645688fd295554824`.
+Fees cross-source contract SHA-256 is
+`fe8bce8a7ea95f5a2aacd9126b74a4a957fcc725667496dd7f5f9d822c5a9eb1`;
+its source-result SHA-256 is
+`eb03bc4614095eca44ed73e21181beec2a438851c8dc61cb5538ada56cfe7dd1`.
+Canonical adjudication SHA-256 is
+`3313a90b2257207c292eab289cc4199db7def8ad35361ad21fcabc435c0bc6a2`.
+Accepted edges remain 29, ranked hypotheses remain 44, terminal families become
+82, and registry SHA-256 becomes
+`2dd5aeb4e2649c12e6f62105dfb0e6472539fc080a5fb41507f02ee3072b189e`.
+No account, credential, signed request, book, order, funds, testnet endpoint, or
+protected capture was touched.

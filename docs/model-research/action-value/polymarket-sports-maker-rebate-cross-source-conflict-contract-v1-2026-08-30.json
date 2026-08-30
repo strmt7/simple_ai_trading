@@ -1,0 +1,69 @@
+{
+  "schema_version": "public-source-capture-contract-v1",
+  "frozen_at_utc": "2026-08-30T18:41:03.4507767Z",
+  "contract_path": "docs/model-research/action-value/polymarket-sports-maker-rebate-cross-source-conflict-contract-v1-2026-08-30.json",
+  "trigger": {
+    "registry_rank": 17,
+    "literal_trigger": "material official fee rate or rebate fraction source conflict with prevalidation source journaling",
+    "material_change": "The exact refreshed Maker Rebates Markdown remains byte-identical at a 15 percent Sports rebate, while the current official developer Fees surface displays a different Sports maker-rebate fraction.",
+    "outcomes_viewed_before_freeze": true,
+    "discovery_values_are_economic_inputs": true
+  },
+  "question": "What exact current Sports maker-rebate fraction does the separate official developer Fees Markdown publish, and does it conflict with the byte-identical canonical Maker Rebates Markdown?",
+  "request_name": "polymarket-current-sports-maker-rebate-developer-fees-source",
+  "request": {
+    "method": "GET",
+    "url": "https://docs.polymarket.com/trading/fees.md",
+    "count": 1,
+    "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "endpoint_classification": {
+    "operation": "download the separate public official developer Fees documentation as Markdown",
+    "security": "public unauthenticated static documentation GET",
+    "preflight": "No retained exact method-and-URL response exists. The request is source reconciliation only and cannot promote profitability because the economic discovery values were already observed."
+  },
+  "response_byte_ceiling": 1000000,
+  "required_utf8_phrases": [
+    "# Fees",
+    "Maker Rebate",
+    "Sports",
+    "Taker Fee Rate",
+    "Fees are determined per-market at match time",
+    "feeSchedule"
+  ],
+  "decision": {
+    "source_gate_only": "Require stable structural phrases without hard-coding any rebate percentage. After retention, mechanically extract the Sports row and compare it with the retained Maker Rebates Markdown.",
+    "accepted_edge": false,
+    "profitability_proved": false,
+    "conditional_next_step": "If the two current official sources disagree, remove every claim of a single current public Sports rebate fraction, keep the public forward floor at zero, and require exact effective per-market feeSchedule or exact owned payout evidence. Do not create a new edge or initiate market making."
+  },
+  "comparison_source": {
+    "path": "docs/model-research/polymarket/raw/sports-maker-rebate-current-source-conflict-v1-2026-08-30/01-maker-rebates.raw.md",
+    "sha256": "8d2c6562bd1b3376bc3fc1557a60efef5aa3c1d856c7f8dcc405139a07e9ba2a",
+    "sports_maker_rebate_fraction": "0.15",
+    "currency": "pUSD"
+  },
+  "outputs": {
+    "raw_path": "docs/model-research/polymarket/raw/sports-maker-rebate-cross-source-conflict-v1-2026-08-30/01-fees.raw.md",
+    "journal_path": "docs/model-research/polymarket/raw/sports-maker-rebate-cross-source-conflict-v1-2026-08-30/00-request-journal.jsonl",
+    "result_path": "docs/model-research/action-value/polymarket-sports-maker-rebate-cross-source-conflict-source-result-v1-2026-08-30.json"
+  },
+  "authority": {
+    "account_requests": 0,
+    "credentials_used": false,
+    "funds_used": false,
+    "orders_or_transactions": 0,
+    "protected_capture_touched": false,
+    "public_unauthenticated_read_only_requests": 1,
+    "signed_requests": 0,
+    "trading_authority": false
+  },
+  "implementations": [
+    {
+      "path": "tools/capture_public_source_contract.py",
+      "sha256": "d566a5a379c659c3da144d5e28449ebac9c01493bd39646f9cc3a6e697a83566"
+    }
+  ],
+  "retry_policy": "This exact developer Fees Markdown GET is one-use for the current conflict. Preserve any response or failure and do not retry an alias. The result may only correct or fail-close source state; it cannot establish forward profit, stable market making, owned income, or deployment readiness.",
+  "contract_sha256": "fe8bce8a7ea95f5a2aacd9126b74a4a957fcc725667496dd7f5f9d822c5a9eb1"
+}

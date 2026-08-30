@@ -1,0 +1,82 @@
+{
+  "schema_version": "polymarket-sports-maker-rebate-source-conflict-adjudication-v1",
+  "created_at_utc": "2026-08-30T18:43:03.2141315Z",
+  "source_binding": {
+    "maker_rebates_refresh_contract": {
+      "path": "docs/model-research/action-value/polymarket-sports-maker-rebate-current-source-conflict-contract-v1-2026-08-30.json",
+      "contract_sha256": "90157b82de207c7a03b704b2dd6a86a7d04ca8798bcaa5588c1d71a7aaf23b5e"
+    },
+    "maker_rebates_refresh_result": {
+      "path": "docs/model-research/action-value/polymarket-sports-maker-rebate-current-source-conflict-result-v1-2026-08-30.json",
+      "result_sha256": "fe8e63e5fb766614eca5af040492a1ff646d32c1ca9ceab645688fd295554824"
+    },
+    "maker_rebates_markdown": {
+      "path": "docs/model-research/polymarket/raw/sports-maker-rebate-current-source-conflict-v1-2026-08-30/01-maker-rebates.raw.md",
+      "file_sha256": "8d2c6562bd1b3376bc3fc1557a60efef5aa3c1d856c7f8dcc405139a07e9ba2a",
+      "response_bytes": 5945
+    },
+    "maker_rebates_request_journal": {
+      "path": "docs/model-research/polymarket/raw/sports-maker-rebate-current-source-conflict-v1-2026-08-30/00-request-journal.jsonl",
+      "file_sha256": "192a30e5907233ad6540248403a18fea7d937e4130291aa369e52a5292182c6a"
+    },
+    "developer_fees_contract": {
+      "path": "docs/model-research/action-value/polymarket-sports-maker-rebate-cross-source-conflict-contract-v1-2026-08-30.json",
+      "contract_sha256": "fe8bce8a7ea95f5a2aacd9126b74a4a957fcc725667496dd7f5f9d822c5a9eb1"
+    },
+    "developer_fees_source_result": {
+      "path": "docs/model-research/action-value/polymarket-sports-maker-rebate-cross-source-conflict-source-result-v1-2026-08-30.json",
+      "result_sha256": "eb03bc4614095eca44ed73e21181beec2a438851c8dc61cb5538ada56cfe7dd1"
+    },
+    "developer_fees_markdown": {
+      "path": "docs/model-research/polymarket/raw/sports-maker-rebate-cross-source-conflict-v1-2026-08-30/01-fees.raw.md",
+      "file_sha256": "8e246189f6ca85b8b8782e1d76a769cf98672a98c4c63d8bbe6150d659db8d7c",
+      "response_bytes": 8128
+    },
+    "developer_fees_request_journal": {
+      "path": "docs/model-research/polymarket/raw/sports-maker-rebate-cross-source-conflict-v1-2026-08-30/00-request-journal.jsonl",
+      "file_sha256": "aa0bfd6bad2e18a4e23293c5b2c01c6ca143fc2d6e9bdfaf799d605c2ddb1892"
+    }
+  },
+  "mechanical_reconciliation": {
+    "maker_rebates_refresh_matches_prior_bytes": true,
+    "prior_and_refreshed_sha256": "8d2c6562bd1b3376bc3fc1557a60efef5aa3c1d856c7f8dcc405139a07e9ba2a",
+    "maker_rebates_markdown": {
+      "sports_maker_rebate_fraction": "0.15",
+      "cash_label": "pUSD",
+      "minimum_accrued_payout_label": "1 pUSD"
+    },
+    "developer_fees_markdown": {
+      "sports_maker_rebate_fraction": "0.15",
+      "cash_label": "USDC",
+      "fee_parameters_location": "Market Details for the exact market"
+    },
+    "rate_reconciliation": "The two byte-retained current developer Markdown sources agree on a 15 percent Sports maker-rebate fraction.",
+    "cash_label_reconciliation": "The same two current official developer sources conflict between pUSD and USDC wording, while the previously documented Help Center surface also reported a different 20 percent Sports fraction. No single public Sports rebate cash label or forward fraction is admitted for profit calculations.",
+    "developer_fees_source_gate_failure": "The response is retained and usable for offline conflict adjudication, but its frozen source gate failed because current wording omits the exact phrases 'Fees are determined per-market at match time' and 'feeSchedule'. The request is consumed and was not retried."
+  },
+  "adjudication": {
+    "accepted_edge_count_before": 29,
+    "accepted_edge_count_after": 29,
+    "accepted_realized_cash_identity_preserved": true,
+    "standalone_market_making_strategy_accepted": false,
+    "public_sports_rebate_fraction_for_forward_economics": null,
+    "public_forward_profit_floor": "0",
+    "profitability_claim": false,
+    "deployment_ready": false,
+    "status": "current_byte_retained_developer_sources_agree_on_15_percent_but_official_surface_and_cash_label_conflicts_keep_sports_forward_rebate_credit_fail_closed"
+  },
+  "realization_rule": "Credit only an exact positive owned maker-rebate payment in the asset actually received, joined to exact independently justified legitimate organic maker fills and the exact effective market fee parameters at match time, after conversion basis and every incremental cost. Never multiply projected volume by 15, 20, or 25 percent to manufacture forward profit.",
+  "retry_trigger": "A byte-retainable official effective-dated reconciliation of Maker Rebates, Fees, and Help Center terms; an exact effective per-market rebate fraction exposed with the market fee parameters; or explicit read-only authority plus independently existing legitimate organic owned maker fills and an exact owned payout reconciliation.",
+  "authority": {
+    "public_unauthenticated_read_only_requests": 2,
+    "account_requests": 0,
+    "credentials_used": false,
+    "signed_requests": 0,
+    "orders_or_cancellations": 0,
+    "funds_used": false,
+    "state_changes": 0,
+    "protected_capture_touched": false,
+    "trading_authority": false
+  },
+  "result_sha256": "3313a90b2257207c292eab289cc4199db7def8ad35361ad21fcabc435c0bc6a2"
+}
