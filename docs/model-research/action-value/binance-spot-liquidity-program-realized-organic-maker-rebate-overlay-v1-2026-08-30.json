@@ -1,0 +1,82 @@
+{
+  "adjudication": {
+    "accepted_edge": true,
+    "accepted_edge_count_after": 26,
+    "accepted_edge_count_before": 25,
+    "accepted_scope": "exact_realized_positive_Binance_Spot_Liquidity_Program_final_rebate_on_independently_justified_legitimate_organic_owned_maker_fills_after_every_incremental_cost",
+    "deployment_ready": false,
+    "fresh_hypothetical_order_profit_proved": false,
+    "market_direction_forecast_required": false,
+    "profitability_claim_beyond_exact_realized_incremental_scope": false,
+    "public_forward_profit_floor_quote_units": "0",
+    "standalone_market_making_strategy_accepted": false,
+    "status": "accepted_scoped_exact_realized_organic_Spot_liquidity_program_rebate_without_accepting_the_underlying_market_making_strategy",
+    "trading_authority": "none"
+  },
+  "authority": {
+    "account_or_trade_history_accessed": false,
+    "credentials_used": false,
+    "funded_actions": 0,
+    "new_source_bytes_bound_to_this_adjudication": 0,
+    "official_venue_API_requests": 0,
+    "orders_or_cancels": 0,
+    "signed_requests": 0
+  },
+  "created_at_utc": "2026-08-30T08:47:02.5411984Z",
+  "economic_contract": {
+    "accepted_cash_identity": "exact_positive_final_rebate_minus_every_incremental_program_and_operating_cost",
+    "current_public_maximum_displayed_rebate_bips_diagnostic_only": "0.8",
+    "final_rebate_endpoint": "GET /sapi/v1/vip/liquidity-programs/weekly-result",
+    "final_rebate_update_cadence": "after_each_evaluation_cycle_each_Monday_around_10_00_UTC",
+    "liquidity_program_performance_endpoint": "GET /sapi/v1/vip/liquidity-programs/performance",
+    "liquidity_program_state_endpoint": "GET /sapi/v1/vip/liquidity-programs/overview",
+    "rate_assumption": "none",
+    "realized_spot_rebate_history_endpoint": "GET /sapi/v1/rebate/taxQuery",
+    "realized_spot_rebate_history_security": "USER_DATA"
+  },
+  "overlap_adjudication": {
+    "accepted_bStocks_zero_maker_fee_overlay_distinct": true,
+    "accepted_quote_native_zero_fee_overlays_distinct": true,
+    "bnb_discount_distinct": true,
+    "current_bStocks_LP_promotion_is_a_schedule_input_not_a_separate_realized_rebate_edge": true,
+    "reason": "zero_maker_fee_avoids_a_charge_while_this_overlay_accepts_only_a_separately_reconciled_positive_final_cash_rebate_and_neither_may_be_double_counted",
+    "symbol_commission_response_excludes_liquidity_program_rebates": true
+  },
+  "prohibited_shortcuts": [
+    "do_not_apply_generate_or_reroute_volume_to_chase_a_tier_or_rebate",
+    "do_not_self_trade_wash_trade_churn_or_manufacture_market_share",
+    "do_not_credit_the_public_schedule_or_maximum_0_8_bips_as_owned_income",
+    "do_not_count_zero_maker_fee_BNB_discount_bStocks_promotion_or_symbol_commission_savings_twice",
+    "do_not_use_the_rebate_to_rescue_an_otherwise_unjustified_or_negative_base_strategy",
+    "do_not_infer_queue_position_fill_probability_adverse_selection_inventory_unwind_or_after_cost_market_making_profit_from_a_rebate_schedule",
+    "do_not_place_cancel_amend_transfer_withdraw_apply_contact_or_change_an_account_without_separate_explicit_authority"
+  ],
+  "required_realized_reconciliation": {
+    "account_program_state": "same_account_overview_proves_current_enrollment_tier_and_applicable_product_scope",
+    "base_flow": "exact_owned_maker_fills_were_independently_justified_legitimate_and_organic_before_the_rebate",
+    "costs": "every_incremental_enrollment_capital_turnover_hedge_slippage_inventory_opportunity_tax_compliance_and_operating_cost_is_deducted",
+    "no_double_counting": "join_exact_final_weekly_rebate_to_taxQuery_and_balance_once_without_reusing_any_fee_or_promotion_saving",
+    "payout": "weekly_result_and_spot_rebate_history_reconcile_one_exact_positive_owned_final_rebate"
+  },
+  "result_sha256": "13c0a9468e439f9163ede0b5824c9b065737078ece0cba5f2b348fb402ef01d4",
+  "retry_contract": {
+    "account_evidence": "only_when_both_designated_credentials_explicit_signed_GET_only_authority_and_an_independently_existing_owned_legitimate_organic_Spot_maker_flow_question_exist_reconcile_overview_performance_weekly_result_taxQuery_exact_fills_and_balance_without_any_mutation",
+    "funded_work": "every_application_contact_disclosure_order_cancel_amend_transfer_withdrawal_or_account_change_requires_separate_explicit_authority",
+    "public_research": "only_on_a_material_official_liquidity_program_schedule_rebate_endpoint_fee_execution_or_bStocks_promotion_change"
+  },
+  "schema_version": "1.0.0",
+  "sources": [
+    {
+      "file_sha256": "14a1a4a1fc3917448f7d459e4203995ee283c22a0ff2ace1632f38b8c2780df3",
+      "path": "docs/model-research/action-value/binance-spot-maker-rebate-account-evidence-gate-v1.json",
+      "result_sha256": "d2adda1c5ab4b561e0c238e1e874cc72edaee15ebadafbb76703251f9cd99e10",
+      "role": "retained_current_public_schedule_and_exact_account_evidence_contract"
+    },
+    {
+      "file_sha256": "2d9d370a87cb65eaf10e2b12add2808b1f27dbfd9834a7255fec5eac7061cf5d",
+      "path": "docs/model-research/action-value/binance-bstock-spot-lp-all-symbol-rebate-overlay-candidate-v1-2026-08-27.json",
+      "result_sha256": "d279f8ab88875c812e6691fa500fdfde741f2e2fbca19ee240b4c0d4a579d607",
+      "role": "time_limited_bStocks_schedule_overlap_and_non_double_counting_boundary"
+    }
+  ]
+}

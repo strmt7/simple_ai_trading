@@ -12,7 +12,7 @@ operating contract. Historical handoff text is archived under
 | Development branch | `main` only |
 | Binance | BTC, ETH, and SOL; paper or testnet/Demo only |
 | Polymarket | Independent BTC 5-minute/15-minute research; disabled by default |
-| Accepted edges | Twenty-five scoped structural edges. The canonical complete scopes, counts, and retry gates are in `docs/model-research/structural-edge-priority-registry-v1.json`; none is deployment-ready or fully account-and-external-cost-qualified. |
+| Accepted edges | Twenty-six scoped structural edges. The canonical complete scopes, counts, and retry gates are in `docs/model-research/structural-edge-priority-registry-v1.json`; none is deployment-ready or fully account-and-external-cost-qualified. |
 | Live-money authority | None |
 | Historical cutoff | `2026-08-14T00:00:00Z` |
 
@@ -491,6 +491,14 @@ safety gate, blocks Stop, or submits an order.
   Canonical account gate: `binance-spot-maker-rebate-account-evidence-gate-v1.json`,
   result SHA-256
   `d2adda1c5ab4b561e0c238e1e874cc72edaee15ebadafbb76703251f9cd99e10`.
+  A zero-request scope correction now accepts only an exact realized positive
+  final Liquidity Program rebate on independently justified legitimate organic
+  owned maker fills after every incremental cost. It does not credit the public
+  tier schedule, accept a standalone market-making strategy, authorize volume,
+  or double count zero maker fees, BNB discounts, bStocks promotions, or symbol
+  commission savings. The public forward floor remains zero. Canonical overlay
+  SHA-256 is
+  `13c0a9468e439f9163ede0b5824c9b065737078ece0cba5f2b348fb402ef01d4`.
   Binance option
   vertical/convexity parity covered 365,592 exact payoff
   identities across 1,538 unit-one contracts. Two ticker-only candidates
