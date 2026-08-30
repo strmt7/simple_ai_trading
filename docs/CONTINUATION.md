@@ -4728,6 +4728,24 @@ fund was accessed. Canonical overlay SHA-256 is
 `38aa0313cdd71a2613f3850267e71acd9d44006dd2699e4c00f801ffca8772f8`.
 Accepted edges become 27, ranked hypotheses remain 44, and terminal families
 remain 57. Current frontier SHA-256 becomes
-`e07814f91757306617b0152eaf3df81ebf162f4dfbd89d52bc59bf297a106309`;
+`aed37a0d9527c4c02b63cf1b7bffb7a061e4236e246d3098ab27328ee51f8a58`;
 registry SHA-256 becomes
 `59bd2c2b7b0c5a0faff86ef76bebcbbaa5b3965d93cb779a8ce5de8abab3fbd1`.
+
+## Evidence-Quality Correction
+
+The current market-independent yield frontier now separates scoped mechanism
+acceptance from owned profitable execution. Of its nine accepted yield and
+capital-efficiency scopes, one has owned recurrent cash evidence after
+source-bound direct costs, eight have public historical or fixed-term gross
+evidence without owned account reconciliation, zero have a current owned
+positive floor after every incremental cost, and zero are deployment-ready.
+This classification does not revoke any narrow accepted mechanism; it prevents
+the accepted-edge count from being read as nine currently executable profits.
+
+No immediate venue request is justified. The WNBA window is consumed and must
+not be repeated. Under unchanged evidence, the next exact public triggers are
+the terminal GLWUSDT history reconciliation after `2026-08-31T00:00:00Z`
+without books, followed by at most one distinct rank-1 Polymarket single-wallet
+continuity pulse not before `2026-08-31T02:15:30Z`. Do not roll the USD1 or U
+remaining-horizon stresses daily.
