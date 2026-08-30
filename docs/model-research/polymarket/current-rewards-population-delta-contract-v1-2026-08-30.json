@@ -1,0 +1,58 @@
+{
+  "authority": {
+    "account_access_permitted": false,
+    "credentials_permitted": false,
+    "funded_actions_permitted": false,
+    "orders_or_cancellations_permitted": false,
+    "public_unauthenticated_get_only": true
+  },
+  "baseline": {
+    "path": "docs/model-research/polymarket/raw/crypto-twap-5m-current-rewards-list-join-v1-2026-08-27/02-current-rewards-page-01.raw",
+    "response_sha256": "16a77685f17dc44dd7785563556bd090f8a77b38812722e79fe1563f4bb3b22b",
+    "row_count": 54,
+    "terminal_cursor": "LTE="
+  },
+  "decision": {
+    "material_delta_fields": [
+      "condition_id",
+      "rewards_config",
+      "rewards_max_spread",
+      "rewards_min_size",
+      "sponsored_daily_rate",
+      "sponsors_count",
+      "native_daily_rate",
+      "total_daily_rate"
+    ],
+    "no_delta_action": "terminalize_without_market_metadata_or_books",
+    "positive_delta_action": "retain_complete_added_removed_changed_identities_then_freeze_a_separate_rejection_first_economic_selection_before_any_market_metadata_or_books",
+    "this_capture_can_accept_an_edge": false
+  },
+  "frozen_at_utc": "2026-08-30T01:28:36.5729371+00:00",
+  "purpose": "one_use_public_population_delta_gate_after_the_live_official_rewards_page_exposed_new_dated_rows",
+  "request_contract": {
+    "endpoint": "https://clob.polymarket.com/rewards/markets/current",
+    "initial_cursor": "MA==",
+    "maximum_pages": 4,
+    "method": "GET",
+    "parameters": [
+      "next_cursor only"
+    ],
+    "retry_on_http_or_parse_failure": false,
+    "terminal_cursor": "LTE="
+  },
+  "result_sha256": "c6aef4b1395e6a0c311a6a64b4e679d6dafbd6ac3e7b50860585e230ca0c9484",
+  "schema_version": "polymarket-current-rewards-population-delta-contract-v1",
+  "source_contract": {
+    "current_official_sdk_commit": "215fc63a8fd6ec3a10c7edb73997c9772d8686d3",
+    "current_official_sdk_method": "PublicClient.get_current_rewards",
+    "current_method_behavior": "starts_at_MA_follows_next_cursor_to_LTE_and_sends_no_sponsored_parameter",
+    "endpoint_classification": "public_unauthenticated_read_only_current_rewards_market_population"
+  },
+  "terminal_prohibitions": [
+    "Do not add sponsored=true because the current official v2 method does not send it.",
+    "Do not follow more than four pages or accept a nonterminal final cursor as complete.",
+    "Do not request Gamma metadata, books, accounts, orders, or rewards ownership in this capture.",
+    "Do not call a population delta a profitable edge or a guaranteed reward payout.",
+    "Do not rerun this one-use population observation on HTTP, parse, cursor, or local calculation failure."
+  ]
+}

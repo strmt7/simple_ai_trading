@@ -104,6 +104,11 @@ override prose.
   Polymarket raw market rewards, `sponsored=true` folds sponsored daily rates
   into `rate_per_day`; a default response cannot close total reward funding,
   and Gamma spread/size metadata does not prove a current funded pool.
+- An omitted parameter in a newer official client method does not prove that
+  its default response is aggregation-equivalent to an older filtered response.
+  Never compare populations across different parameterizations without an
+  explicit current semantics contract; source-contract drift is terminal, not
+  permission to discover the new population ceiling by adaptive pagination.
 - Cross-token cost and reward comparisons must use a source-bound executable
   conversion into one exact unit. A one-for-one stablecoin assumption or a
   different quote currency is a labeled sensitivity only and cannot support an

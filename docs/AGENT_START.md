@@ -832,6 +832,21 @@ safety gate, blocks Stop, or submits an order.
   Both current public allocation-source paths are terminal; do not repeat them
   absent another program change or a genuinely new exact per-market dated
   allocation response.
+  A 2026-08-30 discovery signal exposed new dated rows on the official rewards
+  page, but its one-use source-contract check failed closed before market data.
+  The current official v2 client omits `sponsored=true`; four frozen default
+  pages each returned the maximum 500 rows and the cursor remained nonterminal
+  at offset 2,000. That incomplete default population is not aggregation-
+  comparable with the prior complete 54-row `sponsored=true` baseline. Do not
+  follow the cursor, select a partial-page winner, or call the 1,996 retained
+  nonbaseline identities a population delta. Reopen only after a current
+  primary source explicitly defines bounded comparable aggregation/filter
+  semantics or source-selects a distinct exact per-market dated endpoint.
+  Canonical terminal adjudication:
+  `current-rewards-population-delta-terminal-v1-2026-08-30.json`, SHA-256
+  `0a885b96eadbc0109ec3da70a8670680a23813a5f492d61abf89e49f3e892481`.
+  The accepted count remains 21; registry SHA-256 is
+  `9d8d19faac706767258bfd494cec2842d22607e9ca7c23d6094a38a498e54fb6`.
 - The separate official crypto maker-rebate schedule has exact conditional
   filled-order arithmetic, not an accepted edge. At 50 shares bid on each side
   at 0.49, the unrounded nominal rebates total 0.3498600 pUSD and raise the
