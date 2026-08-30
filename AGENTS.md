@@ -371,6 +371,12 @@ override prose.
   cumulative upper-range YES, and threshold YES plus lower bins through the
   starting bin. Gamma is rejection-only; if exact depth is already negative at
   zero fee, stop before fee endpoints and never refetch stale or skewed books.
+- When one current retained response exposes multiple simultaneously deployed
+  BTC, ETH, or SOL sibling pairs for the same payoff family, screen every pair,
+  shared boundary, and valid direction before selecting one global best row.
+  Precommit deterministic tie-breaking; never book-test one asset while hiding
+  an equal or worse sibling, and stop when the global best merely equals its
+  optimistic payout floor before fees.
 - Before refreshing books for a Polymarket maker-reward overlay, reconstruct the
   exact minimum-size one-leg orphan loss from retained evidence and reconcile
   each exact condition with `sponsored=true`. Gamma reward minimum and spread

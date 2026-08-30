@@ -1,0 +1,1 @@
+{"json_body_sha256":null,"method":"GET","params":{"ascending":"false","closed":"false","limit":"200","order":"createdAt","tag_slug":"crypto"},"requested_before_ms":1788106238344,"url":"https://gamma-api.polymarket.com/events/keyset"}
