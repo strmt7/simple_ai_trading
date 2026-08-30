@@ -845,8 +845,15 @@ safety gate, blocks Stop, or submits an order.
   Canonical terminal adjudication:
   `current-rewards-population-delta-terminal-v1-2026-08-30.json`, SHA-256
   `0a885b96eadbc0109ec3da70a8670680a23813a5f492d61abf89e49f3e892481`.
+  A distinct source-selected exact-market retry then retained the active Elon
+  Musk 40-64 posts Gamma and sponsored reward responses. It stopped before
+  books because the rewards-page discovery values (104 pUSD/day, 20 shares,
+  4 cents) disagreed with the exact condition values (53 pUSD/day, 50 shares,
+  5.5 cents). Do not retry, change parameters, substitute another range, or
+  use the more favorable configuration. Terminal result SHA-256:
+  `3fc224b70c035090c4f015d68b52edb6abd9f7222f1b932962274c446d613f47`.
   The accepted count remains 21; registry SHA-256 is
-  `9d8d19faac706767258bfd494cec2842d22607e9ca7c23d6094a38a498e54fb6`.
+  `5d524c5958dd8790f345c9056dc3053a1ac819197b44ac14f019c50de1037990`.
 - The separate official crypto maker-rebate schedule has exact conditional
   filled-order arithmetic, not an accepted edge. At 50 shares bid on each side
   at 0.49, the unrounded nominal rebates total 0.3498600 pUSD and raise the
@@ -1956,3 +1963,16 @@ SHA-256 is
 `3b33ca4ef8c03a609bef1665ccfc2104a3f6585033770f0bb99ec3c5699949f8`;
 registry SHA-256 is
 `546904123e0985aa23d7f3c58567dd2b8e877681b48e560512e4b15b9082721b`.
+
+## Exact Polymarket reward candidate rejection
+
+The latest distinct rank-17 retry is terminal before books. For the active
+Elon Musk 40-64 posts condition, the rewards page showed 104 pUSD/day, 20
+shares, and 4 cents, while the exact sponsored condition endpoint returned
+53 pUSD/day, 50 shares, and 5.5 cents. Both public responses are retained.
+Do not retry, alter parameters, substitute another range, or select the more
+favorable configuration. No credential, account, order, fund, or protected
+capture was accessed. Accepted edges remain 21. Terminal SHA-256:
+`3fc224b70c035090c4f015d68b52edb6abd9f7222f1b932962274c446d613f47`;
+registry SHA-256:
+`5d524c5958dd8790f345c9056dc3053a1ac819197b44ac14f019c50de1037990`.

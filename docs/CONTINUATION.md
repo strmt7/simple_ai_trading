@@ -1507,9 +1507,21 @@ aggregation semantics, or source-selects a distinct exact per-market dated
 endpoint before access. Canonical contract and terminal result SHA-256 values:
 `c6aef4b1395e6a0c311a6a64b4e679d6dafbd6ac3e7b50860585e230ca0c9484` and
 `0a885b96eadbc0109ec3da70a8670680a23813a5f492d61abf89e49f3e892481`.
+
+A genuinely distinct exact-market retry was then source-selected from the live
+official rewards page before endpoint access: the active Elon Musk 40-64 posts
+market ending September 2. Its frozen one-use screen retained exact Gamma and
+`sponsored=true` reward responses, then stopped before books because the page's
+discovery values did not reconcile. The page showed 104 pUSD/day, 20 shares,
+and a 4-cent maximum spread; the exact condition returned one terminal active
+configuration at 53 pUSD/day, 50 shares, and 5.5 cents. Do not retry, change
+parameters, substitute another range, or choose the more favorable values.
+No book, fee follow-up, account, credential, or order request was made; the
+public payout floor remains zero. Canonical terminal result SHA-256:
+`3fc224b70c035090c4f015d68b52edb6abd9f7222f1b932962274c446d613f47`.
 The accepted-edge count remains 21, the ranked-hypothesis count remains 44, and
 the registry SHA-256 is
-`9d8d19faac706767258bfd494cec2842d22607e9ca7c23d6094a38a498e54fb6`.
+`5d524c5958dd8790f345c9056dc3053a1ac819197b44ac14f019c50de1037990`.
 
 The Binance option workflow adds a request-efficiency contract learned from a
 failed exploratory confirmation: fetch the contract catalog once, fetch the
@@ -3801,3 +3813,22 @@ requires separate explicit authority. Canonical candidate SHA-256 is
 The accepted-edge count remains 21, the ranked-hypothesis count remains 44, and
 the registry SHA-256 is
 `546904123e0985aa23d7f3c58567dd2b8e877681b48e560512e4b15b9082721b`.
+
+## 2026-08-30 Exact Polymarket Reward Candidate Rejection
+
+The rank-17 distinct exact-market retry trigger fired for the active Elon Musk
+40-64 posts market. Its frozen one-use public screen retained one exact Gamma
+response and one exact `sponsored=true` reward response, then stopped before
+books. The rewards-page discovery values (104 pUSD/day, 20 shares, 4 cents)
+did not reconcile to the exact condition values (53 pUSD/day, 50 shares,
+5.5 cents). The exact response was terminal in one page and had one active
+dated configuration; no retry, alternate parameter, replacement range, or
+favorable-value selection is admissible.
+
+No account, credential, order, cancellation, fund, or protected-capture state
+was accessed. Publicly proven payout remains zero and the accepted-edge count
+remains 21. Continue with the highest-ranked hypothesis whose literal trigger
+is satisfied; do not repeat this market. Terminal result SHA-256 is
+`3fc224b70c035090c4f015d68b52edb6abd9f7222f1b932962274c446d613f47`;
+registry SHA-256 is
+`5d524c5958dd8790f345c9056dc3053a1ac819197b44ac14f019c50de1037990`.
