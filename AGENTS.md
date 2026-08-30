@@ -206,6 +206,13 @@ override prose.
   aggregation, partial-fill behavior, and owned organic fills; absent those,
   the guaranteed saving is zero. Cap any credited rounding saving below one
   documented fee quantum per independently proven assessment.
+- A contingent order list is not an atomic round trip. For Binance Spot OPO or
+  OPOCO, the pending sell activates only after the working buy fully fills;
+  partial fills remain unprotected. Bind received-quantity commission handling,
+  trigger-time filters, locked and unlocked residuals, exact symbol capability,
+  owned fills, and a precommitted sequential comparator before valuing its lower
+  capital requirement or removed client request. Feature support alone proves
+  no latency, fee, fill, price-improvement, or profit floor.
 - Bind Polymarket fee schedules per exact retained market population. Crypto,
   Sports, and other event categories can have different taker rates and rebate
   fractions; never reuse a prior event's hard-coded schedule. If a consumed

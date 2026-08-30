@@ -1,0 +1,138 @@
+{
+  "schema_version": "binance-spot-opo-opoco-received-quantity-execution-overlay-candidate-v1",
+  "created_at_utc": "2026-08-30T20:24:53.3440258Z",
+  "question": "Can Binance Spot OPO or OPOCO create a stable market-direction-independent edge for an independently required BTC, ETH, or SOL buy-then-sell flow by funding the contingent sell from the working buy's actual received quantity?",
+  "mechanism": {
+    "working_side": "BUY_only",
+    "pending_side": "SELL_only",
+    "working_order_balance_requirement_only": true,
+    "received_funds_locked_for_pending_orders": true,
+    "pending_quantity_source": "received_quantity_from_working_order_after_full_fill",
+    "commission_handling": "commission_is_deducted_as_appropriate_or_taken_from_available_free_funds_when_the_received_asset_is_not_BNB_and_sufficient_free_funds_exist",
+    "filter_timing": "pending_quantity_is_evaluated_after_the_working_order_fully_fills",
+    "lot_adjustment": "pending_quantity_is_adjusted_to_LOT_SIZE_or_MARKET_LOT_SIZE_and_unused_locked_quantity_is_unlocked",
+    "pending_activation_before_full_fill": false,
+    "quantity_amendment_before_full_fill": false,
+    "same_symbol_round_trip_only": true
+  },
+  "structural_value": {
+    "market_direction_forecast_required": false,
+    "manual_post_fill_client_order_submissions_for_frozen_comparator": 1,
+    "opo_post_fill_client_order_submissions": 0,
+    "post_fill_client_order_submission_reduction": 1,
+    "pre_funded_pending_sell_inventory_required": false,
+    "received_quantity_sizing_and_commission_accounting_are_exchange_managed": true,
+    "maximum_unlocked_lot_adjustment_residual": "strictly_less_than_one_exact_symbol_stepSize_in_base_asset",
+    "monetary_latency_saving_floor_USDT": "0",
+    "standalone_after_cost_profit_floor_USDT": "0",
+    "interpretation": "OPO strictly removes one post-fill client submission from the specified sequential comparator and removes the need to pre-fund the pending sell, but current public evidence supplies no millisecond, fill, price-improvement, fee, or profit lower bound."
+  },
+  "production_and_testnet_configuration": {
+    "production_server_time_utc": "2026-08-29T21:41:22.7680000Z",
+    "testnet_server_time_utc": "2026-08-30T20:23:15.7190000Z",
+    "symbols": [
+      {
+        "symbol": "BTCUSDT",
+        "status_in_both": "TRADING",
+        "otoAllowed_in_both": true,
+        "opoAllowed_in_both": true,
+        "ocoAllowed_in_both": true,
+        "minQty_in_both": "0.00001000",
+        "stepSize_in_both": "0.00001000",
+        "minNotional_in_both": "5.00000000",
+        "maxNumOrders_in_both": 200,
+        "maxNumOrderLists_in_both": 20
+      },
+      {
+        "symbol": "ETHUSDT",
+        "status_in_both": "TRADING",
+        "otoAllowed_in_both": true,
+        "opoAllowed_in_both": true,
+        "ocoAllowed_in_both": true,
+        "minQty_in_both": "0.00010000",
+        "stepSize_in_both": "0.00010000",
+        "minNotional_in_both": "5.00000000",
+        "maxNumOrders_in_both": 200,
+        "maxNumOrderLists_in_both": 20
+      },
+      {
+        "symbol": "SOLUSDT",
+        "status_in_both": "TRADING",
+        "otoAllowed_in_both": true,
+        "opoAllowed_in_both": true,
+        "ocoAllowed_in_both": true,
+        "minQty_in_both": "0.00100000",
+        "stepSize_in_both": "0.00100000",
+        "minNotional_in_both": "5.00000000",
+        "maxNumOrders_in_both": 200,
+        "maxNumOrderLists_in_both": 20
+      }
+    ]
+  },
+  "failure_modes": [
+    "partial_working_fills_create_exposure_but_do_not_activate_the_pending_sell",
+    "the_pending_order_is_evaluated_only_after_full_fill_and_public_sources_do_not_prove_that_every_non_lot_filter_or_price_will_pass_then",
+    "locked_received_funds_are_unavailable_for_other_trading_or_withdrawal_while_the_order_list_is_pending",
+    "the_mechanism_supports_only_BUY_working_to_SELL_pending_same_symbol_flow_and_cannot_atomically_hedge_futures_or_another_venue",
+    "exchange_managed_quantity_sizing_does_not_guarantee_exit_fill_price_priority_fee_reduction_or_positive_round_trip_economics",
+    "a_correct_manual_or_exchange_native_alternative_may_match_the_quantity_result_so only a precommitted owned comparator can measure incremental value",
+    "OPOCO_reduces_exit_control_plane_work_but_does_not_make_the_entry_and_either_exit_leg_an_atomic_profitable_package"
+  ],
+  "adjudication": {
+    "accepted_edge": false,
+    "candidate": true,
+    "deployment_ready": false,
+    "profitability_claim": false,
+    "standalone_profit_claim_terminal": true,
+    "current_status": "direction_independent_capital_efficiency_quantity_sizing_and_post_fill_control_plane_candidate_for_independently_required_organic_buy_then_sell_flow",
+    "next_action": "only_with_separate_explicit_Spot_testnet_order_authority_and_an_independently_required_minimum_size_BTCUSDT_ETHUSDT_or_SOLUSDT_buy_then_sell_question_freeze_one_OPO_or_OPOCO_acknowledgement_full_fill_pending_activation_exit_or_cancel_and_identical_quantity_manual_sequential_comparator_measure_pending_activation_latency_filter_outcome_locked_and_unlocked_quantity_owned_fees_fills_and_residuals_then_reject_unless_incremental_after_cost_value_is_strictly_positive",
+    "retry_trigger": "separate_explicit_Spot_testnet_order_authority_plus_an_independently_required_minimum_size_BTCUSDT_ETHUSDT_or_SOLUSDT_buy_then_sell_question_with_a_precommitted_identical_quantity_manual_sequential_comparator_or_a_material_official_OPO_commission_filter_partial_fill_testnet_or_production_configuration_change"
+  },
+  "authority": {
+    "account_requests": 0,
+    "credentials_used": false,
+    "funds_used": false,
+    "orders_or_transactions": 0,
+    "public_unauthenticated_read_only_requests_in_frozen_testnet_capture": 1,
+    "signed_requests": 0,
+    "trading_authority": false
+  },
+  "sources": {
+    "official_OPO_FAQ": {
+      "path": "docs/model-research/binance/raw/spot-opo-opoco-official-contract-v1-2026-08-30/01-opo-faq.raw.md",
+      "sha256": "b76b827c35e307fd5d2fb02fc6d2a059978d33370f3ea92573ec9fec346a6ba1",
+      "pinned_git_commit": "3027e2ed79b8fd25e763b4b56d970374b85bba1e"
+    },
+    "official_OPO_source_receipt": {
+      "path": "docs/model-research/binance/raw/spot-opo-opoco-official-contract-v1-2026-08-30/00-source-receipt.json",
+      "sha256": "5cabe7b047f5fb1131e3a82245066ddbb9bd92d5fb8e35e653e6bc514b43f3ba"
+    },
+    "official_changelog": {
+      "path": "docs/model-research/binance/raw/spot-block-trade-public-price-concession-v1-2026-08-30/03-spot-changelog.raw.md",
+      "sha256": "e6da6a7bb729ec5b1aa6d3c97684bb2a1e4d3a64231b007edea42c6cceef7681",
+      "relevant_lines": [478, 479, 482, 484, 485]
+    },
+    "official_agent_native_index": {
+      "path": "docs/model-research/binance/raw/spot-block-matching-cost-overlay-v1-2026-08-30/03-agent-native-index.raw.txt",
+      "sha256": "944e132d3523c8a03abcac2f7ddb85802107e45161470885b7a8785fd4fdb15d",
+      "relevant_lines": [1779, 1780, 1835, 1836]
+    },
+    "retained_production_exchangeInfo": {
+      "path": "data/binance-spot-sor-liquidity-overlay-v1/raw/exchangeInfo.json",
+      "sha256": "658d03279eea9a2384171eb56e151541407ae7407c123c700c9902d5e9f56c9d"
+    },
+    "frozen_testnet_exchangeInfo_contract": {
+      "path": "docs/model-research/action-value/binance-spot-opo-opoco-testnet-configuration-contract-v1-2026-08-30.json",
+      "contract_sha256": "e717842175c88ed3a1fad24df1ef89f2e8f5e17ed5845fe02fc8ce7e514290b0"
+    },
+    "frozen_testnet_exchangeInfo_raw": {
+      "path": "docs/model-research/binance/raw/spot-opo-opoco-testnet-configuration-v1-2026-08-30/01-exchange-info.raw.json",
+      "sha256": "bea3c6137da0e6a91cf8e2cc7bc7b38d9eda30b349a2306eafd3aa30e5ae6fda"
+    },
+    "frozen_testnet_exchangeInfo_source_result": {
+      "path": "docs/model-research/action-value/binance-spot-opo-opoco-testnet-configuration-source-result-v1-2026-08-30.json",
+      "result_sha256": "71265104e5d4e712ba737b926a88ce870d190fe07ec32042396ac9b35b20ff06"
+    }
+  },
+  "result_sha256": "4680faf2b4b4e36466cbc7ace4de2a2214430cbe4a5d537a3997e3f43bc47cc8"
+}

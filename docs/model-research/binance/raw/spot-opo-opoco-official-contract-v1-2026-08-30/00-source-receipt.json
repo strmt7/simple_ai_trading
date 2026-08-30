@@ -1,0 +1,17 @@
+{
+  "schema_version": "public-static-source-receipt-v1",
+  "captured_before_utc": "2026-08-30T20:20:54.6617436Z",
+  "method": "GET",
+  "url": "https://raw.githubusercontent.com/binance/binance-spot-api-docs/3027e2ed79b8fd25e763b4b56d970374b85bba1e/faqs/opo.md",
+  "status_code": 200,
+  "response_bytes": 2192,
+  "response_sha256": "b76b827c35e307fd5d2fb02fc6d2a059978d33370f3ea92573ec9fec346a6ba1",
+  "git_ref": "refs/heads/master",
+  "git_commit": "3027e2ed79b8fd25e763b4b56d970374b85bba1e",
+  "authority": {
+    "credentials_used": false,
+    "public_unauthenticated_read_only_requests": 1,
+    "orders_or_transactions": 0,
+    "trading_authority": false
+  }
+}

@@ -1,0 +1,62 @@
+{
+  "schema_version": "public-source-capture-contract-v1",
+  "frozen_at_utc": "2026-08-30T20:22:00Z",
+  "contract_path": "docs/model-research/action-value/binance-spot-opo-opoco-testnet-configuration-contract-v1-2026-08-30.json",
+  "trigger": {
+    "registry_rank": 5,
+    "literal_trigger": "material official Spot execution architecture change or confirmed testnet support before separately authorized order-capable work",
+    "material_change": "Official Binance Spot documentation now defines OPO and OPOCO as received-quantity-funded contingent order lists, and the retained production exchangeInfo snapshot exposes opoAllowed on BTCUSDT, ETHUSDT, and SOLUSDT; exact public testnet deployment remains unbound.",
+    "outcomes_viewed_before_freeze": false,
+    "discovery_values_are_economic_inputs": false
+  },
+  "question": "Does the exact current public Binance Spot Testnet exchangeInfo response expose BTCUSDT, ETHUSDT, and SOLUSDT, and what OTO, OPO, and OCO capability flags and filters does it publish for each symbol?",
+  "request_name": "binance-spot-opo-opoco-testnet-configuration",
+  "request": {
+    "method": "GET",
+    "url": "https://testnet.binance.vision/api/v3/exchangeInfo?symbols=%5B%22BTCUSDT%22%2C%22ETHUSDT%22%2C%22SOLUSDT%22%5D",
+    "count": 1,
+    "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "endpoint_classification": {
+    "operation": "query exact public Spot Testnet symbol configuration without account or order access",
+    "security": "public unauthenticated market-data GET",
+    "preflight": "The retained official Spot REST index classifies GET /api/v3/exchangeInfo as public, repository request journals contain no prior exact testnet URL, and the exact three-symbol response is bounded before access."
+  },
+  "response_byte_ceiling": 100000,
+  "required_utf8_phrases": [
+    "\"timezone\":",
+    "\"serverTime\":",
+    "\"symbol\":\"BTCUSDT\"",
+    "\"symbol\":\"ETHUSDT\"",
+    "\"symbol\":\"SOLUSDT\""
+  ],
+  "decision": {
+    "source_gate_only": "Require only the exact three-symbol response identity. Do not hard-code favorable OPO capability flags into the gate; adjudicate every retained boolean and filter after access.",
+    "accepted_edge": false,
+    "profitability_proved": false,
+    "conditional_next_step": "If all three exact symbols expose the required OTO, OPO, and OCO flags, preserve only a testnet execution-risk candidate. Any order acknowledgement, fill, cancel, or latency comparison still requires separate explicit order authority and a precommitted independently required organic round-trip comparator."
+  },
+  "outputs": {
+    "raw_path": "docs/model-research/binance/raw/spot-opo-opoco-testnet-configuration-v1-2026-08-30/01-exchange-info.raw.json",
+    "journal_path": "docs/model-research/binance/raw/spot-opo-opoco-testnet-configuration-v1-2026-08-30/00-request-journal.jsonl",
+    "result_path": "docs/model-research/action-value/binance-spot-opo-opoco-testnet-configuration-source-result-v1-2026-08-30.json"
+  },
+  "authority": {
+    "account_requests": 0,
+    "credentials_used": false,
+    "funds_used": false,
+    "orders_or_transactions": 0,
+    "protected_capture_touched": false,
+    "public_unauthenticated_read_only_requests": 1,
+    "signed_requests": 0,
+    "trading_authority": false
+  },
+  "implementations": [
+    {
+      "path": "tools/capture_public_source_contract.py",
+      "sha256": "d566a5a379c659c3da144d5e28449ebac9c01493bd39646f9cc3a6e697a83566"
+    }
+  ],
+  "retry_policy": "This exact three-symbol public Testnet configuration request is one-use. Preserve any response or failure and do not retry, narrow, reorder, alias, or expand it. It can prove deployment flags only, never profit, fills, latency, account eligibility, or order authority.",
+  "contract_sha256": "e717842175c88ed3a1fad24df1ef89f2e8f5e17ed5845fe02fc8ce7e514290b0"
+}
