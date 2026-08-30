@@ -14,11 +14,6 @@ ARTIFACT = ROOT / (
 REGISTRY = ROOT / "docs/model-research/structural-edge-priority-registry-v1.json"
 RAW = ROOT / ("docs/model-research/action-value/raw/polymarket-organic-taker-rebate-v1")
 EXPECTED_HASH = "6a3f907dbebd0c7cc894d95054231540e50cd8e28e6264840a2840be8ac72865"
-EXPECTED_REGISTRY_HASH = json.loads(
-    (ROOT / "docs/model-research/structural-edge-priority-registry-v1.json").read_text(
-        encoding="utf-8"
-    )
-)["result_sha256"]
 PUSD = "0xc011a7e12a19f7b1f670d46f03b03f3342e82dfb"
 V2_EXCHANGE = "0xe111180000d2663c0091e4f400237545b87b996b"
 TRANSFER_TOPIC = "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef"
@@ -164,7 +159,7 @@ def test_deployed_v2_fee_collateral_is_pusd_without_a_parity_assumption() -> Non
     )
 
 
-def test_promotion_is_scoped_non_authorizing_and_registered_as_edge_ten() -> None:
+def test_promotion_is_scoped_non_authorizing_and_registered() -> None:
     artifact = _load(ARTIFACT)
     registry = _load(REGISTRY)
     assert isinstance(artifact, dict)
@@ -176,8 +171,7 @@ def test_promotion_is_scoped_non_authorizing_and_registered_as_edge_ten() -> Non
     assert artifact["authority"]["orders_or_quotes_submitted"] == 0
     assert any("self matching" in row for row in artifact["prohibited_actions"])
 
-    assert registry["result_sha256"] == EXPECTED_REGISTRY_HASH
-    assert _embedded_hash(registry) == EXPECTED_REGISTRY_HASH
+    assert _embedded_hash(registry) == registry["result_sha256"]
     hypotheses = registry["prioritized_hypotheses"]
     assert [row["priority_rank"] for row in hypotheses] == list(range(1, 45))
     candidate = next(
@@ -186,12 +180,14 @@ def test_promotion_is_scoped_non_authorizing_and_registered_as_edge_ten() -> Non
         if row["mechanism"] == "polymarket_organic_taker_fee_rebate_overlay"
     )
     assert candidate["priority_rank"] == 22
-    assert candidate["canonical_artifacts"] == [
-        {
+    assert any(
+        row
+        == {
             "path": (
                 "docs/model-research/action-value/"
                 "polymarket-organic-taker-rebate-overlay-v1-2026-08-26.json"
             ),
             "result_sha256": EXPECTED_HASH,
         }
-    ]
+        for row in candidate["canonical_artifacts"]
+    )

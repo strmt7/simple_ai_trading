@@ -1258,12 +1258,17 @@
         {
           "path": "docs/model-research/action-value/polymarket-organic-taker-rebate-overlay-v1-2026-08-26.json",
           "result_sha256": "6a3f907dbebd0c7cc894d95054231540e50cd8e28e6264840a2840be8ac72865"
+        },
+        {
+          "path": "docs/model-research/action-value/polymarket-fee-rounding-fragmentation-dominance-bound-v1-2026-08-30.json",
+          "result_sha256": "24a471a56b10e67ce20350f7680e4cd67b54ca911564141dcfe229a1fe21edbd"
         }
       ],
       "current_status": "accepted_scoped_current_incremental_pUSD_fee_rebate_for_independently_justified_legitimate_organic_BTC_ETH_SOL_taker_flow_public_one_day_1202_trade_reconstruction_implied_302_8176185015_pUSD_crypto_fees_and_the_next_54_5062_pUSD_onchain_payment_matched_the_documented_Gold_18_percent_rate_to_within_0_001_pUSD_account_tier_owned_fills_and_external_costs_unproved_not_deployment_ready",
+      "fee_rounding_submechanism_status": "terminal_zero_network_dominance_rejection_current_official_fee_precision_is_0_00001_pUSD_while_96_distinct_retained_conditions_across_15_book_files_all_have_five_share_minimum_orders_and_0_001_or_0_01_ticks_the_lowest_rate_minimum_size_extreme_tick_fee_is_0_0001998_pUSD_or_19_98_quantums_and_any_zero_fee_fragment_must_be_below_0_2502502502502502502502502503_shares_user_controllable_fee_partitioning_is_unproved_and_less_than_one_quantum_per_assessment_cannot_create_standalone_profit",
       "market_direction_forecast_required": false,
       "mechanism": "polymarket_organic_taker_fee_rebate_overlay",
-      "next_action": "do_not_poll_public_wallets_or_create_volume_for_an_otherwise_authorized_independently_positive_organic_taker_order_refresh_current_crypto_fee_and_tier_terms_once_then_require_account_confirmed_post_daily_update_tier_exact_owned_taker_fee_and_realized_pUSD_rebate_reconciliation",
+      "next_action": "do_not_poll_public_wallets_create_volume_or_fragment_orders_for_fee_rounding_for_an_otherwise_authorized_independently_positive_organic_taker_order_refresh_current_crypto_fee_and_tier_terms_once_then_require_account_confirmed_post_daily_update_tier_exact_owned_taker_fee_and_realized_pUSD_rebate_reconciliation_credit_fee_rounding_only_below_one_documented_quantum_per_independently_proven_assessment",
       "priority_rank": 22,
       "prohibited_shortcuts": [
         "self_matching_wash_trading_inauthentic_or_manufactured_complete_set_volume",
@@ -1272,9 +1277,10 @@
         "counting_a_one_time_level_up_bonus_as_recurring_edge",
         "using_monthly_leaderboard_volume_or_a_public_wallet_as_account_tier_or_eligibility_proof",
         "selecting_the_immediate_tier_interpretation_while_current_terms_also_require_the_next_daily_update",
-        "double_counting_fee_rebate_fee_waiver_maker_rebate_liquidity_reward_or_referral_reward"
+        "double_counting_fee_rebate_fee_waiver_maker_rebate_liquidity_reward_or_referral_reward",
+        "manufacturing_self_matching_churning_splitting_or_rerouting_volume_to_chase_fee_rounding_or_assuming_user_control_over_partial_fill_fee_aggregation"
       ],
-      "retry_trigger": "otherwise_authorized_independently_positive_organic_BTC_ETH_or_SOL_taker_flow_with_fresh_terms_and_explicit_read_only_account_evidence_then_separate_funded_authority_for_any_order",
+      "retry_trigger": "otherwise_authorized_independently_positive_organic_BTC_ETH_or_SOL_taker_flow_with_fresh_terms_and_explicit_read_only_account_evidence_then_separate_funded_authority_for_any_order_or_for_fee_rounding_a_material_fee_precision_minimum_order_tick_fee_aggregation_or_partial_fill_semantics_change_or_exact_owned_organic_fill_evidence_proving_recurring_positive_after_cost_savings",
       "venue_scope": "polymarket_BTC_ETH_SOL_fee_enabled_markets"
     },
     {
@@ -2739,7 +2745,7 @@
       "venue_scope": "Binance_Spot_direct_and_exactly_one_intermediary_routes_for_independently_required_organic_conversions_with_the_exactly_two_intermediary_extension_terminal_for_the_retained_population"
     }
   ],
-  "result_sha256": "616c1991be031641954464c4099b662afc75f835188847f087748a7544fa356a",
+  "result_sha256": "2dcff4f6fcf1c3d40ac78eb3a09dd963303349203fc290381046111e762afa83",
   "schema_version": "structural-edge-priority-registry-v1",
   "terminal_do_not_repeat": [
     {
@@ -3177,8 +3183,13 @@
       "canonical_result_sha256": "6c54fcb7e8031a1c6cf43c969b445fa12e955368283922edf4d1b7782fb0c60b",
       "family": "polymarket_retained_soccer_exact_score_first_to_score_total_BTTS_draw_structural_graph_2026_08_30",
       "reason": "one_zero_network_hash_bound_screen_exhausted_305_rule_proved_relations_across_11_exact_score_pairs_10_first_to_score_pairs_and_7_more_markets_pairs_197_relations_had_complete_side_specific_bestAsk_or_complement_proxy_evidence_and_zero_were_strictly_below_the_one_pUSD_floor_with_a_1_15_pUSD_best_the_other_108_missing_price_rows_remain_fail_closed_do_not_adaptively_fill_repeat_or_request_books_for_this_retained_population"
+    },
+    {
+      "canonical_result_sha256": "24a471a56b10e67ce20350f7680e4cd67b54ca911564141dcfe229a1fe21edbd",
+      "family": "polymarket_fee_rounding_fragmentation_dominance_bound_2026_08_30",
+      "reason": "the_current_official_fee_source_exposes_a_0_00001_pUSD_precision_quantum_but_all_96_distinct_conditions_in_15_retained_book_files_have_five_share_minimum_orders_and_0_001_or_0_01_ticks_the_lowest_published_rate_whole_minimum_order_at_the_most_favorable_observed_extreme_tick_still_costs_0_0001998_pUSD_or_19_98_quantums_a_zeroed_fragment_would_need_to_be_below_0_2502502502502502502502502503_shares_and_user_control_over_fee_assessment_partitioning_is_unproved_each_zeroed_assessment_saves_strictly_less_than_one_quantum_and_supplies_no_price_payout_settlement_or_fill_advantage_do_not_fragment_create_reroute_churn_self_match_or_manufacture_volume_reopen_only_after_a_material_precision_minimum_order_tick_or_aggregation_change_or_exact_owned_organic_after_cost_evidence"
     }
   ],
-  "updated_at_utc": "2026-08-30T20:01:00Z",
+  "updated_at_utc": "2026-08-30T20:10:00Z",
   "usage_rule": "advance_the_highest_ranked_hypothesis_whose_retry_trigger_is_satisfied_otherwise_do_not_repeat_a_blocked_or_terminal_screen"
 }

@@ -32,6 +32,15 @@ before fees and was stale and skewed. Never use `outcomePrices` alone to
 authorize a book. Use YES `bestAsk` and a direct NO ask or conservative
 `1 - YES bestBid` rejection proxy first. The exact soccer pair is terminal.
 
+Polymarket fee rounding is not a hidden standalone edge. Across 96 distinct
+conditions in all 15 retained current book files, every minimum order was five
+shares and ticks were 0.001 or 0.01. At the lowest published nonzero fee rate,
+the smallest whole-order extreme-tick fee is 0.0001998 pUSD, or 19.98 fee
+quanta. A zeroed fragment would have to be below 0.2502502503 shares, while fee
+aggregation and fragment control are unproved; every zeroed assessment saves
+strictly less than 0.00001 pUSD. Never split, churn, self-match, or manufacture
+volume for rounding.
+
 The Polymarket BTC/ETH/SOL interval-composition family has a mechanically
 verified one-pUSD payoff floor across all 50 packages in 25 retained aligned
 settlements, with zero violations. It remains unaccepted: the current displayed

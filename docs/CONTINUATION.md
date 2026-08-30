@@ -5975,3 +5975,33 @@ result SHA-256 is
 Accepted edges remain 29, ranked hypotheses remain 44, terminal families become
 86, and registry SHA-256 becomes
 `616c1991be031641954464c4099b662afc75f835188847f087748a7544fa356a`.
+
+## Polymarket fee-rounding fragmentation dominance rejection
+
+The official retained maker-rebate source exposes a potentially adversarial
+fee discontinuity: fees are rounded to five decimals and amounts below the
+0.00001-pUSD quantum round to zero. A zero-network exhaustive audit bound that
+mechanism against every retained current book rather than placing or sampling
+orders. The 15 book files contain 180 token rows and 96 distinct conditions;
+every condition has a five-share minimum order and a 0.001 or 0.01 tick.
+
+At the lowest published nonzero 0.04 fee rate, five shares at the most favorable
+observed extreme tick of 0.001 still produce a 0.0001998-pUSD fee, or 19.98
+quanta. A zero-fee fragment would have to be smaller than
+0.2502502502502502502502502503 shares. Such a fragment is below the observed
+minimum order, and current sources do not bind user control over partial-fill
+partitioning or fee aggregation. Even under the most favorable interpretation,
+one zeroed fee assessment saves strictly less than 0.00001 pUSD, so more than
+100,000 independently zeroed assessments are required for one pUSD of gross
+savings before spread, adverse selection, latency, and operating costs.
+
+Fee rounding therefore has a zero standalone profit floor. Never split, churn,
+self-match, reroute, or manufacture volume for it. Reopen only after a material
+fee-precision, minimum-order, tick, aggregation, or partial-fill semantics
+change, or exact owned organic fills prove recurring positive after-cost
+savings. No network, credential, account, order, fund, transaction, or protected
+capture was accessed. Canonical result SHA-256 is
+`24a471a56b10e67ce20350f7680e4cd67b54ca911564141dcfe229a1fe21edbd`.
+Accepted edges remain 29, ranked hypotheses remain 44, terminal families become
+87, and registry SHA-256 becomes
+`2dcff4f6fcf1c3d40ac78eb3a09dd963303349203fc290381046111e762afa83`.

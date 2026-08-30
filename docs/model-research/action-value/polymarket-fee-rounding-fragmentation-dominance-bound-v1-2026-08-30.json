@@ -1,0 +1,78 @@
+{
+  "adjudication": {
+    "accepted_edge": false,
+    "deployment_ready": false,
+    "market_direction_independent_profit_floor_pUSD": "0",
+    "next_action": "do_not_fragment_create_or_reroute_volume_for_fee_rounding_reopen_only_after_a_material_fee_precision_minimum_order_tick_or_fee_aggregation_change_or_exact_owned_organic_fill_evidence_that_proves_recurring_positive_after_cost_savings",
+    "profitability_claim": false
+  },
+  "authority": {
+    "accounts_accessed": 0,
+    "credentials_used": false,
+    "funds_used": false,
+    "network_requests": 0,
+    "orders_or_transactions": 0,
+    "trading_authority": false
+  },
+  "created_at_utc": "2026-08-30T20:08:51.4945492Z",
+  "dominance_bound": {
+    "fee_formula": "C * feeRate * p * (1 - p)",
+    "lowest_nonzero_published_fee_rate": "0.04",
+    "minimum_observed_tick": "0.001",
+    "minimum_observed_whole_order_fee_pUSD": "0.0001998",
+    "minimum_observed_whole_order_fee_quantums": "19.98",
+    "observed_minimum_order_size_shares": "5",
+    "price_used_for_minimum_observed_whole_order_fee": "0.001",
+    "strict_maximum_saving_per_zeroed_fee_assessment_pUSD": "0.00001",
+    "minimum_zeroed_fee_assessments_for_one_pUSD_gross_saving": 100001,
+    "sub_minimum_fragment_size_required_to_zero_at_lowest_rate_and_tick_shares": "less_than_0.2502502502502502502502502503"
+  },
+  "reasoning": [
+    "the_current_official_source_says_fees_below_one_0.00001_pUSD_quantum_round_to_zero_but_does_not_bind_a_rounding_mode_or_promise_user_control_over_fee_assessment_partitioning",
+    "every_retained_book_in_the_bounded_population_has_a_five_share_minimum_and_a_0.001_or_0.01_tick_so_a_whole_minimum_order_at_the_lowest_rate_and_most_favorable_extreme_tick_remains_about_20_fee_quantums",
+    "a_zero_fee_fragment_at_the_lowest_rate_and_tick_must_be_smaller_than_0.2502502502502502502502502503_shares_which_is_below_the_observed_order_minimum",
+    "partial_fill_fragmentation_fee_aggregation_and_operator_partitioning_are_not_source_bound_or_user_controllable_and_must_not_be_manufactured_through_self_matching_churn_or_inauthentic_volume",
+    "rounding_changes_only_a_fee_by_less_than_one_quantum_per_zeroed_assessment_and supplies_no payout price settlement or fill advantage so it cannot create standalone market_direction_independent_profit"
+  ],
+  "result_sha256": "24a471a56b10e67ce20350f7680e4cd67b54ca911564141dcfe229a1fe21edbd",
+  "retained_book_population": {
+    "book_file_count": 15,
+    "book_response_row_count": 180,
+    "distinct_condition_count": 96,
+    "distinct_path_condition_count": 98,
+    "observed_minimum_order_sizes": [
+      "5"
+    ],
+    "observed_tick_sizes": [
+      "0.001",
+      "0.01"
+    ],
+    "sources": [
+      {"path": "data/polymarket-aca-house-identity-parity-v1/raw/books.json", "sha256": "9da7c5fe7b9fd3d9fa8ff1a7c6683aff7cf9e59b1f2255893a9f18e265d000d5"},
+      {"path": "data/polymarket-btc-sep4-price-range-exact-negrisk-books-v1/raw/books.json", "sha256": "b003bee6a0e6300c5068617685748ced28f6c039e0be561b40147f13dfeea735"},
+      {"path": "data/polymarket-commanders-cowboys-total-package-v1/raw/books.json", "sha256": "8da794882e57670204872c40ea9478d9e7ab05fa349eae25ba4ae6c30ec9af9e"},
+      {"path": "data/polymarket-current-mlb-monotone-parity-v1/raw/books.json", "sha256": "7f2a08ad4988477a3be2da00e392cf4c7a07727982113c0acb4991c2b57597f9"},
+      {"path": "data/polymarket-current-wnba-monotone-parity-v1/raw/books.json", "sha256": "c81e97bf7f615e155e23ab58c7b7133a3c6b89dd1734c6dba58dccc97d172d63"},
+      {"path": "data/polymarket-elon-aug31-sep2-exact-negrisk-books-v2/raw/books.json", "sha256": "a79c4395499986d94cde9b46014f5c10d464dd6f6b6c171bb266475fd3f7a661"},
+      {"path": "data/polymarket-elon-sep1-sep8-exact-negrisk-books-v1/raw/books.json", "sha256": "571aae1e4c7570d8623712eaed1754b8a0bbb731ff9ed54d8b4948c4e6372896"},
+      {"path": "data/polymarket-fordham-ndsu-total-monotone-package-v1/raw/books.json", "sha256": "b36714069c78a4e3d30f9c3fc3348ff42bccc41608394b6b2eb5dc4de6bf01a6"},
+      {"path": "data/polymarket-lad-det-cross-period-total-v1/raw/books.json", "sha256": "a337119b156cf484a869735a263e914acdd1b3008d263de2c3820242d0933679"},
+      {"path": "data/polymarket-mercyhurst-nmsu-margin-monotone-package-v1/raw/books.json", "sha256": "a0412f7dccf2dbf87ebfa7d88e67aadfbd0dd09fbd8cf61d37e46922dda961d2"},
+      {"path": "data/polymarket-nyc-mayor-sep1-sep8-exact-negrisk-books-v1/raw/books.json", "sha256": "1e64a6eecb58481ff85eed9cf1770822f2843faa8bfc4ac5c93d00c474736b3b"},
+      {"path": "data/polymarket-packers-vikings-tie-state-package-v1/raw/books.json", "sha256": "430f9ae42b6fcbff066ce142aea17968c4b69a52d26fc908adbaf3605fdb4d49"},
+      {"path": "data/polymarket-shutdown-house-identity-parity-v1/raw/books.json", "sha256": "248a739ef45fe5d75d3725a1ee0a4097f73ef25be92e4f99872185314828faa9"},
+      {"path": "data/polymarket-soccer-zero-zero-draw-books-v1/raw/books.json", "sha256": "c814560ec0542e3c3407ce107ded679415205fda9e3b653e587a2de4ba0ccb58"},
+      {"path": "data/polymarket-sol-sep4-range-threshold-coverage-books-v1/raw/books.json", "sha256": "23a27a8ba6bd3e19a3fdea97a13e71464befd601a291d2d83cc461c7a1ccfc5a"}
+    ]
+  },
+  "schema_version": "polymarket-fee-rounding-fragmentation-dominance-bound-v1",
+  "source": {
+    "fee_precision_line": 112,
+    "fee_rate_lines": [
+      72,
+      84
+    ],
+    "fee_source_path": "docs/model-research/polymarket/raw/all-category-maker-rebate-source-v1-2026-08-30/01-maker-rebates.raw.md",
+    "fee_source_sha256": "8d2c6562bd1b3376bc3fc1557a60efef5aa3c1d856c7f8dcc405139a07e9ba2a"
+  }
+}
