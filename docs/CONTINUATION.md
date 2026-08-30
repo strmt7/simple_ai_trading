@@ -4471,3 +4471,33 @@ strictly below its guaranteed payout floor. Canonical terminal SHA-256 is
 Accepted edges remain 24, ranked hypotheses remain 44, and terminal families
 become 56. Registry SHA-256 becomes
 `2d2e24457ea117c094c82f2259ed75970e29666391a1575d285b5e4275d83080`.
+
+## Polymarket Elon August 28-September 4 partial-resolution rejection
+
+Polymarket's official rendered page exposed a distinct 26-outcome Elon post-
+count event and fired rank 31's literal new fixed-NegRisk deployment trigger.
+One frozen exact Gamma GET retained all 26 markets. The event remained active,
+but `<20` and `20-39` were already closed, nonaccepting, and displayed at zero
+YES/one NO; the other 24 markets were active and accepting orders.
+
+The consumed reusable runner retained the raw response and journal, then failed
+closed because it required every market to be simultaneously available. A
+zero-request retained audit assigned the two closed losing bins their optimistic
+zero YES cost and summed all 24 active YES prices to 1.0055 pUSD. This is already
+0.0055 pUSD above the maximum one-pUSD complete-set payout before fees, spread,
+slippage, latency, partial fills, or adapter constraints. No book, fee, on-chain,
+account, credential, order, transaction, or fund request was justified.
+
+Do not refetch, alias, or selectively refresh this event. The exact consumed
+runner bytes are retained in an immutable sidecar. The current reusable runner
+now converts unavailable or incompatible exact-event populations into a normal
+fail-closed terminal result rather than crashing after a future capture. The
+first direct-file `--help` preflight also failed locally before network because
+the runner imports `tools.*`; that error is journaled and the mandated locked
+module invocation passed before access.
+
+Canonical terminal SHA-256 is
+`d22954b0611b7bd8210dbc8d59bf1f9a645c118331da057d80585b364ed0c0ac`.
+Accepted edges remain 24, ranked hypotheses remain 44, and terminal families
+become 57. Registry SHA-256 becomes
+`c03acc97b09440a4def55447f2fc1d62e410bfc9f77b6aae97b58d7cb2eee155`.

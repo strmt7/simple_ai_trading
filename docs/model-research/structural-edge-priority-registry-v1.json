@@ -1747,12 +1747,20 @@
         {
           "path": "docs/model-research/action-value/polymarket-nyc-mayor-sep1-sep8-exact-negrisk-books-result-v1-2026-08-30.json",
           "result_sha256": "2dcaa72b8a9643b3f6652691f7395ac5405cd6f15ee88e57ce45af1f69b0dc6b"
+        },
+        {
+          "path": "docs/model-research/action-value/polymarket-elon-aug28-sep4-exact-negrisk-prefilter-contract-v1-2026-08-30.json",
+          "result_sha256": "a9b5bc40654d84b6d5d9916d60869b1b01db7c975c06ef7fb1b2e0d35fd5b25b"
+        },
+        {
+          "path": "docs/model-research/action-value/polymarket-elon-aug28-sep4-exact-negrisk-prefilter-terminal-v1-2026-08-30.json",
+          "result_sha256": "d22954b0611b7bd8210dbc8d59bf1f9a645c118331da057d80585b364ed0c0ac"
         }
       ],
-      "current_status": "direction_independent_exact_multioutcome_family_remains_unaccepted_after_the_complete_2026_09_07_hour00_rejection_two_empty_forward_series_queries_and_the_terminal_Elon_event_the_distinct_newly_deployed_eleven_bin_NYC_Mayor_September_1_to_September_8_fixed_NegRisk_event_then_fired_the_literal_trigger_one_exact_Gamma_GET_showed_a_0_9855_pUSD_all_YES_sum_or_0_0145_pUSD_source_only_headroom_but_the_separately_frozen_complete_twenty_two_token_batch_was_92065_ms_old_with_91385_ms_skew_and_even_optimistically_the_best_five_share_all_YES_path_lost_0_45_pUSD_before_fees_0_54928_after_current_Gamma_taker_fees_and_0_69638_after_one_adverse_tick_per_leg_so_zero_onchain_account_credential_order_or_fund_requests_were_needed_and_the_exact_event_is_terminal_not_an_edge_profit_or_deployment_claim",
+      "current_status": "direction_independent_exact_multioutcome_family_remains_unaccepted_after_the_complete_2026_09_07_hour00_rejection_two_empty_forward_series_queries_and_the_terminal_Elon_August_31_to_September_2_and_NYC_Mayor_events_the_distinct_Elon_August_28_to_September_4_twenty_six_bin_fixed_NegRisk_event_then_fired_the_literal_trigger_but_its_one_exact_Gamma_GET_found_two_already_closed_nonaccepting_losing_bins_and_twenty_four_active_accepting_bins_the_consumed_runner_failed_closed_on_that_incompatibility_and_the_retained_optimistic_active_all_YES_sum_was_1_0055_pUSD_or_negative_0_0055_pUSD_headroom_before_fees_so_zero_book_fee_onchain_account_credential_order_or_fund_requests_were_needed_and_the_exact_event_is_terminal_not_an_edge_profit_or_deployment_claim",
       "market_direction_forecast_required": false,
       "mechanism": "polymarket_cross_market_exact_multi_outcome_subset_equivalence",
-      "next_action": "do_not_repeat_the_NYC_Mayor_September_1_to_September_8_or_Elon_August_31_to_September_2_Gamma_or_book_requests_do_not_repeat_either_empty_forward_series_query_or_resample_adaptively_continue_or_narrow_any_consumed_population_advance_other_ranked_triggers_and_reopen_only_after_another_explicit_new_fixed_NegRisk_event_deployment_or_not_before_2026_09_20T00_00_00Z_for_one_distinct_2026_09_22_through_2026_09_28_series_45_discovery_then_use_Gamma_only_to_reject_and_require_a_strict_positive_exact_depth_and_fee_gate_before_any_onchain_or_account_request",
+      "next_action": "do_not_repeat_the_Elon_August_28_to_September_4_NYC_Mayor_September_1_to_September_8_or_Elon_August_31_to_September_2_Gamma_or_book_requests_do_not_repeat_either_empty_forward_series_query_or_resample_adaptively_continue_or_narrow_any_consumed_population_advance_other_ranked_triggers_and_reopen_only_after_another_explicit_new_fixed_NegRisk_event_deployment_or_not_before_2026_09_20T00_00_00Z_for_one_distinct_2026_09_22_through_2026_09_28_series_45_discovery_then_use_Gamma_only_to_reject_and_require_a_strict_positive_exact_depth_and_fee_gate_before_any_onchain_or_account_request",
       "priority_rank": 31,
       "prohibited_shortcuts": [
         "calling_the_39_6_million_USD_all_strategy_headline_cross_market_subset_profit",
@@ -1768,7 +1776,8 @@
         "escalating_one_positive_maker_first_snapshot_to_order_capable_work_before_a_distinct_instance_survives_the_same_hedge_stress",
         "double_counting_the_same_NBA_episode_or_calling_public_recurrence_owned_profit",
         "repeating_the_consumed_Elon_August_31_to_September_2_exact_Gamma_or_twenty_token_book_batch_or_selecting_only_favorable_bins",
-        "repeating_the_consumed_NYC_Mayor_September_1_to_September_8_exact_Gamma_or_twenty_two_token_book_batch_or_treating_the_0_9855_displayed_sum_as_executable"
+        "repeating_the_consumed_NYC_Mayor_September_1_to_September_8_exact_Gamma_or_twenty_two_token_book_batch_or_treating_the_0_9855_displayed_sum_as_executable",
+        "repeating_the_consumed_Elon_August_28_to_September_4_exact_Gamma_or_requesting_books_after_the_retained_active_all_YES_sum_was_1_0055_pUSD"
       ],
       "retry_trigger": "material_price_fee_rule_or_market_change_in_the_resolved_leg_House_family_or_explicit_official_deployment_of_a_new_fixed_NegRisk_event_in_a_source_selected_nonconsumed_series_or_not_before_2026_09_20T00_00_00Z_for_one_separately_frozen_distinct_series_45_window_from_2026_09_22_through_2026_09_28_or_a_distinct_active_accepting_orders_market_pair_with_complete_exact_rules_deterministic_subset_indicator_equality_and_optimistic_current_economics_not_already_covered_by_the_specialized_NBA_family",
       "venue_scope": "polymarket_fixed_NegRisk_multioutcome_complete_sets_and_two_separately_traded_exact_rule_multioutcome_markets"
@@ -2325,7 +2334,7 @@
       "venue_scope": "Binance_Spot_direct_and_exactly_one_intermediary_routes_for_independently_required_organic_conversions_with_the_exactly_two_intermediary_extension_terminal_for_the_retained_population"
     }
   ],
-  "result_sha256": "2d2e24457ea117c094c82f2259ed75970e29666391a1575d285b5e4275d83080",
+  "result_sha256": "c03acc97b09440a4def55447f2fc1d62e410bfc9f77b6aae97b58d7cb2eee155",
   "schema_version": "structural-edge-priority-registry-v1",
   "terminal_do_not_repeat": [
     {
@@ -2607,8 +2616,13 @@
       "canonical_result_sha256": "13eb2d843260b2e05d693f82ddc6f3efcbae51e83d61f5fe06693be56c2c30a5",
       "family": "polymarket_Ball_State_Ohio_State_September_5_exact_CFB_monotone_superhedge_2026_08_30",
       "reason": "the_new_active_CFB_event_had_moneyline_minus_50_5_spread_and_56_5_total_markets_but_the_complete_nine_state_tie_and_cancellation_aware_nonnegative_superhedge_screen_found_a_minimum_Gamma_displayed_cost_of_exactly_1_0000_pUSD_with_zero_strict_headroom_before_taker_fees_spread_slippage_latency_or_partial_fills_do_not_request_books_or_repeat_the_exact_event"
+    },
+    {
+      "canonical_result_sha256": "d22954b0611b7bd8210dbc8d59bf1f9a645c118331da057d80585b364ed0c0ac",
+      "family": "polymarket_Elon_August_28_to_September_4_partial_resolution_fixed_NegRisk_prefilter_2026_08_30",
+      "reason": "the_new_twenty_six_bin_event_had_two_closed_nonaccepting_losing_bins_and_twenty_four_active_accepting_bins_whose_optimistic_all_YES_Gamma_displayed_sum_was_1_0055_pUSD_or_negative_0_0055_pUSD_headroom_before_fees_so_no_books_or_conversion_screen_are_justified_do_not_refetch_alias_or_repeat_the_exact_event"
     }
   ],
-  "updated_at_utc": "2026-08-30T07:19:31.6917531Z",
+  "updated_at_utc": "2026-08-30T07:40:22.4978550Z",
   "usage_rule": "advance_the_highest_ranked_hypothesis_whose_retry_trigger_is_satisfied_otherwise_do_not_repeat_a_blocked_or_terminal_screen"
 }
