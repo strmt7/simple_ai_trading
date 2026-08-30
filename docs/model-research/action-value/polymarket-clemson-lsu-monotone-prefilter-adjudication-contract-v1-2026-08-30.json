@@ -1,0 +1,48 @@
+{
+  "authority": {
+    "book_requests": 0,
+    "fee_requests": 0,
+    "network_requests": 0,
+    "orders_or_transactions": 0,
+    "protected_capture_touched": false,
+    "trading_authority": false
+  },
+  "contract_path": "docs/model-research/action-value/polymarket-clemson-lsu-monotone-prefilter-adjudication-contract-v1-2026-08-30.json",
+  "contract_sha256": "b4d441a5af909401d19c9428c2de53dd8dac55f5948d3081b5e9f29f4a863fa8",
+  "frozen_at_utc": "2026-08-30T11:23:30.7473328Z",
+  "hypothesis": "all deterministic subset relations across the exact active CFB moneyline spread and total ladders have a one-pUSD minimum package payout after explicit game-tie and cancellation states; retained Gamma prices are rejection-only and at least one package may sum strictly below its payout floor",
+  "implementations": [
+    {
+      "path": "tools/adjudicate_polymarket_exact_nfl_monotone_prefilter.py",
+      "role": "football tie-aware exact payoff parser shared with CFB under identical retained rule phrases",
+      "sha256": "6e7119c7827d04435378136fcca3e13378f752d9da102ea88c6a65ce4d9885cd"
+    },
+    {
+      "path": "tools/adjudicate_polymarket_exact_mlb_monotone_prefilter.py",
+      "role": "shared canonical hash market gate and payoff relation algebra",
+      "sha256": "958a44d78029b9a1eb69a3771ce18e53ac1ed3c7bc161c8e4318beedce2cf99f"
+    }
+  ],
+  "metadata_source": {
+    "file_sha256": "72001da1bccd5e444ae56ef47ce8a38c3f9bca21c63abc885314a4658d82fff4",
+    "path": "docs/model-research/action-value/polymarket-clemson-lsu-exact-event-result-v1-2026-08-30.json",
+    "raw_response_sha256": "26a24f5bf541a5491b311b4779e2ad0d714b94493d11794739f62ea3d139ec81",
+    "result_sha256": "9017625ba6cc862eb51da826cb68e881117032566915eb1ba07b675b560c9587"
+  },
+  "output_path": "docs/model-research/action-value/polymarket-clemson-lsu-monotone-prefilter-adjudication-v1-2026-08-30.json",
+  "purpose": "zero-network complete CFB monotone payoff-lattice proof and retained-Gamma rejection gate before any exact-depth access",
+  "scope": {
+    "event_slug": "cfb-clmsn-lsu-2026-09-05",
+    "families": [
+      "full_game_margin_including_moneyline",
+      "full_game_total"
+    ],
+    "game_margin_states": "all integers including zero tie",
+    "separate_cancellation_state": true,
+    "tested_relations": "every ordered pair of distinct thresholds within each compatible family"
+  },
+  "terminal_decision": {
+    "if_any_displayed_price_sum_is_strictly_below_its_proven_floor": "retain every relation then freeze at most one exact two-token depth and fee screen",
+    "otherwise": "terminalize this exact event without books fees or retry"
+  }
+}

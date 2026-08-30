@@ -1,0 +1,191 @@
+{
+  "adjudication": {
+    "accepted_edge": false,
+    "deployment_ready": false,
+    "next_action": "offline_rejection_only_payoff_and_Gamma_price_sum_prefilter",
+    "profitability_claim": false
+  },
+  "authority": {
+    "account_requests": 0,
+    "authenticated_requests": 0,
+    "book_or_price_requests": 0,
+    "credentials_used": false,
+    "orders_trades_cancels_or_funds": 0,
+    "protected_capture_accessed": false,
+    "public_unauthenticated_event_requests": 1
+  },
+  "capture": {
+    "active_accepting_market_count": 4,
+    "embedded_market_count": 4,
+    "event_active_and_open": true,
+    "exact_slug_match": true,
+    "receipt": {
+      "completed_at_ms": 1788089001058,
+      "method": "GET",
+      "name": "exact-sports-event-metadata",
+      "phase": "completed",
+      "raw_path": "docs/model-research/polymarket/raw/clemson-lsu-exact-event-v1-2026-08-30/event.raw.json",
+      "request_body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "requested_at_ms": 1788088999430,
+      "response_bytes": 17203,
+      "response_sha256": "26a24f5bf541a5491b311b4779e2ad0d714b94493d11794739f62ea3d139ec81",
+      "status_code": 200,
+      "url": "https://gamma-api.polymarket.com/events/slug/cfb-clmsn-lsu-2026-09-05"
+    }
+  },
+  "contract": {
+    "path": "docs/model-research/action-value/polymarket-clemson-lsu-exact-event-contract-v1-2026-08-30.json",
+    "sha256": "7e2fdbe04bbee08d21bb21905388ba8d62283df87b859bbecf61c414890334b6"
+  },
+  "created_at_utc": "2026-08-30T11:23:21.058917Z",
+  "discovery": {
+    "active_accepting_markets": [
+      {
+        "acceptingOrders": true,
+        "active": true,
+        "clobTokenIds": "[\"53397723766670239499300723413747625610144777066537300586635952680807626726525\", \"61987362223742539248903180427604453938307533741873411926498505617787307180196\"]",
+        "closed": false,
+        "conditionId": "0x74ce546002223185879af518d89fc7a6b2d5268cda2057bbd7f0e3e8043c3386",
+        "description": "In the upcoming college football game, scheduled for September 5 at 7:30PM ET:\nIf Clemson wins, the market will resolve to \"Clemson\".\nIf LSU wins, the market will resolve to \"LSU\".\nIf the game is postponed, this market will remain open until the game has been completed.\nIf the game is canceled entirely or ends in a tie, with no make-up game, this market will resolve 50-50.",
+        "enableOrderBook": true,
+        "endDate": "2026-09-05T23:30:00Z",
+        "feeSchedule": {
+          "exponent": 1,
+          "rate": 0.05,
+          "rebateRate": 0.15,
+          "takerOnly": true
+        },
+        "feesEnabled": true,
+        "groupItemTitle": null,
+        "id": "3889616",
+        "line": null,
+        "negRisk": false,
+        "orderMinSize": 5,
+        "orderPriceMinTickSize": 0.01,
+        "outcomePrices": "[\"0.22\", \"0.78\"]",
+        "outcomes": "[\"Clemson\", \"LSU\"]",
+        "question": "Clemson vs. LSU",
+        "secondsDelay": 1,
+        "slug": "cfb-clmsn-lsu-2026-09-05",
+        "sportsMarketType": "moneyline",
+        "takerBaseFee": 1000
+      },
+      {
+        "acceptingOrders": true,
+        "active": true,
+        "clobTokenIds": "[\"22558512851522607549605787583542280303885314686071950317615067756400649435274\", \"20194498246172928042447979492602667326384817374026451954854055025731637859616\"]",
+        "closed": false,
+        "conditionId": "0x4430641c41597b4ada30b4e4304751f7e52f171264a0e087a5e6a7e757f5d799",
+        "description": "In the upcoming college football game, scheduled for September 5 at 7:30 PM ET:\n\nThis market will resolve to \"LSU\" if LSU win the game by 10 or more points.\n\nOtherwise, this market will resolve to \"Clemson\".\n\nIf the game is postponed, this market will remain open until the game has been completed. If the game is canceled entirely, with no make-up game, this market will resolve 50-50.",
+        "enableOrderBook": true,
+        "endDate": "2026-09-05T23:30:00Z",
+        "feeSchedule": {
+          "exponent": 1,
+          "rate": 0.05,
+          "rebateRate": 0.15,
+          "takerOnly": true
+        },
+        "feesEnabled": true,
+        "groupItemTitle": null,
+        "id": "3889617",
+        "line": -9.5,
+        "negRisk": false,
+        "orderMinSize": 5,
+        "orderPriceMinTickSize": 0.01,
+        "outcomePrices": "[\"0.54\", \"0.46\"]",
+        "outcomes": "[\"LSU\", \"Clemson\"]",
+        "question": "Spread: LSU (-9.5)",
+        "secondsDelay": 1,
+        "slug": "cfb-clmsn-lsu-2026-09-05-spread-home-9pt5",
+        "sportsMarketType": "spreads",
+        "takerBaseFee": 1000
+      },
+      {
+        "acceptingOrders": true,
+        "active": true,
+        "clobTokenIds": "[\"58006849809454652137445024701125426801969174988252406144944246158601216375734\", \"27230997209001998171142617050360964344326244708885912869267906838076091310918\"]",
+        "closed": false,
+        "conditionId": "0x4d4ae70b2c6d2a7f207b896f355f2724bf8eed2fa04366c95daa719c10ea1890",
+        "description": "In the upcoming college football game, scheduled for September 5 at 7:30 PM ET:\n\nThis market will resolve to \"Over\" if Clemson and LSU combine to score 52 or more points in this game.\n\nIf the combined total is less than 52, this market will resolve to \"Under\".\n\nIf the game is postponed, this market will remain open until the game has been completed. If the game is canceled entirely, with no make-up game, this market will resolve 50-50.",
+        "enableOrderBook": true,
+        "endDate": "2026-09-05T23:30:00Z",
+        "feeSchedule": {
+          "exponent": 1,
+          "rate": 0.05,
+          "rebateRate": 0.15,
+          "takerOnly": true
+        },
+        "feesEnabled": true,
+        "groupItemTitle": null,
+        "id": "3889618",
+        "line": 51.5,
+        "negRisk": false,
+        "orderMinSize": 5,
+        "orderPriceMinTickSize": 0.01,
+        "outcomePrices": "[\"0.485\", \"0.515\"]",
+        "outcomes": "[\"Over\", \"Under\"]",
+        "question": "O/U 51.5",
+        "secondsDelay": 1,
+        "slug": "cfb-clmsn-lsu-2026-09-05-total-51pt5",
+        "sportsMarketType": "totals",
+        "takerBaseFee": 1000
+      },
+      {
+        "acceptingOrders": true,
+        "active": true,
+        "clobTokenIds": "[\"4383791770694000551467049600033165734810404204881534457441051677819618285029\", \"94298940513488221210303861589764196085269036709286339858449708216316473304129\"]",
+        "closed": false,
+        "conditionId": "0x275688b0eee9274fbe2b5d3a7237df383989f7e93e014267350f8ec1e73526e3",
+        "description": "In the upcoming college football game, scheduled for September 5 at 7:30 PM ET:\n\nThis market will resolve to \"LSU\" if LSU win the game by 11 or more points.\n\nOtherwise, this market will resolve to \"Clemson\".\n\nIf the game is postponed, this market will remain open until the game has been completed. If the game is canceled entirely, with no make-up game, this market will resolve 50-50.",
+        "enableOrderBook": true,
+        "endDate": "2026-09-05T23:30:00Z",
+        "feeSchedule": {
+          "exponent": 1,
+          "rate": 0.05,
+          "rebateRate": 0.15,
+          "takerOnly": true
+        },
+        "feesEnabled": true,
+        "groupItemTitle": "Spread -10.5",
+        "id": "3986793",
+        "line": -10.5,
+        "negRisk": false,
+        "orderMinSize": 5,
+        "orderPriceMinTickSize": 0.01,
+        "outcomePrices": "[\"0.495\", \"0.505\"]",
+        "outcomes": "[\"LSU\", \"Clemson\"]",
+        "question": "Spread: LSU (-10.5)",
+        "secondsDelay": 1,
+        "slug": "cfb-clmsn-lsu-2026-09-05-spread-home-10pt5",
+        "sportsMarketType": "spreads",
+        "takerBaseFee": 1000
+      }
+    ],
+    "active_sports_market_types": [
+      "moneyline",
+      "spreads",
+      "totals"
+    ],
+    "exact_moneyline_spread_candidate": true
+  },
+  "event": {
+    "active": true,
+    "closed": false,
+    "description": "In the upcoming college football game, scheduled for September 5 at 7:30PM ET:\nIf Clemson wins, the market will resolve to \"Clemson\".\nIf LSU wins, the market will resolve to \"LSU\".\nIf the game is postponed, this market will remain open until the game has been completed.\nIf the game is canceled entirely or ends in a tie, with no make-up game, this market will resolve 50-50.",
+    "endDate": "2026-09-05T23:30:00Z",
+    "eventDate": "2026-09-05",
+    "gameId": 70918738,
+    "gameStatus": null,
+    "id": "912996",
+    "resolutionSource": "https://www.ncaa.com/",
+    "slug": "cfb-clmsn-lsu-2026-09-05",
+    "startTime": "2026-09-05T23:30:00Z",
+    "title": "Clemson vs. LSU"
+  },
+  "implementation": {
+    "path": "tools/capture_polymarket_exact_sports_event.py",
+    "sha256": "a1f431d9ef181123a8f47840b9cf894aa3e8b6b09b18acadf643ac7f32e61606"
+  },
+  "result_sha256": "9017625ba6cc862eb51da826cb68e881117032566915eb1ba07b675b560c9587",
+  "schema_version": "polymarket-exact-sports-event-metadata-result-v1"
+}
