@@ -2998,3 +2998,18 @@ Consumed runner byte lineage SHA-256 is
 Accepted edges remain 29, ranked hypotheses remain 44, terminal families become
 78, and registry SHA-256 is
 `809c82d3233fb76b8fa41c1ba1cd7e7cb168ee8932a71098870d5f5b7e2ab04a`.
+
+## Exact GLW time-gate instruction correction
+
+The accepted market-independent yield frontier incorrectly summarized the
+frozen GLW terminal reconciliation as available after `2026-08-31T00:00:00Z`.
+The executable contract and complete rank-34 registry row both require
+`2026-08-31T00:10:00Z`. The frontier now carries the exact later gate; never
+run this request from the superseded earlier prose time.
+
+Two distinct discovery-only searches for a new September 2026 Binance bStock
+dividend or Special-funding announcement found no material forward episode, so
+they did not authorize another request or alter economics. Current immediate
+research spend remains zero until an exact trigger fires. Canonical corrected
+frontier SHA-256 is
+`1c346600a0bc2a439aa868fba51ed0bf939a48011dbc021ef107bcb5c9771040`.
