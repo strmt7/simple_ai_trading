@@ -1,0 +1,76 @@
+{
+  "schema_version": "polymarket-crypto-interval-composition-settlement-audit-v1-contract",
+  "contract_path": "docs/model-research/action-value/polymarket-crypto-interval-composition-settlement-contract-v1-2026-08-30.json",
+  "frozen_at_utc": "2026-08-30T16:55:28Z",
+  "question": "Across every complete aligned BTC ETH and SOL interval set in the six exact retained market files do both four-leg composition packages settle to at least one pUSD per unit package?",
+  "prior_payoff_evidence": {
+    "path": "docs/model-research/action-value/polymarket-crypto-interval-composition-result-v2-2026-08-30.json",
+    "result_sha256": "6ef1b3acc9c4a234bc7826395bca02397351c9e168d7d010145752dad33b7747"
+  },
+  "prior_trade_capture_failure": {
+    "path": "docs/model-research/action-value/polymarket-crypto-interval-composition-trades-failure-v1-2026-08-30.json",
+    "result_sha256": "5dcacfa8c9f1b953a9fa28e380e43cfb8c0107361426f67d5b4adeb83dabdfb1"
+  },
+  "retained_market_sources": [
+    {
+      "path": "data/polymarket-resolution-reward-v1/recent-ended-closed-crypto-markets.raw.json",
+      "sha256": "f873fd89a8e9e9b6e00c8dace9df17bbcc3c38c91bcdc9040794f8ef87c0e19a"
+    },
+    {
+      "path": "data/polymarket-finalized-redemption-latency-v1/prior-page-markets.raw.json",
+      "sha256": "9a0a4a74a1dafc3b056db33d6ea0775e661defecdf8581aae54daa452d172c14"
+    },
+    {
+      "path": "data/polymarket-finalized-redemption-latency-v1/prior-hour-page-markets.raw.json",
+      "sha256": "fda709705d09e889296460309b3b3414f2f3af805abba0bd4d2e64d6b542a3e7"
+    },
+    {
+      "path": "data/polymarket-finalized-redemption-latency-v1/hour-09-markets.raw.json",
+      "sha256": "abf3b06ab6be8576a46b471b7c382c36efd9af8667519aabe30479e4ed59287c"
+    },
+    {
+      "path": "data/polymarket-finalized-redemption-latency-v1/hour-10-markets.raw.json",
+      "sha256": "47c6c1f5b5aa77b04bbfb676dc3858d67e146ae1717afecd9ef028af27307d09"
+    },
+    {
+      "path": "data/polymarket-finalized-redemption-latency-v1/hour-11-markets.raw.json",
+      "sha256": "1f4f4e75bac6ae367ca9186c17dfacab83788e9ae8f7c3e46d21c3a57cff8c23"
+    }
+  ],
+  "population": {
+    "selection": "all deduplicated retained slugs matching BTC ETH or SOL updown 5m or 15m where one 15m start has 5m starts at t t+300 and t+600",
+    "duplicate_rule": "immutable market identity must agree and the latest updatedAt row is selected",
+    "expected_complete_set_count": 25,
+    "expected_market_count": 100,
+    "expected_package_evaluation_count": 50,
+    "complete_set_keys_sha256": "17e8486a7c626196db8df80a325c0b3a63d6e98871b8e7423ba26d045275dcb9"
+  },
+  "decision": {
+    "terminal_market_gate": "outcomePrices must equal exactly [1,0] or [0,1] in Up Down order",
+    "up_chain_package": "Down on each of the three consecutive 5m markets plus Up on the aligned 15m market",
+    "down_chain_package": "Up on each of the three consecutive 5m markets plus Down on the aligned 15m market",
+    "payoff_floor_pUSD": "1",
+    "support_gate": "all 50 realized package evaluations must pay at least one pUSD per unit package",
+    "promotion_gate": "never accept or call profitable because retained settlements do not prove sub-floor acquisition atomic execution fees or capacity",
+    "failure_gate": "any realized package below one pUSD rejects the claimed payoff identity for this retained population"
+  },
+  "output": {
+    "result_path": "docs/model-research/action-value/polymarket-crypto-interval-composition-settlement-result-v1-2026-08-30.json"
+  },
+  "authority": {
+    "account_requests": 0,
+    "credentials_used": false,
+    "funds_used": false,
+    "network_requests": 0,
+    "orders_or_transactions": 0,
+    "protected_capture_touched": false,
+    "public_unauthenticated_read_only_requests": 0,
+    "trading_authority": false
+  },
+  "implementation": {
+    "path": "tools/audit_polymarket_crypto_interval_composition_settlement.py",
+    "sha256": "f3a1c456adf4d3186e141461b04c03bbec463ae2861a9581fb9c4cf2d3a5bfac"
+  },
+  "retry_policy": "This deterministic audit consumes no new source. Preserve its exact result; do not alter the population after viewing settlements. Only a new immutable retained source population can support a separate contract.",
+  "contract_sha256": "268301993f1ace29a9bf99d936be5f74101e26e72b61b25e2a272d7ee7146747"
+}

@@ -47,6 +47,18 @@ override prose.
   push, or hosted CI run before exploratory public requests. The stricter
   frozen one-use workflow remains mandatory for authenticated, account-specific,
   funded, order-capable, or state-changing operations.
+- Before spending a historical trade or book request on an exact-payoff family,
+  use immutable retained terminal outcomes to test settlement consistency when
+  they can answer that question. Settlement consistency supports only the payoff
+  identity; it never proves sub-floor acquisition, atomic execution, fees,
+  capacity, owned fills, or profit.
+- A documented comma-separated multi-market query can still exceed the venue's
+  practical backend limit. If a frozen one-use request times out, preserve the
+  exact response and journal and terminalize that population; never split,
+  narrow, paginate, reorder, or alias it after observing the outcome.
+- Invoke repository Python tools through the locked project environment, using
+  `uv run --locked python -m tools.<module>`, so package imports and dependency
+  versions match the checkout before any outcome-sensitive access.
 - Raw non-browser requests to rendered Binance Academy and product-documentation
   pages have repeatedly returned HTTP 202 shells of about 2 KB with none of the
   visible economic or schema terms. Do not use such a dynamic page as the sole
