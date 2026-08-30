@@ -89,6 +89,12 @@ override prose.
 - Search-result snippets, locale mirrors, and cached previews are discovery
   leads only. Open and retain the current primary page or endpoint before
   source-binding a rate, fee, eligibility rule, inventory, or effective date.
+- A browser-renderable dynamic documentation route is not automatically byte-
+  retainable through a direct HTTP client. Before freezing an outcome-sensitive
+  documentation capture, use an already hash-bound native index or preflight
+  that the exact route returns the required contract bytes. Preserve HTTP 202
+  with an empty body as a consumed null response; do not retry an alias to
+  manufacture the rendered text.
 - A current official runtime registry that explicitly declares itself the
   single source of truth, together with a dated official deprecation or cutover
   notice, resolves an older repository deployment table for address selection.
