@@ -188,6 +188,10 @@ override prose.
   single-line raw evidence, use filename-only matches, a bounded parser, or
   aggregate counts. Never let `rg -n` print an unbounded matching payload line
   to the console; raw retention is not permission to flood logs or prompts.
+- Before printing parsed JSON, inspect only its top-level keys and collection
+  counts first. Never serialize an unknown object or array to the console;
+  select named scalar fields and explicitly bounded rows only. This applies to
+  PowerShell `ConvertTo-Json` as well as search tools.
 - For cross-contract funding histories, audit the actual returned row ceiling,
   ordinal settlement schedule, and timestamp skew before choosing a join. Do not
   discard valid leg-specific cash flows merely because independently published
