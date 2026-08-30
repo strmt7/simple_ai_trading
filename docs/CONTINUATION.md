@@ -5237,3 +5237,26 @@ canonical parity prefilter SHA-256 is
 Accepted edges remain 29, ranked hypotheses remain 44, terminal families become
 67, and registry SHA-256 becomes
 `5ec42c3de1890f6c9f5e4ecc027b892b3c6f7323eeb813a4db821c1f2b67d2cd`.
+
+## Cross-sectional funding capital-sensitivity correction
+
+The original unlevered two-leg capital treatment was explicitly audited rather
+than treated as an untouchable rule. With zero new market requests, the retained
+validation and test roles were combined into one continuous hold and credited
+with interval-by-interval perfect foresight, zero switching, only 32 bips for
+the two-leg entry and exit, and optimistic equal 5x leverage. Even this
+impossible upper bound is -18.840831506849315068493150692 bips.
+
+The necessary break-even leverage is greater than
+12.9536779944653097611862238x before relative-price and basis PnL, liquidation
+risk, and every omitted cost. Because any training-selected fixed orientation
+is dominated by that oracle, no fixed-orientation implementation or price
+request is justified. Reopen only on a source-bound material funding, fee,
+execution, portfolio-margin, netting, or capital-treatment change capable of
+clearing the full risk-adjusted deficit; leverage by itself is not a trigger.
+
+Canonical sensitivity result SHA-256 is
+`61a65f1f81b7109a6f959a53f8b780e88582b1338ec0cc512ef6784020da029f`.
+Accepted edges remain 29, ranked hypotheses remain 44, terminal families remain
+67, and registry SHA-256 becomes
+`d840ca77bf9f250a87fbc4d5a8423f98d94f1494a18d7863eebfc83812bc030f`.
