@@ -5706,8 +5706,9 @@ GETs and the retained
 2026-08-25, 2026-08-27, and 2026-08-29 BTCUSDT/ETHUSDT/SOLUSDT snapshots. Across
 nine observations at 16,264-23,801 seconds before funding, six displayed values
 changed before settlement. Maximum absolute change was 0.6266 basis points.
-The three exact matches were all the positive `0.00010000` cap; they do not
-prove a general lock.
+The three exact matches were all the standard positive `0.00010000`
+interest/clamp plateau; they do not prove a general lock. That value is not the
+funding-rate cap.
 
 The hours-ahead estimate-lock premise is terminal and must not be promoted or
 retested on this population. No books, accounts, credentials, orders, funds, or

@@ -32,6 +32,10 @@ override prose.
   a bid resting before that state is directional exposure, not structural carry.
 - Never print, prompt, log, serialize, test, document, or commit credentials,
   secrets, tokens, signed requests, or unredacted secret fields.
+- Do not label the common `0.00010000` USD-M funding value as a funding-rate
+  cap. It is normally the standard eight-hour interest-rate plateau produced by
+  the premium-index clamp; bind any actual cap or floor from the applicable
+  current `fundingInfo` terms before using cap semantics.
 - Preserve testnet, dry-run, diversification, liquidity gating, and the app's
   `20x` leverage cap unless a stricter frozen contract applies.
 - The installed CLI and native app both invoke `simple_ai_trading.entrypoint`.

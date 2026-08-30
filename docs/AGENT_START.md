@@ -3025,8 +3025,8 @@ Binance reconciliation compared nine
 retained BTCUSDT, ETHUSDT, and SOLUSDT displayed estimates with their eventual
 funding rows. At lead times from 16,264 to 23,801 seconds, six of nine estimates
 changed; the largest absolute change was 0.6266 basis points. The three exact
-matches were all the positive `0.00010000` cap and do not establish a general
-lock.
+matches were all the standard positive `0.00010000` interest/clamp plateau and
+do not establish a general lock. That value is not the funding-rate cap.
 
 This is a terminal rejection of the observed hours-ahead estimate-lock premise,
 not an edge and not authorization to trade. No book, fee, account, credential,
