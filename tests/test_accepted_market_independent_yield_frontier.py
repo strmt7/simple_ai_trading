@@ -11,7 +11,7 @@ FRONTIER = ROOT / (
     "docs/model-research/action-value/"
     "accepted-market-independent-yield-frontier-v1-2026-08-30.json"
 )
-RESULT_HASH = "5f638281d9df79456a5a909f4da07e6375ff46404a8a63fceb7f96899a5a74c2"
+RESULT_HASH = "53afed572c779113de6e9760f319ad7fb7a2d1e1958997139793142cf241fbe7"
 
 
 def _load(path: Path) -> dict[str, object]:
@@ -36,10 +36,14 @@ def test_frontier_and_all_source_artifacts_reconstruct() -> None:
 
     assert frontier["result_sha256"] == RESULT_HASH
     assert _canonical_hash(frontier, "result_sha256") == RESULT_HASH
-    for source in frontier["source_artifacts"]:
-        payload = (ROOT / source["path"]).read_bytes()
-        assert hashlib.sha256(payload).hexdigest() == source["file_sha256"]
-        assert json.loads(payload)["result_sha256"] == source["result_sha256"]
+    for collection in (
+        "source_artifacts",
+        "supplementary_current_stress_artifacts",
+    ):
+        for source in frontier[collection]:
+            payload = (ROOT / source["path"]).read_bytes()
+            assert hashlib.sha256(payload).hexdigest() == source["file_sha256"]
+            assert json.loads(payload)["result_sha256"] == source["result_sha256"]
 
 
 def test_population_is_complete_without_inflating_acceptance() -> None:
@@ -90,3 +94,12 @@ def test_fixed_bonus_urgency_is_expiry_ordered() -> None:
     assert [row["published_end_utc"] for row in rows] == sorted(
         row["published_end_utc"] for row in rows
     )
+    usd1 = next(
+        row for row in rows if row["edge_id"] == "binance_usd1_simple_earn_fixed_bonus"
+    )
+    assert "2026_09_02" in usd1["reason"]
+    stress = frontier["portfolio_decision"][
+        "usd1_current_remaining_horizon_stress"
+    ]
+    assert stress["stable_profit_proved"] is False
+    assert Decimal(stress["margin_before_unproved_other_costs_bips"]) > 0

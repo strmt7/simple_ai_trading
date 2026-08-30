@@ -1,0 +1,124 @@
+{
+  "adjudication": {
+    "accepted_edge_count_change": 0,
+    "accepted_scope_unchanged": true,
+    "current_margin_positive_before_unproved_other_costs": true,
+    "deployment_ready": false,
+    "market_direction_forecast_required": false,
+    "profitability_claim": false,
+    "public_after_all_cost_floor_bips": "0",
+    "stable_edge_proved": false,
+    "status": "current_remaining_horizon_fixed_case_retains_only_1_5162802791_bips_before_unproved_account_conversion_redemption_issuer_tax_custody_and_operating_costs_and_turns_negative_for_new_subscriptions_on_2026_09_02_under_unchanged_inputs",
+    "trading_authority": false
+  },
+  "authority": {
+    "account_requests": 0,
+    "credentials_used": false,
+    "funded_actions": 0,
+    "new_network_requests": 0,
+    "orders_conversions_subscriptions_or_redemptions": 0
+  },
+  "created_at_utc": "2026-08-30T08:08:35.3343497Z",
+  "current_remaining_horizon_case": {
+    "first_bonus_accrual_date_if_subscribed_on_capture_date": "2026-08-31",
+    "historical_basis_plus_displayed_spread_stress_bips": "24.0544959765987630088457560000",
+    "incremental_reward_before_stress_bips": "25.570776255707762557077625570776255707762557077625",
+    "incremental_reward_before_stress_quote_units": "3.835616438356164383561643836",
+    "maximum_unproved_other_costs_before_nonpositive_bips": "1.516280279108999548231869570776255707762557077625",
+    "maximum_unproved_other_costs_before_nonpositive_quote_units": "0.2274420418663499322347804356",
+    "remaining_usd1_bonus_accrual_days": 26,
+    "remaining_usdt_fixed_bonus_accrual_days": 8,
+    "stress_quote_units": "3.6081743964898144513268634",
+    "subscription_date": "2026-08-30"
+  },
+  "day_boundary": {
+    "daily_cases": [
+      {
+        "incremental_reward_before_stress_bips": "25.570776255707762557077625570776255707762557077625",
+        "margin_after_historical_basis_and_spread_stress_bips": "1.516280279108999548231869570776255707762557077625",
+        "remaining_usd1_bonus_days": 26,
+        "remaining_usdt_fixed_bonus_days": 8,
+        "subscription_date": "2026-08-30"
+      },
+      {
+        "incremental_reward_before_stress_bips": "24.840182648401826484018264840182648401826484018264",
+        "margin_after_historical_basis_and_spread_stress_bips": "0.785686671803063475172508840182648401826484018264",
+        "remaining_usd1_bonus_days": 25,
+        "remaining_usdt_fixed_bonus_days": 7,
+        "subscription_date": "2026-08-31"
+      },
+      {
+        "incremental_reward_before_stress_bips": "24.109589041095890410958904109589041095890410958904",
+        "margin_after_historical_basis_and_spread_stress_bips": "0.055093064497127402113148109589041095890410958904",
+        "remaining_usd1_bonus_days": 24,
+        "remaining_usdt_fixed_bonus_days": 6,
+        "subscription_date": "2026-09-01"
+      },
+      {
+        "incremental_reward_before_stress_bips": "23.378995433789954337899543378995433789954337899543",
+        "margin_after_historical_basis_and_spread_stress_bips": "-0.675500542808808670946212621004566210045662100457",
+        "remaining_usd1_bonus_days": 23,
+        "remaining_usdt_fixed_bonus_days": 5,
+        "subscription_date": "2026-09-02"
+      }
+    ],
+    "first_subscription_date_negative_before_every_unproved_other_cost": "2026-09-02",
+    "last_subscription_date_positive_before_every_unproved_other_cost": "2026-09-01",
+    "one_day_accrual_lag_applied": true,
+    "rule": "subscription on date d first accrues fixed bonus on d plus one through the inclusive promotion end; the USDT fixed alternative accrues only through its own inclusive end"
+  },
+  "economic_contract": {
+    "basis_stress_bips": "23.95448647569617726319992000",
+    "basis_stress_is_not_a_future_loss_bound": true,
+    "comparison_formula": "incremental_bips equals ((0.07 minus 0.03) times remaining_USD1_days divided by 365 times 10000) minus ((500 divided by 1500) times 0.04 times remaining_USDT_bonus_days divided by 365 times 10000)",
+    "current_displayed_round_trip_spread_bips": "0.1000095009025857456458360000",
+    "current_displayed_spread_is_from_activation_capture_not_refreshed": true,
+    "principal_cap_usd1": "1500",
+    "usd1_fixed_bonus_apr_percent": "7",
+    "usd1_promotion_end_utc": "2026-09-25T23:59:59Z",
+    "usd1_realtime_apr_credited": false,
+    "usdt_alternative_fixed_bonus_apr_percent": "4",
+    "usdt_alternative_fixed_bonus_cap": "500",
+    "usdt_alternative_fixed_bonus_end_utc": "2026-09-07T23:59:59Z",
+    "usdt_alternative_realtime_apr_percent_assumption": "3",
+    "usdt_realtime_rate_is_approximate_variable_and_not_a_current_floor": true
+  },
+  "prohibited_shortcuts": [
+    "calling the 1.5162802791 bip pre-unknown-cost margin an executable or stable profit floor",
+    "treating the historical worst close decline as a maximum future depeg issuer loss freeze or redemption loss",
+    "crediting the variable USD1 realtime APR or assuming the approximate USDT realtime APR remains current",
+    "acquiring converting borrowing retaining or redirecting USD1 or USDT for this comparison",
+    "assuming account eligibility product capacity quota exact fees redemption timing tax custody or operating cost",
+    "repeating public book or kline captures merely because one more accrual day elapsed",
+    "subscribing redeeming converting transferring or ordering without separate explicit funded authority"
+  ],
+  "result_sha256": "669fd50772087cb81a4d1e9439e5666a75b5c1ed9de68b1e8b27cb360f2d5934",
+  "schema_version": "binance-usd1-simple-earn-remaining-horizon-stress-v1",
+  "sources": [
+    {
+      "file_sha256": "9128661c108ce62ca721ffed4352db18bdec6b8e8f084f2c5e954f42c1bc452e",
+      "path": "docs/model-research/action-value/binance-usd1-simple-earn-activation-refresh-v1-2026-08-27.json",
+      "result_sha256": "f8106a93155813a3130bc925a3f4b223fad16b6133ee073226251d25175ecf06",
+      "role": "post_activation_fixed_terms_displayed_spread_and_original_full_window_stress"
+    },
+    {
+      "file_sha256": "820aab4d9d3cb59863526b90977f48139c32763ec7359a4265045c065414d4d7",
+      "path": "docs/model-research/action-value/binance-usd1-simple-earn-promotion-gate-v1-2026-08-26.json",
+      "result_sha256": "230b1524f337964394a45ffe047adfd19b35b339a7735866a15cafdd7549c6f1",
+      "role": "promotion_accrual_terms_alternative_yield_contract_and_462_day_basis_stress"
+    },
+    {
+      "file_sha256": "db514e67a700ca181bf3f47e505d88d91f1f6dfbaf50ea5a43ab454cd431364f",
+      "path": "docs/model-research/action-value/binance-usd1-simple-earn-versus-holding-airdrop-allocation-edge-v1-2026-08-27.json",
+      "result_sha256": "a4158bf059f4f5ad839b2f504c08c4afc65615260b4171533866f4c2337494e0",
+      "role": "accepted_same_principal_fixed_bonus_scope_and_mutually_exclusive_airdrop_comparison"
+    },
+    {
+      "file_sha256": "1b93a6ae9fbc8b68089f5cb7c4420eab130fd717afe0f27310665f0afccc5ee2",
+      "path": "docs/model-research/action-value/binance-usd1-usdt-funding-differential-v1-2026-08-26.json",
+      "result_sha256": "0d82da55d7687b0f26dc12103f38394b3325542a62af10abf4d34609fa5a6e79",
+      "role": "independent_hash_bound_462_day_USD1USDT_close_history_and_30_day_basis_stress"
+    }
+  ],
+  "time_sensitive_next_action": "before 2026-09-02 only both designated credentials plus explicit signed GET-only account evidence authority could test eligibility capacity exact product rates fees and sold-out state; every subscription conversion redemption transfer or order still requires separate authority; absent that evidence do not refresh public books or histories and treat unchanged late-entry economics as negative from 2026-09-02"
+}

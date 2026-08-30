@@ -1635,6 +1635,19 @@ airdrop day, and only 0.4977 USD1 same-week excess at the 1,500 USD1 cap before
 unproved account and transition costs. The RLUSD second completed-week APR fell
 from 8.07% to 5.78%; its next-week public reward floor remains zero.
 
+A zero-network remaining-horizon correction now prevents the activation-day
+28-day USD1-versus-USDT stress margin from being treated as current. Using the
+unchanged source-bound 7% USD1 fixed bonus, 3% approximate variable USDT
+alternative, 4% USDT fixed bonus on 500 through September 7, 23.9544864757-bip
+worst retained 30-day USD1 close decline, and 0.1000095009-bip displayed round-
+trip spread, a new 2026-08-30 allocation has 25.5707762557 bips of incremental
+reward and only 1.5162802791 bips after the frozen stress. That is just
+0.2274420419 quote units at the 1,500 cap before every unproved cost. The same
+case has only 0.0550930645 bips for a September 1 subscription and becomes
+negative on September 2 before any unproved account, conversion, redemption,
+issuer, tax, custody, or operating cost. This is not a public profit floor.
+Do not roll it daily or refresh books merely because another accrual day passed.
+
 The current first-USD-deposit Promotion A is a distinct high-margin public
 candidate, not an accepted or recurring edge. It offers a 15 USD-equivalent
 SPCXB voucher to the first 1,000 registered genuinely first-time eligible users
@@ -4545,3 +4558,36 @@ Canonical candidate SHA-256 is
 Accepted edges remain 24, ranked hypotheses remain 44, and terminal families
 remain 57. Registry SHA-256 becomes
 `e71ec77c3a06164f35249879f22300f9c8d3b46a1020d6b96f271c4c6fb5b661`.
+
+## Binance USD1 Simple Earn remaining-horizon correction
+
+The activation-day source-bound stress credited 28 potential USD1 bonus days
+and left only 0.9683445745 bips after its historical USD1USDT basis and spread
+stress. A distinct zero-request recalculation preserved every frozen economic
+input and changed only the mechanically elapsed accrual days and the competing
+USDT fixed-bonus days remaining under their respective published end dates.
+
+For a subscription dated 2026-08-30, bonus accrual begins on August 31 and has
+26 USD1 days versus eight remaining USDT fixed-bonus days. The incremental
+reward is 25.5707762557 bips. After the exact retained 23.9544864757-bip worst
+30-day close decline and 0.1000095009-bip displayed round-trip spread, only
+1.5162802791 bips or 0.2274420419 quote units at the 1,500 cap remain before all
+unknown costs. The unchanged case falls to 0.0550930645 bips for a September 1
+subscription and becomes negative on September 2 even before those costs.
+
+The accepted same-principal fixed-bonus scope is unchanged, but stable profit is
+not proved and the public after-all-cost floor remains zero. No network,
+credential, account, conversion, subscription, redemption, transfer, order, or
+fund was used. Do not refresh the book, kline history, or this calculation each
+day. Before September 2, only both designated credentials plus explicit signed
+GET-only account-evidence authority could justify one eligibility, capacity,
+exact-rate, fee, and sold-out-state prequalification. Every funded action still
+requires separate authority.
+
+Canonical stress SHA-256 is
+`669fd50772087cb81a4d1e9439e5666a75b5c1ed9de68b1e8b27cb360f2d5934`.
+Accepted edges remain 24, ranked hypotheses remain 44, and terminal families
+remain 57. Current frontier SHA-256 becomes
+`53afed572c779113de6e9760f319ad7fb7a2d1e1958997139793142cf241fbe7`;
+registry SHA-256 becomes
+`9d4902c9608c358d212e329d9f2aa74e726d7187a218fd4123ed0cec0fe2d123`.
