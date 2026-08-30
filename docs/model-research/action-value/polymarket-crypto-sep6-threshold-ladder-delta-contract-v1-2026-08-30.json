@@ -1,0 +1,94 @@
+{
+  "schema_version": "polymarket-crypto-threshold-ladder-delta-contract-v1",
+  "contract_path": "docs/model-research/action-value/polymarket-crypto-sep6-threshold-ladder-delta-contract-v1-2026-08-30.json",
+  "frozen_at_utc": "2026-08-30T16:23:27Z",
+  "delta_cutoff_utc": "2026-08-30T15:46:52Z",
+  "question": "Do the complete newly deployed September 6 BTC, ETH, and SOL strict-above threshold ladders contain any lower-YES plus higher-NO package with a displayed sum strictly below its exact common-rule one-pUSD payout floor?",
+  "retained_source": {
+    "raw_path": "data/polymarket-crypto-current-event-delta-v1/newest-open-crypto-events.raw",
+    "raw_sha256": "4f9aadb6a95bdf2612845b3e3bc96146cc1ea5f23b3cb6bf8815ccb43c8ce087",
+    "intent_path": "data/polymarket-crypto-current-event-delta-v1/newest-open-crypto-events.intent.json",
+    "intent_sha256": "4c8caa46d244c8bba1849c61b4c7d313f966b6a550bfe2f69b5154cc1ecc676a",
+    "receipt_path": "data/polymarket-crypto-current-event-delta-v1/newest-open-crypto-events.receipt.json",
+    "receipt_sha256": "6b131c4db31ca776ca5b83a90d0e8434649ee2de0611276110cc78d265148c63",
+    "request": {
+      "url": "https://gamma-api.polymarket.com/events/keyset",
+      "params": {
+        "limit": "200",
+        "order": "createdAt",
+        "ascending": "false",
+        "closed": "false",
+        "tag_slug": "crypto"
+      },
+      "official_contract_url": "https://docs.polymarket.com/api-reference/events/list-events-keyset-pagination"
+    }
+  },
+  "ladders": [
+    {
+      "asset": "BTC",
+      "event_slug": "bitcoin-above-on-september-6-2026",
+      "event_title": "Bitcoin above ___ on September 6?",
+      "expected_thresholds": ["68000", "70000", "72000", "74000", "76000", "78000", "80000", "82000", "84000", "86000", "88000"],
+      "required_rule_fragments": [
+        "BTC/USDT 12:00 in the ET timezone (noon)",
+        "final \"Close\" price higher than the price specified in the title",
+        "not according to other exchanges or trading pairs"
+      ]
+    },
+    {
+      "asset": "ETH",
+      "event_slug": "ethereum-above-on-september-6-2026",
+      "event_title": "Ethereum above ___ on September 6?",
+      "expected_thresholds": ["2000", "2100", "2200", "2300", "2400", "2500", "2600", "2700", "2800", "2900", "3000"],
+      "required_rule_fragments": [
+        "ETH/USDT 12:00 in the ET timezone (noon)",
+        "final \"Close\" price higher than the price specified in the title",
+        "not according to other exchanges or trading pairs"
+      ]
+    },
+    {
+      "asset": "SOL",
+      "event_slug": "solana-above-on-september-6-2026",
+      "event_title": "Solana above ___ on September 6?",
+      "expected_thresholds": ["80", "85", "90", "95", "100", "105", "110", "115", "120", "125", "130"],
+      "required_rule_fragments": [
+        "SOL/USDT 12:00 in the ET timezone (noon)",
+        "final \"Close\" price higher than the price specified in the title",
+        "not according to other exchanges or trading pairs"
+      ]
+    }
+  ],
+  "payoff_identity": {
+    "package": "buy one YES share at threshold L and one NO share at threshold H where L is strictly less than H",
+    "state_below_or_equal_L": "YES_L pays 0 and NO_H pays 1",
+    "state_strictly_above_L_and_below_or_equal_H": "YES_L pays 1 and NO_H pays 1",
+    "state_strictly_above_H": "YES_L pays 1 and NO_H pays 0",
+    "guaranteed_floor_pUSD_per_share_pair": "1",
+    "market_direction_forecast_required": false,
+    "limitations": "Independent condition disputes, cancellations, source divergence, inconsistent resolution, and settlement delay can only weaken the common-rule floor."
+  },
+  "decision": {
+    "screen_all_assets_and_all_pairs": true,
+    "expected_package_count": 165,
+    "gamma_is_rejection_only": true,
+    "strict_candidate_gate": "displayed package sum must be strictly below one pUSD",
+    "conditional_next_step": "Only the globally lowest displayed survivor may authorize one separately frozen exact two-token depth batch; ties break by asset then numeric lower and higher threshold.",
+    "accepted_edge": false,
+    "profitability_proved": false
+  },
+  "output_path": "docs/model-research/action-value/polymarket-crypto-sep6-threshold-ladder-delta-result-v1-2026-08-30.json",
+  "authority": {
+    "account_requests": 0,
+    "credentials_used": false,
+    "funds_used": false,
+    "network_requests": 0,
+    "orders_or_transactions": 0,
+    "protected_capture_touched": false,
+    "trading_authority": false
+  },
+  "implementation": {
+    "path": "tools/adjudicate_polymarket_crypto_threshold_ladder_delta.py",
+    "sha256": "d53532d85f052cc41c6270974ccc58340fb1b9dc807338e861a3b2f5bd369226"
+  },
+  "contract_sha256": "207e04f6c773adb04b73ee55417ad15cbfaa00e0ef2bf64e05a9ff94ab89b73f"
+}

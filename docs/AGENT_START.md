@@ -2910,3 +2910,25 @@ raw delta SHA-256 is
 Accepted edges remain 29, ranked hypotheses remain 44, terminal families become
 75, and registry SHA-256 is
 `bb1b929151474ac48c146e335ce0533f459fb09705ab4feae4c3e5bb76dd81e2`.
+
+## Polymarket September 6 crypto threshold-ladder delta rejection
+
+The immutable September 6 crypto delta also fired the distinct within-event
+threshold-ladder trigger. A separately frozen zero-network screen exhausted all
+165 `YES(L) + NO(H)` pairs across the complete BTC, ETH, and SOL ladders. Zero
+were strictly below their optimistic common-rule one-pUSD floor; the global
+best, BTC `YES(68,000) + NO(70,000)`, cost exactly 1.0 pUSD before fees.
+
+No book, fee, on-chain, account, credential, order, fund, or protected-capture
+request was justified. Do not repeat these ladders or request books. Reopen only
+for a literal distinct nonconsumed complete ladder with a strict displayed
+sub-floor package. Enumerate and independently freeze all exact-payoff families
+already testable from retained complete bytes before spending another request.
+
+Contract SHA-256 is
+`207e04f6c773adb04b73ee55417ad15cbfaa00e0ef2bf64e05a9ff94ab89b73f`;
+result SHA-256 is
+`c505584dafa3391fc17647fb897d03a402ec4523fcfc5205960383e4b3967fdf`.
+Accepted edges remain 29, ranked hypotheses remain 44, terminal families become
+76, and registry SHA-256 is
+`dd82fabad42807a602c020f43d58dc7c7c37bad67b41eda47004dc4f64afd5a2`.
