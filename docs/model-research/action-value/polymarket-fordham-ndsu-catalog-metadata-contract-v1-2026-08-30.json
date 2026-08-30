@@ -1,0 +1,33 @@
+{
+  "schema_version": "polymarket-catalog-candidate-metadata-contract-v1",
+  "frozen_at_utc": "2026-08-30T12:25:32.2754908Z",
+  "contract_path": "docs/model-research/action-value/polymarket-fordham-ndsu-catalog-metadata-contract-v1-2026-08-30.json",
+  "purpose": "extract the precommitted deterministic best September 5 CFB package and its exact active market metadata from retained bytes without network access",
+  "selected_event": {
+    "event_id": "912929",
+    "event_slug": "cfb-fordm-ndkst-2026-09-05"
+  },
+  "required_market_ids": [
+    "3889488",
+    "3985100"
+  ],
+  "source_result": {
+    "path": "docs/model-research/action-value/polymarket-cfb-september-5-complete-monotone-catalog-result-v1-2026-08-30.json",
+    "result_sha256": "32c0e75914e651b6fc8da933628e39a90f6d83cb57563e2295d14bb279cf740b"
+  },
+  "raw_source": {
+    "path": "data/polymarket-cfb-september-5-complete-monotone-catalog-v1/raw/events.json",
+    "sha256": "0641a9ed4f6a309a9ed0486b6916c9c9ef6cf0de2c758d1a90b6f26863dd0ac4"
+  },
+  "output_path": "docs/model-research/action-value/polymarket-fordham-ndsu-catalog-metadata-v1-2026-08-30.json",
+  "implementation": {
+    "path": "tools/extract_polymarket_catalog_candidate_metadata.py",
+    "sha256": "35db3e71b14d8556efce2bb1f07e6d04480c5989403f7c64e82fdfaf28dccdd8"
+  },
+  "authority": {
+    "network_requests": 0,
+    "credentials_used": false,
+    "orders_or_transactions": 0
+  },
+  "contract_sha256": "a944deafcc28ad8085e5e664f6f5ecceb7a091004233186677e9f2f3d3d85cbc"
+}

@@ -1,0 +1,109 @@
+{
+  "schema_version": "public-source-capture-contract-v1",
+  "frozen_at_utc": "2026-08-30T12:22:36.0608159Z",
+  "contract_path": "docs/model-research/action-value/polymarket-cfb-september-5-complete-monotone-catalog-contract-v1-2026-08-30.json",
+  "trigger": {
+    "registry_rank": 30,
+    "literal_trigger": "first future distinct active accepting-orders CFB full-game event outside all consumed exact events and catalog windows",
+    "efficiency_reason": "one complete server-filtered day catalog screens every unconsumed September 5 CFB event and exact monotone relation instead of selecting another event by displayed price",
+    "discovery_values_are_economic_inputs": true,
+    "gamma_role": "rejection-only; displayed values may reject but never accept or promote an edge"
+  },
+  "question": "Does the complete unconsumed September 5 CFB population contain an exact rule-proved moneyline-spread or total-threshold package displayed strictly below its guaranteed 1 pUSD payout floor?",
+  "request_name": "polymarket-cfb-september-5-complete-monotone-catalog",
+  "request": {
+    "method": "GET",
+    "url": "https://gamma-api.polymarket.com/events/keyset?closed=false&tag_slug=cfb&series_id=12756&start_time_min=2026-09-05T00%3A00%3A00Z&start_time_max=2026-09-05T23%3A59%3A59Z&limit=500&order=startTime&ascending=true",
+    "count": 1,
+    "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "endpoint_classification": {
+    "operation": "list public market-data events with documented keyset filters",
+    "security": "public unauthenticated read-only Gamma GET",
+    "primary_contract_url": "https://docs.polymarket.com/api-reference/events/list-events-keyset-pagination"
+  },
+  "response_byte_ceiling": 5000000,
+  "required_utf8_phrases": [
+    "\"$schema\":\"https://gamma-api.polymarket.com/schemas/EventsKeysetListResponse.json\"",
+    "\"events\":["
+  ],
+  "population": {
+    "ascending": true,
+    "closed": false,
+    "excluded_consumed_event_slugs": [
+      "cfb-ballst-ohiost-2026-09-05",
+      "cfb-clmsn-lsu-2026-09-05"
+    ],
+    "limit": 500,
+    "order": "startTime",
+    "series_id": "12756",
+    "start_time_max": "2026-09-05T23:59:59Z",
+    "start_time_min": "2026-09-05T00:00:00Z",
+    "tag_slug": "cfb"
+  },
+  "decision": {
+    "population_gate": "A non-null cursor is incomplete and prohibits pagination or depth access.",
+    "candidate_gate": "Only exact rule-proved relations whose complete displayed Gamma package is strictly below the 1 pUSD guaranteed payout floor qualify for a separate depth screen.",
+    "selection_if_multiple": "lowest displayed package cost then start time event slug family superset threshold and subset threshold",
+    "zero_candidate_action": "terminalize only this exact day population and stop before books or fees",
+    "positive_candidate_action": "freeze one separate exact token-depth and current-fee screen for only the deterministic best candidate",
+    "accepted_edge": false,
+    "profitability_proved": false
+  },
+  "outputs": {
+    "raw_path": "data/polymarket-cfb-september-5-complete-monotone-catalog-v1/raw/events.json",
+    "journal_path": "data/polymarket-cfb-september-5-complete-monotone-catalog-v1/request-journal.jsonl",
+    "result_path": "docs/model-research/action-value/polymarket-cfb-september-5-complete-monotone-catalog-source-result-v1-2026-08-30.json"
+  },
+  "adjudication_output_path": "docs/model-research/action-value/polymarket-cfb-september-5-complete-monotone-catalog-result-v1-2026-08-30.json",
+  "authority": {
+    "account_requests": 0,
+    "credentials_used": false,
+    "funds_used": false,
+    "orders_or_transactions": 0,
+    "protected_capture_touched": false,
+    "public_unauthenticated_read_only_requests": 1,
+    "signed_requests": 0,
+    "trading_authority": false
+  },
+  "economic_authority": {
+    "account_requests": 0,
+    "book_requests": 0,
+    "credentials_used": false,
+    "fee_requests": 0,
+    "funds_used": false,
+    "orders_or_transactions": 0,
+    "protected_capture_touched": false,
+    "public_unauthenticated_read_only_requests": 1,
+    "signed_requests": 0,
+    "trading_authority": false
+  },
+  "implementations": [
+    {
+      "path": "tools/capture_public_source_contract.py",
+      "sha256": "d566a5a379c659c3da144d5e28449ebac9c01493bd39646f9cc3a6e697a83566"
+    },
+    {
+      "path": "tools/adjudicate_polymarket_cfb_catalog_retained.py",
+      "sha256": "d2e6856f861291add77f9da141ad3720e4a93ae0362d1a150cda1ec89c1bb068"
+    },
+    {
+      "path": "tools/screen_polymarket_cfb_monotone_catalog.py",
+      "sha256": "d26ef14fe6178e209ceb1ec98c37d7797e054108d623de3ba16e8fb3e2fd2467"
+    },
+    {
+      "path": "tools/adjudicate_polymarket_exact_cfb_monotone_prefilter.py",
+      "sha256": "8413cac195bae8c96076da0de1d74f2b0c8c95b0f6172445f2e9c1f297067e74"
+    },
+    {
+      "path": "tools/adjudicate_polymarket_exact_nfl_monotone_prefilter.py",
+      "sha256": "6e7119c7827d04435378136fcca3e13378f752d9da102ea88c6a65ce4d9885cd"
+    },
+    {
+      "path": "tools/adjudicate_polymarket_exact_mlb_monotone_prefilter.py",
+      "sha256": "958a44d78029b9a1eb69a3771ce18e53ac1ed3c7bc161c8e4318beedce2cf99f"
+    }
+  ],
+  "retry_policy": "This exact day catalog is one-use. Never paginate narrow refresh or repeat it. Exclude both consumed September 5 events before ranking. A sub-floor displayed package authorizes only one separately frozen exact-depth screen and cannot itself accept or promote an edge.",
+  "contract_sha256": "053a3a079d6fddad902e8d5b22d5db4c326e6586b34f568d8e6e4db308b1bf07"
+}

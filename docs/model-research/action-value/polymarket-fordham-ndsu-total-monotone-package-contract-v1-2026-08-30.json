@@ -1,0 +1,207 @@
+{
+  "schema_version": "polymarket-exact-two-leg-package-contract-v2",
+  "frozen_at_utc": "2026-08-30T12:27:21.2324695Z",
+  "contract_path": "docs/model-research/action-value/polymarket-fordham-ndsu-total-monotone-package-contract-v1-2026-08-30.json",
+  "purpose": "test only the precommitted best complete-catalog CFB package using one exact two-token current book batch",
+  "metadata_source": {
+    "path": "docs/model-research/action-value/polymarket-fordham-ndsu-catalog-metadata-v1-2026-08-30.json",
+    "file_sha256": "8856f3711fe3f2a87711c23d44a0b166b439455329407074ad224db71ad6a39c",
+    "result_sha256": "9c5134d2e9bdc54d44eedc305c63776325f581ec1b4b20b8090a8b77f091cf31"
+  },
+  "gamma_prefilter": {
+    "displayed_price_sum_pUSD": "0.960",
+    "optimistic_profit_floor_per_share_before_execution_costs_pUSD": "0.040",
+    "passes_strictly_below_payout_gate": true,
+    "role": "rejection_only_never_acceptance_or_promotion_evidence"
+  },
+  "markets": [
+    {
+      "condition_id": "0xdc4d528bc51ad26767455c5b7887375fefd8a708d7babeaaf14b267ee326c4e9",
+      "id": "3985100",
+      "line": "56.5",
+      "name": "total_56_5",
+      "outcome_prices": [
+        "0.475",
+        "0.525"
+      ],
+      "outcomes": [
+        "Over",
+        "Under"
+      ],
+      "question": "Fordham vs. North Dakota State: O/U 56.5",
+      "required_rule_fragments": [
+        "resolve to \"Over\" if Fordham and North Dakota State combine to score 57 or more points",
+        "If the combined total is less than 57, this market will resolve to \"Under\"",
+        "canceled entirely, with no make-up game, this market will resolve 50-50"
+      ],
+      "sports_market_type": "totals",
+      "tokens": [
+        "74883035129179168147725804109078992608027166968201460324739734586122772391057",
+        "8886699034632127317019919162386007761628827188354000827973141359690574663293"
+      ]
+    },
+    {
+      "condition_id": "0x1986036fd6237722d8dfcf679da8f36d1e2264d5628bbe6ac6f32ad3b41a3e32",
+      "id": "3889488",
+      "line": "57.5",
+      "name": "total_57_5",
+      "outcome_prices": [
+        "0.515",
+        "0.485"
+      ],
+      "outcomes": [
+        "Over",
+        "Under"
+      ],
+      "question": "O/U 57.5",
+      "required_rule_fragments": [
+        "resolve to \"Over\" if Fordham and North Dakota State combine to score 58 or more points",
+        "If the combined total is less than 58, this market will resolve to \"Under\"",
+        "canceled entirely, with no make-up game, this market will resolve 50-50"
+      ],
+      "sports_market_type": "totals",
+      "tokens": [
+        "27511019831137426667057049569230136740451646449781983979225013852742983658596",
+        "27673810746540419939171532511113487259597084928383304881466783586517543324497"
+      ]
+    }
+  ],
+  "package": {
+    "name": "over_56_5_plus_under_57_5",
+    "token_names": [
+      "over_56_5",
+      "under_57_5"
+    ]
+  },
+  "tokens": {
+    "over_56_5": {
+      "condition_id": "0xdc4d528bc51ad26767455c5b7887375fefd8a708d7babeaaf14b267ee326c4e9",
+      "gamma_price_pUSD": "0.475",
+      "token_id": "74883035129179168147725804109078992608027166968201460324739734586122772391057"
+    },
+    "under_57_5": {
+      "condition_id": "0x1986036fd6237722d8dfcf679da8f36d1e2264d5628bbe6ac6f32ad3b41a3e32",
+      "gamma_price_pUSD": "0.485",
+      "token_id": "27673810746540419939171532511113487259597084928383304881466783586517543324497"
+    }
+  },
+  "payoff_proof": {
+    "guaranteed_floor_per_share_pUSD": "1",
+    "invariant": "totals at or below 56 pay Under 57.5; exactly 57 pays both legs; totals at or above 58 pay Over 56.5; cancellation pays each leg one-half",
+    "market_direction_forecast_required": false,
+    "states": [
+      {
+        "state": "combined_total_at_most_56",
+        "payouts": {
+          "over_56_5": "0",
+          "under_57_5": "1"
+        }
+      },
+      {
+        "state": "combined_total_exactly_57",
+        "payouts": {
+          "over_56_5": "1",
+          "under_57_5": "1"
+        }
+      },
+      {
+        "state": "combined_total_at_least_58",
+        "payouts": {
+          "over_56_5": "1",
+          "under_57_5": "0"
+        }
+      },
+      {
+        "state": "game_canceled_without_makeup",
+        "payouts": {
+          "over_56_5": "0.5",
+          "under_57_5": "0.5"
+        }
+      }
+    ]
+  },
+  "execution": {
+    "book_request_count": 1,
+    "candidate_gate": "strictly positive five-pUSD guaranteed floor after complete displayed depth current exact fees two adverse ticks per leg no rebate credit no more than five seconds source skew and no more than five seconds oldest-book age",
+    "candidate_stress_name": "delay_1s_sensitivity",
+    "fee_request_rule": "request both current token fee rates only if the complete five-share package remains gross-positive after two adverse ticks per leg",
+    "fee_schedule": {
+      "exponent": 1,
+      "rate": 0.05,
+      "rebateRate": 0.15,
+      "takerOnly": true
+    },
+    "maximum_book_age_ms": 5000,
+    "maximum_book_timestamp_skew_ms": 5000,
+    "maximum_fee_requests": 2,
+    "metadata_secondsDelay_values": [
+      1,
+      1
+    ],
+    "quantity_shares_each_leg": "5",
+    "rebate_credit_pUSD": "0",
+    "retry_count": 0,
+    "stress_note": "two and six adverse ticks per leg are frozen one-second and three-second sensitivities and are not claimed empirical bounds; both metadata rows declare one-second delay",
+    "stress_ticks": {
+      "actual": 0,
+      "delay_1s_sensitivity": 2,
+      "delay_3s_sensitivity": 6
+    },
+    "tick_size": "0.01",
+    "token_ids": [
+      "74883035129179168147725804109078992608027166968201460324739734586122772391057",
+      "27673810746540419939171532511113487259597084928383304881466783586517543324497"
+    ]
+  },
+  "implementation": {
+    "path": "tools/screen_polymarket_exact_two_leg_sports_package_v2.py",
+    "sha256": "c95941420e91f9b6ed5da0f3132ba055231ce7a1dc4a5afde31d2d3f585b94db"
+  },
+  "dependency_implementations": [
+    {
+      "path": "tools/screen_polymarket_exact_two_leg_sports_package.py",
+      "sha256": "03e899073767678cfe1ca69e01cef8a53d6999fa6774cab089c6b23a0037a579"
+    },
+    {
+      "path": "tools/screen_polymarket_exact_two_leg_package.py",
+      "sha256": "ba7ebaa1fb5235ba026f7cf4cb21ff73ba19430fee4a4f678fbdea37635eb32f"
+    },
+    {
+      "path": "src/simple_ai_trading/polymarket_fees.py",
+      "sha256": "4002aa8008874708931cc182f352adf436a65baee24e23bfc72617acdf127c8d"
+    }
+  ],
+  "outputs": {
+    "books_raw_path": "data/polymarket-fordham-ndsu-total-monotone-package-v1/raw/books.json",
+    "fee_raw_root": "data/polymarket-fordham-ndsu-total-monotone-package-v1/raw/fees",
+    "journal_path": "data/polymarket-fordham-ndsu-total-monotone-package-v1/request-journal.jsonl",
+    "result_path": "docs/model-research/action-value/polymarket-fordham-ndsu-total-monotone-package-result-v1-2026-08-30.json"
+  },
+  "source_contracts": [
+    {
+      "url": "https://docs.polymarket.com/api-reference/market-data/get-order-books-request-body",
+      "use": "official public unauthenticated POST batch book contract"
+    },
+    {
+      "url": "https://docs.polymarket.com/api-reference/market-data/get-fee-rate-by-path-parameter",
+      "use": "official public unauthenticated current token fee-rate contract used only if the two-tick zero-fee stress remains positive"
+    }
+  ],
+  "stopping_rules": {
+    "accepted_edge_from_one_snapshot": false,
+    "deployment_ready_from_one_snapshot": false,
+    "failed_candidate_gate": "terminalize this exact event without refetch or retry",
+    "passed_candidate_gate": "candidate only and require one independent positive recurrence before any order-capable work"
+  },
+  "authority": {
+    "account_requests": 0,
+    "credentials_used": false,
+    "funds_used": false,
+    "orders_or_transactions": 0,
+    "protected_capture_touched": false,
+    "public_unauthenticated_read_only_requests_maximum": 3,
+    "signed_requests": 0,
+    "trading_authority": false
+  },
+  "contract_sha256": "b40cf9e252f63ae589980f1c4e5850a99028112b14a689b6a17d54551640db5a"
+}

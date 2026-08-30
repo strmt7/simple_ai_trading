@@ -4963,3 +4963,43 @@ Canonical failure adjudication SHA-256 is
 Accepted edges remain 27, ranked hypotheses remain 44, and terminal families
 become 63. Registry SHA-256 becomes
 `49e909d549f015918690c14c1062021ca39c10c1ddeadce2ecacf0db8571bb37`.
+
+## Polymarket complete September 5 CFB catalog and depth rejection
+
+Rank 30 advanced with one complete day catalog instead of another hand-picked
+event. The one public unauthenticated Gamma keyset request retained 1,142,294
+bytes and returned 89 events with no continuation cursor. Both previously
+consumed September 5 games were excluded before ranking. Fifty-eight other
+events had rule-complete full-game moneyline, spread, or total lattices; the
+screen retained all 88 exact payoff relations and found six displayed packages
+strictly below their guaranteed 1 pUSD payout floor.
+
+The deterministic frozen ordering selected only Fordham vs. North Dakota State
+Over 56.5 plus Under 57.5, displayed at 0.960 pUSD per paired share. Its rules
+prove a minimum 1 pUSD payout: totals through 56 pay Under 57.5, exactly 57 pays
+both legs, totals from 58 pay Over 56.5, and cancellation pays one-half on each
+leg. The other five observed candidates were not selected and may not be
+cherry-picked after the depth outcome.
+
+One separately frozen two-token CLOB batch rejected the selected package. At
+five shares, both executable asks were 0.92, so the package cost 9.2 pUSD for a
+5 pUSD guaranteed floor and lost 4.2 pUSD before fees. The two books were also
+152,285 to 300,344 ms old with 148,059 ms timestamp skew. The stress path was
+already gross-negative, so no fee request was made. No credential, account,
+order, transaction, fund, or protected-capture access occurred.
+
+Do not repeat, paginate, narrow, or refresh the September 5 catalog; do not
+refetch Fordham-North Dakota State or try any runner-up from the consumed
+catalog. The reusable exact sports runner now conjoins oldest-book age with
+cross-book skew, and `AGENTS.md` records that a complete catalog gets one
+precommitted deterministic depth escalation. Reopen only for a distinct event
+outside every consumed population or a material price, fee, delay, or
+resolution-rule change.
+
+Canonical catalog adjudication SHA-256 is
+`32c0e75914e651b6fc8da933628e39a90f6d83cb57563e2295d14bb279cf740b`;
+canonical exact-depth result SHA-256 is
+`8d2f9e8a5f00fa84c4291822692712151cb51bc7bdc7a659d12aa13f788361a1`.
+Accepted edges remain 27, ranked hypotheses remain 44, and terminal families
+become 64. Registry SHA-256 becomes
+`b55f6a20ac311bca6ff68facae3015a2aa5da53fa6e6ae74208eaf4c3c613732`.

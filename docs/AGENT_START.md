@@ -72,6 +72,15 @@ safety gate, blocks Stop, or submits an order.
   prohibited before `2026-08-31T02:15:30Z` absent a material terms change.
   Canonical receipt result SHA-256
   `4e57d6c0216886144fb89f8ae69b11a2eee4db37149ce6c956adecf293b7b927`.
+- The complete one-request September 5 CFB catalog returned 89 events, excluded
+  both consumed games, retained 88 exact payoff relations across 58 rule-complete
+  events, and found six Gamma sub-floor candidates. Its precommitted best
+  Fordham-North Dakota State Over 56.5 plus Under 57.5 package failed the only
+  authorized depth screen: two 0.92 asks cost 9.2 pUSD for a 5 pUSD floor, while
+  book age was 152,285 to 300,344 ms and skew was 148,059 ms. No fee request was
+  needed. Do not repeat, narrow, paginate, refetch the event, or cherry-pick the
+  other five observed candidates. Canonical depth result SHA-256 is
+  `8d2f9e8a5f00fa84c4291822692712151cb51bc7bdc7a659d12aa13f788361a1`.
 - A distinct USD-M Futures BNB fee-reduction lead remains unaccepted. The
   retained current official API index proves a signed `GET /fapi/v1/feeBurn`
   status query and a separately state-changing `POST /fapi/v1/feeBurn` toggle,

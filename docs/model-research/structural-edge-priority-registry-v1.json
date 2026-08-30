@@ -1619,12 +1619,40 @@
         {
           "path": "docs/model-research/action-value/polymarket-future-cfb-monotone-catalog-result-v1-2026-08-30.json",
           "result_sha256": "fd6373bba5d18b07d4286e9b96f643741afede5c960d490a91438bf77cf67d3d"
+        },
+        {
+          "path": "docs/model-research/action-value/polymarket-cfb-september-5-complete-monotone-catalog-contract-v1-2026-08-30.json",
+          "result_sha256": "053a3a079d6fddad902e8d5b22d5db4c326e6586b34f568d8e6e4db308b1bf07"
+        },
+        {
+          "path": "docs/model-research/action-value/polymarket-cfb-september-5-complete-monotone-catalog-source-result-v1-2026-08-30.json",
+          "result_sha256": "0e34de66b56b8f749c787c48b67917d26beef735aa41f76249c9a87bdd84454d"
+        },
+        {
+          "path": "docs/model-research/action-value/polymarket-cfb-september-5-complete-monotone-catalog-result-v1-2026-08-30.json",
+          "result_sha256": "32c0e75914e651b6fc8da933628e39a90f6d83cb57563e2295d14bb279cf740b"
+        },
+        {
+          "path": "docs/model-research/action-value/polymarket-fordham-ndsu-catalog-metadata-contract-v1-2026-08-30.json",
+          "result_sha256": "a944deafcc28ad8085e5e664f6f5ecceb7a091004233186677e9f2f3d3d85cbc"
+        },
+        {
+          "path": "docs/model-research/action-value/polymarket-fordham-ndsu-catalog-metadata-v1-2026-08-30.json",
+          "result_sha256": "9c5134d2e9bdc54d44eedc305c63776325f581ec1b4b20b8090a8b77f091cf31"
+        },
+        {
+          "path": "docs/model-research/action-value/polymarket-fordham-ndsu-total-monotone-package-contract-v1-2026-08-30.json",
+          "result_sha256": "b40cf9e252f63ae589980f1c4e5850a99028112b14a689b6a17d54551640db5a"
+        },
+        {
+          "path": "docs/model-research/action-value/polymarket-fordham-ndsu-total-monotone-package-result-v1-2026-08-30.json",
+          "result_sha256": "8d2f9e8a5f00fa84c4291822692712151cb51bc7bdc7a659d12aa13f788361a1"
         }
       ],
-      "current_status": "distinct_direction_independent_NBA_WNBA_NFL_and_CFB_moneyline_spread_and_total_monotone_payoff_family_remains_unaccepted_the_complete_nonoverlapping_WNBA_catalog_returned_three_events_two_exact_relations_and_zero_Gamma_sub_floor_candidates_the_prior_complete_NFL_catalog_retained_4621_relations_and_674_Gamma_candidates_but_its_precommitted_Commanders_Cowboys_exact_depth_lost_2_550_pUSD_zero_fee_with_25189367_ms_skew_the_Ball_State_Ohio_State_CFB_superhedge_had_exactly_1_0000_pUSD_displayed_cost_the_distinct_Clemson_LSU_CFB_event_had_best_displayed_cost_1_045_pUSD_and_the_new_complete_nonoverlapping_2026_09_03_through_2026_09_04_CFB_catalog_returned_18_events_included_13_rule_complete_events_proved_19_exact_relations_and_found_zero_sub_floor_candidates_with_best_San_Jose_State_Eastern_Michigan_full_game_total_package_1_02_pUSD_against_the_1_pUSD_floor_so_zero_book_fee_credential_account_order_fund_or_protected_capture_access_no_accepted_edge_or_deployment_readiness",
+      "current_status": "distinct_direction_independent_NBA_WNBA_NFL_and_CFB_moneyline_spread_and_total_monotone_payoff_family_remains_unaccepted_the_complete_nonoverlapping_WNBA_catalog_returned_three_events_two_exact_relations_and_zero_Gamma_sub_floor_candidates_the_prior_complete_NFL_catalog_retained_4621_relations_and_674_Gamma_candidates_but_its_precommitted_Commanders_Cowboys_exact_depth_lost_2_550_pUSD_zero_fee_with_25189367_ms_skew_the_Ball_State_Ohio_State_CFB_superhedge_had_exactly_1_0000_pUSD_displayed_cost_the_distinct_Clemson_LSU_CFB_event_had_best_displayed_cost_1_045_pUSD_the_complete_2026_09_03_through_2026_09_04_CFB_catalog_retained_zero_sub_floor_candidates_and_the_new_complete_2026_09_05_CFB_catalog_returned_89_events_excluded_both_consumed_games_included_58_rule_complete_events_proved_88_exact_relations_and_found_6_Gamma_sub_floor_candidates_but_its_precommitted_best_Fordham_North_Dakota_State_Over_56_5_plus_Under_57_5_package_had_two_0_92_asks_cost_9_2_pUSD_for_a_5_pUSD_floor_lost_4_2_pUSD_before_fees_and_also_failed_freshness_at_300344_ms_old_with_148059_ms_skew_no_fee_credential_account_order_fund_or_protected_capture_access_no_accepted_edge_or_deployment_readiness",
       "market_direction_forecast_required": false,
       "mechanism": "polymarket_sports_moneyline_spread_total_monotone_payoff_implication",
-      "next_action": "do_not_resample_Toronto_Phoenix_Lynx_Dream_Ball_State_Ohio_State_Clemson_LSU_or_the_consumed_WNBA_2026_08_30_through_2026_09_02_CFB_2026_09_03_through_2026_09_04_or_NFL_2026_09_13_through_2026_09_21_windows_for_a_future_distinct_event_outside_all_consumed_populations_first_source_prove_exhaustive_payoffs_then_use_Gamma_only_as_a_rejection_gate_request_one_frozen_exact_depth_batch_for_the_precommitted_strongest_strictly_sub_floor_package_and_require_independent_synchronized_after_fee_positive_recurrence_before_escalation",
+      "next_action": "do_not_resample_Toronto_Phoenix_Lynx_Dream_Ball_State_Ohio_State_Clemson_LSU_Fordham_North_Dakota_State_cherry_pick_the_other_five_observed_September_5_Gamma_candidates_or_repeat_the_consumed_WNBA_2026_08_30_through_2026_09_02_CFB_2026_09_03_through_2026_09_05_or_NFL_2026_09_13_through_2026_09_21_windows_for_a_future_distinct_event_outside_all_consumed_populations_first_source_prove_exhaustive_payoffs_then_use_Gamma_only_as_a_rejection_gate_request_one_frozen_exact_depth_batch_for_the_precommitted_strongest_strictly_sub_floor_package_and_require_independent_synchronized_after_fee_positive_recurrence_before_escalation",
       "priority_rank": 30,
       "prohibited_shortcuts": [
         "reusing_the_paper_zero_fee_median_as_current_profit",
@@ -1635,9 +1663,10 @@
         "treating_synchronized_books_or_batch_submission_as_atomic_two_leg_execution_or_choosing_15_or_20_percent_from_conflicting_sports_rebate_pages",
         "requesting_CLOB_books_when_every_Gamma_displayed_package_sum_is_already_at_or_above_the_guaranteed_payout_floor_or_using_Gamma_prices_to_accept_or_promote",
         "crediting_midpoints_last_trades_uncapped_depth_maker_fees_or_rebates_without_causal_owned_fills",
-        "calling_public_recurrence_profitable_without_owned_both_leg_fill_reconciliation_and_all_external_costs"
+        "calling_public_recurrence_profitable_without_owned_both_leg_fill_reconciliation_and_all_external_costs",
+        "selecting_any_of_the_other_five_observed_September_5_Gamma_candidates_after_the_precommitted_best_candidate_failed_exact_depth"
       ],
-      "retry_trigger": "first_future_distinct_active_accepting_orders_NBA_WNBA_NFL_or_CFB_full_game_event_outside_all_consumed_exact_events_and_the_consumed_WNBA_2026_08_30T19_00_01Z_through_2026_09_02T23_59_59Z_CFB_2026_09_03T00_00_00Z_through_2026_09_04T23_59_59Z_and_NFL_2026_09_13T20_25_01Z_through_2026_09_21T23_59_59Z_windows_with_source_proved_same_game_moneyline_spread_or_total_payoff_implication_exact_current_market_fee_schedules_and_at_least_one_rejection_only_Gamma_displayed_package_sum_strictly_below_its_guaranteed_payout_floor_or_a_material_sports_price_fee_delay_or_resolution_rule_change",
+      "retry_trigger": "first_future_distinct_active_accepting_orders_NBA_WNBA_NFL_or_CFB_full_game_event_outside_all_consumed_exact_events_and_the_consumed_WNBA_2026_08_30T19_00_01Z_through_2026_09_02T23_59_59Z_CFB_2026_09_03T00_00_00Z_through_2026_09_05T23_59_59Z_and_NFL_2026_09_13T20_25_01Z_through_2026_09_21T23_59_59Z_windows_with_source_proved_same_game_moneyline_spread_or_total_payoff_implication_exact_current_market_fee_schedules_and_at_least_one_rejection_only_Gamma_displayed_package_sum_strictly_below_its_guaranteed_payout_floor_or_a_material_sports_price_fee_delay_or_resolution_rule_change",
       "venue_scope": "polymarket_future_NBA_WNBA_NFL_and_CFB_full_game_same_game_moneyline_point_spread_and_total_markets"
     },
     {
@@ -2434,7 +2463,7 @@
       "venue_scope": "Binance_Spot_direct_and_exactly_one_intermediary_routes_for_independently_required_organic_conversions_with_the_exactly_two_intermediary_extension_terminal_for_the_retained_population"
     }
   ],
-  "result_sha256": "49e909d549f015918690c14c1062021ca39c10c1ddeadce2ecacf0db8571bb37",
+  "result_sha256": "b55f6a20ac311bca6ff68facae3015a2aa5da53fa6e6ae74208eaf4c3c613732",
   "schema_version": "structural-edge-priority-registry-v1",
   "terminal_do_not_repeat": [
     {
@@ -2751,8 +2780,13 @@
       "canonical_result_sha256": "621f03ae812f57e9c8994e6073adc4153ca6eb447e9db61bad3bebc36e0b242f",
       "family": "binance_Algo_Trading_current_OpenAPI_schema_source_gate_2026_08_30",
       "reason": "the_frozen_one_use_exact_current_official_schema_GET_returned_HTTP_202_with_zero_bytes_and_zero_of_six_preregistered_endpoint_or_child_order_terms_so_the_distinct_Spot_TWAP_and_USDM_Futures_TWAP_or_VP_execution_cost_candidate_has_zero_public_forward_saving_floor_and_no_admitted_profitability_do_not_retry_alias_or_treat_rendered_discovery_values_as_source_bound_economics_reopen_only_on_the_literal_retry_trigger"
+    },
+    {
+      "canonical_result_sha256": "8d2f9e8a5f00fa84c4291822692712151cb51bc7bdc7a659d12aa13f788361a1",
+      "family": "polymarket_CFB_September_5_complete_monotone_catalog_and_Fordham_NDSU_depth_2026_08_30",
+      "reason": "the_complete_one_request_day_catalog_returned_89_events_excluded_both_consumed_games_included_58_rule_complete_events_retained_all_88_exact_relations_and_found_6_Gamma_sub_floor_candidates_but_the_precommitted_deterministic_best_Fordham_North_Dakota_State_Over_56_5_plus_Under_57_5_package_had_two_0_92_asks_cost_9_2_pUSD_for_a_5_pUSD_floor_lost_4_2_pUSD_before_fees_and_failed_freshness_at_300344_ms_old_with_148059_ms_skew_do_not_repeat_paginate_narrow_refetch_or_cherry_pick_the_other_five_observed_candidates"
     }
   ],
-  "updated_at_utc": "2026-08-30T12:10:14.4809683Z",
+  "updated_at_utc": "2026-08-30T12:30:31.9955472Z",
   "usage_rule": "advance_the_highest_ranked_hypothesis_whose_retry_trigger_is_satisfied_otherwise_do_not_repeat_a_blocked_or_terminal_screen"
 }
