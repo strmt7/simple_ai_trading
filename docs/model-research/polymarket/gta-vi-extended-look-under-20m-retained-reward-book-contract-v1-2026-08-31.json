@@ -1,0 +1,62 @@
+{
+  "authority": {
+    "account_or_funded_actions_permitted": false,
+    "credentials_permitted": false,
+    "orders_or_cancellations_permitted": false,
+    "public_unauthenticated_read_only_only": true
+  },
+  "candidate": {
+    "event_end_utc": "2026-09-03T23:59:00+00:00",
+    "event_slug": "of-views-of-grand-theft-auto-vi-extended-look-on-week-1",
+    "market_slug": "will-grand-theft-auto-vi-extended-look-get-less-than-20-million-views-on-week-1",
+    "outcomes": [
+      "Yes",
+      "No"
+    ],
+    "question": "Will Grand Theft Auto VI Extended Look get less than 20 million views on week 1?"
+  },
+  "capture": {
+    "activation_window_minutes": 30,
+    "book_max_event_age_ms": 10000,
+    "book_max_timestamp_skew_ms": 2000,
+    "request_max_elapsed_ms": 3000
+  },
+  "decision": {
+    "accepted_edge_always": false,
+    "optimistic_rejection_bound": "Assume a hypothetical minimum-size paired maker captures 100% of every remaining exact daily reward. Reject if best-bid both-fill gross is nonpositive or the maximum one-sided settlement loss exceeds that entire remaining pool.",
+    "paper_candidate_only_if": "Fresh exact books show positive best-bid both-fill gross and even the deliberately optimistic full remaining pool covers maximum one-sided settlement loss.",
+    "profitability_claim_always": false
+  },
+  "frozen_at_utc": "2026-08-31T16:09:03.1317833Z",
+  "purpose": "One-use rejection-first exact two-token book screen after exact Gamma and sponsored reward reconciliation and an offline absolute-orphan-ceiling prefilter.",
+  "request_contract": {
+    "books_endpoint": "https://clob.polymarket.com/books",
+    "endpoint_classification": {
+      "method": "POST",
+      "operation": "Get order books for multiple exact token IDs; public read-only documented endpoint.",
+      "primary_contract_url": "https://docs.polymarket.com/api-reference/market-data/get-order-books-request-body"
+    },
+    "response_byte_ceiling": 2000000
+  },
+  "retained_exact_sources": {
+    "gamma": {
+      "path": "docs/model-research/polymarket/raw/gta-vi-extended-look-under-20m-reward-source-v1-2026-08-31/01-exact-gamma-market.raw",
+      "sha256": "abb250bf1e8e56b306319b52a71bb600b3376fa2fd9deeb56f3d984a26810394"
+    },
+    "reward": {
+      "path": "docs/model-research/polymarket/raw/gta-vi-extended-look-under-20m-reward-source-v1-2026-08-31/02-exact-sponsored-reward.raw",
+      "sha256": "dd6b01075cd86a6d685782d573a8722f4a2551c07dc27cbdc19e0db05210fe79",
+      "terminal_cursor": "LTE="
+    },
+    "source_prefilter": {
+      "path": "docs/model-research/polymarket/gta-vi-extended-look-under-20m-reward-source-v1-2026-08-31.json",
+      "result_sha256": "d0c2fba4bd24c97b4c6745059b7b8beb964a7d7f3b56027ee98f6bf15f2a2c60"
+    }
+  },
+  "retry": {
+    "permitted": false,
+    "reopen_only_on": "A materially changed exact reward configuration, fee rule, market identity, or a different newly source-selected reward market."
+  },
+  "schema_version": "polymarket-retained-reward-book-contract-v1",
+  "result_sha256": "e06bfe5b10ae6cc8386b67469d605a27d20e58c4c8a34fb6fd0b059648d91eb2"
+}

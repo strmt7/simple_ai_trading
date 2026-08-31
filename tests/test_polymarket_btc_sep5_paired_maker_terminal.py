@@ -65,6 +65,32 @@ ONTARIO_BOOK_RESULT = (
 ONTARIO_BOOK_RAW = (
     BASE / "raw/ontario-liberal-navdeep-bains-retained-reward-books-v1-2026-08-31"
 )
+GTA_SOURCE_CONTRACT = (
+    BASE
+    / "gta-vi-extended-look-under-20m-reward-source-contract-v1-2026-08-31.json"
+)
+GTA_SOURCE_RESULT = (
+    BASE / "gta-vi-extended-look-under-20m-reward-source-v1-2026-08-31.json"
+)
+GTA_SOURCE_RAW = (
+    BASE / "raw/gta-vi-extended-look-under-20m-reward-source-v1-2026-08-31"
+)
+GTA_BOOK_CONTRACT = (
+    BASE
+    / "gta-vi-extended-look-under-20m-retained-reward-book-contract-v1-2026-08-31.json"
+)
+GTA_BOOK_RESULT = (
+    BASE
+    / "gta-vi-extended-look-under-20m-retained-reward-book-terminal-v1-2026-08-31.json"
+)
+GTA_BOOK_RAW = (
+    BASE
+    / "raw/gta-vi-extended-look-under-20m-retained-reward-books-v1-2026-08-31"
+)
+GTA_ADJUDICATION = (
+    ROOT
+    / "docs/model-research/action-value/polymarket-gta-vi-under-20m-reward-stale-book-adjudication-v1-2026-08-31.json"
+)
 
 
 def _canonical(value: object) -> bytes:
@@ -302,3 +328,92 @@ def test_ontario_reward_sources_reconcile_but_stale_book_is_terminal() -> None:
         == "polymarket_Navdeep_Bains_Ontario_leadership_exact_paired_maker_reward_2026_08_31"
     )
     assert terminal["canonical_result_sha256"] == book_hash
+
+
+def test_gta_reward_candidate_is_terminal_after_stale_book_and_zero_floor() -> None:
+    _source_contract, source_contract_hash = _reconstruct(GTA_SOURCE_CONTRACT)
+    source, source_hash = _reconstruct(GTA_SOURCE_RESULT)
+    _book_contract, book_contract_hash = _reconstruct(GTA_BOOK_CONTRACT)
+    book, book_hash = _reconstruct(GTA_BOOK_RESULT)
+    adjudication, adjudication_hash = _reconstruct(GTA_ADJUDICATION)
+
+    assert (
+        source_contract_hash
+        == "5bab95ee364650762d7ec87db04f4ba6b88c91adb44d5608946c59f4308b9755"
+    )
+    assert (
+        source_hash
+        == "d0c2fba4bd24c97b4c6745059b7b8beb964a7d7f3b56027ee98f6bf15f2a2c60"
+    )
+    assert (
+        book_contract_hash
+        == "e06bfe5b10ae6cc8386b67469d605a27d20e58c4c8a34fb6fd0b059648d91eb2"
+    )
+    assert (
+        book_hash == "dc61d9375638de915b4f16546e9a9fc876815d5a493cb53b117011f7b10ada1d"
+    )
+    assert (
+        adjudication_hash
+        == "f25854cc7ec978cea4c5357bc8438093cfb818b0435f34773de78096af8ef051"
+    )
+
+    assert source["exact_reward"]["daily_rate_pUSD"] == "536.99616"
+    assert source["exact_reward"]["minimum_size_shares"] == "200"
+    assert source["exact_reward"]["maximum_spread_cents"] == "4.5"
+    assert source["candidate"]["maker_fee_zero"] is True
+    for source_name, filename in (
+        ("gamma_request", "01-exact-gamma-market.raw"),
+        ("reward_request", "02-exact-sponsored-reward.raw"),
+    ):
+        raw = GTA_SOURCE_RAW / filename
+        metadata = source["sources"][source_name]
+        assert raw.stat().st_size == metadata["payload_bytes"]
+        assert _sha256(raw.read_bytes()) == metadata["payload_sha256"]
+
+    books_raw = GTA_BOOK_RAW / "01-two-token-books.raw"
+    books_metadata = book["sources"]["books_request"]
+    assert books_raw.stat().st_size == books_metadata["payload_bytes"]
+    assert _sha256(books_raw.read_bytes()) == books_metadata["payload_sha256"]
+    assert book["capture"] == {
+        "book_timestamp_skew_ms": 0,
+        "freshness_passed": False,
+        "oldest_book_event_age_ms": 17830,
+        "request_elapsed_ms": 278,
+    }
+    assert book["economics"]["best_bid_join"] == {
+        "both_fill_gross_profit_pUSD": "2.00",
+        "combined_bid": "0.99",
+        "maximum_orphan_settlement_loss_pUSD": "136.00",
+    }
+    assert book["economics"]["one_tick_improved"] == {
+        "both_fill_gross_profit_pUSD": "-2.00",
+        "combined_bid": "1.01",
+        "marketable": True,
+        "maximum_orphan_settlement_loss_pUSD": "138.00",
+    }
+    assert book["verdict"]["status"] == "rejected_stale_book_snapshot"
+
+    assert adjudication["freshness"]["oldest_book_excess_age_ms"] == 7830
+    assert (
+        adjudication["economics"][
+            "optimistic_full_reward_pool_until_market_horizon_pUSD"
+        ]
+        == "1785.76951491519840"
+    )
+    assert adjudication["reward_allocation_adjudication"][
+        "owned_final_reward_share_floor"
+    ] == "0"
+    assert adjudication["authority"]["network_requests_made_by_adjudication"] is False
+    assert adjudication["authority"]["credentials_used"] is False
+    assert adjudication["verdict"]["accepted_edge"] is False
+    assert adjudication["verdict"]["retry_permitted"] is False
+
+    registry, _registry_hash = _reconstruct(REGISTRY)
+    assert len(registry["prioritized_hypotheses"]) == 45
+    terminal = next(
+        row
+        for row in registry["terminal_do_not_repeat"]
+        if row["family"]
+        == "polymarket_GTA_VI_Extended_Look_under_20_million_views_exact_paired_maker_reward_2026_08_31"
+    )
+    assert terminal["canonical_result_sha256"] == adjudication_hash

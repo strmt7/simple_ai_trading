@@ -74,6 +74,9 @@ docs/model-research/polymarket/elon-posts-40-64-best-bid-join-*.json text eol=lf
 docs/model-research/polymarket/btc-above-72k-sep5-*.json text eol=lf
 docs/model-research/polymarket/raw/btc-above-72k-sep5-exact-reward-source-v1-2026-08-30/** binary -eol
 docs/model-research/polymarket/raw/btc-above-72k-sep5-retained-reward-book-v1-2026-08-30/** binary -eol
+docs/model-research/polymarket/gta-vi-extended-look-under-20m-*.json text eol=lf
+docs/model-research/polymarket/raw/gta-vi-extended-look-under-20m-reward-source-v1-2026-08-31/** binary -eol
+docs/model-research/polymarket/raw/gta-vi-extended-look-under-20m-retained-reward-books-v1-2026-08-31/** binary -eol
 docs/model-research/action-value/round-075-frozen-v4-source/**/*.txt text eol=lf
 docs/archive/agent-history/*.md.txt text eol=lf
 docs/optimization/iteration-progress/**/*.csv text eol=lf

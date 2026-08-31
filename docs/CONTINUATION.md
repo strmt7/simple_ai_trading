@@ -7017,3 +7017,65 @@ Registry SHA-256 becomes
 `f86d8ddc878b21744ba40fa3d88f025d030eea3778016a04922cfadb3c907a27`,
 and the rebound durability-audit SHA-256 becomes
 `3fc2e1175dec783936f3a469a19f86d0942c91d11b4b3295bed278614df5c75b`.
+
+## Polymarket GTA VI paired-maker reward rejection
+
+The official Rewards table was sorted by descending daily reward to avoid
+paging or serial low-value screens. Current five-, fifteen-minute, and four-hour
+crypto rows were excluded under consumed rank-17 boundaries. The September Fed
+rows were then excluded before access because exact filename-only alias checks
+showed that event was already captured in the holding-yield population. Ontario
+siblings were excluded after the prior Navdeep outcome. The first remaining
+zero-alias event was GTA VI Extended Look under 20 million week-one views.
+
+One early alias command mistakenly allowed `rg` to print a large canonical JSON
+line. It made no network request and changed no decision, but wasted output.
+Subsequent checks used filename-only matching as `AGENTS.md` already requires;
+do not repeat line-printing searches on minified JSON or retained HTML.
+
+The frozen exact-source sequence reconciled an active accepting binary market,
+ordered tokens, September 3 23:59 UTC end, five-share order minimum, zero maker
+fee, and one exact sponsored reward row. Exact funding was 536.99616 pUSD/day,
+200 shares, and 4.5 cents with about 3.327 days left. The absolute 200-pUSD
+one-leg settlement-loss ceiling was below the roughly 1,786-pUSD impossible
+100%-of-pool bound, so one separately frozen book request was permitted.
+
+The two-token books returned in 278 ms with zero timestamp skew. Top levels
+were YES 0.68/0.69 and NO 0.31/0.32. Joining both best bids at 200 shares cost
+0.99 per complete pair and had 2 pUSD both-fill gross against a 136-pUSD maximum
+one-leg settlement loss. Improving both legs by one tick was immediately
+marketable, summed to 1.01, and lost 2 pUSD on both fills before every external
+cost. The snapshot timestamp was 17,830 ms old, exceeding the frozen 10,000-ms
+ceiling by 7,830 ms, so executable freshness failed and no refetch is allowed.
+
+An offline retained adjudication then applied the official liquidity-reward
+formula. Covering one maximum orphan would require 7.6157644569% of the entire
+optimistic remaining pool or 25.3260656464% of one daily pool. The formula
+normalizes each maker against all makers at every sample and normalizes again
+across the epoch. Public books do not identify future makers or queue access,
+and current API documentation exposes `market_competitiveness` without a
+conservative mapping to this hypothetical maker's final share. The owned public
+reward-share and payout floors therefore remain zero.
+
+Do not repeat the source or book requests, reprice, weaken freshness, or select
+another GTA bracket after observing this outcome. Reopen only for a genuinely
+distinct source-selected market or documented material program, fee, identity,
+or timestamp-semantics change. No credential, account, order, fund, transaction,
+or protected capture was used.
+
+Source-contract SHA-256 is
+`5bab95ee364650762d7ec87db04f4ba6b88c91adb44d5608946c59f4308b9755`;
+source-result SHA-256 is
+`d0c2fba4bd24c97b4c6745059b7b8beb964a7d7f3b56027ee98f6bf15f2a2c60`;
+book-contract SHA-256 is
+`e06bfe5b10ae6cc8386b67469d605a27d20e58c4c8a34fb6fd0b059648d91eb2`;
+book-result SHA-256 is
+`dc61d9375638de915b4f16546e9a9fc876815d5a493cb53b117011f7b10ada1d`;
+canonical adjudication SHA-256 is
+`f25854cc7ec978cea4c5357bc8438093cfb818b0435f34773de78096af8ef051`.
+Accepted edges remain 29, ranked hypotheses remain 45, terminal families become
+112, and stable current account-qualified after-all-cost edges remain zero.
+Registry SHA-256 becomes
+`10a3ec81ad74ea57d0e7051dfe3a4296db4be6da18f3d8b3438145ae9d4e1693`,
+and the rebound durability-audit SHA-256 becomes
+`8b1dde039a56cda32769aa289955404dde578f48396dc6ff4a1ad1cd7bdf855d`.

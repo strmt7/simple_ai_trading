@@ -51,6 +51,20 @@ be a user-facing resolution date, not Gamma `endDate`. Future contracts must
 bind Gamma time from Gamma or omit rendered-to-Gamma equality; never repair or
 repeat this consumed market or substitute another observed precipitation bin.
 
+Two later source-selected reward candidates are also terminal. Navdeep Bains
+reconciled at 40 pUSD/day and 20 shares, but its only book snapshot was 174.712
+seconds old. A descending-reward pass then excluded consumed crypto rows, the
+already retained Fed event, and Ontario siblings before selecting the first
+zero-alias event: GTA VI Extended Look under 20 million views. Exact sources
+reconciled at 536.99616 pUSD/day, 200 shares, 4.5 cents, zero maker fee, and
+3.327 remaining days. Its books had zero cross-token skew and best bids summing
+to 0.99 for 2 pUSD both-fill gross, but the snapshot was 17.830 seconds old
+against the frozen 10-second ceiling; improving both legs one tick crossed to
+1.01 and negative 2 pUSD gross. The official relative-score formula and the
+undocumented mapping of `market_competitiveness` to any owned share leave the
+public payout floor at zero. Do not refetch, reprice, weaken freshness, or
+substitute another GTA outcome after observing this result.
+
 The retained Los Angeles Galaxy versus New England Revolution event pair proved
 16 exact-score-to-full-game-result payoff implications, but also exposed a
 request-efficiency bug: Gamma `outcomePrices` made the best package appear to

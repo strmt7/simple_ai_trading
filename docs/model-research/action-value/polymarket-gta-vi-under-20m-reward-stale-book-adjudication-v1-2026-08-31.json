@@ -1,0 +1,86 @@
+{
+  "authority": {
+    "accounts_accessed": false,
+    "credentials_used": false,
+    "funds_used": false,
+    "network_requests_made_by_adjudication": false,
+    "orders_or_cancellations": 0,
+    "transactions_sent": false
+  },
+  "created_at_utc": "2026-08-31T16:12:54.2941828Z",
+  "economics": {
+    "best_bid_both_fill_gross_pUSD": "2.00",
+    "best_bid_combined_price": "0.99",
+    "best_bid_maximum_orphan_settlement_loss_pUSD": "136.00",
+    "best_bid_posted_principal_pUSD": "198.00",
+    "best_bid_return_on_posted_principal_before_fill_risk_fraction": "0.01010101010101010101010101010101010101010",
+    "daily_reward_pool_pUSD": "536.99616",
+    "full_remaining_pool_fraction_needed_to_cover_one_orphan": "0.07615764456952233844787455985669084471696",
+    "one_day_pool_fraction_needed_to_cover_one_orphan": "0.2532606564635397020343683649432427971180",
+    "one_tick_improved_both_fill_gross_pUSD": "-2.00",
+    "one_tick_improved_combined_price": "1.01",
+    "one_tick_improved_marketable": true,
+    "optimistic_full_reward_pool_until_market_horizon_pUSD": "1785.76951491519840",
+    "publicly_proven_reward_payout_floor_pUSD": "0",
+    "remaining_reward_days_at_book_capture": "3.325479115"
+  },
+  "exact_identity": {
+    "condition_id": "0xabf7b6d2ce976c0f2c31d0ce931608f3c9b3e3c00468e58ee1d68069bdbaeeff",
+    "event_slug": "of-views-of-grand-theft-auto-vi-extended-look-on-week-1",
+    "market_slug": "will-grand-theft-auto-vi-extended-look-get-less-than-20-million-views-on-week-1",
+    "minimum_reward_size_shares": "200",
+    "question": "Will Grand Theft Auto VI Extended Look get less than 20 million views on week 1?",
+    "zero_maker_fee": true
+  },
+  "freshness": {
+    "book_timestamp_skew_ms": 0,
+    "frozen_oldest_book_age_ceiling_ms": 10000,
+    "oldest_book_event_age_ms": 17830,
+    "oldest_book_excess_age_ms": 7830,
+    "passed": false,
+    "request_elapsed_ms": 278
+  },
+  "reward_allocation_adjudication": {
+    "api_market_competitiveness": "1.714637",
+    "api_field_has_documented_conservative_owned_share_mapping": false,
+    "minimum_public_reward_payout_pUSD": "1",
+    "owned_final_reward_share_floor": "0",
+    "reason": "The official formula normalizes each maker against all makers in every sample, sums 10,080 samples, and normalizes again for the final reward share. Public books do not identify makers or future orders, and the API documentation exposes market_competitiveness without defining a conservative mapping to this hypothetical maker's final share."
+  },
+  "schema_version": "polymarket-gta-vi-under-20m-stale-book-adjudication-v1",
+  "sources": {
+    "book_contract": {
+      "path": "docs/model-research/polymarket/gta-vi-extended-look-under-20m-retained-reward-book-contract-v1-2026-08-31.json",
+      "result_sha256": "e06bfe5b10ae6cc8386b67469d605a27d20e58c4c8a34fb6fd0b059648d91eb2"
+    },
+    "book_result": {
+      "path": "docs/model-research/polymarket/gta-vi-extended-look-under-20m-retained-reward-book-terminal-v1-2026-08-31.json",
+      "result_sha256": "dc61d9375638de915b4f16546e9a9fc876815d5a493cb53b117011f7b10ada1d"
+    },
+    "current_primary_formula_recheck": {
+      "rechecked_at_utc": "2026-08-31T16:11:00Z",
+      "url": "https://docs.polymarket.com/market-makers/liquidity-rewards"
+    },
+    "retained_primary_formula": {
+      "path": "docs/model-research/polymarket/raw/crypto-twap-5m-liquidity-reward-screen-v1-2026-08-27/01-official-liquidity-rewards-documentation.raw",
+      "sha256": "1e3db7aa93967630e5ba6022e4457f6f9e17e5ddddee84c36f03d7c3d9e3afa0"
+    },
+    "source_contract": {
+      "path": "docs/model-research/polymarket/gta-vi-extended-look-under-20m-reward-source-contract-v1-2026-08-31.json",
+      "result_sha256": "5bab95ee364650762d7ec87db04f4ba6b88c91adb44d5608946c59f4308b9755"
+    },
+    "source_result": {
+      "path": "docs/model-research/polymarket/gta-vi-extended-look-under-20m-reward-source-v1-2026-08-31.json",
+      "result_sha256": "d0c2fba4bd24c97b4c6745059b7b8beb964a7d7f3b56027ee98f6bf15f2a2c60"
+    }
+  },
+  "verdict": {
+    "accepted_edge": false,
+    "profitability_claim": false,
+    "retry_permitted": false,
+    "stable_current_after_all_cost_edge": false,
+    "status": "terminal_stale_book_and_zero_public_reward_share_floor",
+    "trading_authority": false
+  },
+  "result_sha256": "f25854cc7ec978cea4c5357bc8438093cfb818b0435f34773de78096af8ef051"
+}
