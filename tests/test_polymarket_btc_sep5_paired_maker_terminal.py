@@ -45,6 +45,26 @@ NYC_RAW = (
     BASE
     / "raw/nyc-september-precipitation-over-6-reward-source-v1-2026-08-31/01-exact-gamma-market.raw"
 )
+ONTARIO_SOURCE_CONTRACT = (
+    BASE / "ontario-liberal-navdeep-bains-reward-source-contract-v1-2026-08-31.json"
+)
+ONTARIO_SOURCE_RESULT = (
+    BASE / "ontario-liberal-navdeep-bains-reward-source-v1-2026-08-31.json"
+)
+ONTARIO_SOURCE_RAW = (
+    BASE / "raw/ontario-liberal-navdeep-bains-reward-source-v1-2026-08-31"
+)
+ONTARIO_BOOK_CONTRACT = (
+    BASE
+    / "ontario-liberal-navdeep-bains-retained-reward-book-contract-v1-2026-08-31.json"
+)
+ONTARIO_BOOK_RESULT = (
+    BASE
+    / "ontario-liberal-navdeep-bains-retained-reward-book-terminal-v1-2026-08-31.json"
+)
+ONTARIO_BOOK_RAW = (
+    BASE / "raw/ontario-liberal-navdeep-bains-retained-reward-books-v1-2026-08-31"
+)
 
 
 def _canonical(value: object) -> bytes:
@@ -183,8 +203,14 @@ def test_rendered_resolution_date_mismatch_is_terminal_and_date_gate_is_exact() 
     adjudication, adjudication_hash = _reconstruct(NYC_ADJUDICATION)
     gamma_raw = json.loads(NYC_RAW.read_bytes())
 
-    assert contract_hash == "101f5cacd9dc7a4acf2282f373e25f8abdaee5207d85f36812b0e74e98ddc877"
-    assert adjudication_hash == "41d36380efda98913a149156cbb5aacc4425e0d7be8c4372c73be9dbba316d5c"
+    assert (
+        contract_hash
+        == "101f5cacd9dc7a4acf2282f373e25f8abdaee5207d85f36812b0e74e98ddc877"
+    )
+    assert (
+        adjudication_hash
+        == "41d36380efda98913a149156cbb5aacc4425e0d7be8c4372c73be9dbba316d5c"
+    )
     with pytest.raises(ValueError, match="Gamma event end date changed"):
         SOURCE_TOOL._gamma(gamma_raw, candidate=contract["candidate"])
 
@@ -192,6 +218,16 @@ def test_rendered_resolution_date_mismatch_is_terminal_and_date_gate_is_exact() 
     corrected_candidate["event_end_date_utc"] = "2026-09-30"
     market = SOURCE_TOOL._gamma(gamma_raw, candidate=corrected_candidate)
     assert market["event_end"].isoformat() == "2026-09-30T23:59:00+00:00"
+    gamma_authoritative_candidate = dict(corrected_candidate)
+    gamma_authoritative_candidate.pop("event_end_date_utc")
+    gamma_authoritative_market = SOURCE_TOOL._gamma(
+        gamma_raw,
+        candidate=gamma_authoritative_candidate,
+    )
+    assert (
+        gamma_authoritative_market["event_end"].isoformat()
+        == "2026-09-30T23:59:00+00:00"
+    )
     assert adjudication["exact_sponsored_reward"]["request_made"] is False
 
     registry, _registry_hash = _reconstruct(REGISTRY)
@@ -202,3 +238,67 @@ def test_rendered_resolution_date_mismatch_is_terminal_and_date_gate_is_exact() 
         == "polymarket_NYC_September_precipitation_over_6_inches_exact_liquidity_reward_source_date_gate"
     )
     assert terminal["canonical_result_sha256"] == adjudication_hash
+
+
+def test_ontario_reward_sources_reconcile_but_stale_book_is_terminal() -> None:
+    _source_contract, source_contract_hash = _reconstruct(ONTARIO_SOURCE_CONTRACT)
+    source, source_hash = _reconstruct(ONTARIO_SOURCE_RESULT)
+    _book_contract, book_contract_hash = _reconstruct(ONTARIO_BOOK_CONTRACT)
+    book, book_hash = _reconstruct(ONTARIO_BOOK_RESULT)
+
+    assert (
+        source_contract_hash
+        == "ad5931984f16a3f5f4f900bf7878266bd15bd205641076056529a0cb7ee8b4ab"
+    )
+    assert (
+        source_hash
+        == "85cef790f285cd732d0f3ce1ae71077d20d685681c008f0ee843cf2cd49af3e5"
+    )
+    assert (
+        book_contract_hash
+        == "207c62797736a1aefbe1284fd2c191557a92aef65c35cbdbd173297f654ac8b3"
+    )
+    assert (
+        book_hash == "03b4cdc0f577028e51f1f6bee6c3e2f0426d501d36d381c6d3d14036b974b294"
+    )
+
+    assert source["candidate"]["maker_fee_zero"] is True
+    assert source["exact_reward"]["daily_rate_pUSD"] == "40"
+    assert source["exact_reward"]["minimum_size_shares"] == "20"
+    assert source["exact_reward"]["maximum_spread_cents"] == "5.5"
+    for source_name, filename in (
+        ("gamma_request", "01-exact-gamma-market.raw"),
+        ("reward_request", "02-exact-sponsored-reward.raw"),
+    ):
+        raw = ONTARIO_SOURCE_RAW / filename
+        metadata = source["sources"][source_name]
+        assert raw.stat().st_size == metadata["payload_bytes"]
+        assert _sha256(raw.read_bytes()) == metadata["payload_sha256"]
+
+    books_raw = ONTARIO_BOOK_RAW / "01-two-token-books.raw"
+    books_metadata = book["sources"]["books_request"]
+    assert books_raw.stat().st_size == books_metadata["payload_bytes"]
+    assert _sha256(books_raw.read_bytes()) == books_metadata["payload_sha256"]
+    assert book["capture"] == {
+        "book_timestamp_skew_ms": 0,
+        "freshness_passed": False,
+        "oldest_book_event_age_ms": 174712,
+        "request_elapsed_ms": 281,
+    }
+    assert book["economics"]["best_bid_join"] == {
+        "both_fill_gross_profit_pUSD": "1.00",
+        "combined_bid": "0.95",
+        "maximum_orphan_settlement_loss_pUSD": "11.20",
+    }
+    assert book["verdict"]["status"] == "rejected_stale_book_snapshot"
+    assert book["verdict"]["accepted_edge"] is False
+    assert book["authority"]["credentials_used"] is False
+
+    registry, _registry_hash = _reconstruct(REGISTRY)
+    terminal = next(
+        row
+        for row in registry["terminal_do_not_repeat"]
+        if row["family"]
+        == "polymarket_Navdeep_Bains_Ontario_leadership_exact_paired_maker_reward_2026_08_31"
+    )
+    assert terminal["canonical_result_sha256"] == book_hash

@@ -6963,3 +6963,57 @@ Registry SHA-256 becomes
 `bc6d360c1107bb50b5ec3dfbb845a05dbeef6b2187f9f111144abf964cf53e32`,
 and the rebound durability-audit SHA-256 becomes
 `cb6014f6bdca23b3146a32844770b22badfaee2b2614954b942feff53da1cb4a`.
+
+## Polymarket Ontario leadership paired-maker reward rejection
+
+The live official Rewards surface supplied a distinct long-horizon,
+non-weather lead: the exact Navdeep Bains Ontario Liberal leadership binary.
+Its displayed reward, spread, size, prices, and competition were selection
+evidence only and were excluded from exact economics. An alias check found no
+retained use of this market or event before any venue API request.
+
+The one-use source prefilter reconciled the active accepting Gamma identity,
+condition, ordered binary tokens, November 21 market end, five-share order
+minimum, zero maker fee, and the exact sponsored reward row. Exact funding is
+40 pUSD per day, 20 shares, and 5.5 cents, with about 82.34 market days left.
+The reusable source prefilter was corrected prospectively so Gamma can supply
+the authoritative end without a guessed rendered-page equality; its existing
+exact-date gates remain available when a genuine authoritative date is frozen.
+
+The separately frozen two-token book request returned HTTP 200 in 281 ms with
+zero cross-token timestamp skew. The retained top levels were YES 0.39/0.44
+and NO 0.56/0.61. Joining both best bids at 20 shares had a 1.00 pUSD
+both-fill gross and 11.20 pUSD maximum one-leg settlement loss; improving both
+by one tick remained non-marketable with 0.60 pUSD both-fill gross and 11.40
+pUSD maximum orphan loss. These are diagnostics, not executable or realized
+profit.
+
+The official book-snapshot timestamp was 174,712 ms old against the frozen
+10,000 ms ceiling, so the freshness conjunction failed even though both token
+timestamps matched. The current official API schema labels this field the
+order-book snapshot timestamp; an HTTP receipt proves observation time, not a
+new internal book update. The consumed gate therefore remains fail-closed and
+was not weakened after the favorable-looking rows appeared. Publicly proved
+reward payout remains zero, no edge is accepted, and no refetch is permitted.
+
+Do not repeat the exact source or book requests, reprice, substitute another
+Ontario candidate after observing this outcome, or treat the optimistic full
+reward pool as owned payout. Reopen rank 17 only for a genuinely distinct
+source-selected market under a newly frozen exact contract or a documented
+material program or timestamp-semantics change. No credential, account, order,
+fund, transaction, or protected capture was used.
+
+Source-contract SHA-256 is
+`ad5931984f16a3f5f4f900bf7878266bd15bd205641076056529a0cb7ee8b4ab`;
+source-prefilter SHA-256 is
+`85cef790f285cd732d0f3ce1ae71077d20d685681c008f0ee843cf2cd49af3e5`;
+book-contract SHA-256 is
+`207c62797736a1aefbe1284fd2c191557a92aef65c35cbdbd173297f654ac8b3`;
+canonical terminal book-screen SHA-256 is
+`03b4cdc0f577028e51f1f6bee6c3e2f0426d501d36d381c6d3d14036b974b294`.
+Accepted edges remain 29, ranked hypotheses remain 45, terminal families become
+111, and stable current account-qualified after-all-cost edges remain zero.
+Registry SHA-256 becomes
+`f86d8ddc878b21744ba40fa3d88f025d030eea3778016a04922cfadb3c907a27`,
+and the rebound durability-audit SHA-256 becomes
+`3fc2e1175dec783936f3a469a19f86d0942c91d11b4b3295bed278614df5c75b`.
