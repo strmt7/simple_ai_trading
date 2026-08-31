@@ -98,8 +98,6 @@ def _gamma(raw: object, *, candidate: dict[str, Any]) -> dict[str, Any]:
         ).date()
         if event_end.date() != expected_end_date:
             raise ValueError("Gamma event end date changed")
-    else:
-        raise ValueError("candidate event end gate is missing")
     order_minimum = _decimal(
         row.get("orderMinSize"), name="order minimum", positive=True
     )

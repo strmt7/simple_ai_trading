@@ -1,0 +1,60 @@
+{
+  "authority": {
+    "account_or_funded_actions_permitted": false,
+    "credentials_permitted": false,
+    "orders_or_cancellations_permitted": false,
+    "public_unauthenticated_read_only_only": true
+  },
+  "candidate": {
+    "event_slug": "ontario-liberal-party-leadership-election-winner",
+    "market_slug": "will-navdeep-bains-win-the-2026-ontario-liberal-party-leadership-election",
+    "outcomes": [
+      "Yes",
+      "No"
+    ],
+    "question": "Will Navdeep Bains win the 2026 Ontario Liberal Party leadership election?",
+    "selection": "First exact long-horizon non-weather market on the current official Polymarket Rewards surface after excluding already consumed families and transient same-day mention markets. The displayed 40 pUSD daily reward, 5-cent spread, 20-share minimum, prices, competition, and market horizon are discovery only and excluded from every exact-value gate. Gamma is the authoritative source for the exact market end; no rendered resolution date is guessed into this contract."
+  },
+  "capture": {
+    "activation_window_minutes": 30
+  },
+  "decision": {
+    "advance_only_if": "Gamma and exact sponsored-condition identity, size, spread, active dated positive rate, binary tokens, zero-maker-fee state, and remaining horizon reconcile exactly.",
+    "books_in_this_stage": false,
+    "on_failure": "Terminalize this exact candidate without retry, sibling substitution, parameter change, or book request.",
+    "on_pass": "Freeze a separate one-use two-token book screen using only the retained exact source identities and settings."
+  },
+  "frozen_at_utc": "2026-08-31T15:47:44.5723971Z",
+  "purpose": "Rejection-first exact-source reconciliation for one source-selected current long-horizon paired-maker liquidity-reward candidate before any book access.",
+  "request_contract": {
+    "endpoint_classification": {
+      "exact_reward": {
+        "method": "GET",
+        "operation": "Get raw rewards for a specific market; public read-only documented endpoint.",
+        "primary_contract_url": "https://docs.polymarket.com/api-reference/rewards/get-raw-rewards-for-a-specific-market"
+      },
+      "gamma": {
+        "method": "GET",
+        "operation": "Discover markets by exact slug; public read-only documented endpoint.",
+        "primary_contract_url": "https://docs.polymarket.com/market-data/discover-markets"
+      }
+    },
+    "exact_reward_endpoint_pattern": "https://clob.polymarket.com/rewards/markets/{condition_id}",
+    "gamma_endpoint": "https://gamma-api.polymarket.com/markets",
+    "gamma_params": {
+      "closed": "false",
+      "slug": "will-navdeep-bains-win-the-2026-ontario-liberal-party-leadership-election"
+    },
+    "response_byte_ceiling": 2000000,
+    "reward_params": {
+      "sponsored": "true"
+    },
+    "terminal_cursor": "LTE="
+  },
+  "retry": {
+    "permitted": false,
+    "reopen_only_on": "A materially new exact source-selected reward market or a documented material change in this market's reward configuration; never by repeating this consumed candidate."
+  },
+  "schema_version": "polymarket-exact-reward-source-contract-v1",
+  "result_sha256": "ad5931984f16a3f5f4f900bf7878266bd15bd205641076056529a0cb7ee8b4ab"
+}
