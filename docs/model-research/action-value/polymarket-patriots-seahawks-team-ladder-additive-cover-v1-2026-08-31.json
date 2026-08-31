@@ -1,0 +1,81 @@
+{
+  "schema_version": "polymarket-nfl-team-total-ladder-and-additive-cover-adjudication-v1",
+  "created_at_utc": "2026-08-31T11:49:10.525Z",
+  "purpose": "Exhaust the remaining exact full-game team-total ladder and score-additivity covers from the retained Patriots-Seahawks event without another request.",
+  "source_binding": {
+    "metadata_path": "docs/model-research/action-value/polymarket-patriots-seahawks-exact-event-result-v1-2026-08-31.json",
+    "metadata_file_sha256": "ce8867da28da5b5f90040317591adf71ef070c7d5b014511a17586fd60e9221f",
+    "metadata_result_sha256": "e62d7b8a93a2a11197058d631e2fea88a408cfa30bd2dda6a9df54998b524d36",
+    "raw_response_sha256": "a3a1c23e2e9fc2944f30f0fafdebe42f4a597ada4dd2918e47c9155213c966c3"
+  },
+  "team_total_ladders": {
+    "payoff_proof": "For lower integer threshold L below higher threshold H on the same team and game, team Over L plus team Under H pays one outside the interval and two when the final team score is at least L and below H; cancellation pays one because both legs resolve 50-50.",
+    "team_count": 2,
+    "market_count": 10,
+    "rule_valid_relation_count": 20,
+    "strict_displayed_sub_floor_candidate_count": 0,
+    "best_relation": {
+      "team": "Seahawks",
+      "lower_market_id": "3922486",
+      "lower_threshold": 25,
+      "lower_over_price_pUSD": "0.445",
+      "higher_market_id": "3922999",
+      "higher_threshold": 28,
+      "higher_under_price_pUSD": "0.61",
+      "displayed_package_sum_pUSD": "1.055",
+      "guaranteed_floor_pUSD": "1",
+      "optimistic_headroom_before_execution_costs_pUSD": "-0.055"
+    }
+  },
+  "two_team_additive_covers": {
+    "package": "Patriots Under A plus Seahawks Under B plus full-game Over G",
+    "complete_proof_condition": "A+B-1 <= G <= A+B for integer scoring thresholds",
+    "why_lower_bound_is_required": "If the game reaches G, G greater than A+B-2 makes it impossible for both teams to remain below their thresholds, so the game-over leg plus any remaining under leg pays at least one.",
+    "why_upper_bound_is_required": "If the game stays below G, G no greater than A+B makes it impossible for both teams to reach their over thresholds, so at least one under leg pays one.",
+    "cancellation_payout_pUSD": "1.5",
+    "rule_valid_relation_count": 33,
+    "strict_displayed_sub_floor_candidate_count": 0,
+    "best_relation": {
+      "patriots_under_market_id": "3922993",
+      "patriots_threshold": 15,
+      "patriots_under_price_pUSD": "0.285",
+      "seahawks_under_market_id": "3922998",
+      "seahawks_threshold": 22,
+      "seahawks_under_price_pUSD": "0.36",
+      "game_over_market_id": "3920612",
+      "game_threshold": 37,
+      "game_over_price_pUSD": "0.725",
+      "displayed_package_sum_pUSD": "1.370",
+      "guaranteed_floor_pUSD": "1",
+      "optimistic_headroom_before_execution_costs_pUSD": "-0.370"
+    }
+  },
+  "methodology_correction": {
+    "status": "corrected_before_freeze_or_access",
+    "error": "An exploratory calculation initially enforced only G >= A+B-1 and therefore admitted states below G where both teams exceeded their thresholds and every package leg paid zero.",
+    "false_candidate_count_discarded": 50,
+    "false_relation_count_discarded": 308,
+    "market_or_book_requests_caused": 0,
+    "registry_or_profit_claim_caused": false,
+    "durable_rule": "Never accept an additive cover from one directional implication; enumerate both the event and complement states and require the complete bidirectional threshold condition before price access."
+  },
+  "adjudication": {
+    "status": "terminal_retained_team_total_ladder_and_additive_cover_graphs_rejected_before_books_and_fees",
+    "accepted_edge": false,
+    "deployment_ready": false,
+    "profitability_claim": false,
+    "market_direction_forecast_required": false,
+    "book_or_fee_request_permitted": false,
+    "next_action": "do_not_repeat_reprice_or_request_books_for_either_retained_graph"
+  },
+  "authority": {
+    "new_network_requests": 0,
+    "account_requests": 0,
+    "credentials_used": false,
+    "funds_used": false,
+    "orders_or_transactions": 0,
+    "protected_capture_touched": false,
+    "trading_authority": false
+  },
+  "result_sha256": "317ecd24a990456be2e8c64f644f7481309d7c5e663c33274d281270483a848f"
+}

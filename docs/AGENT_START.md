@@ -114,6 +114,15 @@ same retained bytes also proved all nine valid team-total to full-game-total
 implications were above floor; the best cost 1.465 pUSD for a 1 pUSD floor.
 Do not rebuild, reprice, or book-capture that graph.
 
+The same retained event is also exhausted across both team-total ladders and
+the exact two-team additive cover. Twenty valid within-team ladder packages had
+zero sub-floor candidates and a best cost of 1.055 pUSD. The corrected additive
+proof requires both sides, `A+B-1 <= G <= A+B`; 33 valid packages had zero
+sub-floor candidates and a best cost of 1.370 pUSD. An exploratory one-sided
+condition produced false candidates but was caught and discarded before freeze,
+venue access, or any registry/profit claim. Never rebuild or reprice either
+graph, and never price an additive cover before proving both complement states.
+
 The historical Binance Direct Stocks fee overlay ended at
 `2026-08-31T00:00:00Z`. Binance's August 28 extension announcement says the
 same 0.05% spread and 0.17-USD fee tiers continue through September 30, but the
