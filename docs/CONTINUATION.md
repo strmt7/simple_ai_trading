@@ -22,29 +22,43 @@ Development belongs only on `main`; do not create another development branch.
   0.0005909365952300705204892211 pUSD, and corrected locked cashflow was
   217.6297012542271051 pUSD.
 
+  A separately preregistered zero-network robustness audit kept every lock
+  fixed and crossed 1/2/3/5/10 total adverse hedge ticks with fixed per-lock
+  costs. At the frozen gate of five ticks plus 0.05 pUSD on every lock,
+  aggregate cashflow remained 154.9035632142271051 pUSD and BTC, ETH, and SOL
+  aggregates were each positive, but only 43 of 66 locks, or 65.15%, remained
+  individually positive versus the required 80%. The gate therefore failed.
+  Median extra whole-tick capacity above baseline was eight, but the minimum
+  and p10 were zero. This materially narrows the claim: aggregate historical
+  surplus exists, but cross-lock stability does not.
+
   This is not an accepted edge, current executable profit, or authority to
   initiate the first leg. It is an existing-inventory risk-reduction overlay:
   only an independently justified owned first leg may be completed, and the
   matched YES+NO quantity then has a direction-independent one-pUSD terminal or
   merge identity. The public wallet is not owned, authorized, or assumed
-  reproducible. Current owned basis, finite-size book, merge/redemption,
-  external cost, and failure-unwind evidence remain absent, so the public
-  forward floor is zero. Do not repeat, narrow, paginate, alias, or resample the
-  consumed August 30 request. The next literal trigger is explicit read-only
-  account authority plus independently preexisting eligible BTC, ETH, or SOL
-  binary inventory with exact basis, or a material fee/merge/redemption/
-  execution change; any order requires separate explicit authority. Candidate
-  SHA-256 is
-  `e4392f0bad06aa56f5a80b72fd474f953a95c4da99b74f37db2c7fa3cfc70f9f`;
+  reproducible. Current owned per-lot basis, finite-size book,
+  merge/redemption, external cost, and failure-unwind evidence remain absent,
+  so the public forward floor is zero. Do not repeat, narrow, paginate, alias,
+  resample, or cherry-pick the consumed August 30 locks. The next literal
+  trigger is explicit read-only account authority plus independently
+  preexisting eligible BTC, ETH, or SOL binary inventory with exact per-lot
+  basis and external-cost ceiling, or a material fee/merge/redemption/execution
+  change. Reject every exact lot that is not positive after all costs; any order
+  requires separate explicit authority. Candidate SHA-256 is
+  `4ee6b1d3a54b6b112f9f031dc5cb91cb2abc2943119f512dfb26c79fe6c93a01`;
   validation SHA-256 is
   `b81af57f094f1ff75bcb77f9938ec7c84791af4e1cecb44b3402dac17d4dc1df`.
   Fee-rounding correction SHA-256 is
   `b423b44e57bfd329220256facf4b9eabe45371b267e7a91ea08aa11a666be204`.
+  Robustness contract and result SHA-256 are
+  `cc52cb4cafd7d36c432e39b1610e352bf513f405d2244432f7bcbc26dca2ea6f`
+  and `3f2bc8f2ea70345700062f43766bd1110299f7636367385daf4ce944f129046e`.
   Accepted edges remain 29, ranked hypotheses remain 47, terminal families
   become 121, registry SHA-256 is
-  `592e9f6213d1d909fbb193581b0899e3d7191f4cd33601f365ffe96ceeceed2c`,
+  `669324eaae8533fb51fae63078f561499b74666a511847fe99f7c8b48eba085e`,
   and durability-audit SHA-256 is
-  `5bf1e78140ec0d3204b20bccddd2203edb4109e516e8189e59ca3b41610b826f`.
+  `3b4cbdacb890c13ce7f91ed1eb31feee65dc468503afbe0281f23f4760678467`.
 
 - The exact-title literature delta for `Arbitrage in Perpetual Contracts`
   (SSRN 5262988) is terminal as a source failure, not a Binance edge. The one

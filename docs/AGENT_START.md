@@ -35,26 +35,37 @@ ceiled each leg of each matched fragment to the published 0.00001 pUSD fee
 quantum. All 66 remained positive; total drag was only
 0.0005909365952300705204892211 pUSD and corrected locked cashflow was
 217.6297012542271051 pUSD. Both time halves and all three assets were positive.
+A separately preregistered zero-network robustness audit then kept all 66 locks
+fixed. At five total adverse ticks plus 0.05 pUSD fixed cost on every lock,
+aggregate cashflow remained 154.9035632142271051 pUSD and each asset aggregate
+remained positive, but only 43 locks, or 65.15%, stayed individually positive.
+That fails the frozen 80% cross-lock gate. The median lock absorbed eight
+additional whole adverse ticks above baseline, while the minimum and p10
+absorbed zero. Treat the candidate as serious but fragile, not stable.
 
 This is not an accepted edge, current executable profit, or a first-leg entry
 strategy. It applies only when one outcome is already held for an independently
 justified reason; the later exact-quantity opposite fill makes the matched
 inventory direction-neutral. The public wallet is not owned or reproducible,
-and current owned basis, book, merge or redemption, external costs, and failure
-unwind remain unproved. Do not repeat, narrow, paginate, alias, or resample the
-consumed request. Advance only with explicit read-only account authority plus
-independently preexisting eligible inventory; any order requires separate
-explicit authority. Candidate SHA-256 is
-`e4392f0bad06aa56f5a80b72fd474f953a95c4da99b74f37db2c7fa3cfc70f9f`;
+and current owned per-lot basis, book, merge or redemption, external costs, and
+failure unwind remain unproved. Do not repeat, narrow, paginate, alias,
+resample, or cherry-pick historical survivors. Advance only with explicit
+read-only account authority plus independently preexisting eligible inventory;
+reject each lot unless its exact completion is positive after every cost. Any
+order requires separate explicit authority. Candidate SHA-256 is
+`4ee6b1d3a54b6b112f9f031dc5cb91cb2abc2943119f512dfb26c79fe6c93a01`;
 validation SHA-256 is
 `b81af57f094f1ff75bcb77f9938ec7c84791af4e1cecb44b3402dac17d4dc1df`.
 Fee-rounding correction SHA-256 is
 `b423b44e57bfd329220256facf4b9eabe45371b267e7a91ea08aa11a666be204`.
+Robustness contract and result SHA-256 are
+`cc52cb4cafd7d36c432e39b1610e352bf513f405d2244432f7bcbc26dca2ea6f`
+and `3f2bc8f2ea70345700062f43766bd1110299f7636367385daf4ce944f129046e`.
 Accepted edges remain 29, ranked hypotheses remain 47, terminal families become
 121, registry SHA-256 is
-`592e9f6213d1d909fbb193581b0899e3d7191f4cd33601f365ffe96ceeceed2c`,
+`669324eaae8533fb51fae63078f561499b74666a511847fe99f7c8b48eba085e`,
 and durability-audit SHA-256 is
-`5bf1e78140ec0d3204b20bccddd2203edb4109e516e8189e59ca3b41610b826f`.
+`3b4cbdacb890c13ce7f91ed1eb31feee65dc468503afbe0281f23f4760678467`.
 
 The exact-title literature delta for `Arbitrage in Perpetual Contracts` (SSRN
 5262988) is terminal as a source failure, not a Binance edge. The one frozen

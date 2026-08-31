@@ -118,11 +118,19 @@
       "corrected_one_tick_stressed_full_fee_no_rebate_locked_cashflow_pusd": "217.62970125422710510000000000000000000000000000000",
       "fee_rounding_correction_result_sha256": "b423b44e57bfd329220256facf4b9eabe45371b267e7a91ea08aa11a666be204",
       "fee_rounding_correction_source_path": "docs/model-research/action-value/polymarket-wallet-opposite-lock-rounding-correction-v1-2026-08-31.json",
+      "five_tick_plus_0_05_pusd_fixed_cost_all_asset_aggregate_positive": true,
+      "five_tick_plus_0_05_pusd_fixed_cost_positive_lock_count": 43,
+      "five_tick_plus_0_05_pusd_fixed_cost_positive_lock_fraction": "0.65151515151515151515151515151515151515151515151515",
+      "five_tick_plus_0_05_pusd_fixed_cost_total_locked_cashflow_pusd": "154.90356321422710510000000000000000000000000000000",
+      "median_additional_whole_adverse_ticks_above_one_tick_baseline": 8,
       "nonpositive_lock_count_after_conservative_rounding": 0,
+      "predeclared_cross_lock_robustness_gate_passed": false,
       "public_forward_profit_floor_pusd": "0",
-      "result_sha256": "e4392f0bad06aa56f5a80b72fd474f953a95c4da99b74f37db2c7fa3cfc70f9f",
+      "result_sha256": "4ee6b1d3a54b6b112f9f031dc5cb91cb2abc2943119f512dfb26c79fe6c93a01",
+      "robustness_result_sha256": "3f2bc8f2ea70345700062f43766bd1110299f7636367385daf4ce944f129046e",
+      "robustness_source_path": "docs/model-research/action-value/polymarket-wallet-opposite-lock-robustness-result-v1-2026-08-31.json",
       "source_path": "docs/model-research/action-value/polymarket-existing-inventory-opposite-lock-candidate-v1-2026-08-31.json",
-      "why_not_stable_deployable": "The frozen rule repeated on a later complete public-wallet day and becomes direction-neutral after completion, but it cannot justify first-leg inventory, the wallet is not owned or reproducible, and current owned basis finite-size book merge external costs and failure unwind are unproved."
+      "why_not_stable_deployable": "The frozen rule repeated on a later complete public-wallet day and aggregate historical cashflow survived the predeclared five-tick plus fixed-cost stress, but only 43 of 66 locks remained positive versus the frozen 80 percent requirement. It cannot justify first-leg inventory, the wallet is not owned or reproducible, and current per-lot owned basis finite-size book merge external costs and failure unwind are unproved."
     },
     "polymarket_recurring_cash_leader": {
       "assets": [
@@ -141,7 +149,7 @@
       "why_not_stable_deployable": "Current rate remains conflict-qualified rather than proven, the evidence is from public wallets rather than the owned account, every external friction and best alternative is not bound, and future persistence is not guaranteed."
     }
   },
-  "result_sha256": "5bf1e78140ec0d3204b20bccddd2203edb4109e516e8189e59ca3b41610b826f",
+  "result_sha256": "3b4cbdacb890c13ce7f91ed1eb31feee65dc468503afbe0281f23f4760678467",
   "routing": {
     "do_not_count_as_standalone_profit": [
       "advertised_or_public_rate_without_realized_cash",
@@ -149,14 +157,15 @@
       "acceptance_predicate_that_requires_future_owned_realization",
       "referral_creator_builder_client_or_follower_income_without_authentic_external_flow"
     ],
-    "next_research_priority": "Seek repeatable Tier A direct-cash mechanisms or materially improve Tier A account cost persistence evidence. The new opposite-lock result is a serious Tier C existing-inventory candidate and should advance only on independently existing owned inventory, not by initiating a first leg. Do not spend requests or tests merely increasing Tier C or Tier D counts while a Tier A trigger is closed.",
-    "polymarket_next_literal_trigger": "Do not repeat the consumed V11 single-wallet activity pulse or its exact successful V12 receipt reconciliation. Wait for a material official holding-yield rate, program, cross-asset payout, or economic-comparator change. Do not repeat narrow paginate alias or resample the consumed August 30 public-wallet opposite-lock validation: it passed historically but its next literal trigger is explicit read-only account authority plus independently preexisting eligible BTC ETH or SOL binary inventory with exact basis, or a material fee merge redemption or execution change; any order requires separate explicit authority. The exact Frantisek Olha Presov paired-maker candidate is separately terminal after exact sources reconciled but its one-use book had zero YES bids, zero NO asks, and stale timestamps; do not retry or substitute a Presov sibling. The public market_competitiveness value of zero is not an owned payout share: current official SDK owned-percentage routes require Level 2 authentication, and no retained primary source maps that field to a positive account-independent share. The consumed August 31 Sports maker-rebate search-index drift is also terminal while canonical Maker Rebates Markdown remains SHA-256 8d2c6562bd1b3376bc3fc1557a60efef5aa3c1d856c7f8dcc405139a07e9ba2a; search snippets are discovery only. Reopen only on the registry's exact canonical byte-change, semantics, or authorized owned-evidence trigger.",
+    "next_research_priority": "Seek repeatable Tier A direct-cash mechanisms or materially improve Tier A account cost persistence evidence. The opposite-lock result is a serious but cross-lock-fragile Tier C existing-inventory candidate: aggregate historical surplus survived stress but its preregistered 80 percent lock-survival gate failed. Advance only on independently existing owned inventory with an exact per-lot positive completion, never by initiating a first leg or subsidizing a fragile lot with aggregate history. Do not spend requests or tests merely increasing Tier C or Tier D counts while a Tier A trigger is closed.",
+    "polymarket_next_literal_trigger": "Do not repeat the consumed V11 single-wallet activity pulse or its exact successful V12 receipt reconciliation. Wait for a material official holding-yield rate, program, cross-asset payout, or economic-comparator change. Do not repeat narrow paginate alias resample or cherry-pick the consumed August 30 public-wallet opposite-lock validation: it passed historically at one tick but failed the separately preregistered cross-lock robustness gate at five ticks plus 0.05 pUSD per lock. Its next literal trigger is explicit read-only account authority plus independently preexisting eligible BTC ETH or SOL binary inventory with exact per-lot basis and external-cost ceiling, or a material fee merge redemption or execution change; any order requires separate explicit authority. The exact Frantisek Olha Presov paired-maker candidate is separately terminal after exact sources reconciled but its one-use book had zero YES bids, zero NO asks, and stale timestamps; do not retry or substitute a Presov sibling. The public market_competitiveness value of zero is not an owned payout share: current official SDK owned-percentage routes require Level 2 authentication, and no retained primary source maps that field to a positive account-independent share. The consumed August 31 Sports maker-rebate search-index drift is also terminal while canonical Maker Rebates Markdown remains SHA-256 8d2c6562bd1b3376bc3fc1557a60efef5aa3c1d856c7f8dcc405139a07e9ba2a; search snippets are discovery only. Reopen only on the registry's exact canonical byte-change, semantics, or authorized owned-evidence trigger.",
     "binance_next_literal_trigger": "Do not repeat or book-capture the terminal 2026 GLW, GOOGL, QCOM, or PYPL dividend-timing episodes. QCOM and PYPL fail the shared strictly-positive-net-distribution gate before issuer-calendar or market access. Do not poll or pre-position around the September 3 WBETH/ETH, BNSOL/SOL, or BFUSD/USDT isolated-margin removals: the current primary source proves timing but no forced-flow direction or conversion floor. Advance a genuinely distinct Tier A or Tier B monetary mechanism only when its registry retry trigger is satisfied; do not repeat exhausted all-symbol triangle, stablecoin-cycle, or official-document inventory screens on unchanged evidence."
   },
   "schema_version": "accepted-edge-profitability-durability-audit-v1",
+  "updated_at_utc": "2026-08-31T22:15:00Z",
   "source_binding": {
     "accepted_edge_count": 29,
     "registry_path": "docs/model-research/structural-edge-priority-registry-v1.json",
-    "registry_result_sha256": "592e9f6213d1d909fbb193581b0899e3d7191f4cd33601f365ffe96ceeceed2c"
+    "registry_result_sha256": "669324eaae8533fb51fae63078f561499b74666a511847fe99f7c8b48eba085e"
   }
 }

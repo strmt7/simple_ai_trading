@@ -1,0 +1,531 @@
+{
+  "adjudication": {
+    "accepted_edge": false,
+    "deployment_ready": false,
+    "historical_out_of_sample_robustness_gate_passed": false,
+    "profitability_claim": false,
+    "public_forward_profit_floor_pusd": "0",
+    "status": "fixed_historical_lock_set_fails_predeclared_robustness_gate",
+    "trading_authority": false
+  },
+  "analysis": {
+    "base_lock_count": 66,
+    "base_matched_shares": "1486.108451",
+    "baseline_one_tick_break_even_fixed_cost_per_lock_pusd": {
+      "maximum": "55.08001997955000000000000000000000000000000000000",
+      "median_nearest_rank": "1.0103127500000000000000000000000000000000000000000",
+      "minimum": "0.006496827943722000000000000000000000000000000000",
+      "p10_nearest_rank": "0.08150666664500000000000000000000000000000000000000",
+      "p90_nearest_rank": "7.972750460378322000000000000000000000000000000000"
+    },
+    "maximum_additional_whole_adverse_ticks_above_baseline": {
+      "maximum": 70,
+      "median_nearest_rank": 8,
+      "minimum": 0,
+      "p10_nearest_rank": 0,
+      "p90_nearest_rank": 42,
+      "search_ceiling_total_ticks": 100
+    },
+    "predeclared_gate_passed": false,
+    "predeclared_gate_scenario": {
+      "all_asset_aggregate_pnl_positive": true,
+      "asset_aggregate_pnl_pusd": {
+        "btc": "151.02038338084593010000000000000000000000000000000",
+        "eth": "3.4247698333811750000000000000000000000000000000000",
+        "sol": "0.4584100000000000000000000000000000000000000000000"
+      },
+      "fixed_operating_cost_per_lock_pusd": "0.05",
+      "positive_lock_count": 43,
+      "positive_lock_fraction": "0.65151515151515151515151515151515151515151515151515",
+      "positive_lock_matched_shares": "750.329318",
+      "total_hedge_adverse_ticks": 5,
+      "total_locked_pnl_pusd": "154.90356321422710510000000000000000000000000000000"
+    },
+    "scenarios": [
+      {
+        "all_asset_aggregate_pnl_positive": true,
+        "asset_aggregate_pnl_pusd": {
+          "btc": "210.54326442084593010000000000000000000000000000000",
+          "eth": "6.1176568333811750000000000000000000000000000000000",
+          "sol": "0.9687800000000000000000000000000000000000000000000"
+        },
+        "fixed_operating_cost_per_lock_pusd": "0",
+        "positive_lock_count": 66,
+        "positive_lock_fraction": "1",
+        "positive_lock_matched_shares": "1486.108451",
+        "total_hedge_adverse_ticks": 1,
+        "total_locked_pnl_pusd": "217.62970125422710510000000000000000000000000000000"
+      },
+      {
+        "all_asset_aggregate_pnl_positive": true,
+        "asset_aggregate_pnl_pusd": {
+          "btc": "209.96326442084593010000000000000000000000000000000",
+          "eth": "6.0576568333811750000000000000000000000000000000000",
+          "sol": "0.9487800000000000000000000000000000000000000000000"
+        },
+        "fixed_operating_cost_per_lock_pusd": "0.01",
+        "positive_lock_count": 65,
+        "positive_lock_fraction": "0.98484848484848484848484848484848484848484848484848",
+        "positive_lock_matched_shares": "1464.206146",
+        "total_hedge_adverse_ticks": 1,
+        "total_locked_pnl_pusd": "216.96970125422710510000000000000000000000000000000"
+      },
+      {
+        "all_asset_aggregate_pnl_positive": true,
+        "asset_aggregate_pnl_pusd": {
+          "btc": "207.64326442084593010000000000000000000000000000000",
+          "eth": "5.8176568333811750000000000000000000000000000000000",
+          "sol": "0.8687800000000000000000000000000000000000000000000"
+        },
+        "fixed_operating_cost_per_lock_pusd": "0.05",
+        "positive_lock_count": 62,
+        "positive_lock_fraction": "0.93939393939393939393939393939393939393939393939394",
+        "positive_lock_matched_shares": "1441.352074",
+        "total_hedge_adverse_ticks": 1,
+        "total_locked_pnl_pusd": "214.32970125422710510000000000000000000000000000000"
+      },
+      {
+        "all_asset_aggregate_pnl_positive": true,
+        "asset_aggregate_pnl_pusd": {
+          "btc": "204.74326442084593010000000000000000000000000000000",
+          "eth": "5.5176568333811750000000000000000000000000000000000",
+          "sol": "0.7687800000000000000000000000000000000000000000000"
+        },
+        "fixed_operating_cost_per_lock_pusd": "0.10",
+        "positive_lock_count": 59,
+        "positive_lock_fraction": "0.89393939393939393939393939393939393939393939393939",
+        "positive_lock_matched_shares": "1409.589798",
+        "total_hedge_adverse_ticks": 1,
+        "total_locked_pnl_pusd": "211.02970125422710510000000000000000000000000000000"
+      },
+      {
+        "all_asset_aggregate_pnl_positive": true,
+        "asset_aggregate_pnl_pusd": {
+          "btc": "196.04326442084593010000000000000000000000000000000",
+          "eth": "4.6176568333811750000000000000000000000000000000000",
+          "sol": "0.4687800000000000000000000000000000000000000000000"
+        },
+        "fixed_operating_cost_per_lock_pusd": "0.25",
+        "positive_lock_count": 54,
+        "positive_lock_fraction": "0.81818181818181818181818181818181818181818181818182",
+        "positive_lock_matched_shares": "1344.759798",
+        "total_hedge_adverse_ticks": 1,
+        "total_locked_pnl_pusd": "201.12970125422710510000000000000000000000000000000"
+      },
+      {
+        "all_asset_aggregate_pnl_positive": false,
+        "asset_aggregate_pnl_pusd": {
+          "btc": "152.54326442084593010000000000000000000000000000000",
+          "eth": "0.11765683338117500000000000000000000000000000000000",
+          "sol": "-1.0312200000000000000000000000000000000000000000000"
+        },
+        "fixed_operating_cost_per_lock_pusd": "1.00",
+        "positive_lock_count": 34,
+        "positive_lock_fraction": "0.51515151515151515151515151515151515151515151515152",
+        "positive_lock_matched_shares": "1022.056587",
+        "total_hedge_adverse_ticks": 1,
+        "total_locked_pnl_pusd": "151.62970125422710510000000000000000000000000000000"
+      },
+      {
+        "all_asset_aggregate_pnl_positive": true,
+        "asset_aggregate_pnl_pusd": {
+          "btc": "196.35779916084593010000000000000000000000000000000",
+          "eth": "5.5181775833811750000000000000000000000000000000000",
+          "sol": "0.8659800000000000000000000000000000000000000000000"
+        },
+        "fixed_operating_cost_per_lock_pusd": "0",
+        "positive_lock_count": 58,
+        "positive_lock_fraction": "0.87878787878787878787878787878787878787878787878788",
+        "positive_lock_matched_shares": "1271.222729",
+        "total_hedge_adverse_ticks": 2,
+        "total_locked_pnl_pusd": "202.74195674422710510000000000000000000000000000000"
+      },
+      {
+        "all_asset_aggregate_pnl_positive": true,
+        "asset_aggregate_pnl_pusd": {
+          "btc": "195.77779916084593010000000000000000000000000000000",
+          "eth": "5.4581775833811750000000000000000000000000000000000",
+          "sol": "0.8459800000000000000000000000000000000000000000000"
+        },
+        "fixed_operating_cost_per_lock_pusd": "0.01",
+        "positive_lock_count": 58,
+        "positive_lock_fraction": "0.87878787878787878787878787878787878787878787878788",
+        "positive_lock_matched_shares": "1271.222729",
+        "total_hedge_adverse_ticks": 2,
+        "total_locked_pnl_pusd": "202.08195674422710510000000000000000000000000000000"
+      },
+      {
+        "all_asset_aggregate_pnl_positive": true,
+        "asset_aggregate_pnl_pusd": {
+          "btc": "193.45779916084593010000000000000000000000000000000",
+          "eth": "5.2181775833811750000000000000000000000000000000000",
+          "sol": "0.7659800000000000000000000000000000000000000000000"
+        },
+        "fixed_operating_cost_per_lock_pusd": "0.05",
+        "positive_lock_count": 56,
+        "positive_lock_fraction": "0.84848484848484848484848484848484848484848484848485",
+        "positive_lock_matched_shares": "1240.085597",
+        "total_hedge_adverse_ticks": 2,
+        "total_locked_pnl_pusd": "199.44195674422710510000000000000000000000000000000"
+      },
+      {
+        "all_asset_aggregate_pnl_positive": true,
+        "asset_aggregate_pnl_pusd": {
+          "btc": "190.55779916084593010000000000000000000000000000000",
+          "eth": "4.9181775833811750000000000000000000000000000000000",
+          "sol": "0.6659800000000000000000000000000000000000000000000"
+        },
+        "fixed_operating_cost_per_lock_pusd": "0.10",
+        "positive_lock_count": 53,
+        "positive_lock_fraction": "0.80303030303030303030303030303030303030303030303030",
+        "positive_lock_matched_shares": "1216.635597",
+        "total_hedge_adverse_ticks": 2,
+        "total_locked_pnl_pusd": "196.14195674422710510000000000000000000000000000000"
+      },
+      {
+        "all_asset_aggregate_pnl_positive": true,
+        "asset_aggregate_pnl_pusd": {
+          "btc": "181.85779916084593010000000000000000000000000000000",
+          "eth": "4.0181775833811750000000000000000000000000000000000",
+          "sol": "0.3659800000000000000000000000000000000000000000000"
+        },
+        "fixed_operating_cost_per_lock_pusd": "0.25",
+        "positive_lock_count": 49,
+        "positive_lock_fraction": "0.74242424242424242424242424242424242424242424242424",
+        "positive_lock_matched_shares": "1174.094226",
+        "total_hedge_adverse_ticks": 2,
+        "total_locked_pnl_pusd": "186.24195674422710510000000000000000000000000000000"
+      },
+      {
+        "all_asset_aggregate_pnl_positive": false,
+        "asset_aggregate_pnl_pusd": {
+          "btc": "138.35779916084593010000000000000000000000000000000",
+          "eth": "-0.48182241661882500000000000000000000000000000000000",
+          "sol": "-1.1340200000000000000000000000000000000000000000000"
+        },
+        "fixed_operating_cost_per_lock_pusd": "1.00",
+        "positive_lock_count": 31,
+        "positive_lock_fraction": "0.46969696969696969696969696969696969696969696969697",
+        "positive_lock_matched_shares": "853.797038",
+        "total_hedge_adverse_ticks": 2,
+        "total_locked_pnl_pusd": "136.74195674422710510000000000000000000000000000000"
+      },
+      {
+        "all_asset_aggregate_pnl_positive": true,
+        "asset_aggregate_pnl_pusd": {
+          "btc": "182.19213390084593010000000000000000000000000000000",
+          "eth": "4.9195583333811750000000000000000000000000000000000",
+          "sol": "0.7633200000000000000000000000000000000000000000000"
+        },
+        "fixed_operating_cost_per_lock_pusd": "0",
+        "positive_lock_count": 54,
+        "positive_lock_fraction": "0.81818181818181818181818181818181818181818181818182",
+        "positive_lock_matched_shares": "1132.901465",
+        "total_hedge_adverse_ticks": 3,
+        "total_locked_pnl_pusd": "187.87501223422710510000000000000000000000000000000"
+      },
+      {
+        "all_asset_aggregate_pnl_positive": true,
+        "asset_aggregate_pnl_pusd": {
+          "btc": "181.61213390084593010000000000000000000000000000000",
+          "eth": "4.8595583333811750000000000000000000000000000000000",
+          "sol": "0.7433200000000000000000000000000000000000000000000"
+        },
+        "fixed_operating_cost_per_lock_pusd": "0.01",
+        "positive_lock_count": 52,
+        "positive_lock_fraction": "0.78787878787878787878787878787878787878787878787879",
+        "positive_lock_matched_shares": "1105.775043",
+        "total_hedge_adverse_ticks": 3,
+        "total_locked_pnl_pusd": "187.21501223422710510000000000000000000000000000000"
+      },
+      {
+        "all_asset_aggregate_pnl_positive": true,
+        "asset_aggregate_pnl_pusd": {
+          "btc": "179.29213390084593010000000000000000000000000000000",
+          "eth": "4.6195583333811750000000000000000000000000000000000",
+          "sol": "0.6633200000000000000000000000000000000000000000000"
+        },
+        "fixed_operating_cost_per_lock_pusd": "0.05",
+        "positive_lock_count": 52,
+        "positive_lock_fraction": "0.78787878787878787878787878787878787878787878787879",
+        "positive_lock_matched_shares": "1105.775043",
+        "total_hedge_adverse_ticks": 3,
+        "total_locked_pnl_pusd": "184.57501223422710510000000000000000000000000000000"
+      },
+      {
+        "all_asset_aggregate_pnl_positive": true,
+        "asset_aggregate_pnl_pusd": {
+          "btc": "176.39213390084593010000000000000000000000000000000",
+          "eth": "4.3195583333811750000000000000000000000000000000000",
+          "sol": "0.5633200000000000000000000000000000000000000000000"
+        },
+        "fixed_operating_cost_per_lock_pusd": "0.10",
+        "positive_lock_count": 48,
+        "positive_lock_fraction": "0.72727272727272727272727272727272727272727272727273",
+        "positive_lock_matched_shares": "1060.045043",
+        "total_hedge_adverse_ticks": 3,
+        "total_locked_pnl_pusd": "181.27501223422710510000000000000000000000000000000"
+      },
+      {
+        "all_asset_aggregate_pnl_positive": true,
+        "asset_aggregate_pnl_pusd": {
+          "btc": "167.69213390084593010000000000000000000000000000000",
+          "eth": "3.4195583333811750000000000000000000000000000000000",
+          "sol": "0.2633200000000000000000000000000000000000000000000"
+        },
+        "fixed_operating_cost_per_lock_pusd": "0.25",
+        "positive_lock_count": 44,
+        "positive_lock_fraction": "0.66666666666666666666666666666666666666666666666667",
+        "positive_lock_matched_shares": "959.107402",
+        "total_hedge_adverse_ticks": 3,
+        "total_locked_pnl_pusd": "171.37501223422710510000000000000000000000000000000"
+      },
+      {
+        "all_asset_aggregate_pnl_positive": false,
+        "asset_aggregate_pnl_pusd": {
+          "btc": "124.19213390084593010000000000000000000000000000000",
+          "eth": "-1.0804416666188250000000000000000000000000000000000",
+          "sol": "-1.2366800000000000000000000000000000000000000000000"
+        },
+        "fixed_operating_cost_per_lock_pusd": "1.00",
+        "positive_lock_count": 27,
+        "positive_lock_fraction": "0.40909090909090909090909090909090909090909090909091",
+        "positive_lock_matched_shares": "632.491484",
+        "total_hedge_adverse_ticks": 3,
+        "total_locked_pnl_pusd": "121.87501223422710510000000000000000000000000000000"
+      },
+      {
+        "all_asset_aggregate_pnl_positive": true,
+        "asset_aggregate_pnl_pusd": {
+          "btc": "153.92038338084593010000000000000000000000000000000",
+          "eth": "3.7247698333811750000000000000000000000000000000000",
+          "sol": "0.5584100000000000000000000000000000000000000000000"
+        },
+        "fixed_operating_cost_per_lock_pusd": "0",
+        "positive_lock_count": 44,
+        "positive_lock_fraction": "0.66666666666666666666666666666666666666666666666667",
+        "positive_lock_matched_shares": "763.757402",
+        "total_hedge_adverse_ticks": 5,
+        "total_locked_pnl_pusd": "158.20356321422710510000000000000000000000000000000"
+      },
+      {
+        "all_asset_aggregate_pnl_positive": true,
+        "asset_aggregate_pnl_pusd": {
+          "btc": "153.34038338084593010000000000000000000000000000000",
+          "eth": "3.6647698333811750000000000000000000000000000000000",
+          "sol": "0.5384100000000000000000000000000000000000000000000"
+        },
+        "fixed_operating_cost_per_lock_pusd": "0.01",
+        "positive_lock_count": 43,
+        "positive_lock_fraction": "0.65151515151515151515151515151515151515151515151515",
+        "positive_lock_matched_shares": "750.329318",
+        "total_hedge_adverse_ticks": 5,
+        "total_locked_pnl_pusd": "157.54356321422710510000000000000000000000000000000"
+      },
+      {
+        "all_asset_aggregate_pnl_positive": true,
+        "asset_aggregate_pnl_pusd": {
+          "btc": "151.02038338084593010000000000000000000000000000000",
+          "eth": "3.4247698333811750000000000000000000000000000000000",
+          "sol": "0.4584100000000000000000000000000000000000000000000"
+        },
+        "fixed_operating_cost_per_lock_pusd": "0.05",
+        "positive_lock_count": 43,
+        "positive_lock_fraction": "0.65151515151515151515151515151515151515151515151515",
+        "positive_lock_matched_shares": "750.329318",
+        "total_hedge_adverse_ticks": 5,
+        "total_locked_pnl_pusd": "154.90356321422710510000000000000000000000000000000"
+      },
+      {
+        "all_asset_aggregate_pnl_positive": true,
+        "asset_aggregate_pnl_pusd": {
+          "btc": "148.12038338084593010000000000000000000000000000000",
+          "eth": "3.1247698333811750000000000000000000000000000000000",
+          "sol": "0.3584100000000000000000000000000000000000000000000"
+        },
+        "fixed_operating_cost_per_lock_pusd": "0.10",
+        "positive_lock_count": 39,
+        "positive_lock_fraction": "0.59090909090909090909090909090909090909090909090909",
+        "positive_lock_matched_shares": "714.222414",
+        "total_hedge_adverse_ticks": 5,
+        "total_locked_pnl_pusd": "151.60356321422710510000000000000000000000000000000"
+      },
+      {
+        "all_asset_aggregate_pnl_positive": true,
+        "asset_aggregate_pnl_pusd": {
+          "btc": "139.42038338084593010000000000000000000000000000000",
+          "eth": "2.2247698333811750000000000000000000000000000000000",
+          "sol": "0.0584100000000000000000000000000000000000000000000"
+        },
+        "fixed_operating_cost_per_lock_pusd": "0.25",
+        "positive_lock_count": 36,
+        "positive_lock_fraction": "0.54545454545454545454545454545454545454545454545455",
+        "positive_lock_matched_shares": "686.203897",
+        "total_hedge_adverse_ticks": 5,
+        "total_locked_pnl_pusd": "141.70356321422710510000000000000000000000000000000"
+      },
+      {
+        "all_asset_aggregate_pnl_positive": false,
+        "asset_aggregate_pnl_pusd": {
+          "btc": "95.920383380845930100000000000000000000000000000000",
+          "eth": "-2.2752301666188250000000000000000000000000000000000",
+          "sol": "-1.4415900000000000000000000000000000000000000000000"
+        },
+        "fixed_operating_cost_per_lock_pusd": "1.00",
+        "positive_lock_count": 23,
+        "positive_lock_fraction": "0.34848484848484848484848484848484848484848484848485",
+        "positive_lock_matched_shares": "550.993173",
+        "total_hedge_adverse_ticks": 5,
+        "total_locked_pnl_pusd": "92.203563214227105100000000000000000000000000000000"
+      },
+      {
+        "all_asset_aggregate_pnl_positive": true,
+        "asset_aggregate_pnl_pusd": {
+          "btc": "92.852897080845930100000000000000000000000000000000",
+          "eth": "0.7525035833811750000000000000000000000000000000000",
+          "sol": "0.0485800000000000000000000000000000000000000000000"
+        },
+        "fixed_operating_cost_per_lock_pusd": "0",
+        "positive_lock_count": 32,
+        "positive_lock_fraction": "0.48484848484848484848484848484848484848484848484848",
+        "positive_lock_matched_shares": "556.764048",
+        "total_hedge_adverse_ticks": 10,
+        "total_locked_pnl_pusd": "93.653980664227105100000000000000000000000000000000"
+      },
+      {
+        "all_asset_aggregate_pnl_positive": true,
+        "asset_aggregate_pnl_pusd": {
+          "btc": "92.272897080845930100000000000000000000000000000000",
+          "eth": "0.6925035833811750000000000000000000000000000000000",
+          "sol": "0.0285800000000000000000000000000000000000000000000"
+        },
+        "fixed_operating_cost_per_lock_pusd": "0.01",
+        "positive_lock_count": 32,
+        "positive_lock_fraction": "0.48484848484848484848484848484848484848484848484848",
+        "positive_lock_matched_shares": "556.764048",
+        "total_hedge_adverse_ticks": 10,
+        "total_locked_pnl_pusd": "92.993980664227105100000000000000000000000000000000"
+      },
+      {
+        "all_asset_aggregate_pnl_positive": false,
+        "asset_aggregate_pnl_pusd": {
+          "btc": "89.952897080845930100000000000000000000000000000000",
+          "eth": "0.4525035833811750000000000000000000000000000000000",
+          "sol": "-0.0514200000000000000000000000000000000000000000000"
+        },
+        "fixed_operating_cost_per_lock_pusd": "0.05",
+        "positive_lock_count": 30,
+        "positive_lock_fraction": "0.45454545454545454545454545454545454545454545454545",
+        "positive_lock_matched_shares": "551.114048",
+        "total_hedge_adverse_ticks": 10,
+        "total_locked_pnl_pusd": "90.353980664227105100000000000000000000000000000000"
+      },
+      {
+        "all_asset_aggregate_pnl_positive": false,
+        "asset_aggregate_pnl_pusd": {
+          "btc": "87.052897080845930100000000000000000000000000000000",
+          "eth": "0.1525035833811750000000000000000000000000000000000",
+          "sol": "-0.1514200000000000000000000000000000000000000000000"
+        },
+        "fixed_operating_cost_per_lock_pusd": "0.10",
+        "positive_lock_count": 29,
+        "positive_lock_fraction": "0.43939393939393939393939393939393939393939393939394",
+        "positive_lock_matched_shares": "546.114048",
+        "total_hedge_adverse_ticks": 10,
+        "total_locked_pnl_pusd": "87.053980664227105100000000000000000000000000000000"
+      },
+      {
+        "all_asset_aggregate_pnl_positive": false,
+        "asset_aggregate_pnl_pusd": {
+          "btc": "78.352897080845930100000000000000000000000000000000",
+          "eth": "-0.74749641661882500000000000000000000000000000000000",
+          "sol": "-0.4514200000000000000000000000000000000000000000000"
+        },
+        "fixed_operating_cost_per_lock_pusd": "0.25",
+        "positive_lock_count": 28,
+        "positive_lock_fraction": "0.42424242424242424242424242424242424242424242424242",
+        "positive_lock_matched_shares": "534.808494",
+        "total_hedge_adverse_ticks": 10,
+        "total_locked_pnl_pusd": "77.153980664227105100000000000000000000000000000000"
+      },
+      {
+        "all_asset_aggregate_pnl_positive": false,
+        "asset_aggregate_pnl_pusd": {
+          "btc": "34.852897080845930100000000000000000000000000000000",
+          "eth": "-5.2474964166188250000000000000000000000000000000000",
+          "sol": "-1.9514200000000000000000000000000000000000000000000"
+        },
+        "fixed_operating_cost_per_lock_pusd": "1.00",
+        "positive_lock_count": 20,
+        "positive_lock_fraction": "0.30303030303030303030303030303030303030303030303030",
+        "positive_lock_matched_shares": "483.415099",
+        "total_hedge_adverse_ticks": 10,
+        "total_locked_pnl_pusd": "27.653980664227105100000000000000000000000000000000"
+      }
+    ]
+  },
+  "authority": {
+    "account_requests": 0,
+    "credentials_used": false,
+    "funds_used": false,
+    "network_requests": 0,
+    "orders_or_transactions": 0,
+    "protected_capture_touched": false,
+    "signed_requests": 0,
+    "trading_authority": false
+  },
+  "contract": {
+    "path": "docs/model-research/action-value/polymarket-wallet-opposite-lock-robustness-contract-v1-2026-08-31.json",
+    "sha256": "cc52cb4cafd7d36c432e39b1610e352bf513f405d2244432f7bcbc26dca2ea6f"
+  },
+  "created_at_utc": "2026-08-31T22:11:43.739937Z",
+  "implementation": {
+    "path": "tools/adjudicate_polymarket_wallet_opposite_lock_robustness.py",
+    "sha256": "203ed203f5b68e61a075902814aec5dbfa43bf08a5ebf1906890ba6f168851d6"
+  },
+  "method": {
+    "base_lock_set_reselected": false,
+    "fee_rounding": "ceil_each_leg_of_each_fixed_matched_fragment_to_0_00001_pUSD",
+    "fixed_cost_application": "once_per_retained_lock_even_when_stressed_pnl_is_nonpositive",
+    "interpretation": "A zero-network robustness profile of the already-selected OOS locks, not evidence of current executable prices or first-leg justification.",
+    "stress_grid": {
+      "break_even_tick_search_ceiling": 100,
+      "fee_quantum_pusd": "0.00001",
+      "fee_rate": "0.07",
+      "fixed_operating_cost_per_lock_pusd": [
+        "0",
+        "0.01",
+        "0.05",
+        "0.10",
+        "0.25",
+        "1.00"
+      ],
+      "tick_size_pusd": "0.01",
+      "total_hedge_adverse_ticks": [
+        1,
+        2,
+        3,
+        5,
+        10
+      ]
+    }
+  },
+  "result_sha256": "3f2bc8f2ea70345700062f43766bd1110299f7636367385daf4ce944f129046e",
+  "schema_version": "polymarket-wallet-opposite-lock-robustness-v1",
+  "source_binding": {
+    "fee_rounding_correction": {
+      "file_sha256": "cf2f486a395fdf91a24fe7f0a24fb2efcf8bf8b15d16322c27b8b3f4457d4b11",
+      "path": "docs/model-research/action-value/polymarket-wallet-opposite-lock-rounding-correction-v1-2026-08-31.json",
+      "self_sha256": "b423b44e57bfd329220256facf4b9eabe45371b267e7a91ea08aa11a666be204"
+    },
+    "frozen_validation_result": {
+      "file_sha256": "b90553bc3701ee53d55f308ce58d5597c1904fee4ec66529655a73528c384ccc",
+      "path": "docs/model-research/action-value/polymarket-wallet-opposite-lock-validation-result-v1-2026-08-31.json",
+      "self_sha256": "b81af57f094f1ff75bcb77f9938ec7c84791af4e1cecb44b3402dac17d4dc1df"
+    },
+    "published_fee_semantics": {
+      "file_sha256": "998abde974e94e88784c26915969b2a216f2f283bc09ad64b4ee1d0f82ebf5c8",
+      "path": "docs/model-research/action-value/raw/polymarket-organic-taker-rebate-v1/07-fees.html"
+    }
+  }
+}

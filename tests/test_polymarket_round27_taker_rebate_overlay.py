@@ -162,5 +162,17 @@ def test_candidate_is_registered_without_changing_the_accepted_edge_count() -> N
         artifacts[
             "docs/model-research/action-value/polymarket-existing-inventory-opposite-lock-candidate-v1-2026-08-31.json"
         ]
-        == "e4392f0bad06aa56f5a80b72fd474f953a95c4da99b74f37db2c7fa3cfc70f9f"
+        == "4ee6b1d3a54b6b112f9f031dc5cb91cb2abc2943119f512dfb26c79fe6c93a01"
+    )
+    assert (
+        artifacts[
+            "docs/model-research/action-value/polymarket-wallet-opposite-lock-robustness-contract-v1-2026-08-31.json"
+        ]
+        == "cc52cb4cafd7d36c432e39b1610e352bf513f405d2244432f7bcbc26dca2ea6f"
+    )
+    assert (
+        artifacts[
+            "docs/model-research/action-value/polymarket-wallet-opposite-lock-robustness-result-v1-2026-08-31.json"
+        ]
+        == "3f2bc8f2ea70345700062f43766bd1110299f7636367385daf4ce944f129046e"
     )
