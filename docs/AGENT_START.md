@@ -23,6 +23,36 @@ safety gate, blocks Stop, or submits an order.
 
 ### Latest efficient structural screen
 
+Rank 47's literal new-population trigger was satisfied and consumed efficiently.
+A frozen zero-network audit compared the exhausted 1,410-symbol August 27
+BTC/ETH/SOL crypto-option population with the already retained complete August
+31 Binance Options `exchangeInfo`. The current population had 1,576 eligible
+symbols: 508 exact additions and 342 removals. A separately frozen two-request
+public prefilter then captured the complete Options ticker and USD-M Futures
+book ticker once and evaluated only those 508 additions. Four hundred thirteen
+had positive option-ask and executable perpetual-entry sides, but zero had even
+a positive gross long-option plus opposite-perpetual terminal floor. They
+therefore fail before the frozen 33.5-bip option fee, settlement fee, futures
+round-trip, and expiry-basis stress, and before funding, ticks, capital, depth,
+or account costs.
+
+This exact August 31 delta is terminal with zero option-depth, funding, account,
+credential, order, or fund requests. Do not refresh, subset, reprice, or rebuild
+it. Reopen rank 47 only for a later distinct active BTC/ETH/SOL option population
+or another literal material fee, settlement, tick, depth, funding, basis,
+capital, or independently observed above-all-cost trigger. The population-delta
+contract and result SHA-256 values are
+`15604a7006b324bdd873481c79d5ac4ec34551a1d39d80904b546eb50ea441bc`
+and `001abaada3b352235cbc38228dec6b6176a26cdfb33e208f0c3467f858cf9446`.
+The price-prefilter contract and result SHA-256 values are
+`5e2d0c36588530a4c4bf176bfe874a43af6f0063b636670fd4d599d3356bd5af`
+and `93d2ed3c9b6041f9ffcc7f9579f184687113049051a421f9fc048d2d4e309eee`.
+Accepted edges remain 29, ranked hypotheses remain 47, terminal families become
+122, registry SHA-256 is
+`fc026e6e2c76d6d6589f964dbe52fe140e126d87ee005c96e786289f40f9664c`,
+and durability-audit SHA-256 is
+`6d72a1f54af7e18351133f9bd329acfc9f2800f429274f0d564228efdd9e1d0e`.
+
 A serious Polymarket existing-inventory opposite-lock candidate has passed one
 frozen out-of-sample historical validation. The rule was selected only on the
 retained August 25 public-wallet day, then one preregistered public

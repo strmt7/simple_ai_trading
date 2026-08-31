@@ -1,0 +1,68 @@
+{
+  "schema_version": "binance-crypto-option-population-price-prefilter-contract-v1",
+  "status": "frozen_before_two_public_price_requests",
+  "frozen_at_utc": "2026-08-31T22:42:29.1962979Z",
+  "purpose": "use exactly two public unauthenticated price requests to reject the exact 508-symbol new BTC ETH SOL crypto-option population unless a displayed long-option plus opposite USDT perpetual terminal floor exceeds the frozen fixed fee and expiry-basis stress",
+  "implementation": {
+    "path": "tools/capture_binance_crypto_option_population_price_prefilter.py",
+    "sha256": "f0f4939a745d944e98e3c3fc3206ca93c5f828dac77d50000ec5fdd8729e3743"
+  },
+  "retained_sources": {
+    "population_delta": {
+      "path": "docs/model-research/action-value/binance-crypto-option-population-delta-retained-result-v1-2026-08-31.json",
+      "file_sha256": "9bb807d70cdcfe297d3fb70c7856148e0bce74a4ffe4049e5b4561b45031e79f",
+      "canonical_result_sha256": "001abaada3b352235cbc38228dec6b6176a26cdfb33e208f0c3467f858cf9446"
+    },
+    "current_exchange_info": {
+      "path": "data/binance-stock-option-inventory-v1/raw/options-exchange-info.raw",
+      "sha256": "88db31aba07967eb9fcd6dd3c93b409e97b835365df9fd001590f53c6f3d3e23"
+    },
+    "endpoint_and_economic_source_contract": {
+      "path": "docs/model-research/action-value/binance-commodity-option-perpetual-lower-bound-contract-v1.json",
+      "file_sha256": "575a8935ba8bc51d7fceae75177399ffaf0c3ae51d1981884ddb6add1b2f3f98",
+      "role": "retained official public Options ticker and USD-M bookTicker endpoint identities plus long-option terminal lower-bound formulas and 33.5-bip fixed stress"
+    }
+  },
+  "requests": [
+    {
+      "method": "GET",
+      "name": "options-all-tickers",
+      "url": "https://eapi.binance.com/eapi/v1/ticker"
+    },
+    {
+      "method": "GET",
+      "name": "futures-all-book-tickers",
+      "url": "https://fapi.binance.com/fapi/v1/ticker/bookTicker"
+    }
+  ],
+  "maximum_capture_skew_ms": 5000,
+  "fixed_fee_and_basis_stress_bps": "33.5",
+  "economics": {
+    "call_gross_floor": "current BTC ETH or SOL perpetual bid minus strike minus current option ask",
+    "put_gross_floor": "strike minus current BTC ETH or SOL perpetual ask minus current option ask",
+    "fixed_gate": "require strictly positive gross floor after 2 option taker bips plus 1.5 option settlement bips plus 10 futures round-trip bips plus 20 expiry-basis bips",
+    "option_ask_quantity": "not exposed by the all-option ticker and therefore never treated as capacity",
+    "survivor": "freeze one zero-network full retained funding tick capital and quantity stress before any option depth request",
+    "no_survivor": "terminalize only this exact new population and stop without depth funding account or order requests"
+  },
+  "authority": {
+    "account_state_accessed": false,
+    "authenticated_requests": 0,
+    "credentials_used": false,
+    "funds_used": false,
+    "maximum_public_unauthenticated_GET_requests": 2,
+    "orders_quotes_transfers_or_wallet_actions": 0,
+    "paper_or_live_trading_authority": false
+  },
+  "prohibited_shortcuts": [
+    "evaluating any option outside the exact hash-bound 508-symbol new population",
+    "using option mark last bid or model price instead of the displayed ask",
+    "using futures mark or index instead of the executable entry side",
+    "requesting option depth funding account or order data before a strict fixed-stress survivor",
+    "assuming option ticker prices expose executable quantity",
+    "crediting favorable funding basis fees ticks capital or atomic execution",
+    "using credentials accounts orders quotes transfers wallets or funds",
+    "calling one public snapshot profitable recurring stable accepted or deployment ready"
+  ],
+  "contract_sha256": "5e2d0c36588530a4c4bf176bfe874a43af6f0063b636670fd4d599d3356bd5af"
+}

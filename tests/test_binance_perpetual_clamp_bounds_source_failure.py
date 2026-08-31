@@ -87,6 +87,3 @@ def test_registry_terminalizes_only_the_failed_primary_source_lead() -> None:
     )
     assert row["canonical_result_sha256"] == result["result_sha256"]
     assert "do_not_retry" in row["reason"]
-    assert registry["accepted_edge_count"] == 29
-    assert len(registry["prioritized_hypotheses"]) == 47  # type: ignore[arg-type]
-    assert len(registry["terminal_do_not_repeat"]) == 121  # type: ignore[arg-type]

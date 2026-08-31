@@ -1,0 +1,71 @@
+{
+  "schema_version": "binance-crypto-option-population-delta-retained-contract-v1",
+  "status": "frozen_before_zero_network_population_delta",
+  "frozen_at_utc": "2026-08-31T22:38:13.6869137Z",
+  "purpose": "compare the exact retained August 27 and August 31 active BTC ETH and SOL crypto-option populations offline before spending any current ticker futures depth or funding request",
+  "implementation": {
+    "path": "tools/audit_binance_crypto_option_population_delta_retained.py",
+    "sha256": "f37812dfaf55ad981482c80c919ceaf5ccdc8d9a17a817aa4c27cca26aeaf7cd"
+  },
+  "retained_sources": {
+    "baseline": {
+      "path": "data/binance-commodity-option-perpetual-lower-bound-v1/raw/options-exchange-info.raw",
+      "sha256": "81a8cb419821562c96537ec310e7043f40e2a63c7e96fb33d86a225f13b26449",
+      "role": "previously exhausted rank-47 active crypto-option population"
+    },
+    "current": {
+      "path": "data/binance-stock-option-inventory-v1/raw/options-exchange-info.raw",
+      "sha256": "88db31aba07967eb9fcd6dd3c93b409e97b835365df9fd001590f53c6f3d3e23",
+      "role": "same-day complete public Options exchangeInfo retained at 2026-08-31T17:29:52Z"
+    },
+    "current_capture_receipt": {
+      "path": "data/binance-stock-option-inventory-v1/request-journal.jsonl",
+      "sha256": "42985d10ff96877430c6dcaa5f9d3c23248795f7d69aff1c76eead08da970daf",
+      "response_bytes": 1290567,
+      "response_sha256": "88db31aba07967eb9fcd6dd3c93b409e97b835365df9fd001590f53c6f3d3e23",
+      "url": "https://eapi.binance.com/eapi/v1/exchangeInfo"
+    },
+    "current_capture_result": {
+      "path": "docs/model-research/action-value/binance-stock-option-inventory-result-v1-2026-08-31.json",
+      "file_sha256": "136f1892af156fd78ff27ff7e6f872c0042cc66a93f5cd734ed03b9ec88dcab2",
+      "canonical_result_sha256": "b72592efad26563aacc4e6d8611f15f3172039ffc220153ab824bf57231afcb3"
+    }
+  },
+  "expected_baseline_count": 1410,
+  "population_filter": {
+    "allowed_underlyings": [
+      "BTCUSDT",
+      "ETHUSDT",
+      "SOLUSDT"
+    ],
+    "contract_type": "CRYPTO_OPTIONS",
+    "option_unit": "1",
+    "quote_asset": "USDT",
+    "status": "TRADING",
+    "underlying_type": "CRYPTO"
+  },
+  "decision": {
+    "trigger": "rank 47 advances only if at least one exact eligible current symbol is absent from the exhausted baseline population",
+    "new_symbols": "freeze a separate public price prefilter restricted to the exact new symbol set before any market request",
+    "no_new_symbols": "stop without ticker futures depth or funding requests",
+    "removed_symbols": "report for lineage only and never treat delisting as a positive trigger",
+    "accepted_edge": "never from an inventory delta; after-cost displayed economics exact depth recurrence and account qualification remain mandatory"
+  },
+  "authority": {
+    "account_state_accessed": false,
+    "authenticated_requests": 0,
+    "credentials_used": false,
+    "funds_used": false,
+    "new_public_requests": 0,
+    "orders_quotes_transfers_or_wallet_actions": 0,
+    "paper_or_live_trading_authority": false
+  },
+  "prohibited_shortcuts": [
+    "requesting tickers futures books option depth or funding before the exact new-symbol trigger is proved",
+    "treating removed expired or renamed contracts as new population",
+    "parsing a different exchangeInfo response or refreshing the endpoint",
+    "using credentials account state orders quotes transfers wallets or funds",
+    "calling a listing delta profitable current recurring or deployment ready"
+  ],
+  "contract_sha256": "15604a7006b324bdd873481c79d5ac4ec34551a1d39d80904b546eb50ea441bc"
+}

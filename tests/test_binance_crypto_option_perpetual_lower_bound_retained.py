@@ -150,10 +150,10 @@ def test_registry_terminalizes_only_the_retained_single_option_population() -> N
     )
     assert hypothesis["priority_rank"] == 47
     assert hypothesis["market_direction_forecast_required"] is False
-    assert hypothesis["canonical_artifacts"][-1] == {
+    assert {
         "path": RESULT.relative_to(ROOT).as_posix(),
         "result_sha256": _load(RESULT)["result_sha256"],
-    }
+    } in hypothesis["canonical_artifacts"]
     terminal = next(
         row
         for row in registry["terminal_do_not_repeat"]
