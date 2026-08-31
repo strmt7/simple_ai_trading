@@ -1,0 +1,60 @@
+{
+  "authority": {
+    "account_or_funded_actions_permitted": false,
+    "credentials_permitted": false,
+    "orders_or_cancellations_permitted": false,
+    "public_unauthenticated_read_only_only": true
+  },
+  "candidate": {
+    "event_slug": "of-views-of-grand-theft-auto-vi-extended-look-on-week-1",
+    "market_slug": "will-grand-theft-auto-vi-extended-look-get-less-than-20-million-views-on-week-1",
+    "outcomes": [
+      "Yes",
+      "No"
+    ],
+    "question": "Will Grand Theft Auto VI Extended Look get less than 20 million views on week 1?",
+    "selection": "First exact zero-alias long-horizon non-crypto event in descending daily-reward order on the current official Polymarket Rewards surface after excluding consumed short-interval crypto families, the previously retained Fed event, and Ontario siblings. The displayed 536 pUSD daily reward, 4-cent spread, 200-share minimum, prices, competition, and market horizon are discovery only and excluded from every exact-value gate. Gamma is authoritative for the exact market end."
+  },
+  "capture": {
+    "activation_window_minutes": 30
+  },
+  "decision": {
+    "advance_only_if": "Gamma and exact sponsored-condition identity, size, spread, active dated positive rate, binary tokens, zero-maker-fee state, and remaining horizon reconcile exactly.",
+    "books_in_this_stage": false,
+    "on_failure": "Terminalize this exact candidate without retry, sibling substitution, parameter change, or book request.",
+    "on_pass": "Apply the retained-source full-pool versus maximum-orphan prefilter, then freeze a separate one-use two-token book screen only if the optimistic bound can still pass."
+  },
+  "frozen_at_utc": "2026-08-31T16:06:49.6740713Z",
+  "purpose": "Rejection-first exact-source reconciliation for one reward-descending current paired-maker liquidity-reward candidate before any book access.",
+  "request_contract": {
+    "endpoint_classification": {
+      "exact_reward": {
+        "method": "GET",
+        "operation": "Get raw rewards for a specific market; public read-only documented endpoint.",
+        "primary_contract_url": "https://docs.polymarket.com/api-reference/rewards/get-raw-rewards-for-a-specific-market"
+      },
+      "gamma": {
+        "method": "GET",
+        "operation": "Discover markets by exact slug; public read-only documented endpoint.",
+        "primary_contract_url": "https://docs.polymarket.com/market-data/discover-markets"
+      }
+    },
+    "exact_reward_endpoint_pattern": "https://clob.polymarket.com/rewards/markets/{condition_id}",
+    "gamma_endpoint": "https://gamma-api.polymarket.com/markets",
+    "gamma_params": {
+      "closed": "false",
+      "slug": "will-grand-theft-auto-vi-extended-look-get-less-than-20-million-views-on-week-1"
+    },
+    "response_byte_ceiling": 2000000,
+    "reward_params": {
+      "sponsored": "true"
+    },
+    "terminal_cursor": "LTE="
+  },
+  "retry": {
+    "permitted": false,
+    "reopen_only_on": "A materially new exact source-selected reward market or a documented material change in this market's reward configuration; never by repeating this consumed candidate."
+  },
+  "schema_version": "polymarket-exact-reward-source-contract-v1",
+  "result_sha256": "5bab95ee364650762d7ec87db04f4ba6b88c91adb44d5608946c59f4308b9755"
+}
