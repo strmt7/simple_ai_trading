@@ -1,0 +1,438 @@
+{
+  "authority": {
+    "account_requests": 0,
+    "credentials_used": false,
+    "funds_used": false,
+    "network_requests": 0,
+    "orders_or_transactions": 0,
+    "protected_capture_touched": false,
+    "signed_requests": 0,
+    "trading_authority": false
+  },
+  "capture_result": {
+    "path": "docs/model-research/action-value/binance-linear-inverse-perpetual-funding-result-v1-2026-08-31.json",
+    "result_sha256": "a0b981ef899e825b77ad67993f9a10cd6a3b5ebb5907c9cfa53a2e1611aa06c0"
+  },
+  "contract": {
+    "contract_sha256": "fdb9ad4f6db350b4dd44b7b4d0c290b08b3bc12279578e43520357ba526c17ab",
+    "path": "docs/model-research/action-value/binance-linear-inverse-perpetual-funding-adjudication-contract-v1-2026-08-31.json"
+  },
+  "pair_adjudications": [
+    {
+      "asset": "BTC",
+      "fixed_orientation_combined_out_of_sample": {
+        "entry_exit_execution_hurdle_bips": "32",
+        "gross_funding_bips": "3.95160000",
+        "interval_count": 200,
+        "net_after_one_combined_entry_exit_hurdle_bips": "-28.04840000",
+        "one_way_break_even_execution_bips": "0.98790000",
+        "training_selected_orientation": "short_COIN_M_long_USDS_M"
+      },
+      "fixed_orientation_observed_months": {
+        "test": [
+          {
+            "gross_funding_bips": "1.64970000",
+            "interval_count": 7,
+            "month": "2026-07",
+            "positive": true
+          },
+          {
+            "gross_funding_bips": "-1.55150000",
+            "interval_count": 93,
+            "month": "2026-08",
+            "positive": false
+          }
+        ],
+        "validation": [
+          {
+            "gross_funding_bips": "3.13090000",
+            "interval_count": 14,
+            "month": "2026-06",
+            "positive": true
+          },
+          {
+            "gross_funding_bips": "0.72250000",
+            "interval_count": 86,
+            "month": "2026-07",
+            "positive": true
+          }
+        ]
+      },
+      "lagged_sign_causal_sensitivity": {
+        "test": {
+          "0": {
+            "gross_causal_funding_bips": "8.98130000",
+            "net_after_turnover_bips": "8.98130000",
+            "one_way_break_even_execution_bips": "0.05757243589743589743589743590",
+            "one_way_execution_bips": "0",
+            "turnover_execution_bips": "0",
+            "turnover_units": "156",
+            "zero_cost_positive": true
+          },
+          "2": {
+            "gross_causal_funding_bips": "8.98130000",
+            "net_after_turnover_bips": "-303.01870000",
+            "one_way_break_even_execution_bips": "0.05757243589743589743589743590",
+            "one_way_execution_bips": "2",
+            "turnover_execution_bips": "312",
+            "turnover_units": "156",
+            "zero_cost_positive": true
+          },
+          "8": {
+            "gross_causal_funding_bips": "8.98130000",
+            "net_after_turnover_bips": "-1239.01870000",
+            "one_way_break_even_execution_bips": "0.05757243589743589743589743590",
+            "one_way_execution_bips": "8",
+            "turnover_execution_bips": "1248",
+            "turnover_units": "156",
+            "zero_cost_positive": true
+          }
+        },
+        "training": {
+          "0": {
+            "gross_causal_funding_bips": "58.77340000",
+            "net_after_turnover_bips": "58.77340000",
+            "one_way_break_even_execution_bips": "0.1412822115384615384615384615",
+            "one_way_execution_bips": "0",
+            "turnover_execution_bips": "0",
+            "turnover_units": "416",
+            "zero_cost_positive": true
+          },
+          "2": {
+            "gross_causal_funding_bips": "58.77340000",
+            "net_after_turnover_bips": "-773.22660000",
+            "one_way_break_even_execution_bips": "0.1412822115384615384615384615",
+            "one_way_execution_bips": "2",
+            "turnover_execution_bips": "832",
+            "turnover_units": "416",
+            "zero_cost_positive": true
+          },
+          "8": {
+            "gross_causal_funding_bips": "58.77340000",
+            "net_after_turnover_bips": "-3269.22660000",
+            "one_way_break_even_execution_bips": "0.1412822115384615384615384615",
+            "one_way_execution_bips": "8",
+            "turnover_execution_bips": "3328",
+            "turnover_units": "416",
+            "zero_cost_positive": true
+          }
+        },
+        "validation": {
+          "0": {
+            "gross_causal_funding_bips": "11.81530000",
+            "net_after_turnover_bips": "11.81530000",
+            "one_way_break_even_execution_bips": "0.1018560344827586206896551724",
+            "one_way_execution_bips": "0",
+            "turnover_execution_bips": "0",
+            "turnover_units": "116",
+            "zero_cost_positive": true
+          },
+          "2": {
+            "gross_causal_funding_bips": "11.81530000",
+            "net_after_turnover_bips": "-220.18470000",
+            "one_way_break_even_execution_bips": "0.1018560344827586206896551724",
+            "one_way_execution_bips": "2",
+            "turnover_execution_bips": "232",
+            "turnover_units": "116",
+            "zero_cost_positive": true
+          },
+          "8": {
+            "gross_causal_funding_bips": "11.81530000",
+            "net_after_turnover_bips": "-916.18470000",
+            "one_way_break_even_execution_bips": "0.1018560344827586206896551724",
+            "one_way_execution_bips": "8",
+            "turnover_execution_bips": "928",
+            "turnover_units": "116",
+            "zero_cost_positive": true
+          }
+        }
+      },
+      "terminal_reasons": [
+        "fixed_combined_out_of_sample_net_nonpositive",
+        "fixed_orientation_out_of_sample_month_sign_instability",
+        "lagged_sign_turnover_exceeds_gross_at_two_bips_one_way"
+      ]
+    },
+    {
+      "asset": "ETH",
+      "fixed_orientation_combined_out_of_sample": {
+        "entry_exit_execution_hurdle_bips": "32",
+        "gross_funding_bips": "11.87490000",
+        "interval_count": 200,
+        "net_after_one_combined_entry_exit_hurdle_bips": "-20.12510000",
+        "one_way_break_even_execution_bips": "2.96872500",
+        "training_selected_orientation": "short_COIN_M_long_USDS_M"
+      },
+      "fixed_orientation_observed_months": {
+        "test": [
+          {
+            "gross_funding_bips": "2.90000000",
+            "interval_count": 7,
+            "month": "2026-07",
+            "positive": true
+          },
+          {
+            "gross_funding_bips": "8.41240000",
+            "interval_count": 93,
+            "month": "2026-08",
+            "positive": true
+          }
+        ],
+        "validation": [
+          {
+            "gross_funding_bips": "2.95740000",
+            "interval_count": 14,
+            "month": "2026-06",
+            "positive": true
+          },
+          {
+            "gross_funding_bips": "-2.39490000",
+            "interval_count": 86,
+            "month": "2026-07",
+            "positive": false
+          }
+        ]
+      },
+      "lagged_sign_causal_sensitivity": {
+        "test": {
+          "0": {
+            "gross_causal_funding_bips": "9.35870000",
+            "net_after_turnover_bips": "9.35870000",
+            "one_way_break_even_execution_bips": "0.07089924242424242424242424242",
+            "one_way_execution_bips": "0",
+            "turnover_execution_bips": "0",
+            "turnover_units": "132",
+            "zero_cost_positive": true
+          },
+          "2": {
+            "gross_causal_funding_bips": "9.35870000",
+            "net_after_turnover_bips": "-254.64130000",
+            "one_way_break_even_execution_bips": "0.07089924242424242424242424242",
+            "one_way_execution_bips": "2",
+            "turnover_execution_bips": "264",
+            "turnover_units": "132",
+            "zero_cost_positive": true
+          },
+          "8": {
+            "gross_causal_funding_bips": "9.35870000",
+            "net_after_turnover_bips": "-1046.64130000",
+            "one_way_break_even_execution_bips": "0.07089924242424242424242424242",
+            "one_way_execution_bips": "8",
+            "turnover_execution_bips": "1056",
+            "turnover_units": "132",
+            "zero_cost_positive": true
+          }
+        },
+        "training": {
+          "0": {
+            "gross_causal_funding_bips": "63.37370000",
+            "net_after_turnover_bips": "63.37370000",
+            "one_way_break_even_execution_bips": "0.152340625",
+            "one_way_execution_bips": "0",
+            "turnover_execution_bips": "0",
+            "turnover_units": "416",
+            "zero_cost_positive": true
+          },
+          "2": {
+            "gross_causal_funding_bips": "63.37370000",
+            "net_after_turnover_bips": "-768.62630000",
+            "one_way_break_even_execution_bips": "0.152340625",
+            "one_way_execution_bips": "2",
+            "turnover_execution_bips": "832",
+            "turnover_units": "416",
+            "zero_cost_positive": true
+          },
+          "8": {
+            "gross_causal_funding_bips": "63.37370000",
+            "net_after_turnover_bips": "-3264.62630000",
+            "one_way_break_even_execution_bips": "0.152340625",
+            "one_way_execution_bips": "8",
+            "turnover_execution_bips": "3328",
+            "turnover_units": "416",
+            "zero_cost_positive": true
+          }
+        },
+        "validation": {
+          "0": {
+            "gross_causal_funding_bips": "12.18140000",
+            "net_after_turnover_bips": "12.18140000",
+            "one_way_break_even_execution_bips": "0.07613375",
+            "one_way_execution_bips": "0",
+            "turnover_execution_bips": "0",
+            "turnover_units": "160",
+            "zero_cost_positive": true
+          },
+          "2": {
+            "gross_causal_funding_bips": "12.18140000",
+            "net_after_turnover_bips": "-307.81860000",
+            "one_way_break_even_execution_bips": "0.07613375",
+            "one_way_execution_bips": "2",
+            "turnover_execution_bips": "320",
+            "turnover_units": "160",
+            "zero_cost_positive": true
+          },
+          "8": {
+            "gross_causal_funding_bips": "12.18140000",
+            "net_after_turnover_bips": "-1267.81860000",
+            "one_way_break_even_execution_bips": "0.07613375",
+            "one_way_execution_bips": "8",
+            "turnover_execution_bips": "1280",
+            "turnover_units": "160",
+            "zero_cost_positive": true
+          }
+        }
+      },
+      "terminal_reasons": [
+        "fixed_combined_out_of_sample_net_nonpositive",
+        "fixed_orientation_out_of_sample_month_sign_instability",
+        "lagged_sign_turnover_exceeds_gross_at_two_bips_one_way"
+      ]
+    },
+    {
+      "asset": "SOL",
+      "fixed_orientation_combined_out_of_sample": {
+        "entry_exit_execution_hurdle_bips": "32",
+        "gross_funding_bips": "25.29150000",
+        "interval_count": 200,
+        "net_after_one_combined_entry_exit_hurdle_bips": "-6.70850000",
+        "one_way_break_even_execution_bips": "6.32287500",
+        "training_selected_orientation": "short_COIN_M_long_USDS_M"
+      },
+      "fixed_orientation_observed_months": {
+        "test": [
+          {
+            "gross_funding_bips": "1.46480000",
+            "interval_count": 7,
+            "month": "2026-07",
+            "positive": true
+          },
+          {
+            "gross_funding_bips": "-0.36840000",
+            "interval_count": 93,
+            "month": "2026-08",
+            "positive": false
+          }
+        ],
+        "validation": [
+          {
+            "gross_funding_bips": "7.54880000",
+            "interval_count": 14,
+            "month": "2026-06",
+            "positive": true
+          },
+          {
+            "gross_funding_bips": "16.64630000",
+            "interval_count": 86,
+            "month": "2026-07",
+            "positive": true
+          }
+        ]
+      },
+      "lagged_sign_causal_sensitivity": {
+        "test": {
+          "0": {
+            "gross_causal_funding_bips": "1.68460000",
+            "net_after_turnover_bips": "1.68460000",
+            "one_way_break_even_execution_bips": "0.01138243243243243243243243243",
+            "one_way_execution_bips": "0",
+            "turnover_execution_bips": "0",
+            "turnover_units": "148",
+            "zero_cost_positive": true
+          },
+          "2": {
+            "gross_causal_funding_bips": "1.68460000",
+            "net_after_turnover_bips": "-294.31540000",
+            "one_way_break_even_execution_bips": "0.01138243243243243243243243243",
+            "one_way_execution_bips": "2",
+            "turnover_execution_bips": "296",
+            "turnover_units": "148",
+            "zero_cost_positive": true
+          },
+          "8": {
+            "gross_causal_funding_bips": "1.68460000",
+            "net_after_turnover_bips": "-1182.31540000",
+            "one_way_break_even_execution_bips": "0.01138243243243243243243243243",
+            "one_way_execution_bips": "8",
+            "turnover_execution_bips": "1184",
+            "turnover_units": "148",
+            "zero_cost_positive": true
+          }
+        },
+        "training": {
+          "0": {
+            "gross_causal_funding_bips": "100.44620000",
+            "net_after_turnover_bips": "100.44620000",
+            "one_way_break_even_execution_bips": "0.2643321052631578947368421053",
+            "one_way_execution_bips": "0",
+            "turnover_execution_bips": "0",
+            "turnover_units": "380",
+            "zero_cost_positive": true
+          },
+          "2": {
+            "gross_causal_funding_bips": "100.44620000",
+            "net_after_turnover_bips": "-659.55380000",
+            "one_way_break_even_execution_bips": "0.2643321052631578947368421053",
+            "one_way_execution_bips": "2",
+            "turnover_execution_bips": "760",
+            "turnover_units": "380",
+            "zero_cost_positive": true
+          },
+          "8": {
+            "gross_causal_funding_bips": "100.44620000",
+            "net_after_turnover_bips": "-2939.55380000",
+            "one_way_break_even_execution_bips": "0.2643321052631578947368421053",
+            "one_way_execution_bips": "8",
+            "turnover_execution_bips": "3040",
+            "turnover_units": "380",
+            "zero_cost_positive": true
+          }
+        },
+        "validation": {
+          "0": {
+            "gross_causal_funding_bips": "13.40830000",
+            "net_after_turnover_bips": "13.40830000",
+            "one_way_break_even_execution_bips": "0.07795523255813953488372093023",
+            "one_way_execution_bips": "0",
+            "turnover_execution_bips": "0",
+            "turnover_units": "172",
+            "zero_cost_positive": true
+          },
+          "2": {
+            "gross_causal_funding_bips": "13.40830000",
+            "net_after_turnover_bips": "-330.59170000",
+            "one_way_break_even_execution_bips": "0.07795523255813953488372093023",
+            "one_way_execution_bips": "2",
+            "turnover_execution_bips": "344",
+            "turnover_units": "172",
+            "zero_cost_positive": true
+          },
+          "8": {
+            "gross_causal_funding_bips": "13.40830000",
+            "net_after_turnover_bips": "-1362.59170000",
+            "one_way_break_even_execution_bips": "0.07795523255813953488372093023",
+            "one_way_execution_bips": "8",
+            "turnover_execution_bips": "1376",
+            "turnover_units": "172",
+            "zero_cost_positive": true
+          }
+        }
+      },
+      "terminal_reasons": [
+        "fixed_combined_out_of_sample_net_nonpositive",
+        "fixed_orientation_out_of_sample_month_sign_instability",
+        "lagged_sign_turnover_exceeds_gross_at_two_bips_one_way"
+      ]
+    }
+  ],
+  "result_sha256": "560c42b8bbebf9c10ac1292c44043001fe4d26ccf85217f71b93095e72bf9230",
+  "schema_version": "binance-linear-inverse-perpetual-funding-adjudication-v1",
+  "verdict": {
+    "accepted_edge": false,
+    "fixed_combined_out_of_sample_all_failed_frozen_hurdle": true,
+    "lagged_sign_all_roles_failed_two_bip_sensitivity": true,
+    "profitability_claim": false,
+    "retry_trigger": "material COIN-M or USD-M funding cash-flow, collateral, settlement, fee, or contract architecture change",
+    "status": "terminal_rejected_linear_inverse_perpetual_funding_family",
+    "trading_authority": false
+  }
+}

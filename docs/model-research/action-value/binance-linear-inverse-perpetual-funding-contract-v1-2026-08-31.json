@@ -1,0 +1,94 @@
+{
+  "schema_version": "binance-linear-inverse-perpetual-funding-preflight-contract-v1",
+  "frozen_at_utc": "2026-08-31T20:00:17.4284194Z",
+  "contract_path": "docs/model-research/action-value/binance-linear-inverse-perpetual-funding-contract-v1-2026-08-31.json",
+  "question": "Does a fixed same-asset equal-notional orientation between Binance COIN-M inverse perpetual funding and USD-M linear perpetual funding persist for BTC, ETH, or SOL out of sample after a conservative two-leg entry and exit hurdle, without forecasting market direction?",
+  "novelty": {
+    "registry_and_alias_search": "No prioritized or terminal structural family, action-value artifact, tool, or test contained BTCUSD_PERP, ETHUSD_PERP, SOLUSD_PERP, dapi funding history, or a COIN-M inverse versus USD-M linear same-asset funding comparison.",
+    "distinct_from_cross_stablecoin_funding": "The rejected USDT versus USDC family used two linear stablecoin-margined contracts. This family compares an inverse coin-margined contract with a linear stablecoin-margined contract on the same base asset and therefore has distinct funding, collateral, settlement-asset, and convexity risks.",
+    "distinct_from_cross_sectional_funding": "The prior BTC ETH SOL dispersion family selected different base assets. This family preserves the same base asset on both legs and fixes orientation from training history only.",
+    "outcomes_viewed_before_freeze": false
+  },
+  "official_source": {
+    "path": "docs/model-research/binance/raw/spot-block-matching-cost-overlay-v1-2026-08-30/03-agent-native-index.raw.txt",
+    "sha256": "944e132d3523c8a03abcac2f7ddb85802107e45161470885b7a8785fd4fdb15d",
+    "contract": "The retained current official Binance Agent Native index lists GET /dapi/v1/exchangeInfo and GET /dapi/v1/fundingRate under COIN-M market data, and GET /fapi/v1/exchangeInfo and GET /fapi/v1/fundingRate under USD-M market data, without USER_DATA or TRADE classification. The current official derivatives changelog documents markPrice in both funding-history responses."
+  },
+  "requests": {
+    "coin_exchange_info": "https://dapi.binance.com/dapi/v1/exchangeInfo",
+    "linear_exchange_info": "https://fapi.binance.com/fapi/v1/exchangeInfo",
+    "coin_history_template": "https://dapi.binance.com/dapi/v1/fundingRate?symbol={symbol}&limit=1000",
+    "linear_history_template": "https://fapi.binance.com/fapi/v1/fundingRate?symbol={symbol}&limit=1000"
+  },
+  "request_policy": {
+    "method": "GET",
+    "public_unauthenticated_read_only": true,
+    "maximum_requests": 8,
+    "timeout_seconds": 30,
+    "conditional_sequence": "Request both exchange-information endpoints once. For each of BTC, ETH, and SOL only when both a current TRADING COIN-M inverse perpetual and a current TRADING USD-M linear USDT perpetual exist, request each exact 1000-row funding history once.",
+    "failure_policy": "Persist any returned bytes and journal, stop the entire one-use sequence on the first failure, and never retry, paginate, change limit, change symbols, reorder, alias, or repair after outcome access.",
+    "book_price_account_or_order_requests": 0
+  },
+  "population": {
+    "assets": [
+      "BTC",
+      "ETH",
+      "SOL"
+    ],
+    "funding_interval_hours": 8,
+    "history_limit_per_symbol": 1000,
+    "minimum_aligned_rows": 300,
+    "maximum_cross_venue_skew_ms": 10000,
+    "alignment": "Map each fundingTime to its nearest frozen eight-hour bucket and require unique rows. Use only buckets present in both exact histories.",
+    "roles": "First 60 percent training, next 20 percent validation, final 20 percent test after exact time alignment."
+  },
+  "signal": {
+    "training_selection": "Sum COIN-M fundingRate minus USD-M fundingRate over training only. If nonnegative, fix short COIN-M and long USD-M; otherwise fix long COIN-M and short USD-M.",
+    "cash_flow": "At each funding settlement, funding cash in bips is 10000 times the short-leg rate minus the long-leg rate.",
+    "out_of_sample_rule": "Never change orientation in validation or test. No current premium, estimated rate, price, book, account, or future funding value enters selection.",
+    "market_direction_forecast_required": false,
+    "price_pnl_included": false,
+    "price_pnl_gate": "This is a funding-only rejection preflight. A pass remains unaccepted and must separately bind inverse-contract mark-to-market, coin collateral exposure, stablecoin basis, liquidation, rebalancing, fees, books, and all cross-regime costs. A fail prohibits those requests for this snapshot."
+  },
+  "economics": {
+    "one_way_execution_bips": "8",
+    "round_trip_hurdle_bips": "32",
+    "interpretation": "Charge 8 bips for each of two entries and two exits within every independently evaluated role. This deliberately omits collateral, borrow, basis, liquidation, custody, transfer, tax, slippage beyond the hurdle, and operating costs, so passing is only a permissive preflight and failing is decisive for the public snapshot."
+  },
+  "gates": {
+    "required_out_of_sample_roles": [
+      "validation",
+      "test"
+    ],
+    "net_after_entry_exit_hurdle_must_be_strictly_positive": true,
+    "every_observed_out_of_sample_calendar_month_gross_must_be_strictly_positive": true,
+    "maximum_gross_drawdown_bips": "100",
+    "accepted_edge_even_if_passed": false
+  },
+  "decision": {
+    "pass": "Retain as a public persistence candidate only. Next use the already returned markPrice rows for a separate zero-request inverse-linear mark-to-market and regime audit before any book, fee, account, credential, order, or fund request.",
+    "fail": "Reject this exact current linear-inverse funding persistence population before books, fees, accounts, credentials, orders, funds, or adaptive resampling. Reopen only after a material COIN-M or USD-M funding, collateral, settlement, fee, or contract architecture change.",
+    "profitability_proved": false,
+    "trading_authority": false
+  },
+  "retention": {
+    "raw_directory": "data/binance-linear-inverse-funding-v1/raw",
+    "journal_path": "data/binance-linear-inverse-funding-v1/request-journal.jsonl"
+  },
+  "output_path": "docs/model-research/action-value/binance-linear-inverse-perpetual-funding-result-v1-2026-08-31.json",
+  "authority": {
+    "account_requests": 0,
+    "credentials_used": false,
+    "funds_used": false,
+    "orders_or_transactions": 0,
+    "protected_capture_touched": false,
+    "public_unauthenticated_read_only_requests_maximum": 8,
+    "signed_requests": 0,
+    "trading_authority": false
+  },
+  "implementation": {
+    "path": "tools/screen_binance_linear_inverse_funding.py",
+    "sha256": "6bf3af11f771619ca5bf99350a638746c3d7d8d15df5533e02b9b32359e836f5"
+  },
+  "contract_sha256": "43c3733749cc944c6fab24b8c9cae4237f6e5448e33f62a3b39a820f14e803b4"
+}
