@@ -23,6 +23,14 @@ safety gate, blocks Stop, or submits an order.
 
 ### Latest efficient structural screen
 
+The non-aliased Binance-style delta-neutral dual-grid paper is terminal as a
+research trigger. Its exact SSRN PDF request returned a retained Cloudflare
+HTTP 403 page and may not be retried through a mirror. The indexed abstract is
+discovery only and reports a 52-day Gate.io window, near-zero rather than exact
+delta, trend-skewed quoting, and active inventory management. It proves neither
+current Binance fills and costs nor cross-regime stability, and it supplies no
+unique subsidy or atomic hedge. Do not build a collector or order test from it.
+
 The source-selected Chicago August 31 tornado liquidity-reward lead is
 terminal before books. The public Rewards surface displayed 50 pUSD/day,
 20 shares, a 4-cent band, and zero competition, but exact Gamma reported a

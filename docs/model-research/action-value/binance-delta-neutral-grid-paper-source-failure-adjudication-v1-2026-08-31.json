@@ -1,0 +1,90 @@
+{
+  "adjudication": {
+    "accepted_edge": false,
+    "collector_reopened": false,
+    "deployment_ready": false,
+    "market_direction_forecast_required": false,
+    "materially_distinct_structural_edge_proved": false,
+    "profitability_claim": false,
+    "status": "terminal_primary_PDF_source_failure_discovery_abstract_insufficient_to_reopen_market_data_or_testing",
+    "trading_authority": false
+  },
+  "authority": {
+    "account_state_accessed": false,
+    "credentials_used": false,
+    "funded_actions": 0,
+    "orders_or_mutations": 0,
+    "protected_capture_accessed": false,
+    "public_paper_requests": 1,
+    "venue_market_data_requests": 0
+  },
+  "created_at_utc": "2026-08-31T15:10:08.6779946Z",
+  "discovery_only_abstract": {
+    "excluded_from_profitability_evidence": true,
+    "reported_claims": {
+      "data_venue": "Gate.io BTCUSDT tick data rather than Binance execution data",
+      "market_direction": "near-zero rather than exactly zero delta, with trend-skewed quoting and active inventory management",
+      "maximum_drawdown": "below 8 percent",
+      "reported_sharpe": "above 3.0",
+      "sample": "November through December 2025, 52 days",
+      "strategy": "two-sided spot-futures grids combining spread, grid profit, funding, and maker volume rebates"
+    },
+    "title": "Delta-Neutral Grid Market Making with Adaptive Hedging and Risk Management for Cryptocurrency Spot-Futures Markets"
+  },
+  "fail_closed_economic_assessment": {
+    "current_binance_after_cost_floor": "0",
+    "direction_independence_proved": false,
+    "reasons": [
+      "The primary PDF was not obtained, so fee, fill, queue, slippage, hedge, funding, rebate, basis, capital, liquidation, and implementation assumptions are not source-validated.",
+      "A 52-day single-window backtest cannot establish bull, bear, sideways, choppy, volatility, liquidity, and latency durability.",
+      "The discovery abstract itself says near-zero delta and trend-skewed quoting, so exact market-direction independence is not established.",
+      "Results reported on Gate.io tick data do not prove current Binance filters, fees, maker rebates, fills, funding, or account economics.",
+      "Spread capture, spot-perpetual funding, and maker rebates already map to existing families; no unique subsidy, atomic hedge, principal guarantee, or capital credit was source-proved."
+    ],
+    "stable_current_account_qualified_after_all_cost_edge": false
+  },
+  "paper_identity": {
+    "authors": [
+      "Thanh Nguyen",
+      "Duc Bui"
+    ],
+    "doi": "10.2139/ssrn.6280958",
+    "ssrn_id": "6280958"
+  },
+  "result_sha256": "f07468a381362d3551c2455344035ac6adc84c317d0e7851f9791d73351eaa17",
+  "retry_policy": {
+    "permitted": false,
+    "prohibited": [
+      "retrying the consumed SSRN Delivery URL",
+      "switching to a mirror after the frozen failure",
+      "building a grid collector from the discovery abstract",
+      "using testnet orders to validate profitability without a causal paper or public-data design",
+      "calling near-zero delta market independent",
+      "crediting maker rebates without exact current account qualification and organic owned fills"
+    ],
+    "reopen_only_for": "a materially new byte-retainable primary version with complete methodology and reproducible code or data that proves causal fills and after-cost cross-regime persistence, followed by a separately frozen Binance public-data design; every order experiment still requires separate explicit authority"
+  },
+  "schema_version": "binance-delta-neutral-grid-paper-source-failure-adjudication-v1",
+  "sources": {
+    "contract": {
+      "contract_sha256": "be6bb998493e6ab3c816c30ef991574729f8ac9888c5217ab9beef98f7dc775a",
+      "file_sha256": "6d8ff33e67fc169335f16717194a189c52a39e3fdfd48457d06d207df8bbee87",
+      "path": "docs/model-research/action-value/binance-delta-neutral-grid-paper-source-contract-v1.json"
+    },
+    "journal": {
+      "path": "data/binance-delta-neutral-grid-paper-v1/request-journal.jsonl",
+      "sha256": "fa4c18ea45697cf6fc5600cf796450038678a4afeec871ff28ed497d79d98695"
+    },
+    "raw_failure": {
+      "bytes": 5757,
+      "content_class": "Cloudflare challenge HTML, not a PDF",
+      "http_status": 403,
+      "path": "data/binance-delta-neutral-grid-paper-v1/raw/ssrn-6280958.pdf",
+      "sha256": "7cb68acb61069555e8672266bfc294785fc72df37410027a151c5c59b1d1542f"
+    },
+    "request_implementation": {
+      "path": "tools/screen_polymarket_exact_two_leg_package.py",
+      "sha256": "374fcc3c3485c466b4929a91256450bdc7db70f93ef4c6bda627e05fe8938327"
+    }
+  }
+}

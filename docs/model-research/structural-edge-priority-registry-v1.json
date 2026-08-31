@@ -933,6 +933,14 @@
         {
           "path": "docs/model-research/action-value/binance-bstock-spot-lp-all-symbol-rebate-overlay-candidate-v1-2026-08-27.json",
           "result_sha256": "d279f8ab88875c812e6691fa500fdfde741f2e2fbca19ee240b4c0d4a579d607"
+        },
+        {
+          "path": "docs/model-research/action-value/binance-delta-neutral-grid-paper-source-contract-v1.json",
+          "result_sha256": "be6bb998493e6ab3c816c30ef991574729f8ac9888c5217ab9beef98f7dc775a"
+        },
+        {
+          "path": "docs/model-research/action-value/binance-delta-neutral-grid-paper-source-failure-adjudication-v1-2026-08-31.json",
+          "result_sha256": "f07468a381362d3551c2455344035ac6adc84c317d0e7851f9791d73351eaa17"
         }
       ],
       "current_status": "accepted_scoped_exact_realized_positive_Binance_Spot_Liquidity_Program_final_rebate_only_on_independently_justified_legitimate_organic_owned_maker_fills_after_every_incremental_cost_without_accepting_the_underlying_market_making_strategy_current_public_schedule_proves_zero_maker_fee_by_enrollment_tier1_0_05_percent_weekly_share_or_25_million_USD_and_tiers2_4_rebate_0_4_to_0_8_bips_the_time_limited_bStocks_overlay_adds_lower_separate_bStocks_share_thresholds_of_0_05_0_10_0_30_and_0_60_percent_and_applies_a_higher_bStocks_tier_rebate_across_all_symbols_but_the_first_effective_week_starts_2026_09_01_and_account_enrollment_owned_final_rebate_and_complete_after_cost_profit_remain_unproved_so_the_public_forward_floor_is_zero_and_no_volume_generation_is_authorized",
@@ -947,7 +955,8 @@
         "volume farming self-trading or wash trading for a maximum displayed 0_8_bip rebate",
         "crediting_the_bStocks_review_week_before_the_following_effective_tier_week",
         "treating_the_public_bStocks_share_threshold_as_account_tier_or_as_a_known_notional_denominator",
-        "assuming_bStock_maker_fills_are_delta_neutral_without_owned_same_quantity_hedges_and_every_cost"
+        "assuming_bStock_maker_fills_are_delta_neutral_without_owned_same_quantity_hedges_and_every_cost",
+        "treating_a_short_Gate_io_backtest_with_near_zero_delta_trend_skew_and_unverified_fill_fee_funding_rebate_assumptions_as_current_Binance_market_independent_profit"
       ],
       "retry_trigger": "not_before_2026_09_01T00_00_00Z_plus_both_SIMPLE_AI_TRADING_BINANCE_MAINNET_API_KEY_and_SIMPLE_AI_TRADING_BINANCE_MAINNET_API_SECRET_available_with_explicit_signed_GET_only_account_evidence_authority_or_a_material_bStocks_LP_schedule_or_execution_change",
       "venue_scope": "binance_spot_and_bStocks_spot_LP_promotion"
@@ -3003,7 +3012,7 @@
       "venue_scope": "Binance_TUSDUSDT_Spot_and_TrueUSD_bank_USD_redemption"
     }
   ],
-  "result_sha256": "4c79d044f1cde823b1848fa13f47ea7fb0ebd0dda98209672158ff29d4f10fa3",
+  "result_sha256": "16a69108fdd3b8f2b20dacf4d193427f988f4438a4fa285667062e2fda694fc3",
   "schema_version": "structural-edge-priority-registry-v1",
   "terminal_do_not_repeat": [
     {
@@ -3551,8 +3560,13 @@
       "canonical_result_sha256": "1e514db9565c9aacb6a9d0c9e11a2bfa371b892ee0c133dc43da02c64815b66a",
       "family": "polymarket_Chicago_August_31_tornado_exact_liquidity_reward_source_reconciliation",
       "reason": "the_source_selected_rewards_page_lead_displayed_50_pUSD_per_day_20_shares_4_cents_and_zero_competition_but_exact_Gamma_reported_20_shares_and_4_5_cents_while_the_exact_sponsored_true_condition_response_was_a_terminal_empty_population_the_public_forward_reward_floor_is_zero_and_no_book_was_requested_do_not_repeat_change_filter_substitute_another_observed_city_or_use_page_values_as_funded_economics"
+    },
+    {
+      "canonical_result_sha256": "f07468a381362d3551c2455344035ac6adc84c317d0e7851f9791d73351eaa17",
+      "family": "binance_style_delta_neutral_spot_futures_dual_grid_paper_lead",
+      "reason": "the_exact_primary_SSRN_PDF_request_returned_HTTP_403_Cloudflare_HTML_and_is_consumed_without_mirror_retry_the_discovery_abstract_reports_only_a_52_day_Gate_io_window_near_zero_delta_trend_skew_and_active_inventory_management_not_current_Binance_execution_or_cross_regime_evidence_no_unique_subsidy_atomic_hedge_principal_guarantee_or_capital_credit_was_source_proved_do_not_build_a_collector_or_order_test_from_the_abstract"
     }
   ],
-  "updated_at_utc": "2026-08-31T14:56:04Z",
+  "updated_at_utc": "2026-08-31T15:10:08Z",
   "usage_rule": "advance_the_highest_ranked_hypothesis_whose_retry_trigger_is_satisfied_otherwise_do_not_repeat_a_blocked_or_terminal_screen"
 }

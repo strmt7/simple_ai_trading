@@ -6895,3 +6895,39 @@ Registry SHA-256 becomes
 `4c79d044f1cde823b1848fa13f47ea7fb0ebd0dda98209672158ff29d4f10fa3`,
 and the rebound durability-audit SHA-256 becomes
 `d9838da2a03c04fb0826736ce01228b3bbc940c1dc1db90981c825390e7963fe`.
+
+## Binance delta-neutral dual-grid paper source failure
+
+An exact-title, DOI, SSRN-ID, author-title, registry, and artifact alias check
+found no retained adjudication for *Delta-Neutral Grid Market Making with
+Adaptive Hedging and Risk Management for Cryptocurrency Spot-Futures Markets*.
+The lead was therefore distinct enough for one primary-paper request, but not
+for venue data or testing.
+
+The frozen exact SSRN `Delivery.cfm` PDF GET returned HTTP 403 with 5,757 bytes
+of Cloudflare challenge HTML at SHA-256
+`7cb68acb61069555e8672266bfc294785fc72df37410027a151c5c59b1d1542f`.
+The request and raw failure are retained and may not be retried through a URL
+variant or mirror.
+
+The indexed abstract remains discovery only. It reports a 52-day November-
+December 2025 Gate.io BTCUSDT tick-data backtest, near-zero rather than exact
+delta, trend-skewed quoting, and active inventory management. Even if those
+claims are accurate, they do not establish current Binance fees, fills, queue,
+slippage, hedge costs, funding, rebates, basis, capital, liquidation, or bull,
+bear, sideways, choppy, volatility, liquidity, and latency durability. Spread
+capture, funding carry, and maker rebates already map to retained families; no
+unique subsidy, atomic hedge, principal guarantee, or capital credit was
+source-proved. No collector, venue request, credential, account, book, order,
+fund, transaction, or protected capture was used.
+
+Contract SHA-256 is
+`be6bb998493e6ab3c816c30ef991574729f8ac9888c5217ab9beef98f7dc775a`;
+canonical adjudication SHA-256 is
+`f07468a381362d3551c2455344035ac6adc84c317d0e7851f9791d73351eaa17`.
+Accepted edges remain 29, ranked hypotheses remain 45, terminal families become
+109, and stable current account-qualified after-all-cost edges remain zero.
+Registry SHA-256 becomes
+`16a69108fdd3b8f2b20dacf4d193427f988f4438a4fa285667062e2fda694fc3`,
+and the rebound durability-audit SHA-256 becomes
+`93bf922b12fd3fef040503660f1a04f70abe842a07be5c6d8ecc83cb164d9740`.
