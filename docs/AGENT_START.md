@@ -23,6 +23,20 @@ safety gate, blocks Stop, or submits an order.
 
 ### Latest efficient structural screen
 
+The August 31 Binance margin-pair removal is source-bound and terminal as a
+market-independent forced-settlement edge. The exact current primary article
+removes isolated `WBETH/ETH`, `BNSOL/SOL`, and `BFUSD/USDT`, suspends borrowing
+at `2026-09-01T06:00:00Z`, and schedules automatic settlement, order
+cancellation, and pair removal at `2026-09-03T06:00:00Z`. It publishes no
+aggregate position direction or size, settlement-price formula, conversion or
+redemption ratio, fee, capacity, discount, reward, or recurrent cash flow.
+Predictable timing therefore does not determine forced-flow direction and is
+not structural carry. Do not poll books or pre-position around this episode.
+Reopen only after an independent non-polling finite-size discount strictly
+exceeds a separately source-bound exact same-account conversion or redemption
+floor after every cost. Canonical terminal SHA-256 is
+`b0367360207044b8b70cc76a72de288f698c563c0e52133836e1b6402b15f392`.
+
 The non-aliased Binance-style delta-neutral dual-grid paper is terminal as a
 research trigger. Its exact SSRN PDF request returned a retained Cloudflare
 HTTP 403 page and may not be retried through a mirror. The indexed abstract is
