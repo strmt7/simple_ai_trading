@@ -6633,3 +6633,18 @@ Registry SHA-256 is
 `d8ca22c91a98d42fcd1ed63b532eeb1eeacf83f15d97be7c0198ea5b13639e5e`,
 and the rebound durability-audit SHA-256 is
 `e84cb6c9da66aed936e5bbab58ea87f48e6c7f1cb29640a0b37233e6fb393b72`.
+
+A distinct zero-request audit then exhausted the retained NFL team-total to
+full-game-total implication graph. When team threshold `T >= G`, team Over `T`
+implies game Over `G`, so team Under `T` plus game Over `G` has a common-rule
+one-pUSD floor, including cancellation because both legs resolve 50-50. All
+nine valid packages were above floor; the best, Seahawks Under 24.5 plus Game
+Over 24.5, cost 1.465 pUSD before books or fees. First-half, second-half, and
+quarter markets were excluded because their retained horizon and overtime
+semantics differ. No request was made. Canonical result SHA-256 is
+`51d0f5bda02fe124a7f02eb6f2365c358f8ec6a99d75b8f87bd8de8eec1d669c`.
+Terminal families become 100; accepted edges remain 29 and stable current
+account-qualified after-all-cost edges remain zero. Registry SHA-256 is
+`da888279bbf565413faadd9036547e4452b10bff91ed7ff1735117eb946c6f15`,
+and the rebound durability-audit SHA-256 is
+`dab81b0b99a64203392a4b7f684bf1b7c18417c2961e990a9db12cb5bb16dc96`.

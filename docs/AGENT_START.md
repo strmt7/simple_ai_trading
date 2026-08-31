@@ -109,7 +109,10 @@ Over 24.5 plus Under 26.5 package cost 5.55 pUSD at exact asks for a 5 pUSD
 floor before fees and 5.65 pUSD after one adverse tick per leg. The oldest book
 was 11.031 seconds old, but freshness cannot rescue the independently negative
 zero-fee upper bound. Do not refresh this event or select the already observed
-49ers-Rams sibling after outcome access.
+49ers-Rams sibling after outcome access. A distinct zero-request audit of the
+same retained bytes also proved all nine valid team-total to full-game-total
+implications were above floor; the best cost 1.465 pUSD for a 1 pUSD floor.
+Do not rebuild, reprice, or book-capture that graph.
 
 The historical Binance Direct Stocks fee overlay ended at
 `2026-08-31T00:00:00Z`. Binance's August 28 extension announcement says the

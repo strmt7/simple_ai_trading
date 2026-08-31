@@ -201,6 +201,27 @@ def test_first_nonconsumed_nfl_event_fails_exact_depth_before_fees() -> None:
     assert books["adjudication"]["passes_frozen_candidate_gate"] is False
 
 
+def test_retained_team_to_full_total_graph_rejects_without_network() -> None:
+    result = _load(
+        ACTION_VALUE
+        / "polymarket-patriots-seahawks-team-full-total-monotone-v1-2026-08-31.json"
+    )
+
+    assert result["result_sha256"] == (
+        "51d0f5bda02fe124a7f02eb6f2365c358f8ec6a99d75b8f87bd8de8eec1d669c"
+    )
+    assert _canonical_hash(result, "result_sha256") == result["result_sha256"]
+    assert result["screen"]["rule_valid_relation_count"] == 9
+    assert result["screen"]["strict_displayed_sub_floor_candidate_count"] == 0
+    best = result["screen"]["best_relation"]
+    assert Decimal(best["displayed_package_sum_pUSD"]) == Decimal("1.465")
+    assert Decimal(best["optimistic_headroom_before_execution_costs_pUSD"]) == (
+        Decimal("-0.465")
+    )
+    assert result["authority"]["new_network_requests"] == 0
+    assert result["adjudication"]["book_or_fee_request_permitted"] is False
+
+
 def test_registry_routes_catalog_and_correction_without_acceptance() -> None:
     registry = _load(REGISTRY)
     assert registry["result_sha256"] == REGISTRY_HASH
@@ -216,6 +237,7 @@ def test_registry_routes_catalog_and_correction_without_acceptance() -> None:
         "729d482f9a15b60b5345ba6c52ee75941a1f0751db2453e307c30f8872bbac35",
         "37f79cc8a4f5f96fa395a729e85a793e12c2127e2124591db693c92b1b459928",
         "2658c04330fdeaa7f39b4a9dc842a079c7e81ef1feeeba75ce74384e328338ae",
+        "51d0f5bda02fe124a7f02eb6f2365c358f8ec6a99d75b8f87bd8de8eec1d669c",
     } <= hashes
     assert "25189367_ms_skew" in row["current_status"]
     assert "Patriots_Seahawks" in row["current_status"]
