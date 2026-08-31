@@ -1,0 +1,48 @@
+{
+  "schema_version": "public-source-capture-contract-v1",
+  "frozen_at_utc": "2026-08-31T23:18:54.9826183Z",
+  "contract_path": "docs/model-research/action-value/binance-wallet-aster-btcusd1-funding-contract-v1-2026-09-01.json",
+  "trigger": {
+    "registry_route": "new_distinct_Binance_Wallet_Aster_cross_venue_BTC_ETH_SOL_USD1_perpetual_funding_and_basis_family",
+    "novelty_evidence": "The retained current Aster V3 exchangeInfo response contains active BTCUSD1 ETHUSD1 and SOLUSD1 perpetuals. This BTC contract and its ETH and SOL siblings are frozen together before the first funding-history response.",
+    "outcomes_viewed_before_freeze": false,
+    "discovery_values_are_economic_inputs": false
+  },
+  "question": "What are all BTCUSD1 Aster funding settlements in the exact retained Binance comparison window 1781740800002 through 1787760000000 milliseconds?",
+  "request_name": "aster-v3-btcusd1-funding-fixed-window",
+  "request": {
+    "method": "GET",
+    "url": "https://fapi.asterdex.com/fapi/v3/fundingRate?symbol=BTCUSD1&startTime=1781740800002&endTime=1787760000000&limit=1000",
+    "count": 1,
+    "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "endpoint_classification": {
+    "operation": "download one fixed complete BTCUSD1 funding-history window",
+    "security": "public unauthenticated market-data GET",
+    "source_contract": "Current official Aster V3 documentation classifies market data as unauthenticated and documents GET /fapi/v3/fundingRate with symbol startTime endTime and limit up to 1000."
+  },
+  "response_byte_ceiling": 1000000,
+  "required_utf8_phrases": ["\"symbol\":\"BTCUSD1\"", "\"fundingRate\"", "\"fundingTime\""],
+  "decision": {
+    "source_gate_only": "Retain the exact fixed-window BTCUSD1 history without inspecting sibling outcomes.",
+    "accepted_edge": false,
+    "profitability_proved": false,
+    "conditional_next_step": "After all three prospectively frozen Aster histories are retained, align them offline to the retained exact Binance BTC ETH and SOL funding timestamps and apply one frozen 20-bip execution plus basis and opportunity-cost dominance bound before any book request."
+  },
+  "outputs": {
+    "raw_path": "docs/model-research/binance/raw/wallet-aster-usd1-funding-v1-2026-09-01/01-btcusd1-funding.raw.json",
+    "journal_path": "docs/model-research/binance/raw/wallet-aster-usd1-funding-v1-2026-09-01/00-btcusd1-request-journal.jsonl",
+    "result_path": "docs/model-research/action-value/binance-wallet-aster-btcusd1-funding-source-result-v1-2026-09-01.json"
+  },
+  "authority": {
+    "account_requests": 0, "credentials_used": false, "funds_used": false, "orders_or_transactions": 0,
+    "protected_capture_touched": false, "public_unauthenticated_read_only_requests": 1, "signed_requests": 0, "trading_authority": false
+  },
+  "implementations": [
+    {"path": "tools/capture_public_source_contract.py", "sha256": "d566a5a379c659c3da144d5e28449ebac9c01493bd39646f9cc3a6e697a83566"},
+    {"path": "tools/screen_polymarket_exact_two_leg_package.py", "sha256": "374fcc3c3485c466b4929a91256450bdc7db70f93ef4c6bda627e05fe8938327"},
+    {"path": "tools/adjudicate_polymarket_exact_mlb_monotone_prefilter.py", "sha256": "958a44d78029b9a1eb69a3771ce18e53ac1ed3c7bc161c8e4318beedce2cf99f"}
+  ],
+  "retry_policy": "One use. Preserve every response or error and never change host endpoint window symbol parameter order or limit after access.",
+  "contract_sha256": "3faa01e4be7ba1c839927a5a709c9de99a035ad41b1e4e073bdafb56b51b15fa"
+}
