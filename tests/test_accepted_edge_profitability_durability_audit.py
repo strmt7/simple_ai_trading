@@ -6,7 +6,10 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
-AUDIT_PATH = ROOT / "docs/model-research/action-value/accepted-edge-profitability-durability-audit-v1-2026-08-30.json"
+AUDIT_PATH = (
+    ROOT
+    / "docs/model-research/action-value/accepted-edge-profitability-durability-audit-v1-2026-08-30.json"
+)
 
 
 def _load(path: Path) -> dict[str, object]:
@@ -29,8 +32,14 @@ def test_profitability_durability_audit_is_source_bound_and_exhaustive() -> None
 
     assert _self_hash(audit) == audit["result_sha256"]
     assert _self_hash(registry) == registry["result_sha256"]
-    assert audit["source_binding"]["registry_result_sha256"] == registry["result_sha256"]
-    assert audit["source_binding"]["accepted_edge_count"] == registry["accepted_edge_count"] == 29
+    assert (
+        audit["source_binding"]["registry_result_sha256"] == registry["result_sha256"]
+    )
+    assert (
+        audit["source_binding"]["accepted_edge_count"]
+        == registry["accepted_edge_count"]
+        == 29
+    )
 
     groups = audit["classification"]
     assert sum(group["count"] for group in groups) == 29
@@ -39,10 +48,18 @@ def test_profitability_durability_audit_is_source_bound_and_exhaustive() -> None
     assert len(ordinals) == len(set(ordinals))
 
     decision = audit["decision"]
-    assert decision["historically_source_demonstrated_recurring_direct_cash_edge_count"] == 1
+    assert (
+        decision["historically_source_demonstrated_recurring_direct_cash_edge_count"]
+        == 1
+    )
     assert decision["stable_current_account_qualified_after_all_cost_edge_count"] == 0
     assert decision["accepted_scope_is_not_deployment_ready_count"] == 29
-    assert decision["standalone_incremental_cash_without_independent_trade_borrow_or_external_user_count"] == 8
+    assert (
+        decision[
+            "standalone_incremental_cash_without_independent_trade_borrow_or_external_user_count"
+        ]
+        == 8
+    )
 
 
 def test_profitability_frontier_metrics_match_canonical_sources() -> None:
@@ -52,13 +69,37 @@ def test_profitability_frontier_metrics_match_canonical_sources() -> None:
     ]
     candidate = _load(ROOT / opposite_lock["source_path"])
     correction = _load(ROOT / opposite_lock["fee_rounding_correction_source_path"])
+    robustness = _load(ROOT / opposite_lock["robustness_source_path"])
 
     assert candidate["result_sha256"] == opposite_lock["result_sha256"]
-    assert correction["result_sha256"] == opposite_lock["fee_rounding_correction_result_sha256"]
-    assert correction["analysis"]["corrected_locked_pnl_pusd"] == opposite_lock[
-        "corrected_one_tick_stressed_full_fee_no_rebate_locked_cashflow_pusd"
-    ]
+    assert (
+        correction["result_sha256"]
+        == opposite_lock["fee_rounding_correction_result_sha256"]
+    )
+    assert (
+        correction["analysis"]["corrected_locked_pnl_pusd"]
+        == opposite_lock[
+            "corrected_one_tick_stressed_full_fee_no_rebate_locked_cashflow_pusd"
+        ]
+    )
     assert correction["analysis"]["nonpositive_lock_count_after_correction"] == 0
+    assert robustness["result_sha256"] == opposite_lock["robustness_result_sha256"]
+    assert robustness["analysis"]["predeclared_gate_passed"] is False
+    gate = robustness["analysis"]["predeclared_gate_scenario"]
+    assert (
+        gate["positive_lock_count"]
+        == opposite_lock["five_tick_plus_0_05_pusd_fixed_cost_positive_lock_count"]
+    )
+    assert (
+        gate["positive_lock_fraction"]
+        == opposite_lock["five_tick_plus_0_05_pusd_fixed_cost_positive_lock_fraction"]
+    )
+    assert (
+        gate["total_locked_pnl_pusd"]
+        == opposite_lock[
+            "five_tick_plus_0_05_pusd_fixed_cost_total_locked_cashflow_pusd"
+        ]
+    )
 
     polymarket = audit["frontier"]["polymarket_recurring_cash_leader"]
     polymarket_source = _load(ROOT / polymarket["source_path"])
@@ -80,8 +121,17 @@ def test_profitability_frontier_metrics_match_canonical_sources() -> None:
     sensitivity = binance_source["official_direct_cost_adjudication"]
 
     assert binance_source["result_sha256"] == binance["result_sha256"]
-    for field in ("aligned_daily_close_count", "compound_annualized_return_fraction", "elapsed_days"):
+    for field in (
+        "aligned_daily_close_count",
+        "compound_annualized_return_fraction",
+        "elapsed_days",
+    ):
         assert economics[field] == binance[field]
-    assert sensitivity["full_history_compound_return_after_ten_percent_extra_principal_drag_fraction"] == binance[
-        "after_ten_percent_annual_opportunity_cost_on_extra_principal_fraction"
-    ]
+    assert (
+        sensitivity[
+            "full_history_compound_return_after_ten_percent_extra_principal_drag_fraction"
+        ]
+        == binance[
+            "after_ten_percent_annual_opportunity_cost_on_extra_principal_fraction"
+        ]
+    )

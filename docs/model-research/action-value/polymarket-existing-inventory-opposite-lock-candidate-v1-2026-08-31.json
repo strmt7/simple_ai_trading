@@ -1,6 +1,7 @@
 {
   "schema_version": "polymarket-existing-inventory-opposite-lock-candidate-v1",
   "created_at_utc": "2026-08-31T21:20:00Z",
+  "updated_at_utc": "2026-08-31T22:12:00Z",
   "question": "When a wallet already holds one binary Polymarket outcome for an independently justified reason, can a later opposite-outcome taker fill lock a complete set below one pUSD without relying on market direction?",
   "mechanism": {
     "scope": "BTC ETH and SOL 5 minute 15 minute and 4 hour Up or Down binary markets",
@@ -30,6 +31,44 @@
     "result_sha256": "b423b44e57bfd329220256facf4b9eabe45371b267e7a91ea08aa11a666be204",
     "rounding_assumption": "ceil_each_leg_of_each_matched_lock_fragment_to_0_00001_pUSD_even_when_the_source_trade_row_was_larger",
     "status": "candidate_survives_conservative_per_matched_fragment_fee_rounding_ceiling"
+  },
+  "fixed_lock_robustness_audit": {
+    "base_lock_set_reselected": false,
+    "baseline_one_tick_break_even_fixed_cost_per_lock_pusd": {
+      "minimum": "0.006496827943722000000000000000000000000000000000",
+      "p10_nearest_rank": "0.08150666664500000000000000000000000000000000000000",
+      "median_nearest_rank": "1.0103127500000000000000000000000000000000000000000",
+      "p90_nearest_rank": "7.972750460378322000000000000000000000000000000000",
+      "maximum": "55.08001997955000000000000000000000000000000000000"
+    },
+    "contract_path": "docs/model-research/action-value/polymarket-wallet-opposite-lock-robustness-contract-v1-2026-08-31.json",
+    "contract_sha256": "cc52cb4cafd7d36c432e39b1610e352bf513f405d2244432f7bcbc26dca2ea6f",
+    "gate": {
+      "all_asset_aggregate_pnl_positive": true,
+      "asset_aggregate_pnl_pusd": {
+        "btc": "151.02038338084593010000000000000000000000000000000",
+        "eth": "3.4247698333811750000000000000000000000000000000000",
+        "sol": "0.4584100000000000000000000000000000000000000000000"
+      },
+      "fixed_operating_cost_per_lock_pusd": "0.05",
+      "minimum_positive_lock_fraction": "0.80",
+      "positive_lock_count": 43,
+      "positive_lock_fraction": "0.65151515151515151515151515151515151515151515151515",
+      "positive_lock_matched_shares": "750.329318",
+      "total_hedge_adverse_ticks": 5,
+      "total_locked_pnl_pusd": "154.90356321422710510000000000000000000000000000000"
+    },
+    "maximum_additional_whole_adverse_ticks_above_one_tick_baseline": {
+      "minimum": 0,
+      "p10_nearest_rank": 0,
+      "median_nearest_rank": 8,
+      "p90_nearest_rank": 42,
+      "maximum": 70
+    },
+    "predeclared_gate_passed": false,
+    "result_path": "docs/model-research/action-value/polymarket-wallet-opposite-lock-robustness-result-v1-2026-08-31.json",
+    "result_sha256": "3f2bc8f2ea70345700062f43766bd1110299f7636367385daf4ce944f129046e",
+    "status": "aggregate_historical_cashflow_survives_but_cross_lock_robustness_gate_fails"
   },
   "training_evidence": {
     "role": "hypothesis_and_rule_selection_only_not_validation",
@@ -89,12 +128,14 @@
     "proved": [
       "The frozen rule repeated out of sample on a later complete UTC day for the preselected public wallet.",
       "Each counted completion was causal at one to sixty seconds and remained positive after the full published crypto taker fee on both legs, a conservative per-matched-fragment ceiling to the published five-decimal fee quantum, and one adverse 0.01 tick on the later hedge.",
+      "Without reselecting any lock, aggregate historical cashflow remained 154.9035632142271051 pUSD and BTC ETH and SOL aggregates each remained positive under five adverse hedge ticks plus 0.05 pUSD fixed operating cost per retained lock.",
       "The completed matched quantity has a direction-independent one-pUSD terminal or merge identity."
     ],
     "not_proved": [
       "The public wallet's first-leg strategy is profitable reproducible or independently justified.",
       "A user account currently owns eligible first-leg inventory or can reproduce the observed fills latency or size.",
       "A current executable opposite book exists when independently owned inventory needs completion.",
+      "Uniform cross-lock robustness is not proved: only 43 of 66 locks remained positive under the preregistered five-tick plus 0.05 pUSD gate, below the frozen 80 percent requirement, and the one-tick minimum lock absorbed only 0.006496827943722 pUSD of additional fixed cost.",
       "Merge redemption relayer latency custody tax capital opportunity and every account-specific external cost are fully bound.",
       "The historical gross locked cashflow is an owned realized PnL statement."
     ]
@@ -108,8 +149,8 @@
     "profitability_claim": false,
     "public_forward_profit_floor_pusd": "0",
     "stable_current_account_qualified_after_all_cost_edge": false,
-    "current_status": "serious_historical_out_of_sample_existing_inventory_risk_reduction_and_complete_set_lock_candidate_not_a_standalone_entry_strategy",
-    "next_action": "Only with explicit read-only account authority and independently preexisting BTC ETH or SOL binary outcome inventory, bind exact owned quantity basis current fee and merge or redemption eligibility, then freeze one current finite-size public opposite-book decision. Require separate explicit order authority before any hedge and reject unless the exact owned completion remains strictly positive after every cost and failure unwind.",
+    "current_status": "serious_but_fragile_historical_out_of_sample_existing_inventory_risk_reduction_candidate_aggregate_stress_remains_positive_but_predeclared_cross_lock_robustness_fails_not_a_standalone_entry_strategy",
+    "next_action": "Only with explicit read-only account authority and independently preexisting BTC ETH or SOL binary outcome inventory, bind each exact owned lot quantity basis current fee merge or redemption eligibility and a per-lot external-cost ceiling, then freeze one current finite-size public opposite-book decision. Require separate explicit order authority before any hedge and reject each lot unless its exact owned completion remains strictly positive after every cost and failure unwind; never rely on aggregate historical surplus to subsidize a fragile lot.",
     "retry_trigger": "explicit_read_only_account_authority_plus_independently_preexisting_eligible_BTC_ETH_or_SOL_binary_outcome_inventory_with_exact_basis_or_a_material_current_fee_merge_redemption_or_execution_architecture_change"
   },
   "prohibited_shortcuts": [
@@ -118,6 +159,7 @@
     "crediting_taker_rebates_maker_rebates_rewards_holding_yield_or_midpoints",
     "using_a_later_fill_as_if_it_were_available_at_the_first_leg",
     "matching_more_opposite_shares_than_existing_inventory",
+    "cherry_picking_only_the_43_locks_that_survived_the_predeclared_robustness_gate_or_using_aggregate_surplus_to_hide_nonpositive_locks",
     "repeating_narrowing_paginating_or_aliasing_the_consumed_August_30_request",
     "placing_an_order_or_accessing_an_account_without_separate_explicit_authority"
   ],
@@ -131,5 +173,5 @@
     "signed_requests": 0,
     "trading_authority": false
   },
-  "result_sha256": "e4392f0bad06aa56f5a80b72fd474f953a95c4da99b74f37db2c7fa3cfc70f9f"
+  "result_sha256": "4ee6b1d3a54b6b112f9f031dc5cb91cb2abc2943119f512dfb26c79fe6c93a01"
 }

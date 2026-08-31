@@ -1458,6 +1458,7 @@
         "one separately frozen current finite-size opposite-book decision after the independently existing inventory is identified",
         "owned opposite-order acceptance fill timing exact fee and complete-set merge or redemption evidence under separate explicit order authority",
         "network order-response merge or redemption relayer adverse-selection failure-unwind and opportunity costs",
+        "per-owned-lot slippage and external-cost evidence because the fixed historical set failed its preregistered cross-lock robustness gate even though aggregate cashflow remained positive",
         "for any rebate-enhanced variant current direct-wallet tier after a completed daily update plus realized owned pUSD taker-rebate payout reconciliation"
       ],
       "canonical_artifacts": [
@@ -1478,14 +1479,22 @@
         "result_sha256": "b423b44e57bfd329220256facf4b9eabe45371b267e7a91ea08aa11a666be204"
       },
       {
+        "path": "docs/model-research/action-value/polymarket-wallet-opposite-lock-robustness-contract-v1-2026-08-31.json",
+        "result_sha256": "cc52cb4cafd7d36c432e39b1610e352bf513f405d2244432f7bcbc26dca2ea6f"
+      },
+      {
+        "path": "docs/model-research/action-value/polymarket-wallet-opposite-lock-robustness-result-v1-2026-08-31.json",
+        "result_sha256": "3f2bc8f2ea70345700062f43766bd1110299f7636367385daf4ce944f129046e"
+      },
+      {
         "path": "docs/model-research/action-value/polymarket-existing-inventory-opposite-lock-candidate-v1-2026-08-31.json",
-        "result_sha256": "e4392f0bad06aa56f5a80b72fd474f953a95c4da99b74f37db2c7fa3cfc70f9f"
+        "result_sha256": "4ee6b1d3a54b6b112f9f031dc5cb91cb2abc2943119f512dfb26c79fe6c93a01"
       }
     ],
-    "current_status": "serious_historical_out_of_sample_existing_inventory_opposite_lock_candidate_not_accepted_the_prior_Round27_standalone_both_taker_entry_remains_unproved_but_a_distinct_no_rebate_overlay_fixed_on_the_retained_August25_public_wallet_day_then_passed_all_frozen_August30_out_of_sample_gates_with_66_causal_one_to_sixty_second_locks_across_27_BTC_ETH_SOL_conditions_1486_108451_matched_shares_and_217_6302921908223351705204892211_pUSD_one_tick_stressed_full_fee_locked_cashflow_a_fixed_lock_set_zero_network_correction_then_conservatively_ceiled_each_leg_of_each_matched_fragment_to_the_published_0_00001_pUSD_fee_quantum_subtracted_0_0005909365952300705204892211_pUSD_and_left_all_66_locks_positive_with_217_6297012542271051_pUSD_corrected_cashflow_both_time_halves_and_three_assets_were_positive_and_maximum_condition_share_was_0_2807103473_the_overlay_cannot_justify_first_leg_inventory_the_public_wallet_is_not_owned_or_reproducible_and_current_owned_basis_book_merge_external_cost_and_failure_unwind_remain_unproved_public_forward_floor_zero_not_deployment_ready",
+    "current_status": "serious_but_fragile_historical_out_of_sample_existing_inventory_opposite_lock_candidate_not_accepted_the_fixed_August30_set_has_66_causal_locks_27_BTC_ETH_SOL_conditions_1486_108451_matched_shares_and_217_6297012542271051_pUSD_after_one_adverse_tick_full_fees_and_conservative_fragment_rounding_the_zero_network_preregistered_robustness_gate_then_applied_five_total_adverse_ticks_plus_0_05_pUSD_fixed_cost_to_every_retained_lock_without_reselection_aggregate_cashflow_remained_positive_at_154_9035632142271051_pUSD_and_all_three_asset_aggregates_were_positive_but_only_43_of_66_locks_or_0_651515_survived_below_the_frozen_0_80_requirement_the_median_lock_absorbed_eight_additional_whole_ticks_but_the_minimum_and_p10_absorbed_zero_so_cross_lock_stability_failed_the_overlay_cannot_justify_first_leg_inventory_the_public_wallet_is_not_owned_or_reproducible_and_current_owned_basis_book_merge_external_cost_and_failure_unwind_remain_unproved_public_forward_floor_zero_not_deployment_ready",
       "market_direction_forecast_required": false,
       "mechanism": "polymarket_binary_complete_set_taker_rebate_latency_overlay",
-      "next_action": "do_not_replay_refit_repeat_narrow_paginate_or_alias_either_historical_cohort_only_with_explicit_read_only_account_authority_and_independently_preexisting_eligible_BTC_ETH_or_SOL_binary_inventory_bind_exact_owned_quantity_basis_fee_and_merge_or_redemption_eligibility_then_freeze_one_current_finite_size_public_opposite_book_decision_require_separate_explicit_order_authority_before_any_hedge_and_reject_unless_exact_owned_completion_is_strictly_positive_after_every_cost_and_failure_unwind",
+      "next_action": "do_not_replay_refit_repeat_narrow_paginate_alias_or_cherry_pick_surviving_historical_locks_only_with_explicit_read_only_account_authority_and_independently_preexisting_eligible_BTC_ETH_or_SOL_binary_inventory_bind_each_exact_owned_lot_quantity_basis_fee_merge_or_redemption_eligibility_and_external_cost_ceiling_then_freeze_one_current_finite_size_public_opposite_book_decision_require_separate_explicit_order_authority_before_any_hedge_and_reject_each_lot_unless_exact_owned_completion_is_strictly_positive_after_every_cost_and_failure_unwind",
       "priority_rank": 23,
       "prohibited_shortcuts": [
         "using_the_ex_post_minimum_of_Up_then_Down_and_Down_then_Up_as_a_tradable_ordering_rule",
@@ -1497,6 +1506,7 @@
         "initiating_first_leg_inventory_because_the_existing_inventory_overlay_passed_historically",
         "calling_the_public_wallet_owned_authorized_reproducible_or_realized_account_profit",
         "crediting_taker_rebates_maker_rebates_rewards_holding_yield_or_midpoints_to_the_no_rebate_validation",
+        "cherry_picking_only_the_43_predeclared_stress_survivors_or_using_aggregate_historical_surplus_to_subsidize_a_nonpositive_owned_lot",
         "repeating_narrowing_paginating_or_aliasing_the_consumed_August30_wallet_request"
       ],
       "retry_trigger": "explicit_read_only_account_authority_plus_independently_preexisting_eligible_BTC_ETH_or_SOL_binary_outcome_inventory_with_exact_basis_or_a_material_current_fee_merge_redemption_or_execution_architecture_change_then_separate_explicit_order_authority_for_any_hedge_or_merge",
@@ -3231,7 +3241,7 @@
       "venue_scope": "Binance_BTC_ETH_SOL_European_options_and_exact_matching_USDT_perpetuals"
     }
   ],
-  "result_sha256": "592e9f6213d1d909fbb193581b0899e3d7191f4cd33601f365ffe96ceeceed2c",
+  "result_sha256": "669324eaae8533fb51fae63078f561499b74666a511847fe99f7c8b48eba085e",
   "schema_version": "structural-edge-priority-registry-v1",
   "terminal_do_not_repeat": [
     {
@@ -3846,6 +3856,6 @@
       "reason": "the_exact_title_DOI_SSRN_ID_author_and_mechanism_alias_search_found_no_retained_adjudication_but_the_one_frozen_exact_primary_PDF_GET_returned_HTTP_403_and_a_5625_byte_Cloudflare_HTML_challenge_not_the_complete_paper_the_indexed_title_and_abstract_remain_discovery_only_and_cannot_authorize_a_retained_data_screen_market_collector_or_profit_claim_do_not_retry_query_variants_aliases_mirrors_or_locale_routes_reopen_only_on_a_materially_revised_complete_primary_version_from_the_authors_or_a_public_reproducible_repository_with_exact_bound_formula_code_data_and_after_cost_execution_methodology"
     }
   ],
-  "updated_at_utc": "2026-08-31T21:52:40Z",
+  "updated_at_utc": "2026-08-31T22:14:00Z",
   "usage_rule": "advance_the_highest_ranked_hypothesis_whose_retry_trigger_is_satisfied_otherwise_do_not_repeat_a_blocked_or_terminal_screen"
 }

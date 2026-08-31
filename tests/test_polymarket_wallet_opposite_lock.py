@@ -35,6 +35,14 @@ ROUNDING_CORRECTION = (
     ROOT
     / "docs/model-research/action-value/polymarket-wallet-opposite-lock-rounding-correction-v1-2026-08-31.json"
 )
+ROBUSTNESS_CONTRACT = (
+    ROOT
+    / "docs/model-research/action-value/polymarket-wallet-opposite-lock-robustness-contract-v1-2026-08-31.json"
+)
+ROBUSTNESS_RESULT = (
+    ROOT
+    / "docs/model-research/action-value/polymarket-wallet-opposite-lock-robustness-result-v1-2026-08-31.json"
+)
 FEES = (
     ROOT
     / "docs/model-research/action-value/raw/polymarket-organic-taker-rebate-v1/07-fees.html"
@@ -134,7 +142,9 @@ def test_fixed_lock_set_survives_conservative_fee_rounding_ceiling() -> None:
 
     assert _canonical_hash(correction, "result_sha256") == correction["result_sha256"]
     assert correction["source_binding"]["base_result_sha256"] == result["result_sha256"]  # type: ignore[index]
-    assert correction["source_binding"]["fees_source_file_sha256"] == _sha256(FEES.read_bytes())  # type: ignore[index]
+    assert correction["source_binding"]["fees_source_file_sha256"] == _sha256(
+        FEES.read_bytes()
+    )  # type: ignore[index]
     assert correction["method"]["base_lock_set_reselected"] is False  # type: ignore[index]
     assert correction["analysis"]["base_lock_count"] == 66  # type: ignore[index]
     assert correction["analysis"]["nonpositive_lock_count_after_correction"] == 0  # type: ignore[index]
@@ -147,4 +157,35 @@ def test_fixed_lock_set_survives_conservative_fee_rounding_ceiling() -> None:
     assert correction["adjudication"]["accepted_edge"] is False  # type: ignore[index]
     assert correction["adjudication"]["public_forward_profit_floor_pusd"] == "0"  # type: ignore[index]
     assert correction["authority"]["network_requests"] == 0  # type: ignore[index]
-    assert candidate["fee_rounding_correction"]["result_sha256"] == correction["result_sha256"]  # type: ignore[index]
+    assert (
+        candidate["fee_rounding_correction"]["result_sha256"]
+        == correction["result_sha256"]
+    )  # type: ignore[index]
+
+
+def test_fixed_lock_set_fails_predeclared_cross_lock_robustness_gate() -> None:
+    contract = _load(ROBUSTNESS_CONTRACT)
+    result = _load(ROBUSTNESS_RESULT)
+    candidate = _load(CANDIDATE)
+
+    assert _canonical_hash(contract, "contract_sha256") == contract["contract_sha256"]
+    assert _canonical_hash(result, "result_sha256") == result["result_sha256"]
+    assert result["contract"]["sha256"] == contract["contract_sha256"]  # type: ignore[index]
+    assert result["method"]["base_lock_set_reselected"] is False  # type: ignore[index]
+    assert result["authority"]["network_requests"] == 0  # type: ignore[index]
+    assert result["analysis"]["base_lock_count"] == 66  # type: ignore[index]
+    assert result["analysis"]["predeclared_gate_passed"] is False  # type: ignore[index]
+
+    gate = result["analysis"]["predeclared_gate_scenario"]  # type: ignore[index]
+    assert gate["total_hedge_adverse_ticks"] == 5
+    assert gate["fixed_operating_cost_per_lock_pusd"] == "0.05"
+    assert gate["positive_lock_count"] == 43
+    assert Decimal(gate["positive_lock_fraction"]) < Decimal("0.80")
+    assert Decimal(gate["total_locked_pnl_pusd"]) > 0
+    assert gate["all_asset_aggregate_pnl_positive"] is True
+
+    robustness = candidate["fixed_lock_robustness_audit"]  # type: ignore[index]
+    assert robustness["result_sha256"] == result["result_sha256"]
+    assert robustness["predeclared_gate_passed"] is False
+    assert candidate["adjudication"]["accepted_edge"] is False  # type: ignore[index]
+    assert candidate["adjudication"]["public_forward_profit_floor_pusd"] == "0"  # type: ignore[index]
