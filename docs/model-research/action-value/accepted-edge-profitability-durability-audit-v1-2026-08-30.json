@@ -124,7 +124,7 @@
       "why_not_stable_deployable": "Current rate remains conflict-qualified rather than proven, the evidence is from public wallets rather than the owned account, every external friction and best alternative is not bound, and future persistence is not guaranteed."
     }
   },
-  "result_sha256": "c7b116f8786575044287a74d6c550bb771708c671d8e7b3c52217ece7b1f3108",
+  "result_sha256": "ead5a00c80c621738d71dab382ef8cae9fb2f6ab7ec967c2d8ed7e6664eada06",
   "routing": {
     "do_not_count_as_standalone_profit": [
       "advertised_or_public_rate_without_realized_cash",
@@ -133,13 +133,13 @@
       "referral_creator_builder_client_or_follower_income_without_authentic_external_flow"
     ],
     "next_research_priority": "Seek repeatable Tier A direct-cash mechanisms or materially improve Tier A account cost persistence evidence. Do not spend requests or tests merely increasing Tier C or Tier D counts while a Tier A trigger is closed.",
-    "polymarket_next_literal_trigger": "Do not repeat the consumed V11 single-wallet activity pulse. Run only the frozen transaction-specific V12 public receipt reconciliation exactly once with no retry, alias, parameter change, or other request; afterward wait for a material official rate, program, cross-asset payout, or economic-comparator change.",
-    "binance_next_literal_trigger": "Advance a genuinely distinct Tier A or Tier B monetary mechanism only when its registry retry trigger is satisfied; do not repeat the exhausted all-symbol triangle stablecoin-cycle or official-doc inventory screens on unchanged evidence."
+    "polymarket_next_literal_trigger": "Do not repeat the consumed V11 single-wallet activity pulse or its exact successful V12 receipt reconciliation. Wait for a material official rate, program, cross-asset payout, or economic-comparator change.",
+    "binance_next_literal_trigger": "Do not repeat or book-capture the terminal 2026 GLW timing-gap episode. Advance a genuinely distinct Tier A or Tier B monetary mechanism only when its registry retry trigger is satisfied; do not repeat exhausted all-symbol triangle, stablecoin-cycle, or official-document inventory screens on unchanged evidence."
   },
   "schema_version": "accepted-edge-profitability-durability-audit-v1",
   "source_binding": {
     "accepted_edge_count": 29,
     "registry_path": "docs/model-research/structural-edge-priority-registry-v1.json",
-    "registry_result_sha256": "1797b2c3bc3c7698c5f9ed799277e37cfc7ee7f8ab711608a6a06eb15701446a"
+    "registry_result_sha256": "5e67d7e5da543ac85d364fcb23dd09b42dce28c538a447c716393427d5e76b49"
   }
 }
