@@ -135,17 +135,20 @@ def test_registry_strengthens_the_existing_family_without_new_edge() -> None:
     registry = _load(REGISTRY)
     assert registry["result_sha256"] == REGISTRY_HASH
     assert _canonical_hash(registry, "result_sha256") == REGISTRY_HASH
-    assert len(registry["prioritized_hypotheses"]) == 44
+    assert len(registry["prioritized_hypotheses"]) == 47
     family = next(
         row for row in registry["prioritized_hypotheses"] if row["priority_rank"] == 44
     )
-    assert family["canonical_artifacts"][-2:] == [
-        {
-            "path": "docs/model-research/action-value/binance-one-way-arbitrage-paper-source-contract-v1.json",
-            "result_sha256": PAPER_CONTRACT_HASH,
-        },
-        {
-            "path": "docs/model-research/action-value/binance-one-way-arbitrage-paper-source-adjudication-v1-2026-08-29.json",
-            "result_sha256": PAPER_RESULT_HASH,
-        },
-    ]
+    assert all(
+        artifact in family["canonical_artifacts"]
+        for artifact in [
+            {
+                "path": "docs/model-research/action-value/binance-one-way-arbitrage-paper-source-contract-v1.json",
+                "result_sha256": PAPER_CONTRACT_HASH,
+            },
+            {
+                "path": "docs/model-research/action-value/binance-one-way-arbitrage-paper-source-adjudication-v1-2026-08-29.json",
+                "result_sha256": PAPER_RESULT_HASH,
+            },
+        ]
+    )

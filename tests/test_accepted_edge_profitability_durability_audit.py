@@ -47,6 +47,19 @@ def test_profitability_durability_audit_is_source_bound_and_exhaustive() -> None
 
 def test_profitability_frontier_metrics_match_canonical_sources() -> None:
     audit = _load(AUDIT_PATH)
+    opposite_lock = audit["frontier"][
+        "polymarket_historical_out_of_sample_existing_inventory_lock_candidate"
+    ]
+    candidate = _load(ROOT / opposite_lock["source_path"])
+    correction = _load(ROOT / opposite_lock["fee_rounding_correction_source_path"])
+
+    assert candidate["result_sha256"] == opposite_lock["result_sha256"]
+    assert correction["result_sha256"] == opposite_lock["fee_rounding_correction_result_sha256"]
+    assert correction["analysis"]["corrected_locked_pnl_pusd"] == opposite_lock[
+        "corrected_one_tick_stressed_full_fee_no_rebate_locked_cashflow_pusd"
+    ]
+    assert correction["analysis"]["nonpositive_lock_count_after_correction"] == 0
+
     polymarket = audit["frontier"]["polymarket_recurring_cash_leader"]
     polymarket_source = _load(ROOT / polymarket["source_path"])
     portfolio = polymarket_source["cross_asset_portfolio"]

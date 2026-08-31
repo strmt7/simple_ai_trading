@@ -57,6 +57,7 @@
   },
   "historical_primary_evidence": {
     "arxiv_id": "2605.00864v1",
+    "doi": "10.48550/arXiv.2605.00864",
     "combinatorial_evaluated_states": 8591339,
     "combinatorial_executable_episodes_after_post_game_exclusion": 290,
     "combinatorial_in_game_episodes": 279,
@@ -69,6 +70,8 @@
     "paper_average_executable_shares_when_budget_constrained": "14.79",
     "paper_capped_profit_usdc_before_current_fees_and_external_costs": "559.59",
     "paper_population": "NBA_full_game_moneyline_and_point_spread_markets",
+    "paper_title": "Arbitrage Analysis in Polymarket NBA Markets",
+    "paper_version": "v1",
     "paper_states_with_less_than_100_USDC_deployable_fraction": "0.769",
     "warning": "the paper explicitly used zero NBA trading fees and therefore does not establish current after-fee profitability"
   },
@@ -125,7 +128,7 @@
     "calling a read-only recurrence profitable or deployment-ready without owned fill reconciliation and all external costs",
     "placing either leg or accepting legging risk without separate explicit trading authority"
   ],
-  "result_sha256": "70cfc7b2ae1cb256e7a8c08c9af33fa8524d2308a8c18400d5a2b7d93c966fe3",
+  "result_sha256": "bb2d030b9465ded6cc4ce0ba894719d60ecd812d673432a10941db1779d0d758",
   "retry_policy": {
     "public_recurrence_trigger": "first future active NBA full-game event population whose exact market rules expose at least one valid moneyline_spread implication pair under the prospective contract",
     "research_now": "retain this source-bound contract and do not repeatedly sample the current off-season or unrelated sports",

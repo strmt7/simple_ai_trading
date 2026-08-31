@@ -31,6 +31,10 @@ CANDIDATE = (
     ROOT
     / "docs/model-research/action-value/polymarket-existing-inventory-opposite-lock-candidate-v1-2026-08-31.json"
 )
+ROUNDING_CORRECTION = (
+    ROOT
+    / "docs/model-research/action-value/polymarket-wallet-opposite-lock-rounding-correction-v1-2026-08-31.json"
+)
 FEES = (
     ROOT
     / "docs/model-research/action-value/raw/polymarket-organic-taker-rebate-v1/07-fees.html"
@@ -121,3 +125,26 @@ def test_frozen_result_and_candidate_are_source_bound_and_fail_closed() -> None:
     assert candidate["adjudication"]["accepted_edge"] is False  # type: ignore[index]
     assert candidate["adjudication"]["profitability_claim"] is False  # type: ignore[index]
     assert candidate["adjudication"]["public_forward_profit_floor_pusd"] == "0"  # type: ignore[index]
+
+
+def test_fixed_lock_set_survives_conservative_fee_rounding_ceiling() -> None:
+    result = _load(RESULT)
+    correction = _load(ROUNDING_CORRECTION)
+    candidate = _load(CANDIDATE)
+
+    assert _canonical_hash(correction, "result_sha256") == correction["result_sha256"]
+    assert correction["source_binding"]["base_result_sha256"] == result["result_sha256"]  # type: ignore[index]
+    assert correction["source_binding"]["fees_source_file_sha256"] == _sha256(FEES.read_bytes())  # type: ignore[index]
+    assert correction["method"]["base_lock_set_reselected"] is False  # type: ignore[index]
+    assert correction["analysis"]["base_lock_count"] == 66  # type: ignore[index]
+    assert correction["analysis"]["nonpositive_lock_count_after_correction"] == 0  # type: ignore[index]
+    drag = Decimal(correction["analysis"]["conservative_fee_rounding_drag_pusd"])  # type: ignore[index]
+    corrected = Decimal(correction["analysis"]["corrected_locked_pnl_pusd"])  # type: ignore[index]
+    minimum = Decimal(correction["analysis"]["minimum_corrected_lock_pnl_pusd"])  # type: ignore[index]
+    assert Decimal("0") < drag < Decimal(66 * 2) * Decimal("0.00001")
+    assert corrected == Decimal("217.62970125422710510000000000000000000000000000000")
+    assert minimum > 0
+    assert correction["adjudication"]["accepted_edge"] is False  # type: ignore[index]
+    assert correction["adjudication"]["public_forward_profit_floor_pusd"] == "0"  # type: ignore[index]
+    assert correction["authority"]["network_requests"] == 0  # type: ignore[index]
+    assert candidate["fee_rounding_correction"]["result_sha256"] == correction["result_sha256"]  # type: ignore[index]

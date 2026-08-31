@@ -1469,16 +1469,20 @@
           "path": "docs/model-research/action-value/polymarket-wallet-opposite-lock-validation-contract-v1-2026-08-31.json",
           "result_sha256": "c6e6115188b7ce021d1140e9a1e53c8f4979af14742e080d2f2b4d6662b4f7dc"
         },
-        {
-          "path": "docs/model-research/action-value/polymarket-wallet-opposite-lock-validation-result-v1-2026-08-31.json",
-          "result_sha256": "b81af57f094f1ff75bcb77f9938ec7c84791af4e1cecb44b3402dac17d4dc1df"
-        },
-        {
-          "path": "docs/model-research/action-value/polymarket-existing-inventory-opposite-lock-candidate-v1-2026-08-31.json",
-          "result_sha256": "335e258b11136b1913d584dce5d493b985bad06bdc73a0eb8564049ebec2c4ee"
-        }
-      ],
-      "current_status": "serious_historical_out_of_sample_existing_inventory_opposite_lock_candidate_not_accepted_the_prior_Round27_standalone_both_taker_entry_remains_unproved_but_a_distinct_no_rebate_overlay_fixed_on_the_retained_August25_public_wallet_day_then_passed_all_frozen_August30_out_of_sample_gates_with_66_causal_one_to_sixty_second_locks_across_27_BTC_ETH_SOL_conditions_1486_108451_matched_shares_and_217_6302921908223351705204892211_pUSD_one_tick_stressed_full_fee_locked_cashflow_both_time_halves_and_three_assets_were_positive_and_maximum_condition_share_was_0_2807103473_the_retained_official_fee_source_proves_the_additive_USDC_fee_formula_is_exact_for_shares_traded_but_the_overlay_cannot_justify_first_leg_inventory_the_public_wallet_is_not_owned_or_reproducible_and_current_owned_basis_book_merge_external_cost_and_failure_unwind_remain_unproved_public_forward_floor_zero_not_deployment_ready",
+      {
+        "path": "docs/model-research/action-value/polymarket-wallet-opposite-lock-validation-result-v1-2026-08-31.json",
+        "result_sha256": "b81af57f094f1ff75bcb77f9938ec7c84791af4e1cecb44b3402dac17d4dc1df"
+      },
+      {
+        "path": "docs/model-research/action-value/polymarket-wallet-opposite-lock-rounding-correction-v1-2026-08-31.json",
+        "result_sha256": "b423b44e57bfd329220256facf4b9eabe45371b267e7a91ea08aa11a666be204"
+      },
+      {
+        "path": "docs/model-research/action-value/polymarket-existing-inventory-opposite-lock-candidate-v1-2026-08-31.json",
+        "result_sha256": "e4392f0bad06aa56f5a80b72fd474f953a95c4da99b74f37db2c7fa3cfc70f9f"
+      }
+    ],
+    "current_status": "serious_historical_out_of_sample_existing_inventory_opposite_lock_candidate_not_accepted_the_prior_Round27_standalone_both_taker_entry_remains_unproved_but_a_distinct_no_rebate_overlay_fixed_on_the_retained_August25_public_wallet_day_then_passed_all_frozen_August30_out_of_sample_gates_with_66_causal_one_to_sixty_second_locks_across_27_BTC_ETH_SOL_conditions_1486_108451_matched_shares_and_217_6302921908223351705204892211_pUSD_one_tick_stressed_full_fee_locked_cashflow_a_fixed_lock_set_zero_network_correction_then_conservatively_ceiled_each_leg_of_each_matched_fragment_to_the_published_0_00001_pUSD_fee_quantum_subtracted_0_0005909365952300705204892211_pUSD_and_left_all_66_locks_positive_with_217_6297012542271051_pUSD_corrected_cashflow_both_time_halves_and_three_assets_were_positive_and_maximum_condition_share_was_0_2807103473_the_overlay_cannot_justify_first_leg_inventory_the_public_wallet_is_not_owned_or_reproducible_and_current_owned_basis_book_merge_external_cost_and_failure_unwind_remain_unproved_public_forward_floor_zero_not_deployment_ready",
       "market_direction_forecast_required": false,
       "mechanism": "polymarket_binary_complete_set_taker_rebate_latency_overlay",
       "next_action": "do_not_replay_refit_repeat_narrow_paginate_or_alias_either_historical_cohort_only_with_explicit_read_only_account_authority_and_independently_preexisting_eligible_BTC_ETH_or_SOL_binary_inventory_bind_exact_owned_quantity_basis_fee_and_merge_or_redemption_eligibility_then_freeze_one_current_finite_size_public_opposite_book_decision_require_separate_explicit_order_authority_before_any_hedge_and_reject_unless_exact_owned_completion_is_strictly_positive_after_every_cost_and_failure_unwind",
@@ -1752,10 +1756,10 @@
         "owned simultaneous or otherwise causally complete both-leg fills reconciliation and unwind costs before any deployment or profitability claim"
       ],
       "canonical_artifacts": [
-        {
-          "path": "docs/model-research/action-value/polymarket-live-nba-moneyline-spread-combinatorial-parity-reopen-v1-2026-08-26.json",
-          "result_sha256": "70cfc7b2ae1cb256e7a8c08c9af33fa8524d2308a8c18400d5a2b7d93c966fe3"
-        },
+      {
+        "path": "docs/model-research/action-value/polymarket-live-nba-moneyline-spread-combinatorial-parity-reopen-v1-2026-08-26.json",
+        "result_sha256": "bb2d030b9465ded6cc4ce0ba894719d60ecd812d673432a10941db1779d0d758"
+      },
         {
           "path": "docs/model-research/action-value/polymarket-sports-taker-delay-maker-protection-gate-v1-2026-08-27.json",
           "result_sha256": "4847ec7828e598950da9a455170b66a529d9a5d671bfb4c37a57a36f608b9627"
@@ -2013,7 +2017,12 @@
       "latest_cfb_delta_status": "the_frozen_complete_2026_09_08_through_2026_09_12_CFB_event_discovery_and_catalog_request_returned_HTTP_200_with_zero_events_no_cursor_and_a_complete_empty_population_so_zero_relations_books_fees_accounts_credentials_orders_funds_or_protected_capture_access_were_permitted_the_consumed_runner_price_method_mismatched_the_contract_but_zero_price_rows_made_the_empty_population_decision_invariant_the_exact_runner_was_preserved_in_an_immutable_sidecar_and_corrected_prospectively_do_not_poll_refine_or_repeat_this_window",
       "retained_cfb_side_specific_correction_status": "a_zero_network_correction_repriced_all_139_retained_CFB_relations_across_the_complete_September_3_through_7_populations_with_bestAsk_or_conservative_one_minus_bestBid_the_8_midpoint_like_candidates_became_zero_strict_side_specific_sub_floor_candidates_and_the_best_corrected_sums_were_1_07_1_08_1_07_and_1_62_pUSD_for_1_pUSD_floors_the_payoff_relations_remain_valid_but_every_prior_outcomePrices_economic_gate_is_superseded_no_books_fees_accounts_credentials_orders_funds_or_protected_capture_requests_were_justified",
       "market_direction_forecast_required": false,
-      "mechanism": "polymarket_sports_moneyline_spread_total_monotone_payoff_implication",
+    "literature_aliases": {
+      "arxiv_id": "2605.00864v1",
+      "doi": "10.48550/arXiv.2605.00864",
+      "paper_title": "Arbitrage Analysis in Polymarket NBA Markets"
+    },
+    "mechanism": "polymarket_sports_moneyline_spread_total_monotone_payoff_implication",
       "next_action": "do_not_resample_Toronto_Phoenix_Lynx_Dream_Ball_State_Ohio_State_Clemson_LSU_Fordham_North_Dakota_State_Mercyhurst_New_Mexico_State_SMU_Florida_State_or_Patriots_Seahawks_do_not_rebuild_reprice_or_book_capture_any_retained_Patriots_Seahawks_team_full_half_quarter_team_period_spread_ladder_or_additive_partition_graph_do_not_select_the_already_observed_49ers_Rams_sibling_after_the_source_selected_event_failed_and_do_not_repeat_the_consumed_WNBA_2026_08_30_through_2026_09_02_CFB_2026_09_03_through_2026_09_12_or_NFL_2026_09_13_through_2026_09_21_windows_do_not_refine_the_empty_September_8_through_12_CFB_window_to_another_unproved_horizon_for_a_future_distinct_event_outside_all_consumed_populations_first_source_prove_actual_deployment_and_exhaustive_payoffs_then_use_side_specific_Gamma_asks_only_as_a_rejection_gate_request_one_frozen_exact_depth_batch_for_the_precommitted_strongest_strictly_sub_floor_package_and_require_independent_synchronized_after_fee_positive_recurrence_before_escalation",
       "priority_rank": 30,
       "prohibited_shortcuts": [
@@ -3222,7 +3231,7 @@
       "venue_scope": "Binance_BTC_ETH_SOL_European_options_and_exact_matching_USDT_perpetuals"
     }
   ],
-  "result_sha256": "f267c92839fa549f63ae4ab9c45bb9c9f1b15d492e6e5c620e5f3150cade26d8",
+  "result_sha256": "992b900a7fda3ea1d17362cf4d32cc73a6ebb2ed0be1463c6a0cc4da0ffe6f9e",
   "schema_version": "structural-edge-priority-registry-v1",
   "terminal_do_not_repeat": [
     {

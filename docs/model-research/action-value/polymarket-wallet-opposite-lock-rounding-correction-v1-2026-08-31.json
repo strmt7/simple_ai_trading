@@ -1,0 +1,513 @@
+{
+  "adjudication": {
+    "accepted_edge": false,
+    "deployment_ready": false,
+    "historical_out_of_sample_candidate_survives": true,
+    "profitability_claim": false,
+    "public_forward_profit_floor_pusd": "0",
+    "status": "candidate_survives_conservative_per_matched_fragment_fee_rounding_ceiling",
+    "trading_authority": false
+  },
+  "analysis": {
+    "base_lock_count": 66,
+    "base_locked_pnl_pusd": "217.6302921908223351705204892211",
+    "conservative_fee_rounding_drag_pusd": "0.0005909365952300705204892211000000000000000000000000",
+    "corrected_locked_pnl_pusd": "217.62970125422710510000000000000000000000000000000",
+    "locks": [
+      {
+        "base_locked_pnl_pusd": "0.3255558147629349354296646065",
+        "condition_id": "0x0267fc4f2305b6e8a17d56081984078084052f4d162292576872b4429f79cc15",
+        "conservative_fee_rounding_drag_pusd": "0.00000951059584903542966460650000000000000000000000",
+        "corrected_locked_pnl_pusd": "0.32554630416708590000000000000000000000000000000000",
+        "matched_shares": "8.661371"
+      },
+      {
+        "base_locked_pnl_pusd": "2.75273337552982254999871375",
+        "condition_id": "0x08b62d80471fdb51a720700666bca4cac3fcc3c5629aa6855d51b624e6124163",
+        "conservative_fee_rounding_drag_pusd": "7.552999754999871375000000000000000000000000E-8",
+        "corrected_locked_pnl_pusd": "2.7527332999998250000000000000000000000000000000000",
+        "matched_shares": "6.666665"
+      },
+      {
+        "base_locked_pnl_pusd": "7.9727691661246061708444987280",
+        "condition_id": "0x08b62d80471fdb51a720700666bca4cac3fcc3c5629aa6855d51b624e6124163",
+        "conservative_fee_rounding_drag_pusd": "0.00001870574628417084449872800000000000000000000000",
+        "corrected_locked_pnl_pusd": "7.9727504603783220000000000000000000000000000000000",
+        "matched_shares": "23.333335"
+      },
+      {
+        "base_locked_pnl_pusd": "0.05130197645661021710997",
+        "condition_id": "0x0a5b891c7d2ed298abb0d3cf0c7b0940d9e3053008bad4423447abc61f4dc8e4",
+        "conservative_fee_rounding_drag_pusd": "0.00001180122661021710997000000000000000000000000000",
+        "corrected_locked_pnl_pusd": "0.05129017523000000000000000000000000000000000000000",
+        "matched_shares": "9.9"
+      },
+      {
+        "base_locked_pnl_pusd": "2.8795658706062708642809811870",
+        "condition_id": "0x0a5b891c7d2ed298abb0d3cf0c7b0940d9e3053008bad4423447abc61f4dc8e4",
+        "conservative_fee_rounding_drag_pusd": "0.00001208003720666428098118700000000000000000000000",
+        "corrected_locked_pnl_pusd": "2.8795537905690642000000000000000000000000000000000",
+        "matched_shares": "17.281817"
+      },
+      {
+        "base_locked_pnl_pusd": "4.0703566349285664417225638460",
+        "condition_id": "0x0a5b891c7d2ed298abb0d3cf0c7b0940d9e3053008bad4423447abc61f4dc8e4",
+        "conservative_fee_rounding_drag_pusd": "0.00000802554781004172256384600000000000000000000000",
+        "corrected_locked_pnl_pusd": "4.0703486093807564000000000000000000000000000000000",
+        "matched_shares": "51.132074"
+      },
+      {
+        "base_locked_pnl_pusd": "2.1353416954244443194590620485",
+        "condition_id": "0x0a5b891c7d2ed298abb0d3cf0c7b0940d9e3053008bad4423447abc61f4dc8e4",
+        "conservative_fee_rounding_drag_pusd": "0.00000158967315741945906204850000000000000000000000",
+        "corrected_locked_pnl_pusd": "2.1353401057512869000000000000000000000000000000000",
+        "matched_shares": "33.414679"
+      },
+      {
+        "base_locked_pnl_pusd": "6.3296753608470321551926679975",
+        "condition_id": "0x0a5b891c7d2ed298abb0d3cf0c7b0940d9e3053008bad4423447abc61f4dc8e4",
+        "conservative_fee_rounding_drag_pusd": "0.00000724230260165519266799750000000000000000000000",
+        "corrected_locked_pnl_pusd": "6.3296681185444305000000000000000000000000000000000",
+        "matched_shares": "55.299605"
+      },
+      {
+        "base_locked_pnl_pusd": "0.181985529287059382617344",
+        "condition_id": "0x0a9ebb78709e695af58cf28768bb03ca8bd7c9cfe5f78e322907d712620510c2",
+        "conservative_fee_rounding_drag_pusd": "0.000005403863059382617344000000000000000000000000000",
+        "corrected_locked_pnl_pusd": "0.18198012542400000000000000000000000000000000000000",
+        "matched_shares": "6.03"
+      },
+      {
+        "base_locked_pnl_pusd": "0.015610265777318916658688",
+        "condition_id": "0x0a9ebb78709e695af58cf28768bb03ca8bd7c9cfe5f78e322907d712620510c2",
+        "conservative_fee_rounding_drag_pusd": "0.00000991092931891665868800000000000000000000000000",
+        "corrected_locked_pnl_pusd": "0.01560035484800000000000000000000000000000000000000",
+        "matched_shares": "17.06"
+      },
+      {
+        "base_locked_pnl_pusd": "0.0065140445379831094630782360",
+        "condition_id": "0x0f58802b32422886500da03fb1f3f0a4964166835b7498db51d55418f82c7bb8",
+        "conservative_fee_rounding_drag_pusd": "0.00001721659426110946307823600000000000000000000000",
+        "corrected_locked_pnl_pusd": "0.00649682794372200000000000000000000000000000000000",
+        "matched_shares": "21.902305"
+      },
+      {
+        "base_locked_pnl_pusd": "0.510315",
+        "condition_id": "0x0f58802b32422886500da03fb1f3f0a4964166835b7498db51d55418f82c7bb8",
+        "conservative_fee_rounding_drag_pusd": "0.000005000000000000000000000000000000000000000000000",
+        "corrected_locked_pnl_pusd": "0.51031000000000000000000000000000000000000000000000",
+        "matched_shares": "5"
+      },
+      {
+        "base_locked_pnl_pusd": "0.633885",
+        "condition_id": "0x24548f486389db0fbf984ff1eaba64116f7caae67a1e55cd0862c73445eba2fb",
+        "conservative_fee_rounding_drag_pusd": "0.00000500000000000000000000000000000000000000000000",
+        "corrected_locked_pnl_pusd": "0.63388000000000000000000000000000000000000000000000",
+        "matched_shares": "15"
+      },
+      {
+        "base_locked_pnl_pusd": "2.434912541119218145718376",
+        "condition_id": "0x24548f486389db0fbf984ff1eaba64116f7caae67a1e55cd0862c73445eba2fb",
+        "conservative_fee_rounding_drag_pusd": "0.00000762032321814571837600000000000000000000000000",
+        "corrected_locked_pnl_pusd": "2.4349049207960000000000000000000000000000000000000",
+        "matched_shares": "10.62"
+      },
+      {
+        "base_locked_pnl_pusd": "0.6434572171652909862358159566",
+        "condition_id": "0x2b22645b3dd17edc583ef5f856d3a0d27cf243189ab8a6f90dacfed20833c57e",
+        "conservative_fee_rounding_drag_pusd": "0.0000152438929913862358159566000000000000000000000",
+        "corrected_locked_pnl_pusd": "0.6434419732722996000000000000000000000000000000000",
+        "matched_shares": "103.761141"
+      },
+      {
+        "base_locked_pnl_pusd": "0.40024420",
+        "condition_id": "0x30a8675c469482d46a4e30e75dd80f07c9e973988cc40ac11f1c718253dd78e4",
+        "conservative_fee_rounding_drag_pusd": "0.00001420000000000000000000000000000000000000000000",
+        "corrected_locked_pnl_pusd": "0.40023000000000000000000000000000000000000000000000",
+        "matched_shares": "15.85"
+      },
+      {
+        "base_locked_pnl_pusd": "5.280838835514696708213092",
+        "condition_id": "0x30a8675c469482d46a4e30e75dd80f07c9e973988cc40ac11f1c718253dd78e4",
+        "conservative_fee_rounding_drag_pusd": "0.00001239984069670821309200000000000000000000000000",
+        "corrected_locked_pnl_pusd": "5.2808264356740000000000000000000000000000000000000",
+        "matched_shares": "12.71"
+      },
+      {
+        "base_locked_pnl_pusd": "55.080030317420575523613900",
+        "condition_id": "0x30a8675c469482d46a4e30e75dd80f07c9e973988cc40ac11f1c718253dd78e4",
+        "conservative_fee_rounding_drag_pusd": "0.00001033787057552361390000000000000000000000000000",
+        "corrected_locked_pnl_pusd": "55.080019979550000000000000000000000000000000000000",
+        "matched_shares": "113.25"
+      },
+      {
+        "base_locked_pnl_pusd": "0.3299615509103705053831937264",
+        "condition_id": "0x30a8675c469482d46a4e30e75dd80f07c9e973988cc40ac11f1c718253dd78e4",
+        "conservative_fee_rounding_drag_pusd": "0.0000110077940097053831937264000000000000000000000000",
+        "corrected_locked_pnl_pusd": "0.32995054311636080000000000000000000000000000000000",
+        "matched_shares": "0.723332"
+      },
+      {
+        "base_locked_pnl_pusd": "0.9220706847746195180386397259",
+        "condition_id": "0x3a8bfe2fa5ba04eb74da4a80c930bcf61651d6c7947d0db0b35bffe194c44cc1",
+        "conservative_fee_rounding_drag_pusd": "0.00000900155946721803863972590000000000000000000000",
+        "corrected_locked_pnl_pusd": "0.92206168321515230000000000000000000000000000000000",
+        "matched_shares": "19.078517"
+      },
+      {
+        "base_locked_pnl_pusd": "17.6291729260552875926880",
+        "condition_id": "0x445cf4b12521c6f2670508a23f350230df65fcd2661afd5dd88f191a1e5f4501",
+        "conservative_fee_rounding_drag_pusd": "0.00000301005528759268800000000000000000000000000000",
+        "corrected_locked_pnl_pusd": "17.629169916000000000000000000000000000000000000000",
+        "matched_shares": "45"
+      },
+      {
+        "base_locked_pnl_pusd": "1.2025948599744109921543292796",
+        "condition_id": "0x4560b921cc8ffecc4d1454e4e94ac1ff03bf0b3466125fa50527ce8016190fd7",
+        "conservative_fee_rounding_drag_pusd": "0.00000683870780779215432927960000000000000000000000",
+        "corrected_locked_pnl_pusd": "1.2025880212666032000000000000000000000000000000000",
+        "matched_shares": "11.305554"
+      },
+      {
+        "base_locked_pnl_pusd": "2.0345919766456176424307737275",
+        "condition_id": "0x65613ee1453c00afc8bf7a58d7f8facb769cfca1d548cc18a00042869a1a4189",
+        "conservative_fee_rounding_drag_pusd": "0.00000447704294514243077372750000000000000000000000",
+        "corrected_locked_pnl_pusd": "2.0345874996026725000000000000000000000000000000000",
+        "matched_shares": "13.144925"
+      },
+      {
+        "base_locked_pnl_pusd": "1.010321518725",
+        "condition_id": "0x65613ee1453c00afc8bf7a58d7f8facb769cfca1d548cc18a00042869a1a4189",
+        "conservative_fee_rounding_drag_pusd": "0.000008768725000000000000000000000000000000000000000",
+        "corrected_locked_pnl_pusd": "1.0103127500000000000000000000000000000000000000000",
+        "matched_shares": "6.855075"
+      },
+      {
+        "base_locked_pnl_pusd": "1.3505295356744276531952218275",
+        "condition_id": "0x65613ee1453c00afc8bf7a58d7f8facb769cfca1d548cc18a00042869a1a4189",
+        "conservative_fee_rounding_drag_pusd": "0.000009744340925153195221827500000000000000000000000",
+        "corrected_locked_pnl_pusd": "1.3505197913335025000000000000000000000000000000000",
+        "matched_shares": "9.994925"
+      },
+      {
+        "base_locked_pnl_pusd": "0.081515543032801944444495",
+        "condition_id": "0x65613ee1453c00afc8bf7a58d7f8facb769cfca1d548cc18a00042869a1a4189",
+        "conservative_fee_rounding_drag_pusd": "0.0000088763878019444444950000000000000000000000000000",
+        "corrected_locked_pnl_pusd": "0.081506666645000000000000000000000000000000000000000",
+        "matched_shares": "0.65"
+      },
+      {
+        "base_locked_pnl_pusd": "0.531860",
+        "condition_id": "0x6babb9595700a0e65eabaa41e7c8ea62100e480545f25fa9095827e9e6368e23",
+        "conservative_fee_rounding_drag_pusd": "0E-51",
+        "corrected_locked_pnl_pusd": "0.53186000000000000000000000000000000000000000000000",
+        "matched_shares": "5"
+      },
+      {
+        "base_locked_pnl_pusd": "2.9884304029036010811430",
+        "condition_id": "0x6d6c8b2ca0479ec10f978ad37177fa89264feadbd12a9e17457ebe182d32b0d4",
+        "conservative_fee_rounding_drag_pusd": "9.90360108114300000000000000000000000000000E-9",
+        "corrected_locked_pnl_pusd": "2.9884303930000000000000000000000000000000000000000",
+        "matched_shares": "10"
+      },
+      {
+        "base_locked_pnl_pusd": "2.4617688468223759520785365990",
+        "condition_id": "0x6d6c8b2ca0479ec10f978ad37177fa89264feadbd12a9e17457ebe182d32b0d4",
+        "conservative_fee_rounding_drag_pusd": "0.00001050188054415207853659900000000000000000000000",
+        "corrected_locked_pnl_pusd": "2.4617583449418318000000000000000000000000000000000",
+        "matched_shares": "7.032257"
+      },
+      {
+        "base_locked_pnl_pusd": "1.1894666486876470900199246525",
+        "condition_id": "0x6d6c8b2ca0479ec10f978ad37177fa89264feadbd12a9e17457ebe182d32b0d4",
+        "conservative_fee_rounding_drag_pusd": "0.000007206895189590019924652500000000000000000000000",
+        "corrected_locked_pnl_pusd": "1.1894594417924575000000000000000000000000000000000",
+        "matched_shares": "3.301075"
+      },
+      {
+        "base_locked_pnl_pusd": "2.485868948475",
+        "condition_id": "0x6d6c8b2ca0479ec10f978ad37177fa89264feadbd12a9e17457ebe182d32b0d4",
+        "conservative_fee_rounding_drag_pusd": "0.00000819847500000000000000000000000000000000000000",
+        "corrected_locked_pnl_pusd": "2.4858607500000000000000000000000000000000000000000",
+        "matched_shares": "6.898925"
+      },
+      {
+        "base_locked_pnl_pusd": "26.2159840936128251828477596380",
+        "condition_id": "0x6f60ade986c07489092086254065ee8443d2d11889bfc0e8e10001734ea7e906",
+        "conservative_fee_rounding_drag_pusd": "0.000007781592560582847759638000000000000000000000000",
+        "corrected_locked_pnl_pusd": "26.215976312020264600000000000000000000000000000000",
+        "matched_shares": "39.357141"
+      },
+      {
+        "base_locked_pnl_pusd": "3.6205148170559127349691623236",
+        "condition_id": "0x6f60ade986c07489092086254065ee8443d2d11889bfc0e8e10001734ea7e906",
+        "conservative_fee_rounding_drag_pusd": "0.0000132380964485349691623236000000000000000000000000",
+        "corrected_locked_pnl_pusd": "3.6205015789594642000000000000000000000000000000000",
+        "matched_shares": "5.202859"
+      },
+      {
+        "base_locked_pnl_pusd": "8.1821306510904076398180",
+        "condition_id": "0x6f60ade986c07489092086254065ee8443d2d11889bfc0e8e10001734ea7e906",
+        "conservative_fee_rounding_drag_pusd": "0.00001112009040763981800000000000000000000000000000",
+        "corrected_locked_pnl_pusd": "8.1821195310000000000000000000000000000000000000000",
+        "matched_shares": "15"
+      },
+      {
+        "base_locked_pnl_pusd": "0.9986785010271281337995397832",
+        "condition_id": "0x6f60ade986c07489092086254065ee8443d2d11889bfc0e8e10001734ea7e906",
+        "conservative_fee_rounding_drag_pusd": "0.000015649160475733799539783200000000000000000000000",
+        "corrected_locked_pnl_pusd": "0.99866285186665240000000000000000000000000000000000",
+        "matched_shares": "2.374063"
+      },
+      {
+        "base_locked_pnl_pusd": "8.1460142372839226946321562524",
+        "condition_id": "0x6f60ade986c07489092086254065ee8443d2d11889bfc0e8e10001734ea7e906",
+        "conservative_fee_rounding_drag_pusd": "0.00001045935694489463215625240000000000000000000000",
+        "corrected_locked_pnl_pusd": "8.1460037779269778000000000000000000000000000000000",
+        "matched_shares": "25.525937"
+      },
+      {
+        "base_locked_pnl_pusd": "0.43692818",
+        "condition_id": "0x789333d8c3677ecf1e9f450c80c6dcfea2c43487e06136175b8f7348ecc7abb5",
+        "conservative_fee_rounding_drag_pusd": "0.000008180000000000000000000000000000000000000000000",
+        "corrected_locked_pnl_pusd": "0.43692000000000000000000000000000000000000000000000",
+        "matched_shares": "4.94"
+      },
+      {
+        "base_locked_pnl_pusd": "0.348055404462365533949105244",
+        "condition_id": "0x819613b76d86e993c99713ec7eb60558b90b14856984e8a2197f091770b2f862",
+        "conservative_fee_rounding_drag_pusd": "0.00001235952211353394910524400000000000000000000000",
+        "corrected_locked_pnl_pusd": "0.34804304494025200000000000000000000000000000000000",
+        "matched_shares": "30.39306"
+      },
+      {
+        "base_locked_pnl_pusd": "0.5395570108883854135052592600",
+        "condition_id": "0x819613b76d86e993c99713ec7eb60558b90b14856984e8a2197f091770b2f862",
+        "conservative_fee_rounding_drag_pusd": "0.00001138264960781350525926000000000000000000000000",
+        "corrected_locked_pnl_pusd": "0.53954562823877760000000000000000000000000000000000",
+        "matched_shares": "13.428084"
+      },
+      {
+        "base_locked_pnl_pusd": "0.0187059761407343093372994744",
+        "condition_id": "0x819613b76d86e993c99713ec7eb60558b90b14856984e8a2197f091770b2f862",
+        "conservative_fee_rounding_drag_pusd": "0.000011650113751109337299474400000000000000000000000",
+        "corrected_locked_pnl_pusd": "0.018694326026983200000000000000000000000000000000000",
+        "matched_shares": "0.744072"
+      },
+      {
+        "base_locked_pnl_pusd": "0.987215",
+        "condition_id": "0xa13aa744704b3053e1c2335ce918e7cca50a291fd81cf28f47ddc0cb3b744a58",
+        "conservative_fee_rounding_drag_pusd": "0.000005000000000000000000000000000000000000000000000",
+        "corrected_locked_pnl_pusd": "0.98721000000000000000000000000000000000000000000000",
+        "matched_shares": "5"
+      },
+      {
+        "base_locked_pnl_pusd": "1.4825762703413908874976921300",
+        "condition_id": "0xa465265816e0305c20c9be06955434cdb8500e7b559ac00f64c799d20b317b68",
+        "conservative_fee_rounding_drag_pusd": "0.00001003364908488749769213000000000000000000000000",
+        "corrected_locked_pnl_pusd": "1.4825662366923060000000000000000000000000000000000",
+        "matched_shares": "85.128204"
+      },
+      {
+        "base_locked_pnl_pusd": "1.144360",
+        "condition_id": "0xa465265816e0305c20c9be06955434cdb8500e7b559ac00f64c799d20b317b68",
+        "conservative_fee_rounding_drag_pusd": "0E-50",
+        "corrected_locked_pnl_pusd": "1.1443600000000000000000000000000000000000000000000",
+        "matched_shares": "10"
+      },
+      {
+        "base_locked_pnl_pusd": "0.472400",
+        "condition_id": "0xa8c7d1f080f56518c86617db2ced09300930aa01816bb154037e92964492b0c5",
+        "conservative_fee_rounding_drag_pusd": "0E-50",
+        "corrected_locked_pnl_pusd": "0.47240000000000000000000000000000000000000000000000",
+        "matched_shares": "10"
+      },
+      {
+        "base_locked_pnl_pusd": "3.692223756441330663607837",
+        "condition_id": "0xa8c7d1f080f56518c86617db2ced09300930aa01816bb154037e92964492b0c5",
+        "conservative_fee_rounding_drag_pusd": "0.00001158117833066360783700000000000000000000000000",
+        "corrected_locked_pnl_pusd": "3.6922121752630000000000000000000000000000000000000",
+        "matched_shares": "14.59"
+      },
+      {
+        "base_locked_pnl_pusd": "10.8068005914223298617360028250",
+        "condition_id": "0xa8c7d1f080f56518c86617db2ced09300930aa01816bb154037e92964492b0c5",
+        "conservative_fee_rounding_drag_pusd": "0.00000992747942486173600282500000000000000000000000",
+        "corrected_locked_pnl_pusd": "10.806790663942905000000000000000000000000000000000",
+        "matched_shares": "40.031175"
+      },
+      {
+        "base_locked_pnl_pusd": "1.771416575312728248595936833",
+        "condition_id": "0xa8c7d1f080f56518c86617db2ced09300930aa01816bb154037e92964492b0c5",
+        "conservative_fee_rounding_drag_pusd": "0.0000158423351232485959368330000000000000000000000",
+        "corrected_locked_pnl_pusd": "1.7714007329776050000000000000000000000000000000000",
+        "matched_shares": "76.27627"
+      },
+      {
+        "base_locked_pnl_pusd": "0.0764118035480576205794201772",
+        "condition_id": "0xa8c7d1f080f56518c86617db2ced09300930aa01816bb154037e92964492b0c5",
+        "conservative_fee_rounding_drag_pusd": "0.00000419254416122057942017720000000000000000000000",
+        "corrected_locked_pnl_pusd": "0.07640761100389640000000000000000000000000000000000",
+        "matched_shares": "21.212276"
+      },
+      {
+        "base_locked_pnl_pusd": "0.117308384128",
+        "condition_id": "0xa8c7d1f080f56518c86617db2ced09300930aa01816bb154037e92964492b0c5",
+        "conservative_fee_rounding_drag_pusd": "0.00000942412800000000000000000000000000000000000000",
+        "corrected_locked_pnl_pusd": "0.11729896000000000000000000000000000000000000000000",
+        "matched_shares": "16.587724"
+      },
+      {
+        "base_locked_pnl_pusd": "0.137283615872",
+        "condition_id": "0xa8c7d1f080f56518c86617db2ced09300930aa01816bb154037e92964492b0c5",
+        "conservative_fee_rounding_drag_pusd": "0.00001257587200000000000000000000000000000000000000",
+        "corrected_locked_pnl_pusd": "0.13727104000000000000000000000000000000000000000000",
+        "matched_shares": "19.412276"
+      },
+      {
+        "base_locked_pnl_pusd": "0.03260280",
+        "condition_id": "0xa8c7d1f080f56518c86617db2ced09300930aa01816bb154037e92964492b0c5",
+        "conservative_fee_rounding_drag_pusd": "0.000012800000000000000000000000000000000000000000000",
+        "corrected_locked_pnl_pusd": "0.032590000000000000000000000000000000000000000000000",
+        "matched_shares": "5.05"
+      },
+      {
+        "base_locked_pnl_pusd": "0.664096607232",
+        "condition_id": "0xa8c7d1f080f56518c86617db2ced09300930aa01816bb154037e92964492b0c5",
+        "conservative_fee_rounding_drag_pusd": "0.00000992723200000000000000000000000000000000000000",
+        "corrected_locked_pnl_pusd": "0.66408668000000000000000000000000000000000000000000",
+        "matched_shares": "7.454389"
+      },
+      {
+        "base_locked_pnl_pusd": "1.4481627866827649468136373504",
+        "condition_id": "0xa8c7d1f080f56518c86617db2ced09300930aa01816bb154037e92964492b0c5",
+        "conservative_fee_rounding_drag_pusd": "0.00001174612932974681363735040000000000000000000000",
+        "corrected_locked_pnl_pusd": "1.4481510405534352000000000000000000000000000000000",
+        "matched_shares": "20.088707"
+      },
+      {
+        "base_locked_pnl_pusd": "0.520335543040",
+        "condition_id": "0xa8c7d1f080f56518c86617db2ced09300930aa01816bb154037e92964492b0c5",
+        "conservative_fee_rounding_drag_pusd": "0.00000322304000000000000000000000000000000000000000",
+        "corrected_locked_pnl_pusd": "0.52033232000000000000000000000000000000000000000000",
+        "matched_shares": "10.456904"
+      },
+      {
+        "base_locked_pnl_pusd": "0.3687120632577600244944",
+        "condition_id": "0xa8c7d1f080f56518c86617db2ced09300930aa01816bb154037e92964492b0c5",
+        "conservative_fee_rounding_drag_pusd": "0.00001199845776002449440000000000000000000000000000",
+        "corrected_locked_pnl_pusd": "0.36870006480000000000000000000000000000000000000000",
+        "matched_shares": "12"
+      },
+      {
+        "base_locked_pnl_pusd": "0.56788645946738837439000",
+        "condition_id": "0xa8c7d1f080f56518c86617db2ced09300930aa01816bb154037e92964492b0c5",
+        "conservative_fee_rounding_drag_pusd": "0.00001074514738837439000000000000000000000000000000",
+        "corrected_locked_pnl_pusd": "0.56787571432000000000000000000000000000000000000000",
+        "matched_shares": "23.2"
+      },
+      {
+        "base_locked_pnl_pusd": "0.21518142909787714285866",
+        "condition_id": "0xa8c7d1f080f56518c86617db2ced09300930aa01816bb154037e92964492b0c5",
+        "conservative_fee_rounding_drag_pusd": "0.00000714287787714285866000000000000000000000000000",
+        "corrected_locked_pnl_pusd": "0.21517428622000000000000000000000000000000000000000",
+        "matched_shares": "11.8"
+      },
+      {
+        "base_locked_pnl_pusd": "0.1900251062908000739508",
+        "condition_id": "0xb9f031398a73afb8eb2e19e8b70cc1f128e81bfb211a0a75e99f8beda16b018f",
+        "conservative_fee_rounding_drag_pusd": "0.00001499849080007395080000000000000000000000000000",
+        "corrected_locked_pnl_pusd": "0.19001010780000000000000000000000000000000000000000",
+        "matched_shares": "11"
+      },
+      {
+        "base_locked_pnl_pusd": "1.530465",
+        "condition_id": "0xc451f4b2ea3ea83ffb5bcda445450b6df5fa81de9ca36187fd232a481abcdf78",
+        "conservative_fee_rounding_drag_pusd": "0.0000150000000000000000000000000000000000000000000000",
+        "corrected_locked_pnl_pusd": "1.5304500000000000000000000000000000000000000000000",
+        "matched_shares": "3"
+      },
+      {
+        "base_locked_pnl_pusd": "3.300756",
+        "condition_id": "0xdad94115ac5a579b61a7db93b0988562f639e31e5fa373f9ee2c10d6f5d2d61b",
+        "conservative_fee_rounding_drag_pusd": "0.000016000000000000000000000000000000000000000000000",
+        "corrected_locked_pnl_pusd": "3.3007400000000000000000000000000000000000000000000",
+        "matched_shares": "124"
+      },
+      {
+        "base_locked_pnl_pusd": "2.023044",
+        "condition_id": "0xdad94115ac5a579b61a7db93b0988562f639e31e5fa373f9ee2c10d6f5d2d61b",
+        "conservative_fee_rounding_drag_pusd": "0.000004000000000000000000000000000000000000000000000",
+        "corrected_locked_pnl_pusd": "2.0230400000000000000000000000000000000000000000000",
+        "matched_shares": "76"
+      },
+      {
+        "base_locked_pnl_pusd": "5.0331327474709534751612300304",
+        "condition_id": "0xdf28b8983fd75ea827d6bd9289862412bd7d3e3ed0f51c49aa07532197248340",
+        "conservative_fee_rounding_drag_pusd": "0.000009237071045875161230030400000000000000000000000",
+        "corrected_locked_pnl_pusd": "5.0331235103999076000000000000000000000000000000000",
+        "matched_shares": "16.615383"
+      },
+      {
+        "base_locked_pnl_pusd": "4.322032",
+        "condition_id": "0xf3216dbe2009e21c435212634f67bbbcefd283c046419c7195ce0adac166a6dc",
+        "conservative_fee_rounding_drag_pusd": "0.00000200000000000000000000000000000000000000000000",
+        "corrected_locked_pnl_pusd": "4.3220300000000000000000000000000000000000000000000",
+        "matched_shares": "16"
+      },
+      {
+        "base_locked_pnl_pusd": "0.2920557684479360969152",
+        "condition_id": "0xf3216dbe2009e21c435212634f67bbbcefd283c046419c7195ce0adac166a6dc",
+        "conservative_fee_rounding_drag_pusd": "0.000007939647936096915200000000000000000000000000000",
+        "corrected_locked_pnl_pusd": "0.29204782880000000000000000000000000000000000000000",
+        "matched_shares": "4"
+      },
+      {
+        "base_locked_pnl_pusd": "0.553264705729345711666860005",
+        "condition_id": "0xfa911453fa9e403d167fdbeae78138836bc26641a5f3b8c7eaef88ca79da8f73",
+        "conservative_fee_rounding_drag_pusd": "0.00000677569704071166686000500000000000000000000000",
+        "corrected_locked_pnl_pusd": "0.55325793003230500000000000000000000000000000000000",
+        "matched_shares": "26.38235"
+      },
+      {
+        "base_locked_pnl_pusd": "1.45072801729440000126",
+        "condition_id": "0xfef204170246e6e4f67586fdad123734575b4e1e72f2687741313df8ceb5473e",
+        "conservative_fee_rounding_drag_pusd": "0.00000799929440000126000000000000000000000000000000",
+        "corrected_locked_pnl_pusd": "1.4507200180000000000000000000000000000000000000000",
+        "matched_shares": "18"
+      }
+    ],
+    "minimum_corrected_lock_pnl_pusd": "0.00649682794372200000000000000000000000000000000000",
+    "nonpositive_lock_count_after_correction": 0
+  },
+  "authority": {
+    "account_requests": 0,
+    "credentials_used": false,
+    "funds_used": false,
+    "network_requests": 0,
+    "orders_or_transactions": 0,
+    "protected_capture_touched": false,
+    "signed_requests": 0,
+    "trading_authority": false
+  },
+  "created_at_utc": "2026-08-31T21:29:41.093421Z",
+  "implementation": {
+    "path": "tools/adjudicate_polymarket_wallet_opposite_lock_rounding.py",
+    "sha256": "48576cc25976d3c9695b3f544ed2fd879335fa0619563dec1b816feb14bbd0c8"
+  },
+  "method": {
+    "base_lock_set_reselected": false,
+    "fee_curve": "shares * 0.07 * price * (1 - price)",
+    "interpretation": "This is an upper bound on rounding drag at the retained matched-fragment granularity, not a favorable estimate of venue rounding.",
+    "published_fee_quantum_pusd": "0.00001",
+    "rounding_assumption": "ceil_each_leg_of_each_matched_lock_fragment_to_0_00001_pUSD_even_when_the_source_trade_row_was_larger"
+  },
+  "result_sha256": "b423b44e57bfd329220256facf4b9eabe45371b267e7a91ea08aa11a666be204",
+  "schema_version": "polymarket-wallet-opposite-lock-rounding-correction-v1",
+  "source_binding": {
+    "base_result_path": "docs/model-research/action-value/polymarket-wallet-opposite-lock-validation-result-v1-2026-08-31.json",
+    "base_result_sha256": "b81af57f094f1ff75bcb77f9938ec7c84791af4e1cecb44b3402dac17d4dc1df",
+    "fees_source_file_sha256": "998abde974e94e88784c26915969b2a216f2f283bc09ad64b4ee1d0f82ebf5c8",
+    "fees_source_path": "docs/model-research/action-value/raw/polymarket-organic-taker-rebate-v1/07-fees.html"
+  }
+}

@@ -114,9 +114,13 @@
       "lock_count": 66,
       "matched_shares": "1486.108451",
       "mechanism": "buy_the_opposite_outcome_only_for_independently_preexisting_binary_inventory_when_the_complete_set_locks_below_one",
-      "one_tick_stressed_full_fee_no_rebate_locked_cashflow_pusd": "217.6302921908223351705204892211",
+      "conservative_fee_rounding_drag_pusd": "0.0005909365952300705204892211000000000000000000000000",
+      "corrected_one_tick_stressed_full_fee_no_rebate_locked_cashflow_pusd": "217.62970125422710510000000000000000000000000000000",
+      "fee_rounding_correction_result_sha256": "b423b44e57bfd329220256facf4b9eabe45371b267e7a91ea08aa11a666be204",
+      "fee_rounding_correction_source_path": "docs/model-research/action-value/polymarket-wallet-opposite-lock-rounding-correction-v1-2026-08-31.json",
+      "nonpositive_lock_count_after_conservative_rounding": 0,
       "public_forward_profit_floor_pusd": "0",
-      "result_sha256": "335e258b11136b1913d584dce5d493b985bad06bdc73a0eb8564049ebec2c4ee",
+      "result_sha256": "e4392f0bad06aa56f5a80b72fd474f953a95c4da99b74f37db2c7fa3cfc70f9f",
       "source_path": "docs/model-research/action-value/polymarket-existing-inventory-opposite-lock-candidate-v1-2026-08-31.json",
       "why_not_stable_deployable": "The frozen rule repeated on a later complete public-wallet day and becomes direction-neutral after completion, but it cannot justify first-leg inventory, the wallet is not owned or reproducible, and current owned basis finite-size book merge external costs and failure unwind are unproved."
     },
@@ -137,7 +141,7 @@
       "why_not_stable_deployable": "Current rate remains conflict-qualified rather than proven, the evidence is from public wallets rather than the owned account, every external friction and best alternative is not bound, and future persistence is not guaranteed."
     }
   },
-  "result_sha256": "cd1eb3fda6cd3cd50864dff6adb5626435afef269463526d168362bbc157d060",
+  "result_sha256": "d129b50c62dd4097e856c0037461fff2dfc89951c00c0130c75f98e358758270",
   "routing": {
     "do_not_count_as_standalone_profit": [
       "advertised_or_public_rate_without_realized_cash",
@@ -153,6 +157,6 @@
   "source_binding": {
     "accepted_edge_count": 29,
     "registry_path": "docs/model-research/structural-edge-priority-registry-v1.json",
-    "registry_result_sha256": "f267c92839fa549f63ae4ab9c45bb9c9f1b15d492e6e5c620e5f3150cade26d8"
+    "registry_result_sha256": "992b900a7fda3ea1d17362cf4d32cc73a6ebb2ed0be1463c6a0cc4da0ffe6f9e"
   }
 }

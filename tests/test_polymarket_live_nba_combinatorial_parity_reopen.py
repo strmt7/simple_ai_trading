@@ -16,7 +16,7 @@ ARTIFACT = (
     )
 )
 REGISTRY = ROOT / "docs/model-research/structural-edge-priority-registry-v1.json"
-EXPECTED_HASH = "70cfc7b2ae1cb256e7a8c08c9af33fa8524d2308a8c18400d5a2b7d93c966fe3"
+EXPECTED_HASH = "bb2d030b9465ded6cc4ce0ba894719d60ecd812d673432a10941db1779d0d758"
 REGISTRY_HASH = json.loads(
     (ROOT / "docs/model-research/structural-edge-priority-registry-v1.json").read_text(
         encoding="utf-8"
@@ -77,6 +77,10 @@ def test_current_fee_regime_and_push_state_block_historical_profit_claim() -> No
     assert "zero NBA trading fees" in artifact["historical_primary_evidence"]["warning"]
     assert "push" in artifact["payoff_identity"]["required_push_tie_overtime_gate"]
     assert artifact["payoff_identity"]["middle_value_in_acceptance"] == "0"
+    evidence = artifact["historical_primary_evidence"]
+    assert evidence["paper_title"] == "Arbitrage Analysis in Polymarket NBA Markets"
+    assert evidence["doi"] == "10.48550/arXiv.2605.00864"
+    assert evidence["arxiv_id"] == "2605.00864v1"
 
 
 def test_registry_reopens_only_the_distinct_future_nba_recurrence_family() -> None:
@@ -85,7 +89,7 @@ def test_registry_reopens_only_the_distinct_future_nba_recurrence_family() -> No
     assert registry["result_sha256"] == REGISTRY_HASH
     assert _canonical_hash(registry) == REGISTRY_HASH
     assert [row["priority_rank"] for row in registry["prioritized_hypotheses"]] == list(
-        range(1, 45)
+        range(1, 48)
     )
     row = next(
         item
