@@ -1,0 +1,68 @@
+{
+  "schema_version": "historical-two-leg-tool-immutable-lineage-v1",
+  "created_at_utc": "2026-08-31T16:53:04.7916710Z",
+  "purpose": "repair reproducibility for consumed contracts that bound a reusable mutable implementation path without changing any consumed contract or outcome",
+  "result_sha256": "a584e3665300bb405183370a66f47e2fc83ddc43764251ec236c2341f7a4d1ef",
+  "original_binding": {
+    "mutable_path": "tools/screen_polymarket_exact_two_leg_package.py",
+    "expected_sha256": "ba7ebaa1fb5235ba026f7cf4cb21ff73ba19430fee4a4f678fbdea37635eb32f",
+    "recovered_from_commit": "7e9bffa763a85c913d153fe947ef917b2185249e",
+    "failure_mode": "the reusable path changed after the historical contracts were consumed, so validating their expected hash against the current path failed"
+  },
+  "immutable_sidecar": {
+    "path": "docs/model-research/action-value/source-bound-implementations/screen-polymarket-exact-two-leg-package-ba7ebaa1.py.raw",
+    "bytes": 17547,
+    "sha256": "ba7ebaa1fb5235ba026f7cf4cb21ff73ba19430fee4a4f678fbdea37635eb32f"
+  },
+  "affected_bindings": {
+    "reference_count": 32,
+    "paths": [
+      "docs/model-research/action-value/binance-agentic-wallet-organic-conversion-source-contract-v1-2026-08-30.json",
+      "docs/model-research/action-value/binance-algo-execution-cost-overlay-source-contract-v1-2026-08-30.json",
+      "docs/model-research/action-value/binance-alpha-spot-same-token-parity-token-list-contract-v1-2026-08-30.json",
+      "docs/model-research/action-value/binance-gift-card-fixed-value-source-contract-v1-2026-08-30.json",
+      "docs/model-research/action-value/binance-spot-price-range-execution-rule-source-contract-v1-2026-08-30.json",
+      "docs/model-research/action-value/binance-spot-sor-liquidity-overlay-contract-v1-2026-08-29.json",
+      "docs/model-research/action-value/polymarket-all-category-maker-rebate-source-contract-v1-2026-08-30.json",
+      "docs/model-research/action-value/polymarket-btc-multi-strikes-weekly-negrisk-contract-v1-2026-08-29.json",
+      "docs/model-research/action-value/polymarket-btc-sep4-price-range-exact-negrisk-books-contract-v1-2026-08-30.json",
+      "docs/model-research/action-value/polymarket-btc-sep4-price-range-exact-negrisk-prefilter-contract-v1-2026-08-30.json",
+      "docs/model-research/action-value/polymarket-cfb-september-6-complete-monotone-catalog-contract-v1-2026-08-30.json",
+      "docs/model-research/action-value/polymarket-cfb-september-7-complete-monotone-catalog-contract-v1-2026-08-30.json",
+      "docs/model-research/action-value/polymarket-elon-aug28-sep4-exact-negrisk-prefilter-contract-v1-2026-08-30.json",
+      "docs/model-research/action-value/polymarket-elon-aug31-sep2-exact-negrisk-books-contract-v1-2026-08-30.json",
+      "docs/model-research/action-value/polymarket-elon-aug31-sep2-exact-negrisk-books-contract-v2-2026-08-30.json",
+      "docs/model-research/action-value/polymarket-elon-aug31-sep2-exact-negrisk-prefilter-contract-v1-2026-08-30.json",
+      "docs/model-research/action-value/polymarket-elon-sep1-sep8-exact-negrisk-books-contract-v1-2026-08-30.json",
+      "docs/model-research/action-value/polymarket-elon-sep1-sep8-exact-negrisk-prefilter-contract-v1-2026-08-30.json",
+      "docs/model-research/action-value/polymarket-fordham-ndsu-total-monotone-package-contract-v1-2026-08-30.json",
+      "docs/model-research/action-value/polymarket-future-cfb-monotone-catalog-contract-v1-2026-08-30.json",
+      "docs/model-research/action-value/polymarket-future-nfl-monotone-catalog-contract-v1-2026-08-29.json",
+      "docs/model-research/action-value/polymarket-future-wnba-monotone-catalog-contract-v1-2026-08-29.json",
+      "docs/model-research/action-value/polymarket-lad-det-cross-period-total-contract-v1-2026-08-29.json",
+      "docs/model-research/action-value/polymarket-lad-det-cross-period-total-result-v1-2026-08-29.json",
+      "docs/model-research/action-value/polymarket-mercyhurst-nmsu-margin-monotone-package-contract-v1-2026-08-30.json",
+      "docs/model-research/action-value/polymarket-near-expiry-negrisk-complete-set-catalog-contract-v1-2026-08-29.json",
+      "docs/model-research/action-value/polymarket-nyc-mayor-sep1-sep8-exact-negrisk-books-contract-v1-2026-08-30.json",
+      "docs/model-research/action-value/polymarket-nyc-mayor-sep1-sep8-exact-negrisk-prefilter-contract-v1-2026-08-30.json",
+      "docs/model-research/action-value/polymarket-sep6-negrisk-complete-set-catalog-contract-v1-2026-08-29.json",
+      "docs/model-research/action-value/polymarket-sep7-hour00-negrisk-complete-set-catalog-contract-v1-2026-08-29.json",
+      "docs/model-research/action-value/polymarket-sol-sep4-range-threshold-coverage-books-contract-v1-2026-08-30.json",
+      "docs/model-research/action-value/polymarket-source-selected-crypto-negrisk-series-contract-v1-2026-08-29.json"
+    ]
+  },
+  "repair": {
+    "consumed_contracts_changed": false,
+    "consumed_results_changed": false,
+    "current_reusable_tool_rolled_back": false,
+    "validation_rule": "when one of the listed historical bindings expects the recovered hash, validate the immutable sidecar instead of the current reusable path"
+  },
+  "authority": {
+    "network_requests": 0,
+    "credentials_used": false,
+    "accounts_accessed": false,
+    "orders_or_transactions": 0,
+    "funds_used": false,
+    "protected_capture_touched": false
+  }
+}

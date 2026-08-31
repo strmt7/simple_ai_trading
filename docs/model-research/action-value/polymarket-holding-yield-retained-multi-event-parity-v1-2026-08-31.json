@@ -1,0 +1,253 @@
+{
+  "schema_version": "polymarket-holding-yield-retained-multi-event-parity-v1",
+  "created_at_utc": "2026-08-31T16:37:39.0191668Z",
+  "purpose": "exhaust every exact direction-independent same-event parity relation exposed by the retained holding-yield market rows before spending another market or book request",
+  "result_sha256": "b3f5480fea15bb73990a278dba93356cb34c49f91d82e2624c79fef8191e09f4",
+  "sources": {
+    "holding_yield_reconciliation": {
+      "path": "docs/model-research/polymarket/complete-set-holding-yield-reconciliation-v3-2026-08-26.json",
+      "result_sha256": "48e31f3d6021d28946fa1f143f65ff0f6baf9a222424f41e76c2d89875796abe"
+    },
+    "retained_market_files": [
+      {
+        "path": "data/polymarket-holding-yield-v3/raw/market-876506d8b2bd7a0d3fa4fe18c024eee6e1dd81ee24c26795dadd6cfe4a7b5d0d.raw",
+        "bytes": 8475,
+        "sha256": "9dd1120926079237756d69a3f6181a1b85267757310485acd51b6d2d87d70a73"
+      },
+      {
+        "path": "data/polymarket-holding-yield-v3/raw/market-a3b36b2d6104d34af4e6c6215fc818e43352e78a748fbfb0b85e3a35f71dec9a.raw",
+        "bytes": 8462,
+        "sha256": "5bdf780a3a744a8c346b810dbd429de0e9f4b1fa3b77b204e2df2b932bba6306"
+      },
+      {
+        "path": "data/polymarket-holding-yield-v3/raw/market-39676b9161ea372b38115423a5de8f700f1888c35dd0fb2be07d96510ec28f7c.raw",
+        "bytes": 6244,
+        "sha256": "5e1044011be0d880c06323518bc48d02ace4df35f791c69410aa97e99df14fdf"
+      },
+      {
+        "path": "data/polymarket-holding-yield-v3/raw/market-55a5a4b50b7947482e95af8f638fa0b8d9a46740c5cd04c6799443e83565176a.raw",
+        "bytes": 6287,
+        "sha256": "f47ba52ea310dcceec19082f2ffbec95fbd277596b00c80c62daad17ced96f03"
+      },
+      {
+        "path": "data/polymarket-holding-yield-v3/raw/market-94f240d042917cabd55f0bcbcac7d4d2accd4436773bf91596f76572cac643cb.raw",
+        "bytes": 8558,
+        "sha256": "2e19436926c91a504cba5bbf06c10aeef7f4734307594898db8a34c3dfa3e7ee"
+      },
+      {
+        "path": "data/polymarket-holding-yield-v3/raw/market-ccc84033ab481e4c1ed49fce3889e54a9f6c127b819a3bc17bbf2359d1e4c2bd.raw",
+        "bytes": 8580,
+        "sha256": "8cb02b748e22cbb00f29b3f0884ab34e99d1d92d8a62654c20a477c0be17e9a1"
+      },
+      {
+        "path": "data/polymarket-holding-yield-v3/raw/market-e944062b6d02b59c5f6c39cd4d35538918053c0c7e5f8d7fa0ab1d4edb9baa46.raw",
+        "bytes": 8565,
+        "sha256": "48238f8c015a44b232265f7f0fa5a48c4f1d1cf110e2c2b5267941ceb648e5ae"
+      },
+      {
+        "path": "data/polymarket-holding-yield-v3/raw/market-91a003371cb96dc30511f883052d6b5957d9f099f02704f9838523a260dd1162.raw",
+        "bytes": 11426,
+        "sha256": "9719d78c21451d1a992750653b03a63d654a7ef04136bd1f94ae67849188af0f"
+      },
+      {
+        "path": "data/polymarket-holding-yield-v3/raw/market-f32da8a1740a0d58ffdf87343afefb0bcca4b355cc88e2dba8fd78a88a5308d2.raw",
+        "bytes": 11387,
+        "sha256": "d8b318272f586e61f831216e7980b3f5be6ccd1f316013574104f8ab5585b14b"
+      }
+    ]
+  },
+  "method": {
+    "observation_role": "retained 2026-08-26 rejection-only diagnostic; not a current quote",
+    "yes_price": "retained Gamma bestAsk",
+    "no_price": "conservative one minus retained Gamma YES bestBid",
+    "mutually_exclusive_identity": "for any two markets that can have at most one YES, NO(A) plus NO(B) has an optimistic common-rule payout floor of one pUSD; for three such markets, all three NO positions have a floor of two pUSD",
+    "nested_threshold_identity": "for thresholds L below H on the same maximum observation, YES(L) plus NO(H) has an optimistic common-rule payout floor of one pUSD",
+    "promotion_rule": "Gamma prices can reject only; a strict sub-floor row would require a separately frozen current exact-depth and fee screen"
+  },
+  "relations": [
+    {
+      "relation_id": "fed_no_change_NO_plus_25bp_increase_NO",
+      "event_slug": "fed-decision-in-september-762",
+      "identity": "the shared exact rules assign one rate-change bracket, so no change and a 25 bps increase cannot both resolve YES",
+      "legs": [
+        {
+          "condition_id": "0xa3b36b2d6104d34af4e6c6215fc818e43352e78a748fbfb0b85e3a35f71dec9a",
+          "side": "NO",
+          "conservative_price_pUSD": "0.33"
+        },
+        {
+          "condition_id": "0x876506d8b2bd7a0d3fa4fe18c024eee6e1dd81ee24c26795dadd6cfe4a7b5d0d",
+          "side": "NO",
+          "conservative_price_pUSD": "0.68"
+        }
+      ],
+      "optimistic_rule_consistent_payout_floor_pUSD": "1",
+      "displayed_rejection_price_sum_pUSD": "1.01",
+      "price_minus_floor_pUSD": "0.01",
+      "strictly_sub_floor": false
+    },
+    {
+      "relation_id": "largest_company_alphabet_NO_plus_apple_NO",
+      "event_slug": "largest-company-end-of-december-2026",
+      "identity": "only one company can be the largest at the shared market-close observation",
+      "legs": [
+        {
+          "condition_id": "0x39676b9161ea372b38115423a5de8f700f1888c35dd0fb2be07d96510ec28f7c",
+          "side": "NO",
+          "conservative_price_pUSD": "0.89"
+        },
+        {
+          "condition_id": "0x55a5a4b50b7947482e95af8f638fa0b8d9a46740c5cd04c6799443e83565176a",
+          "side": "NO",
+          "conservative_price_pUSD": "0.84"
+        }
+      ],
+      "optimistic_rule_consistent_payout_floor_pUSD": "1",
+      "displayed_rejection_price_sum_pUSD": "1.73",
+      "price_minus_floor_pUSD": "0.73",
+      "strictly_sub_floor": false
+    },
+    {
+      "relation_id": "best_ai_google_NO_plus_openai_NO",
+      "event_slug": "which-company-has-best-ai-model-end-of-2026",
+      "identity": "the shared rank, score, and alphabetical tie-break rules select only one first-place company",
+      "legs": [
+        {
+          "condition_id": "0x94f240d042917cabd55f0bcbcac7d4d2accd4436773bf91596f76572cac643cb",
+          "side": "NO",
+          "conservative_price_pUSD": "0.92"
+        },
+        {
+          "condition_id": "0xccc84033ab481e4c1ed49fce3889e54a9f6c127b819a3bc17bbf2359d1e4c2bd",
+          "side": "NO",
+          "conservative_price_pUSD": "0.93"
+        }
+      ],
+      "optimistic_rule_consistent_payout_floor_pUSD": "1",
+      "displayed_rejection_price_sum_pUSD": "1.85",
+      "price_minus_floor_pUSD": "0.85",
+      "strictly_sub_floor": false
+    },
+    {
+      "relation_id": "best_ai_google_NO_plus_anthropic_NO",
+      "event_slug": "which-company-has-best-ai-model-end-of-2026",
+      "identity": "the shared rank, score, and alphabetical tie-break rules select only one first-place company",
+      "legs": [
+        {
+          "condition_id": "0x94f240d042917cabd55f0bcbcac7d4d2accd4436773bf91596f76572cac643cb",
+          "side": "NO",
+          "conservative_price_pUSD": "0.92"
+        },
+        {
+          "condition_id": "0xe944062b6d02b59c5f6c39cd4d35538918053c0c7e5f8d7fa0ab1d4edb9baa46",
+          "side": "NO",
+          "conservative_price_pUSD": "0.29"
+        }
+      ],
+      "optimistic_rule_consistent_payout_floor_pUSD": "1",
+      "displayed_rejection_price_sum_pUSD": "1.21",
+      "price_minus_floor_pUSD": "0.21",
+      "strictly_sub_floor": false
+    },
+    {
+      "relation_id": "best_ai_openai_NO_plus_anthropic_NO",
+      "event_slug": "which-company-has-best-ai-model-end-of-2026",
+      "identity": "the shared rank, score, and alphabetical tie-break rules select only one first-place company",
+      "legs": [
+        {
+          "condition_id": "0xccc84033ab481e4c1ed49fce3889e54a9f6c127b819a3bc17bbf2359d1e4c2bd",
+          "side": "NO",
+          "conservative_price_pUSD": "0.93"
+        },
+        {
+          "condition_id": "0xe944062b6d02b59c5f6c39cd4d35538918053c0c7e5f8d7fa0ab1d4edb9baa46",
+          "side": "NO",
+          "conservative_price_pUSD": "0.29"
+        }
+      ],
+      "optimistic_rule_consistent_payout_floor_pUSD": "1",
+      "displayed_rejection_price_sum_pUSD": "1.22",
+      "price_minus_floor_pUSD": "0.22",
+      "strictly_sub_floor": false
+    },
+    {
+      "relation_id": "best_ai_google_openai_anthropic_all_NO",
+      "event_slug": "which-company-has-best-ai-model-end-of-2026",
+      "identity": "the shared rank, score, and alphabetical tie-break rules select at most one of the three retained companies",
+      "legs": [
+        {
+          "condition_id": "0x94f240d042917cabd55f0bcbcac7d4d2accd4436773bf91596f76572cac643cb",
+          "side": "NO",
+          "conservative_price_pUSD": "0.92"
+        },
+        {
+          "condition_id": "0xccc84033ab481e4c1ed49fce3889e54a9f6c127b819a3bc17bbf2359d1e4c2bd",
+          "side": "NO",
+          "conservative_price_pUSD": "0.93"
+        },
+        {
+          "condition_id": "0xe944062b6d02b59c5f6c39cd4d35538918053c0c7e5f8d7fa0ab1d4edb9baa46",
+          "side": "NO",
+          "conservative_price_pUSD": "0.29"
+        }
+      ],
+      "optimistic_rule_consistent_payout_floor_pUSD": "2",
+      "displayed_rejection_price_sum_pUSD": "2.14",
+      "price_minus_floor_pUSD": "0.14",
+      "strictly_sub_floor": false
+    },
+    {
+      "relation_id": "anthropic_valuation_1_5T_YES_plus_2_0T_NO",
+      "event_slug": "will-anthropics-valuation-hit-by-december-31",
+      "identity": "the shared maximum-valuation rules make reaching 2.0T imply reaching 1.5T",
+      "legs": [
+        {
+          "condition_id": "0x91a003371cb96dc30511f883052d6b5957d9f099f02704f9838523a260dd1162",
+          "side": "YES",
+          "conservative_price_pUSD": "0.94"
+        },
+        {
+          "condition_id": "0xf32da8a1740a0d58ffdf87343afefb0bcca4b355cc88e2dba8fd78a88a5308d2",
+          "side": "NO",
+          "conservative_price_pUSD": "0.32"
+        }
+      ],
+      "optimistic_rule_consistent_payout_floor_pUSD": "1",
+      "displayed_rejection_price_sum_pUSD": "1.26",
+      "price_minus_floor_pUSD": "0.26",
+      "strictly_sub_floor": false
+    }
+  ],
+  "summary": {
+    "retained_event_count": 4,
+    "complete_relation_count": 7,
+    "strictly_sub_floor_candidate_count": 0,
+    "best_relation_id": "fed_no_change_NO_plus_25bp_increase_NO",
+    "best_price_minus_floor_pUSD": "0.01",
+    "book_requests_permitted": 0,
+    "fee_requests_permitted": 0
+  },
+  "limitations": [
+    "the retained prices are from August 26 and can reject only that observation",
+    "Gamma bestAsk and one-minus-bestBid are rejection prices rather than executable multi-leg depth",
+    "independent condition disputes cancellations or inconsistent resolutions are additional downside beyond the optimistic common-rule payout floors",
+    "no fee atomicity fill capacity latency account or external-cost evidence is supplied"
+  ],
+  "verdict": {
+    "status": "retained_multi_event_parity_rejected_before_books_and_fees",
+    "accepted_edge": false,
+    "profitability_claim": false,
+    "retry_permitted_for_same_retained_observation": false,
+    "trading_authority": false,
+    "next_action": "do not reprice these retained rows; only a distinct prospective exact event with a strict rejection-only sub-floor package may advance"
+  },
+  "authority": {
+    "accounts_accessed": false,
+    "credentials_used": false,
+    "funds_used": false,
+    "network_requests": 0,
+    "orders_or_cancellations": 0,
+    "protected_capture_touched": false,
+    "transactions_sent": false
+  }
+}
