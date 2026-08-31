@@ -6649,28 +6649,40 @@ account-qualified after-all-cost edges remain zero. Registry SHA-256 is
 and the rebound durability-audit SHA-256 is
 `dab81b0b99a64203392a4b7f684bf1b7c18417c2961e990a9db12cb5bb16dc96`.
 
-## Polymarket Patriots-Seahawks team ladders and additive covers
+## Polymarket Patriots-Seahawks V2 proof and pricing correction
 
-A zero-request audit exhausted the remaining full-game team-total structure in
-the retained Patriots-Seahawks event. The two team ladders produced 20 valid
-lower-Over plus higher-Under packages, zero displayed sub-floor candidates, and
-a best cost of 1.055 pUSD for a one-pUSD floor.
+The prior V1 team-ladder/additive artifact is preserved but superseded. It
+fixed an initial lower-bound-only error by requiring
+`A+B-1 <= G <= A+B`, but that remained over-restrictive. For Patriots Under
+`A` plus Seahawks Under `B` plus Game Over `G`, all legs pay zero exactly when
+both teams reach their thresholds and their combined score remains below `G`.
+The necessary and sufficient one-pUSD-floor condition is therefore only
+`G <= A+B`; the Over leg already pays in every game-over state.
 
-The two-team additive package is Patriots Under `A` plus Seahawks Under `B`
-plus Game Over `G`. Its complete integer-score proof requires both
-`A+B-1 <= G` and `G <= A+B`. An exploratory calculation initially enforced
-only the lower bound and produced 50 false candidates across 308 invalid
-relations. That error was caught and discarded before freeze, network access,
-or any edge claim. Under the corrected two-sided condition, 33 valid relations
-remain, zero are sub-floor, and the best costs 1.370 pUSD for a one-pUSD floor.
+V1 also treated midpoint-like Gamma `outcomePrices` as displayed acquisition
+prices. V2 uses only retained `bestAsk` for the first outcome and conservative
+`1 - bestBid` for the second. The corrected graph contains 325 full-team
+additive covers, including 292 omitted by V1, and 20 full-team ladders. Zero are
+side-specific sub-floor candidates; their best costs are 1.78 and 1.34 pUSD for
+a one-pUSD floor, rather than the V1 diagnostics of 1.370 and 1.055 pUSD.
+
+The same deterministic zero-network runner also exhausted 8,508 additional
+period structures: 113 half/quarter/team-period/spread ladders, 36 same-half
+team covers, 128 half-to-full covers, 48 team-half-to-full covers, 97
+quarter-to-half covers, and 8,086 four-quarter-to-full covers. Across all 8,853
+relations, both the side-specific and diagnostic strict-sub-floor counts are
+zero. The best remaining period structure costs 1.44 pUSD for a one-pUSD floor.
 
 No network, credential, account, order, fund, transaction, or protected capture
-was accessed. Do not rebuild, reprice, or request books for either retained
-graph. Canonical result SHA-256 is
-`317ecd24a990456be2e8c64f644f7481309d7c5e663c33274d281270483a848f`.
+was accessed. The V2 contract SHA-256 is
+`38df25f415434cb1ae823959e6fd81e0d777f52432bb3f5578122e407ed584f6`;
+the V2 result SHA-256 is
+`9c80f1a188c059890c682f16f367cc472667bda595482d5d0db26ebda2d014bb`.
+Do not rebuild, reprice, or request books for this retained graph.
+
 Accepted edges remain 29, ranked hypotheses remain 45, terminal families become
-101, and stable current account-qualified after-all-cost edges remain zero.
+102, and stable current account-qualified after-all-cost edges remain zero.
 Registry SHA-256 is
-`c0c858a4c13f40e020d1643c5d9fa7f9c1fad0136266d2c37f4798281583e8ff`,
+`c1ff9777a1d8b0782f708e228c0a921a95ebecc0f38c2a745625357df162a5ce`,
 and the rebound durability-audit SHA-256 is
-`6edfe4c861270be295245e878a61ca1e9398ad012574ea5fc88225fe1f89d199`.
+`d86ef74ca37f66f414e0916dbaaefc851a461726359e7e16007f8e71386d12a9`.

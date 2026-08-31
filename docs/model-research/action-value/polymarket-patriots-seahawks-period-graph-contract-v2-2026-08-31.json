@@ -1,0 +1,57 @@
+{
+  "authority": {
+    "account_requests": 0,
+    "credentials_used": false,
+    "funds_used": false,
+    "new_network_requests": 0,
+    "orders_or_transactions": 0,
+    "protected_capture_touched": false,
+    "trading_authority": false
+  },
+  "contract_path": "docs/model-research/action-value/polymarket-patriots-seahawks-period-graph-contract-v2-2026-08-31.json",
+  "contract_sha256": "38df25f415434cb1ae823959e6fd81e0d777f52432bb3f5578122e407ed584f6",
+  "frozen_at_utc": "2026-08-31T12:08:10.624Z",
+  "implementation": {
+    "path": "tools/adjudicate_polymarket_nfl_period_graph.py",
+    "sha256": "1c7ddcfdc3eb67c4cb5bcf373e2a4b21e864cd16556f313ecf6b7733274b922b"
+  },
+  "output_path": "docs/model-research/action-value/polymarket-patriots-seahawks-period-graph-result-v2-2026-08-31.json",
+  "pricing_contract": {
+    "candidate_gate": "strict_side_specific_rejection_sum_below_the_guaranteed_floor",
+    "first_outcome_acquisition_price": "retained_bestAsk",
+    "outcomePrices_role": "diagnostic_only_never_authorizes_a_book",
+    "second_outcome_acquisition_proxy": "one_minus_retained_first_outcome_bestBid",
+    "tie_break": "side_specific_sum_then_thresholds_then_market_ids"
+  },
+  "proof_contract": {
+    "additive_cover": "Under_A_plus_Under_B_plus_Over_G_has_a_one_pUSD_floor_if_and_only_if_G_is_less_than_or_equal_to_A_plus_B_for_nonnegative_integer_component_scores",
+    "additive_zero_state": "all_three_legs_pay_zero_exactly_when_A_score_is_at_least_A_B_score_is_at_least_B_and_the_combined_score_is_below_G_which_is_possible_if_and_only_if_G_is_greater_than_A_plus_B",
+    "full_game_relationship": "the_full_game_or_team_score_is_at_least_the_sum_of_its_retained_non_overtime_period_components_so_the_same_upper_bound_condition_is_conservative_whether_overtime_is_included_or_excluded",
+    "ladder_cover": "lower_threshold_Over_plus_higher_threshold_Under_has_a_one_pUSD_floor_when_lower_is_strictly_below_higher",
+    "multi_component_cover": "the_sum_of_all_component_Unders_plus_combined_Over_G_has_a_one_pUSD_floor_when_G_is_less_than_or_equal_to_the_sum_of_component_thresholds",
+    "period_relationship": "first_half_equals_first_plus_second_quarter_and_second_half_excluding_overtime_equals_third_plus_fourth_quarter_under_the_exact_retained_rules",
+    "whole_cancellation": "every_retained_leg_resolves_50_50_so_two_leg_three_leg_and_five_leg packages_pay_1_1_5_and_2_5_pUSD_respectively"
+  },
+  "schema_version": "polymarket-nfl-team-and-period-structural-graph-correction-contract-v2",
+  "source": {
+    "metadata_file_sha256": "ce8867da28da5b5f90040317591adf71ef070c7d5b014511a17586fd60e9221f",
+    "metadata_path": "docs/model-research/action-value/polymarket-patriots-seahawks-exact-event-result-v1-2026-08-31.json",
+    "metadata_result_sha256": "e62d7b8a93a2a11197058d631e2fea88a408cfa30bd2dda6a9df54998b524d36",
+    "raw_file_sha256": "a3a1c23e2e9fc2944f30f0fafdebe42f4a597ada4dd2918e47c9155213c966c3",
+    "raw_path": "data/polymarket-patriots-seahawks-exact-event-v1/raw/event.json"
+  },
+  "supersession": {
+    "impact": {
+      "account_requests_caused": 0,
+      "book_or_fee_requests_caused": 0,
+      "credentials_used": false,
+      "orders_or_transactions_caused": 0,
+      "profit_or_acceptance_claim_caused": false
+    },
+    "previous_artifact_path": "docs/model-research/action-value/polymarket-patriots-seahawks-team-ladder-additive-cover-v1-2026-08-31.json",
+    "previous_artifact_sha256": "317ecd24a990456be2e8c64f644f7481309d7c5e663c33274d281270483a848f",
+    "previous_valid_additive_subset_count": 33,
+    "reason": "v1_correctly_rejected_its_tested_subset_but_unnecessarily_required_G_greater_than_or_equal_to_A_plus_B_minus_1_omitted_292_valid_covers_and_used_midpoint_like_outcomePrices_instead_of_side_specific_rejection_prices",
+    "status": "v1_preserved_as_superseded_methodology_error"
+  }
+}

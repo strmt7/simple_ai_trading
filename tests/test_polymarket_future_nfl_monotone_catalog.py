@@ -5,6 +5,8 @@ import hashlib
 import json
 from pathlib import Path
 
+from tools.adjudicate_polymarket_nfl_period_graph import adjudicate
+
 
 ROOT = Path(__file__).resolve().parents[1]
 ACTION_VALUE = ROOT / "docs/model-research/action-value"
@@ -222,35 +224,48 @@ def test_retained_team_to_full_total_graph_rejects_without_network() -> None:
     assert result["adjudication"]["book_or_fee_request_permitted"] is False
 
 
-def test_retained_team_ladders_and_corrected_additive_covers_reject_offline() -> None:
-    result = _load(
+def test_superseded_v1_and_corrected_v2_period_graph_are_preserved() -> None:
+    previous = _load(
         ACTION_VALUE
         / "polymarket-patriots-seahawks-team-ladder-additive-cover-v1-2026-08-31.json"
     )
+    contract = _load(
+        ACTION_VALUE
+        / "polymarket-patriots-seahawks-period-graph-contract-v2-2026-08-31.json"
+    )
+    result = _load(
+        ACTION_VALUE
+        / "polymarket-patriots-seahawks-period-graph-result-v2-2026-08-31.json"
+    )
 
-    assert result["result_sha256"] == (
+    assert previous["result_sha256"] == (
         "317ecd24a990456be2e8c64f644f7481309d7c5e663c33274d281270483a848f"
     )
+    assert _canonical_hash(previous, "result_sha256") == previous["result_sha256"]
+    assert previous["adjudication"]["accepted_edge"] is False
+    assert contract["contract_sha256"] == (
+        "38df25f415434cb1ae823959e6fd81e0d777f52432bb3f5578122e407ed584f6"
+    )
+    assert _canonical_hash(contract, "contract_sha256") == contract["contract_sha256"]
+    assert result["result_sha256"] == (
+        "9c80f1a188c059890c682f16f367cc472667bda595482d5d0db26ebda2d014bb"
+    )
     assert _canonical_hash(result, "result_sha256") == result["result_sha256"]
-    ladders = result["team_total_ladders"]
-    assert ladders["rule_valid_relation_count"] == 20
-    assert ladders["strict_displayed_sub_floor_candidate_count"] == 0
-    assert Decimal(ladders["best_relation"]["displayed_package_sum_pUSD"]) == Decimal(
-        "1.055"
-    )
-    covers = result["two_team_additive_covers"]
-    assert covers["complete_proof_condition"] == (
-        "A+B-1 <= G <= A+B for integer scoring thresholds"
-    )
-    assert covers["rule_valid_relation_count"] == 33
-    assert covers["strict_displayed_sub_floor_candidate_count"] == 0
-    assert Decimal(covers["best_relation"]["displayed_package_sum_pUSD"]) == Decimal(
-        "1.370"
-    )
-    correction = result["methodology_correction"]
-    assert correction["false_candidate_count_discarded"] == 50
-    assert correction["market_or_book_requests_caused"] == 0
-    assert correction["registry_or_profit_claim_caused"] is False
+    assert adjudicate(contract) == result
+    assert result["supersession"]["previous_valid_additive_subset_count"] == 33
+    assert result["family_screens"]["full_team_additive_covers"]["relation_count"] == 325
+    assert Decimal(
+        result["family_screens"]["full_team_additive_covers"]
+        ["best_side_specific_relation"]["side_specific_rejection_sum_pUSD"]
+    ) == Decimal("1.78")
+    assert result["family_screens"]["full_team_total_ladders"]["relation_count"] == 20
+    assert Decimal(
+        result["family_screens"]["full_team_total_ladders"]
+        ["best_side_specific_relation"]["side_specific_rejection_sum_pUSD"]
+    ) == Decimal("1.34")
+    assert result["aggregate_screen"]["relation_count"] == 8_853
+    assert result["aggregate_screen"]["strict_side_specific_subfloor_count"] == 0
+    assert result["aggregate_screen"]["strict_diagnostic_subfloor_count"] == 0
     assert result["authority"]["new_network_requests"] == 0
     assert result["adjudication"]["book_or_fee_request_permitted"] is False
 
@@ -272,6 +287,7 @@ def test_registry_routes_catalog_and_correction_without_acceptance() -> None:
         "2658c04330fdeaa7f39b4a9dc842a079c7e81ef1feeeba75ce74384e328338ae",
         "51d0f5bda02fe124a7f02eb6f2365c358f8ec6a99d75b8f87bd8de8eec1d669c",
         "317ecd24a990456be2e8c64f644f7481309d7c5e663c33274d281270483a848f",
+        "9c80f1a188c059890c682f16f367cc472667bda595482d5d0db26ebda2d014bb",
     } <= hashes
     assert "25189367_ms_skew" in row["current_status"]
     assert "Patriots_Seahawks" in row["current_status"]
