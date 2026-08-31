@@ -1,0 +1,71 @@
+{
+  "schema_version": "polymarket-sports-maker-rebate-source-drift-adjudication-v2",
+  "created_at_utc": "2026-08-31T20:32:33Z",
+  "source_binding": {
+    "frozen_contract": {
+      "path": "docs/model-research/action-value/polymarket-sports-maker-rebate-source-drift-contract-v2-2026-08-31.json",
+      "file_sha256": "7849e2cf5657232df2a2ddc878df4d0ededacb2e02aea10796d52f99647694b2",
+      "contract_sha256": "42f7f812baf3fa4a07f6f206140bde1d7efcf4ff353991021c103641be7348a6"
+    },
+    "capture_result": {
+      "path": "docs/model-research/action-value/polymarket-sports-maker-rebate-source-drift-result-v2-2026-08-31.json",
+      "file_sha256": "f22ed217e869ee8eb186493ac89aeb74d22543cd1f463a2d81e16d18162733be",
+      "result_sha256": "d45ad88b2c3d163691fc95ffd31620e27219d9e404bd70dcedb122beff1eabdd"
+    },
+    "canonical_markdown": {
+      "path": "docs/model-research/polymarket/raw/sports-maker-rebate-source-drift-v2-2026-08-31/01-maker-rebates.raw.md",
+      "file_sha256": "8d2c6562bd1b3376bc3fc1557a60efef5aa3c1d856c7f8dcc405139a07e9ba2a",
+      "response_bytes": 5945,
+      "url": "https://docs.polymarket.com/market-makers/maker-rebates.md"
+    },
+    "request_journal": {
+      "path": "docs/model-research/polymarket/raw/sports-maker-rebate-source-drift-v2-2026-08-31/00-request-journal.jsonl",
+      "file_sha256": "1e22057193f532a98df1617bb6e8f446c796f08bb0e8b02f19481b18efab88d8"
+    },
+    "prior_conflict_adjudication": {
+      "path": "docs/model-research/action-value/polymarket-sports-maker-rebate-source-conflict-adjudication-v1-2026-08-30.json",
+      "file_sha256": "282cc94bc95f8a0d2e5a5d43b43bd3c96644a80fe56f0cceabcab5a59fbd7bf6",
+      "result_sha256": "3313a90b2257207c292eab289cc4199db7def8ad35361ad21fcabc435c0bc6a2"
+    }
+  },
+  "mechanical_reconciliation": {
+    "current_markdown_matches_2026_08_30_bytes": true,
+    "shared_response_sha256": "8d2c6562bd1b3376bc3fc1557a60efef5aa3c1d856c7f8dcc405139a07e9ba2a",
+    "canonical_current_terms": {
+      "sports_maker_rebate_fraction": "0.15",
+      "sports_taker_fee_rate": "0.05",
+      "cash_label": "pUSD",
+      "minimum_accrued_payout_label": "1 pUSD"
+    },
+    "expected_drift_gate_passed": false,
+    "interpretation": "The canonical Markdown did not change. The current search-index rendering that exposed 25 percent, 0.03, and USDC was discovery-only and is excluded from economic inputs. The prior official cross-surface Sports fraction and cash-label conflict therefore remains unresolved."
+  },
+  "adjudication": {
+    "accepted_edge_count_before": 29,
+    "accepted_edge_count_after": 29,
+    "accepted_realized_organic_maker_rebate_scope_preserved": true,
+    "standalone_market_making_strategy_accepted": false,
+    "public_sports_rebate_fraction_for_forward_economics": null,
+    "public_forward_profit_floor": "0",
+    "profitability_claim": false,
+    "deployment_ready": false,
+    "status": "terminal_byte_identical_canonical_source_search_index_drift_rejected_prior_sports_rebate_conflict_preserved"
+  },
+  "methodology_correction": {
+    "rule": "Search-engine and rendered discovery snippets may justify one frozen canonical source capture after material semantic drift, but they are never economic inputs. The canonical retained response bytes control adjudication.",
+    "consumed_trigger": "The exact 2026-08-31 apparent Sports 25 percent, 0.03, and USDC search-index drift has been reconciled once and must not be retried or aliased while the canonical Markdown hash remains unchanged.",
+    "efficiency_effect": "Future runs compare canonical content hashes or require an effective-dated primary reconciliation before spending another request on this conflict."
+  },
+  "retry_trigger": "A canonical Maker Rebates Markdown byte change after 8d2c6562bd1b3376bc3fc1557a60efef5aa3c1d856c7f8dcc405139a07e9ba2a together with an effective-dated official reconciliation, an exact effective per-market rebate fraction exposed with market fee parameters, or explicit read-only authority plus independently existing legitimate organic owned maker fills and exact owned payout reconciliation.",
+  "authority": {
+    "account_requests": 0,
+    "credentials_used": false,
+    "funds_used": false,
+    "orders_or_transactions": 0,
+    "protected_capture_touched": false,
+    "public_unauthenticated_read_only_requests": 1,
+    "signed_requests": 0,
+    "trading_authority": false
+  },
+  "result_sha256": "0874302d3acb6e641f38f693eafaa94d2a3b86167c0f796691efc5707b5cf64a"
+}

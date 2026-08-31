@@ -23,6 +23,22 @@ safety gate, blocks Stop, or submits an order.
 
 ### Latest efficient structural screen
 
+The apparent August 31 Polymarket Sports maker-rebate change is terminal as a
+source-quality event, not a market edge. A search-index rendering reported a
+25% Sports rebate, 0.03 taker-fee rate, and USDC payout wording. One frozen
+canonical `.md` GET returned exactly the prior 5,945 bytes and SHA-256
+`8d2c6562bd1b3376bc3fc1557a60efef5aa3c1d856c7f8dcc405139a07e9ba2a`,
+still stating 15%, 0.05, and pUSD. Search snippets are discovery only and may
+never enter economics. The prior official cross-surface conflict and zero
+forward Sports rebate credit remain. Do not retry or alias this drift while the
+canonical hash is unchanged. Canonical adjudication SHA-256 is
+`0874302d3acb6e641f38f693eafaa94d2a3b86167c0f796691efc5707b5cf64a`.
+Accepted edges remain 29, ranked hypotheses remain 47, terminal families become
+120, registry SHA-256 is
+`6a7d560501abdd37f3a88db28a708ef69dd0e83668639ea5d4bac9836cee6dc3`,
+and durability-audit SHA-256 is
+`bd0f48ebd0b56e14ffdc988c0a72ba9c016e6a4c8db7d0b743242e26003efac5`.
+
 Binance COIN-M inverse versus USD-M linear same-asset perpetual funding is now
 source-bound and terminal for the retained BTC/ETH/SOL population. One frozen
 public eight-request sequence retained current exchange configuration and 499

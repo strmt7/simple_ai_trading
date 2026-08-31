@@ -5,6 +5,25 @@ Development belongs only on `main`; do not create another development branch.
 
 ## Latest Edge R&D Checkpoint
 
+- The apparent August 31 Polymarket Sports maker-rebate change is terminal as
+  a source-quality event, not an edge. A current search-index rendering exposed
+  25%, a 0.03 Sports taker-fee rate, and USDC wording, but one frozen canonical
+  `.md` GET returned exactly the prior 5,945 bytes and SHA-256
+  `8d2c6562bd1b3376bc3fc1557a60efef5aa3c1d856c7f8dcc405139a07e9ba2a`,
+  still stating 15%, 0.05, and pUSD. Discovery snippets are never economic
+  inputs. The prior official cross-surface conflict and zero public forward
+  Sports rebate floor remain. Do not retry or alias this exact drift while the
+  canonical hash is unchanged; reopen only on a canonical byte change plus an
+  effective-dated reconciliation, exact effective per-market fraction, or
+  separately authorized owned fill-and-payout evidence. Canonical adjudication
+  SHA-256 is
+  `0874302d3acb6e641f38f693eafaa94d2a3b86167c0f796691efc5707b5cf64a`.
+  Accepted edges remain 29, ranked hypotheses remain 47, terminal families
+  become 120, registry SHA-256 is
+  `6a7d560501abdd37f3a88db28a708ef69dd0e83668639ea5d4bac9836cee6dc3`,
+  and durability-audit SHA-256 is
+  `bd0f48ebd0b56e14ffdc988c0a72ba9c016e6a4c8db7d0b743242e26003efac5`.
+
 - Binance COIN-M inverse versus USD-M linear same-asset perpetual funding is
   terminal for the retained BTC/ETH/SOL population. One frozen public
   eight-request sequence retained current exchange configuration and 499
