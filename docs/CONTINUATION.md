@@ -5,6 +5,31 @@ Development belongs only on `main`; do not create another development branch.
 
 ## Latest Edge R&D Checkpoint
 
+- The distinct active Polymarket `Ethereum above ___ on September 2?`
+  threshold ladder satisfied rank 31's literal trigger. A prospectively frozen
+  corrected v2 screen made one exact public unauthenticated Gamma event GET and
+  excluded midpoint-like `outcomePrices` from economics. All 11 active markets
+  and all 55 direction-independent lower-YES plus higher-NO packages had
+  side-specific rejection prices: lower YES used `bestAsk`, while higher NO
+  used the conservative `1 - bestBid` proxy. Zero packages were strictly below
+  their guaranteed one-pUSD terminal floor. The cheapest was 2000 YES plus
+  2100 NO at 1.004 pUSD, so this exact event fails before fees, ticks, latency,
+  failure unwind, or depth.
+
+  This September 2 event is terminal with zero book, fee, account, credential,
+  order, fund, on-chain, or protected-capture requests. Do not repeat or
+  reprice it, and do not select a BTC, SOL, or adjacent-date sibling after
+  observing the result. Reopen only on rank 31's registered literal trigger for
+  a distinct nonconsumed exact population whose side-specific rejection proxy
+  is already strictly sub-floor. Contract and result SHA-256 values are
+  `1ef97e13565e958fa67c380abb6fb9e519d4207e1a66a843ce2f9c2fc46bf8b7`
+  and `a83c568656fe15000624d0ae872abc75955bd42581714a1a926b114bc4206f33`.
+  Accepted edges remain 29, ranked hypotheses remain 47, terminal families
+  become 123, registry SHA-256 is
+  `77a777ed40570ebd4773b431c20d32057fb36ce2f648011e503870fe58700352`,
+  and durability-audit SHA-256 is
+  `58109b3122be2876d4a6f8acd2a028bd13cc06255d6d379a8f2b4063802897ff`.
+
 - Rank 47's literal new-population trigger was satisfied and consumed
   efficiently. A frozen zero-network audit compared the exhausted 1,410-symbol
   August 27 BTC/ETH/SOL crypto-option population with the already retained
