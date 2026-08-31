@@ -41,6 +41,16 @@ use Rewards-page values as economics. This is the intended rejection-first
 workflow: exact condition and exact sponsored allocation must reconcile before
 spending a book request.
 
+The next source-selected month-long reward lead, NYC September precipitation
+over six inches, stopped even earlier. Its prospectively frozen rendered-page
+October 2 date did not equal Gamma's exact September 30 23:59 UTC market end,
+so the one-use sequence terminated after one public Gamma request. Sponsored
+rewards and books were never requested and the exact candidate is terminal.
+This exposed an avoidable source-semantics mistake: a rendered `End Date` can
+be a user-facing resolution date, not Gamma `endDate`. Future contracts must
+bind Gamma time from Gamma or omit rendered-to-Gamma equality; never repair or
+repeat this consumed market or substitute another observed precipitation bin.
+
 The retained Los Angeles Galaxy versus New England Revolution event pair proved
 16 exact-score-to-full-game-result payoff implications, but also exposed a
 request-efficiency bug: Gamma `outcomePrices` made the best package appear to

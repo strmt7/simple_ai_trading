@@ -89,8 +89,17 @@ def _gamma(raw: object, *, candidate: dict[str, Any]) -> dict[str, Any]:
     if outcomes != candidate["outcomes"] or len(tokens) != 2 or len(set(tokens)) != 2:
         raise ValueError("Gamma binary outcome or token identity changed")
     event_end = _utc_datetime(row.get("endDate"), end_of_date=True)
-    if event_end != _utc_datetime(candidate["event_end_utc"]):
-        raise ValueError("Gamma event end changed")
+    if "event_end_utc" in candidate:
+        if event_end != _utc_datetime(candidate["event_end_utc"]):
+            raise ValueError("Gamma event end changed")
+    elif "event_end_date_utc" in candidate:
+        expected_end_date = datetime.fromisoformat(
+            str(candidate["event_end_date_utc"])
+        ).date()
+        if event_end.date() != expected_end_date:
+            raise ValueError("Gamma event end date changed")
+    else:
+        raise ValueError("candidate event end gate is missing")
     order_minimum = _decimal(
         row.get("orderMinSize"), name="order minimum", positive=True
     )

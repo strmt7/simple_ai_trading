@@ -33,6 +33,18 @@ TOKEN_CORRECTION = (
     BASE / "btc-above-72k-sep5-exact-source-token-reconciliation-v1-2026-08-30.json"
 )
 REGISTRY = ROOT / "docs/model-research/structural-edge-priority-registry-v1.json"
+NYC_CONTRACT = (
+    BASE
+    / "nyc-september-precipitation-over-6-reward-source-contract-v1-2026-08-31.json"
+)
+NYC_ADJUDICATION = (
+    ROOT
+    / "docs/model-research/action-value/polymarket-nyc-september-precipitation-over-6-reward-end-date-mismatch-v1-2026-08-31.json"
+)
+NYC_RAW = (
+    BASE
+    / "raw/nyc-september-precipitation-over-6-reward-source-v1-2026-08-31/01-exact-gamma-market.raw"
+)
 
 
 def _canonical(value: object) -> bytes:
@@ -137,7 +149,7 @@ def test_btc_sep5_exact_reward_candidate_is_terminal_without_refetch() -> None:
     )
 
     registry, _registry_hash = _reconstruct(REGISTRY)
-    assert len(registry["prioritized_hypotheses"]) == 44
+    assert len(registry["prioritized_hypotheses"]) == 45
     terminal = next(
         row
         for row in registry["terminal_do_not_repeat"]
@@ -164,3 +176,29 @@ def test_exact_reward_source_rejects_cross_source_token_mismatch() -> None:
             now=market["event_end"].replace(year=2026, month=8, day=30),
             terminal_cursor="LTE=",
         )
+
+
+def test_rendered_resolution_date_mismatch_is_terminal_and_date_gate_is_exact() -> None:
+    contract, contract_hash = _reconstruct(NYC_CONTRACT)
+    adjudication, adjudication_hash = _reconstruct(NYC_ADJUDICATION)
+    gamma_raw = json.loads(NYC_RAW.read_bytes())
+
+    assert contract_hash == "101f5cacd9dc7a4acf2282f373e25f8abdaee5207d85f36812b0e74e98ddc877"
+    assert adjudication_hash == "41d36380efda98913a149156cbb5aacc4425e0d7be8c4372c73be9dbba316d5c"
+    with pytest.raises(ValueError, match="Gamma event end date changed"):
+        SOURCE_TOOL._gamma(gamma_raw, candidate=contract["candidate"])
+
+    corrected_candidate = dict(contract["candidate"])
+    corrected_candidate["event_end_date_utc"] = "2026-09-30"
+    market = SOURCE_TOOL._gamma(gamma_raw, candidate=corrected_candidate)
+    assert market["event_end"].isoformat() == "2026-09-30T23:59:00+00:00"
+    assert adjudication["exact_sponsored_reward"]["request_made"] is False
+
+    registry, _registry_hash = _reconstruct(REGISTRY)
+    terminal = next(
+        row
+        for row in registry["terminal_do_not_repeat"]
+        if row["family"]
+        == "polymarket_NYC_September_precipitation_over_6_inches_exact_liquidity_reward_source_date_gate"
+    )
+    assert terminal["canonical_result_sha256"] == adjudication_hash

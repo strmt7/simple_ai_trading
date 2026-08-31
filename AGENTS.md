@@ -252,6 +252,12 @@ override prose.
   authorize a retry, parameter change, replacement market, or favorable-value
   selection. A stale or misattributed discovery snippet is a methodology error,
   not evidence that agreeing exact sources conflict.
+- A rendered Polymarket market page's `End Date` can be a user-facing
+  resolution date rather than Gamma `endDate`. Never freeze equality between
+  those fields or invent a Gamma timestamp from the rendered date. Bind the
+  exact Gamma end only from a retained Gamma source, or omit that equality gate
+  and let the prospectively frozen Gamma request establish the exact horizon;
+  every other identity, active-state, fee, token, and reward gate still applies.
 - Cross-token cost and reward comparisons must use a source-bound executable
   conversion into one exact unit. A one-for-one stablecoin assumption or a
   different quote currency is a labeled sensitivity only and cannot support an
