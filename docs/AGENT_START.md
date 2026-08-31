@@ -11,7 +11,7 @@ operating contract. Historical handoff text is archived under
 | Release | `0.1.0-beta.1`; experimental |
 | Development branch | `main` only |
 | Binance | BTC, ETH, and SOL; paper or testnet/Demo only |
-| Polymarket | Independent BTC 5-minute/15-minute research; disabled by default |
+| Polymarket | Independent BTC, ETH, and SOL 5-minute/15-minute/4-hour research; disabled by default |
 | Accepted edges | Twenty-nine scoped structural edges. The canonical complete scopes, counts, and retry gates are in `docs/model-research/structural-edge-priority-registry-v1.json`; none is deployment-ready or fully account-and-external-cost-qualified. |
 | Live-money authority | None |
 | Historical cutoff | `2026-08-14T00:00:00Z` |
@@ -22,6 +22,35 @@ or reduce risk only; it never creates positions, selects leverage, overrides a
 safety gate, blocks Stop, or submits an order.
 
 ### Latest efficient structural screen
+
+A serious Polymarket existing-inventory opposite-lock candidate has passed one
+frozen out-of-sample historical validation. The rule was selected only on the
+retained August 25 public-wallet day, then one preregistered public
+unauthenticated August 30 wallet-day GET produced 1,964 rows and passed with 66
+causal 1-60 second locks across 27 BTC, ETH, and SOL conditions, 1,486.108451
+matched shares, and 217.6302921908223351705204892211 pUSD of locked historical
+cashflow after the full 0.07 fee on both legs and one adverse 0.01 tick on the
+later hedge. Both time halves and all three assets were positive. Retained
+official source bytes prove that the fee is additive USDC on shares traded, so
+no net-share correction is required.
+
+This is not an accepted edge, current executable profit, or a first-leg entry
+strategy. It applies only when one outcome is already held for an independently
+justified reason; the later exact-quantity opposite fill makes the matched
+inventory direction-neutral. The public wallet is not owned or reproducible,
+and current owned basis, book, merge or redemption, external costs, and failure
+unwind remain unproved. Do not repeat, narrow, paginate, alias, or resample the
+consumed request. Advance only with explicit read-only account authority plus
+independently preexisting eligible inventory; any order requires separate
+explicit authority. Candidate SHA-256 is
+`335e258b11136b1913d584dce5d493b985bad06bdc73a0eb8564049ebec2c4ee`;
+validation SHA-256 is
+`b81af57f094f1ff75bcb77f9938ec7c84791af4e1cecb44b3402dac17d4dc1df`.
+Accepted edges remain 29, ranked hypotheses remain 47, terminal families remain
+120, registry SHA-256 is
+`f267c92839fa549f63ae4ab9c45bb9c9f1b15d492e6e5c620e5f3150cade26d8`,
+and durability-audit SHA-256 is
+`cd1eb3fda6cd3cd50864dff6adb5626435afef269463526d168362bbc157d060`.
 
 The apparent August 31 Polymarket Sports maker-rebate change is terminal as a
 source-quality event, not a market edge. A search-index rendering reported a

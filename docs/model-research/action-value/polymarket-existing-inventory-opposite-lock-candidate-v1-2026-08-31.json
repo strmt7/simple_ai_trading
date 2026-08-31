@@ -1,0 +1,124 @@
+{
+  "schema_version": "polymarket-existing-inventory-opposite-lock-candidate-v1",
+  "created_at_utc": "2026-08-31T21:20:00Z",
+  "question": "When a wallet already holds one binary Polymarket outcome for an independently justified reason, can a later opposite-outcome taker fill lock a complete set below one pUSD without relying on market direction?",
+  "mechanism": {
+    "scope": "BTC ETH and SOL 5 minute 15 minute and 4 hour Up or Down binary markets",
+    "starting_state": "independently existing same-condition outcome inventory with known acquisition basis",
+    "completion_action": "buy only the opposite outcome and match no more than the existing inventory quantity",
+    "terminal_identity": "one matched YES share plus one matched NO share pays or merges to one pUSD",
+    "locked_cashflow_per_share": "1 - first_leg_price - first_leg_USDC_taker_fee - stressed_opposite_price - stressed_opposite_USDC_taker_fee",
+    "current_crypto_fee_identity": "fee_USDC = shares * 0.07 * price * (1 - price)",
+    "rebate_credit": "0",
+    "direction_forecast_required_after_completion": false,
+    "standalone_first_leg_strategy_supported": false
+  },
+  "fee_semantics_audit": {
+    "status": "passed_from_retained_official_primary_source",
+    "finding": "The retained official Fees page defines C as the number of shares traded, states fee equals C times feeRate times p times one minus p, and explicitly states that taker fees are calculated in USDC. The validation's additive per-share fee treatment is exact for the published formula; no net-share correction is required.",
+    "source_path": "docs/model-research/action-value/raw/polymarket-organic-taker-rebate-v1/07-fees.html",
+    "source_file_sha256": "998abde974e94e88784c26915969b2a216f2f283bc09ad64b4ee1d0f82ebf5c8",
+    "source_status": "retained_before_hypothesis_validation_and_not_refetched"
+  },
+  "training_evidence": {
+    "role": "hypothesis_and_rule_selection_only_not_validation",
+    "window": "2026-08-25 retained public wallet trades",
+    "source_path": "docs/model-research/action-value/raw/polymarket-organic-taker-rebate-v1/05-top-wallet-taker-trades-2026-08-25.json",
+    "source_file_sha256": "230490065b2e808f9aa17f00537223b034aa5e76c002879d2c3db04c4e9aa6c0",
+    "raw_buy_rows": 1202,
+    "raw_conditions": 355,
+    "naive_blind_pairing_result": "rejected_at_approximately_negative_8_0208_pUSD_across_115_conditions_with_both_outcomes",
+    "fixed_rule_lock_count": 70,
+    "fixed_rule_condition_count": 40,
+    "fixed_rule_one_tick_stressed_no_rebate_locked_cashflow_pusd": "136.3461957648627322994800855096"
+  },
+  "out_of_sample_validation": {
+    "status": "passed_all_frozen_gates",
+    "wallet": "0xb27bc932bf8110d8f78e55da7d5f0497a18b5b82",
+    "window": "2026-08-30T00:00:00Z_to_2026-08-31T00:00:00Z",
+    "raw_row_count": 1964,
+    "scoped_condition_count": 358,
+    "sell_contaminated_condition_count": 0,
+    "lock_count": 66,
+    "condition_count": 27,
+    "matched_shares": "1486.108451",
+    "one_tick_stressed_no_rebate_locked_cashflow_pusd": "217.6302921908223351705204892211",
+    "maximum_single_condition_pnl_share": "0.2807103472998135698817697193821066549051",
+    "asset_results": {
+      "BTC": {
+        "locks": 58,
+        "conditions": 22,
+        "locked_cashflow_pusd": "210.5437923131592878552391986661"
+      },
+      "ETH": {
+        "locks": 6,
+        "conditions": 3,
+        "locked_cashflow_pusd": "6.1177116976630473152812905550"
+      },
+      "SOL": {
+        "locks": 2,
+        "conditions": 2,
+        "locked_cashflow_pusd": "0.96878818"
+      }
+    },
+    "time_halves": {
+      "early_locked_cashflow_pusd": "131.2720942879264120653863268900",
+      "late_locked_cashflow_pusd": "86.3581979028959231051341623311"
+    },
+    "contract_path": "docs/model-research/action-value/polymarket-wallet-opposite-lock-validation-contract-v1-2026-08-31.json",
+    "contract_sha256": "c6e6115188b7ce021d1140e9a1e53c8f4979af14742e080d2f2b4d6662b4f7dc",
+    "result_path": "docs/model-research/action-value/polymarket-wallet-opposite-lock-validation-result-v1-2026-08-31.json",
+    "result_sha256": "b81af57f094f1ff75bcb77f9938ec7c84791af4e1cecb44b3402dac17d4dc1df",
+    "raw_path": "docs/model-research/polymarket/raw/wallet-opposite-lock-validation-v1-2026-08-31/01-trades.raw.json",
+    "raw_sha256": "6415762d369fd3188c822e00b6a83f416b9061d47cbeabf4b874e953c28a0dd0",
+    "request_count": 1,
+    "request_class": "public_unauthenticated_read_only"
+  },
+  "interpretation": {
+    "proved": [
+      "The frozen rule repeated out of sample on a later complete UTC day for the preselected public wallet.",
+      "Each counted completion was causal at one to sixty seconds and remained positive after the full published crypto taker fee on both legs and one adverse 0.01 tick on the later hedge.",
+      "The completed matched quantity has a direction-independent one-pUSD terminal or merge identity."
+    ],
+    "not_proved": [
+      "The public wallet's first-leg strategy is profitable reproducible or independently justified.",
+      "A user account currently owns eligible first-leg inventory or can reproduce the observed fills latency or size.",
+      "A current executable opposite book exists when independently owned inventory needs completion.",
+      "Merge redemption relayer latency custody tax capital opportunity and every account-specific external cost are fully bound.",
+      "The historical gross locked cashflow is an owned realized PnL statement."
+    ]
+  },
+  "adjudication": {
+    "accepted_edge": false,
+    "candidate": true,
+    "deployment_ready": false,
+    "historical_out_of_sample_candidate": true,
+    "market_direction_independent_after_completion": true,
+    "profitability_claim": false,
+    "public_forward_profit_floor_pusd": "0",
+    "stable_current_account_qualified_after_all_cost_edge": false,
+    "current_status": "serious_historical_out_of_sample_existing_inventory_risk_reduction_and_complete_set_lock_candidate_not_a_standalone_entry_strategy",
+    "next_action": "Only with explicit read-only account authority and independently preexisting BTC ETH or SOL binary outcome inventory, bind exact owned quantity basis current fee and merge or redemption eligibility, then freeze one current finite-size public opposite-book decision. Require separate explicit order authority before any hedge and reject unless the exact owned completion remains strictly positive after every cost and failure unwind.",
+    "retry_trigger": "explicit_read_only_account_authority_plus_independently_preexisting_eligible_BTC_ETH_or_SOL_binary_outcome_inventory_with_exact_basis_or_a_material_current_fee_merge_redemption_or_execution_architecture_change"
+  },
+  "prohibited_shortcuts": [
+    "initiating_first_leg_inventory_because_the_overlay_was_positive_historically",
+    "calling_the_public_wallet_owned_authorized_or_reproducible",
+    "crediting_taker_rebates_maker_rebates_rewards_holding_yield_or_midpoints",
+    "using_a_later_fill_as_if_it_were_available_at_the_first_leg",
+    "matching_more_opposite_shares_than_existing_inventory",
+    "repeating_narrowing_paginating_or_aliasing_the_consumed_August_30_request",
+    "placing_an_order_or_accessing_an_account_without_separate_explicit_authority"
+  ],
+  "authority": {
+    "account_requests": 0,
+    "credentials_used": false,
+    "funds_used": false,
+    "orders_or_transactions": 0,
+    "protected_capture_touched": false,
+    "public_unauthenticated_read_only_requests": 1,
+    "signed_requests": 0,
+    "trading_authority": false
+  },
+  "result_sha256": "335e258b11136b1913d584dce5d493b985bad06bdc73a0eb8564049ebec2c4ee"
+}

@@ -141,7 +141,7 @@ def test_candidate_is_registered_without_changing_the_accepted_edge_count() -> N
     assert registry["result_sha256"] == EXPECTED_REGISTRY_HASH
     assert _embedded_hash(registry, "result_sha256") == EXPECTED_REGISTRY_HASH
     hypotheses = registry["prioritized_hypotheses"]
-    assert [row["priority_rank"] for row in hypotheses] == list(range(1, 45))
+    assert [row["priority_rank"] for row in hypotheses] == list(range(1, 48))
     candidate = next(
         row
         for row in hypotheses
@@ -149,12 +149,18 @@ def test_candidate_is_registered_without_changing_the_accepted_edge_count() -> N
         == "polymarket_binary_complete_set_taker_rebate_latency_overlay"
     )
     assert candidate["priority_rank"] == 23
-    assert candidate["canonical_artifacts"] == [
-        {
-            "path": (
-                "docs/model-research/action-value/"
-                "polymarket-round27-complete-set-taker-rebate-overlay-v1-2026-08-26.json"
-            ),
-            "result_sha256": EXPECTED_HASH,
-        }
-    ]
+    artifacts = {
+        row["path"]: row["result_sha256"] for row in candidate["canonical_artifacts"]
+    }
+    assert (
+        artifacts[
+            "docs/model-research/action-value/polymarket-round27-complete-set-taker-rebate-overlay-v1-2026-08-26.json"
+        ]
+        == EXPECTED_HASH
+    )
+    assert (
+        artifacts[
+            "docs/model-research/action-value/polymarket-existing-inventory-opposite-lock-candidate-v1-2026-08-31.json"
+        ]
+        == "335e258b11136b1913d584dce5d493b985bad06bdc73a0eb8564049ebec2c4ee"
+    )
