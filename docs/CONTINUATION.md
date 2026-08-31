@@ -6828,3 +6828,37 @@ Registry SHA-256 becomes
 `3e3938a581501a8f937accfdab920187f22a1870bc69628c632397a95590387f`,
 and the rebound durability-audit SHA-256 becomes
 `e21ea8f29f6732333689964e4f41f673f2ae9ac32738c6c1d8cbbb7032c326ac`.
+
+## Binance Lite Loan USD1 current-horizon closure
+
+The former narrow Lite Loan plus USD1 fixed-bonus lead is no longer an
+available candidate. Its retained official enrollment window ended at
+`2026-08-27T23:59:59Z`. A zero-network hypothetical late-entry adjudication
+also preserved every originally favorable input except elapsed reward time and
+recomputed the route at `2026-08-31T14:31:15.606103Z`. Only
+25.3949466886 bonus days remained.
+
+At the frozen 100, 500, and 1,000 USDT loan sizes, elapsed time removed
+6.8446628624, 6.8861456677, and 6.8930594685 bips of reward. The original
+same-stress margins therefore became `-5.7367793816`, `-5.5897295597`, and
+`-5.5652212560` bips, respectively. Under those unchanged inputs, break-even
+fixed APR is now 7.8328724815%, 7.8066349163%, and 7.8022926913%, all above
+the retained 7% offer before account, collateral, tax, custody, and operating
+costs. This is rejection-only time decay, not a current book observation and
+not permission to reprice the expired offer.
+
+Do not account-prequalify, borrow, subscribe, reprice, or poll this expired
+episode. Reopen only for a new official Lite Loan offer with a fresh enrollment
+window and complete service-fee and stablecoin-reward terms, or an exact
+account voucher or rate change that restores positive after-every-cost
+headroom. No network request, credential, account, order, conversion,
+subscription, borrow, repayment, fund, or protected capture was used for this
+adjudication. Canonical result SHA-256 is
+`b48f1a9fb2d2858e872205e2d00ded6c50bed93eb4ef639cb0133cec9dff5f3f`.
+
+Accepted edges remain 29, ranked hypotheses remain 45, terminal families remain
+107, and stable current account-qualified after-all-cost edges remain zero.
+Registry SHA-256 becomes
+`e6f4afd492fb2ea9f9bb5f36cc844db5268f19918480bea868ff440043155e6d`,
+and the rebound durability-audit SHA-256 becomes
+`c5ec5512240cb91d6e10a8080afd59659eb91bca22bd242ff05c9cf0ac7fce62`.
