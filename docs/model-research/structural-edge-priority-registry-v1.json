@@ -3193,7 +3193,7 @@
       "venue_scope": "Binance_BTC_ETH_SOL_European_options_and_exact_matching_USDT_perpetuals"
     }
   ],
-  "result_sha256": "e9dcc345636a26a3fc43c3152087d7ca33f53744674d291b500f16f0fff00776",
+  "result_sha256": "c68a0818a3ddde4e1916f4313d765c91cde3b0320b507b4360199fee4bf8453f",
   "schema_version": "structural-edge-priority-registry-v1",
   "terminal_do_not_repeat": [
     {
@@ -3791,8 +3791,13 @@
       "canonical_result_sha256": "efa25a2905029b44e96684660a291d12d8d049f49204136da1840099e550669d",
       "family": "polymarket_Frantisek_Olha_Presov_mayoral_exact_paired_maker_reward_2026_08_31",
       "reason": "the_current_first_page_source_selected_zero_alias_market_reconciled_exact_Gamma_and_sponsored_condition_sources_at_55_pUSD_per_day_20_shares_5_5_cents_zero_maker_fee_and_54_2168_remaining_days_but_the_one_use_two_token_response_had_zero_YES_bids_zero_NO_asks_and_221182_ms_snapshot_age_versus_the_frozen_10000_ms_gate_so_no_paired_best_bid_both_fill_gross_or_fresh_executable_quote_state_exists_the_relative_reward_formula_leaves_the_owned_public_payout_floor_at_zero_do_not_retry_substitute_a_Presov_sibling_or_use_displayed_rewards_page_values_as_economics"
+    },
+    {
+      "canonical_result_sha256": "560c42b8bbebf9c10ac1292c44043001fe4d26ccf85217f71b93095e72bf9230",
+      "family": "binance_BTC_ETH_SOL_COIN_M_inverse_vs_USDM_linear_same_asset_perpetual_funding",
+      "reason": "the_one_use_public_eight_request_capture_retained_current_exchange_configuration_and_499_aligned_funding_rows_for_each_BTC_ETH_SOL_pair_training_selected_short_COIN_M_long_USDM_for_all_three_but_combined_validation_plus_test_gross_was_only_3_9516_11_8749_and_25_2915_bips_versus_one_32_bip_entry_exit_hurdle_each_and_every_asset_had_an_out_of_sample_negative_calendar_month_the_zero_request_causal_lagged_sign_rescue_required_116_to_172_turnover_units_per_out_of_sample_role_and_lost_220_1847_to_330_5917_bips_at_only_two_bips_one_way_do_not_repeat_or_resample_reopen_only_on_a_material_COIN_M_or_USDM_funding_cash_flow_collateral_settlement_fee_or_contract_architecture_change"
     }
   ],
-  "updated_at_utc": "2026-08-31T19:22:17Z",
+  "updated_at_utc": "2026-08-31T20:06:36Z",
   "usage_rule": "advance_the_highest_ranked_hypothesis_whose_retry_trigger_is_satisfied_otherwise_do_not_repeat_a_blocked_or_terminal_screen"
 }

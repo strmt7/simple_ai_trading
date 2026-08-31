@@ -23,6 +23,20 @@ safety gate, blocks Stop, or submits an order.
 
 ### Latest efficient structural screen
 
+Binance COIN-M inverse versus USD-M linear same-asset perpetual funding is now
+source-bound and terminal for the retained BTC/ETH/SOL population. One frozen
+public eight-request sequence retained current exchange configuration and 499
+aligned funding rows per pair. Training selected short COIN-M and long USD-M
+for all three assets, but combined validation plus test gross was only 3.9516,
+11.8749, and 25.2915 bips versus one 32-bip two-leg entry-exit hurdle. BTC and
+SOL also had a negative August, while ETH had a negative July. The zero-request
+causal lagged-sign rescue required 116 to 172 turnover units per out-of-sample
+role and lost 220.1847 to 330.5917 bips at only two bips one-way. Do not repeat,
+resample, request books, or use credentials for this family. Reopen only after
+a material COIN-M or USD-M funding cash-flow, collateral, settlement, fee, or
+contract-architecture change. Canonical adjudication SHA-256 is
+`560c42b8bbebf9c10ac1292c44043001fe4d26ccf85217f71b93095e72bf9230`.
+
 The current first-page zero-alias Polymarket Rewards lead, František Oľha for
 the 2026 Prešov mayoral election, is source-bound and terminal. Exact Gamma and
 the exact `sponsored=true` condition row reconciled at 55 pUSD/day, 20 shares,

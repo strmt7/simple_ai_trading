@@ -5,6 +5,21 @@ Development belongs only on `main`; do not create another development branch.
 
 ## Latest Edge R&D Checkpoint
 
+- Binance COIN-M inverse versus USD-M linear same-asset perpetual funding is
+  terminal for the retained BTC/ETH/SOL population. One frozen public
+  eight-request sequence retained current exchange configuration and 499
+  aligned funding rows per pair. A training-only orientation selected short
+  COIN-M and long USD-M for all three assets, but combined validation plus test
+  gross was only 3.9516, 11.8749, and 25.2915 bips versus one 32-bip entry-exit
+  hurdle. Every asset also had an out-of-sample negative calendar month. A
+  zero-request causal lagged-sign rescue required 116 to 172 turnover units per
+  out-of-sample role and lost 220.1847 to 330.5917 bips at only two bips
+  one-way. Do not repeat, resample, request books, or use credentials for this
+  family. Reopen only after a material COIN-M or USD-M funding cash-flow,
+  collateral, settlement, fee, or contract-architecture change. Canonical
+  adjudication SHA-256 is
+  `560c42b8bbebf9c10ac1292c44043001fe4d26ccf85217f71b93095e72bf9230`.
+
 - Binance Spot OPO and OPOCO now have a source-bound received-quantity execution
   candidate. Pinned official terms prove that only the working BUY balance is
   required, received funds are locked, the contingent SELL quantity accounts

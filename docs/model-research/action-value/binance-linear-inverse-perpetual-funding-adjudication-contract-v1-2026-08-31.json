@@ -1,0 +1,105 @@
+{
+  "schema_version": "binance-linear-inverse-perpetual-funding-adjudication-contract-v1",
+  "frozen_at_utc": "2026-08-31T20:06:36.246851Z",
+  "contract_path": "docs/model-research/action-value/binance-linear-inverse-perpetual-funding-adjudication-contract-v1-2026-08-31.json",
+  "purpose": "Deterministically preserve the post-capture correction that out-of-sample validation plus test should pay one combined entry-exit hurdle, and exhaust the only simple causal lagged-sign rescue using the same retained funding rows and zero network requests.",
+  "outcomes_viewed_before_freeze": true,
+  "capture_result": {
+    "path": "docs/model-research/action-value/binance-linear-inverse-perpetual-funding-result-v1-2026-08-31.json",
+    "result_sha256": "a0b981ef899e825b77ad67993f9a10cd6a3b5ebb5907c9cfa53a2e1611aa06c0"
+  },
+  "sources": [
+    {
+      "asset": "BTC",
+      "role": "coin_history",
+      "symbol": "BTCUSD_PERP",
+      "path": "data/binance-linear-inverse-funding-v1/raw/btc-coin-funding.json",
+      "sha256": "e7b7c079d610758c6423b81df36ea5cbb5aacdd2c585cb83472345cc22e1fee7"
+    },
+    {
+      "asset": "BTC",
+      "role": "linear_history",
+      "symbol": "BTCUSDT",
+      "path": "data/binance-linear-inverse-funding-v1/raw/btc-linear-funding.json",
+      "sha256": "b5ba3f6b19d51fb8c21dd3bb4191cab8c6fb07b6185d794c5cf7019b48da5e9e"
+    },
+    {
+      "asset": "ETH",
+      "role": "coin_history",
+      "symbol": "ETHUSD_PERP",
+      "path": "data/binance-linear-inverse-funding-v1/raw/eth-coin-funding.json",
+      "sha256": "e68d58d3706bb8d242ac5e8fb51d186fd17d8f6dba4a7944f37128f93ae10e18"
+    },
+    {
+      "asset": "ETH",
+      "role": "linear_history",
+      "symbol": "ETHUSDT",
+      "path": "data/binance-linear-inverse-funding-v1/raw/eth-linear-funding.json",
+      "sha256": "8b747719f7c183ca8ce7c69e0d497bc679b321b9ffab2295626d3725141d3ea9"
+    },
+    {
+      "asset": "SOL",
+      "role": "coin_history",
+      "symbol": "SOLUSD_PERP",
+      "path": "data/binance-linear-inverse-funding-v1/raw/sol-coin-funding.json",
+      "sha256": "69e1c50ef35be6d50bd27016358fa1ed0f926e31ac44dbb9fe0b4ad169d7d4fa"
+    },
+    {
+      "asset": "SOL",
+      "role": "linear_history",
+      "symbol": "SOLUSDT",
+      "path": "data/binance-linear-inverse-funding-v1/raw/sol-linear-funding.json",
+      "sha256": "3133d44b9301f210b528aa9b1e06af612a75890f11486df71090fffb4122a1e4"
+    }
+  ],
+  "population": {
+    "assets": [
+      "BTC",
+      "ETH",
+      "SOL"
+    ],
+    "funding_interval_hours": 8,
+    "roles": "First 60 percent training, next 20 percent validation, final 20 percent test after the original exact alignment."
+  },
+  "fixed_orientation_correction": {
+    "rule": "Reuse the training-selected fixed orientation and combine validation plus test into one continuous out-of-sample hold with exactly one two-leg entry and one two-leg exit.",
+    "hurdle": "Four turnover units times the frozen 8-bip one-way sensitivity, or 32 bips total.",
+    "terminal_gate": "Every asset must remain negative after the corrected combined out-of-sample hurdle."
+  },
+  "lagged_sign_rescue": {
+    "signal": "Within each role, the sign of the prior settled COIN-M-minus-USD-M funding spread fixes the next interval orientation. No future rate enters inference.",
+    "turnover": "Initial and terminal positions cost two units each. A sign flip closes and reverses both legs for four turnover units.",
+    "fee_sensitivities_one_way_bips": [
+      "0",
+      "2",
+      "8"
+    ],
+    "terminal_gate": "Every training validation and test role for every asset must be negative at the 2-bip one-way sensitivity."
+  },
+  "economics": {
+    "frozen_one_way_execution_bips": "8",
+    "lagged_fee_sensitivity_bips": [
+      "0",
+      "2",
+      "8"
+    ],
+    "omitted_costs": "Coin collateral exposure, inverse-contract basis, stablecoin basis, margin, liquidation, borrow, slippage beyond the sensitivity, custody, transfer, tax, and operations remain unbounded. No pass can establish profit; the observed failures are decisive without them."
+  },
+  "network_requests": 0,
+  "output_path": "docs/model-research/action-value/binance-linear-inverse-perpetual-funding-adjudication-v1-2026-08-31.json",
+  "authority": {
+    "account_requests": 0,
+    "credentials_used": false,
+    "funds_used": false,
+    "network_requests": 0,
+    "orders_or_transactions": 0,
+    "protected_capture_touched": false,
+    "signed_requests": 0,
+    "trading_authority": false
+  },
+  "implementation": {
+    "path": "tools/adjudicate_binance_linear_inverse_funding.py",
+    "sha256": "c3747b0d228875abc2887a90aa1e67fd61158861e67561f8ac71b64aa62e14e4"
+  },
+  "contract_sha256": "fdb9ad4f6db350b4dd44b7b4d0c290b08b3bc12279578e43520357ba526c17ab"
+}

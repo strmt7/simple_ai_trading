@@ -1,0 +1,441 @@
+{
+  "authority": {
+    "account_requests": 0,
+    "credentials_used": false,
+    "funds_used": false,
+    "orders_or_transactions": 0,
+    "protected_capture_touched": false,
+    "public_unauthenticated_read_only_requests_maximum": 8,
+    "signed_requests": 0,
+    "trading_authority": false
+  },
+  "completed_at_utc": "2026-08-31T20:06:36.244852Z",
+  "contract": {
+    "contract_sha256": "43c3733749cc944c6fab24b8c9cae4237f6e5448e33f62a3b39a820f14e803b4",
+    "path": "docs/model-research/action-value/binance-linear-inverse-perpetual-funding-contract-v1-2026-08-31.json"
+  },
+  "pair_results": [
+    {
+      "aligned_end_time_ms": 1788192000001,
+      "aligned_row_count": 499,
+      "aligned_start_time_ms": 1773820800002,
+      "asset": "BTC",
+      "coin_contract_size_usd": "100",
+      "coin_margin_asset": "BTC",
+      "coin_source_row_count": 500,
+      "coin_symbol": "BTCUSD_PERP",
+      "failure_reasons": [
+        "validation_net_nonpositive",
+        "test_net_nonpositive",
+        "test_month_persistence_failed"
+      ],
+      "fixed_training_selected_orientation": "short_COIN_M_long_USDS_M",
+      "linear_margin_asset": "USDT",
+      "linear_source_row_count": 500,
+      "linear_symbol": "BTCUSDT",
+      "maximum_timestamp_skew_ms": 16,
+      "qualified_public_preflight": false,
+      "role_results": {
+        "test": {
+          "all_observed_months_gross_positive": false,
+          "entry_exit_execution_hurdle_bips": "32",
+          "gross_funding_bips": "0.09820000",
+          "interval_count": 100,
+          "maximum_gross_drawdown_bips": "8.13040000",
+          "negative_interval_count": 40,
+          "net_after_entry_exit_hurdle_bips": "-31.90180000",
+          "observed_months": [
+            {
+              "gross_funding_bips": "1.64970000",
+              "interval_count": 7,
+              "month": "2026-07",
+              "positive": true
+            },
+            {
+              "gross_funding_bips": "-1.55150000",
+              "interval_count": 93,
+              "month": "2026-08",
+              "positive": false
+            }
+          ],
+          "positive_interval_count": 45,
+          "zero_interval_count": 15
+        },
+        "training": {
+          "all_observed_months_gross_positive": true,
+          "entry_exit_execution_hurdle_bips": "32",
+          "gross_funding_bips": "67.51090000",
+          "interval_count": 299,
+          "maximum_gross_drawdown_bips": "4.08630000",
+          "negative_interval_count": 100,
+          "net_after_entry_exit_hurdle_bips": "35.51090000",
+          "observed_months": [
+            {
+              "gross_funding_bips": "23.17840000",
+              "interval_count": 41,
+              "month": "2026-03",
+              "positive": true
+            },
+            {
+              "gross_funding_bips": "15.03970000",
+              "interval_count": 90,
+              "month": "2026-04",
+              "positive": true
+            },
+            {
+              "gross_funding_bips": "9.93450000",
+              "interval_count": 93,
+              "month": "2026-05",
+              "positive": true
+            },
+            {
+              "gross_funding_bips": "19.35830000",
+              "interval_count": 75,
+              "month": "2026-06",
+              "positive": true
+            }
+          ],
+          "positive_interval_count": 193,
+          "zero_interval_count": 6
+        },
+        "validation": {
+          "all_observed_months_gross_positive": true,
+          "entry_exit_execution_hurdle_bips": "32",
+          "gross_funding_bips": "3.85340000",
+          "interval_count": 100,
+          "maximum_gross_drawdown_bips": "4.80600000",
+          "negative_interval_count": 42,
+          "net_after_entry_exit_hurdle_bips": "-28.14660000",
+          "observed_months": [
+            {
+              "gross_funding_bips": "3.13090000",
+              "interval_count": 14,
+              "month": "2026-06",
+              "positive": true
+            },
+            {
+              "gross_funding_bips": "0.72250000",
+              "interval_count": 86,
+              "month": "2026-07",
+              "positive": true
+            }
+          ],
+          "positive_interval_count": 50,
+          "zero_interval_count": 8
+        }
+      }
+    },
+    {
+      "aligned_end_time_ms": 1788192000001,
+      "aligned_row_count": 499,
+      "aligned_start_time_ms": 1773820800002,
+      "asset": "ETH",
+      "coin_contract_size_usd": "10",
+      "coin_margin_asset": "ETH",
+      "coin_source_row_count": 500,
+      "coin_symbol": "ETHUSD_PERP",
+      "failure_reasons": [
+        "validation_net_nonpositive",
+        "validation_month_persistence_failed",
+        "test_net_nonpositive"
+      ],
+      "fixed_training_selected_orientation": "short_COIN_M_long_USDS_M",
+      "linear_margin_asset": "USDT",
+      "linear_source_row_count": 500,
+      "linear_symbol": "ETHUSDT",
+      "maximum_timestamp_skew_ms": 16,
+      "qualified_public_preflight": false,
+      "role_results": {
+        "test": {
+          "all_observed_months_gross_positive": true,
+          "entry_exit_execution_hurdle_bips": "32",
+          "gross_funding_bips": "11.31240000",
+          "interval_count": 100,
+          "maximum_gross_drawdown_bips": "4.96880000",
+          "negative_interval_count": 27,
+          "net_after_entry_exit_hurdle_bips": "-20.68760000",
+          "observed_months": [
+            {
+              "gross_funding_bips": "2.90000000",
+              "interval_count": 7,
+              "month": "2026-07",
+              "positive": true
+            },
+            {
+              "gross_funding_bips": "8.41240000",
+              "interval_count": 93,
+              "month": "2026-08",
+              "positive": true
+            }
+          ],
+          "positive_interval_count": 59,
+          "zero_interval_count": 14
+        },
+        "training": {
+          "all_observed_months_gross_positive": false,
+          "entry_exit_execution_hurdle_bips": "32",
+          "gross_funding_bips": "29.44060000",
+          "interval_count": 299,
+          "maximum_gross_drawdown_bips": "21.10220000",
+          "negative_interval_count": 128,
+          "net_after_entry_exit_hurdle_bips": "-2.55940000",
+          "observed_months": [
+            {
+              "gross_funding_bips": "13.52120000",
+              "interval_count": 41,
+              "month": "2026-03",
+              "positive": true
+            },
+            {
+              "gross_funding_bips": "-18.31380000",
+              "interval_count": 90,
+              "month": "2026-04",
+              "positive": false
+            },
+            {
+              "gross_funding_bips": "15.85520000",
+              "interval_count": 93,
+              "month": "2026-05",
+              "positive": true
+            },
+            {
+              "gross_funding_bips": "18.37800000",
+              "interval_count": 75,
+              "month": "2026-06",
+              "positive": true
+            }
+          ],
+          "positive_interval_count": 169,
+          "zero_interval_count": 2
+        },
+        "validation": {
+          "all_observed_months_gross_positive": false,
+          "entry_exit_execution_hurdle_bips": "32",
+          "gross_funding_bips": "0.56250000",
+          "interval_count": 100,
+          "maximum_gross_drawdown_bips": "11.49590000",
+          "negative_interval_count": 55,
+          "net_after_entry_exit_hurdle_bips": "-31.43750000",
+          "observed_months": [
+            {
+              "gross_funding_bips": "2.95740000",
+              "interval_count": 14,
+              "month": "2026-06",
+              "positive": true
+            },
+            {
+              "gross_funding_bips": "-2.39490000",
+              "interval_count": 86,
+              "month": "2026-07",
+              "positive": false
+            }
+          ],
+          "positive_interval_count": 45,
+          "zero_interval_count": 0
+        }
+      }
+    },
+    {
+      "aligned_end_time_ms": 1788192000001,
+      "aligned_row_count": 499,
+      "aligned_start_time_ms": 1773820800002,
+      "asset": "SOL",
+      "coin_contract_size_usd": "10",
+      "coin_margin_asset": "SOL",
+      "coin_source_row_count": 500,
+      "coin_symbol": "SOLUSD_PERP",
+      "failure_reasons": [
+        "validation_net_nonpositive",
+        "test_net_nonpositive",
+        "test_month_persistence_failed"
+      ],
+      "fixed_training_selected_orientation": "short_COIN_M_long_USDS_M",
+      "linear_margin_asset": "USDT",
+      "linear_source_row_count": 500,
+      "linear_symbol": "SOLUSDT",
+      "maximum_timestamp_skew_ms": 16,
+      "qualified_public_preflight": false,
+      "role_results": {
+        "test": {
+          "all_observed_months_gross_positive": false,
+          "entry_exit_execution_hurdle_bips": "32",
+          "gross_funding_bips": "1.09640000",
+          "interval_count": 100,
+          "maximum_gross_drawdown_bips": "4.69800000",
+          "negative_interval_count": 34,
+          "net_after_entry_exit_hurdle_bips": "-30.90360000",
+          "observed_months": [
+            {
+              "gross_funding_bips": "1.46480000",
+              "interval_count": 7,
+              "month": "2026-07",
+              "positive": true
+            },
+            {
+              "gross_funding_bips": "-0.36840000",
+              "interval_count": 93,
+              "month": "2026-08",
+              "positive": false
+            }
+          ],
+          "positive_interval_count": 38,
+          "zero_interval_count": 28
+        },
+        "training": {
+          "all_observed_months_gross_positive": true,
+          "entry_exit_execution_hurdle_bips": "32",
+          "gross_funding_bips": "85.42960000",
+          "interval_count": 299,
+          "maximum_gross_drawdown_bips": "12.69660000",
+          "negative_interval_count": 95,
+          "net_after_entry_exit_hurdle_bips": "53.42960000",
+          "observed_months": [
+            {
+              "gross_funding_bips": "25.22810000",
+              "interval_count": 41,
+              "month": "2026-03",
+              "positive": true
+            },
+            {
+              "gross_funding_bips": "1.68340000",
+              "interval_count": 90,
+              "month": "2026-04",
+              "positive": true
+            },
+            {
+              "gross_funding_bips": "18.90040000",
+              "interval_count": 93,
+              "month": "2026-05",
+              "positive": true
+            },
+            {
+              "gross_funding_bips": "39.61770000",
+              "interval_count": 75,
+              "month": "2026-06",
+              "positive": true
+            }
+          ],
+          "positive_interval_count": 198,
+          "zero_interval_count": 6
+        },
+        "validation": {
+          "all_observed_months_gross_positive": true,
+          "entry_exit_execution_hurdle_bips": "32",
+          "gross_funding_bips": "24.19510000",
+          "interval_count": 100,
+          "maximum_gross_drawdown_bips": "1.33010000",
+          "negative_interval_count": 32,
+          "net_after_entry_exit_hurdle_bips": "-7.80490000",
+          "observed_months": [
+            {
+              "gross_funding_bips": "7.54880000",
+              "interval_count": 14,
+              "month": "2026-06",
+              "positive": true
+            },
+            {
+              "gross_funding_bips": "16.64630000",
+              "interval_count": 86,
+              "month": "2026-07",
+              "positive": true
+            }
+          ],
+          "positive_interval_count": 63,
+          "zero_interval_count": 5
+        }
+      }
+    }
+  ],
+  "request_receipts": [
+    {
+      "elapsed_ms": 1094,
+      "http_date": "Mon, 31 Aug 2026 20:06:27 GMT",
+      "http_status": 200,
+      "payload_bytes": 35676,
+      "payload_sha256": "e894cfc039af725eebbc821a3501aa80494cc9c51b66bd955d02c488e96ad1a3",
+      "raw_path": "data/binance-linear-inverse-funding-v1/raw/coin-exchange-info.json",
+      "received_at_utc": "2026-08-31T20:06:28.717278Z",
+      "url": "https://dapi.binance.com/dapi/v1/exchangeInfo"
+    },
+    {
+      "elapsed_ms": 2750,
+      "http_date": "Mon, 31 Aug 2026 20:06:29 GMT",
+      "http_status": 200,
+      "payload_bytes": 1091863,
+      "payload_sha256": "a9c292046727149f8f7fce429bd6854df0b31e9d086367f6146808b4eb74d65d",
+      "raw_path": "data/binance-linear-inverse-funding-v1/raw/linear-exchange-info.json",
+      "received_at_utc": "2026-08-31T20:06:31.467030Z",
+      "url": "https://fapi.binance.com/fapi/v1/exchangeInfo"
+    },
+    {
+      "elapsed_ms": 1297,
+      "http_date": "Mon, 31 Aug 2026 20:06:31 GMT",
+      "http_status": 200,
+      "payload_bytes": 65110,
+      "payload_sha256": "e7b7c079d610758c6423b81df36ea5cbb5aacdd2c585cb83472345cc22e1fee7",
+      "raw_path": "data/binance-linear-inverse-funding-v1/raw/btc-coin-funding.json",
+      "received_at_utc": "2026-08-31T20:06:32.768700Z",
+      "url": "https://dapi.binance.com/dapi/v1/fundingRate?symbol=BTCUSD_PERP&limit=1000"
+    },
+    {
+      "elapsed_ms": 297,
+      "http_date": "Mon, 31 Aug 2026 20:06:31 GMT",
+      "http_status": 200,
+      "payload_bytes": 63128,
+      "payload_sha256": "b5ba3f6b19d51fb8c21dd3bb4191cab8c6fb07b6185d794c5cf7019b48da5e9e",
+      "raw_path": "data/binance-linear-inverse-funding-v1/raw/btc-linear-funding.json",
+      "received_at_utc": "2026-08-31T20:06:33.067229Z",
+      "url": "https://fapi.binance.com/fapi/v1/fundingRate?symbol=BTCUSDT&limit=1000"
+    },
+    {
+      "elapsed_ms": 1282,
+      "http_date": "Mon, 31 Aug 2026 20:06:32 GMT",
+      "http_status": 200,
+      "payload_bytes": 64649,
+      "payload_sha256": "e68d58d3706bb8d242ac5e8fb51d186fd17d8f6dba4a7944f37128f93ae10e18",
+      "raw_path": "data/binance-linear-inverse-funding-v1/raw/eth-coin-funding.json",
+      "received_at_utc": "2026-08-31T20:06:34.358577Z",
+      "url": "https://dapi.binance.com/dapi/v1/fundingRate?symbol=ETHUSD_PERP&limit=1000"
+    },
+    {
+      "elapsed_ms": 281,
+      "http_date": "Mon, 31 Aug 2026 20:06:33 GMT",
+      "http_status": 200,
+      "payload_bytes": 62647,
+      "payload_sha256": "8b747719f7c183ca8ce7c69e0d497bc679b321b9ffab2295626d3725141d3ea9",
+      "raw_path": "data/binance-linear-inverse-funding-v1/raw/eth-linear-funding.json",
+      "received_at_utc": "2026-08-31T20:06:34.642636Z",
+      "url": "https://fapi.binance.com/fapi/v1/fundingRate?symbol=ETHUSDT&limit=1000"
+    },
+    {
+      "elapsed_ms": 1312,
+      "http_date": "Mon, 31 Aug 2026 20:06:34 GMT",
+      "http_status": 200,
+      "payload_bytes": 63689,
+      "payload_sha256": "69e1c50ef35be6d50bd27016358fa1ed0f926e31ac44dbb9fe0b4ad169d7d4fa",
+      "raw_path": "data/binance-linear-inverse-funding-v1/raw/sol-coin-funding.json",
+      "received_at_utc": "2026-08-31T20:06:35.953420Z",
+      "url": "https://dapi.binance.com/dapi/v1/fundingRate?symbol=SOLUSD_PERP&limit=1000"
+    },
+    {
+      "elapsed_ms": 297,
+      "http_date": "Mon, 31 Aug 2026 20:06:35 GMT",
+      "http_status": 200,
+      "payload_bytes": 61754,
+      "payload_sha256": "3133d44b9301f210b528aa9b1e06af612a75890f11486df71090fffb4122a1e4",
+      "raw_path": "data/binance-linear-inverse-funding-v1/raw/sol-linear-funding.json",
+      "received_at_utc": "2026-08-31T20:06:36.242851Z",
+      "url": "https://fapi.binance.com/fapi/v1/fundingRate?symbol=SOLUSDT&limit=1000"
+    }
+  ],
+  "result_sha256": "a0b981ef899e825b77ad67993f9a10cd6a3b5ebb5907c9cfa53a2e1611aa06c0",
+  "schema_version": "binance-linear-inverse-funding-preflight-v1",
+  "verdict": {
+    "accepted_edge": false,
+    "eligible_pair_count": 3,
+    "profitability_claim": false,
+    "qualified_public_preflight_count": 0,
+    "status": "rejected_public_linear_inverse_funding_persistence_preflight",
+    "trading_authority": false
+  }
+}
