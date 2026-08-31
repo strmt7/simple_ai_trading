@@ -4,6 +4,7 @@ import hashlib
 import importlib
 import json
 from pathlib import Path
+import re
 import sys
 
 import pytest
@@ -100,6 +101,22 @@ PRESOV_BOOK_RAW = ROOT / "data/polymarket-presov-frantisek-olha-reward-book-v1"
 PRESOV_ADJUDICATION = (
     ROOT
     / "docs/model-research/action-value/polymarket-presov-frantisek-olha-reward-empty-book-adjudication-v1-2026-08-31.json"
+)
+REWARD_AUTH_CONTRACT = (
+    ROOT
+    / "docs/model-research/action-value/polymarket-reward-percentage-auth-source-contract-v1-2026-08-31.json"
+)
+REWARD_AUTH_RESULT = (
+    ROOT
+    / "docs/model-research/action-value/polymarket-reward-percentage-auth-source-result-v1-2026-08-31.json"
+)
+REWARD_AUTH_RAW = (
+    BASE
+    / "raw/reward-percentage-auth-source-v1-2026-08-31/01-official-v2-client.raw.py"
+)
+COMPETITIVENESS_GATE = (
+    ROOT
+    / "docs/model-research/action-value/polymarket-market-competitiveness-semantics-gate-v1-2026-08-31.json"
 )
 
 
@@ -493,3 +510,44 @@ def test_presov_reward_candidate_is_terminal_after_empty_stale_book() -> None:
         == "polymarket_Frantisek_Olha_Presov_mayoral_exact_paired_maker_reward_2026_08_31"
     )
     assert terminal["canonical_result_sha256"] == adjudication_hash
+
+
+def test_public_market_competitiveness_zero_is_not_an_owned_reward_share() -> None:
+    contract = json.loads(REWARD_AUTH_CONTRACT.read_text(encoding="ascii"))
+    contract_hash = contract.pop("contract_sha256")
+    assert _sha256(_canonical(contract)) == contract_hash
+    assert (
+        contract_hash
+        == "e66201f597c4016fd211115dd180aacdc2869b20f4d1ab3c09f67ba3cc07d884"
+    )
+
+    source_result, source_result_hash = _reconstruct(REWARD_AUTH_RESULT)
+    gate, gate_hash = _reconstruct(COMPETITIVENESS_GATE)
+    assert (
+        source_result_hash
+        == "c57cbe963a3cf3caa04beef0df72f62fbcd6d300f8909b057e4fa62cb85207fd"
+    )
+    assert (
+        gate_hash == "7b58e5317a212c1e50f91bb7742f64f18915e7a3d477cdfc884c2c9938e3ee5b"
+    )
+    assert (
+        _sha256(REWARD_AUTH_RAW.read_bytes())
+        == gate["sources"]["official_v2_sdk"]["raw_sha256"]
+    )
+
+    sdk = REWARD_AUTH_RAW.read_text(encoding="utf-8")
+    for route in gate["observations"]["sdk_owned_routes"]:
+        method = route["method"]
+        match = re.search(rf"(?ms)^    def {method}\(.*?(?=^    def |\Z)", sdk)
+        assert match is not None
+        assert "self.assert_level_2_auth()" in match.group(0)
+        assert _sha256(match.group(0).encode("utf-8")) == route["method_block_sha256"]
+
+    assert gate["observations"]["exact_public_market_competitiveness"] == 0
+    assert (
+        gate["observations"]["public_config_supplies_owned_share_lower_bound"] is False
+    )
+    assert gate["adjudication"]["publicly_proven_owned_reward_share_floor"] == "0"
+    assert gate["adjudication"]["publicly_proven_reward_payout_floor_pUSD"] == "0"
+    assert gate["verdict"]["accepted_edge"] is False
+    assert source_result["authority"]["credentials_used"] is False
