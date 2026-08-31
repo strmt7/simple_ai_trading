@@ -93,6 +93,16 @@ only for a future independent weekend or holiday dividend event under a new
 prospective contract with a positive source-bound conservative net-distribution
 floor.
 
+The historical Binance Direct Stocks fee overlay ended at
+`2026-08-31T00:00:00Z`. Binance's August 28 extension announcement says the
+same 0.05% spread and 0.17-USD fee tiers continue through September 30, but the
+logged-out live Direct Equities fee schedule still publishes the August 31 end.
+This current primary-source conflict makes the public current discount floor
+zero. Do not retry the consumed CMS article request or poll the unchanged fee
+page. Reopen only when an explicit correction or materially updated live fee
+schedule resolves one effective end time; this can amend duration only and
+cannot create a new accepted edge.
+
 The consumed Polymarket created-event delta after
 `2026-08-30T16:07:16.021321Z` hit the endpoint's effective 100-row cap before
 crossing its cutoff. It screened zero packages and authorized no books. Never

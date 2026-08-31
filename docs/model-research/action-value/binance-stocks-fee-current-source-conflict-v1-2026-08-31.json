@@ -1,0 +1,88 @@
+{
+  "adjudication": {
+    "accepted_edge_count_change": 0,
+    "current_discount_credit_permitted": false,
+    "deployment_ready": false,
+    "existing_historical_accepted_scope_preserved": true,
+    "extension_duration_updated": false,
+    "market_direction_forecast_required": false,
+    "profitability_claim": false,
+    "public_current_incremental_saving_floor_USD": "0",
+    "status": "historical_direct_stock_fee_overlay_expired_at_2026_08_31T00_00_00Z_current_extension_fail_closed_unresolved_because_the_official_announcement_says_2026_09_30T23_59_00Z_while_the_live_official_fee_schedule_still_says_2026_08_31T00_00_00Z"
+  },
+  "authority": {
+    "account_state_accessed": false,
+    "credentials_used": false,
+    "logged_out_rendered_pages_read": 1,
+    "orders_or_mutations": 0,
+    "protected_capture_accessed": false,
+    "public_read_only_research": true
+  },
+  "created_at_utc": "2026-08-31T10:31:24.588Z",
+  "decision_contract": {
+    "conflicting_current_primary_sources": "do not choose the favorable end time; guaranteed current discount credit is zero until an explicit effective source resolves the conflict",
+    "exact_340_USD": "the extension announcement uses 340 USD and above for the spread tier, but no extension is credited while the duration conflict remains unresolved",
+    "historical_scope": "preserve the already accepted incremental saving only for independently justified owned organic orders during the source-bound interval that ended at 2026-08-31T00:00:00Z",
+    "no_new_edge": "a duration update would amend the existing fee-overlay family and never increment the accepted-edge count"
+  },
+  "official_announcement_side": {
+    "article_code": "0a57193b957c4b8fb0d8d8f22ddb25a4",
+    "discount_end_utc": "2026-09-30T23:59:00Z",
+    "published_at_utc": "2026-08-28T06:00:00Z",
+    "terms": {
+      "orders_340_USD_and_above_new_spread_percent": "0.05",
+      "orders_340_USD_and_above_old_spread_percent": "0.10",
+      "orders_under_340_USD_new_platform_fee_USD": "0.17",
+      "orders_under_340_USD_old_platform_fee_USD": "0.35"
+    },
+    "url": "https://www.binance.com/en/support/announcement/detail/0a57193b957c4b8fb0d8d8f22ddb25a4"
+  },
+  "prior_source_bindings": [
+    {
+      "path": "docs/model-research/action-value/binance-stocks-current-fee-overlay-edge-v1-2026-08-27.json",
+      "result_sha256": "d4f02be559d9267abbea28ccefb48f4886f375b359ce7274b90b6585b828160a",
+      "role": "historical accepted fee overlay and original live fee schedule"
+    },
+    {
+      "path": "docs/model-research/action-value/binance-stocks-fee-extension-source-failure-v1-2026-08-29.json",
+      "result_sha256": "498003b3f593cda600570099f9089bcb0db0a189e5c92c87e9395bd2afeb3ed8",
+      "role": "consumed one-use CMS failure that already recorded official web discovery of the September 30 extension and prohibits retrying that exact CMS request"
+    }
+  ],
+  "prohibited_shortcuts": [
+    "retrying_or_aliasing_the_consumed_exact_CMS_article_request_to_repair_its_failed_raw_retention",
+    "choosing_the_later_announcement_end_over_the_conflicting_live_fee_schedule",
+    "carrying_the_expired_live_schedule_discount_forward_without_explicit_resolution",
+    "manufacturing_enlarging_splitting_churning_self_matching_or_rerouting_orders_to_obtain_a_fee_discount",
+    "crediting_either_fee_tier_without_an_independently_positive_organic_order_current_account_eligibility_exact_preview_and_owned_realized_fee_reconciliation"
+  ],
+  "result_sha256": "eb6dcd919b73a033e1de48f6e8a806ab66f19ef657de75fa99fb98d0e1a56341",
+  "retry_contract": {
+    "next_public_trigger": "an explicit official correction withdrawal or replacement of either source or a materially updated live Direct Equities fee schedule that unambiguously publishes one effective end time",
+    "next_action": "do not repeat the consumed CMS request and do not poll the unchanged fee page; on the literal trigger retain one exact current source and amend duration only if the conflict is explicitly resolved",
+    "separate_authority": "account preview acceptance transfer conversion and every order or mutation remain separately unauthorized"
+  },
+  "schema_version": "binance-stocks-fee-current-source-conflict-v1",
+  "source_conflict": {
+    "announcement_end_utc": "2026-09-30T23:59:00Z",
+    "conflict_material": true,
+    "live_fee_schedule_end_utc": "2026-08-31T00:00:00Z",
+    "resolution": "unresolved_fail_closed",
+    "same_fee_amounts": true
+  },
+  "live_fee_schedule_side": {
+    "observed_at_utc": "2026-08-31T10:31:24.588Z",
+    "promotion_end_utc": "2026-08-31T00:00:00Z",
+    "rendered_semantic_snapshot_path": "data/binance-stocks-fee-current-conflict-v1/rendered-semantic-snapshot.json",
+    "rendered_semantic_snapshot_sha256": "bf77ad3565b90c3cb04c00e4ce1ef41268f72579e3b40603496ac72c478da14b",
+    "request_journal_path": "data/binance-stocks-fee-current-conflict-v1/request-journal.jsonl",
+    "request_journal_sha256": "ab950ac70f2938256ba67ba401c8e3e871b7a0f73ed6739cfdab93c426d504af",
+    "terms": {
+      "orders_340_USD_and_above_new_spread_percent": "0.05",
+      "orders_340_USD_and_above_old_spread_percent": "0.10",
+      "orders_340_USD_and_below_new_platform_fee_USD": "0.17",
+      "orders_340_USD_and_below_old_platform_fee_USD": "0.35"
+    },
+    "url": "https://www.binance.com/en/fee/stocks"
+  }
+}

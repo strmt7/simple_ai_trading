@@ -1,0 +1,23 @@
+{
+  "capture_type": "logged_out_rendered_semantic_snapshot",
+  "observed_at_utc": "2026-08-31T10:31:24.588Z",
+  "source_title": "Stocks",
+  "source_url": "https://www.binance.com/en/fee/stocks",
+  "selected_visible_text": [
+    "Binance allows you to buy and sell US-listed stocks and ETFs. Subject to change with advance notice.",
+    "Trading spread",
+    "Promotion Until 2026-08-31 00:00 (UTC)",
+    "0.05%",
+    "0.10%",
+    "For orders with trade value of $340 USD and above",
+    "Platform Fee",
+    "Promotion Until 2026-08-31 00:00 (UTC)",
+    "0.17 USD",
+    "0.35 USD",
+    "For orders with trade value of $340 USD and below",
+    "Stock trading is available to eligible users in supported jurisdictions.",
+    "Fees are subject to change. We will provide advance notice of any changes to this fee schedule.",
+    "This fee schedule applies to Direct Equities (US stocks and ETFs) only. Tokenized Stocks and other products are subject to separate fee schedules."
+  ],
+  "selection_rule": "retain the exact visible lines needed to bind the Direct Equities discount end, both deterministic fee tiers, eligibility boundary, and fee-change warning; no account, cookies, storage, credentials, or hidden state was inspected"
+}

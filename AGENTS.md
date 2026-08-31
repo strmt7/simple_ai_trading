@@ -158,6 +158,11 @@ override prose.
   a rate, fee, eligibility rule, or effective date by page location, apparent
   recency, or convenience; preserve both sources and require an explicit
   effective-date source or realized post-change evidence before promotion.
+- A promotion-extension announcement does not override a conflicting current
+  fee schedule that still publishes the expired end time. Credit zero current
+  discount until an explicit correction, withdrawal, replacement, or updated
+  schedule resolves the effective interval; never retry a consumed article
+  endpoint merely to obtain a cleaner copy of the favorable terms.
 - Search-result snippets, locale mirrors, and cached previews are discovery
   leads only. Open and retain the current primary page or endpoint before
   source-binding a rate, fee, eligibility rule, inventory, or effective date.
