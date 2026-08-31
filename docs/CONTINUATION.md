@@ -6597,3 +6597,39 @@ Registry SHA-256 is
 `dfe854e92f8de1af0b514f54a8c7ceeb49cb93fd168cad99bd81338b40d184c2`,
 and the rebound durability-audit SHA-256 is
 `e90253b1682b720e9e1e7ad9ad4c388e1aed415f04c30a0cc1ac5fcce6fe0dbd`.
+
+## Polymarket Patriots-Seahawks monotone total rejection
+
+The current official NFL surface supplied the first source-selected event
+outside the consumed September 13-21 NFL window: Patriots vs. Seahawks on
+September 9. One exact public Gamma event GET retained 110 active accepting
+markets. Offline rule proof exhaustively evaluated 291 full-game margin and
+total monotone packages and found two rejection-only displayed sums below their
+one-pUSD floor. The precommitted best was Over 24.5 plus Under 26.5 at 0.995
+pUSD per share, an optimistic 0.005 pUSD gross lead.
+
+One separately frozen two-token book batch rejected it decisively. Five shares
+per leg cost 5.55 pUSD against a 5 pUSD floor even at zero fees, and 5.65 pUSD
+after one adverse tick per leg. The books were 11,031 ms old with 2,055 ms
+timestamp skew. Because current exact asks were already negative by 0.55 pUSD
+at zero fee, no fee request was made. Do not refresh this event, repair its age
+gate, or select the already observed 49ers-Rams sibling after outcome access.
+
+Exact-event contract SHA-256 is
+`7f15f1c84d443301cf845abb126caaa091c688934ca3bad6633c964d1b67d25a`;
+metadata result SHA-256 is
+`e62d7b8a93a2a11197058d631e2fea88a408cfa30bd2dda6a9df54998b524d36`;
+offline prefilter contract SHA-256 is
+`c79bfa78b125e657003ef85b0b5d47f4b7a367230da10be5dbe551c5f6cbbf4e`;
+prefilter result SHA-256 is
+`2658f410b44f2a689c528b82f94f71c6459f5f52729824cd5f58fb22e920cc38`;
+book contract SHA-256 is
+`cff83822356354609fe1debed3d260405a80e57bb95a9f9cce933ee41d8bef71`;
+terminal book result SHA-256 is
+`2658c04330fdeaa7f39b4a9dc842a079c7e81ef1feeeba75ce74384e328338ae`.
+Accepted edges remain 29, ranked hypotheses remain 45, terminal families become
+99, and stable current account-qualified after-all-cost edges remain zero.
+Registry SHA-256 is
+`d8ca22c91a98d42fcd1ed63b532eeb1eeacf83f15d97be7c0198ea5b13639e5e`,
+and the rebound durability-audit SHA-256 is
+`e84cb6c9da66aed936e5bbab58ea87f48e6c7f1cb29640a0b37233e6fb393b72`.

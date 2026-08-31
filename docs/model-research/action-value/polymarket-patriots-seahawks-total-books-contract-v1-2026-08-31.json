@@ -1,0 +1,176 @@
+{
+  "schema_version": "polymarket-nfl-monotone-two-leg-books-contract-v1",
+  "frozen_at_utc": "2026-08-31T11:27:46.716Z",
+  "contract_path": "docs/model-research/action-value/polymarket-patriots-seahawks-total-books-contract-v1-2026-08-31.json",
+  "purpose": "Test only the deterministic best retained Over 24.5 plus Under 26.5 package with one exact current two-token public book batch.",
+  "metadata_source": {
+    "path": "docs/model-research/action-value/polymarket-patriots-seahawks-exact-event-result-v1-2026-08-31.json",
+    "file_sha256": "ce8867da28da5b5f90040317591adf71ef070c7d5b014511a17586fd60e9221f",
+    "result_sha256": "e62d7b8a93a2a11197058d631e2fea88a408cfa30bd2dda6a9df54998b524d36"
+  },
+  "prefilter_source": {
+    "path": "docs/model-research/action-value/polymarket-patriots-seahawks-monotone-prefilter-result-v1-2026-08-31.json",
+    "file_sha256": "2fc48200ee8bc396bb46433aec179694e465af9e486c6a6e2901614c96fd5837",
+    "result_sha256": "2658f410b44f2a689c528b82f94f71c6459f5f52729824cd5f58fb22e920cc38"
+  },
+  "gamma_prefilter": {
+    "displayed_price_sum_pUSD": "0.995",
+    "optimistic_headroom_pUSD": "0.005",
+    "strict_displayed_candidate_count": 2,
+    "tested_relation_count": 291,
+    "role": "rejection_only_never_acceptance_or_promotion_evidence"
+  },
+  "markets": [
+    {
+      "name": "over_24_5",
+      "id": "3920597",
+      "question": "Patriots vs. Seahawks: O/U 24.5",
+      "sports_market_type": "totals",
+      "line": 24.5,
+      "neg_risk": false,
+      "condition_id": "0xd53260af6fc0984d0309891e3e78f611c9ab899d2bcbed2172f7d2f77081111e",
+      "outcomes": ["Over", "Under"],
+      "outcome_prices": ["0.91", "0.09"],
+      "tokens": [
+        "70261770742024491788956274319548274940596644909368031506630098114705295881381",
+        "75154197157124054188481581969773971392959430501453235674701232999633716301657"
+      ],
+      "required_rule_fragments": [
+        "resolve to \"Over\" if the Patriots and Seahawks combine to score 25 or more points",
+        "If the combined total is less than 25, this market will resolve to \"Under\".",
+        "If the game is canceled entirely, with no make-up game, this market will resolve 50-50."
+      ]
+    },
+    {
+      "name": "under_26_5",
+      "id": "3920599",
+      "question": "Patriots vs. Seahawks: O/U 26.5",
+      "sports_market_type": "totals",
+      "line": 26.5,
+      "neg_risk": false,
+      "condition_id": "0x31b13613da0c27137d012747d258e4cb222d37ab550fcab955f7ba6f4415e217",
+      "outcomes": ["Over", "Under"],
+      "outcome_prices": ["0.915", "0.085"],
+      "tokens": [
+        "40603045872379065733806371471343757795735080118722142502669271383727371371340",
+        "100582523633648691026859211210122211339178781542739005720924257108959435725006"
+      ],
+      "required_rule_fragments": [
+        "resolve to \"Over\" if the Patriots and Seahawks combine to score 27 or more points",
+        "If the combined total is less than 27, this market will resolve to \"Under\".",
+        "If the game is canceled entirely, with no make-up game, this market will resolve 50-50."
+      ]
+    }
+  ],
+  "package": {
+    "name": "over_24_5_plus_under_26_5",
+    "token_names": ["over_24_5_yes", "under_26_5_yes"]
+  },
+  "tokens": {
+    "over_24_5_yes": {
+      "condition_id": "0xd53260af6fc0984d0309891e3e78f611c9ab899d2bcbed2172f7d2f77081111e",
+      "gamma_market_id": "3920597",
+      "gamma_price_pUSD": "0.91",
+      "neg_risk": false,
+      "question": "Patriots vs. Seahawks: O/U 24.5",
+      "side": "Over",
+      "token_id": "70261770742024491788956274319548274940596644909368031506630098114705295881381"
+    },
+    "under_26_5_yes": {
+      "condition_id": "0x31b13613da0c27137d012747d258e4cb222d37ab550fcab955f7ba6f4415e217",
+      "gamma_market_id": "3920599",
+      "gamma_price_pUSD": "0.085",
+      "neg_risk": false,
+      "question": "Patriots vs. Seahawks: O/U 26.5",
+      "side": "Under",
+      "token_id": "100582523633648691026859211210122211339178781542739005720924257108959435725006"
+    }
+  },
+  "payoff_proof": {
+    "guaranteed_floor_per_share_pUSD": "1",
+    "market_direction_forecast_required": false,
+    "invariant": "Over 24.5 plus Under 26.5 pays one below 25, two at 25 or 26, one at 27 or above, and one on cancellation because both legs resolve 50-50.",
+    "states": [
+      {
+        "state": "total_at_most_24",
+        "payouts": {"over_24_5_yes": "0", "under_26_5_yes": "1"}
+      },
+      {
+        "state": "total_25_or_26",
+        "payouts": {"over_24_5_yes": "1", "under_26_5_yes": "1"}
+      },
+      {
+        "state": "total_at_least_27",
+        "payouts": {"over_24_5_yes": "1", "under_26_5_yes": "0"}
+      },
+      {
+        "state": "canceled_no_makeup",
+        "payouts": {"over_24_5_yes": "0.5", "under_26_5_yes": "0.5"}
+      }
+    ],
+    "unqualified_risk": "Independent condition disputes, inconsistent resolutions, oracle error, settlement delay, non-atomic execution, and capital opportunity cost can weaken the common-rule floor."
+  },
+  "execution": {
+    "book_request_count": 1,
+    "candidate_gate": "strictly positive five-pUSD common-rule floor after complete current depth, current exact fees, one adverse tick per leg, no rebate credit, no more than five seconds source skew, and no more than five seconds oldest-book age",
+    "candidate_stress_name": "one_adverse_tick",
+    "fee_request_rule": "Request both current token fee rates only if the complete five-share package remains gross-positive after one adverse tick per leg.",
+    "fee_schedule": {
+      "exponent": 1,
+      "rate": 0.05,
+      "rebateRate": 0.15,
+      "takerOnly": true
+    },
+    "maximum_book_age_ms": 5000,
+    "maximum_book_timestamp_skew_ms": 5000,
+    "maximum_fee_requests": 2,
+    "quantity_shares_each_leg": "5",
+    "rebate_credit_pUSD": "0",
+    "retry_count": 0,
+    "stress_ticks": {"actual": 0, "one_adverse_tick": 1, "five_adverse_ticks": 5},
+    "tick_size": "0.01"
+  },
+  "implementation": {
+    "path": "tools/screen_polymarket_exact_two_leg_package.py",
+    "sha256": "374fcc3c3485c466b4929a91256450bdc7db70f93ef4c6bda627e05fe8938327"
+  },
+  "dependency_implementations": [
+    {
+      "path": "src/simple_ai_trading/polymarket_fees.py",
+      "sha256": "4002aa8008874708931cc182f352adf436a65baee24e23bfc72617acdf127c8d"
+    }
+  ],
+  "outputs": {
+    "books_raw_path": "data/polymarket-patriots-seahawks-total-books-v1/raw/books.json",
+    "fee_raw_root": "data/polymarket-patriots-seahawks-total-books-v1/raw/fees",
+    "journal_path": "data/polymarket-patriots-seahawks-total-books-v1/request-journal.jsonl",
+    "result_path": "docs/model-research/action-value/polymarket-patriots-seahawks-total-books-result-v1-2026-08-31.json"
+  },
+  "source_contracts": [
+    {
+      "url": "https://docs.polymarket.com/api-reference/market-data/get-order-books-request-body",
+      "use": "official public unauthenticated POST batch book contract"
+    },
+    {
+      "url": "https://docs.polymarket.com/api-reference/market-data/get-fee-rate-by-path-parameter",
+      "use": "official public unauthenticated current token fee-rate contract used only after the gross stress gate"
+    }
+  ],
+  "stopping_rules": {
+    "accepted_edge_from_one_snapshot": false,
+    "deployment_ready_from_one_snapshot": false,
+    "failed_candidate_gate": "terminalize this exact event pair without refetch, retry, or selecting the retained 49ers-Rams sibling",
+    "passed_candidate_gate": "candidate only; require one independent positive recurrence before any order-capable work"
+  },
+  "authority": {
+    "account_requests": 0,
+    "credentials_used": false,
+    "funds_used": false,
+    "orders_or_transactions": 0,
+    "protected_capture_touched": false,
+    "public_unauthenticated_read_only_requests_maximum": 3,
+    "signed_requests": 0,
+    "trading_authority": false
+  },
+  "contract_sha256": "cff83822356354609fe1debed3d260405a80e57bb95a9f9cce933ee41d8bef71"
+}

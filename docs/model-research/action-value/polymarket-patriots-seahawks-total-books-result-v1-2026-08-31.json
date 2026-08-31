@@ -1,0 +1,158 @@
+{
+  "adjudication": {
+    "accepted_edge": false,
+    "deployment_ready": false,
+    "next_action": "terminalize_this_exact_event_without_refetch_or_retry",
+    "passes_frozen_candidate_gate": false,
+    "profitability_claim": false
+  },
+  "authority": {
+    "account_requests": 0,
+    "credentials_used": false,
+    "funds_used": false,
+    "orders_or_transactions": 0,
+    "protected_capture_touched": false,
+    "public_unauthenticated_read_only_requests_maximum": 3,
+    "signed_requests": 0,
+    "trading_authority": false
+  },
+  "capture": {
+    "book_receipt": {
+      "completed_at_ms": 1788175827711,
+      "method": "POST",
+      "name": "exact-two-token-book-batch",
+      "phase": "completed",
+      "raw_path": "data/polymarket-patriots-seahawks-total-books-v1/raw/books.json",
+      "request_body_sha256": "ce035c7dc02ae1cf9842f01748440d6fb27dde4e86247cd5fd921a953a047024",
+      "requested_at_ms": 1788175827597,
+      "response_bytes": 1559,
+      "response_sha256": "1051a5ea39313d2bc9c744acc0575ad5b377b4b0e24eee1c382c8f6a5b5d8ab4",
+      "status_code": 200,
+      "url": "https://clob.polymarket.com/books"
+    },
+    "book_timestamp_skew_ms": 2055,
+    "fee_receipts": {},
+    "oldest_book_age_ms": 11031,
+    "request_journal": {
+      "path": "data/polymarket-patriots-seahawks-total-books-v1/request-journal.jsonl",
+      "sha256": "b2c217f3a82c44a5cedb0afc0d313d4883a833beef24b7f35882cef7b3a1bf60"
+    },
+    "within_frozen_age_gate": false,
+    "within_frozen_skew_gate": true
+  },
+  "contract": {
+    "path": "docs/model-research/action-value/polymarket-patriots-seahawks-total-books-contract-v1-2026-08-31.json",
+    "sha256": "cff83822356354609fe1debed3d260405a80e57bb95a9f9cce933ee41d8bef71"
+  },
+  "created_at_utc": "2026-08-31T11:30:27.721575Z",
+  "economics": {
+    "actual": {
+      "adverse_ticks_per_leg": 0,
+      "after_current_fee_profit_floor_pUSD": null,
+      "cost_pUSD": "5.55",
+      "current_fee_pUSD": null,
+      "fills": [
+        {
+          "cost_pUSD": "4.85",
+          "fee_pUSD": null,
+          "fills": [
+            {
+              "price_pUSD": "0.97",
+              "quantity_shares": "5"
+            }
+          ]
+        },
+        {
+          "cost_pUSD": "0.7",
+          "fee_pUSD": null,
+          "fills": [
+            {
+              "price_pUSD": "0.14",
+              "quantity_shares": "5"
+            }
+          ]
+        }
+      ],
+      "optimistic_zero_fee_profit_floor_pUSD": "-0.55"
+    },
+    "five_adverse_ticks": null,
+    "one_adverse_tick": {
+      "adverse_ticks_per_leg": 1,
+      "after_current_fee_profit_floor_pUSD": null,
+      "cost_pUSD": "5.65",
+      "current_fee_pUSD": null,
+      "fills": [
+        {
+          "cost_pUSD": "4.9",
+          "fee_pUSD": null,
+          "fills": [
+            {
+              "price_pUSD": "0.98",
+              "quantity_shares": "5"
+            }
+          ]
+        },
+        {
+          "cost_pUSD": "0.75",
+          "fee_pUSD": null,
+          "fills": [
+            {
+              "price_pUSD": "0.15",
+              "quantity_shares": "5"
+            }
+          ]
+        }
+      ],
+      "optimistic_zero_fee_profit_floor_pUSD": "-0.65"
+    }
+  },
+  "gamma_prefilter": {
+    "displayed_price_sum_pUSD": "0.995",
+    "optimistic_headroom_pUSD": "0.005",
+    "role": "rejection_only_never_acceptance_or_promotion_evidence",
+    "strict_displayed_candidate_count": 2,
+    "tested_relation_count": 291
+  },
+  "implementation": {
+    "path": "tools/screen_polymarket_exact_two_leg_package.py",
+    "sha256": "374fcc3c3485c466b4929a91256450bdc7db70f93ef4c6bda627e05fe8938327"
+  },
+  "payoff_proof": {
+    "guaranteed_floor_per_share_pUSD": "1",
+    "invariant": "Over 24.5 plus Under 26.5 pays one below 25, two at 25 or 26, one at 27 or above, and one on cancellation because both legs resolve 50-50.",
+    "market_direction_forecast_required": false,
+    "states": [
+      {
+        "payouts": {
+          "over_24_5_yes": "0",
+          "under_26_5_yes": "1"
+        },
+        "state": "total_at_most_24"
+      },
+      {
+        "payouts": {
+          "over_24_5_yes": "1",
+          "under_26_5_yes": "1"
+        },
+        "state": "total_25_or_26"
+      },
+      {
+        "payouts": {
+          "over_24_5_yes": "1",
+          "under_26_5_yes": "0"
+        },
+        "state": "total_at_least_27"
+      },
+      {
+        "payouts": {
+          "over_24_5_yes": "0.5",
+          "under_26_5_yes": "0.5"
+        },
+        "state": "canceled_no_makeup"
+      }
+    ],
+    "unqualified_risk": "Independent condition disputes, inconsistent resolutions, oracle error, settlement delay, non-atomic execution, and capital opportunity cost can weaken the common-rule floor."
+  },
+  "result_sha256": "2658c04330fdeaa7f39b4a9dc842a079c7e81ef1feeeba75ce74384e328338ae",
+  "schema_version": "polymarket-exact-two-leg-package-result-v1"
+}

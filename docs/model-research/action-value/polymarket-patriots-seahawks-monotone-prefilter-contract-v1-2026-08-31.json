@@ -1,0 +1,38 @@
+{
+  "schema_version": "polymarket-exact-nfl-monotone-prefilter-contract-v1",
+  "frozen_at_utc": "2026-08-31T11:25:52.156Z",
+  "contract_path": "docs/model-research/action-value/polymarket-patriots-seahawks-monotone-prefilter-contract-v1-2026-08-31.json",
+  "question": "Do any exact full-game moneyline, spread, or total monotone packages in the first source-selected nonconsumed NFL event cost strictly less than their one-pUSD deterministic payout floor at same-response rejection-only Gamma prices?",
+  "metadata_source": {
+    "path": "docs/model-research/action-value/polymarket-patriots-seahawks-exact-event-result-v1-2026-08-31.json",
+    "file_sha256": "ce8867da28da5b5f90040317591adf71ef070c7d5b014511a17586fd60e9221f",
+    "result_sha256": "e62d7b8a93a2a11197058d631e2fea88a408cfa30bd2dda6a9df54998b524d36",
+    "raw_response_sha256": "a3a1c23e2e9fc2944f30f0fafdebe42f4a597ada4dd2918e47c9155213c966c3"
+  },
+  "decision_contract": {
+    "gamma_role": "rejection_only_never_acceptance_or_promotion",
+    "book_request_permitted_only_if": "At least one exact rule-proved package has a side-specific displayed sum strictly below one pUSD.",
+    "candidate_selection": "Choose the lowest displayed sum across every exact full-game margin and total monotone relation; do not select by a discovery-page tuple.",
+    "stop_if": "Every displayed package is at or above one pUSD."
+  },
+  "authority": {
+    "network_requests": 0,
+    "book_requests": 0,
+    "fee_requests": 0,
+    "orders_or_transactions": 0,
+    "protected_capture_touched": false,
+    "trading_authority": false
+  },
+  "implementations": [
+    {
+      "path": "tools/adjudicate_polymarket_exact_nfl_monotone_prefilter.py",
+      "sha256": "6e7119c7827d04435378136fcca3e13378f752d9da102ea88c6a65ce4d9885cd"
+    },
+    {
+      "path": "tools/adjudicate_polymarket_exact_mlb_monotone_prefilter.py",
+      "sha256": "958a44d78029b9a1eb69a3771ce18e53ac1ed3c7bc161c8e4318beedce2cf99f"
+    }
+  ],
+  "output_path": "docs/model-research/action-value/polymarket-patriots-seahawks-monotone-prefilter-result-v1-2026-08-31.json",
+  "contract_sha256": "c79bfa78b125e657003ef85b0b5d47f4b7a367230da10be5dbe551c5f6cbbf4e"
+}

@@ -102,6 +102,15 @@ race. Reopen rank 34 only for a future episode whose bStock snapshot materially
 precedes the official exchange ex-dividend adjustment and whose current primary
 terms bind a strictly positive conservative net-distribution floor.
 
+The first source-selected nonconsumed NFL rank-30 event, Patriots vs. Seahawks,
+is terminal. Its retained rules proved 291 full-game margin and total monotone
+packages; two rejection-only Gamma sums were 0.995 pUSD, but the precommitted
+Over 24.5 plus Under 26.5 package cost 5.55 pUSD at exact asks for a 5 pUSD
+floor before fees and 5.65 pUSD after one adverse tick per leg. The oldest book
+was 11.031 seconds old, but freshness cannot rescue the independently negative
+zero-fee upper bound. Do not refresh this event or select the already observed
+49ers-Rams sibling after outcome access.
+
 The historical Binance Direct Stocks fee overlay ended at
 `2026-08-31T00:00:00Z`. Binance's August 28 extension announcement says the
 same 0.05% spread and 0.17-USD fee tiers continue through September 30, but the
