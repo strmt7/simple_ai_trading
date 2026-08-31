@@ -1,0 +1,104 @@
+{
+  "authority": {
+    "accepted_edge": false,
+    "credentials_permitted": false,
+    "funded_actions_permitted": false,
+    "live_trading_authority": false,
+    "orders_or_cancellations_permitted": false,
+    "profitability_claim": false
+  },
+  "candidate": {
+    "discovery_only": {
+      "displayed_no_price": "0.975",
+      "displayed_yes_price": "0.025",
+      "maximum_spread_cents": "4",
+      "minimum_size_shares": "20",
+      "total_daily_reward_pUSD": "50"
+    },
+    "event_end_date_utc": "2026-09-01",
+    "event_slug": "which-cities-face-tornado-risk-on-august-31-2026",
+    "market_slug": "which-cities-face-tornado-risk-on-august-31-2026-chicago-il",
+    "outcomes": [
+      "Yes",
+      "No"
+    ],
+    "question": "Will Chicago, IL face tornado risk on August 31?"
+  },
+  "capture": {
+    "activation_window_minutes": 30,
+    "book_max_event_age_ms": 15000,
+    "book_max_timestamp_skew_ms": 1000,
+    "one_attempt_only": true,
+    "receipt_max_span_ms": 8000,
+    "replacement_market_permitted": false,
+    "retry_permitted": false
+  },
+  "decision": {
+    "accepted_edge_possible": false,
+    "advance_to_prospective_paper_capture_only_when": [
+      "identity_fee_reward_and_freshness_gates_pass",
+      "one_tick_improved_equal_size_bids_are_nonmarketable_and_sum_below_one",
+      "both_fill_gross_profit_is_positive",
+      "one_hundred_times_displayed_book_competition_payback_does_not_exceed_remaining_reward_days"
+    ],
+    "publicly_proven_reward_payout_floor_pUSD": "0",
+    "stress_multipliers": [
+      1,
+      10,
+      100
+    ]
+  },
+  "frozen_at_utc": "2026-08-31T14:52:47.2515305Z",
+  "hypothesis": {
+    "market_direction_dependency": "both-fill YES plus NO complete-set economics are direction-neutral; every orphan fill is directional",
+    "statement": "paired resting YES and NO bids may capture complete-set spread plus liquidity rewards without forecasting market direction",
+    "status": "unobserved_under_this_contract"
+  },
+  "quote_rule": {
+    "maximum_spread_source": "exact sponsored reward configuration",
+    "post_quote_midpoint_method": "conditional top midpoint including complementary own ask",
+    "price": "best displayed bid plus one exact market tick",
+    "quantity": "exact reward minimum size",
+    "require_combined_bid_below_one": true,
+    "require_nonmarketable": true
+  },
+  "request_contract": {
+    "books_endpoint": "https://clob.polymarket.com/books",
+    "endpoint_classification": {
+      "books": {
+        "method": "POST",
+        "operation": "Get multiple public order books; public unauthenticated read-only documented endpoint.",
+        "primary_contract_url": "https://docs.polymarket.com/api-reference/orderbook/get-multiple-order-books"
+      },
+      "exact_reward": {
+        "method": "GET",
+        "operation": "Get raw rewards for a specific market; public unauthenticated read-only documented endpoint.",
+        "primary_contract_url": "https://docs.polymarket.com/api-reference/rewards/get-raw-rewards-for-a-specific-market"
+      },
+      "gamma": {
+        "method": "GET",
+        "operation": "Discover markets by exact slug; public unauthenticated read-only documented endpoint.",
+        "primary_contract_url": "https://docs.polymarket.com/market-data/discover-markets"
+      }
+    },
+    "exact_reward_endpoint_pattern": "https://clob.polymarket.com/rewards/markets/{condition_id}",
+    "gamma_endpoint": "https://gamma-api.polymarket.com/markets",
+    "gamma_params": {
+      "closed": "false",
+      "slug": "which-cities-face-tornado-risk-on-august-31-2026-chicago-il"
+    },
+    "maximum_public_requests": 3,
+    "response_byte_ceiling": 8388608,
+    "reward_params": {
+      "sponsored": "true"
+    },
+    "sequence": [
+      "exact_gamma_market",
+      "exact_sponsored_reward_configuration_if_identity_and_fee_gate_passes",
+      "two_token_books_if_reward_gate_passes"
+    ],
+    "terminal_cursor": "LTE="
+  },
+  "result_sha256": "25ed7ffeb6ab89366721e95a0ca5d11574a08e2df4052659632ada309017f091",
+  "schema_version": "polymarket-exact-paired-maker-reward-contract-v1"
+}

@@ -6862,3 +6862,36 @@ Registry SHA-256 becomes
 `e6f4afd492fb2ea9f9bb5f36cc844db5268f19918480bea868ff440043155e6d`,
 and the rebound durability-audit SHA-256 becomes
 `c5ec5512240cb91d6e10a8080afd59659eb91bca22bd242ff05c9cf0ac7fce62`.
+
+## Polymarket Chicago tornado reward-source rejection
+
+The current Polymarket Rewards discovery surface supplied a materially larger
+liquidity-reward lead: Chicago tornado risk on August 31 displayed 50 pUSD per
+day, a 20-share minimum, a 4-cent maximum spread, and zero competition. Those
+page values were frozen as discovery only and excluded from exact economics.
+
+The one-use exact Gamma request reconciled the active accepting market,
+condition, binary tokens, five-share order minimum, zero maker fee, and a
+20-share reward minimum, but reported a 4.5-cent reward spread rather than the
+displayed 4 cents. The conditional exact `sponsored=true` reward request then
+returned HTTP 200 with a terminal cursor and zero rows. The sequence stopped
+before books. The maximum publicly proved forward reward is zero, and the
+candidate is terminal without a profitability claim.
+
+Do not repeat either request, change the sponsored filter, substitute another
+observed tornado city after outcome access, or use the Rewards-page amount or
+competition display as funded economics. Reopen the family only for a distinct
+source-selected exact market whose Gamma condition and exact sponsored response
+reconcile to one active dated positive allocation before any book access, or a
+documented material aggregation change.
+
+Contract SHA-256 is
+`25ed7ffeb6ab89366721e95a0ca5d11574a08e2df4052659632ada309017f091`;
+canonical adjudication SHA-256 is
+`1e514db9565c9aacb6a9d0c9e11a2bfa371b892ee0c133dc43da02c64815b66a`.
+Accepted edges remain 29, ranked hypotheses remain 45, terminal families become
+108, and stable current account-qualified after-all-cost edges remain zero.
+Registry SHA-256 becomes
+`4c79d044f1cde823b1848fa13f47ea7fb0ebd0dda98209672158ff29d4f10fa3`,
+and the rebound durability-audit SHA-256 becomes
+`d9838da2a03c04fb0826736ce01228b3bbc940c1dc1db90981c825390e7963fe`.
