@@ -173,6 +173,11 @@ override prose.
 - Search-result snippets, locale mirrors, and cached previews are discovery
   leads only. Open and retain the current primary page or endpoint before
   source-binding a rate, fee, eligibility rule, inventory, or effective date.
+- When one retained primary announcement covers several exact events, enumerate
+  every sibling and apply the cheapest independent decisive gate to the whole
+  set before researching them serially. If shared terms leave the conservative
+  cash-flow floor at zero, terminalize each exact sibling before issuer dates,
+  funding, or books; a different ticker does not make the shared terms new.
 - A browser-renderable dynamic documentation route is not automatically byte-
   retainable through a direct HTTP client. Before freezing an outcome-sensitive
   documentation capture, use an already hash-bound native index or preflight

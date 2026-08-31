@@ -2460,13 +2460,18 @@
         {
           "path": "docs/model-research/action-value/binance-googl-bstock-holiday-dividend-timing-adjudication-v1-2026-08-31.json",
           "result_sha256": "9afb3aea93660ceabc34630e0cc6f5d562e094c96d7a21f21438a6daac6b2ce6"
+        },
+        {
+          "path": "docs/model-research/action-value/binance-qcom-pypl-bstock-dividend-shared-net-floor-prefilter-v1-2026-08-31.json",
+          "result_sha256": "ddb99b6d56e18e82218c057ee180eacdd7d0b055daab6701c762120a7a0d64df"
         }
       ],
-      "current_status": "terminally_rejected_for_both_the_2026_GLW_and_current_GOOGL_episodes_GLW_had_its_gross_matching_Special_debit_1003_ms_after_snapshot_and_GOOGLs_holiday_adjusted_ex_dividend_date_equals_the_snapshot_date_while_the_prior_exact_GOOGL_Special_debit_arrived_7_ms_after_midnight_at_slightly_more_than_gross_the_current_public_net_distribution_floor_is_zero_no_current_book_funding_account_order_or_profit_claim_is_permitted_not_accepted_or_deployment_ready",
+      "current_status": "terminally_rejected_for_the_2026_GLW_GOOGL_QCOM_and_PYPL_episodes_GLW_had_its_gross_matching_Special_debit_1003_ms_after_snapshot_GOOGLs_holiday_adjusted_ex_dividend_date_equals_the_snapshot_date_and_prior_exact_gross_matching_debit_arrived_7_ms_after_midnight_while_the_already_retained_shared_QCOMB_PYPLB_GOOGLB_announcement_leaves_withholding_fees_costs_and_other_deductions_unbounded_so_QCOM_and_PYPL_each_have_zero_conservative_net_distribution_floor_before_issuer_date_or_market_requests_no_current_book_funding_account_order_or_profit_claim_is_permitted_not_accepted_or_deployment_ready",
       "latest_terminal_delta_status": "the_GOOGL_announcement_capture_retained_HTTP_200_and_failed_only_its_generic_trading_phrase_while_exact_symbol_wording_was_retained_the_SEC_filing_capture_failed_before_response_on_DNS_and_was_not_retried_offline_adjudication_bound_the_holiday_adjusted_ex_date_to_the_snapshot_and_prior_same_underlying_gross_matching_debit_no_market_book_account_credential_order_or_fund_request_was_made",
+      "latest_sibling_prefilter_status": "the_same_immutable_announcement_already_bound_QCOMB_and_PYPLB_snapshots_and_the_shared_net_after_withholding_fees_costs_and_other_deductions_semantics_because_no_deduction_ceiling_or_complete_formula_is_retained_each_exact_sibling_episode_has_a_zero_public_conservative_net_distribution_floor_and_was_terminalized_with_zero_new_requests_before_issuer_calendar_funding_or_book_work",
       "market_direction_forecast_required": false,
       "mechanism": "binance_bstock_dividend_perpetual_funding_timing_gap",
-      "next_action": "do_not_repeat_or_alias_either_consumed_GOOGL_source_capture_do_not_repeat_the_GLW_history_capture_and_do_not_request_GOOGL_or_GLW_books_or_funding_reopen_only_for_a_future_event_where_the_bStock_snapshot_materially_precedes_the_official_exchange_ex_dividend_adjustment_and_current_primary_terms_bind_a_strictly_positive_conservative_net_distribution_floor",
+      "next_action": "do_not_repeat_or_alias_either_consumed_GOOGL_source_capture_do_not_repeat_the_GLW_history_capture_and_do_not_request_GOOGL_GLW_QCOM_or_PYPL_books_funding_or_issuer_dates_for_these_exact_episodes_reopen_only_for_a_future_event_where_current_primary_terms_first_bind_a_strictly_positive_conservative_net_distribution_floor_and_the_bStock_snapshot_materially_precedes_the_official_exchange_ex_dividend_adjustment",
       "priority_rank": 34,
       "prohibited_shortcuts": [
         "assuming_the_GLW_special_funding_timestamp_from_AMAT_and_MSFT",
@@ -2981,7 +2986,7 @@
       "venue_scope": "Binance_TUSDUSDT_Spot_and_TrueUSD_bank_USD_redemption"
     }
   ],
-  "result_sha256": "c1ff9777a1d8b0782f708e228c0a921a95ebecc0f38c2a745625357df162a5ce",
+  "result_sha256": "6cd4204e8b3a4a75af1047c7a6d9ff36b0fb32b30322622ae06eb5d8ea5ebc29",
   "schema_version": "structural-edge-priority-registry-v1",
   "terminal_do_not_repeat": [
     {
@@ -3499,8 +3504,18 @@
       "canonical_result_sha256": "9c80f1a188c059890c682f16f367cc472667bda595482d5d0db26ebda2d014bb",
       "family": "polymarket_Patriots_Seahawks_half_quarter_team_period_and_spread_structural_graph_2026_09_09",
       "reason": "the_zero_network_v2_runner_exhausted_8508_distinct_half_quarter_team_period_and_spread_ladders_and_additive_partitions_for_8853_total_relations_when_combined_with_the_corrected_full_team_graph_zero_side_specific_and_zero_diagnostic_strict_sub_floor_candidates_the_best_remaining_period_package_cost_1_44_pUSD_for_a_1_pUSD_floor_do_not_repeat_reprice_or_request_books"
+    },
+    {
+      "canonical_result_sha256": "ddb99b6d56e18e82218c057ee180eacdd7d0b055daab6701c762120a7a0d64df",
+      "family": "binance_QCOMB_2026_dividend_net_distribution_floor_prefilter",
+      "reason": "the_already_consumed_multi_symbol_announcement_bound_the_QCOMB_snapshot_but_permits_withholding_taxes_fees_costs_and_other_deductions_without_a_ceiling_or_complete_formula_the_exact_QCOM_episode_therefore_has_a_zero_public_conservative_net_distribution_floor_and_is_terminal_before_issuer_date_funding_or_book_requests_do_not_repeat_or_alias_the_announcement_or_request_markets_for_this_episode"
+    },
+    {
+      "canonical_result_sha256": "ddb99b6d56e18e82218c057ee180eacdd7d0b055daab6701c762120a7a0d64df",
+      "family": "binance_PYPLB_2026_dividend_net_distribution_floor_prefilter",
+      "reason": "the_already_consumed_multi_symbol_announcement_bound_the_PYPLB_snapshot_but_permits_withholding_taxes_fees_costs_and_other_deductions_without_a_ceiling_or_complete_formula_the_exact_PYPL_episode_therefore_has_a_zero_public_conservative_net_distribution_floor_and_is_terminal_before_issuer_date_funding_or_book_requests_do_not_repeat_or_alias_the_announcement_or_request_markets_for_this_episode"
     }
   ],
-  "updated_at_utc": "2026-08-31T12:19:07Z",
+  "updated_at_utc": "2026-08-31T12:45:00Z",
   "usage_rule": "advance_the_highest_ranked_hypothesis_whose_retry_trigger_is_satisfied_otherwise_do_not_repeat_a_blocked_or_terminal_screen"
 }

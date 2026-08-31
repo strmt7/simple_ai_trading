@@ -102,6 +102,16 @@ race. Reopen rank 34 only for a future episode whose bStock snapshot materially
 precedes the official exchange ex-dividend adjustment and whose current primary
 terms bind a strictly positive conservative net-distribution floor.
 
+The same retained QCOMB/PYPLB/GOOGLB announcement is now exhausted at its
+cheapest shared gate. QCOMB snapshots on September 3 and PYPLB on September 4,
+and matching QCOMUSDT/PYPLUSDT histories were already source-bound, but Binance
+reinvests only the net dividend after withholding taxes, fees, costs, and other
+deductions without a retained ceiling or complete formula. The conservative
+public net-distribution floor is therefore zero for both exact episodes before
+issuer-calendar, funding, or book work. No new request was made. Do not research
+QCOM or PYPL issuer dates or markets for these episodes, and do not repeat or
+alias the consumed announcement.
+
 The first source-selected nonconsumed NFL rank-30 event, Patriots vs. Seahawks,
 is terminal. Its retained rules proved 291 full-game margin and total monotone
 packages; two rejection-only Gamma sums were 0.995 pUSD, but the precommitted

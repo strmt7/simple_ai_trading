@@ -124,7 +124,7 @@
       "why_not_stable_deployable": "Current rate remains conflict-qualified rather than proven, the evidence is from public wallets rather than the owned account, every external friction and best alternative is not bound, and future persistence is not guaranteed."
     }
   },
-  "result_sha256": "d86ef74ca37f66f414e0916dbaaefc851a461726359e7e16007f8e71386d12a9",
+  "result_sha256": "c9a25482f9984581a775ab2a02a73d4be35e0566e60ae8217d2eb6edd6e4f9f4",
   "routing": {
     "do_not_count_as_standalone_profit": [
       "advertised_or_public_rate_without_realized_cash",
@@ -134,12 +134,12 @@
     ],
     "next_research_priority": "Seek repeatable Tier A direct-cash mechanisms or materially improve Tier A account cost persistence evidence. Do not spend requests or tests merely increasing Tier C or Tier D counts while a Tier A trigger is closed.",
     "polymarket_next_literal_trigger": "Do not repeat the consumed V11 single-wallet activity pulse or its exact successful V12 receipt reconciliation. Wait for a material official rate, program, cross-asset payout, or economic-comparator change.",
-    "binance_next_literal_trigger": "Do not repeat or book-capture the terminal 2026 GLW timing-gap episode. Advance a genuinely distinct Tier A or Tier B monetary mechanism only when its registry retry trigger is satisfied; do not repeat exhausted all-symbol triangle, stablecoin-cycle, or official-document inventory screens on unchanged evidence."
+    "binance_next_literal_trigger": "Do not repeat or book-capture the terminal 2026 GLW, GOOGL, QCOM, or PYPL dividend-timing episodes. QCOM and PYPL fail the shared strictly-positive-net-distribution gate before issuer-calendar or market access. Advance a genuinely distinct Tier A or Tier B monetary mechanism only when its registry retry trigger is satisfied; do not repeat exhausted all-symbol triangle, stablecoin-cycle, or official-document inventory screens on unchanged evidence."
   },
   "schema_version": "accepted-edge-profitability-durability-audit-v1",
   "source_binding": {
     "accepted_edge_count": 29,
     "registry_path": "docs/model-research/structural-edge-priority-registry-v1.json",
-    "registry_result_sha256": "c1ff9777a1d8b0782f708e228c0a921a95ebecc0f38c2a745625357df162a5ce"
+    "registry_result_sha256": "6cd4204e8b3a4a75af1047c7a6d9ff36b0fb32b30322622ae06eb5d8ea5ebc29"
   }
 }
