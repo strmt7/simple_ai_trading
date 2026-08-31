@@ -3118,9 +3118,46 @@
       ],
       "retry_trigger": "new_official_Binance_TradFi_equity_option_listing_or_material_stock_option_settlement_fee_access_contract_unit_or_matching_TradFi_perpetual_architecture_change",
       "venue_scope": "Binance_public_TradFi_equity_options_and_exact_matching_USDT_TradFi_perpetuals"
+    },
+    {
+      "blocking_evidence": [
+        "a new distinct active BTC ETH or SOL option population or material option fee settlement tick or depth architecture change",
+        "an independently observed displayed one-option terminal floor above the exact 33.5 bips fixed fee and expiry-basis stress plus two ticks adverse funding and capital cost",
+        "exact synchronized option ask depth and perpetual entry depth at the common quantity",
+        "exact account option and futures fees margin funding settlement and exercise evidence",
+        "prospective recurrence across nonoverlapping expiry volatility funding and liquidity regimes",
+        "owned cash settlement and perpetual unwind after every orphan liquidation custody tax and operational cost"
+      ],
+      "canonical_artifacts": [
+        {
+          "path": "docs/model-research/action-value/binance-crypto-option-perpetual-lower-bound-retained-contract-v1-2026-08-31.json",
+          "result_sha256": "b31c691c728d7d2c7a5d7e13151c57139c6aad1c5fc22fb2be913edb6e5b9a60"
+        },
+        {
+          "path": "docs/model-research/action-value/binance-crypto-option-perpetual-lower-bound-retained-result-v1-2026-08-31.json",
+          "result_sha256": "90c05ed35db00da7e5b4a2d8ec6ac0a51367a1a768dc58a39ef479510d5aa745"
+        }
+      ],
+      "current_status": "unaccepted_direction_independent_long_crypto_option_plus_equal_opposite_USDT_perpetual_terminal_payoff_lower_bound_the_zero_network_hash_bound_screen_exhausted_all_1410_active_retained_BTC_ETH_SOL_options_1115_had_positive_entry_sides_and_two_SOL_calls_had_positive_gross_floors_the_best_SOL_260828_90_C_was_16_71090141_bips_but_the_frozen_33_5_bips_fixed_fee_and_expiry_basis_stress_alone_already_exceeded_it_before_two_ticks_adverse_funding_and_capital_cost_and_the_complete_after_stress_result_was_negative_41_09843077_bips_zero_survivors_zero_current_depth_requests_not_an_edge_or_deployment_ready",
+      "market_direction_forecast_required": false,
+      "mechanism": "binance_long_crypto_option_opposite_USDT_perpetual_terminal_payoff_lower_bound",
+      "next_action": "do_not_repeat_rebuild_or_current_depth_capture_the_retained_1410_option_population_reopen_only_for_a_new_distinct_active_option_population_material_fee_settlement_tick_depth_funding_basis_or_capital_rule_change_or_an_independently_observed_nonpolling_displayed_terminal_floor_that_strictly_exceeds_every_frozen_cost_then_freeze_one_exact_top_option_depth_request",
+      "priority_rank": 47,
+      "prohibited_shortcuts": [
+        "calling_the_two_positive_gross_SOL_rows_after_cost_profit",
+        "using_option_mark_last_trade_model_value_or_bid_instead_of_the_displayed_ask",
+        "assuming_absent_option_ask_quantity_is_executable_capacity",
+        "crediting_favorable_funding_or_zero_expiry_basis",
+        "ignoring_option_futures_settlement_tick_capital_or_non_atomic_orphan_costs",
+        "requesting_current_depth_after_the_best_gross_floor_failed_the_fixed_cost_gate_alone",
+        "calling_one_retained_snapshot_recurring_current_or_stable",
+        "using_credentials_accessing_accounts_or_placing_orders_without_separate_explicit_authority"
+      ],
+      "retry_trigger": "new_distinct_active_BTC_ETH_or_SOL_option_population_or_material_option_fee_settlement_tick_depth_funding_expiry_basis_or_capital_rule_change_or_an_independently_observed_nonpolling_displayed_single_option_terminal_floor_strictly_above_every_applicable_cost",
+      "venue_scope": "Binance_BTC_ETH_SOL_European_options_and_exact_matching_USDT_perpetuals"
     }
   ],
-  "result_sha256": "06ca44a66364f8bcd1d78b76d4e75f13f1431ce9437a5e7f7ce8c1f6af5ffd04",
+  "result_sha256": "7eeba81c9b93404372bd4833002c67c5a958d25e5b7de258f86c95968f70b247",
   "schema_version": "structural-edge-priority-registry-v1",
   "terminal_do_not_repeat": [
     {
@@ -3703,8 +3740,13 @@
       "canonical_result_sha256": "b72592efad26563aacc4e6d8611f15f3172039ffc220153ab824bf57231afcb3",
       "family": "binance_active_TradFi_equity_option_inventory_2026_08_31",
       "reason": "the_one_use_complete_public_options_exchangeInfo_request_returned_HTTP_200_and_zero_active_TRADFI_OPTIONS_EQUITY_rows_so_the_stock_option_plus_opposite_matching_TradFi_perpetual_terminal_lower_bound_has_no_current_deployed_population_and_stopped_before_every_ticker_futures_book_premium_funding_account_credential_order_or_fund_request_do_not_repeat_or_poll_reopen_only_on_rank_46s_literal_official_listing_or_material_architecture_trigger"
+    },
+    {
+      "canonical_result_sha256": "90c05ed35db00da7e5b4a2d8ec6ac0a51367a1a768dc58a39ef479510d5aa745",
+      "family": "binance_retained_BTC_ETH_SOL_single_long_option_opposite_perpetual_terminal_lower_bound",
+      "reason": "the_zero_network_hash_bound_screen_exhausted_all_1410_active_retained_crypto_options_1115_had_positive_entry_sides_and_only_SOL_260828_90_C_and_SOL_260828_92_C_had_positive_gross_terminal_floors_the_best_was_16_71090141_bips_but_33_5_bips_fixed_fee_and_expiry_basis_stress_alone_exceeded_it_and_complete_frozen_stress_reduced_it_to_negative_41_09843077_bips_zero_option_depth_or_current_market_requests_were_justified_do_not_repeat_or_rebuild_this_population_reopen_only_on_rank_47s_literal_trigger"
     }
   ],
-  "updated_at_utc": "2026-08-31T17:34:00Z",
+  "updated_at_utc": "2026-08-31T17:58:00Z",
   "usage_rule": "advance_the_highest_ranked_hypothesis_whose_retry_trigger_is_satisfied_otherwise_do_not_repeat_a_blocked_or_terminal_screen"
 }

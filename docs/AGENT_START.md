@@ -3338,3 +3338,31 @@ Registry SHA-256 becomes
 `06ca44a66364f8bcd1d78b76d4e75f13f1431ce9437a5e7f7ce8c1f6af5ffd04`,
 and durability-audit SHA-256 becomes
 `a0896ba8a9782234b2735e67553583118694715e8f65886416d6f73481d4ea1a`.
+
+## Binance retained crypto single-option terminal-floor rejection
+
+Before another venue request, reuse the hash-bound August 27 BTC, ETH, and SOL
+option ticker, futures book, exchange-info, and 500-row funding histories. A
+distinct one-option payoff identity was not covered by the earlier two-option
+conversion/reversal screen: long call plus equal short perpetual has gross floor
+`F_bid - K - call_ask`; long put plus equal long perpetual has gross floor
+`K - F_ask - put_ask` before expiry basis, funding, and costs.
+
+The zero-network screen exhausted all 1,410 eligible active options. Of 1,115
+positive-entry rows, only `SOL-260828-90-C` and `SOL-260828-92-C` had positive
+gross floors. The best was 0.17 USDT per unit, or 16.71090141 bips. The frozen
+33.5-bip option/futures fee plus expiry-basis stress alone exceeded that gross
+floor; two adverse ticks, adverse short funding, and capital cost reduced it to
+-41.09843077 bips. Zero rows survived, so no option depth or current market
+request is permitted. Do not rebuild or reprice this retained population.
+
+Contract SHA-256 is
+`b31c691c728d7d2c7a5d7e13151c57139c6aad1c5fc22fb2be913edb6e5b9a60`;
+result SHA-256 is
+`90c05ed35db00da7e5b4a2d8ec6ac0a51367a1a768dc58a39ef479510d5aa745`.
+Accepted edges remain 29, ranked hypotheses become 47, terminal families become
+116, and stable current account-qualified after-all-cost edges remain zero.
+Registry SHA-256 becomes
+`7eeba81c9b93404372bd4833002c67c5a958d25e5b7de258f86c95968f70b247`,
+and durability-audit SHA-256 becomes
+`9fe9eff62c4d11e94d7791bbba3edfbb89d8bc26b0f38da204b1ef38cf6a0485`.

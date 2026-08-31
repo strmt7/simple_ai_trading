@@ -7192,3 +7192,54 @@ Registry SHA-256 becomes
 `06ca44a66364f8bcd1d78b76d4e75f13f1431ce9437a5e7f7ce8c1f6af5ffd04`,
 and durability-audit SHA-256 becomes
 `a0896ba8a9782234b2735e67553583118694715e8f65886416d6f73481d4ea1a`.
+
+## Binance BTC ETH SOL single-option terminal-floor retained screen
+
+The stock-option deployment review exposed a stronger zero-request extension:
+the retained August 27 option/futures capture already contained 1,410 active
+BTC, ETH, and SOL crypto options plus synchronized executable-side perpetual
+books and 500 funding rows per asset. Earlier work screened two-option
+conversion/reversal parity, but not the simpler long-option terminal floor.
+
+For a unit European call bought at ask plus an equal short perpetual entered at
+bid, the terminal gross lower bound is `F_bid - K - call_ask` if the perpetual
+is closed at the option settlement underlying. For a put plus equal long
+perpetual it is `K - F_ask - put_ask`. Neither construction writes an option or
+requires a price forecast, but basis, funding, fees, ticks, capital, depth, and
+non-atomic risk remain real costs.
+
+The implementation was formatted, import-preflighted, and then exercised in a
+separate zero-economics preflight against every hash-bound source before the
+one-use contract was frozen. The production screen made zero network requests
+and exhaustively evaluated all 1,410 options. Exactly 1,115 had positive entry
+sides and exactly two had a positive displayed gross floor:
+
+- `SOL-260828-90-C`: 0.17 USDT per unit, 16.71090141 bips gross.
+- `SOL-260828-92-C`: 0.10 USDT per unit, 9.82994200 bips gross.
+
+The best row already lost against the frozen 33.5-bip option-entry,
+option-settlement, futures-round-trip, and expiry-basis stress before funding,
+capital, or two adverse ticks. Complete stress reduced the two rows to
+-41.09843077 and -47.97939017 bips. Futures top-level capacity passed at the
+0.05-unit common minimum, but the retained option ticker has no ask quantity;
+because zero rows survived the prior cost gate, no exact option depth or current
+market request was justified.
+
+Do not rebuild, reprice, or depth-capture this retained population. Reopen only
+for a distinct active option population, material fee/settlement/tick/depth/
+funding/basis/capital change, or an independently observed non-polling displayed
+terminal floor strictly above every applicable cost. No credentials, account
+state, orders, quotes, transfers, funds, paper trades, or live trades were used.
+
+Contract SHA-256 is
+`b31c691c728d7d2c7a5d7e13151c57139c6aad1c5fc22fb2be913edb6e5b9a60`;
+result SHA-256 is
+`90c05ed35db00da7e5b4a2d8ec6ac0a51367a1a768dc58a39ef479510d5aa745`;
+implementation SHA-256 is
+`04780a528d5708b9f6a7cdec3d38f29292254a2a7d7bea647287f08ef2f8363a`.
+Accepted edges remain 29, ranked hypotheses become 47, terminal families become
+116, and stable current account-qualified after-all-cost edges remain zero.
+Registry SHA-256 becomes
+`7eeba81c9b93404372bd4833002c67c5a958d25e5b7de258f86c95968f70b247`,
+and durability-audit SHA-256 becomes
+`9fe9eff62c4d11e94d7791bbba3edfbb89d8bc26b0f38da204b1ef38cf6a0485`.

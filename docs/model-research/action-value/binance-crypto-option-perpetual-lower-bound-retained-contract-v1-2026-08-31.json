@@ -1,0 +1,145 @@
+{
+  "schema_version": "binance-crypto-option-perpetual-lower-bound-retained-contract-v1",
+  "status": "frozen_before_zero_network_retained_economic_screen",
+  "frozen_at_utc": "2026-08-31T17:51:37.1362109Z",
+  "purpose": "exhaust every retained active BTC ETH and SOL long-option plus equal opposite USDT perpetual terminal-payoff lower bound before considering one exact option-depth request",
+  "implementation": {
+    "path": "tools/screen_binance_crypto_option_perpetual_lower_bound_retained.py",
+    "sha256": "04780a528d5708b9f6a7cdec3d38f29292254a2a7d7bea647287f08ef2f8363a"
+  },
+  "shared_dependency": {
+    "path": "tools/stress_binance_options_perpetual_conversion_retained.py",
+    "sha256": "0e3ef91b5de894c1bc6d10b213ff9d5b0ae4dda508138b09e94799dcbedf69d7"
+  },
+  "retained_lineage": [
+    {
+      "path": "docs/model-research/action-value/binance-options-perpetual-conversion-retained-prefilter-contract-v2.json",
+      "file_sha256": "0c6ddedbd749ce162d3dfe1bd3d0362d12971a0fd60a07d77108c39c5c02cb4a",
+      "canonical_contract_sha256": "5cbcc2f302b78da934d63801a58c56e640670e4b31935a6e2542536360502ee5",
+      "role": "source-bound crypto option perpetual identity population and HTTP observation-window correction"
+    },
+    {
+      "path": "docs/model-research/action-value/binance-options-perpetual-conversion-retained-stress-contract-v1.json",
+      "file_sha256": "b478fdce2e05f95b47a8256c49be5c603bfc369a114b12d4f0f9d22be35d6b3f",
+      "role": "retained fee funding basis tick capital and quantity stress semantics"
+    }
+  ],
+  "retained_sources": {
+    "options_exchange_info": {
+      "path": "data/binance-commodity-option-perpetual-lower-bound-v1/raw/options-exchange-info.raw",
+      "sha256": "81a8cb419821562c96537ec310e7043f40e2a63c7e96fb33d86a225f13b26449"
+    },
+    "options_all_tickers": {
+      "path": "data/binance-commodity-option-perpetual-lower-bound-v1/raw/options-all-tickers.raw",
+      "sha256": "ae550eff1af3dce6738f410916f1ac07315a2ef2afa661af11eec4e56b756dbc"
+    },
+    "futures_exchange_info": {
+      "path": "data/binance-commodity-option-perpetual-lower-bound-v1/raw/futures-exchange-info.raw",
+      "sha256": "7d05e44574d676b0faf054ecd378b8898a7ff81bcd3ca518d1b57ab9b394e3be"
+    },
+    "futures_all_book_tickers": {
+      "path": "data/binance-commodity-option-perpetual-lower-bound-v1/raw/futures-all-book-tickers.raw",
+      "sha256": "13a288b242261c14e1662e36ab672c255045940a054338595179db64d986b9fe"
+    },
+    "funding_histories": {
+      "BTCUSDT": {
+        "path": "data/binance-broad-crypto-funding-carry-preflight-v1/raw/07-funding-btcusdt.raw",
+        "sha256": "6b4219597b85ee51a7b0601ba1399b2775a4ca1356fe3db48c459376fad9b9a8"
+      },
+      "ETHUSDT": {
+        "path": "data/binance-broad-crypto-funding-carry-preflight-v1/raw/08-funding-ethusdt.raw",
+        "sha256": "73901ed47ae67f544b586133083ed8aefde10dcf52bd2a8574f4e05c0863d6cc"
+      },
+      "SOLUSDT": {
+        "path": "data/binance-broad-crypto-funding-carry-preflight-v1/raw/09-funding-solusdt.raw",
+        "sha256": "fd94adb008bca4e083a8097fa3c675134ccb06fb2936546ee86d6b7fbe62d297"
+      }
+    }
+  },
+  "population": {
+    "allowed_underlyings": [
+      "BTCUSDT",
+      "ETHUSDT",
+      "SOLUSDT"
+    ],
+    "expected_eligible_option_count": 1410,
+    "futures_contract_type": "PERPETUAL",
+    "futures_margin_asset": "USDT",
+    "futures_status": "TRADING",
+    "option_contract_type": "CRYPTO_OPTIONS",
+    "option_quote_asset": "USDT",
+    "option_status": "TRADING",
+    "option_underlying_type": "CRYPTO",
+    "option_unit": "1"
+  },
+  "identity": {
+    "call_construction": "buy one European call at displayed ask and short one equal-unit matching USDT perpetual at displayed bid",
+    "call_terminal_gross_floor_per_unit": "perpetual_entry_bid minus strike minus call_ask when the perpetual is exited at the option settlement underlying before basis funding and costs",
+    "put_construction": "buy one European put at displayed ask and long one equal-unit matching USDT perpetual at displayed ask",
+    "put_terminal_gross_floor_per_unit": "strike minus perpetual_entry_ask minus put_ask when the perpetual is exited at the option settlement underlying before basis funding and costs",
+    "option_writing_required": false,
+    "market_direction_forecast_required": false,
+    "perpetual_expiry_basis_assumed_zero_for_promotion": false,
+    "unit_currency": "USDT"
+  },
+  "observation": {
+    "options_ticker_http_interval_ms": {
+      "requested_at_ms": 1787801241208,
+      "completed_at_ms": 1787801241950
+    },
+    "futures_book_http_interval_ms": {
+      "requested_at_ms": 1787801242616,
+      "completed_at_ms": 1787801242847
+    },
+    "maximum_observation_window_skew_ms": 5000,
+    "maximum_futures_book_age_ms": 60000,
+    "option_closeTime_used_as_quote_timestamp": false
+  },
+  "stress": {
+    "one_option_taker_fee_bps": "2",
+    "one_option_settlement_fee_bps": "1.5",
+    "futures_round_trip_fee_bps": "10",
+    "perpetual_expiry_basis_bps": "20",
+    "adverse_ticks_per_leg": "2",
+    "funding_notional_multiplier": "1.25",
+    "capital_notional_multiplier": "2",
+    "annual_capital_hurdle": "0.10",
+    "funding_long_perpetual_rule": "never credit negative funding and use worst exact-length positive-rate rolling sum or worst 90-event positive-rate average extrapolation",
+    "funding_short_perpetual_rule": "never credit positive funding and use worst exact-length absolute-negative-rate rolling sum or worst 90-event absolute-negative-rate average extrapolation"
+  },
+  "decision": {
+    "gross_gate": "evaluate all 1410 active eligible options and retain only positive displayed option-ask plus executable-side perpetual-entry terminal floors",
+    "stress_gate": "require positive headroom after exact common minimum quantity futures top-level capacity 33.5 bips fixed fee and exit-basis stress two adverse ticks per leg direction-specific adverse funding 1.25 funding notional multiplier and two-notional 10 percent annual capital hurdle",
+    "option_depth": "the retained all-option ticker has no ask quantity so even a stress survivor authorizes only one separately frozen exact option-depth request for the deterministic highest after-stress-bips row",
+    "tie_break": "descending after-stress bips then lexical option symbol",
+    "accepted_edge": "never from this retained screen or one snapshot; exact option depth current synchronized futures depth exact account fees recurrence and owned settlement remain mandatory",
+    "no_survivor": "terminalize this retained single-option population and stop with zero requests"
+  },
+  "reporting": {
+    "maximum_rows": 1,
+    "retain_all_evaluated_rows": true,
+    "raw_payloads_printed": false
+  },
+  "authority": {
+    "retained_public_responses_reused": 7,
+    "new_public_requests": 0,
+    "authenticated_requests": 0,
+    "credentials_used": false,
+    "account_state_accessed": false,
+    "orders_quotes_transfers_or_wallet_actions": 0,
+    "funds_used": false,
+    "paper_or_live_trading_authority": false,
+    "accepted_edge_claim_permitted": false
+  },
+  "prohibited_shortcuts": [
+    "using option mark last trade model value or bid instead of the displayed ask",
+    "using perpetual mark or index instead of the executable entry book side",
+    "assuming perpetual expiry exit equals the option settlement index",
+    "crediting favorable funding or ignoring option futures settlement basis tick capital or orphan costs",
+    "treating absent option ask quantity as executable capacity",
+    "requesting depth for more than the deterministic top retained-stress survivor",
+    "calling a retained historical snapshot current recurring profit or deployment ready",
+    "using credentials accessing accounts accepting contracts or placing orders"
+  ],
+  "contract_sha256": "b31c691c728d7d2c7a5d7e13151c57139c6aad1c5fc22fb2be913edb6e5b9a60"
+}

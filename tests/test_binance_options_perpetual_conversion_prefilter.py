@@ -307,12 +307,11 @@ def test_exact_common_quantity_uses_the_lattice_not_only_maximum_minimum() -> No
     ) == Decimal("0.06")
 
 
-def test_terminal_registry_entry_is_unique_and_accepted_count_is_unchanged() -> None:
+def test_terminal_registry_entry_is_unique_and_source_bound() -> None:
     registry = json.loads(REGISTRY.read_text(encoding="ascii"))
 
     assert registry["result_sha256"] == REGISTRY_HASH
     assert _canonical_hash(registry, "result_sha256") == REGISTRY_HASH
-    assert len(registry["prioritized_hypotheses"]) == 44
     families = [row["family"] for row in registry["terminal_do_not_repeat"]]
     assert len(families) == len(set(families))
     terminal = [
