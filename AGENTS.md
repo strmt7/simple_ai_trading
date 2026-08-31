@@ -564,6 +564,13 @@ override prose.
   partitioning, source/value continuity, and equality semantics are proved;
   matching titles or nominal horizons alone prove nothing. Screen every scoped
   asset and both directions, then apply one deterministic global gate.
+- Prove that interval markets share the exact observation function before any
+  price or API request. A Binance candle open/close comparison, a Chainlink
+  start/end comparison, an interval TWAP-versus-start comparison, and a
+  noon-to-noon close comparison are different payoff functions even when the
+  asset and nominal endpoints look aligned. A source, timestamp endpoint,
+  aggregation, or tie-rule mismatch stops the package at the rendered-rule
+  discovery gate; it is not permission to request Gamma or CLOB data.
 - Gamma may encode `outcomes`, `outcomePrices`, and `clobTokenIds` as JSON
   strings inside otherwise parsed event objects. A retained-input preflight
   must assert the exact representation and exercise the production field

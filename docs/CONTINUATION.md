@@ -5,6 +5,22 @@ Development belongs only on `main`; do not create another development branch.
 
 ## Latest Edge R&D Checkpoint
 
+- A 2026-09-01 zero-request discovery pass rejected three superficially
+  attractive Polymarket shortcuts before Gamma or CLOB access. The current
+  official rendered hourly BTC rules use Binance one-hour candle open and
+  close, a five-minute SOL market uses Chainlink start/end values, and the
+  daily ETH market uses Binance noon-to-noon closes plus a 50/50 equality case.
+  These are different observation functions, so there is no proved
+  cross-horizon interval payoff identity. The same discovery pass found every
+  rendered Buy package for the new September 3 and September 5 BTC
+  range/threshold pairs and the August 31-September 6 ETH hit/daily-threshold
+  implications at or above its optimistic guaranteed floor. Discovery values
+  are excluded from economics: this pass authorizes zero deeper requests and
+  changes neither terminal-family counts nor the registry. `AGENTS.md` now
+  makes source, timestamp endpoint, aggregation, and tie-rule equivalence a
+  mandatory pre-price gate so nominally aligned titles cannot waste another
+  request.
+
 - The distinct active Polymarket `Ethereum above ___ on September 2?`
   threshold ladder satisfied rank 31's literal trigger. A prospectively frozen
   corrected v2 screen made one exact public unauthenticated Gamma event GET and
