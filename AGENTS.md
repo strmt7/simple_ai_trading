@@ -108,6 +108,10 @@ override prose.
   otherwise stop before building another collector. A zero-request retained-data
   audit may be kept only when it materially strengthens or corrects the existing
   adjudication, and it must update that family instead of creating a duplicate.
+- Do not run broad text searches over raw or canonical one-line JSON payloads.
+  List candidate files first, exclude `data/` and raw artifact trees from alias
+  searches, and parse only the exact JSON keys needed for retained-data audits.
+  This prevents multi-megabyte console dumps from wasting context and resources.
 - Before freezing any request for an existing family, inspect its complete
   registry row: canonical artifacts, current status, next action, every
   prohibited shortcut, and the literal retry trigger. A compact rank/trigger

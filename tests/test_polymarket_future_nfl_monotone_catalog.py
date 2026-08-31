@@ -6,6 +6,9 @@ import json
 from pathlib import Path
 
 from tools.adjudicate_polymarket_nfl_period_graph import adjudicate
+from tools.adjudicate_polymarket_nfl_catalog_side_specific import (
+    adjudicate as adjudicate_catalog_side_specific,
+)
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -270,6 +273,45 @@ def test_superseded_v1_and_corrected_v2_period_graph_are_preserved() -> None:
     assert result["adjudication"]["book_or_fee_request_permitted"] is False
 
 
+def test_complete_retained_nfl_catalog_is_corrected_before_any_more_books() -> None:
+    contract = _load(
+        ACTION_VALUE
+        / "polymarket-future-nfl-catalog-side-specific-adjudication-contract-v1-2026-08-31.json"
+    )
+    result = _load(
+        ACTION_VALUE
+        / "polymarket-future-nfl-catalog-side-specific-adjudication-v1-2026-08-31.json"
+    )
+
+    assert contract["contract_sha256"] == (
+        "d37c0924ab5c1d66ee95d4ad06956b0cbb24c031db18b5c733033e463d69611b"
+    )
+    assert _canonical_hash(contract, "contract_sha256") == contract["contract_sha256"]
+    assert result["result_sha256"] == (
+        "61fb2010d57b3295dd0ca859345c54404372dbd8b0f7ac4bca42d3fb0e40ddfd"
+    )
+    assert _canonical_hash(result, "result_sha256") == result["result_sha256"]
+    assert adjudicate_catalog_side_specific(contract) == result
+
+    screen = result["screen"]
+    assert screen["complete_relation_count"] == 4_621
+    assert screen["price_complete_relation_count"] == 4_621
+    assert screen["source_midpoint_like_strict_subfloor_count"] == 674
+    assert screen["strict_side_specific_subfloor_count"] == 0
+    assert screen["complete_relations_sha256"] == (
+        "4f66205743538c5491fd52246edb40f5a033bc27865195f20ebb5e842339d6fc"
+    )
+    groups = screen["event_family_summaries"]
+    assert len(groups) == 32
+    assert sum(row["relation_count"] for row in groups) == 4_621
+    assert all(row["strict_side_specific_subfloor_count"] == 0 for row in groups)
+    best = screen["best_side_specific_relation"]
+    assert best["event_slug"] == "nfl-den-kc-2026-09-15"
+    assert Decimal(best["side_specific_rejection_sum_pUSD"]) == Decimal("1.05")
+    assert result["authority"]["new_network_requests"] == 0
+    assert result["adjudication"]["book_or_fee_request_permitted"] is False
+
+
 def test_registry_routes_catalog_and_correction_without_acceptance() -> None:
     registry = _load(REGISTRY)
     assert registry["result_sha256"] == REGISTRY_HASH
@@ -288,6 +330,17 @@ def test_registry_routes_catalog_and_correction_without_acceptance() -> None:
         "51d0f5bda02fe124a7f02eb6f2365c358f8ec6a99d75b8f87bd8de8eec1d669c",
         "317ecd24a990456be2e8c64f644f7481309d7c5e663c33274d281270483a848f",
         "9c80f1a188c059890c682f16f367cc472667bda595482d5d0db26ebda2d014bb",
+        "61fb2010d57b3295dd0ca859345c54404372dbd8b0f7ac4bca42d3fb0e40ddfd",
     } <= hashes
     assert "25189367_ms_skew" in row["current_status"]
     assert "Patriots_Seahawks" in row["current_status"]
+    assert "zero_strict_sub_floor_candidates" in row["current_status"]
+    terminal = next(
+        item
+        for item in registry["terminal_do_not_repeat"]
+        if item["family"]
+        == "polymarket_future_NFL_2026_09_13_through_2026_09_21_complete_side_specific_monotone_catalog"
+    )
+    assert terminal["canonical_result_sha256"] == (
+        "61fb2010d57b3295dd0ca859345c54404372dbd8b0f7ac4bca42d3fb0e40ddfd"
+    )

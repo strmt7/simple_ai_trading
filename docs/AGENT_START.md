@@ -136,6 +136,14 @@ relations, zero were sub-floor; the best remaining period package cost 1.44
 pUSD. The correction used the same retained bytes and zero network requests.
 Never rebuild, reprice, or book-capture this graph.
 
+The older complete September 13-21 NFL catalog is now corrected too. Its 674
+apparent Gamma candidates came from midpoint-like `outcomePrices`. A zero-network
+audit repriced every one of its 4,621 proved monotone packages with side-specific
+`bestAsk` or conservative `1 - bestBid`; all fields were complete, zero packages
+were strictly below the one-pUSD floor, and the best cost 1.05 pUSD. Preserve the
+original catalog and Commanders-Cowboys depth loss as superseded methodology
+evidence. Never repeat, reprice, or book-capture that consumed NFL window.
+
 The historical Binance Direct Stocks fee overlay ended at
 `2026-08-31T00:00:00Z`. Binance's August 28 extension announcement says the
 same 0.05% spread and 0.17-USD fee tiers continue through September 30, but the
