@@ -195,11 +195,9 @@ def test_registry_terminalizes_consumed_reconciliation() -> None:
         and artifact["result_sha256"] == RESULT_HASH
         for artifact in rank_34["canonical_artifacts"]
     )
-    assert "terminally_rejected_for_the_2026_GLW_episode" in rank_34["current_status"]
-    assert "do_not_repeat_retry_paginate_alias_extend_or_repair" in (
-        rank_34["next_action"]
-    )
-    assert "future_independent_weekend_or_holiday" in rank_34["retry_trigger"]
+    assert "terminally_rejected_for_both_the_2026_GLW" in rank_34["current_status"]
+    assert "do_not_repeat_the_GLW_history_capture" in rank_34["next_action"]
+    assert "official_exchange_ex_dividend_adjustment" in rank_34["retry_trigger"]
     assert any(
         item["canonical_result_sha256"] == RESULT_HASH
         for item in registry["terminal_do_not_repeat"]

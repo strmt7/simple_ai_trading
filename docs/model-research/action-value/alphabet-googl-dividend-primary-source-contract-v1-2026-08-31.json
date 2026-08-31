@@ -1,0 +1,69 @@
+{
+  "schema_version": "public-source-capture-contract-v1",
+  "frozen_at_utc": "2026-08-31T10:55:30.0000000Z",
+  "contract_path": "docs/model-research/action-value/alphabet-googl-dividend-primary-source-contract-v1-2026-08-31.json",
+  "trigger": {
+    "registry_route": "rank_34_GOOGL_holiday_dividend_episode_primary_underlying_terms",
+    "novelty_evidence": "The exact Alphabet 2026 common-dividend amount and record date are required to classify the newly announced GOOGLB snapshot gap.",
+    "outcomes_viewed_before_freeze": true,
+    "discovery_values_are_economic_inputs": false
+  },
+  "question": "Does Alphabet's exact primary SEC exhibit bind a 0.22 USD common dividend and September 7 2026 record date for Class A stock?",
+  "request_name": "alphabet-googl-2026-q2-dividend-sec-exhibit",
+  "request": {
+    "method": "GET",
+    "url": "https://www.sec.gov/Archives/edgar/data/1652044/000165204426000066/googexhibit991q22026.htm",
+    "count": 1,
+    "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "endpoint_classification": {
+    "operation": "download one public issuer-filed SEC exhibit",
+    "security": "public unauthenticated read-only primary issuer filing GET",
+    "source_contract": "The SEC archive publishes Alphabet's filed earnings exhibit and exposes no account or mutation surface."
+  },
+  "response_byte_ceiling": 1000000,
+  "required_utf8_phrases": [
+    "quarterly cash dividend",
+    "$0.22 per share",
+    "September 14, 2026",
+    "September 7, 2026",
+    "Class A"
+  ],
+  "decision": {
+    "source_gate_only": "Every issuer amount, payment-date, record-date, and share-class phrase must exist in the one retained filing.",
+    "accepted_edge": false,
+    "profitability_proved": false,
+    "conditional_next_step": "Use the filing only to bind the gross dividend and holiday record date. Binance's net-after-deductions contract controls the conservative distribution floor."
+  },
+  "outputs": {
+    "raw_path": "data/binance-googl-bstock-holiday-dividend-v1/raw/02-alphabet-sec-exhibit.raw.html",
+    "journal_path": "data/binance-googl-bstock-holiday-dividend-v1/raw/02-request-journal.jsonl",
+    "result_path": "docs/model-research/action-value/alphabet-googl-dividend-primary-source-result-v1-2026-08-31.json"
+  },
+  "authority": {
+    "account_requests": 0,
+    "credentials_used": false,
+    "funds_used": false,
+    "orders_or_transactions": 0,
+    "protected_capture_touched": false,
+    "public_unauthenticated_read_only_requests": 1,
+    "signed_requests": 0,
+    "trading_authority": false
+  },
+  "implementations": [
+    {
+      "path": "tools/capture_public_source_contract.py",
+      "sha256": "d566a5a379c659c3da144d5e28449ebac9c01493bd39646f9cc3a6e697a83566"
+    },
+    {
+      "path": "tools/screen_polymarket_exact_two_leg_package.py",
+      "sha256": "374fcc3c3485c466b4929a91256450bdc7db70f93ef4c6bda627e05fe8938327"
+    },
+    {
+      "path": "tools/adjudicate_polymarket_exact_mlb_monotone_prefilter.py",
+      "sha256": "958a44d78029b9a1eb69a3771ce18e53ac1ed3c7bc161c8e4318beedce2cf99f"
+    }
+  ],
+  "retry_policy": "This exact SEC exhibit GET is one-use. Preserve any HTTP error or missing-term response and do not retry an alias. A passing source gate proves only the issuer's declared gross terms, not Binance entitlement, net distribution, timing, execution, profitability, or recurrence.",
+  "contract_sha256": "638afff3be67a9b8b551246e4b39a7f8984762e5cc9889fe36be0fd53ec0a09a"
+}

@@ -88,10 +88,19 @@ The GLWUSDT terminal special-funding reconciliation is consumed. Its complete
 ten-row delta contained one negative Special row matching the 0.28 USD gross
 dividend within 0.000000107 USDT, but it arrived 1.003 seconds after the bStock
 snapshot. The hypothesized pre-snapshot timing gap did not exist. Never repeat,
-retry, paginate, alias, extend, repair, or book-capture this 2026 episode. Reopen
-only for a future independent weekend or holiday dividend event under a new
-prospective contract with a positive source-bound conservative net-distribution
-floor.
+retry, paginate, alias, extend, repair, or book-capture this 2026 episode.
+
+The current GOOGL holiday-gap screen is also terminal. September 7 is a Nasdaq
+holiday, so the applicable ex-dividend rule moves the ex-date to September 4,
+the same date as Binance's GOOGLB snapshot; the apparent three-day record-date
+gap is not a pre-ex-date gap. Retained exact GOOGLUSDT history shows the prior
+gross-matching Special debit at `00:00:00.007Z`, only 7 ms after midnight, and
+current terms leave fees, costs, and other deductions unbounded, so the public
+conservative net-distribution floor is zero. Do not request current GOOGL books
+or funding, repeat either consumed source capture, or attempt a millisecond
+race. Reopen rank 34 only for a future episode whose bStock snapshot materially
+precedes the official exchange ex-dividend adjustment and whose current primary
+terms bind a strictly positive conservative net-distribution floor.
 
 The historical Binance Direct Stocks fee overlay ended at
 `2026-08-31T00:00:00Z`. Binance's August 28 extension announcement says the
@@ -1523,19 +1532,18 @@ qualification, deployment readiness, and new-capital profit remain fail-closed.
   SHA-256
   `416daf4d279e06a2353127e642d588a39ae85be0709c2d7498896c1d182847ee`.
 - Binance bStock dividend reinvestment versus stock TradFi-perpetual funding
-  has one closed family and one materially distinct timing candidate. Historical
+  has a closed direct family and terminal GLW and GOOGL timing episodes. Historical
   AMAT and MSFT special negative funding debits matched their declared gross
   dividends within three micro-USDT per matched unit. Because bStock
   receives only the net dividend after deductions, direct pre-adjustment long
   bStock plus short perpetual contributes `N-D=-F<0` before every other cost;
-  do not repeat it. GLW is different only because its Friday 2026-08-28 ex-date
-  precedes the Monday 2026-08-31 bStock snapshot. Do not assume the special
-  funding time or credit the gross dividend. After 2026-08-28, check funding
-  history once. Only if the actual special debit occurs before the snapshot may
-  one synchronized post-adjustment public book batch run after the conversion
-  pause and before the deposit-withdrawal pause. The public net-distribution
-  floor is zero, so this is unaccepted and not deployment ready. Canonical
-  candidate:
+  do not repeat it. GLW's exact Special debit arrived 1.003 seconds after its
+  snapshot, so its pre-snapshot premise failed. GOOGL's apparent holiday gap
+  also fails because its holiday-adjusted ex-date equals its snapshot date; its
+  prior same-underlying Special debit arrived 7 ms after midnight at slightly
+  more than gross, and its current public net-distribution floor is zero. Never
+  infer ex-date from record date alone, attempt a millisecond race, or request
+  books for either terminal episode. Canonical candidate:
   `binance-bstock-dividend-perp-funding-timing-gap-candidate-v1-2026-08-27.json`,
   result SHA-256
   `c073b61271886a5add71c2578caa889dfb97b1245327ae746bd517a91e52530d`.

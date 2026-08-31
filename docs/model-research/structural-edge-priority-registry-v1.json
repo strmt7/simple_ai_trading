@@ -2376,11 +2376,12 @@
     },
     {
       "blocking_evidence": [
-        "an actually observed GLWUSDT special negative dividend funding row before the 2026-08-31T00:00:00Z bStock snapshot",
-        "one synchronized post-adjustment depth-20 GLWBUSDT spot and GLWUSDT perpetual book batch after the conversion pause and before the deposit-withdrawal pause",
-        "an exact source-bound positive conservative bStock net-distribution floor rather than the 0.28 gross-dividend cap",
+        "an official exchange ex-dividend date materially after the bStock snapshot rather than merely a record date after the snapshot",
+        "an exact source-bound strictly positive conservative bStock net-distribution floor after every withholding fee cost and other deduction",
+        "confirmed pre-snapshot perpetual dividend-adjustment ordering before any synchronized event-time book request",
+        "one synchronized event-time depth-20 bStock and matching TradFi perpetual book batch only after the prior three gates pass",
         "complete entry exit funding fee depth latency liquidation capital tax custody and operational costs",
-        "at least three independent weekend or holiday ex-date-to-bStock-snapshot episodes with the same adjustment ordering and positive worst-episode after-cost economics"
+        "at least three independent episodes with the same adjustment ordering and positive worst-episode after-cost economics"
       ],
       "canonical_artifacts": [
         {
@@ -2398,13 +2399,29 @@
         {
           "path": "docs/model-research/action-value/binance-glw-special-funding-terminal-reconciliation-result-v2-2026-08-31.json",
           "result_sha256": "315b2ba2a4f30caba2a7be1181dff3a8d93bc0e28adb2ad9738623a90342bd4b"
+        },
+        {
+          "path": "docs/model-research/action-value/binance-googl-bstock-holiday-dividend-source-contract-v1-2026-08-31.json",
+          "result_sha256": "a0ad60e0ad7a8662c7337ae98c8a8f759c93ef559761789dabbc996269854e86"
+        },
+        {
+          "path": "docs/model-research/action-value/binance-googl-bstock-holiday-dividend-source-result-v1-2026-08-31.json",
+          "result_sha256": "dd7c7bb3172b567a27afa5ec1df811e5143d5f38f23980a811b2df7a3726f154"
+        },
+        {
+          "path": "docs/model-research/action-value/alphabet-googl-dividend-primary-source-contract-v1-2026-08-31.json",
+          "result_sha256": "638afff3be67a9b8b551246e4b39a7f8984762e5cc9889fe36be0fd53ec0a09a"
+        },
+        {
+          "path": "docs/model-research/action-value/binance-googl-bstock-holiday-dividend-timing-adjudication-v1-2026-08-31.json",
+          "result_sha256": "9afb3aea93660ceabc34630e0cc6f5d562e094c96d7a21f21438a6daac6b2ce6"
         }
       ],
-      "current_status": "terminally_rejected_for_the_2026_GLW_episode_the_consumed_one_request_nonoverlapping_history_delta_retained_10_complete_rows_including_one_negative_Special_row_at_2026_08_31T00_00_01_003Z_exactly_1003_ms_after_the_bStock_snapshot_its_0_279999893_USDT_per_unit_debit_matched_the_0_28_gross_dividend_within_0_000000107_USDT_but_no_pre_snapshot_special_adjustment_occurred_the_2026_execution_window_is_closed_no_book_capture_positive_net_distribution_floor_after_cost_recurrence_or_profit_is_proved_not_accepted_or_deployment_ready",
-      "latest_terminal_delta_status": "one_public_unauthenticated_GLWUSDT_funding_history_GET_returned_HTTP_200_10_rows_below_the_frozen_100_row_limit_one_negative_Special_row_matched_the_declared_gross_dividend_but_occurred_1003_ms_after_the_snapshot_so_the_pre_snapshot_timing_gap_did_not_exist_no_books_accounts_credentials_orders_or_funds_were_accessed",
+      "current_status": "terminally_rejected_for_both_the_2026_GLW_and_current_GOOGL_episodes_GLW_had_its_gross_matching_Special_debit_1003_ms_after_snapshot_and_GOOGLs_holiday_adjusted_ex_dividend_date_equals_the_snapshot_date_while_the_prior_exact_GOOGL_Special_debit_arrived_7_ms_after_midnight_at_slightly_more_than_gross_the_current_public_net_distribution_floor_is_zero_no_current_book_funding_account_order_or_profit_claim_is_permitted_not_accepted_or_deployment_ready",
+      "latest_terminal_delta_status": "the_GOOGL_announcement_capture_retained_HTTP_200_and_failed_only_its_generic_trading_phrase_while_exact_symbol_wording_was_retained_the_SEC_filing_capture_failed_before_response_on_DNS_and_was_not_retried_offline_adjudication_bound_the_holiday_adjusted_ex_date_to_the_snapshot_and_prior_same_underlying_gross_matching_debit_no_market_book_account_credential_order_or_fund_request_was_made",
       "market_direction_forecast_required": false,
       "mechanism": "binance_bstock_dividend_perpetual_funding_timing_gap",
-      "next_action": "do_not_repeat_retry_paginate_alias_extend_or_repair_the_consumed_GLWUSDT_terminal_history_delta_and_do_not_capture_2026_GLW_books_reopen_only_a_future_independent_weekend_or_holiday_dividend_episode_under_a_new_prospective_contract_with_a_positive_source_bound_net_distribution_floor",
+      "next_action": "do_not_repeat_or_alias_either_consumed_GOOGL_source_capture_do_not_repeat_the_GLW_history_capture_and_do_not_request_GOOGL_or_GLW_books_or_funding_reopen_only_for_a_future_event_where_the_bStock_snapshot_materially_precedes_the_official_exchange_ex_dividend_adjustment_and_current_primary_terms_bind_a_strictly_positive_conservative_net_distribution_floor",
       "priority_rank": 34,
       "prohibited_shortcuts": [
         "assuming_the_GLW_special_funding_timestamp_from_AMAT_and_MSFT",
@@ -2414,10 +2431,13 @@
         "using_one_minute_closes_as_executable_or_synchronized_quotes",
         "treating_the_passed_conversion_pause_as_proof_that_the_required_Special_row_had_occurred_or_polling_after_the_consumed_null_observation",
         "calling_one_calendar_gap_recurrence_profit_or_an_accepted_edge",
+        "treating_a_record_date_holiday_gap_as_an_ex_dividend_gap",
+        "assuming_record_date_equals_ex_date_without_the_exchange_calendar_and_settlement_rule",
+        "trying_to_race_a_millisecond_snapshot_to_funding_window_over_public_networks",
         "placing_orders_or_accessing_account_state_without_separate_explicit_authority"
       ],
-      "retry_trigger": "a_future_independent_weekend_or_holiday_bStock_dividend_episode_with_a_new_prospective_contract_a_source_bound_positive_conservative_net_distribution_floor_and_complete_precommitted_adjustment_ordering_before_any_book_request",
-      "venue_scope": "binance_GLWBUSDT_bStock_and_GLWUSDT_TradFi_perpetual_weekend_dividend_adjustment_timing_gap"
+      "retry_trigger": "a_future_independent_dividend_episode_where_the_bStock_snapshot_materially_precedes_the_official_exchange_ex_dividend_adjustment_not_merely_the_record_date_and_current_primary_terms_bind_a_strictly_positive_conservative_net_distribution_floor_before_a_complete_precommitted_adjustment_and_book_sequence",
+      "venue_scope": "binance_bStock_and_matching_TradFi_perpetual_dividend_adjustment_timing_gap"
     },
     {
       "blocking_evidence": [
@@ -2916,7 +2936,7 @@
       "venue_scope": "Binance_TUSDUSDT_Spot_and_TrueUSD_bank_USD_redemption"
     }
   ],
-  "result_sha256": "5f54a935d93a3e3b0380b178f8812f05880056f4477a28f4f672eabeaa7590f7",
+  "result_sha256": "dfe854e92f8de1af0b514f54a8c7ceeb49cb93fd168cad99bd81338b40d184c2",
   "schema_version": "structural-edge-priority-registry-v1",
   "terminal_do_not_repeat": [
     {
@@ -3409,8 +3429,13 @@
       "canonical_result_sha256": "315b2ba2a4f30caba2a7be1181dff3a8d93bc0e28adb2ad9738623a90342bd4b",
       "family": "binance_GLWUSDT_pre_snapshot_special_funding_timing_gap_2026_08_31",
       "reason": "the_frozen_one_request_terminal_history_delta_retained_10_complete_rows_and_the_only_negative_Special_row_matched_the_0_28_USD_gross_dividend_but_occurred_1003_ms_after_the_bStock_snapshot_so_the_pre_snapshot_timing_gap_did_not_exist_no_2026_book_capture_is_permitted_and_the_episode_is_terminal_reopen_only_on_rank_34s_literal_future_independent_episode_trigger"
+    },
+    {
+      "canonical_result_sha256": "9afb3aea93660ceabc34630e0cc6f5d562e094c96d7a21f21438a6daac6b2ce6",
+      "family": "binance_GOOGLB_GOOGLUSDT_holiday_adjusted_ex_date_snapshot_timing_2026_09_04",
+      "reason": "the_holiday_adjusted_official_ex_dividend_date_equals_the_bStock_snapshot_date_the_prior_exact_GOOGL_Special_debit_arrived_7_ms_after_midnight_at_slightly_more_than_gross_and_current_terms_leave_the_conservative_net_distribution_floor_at_zero_no_books_or_funding_were_requested_and_the_episode_is_terminal_reopen_only_on_rank_34s_literal_future_independent_episode_trigger"
     }
   ],
-  "updated_at_utc": "2026-08-31T10:31:24.588Z",
+  "updated_at_utc": "2026-08-31T11:16:21.251Z",
   "usage_rule": "advance_the_highest_ranked_hypothesis_whose_retry_trigger_is_satisfied_otherwise_do_not_repeat_a_blocked_or_terminal_screen"
 }
