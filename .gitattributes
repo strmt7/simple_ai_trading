@@ -62,6 +62,8 @@ data/polymarket-sol-sep4-cross-event-rewards-v1/** binary -eol
 data/polymarket-crypto-current-event-delta-v1/** binary -eol
 data/polymarket-crypto-current-event-delta-v2/** binary -eol
 data/polymarket-crypto-interval-composition-trades-v1/** binary -eol
+data/polymarket-presov-frantisek-olha-reward-source-v1/** binary -eol
+data/polymarket-presov-frantisek-olha-reward-book-v1/** binary -eol
 docs/model-research/binance/raw/** binary -eol
 docs/model-research/binance/spot-primary-peg-execution-overlay-*.json text eol=lf
 docs/model-research/binance/spot-stp-transfer-structural-value-preflight-*.json text eol=lf
@@ -79,6 +81,7 @@ docs/model-research/polymarket/raw/btc-above-72k-sep5-retained-reward-book-v1-20
 docs/model-research/polymarket/gta-vi-extended-look-under-20m-*.json text eol=lf
 docs/model-research/polymarket/raw/gta-vi-extended-look-under-20m-reward-source-v1-2026-08-31/** binary -eol
 docs/model-research/polymarket/raw/gta-vi-extended-look-under-20m-retained-reward-books-v1-2026-08-31/** binary -eol
+docs/model-research/polymarket/presov-frantisek-olha-*.json text eol=lf
 docs/model-research/action-value/round-075-frozen-v4-source/**/*.txt text eol=lf
 docs/archive/agent-history/*.md.txt text eol=lf
 docs/optimization/iteration-progress/**/*.csv text eol=lf

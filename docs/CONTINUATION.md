@@ -7277,3 +7277,50 @@ Registry SHA-256 becomes
 `87d53a5b052600a788db81d19cfdcac75b8f1c9fe616b42d116ce789f48b9a1a`,
 and durability-audit SHA-256 becomes
 `067a2014b02bafde283841940cbb3f1299b8e1fe9108f06cf238816bf2e0d014`.
+
+## Polymarket Prešov paired-maker reward rejection
+
+The current official Rewards page supplied a distinct first-page zero-alias
+lead: František Oľha for the 2026 Prešov mayoral election. Page values were
+selection evidence only. The frozen exact-source sequence reconciled the active
+accepting Gamma identity, ordered binary tokens, October 25 market end,
+five-share order minimum, zero maker fee, and the exact sponsored reward row.
+Exact funding is 55 pUSD/day, 20 shares, and 5.5 cents with about 54.22 days
+left. The impossible 100%-of-pool bound therefore exceeded the absolute
+20-pUSD minimum-size orphan ceiling and permitted one separately frozen book
+request.
+
+The two-token response returned HTTP 200 in 250 ms but had zero YES bids and
+zero NO asks. The only displayed executable sides were a 0.87 YES ask and a
+0.13 NO bid, so no complete paired best-bid state or both-fill gross exists.
+Both official book timestamps were also 221,182 ms old against the frozen
+10,000-ms ceiling. The runner retained the exact response and failed closed on
+the empty side before producing a normal book result; the zero-network
+adjudication preserves that failure rather than weakening the validator or
+refetching. The reusable runner is corrected prospectively to emit a terminal
+`rejected_incomplete_paired_book` result with null paired economics when an
+exact side is empty, so future valid empty-book outcomes no longer require an
+exception-path adjudication. The consumed runner bytes remain bound to commit
+`5ab5aa98e0f2be7d5400c147b9a39fd97565564a` and were not rerun.
+
+Publicly proved reward payout remains zero: the relative formula does not map
+`market_competitiveness` to a conservative owned share, and an empty-sided stale
+book supplies no fresh executable paired quote. Do not repeat the source or
+book requests, substitute a Prešov sibling after observing the result, or use
+Rewards-page values as economics. No credential, account, order, fund,
+transaction, or protected capture was used.
+
+Source-contract SHA-256 is
+`e1b09fb8ca8287b93a15b51d00859703767dd313b76023dca376547084e2a31d`;
+source-result SHA-256 is
+`1ca9fb12c928d6ca5f507f4aa118261c78df096f96edd81f8248fc568f9ed319`;
+book-contract SHA-256 is
+`2eea2c6e44bdc6ce407cc1ac140147dc9b3f033d6f9e2da66428a7f8f3b6136a`;
+canonical adjudication SHA-256 is
+`efa25a2905029b44e96684660a291d12d8d049f49204136da1840099e550669d`.
+Accepted edges remain 29, ranked hypotheses remain 47, terminal families become
+118, and stable current account-qualified after-all-cost edges remain zero.
+Registry SHA-256 becomes
+`0214595c90112a546ef535c26ff6a750dbfe6d975eae3fe8240008502fc694fe`,
+and durability-audit SHA-256 becomes
+`6c40ae46fc8247db33b1d6b14ab96e3c5a11b2eda8be1d327f63189b8fab75d2`.

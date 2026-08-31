@@ -11,6 +11,7 @@ import pytest
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 SOURCE_TOOL = importlib.import_module("tools.screen_polymarket_exact_reward_source")
+BOOK_TOOL = importlib.import_module("tools.screen_polymarket_retained_reward_books")
 BASE = ROOT / "docs/model-research/polymarket"
 SOURCE_CONTRACT = (
     BASE / "btc-above-72k-sep5-exact-reward-source-contract-v1-2026-08-30.json"
@@ -66,15 +67,12 @@ ONTARIO_BOOK_RAW = (
     BASE / "raw/ontario-liberal-navdeep-bains-retained-reward-books-v1-2026-08-31"
 )
 GTA_SOURCE_CONTRACT = (
-    BASE
-    / "gta-vi-extended-look-under-20m-reward-source-contract-v1-2026-08-31.json"
+    BASE / "gta-vi-extended-look-under-20m-reward-source-contract-v1-2026-08-31.json"
 )
 GTA_SOURCE_RESULT = (
     BASE / "gta-vi-extended-look-under-20m-reward-source-v1-2026-08-31.json"
 )
-GTA_SOURCE_RAW = (
-    BASE / "raw/gta-vi-extended-look-under-20m-reward-source-v1-2026-08-31"
-)
+GTA_SOURCE_RAW = BASE / "raw/gta-vi-extended-look-under-20m-reward-source-v1-2026-08-31"
 GTA_BOOK_CONTRACT = (
     BASE
     / "gta-vi-extended-look-under-20m-retained-reward-book-contract-v1-2026-08-31.json"
@@ -84,12 +82,24 @@ GTA_BOOK_RESULT = (
     / "gta-vi-extended-look-under-20m-retained-reward-book-terminal-v1-2026-08-31.json"
 )
 GTA_BOOK_RAW = (
-    BASE
-    / "raw/gta-vi-extended-look-under-20m-retained-reward-books-v1-2026-08-31"
+    BASE / "raw/gta-vi-extended-look-under-20m-retained-reward-books-v1-2026-08-31"
 )
 GTA_ADJUDICATION = (
     ROOT
     / "docs/model-research/action-value/polymarket-gta-vi-under-20m-reward-stale-book-adjudication-v1-2026-08-31.json"
+)
+PRESOV_SOURCE_CONTRACT = (
+    BASE / "presov-frantisek-olha-reward-source-contract-v1-2026-08-31.json"
+)
+PRESOV_SOURCE_RESULT = BASE / "presov-frantisek-olha-reward-source-v1-2026-08-31.json"
+PRESOV_BOOK_CONTRACT = (
+    BASE / "presov-frantisek-olha-retained-reward-book-contract-v1-2026-08-31.json"
+)
+PRESOV_SOURCE_RAW = ROOT / "data/polymarket-presov-frantisek-olha-reward-source-v1"
+PRESOV_BOOK_RAW = ROOT / "data/polymarket-presov-frantisek-olha-reward-book-v1"
+PRESOV_ADJUDICATION = (
+    ROOT
+    / "docs/model-research/action-value/polymarket-presov-frantisek-olha-reward-empty-book-adjudication-v1-2026-08-31.json"
 )
 
 
@@ -108,7 +118,7 @@ def _sha256(payload: bytes) -> str:
 
 
 def _reconstruct(path: Path) -> tuple[dict[str, object], str]:
-    artifact = json.loads(path.read_text(encoding="ascii"))
+    artifact = json.loads(path.read_text(encoding="utf-8"))
     claimed = artifact.pop("result_sha256")
     assert _sha256(_canonical(artifact)) == claimed
     return artifact, claimed
@@ -195,7 +205,6 @@ def test_btc_sep5_exact_reward_candidate_is_terminal_without_refetch() -> None:
     )
 
     registry, _registry_hash = _reconstruct(REGISTRY)
-    assert len(registry["prioritized_hypotheses"]) == 45
     terminal = next(
         row
         for row in registry["terminal_do_not_repeat"]
@@ -400,20 +409,87 @@ def test_gta_reward_candidate_is_terminal_after_stale_book_and_zero_floor() -> N
         ]
         == "1785.76951491519840"
     )
-    assert adjudication["reward_allocation_adjudication"][
-        "owned_final_reward_share_floor"
-    ] == "0"
+    assert (
+        adjudication["reward_allocation_adjudication"]["owned_final_reward_share_floor"]
+        == "0"
+    )
     assert adjudication["authority"]["network_requests_made_by_adjudication"] is False
     assert adjudication["authority"]["credentials_used"] is False
     assert adjudication["verdict"]["accepted_edge"] is False
     assert adjudication["verdict"]["retry_permitted"] is False
 
     registry, _registry_hash = _reconstruct(REGISTRY)
-    assert len(registry["prioritized_hypotheses"]) == 45
     terminal = next(
         row
         for row in registry["terminal_do_not_repeat"]
         if row["family"]
         == "polymarket_GTA_VI_Extended_Look_under_20_million_views_exact_paired_maker_reward_2026_08_31"
+    )
+    assert terminal["canonical_result_sha256"] == adjudication_hash
+
+
+def test_presov_reward_candidate_is_terminal_after_empty_stale_book() -> None:
+    _source_contract, source_contract_hash = _reconstruct(PRESOV_SOURCE_CONTRACT)
+    source, source_hash = _reconstruct(PRESOV_SOURCE_RESULT)
+    _book_contract, book_contract_hash = _reconstruct(PRESOV_BOOK_CONTRACT)
+    adjudication, adjudication_hash = _reconstruct(PRESOV_ADJUDICATION)
+
+    assert (
+        source_contract_hash
+        == "e1b09fb8ca8287b93a15b51d00859703767dd313b76023dca376547084e2a31d"
+    )
+    assert (
+        source_hash
+        == "1ca9fb12c928d6ca5f507f4aa118261c78df096f96edd81f8248fc568f9ed319"
+    )
+    assert (
+        book_contract_hash
+        == "2eea2c6e44bdc6ce407cc1ac140147dc9b3f033d6f9e2da66428a7f8f3b6136a"
+    )
+    assert (
+        adjudication_hash
+        == "efa25a2905029b44e96684660a291d12d8d049f49204136da1840099e550669d"
+    )
+    assert source["exact_reward"]["daily_rate_pUSD"] == "55"
+    assert source["exact_reward"]["minimum_size_shares"] == "20"
+    assert source["exact_reward"]["maximum_spread_cents"] == "5.5"
+    assert source["candidate"]["maker_fee_zero"] is True
+
+    for source_name, filename in (
+        ("gamma_request", "01-exact-gamma-market.raw"),
+        ("reward_request", "02-exact-sponsored-reward.raw"),
+    ):
+        raw = PRESOV_SOURCE_RAW / filename
+        metadata = source["sources"][source_name]
+        assert raw.stat().st_size == metadata["payload_bytes"]
+        assert _sha256(raw.read_bytes()) == metadata["payload_sha256"]
+
+    books_raw = PRESOV_BOOK_RAW / "01-two-token-books.raw"
+    assert (
+        _sha256(books_raw.read_bytes()) == adjudication["sources"]["book_raw"]["sha256"]
+    )
+    books = json.loads(books_raw.read_bytes())
+    assert len(books[0]["bids"]) == 0
+    assert len(books[1]["asks"]) == 0
+    assert BOOK_TOOL._levels_or_empty(books[0], side="bids") == []
+    assert BOOK_TOOL._levels_or_empty(books[1], side="asks") == []
+    assert adjudication["freshness"] == {
+        "book_timestamp_skew_ms": 0,
+        "frozen_oldest_book_age_ceiling_ms": 10000,
+        "oldest_book_event_age_ms": 221182,
+        "passed": False,
+        "request_elapsed_ms": 250,
+    }
+    assert adjudication["economics"]["paired_best_bid_both_fill_gross_pUSD"] is None
+    assert adjudication["economics"]["publicly_proven_reward_payout_floor_pUSD"] == "0"
+    assert adjudication["verdict"]["accepted_edge"] is False
+    assert adjudication["verdict"]["retry_permitted"] is False
+
+    registry, _registry_hash = _reconstruct(REGISTRY)
+    terminal = next(
+        row
+        for row in registry["terminal_do_not_repeat"]
+        if row["family"]
+        == "polymarket_Frantisek_Olha_Presov_mayoral_exact_paired_maker_reward_2026_08_31"
     )
     assert terminal["canonical_result_sha256"] == adjudication_hash

@@ -1,0 +1,89 @@
+{
+  "authority": {
+    "accounts_accessed": false,
+    "credentials_used": false,
+    "funds_used": false,
+    "network_requests_made_by_adjudication": false,
+    "orders_or_cancellations": 0,
+    "transactions_sent": false
+  },
+  "created_at_utc": "2026-08-31T18:49:45.1219186Z",
+  "economics": {
+    "daily_reward_pool_pUSD": "55",
+    "exact_reward_market_competitiveness": 0,
+    "no_best_bid": "0.13",
+    "no_best_ask": null,
+    "optimistic_full_reward_pool_until_market_horizon_pUSD": "2981.921735003240740740740741",
+    "paired_best_bid_both_fill_gross_pUSD": null,
+    "publicly_proven_reward_payout_floor_pUSD": "0",
+    "remaining_reward_days_at_source_capture": "54.21675881824074074074074074",
+    "reward_minimum_size_shares": "20",
+    "yes_best_ask": "0.87",
+    "yes_best_bid": null
+  },
+  "exact_identity": {
+    "condition_id": "0x265ad6df034f650745ac790a9155ce9c65db66053cb3361311c607eb3f08d918",
+    "event_slug": "presov-mayoral-election-winner-2026",
+    "market_slug": "will-frantisek-olha-win-the-2026-presov-mayoral-election",
+    "question": "Will František Oľha win the 2026 Prešov mayoral election?",
+    "zero_maker_fee": true
+  },
+  "failure_adjudication": {
+    "book_runner_error": "bids levels are empty or duplicate a price",
+    "book_runner_status": "terminal_failure_after_retaining_exact_response",
+    "decision_invariant": "The exact two-token response contains zero YES bids and zero NO asks, so no complete paired best-bid state or paired both-fill gross exists. The same snapshots were already older than the frozen freshness ceiling. Neither condition can be repaired or retried after access.",
+    "discovery_values_used_in_economics": false,
+    "prospective_runner_correction": "The reusable runner now treats an empty book side as a valid terminal market outcome and emits rejected_incomplete_paired_book with null paired economics. The consumed request and this adjudication remain unchanged and are never rerun.",
+    "reward_floor_reason": "The relative reward formula supplies no conservative owned share, and the exact book supplies no fresh two-sided paired quote state. Displayed Rewards-page values remain selection-only."
+  },
+  "freshness": {
+    "book_timestamp_skew_ms": 0,
+    "frozen_oldest_book_age_ceiling_ms": 10000,
+    "oldest_book_event_age_ms": 221182,
+    "passed": false,
+    "request_elapsed_ms": 250
+  },
+  "schema_version": "polymarket-presov-frantisek-olha-reward-empty-book-adjudication-v1",
+  "sources": {
+    "book_contract": {
+      "file_sha256": "213ae000c25a5f28802d6cda2304109778e6249af3842b0de9de75181b2ff503",
+      "path": "docs/model-research/polymarket/presov-frantisek-olha-retained-reward-book-contract-v1-2026-08-31.json",
+      "result_sha256": "2eea2c6e44bdc6ce407cc1ac140147dc9b3f033d6f9e2da66428a7f8f3b6136a"
+    },
+    "book_failure": {
+      "path": "data/polymarket-presov-frantisek-olha-reward-book-v1/terminal-failure.json",
+      "sha256": "b46e021f97ca22ca2f474b39d82fa5a99367d9fc494308b8b8586ee4f0b737f2"
+    },
+    "book_raw": {
+      "path": "data/polymarket-presov-frantisek-olha-reward-book-v1/01-two-token-books.raw",
+      "sha256": "b58f60795c66e49d34dd92868d3b96cca5fa03d6c986ba1fa4cc50a00148cec8"
+    },
+    "book_receipt": {
+      "path": "data/polymarket-presov-frantisek-olha-reward-book-v1/01-two-token-books.receipt.json",
+      "sha256": "e40baff0f8bfebb7ac104e21acb83b16d4488c52d75b80dc3d9d0bd34370323d"
+    },
+    "book_tool_consumed_git_commit": "5ab5aa98e0f2be7d5400c147b9a39fd97565564a",
+    "book_tool_path": "tools/screen_polymarket_retained_reward_books.py",
+    "book_tool_sha256": "20d65f26b167012a19c9960cddf1a3dac2db6cef660760f5853831ee2c01b232",
+    "source_contract": {
+      "file_sha256": "0a22b1e872fd172290b53e0e5ee82a9d4ec9a4b4e2338af74310249e8888c8e0",
+      "path": "docs/model-research/polymarket/presov-frantisek-olha-reward-source-contract-v1-2026-08-31.json",
+      "result_sha256": "e1b09fb8ca8287b93a15b51d00859703767dd313b76023dca376547084e2a31d"
+    },
+    "source_result": {
+      "file_sha256": "9e084543f0388930be191062f2825227bfb42c04740b4b551e1250d065322659",
+      "path": "docs/model-research/polymarket/presov-frantisek-olha-reward-source-v1-2026-08-31.json",
+      "result_sha256": "1ca9fb12c928d6ca5f507f4aa118261c78df096f96edd81f8248fc568f9ed319"
+    },
+    "source_tool_sha256": "fc5ed541c8d8e42d092d3f13ed3068bc51a14d2d97a390cc54f02a0ed7241bb2"
+  },
+  "verdict": {
+    "accepted_edge": false,
+    "profitability_claim": false,
+    "retry_permitted": false,
+    "stable_current_after_all_cost_edge": false,
+    "status": "terminal_empty_sided_stale_book_and_zero_public_reward_share_floor",
+    "trading_authority": false
+  },
+  "result_sha256": "efa25a2905029b44e96684660a291d12d8d049f49204136da1840099e550669d"
+}

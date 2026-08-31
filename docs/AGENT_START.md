@@ -23,6 +23,18 @@ safety gate, blocks Stop, or submits an order.
 
 ### Latest efficient structural screen
 
+The current first-page zero-alias Polymarket Rewards lead, František Oľha for
+the 2026 Prešov mayoral election, is source-bound and terminal. Exact Gamma and
+the exact `sponsored=true` condition row reconciled at 55 pUSD/day, 20 shares,
+5.5 cents, zero maker fee, and about 54.22 remaining days. The separately
+frozen two-token book then returned zero YES bids and zero NO asks; both book
+timestamps were also 221,182 ms old against the frozen 10,000-ms ceiling. No
+paired best-bid state or both-fill gross therefore exists, and the relative
+reward formula still supplies no conservative owned payout share. Do not retry,
+substitute a Prešov sibling, or use the Rewards-page display values as exact
+economics. Canonical adjudication SHA-256 is
+`efa25a2905029b44e96684660a291d12d8d049f49204136da1840099e550669d`.
+
 The August 31 Binance margin-pair removal is source-bound and terminal as a
 market-independent forced-settlement edge. The exact current primary article
 removes isolated `WBETH/ETH`, `BNSOL/SOL`, and `BFUSD/USDT`, suspends borrowing

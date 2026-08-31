@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 from datetime import datetime, timezone
+from decimal import Decimal
 import json
 from pathlib import Path
 
@@ -42,6 +43,15 @@ def _retained_result(path: Path, expected_result_sha256: str) -> dict[str, objec
     if claimed != expected_result_sha256 or _sha256(_canonical(result)) != claimed:
         raise ValueError(f"retained result binding changed: {path}")
     return result
+
+
+def _levels_or_empty(
+    book: dict[str, object], *, side: str
+) -> list[tuple[Decimal, Decimal]]:
+    raw = _list(book.get(side), name=f"{side} levels")
+    if not raw:
+        return []
+    return _levels(book, side=side)
 
 
 def run(*, contract_path: Path, output: Path, journal_dir: Path) -> dict[str, object]:
@@ -108,8 +118,8 @@ def run(*, contract_path: Path, output: Path, journal_dir: Path) -> dict[str, ob
             != market["order_minimum"]
         ):
             raise ValueError("book and retained Gamma order minimums disagree")
-        _levels(row, side="bids")
-        _levels(row, side="asks")
+        _levels_or_empty(row, side="bids")
+        _levels_or_empty(row, side="asks")
         timestamps.append(int(str(row.get("timestamp"))))
     capture = _mapping(contract.get("capture"), name="capture")
     received_ms = int(books_source["received_after_ms"])
@@ -121,38 +131,50 @@ def run(*, contract_path: Path, output: Path, journal_dir: Path) -> dict[str, ob
         and 0 <= event_age <= int(capture["book_max_event_age_ms"])
     )
     first, second = (books[token] for token in market["tokens"])
-    first_bids, first_asks = _levels(first, side="bids"), _levels(first, side="asks")
+    first_bids, first_asks = (
+        _levels_or_empty(first, side="bids"),
+        _levels_or_empty(first, side="asks"),
+    )
     second_bids, second_asks = (
-        _levels(second, side="bids"),
-        _levels(second, side="asks"),
-    )
-    first_bid, second_bid = (
-        max(x[0] for x in first_bids),
-        max(x[0] for x in second_bids),
-    )
-    first_ask, second_ask = (
-        min(x[0] for x in first_asks),
-        min(x[0] for x in second_asks),
+        _levels_or_empty(second, side="bids"),
+        _levels_or_empty(second, side="asks"),
     )
     quantity = reward["minimum_size"]
-    join = paired_buy_economics(
-        yes_price=first_bid,
-        no_price=second_bid,
-        quantity=quantity,
-    )
     tick = market["tick_size"]
-    improved_prices = (first_bid + tick, second_bid + tick)
-    improved_marketable = (
-        improved_prices[0] >= first_ask or improved_prices[1] >= second_ask
-    )
-    improved = paired_buy_economics(
-        yes_price=improved_prices[0],
-        no_price=improved_prices[1],
-        quantity=quantity,
-    )
     optimistic_full_pool = reward["daily_rate"] * reward["remaining_days"]
-    if not fresh:
+    complete_pair = all((first_bids, first_asks, second_bids, second_asks))
+    first_bid = max((x[0] for x in first_bids), default=None)
+    second_bid = max((x[0] for x in second_bids), default=None)
+    first_ask = min((x[0] for x in first_asks), default=None)
+    second_ask = min((x[0] for x in second_asks), default=None)
+    join = None
+    improved = None
+    improved_marketable = None
+    if complete_pair:
+        assert first_bid is not None
+        assert second_bid is not None
+        assert first_ask is not None
+        assert second_ask is not None
+        join = paired_buy_economics(
+            yes_price=first_bid,
+            no_price=second_bid,
+            quantity=quantity,
+        )
+        improved_prices = (first_bid + tick, second_bid + tick)
+        improved_marketable = (
+            improved_prices[0] >= first_ask or improved_prices[1] >= second_ask
+        )
+        improved = paired_buy_economics(
+            yes_price=improved_prices[0],
+            no_price=improved_prices[1],
+            quantity=quantity,
+        )
+    if not complete_pair:
+        status = "rejected_incomplete_paired_book"
+    elif not fresh:
         status = "rejected_stale_book_snapshot"
+    elif join is None:
+        raise AssertionError("complete book did not produce paired economics")
     elif join.both_fill_gross_profit <= 0:
         status = "rejected_no_positive_both_fill_gross_at_best_bid"
     elif join.maximum_orphan_loss > optimistic_full_pool:
@@ -183,23 +205,31 @@ def run(*, contract_path: Path, output: Path, journal_dir: Path) -> dict[str, ob
         },
         "economics": {
             "top_of_book": {
-                "yes_best_bid": str(first_bid),
-                "yes_best_ask": str(first_ask),
-                "no_best_bid": str(second_bid),
-                "no_best_ask": str(second_ask),
+                "yes_best_bid": None if first_bid is None else str(first_bid),
+                "yes_best_ask": None if first_ask is None else str(first_ask),
+                "no_best_bid": None if second_bid is None else str(second_bid),
+                "no_best_ask": None if second_ask is None else str(second_ask),
             },
             "best_bid_join": {
-                "combined_bid": str(join.combined_price),
-                "both_fill_gross_profit_pUSD": str(join.both_fill_gross_profit),
-                "maximum_orphan_settlement_loss_pUSD": str(join.maximum_orphan_loss),
+                "combined_bid": None if join is None else str(join.combined_price),
+                "both_fill_gross_profit_pUSD": None
+                if join is None
+                else str(join.both_fill_gross_profit),
+                "maximum_orphan_settlement_loss_pUSD": None
+                if join is None
+                else str(join.maximum_orphan_loss),
             },
             "one_tick_improved": {
                 "marketable": improved_marketable,
-                "combined_bid": str(improved.combined_price),
-                "both_fill_gross_profit_pUSD": str(improved.both_fill_gross_profit),
-                "maximum_orphan_settlement_loss_pUSD": str(
-                    improved.maximum_orphan_loss
-                ),
+                "combined_bid": None
+                if improved is None
+                else str(improved.combined_price),
+                "both_fill_gross_profit_pUSD": None
+                if improved is None
+                else str(improved.both_fill_gross_profit),
+                "maximum_orphan_settlement_loss_pUSD": None
+                if improved is None
+                else str(improved.maximum_orphan_loss),
             },
             "optimistic_full_reward_pool_until_horizon_pUSD": str(optimistic_full_pool),
             "publicly_proven_reward_payout_floor_pUSD": "0",
