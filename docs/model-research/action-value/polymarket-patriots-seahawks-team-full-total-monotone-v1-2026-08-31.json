@@ -1,0 +1,58 @@
+{
+  "schema_version": "polymarket-nfl-team-to-full-total-monotone-adjudication-v1",
+  "created_at_utc": "2026-08-31T11:35:00Z",
+  "purpose": "Exhaust the distinct team-total to full-game-total monotone payoff graph from the already retained Patriots-Seahawks exact event without another request.",
+  "source_binding": {
+    "metadata_path": "docs/model-research/action-value/polymarket-patriots-seahawks-exact-event-result-v1-2026-08-31.json",
+    "metadata_file_sha256": "ce8867da28da5b5f90040317591adf71ef070c7d5b014511a17586fd60e9221f",
+    "metadata_result_sha256": "e62d7b8a93a2a11197058d631e2fea88a408cfa30bd2dda6a9df54998b524d36",
+    "raw_response_sha256": "a3a1c23e2e9fc2944f30f0fafdebe42f4a597ada4dd2918e47c9155213c966c3"
+  },
+  "payoff_proof": {
+    "state_variables": "nonnegative integer Patriots and Seahawks final scores including overtime if played",
+    "relation": "For team threshold T and full-game threshold G with T greater than or equal to G, team Over T implies game Over G. Therefore team Under T plus game Over G pays at least one pUSD in every completed score state.",
+    "cancellation": "Both retained markets resolve 50-50 when canceled with no make-up game, so the two legs total one pUSD in that state.",
+    "postponement": "Both retained markets remain open until the same game is completed.",
+    "package": "YES(team Under T) plus YES(game Over G)",
+    "guaranteed_common_rule_floor_per_share_pUSD": "1",
+    "excluded_market_types": "First-half, second-half, and quarter totals are not included because their retained horizon and overtime semantics are not identical to the full-game total."
+  },
+  "screen": {
+    "active_accepting_team_total_market_count": 10,
+    "active_accepting_full_game_total_market_count": 23,
+    "rule_valid_relation_count": 9,
+    "strict_displayed_sub_floor_candidate_count": 0,
+    "gamma_role": "rejection_only_never_acceptance_or_promotion",
+    "best_relation": {
+      "team": "Seahawks",
+      "team_total_market_id": "3922486",
+      "team_threshold": 25,
+      "team_under_displayed_price_pUSD": "0.555",
+      "full_game_total_market_id": "3920597",
+      "full_game_threshold": 25,
+      "game_over_displayed_price_pUSD": "0.91",
+      "displayed_package_sum_pUSD": "1.465",
+      "guaranteed_floor_pUSD": "1",
+      "optimistic_headroom_before_execution_costs_pUSD": "-0.465"
+    }
+  },
+  "adjudication": {
+    "status": "terminal_retained_event_team_to_full_total_graph_rejected_before_books_and_fees",
+    "accepted_edge": false,
+    "deployment_ready": false,
+    "profitability_claim": false,
+    "market_direction_forecast_required": false,
+    "book_or_fee_request_permitted": false,
+    "next_action": "do_not_repeat_reprice_or_request_books_for_this_retained_team_to_full_total_graph"
+  },
+  "authority": {
+    "new_network_requests": 0,
+    "account_requests": 0,
+    "credentials_used": false,
+    "funds_used": false,
+    "orders_or_transactions": 0,
+    "protected_capture_touched": false,
+    "trading_authority": false
+  },
+  "result_sha256": "51d0f5bda02fe124a7f02eb6f2365c358f8ec6a99d75b8f87bd8de8eec1d669c"
+}
