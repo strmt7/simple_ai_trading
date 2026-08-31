@@ -1,0 +1,71 @@
+{
+  "schema_version": "public-source-capture-contract-v1",
+  "frozen_at_utc": "2026-08-31T20:31:11.8567680Z",
+  "contract_path": "docs/model-research/action-value/polymarket-sports-maker-rebate-source-drift-contract-v2-2026-08-31.json",
+  "trigger": {
+    "registry_rank": 17,
+    "literal_trigger": "a byte-retained effective-dated official reconciliation or another material fee-rate program change",
+    "material_change": "A current official search-index rendering of the canonical Maker Rebates page reports Sports at 25 percent, a 0.03 taker fee rate, and USDC payout wording instead of the byte-retained 15 percent, 0.05, and pUSD terms captured on 2026-08-30. Discovery text is not admitted into economics.",
+    "discovery_values_are_economic_inputs": false
+  },
+  "question": "Did the exact canonical current Maker Rebates Markdown materially change its Sports fraction, Sports taker-fee parameter, and payout asset wording, and does the retained page now internally bind those terms without proving any forward maker profit?",
+  "request_name": "polymarket-sports-maker-rebate-source-drift-v2",
+  "request": {
+    "method": "GET",
+    "url": "https://docs.polymarket.com/market-makers/maker-rebates.md",
+    "count": 1,
+    "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "endpoint_classification": {
+    "operation": "download the canonical public official Maker Rebates documentation as Markdown after a material source-drift trigger",
+    "security": "public unauthenticated static documentation GET",
+    "preflight": "Search-index discovery exposed materially different official terms. No direct URL preflight was made and discovery text is excluded from adjudication."
+  },
+  "response_byte_ceiling": 1000000,
+  "required_utf8_phrases": [
+    "# Maker Rebates Program",
+    "Paid daily in USDC",
+    "$1 USDC",
+    "| Sports          | 25%",
+    "| Sports          | 0.03",
+    "Totals are calculated per market",
+    "rebate percentage is at the sole discretion of Polymarket"
+  ],
+  "decision": {
+    "source_gate_only": "Every exact changed Sports, cash-label, competition, and discretion phrase must exist in the single retained current Markdown response.",
+    "accepted_edge": false,
+    "profitability_proved": false,
+    "conditional_next_step": "If the gate passes, adjudicate the source drift against the retained 2026-08-30 bytes. Preserve the accepted exact-realized organic maker-rebate overlay and its zero public forward floor; do not accept, simulate, or initiate market making."
+  },
+  "outputs": {
+    "raw_path": "docs/model-research/polymarket/raw/sports-maker-rebate-source-drift-v2-2026-08-31/01-maker-rebates.raw.md",
+    "journal_path": "docs/model-research/polymarket/raw/sports-maker-rebate-source-drift-v2-2026-08-31/00-request-journal.jsonl",
+    "result_path": "docs/model-research/action-value/polymarket-sports-maker-rebate-source-drift-result-v2-2026-08-31.json"
+  },
+  "authority": {
+    "account_requests": 0,
+    "credentials_used": false,
+    "funds_used": false,
+    "orders_or_transactions": 0,
+    "protected_capture_touched": false,
+    "public_unauthenticated_read_only_requests": 1,
+    "signed_requests": 0,
+    "trading_authority": false
+  },
+  "implementations": [
+    {
+      "path": "tools/capture_public_source_contract.py",
+      "sha256": "d566a5a379c659c3da144d5e28449ebac9c01493bd39646f9cc3a6e697a83566"
+    },
+    {
+      "path": "tools/screen_polymarket_exact_two_leg_package.py",
+      "sha256": "374fcc3c3485c466b4929a91256450bdc7db70f93ef4c6bda627e05fe8938327"
+    },
+    {
+      "path": "tools/adjudicate_polymarket_exact_mlb_monotone_prefilter.py",
+      "sha256": "958a44d78029b9a1eb69a3771ce18e53ac1ed3c7bc161c8e4318beedce2cf99f"
+    }
+  ],
+  "retry_policy": "This exact post-drift canonical Markdown GET is one-use. Preserve any HTTP error, byte change, format mismatch, or missing-term response and do not retry or alias it absent another material source change. A passing gate proves only current page semantics and never forward income, owned fills, payout, market-making profitability, or deployment readiness.",
+  "contract_sha256": "42f7f812baf3fa4a07f6f206140bde1d7efcf4ff353991021c103641be7348a6"
+}
