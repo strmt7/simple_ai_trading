@@ -5,6 +5,46 @@ Development belongs only on `main`; do not create another development branch.
 
 ## Latest Edge R&D Checkpoint
 
+- A distinct adjacent-day threshold-plus-direction identity was derived and
+  screened before Gamma, books, fees, accounts, or orders. For one shared
+  strike `T`, `Sep 2 NO(T) + Sep 1 YES(T) + daily Up` and the symmetric
+  `Sep 2 YES(T) + Sep 1 NO(T) + daily Down` each have an optimistic one-pUSD
+  common-rule floor under the current same-asset Binance noon-close rules. The
+  daily 50/50 equality case does not create a hole: at equal closes, one of the
+  two strict-threshold legs already pays one. Every shared strike and both
+  directions were then screened across BTC, ETH, and SOL using only available
+  rendered discovery snapshots of threshold acquisition buttons and the
+  rendered daily probability as an explicitly non-executable optimistic
+  diagnostic. The best displayed
+  totals were approximately 1.429, 1.370, and 1.450 pUSD, respectively, for a
+  one-pUSD floor. Snapshot refresh times were not synchronized and a displayed
+  probability is not an ask, so this does not terminalize the family or
+  establish economics;
+  it does show that the visible package is roughly 37% or more too expensive
+  and justifies zero Gamma or CLOB requests. Reopen only for a distinct
+  synchronized side-specific prefilter strictly below one pUSD, never by
+  treating a probability, last trade, midpoint, missing ask, or zero display as
+  executable acquisition.
+
+- A current rendered-screen lead in the September 3 Ethereum range and
+  strict-above events was rejected before Gamma, books, fees, accounts, or
+  orders. The tempting range `NO(>3,000)` plus threshold `YES(3,000)` package
+  is not an exact complement: the range rules assign an exact 3,000 close to
+  the higher bracket while the threshold requires a strictly higher close, so
+  both purchased legs pay zero at exact equality. Current rendered acquisition
+  asks also moved to 0.999 plus 0.005, above the one-pUSD target even before
+  fees. Treat displayed values as discovery only and never let a top-bin label
+  override an event's explicit boundary assignment. `AGENTS.md` now states the
+  zero-payout state directly so this false identity cannot authorize Gamma or
+  book access in a later run. The same pass screened every visible valid
+  cross-event coverage package and every lower-YES plus higher-NO threshold
+  pair across the newly deployed September 7 BTC, ETH, and SOL siblings. The
+  best rendered coverage sums were 1.98, 1.98, and 3.96 pUSD; the best ladder
+  sums were 1.03, 1.03, and 1.04 pUSD, respectively, for one-pUSD floors.
+  Rendered asks remain discovery-only, but all six global minima already reject
+  before Gamma, depth, fees, accounts, or orders; do not deepen or cherry-pick
+  this September 7 sibling population absent a distinct rule or market change.
+
 - A distinct Binance Wallet routed Aster USD1-versus-Binance USDT perpetual
   funding lead has been rejected before any basis, book, account, credential,
   order, or fund request. One prospectively frozen public Aster inventory
