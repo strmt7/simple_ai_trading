@@ -1,0 +1,123 @@
+{
+  "schema_version": "polymarket-wallet-opposite-lock-validation-contract-v1",
+  "frozen_at_utc": "2026-08-31T21:00:46.5112726Z",
+  "contract_path": "docs/model-research/action-value/polymarket-wallet-opposite-lock-validation-contract-v1-2026-08-31.json",
+  "hypothesis": "For independently existing same-wallet binary outcome inventory with known all-in acquisition basis, an actual later opposite-outcome taker buy at exact matched quantity creates a direction-independent complete set. Count a lock only when the first-leg basis plus the later hedge price stressed one adverse tick plus the full current crypto taker fee remains strictly below one pUSD.",
+  "distinctness": {
+    "classification": "out_of_sample_historical_validation_of_an_existing_inventory_risk_reduction_overlay_not_blind_two_leg_entry",
+    "not_the_rejected_strategy": "The retained 2026-08-25 wallet day had negative aggregate naive FIFO pairing. This contract never initiates first-leg inventory, never assumes both legs fill atomically, and never credits a negative completion.",
+    "relation_to_existing_rank_17": "The existing maker-first candidate starts with a new passive maker order and requires a synchronized creation-time hedge. This candidate instead starts only from independently existing public-wallet taker inventory and asks whether a later actual opposite taker fill locked a complete set under a causal fixed rule.",
+    "relation_to_existing_rank_23": "The prior Round 27 rescore tested standalone both-taker complete-set entry under tier rebates. This contract credits no rebate, starts from preexisting inventory, stresses only the later risk-reducing hedge, and cannot justify the first-leg strategy."
+  },
+  "training_evidence": {
+    "path": "docs/model-research/action-value/raw/polymarket-organic-taker-rebate-v1/05-top-wallet-taker-trades-2026-08-25.json",
+    "file_sha256": "230490065b2e808f9aa17f00537223b034aa5e76c002879d2c3db04c4e9aa6c0",
+    "row_count": 1202,
+    "condition_count": 355,
+    "training_only_rule_diagnostic": "The frozen validation rule produced 70 one-tick-stressed no-rebate locks across 40 BTC ETH SOL conditions and 136.3461957648627322994800855096 pUSD of locked historical cashflow on the retained August 25 day. These values selected the hypothesis and are not validation evidence."
+  },
+  "wallet": "0xb27bc932bf8110d8f78e55da7d5f0497a18b5b82",
+  "wallet_selection": "Fixed before validation from the prior completed August 25 public top-volume taker-rebate reconciliation. The wallet is public evidence, not owned, authorized, or assumed reproducible.",
+  "validation_window": {
+    "start_epoch_inclusive": 1788048000,
+    "end_epoch_exclusive": 1788134400,
+    "start_utc": "2026-08-30T00:00:00Z",
+    "end_utc": "2026-08-31T00:00:00Z",
+    "selection_rule": "One complete later UTC day fixed before access, five days after the training day and before the current partial UTC day."
+  },
+  "request_name": "polymarket-wallet-opposite-lock-validation-2026-08-30",
+  "request": {
+    "method": "GET",
+    "url": "https://data-api.polymarket.com/trades?user=0xb27bc932bf8110d8f78e55da7d5f0497a18b5b82&takerOnly=true&start=1788048000&end=1788134400&limit=10000&offset=0",
+    "count": 1,
+    "limit": 10000,
+    "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "endpoint_classification": {
+    "operation": "download one public unauthenticated window of already executed taker trades for one public wallet",
+    "security": "public unauthenticated read-only Data API GET",
+    "preflight": "The exact query shape is source-bound by the retained official trades contract and the prior completed request. No validation-window preflight was made."
+  },
+  "response_byte_ceiling": 15000000,
+  "economics": {
+    "assets": [
+      "btc",
+      "eth",
+      "sol"
+    ],
+    "durations": {
+      "5m": 300,
+      "15m": 900,
+      "4h": 14400
+    },
+    "taker_fee_rate": "0.07",
+    "rebate_fraction_credited": "0",
+    "tick_size": "0.01",
+    "hedge_adverse_ticks": 1,
+    "minimum_lag_seconds": 1,
+    "maximum_lag_seconds": 60,
+    "minimum_seconds_before_close": 10,
+    "inventory_origin": "Only BUY rows acquired earlier inside the same validation window and same condition. Start every condition at zero; exclude any condition containing a SELL row.",
+    "matching_rule": "Chronological actual taker BUY rows. At each later BUY, scan still-unmatched opposite lots in acquisition order and match only exact available quantity whose first-leg full-fee cost plus later hedge price stressed one 0.01 tick and charged the full 0.07 fee is strictly below one. Expire first-leg lots after 60 seconds. Same-second ordering is excluded.",
+    "cashflow_identity": "Each matched YES plus NO share is a mergeable or terminal one-pUSD complete set. Locked PnL equals matched quantity times one minus first-leg all-in cost minus stressed later-hedge all-in cost.",
+    "cost_conservatism": "Credit no taker rebate, no maker rebate, no liquidity reward, no holding yield, no midpoint, no future price movement, and no public-wallet PnL. The official relayer split or merge gas identity is retained only as zero direct user gas, not as authority or latency proof."
+  },
+  "validation_gates": {
+    "minimum_locks": 20,
+    "minimum_conditions": 10,
+    "minimum_positive_assets": 2,
+    "minimum_conditions_per_half": 3,
+    "maximum_single_condition_pnl_share": "0.35",
+    "aggregate_stress_locked_pnl_strictly_positive": true,
+    "all_gates_must_pass": true
+  },
+  "decision": {
+    "passing_result": "Create a source-bound historical out-of-sample candidate for an existing-inventory opposite-leg lock overlay. Keep accepted-edge count unchanged, public forward floor zero, and require a separately frozen current prospective public book study followed by explicit account and order authority before any owned execution question.",
+    "failing_result": "Terminalize this exact wallet and validation day without retry, narrowing, pagination, alternate matching, rebate credit, or another wallet selection.",
+    "profitability_claim": false,
+    "deployment_ready": false
+  },
+  "outputs": {
+    "raw_path": "docs/model-research/polymarket/raw/wallet-opposite-lock-validation-v1-2026-08-31/01-trades.raw.json",
+    "journal_path": "docs/model-research/polymarket/raw/wallet-opposite-lock-validation-v1-2026-08-31/00-request-journal.jsonl",
+    "result_path": "docs/model-research/action-value/polymarket-wallet-opposite-lock-validation-result-v1-2026-08-31.json"
+  },
+  "authority": {
+    "account_requests": 0,
+    "credentials_used": false,
+    "funds_used": false,
+    "orders_or_transactions": 0,
+    "protected_capture_touched": false,
+    "public_unauthenticated_read_only_requests": 1,
+    "signed_requests": 0,
+    "trading_authority": false
+  },
+  "source_bindings": [
+    {
+      "path": "docs/model-research/action-value/polymarket-organic-taker-rebate-overlay-v1-2026-08-26.json",
+      "file_sha256": "59a695ef1436ab35048a0981155cc06fcf1093280a8ebc72aa56226101a61fb6",
+      "role": "prior public wallet selection exact trade endpoint contract fee formula and realized rebate reconciliation"
+    },
+    {
+      "path": "docs/model-research/action-value/polymarket-maker-first-taker-hedge-complete-set-candidate-v1-2026-08-27.json",
+      "file_sha256": "9185881b3e02fbde4a083bee6586825d4c9e1eb2d8fe9bcc2f344532f0d15567",
+      "role": "distinct maker-first mechanism boundary and complete-set payoff identity"
+    }
+  ],
+  "implementations": [
+    {
+      "path": "tools/screen_polymarket_wallet_opposite_lock.py",
+      "sha256": "3890dc02e53d0a0d05bbd8e9b85394ce151312823544a1837a84fe1df3a5fd0d"
+    },
+    {
+      "path": "tools/screen_polymarket_exact_two_leg_package.py",
+      "sha256": "374fcc3c3485c466b4929a91256450bdc7db70f93ef4c6bda627e05fe8938327"
+    },
+    {
+      "path": "tools/adjudicate_polymarket_exact_mlb_monotone_prefilter.py",
+      "sha256": "958a44d78029b9a1eb69a3771ce18e53ac1ed3c7bc161c8e4318beedce2cf99f"
+    }
+  ],
+  "retry_policy": "The exact wallet and August 30 UTC window GET is one-use. Preserve an empty, full-page, malformed, failed, or negative result without retrying, splitting, paginating, changing the wallet, adding rebates, relaxing lag or concentration gates, or selecting another day after seeing the result.",
+  "contract_sha256": "c6e6115188b7ce021d1140e9a1e53c8f4979af14742e080d2f2b4d6662b4f7dc"
+}

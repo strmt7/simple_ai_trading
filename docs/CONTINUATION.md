@@ -5,6 +5,41 @@ Development belongs only on `main`; do not create another development branch.
 
 ## Latest Edge R&D Checkpoint
 
+- A serious Polymarket existing-inventory opposite-lock candidate passed one
+  frozen out-of-sample historical validation. The rule was selected only on the
+  retained August 25 public-wallet day. One preregistered public unauthenticated
+  August 30 wallet-day GET then returned 1,964 complete rows and produced 66
+  causal 1-60 second locks across 27 BTC, ETH, and SOL conditions, 1,486.108451
+  matched shares, and 217.6302921908223351705204892211 pUSD of locked
+  historical cashflow after charging the full 0.07 fee on both legs and
+  stressing the later hedge one adverse 0.01 tick. Both UTC halves and all
+  three assets were positive; maximum single-condition PnL share was
+  0.2807103473 below the frozen 0.35 ceiling. Retained official primary-source
+  bytes define the fee as `shares * feeRate * p * (1-p)` in USDC, so the
+  additive cost accounting is exact under the published contract.
+
+  This is not an accepted edge, current executable profit, or authority to
+  initiate the first leg. It is an existing-inventory risk-reduction overlay:
+  only an independently justified owned first leg may be completed, and the
+  matched YES+NO quantity then has a direction-independent one-pUSD terminal or
+  merge identity. The public wallet is not owned, authorized, or assumed
+  reproducible. Current owned basis, finite-size book, merge/redemption,
+  external cost, and failure-unwind evidence remain absent, so the public
+  forward floor is zero. Do not repeat, narrow, paginate, alias, or resample the
+  consumed August 30 request. The next literal trigger is explicit read-only
+  account authority plus independently preexisting eligible BTC, ETH, or SOL
+  binary inventory with exact basis, or a material fee/merge/redemption/
+  execution change; any order requires separate explicit authority. Candidate
+  SHA-256 is
+  `335e258b11136b1913d584dce5d493b985bad06bdc73a0eb8564049ebec2c4ee`;
+  validation SHA-256 is
+  `b81af57f094f1ff75bcb77f9938ec7c84791af4e1cecb44b3402dac17d4dc1df`.
+  Accepted edges remain 29, ranked hypotheses remain 47, terminal families
+  remain 120, registry SHA-256 is
+  `f267c92839fa549f63ae4ab9c45bb9c9f1b15d492e6e5c620e5f3150cade26d8`,
+  and durability-audit SHA-256 is
+  `cd1eb3fda6cd3cd50864dff6adb5626435afef269463526d168362bbc157d060`.
+
 - The apparent August 31 Polymarket Sports maker-rebate change is terminal as
   a source-quality event, not an edge. A current search-index rendering exposed
   25%, a 0.03 Sports taker-fee rate, and USDC wording, but one frozen canonical
