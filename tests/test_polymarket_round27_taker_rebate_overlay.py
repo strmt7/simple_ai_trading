@@ -162,5 +162,5 @@ def test_candidate_is_registered_without_changing_the_accepted_edge_count() -> N
         artifacts[
             "docs/model-research/action-value/polymarket-existing-inventory-opposite-lock-candidate-v1-2026-08-31.json"
         ]
-        == "335e258b11136b1913d584dce5d493b985bad06bdc73a0eb8564049ebec2c4ee"
+        == "e4392f0bad06aa56f5a80b72fd474f953a95c4da99b74f37db2c7fa3cfc70f9f"
     )

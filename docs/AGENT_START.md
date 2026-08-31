@@ -30,9 +30,11 @@ unauthenticated August 30 wallet-day GET produced 1,964 rows and passed with 66
 causal 1-60 second locks across 27 BTC, ETH, and SOL conditions, 1,486.108451
 matched shares, and 217.6302921908223351705204892211 pUSD of locked historical
 cashflow after the full 0.07 fee on both legs and one adverse 0.01 tick on the
-later hedge. Both time halves and all three assets were positive. Retained
-official source bytes prove that the fee is additive USDC on shares traded, so
-no net-share correction is required.
+later hedge. A zero-network fixed-lock-set correction then conservatively
+ceiled each leg of each matched fragment to the published 0.00001 pUSD fee
+quantum. All 66 remained positive; total drag was only
+0.0005909365952300705204892211 pUSD and corrected locked cashflow was
+217.6297012542271051 pUSD. Both time halves and all three assets were positive.
 
 This is not an accepted edge, current executable profit, or a first-leg entry
 strategy. It applies only when one outcome is already held for an independently
@@ -43,14 +45,16 @@ unwind remain unproved. Do not repeat, narrow, paginate, alias, or resample the
 consumed request. Advance only with explicit read-only account authority plus
 independently preexisting eligible inventory; any order requires separate
 explicit authority. Candidate SHA-256 is
-`335e258b11136b1913d584dce5d493b985bad06bdc73a0eb8564049ebec2c4ee`;
+`e4392f0bad06aa56f5a80b72fd474f953a95c4da99b74f37db2c7fa3cfc70f9f`;
 validation SHA-256 is
 `b81af57f094f1ff75bcb77f9938ec7c84791af4e1cecb44b3402dac17d4dc1df`.
+Fee-rounding correction SHA-256 is
+`b423b44e57bfd329220256facf4b9eabe45371b267e7a91ea08aa11a666be204`.
 Accepted edges remain 29, ranked hypotheses remain 47, terminal families remain
 120, registry SHA-256 is
-`f267c92839fa549f63ae4ab9c45bb9c9f1b15d492e6e5c620e5f3150cade26d8`,
+`992b900a7fda3ea1d17362cf4d32cc73a6ebb2ed0be1463c6a0cc4da0ffe6f9e`,
 and durability-audit SHA-256 is
-`cd1eb3fda6cd3cd50864dff6adb5626435afef269463526d168362bbc157d060`.
+`d129b50c62dd4097e856c0037461fff2dfc89951c00c0130c75f98e358758270`.
 
 The apparent August 31 Polymarket Sports maker-rebate change is terminal as a
 source-quality event, not a market edge. A search-index rendering reported a
@@ -1633,7 +1637,7 @@ qualification, deployment readiness, and new-capital profit remain fail-closed.
   threshold/deadline or single-market complete-set families. Canonical contract:
   `polymarket-live-nba-moneyline-spread-combinatorial-parity-reopen-v1-2026-08-26.json`,
   result SHA-256
-  `70cfc7b2ae1cb256e7a8c08c9af33fa8524d2308a8c18400d5a2b7d93c966fe3`.
+`bb2d030b9465ded6cc4ce0ba894719d60ecd812d673432a10941db1779d0d758`.
 - A separate primary paper materially reopens exact dependent-subset parity
   across two multi-outcome Polymarket markets, but not its headline profit
   claim. The paper's four numerically enumerated cross-market pairs total
