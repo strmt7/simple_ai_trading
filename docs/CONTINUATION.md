@@ -6648,3 +6648,29 @@ account-qualified after-all-cost edges remain zero. Registry SHA-256 is
 `da888279bbf565413faadd9036547e4452b10bff91ed7ff1735117eb946c6f15`,
 and the rebound durability-audit SHA-256 is
 `dab81b0b99a64203392a4b7f684bf1b7c18417c2961e990a9db12cb5bb16dc96`.
+
+## Polymarket Patriots-Seahawks team ladders and additive covers
+
+A zero-request audit exhausted the remaining full-game team-total structure in
+the retained Patriots-Seahawks event. The two team ladders produced 20 valid
+lower-Over plus higher-Under packages, zero displayed sub-floor candidates, and
+a best cost of 1.055 pUSD for a one-pUSD floor.
+
+The two-team additive package is Patriots Under `A` plus Seahawks Under `B`
+plus Game Over `G`. Its complete integer-score proof requires both
+`A+B-1 <= G` and `G <= A+B`. An exploratory calculation initially enforced
+only the lower bound and produced 50 false candidates across 308 invalid
+relations. That error was caught and discarded before freeze, network access,
+or any edge claim. Under the corrected two-sided condition, 33 valid relations
+remain, zero are sub-floor, and the best costs 1.370 pUSD for a one-pUSD floor.
+
+No network, credential, account, order, fund, transaction, or protected capture
+was accessed. Do not rebuild, reprice, or request books for either retained
+graph. Canonical result SHA-256 is
+`317ecd24a990456be2e8c64f644f7481309d7c5e663c33274d281270483a848f`.
+Accepted edges remain 29, ranked hypotheses remain 45, terminal families become
+101, and stable current account-qualified after-all-cost edges remain zero.
+Registry SHA-256 is
+`c0c858a4c13f40e020d1643c5d9fa7f9c1fad0136266d2c37f4798281583e8ff`,
+and the rebound durability-audit SHA-256 is
+`6edfe4c861270be295245e878a61ca1e9398ad012574ea5fc88225fe1f89d199`.

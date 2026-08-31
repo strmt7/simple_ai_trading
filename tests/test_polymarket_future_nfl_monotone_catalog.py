@@ -222,6 +222,39 @@ def test_retained_team_to_full_total_graph_rejects_without_network() -> None:
     assert result["adjudication"]["book_or_fee_request_permitted"] is False
 
 
+def test_retained_team_ladders_and_corrected_additive_covers_reject_offline() -> None:
+    result = _load(
+        ACTION_VALUE
+        / "polymarket-patriots-seahawks-team-ladder-additive-cover-v1-2026-08-31.json"
+    )
+
+    assert result["result_sha256"] == (
+        "317ecd24a990456be2e8c64f644f7481309d7c5e663c33274d281270483a848f"
+    )
+    assert _canonical_hash(result, "result_sha256") == result["result_sha256"]
+    ladders = result["team_total_ladders"]
+    assert ladders["rule_valid_relation_count"] == 20
+    assert ladders["strict_displayed_sub_floor_candidate_count"] == 0
+    assert Decimal(ladders["best_relation"]["displayed_package_sum_pUSD"]) == Decimal(
+        "1.055"
+    )
+    covers = result["two_team_additive_covers"]
+    assert covers["complete_proof_condition"] == (
+        "A+B-1 <= G <= A+B for integer scoring thresholds"
+    )
+    assert covers["rule_valid_relation_count"] == 33
+    assert covers["strict_displayed_sub_floor_candidate_count"] == 0
+    assert Decimal(covers["best_relation"]["displayed_package_sum_pUSD"]) == Decimal(
+        "1.370"
+    )
+    correction = result["methodology_correction"]
+    assert correction["false_candidate_count_discarded"] == 50
+    assert correction["market_or_book_requests_caused"] == 0
+    assert correction["registry_or_profit_claim_caused"] is False
+    assert result["authority"]["new_network_requests"] == 0
+    assert result["adjudication"]["book_or_fee_request_permitted"] is False
+
+
 def test_registry_routes_catalog_and_correction_without_acceptance() -> None:
     registry = _load(REGISTRY)
     assert registry["result_sha256"] == REGISTRY_HASH
@@ -238,6 +271,7 @@ def test_registry_routes_catalog_and_correction_without_acceptance() -> None:
         "37f79cc8a4f5f96fa395a729e85a793e12c2127e2124591db693c92b1b459928",
         "2658c04330fdeaa7f39b4a9dc842a079c7e81ef1feeeba75ce74384e328338ae",
         "51d0f5bda02fe124a7f02eb6f2365c358f8ec6a99d75b8f87bd8de8eec1d669c",
+        "317ecd24a990456be2e8c64f644f7481309d7c5e663c33274d281270483a848f",
     } <= hashes
     assert "25189367_ms_skew" in row["current_status"]
     assert "Patriots_Seahawks" in row["current_status"]
