@@ -1,0 +1,167 @@
+{
+  "schema_version": "binance-googl-bstock-holiday-dividend-timing-adjudication-v1",
+  "created_at_utc": "2026-08-31T11:04:04.0081941Z",
+  "purpose": "adjudicate the apparent GOOGLB record-date holiday gap before any current book or funding request",
+  "question": "Does Binance's September 4 GOOGLB snapshot create a material pre-adjustment dividend entitlement window against GOOGLUSDT, or does the holiday-adjusted ex-dividend date and prior same-underlying Special funding eliminate it?",
+  "source_capture": {
+    "binance_announcement": {
+      "contract_path": "docs/model-research/action-value/binance-googl-bstock-holiday-dividend-source-contract-v1-2026-08-31.json",
+      "contract_sha256": "a0ad60e0ad7a8662c7337ae98c8a8f759c93ef559761789dabbc996269854e86",
+      "result_path": "docs/model-research/action-value/binance-googl-bstock-holiday-dividend-source-result-v1-2026-08-31.json",
+      "result_sha256": "dd7c7bb3172b567a27afa5ec1df811e5143d5f38f23980a811b2df7a3726f154",
+      "raw_path": "data/binance-googl-bstock-holiday-dividend-v1/raw/01-binance-announcement.raw.json",
+      "raw_sha256": "10195102bfcff57204be744b365e15a5da3cfcd4f296f7fab9d61b73facde9f2",
+      "journal_path": "data/binance-googl-bstock-holiday-dividend-v1/raw/00-request-journal.jsonl",
+      "journal_sha256": "9ef42903b97ff6ebdd4d38719ba7180a9eb95ee0f73e8d2cfcda2f8e496bc289",
+      "http_status": 200,
+      "bytes": 84176,
+      "frozen_gate_passed": false,
+      "failed_phrase": "Trading of the affected bStocks will not be impacted",
+      "retained_exact_phrase": "Trading of QCOMB/USDT, PYPLB/USDT, GOOGLB/USDT will not be affected.",
+      "offline_adjudication": "The failed generic wording gate is preserved. The retained bytes directly bind the exact symbols and uninterrupted trading semantics, so no refetch or alias is permitted."
+    },
+    "alphabet_sec_capture": {
+      "contract_path": "docs/model-research/action-value/alphabet-googl-dividend-primary-source-contract-v1-2026-08-31.json",
+      "contract_sha256": "638afff3be67a9b8b551246e4b39a7f8984762e5cc9889fe36be0fd53ec0a09a",
+      "journal_path": "data/binance-googl-bstock-holiday-dividend-v1/raw/02-request-journal.jsonl",
+      "journal_sha256": "d88fd944418c16fdc719c555575b4cfc6cf8a2e70485246e47f1d56b2f1750ba",
+      "status": "consumed_failed_before_response_on_DNS_resolution",
+      "raw_retained": false,
+      "retry_or_alias_permitted": false
+    }
+  },
+  "current_event": {
+    "underlying": "Alphabet Class A common stock",
+    "underlying_ticker": "GOOGL",
+    "bstock_symbol": "GOOGLBUSDT",
+    "perpetual_symbol": "GOOGLUSDT",
+    "issuer_gross_dividend_usd_per_share": "0.22",
+    "issuer_record_date": "2026-09-07",
+    "issuer_payable_date": "2026-09-14",
+    "record_date_market_status": "Nasdaq_closed_for_Labor_Day",
+    "derived_ex_dividend_date": "2026-09-04",
+    "derived_ex_dividend_date_method": "Alphabet's SEC-filed record date plus Nasdaq's official holiday calendar and Investor.gov's weekend-or-holiday ex-dividend rule; this is an explicit inference, not a date printed in the issuer filing",
+    "binance_bstock_snapshot_utc": "2026-09-04T00:00:00Z",
+    "binance_conversion_deposit_withdrawal_pause_utc": "2026-09-03T23:30:00Z",
+    "binance_spot_trading_affected": false,
+    "binance_distribution_contract": "Net cash dividend is reinvested after applicable withholding taxes, fees, costs, and other deductions.",
+    "apparent_record_date_gap_days": 3,
+    "actual_snapshot_to_derived_ex_date_gap_days": 0,
+    "classification": "snapshot_aligns_with_holiday_adjusted_ex_dividend_date_not_a_three_day_pre_ex_date_gap"
+  },
+  "same_underlying_historical_mechanism": {
+    "issuer_source_url": "https://www.sec.gov/Archives/edgar/data/1652044/000165204426000043/googexhibit991q12026.htm",
+    "issuer_source_payload_retained": false,
+    "issuer_declared_dividend_usd_per_share": "0.22",
+    "issuer_record_date": "2026-06-08",
+    "funding_source_path": "data/binance-bstock-funding-full-universe-v1/raw/funding-googlusdt.raw",
+    "funding_source_sha256": "4332b7fcca69dd0e43763c7e9c106663413c377e5a7602e41ee52d67b4470246",
+    "special_row_count": 1,
+    "special_funding_time_ms": 1780876800007,
+    "special_funding_time_utc": "2026-06-08T00:00:00.007Z",
+    "special_funding_rate": "-0.00060111",
+    "special_mark_price_usdt": "366.21000000",
+    "short_debit_usdt_per_contract_unit": "0.2201324931",
+    "gross_dividend_minus_short_debit_usdt": "-0.0001324931",
+    "interpretation": "The previous exact GOOGL dividend was debited to the short seven milliseconds after midnight at slightly more than gross. This is historical same-underlying mechanism evidence, not proof of the future row's timestamp."
+  },
+  "retained_pre_event_market_sensitivity": {
+    "role": "non_executable_rejection_and_scale_sensitivity_only",
+    "spot_source_path": "docs/model-research/action-value/binance-bstock-reference-parity-v1-2026-08-26.json",
+    "spot_source_result_sha256": "73fec22cc61fc8be0c792a78c0340fcb163b9bf7862708796d50521a9c44a8ac",
+    "spot_reference_raw_path": "data/binance-bstock-reference-parity-v1/raw/reference-googlbusdt.raw",
+    "spot_reference_raw_sha256": "16fa7d9a53eee6398c695031c996fc061f822561e8bf505f6a1ffba8859cdd0b",
+    "futures_book_raw_path": "data/binance-bstock-reference-parity-v1/raw/futures-book-tickers.raw",
+    "futures_book_raw_sha256": "abd1c0356326927ba749110956dc7e17fcf0d8e6cad9e88efd8cfb2214cea7d9",
+    "spot_reference_timestamp_ms": 1787729247310,
+    "futures_book_timestamp_ms": 1787729238461,
+    "source_skew_ms": 8849,
+    "spot_bid": "346.68000000",
+    "spot_ask": "346.69000000",
+    "spot_reference": "346.82000000",
+    "futures_bid": "346.92000",
+    "futures_ask": "346.93000",
+    "gross_dividend_yield_bips_at_reference": "6.343348134478980450954385560",
+    "academy_thirty_percent_withholding_only_sensitivity_net_usd": "0.1540",
+    "academy_thirty_percent_withholding_only_sensitivity_yield_bips": "4.440343694135286315668069892",
+    "entry_short_perpetual_minus_long_bstock_basis_usdt": "0.23",
+    "entry_basis_bips": "6.634168854019440999163517840",
+    "same_quotes_crossed_round_trip_basis_usdt": "-0.02",
+    "same_quotes_crossed_round_trip_basis_bips": "-0.5768842481756035651446537252",
+    "optimistic_net_sensitivity_after_same_quotes_crossed_round_trip_usdt": "0.1340",
+    "optimistic_net_sensitivity_after_same_quotes_crossed_round_trip_bips": "3.865124462776543886469179959",
+    "with_prior_same_underlying_special_debit_usdt": "-0.0861324931",
+    "with_prior_same_underlying_special_debit_bips": "-2.484423926274193083157864375",
+    "why_not_economic_evidence": "The quotes predate the event, are not synchronized, have no depth or fills, and the 0.154 net assumes every deduction beyond 30 percent withholding is zero even though the current announcement explicitly permits more."
+  },
+  "economic_adjudication": {
+    "public_conservative_net_distribution_floor_usd": "0",
+    "why_zero": "The current event contract leaves fees, costs, and other deductions unbounded; the ADGM prospectus is location-restricted and was not evaded or treated as zero-cost evidence.",
+    "direct_hedged_snapshot_contribution": "net_bStock_distribution_minus_gross_matching_Special_short_debit_is_nonpositive_before_execution_and_every_other_cost",
+    "post_snapshot_race": "A recurrence of the prior same-underlying ordering would leave only seven milliseconds between the snapshot and gross-matching debit. No public-network executable two-leg window, entitlement repricing, atomicity, or future timestamp is proved; attempting to race it is prohibited.",
+    "book_request_value": "zero_until_a_strictly_positive_source_bound_net_floor_and_material_pre_ex_date_adjustment_window_exist"
+  },
+  "adjudication": {
+    "status": "terminal_current_GOOGL_episode_holiday_adjusted_ex_date_equals_bStock_snapshot_prior_same_underlying_gross_matching_Special_debit_arrived_7ms_after_midnight_and_public_net_floor_is_zero",
+    "accepted_edge": false,
+    "deployment_ready": false,
+    "market_direction_forecast_required": false,
+    "profitability_claim": false,
+    "trading_authority": false,
+    "current_book_or_funding_request_permitted": false,
+    "current_public_after_cost_profit_floor_usdt": "0",
+    "next_action": "do_not_request_GOOGLB_or_GOOGLUSDT_books_funding_account_or_orders_for_this_episode_and_do_not_retry_either_consumed_source_capture",
+    "retry_trigger": "a_future_independent_dividend_episode_where_the_bStock_snapshot_materially_precedes_the_official_exchange_ex_dividend_adjustment_not_merely_the_record_date_and_current_primary_terms_bind_a_strictly_positive_conservative_net_distribution_floor_before_a_complete_precommitted_adjustment_and_book_sequence"
+  },
+  "prohibited_shortcuts": [
+    "treating_a_record_date_holiday_gap_as_an_ex_dividend_gap",
+    "assuming_record_date_equals_ex_date_without_exchange_calendar_and_settlement_rules",
+    "crediting_the_0_22_gross_dividend_or_the_30_percent_withholding_example_as_a_complete_net_floor",
+    "using_the_retained_pre_event_top_of_book_as_event_time_execution",
+    "assuming_the_future_Special_row_repeats_the_prior_7ms_timestamp",
+    "trying_to_race_a_millisecond_snapshot_to_funding_window_over_public_networks",
+    "closing_the_hedge_without_pricing_bStock_entitlement_repricing",
+    "requesting_books_or_funding_only_to_confirm_an_already_nonpositive_mechanism",
+    "using_credentials_or_placing_orders_without_separate_explicit_authority"
+  ],
+  "web_rendered_sources": [
+    {
+      "role": "current Alphabet gross dividend record and payable dates",
+      "url": "https://www.sec.gov/Archives/edgar/data/1652044/000165204426000066/googexhibit991q22026.htm",
+      "payload_retained": false
+    },
+    {
+      "role": "prior Alphabet gross dividend and June 8 record date",
+      "url": "https://www.sec.gov/Archives/edgar/data/1652044/000165204426000043/googexhibit991q12026.htm",
+      "payload_retained": false
+    },
+    {
+      "role": "official 2026 Nasdaq market closure on September 7",
+      "url": "https://www.nasdaq.com/market-activity/stock-market-holiday-schedule",
+      "payload_retained": false
+    },
+    {
+      "role": "official ex-dividend timing rule for a weekend or holiday record date",
+      "url": "https://www.investor.gov/introduction-investing/investing-basics/glossary/ex-dividend-dates-when-are-you-entitled-stock-and",
+      "payload_retained": false
+    },
+    {
+      "role": "current Binance generic 30 percent withholding sensitivity and multiplier semantics",
+      "url": "https://academy.binance.com/en/articles/what-are-bstocks-a-guide-to-tokenized-stocks-on-binance",
+      "payload_retained": false
+    }
+  ],
+  "authority": {
+    "public_unauthenticated_source_requests_attempted": 2,
+    "public_source_responses_retained": 1,
+    "public_source_requests_failed_before_response": 1,
+    "new_market_or_book_requests": 0,
+    "authenticated_requests": 0,
+    "credentials_used": false,
+    "account_state_accessed": false,
+    "orders_transfers_or_transactions": 0,
+    "funds_used": false,
+    "protected_capture_touched": false
+  },
+  "result_sha256": "9afb3aea93660ceabc34630e0cc6f5d562e094c96d7a21f21438a6daac6b2ce6"
+}

@@ -6550,3 +6550,50 @@ Registry SHA-256 is
 `5f54a935d93a3e3b0380b178f8812f05880056f4477a28f4f672eabeaa7590f7`,
 and the rebound durability-audit SHA-256 is
 `89b94461381341ef497f27c79f7ceaed1626d0309dcf81d14a7fe33f112a0e47`.
+
+## Binance GOOGL holiday-adjusted dividend timing rejection
+
+The apparent September GOOGL timing gap was a false lead and is now corrected.
+Alphabet's SEC filing states a September 7 record date, but Nasdaq is closed
+for Labor Day and the applicable ex-dividend rule moves the ex-date to September
+4. Binance's GOOGLB snapshot is also September 4, so the apparent three-day
+record-date gap is not a pre-ex-date entitlement window.
+
+The one-use Binance announcement capture retained an HTTP 200 response of
+84,176 bytes at SHA-256
+`10195102bfcff57204be744b365e15a5da3cfcd4f296f7fab9d61b73facde9f2`.
+Its frozen gate failed four of five only because it expected generic trading
+wording; the retained response instead says exactly that GOOGLB/USDT trading
+will not be affected. Preserve that failure and adjudicate the immutable bytes
+offline; do not refetch or alias it. The separate SEC capture failed before a
+response on DNS resolution and is also consumed without retry or alias.
+
+Retained exact GOOGLUSDT history contains one prior Special row at
+`2026-06-08T00:00:00.007Z`. Its 0.2201324931 USDT per-unit short debit slightly
+exceeded the issuer's 0.22 USD gross dividend. A public-network attempt to enter
+or close between snapshot and a similar future debit would therefore be an
+unproved millisecond race, not a structural edge. Current Binance terms also
+permit withholding taxes, fees, costs, and other deductions, leaving the
+conservative net distribution floor at zero. No current book, funding, account,
+credential, order, fund, or protected-capture request was made.
+
+Never infer ex-date from record date alone or repeat either source capture.
+Reopen rank 34 only for a future independent episode where the bStock snapshot
+materially precedes the official exchange ex-dividend adjustment and current
+primary terms bind a strictly positive conservative net-distribution floor
+before any precommitted adjustment and book sequence.
+
+Binance source contract SHA-256 is
+`a0ad60e0ad7a8662c7337ae98c8a8f759c93ef559761789dabbc996269854e86`;
+source result SHA-256 is
+`dd7c7bb3172b567a27afa5ec1df811e5143d5f38f23980a811b2df7a3726f154`;
+SEC capture contract SHA-256 is
+`638afff3be67a9b8b551246e4b39a7f8984762e5cc9889fe36be0fd53ec0a09a`;
+canonical adjudication SHA-256 is
+`9afb3aea93660ceabc34630e0cc6f5d562e094c96d7a21f21438a6daac6b2ce6`.
+Accepted edges remain 29, ranked hypotheses remain 45, terminal families become
+98, and stable current account-qualified after-all-cost edges remain zero.
+Registry SHA-256 is
+`dfe854e92f8de1af0b514f54a8c7ceeb49cb93fd168cad99bd81338b40d184c2`,
+and the rebound durability-audit SHA-256 is
+`e90253b1682b720e9e1e7ad9ad4c388e1aed415f04c30a0cc1ac5fcce6fe0dbd`.

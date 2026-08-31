@@ -17,9 +17,17 @@ TRIGGER_RESULT = (
     / "docs/model-research/action-value"
     / ("binance-glw-special-funding-trigger-result-v1-2026-08-29.json")
 )
+GOOGL_ADJUDICATION = (
+    ROOT
+    / "docs/model-research/action-value"
+    / "binance-googl-bstock-holiday-dividend-timing-adjudication-v1-2026-08-31.json"
+)
 REGISTRY = ROOT / "docs/model-research/structural-edge-priority-registry-v1.json"
 EXPECTED_HASH = "c073b61271886a5add71c2578caa889dfb97b1245327ae746bd517a91e52530d"
 TRIGGER_RESULT_HASH = "823448f115ecf7fe3e7fe8862855f40dfd351ed041fce2aa94196d069c8d585a"
+GOOGL_ADJUDICATION_HASH = (
+    "9afb3aea93660ceabc34630e0cc6f5d562e094c96d7a21f21438a6daac6b2ce6"
+)
 REGISTRY_HASH = json.loads(
     (ROOT / "docs/model-research/structural-edge-priority-registry-v1.json").read_text(
         encoding="utf-8"
@@ -130,13 +138,41 @@ def test_glw_one_use_observation_blocks_conditional_books() -> None:
     assert "terminal_history_reconciliation" in result["next_retry_trigger"]
 
 
+def test_googl_holiday_adjusted_ex_date_rejects_millisecond_race() -> None:
+    artifact = _load(GOOGL_ADJUDICATION)
+
+    assert artifact["result_sha256"] == GOOGL_ADJUDICATION_HASH
+    assert _canonical_hash(artifact) == GOOGL_ADJUDICATION_HASH
+    event = artifact["current_event"]
+    assert event["derived_ex_dividend_date"] == "2026-09-04"
+    assert event["binance_bstock_snapshot_utc"].startswith("2026-09-04")
+    assert event["actual_snapshot_to_derived_ex_date_gap_days"] == 0
+    history = artifact["same_underlying_historical_mechanism"]
+    assert history["special_funding_time_utc"] == "2026-06-08T00:00:00.007Z"
+    assert Decimal(history["short_debit_usdt_per_contract_unit"]) > Decimal(
+        history["issuer_declared_dividend_usd_per_share"]
+    )
+    assert artifact["economic_adjudication"][
+        "public_conservative_net_distribution_floor_usd"
+    ] == "0"
+    adjudication = artifact["adjudication"]
+    assert adjudication["current_book_or_funding_request_permitted"] is False
+    assert "terminal_current_GOOGL_episode" in adjudication["status"]
+    authority = artifact["authority"]
+    assert authority["authenticated_requests"] == 0
+    assert authority["credentials_used"] is False
+    assert authority["orders_transfers_or_transactions"] == 0
+
+
 def test_registry_adds_candidate_and_closes_only_direct_family() -> None:
     registry = _load(REGISTRY)
 
     assert registry["result_sha256"] == REGISTRY_HASH
     assert _canonical_hash(registry) == REGISTRY_HASH
     hypotheses = registry["prioritized_hypotheses"]
-    assert [row["priority_rank"] for row in hypotheses] == list(range(1, 45))
+    assert [row["priority_rank"] for row in hypotheses] == list(
+        range(1, len(hypotheses) + 1)
+    )
     candidate = next(
         row
         for row in hypotheses
@@ -144,9 +180,16 @@ def test_registry_adds_candidate_and_closes_only_direct_family() -> None:
     )
     assert candidate["priority_rank"] == 34
     assert candidate["market_direction_forecast_required"] is False
-    assert "after_2026_08_31" in candidate["retry_trigger"]
+    assert "materially_precedes_the_official_exchange_ex_dividend_adjustment" in (
+        candidate["retry_trigger"]
+    )
+    assert "not_merely_the_record_date" in candidate["retry_trigger"]
     assert any(
         artifact["result_sha256"] == TRIGGER_RESULT_HASH
+        for artifact in candidate["canonical_artifacts"]
+    )
+    assert any(
+        artifact["result_sha256"] == GOOGL_ADJUDICATION_HASH
         for artifact in candidate["canonical_artifacts"]
     )
     terminal = next(

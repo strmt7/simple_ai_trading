@@ -285,9 +285,16 @@ override prose.
 - Treat the 2026 GLW bStock/perpetual timing-gap episode as terminal. The exact
   Special debit matched the gross dividend but arrived 1.003 seconds after the
   snapshot, so no pre-snapshot gap existed. Never repeat, retry, paginate,
-  alias, extend, repair, or book-capture that episode; only a future independent
-  weekend or holiday dividend event may reopen rank 34 under its literal new
-  prospective-contract and positive net-distribution-floor trigger.
+  alias, extend, repair, or book-capture that episode.
+- A record-date weekend or holiday gap is not an ex-dividend timing gap. Bind
+  the official exchange ex-dividend date using the applicable exchange calendar
+  and settlement rule before valuing any bStock snapshot. Treat the current
+  GOOGL episode as terminal: its holiday-adjusted ex-date equals the snapshot,
+  its prior same-underlying gross-matching Special debit arrived only 7 ms after
+  midnight, and the current public conservative net-distribution floor is zero.
+  Never attempt a public-network millisecond snapshot/funding race. Rank 34 may
+  reopen only under its literal future material pre-ex-date snapshot and
+  positive source-bound net-distribution-floor trigger.
 - Before freezing a time-bounded prospective capture, prove that its duration,
   phase alignment, retained observation tail, and required source timestamps can
   supply every minimum-sample gate. Elapsed duration and zero transport gaps do
