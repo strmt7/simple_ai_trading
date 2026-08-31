@@ -6718,3 +6718,35 @@ Registry SHA-256 becomes
 `6cd4204e8b3a4a75af1047c7a6d9ff36b0fb32b30322622ae06eb5d8ea5ebc29`,
 and the rebound durability-audit SHA-256 becomes
 `c9a25482f9984581a775ab2a02a73d4be35e0566e60ae8217d2eb6edd6e4f9f4`.
+
+## Polymarket complete NFL catalog side-specific correction
+
+The complete retained September 13-21 NFL catalog is now exhaustively corrected
+without network access. Its payoff proof remains valid, but its 674 apparent
+sub-floor candidates were produced by midpoint-like `outcomePrices`, not
+side-specific acquisition bounds. The deterministic correction repriced all
+4,621 relations using first-outcome `bestAsk` and conservative second-outcome
+`1 - bestBid`. All 4,621 relations were price-complete, zero cost strictly less
+than their one-pUSD floor, and the best was a Denver-Kansas City package at
+1.05 pUSD.
+
+This makes the prior Commanders-Cowboys book request avoidable in hindsight;
+its 2.55-pUSD zero-fee loss and skew evidence remain preserved, not rewritten.
+Do not repeat, reprice, or book-capture any event in the consumed NFL window.
+For every future sports catalog, enumerate payoff relations once and require a
+strict side-specific Gamma rejection result before any exact book or fee access.
+
+No network, credential, account, order, fund, transaction, fee, book, or
+protected capture was accessed. The offline contract SHA-256 is
+`d37c0924ab5c1d66ee95d4ad06956b0cbb24c031db18b5c733033e463d69611b`;
+the canonical correction SHA-256 is
+`61fb2010d57b3295dd0ca859345c54404372dbd8b0f7ac4bca42d3fb0e40ddfd`;
+and the exhaustive corrected-relation digest is
+`4f66205743538c5491fd52246edb40f5a033bc27865195f20ebb5e842339d6fc`.
+
+Accepted edges remain 29, ranked hypotheses remain 45, terminal families become
+105, and stable current account-qualified after-all-cost edges remain zero.
+Registry SHA-256 becomes
+`549dfc93d72d056b3e8b72f96dc93b571c80bcdcc73f0d6ad36af3b1c7b0c67e`,
+and the rebound durability-audit SHA-256 becomes
+`95baa8bd82e7d92af36f1f39464c2961fe595f5040f378d6f8aeb67f705d48ab`.

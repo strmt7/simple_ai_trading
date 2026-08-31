@@ -1,0 +1,52 @@
+{
+  "authority": {
+    "account_requests": 0,
+    "book_requests": 0,
+    "credentials_used": false,
+    "fee_requests": 0,
+    "funds_used": false,
+    "new_network_requests": 0,
+    "orders_or_transactions": 0,
+    "protected_capture_touched": false,
+    "signed_requests": 0,
+    "trading_authority": false
+  },
+  "contract_path": "docs/model-research/action-value/polymarket-future-nfl-catalog-side-specific-adjudication-contract-v1-2026-08-31.json",
+  "contract_sha256": "d37c0924ab5c1d66ee95d4ad06956b0cbb24c031db18b5c733033e463d69611b",
+  "frozen_at_utc": "2026-08-31T13:05:16.2167996Z",
+  "implementations": [
+    {
+      "path": "tools/adjudicate_polymarket_nfl_catalog_side_specific.py",
+      "sha256": "b97d2046aad3c0125f7c8b4d751807799ac2d5e4c767564a1521f242b813149b"
+    }
+  ],
+  "methodology": {
+    "enumeration": "reprice every one of the 4621 already-proved relations; no candidate selection",
+    "first_outcome_price": "bestAsk",
+    "price_role": "rejection_only",
+    "prohibited": [
+      "network access",
+      "book or fee access",
+      "outcomePrices as acquisition prices",
+      "adaptive sibling selection",
+      "changing the retained payoff graph"
+    ],
+    "second_outcome_price": "one minus first-outcome bestBid"
+  },
+  "output_path": "docs/model-research/action-value/polymarket-future-nfl-catalog-side-specific-adjudication-v1-2026-08-31.json",
+  "raw_file_sha256": "54611964aeaa68d133a252ec3ed3476f5072fef9ad33ec9308c7726266d21e3f",
+  "raw_path": "data/polymarket-future-nfl-monotone-catalog-v1/raw/events.json",
+  "schema_version": "polymarket-nfl-catalog-side-specific-adjudication-contract-v1",
+  "source_result_path": "docs/model-research/action-value/polymarket-future-nfl-monotone-catalog-result-v1-2026-08-29.json",
+  "source_result_sha256": "7c4472e0a77cde09f5643a06a1326fbfc2cc1e5ec37641314d875a346e1a7754",
+  "sources": [
+    {
+      "file_sha256": "9cdaf5ea9c6d346f389a404215aec32d7d3000b1cd56e1d808e7c6faceab82d7",
+      "path": "docs/model-research/action-value/polymarket-future-nfl-monotone-catalog-result-v1-2026-08-29.json"
+    },
+    {
+      "file_sha256": "54611964aeaa68d133a252ec3ed3476f5072fef9ad33ec9308c7726266d21e3f",
+      "path": "data/polymarket-future-nfl-monotone-catalog-v1/raw/events.json"
+    }
+  ]
+}
