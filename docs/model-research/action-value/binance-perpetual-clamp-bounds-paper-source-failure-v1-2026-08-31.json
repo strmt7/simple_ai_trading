@@ -1,0 +1,78 @@
+{
+  "schema_version": "binance-perpetual-clamp-bounds-paper-source-failure-v1",
+  "created_at_utc": "2026-08-31T21:52:40.8555286Z",
+  "question": "Does the complete primary paper expose a direction-independent executable Binance perpetual clamp-bound mechanism distinct from the retained funding-carry families?",
+  "source_binding": {
+    "contract_path": "docs/model-research/action-value/binance-perpetual-clamp-bounds-paper-source-contract-v1-2026-08-31.json",
+    "contract_sha256": "96c28a0f458018ca4fab1c6328d8d302d029aec334f056d770fb17b357de090b",
+    "raw_path": "data/binance-perpetual-clamp-bounds-paper-v1/raw/5262988.pdf",
+    "raw_sha256": "0e7a2dc4106fefd54755a759a83045584eeee657b4a423d43e8ebef04d3903a2",
+    "raw_bytes": 5625,
+    "journal_path": "data/binance-perpetual-clamp-bounds-paper-v1/request-journal.jsonl",
+    "journal_sha256": "03c685e1159bc7fe7e023a33623f5af08e4b96cb4fb71105dfeb82bcba4e102b"
+  },
+  "paper_identity": {
+    "ssrn_id": "5262988",
+    "doi": "10.2139/ssrn.5262988",
+    "title": "Arbitrage in Perpetual Contracts",
+    "authors": [
+      "Min Dai",
+      "Linfeng Li",
+      "Chen Yang"
+    ]
+  },
+  "capture": {
+    "method": "GET",
+    "status_code": 403,
+    "content_type": "text/html; charset=UTF-8",
+    "redirect_count": 0,
+    "response_classification": "cloudflare_javascript_and_cookie_challenge_not_primary_paper_pdf",
+    "required_pdf_signature_present": false,
+    "complete_methodology_available": false
+  },
+  "adjudication": {
+    "accepted_edge": false,
+    "deployment_ready": false,
+    "distinct_mechanism_adjudicated": false,
+    "market_data_collector_authorized": false,
+    "profitability_claim": false,
+    "public_forward_profit_floor": "0",
+    "status": "terminal_primary_source_failure_abstract_discovery_cannot_authorize_binance_market_research",
+    "trading_authority": false
+  },
+  "reasoning": {
+    "what_is_proved": [
+      "The one frozen exact primary SSRN PDF request returned HTTP 403 and a retained Cloudflare HTML challenge.",
+      "The retained bytes are not a PDF and contain no complete source methodology.",
+      "No Binance venue request account request credential order fund or protected capture access was used."
+    ],
+    "what_is_not_proved": [
+      "The exact no-arbitrage bound formula and its entry-time cash-flow assumptions.",
+      "Any historical or current executable Binance bound violation.",
+      "Any after-cost recurring direction-independent profit or distinct mechanism."
+    ],
+    "decision": "The title and indexed abstract remain discovery only. Without the complete primary methodology, the lead cannot reopen a retained-data screen or collector."
+  },
+  "retry_policy": {
+    "same_source": "do_not_retry_query_variants_aliases_mirrors_or_locale_routes",
+    "literal_trigger": "a_materially_revised_complete_primary_version_from_the_authors_or_a_public_reproducible_repository_with_exact_bound_formula_code_data_and_after_cost_execution_methodology",
+    "prohibited_shortcuts": [
+      "using_the_indexed_abstract_as_complete_methodology",
+      "retrying_an_SSRN_Delivery_cfm_alias_or_mirror",
+      "building_a_Binance_collector_from_the_title_or_abstract",
+      "calling_model_free_bounds_owned_executable_or_profitable_without_complete_source_and_after_cost_evidence"
+    ]
+  },
+  "authority": {
+    "account_requests": 0,
+    "credentials_used": false,
+    "funds_used": false,
+    "literature_requests": 1,
+    "orders_or_transactions": 0,
+    "protected_capture_touched": false,
+    "signed_requests": 0,
+    "trading_authority": false,
+    "venue_market_data_requests": 0
+  },
+  "result_sha256": "dd5058136c809425b833266f9a1bce568bab6e692301a2adbffec8b18b017275"
+}
