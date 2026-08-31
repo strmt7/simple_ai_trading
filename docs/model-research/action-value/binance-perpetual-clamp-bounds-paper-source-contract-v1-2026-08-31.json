@@ -1,0 +1,56 @@
+{
+  "schema_version": "binance-perpetual-clamp-bounds-paper-source-contract-v1",
+  "status": "frozen_before_primary_paper_access",
+  "frozen_at_utc": "2026-08-31T21:51:14.9538904Z",
+  "contract_sha256": "96c28a0f458018ca4fab1c6328d8d302d029aec334f056d770fb17b357de090b",
+  "purpose": "retrieve the exact complete primary paper and determine whether its model-free Binance perpetual clamp bounds expose a direction-independent executable mechanism distinct from retained funding-carry families",
+  "authority": {
+    "public_unauthenticated_read_only_research": true,
+    "network_requests_permitted": 1,
+    "venue_market_data_requests_permitted": 0,
+    "credentials_permitted": false,
+    "account_state_permitted": false,
+    "orders_or_mutations_permitted": false,
+    "protected_capture_access_permitted": false,
+    "accepted_edge_from_this_stage_permitted": false
+  },
+  "source": {
+    "ssrn_id": "5262988",
+    "doi": "10.2139/ssrn.5262988",
+    "title": "Arbitrage in Perpetual Contracts",
+    "authors": [
+      "Min Dai",
+      "Linfeng Li",
+      "Chen Yang"
+    ],
+    "method": "GET",
+    "url": "https://papers.ssrn.com/sol3/Delivery.cfm/5262988.pdf?abstractid=5262988&mirid=1",
+    "endpoint_classification": "public unauthenticated primary-paper PDF retrieval; not a venue endpoint and not state changing",
+    "request_body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "timeout_seconds": 30
+  },
+  "retention": {
+    "raw_path": "data/binance-perpetual-clamp-bounds-paper-v1/raw/5262988.pdf",
+    "journal_path": "data/binance-perpetual-clamp-bounds-paper-v1/request-journal.jsonl",
+    "intent_before_access": true,
+    "retain_http_error_body": true
+  },
+  "questions": [
+    "what exact entry-time funding cash flow and clamp terms define each no-arbitrage bound",
+    "whether any bound violation is a guaranteed cash-flow arbitrage or only a valuation restriction",
+    "which spot borrowing shorting trading funding exit capital and liquidation costs are included",
+    "whether the empirical Binance result exposes recurrent out-of-bound states with prospective executable conditions",
+    "whether retained public Binance spot perpetual premium-index and funding data can answer the mechanism without a new venue request"
+  ],
+  "decision_boundary": {
+    "reopen": "only a complete source-proved guaranteed entry-time cash-flow identity distinct from retained funding carry may enter one zero-network retained-data test before any new market request",
+    "reject": "bounds that hold empirically or depend on future unknown funding valuation leverage or omitted execution costs do not authorize a collector",
+    "promotion": "none; the paper cannot accept an edge or grant account order or trading authority"
+  },
+  "stop_rules": [
+    "do not retry query variants aliases mirrors or locale routes if this exact SSRN request fails",
+    "do not request venue books histories accounts or credentials from this stage",
+    "do not treat a theoretical bound or historical violation as executable after-cost profit",
+    "preserve the raw response and journal before interpretation"
+  ]
+}

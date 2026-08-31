@@ -41,10 +41,21 @@ Development belongs only on `main`; do not create another development branch.
   Fee-rounding correction SHA-256 is
   `b423b44e57bfd329220256facf4b9eabe45371b267e7a91ea08aa11a666be204`.
   Accepted edges remain 29, ranked hypotheses remain 47, terminal families
-  remain 120, registry SHA-256 is
-  `992b900a7fda3ea1d17362cf4d32cc73a6ebb2ed0be1463c6a0cc4da0ffe6f9e`,
+  become 121, registry SHA-256 is
+  `592e9f6213d1d909fbb193581b0899e3d7191f4cd33601f365ffe96ceeceed2c`,
   and durability-audit SHA-256 is
-  `d129b50c62dd4097e856c0037461fff2dfc89951c00c0130c75f98e358758270`.
+  `5bf1e78140ec0d3204b20bccddd2203edb4109e516e8189e59ca3b41610b826f`.
+
+- The exact-title literature delta for `Arbitrage in Perpetual Contracts`
+  (SSRN 5262988) is terminal as a source failure, not a Binance edge. The one
+  frozen exact primary PDF GET returned HTTP 403 and a retained 5,625-byte
+  Cloudflare HTML challenge. The indexed abstract is discovery only and cannot
+  authorize a clamp-bound collector or retained-data screen. Do not retry a
+  query variant, alias, mirror, or locale route. Reopen only on a materially
+  revised complete primary version from the authors or a public reproducible
+  repository with the exact formula, code, data, and after-cost execution
+  method. Canonical adjudication SHA-256 is
+  `dd5058136c809425b833266f9a1bce568bab6e692301a2adbffec8b18b017275`.
 
 - The apparent August 31 Polymarket Sports maker-rebate change is terminal as
   a source-quality event, not an edge. A current search-index rendering exposed

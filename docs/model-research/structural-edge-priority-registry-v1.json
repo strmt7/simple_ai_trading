@@ -3231,7 +3231,7 @@
       "venue_scope": "Binance_BTC_ETH_SOL_European_options_and_exact_matching_USDT_perpetuals"
     }
   ],
-  "result_sha256": "992b900a7fda3ea1d17362cf4d32cc73a6ebb2ed0be1463c6a0cc4da0ffe6f9e",
+  "result_sha256": "592e9f6213d1d909fbb193581b0899e3d7191f4cd33601f365ffe96ceeceed2c",
   "schema_version": "structural-edge-priority-registry-v1",
   "terminal_do_not_repeat": [
     {
@@ -3839,8 +3839,13 @@
       "canonical_result_sha256": "0874302d3acb6e641f38f693eafaa94d2a3b86167c0f796691efc5707b5cf64a",
       "family": "polymarket_Sports_maker_rebate_search_index_vs_canonical_source_drift_2026_08_31",
       "reason": "the_material_search_index_discovery_reported_Sports_25_percent_taker_rate_0_03_and_USDC_but_the_frozen_one_use_canonical_Maker_Rebates_Markdown_GET_returned_the_exact_prior_5945_bytes_and_sha256_8d2c6562bd1b3376bc3fc1557a60efef5aa3c1d856c7f8dcc405139a07e9ba2a_still_binding_15_percent_0_05_and_pUSD_the_search_rendering_is_discovery_only_the_prior_official_cross_surface_conflict_and_zero_forward_credit_remain_do_not_retry_or_alias_while_the_canonical_hash_is_unchanged"
+    },
+    {
+      "canonical_result_sha256": "dd5058136c809425b833266f9a1bce568bab6e692301a2adbffec8b18b017275",
+      "family": "binance_perpetual_clamp_model_free_bounds_SSRN_5262988_primary_source_failure",
+      "reason": "the_exact_title_DOI_SSRN_ID_author_and_mechanism_alias_search_found_no_retained_adjudication_but_the_one_frozen_exact_primary_PDF_GET_returned_HTTP_403_and_a_5625_byte_Cloudflare_HTML_challenge_not_the_complete_paper_the_indexed_title_and_abstract_remain_discovery_only_and_cannot_authorize_a_retained_data_screen_market_collector_or_profit_claim_do_not_retry_query_variants_aliases_mirrors_or_locale_routes_reopen_only_on_a_materially_revised_complete_primary_version_from_the_authors_or_a_public_reproducible_repository_with_exact_bound_formula_code_data_and_after_cost_execution_methodology"
     }
   ],
-  "updated_at_utc": "2026-08-31T21:17:39Z",
+  "updated_at_utc": "2026-08-31T21:52:40Z",
   "usage_rule": "advance_the_highest_ranked_hypothesis_whose_retry_trigger_is_satisfied_otherwise_do_not_repeat_a_blocked_or_terminal_screen"
 }
