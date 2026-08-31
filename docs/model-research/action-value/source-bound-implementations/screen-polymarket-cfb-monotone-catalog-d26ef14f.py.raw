@@ -23,9 +23,6 @@ from tools.adjudicate_polymarket_exact_mlb_monotone_prefilter import (
 from tools.adjudicate_polymarket_exact_nfl_monotone_prefilter import (
     _total_markets,
 )
-from tools.adjudicate_polymarket_nfl_catalog_side_specific import (
-    _side_specific_price,
-)
 from tools.screen_polymarket_exact_two_leg_package import _request
 from tools.screen_polymarket_mlb_cross_period_catalog import (
     _frozen_instant,
@@ -124,39 +121,6 @@ def _screen_event(event: dict[str, Any]) -> tuple[list[dict[str, Any]], dict[str
     ]
     if not relations:
         raise RuntimeError("no exact monotone relations")
-    market_by_id = {str(row["id"]): row for row in markets}
-    for relation in relations:
-        superset_price, superset_source = _side_specific_price(
-            market_by_id[str(relation["superset_positive_market_id"])],
-            str(relation["superset_positive_outcome"]),
-        )
-        subset_price, subset_source = _side_specific_price(
-            market_by_id[str(relation["subset_complement_market_id"])],
-            str(relation["subset_complement_outcome"]),
-        )
-        minimum_payout = Decimal(
-            str(relation["minimum_terminal_payout_per_share_pUSD"])
-        )
-        side_specific_sum = superset_price + subset_price
-        relation.update(
-            {
-                "source_outcome_price_sum_per_share_pUSD": relation[
-                    "displayed_price_sum_per_share_pUSD"
-                ],
-                "superset_positive_price_pUSD": superset_price,
-                "superset_positive_price_source": superset_source,
-                "subset_complement_price_pUSD": subset_price,
-                "subset_complement_price_source": subset_source,
-                "displayed_price_sum_per_share_pUSD": side_specific_sum,
-                "price_semantics": "bestAsk_or_1-bestBid_rejection_only",
-                "optimistic_profit_floor_per_share_before_execution_costs_pUSD": (
-                    minimum_payout - side_specific_sum
-                ),
-                "passes_strictly_below_payout_gate": (
-                    side_specific_sum < minimum_payout
-                ),
-            }
-        )
     event_ref = {
         "event_id": str(event["id"]),
         "event_slug": str(event["slug"]),

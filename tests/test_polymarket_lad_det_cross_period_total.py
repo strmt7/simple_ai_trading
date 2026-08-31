@@ -13,6 +13,9 @@ from tools.screen_polymarket_exact_two_leg_package import _asks
 ROOT = Path(__file__).resolve().parents[1]
 ACTION_VALUE = ROOT / "docs/model-research/action-value"
 DATA = ROOT / "data/polymarket-lad-det-cross-period-total-v1"
+HISTORICAL_TWO_LEG_TOOL = ACTION_VALUE / (
+    "source-bound-implementations/screen-polymarket-exact-two-leg-package-ba7ebaa1.py.raw"
+)
 REGISTRY = ROOT / "docs/model-research/structural-edge-priority-registry-v1.json"
 REGISTRY_HASH = json.loads(
     (ROOT / "docs/model-research/structural-edge-priority-registry-v1.json").read_text(
@@ -85,7 +88,7 @@ def test_exact_depth_rejects_the_cross_period_candidate_before_fee_requests() ->
         "fc01c54e9c04117067aa3b43ae194649b93efc12a5265fce508e64f082f320b2"
     )
     assert _canonical_hash(result, "result_sha256") == result["result_sha256"]
-    assert _file_hash(ROOT / result["implementation"]["path"]) == (
+    assert _file_hash(HISTORICAL_TWO_LEG_TOOL) == (
         "ba7ebaa1fb5235ba026f7cf4cb21ff73ba19430fee4a4f678fbdea37635eb32f"
     )
     assert _file_hash(raw) == (

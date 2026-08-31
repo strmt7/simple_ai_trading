@@ -1,0 +1,67 @@
+{
+  "schema_version": "polymarket-cfb-september-8-12-empty-method-adjudication-v1",
+  "created_at_utc": "2026-08-31T17:05:28.0762429Z",
+  "purpose": "adjudicate the consumed empty CFB population after discovering that its runner used midpoint-like outcomePrices rather than the contract-required side-specific rejection prices",
+  "result_sha256": "29d8342af4060c5e75d9e4cfca88db38e59e67f32a332847b046d0b1f900d5a0",
+  "sources": {
+    "contract": {
+      "path": "docs/model-research/action-value/polymarket-cfb-september-8-12-complete-monotone-catalog-contract-v1-2026-08-31.json",
+      "result_sha256": "dc73c6b56d2ae89a4eaab93666f7b5b6bf5856daed1663ef5b5fef4e76f8c178"
+    },
+    "consumed_result": {
+      "path": "docs/model-research/action-value/polymarket-cfb-september-8-12-complete-monotone-catalog-result-v1-2026-08-31.json",
+      "result_sha256": "5511d2446585d02577c91249f454e458b1b7551e656cd4f68abd8dae0ac526be"
+    },
+    "raw_response": {
+      "path": "data/polymarket-cfb-september-8-12-complete-monotone-catalog-v1/raw/events.json",
+      "bytes": 97,
+      "sha256": "1caf48c002786edb458302862e4e33fbff3b2afecb9ec796169d7a3881ad7e9e"
+    },
+    "consumed_runner_sidecar": {
+      "path": "docs/model-research/action-value/source-bound-implementations/screen-polymarket-cfb-monotone-catalog-d26ef14f.py.raw",
+      "bytes": 11535,
+      "sha256": "d26ef14fe6178e209ceb1ec98c37d7797e054108d623de3ba16e8fb3e2fd2467"
+    },
+    "lineage": {
+      "path": "docs/model-research/action-value/historical-cfb-catalog-runner-immutable-lineage-v1-2026-08-31.json",
+      "result_sha256": "e55df3c23a28a49cc346f3d382a04b0fa9410612ae519be6e59547a85c3b4627"
+    }
+  },
+  "finding": {
+    "contract_price_semantics": "side-specific bestAsk or conservative one-minus-bestBid",
+    "consumed_runner_price_semantics": "outcomePrices through the imported relation helper",
+    "representation_mismatch": true,
+    "consumed_contract_or_result_rewritten": false
+  },
+  "decision_invariance": {
+    "returned_event_count": 0,
+    "next_cursor_present": false,
+    "population_complete_under_frozen_filter": true,
+    "included_event_count": 0,
+    "complete_relation_count": 0,
+    "price_rows_evaluated": 0,
+    "reason": "the incorrect price path was never reached because the source returned no event and no relation; the complete-empty-population rejection is invariant to price semantics"
+  },
+  "prospective_correction": {
+    "current_runner_path": "tools/screen_polymarket_cfb_monotone_catalog.py",
+    "current_runner_sha256": "f7ee734f9287adcbcf8556fe543022c01298fb16e815d71d9cd321ca192abb20",
+    "future_behavior": "rewrite relation acquisition diagnostics from each exact market's first-outcome bestAsk or conservative second-outcome one-minus-bestBid before candidate ranking"
+  },
+  "verdict": {
+    "status": "terminal_complete_empty_population_method_mismatch_decision_invariant",
+    "accepted_edge": false,
+    "profitability_claim": false,
+    "retry_permitted": false,
+    "trading_authority": false
+  },
+  "authority": {
+    "network_requests": 0,
+    "credentials_used": false,
+    "accounts_accessed": false,
+    "book_requests": 0,
+    "fee_requests": 0,
+    "orders_or_transactions": 0,
+    "funds_used": false,
+    "protected_capture_touched": false
+  }
+}

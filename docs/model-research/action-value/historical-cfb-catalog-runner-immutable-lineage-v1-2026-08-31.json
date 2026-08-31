@@ -1,0 +1,49 @@
+{
+  "schema_version": "historical-cfb-catalog-runner-immutable-lineage-v1",
+  "created_at_utc": "2026-08-31T17:05:28.0762429Z",
+  "purpose": "preserve the exact consumed CFB catalog runner before its prospective side-specific price correction",
+  "result_sha256": "e55df3c23a28a49cc346f3d382a04b0fa9410612ae519be6e59547a85c3b4627",
+  "original_binding": {
+    "mutable_path": "tools/screen_polymarket_cfb_monotone_catalog.py",
+    "expected_sha256": "d26ef14fe6178e209ceb1ec98c37d7797e054108d623de3ba16e8fb3e2fd2467",
+    "recovered_from_commit": "d49a390015fc5b3e6c900cb7533da3e72a186e4c",
+    "failure_mode": "the consumed runner delegated acquisition prices to outcomePrices; the reusable path was corrected prospectively after the empty September 8 through 12 result"
+  },
+  "immutable_sidecar": {
+    "path": "docs/model-research/action-value/source-bound-implementations/screen-polymarket-cfb-monotone-catalog-d26ef14f.py.raw",
+    "bytes": 11535,
+    "sha256": "d26ef14fe6178e209ceb1ec98c37d7797e054108d623de3ba16e8fb3e2fd2467"
+  },
+  "affected_bindings": {
+    "reference_count": 9,
+    "paths": [
+      "docs/model-research/action-value/polymarket-cfb-september-5-complete-monotone-catalog-contract-v1-2026-08-30.json",
+      "docs/model-research/action-value/polymarket-cfb-september-6-complete-monotone-catalog-contract-v1-2026-08-30.json",
+      "docs/model-research/action-value/polymarket-cfb-september-6-complete-monotone-catalog-result-v1-2026-08-30.json",
+      "docs/model-research/action-value/polymarket-cfb-september-7-complete-monotone-catalog-contract-v1-2026-08-30.json",
+      "docs/model-research/action-value/polymarket-cfb-september-7-complete-monotone-catalog-result-v1-2026-08-30.json",
+      "docs/model-research/action-value/polymarket-cfb-september-8-12-complete-monotone-catalog-contract-v1-2026-08-31.json",
+      "docs/model-research/action-value/polymarket-cfb-september-8-12-complete-monotone-catalog-result-v1-2026-08-31.json",
+      "docs/model-research/action-value/polymarket-future-cfb-monotone-catalog-contract-v1-2026-08-30.json",
+      "docs/model-research/action-value/polymarket-future-cfb-monotone-catalog-result-v1-2026-08-30.json"
+    ]
+  },
+  "prospective_correction": {
+    "current_path_sha256": "f7ee734f9287adcbcf8556fe543022c01298fb16e815d71d9cd321ca192abb20",
+    "method": "retain payoff relations but replace each outcomePrices acquisition diagnostic with first-outcome bestAsk or conservative second-outcome 1-bestBid before ranking or escalation",
+    "historical_nonempty_populations": "all 139 retained relations were separately corrected offline with zero strict sub-floor candidates"
+  },
+  "repair": {
+    "consumed_contracts_changed": false,
+    "consumed_results_changed": false,
+    "validation_rule": "historical bindings expecting d26ef14f validate the immutable sidecar; future contracts bind the corrected reusable path"
+  },
+  "authority": {
+    "network_requests": 0,
+    "credentials_used": false,
+    "accounts_accessed": false,
+    "orders_or_transactions": 0,
+    "funds_used": false,
+    "protected_capture_touched": false
+  }
+}

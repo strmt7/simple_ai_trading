@@ -65,6 +65,22 @@ undocumented mapping of `market_competitiveness` to any owned share leave the
 public payout floor at zero. Do not refetch, reprice, weaken freshness, or
 substitute another GTA outcome after observing this result.
 
+The next complete CFB payoff-lattice discovery window, September 8 through 12,
+returned zero events and no cursor. It is a consumed complete empty population:
+do not poll, refine, or move immediately to another unproved forward horizon.
+Verification exposed that its consumed runner still used midpoint-like
+`outcomePrices`; zero events made that decision invariant. The exact old runner
+is now immutable and the reusable runner is corrected prospectively. A
+zero-network correction repriced all 139 retained September 3–7 CFB relations
+with `bestAsk` or `1 - bestBid`: eight apparent candidates became zero, with
+best sums of 1.07, 1.08, 1.07, and 1.62 pUSD for 1 pUSD floors. Never use the
+superseded CFB `outcomePrices` gates.
+A separate zero-network audit then exhausted every exact relation exposed by
+the retained August 26 holding-yield market rows: seven mutual-exclusion,
+triple-NO, and nested-threshold packages across four events. None was strictly
+below its optimistic common-rule floor; the best Fed pair cost 1.01 pUSD for a
+1 pUSD floor. Do not reprice or book-capture those retained rows.
+
 The retained Los Angeles Galaxy versus New England Revolution event pair proved
 16 exact-score-to-full-game-result payoff implications, but also exposed a
 request-efficiency bug: Gamma `outcomePrices` made the best package appear to

@@ -7079,3 +7079,76 @@ Registry SHA-256 becomes
 `10a3ec81ad74ea57d0e7051dfe3a4296db4be6da18f3d8b3438145ae9d4e1693`,
 and the rebound durability-audit SHA-256 becomes
 `8b1dde039a56cda32769aa289955404dde578f48396dc6ff4a1ad1cd7bdf855d`.
+
+## Polymarket CFB empty-window and retained multi-event parity closure
+
+Rank 30 advanced through one nonoverlapping, prospectively frozen CFB catalog
+window rather than another single-event book test. The September 8 through 12
+window began after every consumed CFB event. Its retained densest-day bound was
+89 events, so five days projected to 445 against the source-bound 500-row
+ceiling. The one public unauthenticated keyset request returned HTTP 200 with
+zero events, no cursor, and a complete empty population. Zero relations, books,
+or fee requests followed. Do not poll, narrow, refine, repeat, or immediately
+move to another unproved forward horizon; reopen only after an actual distinct
+deployment is source-proved or a material rule, fee, or price change occurs.
+
+The contract SHA-256 is
+`dc73c6b56d2ae89a4eaab93666f7b5b6bf5856daed1663ef5b5fef4e76f8c178`;
+the result SHA-256 is
+`5511d2446585d02577c91249f454e458b1b7551e656cd4f68abd8dae0ac526be`;
+the 97-byte raw response SHA-256 is
+`1caf48c002786edb458302862e4e33fbff3b2afecb9ec796169d7a3881ad7e9e`.
+
+Focused verification then exposed that the consumed CFB runner delegated its
+price gate to midpoint-like `outcomePrices`, despite the new contract requiring
+side-specific rejection prices. The September 8–12 decision is invariant: its
+complete population contained zero events and zero price rows. The exact
+11,535-byte consumed runner was preserved under an immutable sidecar at
+SHA-256 `d26ef14f...`; the reusable runner was corrected prospectively to use
+first-outcome `bestAsk` or conservative second-outcome `1 - bestBid` before
+ranking. The empty-population method adjudication SHA-256 is
+`29d8342af4060c5e75d9e4cfca88db38e59e67f32a332847b046d0b1f900d5a0`,
+and the runner-lineage SHA-256 is
+`e55df3c23a28a49cc346f3d382a04b0fa9410612ae519be6e59547a85c3b4627`.
+
+A zero-network correction then repriced all 139 retained CFB relations across
+the complete September 3–7 populations. The old midpoint-like method reported
+eight strict sub-floor candidates; the correct side-specific method reports
+zero. Corrected best sums are 1.07, 1.08, 1.07, and 1.62 pUSD respectively for
+1 pUSD floors. All earlier payoff identities remain valid, but their
+`outcomePrices` economic gates are superseded. The consolidated correction
+SHA-256 is
+`cc247e76896eea386ae252474099af3c6872393e77ea81b9d4262671f17ac9e0`.
+
+Before spending another market request, a distinct zero-network rank-31 audit
+reused the nine hash-bound August 26 market rows already retained by the
+holding-yield study. It exhausted seven exact direction-independent relations
+across four events: two mutually exclusive Fed brackets, two largest-company
+outcomes, three best-AI outcomes including the all-NO triple, and the nested
+Anthropic 1.5T/2.0T valuation thresholds. Rejection prices used YES `bestAsk`
+or conservative `1 - YES bestBid`; Gamma remained rejection-only.
+
+Zero of seven sums were strictly below their optimistic common-rule payout
+floor. The best was NO no-change plus NO 25-bps-increase at 1.01 pUSD for a
+1 pUSD floor. The all-NO best-AI triple cost 2.14 pUSD for a 2 pUSD floor, and
+the nested Anthropic package cost 1.26 pUSD for a 1 pUSD floor. No current book,
+fee, credential, account, order, fund, transaction, or protected capture was
+justified. Do not rebuild, reprice, or book-capture these retained rows.
+
+The canonical retained-parity SHA-256 is
+`b3f5480fea15bb73990a278dba93356cb34c49f91d82e2624c79fef8191e09f4`.
+Accepted edges remain 29, ranked hypotheses remain 45, terminal families become
+114, and stable current account-qualified after-all-cost edges remain zero.
+Registry SHA-256 becomes
+`f6f2e93e2706b1db421c53fc07e5066cb2084367e8deee98b44b3fd62606180c`,
+and the rebound durability-audit SHA-256 becomes
+`a45b7f745ea564fc859a7c034f8739c96716df8e43bda8f74b6f814b8459d7eb`.
+
+Focused verification exposed one older source-binding defect: 32 consumed
+contracts or results expected SHA-256 `ba7ebaa1...` at the reusable
+`screen_polymarket_exact_two_leg_package.py` path, which was later legitimately
+changed. The consumed artifacts and current tool were not rewritten. The exact
+17,547 historical bytes were recovered from commit `7e9bffa7...` into an
+immutable binary sidecar and tests now route only that historical hash to the
+sidecar. The lineage artifact SHA-256 is
+`a584e3665300bb405183370a66f47e2fc83ddc43764251ec236c2341f7a4d1ef`.
