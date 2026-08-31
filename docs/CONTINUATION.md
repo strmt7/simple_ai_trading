@@ -7152,3 +7152,43 @@ changed. The consumed artifacts and current tool were not rewritten. The exact
 immutable binary sidecar and tests now route only that historical hash to the
 sidecar. The lineage artifact SHA-256 is
 `a584e3665300bb405183370a66f47e2fc83ddc43764251ec236c2341f7a4d1ef`.
+
+## Binance stock-option plus opposite-perpetual deployment rejection
+
+A retained official API catalog comparison exposed one genuinely distinct
+structural lead not previously registered. For a European option and exactly
+matching underlying unit, a long call plus an equal short perpetual has the
+terminal gross lower bound `perpetual entry - strike - call ask`; a long put
+plus an equal long perpetual has `strike - perpetual entry - put ask`. This is
+market-direction independent, but it matters only if stock options are actually
+deployed and their settlement identity matches a tradable perpetual.
+
+Current official Binance developer documentation classifies
+`GET /eapi/v1/exchangeInfo` as public market data and exposes `contractType`,
+`underlyingType`, unit, strike, expiry, and status. TradFi Options contract
+acceptance is a separate `USER_DATA` `POST` and was not called. The prospective
+contract froze the complete active `TRADFI_OPTIONS` plus `EQUITY` filter and one
+request maximum before access.
+
+The exact public inventory GET returned HTTP 200 with 1,290,567 retained bytes
+and zero active stock option rows. The empty population SHA-256 is the standard
+empty-byte hash `e3b0c442...`. The sequence stopped immediately: zero option
+tickers, futures metadata, books, premium-index rows, funding rows, credentials,
+account reads, contract acceptances, orders, or funds were used. This rejects
+current deployment, not the payoff identity. Do not poll or repeat the current
+population. Reopen only after an official Binance TradFi equity-option listing
+or a material stock-option settlement, fee, access, unit, or matching-perpetual
+architecture change, then freeze a separate economics contract.
+
+Contract file SHA-256 is
+`08bcd2fd86082e9c4d03b4408c38aabfb5f84248ace9748d6898ebcef3114624`;
+canonical result SHA-256 is
+`b72592efad26563aacc4e6d8611f15f3172039ffc220153ab824bf57231afcb3`;
+raw response SHA-256 is
+`88db31aba07967eb9fcd6dd3c93b409e97b835365df9fd001590f53c6f3d3e23`.
+Accepted edges remain 29, ranked hypotheses become 46, terminal families become
+115, and stable current account-qualified after-all-cost edges remain zero.
+Registry SHA-256 becomes
+`06ca44a66364f8bcd1d78b76d4e75f13f1431ce9437a5e7f7ce8c1f6af5ffd04`,
+and durability-audit SHA-256 becomes
+`a0896ba8a9782234b2735e67553583118694715e8f65886416d6f73481d4ea1a`.

@@ -1,0 +1,78 @@
+{
+  "schema_version": "binance-stock-option-inventory-contract-v1",
+  "status": "frozen_before_one_public_inventory_request",
+  "frozen_at_utc": "2026-08-31T17:28:28.6501733Z",
+  "purpose": "determine whether Binance currently deploys any active TradFi equity option population that could support a separately frozen long-option plus opposite matching TradFi-perpetual terminal-payoff lower-bound screen",
+  "authority": {
+    "research_only": true,
+    "public_unauthenticated_GET_sources_only": true,
+    "credentials_permitted": false,
+    "account_state_permitted": false,
+    "orders_quotes_transfers_contract_acceptance_or_wallet_actions_permitted": false,
+    "paper_or_live_trading_authority": false,
+    "profitability_or_accepted_edge_claim_permitted": false
+  },
+  "population_filter": {
+    "contract_type": "TRADFI_OPTIONS",
+    "status": "TRADING",
+    "underlying_type": "EQUITY"
+  },
+  "capture": {
+    "endpoint": "https://eapi.binance.com/eapi/v1/exchangeInfo",
+    "method": "GET",
+    "security_classification": "public_market_data_no_header_or_signature",
+    "maximum_http_requests": 1,
+    "retry_permitted": false,
+    "durable_raw_before_calculation": true,
+    "stop_on_first_http_or_schema_error": true
+  },
+  "prospective_decision": {
+    "zero_active_rows": "terminalize the current public stock-option deployment premise and stop without option tickers futures metadata books premium index or funding history",
+    "one_or_more_active_rows": "retain only the complete active symbol identity population and freeze one separate exact economics contract before any downstream market-data request",
+    "downstream_minimum_requirements": [
+      "source-proved stock-option exercise style settlement time settlement index and contract unit",
+      "an exact matching active Binance TradFi perpetual underlying and unit conversion",
+      "option executable ask price and displayed quantity",
+      "perpetual executable entry book side and quantity",
+      "option entry exercise settlement and exit fees",
+      "direction-specific adverse funding and expiry exit-basis stress",
+      "non-atomic orphan liquidation opportunity tax custody and operational costs",
+      "strictly positive worst-state same-unit terminal floor after every cost"
+    ],
+    "accepted_edge": "never from inventory; recurring exact executable after-cost evidence and separate account qualification remain mandatory",
+    "all_outcomes": "accepted edge count remains unchanged and no authenticated funded paper or live action is authorized"
+  },
+  "method": {
+    "implementation_path": "tools/check_binance_commodity_option_expiry_delta.py",
+    "implementation_sha256": "fc86214bcb6f9e372e56be40fd289788ada9b965e36dedb249dea92912e36c97",
+    "sorted_population_hash": "SHA-256 of newline-joined active symbol names in lexical order; the empty population hashes the empty byte string",
+    "grouping": "exact underlying and expiryDate pair"
+  },
+  "source_contracts": [
+    {
+      "url": "https://developers.binance.com/docs/derivatives/change-log",
+      "role": "current official July 9 2026 addition of contractType and underlyingType to public option exchange information plus the TradFi Options agreement endpoint"
+    },
+    {
+      "url": "https://developers.binance.com/en/docs/catalog/core-trading-derivatives-trading-options/api/rest-api/market-data",
+      "role": "current official public GET exchangeInfo route and response fields"
+    },
+    {
+      "path": "docs/model-research/binance/raw/spot-block-matching-cost-overlay-v1-2026-08-30/03-agent-native-index.raw.txt",
+      "sha256": "944e132d3523c8a03abcac2f7ddb85802107e45161470885b7a8785fd4fdb15d",
+      "role": "retained official Agent Native catalog separating public market data from USER_DATA TradFi Options agreement access"
+    }
+  ],
+  "raw_retention": {
+    "directory": "data/binance-stock-option-inventory-v1/raw",
+    "journal": "data/binance-stock-option-inventory-v1/request-journal.jsonl"
+  },
+  "prohibited_shortcuts": [
+    "calling API feature support a deployed active stock-option population",
+    "requesting tickers futures books funding or account state when the active stock-option population is empty",
+    "using option mark last trade model value or missing quantity as an executable ask",
+    "assuming an equity option and similarly named perpetual share one settlement index unit or terminal value",
+    "treating the option contract agreement endpoint as read-only or accepting it without separate explicit authority",
+    "using credentials placing orders or claiming profit from inventory metadata"
+  ]
+}
