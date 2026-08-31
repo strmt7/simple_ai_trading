@@ -1,0 +1,61 @@
+{
+  "authority": {
+    "account_or_funded_actions_permitted": false,
+    "credentials_permitted": false,
+    "orders_or_cancellations_permitted": false,
+    "public_unauthenticated_read_only_only": true
+  },
+  "candidate": {
+    "event_end_date_utc": "2026-10-02",
+    "event_slug": "precipitation-in-nyc-in-september",
+    "market_slug": "will-nyc-have-more-than-6-inches-of-precipitation-in-september",
+    "outcomes": [
+      "Yes",
+      "No"
+    ],
+    "question": "Will NYC have more than 6 inches of precipitation in September?",
+    "selection": "Highest displayed daily reward on the current first page of the official Polymarket Rewards surface at discovery time; the displayed 64 pUSD rate, 4-cent spread, 20-share minimum, prices, volume, and competition are discovery only and excluded from every exact-value gate."
+  },
+  "capture": {
+    "activation_window_minutes": 30
+  },
+  "decision": {
+    "advance_only_if": "Gamma and exact sponsored-condition identity, size, spread, active dated positive rate, binary tokens, zero-maker-fee state, and remaining horizon reconcile exactly.",
+    "books_in_this_stage": false,
+    "on_failure": "Terminalize this exact candidate without retry, replacement, parameter change, or book request.",
+    "on_pass": "Freeze a separate one-use two-token book screen using only the retained exact source identities and settings."
+  },
+  "frozen_at_utc": "2026-08-31T15:26:30.5677856Z",
+  "purpose": "Rejection-first exact-source reconciliation for one source-selected current month-long paired-maker liquidity-reward candidate before any book access.",
+  "request_contract": {
+    "endpoint_classification": {
+      "exact_reward": {
+        "method": "GET",
+        "operation": "Get raw rewards for a specific market; public read-only documented endpoint.",
+        "primary_contract_url": "https://docs.polymarket.com/api-reference/rewards/get-raw-rewards-for-a-specific-market"
+      },
+      "gamma": {
+        "method": "GET",
+        "operation": "Discover markets by exact slug; public read-only documented endpoint.",
+        "primary_contract_url": "https://docs.polymarket.com/market-data/discover-markets"
+      }
+    },
+    "exact_reward_endpoint_pattern": "https://clob.polymarket.com/rewards/markets/{condition_id}",
+    "gamma_endpoint": "https://gamma-api.polymarket.com/markets",
+    "gamma_params": {
+      "closed": "false",
+      "slug": "will-nyc-have-more-than-6-inches-of-precipitation-in-september"
+    },
+    "response_byte_ceiling": 2000000,
+    "reward_params": {
+      "sponsored": "true"
+    },
+    "terminal_cursor": "LTE="
+  },
+  "retry": {
+    "permitted": false,
+    "reopen_only_on": "A materially new exact source-selected reward market or a documented material change in this market's reward configuration; never by repeating this consumed candidate."
+  },
+  "schema_version": "polymarket-exact-reward-source-contract-v1",
+  "result_sha256": "101f5cacd9dc7a4acf2282f373e25f8abdaee5207d85f36812b0e74e98ddc877"
+}

@@ -1,0 +1,93 @@
+{
+  "adjudication": {
+    "accepted_edge": false,
+    "books_permitted": false,
+    "deployment_ready": false,
+    "market_direction_forecast_required": false,
+    "profitability_claim": false,
+    "status": "terminal_before_exact_reward_request_rendered_resolution_date_did_not_equal_Gamma_market_end_date",
+    "trading_authority": false
+  },
+  "authority": {
+    "account_state_accessed": false,
+    "credentials_used": false,
+    "funded_actions": 0,
+    "orders_or_cancellations": 0,
+    "public_read_only_requests": 1
+  },
+  "candidate": {
+    "condition_id": "0x80cfbda7d19183b6206dd6fefb18cbf0f5877d0f528c422c4dd4897c4c302779",
+    "event_slug": "precipitation-in-nyc-in-september",
+    "market_slug": "will-nyc-have-more-than-6-inches-of-precipitation-in-september",
+    "question": "Will NYC have more than 6 inches of precipitation in September?",
+    "rendered_page_end_date": "2026-10-02",
+    "retained_Gamma_end_utc": "2026-09-30T23:59:00+00:00"
+  },
+  "completed_at_utc": "2026-08-31T15:28:59.2134304+00:00",
+  "exact_gamma": {
+    "accepting_orders": true,
+    "active": true,
+    "closed": false,
+    "enable_order_book": true,
+    "fee_schedule": {
+      "exponent": 1,
+      "rate": 0.05,
+      "rebateRate": 0.25,
+      "takerOnly": true
+    },
+    "maker_fee_zero": true,
+    "minimum_order_size_shares": "5",
+    "reward_maximum_spread_cents": "4.5",
+    "reward_minimum_size_shares": "20",
+    "tick_size": "0.01",
+    "tokens": [
+      "51121776902328147785212620342106085900715508859733800319257210016916309112789",
+      "11829456815467866345937534740948529658218812611678769909170703836680014920953"
+    ]
+  },
+  "exact_sponsored_reward": {
+    "request_made": false,
+    "positive_dated_daily_rate_proved": false,
+    "public_forward_reward_floor_pUSD_under_this_contract": "0"
+  },
+  "method_correction": {
+    "discovery_page_values_used_in_economics": false,
+    "failure_was_avoidable": true,
+    "lesson": "The rendered market page's End Date is a user-facing resolution date and is not the Gamma market endDate contract field. Future exact-reward source contracts must either bind Gamma endDate from a retained Gamma source or omit a rendered-page date equality gate; they must never manufacture a precise Gamma end timestamp from the rendered page.",
+    "retained_economic_metadata": "Gamma independently reported the 20-share minimum, 4.5-cent spread, zero maker fee, binary tokens, and active accepting state, but the frozen sequence had to stop before proving a funded dated allocation."
+  },
+  "result_sha256": "41d36380efda98913a149156cbb5aacc4425e0d7be8c4372c73be9dbba316d5c",
+  "retry_policy": {
+    "permitted": false,
+    "prohibited": [
+      "repeat the consumed Gamma request",
+      "repair the date gate after observing Gamma",
+      "request the exact sponsored reward configuration for this candidate",
+      "request books for this candidate",
+      "substitute another precipitation bracket from the observed event",
+      "use the rendered reward amount or competition display as funded economics"
+    ],
+    "reopen_only_for": "a future distinct source-selected exact market under a corrected prospectively frozen source contract, or a documented material reward aggregation change"
+  },
+  "schema_version": "polymarket-exact-reward-source-date-mismatch-adjudication-v1",
+  "sources": {
+    "contract": {
+      "path": "docs/model-research/polymarket/nyc-september-precipitation-over-6-reward-source-contract-v1-2026-08-31.json",
+      "result_sha256": "101f5cacd9dc7a4acf2282f373e25f8abdaee5207d85f36812b0e74e98ddc877",
+      "sha256": "c2840d3a366ec8fa2b5d1f14d1943320e4c20139054b3f0193c4a2bff687bd63"
+    },
+    "gamma": {
+      "elapsed_ms": 307,
+      "payload_bytes": 7992,
+      "payload_sha256": "0be50356d96e14d11a3a941643940fbceed8a621281a8bfe5b2902cd7a86ed6f",
+      "received_after_ms": 1788190070538,
+      "requested_before_ms": 1788190070231,
+      "status_code": 200,
+      "url": "https://gamma-api.polymarket.com/markets?closed=false&slug=will-nyc-have-more-than-6-inches-of-precipitation-in-september"
+    },
+    "tool": {
+      "path": "tools/screen_polymarket_exact_reward_source.py",
+      "sha256": "931aecb9600a20dcdcc9fe4f57ae63efce1dd31f9ecd92352c20b5c9bfc5ab6a"
+    }
+  }
+}

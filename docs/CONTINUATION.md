@@ -6931,3 +6931,35 @@ Registry SHA-256 becomes
 `16a69108fdd3b8f2b20dacf4d193427f988f4438a4fa285667062e2fda694fc3`,
 and the rebound durability-audit SHA-256 becomes
 `93bf922b12fd3fef040503660f1a04f70abe842a07be5c6d8ecc83cb164d9740`.
+
+## Polymarket NYC precipitation reward date-gate rejection
+
+The current first page of the official Rewards surface supplied a distinct
+month-long lead: NYC September precipitation above six inches had the largest
+displayed daily reward on that page. All displayed rate, spread, size, price,
+volume, and competition values remained discovery only.
+
+The frozen source contract incorrectly bound the rendered market page's
+October 2 `End Date` as if it were Gamma `endDate`. The one exact Gamma request
+returned an active accepting binary market ending September 30 at 23:59 UTC,
+with a 20-share reward minimum, 4.5-cent reward spread, 0.01 tick, and zero
+maker fee. The prospective mismatch gate terminated the sequence before the
+exact sponsored reward request or any book request. The public forward reward
+floor under this contract is zero and no edge is claimed.
+
+Do not repeat or repair the consumed Gamma request, request rewards or books
+for this candidate, or substitute another observed precipitation bracket. A
+rendered page date can be a user-facing resolution date rather than Gamma's
+market end. Future exact-reward contracts must bind the Gamma end from Gamma or
+omit rendered-to-Gamma equality instead of inventing timestamp precision.
+
+Contract SHA-256 is
+`101f5cacd9dc7a4acf2282f373e25f8abdaee5207d85f36812b0e74e98ddc877`;
+canonical adjudication SHA-256 is
+`41d36380efda98913a149156cbb5aacc4425e0d7be8c4372c73be9dbba316d5c`.
+Accepted edges remain 29, ranked hypotheses remain 45, terminal families become
+110, and stable current account-qualified after-all-cost edges remain zero.
+Registry SHA-256 becomes
+`bc6d360c1107bb50b5ec3dfbb845a05dbeef6b2187f9f111144abf964cf53e32`,
+and the rebound durability-audit SHA-256 becomes
+`cb6014f6bdca23b3146a32844770b22badfaee2b2614954b942feff53da1cb4a`.
