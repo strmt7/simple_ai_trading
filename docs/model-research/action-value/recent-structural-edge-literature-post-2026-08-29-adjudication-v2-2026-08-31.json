@@ -1,0 +1,81 @@
+{
+  "schema_version": "recent-structural-edge-literature-post-cutoff-adjudication-v2",
+  "created_at_utc": "2026-08-31T13:46:00Z",
+  "question": "Did the one-use bounded ArXiv delta contain any primary paper newer than the retained 2026-08-29 checkpoint that could justify a new direction-independent Polymarket or Binance mechanism study?",
+  "source_lineage": {
+    "contract_path": "docs/model-research/action-value/recent-structural-edge-literature-post-2026-08-29-source-contract-v2.json",
+    "contract_sha256": "b809d79d24678212dd90c8e61b75d502463f24aa66cfc52a9ae262aebe4dba0f",
+    "capture_result_path": "docs/model-research/action-value/recent-structural-edge-literature-post-2026-08-29-source-result-v2-2026-08-31.json",
+    "capture_result_sha256": "986a79fec025a0d27862c59cdf1e5e865b39ec6754b31bcc9ae5ea090c10f8af",
+    "raw_path": "data/recent-structural-edge-literature-delta-v2/raw/arxiv-query.atom",
+    "raw_sha256": "dc5014da0761c6a317bbd1c3c3b185f700d2574aed94871c44d11de4b35bdeb6",
+    "raw_bytes": 124492,
+    "journal_path": "data/recent-structural-edge-literature-delta-v2/request-journal.jsonl",
+    "journal_sha256": "9ebbe868383cf675ebdb964e027a4f7ffe5d8b506e8f856cfd5b345b8e0535b8",
+    "request_count": 1,
+    "status_code": 200
+  },
+  "frozen_population": {
+    "published_strictly_after_utc": "2026-08-29T22:37:17.664866Z",
+    "sort_order": "submittedDate_descending",
+    "maximum_results": 50,
+    "pagination_permitted": false,
+    "api_total_results": 325,
+    "returned_entries": 50,
+    "newest_returned_published_utc": "2026-08-26T10:21:10Z",
+    "oldest_returned_published_utc": "2026-03-27T20:26:17Z",
+    "entries_strictly_after_cutoff": 0,
+    "post_cutoff_population_complete": true,
+    "completeness_reason": "The response is sorted newest first and even its first entry predates the frozen cutoff, so no later page can contain a post-cutoff paper."
+  },
+  "formatting_failure_adjudication": {
+    "original_source_gate_passed": false,
+    "failed_literal": "<feed xmlns=\"http://www.w3.org/2005/Atom\">",
+    "semantic_parse_succeeded": true,
+    "parsed_root_expanded_name": "{http://www.w3.org/2005/Atom}feed",
+    "parsed_entry_count": 50,
+    "classification": "representation_only_failure_preserved_without_refetch",
+    "method_correction": "Future XML source gates must parse the namespace-expanded root and required elements instead of pinning an exact serialized root tag whose attribute layout can vary."
+  },
+  "alias_audit": {
+    "maker_paper_title": "Taker vs. Maker Arbitrage",
+    "maker_paper_ssrn_id": "7269858",
+    "existing_artifact": "docs/model-research/action-value/polymarket-maker-first-taker-hedge-complete-set-candidate-v1-2026-08-27.json",
+    "existing_artifact_sha256": "4fe308ddeb6fd080bbd8548347a095762d8fc67eb5820fb0c7b3c2d6b7430d69",
+    "rank_2_reopened": false,
+    "reason": "The exact title and SSRN identifier were already source-bound and historically adjudicated; its primary-evidence trigger was consumed before this delta."
+  },
+  "adjudication": {
+    "status": "terminal_null_post_cutoff_primary_literature_delta",
+    "novel_paper_count": 0,
+    "venue_requests_justified": 0,
+    "paper_downloads_justified": 0,
+    "ranked_retry_triggers_fired": 0,
+    "new_registry_family_justified": false,
+    "accepted_edge": false,
+    "deployment_ready": false,
+    "profitability_claim": false,
+    "stable_current_account_qualified_after_all_cost_edge_count": 0,
+    "next_action": "Do not repeat, paginate, alter, or alias this query. Reopen literature research only for a later publication delta or an independently discovered exact primary paper absent from retained title and identifier aliases."
+  },
+  "authority": {
+    "account_requests": 0,
+    "credentials_used": false,
+    "funds_used": false,
+    "orders_or_transactions": 0,
+    "paper_downloads": 0,
+    "protected_capture_touched": false,
+    "public_unauthenticated_read_only_requests": 1,
+    "signed_requests": 0,
+    "trading_authority": false,
+    "venue_market_data_requests": 0
+  },
+  "prohibited_shortcuts": [
+    "repeating_the_same_ArXiv_query_with_a_new_output_path_or_label",
+    "changing_keywords_or_pagination_after_observing_the_null_delta",
+    "browsing_or_downloading_a_paper_before_exact_title_identifier_and_mechanism_alias_checks",
+    "treating_a_search_snippet_or_abstract_as_current_executable_profit",
+    "using_credentials_or_market_data_to_repair_a_null_primary_literature_delta"
+  ],
+  "result_sha256": "17a2d6b537a05f1b4a4e273db682d8b611cd23f6c0906bcd4120be332d855101"
+}
