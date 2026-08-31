@@ -124,7 +124,7 @@
       "why_not_stable_deployable": "Current rate remains conflict-qualified rather than proven, the evidence is from public wallets rather than the owned account, every external friction and best alternative is not bound, and future persistence is not guaranteed."
     }
   },
-  "result_sha256": "95baa8bd82e7d92af36f1f39464c2961fe595f5040f378d6f8aeb67f705d48ab",
+  "result_sha256": "e127ae7f13413599822c67970cdd8e6ada506d65eb1a61c0ecb0f8acf6da0a4a",
   "routing": {
     "do_not_count_as_standalone_profit": [
       "advertised_or_public_rate_without_realized_cash",
@@ -140,6 +140,6 @@
   "source_binding": {
     "accepted_edge_count": 29,
     "registry_path": "docs/model-research/structural-edge-priority-registry-v1.json",
-    "registry_result_sha256": "549dfc93d72d056b3e8b72f96dc93b571c80bcdcc73f0d6ad36af3b1c7b0c67e"
+    "registry_result_sha256": "5a6ce51d4fe290ec5121e56914896980108d1b4bcc9e162fb1b4769c79406e59"
   }
 }

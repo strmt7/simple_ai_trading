@@ -6750,3 +6750,44 @@ Registry SHA-256 becomes
 `549dfc93d72d056b3e8b72f96dc93b571c80bcdcc73f0d6ad36af3b1c7b0c67e`,
 and the rebound durability-audit SHA-256 becomes
 `95baa8bd82e7d92af36f1f39464c2961fe595f5040f378d6f8aeb67f705d48ab`.
+
+## Post-August-29 primary-literature delta
+
+The exact *Taker vs. Maker Arbitrage* title and SSRN identifier `7269858`
+were already source-bound in the August 27 maker-first candidate. The paper is
+not new primary evidence and does not reopen rank 2. Its existing historical
+diagnostic remains aggregate-negative, unstable across assets and hours, and
+unable to bind creation-time hedge executability or queue access.
+
+A separately frozen one-request ArXiv delta then tested only for primary papers
+strictly after `2026-08-29T22:37:17.664866Z`. The HTTP 200 Atom response retained
+50 newest-first entries and 124,492 bytes at SHA-256
+`dc5014da0761c6a317bbd1c3c3b185f700d2574aed94871c44d11de4b35bdeb6`.
+The newest returned paper was dated `2026-08-26T10:21:10Z`, so the exact
+post-cutoff paper count is zero and the post-cutoff population is complete.
+No paper download, venue market-data, book, fee, credential, account, order,
+fund, transaction, or protected-capture request was justified.
+
+The source gate failed only because it froze one literal serialized XML root
+tag and the response used an equivalent namespace representation. That failure
+is preserved. The retained bytes parsed as the exact namespace-expanded Atom
+`feed` with 50 entries and were adjudicated offline without refetch. Future
+paper work must search exact titles, DOI, arXiv ID, SSRN ID, author-title pairs,
+and mechanism aliases before browsing; future XML gates must bind semantic
+namespace-expanded elements rather than attribute layout.
+
+Do not repeat, paginate, alter keywords, alias, or repair this query. Reopen
+only for a later primary-publication delta or an independently discovered exact
+paper absent from retained identifiers and mechanisms. Contract SHA-256 is
+`b809d79d24678212dd90c8e61b75d502463f24aa66cfc52a9ae262aebe4dba0f`;
+capture-result SHA-256 is
+`986a79fec025a0d27862c59cdf1e5e865b39ec6754b31bcc9ae5ea090c10f8af`;
+canonical adjudication SHA-256 is
+`17a2d6b537a05f1b4a4e273db682d8b611cd23f6c0906bcd4120be332d855101`.
+
+Accepted edges remain 29, ranked hypotheses remain 45, terminal families become
+106, and stable current account-qualified after-all-cost edges remain zero.
+Registry SHA-256 becomes
+`5a6ce51d4fe290ec5121e56914896980108d1b4bcc9e162fb1b4769c79406e59`,
+and the rebound durability-audit SHA-256 becomes
+`e127ae7f13413599822c67970cdd8e6ada506d65eb1a61c0ecb0f8acf6da0a4a`.

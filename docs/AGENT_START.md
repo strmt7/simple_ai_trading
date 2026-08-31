@@ -144,6 +144,16 @@ were strictly below the one-pUSD floor, and the best cost 1.05 pUSD. Preserve th
 original catalog and Commanders-Cowboys depth loss as superseded methodology
 evidence. Never repeat, reprice, or book-capture that consumed NFL window.
 
+The one-use primary-literature delta after the retained August 29 checkpoint is
+terminal. Its 50-entry newest-first ArXiv response contained zero papers after
+`2026-08-29T22:37:17.664866Z`; the newest returned paper was August 26, so no
+paper download, venue data, or ranked retry was justified. The exact *Taker vs.
+Maker Arbitrage* title and SSRN `7269858` were already adjudicated on August 27
+and do not reopen rank 2. Preserve the consumed XML root-tag formatting failure
+and its offline semantic adjudication; never repeat, paginate, change keywords,
+or alias this query. Future literature work must alias-check exact titles and
+identifiers before browsing and use namespace-aware XML gates.
+
 The historical Binance Direct Stocks fee overlay ended at
 `2026-08-31T00:00:00Z`. Binance's August 28 extension announcement says the
 same 0.05% spread and 0.17-USD fee tiers continue through September 30, but the

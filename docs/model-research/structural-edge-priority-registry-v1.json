@@ -2991,7 +2991,7 @@
       "venue_scope": "Binance_TUSDUSDT_Spot_and_TrueUSD_bank_USD_redemption"
     }
   ],
-  "result_sha256": "549dfc93d72d056b3e8b72f96dc93b571c80bcdcc73f0d6ad36af3b1c7b0c67e",
+  "result_sha256": "5a6ce51d4fe290ec5121e56914896980108d1b4bcc9e162fb1b4769c79406e59",
   "schema_version": "structural-edge-priority-registry-v1",
   "terminal_do_not_repeat": [
     {
@@ -3524,8 +3524,13 @@
       "canonical_result_sha256": "61fb2010d57b3295dd0ca859345c54404372dbd8b0f7ac4bca42d3fb0e40ddfd",
       "family": "polymarket_future_NFL_2026_09_13_through_2026_09_21_complete_side_specific_monotone_catalog",
       "reason": "the_zero_network_correction_repriced_all_4621_already_proved_relations_with_side_specific_bestAsk_or_conservative_one_minus_bestBid_all_fields_were_complete_zero_packages_cost_strictly_below_their_one_pUSD_floor_and_the_best_cost_1_05_pUSD_the_674_midpoint_like_candidates_and_precommitted_depth_request_are_preserved_as_superseded_methodology_evidence_do_not_repeat_reprice_or_book_capture_this_window"
+    },
+    {
+      "canonical_result_sha256": "17a2d6b537a05f1b4a4e273db682d8b611cd23f6c0906bcd4120be332d855101",
+      "family": "recent_structural_edge_primary_literature_post_2026_08_29_delta",
+      "reason": "the_frozen_one_request_50_entry_ArXiv_delta_returned_HTTP_200_and_zero_papers_strictly_after_the_2026_08_29T22_37_17_664866Z_cutoff_the_newest_returned_paper_was_2026_08_26_so_no_paper_download_venue_market_data_ranked_retry_trigger_or_new_family_was_justified_the_literal_XML_root_gate_failed_only_on_serialized_namespace_attribute_layout_and_the_retained_semantically_valid_50_entry_feed_was_adjudicated_offline_without_refetch_do_not_repeat_paginate_change_keywords_or_alias_this_query"
     }
   ],
-  "updated_at_utc": "2026-08-31T13:10:00Z",
+  "updated_at_utc": "2026-08-31T13:46:00Z",
   "usage_rule": "advance_the_highest_ranked_hypothesis_whose_retry_trigger_is_satisfied_otherwise_do_not_repeat_a_blocked_or_terminal_screen"
 }

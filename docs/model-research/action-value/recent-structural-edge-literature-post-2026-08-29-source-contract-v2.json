@@ -1,0 +1,75 @@
+{
+  "schema_version": "public-source-capture-contract-v1",
+  "frozen_at_utc": "2026-08-31T13:41:58.5910325Z",
+  "contract_path": "docs/model-research/action-value/recent-structural-edge-literature-post-2026-08-29-source-contract-v2.json",
+  "trigger": {
+    "registry_route": "delta_only_primary_literature_search_after_the_last_complete_2026_08_29_cutoff",
+    "novelty_evidence": "The retained V1 ArXiv result was complete only through its 2026-08-29 execution. Two later calendar days can contain newly submitted primary papers, while venue polling remains unjustified.",
+    "outcomes_viewed_before_freeze": false,
+    "discovery_values_are_economic_inputs": false
+  },
+  "question": "Has a new primary paper submitted after the retained 2026-08-29 literature checkpoint exposed a materially distinct direction-independent Polymarket or Binance mechanism that satisfies an existing literal retry trigger or deserves a new fail-closed registry family?",
+  "request_name": "recent-structural-edge-literature-post-2026-08-29-arxiv-delta",
+  "request": {
+    "method": "GET",
+    "url": "https://export.arxiv.org/api/query?search_query=%28all%3A%22prediction%20market%22%20OR%20all%3Apolymarket%20OR%20all%3A%22crypto%20exchange%22%20OR%20all%3Acryptocurrency%29%20AND%20%28all%3Aarbitrage%20OR%20all%3A%22market%20making%22%20OR%20all%3Afunding%20OR%20all%3Arebate%20OR%20all%3Ayield%20OR%20all%3Alatency%20OR%20all%3Aconversion%29&start=0&max_results=50&sortBy=submittedDate&sortOrder=descending",
+    "count": 1,
+    "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "endpoint_classification": {
+    "operation": "download one bounded ArXiv Atom metadata result",
+    "security": "public unauthenticated static research-metadata GET",
+    "source_contract": "The ArXiv export API supplies public scholarly metadata. This is not a venue, account, trading, or state-changing endpoint."
+  },
+  "response_byte_ceiling": 500000,
+  "required_utf8_phrases": [
+    "<feed xmlns=\"http://www.w3.org/2005/Atom\">",
+    "<opensearch:totalResults",
+    "<entry>"
+  ],
+  "retained_sources": [
+    {
+      "path": "docs/model-research/action-value/recent-structural-edge-literature-delta-v1-2026-08-29.json",
+      "sha256": "21c830177ae1e17f18c941a5630df56a2c3dec5c0f26acd14ff740275fe29b06",
+      "use": "last bounded result and exact pre-existing paper population"
+    }
+  ],
+  "decision": {
+    "source_gate_only": "The response must be a bounded ArXiv Atom feed with at least one entry.",
+    "offline_delta_gate": "Parse only papers with published_utc strictly later than 2026-08-29T22:37:17.664866Z, exact-title and identifier alias-check each survivor before any source or venue request, and reject directional prediction, security exploitation, and already-registered mechanisms.",
+    "accepted_edge": false,
+    "profitability_proved": false,
+    "terminal_if_no_novel_survivor": "Do not poll venue data. Reopen only after a later primary-paper or material official-mechanism change."
+  },
+  "outputs": {
+    "raw_path": "data/recent-structural-edge-literature-delta-v2/raw/arxiv-query.atom",
+    "journal_path": "data/recent-structural-edge-literature-delta-v2/request-journal.jsonl",
+    "result_path": "docs/model-research/action-value/recent-structural-edge-literature-post-2026-08-29-source-result-v2-2026-08-31.json"
+  },
+  "authority": {
+    "account_requests": 0,
+    "credentials_used": false,
+    "funds_used": false,
+    "orders_or_transactions": 0,
+    "protected_capture_touched": false,
+    "public_unauthenticated_read_only_requests": 1,
+    "signed_requests": 0,
+    "trading_authority": false
+  },
+  "implementations": [
+    {
+      "path": "tools/capture_public_source_contract.py",
+      "sha256": "d566a5a379c659c3da144d5e28449ebac9c01493bd39646f9cc3a6e697a83566"
+    },
+    {
+      "path": "tools/screen_polymarket_exact_two_leg_package.py",
+      "sha256": "374fcc3c3485c466b4929a91256450bdc7db70f93ef4c6bda627e05fe8938327"
+    },
+    {
+      "path": "tools/adjudicate_polymarket_exact_mlb_monotone_prefilter.py",
+      "sha256": "958a44d78029b9a1eb69a3771ce18e53ac1ed3c7bc161c8e4318beedce2cf99f"
+    }
+  ],
+  "retry_policy": "This exact bounded query is one-use. Preserve any HTTP error, Atom-gate failure, or empty post-cutoff delta. Do not paginate, alter keywords, retry an alias, download a paper, or call venue data after observing the response unless a preregistered novel survivor literally justifies it.",
+  "contract_sha256": "b809d79d24678212dd90c8e61b75d502463f24aa66cfc52a9ae262aebe4dba0f"
+}

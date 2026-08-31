@@ -108,6 +108,16 @@ override prose.
   otherwise stop before building another collector. A zero-request retained-data
   audit may be kept only when it materially strengthens or corrects the existing
   adjudication, and it must update that family instead of creating a duplicate.
+- Before browsing, downloading, or source-validating a paper, search its exact
+  title, DOI, arXiv ID, SSRN ID, author-title pair, and mechanism aliases across
+  the registry, action-value artifacts, and `docs/CONTINUATION.md`. A retained
+  source-bound hit is not a new literature trigger; reuse its adjudication and
+  advance only on that family's literal retry trigger.
+- For XML or other structured public sources, freeze semantic parser gates for
+  namespace-expanded element names and exact required fields instead of a
+  literal serialized root tag whose whitespace or attribute layout can vary.
+  Preserve a consumed representation-only failure, adjudicate its retained
+  bytes offline, and never refetch merely to repair serialization formatting.
 - Do not run broad text searches over raw or canonical one-line JSON payloads.
   List candidate files first, exclude `data/` and raw artifact trees from alias
   searches, and parse only the exact JSON keys needed for retained-data audits.
