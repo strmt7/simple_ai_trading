@@ -6513,3 +6513,40 @@ Registry SHA-256 is
 `5e67d7e5da543ac85d364fcb23dd09b42dce28c538a447c716393427d5e76b49`,
 and the rebound durability-audit SHA-256 is
 `ead5a00c80c621738d71dab382ef8cae9fb2f6ab7ec967c2d8ed7e6664eada06`.
+
+## Binance Direct Stocks current fee-source conflict
+
+The rank-five material fee-term trigger was investigated without credentials,
+account state, orders, mutations, or protected capture access. The August 28
+official announcement says the unchanged Direct Stocks discount is extended
+through `2026-09-30T23:59:00Z`: 0.05% instead of 0.10% for orders of 340 USD
+and above, and 0.17 USD instead of 0.35 USD for orders under 340 USD. That
+announcement was already discovered by the consumed August 29 CMS contract;
+its failed raw retention remains terminal and its exact request was not retried
+or aliased.
+
+One materially distinct logged-out read of the current Direct Equities fee
+schedule still displayed `Promotion Until 2026-08-31 00:00 (UTC)` for both
+fee tiers at `2026-08-31T10:31:24.588Z`, after that time had passed. The
+announcement and live schedule therefore conflict on the effective interval.
+The public current discount floor is zero: the historical accepted overlay is
+preserved only through its original end, the extension is not credited, and
+the accepted-edge count does not change. Do not repeat or alias the consumed
+CMS request and do not poll the unchanged fee page. Reopen only on an explicit
+official correction, withdrawal, replacement, or materially updated live fee
+schedule that resolves one effective end time; even then, amend duration only
+and require an independently positive organic order, exact account eligibility,
+preview, and owned realized fee reconciliation.
+
+The rendered semantic snapshot SHA-256 is
+`bf77ad3565b90c3cb04c00e4ce1ef41268f72579e3b40603496ac72c478da14b`;
+the request journal SHA-256 is
+`ab950ac70f2938256ba67ba401c8e3e871b7a0f73ed6739cfdab93c426d504af`;
+and the canonical conflict adjudication SHA-256 is
+`eb6dcd919b73a033e1de48f6e8a806ab66f19ef657de75fa99fb98d0e1a56341`.
+Accepted edges remain 29, ranked hypotheses remain 45, terminal families remain
+97, and stable current account-qualified after-all-cost edges remain zero.
+Registry SHA-256 is
+`5f54a935d93a3e3b0380b178f8812f05880056f4477a28f4f672eabeaa7590f7`,
+and the rebound durability-audit SHA-256 is
+`89b94461381341ef497f27c79f7ceaed1626d0309dcf81d14a7fe33f112a0e47`.
