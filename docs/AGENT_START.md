@@ -23,6 +23,30 @@ safety gate, blocks Stop, or submits an order.
 
 ### Latest efficient structural screen
 
+A distinct Binance Wallet routed Aster USD1-versus-Binance USDT perpetual
+funding lead has been rejected before any basis, book, account, credential,
+order, or fund request. One prospectively frozen public Aster inventory capture
+proved active BTCUSD1, ETHUSD1, and SOLUSD1 contracts. Three sibling funding
+captures then aligned 209 eight-hour rows per asset with retained Binance
+BTCUSDT, ETHUSDT, and SOLUSDT histories. Orientation was selected on the first
+104 rows only and held fixed for 52-row validation and 53-row test roles.
+
+All three assets failed the frozen 20-bip round trip, 10% annual two-leg capital
+hurdle, and 23.954486-bip USD1/USDT stress. BTC and ETH had negative validation
+and test gross funding; SOL had positive validation gross but negative test
+gross. No asset passed even the training role after all costs, so the contract
+forbade deeper requests. This exact 209-row population is terminal. Reopen only
+on a material Aster or Binance funding, fee, basis, USD1 conversion, custody,
+capital, or execution-architecture change. Prefilter contract and result
+SHA-256 values are
+`20ef24c12e5b18960ef491e07e51855868c18355adfb1e9fb3c3c465f28b307e`
+and `c8983f0668fdd157add672940769f5ceb3db91c2cbe495ce27b8034dd491da91`.
+Accepted edges remain 29, ranked hypotheses remain 47, terminal families become
+124, registry SHA-256 is
+`400313770bcd2cbf542e97f5a1d1fcf59b66dbf76121ecbd784e107bed4767c8`,
+and durability-audit SHA-256 is
+`13910f293d085c63f8ac6fb001e06b26c23dae7481af8852af1f1e7165fcc73f`.
+
 A 2026-09-01 zero-request discovery pass stopped three tempting Polymarket
 shortcuts before Gamma or CLOB access. Current official rendered pages show
 that the new hourly BTC contract compares Binance one-hour candle open and

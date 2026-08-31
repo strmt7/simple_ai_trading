@@ -1,0 +1,66 @@
+{
+  "schema_version": "public-source-capture-contract-v1",
+  "frozen_at_utc": "2026-08-31T23:16:08.5002885Z",
+  "contract_path": "docs/model-research/action-value/binance-wallet-aster-usd1-perpetual-inventory-contract-v1-2026-09-01.json",
+  "trigger": {
+    "registry_route": "new_distinct_Binance_Wallet_Aster_cross_venue_BTC_ETH_SOL_USD1_perpetual_funding_and_basis_family",
+    "novelty_evidence": "Repository alias search found the terminal Binance CEX USD1-versus-USDT funding family but no Aster or Binance Wallet routed Aster perpetual family. The current official Binance Wallet announcement identifies Aster as a third-party DEX and advertises BTC ETH and SOL USD1-denominated perpetual markets, while current official Aster V3 documentation exposes a separate public market-data API.",
+    "outcomes_viewed_before_freeze": false,
+    "discovery_values_are_economic_inputs": false
+  },
+  "question": "Does the current complete public Aster V3 futures inventory expose active BTC ETH or SOL perpetual contracts quoted or settled in USD1, establishing a deployed population for a later cross-venue Binance USD-M funding-and-basis prefilter?",
+  "request_name": "aster-v3-current-complete-futures-exchange-info",
+  "request": {
+    "method": "GET",
+    "url": "https://fapi.asterdex.com/fapi/v3/exchangeInfo",
+    "count": 1,
+    "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "endpoint_classification": {
+    "operation": "download current complete Aster V3 futures exchange information",
+    "security": "public unauthenticated market-data GET",
+    "source_contract": "Current official Aster V3 documentation declares MARKET_DATA endpoints unauthenticated, gives base endpoint https://fapi.asterdex.com, and documents GET /fapi/v3/exchangeInfo with no parameters and request weight one."
+  },
+  "response_byte_ceiling": 10000000,
+  "required_utf8_phrases": [
+    "\"symbols\"",
+    "\"symbol\""
+  ],
+  "decision": {
+    "source_gate_only": "The retained response must be a successful nonempty current exchange-information object. Parse only after durable capture.",
+    "accepted_edge": false,
+    "profitability_proved": false,
+    "conditional_next_step": "Without requesting funding or books, deterministically enumerate active perpetual rows and retain only exact BTC ETH or SOL rows whose quote margin or settlement asset is USD1. If none exist, terminalize the deployed-population question. If exact rows exist, freeze a separate historical funding and conservative basis dominance prefilter before any depth or account request."
+  },
+  "outputs": {
+    "raw_path": "docs/model-research/binance/raw/wallet-aster-usd1-perpetual-inventory-v1-2026-09-01/01-exchange-info.raw.json",
+    "journal_path": "docs/model-research/binance/raw/wallet-aster-usd1-perpetual-inventory-v1-2026-09-01/00-request-journal.jsonl",
+    "result_path": "docs/model-research/action-value/binance-wallet-aster-usd1-perpetual-inventory-source-result-v1-2026-09-01.json"
+  },
+  "authority": {
+    "account_requests": 0,
+    "credentials_used": false,
+    "funds_used": false,
+    "orders_or_transactions": 0,
+    "protected_capture_touched": false,
+    "public_unauthenticated_read_only_requests": 1,
+    "signed_requests": 0,
+    "trading_authority": false
+  },
+  "implementations": [
+    {
+      "path": "tools/capture_public_source_contract.py",
+      "sha256": "d566a5a379c659c3da144d5e28449ebac9c01493bd39646f9cc3a6e697a83566"
+    },
+    {
+      "path": "tools/screen_polymarket_exact_two_leg_package.py",
+      "sha256": "374fcc3c3485c466b4929a91256450bdc7db70f93ef4c6bda627e05fe8938327"
+    },
+    {
+      "path": "tools/adjudicate_polymarket_exact_mlb_monotone_prefilter.py",
+      "sha256": "958a44d78029b9a1eb69a3771ce18e53ac1ed3c7bc161c8e4318beedce2cf99f"
+    }
+  ],
+  "retry_policy": "This exact complete Aster V3 exchangeInfo GET is one-use. Preserve any HTTP error empty response oversized response or missing-term result and do not retry the V1 endpoint another host or an alias. A passing source gate proves only current inventory, never Binance Wallet routing equivalence funding basis fees capacity account access profitability or deployment readiness.",
+  "contract_sha256": "30f2d0df8ac519856a9cfc0ac03040b45d0c907fb2ccea989e4a9ab10da80f04"
+}

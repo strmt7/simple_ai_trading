@@ -3260,7 +3260,7 @@
       "venue_scope": "Binance_BTC_ETH_SOL_European_options_and_exact_matching_USDT_perpetuals"
     }
   ],
-  "result_sha256": "77a777ed40570ebd4773b431c20d32057fb36ce2f648011e503870fe58700352",
+  "result_sha256": "400313770bcd2cbf542e97f5a1d1fcf59b66dbf76121ecbd784e107bed4767c8",
   "schema_version": "structural-edge-priority-registry-v1",
   "terminal_do_not_repeat": [
     {
@@ -3883,8 +3883,13 @@
       "canonical_result_sha256": "dd5058136c809425b833266f9a1bce568bab6e692301a2adbffec8b18b017275",
       "family": "binance_perpetual_clamp_model_free_bounds_SSRN_5262988_primary_source_failure",
       "reason": "the_exact_title_DOI_SSRN_ID_author_and_mechanism_alias_search_found_no_retained_adjudication_but_the_one_frozen_exact_primary_PDF_GET_returned_HTTP_403_and_a_5625_byte_Cloudflare_HTML_challenge_not_the_complete_paper_the_indexed_title_and_abstract_remain_discovery_only_and_cannot_authorize_a_retained_data_screen_market_collector_or_profit_claim_do_not_retry_query_variants_aliases_mirrors_or_locale_routes_reopen_only_on_a_materially_revised_complete_primary_version_from_the_authors_or_a_public_reproducible_repository_with_exact_bound_formula_code_data_and_after_cost_execution_methodology"
+    },
+    {
+      "canonical_result_sha256": "c8983f0668fdd157add672940769f5ceb3db91c2cbe495ce27b8034dd491da91",
+      "family": "binance_wallet_Aster_BTC_ETH_SOL_USD1_vs_Binance_USDT_perpetual_funding_2026_09_01",
+      "reason": "the_distinct_Binance_Wallet_routed_Aster_population_proved_active_BTCUSD1_ETHUSD1_and_SOLUSD1_contracts_then_three_prospectively_frozen_public_funding_histories_aligned_209_eight_hour_rows_per_asset_with_orientation_selected_from_training_only_all_BTC_ETH_and_SOL_roles_failed_the_frozen_20_bip_round_trip_10_percent_annual_two_leg_capital_and_23_954486_bip_USD1_USDT_stress_hurdles_and_validation_or_test_gross_was_negative_for_BTC_and_ETH_while_SOL_test_gross_was_negative_zero_basis_book_account_credential_order_or_fund_requests_were_justified_do_not_repeat_resample_or_change_orientation_roles_or_hurdles_reopen_only_on_a_material_Aster_or_Binance_funding_fee_basis_USD1_conversion_custody_capital_or_execution_architecture_change"
     }
   ],
-  "updated_at_utc": "2026-08-31T22:57:00Z",
+  "updated_at_utc": "2026-08-31T23:29:00Z",
   "usage_rule": "advance_the_highest_ranked_hypothesis_whose_retry_trigger_is_satisfied_otherwise_do_not_repeat_a_blocked_or_terminal_screen"
 }

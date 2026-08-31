@@ -56,6 +56,14 @@ override prose.
   they can answer that question. Settlement consistency supports only the payoff
   identity; it never proves sub-floor acquisition, atomic execution, fees,
   capacity, owned fills, or profit.
+- For a cross-venue funding candidate, freeze the population, chronological
+  training/validation/test roles, timestamp normalization, orientation rule,
+  execution cost, two-leg capital hurdle, and quote-unit stress before viewing
+  funding values. Select orientation on training only and require every role to
+  remain positive after all frozen costs plus within-role stability gates.
+  Request no premiums, books, accounts, credentials, or orders when that cheap
+  funding-only prefilter fails; never rescue it by resampling or changing the
+  orientation after observation.
 - For an integer-score additive cover `Under A + Under B + Over G`, enumerate
   the zero-payout state before looking at price. It exists exactly when both
   component scores reach their thresholds while their sum stays below `G`, so

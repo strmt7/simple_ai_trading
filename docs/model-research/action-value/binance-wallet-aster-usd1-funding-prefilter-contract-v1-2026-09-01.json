@@ -1,0 +1,91 @@
+{
+  "schema_version": "binance-wallet-aster-usd1-funding-prefilter-contract-v1",
+  "frozen_at_utc": "2026-08-31T23:23:51.3406864Z",
+  "contract_path": "docs/model-research/action-value/binance-wallet-aster-usd1-funding-prefilter-contract-v1-2026-09-01.json",
+  "question": "Does any fixed training-selected Aster USD1 versus Binance USDT BTC ETH or SOL perpetual orientation remain positive across chronological training validation and test after conservative execution two-leg capital and USD1/USDT stress, strongly enough to justify a later basis and depth request?",
+  "novelty": {
+    "distinct_mechanism": "Binance Wallet routes the USD1 leg to the third-party Aster DEX, so custody venue funding and basis differ from the terminal same-venue Binance CEX USD1-versus-USDT family and the terminal Binance-Hyperliquid family.",
+    "population_trigger": "One prospectively frozen Aster V3 exchangeInfo GET retained 572 contracts and proved active BTCUSD1 ETHUSD1 and SOLUSD1 perpetuals. Three sibling funding-history contracts were then frozen together before their first response.",
+    "funding_values_viewed_before_freeze": false,
+    "no_hindsight_orientation": true
+  },
+  "population": {
+    "assets": ["BTC", "ETH", "SOL"],
+    "interval_hours": 8,
+    "aligned_row_count": 209,
+    "first_funding_bucket_ms": 1781769600000,
+    "last_funding_bucket_ms": 1787760000000,
+    "maximum_schedule_jitter_ms": 1000
+  },
+  "roles": {
+    "training": {"start": 0, "stop": 104},
+    "validation": {"start": 104, "stop": 156},
+    "test": {"start": 156, "stop": 209}
+  },
+  "method": {
+    "alignment": "Round each retained timestamp to its nearest eight-hour UTC bucket only when absolute jitter is at most 1000 milliseconds; reject duplicates gaps and any population other than the frozen 209 common buckets.",
+    "orientation": "For each asset select short Aster USD1 plus long Binance USDT when training sum(Aster funding minus Binance funding) is nonnegative, otherwise select the exact opposite. Keep that orientation unchanged in validation and test.",
+    "cash_flow": "Positive funding means longs pay shorts. Equal-notional spread cash flow is payer-leg funding minus receiver-leg funding under the fixed orientation.",
+    "rejection_first": "No basis premium book account credential or order request is justified unless at least one asset passes every role after all frozen hurdles and within-role stability gates."
+  },
+  "economics": {
+    "round_trip_execution_bips": "20",
+    "execution_basis": "The prior source-bound Binance-Hyperliquid cross-venue study used a 20-bip round-trip floor; current Aster public standard taker terms alone expose 4 bips per fill and Binance account fees remain unqualified.",
+    "annual_two_leg_capital_hurdle_percent": "10",
+    "capital_basis": "Reuse the conservative two-leg annual capital hurdle from the terminal broad Binance funding-carry studies rather than crediting leverage as edge.",
+    "usd1_usdt_stress_bips": "23.95448647569617726319992000",
+    "fx_basis": "Exact retained worst 30-day USD1USDT close decline stress from docs/model-research/action-value/binance-usd1-usdt-funding-differential-v1-2026-08-26.json."
+  },
+  "gates": {
+    "minimum_positive_interval_fraction": "0.60",
+    "each_role_net_after_all_hurdles_strictly_positive": true,
+    "each_role_first_and_second_half_gross_strictly_positive": true,
+    "minimum_surviving_assets_for_basis_or_book_capture": 1
+  },
+  "sources": [
+    {
+      "asset": "BTC",
+      "aster": {"symbol": "BTCUSD1", "path": "docs/model-research/binance/raw/wallet-aster-usd1-funding-v1-2026-09-01/01-btcusd1-funding.raw.json", "file_sha256": "9db4c72cc40a69be53720e3e457a8e2ff43f7dad724c47b563c7a089c84f7482"},
+      "binance": {"symbol": "BTCUSDT", "path": "docs/model-research/action-value/raw/binance-hyperliquid-cross-venue-funding-spread-extension-v1-2026-08-27/binance-btc-funding.raw", "file_sha256": "07c8544df4941a9dd463ae27cb09e247df3e99fbd27b31c2076be49aa2a87e4e"}
+    },
+    {
+      "asset": "ETH",
+      "aster": {"symbol": "ETHUSD1", "path": "docs/model-research/binance/raw/wallet-aster-usd1-funding-v1-2026-09-01/02-ethusd1-funding.raw.json", "file_sha256": "b4193e364a31741496135070c8cfce0824fae2d07e9accef24ca1d5443d1bb92"},
+      "binance": {"symbol": "ETHUSDT", "path": "docs/model-research/action-value/raw/binance-hyperliquid-cross-venue-funding-spread-extension-v1-2026-08-27/binance-eth-funding.raw", "file_sha256": "ffed21b173e50080c11a56eaff5fe44ecf58545d25b179602177d71501e064be"}
+    },
+    {
+      "asset": "SOL",
+      "aster": {"symbol": "SOLUSD1", "path": "docs/model-research/binance/raw/wallet-aster-usd1-funding-v1-2026-09-01/03-solusd1-funding.raw.json", "file_sha256": "14de561875304dda5266c4a3792e897a6c1f0f648c92a2bb2cb070f32d38ae3e"},
+      "binance": {"symbol": "SOLUSDT", "path": "docs/model-research/action-value/raw/binance-hyperliquid-cross-venue-funding-spread-extension-v1-2026-08-27/binance-sol-funding.raw", "file_sha256": "77cdf3421cb25f0300d72697deed6286298841543af4b0c06afbb2f1bfec9c9d"}
+    }
+  ],
+  "lineage_sources": [
+    {"path": "docs/model-research/action-value/binance-wallet-aster-usd1-perpetual-inventory-contract-v1-2026-09-01.json", "file_sha256": "b0664282cdfa28475735596692fccd1bea2fd3a65cc80df92938b1a75627b93e"},
+    {"path": "docs/model-research/action-value/binance-wallet-aster-usd1-perpetual-inventory-source-result-v1-2026-09-01.json", "file_sha256": "e6373f42eabe3714efb82fe0d5fcdbd21ca7ab7d171cbf8a7dce959fda2fe196"},
+    {"path": "docs/model-research/binance/raw/wallet-aster-usd1-perpetual-inventory-v1-2026-09-01/01-exchange-info.raw.json", "file_sha256": "364dce50401f659ce404598cd7cc694c1e7106bce8d192aee4397fe566667ba9"},
+    {"path": "docs/model-research/action-value/binance-wallet-aster-btcusd1-funding-contract-v1-2026-09-01.json", "file_sha256": "0ad766da2ef5083a8da27cabca83878712244a9c7732d2ff15b884272aad1edc"},
+    {"path": "docs/model-research/action-value/binance-wallet-aster-btcusd1-funding-source-result-v1-2026-09-01.json", "file_sha256": "8520c4bf05bb91551b64e59df14b6b73f1cae1f1b64716d65889b82864a514b1"},
+    {"path": "docs/model-research/action-value/binance-wallet-aster-ethusd1-funding-contract-v1-2026-09-01.json", "file_sha256": "49f0f6cebd6cbafc1fa204f22cd6e6ca305e117ad950e8d3bc041b7eb867a105"},
+    {"path": "docs/model-research/action-value/binance-wallet-aster-ethusd1-funding-source-result-v1-2026-09-01.json", "file_sha256": "6b55092105e806460848633295d9d09351e06ab6e7b09df53b708328e7e8eae3"},
+    {"path": "docs/model-research/action-value/binance-wallet-aster-solusd1-funding-contract-v1-2026-09-01.json", "file_sha256": "9b8ebbb781ced968cb8ea696d9e11f275bcb6bc337539f9058fd0b51a80186bd"},
+    {"path": "docs/model-research/action-value/binance-wallet-aster-solusd1-funding-source-result-v1-2026-09-01.json", "file_sha256": "325b1ed1e05397aab099e859c0f15c44eaa346888104fb1a6152b5fccbbe482f"}
+  ],
+  "network_requests": 0,
+  "authority": {
+    "network_requests": 0,
+    "account_requests": 0,
+    "credentials_used": false,
+    "funds_used": false,
+    "orders_or_transactions": 0,
+    "protected_capture_touched": false,
+    "signed_requests": 0,
+    "trading_authority": false
+  },
+  "implementation": {
+    "path": "tools/adjudicate_binance_wallet_aster_usd1_funding.py",
+    "sha256": "8f7a3bf5be01b5785d5a6763a3533b7f5a16f9c4293e72890690a175b18d2c05"
+  },
+  "output_path": "docs/model-research/action-value/binance-wallet-aster-usd1-funding-prefilter-result-v1-2026-09-01.json",
+  "retry_policy": "Do not change orientation roles hurdles timestamp normalization or population after observing funding values. If no asset survives, do not request Aster or Binance premiums books fees or accounts and reopen only on a material funding fee basis USD1 conversion custody capital or execution change. If an asset survives, freeze one separate basis-dominance request before any depth.",
+  "contract_sha256": "20ef24c12e5b18960ef491e07e51855868c18355adfb1e9fb3c3c465f28b307e"
+}
