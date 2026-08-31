@@ -23,6 +23,19 @@ safety gate, blocks Stop, or submits an order.
 
 ### Latest efficient structural screen
 
+A 2026-09-01 zero-request discovery pass stopped three tempting Polymarket
+shortcuts before Gamma or CLOB access. Current official rendered pages show
+that the new hourly BTC contract compares Binance one-hour candle open and
+close, a five-minute SOL contract uses Chainlink start/end values, and the
+daily ETH contract compares Binance noon-to-noon closes with a 50/50 equality
+case. Those observation functions are not interchangeable, so cross-horizon
+interval composition has no proved payoff identity. Separately, rendered Buy
+quotes for the new September 3 and September 5 BTC range/threshold pairs and
+the August 31-September 6 ETH hit/daily-threshold implications were all at or
+above their optimistic guaranteed floors. These rendered values are discovery
+only: they justify spending no deeper request, but do not terminalize a
+population, establish executable economics, or change the registry.
+
 The distinct active Polymarket `Ethereum above ___ on September 2?` threshold
 ladder satisfied rank 31's literal trigger. A prospectively frozen corrected v2
 screen made one exact public unauthenticated Gamma event GET and excluded
