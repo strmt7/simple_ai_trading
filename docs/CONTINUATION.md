@@ -6364,3 +6364,104 @@ Accepted edges remain 29, ranked hypotheses remain 45, terminal families become
 `3ee674e0dbc81c965ca1afba65c6b3a032f1cdeb271b856b3b7b268510d6af1f`,
 and the rebound durability-audit SHA-256 is
 `c2a6a0d5d0dcc17fb0827ee41631c9e654d9c07b6bd733d46087d0a576e20637`.
+
+## Polymarket soccer goalscorer-to-total superhedges
+
+A distinct frozen zero-network audit exhausted every retained same-match
+anytime-goalscorer implication into full-game Over 0.5. If a named player is
+credited with a goal, the match total must be positive; on full cancellation,
+both markets resolve 50-50. Therefore NO anytime goalscorer plus YES Over 0.5
+has a one-pUSD rule floor independent of match direction.
+
+Five complete match families produced 43 packages. All 43 had complete
+side-specific `bestAsk` or conservative `1 - bestBid` rejection prices, zero
+were strictly below the floor, and the best—NO Tosin Aiyegun anytime scorer plus
+YES FC Lorient/ES Troyes Over 0.5—cost 1.90 pUSD. Do not rebuild or reprice this
+population. Reopen only on a future distinct active match whose exact rules
+preserve the floor and whose rejection-only sum is strictly below one pUSD.
+
+The contract SHA-256 is
+`a1c7e244f196d7531bf40950dcb368b5cb71ae0578e71495282ae9b6e933d6ae`;
+the result SHA-256 is
+`6b5fa74bc6f9e4022472969155960ab6fa676d472f570b1e9a56ae0286ba5a03`.
+
+## Polymarket soccer corner-count structural graph
+
+A second distinct frozen zero-network audit exhausted full-game, first-half,
+second-half, and team corner-count ladders; the exact first-half plus
+second-half and home plus away additive partitions; and parity implied by
+adjacent full-total thresholds. Every tested market counts corners taken rather
+than awarded and uses the same official-statistics fallback chain. Two-leg
+packages retain a one-pUSD cancellation/no-data floor and three-leg packages
+retain 1.5 pUSD under those 50-50 states, while their ordinary floor is one.
+
+The V1 literal gate stopped on a Belgian 24-hour no-data fallback instead of
+the expected 48 hours, even though both resolve 50-50. That failure is
+preserved. V2 accepted only the exact 24-or-48-hour variants but stopped on an
+incorrect strict zip of an adjacent ladder and its one-element-shorter tail;
+that failure is also preserved. V3 changed only that mechanical pairing.
+
+Seven complete 23-market corner events produced 1,820 distinct packages: 273
+within-ladder monotone packages, 560 half-partition packages, 945 team-partition
+packages, and 42 adjacent-interval parity packages. All 1,820 had complete
+side-specific rejection prices and zero were strictly sub-floor. The best,
+FC Lorient/ES Troyes Over 12.5 plus Under 13.5 total corners, cost 1.10 pUSD for
+a one-pUSD floor before books, fees, synchronization, or external costs.
+
+Do not rebuild, reprice, refetch, or request books for this population. Reopen
+only on a future distinct active corner event with the same exact counting,
+partition, cancellation, no-data, and source rules plus at least one
+rejection-only package strictly below the floor. No network, credential,
+account, order, fund, transaction, or protected capture was accessed.
+
+The V1 contract/failure SHA-256 values are
+`179c50e5e73c9743bb9c325796d1f9cb47cc0ad25e5f5163cd009bbffa3b0dc4`
+and `ac8bad645ffa37146e8e5456f399840c73ac5aa9749890840459a07b13a43fb8`.
+The V2 contract/failure SHA-256 values are
+`66400e1bdf3efea98b517a4edf53db3e306e63ffebe742c27d726e89b916edf6`
+and `ad491cd62a0b0a8fbe3937b590335baa5444225db90f272ee4aa190ffd1b9a88`.
+The V3 contract/result SHA-256 values are
+`0f057fd21f536afd27f4e83b131a1036354a9231e79d863053aeeadde3ca37d6`
+and `3fcbb162ac70c5cd607d390d7e240614d9dd5b47eb07450522397b7c5e1dabb4`.
+
+Accepted edges remain 29, ranked hypotheses remain 45, terminal families become
+96, registry SHA-256 becomes
+`038f86e6b9c9765e44d7ba6f64454cab78946deeec6c602b6899197122fdd661`,
+and the rebound durability-audit SHA-256 is
+`7254a0504730471143e5449df532bcbe0e36aa207474afb77b048909e55afd4b`.
+
+## Polymarket holding-yield V11 continuity pulse and frozen V12 receipt
+
+The rank-one post-gate trigger was satisfied. The frozen V11 runner made its
+one permitted public unauthenticated BTC activity GET and retained an HTTP 200,
+8,038-byte response. It found exactly one new YIELD row: 0.0133 pUSD at
+2026-08-31 00:10:10 UTC, 86,190 seconds after the prior selected row, with
+transaction
+`0xfb4022e56f217004e89c9a3be838222da491b73abcc0633c1eab55457cc61d5a`.
+The raw response SHA-256 is
+`63d2cbc9b33baee0a9773ecce72d13a38f5654ed08e6863e697d17dda01732c0`.
+
+The V11 contract and result SHA-256 values are
+`267040fa9fcdca77ff20e124203de4b128e4f1e9e53a819cd6dd98416c3cc323`
+and `0ed8af56f9488757c9351c01b711ece0fbe579ea408cdfc28873863a91555cc9`.
+The protected V7 partial payloads were not read, repaired, rerun, or touched.
+The runner stopped before any receipt request as contracted.
+
+A separate transaction-specific V12 receipt contract is frozen at SHA-256
+`f7682f246682bcbff842c6e66776b58990446848a69040fcd1248867e405bb10`.
+It binds exactly one public `eth_getTransactionReceipt` call for the transaction
+above and the exact distributor-token-wallet-amount transfer. It has not been
+executed. The next continuation must run only this frozen request once, without
+retry, alias, parameter change, or any other receipt or activity request. Do
+not repeat V7, V9, V10, or V11. Only after V12 resolves should the already-due
+rank-34 GLW terminal history reconciliation advance.
+
+This observation extends single-wallet payout continuity but does not qualify
+the current three-wallet rate, owned-account eligibility, external costs,
+deployment readiness, future persistence, or a profit floor for new capital.
+Stable current account-qualified after-all-cost edges remain zero. Accepted
+scoped edges remain 29, ranked hypotheses remain 45, and terminal families
+remain 96. Registry SHA-256 is
+`1797b2c3bc3c7698c5f9ed799277e37cfc7ee7f8ab711608a6a06eb15701446a`,
+and the rebound durability-audit SHA-256 is
+`c7b116f8786575044287a74d6c550bb771708c671d8e7b3c52217ece7b1f3108`.

@@ -272,6 +272,11 @@ override prose.
   active event whose exact common rules preserve the payoff floor and whose
   side-specific rejection prices are strictly below it; stale event prices and
   `outcomePrices` never authorize a book.
+- Treat soccer anytime-goalscorer/Over-0.5 and corner-count markets as part of
+  that same anti-repeat boundary. The retained August 29 page already exhausts
+  all 43 goalscorer-total packages and 1,820 full/half/team corner monotone,
+  additive-partition, and parity packages. Reopen only under their literal
+  rank-31 future-distinct-event triggers; do not rebuild or reprice them.
 - Before freezing a time-bounded prospective capture, prove that its duration,
   phase alignment, retained observation tail, and required source timestamps can
   supply every minimum-sample gate. Elapsed duration and zero transport gaps do

@@ -1,0 +1,77 @@
+{
+  "adjudication": {
+    "accepted_edge": false,
+    "current_book_request_authorized": false,
+    "deployment_ready": false,
+    "next_action": "terminalize_this_retained_population_without_any_market_request",
+    "profitability_claim": false,
+    "status": "no_strict_side_specific_sub_floor_candidate"
+  },
+  "authority": {
+    "account_state_accessed": false,
+    "credentials_used": false,
+    "network_requests": 0,
+    "orders_quotes_wallets_funds_or_transactions": 0,
+    "protected_capture_touched": false,
+    "trading_authority": false
+  },
+  "best_complete_relation": {
+    "base_slug": "fl1-lor-tro-2026-08-29-total-corners",
+    "cancellation_floor_pUSD": "1",
+    "common_rule_floor_pUSD": "1",
+    "family": "full_corner_total_monotone",
+    "legs": [
+      {
+        "condition_id": "0xc766bba3d9c2f66223d4f8836d1e7b04e71815b568384fc390c764ee78d944ba",
+        "market_id": "3623487",
+        "outcome": "Over",
+        "question": "FC Lorient vs. ES Troyes AC: O/U 12.5 Total Corners",
+        "side_specific_price_kind": "bestAsk",
+        "token_id": "76537643640554917072277956469845949751084016889782819025801213098300810316819"
+      },
+      {
+        "condition_id": "0x83a6f72f6a962834d6b5d15d4f4ac522f3e96ab41491757bd5f679f00d67ade8",
+        "market_id": "3623488",
+        "outcome": "Under",
+        "question": "FC Lorient vs. ES Troyes AC: O/U 13.5 Total Corners",
+        "side_specific_price_kind": "one_minus_first_outcome_bestBid",
+        "token_id": "7570165125120177727862470616380250130797625426436797301464272647213014241102"
+      }
+    ],
+    "optimistic_proxy_headroom_pUSD": "-0.1",
+    "passes_strict_side_specific_rejection_gate": false,
+    "payoff_proof": "Over 12.5 plus Under 13.5 covers every integer corner count",
+    "rejection_proxy_sum_pUSD": "1.1",
+    "side_specific_prices_complete": true
+  },
+  "contract": {
+    "path": "docs/model-research/action-value/polymarket-soccer-corner-graph-contract-v3-2026-08-30.json",
+    "sha256": "0f057fd21f536afd27f4e83b131a1036354a9231e79d863053aeeadde3ca37d6"
+  },
+  "created_at_utc": "2026-08-30T22:47:50.066406Z",
+  "population": {
+    "adjacent_full_corner_interval_implies_parity_count": 42,
+    "complete_event_count": 7,
+    "first_half_corner_total_monotone_count": 21,
+    "full_corner_total_monotone_count": 147,
+    "half_partition_both_over_implies_full_over_count": 189,
+    "half_partition_both_under_implies_full_under_count": 371,
+    "relation_count": 1820,
+    "second_half_corner_total_monotone_count": 21,
+    "side_specific_price_complete_count": 1820,
+    "side_specific_price_missing_count": 0,
+    "strict_sub_floor_count": 0,
+    "team_corner_total_monotone_count": 84,
+    "team_partition_both_over_implies_full_over_count": 231,
+    "team_partition_both_under_implies_full_under_count": 714
+  },
+  "result_sha256": "3fcbb162ac70c5cd607d390d7e240614d9dd5b47eb07450522397b7c5e1dabb4",
+  "retained_source": {
+    "global_population_complete": false,
+    "path": "data/polymarket-near-expiry-negrisk-complete-set-catalog-v1/raw/events.json",
+    "population_scope": "Every 23-market total-corners event in the immutable 100-event response.",
+    "sha256": "1dd21f815a4564cb42711842b80c91e46d6b6a799dcefe2911d0a30e10ab61f2"
+  },
+  "schema_version": "polymarket-soccer-corner-graph-result-v1",
+  "strict_sub_floor_relations": []
+}

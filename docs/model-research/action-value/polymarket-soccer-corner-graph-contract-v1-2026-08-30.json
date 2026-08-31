@@ -1,0 +1,82 @@
+{
+  "schema_version": "polymarket-soccer-corner-graph-contract-v1",
+  "frozen_at_utc": "2026-08-30T22:36:47.9248160Z",
+  "contract_path": "docs/model-research/action-value/polymarket-soccer-corner-graph-contract-v1-2026-08-30.json",
+  "purpose": "Exhaust every retained same-game corner-count monotone, additive-partition, and parity payoff identity before viewing any package price.",
+  "distinctness": {
+    "prior_soccer_graphs": "Prior soccer graphs test goals, match results, exact scores, scorers, and half results; they do not test corner-count markets.",
+    "this_graph": "This graph covers full, first-half, second-half, and team corner ladders; exact additivity of the two halves and two teams into the full-game total; and parity implied by adjacent full-total thresholds.",
+    "price_blind_freeze": "Corner market labels and complete rules were inspected to define integer payoff identities. No corner package price sum was inspected before this contract was frozen."
+  },
+  "retained_source": {
+    "path": "data/polymarket-near-expiry-negrisk-complete-set-catalog-v1/raw/events.json",
+    "sha256": "1dd21f815a4564cb42711842b80c91e46d6b6a799dcefe2911d0a30e10ab61f2",
+    "global_population_complete": false,
+    "population_scope": "Every 23-market total-corners event in the immutable 100-event response."
+  },
+  "relation_contracts": [
+    {
+      "family": "corner_total_monotone",
+      "legs": "YES Over lower threshold plus YES Under higher threshold",
+      "ordinary_floor_pUSD": "1",
+      "full_cancellation_floor_pUSD": "1"
+    },
+    {
+      "family": "component_both_over_implies_full_over",
+      "legs": "YES Under each component threshold plus YES full Over threshold",
+      "ordinary_floor_pUSD": "1",
+      "full_cancellation_floor_pUSD": "1.5"
+    },
+    {
+      "family": "component_both_under_implies_full_under",
+      "legs": "YES Over each component threshold plus YES full Under threshold",
+      "ordinary_floor_pUSD": "1",
+      "full_cancellation_floor_pUSD": "1.5"
+    },
+    {
+      "family": "adjacent_full_corner_interval_implies_parity",
+      "legs": "YES Under lower threshold plus YES Over adjacent higher threshold plus YES implied parity",
+      "ordinary_floor_pUSD": "1",
+      "full_cancellation_floor_pUSD": "1.5"
+    }
+  ],
+  "rule_contract": {
+    "counting_unit": "corners taken, not corners awarded",
+    "full_partition": "first-half plus second-half corner counts and each team's corner count sum exactly to the full first-90-minutes-plus-stoppage-time count",
+    "source": "official governing-body or organizer statistics, then the same Flashscore, Sofascore, and credible-reporting fallback chain",
+    "full_cancellation": "every tested leg resolves 50-50",
+    "no_data_fallback": "every tested leg resolves 50-50 after 48 hours without acceptable data"
+  },
+  "price_contract": {
+    "first_outcome_acquisition_proxy": "bestAsk",
+    "second_outcome_acquisition_proxy": "1 minus first-outcome bestBid",
+    "missing_side_specific_price": "fail closed and do not substitute outcomePrices",
+    "candidate_requires_sum_strictly_below_one_pUSD": true,
+    "retained_prices_are_rejection_only": true,
+    "retained_prices_cannot_accept_or_promote": true
+  },
+  "stopping_rules": {
+    "zero_strict_candidates": "Terminalize this retained population without any venue request.",
+    "one_or_more_strict_candidates": "Retain and deterministically rank all strict rows. Because every retained match has ended, make no request; preregister one future distinct active equivalent relation before exact book access.",
+    "current_or_historical_book_request": false,
+    "adaptive_refit_cherry_pick_or_source_refresh": false
+  },
+  "implementation": {
+    "path": "tools/adjudicate_polymarket_soccer_corner_graph.py",
+    "sha256": "0c6e8f426c718f80075566130c26d03d55a4e0d522460302029b65f4f4d50a48",
+    "dependency": {
+      "path": "tools/adjudicate_polymarket_soccer_structural_graph.py",
+      "sha256": "32add0641e85d5f8cbc360f8c5969b56c386e3441a35246c18728844d765c0bc"
+    }
+  },
+  "output_path": "docs/model-research/action-value/polymarket-soccer-corner-graph-result-v1-2026-08-30.json",
+  "authority": {
+    "network_requests": 0,
+    "credentials_used": false,
+    "account_state_accessed": false,
+    "orders_quotes_wallets_funds_or_transactions": 0,
+    "protected_capture_touched": false,
+    "trading_authority": false
+  },
+  "contract_sha256": "179c50e5e73c9743bb9c325796d1f9cb47cc0ad25e5f5163cd009bbffa3b0dc4"
+}

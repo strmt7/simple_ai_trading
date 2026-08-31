@@ -124,7 +124,7 @@
       "why_not_stable_deployable": "Current rate remains conflict-qualified rather than proven, the evidence is from public wallets rather than the owned account, every external friction and best alternative is not bound, and future persistence is not guaranteed."
     }
   },
-  "result_sha256": "c2a6a0d5d0dcc17fb0827ee41631c9e654d9c07b6bd733d46087d0a576e20637",
+  "result_sha256": "c7b116f8786575044287a74d6c550bb771708c671d8e7b3c52217ece7b1f3108",
   "routing": {
     "do_not_count_as_standalone_profit": [
       "advertised_or_public_rate_without_realized_cash",
@@ -133,13 +133,13 @@
       "referral_creator_builder_client_or_follower_income_without_authentic_external_flow"
     ],
     "next_research_priority": "Seek repeatable Tier A direct-cash mechanisms or materially improve Tier A account cost persistence evidence. Do not spend requests or tests merely increasing Tier C or Tier D counts while a Tier A trigger is closed.",
-    "polymarket_next_literal_trigger": "Do not run another single-wallet holding-yield continuity pulse before 2026-08-31T02:15:30Z; otherwise wait for a material official rate program cross-asset payout or economic comparator change.",
+    "polymarket_next_literal_trigger": "Do not repeat the consumed V11 single-wallet activity pulse. Run only the frozen transaction-specific V12 public receipt reconciliation exactly once with no retry, alias, parameter change, or other request; afterward wait for a material official rate, program, cross-asset payout, or economic-comparator change.",
     "binance_next_literal_trigger": "Advance a genuinely distinct Tier A or Tier B monetary mechanism only when its registry retry trigger is satisfied; do not repeat the exhausted all-symbol triangle stablecoin-cycle or official-doc inventory screens on unchanged evidence."
   },
   "schema_version": "accepted-edge-profitability-durability-audit-v1",
   "source_binding": {
     "accepted_edge_count": 29,
     "registry_path": "docs/model-research/structural-edge-priority-registry-v1.json",
-    "registry_result_sha256": "3ee674e0dbc81c965ca1afba65c6b3a032f1cdeb271b856b3b7b268510d6af1f"
+    "registry_result_sha256": "1797b2c3bc3c7698c5f9ed799277e37cfc7ee7f8ab711608a6a06eb15701446a"
   }
 }
