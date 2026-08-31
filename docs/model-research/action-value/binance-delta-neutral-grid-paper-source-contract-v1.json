@@ -1,0 +1,63 @@
+{
+  "authority": {
+    "accepted_edge_from_this_stage_permitted": false,
+    "account_state_permitted": false,
+    "credentials_permitted": false,
+    "funded_actions_permitted": false,
+    "orders_or_mutations_permitted": false,
+    "protected_capture_access_permitted": false,
+    "public_unauthenticated_read_only_requests": 1,
+    "venue_market_data_requests_permitted": 0
+  },
+  "contract_sha256": "be6bb998493e6ab3c816c30ef991574729f8ac9888c5217ab9beef98f7dc775a",
+  "decision_boundary": {
+    "promotion": "none; a paper cannot prove current owned after-cost profitability or grant order authority",
+    "reject": "terminalize or merge into an existing family if the test is short, cross-venue, directionally skewed, fee-incomplete, non-reproducible, or lacks regime and fill attribution",
+    "reopen": "only a reproducible causal mechanism with exact fee, fill, inventory, hedge, funding, capital, and regime evidence materially distinct from retained maker-first and spot-perpetual carry families may authorize a separately frozen public-data test"
+  },
+  "frozen_at_utc": "2026-08-31T15:07:46.3784448Z",
+  "implementations": [
+    {
+      "path": "tools/screen_polymarket_exact_two_leg_package.py",
+      "sha256": "374fcc3c3485c466b4929a91256450bdc7db70f93ef4c6bda627e05fe8938327"
+    }
+  ],
+  "outputs": {
+    "journal_path": "data/binance-delta-neutral-grid-paper-v1/request-journal.jsonl",
+    "raw_path": "data/binance-delta-neutral-grid-paper-v1/raw/ssrn-6280958.pdf"
+  },
+  "purpose": "retrieve and falsify the exact non-aliased primary paper claiming direction-neutral Binance-style spot-futures grid market-making returns before any market-data collector or order experiment",
+  "questions": [
+    "which venue and exact sample actually produced the reported results",
+    "whether fees funding rebates spread slippage and hedge costs are complete and source-bound",
+    "whether fill simulation uses future bars touch assumptions or full queue and partial-fill attribution",
+    "whether near-zero delta survives inventory hedge timing basis and liquidation stress",
+    "whether every bull bear sideways choppy volatility liquidity and latency regime is supported",
+    "whether code data parameters and results are reproducible without refitting"
+  ],
+  "request": {
+    "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "count": 1,
+    "endpoint_classification": "public unauthenticated primary SSRN paper PDF GET; not a venue endpoint and not state changing",
+    "method": "GET",
+    "timeout_seconds": 30,
+    "url": "https://papers.ssrn.com/sol3/Delivery.cfm/6280958.pdf?abstractid=6280958&mirid=1"
+  },
+  "schema_version": "binance-delta-neutral-grid-paper-source-contract-v1",
+  "source": {
+    "authors": [
+      "Thanh Nguyen",
+      "Duc Bui"
+    ],
+    "doi": "10.2139/ssrn.6280958",
+    "ssrn_id": "6280958",
+    "title": "Delta-Neutral Grid Market Making with Adaptive Hedging and Risk Management for Cryptocurrency Spot-Futures Markets"
+  },
+  "status": "frozen_before_primary_paper_access",
+  "stop_rules": [
+    "do not retry or follow a mirror if this request fails",
+    "do not request venue books histories accounts credentials or orders from this stage",
+    "do not call a 52-day backtest stable or market-independent",
+    "preserve the raw response and request journal before interpretation"
+  ]
+}

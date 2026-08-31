@@ -113,6 +113,13 @@ override prose.
   the registry, action-value artifacts, and `docs/CONTINUATION.md`. A retained
   source-bound hit is not a new literature trigger; reuse its adjudication and
   advance only on that family's literal retry trigger.
+- Direct SSRN `Delivery.cfm` PDF requests can return a Cloudflare HTTP 403 HTML
+  challenge even when the public abstract is indexed. Freeze the exact primary
+  PDF once, retain the failure, and stop without retrying query variants or
+  mirrors. An indexed abstract remains discovery only: never use its Sharpe,
+  return, drawdown, fee, fill, venue, or direction-neutral claims to authorize
+  a collector, book request, or order experiment without byte-retained complete
+  methodology and reproducible code or data.
 - For XML or other structured public sources, freeze semantic parser gates for
   namespace-expanded element names and exact required fields instead of a
   literal serialized root tag whose whitespace or attribute layout can vary.
