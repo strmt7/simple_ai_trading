@@ -124,7 +124,7 @@
       "why_not_stable_deployable": "Current rate remains conflict-qualified rather than proven, the evidence is from public wallets rather than the owned account, every external friction and best alternative is not bound, and future persistence is not guaranteed."
     }
   },
-  "result_sha256": "067a2014b02bafde283841940cbb3f1299b8e1fe9108f06cf238816bf2e0d014",
+  "result_sha256": "6c40ae46fc8247db33b1d6b14ab96e3c5a11b2eda8be1d327f63189b8fab75d2",
   "routing": {
     "do_not_count_as_standalone_profit": [
       "advertised_or_public_rate_without_realized_cash",
@@ -133,13 +133,13 @@
       "referral_creator_builder_client_or_follower_income_without_authentic_external_flow"
     ],
     "next_research_priority": "Seek repeatable Tier A direct-cash mechanisms or materially improve Tier A account cost persistence evidence. Do not spend requests or tests merely increasing Tier C or Tier D counts while a Tier A trigger is closed.",
-    "polymarket_next_literal_trigger": "Do not repeat the consumed V11 single-wallet activity pulse or its exact successful V12 receipt reconciliation. Wait for a material official rate, program, cross-asset payout, or economic-comparator change.",
+    "polymarket_next_literal_trigger": "Do not repeat the consumed V11 single-wallet activity pulse or its exact successful V12 receipt reconciliation. Wait for a material official holding-yield rate, program, cross-asset payout, or economic-comparator change. The exact Frantisek Olha Presov paired-maker candidate is separately terminal after exact sources reconciled but its one-use book had zero YES bids, zero NO asks, and stale timestamps; do not retry or substitute a Presov sibling.",
     "binance_next_literal_trigger": "Do not repeat or book-capture the terminal 2026 GLW, GOOGL, QCOM, or PYPL dividend-timing episodes. QCOM and PYPL fail the shared strictly-positive-net-distribution gate before issuer-calendar or market access. Do not poll or pre-position around the September 3 WBETH/ETH, BNSOL/SOL, or BFUSD/USDT isolated-margin removals: the current primary source proves timing but no forced-flow direction or conversion floor. Advance a genuinely distinct Tier A or Tier B monetary mechanism only when its registry retry trigger is satisfied; do not repeat exhausted all-symbol triangle, stablecoin-cycle, or official-document inventory screens on unchanged evidence."
   },
   "schema_version": "accepted-edge-profitability-durability-audit-v1",
   "source_binding": {
     "accepted_edge_count": 29,
     "registry_path": "docs/model-research/structural-edge-priority-registry-v1.json",
-    "registry_result_sha256": "87d53a5b052600a788db81d19cfdcac75b8f1c9fe616b42d116ce789f48b9a1a"
+    "registry_result_sha256": "0214595c90112a546ef535c26ff6a750dbfe6d975eae3fe8240008502fc694fe"
   }
 }
