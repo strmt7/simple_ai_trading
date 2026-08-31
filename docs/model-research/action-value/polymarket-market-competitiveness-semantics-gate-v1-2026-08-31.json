@@ -1,0 +1,83 @@
+{
+  "schema_version": "polymarket-market-competitiveness-semantics-gate-v1",
+  "created_at_utc": "2026-08-31T19:22:17.0697989Z",
+  "question": "Can a public market_competitiveness value of zero be converted into a conservative owned liquidity-reward share without account access or owned eligible orders?",
+  "authority": {
+    "account_requests": 0,
+    "credentials_used": false,
+    "funds_used": false,
+    "market_data_requests": 0,
+    "orders_or_transactions": 0,
+    "protected_capture_touched": false,
+    "public_source_requests": 1,
+    "signed_requests": 0,
+    "trading_authority": false
+  },
+  "sources": {
+    "official_liquidity_reward_formula": {
+      "path": "docs/model-research/polymarket/raw/crypto-twap-5m-liquidity-reward-screen-v1-2026-08-27/01-official-liquidity-rewards-documentation.raw",
+      "sha256": "1e3db7aa93967630e5ba6022e4457f6f9e17e5ddddee84c36f03d7c3d9e3afa0"
+    },
+    "exact_public_reward_row": {
+      "path": "data/polymarket-presov-frantisek-olha-reward-source-v1/02-exact-sponsored-reward.raw",
+      "sha256": "bfe3ba7de4ea56db9d0b4cd69d4dc67c9141527c5c1972ea4f4b85a088c9e078",
+      "source_result_path": "docs/model-research/polymarket/presov-frantisek-olha-reward-source-v1-2026-08-31.json",
+      "source_result_file_sha256": "9e084543f0388930be191062f2825227bfb42c04740b4b551e1250d065322659",
+      "source_result_sha256": "1ca9fb12c928d6ca5f507f4aa118261c78df096f96edd81f8248fc568f9ed319"
+    },
+    "official_v2_sdk": {
+      "commit": "215fc63a8fd6ec3a10c7edb73997c9772d8686d3",
+      "repository": "https://github.com/Polymarket/py-clob-client-v2",
+      "contract_path": "docs/model-research/action-value/polymarket-reward-percentage-auth-source-contract-v1-2026-08-31.json",
+      "contract_sha256": "e66201f597c4016fd211115dd180aacdc2869b20f4d1ab3c09f67ba3cc07d884",
+      "result_path": "docs/model-research/action-value/polymarket-reward-percentage-auth-source-result-v1-2026-08-31.json",
+      "result_sha256": "c57cbe963a3cf3caa04beef0df72f62fbcd6d300f8909b057e4fa62cb85207fd",
+      "raw_path": "docs/model-research/polymarket/raw/reward-percentage-auth-source-v1-2026-08-31/01-official-v2-client.raw.py",
+      "raw_sha256": "66604f43bf37f8482f3f50674b9f3e3834ff13ef83722c00c69520e37052bd3a",
+      "journal_path": "docs/model-research/polymarket/raw/reward-percentage-auth-source-v1-2026-08-31/00-request-journal.jsonl",
+      "journal_sha256": "ff4fcc472c8bfb57e0e5ae633048e3a2901a70eed531a5e25be4214e8d73dfa5"
+    }
+  },
+  "observations": {
+    "exact_public_market_competitiveness": 0,
+    "exact_public_daily_reward_pool_pUSD": "55",
+    "official_formula_is_relative_across_market_makers": true,
+    "official_formula_normalizes_again_to_final_reward_share": true,
+    "public_config_supplies_owned_share_lower_bound": false,
+    "market_competitiveness_primary_source_mapping_retained": false,
+    "sdk_owned_routes": [
+      {
+        "method": "get_user_earnings_and_markets_config",
+        "endpoint": "/rewards/user/markets",
+        "method_block_sha256": "568cd57961b5fa4d74ce8ec8fff475a7c77999907701a43e037733a080263da0",
+        "requires_level_2_auth": true,
+        "requires_date": true
+      },
+      {
+        "method": "get_reward_percentages",
+        "endpoint": "/rewards/user/percentages",
+        "method_block_sha256": "0e8b1344cc3ca53bb07bfb529a52a4895d821fce9dc709fd95016c37a32cec1c",
+        "requires_level_2_auth": true,
+        "requires_account_signature_type": true
+      }
+    ]
+  },
+  "adjudication": {
+    "market_competitiveness_zero_meaning": "undocumented_public_metric_not_zero_competitors_not_full_owned_share",
+    "owned_percentage_route": "authenticated_account_specific_observation_not_account_independent_forward_guarantee",
+    "publicly_proven_owned_reward_share_floor": "0",
+    "publicly_proven_reward_payout_floor_pUSD": "0",
+    "decision_invariant": "A relative pool cannot be credited without a conservative owned share. The retained public value zero has no retained primary-source mapping to competitor count or owned percentage, while both SDK routes that expose owned reward context require Level 2 authentication. Therefore multiplying the pool by any positive inferred share is prohibited.",
+    "economic_requests_justified": false,
+    "retry_trigger": "A current primary source explicitly defines market_competitiveness as a bounded account-independent owned-share lower bound, or separately authorized owned eligible orders produce exact authenticated scoring percentage and realized earnings evidence with full costs."
+  },
+  "verdict": {
+    "accepted_edge": false,
+    "deployment_ready": false,
+    "profitability_claim": false,
+    "stable_current_after_all_cost_edge": false,
+    "status": "terminal_public_market_competitiveness_shortcut_rejected",
+    "trading_authority": false
+  },
+  "result_sha256": "7b58e5317a212c1e50f91bb7742f64f18915e7a3d477cdfc884c2c9938e3ee5b"
+}

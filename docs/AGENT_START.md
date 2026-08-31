@@ -35,6 +35,18 @@ substitute a Prešov sibling, or use the Rewards-page display values as exact
 economics. Canonical adjudication SHA-256 is
 `efa25a2905029b44e96684660a291d12d8d049f49204136da1840099e550669d`.
 
+The follow-on rank-17 semantics gate is also terminal. The public
+`market_competitiveness: 0` value is not zero competitors or a 100% owned
+reward share. The retained official formula is relative across makers, and the
+commit-pinned official v2 SDK requires Level 2 authentication for both owned
+reward-percentage routes. No retained primary source maps the public metric to
+an account-independent positive share, so the proved owned-share and payout
+floors remain zero and no further book request is justified by that field.
+Reopen only on an explicit primary-source lower-bound definition or separately
+authorized owned eligible-order scoring and realized-earnings evidence with all
+costs. Canonical adjudication SHA-256 is
+`7b58e5317a212c1e50f91bb7742f64f18915e7a3d477cdfc884c2c9938e3ee5b`.
+
 The August 31 Binance margin-pair removal is source-bound and terminal as a
 market-independent forced-settlement edge. The exact current primary article
 removes isolated `WBETH/ETH`, `BNSOL/SOL`, and `BFUSD/USDT`, suspends borrowing

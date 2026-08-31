@@ -7324,3 +7324,45 @@ Registry SHA-256 becomes
 `0214595c90112a546ef535c26ff6a750dbfe6d975eae3fe8240008502fc694fe`,
 and durability-audit SHA-256 becomes
 `6c40ae46fc8247db33b1d6b14ab96e3c5a11b2eda8be1d327f63189b8fab75d2`.
+
+## Polymarket public reward-share semantics gate
+
+The strongest unresolved rank-17 shortcut is now source-bound and rejected.
+The exact public Prešov reward row exposes `market_competitiveness: 0`, but the
+retained official liquidity-reward formula allocates the pool by each maker's
+relative normalized score and supplies no account-independent owned-share
+floor. A zero metric therefore cannot be interpreted as zero competitors,
+100% owned share, or any positive payout.
+
+One commit-pinned public source retention captured the current official
+Polymarket Python v2 client at
+`215fc63a8fd6ec3a10c7edb73997c9772d8686d3`. Both exposed owned-reward routes,
+`get_reward_percentages` and `get_user_earnings_and_markets_config`, call
+`assert_level_2_auth`; the latter is also date-specific. This proves that the
+SDK's owned percentage and user-market context is authenticated and
+account-specific. It does not create authority to access an account, does not
+make the observations a forward guarantee, and does not define the public
+`market_competitiveness` field.
+
+The adjudication therefore retains a public owned-share and payout floor of
+zero. Do not multiply a public reward pool by an inferred positive share, and
+do not request another book merely because `market_competitiveness` equals
+zero. Reopen only if a current primary source explicitly defines a bounded
+account-independent owned-share lower bound, or if separately authorized owned
+eligible orders later provide exact authenticated scoring percentage, realized
+earnings, and every cost. No credential, account request, market-data request,
+order, fund, transaction, or protected capture was used by the adjudication;
+the only new request retained immutable public SDK source.
+
+Source-contract SHA-256 is
+`e66201f597c4016fd211115dd180aacdc2869b20f4d1ab3c09f67ba3cc07d884`;
+source-result SHA-256 is
+`c57cbe963a3cf3caa04beef0df72f62fbcd6d300f8909b057e4fa62cb85207fd`;
+canonical adjudication SHA-256 is
+`7b58e5317a212c1e50f91bb7742f64f18915e7a3d477cdfc884c2c9938e3ee5b`.
+Accepted edges remain 29, ranked hypotheses remain 47, terminal families
+remain 118, and stable current account-qualified after-all-cost edges remain
+zero. Registry SHA-256 becomes
+`e9dcc345636a26a3fc43c3152087d7ca33f53744674d291b500f16f0fff00776`,
+and durability-audit SHA-256 becomes
+`87d5e74c6b7feefc95c3a047980527679763668e34e234aa0fee4abd98526256`.
