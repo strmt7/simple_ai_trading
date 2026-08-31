@@ -3311,3 +3311,30 @@ result SHA-256 is
 Accepted edges remain 29, ranked hypotheses remain 44, terminal families become
 84, and registry SHA-256 becomes
 `7c4c4ecc062a4cda012958571fcc477e304d38e0f00f8c67aecd37ae4a031645`.
+
+## Binance stock-option deployment gate
+
+The current official Binance developer contract exposes a public unauthenticated
+Options `exchangeInfo` population with `contractType` and `underlyingType`, and
+separately classifies TradFi Options contract acceptance as `USER_DATA` and a
+state-changing `POST`. A distinct direction-independent payoff lead therefore
+tested only whether active `TRADFI_OPTIONS` plus `EQUITY` symbols are actually
+deployed before spending any economic request.
+
+The one frozen public inventory GET returned HTTP 200 and zero active stock
+option rows. Stop there: no option tickers, futures metadata, books, premium
+index, funding, account, credential, contract acceptance, order, or fund request
+is permitted for this population. API feature support is not deployment.
+Reopen rank 46 only after an official stock-option listing or a material option
+settlement, fee, access, unit, or matching-perpetual architecture change.
+
+Contract file SHA-256 is
+`08bcd2fd86082e9c4d03b4408c38aabfb5f84248ace9748d6898ebcef3114624`;
+canonical result SHA-256 is
+`b72592efad26563aacc4e6d8611f15f3172039ffc220153ab824bf57231afcb3`.
+Accepted edges remain 29, ranked hypotheses become 46, terminal families become
+115, and stable current account-qualified after-all-cost edges remain zero.
+Registry SHA-256 becomes
+`06ca44a66364f8bcd1d78b76d4e75f13f1431ce9437a5e7f7ce8c1f6af5ffd04`,
+and durability-audit SHA-256 becomes
+`a0896ba8a9782234b2735e67553583118694715e8f65886416d6f73481d4ea1a`.

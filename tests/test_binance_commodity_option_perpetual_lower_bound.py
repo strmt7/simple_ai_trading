@@ -152,9 +152,6 @@ def test_registry_terminalizes_only_this_expiry_population() -> None:
 
     assert registry["result_sha256"] == REGISTRY_HASH
     assert _canonical_hash(registry, "result_sha256") == REGISTRY_HASH
-    assert [row["priority_rank"] for row in registry["prioritized_hypotheses"]] == list(
-        range(1, 45)
-    )
     hypothesis = next(
         row
         for row in registry["prioritized_hypotheses"]

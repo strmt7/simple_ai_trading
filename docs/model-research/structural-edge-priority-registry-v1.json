@@ -3082,9 +3082,45 @@
       ],
       "retry_trigger": "material_official_TUSD_redemption_or_Binance_listing_fee_withdrawal_change_or_exact_account_qualified_issuer_and_every_same_unit_cost_evidence_or_an_independently_observed_event_driven_TUSD_ask_discount_above_25_bips_from_a_non_polling_source",
       "venue_scope": "Binance_TUSDUSDT_Spot_and_TrueUSD_bank_USD_redemption"
+    },
+    {
+      "blocking_evidence": [
+        "an official active Binance TradFi equity option listing",
+        "source-proved option exercise style settlement time settlement index and contract unit",
+        "an exact matching active Binance TradFi perpetual underlying and unit conversion",
+        "executable option ask quantity and perpetual entry depth",
+        "exact option entry exercise settlement futures exit and account fees",
+        "direction-specific adverse funding expiry exit-basis orphan liquidation opportunity tax custody and operational costs",
+        "recurring strictly positive same-unit worst-state terminal floor after every cost"
+      ],
+      "canonical_artifacts": [
+        {
+          "path": "docs/model-research/action-value/binance-stock-option-inventory-contract-v1-2026-08-31.json",
+          "result_sha256": "08bcd2fd86082e9c4d03b4408c38aabfb5f84248ace9748d6898ebcef3114624"
+        },
+        {
+          "path": "docs/model-research/action-value/binance-stock-option-inventory-result-v1-2026-08-31.json",
+          "result_sha256": "b72592efad26563aacc4e6d8611f15f3172039ffc220153ab824bf57231afcb3"
+        }
+      ],
+      "current_status": "unaccepted_direction_independent_long_stock_option_plus_equal_opposite_TradFi_perpetual_terminal_payoff_lower_bound_the_current_official_API_supports_TradFi_Options_account_contracting_and_public_contractType_underlyingType_inventory_fields_but_the_one_use_complete_public_exchangeInfo_request_returned_zero_active_TRADFI_OPTIONS_EQUITY_rows_so_no_deployed_population_and_zero_ticker_futures_book_premium_funding_account_credential_order_or_fund_requests_exist_not_an_edge_or_deployment_ready",
+      "market_direction_forecast_required": false,
+      "mechanism": "binance_long_stock_option_opposite_TradFi_perpetual_terminal_payoff_lower_bound",
+      "next_action": "do_not_repeat_or_poll_the_current_zero_row_inventory_wait_for_an_official_stock_option_listing_or_material_option_settlement_fee_access_or_matching_perpetual_architecture_change_then_freeze_one_exact_active_population_and_request_downstream_economics_only_if_the_deployment_trigger_exists",
+      "priority_rank": 46,
+      "prohibited_shortcuts": [
+        "calling_API_feature_support_a_deployed_active_stock_option_population",
+        "requesting_tickers_futures_books_premium_or_funding_when_the_active_population_is_empty",
+        "using_option_mark_last_trade_model_value_or_missing_quantity_as_an_executable_ask",
+        "assuming_a_stock_option_and_similarly_named_perpetual_share_one_settlement_index_unit_or_terminal_value",
+        "crediting_favorable_funding_or_ignoring_expiry_exit_basis_and_non_atomic_orphan_risk",
+        "accepting_the_TradFi_Options_contract_accessing_an_account_using_credentials_or_placing_orders_without_separate_explicit_authority"
+      ],
+      "retry_trigger": "new_official_Binance_TradFi_equity_option_listing_or_material_stock_option_settlement_fee_access_contract_unit_or_matching_TradFi_perpetual_architecture_change",
+      "venue_scope": "Binance_public_TradFi_equity_options_and_exact_matching_USDT_TradFi_perpetuals"
     }
   ],
-  "result_sha256": "f6f2e93e2706b1db421c53fc07e5066cb2084367e8deee98b44b3fd62606180c",
+  "result_sha256": "06ca44a66364f8bcd1d78b76d4e75f13f1431ce9437a5e7f7ce8c1f6af5ffd04",
   "schema_version": "structural-edge-priority-registry-v1",
   "terminal_do_not_repeat": [
     {
@@ -3662,8 +3698,13 @@
       "canonical_result_sha256": "b3f5480fea15bb73990a278dba93356cb34c49f91d82e2624c79fef8191e09f4",
       "family": "polymarket_retained_2026_08_26_holding_yield_multi_event_exact_parity_graph",
       "reason": "the_zero_network_retained_audit_exhausted_7_exact_mutual_exclusion_triple_NO_and_nested_threshold_relations_across_Fed_largest_company_best_AI_and_Anthropic_valuation_events_zero_side_specific_rejection_prices_were_strictly_below_their_optimistic_common_rule_floor_and_the_best_Fed_pair_cost_1_01_pUSD_for_a_1_pUSD_floor_do_not_rebuild_reprice_or_book_capture_the_same_retained_rows"
+    },
+    {
+      "canonical_result_sha256": "b72592efad26563aacc4e6d8611f15f3172039ffc220153ab824bf57231afcb3",
+      "family": "binance_active_TradFi_equity_option_inventory_2026_08_31",
+      "reason": "the_one_use_complete_public_options_exchangeInfo_request_returned_HTTP_200_and_zero_active_TRADFI_OPTIONS_EQUITY_rows_so_the_stock_option_plus_opposite_matching_TradFi_perpetual_terminal_lower_bound_has_no_current_deployed_population_and_stopped_before_every_ticker_futures_book_premium_funding_account_credential_order_or_fund_request_do_not_repeat_or_poll_reopen_only_on_rank_46s_literal_official_listing_or_material_architecture_trigger"
     }
   ],
-  "updated_at_utc": "2026-08-31T17:08:00Z",
+  "updated_at_utc": "2026-08-31T17:34:00Z",
   "usage_rule": "advance_the_highest_ranked_hypothesis_whose_retry_trigger_is_satisfied_otherwise_do_not_repeat_a_blocked_or_terminal_screen"
 }
