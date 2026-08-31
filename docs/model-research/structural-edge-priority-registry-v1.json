@@ -3157,7 +3157,7 @@
       "venue_scope": "Binance_BTC_ETH_SOL_European_options_and_exact_matching_USDT_perpetuals"
     }
   ],
-  "result_sha256": "7eeba81c9b93404372bd4833002c67c5a958d25e5b7de258f86c95968f70b247",
+  "result_sha256": "87d53a5b052600a788db81d19cfdcac75b8f1c9fe616b42d116ce789f48b9a1a",
   "schema_version": "structural-edge-priority-registry-v1",
   "terminal_do_not_repeat": [
     {
@@ -3745,8 +3745,13 @@
       "canonical_result_sha256": "90c05ed35db00da7e5b4a2d8ec6ac0a51367a1a768dc58a39ef479510d5aa745",
       "family": "binance_retained_BTC_ETH_SOL_single_long_option_opposite_perpetual_terminal_lower_bound",
       "reason": "the_zero_network_hash_bound_screen_exhausted_all_1410_active_retained_crypto_options_1115_had_positive_entry_sides_and_only_SOL_260828_90_C_and_SOL_260828_92_C_had_positive_gross_terminal_floors_the_best_was_16_71090141_bips_but_33_5_bips_fixed_fee_and_expiry_basis_stress_alone_exceeded_it_and_complete_frozen_stress_reduced_it_to_negative_41_09843077_bips_zero_option_depth_or_current_market_requests_were_justified_do_not_repeat_or_rebuild_this_population_reopen_only_on_rank_47s_literal_trigger"
+    },
+    {
+      "canonical_result_sha256": "b0367360207044b8b70cc76a72de288f698c563c0e52133836e1b6402b15f392",
+      "family": "binance_WBETH_BNSOL_BFUSD_isolated_margin_pair_removal_forced_settlement_2026_09_03",
+      "reason": "the_one_request_current_primary_article_proves_WBETH_ETH_BNSOL_SOL_and_BFUSD_USDT_isolated_margin_pair_removal_borrow_suspension_and_automatic_settlement_timing_but_no_aggregate_position_direction_size_settlement_price_conversion_redemption_ratio_fee_capacity_discount_reward_or_recurrent_cash_flow_trading_the_event_would_require_a_directional_forced_flow_forecast_not_a_market_independent_payoff_do_not_poll_books_or_preposition_reopen_only_after_an_independent_nonpolling_finite_size_discount_strictly_exceeds_a_separately_source_bound_exact_same_account_conversion_or_redemption_floor_after_every_cost"
     }
   ],
-  "updated_at_utc": "2026-08-31T17:58:00Z",
+  "updated_at_utc": "2026-08-31T18:20:00Z",
   "usage_rule": "advance_the_highest_ranked_hypothesis_whose_retry_trigger_is_satisfied_otherwise_do_not_repeat_a_blocked_or_terminal_screen"
 }

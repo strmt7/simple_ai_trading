@@ -7243,3 +7243,37 @@ Registry SHA-256 becomes
 `7eeba81c9b93404372bd4833002c67c5a958d25e5b7de258f86c95968f70b247`,
 and durability-audit SHA-256 becomes
 `9fe9eff62c4d11e94d7791bbba3edfbb89d8bc26b0f38da204b1ef38cf6a0485`.
+
+## Binance yield-asset isolated-margin removal rejection
+
+One exact current primary Binance announcement exposed a novel but terminal
+forced-settlement lead. Isolated `WBETH/ETH`, `BNSOL/SOL`, and `BFUSD/USDT`
+borrowing is suspended at `2026-09-01T06:00:00Z`; automatic settlement, order
+cancellation, and pair removal are scheduled for
+`2026-09-03T06:00:00Z`. The source contains no aggregate long/short position
+direction or size, settlement-price formula, LST conversion/redemption ratio,
+fee, capacity, delay, BFUSD face-value redemption contract, observed discount,
+reward, or recurrent cash flow.
+
+The announcement therefore proves event timing but not a direction-independent
+payoff. Any trade based only on presumed forced buying or selling would be
+directional speculation. The sequence stopped after the single source request:
+zero books, conversion quotes, account reads, credentials, borrows, orders,
+funds, or transactions were used. Do not poll or pre-position around this exact
+removal. Reopen only if an independent non-polling observation shows a
+finite-size discount strictly above a separately source-bound exact same-account
+conversion or redemption floor after every fee, delay, basis, hedge, unwind,
+capital, and operational cost.
+
+Contract SHA-256 is
+`8ae3039fd20c9daa8108a964ba0beff8419204f9b119cd0e582a6d7f6ccd9767`;
+canonical terminal SHA-256 is
+`b0367360207044b8b70cc76a72de288f698c563c0e52133836e1b6402b15f392`;
+raw response SHA-256 is
+`5f1cec111cb8aa171d1d23a1a6222b8daec3ce6be45cb2c8b99c5effe35bb4e8`.
+Accepted edges remain 29, ranked hypotheses remain 47, terminal families become
+117, and stable current account-qualified after-all-cost edges remain zero.
+Registry SHA-256 becomes
+`87d53a5b052600a788db81d19cfdcac75b8f1c9fe616b42d116ce789f48b9a1a`,
+and durability-audit SHA-256 becomes
+`067a2014b02bafde283841940cbb3f1299b8e1fe9108f06cf238816bf2e0d014`.
