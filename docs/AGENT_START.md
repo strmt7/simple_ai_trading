@@ -104,6 +104,24 @@ below the one-pUSD floor; the best only equaled one pUSD before books, fees, or
 execution. Do not rebuild or reprice this population. Reopen only on the rank-31
 future-distinct-event trigger.
 
+The same retained page is also exhausted across player-prop and corner-count
+identities. All 43 NO-anytime-goalscorer plus YES-Over-0.5 packages were
+price-complete, zero were sub-floor, and the best cost 1.90 pUSD for a one-pUSD
+floor. Seven complete corner events produced 1,820 full/half/team monotone,
+additive-partition, and adjacent-interval parity packages; all were
+price-complete, zero were sub-floor, and the best cost 1.10 pUSD. Preserve the
+corner V1 literal-rule and V2 strict-zip failures. Do not rebuild, reprice, or
+request books for either population.
+
+The rank-one Polymarket holding-yield gate is consumed through V11. Its one
+public BTC activity request found exactly one new 0.0133 pUSD YIELD row at
+2026-08-31 00:10:10 UTC, 86,190 seconds after the prior row. The protected V7
+partial payloads were not read, repaired, or touched. No receipt request has
+been sent. Run only the frozen transaction-specific V12 receipt reconciliation
+once, with no retry, alias, parameter change, or other request; never repeat
+V7, V9, V10, or V11. Current rate, account qualification, deployment readiness,
+and new-capital profit remain fail-closed.
+
 ## Non-Negotiable Gates
 
 - Aggregate performance is not an all-market edge. Promotion requires causal

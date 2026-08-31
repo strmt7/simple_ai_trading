@@ -1,0 +1,68 @@
+{
+  "adjudication": {
+    "accepted_edge": false,
+    "current_book_request_authorized": false,
+    "deployment_ready": false,
+    "next_action": "terminalize_this_retained_population_without_any_market_request",
+    "profitability_claim": false,
+    "status": "no_strict_side_specific_sub_floor_candidate"
+  },
+  "authority": {
+    "account_state_accessed": false,
+    "credentials_used": false,
+    "network_requests": 0,
+    "orders_quotes_wallets_funds_or_transactions": 0,
+    "protected_capture_touched": false,
+    "trading_authority": false
+  },
+  "best_complete_relation": {
+    "base_slug": "fl1-lor-tro-2026-08-29",
+    "cancellation_floor_pUSD": "1",
+    "common_rule_floor_pUSD": "1",
+    "family": "anytime_goalscorer_implies_over_zero_point_five",
+    "legs": [
+      {
+        "condition_id": "0x7d113381f03a5320fec01f577da2f1f6e371d298f7aeef9528e5b868ac24a9b0",
+        "market_id": "3842761",
+        "outcome": "No",
+        "question": "Tosin Aiyegun: Anytime Goalscorer",
+        "side_specific_price_kind": "one_minus_first_outcome_bestBid",
+        "token_id": "14544970573300160151403025403601219936234177639382875835410066962372012211953"
+      },
+      {
+        "condition_id": "0xe9eb0b66926ae82f5a3f5321e32f181caf1c723efc668b2cdfe692f2c02dbdcd",
+        "market_id": "3624412",
+        "outcome": "Over",
+        "question": "FC Lorient vs. ES Troyes AC: O/U 0.5",
+        "side_specific_price_kind": "bestAsk",
+        "token_id": "115774478543608974263455910638658797642890233535883548539707403055994172948453"
+      }
+    ],
+    "optimistic_proxy_headroom_pUSD": "-0.9",
+    "passes_strict_side_specific_rejection_gate": false,
+    "payoff_proof": "NO anytime goalscorer plus YES Over 0.5 pays at least one because any credited player goal makes the match total positive",
+    "rejection_proxy_sum_pUSD": "1.9",
+    "side_specific_prices_complete": true
+  },
+  "contract": {
+    "path": "docs/model-research/action-value/polymarket-soccer-goalscorer-total-contract-v1-2026-08-30.json",
+    "sha256": "a1c7e244f196d7531bf40950dcb368b5cb71ae0578e71495282ae9b6e933d6ae"
+  },
+  "created_at_utc": "2026-08-30T22:33:18.356356Z",
+  "population": {
+    "complete_base_count": 5,
+    "relation_count": 43,
+    "side_specific_price_complete_count": 43,
+    "side_specific_price_missing_count": 0,
+    "strict_sub_floor_count": 0
+  },
+  "result_sha256": "6b5fa74bc6f9e4022472969155960ab6fa676d472f570b1e9a56ae0286ba5a03",
+  "retained_source": {
+    "global_population_complete": false,
+    "path": "data/polymarket-near-expiry-negrisk-complete-set-catalog-v1/raw/events.json",
+    "population_scope": "Every complete player-props plus more-markets soccer family in the immutable 100-event response.",
+    "sha256": "1dd21f815a4564cb42711842b80c91e46d6b6a799dcefe2911d0a30e10ab61f2"
+  },
+  "schema_version": "polymarket-soccer-goalscorer-total-result-v1",
+  "strict_sub_floor_relations": []
+}

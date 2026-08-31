@@ -120,4 +120,9 @@ def test_registry_keeps_edge_scoped_and_source_bound() -> None:
         "result_sha256": RECEIPT_RESULT_HASH,
     } in row["canonical_artifacts"]
     assert "current_rate_remains_fail_closed_unqualified" in row["current_status"]
-    assert "2026_08_31T02_15_30Z" in row["retry_trigger"]
+    assert "material_official_rate_program_cross_asset_payout" in (
+        row["retry_trigger"]
+    )
+    assert "run_once_the_frozen_transaction_specific_v12" in (
+        row["receipt_v12_retry_trigger"]
+    )

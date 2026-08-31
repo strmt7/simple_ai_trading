@@ -1,0 +1,58 @@
+{
+  "schema_version": "polymarket-soccer-goalscorer-total-contract-v1",
+  "frozen_at_utc": "2026-08-30T22:32:13.3678739Z",
+  "contract_path": "docs/model-research/action-value/polymarket-soccer-goalscorer-total-contract-v1-2026-08-30.json",
+  "purpose": "Exhaust every rule-complete retained anytime-goalscorer implication into the same match's Over 0.5 market before viewing any cross-family package price.",
+  "distinctness": {
+    "prior_soccer_graphs": "The prior retained soccer graphs exhaust exact-score, first-to-score, BTTS, full-total, team-total, match-result, halftime-result, and second-half-result identities; they do not test player-prop markets.",
+    "this_graph": "For every complete player-props plus more-markets family, this graph tests NO anytime goalscorer plus YES Over 0.5, which pays at least one pUSD because a credited player goal makes the match total positive and both legs resolve 50-50 on full cancellation.",
+    "price_blind_freeze": "Event and rule metadata were inspected to define the family. No goalscorer-to-total price sum was inspected before this contract was frozen."
+  },
+  "retained_source": {
+    "path": "data/polymarket-near-expiry-negrisk-complete-set-catalog-v1/raw/events.json",
+    "sha256": "1dd21f815a4564cb42711842b80c91e46d6b6a799dcefe2911d0a30e10ab61f2",
+    "global_population_complete": false,
+    "population_scope": "Every complete player-props plus more-markets soccer family in the immutable 100-event response."
+  },
+  "relation_contract": {
+    "family": "anytime_goalscorer_implies_over_zero_point_five",
+    "legs": "NO anytime goalscorer plus YES full-game Over 0.5",
+    "ordinary_floor_pUSD": "1",
+    "full_cancellation_floor_pUSD": "1",
+    "required_common_horizon": "first 90 minutes of regular play plus stoppage time",
+    "required_player_rule": "YES only when the named player is credited with a goal; inactive or did-not-play resolves NO; full cancellation resolves 50-50",
+    "required_total_rule": "Over only when the teams combine for at least one goal; full cancellation resolves 50-50"
+  },
+  "price_contract": {
+    "goalscorer_no_acquisition_proxy": "1 minus goalscorer YES bestBid",
+    "over_yes_acquisition_proxy": "Over bestAsk",
+    "missing_side_specific_price": "fail closed and do not substitute outcomePrices",
+    "candidate_requires_sum_strictly_below_one_pUSD": true,
+    "retained_prices_are_rejection_only": true,
+    "retained_prices_cannot_accept_or_promote": true
+  },
+  "stopping_rules": {
+    "zero_strict_candidates": "Terminalize this retained population without any venue request.",
+    "one_or_more_strict_candidates": "Retain all strict rows and rank deterministically. Because every retained match has ended, make no request; preregister one future distinct active equivalent relation before any exact book access.",
+    "current_or_historical_book_request": false,
+    "adaptive_refit_cherry_pick_or_source_refresh": false
+  },
+  "implementation": {
+    "path": "tools/adjudicate_polymarket_soccer_goalscorer_total.py",
+    "sha256": "c3bce2611b01ece90c56dcfea97cbf548a83f83ef82d45b1d2b7b7114eaabdcc",
+    "dependency": {
+      "path": "tools/adjudicate_polymarket_soccer_structural_graph.py",
+      "sha256": "32add0641e85d5f8cbc360f8c5969b56c386e3441a35246c18728844d765c0bc"
+    }
+  },
+  "output_path": "docs/model-research/action-value/polymarket-soccer-goalscorer-total-result-v1-2026-08-30.json",
+  "authority": {
+    "network_requests": 0,
+    "credentials_used": false,
+    "account_state_accessed": false,
+    "orders_quotes_wallets_funds_or_transactions": 0,
+    "protected_capture_touched": false,
+    "trading_authority": false
+  },
+  "contract_sha256": "a1c7e244f196d7531bf40950dcb368b5cb71ae0578e71495282ae9b6e933d6ae"
+}

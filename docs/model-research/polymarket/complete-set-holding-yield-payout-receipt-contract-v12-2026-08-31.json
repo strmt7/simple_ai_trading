@@ -1,0 +1,76 @@
+{
+  "schema_version": "polymarket-holding-yield-payout-receipt-v12-contract",
+  "frozen_at_utc": "2026-08-31T09:54:22.4012172Z",
+  "purpose": "Reconcile the exact new BTC YIELD row selected by the consumed V11 pulse to one successful exact public Polygon pUSD transfer.",
+  "contract_path": "docs/model-research/polymarket/complete-set-holding-yield-payout-receipt-contract-v12-2026-08-31.json",
+  "parent_result": {
+    "path": "docs/model-research/polymarket/complete-set-holding-yield-payout-pulse-v11-2026-08-31.json",
+    "result_sha256": "0ed8af56f9488757c9351c01b711ece0fbe579ea408cdfc28873863a91555cc9"
+  },
+  "payout": {
+    "asset": "BTC",
+    "prior_timestamp": 1788048820,
+    "selected_timestamp": 1788135010,
+    "selected_at_utc": "2026-08-31T00:10:10Z",
+    "interval_seconds": 86190,
+    "amount_pusd": "0.0133"
+  },
+  "transaction_hash": "0xfb4022e56f217004e89c9a3be838222da491b73abcc0633c1eab55457cc61d5a",
+  "expected_transfer": {
+    "token": "0xc011a7e12a19f7b1f670d46f03b03f3342e82dfb",
+    "from": "0x607c8c9866ef3b4665c5a384188706be738d8bf8",
+    "to": "0x3fb5c98d825651d7efd2bd48a5d02c2d86c96f2f",
+    "amount_pusd": "0.0133",
+    "token_decimals": 6
+  },
+  "selection_gates": {
+    "exact_frozen_transaction_required": true,
+    "successful_receipt_required": true,
+    "exact_distributor_token_wallet_and_amount_transfer_required": true,
+    "adaptive_transaction_selection": false,
+    "rate_requalification_attempted": false
+  },
+  "request": {
+    "method": "POST",
+    "url": "https://polygon.drpc.org",
+    "rpc_method": "eth_getTransactionReceipt",
+    "timeout_seconds": 30,
+    "exact_total_requests": 1,
+    "journal_method_url_and_body_hash_before_access": true,
+    "retain_http_error_body_status_and_completion_before_raising": true,
+    "retry_permitted": false,
+    "alias_or_parameter_change_permitted": false,
+    "repeat_policy": "one use only; existing output journal or raw path prohibits reuse"
+  },
+  "outputs": {
+    "raw_path": "data/polymarket-holding-yield-payout-receipt-v12/raw/btc-receipt.raw",
+    "journal_path": "data/polymarket-holding-yield-payout-receipt-v12/journal.json",
+    "result_path": "docs/model-research/polymarket/complete-set-holding-yield-payout-receipt-v12-2026-08-31.json"
+  },
+  "stop_rules": {
+    "execute_only_once": true,
+    "stop_after_exact_receipt_response": true,
+    "do_not_repeat_v7_v9_v10_or_v11": true,
+    "other_wallet_or_transaction_request": false,
+    "account_or_order_request": false
+  },
+  "authority": {
+    "public_unauthenticated_read_only": true,
+    "new_public_requests": 1,
+    "credentials_used": false,
+    "account_state_accessed": false,
+    "funds_used": false,
+    "orders_or_transactions_submitted": 0,
+    "protected_capture_assets_touched": false,
+    "trading_authority": false
+  },
+  "implementation": {
+    "path": "tools/reconcile_polymarket_holding_yield_payout_receipt_v12.py",
+    "sha256": "017336917932facd5bc89727338b09af7c4d26bf549371332c7dcf2eb3e1c7fa",
+    "base_dependency": {
+      "path": "tools/reconcile_polymarket_holding_yield_payout_receipt.py",
+      "sha256": "ff31cd85210acf55eed95b4c192470ed0af6abeced69e53ec924434c9343a859"
+    }
+  },
+  "contract_sha256": "f7682f246682bcbff842c6e66776b58990446848a69040fcd1248867e405bb10"
+}
