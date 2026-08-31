@@ -56,11 +56,13 @@ override prose.
   they can answer that question. Settlement consistency supports only the payoff
   identity; it never proves sub-floor acquisition, atomic execution, fees,
   capacity, owned fills, or profit.
-- For an integer-score additive cover `Under A + Under B + Over G`, prove both
-  the event and its complement before looking at price. The complete condition
-  is `A+B-1 <= G <= A+B`; the lower bound alone is insufficient because a
-  game-under state can leave both team-under legs losing. Enumerate the complete
-  terminal state space and reject any one-sided implication before venue access.
+- For an integer-score additive cover `Under A + Under B + Over G`, enumerate
+  the zero-payout state before looking at price. It exists exactly when both
+  component scores reach their thresholds while their sum stays below `G`, so
+  the complete one-pUSD-floor condition is `G <= A+B`; no lower bound on `G` is
+  required. Generalize to `G <= sum(component thresholds)` for more components,
+  and use side-specific `bestAsk` or conservative `1 - bestBid`, never midpoint-
+  like `outcomePrices`, for the rejection gate.
 - An issuer's at-par mint or redemption right proves only the payoff identity.
   Before any venue refresh, reuse retained finite-size spreads and reject unless
   the executable gap exceeds account fees plus transfer, redemption, delay,

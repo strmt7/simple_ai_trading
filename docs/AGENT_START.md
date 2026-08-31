@@ -114,14 +114,17 @@ same retained bytes also proved all nine valid team-total to full-game-total
 implications were above floor; the best cost 1.465 pUSD for a 1 pUSD floor.
 Do not rebuild, reprice, or book-capture that graph.
 
-The same retained event is also exhausted across both team-total ladders and
-the exact two-team additive cover. Twenty valid within-team ladder packages had
-zero sub-floor candidates and a best cost of 1.055 pUSD. The corrected additive
-proof requires both sides, `A+B-1 <= G <= A+B`; 33 valid packages had zero
-sub-floor candidates and a best cost of 1.370 pUSD. An exploratory one-sided
-condition produced false candidates but was caught and discarded before freeze,
-venue access, or any registry/profit claim. Never rebuild or reprice either
-graph, and never price an additive cover before proving both complement states.
+The V1 retained team-ladder/additive audit is superseded. Its 33 additive rows
+were valid but not exhaustive: `Under A + Under B + Over G` has a one-pUSD floor
+whenever `G <= A+B`; no lower bound is needed because the Over leg already pays
+in every game-over state. V1 also reported midpoint-like `outcomePrices` rather
+than side-specific rejection prices. The deterministic V2 correction proved
+325 full-team additive covers and 20 full-team ladders, with zero side-specific
+sub-floor candidates and best sums of 1.78 and 1.34 pUSD. It also exhausted
+8,508 half, quarter, team-period, and spread ladders/partitions. Across all 8,853
+relations, zero were sub-floor; the best remaining period package cost 1.44
+pUSD. The correction used the same retained bytes and zero network requests.
+Never rebuild, reprice, or book-capture this graph.
 
 The historical Binance Direct Stocks fee overlay ended at
 `2026-08-31T00:00:00Z`. Binance's August 28 extension announcement says the
