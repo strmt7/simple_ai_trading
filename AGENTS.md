@@ -545,14 +545,30 @@ override prose.
 - Do not equate a strict-above threshold indicator with cumulative range bins
   when exact boundary values resolve to the higher bin. At `x = T`, threshold
   YES is zero while the cumulative upper-range indicator is one. The exact
-  equality gate therefore fails; only `NO(T)` plus all upper-range YES claims
-  has an optimistic common-rule one-pUSD floor. Screen that weaker cross-event
-  coverage identity only on a distinct nonconsumed same-source, same-instant
-  pair with complete boundary rules and contemporaneous frozen populations.
+  equality gate therefore fails. In particular, a top label such as `>T` does
+  not override the higher-bracket rule: range `NO(>T)` plus threshold `YES(T)`
+  can pay zero at exact equality and is not a hedge. Only `NO(T)` plus all
+  upper-range YES claims has an optimistic common-rule one-pUSD floor. Screen
+  that weaker cross-event coverage identity only on a distinct nonconsumed
+  same-source, same-instant pair with complete boundary rules and
+  contemporaneous frozen populations.
   Exhaust both valid directions at every shared boundary: threshold NO plus
   cumulative upper-range YES, and threshold YES plus lower bins through the
   starting bin. Gamma is rejection-only; if exact depth is already negative at
   zero fee, stop before fee endpoints and never refetch stale or skewed books.
+
+- For adjacent daily closes `x0` and `x1` at one shared strict threshold `T`,
+  the packages `day1 NO(T) + day0 YES(T) + daily Up` and
+  `day1 YES(T) + day0 NO(T) + daily Down` each have an optimistic common-rule
+  one-pUSD floor when all three contracts use the same exact source, timestamp,
+  close definition, precision, and exceptional-settlement rules. A 50/50 daily
+  equality payout does not break that floor because one threshold leg already
+  pays one when `x0 = x1`. Prove those rule identities before price, exhaust
+  every shared threshold and both directions, treat a displayed daily
+  probability as neither an ask nor a lower bound, and stop before Gamma or
+  books when even an explicitly labeled optimistic rendered diagnostic is far
+  above the floor. Only a distinct synchronized side-specific prefilter that is
+  strictly sub-floor may authorize one separately frozen exact book batch.
 - When one current retained response exposes multiple simultaneously deployed
   BTC, ETH, or SOL sibling pairs for the same payoff family, screen every pair,
   shared boundary, and valid direction before selecting one global best row.
