@@ -6465,3 +6465,51 @@ remain 96. Registry SHA-256 is
 `1797b2c3bc3c7698c5f9ed799277e37cfc7ee7f8ab711608a6a06eb15701446a`,
 and the rebound durability-audit SHA-256 is
 `c7b116f8786575044287a74d6c550bb771708c671d8e7b3c52217ece7b1f3108`.
+
+## Polymarket V12 exact payout receipt reconciliation
+
+The frozen V12 transaction-specific contract was executed exactly once. Its
+single public unauthenticated Polygon receipt request returned HTTP 200 and
+retained 256,395 bytes at SHA-256
+`a102c37099fd5a04bb28ab3705088579d4b053c2bd42a48caf69921448faaebd`.
+Transaction
+`0xfb4022e56f217004e89c9a3be838222da491b73abcc0633c1eab55457cc61d5a`
+was successful in block 92953322 and contained the exact 0.0133 pUSD transfer
+from the frozen distributor to the frozen BTC wallet. Result SHA-256 is
+`5befa8d4ed1d93459632537a47a534bf1650d3d36b7ee1967ed1bce012b58309`.
+
+This extends public single-wallet continuity to 19 positive rows. It does not
+qualify the current three-wallet rate, owned-account eligibility, alternative
+yield, every external cost, future persistence, deployment readiness, or a
+new-capital profit floor. Never repeat V7, V9, V10, V11, or V12. Reopen only on
+a material official rate, program, cross-asset payout, or economic-comparator
+change; authenticated or funded work still requires separate authority.
+
+## Binance GLW terminal special-funding timing reconciliation
+
+After V12 resolved, the already-due rank-34 contract made its one permitted
+public unauthenticated GLWUSDT funding-history GET. The HTTP 200 response was
+1,243 bytes at SHA-256
+`60f998c7d593cfdad2ccbd17f911f849ca0b92f0e72a16cad13b7004099908d5`
+and contained ten complete rows below the frozen 100-row limit. Exactly one
+negative Special row appeared at 2026-08-31 00:00:01.003 UTC. Its per-unit
+debit was 0.279999893 USDT, matching the declared 0.28 USD gross dividend
+within 0.000000107 USDT, but the row arrived 1.003 seconds after the bStock
+snapshot.
+
+The hypothesized pre-snapshot adjustment gap therefore did not exist in the
+2026 GLW episode. No book, filter, premium-index, account, credential, order,
+fund, or transaction request was made. The result is terminal, not an edge;
+accepted-edge and deployment-ready flags are false and the public profit floor
+is zero. Never repeat, retry, paginate, alias, extend, repair, or book-capture
+this episode. Reopen only for a future independent weekend or holiday dividend
+event under a new prospective contract with a positive source-bound
+conservative net-distribution floor. Result SHA-256 is
+`315b2ba2a4f30caba2a7be1181dff3a8d93bc0e28adb2ad9738623a90342bd4b`.
+
+Accepted edges remain 29, ranked hypotheses remain 45, terminal families become
+97, and stable current account-qualified after-all-cost edges remain zero.
+Registry SHA-256 is
+`5e67d7e5da543ac85d364fcb23dd09b42dce28c538a447c716393427d5e76b49`,
+and the rebound durability-audit SHA-256 is
+`ead5a00c80c621738d71dab382ef8cae9fb2f6ab7ec967c2d8ed7e6664eada06`.

@@ -29,6 +29,8 @@ RESULT = ACTION / (
 )
 IMPLEMENTATION = ROOT / "tools/reconcile_binance_glw_special_funding_history.py"
 REGISTRY = ROOT / "docs/model-research/structural-edge-priority-registry-v1.json"
+RESULT_HASH = "315b2ba2a4f30caba2a7be1181dff3a8d93bc0e28adb2ad9738623a90342bd4b"
+RAW_HASH = "60f998c7d593cfdad2ccbd17f911f849ca0b92f0e72a16cad13b7004099908d5"
 
 
 def _load(path: Path) -> dict[str, object]:
@@ -63,7 +65,7 @@ def test_contract_freezes_one_post_snapshot_history_delta_only() -> None:
     assert contract["authority"]["account_requests"] == 0
     assert contract["authority"]["orders_or_transactions"] == 0
     assert contract["authority"]["book_or_price_requests"] == 0
-    assert not RESULT.exists()
+    assert RESULT.exists()
     assert (
         hashlib.sha256(IMPLEMENTATION.read_bytes()).hexdigest()
         == contract["implementation"]["sha256"]
@@ -75,12 +77,45 @@ def test_contract_freezes_one_post_snapshot_history_delta_only() -> None:
         )
 
 
-def test_runner_rejects_before_not_before_without_creating_outputs() -> None:
+def test_runner_rejects_before_not_before_without_changing_outputs() -> None:
+    contract = _load(CONTRACT)
+    before = {
+        path: hashlib.sha256((ROOT / path).read_bytes()).hexdigest()
+        for path in contract["outputs"].values()
+    }
     with pytest.raises(RuntimeError, match="not-before gate is not satisfied"):
         run(CONTRACT, now=datetime(2026, 8, 31, 0, 9, 59, tzinfo=UTC))
 
-    contract = _load(CONTRACT)
-    assert not any((ROOT / path).exists() for path in contract["outputs"].values())
+    after = {
+        path: hashlib.sha256((ROOT / path).read_bytes()).hexdigest()
+        for path in contract["outputs"].values()
+    }
+    assert after == before
+
+
+def test_terminal_result_raw_and_journal_reconstruct() -> None:
+    result = _load(RESULT)
+    assert result["result_sha256"] == RESULT_HASH
+    assert _canonical_hash(result, "result_sha256") == RESULT_HASH
+    assert result["capture"]["request_count"] == 1
+    assert result["capture"]["response_row_count"] == 10
+    assert result["history"]["negative_special_row_count"] == 1
+    special = result["history"]["negative_special_rows"][0]
+    assert special["funding_time_ms"] == 1788134401003
+    assert special["timing_relative_to_bstock_snapshot"] == "at_or_after"
+    assert special["per_unit_debit_usdt"] == "0.2799998930000000"
+    assert special["matches_gross_dividend_tolerance"] is True
+    assert result["adjudication"]["status"] == (
+        "terminal_matching_special_row_at_or_after_snapshot_no_pre_snapshot_gap"
+    )
+    assert result["adjudication"]["accepted_edge"] is False
+    assert result["adjudication"]["book_capture_permitted"] is False
+    raw_path = ROOT / result["capture"]["receipt"]["raw_path"]
+    assert hashlib.sha256(raw_path.read_bytes()).hexdigest() == RAW_HASH
+    journal = ROOT / "data/binance-glw-special-funding-terminal-reconciliation-v2/request-journal.jsonl"
+    entries = [json.loads(line) for line in journal.read_text(encoding="ascii").splitlines()]
+    assert [entry["phase"] for entry in entries] == ["intent", "completed"]
+    assert entries[1]["response_sha256"] == RAW_HASH
 
 
 @pytest.mark.parametrize(
@@ -143,7 +178,7 @@ def test_terminal_status_is_deterministic(
         )
 
 
-def test_registry_routes_only_the_frozen_terminal_reconciliation() -> None:
+def test_registry_terminalizes_consumed_reconciliation() -> None:
     registry = _load(REGISTRY)
     contract = _load(CONTRACT)
     rank_34 = next(
@@ -155,5 +190,17 @@ def test_registry_routes_only_the_frozen_terminal_reconciliation() -> None:
         and artifact["result_sha256"] == contract["contract_sha256"]
         for artifact in rank_34["canonical_artifacts"]
     )
-    assert "2026_08_31T00_10_00Z" in rank_34["next_action"]
-    assert "no_2026_GLW_book_capture" in rank_34["next_action"]
+    assert any(
+        artifact["path"] == RESULT.relative_to(ROOT).as_posix()
+        and artifact["result_sha256"] == RESULT_HASH
+        for artifact in rank_34["canonical_artifacts"]
+    )
+    assert "terminally_rejected_for_the_2026_GLW_episode" in rank_34["current_status"]
+    assert "do_not_repeat_retry_paginate_alias_extend_or_repair" in (
+        rank_34["next_action"]
+    )
+    assert "future_independent_weekend_or_holiday" in rank_34["retry_trigger"]
+    assert any(
+        item["canonical_result_sha256"] == RESULT_HASH
+        for item in registry["terminal_do_not_repeat"]
+    )

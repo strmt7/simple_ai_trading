@@ -84,11 +84,14 @@ or alias that consumed population. Reopen only for a future distinct aligned
 population that passes a strict rejection-only sub-floor gate, followed by a
 prospectively frozen exact live CLOB package capture.
 
-The GLWUSDT terminal special-funding reconciliation is frozen but prohibited
-before `2026-08-31T00:10:00Z`. When due, run only its exact one-request
-nonoverlapping delta. The 2026 execution window is closed, so no book capture is
-permitted regardless of the history outcome; this can establish mechanism
-timing only and cannot establish profit.
+The GLWUSDT terminal special-funding reconciliation is consumed. Its complete
+ten-row delta contained one negative Special row matching the 0.28 USD gross
+dividend within 0.000000107 USDT, but it arrived 1.003 seconds after the bStock
+snapshot. The hypothesized pre-snapshot timing gap did not exist. Never repeat,
+retry, paginate, alias, extend, repair, or book-capture this 2026 episode. Reopen
+only for a future independent weekend or holiday dividend event under a new
+prospective contract with a positive source-bound conservative net-distribution
+floor.
 
 The consumed Polymarket created-event delta after
 `2026-08-30T16:07:16.021321Z` hit the endpoint's effective 100-row cap before
@@ -113,14 +116,14 @@ price-complete, zero were sub-floor, and the best cost 1.10 pUSD. Preserve the
 corner V1 literal-rule and V2 strict-zip failures. Do not rebuild, reprice, or
 request books for either population.
 
-The rank-one Polymarket holding-yield gate is consumed through V11. Its one
+The rank-one Polymarket holding-yield gate is consumed through V12. The V11
 public BTC activity request found exactly one new 0.0133 pUSD YIELD row at
 2026-08-31 00:10:10 UTC, 86,190 seconds after the prior row. The protected V7
-partial payloads were not read, repaired, or touched. No receipt request has
-been sent. Run only the frozen transaction-specific V12 receipt reconciliation
-once, with no retry, alias, parameter change, or other request; never repeat
-V7, V9, V10, or V11. Current rate, account qualification, deployment readiness,
-and new-capital profit remain fail-closed.
+partial payloads were not read, repaired, or touched. The exact V12 public
+receipt request reconciled a successful distributor pUSD transfer in Polygon
+block 92953322, extending single-wallet continuity to 19 positive rows. Never
+repeat V7, V9, V10, V11, or V12. Current three-wallet rate, account
+qualification, deployment readiness, and new-capital profit remain fail-closed.
 
 ## Non-Negotiable Gates
 

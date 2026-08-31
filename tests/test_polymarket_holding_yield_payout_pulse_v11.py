@@ -27,7 +27,13 @@ PULSE_RESULT_HASH = (
 RECEIPT_CONTRACT_HASH = (
     "f7682f246682bcbff842c6e66776b58990446848a69040fcd1248867e405bb10"
 )
+RECEIPT_RESULT_HASH = (
+    "5befa8d4ed1d93459632537a47a534bf1650d3d36b7ee1967ed1bce012b58309"
+)
 RAW_HASH = "63d2cbc9b33baee0a9773ecce72d13a38f5654ed08e6863e697d17dda01732c0"
+RECEIPT_RAW_HASH = (
+    "a102c37099fd5a04bb28ab3705088579d4b053c2bd42a48caf69921448faaebd"
+)
 
 
 def _load(path: Path) -> dict[str, object]:
@@ -85,7 +91,7 @@ def test_v11_selected_exactly_one_new_payout_and_remains_fail_closed() -> None:
     assert pulse["authority"]["protected_capture_assets_touched"] is False
 
 
-def test_v12_is_frozen_to_v11_and_has_not_been_executed() -> None:
+def test_v12_is_frozen_to_v11_and_exact_receipt_reconstructs() -> None:
     contract = _load(RECEIPT_CONTRACT)
     assert contract["parent_result"] == {
         "path": PULSE_RESULT.relative_to(ROOT).as_posix(),
@@ -105,12 +111,22 @@ def test_v12_is_frozen_to_v11_and_has_not_been_executed() -> None:
     assert hashlib.sha256((ROOT / dependency["path"]).read_bytes()).hexdigest() == (
         dependency["sha256"]
     )
-    assert not RECEIPT_RESULT.exists()
-    assert not (ROOT / contract["outputs"]["raw_path"]).exists()
-    assert not (ROOT / contract["outputs"]["journal_path"]).exists()
+    result = _load(RECEIPT_RESULT)
+    assert result["result_sha256"] == RECEIPT_RESULT_HASH
+    assert _canonical_hash(result, "result_sha256") == RECEIPT_RESULT_HASH
+    assert result["receipt"]["successful_exact_distributor_pusd_transfer"] is True
+    assert result["receipt"]["block_number"] == 92953322
+    assert result["adjudication"]["current_three_wallet_rate_qualified"] is False
+    assert result["adjudication"]["deployment_ready"] is False
+    raw_path = ROOT / contract["outputs"]["raw_path"]
+    assert hashlib.sha256(raw_path.read_bytes()).hexdigest() == RECEIPT_RAW_HASH
+    journal = _load(ROOT / contract["outputs"]["journal_path"])
+    assert journal["state"] == "completed"
+    assert journal["result_sha256"] == RECEIPT_RESULT_HASH
+    assert journal["request"]["response_sha256"] == RECEIPT_RAW_HASH
 
 
-def test_registry_source_binds_v11_and_frozen_v12() -> None:
+def test_registry_source_binds_consumed_v11_and_v12() -> None:
     registry = _load(REGISTRY)
     assert _canonical_hash(registry, "result_sha256") == registry["result_sha256"]
     row = registry["prioritized_hypotheses"][0]
@@ -118,13 +134,12 @@ def test_registry_source_binds_v11_and_frozen_v12() -> None:
         (PULSE_CONTRACT, PULSE_CONTRACT_HASH),
         (PULSE_RESULT, PULSE_RESULT_HASH),
         (RECEIPT_CONTRACT, RECEIPT_CONTRACT_HASH),
+        (RECEIPT_RESULT, RECEIPT_RESULT_HASH),
     ):
         assert {
             "path": path.relative_to(ROOT).as_posix(),
             "result_sha256": result_hash,
         } in row["canonical_artifacts"]
     assert "consumed_v11" in row["latest_pulse_delta_status"]
-    assert "run_once_the_frozen_transaction_specific_v12" in (
-        row["receipt_v12_retry_trigger"]
-    )
+    assert "consumed_exact_successful_transfer_reconciled" in row["receipt_v12_status"]
     assert "current_rate_remains_fail_closed_unqualified" in row["current_status"]

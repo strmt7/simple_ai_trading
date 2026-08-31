@@ -123,6 +123,4 @@ def test_registry_keeps_edge_scoped_and_source_bound() -> None:
     assert "material_official_rate_program_cross_asset_payout" in (
         row["retry_trigger"]
     )
-    assert "run_once_the_frozen_transaction_specific_v12" in (
-        row["receipt_v12_retry_trigger"]
-    )
+    assert "consumed_exact_successful_transfer_reconciled" in row["receipt_v12_status"]
