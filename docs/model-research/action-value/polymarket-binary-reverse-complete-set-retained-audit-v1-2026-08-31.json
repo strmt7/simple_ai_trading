@@ -1,0 +1,284 @@
+{
+  "adjudication": {
+    "accepted_edge": false,
+    "deployment_ready": false,
+    "profitability_claim": false,
+    "reason": "zero of the exhaustive retained finite-size pair observations was gross-positive before fees or any external cost",
+    "status": "terminal_rejected_retained_population_no_gross_positive_path",
+    "trading_authority": false
+  },
+  "authority": {
+    "account_accessed": false,
+    "credentials_used": false,
+    "network_requests": 0,
+    "orders_or_funds_mutated": false
+  },
+  "created_at_utc": "2026-08-31T14:14:45Z",
+  "economics": {
+    "mechanism": "mint_one_complete_binary_set_then_sell_both_legs_to_bids",
+    "mint_cost_pUSD_per_share_pair": "1",
+    "quantity_shares_per_leg": "5",
+    "screen_rule": "sum exact descending bid-depth proceeds for both complementary tokens minus one pUSD per complete set; fees are omitted only as an optimistic rejection bound"
+  },
+  "implementation": {
+    "path": "tools/audit_polymarket_binary_reverse_complete_set_retained.py",
+    "sha256": "6e883db85b6858cb8c8447e1158ae4c975f3d30d2d8b49df3509554023a94c58"
+  },
+  "limitations": [
+    "The retained files were captured for other hypotheses and are not a prospectively selected recurrence population.",
+    "The exploratory pass exposed outcomes before this canonical audit was written, so this result is rejection-only and cannot promote an edge.",
+    "A finite retained sample cannot prove that a transient operator or transport anomaly never occurs.",
+    "Public books do not prove own fills; a positive row would still require freshness, atomicity, fees, capacity, relayer, and realized-cash validation."
+  ],
+  "mechanics_source": {
+    "interpretation": "the retained official CTF Exchange V2 README defines both-buy matches as MINT and both-sell matches as MERGE, making persistent crossed complementary books structurally self-clearing",
+    "path": "docs/model-research/action-value/raw/polymarket-negrisk-maker-input-v2/ctf-exchange-v2-readme.raw",
+    "sha256": "41def0727a8adbaccefb3c25bce4e50166915f98ea3e9588323304c2851fac7c"
+  },
+  "result_sha256": "83d1e6b35f79d3b2542b4de11f86ca859d34b279b94395469585085ac7cd9671",
+  "retry_policy": {
+    "do_not_repeat": true,
+    "literal_trigger": "material official matching or settlement architecture change, or independently frozen source-continuous evidence of a persistent finite-size combined bid above one after every fee and external cost"
+  },
+  "schema_version": "polymarket-binary-reverse-complete-set-retained-audit-v1",
+  "selection_integrity": {
+    "promotion_eligible": false,
+    "role": "outcome_aware_exhaustive_retained_population_rejection_only",
+    "source_glob": "data/polymarket-*/raw/books.json"
+  },
+  "source_manifest": [
+    {
+      "book_count": 8,
+      "eligible_binary_pair_count": 4,
+      "excluded_nonpair_condition_group_count": 0,
+      "finite_size_complete_count": 4,
+      "gross_positive_count": 0,
+      "path": "data/polymarket-aca-house-identity-parity-v1/raw/books.json",
+      "sha256": "9da7c5fe7b9fd3d9fa8ff1a7c6683aff7cf9e59b1f2255893a9f18e265d000d5"
+    },
+    {
+      "book_count": 22,
+      "eligible_binary_pair_count": 11,
+      "excluded_nonpair_condition_group_count": 0,
+      "finite_size_complete_count": 11,
+      "gross_positive_count": 0,
+      "path": "data/polymarket-btc-sep4-price-range-exact-negrisk-books-v1/raw/books.json",
+      "sha256": "b003bee6a0e6300c5068617685748ced28f6c039e0be561b40147f13dfeea735"
+    },
+    {
+      "book_count": 2,
+      "eligible_binary_pair_count": 0,
+      "excluded_nonpair_condition_group_count": 2,
+      "finite_size_complete_count": 0,
+      "gross_positive_count": 0,
+      "path": "data/polymarket-commanders-cowboys-total-package-v1/raw/books.json",
+      "sha256": "8da794882e57670204872c40ea9478d9e7ab05fa349eae25ba4ae6c30ec9af9e"
+    },
+    {
+      "book_count": 30,
+      "eligible_binary_pair_count": 15,
+      "excluded_nonpair_condition_group_count": 0,
+      "finite_size_complete_count": 15,
+      "gross_positive_count": 0,
+      "path": "data/polymarket-current-mlb-monotone-parity-v1/raw/books.json",
+      "sha256": "7f2a08ad4988477a3be2da00e392cf4c7a07727982113c0acb4991c2b57597f9"
+    },
+    {
+      "book_count": 4,
+      "eligible_binary_pair_count": 1,
+      "excluded_nonpair_condition_group_count": 2,
+      "finite_size_complete_count": 1,
+      "gross_positive_count": 0,
+      "path": "data/polymarket-current-wnba-monotone-parity-v1/raw/books.json",
+      "sha256": "c81e97bf7f615e155e23ab58c7b7133a3c6b89dd1734c6dba58dccc97d172d63"
+    },
+    {
+      "book_count": 20,
+      "eligible_binary_pair_count": 10,
+      "excluded_nonpair_condition_group_count": 0,
+      "finite_size_complete_count": 10,
+      "gross_positive_count": 0,
+      "path": "data/polymarket-elon-aug31-sep2-exact-negrisk-books-v2/raw/books.json",
+      "sha256": "a79c4395499986d94cde9b46014f5c10d464dd6f6b6c171bb266475fd3f7a661"
+    },
+    {
+      "book_count": 52,
+      "eligible_binary_pair_count": 26,
+      "excluded_nonpair_condition_group_count": 0,
+      "finite_size_complete_count": 23,
+      "gross_positive_count": 0,
+      "path": "data/polymarket-elon-sep1-sep8-exact-negrisk-books-v1/raw/books.json",
+      "sha256": "571aae1e4c7570d8623712eaed1754b8a0bbb731ff9ed54d8b4948c4e6372896"
+    },
+    {
+      "book_count": 2,
+      "eligible_binary_pair_count": 0,
+      "excluded_nonpair_condition_group_count": 2,
+      "finite_size_complete_count": 0,
+      "gross_positive_count": 0,
+      "path": "data/polymarket-fordham-ndsu-total-monotone-package-v1/raw/books.json",
+      "sha256": "b36714069c78a4e3d30f9c3fc3348ff42bccc41608394b6b2eb5dc4de6bf01a6"
+    },
+    {
+      "book_count": 2,
+      "eligible_binary_pair_count": 0,
+      "excluded_nonpair_condition_group_count": 2,
+      "finite_size_complete_count": 0,
+      "gross_positive_count": 0,
+      "path": "data/polymarket-lad-det-cross-period-total-v1/raw/books.json",
+      "sha256": "a337119b156cf484a869735a263e914acdd1b3008d263de2c3820242d0933679"
+    },
+    {
+      "book_count": 2,
+      "eligible_binary_pair_count": 0,
+      "excluded_nonpair_condition_group_count": 2,
+      "finite_size_complete_count": 0,
+      "gross_positive_count": 0,
+      "path": "data/polymarket-mercyhurst-nmsu-margin-monotone-package-v1/raw/books.json",
+      "sha256": "a0412f7dccf2dbf87ebfa7d88e67aadfbd0dd09fbd8cf61d37e46922dda961d2"
+    },
+    {
+      "book_count": 22,
+      "eligible_binary_pair_count": 11,
+      "excluded_nonpair_condition_group_count": 0,
+      "finite_size_complete_count": 11,
+      "gross_positive_count": 0,
+      "path": "data/polymarket-nyc-mayor-sep1-sep8-exact-negrisk-books-v1/raw/books.json",
+      "sha256": "1e64a6eecb58481ff85eed9cf1770822f2843faa8bfc4ac5c93d00c474736b3b"
+    },
+    {
+      "book_count": 2,
+      "eligible_binary_pair_count": 0,
+      "excluded_nonpair_condition_group_count": 2,
+      "finite_size_complete_count": 0,
+      "gross_positive_count": 0,
+      "path": "data/polymarket-packers-vikings-tie-state-package-v1/raw/books.json",
+      "sha256": "430f9ae42b6fcbff066ce142aea17968c4b69a52d26fc908adbaf3605fdb4d49"
+    },
+    {
+      "book_count": 2,
+      "eligible_binary_pair_count": 0,
+      "excluded_nonpair_condition_group_count": 2,
+      "finite_size_complete_count": 0,
+      "gross_positive_count": 0,
+      "path": "data/polymarket-patriots-seahawks-total-books-v1/raw/books.json",
+      "sha256": "1051a5ea39313d2bc9c744acc0575ad5b377b4b0e24eee1c382c8f6a5b5d8ab4"
+    },
+    {
+      "book_count": 8,
+      "eligible_binary_pair_count": 4,
+      "excluded_nonpair_condition_group_count": 0,
+      "finite_size_complete_count": 4,
+      "gross_positive_count": 0,
+      "path": "data/polymarket-shutdown-house-identity-parity-v1/raw/books.json",
+      "sha256": "248a739ef45fe5d75d3725a1ee0a4097f73ef25be92e4f99872185314828faa9"
+    },
+    {
+      "book_count": 2,
+      "eligible_binary_pair_count": 0,
+      "excluded_nonpair_condition_group_count": 2,
+      "finite_size_complete_count": 0,
+      "gross_positive_count": 0,
+      "path": "data/polymarket-soccer-zero-zero-draw-books-v1/raw/books.json",
+      "sha256": "c814560ec0542e3c3407ce107ded679415205fda9e3b653e587a2de4ba0ccb58"
+    },
+    {
+      "book_count": 2,
+      "eligible_binary_pair_count": 0,
+      "excluded_nonpair_condition_group_count": 2,
+      "finite_size_complete_count": 0,
+      "gross_positive_count": 0,
+      "path": "data/polymarket-sol-sep4-range-threshold-coverage-books-v1/raw/books.json",
+      "sha256": "23a27a8ba6bd3e19a3fdea97a13e71464befd601a291d2d83cc461c7a1ccfc5a"
+    }
+  ],
+  "summary": {
+    "book_count": 182,
+    "capture_file_count": 16,
+    "capture_files_with_eligible_pairs": 8,
+    "closest_gross_profit_before_fees_pUSD": "-0.005",
+    "closest_observations": [
+      {
+        "condition_id": "0xc53b6056373f3659365afa094b4ba9af14f540b576a8ca0347309be8b4ed3228",
+        "gross_profit_before_fees_pUSD": "-0.005",
+        "matched_proceeds_pUSD": "4.995",
+        "source_path": "data/polymarket-current-mlb-monotone-parity-v1/raw/books.json",
+        "timestamp_skew_ms": 0
+      },
+      {
+        "condition_id": "0x32da351b6679ea2491ae34740477b4bf7775fdb86812eb0eb0600936293635de",
+        "gross_profit_before_fees_pUSD": "-0.005",
+        "matched_proceeds_pUSD": "4.995",
+        "source_path": "data/polymarket-elon-aug31-sep2-exact-negrisk-books-v2/raw/books.json",
+        "timestamp_skew_ms": 0
+      },
+      {
+        "condition_id": "0x7807a701b28e6643121f7e1dbf2ab25aa57e05bc74d1df3e26904078ce7498b2",
+        "gross_profit_before_fees_pUSD": "-0.005",
+        "matched_proceeds_pUSD": "4.995",
+        "source_path": "data/polymarket-elon-aug31-sep2-exact-negrisk-books-v2/raw/books.json",
+        "timestamp_skew_ms": 0
+      },
+      {
+        "condition_id": "0xb36f4206aec56f89a5cb58ded5948a4dd2430ad0d73d993ccac94af11746433f",
+        "gross_profit_before_fees_pUSD": "-0.005",
+        "matched_proceeds_pUSD": "4.995",
+        "source_path": "data/polymarket-elon-aug31-sep2-exact-negrisk-books-v2/raw/books.json",
+        "timestamp_skew_ms": 0
+      },
+      {
+        "condition_id": "0xc5a3d0f96a385fd541020a5acc9c1ff583f8e3795c846b025d65d4cf72ec08b7",
+        "gross_profit_before_fees_pUSD": "-0.005",
+        "matched_proceeds_pUSD": "4.995",
+        "source_path": "data/polymarket-elon-aug31-sep2-exact-negrisk-books-v2/raw/books.json",
+        "timestamp_skew_ms": 0
+      },
+      {
+        "condition_id": "0xea02e0b1459dc3102b8b1f9281cee398f9e346f092a064a7ca2051ce7dcf7966",
+        "gross_profit_before_fees_pUSD": "-0.005",
+        "matched_proceeds_pUSD": "4.995",
+        "source_path": "data/polymarket-elon-aug31-sep2-exact-negrisk-books-v2/raw/books.json",
+        "timestamp_skew_ms": 0
+      },
+      {
+        "condition_id": "0x194897e8b678dc9ef02072dc641f45213b807efce2cb02287e09f59a0a9ff5ea",
+        "gross_profit_before_fees_pUSD": "-0.005",
+        "matched_proceeds_pUSD": "4.995",
+        "source_path": "data/polymarket-elon-sep1-sep8-exact-negrisk-books-v1/raw/books.json",
+        "timestamp_skew_ms": 0
+      },
+      {
+        "condition_id": "0x43a899382ae94dd8c703c5e2e52fff46e1f7d7f246d4fc225997e57bcb101612",
+        "gross_profit_before_fees_pUSD": "-0.005",
+        "matched_proceeds_pUSD": "4.995",
+        "source_path": "data/polymarket-elon-sep1-sep8-exact-negrisk-books-v1/raw/books.json",
+        "timestamp_skew_ms": 0
+      },
+      {
+        "condition_id": "0x47a437cc3301fea95c32dc933eb2a456fad96540f9a6edea7fbd2edeef0895c2",
+        "gross_profit_before_fees_pUSD": "-0.005",
+        "matched_proceeds_pUSD": "4.995",
+        "source_path": "data/polymarket-elon-sep1-sep8-exact-negrisk-books-v1/raw/books.json",
+        "timestamp_skew_ms": 0
+      },
+      {
+        "condition_id": "0x6e4206b5dbcea2d922bb920121317dc2e8d73d8def6138ce8c4cd50a08c57bef",
+        "gross_profit_before_fees_pUSD": "-0.005",
+        "matched_proceeds_pUSD": "4.995",
+        "source_path": "data/polymarket-elon-sep1-sep8-exact-negrisk-books-v1/raw/books.json",
+        "timestamp_skew_ms": 0
+      }
+    ],
+    "excluded_nonpair_condition_group_count": 18,
+    "finite_size_complete_observation_count": 79,
+    "gross_flat_observation_count": 0,
+    "gross_negative_observation_count": 79,
+    "gross_positive_observation_count": 0,
+    "insufficient_depth_observation_count": 3,
+    "median_gross_profit_before_fees_pUSD": "-0.05",
+    "paired_observation_count": 82,
+    "raw_book_timestamp_max_ms": 1788175818735,
+    "raw_book_timestamp_min_ms": 1788002555674,
+    "unique_condition_count": 80
+  }
+}

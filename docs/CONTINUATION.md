@@ -6791,3 +6791,40 @@ Registry SHA-256 becomes
 `5a6ce51d4fe290ec5121e56914896980108d1b4bcc9e162fb1b4769c79406e59`,
 and the rebound durability-audit SHA-256 becomes
 `e127ae7f13413599822c67970cdd8e6ada506d65eb1a61c0ecb0f8acf6da0a4a`.
+
+## Polymarket binary reverse-complete-set retained audit
+
+The standard binary mint-one-complete-set then sell-YES-and-NO hypothesis is
+now terminal on the exhaustive retained repository population without another
+market request. The offline audit covered all 16 retained Polymarket book
+arrays: 182 books, 82 complementary-pair observations, and 80 unique condition
+IDs at five shares per leg. Seventy-nine observations had complete displayed
+bid depth and all 79 were gross-negative before fees; three lacked sufficient
+depth. The closest gross result was `-0.005` pUSD and the median was `-0.05`
+pUSD. Fees and every external cost were intentionally omitted only as an
+optimistic rejection bound.
+
+The retained official CTF Exchange V2 README, SHA-256
+`41def0727a8adbaccefb3c25bce4e50166915f98ea3e9588323304c2851fac7c`,
+defines complementary both-buy matching as a MINT and both-sell matching as a
+MERGE. Persistent crossed complementary books are therefore structurally
+self-clearing rather than a stable harvestable overround. The initial
+zero-network exploratory pass exposed outcomes before the canonical runner and
+artifact were written, so the result is explicitly outcome-aware,
+rejection-only, and forever ineligible to promote an edge. This method error
+did not create a favorable claim and is preserved rather than hidden.
+
+Do not rerun the same retained files or poll binary books for this unchanged
+identity. Reopen only on a material official matching or settlement
+architecture change, or independently frozen source-continuous evidence of a
+persistent finite-size combined bid above one after every fee and external
+cost. No credential, account, order, fund, transaction, new book, or protected
+capture was accessed. Canonical audit SHA-256 is
+`83d1e6b35f79d3b2542b4de11f86ca859d34b279b94395469585085ac7cd9671`.
+
+Accepted edges remain 29, ranked hypotheses remain 45, terminal families become
+107, and stable current account-qualified after-all-cost edges remain zero.
+Registry SHA-256 becomes
+`3e3938a581501a8f937accfdab920187f22a1870bc69628c632397a95590387f`,
+and the rebound durability-audit SHA-256 becomes
+`e21ea8f29f6732333689964e4f41f673f2ae9ac32738c6c1d8cbbb7032c326ac`.

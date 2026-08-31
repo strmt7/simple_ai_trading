@@ -2991,7 +2991,7 @@
       "venue_scope": "Binance_TUSDUSDT_Spot_and_TrueUSD_bank_USD_redemption"
     }
   ],
-  "result_sha256": "5a6ce51d4fe290ec5121e56914896980108d1b4bcc9e162fb1b4769c79406e59",
+  "result_sha256": "3e3938a581501a8f937accfdab920187f22a1870bc69628c632397a95590387f",
   "schema_version": "structural-edge-priority-registry-v1",
   "terminal_do_not_repeat": [
     {
@@ -3529,8 +3529,13 @@
       "canonical_result_sha256": "17a2d6b537a05f1b4a4e273db682d8b611cd23f6c0906bcd4120be332d855101",
       "family": "recent_structural_edge_primary_literature_post_2026_08_29_delta",
       "reason": "the_frozen_one_request_50_entry_ArXiv_delta_returned_HTTP_200_and_zero_papers_strictly_after_the_2026_08_29T22_37_17_664866Z_cutoff_the_newest_returned_paper_was_2026_08_26_so_no_paper_download_venue_market_data_ranked_retry_trigger_or_new_family_was_justified_the_literal_XML_root_gate_failed_only_on_serialized_namespace_attribute_layout_and_the_retained_semantically_valid_50_entry_feed_was_adjudicated_offline_without_refetch_do_not_repeat_paginate_change_keywords_or_alias_this_query"
+    },
+    {
+      "canonical_result_sha256": "83d1e6b35f79d3b2542b4de11f86ca859d34b279b94395469585085ac7cd9671",
+      "family": "polymarket_binary_reverse_complete_set_mint_then_sell_retained_population",
+      "reason": "the_outcome_aware_zero_network_audit_exhausted_all_16_retained_polymarket_book_arrays_182_books_82_complementary_pair_observations_and_80_unique_conditions_at_five_shares_79_had_complete_depth_and_all_79_were_gross_negative_before_fees_with_a_best_minus_0_005_pUSD_and_median_minus_0_05_pUSD_the_official_retained_CTF_Exchange_V2_mechanics_define_complementary_both_buy_orders_as_MINT_and_both_sell_orders_as_MERGE_so_persistent_crossed_pairs_are_structurally_self_clearing_the_audit_is_rejection_only_and_cannot_promote_an_edge_do_not_repeat_on_the_same_retained_files_or_poll_books_reopen_only_on_a_material_matching_or_settlement_architecture_change_or_independently_frozen_source_continuous_persistent_finite_size_combined_bid_above_one_after_every_cost"
     }
   ],
-  "updated_at_utc": "2026-08-31T13:46:00Z",
+  "updated_at_utc": "2026-08-31T14:14:45Z",
   "usage_rule": "advance_the_highest_ranked_hypothesis_whose_retry_trigger_is_satisfied_otherwise_do_not_repeat_a_blocked_or_terminal_screen"
 }
