@@ -1,0 +1,84 @@
+{
+  "adjudication": {
+    "accepted_edge": false,
+    "deployment_ready": false,
+    "market_direction_forecast_required": false,
+    "profitability_claim": false,
+    "status": "terminal_expired_and_hypothetical_current_remaining_horizon_negative_under_original_favorable_inputs",
+    "trading_authority": false
+  },
+  "authority": {
+    "account_requests": 0,
+    "credentials_used": false,
+    "funded_actions": 0,
+    "network_requests": 0,
+    "orders_conversions_subscriptions_borrows_or_repays": 0
+  },
+  "created_at_utc": "2026-08-31T14:31:15.606103Z",
+  "decision": {
+    "reason": "the_Lite_Loan_enrollment_window_ended_on_2026_08_27_and_even_a_hypothetical_unchanged_late_entry_now_loses_more_reward_to_time_decay_than_the_original_stressed_headroom_at_every_frozen_loan_size",
+    "retry_trigger": "a_new_official_Lite_Loan_offer_with_a_fresh_enrollment_window_and_complete_service_fee_term_and_stablecoin_reward_terms_or_an_exact_account_voucher_or_rate_change_that_restores_strictly_positive_after_every_cost_headroom",
+    "same_route_do_not_repeat": true
+  },
+  "limitations": [
+    "This is a zero-network hypothetical time-decay adjudication of the original retained route after its loan-enrollment window expired, not a current book or account observation.",
+    "The original historical close decline remains a stress sensitivity rather than a bound on future depeg, issuer, venue, custody, or insolvency loss.",
+    "The BTC collateral still must be independently held and idle; collateral opportunity cost, account eligibility, capacity, reward rounding, tax, custody, and operating costs remain unproved.",
+    "The adjudication was written after the deterministic retained calculation and is therefore rejection-only; it may never promote an edge."
+  ],
+  "method": {
+    "bonus_end_utc": "2026-09-25T23:59:59Z",
+    "fixed_bonus_apr_fraction": "0.07",
+    "frozen_original_bonus_days": "29",
+    "lite_loan_enrollment_end_utc": "2026-08-27T23:59:59Z",
+    "remaining_bonus_days": "25.3949466886226851851851851851851851851851851851851851851852",
+    "remaining_bonus_seconds": "2194123.393897",
+    "rule": "subtract the lost fixed-bonus reward caused only by elapsed time from each original stressed net result while preserving its loan fee, retained entry, exit stress, acquired quantity, and all zero-credited inputs"
+  },
+  "result_sha256": "b48f1a9fb2d2858e872205e2d00ded6c50bed93eb4ef639cb0133cec9dff5f3f",
+  "schema_version": "binance-lite-loan-usd1-remaining-horizon-rejection-v1",
+  "selection_integrity": {
+    "promotion_eligible": false,
+    "role": "outcome_aware_zero_network_rejection_only"
+  },
+  "source_binding": {
+    "contract": {
+      "path": "docs/model-research/action-value/binance-lite-loan-stablecoin-yield-curve-contract-v1.json",
+      "sha256": "73f6a0362ca88db393b723119b21e603f202345f570b59a70204fa3779349d41"
+    },
+    "original_result": {
+      "file_sha256": "11bbc90774a340e15874b43a68673c795fec880b72d2fbc56b4cb8f597ea746e",
+      "path": "docs/model-research/action-value/binance-lite-loan-stablecoin-yield-curve-v1-2026-08-27.json",
+      "result_sha256": "65f223a245fa1bb65a8fd791275da0dbd71d3c52ee2d232ac1420feb198b129d"
+    }
+  },
+  "size_results": [
+    {
+      "acquired_quantity_USD1": "99",
+      "current_fixed_bonus_reward_USD1": "0.482156111101795091324200913242009132420091324200913242009132",
+      "current_stressed_net_USDT": "-0.0573677938162578683264354788399098527853881278530593607305934",
+      "current_stressed_net_bips_of_loan": "-5.73677938162578683264354788399098527853881278530593607305934",
+      "loan_amount_USDT": "100",
+      "minimum_fixed_bonus_apr_fraction_to_restore_zero_under_same_inputs": "0.0783287248147939111772751107849372115154669232561255114852153",
+      "reward_decay_from_original_bips": "6.84466286242323059360730593607305936073059360730593607305934"
+    },
+    {
+      "acquired_quantity_USD1": "498",
+      "current_fixed_bonus_reward_USD1": "2.42539134675448439878234398782343987823439878234398782343988",
+      "current_stressed_net_USDT": "-0.279486477984812307339039075376516229162861491629025875190258",
+      "current_stressed_net_bips_of_loan": "-5.58972955969624614678078150753032458325722983258051750380516",
+      "loan_amount_USDT": "500",
+      "minimum_fixed_bonus_apr_fraction_to_restore_zero_under_same_inputs": "0.0780663491626274347708500940960811124138462307731860672896963",
+      "reward_decay_from_original_bips": "6.88614566765003805175038051750380517503805175038051750380516"
+    },
+    {
+      "acquired_quantity_USD1": "997",
+      "current_fixed_bonus_reward_USD1": "4.85565295725747177828513444951801116184677828513444951801118",
+      "current_stressed_net_USDT": "-0.556522125604132269913698711145354780071029934055961440892945",
+      "current_stressed_net_bips_of_loan": "-5.56522125604132269913698711145354780071029934055961440892945",
+      "loan_amount_USDT": "1000",
+      "minimum_fixed_bonus_apr_fraction_to_restore_zero_under_same_inputs": "0.0780229269132718995581518716751570839767675805630142729968137",
+      "reward_decay_from_original_bips": "6.89305946852117262810755961440892947742262810755961440892945"
+    }
+  ]
+}
