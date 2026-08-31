@@ -1,0 +1,99 @@
+{
+  "schema_version": "binance-qcom-pypl-bstock-dividend-shared-net-floor-prefilter-v1",
+  "created_at_utc": "2026-08-31T12:41:00Z",
+  "purpose": "exhaust the two unadjudicated sibling dividend episodes in the already-consumed QCOMB/PYPLB/GOOGLB announcement at the cheapest decisive shared gate before any issuer-date or market request",
+  "question": "Can either QCOMB or PYPLB support the rank-34 dividend-timing edge when the exact current shared Binance terms permit withholding taxes, fees, costs, and other deductions before reinvestment?",
+  "source_binding": {
+    "binance_announcement_capture_contract_path": "docs/model-research/action-value/binance-googl-bstock-holiday-dividend-source-contract-v1-2026-08-31.json",
+    "binance_announcement_capture_contract_sha256": "a0ad60e0ad7a8662c7337ae98c8a8f759c93ef559761789dabbc996269854e86",
+    "binance_announcement_capture_result_path": "docs/model-research/action-value/binance-googl-bstock-holiday-dividend-source-result-v1-2026-08-31.json",
+    "binance_announcement_capture_result_sha256": "dd7c7bb3172b567a27afa5ec1df811e5143d5f38f23980a811b2df7a3726f154",
+    "binance_announcement_raw_path": "data/binance-googl-bstock-holiday-dividend-v1/raw/01-binance-announcement.raw.json",
+    "binance_announcement_raw_sha256": "10195102bfcff57204be744b365e15a5da3cfcd4f296f7fab9d61b73facde9f2",
+    "binance_announcement_journal_path": "data/binance-googl-bstock-holiday-dividend-v1/raw/00-request-journal.jsonl",
+    "binance_announcement_journal_sha256": "9ef42903b97ff6ebdd4d38719ba7180a9eb95ee0f73e8d2cfcda2f8e496bc289",
+    "matching_perpetual_source_path": "docs/model-research/action-value/binance-bstock-funding-full-universe-v1-2026-08-26.json",
+    "matching_perpetual_source_result_sha256": "ad3fbc7a09ff6b467955eeef8bf1e8df4ba7d20ca9e7659fcaf75069da622d3f",
+    "qcom_funding_raw_path": "data/binance-bstock-funding-full-universe-v1/raw/funding-qcomusdt.raw",
+    "qcom_funding_raw_sha256": "087f852c3c685b238f3863b21b85376fbe46d26bf593c0924b45706a61adca45",
+    "pypl_funding_raw_path": "data/binance-bstock-funding-full-universe-v1/raw/funding-pyplusdt.raw",
+    "pypl_funding_raw_sha256": "4b15c22edce89e42371f066903bae60d61bb5ac869f35309f1aa59b330b1c8a3"
+  },
+  "shared_exact_terms": {
+    "announcement_article_code": "1bf42a37f8dd4642a73e6cef78440eec",
+    "distribution_form": "additional units or fractions of the same underlying security",
+    "distribution_base": "net amount of the cash dividend",
+    "deductions_before_reinvestment": [
+      "applicable withholding taxes",
+      "fees",
+      "costs",
+      "other deductions"
+    ],
+    "deduction_ceiling_or_complete_formula_published_in_retained_announcement": false,
+    "trading_affected": false
+  },
+  "episodes": [
+    {
+      "underlying_ticker": "QCOM",
+      "bstock_symbol": "QCOMBUSDT",
+      "matching_perpetual_symbol": "QCOMUSDT",
+      "binance_snapshot_utc": "2026-09-03T00:00:00Z",
+      "matching_perpetual_previously_source_bound": true,
+      "official_exchange_ex_dividend_date_gate_evaluated": false,
+      "why_date_gate_was_not_spent": "the independent shared net-distribution-floor gate already fails and no date outcome can make an unbounded net distribution strictly positive"
+    },
+    {
+      "underlying_ticker": "PYPL",
+      "bstock_symbol": "PYPLBUSDT",
+      "matching_perpetual_symbol": "PYPLUSDT",
+      "binance_snapshot_utc": "2026-09-04T00:00:00Z",
+      "matching_perpetual_previously_source_bound": true,
+      "official_exchange_ex_dividend_date_gate_evaluated": false,
+      "why_date_gate_was_not_spent": "the independent shared net-distribution-floor gate already fails and no date outcome can make an unbounded net distribution strictly positive"
+    }
+  ],
+  "gate_order": [
+    "exact current conservative net-distribution floor must be strictly positive",
+    "official exchange ex-dividend adjustment must materially follow the bStock snapshot",
+    "pre-snapshot perpetual adjustment ordering must be confirmed",
+    "only then may one synchronized finite-size event-time book batch be frozen"
+  ],
+  "economic_adjudication": {
+    "qcom_public_conservative_net_distribution_floor_usd": "0",
+    "pypl_public_conservative_net_distribution_floor_usd": "0",
+    "reason": "the current shared announcement permits fees, costs, and other deductions without a retained ceiling or complete formula, so neither gross issuer dividend nor a partial withholding example is a guaranteed net receipt",
+    "date_or_market_data_can_change_this_decision": false,
+    "book_request_value": "0",
+    "funding_request_value": "0"
+  },
+  "adjudication": {
+    "status": "terminal_exact_2026_QCOM_and_PYPL_sibling_episodes_shared_current_net_distribution_floor_is_zero_before_issuer_date_or_market_access",
+    "accepted_edge": false,
+    "deployment_ready": false,
+    "market_direction_forecast_required": false,
+    "profitability_claim": false,
+    "current_public_after_cost_profit_floor_usdt": "0",
+    "trading_authority": false,
+    "next_action": "do_not_request_QCOM_or_PYPL_issuer_dates_books_funding_accounts_credentials_or_orders_for_these_exact_episodes",
+    "retry_trigger": "a_future_independent_dividend_episode_under_materially_changed_current_primary_terms_that_bind_a_strictly_positive_conservative_net_distribution_floor_then_an_official_exchange_ex_dividend_date_materially_after_the_bStock_snapshot"
+  },
+  "prohibited_shortcuts": [
+    "crediting_a_gross_issuer_dividend_as_the_bStock_net_distribution",
+    "assuming_unspecified_fees_costs_or_other_deductions_are_zero",
+    "spending_issuer_date_or_market_requests_after_an_independent_shared_zero_floor_rejection",
+    "repeating_or_aliasing_the_consumed_multi_symbol_announcement_request",
+    "requesting_books_or_funding_to_confirm_an_already_nonpositive_public_floor",
+    "using_credentials_or_placing_orders_without_separate_explicit_authority"
+  ],
+  "methodology_correction": "When one retained primary announcement covers multiple exact episodes, enumerate every sibling and apply the cheapest independent decisive gate across the whole sibling set. A shared zero conservative cash-flow floor terminalizes each exact episode before issuer-calendar, funding, or book work; do not investigate siblings serially as if their shared terms were new.",
+  "authority": {
+    "new_public_requests": 0,
+    "authenticated_requests": 0,
+    "credentials_used": false,
+    "account_state_accessed": false,
+    "orders_transfers_or_transactions": 0,
+    "funds_used": false,
+    "protected_capture_touched": false
+  },
+  "result_sha256": "ddb99b6d56e18e82218c057ee180eacdd7d0b055daab6701c762120a7a0d64df"
+}

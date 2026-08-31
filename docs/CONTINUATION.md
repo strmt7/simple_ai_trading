@@ -6686,3 +6686,35 @@ Registry SHA-256 is
 `c1ff9777a1d8b0782f708e228c0a921a95ebecc0f38c2a745625357df162a5ce`,
 and the rebound durability-audit SHA-256 is
 `d86ef74ca37f66f414e0916dbaaefc851a461726359e7e16007f8e71386d12a9`.
+
+## Binance QCOM/PYPL shared dividend net-floor prefilter
+
+The already-consumed current QCOMB/PYPLB/GOOGLB announcement was exhaustively
+reused offline instead of treating its two unadjudicated sibling tickers as new
+source requests. It binds a September 3 QCOMB snapshot and September 4 PYPLB
+snapshot, while retained exact histories already bind matching QCOMUSDT and
+PYPLUSDT perpetuals. The shared distribution term is decisive: Binance
+reinvests only the net cash dividend after applicable withholding taxes, fees,
+costs, and other deductions, with no retained ceiling or complete formula.
+
+The conservative public net-distribution floor is therefore zero for both
+exact episodes. No official ex-dividend date, current funding, book, account,
+credential, order, fund, transaction, or protected capture was requested. A
+favorable calendar outcome cannot repair an independently zero guaranteed cash
+flow, so both episodes are terminal before issuer-calendar or market access.
+Do not repeat or alias the shared announcement or research QCOM/PYPL dates,
+funding, or books for these episodes.
+
+This corrects the workflow: when one primary source covers multiple events,
+enumerate every sibling and apply the cheapest independent decisive gate across
+the entire set before investigating siblings serially. A different ticker does
+not make shared terms new.
+
+The canonical result SHA-256 is
+`ddb99b6d56e18e82218c057ee180eacdd7d0b055daab6701c762120a7a0d64df`.
+Accepted edges remain 29, ranked hypotheses remain 45, terminal families become
+104, and stable current account-qualified after-all-cost edges remain zero.
+Registry SHA-256 becomes
+`6cd4204e8b3a4a75af1047c7a6d9ff36b0fb32b30322622ae06eb5d8ea5ebc29`,
+and the rebound durability-audit SHA-256 becomes
+`c9a25482f9984581a775ab2a02a73d4be35e0566e60ae8217d2eb6edd6e4f9f4`.
