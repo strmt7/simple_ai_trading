@@ -23,6 +23,16 @@ safety gate, blocks Stop, or submits an order.
 
 ### Latest efficient structural screen
 
+The source-selected Chicago August 31 tornado liquidity-reward lead is
+terminal before books. The public Rewards surface displayed 50 pUSD/day,
+20 shares, a 4-cent band, and zero competition, but exact Gamma reported a
+4.5-cent band and the exact `sponsored=true` condition response was an empty
+terminal population. The public funded-reward floor is therefore zero. Never
+repeat either request, change the filter, substitute another observed city, or
+use Rewards-page values as economics. This is the intended rejection-first
+workflow: exact condition and exact sponsored allocation must reconcile before
+spending a book request.
+
 The retained Los Angeles Galaxy versus New England Revolution event pair proved
 16 exact-score-to-full-game-result payoff implications, but also exposed a
 request-efficiency bug: Gamma `outcomePrices` made the best package appear to

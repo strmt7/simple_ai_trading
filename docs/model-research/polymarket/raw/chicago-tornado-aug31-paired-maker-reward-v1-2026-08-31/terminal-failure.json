@@ -1,0 +1,1 @@
+{"error_message":"exact sponsored reward response contained zero rows after the exact active Gamma market reconciled; no book request was permitted","error_type":"ValueError","failed_at_utc":"2026-08-31T14:56:04.8790932+00:00","raw_responses_retained_before_validation":true,"retry_permitted":false}

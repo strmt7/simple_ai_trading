@@ -1,0 +1,104 @@
+{
+  "adjudication": {
+    "accepted_edge": false,
+    "deployment_ready": false,
+    "market_direction_forecast_required": false,
+    "profitability_claim": false,
+    "status": "terminal_exact_Gamma_reward_metadata_but_empty_exact_sponsored_reward_population_no_book_permitted",
+    "trading_authority": false
+  },
+  "authority": {
+    "account_state_accessed": false,
+    "credentials_used": false,
+    "funded_actions": 0,
+    "orders_or_cancellations": 0,
+    "public_read_only_requests": 2
+  },
+  "candidate": {
+    "condition_id": "0x1d0c1d840271740667d177375a828973ab3a31966ce308a7232f4290ec08e2e1",
+    "end_utc": "2026-09-01T12:00:00+00:00",
+    "event_slug": "which-cities-face-tornado-risk-on-august-31-2026",
+    "market_slug": "which-cities-face-tornado-risk-on-august-31-2026-chicago-il",
+    "question": "Will Chicago, IL face tornado risk on August 31?"
+  },
+  "completed_at_utc": "2026-08-31T14:56:04.8790932+00:00",
+  "exact_gamma": {
+    "accepting_orders": true,
+    "active": true,
+    "closed": false,
+    "enable_order_book": true,
+    "fee_schedule": {
+      "exponent": 1,
+      "rate": 0.05,
+      "rebateRate": 0.25,
+      "takerOnly": true
+    },
+    "maker_fee_zero": true,
+    "minimum_order_size_shares": "5",
+    "reward_maximum_spread_cents": "4.5",
+    "reward_minimum_size_shares": "20",
+    "tick_size": "0.001",
+    "tokens": [
+      "114867168491112171105074853155526100442679574239396816796621090226602769890326",
+      "40986708562170016184986509662981516214521574619747420090963550816741641573535"
+    ]
+  },
+  "exact_sponsored_reward": {
+    "data_count": 0,
+    "next_cursor": "LTE=",
+    "positive_dated_daily_rate_proved": false,
+    "public_forward_reward_floor_pUSD": "0"
+  },
+  "method_correction": {
+    "discovery_page_reward_used_in_economics": false,
+    "discovery_tuple": {
+      "displayed_daily_reward_pUSD": "50",
+      "displayed_maximum_spread_cents": "4",
+      "displayed_minimum_size_shares": "20"
+    },
+    "exact_source_difference": "Gamma reported a 4.5-cent maximum spread while the exact sponsored=true condition response was an empty terminal population; the page tuple is excluded rather than forced into the economics.",
+    "lesson": "A large rewards-page headline and zero displayed competition do not prove an active funded condition. Reconcile the exact Gamma condition and exact sponsored response before books, and stop on any mismatch."
+  },
+  "result_sha256": "1e514db9565c9aacb6a9d0c9e11a2bfa371b892ee0c133dc43da02c64815b66a",
+  "retry_policy": {
+    "permitted": false,
+    "prohibited": [
+      "repeat either consumed exact request",
+      "change sponsored filtering",
+      "substitute another tornado city after observing this result",
+      "request books for this candidate",
+      "use the rewards-page amount or competition display as funded economics"
+    ],
+    "reopen_only_for": "a distinct source-selected exact market whose Gamma condition and exact sponsored-condition response reconcile to one active dated positive allocation before any book access, or a documented material reward aggregation change"
+  },
+  "schema_version": "polymarket-exact-reward-source-mismatch-adjudication-v1",
+  "sources": {
+    "contract": {
+      "path": "docs/model-research/polymarket/chicago-tornado-aug31-paired-maker-reward-contract-v1-2026-08-31.json",
+      "result_sha256": "25ed7ffeb6ab89366721e95a0ca5d11574a08e2df4052659632ada309017f091",
+      "sha256": "ce41c3b38aa5fa28818dc728a57ad20af3f627cef46081b1dbaa28bca5a7f1c8"
+    },
+    "gamma": {
+      "elapsed_ms": 2152,
+      "payload_bytes": 8427,
+      "payload_sha256": "48a13071ced29b0fc11fbe2167cc3b3f671a51cdccbba2f76ccc56b8530c7155",
+      "received_after_ms": 1788188061630,
+      "requested_before_ms": 1788188059478,
+      "status_code": 200,
+      "url": "https://gamma-api.polymarket.com/markets?closed=false&slug=which-cities-face-tornado-risk-on-august-31-2026-chicago-il"
+    },
+    "reward": {
+      "elapsed_ms": 285,
+      "payload_bytes": 55,
+      "payload_sha256": "cb1463591af370d3e3eb39e1dc5821bb1ae64d7dde15ba0748011273b32e9148",
+      "received_after_ms": 1788188061934,
+      "requested_before_ms": 1788188061649,
+      "status_code": 200,
+      "url": "https://clob.polymarket.com/rewards/markets/0x1d0c1d840271740667d177375a828973ab3a31966ce308a7232f4290ec08e2e1?sponsored=true"
+    },
+    "tool": {
+      "path": "tools/screen_polymarket_exact_paired_maker_reward.py",
+      "sha256": "5a78428fd85a24a16b1afd925d87217558765e3af61ccbdfeb8e7f03d737e4cf"
+    }
+  }
+}
