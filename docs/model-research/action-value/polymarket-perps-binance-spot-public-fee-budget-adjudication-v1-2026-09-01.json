@@ -1,0 +1,100 @@
+{
+  "schema_version": "polymarket-perps-binance-spot-public-fee-budget-adjudication-v1",
+  "created_at_utc": "2026-09-01T00:01:30.327865Z",
+  "mechanism": "conditional_polymarket_perps_OI_reward_and_funding_hedged_by_binance_spot",
+  "source_bindings": {
+    "retained_carry_result": {
+      "path": "docs/model-research/action-value/polymarket-perps-binance-spot-oi-carry-v1-2026-08-26.json",
+      "result_sha256": "0d89a4fee61cf51c2f5f8c2491c9d8c3cc4a5e08046206dbe2ba20f7ba3ea934"
+    },
+    "new_fee_source_contract": {
+      "path": "docs/model-research/action-value/polymarket-perps-crypto-fee-source-contract-v1-2026-09-01.json",
+      "contract_sha256": "d262e39f404530dbc5c7451fa930f3c9a6180f32ba334e842c5fa467fa2565d1"
+    },
+    "new_fee_source_capture": {
+      "path": "docs/model-research/action-value/polymarket-perps-crypto-fee-source-capture-v1-2026-09-01.json",
+      "result_sha256": "864efb46a06dda7a7af76e1dda766fe25870f80c78a1bfb322c83033acee7529"
+    },
+    "new_fee_source_raw": {
+      "path": "data/polymarket-perps-crypto-fee-source-v1/raw/fees.md",
+      "sha256": "e16639008e2f58f3684e8148c9fa71695e75b693131826a26b5c1861befc20a6"
+    },
+    "new_fee_source_journal": {
+      "path": "data/polymarket-perps-crypto-fee-source-v1/request-journal.jsonl",
+      "sha256": "4a168ccefef7c8661a61d461a1156764bda9b6dcd771b40cf00a885d1c72c72f"
+    },
+    "retained_binance_spot_fee_sensitivities": {
+      "path": "docs/model-research/action-value/binance-spot-promotional-fee-overlay-v1-2026-08-26.json",
+      "result_sha256": "f951d167b3abbb89afc39a29671b9a4cb6929661f13a957e553a8fad439ce9e6"
+    }
+  },
+  "polymarket_perps_fee_schedule": {
+    "quote_asset": "pUSD",
+    "formula": "abs(Price * Quantity) * Rate",
+    "tier_basis": "account trailing 30-day trading volume re-evaluated every UTC day",
+    "tiers": [
+      {"minimum_30_day_volume_usd": "0", "taker_percent": "0.0400", "maker_percent": "0.0125"},
+      {"minimum_30_day_volume_usd": "1000000", "taker_percent": "0.0370", "maker_percent": "0.0100"},
+      {"minimum_30_day_volume_usd": "5000000", "taker_percent": "0.0350", "maker_percent": "0.0080"},
+      {"minimum_30_day_volume_usd": "25000000", "taker_percent": "0.0300", "maker_percent": "0.0050"},
+      {"minimum_30_day_volume_usd": "100000000", "taker_percent": "0.0270", "maker_percent": "0.0020"},
+      {"minimum_30_day_volume_usd": "500000000", "taker_percent": "0.0250", "maker_percent": "0.0000"},
+      {"minimum_30_day_volume_usd": "1000000000", "taker_percent": "0.0200", "maker_percent": "-0.0050"}
+    ],
+    "temporary_beta_exception": "A source-described subset of beta accounts temporarily receives the top-tier schedule regardless of trailing volume, but public evidence does not identify or qualify any repository account."
+  },
+  "retained_carry_economics_bips": {
+    "funding": "58.66880000",
+    "conditional_six_percent_OI_reward": "49.31506849315068493150684932",
+    "two_leg_five_percent_annual_capital_hurdle": "82.19178082191780821917808219",
+    "maximum_total_all_in_friction_budget": "25.79208767123287671232876711"
+  },
+  "fee_budget_bips": {
+    "polymarket_zero_volume_tier_maker_per_fill": "1.25",
+    "polymarket_zero_volume_tier_two_fill_round_trip": "2.50",
+    "residual_after_polymarket_zero_volume_maker_round_trip_before_every_binance_basis_conversion_transfer_custody_and_failure_cost": "23.29208767123287671232876711",
+    "polymarket_zero_volume_tier_taker_per_fill": "4.00",
+    "polymarket_zero_volume_tier_two_fill_round_trip": "8.00",
+    "residual_after_polymarket_zero_volume_taker_round_trip_before_every_binance_basis_conversion_transfer_custody_and_failure_cost": "17.79208767123287671232876711",
+    "polymarket_top_tier_maker_rebate_per_fill": "-0.50",
+    "polymarket_top_tier_two_fill_round_trip_rebate": "-1.00",
+    "residual_after_unqualified_top_tier_maker_rebate_sensitivity": "26.79208767123287671232876711",
+    "retained_binance_standard_maker_two_fill_sensitivity": "20.00",
+    "combined_zero_volume_polymarket_maker_plus_binance_standard_maker_sensitivity": "22.50",
+    "residual_after_combined_standard_maker_fee_sensitivity_before_basis_and_every_external_cost": "3.29208767123287671232876711",
+    "retained_binance_promotional_zero_maker_two_fill_sensitivity": "0.00",
+    "residual_after_conditional_zero_maker_binance_route_and_polymarket_zero_volume_maker_fees": "23.29208767123287671232876711"
+  },
+  "sensitivity_limits": [
+    "The retained Binance standard and promotional rates are public sensitivities, not exact current account BTC spot commissions.",
+    "The retained zero-maker Binance route applies only when an eligible BTC FDUSD or U quote asset is independently required and current for the exact account and region; no quote acquisition or extra leg is credited.",
+    "Maker rates do not prove maker fills, queue priority, synchronized execution, capacity, or absence of adverse selection.",
+    "The conditional six percent OI reward remains zero for acceptance until an exact account proves at least 1000000 USD daily-average gross OI and realized payment.",
+    "pUSD versus the Binance spot quote, transfer, custody, withdrawal, liquidation, auto-deleveraging, failure unwind, and full entry-exit basis remain unbound."
+  ],
+  "adjudication": {
+    "status": "material_public_crypto_perps_fee_gap_closed_but_total_after_cost_edge_still_unproved",
+    "accepted_edge": false,
+    "deployment_ready": false,
+    "profitability_claim": false,
+    "public_persistence_candidate": false,
+    "book_request_permitted": false,
+    "account_request_permitted": false,
+    "registry_rank": 19,
+    "next_action": "Do not refresh funding or books. Reopen only after explicit read-only authority and exact authenticated Polymarket reward eligibility plus exact Polymarket and Binance account fee tiers first leave a positive residual; then source-bind the exact same-unit quote route and every external cost before one separately frozen synchronized finite-size basis and depth study."
+  },
+  "authority": {
+    "account_requests": 0,
+    "book_requests": 0,
+    "credentials_used": false,
+    "fee_requests": 0,
+    "funds_used": false,
+    "onchain_requests": 0,
+    "orders_or_transactions": 0,
+    "protected_capture_touched": false,
+    "public_unauthenticated_read_only_requests": 1,
+    "signed_requests": 0,
+    "trading_authority": false
+  },
+  "result_sha256": "69fc78d24c28106e7c8f96a6bca32e92f4591582698261398bcdb77a6fc2fa78"
+}

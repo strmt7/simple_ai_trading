@@ -23,6 +23,33 @@ safety gate, blocks Stop, or submits an order.
 
 ### Latest efficient structural screen
 
+A newly indexed exact official Polymarket Perps fee source materially narrowed
+rank 19's BTC short-Polymarket-Perps/long-Binance-spot carry near-miss. One
+frozen public unauthenticated Markdown GET proved the zero-volume maker rate is
+1.25 bips per fill, or 2.50 bips round trip. The retained carry had only
+25.7920876712 bips available after funding, its conditional 6% OI reward, and
+the two-leg 5% annual capital hurdle, so only 23.2920876712 bips remain before
+every Binance fee, basis, quote conversion, transfer, custody, and failure cost.
+The retained standard Binance maker sensitivity leaves only 3.2920876712 bips;
+the conditional zero-maker quote sensitivity leaves 23.2920876712 bips but is
+not exact current account or same-unit route evidence.
+
+This is a tighter candidate budget, not an accepted or profitable edge. Do not
+refresh funding or request books. Advance only after explicit read-only
+authority proves the exact account's one-million-dollar daily-average gross OI
+reward eligibility, Polymarket tier, Binance fee and eligible quote route, and
+every same-unit external cost; only a positive residual may authorize one
+separately frozen synchronized finite-size basis/depth study. Contract, capture,
+and adjudication SHA-256 values are
+`d262e39f404530dbc5c7451fa930f3c9a6180f32ba334e842c5fa467fa2565d1`,
+`864efb46a06dda7a7af76e1dda766fe25870f80c78a1bfb322c83033acee7529`,
+and `69fc78d24c28106e7c8f96a6bca32e92f4591582698261398bcdb77a6fc2fa78`.
+Accepted edges remain 29, ranked hypotheses remain 47, terminal families remain
+124, registry SHA-256 is
+`d4a134ac80079622c76e0f39bcf30dba4a5d0ae539635dde93f5f802b3005cbb`,
+and durability-audit SHA-256 is
+`a520e2e0a41bb053cfeefe6752acecfe95d471c21fffe02b9512c06c46be7e96`.
+
 A distinct Binance Wallet routed Aster USD1-versus-Binance USDT perpetual
 funding lead has been rejected before any basis, book, account, credential,
 order, or fund request. One prospectively frozen public Aster inventory capture

@@ -5,6 +5,39 @@ Development belongs only on `main`; do not create another development branch.
 
 ## Latest Edge R&D Checkpoint
 
+- Rank 19's Polymarket Perps/Binance spot carry near-miss has a materially
+  tighter public fee bound. The retained August 29 official documentation index
+  exposed a dedicated Perps fee page that the August 26 carry attempt had not
+  captured. One prospectively frozen public unauthenticated Markdown GET
+  retained 3,187 exact bytes and proved that a zero-volume Polymarket Perps
+  account pays 1.25 bips per maker fill, or 2.50 bips for entry plus exit;
+  taker entry plus exit costs 8 bips. The top maker tier rebates 0.50 bip per
+  fill, but its one-billion-dollar volume tier and temporary beta-account
+  exception are not attributed to any repository account.
+
+  The retained 30-day BTC short-Polymarket-Perps/long-Binance-spot result had
+  only 25.7920876712 bips left after funding, the conditional 6% OI reward, and
+  the two-leg 5% annual capital hurdle. The new baseline Polymarket maker fee
+  therefore leaves 23.2920876712 bips before every Binance fee, cross-venue
+  basis, quote conversion, transfer, custody, and failure cost. Combining it
+  with the retained standard Binance maker sensitivity leaves only
+  3.2920876712 bips; a retained conditional zero-maker quote route leaves
+  23.2920876712 bips but is not current account or same-unit route evidence.
+  The exact account must still prove the one-million-dollar daily-average gross
+  OI reward, its fee tiers, eligible quote route, and every external cost before
+  one synchronized finite-size basis/book study. No funding refresh, books,
+  accounts, credentials, orders, funds, or protected captures were used.
+
+  The fee-source contract, capture, and zero-network adjudication SHA-256 values
+  are `d262e39f404530dbc5c7451fa930f3c9a6180f32ba334e842c5fa467fa2565d1`,
+  `864efb46a06dda7a7af76e1dda766fe25870f80c78a1bfb322c83033acee7529`,
+  and `69fc78d24c28106e7c8f96a6bca32e92f4591582698261398bcdb77a6fc2fa78`.
+  Accepted edges remain 29, ranked hypotheses remain 47, terminal families
+  remain 124, registry SHA-256 is
+  `d4a134ac80079622c76e0f39bcf30dba4a5d0ae539635dde93f5f802b3005cbb`,
+  and durability-audit SHA-256 is
+  `a520e2e0a41bb053cfeefe6752acecfe95d471c21fffe02b9512c06c46be7e96`.
+
 - A distinct adjacent-day threshold-plus-direction identity was derived and
   screened before Gamma, books, fees, accounts, or orders. For one shared
   strike `T`, `Sep 2 NO(T) + Sep 1 YES(T) + daily Up` and the symmetric
