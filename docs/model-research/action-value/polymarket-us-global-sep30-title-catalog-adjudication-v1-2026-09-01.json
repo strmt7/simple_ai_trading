@@ -1,0 +1,55 @@
+{
+  "adjudication": {
+    "accepted_edge": false,
+    "candidate_for_separate_frozen_economics_gate": false,
+    "deployment_ready": false,
+    "next_action": "stop without any BBO book fee account credential or order request",
+    "profitability_claim": false,
+    "status": "no_exact_cross_venue_source_identity_in_frozen_populations"
+  },
+  "authority": {
+    "account_requests": 0,
+    "credentials_used": false,
+    "funds_used": false,
+    "orders_or_transactions": 0,
+    "protected_capture_touched": false,
+    "public_unauthenticated_read_only_requests": 1,
+    "signed_requests": 0,
+    "trading_authority": false
+  },
+  "contract": {
+    "path": "docs/model-research/action-value/polymarket-us-global-sep30-title-catalog-contract-v1-2026-09-01.json",
+    "sha256": "a327468de94837db6644abe15878fe5af2881965ffd765f17fdcec19a08c85fc"
+  },
+  "created_at_utc": "2026-09-01T10:28:37.183383Z",
+  "implementation": {
+    "path": "tools/adjudicate_polymarket_us_global_title_catalog.py",
+    "sha256": "74a74baeb3e1d6d71b6174723e2289e7c24e8786fb80902e0d881138ee4e2bc6"
+  },
+  "join": {
+    "candidates": [],
+    "economic_fields_read_or_printed": 0,
+    "exact_event_title_match_count": 0,
+    "exact_source_identity_count": 0
+  },
+  "limitations": [
+    "Strict title and text equality is a candidate gate only; different venue contracts resolution systems dispute handling eligibility settlement latency custody and legal terms can still differ.",
+    "The retained Global catalog is one exact September 30 population, not every Global market, and the US page is current only at its one request instant.",
+    "Raw catalog bytes may contain prices but the adjudicator must neither read them into the join nor print or use them for selection.",
+    "A missing field unequal type hidden sibling extra market or full 500-row page rejects promotion rather than being assumed equivalent or complete.",
+    "Any BBO book fee account credential order cancellation fund transfer or transaction requires a separately frozen or separately authorized step."
+  ],
+  "population": {
+    "global_event_count": 100,
+    "us_event_count": 1,
+    "us_filters_exact": true,
+    "us_population_complete_by_strict_below_limit": true,
+    "us_requested_limit": 500
+  },
+  "result_sha256": "d4ef63463e60b52cf97bbc5044e679b6c8f529813c8e843b9864ffef87700988",
+  "schema_version": "polymarket-us-global-title-catalog-adjudication-v1",
+  "source_result": {
+    "path": "docs/model-research/action-value/polymarket-us-global-sep30-title-catalog-source-result-v1-2026-09-01.json",
+    "sha256": "2cae855c1d22f68da0fed37406af5086dcad7713e94e4236c1bb1cd9937db956"
+  }
+}
