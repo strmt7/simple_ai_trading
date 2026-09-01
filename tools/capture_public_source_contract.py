@@ -21,6 +21,37 @@ SCHEMA = "public-source-capture-result-v1"
 EMPTY_SHA256 = _sha256(b"")
 
 
+def _inspect_utf8_source(
+    raw: bytes, required_phrases: list[str]
+) -> tuple[dict[str, bool], dict[str, Any]]:
+    """Inspect a text contract without crashing after durable binary capture."""
+    detected_format = "pdf" if raw.startswith(b"%PDF-") else "unknown_binary"
+    try:
+        text = raw.decode("utf-8")
+    except UnicodeDecodeError as exc:
+        return (
+            {phrase: False for phrase in required_phrases},
+            {
+                "utf8_decode_passed": False,
+                "detected_format": detected_format,
+                "decode_error": {
+                    "type": type(exc).__name__,
+                    "start": exc.start,
+                    "end": exc.end,
+                    "reason": exc.reason,
+                },
+            },
+        )
+    return (
+        {phrase: phrase in text for phrase in required_phrases},
+        {
+            "utf8_decode_passed": True,
+            "detected_format": "utf8_text",
+            "decode_error": None,
+        },
+    )
+
+
 def _load_object(path: Path) -> dict[str, Any]:
     value = json.loads(path.read_bytes())
     if not isinstance(value, dict):
@@ -123,12 +154,15 @@ def main() -> None:
         raw_relative_path=contract["outputs"]["raw_path"],
         journal_path=paths["journal_path"],
     )
-    text = raw.decode("utf-8")
-    phrase_presence = {
-        phrase: phrase in text for phrase in contract["required_utf8_phrases"]
-    }
+    phrase_presence, source_format = _inspect_utf8_source(
+        raw, contract["required_utf8_phrases"]
+    )
     byte_ceiling_passed = len(raw) <= contract["response_byte_ceiling"]
-    source_gate_passed = byte_ceiling_passed and all(phrase_presence.values())
+    source_gate_passed = (
+        byte_ceiling_passed
+        and source_format["utf8_decode_passed"]
+        and all(phrase_presence.values())
+    )
     result: dict[str, Any] = {
         "schema_version": SCHEMA,
         "created_at_utc": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
@@ -143,6 +177,7 @@ def main() -> None:
         },
         "source_gate": {
             "required_phrase_presence": phrase_presence,
+            "source_format": source_format,
             "passed": source_gate_passed,
         },
         "adjudication": {

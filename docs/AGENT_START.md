@@ -21,6 +21,32 @@ profitable without reproducible source-bound after-cost evidence. AI may veto
 or reduce risk only; it never creates positions, selects leverage, overrides a
 safety gate, blocks Stop, or submits an order.
 
+### Latest Binance Options block-trade atomicity rejection
+
+One frozen exact official public GET retained a 40,487-byte four-page Binance
+Options Block Trade EAPI PDF. The text-only capture runner failed closed after
+durable retention because the extensionless source was PDF rather than UTF-8;
+the request was not retried. Complete offline extraction and visual review of
+the hash-bound bytes proves `POST eapi/v1/block/order/create` accepts a
+mandatory `legs` list but explicitly caps it at `Max 1 (only single leg
+supported)`.
+
+The documented block-trade API therefore cannot atomically execute either a
+two-leg vertical or four-leg box and cannot reopen fixed-payoff box parity.
+Rank 37's separate account-gated RFQ UI two-leg route is unchanged and still
+requires explicit quote-request-only authority plus eligible account access.
+Accepted edges remain 37, ranked hypotheses remain 65, terminal families become
+182, and stable current account-qualified after-all-cost edges remain zero.
+Registry, durability-audit, and adjudication-result SHA-256 values are
+`5e7c835dffe9314325a95724de35875637177a3a17aa1886506aad0b6ca6883c`,
+`1ec056ab4102eeea8631449e83444b7e3692d176c6016081651c786f5ecbb4c2`,
+and `31f0149202f997f0ba7015629d6c3df1e9f86b6580c5f98a34c024d2f3da7b6d`.
+Do not refetch, alias, use batch orders as atomic execution, or request quotes,
+books, commissions, accounts, credentials, orders, funds, or transactions for
+this workaround. The public-source capture helper now records a clean
+fail-closed format result for future non-UTF-8 responses instead of raising
+after retention; it does not weaken any economic gate.
+
 ### Latest Binance Futures Bonus Voucher downside rejection
 
 One frozen current official Binance FAQ says a Futures Bonus Voucher supplies

@@ -61,6 +61,13 @@ override prose.
   do not refetch or alias it. Family-level novelty does not override an exact-
   URL one-use boundary. Correct the registry lineage when a novelty inventory
   missed this reuse instead of spending another request.
+- When a public source URL does not prove its payload format before access,
+  freeze the admitted format or treat content-format discovery as a source gate.
+  Always retain raw bytes and the request journal before decoding. A text-only
+  runner must record non-UTF-8 or binary input as a clean fail-closed format
+  result instead of raising after access. Hash-bound PDF or other binary bytes
+  may be inspected offline to strengthen rejection, but they cannot repair or
+  promote a text contract, and no format alias or retry is allowed.
 - Predict.fun is a separate BNB Chain prediction venue, not Binance Exchange.
   Binance Exchange or testnet credentials never authorize Predict.fun API,
   wallet, account, order, reward, or eligibility access. A logged-out Predict.fun

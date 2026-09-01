@@ -84,7 +84,13 @@ def test_existing_terminal_family_is_updated_without_duplicate_rank() -> None:
 
     assert registry["result_sha256"] == REGISTRY_HASH
     assert _canonical_hash(registry, "result_sha256") == REGISTRY_HASH
-    assert len(registry["prioritized_hypotheses"]) == 44
+    ranks = [row["priority_rank"] for row in registry["prioritized_hypotheses"]]
+    assert len(ranks) == len(set(ranks))
+    assert sum(
+        row["mechanism"]
+        == "binance_options_Rfq_atomic_vertical_fixed_payoff_parity"
+        for row in registry["prioritized_hypotheses"]
+    ) == 1
     terminal = [
         row
         for row in registry["terminal_do_not_repeat"]
