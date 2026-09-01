@@ -4122,9 +4122,44 @@
           "result_sha256": "5235ee14ad6d7d17c69938d7215f5266048610fac7148de8c27375eba4ddab45"
         }
       ]
+    },
+    {
+      "priority_rank": 63,
+      "mechanism": "binance_Futures_Free_Position_zero_personal_capital_option",
+      "venue_scope": "Binance_mainnet_Futures_Free_Position_Voucher",
+      "market_direction_forecast_required": false,
+      "current_status": "terminal_public_FAQ_proves_given_trading_margin_fixed_voucher_parameters_user_selected_long_or_short_withdrawable_or_transferable_profits_and_close_anytime_control_but_does_not_prove_losses_commissions_funding_liquidation_deficits_clawbacks_or_other_liabilities_are_capped_at_supplied_margin_or_cannot_touch_other_user_balances_so_zero_personal_capital_free_option_nonnegative_payoff_expected_value_stable_profit_and_deployment_are_unproved_public_and_account_qualified_profit_floors_zero",
+      "blocking_evidence": [
+        "a complete official nonrecourse term proving every loss and cost channel is confined to supplied voucher margin",
+        "explicit signed GET-only Binance mainnet authority and independently existing voucher ownership",
+        "exact acquisition lineage symbol side notional margin leverage order type expiry fees funding liquidation deficit clawback and other-balance treatment",
+        "owned realized profit and loss reconciliation after every opportunity tax custody and operating cost"
+      ],
+      "next_action": "do_not_refetch_alias_follow_the_adaptively_discovered_terms_link_open_Rewards_Hub_access_an_account_use_testnet_credentials_or_request_prices_and_books_for_the_exact_source_question_reopen_only_on_the_exact_retry_trigger_and_require_proved_nonrecourse_downside_plus_exact_owned_economics_before_any_voucher_action_every_activation_terms_acceptance_side_selection_position_transfer_withdrawal_or_state_change_requires_separate_explicit_authority",
+      "prohibited_shortcuts": [
+        "assuming_provided_trading_margin_means_all_losses_and_costs_are_nonrecourse",
+        "treating_withdrawable_positive_profit_as_a_nonnegative_guaranteed_payoff",
+        "ignoring_fees_funding_liquidation_deficit_clawback_other_balance_and_opportunity_cost",
+        "choosing_long_or_short_from_a_market_forecast_and_calling_the_result_direction_independent",
+        "opening_the_linked_terms_or_retrying_a_locale_rendered_or_CMS_alias_after_the_frozen_missing_downside_gate",
+        "opening_Rewards_Hub_accessing_an_account_or_using_testnet_credentials_as_mainnet_evidence",
+        "manufacturing_tasks_accounts_referrals_deposits_volume_trades_or_eligibility",
+        "claiming_activating_accepting_terms_selecting_a_side_opening_closing_transferring_withdrawing_or_mutating_state_without_separate_explicit_authority"
+      ],
+      "retry_trigger": "a_material_official_Futures_Free_Position_nonrecourse_loss_fee_funding_liquidation_deficit_clawback_or_other_balance_term_change_or_a_distinct_prospectively_frozen_complete_official_terms_package_selected_before_economic_access_plus_explicit_signed_GET_only_Binance_mainnet_authority_and_an_independently_existing_owned_voucher",
+      "canonical_artifacts": [
+        {
+          "path": "docs/model-research/action-value/binance-futures-free-position-zero-capital-option-terminal-v1-2026-09-01.json",
+          "result_sha256": "a258fff5e8a96f8a36de8aca28d72d15d7e8d29c26a262d9df2c673a5b750fff"
+        },
+        {
+          "path": "docs/model-research/action-value/binance-futures-free-position-zero-capital-option-source-result-v1-2026-09-01.json",
+          "result_sha256": "317aeb0f872c9f74c542aef3e7eaaa45eefce05adea7a8e8174166f1189519fb"
+        }
+      ]
     }
   ],
-  "result_sha256": "4bfa33cf6f44af9876a0a500efdd704499f802a7d57927736c144906d850ad1d",
+  "result_sha256": "3b48e46b34d06e443d8a52d33554b0c7ff6db0ea35e9fb73aba870b5d250c3cc",
   "schema_version": "structural-edge-priority-registry-v1",
   "terminal_do_not_repeat": [
     {
@@ -5027,8 +5062,13 @@
       "family": "binance_Token_Voucher_direct_free_token_Spot_credit_public_source_gate_2026_09_01",
       "reason": "the_prospectively_frozen_one_use_official_public_FAQ_capture_returned_200_and_retained_substantive_mechanics_but_failed_its_exact_phrase_gate_because_the_contract_guessed_without_any_restrictions_while_the_source_said_with_no_restrictions_the_contract_explicitly_requires_terminal_rejection_on_any_missing_phrase_so_the_exact_hypothesis_is_terminal_without_post_outcome_rewrite_alias_refetch_Rewards_Hub_account_credentials_claim_redemption_transfer_withdrawal_conversion_order_or_state_change_reopen_only_on_rank_62_exact_material_change_or_owned_voucher_reconciliation_trigger",
       "canonical_result_sha256": "1776c7bcd318edd3c703446f7e2ca746922efc307c2c295075dd0b58eb03c752"
+    },
+    {
+      "family": "binance_Futures_Free_Position_zero_personal_capital_option_public_source_2026_09_01",
+      "reason": "one_prospectively_frozen_current_official_FAQ_proves_given_trading_margin_fixed_voucher_parameters_user_selected_long_or_short_withdrawable_or_transferable_profits_and_close_anytime_control_but_does_not_prove_losses_commissions_funding_liquidation_deficits_clawbacks_or_other_liabilities_are_capped_at_supplied_margin_or_cannot_touch_other_user_balances_the_exact_zero_personal_capital_free_option_hypothesis_is_terminal_before_prices_books_accounts_credentials_Rewards_Hub_voucher_actions_orders_or_funds_reopen_only_on_rank_63_exact_complete_nonrecourse_terms_and_owned_voucher_trigger",
+      "canonical_result_sha256": "a258fff5e8a96f8a36de8aca28d72d15d7e8d29c26a262d9df2c673a5b750fff"
     }
   ],
-  "updated_at_utc": "2026-09-01T14:30:00Z",
+  "updated_at_utc": "2026-09-01T14:43:00Z",
   "usage_rule": "advance_the_highest_ranked_hypothesis_whose_retry_trigger_is_satisfied_otherwise_do_not_repeat_a_blocked_or_terminal_screen"
 }

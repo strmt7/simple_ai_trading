@@ -21,7 +21,32 @@ profitable without reproducible source-bound after-cost evidence. AI may veto
 or reduce risk only; it never creates positions, selects leverage, overrides a
 safety gate, blocks Stop, or submits an order.
 
-### Latest Binance Token Voucher source-gate rejection
+### Latest Binance Futures Free Position downside rejection
+
+One frozen current official Binance FAQ proves that a Futures Free Position
+uses given trading margin, fixes voucher parameters, lets the user choose Long
+or Short, permits closing at any time, and makes generated profits withdrawable
+or transferable. It does not say that losses, fees, funding, liquidation,
+deficits, clawbacks, or other liabilities are capped at the supplied margin or
+cannot reach the user's other balances.
+
+The exact zero-personal-capital free-option hypothesis is therefore terminal.
+Supplied margin and withdrawable upside alone do not prove a nonnegative payoff,
+positive expected value, stable profit, or deployment readiness. The run stopped
+before prices, books, accounts, credentials, Rewards Hub, voucher activation,
+positions, orders, or funds.
+
+Accepted edges remain 36, ranked hypotheses become 63, terminal families become
+180, and stable current account-qualified after-all-cost edges remain zero.
+Registry, durability-audit, and terminal-result SHA-256 values are
+`3b48e46b34d06e443d8a52d33554b0c7ff6db0ea35e9fb73aba870b5d250c3cc`,
+`99bab9069d94f690de7781310f8124a1dd9cde1c35380185cde9b4c907c8d329`,
+and `a258fff5e8a96f8a36de8aca28d72d15d7e8d29c26a262d9df2c673a5b750fff`.
+Do not refetch, alias, follow the adaptively discovered terms link, open Rewards
+Hub, or use testnet credentials as mainnet evidence. Reopen only on rank 63's
+exact complete nonrecourse-terms and independently owned-voucher trigger.
+
+### Prior Binance Token Voucher source-gate rejection
 
 One frozen exact official Binance FAQ capture returned HTTP 200 and retained the
 substantive ordinary Token Voucher mechanics. The source says redeemed free

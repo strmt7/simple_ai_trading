@@ -1,0 +1,72 @@
+{
+  "schema_version": "binance-futures-free-position-zero-capital-option-terminal-v1",
+  "created_at_utc": "2026-09-01T14:43:00Z",
+  "authority": {
+    "public_unauthenticated_read_only_requests": 1,
+    "account_requests": 0,
+    "signed_requests": 0,
+    "credentials_used": false,
+    "funds_used": false,
+    "orders_or_transactions": 0,
+    "protected_capture_touched": false,
+    "trading_authority": false
+  },
+  "source_binding": {
+    "contract_path": "docs/model-research/action-value/binance-futures-free-position-zero-capital-option-source-contract-v1-2026-09-01.json",
+    "contract_sha256": "d0b6f83bac0f2f4f5aedcb631e2d7ce2cadc3ff441f5e765219cd788f7c1c5ca",
+    "source_result_path": "docs/model-research/action-value/binance-futures-free-position-zero-capital-option-source-result-v1-2026-09-01.json",
+    "source_result_sha256": "317aeb0f872c9f74c542aef3e7eaaa45eefce05adea7a8e8174166f1189519fb",
+    "raw_path": "data/binance-futures-free-position-zero-capital-option-v1/raw/01-faq.raw.json",
+    "raw_sha256": "092b39ce35545530e9ae730fd64399308b8e7535ef704686409d7e681729b66a",
+    "journal_path": "data/binance-futures-free-position-zero-capital-option-v1/raw/01-faq.journal.jsonl",
+    "journal_sha256": "03d212d56ef5fbbc21e8a24bb38909d3a5d528644cc6ec9ee11f304950b616d8"
+  },
+  "source_proved": [
+    "The voucher opens a Futures position using given trading margin.",
+    "Contract pair, order type, leverage, and margin mode are voucher parameters.",
+    "The user may choose Bullish for Long or Bearish for Short.",
+    "Profits generated from the free position may be withdrawn or transferred.",
+    "The position may be closed at any time, and the interface permits leverage adjustment and a stop-loss."
+  ],
+  "source_did_not_prove": [
+    "that the voucher was acquired at zero opportunity or activity cost",
+    "that trading losses are capped at supplied voucher margin",
+    "that commissions, funding fees, liquidation charges, deficits, clawbacks, or other liabilities are deducted only from supplied voucher margin",
+    "that the user's other Futures balance, Spot balance, collateral, deposits, or assets cannot be debited, encumbered, or liquidated",
+    "that no additional collateral or deposit is required",
+    "exact symbol, side, notional, initial margin, leverage, order type, expiry, fee, funding, liquidation, regional eligibility, account eligibility, ownership, or receipt",
+    "a nonnegative personal-capital payoff, positive expected value, stable profit, or deployment readiness"
+  ],
+  "economic_adjudication": {
+    "candidate_identity": "withdrawable_positive_profit_from_an_independently_awarded_zero_cost_free_position_only_if_every_personal_capital_loss_channel_is_proved_capped_at_zero",
+    "market_direction_forecast_required": false,
+    "public_profit_floor": "0",
+    "account_qualified_profit_floor": "0",
+    "loss_floor_proved": false,
+    "free_option_proved": false,
+    "reason": "Supplied initial margin and withdrawable upside do not establish limited personal downside. Without explicit treatment of losses, fees, funding, liquidation, deficits, clawbacks, and other balances, the payoff cannot be modeled as max(position PnL, zero) to the user."
+  },
+  "adjudication": {
+    "priority_rank": 63,
+    "accepted_edge": false,
+    "accepted_edge_count_change": 0,
+    "terminal_family_count_change": 1,
+    "profitability_claim": false,
+    "stable_current_account_qualified_edge": false,
+    "deployment_ready": false,
+    "status": "terminal_public_FAQ_does_not_prove_zero_personal_capital_downside"
+  },
+  "prohibited_shortcuts": [
+    "assuming_provided_trading_margin_means_all_losses_and_costs_are_nonrecourse",
+    "treating_withdrawable_positive_profit_as_a_nonnegative_guaranteed_payoff",
+    "ignoring_fees_funding_liquidation_deficit_clawback_other_balance_and_opportunity_cost",
+    "choosing_long_or_short_from_a_market_forecast_and_calling_the_result_direction_independent",
+    "opening_the_linked_terms_or_retrying_a_locale_rendered_or_CMS_alias_after_the_frozen_missing_downside_gate",
+    "opening_Rewards_Hub_accessing_an_account_or_using_testnet_credentials_as_mainnet_evidence",
+    "manufacturing_tasks_accounts_referrals_deposits_volume_trades_or_eligibility",
+    "claiming_activating_accepting_terms_selecting_a_side_opening_closing_transferring_withdrawing_or_mutating_state_without_separate_explicit_authority"
+  ],
+  "retry_trigger": "a_material_official_Futures_Free_Position_nonrecourse_loss_fee_funding_liquidation_deficit_clawback_or_other_balance_term_change_or_a_distinct_prospectively_frozen_complete_official_terms_package_selected_before_economic_access_plus_explicit_signed_GET_only_Binance_mainnet_authority_and_an_independently_existing_owned_voucher",
+  "next_action": "Do not refetch, alias, follow the adaptively discovered terms link, open Rewards Hub, access an account, or request prices and books for this exact source question. Reopen only on the exact retry trigger and require a proved nonrecourse loss boundary plus exact owned economics before any voucher action; every activation, terms acceptance, side selection, position, transfer, withdrawal, or state change requires separate explicit authority.",
+  "result_sha256": "a258fff5e8a96f8a36de8aca28d72d15d7e8d29c26a262d9df2c673a5b750fff"
+}
