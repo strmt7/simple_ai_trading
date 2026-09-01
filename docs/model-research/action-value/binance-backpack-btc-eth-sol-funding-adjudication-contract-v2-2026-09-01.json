@@ -1,0 +1,69 @@
+{
+  "schema_version": "binance-backpack-cross-venue-funding-adjudication-contract-v2",
+  "frozen_at_utc": "2026-09-01T13:49:00Z",
+  "contract_path": "docs/model-research/action-value/binance-backpack-btc-eth-sol-funding-adjudication-contract-v2-2026-09-01.json",
+  "output_path": "docs/model-research/action-value/binance-backpack-btc-eth-sol-funding-adjudication-result-v2-2026-09-01.json",
+  "network_requests": 0,
+  "preregistration": {
+    "path": "docs/model-research/action-value/binance-backpack-btc-eth-sol-funding-preregistration-v1-2026-09-01.json",
+    "file_sha256": "fe296b2adcd65d05de4ccc54a948c219077d4bd33bcd691a12e7fec556aa0cc2",
+    "canonical_sha256": "3e59d011fedc55d81f3fdd78b75ef20fcd9f3c7b7b89dd24a704335d4b372baf"
+  },
+  "inventory": {
+    "path": "docs/model-research/binance/raw/backpack-btc-eth-sol-funding-v1-2026-09-01/00-market-inventory.raw.json",
+    "file_sha256": "b515ac0b293694af23c2de22bf7d281b8ba470a02187bcdfcb07f692228d4bf7"
+  },
+  "sources": [
+    {
+      "asset": "BTC",
+      "backpack": {"path": "docs/model-research/binance/raw/backpack-btc-eth-sol-funding-v1-2026-09-01/01-btc-backpack-funding.raw.json", "file_sha256": "0fabf713e50e2353f4fdf311c2ac01b053adce64a1b4536eac0e0591f5d4afb8", "symbol": "BTC_USDC_PERP"},
+      "binance": {"path": "docs/model-research/binance/raw/backpack-btc-eth-sol-funding-v1-2026-09-01/04-btc-binance-funding.raw.json", "file_sha256": "caa7222b1e3ce9f412cd51d84952f30f3e88550b1b1839f26386100dae386483", "symbol": "BTCUSDT"}
+    },
+    {
+      "asset": "ETH",
+      "backpack": {"path": "docs/model-research/binance/raw/backpack-btc-eth-sol-funding-v1-2026-09-01/02-eth-backpack-funding.raw.json", "file_sha256": "405b0385c808b33b3d11d7c2eaeb4d9a9fa3886b6e90ba2294bd8354408c8226", "symbol": "ETH_USDC_PERP"},
+      "binance": {"path": "docs/model-research/binance/raw/backpack-btc-eth-sol-funding-v1-2026-09-01/05-eth-binance-funding.raw.json", "file_sha256": "8d9cef0513bad8dfb77f83a49f462e74ee5ab03915b1304363be0803d27e1a48", "symbol": "ETHUSDT"}
+    },
+    {
+      "asset": "SOL",
+      "backpack": {"path": "docs/model-research/binance/raw/backpack-btc-eth-sol-funding-v1-2026-09-01/03-sol-backpack-funding.raw.json", "file_sha256": "c16c7c727342858104a74a2251e48621843c768454c63117c840088f00bcef75", "symbol": "SOL_USDC_PERP"},
+      "binance": {"path": "docs/model-research/binance/raw/backpack-btc-eth-sol-funding-v1-2026-09-01/06-sol-binance-funding.raw.json", "file_sha256": "8150891d65d0d2257b719b4ecc3d54a574d62905b76a6b09d6bd34e6e0a484e7", "symbol": "SOLUSDT"}
+    }
+  ],
+  "lineage_sources": [
+    {"path": "docs/model-research/action-value/binance-backpack-btc-eth-sol-funding-adjudication-contract-v1-2026-09-01.json", "file_sha256": "6c187e5620f38719b3826ce05a8b0102115128502bb27dde3df62266797849af"},
+    {"path": "docs/model-research/action-value/binance-backpack-btc-eth-sol-funding-v1-preflight-failure-2026-09-01.json", "file_sha256": "b2cfcd30e3c0ce829d1b1c0d9727235950de0e70fd696bc3a00c22b41ff661a5"},
+    {"path": "docs/model-research/action-value/binance-backpack-hourly-utc-anchor-source-contract-v1-2026-09-01.json", "file_sha256": "c024a4ee6a44ab266b5b20384707c375f4503ef3036b86f4e940b4cf82be10f7"},
+    {"path": "docs/model-research/action-value/binance-backpack-hourly-utc-anchor-source-result-v1-2026-09-01.json", "file_sha256": "f703e89a3df5629fde8f5498f206ba03303646040b7139851b078aa848362ed9"},
+    {"path": "docs/model-research/binance/raw/backpack-btc-eth-sol-funding-v1-2026-09-01/07-backpack-hourly-utc-anchor.raw.md", "file_sha256": "64ef1f561e6d095d6a732a770b07dac8460d543ea592e148a517e1a7239c45b2"},
+    {"path": "docs/model-research/binance/raw/backpack-btc-eth-sol-funding-v1-2026-09-01/07-backpack-hourly-utc-anchor.journal.jsonl", "file_sha256": "604c9135a28c907a6c3c912a41e571fb261349d15243de7ff4a42b2c63e9dca2"}
+  ],
+  "population": {
+    "assets": ["BTC", "ETH", "SOL"],
+    "first_aligned_bucket_ms": 1780502400000,
+    "last_aligned_bucket_ms": 1788249600000,
+    "aligned_row_count": 270,
+    "maximum_binance_schedule_jitter_ms": 1000
+  },
+  "roles": {
+    "training": {"start": 0, "stop": 135},
+    "validation": {"start": 135, "stop": 202},
+    "test": {"start": 202, "stop": 270}
+  },
+  "economics": {
+    "round_trip_execution_bips": "20",
+    "annual_two_leg_capital_hurdle_percent": "10",
+    "usdc_usdt_quote_unit_stress_bips": "25",
+    "custody_latency_failure_stress_bips": "25"
+  },
+  "gates": {"minimum_positive_interval_fraction": "0.5", "promotion_eligible": true},
+  "timestamp_correction": {
+    "only_change_from_v1": "Interpret exact timezone-naive YYYY-MM-DDTHH:00:00 interval-end labels as UTC.",
+    "source_proof": "Official Backpack terms anchor the exchange-wide change to hourly perpetual funding at 08:00 UTC and state that payment occurs at each interval end.",
+    "forbidden_changes": ["population", "roles", "orientation", "alignment", "costs", "gates", "raw inputs"]
+  },
+  "authority": {"account_requests": 0, "credentials_used": false, "funds_used": false, "orders_or_transactions": 0, "protected_capture_touched": false, "public_unauthenticated_read_only_requests": 8, "signed_requests": 0, "trading_authority": false},
+  "implementation": {"path": "tools/adjudicate_binance_backpack_funding_v2.py", "sha256": "9ba7d2db3a6fb41318b8f5358424f88c8a1d26f7d3a693305d4c4b4707586f83"},
+  "decision": "Run exactly once. A zero-survivor result terminalizes the population before premiums, books, accounts, credentials, orders, or funds. Any survivor only authorizes a separately frozen basis and depth study.",
+  "contract_sha256": "baf18425361d1dc750296ce619ad9caf5ef74e6f8109e1b3994e19c8778354d4"
+}

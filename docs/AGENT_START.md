@@ -21,6 +21,36 @@ profitable without reproducible source-bound after-cost evidence. AI may veto
 or reduce risk only; it never creates positions, selects leverage, overrides a
 safety gate, blocks Stop, or submits an order.
 
+### Latest Binance-Backpack funding rejection
+
+The distinct prospectively frozen Binance-USDT versus Backpack-USDC BTC, ETH,
+and SOL perpetual funding screen aligned 270 Binance eight-hour buckets to
+2,160 Backpack hourly intervals per asset. Training selected short Backpack
+and long Binance for every asset. Gross carry was frequently positive, but zero
+asset survived validation and test after 20 bips execution, a 10 percent annual
+two-leg capital hurdle, 25 bips quote-unit stress, and 25 bips custody, latency,
+and failure stress. BTC, ETH, and SOL test nets were respectively about
+`-118.97`, `-113.62`, and `-110.22` bips.
+
+A v1 preflight failure on Backpack's timezone-naive whole-hour interval label
+is preserved. Official Backpack terms source-bound the sole v2 parser
+correction by anchoring hourly perpetual funding at 08:00 UTC and payment at
+each interval end. No population, role, orientation, alignment, cost, gate, or
+raw input changed, and no economic value was emitted before v2 was frozen.
+
+Do not refetch, resample, realign, refit, weaken costs, or request premiums,
+basis, books, accounts, credentials, orders, or funds for this exact
+population. Reopen only on a material venue funding, fee, quote-unit, custody,
+latency, capital, or execution-architecture change, or a distinct prospectively
+frozen nonoverlapping population.
+
+Accepted edges remain 35, ranked hypotheses become 60, terminal families
+become 178, and stable current account-qualified after-all-cost edges remain
+zero. Registry, durability-audit, and adjudication-result SHA-256 values are
+`d82874659b6cd34e6713253d6322af9833cf79a6a4ad71809fc9ce9a1dd5619c`,
+`6f8d7cc5838bf64251fb6e40e0ff4847f49e79454874f0eaf7a4ec7117843f87`,
+and `ef665320c7cb3537d5f1a9b296fb95ca545def685fe7bb25abbda52c1193f133`.
+
 ### Latest Binance-Paradex funding source-gate rejection
 
 The distinct BTC/ETH/SOL Binance-versus-Paradex direction-neutral funding
