@@ -126,6 +126,12 @@ override prose.
   Gamma or CLOB when the cheapest unambiguous discovery package is already at
   or above one pUSD, and charge time value through resolution before calling
   any strict sub-floor package an edge.
+- When scalar-threshold rules accrue only after each market's creation,
+  `YES(lower) + NO(higher)` additionally requires the lower-threshold market to
+  start no later than the higher-threshold market. Compare exact instants,
+  including subsecond precision. If the lower market starts later, the higher
+  threshold can trigger in the gap and leave both legs at zero; exclude that
+  pair before economics unless the gap is source-proved event-free.
 - For any proposed two-market Boolean cover, enumerate all four joint truth
   states before looking at price. If `A => B`, `NO(A) + YES(B)` has a one-pUSD
   floor. If `A` and `B` are mutually exclusive, `NO(A) + NO(B)` has a one-pUSD

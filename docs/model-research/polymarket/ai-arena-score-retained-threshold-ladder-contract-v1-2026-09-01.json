@@ -1,0 +1,145 @@
+{
+  "schema_version": "polymarket-retained-ai-arena-threshold-ladder-contract-v1",
+  "status": "frozen_before_one_zero_network_retained_adjudication",
+  "frozen_at_utc": "2026-09-01T09:26:11.1079324Z",
+  "contract_path": "docs/model-research/polymarket/ai-arena-score-retained-threshold-ladder-contract-v1-2026-09-01.json",
+  "contract_sha256": "8246a5ebc592cdcdd847e1717af26cbf57db1b51d63edd7712b69e1870f617d9",
+  "retained_input": {
+    "path": "data/polymarket-sep30-et-negrisk-complete-set-catalog-v1/raw/events.json",
+    "sha256": "ff108e7b869cf74e1950d9eb90d75c35335b56996d8ad1cda5fc675b2633c0ab",
+    "catalog_completeness": "incomplete_cursor_returned",
+    "use_boundary": "one_exact_nested_event_only_no_catalog_completeness_claim",
+    "prior_access_boundary": "the retained catalog was accessed for unrelated screens so this result is rejection-only and any survivor requires a separately frozen fresh exact primary reconciliation before depth"
+  },
+  "event_id": "336406",
+  "event_slug": "will-any-ai-model-reach-overall-arena-score-by-september-30",
+  "event_title": "Will any AI model reach ___ Overall Arena Score by September 30?",
+  "cutoff_date": "2026-09-30",
+  "required_rule_fragments": [
+    "any model on the Arena.AI Leaderboard",
+    "reaches at least the specified Arena Score by September 30, 2026, 11:59 PM ET",
+    "Score\" column under the \"Text Arena | Overall\" Leaderboard tab",
+    "with style control off",
+    "this market will remain open until the leaderboard comes back online",
+    "If permanently unavailable, this market will resolve to \"No\""
+  ],
+  "markets": [
+    {
+      "market_id": "1831351",
+      "threshold": "1510",
+      "start_utc": "2026-04-02T22:09:43.150997Z",
+      "active": true,
+      "closed": true,
+      "acceptingOrders": false,
+      "enableOrderBook": true,
+      "selection": "excluded_closed_not_acquisition_capable"
+    },
+    {
+      "market_id": "1831352",
+      "threshold": "1520",
+      "start_utc": "2026-04-02T22:09:40.575681Z",
+      "active": true,
+      "closed": false,
+      "acceptingOrders": true,
+      "enableOrderBook": true,
+      "selection": "active_candidate_leg"
+    },
+    {
+      "market_id": "1831353",
+      "threshold": "1530",
+      "start_utc": "2026-04-02T22:09:45.416726Z",
+      "active": true,
+      "closed": false,
+      "acceptingOrders": true,
+      "enableOrderBook": true,
+      "selection": "active_candidate_leg"
+    },
+    {
+      "market_id": "1831354",
+      "threshold": "1540",
+      "start_utc": "2026-04-02T22:09:40.828Z",
+      "active": true,
+      "closed": false,
+      "acceptingOrders": true,
+      "enableOrderBook": true,
+      "selection": "active_candidate_leg"
+    },
+    {
+      "market_id": "1831355",
+      "threshold": "1550",
+      "start_utc": "2026-04-02T22:09:45.163709Z",
+      "active": true,
+      "closed": false,
+      "acceptingOrders": true,
+      "enableOrderBook": true,
+      "selection": "active_candidate_leg"
+    }
+  ],
+  "pairs": [
+    {
+      "pair": "AI_Arena_1520_to_1530",
+      "lower_market_id": "1831352",
+      "lower_threshold": "1520",
+      "higher_market_id": "1831353",
+      "higher_threshold": "1530"
+    },
+    {
+      "pair": "AI_Arena_1520_to_1540",
+      "lower_market_id": "1831352",
+      "lower_threshold": "1520",
+      "higher_market_id": "1831354",
+      "higher_threshold": "1540"
+    },
+    {
+      "pair": "AI_Arena_1520_to_1550",
+      "lower_market_id": "1831352",
+      "lower_threshold": "1520",
+      "higher_market_id": "1831355",
+      "higher_threshold": "1550"
+    },
+    {
+      "pair": "AI_Arena_1540_to_1550",
+      "lower_market_id": "1831354",
+      "lower_threshold": "1540",
+      "higher_market_id": "1831355",
+      "higher_threshold": "1550"
+    }
+  ],
+  "excluded_pairs": [
+    {
+      "pair": "AI_Arena_1530_to_1540",
+      "reason": "lower 1530 market starts 4.588726 seconds after the higher 1540 market and does not cover its complete creation window"
+    },
+    {
+      "pair": "AI_Arena_1530_to_1550",
+      "reason": "lower 1530 market starts 0.253017 seconds after the higher 1550 market and does not cover its complete creation window"
+    }
+  ],
+  "payoff_identity": {
+    "package": "YES(lower threshold) plus NO(higher threshold)",
+    "guaranteed_payout_floor_pUSD_per_share": "1",
+    "proof": "the common at-least scalar makes higher YES imply lower YES when the lower market starts no later and therefore covers the higher market creation window",
+    "creation_window_gate": "lower market start must be at or before higher market start; exact timestamps are binding",
+    "price_gate": "direct lower YES bestAsk plus conservative higher NO proxy one minus higher YES bestBid must be strictly below one pUSD then remain positive after exact current fees and one adverse tick per leg",
+    "selection": "validate all five returned thresholds, exclude the closed 1510 leg and both uncovered creation-gap pairs, then rank all four frozen safe pairs globally",
+    "gamma_role": "rejection_only_never_acceptance_or_promotion_evidence"
+  },
+  "result_path": "docs/model-research/polymarket/ai-arena-score-retained-threshold-ladder-result-v1-2026-09-01.json",
+  "implementation": {
+    "path": "tools/adjudicate_polymarket_retained_ai_arena_threshold_ladder.py",
+    "sha256": "45f9c292683ef6d19c72d038cb4b7c549563a0771dc5799aba675a00542cf922"
+  },
+  "authority": {
+    "account_requests": 0,
+    "book_requests": 0,
+    "credentials_used": false,
+    "fee_requests": 0,
+    "funds_used": false,
+    "network_requests": 0,
+    "onchain_requests": 0,
+    "orders_or_transactions": 0,
+    "protected_capture_touched": false,
+    "signed_requests": 0,
+    "trading_authority": false
+  }
+}
