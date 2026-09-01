@@ -5,6 +5,40 @@ Development belongs only on `main`; do not create another development branch.
 
 ## Latest Edge R&D Checkpoint
 
+- A bounded public rendered-page discovery pass generalized rank 31's exact
+  monotone-threshold identity beyond crypto without spending Gamma, CLOB,
+  account, credential, order, fund, or protected-capture requests. Every sampled
+  2026 college-football team win-total page uses the same scalar rule: `Yes`
+  pays when regular-season wins exceed its listed threshold, with championship,
+  bowl, playoff, cancellation, and no-data handling stated consistently. Thus,
+  for one team and thresholds `L < H`, lower-threshold `YES` plus
+  higher-threshold `NO` has a rule-consistent one-pUSD terminal floor
+  independent of team performance.
+
+  Thirty-one official event-page discovery snapshots, including both liquid
+  and zero-volume ladders, were checked with the displayed `Buy Yes` and
+  `Buy No` buttons. No observed ordered pair was strictly below one pUSD; the
+  best was Colorado State `YES(>1.5 wins)` plus `NO(>2.5 wins)` at 0.88 + 0.17
+  = 1.05 pUSD. This is a bounded discovery rejection, not complete catalog
+  coverage, current executable economics, or a terminal family result. Search
+  crawls and rendered buttons are excluded from accepted economics. Reopen
+  rank 31 only for a distinct nonconsumed same-rule scalar ladder whose
+  side-specific discovery acquisition sum is already strictly below its floor;
+  only then freeze one exact primary event capture and require depth, fees,
+  resolution risk, failure unwind, and capital-time cost.
+
+- A tempting cross-market decomposition of the four-way `US economic state at
+  the end of 2026?` partition was rejected before any API access. That event
+  resolves from December 2026 unemployment and inflation, while the separately
+  traded `How high will US unemployment go in 2026?` and `How high will
+  inflation get in 2026?` ladders trigger on any qualifying month during 2026.
+  The source families overlap but their observation functions are not equal, so
+  neither ladder can replicate the December-only partition. The active August
+  unemployment nine-bin complete set was also rejected at the rendered layer:
+  all displayed `Buy Yes` asks summed to 1.277 pUSD for a one-pUSD complete-set
+  floor. Do not substitute shared BLS sources or matching numeric thresholds
+  for exact time-scope equality.
+
 - Rank 47's literal later-population trigger was satisfied with zero new
   network access. The retained complete Binance Options `exchangeInfo` at
   `2026-08-31T17:29:50.562Z` contained 1,576 eligible BTC, ETH, and SOL
