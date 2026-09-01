@@ -32,7 +32,7 @@
       "interpretation": "These scopes add yield only to independently existing idle inventory or already-required collateral. Public rates or historical indices can be positive, but account eligibility, exact current rates, principal risks, alternative yield and external costs remain incomplete."
     },
     {
-      "count": 13,
+      "count": 14,
       "edge_ordinals": [
         2,
         3,
@@ -46,7 +46,8 @@
         24,
         26,
         27,
-        31
+        31,
+        32
       ],
       "evidence_tier": "C_preexisting_internal_activity_saving_or_rebate",
       "interpretation": "These scopes can reduce costs or add rebates only when legitimate trading borrowing conversion or loan activity already exists independently. They are not standalone profit generators and must never justify manufacturing activity."
@@ -70,8 +71,8 @@
   ],
   "created_at_utc": "2026-08-30T21:13:32.3379784Z",
   "decision": {
-    "accepted_scope_count": 31,
-    "accepted_scope_is_not_deployment_ready_count": 31,
+    "accepted_scope_count": 32,
+    "accepted_scope_is_not_deployment_ready_count": 32,
     "historically_source_demonstrated_recurring_direct_cash_edge_count": 1,
     "market_direction_forecast_required": false,
     "public_new_capital_after_all_cost_profit_floor": "0",
@@ -151,10 +152,11 @@
       "why_not_stable_deployable": "Current rate remains conflict-qualified rather than proven, the evidence is from public wallets rather than the owned account, every external friction and best alternative is not bound, and future persistence is not guaranteed."
     }
   },
-  "result_sha256": "34f82a9403b62b9c96ac0c8d9f6305c07b60fdedc7cf9d02fc1354b8dad07e95",
+  "result_sha256": "cc629da0b30ed3652426825cb45e1128a30ffe13cd71ef8e33de1546633f9026",
   "routing": {
     "binance_copy_trading_lead_vip_fee_overlay_trigger": "The thirtieth accepted scope is exact realized positive Binance Futures Copy Trading Lead Trader VIP fee reduction only on independently existing authentic organic lead flow after owned eligibility applied tier exact current commission authentic copier volume and AUM any preexisting 25 BNB requirement exclusivity opportunity cost realized fee reconciliation and every incremental cost. The recurring existing-portfolio route requires 200 public or signal or 50 private copiers at least 60 percent of the corresponding AUM threshold and 5000000 USDT trailing 30-day copier volume; the quota-limited three-month new-trader route is excluded from stable status. Public and stable account-qualified forward floors remain zero. Do not repeat the consumed announcement or FAQ. Reopen only on a material official term or fee change or with explicit signed GET-only mainnet authority for an independently existing qualifying portfolio and exact owned organic fee reconciliation. Never manufacture copiers followers AUM volume PnL exclusivity or evidence, use testnet credentials as mainnet proof, acquire BNB merely to chase the tier, or double count the benefit.",
     "predictfun_maker_rebate_overlay_trigger": "The thirty-first accepted scope is exact positive Predict.fun maker-rebate value actually distributed on an independently justified legitimate organic maker fill in a currently badged eligible UP/DOWN crypto market while the published trial remains active, after the received USDT or shares basis and every incremental cost. Current official terms define zero maker fee and an automatic 25 percent share of the taker fee through a trial published to end September 16, 2026; the maximum nominal rebate is only 0.0025 USDT equivalent per share at price 0.5 before costs. Public and stable account-qualified forward floors remain zero. Predict.fun is separate from Binance Exchange, Binance credentials are irrelevant, Predict Points have zero admitted monetary value, and current Predict BTC/USDT point-report rules are not payoff-identical to Polymarket BTC/USD 60-second TWAP. Reopen before the trial end only for a distinct active badged market plus a new official public fill-quality source or explicit separate Predict.fun read-only paper-study authority with all chronological and cost gates frozen first; any order or funded action requires separate authority. Never create volume, self-trade, wash-trade, manipulate balances, abuse cancellation, or post non-executable orders to farm rebates or points.",
+    "polymarket_us_maker_rebate_rounding_overlay_trigger": "The thirty-second accepted scope is the exact positive USD maker rebate actually credited on an independently justified legitimate organic Polymarket US maker fill after every incremental cost. Current exchange-wide terms define maker theta 0.0125, taker theta 0.05, and cent banker's rounding. The exhaustive 99000-combination identity proves at most 0.005 USD positive rounding uplift per trade and at most a 50 percent effective share of the rounded taker fee, with zero rebate-over-fee cases. Public and stable account-qualified forward floors remain zero. Do not repeat or subdivide the deterministic grid. Reopen only with explicit separate read-only Polymarket US account authority plus independently existing bona fide organic maker fills, or on a material official fee, rounding, fill-grouping, rebate-payment, or exchange-architecture change. Never split, combine, or time orders to farm rounding; never self-trade, wash-trade, spoof, manufacture volume or liquidity, abuse cancellation, or credit an advertised rebate before exact owned receipt and every incremental cost.",
     "binance_shein_native_stock_terminal_trigger": "The HK0625USDT SHEIN quanto announcement cannot form an exact Binance native-stock parity pair under current official product documentation: native Stocks cover US-listed NYSE or NASDAQ common shares and US-listed ETFs, not the HK0625 Hong Kong share. One frozen exact documentation GET returned HTTP 202 with an empty body and is preserved without alias or retry. Do not substitute an ADR, wrapper, tokenized stock, bStock, Ondo, xStock, company name, or related security; do not request native streams, futures, FX, funding, fees, books, accounts, or credentials. Reopen rank 38 only for a future official listing whose exact share class exists in the documented native US-stock universe or a material product-universe or stream-architecture change.",
     "binance_shein_quanto_terminal_trigger": "The new official announcement for an HK0625USDT SHEIN quanto TradFi perpetual did not create an exact Polymarket Perps match. One frozen current public inventory GET returned the same 67-symbol membership as August 29, with zero additions, zero removals, and zero SHEIN or HK0625 symbols or base assets. Binance deployment was not inferred from the announcement alone. Do not refresh this exact population or request funding, tickers, prices, or books. Reopen rank 43 only after a later source-proved exact common-underlying instrument appears or another literal material funding, fee, session, unit, conversion, or execution-architecture trigger is satisfied.",
     "binance_next_literal_trigger": "Do not repeat or book-capture the terminal 2026 GLW, GOOGL, QCOM, or PYPL dividend-timing episodes. QCOM and PYPL fail the shared strictly-positive-net-distribution gate before issuer-calendar or market access. Do not poll or pre-position around the September 3 WBETH/ETH, BNSOL/SOL, or BFUSD/USDT isolated-margin removals: the current primary source proves timing but no forced-flow direction or conversion floor. Rank 47's exact August 31 delta is exhausted: 508 new BTC ETH and SOL option symbols produced zero positive gross long-option plus opposite-perpetual terminal floors. Its later two-symbol BTC December 25 delta is also terminal without a refetch: the call was gross negative and the put had no positive displayed ask. Do not poll within the same UTC day; reopen only after 2026-09-01T22:44:19Z for a later distinct population or another literal material trigger. The distinct Binance Wallet routed Aster USD1 versus Binance USDT funding population is terminal after all BTC ETH and SOL assets failed prospectively frozen training validation and test hurdles; do not request basis or books, change the training-selected orientation, or resample the 209 aligned rows. Reopen it only on a material Aster or Binance funding, fee, basis, USD1 conversion, custody, capital, or execution-architecture change. Advance a genuinely distinct Tier A or Tier B monetary mechanism only when its registry retry trigger is satisfied; do not repeat exhausted all-symbol triangle, stablecoin-cycle, or official-document inventory screens on unchanged evidence.",
@@ -191,9 +193,9 @@
   },
   "schema_version": "accepted-edge-profitability-durability-audit-v1",
   "source_binding": {
-    "accepted_edge_count": 31,
+    "accepted_edge_count": 32,
     "registry_path": "docs/model-research/structural-edge-priority-registry-v1.json",
-    "registry_result_sha256": "84967248716813aca5de3dc68c154ccbedb01ef74c2f3cf6fbd56ccd234f0952"
+    "registry_result_sha256": "c91039e95182af5c40207facfb3d511923ddb3e2e01fa5e8a601ff2d488df422"
   },
-  "updated_at_utc": "2026-09-01T10:01:38.1604490Z"
+  "updated_at_utc": "2026-09-01T10:13:01.7922794Z"
 }

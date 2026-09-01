@@ -64,6 +64,7 @@ data/polymarket-crypto-current-event-delta-v2/** binary -eol
 data/polymarket-crypto-interval-composition-trades-v1/** binary -eol
 data/polymarket-presov-frantisek-olha-reward-source-v1/** binary -eol
 data/polymarket-presov-frantisek-olha-reward-book-v1/** binary -eol
+data/polymarket-us-maker-rebate-rounding-v1/** binary -eol
 docs/model-research/binance/raw/** binary -eol
 docs/model-research/binance/spot-primary-peg-execution-overlay-*.json text eol=lf
 docs/model-research/binance/spot-stp-transfer-structural-value-preflight-*.json text eol=lf

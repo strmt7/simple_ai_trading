@@ -9084,3 +9084,45 @@ Do not refetch, reprice, ignore exact creation instants, or request books.
 Reopen only on a material price, fee, tick, rule, or market-architecture change.
 No network, account, credential, book, fee endpoint, order, fund, transaction,
 on-chain, or protected capture was touched.
+
+## Polymarket US maker-rebate cent-rounding identity
+
+The next distinct direction-neutral mechanism used the current official
+exchange-wide Polymarket US fee schedule rather than another market-price
+screen. Before the one permitted public documentation GET, the contract froze
+the exact source, required maker coefficient `0.0125`, taker coefficient
+`0.05`, banker's cent rounding, and a complete 99-price by 1000-quantity grid.
+The retained 371114-byte source passed all gates.
+
+The exhaustive 99000-combination adjudication found 98641 positive rounded
+maker rebates and 48949 positive maker-rounding uplifts. The maximum uplift
+over the unrounded rebate is exactly `0.00500000` USD per trade, the maximum
+effective maker share is `0.5` of the rounded taker fee, zero positive maker
+rebates coincide with a zero rounded taker fee, and zero maker rebates exceed
+the rounded taker fee. This proves a bounded accounting overlay, not a
+standalone arbitrage or a profitable market-making strategy.
+
+The thirty-second accepted scope is therefore only the exact positive USD
+maker rebate actually credited on an independently justified legitimate
+organic Polymarket US maker fill after every incremental cost. Do not split,
+combine, or time orders to optimize rounding; manufacture volume or liquidity;
+self-trade, wash-trade, spoof, abuse cancellation; assume partial-fill grouping;
+or credit an advertised amount before an exact owned receipt. Reopen only with
+explicit separate read-only Polymarket US account authority plus independently
+existing bona fide organic maker fills, or after a material official fee,
+rounding, fill-grouping, payment, or exchange-architecture change. Any order,
+fund, account, or state change still requires separate explicit authority.
+
+Contract/source-result/adjudication/raw/journal SHA-256 values are
+`f3a9e18049344c0f1f02109b3adbc09628eec5e91766cfeae2eb8cab6e838101`,
+`42d098f39c3ba01bb8210982a56d65cf5fe3e54772bfef7f3f2872ed47037f33`,
+`d13ecf94825c27143a36af243e8fa008b6b99334e3651343189a55b823c6b21d`,
+`58ba04e9d5da110d16dce0f8f9dff6ee4e6f2ad1c362d920e2ccb44b3733de`,
+and `0d64f9857b51437605aa57de569dd23426040d908f54d337ed572e8adfd7891a`.
+Registry and durability-audit SHA-256 values become
+`c91039e95182af5c40207facfb3d511923ddb3e2e01fa5e8a601ff2d488df422`
+and `cc629da0b30ed3652426825cb45e1128a30ffe13cd71ef8e33de1546633f9026`.
+Accepted edges become 32, ranked hypotheses become 49, terminal families become
+161, and stable current account-qualified after-all-cost edges remain zero.
+No account, credential, order, fund, transaction, on-chain action, or protected
+capture was touched.

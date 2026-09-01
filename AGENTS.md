@@ -491,6 +491,12 @@ override prose.
   book request exposes schedule drift after raw retention, preserve the failed
   runner and adjudicate the immutable response once against a separately frozen
   exact schedule instead of refetching for a cleaner result.
+- Polymarket US cent rounding is a receipt-level accounting overlay only. Never
+  split, combine, or time orders to optimize rounding, and never infer partial-
+  fill or settlement grouping from the published formula alone. Credit only an
+  exact positive owned maker rebate on independently justified legitimate
+  organic flow after its applied schedule, receipt grouping, adverse selection,
+  inventory, hedge, and every incremental cost are reconciled.
 - Polymarket Gamma `outcomePrices` can behave like midpoint diagnostics while
   the same market exposes a materially different `bestAsk`. Never let
   `outcomePrices` alone authorize a CLOB request. For a YES leg, require the

@@ -1,0 +1,265 @@
+{
+  "adjudication": {
+    "accepted_scoped_structural_edge": true,
+    "deployment_ready": false,
+    "market_direction_forecast_required": false,
+    "next_action": "Only with explicit separate read-only account authority and independently existing bona fide organic maker fills, reconcile exact fill grouping, quantities, prices, rebates, eligibility, adverse selection, inventory, hedge, tax, and every cost. Any order or account mutation requires separate authority.",
+    "public_forward_profit_floor_USD": "0",
+    "rounding_uplift_scope": "credit_only_the_actual_owned_fee_receipt_never_an_assumed_per_fill_rounding_frequency",
+    "scope": "exact_positive_USD_maker_rebate_actually_credited_on_an_independently_justified_legitimate_organic_Polymarket_US_maker_fill_after_every_incremental_cost",
+    "source_and_invariants_passed": true,
+    "stable_account_qualified_after_all_cost_edge": false,
+    "standalone_profitable_strategy": false
+  },
+  "authority": {
+    "account_requests": 0,
+    "credentials_used": false,
+    "funds_used": false,
+    "orders_or_transactions": 0,
+    "protected_capture_touched": false,
+    "public_unauthenticated_read_only_requests": 1,
+    "signed_requests": 0,
+    "trading_authority": false
+  },
+  "contract": {
+    "path": "docs/model-research/action-value/polymarket-us-maker-rebate-rounding-contract-v1-2026-09-01.json",
+    "sha256": "f3a9e18049344c0f1f02109b3adbc09628eec5e91766cfeae2eb8cab6e838101"
+  },
+  "created_at_utc": "2026-09-01T10:10:50.021111Z",
+  "exhaustive_grid": {
+    "combination_count": 99000,
+    "maker_rebate_exceeds_taker_fee_count": 0,
+    "positive_maker_rounding_uplift_count": 48949,
+    "positive_rounded_maker_rebate_count": 98641,
+    "price_count": 99,
+    "quantity_count": 1000,
+    "zero_taker_fee_positive_maker_rebate_count": 0
+  },
+  "extrema": {
+    "maximum_effective_maker_share_of_rounded_taker_fee": "0.5",
+    "maximum_effective_share_representative_rows": [
+      {
+        "contracts": 2,
+        "effective_maker_share_of_rounded_taker_fee": "0.5",
+        "maker_rounding_uplift_USD": "0.00496000",
+        "price_USD": "0.28",
+        "raw_maker_rebate_USD": "0.00504000",
+        "rebate_per_contract_USD": "0.005",
+        "rounded_maker_rebate_USD": "0.01",
+        "rounded_taker_fee_USD": "0.02"
+      },
+      {
+        "contracts": 2,
+        "effective_maker_share_of_rounded_taker_fee": "0.5",
+        "maker_rounding_uplift_USD": "0.00485250",
+        "price_USD": "0.29",
+        "raw_maker_rebate_USD": "0.00514750",
+        "rebate_per_contract_USD": "0.005",
+        "rounded_maker_rebate_USD": "0.01",
+        "rounded_taker_fee_USD": "0.02"
+      },
+      {
+        "contracts": 2,
+        "effective_maker_share_of_rounded_taker_fee": "0.5",
+        "maker_rounding_uplift_USD": "0.004750",
+        "price_USD": "0.3",
+        "raw_maker_rebate_USD": "0.005250",
+        "rebate_per_contract_USD": "0.005",
+        "rounded_maker_rebate_USD": "0.01",
+        "rounded_taker_fee_USD": "0.02"
+      },
+      {
+        "contracts": 2,
+        "effective_maker_share_of_rounded_taker_fee": "0.5",
+        "maker_rounding_uplift_USD": "0.00465250",
+        "price_USD": "0.31",
+        "raw_maker_rebate_USD": "0.00534750",
+        "rebate_per_contract_USD": "0.005",
+        "rounded_maker_rebate_USD": "0.01",
+        "rounded_taker_fee_USD": "0.02"
+      },
+      {
+        "contracts": 2,
+        "effective_maker_share_of_rounded_taker_fee": "0.5",
+        "maker_rounding_uplift_USD": "0.00456000",
+        "price_USD": "0.32",
+        "raw_maker_rebate_USD": "0.00544000",
+        "rebate_per_contract_USD": "0.005",
+        "rounded_maker_rebate_USD": "0.01",
+        "rounded_taker_fee_USD": "0.02"
+      },
+      {
+        "contracts": 2,
+        "effective_maker_share_of_rounded_taker_fee": "0.5",
+        "maker_rounding_uplift_USD": "0.00447250",
+        "price_USD": "0.33",
+        "raw_maker_rebate_USD": "0.00552750",
+        "rebate_per_contract_USD": "0.005",
+        "rounded_maker_rebate_USD": "0.01",
+        "rounded_taker_fee_USD": "0.02"
+      },
+      {
+        "contracts": 2,
+        "effective_maker_share_of_rounded_taker_fee": "0.5",
+        "maker_rounding_uplift_USD": "0.00439000",
+        "price_USD": "0.34",
+        "raw_maker_rebate_USD": "0.00561000",
+        "rebate_per_contract_USD": "0.005",
+        "rounded_maker_rebate_USD": "0.01",
+        "rounded_taker_fee_USD": "0.02"
+      },
+      {
+        "contracts": 2,
+        "effective_maker_share_of_rounded_taker_fee": "0.5",
+        "maker_rounding_uplift_USD": "0.00431250",
+        "price_USD": "0.35",
+        "raw_maker_rebate_USD": "0.00568750",
+        "rebate_per_contract_USD": "0.005",
+        "rounded_maker_rebate_USD": "0.01",
+        "rounded_taker_fee_USD": "0.02"
+      },
+      {
+        "contracts": 2,
+        "effective_maker_share_of_rounded_taker_fee": "0.5",
+        "maker_rounding_uplift_USD": "0.00424000",
+        "price_USD": "0.36",
+        "raw_maker_rebate_USD": "0.00576000",
+        "rebate_per_contract_USD": "0.005",
+        "rounded_maker_rebate_USD": "0.01",
+        "rounded_taker_fee_USD": "0.02"
+      },
+      {
+        "contracts": 2,
+        "effective_maker_share_of_rounded_taker_fee": "0.5",
+        "maker_rounding_uplift_USD": "0.00417250",
+        "price_USD": "0.37",
+        "raw_maker_rebate_USD": "0.00582750",
+        "rebate_per_contract_USD": "0.005",
+        "rounded_maker_rebate_USD": "0.01",
+        "rounded_taker_fee_USD": "0.02"
+      }
+    ],
+    "maximum_positive_rounding_uplift_per_trade_USD": "0.00500000",
+    "maximum_rounded_rebate_per_contract_USD": "0.005",
+    "maximum_uplift_representative_rows": [
+      {
+        "contracts": 5,
+        "effective_maker_share_of_rounded_taker_fee": "0.3333333333333333333333333333",
+        "maker_rounding_uplift_USD": "0.005000",
+        "price_USD": "0.4",
+        "raw_maker_rebate_USD": "0.015000",
+        "rebate_per_contract_USD": "0.004",
+        "rounded_maker_rebate_USD": "0.02",
+        "rounded_taker_fee_USD": "0.06"
+      },
+      {
+        "contracts": 5,
+        "effective_maker_share_of_rounded_taker_fee": "0.3333333333333333333333333333",
+        "maker_rounding_uplift_USD": "0.005000",
+        "price_USD": "0.6",
+        "raw_maker_rebate_USD": "0.015000",
+        "rebate_per_contract_USD": "0.004",
+        "rounded_maker_rebate_USD": "0.02",
+        "rounded_taker_fee_USD": "0.06"
+      },
+      {
+        "contracts": 24,
+        "effective_maker_share_of_rounded_taker_fee": "0.2666666666666666666666666667",
+        "maker_rounding_uplift_USD": "0.005000",
+        "price_USD": "0.5",
+        "raw_maker_rebate_USD": "0.075000",
+        "rebate_per_contract_USD": "0.003333333333333333333333333333",
+        "rounded_maker_rebate_USD": "0.08",
+        "rounded_taker_fee_USD": "0.30"
+      },
+      {
+        "contracts": 25,
+        "effective_maker_share_of_rounded_taker_fee": "0.2666666666666666666666666667",
+        "maker_rounding_uplift_USD": "0.005000",
+        "price_USD": "0.4",
+        "raw_maker_rebate_USD": "0.075000",
+        "rebate_per_contract_USD": "0.0032",
+        "rounded_maker_rebate_USD": "0.08",
+        "rounded_taker_fee_USD": "0.30"
+      },
+      {
+        "contracts": 25,
+        "effective_maker_share_of_rounded_taker_fee": "0.2666666666666666666666666667",
+        "maker_rounding_uplift_USD": "0.005000",
+        "price_USD": "0.6",
+        "raw_maker_rebate_USD": "0.075000",
+        "rebate_per_contract_USD": "0.0032",
+        "rounded_maker_rebate_USD": "0.08",
+        "rounded_taker_fee_USD": "0.30"
+      },
+      {
+        "contracts": 32,
+        "effective_maker_share_of_rounded_taker_fee": "0.2666666666666666666666666667",
+        "maker_rounding_uplift_USD": "0.00500000",
+        "price_USD": "0.25",
+        "raw_maker_rebate_USD": "0.07500000",
+        "rebate_per_contract_USD": "0.0025",
+        "rounded_maker_rebate_USD": "0.08",
+        "rounded_taker_fee_USD": "0.30"
+      },
+      {
+        "contracts": 32,
+        "effective_maker_share_of_rounded_taker_fee": "0.2666666666666666666666666667",
+        "maker_rounding_uplift_USD": "0.00500000",
+        "price_USD": "0.75",
+        "raw_maker_rebate_USD": "0.07500000",
+        "rebate_per_contract_USD": "0.0025",
+        "rounded_maker_rebate_USD": "0.08",
+        "rounded_taker_fee_USD": "0.30"
+      },
+      {
+        "contracts": 45,
+        "effective_maker_share_of_rounded_taker_fee": "0.2592592592592592592592592593",
+        "maker_rounding_uplift_USD": "0.005000",
+        "price_USD": "0.4",
+        "raw_maker_rebate_USD": "0.135000",
+        "rebate_per_contract_USD": "0.003111111111111111111111111111",
+        "rounded_maker_rebate_USD": "0.14",
+        "rounded_taker_fee_USD": "0.54"
+      },
+      {
+        "contracts": 45,
+        "effective_maker_share_of_rounded_taker_fee": "0.2592592592592592592592592593",
+        "maker_rounding_uplift_USD": "0.005000",
+        "price_USD": "0.6",
+        "raw_maker_rebate_USD": "0.135000",
+        "rebate_per_contract_USD": "0.003111111111111111111111111111",
+        "rounded_maker_rebate_USD": "0.14",
+        "rounded_taker_fee_USD": "0.54"
+      },
+      {
+        "contracts": 56,
+        "effective_maker_share_of_rounded_taker_fee": "0.2571428571428571428571428571",
+        "maker_rounding_uplift_USD": "0.005000",
+        "price_USD": "0.5",
+        "raw_maker_rebate_USD": "0.175000",
+        "rebate_per_contract_USD": "0.003214285714285714285714285714",
+        "rounded_maker_rebate_USD": "0.18",
+        "rounded_taker_fee_USD": "0.70"
+      }
+    ]
+  },
+  "implementation": {
+    "path": "tools/adjudicate_polymarket_us_fee_rounding.py",
+    "sha256": "196ba7765a8889f6ce2994e26e450cb39c215c3a153146a75c5ba0c098c91ce3"
+  },
+  "limitations": [
+    "A rebate is incremental cash on an independently justified organic maker fill, not a profitable reason to create the trade.",
+    "The public source does not prove account or jurisdiction eligibility, market minimum quantity, fill grouping, partial-fill rounding cadence, queue position, fill probability, capacity, or owned receipt.",
+    "Adverse selection, inventory, hedge, cancellation, spread, latency, settlement, capital, tax, and operating costs can exceed the rebate and every rounding uplift.",
+    "Do not split orders or fills to optimize rounding, manufacture volume or fills, self-trade, wash-trade, spoof, manipulate, use related accounts, or otherwise abuse fee or incentive rules.",
+    "Any account request, credential use, order, cancellation, fund movement, or transaction requires explicit separate authority."
+  ],
+  "result_sha256": "d13ecf94825c27143a36af243e8fa008b6b99334e3651343189a55b823c6b21d",
+  "schema_version": "polymarket-us-fee-rounding-adjudication-v1",
+  "source_result": {
+    "gate_passed": true,
+    "path": "docs/model-research/action-value/polymarket-us-maker-rebate-rounding-source-result-v1-2026-09-01.json",
+    "sha256": "42d098f39c3ba01bb8210982a56d65cf5fe3e54772bfef7f3f2872ed47037f33"
+  }
+}
