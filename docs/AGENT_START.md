@@ -12,7 +12,7 @@ operating contract. Historical handoff text is archived under
 | Development branch | `main` only |
 | Binance | BTC, ETH, and SOL; paper or testnet/Demo only |
 | Polymarket | Order-capable BTC, ETH, and SOL research is disabled by default; public unauthenticated structural discovery may cover other markets, with no live authority. |
-| Accepted edges | Thirty scoped structural edges. The canonical complete scopes, counts, and retry gates are in `docs/model-research/structural-edge-priority-registry-v1.json`; none is deployment-ready or fully account-and-external-cost-qualified. |
+| Accepted edges | Thirty-one scoped structural edges. The canonical complete scopes, counts, and retry gates are in `docs/model-research/structural-edge-priority-registry-v1.json`; none is deployment-ready or fully account-and-external-cost-qualified. |
 | Live-money authority | None |
 | Historical cutoff | `2026-08-14T00:00:00Z` |
 
@@ -4274,3 +4274,26 @@ Registry and durability-audit SHA-256 values become
 and `4723a56809cf8d6f9ba082a02e17a45f90b326bdfffd226ef53dc80a96a2f0e5`.
 No network, account, credential, book, fee endpoint, order, fund, on-chain, or
 protected capture was touched.
+
+The following zero-network retained-input screen inventoried 14 active-looking
+cumulative-deadline families. Ten failed before economics because the
+later-deadline market started later or the rules differed, leaving an uncovered
+state where earlier YES and later NO can coexist. Only four pairs had identical
+rules, a strictly later deadline, and a later-market start no later than the
+earlier-market start. Two had complete side-specific prices. Zero cost strictly
+below their one-pUSD floor; the best was Qwen Plus September 15 NO plus
+September 30 YES at 1.19 pUSD per share. At five shares it was -1.10590 pUSD
+after one adverse tick per leg and exact fees. No books were authorized.
+
+Contract/result SHA-256 values are
+`d85ff8d51b720b2b88d41952d25b003b5d5240771499e37d19579204180adde8`
+and `1b3dcf4167ef6bd5dbec85b1f8d5e23f23b0ad7bcac2cfe4e32b58d65afedb23`.
+Accepted edges remain 31, ranked hypotheses remain 48, terminal families become
+156, and stable current account-qualified after-all-cost edges remain zero.
+Registry and durability-audit SHA-256 values become
+`c5e22c02abcb89ce9ed73b515c32c1fad6a730842c8ff858b5863197f98d14bf`
+and `77b63ce226f366adc047bb756407322828aa856bf562d771a3a4e3fd4b21b6fb`.
+Do not refetch, reprice, weaken the creation-window gate, or request books.
+Reopen only on a material price, fee, tick, rule, or market-architecture change.
+No network, account, credential, book, fee endpoint, order, fund, transaction,
+on-chain, or protected capture was touched.

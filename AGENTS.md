@@ -201,6 +201,12 @@ override prose.
   package with every exact partition leg plus the cumulative complement; never
   subtract a stale headline `No release` probability from an all-YES sum or mix
   rendered snapshots. Charge one adverse tick and the exact fee on every leg.
+- For two cumulative deadlines whose rules begin at market creation,
+  `NO(earlier) + YES(later)` has a one-pUSD floor only when the later-deadline
+  market starts no later than the earlier-deadline market and every other rule
+  is identical. Compare exact timestamps, not calendar labels. A later-market
+  creation gap permits earlier YES with later NO unless a source proves no
+  qualifying event occurred in the gap; reject that pair before economics.
 - An issuer's at-par mint or redemption right proves only the payoff identity.
   Before any venue refresh, reuse retained finite-size spreads and reject unless
   the executable gap exceeds account fees plus transfer, redemption, delay,
