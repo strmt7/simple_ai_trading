@@ -21,6 +21,26 @@ profitable without reproducible source-bound after-cost evidence. AI may veto
 or reduce risk only; it never creates positions, selects leverage, overrides a
 safety gate, blocks Stop, or submits an order.
 
+### Latest retained Iran-island OR implication rejection
+
+The retained September 30 catalog exposed a new direction-independent Boolean
+family: each individual Farsi, Hengam, or Hormuz condition optimistically
+implies the four-island Farsi/Hengam/Hormuz/Kharg OR condition. Every
+`NO(individual) + YES(composite)` package cost `1.018` pUSD for a one-pUSD
+floor. A complete OR replication already cost at least `1.041` pUSD before the
+missing nonnegative Kharg leg, so no Kharg metadata or book request was useful.
+
+This exact family is terminal without a network refresh. Do not refetch, alias,
+request Kharg metadata, reprice, or request books. Reopen only for a distinct
+rule-complete family with a prospectively observed strict side-specific
+sub-floor package. Accepted edges remain 35, ranked hypotheses remain 58,
+terminal families become 173, and stable current account-qualified after-all-
+cost edges remain zero. Registry and durability-audit SHA-256 values are
+`0a9cb63f157cd654cab3a3f49cb8910aa2d3f4a64d8fff9dc2368953e23db8c4`
+and `610d9a68b1121155660c0f4bb7a9e1b38a2992e0f71d6b0d453a54aaa91f3cc7`.
+No network, credential, account, order, fund, transaction, or protected capture
+was used.
+
 ### Latest Polymarket US participant-program exact-URL deduplication
 
 Rank 58 selected `https://docs.polymarket.us/incentives/user-programs.md`, but

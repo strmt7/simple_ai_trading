@@ -1,0 +1,114 @@
+{
+  "schema_version": "polymarket-iran-island-or-implication-retained-adjudication-v1",
+  "created_at_utc": "2026-09-01T12:12:00Z",
+  "question": "Can the retained September 30 individual-island and four-island OR markets form a direction-independent strict sub-floor package without another request?",
+  "source_binding": {
+    "catalog_raw_path": "data/polymarket-sep30-et-negrisk-complete-set-catalog-v1/raw/events.json",
+    "catalog_raw_sha256": "ff108e7b869cf74e1950d9eb90d75c35335b56996d8ad1cda5fc675b2633c0ab",
+    "catalog_contract_path": "docs/model-research/action-value/polymarket-sep30-et-negrisk-complete-set-catalog-contract-v1-2026-09-01.json",
+    "catalog_contract_sha256": "1c7b0d2778a6cd46a676af45fa7974834d28105e09278be82ba0654bb77f76bf",
+    "catalog_result_path": "docs/model-research/action-value/polymarket-sep30-et-negrisk-complete-set-catalog-result-v1-2026-09-01.json",
+    "catalog_result_sha256": "c77380085ca24a759d28d1f0a95211b0f3c2c0b391784653a05a421a66c22678",
+    "network_requests_added": 0
+  },
+  "payoff_identity": {
+    "individual_implies_composite": "For each retained Farsi, Hengam, or Hormuz September 30 condition A, the four-island condition B includes A. Under optimistic exact rule alignment A implies B, so NO(A) plus YES(B) pays at least one pUSD in every admissible joint state.",
+    "joint_states": [
+      {"A": false, "B": false, "NO_A_plus_YES_B_pUSD": "1"},
+      {"A": false, "B": true, "NO_A_plus_YES_B_pUSD": "2"},
+      {"A": true, "B": true, "NO_A_plus_YES_B_pUSD": "1"},
+      {"A": true, "B": false, "admissible": false}
+    ],
+    "optimistic_floor_pUSD_per_share_package": "1",
+    "rule_caveat": "The composite ambiguity sentence can only weaken alignment. Because even optimistic alignment fails the gross gate, no extra source access is justified."
+  },
+  "retained_markets": {
+    "composite": {
+      "event_id": "798727",
+      "event_slug": "farsi-hengam-hormuz-or-kharg-island-no-longer-under-iranian-control-byptptpt-20260804165426109",
+      "market_id": "3350268",
+      "condition_id": "0x8734d74d74b46539703e066fe7629e093d4b99541169d7ded5f695371f0dd22f",
+      "start_date_utc": "2026-08-05T00:29:12.554813Z",
+      "end_date_utc": "2026-10-01T03:59:00Z",
+      "description_sha256": "504e2c92c7fb451b4b22547da57b3b97410586f1e2f1cef19924a1cf7f798045",
+      "best_bid_yes_pUSD": "0.019",
+      "best_ask_yes_pUSD": "0.028",
+      "fees_enabled": false,
+      "active_open_accepting_orders": true
+    },
+    "individuals": [
+      {
+        "island": "Hormuz",
+        "event_id": "727314",
+        "market_id": "3903117",
+        "condition_id": "0x4f69df96ecadeefc6546cf68684e751230eba924c96d3c1300f83981acf9fda8",
+        "start_date_utc": "2026-08-26T15:08:24.532581Z",
+        "end_date_utc": "2026-10-01T03:59:00Z",
+        "description_sha256": "170e8108b1dffff584a6f04964f62e30bd1d5783703377a29b2403fe7aa4d6db",
+        "best_bid_yes_pUSD": "0.010",
+        "best_ask_yes_pUSD": "0.019",
+        "conservative_no_ask_proxy_pUSD": "0.990"
+      },
+      {
+        "island": "Hengam",
+        "event_id": "727315",
+        "market_id": "3903137",
+        "condition_id": "0x957ede96573348c86093919b0470a6ff76f39043e335f97987df0a3ed9d0a1dd",
+        "start_date_utc": "2026-08-26T15:10:04.657781Z",
+        "end_date_utc": "2026-10-01T03:59:00Z",
+        "description_sha256": "32ea756ef7c503ea3fd903b7b55c93e584b06b0c6e2ceed9aa8c33b67865894a",
+        "best_bid_yes_pUSD": "0.010",
+        "best_ask_yes_pUSD": "0.020",
+        "conservative_no_ask_proxy_pUSD": "0.990"
+      },
+      {
+        "island": "Farsi",
+        "event_id": "727316",
+        "market_id": "3903140",
+        "condition_id": "0xf2c6b0777194251b13c28db6234311519907f4e895d80a5ee929f0e1fadcb069",
+        "start_date_utc": "2026-08-26T15:11:23.300643Z",
+        "end_date_utc": "2026-10-01T03:59:00Z",
+        "description_sha256": "1eaed390d8826d5597d24c9c7a24ca2641cad886860f7bfd51337b112aa3662b",
+        "best_bid_yes_pUSD": "0.010",
+        "best_ask_yes_pUSD": "0.021",
+        "conservative_no_ask_proxy_pUSD": "0.990"
+      }
+    ]
+  },
+  "screen": {
+    "individual_implication_packages": [
+      {"island": "Hormuz", "cost_pUSD": "1.018", "headroom_pUSD": "-0.018"},
+      {"island": "Hengam", "cost_pUSD": "1.018", "headroom_pUSD": "-0.018"},
+      {"island": "Farsi", "cost_pUSD": "1.018", "headroom_pUSD": "-0.018"}
+    ],
+    "best_cost_pUSD": "1.018",
+    "strict_subfloor_candidate_count": 0,
+    "complete_or_replication_lower_bound": {
+      "package": "YES(Farsi)+YES(Hengam)+YES(Hormuz)+YES(Kharg)+NO(composite)",
+      "known_three_yes_asks_pUSD": "0.060",
+      "conservative_composite_no_ask_proxy_pUSD": "0.981",
+      "cost_before_unknown_nonnegative_Kharg_leg_pUSD": "1.041",
+      "strict_subfloor_possible": false,
+      "Kharg_request_justified": false
+    }
+  },
+  "adjudication": {
+    "status": "terminal_rejected_offline_before_new_source_book_fee_or_account_access",
+    "accepted_edge": false,
+    "profitability_claim": false,
+    "deployment_ready": false,
+    "next_action": "Do not refetch, alias, request Kharg metadata, or request books for this exact September 30 family. Reopen only for a distinct rule-complete family whose prospectively observed side-specific package is strictly below its payoff floor."
+  },
+  "authority": {
+    "public_unauthenticated_read_only_requests": 0,
+    "book_requests": 0,
+    "fee_requests": 0,
+    "account_requests": 0,
+    "credentials_used": false,
+    "orders_or_transactions": 0,
+    "funds_used": false,
+    "protected_capture_touched": false,
+    "trading_authority": false
+  },
+  "result_sha256": "95d820d802b5eb4f327e33ec025b3d6d4a5e6b2e0693ef4b7d3f83e0a069e307"
+}
