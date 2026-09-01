@@ -155,10 +155,10 @@ def test_rank_47_and_terminal_registry_record_the_consumed_delta() -> None:
         == "binance_long_crypto_option_opposite_USDT_perpetual_terminal_payoff_lower_bound"
     )
     assert hypothesis["priority_rank"] == 47
-    assert hypothesis["canonical_artifacts"][-1] == {
+    assert {
         "path": PRICE_RESULT.relative_to(ROOT).as_posix(),
         "result_sha256": _load(PRICE_RESULT)["result_sha256"],
-    }
+    } in hypothesis["canonical_artifacts"]
     terminal = next(
         row
         for row in registry["terminal_do_not_repeat"]

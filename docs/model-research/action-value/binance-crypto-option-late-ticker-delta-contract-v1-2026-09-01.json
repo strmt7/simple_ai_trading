@@ -1,0 +1,84 @@
+{
+  "schema_version": "binance-crypto-option-late-ticker-delta-contract-v1",
+  "status": "frozen_before_zero_network_late_ticker_delta",
+  "frozen_at_utc": "2026-09-01T00:40:59.4587043Z",
+  "purpose": "use only already retained later Binance option ticker and synchronized futures book bytes to evaluate the exact BTC ETH SOL symbol delta after the fixed long-option opposite-perpetual rejection stress without another public request",
+  "implementation": {
+    "path": "tools/audit_binance_crypto_option_late_ticker_delta_retained.py",
+    "sha256": "489378e54b53903cef7387cf0dc8ea7b2f024b67df08038ca5681459b448cf5c"
+  },
+  "retained_sources": {
+    "baseline_exchange_info": {
+      "path": "data/binance-stock-option-inventory-v1/raw/options-exchange-info.raw",
+      "sha256": "88db31aba07967eb9fcd6dd3c93b409e97b835365df9fd001590f53c6f3d3e23",
+      "requested_at_utc": "2026-08-31T17:29:50.562Z",
+      "completed_at_utc": "2026-08-31T17:29:52.716Z"
+    },
+    "baseline_request_journal": {
+      "path": "data/binance-stock-option-inventory-v1/request-journal.jsonl",
+      "sha256": "42985d10ff96877430c6dcaa5f9d3c23248795f7d69aff1c76eead08da970daf"
+    },
+    "later_option_tickers": {
+      "path": "data/binance-crypto-option-population-price-prefilter-v1/raw/options-all-tickers.raw",
+      "sha256": "02cb81f115f94c1b95828637f4368b567789013f861304bcce41e9f4e9b465a2",
+      "requested_at_utc": "2026-08-31T22:44:19.025Z",
+      "completed_at_utc": "2026-08-31T22:44:20.690Z"
+    },
+    "later_futures_books": {
+      "path": "data/binance-crypto-option-population-price-prefilter-v1/raw/futures-all-book-tickers.raw",
+      "sha256": "e840acadc789e259664bd07c82ca77dccba30b8cba32ad41ef2e0df1f61b8c85",
+      "requested_at_utc": "2026-08-31T22:44:20.697Z",
+      "completed_at_utc": "2026-08-31T22:44:22.319Z"
+    },
+    "later_request_journal": {
+      "path": "data/binance-crypto-option-population-price-prefilter-v1/request-journal.jsonl",
+      "sha256": "ec5765d45c282bcd41ba3adf869dc2c578fd2cebbf3a8a65df661105de43df22"
+    },
+    "economic_source_contract": {
+      "path": "docs/model-research/action-value/binance-crypto-option-population-price-prefilter-contract-v1-2026-08-31.json",
+      "sha256": "cf077bf62540bf8aaec602dda0f935944e0c52a79ae3355dcb86b972bf26be7c"
+    }
+  },
+  "population_filter": {
+    "allowed_symbol_bases": [
+      "BTC",
+      "ETH",
+      "SOL"
+    ],
+    "baseline_contract_type": "CRYPTO_OPTIONS",
+    "baseline_status": "TRADING",
+    "baseline_underlying_type": "CRYPTO",
+    "baseline_quote_asset": "USDT",
+    "baseline_option_unit": "1",
+    "later_population_definition": "all retained option ticker symbols matching the exact BTC ETH or SOL European option symbol grammar"
+  },
+  "expected_new_symbols": [
+    "BTC-261225-94000-C",
+    "BTC-261225-94000-P"
+  ],
+  "fixed_fee_and_basis_stress_bps": "33.5",
+  "economics": {
+    "call_floor_per_underlying_unit_USDT": "perpetual_bid_minus_strike_minus_option_ask",
+    "put_floor_per_underlying_unit_USDT": "strike_minus_perpetual_ask_minus_option_ask",
+    "rejection_gate": "positive option ask and side-specific perpetual entry plus gross floor minus 33.5 bips of perpetual notional strictly above zero",
+    "unit_scaling_rule": "the sign of each per-underlying-unit floor is invariant to any common positive contract unit; current exchangeInfo unit and status remain unconfirmed and cannot support promotion",
+    "depth_gate": "no exchangeInfo refresh or option depth unless a row survives the fixed rejection gate"
+  },
+  "authority": {
+    "new_public_requests": 0,
+    "authenticated_requests": 0,
+    "credentials_used": false,
+    "account_state_accessed": false,
+    "orders_quotes_transfers_or_wallet_actions": 0,
+    "funds_used": false,
+    "paper_or_live_trading_authority": false
+  },
+  "prohibited_shortcuts": [
+    "making another exchangeInfo ticker futures book depth funding account or credential request before the retained fixed rejection gate passes",
+    "treating ticker presence as current exchangeInfo status unit or executable option quantity",
+    "using option mark last trade model value or bid instead of askPrice",
+    "crediting favorable funding or zero expiry basis",
+    "calling a retained snapshot recurring current stable profitable accepted or deployment ready"
+  ],
+  "contract_sha256": "03b6e4c160d10493fe090353440aae1b987fbc7195845a0d8691a0a76cf09f6d"
+}

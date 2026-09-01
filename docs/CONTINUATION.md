@@ -5,6 +5,37 @@ Development belongs only on `main`; do not create another development branch.
 
 ## Latest Edge R&D Checkpoint
 
+- Rank 47's literal later-population trigger was satisfied with zero new
+  network access. The retained complete Binance Options `exchangeInfo` at
+  `2026-08-31T17:29:50.562Z` contained 1,576 eligible BTC, ETH, and SOL
+  symbols. The already-retained all-options ticker at
+  `2026-08-31T22:44:19.025Z` contained 1,578 scoped symbols, with exactly two
+  additions: `BTC-261225-94000-C` and `BTC-261225-94000-P`. The already-
+  retained synchronized USD-M Futures book was reused; no source was refetched.
+
+  A prospectively frozen zero-network screen applied the existing side-specific
+  long-option plus opposite-perpetual payoff identity and 33.5-bip fixed fee and
+  expiry-basis stress. The call had a displayed 2,625 USDT ask and a gross
+  terminal floor of `-17,970.60` USDT per BTC before fixed stress. The put had
+  no positive displayed ask, so it was price-incomplete and could not advance.
+  Zero rows had a complete positive gross floor and zero survived fixed stress.
+  No current `exchangeInfo`, ticker, book, depth, funding, account, credential,
+  order, fund, or protected-capture request was made.
+
+  This exact two-symbol retained snapshot is terminal, not a profitable or
+  accepted edge. Do not refetch, repair the missing ask, or poll rank 47 again
+  within the same UTC day. Reopen only after `2026-09-01T22:44:19Z` for a later
+  distinct population or another literal material fee, settlement, tick, depth,
+  funding, basis, capital, or nonpolling above-all-cost trigger. Contract and
+  result SHA-256 values are
+  `03b6e4c160d10493fe090353440aae1b987fbc7195845a0d8691a0a76cf09f6d`
+  and `b425fd356f5033e24313c5dbb166d381c045a4e794107a791acd49ed61992ab2`.
+  Accepted edges remain 29, ranked hypotheses remain 47, terminal families
+  become 126, registry SHA-256 is
+  `6ad94f7f192f61f7f47f146139985debe5da1252a6a1b7470e53581c5b9d9bf2`,
+  and durability-audit SHA-256 is
+  `4f7196ba69e68d8e28bfc02f3f60c1f063456a310a456a9bcbb8a0d39868aed8`.
+
 - Rank 30's literal public trigger was satisfied by an official rendered NFL
   deployment outside every consumed exact event and time window. One frozen
   complete Gamma keyset GET covered the previously unconsumed September 13
