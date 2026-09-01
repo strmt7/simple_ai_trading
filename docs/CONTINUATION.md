@@ -39,6 +39,59 @@ Accepted edges remain 30, ranked hypotheses remain 47, terminal families become
 account, credential, signed request, order, fund, transaction, basis, book, or
 protected capture was touched.
 
+## Polymarket US portfolio-margin collateral return
+
+The current official documentation index exposed two previously unrepresented
+capital-efficiency mechanisms. Both exact sibling sources were frozen before
+either was opened, preventing the first source from selecting the second. Two
+one-use public Markdown GETs then proved:
+
+- mutually exclusive collateral return applies when the account feature is
+  enabled and the participant holds shorts across instruments in the same event
+  where exactly one outcome can occur; the documented two-short example reduces
+  margin by the smaller offsetting position size;
+- directional collateral return applies only when a lower-ranked long offsets a
+  higher-ranked short in the same ordered event; the reverse direction receives
+  no relief, one long can offset multiple higher shorts, and the matching
+  algorithm starts with the highest-ranking eligible short and long;
+- freed buying power can be used only in different events, not the event that
+  generated the release;
+- closing an offset requires returning released collateral, and the close is
+  rejected when sufficient buying power is unavailable;
+- hypothetical collateral return from proposed new orders is excluded from
+  pre-order buying-power checks.
+
+The former promotional-credit edge remains revoked. The replacement
+thirty-fourth accepted scope is exact positive owned buying-power release
+actually credited on independently existing eligible mutually exclusive shorts
+or lower-ranked-long versus higher-ranked-short directional positions, only
+when released buying power has an independently justified positive after-cost
+use in another event. This is deterministic market-direction-independent
+portfolio-margin relief, not cash income, trading profit, reduced actual risk,
+or a reason to create positions. Account enablement, owned before/after receipt,
+positive different-event use, position lineage, exit ordering, close capacity,
+persistence, fees, tax, and every incremental cost remain unproved. Public and
+stable account-qualified profit floors remain zero.
+
+Mutually exclusive contract/source-result/raw/journal SHA-256 values are
+`e0d4a453180d9f14a72975a54c1d7d2356a4752734b8e2d737b9cc82bb800eda`,
+`2ac41a12efc654017471472fe4c428d0b5f8f9a2dee903bae91a19f7a1bde83b`,
+`7b56aad70dc5ea4550e31b429c052d7f2600774eb5940b330866f1f257a83164`,
+and `0a86b98946a58aeb146b6cdad354e7f964cb4d1f1883644ee0d94f57316a5974`.
+Directional contract/source-result/raw/journal SHA-256 values are
+`773b300f89697ebee8b9dc992dcd9d979dc46cdc5da07e40e23eb3aa580067cd`,
+`db19108f54904e67ee9cad7b3150ea0d8629cd721a1dbbc88dd2604e1bf8b72e`,
+`2b0556c4d4f41c10ae8654eaffd04356320489fdfa2b46c644b2c54efd179362`,
+and `40d3e25dbf2b4f780106d3ebcb085aab0a36b07393cb3d549c5f0a7b7785dc05`.
+Adjudication, registry, and durability-audit SHA-256 values become
+`d1e50f0f650f09b2180eb2b9312c07c9e4004612d8f86831ebf73411d22630a2`,
+`22f0e5d5c557e2626eff4094ba938a8e81a3d8be07a794f5d3a81d8f053f046a`,
+and `f8fb509a2dba3086228f7b0ea2fb804269bac9206858f89b80626c947b9f8ab0`.
+Accepted edges return to 34, ranked hypotheses become 52, terminal families
+become 165, and stable current account-qualified after-all-cost edges remain
+zero. No price, BBO, book, fee, account, credential, order, deposit, fund,
+transaction, or protected capture was touched.
+
 ## 2026-09-01 Polymarket NFL period moneyline-spread rejection
 
 One frozen zero-network adjudication reused the exact complete retained

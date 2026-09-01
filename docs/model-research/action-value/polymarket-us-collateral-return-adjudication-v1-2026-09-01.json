@@ -1,0 +1,73 @@
+{
+  "accepted_scope": {
+    "accepted_edge": true,
+    "edge_ordinal": 34,
+    "evidence_tier": "B_same_principal_yield_or_capital_overlay",
+    "mechanism": "polymarket_US_existing_offsetting_position_collateral_return_overlay",
+    "scope": "Exact positive owned buying-power release actually credited by Polymarket US collateral return on independently existing eligible mutually exclusive short positions or lower-ranked-long versus higher-ranked-short directional positions, only when the released buying power has an independently justified positive after-cost use and every incremental risk and cost is included.",
+    "why_scoped_only": "The sources prove deterministic portfolio-margin mechanisms but not account enablement, owned qualifying positions, a positive use of released buying power, persistence, fees, exit liquidity, or after-cost profit. The release cannot be reused in the generating event and must be returned before an offsetting position can close."
+  },
+  "adjudication": {
+    "accepted_edge_count_after": 34,
+    "accepted_edge_count_change": 1,
+    "deployment_ready": false,
+    "market_direction_forecast_required_for_overlay": false,
+    "profitability_claim": false,
+    "public_new_capital_after_all_cost_profit_floor": "0",
+    "stable_current_account_qualified_after_all_cost_edge_count_after": 0,
+    "status": "one_direction_independent_scoped_existing_position_capital_efficiency_overlay_accepted"
+  },
+  "authority": {
+    "account_requests": 0,
+    "credentials_used": false,
+    "funds_used": false,
+    "market_data_requests": 0,
+    "orders_or_transactions": 0,
+    "protected_capture_touched": false,
+    "public_unauthenticated_read_only_requests": 2,
+    "signed_requests": 0,
+    "trading_authority": false
+  },
+  "created_at_utc": "2026-09-01T11:05:00Z",
+  "directional_mechanism": {
+    "account_gate": "collateral_return_enabled",
+    "eligible_relationship": "lower_ranked_long_offsets_higher_ranked_short_in_the_same_directional_event",
+    "hypothetical_new_order_offset_in_buying_power_check": false,
+    "matching_order": "highest_ranking_short_with_highest_available_lower_ranked_long_first_then_work_down",
+    "multiple_higher_short_offsets_supported": true,
+    "reverse_relationship_eligible": false,
+    "same_event_redeployment_allowed": false
+  },
+  "exit_and_cost_boundaries": [
+    "Collateral return is buying-power relief, not cash income, payout, or reduced actual risk.",
+    "The positions must exist independently; the overlay may not justify opening either leg.",
+    "Freed buying power may be deployed only into different events, not the event generating the release.",
+    "Closing an offsetting position requires returning released collateral and the close is rejected if buying power is insufficient.",
+    "Hypothetical collateral return from a proposed new order is excluded from pre-order buying-power checks.",
+    "Exact account enablement, owned release receipt, fee treatment, position lineage, use, unwind ordering, opportunity value, persistence, tax, and every incremental cost remain unproved."
+  ],
+  "mutually_exclusive_mechanism": {
+    "account_gate": "collateral_return_enabled",
+    "documented_two_short_release": "smaller_offsetting_position_size",
+    "eligible_relationship": "short_positions_across_multiple_instruments_in_the_same_event_where_only_one_outcome_can_occur",
+    "same_event_redeployment_allowed": false
+  },
+  "result_sha256": "d1e50f0f650f09b2180eb2b9312c07c9e4004612d8f86831ebf73411d22630a2",
+  "schema_version": "polymarket-us-collateral-return-adjudication-v1",
+  "source_results": [
+    {
+      "contract_path": "docs/model-research/action-value/polymarket-us-mutually-exclusive-collateral-return-contract-v1-2026-09-01.json",
+      "contract_sha256": "e0d4a453180d9f14a72975a54c1d7d2356a4752734b8e2d737b9cc82bb800eda",
+      "path": "docs/model-research/action-value/polymarket-us-mutually-exclusive-collateral-return-source-result-v1-2026-09-01.json",
+      "raw_sha256": "7b56aad70dc5ea4550e31b429c052d7f2600774eb5940b330866f1f257a83164",
+      "result_sha256": "2ac41a12efc654017471472fe4c428d0b5f8f9a2dee903bae91a19f7a1bde83b"
+    },
+    {
+      "contract_path": "docs/model-research/action-value/polymarket-us-directional-collateral-return-contract-v1-2026-09-01.json",
+      "contract_sha256": "773b300f89697ebee8b9dc992dcd9d979dc46cdc5da07e40e23eb3aa580067cd",
+      "path": "docs/model-research/action-value/polymarket-us-directional-collateral-return-source-result-v1-2026-09-01.json",
+      "raw_sha256": "2b0556c4d4f41c10ae8654eaffd04356320489fdfa2b46c644b2c54efd179362",
+      "result_sha256": "db19108f54904e67ee9cad7b3150ea0d8629cd721a1dbbc88dd2604e1bf8b72e"
+    }
+  ]
+}
