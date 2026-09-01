@@ -1,0 +1,49 @@
+{
+  "schema_version": "public-source-capture-contract-v1",
+  "frozen_at_utc": "2026-09-01T07:37:14.3086885Z",
+  "contract_path": "docs/model-research/action-value/predictfun-chainlink-price-markets-public-source-contract-v1-2026-09-01.json",
+  "trigger": {
+    "retained_source": "data/predictfun-maker-rebates-public-source-v1/raw/01-page.raw.html",
+    "retained_link": "https://docs.predict.fun/developers/chainlink-price-markets",
+    "resolution_terms_viewed_before_freeze": false
+  },
+  "question": "Do Predict.fun UP/DOWN crypto markets bind an exact Chainlink feed, observation timestamp, precision, boundary convention, fallback, and finality compatible with an independently executable Polymarket hedge?",
+  "request_name": "predictfun-chainlink-price-markets-public-source",
+  "request": {
+    "method": "GET",
+    "url": "https://docs.predict.fun/developers/chainlink-price-markets",
+    "count": 1,
+    "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "endpoint_classification": {
+    "operation": "download one exact public official Predict.fun Chainlink market page",
+    "security": "public unauthenticated read-only GET",
+    "source_contract": "The retained bytes may establish only the published Predict.fun resolution contract; title similarity never establishes cross-venue payoff identity."
+  },
+  "response_byte_ceiling": 1000000,
+  "required_utf8_phrases": ["Chainlink", "Predict"],
+  "decision": {
+    "advance": "advance only if the exact feed, timestamps, comparison, precision, fallback, and finality can be matched to one independently executable Polymarket contract before any book access",
+    "reject": "stop the cross-venue hedge route on any unresolved difference or missing field",
+    "accepted_edge": false,
+    "profitability_proved": false
+  },
+  "outputs": {
+    "raw_path": "data/predictfun-chainlink-price-markets-public-source-v1/raw/01-page.raw.html",
+    "journal_path": "data/predictfun-chainlink-price-markets-public-source-v1/raw/00-request-journal.jsonl",
+    "result_path": "docs/model-research/action-value/predictfun-chainlink-price-markets-public-source-result-v1-2026-09-01.json"
+  },
+  "authority": {
+    "account_requests": 0,
+    "credentials_used": false,
+    "funds_used": false,
+    "orders_or_transactions": 0,
+    "protected_capture_touched": false,
+    "public_unauthenticated_read_only_requests": 1,
+    "signed_requests": 0,
+    "trading_authority": false
+  },
+  "implementations": [{"path": "tools/capture_public_source_contract.py", "sha256": "d566a5a379c659c3da144d5e28449ebac9c01493bd39646f9cc3a6e697a83566"}],
+  "retry_policy": "This exact official page GET is one-use; preserve every failure and do not try aliases, accounts, keys, sessions, or state changes.",
+  "contract_sha256": "0e8786c23ce9cdb0f1426181ca6e1ac7448ba738c53eadd4a189f496e48f2746"
+}

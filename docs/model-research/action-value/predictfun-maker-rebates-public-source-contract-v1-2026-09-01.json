@@ -1,0 +1,58 @@
+{
+  "schema_version": "public-source-capture-contract-v1",
+  "frozen_at_utc": "2026-09-01T07:35:45.4088686Z",
+  "contract_path": "docs/model-research/action-value/predictfun-maker-rebates-public-source-contract-v1-2026-09-01.json",
+  "trigger": {
+    "retained_source": "data/predictfun-maker-points-public-source-v1/raw/01-page.raw.md",
+    "retained_link": "https://docs.predict.fun/knowledge-base/maker-rebates",
+    "economic_terms_viewed_before_freeze": false,
+    "novel_question": "whether Predict.fun pays deterministic monetary maker rebates capable of offsetting adverse-selection and inventory costs"
+  },
+  "question": "Do the exact current official Predict.fun maker-rebate terms define a funded, deterministic, transferable monetary rebate with sufficient formula, eligibility, market scope, and disqualification conditions to justify finite-size after-cost testing?",
+  "request_name": "predictfun-maker-rebates-public-source",
+  "request": {
+    "method": "GET",
+    "url": "https://docs.predict.fun/knowledge-base/maker-rebates",
+    "count": 1,
+    "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "endpoint_classification": {
+    "operation": "download one exact public official Predict.fun documentation page",
+    "security": "public unauthenticated read-only GET",
+    "source_contract": "The retained bytes may establish only the current published maker-rebate terms on this exact page. They may not establish user eligibility, owned rewards, account access, execution quality, or profitability."
+  },
+  "response_byte_ceiling": 1000000,
+  "required_utf8_phrases": [
+    "Maker",
+    "Rebate"
+  ],
+  "decision": {
+    "advance": "advance only if the page defines non-discretionary monetary rebate economics and exact market eligibility; then freeze a separate finite-size maker simulation charging trading fees, adverse selection, inventory, hedge, gas, latency, capital, account eligibility, and disqualification risk",
+    "reject": "terminalize current monetary-edge promotion if rebates are points, discretionary, temporary without an exact current schedule, account-unavailable, or economically unspecified",
+    "accepted_edge": false,
+    "profitability_proved": false
+  },
+  "outputs": {
+    "raw_path": "data/predictfun-maker-rebates-public-source-v1/raw/01-page.raw.html",
+    "journal_path": "data/predictfun-maker-rebates-public-source-v1/raw/00-request-journal.jsonl",
+    "result_path": "docs/model-research/action-value/predictfun-maker-rebates-public-source-result-v1-2026-09-01.json"
+  },
+  "authority": {
+    "account_requests": 0,
+    "credentials_used": false,
+    "funds_used": false,
+    "orders_or_transactions": 0,
+    "protected_capture_touched": false,
+    "public_unauthenticated_read_only_requests": 1,
+    "signed_requests": 0,
+    "trading_authority": false
+  },
+  "implementations": [
+    {
+      "path": "tools/capture_public_source_contract.py",
+      "sha256": "d566a5a379c659c3da144d5e28449ebac9c01493bd39646f9cc3a6e697a83566"
+    }
+  ],
+  "retry_policy": "This exact official page GET is one-use. Preserve any shell, block, redirect, missing term, or unsupported content response. Do not try aliases, accounts, keys, sessions, claims, or state changes.",
+  "contract_sha256": "3c931a11c1660de0d22038d435a35fb5bd213394064f248c537888f278b21e61"
+}

@@ -1,0 +1,70 @@
+{
+  "schema_version": "public-source-capture-contract-v1",
+  "frozen_at_utc": "2026-09-01T07:23:28.9876145Z",
+  "contract_path": "docs/model-research/action-value/predictfun-public-gpt6-web-client-source-contract-v1-2026-09-01.json",
+  "trigger": {
+    "registry_route": "rank_18_cross_venue_prediction_complete_set_and_prediction_collateral_yield_overlay_public_execution_discovery",
+    "discovery_urls": [
+      "https://predict.fun/market/gpt-6-released-by",
+      "https://polymarket.com/event/gpt-6-released-by"
+    ],
+    "outcomes_viewed_before_freeze": false,
+    "discovery_values_are_economic_inputs": false,
+    "novel_question": "whether the public Predict.fun web client discloses a stable unauthenticated market-data route or embedded exact market identifiers before any mainnet API-key request"
+  },
+  "question": "Does the exact public Predict.fun GPT-6 page expose enough stable web-client metadata to identify its public market-data route without credentials, account access, or authentication bypass?",
+  "request_name": "predictfun-public-gpt6-web-client-source",
+  "request": {
+    "method": "GET",
+    "url": "https://predict.fun/market/gpt-6-released-by",
+    "count": 1,
+    "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "endpoint_classification": {
+    "operation": "download one exact public rendered Predict.fun market page",
+    "security": "public unauthenticated read-only GET to the same page exposed to logged-out browsers",
+    "source_contract": "The retained bytes may be used only to enumerate public static assets, embedded market identifiers, and public read routes. They may not establish executable economics, eligibility, owned state, or authority."
+  },
+  "response_byte_ceiling": 2000000,
+  "required_utf8_phrases": [
+    "GPT-6 released by",
+    "predict.fun"
+  ],
+  "decision": {
+    "source_gate_only": "If a stable public unauthenticated market-data route and exact market identifier are both present, freeze a separate one-use book contract before viewing prices. Otherwise stop this public route without trying keys, aliases, private endpoints, or browser-session extraction.",
+    "accepted_edge": false,
+    "profitability_proved": false,
+    "conditional_next_step": "Offline-enumerate only public script URLs, route strings, and market identifiers from the retained page."
+  },
+  "outputs": {
+    "raw_path": "data/predictfun-public-gpt6-web-client-source-v1/raw/01-page.raw.html",
+    "journal_path": "data/predictfun-public-gpt6-web-client-source-v1/raw/00-request-journal.jsonl",
+    "result_path": "docs/model-research/action-value/predictfun-public-gpt6-web-client-source-result-v1-2026-09-01.json"
+  },
+  "authority": {
+    "account_requests": 0,
+    "credentials_used": false,
+    "funds_used": false,
+    "orders_or_transactions": 0,
+    "protected_capture_touched": false,
+    "public_unauthenticated_read_only_requests": 1,
+    "signed_requests": 0,
+    "trading_authority": false
+  },
+  "implementations": [
+    {
+      "path": "tools/capture_public_source_contract.py",
+      "sha256": "d566a5a379c659c3da144d5e28449ebac9c01493bd39646f9cc3a6e697a83566"
+    },
+    {
+      "path": "tools/screen_polymarket_exact_two_leg_package.py",
+      "sha256": "374fcc3c3485c466b4929a91256450bdc7db70f93ef4c6bda627e05fe8938327"
+    },
+    {
+      "path": "tools/adjudicate_polymarket_exact_mlb_monotone_prefilter.py",
+      "sha256": "958a44d78029b9a1eb69a3771ce18e53ac1ed3c7bc161c8e4318beedce2cf99f"
+    }
+  ],
+  "retry_policy": "This exact page GET is one-use. Preserve any shell, block, or missing-metadata response. Do not try API keys, aliases, private routes, session extraction, account endpoints, or executable books unless a separate prospectively frozen contract is justified by retained public metadata.",
+  "contract_sha256": "5702ee78b4421fe64da9a0e788538ded1f504f702e347d090f6e5fff5e46edf0"
+}

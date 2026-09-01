@@ -1,0 +1,44 @@
+{
+  "schema_version": "public-cross-venue-rendered-rejection-result-v1",
+  "created_at_utc": "2026-09-01T07:42:34.2556855Z",
+  "contract": {
+    "path": "docs/model-research/action-value/predictfun-polymarket-openai-acquisition-public-rejection-contract-v1-2026-09-01.json",
+    "sha256": "9332772124e1ee090561df24bd21e07d6b907bd5cde008197c9f400a369b1de7"
+  },
+  "adjudication": {
+    "accepted_edge": false,
+    "deployment_ready": false,
+    "profitability_claim": false,
+    "promotion_eligible": false,
+    "status": "terminal_public_rendered_rejection"
+  },
+  "observations": {
+    "rule_identity": "rendered rule text matched on the acquisition agreement, deadline, merger, announced-agreement, and resolution-source clauses",
+    "predictfun_total_volume_usd": 0,
+    "predictfun_best_yes_ask": 0.92,
+    "predictfun_best_yes_ask_shares": 625,
+    "predictfun_no_ask_present": false,
+    "predictfun_last_trade_present": false,
+    "predictfun_spread_present": false,
+    "polymarket_yes_ask": 0.042,
+    "polymarket_no_ask": 0.959,
+    "predict_yes_plus_polymarket_no_cost": 1.879,
+    "predict_no_plus_polymarket_yes_cost": null,
+    "null_cost_reason": "Predict.fun NO had no visible ask"
+  },
+  "decision": "One package exceeded its one-pUSD floor before fees and the other package was not executable. The page comparator probability was not treated as an ask and the missing ask was not treated as free.",
+  "canonical_adjudication": {
+    "path": "docs/model-research/action-value/predictfun-maker-rebate-and-cross-venue-adjudication-v1-2026-09-01.json",
+    "result_sha256": "b054ef3388dd9e97b065120d35792699ef3bbdc40efbd72e2034e77db0efe1fd"
+  },
+  "authority": {
+    "account_requests": 0,
+    "credentials_used": false,
+    "funds_used": false,
+    "orders_or_transactions": 0,
+    "protected_capture_touched": false,
+    "signed_requests": 0,
+    "trading_authority": false
+  },
+  "result_sha256": "762f0d2bf5aafcc81f260012d112fb6e55e68764abff9dc212bfb5e6dbc448d2"
+}

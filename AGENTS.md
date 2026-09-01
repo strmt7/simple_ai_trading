@@ -54,6 +54,23 @@ override prose.
   push, or hosted CI run before exploratory public requests. The stricter
   frozen one-use workflow remains mandatory for authenticated, account-specific,
   funded, order-capable, or state-changing operations.
+- Predict.fun is a separate BNB Chain prediction venue, not Binance Exchange.
+  Binance Exchange or testnet credentials never authorize Predict.fun API,
+  wallet, account, order, reward, or eligibility access. A logged-out Predict.fun
+  page may expose a public book and a Polymarket comparator, but a comparator
+  probability is not an executable ask, a missing ask is not free, and rendered
+  discovery is rejection-only unless exact rules, side-specific depth, fees, and
+  timestamps are durably source-bound under a prospective contract.
+- Current Predict.fun maker rebates are only an incremental overlay on an
+  independently justified legitimate organic eligible maker fill: credit the
+  exact asset actually distributed after every incremental cost, never infer a
+  profitable market-making strategy from the advertised fraction, and never
+  create volume, self-trade, wash-trade, manipulate balances, abuse cancellation,
+  or post non-executable orders to farm rebates or Predict Points. Predict Points
+  have zero admitted monetary value without a deterministic official redemption
+  contract. Matching crypto title and interval are not payoff identity: current
+  Predict BTC/USDT point-report Up/Down/Flat rules differ from Polymarket BTC/USD
+  60-second-TWAP equality-to-Up rules and cannot form a deterministic hedge.
 - Before spending a historical trade or book request on an exact-payoff family,
   use immutable retained terminal outcomes to test settlement consistency when
   they can answer that question. Settlement consistency supports only the payoff

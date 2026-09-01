@@ -1,0 +1,76 @@
+{
+  "schema_version": "public-cross-venue-rendered-rejection-contract-v1",
+  "frozen_at_utc": "2026-09-01T07:30:49.3858821Z",
+  "contract_path": "docs/model-research/action-value/predictfun-polymarket-openai-acquisition-public-rejection-contract-v1-2026-09-01.json",
+  "population": {
+    "predictfun_url": "https://predict.fun/market/openai-acquired-before-2027",
+    "polymarket_url": "https://polymarket.com/event/openai-acquired-before-2027/openai-acquired-before-2027",
+    "market_family": "OpenAI acquired before 2027",
+    "selection_rule": "one disjoint exact-title pair surfaced before this freeze by the public related-market card and public Polymarket search",
+    "prior_economic_observations": {
+      "predictfun_card_probability": "5%",
+      "polymarket_search_probability": "approximately 4%",
+      "side_specific_asks_seen": false,
+      "depth_seen": false
+    },
+    "promotion_eligibility": "rejection_only_because_headline_probabilities_were_seen_before_freeze"
+  },
+  "question": "Can this exact public-title pair be rejected cheaply because neither predeclared opposite-side package is strictly below one pUSD before fees, or because its payout rules are not byte-equivalent?",
+  "browser_access": {
+    "top_level_navigations": 2,
+    "operation": "logged-out public read-only rendering of the two exact URLs",
+    "allowed_observations": [
+      "rendered market title and rules",
+      "rendered Buy Yes and Buy No prices",
+      "visible top-of-book price and size when present",
+      "visible venue comparator probability when present"
+    ],
+    "forbidden_operations": [
+      "login",
+      "wallet connection",
+      "account access",
+      "credential use",
+      "order placement",
+      "session or cookie inspection",
+      "private endpoint discovery",
+      "state mutation"
+    ]
+  },
+  "predeclared_packages": [
+    {
+      "name": "predict_yes_plus_polymarket_no",
+      "legs": [
+        "Predict.fun YES ask",
+        "Polymarket NO ask"
+      ]
+    },
+    {
+      "name": "predict_no_plus_polymarket_yes",
+      "legs": [
+        "Predict.fun NO ask",
+        "Polymarket YES ask"
+      ]
+    }
+  ],
+  "decision": {
+    "rule_mismatch": "reject immediately if the exact resolution source, deadline, agreement definition, exception, fallback, or invalid-market treatment differs",
+    "price_rejection": "reject if both visible opposite-side ask sums are at least 1.000 pUSD before fees or if any required ask is unavailable",
+    "apparent_subfloor": "record discovery only; do not accept or promote this pre-exposed population; require a disjoint prospectively frozen exact-rule and side-specific depth confirmation including all fees, transfer, capital, settlement, custody, failure, latency, and adverse-tick costs",
+    "accepted_edge": false,
+    "profitability_proved": false
+  },
+  "outputs": {
+    "result_path": "docs/model-research/action-value/predictfun-polymarket-openai-acquisition-public-rejection-result-v1-2026-09-01.json"
+  },
+  "authority": {
+    "account_requests": 0,
+    "credentials_used": false,
+    "funds_used": false,
+    "orders_or_transactions": 0,
+    "protected_capture_touched": false,
+    "signed_requests": 0,
+    "trading_authority": false
+  },
+  "retry_policy": "The two exact top-level browser navigations are one-use for this contract. Preserve a block, missing field, or ambiguous render as rejection. Do not retry aliases, authenticated routes, APIs, accounts, or books for this population.",
+  "contract_sha256": "9332772124e1ee090561df24bd21e07d6b907bd5cde008197c9f400a369b1de7"
+}

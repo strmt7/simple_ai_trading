@@ -1,0 +1,57 @@
+{
+  "schema_version": "public-source-capture-contract-v1",
+  "frozen_at_utc": "2026-09-01T07:34:05.2744720Z",
+  "contract_path": "docs/model-research/action-value/predictfun-maker-points-public-source-contract-v1-2026-09-01.json",
+  "trigger": {
+    "public_observation": "one exact logged-out Predict.fun market rendered Current LP Rewards 50/hr beside a link to this exact official points page",
+    "economic_terms_viewed_before_freeze": false,
+    "novel_question": "whether the advertised maker-reward rate has a defined, transferable, redeemable, or otherwise source-valued payoff that can exceed adverse-selection and inventory costs"
+  },
+  "question": "Do the exact current official Predict.fun points terms define deterministic monetary value, maker-reward allocation, eligibility, anti-gaming, and settlement conditions sufficient to price a direction-independent liquidity-provision edge?",
+  "request_name": "predictfun-maker-points-public-source",
+  "request": {
+    "method": "GET",
+    "url": "https://docs.predict.fun/the-basics/how-to-earn-points",
+    "count": 1,
+    "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "endpoint_classification": {
+    "operation": "download one exact public official Predict.fun documentation page",
+    "security": "public unauthenticated read-only GET",
+    "source_contract": "The retained bytes may establish only the current published points and reward terms on this exact page. They may not establish user eligibility, owned rewards, account access, execution quality, cash value, or profitability unless the page explicitly defines those facts."
+  },
+  "response_byte_ceiling": 1000000,
+  "required_utf8_phrases": [
+    "Points",
+    "Predict"
+  ],
+  "decision": {
+    "advance": "advance only if the page source-defines a deterministic reward formula and non-speculative monetary redemption value, after which a separate prospectively frozen finite-size maker simulation must charge fees, adverse selection, inventory, hedge, gas, latency, eligibility, and reward-disqualification costs",
+    "reject": "terminalize current monetary-edge promotion if points have no deterministic cash or redeemable value, if allocation is discretionary or undisclosed, or if maker eligibility and anti-gaming conditions prevent conservative valuation",
+    "accepted_edge": false,
+    "profitability_proved": false
+  },
+  "outputs": {
+    "raw_path": "data/predictfun-maker-points-public-source-v1/raw/01-page.raw.md",
+    "journal_path": "data/predictfun-maker-points-public-source-v1/raw/00-request-journal.jsonl",
+    "result_path": "docs/model-research/action-value/predictfun-maker-points-public-source-result-v1-2026-09-01.json"
+  },
+  "authority": {
+    "account_requests": 0,
+    "credentials_used": false,
+    "funds_used": false,
+    "orders_or_transactions": 0,
+    "protected_capture_touched": false,
+    "public_unauthenticated_read_only_requests": 1,
+    "signed_requests": 0,
+    "trading_authority": false
+  },
+  "implementations": [
+    {
+      "path": "tools/capture_public_source_contract.py",
+      "sha256": "d566a5a379c659c3da144d5e28449ebac9c01493bd39646f9cc3a6e697a83566"
+    }
+  ],
+  "retry_policy": "This exact official page GET is one-use. Preserve any shell, block, redirect, missing term, or unsupported content response. Do not try aliases, account routes, keys, sessions, or reward claims.",
+  "contract_sha256": "7404207628facc8d0f26f4b42e02ba4d6d109a31e82342adc101849269d93182"
+}
