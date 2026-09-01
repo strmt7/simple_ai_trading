@@ -131,6 +131,13 @@ override prose.
   exhaustiveness from the two-party prose, rendered FAQ count, or active-only
   market set, and never omit a returned inactive sibling from a complete-set
   acquisition package unless its zero-payout status is source-proved.
+- A rendered FAQ outcome count can describe only the active or displayed rows,
+  not the complete Gamma event population. Generated candidate events can retain
+  dozens of inactive `Person X` placeholders, named inactive candidates, a
+  closed active candidate, and `Other` even when only a small active set renders.
+  Reject before books unless every returned market is open, active,
+  acquisition-capable, and rule-exhaustive; never party-map, classify, or omit
+  identity-free placeholders to manufacture a projection or complete-set floor.
 - A nominally shorter calendar window is not a subset when it begins before the
   longer window. Source-prove that every already elapsed exclusive segment did
   not trigger before upgrading the remaining short-window event to an
@@ -483,6 +490,13 @@ override prose.
   error, preserve the original hash-bound contract and capture and adjudicate it
   separately; never rewrite the consumed contract or rerun merely to repair
   metadata.
+- Immediately before writing such a contract, capture the UTC clock from the
+  host and use that observed instant or an earlier exact second. After computing
+  the canonical hash, call the runner's offline validator with the contract path
+  resolved to an absolute path. A validation failure before output-path creation
+  and before network access leaves the request unconsumed; correct only the
+  invalid pre-access field, recompute the hash, and record the correction rather
+  than weakening or changing any outcome-sensitive population or decision gate.
 - Treat every conjunctive retry trigger literally: each event, time, authority,
   and data-state clause needs independent evidence before the triggered action.
   A passed date does not prove that a required market event occurred. If one

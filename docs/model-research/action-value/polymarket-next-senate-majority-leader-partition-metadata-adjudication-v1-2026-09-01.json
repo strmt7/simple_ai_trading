@@ -1,0 +1,156 @@
+{
+  "schema_version": "polymarket-next-senate-majority-leader-partition-metadata-adjudication-v1",
+  "created_at_utc": "2026-09-01T04:18:00Z",
+  "source": {
+    "contract": {
+      "path": "docs/model-research/action-value/polymarket-next-senate-majority-leader-partition-metadata-contract-v1-2026-09-01.json",
+      "sha256": "5f69284d64c20444343221b592558dfeb731c95217b12760f8ff1e4c11f76491"
+    },
+    "capture_result": {
+      "path": "docs/model-research/action-value/polymarket-next-senate-majority-leader-partition-metadata-capture-result-v1-2026-09-01.json",
+      "sha256": "ff5ddefed63331563e69fd528755dfef2176f0a693268211a42b1dbf699811e0"
+    },
+    "raw": {
+      "path": "data/polymarket-next-senate-majority-leader-partition-metadata-v1/raw/event.json",
+      "sha256": "374fa8c998ef05a8c13b321b602651e6ac355d91b2663646dad0844218c47d38",
+      "bytes": 218775,
+      "http_status": 200
+    },
+    "journal": {
+      "path": "data/polymarket-next-senate-majority-leader-partition-metadata-v1/request-journal.jsonl",
+      "sha256": "a661de1ca0749ec5efaab367eb22d4c2cec179bbf3a6d500a83222609f391ea9"
+    }
+  },
+  "event": {
+    "id": "289908",
+    "slug": "next-senate-majority-leader-485",
+    "title": "Next Senate Majority Leader?",
+    "active": true,
+    "closed": false,
+    "archived": false,
+    "negRisk": true,
+    "returned_market_count": 64,
+    "active_market_count": 11,
+    "open_active_accepting_orders_market_count": 10,
+    "inactive_market_count": 53,
+    "closed_market_count": 1,
+    "common_description_sha256": "f8093b98bcad63306c377809ec9a2f6341d0eb1241feefceb37236aa9845148f"
+  },
+  "open_active_markets": [
+    {
+      "group_item_title": "John Thune",
+      "best_ask_pUSD": "0.43",
+      "tick_pUSD": "0.01"
+    },
+    {
+      "group_item_title": "Steve Daines",
+      "best_ask_pUSD": "0.005",
+      "tick_pUSD": "0.001"
+    },
+    {
+      "group_item_title": "Tom Cotton",
+      "best_ask_pUSD": "0.033",
+      "tick_pUSD": "0.001"
+    },
+    {
+      "group_item_title": "Brian Schatz",
+      "best_ask_pUSD": "0.056",
+      "tick_pUSD": "0.001"
+    },
+    {
+      "group_item_title": "Amy Klobuchar",
+      "best_ask_pUSD": "0.001",
+      "tick_pUSD": "0.001"
+    },
+    {
+      "group_item_title": "Cory Booker",
+      "best_ask_pUSD": "0.003",
+      "tick_pUSD": "0.001"
+    },
+    {
+      "group_item_title": "Chuck Schumer",
+      "best_ask_pUSD": "0.39",
+      "tick_pUSD": "0.01"
+    },
+    {
+      "group_item_title": "Mark Kelly",
+      "best_ask_pUSD": "0.001",
+      "tick_pUSD": "0.001"
+    },
+    {
+      "group_item_title": "John Barrasso",
+      "best_ask_pUSD": "0.005",
+      "tick_pUSD": "0.001"
+    },
+    {
+      "group_item_title": "Patty Murray",
+      "best_ask_pUSD": "0.006",
+      "tick_pUSD": "0.001"
+    }
+  ],
+  "non_open_market_summary": {
+    "closed_active_market": {
+      "group_item_title": "Lindsey Graham",
+      "best_ask_pUSD": "0.001",
+      "accepting_orders": false
+    },
+    "inactive_named_markets": [
+      "Dick Durbin",
+      "John Cornyn",
+      "Other",
+      "Rick Scott"
+    ],
+    "inactive_placeholder_market_count": 49,
+    "inactive_placeholder_label_pattern": "Person A through Person AZ with gaps occupied by named markets",
+    "inactive_market_best_ask_pUSD": "1",
+    "inactive_markets_accepting_orders": true,
+    "other_is_neg_risk_other": true
+  },
+  "economics": {
+    "quantity_shares_per_leg": "5",
+    "complete_returned_yes_leg_count": 64,
+    "complete_returned_yes_ask_sum_pUSD_per_share": "53.931",
+    "complete_returned_gross_cost_pUSD": "269.655",
+    "complete_event_payoff_floor_pUSD": "5",
+    "complete_returned_gross_floor_pUSD": "-264.655",
+    "open_active_only_diagnostic": {
+      "not_a_complete_package": true,
+      "yes_ask_sum_pUSD_per_share": "0.930",
+      "gross_headroom_pUSD": "0.350",
+      "fee_schedule": {
+        "rate": "0.04",
+        "exponent": 1,
+        "taker_only": true,
+        "taker_base_fee": 1000
+      },
+      "nominal_taker_fees_pUSD": "0.11773560",
+      "nominal_after_fee_headroom_pUSD": "0.23226440",
+      "one_adverse_tick_per_leg_sum_pUSD_per_share": "0.958",
+      "one_adverse_tick_per_leg_fees_pUSD": "0.11997000",
+      "one_adverse_tick_per_leg_after_fee_headroom_pUSD": "0.09003000",
+      "reason_excluded": "The package omits 53 inactive returned siblings, the closed Lindsey Graham market, and the explicit negRiskOther outcome, so it does not prove a one-pUSD payout floor."
+    }
+  },
+  "adjudication": {
+    "status": "terminal_rejected_generated_inactive_negrisk_siblings",
+    "accepted_edge": false,
+    "current_executable_candidate_proved": false,
+    "deployment_ready": false,
+    "profitability_claim": false,
+    "book_request_authorized": false,
+    "party_projection_cover_proved": false,
+    "reason": "The ten rendered open candidate YES asks form a strict sub-floor diagnostic, but exact metadata contains 64 markets: 53 inactive siblings at a one-pUSD ask and one active closed candidate. The 49 identity-free placeholders and named inactive candidates also prevent a complete source-proved party mapping to the separate Senate-control marginal. Buying every returned YES costs 53.931 pUSD per share for a one-pUSD event payout, and the only cheap active subset is not a complete payoff package.",
+    "next_action": "Do not refresh, alias, omit inactive or closed siblings, party-map placeholders, or request this event's books. Reopen only for a distinct exact event whose complete market set is active, open, acquisition-capable, rule-exhaustive, and positive after current fees and at least one adverse tick per leg before depth."
+  },
+  "authority": {
+    "public_unauthenticated_read_only_requests": 1,
+    "credentials_used": false,
+    "signed_requests": 0,
+    "account_requests": 0,
+    "orders_or_transactions": 0,
+    "funds_used": false,
+    "protected_capture_touched": false,
+    "trading_authority": false
+  },
+  "result_sha256": "bf4605a90bd9a9389615cef7618b6ce04fbe379ca121bad9db7dbdc65a956772"
+}
