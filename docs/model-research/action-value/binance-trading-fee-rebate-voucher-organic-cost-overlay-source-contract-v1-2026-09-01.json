@@ -1,0 +1,78 @@
+{
+  "schema_version": "public-source-capture-contract-v1",
+  "frozen_at_utc": "2026-09-01T14:48:52Z",
+  "contract_path": "docs/model-research/action-value/binance-trading-fee-rebate-voucher-organic-cost-overlay-source-contract-v1-2026-09-01.json",
+  "trigger": {
+    "retained_index_source": "data/binance-futures-free-position-zero-capital-option-v1/raw/01-faq.raw.json",
+    "retained_related_article_code": "850671e05bb74848bf8fc4466279dda8",
+    "retained_related_article_title": "How to Redeem Trading Fee Rebate Voucher",
+    "exact_url_deduplication_hits": 0,
+    "economic_terms_viewed_before_freeze": true,
+    "economic_terms_role": "public discovery only; no retained selected-article bytes or promotion claim existed before this contract",
+    "novel_question": "whether a Binance Trading Fee Rebate Voucher creates a deterministic realized fee refund on independently justified organic eligible trading, after every voucher-acquisition and activity cost"
+  },
+  "question": "Do current official Binance terms define a realized cash-like trading-fee rebate with exact destination, asset, timing, cap, validity, and eligibility mechanics that can reduce the cost of independently justified organic trading without manufacturing volume?",
+  "request_name": "binance-trading-fee-rebate-voucher-organic-cost-overlay-public-source",
+  "request": {
+    "method": "GET",
+    "url": "https://www.binance.com/bapi/composite/v1/public/cms/article/detail/query?articleCode=850671e05bb74848bf8fc4466279dda8",
+    "count": 1,
+    "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "endpoint_classification": {
+    "operation": "download one exact public official Binance Trading Fee Rebate Voucher FAQ through its public CMS endpoint",
+    "security": "public unauthenticated read-only GET",
+    "source_contract": "The retained bytes may establish only published voucher mechanics. They may not establish regional or account eligibility, voucher ownership, acquisition cost, face value, remaining balance, activation, receipt, tax, profitability of any underlying trade, account profitability, persistence, or deployment readiness."
+  },
+  "response_byte_ceiling": 500000,
+  "required_utf8_phrases": [
+    "How to Redeem Trading Fee Rebate Voucher"
+  ],
+  "semantic_decision_gate": {
+    "advance_only_if_all_are_explicit_in_retained_official_bytes": [
+      "the voucher rebates eligible trading or platform fees actually incurred after activation",
+      "the exact destination account and rebate asset or currency",
+      "the exact distribution timing or cadence",
+      "the exact cap or face-value exhaustion mechanism",
+      "the exact validity or expiry mechanism"
+    ],
+    "fail_closed_if_missing": true,
+    "manual_offline_adjudication_only": true
+  },
+  "decision": {
+    "advance": "If every lexical and semantic source gate passes, accept only exact positive owned realized fee rebates credited on independently justified organic eligible fee-bearing activity after every incremental voucher acquisition, activity, tax, conversion, opportunity, operating, and execution cost. Never create, enlarge, churn, self-trade, wash-trade, spoof, or manipulate volume to obtain or consume a voucher. Do not double-count BNB, VIP, zero-fee, referral, maker, or other fee reductions. Public and account-qualified forward floors remain zero and no account access, activation, or trade is authorized.",
+    "reject": "If any lexical or semantic source gate fails, terminalize this exact public mechanism without aliases, Rewards Hub access, account access, credentials, or another request.",
+    "accepted_edge_if_advanced": "exact positive owned realized fee-rebate receipts on independently justified organic eligible fee-bearing activity, net of every incremental cost",
+    "accepted_edge": false,
+    "profitability_proved": false,
+    "stable_current_account_qualified_edge": false,
+    "deployment_ready": false
+  },
+  "outputs": {
+    "raw_path": "data/binance-trading-fee-rebate-voucher-organic-cost-overlay-v1/raw/01-faq.raw.json",
+    "journal_path": "data/binance-trading-fee-rebate-voucher-organic-cost-overlay-v1/raw/01-faq.journal.jsonl",
+    "result_path": "docs/model-research/action-value/binance-trading-fee-rebate-voucher-organic-cost-overlay-source-result-v1-2026-09-01.json"
+  },
+  "authority": {
+    "account_requests": 0,
+    "credentials_used": false,
+    "funds_used": false,
+    "orders_or_transactions": 0,
+    "protected_capture_touched": false,
+    "public_unauthenticated_read_only_requests": 1,
+    "signed_requests": 0,
+    "trading_authority": false
+  },
+  "implementations": [
+    {
+      "path": "tools/capture_public_source_contract.py",
+      "sha256": "ba0e76bd6643eedc072cc1fcff2aa363c1dc14a5b8e14956e874c7843637b376"
+    },
+    {
+      "path": "tools/screen_polymarket_exact_two_leg_package.py",
+      "sha256": "374fcc3c3485c466b4929a91256450bdc7db70f93ef4c6bda627e05fe8938327"
+    }
+  ],
+  "retry_policy": "This exact public CMS GET is one-use. Preserve every response, redirect, block, missing phrase, ceiling failure, and semantic-gate failure. Do not retry, alias, open Rewards Hub, use an account or credentials, claim or activate a voucher, complete a task, spend Points, manufacture volume, trade, transfer, withdraw, or mutate state.",
+  "contract_sha256": "f7d8d67913e8813e16e62ee031c29ead28715676b01b5b8ea1e604b645025a15"
+}

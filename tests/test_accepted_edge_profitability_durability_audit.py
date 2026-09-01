@@ -56,15 +56,25 @@ def test_profitability_durability_audit_is_source_bound_and_exhaustive() -> None
     assert (
         decision["accepted_scope_is_not_deployment_ready_count"] == accepted_count
     )
+    standalone_ordinals = decision[
+        "standalone_incremental_cash_without_independent_trade_borrow_or_external_user_ordinals"
+    ]
     assert (
         decision[
             "standalone_incremental_cash_without_independent_trade_borrow_or_external_user_count"
         ]
-        == 9
+        == len(standalone_ordinals)
     )
-    assert accepted_count in decision[
-        "standalone_incremental_cash_without_independent_trade_borrow_or_external_user_ordinals"
-    ]
+    assert len(standalone_ordinals) == len(set(standalone_ordinals))
+    assert set(standalone_ordinals) <= set(range(1, accepted_count + 1))
+    activity_overlay = next(
+        group
+        for group in groups
+        if group["evidence_tier"]
+        == "C_preexisting_internal_activity_saving_or_rebate"
+    )
+    assert accepted_count in activity_overlay["edge_ordinals"]
+    assert accepted_count not in standalone_ordinals
 
 
 def test_profitability_frontier_metrics_match_canonical_sources() -> None:
