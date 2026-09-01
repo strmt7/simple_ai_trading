@@ -1,0 +1,36 @@
+{
+  "schema_version": "public-source-capture-contract-v1",
+  "frozen_at_utc": "2026-09-01T07:59:34.7853268Z",
+  "contract_path": "docs/model-research/action-value/predictfun-audits-public-source-contract-v1-2026-09-01.json",
+  "trigger": {
+    "retained_source": "data/predictfun-maker-rebates-public-source-v1/raw/01-page.raw.html",
+    "retained_link": "https://docs.predict.fun/developers/audits",
+    "audit_terms_viewed_before_freeze": false,
+    "novel_question": "whether current official audit artifacts identify the exact deployed public contract lineage needed to verify fill and rebate events"
+  },
+  "question": "Does the exact current official audits page bind deployed Predict.fun BNB Chain contracts or audit artifacts that identify public fill and rebate event lineage?",
+  "request_name": "predictfun-audits-public-source",
+  "request": {"method": "GET", "url": "https://docs.predict.fun/developers/audits", "count": 1, "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"},
+  "endpoint_classification": {
+    "operation": "download one exact public official Predict.fun audits page",
+    "security": "public unauthenticated read-only GET",
+    "source_contract": "Use only published audit, repository, chain, and deployed-contract references. Do not infer account access, eligibility, fills, rebates, or profitability."
+  },
+  "response_byte_ceiling": 1000000,
+  "required_utf8_phrases": ["Audits", "Predict"],
+  "decision": {
+    "advance": "advance only if an exact official audit or deployment reference can source-bind a separately frozen public chain-event study",
+    "reject": "stop if the page supplies no exact deployed contract lineage or independently usable public event source",
+    "accepted_edge": false,
+    "profitability_proved": false
+  },
+  "outputs": {
+    "raw_path": "data/predictfun-audits-public-source-v1/raw/01-page.raw.html",
+    "journal_path": "data/predictfun-audits-public-source-v1/raw/00-request-journal.jsonl",
+    "result_path": "docs/model-research/action-value/predictfun-audits-public-source-result-v1-2026-09-01.json"
+  },
+  "authority": {"account_requests": 0, "credentials_used": false, "funds_used": false, "orders_or_transactions": 0, "protected_capture_touched": false, "public_unauthenticated_read_only_requests": 1, "signed_requests": 0, "trading_authority": false},
+  "implementations": [{"path": "tools/capture_public_source_contract.py", "sha256": "d566a5a379c659c3da144d5e28449ebac9c01493bd39646f9cc3a6e697a83566"}],
+  "retry_policy": "This exact official page GET is one-use. Preserve any shell, block, redirect, or missing-term response; do not try aliases, accounts, keys, sessions, wallets, or state changes.",
+  "contract_sha256": "4c01342f6062872cd76e56ec597eefa7c9ddc72ab6bcdcae789c9ad99b610a6a"
+}

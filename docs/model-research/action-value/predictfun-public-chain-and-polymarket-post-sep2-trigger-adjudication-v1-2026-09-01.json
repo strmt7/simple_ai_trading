@@ -1,0 +1,83 @@
+{
+  "schema_version": "predictfun-public-chain-and-polymarket-post-sep2-trigger-adjudication-v1",
+  "created_at_utc": "2026-09-01T08:18:00Z",
+  "question": "Do the newly triggered public sources expose a direction-independent executable edge or a justified next economic request?",
+  "adjudication": {
+    "accepted_edge": false,
+    "accepted_edge_count_delta": 0,
+    "deployment_ready": false,
+    "profitability_claim": false,
+    "public_forward_profit_floor_usdt": 0,
+    "status": "both_triggered_paths_terminal_before_economic_access",
+    "reason": "The exact post-September-2 WNBA deployment window is a complete empty population. Predict.fun documents on-chain execution and rebate distribution but publishes no deployed exchange, fee-module, conditional-token, or market contract address in the retained technical or audits pages; the linked CRE audit addresses identify an admin multisig, Chainlink infrastructure, and a testnet adapter rather than the contracts needed to enumerate fills or rebates. The same technical source assigns collateral-yield claims to yield managers, not traders."
+  },
+  "polymarket_post_sep2_wnba": {
+    "frozen_window_utc": "2026-09-03T00:00:00Z/2026-09-09T23:59:59Z",
+    "returned_event_count": 0,
+    "population_complete_under_frozen_filter": true,
+    "relation_count": 0,
+    "strict_subfloor_candidate_count": 0,
+    "decision": "terminal empty deployment window; no book, fee, account, credential, order, or fund request is justified",
+    "source": {
+      "path": "docs/model-research/action-value/polymarket-post-sep2-wnba-monotone-catalog-result-v1-2026-09-01.json",
+      "result_sha256": "5747443e188a467c903f51af942838d28657c277a4b6c72941d61f872b600908",
+      "raw_sha256": "1caf48c002786edb458302862e4e33fbff3b2afecb9ec796169d7a3881ad7e9e"
+    }
+  },
+  "predictfun_public_chain_path": {
+    "source_proved_architecture": [
+      "hybrid central-limit-order-book with off-chain matching and on-chain execution and settlement",
+      "CTFExchange matchOrders execution",
+      "FeeModuleV2 dynamic actual-fee and refund proxy",
+      "ConditionalTokens and NegRisk contracts",
+      "eligible maker rebates are distributed in the fill transaction"
+    ],
+    "missing_public_lineage": [
+      "deployed exchange contract address",
+      "deployed fee-module contract address",
+      "deployed conditional-token or NegRisk contract address",
+      "deployed market identifiers mapped to eligible maker-rebate badges",
+      "public event schema binding fills to exact rebate assets and amounts"
+    ],
+    "linked_audit_review": {
+      "official_link_target": "https://github.com/Cyfrin/cyfrin-audit-reports/blob/main/reports/2026-04-25-cyfrin-predict-cre-integration-v2.1.pdf",
+      "pinned_raw_commit": "9293d45a74271fa53213331ecaabda29bf966923",
+      "downloaded_pdf_sha256": "da9f30f4e2a208f64c2773afbd7759497ff2afa30ef3106f10ee85f371c553d2",
+      "page_count": 33,
+      "address_contexts": [
+        {"address": "0x7625B1c374b0D1546d87c0ab66229461007f1e33", "context": "DEFAULT_ADMIN_ROLE and INITIALIZER_ROLE multisig on BSC mainnet", "page": 5},
+        {"address": "0x76c9cf548b4179F8901cda1f8623568b58215E62", "context": "Chainlink Keystone Forwarder on BSC mainnet", "page": 6},
+        {"address": "0xF276a4BC8Da323EA3E8c3c195a4E2E7615a898d1", "context": "Chainlink Verifier Proxy on BSC mainnet", "page": 6},
+        {"address": "0xDB923974731Bdf5C4b1c046522Bf7F99Ee467257", "context": "hardcoded BSC testnet adapter address in an initialization-script finding", "page": 19}
+      ],
+      "decision": "none of these addresses is source-identified as the deployed exchange, fee, token, NegRisk, or eligible-market contract required for a public fill-and-rebate study"
+    },
+    "decision": "do not crawl BSC by guessed address, selector, bytecode similarity, admin-neighbor, or testnet-to-mainnet substitution; reopen only on an exact official deployed-contract reference, official explorer link, or separately authorized Predict.fun read-only API study"
+  },
+  "predictfun_collateral_yield": {
+    "source_proved": "yield-bearing contracts deploy collateral into Venus and yield managers can claim accumulated yield",
+    "not_source_proved": [
+      "trader ownership of Venus yield",
+      "trader accrual rate or base",
+      "automatic trader distribution",
+      "non-double-counted redemption value"
+    ],
+    "decision": "terminal as a trader-owned public yield edge; credit zero unless a materially new official source defines trader beneficiary, rate, base, distribution, and redemption"
+  },
+  "sources": [
+    {"path": "docs/model-research/action-value/predictfun-technical-overview-public-source-result-v1-2026-09-01.json", "result_sha256": "9a61a17fb99daae4b374203d71afa5a92d398e4c1fe3e788f1d825a0335fc181", "raw_sha256": "ba42a557e16ffb4dde4cdc76c59929acce33bce900927e1dc53037fd59f1d631"},
+    {"path": "docs/model-research/action-value/predictfun-audits-public-source-result-v1-2026-09-01.json", "result_sha256": "36f39066884a8f7a4faf21ff1c5ea874bacf029ccc9fd315ef84523a474270fb", "raw_sha256": "5355e17f319dd9447cd7b24faded8eda123c49a2437c9954ce0947c54b47067f"}
+  ],
+  "authority": {
+    "account_requests": 0,
+    "credentials_used": false,
+    "funds_used": false,
+    "orders_or_transactions": 0,
+    "protected_capture_touched": false,
+    "public_unauthenticated_read_only_requests": 3,
+    "signed_requests": 0,
+    "trading_authority": false
+  },
+  "next_action": "Do not repeat the exact WNBA window or guess Predict.fun deployments. Advance another exact-ranked trigger; rank 48 reopens only on an official deployed-contract lineage, a new public fill-quality source, or explicit separate Predict.fun read-only paper-study authority. Any order, wallet, funded, or account mutation still requires separate explicit authority.",
+  "result_sha256": "aa89b82912335b288506e731382e8ac87fa8e60afb614986f224a1b88d730c22"
+}

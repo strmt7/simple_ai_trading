@@ -1,0 +1,36 @@
+{
+  "schema_version": "public-source-capture-contract-v1",
+  "frozen_at_utc": "2026-09-01T07:59:34.7853268Z",
+  "contract_path": "docs/model-research/action-value/predictfun-technical-overview-public-source-contract-v1-2026-09-01.json",
+  "trigger": {
+    "retained_source": "data/predictfun-maker-rebates-public-source-v1/raw/01-page.raw.html",
+    "retained_link": "https://docs.predict.fun/developers/technical-overview",
+    "technical_terms_viewed_before_freeze": false,
+    "novel_question": "whether the official public architecture identifies byte-retainable BNB Chain contracts or events sufficient for a no-credential realized fill and rebate study"
+  },
+  "question": "Does the exact current official technical overview source-bind public contracts, transaction flows, or event identities for Predict.fun fills and maker-rebate distributions?",
+  "request_name": "predictfun-technical-overview-public-source",
+  "request": {"method": "GET", "url": "https://docs.predict.fun/developers/technical-overview", "count": 1, "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"},
+  "endpoint_classification": {
+    "operation": "download one exact public official Predict.fun technical overview",
+    "security": "public unauthenticated read-only GET",
+    "source_contract": "Use only published architecture, contract, chain, transaction, and event terms. Do not infer account access, private APIs, eligible fills, rebate value, or profitability."
+  },
+  "response_byte_ceiling": 1000000,
+  "required_utf8_phrases": ["Technical Overview", "Predict"],
+  "decision": {
+    "advance": "advance only if an exact current public chain contract or event route can support a separately frozen bounded realized-fill and rebate study without keys, accounts, orders, wallets, or state changes",
+    "reject": "stop the public on-chain route if exact deployed contract and event identity are absent or insufficient",
+    "accepted_edge": false,
+    "profitability_proved": false
+  },
+  "outputs": {
+    "raw_path": "data/predictfun-technical-overview-public-source-v1/raw/01-page.raw.html",
+    "journal_path": "data/predictfun-technical-overview-public-source-v1/raw/00-request-journal.jsonl",
+    "result_path": "docs/model-research/action-value/predictfun-technical-overview-public-source-result-v1-2026-09-01.json"
+  },
+  "authority": {"account_requests": 0, "credentials_used": false, "funds_used": false, "orders_or_transactions": 0, "protected_capture_touched": false, "public_unauthenticated_read_only_requests": 1, "signed_requests": 0, "trading_authority": false},
+  "implementations": [{"path": "tools/capture_public_source_contract.py", "sha256": "d566a5a379c659c3da144d5e28449ebac9c01493bd39646f9cc3a6e697a83566"}],
+  "retry_policy": "This exact official page GET is one-use. Preserve any shell, block, redirect, or missing-term response; do not try aliases, accounts, keys, sessions, wallets, or state changes.",
+  "contract_sha256": "e80faa62539894eb99186b52aae4c3ea58bba1063de7ac95f4b4d3eb0e98e277"
+}
