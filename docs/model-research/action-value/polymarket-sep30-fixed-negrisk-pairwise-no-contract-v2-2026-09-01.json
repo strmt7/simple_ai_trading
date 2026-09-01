@@ -1,0 +1,69 @@
+{
+  "schema_version": "polymarket-retained-negrisk-pairwise-no-contract-v2",
+  "status": "frozen_before_one_zero_network_retained_adjudication",
+  "frozen_at_utc": "2026-09-01T12:40:56.532Z",
+  "contract_path": "docs/model-research/action-value/polymarket-sep30-fixed-negrisk-pairwise-no-contract-v2-2026-09-01.json",
+  "research_question": "Does any pair of distinct mutually exclusive outcomes inside the three retained fixed-NegRisk September 30 events have a side-specific NO acquisition cost strictly below its one-pUSD payout floor and remain positive after one adverse tick per leg plus exact configured taker fees?",
+  "superseded_failure": {
+    "path": "docs/model-research/action-value/polymarket-sep30-fixed-negrisk-pairwise-no-v1-failure-2026-09-01.json",
+    "result_sha256": "d1d018fb103df9065b7077f2e0a497691ae70486e68dad9cd8a5aeb4ad312c47",
+    "file_sha256": "2d7967b82af15c5c80abe3b326fdb14d162681da53be3d78edd93d393961403f",
+    "preserved_contract_sha256": "791b61f436b8432a4767e5ca9474e496cdff4d51d0117ee0060dbc9d51a653a8"
+  },
+  "only_changed_adjudication_term": "When feesEnabled is false, feeSchedule is absent, and feeType is empty, treat the retained market as explicitly zero configured taker fee. Every feesEnabled=true market must still retain a supported exact positive taker-only fee schedule. The question, retained bytes, three events, 55 markets, 646 pairs, ordering, price gate, tick stress, authority, and output boundary are unchanged from v1.",
+  "retained_input": {
+    "path": "data/polymarket-sep30-et-negrisk-complete-set-catalog-v1/raw/events.json",
+    "sha256": "ff108e7b869cf74e1950d9eb90d75c35335b56996d8ad1cda5fc675b2633c0ab"
+  },
+  "implementation": {
+    "path": "tools/adjudicate_polymarket_retained_negrisk_pairwise_no_v2.py",
+    "sha256": "fe601915bd4db210441dc56978dba919ba7e68cb4a586ee9f19d00f807f2afb1"
+  },
+  "events": [
+    {
+      "id": "624242",
+      "slug": "where-will-the-next-next-round-of-us-iran-peace-talks-beptptpt-20260623023740663",
+      "title": "Where will the next next round of US-Iran peace talks be...?",
+      "market_count": 19
+    },
+    {
+      "id": "868079",
+      "slug": "next-google-gemini-pro-model-released-onptptpt-20260817141404356",
+      "title": "Next Google Gemini Pro Model released on...?",
+      "market_count": 31
+    },
+    {
+      "id": "878241",
+      "slug": "longest-github-critical-incident-in-september",
+      "title": "Longest GitHub critical incident in September?",
+      "market_count": 5
+    }
+  ],
+  "expected_pair_count": 646,
+  "payoff_identity": "Within one fixed-NegRisk event, any two distinct outcomes are mutually exclusive. NO(A) plus NO(B) therefore pays one pUSD when A or B occurs and two pUSD when another outcome occurs, for a one-pUSD floor independent of market direction.",
+  "price_gate": "Use conservative one minus direct YES bestBid for NO acquisition. Gamma is rejection-only and may not accept or promote an edge. Missing side-specific acquisition evidence is not a free leg.",
+  "stress_gate": "A pair may advance only when the common minimum executable quantity remains strictly positive after one adverse configured tick on each leg and the exact per-market configured taker fee model, including the frozen zero-fee representation rule.",
+  "selection_rule": "Enumerate every unordered pair within all three frozen events, rank priced rows by ascending unstressed acquisition cost then event ID and market IDs, and never select a sibling after a later exact-depth failure without a literal new trigger.",
+  "output_path": "docs/model-research/action-value/polymarket-sep30-fixed-negrisk-pairwise-no-adjudication-v2-2026-09-01.json",
+  "authority": {
+    "account_requests": 0,
+    "book_requests": 0,
+    "credentials_used": false,
+    "fee_requests": 0,
+    "funds_used": false,
+    "onchain_requests": 0,
+    "orders_or_transactions": 0,
+    "protected_capture_touched": false,
+    "public_unauthenticated_read_only_requests": 0,
+    "signed_requests": 0,
+    "trading_authority": false
+  },
+  "prohibited_shortcuts": [
+    "do not rerun rewrite or reinterpret the consumed v1 contract or failure",
+    "do not refetch reprice paginate alias or request a book before the retained screen passes every frozen gate",
+    "do not use outcomePrices midpoints last trades missing asks or future prices as acquisition evidence",
+    "do not omit an expensive pair or select a pair after viewing economics",
+    "do not use credentials accounts orders funds transactions on-chain actions or the protected Polymarket capture"
+  ],
+  "contract_sha256": "4423de03d8dcb76130ba52a8d615419fea24f6ca687b7a503f203faa1f4fa490"
+}

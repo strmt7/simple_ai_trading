@@ -1,12 +1,45 @@
 # Continue Development
 
-Current canonical status after the retained September 30 Iran-island implication
-audit: accepted edges 35, ranked hypotheses 58, terminal families 173,
+Current canonical status after the retained September 30 fixed-NegRisk
+pairwise-NO audit: accepted edges 35, ranked hypotheses 58, terminal families 174,
 and stable current account-qualified after-all-cost edges zero. Registry
 SHA-256 is
-`0a9cb63f157cd654cab3a3f49cb8910aa2d3f4a64d8fff9dc2368953e23db8c4`;
+`d035ed692935222ec415702231ff2d30c6d8f07dbfb6eea57d801199916ebba9`;
 durability-audit SHA-256 is
-`610d9a68b1121155660c0f4bb7a9e1b38a2992e0f71d6b0d453a54aaa91f3cc7`.
+`3144e5eeadbef632dddc427eaf71adef1318e57ca919be68e73e8f580c0d74d0`.
+
+## 2026-09-01 retained fixed-NegRisk pairwise-NO audit
+
+The hash-bound September 30 Global catalog contains three complete fixed-
+NegRisk events with 19, 31, and 5 markets. Any two distinct outcomes in one
+event are mutually exclusive, so `NO(A) + NO(B)` has a one-pUSD floor: if A or
+B wins one NO pays, and if another outcome wins both NO tokens pay. This is a
+distinct direction-independent package family not exhausted by the earlier
+all-YES complete-set screen.
+
+The prospectively frozen v1 zero-network run failed before producing economic
+output because a fee-disabled market had no `feeSchedule`. That failure is
+preserved and was not rerun or rewritten. A retained-byte fee-shape audit found
+19 markets with `feesEnabled=false`, empty `feeType`, and no schedule, plus 36
+enabled `tech_fees` markets with explicit schedules. The frozen v2 correction
+therefore treats absence as zero only under the explicit disabled-fee shape;
+every enabled market still requires an exact supported positive schedule.
+
+The one-use v2 screen exhausted all 646 unordered pairs. Of those, 481 had
+complete side-specific rejection prices and 165 remained price-incomplete.
+Zero complete pairs cost strictly below their `1.000` pUSD floor, and zero
+survived current fees plus one adverse tick per leg. The best pair was `No
+Meeting by September 30` plus `Switzerland` in event 624242 at `1.084` pUSD per
+share. At five common shares it lost `0.475` pUSD after the frozen tick-and-fee
+stress.
+
+This exact three-event/646-pair population is terminal. Do not repeat, refetch,
+reprice, request books, or adaptively fill the 165 missing prices. Reopen only
+for a distinct unconsumed complete fixed-NegRisk event or a material price,
+fee, tick, rule, or architecture change. No network, credential, account,
+order, fund, transaction, or protected capture request was used. Canonical v2
+adjudication SHA-256 is
+`951bde07b04cd1257d6be4e4d6e163a3b6a8adc3198bf653eb2504f791d23520`.
 
 ## 2026-09-01 retained Iran-island OR implication audit
 

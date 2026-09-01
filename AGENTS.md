@@ -158,6 +158,18 @@ override prose.
   for composite NO before requesting a missing member: if that nonnegative-leg
   lower bound is already at or above one pUSD, stop without the extra metadata,
   book, fee, account, or credential request.
+- In one rule-complete fixed-NegRisk event, every unordered pair of distinct
+  outcomes is mutually exclusive, so `NO(Ai) + NO(Aj)` has a one-pUSD floor and
+  pays two pUSD when another outcome wins. An all-YES complete-set screen does
+  not exhaust this pairwise-NO family. Freeze and enumerate every pair before
+  economics, use a direct NO ask or conservative `1-bestBid`, and treat a
+  missing selected-side price as incomplete rather than free. Stop before books
+  when no pair is strictly sub-floor. For retained Gamma fee metadata, an
+  absent `feeSchedule` is zero fee only when the same frozen row explicitly has
+  `feesEnabled=false` and an empty `feeType`; every enabled row still requires
+  a supported exact positive schedule. Preserve a consumed pre-output schema
+  failure and refreeze that sole mechanical correction instead of rerunning or
+  rewriting it.
 - When projecting a pairwise comparator into a multi-outcome winner market,
   align tie payouts before calling the implication Boolean. If the pairwise
   market resolves an equal comparison 50-50 while the multi-outcome market
