@@ -1,0 +1,160 @@
+{
+  "schema_version": "binance-copy-trading-lead-vip-fee-overlay-edge-v1",
+  "created_at_utc": "2026-09-01T06:12:00Z",
+  "question": "Does Binance's current Lead Trader VIP Fee Privilege Program create a market-direction-independent cost overlay without manufacturing trading volume, followers, or assets under management?",
+  "source_binding": {
+    "announcement_discovery": {
+      "contract_path": "docs/model-research/action-value/binance-latest-announcement-trigger-sweep-contract-v1-2026-09-01.json",
+      "contract_sha256": "59a07400bd579b37760fc9dfb9a7ed7653cdd063af7b2d986580442f90c1d868",
+      "raw_path": "data/binance-latest-announcement-trigger-sweep-v1/raw/01-announcement-list.raw.json",
+      "raw_sha256": "ed97dc194e205e081f68bafaea15d9873b22a13fe946f513d84e437d7b02a4ca",
+      "journal_sha256": "71381cd52e47f850ad74da2cd1646c1160704d9914a1eecd42c401a6f204de45",
+      "source_result_sha256": "af4bdf8333745294b312b718a6d53d43645520ce45ad9330414e645545294653"
+    },
+    "announcement": {
+      "article_code": "214ff1a197d5497595da888569e3552a",
+      "contract_path": "docs/model-research/action-value/binance-copy-trading-lead-vip-fee-overlay-source-contract-v1-2026-09-01.json",
+      "contract_sha256": "15c99f4935a0eee99f8eae144a05c162a228126fa6410178347299732cd06166",
+      "raw_path": "data/binance-copy-trading-lead-vip-fee-overlay-v1/raw/01-announcement.raw.json",
+      "raw_sha256": "7d1beba2d82f072bfd56c4e55db344b10b5242d0bce2d1209fb823b0a2419327",
+      "journal_sha256": "6f907d3366f3b49414fe70cfa94156e967d7a69d6a39d9d9a87e3407a06aaf65",
+      "source_result_sha256": "c98d9f51c27df2a34a1a1124f82c69909de05b9161039c65153dc7b29ec95640",
+      "published_at_utc": "2026-07-16T01:40:33.007000Z"
+    },
+    "program_faq": {
+      "article_code": "85a90634d4fe44fd91a3a32ef50fded0",
+      "contract_path": "docs/model-research/action-value/binance-copy-trading-lead-vip-fee-faq-source-contract-v1-2026-09-01.json",
+      "contract_sha256": "7d31146c29618fbad179702790162118328369e6ce6b835746dedcb3466de2d0",
+      "raw_path": "data/binance-copy-trading-lead-vip-fee-overlay-v1/raw/02-program-faq.raw.json",
+      "raw_sha256": "5b6ef45a26fc304d4c3e86aacbdabc28350cdc1c3f760c6e7e068b88b39a5c8e",
+      "journal_sha256": "9c2d633d5d8f58166525edf29d0525b746c74bd01ec397ec072abf18e27bea15",
+      "source_result_sha256": "04d81e864b8700a4ff3e36c09a8e3e406819ba64f35a76b093982541f1019c95",
+      "published_at_utc": "2026-07-16T01:40:33.007000Z",
+      "updated_at_utc": "2026-08-18T10:16:00Z"
+    },
+    "retained_fee_comparator": {
+      "path": "docs/model-research/action-value/binance-vip6-for-six-organic-fee-overlay-candidate-v1-2026-08-27.json",
+      "result_sha256": "f638cb6f565c1ee18c9dc065c5f4fc6506442f00833193d23c287bdf9d8ec74d",
+      "observed_at_utc": "2026-08-27T05:36:16.872000Z",
+      "role": "bounded sensitivity only; refresh the exact current account fee before valuing an owned trade"
+    }
+  },
+  "current_program_terms": {
+    "product_scope": "Binance Futures Copy Trading lead-trader fee component only",
+    "minimum_eligible_copiers": {
+      "public_or_signal_portfolio": 200,
+      "private_portfolio": 50
+    },
+    "minimum_copy_trading_AUM_rule": "at least 60 percent of the corresponding 500000, 1000000, or 3000000 USDT tier threshold",
+    "minimum_trailing_30_day_copier_volume_USDT": "5000000",
+    "existing_lead_trader_tiers": [
+      {
+        "AUM_USDT": "500000_to_below_1000000",
+        "exclusive": "upgrade_to_VIP4_or_plus_2",
+        "non_exclusive_over_60_percent_assets_on_Binance": "upgrade_to_VIP3_or_plus_1"
+      },
+      {
+        "AUM_USDT": "1000000_to_below_3000000",
+        "exclusive": "upgrade_to_VIP5_or_plus_2",
+        "non_exclusive_over_60_percent_assets_on_Binance": "upgrade_to_VIP4_or_plus_1"
+      },
+      {
+        "AUM_USDT": "at_least_3000000",
+        "exclusive": "upgrade_to_VIP6_or_plus_2",
+        "non_exclusive_over_60_percent_assets_on_Binance": "upgrade_to_VIP5_or_plus_1"
+      }
+    ],
+    "caps": {
+      "exclusive": "VIP6",
+      "non_exclusive": "VIP5"
+    },
+    "VIP5_or_VIP6_BNB_holding_requirement": "at_least_25_BNB_in_Binance_account",
+    "review_frequency": "first_week_of_each_month",
+    "first_review_start_utc": "2026-08-03T00:00:00Z",
+    "upgrade_qualification_days_in_prior_30": 25,
+    "downgrade_failure_days_in_prior_30": 15,
+    "published_end_time": null,
+    "manual_conditions": [
+      "initial manual review",
+      "exclusive partnership agreement before exclusive benefits",
+      "anti-abuse review",
+      "exclusive status may be reviewed at any time"
+    ],
+    "excluded_from_stable_edge": "The separate new-top-trader or KOL path is a quota-limited three-month experience and has no stable recurring public floor."
+  },
+  "retained_fee_sensitivity": {
+    "classification": "gross sensitivity on independently existing organic executed notional, never a forward account profit floor",
+    "formula": "owned fee-bearing executed notional times the exact prior account commission minus the exact applied upgraded commission",
+    "USD_M_USDT_standard_USD_per_1000000_USD": {
+      "VIP3_to_VIP4": {"maker": "20", "taker": "20"},
+      "VIP4_to_VIP5": {"maker": "20", "taker": "30"},
+      "VIP5_to_VIP6": {"maker": "20", "taker": "20"},
+      "VIP1_to_VIP4": {"maker": "80", "taker": "200"},
+      "VIP1_to_VIP6": {"maker": "120", "taker": "250"}
+    },
+    "USD_M_USDT_with_BNB_discount_USD_per_1000000_USD": {
+      "VIP3_to_VIP4": {"maker": "18", "taker": "18"},
+      "VIP4_to_VIP5": {"maker": "18", "taker": "27"},
+      "VIP5_to_VIP6": {"maker": "18", "taker": "18"},
+      "VIP1_to_VIP4": {"maker": "72", "taker": "180"},
+      "VIP1_to_VIP6": {"maker": "108", "taker": "225"}
+    },
+    "minimum_displayed_positive_example_at_5000000_USDT_trailing_volume_USD": "90",
+    "minimum_example_note": "Five million USDT times the retained 18 USD per million adjacent-tier BNB-discounted sensitivity; this is diagnostic only because owned tier, fill role, BNB already-held status, program approval, exclusivity cost, and current commission remain unproved."
+  },
+  "adjudication": {
+    "status": "accepted_scoped_exact_realized_positive_Copy_Trading_Lead_Trader_VIP_fee_reduction_only_on_independently_existing_organic_Futures_lead_flow_after_owned_eligibility_tier_and_every_incremental_cost",
+    "accepted_edge": true,
+    "accepted_edge_count_change": 1,
+    "deployment_ready": false,
+    "market_direction_forecast_required": false,
+    "profitability_claim": false,
+    "public_forward_net_saving_floor_USD": "0",
+    "stable_current_account_qualified_after_all_cost_edge": false,
+    "why_direction_independent": "The benefit changes the commission charged on an already independently justified trade; its sign does not depend on the market's direction.",
+    "why_not_current_profit": "No owned qualifying lead portfolio, approval, applied tier, exact current commission, authentic external copier flow, preexisting 25 BNB where applicable, exclusivity opportunity cost, or realized fee ledger was accessed or proved."
+  },
+  "next_action": {
+    "public_work": "complete until a material official eligibility, tier, fee, review, duration, or product-scope change",
+    "account_gate": "Only with explicit signed read-only mainnet account authority and an independently existing qualifying lead portfolio, read current lead eligibility, applied VIP tier, exact commissions, trailing authentic copier volume, AUM, copiers, and existing BNB balance. Reconcile only exact realized positive fee savings on independently justified organic BTC, ETH, or SOL Futures lead fills after every incremental cost.",
+    "separate_authority_required_for": [
+      "manual review or application",
+      "contacting Binance",
+      "signing or changing an exclusivity agreement",
+      "sharing external platform or community evidence",
+      "acquiring or retaining BNB",
+      "creating a lead portfolio or recruiting copiers",
+      "placing, modifying, or cancelling any trade",
+      "transfers or account changes"
+    ]
+  },
+  "prohibited_shortcuts": [
+    "manufacturing enlarging churning self matching or wash trading volume",
+    "creating fake copiers followers AUM community members PnL or eligibility evidence",
+    "moving assets or abandoning another venue solely to manufacture exclusivity status without a separately positive all-cost decision",
+    "acquiring or retaining 25 BNB solely to reach VIP5 or VIP6 without a separate opportunity-cost gate",
+    "assuming logged-out public eligibility approval applied tier or account availability",
+    "double counting this fee reduction with BNB discount referral rebate profit share liquidity-provider rebate or another promotion",
+    "treating the quota-limited three-month new-trader experience as a stable recurring edge",
+    "using testnet credentials as evidence of mainnet program eligibility",
+    "calling a conditional cost reduction guaranteed profit or a profitable underlying strategy"
+  ],
+  "retry_trigger": "material_official_Copy_Trading_Lead_Trader_VIP_eligibility_tier_fee_review_duration_exclusivity_or_product_scope_change_or_both_designated_mainnet_credentials_plus_explicit_signed_GET_only_authority_plus_an_independently_existing_qualifying_lead_portfolio_and_exact_owned_organic_fee_reconciliation_question",
+  "authority": {
+    "account_requests": 0,
+    "credentials_used": false,
+    "funds_used": false,
+    "orders_or_transactions": 0,
+    "protected_capture_touched": false,
+    "public_unauthenticated_read_only_requests": 3,
+    "signed_requests": 0,
+    "trading_authority": false
+  },
+  "registry_effect": {
+    "accepted_edge_count": 30,
+    "ranked_hypothesis_count": 47,
+    "terminal_family_count": 142,
+    "stable_current_account_qualified_after_all_cost_edge_count": 0
+  },
+  "result_sha256": "542980565432c5160cf0970b3a7e909ea2d028cbc9a0917ebbf7b21fded3f6c5"
+}

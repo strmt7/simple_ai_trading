@@ -195,6 +195,19 @@ override prose.
   a machine-readable primary schema, or a predeclared rendered field extraction
   can answer the question. If an exact dynamic page is nevertheless uniquely
   necessary and fails this way, retain the response and stop without URL aliases.
+- Treat every Binance CMS announcement catalog as a category-specific discovery
+  page, not a complete or strictly current cross-category feed. A page may omit a
+  newer Futures, listing, promotion, or product announcement while still returning
+  HTTP 200. Freeze one bounded page only when its exact catalog is relevant, label
+  a no-new-row result to that page and cutoff only, and never infer that Binance as
+  a whole has no new trigger. A discovered title or article code is not economics:
+  freeze the exact detail article and any announcement-designated FAQ before using
+  eligibility, tier, fee, duration, or product terms.
+- Testnet credentials never prove mainnet promotion, VIP, portfolio, copier, AUM,
+  commission, or account eligibility. Keep them out of public program gates and
+  require the exact designated mainnet read-only authority before any owned-state
+  claim; every application, agreement, evidence disclosure, trade, transfer, or
+  account change remains separately authorized.
 - Search the retained official Agent Native index and exact safe source sections
   before downloading a multi-megabyte complete reference. Secret-scan any full
   documentation response before staging because public examples can contain API

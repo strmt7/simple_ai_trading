@@ -1,0 +1,68 @@
+{
+  "schema_version": "public-source-capture-contract-v1",
+  "frozen_at_utc": "2026-09-01T06:06:12.8092275Z",
+  "contract_path": "docs/model-research/action-value/binance-latest-announcement-trigger-sweep-contract-v1-2026-09-01.json",
+  "trigger": {
+    "registry_route": "bounded_current_official_material_trigger_discovery_across_open_Binance_hypotheses",
+    "prior_observation_cutoff_utc": "2026-09-01T04:32:00Z",
+    "outcomes_viewed_before_freeze": false,
+    "discovery_values_are_economic_inputs": false
+  },
+  "question": "Has Binance published a new official announcement since the retained September 1 SHEIN trigger that literally changes an open ranked mechanism's instrument, fee, reward, yield, settlement, conversion, execution, or program terms?",
+  "request_name": "binance-latest-announcement-material-trigger-sweep",
+  "request": {
+    "method": "GET",
+    "url": "https://www.binance.com/bapi/composite/v1/public/cms/article/list/query?type=1&pageNo=1&pageSize=50&catalogId=49",
+    "count": 1,
+    "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "endpoint_classification": {
+    "operation": "download one bounded current page of the public official Binance latest-announcement catalog",
+    "security": "public unauthenticated read-only CMS GET with no account, credential, order, or mutation semantics",
+    "source_contract": "The official Binance support announcement list is the discovery surface; only exact returned titles, article codes, and publication times may open a separate source-bound gate."
+  },
+  "response_byte_ceiling": 1000000,
+  "required_utf8_phrases": [
+    "\"code\"",
+    "\"data\"",
+    "\"articles\"",
+    "\"releaseDate\""
+  ],
+  "decision": {
+    "source_gate_only": "Parse titles, article codes, and release times offline; ignore marketing language and do not infer deployment or economics from a title.",
+    "accepted_edge": false,
+    "profitability_proved": false,
+    "conditional_next_step": "Advance at most the highest-ranked genuinely new literal trigger through a separately frozen cheapest decisive source or structural gate; otherwise record a no-trigger result without any market-data request."
+  },
+  "outputs": {
+    "raw_path": "data/binance-latest-announcement-trigger-sweep-v1/raw/01-announcement-list.raw.json",
+    "journal_path": "data/binance-latest-announcement-trigger-sweep-v1/raw/00-request-journal.jsonl",
+    "result_path": "docs/model-research/action-value/binance-latest-announcement-trigger-sweep-source-result-v1-2026-09-01.json"
+  },
+  "authority": {
+    "account_requests": 0,
+    "credentials_used": false,
+    "funds_used": false,
+    "orders_or_transactions": 0,
+    "protected_capture_touched": false,
+    "public_unauthenticated_read_only_requests": 1,
+    "signed_requests": 0,
+    "trading_authority": false
+  },
+  "implementations": [
+    {
+      "path": "tools/capture_public_source_contract.py",
+      "sha256": "d566a5a379c659c3da144d5e28449ebac9c01493bd39646f9cc3a6e697a83566"
+    },
+    {
+      "path": "tools/screen_polymarket_exact_two_leg_package.py",
+      "sha256": "374fcc3c3485c466b4929a91256450bdc7db70f93ef4c6bda627e05fe8938327"
+    },
+    {
+      "path": "tools/adjudicate_polymarket_exact_mlb_monotone_prefilter.py",
+      "sha256": "958a44d78029b9a1eb69a3771ce18e53ac1ed3c7bc161c8e4318beedce2cf99f"
+    }
+  ],
+  "retry_policy": "This exact catalog-page GET is one-use. Preserve any HTTP error, empty response, or missing-term response and do not retry an alias. Do not revisit titles at or before the retained prior-observation cutoff, and do not request prices, funding, books, accounts, or credentials unless a separate literal trigger and frozen cheapest decisive gate justify them.",
+  "contract_sha256": "59a07400bd579b37760fc9dfb9a7ed7653cdd063af7b2d986580442f90c1d868"
+}

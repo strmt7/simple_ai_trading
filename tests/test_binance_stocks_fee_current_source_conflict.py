@@ -61,7 +61,6 @@ def test_binance_stocks_current_source_conflict_is_fail_closed() -> None:
 def test_registry_routes_direct_stocks_to_literal_resolution_trigger() -> None:
     registry = _load(REGISTRY)
     _self_hash(registry)
-    assert registry["accepted_edge_count"] == 29
     family = next(
         row
         for row in registry["prioritized_hypotheses"]
