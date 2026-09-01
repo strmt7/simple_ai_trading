@@ -1,0 +1,86 @@
+{
+  "adjudication": {
+    "accepted_edge_count_after": 33,
+    "accepted_edge_count_change": -1,
+    "deployment_ready": false,
+    "market_direction_forecast_required_for_publicly_proved_value": true,
+    "profitability_claim": false,
+    "public_bonus_conversion_candidate": false,
+    "public_new_capital_after_all_cost_profit_floor_usd": "0",
+    "stable_current_account_qualified_after_all_cost_edge_count_after": 0,
+    "status": "edge_34_revoked_because_publicly_proved_value_requires_a_trading_outcome_and_public_hedged_conversion_is_not_source_proved"
+  },
+  "authority": {
+    "account_requests": 0,
+    "credentials_used": false,
+    "funds_used": false,
+    "market_data_requests": 0,
+    "orders_or_transactions": 0,
+    "protected_capture_touched": false,
+    "public_unauthenticated_read_only_requests": 2,
+    "signed_requests": 0,
+    "trading_authority": false
+  },
+  "created_at_utc": "2026-09-01T10:54:00Z",
+  "edge_34_revocation": {
+    "former_evidence_tier": "C_preexisting_internal_activity_saving_or_rebate",
+    "mechanism": "polymarket_US_first_deposit_promotional_trading_credit_realized_proceeds_overlay",
+    "reason": "The promotional credit face amount is non-withdrawable and the only possibly withdrawable value is resulting trading proceeds. Without an expressly permitted state-complete direction-independent conversion, positive proceeds require a favorable trading outcome and the former scope is not a structural market-direction-independent edge.",
+    "withdrawable_value_excludes": [
+      "the_promotional_credit_face_amount",
+      "an_advertised_20_USD_amount_without_the_exact_account_campaign",
+      "unsettled_or_unliquidated_position_value",
+      "proceeds_not_yet_eligible_under_withdrawal_requirements",
+      "any_reward_withheld_canceled_or_reversed_under_program_controls"
+    ]
+  },
+  "public_source_conflicts": [
+    {
+      "field": "qualifying_deposit",
+      "open_incentive_page": "at_least_1_USD_after_ISV_onboarding",
+      "user_program_terms": "Campaign_A_at_least_10_USD_after_campaign_presented_by_code_or_link",
+      "resolution": "account_specific_campaign_required_public_floor_zero"
+    },
+    {
+      "field": "original_credit_withdrawal",
+      "faq": "credit_is_trading_credit_not_cash_and_cannot_be_withdrawn_including_after_use_settlement_or_liquidation_only_resulting_proceeds_may_become_withdrawable",
+      "user_program_terms": "incentive_funds_may_become_withdrawable_after_trading_collateral_use_and_release_through_settlement_or_liquidation",
+      "resolution": "specific_FAQ_blocks_face_value_cash_credit_and_remaining_wording_conflict_blocks_public_conversion_floor"
+    }
+  ],
+  "public_terms": {
+    "campaign_control": "A participant qualifies only for the campaign presented before the qualifying deposit and may receive one deposit incentive credit.",
+    "daily_trading_program_live": false,
+    "deposit_and_trading_program_live": false,
+    "deposit_campaign_a_advertised_credit_usd": "20",
+    "deposit_campaign_a_advertised_qualifying_deposit_usd": "10",
+    "referral_campaign_a_advertised_credit_each_usd": "25",
+    "referral_limit_per_participant": 14,
+    "reversal_controls": [
+      "suspected_fraud",
+      "abuse",
+      "manipulation",
+      "self_dealing",
+      "self_referral",
+      "coordinated_activity",
+      "activity_inconsistent_with_program_terms_or_exchange_rules"
+    ]
+  },
+  "result_sha256": "14411b0378171e180f2e4423bb89aa491522315082d216ed219f6345b803883b",
+  "schema_version": "polymarket-us-promotional-credit-adjudication-v1",
+  "terminal_public_conversion": {
+    "family": "polymarket_US_first_deposit_promotional_credit_direction_independent_hedged_cash_conversion_2026_09_01",
+    "reason": "The original promotional credit is never withdrawable; only resulting trading proceeds may become eligible after full credit use and settlement or liquidation. Public sources conflict on campaign eligibility, qualifying deposit, and whether incentive funds themselves may become withdrawable, while Polymarket may withhold cancel or reverse suspected abuse self-dealing coordinated activity or inconsistent use. No public source expressly permits the contemplated offsetting hedge or defines state-complete credit consumption, cash-account mixing, fees, whole-contract rounding, fill atomicity, liquidation, withdrawal, or reversal economics. Stop before every BBO, book, fee, account, credential, deposit, order, fund, or transaction request.",
+    "reopen_only_on": "exact_account_campaign_terms_plus_explicit_read_only_authority_plus_a_current_official_source_expressly_permitting_the_exact_non_abusive_hedge_and_defining_credit_consumption_resulting_proceeds_account_mixing_settlement_liquidation_withdrawal_reversal_and_every_cost_or_a_material_official_program_change"
+  },
+  "terms_source_result": {
+    "path": "docs/model-research/action-value/polymarket-us-promotional-credit-terms-source-result-v1-2026-09-01.json",
+    "raw_sha256": "3a1987bbff88abf718c43b190db8b40d040ab5ba9c42141920e250e186f9d1ec",
+    "sha256": "8bf6ca023bf62623b5c0334a4866f3df4d5cbe4f9460e333b8c620d46c99caad"
+  },
+  "usability_source_result": {
+    "path": "docs/model-research/action-value/polymarket-us-promotional-credit-usability-source-result-v1-2026-09-01.json",
+    "raw_sha256": "75585a94e745d315da0ab0ef55a4e7efc17b41e5aed48f0bcb6539bb458f7174",
+    "sha256": "0e127bf1c2abc044ebc5e26815e331ed840e9440026a79f33b1ec45075e92106"
+  }
+}

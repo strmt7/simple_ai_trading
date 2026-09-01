@@ -1,0 +1,62 @@
+{
+  "authority": {
+    "account_requests": 0,
+    "credentials_used": false,
+    "funds_used": false,
+    "orders_or_transactions": 0,
+    "protected_capture_touched": false,
+    "public_unauthenticated_read_only_requests": 1,
+    "signed_requests": 0,
+    "trading_authority": false
+  },
+  "contract_path": "docs/model-research/action-value/polymarket-us-promotional-credit-usability-contract-v1-2026-09-01.json",
+  "contract_sha256": "f2328021f2f937178ef645a32b8730dac8ee19a4b9bf716a6dd3c3fa28ba5012",
+  "decision": {
+    "accepted_edge_count_change": "Only if the exact source proves a distinct direction-independent owned value identity rather than restating the first-deposit offer.",
+    "adjudication_rule": "If promotional credit cannot be withdrawn directly, do not count its face amount as cash. Bind every use, conversion, expiration, forfeiture, wagering or trading, profit-withdrawal, fee, loss, and eligibility condition stated by the source. Any missing branch makes the public transferable-value floor zero.",
+    "deployment_ready": false,
+    "profitability_proved": false,
+    "stable_current_edge_proved": false
+  },
+  "frozen_at_utc": "2026-09-01T10:48:28.2624696Z",
+  "implementations": [
+    {
+      "path": "tools/capture_public_source_contract.py",
+      "sha256": "ba0e76bd6643eedc072cc1fcff2aa363c1dc14a5b8e14956e874c7843637b376"
+    }
+  ],
+  "limitations": [
+    "The documentation-index title is discovery only and reveals no complete usability economics.",
+    "An advertised promotional-credit face amount is not cash, profit, withdrawal value, or expected value.",
+    "No account eligibility, owned receipt, expiration, trading result, withdrawal, persistence, or recurrence is assumed.",
+    "No account, onboarding, deposit, trade, order, fund movement, or state change is authorized."
+  ],
+  "outputs": {
+    "journal_path": "data/polymarket-us-promotional-credit-usability-v1/request-journal.jsonl",
+    "raw_path": "data/polymarket-us-promotional-credit-usability-v1/raw/withdraw-promo.md",
+    "result_path": "docs/model-research/action-value/polymarket-us-promotional-credit-usability-source-result-v1-2026-09-01.json"
+  },
+  "question": "Does current official Polymarket US documentation prove that promotional credit is directly withdrawable or otherwise has a deterministic positive transferable-value floor without requiring a profitable directional trade?",
+  "request_name": "polymarket-us-promotional-credit-usability",
+  "request": {
+    "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "count": 1,
+    "method": "GET",
+    "name": "polymarket-us-promotional-credit-usability",
+    "url": "https://docs.polymarket.us/learn/faq/withdraw-promo.md"
+  },
+  "required_utf8_phrases": [
+    "promotional credit",
+    "withdraw"
+  ],
+  "response_byte_ceiling": 1000000,
+  "retry_policy": "This exact official Markdown GET is one-use. Preserve any HTTP, empty-response, phrase, or schema failure and do not retry an HTML alias. Adjudicate retained bytes once without an account request. Reopen only for a material official promotional-credit eligibility, use, expiration, conversion, withdrawal, or payment change.",
+  "schema_version": "public-source-capture-contract-v1",
+  "trigger": {
+    "discovery_source": "https://docs.polymarket.us/llms.txt",
+    "discovery_title": "Why can't I withdraw my promotional credit?",
+    "economic_content_viewed_before_freeze": false,
+    "registry_rank": 51,
+    "retry_trigger_satisfied_by": "previously_unconsumed_current_official_source_directly_addressing_credit_usability_and_withdrawal"
+  }
+}

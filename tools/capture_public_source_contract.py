@@ -33,6 +33,20 @@ def _validate_contract(contract: dict[str, Any], contract_path: Path) -> None:
         raise RuntimeError("contract hash mismatch")
     if contract_path != _root_path(contract["contract_path"]):
         raise RuntimeError("contract path mismatch")
+    request_name = contract.get("request_name")
+    if not isinstance(request_name, str) or not request_name.strip():
+        raise RuntimeError("request_name must be a nonempty string")
+    outputs = contract.get("outputs")
+    required_outputs = {"raw_path", "journal_path", "result_path"}
+    if (
+        not isinstance(outputs, dict)
+        or set(outputs) != required_outputs
+        or any(
+            not isinstance(outputs[name], str) or not outputs[name]
+            for name in required_outputs
+        )
+    ):
+        raise RuntimeError("outputs must contain exact nonempty path fields")
     frozen_text = contract.get("frozen_at_utc")
     if not isinstance(frozen_text, str) or not frozen_text.endswith("Z"):
         raise RuntimeError("frozen_at_utc must be an explicit UTC instant")
@@ -75,7 +89,12 @@ def _validate_contract(contract: dict[str, Any], contract_path: Path) -> None:
         "trading_authority": False,
     }:
         raise RuntimeError("authority boundary changed")
-    for implementation in contract["implementations"]:
+    implementations = contract.get("implementations")
+    if not isinstance(implementations, list) or not implementations:
+        raise RuntimeError("implementations must be a nonempty list")
+    for implementation in implementations:
+        if not isinstance(implementation, dict):
+            raise RuntimeError("implementation entry must be an object")
         path = _root_path(implementation["path"])
         if _sha256(path.read_bytes()) != implementation["sha256"]:
             raise RuntimeError(f"implementation hash mismatch: {path.name}")

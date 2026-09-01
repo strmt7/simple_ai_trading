@@ -9181,3 +9181,68 @@ and `ff1c9aae493f8acf533464ad90352a486d1dfe23c73511ba1f7ba9a628441922`.
 Accepted edges become 34, ranked hypotheses become 51, terminal families become
 163, and stable current account-qualified after-all-cost edges remain zero.
 No credentials were used and the protected Polymarket capture was untouched.
+
+## Polymarket US promotional-credit withdrawal conflict and edge revocation
+
+The official documentation index exposed a previously unconsumed source titled
+`Why can't I withdraw my promotional credit?`. Before opening it, a one-use
+contract froze the exact official Markdown URL and the decision rule that an
+advertised credit is not cash. The retained 1,528-byte source proves that promo
+credits are trading credits, not cash, and cannot be withdrawn even after use,
+settlement, or liquidation. Only resulting trading proceeds may possibly become
+withdrawal-eligible after the full credit is used as collateral and the related
+positions settle or are liquidated. Withdrawal also requires a linked payment
+method, an initial deposit, and its clearing delay.
+
+That source linked the complete User Incentive Programs terms. A second
+prospectively frozen one-use 4,959-byte official Markdown capture proved
+additional conflicts and controls:
+
+- the general open-incentive page says a new ISV-onboarded participant deposits
+  at least 1 USD, while the full terms say the participant qualifies only for
+  the campaign presented before deposit and Campaign A requires at least 10 USD;
+- the specific FAQ says the original credit always remains non-withdrawable,
+  while the full terms say incentive funds may become withdrawable after
+  collateral use and release through settlement or liquidation;
+- Polymarket may withhold, cancel, or reverse incentives for suspected fraud,
+  abuse, manipulation, self-dealing, self-referral, coordinated activity, or
+  activity inconsistent with program terms or exchange rules;
+- Daily Trading and Deposit and Trading program details are not yet live.
+
+The contemplated direction-independent free-bet-style hedge therefore stops
+before economics. No public source expressly permits the exact offsetting hedge
+or defines state-complete credit consumption, cash-account mixing, fees,
+whole-contract rounding, fill atomicity, liquidation, withdrawal, or reversal
+economics. The face amount is non-withdrawable and positive resulting proceeds
+otherwise require a favorable trading outcome. The former thirty-fourth
+accepted edge is revoked rather than preserved as a tautological
+exact-positive-proceeds predicate. It remains rank 51 as a zero-floor
+hypothesis and may reopen only on exact account campaign terms, explicit
+separate read-only authority, and current official permission plus complete
+economics for the exact non-abusive hedge, or on a material program change.
+
+The shared public-source validator also now rejects a missing `request_name`,
+nonexact or empty output paths, and a missing, empty, or malformed implementation
+list before creating output directories or making a request. Four focused
+assertions cover the valid contract and each observed pre-side-effect failure.
+
+Usability contract/source-result/raw/journal SHA-256 values are
+`f2328021f2f937178ef645a32b8730dac8ee19a4b9bf716a6dd3c3fa28ba5012`,
+`0e127bf1c2abc044ebc5e26815e331ed840e9440026a79f33b1ec45075e92106`,
+`75585a94e745d315da0ab0ef55a4e7efc17b41e5aed48f0bcb6539bb458f7174`,
+and `b3b1b51621b054f3857b7db2505577846412e64c831a3932a057becc161bc874`.
+Full-terms contract/source-result/raw/journal SHA-256 values are
+`9f237e7b0092d60553364c396d20822d2f7fe805535d451c4114a38c94839c92`,
+`8bf6ca023bf62623b5c0334a4866f3df4d5cbe4f9460e333b8c620d46c99caad`,
+`3a1987bbff88abf718c43b190db8b40d040ab5ba9c42141920e250e186f9d1ec`,
+and `c22e4a529233a4fb2dbf2c80008c86b1073a36b5e9b0191e3eb7a1e42992ac0c`.
+Adjudication, capture implementation, registry, and durability-audit SHA-256
+values are
+`14411b0378171e180f2e4423bb89aa491522315082d216ed219f6345b803883b`,
+`ba0e76bd6643eedc072cc1fcff2aa363c1dc14a5b8e14956e874c7843637b376`,
+`a788b2d7d26e95b8719e3943338b27bb7500453dc149bc9f66fc2e9617b1594a`,
+and `7d9449c50cadd7ce8987f4d80733b4fa887ddc2e4342c902f51dcb877a4e2a21`.
+Accepted edges become 33, ranked hypotheses remain 51, terminal families become
+164, and stable current account-qualified after-all-cost edges remain zero.
+No BBO, book, fee, account, credential, deposit, order, fund, transaction, or
+protected capture was touched.
