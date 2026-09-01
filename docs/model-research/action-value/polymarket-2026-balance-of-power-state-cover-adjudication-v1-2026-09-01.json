@@ -1,0 +1,228 @@
+{
+  "schema_version": "polymarket-cross-event-state-cover-adjudication-v1",
+  "created_at_utc": "2026-09-01T03:26:03Z",
+  "candidate": {
+    "mechanism": "joint_partition_to_house_marginal_state_cover",
+    "market_direction_forecast_required": false,
+    "quantity_shares_per_leg": "5",
+    "guaranteed_floor_pUSD": "5",
+    "legs": [
+      {
+        "event_slug": "which-party-will-win-the-house-in-2026",
+        "gamma_market_id": "562802",
+        "outcome": "No",
+        "price_source": "one_minus_direct_Democratic_YES_bestBid",
+        "rejection_price_pUSD_per_share": "0.12"
+      },
+      {
+        "event_slug": "balance-of-power-2026-midterms",
+        "gamma_market_id": "562828",
+        "outcome": "Yes",
+        "price_source": "direct_bestAsk",
+        "rejection_price_pUSD_per_share": "0.51"
+      },
+      {
+        "event_slug": "balance-of-power-2026-midterms",
+        "gamma_market_id": "562830",
+        "outcome": "Yes",
+        "price_source": "direct_bestAsk",
+        "rejection_price_pUSD_per_share": "0.36"
+      },
+      {
+        "event_slug": "balance-of-power-2026-midterms",
+        "gamma_market_id": "562832",
+        "outcome": "Yes",
+        "price_source": "direct_bestAsk",
+        "rejection_price_pUSD_per_share": "0.003"
+      }
+    ]
+  },
+  "exact_metadata": {
+    "joint_event": {
+      "gamma_event_id": "32228",
+      "active": true,
+      "closed": false,
+      "negRisk": true,
+      "negRiskAugmented": false,
+      "end_date_utc": "2026-11-03T00:00:00Z",
+      "market_count": 5,
+      "complete_group_item_titles": [
+        "Democrats Sweep",
+        "D Senate, R House",
+        "R Senate, D House",
+        "Republicans Sweep",
+        "Other"
+      ],
+      "all_markets_active_open_accepting_orders": true,
+      "description_sha256": "f34f45b6b7464581ee4e02f4ae784532e248f81c5550b8542ad51517db1f06f4"
+    },
+    "house_event": {
+      "gamma_event_id": "32225",
+      "active": true,
+      "closed": false,
+      "negRisk": true,
+      "negRiskAugmented": true,
+      "end_date_utc": "2026-11-03T00:00:00Z",
+      "market_count": 9,
+      "active_group_item_titles": [
+        "Democratic Party",
+        "Republican Party"
+      ],
+      "inactive_hidden_group_item_titles": [
+        "Other",
+        "Party A",
+        "Party B",
+        "Party C",
+        "Party D",
+        "Party E",
+        "Party F"
+      ],
+      "selected_Democratic_market_active_open_accepting_orders": true,
+      "description_sha256": "7f0d9069b6d07e308bfb7e917e01deb121fb4521cb41227c37a601d9e2be693f"
+    }
+  },
+  "rule_alignment": {
+    "passed_for_rejection_only_state_cover": true,
+    "aligned_terms": [
+      "same 2026 United States midterm House-control question",
+      "same majority-of-voting-seats House-control definition",
+      "same first elected Speaker ambiguity fallback",
+      "same upcoming 120th Congress House seat universe",
+      "same runoff attribution",
+      "same elected-party attribution through formal organization",
+      "same independent caucus handling and January 4 deadline",
+      "same official state authority United States Congress and credible-reporting sources",
+      "same 2026-11-03T00:00:00Z event end"
+    ],
+    "important_hidden_state_treatment": "The joint Other YES leg is mandatory and pays in every joint Other resolution. Hidden inactive marginal siblings are not omitted as free legs: the selected Democratic-market NO token pays whenever Democratic House control is false, regardless of which non-Democratic marginal sibling is true."
+  },
+  "state_table": [
+    {
+      "joint_state": "D_Senate_D_House",
+      "NO_D_House": 0,
+      "YES_DD": 1,
+      "YES_RD": 0,
+      "YES_Other": 0,
+      "package_payout_pUSD_per_share": 1
+    },
+    {
+      "joint_state": "D_Senate_R_House",
+      "NO_D_House": 1,
+      "YES_DD": 0,
+      "YES_RD": 0,
+      "YES_Other": 0,
+      "package_payout_pUSD_per_share": 1
+    },
+    {
+      "joint_state": "R_Senate_D_House",
+      "NO_D_House": 0,
+      "YES_DD": 0,
+      "YES_RD": 1,
+      "YES_Other": 0,
+      "package_payout_pUSD_per_share": 1
+    },
+    {
+      "joint_state": "R_Senate_R_House",
+      "NO_D_House": 1,
+      "YES_DD": 0,
+      "YES_RD": 0,
+      "YES_Other": 0,
+      "package_payout_pUSD_per_share": 1
+    },
+    {
+      "joint_state": "Other",
+      "NO_D_House": "0_or_1",
+      "YES_DD": 0,
+      "YES_RD": 0,
+      "YES_Other": 1,
+      "package_payout_pUSD_per_share": "at_least_1"
+    }
+  ],
+  "economics": {
+    "gamma_role": "side_specific_rejection_only_never_acceptance_or_promotion_evidence",
+    "gross_acquisition_cost_pUSD": "4.965",
+    "gross_terminal_floor_pUSD": "5",
+    "gross_headroom_pUSD": "0.035",
+    "fee_schedule": {
+      "feesEnabled": true,
+      "rate": "0.04",
+      "exponent": 1,
+      "takerOnly": true,
+      "takerBaseFee": 1000
+    },
+    "fee_formula": "ceil_to_0.00001(quantity * rate * (price * (1-price))^exponent), with values below 0.00001 treated as zero",
+    "leg_taker_fees_pUSD": [
+      "0.02112",
+      "0.04998",
+      "0.04608",
+      "0.00060"
+    ],
+    "total_taker_fees_pUSD": "0.11778",
+    "after_fee_profit_floor_pUSD": "-0.08278",
+    "after_fee_profit_floor_pUSD_per_share": "-0.016556",
+    "strict_after_fee_positive": false,
+    "unmodeled_costs": [
+      "exact depth",
+      "adverse ticks",
+      "time value through resolution",
+      "four-leg non-atomicity",
+      "partial-fill unwind",
+      "latency",
+      "capital cost",
+      "operational failure"
+    ]
+  },
+  "source_binding": {
+    "joint_contract": {
+      "path": "docs/model-research/action-value/polymarket-2026-balance-of-power-joint-metadata-contract-v1-2026-09-01.json",
+      "canonical_sha256": "8201e7535d07b7340a612f10473a43718ed1efa350b6d804dd5762a57cab64b7"
+    },
+    "house_contract": {
+      "path": "docs/model-research/action-value/polymarket-2026-house-control-marginal-metadata-contract-v1-2026-09-01.json",
+      "canonical_sha256": "1ce1e4450da6cc36e7b2c64702bad00ce52fc0b33b9937353ae8ecb16bdbf634"
+    },
+    "joint_capture_result": {
+      "path": "docs/model-research/action-value/polymarket-2026-balance-of-power-joint-metadata-capture-result-v1-2026-09-01.json",
+      "canonical_sha256": "be8f2a91acaa38c22fe1be0daaa49c728e068cdba0fdff1572a36f0c6d07ce52"
+    },
+    "house_capture_result": {
+      "path": "docs/model-research/action-value/polymarket-2026-house-control-marginal-metadata-capture-result-v1-2026-09-01.json",
+      "canonical_sha256": "3df33380efd5b37047f9dbe5bed73a766a7fd9cfbfadebdb69ece385f0666a1b"
+    },
+    "joint_raw": {
+      "path": "data/polymarket-2026-balance-of-power-state-cover-metadata-v1/raw/joint-event.json",
+      "file_sha256": "33874b299bb20f0201d739ac43bb02395065618523c98db464696681d85f06c8"
+    },
+    "house_raw": {
+      "path": "data/polymarket-2026-balance-of-power-state-cover-metadata-v1/raw/house-event.json",
+      "file_sha256": "64729ef91d43b60cdf13556390132d8fcdcf4bf0cfbc9d57dc525132aa515eba"
+    },
+    "fee_implementation": {
+      "path": "src/simple_ai_trading/polymarket_fees.py",
+      "file_sha256": "4002aa8008874708931cc182f352adf436a65baee24e23bfc72617acdf127c8d"
+    }
+  },
+  "decision": {
+    "status": "rejected_after_exact_metadata_and_current_gamma_fee_schedule_before_books",
+    "accepted_edge": false,
+    "deployment_ready": false,
+    "profitability_claim": false,
+    "book_requests_justified": 0,
+    "fee_endpoint_requests_justified": 0,
+    "reason": "The exact rule-complete four-leg state cover has only 0.035 pUSD gross headroom at five shares, while the current per-market taker schedule charges 0.11778 pUSD before depth or any other cost."
+  },
+  "authority": {
+    "public_unauthenticated_read_only_requests": 2,
+    "book_requests": 0,
+    "fee_endpoint_requests": 0,
+    "account_requests": 0,
+    "signed_requests": 0,
+    "credentials_used": false,
+    "orders_or_transactions": 0,
+    "funds_used": false,
+    "protected_capture_touched": false,
+    "trading_authority": false
+  },
+  "retry_policy": "Do not refresh, reprice, alias, omit Other, switch to midpoint-like outcomePrices, or request books for this exact two-event population. Reopen only for a distinct exact joint-to-marginal event family with a complete rule state cover and rejection-only after-fee headroom strictly positive before depth, or a material fee/rule/market-architecture change.",
+  "result_sha256": "738a9d89f9334e2cfc91f4c21b474528d5222cab222455856cb8289c055ac3ff"
+}

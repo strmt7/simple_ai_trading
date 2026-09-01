@@ -3360,7 +3360,7 @@
       "venue_scope": "Binance_BTC_ETH_SOL_European_options_and_exact_matching_USDT_perpetuals"
     }
   ],
-  "result_sha256": "89cd6f271e75fb716682976870b5d74d4fd06b8a27c8933f88cb0019c993a533",
+  "result_sha256": "264076c9ab6c42043689bf0d53043c2520236c493859cfd1f159acaea78e0cac",
   "schema_version": "structural-edge-priority-registry-v1",
   "terminal_do_not_repeat": [
     {
@@ -4023,8 +4023,13 @@
       "canonical_result_sha256": "9ffdd9272bb4b18644aad2c42e713a270689c2fed2145cd91079ed6b7ba82c05",
       "family": "polymarket_streaming_service_most_Emmys_complete_NegRisk_partition_2026_09_01",
       "reason": "the_rendered_page_exposed_eight_active_service_outcomes_with_direct_YES_asks_summing_to_0_99_pUSD_but_one_frozen_exact_public_Gamma_GET_reconciled_a_ninth_hidden_Other_market_required_by_the_rules_the_hidden_market_was_inactive_with_bestAsk_1_and_the_complete_nine_market_rejection_sum_was_1_99_pUSD_for_a_1_pUSD_floor_before_every_fee_depth_time_value_latency_atomicity_and_unwind_cost_zero_books_fees_accounts_credentials_orders_funds_transactions_or_protected_requests_were_justified_do_not_retry_refresh_alias_omit_Other_or_book_capture_this_exact_event"
+    },
+    {
+      "canonical_result_sha256": "738a9d89f9334e2cfc91f4c21b474528d5222cab222455856cb8289c055ac3ff",
+      "family": "polymarket_2026_balance_of_power_to_Democratic_House_marginal_four_leg_state_cover_2026_09_01",
+      "reason": "the_rendered_NO_Democratic_House_plus_joint_DD_plus_joint_RD_plus_joint_Other_package_triggered_at_0_983_pUSD_and_two_frozen_exact_public_Gamma_GETs_proved_a_complete_five_state_joint_partition_rule_compatible_with_the_marginal_House_definition_the_conservative_side_specific_metadata_sum_was_0_993_pUSD_for_a_1_pUSD_floor_but_current_0_04_exponent_1_taker_fees_totaled_0_11778_pUSD_at_the_five_share_minimum_against_only_0_035_pUSD_gross_headroom_for_negative_0_08278_pUSD_before_depth_ticks_time_value_nonatomicity_unwind_latency_capital_or_operational_cost_zero_books_fee_endpoints_accounts_credentials_orders_funds_transactions_or_protected_requests_were_justified_do_not_retry_refresh_alias_omit_Other_or_book_capture_this_exact_two_event_population"
     }
   ],
-  "updated_at_utc": "2026-09-01T03:08:12Z",
+  "updated_at_utc": "2026-09-01T03:26:03Z",
   "usage_rule": "advance_the_highest_ranked_hypothesis_whose_retry_trigger_is_satisfied_otherwise_do_not_repeat_a_blocked_or_terminal_screen"
 }
