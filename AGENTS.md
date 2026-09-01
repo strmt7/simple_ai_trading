@@ -73,6 +73,13 @@ override prose.
   Request no premiums, books, accounts, credentials, or orders when that cheap
   funding-only prefilter fails; never rescue it by resampling or changing the
   orientation after observation.
+- A new listing on only one venue does not by itself reopen a cross-venue
+  funding family. First freeze one current counterpart-instrument inventory and
+  require an exact common underlying, share class, contract unit, quote unit,
+  and settlement mapping. If no exact counterpart exists, stop before every
+  funding value, ticker, premium, price, book, fee, or account request; a related
+  prediction market, company name, index, wrapper, or merely similar ticker is
+  not a hedge match.
 - For an integer-score additive cover `Under A + Under B + Over G`, enumerate
   the zero-payout state before looking at price. It exists exactly when both
   component scores reach their thresholds while their sum stays below `G`, so

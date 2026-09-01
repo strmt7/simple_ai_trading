@@ -23,6 +23,38 @@ safety gate, blocks Stop, or submits an order.
 
 ### Latest efficient structural screen
 
+Binance's new September 1 announcement for an `HK0625USDT` SHEIN quanto TradFi
+perpetual supplied a literal instrument-change trigger for rank 43. The
+cheapest decisive gate was one frozen current Polymarket Perps instrument
+inventory, not funding or books. The HTTP 200 response retained 44,614 bytes
+and contained the same 67-symbol membership as the August 29 baseline: zero
+additions, zero removals, and zero `SHEIN` or `HK0625` symbol or base-asset
+matches. No new cross-venue funding population exists, and Binance deployment
+was not inferred from the announcement alone.
+
+The related Polymarket SHEIN IPO market-cap threshold page was screened only at
+the rendered discovery layer. Its two unambiguous adjacent guaranteed packages
+cost 1.81 and 1.548 pUSD for a one-pUSD floor; blank higher-threshold `No`
+buttons were unavailable, never free. No strict sub-floor package or exact
+bracket sibling was source-proved, so zero Gamma or CLOB requests followed.
+
+Do not refresh the exact 67-instrument population, substitute an IPO prediction
+market as a perpetual hedge, or request SHEIN funding, prices, fees, or books.
+Reopen rank 43 only after a later exact common underlying exists or another
+literal material funding, fee, session, unit, conversion, or execution trigger
+is satisfied. Contract, capture-result, and adjudication SHA-256 values are
+`74952fcaa3bd83f826c9113051776aecedc46bd7d4add3f522ff517432e672de`,
+`360159707942d24e08cca729c390317aac62b3cdbe8ccbfd2fc833155d78f46a`,
+and `bce940e94a6846e2524f01d77f18b7e921bc273b1f027d9dc7cab4a5b99faf50`.
+Accepted edges remain 29, ranked hypotheses remain 47, terminal families become
+136, and stable current account-qualified after-all-cost edges remain zero.
+Registry and durability-audit SHA-256 values become
+`e077098bcd22df64153ecbd2bc859980acdeaa2eabe4b13925728ea735ab248c`
+and `40491937fb0a4ffd930a190f2ec4ca6c38d25d4b843bd308ad94c1d48ec62169`.
+
+No funding value, ticker, price, book, fee endpoint, credential, account, order,
+fund, transaction, or protected capture was touched.
+
 The distinct `Next Senate Majority Leader?` event initially exposed a stronger
 complete-set lead: ten rendered open candidate YES asks summed to 0.950 pUSD,
 while the FAQ said eleven outcomes and the rules explicitly named `Other`.

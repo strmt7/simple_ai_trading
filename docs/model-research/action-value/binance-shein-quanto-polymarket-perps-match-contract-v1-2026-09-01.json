@@ -1,0 +1,79 @@
+{
+  "schema_version": "binance-shein-quanto-polymarket-perps-match-contract-v1",
+  "status": "frozen_before_one_public_polymarket_perps_instrument_request",
+  "frozen_at_utc": "2026-09-01T04:29:45Z",
+  "contract_path": "docs/model-research/action-value/binance-shein-quanto-polymarket-perps-match-contract-v1-2026-09-01.json",
+  "question": "Does the current Polymarket Perps instrument inventory contain an exact SHEIN or HK0625 underlying match for Binance's newly announced HK0625USDT quanto TradFi perpetual, so that the existing fixed-orientation cross-venue funding family has a genuinely new exact population?",
+  "trigger": {
+    "registry_rank": 43,
+    "mechanism": "polymarket_binance_TradFi_perpetual_fixed_orientation_cross_venue_funding_spread",
+    "official_binance_announcement_list_url": "https://www.binance.com/en/support/announcement/list/49?navId=49",
+    "official_binance_announcement_url": "https://www.binance.com/en/support/announcement/detail/969a4628dd5d4a479c071b02175bae57",
+    "announcement_title": "Binance Futures Will Launch HK0625USDT USD-Margined Quanto Perpetual Contract (2026-09-01)",
+    "announcement_observed_published_date": "2026-09-01",
+    "new_binance_symbol": "HK0625USDT",
+    "underlying_company": "SHEIN Global Holdings Limited",
+    "why_prior_inventory_is_stale_for_this_question": "The retained Polymarket Perps instrument inventory was captured on 2026-08-29, before Binance announced and deployed the new HK0625USDT instrument on 2026-09-01.",
+    "exact_url_journal_search": "The same Polymarket instruments URL exists only in the retained 2026-08-29 family; no 2026-09-01 response exists before this freeze.",
+    "alias_search": "No HK0625, SHEIN quanto, or SHEIN Polymarket Perps match is registered in prose, tools, or tests before this freeze."
+  },
+  "request_name": "current_polymarket_perps_instruments_for_shein_match",
+  "request": {
+    "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "count": 1,
+    "method": "GET",
+    "url": "https://api.perpetuals.polymarket.com/v1/info/instruments"
+  },
+  "source_contract": {
+    "url": "https://docs.polymarket.com/perps/market-data",
+    "security_classification": "documented public unauthenticated market-data GET",
+    "expected_shape": "JSON array of instrument objects"
+  },
+  "response_byte_ceiling": 2000000,
+  "required_utf8_phrases": [
+    "\"instrument_id\":",
+    "\"symbol\":",
+    "\"category\":"
+  ],
+  "decision": {
+    "inventory_only": true,
+    "economic_values_permitted": false,
+    "funding_requests_authorized": 0,
+    "ticker_or_book_requests_authorized": 0,
+    "accepted_edge_from_inventory": false,
+    "exact_match_rule": "Advance only if a current Polymarket equity instrument has an unambiguous base asset or symbol identifying SHEIN or HK0625 and the exact underlying share class and quote-unit mapping can be source-proved.",
+    "positive_match_action": "Freeze a separate funding-only population and exact unit-mapping contract before requesting any funding values; do not request books.",
+    "absent_or_ambiguous_match_action": "Preserve the one-use response and reject this listing as a cross-venue match without funding, prices, books, credentials, accounts, orders, funds, transactions, or protected capture access."
+  },
+  "outputs": {
+    "raw_path": "data/binance-shein-quanto-polymarket-perps-match-v1/raw/polymarket-instruments.json",
+    "journal_path": "data/binance-shein-quanto-polymarket-perps-match-v1/request-journal.jsonl",
+    "result_path": "docs/model-research/action-value/binance-shein-quanto-polymarket-perps-match-capture-v1-2026-09-01.json"
+  },
+  "authority": {
+    "account_requests": 0,
+    "credentials_used": false,
+    "funds_used": false,
+    "orders_or_transactions": 0,
+    "protected_capture_touched": false,
+    "public_unauthenticated_read_only_requests": 1,
+    "signed_requests": 0,
+    "trading_authority": false
+  },
+  "implementations": [
+    {
+      "path": "tools/capture_public_source_contract.py",
+      "sha256": "d566a5a379c659c3da144d5e28449ebac9c01493bd39646f9cc3a6e697a83566"
+    },
+    {
+      "path": "tools/screen_polymarket_exact_two_leg_package.py",
+      "sha256": "374fcc3c3485c466b4929a91256450bdc7db70f93ef4c6bda627e05fe8938327"
+    },
+    {
+      "path": "tools/adjudicate_polymarket_exact_mlb_monotone_prefilter.py",
+      "sha256": "958a44d78029b9a1eb69a3771ce18e53ac1ed3c7bc161c8e4318beedce2cf99f"
+    }
+  ],
+  "retry_policy": "This exact post-listing Polymarket instrument inventory GET is one-use. Preserve every response or failure. Never retry, alias, paginate, request funding, or substitute a merely similar company after observing the result. Reopen only for another official exact matching instrument listing or a material funding, unit, fee, session, or execution-architecture change that satisfies the complete rank-43 trigger.",
+  "contract_sha256": "74952fcaa3bd83f826c9113051776aecedc46bd7d4add3f522ff517432e672de"
+}

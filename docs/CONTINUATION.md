@@ -8225,3 +8225,53 @@ zero. Registry SHA-256 becomes
 `002bbb75244f3333b2e70464b8835922fa7787fd5ccc01a857ed8becb459ee1a`,
 and durability-audit SHA-256 becomes
 `773581acc22ef94cf350c3d423c4b601514f17701f4ce57a3cdb623e8bc5af7e`.
+
+## Binance SHEIN quanto to Polymarket Perps exact-match rejection
+
+The September 1 official Binance announcement list exposed a genuinely new
+instrument trigger: an announced `HK0625USDT` SHEIN quanto TradFi perpetual.
+Rank 43 permits a fresh check only when a material instrument change can create
+a new exact cross-venue population. The cheapest decisive gate was therefore
+one current Polymarket Perps instrument inventory, frozen before access; no
+funding, ticker, price, fee, or book request was authorized.
+
+The one permitted public unauthenticated GET returned HTTP 200 with 44,614
+retained bytes. The current inventory still contains exactly 67 instruments,
+with identical symbol membership to the retained August 29 population: zero
+additions, zero removals, and zero `SHEIN` or `HK0625` symbol or base-asset
+matches. A company-related prediction market is not a fungible perpetual hedge,
+so no fixed-orientation cross-venue funding population exists for this
+announcement. The retained primary page proved the announcement title and
+date, not completed Binance deployment; deployment was not assumed or needed
+for the negative counterpart gate.
+
+The related SHEIN IPO closing-market-cap threshold event was separately
+screened only through rendered side-specific discovery values. Its two
+unambiguous adjacent guaranteed packages cost 1.81 and 1.548 pUSD against a
+one-pUSD floor. Blank or `0.0` higher-threshold `No` buttons were unavailable,
+never free; no exact interval sibling was source-proved. That stopped the
+threshold branch before Gamma or CLOB.
+
+Do not refresh, alias, or substitute this exact 67-instrument population and do
+not request SHEIN funding, prices, fees, or books. Reopen rank 43 only after a
+later exact common-underlying instrument appears or another literal material
+funding, fee, session, unit, conversion, or execution-architecture trigger is
+satisfied. A new listing on only one venue must now pass an exact counterpart,
+share-class, contract-unit, quote-unit, and settlement-mapping gate before any
+economic request.
+
+Contract, capture-result, raw, journal, and adjudication SHA-256 values are
+`74952fcaa3bd83f826c9113051776aecedc46bd7d4add3f522ff517432e672de`,
+`360159707942d24e08cca729c390317aac62b3cdbe8ccbfd2fc833155d78f46a`,
+`427f7f9578285dc3c4200c3ad5c185f6cbb2a343f91e249184aae652805e9083`,
+`42dcb2b4c6cd1249e9aba4565cd47c800c25aef525c43b4f04e16395e7a8f6ac`,
+and `bce940e94a6846e2524f01d77f18b7e921bc273b1f027d9dc7cab4a5b99faf50`.
+Accepted edges remain 29, ranked hypotheses remain 47, terminal families become
+136, and stable current account-qualified after-all-cost edges remain zero.
+Registry SHA-256 becomes
+`e077098bcd22df64153ecbd2bc859980acdeaa2eabe4b13925728ea735ab248c`,
+and durability-audit SHA-256 becomes
+`40491937fb0a4ffd930a190f2ec4ca6c38d25d4b843bd308ad94c1d48ec62169`.
+
+No account, credential, order, fund, transaction, or protected capture was
+touched.
