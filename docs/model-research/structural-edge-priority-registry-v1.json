@@ -3764,9 +3764,39 @@
       ],
       "retry_trigger": "explicit_separate_read_only_Polymarket_US_account_authority_plus_collateral_return_enabled_plus_independently_existing_eligible_mutually_exclusive_or_directional_positions_and_an_independently_justified_positive_different_event_use_or_a_material_official_collateral_payoff_eligibility_matching_timing_balance_settlement_fee_or_exchange_architecture_change",
       "venue_scope": "Polymarket_US_portfolio_margin_collateral_return"
+    },
+    {
+      "blocking_evidence": [
+        "a complete byte-retainable current official access authentication quote lifecycle minimum-size fee settlement cancellation and privacy contract",
+        "explicit separate read-only authority and an independently required legitimate large Binance Web3 Wallet prediction trade",
+        "exact same-payoff identity and finite-size public-book counterfactual",
+        "authentic counterparty quote with exact owned price size expiry and fillability",
+        "every fee custody settlement latency failure capital tax and operational cost"
+      ],
+      "canonical_artifacts": [
+        {
+          "path": "docs/model-research/action-value/binance-web3-prediction-otc-blocktrade-source-failure-adjudication-v1-2026-09-01.json",
+          "result_sha256": "02a2085182a0ff292aaf5b7f4544a3d4d3c5a813bab9e7adca9638fac8500525"
+        }
+      ],
+      "current_status": "distinct_direction_independent_Binance_Web3_Wallet_Prediction_Trading_OTC_price_concession_candidate_only_the_prospectively_frozen_exact_official_developer_documentation_GET_returned_HTTP_202_with_zero_bytes_so_search_rendered_endpoint_and_secretToken_examples_are_promotion_ineligible_and_no_current_public_quote_access_authentication_minimum_size_fee_settlement_counterparty_fillability_or_after_cost_value_is_proved_zero_quote_account_credential_token_order_acceptance_cancellation_fund_wallet_or_transaction_requests_not_accepted_or_deployment_ready",
+      "market_direction_forecast_required": false,
+      "mechanism": "binance_Web3_Wallet_prediction_OTC_blocktrade_price_concession_overlay",
+      "next_action": "do_not_retry_a_locale_rendered_route_cached_snippet_or_guessed_API_call_advance_only_after_a_material_byte_retainable_official_documentation_or_API_change_or_with_explicit_separate_read_only_authority_an_independently_required_legitimate_large_prediction_trade_and_an_exact_same_payoff_public_book_counterfactual_every_quote_accept_cancel_negotiate_order_fund_wallet_or_account_mutation_requires_separate_explicit_authority",
+      "priority_rank": 53,
+      "prohibited_shortcuts": [
+        "retrying_a_locale_or_rendered_alias_after_the_one_use_empty_HTTP_202_response",
+        "using_cached_search_snippets_example_quotes_or_secretToken_values_as_current_economic_evidence",
+        "requesting_private_quotes_or_guessing_secretToken_without_explicit_separate_read_only_authority",
+        "assuming_payoff_identity_from_title_similarity",
+        "accepting_canceling_or_negotiating_a_quote_without_separate_explicit_authority",
+        "manufacturing_volume_self_dealing_coordinating_counterparties_wash_trading_or_manipulating_a_reference_price"
+      ],
+      "retry_trigger": "material_official_Binance_Web3_Wallet_Prediction_Trading_OTC_documentation_or_API_change_exposing_complete_byte_retainable_access_authentication_quote_lifecycle_minimum_size_fee_settlement_cancellation_and_privacy_terms_or_explicit_separate_read_only_authority_plus_an_independently_required_legitimate_large_prediction_trade_and_exact_same_payoff_public_book_counterfactual",
+      "venue_scope": "Binance_Web3_Wallet_Prediction_Trading_OTC"
     }
   ],
-  "result_sha256": "22f0e5d5c557e2626eff4094ba938a8e81a3d8be07a794f5d3a81d8f053f046a",
+  "result_sha256": "9b2236283e5ec3c877be2fa0cabb423699d3708bd2cb1a6d656e26dace4aaefb",
   "schema_version": "structural-edge-priority-registry-v1",
   "terminal_do_not_repeat": [
     {
@@ -4599,8 +4629,13 @@
       "canonical_result_sha256": "d1e50f0f650f09b2180eb2b9312c07c9e4004612d8f86831ebf73411d22630a2",
       "family": "polymarket_US_complete_mutually_exclusive_and_directional_collateral_return_terms_2026_09_01",
       "reason": "two_sibling_sources_were_frozen_before_either_was_opened_then_one_use_current_official_Markdown_GETs_proved_deterministic_mutually_exclusive_short_and_lower_ranked_long_versus_higher_ranked_short_directional_portfolio_margin_relief_the_scoped_existing_position_buying_power_overlay_is_accepted_but_the_exact_documentation_population_is_consumed_do_not_refetch_split_or_generalize_the_two_short_smaller_position_formula_open_positions_to_manufacture_relief_treat_buying_power_as_cash_reuse_it_in_the_generating_event_count_hypothetical_new_order_offsets_or_ignore_collateral_return_required_for_close_reopen_only_on_rank_52_exact_account_or_material_official_term_trigger"
+    },
+    {
+      "canonical_result_sha256": "02a2085182a0ff292aaf5b7f4544a3d4d3c5a813bab9e7adca9638fac8500525",
+      "family": "binance_Web3_Wallet_Prediction_Trading_OTC_public_source_gate_2026_09_01",
+      "reason": "one_prospectively_frozen_exact_official_developer_documentation_GET_returned_HTTP_202_with_zero_bytes_so_search_rendered_endpoint_and_secretToken_examples_are_promotion_ineligible_and_no_public_quote_access_authentication_minimum_size_fee_settlement_counterparty_fillability_or_after_cost_concession_is_proved_do_not_retry_locale_rendered_aliases_cached_snippets_or_guessed_API_calls_and_do_not_request_quotes_accounts_credentials_tokens_orders_funds_wallets_or_transactions_reopen_only_on_rank_53_exact_material_official_or_separately_authorized_read_only_trigger"
     }
   ],
-  "updated_at_utc": "2026-09-01T11:05:00Z",
+  "updated_at_utc": "2026-09-01T11:14:38.9498964Z",
   "usage_rule": "advance_the_highest_ranked_hypothesis_whose_retry_trigger_is_satisfied_otherwise_do_not_repeat_a_blocked_or_terminal_screen"
 }

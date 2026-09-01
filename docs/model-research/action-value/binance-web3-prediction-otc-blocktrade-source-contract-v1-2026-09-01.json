@@ -1,0 +1,61 @@
+{
+  "authority": {
+    "account_requests": 0,
+    "credentials_used": false,
+    "funds_used": false,
+    "orders_or_transactions": 0,
+    "protected_capture_touched": false,
+    "public_unauthenticated_read_only_requests": 1,
+    "signed_requests": 0,
+    "trading_authority": false
+  },
+  "contract_path": "docs/model-research/action-value/binance-web3-prediction-otc-blocktrade-source-contract-v1-2026-09-01.json",
+  "contract_sha256": "2441d38840ceb9a442a649b5631c2ef0c8ef73c58afdc61f7b015cbc91f92b50",
+  "decision": {
+    "accepted_edge": "Only a current public unauthenticated quote population with source-proved authentic counterparties, complete size and price terms, and a strictly positive owned after-cost concession against the exact public-book alternative could become a scoped overlay for an independently required legitimate large prediction trade.",
+    "adjudication_rule": "Bind access control, public versus private fields, quote lifecycle, authenticity, minimum size, settlement, fees, execution atomicity, expiry, cancellation, failure, custody, and the exact public-book counterfactual. Any signed access, private secretToken, account dependency, missing cost, or discretionary quote makes the public deployable profit floor zero.",
+    "deployment_ready": false,
+    "profitability_proved": false,
+    "stable_current_edge_proved": false
+  },
+  "frozen_at_utc": "2026-09-01T11:13:24.8802073Z",
+  "implementations": [
+    {
+      "path": "tools/capture_public_source_contract.py",
+      "sha256": "ba0e76bd6643eedc072cc1fcff2aa363c1dc14a5b8e14956e874c7843637b376"
+    }
+  ],
+  "limitations": [
+    "Search discovery exposed only the official documentation URL, one endpoint path, and an example secretToken field before freeze; all discovery economics are ineligible for promotion and this capture is source-binding or rejection-only.",
+    "No private quote, secretToken, account, credential, order, acceptance, cancellation, fund movement, wallet mutation, or transaction is authorized.",
+    "An OTC product label is not price improvement, a public quote, counterparty authenticity, fillability, or profit evidence.",
+    "This Binance Web3 Wallet Prediction Trading surface is distinct from Binance Exchange Spot block matching and from Polymarket's public CLOB, so venue, custody, settlement, and legal identity cannot be assumed equivalent."
+  ],
+  "outputs": {
+    "journal_path": "data/binance-web3-prediction-otc-blocktrade-v1/request-journal.jsonl",
+    "raw_path": "data/binance-web3-prediction-otc-blocktrade-v1/raw/official-otc-docs.html",
+    "result_path": "docs/model-research/action-value/binance-web3-prediction-otc-blocktrade-source-result-v1-2026-09-01.json"
+  },
+  "question": "Does the current official Binance Web3 Wallet Prediction Trading OTC documentation expose a public unauthenticated executable block-trade quote surface with deterministic terms that can support a direction-independent price-concession overlay?",
+  "request": {
+    "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "count": 1,
+    "method": "GET",
+    "name": "binance-web3-prediction-otc-blocktrade-official-docs",
+    "url": "https://developers.binance.com/zh-CN/docs/catalog/web3-wallet-prediction-trading/api/rest-api/otc"
+  },
+  "request_name": "binance-web3-prediction-otc-blocktrade-official-docs",
+  "required_utf8_phrases": [
+    "/sapi/v1/w3w/wallet/prediction/otc/blocktrade/list",
+    "secretToken"
+  ],
+  "response_byte_ceiling": 2000000,
+  "retry_policy": "This exact official documentation GET is one-use. Preserve every HTTP, empty-response, phrase, or schema failure and do not retry a locale or route alias. Adjudicate retained bytes once without quote, market, account, or credential access. Reopen only on a material official access, quote, fee, settlement, minimum-size, or architecture change, or separately authorized read-only account evidence for an independently required legitimate large prediction trade.",
+  "schema_version": "public-source-capture-contract-v1",
+  "trigger": {
+    "discovery_source": "official Binance Developer documentation search result",
+    "economic_content_viewed_before_freeze": true,
+    "family_search_found_existing_registry_or_source": false,
+    "selection_rule": "novel official prediction-trading OTC primitive; use discovery only to select the exact primary source and exclude its snippets from promotion"
+  }
+}

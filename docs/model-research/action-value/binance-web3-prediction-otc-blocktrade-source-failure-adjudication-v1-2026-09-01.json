@@ -1,0 +1,75 @@
+{
+  "adjudication": {
+    "accepted_edge": false,
+    "candidate_for_account_qualified_research": true,
+    "deployment_ready": false,
+    "market_direction_forecast_required": false,
+    "profitability_claim": false,
+    "public_after_all_cost_profit_floor_quote_units": "0",
+    "public_quote_surface_proved": false,
+    "status": "public_source_failed_closed_HTTP_202_empty"
+  },
+  "authority": {
+    "account_requests": 0,
+    "credentials_used": false,
+    "funds_used": false,
+    "orders_or_transactions": 0,
+    "protected_capture_touched": false,
+    "public_unauthenticated_read_only_requests": 1,
+    "signed_requests": 0,
+    "trading_authority": false
+  },
+  "created_at_utc": "2026-09-01T11:14:38.9498964Z",
+  "decision": {
+    "reason": "The prospectively frozen exact official Binance Developer documentation GET returned HTTP 202 with an empty body. Therefore the search-rendered endpoint example and secretToken field cannot prove current access control, public quote availability, authenticity, minimum size, fees, settlement, executable price improvement, or any owned after-cost value. The mechanism remains a distinct direction-independent candidate only for an independently required legitimate large Binance Web3 Wallet prediction trade; no quote, account, credential, token, order, acceptance, fund, wallet, or transaction request is justified.",
+    "why_distinct": "The documented product surface is Binance Web3 Wallet Prediction Trading OTC, not Binance Exchange Spot block matching and not Polymarket's public CLOB. Its venue, counterparties, custody, settlement, fee, and legal terms must be independently proved.",
+    "why_no_alias_retry": "The frozen contract made this exact official page one-use and discovery economics promotion-ineligible. A locale, rendered route, cached search snippet, or guessed API call would weaken the source boundary without answering the missing current economic terms.",
+    "why_not_an_edge": "An OTC label and example response are not a public executable concession. Even a real quote would require an exact same-payoff public-book counterfactual and every fee, custody, settlement, latency, failure, capital, tax, and operational cost before positive value could be credited."
+  },
+  "discovery_boundary": {
+    "discovery_values_are_economic_inputs": false,
+    "discovery_values_are_promotion_eligible": false,
+    "exposed_before_freeze": [
+      "official documentation URL",
+      "example block-trade list endpoint path",
+      "example secretToken field name"
+    ]
+  },
+  "evidence": {
+    "contract": {
+      "canonical_sha256": "2441d38840ceb9a442a649b5631c2ef0c8ef73c58afdc61f7b015cbc91f92b50",
+      "file_sha256": "e90e728adc4ffce850a6b1789b298cda30cac1dc5a03b2fd25a67dc8710f4505",
+      "path": "docs/model-research/action-value/binance-web3-prediction-otc-blocktrade-source-contract-v1-2026-09-01.json"
+    },
+    "journal": {
+      "completed_receipt_count": 1,
+      "path": "data/binance-web3-prediction-otc-blocktrade-v1/request-journal.jsonl",
+      "sha256": "5ff12552f4dba7fa15210bf13a073f4c6f01d8646f4e288b3bf930b91c200961"
+    },
+    "retained_response": {
+      "bytes": 0,
+      "path": "data/binance-web3-prediction-otc-blocktrade-v1/raw/official-otc-docs.html",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "status_code": 202
+    },
+    "source_url": "https://developers.binance.com/zh-CN/docs/catalog/web3-wallet-prediction-trading/api/rest-api/otc"
+  },
+  "prohibited_shortcuts": [
+    "retrying a locale or rendered alias after the one-use empty HTTP 202 response",
+    "using cached search snippets or example values as current economic evidence",
+    "requesting listing data with a credential or guessing a secretToken without explicit separate read-only authority",
+    "accepting, canceling, or negotiating a quote without explicit separate authority",
+    "treating a private or example quote as publicly executable",
+    "assuming payoff identity with a Polymarket or other prediction contract from title similarity",
+    "manufacturing volume, self-dealing, coordinating counterparties, wash trading, or manipulating a public reference price"
+  ],
+  "registry_effect": {
+    "accepted_edge_count": 34,
+    "ranked_hypothesis_count": 53,
+    "stable_current_account_qualified_after_all_cost_edge_count": 0,
+    "terminal_family_count": 166
+  },
+  "result_sha256": "02a2085182a0ff292aaf5b7f4544a3d4d3c5a813bab9e7adca9638fac8500525",
+  "retry_trigger": "A material official Binance Web3 Wallet Prediction Trading OTC documentation or API change that exposes complete byte-retainable access, authentication, quote lifecycle, minimum-size, fee, settlement, cancellation, and privacy terms; or explicit separate read-only authority plus an independently required legitimate large prediction trade and exact same-payoff public-book counterfactual. Every quote acceptance, cancellation, negotiation, order, fund, wallet, or account mutation still requires separate explicit authority.",
+  "schema_version": "binance-web3-prediction-otc-blocktrade-source-failure-adjudication-v1"
+}
