@@ -1,5 +1,61 @@
 # Continue Development
 
+## 2026-09-01 Binance SHEIN quanto to native-stock exact-share rejection
+
+The new `HK0625USDT` SHEIN quanto announcement also satisfied rank 38's literal
+new-TradFi-instrument trigger. The cheapest decisive question was whether
+Binance's native Stocks product could supply the exact same HK0625 Hong Kong
+share, not whether a company-name-related US security existed. Current official
+Binance Stocks documentation limits the native product to US-listed NYSE or
+NASDAQ common shares and US-listed ETFs, with bare US-equity symbols and USDC
+as the default quote. That universe cannot contain the HK0625 Hong Kong share.
+
+A source-retention contract was frozen for the exact official documentation
+page. Its one permitted unauthenticated GET returned HTTP 202 with an empty
+body. Preserve that failure; do not retry an alias or alternate download. The
+separately rendered official page is only a negative universe gate and cannot
+promote or price a candidate. An ADR, US wrapper, tokenized stock, bStock,
+Ondo, xStock, company-name match, or other share class is not fungible with
+HK0625.
+
+The branch is terminal before native quote streams, futures, FX, funding, fees,
+or books. Contract, failure, and adjudication canonical SHA-256 values are
+`3fd064e94d8e591d874a816c495c34b878fb0f6979662a7dcca03625ab43c9d0`,
+`4baf2f1b3a5bce69cc23575234c4ee27405136c222f8d60904adc0ba4e2bec73`,
+and `6ff02e16bc0c8e8f6e833da8a221eee532868b103b6ef078ca16b72495ecf139`.
+Reopen rank 38 only for a future official listing whose exact share class
+exists in the documented native US-stock universe or a material product-
+universe or stream-architecture change.
+
+## 2026-09-01 Polymarket pairwise-to-multiway tie rejection
+
+A distinct September private-company valuation-growth projection was rejected
+without a Gamma, CLOB, or fee request. The pairwise Anthropic-versus-OpenAI
+market resolves equal percentage growth 50-50. The five-company greatest-
+growth market instead awards one full winner among tied companies using the
+highest final valuation. Therefore `NO(Anthropic wins five-way) +
+YES(Anthropic beats OpenAI)` does not have a one-pUSD Boolean-implication
+floor. In the state where the two companies tie and Anthropic wins the five-way
+tie-break, it pays only 0.50 pUSD.
+
+The required five-way `NO` leg alone displayed 0.97 pUSD. Total package cost is
+therefore at least 0.97 pUSD against the correct 0.50-pUSD floor: at most
+-0.47 pUSD before the missing pairwise leg, fees, depth, time value,
+non-atomicity, latency, or unwind cost. The exact family is terminal before any
+venue API request. Reopen only when pairwise and multiway tie payouts are
+aligned or exact tie coverage is included and the complete rendered package is
+strictly below its tie-aware floor. Canonical adjudication SHA-256 is
+`bcb49e2e1bdba407fe8121a37ff56dcddd770b1957e1add2c95f225fdb76fded`.
+
+Accepted edges remain 29, ranked hypotheses remain 47, terminal families become
+138, and stable current account-qualified after-all-cost edges remain zero.
+Registry SHA-256 is
+`06e9c43228f09c23d6ad26dde21216eed7d350fbfe19453380a7bf10247565b9`;
+durability-audit SHA-256 is
+`a6c3d63d971bf16aacfec64492dc13660c203d93e740c4fade4122f2fc50a5d8`.
+No account, credential, signed request, order, fund, transaction, or protected
+capture was touched.
+
 ## 2026-09-01 Polymarket joint-to-marginal state-cover checkpoint
 
 A distinct direction-independent Boolean decomposition passed the rendered
