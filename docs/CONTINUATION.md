@@ -8973,6 +8973,40 @@ complete expected population before any outcome-aware rendered page or search
 access. One public unauthenticated request was made; no account, credential,
 book, fee, on-chain, order, fund, transaction, or protected capture was touched.
 
+## Polymarket US versus Global exact-payoff identity gate
+
+The first cross-venue parity study used Polymarket US's documented public API
+as a source-first gate, not a price-discovery shortcut. Before requesting the
+U.S. venue, the contract selected one objectively resolvable exact Global title
+from the hash-bound retained September 30 catalog: whether the U.S. House will
+pass a bill restricting military aid to Israel by September 30. Candidate
+selection used titles and rule objectivity only; no candidate economics were
+inspected.
+
+One frozen unauthenticated `GET /v1/search` retained two U.S. events and zero
+exact-title matches. The payoff-identity gate therefore failed before prices:
+there is no source-proved same contract to arbitrage across the two venues.
+Matching themes or approximate titles are not substitutes. No price, BBO,
+order-book, fee, account, credential, order, fund, or transaction request was
+made or justified.
+
+Contract/result SHA-256 values are
+`fb9f342d39d672c41c33c08bb11685bf43403d1c9650c2ff05e981ef3226c960`
+and `2ffbcad5a046dca1008bfc8b11693e7621ed23848fde8c0ddf24f03453375f6e`.
+Raw-response and request-journal SHA-256 values are
+`4f216f2c962498d149c846ba5f5044d11328bbdfb1c45855a33014ea156e8742`
+and `4357311cb699c3458e46b25faa69b05e4bd55f51d9c80b2c6ce414b2261197cc`.
+Accepted edges remain 31, ranked hypotheses remain 48, terminal families become
+159, and stable current account-qualified after-all-cost edges remain zero.
+Registry and durability-audit SHA-256 values become
+`979ba80e079e03afb3a6991fcc186a5e5e61749e5485467317e47ceab8efffdd`
+and `1513efdc5d7c34a7ee14c45fa2725b0fa373eeb1ab1691c6bd4a041df6cead8c`.
+
+Do not retry, alias, paginate, or substitute a similar House or Israel question.
+Reopen this family only for a distinct exact contract selected and frozen before
+any Polymarket US search, or after a material listing or venue-architecture
+change. The protected holding-yield partial capture remains untouched.
+
 ## AI Arena Overall creation-safe threshold ladder
 
 The retained September 30 catalog exposed five AI Arena Overall score
