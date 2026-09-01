@@ -23,6 +23,36 @@ safety gate, blocks Stop, or submits an order.
 
 ### Latest efficient structural screen
 
+The rendered `NO(UAE targeted by September 15) + YES(any Arab country targeted
+by September 15)` pair is terminal at the source gate. Two prospectively frozen
+one-use public Gamma GETs proved that the UAE condition starts at
+`2026-08-18T22:49:24Z`, while the aggregate starts only at
+`2026-08-31T18:37:55Z`. A qualifying UAE action in that 1,108,111-second gap,
+followed by no aggregate-interval action, makes both proposed tokens pay zero.
+Otherwise-aligned action, country, source, timezone, and deadline semantics
+cannot repair that counterexample.
+
+No price field was used for the decision and no CLOB book or fee request was
+made. Do not retry or assume a later aggregate condition inherits earlier
+subset history. Reopen rank 31 only for source-proved aligned starts or complete
+intervening-event evidence removing every gap state. Accepted edges remain 29,
+ranked hypotheses remain 47, terminal families are 142, and stable current
+account-qualified after-all-cost edges remain zero. Aggregate and UAE contract
+hashes are
+`856e8ad6a4ca83ff41267950794b75ee783e350ca4ad55c9c6f6c196cc7dcef2`
+and `d17cf334d4fbecaf269e6c3b2d779d57dfb61be5b0a1414a29ba0b8a06dcb88b`;
+capture hashes are
+`a5dfe50ee40388c843677275def2d166657e103a2287ba717cc66ddc47e45603`
+and `c41d4ce06afa52ba0308f92e51b9c48b1ccd5b6cc5cecb49c4198314cbf229ce`;
+the adjudication, registry, and durability-audit hashes are
+`c6634add2f5fac96fe5c3b08c4236b3a0ad483c37efea03bd1dd1ab41e398941`,
+`aa36f2488fa336e45fbff6f31e9644612e3a2d6faf78138f634b00bfb08194f5`,
+and `c9c1d57cc402cd54372b59c12b2052238e9ab6b8eb68732fa1427dcf56971508`.
+No account, credential, signed request, order, fund, transaction, or protected
+capture was touched.
+
+### Prior efficient structural screen
+
 The exact largest, second-largest, and third-largest company events are
 terminal at the source gate. Three prospectively frozen one-use public Gamma
 GETs retained 25, 29, and 29 markets. Their market-cap metric, September 30
@@ -54,7 +84,7 @@ and `0d25d77c6d84cad2bb356d15469cea7f6d0c3032e38ab18e0040388ed29466c4`.
 No account, credential, signed request, order, fund, transaction, or protected
 capture was touched.
 
-### Prior efficient structural screen
+### Earlier efficient structural screen
 
 The exact Mythos release-date and cumulative-deadline population is terminal.
 Two prospectively frozen one-use public Gamma GETs retained 38 and 10 markets;
@@ -85,7 +115,7 @@ and `fa699d282419535be266c71a5e0ff465cde3ecddbf7fbb4ce15a0c63f30c86ff`.
 No account, credential, signed request, order, fund, transaction, or protected
 capture was touched.
 
-### Earlier efficient structural screen
+### Earlier structural screen
 
 The Gemini Pro October-31 deadline to November-1 interval pair is terminal at
 the exact metadata gate. Two prospectively frozen one-use public Gamma GETs

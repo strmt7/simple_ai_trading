@@ -1,0 +1,65 @@
+{
+  "authority": {
+    "account_requests": 0,
+    "credentials_used": false,
+    "funds_used": false,
+    "orders_or_transactions": 0,
+    "protected_capture_touched": false,
+    "public_unauthenticated_read_only_requests": 1,
+    "signed_requests": 0,
+    "trading_authority": false
+  },
+  "contract_path": "docs/model-research/action-value/polymarket-iran-any-arab-sep15-metadata-contract-v1-2026-09-01.json",
+  "contract_sha256": "856e8ad6a4ca83ff41267950794b75ee783e350ca4ad55c9c6f6c196cc7dcef2",
+  "decision": {
+    "accepted_edge_from_metadata": false,
+    "alignment_gate": "Require one active September 15 condition; UAE explicitly inside the aggregate country set; matching military-action, interception, territorial, attribution, proxy, conflict-reporting, and source rules; and an aggregate condition start no later than the UAE condition start or complete source proof that no qualifying UAE action occurred in the creation gap. The UAE September 15 23:59 GST cutoff is one hour earlier than the aggregate September 15 23:59 AST cutoff and is therefore implication-safe only after the creation-start gate passes.",
+    "book_requests_authorized": 0,
+    "metadata_only": true,
+    "next_step_if_gate_fails": "Preserve both one-use responses and reject without books, fee endpoints, credentials, accounts, orders, funds, transactions, or protected capture access.",
+    "next_step_if_gate_passes": "Combine only with the separately frozen UAE response. Use direct aggregate YES bestAsk and conservative one minus UAE YES bestBid; require a strict sub-one-pUSD sum, exact fees, and one adverse tick per leg before any separately frozen two-token book request.",
+    "outcome_prices_excluded": true
+  },
+  "frozen_at_utc": "2026-09-01T05:54:53.2049748Z",
+  "implementations": [
+    {
+      "path": "tools/capture_public_source_contract.py",
+      "sha256": "d566a5a379c659c3da144d5e28449ebac9c01493bd39646f9cc3a6e697a83566"
+    },
+    {
+      "path": "tools/screen_polymarket_exact_two_leg_package.py",
+      "sha256": "374fcc3c3485c466b4929a91256450bdc7db70f93ef4c6bda627e05fe8938327"
+    }
+  ],
+  "outputs": {
+    "journal_path": "data/polymarket-iran-uae-to-any-arab-sep15-v1/aggregate-request-journal.jsonl",
+    "raw_path": "data/polymarket-iran-uae-to-any-arab-sep15-v1/raw/aggregate-event.json",
+    "result_path": "docs/model-research/action-value/polymarket-iran-any-arab-sep15-metadata-capture-result-v1-2026-09-01.json"
+  },
+  "question": "Does the exact September 15 any-Arab-country condition start early enough and align closely enough that a qualifying UAE action under the exact UAE condition must make the aggregate condition true?",
+  "request": {
+    "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "count": 1,
+    "method": "GET",
+    "url": "https://gamma-api.polymarket.com/events/slug/will-iran-target-an-arab-country-byptptpt-20260831"
+  },
+  "request_name": "exact_iran_any_arab_country_deadline_event_metadata",
+  "required_utf8_phrases": [
+    "\"slug\":\"will-iran-target-an-arab-country-byptptpt-20260831\"",
+    "\"markets\":["
+  ],
+  "response_byte_ceiling": 2000000,
+  "retry_policy": "This exact Gamma event GET is one-use. Preserve any timeout, non-200 response, schema mismatch, missing September 15 condition, creation-gap ambiguity, rule contradiction, or side-specific-field failure. Never retry an alias or substitute rendered or outcomePrices values.",
+  "schema_version": "polymarket-iran-any-arab-sep15-metadata-contract-v1",
+  "status": "frozen_before_one_public_gamma_request",
+  "trigger": {
+    "candidate_legs": "NO(UAE targeted by September 15) plus YES(any Arab country targeted by September 15)",
+    "candidate_selection_rule": "first distinct unconsumed source-plausible subset-to-aggregate implication whose unambiguous rendered acquisition buttons sum strictly below one pUSD",
+    "event_slug": "will-iran-target-an-arab-country-byptptpt-20260831",
+    "registry_rank": 31,
+    "rendered_candidate_sum_pUSD_per_share": "0.95",
+    "rendered_discovery_url": "https://polymarket.com/event/will-iran-target-an-arab-country-byptptpt-20260831",
+    "rendered_discovery_values_are_economic_inputs": false,
+    "rendered_source_observed_at_utc": "2026-09-01T05:53:30Z"
+  }
+}

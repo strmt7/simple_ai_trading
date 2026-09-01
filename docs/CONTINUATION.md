@@ -1,5 +1,42 @@
 # Continue Development
 
+## 2026-09-01 Polymarket UAE-to-any-Arab creation-gap rejection
+
+Rendered discovery found an apparently direction-independent five-cent cover:
+`NO(Iran targets the UAE by September 15) + YES(Iran targets any Arab country
+by September 15)`. Two prospectively frozen, one-use, public unauthenticated
+Gamma GETs retained the exact UAE and aggregate deadline events.
+
+The country subset, qualifying military action, interception, territory,
+attribution, proxy exclusion, reporting-conflict, and source definitions align.
+The GST cutoff is one hour earlier than the AST aggregate cutoff and is also
+deadline-safe. The condition starts are not: UAE begins at
+`2026-08-18T22:49:24Z`, while the aggregate begins only at
+`2026-08-31T18:37:55Z`, leaving 1,108,111 seconds uncovered. A qualifying UAE
+action in that gap followed by no qualifying aggregate-interval action makes
+both proposed tokens pay zero. The guaranteed floor is therefore zero.
+
+The source gate failed before price inspection. No `bestBid`, `bestAsk`, or
+`outcomePrices` field was used for the decision, and zero CLOB book, fee,
+account, credential, signed, order, fund, transaction, or protected requests
+were made. Do not retry or assume a later aggregate condition inherits earlier
+subset history. Reopen rank 31 only for source-proved aligned starts or complete
+intervening-event evidence that removes every creation-gap counterexample.
+
+Aggregate and UAE contract hashes are
+`856e8ad6a4ca83ff41267950794b75ee783e350ca4ad55c9c6f6c196cc7dcef2`
+and `d17cf334d4fbecaf269e6c3b2d779d57dfb61be5b0a1414a29ba0b8a06dcb88b`;
+capture-result hashes are
+`a5dfe50ee40388c843677275def2d166657e103a2287ba717cc66ddc47e45603`
+and `c41d4ce06afa52ba0308f92e51b9c48b1ccd5b6cc5cecb49c4198314cbf229ce`;
+the adjudication hash is
+`c6634add2f5fac96fe5c3b08c4236b3a0ad483c37efea03bd1dd1ab41e398941`.
+Accepted edges remain 29, ranked hypotheses remain 47, terminal families become
+142, and stable current account-qualified after-all-cost edges remain zero.
+Registry and durability-audit hashes are
+`aa36f2488fa336e45fbff6f31e9644612e3a2d6faf78138f634b00bfb08194f5`
+and `c9c1d57cc402cd54372b59c12b2052238e9ab6b8eb68732fa1427dcf56971508`.
+
 ## 2026-09-01 Polymarket public-company rank assignment source rejection
 
 Three prospectively frozen, one-use, public unauthenticated Gamma GETs retained

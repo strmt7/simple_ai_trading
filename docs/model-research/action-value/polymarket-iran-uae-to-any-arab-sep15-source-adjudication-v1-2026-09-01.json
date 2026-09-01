@@ -1,0 +1,70 @@
+{
+  "adjudication": {
+    "accepted_edge": false,
+    "book_request_justified": false,
+    "deployment_ready": false,
+    "next_action": "Do not inspect price fields, request books or fees, or retry aliases for this exact pair. Reopen only for conditions with source-proved aligned starts or complete intervening-event evidence that removes every creation-gap counterexample.",
+    "profitability_claim": false,
+    "status": "terminal_at_source_gate_creation_gap_breaks_subset_to_aggregate_implication"
+  },
+  "authority": {
+    "account_requests": 0,
+    "bestBid_or_bestAsk_fields_accessed_for_decision": false,
+    "book_or_fee_endpoint_requests": 0,
+    "credentials_used": false,
+    "funds_used": false,
+    "orders_or_transactions": 0,
+    "outcomePrices_field_accessed_for_decision": false,
+    "protected_capture_touched": false,
+    "public_unauthenticated_read_only_requests": 2,
+    "signed_requests": 0,
+    "trading_authority": false
+  },
+  "created_at_utc": "2026-09-01T05:56:57.9138051Z",
+  "payoff_counterexample": {
+    "aggregate_condition": "Iran targets any qualifying Arab country between 2026-08-31T18:37:55Z and the September 15 AST deadline",
+    "aggregate_yes_payout": "0",
+    "allowed_state": "A qualifying Iranian action targets the UAE after the UAE condition starts but before the aggregate condition starts, followed by no qualifying Arab-country action during the aggregate interval.",
+    "package_payout_pUSD_per_share": "0",
+    "proposed_aggregate_leg": "YES(any Arab country targeted by September 15)",
+    "proposed_uae_leg": "NO(UAE targeted by September 15)",
+    "uae_condition": "Iran targets the UAE between 2026-08-18T22:49:24Z and the September 15 GST deadline",
+    "uae_no_payout": "0"
+  },
+  "result_sha256": "c6634add2f5fac96fe5c3b08c4236b3a0ad483c37efea03bd1dd1ab41e398941",
+  "rule_alignment": {
+    "aggregate_condition_start_utc": "2026-08-31T18:37:55Z",
+    "aggregate_start_no_later_than_uae_start": false,
+    "creation_gap_seconds": 1108111,
+    "deadline_timezone_implication_safe_after_start_gate": true,
+    "intervening_history_completely_source_proved_absent": false,
+    "military_action_definition_aligned": true,
+    "proxy_and_attribution_exclusions_aligned": true,
+    "territorial_subset": "United Arab Emirates is explicitly in the aggregate qualifying-country list",
+    "uae_condition_start_utc": "2026-08-18T22:49:24Z",
+    "uae_implies_aggregate_source_proved": false
+  },
+  "schema_version": "polymarket-iran-uae-to-any-arab-sep15-source-adjudication-v1",
+  "source_binding": {
+    "aggregate": {
+      "capture_result_sha256": "a5dfe50ee40388c843677275def2d166657e103a2287ba717cc66ddc47e45603",
+      "contract_sha256": "856e8ad6a4ca83ff41267950794b75ee783e350ca4ad55c9c6f6c196cc7dcef2",
+      "event_id": "943258",
+      "event_slug": "will-iran-target-an-arab-country-byptptpt-20260831",
+      "market_count": 2,
+      "raw_path": "data/polymarket-iran-uae-to-any-arab-sep15-v1/raw/aggregate-event.json",
+      "raw_sha256": "dfd3f83aa1e0efe61d70238aeee3a3bc218623deaf12f2b6699e4741dad6ab61",
+      "selected_market_id": "4038988"
+    },
+    "uae": {
+      "capture_result_sha256": "c41d4ce06afa52ba0308f92e51b9c48b1ccd5b6cc5cecb49c4198314cbf229ce",
+      "contract_sha256": "d17cf334d4fbecaf269e6c3b2d779d57dfb61be5b0a1414a29ba0b8a06dcb88b",
+      "event_id": "872936",
+      "event_slug": "will-iran-target-the-united-arab-emirates-byptptpt",
+      "market_count": 3,
+      "raw_path": "data/polymarket-iran-uae-to-any-arab-sep15-v1/raw/uae-event.json",
+      "raw_sha256": "90c77d5584559e8e9d8183f9ce4606de429278d7fdfaff6c70b4e851a539ef4d",
+      "selected_market_id": "3710798"
+    }
+  }
+}
