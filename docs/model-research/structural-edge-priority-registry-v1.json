@@ -3291,12 +3291,16 @@
         {
           "path": "docs/model-research/action-value/binance-crypto-option-population-price-prefilter-result-v1-2026-08-31.json",
           "result_sha256": "93d2ed3c9b6041f9ffcc7f9579f184687113049051a421f9fc048d2d4e309eee"
+        },
+        {
+          "path": "docs/model-research/action-value/binance-crypto-option-late-ticker-delta-result-v1-2026-09-01.json",
+          "result_sha256": "b425fd356f5033e24313c5dbb166d381c045a4e794107a791acd49ed61992ab2"
         }
       ],
-      "current_status": "unaccepted_direction_independent_long_crypto_option_plus_equal_opposite_USDT_perpetual_terminal_payoff_lower_bound_the_rank_47_new_population_trigger_was_satisfied_offline_by_508_exact_new_symbols_in_the_retained_August_31_exchangeInfo_1576_current_versus_1410_baseline_and_342_removed_then_one_frozen_two_request_price_prefilter_evaluated_only_those_508_new_symbols_413_had_positive_entry_sides_zero_had_even_a_positive_gross_terminal_floor_before_the_frozen_33_5_bips_fixed_fee_and_expiry_basis_stress_zero_survivors_zero_depth_funding_account_credential_order_or_fund_requests_not_an_edge_or_deployment_ready",
+      "current_status": "unaccepted_direction_independent_long_crypto_option_plus_equal_opposite_USDT_perpetual_terminal_payoff_lower_bound_the_rank_47_later_population_trigger_was_satisfied_without_network_access_by_two_exact_BTC_261225_94000_call_and_put_symbols_present_in_the_retained_2026_08_31T22_44_19Z_all_options_ticker_but_absent_from_the_2026_08_31T17_29_50Z_complete_1576_symbol_exchangeInfo_baseline_the_zero_network_fixed_33_5_bip_screen_found_the_call_negative_17970_60_USDT_per_BTC_before_fixed_costs_and_the_put_missing_a_positive_displayed_ask_so_zero_rows_had_a_positive_complete_gross_terminal_floor_zero_survivors_zero_exchangeInfo_refresh_depth_funding_account_credential_order_or_fund_requests_not_an_edge_or_deployment_ready",
       "market_direction_forecast_required": false,
       "mechanism": "binance_long_crypto_option_opposite_USDT_perpetual_terminal_payoff_lower_bound",
-      "next_action": "do_not_repeat_rebuild_refresh_or_depth_capture_either_the_exhausted_1410_symbol_baseline_or_the_exact_508_symbol_August_31_delta_reopen_only_for_a_later_distinct_active_option_population_material_fee_settlement_tick_depth_funding_basis_or_capital_rule_change_or_an_independently_observed_nonpolling_displayed_terminal_floor_that_strictly_exceeds_every_frozen_cost_then_apply_the_same_rejection_first_sequence",
+      "next_action": "do_not_repeat_rebuild_refresh_or_depth_capture_the_exhausted_1410_symbol_baseline_the_exact_508_symbol_August_31_delta_or_the_exact_two_symbol_late_ticker_delta_and_do_not_poll_within_the_same_UTC_day_reopen_only_for_a_later_distinct_active_option_population_after_2026_09_01T22_44_19Z_or_a_material_fee_settlement_tick_depth_funding_basis_or_capital_rule_change_or_an_independently_observed_nonpolling_displayed_terminal_floor_that_strictly_exceeds_every_frozen_cost_then_apply_the_same_rejection_first_sequence",
       "priority_rank": 47,
       "prohibited_shortcuts": [
         "calling_the_two_positive_gross_SOL_rows_after_cost_profit",
@@ -3306,6 +3310,7 @@
         "ignoring_option_futures_settlement_tick_capital_or_non_atomic_orphan_costs",
         "requesting_current_depth_after_the_best_gross_floor_failed_the_fixed_cost_gate_alone",
         "retesting_refreshing_or_subsetting_the_exact_508_symbol_August_31_delta_after_zero_gross_positive_rows",
+        "refetching_exchangeInfo_tickers_or_books_for_the_exact_two_symbol_2026_09_01_late_ticker_delta_after_the_call_was_gross_negative_and_the_put_had_no_positive_displayed_ask",
         "calling_one_retained_snapshot_recurring_current_or_stable",
         "using_credentials_accessing_accounts_or_placing_orders_without_separate_explicit_authority"
       ],
@@ -3313,7 +3318,7 @@
       "venue_scope": "Binance_BTC_ETH_SOL_European_options_and_exact_matching_USDT_perpetuals"
     }
   ],
-  "result_sha256": "1647539495270c7e732dd9fe8d421cc69456f6d7ccbb53e7655d34cfc7316f85",
+  "result_sha256": "6ad94f7f192f61f7f47f146139985debe5da1252a6a1b7470e53581c5b9d9bf2",
   "schema_version": "structural-edge-priority-registry-v1",
   "terminal_do_not_repeat": [
     {
@@ -3946,8 +3951,13 @@
       "canonical_result_sha256": "c8983f0668fdd157add672940769f5ceb3db91c2cbe495ce27b8034dd491da91",
       "family": "binance_wallet_Aster_BTC_ETH_SOL_USD1_vs_Binance_USDT_perpetual_funding_2026_09_01",
       "reason": "the_distinct_Binance_Wallet_routed_Aster_population_proved_active_BTCUSD1_ETHUSD1_and_SOLUSD1_contracts_then_three_prospectively_frozen_public_funding_histories_aligned_209_eight_hour_rows_per_asset_with_orientation_selected_from_training_only_all_BTC_ETH_and_SOL_roles_failed_the_frozen_20_bip_round_trip_10_percent_annual_two_leg_capital_and_23_954486_bip_USD1_USDT_stress_hurdles_and_validation_or_test_gross_was_negative_for_BTC_and_ETH_while_SOL_test_gross_was_negative_zero_basis_book_account_credential_order_or_fund_requests_were_justified_do_not_repeat_resample_or_change_orientation_roles_or_hurdles_reopen_only_on_a_material_Aster_or_Binance_funding_fee_basis_USD1_conversion_custody_capital_or_execution_architecture_change"
+    },
+    {
+      "canonical_result_sha256": "b425fd356f5033e24313c5dbb166d381c045a4e794107a791acd49ed61992ab2",
+      "family": "binance_BTC_261225_94000_call_put_late_ticker_delta_2026_09_01",
+      "reason": "the_retained_2026_08_31T22_44_19Z_all_options_ticker_exposed_exactly_two_scoped_BTC_symbols_absent_from_the_2026_08_31T17_29_50Z_complete_exchangeInfo_baseline_the_94000_call_had_a_negative_17970_60_USDT_per_BTC_gross_terminal_floor_before_the_frozen_33_5_bip_fixed_stress_and_the_94000_put_had_no_positive_displayed_ask_so_the_exact_price_incomplete_delta_had_zero_complete_positive_gross_rows_and_zero_survivors_do_not_refetch_exchangeInfo_tickers_books_depth_funding_or_accounts_for_this_snapshot_reopen_rank_47_only_after_2026_09_01T22_44_19Z_for_a_later_distinct_population_or_another_literal_material_trigger"
     }
   ],
-  "updated_at_utc": "2026-09-01T00:29:00Z",
+  "updated_at_utc": "2026-09-01T00:42:00Z",
   "usage_rule": "advance_the_highest_ranked_hypothesis_whose_retry_trigger_is_satisfied_otherwise_do_not_repeat_a_blocked_or_terminal_screen"
 }

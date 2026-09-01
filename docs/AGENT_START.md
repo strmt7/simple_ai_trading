@@ -23,6 +23,24 @@ safety gate, blocks Stop, or submits an order.
 
 ### Latest efficient structural screen
 
+A later retained Binance all-options ticker exposed exactly two BTC option
+symbols absent from the complete 1,576-symbol inventory captured five hours
+earlier. One prospectively frozen zero-network rank-47 screen reused that ticker
+and its synchronized USD-M Futures book. The 94,000 call had a gross terminal
+floor of `-17,970.60` USDT per BTC before the 33.5-bip fixed stress; the 94,000
+put had no positive displayed ask. Zero rows had a complete positive gross
+floor, so no exchange-info refresh, ticker, book, depth, funding, account,
+credential, order, fund, or protected-capture request was made.
+
+This exact two-symbol snapshot is terminal and price-incomplete, not an edge.
+Do not refetch or poll rank 47 again within the same UTC day. Reopen only after
+`2026-09-01T22:44:19Z` for a later distinct population or another literal
+material trigger. Accepted edges remain 29, ranked hypotheses remain 47,
+terminal families become 126, registry SHA-256 is
+`6ad94f7f192f61f7f47f146139985debe5da1252a6a1b7470e53581c5b9d9bf2`,
+and durability-audit SHA-256 is
+`4f7196ba69e68d8e28bfc02f3f60c1f063456a310a456a9bcbb8a0d39868aed8`.
+
 A previously unconsumed early September 13 NFL window materially satisfied rank
 30's public trigger. One frozen complete Gamma keyset request returned 12
 events; 10 rule-complete active events proved 2,978 exact full-game margin and
