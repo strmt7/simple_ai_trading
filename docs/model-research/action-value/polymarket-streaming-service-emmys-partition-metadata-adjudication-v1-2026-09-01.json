@@ -1,0 +1,81 @@
+{
+  "schema_version": "polymarket-exact-negrisk-partition-metadata-adjudication-v1",
+  "created_at_utc": "2026-09-01T03:08:12Z",
+  "hypothesis": "Buying one equal-size YES share in every outcome of a mutually exclusive and exhaustive NegRisk event has a one-pUSD settlement floor and may be direction-independent when the complete executable acquisition cost is strictly below one pUSD.",
+  "source_binding": {
+    "contract": {
+      "path": "docs/model-research/action-value/polymarket-streaming-service-emmys-partition-metadata-contract-v1-2026-09-01.json",
+      "canonical_sha256": "90525ae26b9d336473ad3e676bc8a229fc90bbabb0b8d7ceeb6230e15c1e5f30",
+      "file_sha256": "5f0b9077d5c8537f5157d2bb5bcc5346439652e46fed99d607cef9891b1d4b35"
+    },
+    "capture_result": {
+      "path": "docs/model-research/action-value/polymarket-streaming-service-emmys-partition-metadata-capture-result-v1-2026-09-01.json",
+      "canonical_sha256": "0e69ed7e54e8b071cbdf9fd758ee11feb26a5160f1abf8bf3724ceb6bb040a04",
+      "file_sha256": "6e0cfabf9fded135af2610350d1c5ab3eecdccac5000a4fc1fab7f9c4bc5625c"
+    },
+    "raw": {
+      "path": "data/polymarket-streaming-service-emmys-partition-metadata-v1/raw/event.json",
+      "file_sha256": "8261d6a354ca3d7dd1691ae5f8b7052456b5c676bc4416b717fa1c4ebef64bfc",
+      "response_bytes": 44700,
+      "event_updated_at_utc": "2026-09-01T03:05:41.786668Z"
+    },
+    "request_journal": {
+      "path": "data/polymarket-streaming-service-emmys-partition-metadata-v1/request-journal.jsonl",
+      "file_sha256": "db690900716feb4e43f3e48cb1d5fdb9a712f12a9ff90b1350288085646a399e"
+    }
+  },
+  "event": {
+    "id": "727050",
+    "slug": "which-streaming-service-will-win-the-most-emmys-20260710203956416",
+    "title": "Which streaming service will win the most Emmys?",
+    "active": true,
+    "closed": false,
+    "enable_order_book": true,
+    "neg_risk": true,
+    "gamma_market_count": 9,
+    "rendered_market_count": 8
+  },
+  "screen": {
+    "outcome_prices_used": false,
+    "rendered_active_yes_best_ask_sum_pUSD": "0.99",
+    "complete_gamma_yes_best_ask_sum_pUSD": "1.99",
+    "optimistic_guaranteed_floor_pUSD": "1",
+    "complete_gamma_headroom_before_fees_pUSD": "-0.99",
+    "strict_complete_subfloor_gate_passed": false,
+    "hidden_market": {
+      "id": "3008086",
+      "question": "Will another streaming service win the most Emmys?",
+      "group_item_title": "Other",
+      "active": false,
+      "closed": false,
+      "accepting_orders": true,
+      "enable_order_book": true,
+      "neg_risk": true,
+      "yes_best_ask_pUSD": "1",
+      "yes_best_bid_pUSD": "0"
+    },
+    "adjudication": "The rendered eight-leg 0.99-pUSD discovery sum is not the complete event. Exact Gamma metadata contains a ninth Other market required by the rules. Including its direct YES bestAsk raises the complete rejection proxy to 1.99 pUSD, so the package loses 0.99 pUSD before fees, depth, time value, latency, atomicity, or unwind risk. The inactive flag also independently blocks an all-active executable package."
+  },
+  "decision": {
+    "accepted_edge": false,
+    "profitability_claim": false,
+    "deployment_ready": false,
+    "market_direction_forecast_required": false,
+    "book_requests_justified": 0,
+    "fee_requests_justified": 0,
+    "next_action": "Do not retry, refresh, alias, omit Other, treat the rendered page as exhaustive, or request books. Reopen only for a distinct nonconsumed active NegRisk event whose exact complete market set is active and whose complete side-specific ask sum is strictly below its one-pUSD floor."
+  },
+  "authority": {
+    "account_requests": 0,
+    "book_requests": 0,
+    "credentials_used": false,
+    "fee_requests": 0,
+    "funds_used": false,
+    "orders_or_transactions": 0,
+    "protected_capture_touched": false,
+    "public_unauthenticated_read_only_requests": 1,
+    "signed_requests": 0,
+    "trading_authority": false
+  },
+  "result_sha256": "9ffdd9272bb4b18644aad2c42e713a270689c2fed2145cd91079ed6b7ba82c05"
+}
