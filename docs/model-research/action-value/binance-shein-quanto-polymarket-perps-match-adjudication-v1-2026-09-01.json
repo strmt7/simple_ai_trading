@@ -1,0 +1,111 @@
+{
+  "schema_version": "binance-shein-quanto-polymarket-perps-match-adjudication-v1",
+  "created_at_utc": "2026-09-01T04:32:00Z",
+  "question": "Did Binance's new HK0625USDT quanto TradFi perpetual create a current exact SHEIN or HK0625 match on Polymarket Perps that can reopen the fixed-orientation cross-venue funding family?",
+  "trigger": {
+    "registry_rank": 43,
+    "official_binance_announcement_list_url": "https://www.binance.com/en/support/announcement/list/49?navId=49",
+    "official_binance_announcement_url": "https://www.binance.com/en/support/announcement/detail/969a4628dd5d4a479c071b02175bae57",
+    "announcement_title": "Binance Futures Will Launch HK0625USDT USD-Margined Quanto Perpetual Contract (2026-09-01)",
+    "new_binance_symbol": "HK0625USDT",
+    "underlying_company": "SHEIN Global Holdings Limited",
+    "binance_deployment_state_source_proved": false,
+    "deployment_note": "The retained rendered primary evidence proves the announcement title and date, not a completed deployment. No Binance inventory or market-data request was needed because the exact Polymarket counterpart gate failed independently."
+  },
+  "source_binding": {
+    "contract": {
+      "path": "docs/model-research/action-value/binance-shein-quanto-polymarket-perps-match-contract-v1-2026-09-01.json",
+      "canonical_sha256": "74952fcaa3bd83f826c9113051776aecedc46bd7d4add3f522ff517432e672de"
+    },
+    "capture": {
+      "path": "docs/model-research/action-value/binance-shein-quanto-polymarket-perps-match-capture-v1-2026-09-01.json",
+      "canonical_sha256": "360159707942d24e08cca729c390317aac62b3cdbe8ccbfd2fc833155d78f46a",
+      "file_sha256": "5cc0f5f1ee24d74f72f3632d0ef560ff997ba5a4b7b77801fd7c592450b51d94"
+    },
+    "raw": {
+      "path": "data/binance-shein-quanto-polymarket-perps-match-v1/raw/polymarket-instruments.json",
+      "sha256": "427f7f9578285dc3c4200c3ad5c185f6cbb2a343f91e249184aae652805e9083",
+      "bytes": 44614,
+      "http_status": 200
+    },
+    "journal": {
+      "path": "data/binance-shein-quanto-polymarket-perps-match-v1/request-journal.jsonl",
+      "sha256": "42dcb2b4c6cd1249e9aba4565cd47c800c25aef525c43b4f04e16395e7a8f6ac"
+    },
+    "prior_inventory": {
+      "path": "data/polymarket-binance-tradfi-perps-funding-prefilter-v1/response-01-polymarket-instruments.json",
+      "captured_at_utc": "2026-08-29T19:27:40Z",
+      "instrument_count": 67
+    }
+  },
+  "inventory_result": {
+    "current_instrument_count": 67,
+    "prior_instrument_count": 67,
+    "added_symbols": [],
+    "removed_symbols": [],
+    "exact_symbol_or_base_asset_match_terms": [
+      "SHEIN",
+      "HK0625"
+    ],
+    "exact_match_count": 0,
+    "funding_population_created": false
+  },
+  "related_polymarket_threshold_screen": {
+    "role": "rendered discovery rejection only; no rendered value is executable evidence or an input to the exact Perps inventory adjudication",
+    "url": "https://polymarket.com/event/shein-ipo-closing-market-cap-above-20260727205430939/will-sheins-closing-ipo-market-cap-be-at-least-100b-hkd",
+    "payoff_identity": "For lower threshold L below higher threshold H under the page's common market-cap rules, YES(at least L) plus NO(at least H) has a one-pUSD terminal floor.",
+    "rendered_unambiguous_adjacent_packages": [
+      {
+        "lower_threshold_HKD": "150000000000",
+        "higher_threshold_HKD": "200000000000",
+        "displayed_yes_lower_pUSD": "0.98",
+        "displayed_no_higher_pUSD": "0.83",
+        "displayed_sum_pUSD": "1.81"
+      },
+      {
+        "lower_threshold_HKD": "200000000000",
+        "higher_threshold_HKD": "250000000000",
+        "displayed_yes_lower_pUSD": "0.55",
+        "displayed_no_higher_pUSD": "0.998",
+        "displayed_sum_pUSD": "1.548"
+      }
+    ],
+    "missing_side_rule": "Every blank or 0.0 rendered button without an unambiguous labeled acquisition ask is unavailable, never a free leg.",
+    "strict_subfloor_candidate_count": 0,
+    "exact_bracket_sibling_source_proved": false,
+    "gamma_or_clob_requests_justified": 0
+  },
+  "economics_gate": {
+    "funding_values_requested": 0,
+    "ticker_values_requested": 0,
+    "books_requested": 0,
+    "fees_requested": 0,
+    "reason": "Without an exact common underlying on both perpetual venues there is no two-leg fixed-orientation population, so funding spread and execution economics are undefined rather than zero."
+  },
+  "adjudication": {
+    "status": "terminal_new_HK0625USDT_announcement_has_no_current_exact_Polymarket_Perps_match",
+    "accepted_edge": false,
+    "deployment_ready": false,
+    "market_direction_forecast_required": false,
+    "profitability_claim": false,
+    "stable_current_account_qualified_after_all_cost_edge": false,
+    "next_action": "Do not refresh this exact 67-instrument population, infer Binance deployment from the announcement alone, request SHEIN funding, substitute a merely related IPO prediction market, or request any book. Reopen rank 43 only after a later source-proved exact common-underlying instrument appears or another literal material funding, fee, session, unit, conversion, or execution-architecture trigger is satisfied."
+  },
+  "authority": {
+    "account_requests": 0,
+    "credentials_used": false,
+    "funds_used": false,
+    "orders_or_transactions": 0,
+    "protected_capture_touched": false,
+    "public_unauthenticated_read_only_requests": 1,
+    "signed_requests": 0,
+    "trading_authority": false
+  },
+  "registry_effect": {
+    "accepted_edge_count": 29,
+    "ranked_hypothesis_count": 47,
+    "terminal_family_count": 136,
+    "stable_current_account_qualified_after_all_cost_edge_count": 0
+  },
+  "result_sha256": "bce940e94a6846e2524f01d77f18b7e921bc273b1f027d9dc7cab4a5b99faf50"
+}
