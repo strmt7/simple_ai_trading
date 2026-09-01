@@ -1,12 +1,49 @@
 # Continue Development
 
-Current canonical status after the Binance-Bybit BTC/ETH/SOL cross-venue
-funding checkpoint: accepted edges 30, ranked hypotheses 47, terminal families
-145, and stable current account-qualified after-all-cost edges zero. Registry
+Current canonical status after the Binance Web3 Wallet Prediction Trading OTC
+source gate: accepted edges 34, ranked hypotheses 53, terminal families 166,
+and stable current account-qualified after-all-cost edges zero. Registry
 SHA-256 is
-`a3e770993bdc1705703a38ccbaf01c14ec90ceed4c948b04032a275ee43e5eef`;
+`9b2236283e5ec3c877be2fa0cabb423699d3708bd2cb1a6d656e26dace4aaefb`;
 durability-audit SHA-256 is
-`b3050b131b33588f5722302e1d4926bf56e6ae6589a44b5c6e91bd79133df005`.
+`dfb85ebfcc78b7d05da92036860701dbdae54953c04911a1fc6e47cad3dbd762`.
+
+## 2026-09-01 Binance Web3 prediction OTC source failure
+
+Official Binance discovery exposed a previously unrepresented Web3 Wallet
+Prediction Trading OTC block-trade surface. It is potentially a
+direction-independent price-concession overlay for an independently required
+legitimate large prediction trade, and is structurally distinct from Binance
+Exchange Spot block matching and Polymarket's public CLOB. The exact developer
+page was frozen before access. Its one-use public GET returned HTTP 202 with
+zero bytes, preserved in the raw response and durable request journal.
+
+The search-rendered endpoint and `secretToken` examples are discovery-only.
+They prove no current public quote access, authentication contract, authentic
+counterparty, minimum size, fee, settlement, fillability, payoff identity,
+public-book counterfactual, or after-cost concession. Public profit floor is
+zero; the candidate is not accepted or deployment-ready. Do not retry locale or
+rendered aliases, use cached snippets, guess tokens, or request private quotes.
+Reopen rank 53 only on a material byte-retainable official documentation/API
+change, or with explicit separate read-only authority, an independently
+required legitimate large prediction trade, and an exact same-payoff
+public-book counterfactual. Every quote acceptance, cancellation, negotiation,
+order, fund, wallet, or account mutation requires separate explicit authority.
+
+Contract canonical/file, raw, journal, and failure-adjudication SHA-256 values
+are
+`2441d38840ceb9a442a649b5631c2ef0c8ef73c58afdc61f7b015cbc91f92b50`,
+`e90e728adc4ffce850a6b1789b298cda30cac1dc5a03b2fd25a67dc8710f4505`,
+`e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855`,
+`5ff12552f4dba7fa15210bf13a073f4c6f01d8646f4e288b3bf930b91c200961`,
+and `02a2085182a0ff292aaf5b7f4544a3d4d3c5a813bab9e7adca9638fac8500525`.
+Registry and durability-audit SHA-256 values are
+`9b2236283e5ec3c877be2fa0cabb423699d3708bd2cb1a6d656e26dace4aaefb`
+and `dfb85ebfcc78b7d05da92036860701dbdae54953c04911a1fc6e47cad3dbd762`.
+Accepted edges remain 34, ranked hypotheses become 53,
+terminal families become 166, and stable current account-qualified after-all-
+cost edges remain zero. No account, credential, signed request, quote, order,
+fund, wallet, transaction, or protected capture was touched.
 
 ## 2026-09-01 Binance-Bybit funding-spread rejection
 

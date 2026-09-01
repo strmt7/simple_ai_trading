@@ -129,3 +129,5 @@ docs/model-research/polymarket/round-025-terminal-receipt-materialization-design
 docs/model-research/polymarket/round-025-twap-core-campaign-plan-publication-2026-08-10.json text eol=lf
 docs/model-research/polymarket/round-025-twap-wire-schema-correction-v1.json text eol=lf
 docs/model-research/polymarket/round-027-*.json text eol=lf
+data/binance-web3-prediction-otc-blocktrade-v1/request-journal.jsonl binary
+data/binance-web3-prediction-otc-blocktrade-v1/raw/official-otc-docs.html binary

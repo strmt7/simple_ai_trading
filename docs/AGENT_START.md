@@ -21,6 +21,33 @@ profitable without reproducible source-bound after-cost evidence. AI may veto
 or reduce risk only; it never creates positions, selects leverage, overrides a
 safety gate, blocks Stop, or submits an order.
 
+### Latest structural novelty gate
+
+Binance Web3 Wallet Prediction Trading OTC block trades are a genuinely
+distinct direction-independent price-concession candidate, not an alias of
+Binance Exchange Spot block matching or Polymarket's public CLOB. The exact
+official developer source was frozen before access, but its one-use GET returned
+HTTP 202 with an empty body. Search-rendered endpoint and `secretToken` examples
+are discovery-only and cannot prove public access, quote authenticity, minimum
+size, fees, settlement, fillability, or positive after-cost value.
+
+Do not retry a locale or rendered alias, use cached snippets, guess a private
+token, or request quotes. Reopen rank 53 only after a material byte-retainable
+official documentation/API change, or with explicit separate read-only
+authority, an independently required legitimate large prediction trade, and an
+exact same-payoff public-book counterfactual. Quote acceptance, cancellation,
+negotiation, orders, funds, wallets, and account mutations always require
+separate explicit authority. Accepted edges remain 34, ranked hypotheses become
+53, terminal families become 166, and stable current account-qualified
+after-all-cost edges remain zero. Contract, failure-adjudication, registry, and
+durability-audit hashes are
+`2441d38840ceb9a442a649b5631c2ef0c8ef73c58afdc61f7b015cbc91f92b50`,
+`02a2085182a0ff292aaf5b7f4544a3d4d3c5a813bab9e7adca9638fac8500525`,
+`9b2236283e5ec3c877be2fa0cabb423699d3708bd2cb1a6d656e26dace4aaefb`,
+and `dfb85ebfcc78b7d05da92036860701dbdae54953c04911a1fc6e47cad3dbd762`.
+No account, credential, signed request, quote, order, fund,
+wallet, transaction, or protected capture was touched.
+
 ### Latest efficient structural screen
 
 The distinct Binance-Bybit BTC, ETH, and SOL USDT perpetual funding population
