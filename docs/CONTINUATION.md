@@ -1,12 +1,47 @@
 # Continue Development
 
-Current canonical status after the Binance Trading Fee Rebate Voucher source gate:
-accepted edges 37, ranked hypotheses 64, terminal families 180,
+Current canonical status after the Binance Futures Bonus Voucher downside gate:
+accepted edges 37, ranked hypotheses 65, terminal families 181,
 and stable current account-qualified after-all-cost edges zero. Registry
 SHA-256 is
-`8a9c3282758f348a7009af934a17ceffdcd5501b17292717555684ff6686063a`;
+`cc6d24ba7c3485e31f18896d8fe67be4eaeaed29660fc29b0543f406f6c13516`;
 durability-audit SHA-256 is
-`530f25f5b07815e08ce94a214f5b319da394bc19ba8ced83e5368a434399ef4c`.
+`d001f3b28b65e9e440cd1b1510de01ed853523b36e518155bd93526d78d8dc73`.
+
+## 2026-09-01 Binance Futures Bonus Voucher downside rejection
+
+One prospectively frozen unauthenticated public CMS GET retained the exact
+current official Futures Bonus Voucher FAQ. It says free tokens can be used as
+same-cryptocurrency USD-M or COIN-M Futures collateral, losses can be offset
+against the bonus amount, generated profits can be withdrawn or transferred,
+the bonus principal cannot be directly withdrawn, and unused credits may be
+revoked after 30 days.
+
+Those headlines do not prove a free option. The FAQ expressly says it is not
+legal terms and may be outdated. It does not specify bonus-versus-user-fund
+loss ordering, commissions, funding, liquidation, deficits, ADL, insurance
+recovery, clawbacks, mixed-balance or other-asset protection, additional-margin
+requirements, exact depletion accounting, or transfer and withdrawal effects.
+The fully nonrecourse gate therefore fails. The narrower organic-cost-overlay
+gate also fails because exact depletion and mixed-balance mechanics are absent.
+
+The hypothesis is terminal before linked controlling terms, prices, funding,
+books, accounts, credentials, Rewards Hub, voucher actions, positions, orders,
+or funds. Do not refetch, alias, or use testnet credentials as mainnet evidence.
+Reopen only on rank 65's material official downside-term change or a distinct
+prospectively frozen complete controlling-terms package selected before access,
+plus an independently owned-voucher read-only trigger. Every claim, activation,
+deposit, trade, position, transfer, withdrawal, or state change requires
+separate explicit authority.
+
+Contract, source-result, raw-response, request-journal, and terminal-result
+SHA-256 values are
+`dd35c75a5f84ff75e8623e15082596fa4ca25cbe8ea090236f8592cfa5faab57`,
+`971e87c3d6e95b37bf1a565f2054f828b55e13a4f8d746578a5d1682c5c8d1e3`,
+`f7325515673a162e8b21f6a15ba9e2fe02aaa0b999c8877ff51f2161c538d710`,
+`7e5db43bb0bee51c15fc8d5ad7dd0823e58a4504be1ae72ac339e26b22741ee7`,
+and `57822cbd67822d8c8d61e6d353db99b42dc9895ff19e51e6825beee0a4f66423`.
+No account, credential, order, fund, transaction, or protected capture was used.
 
 ## 2026-09-01 Binance Trading Fee Rebate Voucher scoped edge
 
