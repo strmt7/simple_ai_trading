@@ -1,0 +1,171 @@
+{
+  "schema_version": "polymarket-or06-house-winner-complete-set-metadata-adjudication-v1",
+  "created_at_utc": "2026-09-01T04:02:10Z",
+  "source": {
+    "contract": {
+      "path": "docs/model-research/action-value/polymarket-or06-house-winner-complete-set-metadata-contract-v1-2026-09-01.json",
+      "sha256": "35dfa8a68ec3856e6f8ff32bed471ff5378c19a9997bea9b5345e4af061e592b"
+    },
+    "capture_result": {
+      "path": "docs/model-research/action-value/polymarket-or06-house-winner-complete-set-metadata-capture-result-v1-2026-09-01.json",
+      "sha256": "c60b91d086e1246e87eb39b5845fa9fd3ca60864102351477d583f7c5b96d804"
+    },
+    "raw": {
+      "path": "data/polymarket-or06-house-winner-complete-set-metadata-v1/raw/event.json",
+      "sha256": "82323cd9184939d9f3d630fb3c26c8c1eedd6af68b1724eb6faa5cd5da5e7829",
+      "bytes": 33714,
+      "http_status": 200
+    },
+    "journal": {
+      "path": "data/polymarket-or06-house-winner-complete-set-metadata-v1/request-journal.jsonl",
+      "sha256": "e6a2bb7fea570f9d506c1af58c20e2dc95fdd8b72047f5b85b57f2be0baa814c"
+    }
+  },
+  "event": {
+    "id": "191602",
+    "slug": "or-06-house-election-winner",
+    "title": "OR-06 House Election Winner",
+    "active": true,
+    "closed": false,
+    "archived": false,
+    "negRisk": true,
+    "market_count": 8,
+    "active_market_count": 2,
+    "inactive_market_count": 6,
+    "common_description_sha256": "d247bf90347758403cbf57ee5ccfc06c88e2786a8748d7d1aae57269d18a00c2"
+  },
+  "markets": [
+    {
+      "id": "1284552",
+      "group_item_title": "Democratic Party",
+      "active": true,
+      "accepting_orders": true,
+      "neg_risk_other": false,
+      "best_ask_pUSD": "0.964",
+      "best_bid_pUSD": "0.957",
+      "tick_pUSD": "0.001",
+      "minimum_order_shares": "5"
+    },
+    {
+      "id": "1284551",
+      "group_item_title": "Republican Party",
+      "active": true,
+      "accepting_orders": true,
+      "neg_risk_other": false,
+      "best_ask_pUSD": "0.007",
+      "best_bid_pUSD": "0.005",
+      "tick_pUSD": "0.001",
+      "minimum_order_shares": "5"
+    },
+    {
+      "id": "1284553",
+      "group_item_title": "Other",
+      "active": false,
+      "accepting_orders": true,
+      "neg_risk_other": true,
+      "best_ask_pUSD": "1",
+      "best_bid_pUSD": "0",
+      "tick_pUSD": "0.01",
+      "minimum_order_shares": "5"
+    },
+    {
+      "id": "1284555",
+      "group_item_title": "B",
+      "active": false,
+      "accepting_orders": true,
+      "neg_risk_other": false,
+      "best_ask_pUSD": "1",
+      "best_bid_pUSD": "0",
+      "tick_pUSD": "0.01",
+      "minimum_order_shares": "5"
+    },
+    {
+      "id": "1284557",
+      "group_item_title": "D",
+      "active": false,
+      "accepting_orders": true,
+      "neg_risk_other": false,
+      "best_ask_pUSD": "1",
+      "best_bid_pUSD": "0",
+      "tick_pUSD": "0.01",
+      "minimum_order_shares": "5"
+    },
+    {
+      "id": "1284554",
+      "group_item_title": "A",
+      "active": false,
+      "accepting_orders": true,
+      "neg_risk_other": false,
+      "best_ask_pUSD": "1",
+      "best_bid_pUSD": "0",
+      "tick_pUSD": "0.01",
+      "minimum_order_shares": "5"
+    },
+    {
+      "id": "1284556",
+      "group_item_title": "C",
+      "active": false,
+      "accepting_orders": true,
+      "neg_risk_other": false,
+      "best_ask_pUSD": "1",
+      "best_bid_pUSD": "0",
+      "tick_pUSD": "0.01",
+      "minimum_order_shares": "5"
+    },
+    {
+      "id": "1284558",
+      "group_item_title": "E",
+      "active": false,
+      "accepting_orders": true,
+      "neg_risk_other": false,
+      "best_ask_pUSD": "1",
+      "best_bid_pUSD": "0",
+      "tick_pUSD": "0.01",
+      "minimum_order_shares": "5"
+    }
+  ],
+  "economics": {
+    "quantity_shares_per_leg": "5",
+    "complete_event_yes_leg_count": 8,
+    "complete_event_yes_ask_sum_pUSD_per_share": "6.971",
+    "complete_event_gross_cost_pUSD": "34.855",
+    "complete_event_payoff_floor_pUSD": "5",
+    "complete_event_gross_floor_pUSD": "-29.855",
+    "active_only_diagnostic": {
+      "not_a_complete_package": true,
+      "yes_ask_sum_pUSD_per_share": "0.971",
+      "gross_headroom_pUSD": "0.145",
+      "fee_schedule": {
+        "rate": "0.04",
+        "exponent": 1,
+        "taker_only": true,
+        "taker_base_fee": 1000
+      },
+      "nominal_taker_fees_pUSD": "0.008331",
+      "nominal_after_fee_headroom_pUSD": "0.136669",
+      "one_adverse_tick_per_leg_after_fee_headroom_pUSD": "0.1266578",
+      "reason_excluded": "The six returned inactive siblings remain part of the exact NegRisk event metadata, include the negRiskOther outcome, and are not proved impossible or safely omittable by the rendered two-party card."
+    }
+  },
+  "adjudication": {
+    "status": "terminal_rejected_hidden_inactive_negrisk_siblings",
+    "accepted_edge": false,
+    "current_executable_candidate_proved": false,
+    "deployment_ready": false,
+    "profitability_claim": false,
+    "book_request_authorized": false,
+    "reason": "The two rendered active YES asks form a strict sub-floor diagnostic, but the exact event contains six hidden inactive siblings. Buying every returned YES costs 6.971 pUSD per share for a one-pUSD event payout, while omitting Other and placeholder outcomes A through E is not a proved complete payoff package.",
+    "next_action": "Do not refresh, alias, omit hidden siblings, or request OR-06 books. Reopen only for a distinct exact event whose complete Gamma market set is active, acquisition-capable, rule-exhaustive, and positive after current fees and at least one adverse tick per leg before depth."
+  },
+  "authority": {
+    "public_unauthenticated_read_only_requests": 1,
+    "credentials_used": false,
+    "signed_requests": 0,
+    "account_requests": 0,
+    "orders_or_transactions": 0,
+    "funds_used": false,
+    "protected_capture_touched": false,
+    "trading_authority": false
+  },
+  "result_sha256": "b8ab67f254bf6278e6acb993c8a73412e3a4465fe3c7d99dc34b4c603d0455e5"
+}

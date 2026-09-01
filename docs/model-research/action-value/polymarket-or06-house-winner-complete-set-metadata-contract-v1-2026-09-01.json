@@ -1,0 +1,80 @@
+{
+  "schema_version": "polymarket-or06-house-winner-complete-set-metadata-contract-v1",
+  "status": "frozen_before_one_public_gamma_request",
+  "frozen_at_utc": "2026-09-01T03:59:39Z",
+  "contract_path": "docs/model-research/action-value/polymarket-or06-house-winner-complete-set-metadata-contract-v1-2026-09-01.json",
+  "question": "Does the exact OR-06 House Election Winner event contain one active open acquisition-capable NegRisk partition whose complete direct YES package remains positive after current fee schedules and one adverse tick per leg before depth?",
+  "trigger": {
+    "registry_rank": 31,
+    "event_slug": "or-06-house-election-winner",
+    "rendered_discovery_url": "https://polymarket.com/event/or-06-house-election-winner",
+    "rendered_outcomes": [
+      {
+        "label": "Democratic Party",
+        "displayed_yes_ask_pUSD": "0.935"
+      },
+      {
+        "label": "Republican Party",
+        "displayed_yes_ask_pUSD": "0.027"
+      }
+    ],
+    "rendered_yes_ask_sum_pUSD": "0.962",
+    "guaranteed_floor_if_complete_pUSD": "1",
+    "discovery_values_are_economic_inputs": false,
+    "ambiguity": "The rendered page says there are two outcomes and shows a strict sub-floor package, but exact Gamma metadata must prove that no hidden, inactive, Other, tie, unresolved, or fallback sibling can receive the event payout."
+  },
+  "request_name": "exact_or06_house_winner_event_metadata",
+  "request": {
+    "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "count": 1,
+    "method": "GET",
+    "url": "https://gamma-api.polymarket.com/events/slug/or-06-house-election-winner"
+  },
+  "response_byte_ceiling": 2000000,
+  "required_utf8_phrases": [
+    "\"title\":\"OR-06 House Election Winner\"",
+    "\"markets\":[",
+    "\"negRisk\":true"
+  ],
+  "decision": {
+    "metadata_only": true,
+    "rendered_prices_excluded": true,
+    "book_requests_authorized": 0,
+    "accepted_edge_from_metadata": false,
+    "partition_gate": "Enumerate every returned market and every rule fallback. Require exactly one pUSD payout across every state, with every required market active, open, accepting orders, and exposing a direct positive bestAsk.",
+    "economic_gate": "Using only exact returned direct bestAsk, current per-market fee schedule, exact tick size, and the event minimum size, require a strictly positive one-pUSD floor after fees and one adverse tick per leg before any book request.",
+    "next_step_if_both_gates_pass": "Freeze one separate exact all-token five-share depth capture with freshness, skew, full-fill, two-tick, fee, non-atomicity, and unwind gates.",
+    "next_step_if_either_gate_fails": "Preserve the one-use response and reject without books, credentials, accounts, orders, funds, transactions, or protected capture access."
+  },
+  "outputs": {
+    "raw_path": "data/polymarket-or06-house-winner-complete-set-metadata-v1/raw/event.json",
+    "journal_path": "data/polymarket-or06-house-winner-complete-set-metadata-v1/request-journal.jsonl",
+    "result_path": "docs/model-research/action-value/polymarket-or06-house-winner-complete-set-metadata-capture-result-v1-2026-09-01.json"
+  },
+  "authority": {
+    "account_requests": 0,
+    "credentials_used": false,
+    "funds_used": false,
+    "orders_or_transactions": 0,
+    "protected_capture_touched": false,
+    "public_unauthenticated_read_only_requests": 1,
+    "signed_requests": 0,
+    "trading_authority": false
+  },
+  "implementations": [
+    {
+      "path": "tools/capture_public_source_contract.py",
+      "sha256": "d566a5a379c659c3da144d5e28449ebac9c01493bd39646f9cc3a6e697a83566"
+    },
+    {
+      "path": "tools/screen_polymarket_exact_two_leg_package.py",
+      "sha256": "374fcc3c3485c466b4929a91256450bdc7db70f93ef4c6bda627e05fe8938327"
+    },
+    {
+      "path": "tools/adjudicate_polymarket_exact_mlb_monotone_prefilter.py",
+      "sha256": "958a44d78029b9a1eb69a3771ce18e53ac1ed3c7bc161c8e4318beedce2cf99f"
+    }
+  ],
+  "retry_policy": "This exact Gamma event GET is one-use. Preserve any timeout, non-200 response, schema mismatch, incomplete outcome set, missing side-specific field, rule contradiction, or calculation failure. Never retry an alias, sibling, favorable subset, or same-event price refresh.",
+  "contract_sha256": "35dfa8a68ec3856e6f8ff32bed471ff5378c19a9997bea9b5345e4af061e592b"
+}

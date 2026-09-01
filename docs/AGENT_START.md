@@ -23,6 +23,33 @@ safety gate, blocks Stop, or submits an order.
 
 ### Latest efficient structural screen
 
+The rendered OR-06 House Election Winner card exposed only Democratic and
+Republican outcomes whose visible prices appeared to sum to 0.962 pUSD. A
+frozen one-use public Gamma GET was therefore justified before any depth
+request. Exact metadata instead returned eight NegRisk markets: the two active
+party outcomes plus six hidden inactive but accepting-order siblings named
+`Other`, `A`, `B`, `C`, `D`, and `E`. The exact active-only ask sum was 0.971
+pUSD, but it is not a complete payoff package because none of the hidden
+siblings is source-proved impossible or safely omittable.
+
+Buying every returned YES side costs 6.971 pUSD per share for a one-pUSD event
+payout. The apparent structural edge is therefore terminal before books. Do
+not refresh, alias, omit hidden siblings, or request OR-06 depth. Reopen only
+for a distinct exact event whose complete market set is rule-exhaustive and
+remains positive after current fees and at least one adverse tick per leg
+before depth. No credential, account, fee endpoint, order, fund, transaction,
+book, or protected capture was touched.
+
+Accepted edges remain 29, ranked hypotheses remain 47, terminal families
+become 134, and stable current account-qualified after-all-cost edges remain
+zero. Contract, capture-result, and adjudication SHA-256 values are
+`35dfa8a68ec3856e6f8ff32bed471ff5378c19a9997bea9b5345e4af061e592b`,
+`c60b91d086e1246e87eb39b5845fa9fd3ca60864102351477d583f7c5b96d804`,
+and `b8ab67f254bf6278e6acb993c8a73412e3a4465fe3c7d99dc34b4c603d0455e5`.
+Registry and durability-audit SHA-256 values are
+`bafdead76f0ee1aca2c414674764a7ebca7510fd74478f797fa41735007e80dc`
+and `7bfabbc199967018ce0cfde0787850d48f52960b146064e846455899b754dbf4`.
+
 A distinct joint-projection cover advanced past rendered discovery and exact
 fees: buy `NO` on standalone Republican Senate seat outcomes 50, 51, and 52,
 then buy `YES` on all four joint-event rows whose Senate projection is 50-52.

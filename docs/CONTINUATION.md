@@ -8128,3 +8128,44 @@ Registry SHA-256 becomes
 `93ea1175161da3c536af13d0ac86cc0c08ec1e729cd56b72eafa32c4654c4125`,
 and durability-audit SHA-256 becomes
 `bd2f8e5bb16a9b9dc64d2f79f626b051147fc20679f72c06d89563909dca8c1e`.
+
+## Polymarket OR-06 hidden-election-sibling rejection
+
+The rendered OR-06 House Election Winner card exposed only Democratic and
+Republican outcomes at an apparent combined 0.962 pUSD. The candidate was
+distinct from prior retained families, so a one-use public unauthenticated
+Gamma metadata contract was frozen before access. Its exact GET returned HTTP
+200 with 33,714 retained bytes at SHA-256
+`82323cd9184939d9f3d630fb3c26c8c1eedd6af68b1724eb6faa5cd5da5e7829`.
+
+Exact metadata rejected the apparent edge. Event `191602` is a NegRisk event
+with eight markets, not two. Democratic and Republican are active with YES
+asks 0.964 and 0.007 pUSD. Six hidden inactive siblings remain accepting
+orders: `Other`, `A`, `B`, `C`, `D`, and `E`, each with a direct YES ask of 1
+pUSD; `Other` is explicitly `negRiskOther`. The two active asks sum to 0.971
+pUSD and would retain 0.1266578 pUSD at the five-share minimum after current
+fees and one adverse tick per leg, but this is diagnostic only: it is not a
+complete payoff package because the hidden siblings are not source-proved
+impossible or safely omittable. Every returned YES ask sums to 6.971 pUSD per
+share for a one-pUSD event payout, or a -29.855 pUSD gross floor at five
+shares.
+
+The exact event is terminal before books. Do not retry, refresh, alias, omit
+hidden siblings, or request OR-06 depth. Reopen only for a distinct exact event
+whose complete Gamma market set is active, acquisition-capable,
+rule-exhaustive, and positive after current fees and at least one adverse tick
+per leg before depth. No book, fee endpoint, credential, account, order, fund,
+transaction, or protected capture was touched.
+
+Contract, capture-result, raw, journal, and adjudication SHA-256 values are
+`35dfa8a68ec3856e6f8ff32bed471ff5378c19a9997bea9b5345e4af061e592b`,
+`c60b91d086e1246e87eb39b5845fa9fd3ca60864102351477d583f7c5b96d804`,
+`82323cd9184939d9f3d630fb3c26c8c1eedd6af68b1724eb6faa5cd5da5e7829`,
+`e6a2bb7fea570f9d506c1af58c20e2dc95fdd8b72047f5b85b57f2be0baa814c`,
+and `b8ab67f254bf6278e6acb993c8a73412e3a4465fe3c7d99dc34b4c603d0455e5`.
+Accepted edges remain 29, ranked hypotheses remain 47, terminal families
+become 134, and stable current account-qualified after-all-cost edges remain
+zero. Registry SHA-256 becomes
+`bafdead76f0ee1aca2c414674764a7ebca7510fd74478f797fa41735007e80dc`,
+and durability-audit SHA-256 becomes
+`7bfabbc199967018ce0cfde0787850d48f52960b146064e846455899b754dbf4`.
