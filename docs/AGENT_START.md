@@ -23,6 +23,39 @@ safety gate, blocks Stop, or submits an order.
 
 ### Latest efficient structural screen
 
+The exact largest, second-largest, and third-largest company events are
+terminal at the source gate. Three prospectively frozen one-use public Gamma
+GETs retained 25, 29, and 29 markets. Their market-cap metric, September 30
+market-close instant, and reporting source align, but the independently
+resolved NegRisk rules do not specify cross-rank tie or corporate-action
+handling. Hidden Company-letter populations differ by rank and have no
+source-proved identities, while any-other-company can denote different
+companies at different ranks. An all-different matching floor is therefore not
+source-proved.
+
+No price field was used for the decision and no CLOB book or fee request was
+made. Do not retry, alias-map placeholders, or assume ordinal tie semantics.
+Reopen rank 31 only if exact rules add deterministic cross-rank tie and identity
+semantics or a distinct family proves them before economics. Accepted edges
+remain 29, ranked hypotheses remain 47, terminal families are 141, and stable
+current account-qualified after-all-cost edges remain zero. The three contract
+hashes are
+`c60773469228f8b94f43e62fae1b8fcacf87c69f2a97cb2ed075656bd2a1555d`,
+`77806e15cd1326385ecdf3860c760a11f24df8612b77d570dab30e6b86fdc862`,
+and `c89545cb8fe40944bff0f44b978573f9fec215cdaa9758847a8ca5c8dc9341f8`;
+capture hashes are
+`e338dfd907f90c758aee7c04aa5cabd4ef7391eff34bb303d6289c22c370869c`,
+`59cc6a074cbc29088490d7208481a90fa4750861e616a824b9f8790f2457c97b`,
+and `c945347331b14bbb5ace8c68660fa3169e99b4e62fae78a0347ea74fd726f077`;
+the adjudication, registry, and durability-audit hashes are
+`47d7c9f000b9e8445d227a4b9b35ebeaf0681e8b6bfbdaaf2ebcb359e054839e`,
+`9c793173647d9a3f50e0be1f3696a16614517fb6d921dc9efb9f2151532b2939`,
+and `0d25d77c6d84cad2bb356d15469cea7f6d0c3032e38ab18e0040388ed29466c4`.
+No account, credential, signed request, order, fund, transaction, or protected
+capture was touched.
+
+### Prior efficient structural screen
+
 The exact Mythos release-date and cumulative-deadline population is terminal.
 Two prospectively frozen one-use public Gamma GETs retained 38 and 10 markets;
 a separately frozen zero-network graph exhausted 208 valid implication,
@@ -52,7 +85,7 @@ and `fa699d282419535be266c71a5e0ff465cde3ecddbf7fbb4ce15a0c63f30c86ff`.
 No account, credential, signed request, order, fund, transaction, or protected
 capture was touched.
 
-### Prior efficient structural screen
+### Earlier efficient structural screen
 
 The Gemini Pro October-31 deadline to November-1 interval pair is terminal at
 the exact metadata gate. Two prospectively frozen one-use public Gamma GETs
@@ -87,7 +120,7 @@ canonicalizer, never PowerShell `ConvertTo-Json`. This correction was made
 before validation, output creation, or network access and changed no frozen
 question, population, gate, or request boundary.
 
-### Earlier efficient structural screen
+### Earlier structural screens
 
 Two new literal triggers were closed at the cheapest decisive gate.
 

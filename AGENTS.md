@@ -438,6 +438,14 @@ override prose.
   and at least one adverse tick per leg before any CLOB request is justified.
   Terminalize the complete retained population when no row survives; do not
   retry it as date aliases or hand-selected pairs.
+- Never infer an all-different assignment across independently resolved rank or
+  ordinal events from labels alone. Bind deterministic tie handling, the exact
+  observation metric and instant, corporate-action handling, and outcome
+  identity across every event before using a matching or permutation floor.
+  Identity-free placeholders cannot be mapped by letter or position, and an
+  `Other` bucket can represent different entities at different ranks. If those
+  semantics are absent, fail at the source gate before reading price fields or
+  building an assignment optimizer.
 - Treat soccer exact-score implications as one cross-family graph, not a reason
   to rebuild collectors market by market. The retained August 29 population
   already exhausts match result, first scorer, BTTS, full-total, team-total,

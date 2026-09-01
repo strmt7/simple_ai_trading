@@ -1,0 +1,93 @@
+{
+  "adjudication": {
+    "accepted_edge": false,
+    "book_request_justified": false,
+    "deployment_ready": false,
+    "next_action": "Do not inspect economic fields, request books or fees, or retry aliases for this exact three-event population. Reopen only if exact source rules add deterministic cross-rank tie and identity semantics or a distinct rank family proves them before economics.",
+    "profitability_claim": false,
+    "status": "terminal_at_source_gate_cross_event_all_different_constraint_not_proved"
+  },
+  "authority": {
+    "account_requests": 0,
+    "bestBid_or_bestAsk_fields_accessed_for_decision": false,
+    "book_or_fee_endpoint_requests": 0,
+    "credentials_used": false,
+    "funds_used": false,
+    "orders_or_transactions": 0,
+    "outcomePrices_field_accessed_for_decision": false,
+    "protected_capture_touched": false,
+    "public_unauthenticated_read_only_requests": 3,
+    "signed_requests": 0,
+    "trading_authority": false
+  },
+  "created_at_utc": "2026-09-01T05:47:52.8872517Z",
+  "population": {
+    "common_explicit_active_company_count": 9,
+    "common_explicit_active_companies": [
+      "Alphabet",
+      "Amazon",
+      "Apple",
+      "Broadcom",
+      "Microsoft",
+      "NVIDIA",
+      "Saudi Aramco",
+      "SpaceX",
+      "Tesla"
+    ],
+    "rank_1": {
+      "active_market_count": 9,
+      "event_id": "770098",
+      "inactive_market_count": 16,
+      "market_count": 25
+    },
+    "rank_2": {
+      "active_market_count": 9,
+      "event_id": "770109",
+      "inactive_market_count": 20,
+      "market_count": 29
+    },
+    "rank_3": {
+      "active_market_count": 9,
+      "event_id": "770166",
+      "inactive_market_count": 20,
+      "market_count": 29
+    }
+  },
+  "result_sha256": "47d7c9f000b9e8445d227a4b9b35ebeaf0681e8b6bfbdaaf2ebcb359e054839e",
+  "rule_alignment": {
+    "all_different_rank_assignment_floor_source_proved": false,
+    "common_market_cap_metric": true,
+    "common_observation_date_and_market_close": true,
+    "common_resolution_source_consensus_of_credible_reporting": true,
+    "cross_event_corporate_action_handling_explicit": false,
+    "cross_event_tie_handling_explicit": false,
+    "independent_NegRisk_events": true,
+    "other_bucket_is_one_company_identity": false,
+    "placeholder_identity_mapping_across_events_proved": false,
+    "reason": "Each event independently selects one rank outcome, but the retained rules do not specify how exact market-cap ties map across first, second, and third place. The hidden Company-letter populations differ by rank and have no source-proved identities, while any-other-company can denote different companies at different ranks. Therefore a cross-event matching constraint cannot be treated as a guaranteed payout floor without an unstated assumption."
+  },
+  "schema_version": "polymarket-public-company-top3-assignment-source-adjudication-v1",
+  "source_binding": {
+    "rank_1": {
+      "capture_result_sha256": "e338dfd907f90c758aee7c04aa5cabd4ef7391eff34bb303d6289c22c370869c",
+      "contract_sha256": "c60773469228f8b94f43e62fae1b8fcacf87c69f2a97cb2ed075656bd2a1555d",
+      "event_slug": "largest-company-end-of-september-1785358369147",
+      "raw_path": "data/polymarket-public-company-top3-assignment-v1/raw/rank-1-event.json",
+      "raw_sha256": "4ac8fcbf5ab2eafd497db800c30d5fc0aca74d2dabc9e782bcd177fa44bedd7e"
+    },
+    "rank_2": {
+      "capture_result_sha256": "59cc6a074cbc29088490d7208481a90fa4750861e616a824b9f8790f2457c97b",
+      "contract_sha256": "77806e15cd1326385ecdf3860c760a11f24df8612b77d570dab30e6b86fdc862",
+      "event_slug": "2nd-largest-company-end-of-september-20260729222928263",
+      "raw_path": "data/polymarket-public-company-top3-assignment-v1/raw/rank-2-event.json",
+      "raw_sha256": "eb7d97c61dc1408051e2c30569dd06ffb072f7ae5bd00551bef93d1860b2f7fc"
+    },
+    "rank_3": {
+      "capture_result_sha256": "c945347331b14bbb5ace8c68660fa3169e99b4e62fae78a0347ea74fd726f077",
+      "contract_sha256": "c89545cb8fe40944bff0f44b978573f9fec215cdaa9758847a8ca5c8dc9341f8",
+      "event_slug": "3rd-largest-company-end-of-september-1785358369147",
+      "raw_path": "data/polymarket-public-company-top3-assignment-v1/raw/rank-3-event.json",
+      "raw_sha256": "5eaf2a51bc07e13400cd2ee0edb3f409fc07a161fbd45e39e1ea9455ede8ea0c"
+    }
+  }
+}
