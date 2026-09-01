@@ -1,12 +1,49 @@
 # Continue Development
 
-Current canonical status after the Binance Token Voucher source gate:
-accepted edges 36, ranked hypotheses 62, terminal families 179,
+Current canonical status after the Binance Futures Free Position downside gate:
+accepted edges 36, ranked hypotheses 63, terminal families 180,
 and stable current account-qualified after-all-cost edges zero. Registry
 SHA-256 is
-`4bfa33cf6f44af9876a0a500efdd704499f802a7d57927736c144906d850ad1d`;
+`3b48e46b34d06e443d8a52d33554b0c7ff6db0ea35e9fb73aba870b5d250c3cc`;
 durability-audit SHA-256 is
-`8ace9a89c7b36136ccec36ada332955828cc37eab10fa199c89dddd759bc6d23`.
+`99bab9069d94f690de7781310f8124a1dd9cde1c35380185cde9b4c907c8d329`.
+
+## 2026-09-01 Binance Futures Free Position downside rejection
+
+One prospectively frozen unauthenticated public CMS GET retained the exact
+current official Futures Free Position FAQ. The source proves that the voucher
+opens a position with given trading margin; contract pair, order type, leverage,
+and margin mode are voucher parameters; the user may choose Bullish/Long or
+Bearish/Short; generated profits may be withdrawn or transferred; and the
+position may be closed at any time with stop-loss control.
+
+The decisive downside terms are missing. The FAQ does not say that position
+losses, commissions, funding fees, liquidation charges, deficits, clawbacks,
+or other liabilities are confined to the supplied margin. It does not say that
+the user's other Futures or Spot balance, collateral, deposits, or assets cannot
+be debited, encumbered, or liquidated. It also does not prove zero acquisition
+cost, no additional collateral requirement, owned eligibility, exact position
+economics, expected value, or realized receipts.
+
+Supplied margin plus withdrawable upside is therefore insufficient to model the
+user payoff as `max(position PnL, 0)`. The zero-personal-capital free-option
+hypothesis is terminal before prices, books, accounts, credentials, Rewards Hub,
+voucher activation, terms acceptance, positions, orders, or funds. Do not
+refetch, alias, follow the adaptively discovered terms link, or use testnet
+credentials as mainnet evidence. Reopen only on rank 63's exact material
+downside-term change or distinct prospectively frozen complete official terms
+package plus independently owned-voucher read-only trigger. Every activation,
+side selection, position, transfer, withdrawal, or state change requires
+separate explicit authority.
+
+Contract, source-result, raw-response, request-journal, and terminal-result
+SHA-256 values are
+`d0b6f83bac0f2f4f5aedcb631e2d7ce2cadc3ff441f5e765219cd788f7c1c5ca`,
+`317aeb0f872c9f74c542aef3e7eaaa45eefce05adea7a8e8174166f1189519fb`,
+`092b39ce35545530e9ae730fd64399308b8e7535ef704686409d7e681729b66a`,
+`03d212d56ef5fbbc21e8a24bb38909d3a5d528644cc6ec9ee11f304950b616d8`,
+and `a258fff5e8a96f8a36de8aca28d72d15d7e8d29c26a262d9df2c673a5b750fff`.
+No account, credential, order, fund, transaction, or protected capture was used.
 
 ## 2026-09-01 Binance Token Voucher source-gate rejection
 

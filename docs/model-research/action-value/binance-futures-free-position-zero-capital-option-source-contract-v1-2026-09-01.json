@@ -1,0 +1,73 @@
+{
+  "schema_version": "public-source-capture-contract-v1",
+  "frozen_at_utc": "2026-09-01T14:40:30Z",
+  "contract_path": "docs/model-research/action-value/binance-futures-free-position-zero-capital-option-source-contract-v1-2026-09-01.json",
+  "trigger": {
+    "official_discovery_article_code": "d8876212c31c42e2a18a8b88b2b6edf8",
+    "exact_url_deduplication_hits": 0,
+    "economic_terms_viewed_before_freeze": true,
+    "economic_terms_role": "public search discovery only; no retained primary bytes or accepted claim existed before this contract",
+    "novel_question": "whether an independently awarded zero-cost Futures Free Position provides a true no-personal-capital-loss option rather than merely supplied initial margin with residual deficit or account-balance exposure"
+  },
+  "question": "Do current official Binance Futures Free Position terms prove both withdrawable profits and a loss ceiling limited exclusively to the supplied trading margin, with no debit, deficit, fee, funding, liquidation, or other exposure to the user's own balance?",
+  "request_name": "binance-futures-free-position-zero-capital-option-public-source",
+  "request": {
+    "method": "GET",
+    "url": "https://www.binance.com/bapi/composite/v1/public/cms/article/detail/query?articleCode=d8876212c31c42e2a18a8b88b2b6edf8",
+    "count": 1,
+    "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "endpoint_classification": {
+    "operation": "download one exact public official Binance Futures Free Position FAQ through its public CMS endpoint",
+    "security": "public unauthenticated read-only GET",
+    "source_contract": "The retained bytes may establish only public Free Position mechanics. They may not establish voucher ownership, acquisition cost, account or regional eligibility, exact symbol, order type, side, leverage, margin, notional, fees, funding, liquidation, deficit treatment, expiry, receipt, expected value, profitability, or deployment readiness unless stated explicitly in the retained source."
+  },
+  "response_byte_ceiling": 500000,
+  "required_utf8_phrases": [
+    "Futures",
+    "Position",
+    "profit",
+    "withdraw"
+  ],
+  "semantic_decision_gate": {
+    "advance_only_if_all_are_explicit_in_retained_primary_bytes": [
+      "the position uses trading margin supplied by the voucher rather than user-contributed principal",
+      "profits from the position may be withdrawn or transferred",
+      "the position may be closed at any time",
+      "every loss, trading fee, funding fee, liquidation charge, deficit, and other liability is capped at and deducted only from supplied voucher margin",
+      "no other Futures balance, Spot balance, collateral, deposit, or user asset can be debited, encumbered, liquidated, or made liable"
+    ],
+    "reject_if_any_are_missing": "Terminalize the exact zero-personal-capital-loss/free-option hypothesis before prices, books, account access, credentials, voucher activation, or any state change. Publicly supplied margin and withdrawable profits alone do not prove a nonnegative personal-capital payoff.",
+    "accepted_edge": false,
+    "profitability_proved": false,
+    "stable_current_account_qualified_edge": false,
+    "deployment_ready": false
+  },
+  "outputs": {
+    "raw_path": "data/binance-futures-free-position-zero-capital-option-v1/raw/01-faq.raw.json",
+    "journal_path": "data/binance-futures-free-position-zero-capital-option-v1/raw/01-faq.journal.jsonl",
+    "result_path": "docs/model-research/action-value/binance-futures-free-position-zero-capital-option-source-result-v1-2026-09-01.json"
+  },
+  "authority": {
+    "account_requests": 0,
+    "credentials_used": false,
+    "funds_used": false,
+    "orders_or_transactions": 0,
+    "protected_capture_touched": false,
+    "public_unauthenticated_read_only_requests": 1,
+    "signed_requests": 0,
+    "trading_authority": false
+  },
+  "implementations": [
+    {
+      "path": "tools/capture_public_source_contract.py",
+      "sha256": "ba0e76bd6643eedc072cc1fcff2aa363c1dc14a5b8e14956e874c7843637b376"
+    },
+    {
+      "path": "tools/screen_polymarket_exact_two_leg_package.py",
+      "sha256": "374fcc3c3485c466b4929a91256450bdc7db70f93ef4c6bda627e05fe8938327"
+    }
+  ],
+  "retry_policy": "This exact public CMS GET is one-use. Preserve every response, redirect, block, missing phrase, and ceiling failure. Do not retry, alias, open Rewards Hub, access an account, use credentials, claim or activate a voucher, accept terms, select a side, open or close a position, transfer, withdraw, trade, or mutate state.",
+  "contract_sha256": "d0b6f83bac0f2f4f5aedcb631e2d7ce2cadc3ff441f5e765219cd788f7c1c5ca"
+}
