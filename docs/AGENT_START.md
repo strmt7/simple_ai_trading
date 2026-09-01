@@ -21,7 +21,33 @@ profitable without reproducible source-bound after-cost evidence. AI may veto
 or reduce risk only; it never creates positions, selects leverage, overrides a
 safety gate, blocks Stop, or submits an order.
 
-### Latest Binance Simple Earn Trial Fund scoped edge
+### Latest Binance Token Voucher source-gate rejection
+
+One frozen exact official Binance FAQ capture returned HTTP 200 and retained the
+substantive ordinary Token Voucher mechanics. The source says redeemed free
+tokens reach Spot Wallet and may be used, transferred, or withdrawn `with no
+restrictions`. The contract, however, guessed the unobserved exact phrase
+`without any restrictions`. Because every exact phrase was precommitted as
+mandatory, the source gate failed and the exact hypothesis is terminal.
+
+The retained mechanics are hypothesis-generation evidence only; they do not
+rescue the failed contract or establish an owned voucher, acquisition cost,
+token, amount, expiry, eligibility, realized Spot credit, profit, or deployment
+readiness. Do not rewrite, refetch, alias, open Rewards Hub, or use credentials.
+The repository rule now requires exact source-observed phrase forms, minimal
+observed substrings, or prospectively frozen alternatives before access.
+
+Accepted edges remain 36, ranked hypotheses become 62, terminal families become
+179, and stable current account-qualified after-all-cost edges remain zero.
+Registry, durability-audit, and terminal-result SHA-256 values are
+`4bfa33cf6f44af9876a0a500efdd704499f802a7d57927736c144906d850ad1d`,
+`8ace9a89c7b36136ccec36ada332955828cc37eab10fa199c89dddd759bc6d23`,
+and `1776c7bcd318edd3c703446f7e2ca746922efc307c2c295075dd0b58eb03c752`.
+Reopen only on rank 62's exact material-change or independently owned-voucher
+read-only trigger. Any claim, redemption, transfer, withdrawal, conversion,
+order, or state change still requires separate explicit authority.
+
+### Prior Binance Simple Earn Trial Fund scoped edge
 
 One frozen exact official Binance FAQ proves that Simple Earn Trial Fund face
 value cannot be withdrawn or transferred, is used only for APR reward
