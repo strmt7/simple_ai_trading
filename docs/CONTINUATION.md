@@ -8908,3 +8908,34 @@ price, fee, tick, rule, or market-architecture change that makes the exact
 package positive after the same fee-and-one-tick stress. No network, account,
 credential, book, fee endpoint, order, fund, transaction, on-chain, or protected
 capture was touched.
+
+## Creation-window-safe retained deadline implications
+
+A prospectively frozen zero-network screen inventoried 14 active-looking
+cumulative-deadline families in the retained September 30 catalog. Ten were
+excluded before economics because the later-deadline market started later or
+the rules differed. In those cases, an event in the creation gap can make the
+earlier market YES while the later market remains NO, so the proposed package
+has no source-proved floor.
+
+Only four pairs had identical rules, a strictly later deadline, and a
+later-market start no later than the earlier-market start: Discord August 31 to
+September 30, Meta Muse Spark September 15 to September 30, and Qwen Plus
+August 31 or September 15 to September 30. Two had complete side-specific
+prices. Zero cost strictly below the one-pUSD floor. The best Qwen Plus
+September 15 NO plus September 30 YES package cost 1.19 pUSD per share and lost
+1.10590 pUSD at five shares after one adverse tick per leg plus exact fees.
+
+Contract/result SHA-256 values are
+`d85ff8d51b720b2b88d41952d25b003b5d5240771499e37d19579204180adde8`
+and `1b3dcf4167ef6bd5dbec85b1f8d5e23f23b0ad7bcac2cfe4e32b58d65afedb23`.
+Accepted edges remain 31, ranked hypotheses remain 48, terminal families become
+156, and stable current account-qualified after-all-cost edges remain zero.
+Registry and durability-audit SHA-256 values become
+`c5e22c02abcb89ce9ed73b515c32c1fad6a730842c8ff858b5863197f98d14bf`
+and `77b63ce226f366adc047bb756407322828aa856bf562d771a3a4e3fd4b21b6fb`.
+
+Do not refetch, reprice, weaken the exact creation-window gate, or request books.
+Reopen only on a material price, fee, tick, rule, or market-architecture change.
+No network, account, credential, book, fee endpoint, order, fund, transaction,
+on-chain, or protected capture was touched.
