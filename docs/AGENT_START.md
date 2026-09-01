@@ -11,7 +11,7 @@ operating contract. Historical handoff text is archived under
 | Release | `0.1.0-beta.1`; experimental |
 | Development branch | `main` only |
 | Binance | BTC, ETH, and SOL; paper or testnet/Demo only |
-| Polymarket | Independent BTC, ETH, and SOL 5-minute/15-minute/4-hour research; disabled by default |
+| Polymarket | Order-capable BTC, ETH, and SOL research is disabled by default; public unauthenticated structural discovery may cover other markets, with no live authority. |
 | Accepted edges | Twenty-nine scoped structural edges. The canonical complete scopes, counts, and retry gates are in `docs/model-research/structural-edge-priority-registry-v1.json`; none is deployment-ready or fully account-and-external-cost-qualified. |
 | Live-money authority | None |
 | Historical cutoff | `2026-08-14T00:00:00Z` |
@@ -22,6 +22,24 @@ or reduce risk only; it never creates positions, selects leverage, overrides a
 safety gate, blocks Stop, or submits an order.
 
 ### Latest efficient structural screen
+
+A bounded public rendered-page pass screened eight distinct, previously
+unrecorded week-of-August-31 scalar ladders: DXY, EWY, Natural Gas, PLTR,
+SpaceX, WTI, Gold, and Silver. Each exact event used a common within-event
+high/low scalar, observation window, boundary convention, and fallback, so its
+ordered monotone packages have a one-pUSD terminal floor. None of the displayed
+side-specific discovery packages was strictly below that floor. The closest
+was WTI `YES(above $110) + NO(above $115)` at 0.005 + 0.999 = 1.004 pUSD
+before fees, depth, latency, failure unwind, and capital-time cost.
+
+Rendered buttons are discovery-only and this near-miss is not an executable,
+accepted, stable, or profitable edge. No Gamma, CLOB, Binance market, account,
+credential, order, fund, or protected-capture request followed. Do not refetch
+these exact pages merely to chase a four-mill gap. Reopen rank 31 only when a
+distinct nonconsumed same-rule package is already strictly below its floor on
+side-specific discovery asks, then freeze one exact primary and depth sequence.
+The posted Binance Testnet credentials were neither used nor persisted and do
+not satisfy Mainnet-only account-evidence triggers.
 
 A later retained Binance all-options ticker exposed exactly two BTC option
 symbols absent from the complete 1,576-symbol inventory captured five hours

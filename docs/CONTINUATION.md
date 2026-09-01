@@ -5,6 +5,34 @@ Development belongs only on `main`; do not create another development branch.
 
 ## Latest Edge R&D Checkpoint
 
+- A bounded public rendered-page pass screened eight distinct, previously
+  unrecorded week-of-August-31 scalar ladders: DXY, EWY, Natural Gas, PLTR,
+  SpaceX, WTI, Gold, and Silver. Each exact event used a common within-event
+  high/low scalar, observation window, boundary convention, and fallback, so
+  its ordered monotone packages have a one-pUSD terminal floor. None of the
+  displayed side-specific discovery packages was strictly below that floor.
+  The closest was WTI `YES(above $110) + NO(above $115)` at 0.005 + 0.999 =
+  1.004 pUSD before fees, depth, latency, failure unwind, and capital-time cost.
+
+  Rendered buttons remain discovery-only, so this is a near-miss rather than an
+  executable, accepted, stable, or profitable edge. No Gamma, CLOB, Binance
+  market, account, credential, order, fund, or protected-capture request
+  followed. Do not refetch these exact pages merely to chase a four-mill gap.
+  Reopen rank 31 only when a distinct nonconsumed same-rule package is already
+  strictly below its floor on side-specific discovery asks, then freeze one
+  exact primary and depth sequence. The posted Binance Testnet credentials were
+  neither used nor persisted and do not satisfy Mainnet-only account-evidence
+  triggers.
+
+  This pass also exposed an avoidable search-hygiene defect: excluding only the
+  action-value JSON tree still allowed another large one-line retained JSON to
+  flood an alias search. `AGENTS.md` now excludes every JSON file from broad
+  prose/code alias searches by default and requires structured exact-field
+  parsing for selected JSON artifacts. The Polymarket boundary is clarified:
+  order-capable work remains BTC/ETH/SOL and disabled, while public
+  unauthenticated structural discovery may cover other markets under the same
+  fail-closed gates.
+
 - A second bounded rendered-page pass screened eight distinct September
   equity/index hit ladders: RKLB, NVDA, TSLA, AAPL, SPY, AMZN, META, and MU.
   Their current rules use the same within-event Pyth one-minute high/low scalar,
