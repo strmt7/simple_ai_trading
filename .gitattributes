@@ -131,3 +131,7 @@ docs/model-research/polymarket/round-025-twap-wire-schema-correction-v1.json tex
 docs/model-research/polymarket/round-027-*.json text eol=lf
 data/binance-web3-prediction-otc-blocktrade-v1/request-journal.jsonl binary
 data/binance-web3-prediction-otc-blocktrade-v1/raw/official-otc-docs.html binary
+data/polymarket-us-official-docs-mechanism-index-v1/request-journal.jsonl binary
+data/polymarket-us-official-docs-mechanism-index-v1/raw/llms.txt binary
+data/polymarket-us-referral-incentive-v1/request-journal.jsonl binary
+data/polymarket-us-referral-incentive-v1/raw/referral.md binary

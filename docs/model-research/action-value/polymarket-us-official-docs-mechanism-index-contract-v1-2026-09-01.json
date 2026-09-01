@@ -1,0 +1,60 @@
+{
+  "authority": {
+    "account_requests": 0,
+    "credentials_used": false,
+    "funds_used": false,
+    "orders_or_transactions": 0,
+    "protected_capture_touched": false,
+    "public_unauthenticated_read_only_requests": 1,
+    "signed_requests": 0,
+    "trading_authority": false
+  },
+  "contract_path": "docs/model-research/action-value/polymarket-us-official-docs-mechanism-index-contract-v1-2026-09-01.json",
+  "contract_sha256": "7625c1acceffc154492429b20b5218ab32f5f9e77f2e180e67377c8f6eb4866f",
+  "decision": {
+    "accepted_edge": "The index alone can never establish an edge. It may identify one exact previously unrepresented official economic source for a separately frozen one-use source gate.",
+    "adjudication_rule": "Parse only titles, descriptions, and URLs offline. Deduplicate every apparent mechanism against the registry. Do not use index snippets as payout, eligibility, fee, account, execution, or profitability evidence.",
+    "deployment_ready": false,
+    "profitability_proved": false,
+    "stable_current_edge_proved": false
+  },
+  "frozen_at_utc": "2026-09-01T11:22:34.7360129Z",
+  "implementations": [
+    {
+      "path": "tools/capture_public_source_contract.py",
+      "sha256": "ba0e76bd6643eedc072cc1fcff2aa363c1dc14a5b8e14956e874c7843637b376"
+    }
+  ],
+  "limitations": [
+    "Search discovery already exposed overview labels for an open Referral Program, a coming-soon Refer-a-Friend program, and an application-only Market Maker Program; those snippets are ineligible for promotion.",
+    "An index title, description, access label, or link is not a complete current economic contract or positive payout floor.",
+    "No linked page, incentive API, price, BBO, book, fee endpoint, account, credential, application, referral, order, deposit, fund movement, or transaction is authorized."
+  ],
+  "outputs": {
+    "journal_path": "data/polymarket-us-official-docs-mechanism-index-v1/request-journal.jsonl",
+    "raw_path": "data/polymarket-us-official-docs-mechanism-index-v1/raw/llms.txt",
+    "result_path": "docs/model-research/action-value/polymarket-us-official-docs-mechanism-index-source-result-v1-2026-09-01.json"
+  },
+  "question": "Does the complete current official Polymarket US documentation index identify a genuinely distinct deterministic cash-flow, rebate, collateral, referral, or execution-right mechanism outside the registry?",
+  "request": {
+    "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "count": 1,
+    "method": "GET",
+    "name": "polymarket-us-official-docs-mechanism-index",
+    "url": "https://docs.polymarket.us/llms.txt"
+  },
+  "request_name": "polymarket-us-official-docs-mechanism-index",
+  "required_utf8_phrases": [
+    "Polymarket",
+    "https://docs.polymarket.us"
+  ],
+  "response_byte_ceiling": 2000000,
+  "retry_policy": "This exact official index GET is one-use. Preserve any HTTP, empty-response, phrase, or schema failure and do not retry an HTML or locale alias. If successful, inventory the retained index offline once, open at most one exact previously unrepresented economic source under a fresh frozen contract, and stop before market or account access. Reopen the index only after its retained response hash is independently known to have materially changed.",
+  "schema_version": "public-source-capture-contract-v1",
+  "trigger": {
+    "discovery_source": "official Polymarket US pages instruct agents to fetch the complete llms.txt index",
+    "economic_content_viewed_before_freeze": true,
+    "family_search_found_existing_registry_or_source": false,
+    "selection_rule": "capture one complete source index before opening any unrepresented linked economic page"
+  }
+}

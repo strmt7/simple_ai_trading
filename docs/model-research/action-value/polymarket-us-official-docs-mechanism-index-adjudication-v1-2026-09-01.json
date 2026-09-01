@@ -1,0 +1,100 @@
+{
+  "adjudication": {
+    "accepted_edge": false,
+    "deployment_ready": false,
+    "linked_economic_sources_opened": 1,
+    "market_or_account_requests_justified": false,
+    "profitability_claim": false,
+    "status": "complete_offline_index_inventory_identified_five_unrepresented_families"
+  },
+  "authority": {
+    "account_requests": 0,
+    "credentials_used": false,
+    "funds_used": false,
+    "orders_or_transactions": 0,
+    "protected_capture_touched": false,
+    "public_unauthenticated_read_only_requests": 1,
+    "signed_requests": 0,
+    "trading_authority": false
+  },
+  "created_at_utc": "2026-09-01T11:25:51.8025579Z",
+  "decision": {
+    "reason": "The one-use official Polymarket US llms.txt capture passed its exact source gate and retained a complete 350-line source index with 342 link rows and 300 unique absolute HTTP URLs. Offline title-description deduplication found five economic families not represented in the registry. The frozen selection rule advanced only the first potential direct-cash family, Referral Incentive, under its own one-use contract and deferred every other linked source.",
+    "why_not_an_edge": "An index title, description, URL, access label, or endpoint name does not prove an economic contract, account eligibility, executable value, persistence, or profit.",
+    "why_stop_after_one_linked_source": "The source contract prospectively capped this index campaign at one exact previously unrepresented economic source, preventing outcome-aware page hopping after the first result."
+  },
+  "discovery_boundary": {
+    "economic_content_from_index_is_promotion_eligible": false,
+    "link_rows": 342,
+    "line_count": 350,
+    "unique_absolute_http_urls": 300
+  },
+  "evidence": {
+    "contract": {
+      "canonical_sha256": "7625c1acceffc154492429b20b5218ab32f5f9e77f2e180e67377c8f6eb4866f",
+      "file_sha256": "382d8455053eb4dc79da609869db891c9828abab265b4626d40b8b77c983bdf3",
+      "path": "docs/model-research/action-value/polymarket-us-official-docs-mechanism-index-contract-v1-2026-09-01.json"
+    },
+    "journal": {
+      "path": "data/polymarket-us-official-docs-mechanism-index-v1/request-journal.jsonl",
+      "sha256": "2a1405b81ed8d586fe1a18d445febcbbd223451f840b022ed15fa0ffad320522"
+    },
+    "raw_index": {
+      "bytes": 47687,
+      "path": "data/polymarket-us-official-docs-mechanism-index-v1/raw/llms.txt",
+      "sha256": "308b0a29cf69d8b50fd9f5c841a21b51cebb5842d988fe4d53f77322fd980d60",
+      "status_code": 200
+    },
+    "source_result": {
+      "path": "docs/model-research/action-value/polymarket-us-official-docs-mechanism-index-source-result-v1-2026-09-01.json",
+      "result_sha256": "43eb515fb75c5a1891c78c998e261d8f8f2c60707c5034db0d7aec9e70314c52"
+    }
+  },
+  "new_ranked_families": [
+    {
+      "family": "polymarket_US_approved_affiliate_referral_incentive",
+      "rank": 54,
+      "selected_source": "https://docs.polymarket.us/incentives/referral.md",
+      "status": "advanced_under_separate_frozen_source_contract"
+    },
+    {
+      "family": "polymarket_US_partner_declared_vendor_fee_receivable",
+      "rank": 55,
+      "selected_source": "https://docs.polymarket.us/partners/funding/vendor-fees.md",
+      "status": "deferred_unopened"
+    },
+    {
+      "family": "polymarket_US_approved_market_maker_contract_incentive",
+      "rank": 56,
+      "selected_source": "https://docs.polymarket.us/incentives/market-maker.md",
+      "status": "deferred_unopened"
+    },
+    {
+      "family": "polymarket_US_combo_RFQ_atomic_execution_overlay",
+      "rank": 57,
+      "selected_source": "https://docs.polymarket.us/api-reference/rfqs/overview.md",
+      "status": "deferred_unopened"
+    },
+    {
+      "family": "polymarket_US_participant_daily_trading_and_deposit_trading_incentives",
+      "rank": 58,
+      "selected_source": "https://docs.polymarket.us/incentives/user-programs.md",
+      "status": "deferred_unopened"
+    }
+  ],
+  "prohibited_shortcuts": [
+    "opening another linked economic page in this one-source index campaign",
+    "using titles descriptions access labels or endpoint examples as economic inputs",
+    "adaptive page selection after observing referral terms",
+    "requesting prices books fees accounts credentials applications referrals orders deposits funds or transactions"
+  ],
+  "registry_effect": {
+    "accepted_edge_count": 34,
+    "ranked_hypothesis_count": 58,
+    "stable_current_account_qualified_after_all_cost_edge_count": 0,
+    "terminal_family_count_after_referral_adjudication": 168
+  },
+  "result_sha256": "214f9807ed7d9120478be6e75daf889ee8aeb30f8bea194c3af8d5eb4e8c251f",
+  "retry_trigger": "Do not repeat the current index while its retained SHA-256 remains 308b0a29cf69d8b50fd9f5c841a21b51cebb5842d988fe4d53f77322fd980d60. Advance deferred families independently in rank order under fresh prospective source contracts; reopen this index only after an independently known material hash or documentation-architecture change.",
+  "schema_version": "polymarket-us-official-docs-mechanism-index-adjudication-v1"
+}
