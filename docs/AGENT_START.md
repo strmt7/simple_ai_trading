@@ -23,6 +23,26 @@ safety gate, blocks Stop, or submits an order.
 
 ### Latest efficient structural screen
 
+A bounded current-page pass screened eight distinct, previously unrecorded
+end-of-September monotone equity ladders: OPEN, NFLX, PLTR, META, NVDA, TSLA,
+MU, and SPCX. For thresholds `L < H`, the common-rule package `YES(above L) +
+NO(above H)` has a one-pUSD terminal floor independent of the final stock
+price. None of the displayed side-specific acquisition packages was strictly
+below that floor. The closest was META `YES(above $680) + NO(above $700)` at
+0.13 + 0.98 = 1.11 pUSD before fees, depth, latency, failure unwind, and
+capital-time cost.
+
+These rendered buttons are discovery-only, not executable economics. No Gamma,
+CLOB, Binance market, account, credential, order, fund, or protected-capture
+request followed. Do not repeat these exact eight September pages. The current
+official Binance announcement/developer delta supplied no new Launchpool,
+stock/perpetual, stock-option, or funding-cash-flow trigger. Public Polymarket
+Combo catalog/configuration also does not reopen rank 33: the retained candidate
+already proves RFQ quoting is approved-builder/authenticated and forbids using
+catalog prices or `rfqEnabled` as executable quotes. The posted Binance Testnet
+credentials were neither used nor persisted and cannot satisfy the frozen
+Mainnet fee-evidence trigger for quarterly carry.
+
 A bounded public rendered-page pass screened eight distinct, previously
 unrecorded week-of-August-31 scalar ladders: DXY, EWY, Natural Gas, PLTR,
 SpaceX, WTI, Gold, and Silver. Each exact event used a common within-event

@@ -5,6 +5,37 @@ Development belongs only on `main`; do not create another development branch.
 
 ## Latest Edge R&D Checkpoint
 
+- A bounded current-page pass screened eight distinct, previously unrecorded
+  end-of-September monotone equity ladders: OPEN, NFLX, PLTR, META, NVDA, TSLA,
+  MU, and SPCX. Each uses one common final-close scalar and common fallback
+  rules across its thresholds. Therefore, for `L < H`, `YES(above L) +
+  NO(above H)` has an optimistic one-pUSD terminal floor independent of market
+  direction. None of the displayed side-specific acquisition packages was
+  strictly below that floor. The closest was META `YES(above $680) + NO(above
+  $700)` at 0.13 + 0.98 = 1.11 pUSD before fees, depth, latency, failure unwind,
+  and capital-time cost.
+
+  Rendered buttons remain discovery-only, not executable economics. No Gamma,
+  CLOB, Binance market, account, credential, order, fund, or protected-capture
+  request followed. Do not repeat the exact OPEN, NFLX, PLTR, META, NVDA, TSLA,
+  MU, or SPCX end-of-September pages. Reopen rank 31 only for a distinct
+  nonconsumed same-rule ladder whose displayed side-specific package is already
+  strictly sub-floor, then freeze one exact primary/depth sequence.
+
+  The current official Binance announcement/developer delta supplied no new
+  Launchpool, stock/perpetual, stock-option, or funding-cash-flow trigger. The
+  frozen quarterly spot-future carry candidate still requires exact Mainnet
+  fee evidence; posted Testnet credentials do not satisfy that trigger and were
+  neither used nor persisted. Public Polymarket Combo catalog/configuration also
+  does not reopen rank 33: the retained candidate already proves RFQ quoting is
+  approved-builder/authenticated and explicitly forbids treating catalog prices
+  or `rfqEnabled` as executable quotes.
+
+  A broad alias command accidentally admitted a retained one-line `*.raw`
+  payload even though JSON suffixes were excluded. `AGENTS.md` now requires
+  broad prose/code searches to exclude every raw path segment and `*.raw`
+  payload explicitly; selected machine artifacts must be parsed by exact field.
+
 - A bounded public rendered-page pass screened eight distinct, previously
   unrecorded week-of-August-31 scalar ladders: DXY, EWY, Natural Gas, PLTR,
   SpaceX, WTI, Gold, and Silver. Each exact event used a common within-event
