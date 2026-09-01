@@ -1,0 +1,67 @@
+{
+  "schema_version": "polymarket-gemini-pro-release-deadline-metadata-contract-v1",
+  "status": "frozen_before_one_public_gamma_request",
+  "frozen_at_utc": "2026-09-01T05:10:11Z",
+  "contract_path": "docs/model-research/action-value/polymarket-gemini-pro-release-deadline-metadata-contract-v1-2026-09-01.json",
+  "question": "Does the exact Gemini Pro deadline event expose a current release-by-October-31 market whose NO side can be paired with the weekly event's No-release-by-November-1 NO side under common qualifying-model rules?",
+  "trigger": {
+    "registry_rank": 31,
+    "event_slug": "next-google-gemini-pro-model-released-byptptpt",
+    "rendered_discovery_url": "https://polymarket.com/event/next-google-gemini-pro-model-released-byptptpt",
+    "candidate_leg": "NO(Next Google Gemini Pro model released by October 31)",
+    "rendered_candidate_ask_pUSD_per_share": "0.28",
+    "rendered_source_observed_at_utc": "2026-09-01T05:08:00Z",
+    "rendered_discovery_values_are_economic_inputs": false
+  },
+  "request_name": "exact_gemini_pro_release_deadline_event_metadata",
+  "request": {
+    "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "count": 1,
+    "method": "GET",
+    "url": "https://gamma-api.polymarket.com/events/slug/next-google-gemini-pro-model-released-byptptpt"
+  },
+  "response_byte_ceiling": 2000000,
+  "required_utf8_phrases": [
+    "\"slug\":\"next-google-gemini-pro-model-released-byptptpt\"",
+    "\"title\":\"Next Google Gemini Pro Model released by...?\"",
+    "\"markets\":["
+  ],
+  "decision": {
+    "metadata_only": true,
+    "outcome_prices_excluded": true,
+    "book_requests_authorized": 0,
+    "accepted_edge_from_metadata": false,
+    "required_market": "one exact release by October 31 binary condition with active, closed, acceptingOrders, resolved, bestBid, bestAsk, outcomes, clobTokenIds, fee, tick, and minimum-order fields retained exactly as returned",
+    "alignment_gate": "Enumerate every returned sibling including hidden or inactive markets. Require an exact October 31 ET inclusive deadline; the same qualifying Gemini Pro labels, GA-promotion treatment, public-access threshold, closed-beta exclusion, placeholder exclusion, official-Google plus credible-reporting source hierarchy, and exceptional fallback as the interval event; and a finalized no-qualifying-release state through the interval event's later creation so both events target the same next release.",
+    "NO_price_rule": "Use conservative 1 - direct YES bestBid for the selected October 31 condition. Never use outcomePrices, displayed probability, midpoint, last trade, or blank/zero button as an ask.",
+    "next_step_if_gate_passes": "Combine only with the separately frozen exact interval response. Require the conservative two-NO metadata sum to remain strictly below one pUSD, then apply current exact per-market fees at the common minimum before any separately frozen two-token book request.",
+    "next_step_if_gate_fails": "Preserve both one-use responses and reject without books, fee endpoints, credentials, accounts, orders, funds, transactions, or protected capture access."
+  },
+  "outputs": {
+    "raw_path": "data/polymarket-gemini-pro-interval-deadline-parity-v1/raw/deadline-event.json",
+    "journal_path": "data/polymarket-gemini-pro-interval-deadline-parity-v1/deadline-request-journal.jsonl",
+    "result_path": "docs/model-research/action-value/polymarket-gemini-pro-release-deadline-metadata-capture-result-v1-2026-09-01.json"
+  },
+  "authority": {
+    "account_requests": 0,
+    "credentials_used": false,
+    "funds_used": false,
+    "orders_or_transactions": 0,
+    "protected_capture_touched": false,
+    "public_unauthenticated_read_only_requests": 1,
+    "signed_requests": 0,
+    "trading_authority": false
+  },
+  "implementations": [
+    {
+      "path": "tools/capture_public_source_contract.py",
+      "sha256": "d566a5a379c659c3da144d5e28449ebac9c01493bd39646f9cc3a6e697a83566"
+    },
+    {
+      "path": "tools/screen_polymarket_exact_two_leg_package.py",
+      "sha256": "374fcc3c3485c466b4929a91256450bdc7db70f93ef4c6bda627e05fe8938327"
+    }
+  ],
+  "retry_policy": "This exact Gamma event GET is one-use. Preserve any timeout, non-200 response, schema mismatch, hidden sibling, missing exact deadline, prior-release ambiguity, missing side-specific field, rule contradiction, or calculation failure. Never retry an alias, omit a sibling, or substitute rendered or outcomePrices values.",
+  "contract_sha256": "d9c3633af7c754ba0aef5fdcc319eb3cf03b8a083ecb19ff2c6056007983cb8e"
+}

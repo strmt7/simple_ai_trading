@@ -506,6 +506,13 @@ override prose.
   error, preserve the original hash-bound contract and capture and adjudicate it
   separately; never rewrite the consumed contract or rerun merely to repair
   metadata.
+- Compute canonical contract and result hashes with the repository's Python
+  canonicalizer: remove only the named hash field, then use sorted keys,
+  compact separators, and ASCII JSON. Never substitute PowerShell
+  `ConvertTo-Json`; its serialization is not the executable canonical byte
+  contract. If a wrong hash is caught before validation, output creation, or
+  network access, correct the hash only and preserve the frozen question,
+  population, decision gate, and request boundary.
 - Immediately before writing such a contract, capture the UTC clock from the
   host and use that observed instant or an earlier exact second. After computing
   the canonical hash, call the runner's offline validator with the contract path
