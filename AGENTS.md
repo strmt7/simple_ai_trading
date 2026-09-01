@@ -71,6 +71,17 @@ override prose.
   required. Generalize to `G <= sum(component thresholds)` for more components,
   and use side-specific `bestAsk` or conservative `1 - bestBid`, never midpoint-
   like `outcomePrices`, for the rejection gate.
+- For any scalar threshold ladder, prove that every leg uses the same scalar,
+  source, observation instant or interval, precision, boundary convention, and
+  exceptional fallback before looking at price. If those rules are identical,
+  `YES(X > L) + NO(X > H)` has a one-pUSD floor for every `L < H`; enumerate
+  every ordered pair, not only adjacent thresholds. Use the rendered `Buy Yes`
+  and `Buy No` buttons only as a discovery rejection gate, then side-specific
+  `bestAsk` or conservative `1 - bestBid` for a frozen advance. A card
+  probability, search snippet, stale crawl, midpoint, or blank button is not an
+  ask. Stop before Gamma or CLOB when the cheapest discovery package is already
+  at or above one pUSD, and charge time value through resolution before calling
+  any strict sub-floor package an edge.
 - An issuer's at-par mint or redemption right proves only the payoff identity.
   Before any venue refresh, reuse retained finite-size spreads and reject unless
   the executable gap exceeds account fees plus transfer, redemption, delay,
@@ -137,6 +148,10 @@ override prose.
   List candidate files first, exclude `data/` and raw artifact trees from alias
   searches, and parse only the exact JSON keys needed for retained-data audits.
   This prevents multi-megabyte console dumps from wasting context and resources.
+  Mechanism-alias searches must also exclude
+  `docs/model-research/action-value/**/*.json` by default; when those artifacts
+  are relevant, list their names first and parse only predeclared fields from
+  the selected file instead of sending a matching one-line payload to stdout.
 - Before freezing any request for an existing family, inspect its complete
   registry row: canonical artifacts, current status, next action, every
   prohibited shortcut, and the literal retry trigger. A compact rank/trigger
