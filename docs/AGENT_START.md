@@ -12,7 +12,7 @@ operating contract. Historical handoff text is archived under
 | Development branch | `main` only |
 | Binance | BTC, ETH, and SOL; paper or testnet/Demo only |
 | Polymarket | Order-capable BTC, ETH, and SOL research is disabled by default; public unauthenticated structural discovery may cover other markets, with no live authority. |
-| Accepted edges | Twenty-nine scoped structural edges. The canonical complete scopes, counts, and retry gates are in `docs/model-research/structural-edge-priority-registry-v1.json`; none is deployment-ready or fully account-and-external-cost-qualified. |
+| Accepted edges | Thirty scoped structural edges. The canonical complete scopes, counts, and retry gates are in `docs/model-research/structural-edge-priority-registry-v1.json`; none is deployment-ready or fully account-and-external-cost-qualified. |
 | Live-money authority | None |
 | Historical cutoff | `2026-08-14T00:00:00Z` |
 
@@ -23,33 +23,27 @@ safety gate, blocks Stop, or submits an order.
 
 ### Latest efficient structural screen
 
-The rendered `NO(UAE targeted by September 15) + YES(any Arab country targeted
-by September 15)` pair is terminal at the source gate. Two prospectively frozen
-one-use public Gamma GETs proved that the UAE condition starts at
-`2026-08-18T22:49:24Z`, while the aggregate starts only at
-`2026-08-31T18:37:55Z`. A qualifying UAE action in that 1,108,111-second gap,
-followed by no aggregate-interval action, makes both proposed tokens pay zero.
-Otherwise-aligned action, country, source, timezone, and deadline semantics
-cannot repair that counterexample.
+The complete retained September 13 early NFL catalog team and period payoff
+graph is terminal for the consumed population. One frozen zero-network
+adjudication exhausted 84,508 full, team, half, quarter, and team-period total
+ladder and additive-cover relations across all 12 events. Of those, 76,607 were
+side-specifically price-complete; zero cost strictly below the one-pUSD floor.
+The best complete package cost 1.04 pUSD. Another 7,901 relations are explicitly
+price-incomplete because retained selected-side quotes are missing; missing
+quotes are never free legs and authorize no escalation.
 
-No price field was used for the decision and no CLOB book or fee request was
-made. Do not retry or assume a later aggregate condition inherits earlier
-subset history. Reopen rank 31 only for source-proved aligned starts or complete
-intervening-event evidence removing every gap state. Accepted edges remain 29,
-ranked hypotheses remain 47, terminal families are 142, and stable current
-account-qualified after-all-cost edges remain zero. Aggregate and UAE contract
-hashes are
-`856e8ad6a4ca83ff41267950794b75ee783e350ca4ad55c9c6f6c196cc7dcef2`
-and `d17cf334d4fbecaf269e6c3b2d779d57dfb61be5b0a1414a29ba0b8a06dcb88b`;
-capture hashes are
-`a5dfe50ee40388c843677275def2d166657e103a2287ba717cc66ddc47e45603`
-and `c41d4ce06afa52ba0308f92e51b9c48b1ccd5b6cc5cecb49c4198314cbf229ce`;
-the adjudication, registry, and durability-audit hashes are
-`c6634add2f5fac96fe5c3b08c4236b3a0ad483c37efea03bd1dd1ab41e398941`,
-`aa36f2488fa336e45fbff6f31e9644612e3a2d6faf78138f634b00bfb08194f5`,
-and `c9c1d57cc402cd54372b59c12b2052238e9ab6b8eb68732fa1427dcf56971508`.
-No account, credential, signed request, order, fund, transaction, or protected
-capture was touched.
+Do not refetch, repair, reprice, select a sibling, or request books or fees for
+this consumed graph. Reopen only for a distinct unconsumed population or a
+material rule, fee, tick, or market-architecture change. Accepted edges remain
+30, ranked hypotheses remain 47, terminal families are 143, and stable current
+account-qualified after-all-cost edges remain zero. Contract, result, registry,
+and durability-audit hashes are
+`91272f05bbef81ba0dbf9b2bddee2d5d3418cdd12f33d9ef060cc2b582f5c560`,
+`556ee348cf5246f422df80da958a2d96402a2900dc88878cd561fb02f1bd5b02`,
+`1fcb5ed59c8e2abf1871c6deb2a5b03ce5e2faa09223d455b7f66717fff02903`,
+and `0adf2859a240d69e4344e3ac4f41cf42c2c70d28081b373c440e158b57a4b18e`.
+No network, account, credential, signed request, order, fund, transaction, or
+protected capture was touched.
 
 ### Prior efficient structural screen
 

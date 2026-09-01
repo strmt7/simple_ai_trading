@@ -1,12 +1,40 @@
 # Continue Development
 
-Current canonical status after the Binance Copy Trading Lead Trader VIP fee
-overlay checkpoint: accepted edges 30, ranked hypotheses 47, terminal families
-142, and stable current account-qualified after-all-cost edges zero. Registry
-SHA-256 is
-`5689c8bb60c5a36d7832a4a74cb723e10de94cf96a8f90535e7b15256e50cb2f`;
+Current canonical status after the retained September 13 NFL catalog team and
+period payoff-graph checkpoint: accepted edges 30, ranked hypotheses 47,
+terminal families 143, and stable current account-qualified after-all-cost edges
+zero. Registry SHA-256 is
+`1fcb5ed59c8e2abf1871c6deb2a5b03ce5e2faa09223d455b7f66717fff02903`;
 durability-audit SHA-256 is
-`082b02117a9c15d7f1e70ea84e344791af7f2a638b0755760a3ebcd1de9ef9ab`.
+`0adf2859a240d69e4344e3ac4f41cf42c2c70d28081b373c440e158b57a4b18e`.
+
+## 2026-09-01 Polymarket September 13 NFL team-period graph rejection
+
+One frozen zero-network adjudication reused the exact complete retained
+September 13 early NFL catalog without a refetch. It exhausted 84,508
+direction-independent relations across all 12 events: full, team, half,
+quarter, and team-period total ladders plus team-to-game, team-to-half,
+halves-to-game, team-halves-to-team, quarters-to-half, and quarters-to-game
+additive covers.
+
+Of those relations, 76,607 had complete side-specific rejection prices using
+only retained `bestAsk` or conservative `1-bestBid`; zero cost strictly less
+than their one-pUSD guaranteed floor. The best complete package was Buccaneers
+vs. Bengals Over 51.5 plus Under 52.5 at 1.04 pUSD per share. The remaining
+7,901 relations are explicitly price-incomplete because retained selected-side
+quotes are missing. Missing quotes are not zero-cost legs and block any
+escalation.
+
+Do not refetch, repair, reprice, select a sibling, or request books or fees for
+this consumed catalog graph. Reopen only for a distinct unconsumed population
+or a material rule, fee, tick, or market-architecture change. Contract and
+result hashes are
+`91272f05bbef81ba0dbf9b2bddee2d5d3418cdd12f33d9ef060cc2b582f5c560`
+and `556ee348cf5246f422df80da958a2d96402a2900dc88878cd561fb02f1bd5b02`.
+Accepted edges remain 30, ranked hypotheses remain 47, terminal families become
+143, and stable current account-qualified after-all-cost edges remain zero.
+No network, account, credential, signed request, order, fund, transaction, or
+protected capture was touched.
 
 ## 2026-09-01 Polymarket UAE-to-any-Arab creation-gap rejection
 

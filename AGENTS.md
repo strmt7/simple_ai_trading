@@ -181,6 +181,13 @@ override prose.
 - Invoke repository Python tools through the locked project environment, using
   `uv run --locked python -m tools.<module>`, so package imports and dependency
   versions match the checkout before any outcome-sensitive access.
+- For canonical top-level JSON self-hashes, use
+  `uv run --locked python -m tools.hash_json_without_field <path> --field <name>`
+  instead of an ad hoc interpreter snippet or a test failure as a hash oracle.
+- Keep broad `rg` discovery out of retained raw single-line JSON payloads unless
+  the payload itself is the explicit target. Search source and artifact metadata
+  first, then parse the exact retained file with a bounded field projection; a
+  multi-megabyte one-line match wastes output without improving coverage.
 - On Windows, invoke focused tests as `uv run --locked python -m pytest ...`.
   The `uv run --locked pytest ...` console-script form can omit the repository
   root from `sys.path` here and produce a false `ModuleNotFoundError: tools`
