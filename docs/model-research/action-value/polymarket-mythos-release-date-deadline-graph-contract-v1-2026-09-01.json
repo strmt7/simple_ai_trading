@@ -1,0 +1,67 @@
+{
+  "authority": {
+    "account_requests": 0,
+    "credentials_used": false,
+    "funds_used": false,
+    "network_requests": 0,
+    "orders_or_transactions": 0,
+    "protected_capture_touched": false,
+    "signed_requests": 0,
+    "trading_authority": false
+  },
+  "contract_path": "docs/model-research/action-value/polymarket-mythos-release-date-deadline-graph-contract-v1-2026-09-01.json",
+  "contract_sha256": "fa9dc2f724d03cf869865ed1bd0f40b46c2274c11e1c121d0290757c2446f65b",
+  "frozen_at_utc": "2026-09-01T05:35:36.7035166Z",
+  "implementation": {
+    "path": "tools/adjudicate_polymarket_release_date_deadline_graph.py",
+    "sha256": "c6277f53adf269e818c12b187d7f5fef19dbb016d93b3c246052aedd52dc2c03"
+  },
+  "outputs": {
+    "result_path": "docs/model-research/action-value/polymarket-mythos-release-date-deadline-graph-adjudication-v1-2026-09-01.json"
+  },
+  "parsing": {
+    "calendar_timezone": "America/New_York",
+    "deadline_question_regex": "^Next Mythos-Class Model released by (?P<date>[A-Z][a-z]+ [0-9]{1,2}, [0-9]{4})\\?$",
+    "deadline_required_rule_fragments": [
+      "must be launched and publicly accessible",
+      "open beta or open rolling waitlist signups",
+      "closed beta or any form of private access will not suffice",
+      "clearly defined and publicly announced by Anthropic",
+      "Labeling errors, placeholder text",
+      "official information from Anthropic",
+      "consensus of credible reporting"
+    ],
+    "eligible_date_on_or_after": "2026-09-01",
+    "exact_date_question_regex": "^Will the next Mythos-Class model be released on (?P<date>[A-Z][a-z]+ [0-9]{1,2}, [0-9]{4})\\?$",
+    "exact_required_rule_fragments": [
+      "Any model whose official name includes",
+      "must be launched and publicly accessible",
+      "open beta or open rolling waitlist signups",
+      "closed beta or any form of private access will not suffice",
+      "Labeling errors, placeholder text",
+      "official information from Anthropic",
+      "consensus of credible reporting"
+    ],
+    "expected_eligible_deadline_count": 8,
+    "expected_eligible_exact_date_count": 30,
+    "no_release_question": "Will there be no next Mythos-Class model release by September 30, 2026?",
+    "no_release_through_date": "2026-09-30"
+  },
+  "schema_version": "polymarket-release-date-deadline-graph-contract-v1",
+  "sources": {
+    "deadline_event": {
+      "event_id": "578305",
+      "event_slug": "next-mythos-class-model-released-by",
+      "market_count": 10,
+      "path": "data/polymarket-mythos-release-on-by-parity-v1/raw/release-by-event.json",
+      "sha256": "559abaaeb845055168eaaaed9fdcac82e8bfc606b5b8be80f9b539317db23394"
+    },
+    "exact_date_event": {
+      "event_id": "907022",
+      "event_slug": "next-mythos-class-model-released-onptptpt-20260824151506141",
+      "market_count": 38,
+      "path": "data/polymarket-mythos-release-on-by-parity-v1/raw/release-on-event.json",
+      "sha256": "932c2ae19aa373d6bb6998ecb6572eed04d16918991a84bfac82796c841833d6"
+    }
+  }
+}

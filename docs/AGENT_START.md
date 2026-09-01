@@ -23,6 +23,37 @@ safety gate, blocks Stop, or submits an order.
 
 ### Latest efficient structural screen
 
+The exact Mythos release-date and cumulative-deadline population is terminal.
+Two prospectively frozen one-use public Gamma GETs retained 38 and 10 markets;
+a separately frozen zero-network graph exhausted 208 valid implication,
+mutual-exclusion, and no-release-exclusion packages across 30 future exact dates
+and eight deadlines. Zero conservative side-specific packages cost strictly
+below their one-pUSD floor, and zero survived current taker fees plus one
+adverse tick per leg. The best metadata package cost 1.17 pUSD per share and
+lost 0.99878 pUSD at the five-share common minimum after fee-and-tick stress.
+No CLOB book or fee-endpoint request was justified.
+
+Do not retry, refresh, alias, reprice, or book-capture this exact two-event
+population. Reopen rank 31 only for a distinct unconsumed source-proved release
+family or a material rule, fee, tick, or market-architecture change. Accepted
+edges remain 29, ranked hypotheses remain 47, terminal families are 140, and
+stable current account-qualified after-all-cost edges remain zero. The metadata
+contract hashes are
+`bcaf6ca43afab29fa4d8dcd614e36522e93bfbf9ec09761a19e7efbe63052765`
+and `482f3afab76c71f60ce049cfb310d64decfcadea7294d5f9f0218860d32cca3e`;
+capture hashes are
+`db3f62ddb586c898b3a8b9e2258cb6db005c3c7c66253093afe4b73738a3e13c`
+and `2b51a74a707a29029ba7d1392adc56115f4caf08b1a5b4406008fb9dbfca6ab8`;
+the graph contract, adjudication, registry, and durability-audit hashes are
+`fa9dc2f724d03cf869865ed1bd0f40b46c2274c11e1c121d0290757c2446f65b`,
+`f515939e699129b50b7570fc7157cc9d9f70951a3b8a3127555152603ddf782e`,
+`98a39ba8c2a565104cd49df26b41e711fc770c57433a26fdb6d90ba20d6f6300`,
+and `fa699d282419535be266c71a5e0ff465cde3ecddbf7fbb4ce15a0c63f30c86ff`.
+No account, credential, signed request, order, fund, transaction, or protected
+capture was touched.
+
+### Prior efficient structural screen
+
 The Gemini Pro October-31 deadline to November-1 interval pair is terminal at
 the exact metadata gate. Two prospectively frozen one-use public Gamma GETs
 reconciled 11 interval and 21 deadline markets. The substantive public-release
@@ -56,7 +87,7 @@ canonicalizer, never PowerShell `ConvertTo-Json`. This correction was made
 before validation, output creation, or network access and changed no frozen
 question, population, gate, or request boundary.
 
-### Prior efficient structural screen
+### Earlier efficient structural screen
 
 Two new literal triggers were closed at the cheapest decisive gate.
 

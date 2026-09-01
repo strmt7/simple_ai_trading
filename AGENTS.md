@@ -426,6 +426,18 @@ override prose.
   available or use `1 - YES bestBid` only as a conservative rejection proxy.
   Missing side-specific ask evidence blocks escalation, and every surviving
   row still requires an exact current book batch before any economic claim.
+- Treat exact-date, cumulative-deadline, interval, and no-release siblings for
+  one underlying event as one implication graph, not isolated rendered pairs.
+  Bind each condition's start instant and calendar timezone: an exact date can
+  imply a later deadline only when that deadline condition existed before the
+  exact calendar day began; mutual exclusion with an earlier deadline requires
+  that deadline condition to start no earlier than the exact-date event unless
+  complete intervening release history is source-proved. Exhaust every valid
+  retained relation with conservative side-specific acquisition evidence in
+  one zero-network pass. A row must remain strictly positive after exact fees
+  and at least one adverse tick per leg before any CLOB request is justified.
+  Terminalize the complete retained population when no row survives; do not
+  retry it as date aliases or hand-selected pairs.
 - Treat soccer exact-score implications as one cross-family graph, not a reason
   to rebuild collectors market by market. The retained August 29 population
   already exhausts match result, first scorer, BTTS, full-total, team-total,

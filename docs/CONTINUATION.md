@@ -1,5 +1,44 @@
 # Continue Development
 
+## 2026-09-01 Polymarket Mythos release implication-graph rejection
+
+A distinct direction-independent release-timing family was tested as one graph,
+not as repeated hand-selected pairs. Two prospectively frozen, one-use, public
+unauthenticated Gamma GETs retained the exact 38-market Mythos release-date
+event and 10-market cumulative-deadline event. A separately frozen zero-network
+adjudicator then exhausted 208 creation-order-safe implication,
+mutual-exclusion, and no-release-exclusion packages across 30 future exact dates
+and eight deadlines.
+
+Zero of 208 conservative side-specific metadata packages cost strictly less
+than their one-pUSD payout floor, and zero survived current taker fees plus one
+adverse tick per leg. The best metadata package was `NO(no release through
+September 30) + NO(released by September 7)` at 1.17 pUSD per share. At the
+five-share common minimum it loses 0.99878 pUSD after the frozen fee-and-tick
+stress, before depth, time value, non-atomicity, latency, unwind, capital, or
+operating cost. No CLOB book or fee-endpoint request was justified.
+
+This exact two-event population is terminal. Do not retry, refresh, alias,
+reprice, or book-capture it. Reopen rank 31 only for a distinct unconsumed,
+source-proved release family or a material rule, fee, tick, or market-
+architecture change. Exact-date and deadline metadata contract hashes are
+`bcaf6ca43afab29fa4d8dcd614e36522e93bfbf9ec09761a19e7efbe63052765`
+and `482f3afab76c71f60ce049cfb310d64decfcadea7294d5f9f0218860d32cca3e`;
+capture-result hashes are
+`db3f62ddb586c898b3a8b9e2258cb6db005c3c7c66253093afe4b73738a3e13c`
+and `2b51a74a707a29029ba7d1392adc56115f4caf08b1a5b4406008fb9dbfca6ab8`;
+graph contract and adjudication hashes are
+`fa9dc2f724d03cf869865ed1bd0f40b46c2274c11e1c121d0290757c2446f65b`
+and `f515939e699129b50b7570fc7157cc9d9f70951a3b8a3127555152603ddf782e`.
+
+Accepted edges remain 29, ranked hypotheses remain 47, terminal families become
+140, and stable current account-qualified after-all-cost edges remain zero.
+Registry and durability-audit hashes are
+`98a39ba8c2a565104cd49df26b41e711fc770c57433a26fdb6d90ba20d6f6300`
+and `fa699d282419535be266c71a5e0ff465cde3ecddbf7fbb4ce15a0c63f30c86ff`.
+No account, credential, signed request, order, fund, transaction, or protected
+capture was touched.
+
 ## 2026-09-01 Polymarket Gemini Pro interval/deadline parity rejection
 
 A distinct direction-independent candidate passed rendered discovery:
