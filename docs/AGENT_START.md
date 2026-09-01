@@ -23,6 +23,23 @@ safety gate, blocks Stop, or submits an order.
 
 ### Latest efficient structural screen
 
+A bounded rendered-only pass screened eight distinct, exhaustive September
+central-bank decision partitions. The direct known `Buy Yes` complete-set sums
+were Bank of Canada 1.005 pUSD, Bank of Japan 1.024, Reserve Bank of Australia
+1.006, Bank of Russia 1.018, Fed 1.016, and ECB 1.009. Bank of England already
+exceeded 1.024 before one missing displayed side; Reserve Bank of New Zealand
+already exceeded 1.003 before its missing displayed `Decrease` ask. Every page
+therefore rejected at the discovery layer before Gamma, CLOB, fees, accounts,
+credentials, orders, funds, transactions, or protected captures. Missing or
+zero-rendered sides are unavailable, never free.
+
+Do not refetch these exact September decision pages merely to chase mill
+changes. Reopen rank 31 only for a distinct rule-complete partition with every
+required direct acquisition side displayed strictly below its payoff floor,
+then freeze exact metadata before depth. This rendered screen changes no
+accepted, ranked, or terminal-family count and does not require registry or
+publication-hash regeneration.
+
 A distinct Polymarket complete-set candidate initially cleared the rendered
 discovery gate: eight visible streaming-service YES asks totaled 0.99 pUSD for
 a nominal one-pUSD floor. Because the rules named an unlisted `Other` fallback,

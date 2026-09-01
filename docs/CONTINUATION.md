@@ -1,5 +1,26 @@
 # Continue Development
 
+## 2026-09-01 Polymarket policy-partition discovery screen
+
+A bounded rendered-page pass screened eight distinct, exhaustive central-bank
+decision partitions before any Gamma, CLOB, fee, account, credential, order,
+fund, transaction, or protected-capture access. Every known direct `Buy Yes`
+subtotal rejected at or above its one-pUSD complete-set floor: Bank of Canada
+1.005, Bank of Japan 1.024, Reserve Bank of Australia 1.006, Bank of Russia
+1.018, Fed 1.016, ECB 1.009, and Bank of England already exceeded 1.024 before
+its missing displayed side. Reserve Bank of New Zealand already exceeded 1.003
+before its missing displayed `Decrease` ask. Missing or zero-rendered sides
+remain unavailable, never free.
+
+These values are discovery gates, not executable economics or accepted edge
+evidence. Do not refetch these exact September decision pages merely to chase
+mill changes. Reopen rank 31 only for a distinct, unconsumed, rule-complete
+partition whose every required side is displayed and whose direct acquisition
+sum is strictly below its exact payoff floor; then freeze one exact metadata
+reconciliation before any depth or fee request. This pass changes no accepted,
+ranked, or terminal-family count and requires no registry or publication-hash
+rewrite.
+
 ## 2026-09-01 Polymarket streaming-service partition checkpoint
 
 A distinct fixed-NegRisk partition passed the cheapest rendered discovery gate:
