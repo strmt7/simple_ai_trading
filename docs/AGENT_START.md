@@ -23,6 +23,27 @@ safety gate, blocks Stop, or submits an order.
 
 ### Latest efficient structural screen
 
+A new Polymarket event card appeared to offer a direction-independent deadline
+ladder: buy `NO` on Qwen Flash (3.9+) by October 31 and `YES` by December 31.
+The exact common rule gives that package a one-pUSD floor in every release-time
+state. However, the rendered card's apparent 0.99 sum combined separate market
+probabilities rather than labeled acquisition sides. One prospectively frozen,
+public, unauthenticated exact Gamma reconciliation returned October `NO` 0.50
+plus December `YES` 0.52 = 1.02 pUSD before enabled fees, depth, latency,
+failure unwind, and capital-time cost. It was rejected immediately; no book,
+account, credential, order, fund, on-chain, or protected-capture request was
+made.
+
+The exact Qwen event is consumed and terminal. Do not refresh, reprice, or book
+capture it. A multi-deadline card may reopen rank 31 only when its displayed
+values are explicitly labeled side-specific acquisition prices and a frozen
+exact metadata reconciliation remains strictly below the proved payoff floor.
+Accepted edges remain 29, ranked hypotheses remain 47, and terminal families
+become 127. Registry SHA-256 is
+`4dfb9c701d88737992999978a77bdb8554ea2f6e47f6194c95a6db0112e8b70b`;
+durability-audit SHA-256 is
+`1c90bd52fbc61e8b3fba8c521170b87710ab7640696a17388dbec4ad59a23b8d`.
+
 A bounded current-page pass screened eight distinct, previously unrecorded
 end-of-September monotone equity ladders: OPEN, NFLX, PLTR, META, NVDA, TSLA,
 MU, and SPCX. For thresholds `L < H`, the common-rule package `YES(above L) +

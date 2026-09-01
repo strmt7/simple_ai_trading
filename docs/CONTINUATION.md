@@ -5,6 +5,41 @@ Development belongs only on `main`; do not create another development branch.
 
 ## Latest Edge R&D Checkpoint
 
+- A newly listed Qwen Flash (3.9+) event satisfied rank 31's distinct exact
+  two-deadline trigger. Its common rules prove that `NO(released by October 31)
+  + YES(released by December 31)` has a one-pUSD terminal floor: release by the
+  earlier deadline pays one, release between deadlines pays two, and no release
+  by the later deadline pays one. The rendered New card superficially summed to
+  0.99, but those values were separate market probabilities rather than labeled
+  acquisition sides.
+
+  One prospective contract froze the exact slug, title, two deadline groups,
+  rule fragments, implementation hash, request URL, output paths, and zero-live-
+  authority boundary before access. Its one public unauthenticated Gamma GET
+  returned October `NO` 0.50 plus December `YES` 0.52 = 1.02 pUSD. Both markets
+  had fees enabled with the retained 0.04/1 taker-only schedule, so the package
+  failed even before books, fee computation, latency, failure unwind, and
+  capital-time cost. No CLOB, account, credential, order, fund, on-chain, or
+  protected-capture request was justified.
+
+  The contract SHA-256 is
+  `1079c0c1aaa133e6e3598d9f9d15985f323b698d689127a02e25d7310acf655e`,
+  result SHA-256 is
+  `e6438db7e061ed11a86c6c20ea0c80d38bdab9121e13b7ebd2c20583a5c9b85e`,
+  and retained raw response SHA-256 is
+  `9e5b26aa91e9535fd88d8e570b049db3e030a21ca5b42262f5b70df8d763ee14`.
+  The exact event is consumed: do not refresh, reprice, alias, or request its
+  books. `AGENTS.md` now records the reusable efficiency rule that multiple
+  deadline buttons on one rendered card are not acquisition sides. Freeze at
+  most one exact metadata reconciliation when that ambiguity alone creates an
+  apparent candidate, and keep Gamma rejection-only.
+
+  Accepted edges remain 29, ranked hypotheses remain 47, and terminal families
+  become 127. Registry SHA-256 is
+  `4dfb9c701d88737992999978a77bdb8554ea2f6e47f6194c95a6db0112e8b70b`;
+  durability-audit SHA-256 is
+  `1c90bd52fbc61e8b3fba8c521170b87710ab7640696a17388dbec4ad59a23b8d`.
+
 - A bounded current-page pass screened eight distinct, previously unrecorded
   end-of-September monotone equity ladders: OPEN, NFLX, PLTR, META, NVDA, TSLA,
   MU, and SPCX. Each uses one common final-close scalar and common fallback

@@ -82,8 +82,13 @@ override prose.
   and `Buy No` buttons only as a discovery rejection gate, then side-specific
   `bestAsk` or conservative `1 - bestBid` for a frozen advance. A card
   probability, search snippet, stale crawl, midpoint, or blank button is not an
-  ask. Stop before Gamma or CLOB when the cheapest discovery package is already
-  at or above one pUSD, and charge time value through resolution before calling
+  ask. Multiple deadline buttons on one rendered event card can be separate
+  market probabilities rather than labeled acquisition sides; never combine
+  them as `NO(earlier) + YES(later)` economics. If that ambiguity alone creates
+  an apparent strict sub-floor package, freeze at most one exact primary
+  metadata reconciliation and treat its prices as rejection-only. Stop before
+  Gamma or CLOB when the cheapest unambiguous discovery package is already at
+  or above one pUSD, and charge time value through resolution before calling
   any strict sub-floor package an edge.
 - For any proposed two-market Boolean cover, enumerate all four joint truth
   states before looking at price. If `A => B`, `NO(A) + YES(B)` has a one-pUSD

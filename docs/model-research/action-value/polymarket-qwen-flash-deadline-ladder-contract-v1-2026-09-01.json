@@ -1,0 +1,56 @@
+{
+  "authority": {
+    "account_requests": 0,
+    "book_requests": 0,
+    "credentials_used": false,
+    "fee_requests": 0,
+    "funds_used": false,
+    "onchain_requests": 0,
+    "orders_or_transactions": 0,
+    "protected_capture_touched": false,
+    "public_unauthenticated_read_only_requests": 1,
+    "signed_requests": 0,
+    "trading_authority": false
+  },
+  "contract_path": "docs/model-research/action-value/polymarket-qwen-flash-deadline-ladder-contract-v1-2026-09-01.json",
+  "contract_sha256": "1079c0c1aaa133e6e3598d9f9d15985f323b698d689127a02e25d7310acf655e",
+  "event_slug": "next-qwen-flash-3pt9-released-byptptpt",
+  "event_title": "Next Qwen Flash (3.9+) released by...?",
+  "expected_deadline_groups": [
+    "October 31",
+    "December 31"
+  ],
+  "frozen_at_utc": "2026-09-01T01:46:43.924207Z",
+  "implementation": {
+    "path": "tools/screen_polymarket_exact_deadline_ladder.py",
+    "sha256": "34c68a921e644b86cb348e5e3c756cdc98af42388e12636849fac0b96d1d8882"
+  },
+  "outputs": {
+    "journal_path": "data/polymarket-qwen-flash-deadline-ladder-v1/request-journal.jsonl",
+    "raw_path": "data/polymarket-qwen-flash-deadline-ladder-v1/raw/01-exact-event.raw",
+    "result_path": "docs/model-research/action-value/polymarket-qwen-flash-deadline-ladder-result-v1-2026-09-01.json"
+  },
+  "payoff_identity": {
+    "construction": "buy_NO_on_the_earlier_deadline_plus_buy_YES_on_the_later_deadline",
+    "earlier_deadline": "October 31",
+    "guaranteed_payout_floor_pUSD_per_equal_share": "1",
+    "later_deadline": "December 31",
+    "state_table": {
+      "qualifying_release_after_earlier_and_by_later": "2",
+      "qualifying_release_by_earlier": "1",
+      "qualifying_release_not_by_later": "1"
+    }
+  },
+  "request": {
+    "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "count": 1,
+    "method": "GET",
+    "url": "https://gamma-api.polymarket.com/events/slug/next-qwen-flash-3pt9-released-byptptpt"
+  },
+  "required_rule_fragments": [
+    "This market will resolve to \"Yes\" if Alibaba's next Qwen Flash model (3.9+) is made available to the general public between market creation and the specified date (ET).",
+    "Otherwise, this market will resolve to \"No\".",
+    "The primary resolution source for this market will be official information from Alibaba"
+  ],
+  "schema_version": "polymarket-exact-deadline-ladder-prefilter-contract-v1"
+}
