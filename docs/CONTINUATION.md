@@ -1,12 +1,154 @@
 # Continue Development
 
-Current canonical status after the Polymarket US partner vendor-fee source
-adjudication: accepted edges 35, ranked hypotheses 58, terminal families 169,
+Current canonical status after all five Polymarket US mechanism-index families
+were adjudicated: accepted edges 35, ranked hypotheses 58, terminal families 172,
 and stable current account-qualified after-all-cost edges zero. Registry
 SHA-256 is
-`d2f93c88d50905be28cefe0f215e72137c8b9bbb7f9d73741b87925691413b44`;
+`c038dde89dc80e2712d8adbbcd90056b27b625be062467f34b592e233e5e7eb8`;
 durability-audit SHA-256 is
-`8fb854400727c2b40666047a8df5ac42b183082db8c8ce2f3c77ce16a95828af`.
+`bcf28988454195e319db22ba3f31ef1ad1e13d157d332ff84b2c7a7ad4981556`.
+
+## 2026-09-01 Polymarket US participant-program exact-URL deduplication
+
+Rank 58 selected the exact official URL
+`https://docs.polymarket.us/incentives/user-programs.md`. Before freezing a new
+request, retained contracts, source results, and request journals proved that
+the same URL had already been prospectively captured under rank 51 earlier that
+day. Its 4,959 hash-bound bytes say Daily Trading details will be published once
+that program is live and say the same for Deposit and Trading. The overview
+names generic deposit and trading requirements plus possible credits but gives
+no deterministic live eligibility, task, reward, cap, timing, expiry, payment,
+withdrawal, reversal, or after-cost economics.
+
+The correct action was offline reuse, not a duplicate request. Rank 58 is
+terminal on the retained current source, with public and stable account-
+qualified floors zero, and is not accepted or deployment-ready. The mechanism-
+index inventory had deduplicated economic family names but missed exact selected-
+URL reuse. `AGENTS.md` now requires every index-selected source to be checked
+against retained contract, result, and journal URLs before a freeze; a new
+family label cannot override a consumed source retry policy.
+
+Do not refetch or alias the exact source without an independently known material
+change. Never manufacture deposits, trades, volume, days, accounts, referrals,
+or eligibility; self-trade, wash-trade, spoof, coordinate abuse, manipulate, or
+use promotional credit face value as cash. Every onboarding, deposit, trade,
+order, fund, or state change requires separate explicit authority. All five
+families from the retained mechanism index are now adjudicated. Continue with
+the highest existing registry hypothesis only when its exact retry trigger is
+independently satisfied.
+
+Rank 58 adjudication SHA-256 is
+`cba93ed78972affef86459fba0ad070431b803087d404bb7b9fe92eb284e17dd`.
+Reused retained contract canonical/file, source-result, raw, and journal hashes
+are
+`9f237e7b0092d60553364c396d20822d2f7fe805535d451c4114a38c94839c92`,
+`9b24ea0835bde9c3e76289aa6a728767950bcf8e3f6cff211ecf11e4f7fe4dc2`,
+`8bf6ca023bf62623b5c0334a4866f3df4d5cbe4f9460e333b8c620d46c99caad`,
+`3a1987bbff88abf718c43b190db8b40d040ab5ba9c42141920e250e186f9d1ec`,
+and `c22e4a529233a4fb2dbf2c80008c86b1073a36b5e9b0191e3eb7a1e42992ac0c`.
+Registry and durability-audit SHA-256 values become
+`c038dde89dc80e2712d8adbbcd90056b27b625be062467f34b592e233e5e7eb8`
+and `bcf28988454195e319db22ba3f31ef1ad1e13d157d332ff84b2c7a7ad4981556`.
+Accepted edges remain 35, ranked hypotheses remain 58, terminal families become
+172, and stable current account-qualified after-all-cost edges remain zero. No
+network, account, credential, signed request, deposit, trade, order, fund,
+transaction, or protected capture was touched by this adjudication.
+
+## 2026-09-01 Polymarket US combo RFQ source gate
+
+The exact rank 57 source identified by the retained official documentation
+index was prospectively frozen before access. One current official Markdown GET
+retained 4,071 bytes. The Retail RFQ API is authenticated beta for explicitly
+enabled users. An RFQ requests two-sided liquidity for an exact combo symbol;
+the lifecycle includes quote creation or replacement, acceptance of one side,
+and maker confirmation during last look. Its private stream is best effort,
+without replay or a separate subscription acknowledgement, and reconnect
+requires reconciliation through authenticated REST reads.
+
+The decisive execution semantics reject an atomic-fill assumption:
+`QUOTE_STATUS_EXECUTED` and `quoteExecuted` mean paired exchange orders were
+submitted and their order IDs recorded, not that the orders filled. RFQ orders
+enter the normal combo order book, may trade with other resting liquidity, and
+can leave unfilled quantity resting if either side enables `restRemainder`.
+Using an RFQ is optional because the combo can be traded through the normal
+Orders API.
+
+The overview proves no authentic quote, atomic fill, guaranteed price
+improvement, fee, last-look rejection rate, remainder configuration, exact
+payoff, or after-cost result. Public and stable account-qualified profit floors
+are zero. Rank 57 is terminal on public mechanics and is not accepted or
+deployment-ready. An authentic finite-size comparison would require explicit
+separate quote-only authority, beta-enabled account access, a prospectively
+frozen independently required exact combo and side, a payoff-identical public-
+leg counterfactual, complete fill/remainder/reconciliation/failure costs, and a
+fresh quote frozen before access. Quote acceptance and every state change would
+still require separate authority.
+
+Do not refetch RFQ, combo, endpoint, schema, streaming, institutional, trader-
+guide, HTML, FAQ, or search aliases. Never manufacture RFQs, quotes, orders,
+fills, volume, counterparties, or activity; self-trade, wash-trade, spoof,
+manipulate a reference price, abuse information, or abuse cancellation. Rank 58
+participant Daily Trading / Deposit and Trading programs was the next source-
+qualified hypothesis at that checkpoint and is adjudicated above through exact-
+URL retained-source reuse.
+
+Contract canonical/file, source-result, raw, journal, and adjudication SHA-256
+values are
+`dca10fd4fb7ff27d8c9e88670cbc57e79d5a12e683f4ea18d7dbc22f5415fd96`,
+`c51e5372f9218a79a480652d626cfe03ef5e06eb26b63643344f485ce548185e`,
+`210cb590e3bbdd50ab653a80f5265d461237d7f5a9e162afa2165e320472d43e`,
+`ab97a5110e8f5ee7aae0996cb6931fdea52a813c78512a7a3a01106bb4414c4b`,
+`bee6c4768ac645746def16ae8be8d1cd0ff0ff3a41a72991012079304af289c7`,
+and `d1a4075cde9f3f3bd830067a8b70ae1f1c3a19a7de97e8788f16d6536c42bc20`.
+Registry and durability-audit SHA-256 values become
+`7a6dd4d5cb7aed3b1dc15062ce017387b873ea64da9c7f3a5feb62c894c3d077`
+and `e6b22e14da4128fa3e1b37c5214776360dcb41651e77f6cef47348abe5416e02`.
+Accepted edges remain 35, ranked hypotheses remain 58, terminal families become
+171, and stable current account-qualified after-all-cost edges remain zero. No
+account, credential, signed request, authenticated access, RFQ, quote, order,
+fund, transaction, or protected capture was touched.
+
+## 2026-09-01 Polymarket US market-maker source gate
+
+The exact rank 56 source identified by the retained official documentation
+index was prospectively frozen before access. One current official Markdown GET
+retained 488 bytes. It says the program rewards approved market makers for
+providing liquidity across a wide range of contracts in given categories and
+provides an institutional contact route to learn more or apply.
+
+The page publishes no deterministic approval criteria or guarantee, eligible
+categories or markets, quote uptime, size, spread, depth, inventory or fill
+obligations, performance measurement, reward formula, amount, asset, cadence,
+cap, discretion, withholding, clawback, suspension, termination, renewal, or
+change rights. It therefore proves no positive public after-all-cost floor and
+no profitable liquidity strategy. Accepting an exact-positive future owned
+payment predicate would be tautological and add no predictive or deployable
+edge. Rank 56 is terminal on current public terms and is not accepted, account-
+qualified, stable, or deployment-ready.
+
+Do not refetch or alias the consumed source, contact or apply, or manufacture
+quotes, orders, fills, liquidity, volume, accounts, or eligibility. Never self-
+trade, wash-trade, spoof, abuse cancellation, or post non-executable quotes.
+Contact, application, negotiation, onboarding, configuration, quote, order,
+cancellation, fill, transfer, fund, and state changes require separate explicit
+authority. Rank 57 combo RFQ was the next exact unconsumed source-qualified
+hypothesis at that checkpoint and is adjudicated above.
+
+Contract canonical/file, source-result, raw, journal, and adjudication SHA-256
+values are
+`d3fb2c4ac6975acc612760624fc126ae382ff232e8f8e2e1f8e67577f37038bb`,
+`af73d12cad2f1d459dcda88e29cfe78e63baa78d707f9324b58d8bf76846be92`,
+`4acef72e1c83f2861df3a099e189355b30d6e7f15a5d54728a120f6299aa39b1`,
+`d4b568df596d93c7e7d1b7da7d74602349449b59535644abafe2909dc7245d42`,
+`07d538a24afc46dd5d1d4adac8d34a6a3890dc1fed5db392536154f3caaac20e`,
+and `af80c16faa5666735cc74f17d5212ec95d226bc0ed58e8d247811eab06ded381`.
+Registry and durability-audit SHA-256 values become
+`afdc6b4f6d82f4011ce723076a9cff22e1cf21c45a4995a28ca9bfca83a86b4e`
+and `b6e2d132f31b0879214ef2e81658bd48fa781bfaaea89536a8c1eb2c13c98f18`.
+Accepted edges remain 35, ranked hypotheses remain 58, terminal families become
+170, and stable current account-qualified after-all-cost edges remain zero. No
+account, credential, signed request, contact, application, quote, order, fund,
+transaction, or protected capture was touched.
 
 ## 2026-09-01 Polymarket US partner vendor-fee overlay
 
@@ -43,7 +185,8 @@ manufacture orders, volume, or activity; or charge undisclosed, unconsented,
 deceptive, excessive, or disallowed fees. Contact, application, onboarding,
 configuration, order, fee declaration, transfer, collection, fund, and state
 changes require separate explicit authority. Rank 56 approved market-maker
-contracts is the next exact unconsumed source-qualified hypothesis.
+contracts was the next exact unconsumed source-qualified hypothesis at that
+checkpoint and is adjudicated above.
 
 Contract canonical/file, source-result, raw, journal, and adjudication SHA-256
 values are

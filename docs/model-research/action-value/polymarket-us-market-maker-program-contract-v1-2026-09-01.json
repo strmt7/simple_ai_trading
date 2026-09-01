@@ -1,0 +1,60 @@
+{
+  "authority": {
+    "account_requests": 0,
+    "credentials_used": false,
+    "funds_used": false,
+    "orders_or_transactions": 0,
+    "protected_capture_touched": false,
+    "public_unauthenticated_read_only_requests": 1,
+    "signed_requests": 0,
+    "trading_authority": false
+  },
+  "contract_path": "docs/model-research/action-value/polymarket-us-market-maker-program-contract-v1-2026-09-01.json",
+  "contract_sha256": "d3fb2c4ac6975acc612760624fc126ae382ff232e8f8e2e1f8e67577f37038bb",
+  "decision": {
+    "accepted_edge": "Accept only exact positive owned contractual compensation actually received by an already approved market maker for independently justified legitimate organic qualifying liquidity, after every contractual obligation, rejected or missed payment, inventory, adverse selection, hedge, spread, fee, latency, capital, custody, compliance, support, tax, opportunity, termination, clawback, and incremental cost.",
+    "adjudication_rule": "Bind approval and current eligibility, contract category, qualifying markets and activity, quote obligations, uptime, size, spread, performance measurement, payment formula, asset, cadence, cap, discretion, withholding, clawback, suspension, termination, renewal, and change rights. An application route, qualitative incentive claim, discretionary negotiation, or future owned-payment predicate without deterministic economics leaves the public forward profit floor at zero.",
+    "deployment_ready": false,
+    "profitability_proved": false,
+    "stable_current_edge_proved": false
+  },
+  "frozen_at_utc": "2026-09-01T11:43:34.9772097Z",
+  "implementations": [
+    {
+      "path": "tools/capture_public_source_contract.py",
+      "sha256": "ba0e76bd6643eedc072cc1fcff2aa363c1dc14a5b8e14956e874c7843637b376"
+    }
+  ],
+  "limitations": [
+    "Market-maker compensation requires an independently legitimate liquidity business and organic external demand; it cannot justify manufacturing orders, quotes, fills, volume, or exposure.",
+    "The retained index title and description are source-selection evidence only and cannot establish approval, obligations, payout, persistence, collection, or profit.",
+    "No contact, application, account, agreement, configuration, quote, order, cancellation, fill, transfer, fund movement, credential, or transaction is authorized."
+  ],
+  "outputs": {
+    "journal_path": "data/polymarket-us-market-maker-program-v1/request-journal.jsonl",
+    "raw_path": "data/polymarket-us-market-maker-program-v1/raw/market-maker.md",
+    "result_path": "docs/model-research/action-value/polymarket-us-market-maker-program-source-result-v1-2026-09-01.json"
+  },
+  "question": "Do the complete current official Polymarket US Market Maker Program terms define deterministic direction-independent compensation with a positive public after-all-cost floor for bona fide independently required organic liquidity?",
+  "request": {
+    "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "count": 1,
+    "method": "GET",
+    "name": "polymarket-us-market-maker-program-terms",
+    "url": "https://docs.polymarket.us/incentives/market-maker.md"
+  },
+  "request_name": "polymarket-us-market-maker-program-terms",
+  "required_utf8_phrases": [
+    "Market Maker Program"
+  ],
+  "response_byte_ceiling": 1000000,
+  "retry_policy": "This exact official Markdown GET is one-use. Preserve any HTTP, empty-response, phrase, or schema failure and do not retry an HTML, application, incentive, partner, liquidity, FAQ, or search alias. Adjudicate retained bytes once without contact, application, partner, account, quote, or order access. Reopen only on a material official approval, obligation, performance, payment, withholding, clawback, termination, renewal, or architecture change, or exact owned approved-market-maker evidence under explicit separate read-only authority.",
+  "schema_version": "public-source-capture-contract-v1",
+  "trigger": {
+    "discovery_index_adjudication_sha256": "214f9807ed7d9120478be6e75daf889ee8aeb30f8bea194c3af8d5eb4e8c251f",
+    "economic_content_viewed_before_freeze": false,
+    "family_search_found_existing_registry_or_source": false,
+    "registry_rank": 56,
+    "selection_rule": "highest-ranked exact unconsumed source-qualified family after the vendor-fee checkpoint"
+  }
+}
