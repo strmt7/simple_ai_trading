@@ -307,6 +307,12 @@ override prose.
   authorize a retry, parameter change, replacement market, or favorable-value
   selection. A stale or misattributed discovery snippet is a methodology error,
   not evidence that agreeing exact sources conflict.
+- On the rendered Rewards surface, an earnings value of zero or a competition
+  dash is account/dashboard presentation, not proof of zero competitors, full
+  owned share, or any positive payout floor. The CLOB book `timestamp` is
+  officially the snapshot timestamp; compare it with receipt time and reject a
+  stale snapshot without refreshing it or selecting a sibling. Do not reinterpret
+  it as a harmless last-change time merely because the levels look attractive.
 - A rendered Polymarket market page's `End Date` can be a user-facing
   resolution date rather than Gamma `endDate`. Never freeze equality between
   those fields or invent a Gamma timestamp from the rendered date. Bind the
