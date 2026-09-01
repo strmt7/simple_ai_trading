@@ -9,8 +9,11 @@ override prose.
 - AI Git history must use `AI agent <>` for author and committer. Read
   `docs/AI_COMMIT_IDENTITY.md` before committing or auditing; never use a human,
   host, tool, CI, global-config, or noreply identity.
-- Binance is BTC/ETH/SOL testnet, Demo, or paper only. Polymarket research is
-  BTC/ETH/SOL; its BTC-only live-capable boundary defaults off. No live-money authority exists.
+- Binance execution is BTC/ETH/SOL testnet, Demo, or paper only. Polymarket
+  order-capable research remains BTC/ETH/SOL and its BTC-only live-capable
+  boundary defaults off. Public unauthenticated read-only structural discovery
+  may cover other Polymarket markets when it uses the same fail-closed payoff,
+  source, and cost gates. No live-money authority exists.
 - Conservative is default. Leverage is a ceiling, never edge. Profitability,
   ROI, readiness, and drawdown claims require source-bound after-cost evidence.
 - Aggregate performance never establishes an all-regime edge. Apply
@@ -167,13 +170,14 @@ override prose.
   Preserve a consumed representation-only failure, adjudicate its retained
   bytes offline, and never refetch merely to repair serialization formatting.
 - Do not run broad text searches over raw or canonical one-line JSON payloads.
-  List candidate files first, exclude `data/` and raw artifact trees from alias
-  searches, and parse only the exact JSON keys needed for retained-data audits.
-  This prevents multi-megabyte console dumps from wasting context and resources.
-  Mechanism-alias searches must also exclude
-  `docs/model-research/action-value/**/*.json` by default; when those artifacts
-  are relevant, list their names first and parse only predeclared fields from
-  the selected file instead of sending a matching one-line payload to stdout.
+  List candidate files first, exclude `data/`, raw artifact trees, and every
+  `*.json` file from prose/code alias searches by default, and parse only the
+  exact JSON keys needed for retained-data audits. This prevents multi-megabyte
+  console dumps from wasting context and resources. When JSON artifacts are
+  relevant, list their names first and use a structured parser on only the
+  selected files and predeclared fields; never send a matching one-line payload
+  to stdout. A narrow exact-filename search is allowed only when its output is
+  independently bounded.
 - Before freezing any request for an existing family, inspect its complete
   registry row: canonical artifacts, current status, next action, every
   prohibited shortcut, and the literal retry trigger. A compact rank/trigger
