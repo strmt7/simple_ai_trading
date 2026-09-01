@@ -938,6 +938,14 @@ and verify reproducibly. Do not load upstream `EXAMPLES.md`.
    failure reuses evidence instead of refetching it. For a large discovery or
    inventory response, persist it and print only a bounded aggregate in the same
    request; never stream the full payload to the console as the only copy.
+   For a documented cursor endpoint whose sampling cadence or total row count is
+   not source-proved, freeze the conditional cursor traversal, maximum pages,
+   total rows, total bytes, deduplication key, and fail-closed stop conditions
+   before the first economic page. Size each page ceiling from the documented
+   maximum row count times a conservative row-size bound rather than an
+   arbitrary small guess. A consumed ceiling or pagination failure never
+   authorizes a refetch or adaptive page plan; retain the exact bytes and perform
+   at most the already-frozen zero-network adjudication.
 5. Keep edits scoped, match existing patterns, remove only resulting orphans,
    and never revert unrelated work.
 6. Keep numeric evidence in canonical JSON/CSV and regenerate charts from it.

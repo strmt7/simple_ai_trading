@@ -21,6 +21,36 @@ profitable without reproducible source-bound after-cost evidence. AI may veto
 or reduce risk only; it never creates positions, selects leverage, overrides a
 safety gate, blocks Stop, or submits an order.
 
+### Latest Binance-Paradex funding source-gate rejection
+
+The distinct BTC/ETH/SOL Binance-versus-Paradex direction-neutral funding
+family was prospectively frozen before any funding value was viewed. Official
+Paradex terms proved USDC settlement, continuous pro-rata accrual, an eight-hour
+reference rate, and positive funding as long-pays/short-receives. They also
+proved that Paradex funding aggregates Binance and other venues, so the only
+possible edge was a timing or smoothing spread rather than an independent
+signal.
+
+Four exact public GETs retained one current market inventory and one bounded
+history per asset. The inventory exceeded its frozen two-MB ceiling. Each
+history exceeded one MB, returned exactly 5,000 rows, and carried a continuation
+cursor. The frozen contract prohibited pagination or cadence adaptation, so the
+population was incomplete and the run stopped before any funding value, basis,
+book, account, credential, order, or fund access. Do not refetch, alias,
+paginate, or consume the exact cursors.
+
+`AGENTS.md` now requires uncertain-cadence cursor endpoints to freeze traversal,
+maximum pages, total rows and bytes, deduplication, and stop conditions before
+the first economic page, with page ceilings derived from documented maximum row
+count rather than an arbitrary guess.
+
+Accepted edges remain 35, ranked hypotheses become 59, terminal families become
+177, and stable current account-qualified after-all-cost edges remain zero.
+Registry, durability-audit, and terminal result SHA-256 values are
+`2dc19765f6a9a3a0cb688991828f7624d12f10917f0bba02533281193ff9689c`,
+`99c6e83c348f6f3b8b3e95c238db5a66efbf6fcc8af1d3f7e1db6066e7527646`,
+and `98c5441b5f9828664c387b9f9b8a05e4eef919a3857054c8bbd73faa4c3ea30a`.
+
 ### Latest prospective NYC September 2 long-only basis rejection
 
 Before any price-bearing source was opened, the next deterministic NYC daily

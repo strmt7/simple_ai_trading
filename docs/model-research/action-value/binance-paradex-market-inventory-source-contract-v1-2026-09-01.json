@@ -1,0 +1,20 @@
+{
+  "schema_version": "public-source-capture-contract-v1",
+  "frozen_at_utc": "2026-09-01T13:16:23.8942511Z",
+  "contract_path": "docs/model-research/action-value/binance-paradex-market-inventory-source-contract-v1-2026-09-01.json",
+  "request_name": "paradex_current_market_inventory",
+  "request": {"method": "GET", "url": "https://api.prod.paradex.trade/v1/markets", "count": 1, "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"},
+  "response_byte_ceiling": 2000000,
+  "required_utf8_phrases": ["\"results\"", "\"BTC-USD-PERP\"", "\"ETH-USD-PERP\"", "\"SOL-USD-PERP\""],
+  "outputs": {
+    "raw_path": "docs/model-research/binance/raw/paradex-btc-eth-sol-funding-v1-2026-09-01/00-market-inventory.raw.json",
+    "journal_path": "docs/model-research/binance/raw/paradex-btc-eth-sol-funding-v1-2026-09-01/00-market-inventory.journal.jsonl",
+    "result_path": "docs/model-research/action-value/binance-paradex-market-inventory-source-result-v1-2026-09-01.json"
+  },
+  "authority": {"account_requests": 0, "credentials_used": false, "funds_used": false, "orders_or_transactions": 0, "protected_capture_touched": false, "public_unauthenticated_read_only_requests": 1, "signed_requests": 0, "trading_authority": false},
+  "implementations": [
+    {"path": "tools/capture_public_source_contract.py", "sha256": "ba0e76bd6643eedc072cc1fcff2aa363c1dc14a5b8e14956e874c7843637b376"},
+    {"path": "tools/screen_polymarket_exact_two_leg_package.py", "sha256": "374fcc3c3485c466b4929a91256450bdc7db70f93ef4c6bda627e05fe8938327"}
+  ],
+  "contract_sha256": "3d9e871b2026799841f9a4e0c72d25bd115f1c9f2f79a530c212251655cf9478"
+}
