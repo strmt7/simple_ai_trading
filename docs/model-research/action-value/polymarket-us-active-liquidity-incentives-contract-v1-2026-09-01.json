@@ -1,0 +1,74 @@
+{
+  "schema_version": "polymarket-us-active-liquidity-incentives-contract-v1",
+  "frozen_at_utc": "2026-09-01T09:59:48.1925734Z",
+  "contract_path": "docs/model-research/action-value/polymarket-us-active-liquidity-incentives-contract-v1-2026-09-01.json",
+  "research_question": "Does Polymarket US currently publish a complete positive active liquidity-incentive population that pays a direction-independent resting-order score, and which one program has the highest prospectively defined reward-pool-per-hour-per-target-contract ratio for a later separate public competition screen?",
+  "official_sources": [
+    {
+      "url": "https://docs.polymarket.us/incentives/liquidity",
+      "claim": "The open Liquidity Incentive Program scores resting orders every second, whether or not they fill, using Discount Factor^(ticks from best price) times order size; each book side is normalized independently when Target Size is met, rewards are proportional, sub-one-dollar rewards are not paid, canceled or postponed games receive no rewards, and parameters may change."
+    },
+    {
+      "url": "https://docs.polymarket.us/fees",
+      "claim": "Exchange-wide maker rebates equal 25 percent of taker fees at the point of trade under the published symmetric fee formula, separately from liquidity-program rewards."
+    },
+    {
+      "url": "https://docs.polymarket.us/api-reference/incentives/get-incentive-programs",
+      "claim": "GET /v1/incentives is public and unauthenticated and accepts pageSize, orderBy, orderDirection, and statuses filters while returning programs plus nextPageToken."
+    }
+  ],
+  "request_name": "polymarket-us-current-active-incentives",
+  "request": {
+    "method": "GET",
+    "url": "https://api.prod.polymarketexchange.com/v1/incentives?pageSize=100&orderBy=reward&orderDirection=desc&statuses=active",
+    "count": 1,
+    "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "response_byte_ceiling": 5242880,
+  "required_utf8_phrases": [
+    "\"programs\"",
+    "\"nextPageToken\"",
+    "liquidityProgram"
+  ],
+  "selection_rule": "Admit every returned time period only when status is active, programType is liquidityProgram, the capture instant is within its explicit start-inclusive/end-exclusive interval, rewardPool and targetSize are finite and positive, discountFactor is finite in (0,1], and programId and marketSlug are nonempty. Require an explicitly empty nextPageToken and zero malformed rows; otherwise fail closed without pagination or a book request.",
+  "ranking_rule": "Sort all admitted periods by descending rewardPool_USD divided by duration_hours divided by targetSize_contracts_per_side, then ascending marketSlug and programId. This ranking is frozen before program economics access and may nominate only a later separately frozen public book competition screen.",
+  "limitations": [
+    "A public reward pool is not an owned payout floor; proportional score share can be zero.",
+    "The source does not prove account or jurisdiction eligibility, onboarding, capital availability, order permission, queue position, uptime, cancellation latency, or payout receipt.",
+    "Resting near the best price creates adverse-selection, inventory, hedge, fill, gap, cancellation, stale-quote, settlement, tax, and operating risks that can exceed rewards and maker rebates.",
+    "No volume, score, reward, or rebate may be manufactured through self-trading, wash trading, fake liquidity, spoofing, non-bona-fide orders, related accounts, manipulation, or program abuse.",
+    "A later public book snapshot can only reject or size a paper hypothesis; any order, account request, credential use, deposit, fund movement, or transaction requires explicit separate authority."
+  ],
+  "outputs": {
+    "raw_path": "data/polymarket-us-active-liquidity-incentives-v1/raw/incentives.json",
+    "journal_path": "data/polymarket-us-active-liquidity-incentives-v1/request-journal.jsonl",
+    "result_path": "docs/model-research/action-value/polymarket-us-active-liquidity-incentives-source-result-v1-2026-09-01.json",
+    "adjudication_path": "docs/model-research/action-value/polymarket-us-active-liquidity-incentives-adjudication-v1-2026-09-01.json"
+  },
+  "implementations": [
+    {
+      "path": "tools/capture_public_source_contract.py",
+      "sha256": "d566a5a379c659c3da144d5e28449ebac9c01493bd39646f9cc3a6e697a83566"
+    },
+    {
+      "path": "tools/screen_polymarket_exact_two_leg_package.py",
+      "sha256": "374fcc3c3485c466b4929a91256450bdc7db70f93ef4c6bda627e05fe8938327"
+    },
+    {
+      "path": "tools/adjudicate_polymarket_us_active_incentives.py",
+      "sha256": "bfa12d3341dddf5f5037b0601457f42b6d3f0d2f700b070bd603841ca846de69"
+    }
+  ],
+  "authority": {
+    "account_requests": 0,
+    "credentials_used": false,
+    "funds_used": false,
+    "orders_or_transactions": 0,
+    "protected_capture_touched": false,
+    "public_unauthenticated_read_only_requests": 1,
+    "signed_requests": 0,
+    "trading_authority": false
+  },
+  "retry_policy": "This exact current active first page is one-use. Preserve any HTTP, schema, phrase, pagination, malformed-row, or timing failure. Do not retry, change page size, paginate, alias the host, request earnings, use credentials, or select one observed program after failure. A passing result proves only a scoped public direction-independent reward mechanism and deterministic public book-screen candidate, never owned eligibility, fill quality, score share, recurrence, capacity, deployment readiness, or profit.",
+  "contract_sha256": "3e6d4fdbe0feb3584439b8d6976d751dabb86209c6484d0a0885e8b51984521f"
+}
