@@ -4252,3 +4252,25 @@ Accepted edges remain 31, ranked hypotheses remain 48, terminal families become
 Registry and durability-audit SHA-256 values become
 `96982b13beec4577cfa9863b4efa9678fa63983a19842d014f81847ed64567d3`
 and `d3c0205a671bb920061b566004dec16b913de0e439804cdbb09c657534331cb8`.
+
+A distinct four-family zero-network rank screen then tested named companies in
+the exact second- and third-place Labs-view events. It excluded the different
+Models-view best events, `Other`, identity-free Company placeholders, and the
+unproved ByteDance/Bytedance spelling alias. The frozen population contained 67
+`NO(second) + NO(third)` one-pUSD-floor packages; 48 had complete side-specific
+prices. Google in Text Arena Overall was the only strict metadata candidate at
+0.99 pUSD per share, but at five shares one adverse tick per leg plus exact
+taker fees changed 0.05 pUSD gross headroom into -0.11030 pUSD. No books were
+authorized.
+
+Contract/result/preflight-failure SHA-256 values are
+`3fd13b0fb651614e1dbce6f9e85f1baf51a5cb6f020a150efa23e0378e8aaa1a`,
+`268aa6e00d349b164f1727e5d47ae34afe05787627e6552307aa04b59cdbe1e6`,
+and `32495c463d2748df8b4afbcfc579887d0ee01bb61ea2b933da981bac8a53c151`.
+Accepted edges remain 31, ranked hypotheses remain 48, terminal families become
+155, and stable current account-qualified after-all-cost edges remain zero.
+Registry and durability-audit SHA-256 values become
+`384d75c8fcec15cc2caecb249171b01ff00dad24c4a5209d94d0880364f97992`
+and `4723a56809cf8d6f9ba082a02e17a45f90b326bdfffd226ef53dc80a96a2f0e5`.
+No network, account, credential, book, fee endpoint, order, fund, on-chain, or
+protected capture was touched.

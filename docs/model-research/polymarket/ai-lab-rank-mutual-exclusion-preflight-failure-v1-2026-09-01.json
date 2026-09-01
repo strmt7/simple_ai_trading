@@ -1,0 +1,13 @@
+{
+  "schema_version": "local-retained-input-preflight-failure-v1",
+  "created_at_utc": "2026-09-01T08:53:00Z",
+  "status": "unconsumed_pre_economic_local_failure",
+  "contract_path": "docs/model-research/polymarket/ai-lab-rank-mutual-exclusion-contract-v1-2026-09-01.json",
+  "failure": "the first implementation required every returned placeholder and Other market to be active and executable even though the prospective contract excluded those ambiguous identities from every package",
+  "scope": "event identity, rule, representation, and state preflight only; no price value was decoded or printed",
+  "correction": "retain full returned-label and binary-representation validation but require active executable state only for the frozen named-identity package population",
+  "network_requests": 0,
+  "protected_capture_touched": false,
+  "credentials_used": false,
+  "result_sha256": "32495c463d2748df8b4afbcfc579887d0ee01bb61ea2b933da981bac8a53c151"
+}

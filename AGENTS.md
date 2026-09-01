@@ -145,6 +145,15 @@ override prose.
   floor or add exact tie coverage; never assume a one-pUSD floor. If one known
   required leg already costs at least the tie-aware floor, stop before metadata,
   book, fee, account, or credential requests.
+- For ordinal rank mutual exclusion, both events must rank the same entities
+  with the same observation view, source instant, fallback, ambiguity handling,
+  and deterministic tie-break. A best-model view and a lab-rank view are
+  different payoff functions even when both name companies. `Other` can denote
+  different entities at different ranks, identity-free placeholders are not
+  cross-event identities, and spelling variants are not aliases without source
+  proof. Only an exact named identity can support `NO(rank i) + NO(rank j)` for
+  distinct positions; freeze every named package before economics and require
+  exact fees plus one adverse tick per leg before any book request.
 - For a projection cover from one complete joint partition to `k` mutually
   exclusive exact marginal outcomes, buy `NO` on every marginal outcome and
   `YES` on every joint row whose projection is their union. The package has a

@@ -1,0 +1,91 @@
+{
+  "schema_version": "polymarket-retained-rank-mutual-exclusion-contract-v1",
+  "status": "frozen_before_one_zero_network_retained_adjudication",
+  "frozen_at_utc": "2026-09-01T08:53:35.9540317Z",
+  "contract_path": "docs/model-research/polymarket/ai-lab-rank-mutual-exclusion-contract-v1-2026-09-01.json",
+  "contract_sha256": "3fd13b0fb651614e1dbce6f9e85f1baf51a5cb6f020a150efa23e0378e8aaa1a",
+  "retained_input": {
+    "path": "data/polymarket-sep30-et-negrisk-complete-set-catalog-v1/raw/events.json",
+    "sha256": "ff108e7b869cf74e1950d9eb90d75c35335b56996d8ad1cda5fc675b2633c0ab",
+    "catalog_completeness": "incomplete_cursor_returned",
+    "use_boundary": "eight_exact_nested_events_only_no_catalog_completeness_claim"
+  },
+  "families": [
+    {
+      "family": "Code_Arena_WebDev_Lab_Rank",
+      "second_event_id": "745624",
+      "second_event_slug": "second-best-code-arena-webdev-ai-lab-end-of-september-20260722215814727",
+      "second_event_title": "Second-best Code Arena WebDev AI Lab end of September?",
+      "third_event_id": "745625",
+      "third_event_slug": "third-best-code-arena-webdev-ai-lab-end-of-september-20260722220024427",
+      "third_event_title": "Third-best Code Arena WebDev AI Lab end of September?",
+      "expected_all_labels": ["Moonshot", "Anthropic", "OpenAI", "Z.ai", "SpaceXAI", "Meta", "ByteDance", "Alibaba", "MiniMax", "Google", "Xiaomi", "DeepSeek", "Thinky", "Tencent", "Poolside", "Mistral", "Other", "Company A", "Company B", "Company C", "Company D", "Company E", "Company F", "Company G", "Company H", "Company I", "Company J", "Company K", "Company L", "Company M"],
+      "named_identity_labels": ["Moonshot", "Anthropic", "OpenAI", "Z.ai", "SpaceXAI", "Meta", "ByteDance", "Alibaba", "MiniMax", "Google", "Xiaomi", "DeepSeek", "Thinky", "Tencent", "Poolside", "Mistral"],
+      "required_rule_fragments": ["filtered for \"Labs\" is checked on September 30, 2026, 12:00 PM ET", "Results from the \"Lab Rank\" column under the \"Code Arena | WebDev\" Leaderboard tab", "If the results based on the lab ranking are ambiguous or unavailable", "alphabetical order of AI lab/company names", "occupies {rank} place under this ranking", "permanently unavailable, this market will resolve to \"Other\""]
+    },
+    {
+      "family": "Chinese_Text_Arena_Overall_Lab_Rank",
+      "second_event_id": "745626",
+      "second_event_slug": "second-best-chinese-ai-company-end-of-september-20260722220234242",
+      "second_event_title": "Second-Best Chinese AI Company end of September?",
+      "third_event_id": "745634",
+      "third_event_slug": "third-best-chinese-ai-company-end-of-september-20260722220502453",
+      "third_event_title": "Third-Best Chinese AI Company end of September?",
+      "expected_all_labels": ["Alibaba", "Moonshot", "Baidu", "Z.ai", "Xiaomi", "DeepSeek", "ByteDance", "MiniMax", "Meituan", "Tencent", "StepFun", "Other", "Company A", "Company B", "Company C", "Company D", "Company E", "Company F", "Company G", "Company H", "Company I", "Company J", "Company K", "Company L", "Company M"],
+      "named_identity_labels": ["Alibaba", "Moonshot", "Baidu", "Z.ai", "Xiaomi", "DeepSeek", "ByteDance", "MiniMax", "Meituan", "Tencent", "StepFun"],
+      "required_rule_fragments": ["filtered for \"Labs\" is checked on September 30, 2026, 12:00 PM ET", "Results from the \"Lab Rank\" column under the \"Text Arena | Overall\" Leaderboard tab", "If the results based on the lab ranking are ambiguous or unavailable", "alphabetical order of AI company names", "occupies {rank} place under this ranking", "permanently unavailable, this market will resolve to \"Other\""]
+    },
+    {
+      "family": "Text_Arena_Overall_Lab_Rank",
+      "second_event_id": "745651",
+      "second_event_slug": "second-best-ai-lab-end-of-september-20260722221500022",
+      "second_event_title": "Second-best AI Lab end of September?",
+      "third_event_id": "745652",
+      "third_event_slug": "third-best-ai-lab-end-of-september-20260722221654811",
+      "third_event_title": "Third-best AI Lab end of September?",
+      "expected_all_labels": ["Anthropic", "Meta", "Google", "Alibaba", "Moonshot", "OpenAI", "Baidu", "Z.ai", "Xiaomi", "SpaceXAI", "DeepSeek", "Amazon", "ByteDance", "Nvidia", "Thinky", "MiniMax", "Mistral", "Meituan", "Tencent", "StepFun", "Microsoft", "Company A", "Company B", "Company C", "Company D", "Company E", "Company F", "Company G", "Company H", "Company I", "Company K", "Other"],
+      "named_identity_labels": ["Anthropic", "Meta", "Google", "Alibaba", "Moonshot", "OpenAI", "Baidu", "Z.ai", "Xiaomi", "SpaceXAI", "DeepSeek", "Amazon", "ByteDance", "Nvidia", "Thinky", "MiniMax", "Mistral", "Meituan", "Tencent", "StepFun", "Microsoft"],
+      "required_rule_fragments": ["filtered for \"Labs\" is checked on September 30, 2026, 12:00 PM ET", "Results from the \"Lab Rank\" column under the \"Text Arena | Overall\" Leaderboard tab", "If the results based on the lab ranking are ambiguous or unavailable", "alphabetical order of AI lab/company names", "occupies {rank} place under this ranking", "permanently unavailable, this market will resolve to \"Other\""]
+    },
+    {
+      "family": "Text_Arena_Math_Lab_Rank",
+      "second_event_id": "745635",
+      "second_event_slug": "second-best-text-arena-math-ai-lab-end-of-september-20260722220754181",
+      "second_event_title": "Second-best Text Arena Math AI Lab end of September?",
+      "third_event_id": "745636",
+      "third_event_slug": "third-best-text-arena-math-ai-lab-end-of-september-20260722221057130",
+      "third_event_title": "Third-best Text Arena Math AI Lab end of September?",
+      "expected_all_labels": ["Anthropic", "Google", "SpaceXAI", "Alibaba", "OpenAI", "Baidu", "Z.ai", "Xiaomi", "Moonshot", "Meta", "Nvidia", "DeepSeek", "MiniMax", "Meituan", "Amazon", "ByteDance", "Mistral", "Tencent", "StepFun", "Microsoft", "Other", "Company A", "Company B", "Company C", "Company D", "Company E", "Company F", "Company G", "Company H", "Company I", "Company J", "Company K", "Company L", "Company M"],
+      "third_expected_all_labels": ["Anthropic", "Google", "SpaceXAI", "Alibaba", "OpenAI", "Baidu", "Z.ai", "Xiaomi", "Moonshot", "Meta", "Nvidia", "DeepSeek", "MiniMax", "Meituan", "Amazon", "Bytedance", "Mistral", "Tencent", "StepFun", "Microsoft", "Other", "Company A", "Company B", "Company C", "Company D", "Company E", "Company F", "Company G", "Company H", "Company I", "Company J", "Company K", "Company L", "Company M"],
+      "named_identity_labels": ["Anthropic", "Google", "SpaceXAI", "Alibaba", "OpenAI", "Baidu", "Z.ai", "Xiaomi", "Moonshot", "Meta", "Nvidia", "DeepSeek", "MiniMax", "Meituan", "Amazon", "Mistral", "Tencent", "StepFun", "Microsoft"],
+      "required_rule_fragments": ["filtered for \"Labs\" is checked on September 30, 2026, 12:00 PM ET", "Results from the \"Lab Rank\" column under the \"Text Arena | Math\" Leaderboard tab", "If the results based on the lab ranking are ambiguous or unavailable", "alphabetical order of AI lab/company names", "occupies {rank} place under this ranking", "permanently unavailable, this market will resolve to \"Other\""]
+    }
+  ],
+  "payoff_identity": {
+    "package": "NO(named company is second) plus NO(the same named company is third)",
+    "guaranteed_payout_floor_pUSD_per_share": "1",
+    "proof": "one named company cannot occupy both deterministic ordinal positions in one common total ranking; if it is second, third-NO pays one, if it is third, second-NO pays one, otherwise both pay one",
+    "exclusions": "best-model events use a different Models-view ranking and are excluded; Other, Company-letter placeholders, and the ByteDance/Bytedance spelling mismatch are excluded because cross-event identity is not source-proved",
+    "price_gate": "conservative second NO proxy one minus second YES bestBid plus conservative third NO proxy one minus third YES bestBid must be strictly below one pUSD, then remain positive after exact current fees and one adverse tick per leg",
+    "selection": "enumerate all 67 frozen named-identity packages across all four families before one deterministic global ranking",
+    "gamma_role": "rejection_only_never_acceptance_or_promotion_evidence"
+  },
+  "result_path": "docs/model-research/polymarket/ai-lab-rank-mutual-exclusion-result-v1-2026-09-01.json",
+  "implementation": {
+    "path": "tools/adjudicate_polymarket_retained_rank_mutual_exclusion.py",
+    "sha256": "f0109ad4ca76b6e1fb4af3b474b376a7a749343e59516122c446fe83afb6f1ce"
+  },
+  "authority": {
+    "account_requests": 0,
+    "book_requests": 0,
+    "credentials_used": false,
+    "fee_requests": 0,
+    "funds_used": false,
+    "network_requests": 0,
+    "onchain_requests": 0,
+    "orders_or_transactions": 0,
+    "protected_capture_touched": false,
+    "signed_requests": 0,
+    "trading_authority": false
+  }
+}
