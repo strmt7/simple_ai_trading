@@ -23,28 +23,31 @@ safety gate, blocks Stop, or submits an order.
 
 ### Latest efficient structural screen
 
-The complete retained September 13 early NFL catalog period
-moneyline-to-spread population is terminal. One frozen zero-network
-adjudication exhausted 227 direction-independent quarter and second-half
-relations pairing the favorite moneyline with the opponent side of a negative
-half-integer favorite spread. Of those, 215 were side-specifically
-price-complete; zero cost strictly below the one-pUSD floor. The best complete
-package cost 1.53 pUSD. Another 12 relations are explicitly price-incomplete
-because retained selected-side quotes are missing; missing quotes are never
-free legs and authorize no escalation.
+The distinct Binance-Bybit BTC, ETH, and SOL USDT perpetual funding population
+is terminal. A clean preregistration froze exact 90-bucket alignment,
+training-only orientation, chronological 45/22/23 roles, 20-bip round-trip
+execution, a 10% annual two-leg capital hurdle, and 25-bip cross-venue stress
+before any funding value was viewed. Six bounded public GETs proved the exact
+live linear USDT-settled instruments and retained 90 eight-hour funding rows per
+asset. All three selected long Bybit and short Binance from training; zero
+survived every role. BTC gross was positive but economically dominated in every
+role, ETH and SOL validation gross were negative, and every test net was below
+-62 bips.
 
-Do not refetch, repair, reprice, select a sibling, or request books or fees for
-this consumed population. Reopen only for a distinct unconsumed population or a
-material rule, fee, tick, or market-architecture change. Accepted edges remain
-30, ranked hypotheses remain 47, terminal families are 144, and stable current
-account-qualified after-all-cost edges remain zero. Contract, result, registry,
+Do not paginate, resample, reverse after observation, alter roles, weaken
+costs, or request basis or books. Reopen only on a material Bybit or Binance
+funding, fee, quote-unit, custody, transfer, latency, capital, or execution-
+architecture change. Accepted edges remain 30, ranked hypotheses remain 47,
+terminal families are 145, and stable current account-qualified after-all-cost
+edges remain zero. Preregistration, adjudication-contract, result, registry,
 and durability-audit hashes are
-`f6526f49a92a7822be866a6801fbef8a3546c6df3ba7f1c2100ce8b59673e3c4`,
-`e58f7dab3c752863a4a546c83141cac0e3177c0d27d16b87d1217baed9549706`,
-`eb20517954e271220b4070ab62b51bbaaf37dec4ff82ee1691d77902e128968f`,
-and `00e23c1ec726c76f4aff53b94024159c37acc2178e3d022224bcfbde8bb2a876`.
-No network, account, credential, signed request, order, fund, transaction, or
-protected capture was touched.
+`6cbf711127949566a3ad8e7dc50f3bd38700e96987ca06e6d1a3f75abee77480`,
+`00cfb669c0a0300ba1b1de919e03910d0e1aa1c33c1955b696625973a2da0963`,
+`eb8d9badab2dd2d4869b2d52154a49815a2bb9b7034098bdf475163ac8b9303f`,
+`a3e770993bdc1705703a38ccbaf01c14ec90ceed4c948b04032a275ee43e5eef`,
+and `b3050b131b33588f5722302e1d4926bf56e6ae6589a44b5c6e91bd79133df005`.
+No account, credential, signed request, order, fund, transaction, basis, book,
+or protected capture was touched.
 
 ### Prior efficient structural screen
 

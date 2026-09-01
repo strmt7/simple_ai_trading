@@ -1,0 +1,20 @@
+{
+  "schema_version": "public-source-capture-contract-v1",
+  "frozen_at_utc": "2026-09-01T07:01:14.7918267Z",
+  "contract_path": "docs/model-research/action-value/binance-bybit-btc-instrument-source-contract-v1-2026-09-01.json",
+  "request_name": "bybit_btcusdt_linear_instrument",
+  "request": {"method": "GET", "url": "https://api.bybit.com/v5/market/instruments-info?category=linear&symbol=BTCUSDT", "count": 1, "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"},
+  "response_byte_ceiling": 100000,
+  "required_utf8_phrases": ["\"retCode\":0", "\"symbol\":\"BTCUSDT\""],
+  "outputs": {
+    "raw_path": "docs/model-research/binance/raw/bybit-btc-eth-sol-instruments-v1-2026-09-01/01-btc-instrument.raw.json",
+    "journal_path": "docs/model-research/binance/raw/bybit-btc-eth-sol-instruments-v1-2026-09-01/01-btc-instrument.journal.jsonl",
+    "result_path": "docs/model-research/action-value/binance-bybit-btc-instrument-source-result-v1-2026-09-01.json"
+  },
+  "authority": {"account_requests": 0, "credentials_used": false, "funds_used": false, "orders_or_transactions": 0, "protected_capture_touched": false, "public_unauthenticated_read_only_requests": 1, "signed_requests": 0, "trading_authority": false},
+  "implementations": [
+    {"path": "tools/capture_public_source_contract.py", "sha256": "d566a5a379c659c3da144d5e28449ebac9c01493bd39646f9cc3a6e697a83566"},
+    {"path": "tools/screen_polymarket_exact_two_leg_package.py", "sha256": "374fcc3c3485c466b4929a91256450bdc7db70f93ef4c6bda627e05fe8938327"}
+  ],
+  "contract_sha256": "d89a3311cea600fc4a3c75f03eb87711c7f1032fe527a02e26f1c3768b0316f6"
+}

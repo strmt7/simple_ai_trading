@@ -1,0 +1,83 @@
+{
+  "schema_version": "binance-bybit-cross-venue-funding-contract-v1",
+  "frozen_at_utc": "2026-09-01T07:01:14.7918267Z",
+  "contract_path": "docs/model-research/action-value/binance-bybit-btc-eth-sol-funding-adjudication-contract-v1-2026-09-01.json",
+  "question": "Does any preregistered BTC ETH or SOL Binance-Bybit direction-neutral funding orientation remain positive in every chronological role after all frozen hurdles?",
+  "network_requests": 0,
+  "preregistration": {
+    "path": "docs/model-research/action-value/binance-bybit-btc-eth-sol-funding-preregistration-v1-2026-09-01.json",
+    "file_sha256": "832c71939a836bbed8b5b1734730255823f6aa6c8d3584453277967df4d2345d",
+    "canonical_sha256": "6cbf711127949566a3ad8e7dc50f3bd38700e96987ca06e6d1a3f75abee77480"
+  },
+  "schema_preflight": {
+    "economic_values_printed": false,
+    "bybit_funding_response_rows_per_asset": 90,
+    "bybit_funding_row_fields": ["symbol", "fundingRate", "fundingRateTimestamp"],
+    "bybit_instrument_response_rows_per_asset": 1
+  },
+  "population": {
+    "assets": ["BTC", "ETH", "SOL"],
+    "aligned_row_count": 90,
+    "first_funding_bucket_ms": 1785196800000,
+    "last_funding_bucket_ms": 1787760000000,
+    "interval_hours": 8,
+    "maximum_schedule_jitter_ms": 1000
+  },
+  "roles": {
+    "training": {"start": 0, "stop": 45},
+    "validation": {"start": 45, "stop": 67},
+    "test": {"start": 67, "stop": 90}
+  },
+  "orientation": "Choose once from training aggregate Bybit fundingRate minus Binance fundingRate; freeze unchanged in validation and test.",
+  "economics": {
+    "round_trip_execution_bips": "20",
+    "annual_two_leg_capital_hurdle_percent": "10",
+    "quote_unit_stress_bips": "0",
+    "custody_transfer_latency_failure_stress_bips": "25"
+  },
+  "gates": {
+    "minimum_positive_interval_fraction": "0.5",
+    "require_positive_net_after_all_hurdles_in_every_role": true,
+    "require_positive_first_and_second_half_gross_in_every_role": true,
+    "promotion_eligible": true
+  },
+  "sources": [
+    {
+      "asset": "BTC",
+      "bybit_instrument": {"path": "docs/model-research/binance/raw/bybit-btc-eth-sol-instruments-v1-2026-09-01/01-btc-instrument.raw.json", "file_sha256": "b2f036d5797083387bf57d2d80040149488826fa6df7dad036e8275a847ffbd4"},
+      "bybit_funding": {"path": "docs/model-research/binance/raw/bybit-btc-eth-sol-funding-v1-2026-09-01/01-btc-funding.raw.json", "file_sha256": "d2b3e92a23b90663b70dda68c6cab68b2b1a1d001a5fa31f9bc3a773a8c96e09", "symbol": "BTCUSDT"},
+      "binance": {"path": "docs/model-research/action-value/raw/binance-hyperliquid-cross-venue-funding-spread-extension-v1-2026-08-27/binance-btc-funding.raw", "file_sha256": "07c8544df4941a9dd463ae27cb09e247df3e99fbd27b31c2076be49aa2a87e4e", "symbol": "BTCUSDT"}
+    },
+    {
+      "asset": "ETH",
+      "bybit_instrument": {"path": "docs/model-research/binance/raw/bybit-btc-eth-sol-instruments-v1-2026-09-01/02-eth-instrument.raw.json", "file_sha256": "b7cd90e7084fc2a20541c3aa2216767b89a92eb7817445172526d8dc87e8aeb7"},
+      "bybit_funding": {"path": "docs/model-research/binance/raw/bybit-btc-eth-sol-funding-v1-2026-09-01/02-eth-funding.raw.json", "file_sha256": "632207cdbacc5d10dbee079c015a588f5df04422d84e03a2027078983d113fdf", "symbol": "ETHUSDT"},
+      "binance": {"path": "docs/model-research/action-value/raw/binance-hyperliquid-cross-venue-funding-spread-extension-v1-2026-08-27/binance-eth-funding.raw", "file_sha256": "ffed21b173e50080c11a56eaff5fe44ecf58545d25b179602177d71501e064be", "symbol": "ETHUSDT"}
+    },
+    {
+      "asset": "SOL",
+      "bybit_instrument": {"path": "docs/model-research/binance/raw/bybit-btc-eth-sol-instruments-v1-2026-09-01/03-sol-instrument.raw.json", "file_sha256": "9e67c8d9fc850772954a2c0ae86e276a7896683c3465000f87334bf384be2871"},
+      "bybit_funding": {"path": "docs/model-research/binance/raw/bybit-btc-eth-sol-funding-v1-2026-09-01/03-sol-funding.raw.json", "file_sha256": "1b36ef4f47800ca4ab0c380101dabfa2c6d8049771409ef91e2403de53e9e7b3", "symbol": "SOLUSDT"},
+      "binance": {"path": "docs/model-research/action-value/raw/binance-hyperliquid-cross-venue-funding-spread-extension-v1-2026-08-27/binance-sol-funding.raw", "file_sha256": "77cdf3421cb25f0300d72697deed6286298841543af4b0c06afbb2f1bfec9c9d", "symbol": "SOLUSDT"}
+    }
+  ],
+  "lineage_sources": [
+    {"path": "docs/model-research/action-value/binance-bybit-btc-funding-source-contract-v1-2026-09-01.json", "file_sha256": "82d82ce0027fa7af7a586a1b4294271d6846fdfde35b07327856373a8a3920d0"},
+    {"path": "docs/model-research/action-value/binance-bybit-btc-funding-source-result-v1-2026-09-01.json", "file_sha256": "fb6ba13514281d8cb17712549348a7ed4946a31afb26c4671e668ad3422ab7a6"},
+    {"path": "docs/model-research/action-value/binance-bybit-btc-instrument-source-contract-v1-2026-09-01.json", "file_sha256": "bb098551dbfddf656a4b83a7d1a8ea7957782f5acb0fea8c924529428ddbe508"},
+    {"path": "docs/model-research/action-value/binance-bybit-btc-instrument-source-result-v1-2026-09-01.json", "file_sha256": "509a9bd2c620f30dabb1be828c62dbfc33371972defcf2b214799de0913eee0a"},
+    {"path": "docs/model-research/action-value/binance-bybit-eth-funding-source-contract-v1-2026-09-01.json", "file_sha256": "0c134123700deb43d6f4c9249194078367afe66873df5cd2641de30c399469e8"},
+    {"path": "docs/model-research/action-value/binance-bybit-eth-funding-source-result-v1-2026-09-01.json", "file_sha256": "47ee26d1d5750ad85016b26e299cab8835e20342193ab55f3d1ff35695874a1d"},
+    {"path": "docs/model-research/action-value/binance-bybit-eth-instrument-source-contract-v1-2026-09-01.json", "file_sha256": "c9113b32bb10d681d562ca4f4414919de3d5422387aecf963e612e1d7f77a651"},
+    {"path": "docs/model-research/action-value/binance-bybit-eth-instrument-source-result-v1-2026-09-01.json", "file_sha256": "1c5bde333c48b80c40b80344bd69a9dffc5322fa95dce740913901420e54a26f"},
+    {"path": "docs/model-research/action-value/binance-bybit-sol-funding-source-contract-v1-2026-09-01.json", "file_sha256": "e5fe80965541d030d48c3402f8117eeb141207d64d7ff128a0f2a8aaa9061f44"},
+    {"path": "docs/model-research/action-value/binance-bybit-sol-funding-source-result-v1-2026-09-01.json", "file_sha256": "9a9509fa3c10b5630974f68f1516afe6e3523a5a324cf172f361ad6dc6ca23c3"},
+    {"path": "docs/model-research/action-value/binance-bybit-sol-instrument-source-contract-v1-2026-09-01.json", "file_sha256": "35c2ff53b25c30eb90ea70a1e1be4c15939dfb441f5b5bc62d5edb85989a4464"},
+    {"path": "docs/model-research/action-value/binance-bybit-sol-instrument-source-result-v1-2026-09-01.json", "file_sha256": "14c78f24dec25a308fde16454c30ed6be088c35c3d6a226cc15b7ad01336f224"}
+  ],
+  "output_path": "docs/model-research/action-value/binance-bybit-btc-eth-sol-funding-adjudication-v1-2026-09-01.json",
+  "authority": {"account_requests": 0, "credentials_used": false, "funds_used": false, "orders_or_transactions": 0, "protected_capture_touched": false, "public_unauthenticated_read_only_requests": 0, "signed_requests": 0, "trading_authority": false},
+  "implementation": {"path": "tools/adjudicate_binance_bybit_funding.py", "sha256": "f5ae6d5eeea93d98bbb6a2f79accf7a47acac551b816332ea525cc245157d14d"},
+  "retry_policy": "One use. No alternate history page alignment orientation costs roles or asset selection. Failure terminalizes the exact 90-bin family before basis or books.",
+  "contract_sha256": "00cfb669c0a0300ba1b1de919e03910d0e1aa1c33c1955b696625973a2da0963"
+}

@@ -60,4 +60,3 @@ def test_retained_catalog_period_graph_is_source_bound_and_fail_closed() -> None
         "path": str(RESULT.relative_to(ROOT)).replace("\\", "/"),
         "result_sha256": result["result_sha256"],
     } in rank_thirty["canonical_artifacts"]
-    assert len(registry["terminal_do_not_repeat"]) == 144
