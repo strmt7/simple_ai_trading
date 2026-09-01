@@ -69,6 +69,8 @@ data/polymarket-us-global-sep30-title-catalog-v1/** binary -eol
 data/polymarket-us-open-incentive-programs-v1/** binary -eol
 data/polymarket-us-promotional-credit-usability-v1/** binary -eol
 data/polymarket-us-promotional-credit-terms-v1/** binary -eol
+data/polymarket-us-mutually-exclusive-collateral-return-v1/** binary -eol
+data/polymarket-us-directional-collateral-return-v1/** binary -eol
 docs/model-research/binance/raw/** binary -eol
 docs/model-research/binance/spot-primary-peg-execution-overlay-*.json text eol=lf
 docs/model-research/binance/spot-stp-transfer-structural-value-preflight-*.json text eol=lf

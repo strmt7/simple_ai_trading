@@ -517,6 +517,16 @@ override prose.
   for suspected abuse, self-dealing, coordinated activity, or inconsistent use.
   Any account, deposit, order, fund, or state change requires separate explicit
   authority.
+- Polymarket US mutually exclusive and directional collateral return is only a
+  buying-power overlay on independently existing eligible positions. It is not
+  cash income, trading profit, reduced actual risk, or a reason to open or
+  increase either leg. Require exact account enablement and an owned before/after
+  margin and buying-power receipt. Released buying power may be used only in a
+  different event, hypothetical new-order offsets do not count in pre-order
+  buying-power checks, and closing an offset requires returning the release and
+  can be rejected when buying power is already deployed. Credit value only
+  after an independently justified positive different-event use, exit ordering,
+  close capacity, persistence, fees, and every incremental cost are reconciled.
 - Polymarket Gamma `outcomePrices` can behave like midpoint diagnostics while
   the same market exposes a materially different `bestAsk`. Never let
   `outcomePrices` alone authorize a CLOB request. For a YES leg, require the
