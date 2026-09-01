@@ -8744,3 +8744,43 @@ and state changes each require separate explicit authority.
 
 No credential, account, wallet, order, position, fund, transaction, claim, or
 protected capture was touched.
+
+## Predict.fun public-chain gate and post-September-2 WNBA trigger
+
+The prospectively frozen Polymarket WNBA catalog for September 3 through 9
+returned a complete empty population: zero events, relations, or candidates.
+The exact window is terminal without a book or fee request and must not be
+shifted, aliased, or repeated.
+
+Two current official Predict.fun sources were retained. The technical overview
+confirms off-chain matching with on-chain execution and settlement, CTFExchange
+`matchOrders`, FeeModuleV2, ConditionalTokens/NegRisk, and fill-transaction
+rebate distribution. Neither it nor the audits page publishes the deployed
+exchange, fee-module, conditional-token, NegRisk, or eligible-market contract
+address needed to enumerate public fills and rebates. The linked 33-page CRE
+audit identifies a BSC-mainnet admin multisig, two Chainlink infrastructure
+addresses, and a BSC-testnet adapter; none is identified as the required trading
+or rebate contract. Never substitute testnet for mainnet or guess deployments
+from selectors, bytecode, admin neighbors, or audit examples.
+
+The technical source also states that yield-bearing contracts place collateral
+into Venus and that yield managers can claim accumulated yield. It does not
+define traders as beneficiaries or publish a trader rate, base, distribution,
+or redemption contract. Trader-owned Predict.fun collateral yield is therefore
+terminal with zero credited value.
+
+Canonical adjudication SHA-256 is
+`aa89b82912335b288506e731382e8ac87fa8e60afb614986f224a1b88d730c22`.
+Accepted edges remain 31, ranked hypotheses remain 48, terminal families become
+151, and stable current account-qualified after-all-cost edges remain zero.
+Registry SHA-256 becomes
+`57d12349bb20e5ed5c58e1bed6db6dbfccbe3ea6c11868b56f16dc056bf0d480`.
+Durability-audit SHA-256 becomes
+`ec2c84a4fd19dded954e5a632c9b58dc7b3b0ceb3c2f71617c41aac756448894`.
+
+Reopen Predict.fun public-chain fill/rebate work only on an exact official
+deployed-contract or explorer reference, a new public fill-quality source, or
+explicit separate Predict.fun read-only paper-study authority. Any account,
+wallet, order, funded, claim, or state-changing action still requires separate
+explicit authority. No credential, protected capture, account, order, fund, or
+transaction was touched.

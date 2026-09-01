@@ -71,6 +71,12 @@ override prose.
   contract. Matching crypto title and interval are not payoff identity: current
   Predict BTC/USDT point-report Up/Down/Flat rules differ from Polymarket BTC/USD
   60-second-TWAP equality-to-Up rules and cannot form a deterministic hedge.
+- Predict.fun public-chain research must start from an exact official deployed
+  contract or explorer reference. Never guess deployments from selectors,
+  bytecode similarity, admin neighbors, audit examples, or testnet addresses.
+  Protocol collateral yield is not trader income when the current source assigns
+  claims to yield managers; require explicit trader beneficiary, rate, base,
+  distribution, and redemption terms before crediting any value.
 - Before spending a historical trade or book request on an exact-payoff family,
   use immutable retained terminal outcomes to test settlement consistency when
   they can answer that question. Settlement consistency supports only the payoff

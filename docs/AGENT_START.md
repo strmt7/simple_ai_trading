@@ -4187,3 +4187,25 @@ stable current account-qualified after-all-cost edges remain zero. Registry and
 durability-audit SHA-256 values are
 `5805fc3f11e3a8f9c4db2a365d7dd1108e0653b3b2a8147135bdeb4de0d456a8`
 and `400296f66e5807219ce6f8b5825a3b4a863c7383a94c766ba9ca546bc3a55343`.
+
+## Latest public-chain and deployment-trigger checkpoint (2026-09-01)
+
+The frozen September 3-9 Polymarket WNBA catalog returned a complete empty
+population, so that exact window is terminal before books and fees. Current
+official Predict.fun technical and audit sources confirm on-chain execution and
+fill-transaction rebates but publish no deployed exchange, fee, token, NegRisk,
+or eligible-market contract address. The linked CRE-audit addresses are an admin
+multisig, Chainlink infrastructure, and a BSC-testnet adapter, not source-bound
+fill/rebate lineage. Do not guess deployments or substitute testnet for mainnet.
+
+The technical source assigns accumulated Venus collateral-yield claims to yield
+managers and defines no trader beneficiary, rate, base, distribution, or
+redemption. Credit zero trader-owned yield.
+
+Canonical adjudication SHA-256 is
+`aa89b82912335b288506e731382e8ac87fa8e60afb614986f224a1b88d730c22`.
+Accepted edges remain 31, ranked hypotheses remain 48, terminal families become
+151, and stable current account-qualified after-all-cost edges remain zero.
+Registry and durability-audit SHA-256 values are
+`57d12349bb20e5ed5c58e1bed6db6dbfccbe3ea6c11868b56f16dc056bf0d480`
+and `ec2c84a4fd19dded954e5a632c9b58dc7b3b0ceb3c2f71617c41aac756448894`.
