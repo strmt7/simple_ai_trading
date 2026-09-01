@@ -23,6 +23,24 @@ safety gate, blocks Stop, or submits an order.
 
 ### Latest efficient structural screen
 
+A distinct Polymarket complete-set candidate initially cleared the rendered
+discovery gate: eight visible streaming-service YES asks totaled 0.99 pUSD for
+a nominal one-pUSD floor. Because the rules named an unlisted `Other` fallback,
+one prospectively frozen exact public Gamma GET reconciled the event before any
+book access. The immutable 44,700-byte response contains nine markets. The
+hidden ninth `Other` market is inactive and has direct YES `bestAsk=1`, making
+the complete rejection sum 1.99 pUSD before every fee and execution cost.
+
+This exact event is terminal. Do not retry, refresh, alias, omit `Other`, or
+request books. No credential, account, order, fund, transaction, or protected
+capture was touched. Accepted edges remain 29, ranked hypotheses remain 47,
+and terminal families become 131. Contract and adjudication SHA-256 values are
+`90525ae26b9d336473ad3e676bc8a229fc90bbabb0b8d7ceeb6230e15c1e5f30`
+and `9ffdd9272bb4b18644aad2c42e713a270689c2fed2145cd91079ed6b7ba82c05`.
+Registry and durability-audit SHA-256 values are
+`89cd6f271e75fb716682976870b5d74d4fd06b8a27c8933f88cb0019c993a533`
+and `7232a04530aff3090453f32f6f7819fa29e102975b6134775a6219a3a64beeba`.
+
 A distinct, cleanly preregistered Binance-OKX direction-neutral funding family
 was rejected with four public unauthenticated requests and zero basis or book
 access. One complete OKX swap inventory fixed exactly one live, linear,

@@ -106,6 +106,15 @@ override prose.
   joint state uncovered; write that state down explicitly instead of pricing it
   as impossible. Apply the same rendered-button rejection gate and frozen
   side-specific advance rules as for a scalar ladder.
+- A rendered multi-outcome count is not proof that its visible cards exhaust an
+  exact NegRisk event. If the rules name an unrendered fallback or Gamma can
+  retain hidden or inactive siblings, a strict visible all-YES subfloor may
+  authorize at most one prospectively frozen exact metadata reconciliation.
+  Enumerate every returned market, including inactive fallbacks, and require the
+  complete event set to be active, acquisition-capable, mutually exclusive, and
+  exhaustive before any book request. Never omit an expensive hidden sibling or
+  treat an inactive market, blank button, missing ask, or rendered FAQ count as
+  a zero-cost leg.
 - A nominally shorter calendar window is not a subset when it begins before the
   longer window. Source-prove that every already elapsed exclusive segment did
   not trigger before upgrading the remaining short-window event to an

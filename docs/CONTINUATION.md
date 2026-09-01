@@ -1,5 +1,31 @@
 # Continue Development
 
+## 2026-09-01 Polymarket streaming-service partition checkpoint
+
+A distinct fixed-NegRisk partition passed the cheapest rendered discovery gate:
+the eight visible `Which streaming service will win the most Emmys?` YES asks
+summed to 0.99 pUSD for a nominal one-pUSD complete-set floor. The rendered
+rules also named an unlisted `Other` fallback, so no book request was permitted
+without exact metadata reconciliation.
+
+One prospectively frozen, one-use, public unauthenticated Gamma GET retained
+44,700 bytes and reconciled nine markets, not eight. The ninth market is
+`Other` (`Will another streaming service win the most Emmys?`); it is inactive
+and its direct YES `bestAsk` is 1 pUSD. The complete nine-market rejection sum
+is therefore 1.99 pUSD for a one-pUSD floor before fees, depth, time value,
+latency, atomicity, or unwind risk. Stop before books and fees. Do not retry,
+refresh, alias, omit `Other`, or treat the rendered page as exhaustive.
+
+No credential, account, order, fund, transaction, or protected capture was
+touched. Accepted edges remain 29, ranked hypotheses remain 47, and terminal
+families become 131. Contract and adjudication SHA-256 values are
+`90525ae26b9d336473ad3e676bc8a229fc90bbabb0b8d7ceeb6230e15c1e5f30`
+and `9ffdd9272bb4b18644aad2c42e713a270689c2fed2145cd91079ed6b7ba82c05`.
+Registry SHA-256 is
+`89cd6f271e75fb716682976870b5d74d4fd06b8a27c8933f88cb0019c993a533`;
+durability-audit SHA-256 is
+`7232a04530aff3090453f32f6f7819fa29e102975b6134775a6219a3a64beeba`.
+
 ## 2026-09-01 Binance-OKX funding checkpoint
 
 A distinct Binance-OKX USDT perpetual funding family was preregistered before
