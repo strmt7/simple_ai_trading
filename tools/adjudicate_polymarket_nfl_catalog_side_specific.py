@@ -49,12 +49,10 @@ def _validate_probability(value: Any, name: str) -> Decimal:
 
 def _side_specific_price(market: dict[str, Any], outcome: str) -> tuple[Decimal, str]:
     outcomes = _json_pair(market.get("outcomes"), "market outcomes")
-    best_ask = _validate_probability(market.get("bestAsk"), "bestAsk")
-    best_bid = _validate_probability(market.get("bestBid"), "bestBid")
     if outcome == outcomes[0]:
-        return best_ask, "bestAsk"
+        return _validate_probability(market.get("bestAsk"), "bestAsk"), "bestAsk"
     if outcome == outcomes[1]:
-        return ONE - best_bid, "1-bestBid"
+        return ONE - _validate_probability(market.get("bestBid"), "bestBid"), "1-bestBid"
     raise RuntimeError(f"outcome {outcome!r} is absent from market {market.get('id')}")
 
 
@@ -112,6 +110,7 @@ def adjudicate(contract: dict[str, Any]) -> dict[str, Any]:
             markets[market_id] = market
 
     corrected: list[dict[str, Any]] = []
+    price_incomplete: list[dict[str, Any]] = []
     for relation in relations:
         superset_id = str(relation["superset_positive_market_id"])
         subset_id = str(relation["subset_complement_market_id"])
@@ -120,12 +119,30 @@ def adjudicate(contract: dict[str, Any]) -> dict[str, Any]:
             subset_market = markets[subset_id]
         except KeyError as exc:
             raise RuntimeError(f"relation references missing market {exc.args[0]}") from exc
-        superset_price, superset_source = _side_specific_price(
-            superset_market, str(relation["superset_positive_outcome"])
-        )
-        subset_price, subset_source = _side_specific_price(
-            subset_market, str(relation["subset_complement_outcome"])
-        )
+        try:
+            superset_price, superset_source = _side_specific_price(
+                superset_market, str(relation["superset_positive_outcome"])
+            )
+            subset_price, subset_source = _side_specific_price(
+                subset_market, str(relation["subset_complement_outcome"])
+            )
+        except RuntimeError as exc:
+            price_incomplete.append(
+                {
+                    "event_slug": relation["event_slug"],
+                    "family": relation["family"],
+                    "superset_positive_market_id": superset_id,
+                    "superset_positive_outcome": relation[
+                        "superset_positive_outcome"
+                    ],
+                    "subset_complement_market_id": subset_id,
+                    "subset_complement_outcome": relation[
+                        "subset_complement_outcome"
+                    ],
+                    "reason": str(exc),
+                }
+            )
+            continue
         minimum_payout = Decimal(
             str(relation["minimum_terminal_payout_per_share_pUSD"])
         )
@@ -193,6 +210,7 @@ def adjudicate(contract: dict[str, Any]) -> dict[str, Any]:
     source_midpoint_count = int(
         source["screen"]["candidate_count_strictly_below_payout_floor"]
     )
+    price_complete = not price_incomplete
     result: dict[str, Any] = {
         "schema_version": SCHEMA,
         "created_at_utc": contract["frozen_at_utc"],
@@ -223,11 +241,19 @@ def adjudicate(contract: dict[str, Any]) -> dict[str, Any]:
         "screen": {
             "complete_relation_count": len(corrected),
             "price_complete_relation_count": len(corrected),
+            "source_proved_relation_count": len(relations),
+            "price_incomplete_relation_count": len(price_incomplete),
+            "price_incomplete_relations": price_incomplete,
             "source_midpoint_like_strict_subfloor_count": source_midpoint_count,
             "strict_side_specific_subfloor_count": len(strict),
-            "all_side_specific_sums_at_or_above_payout_floor": not strict,
+            "all_side_specific_sums_at_or_above_payout_floor": (
+                not strict and price_complete
+            ),
             "complete_relations_sha256": _canonical_rows_hash(ranked),
-            "best_side_specific_relation": ranked[0],
+            "price_incomplete_relations_sha256": _canonical_rows_hash(
+                price_incomplete
+            ),
+            "best_side_specific_relation": ranked[0] if ranked else None,
             "event_family_summaries": event_family_summaries,
             "price_gate": (
                 "first outcome bestAsk; second outcome conservative 1-bestBid; "
@@ -235,19 +261,43 @@ def adjudicate(contract: dict[str, Any]) -> dict[str, Any]:
             ),
         },
         "adjudication": {
-            "status": "complete_retained_catalog_rejected_before_books_and_fees",
+            "status": (
+                "retained_catalog_price_incomplete_no_depth_escalation"
+                if not price_complete
+                else (
+                    "strict_side_specific_candidate_requires_separate_depth_contract"
+                    if strict
+                    else "complete_retained_catalog_rejected_before_books_and_fees"
+                )
+            ),
             "accepted_edge": False,
             "deployment_ready": False,
             "profitability_claim": False,
             "book_or_fee_request_permitted": False,
             "next_action": (
-                "do not repeat, reprice, or book-capture the consumed NFL catalog; "
-                "wait for the registered future-distinct-event trigger"
+                "do not refetch, substitute outcomePrices, or select a depth candidate "
+                "from the price-incomplete population; wait for a distinct trigger"
+                if not price_complete
+                else (
+                    "freeze one exact depth screen for only the strongest strict "
+                    "side-specific candidate"
+                    if strict
+                    else "do not repeat, reprice, or book-capture the consumed NFL "
+                    "catalog; wait for the registered future-distinct-event trigger"
+                )
             ),
         },
         "authority": contract["authority"],
         "implementation": contract["implementations"][0],
     }
+    if price_complete:
+        for field in (
+            "source_proved_relation_count",
+            "price_incomplete_relation_count",
+            "price_incomplete_relations",
+            "price_incomplete_relations_sha256",
+        ):
+            result["screen"].pop(field)
     serializable = _json_ready(result)
     serializable["result_sha256"] = _canonical_hash(serializable, "result_sha256")
     return serializable
@@ -286,9 +336,14 @@ def main() -> None:
                 "strict_side_specific_subfloor_count": result["screen"][
                     "strict_side_specific_subfloor_count"
                 ],
-                "best_side_specific_sum_pUSD": best[
-                    "side_specific_rejection_sum_pUSD"
-                ],
+                "best_side_specific_sum_pUSD": (
+                    best["side_specific_rejection_sum_pUSD"] if best else None
+                ),
+                "price_incomplete_relation_count": result["screen"][
+                    "price_incomplete_relation_count"
+                ]
+                if "price_incomplete_relation_count" in result["screen"]
+                else 0,
                 "new_network_requests": 0,
                 "payloads_printed": 0,
             },

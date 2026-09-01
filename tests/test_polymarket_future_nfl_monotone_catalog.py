@@ -7,6 +7,7 @@ from pathlib import Path
 
 from tools.adjudicate_polymarket_nfl_period_graph import adjudicate
 from tools.adjudicate_polymarket_nfl_catalog_side_specific import (
+    _side_specific_price,
     adjudicate as adjudicate_catalog_side_specific,
 )
 
@@ -40,6 +41,30 @@ def _canonical_hash(payload: dict[str, object], field: str) -> str:
 
 def _file_hash(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def test_side_specific_price_requires_only_the_selected_side_field() -> None:
+    first_outcome_market = {
+        "id": "first",
+        "outcomes": ["Over", "Under"],
+        "bestAsk": "0.41",
+        "bestBid": None,
+    }
+    second_outcome_market = {
+        "id": "second",
+        "outcomes": ["Over", "Under"],
+        "bestAsk": None,
+        "bestBid": "0.37",
+    }
+
+    assert _side_specific_price(first_outcome_market, "Over") == (
+        Decimal("0.41"),
+        "bestAsk",
+    )
+    assert _side_specific_price(second_outcome_market, "Under") == (
+        Decimal("0.63"),
+        "1-bestBid",
+    )
 
 
 def test_bounded_catalog_is_complete_one_request_and_retains_every_relation() -> None:
@@ -312,6 +337,116 @@ def test_complete_retained_nfl_catalog_is_corrected_before_any_more_books() -> N
     assert result["adjudication"]["book_or_fee_request_permitted"] is False
 
 
+def test_early_september13_catalog_retains_incomplete_prices_and_blocks_depth() -> None:
+    catalog_contract = _load(
+        ACTION_VALUE
+        / "polymarket-nfl-september13-early-monotone-catalog-contract-v1-2026-09-01.json"
+    )
+    catalog_result = _load(
+        ACTION_VALUE
+        / "polymarket-nfl-september13-early-monotone-catalog-result-v1-2026-09-01.json"
+    )
+    failure_v1 = _load(
+        ACTION_VALUE
+        / "polymarket-nfl-september13-early-side-specific-adjudication-v1-failure-2026-09-01.json"
+    )
+    contract_v1 = _load(
+        ACTION_VALUE
+        / "polymarket-nfl-september13-early-side-specific-adjudication-contract-v1-2026-09-01.json"
+    )
+    failure_v2 = _load(
+        ACTION_VALUE
+        / "polymarket-nfl-september13-early-side-specific-adjudication-v2-failure-2026-09-01.json"
+    )
+    contract_v2 = _load(
+        ACTION_VALUE
+        / "polymarket-nfl-september13-early-side-specific-adjudication-contract-v2-2026-09-01.json"
+    )
+    contract_v3 = _load(
+        ACTION_VALUE
+        / "polymarket-nfl-september13-early-side-specific-adjudication-contract-v3-2026-09-01.json"
+    )
+    result_v3 = _load(
+        ACTION_VALUE
+        / "polymarket-nfl-september13-early-side-specific-adjudication-v3-2026-09-01.json"
+    )
+    contract_v4 = _load(
+        ACTION_VALUE
+        / "polymarket-nfl-september13-early-side-specific-adjudication-contract-v4-2026-09-01.json"
+    )
+    result_v4 = _load(
+        ACTION_VALUE
+        / "polymarket-nfl-september13-early-side-specific-adjudication-v4-2026-09-01.json"
+    )
+    raw = (
+        ROOT
+        / "data/polymarket-nfl-september13-early-monotone-catalog-v1/raw/events.json"
+    )
+    journal = [
+        json.loads(line)
+        for line in (
+            ROOT
+            / "data/polymarket-nfl-september13-early-monotone-catalog-v1/request-journal.jsonl"
+        )
+        .read_text()
+        .splitlines()
+    ]
+
+    for payload, field in (
+        (catalog_contract, "contract_sha256"),
+        (catalog_result, "result_sha256"),
+        (contract_v1, "contract_sha256"),
+        (failure_v1, "result_sha256"),
+        (contract_v2, "contract_sha256"),
+        (failure_v2, "result_sha256"),
+        (contract_v3, "contract_sha256"),
+        (result_v3, "result_sha256"),
+        (contract_v4, "contract_sha256"),
+        (result_v4, "result_sha256"),
+    ):
+        assert _canonical_hash(payload, field) == payload[field]
+    assert _file_hash(raw) == (
+        "e086bd126636f0d7726d3ce56b58d238d39c11d17c25b7147d63566239cc4ee9"
+    )
+    assert _file_hash(
+        ROOT
+        / "data/polymarket-nfl-september13-early-monotone-catalog-v1/request-journal.jsonl"
+    ) == "35dfc54dbbe82266f8a05fa7db33a3d3d779115765a7ab1e9b3b19c346fa6911"
+    assert [row["phase"] for row in journal] == ["intent", "completed"]
+    assert catalog_result["capture"]["returned_event_count"] == 12
+    assert catalog_result["screen"]["included_event_count"] == 10
+    assert catalog_result["screen"]["complete_relation_count"] == 2_978
+    assert (
+        catalog_result["screen"]["candidate_count_strictly_below_payout_floor"]
+        == 120
+    )
+    assert failure_v1["failure"]["error"] == "bestBid is missing"
+    assert failure_v1["implementation_correction"]["mistake"].startswith(
+        "the side-specific helper validated both"
+    )
+    assert failure_v2["failure"]["error"] == "bestBid is missing"
+    assert "genuinely lacked" in failure_v2["implementation_correction"]["mistake"]
+    assert adjudicate_catalog_side_specific(contract_v4) == result_v4
+
+    screen = result_v4["screen"]
+    assert screen["source_proved_relation_count"] == 2_978
+    assert screen["price_complete_relation_count"] == 2_965
+    assert screen["price_incomplete_relation_count"] == 13
+    assert screen["strict_side_specific_subfloor_count"] == 0
+    assert screen["all_side_specific_sums_at_or_above_payout_floor"] is False
+    assert {
+        row["event_slug"] for row in screen["price_incomplete_relations"]
+    } == {"nfl-atl-pit-2026-09-13"}
+    best = screen["best_side_specific_relation"]
+    assert best["event_slug"] == "nfl-nyj-ten-2026-09-13"
+    assert Decimal(best["side_specific_rejection_sum_pUSD"]) == Decimal("1.04")
+    assert (
+        result_v4["adjudication"]["status"]
+        == "retained_catalog_price_incomplete_no_depth_escalation"
+    )
+    assert result_v4["adjudication"]["book_or_fee_request_permitted"] is False
+
+
 def test_registry_routes_catalog_and_correction_without_acceptance() -> None:
     registry = _load(REGISTRY)
     assert registry["result_sha256"] == REGISTRY_HASH
@@ -331,10 +466,15 @@ def test_registry_routes_catalog_and_correction_without_acceptance() -> None:
         "317ecd24a990456be2e8c64f644f7481309d7c5e663c33274d281270483a848f",
         "9c80f1a188c059890c682f16f367cc472667bda595482d5d0db26ebda2d014bb",
         "61fb2010d57b3295dd0ca859345c54404372dbd8b0f7ac4bca42d3fb0e40ddfd",
+        "126b1dc61fa379458aaa88a8edef899be437d33fda6cba1a7a29e3536cbe856f",
+        "01963e711663f496a296efbbd806a8f6b8271c37b96897b2cd9b34c081edb94f",
+        "1965d997ba11fdeb51cf5bac40e9a13569640d724b4f58624a59fa230e9d69f9",
     } <= hashes
     assert "25189367_ms_skew" in row["current_status"]
     assert "Patriots_Seahawks" in row["current_status"]
     assert "zero_strict_sub_floor_candidates" in row["current_status"]
+    assert "13_Atlanta_Pittsburgh_relations" in row["current_status"]
+    assert "13_price_incomplete_Atlanta_Pittsburgh_relations" in row["next_action"]
     terminal = next(
         item
         for item in registry["terminal_do_not_repeat"]
@@ -343,4 +483,13 @@ def test_registry_routes_catalog_and_correction_without_acceptance() -> None:
     )
     assert terminal["canonical_result_sha256"] == (
         "61fb2010d57b3295dd0ca859345c54404372dbd8b0f7ac4bca42d3fb0e40ddfd"
+    )
+    early_terminal = next(
+        item
+        for item in registry["terminal_do_not_repeat"]
+        if item["family"]
+        == "polymarket_NFL_2026_09_13T00_00_00Z_through_20_25_00Z_monotone_catalog"
+    )
+    assert early_terminal["canonical_result_sha256"] == (
+        "1965d997ba11fdeb51cf5bac40e9a13569640d724b4f58624a59fa230e9d69f9"
     )

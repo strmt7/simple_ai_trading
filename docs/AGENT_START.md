@@ -23,6 +23,37 @@ safety gate, blocks Stop, or submits an order.
 
 ### Latest efficient structural screen
 
+A previously unconsumed early September 13 NFL window materially satisfied rank
+30's public trigger. One frozen complete Gamma keyset request returned 12
+events; 10 rule-complete active events proved 2,978 exact full-game margin and
+total monotone relations. The 120 midpoint-like `outcomePrices` candidates were
+not credited. An exhaustive zero-network correction found zero strict
+side-specific sub-floor packages across 2,965 price-complete relations, with a
+best rejection sum of 1.04 pUSD for a one-pUSD floor.
+
+Thirteen Atlanta-Pittsburgh relations lacked the `bestBid` required for a
+conservative second-outcome ask, and two events contained duplicate logical
+thresholds. The exact population is therefore price-incomplete rather than an
+exhaustive economic rejection, but it authorizes no refetch, sibling selection,
+book, fee, account, credential, order, fund, or protected-capture access. Two
+consumed offline failures were preserved: the first unnecessarily required an
+unused side field; the second exposed the genuinely missing selected-side
+price. The shared adjudicator now validates only the selected side, retains
+price-incomplete relations, preserves historical complete-result hashes, and
+fails closed before depth when a population is incomplete.
+
+Catalog contract/result SHA-256 values are
+`821e45f53f134dbc14e5f1d94bc657680ac047a74d188365b5c0d29154cab8bf`
+and `126b1dc61fa379458aaa88a8edef899be437d33fda6cba1a7a29e3536cbe856f`;
+final offline contract/result SHA-256 values are
+`714f4688f00111be75d9cb39de668bed7101b3e54debb454f85ffdd2775d9c76`
+and `1965d997ba11fdeb51cf5bac40e9a13569640d724b4f58624a59fa230e9d69f9`.
+Accepted edges remain 29, ranked hypotheses remain 47, terminal families become
+125, registry SHA-256 is
+`1647539495270c7e732dd9fe8d421cc69456f6d7ccbb53e7655d34cfc7316f85`,
+and durability-audit SHA-256 is
+`0195a2498172aec1a92e86a3e553e6e344e2c87980761a2fa4c59ab6bead33d7`.
+
 A newly indexed exact official Polymarket Perps fee source materially narrowed
 rank 19's BTC short-Polymarket-Perps/long-Binance-spot carry near-miss. One
 frozen public unauthenticated Markdown GET proved the zero-volume maker rate is
