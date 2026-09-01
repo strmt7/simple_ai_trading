@@ -1,0 +1,18 @@
+{
+  "schema_version": "public-source-capture-contract-v1",
+  "frozen_at_utc": "2026-09-01T02:37:51.9564838Z",
+  "contract_path": "docs/model-research/action-value/binance-okx-btc-funding-source-contract-v1-2026-09-01.json",
+  "trigger": {"registry_route": "new_distinct_Binance_OKX_cross_venue_USDT_perpetual_funding_family", "funding_values_viewed_before_freeze": false, "preregistration_path": "docs/model-research/action-value/binance-okx-btc-eth-sol-funding-preregistration-v1-2026-09-01.json", "preregistration_file_sha256": "e46e022d5619c2af2bc269137936736c4402634d6a3010a634ec6664d519a58f", "inventory_raw_sha256": "68d41a2a663720cb4226a59319b472b3eae67c1223586830fbea308b9313863b"},
+  "question": "What is the one-use complete current OKX BTC-USDT-SWAP funding-history response needed for the preregistered retained 90-bin Binance comparison?",
+  "request_name": "okx-btc-usdt-swap-funding-history",
+  "request": {"method": "GET", "url": "https://www.okx.com/api/v5/public/funding-rate-history?instId=BTC-USDT-SWAP&limit=400", "count": 1, "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"},
+  "endpoint_classification": {"operation": "download one public OKX realized funding history", "security": "public unauthenticated read-only market-data GET", "source_contract": "Official OKX API v5 Get funding rate history supports up to three months and 400 rows."},
+  "response_byte_ceiling": 2000000,
+  "required_utf8_phrases": ["\"BTC-USDT-SWAP\"", "\"realizedRate\"", "\"fundingTime\""],
+  "decision": {"source_gate_only": "Preserve the response without printing economic values.", "accepted_edge": false, "profitability_proved": false, "conditional_next_step": "Run only the preregistered zero-network alignment after all three sibling captures."},
+  "outputs": {"raw_path": "docs/model-research/binance/raw/okx-btc-eth-sol-funding-v1-2026-09-01/01-btc-funding.raw.json", "journal_path": "docs/model-research/binance/raw/okx-btc-eth-sol-funding-v1-2026-09-01/00-btc-request-journal.jsonl", "result_path": "docs/model-research/action-value/binance-okx-btc-funding-source-result-v1-2026-09-01.json"},
+  "authority": {"account_requests": 0, "credentials_used": false, "funds_used": false, "orders_or_transactions": 0, "protected_capture_touched": false, "public_unauthenticated_read_only_requests": 1, "signed_requests": 0, "trading_authority": false},
+  "implementations": [{"path": "tools/capture_public_source_contract.py", "sha256": "d566a5a379c659c3da144d5e28449ebac9c01493bd39646f9cc3a6e697a83566"}, {"path": "tools/screen_polymarket_exact_two_leg_package.py", "sha256": "374fcc3c3485c466b4929a91256450bdc7db70f93ef4c6bda627e05fe8938327"}, {"path": "tools/adjudicate_polymarket_exact_mlb_monotone_prefilter.py", "sha256": "958a44d78029b9a1eb69a3771ce18e53ac1ed3c7bc161c8e4318beedce2cf99f"}],
+  "retry_policy": "One use. No pagination alias alternate host locale or parameter change.",
+  "contract_sha256": "59f0b20212502a0c4b390fa955d01dd65411302e0f5909ad1db3499ca5bb356b"
+}

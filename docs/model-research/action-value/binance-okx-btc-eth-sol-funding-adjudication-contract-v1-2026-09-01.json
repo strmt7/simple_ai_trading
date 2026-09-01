@@ -1,0 +1,32 @@
+{
+  "schema_version": "binance-okx-cross-venue-funding-contract-v1",
+  "frozen_at_utc": "2026-09-01T02:34:42.6387513Z",
+  "contract_path": "docs/model-research/action-value/binance-okx-btc-eth-sol-funding-adjudication-contract-v1-2026-09-01.json",
+  "question": "Does any preregistered BTC ETH or SOL Binance-OKX direction-neutral funding orientation remain positive in every chronological role after all frozen hurdles?",
+  "network_requests": 0,
+  "preregistration": {"path": "docs/model-research/action-value/binance-okx-btc-eth-sol-funding-preregistration-v1-2026-09-01.json", "file_sha256": "e46e022d5619c2af2bc269137936736c4402634d6a3010a634ec6664d519a58f", "canonical_sha256": "68de39a4ff7db0b01a204f410b637f513fcdb5058705b8a34949991acc8a585b"},
+  "population": {"assets": ["BTC", "ETH", "SOL"], "aligned_row_count": 90, "okx_response_row_count": 296, "first_funding_bucket_ms": 1785196800000, "last_funding_bucket_ms": 1787760000000, "interval_hours": 8, "maximum_schedule_jitter_ms": 1000},
+  "roles": {"training": {"start": 0, "stop": 45}, "validation": {"start": 45, "stop": 67}, "test": {"start": 67, "stop": 90}},
+  "orientation": "Choose once from training aggregate OKX realizedRate minus Binance fundingRate; freeze unchanged in validation and test.",
+  "economics": {"round_trip_execution_bips": "20", "annual_two_leg_capital_hurdle_percent": "10", "quote_unit_stress_bips": "0", "custody_transfer_latency_failure_stress_bips": "25"},
+  "gates": {"minimum_positive_interval_fraction": "0.5", "require_positive_net_after_all_hurdles_in_every_role": true, "require_positive_first_and_second_half_gross_in_every_role": true, "promotion_eligible": true},
+  "inventory_path": "docs/model-research/binance/raw/okx-btc-eth-sol-swap-inventory-v1-2026-09-01/01-instruments.raw.json",
+  "sources": [
+    {"asset": "BTC", "okx": {"path": "docs/model-research/binance/raw/okx-btc-eth-sol-funding-v1-2026-09-01/01-btc-funding.raw.json", "file_sha256": "954c82cd1c6ec731749dbfd8fdb262fbbbd51742710d78d820ffce5daecea602", "inst_id": "BTC-USDT-SWAP"}, "binance": {"path": "docs/model-research/action-value/raw/binance-hyperliquid-cross-venue-funding-spread-extension-v1-2026-08-27/binance-btc-funding.raw", "file_sha256": "07c8544df4941a9dd463ae27cb09e247df3e99fbd27b31c2076be49aa2a87e4e", "symbol": "BTCUSDT"}},
+    {"asset": "ETH", "okx": {"path": "docs/model-research/binance/raw/okx-btc-eth-sol-funding-v1-2026-09-01/02-eth-funding.raw.json", "file_sha256": "0bc6e2b8cfe6920bd69af75a38b6c5344942675af2a114a0b46ad6048fe4e40a", "inst_id": "ETH-USDT-SWAP"}, "binance": {"path": "docs/model-research/action-value/raw/binance-hyperliquid-cross-venue-funding-spread-extension-v1-2026-08-27/binance-eth-funding.raw", "file_sha256": "ffed21b173e50080c11a56eaff5fe44ecf58545d25b179602177d71501e064be", "symbol": "ETHUSDT"}},
+    {"asset": "SOL", "okx": {"path": "docs/model-research/binance/raw/okx-btc-eth-sol-funding-v1-2026-09-01/03-sol-funding.raw.json", "file_sha256": "041cc5d96f1cab669f701237cf24510804f3d6fce04fe680898685fbc8ddea7f", "inst_id": "SOL-USDT-SWAP"}, "binance": {"path": "docs/model-research/action-value/raw/binance-hyperliquid-cross-venue-funding-spread-extension-v1-2026-08-27/binance-sol-funding.raw", "file_sha256": "77cdf3421cb25f0300d72697deed6286298841543af4b0c06afbb2f1bfec9c9d", "symbol": "SOLUSDT"}}
+  ],
+  "lineage_sources": [
+    {"path": "docs/model-research/binance/raw/okx-btc-eth-sol-swap-inventory-v1-2026-09-01/01-instruments.raw.json", "file_sha256": "68d41a2a663720cb4226a59319b472b3eae67c1223586830fbea308b9313863b"},
+    {"path": "docs/model-research/action-value/binance-okx-btc-eth-sol-swap-inventory-source-contract-v1-2026-09-01.json", "file_sha256": "f5a3dc152bef9b142585d12bf6b3c0f727aa0ec9db18f7f8f50a492ff4a070cd"},
+    {"path": "docs/model-research/action-value/binance-okx-btc-eth-sol-swap-inventory-source-result-v1-2026-09-01.json", "file_sha256": "120a2897c5da29ecb8a143b4783958911256a5b27c14b75ab65e97dd29b663fd"},
+    {"path": "docs/model-research/action-value/binance-okx-btc-funding-source-contract-v1-2026-09-01.json", "file_sha256": "11ef9197b440e10249cff7aa5bea7f3b04ee7a459e420763d3eddb16f2649b21"},
+    {"path": "docs/model-research/action-value/binance-okx-eth-funding-source-contract-v1-2026-09-01.json", "file_sha256": "d6a3cd9d94572b25bc0c9f62c19cf61ac9e625ac2eb0f993c5bd764066dc881d"},
+    {"path": "docs/model-research/action-value/binance-okx-sol-funding-source-contract-v1-2026-09-01.json", "file_sha256": "33d2639a54438aa1290a7ffa29367296b85286f815474e48899b3c5d3d84bbd4"}
+  ],
+  "output_path": "docs/model-research/action-value/binance-okx-btc-eth-sol-funding-adjudication-v1-2026-09-01.json",
+  "authority": {"account_requests": 0, "credentials_used": false, "funds_used": false, "orders_or_transactions": 0, "protected_capture_touched": false, "public_unauthenticated_read_only_requests": 0, "signed_requests": 0, "trading_authority": false},
+  "implementation": {"path": "tools/adjudicate_binance_okx_funding.py", "sha256": "1c3f418639765758e3127903b175594f640abe4da7e80d35402e53d8b256da58"},
+  "retry_policy": "One use. No alternate history page alignment orientation costs roles or asset selection. Failure terminalizes the exact 90-bin family before basis or books.",
+  "contract_sha256": "8e4c22673ea61b3f7b516d59acd97e47ab046442a72d7ed7e8e7b231200fc205"
+}
