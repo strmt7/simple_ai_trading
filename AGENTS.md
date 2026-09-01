@@ -149,6 +149,15 @@ override prose.
   joint state uncovered; write that state down explicitly instead of pricing it
   as impossible. Apply the same rendered-button rejection gate and frozen
   side-specific advance rules as for a scalar ladder.
+- For an exact union identity `B = OR(A1...Ak)`, each
+  `NO(Ai) + YES(B)` implication package has a one-pUSD floor, while the complete
+  replication `YES(A1) + ... + YES(Ak) + NO(B)` has a one-pUSD floor only when
+  every union member is present and the rules prove both directions. A missing
+  member leaves a zero-payout state and may never be treated as a free leg. For
+  rejection only, sum the known direct YES asks plus conservative `1-bestBid`
+  for composite NO before requesting a missing member: if that nonnegative-leg
+  lower bound is already at or above one pUSD, stop without the extra metadata,
+  book, fee, account, or credential request.
 - When projecting a pairwise comparator into a multi-outcome winner market,
   align tie payouts before calling the implication Boolean. If the pairwise
   market resolves an equal comparison 50-50 while the multi-outcome market

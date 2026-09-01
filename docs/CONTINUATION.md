@@ -1,12 +1,37 @@
 # Continue Development
 
-Current canonical status after all five Polymarket US mechanism-index families
-were adjudicated: accepted edges 35, ranked hypotheses 58, terminal families 172,
+Current canonical status after the retained September 30 Iran-island implication
+audit: accepted edges 35, ranked hypotheses 58, terminal families 173,
 and stable current account-qualified after-all-cost edges zero. Registry
 SHA-256 is
-`c038dde89dc80e2712d8adbbcd90056b27b625be062467f34b592e233e5e7eb8`;
+`0a9cb63f157cd654cab3a3f49cb8910aa2d3f4a64d8fff9dc2368953e23db8c4`;
 durability-audit SHA-256 is
-`bcf28988454195e319db22ba3f31ef1ad1e13d157d332ff84b2c7a7ad4981556`.
+`610d9a68b1121155660c0f4bb7a9e1b38a2992e0f71d6b0d453a54aaa91f3cc7`.
+
+## 2026-09-01 retained Iran-island OR implication audit
+
+The hash-bound September 30 Global catalog contained three active individual
+conditions for Farsi, Hengam, and Hormuz Island plus a distinct active
+four-island condition covering Farsi, Hengam, Hormuz, or Kharg Island. Under
+optimistic exact rule alignment, each individual condition implies the
+four-island OR condition, so `NO(individual) + YES(composite)` has a one-pUSD
+floor without a market-direction forecast.
+
+The zero-network retained screen rejected all three packages before books. Each
+individual YES best bid was `0.010`, making the conservative NO ask proxy
+`0.990`; the composite YES best ask was `0.028`. Every package therefore cost
+`1.018` pUSD for a `1.000` pUSD floor. The alternative complete OR replication
+already cost at least `1.041` pUSD from the three known YES asks plus the
+composite NO proxy before adding the missing nonnegative Kharg YES leg. A Kharg
+metadata request could not rescue that lower bound and was not made. The
+composite rule ambiguity can only weaken the optimistic implication.
+
+The exact family is terminal. Do not refetch, alias, request Kharg metadata,
+reprice, or request books or fees. Reopen only for a distinct rule-complete
+family with a prospectively observed strict side-specific sub-floor package.
+No network, credential, account, order, fund, transaction, or protected capture
+was used. Canonical adjudication SHA-256 is
+`95d820d802b5eb4f327e33ec025b3d6d4a5e6b2e0693ef4b7d3f83e0a069e307`.
 
 ## 2026-09-01 Polymarket US participant-program exact-URL deduplication
 
