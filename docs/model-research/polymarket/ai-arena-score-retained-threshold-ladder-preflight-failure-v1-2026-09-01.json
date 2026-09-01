@@ -1,0 +1,33 @@
+{
+  "schema_version": "polymarket-retained-ai-arena-threshold-ladder-preflight-failure-v1",
+  "created_at_utc": "2026-09-01T09:25:36.9569204Z",
+  "result_sha256": "36475331926c94e259959ec71d38015665bc1222389b024c2a9a225a345b4da2",
+  "contract": {
+    "path": "docs/model-research/polymarket/ai-arena-score-retained-threshold-ladder-contract-v1-2026-09-01.json",
+    "sha256_before_refreeze": "003e4614e868077614577536dfd55a1dd49d1c33ee8a6776b43bc931fe79f4d8"
+  },
+  "implementation": {
+    "path": "tools/adjudicate_polymarket_retained_ai_arena_threshold_ladder.py",
+    "sha256_before_correction": "dcbd868bc3b5f845bda4a8144b80f9cbabb0e67dc9c614603145d07eb196c4cd"
+  },
+  "failure": {
+    "phase": "preflight_before_economic_fields",
+    "error": "market start changed",
+    "cause": "the validator compared reserialized timestamps textually so a retained millisecond instant ending .828Z became the semantically equal microsecond form .828000Z",
+    "correction": "parse both frozen and retained timestamps as timezone-aware UTC instants and compare the instants without weakening exact-time equality"
+  },
+  "authority": {
+    "account_requests": 0,
+    "book_requests": 0,
+    "credentials_used": false,
+    "fee_requests": 0,
+    "funds_used": false,
+    "network_requests": 0,
+    "onchain_requests": 0,
+    "orders_or_transactions": 0,
+    "protected_capture_touched": false,
+    "signed_requests": 0,
+    "trading_authority": false
+  },
+  "economics_accessed_or_printed": false
+}

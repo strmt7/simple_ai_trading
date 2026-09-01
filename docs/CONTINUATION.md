@@ -8939,3 +8939,40 @@ Do not refetch, reprice, weaken the exact creation-window gate, or request books
 Reopen only on a material price, fee, tick, rule, or market-architecture change.
 No network, account, credential, book, fee endpoint, order, fund, transaction,
 on-chain, or protected capture was touched.
+
+## AI Arena Overall creation-safe threshold ladder
+
+The retained September 30 catalog exposed five AI Arena Overall score
+thresholds with one common leaderboard, score column, style-control setting,
+cutoff, at-least boundary, unavailable-source wait, and permanent-unavailability
+fallback. A prospectively frozen zero-network screen validated the complete
+five-market event before economics. The 1510 market was closed and could not be
+an acquisition leg.
+
+Among the active 1520, 1530, 1540, and 1550 markets, four of six ordered
+`YES(lower) + NO(higher)` pairs had a source-proved one-pUSD floor. The
+1530-to-1540 and 1530-to-1550 pairs were excluded because the lower market
+started 4.588726 seconds and 0.253017 seconds after the higher market; a higher
+threshold reached in those gaps can leave both proposed legs at zero. All four
+safe pairs had side-specific prices. Zero cost strictly below one pUSD. The
+best 1540 YES plus 1550 NO cost 1.035 pUSD per share and lost 0.19670 pUSD at
+five shares after one adverse tick per leg plus exact taker fees.
+
+The first preflight stopped before economic access because the validator
+textually compared a retained millisecond timestamp with its semantically equal
+microsecond serialization. The failure was preserved and the refrozen runner
+compares timezone-aware UTC instants without weakening exact equality.
+Contract/result/preflight-failure SHA-256 values are
+`8246a5ebc592cdcdd847e1717af26cbf57db1b51d63edd7712b69e1870f617d9`,
+`cec42898652936f8eeea78a956f8a9f6e55916a57cd1adc56485f1eb9636387f`,
+and `36475331926c94e259959ec71d38015665bc1222389b024c2a9a225a345b4da2`.
+Accepted edges remain 31, ranked hypotheses remain 48, terminal families become
+157, and stable current account-qualified after-all-cost edges remain zero.
+Registry and durability-audit SHA-256 values become
+`2dc83e4141aabd5d35a2e3a34f0857443579f684ebed7250d52aa7ccd87283c7`
+and `f37ee3effc4f76c737d9f6a5b33bf463fb908bbd3e1cf8b57f3e254aca9eb9a7`.
+
+Do not refetch, reprice, ignore exact creation instants, or request books.
+Reopen only on a material price, fee, tick, rule, or market-architecture change.
+No network, account, credential, book, fee endpoint, order, fund, transaction,
+on-chain, or protected capture was touched.
