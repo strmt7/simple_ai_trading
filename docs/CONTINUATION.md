@@ -5,6 +5,26 @@ Development belongs only on `main`; do not create another development branch.
 
 ## Latest Edge R&D Checkpoint
 
+- A second bounded rendered-page pass screened eight distinct September
+  equity/index hit ladders: RKLB, NVDA, TSLA, AAPL, SPY, AMZN, META, and MU.
+  Their current rules use the same within-event Pyth one-minute high/low scalar,
+  regular-session scope, exact-price convention, and split adjustment. No
+  fully visible monotone package was strictly below one pUSD. The closest new
+  row was SPY `YES(dip to 730) + NO(dip to 720)` at 0.20 + 0.83 = 1.03 pUSD
+  before fees, depth, latency, failure unwind, and capital-time cost. No Gamma, CLOB,
+  Pyth-history, account, credential, order, fund, or protected-capture request
+  followed.
+
+  The AMZN weekly/monthly pages exposed a reusable cross-window trap. The week
+  of August 31 begins before the September monthly window, so the weekly event
+  is not a literal subset until the already elapsed August 31 session is proved
+  not to have hit the shared strike. The visible shared-strike packages already
+  rejected under the optimistic subset assumption, so requesting Pyth history
+  merely to prove the weaker identity would waste a source call. `AGENTS.md`
+  now requires this rejection-first ordering. The current official Binance Spot
+  and USD-M Futures changelogs were also checked and contain no post-retained structural
+  deployment change; no Binance market or account endpoint was called.
+
 - A bounded public rendered-page Boolean-cover screen checked current Fed
   count/deadline markets, September XAU/XAG/WTI hit ladders, and several
   same-event deadline ladders before Gamma, CLOB, account, credential, order,
