@@ -119,8 +119,13 @@ def test_copy_trading_lead_vip_edge_is_scoped_and_fail_closed() -> None:
     assert "authentic_organic_lead_flow" in rank_five[
         "copy_trading_lead_vip_current_status"
     ]
-    assert registry["accepted_edge_count"] == 30
-    assert audit["source_binding"]["accepted_edge_count"] == 30
+    assert registry["accepted_edge_count"] >= edge["registry_effect"][
+        "accepted_edge_count"
+    ]
+    assert (
+        audit["source_binding"]["accepted_edge_count"]
+        == registry["accepted_edge_count"]
+    )
     external = next(
         group
         for group in audit["classification"]

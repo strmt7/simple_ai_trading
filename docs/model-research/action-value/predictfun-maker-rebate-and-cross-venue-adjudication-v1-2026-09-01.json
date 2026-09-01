@@ -1,0 +1,131 @@
+{
+  "schema_version": "predictfun-maker-rebate-and-cross-venue-adjudication-v1",
+  "created_at_utc": "2026-09-01T07:42:34.2556855Z",
+  "question": "Does public Predict.fun access expose a stable market-direction-independent edge through cross-venue parity, Predict Points, or current maker rebates?",
+  "adjudication": {
+    "accepted_edge": true,
+    "accepted_scope": "exact positive Predict.fun maker-rebate value actually distributed on an independently justified legitimate organic maker fill in a currently badged eligible UP/DOWN crypto market, while the published trial remains active, after the exact received asset, liquidation or redemption basis, account eligibility, adverse selection, inventory, hedge, gas, latency, capital, custody, tax, failure, and every other incremental cost are reconciled",
+    "underlying_market_making_strategy_accepted": false,
+    "cross_venue_arbitrage_accepted": false,
+    "predict_points_monetary_edge_accepted": false,
+    "deployment_ready": false,
+    "profitability_claim": false,
+    "public_forward_profit_floor_usdt": 0,
+    "accepted_edge_count_delta": 1,
+    "reason": "The current official maker-rebate page defines an automatic 25 percent share of the taker fee on each eligible maker fill and says makers pay no fee, so an exact realized rebate is a positive direction-independent income overlay on a fill that already exists for independent economic reasons. It does not make an otherwise negative or unproved market-making strategy profitable."
+  },
+  "current_program_terms": {
+    "venue": "Predict.fun on BNB Chain, not Binance Exchange",
+    "eligible_market_scope": "UP/DOWN crypto markets carrying the Maker Rebate badge",
+    "maker_fee": 0,
+    "maker_rebate_share_of_taker_fee": 0.25,
+    "signup_required": false,
+    "distribution": "automatic as part of the fill transaction; portfolio history may show USDT Distribution or Shares Distribution",
+    "minimum_payout_requirement": "none",
+    "published_trial_end_date": "2026-09-16",
+    "end_time_or_inclusivity_source_defined": false,
+    "eligibility_gate": "require the exact current market badge and program-active state at the fill; do not assume the calendar date alone",
+    "double_count_gate": "do not double count the same fee, share distribution, mark-to-market value, Predict Points, spread capture, or later redemption"
+  },
+  "fee_and_rebate_math": {
+    "published_taker_fee_formula": "base_fee_rate * min(price, 1 - price) * shares",
+    "published_base_fee_rate_without_discount": 0.02,
+    "published_discount_multiplier_when_active": 0.9,
+    "maker_rebate_formula_without_discount": "0.25 * 0.02 * min(price, 1 - price) * shares",
+    "maximum_nominal_rebate_per_share_usdt_equivalent_without_discount": 0.0025,
+    "maximum_nominal_rebate_per_share_usdt_equivalent_with_discount": 0.00225,
+    "maximum_occurs_at_share_price": 0.5,
+    "minimum_order_amount_usdt": 1,
+    "interpretation": "The rebate is at most 0.25 cents per filled share before every incremental cost. No lower bound on fill probability, spread capture, queue priority, hedge success, or adverse-selection loss is published, so rebate economics alone prove no positive strategy floor."
+  },
+  "predict_points_rejection": {
+    "status": "terminal_as_current_monetary_edge",
+    "published_terms": [
+      "PP is allocated mostly to liquidity providers and also for other weekly factors",
+      "order-book snapshots determine pro-rata contributed liquidity",
+      "both-side, close-to-market executable orders receive more credit",
+      "non-executable orders, balance manipulation, and cancellation abuse can zero the PP balance",
+      "distribution is weekly after a five-to-six-day calculation period",
+      "the rewards system will continue to evolve"
+    ],
+    "missing_monetary_contract": [
+      "no deterministic cash value",
+      "no transferable token value",
+      "no redemption formula",
+      "no account-independent lower bound"
+    ],
+    "decision": "credit zero monetary value and never create volume, balance manipulation, cancellation abuse, wash trading, or self-trading to farm PP"
+  },
+  "openai_cross_venue_rejection": {
+    "contract_path": "docs/model-research/action-value/predictfun-polymarket-openai-acquisition-public-rejection-contract-v1-2026-09-01.json",
+    "contract_sha256": "9332772124e1ee090561df24bd21e07d6b907bd5cde008197c9f400a369b1de7",
+    "evidence_class": "logged_out_browser_rendered_rejection_only",
+    "promotion_eligibility": "ineligible because headline probabilities were observed before the side-specific freeze",
+    "rule_identity": "the rendered Predict.fun and Polymarket rule text matched on acquisition agreement, deadline, mergers, announced agreement, and primary resolution sources",
+    "predictfun_observation": {
+      "total_volume_usd": 0,
+      "yes_ask_levels": [
+        {"price": 0.92, "shares": 625},
+        {"price": 0.93, "shares": 200},
+        {"price": 0.94, "shares": 500},
+        {"price": 0.95, "shares": 1100},
+        {"price": 0.99, "shares": 1862}
+      ],
+      "no_ask_present": false,
+      "no_side_visible_levels_were_bids": [0.08, 0.07, 0.06, 0.05, 0.01],
+      "last_trade_available": false,
+      "spread_available": false,
+      "built_in_polymarket_comparator_probability": 0.04
+    },
+    "polymarket_rendered_asks": {"yes": 0.042, "no": 0.959},
+    "package_results": {
+      "predict_yes_plus_polymarket_no_cost": 1.879,
+      "predict_no_plus_polymarket_yes_cost": null,
+      "reason_null": "Predict.fun NO had no visible ask"
+    },
+    "decision": "reject without fees or deeper books; a comparator probability is not an executable ask and a missing ask is not zero cost"
+  },
+  "crypto_updown_cross_venue_identity_rejection": {
+    "status": "terminal_before_books",
+    "predictfun": {
+      "asset_pair": "BTC/USDT",
+      "observation": "Chainlink Data Streams v3 report",
+      "comparison": "Up if end is higher, Down if lower, Flat if equal",
+      "buffer_seconds_max": 5,
+      "emergency_path": "an EMERGENCY_CLOSE_ROUND_ROLE account may close rounds manually only while the contract is paused"
+    },
+    "polymarket_exact_future_round": {
+      "slug": "btc-updown-5m-1788249000",
+      "interval_utc": "2026-09-01T07:50:00Z/2026-09-01T07:55:00Z",
+      "asset_pair": "BTC/USD",
+      "observation": "60-second TWAP",
+      "comparison": "Up if interval TWAP is greater than or equal to the beginning price; otherwise Down",
+      "resolution_source": "https://data.chain.link/streams/btc-usd-twap-60s-streams"
+    },
+    "counterexamples": [
+      "BTC/USDT can rise while BTC/USD does not",
+      "exact equality pays Flat on Predict.fun but Up on Polymarket",
+      "a point report with up to a five-second buffer is not the same scalar as a 60-second TWAP",
+      "Predict.fun emergency manual closure has no proved identical Polymarket branch"
+    ],
+    "decision": "title, asset, and interval similarity do not create an identical payoff; no deterministic cross-venue hedge or book request is justified"
+  },
+  "sources": [
+    {"path": "docs/model-research/action-value/predictfun-maker-points-public-source-result-v1-2026-09-01.json", "result_sha256": "a01f7df8db1122353489a7d7da1bbb9e371bb70314de604832aacd1e08b4d0b9", "raw_sha256": "adfef78827f9715a381f6767e1d5e39259089eb39e9338bee04bf9eff16b16ec"},
+    {"path": "docs/model-research/action-value/predictfun-maker-rebates-public-source-result-v1-2026-09-01.json", "result_sha256": "cc79d63139a5d4afd3ccbfa621e8c424846b7a17e7178f5b81b5e31f0958f495", "raw_sha256": "452224e0e84d7616170f89e18cb16ddf034d06d5fe16b562356fd4f90c1ae560"},
+    {"path": "docs/model-research/action-value/predictfun-fees-limits-public-source-result-v1-2026-09-01.json", "result_sha256": "b1bb96af065a1c3cf83b98862194d22f0e1b8e01c896365ead9d3c5a3fa623bc", "raw_sha256": "ca8bea438416438f5ba14363c414ebcd65eef143e2529fe19176e7218e1d9e11"},
+    {"path": "docs/model-research/action-value/predictfun-chainlink-price-markets-public-source-result-v1-2026-09-01.json", "result_sha256": "af067193121f24ddeab45bb1d4118ed7679f392d8daf34821a2452cedafeb0ae", "raw_sha256": "8b8632103bae76066ed4a67547a313e72b808ad562b1de0befbddc182bf070bf"},
+    {"path": "docs/model-research/action-value/polymarket-btc-5m-current-rule-identity-result-v1-2026-09-01.json", "result_sha256": "5ddd8537f32f02a34a06cc02af5c72d07f7f1b54bae9e5cdc0e14c21c18e481a", "raw_sha256": "1e320cfa14d8190fe36875e137fd54c9361553eb475c092ae2506f6a4bf644df"}
+  ],
+  "authority": {
+    "account_requests": 0,
+    "credentials_used": false,
+    "funds_used": false,
+    "orders_or_transactions": 0,
+    "protected_capture_touched": false,
+    "signed_requests": 0,
+    "trading_authority": false
+  },
+  "next_action": "Do not value Predict Points, retry the two rejected cross-venue populations, or use Binance credentials for Predict.fun. Before the published maker-rebate trial ends, advance only with a distinct current eligible UP/DOWN market plus either a new official public fill-quality source or explicit separate Predict.fun read-only paper-study authority; freeze chronological fill, queue, cancellation, inventory, hedge, and regime gates before economic access. Any order or funded action requires separate explicit authority.",
+  "result_sha256": "b054ef3388dd9e97b065120d35792699ef3bbdc40efbd72e2034e77db0efe1fd"
+}

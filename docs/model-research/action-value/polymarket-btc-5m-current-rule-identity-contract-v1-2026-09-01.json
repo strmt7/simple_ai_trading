@@ -1,0 +1,51 @@
+{
+  "schema_version": "public-source-capture-contract-v1",
+  "frozen_at_utc": "2026-09-01T07:40:57.6776168Z",
+  "contract_path": "docs/model-research/action-value/polymarket-btc-5m-current-rule-identity-contract-v1-2026-09-01.json",
+  "trigger": {
+    "candidate_slug": "btc-updown-5m-1788249000",
+    "candidate_start_utc": "2026-09-01T07:50:00Z",
+    "selection_rule": "the first 5-minute boundary at least one full interval after the 2026-09-01T07:40:57Z freeze",
+    "economic_values_before_freeze": false,
+    "question": "whether the current exact Polymarket BTC 5-minute resolution contract remains incompatible with the retained current Predict.fun BTC/USDT round contract"
+  },
+  "question": "Does the exact preselected Polymarket market resolve from BTC/USD 60-second TWAP with Up including equality, rather than Predict.fun BTC/USDT point reports with a separate Flat state and emergency close path?",
+  "request_name": "polymarket-btc-5m-current-rule-identity",
+  "request": {
+    "method": "GET",
+    "url": "https://gamma-api.polymarket.com/events/slug/btc-updown-5m-1788249000",
+    "count": 1,
+    "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "endpoint_classification": {
+    "operation": "download one exact future public Polymarket Gamma event",
+    "security": "public unauthenticated read-only GET",
+    "source_contract": "Use only exact title, interval, resolution source, description, boundary, and fallback fields. Ignore every price, fee, liquidity, volume, token, reward, and book field; this population is rule-rejection-only."
+  },
+  "response_byte_ceiling": 1000000,
+  "required_utf8_phrases": ["BTC/USD", "TWAP", "greater than or equal"],
+  "decision": {
+    "reject_cross_venue_identity": "reject without books if any feed pair, averaging window, timestamp, equality treatment, flat state, buffer, fallback, or emergency resolution path differs from retained Predict.fun terms",
+    "advance": "none unless every rule field is exact; title and interval equality are insufficient",
+    "accepted_edge": false,
+    "profitability_proved": false
+  },
+  "outputs": {
+    "raw_path": "data/polymarket-btc-5m-current-rule-identity-v1/raw/01-event.raw.json",
+    "journal_path": "data/polymarket-btc-5m-current-rule-identity-v1/raw/00-request-journal.jsonl",
+    "result_path": "docs/model-research/action-value/polymarket-btc-5m-current-rule-identity-result-v1-2026-09-01.json"
+  },
+  "authority": {
+    "account_requests": 0,
+    "credentials_used": false,
+    "funds_used": false,
+    "orders_or_transactions": 0,
+    "protected_capture_touched": false,
+    "public_unauthenticated_read_only_requests": 1,
+    "signed_requests": 0,
+    "trading_authority": false
+  },
+  "implementations": [{"path": "tools/capture_public_source_contract.py", "sha256": "d566a5a379c659c3da144d5e28449ebac9c01493bd39646f9cc3a6e697a83566"}],
+  "retry_policy": "This exact future event request is one-use. Preserve missing, not-created, shell, block, or source-gate failure. Do not substitute another interval or timestamp after observation.",
+  "contract_sha256": "58a66b7fb94b21d8fc3b52720f0d7ad7097a9da22e3cd33f4f3625790b0b99c2"
+}

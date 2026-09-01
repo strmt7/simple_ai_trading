@@ -4145,3 +4145,45 @@ Registry SHA-256 becomes
 `7eeba81c9b93404372bd4833002c67c5a958d25e5b7de258f86c95968f70b247`,
 and durability-audit SHA-256 becomes
 `9fe9eff62c4d11e94d7791bbba3edfbb89d8bc26b0f38da204b1ef38cf6a0485`.
+
+## Current Predict.fun structural-edge checkpoint (2026-09-01)
+
+Logged-out Predict.fun pages expose rendered public books and a Polymarket
+comparator without a Predict API key. Use this only for rejection-first public
+discovery: comparator probabilities are not asks, missing asks are not free, and
+acceptance still requires prospectively source-bound exact rules, side-specific
+depth, fees, and synchronized timestamps. Predict.fun is a separate BNB Chain
+venue; Binance Exchange and testnet credentials do not authorize it.
+
+The disjoint OpenAI-acquisition pair is terminal: materially matching rules,
+Predict zero volume/no NO ask, Predict YES ask 0.92, and Polymarket YES/NO asks
+0.042/0.959 produced one 1.879-pUSD package and one unavailable package. The
+current short-horizon crypto cross-venue identity is also terminal before books:
+Predict uses BTC/USDT point reports with Up/Down/Flat, up to a five-second
+buffer, and emergency manual close; the exact frozen Polymarket round uses
+BTC/USD 60-second TWAP with equality assigned to Up.
+
+Predict Points have zero admitted monetary value. The current official maker-
+rebate program does define a thirty-first scoped edge: makers pay zero fee and
+receive 25% of the taker fee automatically on eligible badged UP/DOWN crypto
+fills during a trial published to end September 16, 2026. The maximum nominal
+rebate is only 0.0025 USDT equivalent per share at price 0.5 before costs. Credit
+only exact value actually distributed on an independently justified legitimate
+organic fill after the received-asset basis and every incremental cost; this is
+not an accepted market-making strategy, stable account-qualified edge, or
+deployment-ready claim. Never create volume, self-trade, wash-trade, manipulate
+balances, abuse cancellation, or post non-executable orders to farm rewards.
+
+Reopen before the trial end only for a distinct active badged market plus a new
+official public fill-quality source or explicit separate Predict.fun read-only
+paper-study authority, freezing chronological queue, fill, cancellation,
+inventory, hedge, and regime gates first. Orders and funded actions require
+separate explicit authority.
+
+Canonical adjudication SHA-256 is
+`b054ef3388dd9e97b065120d35792699ef3bbdc40efbd72e2034e77db0efe1fd`.
+Accepted edges are 31, ranked hypotheses are 48, terminal families are 148, and
+stable current account-qualified after-all-cost edges remain zero. Registry and
+durability-audit SHA-256 values are
+`5805fc3f11e3a8f9c4db2a365d7dd1108e0653b3b2a8147135bdeb4de0d456a8`
+and `400296f66e5807219ce6f8b5825a3b4a863c7383a94c766ba9ca546bc3a55343`.

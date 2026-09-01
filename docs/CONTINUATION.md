@@ -8655,3 +8655,92 @@ Durability-audit SHA-256 becomes
 
 No account, credential, order, follower, position, fund, transaction, or
 protected capture was touched.
+
+## Predict.fun public books, maker rebates, and false cross-venue identity
+
+Public logged-out Predict.fun pages now provide a useful rejection-first route:
+the rendered order book and a Polymarket comparator can be inspected without a
+Predict API key. This changes the old assumption that every Predict.fun price
+question requires authenticated API access. It does not weaken acceptance
+gates. A comparator probability is not an executable ask, a missing ask is not
+free, and rendered browser observations remain rejection-only unless exact
+rules, side-specific depth, fees, and synchronized timestamps are durably bound
+under a prospective contract. Predict.fun is a separate BNB Chain venue, not
+Binance Exchange; Binance mainnet or testnet credentials do not authorize it.
+
+The first GPT-6 page exposed economic values before a clean book contract was
+frozen. That exact population was marked promotion-ineligible rather than
+retrofitting the freeze. A disjoint OpenAI-acquisition pair was then frozen for
+rejection only. Its rendered resolution rules matched materially, but
+Predict.fun showed zero total volume, no last trade, no spread, YES asks starting
+at 0.92 for 625 shares, and no NO ask. Polymarket showed executable YES and NO
+asks of 0.042 and 0.959. Predict YES plus Polymarket NO cost 1.879 pUSD before
+fees; the opposite package was unavailable. The pair is terminal without a book
+retry or profit claim.
+
+Four exact current official Predict.fun documentation pages were retained.
+Their raw SHA-256 values are:
+
+- Predict Points: `adfef78827f9715a381f6767e1d5e39259089eb39e9338bee04bf9eff16b16ec`
+- Maker Rebates: `452224e0e84d7616170f89e18cb16ddf034d06d5fe16b562356fd4f90c1ae560`
+- Fees and Limits: `ca8bea438416438f5ba14363c414ebcd65eef143e2529fe19176e7218e1d9e11`
+- Chainlink Price Markets: `8b8632103bae76066ed4a67547a313e72b808ad562b1de0befbddc182bf070bf`
+
+Predict Points are terminal as a current monetary edge. The official terms say
+PP allocations depend on frequently sampled executable liquidity and other
+weekly factors, can be zeroed for non-executable orders, balance manipulation,
+or cancellation abuse, arrive only after a weekly calculation period, and will
+continue to evolve. They define no deterministic cash value, transferable token,
+redemption formula, or account-independent floor. Credit zero and never create
+volume, self-trade, wash-trade, manipulate balances, abuse cancellation, or post
+non-executable orders to farm PP.
+
+The Maker Rebates source defines a real but narrow direction-independent income
+overlay. Makers pay no fee; on each eligible UP/DOWN crypto fill the maker
+receives 25% of the taker fee automatically, with no signup, claim step, or
+minimum payout. The trial is published to end September 16, 2026, but no exact
+end time or inclusivity is stated, so require the live eligible badge and active
+program state. The taker fee is
+`base_rate * min(price, 1-price) * shares`, with a 2% base and possible 10%
+discount. The maximum nominal maker rebate is therefore only 0.0025 USDT
+equivalent per share at price 0.5, or 0.00225 with the discount, before every
+cost. The page says portfolio history may record either USDT Distribution or
+Shares Distribution, so bind the exact received asset and conservative
+liquidation or redemption basis.
+
+This exact realized positive rebate is accepted as the thirty-first scoped edge
+only on an independently justified legitimate organic eligible maker fill after
+adverse selection, inventory, hedge, gas, latency, capital, custody, tax,
+failure, and every other incremental cost. It does not establish profitable
+market making, account eligibility, deployment readiness, or a positive public
+forward floor.
+
+The apparent Predict.fun-to-Polymarket short-horizon crypto hedge is also
+terminal before books. Current Predict.fun terms use BTC/USDT Chainlink Data
+Streams v3 point reports, separate Up/Down/Flat states, up to a five-second
+buffer, and a paused emergency manual-close path. A prospectively selected
+current Polymarket round, `btc-updown-5m-1788249000`, was retained at raw SHA-256
+`1e320cfa14d8190fe36875e137fd54c9361553eb475c092ae2506f6a4bf644df`.
+It uses BTC/USD 60-second TWAP and resolves equality to Up, otherwise Down.
+Different pair, averaging, equality, flat, buffer, and emergency branches are
+source-proved payoff counterexamples; matching asset, interval, and timestamp
+strings are not a deterministic hedge.
+
+Canonical adjudication SHA-256 is
+`b054ef3388dd9e97b065120d35792699ef3bbdc40efbd72e2034e77db0efe1fd`.
+Accepted edges become 31, ranked hypotheses become 48, terminal families become
+148, and stable current account-qualified after-all-cost edges remain zero.
+Registry SHA-256 becomes
+`5805fc3f11e3a8f9c4db2a365d7dd1108e0653b3b2a8147135bdeb4de0d456a8`.
+Durability-audit SHA-256 becomes
+`400296f66e5807219ce6f8b5825a3b4a863c7383a94c766ba9ca546bc3a55343`.
+
+Reopen before the published trial end only for one distinct currently badged
+eligible market plus a new official public fill-quality source or explicit
+separate Predict.fun read-only paper-study authority, with chronological queue,
+fill, cancellation, inventory, hedge, and regime gates frozen first. A Predict
+API key is distinct from Binance keys. Orders, funds, wallets, claims, accounts,
+and state changes each require separate explicit authority.
+
+No credential, account, wallet, order, position, fund, transaction, claim, or
+protected capture was touched.
