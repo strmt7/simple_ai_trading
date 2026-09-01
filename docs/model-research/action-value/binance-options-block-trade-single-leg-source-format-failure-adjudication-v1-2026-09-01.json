@@ -1,0 +1,85 @@
+{
+  "schema_version": "binance-options-block-trade-single-leg-source-format-failure-adjudication-v1",
+  "created_at_utc": "2026-09-01T15:49:16.4638683Z",
+  "result_sha256": "31f0149202f997f0ba7015629d6c3df1e9f86b6580c5f98a34c024d2f3da7b6d",
+  "question": "Can Binance's documented Options block-trade API atomically carry a four-leg same-expiry box and remove leg risk?",
+  "authority": {
+    "account_requests": 0,
+    "book_requests": 0,
+    "commission_requests": 0,
+    "credentials_used": false,
+    "funds_used": false,
+    "orders_or_transactions": 0,
+    "protected_capture_touched": false,
+    "public_unauthenticated_read_only_requests": 1,
+    "signed_requests": 0,
+    "trading_authority": false
+  },
+  "frozen_capture": {
+    "contract_path": "docs/model-research/action-value/binance-options-block-trade-single-leg-source-contract-v1-2026-09-01.json",
+    "contract_sha256": "5cbf54045024dfa9c5bb63bebbdb5caa706f2b35a43894c2f8758305851784ab",
+    "request_url": "https://public.bnbstatic.com/vip/portal/public/Blocktrade_EAPI_Doc",
+    "http_status": 200,
+    "response_bytes": 40487,
+    "raw_path": "data/binance-options-block-trade-single-leg-v1/raw/01-official-block-trade-doc.raw.html",
+    "raw_sha256": "06abdba3d906ddbcc03400cb74f01926c0b410929e8db8b1305b1ae474510882",
+    "journal_path": "data/binance-options-block-trade-single-leg-v1/raw/00-request-journal.jsonl",
+    "journal_sha256": "1e22651e53b827483ab6ecb1a1a50997966c2ffdf40bde2647686b802a14d3c1",
+    "generic_result_created": false,
+    "failure": "The text-only capture runner durably retained the HTTP 200 response and journal, then raised UnicodeDecodeError because the extensionless official source is a PDF rather than UTF-8 text. The exact request was not retried."
+  },
+  "retained_byte_inspection": {
+    "network_requests": 0,
+    "magic": "%PDF-1.5",
+    "pages": 4,
+    "encrypted": false,
+    "producer": "macOS Version 14.4.1 (Build 23E224) Quartz PDFContext, AppendMode 1.1",
+    "source_mod_date": "2024-10-29T12:17:49+01:00",
+    "complete_page_text_extracted": true,
+    "all_pages_visually_rendered_and_reviewed": true,
+    "rejection_only": true,
+    "promotion_eligible": false
+  },
+  "source_proved": {
+    "document_title": "Block Trade EAPI Doc",
+    "endpoint": "POST eapi/v1/block/order/create",
+    "operation": "New Block Trade Order (TRADE)",
+    "liquidity_roles": [
+      "Taker",
+      "Maker"
+    ],
+    "legs_parameter_type": "LIST",
+    "legs_parameter_mandatory": true,
+    "maximum_leg_count": 1,
+    "exact_leg_limit_text": "Max 1 (only single leg supported)",
+    "acceptance_is_a_separate_trade_endpoint": "POST eapi/v1/block/order/execute",
+    "account_history_is_user_data": "GET eapi/v1/block/user-trades"
+  },
+  "adjudication": {
+    "accepted_edge": false,
+    "deployment_ready": false,
+    "profitability_claim": false,
+    "stable_current_account_qualified_after_all_cost_edge": false,
+    "public_forward_profit_floor": "0",
+    "block_trade_two_leg_vertical_path": false,
+    "block_trade_four_leg_box_path": false,
+    "rfq_ui_two_leg_vertical_path_changed": false,
+    "status": "terminal_rejection_of_Binance_Options_block_trade_API_as_atomic_vertical_or_box_workaround",
+    "reason": "A maximum of one option leg cannot atomically execute either a two-leg vertical or a four-leg box. Therefore this documented programmatic block-trade endpoint cannot remove multi-leg execution risk and cannot reopen box parity before any quote, book, commission, account, credential, order, fund, or transaction request. The separately documented account-gated RFQ UI remains limited to its existing two-leg vertical research trigger."
+  },
+  "tooling_correction": {
+    "changed_path": "tools/capture_public_source_contract.py",
+    "change": "Future non-UTF-8 responses are now classified fail-closed with detected format and decode metadata after durable retention instead of raising after the network request.",
+    "economic_gate_weakened": false,
+    "current_one_use_capture_replayed": false
+  },
+  "retry_trigger": "A material official Binance Options block-trade leg-count or atomicity change that supports at least four legs, or rank 37's existing explicit quote-request-only authority plus eligible Options RFQ account access for the separately documented two-leg RFQ route. Every quote confirmation, block-trade acceptance, order, fund, or account mutation requires separate explicit authority.",
+  "prohibited_shortcuts": [
+    "retrying_or_aliasing_the_consumed_official_PDF_request",
+    "treating_a_one_leg_block_trade_as_a_two_leg_vertical_or_four_leg_box",
+    "treating_an_array_named_legs_as_multi_leg_support_when_the_source_caps_it_at_one",
+    "using_batch_orders_as_atomic_execution",
+    "requesting_quotes_books_commissions_accounts_credentials_or_orders_for_this_terminal_workaround",
+    "using_the_user_supplied_Binance_testnet_credentials_as_Options_mainnet_or_RFQ_authority"
+  ]
+}

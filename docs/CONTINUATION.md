@@ -1,12 +1,50 @@
 # Continue Development
 
-Current canonical status after the Binance Futures Bonus Voucher downside gate:
-accepted edges 37, ranked hypotheses 65, terminal families 181,
+Current canonical status after the Binance Options block-trade atomicity gate:
+accepted edges 37, ranked hypotheses 65, terminal families 182,
 and stable current account-qualified after-all-cost edges zero. Registry
 SHA-256 is
-`cc6d24ba7c3485e31f18896d8fe67be4eaeaed29660fc29b0543f406f6c13516`;
+`5e7c835dffe9314325a95724de35875637177a3a17aa1886506aad0b6ca6883c`;
 durability-audit SHA-256 is
-`d001f3b28b65e9e440cd1b1510de01ed853523b36e518155bd93526d78d8dc73`.
+`1ec056ab4102eeea8631449e83444b7e3692d176c6016081651c786f5ecbb4c2`.
+
+## 2026-09-01 Binance Options block-trade single-leg rejection
+
+Rank 37's account-gated RFQ route raised one cheaper public architecture
+question: whether Binance's separately documented Options block-trade API can
+atomically carry a four-leg box. Exact-URL deduplication found zero retained
+matches. Before direct access, a one-use contract froze the exact official
+source and required at least four supported legs before any economic or
+authenticated request.
+
+The exact public GET returned HTTP 200 and durably retained 40,487 bytes. The
+generic text runner then stopped on `UnicodeDecodeError` because the
+extensionless source is a four-page PDF, not UTF-8 text. The request was not
+retried or aliased. Complete offline extraction and visual review of the
+hash-bound PDF proves that `POST eapi/v1/block/order/create` creates a New Block
+Trade Order, accepts a mandatory `legs` list, and explicitly limits it to
+`Max 1 (only single leg supported)`. Acceptance is a separate trade endpoint,
+and account history is USER_DATA.
+
+The one-leg limit terminalizes this programmatic workaround. It cannot execute
+a two-leg vertical or four-leg box atomically and therefore cannot remove the
+multi-leg execution risk needed for fixed-payoff parity. No quote, book,
+commission, account, credential, order, fund, transaction, or protected capture
+was used. Rank 37's separate predefined two-leg Options RFQ UI route remains
+unchanged: it may reopen only with explicit quote-request-only authority plus
+eligible RFQ account access, and confirmation or execution requires separate
+authority.
+
+Contract, raw-response, request-journal, and adjudication-result SHA-256 values
+are
+`5cbf54045024dfa9c5bb63bebbdb5caa706f2b35a43894c2f8758305851784ab`,
+`06abdba3d906ddbcc03400cb74f01926c0b410929e8db8b1305b1ae474510882`,
+`1e22651e53b827483ab6ecb1a1a50997966c2ffdf40bde2647686b802a14d3c1`,
+and `31f0149202f997f0ba7015629d6c3df1e9f86b6580c5f98a34c024d2f3da7b6d`.
+The public-source capture helper now classifies future non-UTF-8 responses
+fail-closed with detected-format and decode metadata after durable retention,
+instead of crashing. This is an efficiency correction only; it does not repair
+this consumed capture or weaken any source or economic gate.
 
 ## 2026-09-01 Binance Futures Bonus Voucher downside rejection
 

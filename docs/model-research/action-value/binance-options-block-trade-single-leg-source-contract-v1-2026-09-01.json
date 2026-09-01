@@ -1,0 +1,69 @@
+{
+  "schema_version": "public-source-capture-contract-v1",
+  "frozen_at_utc": "2026-09-01T15:45:55.5821766Z",
+  "contract_path": "docs/model-research/action-value/binance-options-block-trade-single-leg-source-contract-v1-2026-09-01.json",
+  "trigger": {
+    "registry_route": "rank_37_binance_options_Rfq_atomic_vertical_fixed_payoff_parity",
+    "discovery_source": "official Binance developer search result for the documented Options market-maker block-trade API",
+    "discovery_values_are_economic_inputs": false,
+    "economic_values_viewed_before_freeze": false,
+    "exact_url_dedupe_matches": 0,
+    "selection_rule": "Test the cheapest official programmatic alternative to the account-gated RFQ UI before any quote, book, commission, account, credential, or order request."
+  },
+  "question": "Can Binance's documented Options block-trade API atomically carry the four option legs of a same-expiry box, or is it limited to one leg and therefore unable to remove box leg risk?",
+  "request_name": "binance-options-block-trade-single-leg-official-terms",
+  "request": {
+    "method": "GET",
+    "url": "https://public.bnbstatic.com/vip/portal/public/Blocktrade_EAPI_Doc",
+    "count": 1,
+    "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "endpoint_classification": {
+    "operation": "download the exact public official Binance Options block-trade API document",
+    "security": "public unauthenticated read-only documentation GET",
+    "source_contract": "Only the retained exact source may establish leg-count support, creation semantics, and whether this API can atomically execute a box."
+  },
+  "response_byte_ceiling": 1000000,
+  "required_utf8_phrases": [
+    "New Block Trade Order",
+    "only single leg supported",
+    "legs"
+  ],
+  "decision": {
+    "source_gate_only": "Require an explicit supported leg count greater than or equal to four before treating this endpoint as a box-execution path. A maximum of one leg terminalizes this programmatic workaround before every economic or authenticated request.",
+    "accepted_edge": false,
+    "profitability_proved": false,
+    "conditional_next_step": "If and only if the source proves at least four atomic legs, separately freeze exact box construction, settlement identity, account eligibility, commissions, margin, quote lifecycle, and nonaccepted quote access. Otherwise stop with public forward profit floor zero."
+  },
+  "outputs": {
+    "raw_path": "data/binance-options-block-trade-single-leg-v1/raw/01-official-block-trade-doc.raw.html",
+    "journal_path": "data/binance-options-block-trade-single-leg-v1/raw/00-request-journal.jsonl",
+    "result_path": "docs/model-research/action-value/binance-options-block-trade-single-leg-source-result-v1-2026-09-01.json"
+  },
+  "authority": {
+    "account_requests": 0,
+    "credentials_used": false,
+    "funds_used": false,
+    "orders_or_transactions": 0,
+    "protected_capture_touched": false,
+    "public_unauthenticated_read_only_requests": 1,
+    "signed_requests": 0,
+    "trading_authority": false
+  },
+  "implementations": [
+    {
+      "path": "tools/capture_public_source_contract.py",
+      "sha256": "ba0e76bd6643eedc072cc1fcff2aa363c1dc14a5b8e14956e874c7843637b376"
+    },
+    {
+      "path": "tools/screen_polymarket_exact_two_leg_package.py",
+      "sha256": "374fcc3c3485c466b4929a91256450bdc7db70f93ef4c6bda627e05fe8938327"
+    },
+    {
+      "path": "tools/adjudicate_polymarket_exact_mlb_monotone_prefilter.py",
+      "sha256": "958a44d78029b9a1eb69a3771ce18e53ac1ed3c7bc161c8e4318beedce2cf99f"
+    }
+  ],
+  "retry_policy": "This exact official documentation GET is one-use. Preserve every HTTP, phrase, or schema failure and do not retry an alias. No quote, book, account, credential, commission, order, fund, or transaction request is authorized by a passing source gate. Reopen only on a material official leg-count, atomicity, access, fee, settlement, or architecture change.",
+  "contract_sha256": "5cbf54045024dfa9c5bb63bebbdb5caa706f2b35a43894c2f8758305851784ab"
+}

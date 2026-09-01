@@ -9,7 +9,7 @@ from typing import Callable
 import pytest
 
 from tools.adjudicate_polymarket_exact_mlb_monotone_prefilter import _canonical_hash
-from tools.capture_public_source_contract import _validate_contract
+from tools.capture_public_source_contract import _inspect_utf8_source, _validate_contract
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -51,3 +51,21 @@ def test_validator_rejects_fields_needed_before_side_effects(
 
     with pytest.raises(RuntimeError):
         _validate_contract(value, CONTRACT)
+
+
+def test_binary_pdf_is_retained_as_a_clean_fail_closed_source_gate() -> None:
+    presence, source_format = _inspect_utf8_source(
+        b"%PDF-1.5\n%\xe2\xe3\xcf\xd3\n", ["required phrase"]
+    )
+
+    assert presence == {"required phrase": False}
+    assert source_format == {
+        "utf8_decode_passed": False,
+        "detected_format": "pdf",
+        "decode_error": {
+            "type": "UnicodeDecodeError",
+            "start": 10,
+            "end": 11,
+            "reason": "invalid continuation byte",
+        },
+    }
