@@ -4232,3 +4232,23 @@ Accepted edges remain 31, ranked hypotheses remain 48, terminal families become
 Registry and durability-audit SHA-256 values are
 `5a5040f33e7a14803dd066e565626279c1e3d9e6bfc4c39803237b5010822abf`
 and `6b264230457ad0c159d9632c0f395ea7c326b7cd1c94f4d4048dbad13ce2749e`.
+
+The next frozen zero-network retained-input screen reused only the untouched
+exact U.S. measles September 30 event. Its 2900, 3000, 3100, and 3200 markets
+share one CDC total-case counter, cutoff, fallback, and at-least rule, so every
+ordered `YES(lower) + NO(higher)` pair has a one-pUSD floor. All six pairs had
+side-specific rejection prices; zero cost strictly below the floor and the
+best cost 1.030 pUSD before any fee, tick, depth, time-value, non-atomicity,
+latency, unwind, or operating cost. No new request was made and no book, fee,
+account, credential, order, fund, on-chain, or protected state was touched.
+
+Contract/result SHA-256 values are
+`feb1a65dcbf3e0a3af2e7b33fea7431fc5eebc3439ca295c4a4bf63058265e5b`
+and `990207a430a388ed85c74924eceb53b0e68ba7d31c3b3827a6d19a4d04376a50`.
+The preserved pre-economic failure SHA-256 is
+`c393ac6b0fbb49c487c7b71214fe7348783420be171fc19212c58c5bfab981ae`.
+Accepted edges remain 31, ranked hypotheses remain 48, terminal families become
+154, and stable current account-qualified after-all-cost edges remain zero.
+Registry and durability-audit SHA-256 values become
+`96982b13beec4577cfa9863b4efa9678fa63983a19842d014f81847ed64567d3`
+and `d3c0205a671bb920061b566004dec16b913de0e439804cdbb09c657534331cb8`.

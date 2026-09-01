@@ -8825,3 +8825,41 @@ Do not repair the cursor, refetch either Gemini event, omit partition legs,
 weaken the prehistory gate, or use this leaked population for promotion. No
 credential, protected capture, account, book, fee, order, fund, or transaction
 was touched.
+
+## Retained U.S. measles scalar threshold ladder
+
+The untouched exact nested U.S. measles September 30 event supplied a distinct
+zero-request scalar-ladder test. Before viewing economics, the contract froze
+all four thresholds (2900, 3000, 3100, and 3200), all six ordered lower-higher
+pairs, the common CDC total-case counter, September 30 cutoff, identical source
+fallback, at-least boundary, side-specific `bestAsk`/`1-bestBid` rejection gate,
+and deterministic ranking. The incomplete parent catalog was not treated as a
+complete event catalog; only this exact nested event was adjudicated.
+
+Two pre-economic local preflights exposed reusable implementation assumptions:
+the retained raw response is UTF-8 rather than ASCII, and its numeric display
+labels use a trailing `+`. Both failures were preserved, no economics were
+decoded or printed, and the final implementation-bound contract was refrozen
+after UTF-8 decoding and trailing-display-suffix normalization passed against
+the unchanged hash-bound bytes.
+
+All six direction-independent `YES(lower) + NO(higher)` packages had complete
+side-specific rejection prices. Zero cost strictly below their one-pUSD floor;
+the best cost 1.030 pUSD before fees, ticks, depth, time value, non-atomicity,
+latency, unwind, or operating cost. The exact event is terminal without any
+book or fee request. Do not refetch, reprice, select one sibling pair, or request
+depth; reopen only on a material price, fee, tick, rule, or market-architecture
+change.
+
+Contract/result SHA-256 values are
+`feb1a65dcbf3e0a3af2e7b33fea7431fc5eebc3439ca295c4a4bf63058265e5b`
+and `990207a430a388ed85c74924eceb53b0e68ba7d31c3b3827a6d19a4d04376a50`.
+The preserved pre-economic failure SHA-256 is
+`c393ac6b0fbb49c487c7b71214fe7348783420be171fc19212c58c5bfab981ae`.
+Accepted edges remain 31, ranked hypotheses remain 48, terminal families become
+154, and stable current account-qualified after-all-cost edges remain zero.
+Registry and durability-audit SHA-256 values become
+`96982b13beec4577cfa9863b4efa9678fa63983a19842d014f81847ed64567d3`
+and `d3c0205a671bb920061b566004dec16b913de0e439804cdbb09c657534331cb8`.
+No network, account, credential, book, fee, order, fund, transaction, on-chain,
+or protected capture was touched.

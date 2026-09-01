@@ -802,6 +802,11 @@ override prose.
   must assert the exact representation and exercise the production field
   decoder before an implementation-hash-bound contract is frozen. Preserve a
   pre-economic local failure and freeze a new contract; never rewrite it away.
+- Retained Gamma JSON is UTF-8 even when canonical downstream artifacts are
+  compact ASCII, and scalar `groupItemTitle` labels can carry display suffixes
+  such as `+`. Preflight the unchanged raw bytes with UTF-8 and freeze any
+  mechanical label normalization before economics; never discover encoding or
+  numeric-label assumptions inside an outcome-sensitive run.
 - Before refreshing books for a Polymarket maker-reward overlay, reconstruct the
   exact minimum-size one-leg orphan loss from retained evidence and reconcile
   each exact condition with `sponsored=true`. Gamma reward minimum and spread
