@@ -8169,3 +8169,59 @@ zero. Registry SHA-256 becomes
 `bafdead76f0ee1aca2c414674764a7ebca7510fd74478f797fa41735007e80dc`,
 and durability-audit SHA-256 becomes
 `7bfabbc199967018ce0cfde0787850d48f52960b146064e846455899b754dbf4`.
+
+## Polymarket Senate-majority-leader generated-placeholder rejection
+
+Rendered discovery found a distinct exact-payoff lead in `Next Senate Majority
+Leader?`: ten displayed open candidate YES asks summed to 0.950 pUSD, the FAQ
+said eleven outcomes, and the rules explicitly routed a no-majority or missing-
+announcement state to `Other`. Repository aliases and retained journals had no
+prior request for the exact event. A one-use public unauthenticated Gamma
+metadata contract was frozen before access.
+
+The contract preflight first rejected a manually anticipated `frozen_at_utc`
+that was nine minutes in the future. The validator failed before output-path
+creation and before any network access, so the one-use request remained
+unconsumed. Only that pre-access timestamp was corrected to an already observed
+host UTC instant, the canonical hash was recomputed, and resolved-path offline
+validation passed. `AGENTS.md` now requires capturing the host UTC clock before
+writing, followed by canonical hashing and absolute-path offline validation.
+
+The single permitted GET returned HTTP 200 with 218,775 retained bytes at
+SHA-256 `374fa8c998ef05a8c13b321b602651e6ac355d91b2663646dad0844218c47d38`.
+Exact metadata rejected both the apparent complete set and a possible party-
+projection cover. Event `289908` contains 64 NegRisk markets. Only ten are
+open, active, accepting orders; Lindsey Graham is active but closed; and 53
+are inactive. The inactive population contains 49 identity-free `Person X`
+placeholders plus Dick Durbin, John Cornyn, Rick Scott, and `Other`. Every
+inactive market accepts orders in metadata but has a direct YES ask of one
+pUSD, and `Other` is explicitly `negRiskOther`.
+
+Every returned YES ask sums to 53.931 pUSD per share, costing 269.655 pUSD at
+five shares for a five-pUSD event payout and a -264.655 pUSD gross floor. The
+ten open-active asks sum to 0.930 pUSD and retain 0.09003 pUSD after current
+fees and one adverse tick per leg, but that diagnostic omits 53 inactive
+siblings, the closed Lindsey Graham market, and the explicit `Other` state. It
+is not a complete payoff package. The 49 identity-free placeholders also
+cannot be assigned to a political party, so no complete Senate-control
+projection is proved.
+
+Do not retry, refresh, alias, omit, classify, or party-map hidden siblings, and
+do not request this event's books. Reopen rank 31 only for another distinct
+exact event whose complete returned market set is open, active, acquisition-
+capable, rule-exhaustive, and positive after current fees and at least one
+adverse tick per leg before depth. No book, fee endpoint, credential, account,
+order, fund, transaction, or protected capture was touched.
+
+Contract, capture-result, raw, journal, and adjudication SHA-256 values are
+`5f69284d64c20444343221b592558dfeb731c95217b12760f8ff1e4c11f76491`,
+`ff5ddefed63331563e69fd528755dfef2176f0a693268211a42b1dbf699811e0`,
+`374fa8c998ef05a8c13b321b602651e6ac355d91b2663646dad0844218c47d38`,
+`a661de1ca0749ec5efaab367eb22d4c2cec179bbf3a6d500a83222609f391ea9`,
+and `bf4605a90bd9a9389615cef7618b6ce04fbe379ca121bad9db7dbdc65a956772`.
+Accepted edges remain 29, ranked hypotheses remain 47, terminal families
+become 135, and stable current account-qualified after-all-cost edges remain
+zero. Registry SHA-256 becomes
+`002bbb75244f3333b2e70464b8835922fa7787fd5ccc01a857ed8becb459ee1a`,
+and durability-audit SHA-256 becomes
+`773581acc22ef94cf350c3d423c4b601514f17701f4ce57a3cdb623e8bc5af7e`.

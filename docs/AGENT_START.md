@@ -23,6 +23,43 @@ safety gate, blocks Stop, or submits an order.
 
 ### Latest efficient structural screen
 
+The distinct `Next Senate Majority Leader?` event initially exposed a stronger
+complete-set lead: ten rendered open candidate YES asks summed to 0.950 pUSD,
+while the FAQ said eleven outcomes and the rules explicitly named `Other`.
+One frozen public unauthenticated Gamma GET was therefore justified before
+depth. Exact metadata returned 64 NegRisk markets, not eleven. Only ten were
+open, active, and accepting orders; Lindsey Graham was active but closed; and
+53 markets were inactive. The inactive set included 49 identity-free `Person X`
+placeholders, Dick Durbin, John Cornyn, Rick Scott, and `Other`, each at a
+one-pUSD YES ask.
+
+Every returned YES ask sums to 53.931 pUSD per share for a one-pUSD payout, or
+a -264.655 pUSD gross floor at five shares. The open-active-only diagnostic
+retains 0.09003 pUSD after current fees and one adverse tick per leg, but it is
+not a complete package. The placeholders also cannot be party-mapped into a
+safe projection against the Senate-control marginal. The exact event is
+terminal before books: do not refresh, alias, omit, classify, or party-map
+hidden siblings.
+
+No credential, account, fee endpoint, order, fund, transaction, book, or
+protected capture was touched. Accepted edges remain 29, ranked hypotheses
+remain 47, terminal families become 135, and stable current account-qualified
+after-all-cost edges remain zero. Contract, capture-result, and adjudication
+SHA-256 values are
+`5f69284d64c20444343221b592558dfeb731c95217b12760f8ff1e4c11f76491`,
+`ff5ddefed63331563e69fd528755dfef2176f0a693268211a42b1dbf699811e0`,
+and `bf4605a90bd9a9389615cef7618b6ce04fbe379ca121bad9db7dbdc65a956772`.
+Registry and durability-audit SHA-256 values are
+`002bbb75244f3333b2e70464b8835922fa7787fd5ccc01a857ed8becb459ee1a`
+and `773581acc22ef94cf350c3d423c4b601514f17701f4ce57a3cdb623e8bc5af7e`.
+
+The contract preflight initially rejected a manually anticipated
+`frozen_at_utc` that was nine minutes in the future. This happened before any
+output path or network request existed. The timestamp was replaced with the
+already observed host UTC instant, the canonical hash was recomputed, and the
+resolved-path offline validator passed before the one permitted request. The
+repository instructions now require that exact sequence.
+
 The rendered OR-06 House Election Winner card exposed only Democratic and
 Republican outcomes whose visible prices appeared to sum to 0.962 pUSD. A
 frozen one-use public Gamma GET was therefore justified before any depth
