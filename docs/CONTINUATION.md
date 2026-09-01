@@ -1,12 +1,51 @@
 # Continue Development
 
-Current canonical status after the Binance Futures Free Position downside gate:
-accepted edges 36, ranked hypotheses 63, terminal families 180,
+Current canonical status after the Binance Trading Fee Rebate Voucher source gate:
+accepted edges 37, ranked hypotheses 64, terminal families 180,
 and stable current account-qualified after-all-cost edges zero. Registry
 SHA-256 is
-`3b48e46b34d06e443d8a52d33554b0c7ff6db0ea35e9fb73aba870b5d250c3cc`;
+`8a9c3282758f348a7009af934a17ceffdcd5501b17292717555684ff6686063a`;
 durability-audit SHA-256 is
-`99bab9069d94f690de7781310f8124a1dd9cde1c35380185cde9b4c907c8d329`.
+`530f25f5b07815e08ce94a214f5b319da394bc19ba8ced83e5368a434399ef4c`.
+
+## 2026-09-01 Binance Trading Fee Rebate Voucher scoped edge
+
+One prospectively frozen unauthenticated public CMS GET retained the exact
+current official Trading Fee Rebate Voucher FAQ. It proves that eligible Spot,
+Margin, or Futures fees actually paid after activation are rebated at the
+voucher-specific trade-back percentage. The daily refund is credited to Spot
+Wallet in USDT, USDC, or BNB the next day. It uses the net paid fee after VIP
+and BNB discounts, is limited by remaining voucher balance, and expires on the
+individual voucher date. Referral commissions, liquidation and delivery fees,
+some bots, Alpha trades, unavailable regions, suspicious activity, wash trades,
+bulk accounts, and sub-accounts are excluded or revocable.
+
+The accepted scope is narrow: exact positive owned rebate actually credited to
+Spot on independently justified organic eligible fee-bearing activity after
+every voucher-acquisition, Points-opportunity, activity, execution, tax,
+conversion, custody, delay, failure, and operating cost. It is a deterministic
+cost overlay, not a profitable underlying trading strategy. Never trade merely
+to obtain or consume a voucher; never create volume, self-trade, wash-trade,
+spoof, manipulate, use fake users, or double-count BNB, VIP, zero-fee, maker,
+referral, affiliate, or other discounts.
+
+No owned voucher, product, percentage, balance, maximum reward, expiry, region,
+eligibility, organic paid fee, Spot receipt, persistence, deployment readiness,
+or positive public forward floor is proved. Testnet credentials are irrelevant
+to mainnet voucher state and remained unused. Do not refetch or alias the FAQ,
+open Rewards Hub, claim, activate, spend Points, trade, or mutate state. Reopen
+only on rank 64's exact material official change or explicit signed GET-only
+mainnet authority plus an independently existing voucher; every state change
+requires separate explicit authority.
+
+Contract, source-result, raw-response, request-journal, and adjudication
+SHA-256 values are
+`f7d8d67913e8813e16e62ee031c29ead28715676b01b5b8ea1e604b645025a15`,
+`73698c080c26f0806df8168d88a2ce7f6fdcbece2b35a35fd35eab71ef059de1`,
+`fbb3f32ba39b853b0774343c88e40c32893be4da209a02a09559bfcb62c832d8`,
+`ed063592a2a156c84e71b2f509a6ef29699526e0b625bdd0122eb50204ef4cde`,
+and `f2d8c368459ac59d440e388c0a43e976ab33aa0404132455327ad7001fce17aa`.
+No account, credential, order, fund, transaction, or protected capture was used.
 
 ## 2026-09-01 Binance Futures Free Position downside rejection
 

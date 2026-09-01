@@ -1,0 +1,101 @@
+{
+  "schema_version": "binance-trading-fee-rebate-voucher-organic-cost-overlay-edge-adjudication-v1",
+  "created_at_utc": "2026-09-01T14:51:03Z",
+  "question": "Does a Binance Trading Fee Rebate Voucher define a stable market-direction-independent edge, and what exact rebate value may be credited without manufacturing trading activity or double-counting other fee discounts?",
+  "source_binding": {
+    "contract_path": "docs/model-research/action-value/binance-trading-fee-rebate-voucher-organic-cost-overlay-source-contract-v1-2026-09-01.json",
+    "contract_sha256": "f7d8d67913e8813e16e62ee031c29ead28715676b01b5b8ea1e604b645025a15",
+    "source_result_path": "docs/model-research/action-value/binance-trading-fee-rebate-voucher-organic-cost-overlay-source-result-v1-2026-09-01.json",
+    "source_result_sha256": "73698c080c26f0806df8168d88a2ce7f6fdcbece2b35a35fd35eab71ef059de1",
+    "source_result_file_sha256": "250462661de1e33faf81bb92e5ed6a32449d90d5b9ae13f138c49a9b09701410",
+    "raw_path": "data/binance-trading-fee-rebate-voucher-organic-cost-overlay-v1/raw/01-faq.raw.json",
+    "raw_sha256": "fbb3f32ba39b853b0774343c88e40c32893be4da209a02a09559bfcb62c832d8",
+    "journal_path": "data/binance-trading-fee-rebate-voucher-organic-cost-overlay-v1/raw/01-faq.journal.jsonl",
+    "journal_sha256": "ed063592a2a156c84e71b2f509a6ef29699526e0b625bdd0122eb50204ef4cde",
+    "official_article_code": "850671e05bb74848bf8fc4466279dda8",
+    "http_status": 200,
+    "response_bytes": 28121
+  },
+  "source_proved_mechanics": {
+    "eligible_fee_mechanism": "After voucher activation, designated Spot, Margin, or Futures trading fees actually incurred during eligible transactions are rebated at the voucher's trade-back percentage. Referral commissions are excluded.",
+    "settlement": "The corresponding daily rebate is credited to Spot Wallet in USDT, USDC, or BNB on the next day, by 23:59:59 UTC; timing is not fixed and typically begins from 06:00 UTC onward.",
+    "daily_base": "The rebate calculation uses the net trading fee paid each day after VIP and BNB discounts, so those discounts cannot be counted again as voucher value.",
+    "cap_and_percentage": "Each voucher exposes its trade-back percentage, remaining balance, expiry date, and maximum rebate reward. Eligible fee rebates are limited by the remaining voucher balance with the percentage applied.",
+    "validity": "A claimed voucher receives a unique expiry date. Remaining balance becomes unusable and unrestorable after expiry; value is deducted daily until depletion or expiry.",
+    "voucher_variants": "A fixed-USD rebate voucher converts its face amount to BNB at the current BNB price on activation. Other vouchers may settle in USDT, USDC, or BNB according to exact voucher settings.",
+    "exceptions": "Futures delivery fees, liquidation fees, sub-0.00000001 USD fees, Alpha trades, several named bots, referral commissions, unavailable regions, suspicious transactions, detected wash trades, risk users, illegally bulk-registered accounts, and sub-accounts are excluded or may be suspended or revoked.",
+    "acquisition": "A voucher may be claimed with Binance Points, which are deducted when claimed; the official public FAQ does not prove any voucher is free, owned, claimable, or positive-value for this account."
+  },
+  "semantic_source_gate": {
+    "eligible_incurred_fee_rebate_explicit": true,
+    "destination_account_and_asset_explicit": true,
+    "distribution_timing_explicit": true,
+    "cap_or_face_value_exhaustion_explicit": true,
+    "validity_or_expiry_explicit": true,
+    "passed": true
+  },
+  "economic_identity": {
+    "gross_rebate_formula": "min(remaining_voucher_balance, eligible_net_fee_paid_after_VIP_and_BNB_discounts times voucher_trade_back_fraction), subject to the exact voucher product, exclusions, validity, order, and asset terms",
+    "admitted_value": "only exact positive owned USDT, USDC, or BNB rebate actually credited or deterministically due to Spot for independently justified organic eligible fee-bearing activity",
+    "net_value_formula": "exact_rebate_asset_liquidation_or_retention_value minus voucher_acquisition_and_Points_opportunity_cost minus every incremental activity_execution_spread_slippage_funding_borrow_liquidation_tax_conversion_custody_delay_failure_and_operating_cost",
+    "market_direction_forecast_required": false,
+    "why_direction_independent": "The rebate is a percentage of an eligible fee already incurred and is capped by voucher balance; it does not depend on whether the underlying market rises or falls.",
+    "organic_activity_rule": "The underlying trade, margin use, or Futures activity must be independently justified before considering voucher value. The voucher may reduce a cost but may never justify creating, enlarging, accelerating, churning, self-trading, wash-trading, spoofing, manipulating, or otherwise manufacturing activity.",
+    "discount_interaction_rule": "Use only the net paid fee after VIP and BNB discounts and subtract referral commissions and every exclusion. Never double-count BNB, VIP, zero-fee, referral, maker, affiliate, or other reductions.",
+    "points_rule": "A voucher claimed with Binance Points is not zero-cost. Charge the full foregone alternative redemption value and every task or acquisition cost.",
+    "unknown_or_unowned_rule": "A missing, expired, depleted, unowned, unavailable, ineligible, suspended, revoked, or account-unverified voucher has zero admitted value."
+  },
+  "adjudication": {
+    "status": "accepted_scoped_exact_positive_owned_realized_fee_rebate_on_independently_justified_organic_eligible_activity_after_every_incremental_cost",
+    "accepted_edge": true,
+    "accepted_edge_count_change": 1,
+    "deployment_ready": false,
+    "profitability_claim": false,
+    "public_forward_net_profit_floor": "0",
+    "stable_current_account_qualified_after_all_cost_edge": false,
+    "standalone_incremental_cash_without_independent_trade_borrow_or_external_user": false,
+    "why_not_current_profit": "The public source proves the mechanism but no current owned voucher, product, trade-back percentage, remaining balance, maximum reward, expiry, settlement asset, acquisition lineage, Points cost, region, eligibility, independently justified fee-bearing activity, realized Spot credit, tax, conversion cost, or alternative discount state was accessed or proved.",
+    "why_not_tautological": "Official terms independently define an exact fee-refund calculation and next-day Spot settlement. Acceptance is still limited to the exact positive account-owned rebate after every cost and does not call the underlying trading strategy profitable."
+  },
+  "next_action": {
+    "public_work": "complete until a material official voucher fee base, trade-back, product, settlement asset, distribution, cap, expiry, exclusion, acquisition, reversal, or regional-scope change",
+    "account_gate": "Only with explicit signed GET-only Binance mainnet authority and an independently existing voucher, read the exact acquisition lineage, Points cost, product, trade-back percentage, remaining balance, maximum reward, expiry, region, status, settlement asset, eligible organic paid fees after other discounts, and exact Spot distributions. Compute exact after-all-cost value without creating activity.",
+    "separate_explicit_authority_required_for": [
+      "claiming or activating a voucher",
+      "spending Binance Points or completing acquisition tasks",
+      "opening any trading account or accepting service terms",
+      "placing modifying canceling or closing any order or position",
+      "borrowing repaying converting transferring withdrawing or any account mutation"
+    ],
+    "testnet_credentials_role": "none; Binance testnet credentials do not establish mainnet voucher ownership, eligibility, fee history, Spot distributions, or authority"
+  },
+  "prohibited_shortcuts": [
+    "trading or increasing turnover merely to obtain or consume the rebate voucher",
+    "self-trading wash-trading spoofing manipulating suspicious transactions bulk accounts sub-accounts referrals or fake users",
+    "treating voucher face value or maximum reward as cash before an eligible paid fee and exact Spot credit",
+    "omitting Points task deposit volume spread slippage funding borrow liquidation tax conversion custody delay failure opportunity or operating costs",
+    "double-counting BNB VIP zero-fee referral maker affiliate or other fee reductions",
+    "assuming product percentage balance expiry region settlement asset ownership eligibility receipt persistence or deployment from logged-out terms",
+    "using testnet credentials to infer or access mainnet voucher state",
+    "claiming activating trading transferring withdrawing converting or mutating state without separate explicit authority",
+    "calling a scoped fee rebate a stable current profitable trading strategy"
+  ],
+  "retry_trigger": "material_official_Trading_Fee_Rebate_Voucher_fee_base_trade_back_product_settlement_distribution_cap_expiry_exclusion_acquisition_reversal_or_regional_scope_change_or_explicit_signed_GET_only_Binance_mainnet_authority_plus_an_independently_existing_voucher_and_exact_owned_voucher_fee_and_Spot_distribution_reconciliation",
+  "authority": {
+    "account_requests": 0,
+    "credentials_used": false,
+    "funds_used": false,
+    "orders_or_transactions": 0,
+    "protected_capture_touched": false,
+    "public_unauthenticated_read_only_requests": 1,
+    "signed_requests": 0,
+    "trading_authority": false
+  },
+  "registry_effect": {
+    "accepted_edge_count": 37,
+    "ranked_hypothesis_count": 64,
+    "terminal_family_count": 180,
+    "stable_current_account_qualified_after_all_cost_edge_count": 0
+  },
+  "result_sha256": "f2d8c368459ac59d440e388c0a43e976ab33aa0404132455327ad7001fce17aa"
+}

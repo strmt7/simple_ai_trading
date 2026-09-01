@@ -12,7 +12,7 @@ operating contract. Historical handoff text is archived under
 | Development branch | `main` only |
 | Binance | BTC, ETH, and SOL; paper or testnet/Demo only |
 | Polymarket | Order-capable BTC, ETH, and SOL research is disabled by default; public unauthenticated structural discovery may cover other markets, with no live authority. |
-| Accepted edges | Thirty-six scoped structural edges. The canonical complete scopes, counts, and retry gates are in `docs/model-research/structural-edge-priority-registry-v1.json`; none is deployment-ready or fully account-and-external-cost-qualified. |
+| Accepted edges | Thirty-seven scoped structural edges. The canonical complete scopes, counts, and retry gates are in `docs/model-research/structural-edge-priority-registry-v1.json`; none is deployment-ready or fully account-and-external-cost-qualified. |
 | Live-money authority | None |
 | Historical cutoff | `2026-08-14T00:00:00Z` |
 
@@ -21,7 +21,33 @@ profitable without reproducible source-bound after-cost evidence. AI may veto
 or reduce risk only; it never creates positions, selects leverage, overrides a
 safety gate, blocks Stop, or submits an order.
 
-### Latest Binance Futures Free Position downside rejection
+### Latest Binance Trading Fee Rebate Voucher scoped edge
+
+One frozen current official Binance FAQ proves that an activated Trading Fee
+Rebate Voucher refunds eligible net-paid Spot, Margin, or Futures fees at its
+voucher-specific trade-back percentage. The daily refund reaches Spot Wallet in
+USDT, USDC, or BNB the next day, after VIP and BNB discounts, subject to the
+remaining-balance cap, expiry, product settings, and exclusions.
+
+The accepted scope is only exact positive owned rebate actually credited on
+independently justified organic eligible fee-bearing activity after every
+incremental cost. It must never justify generating or churning volume, and no
+other fee reduction may be double-counted. No owned voucher, exact terms,
+eligible organic fee, receipt, account qualification, persistence, deployment
+readiness, or positive public forward floor is proved.
+
+Accepted edges become 37, ranked hypotheses become 64, terminal families remain
+180, and stable current account-qualified after-all-cost edges remain zero.
+Registry, durability-audit, and adjudication-result SHA-256 values are
+`8a9c3282758f348a7009af934a17ceffdcd5501b17292717555684ff6686063a`,
+`530f25f5b07815e08ce94a214f5b319da394bc19ba8ced83e5368a434399ef4c`,
+and `f2d8c368459ac59d440e388c0a43e976ab33aa0404132455327ad7001fce17aa`.
+Do not refetch, open Rewards Hub, use testnet credentials as mainnet evidence,
+claim, activate, spend Points, trade, or mutate state. Reopen only on rank 64's
+material official change or explicit signed GET-only mainnet authority plus an
+independently existing voucher. Every state change needs separate authority.
+
+### Prior Binance Futures Free Position downside rejection
 
 One frozen current official Binance FAQ proves that a Futures Free Position
 uses given trading margin, fixes voucher parameters, lets the user choose Long
