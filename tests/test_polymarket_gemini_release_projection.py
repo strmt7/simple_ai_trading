@@ -6,9 +6,18 @@ from tools.adjudicate_polymarket_gemini_release_projection import adjudicate
 
 
 ROOT = Path(__file__).resolve().parents[1]
-CONTRACT = ROOT / "docs/model-research/action-value/polymarket-gemini-release-projection-contract-v1-2026-09-01.json"
-RESULT = ROOT / "docs/model-research/action-value/polymarket-gemini-release-projection-adjudication-v1-2026-09-01.json"
-CATALOG_RESULT = ROOT / "docs/model-research/action-value/polymarket-sep30-et-negrisk-complete-set-catalog-result-v1-2026-09-01.json"
+CONTRACT = (
+    ROOT
+    / "docs/model-research/action-value/polymarket-gemini-release-projection-contract-v1-2026-09-01.json"
+)
+RESULT = (
+    ROOT
+    / "docs/model-research/action-value/polymarket-gemini-release-projection-adjudication-v1-2026-09-01.json"
+)
+CATALOG_RESULT = (
+    ROOT
+    / "docs/model-research/action-value/polymarket-sep30-et-negrisk-complete-set-catalog-result-v1-2026-09-01.json"
+)
 REGISTRY = ROOT / "docs/model-research/structural-edge-priority-registry-v1.json"
 
 
@@ -56,4 +65,4 @@ def test_incomplete_catalog_and_registry_remain_fail_closed() -> None:
     assert _self_hash(registry, "result_sha256") == registry["result_sha256"]
     assert registry["accepted_edge_count"] == 31
     assert len(registry["prioritized_hypotheses"]) == 48
-    assert len(registry["terminal_do_not_repeat"]) == 154
+    assert len(registry["terminal_do_not_repeat"]) == 155

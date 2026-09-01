@@ -8863,3 +8863,48 @@ Registry and durability-audit SHA-256 values become
 and `d3c0205a671bb920061b566004dec16b913de0e439804cdbb09c657534331cb8`.
 No network, account, credential, book, fee, order, fund, transaction, on-chain,
 or protected capture was touched.
+
+## AI Lab second/third rank mutual exclusion
+
+Eight untouched exact nested events exposed four distinct common Labs-view
+rankings: Code Arena WebDev, Chinese Text Arena Overall, Text Arena Overall, and
+Text Arena Math. Their second- and third-place rules use the same source view,
+check instant, ambiguity fallback, deterministic tie sequence, permanent-source
+fallback, and candidate population within each family. One named company cannot
+occupy both positions, so `NO(second) + NO(third)` has a one-pUSD floor.
+
+The contract prospectively excluded every best event because it uses the Models
+view rather than the Labs view. It also excluded `Other`, every identity-free
+Company placeholder, and ByteDance/Bytedance across the Math pair because those
+labels do not source-prove one cross-event identity. It froze all remaining 67
+named-company packages before economics and ranked them globally.
+
+The first preflight failed before economics because the implementation required
+inactive excluded placeholders to be executable. That failure was preserved;
+the correction kept full population and representation validation but applied
+the active executable gate only to frozen named package rows. The refrozen
+preflight then passed against the unchanged retained bytes.
+
+Forty-eight packages had complete side-specific `1-bestBid` NO acquisition
+proxies. Google in Text Arena Overall was the only strict metadata candidate:
+0.18 pUSD for second-rank NO plus 0.81 pUSD for third-rank NO, costing 0.99 pUSD
+per share. At the five-share common minimum the 0.05 pUSD gross headroom did not
+survive the frozen execution hurdle. One adverse 0.01-pUSD tick on each leg plus
+0.06030 pUSD of exact taker fees produced a -0.11030 pUSD floor before depth,
+time value, non-atomicity, latency, unwind, or operating cost. No book request
+was authorized.
+
+Contract/result/preflight-failure SHA-256 values are
+`3fd13b0fb651614e1dbce6f9e85f1baf51a5cb6f020a150efa23e0378e8aaa1a`,
+`268aa6e00d349b164f1727e5d47ae34afe05787627e6552307aa04b59cdbe1e6`,
+and `32495c463d2748df8b4afbcfc579887d0ee01bb61ea2b933da981bac8a53c151`.
+Accepted edges remain 31, ranked hypotheses remain 48, terminal families become
+155, and stable current account-qualified after-all-cost edges remain zero.
+Registry and durability-audit SHA-256 values become
+`384d75c8fcec15cc2caecb249171b01ff00dad24c4a5209d94d0880364f97992`
+and `4723a56809cf8d6f9ba082a02e17a45f90b326bdfffd226ef53dc80a96a2f0e5`.
+Do not refetch, reprice, alias labels, or request books. Reopen only on a material
+price, fee, tick, rule, or market-architecture change that makes the exact
+package positive after the same fee-and-one-tick stress. No network, account,
+credential, book, fee endpoint, order, fund, transaction, on-chain, or protected
+capture was touched.
