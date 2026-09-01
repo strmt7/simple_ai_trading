@@ -446,6 +446,14 @@ override prose.
   `Other` bucket can represent different entities at different ranks. If those
   semantics are absent, fail at the source gate before reading price fields or
   building an assignment optimizer.
+- A subset condition implies a broader aggregate only over their shared
+  observation interval. Bind exact condition starts as well as deadlines and
+  timezones. If the subset starts earlier, a qualifying event in the creation
+  gap followed by no aggregate-interval event makes `NO(subset) +
+  YES(aggregate)` pay zero unless complete retained history removes that state.
+  Never assume a later aggregate condition inherits earlier subset history;
+  fail at the source gate before reading prices when any gap counterexample
+  remains.
 - Treat soccer exact-score implications as one cross-family graph, not a reason
   to rebuild collectors market by market. The retained August 29 population
   already exhausts match result, first scorer, BTTS, full-total, team-total,
