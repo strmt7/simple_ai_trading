@@ -1,0 +1,146 @@
+{
+  "schema_version": "polymarket-gemini-pro-interval-deadline-parity-adjudication-v1",
+  "created_at_utc": "2026-09-01T05:15:01Z",
+  "question": "Can NO of the weekly event's no-release-by-November-1 condition plus NO of the deadline event's release-by-October-31 condition form a direction-independent sub-one-pUSD cover?",
+  "source_contracts": [
+    {
+      "path": "docs/model-research/action-value/polymarket-gemini-pro-release-interval-metadata-contract-v1-2026-09-01.json",
+      "contract_sha256": "56fdf5aa9445190d1e2683f68a1f77fa9b5590e9535f05c31e7457bd5aeb68b9"
+    },
+    {
+      "path": "docs/model-research/action-value/polymarket-gemini-pro-release-deadline-metadata-contract-v1-2026-09-01.json",
+      "contract_sha256": "d9c3633af7c754ba0aef5fdcc319eb3cf03b8a083ecb19ff2c6056007983cb8e"
+    }
+  ],
+  "retained_public_sources": [
+    {
+      "path": "data/polymarket-gemini-pro-interval-deadline-parity-v1/raw/interval-event.json",
+      "sha256": "609f9503e55e63fc7a7878fcd862d9091a98096e18eb3e3f9ffbb041c1a3b812",
+      "response_bytes": 51836,
+      "event_market_count": 11
+    },
+    {
+      "path": "data/polymarket-gemini-pro-interval-deadline-parity-v1/raw/deadline-event.json",
+      "sha256": "f3b8c3b0bf9b5ec17f087260ee6ef68ba896f1dcf450da1fa4b4d0e3e309caf3",
+      "response_bytes": 89286,
+      "event_market_count": 21
+    },
+    {
+      "path": "data/polymarket-gemini-pro-interval-deadline-parity-v1/interval-request-journal.jsonl",
+      "sha256": "b620703d44e64e1b6ae8808f8d1921876a91bf1e10d57fd0d49afa5fcee5fe4e"
+    },
+    {
+      "path": "data/polymarket-gemini-pro-interval-deadline-parity-v1/deadline-request-journal.jsonl",
+      "sha256": "c9bce78bad1f5dbef4f39ca18ecf20b73d768f757cfeeaa6a585e8c97a5c5c74"
+    },
+    {
+      "path": "docs/model-research/action-value/polymarket-gemini-pro-release-interval-metadata-capture-result-v1-2026-09-01.json",
+      "file_sha256": "274a18de0c02f2feca73d9197eaaef83396a30375354335974319a372ee10c48",
+      "result_sha256": "748cdb55075ff118848ea71608622571e89912763a33a271eef0674a84ad4309"
+    },
+    {
+      "path": "docs/model-research/action-value/polymarket-gemini-pro-release-deadline-metadata-capture-result-v1-2026-09-01.json",
+      "file_sha256": "25b22f5228314edaf1db0150d6c3a69bfffec4e860b350115ac49165dbeaa7bd",
+      "result_sha256": "7748a2c988adf2cc4efebed0686ebc8bd49ad6f1f23166b2096de99ffbf14df5"
+    }
+  ],
+  "rule_alignment": {
+    "qualifying_model_labels": "Both require a post-market-creation Google Gemini model labeled Pro and exclude Flash, Flash-Lite, and other non-Pro variants.",
+    "GA_promotion_treatment": "Both allow a GA promotion of an existing Preview model to qualify.",
+    "public_access_threshold": "Both require general-public accessibility and allow open beta or open rolling-waitlist signups while excluding closed beta and private access.",
+    "placeholder_exclusion": "Both exclude labeling errors, placeholder text, and inaccessible version names.",
+    "resolution_sources": "Both prioritize official Google information with consensus credible reporting as additional verification.",
+    "calendar": "Both use ET calendar deadlines. The deadline condition ends at 2026-11-01T03:59:00Z for October 31 ET; the weekly no-release condition extends through November 1.",
+    "creation_gap_proof": "The selected deadline condition began 2026-08-17T13:20:14.781557Z and the interval event began 2026-08-17T23:32:37Z. The same deadline event's August-21 condition is closed, not accepting orders, and records [0,1], proving no qualifying release across that gap. The interval event's prior-to-August-31 condition independently records the same finalized No state.",
+    "alignment_status": "aligned_for_an_optimistic_payoff_floor_screen;_no_alignment_assumption_is_needed_for_the_terminal_price_rejection"
+  },
+  "selected_legs": [
+    {
+      "event": "When will the next Google Gemini Pro model be released?",
+      "market_id": "3685385",
+      "condition_id": "0xb3191751ba756172e31ca760cf4b2a9a4324b0993d61f84433f5da7e0f94d64b",
+      "question": "Will there be no next Google Gemini Pro model release by November 1, 2026?",
+      "acquired_outcome": "No",
+      "yes_best_bid": "0.33",
+      "conservative_NO_ask_proxy_pUSD_per_share": "0.67",
+      "active": true,
+      "closed": false,
+      "accepting_orders": true,
+      "minimum_order_shares": "5",
+      "tick_size_pUSD": "0.01"
+    },
+    {
+      "event": "Next Google Gemini Pro Model released by...?",
+      "market_id": "3667937",
+      "condition_id": "0xc6030c1d1b100e37643ac8a1751b483d4feefbf8f4daa0acd08de505eb67e05a",
+      "question": "Will the next Google Gemini Pro model be released by October 31, 2026?",
+      "acquired_outcome": "No",
+      "yes_best_bid": "0.67",
+      "conservative_NO_ask_proxy_pUSD_per_share": "0.33",
+      "active": true,
+      "closed": false,
+      "accepting_orders": true,
+      "minimum_order_shares": "5",
+      "tick_size_pUSD": "0.01"
+    }
+  ],
+  "payoff_state_table": [
+    {
+      "state": "qualifying release by October 31 ET",
+      "interval_no_token_payout_pUSD": "1",
+      "deadline_no_token_payout_pUSD": "0",
+      "package_payout_pUSD": "1"
+    },
+    {
+      "state": "no qualifying release through November 1",
+      "interval_no_token_payout_pUSD": "0",
+      "deadline_no_token_payout_pUSD": "1",
+      "package_payout_pUSD": "1"
+    },
+    {
+      "state": "qualifying release after October 31 but before the no-release condition ceases to be true",
+      "interval_no_token_payout_pUSD": "1",
+      "deadline_no_token_payout_pUSD": "1",
+      "package_payout_pUSD": "2"
+    }
+  ],
+  "economics_gate": {
+    "guaranteed_payout_floor_pUSD_per_share": "1",
+    "interval_NO_ask_proxy_pUSD_per_share": "0.67",
+    "deadline_NO_ask_proxy_pUSD_per_share": "0.33",
+    "package_cost_proxy_pUSD_per_share": "1.00",
+    "gross_headroom_pUSD_per_share": "0.00",
+    "gross_headroom_at_common_five_share_minimum_pUSD": "0.00",
+    "strict_subfloor_gate_passed": false,
+    "fees_evaluated": false,
+    "CLOB_books_requested": 0,
+    "fee_endpoints_requested": 0,
+    "reason": "The prospectively frozen rule requires the sum of one-minus-direct-YES-bestBid rejection proxies to be strictly below the one-pUSD floor before any book or fee request. The exact sum equals the floor, so every nonzero fee, adverse tick, latency, non-atomicity, time-value, unwind, capital, or operating cost makes the package negative."
+  },
+  "adjudication": {
+    "status": "terminal_exact_metadata_sum_equals_payoff_floor_before_fees_and_depth",
+    "accepted_edge": false,
+    "deployment_ready": false,
+    "market_direction_forecast_required": false,
+    "profitability_claim": false,
+    "stable_current_account_qualified_after_all_cost_edge": false,
+    "next_action": "Do not retry, refresh, alias, reprice, request books, or request fees for this exact two-event population. Reopen rank 31 only for a distinct unconsumed exact interval/deadline sibling with source-proved same-target rules and a conservative side-specific package strictly below its guaranteed payout floor, or a material rule, fee, tick, or market-architecture change."
+  },
+  "authority": {
+    "account_requests": 0,
+    "credentials_used": false,
+    "funds_used": false,
+    "orders_or_transactions": 0,
+    "protected_capture_touched": false,
+    "public_unauthenticated_read_only_requests": 2,
+    "signed_requests": 0,
+    "trading_authority": false
+  },
+  "registry_effect": {
+    "accepted_edge_count": 29,
+    "ranked_hypothesis_count": 47,
+    "terminal_family_count": 139,
+    "stable_current_account_qualified_after_all_cost_edge_count": 0
+  },
+  "result_sha256": "a1e7562a56408bf3634f60585a6b64be89e401b7f1a25875762eed42c6908ac6"
+}

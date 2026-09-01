@@ -1,5 +1,52 @@
 # Continue Development
 
+## 2026-09-01 Polymarket Gemini Pro interval/deadline parity rejection
+
+A distinct direction-independent candidate passed rendered discovery:
+`NO(no Gemini Pro release by November 1) + NO(Gemini Pro released by October
+31)` appeared to cost 0.97 pUSD for a one-pUSD floor. Two prospectively frozen,
+one-use, public unauthenticated Gamma GETs retained the exact interval and
+deadline events with 11 and 21 markets respectively.
+
+The substantive qualifying-model, GA-promotion, public-access, private-beta,
+placeholder, ET-calendar, and resolution-source rules align. Closed No siblings
+also exclude a qualifying release during the roughly ten-hour selected-market
+creation gap, so the same-target implication survives the optimistic rule gate.
+The exact conservative acquisition proxies do not: `NO(no release by November
+1)` is `1 - 0.33 = 0.67` pUSD and `NO(released by October 31)` is
+`1 - 0.67 = 0.33` pUSD. Their 1.00-pUSD sum only equals the guaranteed floor
+before fees, ticks, depth, time value, non-atomicity, latency, unwind, capital,
+or operating cost. The strict sub-floor gate failed, so zero CLOB book or fee
+endpoint requests were justified.
+
+This exact two-event population is terminal. Do not retry, refresh, alias,
+reprice, or request books or fees. Reopen rank 31 only for a distinct,
+unconsumed, source-proved same-target interval/deadline pair whose conservative
+side-specific package is strictly below its floor, or a material rule, fee,
+tick, or market-architecture change. Interval and deadline contract hashes are
+`56fdf5aa9445190d1e2683f68a1f77fa9b5590e9535f05c31e7457bd5aeb68b9`
+and `d9c3633af7c754ba0aef5fdcc319eb3cf03b8a083ecb19ff2c6056007983cb8e`;
+capture-result hashes are
+`748cdb55075ff118848ea71608622571e89912763a33a271eef0674a84ad4309`
+and `7748a2c988adf2cc4efebed0686ebc8bd49ad6f1f23166b2096de99ffbf14df5`;
+adjudication hash is
+`a1e7562a56408bf3634f60585a6b64be89e401b7f1a25875762eed42c6908ac6`.
+
+Accepted edges remain 29, ranked hypotheses remain 47, terminal families become
+139, and stable current account-qualified after-all-cost edges remain zero.
+Registry and durability-audit hashes are
+`097e92b82ef74899f08c972747d268fd4554beb92f1fdbcb23c5316767a19703`
+and `62ebb5280c1d3ded0a0298c97ac1cad0189d733be57918e9bf3a1da4bbb4884f`.
+No signed request, account, credential, order, fund, transaction, or protected
+capture was touched.
+
+The pre-access contract hashes were initially computed with PowerShell
+`ConvertTo-Json`, which does not reproduce the repository's canonical sorted,
+compact ASCII JSON. Offline validation had not run and no output path or network
+request existed. The hashes alone were corrected with the Python canonicalizer,
+both absolute-path validators passed, and only then were the exact one-use GETs
+consumed. `AGENTS.md` now prohibits that serializer substitution.
+
 ## 2026-09-01 Binance SHEIN quanto to native-stock exact-share rejection
 
 The new `HK0625USDT` SHEIN quanto announcement also satisfied rank 38's literal

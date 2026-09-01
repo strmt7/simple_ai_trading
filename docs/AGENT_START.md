@@ -23,6 +23,41 @@ safety gate, blocks Stop, or submits an order.
 
 ### Latest efficient structural screen
 
+The Gemini Pro October-31 deadline to November-1 interval pair is terminal at
+the exact metadata gate. Two prospectively frozen one-use public Gamma GETs
+reconciled 11 interval and 21 deadline markets. The substantive public-release
+rules align and closed No siblings exclude a qualifying release during the
+selected markets' creation gap. However, the conservative `NO + NO`
+acquisition proxies are 0.67 and 0.33 pUSD, exactly 1.00 pUSD against a
+one-pUSD floor. Zero gross headroom remains before fees, ticks, depth, time
+value, non-atomicity, latency, unwind, capital, or operating cost, so no CLOB
+book or fee endpoint was requested.
+
+Do not retry, refresh, alias, reprice, or book-capture this exact pair. Reopen
+rank 31 only for a distinct unconsumed same-target sibling whose conservative
+side-specific package is strictly sub-floor, or a material rule, fee, tick, or
+architecture change. Accepted edges remain 29, ranked hypotheses remain 47,
+terminal families are 139, and stable current account-qualified after-all-cost
+edges remain zero. The interval contract/capture hashes are
+`56fdf5aa9445190d1e2683f68a1f77fa9b5590e9535f05c31e7457bd5aeb68b9`
+and `748cdb55075ff118848ea71608622571e89912763a33a271eef0674a84ad4309`;
+the deadline contract/capture hashes are
+`d9c3633af7c754ba0aef5fdcc319eb3cf03b8a083ecb19ff2c6056007983cb8e`
+and `7748a2c988adf2cc4efebed0686ebc8bd49ad6f1f23166b2096de99ffbf14df5`;
+the adjudication, registry, and durability-audit hashes are
+`a1e7562a56408bf3634f60585a6b64be89e401b7f1a25875762eed42c6908ac6`,
+`097e92b82ef74899f08c972747d268fd4554beb92f1fdbcb23c5316767a19703`,
+and `62ebb5280c1d3ded0a0298c97ac1cad0189d733be57918e9bf3a1da4bbb4884f`.
+No account, credential, signed request, order, fund, transaction, or protected
+capture was touched.
+
+Contract hashing must use the repository's Python sorted-key compact-ASCII
+canonicalizer, never PowerShell `ConvertTo-Json`. This correction was made
+before validation, output creation, or network access and changed no frozen
+question, population, gate, or request boundary.
+
+### Prior efficient structural screen
+
 Two new literal triggers were closed at the cheapest decisive gate.
 
 First, rank 38's native-stock parity branch cannot use the newly announced
