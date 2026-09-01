@@ -4298,6 +4298,35 @@ Reopen only on a material price, fee, tick, rule, or market-architecture change.
 No network, account, credential, book, fee endpoint, order, fund, transaction,
 on-chain, or protected capture was touched.
 
+The next distinct fixed-NegRisk discovery was the exact eleven-bin NYC
+September 1 high-temperature event. The official rendered discovery page
+exposed all eleven displayed Buy-YES prices before a contract was frozen, so
+the exact event is permanently promotion-ineligible. One frozen exact Gamma
+GET was retained only for rejection and lineage. It reconciled all eleven
+markets. The all-YES acquisition sum was 1.0485 pUSD for a one-pUSD floor and
+failed before books. All eleven displayed one-NO-to-other-YES identities were
+gross-positive, with a best 0.0485-pUSD displayed gap, but Gamma prices are not
+executable output bids and the pre-freeze leak forbids candidate selection,
+depth, or promotion.
+
+Contract/result SHA-256 values are
+`f870a6417968fa86dc3b194905a7d3d25dca59b4969fd69768290256c48e5336`
+and `c3dc478bc582ec5f60ace208fab5cb28e9d1cf593059894443d2783c12f114ac`.
+Raw-response and request-journal SHA-256 values are
+`28314d59c66cf50b81232ba85ae4017248f2ad73e498535e28b6526cfe03b9d9`
+and `201bdcb74190a36fe9f37de795bda9fc527fe502039279a9d808f44d7b5daefb`.
+Accepted edges remain 31, ranked hypotheses remain 48, terminal families become
+158, and stable current account-qualified after-all-cost edges remain zero.
+Registry and durability-audit SHA-256 values become
+`fd3948dffc72413f18f54fc966278fae617d3050f2fe6fd682c8308874e231f5`
+and `c7e4f16beee4a9bade1d359774849b22f53155db908e0901842d61e2b59db636`.
+
+Do not refetch, alias, reprice, or request books for this exact event. For the
+next distinct daily weather partition, freeze deterministic event selection and
+the complete expected population before any outcome-aware page or search
+access. No account, credential, book, fee, on-chain, order, fund, transaction,
+or protected capture was touched.
+
 The next frozen zero-network screen validated all five returned AI Arena
 Overall score thresholds. The 1510 market was closed and non-acquisition-
 capable. Four of six pairs among the active 1520, 1530, 1540, and 1550 markets
