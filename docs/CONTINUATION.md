@@ -8077,3 +8077,54 @@ zero. Registry SHA-256 becomes
 `e9dcc345636a26a3fc43c3152087d7ca33f53744674d291b500f16f0fff00776`,
 and durability-audit SHA-256 becomes
 `87d5e74c6b7feefc95c3a047980527679763668e34e234aa0fee4abd98526256`.
+
+## Polymarket 2026 Senate-House projection-cover rejection
+
+A distinct joint-to-marginal projection cover passed the rendered and exact
+metadata fee gates. Buy `NO` on the standalone Republican Senate seat outcomes
+50, 51, and 52, then buy `YES` on every joint-event row whose Senate projection
+is 50-52: House seats at least 223, 208-222, 193-207, and at most 192. When the
+Senate result is outside 50-52, all three NO legs pay. When it is 50, 51, or
+52, two NO legs plus exactly one exhaustive House row pay. The seven-leg
+package therefore has a three-pUSD terminal floor independent of market
+direction.
+
+Two frozen one-use public Gamma GETs retained 77,675 and 65,510 bytes at
+SHA-256 `0c2e183ff2d8681095b12635a4b88dc714eede64a36f778da1d35b994f790a3f`
+and `cff3146fd7f73bd341a2e716c27d130569ddde3deacc0a3c76a08978d5ce5158`.
+The exact joint event contains 13 active open accepting-order markets and the
+standalone Senate event contains 11. All four required 50-52 House rows are
+present and exhaustive. The Senate election universe, October 31 cutoff,
+runoff, vacancy, party attribution, independent-caucus, January 4 fallback,
+and resolution-source rules align. The differing nominal Gamma end fields are
+retained as additional timing friction and were not used to improve economics.
+
+Conservative side-specific metadata prices were 0.88, 0.90, and 0.927 pUSD
+for the three NO legs using `1 - bestBid`, and 0.035, 0.107, 0.084, and 0.028
+pUSD for the four direct YES asks. The 2.961-pUSD per-share package left
+0.195 pUSD gross at five shares. All seven current 0.04 exponent-1 taker fees
+totaled 0.09938 pUSD, leaving 0.09562 pUSD before depth.
+
+The cheapest remaining decisive gate then rejected it without wasting a book
+request. One exact adverse tick per leg raised the per-share cost to 2.986
+pUSD; recomputed taker fees were 0.09675 pUSD at five shares, making the
+after-fee floor -0.02675 pUSD before depth, time value, seven-leg non-atomicity,
+partial-fill unwind, latency, capital, or operational cost. No fourteen-token
+book batch, fee endpoint, credential, account, order, fund, transaction, or
+protected capture was requested.
+
+Do not refresh, reprice, alias, omit a House row, or book-capture this exact
+two-event population. Reopen only for a distinct rule-complete joint projection
+whose conservative package remains positive after current fees and at least
+one adverse tick per leg before depth, or a material fee, tick, rule, or market-
+architecture change. Contract SHA-256 values are
+`0cb91fb5c8b0ec763c581b91817e01b0cea15209163f73cc497a7a8bc72b7834`
+and `38faaa6e90618a75fe68edd99444e37e9644c93ed38cf45c77af935979e65bf0`;
+canonical adjudication SHA-256 is
+`2fdcd4595af5b5a7e50a0e97fa0559694bcaddd03f844c201894441afc46adbd`.
+Accepted edges remain 29, ranked hypotheses remain 47, terminal families become
+133, and stable current account-qualified after-all-cost edges remain zero.
+Registry SHA-256 becomes
+`93ea1175161da3c536af13d0ac86cc0c08ec1e729cd56b72eafa32c4654c4125`,
+and durability-audit SHA-256 becomes
+`bd2f8e5bb16a9b9dc64d2f79f626b051147fc20679f72c06d89563909dca8c1e`.

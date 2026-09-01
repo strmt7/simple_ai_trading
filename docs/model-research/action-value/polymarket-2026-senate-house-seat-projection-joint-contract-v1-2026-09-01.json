@@ -1,0 +1,86 @@
+{
+  "schema_version": "polymarket-joint-seat-projection-metadata-contract-v1",
+  "status": "frozen_before_one_public_gamma_request",
+  "frozen_at_utc": "2026-09-01T03:38:51Z",
+  "contract_path": "docs/model-research/action-value/polymarket-2026-senate-house-seat-projection-joint-contract-v1-2026-09-01.json",
+  "question": "Does the exact joint Senate-House seat event expose one complete active partition whose four 50-52 Senate rows exhaust every House-seat state under rules compatible with the standalone exact 50, 51, and 52 Senate-seat markets?",
+  "trigger": {
+    "registry_rank": 31,
+    "event_slug": "how-many-senate-and-house-seats-will-republicans-have-after-the-midterms-20260625152833634",
+    "rendered_discovery_url": "https://polymarket.com/event/how-many-senate-and-house-seats-will-republicans-have-after-the-midterms-20260625152833634",
+    "candidate_package": [
+      "NO(Republicans hold exactly 50 Senate seats)",
+      "NO(Republicans hold exactly 51 Senate seats)",
+      "NO(Republicans hold exactly 52 Senate seats)",
+      "YES(50-52 Senate seats and at least 223 House seats)",
+      "YES(50-52 Senate seats and 208-222 House seats)",
+      "YES(50-52 Senate seats and 193-207 House seats)",
+      "YES(50-52 Senate seats and at most 192 House seats)"
+    ],
+    "rendered_candidate_sum_pUSD_per_share": "2.963",
+    "guaranteed_floor_if_rules_align_pUSD_per_share": "3",
+    "rendered_gross_headroom_at_five_shares_pUSD": "0.185",
+    "rendered_current_taker_fee_at_five_shares_pUSD": "0.09904",
+    "rendered_after_fee_headroom_at_five_shares_pUSD": "0.08596",
+    "discovery_values_are_economic_inputs": false,
+    "house_row_requirement": "Every 50-52 Senate row is mandatory; a missing, hidden, inactive, blank-sided, or unlisted House range is unavailable rather than free."
+  },
+  "request_name": "exact_2026_joint_senate_house_seat_event_metadata",
+  "request": {
+    "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "count": 1,
+    "method": "GET",
+    "url": "https://gamma-api.polymarket.com/events/slug/how-many-senate-and-house-seats-will-republicans-have-after-the-midterms-20260625152833634"
+  },
+  "response_byte_ceiling": 2000000,
+  "required_utf8_phrases": [
+    "\"slug\":\"how-many-senate-and-house-seats-will-republicans-have-after-the-midterms-20260625152833634\"",
+    "\"title\":\"How many Senate and House seats will Republicans have after the midterms?\"",
+    "\"markets\":[",
+    "\"negRisk\":true"
+  ],
+  "decision": {
+    "metadata_only": true,
+    "outcome_prices_excluded": true,
+    "book_requests_authorized": 0,
+    "accepted_edge_from_metadata": false,
+    "state_cover": {
+      "Republican_Senate_seats_outside_50_51_52": "all three standalone NO legs pay 1, for a total payout of 3",
+      "Republican_Senate_seats_exactly_50_51_or_52": "two standalone NO legs pay 1 and exactly one mandatory joint 50-52 House row pays 1, for a total payout of 3"
+    },
+    "alignment_gate": "Enumerate every returned joint sibling, including hidden or inactive markets. Require a complete mutually exclusive and exhaustive joint event; exactly four active open accepting-orders 50-52 rows spanning at least 223, 208-222, 193-207, and at most 192 House seats with no gap or overlap; and identical Senate seat universe, election cutoff, runoff handling, vacancy handling, party attribution, independent-caucus handling, ambiguity fallback, resolution horizon, and sources with the standalone Senate event.",
+    "next_step_if_gate_passes": "Use only direct bestAsk for joint YES legs and conservative one-minus-bestBid for standalone NO legs. Apply every current fee schedule at the five-share common minimum. Only a strictly positive after-fee floor before depth may authorize a separately frozen exact fourteen-token book batch.",
+    "next_step_if_gate_fails": "Preserve both one-use responses and reject without books, fee endpoints, credentials, accounts, orders, funds, transactions, or protected capture access."
+  },
+  "outputs": {
+    "raw_path": "data/polymarket-2026-senate-house-seat-projection-metadata-v1/raw/joint-event.json",
+    "journal_path": "data/polymarket-2026-senate-house-seat-projection-metadata-v1/joint-request-journal.jsonl",
+    "result_path": "docs/model-research/action-value/polymarket-2026-senate-house-seat-projection-joint-capture-result-v1-2026-09-01.json"
+  },
+  "authority": {
+    "account_requests": 0,
+    "credentials_used": false,
+    "funds_used": false,
+    "orders_or_transactions": 0,
+    "protected_capture_touched": false,
+    "public_unauthenticated_read_only_requests": 1,
+    "signed_requests": 0,
+    "trading_authority": false
+  },
+  "implementations": [
+    {
+      "path": "tools/capture_public_source_contract.py",
+      "sha256": "d566a5a379c659c3da144d5e28449ebac9c01493bd39646f9cc3a6e697a83566"
+    },
+    {
+      "path": "tools/screen_polymarket_exact_two_leg_package.py",
+      "sha256": "374fcc3c3485c466b4929a91256450bdc7db70f93ef4c6bda627e05fe8938327"
+    },
+    {
+      "path": "tools/adjudicate_polymarket_exact_mlb_monotone_prefilter.py",
+      "sha256": "958a44d78029b9a1eb69a3771ce18e53ac1ed3c7bc161c8e4318beedce2cf99f"
+    }
+  ],
+  "retry_policy": "This exact Gamma event GET is one-use. Preserve any timeout, non-200 response, schema mismatch, hidden sibling, incomplete outcome set, missing side-specific field, rule contradiction, or calculation failure. Never retry an alias, omit a House row, choose a favorable subset, or substitute rendered or outcomePrices values.",
+  "contract_sha256": "0cb91fb5c8b0ec763c581b91817e01b0cea15209163f73cc497a7a8bc72b7834"
+}

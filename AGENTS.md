@@ -106,6 +106,15 @@ override prose.
   joint state uncovered; write that state down explicitly instead of pricing it
   as impossible. Apply the same rendered-button rejection gate and frozen
   side-specific advance rules as for a scalar ladder.
+- For a projection cover from one complete joint partition to `k` mutually
+  exclusive exact marginal outcomes, buy `NO` on every marginal outcome and
+  `YES` on every joint row whose projection is their union. The package has a
+  `k`-pUSD floor only after every projected joint row, hidden sibling, boundary,
+  and fallback is enumerated and both events use the same underlying scalar and
+  resolution rules. Use conservative `1 - bestBid` for marginal NO legs and
+  direct `bestAsk` for joint YES legs. Apply the exact fee curve and at least one
+  adverse tick per leg before requesting books; a nonpositive stressed floor
+  terminalizes the exact family without depth access.
 - A rendered multi-outcome count is not proof that its visible cards exhaust an
   exact NegRisk event. If the rules name an unrendered fallback or Gamma can
   retain hidden or inactive siblings, a strict visible all-YES subfloor may
@@ -146,7 +155,9 @@ override prose.
   The `uv run --locked pytest ...` console-script form can omit the repository
   root from `sys.path` here and produce a false `ModuleNotFoundError: tools`
   during collection; do not debug or modify imports until the module form has
-  been tried.
+  been tried. The exact publication reconstruction selector is
+  `tests/test_polymarket_publication.py::test_current_status_manifest_reconstructs_every_artifact`;
+  do not guess a filename from the test name.
 - Raw non-browser requests to rendered Binance Academy and product-documentation
   pages have repeatedly returned HTTP 202 shells of about 2 KB with none of the
   visible economic or schema terms. Do not use such a dynamic page as the sole
