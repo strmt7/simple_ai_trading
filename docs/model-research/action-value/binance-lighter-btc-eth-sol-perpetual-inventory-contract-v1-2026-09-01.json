@@ -1,0 +1,67 @@
+{
+  "schema_version": "public-source-capture-contract-v1",
+  "frozen_at_utc": "2026-09-01T02:16:34.5725966Z",
+  "contract_path": "docs/model-research/action-value/binance-lighter-btc-eth-sol-perpetual-inventory-contract-v1-2026-09-01.json",
+  "trigger": {
+    "registry_route": "new_distinct_Binance_Lighter_cross_venue_BTC_ETH_SOL_perpetual_funding_family",
+    "novelty_evidence": "Repository filename and bounded prose alias searches found retained Binance-Hyperliquid and Binance-Aster funding studies but no Lighter family or capture. Official Lighter SDK commit ebc50660efc99f31e4055418e4514255456cb060 documents unauthenticated GET /api/v1/orderBookDetails and GET /api/v1/fundings. Official Lighter funding terms state hourly peer-to-peer funding with positive rates paid by longs to shorts, while current fee terms publish zero maker and taker fees for the default Standard account with explicit execution latency.",
+    "outcomes_viewed_before_freeze": false,
+    "discovery_values_are_economic_inputs": false
+  },
+  "question": "Does the complete current public Lighter perpetual inventory contain active BTC ETH and SOL contracts with exact market IDs and compatible quote-unit metadata, permitting a separately frozen funding-only prefilter against retained Binance BTCUSDT ETHUSDT and SOLUSDT history?",
+  "request_name": "lighter-current-complete-perpetual-order-book-details",
+  "request": {
+    "method": "GET",
+    "url": "https://mainnet.zklighter.elliot.ai/api/v1/orderBookDetails?filter=perp",
+    "count": 1,
+    "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "endpoint_classification": {
+    "operation": "download complete current public Lighter perpetual market metadata",
+    "security": "public unauthenticated read-only market-data GET",
+    "source_contract": "Official Lighter Python SDK commit ebc50660efc99f31e4055418e4514255456cb060 documents OrderApi.order_book_details with optional market_id and filter, return type OrderBookDetails, and no authorization required. The OrderBookDetails schema exposes order_book_details as the perpetual row list."
+  },
+  "response_byte_ceiling": 5000000,
+  "required_utf8_phrases": [
+    "\"order_book_details\"",
+    "\"market_id\"",
+    "\"symbol\""
+  ],
+  "decision": {
+    "source_gate_only": "The retained response must be a successful nonempty complete metadata object. Parse only after durable capture.",
+    "accepted_edge": false,
+    "profitability_proved": false,
+    "conditional_next_step": "Deterministically select exact active perp rows whose symbols are BTC ETH and SOL. If any is absent duplicated inactive or unit-incompatible, terminalize deployment before funding. If all three pass, freeze one exact 30-day historical funding contract that reuses the retained Binance histories and allows exactly one Lighter funding GET per asset. No basis book account credential or order request is allowed unless every chronological role remains positive after all frozen execution capital latency custody and quote-unit stresses."
+  },
+  "outputs": {
+    "raw_path": "docs/model-research/binance/raw/lighter-btc-eth-sol-perpetual-inventory-v1-2026-09-01/01-order-book-details.raw.json",
+    "journal_path": "docs/model-research/binance/raw/lighter-btc-eth-sol-perpetual-inventory-v1-2026-09-01/00-request-journal.jsonl",
+    "result_path": "docs/model-research/action-value/binance-lighter-btc-eth-sol-perpetual-inventory-source-result-v1-2026-09-01.json"
+  },
+  "authority": {
+    "account_requests": 0,
+    "credentials_used": false,
+    "funds_used": false,
+    "orders_or_transactions": 0,
+    "protected_capture_touched": false,
+    "public_unauthenticated_read_only_requests": 1,
+    "signed_requests": 0,
+    "trading_authority": false
+  },
+  "implementations": [
+    {
+      "path": "tools/capture_public_source_contract.py",
+      "sha256": "d566a5a379c659c3da144d5e28449ebac9c01493bd39646f9cc3a6e697a83566"
+    },
+    {
+      "path": "tools/screen_polymarket_exact_two_leg_package.py",
+      "sha256": "374fcc3c3485c466b4929a91256450bdc7db70f93ef4c6bda627e05fe8938327"
+    },
+    {
+      "path": "tools/adjudicate_polymarket_exact_mlb_monotone_prefilter.py",
+      "sha256": "958a44d78029b9a1eb69a3771ce18e53ac1ed3c7bc161c8e4318beedce2cf99f"
+    }
+  ],
+  "retry_policy": "This exact complete Lighter orderBookDetails request is one-use. Preserve any HTTP error empty oversized or missing-term result and do not retry another host parameter alias or endpoint. A passing inventory gate proves only deployed market identity and public metadata, never funding persistence basis fees exact account tier latency capacity custody bridge cost profitability or deployment readiness.",
+  "contract_sha256": "e6bc62bc83257eeb090d8128856094d25c3157e493202c288d5be6d73725e9f2"
+}

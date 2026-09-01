@@ -3346,7 +3346,7 @@
       "venue_scope": "Binance_BTC_ETH_SOL_European_options_and_exact_matching_USDT_perpetuals"
     }
   ],
-  "result_sha256": "8953013ab62dd510724c702ade0480234c95e6139f3ff57054e4cc12cbd352a3",
+  "result_sha256": "333a9118e9339a7b1e0d3ce1ddbfc5f382c1d77f006cb81254b160bcd0f221a8",
   "schema_version": "structural-edge-priority-registry-v1",
   "terminal_do_not_repeat": [
     {
@@ -3994,8 +3994,13 @@
       "canonical_result_sha256": "e840ceeed3a9bf6dc82a63b54e0d5fadcf737cafebd34bce1335aa5af3b1e2d8",
       "family": "polymarket_Anduril_122_5B_September_paired_maker_reward_2026_09_01",
       "reason": "exact_Gamma_and_sponsored_sources_reconciled_50_pUSD_per_day_20_shares_4_5_cents_zero_maker_fee_and_30_7062_remaining_days_and_the_best_bid_join_had_0_60_pUSD_both_fill_gross_against_10_pUSD_maximum_orphan_loss_but_the_one_use_official_book_snapshot_was_79200_ms_old_against_the_frozen_10000_ms_gate_while_public_data_proved_zero_owned_reward_share_and_zero_payout_floor_do_not_retry_refresh_or_select_a_sibling"
+    },
+    {
+      "canonical_result_sha256": "88e62dfd4ab11ab498c56fca530c5b5875054e3819b4068f532fd0ca29e4db0d",
+      "family": "binance_Lighter_BTC_ETH_SOL_USDC_vs_Binance_USDT_perpetual_funding_2026_09_01",
+      "reason": "the_distinct_public_Lighter_population_proved_active_BTC_ETH_and_SOL_perpetuals_then_three_one_use_hourly_funding_histories_mechanically_aligned_88_eight_hour_Binance_buckets_with_orientation_selected_from_training_only_zero_assets_survived_every_chronological_role_after_20_bips_round_trip_10_percent_annual_capital_25_bips_USDC_USDT_and_25_bips_custody_bridge_latency_stress_BTC_test_gross_reversed_negative_ETH_validation_failed_persistence_and_SOL_training_failed_persistence_even_all_gross_role_sums_were_far_below_capital_cost_zero_basis_book_account_credential_order_fund_or_protected_requests_were_justified_do_not_repeat_resample_change_orientation_roles_alignment_or_hurdles_reopen_only_on_a_material_Lighter_or_Binance_funding_fee_quote_unit_custody_bridge_latency_capital_or_execution_architecture_change"
     }
   ],
-  "updated_at_utc": "2026-09-01T02:06:26Z",
+  "updated_at_utc": "2026-09-01T02:28:51.2373800Z",
   "usage_rule": "advance_the_highest_ranked_hypothesis_whose_retry_trigger_is_satisfied_otherwise_do_not_repeat_a_blocked_or_terminal_screen"
 }

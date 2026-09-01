@@ -1,0 +1,75 @@
+{
+  "schema_version": "binance-lighter-cross-venue-funding-contract-v1",
+  "frozen_at_utc": "2026-09-01T02:26:42.5713081Z",
+  "contract_path": "docs/model-research/action-value/binance-lighter-btc-eth-sol-funding-adjudication-contract-v1-2026-09-01.json",
+  "trigger": {
+    "registry_route": "new_distinct_Binance_Lighter_cross_venue_funding_family",
+    "source_contracts_frozen_before_access": true,
+    "economic_values_calculated_before_this_contract": false,
+    "limited_source_rows_viewed_before_this_contract": true,
+    "limited_view_boundary": "A bounded schema check printed only the first and last Lighter rows per asset after durable source capture. Therefore this adjudication is research-prioritization-only even though roles are chronological, orientation is training-only, and costs are conservative. Any survivor requires a separately frozen disjoint public confirmation before basis or books."
+  },
+  "question": "Does any BTC ETH or SOL Binance-Lighter direction-neutral funding orientation remain positive in every chronological role after conservative execution capital quote-unit custody bridge and latency hurdles?",
+  "network_requests": 0,
+  "population": {
+    "assets": ["BTC", "ETH", "SOL"],
+    "lighter_hourly_row_count": 718,
+    "lighter_rate_unit": "percentage_points_per_hour_divide_by_100_to_decimal",
+    "lighter_direction_semantics": "long_means_longs_pay_shorts_and_normalized_positive; short_means_shorts_pay_longs_and_normalized_negative",
+    "lighter_bucket_semantics": "sum the eight hourly payments timestamped t_minus_7h through t inclusive against Binance 8h funding bucket t",
+    "aligned_row_count": 88,
+    "first_aligned_bucket_ms": 1785225600000,
+    "last_aligned_bucket_ms": 1787731200000,
+    "maximum_binance_schedule_jitter_ms": 1000,
+    "mechanical_boundary_exclusion": "The frozen Lighter endpoint returned both requested boundaries exclusively, so the first and last of the intended 90 Binance buckets lack complete eight-hour Lighter coverage and are excluded without inspecting their economics."
+  },
+  "roles": {
+    "training": {"start": 0, "stop": 44},
+    "validation": {"start": 44, "stop": 66},
+    "test": {"start": 66, "stop": 88}
+  },
+  "orientation": "Choose the sign once from training aggregate only; freeze that sign unchanged for validation and test.",
+  "economics": {
+    "round_trip_execution_bips": "20",
+    "annual_two_leg_capital_hurdle_percent": "10",
+    "usdc_usdt_quote_unit_stress_bips": "25",
+    "custody_bridge_latency_stress_bips": "25",
+    "notes": "Lighter publishes zero Standard-account maker and taker fees but 200ms maker/cancel and 300ms taker latency. The execution stress remains deliberately nonzero and the two additional 25-bip stresses cover unmatched USDC/USDT units and cross-venue custody bridge and latency failure modes without using account data."
+  },
+  "gates": {
+    "minimum_positive_interval_fraction": "0.5",
+    "require_positive_net_after_all_hurdles_in_every_role": true,
+    "require_positive_first_and_second_half_gross_in_every_role": true,
+    "promotion_eligible": false
+  },
+  "sources": [
+    {
+      "asset": "BTC",
+      "lighter": {"path": "docs/model-research/binance/raw/lighter-btc-eth-sol-funding-v1-2026-09-01/01-btc-funding.raw.json", "file_sha256": "1bbd1f8b90eccd6718deef29eb8cd6cf94864542af058c358e1955986f839b1c"},
+      "binance": {"path": "docs/model-research/action-value/raw/binance-hyperliquid-cross-venue-funding-spread-extension-v1-2026-08-27/binance-btc-funding.raw", "file_sha256": "07c8544df4941a9dd463ae27cb09e247df3e99fbd27b31c2076be49aa2a87e4e", "symbol": "BTCUSDT"}
+    },
+    {
+      "asset": "ETH",
+      "lighter": {"path": "docs/model-research/binance/raw/lighter-btc-eth-sol-funding-v1-2026-09-01/02-eth-funding.raw.json", "file_sha256": "e0ed5be4726e3f20693e13ff877ce063423539e05ad3ffacd18ebcdaa9a85e12"},
+      "binance": {"path": "docs/model-research/action-value/raw/binance-hyperliquid-cross-venue-funding-spread-extension-v1-2026-08-27/binance-eth-funding.raw", "file_sha256": "ffed21b173e50080c11a56eaff5fe44ecf58545d25b179602177d71501e064be", "symbol": "ETHUSDT"}
+    },
+    {
+      "asset": "SOL",
+      "lighter": {"path": "docs/model-research/binance/raw/lighter-btc-eth-sol-funding-v1-2026-09-01/03-sol-funding.raw.json", "file_sha256": "080424f95cbdce439a20d75805d0c8d0cfbe077fc8af3033c03473984f020492"},
+      "binance": {"path": "docs/model-research/action-value/raw/binance-hyperliquid-cross-venue-funding-spread-extension-v1-2026-08-27/binance-sol-funding.raw", "file_sha256": "77cdf3421cb25f0300d72697deed6286298841543af4b0c06afbb2f1bfec9c9d", "symbol": "SOLUSDT"}
+    }
+  ],
+  "lineage_sources": [
+    {"path": "docs/model-research/binance/raw/lighter-btc-eth-sol-perpetual-inventory-v1-2026-09-01/01-order-book-details.raw.json", "file_sha256": "fc177d6469f8e3d3431d017e63a58b3bed94fe6567da226f589c129cf4c81535"},
+    {"path": "docs/model-research/action-value/binance-lighter-btc-eth-sol-perpetual-inventory-contract-v1-2026-09-01.json", "file_sha256": "b79dcb5fb095b5e3633a684e027c44af10652863042f555fd7e4269056eadef6"},
+    {"path": "docs/model-research/action-value/binance-lighter-btc-eth-sol-perpetual-inventory-source-result-v1-2026-09-01.json", "file_sha256": "1f49dd24292fb248aca08a5e67f1062d4c326bf11bcdeb80038b0d4dac0e6c38"},
+    {"path": "docs/model-research/action-value/binance-lighter-btc-funding-source-contract-v1-2026-09-01.json", "file_sha256": "32c37bb9d580b43b278776a5a639247473e55beebf9ffd4e5ad24d48b7f05929"},
+    {"path": "docs/model-research/action-value/binance-lighter-eth-funding-source-contract-v1-2026-09-01.json", "file_sha256": "b41866218364573c1bd3da9d0bfd60c62c4a5c5c1d50c23036f1b77581a80bfe"},
+    {"path": "docs/model-research/action-value/binance-lighter-sol-funding-source-contract-v1-2026-09-01.json", "file_sha256": "3888830c449b76e8efc622ada2c46526e6d28b0e7d9d0b8b358b54404c549e2a"}
+  ],
+  "output_path": "docs/model-research/action-value/binance-lighter-btc-eth-sol-funding-adjudication-v1-2026-09-01.json",
+  "authority": {"account_requests": 0, "credentials_used": false, "funds_used": false, "orders_or_transactions": 0, "protected_capture_touched": false, "public_unauthenticated_read_only_requests": 0, "signed_requests": 0, "trading_authority": false},
+  "implementation": {"path": "tools/adjudicate_binance_lighter_funding.py", "sha256": "bc5ed89e66a4c890ec70108acbf098a31c85d93e3fc99002c80843d947a50ef8"},
+  "retry_policy": "One use. No alternate alignment orientation cost schedule asset filtering or role slicing. A survivor is not promotion-eligible and requires a separately frozen disjoint confirmation. A failure terminalizes this exact retained 88-bin family before basis or book access.",
+  "contract_sha256": "d1ff2348ff50cd695a8bd320641f590402166a9a733163415d2b9ada1446f3f7"
+}
