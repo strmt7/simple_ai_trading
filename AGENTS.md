@@ -92,6 +92,13 @@ override prose.
   joint state uncovered; write that state down explicitly instead of pricing it
   as impossible. Apply the same rendered-button rejection gate and frozen
   side-specific advance rules as for a scalar ladder.
+- A nominally shorter calendar window is not a subset when it begins before the
+  longer window. Source-prove that every already elapsed exclusive segment did
+  not trigger before upgrading the remaining short-window event to an
+  implication. Do not spend a historical price-source request on that proof
+  when the package already costs at least its floor under the optimistic subset
+  assumption. An unproved optimistic implication may reject research spend but
+  may never advance a candidate, authorize depth, or support an edge claim.
 - An issuer's at-par mint or redemption right proves only the payoff identity.
   Before any venue refresh, reuse retained finite-size spreads and reject unless
   the executable gap exceeds account fees plus transfer, redemption, delay,
