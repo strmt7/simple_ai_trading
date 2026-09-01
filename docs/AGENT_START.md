@@ -23,25 +23,26 @@ safety gate, blocks Stop, or submits an order.
 
 ### Latest efficient structural screen
 
-The complete retained September 13 early NFL catalog team and period payoff
-graph is terminal for the consumed population. One frozen zero-network
-adjudication exhausted 84,508 full, team, half, quarter, and team-period total
-ladder and additive-cover relations across all 12 events. Of those, 76,607 were
-side-specifically price-complete; zero cost strictly below the one-pUSD floor.
-The best complete package cost 1.04 pUSD. Another 7,901 relations are explicitly
-price-incomplete because retained selected-side quotes are missing; missing
-quotes are never free legs and authorize no escalation.
+The complete retained September 13 early NFL catalog period
+moneyline-to-spread population is terminal. One frozen zero-network
+adjudication exhausted 227 direction-independent quarter and second-half
+relations pairing the favorite moneyline with the opponent side of a negative
+half-integer favorite spread. Of those, 215 were side-specifically
+price-complete; zero cost strictly below the one-pUSD floor. The best complete
+package cost 1.53 pUSD. Another 12 relations are explicitly price-incomplete
+because retained selected-side quotes are missing; missing quotes are never
+free legs and authorize no escalation.
 
 Do not refetch, repair, reprice, select a sibling, or request books or fees for
-this consumed graph. Reopen only for a distinct unconsumed population or a
+this consumed population. Reopen only for a distinct unconsumed population or a
 material rule, fee, tick, or market-architecture change. Accepted edges remain
-30, ranked hypotheses remain 47, terminal families are 143, and stable current
+30, ranked hypotheses remain 47, terminal families are 144, and stable current
 account-qualified after-all-cost edges remain zero. Contract, result, registry,
 and durability-audit hashes are
-`91272f05bbef81ba0dbf9b2bddee2d5d3418cdd12f33d9ef060cc2b582f5c560`,
-`556ee348cf5246f422df80da958a2d96402a2900dc88878cd561fb02f1bd5b02`,
-`1fcb5ed59c8e2abf1871c6deb2a5b03ce5e2faa09223d455b7f66717fff02903`,
-and `0adf2859a240d69e4344e3ac4f41cf42c2c70d28081b373c440e158b57a4b18e`.
+`f6526f49a92a7822be866a6801fbef8a3546c6df3ba7f1c2100ce8b59673e3c4`,
+`e58f7dab3c752863a4a546c83141cac0e3177c0d27d16b87d1217baed9549706`,
+`eb20517954e271220b4070ab62b51bbaaf37dec4ff82ee1691d77902e128968f`,
+and `00e23c1ec726c76f4aff53b94024159c37acc2178e3d022224bcfbde8bb2a876`.
 No network, account, credential, signed request, order, fund, transaction, or
 protected capture was touched.
 

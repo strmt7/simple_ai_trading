@@ -1,12 +1,40 @@
 # Continue Development
 
-Current canonical status after the retained September 13 NFL catalog team and
-period payoff-graph checkpoint: accepted edges 30, ranked hypotheses 47,
-terminal families 143, and stable current account-qualified after-all-cost edges
-zero. Registry SHA-256 is
-`1fcb5ed59c8e2abf1871c6deb2a5b03ce5e2faa09223d455b7f66717fff02903`;
+Current canonical status after the retained September 13 NFL period
+moneyline-to-spread checkpoint: accepted edges 30, ranked hypotheses 47,
+terminal families 144, and stable current account-qualified after-all-cost
+edges zero. Registry SHA-256 is
+`eb20517954e271220b4070ab62b51bbaaf37dec4ff82ee1691d77902e128968f`;
 durability-audit SHA-256 is
-`0adf2859a240d69e4344e3ac4f41cf42c2c70d28081b373c440e158b57a4b18e`.
+`00e23c1ec726c76f4aff53b94024159c37acc2178e3d022224bcfbde8bb2a876`.
+
+## 2026-09-01 Polymarket NFL period moneyline-spread rejection
+
+One frozen zero-network adjudication reused the exact complete retained
+September 13 early NFL catalog without a refetch. It exhausted 227
+direction-independent quarter and second-half relations pairing the favorite's
+same-period moneyline outcome with the opponent side of a negative
+half-integer favorite spread. A favorite win, opponent win, period tie, and
+whole-game cancellation pay at least one pUSD; the period-tie payout is 1.5
+pUSD and overtime is excluded by the retained period rules.
+
+Of those relations, 215 had complete side-specific rejection prices using only
+retained `bestAsk` or conservative `1-bestBid`; zero cost strictly less than
+their one-pUSD guaranteed floor. The best complete package was Eagles 2H
+moneyline plus Commanders against Eagles -0.5 in the 2H spread at 1.53 pUSD per
+share. The remaining 12 relations are price-incomplete because retained
+selected-side quotes are missing; missing quotes are not free legs.
+
+Do not refetch, repair, reprice, select a sibling, or request books or fees for
+this consumed period-margin population. Reopen only for a distinct unconsumed
+population or a material rule, fee, tick, or market-architecture change.
+Contract and result hashes are
+`f6526f49a92a7822be866a6801fbef8a3546c6df3ba7f1c2100ce8b59673e3c4`
+and `e58f7dab3c752863a4a546c83141cac0e3177c0d27d16b87d1217baed9549706`.
+Accepted edges remain 30, ranked hypotheses remain 47, terminal families become
+144, and stable current account-qualified after-all-cost edges remain zero. No
+network, account, credential, signed request, order, fund, transaction, or
+protected capture was touched.
 
 ## 2026-09-01 Polymarket September 13 NFL team-period graph rejection
 
