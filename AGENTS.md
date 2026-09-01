@@ -570,6 +570,18 @@ override prose.
   for suspected abuse, self-dealing, coordinated activity, or inconsistent use.
   Any account, deposit, order, fund, or state change requires separate explicit
   authority.
+- Treat every trial fund, voucher, bonus credit, and promotional notional as a
+  ledger with separate face value, earned reward, acquisition cost, validity,
+  lock, regional and account eligibility, reversal, and withdrawal fields. A
+  nonwithdrawable face value is never cash, principal, collateral, or profit.
+  Credit only the exact deterministic positive reward that reaches the owned
+  account after tax, conversion, operating, and every opportunity cost; Points
+  or another redemption currency are not free. Public terms can establish the
+  mechanism but never an owned amount, APR, eligibility, receipt, or stable
+  forward floor. Testnet credentials do not authorize or evidence a mainnet
+  reward product. Claiming, redeeming, accepting terms, subscribing, converting,
+  transferring, withdrawing, or any other state change requires separate
+  explicit authority.
 - Polymarket US mutually exclusive and directional collateral return is only a
   buying-power overlay on independently existing eligible positions. It is not
   cash income, trading profit, reduced actual risk, or a reason to open or

@@ -60,8 +60,11 @@ def test_profitability_durability_audit_is_source_bound_and_exhaustive() -> None
         decision[
             "standalone_incremental_cash_without_independent_trade_borrow_or_external_user_count"
         ]
-        == 8
+        == 9
     )
+    assert accepted_count in decision[
+        "standalone_incremental_cash_without_independent_trade_borrow_or_external_user_ordinals"
+    ]
 
 
 def test_profitability_frontier_metrics_match_canonical_sources() -> None:

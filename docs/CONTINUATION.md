@@ -1,12 +1,47 @@
 # Continue Development
 
-Current canonical status after the Binance-Backpack funding-only screen:
-accepted edges 35, ranked hypotheses 60, terminal families 178,
+Current canonical status after the Binance Simple Earn Trial Fund source gate:
+accepted edges 36, ranked hypotheses 61, terminal families 178,
 and stable current account-qualified after-all-cost edges zero. Registry
 SHA-256 is
-`d82874659b6cd34e6713253d6322af9833cf79a6a4ad71809fc9ce9a1dd5619c`;
+`5c8474e2446e3bf8e6adb7ed5aad3e75ff0be1c72eaf513fd70445ae691b2798`;
 durability-audit SHA-256 is
-`6f8d7cc5838bf64251fb6e40e0ff4847f49e79454874f0eaf7a4ec7117843f87`.
+`cf6e6cfdfd15472e1506153780cedcf5bc3969afe530c1119d30ba394acf476e`.
+
+## 2026-09-01 Binance Simple Earn Trial Fund scoped edge
+
+One exact current official Binance FAQ was frozen and retained through a
+single unauthenticated public CMS GET. It proves that Simple Earn Trial Fund
+face value cannot be withdrawn or transferred, is used only for APR reward
+calculation, and is not redeemed to Spot. Using the voucher creates a locked
+position; its APR rewards are distributed to Spot daily for the voucher period,
+and early redemption is not allowed. The account presentation exposes the
+exact token, amount, APR, and validity rather than making them public constants.
+
+The accepted scope is therefore narrow: exact positive Spot APR rewards from an
+independently awarded zero-cost voucher, after tax, conversion, operating, and
+every other incremental cost. The face value is never cash or profit. A voucher
+acquired with Binance Points or another asset must charge its full opportunity
+cost. No owned voucher, positive APR, token, amount, validity, regional or
+account eligibility, receipt, persistence, deployment readiness, or positive
+public forward floor is proved; stable current account-qualified edges remain
+zero.
+
+Do not refetch or alias the consumed FAQ, open Rewards Hub, or use testnet
+credentials. Reopen only on a material official term change or with explicit
+signed GET-only Binance mainnet authority plus an independently existing
+voucher and exact owned voucher and Spot-reward reconciliation. Claiming,
+redeeming, accepting terms, subscribing, converting, transferring, withdrawing,
+or any state change requires separate explicit authority.
+
+Contract, source-result, raw-response, request-journal, and adjudication
+SHA-256 values are
+`41998867e54deac8bc4e394a88c948b0b407782d6f543bbbb7b027d06705d3aa`,
+`70bcaf46a96aa095003289cab9720312490c13a1bcb6cfdb099f11b0da5ed0ed`,
+`a5317a6dc24cabd626d37a11da1d4d26f742ee488c08b108cc84cdf4fefb8178`,
+`16a7e118b182f791f927e2c76f9d538ffa351a97a65e70a232a0af82c59f1baa`,
+and `d1738d58015b2ee1e34d8dc3bc24eee15cceeeec8730b2ef4c1b8d35a5f30f70`.
+No credential, account, order, fund, transaction, or protected capture was used.
 
 ## 2026-09-01 Binance-Backpack cross-venue funding rejection
 
