@@ -1,0 +1,51 @@
+{
+  "schema_version": "polymarket-retained-negrisk-pairwise-no-pre-output-failure-v1",
+  "created_at_utc": "2026-09-01T12:38:42.750Z",
+  "contract": {
+    "path": "docs/model-research/action-value/polymarket-sep30-fixed-negrisk-pairwise-no-contract-v1-2026-09-01.json",
+    "sha256": "791b61f436b8432a4767e5ca9474e496cdff4d51d0117ee0060dbc9d51a653a8"
+  },
+  "retained_input": {
+    "path": "data/polymarket-sep30-et-negrisk-complete-set-catalog-v1/raw/events.json",
+    "sha256": "ff108e7b869cf74e1950d9eb90d75c35335b56996d8ad1cda5fc675b2633c0ab"
+  },
+  "implementation": {
+    "path": "tools/adjudicate_polymarket_retained_negrisk_pairwise_no.py",
+    "sha256": "59e610511f1e423c6191669931a6a887d190fa10c27eb90e36fd8a370407f71b"
+  },
+  "failure": {
+    "stage": "first_pair_side_specific_acquisition_before_result_construction",
+    "error_type": "RuntimeError",
+    "error_message": "market 2646914 lacks a fee schedule",
+    "result_output_created": false,
+    "payload_or_price_printed": false,
+    "network_request_count": 0
+  },
+  "retained_fee_shape_audit": {
+    "fees_disabled_without_fee_schedule_market_count": 19,
+    "fees_enabled_with_tech_fee_schedule_market_count": 36,
+    "total_frozen_market_count": 55,
+    "correction_rule": "For v2 only, feesEnabled=false with absent feeSchedule is an explicit zero-fee configuration. Every feesEnabled=true market must still retain a supported positive taker-only schedule."
+  },
+  "adjudication": {
+    "status": "consumed_zero_network_pre_output_failure_preserved",
+    "accepted_edge": false,
+    "deployment_ready": false,
+    "profitability_claim": false,
+    "retry_policy": "Do not rerun or rewrite v1. Freeze a new implementation-hash-bound v2 contract against the unchanged retained bytes and exact same 646-pair population, changing only the preregistered absent-disabled-schedule fee treatment."
+  },
+  "authority": {
+    "account_requests": 0,
+    "book_requests": 0,
+    "credentials_used": false,
+    "fee_requests": 0,
+    "funds_used": false,
+    "onchain_requests": 0,
+    "orders_or_transactions": 0,
+    "protected_capture_touched": false,
+    "public_unauthenticated_read_only_requests": 0,
+    "signed_requests": 0,
+    "trading_authority": false
+  },
+  "result_sha256": "d1d018fb103df9065b7077f2e0a497691ae70486e68dad9cd8a5aeb4ad312c47"
+}

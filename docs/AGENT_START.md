@@ -21,6 +21,35 @@ profitable without reproducible source-bound after-cost evidence. AI may veto
 or reduce risk only; it never creates positions, selects leverage, overrides a
 safety gate, blocks Stop, or submits an order.
 
+### Latest retained fixed-NegRisk pairwise-NO rejection
+
+The hash-bound retained September 30 catalog contains three complete fixed-
+NegRisk events. Any two distinct outcomes within one event are mutually
+exclusive, so `NO(A) + NO(B)` has a one-pUSD floor. A frozen zero-network
+screen exhausted all 646 unordered pairs: 481 had complete side-specific
+prices, 165 remained price-incomplete, zero cost strictly below the floor, and
+zero survived current fees plus one adverse tick per leg. The best complete
+pair cost `1.084` pUSD per share and lost `0.475` pUSD at five shares after
+stress.
+
+The v1 run stopped before output because one fee-disabled market lacked a fee
+schedule. That failure is preserved. The prospectively frozen v2 mechanical
+correction treats an absent schedule as zero only when `feesEnabled` is false
+and `feeType` is empty; enabled markets still require an exact supported fee
+schedule. Do not repeat, refetch, reprice, request books, or adaptively fill the
+165 incomplete rows. Reopen only for a distinct complete event or material
+price, fee, tick, rule, or architecture change.
+
+Accepted edges remain 35, ranked hypotheses remain 58, terminal families are
+174, and stable current account-qualified after-all-cost edges remain zero.
+Registry and durability-audit SHA-256 values are
+`d035ed692935222ec415702231ff2d30c6d8f07dbfb6eea57d801199916ebba9`
+and `3144e5eeadbef632dddc427eaf71adef1318e57ca919be68e73e8f580c0d74d0`.
+The v2 result SHA-256 is
+`951bde07b04cd1257d6be4e4d6e163a3b6a8adc3198bf653eb2504f791d23520`.
+No network, credential, account, order, fund, transaction, or protected capture
+was used.
+
 ### Latest retained Iran-island OR implication rejection
 
 The retained September 30 catalog exposed a new direction-independent Boolean
