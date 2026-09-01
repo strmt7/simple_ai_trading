@@ -1,5 +1,46 @@
 # Continue Development
 
+## 2026-09-01 Polymarket joint-to-marginal state-cover checkpoint
+
+A distinct direction-independent Boolean decomposition passed the rendered
+discovery gate: `NO(Democratic House control) + YES(D Senate, D House) +
+YES(R Senate, D House) + YES(joint Other)` displayed at 0.983 pUSD for a
+one-pUSD state-cover floor. The `Other` leg was mandatory; omitting it would
+leave an unmatched joint state with Democratic House control uncovered.
+
+Two prospectively frozen one-use public Gamma GETs retained the exact joint and
+marginal events. The joint event is an active five-market NegRisk partition
+containing DD, DR, RD, RR, and `Other`. Its House rules align with the marginal
+event on control definition, seat universe, runoffs, party attribution,
+independent caucusing, ambiguity fallback, end date, and sources. The marginal
+event actually contains nine markets, including seven hidden inactive siblings,
+but the selected Democratic market's `NO` token still pays in every state where
+Democratic House control is false; no hidden sibling was priced as free.
+
+Exact Gamma rejection prices tightened the four-leg sum to 0.993 pUSD, leaving
+only 0.035 pUSD gross headroom at the five-share minimum. Every selected market
+has the current 0.04, exponent-1, taker-only fee schedule. The source-bound fee
+curve charges 0.11778 pUSD across the four legs, so the package floor is
+-0.08278 pUSD after fees and before depth, ticks, time value, non-atomicity,
+unwind, latency, capital, or operational costs. No book or fee-endpoint request
+was justified.
+
+This exact two-event population is terminal. Do not retry, refresh, reprice,
+alias, omit `Other`, or request books. Reopen rank 31 only for a distinct exact
+joint-to-marginal family whose rejection-only package remains strictly positive
+after current fees before depth, or a material fee, rule, or market-architecture
+change. No credential, account, order, fund, transaction, or protected capture
+was touched. Accepted edges remain 29, ranked hypotheses remain 47, and terminal
+families become 132. Joint and marginal contract SHA-256 values are
+`8201e7535d07b7340a612f10473a43718ed1efa350b6d804dd5762a57cab64b7`
+and `1ce1e4450da6cc36e7b2c64702bad00ce52fc0b33b9937353ae8ecb16bdbf634`;
+adjudication SHA-256 is
+`738a9d89f9334e2cfc91f4c21b474528d5222cab222455856cb8289c055ac3ff`.
+Registry SHA-256 is
+`264076c9ab6c42043689bf0d53043c2520236c493859cfd1f159acaea78e0cac`;
+durability-audit SHA-256 is
+`a0c062913d17787d027b2973c947a5d8fb4d2be81d018ee90f9ca354034d6285`.
+
 ## 2026-09-01 Polymarket policy-partition discovery screen
 
 A bounded rendered-page pass screened eight distinct, exhaustive central-bank

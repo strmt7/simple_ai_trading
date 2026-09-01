@@ -23,6 +23,31 @@ safety gate, blocks Stop, or submits an order.
 
 ### Latest efficient structural screen
 
+A distinct joint-to-marginal Boolean state cover passed rendered discovery at
+0.983 pUSD: `NO(Democratic House) + YES(DD) + YES(RD) + YES(joint Other)`.
+Two frozen one-use public Gamma GETs proved a complete active five-state joint
+partition and a rule-compatible House marginal. The marginal event contains
+nine markets, including seven hidden inactive siblings; none was treated as a
+free leg, and joint `Other` remained mandatory to cover every unmatched state.
+
+Conservative exact metadata prices summed to 0.993 pUSD, only 0.035 pUSD gross
+headroom at five shares. The current 0.04 exponent-1 taker-only schedules charge
+0.11778 pUSD, producing a -0.08278 pUSD after-fee floor before depth or every
+other cost. The exact population is terminal before books. Do not refresh,
+reprice, alias, omit `Other`, or request depth. Reopen only for a distinct
+rule-complete joint-to-marginal package that remains strictly positive after
+current fees before depth, or a material fee/rule/architecture change.
+
+No credential, account, order, fund, transaction, or protected capture was
+touched. Accepted edges remain 29, ranked hypotheses remain 47, and terminal
+families become 132. Joint/marginal contracts and adjudication SHA-256 values
+are `8201e7535d07b7340a612f10473a43718ed1efa350b6d804dd5762a57cab64b7`,
+`1ce1e4450da6cc36e7b2c64702bad00ce52fc0b33b9937353ae8ecb16bdbf634`,
+and `738a9d89f9334e2cfc91f4c21b474528d5222cab222455856cb8289c055ac3ff`.
+Registry and durability-audit SHA-256 values are
+`264076c9ab6c42043689bf0d53043c2520236c493859cfd1f159acaea78e0cac`
+and `a0c062913d17787d027b2973c947a5d8fb4d2be81d018ee90f9ca354034d6285`.
+
 A bounded rendered-only pass screened eight distinct, exhaustive September
 central-bank decision partitions. The direct known `Buy Yes` complete-set sums
 were Bank of Canada 1.005 pUSD, Bank of Japan 1.024, Reserve Bank of Australia
