@@ -21,7 +21,42 @@ profitable without reproducible source-bound after-cost evidence. AI may veto
 or reduce risk only; it never creates positions, selects leverage, overrides a
 safety gate, blocks Stop, or submits an order.
 
-### Latest structural novelty gate
+### Latest structural source inventory
+
+One frozen exact Polymarket US `llms.txt` GET retained a complete 350-line
+index with 342 link rows and 300 unique absolute HTTP URLs. Offline novelty
+deduplication identified five previously unrepresented economic families:
+approved-affiliate referral rewards, partner vendor fees, approved market-maker
+contracts, combo RFQ execution, and participant daily/deposit-trading programs.
+The precommitted one-linked-source cap advanced only Referral Incentive and
+deferred the other four without opening their pages.
+
+The exact referral page says approved affiliates receive rewards for referring
+new Participants, but publishes no approval, eligibility, attribution,
+qualifying activity, payout, cap, duration, payment, anti-abuse, reversal, or
+change economics. It is rank 54 with public floor zero, not an accepted edge.
+Do not inflate the edge count with a tautological exact-positive-payment
+predicate, refetch the page, or open the Refer-A-Friend FAQ alias. Rank 55
+partner vendor fees is the next exact unconsumed source-qualified hypothesis.
+Every later family must receive its own fresh prospective source contract; no
+contact, application, referral, account, KYC, deposit, quote, order, fund, or
+state change is authorized.
+
+Accepted edges remain 34, ranked hypotheses become 58, terminal families become
+168, and stable current account-qualified after-all-cost edges remain zero.
+Index contract/source-result/adjudication hashes are
+`7625c1acceffc154492429b20b5218ab32f5f9e77f2e180e67377c8f6eb4866f`,
+`43eb515fb75c5a1891c78c998e261d8f8f2c60707c5034db0d7aec9e70314c52`,
+and `214f9807ed7d9120478be6e75daf889ee8aeb30f8bea194c3af8d5eb4e8c251f`.
+Referral contract/source-result/adjudication hashes are
+`cb8dca1749f6c2d58e60d9a72d993072a45be22308c7b13771481c25b98d3d11`,
+`62494e77c882afe747e87056d64661f2abc1f80e58bcee4a1725cc4f8e43d935`,
+and `87cce3f6175f12b2b5604db57d0f35fcfec1868577d0e0d92a99a82e189bf6d6`.
+Registry and durability-audit hashes become
+`8041cee138044411dc4c8357c7dc8e0e8b8a4cc5b4493f3ddc475db4aac1303f`
+and `454c2c0e2f3f3eea07a58c6d8ec92be3dd85aac39d48b26d836b415c3d29c3bb`.
+
+### Prior structural novelty gate
 
 Binance Web3 Wallet Prediction Trading OTC block trades are a genuinely
 distinct direction-independent price-concession candidate, not an alias of

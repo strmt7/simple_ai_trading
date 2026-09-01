@@ -1,0 +1,79 @@
+{
+  "adjudication": {
+    "accepted_edge": false,
+    "account_qualified": false,
+    "deployment_ready": false,
+    "market_direction_forecast_required": false,
+    "profitability_claim": false,
+    "public_after_all_cost_profit_floor_usd": "0",
+    "status": "approved_affiliate_candidate_without_public_economics"
+  },
+  "authority": {
+    "account_requests": 0,
+    "credentials_used": false,
+    "funds_used": false,
+    "orders_or_transactions": 0,
+    "protected_capture_touched": false,
+    "public_unauthenticated_read_only_requests": 1,
+    "signed_requests": 0,
+    "trading_authority": false
+  },
+  "created_at_utc": "2026-09-01T11:25:51.8025579Z",
+  "decision": {
+    "exact_source_facts": [
+      "the page labels the mechanism Referral Incentive Program",
+      "the page says it rewards approved affiliates for referring new Participants to Polymarket US",
+      "the only next step published is contacting the affiliate email address"
+    ],
+    "missing_public_economics": [
+      "approval criteria or guarantee",
+      "referrer and referred-participant eligibility",
+      "attribution method",
+      "qualifying funding or trading activity",
+      "payout amount or formula",
+      "cap and duration",
+      "payment asset and timing",
+      "expiry exclusions anti-abuse reversal and program-change terms"
+    ],
+    "reason": "The exact current source contradicts any assumption that the referral reward is automatically open to every participant: it applies to approved affiliates and publishes no economic terms. Exact positive owned payouts for authentic external referrals could later support a scoped direction-independent distribution overlay, but the public source proves no positive forward floor, account approval, persistence, or profitability.",
+    "why_not_accept_exact_positive_realization_predicate": "Accepting a tautological exact-positive-payment predicate without a source-bound payout contract or owned receipt would inflate the edge count while adding no predictive or deployable value. Keep the mechanism ranked and fail closed instead."
+  },
+  "evidence": {
+    "contract": {
+      "canonical_sha256": "cb8dca1749f6c2d58e60d9a72d993072a45be22308c7b13771481c25b98d3d11",
+      "file_sha256": "6684368e1f8aa171d6ffcbbfc1dc819cc41eefabb3a0b8de4864247ab13d56ef",
+      "path": "docs/model-research/action-value/polymarket-us-referral-incentive-contract-v1-2026-09-01.json"
+    },
+    "journal": {
+      "path": "data/polymarket-us-referral-incentive-v1/request-journal.jsonl",
+      "sha256": "383076375ec8ce2659c3bb5fe15feb789279942cdfd8e230d56cb73d1d4bc362"
+    },
+    "raw_source": {
+      "bytes": 446,
+      "path": "data/polymarket-us-referral-incentive-v1/raw/referral.md",
+      "sha256": "626d5f5ff0b21598dbf4d89cc643cc4b14a6d619a8a0b269782122b65c165fa2",
+      "status_code": 200
+    },
+    "source_result": {
+      "path": "docs/model-research/action-value/polymarket-us-referral-incentive-source-result-v1-2026-09-01.json",
+      "result_sha256": "62494e77c882afe747e87056d64661f2abc1f80e58bcee4a1725cc4f8e43d935"
+    }
+  },
+  "prohibited_shortcuts": [
+    "assuming the overview Open label overrides the exact approved-affiliate condition",
+    "creating fake duplicate synthetic related or misrepresented participants referrals accounts or KYC identities",
+    "manufacturing deposits trades volume or activity to qualify a referral",
+    "self-referral coordinated referral rings wash trading or self-dealing",
+    "contacting applying inviting onboarding depositing or trading without separate explicit authority",
+    "crediting an advertised or expected reward before exact owned receipt and every incremental cost"
+  ],
+  "registry_effect": {
+    "accepted_edge_count": 34,
+    "ranked_hypothesis_count": 58,
+    "stable_current_account_qualified_after_all_cost_edge_count": 0,
+    "terminal_family_count": 168
+  },
+  "result_sha256": "87cce3f6175f12b2b5604db57d0f35fcfec1868577d0e0d92a99a82e189bf6d6",
+  "retry_trigger": "A complete current official Polymarket US affiliate contract publishing deterministic approval, eligibility, attribution, qualifying activity, payout, cap, duration, payment, anti-abuse, reversal, and change terms; or explicit separate read-only Polymarket US account authority plus independently existing approved-affiliate status, authentic external referrals, and exact owned payout receipts. No contact, application, invitation, onboarding, KYC, deposit, trade, fund, or state change without separate explicit authority.",
+  "schema_version": "polymarket-us-referral-incentive-adjudication-v1"
+}

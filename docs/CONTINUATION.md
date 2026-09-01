@@ -1,12 +1,58 @@
 # Continue Development
 
-Current canonical status after the Binance Web3 Wallet Prediction Trading OTC
-source gate: accepted edges 34, ranked hypotheses 53, terminal families 166,
+Current canonical status after the Polymarket US mechanism-index and referral
+source gates: accepted edges 34, ranked hypotheses 58, terminal families 168,
 and stable current account-qualified after-all-cost edges zero. Registry
 SHA-256 is
-`9b2236283e5ec3c877be2fa0cabb423699d3708bd2cb1a6d656e26dace4aaefb`;
+`8041cee138044411dc4c8357c7dc8e0e8b8a4cc5b4493f3ddc475db4aac1303f`;
 durability-audit SHA-256 is
-`dfb85ebfcc78b7d05da92036860701dbdae54953c04911a1fc6e47cad3dbd762`.
+`454c2c0e2f3f3eea07a58c6d8ec92be3dd85aac39d48b26d836b415c3d29c3bb`.
+
+## 2026-09-01 Polymarket US mechanism index and referral gate
+
+One prospectively frozen exact official `llms.txt` GET retained 47,687 bytes:
+350 lines, 342 link rows, and 300 unique absolute HTTP URLs. Offline
+title-description deduplication found five unrepresented economic families:
+Referral Incentive, partner vendor fees, approved market-maker contracts, combo
+RFQ execution, and participant Daily Trading / Deposit and Trading incentives.
+The frozen campaign allowed exactly one linked economic source, so Referral
+Incentive advanced under its own contract and the other four remained unopened.
+
+The 446-byte referral page says approved affiliates receive rewards for
+referring new Participants and provides only a contact address. It publishes no
+approval criteria or guarantee, eligibility, attribution, qualifying activity,
+payout formula, cap, duration, payment asset or timing, expiry, anti-abuse,
+reversal, or program-change terms. The overview's `Open` label cannot override
+the exact approved-affiliate condition. Public and account-qualified floors are
+zero, and accepting a tautological exact-positive-payment predicate would add
+no predictive or deployable value. Rank 54 is therefore unaccepted and terminal
+on current public terms. Rank 55 partner vendor fees is the next exact
+unconsumed source-qualified hypothesis, followed by ranks 56–58.
+
+Do not repeat the current index while its raw SHA-256 remains
+`308b0a29cf69d8b50fd9f5c841a21b51cebb5842d988fe4d53f77322fd980d60`;
+do not refetch the referral page or open the Refer-A-Friend FAQ alias. Never
+create fake users, accounts, KYC, referrals, deposits, trades, quotes, fills, or
+volume. Contact, applications, invitations, onboarding, account access, orders,
+funds, and state changes require separate explicit authority.
+
+Index contract/source-result/raw/journal/adjudication SHA-256 values are
+`7625c1acceffc154492429b20b5218ab32f5f9e77f2e180e67377c8f6eb4866f`,
+`43eb515fb75c5a1891c78c998e261d8f8f2c60707c5034db0d7aec9e70314c52`,
+`308b0a29cf69d8b50fd9f5c841a21b51cebb5842d988fe4d53f77322fd980d60`,
+`2a1405b81ed8d586fe1a18d445febcbbd223451f840b022ed15fa0ffad320522`,
+and `214f9807ed7d9120478be6e75daf889ee8aeb30f8bea194c3af8d5eb4e8c251f`.
+Referral contract/source-result/raw/journal/adjudication SHA-256 values are
+`cb8dca1749f6c2d58e60d9a72d993072a45be22308c7b13771481c25b98d3d11`,
+`62494e77c882afe747e87056d64661f2abc1f80e58bcee4a1725cc4f8e43d935`,
+`626d5f5ff0b21598dbf4d89cc643cc4b14a6d619a8a0b269782122b65c165fa2`,
+`383076375ec8ce2659c3bb5fe15feb789279942cdfd8e230d56cb73d1d4bc362`,
+and `87cce3f6175f12b2b5604db57d0f35fcfec1868577d0e0d92a99a82e189bf6d6`.
+Registry and durability-audit SHA-256 values become
+`8041cee138044411dc4c8357c7dc8e0e8b8a4cc5b4493f3ddc475db4aac1303f`
+and `454c2c0e2f3f3eea07a58c6d8ec92be3dd85aac39d48b26d836b415c3d29c3bb`.
+Accepted edges remain 34, ranked hypotheses become 58, terminal families become
+168, and stable current account-qualified after-all-cost edges remain zero.
 
 ## 2026-09-01 Binance Web3 prediction OTC source failure
 
