@@ -1,0 +1,90 @@
+{
+  "schema_version": "binance-simple-earn-trial-fund-edge-adjudication-v1",
+  "created_at_utc": "2026-09-01T14:09:00Z",
+  "question": "Does a Binance Simple Earn Trial Fund Voucher define a stable market-direction-independent edge, and what exact value may be credited without mistaking promotional face value for cash?",
+  "source_binding": {
+    "contract_path": "docs/model-research/action-value/binance-simple-earn-trial-fund-source-contract-v1-2026-09-01.json",
+    "contract_sha256": "41998867e54deac8bc4e394a88c948b0b407782d6f543bbbb7b027d06705d3aa",
+    "source_result_path": "docs/model-research/action-value/binance-simple-earn-trial-fund-source-result-v1-2026-09-01.json",
+    "source_result_sha256": "70bcaf46a96aa095003289cab9720312490c13a1bcb6cfdb099f11b0da5ed0ed",
+    "raw_path": "data/binance-simple-earn-trial-fund-v1/raw/01-faq.raw.json",
+    "raw_sha256": "a5317a6dc24cabd626d37a11da1d4d26f742ee488c08b108cc84cdf4fefb8178",
+    "journal_path": "data/binance-simple-earn-trial-fund-v1/raw/01-faq.journal.jsonl",
+    "journal_sha256": "16a7e118b182f791f927e2c76f9d538ffa351a97a65e70a232a0af82c59f1baa",
+    "official_article_code": "c48608a4969f43bb8e9c58e344e6f69e",
+    "http_status": 200,
+    "response_bytes": 23467
+  },
+  "source_proved_mechanics": {
+    "trial_fund_use": "The trial fund may subscribe to a Binance Simple Earn Product and creates a Locked Product position when the voucher is used.",
+    "face_value": "The trial-fund face value cannot be withdrawn or transferred, is used only for APR reward calculation, and is not redeemed to Spot when the voucher ends.",
+    "reward": "APR rewards from the Locked Product position are distributed to Spot daily for the voucher period; only those APR rewards are the final reward granted to the user.",
+    "schedule": "Rewards accrue the day after subscription from 00:00 UTC and are distributed the next day between 00:00 UTC and 08:00 UTC.",
+    "voucher_specific_terms": "The subscription presentation exposes the trial-fund token, amount, APR, and validity, so those account-specific values must be read rather than assumed.",
+    "liquidity": "Early redemption is not allowed for the trial-fund subscription.",
+    "excluded_benefits": "Trial-fund face value does not create Launchpool, HODLer Airdrop, or Megadrop eligibility."
+  },
+  "economic_identity": {
+    "gross_reward_formula": "trial_fund_face_value times positive_voucher_APR times eligible_accrual_day_fraction, denominated in the exact reward token and limited to the voucher validity",
+    "admitted_value": "only exact positive APR rewards actually owned or deterministically due to Spot from an independently awarded zero-cost voucher",
+    "net_value_formula": "exact reward liquidation_or_retention_value minus voucher_acquisition_opportunity_cost minus tax minus operating_and_conversion_cost minus account_or_regional_restriction_cost",
+    "face_value_admitted_as_cash": false,
+    "market_direction_forecast_required": false,
+    "why_direction_independent": "The reward calculation uses voucher notional, a voucher-set APR, and elapsed eligible time rather than the direction of a traded market.",
+    "points_rule": "A voucher redeemed with Binance Points is not zero-cost. Its full foregone alternative redemption or other opportunity value must be subtracted before any edge claim.",
+    "nonpositive_or_unknown_apr_rule": "A nonpositive, missing, expired, unavailable, ineligible, or unowned voucher has zero admitted value."
+  },
+  "adjudication": {
+    "status": "accepted_scoped_exact_positive_Spot_APR_rewards_from_independently_awarded_zero_cost_Simple_Earn_Trial_Fund_notional_after_every_incremental_cost",
+    "accepted_edge": true,
+    "accepted_edge_count_change": 1,
+    "deployment_ready": false,
+    "profitability_claim": false,
+    "public_forward_net_profit_floor": "0",
+    "stable_current_account_qualified_after_all_cost_edge": false,
+    "standalone_incremental_cash_without_independent_trade_borrow_or_external_user": true,
+    "why_not_current_profit": "The public source proves the mechanism but no current owned voucher, regional or account eligibility, token, face amount, positive APR, validity, tax treatment, reward receipt, reward-token value, conversion cost, or alternative use was accessed or proved.",
+    "why_not_tautological": "The official rules independently define a deterministic APR reward on non-withdrawable promotional notional and daily Spot distribution. Acceptance is still limited to exact positive account-owned rewards after cost; it does not assign value to an unspecified future discretionary payment."
+  },
+  "next_action": {
+    "public_work": "complete until a material official voucher mechanic, APR, reward distribution, acquisition, expiry, eligibility, redemption, reversal, or regional-scope change",
+    "account_gate": "Only with explicit signed GET-only Binance mainnet account authority and an independently existing unclaimed or active Trial Fund Voucher, read the exact voucher token, amount, positive APR, validity, acquisition lineage, Points cost, regional eligibility, status, and exact Spot reward receipts. Compute exact after-tax and after-conversion value without claiming the face value.",
+    "separate_explicit_authority_required_for": [
+      "claiming or redeeming a voucher",
+      "spending Binance Points",
+      "accepting service terms",
+      "subscribing to Simple Earn",
+      "early or ordinary redemption",
+      "conversion transfer withdrawal order or any account mutation"
+    ],
+    "testnet_credentials_role": "none; Binance testnet credentials do not establish mainnet Simple Earn eligibility, voucher ownership, rewards, or authority"
+  },
+  "prohibited_shortcuts": [
+    "treating trial-fund face value as cash profit principal collateral or withdrawable balance",
+    "treating a Points-funded voucher as free or omitting Points opportunity cost",
+    "assuming a positive APR amount validity token eligibility region ownership or reward receipt from logged-out terms",
+    "using testnet credentials to infer or access mainnet Simple Earn state",
+    "creating accounts referrals volume deposits trades or other activity to manufacture voucher eligibility",
+    "claiming redeeming subscribing transferring converting withdrawing or mutating account state without separate explicit authority",
+    "double counting voucher APR rewards with Launchpool HODLer Airdrop Megadrop or the voucher face value",
+    "calling a scoped gross reward mechanism a stable current profitable deployment"
+  ],
+  "retry_trigger": "material_official_Simple_Earn_Trial_Fund_voucher_mechanic_APR_reward_distribution_acquisition_expiry_eligibility_redemption_reversal_or_regional_scope_change_or_explicit_signed_GET_only_Binance_mainnet_authority_plus_an_independently_existing_voucher_and_exact_owned_voucher_and_reward_reconciliation",
+  "authority": {
+    "account_requests": 0,
+    "credentials_used": false,
+    "funds_used": false,
+    "orders_or_transactions": 0,
+    "protected_capture_touched": false,
+    "public_unauthenticated_read_only_requests": 1,
+    "signed_requests": 0,
+    "trading_authority": false
+  },
+  "registry_effect": {
+    "accepted_edge_count": 36,
+    "ranked_hypothesis_count": 61,
+    "terminal_family_count": 178,
+    "stable_current_account_qualified_after_all_cost_edge_count": 0
+  },
+  "result_sha256": "d1738d58015b2ee1e34d8dc3bc24eee15cceeeec8730b2ef4c1b8d35a5f30f70"
+}

@@ -1,0 +1,69 @@
+{
+  "schema_version": "public-source-capture-contract-v1",
+  "frozen_at_utc": "2026-09-01T14:05:26Z",
+  "contract_path": "docs/model-research/action-value/binance-simple-earn-trial-fund-source-contract-v1-2026-09-01.json",
+  "trigger": {
+    "discovery_source": "current public Binance Support search and FAQ page",
+    "exact_url_deduplication_hits": 0,
+    "economic_terms_viewed_before_freeze": true,
+    "economic_terms_role": "public discovery only; no retained bytes or promotion claim existed before this contract",
+    "novel_question": "whether a zero-cost Binance Simple Earn Trial Fund Voucher supplies non-withdrawable notional that deterministically generates positive APR rewards paid to Spot without market-direction exposure"
+  },
+  "question": "Do current official Binance terms define a direction-independent positive-APR reward on trial-fund notional, with the reward distributed to Spot while the trial-fund face value remains non-withdrawable?",
+  "request_name": "binance-simple-earn-trial-fund-public-source",
+  "request": {
+    "method": "GET",
+    "url": "https://www.binance.com/bapi/composite/v1/public/cms/article/detail/query?articleCode=c48608a4969f43bb8e9c58e344e6f69e",
+    "count": 1,
+    "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "endpoint_classification": {
+    "operation": "download one exact public official Binance FAQ article through its public CMS endpoint",
+    "security": "public unauthenticated read-only GET",
+    "source_contract": "The retained bytes may establish only the published voucher mechanics. They may not establish regional or account eligibility, voucher ownership, face value, token, APR, validity, tax, reward receipt, withdrawal, profitability for any account, or deployment readiness."
+  },
+  "response_byte_ceiling": 500000,
+  "required_utf8_phrases": [
+    "Simple Earn Trial Fund",
+    "daily rewards",
+    "Spot Account",
+    "APR rewards",
+    "cannot withdraw or transfer"
+  ],
+  "decision": {
+    "advance": "If every source gate passes, accept only the exact positive daily APR reward mechanism on an independently received zero-cost Trial Fund Voucher: trial face value is never cash, current public and account-qualified profit floors remain zero, Points-funded or otherwise acquired vouchers require full opportunity-cost subtraction, and no account access or deployment is authorized.",
+    "reject": "If any source gate fails, terminalize this exact public mechanism without aliases, Rewards Hub access, account access, credentials, or another request.",
+    "accepted_edge_if_advanced": "positive owned Spot-account APR reward receipts from independently awarded zero-cost trial notional, net of tax and operating cost",
+    "accepted_edge": false,
+    "profitability_proved": false,
+    "stable_current_account_qualified_edge": false,
+    "deployment_ready": false
+  },
+  "outputs": {
+    "raw_path": "data/binance-simple-earn-trial-fund-v1/raw/01-faq.raw.json",
+    "journal_path": "data/binance-simple-earn-trial-fund-v1/raw/01-faq.journal.jsonl",
+    "result_path": "docs/model-research/action-value/binance-simple-earn-trial-fund-source-result-v1-2026-09-01.json"
+  },
+  "authority": {
+    "account_requests": 0,
+    "credentials_used": false,
+    "funds_used": false,
+    "orders_or_transactions": 0,
+    "protected_capture_touched": false,
+    "public_unauthenticated_read_only_requests": 1,
+    "signed_requests": 0,
+    "trading_authority": false
+  },
+  "implementations": [
+    {
+      "path": "tools/capture_public_source_contract.py",
+      "sha256": "ba0e76bd6643eedc072cc1fcff2aa363c1dc14a5b8e14956e874c7843637b376"
+    },
+    {
+      "path": "tools/screen_polymarket_exact_two_leg_package.py",
+      "sha256": "374fcc3c3485c466b4929a91256450bdc7db70f93ef4c6bda627e05fe8938327"
+    }
+  ],
+  "retry_policy": "This exact public CMS GET is one-use. Preserve every response, redirect, block, missing phrase, and ceiling failure. Do not retry, alias, open Rewards Hub, use an account, use credentials, claim a voucher, spend Points, subscribe, redeem, transfer, or mutate state.",
+  "contract_sha256": "41998867e54deac8bc4e394a88c948b0b407782d6f543bbbb7b027d06705d3aa"
+}

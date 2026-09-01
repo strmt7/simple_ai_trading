@@ -12,7 +12,7 @@ operating contract. Historical handoff text is archived under
 | Development branch | `main` only |
 | Binance | BTC, ETH, and SOL; paper or testnet/Demo only |
 | Polymarket | Order-capable BTC, ETH, and SOL research is disabled by default; public unauthenticated structural discovery may cover other markets, with no live authority. |
-| Accepted edges | Thirty-five scoped structural edges. The canonical complete scopes, counts, and retry gates are in `docs/model-research/structural-edge-priority-registry-v1.json`; none is deployment-ready or fully account-and-external-cost-qualified. |
+| Accepted edges | Thirty-six scoped structural edges. The canonical complete scopes, counts, and retry gates are in `docs/model-research/structural-edge-priority-registry-v1.json`; none is deployment-ready or fully account-and-external-cost-qualified. |
 | Live-money authority | None |
 | Historical cutoff | `2026-08-14T00:00:00Z` |
 
@@ -20,6 +20,32 @@ No model, AI component, backtest, capture, or paper result may be described as
 profitable without reproducible source-bound after-cost evidence. AI may veto
 or reduce risk only; it never creates positions, selects leverage, overrides a
 safety gate, blocks Stop, or submits an order.
+
+### Latest Binance Simple Earn Trial Fund scoped edge
+
+One frozen exact official Binance FAQ proves that Simple Earn Trial Fund face
+value cannot be withdrawn or transferred, is used only for APR reward
+calculation, and never reaches Spot. A used voucher creates a locked position;
+its APR rewards reach Spot daily for the voucher period, and early redemption
+is prohibited. Token, amount, APR, and validity are voucher-specific.
+
+The accepted scope is only exact positive Spot APR rewards from an independently
+awarded zero-cost voucher after every incremental cost. Face value is not cash
+or profit, and Points-funded or otherwise acquired vouchers require full
+opportunity-cost subtraction. No owned voucher, positive APR, eligibility,
+receipt, account qualification, persistence, deployment readiness, or positive
+public forward floor is proved. Testnet credentials are irrelevant to mainnet
+Simple Earn state and remained unused.
+
+Accepted edges become 36, ranked hypotheses become 61, terminal families remain
+178, and stable current account-qualified after-all-cost edges remain zero.
+Registry, durability-audit, and adjudication-result SHA-256 values are
+`5c8474e2446e3bf8e6adb7ed5aad3e75ff0be1c72eaf513fd70445ae691b2798`,
+`cf6e6cfdfd15472e1506153780cedcf5bc3969afe530c1119d30ba394acf476e`,
+and `d1738d58015b2ee1e34d8dc3bc24eee15cceeeec8730b2ef4c1b8d35a5f30f70`.
+Do not refetch the FAQ, open Rewards Hub, claim, redeem, subscribe, spend Points,
+or mutate state. Explicit signed GET-only Binance mainnet authority plus an
+independently existing voucher is required even for account reconciliation.
 
 ### Latest Binance-Backpack funding rejection
 
