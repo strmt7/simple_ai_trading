@@ -23,6 +23,35 @@ safety gate, blocks Stop, or submits an order.
 
 ### Latest efficient structural screen
 
+A distinct, cleanly preregistered Binance-OKX direction-neutral funding family
+was rejected with four public unauthenticated requests and zero basis or book
+access. One complete OKX swap inventory fixed exactly one live, linear,
+USDT-settled BTC, ETH, and SOL perpetual. Three one-use public funding responses
+contained 296 rows each and aligned the exact 90 retained Binance eight-hour
+buckets, avoiding any Binance refresh.
+
+Training alone selected long OKX / short Binance for every asset, fixed through
+22-row validation and 23-row test after a 45-row training role. Zero assets
+survived the frozen 20-bip round trip, 10% annual capital hurdle, and 25-bip
+custody/transfer/latency/failure stress. BTC gross train/validation/test carry
+was 3.66193/-1.34312/0.73452 bips; ETH was 5.85134/-2.04475/-0.80671;
+SOL was 2.97859/-2.46280/1.08712. Validation was negative for all three, ETH
+test was negative, and every role was dominated by the frozen hurdles.
+
+This exact 90-bin population is terminal. Do not paginate, resample, change
+alignment, refit orientation, weaken costs, or request basis/books. Reopen only
+on a material OKX or Binance funding, fee, quote-unit, custody, transfer,
+latency, capital, or execution-architecture change. No account, credential,
+order, fund, or protected capture was touched. Preregistration and adjudication
+result SHA-256 values are
+`68de39a4ff7db0b01a204f410b637f513fcdb5058705b8a34949991acc8a585b`
+and `3bd57553ea5f40ac1141a48ee3095b02e3c6e6c41012de93d96d95ebe13b006e`.
+Accepted edges remain 29, ranked hypotheses remain 47, and terminal families
+become 130. Registry SHA-256 is
+`eb915168778e0824dc80bb405c2e1c5657916c0750e6f12bc50ea687024b88a4`;
+durability-audit SHA-256 is
+`159f9940502865da19cdcc6df40f32c385497b723e31988725da5951286d061f`.
+
 A distinct direction-neutral Binance-Lighter funding family was rejected with
 only four public unauthenticated requests and zero basis or book access. One
 complete Lighter perpetual inventory fixed active BTC, ETH, and SOL market IDs;

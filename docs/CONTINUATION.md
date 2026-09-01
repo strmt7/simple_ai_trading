@@ -1,5 +1,35 @@
 # Continue Development
 
+## 2026-09-01 Binance-OKX funding checkpoint
+
+A distinct Binance-OKX USDT perpetual funding family was preregistered before
+any funding value access. One complete public inventory proved exactly one live,
+linear, USDT-settled BTC, ETH, and SOL swap. Three one-use public history calls
+returned 296 rows each and aligned the exact retained 90-bin Binance population,
+so no Binance refresh, basis, book, account, credential, order, fund, or
+protected-capture request occurred.
+
+The 45-row training role selected long OKX / short Binance for all assets and
+held that orientation fixed for 22-row validation and 23-row test. Gross
+train/validation/test carry was BTC 3.66193/-1.34312/0.73452 bips, ETH
+5.85134/-2.04475/-0.80671, and SOL 2.97859/-2.46280/1.08712. Zero assets
+survived the frozen 20-bip round trip, 10% annual capital hurdle, and 25-bip
+custody/transfer/latency/failure stress. Validation gross was negative for all
+three, ETH test gross was negative, and every role was economically dominated
+by the frozen hurdles. Stop before basis and books.
+
+Do not paginate, resample, change alignment, refit orientation, or weaken the
+costs for this exact population. Reopen only on a material OKX or Binance
+funding, fee, quote-unit, custody, transfer, latency, capital, or execution-
+architecture change. Preregistration and adjudication result SHA-256 values are
+`68de39a4ff7db0b01a204f410b637f513fcdb5058705b8a34949991acc8a585b`
+and `3bd57553ea5f40ac1141a48ee3095b02e3c6e6c41012de93d96d95ebe13b006e`.
+Accepted edges remain 29, ranked hypotheses remain 47, terminal families become
+130, registry SHA-256 is
+`eb915168778e0824dc80bb405c2e1c5657916c0750e6f12bc50ea687024b88a4`,
+and durability-audit SHA-256 is
+`159f9940502865da19cdcc6df40f32c385497b723e31988725da5951286d061f`.
+
 ## 2026-09-01 Binance-Lighter funding checkpoint
 
 A new direction-neutral cross-venue family was screened efficiently. One

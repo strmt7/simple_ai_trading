@@ -1,0 +1,63 @@
+{
+  "schema_version": "binance-okx-cross-venue-funding-preregistration-v1",
+  "frozen_at_utc": "2026-09-01T02:34:42.6387513Z",
+  "contract_path": "docs/model-research/action-value/binance-okx-btc-eth-sol-funding-preregistration-v1-2026-09-01.json",
+  "novelty": {
+    "registry_route": "new_distinct_Binance_OKX_cross_venue_USDT_perpetual_funding_family",
+    "bounded_alias_search": "No OKX mechanism or artifact was present in AGENTS.md, AGENT_START.md, CONTINUATION.md, tools, tests, non-JSON research prose, or action-value filenames before freeze.",
+    "funding_values_viewed_before_freeze": false
+  },
+  "question": "Does a fixed BTC ETH or SOL Binance-versus-OKX USDT perpetual orientation retain positive direction-neutral funding carry in training validation and test after all frozen hurdles?",
+  "official_semantics": {
+    "api": "OKX API v5 documents public GET /api/v5/public/funding-rate-history, up to three months of history, limit 400, and realizedRate at fundingTime.",
+    "cash_flow": "OKX official funding terms state positive funding is paid by longs to shorts and negative funding is paid by shorts to longs, matching Binance signed-rate orientation.",
+    "fee_source": "OKX official current standard Lv1 USDT perpetual examples use 0.02 percent maker and 0.05 percent taker per fill; the frozen execution hurdle is deliberately not zero."
+  },
+  "requests": {
+    "inventory": "https://www.okx.com/api/v5/public/instruments?instType=SWAP",
+    "funding": {
+      "BTC": "https://www.okx.com/api/v5/public/funding-rate-history?instId=BTC-USDT-SWAP&limit=400",
+      "ETH": "https://www.okx.com/api/v5/public/funding-rate-history?instId=ETH-USDT-SWAP&limit=400",
+      "SOL": "https://www.okx.com/api/v5/public/funding-rate-history?instId=SOL-USDT-SWAP&limit=400"
+    }
+  },
+  "population": {
+    "assets": ["BTC", "ETH", "SOL"],
+    "okx_inst_ids": {"BTC": "BTC-USDT-SWAP", "ETH": "ETH-USDT-SWAP", "SOL": "SOL-USDT-SWAP"},
+    "binance_symbols": {"BTC": "BTCUSDT", "ETH": "ETHUSDT", "SOL": "SOLUSDT"},
+    "aligned_row_count": 90,
+    "first_funding_bucket_ms": 1785196800000,
+    "last_funding_bucket_ms": 1787760000000,
+    "interval_hours": 8,
+    "maximum_schedule_jitter_ms": 1000,
+    "inventory_gate": "Each exact OKX instId must occur once with instType SWAP, ctType linear, settleCcy USDT, state live, and listTime no later than the first frozen funding bucket."
+  },
+  "roles": {
+    "training": {"start": 0, "stop": 45},
+    "validation": {"start": 45, "stop": 67},
+    "test": {"start": 67, "stop": 90}
+  },
+  "orientation": "Choose sign once from the training aggregate of OKX realizedRate minus Binance fundingRate. A positive training aggregate fixes short OKX and long Binance; a negative aggregate fixes long OKX and short Binance. Never refit validation or test.",
+  "economics": {
+    "round_trip_execution_bips": "20",
+    "annual_two_leg_capital_hurdle_percent": "10",
+    "quote_unit_stress_bips": "0",
+    "custody_transfer_latency_failure_stress_bips": "25"
+  },
+  "gates": {
+    "minimum_positive_interval_fraction": "0.5",
+    "require_positive_net_after_all_hurdles_in_every_role": true,
+    "require_positive_first_and_second_half_gross_in_every_role": true,
+    "promotion_eligible": true
+  },
+  "decision": {
+    "failure": "Terminalize the exact 90-bin population before premiums books accounts credentials orders or funds; do not resample or alter roles orientation alignment or costs.",
+    "survivor": "Freeze a separate synchronized finite-size entry and exit basis/depth study. A survivor is not yet an accepted edge or deployment-ready.",
+    "accepted_edge": false,
+    "deployment_ready": false,
+    "stable_profitability_proved": false
+  },
+  "authority": {"account_requests": 0, "credentials_used": false, "funds_used": false, "orders_or_transactions": 0, "protected_capture_touched": false, "public_unauthenticated_read_only_request_ceiling": 4, "signed_requests": 0, "trading_authority": false},
+  "retry_policy": "One inventory GET and one funding GET per asset only. Preserve every terminal response. Never paginate alias reorder narrow substitute a host or retry after seeing values.",
+  "contract_sha256": "68de39a4ff7db0b01a204f410b637f513fcdb5058705b8a34949991acc8a585b"
+}
