@@ -170,6 +170,23 @@ override prose.
   a supported exact positive schedule. Preserve a consumed pre-output schema
   failure and refreeze that sole mechanical correction instead of rerunning or
   rewriting it.
+- A pairwise-NO screen does not exhaust larger mutually exclusive NO packages.
+  For any `k >= 2` distinct outcomes in one complete fixed-NegRisk event,
+  buying all `k` NO tokens has a `(k - 1)`-pUSD floor. At fixed common quantity,
+  sort price-complete NO legs once and evaluate the cheapest prefix for every
+  cardinality; for fee-and-tick stress, sort by each leg's additive stressed
+  unit cost. This exactly tests whether any known-price subset can pass without
+  enumerating billions of dominated combinations. Missing legs remain
+  incomplete, and retained post-price discovery is hypothesis generation only,
+  never prospective promotion evidence.
+- For a complete mutually exclusive fixed-NegRisk event, the primitive
+  direction-independent long-only package basis is: the all-YES complete set,
+  every same-market `YES + NO` binary straddle, and every optimal `k`-NO
+  cardinality frontier. Adding a positive-cost YES leg to a proper NO subset
+  without covering every selected NO cannot raise its minimum payout. Freeze
+  this complete basis before accessing a prospectively selected recurring
+  event; require a strict side-specific after-fee-and-one-tick source gate
+  before any book request, even when the gross near miss is only one tick.
 - When projecting a pairwise comparator into a multi-outcome winner market,
   align tie payouts before calling the implication Boolean. If the pairwise
   market resolves an equal comparison 50-50 while the multi-outcome market
