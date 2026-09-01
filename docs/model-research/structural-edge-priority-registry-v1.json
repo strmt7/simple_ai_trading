@@ -4192,9 +4192,44 @@
           "result_sha256": "73698c080c26f0806df8168d88a2ce7f6fdcbece2b35a35fd35eab71ef059de1"
         }
       ]
+    },
+    {
+      "priority_rank": 65,
+      "mechanism": "binance_Futures_Bonus_Voucher_nonrecourse_free_option_or_organic_cost_overlay",
+      "venue_scope": "Binance_mainnet_Futures_Bonus_Voucher_same_cryptocurrency_USD_M_or_COIN_M_Futures",
+      "market_direction_forecast_required": false,
+      "current_status": "terminal_public_FAQ_says_free_tokens_are_Futures_collateral_losses_can_be_offset_against_bonus_and_generated_profits_can_be_withdrawn_or_transferred_but_expressly_is_not_legal_terms_may_be_outdated_and_omits_loss_ordering_commissions_funding_liquidation_deficits_clawbacks_mixed_balance_protection_other_asset_protection_additional_margin_and_exact_depletion_or_transfer_effects_so_both_fully_nonrecourse_free_option_and_narrower_organic_cost_overlay_semantic_gates_fail_public_and_account_qualified_profit_floors_zero",
+      "blocking_evidence": [
+        "a complete controlling official term proving every loss and cost channel is confined to bonus value and no other balance collateral deposit or user asset can be reached",
+        "exact bonus versus user-fund loss ordering depletion mixed-balance liquidation deficit ADL insurance recovery transfer withdrawal expiry and clawback mechanics",
+        "explicit signed GET-only Binance mainnet authority and independently existing voucher ownership",
+        "exact acquisition lineage cryptocurrency amount expiry status region eligibility and realized bonus use after every cost"
+      ],
+      "next_action": "do_not_refetch_alias_follow_the_adaptively_discovered_terms_open_Rewards_Hub_access_an_account_use_testnet_credentials_or_request_prices_funding_or_books_for_the_exact_source_question_reopen_only_on_the_exact_retry_trigger_and_require_complete_nonrecourse_or_exact_loss_offset_depletion_terms_before_any_voucher_action_every_claim_activation_deposit_trade_position_transfer_withdrawal_or_state_change_requires_separate_explicit_authority",
+      "prohibited_shortcuts": [
+        "assuming_losses_can_be_offset_against_bonus_means_every_downside_channel_is_nonrecourse",
+        "treating_withdrawable_profit_as_a_guaranteed_nonnegative_personal_capital_payoff",
+        "assuming_bonus_is_consumed_before_user_funds_or_that_mixed_balances_are_protected",
+        "ignoring_commissions_funding_liquidation_deficits_ADL_insurance_recovery_clawbacks_and_other_balance_treatment",
+        "following_linked_terms_or_retrying_locale_rendered_or_CMS_aliases_after_the_frozen_gate",
+        "opening_Rewards_Hub_or_using_testnet_credentials_as_mainnet_evidence",
+        "manufacturing_tasks_accounts_referrals_deposits_volume_trades_or_eligibility",
+        "claiming_activating_depositing_trading_transferring_withdrawing_or_mutating_state_without_separate_explicit_authority"
+      ],
+      "retry_trigger": "a_material_official_Futures_Bonus_Voucher_nonrecourse_loss_ordering_fee_funding_liquidation_deficit_mixed_balance_withdrawal_transfer_expiry_or_clawback_term_change_or_a_distinct_prospectively_frozen_complete_controlling_legal_terms_package_selected_before_economic_access_plus_explicit_signed_GET_only_Binance_mainnet_authority_and_an_independently_existing_owned_voucher",
+      "canonical_artifacts": [
+        {
+          "path": "docs/model-research/action-value/binance-futures-bonus-voucher-nonrecourse-or-organic-cost-overlay-terminal-v1-2026-09-01.json",
+          "result_sha256": "57822cbd67822d8c8d61e6d353db99b42dc9895ff19e51e6825beee0a4f66423"
+        },
+        {
+          "path": "docs/model-research/action-value/binance-futures-bonus-voucher-nonrecourse-or-organic-cost-overlay-source-result-v1-2026-09-01.json",
+          "result_sha256": "971e87c3d6e95b37bf1a565f2054f828b55e13a4f8d746578a5d1682c5c8d1e3"
+        }
+      ]
     }
   ],
-  "result_sha256": "8a9c3282758f348a7009af934a17ceffdcd5501b17292717555684ff6686063a",
+  "result_sha256": "cc6d24ba7c3485e31f18896d8fe67be4eaeaed29660fc29b0543f406f6c13516",
   "schema_version": "structural-edge-priority-registry-v1",
   "terminal_do_not_repeat": [
     {
@@ -5102,8 +5137,13 @@
       "family": "binance_Futures_Free_Position_zero_personal_capital_option_public_source_2026_09_01",
       "reason": "one_prospectively_frozen_current_official_FAQ_proves_given_trading_margin_fixed_voucher_parameters_user_selected_long_or_short_withdrawable_or_transferable_profits_and_close_anytime_control_but_does_not_prove_losses_commissions_funding_liquidation_deficits_clawbacks_or_other_liabilities_are_capped_at_supplied_margin_or_cannot_touch_other_user_balances_the_exact_zero_personal_capital_free_option_hypothesis_is_terminal_before_prices_books_accounts_credentials_Rewards_Hub_voucher_actions_orders_or_funds_reopen_only_on_rank_63_exact_complete_nonrecourse_terms_and_owned_voucher_trigger",
       "canonical_result_sha256": "a258fff5e8a96f8a36de8aca28d72d15d7e8d29c26a262d9df2c673a5b750fff"
+    },
+    {
+      "family": "binance_Futures_Bonus_Voucher_nonrecourse_free_option_or_organic_cost_overlay_public_source_2026_09_01",
+      "reason": "one_prospectively_frozen_current_official_FAQ_says_free_tokens_are_same_cryptocurrency_Futures_collateral_losses_can_be_offset_against_bonus_and_generated_profits_can_be_withdrawn_or_transferred_but_the_FAQ_expressly_is_not_legal_terms_may_be_outdated_and_omits_loss_ordering_commissions_funding_liquidation_deficits_clawbacks_mixed_balance_and_other_asset_protection_additional_margin_and_exact_depletion_or_transfer_effects_so_both_the_fully_nonrecourse_free_option_and_narrower_organic_cost_overlay_semantic_gates_fail_before_prices_funding_books_accounts_credentials_Rewards_Hub_voucher_actions_orders_or_funds_reopen_only_on_rank_65_exact_complete_controlling_terms_and_owned_voucher_trigger",
+      "canonical_result_sha256": "57822cbd67822d8c8d61e6d353db99b42dc9895ff19e51e6825beee0a4f66423"
     }
   ],
-  "updated_at_utc": "2026-09-01T14:51:03Z",
+  "updated_at_utc": "2026-09-01T15:33:41Z",
   "usage_rule": "advance_the_highest_ranked_hypothesis_whose_retry_trigger_is_satisfied_otherwise_do_not_repeat_a_blocked_or_terminal_screen"
 }

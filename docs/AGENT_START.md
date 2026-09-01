@@ -21,7 +21,29 @@ profitable without reproducible source-bound after-cost evidence. AI may veto
 or reduce risk only; it never creates positions, selects leverage, overrides a
 safety gate, blocks Stop, or submits an order.
 
-### Latest Binance Trading Fee Rebate Voucher scoped edge
+### Latest Binance Futures Bonus Voucher downside rejection
+
+One frozen current official Binance FAQ says a Futures Bonus Voucher supplies
+same-cryptocurrency collateral, can offset trading losses, and lets generated
+profits be withdrawn or transferred. It also says the FAQ is not legal terms
+and may be outdated. It omits loss ordering, fees, funding, liquidation,
+deficits, clawbacks, mixed-balance and other-asset protection, additional
+margin, exact depletion, and transfer or withdrawal effects.
+
+Both the fully nonrecourse free-option gate and the narrower exact organic-cost
+overlay gate fail. Accepted edges remain 37, ranked hypotheses become 65,
+terminal families become 181, and stable current account-qualified after-all-
+cost edges remain zero. Registry, durability-audit, and terminal-result SHA-256
+values are
+`cc6d24ba7c3485e31f18896d8fe67be4eaeaed29660fc29b0543f406f6c13516`,
+`d001f3b28b65e9e440cd1b1510de01ed853523b36e518155bd93526d78d8dc73`,
+and `57822cbd67822d8c8d61e6d353db99b42dc9895ff19e51e6825beee0a4f66423`.
+Do not refetch, follow linked terms, open Rewards Hub, use testnet credentials
+as mainnet evidence, claim, activate, deposit, trade, or mutate state. Reopen
+only on rank 65's complete controlling-term and independently owned-voucher
+trigger; every state change needs separate authority.
+
+### Prior Binance Trading Fee Rebate Voucher scoped edge
 
 One frozen current official Binance FAQ proves that an activated Trading Fee
 Rebate Voucher refunds eligible net-paid Spot, Margin, or Futures fees at its

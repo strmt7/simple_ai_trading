@@ -1,0 +1,83 @@
+{
+  "schema_version": "public-source-capture-contract-v1",
+  "frozen_at_utc": "2026-09-01T15:31:31Z",
+  "contract_path": "docs/model-research/action-value/binance-futures-bonus-voucher-nonrecourse-or-organic-cost-overlay-source-contract-v1-2026-09-01.json",
+  "trigger": {
+    "retained_index_source": "data/binance-token-voucher-direct-cash-v1/raw/01-faq.raw.json",
+    "retained_related_article_code": "b8241d4ac5494573adaf85e0557c63ec",
+    "retained_related_article_title": "How to Claim Futures Bonus Vouchers?",
+    "exact_url_deduplication_hits": 0,
+    "economic_terms_viewed_before_freeze": true,
+    "economic_terms_role": "public discovery only; no retained selected-article bytes or promotion claim existed before this contract",
+    "novel_question": "whether a Binance Futures Bonus Voucher proves either a fully nonrecourse zero-personal-capital option or a narrower deterministic cost offset on independently justified organic Futures activity"
+  },
+  "question": "Do current official Binance Futures Bonus Voucher terms prove a withdrawable-upside and fully nonrecourse zero-personal-capital payoff; if not, do they at least define an exact realized bonus offset for independently justified organic eligible fees, funding, or losses after every acquisition and activity cost?",
+  "request_name": "binance-futures-bonus-voucher-nonrecourse-or-organic-cost-overlay-public-source",
+  "request": {
+    "method": "GET",
+    "url": "https://www.binance.com/bapi/composite/v1/public/cms/article/detail/query?articleCode=b8241d4ac5494573adaf85e0557c63ec",
+    "count": 1,
+    "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "endpoint_classification": {
+    "operation": "download one exact public official Binance Futures Bonus Voucher FAQ through its public CMS endpoint",
+    "security": "public unauthenticated read-only GET",
+    "source_contract": "The retained bytes may establish only published voucher mechanics. They may not establish regional or account eligibility, voucher ownership, acquisition cost, face value, remaining balance, activation, exact position economics, receipt, tax, profitability, persistence, or deployment readiness."
+  },
+  "response_byte_ceiling": 500000,
+  "required_utf8_phrases": [
+    "How to Claim Futures Bonus Vouchers?"
+  ],
+  "semantic_decision_gate": {
+    "free_option_advance_only_if_all_are_explicit": [
+      "bonus-funded trading profits are withdrawable or transferable",
+      "every position loss commission funding liquidation deficit clawback and other liability is confined to bonus value",
+      "no other Futures Spot collateral deposit or user asset can be debited encumbered or liquidated",
+      "no personal collateral deposit or additional margin is required",
+      "expiry withdrawal transfer and clawback mechanics cannot create personal liability"
+    ],
+    "organic_cost_overlay_advance_only_if_all_are_explicit": [
+      "bonus value is actually applied to one or more exact eligible fees funding or losses",
+      "the exact eligible product or account destination and value depletion mechanics are stated",
+      "the exact withdrawal transfer expiry or invalidation mechanics are stated"
+    ],
+    "fail_closed_if_missing": true,
+    "manual_offline_adjudication_only": true
+  },
+  "decision": {
+    "free_option_advance": "Advance a zero-personal-capital free-option claim only if every free-option semantic gate is explicit. Otherwise reject that claim before prices, books, accounts, credentials, voucher actions, positions, orders, or funds.",
+    "organic_cost_overlay_advance": "If only the organic-cost gates pass, accept only exact positive owned realized bonus value applied on independently justified organic eligible Futures activity after every voucher acquisition, Points, task, deposit, volume, spread, slippage, funding, liquidation, tax, opportunity, custody, delay, failure, and operating cost. Never create, enlarge, churn, self-trade, wash-trade, spoof, manipulate, or manufacture activity to obtain or consume a voucher.",
+    "reject": "If neither semantic path passes, terminalize this exact public mechanism without aliases, Rewards Hub access, account access, credentials, or another request.",
+    "accepted_edge": false,
+    "profitability_proved": false,
+    "stable_current_account_qualified_edge": false,
+    "deployment_ready": false
+  },
+  "outputs": {
+    "raw_path": "data/binance-futures-bonus-voucher-nonrecourse-or-organic-cost-overlay-v1/raw/01-faq.raw.json",
+    "journal_path": "data/binance-futures-bonus-voucher-nonrecourse-or-organic-cost-overlay-v1/raw/01-faq.journal.jsonl",
+    "result_path": "docs/model-research/action-value/binance-futures-bonus-voucher-nonrecourse-or-organic-cost-overlay-source-result-v1-2026-09-01.json"
+  },
+  "authority": {
+    "account_requests": 0,
+    "credentials_used": false,
+    "funds_used": false,
+    "orders_or_transactions": 0,
+    "protected_capture_touched": false,
+    "public_unauthenticated_read_only_requests": 1,
+    "signed_requests": 0,
+    "trading_authority": false
+  },
+  "implementations": [
+    {
+      "path": "tools/capture_public_source_contract.py",
+      "sha256": "ba0e76bd6643eedc072cc1fcff2aa363c1dc14a5b8e14956e874c7843637b376"
+    },
+    {
+      "path": "tools/screen_polymarket_exact_two_leg_package.py",
+      "sha256": "374fcc3c3485c466b4929a91256450bdc7db70f93ef4c6bda627e05fe8938327"
+    }
+  ],
+  "retry_policy": "This exact public CMS GET is one-use. Preserve every response, redirect, block, missing phrase, ceiling failure, and semantic-gate failure. Do not retry, alias, follow adaptively discovered terms, open Rewards Hub, use an account or credentials, claim or activate a voucher, complete a task, spend Points, deposit, manufacture volume, trade, transfer, withdraw, or mutate state.",
+  "contract_sha256": "dd35c75a5f84ff75e8623e15082596fa4ca25cbe8ea090236f8592cfa5faab57"
+}
