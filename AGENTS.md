@@ -64,6 +64,12 @@ override prose.
   execution cost, two-leg capital hurdle, and quote-unit stress before viewing
   funding values. Select orientation on training only and require every role to
   remain positive after all frozen costs plus within-role stability gates.
+  The frozen capture contract must embed those exact adjudication choices or
+  bind a separately frozen adjudication contract; a schema check before that
+  freeze may print field names and row counts only, never rate, price, first-row,
+  last-row, minimum, maximum, or other economic values. If economic values leak
+  first, mark that population promotion-ineligible and require a disjoint
+  prospectively frozen confirmation rather than pretending the freeze was clean.
   Request no premiums, books, accounts, credentials, or orders when that cheap
   funding-only prefilter fails; never rescue it by resampling or changing the
   orientation after observation.

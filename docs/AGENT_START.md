@@ -23,6 +23,35 @@ safety gate, blocks Stop, or submits an order.
 
 ### Latest efficient structural screen
 
+A distinct direction-neutral Binance-Lighter funding family was rejected with
+only four public unauthenticated requests and zero basis or book access. One
+complete Lighter perpetual inventory fixed active BTC, ETH, and SOL market IDs;
+three one-use funding requests returned 718 hourly rows each. Reusing retained
+Binance histories avoided three redundant source calls. Lighter's exclusive
+time boundaries mechanically left 88 complete eight-hour aligned buckets.
+
+Training alone selected each asset's orientation, which stayed fixed for
+validation and test. Zero assets survived every chronological role after the
+frozen 20-bip round trip, 10% annual capital hurdle, 25-bip USDC/USDT stress,
+and 25-bip custody/bridge/latency stress. BTC gross spread was 3.1217, 2.5119,
+and -3.4251 bips; ETH was 10.0548, 0.4170, and 3.1349; SOL was 4.4760, 3.8258,
+and 15.1961. Those totals are far below capital cost, while BTC reversed in
+test, ETH failed validation persistence, and SOL failed training persistence.
+
+This exact population is terminal. Do not resample, change alignment, refit
+orientation, weaken hurdles, or request basis/books. Reopen only on a material
+Lighter or Binance funding, fee, quote-unit, custody, bridge, latency, capital,
+or execution-architecture change. A bounded schema inspection accidentally
+printed first/last economic rows before the offline contract was finalized; the
+contract therefore made the population promotion-ineligible even though the
+terminal rejection is invariant. `AGENTS.md` now forbids value-bearing schema
+prints before the full funding adjudication freeze. No account, credential,
+order, fund, or protected capture was touched. Accepted edges remain 29, ranked
+hypotheses remain 47, and terminal families become 129. Registry SHA-256 is
+`333a9118e9339a7b1e0d3ce1ddbfc5f382c1d77f006cb81254b160bcd0f221a8`;
+durability-audit SHA-256 is
+`fe8c01b5389fdef3b4a2acd6bc87fec85ac1da65f3111ce018b6ba0da29bb3a9`.
+
 A distinct current Rewards-page lead advanced rank 17 without sampling its
 siblings: Anduril valuation at or above 122.5B by September 30. One frozen exact
 Gamma plus sponsored-condition reconciliation proved an active binary market,

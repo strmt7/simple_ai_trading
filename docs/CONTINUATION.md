@@ -1,5 +1,39 @@
 # Continue Development
 
+## 2026-09-01 Binance-Lighter funding checkpoint
+
+A new direction-neutral cross-venue family was screened efficiently. One
+public Lighter inventory request fixed active BTC, ETH, and SOL perpetual IDs,
+then three one-use public hourly funding requests reused retained Binance
+BTCUSDT, ETHUSDT, and SOLUSDT histories. No redundant Binance refresh, basis,
+book, account, credential, order, fund, or protected-capture request occurred.
+The endpoint's exclusive boundaries produced 718 hourly rows and 88 complete
+aligned eight-hour buckets per asset.
+
+Training-only orientation selection and fixed validation/test roles left no
+survivor after 20 bips round-trip execution, a 10% annual capital hurdle, 25
+bips USDC/USDT stress, and 25 bips custody/bridge/latency stress. BTC gross
+train/validation/test spread was 3.1217/2.5119/-3.4251 bips; ETH was
+10.0548/0.4170/3.1349; SOL was 4.4760/3.8258/15.1961. BTC reversed in test,
+ETH failed validation persistence, SOL failed training persistence, and every
+role total was economically dominated by capital cost. Stop before basis and
+books. Reopen only for a material Lighter or Binance funding, fee, quote-unit,
+custody, bridge, latency, capital, or execution-architecture change.
+
+A bounded post-capture schema command printed the first and last economic rows
+before the offline adjudication contract was finalized. The retained source
+contracts themselves were prospectively frozen, but the result is explicitly
+promotion-ineligible and would have required a fresh disjoint confirmation had
+anything survived. `AGENTS.md` now requires schema inspection to print only
+field names and counts until every funding adjudication choice is hash-bound.
+Adjudication result SHA-256 is
+`88e62dfd4ab11ab498c56fca530c5b5875054e3819b4068f532fd0ca29e4db0d`.
+Accepted edges remain 29, ranked hypotheses remain 47, terminal families become
+129, registry SHA-256 is
+`333a9118e9339a7b1e0d3ce1ddbfc5f382c1d77f006cb81254b160bcd0f221a8`,
+and durability-audit SHA-256 is
+`fe8c01b5389fdef3b4a2acd6bc87fec85ac1da65f3111ce018b6ba0da29bb3a9`.
+
 This is the authoritative handoff. Verify every drift-prone claim before acting.
 Development belongs only on `main`; do not create another development branch.
 

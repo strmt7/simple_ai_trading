@@ -1,0 +1,22 @@
+{
+  "schema_version": "public-source-capture-contract-v1",
+  "frozen_at_utc": "2026-09-01T02:20:48.9804596Z",
+  "contract_path": "docs/model-research/action-value/binance-lighter-sol-funding-source-contract-v1-2026-09-01.json",
+  "trigger": {"registry_route": "new_distinct_Binance_Lighter_cross_venue_funding_family", "outcomes_viewed_before_freeze": false, "discovery_values_are_economic_inputs": false},
+  "question": "What was the complete public hourly Lighter SOL perpetual funding history needed to align exactly with the retained 90-bin Binance SOLUSDT population?",
+  "request_name": "lighter-sol-hourly-funding-frozen-window",
+  "request": {"method": "GET", "url": "https://mainnet.zklighter.elliot.ai/api/v1/fundings?market_id=2&resolution=1h&start_timestamp=1785171600000&end_timestamp=1787760000000&count_back=0", "count": 1, "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"},
+  "endpoint_classification": {"operation": "download one frozen public Lighter funding series", "security": "public unauthenticated read-only market-data GET", "source_contract": "Official Lighter SDK commit ebc50660efc99f31e4055418e4514255456cb060 documents GET /api/v1/fundings without authorization; inventory capture fixed active SOL market_id 2 before funding outcomes."},
+  "response_byte_ceiling": 2000000,
+  "required_utf8_phrases": ["\"fundings\"", "\"timestamp\"", "\"rate\""],
+  "decision": {"source_gate_only": "Preserve the one response before parsing. No retry or alternate parameters.", "accepted_edge": false, "profitability_proved": false, "conditional_next_step": "Offline alignment and chronological funding-only adjudication under the already frozen population and costs."},
+  "outputs": {"raw_path": "docs/model-research/binance/raw/lighter-btc-eth-sol-funding-v1-2026-09-01/03-sol-funding.raw.json", "journal_path": "docs/model-research/binance/raw/lighter-btc-eth-sol-funding-v1-2026-09-01/00-sol-request-journal.jsonl", "result_path": "docs/model-research/action-value/binance-lighter-sol-funding-source-result-v1-2026-09-01.json"},
+  "authority": {"account_requests": 0, "credentials_used": false, "funds_used": false, "orders_or_transactions": 0, "protected_capture_touched": false, "public_unauthenticated_read_only_requests": 1, "signed_requests": 0, "trading_authority": false},
+  "implementations": [
+    {"path": "tools/capture_public_source_contract.py", "sha256": "d566a5a379c659c3da144d5e28449ebac9c01493bd39646f9cc3a6e697a83566"},
+    {"path": "tools/screen_polymarket_exact_two_leg_package.py", "sha256": "374fcc3c3485c466b4929a91256450bdc7db70f93ef4c6bda627e05fe8938327"},
+    {"path": "tools/adjudicate_polymarket_exact_mlb_monotone_prefilter.py", "sha256": "958a44d78029b9a1eb69a3771ce18e53ac1ed3c7bc161c8e4318beedce2cf99f"}
+  ],
+  "retry_policy": "One use. Preserve every terminal response and never retry another host market ID time range resolution or count mode.",
+  "contract_sha256": "dda95982fbfd3c4e634a051156b4dee8f30a003e5a6901ea66c54e90d51b65d5"
+}
