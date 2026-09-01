@@ -1,5 +1,44 @@
 # Continue Development
 
+## 2026-09-01 Polymarket public-company rank assignment source rejection
+
+Three prospectively frozen, one-use, public unauthenticated Gamma GETs retained
+the exact largest, second-largest, and third-largest company events with 25,
+29, and 29 markets. The market-cap metric, September 30 market-close instant,
+and consensus-of-credible-reporting source align, but the cross-event payoff
+proof does not.
+
+Each event is an independently resolved NegRisk partition and none specifies
+how exact market-cap ties or corporate actions map across first, second, and
+third place. The hidden `Company`-letter populations differ by rank and have no
+source-proved identities. `Any other company` can also denote different
+companies at different ranks. Therefore an all-different matching or
+permutation floor would require unstated tie and identity assumptions.
+
+The source gate failed before price inspection. No `bestBid`, `bestAsk`, or
+`outcomePrices` field was used for the decision, and zero CLOB book, fee,
+account, credential, signed, order, fund, transaction, or protected requests
+were made. Do not retry, alias-map placeholders, or assume ordinal tie
+semantics. Reopen rank 31 only if exact rules add deterministic cross-rank tie
+and identity semantics or a distinct family proves them before economics.
+
+Rank-one, rank-two, and rank-three contract hashes are
+`c60773469228f8b94f43e62fae1b8fcacf87c69f2a97cb2ed075656bd2a1555d`,
+`77806e15cd1326385ecdf3860c760a11f24df8612b77d570dab30e6b86fdc862`,
+and `c89545cb8fe40944bff0f44b978573f9fec215cdaa9758847a8ca5c8dc9341f8`;
+capture-result hashes are
+`e338dfd907f90c758aee7c04aa5cabd4ef7391eff34bb303d6289c22c370869c`,
+`59cc6a074cbc29088490d7208481a90fa4750861e616a824b9f8790f2457c97b`,
+and `c945347331b14bbb5ace8c68660fa3169e99b4e62fae78a0347ea74fd726f077`;
+the source adjudication hash is
+`47d7c9f000b9e8445d227a4b9b35ebeaf0681e8b6bfbdaaf2ebcb359e054839e`.
+
+Accepted edges remain 29, ranked hypotheses remain 47, terminal families become
+141, and stable current account-qualified after-all-cost edges remain zero.
+Registry and durability-audit hashes are
+`9c793173647d9a3f50e0be1f3696a16614517fb6d921dc9efb9f2151532b2939`
+and `0d25d77c6d84cad2bb356d15469cea7f6d0c3032e38ab18e0040388ed29466c4`.
+
 ## 2026-09-01 Polymarket Mythos release implication-graph rejection
 
 A distinct direction-independent release-timing family was tested as one graph,

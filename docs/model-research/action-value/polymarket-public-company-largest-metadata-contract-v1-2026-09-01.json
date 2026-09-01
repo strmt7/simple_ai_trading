@@ -1,0 +1,65 @@
+{
+  "authority": {
+    "account_requests": 0,
+    "credentials_used": false,
+    "funds_used": false,
+    "orders_or_transactions": 0,
+    "protected_capture_touched": false,
+    "public_unauthenticated_read_only_requests": 1,
+    "signed_requests": 0,
+    "trading_authority": false
+  },
+  "contract_path": "docs/model-research/action-value/polymarket-public-company-largest-metadata-contract-v1-2026-09-01.json",
+  "contract_sha256": "c60773469228f8b94f43e62fae1b8fcacf87c69f2a97cb2ed075656bd2a1555d",
+  "decision": {
+    "accepted_edge_from_metadata": false,
+    "alignment_gate": "Enumerate every returned sibling, including hidden, inactive, or closed markets. Require the same public-company universe, market-cap metric, observation instant, source hierarchy, tie handling, and corporate-action handling as the separately frozen second- and third-largest events before asserting any all-different rank constraint.",
+    "book_requests_authorized": 0,
+    "metadata_only": true,
+    "next_step_if_gate_fails": "Preserve the one-use response and reject without alias, books, fee endpoints, credentials, accounts, orders, funds, transactions, or protected capture access.",
+    "next_step_if_gate_passes": "Combine only with the separately frozen second- and third-largest responses. Freeze one zero-network exhaustive all-different assignment graph before inspecting unselected economic rows; require a strict conservative metadata sub-floor and current fee-and-one-tick survival before any separately frozen book request.",
+    "outcome_prices_excluded": true,
+    "required_market": "the complete exact largest-public-company-at-end-of-September event with active, closed, acceptingOrders, bestBid, bestAsk, outcomes, clobTokenIds, fee, tick, minimum-order, start, end, and description fields retained exactly as returned",
+    "side_specific_price_rule": "For YES use direct bestAsk; for NO use direct NO ask when source-proved or conservative 1 minus direct YES bestBid. Never use outcomePrices, displayed probability, midpoint, last trade, or a blank or zero button as an ask."
+  },
+  "frozen_at_utc": "2026-09-01T05:44:08.5733446Z",
+  "implementations": [
+    {
+      "path": "tools/capture_public_source_contract.py",
+      "sha256": "d566a5a379c659c3da144d5e28449ebac9c01493bd39646f9cc3a6e697a83566"
+    },
+    {
+      "path": "tools/screen_polymarket_exact_two_leg_package.py",
+      "sha256": "374fcc3c3485c466b4929a91256450bdc7db70f93ef4c6bda627e05fe8938327"
+    }
+  ],
+  "outputs": {
+    "journal_path": "data/polymarket-public-company-top3-assignment-v1/rank-1-request-journal.jsonl",
+    "raw_path": "data/polymarket-public-company-top3-assignment-v1/raw/rank-1-event.json",
+    "result_path": "docs/model-research/action-value/polymarket-public-company-largest-metadata-capture-result-v1-2026-09-01.json"
+  },
+  "question": "Can the exact largest-public-company event participate in a direction-independent all-different assignment cover with the exact second- and third-largest events?",
+  "request": {
+    "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "count": 1,
+    "method": "GET",
+    "url": "https://gamma-api.polymarket.com/events/slug/largest-company-end-of-september-1785358369147"
+  },
+  "request_name": "exact_public_company_rank_1_event_metadata",
+  "required_utf8_phrases": [
+    "\"slug\":\"largest-company-end-of-september-1785358369147\"",
+    "\"markets\":["
+  ],
+  "response_byte_ceiling": 2000000,
+  "retry_policy": "This exact Gamma event GET is one-use. Preserve any timeout, non-200 response, schema mismatch, hidden sibling, missing side-specific field, rule contradiction, or calculation failure. Never retry an alias, omit a sibling, or substitute rendered or outcomePrices values.",
+  "schema_version": "polymarket-public-company-largest-metadata-contract-v1",
+  "status": "frozen_before_one_public_gamma_request",
+  "trigger": {
+    "candidate_selection_rule": "first distinct unconsumed three-rank assignment family with a source-proved all-different constraint and rendered conservative prices close enough to the combinatorial floor to justify exact metadata",
+    "event_slug": "largest-company-end-of-september-1785358369147",
+    "registry_rank": 31,
+    "rendered_discovery_url": "https://polymarket.com/event/largest-company-end-of-september-1785358369147",
+    "rendered_discovery_values_are_economic_inputs": false,
+    "rendered_source_observed_at_utc": "2026-09-01T05:23:30Z"
+  }
+}
