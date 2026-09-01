@@ -9126,3 +9126,58 @@ Accepted edges become 32, ranked hypotheses become 49, terminal families become
 161, and stable current account-qualified after-all-cost edges remain zero.
 No account, credential, order, fund, transaction, on-chain action, or protected
 capture was touched.
+
+## Polymarket US complete catalog and open incentive overlays
+
+A prospectively frozen one-use public Polymarket US Events API request returned
+one active, nonclosed, nonarchived event, strictly below the requested 500-row
+limit. An offline zero-economic-field join compared its exact title and exact
+source terms with all 100 events in the retained September 30 Global catalog.
+There were zero exact title matches and zero exact source identities, so the
+cross-venue route stopped before any price, BBO, book, fee, account, credential,
+order, fund, or transaction request. Do not retry with fuzzy titles, aliases,
+pagination, or repricing. Reopen only after a material listing or venue
+architecture change, or for a distinct population frozen before US access.
+
+Catalog contract/source-result/adjudication/raw/journal SHA-256 values are
+`a327468de94837db6644abe15878fe5af2881965ffd765f17fdcec19a08c85fc`,
+`2cae855c1d22f68da0fed37406af5086dcad7713e94e4236c1bb1cd9937db956`,
+`d4ef63463e60b52cf97bbc5044e679b6c8f529813c8e843b9864ffef87700988`,
+`c94c2f2e8d54d036100e7f2add7957f9d9596a26274d7da6b551305d5d20dad2`,
+and `d1c453f96068bfc739003508c4a3605c7125aea83818593f59972e9b58024ea0`.
+
+The next prospectively frozen one-use current official source reconciled the
+complete open Polymarket US incentive page jointly rather than selecting one
+program after access. Volume rewards are proportional to eligible contract
+volume, with only trades described as between 3 and 97 cents counted; the
+source does not specify endpoint inclusivity. Fill rewards
+are proportional to filled resting-order volume, paid weekly, and capped at
+50,000 USD or 10 percent of the pool per trader; the displayed March 14 table is
+historical, not a current pool. The open first-deposit program advertises a
+20 USD account credit within 30 days for a genuinely new participant onboarded
+through an ISV who successfully onboards and deposits at least 1 USD.
+
+The thirty-third accepted scope is only an exact positive owned Volume or Fill
+reward actually credited on independently justified legitimate organic
+eligible taker volume or resting maker fills after every incremental cost. The
+thirty-fourth is only exact positive owned first-deposit credit actually usable
+or withdrawable after independently intended genuine onboarding and deposit and
+every incremental cost. Both public forward profit floors are zero; neither is
+deployment-ready or stable/current/account-qualified. Never manufacture volume,
+fills, orders, deposits, accounts, or eligibility; self-trade, wash-trade,
+spoof, cycle related accounts, abuse cancellation, or misrepresent new-participant
+status. Any account, order, deposit, fund, or state change requires separate
+explicit authority.
+
+Incentive contract/source-result/adjudication/raw/journal SHA-256 values are
+`4eb9d5db0fc15ef5ee8941dbed781207eb4dde089ab32438862819b2e59dfcb8`,
+`d3c1630c24c2f5156c9ed75d04742b112f928ddd6c7e3b8672f85ec8a4469ac3`,
+`d57ce7474a91cce5ab9e07b7ed5d01bf970b1969c2cc6921c506e956e50dc990`,
+`abc2ffaabd69844cf323c6b85cf334418ff12e7401b778c489a2aa36d8fe6333`,
+and `86de752574f1bb5d2f1818204325d28231060f8a87d606599c52b8c9279a0ff9`.
+Registry and durability-audit SHA-256 values become
+`c74173fe11f09db70393b67c5f37a4495bdfc4a78cd6ced41f4872fe825ebb69`
+and `ff1c9aae493f8acf533464ad90352a486d1dfe23c73511ba1f7ba9a628441922`.
+Accepted edges become 34, ranked hypotheses become 51, terminal families become
+163, and stable current account-qualified after-all-cost edges remain zero.
+No credentials were used and the protected Polymarket capture was untouched.

@@ -1,0 +1,95 @@
+{
+  "schema_version": "polymarket-us-global-title-catalog-contract-v1",
+  "frozen_at_utc": "2026-09-01T10:27:20.2720116Z",
+  "contract_path": "docs/model-research/action-value/polymarket-us-global-sep30-title-catalog-contract-v1-2026-09-01.json",
+  "research_question": "Does one complete-looking public Polymarket US open-event page contain an exact source-identical counterpart for any of the 100 already retained open Polymarket Global September 30 events, sufficient only to permit a separately frozen economics gate?",
+  "trigger": {
+    "registry_route": "distinct_complete_population_extension_of_cross_venue_prediction_payoff_identity",
+    "prior_exact_title_attempt": "The consumed US House military-aid search tested one title only and returned zero exact matches. This contract uses every title in one independently retained 100-event Global population and one bounded US event-list page; it never retries or aliases that title search.",
+    "selection_before_access": "All 100 retained Global event titles are included without inspecting their prices. The US request, completeness rule, exact join, source-identity fields, implementation, paths, limits, and stop conditions are frozen before the US catalog is accessed.",
+    "economic_values_viewed_before_freeze": false
+  },
+  "global_population": {
+    "path": "data/polymarket-sep30-et-negrisk-complete-set-catalog-v1/raw/events.json",
+    "sha256": "ff108e7b869cf74e1950d9eb90d75c35335b56996d8ad1cda5fc675b2633c0ab",
+    "expected_event_count": 100,
+    "exact_end_date_utc": "2026-10-01T03:59:00Z",
+    "selection": "Every active nonclosed event in the exact retained source with this end date; titles are unique and no economic field selects a candidate."
+  },
+  "us_population": {
+    "endpoint": "GET /v1/events",
+    "requested_limit": 500,
+    "offset": 0,
+    "filters": {
+      "active": true,
+      "closed": false,
+      "archived": false
+    },
+    "completeness_rule": "The returned events array must contain strictly fewer than the requested limit and every returned row must satisfy the frozen open active unarchived filters. An exactly full page is incomplete and cannot promote any match."
+  },
+  "request_name": "polymarket-us-open-event-catalog-for-global-title-join",
+  "request": {
+    "method": "GET",
+    "url": "https://gateway.polymarket.us/v1/events?limit=500&offset=0&active=true&closed=false&archived=false&orderBy=createdAt&orderDirection=desc",
+    "count": 1,
+    "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "endpoint_classification": {
+    "operation": "download one bounded page of public open Polymarket US events for an offline exact-title and source-term join",
+    "security": "public unauthenticated read-only market-catalog GET with no account credential order or mutation semantics",
+    "official_documentation": "https://docs.polymarket.us/api-reference/events/get-events"
+  },
+  "response_byte_ceiling": 15000000,
+  "required_utf8_phrases": [
+    "\"events\""
+  ],
+  "decision": {
+    "ignore_fields": [
+      "outcomePrices",
+      "liquidity",
+      "volume",
+      "openInterest",
+      "volume24hr",
+      "volume1wk",
+      "volume1mo"
+    ],
+    "source_identity_only": "Join exact event titles, then require exact event descriptions and end dates, equal complete market counts, exact market questions descriptions end dates and outcomes, open active visible unarchived state, and every market question joined.",
+    "promotion_ceiling": "A passing exact source identity permits only one separately frozen BBO and fee comparison. It proves no executable parity capacity atomicity account eligibility legality or profit.",
+    "fail_closed": "No exact source identity or incomplete US population stops before every BBO book fee account credential order fund or transaction request."
+  },
+  "outputs": {
+    "raw_path": "data/polymarket-us-global-sep30-title-catalog-v1/raw/events.json",
+    "journal_path": "data/polymarket-us-global-sep30-title-catalog-v1/request-journal.jsonl",
+    "result_path": "docs/model-research/action-value/polymarket-us-global-sep30-title-catalog-source-result-v1-2026-09-01.json",
+    "adjudication_path": "docs/model-research/action-value/polymarket-us-global-sep30-title-catalog-adjudication-v1-2026-09-01.json"
+  },
+  "limitations": [
+    "Strict title and text equality is a candidate gate only; different venue contracts resolution systems dispute handling eligibility settlement latency custody and legal terms can still differ.",
+    "The retained Global catalog is one exact September 30 population, not every Global market, and the US page is current only at its one request instant.",
+    "Raw catalog bytes may contain prices but the adjudicator must neither read them into the join nor print or use them for selection.",
+    "A missing field unequal type hidden sibling extra market or full 500-row page rejects promotion rather than being assumed equivalent or complete.",
+    "Any BBO book fee account credential order cancellation fund transfer or transaction requires a separately frozen or separately authorized step."
+  ],
+  "authority": {
+    "account_requests": 0,
+    "credentials_used": false,
+    "funds_used": false,
+    "orders_or_transactions": 0,
+    "protected_capture_touched": false,
+    "public_unauthenticated_read_only_requests": 1,
+    "signed_requests": 0,
+    "trading_authority": false
+  },
+  "implementations": [
+    {
+      "path": "tools/capture_public_source_contract.py",
+      "sha256": "d566a5a379c659c3da144d5e28449ebac9c01493bd39646f9cc3a6e697a83566"
+    },
+    {
+      "path": "tools/adjudicate_polymarket_us_global_title_catalog.py",
+      "sha256": "74a74baeb3e1d6d71b6174723e2289e7c24e8786fb80902e0d881138ee4e2bc6"
+    }
+  ],
+  "retry_policy": "This exact event-list GET is one-use. Preserve any response or failure and never retry an alias page, pagination, alternate order, title subset, or second Global population after viewing it. Reopen only for a future independently selected source population or a material listing, rules, fee, or venue-architecture change.",
+  "contract_sha256": "a327468de94837db6644abe15878fe5af2881965ffd765f17fdcec19a08c85fc"
+}

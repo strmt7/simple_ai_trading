@@ -1,0 +1,82 @@
+{
+  "accepted_scopes": [
+    {
+      "accepted_edge": true,
+      "edge_ordinal": 33,
+      "evidence_tier": "C_preexisting_internal_activity_saving_or_rebate",
+      "mechanism": "polymarket_US_organic_volume_or_fill_incentive_reward_overlay",
+      "scope": "Exact positive owned Volume or Fill Incentive Program reward actually credited on independently justified legitimate organic eligible Polymarket US taker volume or resting maker fills after every incremental cost.",
+      "why_scoped_only": "The source proves open programs and proportional pool-share formulas, not an owned allocation, current contract pool, account eligibility, fill quality, persistence, or positive after-cost result. Public forward profit floor is zero."
+    },
+    {
+      "accepted_edge": true,
+      "edge_ordinal": 34,
+      "evidence_tier": "C_preexisting_internal_activity_saving_or_rebate",
+      "mechanism": "polymarket_US_first_deposit_incentive_credit_overlay",
+      "scope": "Exact positive owned first-deposit incentive credit actually usable or withdrawable by a genuinely new eligible participant who independently intended to onboard through an ISV and deposit at least 1 USD, after every incremental cost.",
+      "why_scoped_only": "The source advertises a 20 USD account credit within 30 days after eligibility criteria, but does not prove owned eligibility, receipt, usability, withdrawal, recurrence, persistence, or a positive result after onboarding, deposit, custody, delay, tax, and opportunity costs. Public forward profit floor is zero."
+    }
+  ],
+  "adjudication": {
+    "accepted_edge_count_increment": 2,
+    "deployment_ready": false,
+    "market_direction_forecast_required": false,
+    "profitability_claim": false,
+    "public_new_capital_after_all_cost_profit_floor": "0",
+    "stable_current_account_qualified_after_all_cost_edge_count_increment": 0,
+    "status": "two_direction_independent_scoped_overlays_accepted_with_zero_public_profit_floor"
+  },
+  "authority": {
+    "account_requests": 0,
+    "credentials_used": false,
+    "funds_used": false,
+    "orders_or_transactions": 0,
+    "protected_capture_touched": false,
+    "public_unauthenticated_read_only_requests": 1,
+    "signed_requests": 0,
+    "trading_authority": false
+  },
+  "contract": {
+    "path": "docs/model-research/action-value/polymarket-us-open-incentive-programs-contract-v1-2026-09-01.json",
+    "sha256": "4eb9d5db0fc15ef5ee8941dbed781207eb4dde089ab32438862819b2e59dfcb8"
+  },
+  "created_at_utc": "2026-09-01T10:35:00Z",
+  "program_evidence": {
+    "deposit": {
+      "access": "Open",
+      "criteria": "New participant onboarded through an ISV, successfully onboarded, and first deposit of at least 1.00 USD.",
+      "published_credit_usd": "20.00",
+      "published_payment_delay": "within_thirty_days",
+      "recurring": false
+    },
+    "fill": {
+      "access": "Open",
+      "allocation": "share_of_total_filled_resting_order_volume",
+      "individual_weekly_cap_usd": "50000",
+      "individual_pool_share_cap": "0.10",
+      "published_table_period": "week_of_2026_03_14_historical_not_current"
+    },
+    "volume": {
+      "access": "Open",
+      "allocation": "share_of_eligible_contract_trading_volume",
+      "eligible_price_range_published_text": "between_3c_and_97c",
+      "price_range_endpoint_inclusivity_specified": false,
+      "published_example_is_not_owned_or_current_pool_evidence": true
+    }
+  },
+  "prohibited_shortcuts": [
+    "creating volume fills deposits accounts or eligibility solely to obtain a reward",
+    "self trading wash trading spoofing fake volume related account cycling cancellation abuse or non executable orders",
+    "duplicate synthetic or misrepresented new participant or ISV eligibility",
+    "treating an advertised example pool weekly cap or account credit as expected value or owned profit",
+    "double counting maker rebate liquidity reward volume reward fill reward spread mark to market redemption or deposit principal",
+    "using Binance or Binance testnet credentials for Polymarket US",
+    "making any account order deposit fund or state change without separate explicit authority"
+  ],
+  "result_sha256": "d57ce7474a91cce5ab9e07b7ed5d01bf970b1969c2cc6921c506e956e50dc990",
+  "schema_version": "polymarket-us-open-incentive-programs-adjudication-v1",
+  "source_result": {
+    "path": "docs/model-research/action-value/polymarket-us-open-incentive-programs-source-result-v1-2026-09-01.json",
+    "sha256": "d3c1630c24c2f5156c9ed75d04742b112f928ddd6c7e3b8672f85ec8a4469ac3"
+  }
+}

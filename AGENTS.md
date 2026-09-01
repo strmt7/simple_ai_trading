@@ -497,6 +497,21 @@ override prose.
   exact positive owned maker rebate on independently justified legitimate
   organic flow after its applied schedule, receipt grouping, adverse selection,
   inventory, hedge, and every incremental cost are reconciled.
+- Polymarket US Volume and Fill incentive rewards are receipt-level overlays on
+  activity that must already be independently justified. Never create volume,
+  fills, orders, accounts, or eligibility to obtain them; never self-trade,
+  wash-trade, spoof, cycle related accounts, abuse cancellation, or double
+  count maker rebates, liquidity rewards, spreads, or redemption. Advertised
+  pools, examples, and caps are not expected value. Credit only an exact owned
+  reward after current eligibility, allocation, receipt, fill quality, and
+  every incremental cost are reconciled.
+- Polymarket US first-deposit credit is one-time and account-gated. Never create
+  duplicate, synthetic, related, or misrepresented participant or ISV
+  eligibility, and never onboard or deposit solely to chase the credit. Credit
+  only exact owned usable or withdrawable value after independently intended
+  onboarding and deposit plus custody, delay, tax, withdrawal, opportunity, and
+  every other cost. Any account, deposit, fund, or state change requires
+  separate explicit authority.
 - Polymarket Gamma `outcomePrices` can behave like midpoint diagnostics while
   the same market exposes a materially different `bestAsk`. Never let
   `outcomePrices` alone authorize a CLOB request. For a YES leg, require the
