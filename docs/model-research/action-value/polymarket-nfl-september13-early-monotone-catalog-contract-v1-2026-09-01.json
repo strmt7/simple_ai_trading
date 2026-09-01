@@ -1,0 +1,76 @@
+{
+  "authority": {
+    "account_requests": 0,
+    "book_requests": 0,
+    "credentials_used": false,
+    "fee_requests": 0,
+    "funds_used": false,
+    "orders_or_transactions": 0,
+    "protected_capture_touched": false,
+    "public_unauthenticated_read_only_requests": 1,
+    "signed_requests": 0,
+    "trading_authority": false
+  },
+  "capture": {
+    "ascending": true,
+    "closed": false,
+    "limit": 500,
+    "order": "startTime",
+    "request_count": 1,
+    "series_id": "12185",
+    "start_time_max": "2026-09-13T20:25:00Z",
+    "start_time_min": "2026-09-13T00:00:00Z",
+    "url": "https://gamma-api.polymarket.com/events/keyset?limit=500&order=startTime&ascending=true&closed=false&start_time_min=2026-09-13T00%3A00%3A00Z&start_time_max=2026-09-13T20%3A25%3A00Z&series_id=12185"
+  },
+  "contract_path": "docs/model-research/action-value/polymarket-nfl-september13-early-monotone-catalog-contract-v1-2026-09-01.json",
+  "frozen_at_utc": "2026-09-01T00:14:40.7871823Z",
+  "hypothesis": "at least one active accepting-orders NFL full-game event in the previously unconsumed September 13 UTC early-game gap has a complete rule-proved moneyline, spread, or total monotone two-leg package whose side-specific Gamma rejection sum is strictly below its one-pUSD minimum terminal payout",
+  "implementations": [
+    {
+      "path": "tools/screen_polymarket_nfl_monotone_catalog.py",
+      "sha256": "cfd36fb3c4fce63dd46d3c903d4a9795efc3a6bed86fbd3b21c542f521745237"
+    },
+    {
+      "path": "tools/adjudicate_polymarket_exact_nfl_monotone_prefilter.py",
+      "role": "NFL_rule_and_tie_state_parser",
+      "sha256": "6e7119c7827d04435378136fcca3e13378f752d9da102ea88c6a65ce4d9885cd"
+    },
+    {
+      "path": "tools/adjudicate_polymarket_exact_mlb_monotone_prefilter.py",
+      "role": "canonical_hash_and_payoff_relation_algebra",
+      "sha256": "958a44d78029b9a1eb69a3771ce18e53ac1ed3c7bc161c8e4318beedce2cf99f"
+    },
+    {
+      "path": "tools/screen_polymarket_exact_two_leg_package.py",
+      "role": "preaccess_journaled_public_request_and_raw_receipt",
+      "sha256": "374fcc3c3485c466b4929a91256450bdc7db70f93ef4c6bda627e05fe8938327"
+    },
+    {
+      "path": "tools/screen_polymarket_mlb_cross_period_catalog.py",
+      "role": "strict_UTC_timestamp_validation",
+      "sha256": "a916790e7e0320089b9f76c49aff43c072312f24599de351820d3fb872e6eddd"
+    }
+  ],
+  "outputs": {
+    "journal_path": "data/polymarket-nfl-september13-early-monotone-catalog-v1/request-journal.jsonl",
+    "raw_path": "data/polymarket-nfl-september13-early-monotone-catalog-v1/raw/events.json",
+    "result_path": "docs/model-research/action-value/polymarket-nfl-september13-early-monotone-catalog-result-v1-2026-09-01.json"
+  },
+  "purpose": "test the first official rendered active NFL deployment outside every consumed exact event and time window with one complete public catalog request and no books",
+  "source_contracts": [
+    {
+      "url": "https://docs.polymarket.com/api-reference/events/list-events-keyset-pagination",
+      "use": "official public GET keyset event catalog with maximum 500 result page series filter nested markets and cursor completeness semantics"
+    }
+  ],
+  "stopping_rules": {
+    "accepted_edge_from_catalog": false,
+    "if_next_cursor_present": "stop_without_adaptive_pagination_or_depth_access_and_label_the_window_incomplete",
+    "if_no_rule_complete_relations": "stop_without_books_or_fees",
+    "outcomePrices_role": "diagnostic_only_and_never_authorizes_depth",
+    "required_before_any_depth": "run one zero-network exhaustive correction using first-outcome bestAsk and conservative one-minus-bestBid for second-outcome acquisition; only a strict side-specific sub-floor relation may authorize a separately frozen one-candidate depth request",
+    "maximum_depth_candidates": 1,
+    "resample_or_select_consumed_or_observed_siblings": false
+  },
+  "contract_sha256": "821e45f53f134dbc14e5f1d94bc657680ac047a74d188365b5c0d29154cab8bf"
+}

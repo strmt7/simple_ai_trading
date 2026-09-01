@@ -1,0 +1,54 @@
+{
+  "authority": {
+    "account_requests": 0,
+    "book_requests": 0,
+    "credentials_used": false,
+    "fee_requests": 0,
+    "funds_used": false,
+    "new_network_requests": 0,
+    "orders_or_transactions": 0,
+    "protected_capture_touched": false,
+    "signed_requests": 0,
+    "trading_authority": false
+  },
+  "contract_path": "docs/model-research/action-value/polymarket-nfl-september13-early-side-specific-adjudication-contract-v3-2026-09-01.json",
+  "frozen_at_utc": "2026-09-01T00:20:36.8716399Z",
+  "implementations": [
+    {
+      "path": "tools/adjudicate_polymarket_nfl_catalog_side_specific.py",
+      "sha256": "3e4833d394ae0c1f88ea11826364f1425d3357baae33b325c6e8c104c17d824d"
+    }
+  ],
+  "methodology": {
+    "enumeration": "attempt side-specific pricing for every one of the 2978 already-proved relations across the 10 rule-complete events; retain each genuinely price-incomplete relation explicitly; keep the two duplicate-threshold events excluded without repair or selection",
+    "first_outcome_price": "bestAsk only",
+    "incomplete_population_rule": "evaluate all price-complete relations but authorize no depth or fee request when any proved relation lacks its selected-side price because the strongest complete-population candidate is then unknown",
+    "price_role": "rejection_only",
+    "prohibited": [
+      "network access",
+      "book or fee access",
+      "outcomePrices as acquisition prices",
+      "adaptive sibling selection",
+      "repairing narrowing or refetching excluded or price-incomplete events",
+      "changing the retained payoff graph"
+    ],
+    "second_outcome_price": "one minus first-outcome bestBid only"
+  },
+  "output_path": "docs/model-research/action-value/polymarket-nfl-september13-early-side-specific-adjudication-v3-2026-09-01.json",
+  "raw_file_sha256": "e086bd126636f0d7726d3ce56b58d238d39c11d17c25b7147d63566239cc4ee9",
+  "raw_path": "data/polymarket-nfl-september13-early-monotone-catalog-v1/raw/events.json",
+  "schema_version": "polymarket-nfl-catalog-side-specific-adjudication-contract-v3",
+  "source_result_path": "docs/model-research/action-value/polymarket-nfl-september13-early-monotone-catalog-result-v1-2026-09-01.json",
+  "source_result_sha256": "126b1dc61fa379458aaa88a8edef899be437d33fda6cba1a7a29e3536cbe856f",
+  "sources": [
+    {
+      "file_sha256": "fe8ec6b67e27fd604ec4f01e5e8e92dd34f9c0156aeef839422b3e03cd89335a",
+      "path": "docs/model-research/action-value/polymarket-nfl-september13-early-monotone-catalog-result-v1-2026-09-01.json"
+    },
+    {
+      "file_sha256": "e086bd126636f0d7726d3ce56b58d238d39c11d17c25b7147d63566239cc4ee9",
+      "path": "data/polymarket-nfl-september13-early-monotone-catalog-v1/raw/events.json"
+    }
+  ],
+  "contract_sha256": "a74c1843ee6e48eb3faabd05204452550348b6439f8781c325318c2c4ecbec40"
+}

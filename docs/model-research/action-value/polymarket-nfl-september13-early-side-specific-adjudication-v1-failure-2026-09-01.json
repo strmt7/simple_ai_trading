@@ -1,0 +1,46 @@
+{
+  "adjudication": {
+    "accepted_edge": false,
+    "book_or_fee_request_permitted": false,
+    "deployment_ready": false,
+    "profitability_claim": false,
+    "status": "offline_correction_failed_before_output_on_unnecessary_unselected_side_field_gate"
+  },
+  "authority": {
+    "account_requests": 0,
+    "book_requests": 0,
+    "credentials_used": false,
+    "fee_requests": 0,
+    "funds_used": false,
+    "new_network_requests": 0,
+    "orders_or_transactions": 0,
+    "protected_capture_touched": false,
+    "signed_requests": 0,
+    "trading_authority": false
+  },
+  "contract": {
+    "path": "docs/model-research/action-value/polymarket-nfl-september13-early-side-specific-adjudication-contract-v1-2026-09-01.json",
+    "sha256": "42b916beb6b428f8d0f8f240da737c05f2cfb55fe610f416a41ab526a9df5db5"
+  },
+  "created_at_utc": "2026-09-01T00:17:41.5928933Z",
+  "failure": {
+    "error": "bestBid is missing",
+    "failed_before_output": true,
+    "new_network_requests": 0,
+    "source_bytes_preserved": true
+  },
+  "implementation_correction": {
+    "mistake": "the side-specific helper validated both bestAsk and bestBid before selecting the requested outcome even though first-outcome acquisition requires only bestAsk and second-outcome acquisition requires only one minus bestBid",
+    "old_implementation_sha256": "b97d2046aad3c0125f7c8b4d751807799ac2d5e4c767564a1521f242b813149b",
+    "preservation_rule": "preserve this consumed zero-network failure and do not refetch the catalog",
+    "prospective_fix": "validate only the field used by the selected outcome and bind a new offline v2 contract to the corrected implementation"
+  },
+  "schema_version": "polymarket-nfl-catalog-side-specific-adjudication-failure-v1",
+  "source_binding": {
+    "catalog_result_path": "docs/model-research/action-value/polymarket-nfl-september13-early-monotone-catalog-result-v1-2026-09-01.json",
+    "catalog_result_sha256": "126b1dc61fa379458aaa88a8edef899be437d33fda6cba1a7a29e3536cbe856f",
+    "raw_catalog_file_sha256": "e086bd126636f0d7726d3ce56b58d238d39c11d17c25b7147d63566239cc4ee9",
+    "raw_catalog_path": "data/polymarket-nfl-september13-early-monotone-catalog-v1/raw/events.json"
+  },
+  "result_sha256": "95d4cd6eeb9c28bc7103cfa7178cf8b0f77e878a2423a9c237ea0c501d6b4210"
+}
