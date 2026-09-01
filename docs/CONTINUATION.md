@@ -8784,3 +8784,44 @@ explicit separate Predict.fun read-only paper-study authority. Any account,
 wallet, order, funded, claim, or state-changing action still requires separate
 explicit authority. No credential, protected capture, account, order, fund, or
 transaction was touched.
+
+## September 30 ET complete sets and Gemini projection
+
+One prospectively frozen public Gamma request covered the exact two-minute UTC
+endpoint band around September 30, 2026, 11:59 PM ET. The service returned its
+effective 100-event page with a cursor, so the population is incomplete and
+terminal without narrowing or pagination. Its three visible fixed NegRisk
+events all failed the rejection-only all-YES floor: the best sum was 1.0085
+pUSD. No on-chain, book, fee, account, credential, order, or fund request was
+justified.
+
+The retained page did expose a distinct exact-payoff idea: buy YES on every one
+of the 30 Gemini Pro release-date outcomes except `No release by September 30`,
+plus NO on the separately retained cumulative September 30 deadline. Rendered
+economics had leaked before the zero-network contract, so the population is
+promotion-ineligible. More importantly, the cumulative event began 6,654,892
+seconds before the exact-date partition; without source proof of no qualifying
+release in that gap, the one-pUSD floor is not established.
+
+Even granting that optimistic floor for rejection only, exact side-specific
+metadata decisively fails: 31 legs cost 1.264 pUSD per share, losing 1.320 pUSD
+at the five-share minimum before tick stress and 1.64295 pUSD after one adverse
+tick per leg plus exact taker fees. Search snippets and rendered headline odds
+were stale or non-synchronous and were not used as executable economics.
+
+Catalog contract/result SHA-256 values are
+`1c7b0d2778a6cd46a676af45fa7974834d28105e09278be82ba0654bb77f76bf`
+and `c77380085ca24a759d28d1f0a95211b0f3c2c0b391784653a05a421a66c22678`.
+Projection contract/result SHA-256 values are
+`c5e0e413700266a6d4d6aefe990d8ef5bd46d9af78e05a9b3c2119204be91285`
+and `233475bd3a302ba7a905b5cd8eea4d53939513aea8dbdc9fcb5ddefcc8f053ce`.
+Accepted edges remain 31, ranked hypotheses remain 48, terminal families become
+153, and stable current account-qualified after-all-cost edges remain zero.
+Registry and durability-audit SHA-256 values become
+`5a5040f33e7a14803dd066e565626279c1e3d9e6bfc4c39803237b5010822abf`
+and `6b264230457ad0c159d9632c0f395ea7c326b7cd1c94f4d4048dbad13ce2749e`.
+
+Do not repair the cursor, refetch either Gemini event, omit partition legs,
+weaken the prehistory gate, or use this leaked population for promotion. No
+credential, protected capture, account, book, fee, order, fund, or transaction
+was touched.

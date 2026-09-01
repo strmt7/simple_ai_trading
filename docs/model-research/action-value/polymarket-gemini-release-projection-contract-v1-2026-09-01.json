@@ -1,0 +1,75 @@
+{
+  "schema_version": "polymarket-gemini-release-projection-contract-v1",
+  "frozen_at_utc": "2026-09-01T08:24:00.5767913Z",
+  "contract_path": "docs/model-research/action-value/polymarket-gemini-release-projection-contract-v1-2026-09-01.json",
+  "contract_sha256": "c5e0e413700266a6d4d6aefe990d8ef5bd46d9af78e05a9b3c2119204be91285",
+  "question": "Does cumulative September 30 NO plus every exact-partition release-date YES except No release retain positive value after exact current fees and one adverse tick per leg?",
+  "promotion_eligible": false,
+  "promotion_ineligibility_reason": "rendered discovery exposed headline economics before this zero-network contract was frozen; this population may reject research spend but never support promotion, books, or trading",
+  "optimistic_payoff_hypothesis": "If no qualifying Gemini Pro release occurred during the deadline event's exclusive prehistory, the cumulative September 30 NO plus every exact-date release YES excluding No release pays exactly one pUSD in every state.",
+  "prehistory_gap_seconds": 6654892,
+  "exact_partition": {
+    "release_leg_count": 30,
+    "no_release_group": "No release by September 30",
+    "selected_outcome": "Yes on every other exact partition row"
+  },
+  "deadline_leg": {
+    "group": "September 30",
+    "selected_outcome": "No using one minus direct YES bestBid"
+  },
+  "required_common_rule_fragments": [
+    "Any Gemini model released after market creation and labeled as \"Pro\" may qualify",
+    "Gemini models labeled only as Flash, Flash-Lite, or another non-Pro variant will not qualify.",
+    "Products labeled as a GA promotion of an already-existing Preview model",
+    "A qualifying model must be launched and publicly accessible",
+    "The primary resolution source for this market will be official information from Google"
+  ],
+  "economic_gate": {
+    "quantity_shares_each_leg": "maximum exact market minimum order across all legs",
+    "yes_price": "direct bestAsk",
+    "no_price": "one minus direct YES bestBid",
+    "stress": "one exact adverse tick on every leg plus the exact taker fee schedule on every stressed leg",
+    "advance": "none for this promotion-ineligible population even if positive; a positive result would require a disjoint prospectively frozen source-continuous confirmation",
+    "reject": "terminal without books, fees, accounts, credentials, orders, funds, or transactions if metadata is not strictly subfloor, any side is missing, the source-proved payoff floor is absent, or after-fee one-tick value is nonpositive"
+  },
+  "sources": {
+    "catalog": {
+      "path": "data/polymarket-sep30-et-negrisk-complete-set-catalog-v1/raw/events.json",
+      "sha256": "ff108e7b869cf74e1950d9eb90d75c35335b56996d8ad1cda5fc675b2633c0ab",
+      "capture_result_path": "docs/model-research/action-value/polymarket-sep30-et-negrisk-complete-set-catalog-result-v1-2026-09-01.json",
+      "capture_result_sha256": "c77380085ca24a759d28d1f0a95211b0f3c2c0b391784653a05a421a66c22678"
+    },
+    "exact_event": {
+      "event_id": "868079",
+      "event_slug": "next-google-gemini-pro-model-released-onptptpt-20260817141404356",
+      "market_count": 31,
+      "start_date": "2026-08-17T23:31:37Z"
+    },
+    "deadline_event": {
+      "path": "data/polymarket-gemini-pro-interval-deadline-parity-v1/raw/deadline-event.json",
+      "sha256": "f3b8c3b0bf9b5ec17f087260ee6ef68ba896f1dcf450da1fa4b4d0e3e309caf3",
+      "capture_result_path": "docs/model-research/action-value/polymarket-gemini-pro-release-deadline-metadata-capture-result-v1-2026-09-01.json",
+      "capture_result_sha256": "7748a2c988adf2cc4efebed0686ebc8bd49ad6f1f23166b2096de99ffbf14df5",
+      "event_id": "549546",
+      "event_slug": "next-google-gemini-pro-model-released-byptptpt",
+      "market_count": 21,
+      "start_date": "2026-06-01T22:56:44.54Z"
+    }
+  },
+  "implementation": {
+    "path": "tools/adjudicate_polymarket_gemini_release_projection.py",
+    "sha256": "34eeb7589e72ef875ff0e1fdc5b3dd51c5b38695069284c9915205a91c7d37ec"
+  },
+  "output_path": "docs/model-research/action-value/polymarket-gemini-release-projection-adjudication-v1-2026-09-01.json",
+  "authority": {
+    "account_requests": 0,
+    "credentials_used": false,
+    "funds_used": false,
+    "network_requests": 0,
+    "orders_or_transactions": 0,
+    "protected_capture_touched": false,
+    "signed_requests": 0,
+    "trading_authority": false
+  },
+  "retry_policy": "Do not refetch either event, repair the incomplete catalog, weaken the prehistory gate, omit exact-date legs, or use this leaked population for promotion."
+}
