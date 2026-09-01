@@ -124,6 +124,13 @@ override prose.
   exhaustive before any book request. Never omit an expensive hidden sibling or
   treat an inactive market, blank button, missing ask, or rendered FAQ count as
   a zero-cost leg.
+- A rendered two-party election-winner card is subject to the same rule. Gamma
+  can retain an inactive `Other` outcome and inactive candidate or placeholder
+  siblings even when only Democratic and Republican cards render and their YES
+  asks sum below one pUSD. Reconcile the complete exact event once; never infer
+  exhaustiveness from the two-party prose, rendered FAQ count, or active-only
+  market set, and never omit a returned inactive sibling from a complete-set
+  acquisition package unless its zero-payout status is source-proved.
 - A nominally shorter calendar window is not a subset when it begins before the
   longer window. Source-prove that every already elapsed exclusive segment did
   not trigger before upgrading the remaining short-window event to an
