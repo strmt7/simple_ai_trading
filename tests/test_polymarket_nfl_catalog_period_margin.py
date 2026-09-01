@@ -69,7 +69,13 @@ def test_retained_period_margin_cover_is_source_bound_and_fail_closed() -> None:
         "path": str(RESULT.relative_to(ROOT)).replace("\\", "/"),
         "result_sha256": result["result_sha256"],
     } in rank_thirty["canonical_artifacts"]
-    assert len(registry["terminal_do_not_repeat"]) == 144
+    terminal = next(
+        row
+        for row in registry["terminal_do_not_repeat"]
+        if row["family"]
+        == "polymarket_NFL_September_13_period_moneyline_negative_half_point_spread_cover_2026_09_01"
+    )
+    assert terminal["canonical_result_sha256"] == result["result_sha256"]
     assert audit["source_binding"]["registry_result_sha256"] == registry[
         "result_sha256"
     ]

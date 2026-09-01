@@ -1,12 +1,43 @@
 # Continue Development
 
-Current canonical status after the retained September 13 NFL period
-moneyline-to-spread checkpoint: accepted edges 30, ranked hypotheses 47,
-terminal families 144, and stable current account-qualified after-all-cost
-edges zero. Registry SHA-256 is
-`eb20517954e271220b4070ab62b51bbaaf37dec4ff82ee1691d77902e128968f`;
+Current canonical status after the Binance-Bybit BTC/ETH/SOL cross-venue
+funding checkpoint: accepted edges 30, ranked hypotheses 47, terminal families
+145, and stable current account-qualified after-all-cost edges zero. Registry
+SHA-256 is
+`a3e770993bdc1705703a38ccbaf01c14ec90ceed4c948b04032a275ee43e5eef`;
 durability-audit SHA-256 is
-`00e23c1ec726c76f4aff53b94024159c37acc2178e3d022224bcfbde8bb2a876`.
+`b3050b131b33588f5722302e1d4926bf56e6ae6589a44b5c6e91bd79133df005`.
+
+## 2026-09-01 Binance-Bybit funding-spread rejection
+
+A genuinely distinct direction-independent cross-venue funding family was
+cleanly preregistered before any funding value was viewed. Official Bybit
+sources established the public funding-history endpoint, exact linear
+instrument fields, funding interval, and signed-rate cash-flow convention. Six
+bounded public unauthenticated GETs then proved live linear USDT-settled
+BTCUSDT, ETHUSDT, and SOLUSDT perpetuals and retained exactly 90 eight-hour
+funding rows per asset aligned to the existing Binance population.
+
+The training-only orientation was long Bybit and short Binance for all three
+assets. Zero assets survived every chronological 45/22/23 training,
+validation, and test role after the frozen 20-bip round-trip execution cost,
+10% annual two-leg capital hurdle, and 25-bip cross-venue custody, transfer,
+latency, and failure stress. BTC gross funding was positive in every role but
+economically dominated; ETH and SOL validation gross funding was negative.
+Every test net was worse than -62 bips. No basis or book request was justified.
+
+Do not paginate, resample, reverse after observation, alter roles, weaken
+costs, or request basis or books for this population. Reopen only on a material
+Bybit or Binance funding, fee, quote-unit, custody, transfer, latency, capital,
+or execution-architecture change. Preregistration, adjudication-contract, and
+result hashes are
+`6cbf711127949566a3ad8e7dc50f3bd38700e96987ca06e6d1a3f75abee77480`,
+`00cfb669c0a0300ba1b1de919e03910d0e1aa1c33c1955b696625973a2da0963`,
+and `eb8d9badab2dd2d4869b2d52154a49815a2bb9b7034098bdf475163ac8b9303f`.
+Accepted edges remain 30, ranked hypotheses remain 47, terminal families become
+145, and stable current account-qualified after-all-cost edges remain zero. No
+account, credential, signed request, order, fund, transaction, basis, book, or
+protected capture was touched.
 
 ## 2026-09-01 Polymarket NFL period moneyline-spread rejection
 

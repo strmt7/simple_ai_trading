@@ -59,7 +59,7 @@ they are high-signal, cheap, and fit the current repo shape.
 | Coinbase | No key public retail/exchange endpoints; exchange APIs have product constraints. | spot price, exchange ticker/book where available | USD spot reference and outage check. | Reference only; do not assume BTCUSDC support. |
 | Bitfinex | No key public ticker/book/candles. | `tBTCUSD` ticker/candles | Cross-venue reference. | Reference only. |
 | OKX | Public market data available; official limit should be checked before use. | ticker, candles, funding, open interest | Exchange dispersion and derivatives sentiment. | P2 after Binance futures. |
-| Bybit | Public market data exists but CDN/API access can be stricter. | ticker, kline, funding, OI | Derivatives confirmation. | P2; require live smoke before adding. |
+| Bybit | Public V5 instrument and bounded funding-history endpoints were live and source-bound on 2026-09-01. | ticker, kline, funding, OI | Derivatives confirmation and frozen cross-venue funding studies. | P2; BTC/ETH/SOL funding screen is terminal until a material economics or architecture change. |
 | KuCoin | Public market data exists with rate pools. | ticker, candles, order book | Cross-venue reference. | P2. |
 | Gate.io | Public spot/futures market data. | tickers, order book, funding | Cross-venue and smaller-exchange stress. | P2. |
 | Gemini | Public ticker and order book. | BTCUSD ticker/book | Regulated US venue reference. | P2 low cadence. |

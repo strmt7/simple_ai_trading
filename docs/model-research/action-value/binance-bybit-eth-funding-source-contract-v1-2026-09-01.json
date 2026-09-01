@@ -1,0 +1,20 @@
+{
+  "schema_version": "public-source-capture-contract-v1",
+  "frozen_at_utc": "2026-09-01T07:01:14.7918267Z",
+  "contract_path": "docs/model-research/action-value/binance-bybit-eth-funding-source-contract-v1-2026-09-01.json",
+  "request_name": "bybit_ethusdt_bounded_funding_history",
+  "request": {"method": "GET", "url": "https://api.bybit.com/v5/market/funding/history?category=linear&symbol=ETHUSDT&startTime=1785196800000&endTime=1787760000000&limit=200", "count": 1, "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"},
+  "response_byte_ceiling": 200000,
+  "required_utf8_phrases": ["\"retCode\":0", "\"symbol\":\"ETHUSDT\""],
+  "outputs": {
+    "raw_path": "docs/model-research/binance/raw/bybit-btc-eth-sol-funding-v1-2026-09-01/02-eth-funding.raw.json",
+    "journal_path": "docs/model-research/binance/raw/bybit-btc-eth-sol-funding-v1-2026-09-01/02-eth-funding.journal.jsonl",
+    "result_path": "docs/model-research/action-value/binance-bybit-eth-funding-source-result-v1-2026-09-01.json"
+  },
+  "authority": {"account_requests": 0, "credentials_used": false, "funds_used": false, "orders_or_transactions": 0, "protected_capture_touched": false, "public_unauthenticated_read_only_requests": 1, "signed_requests": 0, "trading_authority": false},
+  "implementations": [
+    {"path": "tools/capture_public_source_contract.py", "sha256": "d566a5a379c659c3da144d5e28449ebac9c01493bd39646f9cc3a6e697a83566"},
+    {"path": "tools/screen_polymarket_exact_two_leg_package.py", "sha256": "374fcc3c3485c466b4929a91256450bdc7db70f93ef4c6bda627e05fe8938327"}
+  ],
+  "contract_sha256": "4b3236a110bc0b0c8001da8dbdf4fa420c3623cc66fe50d3ffc514bb2d1640a7"
+}
