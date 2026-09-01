@@ -170,9 +170,10 @@ override prose.
   Preserve a consumed representation-only failure, adjudicate its retained
   bytes offline, and never refetch merely to repair serialization formatting.
 - Do not run broad text searches over raw or canonical one-line JSON payloads.
-  List candidate files first, exclude `data/`, raw artifact trees, and every
-  `*.json` file from prose/code alias searches by default, and parse only the
-  exact JSON keys needed for retained-data audits. This prevents multi-megabyte
+  List candidate files first, exclude `data/`, every path segment named `raw`,
+  every `*.raw` payload, and every `*.json` file from prose/code alias searches
+  by default. Parse only the exact JSON keys needed for retained-data audits.
+  This prevents multi-megabyte
   console dumps from wasting context and resources. When JSON artifacts are
   relevant, list their names first and use a structured parser on only the
   selected files and predeclared fields; never send a matching one-line payload
