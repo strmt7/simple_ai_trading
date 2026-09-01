@@ -1,0 +1,314 @@
+{
+  "adjudication": {
+    "accepted_edge": false,
+    "book_or_fee_request_permitted": false,
+    "deployment_ready": false,
+    "market_direction_forecast_required": false,
+    "next_action": "do_not_request_books_or_fees_for_this_retained_population",
+    "profitability_claim": false,
+    "status": "retained_population_price_incomplete_no_escalation"
+  },
+  "aggregate_screen": {
+    "best_complete_relation": {
+      "diagnostic_sum_pUSD": "1.025",
+      "event_id": "795830",
+      "event_slug": "nfl-was-phi-2026-09-13",
+      "event_title": "Commanders vs. Eagles",
+      "favorite": "Eagles",
+      "favorite_required_margin": 1,
+      "guaranteed_floor_pUSD": "1",
+      "legs": [
+        {
+          "market_id": "4012211",
+          "outcome": "Eagles",
+          "price_pUSD": "0.87",
+          "price_source": "1-bestBid",
+          "question": "Commanders vs. Eagles: 2H Moneyline"
+        },
+        {
+          "market_id": "4012212",
+          "outcome": "Commanders",
+          "price_pUSD": "0.66",
+          "price_source": "1-bestBid",
+          "question": "2H Spread: Eagles (-0.5)"
+        }
+      ],
+      "opponent": "Commanders",
+      "price_complete": true,
+      "scope": "2H",
+      "side_specific_rejection_sum_pUSD": "1.53",
+      "strict_side_specific_subfloor": false,
+      "tie_payout_pUSD": "1.5"
+    },
+    "price_complete_relation_count": 215,
+    "price_incomplete_relation_count": 12,
+    "relation_count": 227,
+    "relations_sha256": "fcb7596f8bc34fb7dea5bec6f5f95f1b52bc23a436513a360c048f775adaac66",
+    "strict_side_specific_subfloor_count": 0
+  },
+  "authority": {
+    "account_requests": 0,
+    "book_requests": 0,
+    "credentials_used": false,
+    "fee_requests": 0,
+    "funds_used": false,
+    "new_network_requests": 0,
+    "orders_or_transactions": 0,
+    "protected_capture_touched": false,
+    "signed_requests": 0,
+    "trading_authority": false
+  },
+  "contract": {
+    "path": "docs/model-research/action-value/polymarket-nfl-september13-period-margin-contract-v1-2026-09-01.json",
+    "sha256": "f6526f49a92a7822be866a6801fbef8a3546c6df3ba7f1c2100ce8b59673e3c4"
+  },
+  "created_at_utc": "2026-09-01T06:46:23.9339457Z",
+  "dependencies": [
+    {
+      "path": "tools/adjudicate_polymarket_nfl_catalog_period_graph.py",
+      "sha256": "e474bdd10ca331c52b1d03755390c4381c011bc1afdf3df0b469ab975007157a"
+    }
+  ],
+  "implementation": {
+    "path": "tools/adjudicate_polymarket_nfl_catalog_period_margin.py",
+    "sha256": "68abaee9291a8d427b0ab70687adef3e955194e5a986e94abad2a32273dc6a72"
+  },
+  "population": {
+    "event_count": 12,
+    "event_ids": [
+      "795801",
+      "795805",
+      "795808",
+      "795812",
+      "795815",
+      "795817",
+      "795819",
+      "795820",
+      "795824",
+      "795826",
+      "795827",
+      "795830"
+    ],
+    "scopes": [
+      "1Q",
+      "2Q",
+      "3Q",
+      "4Q",
+      "2H"
+    ],
+    "selection": "every_negative_half_point_period_spread_with_its_same_scope_moneyline_across_all_events_in_the_complete_retained_catalog"
+  },
+  "pricing_contract": {
+    "candidate_gate": "strict_complete_side_specific_rejection_sum_below_the_one_pUSD_floor",
+    "first_outcome_acquisition_price": "retained_bestAsk_only",
+    "incomplete_population_rule": "retain_missing_selected_side_quotes_and_authorize_no_book_or_fee_escalation",
+    "outcomePrices_role": "diagnostic_only_never_authorizes_a_book",
+    "second_outcome_acquisition_proxy": "one_minus_retained_first_outcome_bestBid_only",
+    "tie_break": "side_specific_sum_then_event_scope_margin_and_market_ids"
+  },
+  "proof_contract": {
+    "cancellation_state": "both_legs_pay_one_half_for_a_one_pUSD_package_payout",
+    "favorite_win_state": "favorite_moneyline_pays_one_and_opponent_spread_pays_zero_or_one_for_a_package_payout_at_least_one",
+    "market_direction_forecast_required": false,
+    "opponent_win_state": "favorite_moneyline_pays_zero_and_opponent_spread_pays_one",
+    "package": "favorite_same_scope_moneyline_outcome_plus_opponent_outcome_of_a_negative_half_point_same_scope_spread",
+    "period_tie_state": "favorite_moneyline_pays_one_half_and_opponent_spread_pays_one_for_a_one_point_five_pUSD_package_payout",
+    "scope_rule": "all_retained_quarter_and_second_half_markets_exclude_overtime"
+  },
+  "result_sha256": "e58f7dab3c752863a4a546c83141cac0e3177c0d27d16b87d1217baed9549706",
+  "schema_version": "polymarket-nfl-catalog-period-moneyline-spread-result-v1",
+  "scope_screens": {
+    "1Q": {
+      "best_complete_relation": {
+        "diagnostic_sum_pUSD": "0.955",
+        "event_id": "795830",
+        "event_slug": "nfl-was-phi-2026-09-13",
+        "event_title": "Commanders vs. Eagles",
+        "favorite": "Eagles",
+        "favorite_required_margin": 5,
+        "guaranteed_floor_pUSD": "1",
+        "legs": [
+          {
+            "market_id": "4012231",
+            "outcome": "Eagles",
+            "price_pUSD": "0.98",
+            "price_source": "1-bestBid",
+            "question": "Commanders vs. Eagles: 1Q Moneyline"
+          },
+          {
+            "market_id": "4013474",
+            "outcome": "Commanders",
+            "price_pUSD": "0.85",
+            "price_source": "1-bestBid",
+            "question": "1Q Spread: Eagles (-4.5)"
+          }
+        ],
+        "opponent": "Commanders",
+        "price_complete": true,
+        "scope": "1Q",
+        "side_specific_rejection_sum_pUSD": "1.83",
+        "strict_side_specific_subfloor": false,
+        "tie_payout_pUSD": "1.5"
+      },
+      "price_complete_relation_count": 60,
+      "price_incomplete_relation_count": 0,
+      "relation_count": 60,
+      "strict_side_specific_subfloor_count": 0
+    },
+    "2H": {
+      "best_complete_relation": {
+        "diagnostic_sum_pUSD": "1.025",
+        "event_id": "795830",
+        "event_slug": "nfl-was-phi-2026-09-13",
+        "event_title": "Commanders vs. Eagles",
+        "favorite": "Eagles",
+        "favorite_required_margin": 1,
+        "guaranteed_floor_pUSD": "1",
+        "legs": [
+          {
+            "market_id": "4012211",
+            "outcome": "Eagles",
+            "price_pUSD": "0.87",
+            "price_source": "1-bestBid",
+            "question": "Commanders vs. Eagles: 2H Moneyline"
+          },
+          {
+            "market_id": "4012212",
+            "outcome": "Commanders",
+            "price_pUSD": "0.66",
+            "price_source": "1-bestBid",
+            "question": "2H Spread: Eagles (-0.5)"
+          }
+        ],
+        "opponent": "Commanders",
+        "price_complete": true,
+        "scope": "2H",
+        "side_specific_rejection_sum_pUSD": "1.53",
+        "strict_side_specific_subfloor": false,
+        "tie_payout_pUSD": "1.5"
+      },
+      "price_complete_relation_count": 30,
+      "price_incomplete_relation_count": 0,
+      "relation_count": 30,
+      "strict_side_specific_subfloor_count": 0
+    },
+    "2Q": {
+      "best_complete_relation": {
+        "diagnostic_sum_pUSD": "0.97",
+        "event_id": "795808",
+        "event_slug": "nfl-no-det-2026-09-13",
+        "event_title": "Saints vs. Lions",
+        "favorite": "Lions",
+        "favorite_required_margin": 5,
+        "guaranteed_floor_pUSD": "1",
+        "legs": [
+          {
+            "market_id": "4015893",
+            "outcome": "Lions",
+            "price_pUSD": "0.93",
+            "price_source": "1-bestBid",
+            "question": "Saints vs. Lions: 2Q Moneyline"
+          },
+          {
+            "market_id": "4015886",
+            "outcome": "Saints",
+            "price_pUSD": "0.93",
+            "price_source": "1-bestBid",
+            "question": "2Q Spread: Lions (-4.5)"
+          }
+        ],
+        "opponent": "Saints",
+        "price_complete": true,
+        "scope": "2Q",
+        "side_specific_rejection_sum_pUSD": "1.86",
+        "strict_side_specific_subfloor": false,
+        "tie_payout_pUSD": "1.5"
+      },
+      "price_complete_relation_count": 40,
+      "price_incomplete_relation_count": 4,
+      "relation_count": 44,
+      "strict_side_specific_subfloor_count": 0
+    },
+    "3Q": {
+      "best_complete_relation": {
+        "diagnostic_sum_pUSD": "0.965",
+        "event_id": "795812",
+        "event_slug": "nfl-buf-hou-2026-09-13",
+        "event_title": "Bills vs. Texans",
+        "favorite": "Bills",
+        "favorite_required_margin": 1,
+        "guaranteed_floor_pUSD": "1",
+        "legs": [
+          {
+            "market_id": "4005613",
+            "outcome": "Bills",
+            "price_pUSD": "0.94",
+            "price_source": "bestAsk",
+            "question": "Bills vs. Texans: 3Q Moneyline"
+          },
+          {
+            "market_id": "4005595",
+            "outcome": "Texans",
+            "price_pUSD": "0.93",
+            "price_source": "1-bestBid",
+            "question": "3Q Spread: Bills (-0.5)"
+          }
+        ],
+        "opponent": "Texans",
+        "price_complete": true,
+        "scope": "3Q",
+        "side_specific_rejection_sum_pUSD": "1.87",
+        "strict_side_specific_subfloor": false,
+        "tie_payout_pUSD": "1.5"
+      },
+      "price_complete_relation_count": 45,
+      "price_incomplete_relation_count": 4,
+      "relation_count": 49,
+      "strict_side_specific_subfloor_count": 0
+    },
+    "4Q": {
+      "best_complete_relation": {
+        "diagnostic_sum_pUSD": "1.010",
+        "event_id": "795808",
+        "event_slug": "nfl-no-det-2026-09-13",
+        "event_title": "Saints vs. Lions",
+        "favorite": "Lions",
+        "favorite_required_margin": 1,
+        "guaranteed_floor_pUSD": "1",
+        "legs": [
+          {
+            "market_id": "4015913",
+            "outcome": "Lions",
+            "price_pUSD": "0.96",
+            "price_source": "1-bestBid",
+            "question": "Saints vs. Lions: 4Q Moneyline"
+          },
+          {
+            "market_id": "4015904",
+            "outcome": "Saints",
+            "price_pUSD": "0.93",
+            "price_source": "1-bestBid",
+            "question": "4Q Spread: Lions (-0.5)"
+          }
+        ],
+        "opponent": "Saints",
+        "price_complete": true,
+        "scope": "4Q",
+        "side_specific_rejection_sum_pUSD": "1.89",
+        "strict_side_specific_subfloor": false,
+        "tie_payout_pUSD": "1.5"
+      },
+      "price_complete_relation_count": 40,
+      "price_incomplete_relation_count": 4,
+      "relation_count": 44,
+      "strict_side_specific_subfloor_count": 0
+    }
+  },
+  "source_binding": {
+    "metadata_file_sha256": "fe8ec6b67e27fd604ec4f01e5e8e92dd34f9c0156aeef839422b3e03cd89335a",
+    "metadata_path": "docs/model-research/action-value/polymarket-nfl-september13-early-monotone-catalog-result-v1-2026-09-01.json",
+    "metadata_result_sha256": "126b1dc61fa379458aaa88a8edef899be437d33fda6cba1a7a29e3536cbe856f",
+    "raw_file_sha256": "e086bd126636f0d7726d3ce56b58d238d39c11d17c25b7147d63566239cc4ee9",
+    "raw_path": "data/polymarket-nfl-september13-early-monotone-catalog-v1/raw/events.json"
+  }
+}
