@@ -23,6 +23,38 @@ safety gate, blocks Stop, or submits an order.
 
 ### Latest efficient structural screen
 
+A distinct joint-projection cover advanced past rendered discovery and exact
+fees: buy `NO` on standalone Republican Senate seat outcomes 50, 51, and 52,
+then buy `YES` on all four joint-event rows whose Senate projection is 50-52.
+For a Senate result outside 50-52 all three NO legs pay; inside 50-52 two NO
+legs plus exactly one House row pay. The package therefore has a three-pUSD
+floor without a market-direction forecast.
+
+Two frozen one-use public Gamma GETs reconciled all 13 joint siblings and all
+11 standalone Senate siblings. Every market was active, open, and accepting
+orders; the four required House ranges were complete; and the Senate election,
+cutoff, runoff, vacancy, attribution, independent-caucus, fallback, and source
+rules aligned. Conservative exact prices cost 2.961 pUSD per share. At five
+shares the current 0.04 exponent-1 taker fees left a positive 0.09562 pUSD,
+but one exact adverse tick per leg reduced the after-fee floor to -0.02675
+pUSD before depth, time value, seven-leg non-atomicity, unwind, latency,
+capital, or operational cost. The exact population is terminal before books.
+
+Do not refresh, reprice, alias, omit a House row, or request the fourteen-token
+book batch. Reopen only for a distinct rule-complete joint projection whose
+conservative package remains positive after current fees and at least one
+adverse tick per leg before depth, or a material fee/tick/rule/architecture
+change. No credential, account, order, fund, transaction, fee endpoint, book,
+or protected capture was touched. Accepted edges remain 29, ranked hypotheses
+remain 47, and terminal families become 133. Joint/marginal contracts and
+adjudication SHA-256 values are
+`0cb91fb5c8b0ec763c581b91817e01b0cea15209163f73cc497a7a8bc72b7834`,
+`38faaa6e90618a75fe68edd99444e37e9644c93ed38cf45c77af935979e65bf0`,
+and `2fdcd4595af5b5a7e50a0e97fa0559694bcaddd03f844c201894441afc46adbd`.
+Registry and durability-audit SHA-256 values are
+`93ea1175161da3c536af13d0ac86cc0c08ec1e729cd56b72eafa32c4654c4125`
+and `bd2f8e5bb16a9b9dc64d2f79f626b051147fc20679f72c06d89563909dca8c1e`.
+
 A distinct joint-to-marginal Boolean state cover passed rendered discovery at
 0.983 pUSD: `NO(Democratic House) + YES(DD) + YES(RD) + YES(joint Other)`.
 Two frozen one-use public Gamma GETs proved a complete active five-state joint

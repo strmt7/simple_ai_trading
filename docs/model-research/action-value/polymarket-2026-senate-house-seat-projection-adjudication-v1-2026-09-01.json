@@ -1,0 +1,259 @@
+{
+  "schema_version": "polymarket-joint-to-marginal-projection-cover-adjudication-v1",
+  "created_at_utc": "2026-09-01T03:42:00Z",
+  "candidate": {
+    "mechanism": "joint_partition_projection_to_exact_senate_seat_marginals",
+    "market_direction_forecast_required": false,
+    "quantity_shares_per_leg": "5",
+    "guaranteed_floor_pUSD_per_share": "3",
+    "guaranteed_floor_pUSD": "15",
+    "legs": [
+      {
+        "event_slug": "republican-senate-seats-after-the-2026-midterm-elections-927",
+        "gamma_market_id": "943822",
+        "label": "50",
+        "outcome": "No",
+        "price_source": "one_minus_direct_YES_bestBid",
+        "rejection_price_pUSD_per_share": "0.88",
+        "tick_size_pUSD": "0.01"
+      },
+      {
+        "event_slug": "republican-senate-seats-after-the-2026-midterm-elections-927",
+        "gamma_market_id": "943823",
+        "label": "51",
+        "outcome": "No",
+        "price_source": "one_minus_direct_YES_bestBid",
+        "rejection_price_pUSD_per_share": "0.90",
+        "tick_size_pUSD": "0.01"
+      },
+      {
+        "event_slug": "republican-senate-seats-after-the-2026-midterm-elections-927",
+        "gamma_market_id": "943824",
+        "label": "52",
+        "outcome": "No",
+        "price_source": "one_minus_direct_YES_bestBid",
+        "rejection_price_pUSD_per_share": "0.927",
+        "tick_size_pUSD": "0.001"
+      },
+      {
+        "event_slug": "how-many-senate-and-house-seats-will-republicans-have-after-the-midterms-20260625152833634",
+        "gamma_market_id": "2683260",
+        "label": "50-52 and at least 223",
+        "outcome": "Yes",
+        "price_source": "direct_bestAsk",
+        "rejection_price_pUSD_per_share": "0.035",
+        "tick_size_pUSD": "0.001"
+      },
+      {
+        "event_slug": "how-many-senate-and-house-seats-will-republicans-have-after-the-midterms-20260625152833634",
+        "gamma_market_id": "2683261",
+        "label": "50-52 and 208-222",
+        "outcome": "Yes",
+        "price_source": "direct_bestAsk",
+        "rejection_price_pUSD_per_share": "0.107",
+        "tick_size_pUSD": "0.001"
+      },
+      {
+        "event_slug": "how-many-senate-and-house-seats-will-republicans-have-after-the-midterms-20260625152833634",
+        "gamma_market_id": "2683262",
+        "label": "50-52 and 193-207",
+        "outcome": "Yes",
+        "price_source": "direct_bestAsk",
+        "rejection_price_pUSD_per_share": "0.084",
+        "tick_size_pUSD": "0.001"
+      },
+      {
+        "event_slug": "how-many-senate-and-house-seats-will-republicans-have-after-the-midterms-20260625152833634",
+        "gamma_market_id": "2683263",
+        "label": "50-52 and at most 192",
+        "outcome": "Yes",
+        "price_source": "direct_bestAsk",
+        "rejection_price_pUSD_per_share": "0.028",
+        "tick_size_pUSD": "0.001"
+      }
+    ]
+  },
+  "exact_metadata": {
+    "joint_event": {
+      "gamma_event_id": "633839",
+      "active": true,
+      "closed": false,
+      "negRisk": true,
+      "negRiskAugmented": false,
+      "end_date_utc": "2026-11-03T23:59:00Z",
+      "market_count": 13,
+      "all_markets_active_open_accepting_orders": true,
+      "selected_50_52_house_rows": [
+        "50-52 and at least 223",
+        "50-52 and 208-222",
+        "50-52 and 193-207",
+        "50-52 and at most 192"
+      ],
+      "selected_rows_are_mutually_exclusive_and_exhaustive_over_house_seat_count": true,
+      "description_sha256": "9480e21279c0196d200be0aeadd88be172cdf9b921e916d28dceeca73a1da55a"
+    },
+    "senate_event": {
+      "gamma_event_id": "106193",
+      "active": true,
+      "closed": false,
+      "negRisk": true,
+      "negRiskAugmented": false,
+      "end_date_utc": "2026-11-03T17:00:00Z",
+      "market_count": 11,
+      "all_markets_active_open_accepting_orders": true,
+      "selected_exact_seat_rows": ["50", "51", "52"],
+      "description_sha256": "e3bca6e5b75eccacbf91f785c693f731f4a4bd9e51a715ba6fe206c1086bc50f"
+    }
+  },
+  "rule_alignment": {
+    "passed_for_rejection_only_state_cover": true,
+    "aligned_terms": [
+      "same Republican Senate seat count after the November 3 2026 midterms",
+      "same regular and special elections for the upcoming 120th Congress scheduled by the October 31 cutoff",
+      "same post-November runoff attribution",
+      "same vacant-seat treatment for seats without a scheduled November election",
+      "same elected-party attribution through formal organization",
+      "same noncontested-seat and non-up-for-election Senate member treatment at election day",
+      "same independent caucus handling and January 4 deadline",
+      "same official state authority United States Congress and credible-reporting sources"
+    ],
+    "nominal_event_end_timestamp_difference": "The Gamma event end fields differ by 6 hours 59 minutes, but both rule texts bind the same election, runoff, caucus, fallback, and resolution-source process. The difference is retained as additional timing and capital friction and is not used to improve economics."
+  },
+  "state_table": [
+    {
+      "Republican_Senate_seat_state": "outside_50_51_52",
+      "NO_50_payout": 1,
+      "NO_51_payout": 1,
+      "NO_52_payout": 1,
+      "joint_50_52_row_payout": 0,
+      "package_payout_pUSD_per_share": 3
+    },
+    {
+      "Republican_Senate_seat_state": "exactly_50",
+      "NO_50_payout": 0,
+      "NO_51_payout": 1,
+      "NO_52_payout": 1,
+      "joint_50_52_row_payout": 1,
+      "package_payout_pUSD_per_share": 3
+    },
+    {
+      "Republican_Senate_seat_state": "exactly_51",
+      "NO_50_payout": 1,
+      "NO_51_payout": 0,
+      "NO_52_payout": 1,
+      "joint_50_52_row_payout": 1,
+      "package_payout_pUSD_per_share": 3
+    },
+    {
+      "Republican_Senate_seat_state": "exactly_52",
+      "NO_50_payout": 1,
+      "NO_51_payout": 1,
+      "NO_52_payout": 0,
+      "joint_50_52_row_payout": 1,
+      "package_payout_pUSD_per_share": 3
+    }
+  ],
+  "economics": {
+    "gamma_role": "side_specific_rejection_only_never_acceptance_or_promotion_evidence",
+    "gross_acquisition_cost_pUSD": "14.805",
+    "gross_terminal_floor_pUSD": "15",
+    "gross_headroom_pUSD": "0.195",
+    "fee_schedule": {
+      "feesEnabled": true,
+      "rate": "0.04",
+      "exponent": 1,
+      "takerOnly": true,
+      "takerBaseFee": 1000
+    },
+    "fee_formula": "ceil_to_0.00001(quantity * rate * (price * (1-price))^exponent), with values below 0.00001 treated as zero",
+    "leg_taker_fees_pUSD": ["0.02112", "0.01800", "0.01354", "0.00676", "0.01912", "0.01539", "0.00545"],
+    "total_taker_fees_pUSD": "0.09938",
+    "after_fee_profit_floor_pUSD": "0.09562",
+    "after_fee_profit_floor_pUSD_per_share": "0.019124",
+    "strict_after_fee_positive_before_depth": true,
+    "one_adverse_tick_per_leg": {
+      "stressed_prices_pUSD_per_share": ["0.89", "0.91", "0.928", "0.036", "0.108", "0.085", "0.029"],
+      "gross_acquisition_cost_pUSD": "14.930",
+      "gross_headroom_pUSD": "0.070",
+      "leg_taker_fees_pUSD": ["0.01958", "0.01638", "0.01337", "0.00695", "0.01927", "0.01556", "0.00564"],
+      "total_taker_fees_pUSD": "0.09675",
+      "after_fee_profit_floor_pUSD": "-0.02675",
+      "after_fee_profit_floor_pUSD_per_share": "-0.00535",
+      "strict_after_fee_positive": false
+    },
+    "unmodeled_costs_that_can_only_reduce_the_floor": [
+      "exact finite-size depth",
+      "time value through resolution",
+      "seven-leg non-atomicity",
+      "partial-fill unwind",
+      "latency",
+      "capital cost",
+      "operational failure"
+    ]
+  },
+  "source_binding": {
+    "joint_contract": {
+      "path": "docs/model-research/action-value/polymarket-2026-senate-house-seat-projection-joint-contract-v1-2026-09-01.json",
+      "canonical_sha256": "0cb91fb5c8b0ec763c581b91817e01b0cea15209163f73cc497a7a8bc72b7834",
+      "file_sha256": "b8ef6d6fc0961440fc99765474538030df88ce07af80a7f8fda7472e92d03b80"
+    },
+    "senate_contract": {
+      "path": "docs/model-research/action-value/polymarket-2026-senate-house-seat-projection-marginal-contract-v1-2026-09-01.json",
+      "canonical_sha256": "38faaa6e90618a75fe68edd99444e37e9644c93ed38cf45c77af935979e65bf0",
+      "file_sha256": "86957255e9af08ff1e525f5a59db6170ad889f18477262ecc46662d807fa1e5e"
+    },
+    "joint_capture_result": {
+      "path": "docs/model-research/action-value/polymarket-2026-senate-house-seat-projection-joint-capture-result-v1-2026-09-01.json",
+      "canonical_sha256": "b25f3150bf4e6427c0d849bd22f7090f7734bd0708f39d93fb55c2371576eb35",
+      "file_sha256": "7cb2064d203b409b70928c3785b0713cd1b7f53e7e45d01130ad4615b0525dff"
+    },
+    "senate_capture_result": {
+      "path": "docs/model-research/action-value/polymarket-2026-senate-house-seat-projection-marginal-capture-result-v1-2026-09-01.json",
+      "canonical_sha256": "15a5ad2f7eb3416d22d2a7696390139677e20eaa7884c362f79ec8fc4d405ea6",
+      "file_sha256": "e9d2231de30830908779ce96715ada3ce4573b4470555622e0a6c9ef6b2754c1"
+    },
+    "joint_raw": {
+      "path": "data/polymarket-2026-senate-house-seat-projection-metadata-v1/raw/joint-event.json",
+      "file_sha256": "0c2e183ff2d8681095b12635a4b88dc714eede64a36f778da1d35b994f790a3f"
+    },
+    "senate_raw": {
+      "path": "data/polymarket-2026-senate-house-seat-projection-metadata-v1/raw/senate-event.json",
+      "file_sha256": "cff3146fd7f73bd341a2e716c27d130569ddde3deacc0a3c76a08978d5ce5158"
+    },
+    "joint_journal": {
+      "path": "data/polymarket-2026-senate-house-seat-projection-metadata-v1/joint-request-journal.jsonl",
+      "file_sha256": "9ca90fde3db2556a29d83afb39beacaf2f2c3b74a508f0c00ae72fe2337ee519"
+    },
+    "senate_journal": {
+      "path": "data/polymarket-2026-senate-house-seat-projection-metadata-v1/senate-request-journal.jsonl",
+      "file_sha256": "f2817186e9259f2c85811fb486ec2c924d2c7c7a6fa0fce17bd355b89507d2b0"
+    },
+    "fee_implementation": {
+      "path": "src/simple_ai_trading/polymarket_fees.py",
+      "file_sha256": "4002aa8008874708931cc182f352adf436a65baee24e23bfc72617acdf127c8d"
+    }
+  },
+  "decision": {
+    "status": "rejected_after_exact_metadata_current_gamma_fees_and_one_adverse_tick_per_leg_before_books",
+    "accepted_edge": false,
+    "deployment_ready": false,
+    "profitability_claim": false,
+    "book_requests_justified": 0,
+    "fee_endpoint_requests_justified": 0,
+    "reason": "The rule-complete seven-leg projection cover survives current metadata fees by 0.09562 pUSD at five shares, but the selected markets' exact ticks make the one-adverse-tick after-fee floor negative 0.02675 pUSD before depth and every other cost. A fourteen-token book batch therefore cannot establish a conservative positive floor and was not requested."
+  },
+  "authority": {
+    "public_unauthenticated_read_only_requests": 2,
+    "book_requests": 0,
+    "fee_endpoint_requests": 0,
+    "account_requests": 0,
+    "signed_requests": 0,
+    "credentials_used": false,
+    "orders_or_transactions": 0,
+    "funds_used": false,
+    "protected_capture_touched": false,
+    "trading_authority": false
+  },
+  "retry_policy": "Do not refresh, reprice, alias, omit any House row, switch to midpoint-like outcomePrices, or request books for this exact two-event population. Reopen only for a distinct rule-complete joint-projection family that remains strictly positive after current fees and at least one adverse tick per leg before depth, or a material fee, tick, rule, or market-architecture change.",
+  "result_sha256": "2fdcd4595af5b5a7e50a0e97fa0559694bcaddd03f844c201894441afc46adbd"
+}
