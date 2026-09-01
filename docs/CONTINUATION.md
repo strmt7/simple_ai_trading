@@ -1,13 +1,52 @@
 # Continue Development
 
-Current canonical status after the prospective September 2 NYC complete
-long-only fixed-NegRisk screen: accepted edges 35, ranked hypotheses 58,
-terminal families 176,
+Current canonical status after the Binance-Paradex funding source-gate screen:
+accepted edges 35, ranked hypotheses 59, terminal families 177,
 and stable current account-qualified after-all-cost edges zero. Registry
 SHA-256 is
-`ba86b0e4b333407df56e81d9e1c9af3d7384622c4e625f13ac3267b4ba805881`;
+`2dc19765f6a9a3a0cb688991828f7624d12f10917f0bba02533281193ff9689c`;
 durability-audit SHA-256 is
-`f61327d608cc3f0d2baacf0f29623348ffdba3eee7c2ad8442bba4a7a15da19f`.
+`99c6e83c348f6f3b8b3e95c238db5a66efbf6fcc8af1d3f7e1db6066e7527646`.
+
+## 2026-09-01 Binance-Paradex cross-venue funding source gate
+
+Official Paradex sources proved the public history schema, exact BTC/ETH/SOL
+USD perpetual instruments, USDC settlement, continuous pro-rata funding, an
+eight-hour reference rate, and positive funding as long-pays/short-receives.
+Paradex itself aggregates Binance and other venues into funding, so the frozen
+question was limited to a possible timing or smoothing spread.
+
+Before any funding value was viewed, the exact four public requests, 90 Binance
+buckets, 45/22/23 chronological roles, training-only orientation, hourly-to-
+eight-hour normalization, execution, capital, USDC/USDT, custody/latency, and
+sampling hurdles were frozen. One current market inventory and three bounded
+histories were retained. The inventory returned 2,474 rows and exceeded its
+two-MB ceiling. Every funding history returned 5,000 rows, exceeded its one-MB
+ceiling, and included a continuation cursor.
+
+The preregistration forbade pagination, adaptive cadence changes, resampling,
+or changed roles and costs. The exact population is therefore terminal before
+economics. No funding value was printed, viewed, or used; no basis, book,
+premium, account, credential, order, fund, transaction, or protected capture
+was touched. Do not refetch, alias, paginate, or consume the exact cursors.
+Reopen only for a distinct prospectively frozen nonoverlapping population or an
+independently known material API cadence, pagination, or architecture change.
+
+The reusable failure was an underspecified pagination plan and arbitrary byte
+ceilings. `AGENTS.md` now requires uncertain-cadence cursor endpoints to freeze
+conditional traversal, maximum pages, total rows and bytes, deduplication, and
+stop conditions before first access, with page ceilings derived from the
+documented maximum row count.
+
+Terminal adjudication SHA-256 is
+`98c5441b5f9828664c387b9f9b8a05e4eef919a3857054c8bbd73faa4c3ea30a`.
+Inventory raw and journal SHA-256 values are
+`f0c0299701b6e52f3bbe539affa0c2c8bf75ccd9f32a98a084bdec678c429c0c`
+and `b6537f0a293a74705692a2059e461b31a5f2753735979d492292294ec640be4e`.
+BTC, ETH, and SOL funding raw SHA-256 values are
+`71520ae9b08536953d480414abe00b5cc4a6d8017fa7143b3c7de8a1072b6fd2`,
+`8af42e6a6128119737b66892a478ffd8ad9d32f510975df92d129c52a607cfae`,
+and `70c95d73b8635f55862f43ed35ebcfd15ed8d8d7b96e720e7ad545a548f0fba4`.
 
 ## 2026-09-01 prospective NYC September 2 complete long-only basis screen
 

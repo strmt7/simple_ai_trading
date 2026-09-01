@@ -1,0 +1,83 @@
+{
+  "schema_version": "binance-paradex-cross-venue-funding-preregistration-v1",
+  "frozen_at_utc": "2026-09-01T13:16:23.8942511Z",
+  "contract_path": "docs/model-research/action-value/binance-paradex-btc-eth-sol-funding-preregistration-v1-2026-09-01.json",
+  "novelty": {
+    "registry_route": "new_distinct_Binance_Paradex_cross_venue_USD_perpetual_funding_family",
+    "exact_request_url_deduplication": "The exact market-inventory URL and three exact bounded funding-history URLs had zero retained contract result journal raw or prose hits before freeze.",
+    "funding_values_viewed_before_freeze": false
+  },
+  "question": "Does a fixed BTC ETH or SOL Binance-versus-Paradex perpetual orientation retain positive direction-neutral funding carry in training validation and test after all frozen hurdles?",
+  "official_semantics": {
+    "funding_history": "Paradex production API documents public GET /v1/funding/data with exact market start_at and end_at millisecond bounds page_size up to 5000 and created_at funding_period_hours funding_rate and funding_rate_8h fields.",
+    "instrument_identity": "Paradex production GET /v1/markets exposes symbol asset_kind base_currency quote_currency settlement_currency funding_period_hours open_at expiry_at and trading_mode.",
+    "cash_flow": "Paradex official funding terms define an eight-hour reference rate with continuous pro-rata accrual and state that positive funding is paid by longs to shorts. Positive signed rates therefore match Binance orientation.",
+    "structural_dependence": "Paradex derives its published funding rate from a weighted median of Paradex Binance Bybit OKX Lighter and Hyperliquid impact premiums. This test seeks only a settlement timing or smoothing spread and does not treat Paradex as an independent signal.",
+    "sampling_boundary": "Historical funding_rate_8h observations are normalized to hourly fractions and eight consecutive hourly observations are summed for each Binance eight-hour bucket. Because the public history is sampled rather than the exact realized account index delta this run is rejection or prioritization only and every role pays a separate 10-bip sampling stress.",
+    "execution_hurdle": "The funding-only prefilter charges 20 bips round trip before any account-specific fee claim plus explicit capital quote-unit custody latency and sampling stresses. A survivor requires a disjoint exact-index and synchronized finite-size basis and depth study."
+  },
+  "requests": {
+    "inventory": "https://api.prod.paradex.trade/v1/markets",
+    "funding": {
+      "BTC": "https://api.prod.paradex.trade/v1/funding/data?market=BTC-USD-PERP&start_at=1785168000000&end_at=1787763600000&page_size=5000",
+      "ETH": "https://api.prod.paradex.trade/v1/funding/data?market=ETH-USD-PERP&start_at=1785168000000&end_at=1787763600000&page_size=5000",
+      "SOL": "https://api.prod.paradex.trade/v1/funding/data?market=SOL-USD-PERP&start_at=1785168000000&end_at=1787763600000&page_size=5000"
+    }
+  },
+  "population": {
+    "assets": ["BTC", "ETH", "SOL"],
+    "paradex_symbols": {"BTC": "BTC-USD-PERP", "ETH": "ETH-USD-PERP", "SOL": "SOL-USD-PERP"},
+    "binance_symbols": {"BTC": "BTCUSDT", "ETH": "ETHUSDT", "SOL": "SOLUSDT"},
+    "aligned_row_count": 90,
+    "first_funding_bucket_ms": 1785196800000,
+    "last_funding_bucket_ms": 1787760000000,
+    "interval_hours": 8,
+    "paradex_query_start_ms": 1785168000000,
+    "paradex_query_end_ms": 1787763600000,
+    "paradex_bucket_semantics": "sum funding_rate_8h divided by eight for exact hourly timestamps t_minus_7h through t inclusive against Binance funding bucket t",
+    "maximum_binance_schedule_jitter_ms": 1000,
+    "instrument_gate": "Each exact Paradex symbol must occur once as a STANDARD PERP with matching base currency quote USD settlement USDC funding period 8 hours open no later than the first bucket and expiry_at zero."
+  },
+  "roles": {
+    "training": {"start": 0, "stop": 45},
+    "validation": {"start": 45, "stop": 67},
+    "test": {"start": 67, "stop": 90}
+  },
+  "orientation": "Choose sign once from the training aggregate of Paradex normalized funding minus Binance funding. A positive aggregate fixes short Paradex and long Binance; a negative aggregate fixes long Paradex and short Binance. Never refit validation or test.",
+  "economics": {
+    "round_trip_execution_bips": "20",
+    "annual_two_leg_capital_hurdle_percent": "10",
+    "usdc_usdt_quote_unit_stress_bips": "25",
+    "custody_latency_failure_stress_bips": "25",
+    "continuous_sampling_stress_bips": "10"
+  },
+  "gates": {
+    "minimum_positive_interval_fraction": "0.5",
+    "require_positive_net_after_all_hurdles_in_every_role": true,
+    "require_positive_first_and_second_half_gross_in_every_role": true,
+    "promotion_eligible": false
+  },
+  "decision": {
+    "failure": "Terminalize the exact 90-bin population before premiums books accounts credentials orders or funds; do not resample or alter roles orientation alignment or costs.",
+    "survivor": "Freeze a disjoint exact current Paradex funding-index confirmation plus venue fees and synchronized finite-size entry and exit basis and depth evidence. A survivor is not yet an accepted edge or deployment-ready.",
+    "accepted_edge": false,
+    "deployment_ready": false,
+    "stable_profitability_proved": false
+  },
+  "authority": {
+    "account_requests": 0,
+    "credentials_used": false,
+    "funds_used": false,
+    "orders_or_transactions": 0,
+    "protected_capture_touched": false,
+    "public_unauthenticated_read_only_request_ceiling": 4,
+    "signed_requests": 0,
+    "trading_authority": false
+  },
+  "implementation": {
+    "path": "tools/adjudicate_binance_paradex_funding.py",
+    "sha256": "098303694e80a414145a198c37332203bed1f13876395cd123e9cf49a2589b5b"
+  },
+  "retry_policy": "One exact inventory GET and one exact bounded funding GET per asset only. Preserve every terminal response. Never paginate alias reorder narrow substitute a host or retry after seeing values.",
+  "contract_sha256": "c33cad3377ecc8f00c57744cb0b413aa113c9c88be549ef1db62a888378d177c"
+}

@@ -1,0 +1,112 @@
+{
+  "schema_version": "binance-paradex-cross-venue-funding-terminal-v1",
+  "created_at_utc": "2026-09-01T13:18:30Z",
+  "question": "Can any fixed BTC ETH or SOL Binance-versus-Paradex perpetual orientation be evaluated on the prospectively frozen complete 90-bin population?",
+  "preregistration": {
+    "path": "docs/model-research/action-value/binance-paradex-btc-eth-sol-funding-preregistration-v1-2026-09-01.json",
+    "file_sha256": "86df5e0a4d795e467228c0775f66e1f625f0bd1dbe62d33905b2ae4aed42c3eb",
+    "canonical_sha256": "c33cad3377ecc8f00c57744cb0b413aa113c9c88be549ef1db62a888378d177c"
+  },
+  "source_captures": [
+    {
+      "name": "market_inventory",
+      "contract_path": "docs/model-research/action-value/binance-paradex-market-inventory-source-contract-v1-2026-09-01.json",
+      "contract_file_sha256": "0d576eccc870d19216910982a3c691bc3644a7de20cec094482e31b04907e246",
+      "contract_canonical_sha256": "3d9e871b2026799841f9a4e0c72d25bd115f1c9f2f79a530c212251655cf9478",
+      "result_path": "docs/model-research/action-value/binance-paradex-market-inventory-source-result-v1-2026-09-01.json",
+      "result_file_sha256": "6f76bac684cb9d9818d0a42de74afd8ac647eae48c79bdb64d4086a9c720d726",
+      "result_canonical_sha256": "801d0ce3b35fd118e58b8c519be13ba51870f65281c7e627f20a1a36532679da",
+      "raw_path": "docs/model-research/binance/raw/paradex-btc-eth-sol-funding-v1-2026-09-01/00-market-inventory.raw.json",
+      "raw_bytes": 3507654,
+      "raw_sha256": "f0c0299701b6e52f3bbe539affa0c2c8bf75ccd9f32a98a084bdec678c429c0c",
+      "journal_path": "docs/model-research/binance/raw/paradex-btc-eth-sol-funding-v1-2026-09-01/00-market-inventory.journal.jsonl",
+      "journal_sha256": "b6537f0a293a74705692a2059e461b31a5f2753735979d492292294ec640be4e",
+      "row_count": 2474,
+      "exact_target_symbol_count": 3,
+      "source_gate_passed": false,
+      "failure": "response_exceeded_frozen_2000000_byte_ceiling"
+    },
+    {
+      "name": "BTC_funding",
+      "contract_path": "docs/model-research/action-value/binance-paradex-btc-funding-source-contract-v1-2026-09-01.json",
+      "contract_file_sha256": "d314df28926656810cb7a9555c438c93e03aadc12ca15e3deb72329cfc4e726d",
+      "contract_canonical_sha256": "84fc84095a509255f31f6d4bab6779a63fb6275f05019f89c97f82f2f291ad23",
+      "result_path": "docs/model-research/action-value/binance-paradex-btc-funding-source-result-v1-2026-09-01.json",
+      "result_file_sha256": "75ec821916cafdf6227317f871ac431a27fe3d8daf1f81c1eb8df4bf10a9ee68",
+      "result_canonical_sha256": "18aa63f1e265fd1aa29f76d006685a6bfc509d7a07bb9fdba182aa8966382a89",
+      "raw_path": "docs/model-research/binance/raw/paradex-btc-eth-sol-funding-v1-2026-09-01/01-btc-funding.raw.json",
+      "raw_bytes": 1324303,
+      "raw_sha256": "71520ae9b08536953d480414abe00b5cc4a6d8017fa7143b3c7de8a1072b6fd2",
+      "journal_path": "docs/model-research/binance/raw/paradex-btc-eth-sol-funding-v1-2026-09-01/01-btc-funding.journal.jsonl",
+      "journal_sha256": "932c8ab76d7403d18daacb648c3e9ed781e40b62c93a91b4bbf53cd90c9c2cd5",
+      "row_count": 5000,
+      "continuation_cursor_present": true,
+      "source_gate_passed": false,
+      "failure": "response_exceeded_frozen_1000000_byte_ceiling_and_population_is_paginated"
+    },
+    {
+      "name": "ETH_funding",
+      "contract_path": "docs/model-research/action-value/binance-paradex-eth-funding-source-contract-v1-2026-09-01.json",
+      "contract_file_sha256": "86bc7ccc5fd74cbaba4ff5b2f3f116edf12119feace1e6694ebd45ae3efb927b",
+      "contract_canonical_sha256": "161c127b926fc6881e5791378396dc9abcbed311780e6b1f7a9e7ec92239aae0",
+      "result_path": "docs/model-research/action-value/binance-paradex-eth-funding-source-result-v1-2026-09-01.json",
+      "result_file_sha256": "0dce0bb667f70eeedab6bd9aa34b157371bea9f5ba09de9a9215a7af841e0352",
+      "result_canonical_sha256": "18e8e6f5aa5f04d37830177d3e99fbc74bf0a290300cb899db3d2050feebcd11",
+      "raw_path": "docs/model-research/binance/raw/paradex-btc-eth-sol-funding-v1-2026-09-01/02-eth-funding.raw.json",
+      "raw_bytes": 1328532,
+      "raw_sha256": "8af42e6a6128119737b66892a478ffd8ad9d32f510975df92d129c52a607cfae",
+      "journal_path": "docs/model-research/binance/raw/paradex-btc-eth-sol-funding-v1-2026-09-01/02-eth-funding.journal.jsonl",
+      "journal_sha256": "cdb3f6ab2b274701d1be0e06d932b787eed15ca112f4a9125589ec16094b4168",
+      "row_count": 5000,
+      "continuation_cursor_present": true,
+      "source_gate_passed": false,
+      "failure": "response_exceeded_frozen_1000000_byte_ceiling_and_population_is_paginated"
+    },
+    {
+      "name": "SOL_funding",
+      "contract_path": "docs/model-research/action-value/binance-paradex-sol-funding-source-contract-v1-2026-09-01.json",
+      "contract_file_sha256": "fae2dfa7b37a4c66100d630bc6fb3cfdb9ce3c941dbceb14d6482af5170647ed",
+      "contract_canonical_sha256": "51b3bbe6f02bebe4849f15401f09021b5ad9be0d2b1b21694ae950f3121e220f",
+      "result_path": "docs/model-research/action-value/binance-paradex-sol-funding-source-result-v1-2026-09-01.json",
+      "result_file_sha256": "5e3baafd38bf56ab0d2a75d64a4fccec546d185065510262f2cd9f8590a61b77",
+      "result_canonical_sha256": "886eb597bbaf5c82e14b326fdce8e343f31b0e9f61a8cfca0ce7f6c2aad2f68f",
+      "raw_path": "docs/model-research/binance/raw/paradex-btc-eth-sol-funding-v1-2026-09-01/03-sol-funding.raw.json",
+      "raw_bytes": 1339893,
+      "raw_sha256": "70c95d73b8635f55862f43ed35ebcfd15ed8d8d7b96e720e7ad545a548f0fba4",
+      "journal_path": "docs/model-research/binance/raw/paradex-btc-eth-sol-funding-v1-2026-09-01/03-sol-funding.journal.jsonl",
+      "journal_sha256": "a40d87ca7545b7f2c40ce1db61532d4509ca2b0fb4e7aaf4fd2c017395979919",
+      "row_count": 5000,
+      "continuation_cursor_present": true,
+      "source_gate_passed": false,
+      "failure": "response_exceeded_frozen_1000000_byte_ceiling_and_population_is_paginated"
+    }
+  ],
+  "schema_preflight": {
+    "economic_values_printed_or_used": false,
+    "payloads_printed": 0,
+    "inventory_fields_only_checked": true,
+    "funding_fields_and_row_counts_only_checked": true
+  },
+  "adjudication": {
+    "status": "terminal_incomplete_paginated_source_population_before_economics",
+    "reason": "All three bounded histories reached the frozen 5000-row page limit and exposed a continuation cursor. The preregistration forbids pagination or adaptive cadence changes, so no complete 90-bin population exists under the consumed contract.",
+    "accepted_edge": false,
+    "deployment_ready": false,
+    "stable_profitability_proved": false,
+    "public_profit_floor_quote_units": "0",
+    "funding_values_viewed_or_used": false,
+    "book_or_basis_capture_justified": false
+  },
+  "retry_policy": "Do not refetch alias paginate or consume any continuation cursor for this exact population. Reopen only for a distinct prospectively frozen nonoverlapping population or independently known material API cadence pagination or architecture change with all pages and total byte and row ceilings frozen before access.",
+  "authority": {
+    "account_requests": 0,
+    "credentials_used": false,
+    "funds_used": false,
+    "orders_or_transactions": 0,
+    "protected_capture_touched": false,
+    "public_unauthenticated_read_only_requests": 4,
+    "signed_requests": 0,
+    "trading_authority": false
+  },
+  "result_sha256": "98c5441b5f9828664c387b9f9b8a05e4eef919a3857054c8bbd73faa4c3ea30a"
+}

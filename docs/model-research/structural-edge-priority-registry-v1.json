@@ -3997,9 +3997,37 @@
       ],
       "retry_trigger": "an_independently_known_material_official_byte_or_term_change_that_publishes_complete_live_Daily_Trading_or_Deposit_and_Trading_eligibility_task_reward_cap_timing_expiry_payment_withdrawal_reversal_anti_abuse_and_program_change_economics_under_a_fresh_prospective_contract_or_explicit_separate_read_only_account_authority_plus_an_independently_existing_genuine_campaign_presentation_legitimate_organic_qualifying_activity_exact_owned_reward_receipt_and_every_incremental_cost_any_onboarding_deposit_trade_order_fund_or_state_change_requires_separate_explicit_authority",
       "venue_scope": "Polymarket_US_participant_incentive_programs"
+    },
+    {
+      "blocking_evidence": [
+        "a complete prospectively frozen nonoverlapping Paradex funding population or independently known material API cadence pagination or architecture change",
+        "exact realized Paradex funding-index deltas aligned to Binance funding events",
+        "current fees synchronized finite-size basis depth and every custody quote-unit latency and capital cost"
+      ],
+      "canonical_artifacts": [
+        {
+          "path": "docs/model-research/action-value/binance-paradex-btc-eth-sol-funding-terminal-v1-2026-09-01.json",
+          "result_sha256": "98c5441b5f9828664c387b9f9b8a05e4eef919a3857054c8bbd73faa4c3ea30a"
+        }
+      ],
+      "current_status": "terminal_exact_90_bin_population_source_incomplete_before_economics_all_three_Paradex_histories_hit_5000_rows_and_returned_continuation_cursors_frozen_byte_ceilings_also_failed_no_funding_values_were_viewed_or_used_no_pagination_adaptation_basis_books_accounts_credentials_orders_or_funds_public_profit_floor_zero_not_accepted_stable_or_deployment_ready",
+      "market_direction_forecast_required": false,
+      "mechanism": "binance_Paradex_cross_venue_USD_perpetual_funding_spread",
+      "next_action": "do_not_refetch_alias_paginate_or_consume_any_continuation_cursor_for_the_exact_population_reopen_only_for_a_distinct_prospectively_frozen_nonoverlapping_population_or_independently_known_material_API_cadence_pagination_or_architecture_change_with_every_page_total_byte_and_row_ceiling_frozen_before_access_then_require_exact_realized_index_alignment_current_fees_finite_size_basis_depth_and_all_costs",
+      "priority_rank": 59,
+      "prohibited_shortcuts": [
+        "using_a_partial_5000_row_page_as_complete_history",
+        "adding_cursor_pages_after_observing_the_consumed_page",
+        "changing_cadence_alignment_roles_orientation_or_costs_after_access",
+        "treating_Paradex_as_an_independent_signal_when_its_funding_aggregation_includes_Binance",
+        "using_hourly_sampled_rates_as_exact_realized_index_PnL",
+        "requesting_books_accounts_credentials_orders_or_funds_before_a_complete_funding_only_prefilter_survives"
+      ],
+      "retry_trigger": "a_distinct_prospectively_frozen_nonoverlapping_population_or_an_independently_known_material_Paradex_API_cadence_pagination_or_architecture_change_with_all_pages_total_bytes_rows_alignment_roles_orientation_and_costs_frozen_before_access_followed_by_exact_index_and_finite_size_confirmation_for_any_survivor",
+      "venue_scope": "Binance_USDT_perpetuals_versus_Paradex_USDC_settled_BTC_ETH_SOL_perpetuals"
     }
   ],
-  "result_sha256": "ba86b0e4b333407df56e81d9e1c9af3d7384622c4e625f13ac3267b4ba805881",
+  "result_sha256": "2dc19765f6a9a3a0cb688991828f7624d12f10917f0bba02533281193ff9689c",
   "schema_version": "structural-edge-priority-registry-v1",
   "terminal_do_not_repeat": [
     {
@@ -4887,8 +4915,13 @@
       "canonical_result_sha256": "68232f3fa8f8ba9a6a747ce1b1c06428bbd1ad7e6b1a190b5120610b97ab9c8b",
       "family": "polymarket_NYC_September_2_complete_fixed_NegRisk_long_only_basis_2026_09_01",
       "reason": "the_next_deterministic_eleven_bin_NYC_daily_temperature_event_was_frozen_before_any_price_source_then_one_exact_public_Gamma_GET_reconciled_event_940515_and_screened_the_all_YES_complete_set_every_same_market_binary_straddle_and_every_optimal_k_NO_frontier_zero_packages_were_strictly_subfloor_and_zero_survived_current_fees_plus_one_adverse_tick_per_leg_the_best_69F_or_below_straddle_cost_1_001_pUSD_per_share_and_lost_0_01625_pUSD_at_five_shares_after_stress_do_not_refetch_alias_reprice_request_books_or_select_a_sibling_reopen_only_for_a_distinct_prospectively_frozen_event_or_material_price_fee_tick_rule_or_architecture_change"
+    },
+    {
+      "canonical_result_sha256": "98c5441b5f9828664c387b9f9b8a05e4eef919a3857054c8bbd73faa4c3ea30a",
+      "family": "binance_Paradex_BTC_ETH_SOL_cross_venue_funding_exact_90_bin_population_2026_09_01",
+      "reason": "the_prospectively_frozen_four_request_public_capture_retained_one_current_market_inventory_and_one_bounded_history_for_each_asset_but_inventory_exceeded_its_2MB_ceiling_and_each_funding_history_exceeded_1MB_hit_the_5000_row_page_limit_and_returned_a_continuation_cursor_the_frozen_contract_forbids_pagination_or_adaptive_cadence_changes_so_the_population_is_incomplete_before_any_economic_value_was_viewed_or_used_do_not_refetch_alias_paginate_or_consume_the_cursors_reopen_only_for_a_distinct_prospectively_frozen_nonoverlapping_population_or_independently_known_material_API_cadence_pagination_or_architecture_change"
     }
   ],
-  "updated_at_utc": "2026-09-01T13:01:39Z",
+  "updated_at_utc": "2026-09-01T13:18:30Z",
   "usage_rule": "advance_the_highest_ranked_hypothesis_whose_retry_trigger_is_satisfied_otherwise_do_not_repeat_a_blocked_or_terminal_screen"
 }
