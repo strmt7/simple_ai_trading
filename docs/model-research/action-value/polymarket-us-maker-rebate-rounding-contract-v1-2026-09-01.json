@@ -1,0 +1,94 @@
+{
+  "schema_version": "polymarket-us-maker-rebate-rounding-contract-v1",
+  "frozen_at_utc": "2026-09-01T10:09:37.8095014Z",
+  "contract_path": "docs/model-research/action-value/polymarket-us-maker-rebate-rounding-contract-v1-2026-09-01.json",
+  "research_question": "Across every whole-cent Polymarket US price and every integer quantity from one through one thousand contracts, what exact cash rounding uplift can the exchange-wide maker rebate create, and can it ever exceed the rounded taker fee or create a standalone public profit floor?",
+  "chronology": {
+    "discovery_status": "The official fee formula, coefficients, and banker-rounding rule were viewed during mechanism discovery before this contract.",
+    "admissible_use": "Because the audit exhausts the full frozen price and quantity grid without selecting a market, price, size, or row after observation, it may establish only the deterministic fee identity and exact positive realized-receipt overlay. It cannot establish fill probability, current market applicability, eligibility, execution, capacity, or standalone profit.",
+    "no_cherry_picking": "Every 0.01 through 0.99 price and every one through one thousand whole-contract quantity is included. Extrema use deterministic tie-breaking by smaller quantity then lower price."
+  },
+  "official_source": {
+    "url": "https://docs.polymarket.us/fees",
+    "claim": "Effective exchange-wide from April 3, 2026, fees use theta times contracts times price times one minus price; taker theta is 0.05, maker-rebate theta is 0.0125, the maker rebate is applied at trade, and fees and rebates round to the nearest cent with round-half-to-even. The separately dated taker-rebate promotion is excluded."
+  },
+  "request_name": "polymarket-us-official-fee-schedule",
+  "request": {
+    "method": "GET",
+    "url": "https://docs.polymarket.us/fees",
+    "count": 1,
+    "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "response_byte_ceiling": 2097152,
+  "required_utf8_phrases": [
+    "0.0125",
+    "0.05",
+    "banker"
+  ],
+  "fee_identity": {
+    "formula": "absolute fee or rebate USD = theta * integer contract quantity * price * (1 - price)",
+    "taker_fee_theta": "0.05",
+    "maker_rebate_theta": "0.0125",
+    "rounding_quantum_USD": "0.01",
+    "rounding_mode": "ROUND_HALF_EVEN",
+    "excluded_temporary_taker_rebate": true
+  },
+  "exhaustive_grid": {
+    "minimum_price_USD": "0.01",
+    "maximum_price_USD": "0.99",
+    "price_increment_USD": "0.01",
+    "minimum_contracts": 1,
+    "maximum_contracts": 1000,
+    "quantity_increment_contracts": 1,
+    "expected_combination_count": 99000
+  },
+  "acceptance_invariants": [
+    "official source gate passes",
+    "all 99000 frozen combinations are evaluated",
+    "at least one combination has a positive rounded maker rebate",
+    "zero combinations have positive maker rebate while rounded taker fee is zero",
+    "zero combinations have rounded maker rebate greater than rounded taker fee",
+    "maximum positive rounding uplift is no more than half a cent per trade",
+    "maximum effective maker share of rounded taker fee is no more than one half"
+  ],
+  "limitations": [
+    "A rebate is incremental cash on an independently justified organic maker fill, not a profitable reason to create the trade.",
+    "The public source does not prove account or jurisdiction eligibility, market minimum quantity, fill grouping, partial-fill rounding cadence, queue position, fill probability, capacity, or owned receipt.",
+    "Adverse selection, inventory, hedge, cancellation, spread, latency, settlement, capital, tax, and operating costs can exceed the rebate and every rounding uplift.",
+    "Do not split orders or fills to optimize rounding, manufacture volume or fills, self-trade, wash-trade, spoof, manipulate, use related accounts, or otherwise abuse fee or incentive rules.",
+    "Any account request, credential use, order, cancellation, fund movement, or transaction requires explicit separate authority."
+  ],
+  "outputs": {
+    "raw_path": "data/polymarket-us-maker-rebate-rounding-v1/raw/fees.html",
+    "journal_path": "data/polymarket-us-maker-rebate-rounding-v1/request-journal.jsonl",
+    "result_path": "docs/model-research/action-value/polymarket-us-maker-rebate-rounding-source-result-v1-2026-09-01.json",
+    "source_result_path": "docs/model-research/action-value/polymarket-us-maker-rebate-rounding-source-result-v1-2026-09-01.json",
+    "adjudication_path": "docs/model-research/action-value/polymarket-us-maker-rebate-rounding-adjudication-v1-2026-09-01.json"
+  },
+  "implementations": [
+    {
+      "path": "tools/capture_public_source_contract.py",
+      "sha256": "d566a5a379c659c3da144d5e28449ebac9c01493bd39646f9cc3a6e697a83566"
+    },
+    {
+      "path": "tools/screen_polymarket_exact_two_leg_package.py",
+      "sha256": "374fcc3c3485c466b4929a91256450bdc7db70f93ef4c6bda627e05fe8938327"
+    },
+    {
+      "path": "tools/adjudicate_polymarket_us_fee_rounding.py",
+      "sha256": "196ba7765a8889f6ce2994e26e450cb39c215c3a153146a75c5ba0c098c91ce3"
+    }
+  ],
+  "authority": {
+    "account_requests": 0,
+    "credentials_used": false,
+    "funds_used": false,
+    "orders_or_transactions": 0,
+    "protected_capture_touched": false,
+    "public_unauthenticated_read_only_requests": 1,
+    "signed_requests": 0,
+    "trading_authority": false
+  },
+  "retry_policy": "This exact official fee-page GET and exhaustive grid are one-use. Preserve any source or schema failure without alias or retry. A passing result may accept only exact positive USD maker rebate actually credited on an independently justified legitimate organic Polymarket US maker fill after every incremental cost; it never proves standalone strategy profit, current account eligibility, fill quality, capacity, recurrence, or deployment readiness.",
+  "contract_sha256": "f3a9e18049344c0f1f02109b3adbc09628eec5e91766cfeae2eb8cab6e838101"
+}

@@ -1,9 +1,10 @@
 {
-  "accepted_edge_count": 31,
+  "accepted_edge_count": 32,
   "accepted_edge_scope": "twenty-nine scoped structural edges: Polymarket complete-set holding yield for existing idle on-platform pUSD; Polymarket pUSD taker-fee rebates only for independently justified legitimate organic BTC ETH SOL taker flow after the direct-wallet tier is effective; exact realized positive Polymarket crypto maker rebates only on independently justified legitimate organic owned BTC ETH or SOL maker fills after every incremental cost; Polymarket builder fees only on bona fide independently existing third-party orders routed through an owned app with an account-confirmed active disclosed positive rate; Polymarket referral rewards only for authentic external referrals when the account independently cleared the lifetime-volume threshold; Polymarket Perps referral fee share only for authentic external traders within account-confirmed available invites and without volume-based invite unlocking; Binance Soft Staking yield for already-held idle non-order ETH SOL Spot inventory; LDUSDT or independently existing RWUSD reward retention only for already-required USD-M Futures collateral with the exact applicable account haircut and limits; just-in-time BNB fee reduction only for independently justified organic Spot flow; exact 5 percent Binance Cross Margin interest reduction only on an independently existing legitimate borrow when sufficient BNB is already held in the same Cross Margin account for unrelated reasons and every incremental cost is lower than the discount; current quote-native BTC ETH SOL promotional fee reduction without quote acquisition or extra volume; current TradFi perpetual zero-maker and reduced-taker fee overlay only for independently justified organic flow with the exact current symbol and actual fill role; historically source-bound Binance Stocks promotional trading-spread reduction through 2026-08-31T00:00:00Z only for independently justified organic direct-stock flow with the exact order tier and realized fee; current extension credit is zero while the official September 30 announcement conflicts with the live fee schedule still showing August 31; current bStocks zero-maker fee only for independently justified organic maker flow through 2026-09-30T23:59:00Z with exact owned fill role and counterfactual account fee; exact realized positive Binance Spot Liquidity Program final rebates only on independently justified legitimate organic owned maker fills after every incremental cost; USD1 WLFI holding-airdrop yield only for already-held eligible USD1; current fixed USD1 Simple Earn bonus only on at most the first 1500 independently already-held idle USD1 under a mutually exclusive balance-specific holding-airdrop comparison; U Flexible yield only for already-held eligible non-EEA U; automatic RWUSD VIP bonus only on independently required existing RWUSD; current USDT Flexible bonus yield only for independently held idle eligible USDT; current automatic USDe holding reward only for eligible USDe already independently held on Binance for at least 24 hours; Binance Square base 20 percent Write to Earn commission only on authentic external readers independently existing eligible fee-bearing trades attributed to genuinely useful content; Binance Referral Pro base 20 percent Spot Margin and 10 percent one-year Futures fee commission only for authentic independently acquired new external users; exact realized monthly Binance Institutional Loan interest rebates only on an independently required existing eligible loan when KYB VIP eligibility and the applicable performance target were independently satisfied without creating trading volume Open Interest Net Asset Value borrowing leverage or collateral exposure; exact realized positive Binance CAAS markup trade commission only from independently existing bona fide external client trades under an already active disclosed fee group and markup configuration after every incremental cost; fail-closed one-intermediary Binance Spot route savings only for an independently required legitimate same-account organic conversion after exact account fees filters fresh finite-size depth residuals extra-leg stress and failure-unwind costs remain strictly cheaper than the direct route; exact realized positive own-account Link-and-Trade kickback income only from independently justified legitimate organic Spot flow on an already linked rebate-working account after balance reconciliation and every incremental cost; exact realized positive Link-and-Trade partner rebate income only from independently existing bona fide external Spot client flow under an already active disclosed relationship after exact customer order trade distribution payout and every incremental cost are reconciled without double counting; and exact realized positive Binance Copy Trading Lead Trader profit share only from independently existing authentic followers' profitable copied closes on independently accepted legitimate BTC ETH or SOL Spot or Futures trades in an already active lead portfolio after owned payout reconciliation and every incremental cost; none is deployment-ready or fully account-and-external-cost-qualified",
   "accepted_edge_scope_amendment": "The previously crypto-only Polymarket maker-rebate edge is now source-bound across current fee-enabled Crypto Sports Finance Politics Economics Culture Weather Other or General Mentions and Tech markets. This is a scope extension of the same exact-realized positive owned-rebate identity, not a thirtieth edge; credit requires the asset actually received after conversion basis and every incremental cost, no conflicting public Sports fraction or cash label is admitted for forward economics, and Geopolitics is excluded as fee-free.",
   "accepted_edge_scope_addition_2026_09_01": "The thirtieth scoped structural edge is exact realized positive Binance Copy Trading Lead Trader VIP fee reduction only on independently existing authentic organic Futures lead flow after owned program eligibility, applied tier, exact current commission, authentic copier volume and AUM, any preexisting 25 BNB requirement, exclusivity opportunity cost, realized fee reconciliation, and every incremental cost. It is a direction-independent cost overlay, not a profitable underlying strategy, and no public or account-qualified forward profit floor is claimed.",
   "accepted_edge_scope_addition_2026_09_01_predictfun_maker_rebate": "The thirty-first scoped structural edge is exact positive Predict.fun maker-rebate value actually distributed on an independently justified legitimate organic maker fill in a currently badged eligible UP/DOWN crypto market while the published trial remains active, after the exact received asset, liquidation or redemption basis, account eligibility, adverse selection, inventory, hedge, gas, latency, capital, custody, tax, failure, and every other incremental cost are reconciled. The current official source defines an automatic 25 percent share of the taker fee and zero maker fee through a trial published to end September 16, 2026, but proves no positive underlying market-making strategy, account eligibility, deployment readiness, or public forward profit floor. Predict.fun is a separate BNB Chain venue; Binance Exchange or testnet credentials do not authorize it.",
+  "accepted_edge_scope_addition_2026_09_01_polymarket_us_maker_rebate": "The thirty-second scoped structural edge is the exact positive USD maker rebate actually credited on an independently justified legitimate organic Polymarket US maker fill after every incremental cost. The current exchange-wide fee schedule defines a maker coefficient of 0.0125, a taker coefficient of 0.05, and cent rounding with banker's rounding. An exhaustive 99-price by 1000-quantity grid proves a maximum positive rounding uplift of exactly 0.005 USD per trade and a maximum effective maker share of 50 percent of the rounded taker fee; zero rows had a positive maker rebate with zero rounded taker fee or a rebate exceeding the taker fee. This is a fill-contingent cost overlay, not a profitable market-making strategy, and no public or account-qualified forward profit floor is claimed.",
   "authority": {
     "live_trading_authority": false,
     "paper_trading_authority": false,
@@ -3603,9 +3604,44 @@
       ],
       "retry_trigger": "before_2026_09_16_one_distinct_currently_badged_eligible_Predict_fun_UP_DOWN_market_plus_a_new_official_public_fill_quality_source_or_explicit_separate_Predict_fun_API_read_only_paper_study_authority_or_a_material_program_fee_rebate_resolution_API_or_execution_architecture_change",
       "venue_scope": "Predict.fun_on_BNB_Chain_independent_from_Binance_Exchange"
+    },
+    {
+      "blocking_evidence": [
+        "explicit separate read-only Polymarket US account authority",
+        "independently existing bona fide organic maker fills not created to obtain a rebate",
+        "owned fill grouping exact credited USD rebate and fee receipt reconciliation",
+        "account and jurisdiction eligibility plus current applied fee schedule",
+        "queue adverse selection inventory hedge latency capital custody tax failure and every other incremental cost",
+        "prospective recurrence across nonoverlapping liquidity volatility latency and directional regimes"
+      ],
+      "canonical_artifacts": [
+        {
+          "path": "docs/model-research/action-value/polymarket-us-maker-rebate-rounding-adjudication-v1-2026-09-01.json",
+          "result_sha256": "d13ecf94825c27143a36af243e8fa008b6b99334e3651343189a55b823c6b21d"
+        },
+        {
+          "path": "docs/model-research/action-value/polymarket-us-maker-rebate-rounding-source-result-v1-2026-09-01.json",
+          "result_sha256": "42d098f39c3ba01bb8210982a56d65cf5fe3e54772bfef7f3f2872ed47037f33"
+        }
+      ],
+      "current_status": "accepted_scoped_direction_independent_exact_positive_USD_maker_rebate_actually_credited_on_an_independently_justified_legitimate_organic_Polymarket_US_maker_fill_after_every_incremental_cost_current_exchange_wide_terms_define_theta_0_0125_maker_rebate_theta_0_05_taker_fee_and_cent_bankers_rounding_exhaustive_99000_combination_identity_proves_maximum_0_005_USD_positive_rounding_uplift_per_trade_and_maximum_0_5_effective_share_of_rounded_taker_fee_with_zero_rebate_over_fee_cases_but_fill_grouping_owned_receipt_account_eligibility_underlying_strategy_and_after_cost_profit_are_unproved_public_forward_floor_zero_not_deployment_ready",
+      "market_direction_forecast_required": false,
+      "mechanism": "polymarket_US_organic_maker_rebate_rounding_overlay",
+      "next_action": "advance_only_with_explicit_separate_read_only_Polymarket_US_account_authority_and_independently_existing_bona_fide_organic_maker_fills_freeze_fill_grouping_receipt_fee_account_eligibility_adverse_selection_inventory_hedge_and_all_cost_gates_before_access_credit_only_exact_realized_USD_after_every_cost_no_order_fund_account_or_state_change_without_separate_explicit_authority",
+      "priority_rank": 49,
+      "prohibited_shortcuts": [
+        "splitting_combining_or_timing_orders_to_optimize_rounding",
+        "creating_volume_self_trading_wash_trading_spoofing_balance_manipulation_cancellation_abuse_or_non_executable_orders",
+        "assuming_documented_per_trade_rounding_matches_partial_fill_or_settlement_grouping_without_owned_receipt_evidence",
+        "crediting_the_rebate_before_an_independently_justified_organic_fill_or_double_counting_spread_fee_rebate_liquidity_reward_mark_to_market_and_redemption",
+        "calling_the_overlay_a_profitable_market_making_strategy_stable_edge_or_deployment_ready",
+        "using_Binance_or_Binance_testnet_credentials_for_Polymarket_US"
+      ],
+      "retry_trigger": "explicit_separate_read_only_Polymarket_US_account_authority_plus_independently_existing_bona_fide_organic_maker_fills_or_a_material_official_fee_coefficient_rounding_cadence_fill_grouping_rebate_payment_or_exchange_architecture_change",
+      "venue_scope": "Polymarket_US_exchange_wide_maker_fills"
     }
   ],
-  "result_sha256": "84967248716813aca5de3dc68c154ccbedb01ef74c2f3cf6fbd56ccd234f0952",
+  "result_sha256": "c91039e95182af5c40207facfb3d511923ddb3e2e01fa5e8a601ff2d488df422",
   "schema_version": "structural-edge-priority-registry-v1",
   "terminal_do_not_repeat": [
     {
@@ -4413,8 +4449,13 @@
       "canonical_result_sha256": "30707da50f9d52740ecb59376a0e060edcf5d88cace334a8bdea169c703a6047",
       "family": "polymarket_US_active_liquidity_incentive_inventory_source_gate_2026_09_01",
       "reason": "official_documentation_identifies_a_direction_independent_open_resting_order_liquidity_reward_plus_25_percent_maker_rebate_stack_but_the_prospectively_frozen_one_use_current_active_program_inventory_GET_returned_HTTP_503_so_no_current_positive_pool_score_share_book_candidate_account_eligibility_deployment_or_profit_floor_is_proved_do_not_retry_alias_paginate_request_earnings_select_a_documentation_example_or_request_books_reopen_only_after_a_material_official_endpoint_availability_documented_host_or_schema_change_with_a_fresh_contract_frozen_before_access"
+    },
+    {
+      "canonical_result_sha256": "d13ecf94825c27143a36af243e8fa008b6b99334e3651343189a55b823c6b21d",
+      "family": "polymarket_US_exchange_wide_maker_rebate_cent_rounding_grid_2026_09_01",
+      "reason": "the_current_official_exchange_wide_fee_schedule_and_prospectively_frozen_exhaustive_99_price_by_1000_quantity_grid_prove_a_maximum_0_005_USD_positive_maker_rounding_uplift_per_trade_a_maximum_0_5_effective_share_of_rounded_taker_fee_zero_positive_rebates_when_rounded_taker_fee_is_zero_and_zero_rebates_exceeding_the_taker_fee_do_not_rerun_subsample_extend_split_or_recombine_the_same_grid_reopen_only_on_a_material_official_fee_coefficient_rounding_cadence_fill_grouping_rebate_payment_or_exchange_architecture_change"
     }
   ],
-  "updated_at_utc": "2026-09-01T10:01:38.1604490Z",
+  "updated_at_utc": "2026-09-01T10:13:01.7922794Z",
   "usage_rule": "advance_the_highest_ranked_hypothesis_whose_retry_trigger_is_satisfied_otherwise_do_not_repeat_a_blocked_or_terminal_screen"
 }
