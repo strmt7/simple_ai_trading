@@ -1,0 +1,87 @@
+{
+  "adjudication": {
+    "accepted_edge": true,
+    "accepted_scope": "exact positive owned USD vendor-fee value actually collected through a VENDOR_FEES transfer on bona fide independently existing external participant orders under an already approved partner integration and a disclosed consented participant agreement, after uncollectible receivables, waivers, refunds, reversals, acquisition, support, compliance, tax, opportunity, and every incremental cost",
+    "account_qualified": false,
+    "deployment_ready": false,
+    "market_direction_forecast_required": false,
+    "profitability_claim": false,
+    "public_after_all_cost_profit_floor_usd": "0",
+    "stable_current_edge_proved": false,
+    "status": "accepted_scoped_external_participant_revenue_overlay"
+  },
+  "authority": {
+    "account_requests": 0,
+    "credentials_used": false,
+    "funds_used": false,
+    "orders_or_transactions": 0,
+    "protected_capture_touched": false,
+    "public_unauthenticated_read_only_requests": 1,
+    "signed_requests": 0,
+    "trading_authority": false
+  },
+  "created_at_utc": "2026-09-01T11:33:08.0597268Z",
+  "decision": {
+    "cash_flow_identity": "declared fixed USD vendor fee on external participant order -> DCO-recorded order-linked receivable -> daily report or partner books reconciliation -> at most one net VENDOR_FEES participant-account-to-partner-funding-account transfer per day",
+    "exact_source_facts": [
+      "the fee is a fixed USD amount computed by the partner under its agreement with the participant and validated as non-negative and allowed for the firm",
+      "the declared amount is recorded against the order and is not automatically adjusted for partial fill or cancellation",
+      "no vendor-fee cash moves at order time",
+      "accruals are not exposed through an API and require partner shadow-balance tracking plus daily-report reconciliation",
+      "the receivable is unsecured and participant trading losses can cause collection rejection for insufficient funds",
+      "collection uses one net VENDOR_FEES transfer per participant account no more than once per day",
+      "the capability is beta and the daily report delivery method remains TBD"
+    ],
+    "reason": "Unlike the referral source, this page defines a complete positive USD receivable and collection primitive rather than merely promising unspecified rewards. The value is market-direction-independent for an already approved partner with bona fide external participant orders, but it is external-user revenue rather than autonomous trading profit and collection is not guaranteed. Acceptance is therefore limited to exact positive owned cash actually collected after every cost and never authorizes creating users, orders, fees, or activity.",
+    "why_public_floor_is_zero": "The public source proves no partner approval, allowed fee amount, participant agreement, external order flow, collectable cash, report delivery, owned transfer, persistence, or after-cost margin; unsecured receivables can be rejected and the beta may change without notice."
+  },
+  "evidence": {
+    "contract": {
+      "canonical_sha256": "10f643129214fe6d104ba04b119884e1880a0478a61df20c1c062907b61a82b7",
+      "file_sha256": "801f416555efdd418f1e0e5d26642badda0f3eb97e1a944128154ba32ae023e4",
+      "path": "docs/model-research/action-value/polymarket-us-partner-vendor-fee-contract-v1-2026-09-01.json"
+    },
+    "journal": {
+      "path": "data/polymarket-us-partner-vendor-fee-v1/request-journal.jsonl",
+      "sha256": "6e774dcc56c1a658e021656bd133988f02f9eacf42fccb31744cb464898fb3d3"
+    },
+    "raw_source": {
+      "bytes": 8591,
+      "path": "data/polymarket-us-partner-vendor-fee-v1/raw/vendor-fees.md",
+      "sha256": "5ee5063318cf5c5ad4991fa1c0a52430a03d91df2981021e5bcc96f83c18eae8",
+      "status_code": 200
+    },
+    "source_result": {
+      "path": "docs/model-research/action-value/polymarket-us-partner-vendor-fee-source-result-v1-2026-09-01.json",
+      "result_sha256": "6fc0c7918d461f21fb352fdf2af95e7ba6eaa77ddaa0f3d1ac0760507559fb71"
+    }
+  },
+  "qualification_gates": [
+    "already approved and currently enabled partner plus funding entity",
+    "independently existing bona fide external participant and legitimate order need",
+    "clear disclosed participant agreement and consent for the exact fee policy",
+    "exact allowed fixed USD declaration joined to exact order and participant account",
+    "partner shadow-balance and order-state reconciliation",
+    "exact collectable cash after waivers prorating cancellations losses refunds and reversals",
+    "successful owned VENDOR_FEES transfer and final ledger receipt",
+    "customer acquisition support compliance infrastructure tax opportunity and every incremental cost"
+  ],
+  "prohibited_shortcuts": [
+    "creating fake duplicate synthetic related or misrepresented users participants accounts KYC orders or activity",
+    "charging undisclosed unconsented deceptive excessive or disallowed fees",
+    "creating churning self-dealing wash-trading or otherwise unnecessary orders to generate declarations",
+    "treating a declaration accrual report row or gross receivable as collected cash",
+    "assuming Polymarket reserves underwrites guarantees or exposes the accrued fee balance",
+    "collecting more than once per day per participant account or more cash than is contractually and actually due",
+    "contacting applying onboarding configuring ordering transferring collecting or mutating any account without separate explicit authority"
+  ],
+  "registry_effect": {
+    "accepted_edge_count": 35,
+    "ranked_hypothesis_count": 58,
+    "stable_current_account_qualified_after_all_cost_edge_count": 0,
+    "terminal_family_count": 169
+  },
+  "result_sha256": "92b881d5b426b6e271550dbd3f3fa6b73b1c8164d326d2885528dc4524f57b25",
+  "retry_trigger": "Explicit separate read-only Polymarket US partner authority plus an independently existing approved enabled partner integration, bona fide external participant orders, exact agreements, declarations, reports, shadow balances, collection eligibility, and owned VENDOR_FEES receipts; or a material official eligibility, allowed-fee, disclosure, order, accrual, reservation, reporting, collection, transfer, reversal, beta, or architecture change. Every contact, application, onboarding, configuration, order, fee declaration, transfer, collection, fund, or state change requires separate explicit authority.",
+  "schema_version": "polymarket-us-partner-vendor-fee-adjudication-v1"
+}

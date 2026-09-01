@@ -12,7 +12,7 @@ operating contract. Historical handoff text is archived under
 | Development branch | `main` only |
 | Binance | BTC, ETH, and SOL; paper or testnet/Demo only |
 | Polymarket | Order-capable BTC, ETH, and SOL research is disabled by default; public unauthenticated structural discovery may cover other markets, with no live authority. |
-| Accepted edges | Thirty-four scoped structural edges. The canonical complete scopes, counts, and retry gates are in `docs/model-research/structural-edge-priority-registry-v1.json`; none is deployment-ready or fully account-and-external-cost-qualified. |
+| Accepted edges | Thirty-five scoped structural edges. The canonical complete scopes, counts, and retry gates are in `docs/model-research/structural-edge-priority-registry-v1.json`; none is deployment-ready or fully account-and-external-cost-qualified. |
 | Live-money authority | None |
 | Historical cutoff | `2026-08-14T00:00:00Z` |
 
@@ -21,7 +21,49 @@ profitable without reproducible source-bound after-cost evidence. AI may veto
 or reduce risk only; it never creates positions, selects leverage, overrides a
 safety gate, blocks Stop, or submits an order.
 
-### Latest structural source inventory
+### Latest Polymarket US vendor-fee adjudication
+
+One frozen exact current official Polymarket US partner source defines a fixed
+USD vendor fee computed by the partner under its participant agreement. The fee
+is declared against an order, accrues as an unsecured receivable, requires
+partner shadow-balance and report reconciliation, and can be collected at most
+once per participant account per day through one net `VENDOR_FEES` transfer.
+No fee cash moves at order time; the declaration is not automatically adjusted
+for partial fill or cancellation; Polymarket does not reserve or underwrite the
+receivable; participant trading losses can cause insufficient-funds rejection;
+no API exposes accrued balance; the daily report delivery method is TBD; and
+the capability is beta and subject to change.
+
+The thirty-fifth accepted scope is only exact positive owned USD vendor-fee
+cash actually collected on bona fide independently existing external
+participant orders under an already approved integration and disclosed,
+consented agreement, after uncollectible receivables, waivers, refunds,
+reversals, acquisition, support, compliance, tax, opportunity, and every
+incremental cost. It is market-direction-independent external-user revenue,
+not autonomous trading profit. Public, account-qualified, stable-current, and
+deployment-ready profit floors remain zero. Do not refetch the consumed source
+or treat a declaration, accrual, report row, or receivable as cash. Never create
+users, orders, volume, fees, or activity, and never charge undisclosed or
+unconsented fees. Contact, application, onboarding, configuration, order, fee
+declaration, transfer, collection, fund, or state changes require separate
+explicit authority. Rank 56 approved market-maker contracts is the next exact
+unconsumed source-qualified hypothesis.
+
+Vendor-fee contract/source-result/raw/journal/adjudication hashes are
+`10f643129214fe6d104ba04b119884e1880a0478a61df20c1c062907b61a82b7`,
+`6fc0c7918d461f21fb352fdf2af95e7ba6eaa77ddaa0f3d1ac0760507559fb71`,
+`5ee5063318cf5c5ad4991fa1c0a52430a03d91df2981021e5bcc96f83c18eae8`,
+`6e774dcc56c1a658e021656bd133988f02f9eacf42fccb31744cb464898fb3d3`,
+and `92b881d5b426b6e271550dbd3f3fa6b73b1c8164d326d2885528dc4524f57b25`.
+Registry and durability-audit hashes become
+`d2f93c88d50905be28cefe0f215e72137c8b9bbb7f9d73741b87925691413b44`
+and `8fb854400727c2b40666047a8df5ac42b183082db8c8ce2f3c77ce16a95828af`.
+Accepted edges become 35, ranked hypotheses remain 58, terminal families become
+169, and stable current account-qualified after-all-cost edges remain zero.
+No account, credential, signed request, order, fund, transaction, or protected
+capture was touched.
+
+### Prior structural source inventory
 
 One frozen exact Polymarket US `llms.txt` GET retained a complete 350-line
 index with 342 link rows and 300 unique absolute HTTP URLs. Offline novelty
@@ -29,7 +71,7 @@ deduplication identified five previously unrepresented economic families:
 approved-affiliate referral rewards, partner vendor fees, approved market-maker
 contracts, combo RFQ execution, and participant daily/deposit-trading programs.
 The precommitted one-linked-source cap advanced only Referral Incentive and
-deferred the other four without opening their pages.
+deferred the other four without opening their pages at that checkpoint.
 
 The exact referral page says approved affiliates receive rewards for referring
 new Participants, but publishes no approval, eligibility, attribution,
@@ -37,13 +79,14 @@ qualifying activity, payout, cap, duration, payment, anti-abuse, reversal, or
 change economics. It is rank 54 with public floor zero, not an accepted edge.
 Do not inflate the edge count with a tautological exact-positive-payment
 predicate, refetch the page, or open the Refer-A-Friend FAQ alias. Rank 55
-partner vendor fees is the next exact unconsumed source-qualified hypothesis.
-Every later family must receive its own fresh prospective source contract; no
+partner vendor fees was subsequently consumed and adjudicated above. Every
+later family must receive its own fresh prospective source contract; no
 contact, application, referral, account, KYC, deposit, quote, order, fund, or
 state change is authorized.
 
-Accepted edges remain 34, ranked hypotheses become 58, terminal families become
-168, and stable current account-qualified after-all-cost edges remain zero.
+At that checkpoint accepted edges remained 34, ranked hypotheses became 58,
+terminal families became 168, and stable current account-qualified after-all-
+cost edges remained zero.
 Index contract/source-result/adjudication hashes are
 `7625c1acceffc154492429b20b5218ab32f5f9e77f2e180e67377c8f6eb4866f`,
 `43eb515fb75c5a1891c78c998e261d8f8f2c60707c5034db0d7aec9e70314c52`,

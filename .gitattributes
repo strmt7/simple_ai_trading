@@ -135,3 +135,5 @@ data/polymarket-us-official-docs-mechanism-index-v1/request-journal.jsonl binary
 data/polymarket-us-official-docs-mechanism-index-v1/raw/llms.txt binary
 data/polymarket-us-referral-incentive-v1/request-journal.jsonl binary
 data/polymarket-us-referral-incentive-v1/raw/referral.md binary
+data/polymarket-us-partner-vendor-fee-v1/request-journal.jsonl binary
+data/polymarket-us-partner-vendor-fee-v1/raw/vendor-fees.md binary

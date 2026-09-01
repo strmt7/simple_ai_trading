@@ -1,12 +1,65 @@
 # Continue Development
 
-Current canonical status after the Polymarket US mechanism-index and referral
-source gates: accepted edges 34, ranked hypotheses 58, terminal families 168,
+Current canonical status after the Polymarket US partner vendor-fee source
+adjudication: accepted edges 35, ranked hypotheses 58, terminal families 169,
 and stable current account-qualified after-all-cost edges zero. Registry
 SHA-256 is
-`8041cee138044411dc4c8357c7dc8e0e8b8a4cc5b4493f3ddc475db4aac1303f`;
+`d2f93c88d50905be28cefe0f215e72137c8b9bbb7f9d73741b87925691413b44`;
 durability-audit SHA-256 is
-`454c2c0e2f3f3eea07a58c6d8ec92be3dd85aac39d48b26d836b415c3d29c3bb`.
+`8fb854400727c2b40666047a8df5ac42b183082db8c8ce2f3c77ce16a95828af`.
+
+## 2026-09-01 Polymarket US partner vendor-fee overlay
+
+The exact rank 55 source identified by the retained official documentation
+index was prospectively frozen before access. One current official Markdown GET
+retained 8,591 bytes and proved a distinct market-direction-independent cash-
+flow primitive for approved partners. A partner computes a fixed USD fee under
+its agreement with a participant; Polymarket validates that the declaration is
+well formed, non-negative, and allowed for the firm, then records it against the
+order. No fee cash moves at order time, and the declared amount is not
+automatically adjusted for partial fill or cancellation.
+
+The resulting accrual is an unsecured receivable. Polymarket does not reserve
+or underwrite it, no API exposes accrued balance, and participant trading losses
+can cause collection rejection for insufficient funds. The partner must keep a
+shadow balance and reconcile a daily report whose delivery method remains TBD.
+Collection is one net participant-account-to-partner-funding-account
+`VENDOR_FEES` transfer at most once per participant account per day. The page is
+beta and subject to change.
+
+The thirty-fifth accepted scope is only exact positive owned USD vendor-fee
+cash actually collected on bona fide independently existing external
+participant orders under an already approved integration and a disclosed,
+consented agreement, after uncollectible receivables, waivers, refunds,
+reversals, acquisition, support, compliance, tax, opportunity, and every
+incremental cost. This is external-user business revenue rather than autonomous
+trading profit. The public after-all-cost floor is zero; account qualification,
+collectability, owned receipt, persistence, after-cost margin, stability, and
+deployment readiness remain unproved.
+
+Do not refetch or alias the consumed source. Never treat a declaration, accrual,
+report row, or receivable as collected cash; create fake or related users;
+manufacture orders, volume, or activity; or charge undisclosed, unconsented,
+deceptive, excessive, or disallowed fees. Contact, application, onboarding,
+configuration, order, fee declaration, transfer, collection, fund, and state
+changes require separate explicit authority. Rank 56 approved market-maker
+contracts is the next exact unconsumed source-qualified hypothesis.
+
+Contract canonical/file, source-result, raw, journal, and adjudication SHA-256
+values are
+`10f643129214fe6d104ba04b119884e1880a0478a61df20c1c062907b61a82b7`,
+`801f416555efdd418f1e0e5d26642badda0f3eb97e1a944128154ba32ae023e4`,
+`6fc0c7918d461f21fb352fdf2af95e7ba6eaa77ddaa0f3d1ac0760507559fb71`,
+`5ee5063318cf5c5ad4991fa1c0a52430a03d91df2981021e5bcc96f83c18eae8`,
+`6e774dcc56c1a658e021656bd133988f02f9eacf42fccb31744cb464898fb3d3`,
+and `92b881d5b426b6e271550dbd3f3fa6b73b1c8164d326d2885528dc4524f57b25`.
+Registry and durability-audit SHA-256 values become
+`d2f93c88d50905be28cefe0f215e72137c8b9bbb7f9d73741b87925691413b44`
+and `8fb854400727c2b40666047a8df5ac42b183082db8c8ce2f3c77ce16a95828af`.
+Accepted edges become 35, ranked hypotheses remain 58, terminal families become
+169, and stable current account-qualified after-all-cost edges remain zero. No
+account, credential, signed request, order, fund, transaction, or protected
+capture was touched.
 
 ## 2026-09-01 Polymarket US mechanism index and referral gate
 
@@ -16,7 +69,8 @@ title-description deduplication found five unrepresented economic families:
 Referral Incentive, partner vendor fees, approved market-maker contracts, combo
 RFQ execution, and participant Daily Trading / Deposit and Trading incentives.
 The frozen campaign allowed exactly one linked economic source, so Referral
-Incentive advanced under its own contract and the other four remained unopened.
+Incentive advanced under its own contract and the other four remained unopened
+at that checkpoint.
 
 The 446-byte referral page says approved affiliates receive rewards for
 referring new Participants and provides only a contact address. It publishes no
@@ -26,8 +80,8 @@ reversal, or program-change terms. The overview's `Open` label cannot override
 the exact approved-affiliate condition. Public and account-qualified floors are
 zero, and accepting a tautological exact-positive-payment predicate would add
 no predictive or deployable value. Rank 54 is therefore unaccepted and terminal
-on current public terms. Rank 55 partner vendor fees is the next exact
-unconsumed source-qualified hypothesis, followed by ranks 56–58.
+on current public terms. Rank 55 partner vendor fees was subsequently consumed
+and adjudicated above; ranks 56–58 remain source-qualified in order.
 
 Do not repeat the current index while its raw SHA-256 remains
 `308b0a29cf69d8b50fd9f5c841a21b51cebb5842d988fe4d53f77322fd980d60`;
@@ -51,8 +105,9 @@ and `87cce3f6175f12b2b5604db57d0f35fcfec1868577d0e0d92a99a82e189bf6d6`.
 Registry and durability-audit SHA-256 values become
 `8041cee138044411dc4c8357c7dc8e0e8b8a4cc5b4493f3ddc475db4aac1303f`
 and `454c2c0e2f3f3eea07a58c6d8ec92be3dd85aac39d48b26d836b415c3d29c3bb`.
-Accepted edges remain 34, ranked hypotheses become 58, terminal families become
-168, and stable current account-qualified after-all-cost edges remain zero.
+At that checkpoint accepted edges remained 34, ranked hypotheses became 58,
+terminal families became 168, and stable current account-qualified after-all-
+cost edges remained zero.
 
 ## 2026-09-01 Binance Web3 prediction OTC source failure
 

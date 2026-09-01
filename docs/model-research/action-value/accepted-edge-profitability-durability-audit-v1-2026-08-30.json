@@ -55,7 +55,7 @@
       "interpretation": "These scopes can reduce costs or add rebates only when legitimate trading borrowing conversion or loan activity already exists independently. They are not standalone profit generators and must never justify manufacturing activity."
     },
     {
-      "count": 9,
+      "count": 10,
       "edge_ordinals": [
         4,
         5,
@@ -65,7 +65,8 @@
         25,
         28,
         29,
-        30
+        30,
+        35
       ],
       "evidence_tier": "D_external_user_or_client_revenue_overlay",
       "interpretation": "These scopes require authentic external users readers clients referrals or followers. They are distribution or business revenue overlays, not autonomous market-profit edges."
@@ -73,8 +74,8 @@
   ],
   "created_at_utc": "2026-08-30T21:13:32.3379784Z",
   "decision": {
-    "accepted_scope_count": 34,
-    "accepted_scope_is_not_deployment_ready_count": 34,
+    "accepted_scope_count": 35,
+    "accepted_scope_is_not_deployment_ready_count": 35,
     "historically_source_demonstrated_recurring_direct_cash_edge_count": 1,
     "market_direction_forecast_required": false,
     "public_new_capital_after_all_cost_profit_floor": "0",
@@ -154,9 +155,9 @@
       "why_not_stable_deployable": "Current rate remains conflict-qualified rather than proven, the evidence is from public wallets rather than the owned account, every external friction and best alternative is not bound, and future persistence is not guaranteed."
     }
   },
-  "result_sha256": "454c2c0e2f3f3eea07a58c6d8ec92be3dd85aac39d48b26d836b415c3d29c3bb",
+  "result_sha256": "8fb854400727c2b40666047a8df5ac42b183082db8c8ce2f3c77ce16a95828af",
   "routing": {
-    "polymarket_us_new_mechanism_index_and_referral_trigger": "The complete current Polymarket US llms.txt index is consumed at SHA-256 308b0a29cf69d8b50fd9f5c841a21b51cebb5842d988fe4d53f77322fd980d60 and identified five unrepresented families. Rank 54 Referral Incentive is terminal under its current public page: only approved affiliates are named and no approval, eligibility, attribution, qualifying activity, payout, cap, duration, payment, anti-abuse, reversal, or change economics are published. Do not accept a tautological exact-positive predicate, refetch the page, or open the Refer-A-Friend FAQ alias. Rank 55 partner vendor fees is the next exact unconsumed source-qualified hypothesis, followed by approved market-maker contracts, combo RFQ, and participant daily/deposit-trading programs. Advance each independently under a fresh prospective source contract; never manufacture users referrals accounts KYC deposits trades quotes fills or volume, and make no contact application order fund or account change without separate explicit authority.",
+    "polymarket_us_new_mechanism_index_referral_and_vendor_fee_trigger": "The complete current Polymarket US llms.txt index is consumed at SHA-256 308b0a29cf69d8b50fd9f5c841a21b51cebb5842d988fe4d53f77322fd980d60 and identified five unrepresented families. Rank 54 Referral Incentive is terminal because its current public page names only approved affiliates and publishes no complete payout economics. Rank 55 partner vendor fees is accepted only as exact positive owned USD cash actually collected through VENDOR_FEES on bona fide independently existing external participant orders under an already approved integration and disclosed consented agreement after every cost. The beta source proves an order-linked unsecured receivable and at-most-daily net collection lifecycle, but Polymarket does not reserve or underwrite it, participant losses can cause insufficient-funds rejection, no accrued-balance API exists, and report delivery remains TBD. Public and stable account-qualified floors are zero. Do not refetch either source, manufacture users referrals accounts KYC deposits trades orders fees quotes fills or volume, or treat declarations accruals reports or receivables as cash. Rank 56 approved market-maker contracts is the next exact unconsumed source-qualified hypothesis, followed by combo RFQ and participant daily/deposit-trading programs. Advance each independently under a fresh prospective source contract; make no contact application configuration order fee declaration transfer collection fund or account change without separate explicit authority.",
     "binance_web3_prediction_otc_source_trigger": "The distinct Binance Web3 Wallet Prediction Trading OTC block-trade candidate failed closed when its prospectively frozen exact official developer documentation GET returned HTTP 202 with zero bytes. Search-rendered endpoint and secretToken examples are discovery-only and prove no current public quote, access contract, authenticity, minimum size, fee, settlement, fillability, or positive after-cost concession. Do not retry locale or rendered aliases, cached snippets, or guessed API calls. Reopen rank 53 only on a material byte-retainable official documentation/API change, or with explicit separate read-only authority, an independently required legitimate large prediction trade, and an exact same-payoff public-book counterfactual. Quote acceptance, cancellation, negotiation, orders, funds, wallets, and account mutations require separate explicit authority. Never manufacture volume, self-deal, coordinate counterparties, wash trade, manipulate a reference price, or use private tokens without authority.",
     "binance_copy_trading_lead_vip_fee_overlay_trigger": "The thirtieth accepted scope is exact realized positive Binance Futures Copy Trading Lead Trader VIP fee reduction only on independently existing authentic organic lead flow after owned eligibility applied tier exact current commission authentic copier volume and AUM any preexisting 25 BNB requirement exclusivity opportunity cost realized fee reconciliation and every incremental cost. The recurring existing-portfolio route requires 200 public or signal or 50 private copiers at least 60 percent of the corresponding AUM threshold and 5000000 USDT trailing 30-day copier volume; the quota-limited three-month new-trader route is excluded from stable status. Public and stable account-qualified forward floors remain zero. Do not repeat the consumed announcement or FAQ. Reopen only on a material official term or fee change or with explicit signed GET-only mainnet authority for an independently existing qualifying portfolio and exact owned organic fee reconciliation. Never manufacture copiers followers AUM volume PnL exclusivity or evidence, use testnet credentials as mainnet proof, acquire BNB merely to chase the tier, or double count the benefit.",
     "predictfun_maker_rebate_overlay_trigger": "The thirty-first accepted scope is exact positive Predict.fun maker-rebate value actually distributed on an independently justified legitimate organic maker fill in a currently badged eligible UP/DOWN crypto market while the published trial remains active, after the received USDT or shares basis and every incremental cost. Current official terms define zero maker fee and an automatic 25 percent share of the taker fee through a trial published to end September 16, 2026; the maximum nominal rebate is only 0.0025 USDT equivalent per share at price 0.5 before costs. Public and stable account-qualified forward floors remain zero. Predict.fun is separate from Binance Exchange, Binance credentials are irrelevant, Predict Points have zero admitted monetary value, and current Predict BTC/USDT point-report rules are not payoff-identical to Polymarket BTC/USD 60-second TWAP. Reopen before the trial end only for a distinct active badged market plus a new official public fill-quality source or explicit separate Predict.fun read-only paper-study authority with all chronological and cost gates frozen first; any order or funded action requires separate authority. Never create volume, self-trade, wash-trade, manipulate balances, abuse cancellation, or post non-executable orders to farm rebates or points.",
@@ -200,9 +201,9 @@
   },
   "schema_version": "accepted-edge-profitability-durability-audit-v1",
   "source_binding": {
-    "accepted_edge_count": 34,
+    "accepted_edge_count": 35,
     "registry_path": "docs/model-research/structural-edge-priority-registry-v1.json",
-    "registry_result_sha256": "8041cee138044411dc4c8357c7dc8e0e8b8a4cc5b4493f3ddc475db4aac1303f"
+    "registry_result_sha256": "d2f93c88d50905be28cefe0f215e72137c8b9bbb7f9d73741b87925691413b44"
   },
-  "updated_at_utc": "2026-09-01T11:25:51.8025579Z"
+  "updated_at_utc": "2026-09-01T11:33:08.0597268Z"
 }
