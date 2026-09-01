@@ -199,7 +199,7 @@ def test_registry_and_durability_bind_ai_arena_terminal() -> None:
         == "polymarket_AI_Arena_Overall_creation_safe_threshold_ladder_2026_09_01"
     )
     assert terminal["canonical_result_sha256"] == result["result_sha256"]
-    assert len(registry["terminal_do_not_repeat"]) == 157
+    assert len(registry["terminal_do_not_repeat"]) == 158
     assert (
         audit["source_binding"]["registry_result_sha256"] == registry["result_sha256"]
     )

@@ -195,7 +195,7 @@ def test_registry_and_durability_audit_bind_rank_terminal() -> None:
         == "polymarket_AI_Lab_second_third_rank_named_company_mutual_exclusion_2026_09_01"
     )
     assert terminal["canonical_result_sha256"] == result["result_sha256"]
-    assert len(registry["terminal_do_not_repeat"]) == 157
+    assert len(registry["terminal_do_not_repeat"]) == 158
     assert (
         audit["source_binding"]["registry_result_sha256"] == registry["result_sha256"]
     )

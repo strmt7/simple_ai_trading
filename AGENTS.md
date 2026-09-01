@@ -890,6 +890,14 @@ and verify reproducibly. Do not load upstream `EXAMPLES.md`.
     contract and consumed response, exclude every discovery value, and perform
     at most one zero-network adjudication of the retained bytes. Never refetch,
     alias, or loosen the consumed contract to recover the expected answer.
+11. For recurring fixed-NegRisk weather or scalar partitions, freeze the exact
+    deterministic series member, complete expected outcome count, and one-use
+    source request before opening an event page or search result that can expose
+    prices. If rendered prices leak first, mark that exact event permanently
+    promotion-ineligible: it may be retained for rejection and lineage, but it
+    cannot select books, authorize downstream requests, or support an edge
+    claim. Route the next distinct series member prospectively instead of
+    disguising or repairing the leak.
 
 Do not broadly read the README, historical round designs, generated SVG, or
 large CSV files. The detailed workflow and imported-tool provenance are in

@@ -8940,6 +8940,39 @@ Reopen only on a material price, fee, tick, rule, or market-architecture change.
 No network, account, credential, book, fee endpoint, order, fund, transaction,
 on-chain, or protected capture was touched.
 
+## NYC September 1 high-temperature fixed-NegRisk prefilter
+
+The exact eleven-bin NYC September 1 high-temperature event fired rank 31's
+distinct fixed-NegRisk trigger. The official rendered discovery page exposed
+all eleven displayed Buy-YES prices before the contract freeze. That mistake is
+preserved: this exact event is permanently promotion-ineligible and cannot
+select a book candidate or justify downstream access.
+
+One frozen exact Gamma GET was still retained for rejection and lineage. It
+reconciled all eleven markets. Buying every YES cost 1.0485 pUSD for a one-pUSD
+floor, so the complete-set route failed before books. Every displayed
+one-NO-to-other-YES identity was gross-positive, with a best 0.0485-pUSD gap
+from the `73 F or below` source row, but Gamma displayed prices are not
+executable output bids and the pre-freeze economic leak bars promotion.
+
+Contract/result SHA-256 values are
+`f870a6417968fa86dc3b194905a7d3d25dca59b4969fd69768290256c48e5336`
+and `c3dc478bc582ec5f60ace208fab5cb28e9d1cf593059894443d2783c12f114ac`.
+Raw-response and request-journal SHA-256 values are
+`28314d59c66cf50b81232ba85ae4017248f2ad73e498535e28b6526cfe03b9d9`
+and `201bdcb74190a36fe9f37de795bda9fc527fe502039279a9d808f44d7b5daefb`.
+Accepted edges remain 31, ranked hypotheses remain 48, terminal families become
+158, and stable current account-qualified after-all-cost edges remain zero.
+Registry and durability-audit SHA-256 values become
+`fd3948dffc72413f18f54fc966278fae617d3050f2fe6fd682c8308874e231f5`
+and `c7e4f16beee4a9bade1d359774849b22f53155db908e0901842d61e2b59db636`.
+
+Do not refetch, alias, reprice, or request books for this event. For the next
+distinct daily weather partition, freeze deterministic event selection and the
+complete expected population before any outcome-aware rendered page or search
+access. One public unauthenticated request was made; no account, credential,
+book, fee, on-chain, order, fund, transaction, or protected capture was touched.
+
 ## AI Arena Overall creation-safe threshold ladder
 
 The retained September 30 catalog exposed five AI Arena Overall score
