@@ -1,12 +1,70 @@
 # Continue Development
 
-Current canonical status after the retained September 30 fixed-NegRisk
-pairwise-NO audit: accepted edges 35, ranked hypotheses 58, terminal families 174,
+Current canonical status after the prospective September 2 NYC complete
+long-only fixed-NegRisk screen: accepted edges 35, ranked hypotheses 58,
+terminal families 176,
 and stable current account-qualified after-all-cost edges zero. Registry
 SHA-256 is
-`d035ed692935222ec415702231ff2d30c6d8f07dbfb6eea57d801199916ebba9`;
+`ba86b0e4b333407df56e81d9e1c9af3d7384622c4e625f13ac3267b4ba805881`;
 durability-audit SHA-256 is
-`3144e5eeadbef632dddc427eaf71adef1318e57ca919be68e73e8f580c0d74d0`.
+`f61327d608cc3f0d2baacf0f29623348ffdba3eee7c2ad8442bba4a7a15da19f`.
+
+## 2026-09-01 prospective NYC September 2 complete long-only basis screen
+
+The next deterministic member after the consumed September 1 NYC daily
+high-temperature event was selected before any rendered page, search result,
+Gamma response, or other price-bearing source was opened. The exact September
+2 slug, expected eleven-outcome count, complete payoff basis, side-specific
+price rules, five-share quantity, fee model, one-tick stress, and one-use request
+were frozen first.
+
+One exact public Gamma GET returned event 940515 with all eleven active,
+accepting-order fixed-NegRisk markets. The complete primitive long-only basis
+covered the all-YES complete set, all ten price-complete same-market
+`YES + NO` binary straddles, and every optimal `k`-NO cardinality frontier.
+Zero packages had strict positive metadata headroom, and zero survived current
+fees plus one adverse tick per leg.
+
+The best package was the `69°F or below` same-market straddle. Its conservative
+side-specific cost was `1.001` pUSD per share against a one-pUSD floor, for
+`-0.005` pUSD gross at five shares. After the frozen tick-and-fee stress its
+floor was `-0.01625` pUSD. The strict source gate failed, so no book or fee
+endpoint request was made.
+
+This exact event is terminal. Do not refetch, alias, reprice, request books, or
+select a sibling. Reopen only for a distinct event selected and frozen before
+prices or a material price, fee, tick, rule, adapter, or market-architecture
+change. Raw response and journal SHA-256 values are
+`2f2481f1479fd1a5a36c2fce3be374b9d692e7616014e0486044d9648709ae1c`
+and `2991b25fd601391d38aaeb1fb378cf3cf1872a23d7bfb006a8689fd4334caf75`.
+Contract and result SHA-256 values are
+`ecb4f25a9585e724078595907c4f35bc087ce10ec2045e31e2af8a804d19ec22`
+and `68232f3fa8f8ba9a6a747ce1b1c06428bbd1ad7e6b1a190b5120610b97ab9c8b`.
+No account, credential, order, fund, transaction, or protected capture was
+used.
+
+## 2026-09-01 retained fixed-NegRisk k-NO cardinality frontier
+
+The pairwise screen did not mathematically exhaust larger NO packages. For any
+`k` distinct mutually exclusive outcomes, buying every NO has a `(k - 1)`-pUSD
+floor. At fixed common quantity, sorting price-complete legs once yields the
+cheapest subset for every cardinality; sorting each leg by additive
+fee-and-one-tick unit cost yields the stressed frontier. This reduced
+2,148,007,910 possible subsets to 41 exact frontier rows without brute force.
+
+The frozen zero-network screen found zero strict metadata candidates and zero
+stressed candidates. The best metadata frontier was nine NO legs in event
+624242: cost `8.012` pUSD per share against an eight-pUSD floor, or `-0.060`
+pUSD at five shares. The best stressed frontier was eight NO legs in the same
+event and lost `0.150` pUSD. The retained prices had already been exposed by
+the earlier pairwise screen, so this result was explicitly frozen as
+hypothesis-generation evidence only and could never promote an edge.
+
+Do not brute-force the dominated subsets, refetch, reprice, request books, or
+treat this post-price result as prospective evidence. Contract and result
+SHA-256 values are
+`1443f1b6390762c25faceddb03be73b3afa85a3659d662d95ffdb5727d349df0`
+and `a1e93af849bc7ce31f9b17e1498023d36385ebcd7b53252e2e797c4a2515bd90`.
 
 ## 2026-09-01 retained fixed-NegRisk pairwise-NO audit
 

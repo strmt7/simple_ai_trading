@@ -21,6 +21,35 @@ profitable without reproducible source-bound after-cost evidence. AI may veto
 or reduce risk only; it never creates positions, selects leverage, overrides a
 safety gate, blocks Stop, or submits an order.
 
+### Latest prospective NYC September 2 long-only basis rejection
+
+Before any price-bearing source was opened, the next deterministic NYC daily
+temperature slug and its expected eleven-outcome count were frozen. One exact
+public Gamma GET reconciled event 940515. The screen covered the all-YES
+complete set, every same-market `YES + NO` straddle, and every optimal `k`-NO
+cardinality frontier. Zero packages were strictly subfloor and zero survived
+current fees plus one adverse tick per leg.
+
+The best package was the `69°F or below` same-market binary straddle. It cost
+`1.001` pUSD per share, lost `0.005` pUSD gross at five shares, and lost
+`0.01625` pUSD after stress. The strict source gate therefore stopped before
+books. Do not refetch, alias, reprice, request books, or select a sibling.
+
+The preceding retained cardinality audit proved that 2,148,007,910 possible
+`k`-NO subsets collapse to 41 exact cheapest frontiers. None passed; its best
+metadata and stressed floors were `-0.060` and `-0.150` pUSD at five shares.
+That post-price retained role is hypothesis generation only.
+
+Accepted edges remain 35, ranked hypotheses remain 58, terminal families are
+176, and stable current account-qualified after-all-cost edges remain zero.
+Registry and durability-audit SHA-256 values are
+`ba86b0e4b333407df56e81d9e1c9af3d7384622c4e625f13ac3267b4ba805881`
+and `f61327d608cc3f0d2baacf0f29623348ffdba3eee7c2ad8442bba4a7a15da19f`.
+The prospective result SHA-256 is
+`68232f3fa8f8ba9a6a747ce1b1c06428bbd1ad7e6b1a190b5120610b97ab9c8b`.
+No book, fee endpoint, account, credential, order, fund, transaction, or
+protected capture was used.
+
 ### Latest retained fixed-NegRisk pairwise-NO rejection
 
 The hash-bound retained September 30 catalog contains three complete fixed-
