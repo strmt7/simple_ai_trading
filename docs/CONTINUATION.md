@@ -5,6 +5,48 @@ Development belongs only on `main`; do not create another development branch.
 
 ## Latest Edge R&D Checkpoint
 
+- The current public Rewards surface exposed a distinct September valuation
+  allocation family. A rules-first single-market choice selected Anduril at or
+  above 122.5B because it was unconsumed, near-balanced, and displayed a 50
+  pUSD/day pool with a 20-share minimum and 4-cent band. Every displayed value,
+  competition dash, and earnings value remained discovery-only.
+
+  One prospective exact-source contract then reconciled the exact market and
+  sponsored condition: active binary YES/NO tokens, zero maker fee, 5-share
+  executable order minimum, 20-share reward minimum, 4.5-cent exact reward
+  band, 50 pUSD/day, and 30.7062 reward days through the exact Gamma horizon.
+  `market_competitiveness` was 0.842025, but no primary source maps it to an
+  account-independent owned share; the public reward payout floor remained
+  zero.
+
+  A separately frozen one-use two-token book returned in 233 ms with zero
+  cross-token timestamp skew. Joining the retained best bids 0.47 YES and 0.50
+  NO cost 0.97 per complete set, producing 0.60 pUSD both-fill gross on 20
+  shares and 10 pUSD maximum orphan settlement loss. One-tick improvement cost
+  0.99, remained nonmarketable, and left 0.20 pUSD both-fill gross with 10.20
+  pUSD orphan loss. Even though the impossible 100% remaining-pool bound was
+  1,535.26 pUSD, the official snapshot was 79,200 ms old against the frozen
+  10,000 ms gate. Current official API docs define this field as the order-book
+  snapshot timestamp, so the age is a real freshness failure rather than a
+  harmless last-change time.
+
+  This exact market is terminal: do not retry, refresh, reprice, or select a
+  September valuation sibling. No credential, account, order, cancellation,
+  fund, on-chain, or protected-capture action occurred. The source contract
+  SHA-256 is
+  `1db484e6aa584f9d6609f8eab98bc51104bd1d6aeb3dfd17e46c823e6755c84e`,
+  source result SHA-256 is
+  `5315ab57f4a40356f5cb80aa226c77ec975fda182e0eadeb46c4c25c19c82d51`,
+  book contract SHA-256 is
+  `3d917d1eb6458a0632d4ce3e22279d59582c40f016a3bfc735f153bfec29fa9b`,
+  and book result SHA-256 is
+  `e840ceeed3a9bf6dc82a63b54e0d5fadcf737cafebd34bce1335aa5af3b1e2d8`.
+  Accepted edges remain 29, ranked hypotheses remain 47, and terminal families
+  become 128. Registry SHA-256 is
+  `8953013ab62dd510724c702ade0480234c95e6139f3ff57054e4cc12cbd352a3`;
+  durability-audit SHA-256 is
+  `14f3fdfcabaccf344e6ac7573412425ccecd5132e7e84428a1a40bd7c564bf11`.
+
 - A newly listed Qwen Flash (3.9+) event satisfied rank 31's distinct exact
   two-deadline trigger. Its common rules prove that `NO(released by October 31)
   + YES(released by December 31)` has a one-pUSD terminal floor: release by the

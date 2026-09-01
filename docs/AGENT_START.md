@@ -23,6 +23,27 @@ safety gate, blocks Stop, or submits an order.
 
 ### Latest efficient structural screen
 
+A distinct current Rewards-page lead advanced rank 17 without sampling its
+siblings: Anduril valuation at or above 122.5B by September 30. One frozen exact
+Gamma plus sponsored-condition reconciliation proved an active binary market,
+zero maker fee, 20-share reward minimum, 4.5-cent scoring band, 50 pUSD/day,
+and 30.7062 remaining reward days. Its exact one-use two-token book showed a
+0.97 combined best-bid join, 0.60 pUSD both-fill gross, and 10 pUSD maximum
+one-leg settlement loss for 20 shares. The configured remaining pool was
+1,535.26 pUSD under an intentionally impossible 100% owned-share bound.
+
+This is a serious paired-maker lead but not an accepted or profitable edge.
+The official book snapshot was 79,200 ms old against the frozen 10,000 ms gate,
+and public evidence still proves a zero owned reward-share and payout floor.
+Official docs define the book field as the snapshot timestamp, so its age cannot
+be waived as a last-change time. Do not retry, refresh, or select a September
+valuation sibling. No credential, account, order, cancellation, fund, on-chain,
+or protected-capture action occurred. Accepted edges remain 29, ranked
+hypotheses remain 47, and terminal families become 128. Registry SHA-256 is
+`8953013ab62dd510724c702ade0480234c95e6139f3ff57054e4cc12cbd352a3`;
+durability-audit SHA-256 is
+`14f3fdfcabaccf344e6ac7573412425ccecd5132e7e84428a1a40bd7c564bf11`.
+
 A new Polymarket event card appeared to offer a direction-independent deadline
 ladder: buy `NO` on Qwen Flash (3.9+) by October 31 and `YES` by December 31.
 The exact common rule gives that package a one-pUSD floor in every release-time
