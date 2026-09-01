@@ -4209,3 +4209,26 @@ Accepted edges remain 31, ranked hypotheses remain 48, terminal families become
 Registry and durability-audit SHA-256 values are
 `57d12349bb20e5ed5c58e1bed6db6dbfccbe3ea6c11868b56f16dc056bf0d480`
 and `ec2c84a4fd19dded954e5a632c9b58dc7b3b0ceb3c2f71617c41aac756448894`.
+
+## Latest exact-payoff checkpoint (2026-09-01)
+
+The frozen September 30 ET two-minute endpoint band returned 100 Gamma events
+with a cursor. The population is incomplete and terminal without narrowing or
+pagination; its three visible fixed NegRisk events all had all-YES sums above
+one pUSD, best 1.0085.
+
+A zero-network retained-input audit then tested cumulative Gemini Pro September
+30 NO plus all 30 exact-date release YES legs. The deadline event began
+6,654,892 seconds earlier, so the floor is not source-proved. Even under the
+optimistic rejection-only floor, exact side-specific cost was 1.264 pUSD per
+share: -1.320 pUSD at five shares before ticks and -1.64295 pUSD after one
+adverse tick per leg plus exact fees. Do not refetch, omit legs, repair the
+cursor, or promote this discovery-leaked population.
+
+Projection adjudication SHA-256 is
+`233475bd3a302ba7a905b5cd8eea4d53939513aea8dbdc9fcb5ddefcc8f053ce`.
+Accepted edges remain 31, ranked hypotheses remain 48, terminal families become
+153, and stable current account-qualified after-all-cost edges remain zero.
+Registry and durability-audit SHA-256 values are
+`5a5040f33e7a14803dd066e565626279c1e3d9e6bfc4c39803237b5010822abf`
+and `6b264230457ad0c159d9632c0f395ea7c326b7cd1c94f4d4048dbad13ce2749e`.

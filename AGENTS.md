@@ -184,6 +184,14 @@ override prose.
   when the package already costs at least its floor under the optimistic subset
   assumption. An unproved optimistic implication may reject research spend but
   may never advance a candidate, authorize depth, or support an edge claim.
+- A cumulative-deadline market and an exact-date partition are not projections
+  of the same event when their creation instants differ. The earlier market's
+  exclusive prehistory can make cumulative YES true while every post-creation
+  exact-date row pays zero. Source-prove that no qualifying event occurred in
+  that gap before assigning a floor. For rejection only, price the optimistic
+  package with every exact partition leg plus the cumulative complement; never
+  subtract a stale headline `No release` probability from an all-YES sum or mix
+  rendered snapshots. Charge one adverse tick and the exact fee on every leg.
 - An issuer's at-par mint or redemption right proves only the payoff identity.
   Before any venue refresh, reuse retained finite-size spreads and reject unless
   the executable gap exceeds account fees plus transfer, redemption, delay,
