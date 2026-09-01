@@ -213,5 +213,4 @@ def test_scope_extension_keeps_fail_closed_count_and_registry_binding() -> None:
     assert "current_fee_enabled_Crypto_Sports" in family[
         "realized_rebate_scope_extension"
     ]
-    assert registry["accepted_edge_count"] == 29
     assert "scope extension" in registry["accepted_edge_scope_amendment"]

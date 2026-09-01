@@ -1,5 +1,13 @@
 # Continue Development
 
+Current canonical status after the Binance Copy Trading Lead Trader VIP fee
+overlay checkpoint: accepted edges 30, ranked hypotheses 47, terminal families
+142, and stable current account-qualified after-all-cost edges zero. Registry
+SHA-256 is
+`5689c8bb60c5a36d7832a4a74cb723e10de94cf96a8f90535e7b15256e50cb2f`;
+durability-audit SHA-256 is
+`082b02117a9c15d7f1e70ea84e344791af7f2a638b0755760a3ebcd1de9ef9ab`.
+
 ## 2026-09-01 Polymarket UAE-to-any-Arab creation-gap rejection
 
 Rendered discovery found an apparently direction-independent five-cent cover:
@@ -8493,3 +8501,70 @@ and durability-audit SHA-256 becomes
 
 No account, credential, order, fund, transaction, or protected capture was
 touched.
+
+## Binance Copy Trading Lead Trader VIP fee overlay
+
+A bounded official Binance announcement-catalog capture exposed a previously
+unregistered, market-direction-independent cost mechanism: eligible Futures Copy
+Trading Lead Traders can receive a higher VIP fee tier. The catalog itself is
+category-specific and not a complete current Binance feed; its one retained page
+contained no row newer than the retained September 1 SHEIN discovery cutoff. It
+was used only to discover the historical program article, never to claim that no
+other Binance category has changed.
+
+Two separately frozen one-use public CMS GETs retained the exact announcement and
+its linked program FAQ. The announcement response was 33,055 bytes at SHA-256
+`7d1beba2d82f072bfd56c4e55db344b10b5242d0bce2d1209fb823b0a2419327`;
+the FAQ response was 30,162 bytes at SHA-256
+`5b6ef45a26fc304d4c3e86aacbdabc28350cdc1c3f760c6e7e068b88b39a5c8e`.
+The FAQ was published July 16 and updated August 18. Existing lead portfolios
+need at least 200 public or signal copiers, or 50 private copiers, at least 60%
+of the corresponding 500,000, 1,000,000, or 3,000,000 USDT AUM threshold, and
+at least 5,000,000 USDT of authentic copier-generated Futures volume over the
+prior 30 days. Exclusive tiers receive VIP4, VIP5, or VIP6 or a two-tier upgrade;
+non-exclusive portfolios with more than 60% of assets on Binance receive VIP3,
+VIP4, or VIP5 or a one-tier upgrade. VIP5 and VIP6 require at least 25 BNB.
+Reviews occur during the first week of each month, with the first round starting
+August 3; the current FAQ publishes no program end.
+
+The retained August 27 USD-M USDT fee table supplies sensitivity rather than a
+forward guarantee. Adjacent VIP3-to-VIP4, VIP4-to-VIP5, and VIP5-to-VIP6 examples
+save 20/20, 20/30, and 20/20 USD per million USDT of maker/taker notional before
+the BNB discount, or 18/18, 18/27, and 18/18 USD after that discount. A VIP1-to-
+VIP6 example saves 120 maker or 250 taker USD per million before BNB, and 108 or
+225 USD after it. At the program's five-million-USDT volume floor, even the
+smallest retained positive example is 90 USD, but this is diagnostic only.
+Owned eligibility, manual approval, applied tier, current commission, authentic
+external copier flow, any preexisting 25 BNB, exclusivity opportunity cost, and
+realized fees remain unproved.
+
+The scoped exact-realized fee reduction is accepted as the thirtieth structural
+edge only on independently existing legitimate organic BTC, ETH, or SOL Futures
+lead flow after owned reconciliation and every incremental cost. It does not make
+the underlying strategy profitable and remains non-deployment-ready with a zero
+public and account-qualified forward floor. The quota-limited three-month new-top-
+trader/KOL experience is excluded from the stable edge. Never manufacture copiers,
+followers, AUM, volume, PnL, exclusivity, or evidence; never acquire BNB or abandon
+another venue merely to chase a tier; and never double-count the reduction with
+BNB discount, profit share, referral, rebate, or another promotion.
+
+Reopen only for a material official eligibility, tier, fee, review, duration,
+exclusivity, or product-scope change, or with both designated mainnet credentials,
+explicit signed GET-only authority, an independently existing qualifying lead
+portfolio, and an exact owned organic fee-reconciliation question. Testnet keys
+are not mainnet eligibility evidence and were not used. Applications, manual
+review, Binance contact, exclusivity agreements, evidence disclosure, BNB
+acquisition, portfolio creation, trading, transfers, and account changes each
+require separate authority.
+
+Canonical adjudication SHA-256 is
+`542980565432c5160cf0970b3a7e909ea2d028cbc9a0917ebbf7b21fded3f6c5`.
+Accepted edges become 30, ranked hypotheses remain 47, terminal families remain
+142, and stable current account-qualified after-all-cost edges remain zero.
+Registry SHA-256 becomes
+`5689c8bb60c5a36d7832a4a74cb723e10de94cf96a8f90535e7b15256e50cb2f`.
+Durability-audit SHA-256 becomes
+`082b02117a9c15d7f1e70ea84e344791af7f2a638b0755760a3ebcd1de9ef9ab`.
+
+No account, credential, order, follower, position, fund, transaction, or
+protected capture was touched.

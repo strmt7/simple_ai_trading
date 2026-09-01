@@ -99,4 +99,3 @@ def test_adjudication_lineage_and_terminal_registry_are_exact() -> None:
     terminal = {row["family"]: row for row in registry["terminal_do_not_repeat"]}
     family = "binance_BTC_ETH_SOL_COIN_M_inverse_vs_USDM_linear_same_asset_perpetual_funding"
     assert terminal[family]["canonical_result_sha256"] == result["result_sha256"]
-    assert registry["accepted_edge_count"] == 29

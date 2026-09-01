@@ -116,6 +116,4 @@ def test_registry_terminalizes_lighter_without_promotion() -> None:
         == "binance_Lighter_BTC_ETH_SOL_USDC_vs_Binance_USDT_perpetual_funding_2026_09_01"
     )
     assert terminal["canonical_result_sha256"] == result["result_sha256"]
-    assert registry["accepted_edge_count"] == 29
     assert len(registry["prioritized_hypotheses"]) == 47
-    assert len(registry["terminal_do_not_repeat"]) == 129

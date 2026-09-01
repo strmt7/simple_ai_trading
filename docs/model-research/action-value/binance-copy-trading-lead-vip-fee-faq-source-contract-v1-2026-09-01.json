@@ -1,0 +1,71 @@
+{
+  "schema_version": "public-source-capture-contract-v1",
+  "frozen_at_utc": "2026-09-01T06:10:01.4084081Z",
+  "contract_path": "docs/model-research/action-value/binance-copy-trading-lead-vip-fee-faq-source-contract-v1-2026-09-01.json",
+  "trigger": {
+    "registry_route": "rank_5_distinct_organic_fee_overlay_source_completion",
+    "announcement_contract_path": "docs/model-research/action-value/binance-copy-trading-lead-vip-fee-overlay-source-contract-v1-2026-09-01.json",
+    "announcement_contract_sha256": "15c99f4935a0eee99f8eae144a05c162a228126fa6410178347299732cd06166",
+    "announcement_raw_sha256": "7d1beba2d82f072bfd56c4e55db344b10b5242d0bce2d1209fb823b0a2419327",
+    "faq_article_code": "85a90634d4fe44fd91a3a32ef50fded0",
+    "outcomes_viewed_before_freeze": false,
+    "discovery_values_are_economic_inputs": false
+  },
+  "question": "What exact eligibility, exclusivity, tier, review, duration, and removal terms govern Binance's Lead Trader VIP fee privilege, and do they bind a recurring public gross fee-saving floor?",
+  "request_name": "binance-copy-trading-lead-vip-fee-program-faq",
+  "request": {
+    "method": "GET",
+    "url": "https://www.binance.com/bapi/composite/v1/public/cms/article/detail/query?articleCode=85a90634d4fe44fd91a3a32ef50fded0",
+    "count": 1,
+    "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "endpoint_classification": {
+    "operation": "download the exact public official Binance FAQ linked by the retained program announcement",
+    "security": "public unauthenticated read-only CMS GET with no account, credential, order, or mutation semantics",
+    "source_contract": "The FAQ is the announcement-designated authority for the program's exact conditions; absent terms remain unproved."
+  },
+  "response_byte_ceiling": 500000,
+  "required_utf8_phrases": [
+    "Lead Trader",
+    "VIP",
+    "eligible",
+    "fee"
+  ],
+  "decision": {
+    "source_gate_only": "Extract exact tier mapping, qualification, exclusivity, review, duration, and removal semantics without assuming owned eligibility.",
+    "accepted_edge": false,
+    "profitability_proved": false,
+    "conditional_next_step": "Admit only an account-gated gross fee overlay on independently justified organic lead trades if the public terms define a current positive tier improvement; require explicit signed read-only authority for owned eligibility and realized commission evidence before any current after-cost claim."
+  },
+  "outputs": {
+    "raw_path": "data/binance-copy-trading-lead-vip-fee-overlay-v1/raw/02-program-faq.raw.json",
+    "journal_path": "data/binance-copy-trading-lead-vip-fee-overlay-v1/raw/00-faq-request-journal.jsonl",
+    "result_path": "docs/model-research/action-value/binance-copy-trading-lead-vip-fee-faq-source-result-v1-2026-09-01.json"
+  },
+  "authority": {
+    "account_requests": 0,
+    "credentials_used": false,
+    "funds_used": false,
+    "orders_or_transactions": 0,
+    "protected_capture_touched": false,
+    "public_unauthenticated_read_only_requests": 1,
+    "signed_requests": 0,
+    "trading_authority": false
+  },
+  "implementations": [
+    {
+      "path": "tools/capture_public_source_contract.py",
+      "sha256": "d566a5a379c659c3da144d5e28449ebac9c01493bd39646f9cc3a6e697a83566"
+    },
+    {
+      "path": "tools/screen_polymarket_exact_two_leg_package.py",
+      "sha256": "374fcc3c3485c466b4929a91256450bdc7db70f93ef4c6bda627e05fe8938327"
+    },
+    {
+      "path": "tools/adjudicate_polymarket_exact_mlb_monotone_prefilter.py",
+      "sha256": "958a44d78029b9a1eb69a3771ce18e53ac1ed3c7bc161c8e4318beedce2cf99f"
+    }
+  ],
+  "retry_policy": "This exact FAQ article-code GET is one-use. Preserve any HTTP error or missing-term response and do not retry an alias. No account, order, follower, position, price, funding, fee endpoint, or book request is authorized by a passing source gate.",
+  "contract_sha256": "7d31146c29618fbad179702790162118328369e6ce6b835746dedcb3466de2d0"
+}

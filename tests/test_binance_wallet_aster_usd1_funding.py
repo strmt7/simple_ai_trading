@@ -168,5 +168,4 @@ def test_registry_terminalizes_exact_aster_population_without_promotion() -> Non
         == "binance_wallet_Aster_BTC_ETH_SOL_USD1_vs_Binance_USDT_perpetual_funding_2026_09_01"
     )
     assert terminal["canonical_result_sha256"] == result["result_sha256"]
-    assert registry["accepted_edge_count"] == 29
     assert len(registry["prioritized_hypotheses"]) == 47

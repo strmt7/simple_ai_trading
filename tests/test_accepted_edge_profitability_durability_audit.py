@@ -38,13 +38,13 @@ def test_profitability_durability_audit_is_source_bound_and_exhaustive() -> None
     assert (
         audit["source_binding"]["accepted_edge_count"]
         == registry["accepted_edge_count"]
-        == 29
+        == 30
     )
 
     groups = audit["classification"]
-    assert sum(group["count"] for group in groups) == 29
+    assert sum(group["count"] for group in groups) == 30
     ordinals = [ordinal for group in groups for ordinal in group["edge_ordinals"]]
-    assert sorted(ordinals) == list(range(1, 30))
+    assert sorted(ordinals) == list(range(1, 31))
     assert len(ordinals) == len(set(ordinals))
 
     decision = audit["decision"]
@@ -53,7 +53,7 @@ def test_profitability_durability_audit_is_source_bound_and_exhaustive() -> None
         == 1
     )
     assert decision["stable_current_account_qualified_after_all_cost_edge_count"] == 0
-    assert decision["accepted_scope_is_not_deployment_ready_count"] == 29
+    assert decision["accepted_scope_is_not_deployment_ready_count"] == 30
     assert (
         decision[
             "standalone_incremental_cash_without_independent_trade_borrow_or_external_user_count"
