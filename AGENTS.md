@@ -505,13 +505,18 @@ override prose.
   pools, examples, and caps are not expected value. Credit only an exact owned
   reward after current eligibility, allocation, receipt, fill quality, and
   every incremental cost are reconciled.
-- Polymarket US first-deposit credit is one-time and account-gated. Never create
-  duplicate, synthetic, related, or misrepresented participant or ISV
-  eligibility, and never onboard or deposit solely to chase the credit. Credit
-  only exact owned usable or withdrawable value after independently intended
-  onboarding and deposit plus custody, delay, tax, withdrawal, opportunity, and
-  every other cost. Any account, deposit, fund, or state change requires
-  separate explicit authority.
+- Polymarket US promotional credit is trading collateral, not cash, and its
+  face amount remains non-withdrawable. Do not accept it as a structural edge:
+  only resulting trading proceeds may possibly become withdrawal-eligible, so
+  positive value requires a favorable trading outcome unless an expressly
+  permitted state-complete direction-independent conversion is source-proved.
+  Public sources conflict on campaign eligibility, minimum deposit, and whether
+  incentive funds themselves may become withdrawable. Never create duplicate,
+  synthetic, related, or misrepresented eligibility; onboard, deposit, trade,
+  hedge, or liquidate to evade program controls; or ignore reversal authority
+  for suspected abuse, self-dealing, coordinated activity, or inconsistent use.
+  Any account, deposit, order, fund, or state change requires separate explicit
+  authority.
 - Polymarket Gamma `outcomePrices` can behave like midpoint diagnostics while
   the same market exposes a materially different `bestAsk`. Never let
   `outcomePrices` alone authorize a CLOB request. For a YES leg, require the

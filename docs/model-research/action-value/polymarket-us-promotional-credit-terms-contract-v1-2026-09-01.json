@@ -1,0 +1,62 @@
+{
+  "authority": {
+    "account_requests": 0,
+    "credentials_used": false,
+    "funds_used": false,
+    "orders_or_transactions": 0,
+    "protected_capture_touched": false,
+    "public_unauthenticated_read_only_requests": 1,
+    "signed_requests": 0,
+    "trading_authority": false
+  },
+  "contract_path": "docs/model-research/action-value/polymarket-us-promotional-credit-terms-contract-v1-2026-09-01.json",
+  "contract_sha256": "9f237e7b0092d60553364c396d20822d2f7fe805535d451c4114a38c94839c92",
+  "decision": {
+    "accepted_edge_count_change": "No new edge count. This source may refine, downgrade, or terminalize accepted edge 34.",
+    "adjudication_rule": "A bonus-conversion candidate can advance only if the source permits the exact use, defines credit consumption and resulting proceeds, and does not prohibit hedging, offsetting positions, cash-equivalent conversion, or the contemplated activity. Missing, discretionary, abuse, forfeiture, expiration, KYC, deposit, withdrawal, or account-mixing branches reject a public guaranteed-profit claim.",
+    "deployment_ready": false,
+    "profitability_proved": false,
+    "stable_current_edge_proved": false
+  },
+  "frozen_at_utc": "2026-09-01T10:53:00Z",
+  "implementations": [
+    {
+      "path": "tools/capture_public_source_contract.py",
+      "sha256": "ba0e76bd6643eedc072cc1fcff2aa363c1dc14a5b8e14956e874c7843637b376"
+    }
+  ],
+  "limitations": [
+    "The prior source proves only that promo credits are non-withdrawable trading collateral and that resulting proceeds may become withdrawable after complete use and settlement or liquidation.",
+    "No hedge, complete-set, free-bet-conversion, expiration, eligibility, account, or withdrawal semantics are assumed.",
+    "An illustrative algebraic hedge is not permitted activity, executable economics, or profit until exact terms, identical payoffs, fees, whole-contract rounding, simultaneous fill, and every state are bound.",
+    "No activity may be manufactured or structured to evade program rules, market integrity controls, or eligibility restrictions.",
+    "No account, onboarding, deposit, trade, order, fund movement, or state change is authorized."
+  ],
+  "outputs": {
+    "journal_path": "data/polymarket-us-promotional-credit-terms-v1/request-journal.jsonl",
+    "raw_path": "data/polymarket-us-promotional-credit-terms-v1/raw/user-programs.md",
+    "result_path": "docs/model-research/action-value/polymarket-us-promotional-credit-terms-source-result-v1-2026-09-01.json"
+  },
+  "question": "Do current official Polymarket US user-incentive terms permit and fully define a lawful direction-independent conversion of first-deposit promotional trading credit into withdrawable proceeds?",
+  "request": {
+    "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "count": 1,
+    "method": "GET",
+    "name": "polymarket-us-promotional-credit-full-terms",
+    "url": "https://docs.polymarket.us/incentives/user-programs.md"
+  },
+  "request_name": "polymarket-us-promotional-credit-full-terms",
+  "required_utf8_phrases": [
+    "User Incentive Programs"
+  ],
+  "response_byte_ceiling": 1000000,
+  "retry_policy": "This exact linked official Markdown GET is one-use. Preserve any HTTP, empty-response, phrase, or schema failure and do not retry an HTML alias. Adjudicate retained bytes once without account or market-data access. Reopen only for a material official promotional-credit eligibility, use, expiration, hedging, forfeiture, conversion, withdrawal, or payment change.",
+  "schema_version": "public-source-capture-contract-v1",
+  "trigger": {
+    "economic_content_viewed_before_freeze": false,
+    "prior_source_path": "docs/model-research/action-value/polymarket-us-promotional-credit-usability-source-result-v1-2026-09-01.json",
+    "prior_source_result_sha256": "0e127bf1c2abc044ebc5e26815e331ed840e9440026a79f33b1ec45075e92106",
+    "registry_rank": 51,
+    "retry_trigger_satisfied_by": "the_frozen_usability_source_links_full_program_terms_after_proving_trading_collateral_and_nonwithdrawability"
+  }
+}
