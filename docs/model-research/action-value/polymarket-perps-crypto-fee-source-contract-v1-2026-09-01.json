@@ -1,0 +1,60 @@
+{
+  "schema_version": "polymarket-perps-crypto-fee-source-contract-v1",
+  "status": "frozen_before_one_public_unauthenticated_fee_page_get",
+  "frozen_at_utc": "2026-09-01T00:00:36.6603128Z",
+  "contract_path": "docs/model-research/action-value/polymarket-perps-crypto-fee-source-contract-v1-2026-09-01.json",
+  "trigger": {
+    "registry_rank": 19,
+    "mechanism": "conditional_polymarket_perps_OI_reward_and_funding_hedged_by_binance_spot",
+    "prior_missing_evidence": "exact Polymarket crypto Perps account fees",
+    "new_primary_index_path": "data/polymarket-official-docs-mechanism-inventory-v1/raw/llms.txt",
+    "new_primary_index_sha256": "68256fa9849e72626806cbc7373f726421fd6d62dddecc0ae3a8009595bd2b8d",
+    "new_primary_index_description": "Tiered maker and taker trading fees for Polymarket Perps",
+    "maximum_total_all_in_friction_budget_bips": "25.79208767123287671232876711"
+  },
+  "question": "Does the newly indexed official Polymarket Perps fee page publish an exact crypto perpetual maker and taker fee schedule capable of materially closing rank 19's retained 25.79208767123287671232876711-bip all-in friction budget?",
+  "request_name": "exact-polymarket-perps-crypto-fee-source",
+  "request": {
+    "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "count": 1,
+    "method": "GET",
+    "url": "https://docs.polymarket.com/perps/learn-about-trading/fees.md"
+  },
+  "response_byte_ceiling": 100000,
+  "required_utf8_phrases": [
+    "# Fees",
+    "Maker",
+    "Taker",
+    "Polymarket Perps"
+  ],
+  "decision": {
+    "discovery_values_are_economic_inputs": false,
+    "source_gate_only": "This capture only retains the exact primary terms. It cannot accept an edge or authorize books accounts credentials orders or funds.",
+    "next_if_present": "Perform one zero-network exact fee and retained-carry budget adjudication without refreshing funding or books.",
+    "next_if_absent_or_ambiguous": "Preserve the consumed response and keep rank 19 rejected without aliases retries or inferred crypto fees.",
+    "profitability_proved": false
+  },
+  "outputs": {
+    "raw_path": "data/polymarket-perps-crypto-fee-source-v1/raw/fees.md",
+    "journal_path": "data/polymarket-perps-crypto-fee-source-v1/request-journal.jsonl",
+    "result_path": "docs/model-research/action-value/polymarket-perps-crypto-fee-source-capture-v1-2026-09-01.json"
+  },
+  "authority": {
+    "account_requests": 0,
+    "credentials_used": false,
+    "funds_used": false,
+    "orders_or_transactions": 0,
+    "protected_capture_touched": false,
+    "public_unauthenticated_read_only_requests": 1,
+    "signed_requests": 0,
+    "trading_authority": false
+  },
+  "implementations": [
+    {
+      "path": "tools/capture_public_source_contract.py",
+      "sha256": "d566a5a379c659c3da144d5e28449ebac9c01493bd39646f9cc3a6e697a83566"
+    }
+  ],
+  "retry_policy": "This exact GET is one-use. Preserve every response or validation failure and never retry an alias locale query parameter or rendered route. Reopen only on a later hash-distinct official fee contract or exact authenticated crypto-perps fee evidence under separate authority.",
+  "contract_sha256": "d262e39f404530dbc5c7451fa930f3c9a6180f32ba334e842c5fa467fa2565d1"
+}

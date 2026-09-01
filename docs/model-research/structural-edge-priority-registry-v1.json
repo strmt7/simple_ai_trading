@@ -1329,19 +1329,31 @@
         {
           "path": "docs/model-research/action-value/polymarket-perps-binance-spot-oi-carry-v1-2026-08-26.json",
           "result_sha256": "0d89a4fee61cf51c2f5f8c2491c9d8c3cc4a5e08046206dbe2ba20f7ba3ea934"
+        },
+        {
+          "path": "docs/model-research/action-value/polymarket-perps-crypto-fee-source-contract-v1-2026-09-01.json",
+          "result_sha256": "d262e39f404530dbc5c7451fa930f3c9a6180f32ba334e842c5fa467fa2565d1"
+        },
+        {
+          "path": "docs/model-research/action-value/polymarket-perps-crypto-fee-source-capture-v1-2026-09-01.json",
+          "result_sha256": "864efb46a06dda7a7af76e1dda766fe25870f80c78a1bfb322c83033acee7529"
+        },
+        {
+          "path": "docs/model-research/action-value/polymarket-perps-binance-spot-public-fee-budget-adjudication-v1-2026-09-01.json",
+          "result_sha256": "69fc78d24c28106e7c8f96a6bca32e92f4591582698261398bcdb77a6fc2fa78"
         }
       ],
-      "current_status": "BTC_short_Polymarket_Perps_long_Binance_spot_was_positive_before_one_time_friction_in_all_three_fixed_ten_day_roles_and_every_direction_and_volatility_slice_with_88_3333_percent_hourly_source_coverage_but_only_25_7920876712_bips_remained_after_conditional_6_percent_OI_reward_and_two_leg_5_percent_annual_capital_hurdles_so_the_frozen_50_bips_round_trip_and_basis_gate_rejected_it_the_related_perp_perp_attempt_stopped_on_rate_limit_and_its_BTC_diagnostic_failed_every_role",
+      "current_status": "BTC_short_Polymarket_Perps_long_Binance_spot_was_positive_before_one_time_friction_in_all_three_fixed_ten_day_roles_and_every_direction_and_volatility_slice_with_88_3333_percent_hourly_source_coverage_but_only_25_7920876712_bips_remained_after_conditional_6_percent_OI_reward_and_two_leg_5_percent_annual_capital_hurdles_the_newly_indexed_exact_official_crypto_Perps_fee_page_now_binds_the_zero_volume_maker_rate_at_1_25_bips_per_fill_and_2_50_bips_round_trip_leaving_23_2920876712_bips_before_every_Binance_basis_conversion_transfer_custody_and_failure_cost_the_retained_standard_Binance_maker_sensitivity_leaves_only_3_2920876712_bips_while_the_retained_conditional_zero_maker_quote_route_leaves_23_2920876712_bips_but_neither_is_exact_current_account_evidence_the_conditional_reward_account_tier_same_unit_route_and_all_external_costs_remain_unproved_so_zero_books_accounts_credentials_orders_or_funds_are_authorized",
       "market_direction_forecast_required": false,
       "mechanism": "conditional_polymarket_perps_OI_reward_and_funding_hedged_by_binance_spot",
-      "next_action": "do_not_refresh_public_history_or_books_when_exact_authenticated_account_eligibility_and_fee_evidence_exists_first_prove_a_total_all_in_friction_ceiling_below_25_7920876712_bips_then_freeze_a_separate_synchronized_execution_and_basis_study",
+      "next_action": "do_not_refresh_public_history_or_books_only_after_explicit_read_only_authority_and_exact_authenticated_Polymarket_reward_eligibility_plus_exact_Polymarket_and_Binance_account_fee_tiers_first_leave_a_positive_residual_source_bind_the_exact_same_unit_quote_route_and_every_external_cost_then_freeze_one_separate_synchronized_finite_size_basis_and_depth_study",
       "priority_rank": 19,
       "prohibited_shortcuts": [
         "calling_the_documented_6_percent_reward_realized_without_authenticated_account_rows",
         "using_leverage_to_turn_sub_hurdle_carry_into_edge",
         "ignoring_the_1000000_USD_daily_average_gross_OI_threshold",
         "treating_missing_funding_hours_as_persistent_payments",
-        "assuming_the_public_equity_only_fee_response_proves_crypto_Perps_fees",
+        "treating_the_public_crypto_Perps_fee_schedule_or_temporary_beta_exception_as_exact_repository_account_tier_or_fill_role",
         "using_non_atomic_cross_venue_quotes_as_synchronized_fills"
       ],
       "retry_trigger": "exact_authenticated_reward_eligibility_and_total_fee_evidence_that_leaves_a_positive_budget_below_25_7920876712_bips_before_any_book_request",
@@ -3260,7 +3272,7 @@
       "venue_scope": "Binance_BTC_ETH_SOL_European_options_and_exact_matching_USDT_perpetuals"
     }
   ],
-  "result_sha256": "400313770bcd2cbf542e97f5a1d1fcf59b66dbf76121ecbd784e107bed4767c8",
+  "result_sha256": "d4a134ac80079622c76e0f39bcf30dba4a5d0ae539635dde93f5f802b3005cbb",
   "schema_version": "structural-edge-priority-registry-v1",
   "terminal_do_not_repeat": [
     {
@@ -3890,6 +3902,6 @@
       "reason": "the_distinct_Binance_Wallet_routed_Aster_population_proved_active_BTCUSD1_ETHUSD1_and_SOLUSD1_contracts_then_three_prospectively_frozen_public_funding_histories_aligned_209_eight_hour_rows_per_asset_with_orientation_selected_from_training_only_all_BTC_ETH_and_SOL_roles_failed_the_frozen_20_bip_round_trip_10_percent_annual_two_leg_capital_and_23_954486_bip_USD1_USDT_stress_hurdles_and_validation_or_test_gross_was_negative_for_BTC_and_ETH_while_SOL_test_gross_was_negative_zero_basis_book_account_credential_order_or_fund_requests_were_justified_do_not_repeat_resample_or_change_orientation_roles_or_hurdles_reopen_only_on_a_material_Aster_or_Binance_funding_fee_basis_USD1_conversion_custody_capital_or_execution_architecture_change"
     }
   ],
-  "updated_at_utc": "2026-08-31T23:29:00Z",
+  "updated_at_utc": "2026-09-01T00:01:30Z",
   "usage_rule": "advance_the_highest_ranked_hypothesis_whose_retry_trigger_is_satisfied_otherwise_do_not_repeat_a_blocked_or_terminal_screen"
 }

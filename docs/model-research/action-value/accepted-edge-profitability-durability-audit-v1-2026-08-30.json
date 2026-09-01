@@ -149,7 +149,7 @@
       "why_not_stable_deployable": "Current rate remains conflict-qualified rather than proven, the evidence is from public wallets rather than the owned account, every external friction and best alternative is not bound, and future persistence is not guaranteed."
     }
   },
-  "result_sha256": "13910f293d085c63f8ac6fb001e06b26c23dae7481af8852af1f1e7165fcc73f",
+  "result_sha256": "a520e2e0a41bb053cfeefe6752acecfe95d471c21fffe02b9512c06c46be7e96",
   "routing": {
     "do_not_count_as_standalone_profit": [
       "advertised_or_public_rate_without_realized_cash",
@@ -162,10 +162,10 @@
     "binance_next_literal_trigger": "Do not repeat or book-capture the terminal 2026 GLW, GOOGL, QCOM, or PYPL dividend-timing episodes. QCOM and PYPL fail the shared strictly-positive-net-distribution gate before issuer-calendar or market access. Do not poll or pre-position around the September 3 WBETH/ETH, BNSOL/SOL, or BFUSD/USDT isolated-margin removals: the current primary source proves timing but no forced-flow direction or conversion floor. Rank 47's exact August 31 delta is also exhausted: 508 new BTC ETH and SOL option symbols produced zero positive gross long-option plus opposite-perpetual terminal floors, so do not refresh subset reprice or request depth. The distinct Binance Wallet routed Aster USD1 versus Binance USDT funding population is terminal after all BTC ETH and SOL assets failed prospectively frozen training validation and test hurdles; do not request basis or books, change the training-selected orientation, or resample the 209 aligned rows. Reopen it only on a material Aster or Binance funding, fee, basis, USD1 conversion, custody, capital, or execution-architecture change. Advance a genuinely distinct Tier A or Tier B monetary mechanism only when its registry retry trigger is satisfied; do not repeat exhausted all-symbol triangle, stablecoin-cycle, or official-document inventory screens on unchanged evidence."
   },
   "schema_version": "accepted-edge-profitability-durability-audit-v1",
-  "updated_at_utc": "2026-08-31T23:30:00Z",
+  "updated_at_utc": "2026-09-01T00:02:00Z",
   "source_binding": {
     "accepted_edge_count": 29,
     "registry_path": "docs/model-research/structural-edge-priority-registry-v1.json",
-    "registry_result_sha256": "400313770bcd2cbf542e97f5a1d1fcf59b66dbf76121ecbd784e107bed4767c8"
+    "registry_result_sha256": "d4a134ac80079622c76e0f39bcf30dba4a5d0ae539635dde93f5f802b3005cbb"
   }
 }
