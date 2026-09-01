@@ -5,6 +5,34 @@ Development belongs only on `main`; do not create another development branch.
 
 ## Latest Edge R&D Checkpoint
 
+- A bounded public rendered-page Boolean-cover screen checked current Fed
+  count/deadline markets, September XAU/XAG/WTI hit ladders, and several
+  same-event deadline ladders before Gamma, CLOB, account, credential, order,
+  fund, or protected-capture access. No observed guaranteed package was
+  strictly below its floor. The closest exact implication was XAU
+  `YES(hit >= 5,100) + NO(hit >= 5,200)` at 0.06 + 0.94 = 1.00 pUSD; equality
+  does not survive fees, time value, depth, or failure risk. The Fed
+  mutual-exclusion package `NO(cut by the December meeting) + NO(zero cuts in
+  full-year 2026)` cost 0.89 + 0.121 = 1.011 pUSD for a one-pUSD floor.
+
+  The superficially cheap opposite construction is not a complement: a first
+  emergency cut after completion of the December meeting but before December
+  31 makes both `YES(cut by the December meeting)` and `YES(zero full-year
+  cuts)` pay zero. `AGENTS.md` now generalizes the state-table gate: implication,
+  mutual exclusion, and collective exhaustion authorize different guaranteed
+  packages, and complementarity requires both of the latter two properties.
+  Rendered values remain bounded discovery evidence only, not current
+  executable economics or a terminal population. Reopen only when a distinct
+  same-rule package is already strictly sub-floor on side-specific discovery
+  asks, then freeze one exact source and depth sequence.
+
+  Focused verification initially used `uv run --locked pytest` and failed at
+  collection because the Windows console-script path omitted the repository
+  root, producing `ModuleNotFoundError: tools`. The locked interpreter form
+  `uv run --locked python -m pytest tests/test_agent_workflows.py -q` passed all
+  21 tests. `AGENTS.md` now records that invocation rule; do not change imports
+  to repair this environment-only launcher failure.
+
 - A bounded public rendered-page discovery pass generalized rank 31's exact
   monotone-threshold identity beyond crypto without spending Gamma, CLOB,
   account, credential, order, fund, or protected-capture requests. Every sampled

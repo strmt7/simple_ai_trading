@@ -82,6 +82,16 @@ override prose.
   ask. Stop before Gamma or CLOB when the cheapest discovery package is already
   at or above one pUSD, and charge time value through resolution before calling
   any strict sub-floor package an edge.
+- For any proposed two-market Boolean cover, enumerate all four joint truth
+  states before looking at price. If `A => B`, `NO(A) + YES(B)` has a one-pUSD
+  floor. If `A` and `B` are mutually exclusive, `NO(A) + NO(B)` has a one-pUSD
+  floor. If they are collectively exhaustive, `YES(A) + YES(B)` has a one-pUSD
+  floor. Calling two markets complements requires both mutual exclusion and
+  collective exhaustion. Different end times, emergency-action windows,
+  observation sources, boundary rules, or exceptional fallbacks can leave a
+  joint state uncovered; write that state down explicitly instead of pricing it
+  as impossible. Apply the same rendered-button rejection gate and frozen
+  side-specific advance rules as for a scalar ladder.
 - An issuer's at-par mint or redemption right proves only the payoff identity.
   Before any venue refresh, reuse retained finite-size spreads and reject unless
   the executable gap exceeds account fees plus transfer, redemption, delay,
@@ -102,6 +112,11 @@ override prose.
 - Invoke repository Python tools through the locked project environment, using
   `uv run --locked python -m tools.<module>`, so package imports and dependency
   versions match the checkout before any outcome-sensitive access.
+- On Windows, invoke focused tests as `uv run --locked python -m pytest ...`.
+  The `uv run --locked pytest ...` console-script form can omit the repository
+  root from `sys.path` here and produce a false `ModuleNotFoundError: tools`
+  during collection; do not debug or modify imports until the module form has
+  been tried.
 - Raw non-browser requests to rendered Binance Academy and product-documentation
   pages have repeatedly returned HTTP 202 shells of about 2 KB with none of the
   visible economic or schema terms. Do not use such a dynamic page as the sole
