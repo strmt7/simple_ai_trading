@@ -54,6 +54,13 @@ override prose.
   push, or hosted CI run before exploratory public requests. The stricter
   frozen one-use workflow remains mandatory for authenticated, account-specific,
   funded, order-capable, or state-changing operations.
+- Before freezing or fetching a source selected from any retained index,
+  deduplicate its exact canonical URL against retained contracts, source results,
+  and request journals. If that URL was already consumed and its exact retry
+  trigger is not independently satisfied, reuse the hash-bound bytes offline;
+  do not refetch or alias it. Family-level novelty does not override an exact-
+  URL one-use boundary. Correct the registry lineage when a novelty inventory
+  missed this reuse instead of spending another request.
 - Predict.fun is a separate BNB Chain prediction venue, not Binance Exchange.
   Binance Exchange or testnet credentials never authorize Predict.fun API,
   wallet, account, order, reward, or eligibility access. A logged-out Predict.fun

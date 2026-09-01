@@ -1,0 +1,78 @@
+{
+  "adjudication": {
+    "accepted_edge": false,
+    "account_qualified": false,
+    "deployment_ready": false,
+    "market_direction_forecast_required": false,
+    "profitability_claim": false,
+    "public_after_all_cost_profit_floor_usd": "0",
+    "stable_current_edge_proved": false,
+    "status": "terminal_public_mechanics_authenticated_beta_non_atomic_fill_and_no_quote_economics"
+  },
+  "authority": {
+    "account_requests": 0,
+    "credentials_used": false,
+    "funds_used": false,
+    "orders_or_transactions": 0,
+    "protected_capture_touched": false,
+    "public_unauthenticated_read_only_requests": 1,
+    "signed_requests": 0,
+    "trading_authority": false
+  },
+  "created_at_utc": "2026-09-01T11:50:30.0523808Z",
+  "decision": {
+    "exact_source_facts": [
+      "Retail RFQ API access is beta and available only to explicitly enabled Retail API users",
+      "all RFQ calls use normal Retail API authentication and participant plus account are derived from the API key",
+      "an RFQ requests two-sided liquidity for the exact symbol of a combo instrument",
+      "the lifecycle includes creating or replacing quotes accepting one side and maker confirmation during last look",
+      "the private stream is best effort with no replay or separate subscription acknowledgement and reconnect requires REST reconciliation",
+      "QUOTE_STATUS_EXECUTED and quoteExecuted mean paired exchange orders were submitted and order IDs recorded but do not mean the orders filled",
+      "fills rejections cancellations and expirations require the order subscription",
+      "RFQ orders enter the normal combo order book and may trade with other resting liquidity",
+      "if either restRemainder setting is true unfilled quantity on that side may remain on the book",
+      "using an RFQ is optional because combo instruments can be traded directly through the Orders API"
+    ],
+    "reason": "The overview proves an authenticated beta negotiation and order-submission workflow, not an atomic filled combo or a price concession. Explicit documentation says execution status does not mean fill, orders enter the normal combo book, can trade with other liquidity, and can leave unfilled remainder. Without an authentic separately authorized quote, exact public-leg counterfactual, fill evidence, fees, last-look rejection distribution, and failure-unwind costs, the mechanism has zero public profit floor and no accepted edge.",
+    "why_public_floor_is_zero": "No public quote, price improvement, fee, fill probability, atomicity, last-look timing or rejection probability, remainder setting, exact combo payoff, account eligibility, or after-cost result is bound; the documented workflow exposes non-fill, reconciliation, information-leakage, and remainder risks."
+  },
+  "evidence": {
+    "contract": {
+      "canonical_sha256": "dca10fd4fb7ff27d8c9e88670cbc57e79d5a12e683f4ea18d7dbc22f5415fd96",
+      "file_sha256": "c51e5372f9218a79a480652d626cfe03ef5e06eb26b63643344f485ce548185e",
+      "path": "docs/model-research/action-value/polymarket-us-combo-rfq-overview-contract-v1-2026-09-01.json"
+    },
+    "journal": {
+      "path": "data/polymarket-us-combo-rfq-overview-v1/request-journal.jsonl",
+      "sha256": "bee6c4768ac645746def16ae8be8d1cd0ff0ff3a41a72991012079304af289c7"
+    },
+    "raw_source": {
+      "bytes": 4071,
+      "path": "data/polymarket-us-combo-rfq-overview-v1/raw/overview.md",
+      "sha256": "ab97a5110e8f5ee7aae0996cb6931fdea52a813c78512a7a3a01106bb4414c4b",
+      "status_code": 200
+    },
+    "source_result": {
+      "path": "docs/model-research/action-value/polymarket-us-combo-rfq-overview-source-result-v1-2026-09-01.json",
+      "result_sha256": "210cb590e3bbdd50ab653a80f5265d461237d7f5a9e162afa2165e320472d43e"
+    }
+  },
+  "prohibited_shortcuts": [
+    "treating quote accepted confirmed executed or paired order submitted as filled atomic or profitable",
+    "treating an RFQ label as guaranteed price improvement or complete combo execution",
+    "assuming last look timing confirmation fill probability fee remainder or failure semantics",
+    "requesting authenticated RFQs quotes user IDs streams or account state without explicit separate read-only authority",
+    "accepting confirming cancelling ordering transferring funding or mutating state without explicit separate authority",
+    "manufacturing RFQs quotes orders fills volume counterparties or activity",
+    "self trading wash trading spoofing reference price manipulation information abuse or manipulative cancellation"
+  ],
+  "registry_effect": {
+    "accepted_edge_count": 35,
+    "ranked_hypothesis_count": 58,
+    "stable_current_account_qualified_after_all_cost_edge_count": 0,
+    "terminal_family_count": 171
+  },
+  "result_sha256": "d1a4075cde9f3f3bd830067a8b70ae1f1c3a19a7de97e8788f16d6536c42bc20",
+  "retry_trigger": "Explicit separate quote-only Polymarket US Retail API authority plus independently existing beta-enabled account access, a frozen legitimate required exact combo and side, exact payoff-identical public-leg counterfactual, quote and last-look contract, fees, finite-size fill and remainder semantics, reconciliation, failure-unwind costs, and a prospectively captured authentic quote; or a material official combo, RFQ, quote, acceptance, confirmation, order, fill, fee, settlement, cancellation, access, replay, remainder, or architecture change. Quote acceptance, confirmation, cancellation, order, fill, transfer, fund, or state change always requires separate explicit authority.",
+  "schema_version": "polymarket-us-combo-rfq-overview-adjudication-v1"
+}

@@ -1,0 +1,79 @@
+{
+  "adjudication": {
+    "accepted_edge": false,
+    "account_qualified": false,
+    "deployment_ready": false,
+    "market_direction_forecast_required": false,
+    "profitability_claim": false,
+    "public_after_all_cost_profit_floor_usd": "0",
+    "stable_current_edge_proved": false,
+    "status": "terminal_current_retained_exact_url_program_details_not_live"
+  },
+  "authority": {
+    "account_requests": 0,
+    "credentials_used": false,
+    "funds_used": false,
+    "network_requests_for_this_adjudication": 0,
+    "orders_or_transactions": 0,
+    "protected_capture_touched": false,
+    "signed_requests": 0,
+    "trading_authority": false
+  },
+  "created_at_utc": "2026-09-01T11:54:45.2659047Z",
+  "decision": {
+    "deduplication_correction": "Rank 58's selected source URL exactly matches the already consumed rank 51 full user-program terms URL. The later mechanism-index inventory classified the program family as new but did not deduplicate its selected URL against retained request journals and contracts. Reusing the retained hash-bound bytes is stronger and cheaper than violating the source's one-use retry policy.",
+    "exact_source_facts": [
+      "the overview table labels Daily Trading as daily activity credits requiring a deposit and daily trading requirements",
+      "the overview table labels Deposit and Trading as credits for qualifying deposit and trading activity requiring a qualifying deposit and or trading requirements",
+      "the Daily Trading section says details will be published once the program is live",
+      "the Deposit and Trading section says details will be published once the program is live",
+      "Polymarket US may withhold cancel or reverse incentives for suspected fraud abuse manipulation self-dealing self-referral coordinated activity or inconsistent activity",
+      "Polymarket US may prospectively modify suspend or terminate incentive programs or campaigns"
+    ],
+    "reason": "The exact retained current source says both program details are not yet live and supplies no deterministic eligibility, task, reward, cap, timing, expiry, payment, withdrawal, reversal, or after-cost economics. Program names and overview requirements cannot establish expected value. The public floor is zero and neither program is an accepted edge.",
+    "why_public_floor_is_zero": "No live program contract, exact qualifying activity, reward amount or asset, probability, limit, duration, payment condition, withdrawal path, account eligibility, trading loss, fee, spread, tax, opportunity cost, or owned receipt is bound."
+  },
+  "evidence": {
+    "discovery_index_adjudication": {
+      "path": "docs/model-research/action-value/polymarket-us-official-docs-mechanism-index-adjudication-v1-2026-09-01.json",
+      "result_sha256": "214f9807ed7d9120478be6e75daf889ee8aeb30f8bea194c3af8d5eb4e8c251f"
+    },
+    "retained_contract": {
+      "canonical_sha256": "9f237e7b0092d60553364c396d20822d2f7fe805535d451c4114a38c94839c92",
+      "file_sha256": "9b24ea0835bde9c3e76289aa6a728767950bcf8e3f6cff211ecf11e4f7fe4dc2",
+      "path": "docs/model-research/action-value/polymarket-us-promotional-credit-terms-contract-v1-2026-09-01.json"
+    },
+    "retained_journal": {
+      "path": "data/polymarket-us-promotional-credit-terms-v1/request-journal.jsonl",
+      "sha256": "c22e4a529233a4fb2dbf2c80008c86b1073a36b5e9b0191e3eb7a1e42992ac0c"
+    },
+    "retained_raw_source": {
+      "bytes": 4959,
+      "path": "data/polymarket-us-promotional-credit-terms-v1/raw/user-programs.md",
+      "sha256": "3a1987bbff88abf718c43b190db8b40d040ab5ba9c42141920e250e186f9d1ec",
+      "status_code": 200,
+      "url": "https://docs.polymarket.us/incentives/user-programs.md"
+    },
+    "retained_source_result": {
+      "path": "docs/model-research/action-value/polymarket-us-promotional-credit-terms-source-result-v1-2026-09-01.json",
+      "result_sha256": "8bf6ca023bf62623b5c0334a4866f3df4d5cbe4f9460e333b8c620d46c99caad"
+    }
+  },
+  "prohibited_shortcuts": [
+    "refetching or aliasing the exact consumed user programs URL without a material independently known change",
+    "treating a program name overview requirement or future publication promise as current eligibility value or expected reward",
+    "manufacturing deposits trades volume days accounts referrals or eligibility",
+    "self trading wash trading spoofing coordinated activity manipulation or abuse",
+    "ignoring trading loss fees spread tax expiry reversal withdrawal opportunity or every incremental cost",
+    "using promotional credit face amount as cash"
+  ],
+  "registry_effect": {
+    "accepted_edge_count": 35,
+    "ranked_hypothesis_count": 58,
+    "stable_current_account_qualified_after_all_cost_edge_count": 0,
+    "terminal_family_count": 172
+  },
+  "result_sha256": "cba93ed78972affef86459fba0ad070431b803087d404bb7b9fe92eb284e17dd",
+  "retry_trigger": "A material independently known official byte or term change that publishes complete live Daily Trading or Deposit and Trading eligibility, task, reward, cap, timing, expiry, payment, withdrawal, reversal, anti-abuse, and program-change economics under a fresh prospective contract; or explicit separate read-only account authority plus an independently existing genuine campaign presentation, legitimate organic qualifying activity, exact owned reward receipt, and every incremental cost. Any onboarding, deposit, trade, order, fund, or state change requires separate explicit authority.",
+  "schema_version": "polymarket-us-participant-daily-deposit-trading-programs-adjudication-v1"
+}

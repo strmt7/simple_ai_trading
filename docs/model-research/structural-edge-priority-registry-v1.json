@@ -3866,20 +3866,26 @@
         {
           "path": "docs/model-research/action-value/polymarket-us-official-docs-mechanism-index-adjudication-v1-2026-09-01.json",
           "result_sha256": "214f9807ed7d9120478be6e75daf889ee8aeb30f8bea194c3af8d5eb4e8c251f"
+        },
+        {
+          "path": "docs/model-research/action-value/polymarket-us-market-maker-program-adjudication-v1-2026-09-01.json",
+          "result_sha256": "af80c16faa5666735cc74f17d5212ec95d226bc0ed58e8d247811eab06ded381"
         }
       ],
-      "current_status": "unopened_title_only_application_based_market_maker_contract_incentive_candidate_not_an_edge_or_deployment_ready",
+      "current_status": "terminal_current_public_terms_confirm_only_an_approved_market_maker_reward_program_for_liquidity_across_contracts_in_given_categories_plus_a_contact_route_with_no_deterministic_approval_eligibility_obligation_performance_reward_payment_withholding_clawback_termination_renewal_or_change_economics_public_floor_zero_not_accepted_account_qualified_stable_or_deployment_ready",
       "market_direction_forecast_required": false,
       "mechanism": "polymarket_US_approved_market_maker_contract_incentive",
-      "next_action": "after_rank_55_freeze_one_exact_current_official_market_maker_program_source_before_access_and_stop_unless_public_terms_define_complete_deterministic_economics_no_contact_application_order_or_account_action",
+      "next_action": "do_not_refetch_alias_contact_or_apply_advance_only_on_a_complete_current_official_Polymarket_US_market_maker_contract_with_deterministic_approval_eligibility_category_obligation_performance_reward_payment_withholding_clawback_suspension_termination_renewal_and_change_economics_or_explicit_separate_read_only_authority_plus_independently_existing_approved_status_exact_executed_agreement_legitimate_organic_liquidity_owned_payments_and_every_cost_no_contact_application_negotiation_onboarding_configuration_quote_order_cancel_fill_fund_or_state_change_without_separate_explicit_authority",
       "priority_rank": 56,
       "prohibited_shortcuts": [
         "treating_application_availability_or_strong_incentives_as_approval_or_value",
         "manufacturing_quotes_fills_or_volume",
         "ignoring_contractual_obligations_adverse_selection_inventory_hedge_or_capital_cost",
-        "contacting_or_applying_without_separate_explicit_authority"
+        "contacting_or_applying_without_separate_explicit_authority",
+        "accepting_a_tautological_exact_positive_future_payment_predicate_without_complete_economics_or_owned_receipt",
+        "self_trading_wash_trading_spoofing_manipulative_cancellation_or_non_executable_quoting"
       ],
-      "retry_trigger": "the_unconsumed_exact_official_market_maker_program_source_identified_by_the_frozen_index_under_a_fresh_prospective_source_contract_or_a_material_program_change",
+      "retry_trigger": "a_complete_current_official_Polymarket_US_market_maker_contract_with_deterministic_approval_eligibility_category_obligation_performance_reward_payment_withholding_clawback_suspension_termination_renewal_and_change_economics_or_explicit_separate_read_only_authority_plus_independently_existing_approved_market_maker_status_exact_executed_agreement_legitimate_organic_qualifying_liquidity_owned_payment_receipts_and_every_incremental_cost_every_contact_application_negotiation_onboarding_configuration_quote_order_cancellation_fill_transfer_fund_or_state_change_requires_separate_explicit_authority",
       "venue_scope": "Polymarket_US_Market_Maker_Program"
     },
     {
@@ -3893,20 +3899,27 @@
         {
           "path": "docs/model-research/action-value/polymarket-us-official-docs-mechanism-index-adjudication-v1-2026-09-01.json",
           "result_sha256": "214f9807ed7d9120478be6e75daf889ee8aeb30f8bea194c3af8d5eb4e8c251f"
+        },
+        {
+          "path": "docs/model-research/action-value/polymarket-us-combo-rfq-overview-adjudication-v1-2026-09-01.json",
+          "result_sha256": "d1a4075cde9f3f3bd830067a8b70ae1f1c3a19a7de97e8788f16d6536c42bc20"
         }
       ],
-      "current_status": "unopened_title_only_combo_RFQ_execution_overlay_candidate_not_an_edge_or_deployment_ready",
+      "current_status": "terminal_public_mechanics_authenticated_beta_non_atomic_fill_and_no_quote_economics_exact_source_says_quote_executed_means_paired_exchange_orders_submitted_not_filled_orders_enter_normal_combo_book_may_trade_with_other_liquidity_and_unfilled_remainder_may_rest_public_floor_zero_not_accepted_account_qualified_stable_or_deployment_ready",
       "market_direction_forecast_required": false,
       "mechanism": "polymarket_US_combo_RFQ_atomic_execution_overlay",
-      "next_action": "after_rank_56_freeze_one_exact_current_official_combo_RFQ_overview_before_access_bind_last_look_atomicity_fees_settlement_and_failure_then_require_explicit_quote_only_authority_before_any_quote_request_and_separate_acceptance_authority_before_any_acceptance",
+      "next_action": "do_not_refetch_or_open_institutional_trader_guide_combo_endpoint_schema_streaming_HTML_FAQ_or_search_aliases_advance_only_with_explicit_separate_quote_only_Polymarket_US_Retail_API_authority_plus_independently_existing_beta_enabled_access_a_frozen_legitimate_required_exact_combo_and_side_exact_payoff_identical_public_leg_counterfactual_quote_and_last_look_contract_fees_finite_size_fill_and_remainder_semantics_reconciliation_failure_unwind_costs_and_one_prospective_authentic_quote_or_a_material_official_architecture_change_every_quote_accept_confirm_cancel_order_fill_transfer_fund_or_state_change_requires_separate_explicit_authority",
       "priority_rank": 57,
       "prohibited_shortcuts": [
         "treating_combo_or_RFQ_labels_as_atomic_execution_or_price_improvement",
         "requesting_or_accepting_quotes_without_separate_explicit_authority",
         "omitting_last_look_rejection_leg_fee_settlement_or_failure_risk",
-        "assuming_payoff_identity_or_positive_value_without_exact_leg_and_quote_evidence"
+        "assuming_payoff_identity_or_positive_value_without_exact_leg_and_quote_evidence",
+        "treating_quote_accepted_confirmed_executed_or_paired_orders_submitted_as_filled_atomic_or_profitable",
+        "manufacturing_RFQs_quotes_orders_fills_volume_counterparties_or_activity",
+        "self_trading_wash_trading_spoofing_reference_price_manipulation_information_abuse_or_manipulative_cancellation"
       ],
-      "retry_trigger": "the_unconsumed_exact_official_combo_RFQ_overview_identified_by_the_frozen_index_under_a_fresh_prospective_source_contract_or_a_material_RFQ_architecture_change",
+      "retry_trigger": "explicit_separate_quote_only_Polymarket_US_Retail_API_authority_plus_independently_existing_beta_enabled_access_a_frozen_legitimate_required_exact_combo_and_side_exact_payoff_identical_public_leg_counterfactual_quote_and_last_look_contract_fees_finite_size_fill_and_remainder_semantics_reconciliation_failure_unwind_costs_and_a_prospectively_captured_authentic_quote_or_a_material_official_combo_RFQ_quote_acceptance_confirmation_order_fill_fee_settlement_cancellation_access_replay_remainder_or_architecture_change_quote_acceptance_confirmation_cancellation_order_fill_transfer_fund_or_state_change_always_requires_separate_explicit_authority",
       "venue_scope": "Polymarket_US_combo_RFQ"
     },
     {
@@ -3919,24 +3932,30 @@
         {
           "path": "docs/model-research/action-value/polymarket-us-official-docs-mechanism-index-adjudication-v1-2026-09-01.json",
           "result_sha256": "214f9807ed7d9120478be6e75daf889ee8aeb30f8bea194c3af8d5eb4e8c251f"
+        },
+        {
+          "path": "docs/model-research/action-value/polymarket-us-participant-daily-deposit-trading-programs-adjudication-v1-2026-09-01.json",
+          "result_sha256": "cba93ed78972affef86459fba0ad070431b803087d404bb7b9fe92eb284e17dd"
         }
       ],
-      "current_status": "unopened_title_only_participant_daily_trading_and_deposit_trading_incentive_candidate_not_an_edge_or_deployment_ready",
+      "current_status": "terminal_current_retained_exact_URL_terms_say_Daily_Trading_and_Deposit_and_Trading_program_details_will_be_published_once_each_program_is_live_no_deterministic_eligibility_task_reward_cap_timing_expiry_payment_withdrawal_reversal_or_after_cost_economics_public_floor_zero_not_accepted_account_qualified_stable_or_deployment_ready_the_index_novelty_inventory_missed_that_its_selected_URL_was_already_consumed_under_rank_51_so_no_duplicate_request_was_made",
       "market_direction_forecast_required": false,
       "mechanism": "polymarket_US_participant_daily_trading_and_deposit_trading_incentives",
-      "next_action": "after_rank_57_freeze_one_exact_current_official_user_programs_source_before_access_and reject_any_program_that_requires_negative_expected_value_or manufactured_activity_no_account_deposit_trade_fund_or_state_change",
+      "next_action": "do_not_refetch_or_alias_the_exact_consumed_user_programs_URL_advance_only_on_an_independently_known_material_official_byte_or_term_change_publishing_complete_live_Daily_Trading_or_Deposit_and_Trading_eligibility_task_reward_cap_timing_expiry_payment_withdrawal_reversal_anti_abuse_and_program_change_economics_under_a_fresh_contract_or_explicit_separate_read_only_account_authority_plus_an_independently_existing_genuine_campaign_presentation_legitimate_organic_qualifying_activity_exact_owned_reward_receipt_and_every_cost_no_onboarding_deposit_trade_order_fund_or_state_change_without_separate_explicit_authority",
       "priority_rank": 58,
       "prohibited_shortcuts": [
         "treating_a_program_name_cap_or_example_as_expected_value",
         "manufacturing_deposits_trades_volume_days_accounts_or_eligibility",
         "ignoring_trading_loss_fees_spread_tax_expiry_reversal_or_opportunity_cost",
-        "using_promotional_credit_face_amount_as_cash"
+        "using_promotional_credit_face_amount_as_cash",
+        "refetching_or_aliasing_the_exact_consumed_user_programs_URL_without_an_independently_known_material_change",
+        "treating_a_future_publication_promise_as_current_program_terms_eligibility_or_value"
       ],
-      "retry_trigger": "the_unconsumed_exact_official_user_programs_source_identified_by_the_frozen_index_under_a_fresh_prospective_source_contract_or_a_material_participant_incentive_change",
+      "retry_trigger": "an_independently_known_material_official_byte_or_term_change_that_publishes_complete_live_Daily_Trading_or_Deposit_and_Trading_eligibility_task_reward_cap_timing_expiry_payment_withdrawal_reversal_anti_abuse_and_program_change_economics_under_a_fresh_prospective_contract_or_explicit_separate_read_only_account_authority_plus_an_independently_existing_genuine_campaign_presentation_legitimate_organic_qualifying_activity_exact_owned_reward_receipt_and_every_incremental_cost_any_onboarding_deposit_trade_order_fund_or_state_change_requires_separate_explicit_authority",
       "venue_scope": "Polymarket_US_participant_incentive_programs"
     }
   ],
-  "result_sha256": "d2f93c88d50905be28cefe0f215e72137c8b9bbb7f9d73741b87925691413b44",
+  "result_sha256": "c038dde89dc80e2712d8adbbcd90056b27b625be062467f34b592e233e5e7eb8",
   "schema_version": "structural-edge-priority-registry-v1",
   "terminal_do_not_repeat": [
     {
@@ -4789,8 +4808,23 @@
       "canonical_result_sha256": "92b881d5b426b6e271550dbd3f3fa6b73b1c8164d326d2885528dc4524f57b25",
       "family": "polymarket_US_partner_vendor_fee_public_terms_2026_09_01",
       "reason": "one_frozen_exact_current_official_beta_source_defines_a_fixed_USD_partner_computed_vendor_fee_declared_against_an_order_accrued_as_an_unsecured_receivable_reconciled_through_partner_shadow_balances_and_collected_at_most_once_daily_per_participant_account_by_one_net_VENDOR_FEES_transfer_Polymarket_does_not_reserve_or_underwrite_the_receivable_no_API_exposes_accrued_balance_partial_fill_or_cancellation_does_not_automatically_adjust_the_declared_amount_and_participant_losses_can_cause_insufficient_funds_rejection_the_scoped_exact_positive_owned_cash_actually_collected_after_every_cost_is_accepted_as_external_user_revenue_not_autonomous_trading_profit_do_not_refetch_alias_contact_apply_configure_order_declare_transfer_collect_or_mutate_state_reopen_only_on_rank_55_exact_account_read_only_or_material_official_term_trigger"
+    },
+    {
+      "canonical_result_sha256": "af80c16faa5666735cc74f17d5212ec95d226bc0ed58e8d247811eab06ded381",
+      "family": "polymarket_US_approved_market_maker_program_public_terms_2026_09_01",
+      "reason": "one_frozen_exact_current_official_488_byte_source_confirms_only_that_approved_market_makers_are_rewarded_for_liquidity_across_contracts_in_given_categories_and_provides_an_institutional_contact_route_it_publishes_no_deterministic_approval_eligibility_category_quote_obligation_performance_measurement_reward_formula_asset_payment_cadence_cap_discretion_withholding_clawback_suspension_termination_renewal_or_change_economics_public_floor_zero_do_not_accept_a_tautological_exact_positive_future_payment_predicate_refetch_alias_contact_apply_negotiate_onboard_configure_quote_order_cancel_fill_or_manufacture_activity_reopen_only_on_rank_56_complete_official_or_owned_read_only_evidence_trigger"
+    },
+    {
+      "canonical_result_sha256": "d1a4075cde9f3f3bd830067a8b70ae1f1c3a19a7de97e8788f16d6536c42bc20",
+      "family": "polymarket_US_combo_RFQ_public_execution_mechanics_2026_09_01",
+      "reason": "one_frozen_exact_current_official_4071_byte_overview_proves_the_Retail_RFQ_API_is_authenticated_beta_for_explicitly_enabled_users_quote_acceptance_has_maker_last_look_and_quote_executed_means_only_that_paired_exchange_orders_were_submitted_with_order_IDs_not_that_they_filled_orders_enter_the_normal_combo_book_may_trade_with_other_resting_liquidity_and_unfilled_remainder_may_rest_public_floor_zero_without_an_authentic_separately_authorized_quote_exact_public_leg_counterfactual_fill_evidence_fees_last_look_rejection_and_failure_unwind_costs_do_not_refetch_alias_authenticate_request_accept_confirm_cancel_order_or_manufacture_activity_reopen_only_on_rank_57_exact_quote_only_or_material_official_architecture_trigger"
+    },
+    {
+      "canonical_result_sha256": "cba93ed78972affef86459fba0ad070431b803087d404bb7b9fe92eb284e17dd",
+      "family": "polymarket_US_participant_Daily_Trading_and_Deposit_and_Trading_current_terms_2026_09_01",
+      "reason": "offline_exact_URL_deduplication_proved_rank_58_selected_the_same_user_programs_source_already_consumed_under_rank_51_the_retained_4959_byte_official_source_says_Daily_Trading_and_Deposit_and_Trading_details_will_be_published_once_each_program_is_live_and_publishes_no_deterministic_eligibility_task_reward_cap_timing_expiry_payment_withdrawal_reversal_or_after_cost_economics_public_floor_zero_no_duplicate_network_request_do_not_refetch_alias_manufacture_deposits_trades_volume_days_accounts_or_eligibility_or_treat_program_names_overview_requirements_future_publication_or_promotional_credit_face_value_as_cash_reopen_only_on_rank_58_material_official_live_terms_or_owned_read_only_evidence_trigger"
     }
   ],
-  "updated_at_utc": "2026-09-01T11:33:08.0597268Z",
+  "updated_at_utc": "2026-09-01T11:54:45.2659047Z",
   "usage_rule": "advance_the_highest_ranked_hypothesis_whose_retry_trigger_is_satisfied_otherwise_do_not_repeat_a_blocked_or_terminal_screen"
 }
