@@ -1,0 +1,69 @@
+{
+  "schema_version": "binance-token-voucher-direct-cash-terminal-v1",
+  "created_at_utc": "2026-09-01T14:30:00Z",
+  "authority": {
+    "public_unauthenticated_read_only_requests": 1,
+    "account_requests": 0,
+    "signed_requests": 0,
+    "credentials_used": false,
+    "funds_used": false,
+    "orders_or_transactions": 0,
+    "protected_capture_touched": false,
+    "trading_authority": false
+  },
+  "source_binding": {
+    "contract_path": "docs/model-research/action-value/binance-token-voucher-direct-cash-source-contract-v1-2026-09-01.json",
+    "contract_sha256": "7defa837fd8622ecc8ff94cff3fca2ed35125302859ae8ff4141fb81ab47bd8b",
+    "source_result_path": "docs/model-research/action-value/binance-token-voucher-direct-cash-source-result-v1-2026-09-01.json",
+    "source_result_sha256": "5235ee14ad6d7d17c69938d7215f5266048610fac7148de8c27375eba4ddab45",
+    "raw_path": "data/binance-token-voucher-direct-cash-v1/raw/01-faq.raw.json",
+    "raw_sha256": "6376d31fe3ee6f721e5110c7f31a06a75610a33546864c1500af2472ffe50d53",
+    "journal_path": "data/binance-token-voucher-direct-cash-v1/raw/01-faq.journal.jsonl",
+    "journal_sha256": "ddc0e4f38c5861efc386b1caa8f7a9d9b2e78a870c8a543d7d5a40a372016dd4"
+  },
+  "frozen_gate_outcome": {
+    "passed": false,
+    "missing_exact_phrase": "without any restrictions",
+    "retained_source_wording": "with no restrictions",
+    "economic_interpretation_authorized": false,
+    "reason": "The one-use contract required every exact UTF-8 phrase. One guessed lexical variant was absent, so the contract requires terminal rejection regardless of semantically equivalent retained wording."
+  },
+  "retained_bytes_hypothesis_generation_only": {
+    "observed_mechanics": [
+      "Binance describes token vouchers as rebates.",
+      "The source says a redeemed voucher credits free tokens to Spot Wallet.",
+      "The source says the credited tokens may be used, transferred, or withdrawn with no restrictions."
+    ],
+    "creditable_value": "0",
+    "limitation": "These observations can motivate a future materially changed source or independently owned account reconciliation, but cannot rescue or advance the consumed failed contract."
+  },
+  "adjudication": {
+    "priority_rank": 62,
+    "accepted_edge": false,
+    "accepted_edge_count_change": 0,
+    "terminal_family_count_change": 1,
+    "market_direction_forecast_required": false,
+    "profitability_claim": false,
+    "public_profit_floor": "0",
+    "account_qualified_profit_floor": "0",
+    "stable_current_account_qualified_edge": false,
+    "deployment_ready": false,
+    "status": "terminal_exact_public_token_voucher_direct_cash_source_gate_failed_closed"
+  },
+  "prohibited_shortcuts": [
+    "rewriting_the_missing_phrase_after_observing_retained_bytes",
+    "retrying_the_consumed_URL_or_a_locale_rendered_or_CMS_alias",
+    "opening_Rewards_Hub_or_using_credentials_to_rescue_the_public_gate",
+    "treating_voucher_face_value_advertised_value_or_unowned_tokens_as_cash",
+    "treating_a_Points_funded_task_generated_or_otherwise_acquired_voucher_as_zero_cost",
+    "manufacturing_accounts_referrals_deposits_volume_trades_or_eligibility",
+    "claiming_redeeming_transferring_withdrawing_converting_trading_or_mutating_state_without_separate_explicit_authority"
+  ],
+  "retry_trigger": "a_material_official_Token_Voucher_redemption_credit_transfer_withdrawal_reversal_expiry_eligibility_or_regional_scope_change_or_explicit_signed_GET_only_Binance_mainnet_authority_plus_an_independently_existing_owned_voucher_and_exact_acquisition_lineage_token_amount_expiry_status_and_realized_Spot_credit_reconciliation",
+  "next_action": "Do not refetch or alias the consumed public source. Reopen only on the exact retry trigger; even then, freeze a new distinct contract before access and require every opportunity, tax, conversion, withdrawal, custody, and operating cost. Every claim, redemption, transfer, withdrawal, conversion, order, or state change requires separate explicit authority.",
+  "process_correction": {
+    "mistake": "An exact phrase gate used a discovery-derived synonym that had not been observed in the selected primary source.",
+    "repository_rule_added": "Exact phrase gates now require exact source-observed text, minimal observed substrings, or prospectively frozen alternative forms; post-outcome lexical repair remains forbidden."
+  },
+  "result_sha256": "1776c7bcd318edd3c703446f7e2ca746922efc307c2c295075dd0b58eb03c752"
+}

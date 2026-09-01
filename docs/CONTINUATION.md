@@ -1,12 +1,48 @@
 # Continue Development
 
-Current canonical status after the Binance Simple Earn Trial Fund source gate:
-accepted edges 36, ranked hypotheses 61, terminal families 178,
+Current canonical status after the Binance Token Voucher source gate:
+accepted edges 36, ranked hypotheses 62, terminal families 179,
 and stable current account-qualified after-all-cost edges zero. Registry
 SHA-256 is
-`5c8474e2446e3bf8e6adb7ed5aad3e75ff0be1c72eaf513fd70445ae691b2798`;
+`4bfa33cf6f44af9876a0a500efdd704499f802a7d57927736c144906d850ad1d`;
 durability-audit SHA-256 is
-`cf6e6cfdfd15472e1506153780cedcf5bc3969afe530c1119d30ba394acf476e`.
+`8ace9a89c7b36136ccec36ada332955828cc37eab10fa199c89dddd759bc6d23`.
+
+## 2026-09-01 Binance Token Voucher source-gate rejection
+
+One prospectively frozen unauthenticated public CMS GET retained the exact
+current official ordinary Token Voucher FAQ. Four of five mandatory phrase
+gates passed. The source uses `with no restrictions`, while the contract had
+guessed the unobserved lexical variant `without any restrictions`. The frozen
+decision requires rejection if any exact phrase is absent, so the exact public
+direct-cash hypothesis is terminal. It was not rewritten, aliased, or refetched.
+
+The retained bytes substantively describe token vouchers as rebates and say a
+redeemed voucher credits free tokens to Spot Wallet for unrestricted use,
+transfer, or withdrawal. Those mechanics are hypothesis-generation evidence
+only and have zero creditable value under the failed contract. No owned voucher,
+acquisition lineage, token, amount, expiry, region, account eligibility,
+realized credit, tax, conversion, withdrawal, custody, operating cost,
+profitability, or deployment readiness was proved.
+
+The process error was assuming an exact synonym from discovery rather than
+freezing text observed in the selected primary source. `AGENTS.md` now requires
+exact source-observed phrases, minimal observed substrings, or prospectively
+frozen alternative forms; a failed phrase gate remains failed after access.
+Do not refetch or alias the FAQ, open Rewards Hub, use credentials, or rescue the
+result with account access. Reopen only on rank 62's exact material official
+change or independently owned-voucher read-only reconciliation trigger. Every
+claim, redemption, transfer, withdrawal, conversion, order, or state change
+requires separate explicit authority.
+
+Contract, source-result, raw-response, request-journal, and terminal-result
+SHA-256 values are
+`7defa837fd8622ecc8ff94cff3fca2ed35125302859ae8ff4141fb81ab47bd8b`,
+`5235ee14ad6d7d17c69938d7215f5266048610fac7148de8c27375eba4ddab45`,
+`6376d31fe3ee6f721e5110c7f31a06a75610a33546864c1500af2472ffe50d53`,
+`ddc0e4f38c5861efc386b1caa8f7a9d9b2e78a870c8a543d7d5a40a372016dd4`,
+and `1776c7bcd318edd3c703446f7e2ca746922efc307c2c295075dd0b58eb03c752`.
+No account, credential, order, fund, transaction, or protected capture was used.
 
 ## 2026-09-01 Binance Simple Earn Trial Fund scoped edge
 

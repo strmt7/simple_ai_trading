@@ -999,6 +999,13 @@ and verify reproducibly. Do not load upstream `EXAMPLES.md`.
     contract and consumed response, exclude every discovery value, and perform
     at most one zero-network adjudication of the retained bytes. Never refetch,
     alias, or loosen the consumed contract to recover the expected answer.
+    Freeze an exact required phrase only when that exact lexical form was
+    already observed in the selected primary source. When discovery proves only
+    a semantic proposition, use the smallest exact source-observed substrings or
+    prospectively freeze every acceptable lexical alternative before access.
+    Never guess a synonym, punctuation form, or locale variant as an exact gate.
+    A missed phrase remains a failed one-use contract even when retained bytes
+    later prove an equivalent proposition; do not rewrite, alias, or refetch it.
 11. For recurring fixed-NegRisk weather or scalar partitions, freeze the exact
     deterministic series member, complete expected outcome count, and one-use
     source request before opening an event page or search result that can expose

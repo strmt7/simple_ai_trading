@@ -1,0 +1,69 @@
+{
+  "schema_version": "public-source-capture-contract-v1",
+  "frozen_at_utc": "2026-09-01T14:21:43Z",
+  "contract_path": "docs/model-research/action-value/binance-token-voucher-direct-cash-source-contract-v1-2026-09-01.json",
+  "trigger": {
+    "retained_index_source": "data/binance-simple-earn-trial-fund-v1/raw/01-faq.raw.json",
+    "retained_related_article_code": "8fb78721e97b4138b90b51239f41a9aa",
+    "exact_url_deduplication_hits": 0,
+    "economic_terms_viewed_before_freeze": true,
+    "economic_terms_role": "public discovery only; no retained primary bytes or promotion claim existed before this contract",
+    "novel_question": "whether an independently awarded zero-cost ordinary Binance Token Voucher becomes unrestricted Spot-wallet crypto rather than nonwithdrawable promotional notional"
+  },
+  "question": "Do current official Binance Token Voucher terms define direct free-token credit to Spot with unrestricted use, transfer, and withdrawal, establishing a market-direction-independent cash mechanism when the voucher was independently awarded at zero cost?",
+  "request_name": "binance-token-voucher-direct-cash-public-source",
+  "request": {
+    "method": "GET",
+    "url": "https://www.binance.com/bapi/composite/v1/public/cms/article/detail/query?articleCode=8fb78721e97b4138b90b51239f41a9aa",
+    "count": 1,
+    "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "endpoint_classification": {
+    "operation": "download one exact public official Binance Token Voucher FAQ through its public CMS endpoint",
+    "security": "public unauthenticated read-only GET",
+    "source_contract": "The retained bytes may establish only ordinary Token Voucher redemption mechanics. They may not establish regional or account eligibility, voucher ownership, acquisition cost, token, amount, expiry, claimability, receipt, tax, liquidation value, profitability for any account, or deployment readiness."
+  },
+  "response_byte_ceiling": 500000,
+  "required_utf8_phrases": [
+    "Token Voucher",
+    "free tokens",
+    "Spot Wallet",
+    "use, transfer, or withdraw",
+    "without any restrictions"
+  ],
+  "decision": {
+    "advance": "If every source gate passes, accept only the exact positive owned free-token amount credited to Spot from an independently awarded zero-cost ordinary Token Voucher after tax, conversion, withdrawal, acquisition, and every incremental cost. Voucher face value, advertised value, Points-funded rewards, and task-generated rewards are not free unless their full opportunity and activity costs are subtracted. Public and account-qualified forward floors remain zero and no account access or claim is authorized.",
+    "reject": "If any source gate fails, terminalize this exact public direct-cash hypothesis without aliases, Rewards Hub access, account access, credentials, or another request.",
+    "accepted_edge": false,
+    "profitability_proved": false,
+    "stable_current_account_qualified_edge": false,
+    "deployment_ready": false
+  },
+  "outputs": {
+    "raw_path": "data/binance-token-voucher-direct-cash-v1/raw/01-faq.raw.json",
+    "journal_path": "data/binance-token-voucher-direct-cash-v1/raw/01-faq.journal.jsonl",
+    "result_path": "docs/model-research/action-value/binance-token-voucher-direct-cash-source-result-v1-2026-09-01.json"
+  },
+  "authority": {
+    "account_requests": 0,
+    "credentials_used": false,
+    "funds_used": false,
+    "orders_or_transactions": 0,
+    "protected_capture_touched": false,
+    "public_unauthenticated_read_only_requests": 1,
+    "signed_requests": 0,
+    "trading_authority": false
+  },
+  "implementations": [
+    {
+      "path": "tools/capture_public_source_contract.py",
+      "sha256": "ba0e76bd6643eedc072cc1fcff2aa363c1dc14a5b8e14956e874c7843637b376"
+    },
+    {
+      "path": "tools/screen_polymarket_exact_two_leg_package.py",
+      "sha256": "374fcc3c3485c466b4929a91256450bdc7db70f93ef4c6bda627e05fe8938327"
+    }
+  ],
+  "retry_policy": "This exact public CMS GET is one-use. Preserve every response, redirect, block, missing phrase, and ceiling failure. Do not retry, alias, open Rewards Hub, use an account or credentials, claim a voucher, complete a task, spend Points, transfer, withdraw, trade, or mutate state.",
+  "contract_sha256": "7defa837fd8622ecc8ff94cff3fca2ed35125302859ae8ff4141fb81ab47bd8b"
+}
