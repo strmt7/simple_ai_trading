@@ -9007,6 +9007,47 @@ Reopen this family only for a distinct exact contract selected and frozen before
 any Polymarket US search, or after a material listing or venue-architecture
 change. The protected holding-yield partial capture remains untouched.
 
+## Polymarket US resting-order liquidity incentive source gate
+
+Official Polymarket US documentation exposes a more promising direction-neutral
+mechanism than approximate cross-venue title matching. The open Liquidity
+Incentive Program scores resting orders every second whether or not they fill,
+allocates fixed USD pools proportionally by discounted price-distance and size,
+and can stack with a separately documented 25 percent maker share of taker fees
+when an order fills. The same sources also make the missing economics explicit:
+score share can be zero, Target Size must be met, sub-one-dollar rewards are not
+paid, parameters can change, and canceled or postponed games receive no reward.
+
+Before current program access, a one-use contract froze the complete-page gate,
+active-interval checks, liquidity-program type, positive finite reward pool and
+Target Size, valid Discount Factor, and a deterministic ranking by reward pool
+per hour per target contract. The official active-program GET returned HTTP 503
+with 33 retained bytes. The failure is source-side and was durably journaled;
+the exact request was not retried and the frozen adjudicator was not run.
+
+The mechanism remains a high-quality research lead, but no current positive pool,
+owned score share, public book candidate, jurisdiction or account eligibility,
+deployment readiness, or profit floor is proved. Accepted edges therefore remain
+31, ranked hypotheses remain 48, terminal families become 160, and stable current
+account-qualified after-all-cost edges remain zero.
+
+Contract/failure/raw/journal SHA-256 values are
+`3e6d4fdbe0feb3584439b8d6976d751dabb86209c6484d0a0885e8b51984521f`,
+`30707da50f9d52740ecb59376a0e060edcf5d88cace334a8bdea169c703a6047`,
+`997a01746aa1c0f5cd00f437f9422e133b8b86244aabdf8516c22c92d03ea935`,
+and `db5c8be67102dad3b868204badab43347dad0b73ef2c780f44fc62c1e78dc0af`.
+Registry and durability-audit SHA-256 values become
+`84967248716813aca5de3dc68c154ccbedb01ef74c2f3cf6fbd56ccd234f0952`
+and `34f82a9403b62b9c96ac0c8d9f6305c07b60fdedc7cf9d02fc1354b8dad07e95`.
+
+Do not retry, alias, paginate, request authenticated earnings, select a stale
+documentation example, or request books. Reopen only after a material official
+endpoint-availability, documented-host, or schema change with a fresh contract
+frozen before access. Any account, credential, order, deposit, fund movement,
+or transaction requires explicit separate authority. Never manufacture volume,
+score, fills, liquidity, or rebates through self-trading, wash trading, spoofing,
+fake orders, related accounts, manipulation, or program abuse.
+
 ## AI Arena Overall creation-safe threshold ladder
 
 The retained September 30 catalog exposed five AI Arena Overall score

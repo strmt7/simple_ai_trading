@@ -3605,7 +3605,7 @@
       "venue_scope": "Predict.fun_on_BNB_Chain_independent_from_Binance_Exchange"
     }
   ],
-  "result_sha256": "979ba80e079e03afb3a6991fcc186a5e5e61749e5485467317e47ceab8efffdd",
+  "result_sha256": "84967248716813aca5de3dc68c154ccbedb01ef74c2f3cf6fbd56ccd234f0952",
   "schema_version": "structural-edge-priority-registry-v1",
   "terminal_do_not_repeat": [
     {
@@ -4408,8 +4408,13 @@
       "canonical_result_sha256": "2ffbcad5a046dca1008bfc8b11693e7621ed23848fde8c0ddf24f03453375f6e",
       "family": "polymarket_US_global_House_military_aid_exact_title_cross_venue_payoff_identity_2026_09_01",
       "reason": "the_prospectively_frozen_public_Polymarket_US_exact_title_search_returned_two_events_but_zero_exact_title_matches_for_the_hash_bound_open_Global_US_House_military_aid_contract_so_cross_venue_payoff_identity_failed_before_economics_no_price_BBO_book_fee_account_credential_order_fund_or_transaction_request_was_justified_do_not_retry_alias_paginate_or_substitute_a_similar_title_reopen_only_for_a_distinct_exact_contract_selected_and_frozen_before_any_US_search_or_for_a_material_listing_or_venue_architecture_change"
+    },
+    {
+      "canonical_result_sha256": "30707da50f9d52740ecb59376a0e060edcf5d88cace334a8bdea169c703a6047",
+      "family": "polymarket_US_active_liquidity_incentive_inventory_source_gate_2026_09_01",
+      "reason": "official_documentation_identifies_a_direction_independent_open_resting_order_liquidity_reward_plus_25_percent_maker_rebate_stack_but_the_prospectively_frozen_one_use_current_active_program_inventory_GET_returned_HTTP_503_so_no_current_positive_pool_score_share_book_candidate_account_eligibility_deployment_or_profit_floor_is_proved_do_not_retry_alias_paginate_request_earnings_select_a_documentation_example_or_request_books_reopen_only_after_a_material_official_endpoint_availability_documented_host_or_schema_change_with_a_fresh_contract_frozen_before_access"
     }
   ],
-  "updated_at_utc": "2026-09-01T09:52:47.3380949Z",
+  "updated_at_utc": "2026-09-01T10:01:38.1604490Z",
   "usage_rule": "advance_the_highest_ranked_hypothesis_whose_retry_trigger_is_satisfied_otherwise_do_not_repeat_a_blocked_or_terminal_screen"
 }
