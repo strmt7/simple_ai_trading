@@ -113,6 +113,15 @@ override prose.
   joint state uncovered; write that state down explicitly instead of pricing it
   as impossible. Apply the same rendered-button rejection gate and frozen
   side-specific advance rules as for a scalar ladder.
+- When projecting a pairwise comparator into a multi-outcome winner market,
+  align tie payouts before calling the implication Boolean. If the pairwise
+  market resolves an equal comparison 50-50 while the multi-outcome market
+  awards one full winner by a separate tie-break, the naive
+  `NO(A wins) + YES(A beats B)` package has only a 0.5-pUSD floor when `A` and
+  `B` tie and `A` wins the multi-outcome tie-break. Price against that smaller
+  floor or add exact tie coverage; never assume a one-pUSD floor. If one known
+  required leg already costs at least the tie-aware floor, stop before metadata,
+  book, fee, account, or credential requests.
 - For a projection cover from one complete joint partition to `k` mutually
   exclusive exact marginal outcomes, buy `NO` on every marginal outcome and
   `YES` on every joint row whose projection is their union. The package has a

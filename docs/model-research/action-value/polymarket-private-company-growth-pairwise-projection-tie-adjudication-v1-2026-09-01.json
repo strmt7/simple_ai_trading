@@ -1,0 +1,114 @@
+{
+  "schema_version": "polymarket-private-company-growth-pairwise-projection-tie-adjudication-v1",
+  "created_at_utc": "2026-09-01T04:56:30Z",
+  "question": "Can a September 2026 private-company pairwise valuation-growth market be projected into the five-company greatest-growth winner market as a direction-independent one-pUSD implication cover?",
+  "rendered_primary_sources": [
+    {
+      "url": "https://polymarket.com/event/private-companies-greatest-valuation-growth-september-2026-20260829014000069",
+      "observed_at_utc": "2026-09-01T04:52:00Z",
+      "role": "complete rendered five-company winner population, winner tie-break rule, and discovery-only side prices"
+    },
+    {
+      "url": "https://polymarket.com/event/anthropic-vs-openai-greater-valuation-growth-september-2026-20260829014000031",
+      "observed_at_utc": "2026-09-01T04:53:00Z",
+      "role": "rendered pairwise comparison rule and explicit 50-50 percentage-growth tie settlement"
+    },
+    {
+      "url": "https://polymarket.com/event/stripe-vs-databricks-greater-valuation-growth-september-2026-20260829014000032",
+      "observed_at_utc": "2026-09-01T04:54:00Z",
+      "role": "same-mechanism rendered pairwise corroboration; not separately priced or counted"
+    }
+  ],
+  "source_scope": {
+    "five_way_outcomes": [
+      "Databricks",
+      "ByteDance",
+      "Anthropic",
+      "OpenAI",
+      "Stripe"
+    ],
+    "common_measure": "percentage valuation growth during the stated September 2026 New Privates Markets observation period",
+    "five_way_tie_rule": "award the market to the tied company with the highest final valuation",
+    "pairwise_tie_rule": "resolve the two pairwise outcomes 50-50 when percentage growth is equal",
+    "five_way_NO_discovery_ask_pUSD": 0.97,
+    "pairwise_side_specific_ask_observed": false,
+    "source_role": "rendered rules and prices are rejection-only and cannot promote or price an accepted edge"
+  },
+  "candidate_package": {
+    "legs": [
+      "NO(Anthropic wins the five-way greatest-growth market)",
+      "YES(Anthropic has greater percentage valuation growth than OpenAI)"
+    ],
+    "naive_claimed_floor_pUSD": 1.0,
+    "correct_tie_aware_floor_pUSD": 0.5
+  },
+  "complete_state_table": [
+    {
+      "state": "Anthropic strictly beats OpenAI and wins the five-way market",
+      "five_way_NO_payout_pUSD": 0.0,
+      "pairwise_Anthropic_payout_pUSD": 1.0,
+      "package_payout_pUSD": 1.0
+    },
+    {
+      "state": "Anthropic strictly beats OpenAI but another company wins the five-way market",
+      "five_way_NO_payout_pUSD": 1.0,
+      "pairwise_Anthropic_payout_pUSD": 1.0,
+      "package_payout_pUSD": 2.0
+    },
+    {
+      "state": "OpenAI strictly beats Anthropic",
+      "five_way_NO_payout_pUSD": 1.0,
+      "pairwise_Anthropic_payout_pUSD": 0.0,
+      "package_payout_pUSD": 1.0
+    },
+    {
+      "state": "Anthropic and OpenAI tie on percentage growth and Anthropic wins the five-way market under its highest-final-valuation tie-break",
+      "five_way_NO_payout_pUSD": 0.0,
+      "pairwise_Anthropic_payout_pUSD": 0.5,
+      "package_payout_pUSD": 0.5
+    },
+    {
+      "state": "Anthropic and OpenAI tie on percentage growth but Anthropic does not win the five-way market",
+      "five_way_NO_payout_pUSD": 1.0,
+      "pairwise_Anthropic_payout_pUSD": 0.5,
+      "package_payout_pUSD": 1.5
+    }
+  ],
+  "economics_gate": {
+    "known_required_leg_cost_lower_bound_pUSD": 0.97,
+    "unknown_second_leg_cost_lower_bound_pUSD": 0.0,
+    "total_package_cost_lower_bound_pUSD": 0.97,
+    "guaranteed_payout_floor_pUSD": 0.5,
+    "gross_upper_bound_pUSD": -0.47,
+    "Gamma_requests": 0,
+    "CLOB_book_requests": 0,
+    "fee_requests": 0,
+    "reason": "The required five-way NO leg alone costs at least 0.97 pUSD, already 0.47 pUSD above the correct 0.50 pUSD tie-aware floor. The missing pairwise ask, fees, depth, time value, atomicity, latency, and unwind costs can only worsen the package."
+  },
+  "adjudication": {
+    "status": "terminal_pairwise_to_five_way_projection_rejected_by_tie_semantics_and_single_leg_lower_bound",
+    "accepted_edge": false,
+    "deployment_ready": false,
+    "market_direction_forecast_required": false,
+    "profitability_claim": false,
+    "stable_current_account_qualified_after_all_cost_edge": false,
+    "next_action": "Do not request Gamma metadata, CLOB books, fees, accounts, credentials, funds, orders, or transactions for this exact projection. Reopen this mechanism only when pairwise and multiway tie semantics are payout-aligned or exact tie coverage is included and every required rendered discovery leg remains strictly below the resulting tie-aware floor."
+  },
+  "authority": {
+    "account_requests": 0,
+    "credentials_used": false,
+    "funds_used": false,
+    "orders_or_transactions": 0,
+    "protected_capture_touched": false,
+    "public_unauthenticated_read_only_requests": 0,
+    "signed_requests": 0,
+    "trading_authority": false
+  },
+  "registry_effect": {
+    "accepted_edge_count": 29,
+    "ranked_hypothesis_count": 47,
+    "terminal_family_count": 138,
+    "stable_current_account_qualified_after_all_cost_edge_count": 0
+  },
+  "result_sha256": "bcb49e2e1bdba407fe8121a37ff56dcddd770b1957e1add2c95f225fdb76fded"
+}

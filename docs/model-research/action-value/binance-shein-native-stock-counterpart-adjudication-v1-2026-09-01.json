@@ -1,0 +1,82 @@
+{
+  "schema_version": "binance-shein-native-stock-counterpart-adjudication-v1",
+  "created_at_utc": "2026-09-01T04:49:30Z",
+  "question": "Can Binance's native Stocks Trading product supply an exact same-share HK0625 SHEIN leg against the newly announced HK0625USDT quanto perpetual?",
+  "trigger": {
+    "registry_rank": 38,
+    "mechanism": "binance_native_stock_USDC_TradFi_perpetual_USDT_parity",
+    "prior_announcement_identity_path": "docs/model-research/action-value/binance-shein-quanto-polymarket-perps-match-adjudication-v1-2026-09-01.json",
+    "prior_announcement_identity_canonical_sha256": "bce940e94a6846e2524f01d77f18b7e921bc273b1f027d9dc7cab4a5b99faf50",
+    "announcement_title": "Binance Futures Will Launch HK0625USDT USD-Margined Quanto Perpetual Contract (2026-09-01)",
+    "new_binance_symbol": "HK0625USDT",
+    "underlying_company": "SHEIN Global Holdings Limited",
+    "deployment_state_source_proved": false
+  },
+  "official_product_universe": {
+    "rendered_primary_source_url": "https://developers.binance.com/en/docs/products/stocks/introduction",
+    "rendered_primary_source_observed_at_utc": "2026-09-01T04:46:00Z",
+    "rendered_primary_source_last_modified": "2026-08-31",
+    "source_role": "negative universe and share-class gate only; rendered terms were observed before the byte-retention freeze and cannot advance or price a candidate",
+    "documented_module_scope": "US-listed equities",
+    "documented_stock_scope": "common shares of US-listed companies on NYSE or NASDAQ",
+    "documented_etf_scope": "ETFs listed on US venues",
+    "documented_symbol_namespace": "plain uppercase US-equity ticker",
+    "documented_default_quote_asset": "USDC",
+    "HK0625_in_documented_universe": false
+  },
+  "byte_retention": {
+    "contract_path": "docs/model-research/action-value/binance-shein-native-stock-counterpart-source-contract-v1-2026-09-01.json",
+    "contract_canonical_sha256": "3fd064e94d8e591d874a816c495c34b878fb0f6979662a7dcca03625ab43c9d0",
+    "failure_path": "docs/model-research/action-value/binance-shein-native-stock-counterpart-source-failure-v1-2026-09-01.json",
+    "failure_canonical_sha256": "4baf2f1b3a5bce69cc23575234c4ee27405136c222f8d60904adc0ba4e2bec73",
+    "observed_http_status": 202,
+    "response_bytes": 0,
+    "response_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "journal_sha256": "e9260332674f30ff9f149d95527757cf851da8065240fdcfac9aa25475c7c8b9",
+    "retry_or_alias_permitted": false
+  },
+  "exact_match_gate": {
+    "required_underlying": "the same HK0625 Hong Kong share represented by the announced quanto perpetual",
+    "candidate_native_product_underlying": "US-listed NYSE or NASDAQ common share or US-listed ETF only",
+    "same_share_class": false,
+    "same_exchange_identifier": false,
+    "same_symbol_namespace": false,
+    "exact_counterpart_exists_under_documented_contract": false,
+    "reason": "A US-listed stock or US-stock wrapper is not fungible with the HK0625 Hong Kong share. Company-name similarity, an ADR, a tokenized stock, or another share class cannot satisfy the frozen same-underlying and share-class gate."
+  },
+  "economics_gate": {
+    "native_stock_websocket_connections": 0,
+    "native_stock_REST_requests": 0,
+    "perpetual_ticker_or_book_requests": 0,
+    "spot_FX_requests": 0,
+    "funding_requests": 0,
+    "fee_requests": 0,
+    "reason": "Without an exact native-stock counterpart, parity economics are undefined and every downstream value request would be wasted."
+  },
+  "adjudication": {
+    "status": "terminal_HK0625_quanto_has_no_documented_native_US_stock_counterpart",
+    "accepted_edge": false,
+    "deployment_ready": false,
+    "market_direction_forecast_required": false,
+    "profitability_claim": false,
+    "stable_current_account_qualified_after_all_cost_edge": false,
+    "next_action": "Do not open HK0625, SHEIN, ADR, bStock, Ondo, xStock, or related-company native-stock streams; do not request futures, FX, funding, fee, book, or account data for this branch. Reopen rank 38 only for a future official listing whose exact share class exists in Binance's documented native US-stock universe or for a material product-universe or stream-architecture change."
+  },
+  "authority": {
+    "account_requests": 0,
+    "credentials_used": false,
+    "funds_used": false,
+    "orders_or_transactions": 0,
+    "protected_capture_touched": false,
+    "public_unauthenticated_read_only_requests": 1,
+    "signed_requests": 0,
+    "trading_authority": false
+  },
+  "registry_effect": {
+    "accepted_edge_count": 29,
+    "ranked_hypothesis_count": 47,
+    "terminal_family_count": 138,
+    "stable_current_account_qualified_after_all_cost_edge_count": 0
+  },
+  "result_sha256": "6ff02e16bc0c8e8f6e833da8a221eee532868b103b6ef078ca16b72495ecf139"
+}

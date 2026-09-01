@@ -1,0 +1,73 @@
+{
+  "schema_version": "public-source-capture-contract-v1",
+  "frozen_at_utc": "2026-09-01T04:47:40.0299274Z",
+  "contract_path": "docs/model-research/action-value/binance-shein-native-stock-counterpart-source-contract-v1-2026-09-01.json",
+  "trigger": {
+    "registry_route": "rank_38_binance_native_stock_USDC_TradFi_perpetual_USDT_parity",
+    "novelty_evidence": "The official September 1 HK0625USDT SHEIN quanto-perpetual announcement is a new TradFi-perpetual listing, while the retained rank-38 captures predate it.",
+    "outcomes_viewed_before_freeze": true,
+    "discovery_values_are_economic_inputs": false,
+    "promotion_eligibility": "The source gate can only reject an impossible instrument match. It cannot advance, promote, price, or establish profit because the official page terms were rendered before byte retention."
+  },
+  "question": "Does Binance's current official Stocks Trading contract permit the Hong Kong-listed HK0625 SHEIN share in the native-stock quote universe required to match the announced HK0625USDT quanto perpetual?",
+  "request_name": "binance-stocks-us-listed-universe-contract",
+  "request": {
+    "method": "GET",
+    "url": "https://developers.binance.com/en/docs/products/stocks/introduction",
+    "count": 1,
+    "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "endpoint_classification": {
+    "operation": "download one current official Binance Developer documentation page",
+    "security": "public unauthenticated read-only documentation GET with no account, signing, or mutation semantics",
+    "source_contract": "The official page is the module-level contract for Stocks Trading and explicitly defines its supported instruments and symbol namespace."
+  },
+  "response_byte_ceiling": 1000000,
+  "required_utf8_phrases": [
+    "trade Stocks and ETFs with crypto",
+    "US-listed equities",
+    "common shares of US-listed companies",
+    "NYSE / NASDAQ",
+    "ETFs",
+    "plain ticker",
+    "default USDC"
+  ],
+  "decision": {
+    "source_gate_only": "Every exact US-listed-equity, US-venue, plain-US-ticker, and default-USDC term must exist in the retained official response.",
+    "negative_gate": "If present, HK0625 is outside the documented native-stock universe because it is the Hong Kong share identifier in the source-bound announcement, so no native quote, futures book, FX book, funding, fee, account, or order request is justified.",
+    "accepted_edge": false,
+    "profitability_proved": false,
+    "conditional_next_step": "Adjudicate the exact share-class mismatch offline against the retained September 1 announcement identity and terminalize only this announced HK0625-to-native-US-stock branch."
+  },
+  "outputs": {
+    "raw_path": "data/binance-shein-native-stock-counterpart-v1/raw/01-stocks-introduction.raw.html",
+    "journal_path": "data/binance-shein-native-stock-counterpart-v1/raw/00-request-journal.jsonl",
+    "result_path": "docs/model-research/action-value/binance-shein-native-stock-counterpart-source-result-v1-2026-09-01.json"
+  },
+  "authority": {
+    "account_requests": 0,
+    "credentials_used": false,
+    "funds_used": false,
+    "orders_or_transactions": 0,
+    "protected_capture_touched": false,
+    "public_unauthenticated_read_only_requests": 1,
+    "signed_requests": 0,
+    "trading_authority": false
+  },
+  "implementations": [
+    {
+      "path": "tools/capture_public_source_contract.py",
+      "sha256": "d566a5a379c659c3da144d5e28449ebac9c01493bd39646f9cc3a6e697a83566"
+    },
+    {
+      "path": "tools/screen_polymarket_exact_two_leg_package.py",
+      "sha256": "374fcc3c3485c466b4929a91256450bdc7db70f93ef4c6bda627e05fe8938327"
+    },
+    {
+      "path": "tools/adjudicate_polymarket_exact_mlb_monotone_prefilter.py",
+      "sha256": "958a44d78029b9a1eb69a3771ce18e53ac1ed3c7bc161c8e4318beedce2cf99f"
+    }
+  ],
+  "retry_policy": "This exact official documentation GET is one-use. Preserve any HTTP error or missing-term response and do not retry an alias. A passing source gate proves only the documented instrument boundary and can never prove deployment, execution, profit, recurrence, account eligibility, or trading authority.",
+  "contract_sha256": "3fd064e94d8e591d874a816c495c34b878fb0f6979662a7dcca03625ab43c9d0"
+}

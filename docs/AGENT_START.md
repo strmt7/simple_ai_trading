@@ -23,6 +23,43 @@ safety gate, blocks Stop, or submits an order.
 
 ### Latest efficient structural screen
 
+Two new literal triggers were closed at the cheapest decisive gate.
+
+First, rank 38's native-stock parity branch cannot use the newly announced
+`HK0625USDT` SHEIN quanto instrument. Current official Binance Stocks
+documentation limits the native product to US-listed NYSE or NASDAQ common
+shares and US-listed ETFs, so the exact HK0625 Hong Kong share has no documented
+native counterpart. A frozen documentation GET returned HTTP 202 with an empty
+body and is preserved without alias or retry; the separately rendered official
+page is rejection-only. Never substitute an ADR, wrapper, tokenized stock,
+bStock, Ondo, xStock, company-name match, or different share class. Zero native
+streams, futures, FX, funding, fee, book, account, or credential requests were
+justified.
+
+Second, the September private-company pairwise-to-five-way Polymarket
+projection has a tie-semantics hole. Pairwise equal growth pays 50-50, while the
+five-way market awards one full winner by highest final valuation. The naive
+`NO(Anthropic wins five-way) + YES(Anthropic beats OpenAI)` floor is therefore
+0.50 pUSD, not one pUSD. Its required five-way `NO` leg alone displayed 0.97
+pUSD, so the gross upper bound is at most -0.47 pUSD before the second leg or
+any cost. No Gamma, CLOB, or fee request was justified. `AGENTS.md` now requires
+explicit tie-payout alignment for every pairwise-to-multiway projection.
+
+Accepted edges remain 29, ranked hypotheses remain 47, terminal families are
+138, and stable current account-qualified after-all-cost edges remain zero.
+The Binance contract, failure, and adjudication hashes are
+`3fd064e94d8e591d874a816c495c34b878fb0f6979662a7dcca03625ab43c9d0`,
+`4baf2f1b3a5bce69cc23575234c4ee27405136c222f8d60904adc0ba4e2bec73`,
+and `6ff02e16bc0c8e8f6e833da8a221eee532868b103b6ef078ca16b72495ecf139`.
+The Polymarket adjudication hash is
+`bcb49e2e1bdba407fe8121a37ff56dcddd770b1957e1add2c95f225fdb76fded`.
+Registry and durability-audit hashes are
+`06e9c43228f09c23d6ad26dde21216eed7d350fbfe19453380a7bf10247565b9`
+and `a6c3d63d971bf16aacfec64492dc13660c203d93e740c4fade4122f2fc50a5d8`.
+
+No signed request, account, credential, order, fund, transaction, or protected
+capture was touched.
+
 Binance's new September 1 announcement for an `HK0625USDT` SHEIN quanto TradFi
 perpetual supplied a literal instrument-change trigger for rank 43. The
 cheapest decisive gate was one frozen current Polymarket Perps instrument
