@@ -1,0 +1,65 @@
+{
+  "schema_version": "polymarket-us-global-exact-title-search-contract-v1",
+  "frozen_at_utc": "2026-09-01T09:50:48.5476271Z",
+  "contract_path": "docs/model-research/action-value/polymarket-us-global-house-aid-exact-title-search-contract-v1-2026-09-01.json",
+  "research_question": "Does the public Polymarket US inventory contain exactly the same open September 30 US House military-aid contract already retained from Polymarket Global, with source-proved payoff identity sufficient to permit a later separately frozen economics gate?",
+  "selection": {
+    "method": "Before any Polymarket US search or economics access, select the objectively resolvable exact-title US House question from the eight matching-topic titles in the retained September 30 Global catalog. Selection used title, rule objectivity, and likely cross-listing only; no candidate economics were inspected.",
+    "promotion_safety": "The exact title, one request, response limit, exact-title rule, global event identity, implementation, raw path, journal path, and output path are frozen before access. Search-response economics may be retained in raw bytes but may not be printed, used for selection, or treated as executable.",
+    "no_substitution": "If there is not exactly one exact-title result, stop. Do not search an alias, similar title, sibling, alternate date, or second candidate after observing this response."
+  },
+  "exact_title": "Will the US House pass a bill restricting military aid to Israel by September 30?",
+  "limit": 50,
+  "global_source": {
+    "path": "data/polymarket-sep30-et-negrisk-complete-set-catalog-v1/raw/events.json",
+    "sha256": "ff108e7b869cf74e1950d9eb90d75c35335b56996d8ad1cda5fc675b2633c0ab",
+    "event_id": "648808",
+    "event_slug": "will-the-us-house-pass-a-bill-restricting-military-aid-to-israel-by-september-30-20260629164744619"
+  },
+  "official_sources": [
+    {
+      "url": "https://docs.polymarket.us/api-reference/introduction",
+      "claim": "Polymarket US documents https://gateway.polymarket.us as its public API base and separates public endpoints from authenticated trading endpoints."
+    },
+    {
+      "url": "https://docs.polymarket.us/api-reference/search/search",
+      "claim": "The public GET /v1/search endpoint accepts query and limit parameters and returns an events array."
+    }
+  ],
+  "capture": {
+    "method": "GET",
+    "public_unauthenticated": true,
+    "read_only": true,
+    "retry_count": 0,
+    "url": "https://gateway.polymarket.us/v1/search?query=Will+the+US+House+pass+a+bill+restricting+military+aid+to+Israel+by+September+30%3F&limit=50"
+  },
+  "payoff_identity_gate": {
+    "required": [
+      "exactly one exact event title",
+      "one market on each venue",
+      "exact normalized event descriptions and resolution sources",
+      "exact event end time",
+      "exact normalized market questions descriptions and resolution sources",
+      "exact market end time",
+      "no additional Polymarket US market rules disclaimer",
+      "both events active and not closed"
+    ],
+    "fail_closed": "Any absent, ambiguous, additional, or unequal term rejects the family before economics. Matching titles alone never prove matching payoffs."
+  },
+  "outputs": {
+    "raw_path": "data/polymarket-us-global-house-aid-exact-title-search-v1/raw/search.json",
+    "journal_path": "data/polymarket-us-global-house-aid-exact-title-search-v1/request-journal.jsonl",
+    "result_path": "docs/model-research/action-value/polymarket-us-global-house-aid-exact-title-search-result-v1-2026-09-01.json"
+  },
+  "implementation": {
+    "path": "tools/capture_polymarket_us_exact_title_search.py",
+    "sha256": "833fdd021fcbfebdcadf4b2ba7a6c7d9ea3b5f804961a34a1347896ef66982e5"
+  },
+  "authority": {
+    "allowed": "One public unauthenticated read-only Polymarket US search GET and zero-network comparison with the hash-bound retained Global catalog.",
+    "prohibited": "No credentials accounts authentication orders funds transactions price selection BBO order books fee endpoints retries aliases pagination protected capture reads or deployment claims.",
+    "trading_authority": false
+  },
+  "retry_policy": "This exact search is one-use. Preserve any response or failure and do not retry, alias, paginate, or substitute another candidate after observing it. A passing payoff gate only permits a separately frozen economics test; it never proves executable parity, capacity, atomicity, eligibility, legality, or profit.",
+  "contract_sha256": "fb9f342d39d672c41c33c08bb11685bf43403d1c9650c2ff05e981ef3226c960"
+}

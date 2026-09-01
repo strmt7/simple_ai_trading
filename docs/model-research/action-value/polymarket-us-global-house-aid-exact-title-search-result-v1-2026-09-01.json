@@ -1,0 +1,95 @@
+{
+  "adjudication": {
+    "accepted_edge": false,
+    "candidate_for_separate_frozen_economics_gate": false,
+    "deployment_ready": false,
+    "next_action": "stop_without_any_price_book_account_or_order_request",
+    "profitability_claim": false
+  },
+  "authority": {
+    "allowed": "One public unauthenticated read-only Polymarket US search GET and zero-network comparison with the hash-bound retained Global catalog.",
+    "prohibited": "No credentials accounts authentication orders funds transactions price selection BBO order books fee endpoints retries aliases pagination protected capture reads or deployment claims.",
+    "trading_authority": false
+  },
+  "capture": {
+    "economic_fields_printed": 0,
+    "exact_title_match_count": 0,
+    "receipt": {
+      "completed_at_ms": 1788256305265,
+      "method": "GET",
+      "name": "polymarket-us-exact-title-search",
+      "phase": "completed",
+      "raw_path": "data/polymarket-us-global-house-aid-exact-title-search-v1/raw/search.json",
+      "request_body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "requested_at_ms": 1788256304201,
+      "response_bytes": 45366,
+      "response_sha256": "4f216f2c962498d149c846ba5f5044d11328bbdfb1c45855a33014ea156e8742",
+      "status_code": 200,
+      "url": "https://gateway.polymarket.us/v1/search?query=Will+the+US+House+pass+a+bill+restricting+military+aid+to+Israel+by+September+30%3F&limit=50"
+    },
+    "returned_event_count": 2
+  },
+  "contract": {
+    "path": "docs/model-research/action-value/polymarket-us-global-house-aid-exact-title-search-contract-v1-2026-09-01.json",
+    "sha256": "fb9f342d39d672c41c33c08bb11685bf43403d1c9650c2ff05e981ef3226c960"
+  },
+  "created_at_utc": "2026-09-01T09:51:45.266295Z",
+  "global_event": {
+    "active": true,
+    "archived": false,
+    "closed": false,
+    "description": "This market will resolve to \"Yes\" if the US House passes a bill that, if enacted, would impose restrictions, beyond any that exist at the time of market creation, on military assistance from the United States to Israel by September 30, 2026 at 11:59PM ET. Otherwise, this market will resolve to \"No\".\n\nThe resolution source will be official U.S. federal government publications (e.g., Congress.gov) however a consensus of credible reporting may also be used.",
+    "endDate": "2026-10-01T03:59:00Z",
+    "hidden": null,
+    "id": "648808",
+    "resolutionSource": "",
+    "slug": "will-the-us-house-pass-a-bill-restricting-military-aid-to-israel-by-september-30-20260629164744619",
+    "startDate": "2026-06-29T19:41:51.55702Z",
+    "subtitle": null,
+    "ticker": "will-the-us-house-pass-a-bill-restricting-military-aid-to-israel-by-september-30-20260629164744619",
+    "title": "Will the US House pass a bill restricting military aid to Israel by September 30?"
+  },
+  "global_markets": [
+    {
+      "active": true,
+      "archived": false,
+      "closed": false,
+      "description": "This market will resolve to \"Yes\" if the US House passes a bill that, if enacted, would impose restrictions, beyond any that exist at the time of market creation, on military assistance from the United States to Israel by September 30, 2026 at 11:59PM ET. Otherwise, this market will resolve to \"No\".\n\nThe resolution source will be official U.S. federal government publications (e.g., Congress.gov) however a consensus of credible reporting may also be used.",
+      "endDate": "2026-10-01T03:59:00Z",
+      "hidden": null,
+      "id": "2734704",
+      "marketSides": [],
+      "marketType": null,
+      "outcomes": "[\"Yes\", \"No\"]",
+      "question": "Will the US House pass a bill restricting military aid to Israel by September 30?",
+      "resolutionSource": "",
+      "rulesDisclaimer": null,
+      "slug": "will-the-us-house-pass-a-bill-restricting-military-aid-to-israel-by-september-30-20260629164744619",
+      "title": null
+    }
+  ],
+  "implementation": {
+    "path": "tools/capture_polymarket_us_exact_title_search.py",
+    "sha256": "833fdd021fcbfebdcadf4b2ba7a6c7d9ea3b5f804961a34a1347896ef66982e5"
+  },
+  "payoff_identity": {
+    "both_events_open": false,
+    "comparisons": {
+      "event_description_exact": false,
+      "event_end_date_exact": false,
+      "event_resolution_source_exact": false,
+      "event_title_exact": false,
+      "market_description_exact": false,
+      "market_end_date_exact": false,
+      "market_question_exact": false,
+      "market_resolution_source_exact": false,
+      "single_market_each": false,
+      "us_has_no_additional_rules_disclaimer": false
+    },
+    "exact_text_and_time_identity": false
+  },
+  "polymarket_us_event": null,
+  "polymarket_us_markets": [],
+  "result_sha256": "2ffbcad5a046dca1008bfc8b11693e7621ed23848fde8c0ddf24f03453375f6e",
+  "schema_version": "polymarket-us-global-exact-title-search-result-v1"
+}

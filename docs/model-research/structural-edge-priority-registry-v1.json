@@ -3605,7 +3605,7 @@
       "venue_scope": "Predict.fun_on_BNB_Chain_independent_from_Binance_Exchange"
     }
   ],
-  "result_sha256": "fd3948dffc72413f18f54fc966278fae617d3050f2fe6fd682c8308874e231f5",
+  "result_sha256": "979ba80e079e03afb3a6991fcc186a5e5e61749e5485467317e47ceab8efffdd",
   "schema_version": "structural-edge-priority-registry-v1",
   "terminal_do_not_repeat": [
     {
@@ -4403,8 +4403,13 @@
       "canonical_result_sha256": "c3dc478bc582ec5f60ace208fab5cb28e9d1cf593059894443d2783c12f114ac",
       "family": "polymarket_NYC_September_1_high_temperature_exact_fixed_NegRisk_prefilter_2026_09_01",
       "reason": "the_official_rendered_discovery_page_exposed_all_eleven_displayed_prices_before_freeze_making_the_event_promotion_ineligible_the_frozen_exact_Gamma_GET_reconciled_eleven_markets_and_rejected_the_all_YES_complete_set_at_1_0485_pUSD_for_a_one_pUSD_floor_while_all_eleven_displayed_one_NO_to_other_YES_identities_were_only_non_executable_source_signals_with_best_0_0485_pUSD_do_not_refetch_alias_reprice_request_books_or_promote_reopen_only_for_a_distinct_event_selected_and_frozen_before_any_outcome_aware_access"
+    },
+    {
+      "canonical_result_sha256": "2ffbcad5a046dca1008bfc8b11693e7621ed23848fde8c0ddf24f03453375f6e",
+      "family": "polymarket_US_global_House_military_aid_exact_title_cross_venue_payoff_identity_2026_09_01",
+      "reason": "the_prospectively_frozen_public_Polymarket_US_exact_title_search_returned_two_events_but_zero_exact_title_matches_for_the_hash_bound_open_Global_US_House_military_aid_contract_so_cross_venue_payoff_identity_failed_before_economics_no_price_BBO_book_fee_account_credential_order_fund_or_transaction_request_was_justified_do_not_retry_alias_paginate_or_substitute_a_similar_title_reopen_only_for_a_distinct_exact_contract_selected_and_frozen_before_any_US_search_or_for_a_material_listing_or_venue_architecture_change"
     }
   ],
-  "updated_at_utc": "2026-09-01T09:40:00.0000000Z",
+  "updated_at_utc": "2026-09-01T09:52:47.3380949Z",
   "usage_rule": "advance_the_highest_ranked_hypothesis_whose_retry_trigger_is_satisfied_otherwise_do_not_repeat_a_blocked_or_terminal_screen"
 }
