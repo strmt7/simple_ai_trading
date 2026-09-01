@@ -1,12 +1,60 @@
 # Continue Development
 
-Current canonical status after the Binance-Paradex funding source-gate screen:
-accepted edges 35, ranked hypotheses 59, terminal families 177,
+Current canonical status after the Binance-Backpack funding-only screen:
+accepted edges 35, ranked hypotheses 60, terminal families 178,
 and stable current account-qualified after-all-cost edges zero. Registry
 SHA-256 is
-`2dc19765f6a9a3a0cb688991828f7624d12f10917f0bba02533281193ff9689c`;
+`d82874659b6cd34e6713253d6322af9833cf79a6a4ad71809fc9ce9a1dd5619c`;
 durability-audit SHA-256 is
-`99c6e83c348f6f3b8b3e95c238db5a66efbf6fcc8af1d3f7e1db6066e7527646`.
+`6f8d7cc5838bf64251fb6e40e0ff4847f49e79454874f0eaf7a4ec7117843f87`.
+
+## 2026-09-01 Binance-Backpack cross-venue funding rejection
+
+The distinct BTC, ETH, and SOL Binance-USDT versus Backpack-USDC perpetual
+funding family was frozen before any funding value was emitted. The population
+contained 270 Binance eight-hour buckets per asset and required the exact 2,160
+Backpack hourly intervals that end within them. Training, validation, and test
+roles were 135, 67, and 68 buckets. Orientation was selected on training only.
+The prefilter charged 20 bips round-trip execution, a 10 percent annual two-leg
+capital hurdle, 25 bips of USDC/USDT stress, and 25 bips of custody, latency,
+and failure stress before any premium, basis, or book request.
+
+Seven frozen unauthenticated venue GETs retained one 89-market Backpack
+inventory, 2,200 Backpack hourly rows per asset, and exactly 270 Binance rows
+per asset. A v1 preflight stopped before economic output because Backpack's
+live interval-end strings were strict whole-hour ISO labels without timezone
+markers. That failure is preserved. A separately retained current official
+Backpack source anchors the exchange-wide hourly funding change at 08:00 UTC
+and states that funding is debited or credited at each interval end. The v2
+contract changed only that strict timestamp interpretation; population,
+alignment, roles, orientation, costs, gates, and raw inputs remained immutable.
+
+Every training-only orientation was short Backpack and long Binance. Gross
+funding was often positive, but zero asset passed every after-cost role. BTC,
+ETH, and SOL test net results were respectively `-118.9728466210`,
+`-113.6156966210`, and `-110.2172366210` bips. BTC validation gross was
+negative, and SOL's validation second half was negative. The exact population
+is terminal before premiums, basis, books, accounts, credentials, orders, or
+funds. Do not refetch, resample, realign, refit orientation, or weaken costs.
+Reopen only on a material venue funding, fee, quote-unit, custody, latency,
+capital, or execution-architecture change, or a distinct prospectively frozen
+nonoverlapping population.
+
+Preregistration, v1 failure, v2 contract, and v2 result canonical SHA-256
+values are
+`3e59d011fedc55d81f3fdd78b75ef20fcd9f3c7b7b89dd24a704335d4b372baf`,
+`411575adf40b65ddecc945ce4af423b3a07b21863dd3bbb285d240f37e7c5032`,
+`baf18425361d1dc750296ce619ad9caf5ef74e6f8109e1b3994e19c8778354d4`,
+and `ef665320c7cb3537d5f1a9b296fb95ca545def685fe7bb25abbda52c1193f133`.
+Inventory, Backpack BTC/ETH/SOL, and Binance BTC/ETH/SOL raw SHA-256 values are
+`b515ac0b293694af23c2de22bf7d281b8ba470a02187bcdfcb07f692228d4bf7`,
+`0fabf713e50e2353f4fdf311c2ac01b053adce64a1b4536eac0e0591f5d4afb8`,
+`405b0385c808b33b3d11d7c2eaeb4d9a9fa3886b6e90ba2294bd8354408c8226`,
+`c16c7c727342858104a74a2251e48621843c768454c63117c840088f00bcef75`,
+`caa7222b1e3ce9f412cd51d84952f30f3e88550b1b1839f26386100dae386483`,
+`8d9cef0513bad8dfb77f83a49f462e74ee5ab03915b1304363be0803d27e1a48`,
+and `8150891d65d0d2257b719b4ecc3d54a574d62905b76a6b09d6bd34e6e0a484e7`.
+No credential, account, order, fund, transaction, or protected capture was used.
 
 ## 2026-09-01 Binance-Paradex cross-venue funding source gate
 

@@ -1,0 +1,21 @@
+{
+  "schema_version": "public-source-capture-contract-v1",
+  "frozen_at_utc": "2026-09-01T13:47:00Z",
+  "contract_path": "docs/model-research/action-value/binance-backpack-hourly-utc-anchor-source-contract-v1-2026-09-01.json",
+  "request_name": "backpack_hourly_funding_utc_anchor_terms",
+  "request": {"method": "GET", "url": "https://support.backpack.exchange/technical-docs/trading/futures-specs.md", "count": 1, "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"},
+  "response_byte_ceiling": 250000,
+  "required_utf8_phrases": ["Wednesday August 20 at 08:00 UTC", "changed to hourly", "Funding payments are debited/credited at the end of the interval"],
+  "outputs": {
+    "raw_path": "docs/model-research/binance/raw/backpack-btc-eth-sol-funding-v1-2026-09-01/07-backpack-hourly-utc-anchor.raw.md",
+    "journal_path": "docs/model-research/binance/raw/backpack-btc-eth-sol-funding-v1-2026-09-01/07-backpack-hourly-utc-anchor.journal.jsonl",
+    "result_path": "docs/model-research/action-value/binance-backpack-hourly-utc-anchor-source-result-v1-2026-09-01.json"
+  },
+  "authority": {"account_requests": 0, "credentials_used": false, "funds_used": false, "orders_or_transactions": 0, "protected_capture_touched": false, "public_unauthenticated_read_only_requests": 1, "signed_requests": 0, "trading_authority": false},
+  "implementations": [
+    {"path": "tools/capture_public_source_contract.py", "sha256": "ba0e76bd6643eedc072cc1fcff2aa363c1dc14a5b8e14956e874c7843637b376"},
+    {"path": "tools/screen_polymarket_exact_two_leg_package.py", "sha256": "374fcc3c3485c466b4929a91256450bdc7db70f93ef4c6bda627e05fe8938327"}
+  ],
+  "purpose": "Source-bind the UTC whole-hour anchor needed for the sole post-capture timestamp parser correction before any funding economics are emitted.",
+  "contract_sha256": "927a8b4ea456747c466086e65e6bb2874023eb04121910a7d65eb168fe35b22a"
+}

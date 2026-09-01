@@ -103,6 +103,14 @@ override prose.
   Request no premiums, books, accounts, credentials, or orders when that cheap
   funding-only prefilter fails; never rescue it by resampling or changing the
   orientation after observation.
+- Treat a timezone-naive economic timestamp as ambiguous even when its wall-
+  clock text looks familiar. Stop before economic output and preserve the
+  failure. A sole mechanical correction may be refrozen only when a current
+  primary source independently anchors the venue schedule and timezone; bind
+  that source, require one exact timestamp grammar, and leave population,
+  alignment, roles, orientation, costs, gates, and raw inputs byte-identical.
+  Otherwise enumerate every plausible alignment conservatively or reject the
+  population; never inherit the workstation timezone or silently append UTC.
 - A new listing on only one venue does not by itself reopen a cross-venue
   funding family. First freeze one current counterpart-instrument inventory and
   require an exact common underlying, share class, contract unit, quote unit,

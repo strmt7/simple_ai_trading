@@ -1,0 +1,26 @@
+{
+  "schema_version": "binance-backpack-cross-venue-funding-preflight-failure-v1",
+  "recorded_at_utc": "2026-09-01T13:46:00Z",
+  "failed_contract": {
+    "path": "docs/model-research/action-value/binance-backpack-btc-eth-sol-funding-adjudication-contract-v1-2026-09-01.json",
+    "canonical_sha256": "1d7df5dbcd39e61f1d6e785abc58330b742f051b4035e91d8661957f4451c204",
+    "file_sha256": "6c187e5620f38719b3826ce05a8b0102115128502bb27dde3df62266797849af"
+  },
+  "stage": "post_capture_pre_economic_output_parser_preflight",
+  "failure_class": "timezone_naive_Backpack_intervalEndTimestamp_rejected",
+  "error": "Backpack timestamp lacks timezone",
+  "economic_values_printed": false,
+  "result_written": false,
+  "contract_rerun_allowed": false,
+  "correction_boundary": "A v2 contract may make only the source-proved UTC whole-hour parser correction. Population, roles, orientation, alignment, costs, gates, raw inputs, and all other economics are immutable.",
+  "source_resolution": {
+    "official_url": "https://support.backpack.exchange/technical-docs/trading/futures-specs.md",
+    "fact": "The official terms anchor the change to hourly funding across all perpetual futures at Wednesday August 20 08:00 UTC and say funding is debited or credited at each interval end.",
+    "source_contract_path": "docs/model-research/action-value/binance-backpack-hourly-utc-anchor-source-contract-v1-2026-09-01.json",
+    "source_contract_canonical_sha256": "927a8b4ea456747c466086e65e6bb2874023eb04121910a7d65eb168fe35b22a",
+    "source_result_path": "docs/model-research/action-value/binance-backpack-hourly-utc-anchor-source-result-v1-2026-09-01.json",
+    "source_raw_sha256": "64ef1f561e6d095d6a732a770b07dac8460d543ea592e148a517e1a7239c45b2"
+  },
+  "authority": {"account_requests": 0, "credentials_used": false, "funds_used": false, "orders_or_transactions": 0, "protected_capture_touched": false, "signed_requests": 0, "trading_authority": false},
+  "result_sha256": "411575adf40b65ddecc945ce4af423b3a07b21863dd3bbb285d240f37e7c5032"
+}

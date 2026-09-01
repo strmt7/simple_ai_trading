@@ -1,0 +1,43 @@
+{
+  "schema_version": "binance-backpack-cross-venue-funding-preregistration-v1",
+  "frozen_at_utc": "2026-09-01T13:34:27.6414223Z",
+  "contract_path": "docs/model-research/action-value/binance-backpack-btc-eth-sol-funding-preregistration-v1-2026-09-01.json",
+  "novelty": {"registry_route": "new_distinct_Binance_Backpack_cross_venue_funding_family", "exact_request_url_deduplication": "The exact one Backpack PERP inventory three Backpack recent-hourly funding and three Binance bounded funding URLs had zero retained contract result journal raw or prose hits before freeze.", "funding_values_viewed_before_freeze": false},
+  "question": "Does a fixed BTC ETH or SOL Binance-versus-Backpack perpetual orientation retain positive direction-neutral funding carry in training validation and test after all frozen hurdles?",
+  "official_semantics": {
+    "backpack_history": "Backpack official public GET /api/v1/fundingRates returns symbol intervalEndTimestamp and fundingRate with explicit limit default 100 maximum 10000 and offset default zero.",
+    "backpack_instruments": "Backpack official public GET /api/v1/markets exposes symbol baseSymbol quoteSymbol marketType fundingInterval orderBookState createdAt and visible.",
+    "backpack_cash_flow": "Backpack official funding terms state the current settlement cycle is one hour and positive funding is paid by longs to shorts while negative funding is paid by shorts to longs.",
+    "backpack_settlement": "Backpack official futures specifications state markets are denominated and settled in USDC and funding payment equals funding rate times position quantity times mark price.",
+    "binance_cash_flow": "The retained source-bound Binance convention is positive funding paid by longs to shorts with BTCUSDT ETHUSDT and SOLUSDT eight-hour events validated by exact schedule.",
+    "execution_hurdle": "The funding-only prefilter charges 20 bips round trip plus explicit ten-percent annual two-leg capital 25-bip USDC-USDT and 25-bip custody-latency-failure hurdles before any basis or book request."
+  },
+  "requests": {
+    "backpack_inventory": "https://api.backpack.exchange/api/v1/markets?marketType=PERP",
+    "backpack_funding": {"BTC": "https://api.backpack.exchange/api/v1/fundingRates?symbol=BTC_USDC_PERP&limit=2200&offset=0", "ETH": "https://api.backpack.exchange/api/v1/fundingRates?symbol=ETH_USDC_PERP&limit=2200&offset=0", "SOL": "https://api.backpack.exchange/api/v1/fundingRates?symbol=SOL_USDC_PERP&limit=2200&offset=0"},
+    "binance_funding": {"BTC": "https://fapi.binance.com/fapi/v1/fundingRate?symbol=BTCUSDT&startTime=1780502400000&endTime=1788249600000&limit=1000", "ETH": "https://fapi.binance.com/fapi/v1/fundingRate?symbol=ETHUSDT&startTime=1780502400000&endTime=1788249600000&limit=1000", "SOL": "https://fapi.binance.com/fapi/v1/fundingRate?symbol=SOLUSDT&startTime=1780502400000&endTime=1788249600000&limit=1000"}
+  },
+  "pagination_plan": {"backpack_limit": 2200, "backpack_offset": 0, "maximum_pages_per_asset": 1, "maximum_rows_per_asset": 2200, "maximum_bytes_per_asset": 750000, "decision": "One fixed recent page per asset must contain every exact required hourly timestamp. No second offset page alias or changed limit is allowed after access."},
+  "population": {
+    "assets": ["BTC", "ETH", "SOL"],
+    "backpack_symbols": {"BTC": "BTC_USDC_PERP", "ETH": "ETH_USDC_PERP", "SOL": "SOL_USDC_PERP"},
+    "binance_symbols": {"BTC": "BTCUSDT", "ETH": "ETHUSDT", "SOL": "SOLUSDT"},
+    "aligned_row_count": 270,
+    "first_funding_bucket_ms": 1780502400000,
+    "last_funding_bucket_ms": 1788249600000,
+    "interval_hours": 8,
+    "required_backpack_hourly_rows": 2160,
+    "backpack_bucket_semantics": "sum the eight hourly interval funding rates timestamped t_minus_7h through t inclusive against Binance eight-hour funding bucket t",
+    "maximum_binance_schedule_jitter_ms": 1000,
+    "instrument_gate": "Each exact Backpack symbol must occur once as a visible Open PERP with matching base and USDC quote."
+  },
+  "roles": {"training": {"start": 0, "stop": 135}, "validation": {"start": 135, "stop": 202}, "test": {"start": 202, "stop": 270}},
+  "orientation": "Choose sign once from the training aggregate of Backpack hourly-summed funding minus Binance funding. Positive fixes short Backpack and long Binance; negative fixes long Backpack and short Binance. Never refit validation or test.",
+  "economics": {"round_trip_execution_bips": "20", "annual_two_leg_capital_hurdle_percent": "10", "usdc_usdt_quote_unit_stress_bips": "25", "custody_latency_failure_stress_bips": "25"},
+  "gates": {"minimum_positive_interval_fraction": "0.5", "require_positive_net_after_all_hurdles_in_every_role": true, "require_positive_first_and_second_half_gross_in_every_role": true, "promotion_eligible": true},
+  "decision": {"failure": "Terminalize the exact 270-bin population before premiums books accounts credentials orders or funds; do not resample alter roles orientation alignment costs limit or offset.", "survivor": "Freeze exact current venue fees and synchronized finite-size entry and exit basis and depth evidence. A survivor is not yet an accepted edge or deployment-ready.", "accepted_edge": false, "deployment_ready": false, "stable_profitability_proved": false},
+  "authority": {"account_requests": 0, "credentials_used": false, "funds_used": false, "orders_or_transactions": 0, "protected_capture_touched": false, "public_unauthenticated_read_only_request_ceiling": 7, "signed_requests": 0, "trading_authority": false},
+  "implementation": {"path": "tools/adjudicate_binance_backpack_funding.py", "sha256": "d20cad18fb7a21409921e445273db4094094adb49c6c3acf8a32a4e0267ff623"},
+  "retry_policy": "One exact inventory GET and one exact fixed Backpack and Binance funding GET per asset only. Preserve every response. Never paginate alias reorder narrow change limit or offset substitute a host or retry after seeing values.",
+  "contract_sha256": "3e59d011fedc55d81f3fdd78b75ef20fcd9f3c7b7b89dd24a704335d4b372baf"
+}
