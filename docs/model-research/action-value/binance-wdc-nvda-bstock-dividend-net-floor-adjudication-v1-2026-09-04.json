@@ -1,0 +1,95 @@
+{
+  "schema_version": "binance-wdc-nvda-bstock-dividend-net-floor-adjudication-v1",
+  "created_at_utc": "2026-09-04T19:14:46.3745502Z",
+  "purpose": "apply rank 34's cheapest independent source gate to both episodes in the distinct WDCB and NVDAB dividend announcement before any issuer-calendar or market-data work",
+  "question": "Does either exact episode have a strictly positive source-bound conservative net-distribution floor after every withholding tax, fee, cost, and other deduction?",
+  "source_binding": {
+    "contract_path": "docs/model-research/action-value/binance-wdc-nvda-bstock-dividend-source-contract-v1-2026-09-04.json",
+    "contract_sha256": "36019fbf294ae3f3182ed75c6a4e35e1f305fd1ef7d44e59d24609ca663e3f6f",
+    "source_result_path": "docs/model-research/action-value/binance-wdc-nvda-bstock-dividend-source-result-v1-2026-09-04.json",
+    "source_result_sha256": "fd294181f625d62967254bc97de6f55930b6af9194b97cc9280f493c82702e21",
+    "raw_path": "data/binance-wdc-nvda-bstock-dividend-v1/raw/01-binance-announcement.raw.json",
+    "raw_sha256": "252d23d4de41ed250d2e5d8585cecd964aeeafb8b09d376a5b0dd38e51726882",
+    "journal_path": "data/binance-wdc-nvda-bstock-dividend-v1/raw/00-request-journal.jsonl",
+    "journal_sha256": "352a9de98ae662c0727c97c560afb19ccd33c58eeb49ef5ebbb4ab264c46c71a",
+    "article_code": "eba63ef89a68449088dd16725a2e5a0d",
+    "article_id": 283788,
+    "article_version": "1",
+    "published_at_utc": "2026-09-04T06:00:04.155Z",
+    "title": "Binance Will Support the Western Digital (WDC) and NVIDIA (NVDA) Cash Dividend Distribution via bStocks"
+  },
+  "shared_exact_terms": {
+    "distribution_form": "additional units or fractions of the same underlying security, with on-chain distribution through an adjustment to the multiplier",
+    "distribution_base": "net amount of the cash dividend",
+    "deductions_before_reinvestment": [
+      "applicable withholding taxes",
+      "fees",
+      "costs",
+      "other deductions"
+    ],
+    "exact_positive_gross_cash_amount_per_bstock_unit_published": false,
+    "finite_withholding_upper_bound_or_complete_formula_published": false,
+    "finite_fee_cost_and_other_deduction_upper_bound_or_complete_formula_published": false,
+    "deterministic_positive_final_units_or_multiplier_increment_published": false,
+    "currency_amount_candidates_in_article_body": [],
+    "why_no_positive_floor": "The current official article defines the receipt only after every listed deduction, but publishes neither a positive gross amount nor a finite ceiling or complete formula for the deductions nor a deterministic positive final unit or multiplier increment."
+  },
+  "episodes": [
+    {
+      "underlying_ticker": "WDC",
+      "bstock_symbol": "WDCB",
+      "snapshot_utc": "2026-09-08T00:00:00Z",
+      "public_conservative_net_distribution_floor_usd": "0",
+      "official_exchange_ex_dividend_adjustment_gate_evaluated": false,
+      "why_later_gates_were_not_spent": "The independent positive-net-floor gate already fails, so no issuer date, perpetual adjustment, book, funding, fee, or account observation can repair this episode."
+    },
+    {
+      "underlying_ticker": "NVDA",
+      "bstock_symbol": "NVDAB",
+      "snapshot_utc": "2026-09-10T00:00:00Z",
+      "public_conservative_net_distribution_floor_usd": "0",
+      "official_exchange_ex_dividend_adjustment_gate_evaluated": false,
+      "why_later_gates_were_not_spent": "The independent positive-net-floor gate already fails, so no issuer date, perpetual adjustment, book, funding, fee, or account observation can repair this episode."
+    }
+  ],
+  "gate_outcome": {
+    "full_rank_34_retry_trigger_satisfied": false,
+    "positive_net_distribution_floor_gate_passed": false,
+    "official_exchange_timing_gate_evaluated": false,
+    "perpetual_adjustment_ordering_gate_evaluated": false,
+    "books_or_funding_justified": false,
+    "book_request_value": "0",
+    "funding_request_value": "0",
+    "public_after_cost_profit_floor_usdt": "0"
+  },
+  "adjudication": {
+    "status": "terminal_exact_2026_WDC_and_NVDA_bStock_dividend_episodes_zero_source_bound_net_distribution_floor_before_issuer_or_market_access",
+    "accepted_edge": false,
+    "deployment_ready": false,
+    "market_direction_forecast_required": false,
+    "profitability_claim": false,
+    "trading_authority": false,
+    "next_action": "do_not_request_WDC_or_NVDA_issuer_dates_books_funding_accounts_credentials_orders_or_funds_for_these_exact_episodes",
+    "retry_trigger": "a_future_independent_dividend_episode_where_current_primary_terms_first bind a strictly positive conservative net-distribution floor and the bStock snapshot materially precedes the official exchange ex-dividend adjustment"
+  },
+  "prohibited_shortcuts": [
+    "crediting_an_unpublished_or_gross_issuer_dividend_as_the_bStock_net_distribution",
+    "assuming_unspecified_withholding_fees_costs_or_other_deductions_are_zero",
+    "spending_issuer_date_or_market_requests_after_an_independent_zero_floor_rejection",
+    "repeating_or_aliasing_the_consumed_WDCB_NVDAB_announcement_request",
+    "rushing_to_fund_or_trade_before_a_conversion_or_service_suspension",
+    "using_testnet_credentials_as_mainnet_dividend_or_account_evidence",
+    "placing_orders_or_accessing_account_state_without_separate_explicit_authority"
+  ],
+  "methodology_correction": "Treat a new official episode as a source candidate, not as automatic satisfaction of a conjunctive retry trigger. Apply the cheapest independent gate across every sibling named by one source and stop the whole sibling set when shared terms cannot bind a positive conservative cash-flow floor.",
+  "authority": {
+    "new_public_requests": 1,
+    "authenticated_requests": 0,
+    "credentials_used": false,
+    "account_state_accessed": false,
+    "orders_transfers_or_transactions": 0,
+    "funds_used": false,
+    "protected_capture_touched": false
+  },
+  "result_sha256": "82bd2e0b0461b930218da3b7e01756cc2a5572d823bfc49586421fa3a7d5ce98"
+}

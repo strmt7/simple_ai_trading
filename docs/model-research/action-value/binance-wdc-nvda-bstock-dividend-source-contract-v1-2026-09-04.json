@@ -1,0 +1,80 @@
+{
+  "schema_version": "public-source-capture-contract-v1",
+  "frozen_at_utc": "2026-09-04T19:12:04.4035357Z",
+  "contract_path": "docs/model-research/action-value/binance-wdc-nvda-bstock-dividend-source-contract-v1-2026-09-04.json",
+  "trigger": {
+    "registry_route": "rank_34_future_independent_bStock_dividend_episode_source_gate",
+    "novelty_evidence": "Binance published a distinct 2026-09-04 official WDCB and NVDAB cash-dividend support announcement after every retained rank-34 episode.",
+    "full_retry_trigger_satisfied_before_freeze": false,
+    "why_source_gate_is_permitted": "The new official episode can be rejected at the cheapest independent source gate without asserting that snapshot timing or positive net economics are already proved.",
+    "outcomes_viewed_before_freeze": true,
+    "discovery_values_are_economic_inputs": false
+  },
+  "question": "Do the exact current official WDCB and NVDAB terms bind a strictly positive conservative net distribution after every withholding tax, fee, cost, and other deduction, as required before any issuer-calendar or market-data work?",
+  "request_name": "binance-wdc-nvda-bstock-dividend-announcement",
+  "request": {
+    "method": "GET",
+    "url": "https://www.binance.com/bapi/composite/v1/public/cms/article/detail/query?articleCode=eba63ef89a68449088dd16725a2e5a0d",
+    "count": 1,
+    "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "endpoint_classification": {
+    "operation": "download one exact public official Binance announcement by article code",
+    "security": "public unauthenticated read-only CMS GET used by prior retained official announcement contracts",
+    "source_contract": "The public Binance support detail route identifies this exact article code and exposes no account, credential, order, or mutation semantics."
+  },
+  "response_byte_ceiling": 500000,
+  "required_utf8_phrases": [
+    "WDCB",
+    "NVDAB",
+    "2026-09-08 00:00 (UTC)",
+    "2026-09-10 00:00 (UTC)",
+    "applicable withholding taxes",
+    "fees, costs, and other deductions"
+  ],
+  "economic_decision": {
+    "gate_order": [
+      "exact current conservative net-distribution floor must be strictly positive",
+      "official exchange ex-dividend adjustment must materially follow the bStock snapshot",
+      "pre-snapshot perpetual adjustment ordering must be confirmed",
+      "only then may one synchronized finite-size event-time book batch be frozen"
+    ],
+    "positive_floor_requirements": [
+      "an exact positive gross cash amount per bStock unit",
+      "a finite current upper bound or complete formula for applicable withholding taxes",
+      "a finite current upper bound or complete formula for every fee cost and other deduction",
+      "a deterministic positive lower bound on the final reinvested units or multiplier increment"
+    ],
+    "fail_closed_rule": "If any positive-floor requirement is absent, unspecified, discretionary, or unbounded, set the public conservative net-distribution floor to zero and terminalize both exact episodes before issuer dates, books, funding, accounts, credentials, orders, or funds.",
+    "market_data_request_if_gate_fails": false,
+    "accepted_edge": false,
+    "profitability_proved": false
+  },
+  "outputs": {
+    "raw_path": "data/binance-wdc-nvda-bstock-dividend-v1/raw/01-binance-announcement.raw.json",
+    "journal_path": "data/binance-wdc-nvda-bstock-dividend-v1/raw/00-request-journal.jsonl",
+    "result_path": "docs/model-research/action-value/binance-wdc-nvda-bstock-dividend-source-result-v1-2026-09-04.json"
+  },
+  "authority": {
+    "account_requests": 0,
+    "credentials_used": false,
+    "funds_used": false,
+    "orders_or_transactions": 0,
+    "protected_capture_touched": false,
+    "public_unauthenticated_read_only_requests": 1,
+    "signed_requests": 0,
+    "trading_authority": false
+  },
+  "implementations": [
+    {
+      "path": "tools/capture_public_source_contract.py",
+      "sha256": "9dbb14651455abade755fe96091b9eaafe1153f56a1baad4cd60b1a888d41b8c"
+    },
+    {
+      "path": "tools/screen_polymarket_exact_two_leg_package.py",
+      "sha256": "374fcc3c3485c466b4929a91256450bdc7db70f93ef4c6bda627e05fe8938327"
+    }
+  ],
+  "retry_policy": "This exact article-code GET is one-use. Preserve any HTTP, phrase, format, or byte-limit failure and do not retry an alias. A passing source capture does not satisfy rank 34 unless the frozen positive-floor gate also passes; discovery cannot authorize rushed pre-suspension funding or trading.",
+  "contract_sha256": "36019fbf294ae3f3182ed75c6a4e35e1f305fd1ef7d44e59d24609ca663e3f6f"
+}

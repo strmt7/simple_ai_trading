@@ -1,12 +1,47 @@
 # Continue Development
 
-Current canonical status after the September 2 bStock listing trigger:
-accepted edges 37, ranked hypotheses 65, terminal families 184,
+Current canonical status after the WDCB/NVDAB dividend source gate:
+accepted edges 37, ranked hypotheses 65, terminal families 185,
 and stable current account-qualified after-all-cost edges zero. Registry
 SHA-256 is
-`c6f6338f7d3b42baa2f6f61bbcf0b1433aff46cec541d9b3dbac5d6387ae0e59`;
+`2b0a4ec1734c8e34362e978fd7d6fbccf2ad49db435b1d1a83c80f16c1cd52c6`;
 durability-audit SHA-256 is
-`ed029fb924466e9f937c6fcfb499387618209062f7cdce8645eedcf065545922`.
+`4d956c98e5ef90a425f5dcd0c40017049c057e3d6d1fa6633a6020285c7ff4dd`.
+
+## 2026-09-04 WDCB/NVDAB dividend source-floor rejection
+
+Binance published a distinct current announcement for WDCB and NVDAB cash
+dividend support. This was a new source candidate, not automatic satisfaction
+of rank 34's conjunctive retry trigger. Exact-URL deduplication found no prior
+retained contract, result, or journal match. A frozen one-use public CMS GET
+then retained 69,675 bytes and bound WDCB, NVDAB, their respective
+2026-09-08T00:00:00Z and 2026-09-10T00:00:00Z snapshots, and the shared rule
+that only the net cash amount after applicable withholding taxes, fees, costs,
+and other deductions is reinvested into additional same-security units or
+fractions.
+
+The precommitted cheapest independent gate fails for both siblings. The exact
+article publishes no positive gross cash amount per bStock unit, no finite
+upper bound or complete formula for every deduction, and no deterministic
+positive final units or multiplier increment. WDCB and NVDAB therefore each
+have a zero source-bound conservative net-distribution floor. The full rank-34
+retry trigger is not satisfied, so no issuer-calendar, perpetual-adjustment,
+book, funding, fee, account, credential, order, fund, or rushed pre-suspension
+request is justified. This is a terminal rejection for only these two exact
+episodes, not evidence about any future dividend event.
+
+Do not refetch or alias this announcement. Reopen rank 34 only for a future
+independent episode where current primary terms first bind a strictly positive
+conservative net-distribution floor and the bStock snapshot materially precedes
+the official exchange ex-dividend adjustment. Source-contract, source-result,
+and adjudication SHA-256 values are respectively
+`36019fbf294ae3f3182ed75c6a4e35e1f305fd1ef7d44e59d24609ca663e3f6f`,
+`fd294181f625d62967254bc97de6f55930b6af9194b97cc9280f493c82702e21`,
+and `82bd2e0b0461b930218da3b7e01756cc2a5572d823bfc49586421fa3a7d5ce98`.
+Raw and request-journal SHA-256 values are
+`252d23d4de41ed250d2e5d8585cecd964aeeafb8b09d376a5b0dd38e51726882`
+and `352a9de98ae662c0727c97c560afb19ccd33c58eeb49ef5ebbb4ab264c46c71a`.
+No credentials were used, and the protected Polymarket capture was untouched.
 
 ## 2026-09-04 Binance September 2 bStock listing trigger
 
