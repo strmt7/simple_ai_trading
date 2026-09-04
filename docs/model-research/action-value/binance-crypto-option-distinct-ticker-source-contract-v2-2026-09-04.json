@@ -1,0 +1,51 @@
+{
+  "schema_version": "public-source-capture-contract-v1",
+  "frozen_at_utc": "2026-09-04T18:45:36Z",
+  "contract_path": "docs/model-research/action-value/binance-crypto-option-distinct-ticker-source-contract-v2-2026-09-04.json",
+  "request_name": "binance_crypto_option_distinct_ticker_prefilter_2026_09_04",
+  "request": {
+    "method": "GET",
+    "url": "https://eapi.binance.com/eapi/v1/ticker",
+    "count": 1,
+    "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "exact_url_dedupe": {
+    "retained_matching_journals": [
+      "data/binance-commodity-option-perpetual-lower-bound-v1/request-journal.jsonl",
+      "data/binance-crypto-option-population-price-prefilter-v1/request-journal.jsonl"
+    ],
+    "repeat_justification": "one time-sensitive refresh is required only because the separately frozen population gate found 354 active symbols absent from every consumed economic population",
+    "alias_retry_forbidden": true
+  },
+  "response_byte_ceiling": 5000000,
+  "required_utf8_phrases": [
+    "\"symbol\"",
+    "\"askPrice\""
+  ],
+  "outputs": {
+    "raw_path": "data/binance-crypto-option-distinct-price-prefilter-v2-2026-09-04/raw/options-all-tickers.json",
+    "journal_path": "data/binance-crypto-option-distinct-price-prefilter-v2-2026-09-04/options-request-journal.jsonl",
+    "result_path": "docs/model-research/action-value/binance-crypto-option-distinct-ticker-source-result-v2-2026-09-04.json"
+  },
+  "authority": {
+    "account_requests": 0,
+    "credentials_used": false,
+    "funds_used": false,
+    "orders_or_transactions": 0,
+    "protected_capture_touched": false,
+    "public_unauthenticated_read_only_requests": 1,
+    "signed_requests": 0,
+    "trading_authority": false
+  },
+  "implementations": [
+    {
+      "path": "tools/capture_public_source_contract.py",
+      "sha256": "9dbb14651455abade755fe96091b9eaafe1153f56a1baad4cd60b1a888d41b8c"
+    },
+    {
+      "path": "tools/screen_polymarket_exact_two_leg_package.py",
+      "sha256": "374fcc3c3485c466b4929a91256450bdc7db70f93ef4c6bda627e05fe8938327"
+    }
+  ],
+  "contract_sha256": "b99d763b3db26b4168bde76d34241fd80709f77d89df51391f0bb5649b529138"
+}
