@@ -1,12 +1,30 @@
 # Continue Development
 
-Current canonical status after the WDCB/NVDAB dividend source gate:
-accepted edges 37, ranked hypotheses 65, terminal families 185,
+Current canonical status after the September USD1 campaign source gate:
+accepted scopes 37, ranked hypotheses 65, terminal observations 186,
 and stable current account-qualified after-all-cost edges zero. Registry
 SHA-256 is
-`2b0a4ec1734c8e34362e978fd7d6fbccf2ad49db435b1d1a83c80f16c1cd52c6`;
+`39a69bce3a5544cc33d2d6383cc7f9578ff8c2305fe36caa1c57b0e5f053de1a`;
 durability-audit SHA-256 is
-`4d956c98e5ef90a425f5dcd0c40017049c057e3d6d1fa6633a6020285c7ff4dd`.
+`333c90c4cc471c6f2fa5544b2eecd367f8288009abe8278a3dbf9cf4120bcfe2`.
+
+## September 4 resumed review and USD1 campaign
+
+The paused USD1 source work is retained under adjudication
+`f3eaf05ff817dba843d992c643718f0b6f26fbd57bb5bfd15159522b0899114d`.
+The September 4 to October 2 campaign exists independently of the ended
+August campaign. Its 150 million WLFI pool does not determine per-user returns;
+the first-period APRs and valuation remain placeholders. One frozen public
+reconciliation may run after September 11 at 18:00 UTC or an independently
+observed material official update. No previous article is being refetched now.
+
+The user's comprehensive review is in progress. Inventory coverage does not
+mean semantic review completion. The review must distinguish an unavailable
+guaranteed lower bound, a negative stress scenario, negative expected value,
+and evidence of economic impossibility. Historical contracts and captures
+remain immutable; corrections require explicit new analysis and independent
+confirmation before promotion. See `docs/REVIEW_2026_09_04.md` for coverage,
+findings, and the current research priorities.
 
 ## 2026-09-04 WDCB/NVDAB dividend source-floor rejection
 

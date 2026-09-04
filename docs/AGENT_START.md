@@ -6,6 +6,14 @@ operating contract. Historical handoff text is archived under
 
 ## Current Truth
 
+Review update, September 4: use the current registry and the top of
+`docs/CONTINUATION.md` for counts and routing. The dated sections below are
+historical checkpoints and can contain superseded counts or plans.
+`docs/REVIEW_2026_09_04.md` records the ongoing comprehensive review. The new
+September USD1 campaign is documented, but its first distribution rates remain
+unpublished; its next scheduled public reconciliation is September 11 at
+18:00 UTC. The expired August campaign is a separate observation.
+
 | Boundary | State |
 | --- | --- |
 | Release | `0.1.0-beta.1`; experimental |

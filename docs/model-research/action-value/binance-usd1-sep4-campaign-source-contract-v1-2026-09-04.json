@@ -1,0 +1,84 @@
+{
+  "schema_version": "public-source-capture-contract-v1",
+  "frozen_at_utc": "2026-09-04T19:24:18.9532015Z",
+  "contract_path": "docs/model-research/action-value/binance-usd1-sep4-campaign-source-contract-v1-2026-09-04.json",
+  "trigger": {
+    "registry_route": "rank_8_new_official_USD1_campaign_material_reward_and_horizon_change",
+    "source_selected_title": "Extension to the USD1 Airdrop Campaign (2026-09-04)",
+    "source_selected_article_code": "3dd432ca980c469389d18f2f69c9d4ae",
+    "source_selected_release_time_utc": "2026-09-03T06:00:06.916Z",
+    "catalog_contract_path": "docs/model-research/action-value/binance-usd1-sep4-campaign-catalog-contract-v1-2026-09-04.json",
+    "catalog_contract_sha256": "666745a220b44b7b865f10c2ecae3050ee79eb50e1feb2a5f5971cec690210e8",
+    "catalog_result_path": "docs/model-research/action-value/binance-usd1-sep4-campaign-catalog-source-result-v1-2026-09-04.json",
+    "catalog_result_sha256": "ad1c0c01de25a5288bad6cf142132af93fc60c4b228814544fd69a44ba43b326",
+    "catalog_raw_sha256": "04fab81db9b5eab3e050265406565774b1782787a33b81474cc14a9a95c9a33b",
+    "catalog_journal_sha256": "383e0565937fc98cc3ea491b502e8bc79049bd375ee239cd505026b64e10d2c6",
+    "exact_url_deduplication_matches": 0,
+    "outcomes_viewed_before_freeze": true,
+    "discovery_values_are_economic_inputs": false
+  },
+  "question": "Does the exact new USD1 campaign bind a strictly positive prospective per-user after-cost reward before the first September 11 distribution?",
+  "request_name": "binance-usd1-sep4-campaign-announcement",
+  "request": {
+    "method": "GET",
+    "url": "https://www.binance.com/bapi/composite/v1/public/cms/article/detail/query?articleCode=3dd432ca980c469389d18f2f69c9d4ae",
+    "count": 1,
+    "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "endpoint_classification": {
+    "operation": "download one exact public official Binance announcement by catalog-selected article code",
+    "security": "public unauthenticated read-only CMS GET with no account, credential, order, or mutation semantics",
+    "source_contract": "The hash-bound official catalog uniquely selected this title and article code."
+  },
+  "response_byte_ceiling": 500000,
+  "required_utf8_phrases": [
+    "Extension to the USD1 Airdrop Campaign (2026-09-04)",
+    "150 million World Liberty Financial (WLFI) tokens",
+    "2026-09-04 00:00 (UTC) - 2026-10-02 00:00 (UTC)",
+    "Weekly Rewards",
+    "Effective APR",
+    "To be updated on 2026-09-11"
+  ],
+  "economic_decision": {
+    "strictly_positive_public_forward_floor_requirements": [
+      "a currently published exact positive Effective Base APR for the first reward period",
+      "a deterministic positive reward after the stated two-decimal rounding for an eligible minimum balance",
+      "current owned-account regional and restriction eligibility or a public account-independent guarantee",
+      "USD1 acquisition and redemption basis plus forgone best alternative yield",
+      "executable WLFI liquidation value after spread fees depth custody tax and operational costs"
+    ],
+    "fail_closed_rule": "If the first-period APR or token value remains To be updated, or any account/basis/liquidation requirement is absent, the stable current account-qualified after-all-cost forward floor is zero. Do not infer the APR from pool size, historical campaigns, examples, or current token price.",
+    "first_distribution_publication_trigger_utc": "2026-09-11T18:00:00Z",
+    "market_data_request_if_public_floor_fails": false,
+    "account_request_if_public_floor_fails": false,
+    "accepted_edge": false,
+    "profitability_proved": false
+  },
+  "outputs": {
+    "raw_path": "data/binance-usd1-sep4-campaign-v1/raw/02-campaign-announcement.raw.json",
+    "journal_path": "data/binance-usd1-sep4-campaign-v1/raw/02-article-request-journal.jsonl",
+    "result_path": "docs/model-research/action-value/binance-usd1-sep4-campaign-source-result-v1-2026-09-04.json"
+  },
+  "authority": {
+    "account_requests": 0,
+    "credentials_used": false,
+    "funds_used": false,
+    "orders_or_transactions": 0,
+    "protected_capture_touched": false,
+    "public_unauthenticated_read_only_requests": 1,
+    "signed_requests": 0,
+    "trading_authority": false
+  },
+  "implementations": [
+    {
+      "path": "tools/capture_public_source_contract.py",
+      "sha256": "9dbb14651455abade755fe96091b9eaafe1153f56a1baad4cd60b1a888d41b8c"
+    },
+    {
+      "path": "tools/screen_polymarket_exact_two_leg_package.py",
+      "sha256": "374fcc3c3485c466b4929a91256450bdc7db70f93ef4c6bda627e05fe8938327"
+    }
+  ],
+  "retry_policy": "This exact article-code GET is one-use for the pre-first-distribution observation. Preserve any HTTP, phrase, format, byte-limit, or missing-value outcome and do not retry an alias. Reopen only if an independently observed official last-update timestamp advances beyond the retained baseline, at or after the distinct first-distribution publication trigger, or on a material official economics change.",
+  "contract_sha256": "dc8edd7d20c889d2ff6b3dd1cb06a47b1ef7cb2d7f49fff39d2d30d3a7b0a2a4"
+}

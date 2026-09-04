@@ -1,5 +1,11 @@
 # Product Direction
 
+September 4 review status: the dated experiment sequence below is a historical
+plan, not current scheduling authority. Use the top of `docs/CONTINUATION.md`
+and `docs/REVIEW_2026_09_04.md` for current work and verified review coverage.
+The immediate research objective is recurring, direction-neutral after-cost
+profit; a count of scoped mechanisms, rebates, or promotions is not that result.
+
 Simple AI Trading is a beta BTC/ETH/SOL day-trading research platform. The
 near-term objective is trustworthy paper and testnet/Demo operation, not a
 profit promise or a shortcut to mainnet.
@@ -60,7 +66,11 @@ bound exact count only when canonical name and model digest match the evaluated
 artifact. Without that attestation, legacy name inference remains fail-closed;
 an operator assertion still cannot create size evidence.
 
-## Active Experiment Order
+## Historical Experiment Order (August checkpoint)
+
+The dates and worktree counts in this section describe the original checkpoint.
+Do not restart captures or infer completed integration from the elapsed dates.
+Consult the current continuation record and exact contract before any action.
 
 1. Preserve the active Round 75 Binance capture through its fixed
    `2026-08-23T12:00:00Z` boundary and the independent Round 21 Binance sidecar

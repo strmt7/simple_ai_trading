@@ -1,0 +1,17 @@
+{
+  "schema_version": "review-surface-inventory-v1",
+  "base_head": "976d725f8e55525187eb7cce8b9bca34604439af",
+  "scope": "index paths at invocation; Python worktree bytes only in src/tools/tests/scripts",
+  "untracked_paths_included": false,
+  "project_modules_executed": false,
+  "protected_data_contents_read": false,
+  "semantic_review_complete": false,
+  "tracked_path_count": 4648,
+  "mechanical_status_counts": {
+    "metadata_only_not_reviewed": 2792,
+    "ast_parsed_not_semantically_reviewed": 1856
+  },
+  "python_lines": 964526,
+  "python_functions": 28265,
+  "inventory_sha256": "66a0aefc8583820da4f2ccf13bc3aaec2de0b82d3b64b95b840ea17c0a84ba05"
+}

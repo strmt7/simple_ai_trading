@@ -4,6 +4,9 @@
 *.sh text eol=lf
 pyproject.toml text eol=lf
 uv.lock text eol=lf
+docs/review/2026-09-04/** text eol=lf
+docs/review/2026-09-04/inventory.tsv whitespace=-blank-at-eol
+data/binance-usd1-sep4-campaign-v1/raw/** binary -eol
 docs/ai/foundation/latest/* text eol=lf
 docs/ai/risk-review/** text eol=lf
 src/simple_ai_trading/ai_model_benchmark.py text eol=lf
