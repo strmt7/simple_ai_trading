@@ -10,6 +10,19 @@ durability-audit SHA-256 is
 
 ## September 4 resumed review and USD1 campaign
 
+The next retained-evidence review identified a missing direct-sale comparator:
+none of the 66 historical opposite-lock rows supplies contemporaneous original
+token sell bids/depth/fees. Positive pair P&L is not proof that completion
+outperforms liquidating the existing inventory. See
+`docs/review/2026-09-04/inventory-completion-economics.md`; all original outcomes
+and exact retry triggers are preserved, and no new market capture was run.
+
+The requested GPU review verified an AMD RX 9070 XT/OpenCL driver, but the
+current LightGBM 4.7.0 binary is CPU-only and its real GPU probe fails before
+falling back to CPU. No speedup or trained-model uplift is claimed. The exact
+runtime fingerprint and bounded build/benchmark requirements are in
+`docs/review/2026-09-04/accelerator-readiness.md`.
+
 The model-lab promotion review found and fixed missing/indeterminate
 selection-risk evidence being accepted, plus infinite performance values.
 Each objective now needs an explicit noncontradictory pass. See
