@@ -1,0 +1,65 @@
+{
+  "schema_version": "public-source-capture-contract-v1",
+  "frozen_at_utc": "2026-09-04T19:22:54.3862046Z",
+  "contract_path": "docs/model-research/action-value/binance-usd1-sep4-campaign-catalog-contract-v1-2026-09-04.json",
+  "trigger": {
+    "registry_route": "rank_8_new_official_USD1_campaign_material_reward_and_horizon_change",
+    "novelty_evidence": "A current official Binance publication announces a distinct USD1 campaign from 2026-09-04 through 2026-10-02 with a 150 million WLFI pool, after the consumed August campaign ended.",
+    "exact_url_deduplication_matches": 0,
+    "outcomes_viewed_before_freeze": true,
+    "discovery_values_are_economic_inputs": false
+  },
+  "question": "What exact official article code and release time identify the new September 4 USD1 campaign in Binance's public campaign-announcement catalog?",
+  "request_name": "binance-usd1-sep4-campaign-catalog",
+  "request": {
+    "method": "GET",
+    "url": "https://www.binance.com/bapi/composite/v1/public/cms/article/list/query?type=1&pageNo=1&pageSize=50&catalogId=93",
+    "count": 1,
+    "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "endpoint_classification": {
+    "operation": "download one bounded current page of the public official Binance campaign-announcement catalog",
+    "security": "public unauthenticated read-only CMS GET with no account, credential, order, or mutation semantics",
+    "source_contract": "Only returned title, article code, release time, and catalog metadata may select one separately frozen exact article capture."
+  },
+  "response_byte_ceiling": 1000000,
+  "required_utf8_phrases": [
+    "\"code\"",
+    "\"data\"",
+    "\"articles\"",
+    "\"releaseDate\""
+  ],
+  "decision": {
+    "source_gate_only": "Parse titles, article codes, and release times offline; do not use catalog order, snippets, or marketing language as economic evidence.",
+    "accepted_edge": false,
+    "profitability_proved": false,
+    "conditional_next_step": "If exactly one current title identifies the September 4 USD1 campaign, exact-URL deduplicate and separately freeze that article before access; otherwise stop without an alias or market request."
+  },
+  "outputs": {
+    "raw_path": "data/binance-usd1-sep4-campaign-v1/raw/01-campaign-catalog.raw.json",
+    "journal_path": "data/binance-usd1-sep4-campaign-v1/raw/00-catalog-request-journal.jsonl",
+    "result_path": "docs/model-research/action-value/binance-usd1-sep4-campaign-catalog-source-result-v1-2026-09-04.json"
+  },
+  "authority": {
+    "account_requests": 0,
+    "credentials_used": false,
+    "funds_used": false,
+    "orders_or_transactions": 0,
+    "protected_capture_touched": false,
+    "public_unauthenticated_read_only_requests": 1,
+    "signed_requests": 0,
+    "trading_authority": false
+  },
+  "implementations": [
+    {
+      "path": "tools/capture_public_source_contract.py",
+      "sha256": "9dbb14651455abade755fe96091b9eaafe1153f56a1baad4cd60b1a888d41b8c"
+    },
+    {
+      "path": "tools/screen_polymarket_exact_two_leg_package.py",
+      "sha256": "374fcc3c3485c466b4929a91256450bdc7db70f93ef4c6bda627e05fe8938327"
+    }
+  ],
+  "retry_policy": "This exact catalog-page GET is one-use. Preserve any HTTP, format, byte-limit, missing-field, zero-match, or multiple-match outcome and do not retry an alias, locale, page size, pagination, or search endpoint.",
+  "contract_sha256": "666745a220b44b7b865f10c2ecae3050ee79eb50e1feb2a5f5971cec690210e8"
+}

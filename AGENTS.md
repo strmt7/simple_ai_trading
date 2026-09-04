@@ -3,6 +3,20 @@
 Read `docs/AGENT_START.md` first. Hash-bound evidence and executable contracts
 override prose.
 
+## September 4 review session interpretation
+
+For the comprehensive review session explicitly resumed on September 4, use
+`docs/REVIEW_2026_09_04.md` to distinguish guaranteed-return proof, expected-value
+research, stress scenarios, and scoped snapshot results. This is a session-only
+clarification of research routing, not a permanent relaxation of trading or
+capture rules. A missing guaranteed floor is not proof of negative expected
+value; a failed snapshot is not a family-wide impossibility proof. Retained
+public bytes may support explicitly exploratory offline analysis, never a new
+independent validation claim. Consumed contracts, exact retry triggers,
+protected captures, credential restrictions, and account/order authority remain
+unchanged. Do not reuse the legacy logical-parity runner as proof of settlement
+identity; its deadline grouping does not bind observation starts (review R4).
+
 ## Hard Rules
 
 - Work in this session only; use no subagent.
