@@ -1,0 +1,40 @@
+{
+  "schema_version": "binance-scheduled-yield-distribution-final-refresh-contract-v2",
+  "frozen_at_utc": "2026-09-04T18:18:00Z",
+  "trigger": "The promised 2026-09-04 18:00 UTC publication deadline has passed for the USD1 fourth and final completed distribution and the RLUSD third completed distribution.",
+  "maximum_public_requests": 2,
+  "source_contracts": [
+    "docs/model-research/action-value/binance-usd1-wlfi-final-distribution-source-contract-v1-2026-09-04.json",
+    "docs/model-research/action-value/binance-rlusd-third-distribution-source-contract-v1-2026-09-04.json"
+  ],
+  "frozen_extraction": {
+    "common": "Decode the retained CMS response as JSON, require data.title and data.body, decode data.body as a JSON document tree, flatten text nodes inside the first table in document order, and normalize whitespace.",
+    "usd1_final_row_regex": "4th Distribution on 2026-09-04 Reward Period: 2026-08-28 00:00 \\(UTC\\) to 2026-09-04 00:00 \\(UTC\\) ([0-9]+(?:\\.[0-9]+)?)% ([0-9]+(?:\\.[0-9]+)?)% USD ([0-9]+(?:\\.[0-9]+)?)",
+    "rlusd_third_row_regex": "3rd Distribution on 2026-09-04 Reward Period: 2026-08-28 00:00 \\(UTC\\) to 2026-09-04 00:00 \\(UTC\\) ([0-9]+(?:\\.[0-9]+)?)% USD ([0-9]+(?:\\.[0-9]+)?)",
+    "placeholder_rule": "If the scheduled row still contains 'To be updated on 2026-09-04', or the exact regex does not match, retain the response and fail closed without retrying an alias, locale, article, or parameter."
+  },
+  "frozen_calculations": {
+    "weekly_reward_fraction": "effective_apr_percent / 100 * 7 / 365",
+    "reward_value_per_1000_principal": "1000 * weekly_reward_fraction",
+    "usd1_simple_earn_fixed_bonus_comparison": "7.00 percent minus final USD1 base APR; historical only because the holding campaign has ended",
+    "forward_reward_floor": "zero for the ended USD1 campaign and zero for the unpublished RLUSD fourth week"
+  },
+  "decision_rules": [
+    "Completed-period rates are historical recurrence evidence, never a guaranteed forward rate.",
+    "Do not accept RLUSD unless account eligibility, independently genuine pre-existing qualifying volume, acquisition and exit costs, opportunity cost, and owned reward realization are proved.",
+    "Do not treat an ended USD1 holding campaign as currently deployable; preserve only the historical scoped acceptance and the still-live Simple Earn candidate under its existing account and cost gates.",
+    "Do not use, inspect, serialize, or require credentials for these public unauthenticated sources.",
+    "Do not place orders, subscribe, redeem, convert, transfer, or mutate an account."
+  ],
+  "authority": {
+    "account_requests": 0,
+    "credentials_used": false,
+    "funds_used": false,
+    "orders_or_transactions": 0,
+    "protected_capture_touched": false,
+    "public_unauthenticated_read_only_requests": 2,
+    "signed_requests": 0,
+    "trading_authority": false
+  },
+  "contract_sha256": "e9cb7b1923e55afa4bbe8bb64b1ff9c28598251d40671e84030e715deac747f5"
+}

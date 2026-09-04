@@ -1,0 +1,102 @@
+{
+  "schema_version": "binance-scheduled-yield-distribution-final-refresh-v2",
+  "created_at_utc": "2026-09-04T18:20:00Z",
+  "result_sha256": "5728de0226526a070c44179f3dc4eb673098349b38e62e646722a6f548f126bb",
+  "purpose": "adjudicate the promised 2026-09-04 USD1 final and RLUSD third completed-period publications without extrapolation, account access, or adaptive source retries",
+  "contract": {
+    "path": "docs/model-research/action-value/binance-scheduled-yield-distribution-final-refresh-contract-v2-2026-09-04.json",
+    "sha256": "e9cb7b1923e55afa4bbe8bb64b1ff9c28598251d40671e84030e715deac747f5"
+  },
+  "sources": {
+    "usd1": {
+      "title": "Extension to the USD1 Airdrop Campaign (2026-08-07)",
+      "article_code": "79f451fec45544f8ad941647165f22a8",
+      "article_last_update_utc": "2026-08-28T08:19:00Z",
+      "captured_at_utc": "2026-09-04T18:18:35.426049Z",
+      "scheduled_distribution": "4th Distribution on 2026-09-04",
+      "scheduled_reward_period": "2026-08-28T00:00:00Z/2026-09-04T00:00:00Z",
+      "scheduled_row_still_placeholder": true,
+      "frozen_numeric_row_match": false,
+      "source_contract_path": "docs/model-research/action-value/binance-usd1-wlfi-final-distribution-source-contract-v1-2026-09-04.json",
+      "source_contract_sha256": "f626851514ffef2e95c9fbc03481c0193b2a1516fe7916feef5d35e0e750edf2",
+      "source_result_path": "docs/model-research/action-value/binance-usd1-wlfi-final-distribution-source-result-v1-2026-09-04.json",
+      "source_result_sha256": "6b94591d7e4486a3e9b96dfe6eb0bd4d56e0a89c5ef3b159dae77a71f6b4f346",
+      "raw_path": "data/binance-scheduled-yield-distribution-refresh-v2/raw/usd1.json",
+      "raw_bytes": 132816,
+      "raw_sha256": "62122936491a86c3429e90c623a1d9fb35ca1ac072b9a7e39d2d88c95d8ac93f",
+      "journal_path": "data/binance-scheduled-yield-distribution-refresh-v2/usd1.journal.jsonl",
+      "journal_sha256": "f3f74f8e1c678b820cca79776d9ce2de035d7ff9a14084925f61863e19e9c61c"
+    },
+    "rlusd": {
+      "title": "Hold RLUSD in Binance Earn and Margin Accounts to Share 1 Million XRP in Rewards",
+      "article_code": "87614899ce0346beb103f58075d8c8cc",
+      "article_last_update_utc": "2026-08-28T08:25:00Z",
+      "captured_at_utc": "2026-09-04T18:18:35.030659Z",
+      "scheduled_distribution": "3rd Distribution on 2026-09-04",
+      "scheduled_reward_period": "2026-08-28T00:00:00Z/2026-09-04T00:00:00Z",
+      "scheduled_row_still_placeholder": true,
+      "frozen_numeric_row_match": false,
+      "source_contract_path": "docs/model-research/action-value/binance-rlusd-third-distribution-source-contract-v1-2026-09-04.json",
+      "source_contract_sha256": "990225093790fea80aa2ee5e5a5ce7957f1020557565d653033fef2786f0fab9",
+      "source_result_path": "docs/model-research/action-value/binance-rlusd-third-distribution-source-result-v1-2026-09-04.json",
+      "source_result_sha256": "e2674a34cf658810c9aa97e4e8710813ce4d83fc4cc734ee76b028df146a672b",
+      "raw_path": "data/binance-scheduled-yield-distribution-refresh-v2/raw/rlusd.json",
+      "raw_bytes": 127552,
+      "raw_sha256": "6a0370dd26455fde3e620004f954f3081aac68cb38df4c5f35cca366f8b6721b",
+      "journal_path": "data/binance-scheduled-yield-distribution-refresh-v2/rlusd.journal.jsonl",
+      "journal_sha256": "c440830055cdbb6006fcf6a4356e6d86af6910b59a2a0c37b22d9154c1bbbeaf"
+    }
+  },
+  "research_gap_matrix": [
+    {
+      "question": "Was the USD1 fourth and final completed-period rate published by the promised deadline?",
+      "status": "no",
+      "evidence": "The exact official row still contains three 2026-09-04 placeholders and the article last-update timestamp remains 2026-08-28T08:19:00Z."
+    },
+    {
+      "question": "Was the RLUSD third completed-period rate published by the promised deadline?",
+      "status": "no",
+      "evidence": "The exact official row still contains two 2026-09-04 placeholders and the article last-update timestamp remains 2026-08-28T08:25:00Z."
+    },
+    {
+      "question": "Can either missing value be inferred from prior weeks or compared as a current forward yield?",
+      "status": "no",
+      "evidence": "The frozen rules prohibit extrapolation; USD1 has ended and RLUSD's fourth-week public forward reward floor remains zero."
+    },
+    {
+      "question": "Did this refresh prove an account-qualified after-all-cost edge?",
+      "status": "no",
+      "evidence": "No account evidence or costs were accessed, and both scheduled numeric observations are absent."
+    }
+  ],
+  "adjudication": {
+    "status": "official_scheduled_updates_missing_after_promised_deadline_fail_closed_without_retry",
+    "accepted_edge_count_change": 0,
+    "stable_current_account_qualified_after_all_cost_edge_count_change": 0,
+    "usd1_holding_airdrop_current_deployment_status": "campaign_ended_no_forward_holding_reward",
+    "usd1_historical_scoped_acceptance_retained": true,
+    "usd1_simple_earn_existing_scoped_candidate_retained_under_prior_account_cost_and_capacity_gates": true,
+    "rlusd_candidate_accepted": false,
+    "usd1_final_completed_period_forward_reward_floor": "0",
+    "rlusd_unpublished_fourth_period_forward_reward_floor": "0",
+    "market_direction_forecast_required": false,
+    "profitability_claim": false,
+    "deployment_ready": false
+  },
+  "efficiency_boundary": {
+    "this_capture_is_consumed": true,
+    "adaptive_alias_locale_article_or_parameter_retry_permitted": false,
+    "next_time_trigger": "2026-09-11T18:00:00Z for the distinct scheduled RLUSD fourth distribution, unless an independently observed official article last-update timestamp first advances beyond 2026-08-28T08:19:00Z for USD1 or 2026-08-28T08:25:00Z for RLUSD, or material official campaign economics change",
+    "polling_prohibited": true
+  },
+  "authority": {
+    "account_requests": 0,
+    "credentials_used": false,
+    "funds_used": false,
+    "orders_or_transactions": 0,
+    "protected_capture_touched": false,
+    "public_unauthenticated_read_only_requests": 2,
+    "signed_requests": 0,
+    "trading_authority": false
+  }
+}
