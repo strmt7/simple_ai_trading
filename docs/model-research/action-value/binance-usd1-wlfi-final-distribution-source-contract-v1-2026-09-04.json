@@ -1,0 +1,44 @@
+{
+  "schema_version": "public-source-capture-contract-v1",
+  "frozen_at_utc": "2026-09-04T18:18:00Z",
+  "contract_path": "docs/model-research/action-value/binance-usd1-wlfi-final-distribution-source-contract-v1-2026-09-04.json",
+  "request_name": "binance_usd1_wlfi_final_distribution_update_2026_09_04",
+  "request": {
+    "method": "GET",
+    "url": "https://www.binance.com/bapi/composite/v1/public/cms/article/detail/query?articleCode=79f451fec45544f8ad941647165f22a8",
+    "count": 1,
+    "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "response_byte_ceiling": 300000,
+  "required_utf8_phrases": [
+    "Extension to the USD1 Airdrop Campaign (2026-08-07)",
+    "4th Distribution on 2026-09-04",
+    "Reward Period: 2026-08-28 00:00 (UTC) to 2026-09-04 00:00 (UTC)"
+  ],
+  "outputs": {
+    "raw_path": "data/binance-scheduled-yield-distribution-refresh-v2/raw/usd1.json",
+    "journal_path": "data/binance-scheduled-yield-distribution-refresh-v2/usd1.journal.jsonl",
+    "result_path": "docs/model-research/action-value/binance-usd1-wlfi-final-distribution-source-result-v1-2026-09-04.json"
+  },
+  "authority": {
+    "account_requests": 0,
+    "credentials_used": false,
+    "funds_used": false,
+    "orders_or_transactions": 0,
+    "protected_capture_touched": false,
+    "public_unauthenticated_read_only_requests": 1,
+    "signed_requests": 0,
+    "trading_authority": false
+  },
+  "implementations": [
+    {
+      "path": "tools/capture_public_source_contract.py",
+      "sha256": "9dbb14651455abade755fe96091b9eaafe1153f56a1baad4cd60b1a888d41b8c"
+    },
+    {
+      "path": "tools/screen_polymarket_exact_two_leg_package.py",
+      "sha256": "374fcc3c3485c466b4929a91256450bdc7db70f93ef4c6bda627e05fe8938327"
+    }
+  ],
+  "contract_sha256": "f626851514ffef2e95c9fbc03481c0193b2a1516fe7916feef5d35e0e750edf2"
+}

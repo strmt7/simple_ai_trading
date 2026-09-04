@@ -21,7 +21,29 @@ profitable without reproducible source-bound after-cost evidence. AI may veto
 or reduce risk only; it never creates positions, selects leverage, overrides a
 safety gate, blocks Stop, or submits an order.
 
-### Latest Binance Options block-trade atomicity rejection
+### Latest Binance scheduled-yield publication gate
+
+The exact September 4 trigger ran after the promised 18:00 UTC deadline under
+prospectively frozen one-use rules. Both official public articles still expose
+placeholders instead of the promised USD1 final and RLUSD third completed-week
+rates, and both retain their August 28 update timestamps. The capture therefore
+failed closed without extrapolation or adaptive retry.
+
+USD1 holding-airdrop forward yield is now zero because the campaign ended. Its
+prior positive weeks remain historical scoped evidence only. RLUSD remains an
+unaccepted candidate with zero public forward floor. The separate USD1 Simple
+Earn candidate retains all prior account, capacity, horizon, transition, and
+all-cost gates. Accepted edges remain 37, ranked hypotheses remain 65, terminal
+families remain 182, and stable current account-qualified after-all-cost edges
+remain zero. Registry, durability-audit, and adjudication SHA-256 values are
+`8c99e661477a511cf24a64da40c665e4a3faeb95daca21dbf760ebfd320a3e08`,
+`9e764a34aef6b6c669f4da1df50c8b5c7fa89cf931dd670845b88d94715c5395`,
+and `5728de0226526a070c44179f3dc4eb673098349b38e62e646722a6f548f126bb`.
+Do not poll or retry the consumed September 4 pages. Reopen only on a separately
+observed newer official article timestamp, a material economics change, or the
+distinct RLUSD fourth-distribution trigger after 2026-09-11T18:00:00Z.
+
+### Prior Binance Options block-trade atomicity rejection
 
 One frozen exact official public GET retained a 40,487-byte four-page Binance
 Options Block Trade EAPI PDF. The text-only capture runner failed closed after

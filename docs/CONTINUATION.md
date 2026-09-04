@@ -1,12 +1,49 @@
 # Continue Development
 
-Current canonical status after the Binance Options block-trade atomicity gate:
+Current canonical status after the Binance scheduled-yield publication gate:
 accepted edges 37, ranked hypotheses 65, terminal families 182,
 and stable current account-qualified after-all-cost edges zero. Registry
 SHA-256 is
-`5e7c835dffe9314325a95724de35875637177a3a17aa1886506aad0b6ca6883c`;
+`8c99e661477a511cf24a64da40c665e4a3faeb95daca21dbf760ebfd320a3e08`;
 durability-audit SHA-256 is
-`1ec056ab4102eeea8631449e83444b7e3692d176c6016081651c786f5ecbb4c2`.
+`9e764a34aef6b6c669f4da1df50c8b5c7fa89cf931dd670845b88d94715c5395`.
+
+## 2026-09-04 Binance scheduled-yield publication gate
+
+Rank 8's exact scheduled trigger was satisfied after the promised Friday
+18:00 UTC publication deadline. Before access, three contracts froze the two
+official public CMS requests, exact article identities and period rows, numeric
+row regexes, calculations, and fail-closed decisions. The two requests ran once
+in parallel and retained 132,816 USD1 bytes and 127,552 RLUSD bytes.
+
+Both official articles missed their own displayed update deadline. The USD1
+fourth and final distribution row still contains three `To be updated on
+2026-09-04` placeholders and its article timestamp remains
+2026-08-28T08:19:00Z. The RLUSD third-distribution row still contains two such
+placeholders and its article timestamp remains 2026-08-28T08:25:00Z. The frozen
+numeric patterns therefore match neither row. Do not infer either APR from
+prior weeks, rewrite the test, or retry an alias, locale, article, or parameter.
+
+The USD1 holding campaign has ended and has zero forward holding-reward floor;
+its three published positive base APRs remain historical scoped evidence. The
+separate fixed 7 percent USD1 Simple Earn candidate remains only under its prior
+account, capacity, remaining-horizon, transition, opportunity-cost, issuer,
+redemption, tax, custody, and all-cost gates. RLUSD remains unaccepted with two
+published completed-week APRs, a missing third value, and a zero public forward
+floor for its unpublished fourth week. No accepted-edge count changes.
+
+The September 4 captures are consumed. Do not poll the same pages. Reopen this
+publication question only if an independently observed official timestamp
+advances beyond either retained August 28 baseline, on a material official
+economics change, or at the distinct RLUSD fourth-distribution trigger after
+2026-09-11T18:00:00Z. Contract, USD1 source-result, RLUSD source-result, and
+adjudication SHA-256 values are
+`e9cb7b1923e55afa4bbe8bb64b1ff9c28598251d40671e84030e715deac747f5`,
+`6b94591d7e4486a3e9b96dfe6eb0bd4d56e0a89c5ef3b159dae77a71f6b4f346`,
+`e2674a34cf658810c9aa97e4e8710813ce4d83fc4cc734ee76b028df146a672b`,
+and `5728de0226526a070c44179f3dc4eb673098349b38e62e646722a6f548f126bb`.
+No credentials, accounts, orders, funds, transactions, or protected Polymarket
+capture bytes were touched.
 
 ## 2026-09-01 Binance Options block-trade single-leg rejection
 

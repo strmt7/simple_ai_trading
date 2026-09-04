@@ -28,6 +28,13 @@ REFRESH_PATH = (
     / "action-value"
     / "binance-scheduled-yield-distribution-refresh-v1-2026-08-29.json"
 )
+FINAL_REFRESH_PATH = (
+    ROOT
+    / "docs"
+    / "model-research"
+    / "action-value"
+    / "binance-scheduled-yield-distribution-final-refresh-v2-2026-09-04.json"
+)
 REGISTRY_PATH = (
     ROOT / "docs" / "model-research" / "structural-edge-priority-registry-v1.json"
 )
@@ -44,6 +51,9 @@ EXPECTED_PROMOTION_TRIAGE_SHA256 = (
 )
 EXPECTED_REFRESH_SHA256 = (
     "c5feb852830adadd497aa287460d1a3132e324fbbbdaa5f608890acebc43e252"
+)
+EXPECTED_FINAL_REFRESH_SHA256 = (
+    "5728de0226526a070c44179f3dc4eb673098349b38e62e646722a6f548f126bb"
 )
 
 
@@ -115,7 +125,7 @@ def test_registry_prioritizes_candidate_without_opening_authority() -> None:
     assert registry["result_sha256"] == EXPECTED_REGISTRY_SHA256
     assert _embedded_hash(registry) == EXPECTED_REGISTRY_SHA256
     hypotheses = registry["prioritized_hypotheses"]
-    assert [row["priority_rank"] for row in hypotheses] == list(range(1, 45))
+    assert [row["priority_rank"] for row in hypotheses] == list(range(1, 66))
     candidate = next(
         row
         for row in hypotheses
@@ -123,7 +133,11 @@ def test_registry_prioritizes_candidate_without_opening_authority() -> None:
     )
     assert candidate["priority_rank"] == 8
     assert candidate["market_direction_forecast_required"] is False
-    assert candidate["canonical_artifacts"][:5] == [
+    assert candidate["canonical_artifacts"][:6] == [
+        {
+            "path": FINAL_REFRESH_PATH.relative_to(ROOT).as_posix(),
+            "result_sha256": EXPECTED_FINAL_REFRESH_SHA256,
+        },
         {
             "path": REFRESH_PATH.relative_to(ROOT).as_posix(),
             "result_sha256": EXPECTED_REFRESH_SHA256,
@@ -222,6 +236,27 @@ def test_scheduled_distribution_refresh_retains_raw_and_updates_rates() -> None:
     )
 
     for source in refresh["sources"]:
+        payload = (ROOT / source["raw_path"]).read_bytes()
+        assert len(payload) == source["raw_bytes"]
+        assert hashlib.sha256(payload).hexdigest() == source["raw_sha256"]
+
+
+def test_final_distribution_refresh_fails_closed_on_missing_publications() -> None:
+    refresh = _load(FINAL_REFRESH_PATH)
+
+    assert refresh["result_sha256"] == EXPECTED_FINAL_REFRESH_SHA256
+    assert _embedded_hash(refresh) == EXPECTED_FINAL_REFRESH_SHA256
+    assert refresh["adjudication"]["accepted_edge_count_change"] == 0
+    assert refresh["adjudication"]["rlusd_candidate_accepted"] is False
+    assert refresh["adjudication"]["profitability_claim"] is False
+    assert refresh["sources"]["usd1"]["scheduled_row_still_placeholder"] is True
+    assert refresh["sources"]["rlusd"]["scheduled_row_still_placeholder"] is True
+    assert refresh["sources"]["usd1"]["frozen_numeric_row_match"] is False
+    assert refresh["sources"]["rlusd"]["frozen_numeric_row_match"] is False
+    assert refresh["efficiency_boundary"]["this_capture_is_consumed"] is True
+    assert refresh["efficiency_boundary"]["polling_prohibited"] is True
+
+    for source in refresh["sources"].values():
         payload = (ROOT / source["raw_path"]).read_bytes()
         assert len(payload) == source["raw_bytes"]
         assert hashlib.sha256(payload).hexdigest() == source["raw_sha256"]
