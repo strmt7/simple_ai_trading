@@ -164,9 +164,8 @@ def test_registry_updates_existing_bstock_family_and_terminalizes_snapshot() -> 
 
     assert registry["result_sha256"] == REGISTRY_HASH
     assert _canonical_hash(registry, "result_sha256") == REGISTRY_HASH
-    assert [row["priority_rank"] for row in registry["prioritized_hypotheses"]] == list(
-        range(1, 45)
-    )
+    ranks = [row["priority_rank"] for row in registry["prioritized_hypotheses"]]
+    assert ranks == list(range(1, len(ranks) + 1))
     hypothesis = next(
         row
         for row in registry["prioritized_hypotheses"]
@@ -174,7 +173,10 @@ def test_registry_updates_existing_bstock_family_and_terminalizes_snapshot() -> 
         == "bstock_reference_conversion_and_delta_neutral_perpetual_funding"
     )
     assert "new_official_exact_multiplier_bStock_listing" in hypothesis["retry_trigger"]
-    assert "do_not_poll" in hypothesis["next_action"]
+    assert any(
+        "polling_the_byte_identical_68_row_bStock_inventory" in shortcut
+        for shortcut in hypothesis["prohibited_shortcuts"]
+    )
     assert any(
         artifact["result_sha256"] == RESULT_HASH
         for artifact in hypothesis["canonical_artifacts"]

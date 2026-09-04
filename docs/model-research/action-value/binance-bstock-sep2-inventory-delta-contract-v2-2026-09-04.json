@@ -1,0 +1,71 @@
+{
+  "schema_version": "binance-bstock-inventory-delta-contract-v1",
+  "frozen_at_utc": "2026-09-04T18:59:38Z",
+  "purpose": "test only whether the official September 2 CRWDB MRNAB SQQQB and STXB listings create a genuinely new exact-one multiplier bStock with a previously unscreened active matching TradFi perpetual before any price funding or depth request",
+  "official_trigger": {
+    "article_code": "b3ba5cf68daf4264a1260c8da11eef6d",
+    "source_contract_path": "docs/model-research/action-value/binance-bstock-sep2-listing-source-contract-v2-2026-09-04.json",
+    "source_contract_sha256": "e232dcfdb16039fb5dbb3e30f55e1470046b2ee571def91317f70b1267526601",
+    "announced_tickers": [
+      "CRWD",
+      "MRNA",
+      "SQQQ",
+      "STX"
+    ],
+    "announced_spot_open_utc": "2026-09-02T12:00:00Z"
+  },
+  "baseline": {
+    "path": "data/binance-djtb-new-listing-spot-perpetual-v1/raw/bstock-list.raw",
+    "response_bytes": 14867,
+    "response_sha256": "87aa11d459f9babcba9837743ab616fef4c066b20e209524b43ee383429cde3d",
+    "row_count": 68,
+    "status": "latest_retained_inventory_including_the_already_screened_DJTB_listing"
+  },
+  "inventory_request": {
+    "label": "bstock_inventory",
+    "method": "GET",
+    "url": "https://www.binance.com/bapi/defi/v1/public/wallet-direct/buw/wallet/market/token/rwa/stock/detail/list/ai?type=3"
+  },
+  "conditional_request": {
+    "condition": "at_least_one_new_ticker_not_in_the_hash_bound_baseline_has_decimal_multiplier_exactly_equal_to_one",
+    "label": "futures_exchange_info",
+    "method": "GET",
+    "url": "https://fapi.binance.com/fapi/v1/exchangeInfo"
+  },
+  "exact_url_dedupe": {
+    "inventory_retained_matching_journals": [
+      "data/binance-djtb-new-listing-spot-perpetual-v1/request-journal.jsonl"
+    ],
+    "inventory_repeat_justification": "the new September 2 official four-bStock listing satisfies rank 12's exact inventory refresh trigger",
+    "futures_exchange_info_repeat_justification": "run only conditionally after at least one new exact-one multiplier row and use only to establish current exact TradFi perpetual identity and trading status",
+    "alias_retry_forbidden": true
+  },
+  "decision_rules": {
+    "exact_multiplier": "Decimal(multiplier) == Decimal(1)",
+    "matching_future": "symbol_equals_ticker_plus_USDT_and_contractType_equals_TRADIFI_PERPETUAL_and_status_equals_TRADING_and_underlyingType_equals_EQUITY",
+    "no_new_exact_matching_pair": "retain_the_inventory_delta_and_stop_without_funding_books_or_account_access",
+    "new_exact_matching_pairs": "report_all_matches_but_select_only_the_lexicographically_first_ticker_for_a_separate_newly_frozen_one_symbol_public_prefilter_no_funding_or_books_in_this_discovery",
+    "row_identity": "ticker_is_unique_and_each_row_must_have_type_3_symbol_asset_cs_multiplier_contractAddress_chainId_and_d"
+  },
+  "maximum_requests": 2,
+  "retry_policy": "one_attempt_per_exact_request_no_retry",
+  "outputs": {
+    "raw_dir": "data/binance-bstock-sep2-listing-trigger-v2/raw",
+    "journal": "data/binance-bstock-sep2-listing-trigger-v2/inventory-delta-journal.json",
+    "result": "docs/model-research/action-value/binance-bstock-sep2-listing-inventory-result-v2-2026-09-04.json"
+  },
+  "authority": {
+    "account_state_permitted": false,
+    "credentials_permitted": false,
+    "funded_or_order_actions_permitted": false,
+    "profitability_or_accepted_edge_claim_permitted": false,
+    "public_unauthenticated_GET_only": true,
+    "trading_authority": false,
+    "protected_capture_touched": false
+  },
+  "implementation": {
+    "path": "tools/capture_binance_bstock_inventory_delta.py",
+    "sha256": "17817a4bed20b91d361c88402139f9719b68ece6ce8fbf11485bb84d397287e2"
+  },
+  "contract_sha256": "a264751084738d226669ea181409e8e357d77c41cd53f9955931b12b3a84f00d"
+}
