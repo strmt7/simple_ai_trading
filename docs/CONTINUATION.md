@@ -18,6 +18,14 @@ misleading native empty-state labels, console malformed-artifact/environment
 handling, and the optional Tornado pin from 6.5.7 to 6.5.8. It does not implement
 the proposed edge-centric interface or prove the whole repository reviewed.
 
+The next substantive finding was false portfolio-return alignment: disjoint
+histories were paired by row tails, and unequal horizons by end timestamp only.
+The corrected risk module requires shared start/end observations and rejects
+duplicate endpoints and nonfinite returns. The 23-test portfolio/model-lab
+domain passes, with existing synchronized-data acceptance preserved. Historical
+portfolio acceptance needs an independent interval-alignment audit before reuse;
+no protected data or old outcomes were reopened.
+
 The paused USD1 source work is retained under adjudication
 `f3eaf05ff817dba843d992c643718f0b6f26fbd57bb5bfd15159522b0899114d`.
 The September 4 to October 2 campaign exists independently of the ended

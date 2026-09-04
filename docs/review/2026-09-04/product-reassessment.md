@@ -35,6 +35,7 @@ not a promise of positive profit in every imaginable market state.
 | Native research workflow | Reorient after the underlying status contract is designed | Overview “Research Run” and Research shortcuts launch conservative/regular/aggressive `model-lab` commands. No structural-edge decision view is provided by those shortcuts. This is a source-level workflow gap, not a visual-layout test result. |
 | Console dashboard | Fix invalid state handling | `load_artifact_preview` could crash the menu on a valid JSON artifact with non-object runtime. Missing or string-valued environment flags could also be displayed as an actual venue environment. Corrected with direct regression cases. |
 | Execution lifecycle | Keep deterministic open/close separation | `build_execution_lifecycle_plan` does not let ordinary risk/capacity blocks prevent closes, while unknown ownership/reconciliation still blocks unsafe operations. Full execution-path review remains open. |
+| Portfolio diversification evidence | Repair the actual sampling boundary | `portfolio_risk.py` synthesized alignment from disjoint row tails and matched unequal intervals by end timestamp alone. It now requires both close-to-close endpoints, rejects duplicates/nonfinite returns and reports missing common intervals. All 23 portfolio/model-lab checks pass. |
 | CLI/native contract | Keep one registration and generated metadata path | `entrypoint.py`, `command_contract.py` and `generate_windows_contract.py` prevent a native-only command interface. Native build and installed-entrypoint verification passed for the label correction. |
 | Dependency boundary | Patch the affected optional library | Tornado 6.5.7 was in the optional microstructure chain. 6.5.8 passes socket-free advisory regressions; product server exploitability remains unproved. See the separate dependency report. |
 
@@ -90,3 +91,10 @@ Next review work: source-complete lifecycle/ownership and status freshness,
 causal/selection gates, all active interface flows, then remaining active
 modules/configuration/plans. Record findings and keep/change decisions as each
 surface is actually read. Mechanical inventory is never semantic completion.
+
+The subsequent portfolio pass read the complete risk module and its model-lab
+acceptance caller. Synchronized valid-data acceptance is preserved. Previously
+accepted portfolio reports must not be assumed valid under the corrected
+alignment: verify their exact sampling endpoints independently, without
+rerunning consumed or protected evaluation data. No existing historical report
+or accepted-edge count was rewritten to make the correction appear successful.

@@ -1,15 +1,21 @@
 from __future__ import annotations
 
 import math
+from dataclasses import replace
 
 import pytest
 
 from simple_ai_trading.api import Candle
-from simple_ai_trading.portfolio_risk import build_portfolio_risk_report, policy_for_strategy
+from simple_ai_trading.portfolio_risk import (
+    build_portfolio_risk_report,
+    policy_for_strategy,
+)
 from simple_ai_trading.types import StrategyConfig
 
 
-def _candles(symbol_offset: float = 0.0, *, count: int = 120, shock: float = 0.0) -> list[Candle]:
+def _candles(
+    symbol_offset: float = 0.0, *, count: int = 120, shock: float = 0.0
+) -> list[Candle]:
     price = 100.0 + symbol_offset
     rows: list[Candle] = []
     for index in range(count):
@@ -17,26 +23,107 @@ def _candles(symbol_offset: float = 0.0, *, count: int = 120, shock: float = 0.0
         if shock and index == count - 12:
             move -= shock
         price = max(1.0, price * (1.0 + move))
-        rows.append(Candle(
-            open_time=index * 60_000,
-            open=price * 0.999,
-            high=price * 1.002,
-            low=price * 0.998,
-            close=price,
-            volume=1000.0,
-            close_time=index * 60_000 + 59_000,
-        ))
+        rows.append(
+            Candle(
+                open_time=index * 60_000,
+                open=price * 0.999,
+                high=price * 1.002,
+                low=price * 0.998,
+                close=price,
+                volume=1000.0,
+                close_time=index * 60_000 + 59_000,
+            )
+        )
     return rows
 
 
 def test_policy_for_strategy_is_stricter_for_conservative() -> None:
-    conservative = policy_for_strategy(StrategyConfig(risk_level="conservative"), min_symbols=3)
-    aggressive = policy_for_strategy(StrategyConfig(risk_level="aggressive"), min_symbols=3)
+    conservative = policy_for_strategy(
+        StrategyConfig(risk_level="conservative"), min_symbols=3
+    )
+    aggressive = policy_for_strategy(
+        StrategyConfig(risk_level="aggressive"), min_symbols=3
+    )
 
     assert conservative.max_cluster_weight < aggressive.max_cluster_weight
     assert conservative.max_portfolio_cvar_95 < aggressive.max_portfolio_cvar_95
     assert conservative.min_effective_symbols > aggressive.min_effective_symbols
-    assert conservative.min_correlation_adjusted_effective_symbols > aggressive.min_correlation_adjusted_effective_symbols
+    assert (
+        conservative.min_correlation_adjusted_effective_symbols
+        > aggressive.min_correlation_adjusted_effective_symbols
+    )
+
+
+def test_portfolio_rejects_disjoint_return_histories() -> None:
+    histories = {
+        symbol: [
+            replace(
+                candle,
+                open_time=candle.open_time + shift,
+                close_time=candle.close_time + shift,
+            )
+            for candle in _candles(offset)
+        ]
+        for symbol, offset, shift in (
+            ("AAAUSDC", 0.0, 0),
+            ("BBBUSDC", 1.7, 86_400_000),
+            ("CCCUSDC", 3.1, 172_800_000),
+        )
+    }
+    report = build_portfolio_risk_report(
+        histories,
+        StrategyConfig(min_diversified_assets=3, max_asset_allocation_pct=0.34),
+        min_symbols=3,
+    )
+    assert report.accepted is False
+    assert report.observations == 0
+    assert report.deployed_weight == 0
+    assert report.reserve_weight == 1
+    assert "no_common_return_intervals" in str(report.reason)
+
+
+def test_portfolio_does_not_align_different_return_intervals_by_end_alone() -> None:
+    report = build_portfolio_risk_report(
+        {"AAAUSDC": _candles(), "BBBUSDC": _candles(1.7)[::2]},
+        StrategyConfig(),
+        min_symbols=2,
+    )
+    assert report.accepted is False
+    assert report.observations == 0
+
+
+def test_portfolio_uses_only_returns_with_both_shared_endpoints() -> None:
+    first = _candles(count=4)
+    second = _candles(1.7, count=4)
+    report = build_portfolio_risk_report(
+        {"AAAUSDC": first, "BBBUSDC": [second[0], second[1], second[3]]},
+        StrategyConfig(),
+        min_symbols=2,
+    )
+    assert report.observations == 1
+    assert report.accepted is False
+
+
+def test_portfolio_rejects_ambiguous_duplicate_timestamps() -> None:
+    first = _candles()
+    report = build_portfolio_risk_report(
+        {"AAAUSDC": first, "BBBUSDC": [*first, first[-1]]},
+        StrategyConfig(),
+        min_symbols=2,
+    )
+    assert report.accepted is False
+    assert report.observations == 0
+
+
+def test_portfolio_does_not_replace_overflowing_returns_with_zero() -> None:
+    rows = _candles()
+    corrupted = [replace(row, close=1e308) for row in rows]
+    corrupted[0] = replace(corrupted[0], close=1e-300)
+    report = build_portfolio_risk_report(
+        {"AAAUSDC": rows, "BBBUSDC": corrupted}, StrategyConfig(), min_symbols=2
+    )
+    assert report.accepted is False
+    assert report.observations == 0
 
 
 def test_portfolio_risk_accepts_diversified_low_tail_risk_set() -> None:
@@ -177,6 +264,9 @@ def test_portfolio_risk_uses_actual_capped_weights_for_tail_risk() -> None:
 
     assert reserve.deployed_weight == pytest.approx(0.60)
     assert reserve.reserve_weight == pytest.approx(0.40)
-    assert all(weight <= reserve.policy.max_symbol_weight + 1e-12 for weight in reserve.weights.values())
+    assert all(
+        weight <= reserve.policy.max_symbol_weight + 1e-12
+        for weight in reserve.weights.values()
+    )
     assert reserve.portfolio_cvar_95 < full.portfolio_cvar_95 * 0.75
     assert reserve.portfolio_max_drawdown < full.portfolio_max_drawdown * 0.75
