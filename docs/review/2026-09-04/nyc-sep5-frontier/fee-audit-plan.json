@@ -1,0 +1,10 @@
+{
+  "classification": "post_capture_zero_network_rejection_strengthening_only",
+  "input_result_sha256": "f53fb916a213fcd0dbddfedcb6be3473b104bae145333cf7543e5bac7a61cbd1",
+  "input_raw_sha256": "c85fdb71d0676e6a99295b6067fe88ae27fbae285537072309577c316c831c3d",
+  "population": "All 17 original frontier rows, including duplicated ordering alternatives. Missing NO-price rows remain incomplete; no additional package or data is selected.",
+  "calculation": "Apply the exact retained configured taker fee to every original leg at its original metadata price and five-share quantity, with zero adverse ticks. Record total fee and largest single-leg fee versus original gross headroom.",
+  "purpose": "Determine whether fees alone eliminate the gross-positive rows, independently of the frozen one-tick stress.",
+  "prohibitions": "No original gate change, promotion, resampling, event or book refresh, account/order/fee endpoint access. Even a positive exploratory subtotal would not authorize further requests.",
+  "retention": "Exclusive result and journal; immutable source bindings. This is not independent validation or actual execution PnL."
+}

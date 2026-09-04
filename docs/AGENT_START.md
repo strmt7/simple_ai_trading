@@ -9,6 +9,12 @@ operating contract. Historical handoff text is archived under
 Review update, September 4: use the current registry and the top of
 `docs/CONTINUATION.md` for counts and routing. The dated sections below are
 historical checkpoints and can contain superseded counts or plans.
+
+The exact NYC September 5 long-only frontier is consumed: configured fees
+eliminate every evaluated row even without adverse ticks. See
+`review/2026-09-04/nyc-sep5-frontier/review.md`; do not refresh the event or
+request missing sides/books. Canonical terminal observations are now 187.
+
 `docs/REVIEW_2026_09_04.md` records the ongoing comprehensive review. The new
 September USD1 campaign is documented, but its first distribution rates remain
 unpublished; its next scheduled public reconciliation is September 11 at
