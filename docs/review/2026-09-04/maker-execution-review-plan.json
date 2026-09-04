@@ -1,0 +1,16 @@
+{
+  "schema_version": "maker-execution-semantics-review-plan-v1",
+  "base_head": "34033ab77e14626385954ed15f9fe7a04f847ee8",
+  "scope": "Zero-network synthetic counterexamples against retained implementation plus a retained illustrative Polymarket example; not a new market experiment.",
+  "questions": [
+    "Does equal quote notional at unequal bid and ask prices close base inventory?",
+    "Can an incomplete full-fill label exclude partial inventory under the same FIFO assumption?",
+    "What completion probability would cover the illustrative worst orphan loss, without pretending it is an empirical mean?"
+  ],
+  "market_data_access": false,
+  "protected_data_access": false,
+  "historical_result_changes": false,
+  "promotion_authority": false,
+  "retry_trigger_changed": false,
+  "literature_scope": "Abstract discovery only; repeated retained references are not new research triggers. No paper results enter the numerical review."
+}

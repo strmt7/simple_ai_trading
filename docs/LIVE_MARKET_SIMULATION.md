@@ -4,6 +4,14 @@ Simple AI Trading backtests are intentionally pessimistic. A strategy that only 
 
 ## Research Baseline
 
+For forward maker research, full-fill support and execution accounting are
+distinct. An incomplete full-fill label may contain partial exposure; equal
+quote notionals at unequal prices leave unmatched base quantities. Reconcile
+net delivered quantities, cash, residual inventory, cancellation races and
+terminal costs before using a support label as PnL. The
+[September 4 audit](review/2026-09-04/maker-execution-semantics.md) preserves
+historical implementations and explains the required quantity-aware successor.
+
 Primary references used for the current design:
 
 - Binance Spot testnet and market data docs: https://developers.binance.com/docs/binance-spot-api-docs/testnet and https://developers.binance.com/docs/binance-spot-api-docs/rest-api/market-data-endpoints

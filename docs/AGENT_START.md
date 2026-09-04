@@ -6,6 +6,11 @@ operating contract. Historical handoff text is archived under
 
 ## Current Truth
 
+Maker execution review: full-fill support flags do not establish flat inventory
+or zero partial exposure. Read `review/2026-09-04/maker-execution-semantics.md`
+before reusing Round 57/58 support infrastructure for economic labels. Preserve
+old code/results; no new capture or training trigger follows from this audit.
+
 Review update, September 4: use the current registry and the top of
 `docs/CONTINUATION.md` for counts and routing. The dated sections below are
 historical checkpoints and can contain superseded counts or plans.
