@@ -7,6 +7,38 @@ no exchange credentials, account access or trading actions were used.
 
 ## Current decisions
 
+This section records successive snapshots; later bot activity does not change
+the retained initial PR-head identities or reopen old validation results.
+
+Update after `9b43812a`: the three fully superseded PRs were closed. Dependabot
+itself closed #9 at 20:31:36 UTC after the group configuration refresh and
+opened #13 (CodeQL 4.37.9) and #14 (huggingface-hub 1.29.0, Ruff 0.16.5,
+build 1.6.0). The agent did not create either PR. Both new batches are being
+integrated directly on main with the same identity policy. The SDK migration
+remains unresolved despite the bot closing its former PR.
+
+Exact-SHA checks on `9b43812a`: Ruff, Vulture and the Windows Python/native
+smoke passed. The main Python job was still running at the last observation.
+Super-Linter exposed a second retained raw-data root under `data/**/raw/**`
+and a multiline inline formula parsed as a list in CONTINUATION. The raw-data
+exclusion now covers both roots; the same formula is on one inline-code line.
+No captured data was modified.
+
+The refreshed Dependabot updater also reported incompatible *proposed*
+upgrades: NumPy 2.4.6 conflicts with hftbacktest's `<2.3` requirement;
+websockets 17.1 conflicts with the SDK's `<16` requirement; and uniform pandas
+3.0.5 conflicts with NumPy 2.2.6 on Python 3.14. The current lock resolves.
+These coupled migrations remain explicit, not hidden by broad ignore rules,
+dependency removal, narrowing supported Python versions or forced installs.
+
+The final refreshed batch passes 46 affected model/foundation/dependency tests,
+13 dependency/terminology checks after the raw-root correction, Ruff, and lock
+verification. `build` 1.6.0 successfully produced a local wheel under
+`.tmp/dependency-review-20260904-wheel`; it was not released or uploaded.
+The new CodeQL pin resolves the official 4.37.9 action release, whose stated
+change is its default CodeQL bundle. Hosted completion remains separately
+observable at the published SHA.
+
 The fresh open Dependabot security-alert response was empty. That is not a
 claim of a complete security audit. The prior Tornado 6.5.8 fix remains pinned.
 There were four open PRs and exactly four non-main remote branches:

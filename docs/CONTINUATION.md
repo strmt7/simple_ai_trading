@@ -10,6 +10,19 @@ durability-audit SHA-256 is
 
 ## September 4 resumed review and USD1 campaign
 
+The model-lab promotion review found and fixed missing/indeterminate
+selection-risk evidence being accepted, plus infinite performance values.
+Each objective now needs an explicit noncontradictory pass. See
+`docs/review/2026-09-04/model-evidence-reassessment.md` for counterexamples,
+the current score-haircut limitation and the economics-first model plan.
+
+PRs #8/#10/#11 were closed after direct-main checkpoint `9b43812a`.
+Dependabot then automatically closed #9 and opened #13/#14 following its
+configuration refresh; the agent did not create those PRs. Their reviewed
+CodeQL, huggingface-hub, Ruff and build updates are included in the next
+direct-main checkpoint. The SDK migration remains unresolved in the review
+ledger even though Dependabot closed its old grouped PR.
+
 Dependency/branch review is recorded in
 `docs/review/2026-09-04/dependabot-reconciliation.md`. The September 4 GitHub
 check found zero open security alerts and four dependency PRs. Three Actions
@@ -1531,8 +1544,9 @@ Development belongs only on `main`; do not create another development branch.
   `14f3fdfcabaccf344e6ac7573412425ccecd5132e7e84428a1a40bd7c564bf11`.
 
 - A newly listed Qwen Flash (3.9+) event satisfied rank 31's distinct exact
-  two-deadline trigger. Its common rules prove that `NO(released by October 31)
-  + YES(released by December 31)` has a one-pUSD terminal floor: release by the
+  two-deadline trigger. Its common rules prove that
+  `NO(released by October 31) + YES(released by December 31)`
+  has a one-pUSD terminal floor: release by the
   earlier deadline pays one, release between deadlines pays two, and no release
   by the later deadline pays one. The rendered New card superficially summed to
   0.99, but those values were separate market probabilities rather than labeled

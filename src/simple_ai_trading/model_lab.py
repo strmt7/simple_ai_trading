@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass, field, replace
+from math import isfinite
 from pathlib import Path
 from typing import Sequence
 
@@ -206,6 +207,7 @@ def _walk_forward_gate_passed(report: object) -> bool:
     return (
         fold_count > 0
         and accepted_folds == fold_count
+        and all(isfinite(value) for value in (worst_score, worst_pnl, worst_drawdown))
         and worst_score > 0.0
         and worst_pnl > 0.0
         and 0.0 <= worst_drawdown <= 1.0
@@ -304,9 +306,9 @@ def _outcome_from_suite(
         if getattr(outcome, "walk_forward_gate", None)
     }
     selection_risk = {
-        outcome.objective: dict(getattr(outcome, "selection_risk", {}) or {})
+        outcome.objective: dict(report) if isinstance(report, dict) else {}
         for outcome in suite.outcomes
-        if getattr(outcome, "selection_risk", None)
+        for report in [getattr(outcome, "selection_risk", None)]
     }
     hybrid_ablation = {
         outcome.objective: list(getattr(outcome, "hybrid_ablation", []) or [])
@@ -325,14 +327,20 @@ def _outcome_from_suite(
     }
     robustness_payload = robustness_report.asdict()
     regime_payload = robustness_payload.get("regime_summary") if isinstance(robustness_payload, dict) else None
-    score_accepted = bool(suite.outcomes) and all(score > 0.0 for score in scores.values())
+    score_accepted = bool(suite.outcomes) and all(
+        isfinite(score) and score > 0.0 for score in scores.values()
+    )
     walk_forward_accepted = all(
         _walk_forward_gate_passed(walk_forward_gate.get(str(outcome.objective)))
         for outcome in suite.outcomes
     )
     selection_risk_accepted = all(
-        not isinstance(report, dict) or report.get("passed") is not False
-        for report in selection_risk.values()
+        isinstance(report, dict)
+        and report.get("passed") is True
+        and report.get("reason") in (None, "")
+        and report.get("reasons") == []
+        for outcome in suite.outcomes
+        for report in [getattr(outcome, "selection_risk", None)]
     )
     stress_accepted = bool(stress_report.accepted)
     robustness_accepted = bool(robustness_report.accepted)

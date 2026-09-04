@@ -34,6 +34,11 @@ identity; its deadline grouping does not bind observation starts (review R4).
   `docs/model-research/cross-regime-edge-acceptance-contract-v1.json`; an
   unsupported bullish, bearish, sideways, choppy, volatility, liquidity, or
   latency slice must reject promotion or abstain from new exposure.
+- Model promotion requires each objective's affirmative, noncontradictory
+  selection-risk evidence. Missing status is not a pass; nonfinite performance
+  is not an edge. The training suite's heuristic score haircut and two-panel
+  overfitting proxy are not a statistical Deflated Sharpe Ratio or full
+  combinatorial validation. Preserve old results and label these limits.
 - Portfolio correlation and tail-risk evidence must align returns by both
   observation endpoints. Never substitute equally sized row tails for disjoint
   histories, match unequal return horizons only by their final timestamp, or
