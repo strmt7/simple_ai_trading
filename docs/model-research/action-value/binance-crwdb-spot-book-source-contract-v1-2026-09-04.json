@@ -1,0 +1,48 @@
+{
+  "schema_version": "public-source-capture-contract-v1",
+  "frozen_at_utc": "2026-09-04T19:01:51Z",
+  "contract_path": "docs/model-research/action-value/binance-crwdb-spot-book-source-contract-v1-2026-09-04.json",
+  "request_name": "binance_crwdb_new_bstock_spot_topbook_2026_09_04",
+  "request": {
+    "method": "GET",
+    "url": "https://api.binance.com/api/v3/ticker/bookTicker?symbol=CRWDBUSDT",
+    "count": 1,
+    "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "exact_url_dedupe": {
+    "retained_match_count_before_access": 0,
+    "alias_retry_forbidden": true
+  },
+  "response_byte_ceiling": 10000,
+  "required_utf8_phrases": [
+    "\"symbol\":\"CRWDBUSDT\"",
+    "\"askPrice\"",
+    "\"askQty\""
+  ],
+  "outputs": {
+    "raw_path": "data/binance-crwdb-bstock-perpetual-topbook-v1/raw/spot-book.json",
+    "journal_path": "data/binance-crwdb-bstock-perpetual-topbook-v1/spot-request-journal.jsonl",
+    "result_path": "docs/model-research/action-value/binance-crwdb-spot-book-source-result-v1-2026-09-04.json"
+  },
+  "authority": {
+    "account_requests": 0,
+    "credentials_used": false,
+    "funds_used": false,
+    "orders_or_transactions": 0,
+    "protected_capture_touched": false,
+    "public_unauthenticated_read_only_requests": 1,
+    "signed_requests": 0,
+    "trading_authority": false
+  },
+  "implementations": [
+    {
+      "path": "tools/capture_public_source_contract.py",
+      "sha256": "9dbb14651455abade755fe96091b9eaafe1153f56a1baad4cd60b1a888d41b8c"
+    },
+    {
+      "path": "tools/screen_polymarket_exact_two_leg_package.py",
+      "sha256": "374fcc3c3485c466b4929a91256450bdc7db70f93ef4c6bda627e05fe8938327"
+    }
+  ],
+  "contract_sha256": "ce797e1624a240d93048870bc7de25a962a40ad0889f0f3c5f36b9a0d1d65e5f"
+}

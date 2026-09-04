@@ -1,12 +1,63 @@
 # Continue Development
 
-Current canonical status after the distinct Binance crypto-option population gate:
-accepted edges 37, ranked hypotheses 65, terminal families 183,
+Current canonical status after the September 2 bStock listing trigger:
+accepted edges 37, ranked hypotheses 65, terminal families 184,
 and stable current account-qualified after-all-cost edges zero. Registry
 SHA-256 is
-`51dba2cf9c5f61efa650cab4db66edc37189cd9aeb7ddfd97dbfe9fdd0e16698`;
+`c6f6338f7d3b42baa2f6f61bbcf0b1433aff46cec541d9b3dbac5d6387ae0e59`;
 durability-audit SHA-256 is
-`e575d0084546053bc1ab2c07e9d23553796d4ef4dd8fc29bc2edcef314575801`.
+`ed029fb924466e9f937c6fcfb499387618209062f7cdce8645eedcf065545922`.
+
+## 2026-09-04 Binance September 2 bStock listing trigger
+
+The higher-ranked rank-12 retry trigger was satisfied by Binance's exact
+September 2 announcement for CRWDB, MRNAB, SQQQB, and STXB. A frozen one-use
+official CMS GET retained the complete current article. The independently
+frozen public inventory delta then advanced from 68 to 72 rows with no removed
+ticker. All four new rows have an exact one-share multiplier. Conditional
+current futures metadata proved active exact equity TradFi perpetual matches
+for CRWD, MRNA, and SQQQ; `STXUSDT` is not an equity TradFi match and was
+excluded rather than confused with the Stacks crypto contract.
+
+The precommitted rule reported all three matches but selected only the
+lexicographically first, CRWD, for economics. Before price access, a separate
+contract froze two top-of-book requests and a 50-bip rejection hurdle. The
+CRWDBUSDT spot ask and CRWDUSDT perpetual bid started 262 ms apart and were both
+exactly 213.07 USDT per share. Gross entry headroom was exactly zero; the fixed
+stress made the row -1.06535 USDT per share, or -50 bips. The sequence stopped
+before depth, funding, fees, accounts, credentials, orders, funds, transactions,
+or protected Polymarket capture access.
+
+Only the exact CRWD observation is terminal. MRNA and SQQQ remain unscreened
+and are not inferred from CRWD. To prevent adaptive cherry-picking after seeing
+CRWD, do not inspect them now. Nasdaq's official 2026 calendar closes the U.S.
+market for Labor Day on September 7. At or after
+2026-09-08T13:35:00Z, freeze one separate lexicographically next MRNABUSDT to
+MRNAUSDT two-request top-book test with the same 50-bip gate. Request full depth
+and adverse funding only if it survives. This is not an accepted edge or a
+deployment-ready strategy.
+
+Listing source-contract, listing source-result, inventory-delta contract,
+inventory-delta result, CRWDB spot source-contract, CRWDB spot source-result,
+CRWD futures source-contract, CRWD futures source-result, top-book contract, and
+top-book result SHA-256 values are respectively
+`e232dcfdb16039fb5dbb3e30f55e1470046b2ee571def91317f70b1267526601`,
+`72e5428bc2b96f8bd05867479fedddda40665458548ce4c0456f107d1bb24e4b`,
+`a264751084738d226669ea181409e8e357d77c41cd53f9955931b12b3a84f00d`,
+`ba5ebb29ce89c8cc09bde5066bbe4a0cfc7dc11fa926f5a00de6321054caba26`,
+`ce797e1624a240d93048870bc7de25a962a40ad0889f0f3c5f36b9a0d1d65e5f`,
+`ae771bb195ea5882365c91b0e193be74d31ee98fd3c071265805975bc4f80a7e`,
+`5b2246de062f787a04e6e137d2321155d30aa4c77ac34dc81b6c8b472e3f4614`,
+`0f9251248a65f04853e73330d36568e4822f9187f4c5fb92b84fa2b7c1fd2401`,
+`4b6091bbeda43d6b6609c3fc9980ffc28b19ce015b8dad8dcb5ddc9891c65dd2`,
+and `a02367c4c0f7461a29ba857f947dc870ab6539be36419d7b068e5e685b58c744`.
+The retained article, current bStock inventory, futures metadata, CRWDB book,
+and CRWD book raw SHA-256 values are
+`fde73b7185b6660cefe859197551b1c789a79841316f9610f41e6abe72a3fcda`,
+`0550a22f138562caee8cb22962c494b911feaca43e830a9e28c8bae3c2fddff6`,
+`91beaa5253d9e89d9eabfaad901f6c8888da20066394576acc22434438560f5e`,
+`bce7837961ccefe919a2bbc5aad4cddc499691a1f7597aea3734761f8d86c581`,
+and `201a7131d2b4fad337ac9a9cbf9ba3fd4b799d8b4adb8a72507f36903d770b05`.
 
 ## 2026-09-04 Binance distinct crypto-option population rejection
 

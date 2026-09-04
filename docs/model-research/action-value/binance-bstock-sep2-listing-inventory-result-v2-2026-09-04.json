@@ -1,0 +1,61 @@
+{
+  "accepted_edge": false,
+  "baseline_row_count": 68,
+  "conditional_request_executed": true,
+  "contract_sha256": "a264751084738d226669ea181409e8e357d77c41cd53f9955931b12b3a84f00d",
+  "current_row_count": 72,
+  "deployment_ready": false,
+  "journal_path": "data/binance-bstock-sep2-listing-trigger-v2/inventory-delta-journal.json",
+  "journal_sha256": "ef7fcff748a899e3a35b1eefe0c6379c099d08b106d4e376efd03f90f6ecbbb9",
+  "market_direction_forecast_required": false,
+  "matching_unscreened_pairs": [
+    {
+      "bstock_multiplier": "1",
+      "bstock_spot_symbol": "CRWDBUSDT",
+      "futures_contract_type": "TRADIFI_PERPETUAL",
+      "futures_status": "TRADING",
+      "futures_symbol": "CRWDUSDT",
+      "futures_underlying_type": "EQUITY",
+      "ticker": "CRWD"
+    },
+    {
+      "bstock_multiplier": "1",
+      "bstock_spot_symbol": "MRNABUSDT",
+      "futures_contract_type": "TRADIFI_PERPETUAL",
+      "futures_status": "TRADING",
+      "futures_symbol": "MRNAUSDT",
+      "futures_underlying_type": "EQUITY",
+      "ticker": "MRNA"
+    },
+    {
+      "bstock_multiplier": "1",
+      "bstock_spot_symbol": "SQQQBUSDT",
+      "futures_contract_type": "TRADIFI_PERPETUAL",
+      "futures_status": "TRADING",
+      "futures_symbol": "SQQQUSDT",
+      "futures_underlying_type": "EQUITY",
+      "ticker": "SQQQ"
+    }
+  ],
+  "new_exact_multiplier_tickers": [
+    "CRWD",
+    "MRNA",
+    "SQQQ",
+    "STX"
+  ],
+  "new_tickers": [
+    "CRWD",
+    "MRNA",
+    "SQQQ",
+    "STX"
+  ],
+  "next_selected_ticker": "CRWD",
+  "profitability_claim": false,
+  "public_prefilter_trigger_satisfied": true,
+  "removed_tickers": [],
+  "request_count": 2,
+  "result_sha256": "ba5ebb29ce89c8cc09bde5066bbe4a0cfc7dc11fa926f5a00de6321054caba26",
+  "schema_version": "binance-bstock-inventory-delta-result-v1",
+  "status": "new_exact_multiplier_matching_tradifi_perpetual_prefilter_trigger_satisfied",
+  "trading_authority": false
+}

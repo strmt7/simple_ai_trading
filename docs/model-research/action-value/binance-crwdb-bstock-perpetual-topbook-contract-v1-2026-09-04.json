@@ -1,0 +1,67 @@
+{
+  "schema_version": "binance-crwdb-bstock-perpetual-topbook-contract-v1",
+  "frozen_at_utc": "2026-09-04T19:01:51Z",
+  "purpose": "apply a two-request rejection-first top-book gate to the lexicographically selected new exact-one CRWDB bStock versus CRWD TradFi perpetual before any depth funding fee or account work",
+  "listing_source_result": {
+    "path": "docs/model-research/action-value/binance-bstock-sep2-listing-source-result-v2-2026-09-04.json",
+    "result_sha256": "72e5428bc2b96f8bd05867479fedddda40665458548ce4c0456f107d1bb24e4b"
+  },
+  "inventory_result": {
+    "path": "docs/model-research/action-value/binance-bstock-sep2-listing-inventory-result-v2-2026-09-04.json",
+    "result_sha256": "ba5ebb29ce89c8cc09bde5066bbe4a0cfc7dc11fa926f5a00de6321054caba26"
+  },
+  "selected_identity": {
+    "selection_rule": "lexicographically_first_ticker_from_all_new_exact_one_multiplier_active_matching_tradifi_perpetuals",
+    "ticker": "CRWD",
+    "bstock_spot_symbol": "CRWDBUSDT",
+    "perpetual_symbol": "CRWDUSDT",
+    "multiplier": "1"
+  },
+  "source_results": {
+    "spot_book": {
+      "contract_path": "docs/model-research/action-value/binance-crwdb-spot-book-source-contract-v1-2026-09-04.json",
+      "contract_sha256": "ce797e1624a240d93048870bc7de25a962a40ad0889f0f3c5f36b9a0d1d65e5f",
+      "result_path": "docs/model-research/action-value/binance-crwdb-spot-book-source-result-v1-2026-09-04.json"
+    },
+    "futures_book": {
+      "contract_path": "docs/model-research/action-value/binance-crwd-futures-book-source-contract-v1-2026-09-04.json",
+      "contract_sha256": "5b2246de062f787a04e6e137d2321155d30aa4c77ac34dc81b6c8b472e3f4614",
+      "result_path": "docs/model-research/action-value/binance-crwd-futures-book-source-result-v1-2026-09-04.json"
+    }
+  },
+  "economic_gate": {
+    "construction": "buy_CRWDB_at_displayed_spot_ask_and_short_equal_underlying_quantity_CRWDUSDT_at_displayed_perpetual_bid",
+    "gross_entry_headroom": "perpetual_bid_minus_bstock_spot_ask",
+    "fixed_stress_bps": "50",
+    "fixed_stress_basis": "bstock_spot_ask",
+    "favorable_funding_credited": false,
+    "survivor_rule": "both_displayed_entry_sides_and_quantities_positive_and_gross_headroom_minus_fixed_stress_strictly_greater_than_zero"
+  },
+  "decision_rules": [
+    "If the top-book gate fails, terminalize only this exact CRWDBUSDT CRWDUSDT observation and stop without depth, funding, fee, account, credential, order, fund, or transaction access.",
+    "If it passes, freeze a separate full-depth adverse-funding exit-basis exact-account-cost and quantity stress before any further request.",
+    "Top quantity is diagnostic only and does not establish fill, atomicity, conversion, stock settlement, or exit capacity.",
+    "Never accept or deploy an edge from this prefilter alone."
+  ],
+  "capture": {
+    "public_unauthenticated_read_only_requests": 2,
+    "maximum_request_start_skew_ms": 10000,
+    "no_alias_retry": true,
+    "no_polling": true
+  },
+  "authority": {
+    "account_state_accessed": false,
+    "authenticated_requests": 0,
+    "credentials_used": false,
+    "funds_used": false,
+    "orders_quotes_transfers_or_wallet_actions": 0,
+    "paper_or_live_trading_authority": false,
+    "protected_capture_touched": false
+  },
+  "implementation": {
+    "path": "tools/adjudicate_binance_crwdb_bstock_perpetual_topbook_v1.py",
+    "sha256": "7c6d5d690c2d9074b996fea855b4091a7e20d402584809638fd3d4dc5e648122"
+  },
+  "output_path": "docs/model-research/action-value/binance-crwdb-bstock-perpetual-topbook-result-v1-2026-09-04.json",
+  "contract_sha256": "4b6091bbeda43d6b6609c3fc9980ffc28b19ce015b8dad8dcb5ddc9891c65dd2"
+}

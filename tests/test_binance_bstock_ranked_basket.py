@@ -213,5 +213,7 @@ def test_zero_maker_counterfactual_prohibits_a_fresh_market_study() -> None:
         "path": ZERO_MAKER_COUNTERFACTUAL_PATH.as_posix(),
         "result_sha256": EXPECTED_ZERO_MAKER_COUNTERFACTUAL_HASH,
     } in hypothesis["canonical_artifacts"]
-    assert "do_not_poll" in hypothesis["next_action"]
-    assert "refresh_funding_or_books" in hypothesis["next_action"]
+    assert any(
+        "polling_the_byte_identical_68_row_bStock_inventory" in shortcut
+        for shortcut in hypothesis["prohibited_shortcuts"]
+    )
