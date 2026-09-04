@@ -21,7 +21,23 @@ profitable without reproducible source-bound after-cost evidence. AI may veto
 or reduce risk only; it never creates positions, selects leverage, overrides a
 safety gate, blocks Stop, or submits an order.
 
-### Latest Binance scheduled-yield publication gate
+### Latest Binance CXMT four-hour funding trigger
+
+An exact official notice proves that Binance changed `CXMTUSDT` from eight-hour
+to four-hour funding effective 2026-09-04T08:15:00Z and halved the
+per-settlement cap from 2 to 1 percent. Retained inventories prove an exact
+active `CXMTUSDT` to Polymarket Perps `CXMT-USD` match. The arithmetic absolute
+daily cap remains 6 percent, so the change creates a history test, not an edge
+or a favorable-rate claim.
+
+Do not sample early. At or after 2026-09-06T08:10:00Z, freeze the receiving-leg
+orientation before history access and run one twelve-settlement post-change
+test split 6/3/3 across training, validation, and test. No books, fees,
+accounts, credentials, orders, or funds are permitted before a persistent
+after-hurdle history survivor. Trigger result SHA-256 is
+`99d0fded6f7378d0b398b33cd5221f515704cd8c31c3b360e9773eac784f6402`.
+
+### Prior Binance scheduled-yield publication gate
 
 The exact September 4 trigger ran after the promised 18:00 UTC deadline under
 prospectively frozen one-use rules. Both official public articles still expose
@@ -36,8 +52,8 @@ Earn candidate retains all prior account, capacity, horizon, transition, and
 all-cost gates. Accepted edges remain 37, ranked hypotheses remain 65, terminal
 families remain 182, and stable current account-qualified after-all-cost edges
 remain zero. Registry, durability-audit, and adjudication SHA-256 values are
-`8c99e661477a511cf24a64da40c665e4a3faeb95daca21dbf760ebfd320a3e08`,
-`9e764a34aef6b6c669f4da1df50c8b5c7fa89cf931dd670845b88d94715c5395`,
+`4ceb5de5af67264d50129ae2b44ee33e4ded59cdb3a32eef4ffe85459002e3ee`,
+`d0736b1f3da7af118516993839f271d10dcadc3a3edefaef9202a0d05f6ee2f7`,
 and `5728de0226526a070c44179f3dc4eb673098349b38e62e646722a6f548f126bb`.
 Do not poll or retry the consumed September 4 pages. Reopen only on a separately
 observed newer official article timestamp, a material economics change, or the
