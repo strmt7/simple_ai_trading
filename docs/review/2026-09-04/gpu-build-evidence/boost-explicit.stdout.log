@@ -1,0 +1,502 @@
+Performing configuration checks
+
+    - default address-model    : 64-bit
+    - default architecture     : x86
+
+Building the Boost C++ Libraries.
+
+
+    - symlinks supported       : yes
+    - has BCrypt API           : yes
+    - has stat::st_mtim        : no
+    - has stat::st_mtimensec   : no
+    - has stat::st_mtimespec   : no
+
+Component configuration:
+
+    - chrono                   : building
+    - container                : not building
+    - filesystem               : building
+    - headers                  : building
+    - math                     : not building
+    - serialization            : not building
+    - system                   : building
+
+...found 773 targets...
+...updating 264 targets...
+mklink-or-dir boost\chrono
+symbolic link created for boost\chrono <<===>> ..\libs\chrono\include\boost\chrono
+link.mklink boost\version.hpp
+symbolic link created for boost\version.hpp <<===>> ..\libs\config\include\boost\version.hpp
+boost-install.generate-cmake-config-version- C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\boost-explicit-build\boost\bin.v2\tools\boost_install\BoostConfigVersion.cmake
+boost-install.generate-cmake-config- C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\boost-explicit-build\boost\bin.v2\libs\chrono\build\stage\boost_chrono-config.cmake
+boost-install.generate-cmake-config- C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\boost-explicit-build\boost\bin.v2\libs\headers\build\stage\boost_headers-config.cmake
+mklink-or-dir boost\filesystem
+symbolic link created for boost\filesystem <<===>> ..\libs\filesystem\include\boost\filesystem
+common.copy C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\boost-explicit-stage\lib\cmake\boost_chrono-1.74.0\boost_chrono-config.cmake
+C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\boost-explicit-build\boost\bin.v2\libs\chrono\build\stage\boost_chrono-config.cmake
+        1 file(s) copied.
+common.copy C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\boost-explicit-stage\lib\cmake\BoostDetectToolset-1.74.0.cmake
+C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\cmake-build\Boost\source\tools\boost_install\BoostDetectToolset.cmake
+        1 file(s) copied.
+common.copy C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\boost-explicit-stage\lib\cmake\Boost-1.74.0\BoostConfig.cmake
+C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\cmake-build\Boost\source\tools\boost_install\BoostConfig.cmake
+        1 file(s) copied.
+boost-install.generate-cmake-config-version- C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\boost-explicit-build\boost\bin.v2\libs\headers\build\stage\boost_headers-config-version.cmake
+common.copy C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\boost-explicit-stage\lib\cmake\Boost-1.74.0\BoostConfigVersion.cmake
+C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\boost-explicit-build\boost\bin.v2\tools\boost_install\BoostConfigVersion.cmake
+        1 file(s) copied.
+mklink-or-dir boost\type_traits
+symbolic link created for boost\type_traits <<===>> ..\libs\type_traits\include\boost\type_traits
+boost-install.generate-cmake-config-version- C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\boost-explicit-build\boost\bin.v2\libs\chrono\build\stage\boost_chrono-config-version.cmake
+link.mklink boost\assert.hpp
+symbolic link created for boost\assert.hpp <<===>> ..\libs\assert\include\boost\assert.hpp
+mklink-or-dir boost\core
+symbolic link created for boost\core <<===>> ..\libs\core\include\boost\core
+link.mklink boost\predef.h
+symbolic link created for boost\predef.h <<===>> ..\libs\predef\include\boost\predef.h
+link.mklink boost\current_function.hpp
+symbolic link created for boost\current_function.hpp <<===>> ..\libs\assert\include\boost\current_function.hpp
+common.copy C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\boost-explicit-stage\lib\cmake\boost_headers-1.74.0\boost_headers-config.cmake
+C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\boost-explicit-build\boost\bin.v2\libs\headers\build\stage\boost_headers-config.cmake
+        1 file(s) copied.
+common.copy C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\boost-explicit-stage\lib\cmake\boost_chrono-1.74.0\boost_chrono-config-version.cmake
+C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\boost-explicit-build\boost\bin.v2\libs\chrono\build\stage\boost_chrono-config-version.cmake
+        1 file(s) copied.
+link.mklink boost\static_assert.hpp
+symbolic link created for boost\static_assert.hpp <<===>> ..\libs\static_assert\include\boost\static_assert.hpp
+mklink-or-dir boost\mpl
+symbolic link created for boost\mpl <<===>> ..\libs\mpl\include\boost\mpl
+mklink-or-dir boost\utility
+mklink-or-dir boost\preprocessor
+symbolic link created for boost\preprocessor <<===>> ..\libs\preprocessor\include\boost\preprocessor
+link.mklink boost\utility\enable_if.hpp
+symbolic link created for boost\utility\enable_if.hpp <<===>> ..\..\libs\core\include\boost\utility\enable_if.hpp
+link.mklink boost\integer_traits.hpp
+symbolic link created for boost\integer_traits.hpp <<===>> ..\libs\integer\include\boost\integer_traits.hpp
+mklink-or-dir boost\ratio
+symbolic link created for boost\ratio <<===>> ..\libs\ratio\include\boost\ratio
+link.mklink boost\throw_exception.hpp
+symbolic link created for boost\throw_exception.hpp <<===>> ..\libs\throw_exception\include\boost\throw_exception.hpp
+link.mklink boost\limits.hpp
+symbolic link created for boost\limits.hpp <<===>> ..\libs\config\include\boost\limits.hpp
+link.mklink boost\operators.hpp
+symbolic link created for boost\operators.hpp <<===>> ..\libs\utility\include\boost\operators.hpp
+mklink-or-dir boost\assert
+symbolic link created for boost\assert <<===>> ..\libs\assert\include\boost\assert
+mklink-or-dir boost\exception
+symbolic link created for boost\exception <<===>> ..\libs\throw_exception\include\boost\exception
+link.mklink boost\operators_v1.hpp
+symbolic link created for boost\operators_v1.hpp <<===>> ..\libs\utility\include\boost\operators_v1.hpp
+mklink-or-dir boost\iterator
+symbolic link created for boost\iterator <<===>> ..\libs\iterator\include\boost\iterator
+mklink-or-dir boost\io
+symbolic link created for boost\io <<===>> ..\libs\io\include\boost\io
+mklink-or-dir boost\smart_ptr
+symbolic link created for boost\smart_ptr <<===>> ..\libs\smart_ptr\include\boost\smart_ptr
+link.mklink boost\io_fwd.hpp
+symbolic link created for boost\io_fwd.hpp <<===>> ..\libs\io\include\boost\io_fwd.hpp
+link.mklink boost\checked_delete.hpp
+symbolic link created for boost\checked_delete.hpp <<===>> ..\libs\core\include\boost\checked_delete.hpp
+link.mklink boost\scoped_array.hpp
+symbolic link created for boost\scoped_array.hpp <<===>> ..\libs\smart_ptr\include\boost\scoped_array.hpp
+mklink-or-dir boost\functional
+symbolic link created for boost\functional <<===>> ..\libs\container_hash\include\boost\functional
+boost-install.generate-cmake-config- C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\boost-explicit-build\boost\bin.v2\libs\filesystem\build\stage\boost_filesystem-config.cmake
+link.mklink boost\cstdint.hpp
+symbolic link created for boost\cstdint.hpp <<===>> ..\libs\config\include\boost\cstdint.hpp
+boost-install.generate-cmake-config-version- C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\boost-explicit-build\boost\bin.v2\libs\filesystem\build\stage\boost_filesystem-config-version.cmake
+common.copy C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\boost-explicit-stage\lib\cmake\boost_headers-1.74.0\boost_headers-config-version.cmake
+C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\boost-explicit-build\boost\bin.v2\libs\headers\build\stage\boost_headers-config-version.cmake
+        1 file(s) copied.
+mklink-or-dir boost\container_hash
+symbolic link created for boost\container_hash <<===>> ..\libs\container_hash\include\boost\container_hash
+mklink-or-dir boost\algorithm
+symbolic link created for boost\algorithm <<===>> ..\libs\algorithm\include\boost\algorithm
+common.copy C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\boost-explicit-stage\lib\cmake\boost_filesystem-1.74.0\boost_filesystem-config.cmake
+C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\boost-explicit-build\boost\bin.v2\libs\filesystem\build\stage\boost_filesystem-config.cmake
+        1 file(s) copied.
+common.copy C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\boost-explicit-stage\lib\cmake\boost_filesystem-1.74.0\boost_filesystem-config-version.cmake
+C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\boost-explicit-build\boost\bin.v2\libs\filesystem\build\stage\boost_filesystem-config-version.cmake
+        1 file(s) copied.
+mklink-or-dir boost\align
+symbolic link created for boost\align <<===>> ..\libs\align\include\boost\align
+link.mklink boost\align.hpp
+symbolic link created for boost\align.hpp <<===>> ..\libs\align\include\boost\align.hpp
+link.mklink boost\any.hpp
+symbolic link created for boost\any.hpp <<===>> ..\libs\any\include\boost\any.hpp
+link.mklink boost\array.hpp
+symbolic link created for boost\array.hpp <<===>> ..\libs\array\include\boost\array.hpp
+boost-install.generate-cmake-config- C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\boost-explicit-build\boost\bin.v2\libs\system\build\stage\boost_system-config.cmake
+mklink-or-dir boost\bind
+symbolic link created for boost\bind <<===>> ..\libs\bind\include\boost\bind
+boost-install.generate-cmake-config-version- C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\boost-explicit-build\boost\bin.v2\libs\system\build\stage\boost_system-config-version.cmake
+link.mklink boost\bind.hpp
+symbolic link created for boost\bind.hpp <<===>> ..\libs\bind\include\boost\bind.hpp
+link.mklink boost\is_placeholder.hpp
+symbolic link created for boost\is_placeholder.hpp <<===>> ..\libs\bind\include\boost\is_placeholder.hpp
+link.mklink boost\mem_fn.hpp
+symbolic link created for boost\mem_fn.hpp <<===>> ..\libs\bind\include\boost\mem_fn.hpp
+link.mklink boost\chrono.hpp
+symbolic link created for boost\chrono.hpp <<===>> ..\libs\chrono\include\boost\chrono.hpp
+mklink-or-dir boost\compute
+symbolic link created for boost\compute <<===>> ..\libs\compute\include\boost\compute
+link.mklink boost\compute.hpp
+symbolic link created for boost\compute.hpp <<===>> ..\libs\compute\include\boost\compute.hpp
+...on 100th target...
+mklink-or-dir boost\detail
+common.copy C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\boost-explicit-stage\lib\cmake\boost_system-1.74.0\boost_system-config.cmake
+C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\boost-explicit-build\boost\bin.v2\libs\system\build\stage\boost_system-config.cmake
+        1 file(s) copied.
+common.copy C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\boost-explicit-stage\lib\cmake\boost_system-1.74.0\boost_system-config-version.cmake
+C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\boost-explicit-build\boost\bin.v2\libs\system\build\stage\boost_system-config-version.cmake
+        1 file(s) copied.
+link.mklink boost\concept_archetype.hpp
+symbolic link created for boost\concept_archetype.hpp <<===>> ..\libs\concept_check\include\boost\concept_archetype.hpp
+mklink-or-dir boost\concept_check
+symbolic link created for boost\concept_check <<===>> ..\libs\concept_check\include\boost\concept_check
+mklink-or-dir boost\concept
+symbolic link created for boost\concept <<===>> ..\libs\concept_check\include\boost\concept
+link.mklink boost\detail\indirect_traits.hpp
+symbolic link created for boost\detail\indirect_traits.hpp <<===>> ..\..\libs\detail\include\boost\detail\indirect_traits.hpp
+link.mklink boost\detail\utf8_codecvt_facet.ipp
+symbolic link created for boost\detail\utf8_codecvt_facet.ipp <<===>> ..\..\libs\detail\include\boost\detail\utf8_codecvt_facet.ipp
+link.mklink boost\concept_check.hpp
+symbolic link created for boost\concept_check.hpp <<===>> ..\libs\concept_check\include\boost\concept_check.hpp
+link.mklink boost\detail\utf8_codecvt_facet.hpp
+symbolic link created for boost\detail\utf8_codecvt_facet.hpp <<===>> ..\..\libs\detail\include\boost\detail\utf8_codecvt_facet.hpp
+link.mklink boost\detail\select_type.hpp
+symbolic link created for boost\detail\select_type.hpp <<===>> ..\..\libs\detail\include\boost\detail\select_type.hpp
+mklink-or-dir boost\container
+symbolic link created for boost\container <<===>> ..\libs\container\include\boost\container
+link.mklink boost\detail\iterator.hpp
+symbolic link created for boost\detail\iterator.hpp <<===>> ..\..\libs\core\include\boost\detail\iterator.hpp
+link.mklink boost\detail\lightweight_test.hpp
+symbolic link created for boost\detail\lightweight_test.hpp <<===>> ..\..\libs\core\include\boost\detail\lightweight_test.hpp
+link.mklink boost\detail\bitmask.hpp
+symbolic link created for boost\detail\bitmask.hpp <<===>> ..\..\libs\detail\include\boost\detail\bitmask.hpp
+link.mklink boost\detail\no_exceptions_support.hpp
+symbolic link created for boost\detail\no_exceptions_support.hpp <<===>> ..\..\libs\core\include\boost\detail\no_exceptions_support.hpp
+link.mklink boost\detail\scoped_enum_emulation.hpp
+symbolic link created for boost\detail\scoped_enum_emulation.hpp <<===>> ..\..\libs\core\include\boost\detail\scoped_enum_emulation.hpp
+link.mklink boost\detail\sp_typeinfo.hpp
+symbolic link created for boost\detail\sp_typeinfo.hpp <<===>> ..\..\libs\core\include\boost\detail\sp_typeinfo.hpp
+link.mklink boost\get_pointer.hpp
+symbolic link created for boost\get_pointer.hpp <<===>> ..\libs\core\include\boost\get_pointer.hpp
+link.mklink boost\cxx11_char_types.hpp
+symbolic link created for boost\cxx11_char_types.hpp <<===>> ..\libs\config\include\boost\cxx11_char_types.hpp
+link.mklink boost\iterator.hpp
+symbolic link created for boost\iterator.hpp <<===>> ..\libs\core\include\boost\iterator.hpp
+link.mklink boost\noncopyable.hpp
+symbolic link created for boost\noncopyable.hpp <<===>> ..\libs\core\include\boost\noncopyable.hpp
+link.mklink boost\non_type.hpp
+symbolic link created for boost\non_type.hpp <<===>> ..\libs\core\include\boost\non_type.hpp
+link.mklink boost\ref.hpp
+symbolic link created for boost\ref.hpp <<===>> ..\libs\core\include\boost\ref.hpp
+link.mklink boost\swap.hpp
+symbolic link created for boost\swap.hpp <<===>> ..\libs\core\include\boost\swap.hpp
+link.mklink boost\type.hpp
+symbolic link created for boost\type.hpp <<===>> ..\libs\core\include\boost\type.hpp
+link.mklink boost\visit_each.hpp
+symbolic link created for boost\visit_each.hpp <<===>> ..\libs\core\include\boost\visit_each.hpp
+link.mklink boost\utility\addressof.hpp
+symbolic link created for boost\utility\addressof.hpp <<===>> ..\..\libs\core\include\boost\utility\addressof.hpp
+link.mklink boost\utility\explicit_operator_bool.hpp
+symbolic link created for boost\utility\explicit_operator_bool.hpp <<===>> ..\..\libs\core\include\boost\utility\explicit_operator_bool.hpp
+link.mklink boost\utility\swap.hpp
+symbolic link created for boost\utility\swap.hpp <<===>> ..\..\libs\core\include\boost\utility\swap.hpp
+link.mklink boost\blank.hpp
+symbolic link created for boost\blank.hpp <<===>> ..\libs\detail\include\boost\blank.hpp
+link.mklink boost\blank_fwd.hpp
+symbolic link created for boost\blank_fwd.hpp <<===>> ..\libs\detail\include\boost\blank_fwd.hpp
+link.mklink boost\cstdlib.hpp
+symbolic link created for boost\cstdlib.hpp <<===>> ..\libs\detail\include\boost\cstdlib.hpp
+link.mklink boost\detail\allocator_utilities.hpp
+symbolic link created for boost\detail\allocator_utilities.hpp <<===>> ..\..\libs\detail\include\boost\detail\allocator_utilities.hpp
+link.mklink boost\detail\binary_search.hpp
+symbolic link created for boost\detail\binary_search.hpp <<===>> ..\..\libs\detail\include\boost\detail\binary_search.hpp
+link.mklink boost\detail\catch_exceptions.hpp
+symbolic link created for boost\detail\catch_exceptions.hpp <<===>> ..\..\libs\detail\include\boost\detail\catch_exceptions.hpp
+link.mklink boost\detail\container_fwd.hpp
+symbolic link created for boost\detail\container_fwd.hpp <<===>> ..\..\libs\detail\include\boost\detail\container_fwd.hpp
+link.mklink boost\detail\fenv.hpp
+symbolic link created for boost\detail\fenv.hpp <<===>> ..\..\libs\detail\include\boost\detail\fenv.hpp
+link.mklink boost\detail\has_default_constructor.hpp
+symbolic link created for boost\detail\has_default_constructor.hpp <<===>> ..\..\libs\detail\include\boost\detail\has_default_constructor.hpp
+link.mklink boost\detail\identifier.hpp
+symbolic link created for boost\detail\identifier.hpp <<===>> ..\..\libs\detail\include\boost\detail\identifier.hpp
+link.mklink boost\detail\is_incrementable.hpp
+symbolic link created for boost\detail\is_incrementable.hpp <<===>> ..\..\libs\detail\include\boost\detail\is_incrementable.hpp
+link.mklink boost\detail\is_sorted.hpp
+symbolic link created for boost\detail\is_sorted.hpp <<===>> ..\..\libs\detail\include\boost\detail\is_sorted.hpp
+link.mklink boost\detail\is_xxx.hpp
+symbolic link created for boost\detail\is_xxx.hpp <<===>> ..\..\libs\detail\include\boost\detail\is_xxx.hpp
+link.mklink boost\detail\lightweight_main.hpp
+symbolic link created for boost\detail\lightweight_main.hpp <<===>> ..\..\libs\detail\include\boost\detail\lightweight_main.hpp
+link.mklink boost\detail\lightweight_test_report.hpp
+symbolic link created for boost\detail\lightweight_test_report.hpp <<===>> ..\..\libs\detail\include\boost\detail\lightweight_test_report.hpp
+link.mklink boost\detail\named_template_params.hpp
+symbolic link created for boost\detail\named_template_params.hpp <<===>> ..\..\libs\detail\include\boost\detail\named_template_params.hpp
+link.mklink boost\detail\numeric_traits.hpp
+symbolic link created for boost\detail\numeric_traits.hpp <<===>> ..\..\libs\detail\include\boost\detail\numeric_traits.hpp
+link.mklink boost\detail\workaround.hpp
+symbolic link created for boost\detail\workaround.hpp <<===>> ..\..\libs\config\include\boost\detail\workaround.hpp
+link.mklink boost\detail\reference_content.hpp
+symbolic link created for boost\detail\reference_content.hpp <<===>> ..\..\libs\detail\include\boost\detail\reference_content.hpp
+link.mklink boost\detail\templated_streams.hpp
+symbolic link created for boost\detail\templated_streams.hpp <<===>> ..\..\libs\detail\include\boost\detail\templated_streams.hpp
+link.mklink boost\foreach_fwd.hpp
+symbolic link created for boost\foreach_fwd.hpp <<===>> ..\libs\foreach\include\boost\foreach_fwd.hpp
+mklink-or-dir boost\format
+symbolic link created for boost\format <<===>> ..\libs\format\include\boost\format
+link.mklink boost\foreach.hpp
+symbolic link created for boost\foreach.hpp <<===>> ..\libs\foreach\include\boost\foreach.hpp
+link.mklink boost\filesystem.hpp
+symbolic link created for boost\filesystem.hpp <<===>> ..\libs\filesystem\include\boost\filesystem.hpp
+mklink-or-dir boost\function
+symbolic link created for boost\function <<===>> ..\libs\function\include\boost\function
+link.mklink boost\function.hpp
+symbolic link created for boost\function.hpp <<===>> ..\libs\function\include\boost\function.hpp
+link.mklink boost\function_equal.hpp
+symbolic link created for boost\function_equal.hpp <<===>> ..\libs\function\include\boost\function_equal.hpp
+mklink-or-dir boost\function_types
+symbolic link created for boost\function_types <<===>> ..\libs\function_types\include\boost\function_types
+mklink-or-dir boost\fusion
+symbolic link created for boost\fusion <<===>> ..\libs\fusion\include\boost\fusion
+mklink-or-dir boost\integer
+symbolic link created for boost\integer <<===>> ..\libs\integer\include\boost\integer
+link.mklink boost\integer.hpp
+symbolic link created for boost\integer.hpp <<===>> ..\libs\integer\include\boost\integer.hpp
+link.mklink boost\integer_fwd.hpp
+symbolic link created for boost\integer_fwd.hpp <<===>> ..\libs\integer\include\boost\integer_fwd.hpp
+mklink-or-dir boost\pending
+link.mklink boost\function_output_iterator.hpp
+symbolic link created for boost\function_output_iterator.hpp <<===>> ..\libs\iterator\include\boost\function_output_iterator.hpp
+link.mklink boost\generator_iterator.hpp
+symbolic link created for boost\generator_iterator.hpp <<===>> ..\libs\iterator\include\boost\generator_iterator.hpp
+link.mklink boost\indirect_reference.hpp
+symbolic link created for boost\indirect_reference.hpp <<===>> ..\libs\iterator\include\boost\indirect_reference.hpp
+link.mklink boost\iterator_adaptors.hpp
+symbolic link created for boost\iterator_adaptors.hpp <<===>> ..\libs\iterator\include\boost\iterator_adaptors.hpp
+link.mklink boost\next_prior.hpp
+symbolic link created for boost\next_prior.hpp <<===>> ..\libs\iterator\include\boost\next_prior.hpp
+link.mklink boost\pending\integer_log2.hpp
+symbolic link created for boost\pending\integer_log2.hpp <<===>> ..\..\libs\integer\include\boost\pending\integer_log2.hpp
+mklink-or-dir boost\pending\detail
+symbolic link created for boost\pending\detail <<===>> ..\..\libs\iterator\include\boost\pending\detail
+link.mklink boost\pending\iterator_adaptors.hpp
+symbolic link created for boost\pending\iterator_adaptors.hpp <<===>> ..\..\libs\iterator\include\boost\pending\iterator_adaptors.hpp
+link.mklink boost\pending\iterator_tests.hpp
+symbolic link created for boost\pending\iterator_tests.hpp <<===>> ..\..\libs\iterator\include\boost\pending\iterator_tests.hpp
+link.mklink boost\pointee.hpp
+symbolic link created for boost\pointee.hpp <<===>> ..\libs\iterator\include\boost\pointee.hpp
+link.mklink boost\shared_container_iterator.hpp
+symbolic link created for boost\shared_container_iterator.hpp <<===>> ..\libs\iterator\include\boost\shared_container_iterator.hpp
+link.mklink boost\detail\basic_pointerbuf.hpp
+symbolic link created for boost\detail\basic_pointerbuf.hpp <<===>> ..\..\libs\lexical_cast\include\boost\detail\basic_pointerbuf.hpp
+link.mklink boost\detail\lcast_precision.hpp
+symbolic link created for boost\detail\lcast_precision.hpp <<===>> ..\..\libs\lexical_cast\include\boost\detail\lcast_precision.hpp
+mklink-or-dir boost\lexical_cast
+symbolic link created for boost\lexical_cast <<===>> ..\libs\lexical_cast\include\boost\lexical_cast
+link.mklink boost\lexical_cast.hpp
+symbolic link created for boost\lexical_cast.hpp <<===>> ..\libs\lexical_cast\include\boost\lexical_cast.hpp
+link.mklink boost\cstdfloat.hpp
+symbolic link created for boost\cstdfloat.hpp <<===>> ..\libs\math\include\boost\cstdfloat.hpp
+mklink-or-dir boost\math
+symbolic link created for boost\math <<===>> ..\libs\math\include\boost\math
+mklink-or-dir boost\move
+symbolic link created for boost\move <<===>> ..\libs\move\include\boost\move
+link.mklink boost\math_fwd.hpp
+symbolic link created for boost\math_fwd.hpp <<===>> ..\libs\math\include\boost\math_fwd.hpp
+mklink-or-dir boost\multi_index
+symbolic link created for boost\multi_index <<===>> ..\libs\multi_index\include\boost\multi_index
+link.mklink boost\multi_index_container.hpp
+symbolic link created for boost\multi_index_container.hpp <<===>> ..\libs\multi_index\include\boost\multi_index_container.hpp
+link.mklink boost\multi_index_container_fwd.hpp
+symbolic link created for boost\multi_index_container_fwd.hpp <<===>> ..\libs\multi_index\include\boost\multi_index_container_fwd.hpp
+link.mklink boost\none.hpp
+symbolic link created for boost\none.hpp <<===>> ..\libs\optional\include\boost\none.hpp
+link.mklink boost\none_t.hpp
+symbolic link created for boost\none_t.hpp <<===>> ..\libs\optional\include\boost\none_t.hpp
+mklink-or-dir boost\optional
+symbolic link created for boost\optional <<===>> ..\libs\optional\include\boost\optional
+link.mklink boost\optional.hpp
+symbolic link created for boost\optional.hpp <<===>> ..\libs\optional\include\boost\optional.hpp
+link.mklink boost\preprocessor.hpp
+symbolic link created for boost\preprocessor.hpp <<===>> ..\libs\preprocessor\include\boost\preprocessor.hpp
+mklink-or-dir boost\property_tree
+symbolic link created for boost\property_tree <<===>> ..\libs\property_tree\include\boost\property_tree
+mklink-or-dir boost\range
+symbolic link created for boost\range <<===>> ..\libs\range\include\boost\range
+link.mklink boost\range.hpp
+symbolic link created for boost\range.hpp <<===>> ..\libs\range\include\boost\range.hpp
+link.mklink boost\ratio.hpp
+symbolic link created for boost\ratio.hpp <<===>> ..\libs\ratio\include\boost\ratio.hpp
+mklink-or-dir boost\archive
+symbolic link created for boost\archive <<===>> ..\libs\serialization\include\boost\archive
+mklink-or-dir boost\serialization
+symbolic link created for boost\serialization <<===>> ..\libs\serialization\include\boost\serialization
+link.mklink boost\detail\atomic_count.hpp
+symbolic link created for boost\detail\atomic_count.hpp <<===>> ..\..\libs\smart_ptr\include\boost\detail\atomic_count.hpp
+link.mklink boost\detail\lightweight_mutex.hpp
+symbolic link created for boost\detail\lightweight_mutex.hpp <<===>> ..\..\libs\smart_ptr\include\boost\detail\lightweight_mutex.hpp
+link.mklink boost\detail\lightweight_thread.hpp
+symbolic link created for boost\detail\lightweight_thread.hpp <<===>> ..\..\libs\smart_ptr\include\boost\detail\lightweight_thread.hpp
+...on 200th target...
+link.mklink boost\detail\quick_allocator.hpp
+symbolic link created for boost\detail\quick_allocator.hpp <<===>> ..\..\libs\smart_ptr\include\boost\detail\quick_allocator.hpp
+link.mklink boost\enable_shared_from_this.hpp
+symbolic link created for boost\enable_shared_from_this.hpp <<===>> ..\libs\smart_ptr\include\boost\enable_shared_from_this.hpp
+link.mklink boost\intrusive_ptr.hpp
+symbolic link created for boost\intrusive_ptr.hpp <<===>> ..\libs\smart_ptr\include\boost\intrusive_ptr.hpp
+link.mklink boost\make_shared.hpp
+symbolic link created for boost\make_shared.hpp <<===>> ..\libs\smart_ptr\include\boost\make_shared.hpp
+link.mklink boost\make_unique.hpp
+symbolic link created for boost\make_unique.hpp <<===>> ..\libs\smart_ptr\include\boost\make_unique.hpp
+link.mklink boost\pointer_cast.hpp
+symbolic link created for boost\pointer_cast.hpp <<===>> ..\libs\smart_ptr\include\boost\pointer_cast.hpp
+link.mklink boost\pointer_to_other.hpp
+symbolic link created for boost\pointer_to_other.hpp <<===>> ..\libs\smart_ptr\include\boost\pointer_to_other.hpp
+link.mklink boost\scoped_ptr.hpp
+symbolic link created for boost\scoped_ptr.hpp <<===>> ..\libs\smart_ptr\include\boost\scoped_ptr.hpp
+link.mklink boost\shared_array.hpp
+symbolic link created for boost\shared_array.hpp <<===>> ..\libs\smart_ptr\include\boost\shared_array.hpp
+link.mklink boost\shared_ptr.hpp
+symbolic link created for boost\shared_ptr.hpp <<===>> ..\libs\smart_ptr\include\boost\shared_ptr.hpp
+link.mklink boost\smart_ptr.hpp
+symbolic link created for boost\smart_ptr.hpp <<===>> ..\libs\smart_ptr\include\boost\smart_ptr.hpp
+link.mklink boost\weak_ptr.hpp
+symbolic link created for boost\weak_ptr.hpp <<===>> ..\libs\smart_ptr\include\boost\weak_ptr.hpp
+link.mklink boost\cerrno.hpp
+symbolic link created for boost\cerrno.hpp <<===>> ..\libs\system\include\boost\cerrno.hpp
+mklink-or-dir boost\tuple
+symbolic link created for boost\tuple <<===>> ..\libs\tuple\include\boost\tuple
+mklink-or-dir boost\typeof
+symbolic link created for boost\typeof <<===>> ..\libs\typeof\include\boost\typeof
+mklink-or-dir boost\type_index
+symbolic link created for boost\type_index <<===>> ..\libs\type_index\include\boost\type_index
+link.mklink boost\type_index.hpp
+symbolic link created for boost\type_index.hpp <<===>> ..\libs\type_index\include\boost\type_index.hpp
+link.mklink boost\aligned_storage.hpp
+symbolic link created for boost\aligned_storage.hpp <<===>> ..\libs\type_traits\include\boost\aligned_storage.hpp
+link.mklink boost\type_traits.hpp
+symbolic link created for boost\type_traits.hpp <<===>> ..\libs\type_traits\include\boost\type_traits.hpp
+link.mklink boost\utility\declval.hpp
+symbolic link created for boost\utility\declval.hpp <<===>> ..\..\libs\type_traits\include\boost\utility\declval.hpp
+link.mklink boost\call_traits.hpp
+symbolic link created for boost\call_traits.hpp <<===>> ..\libs\utility\include\boost\call_traits.hpp
+link.mklink boost\compressed_pair.hpp
+symbolic link created for boost\compressed_pair.hpp <<===>> ..\libs\utility\include\boost\compressed_pair.hpp
+link.mklink boost\detail\call_traits.hpp
+symbolic link created for boost\detail\call_traits.hpp <<===>> ..\..\libs\utility\include\boost\detail\call_traits.hpp
+link.mklink boost\detail\compressed_pair.hpp
+symbolic link created for boost\detail\compressed_pair.hpp <<===>> ..\..\libs\utility\include\boost\detail\compressed_pair.hpp
+link.mklink boost\detail\ob_compressed_pair.hpp
+symbolic link created for boost\detail\ob_compressed_pair.hpp <<===>> ..\..\libs\utility\include\boost\detail\ob_compressed_pair.hpp
+link.mklink boost\utility\base_from_member.hpp
+symbolic link created for boost\utility\base_from_member.hpp <<===>> ..\..\libs\utility\include\boost\utility\base_from_member.hpp
+link.mklink boost\utility\binary.hpp
+symbolic link created for boost\utility\binary.hpp <<===>> ..\..\libs\utility\include\boost\utility\binary.hpp
+link.mklink boost\utility\compare_pointees.hpp
+symbolic link created for boost\utility\compare_pointees.hpp <<===>> ..\..\libs\utility\include\boost\utility\compare_pointees.hpp
+mklink-or-dir boost\utility\detail
+symbolic link created for boost\utility\detail <<===>> ..\..\libs\utility\include\boost\utility\detail
+link.mklink boost\utility\identity_type.hpp
+symbolic link created for boost\utility\identity_type.hpp <<===>> ..\..\libs\utility\include\boost\utility\identity_type.hpp
+link.mklink boost\utility\in_place_factory.hpp
+symbolic link created for boost\utility\in_place_factory.hpp <<===>> ..\..\libs\utility\include\boost\utility\in_place_factory.hpp
+link.mklink boost\utility\result_of.hpp
+symbolic link created for boost\utility\result_of.hpp <<===>> ..\..\libs\utility\include\boost\utility\result_of.hpp
+link.mklink boost\utility\string_ref.hpp
+symbolic link created for boost\utility\string_ref.hpp <<===>> ..\..\libs\utility\include\boost\utility\string_ref.hpp
+link.mklink boost\utility\string_ref_fwd.hpp
+symbolic link created for boost\utility\string_ref_fwd.hpp <<===>> ..\..\libs\utility\include\boost\utility\string_ref_fwd.hpp
+link.mklink boost\utility\string_view.hpp
+symbolic link created for boost\utility\string_view.hpp <<===>> ..\..\libs\utility\include\boost\utility\string_view.hpp
+link.mklink boost\utility\string_view_fwd.hpp
+symbolic link created for boost\utility\string_view_fwd.hpp <<===>> ..\..\libs\utility\include\boost\utility\string_view_fwd.hpp
+link.mklink boost\utility\typed_in_place_factory.hpp
+symbolic link created for boost\utility\typed_in_place_factory.hpp <<===>> ..\..\libs\utility\include\boost\utility\typed_in_place_factory.hpp
+link.mklink boost\utility\value_init.hpp
+symbolic link created for boost\utility\value_init.hpp <<===>> ..\..\libs\utility\include\boost\utility\value_init.hpp
+link.mklink boost\utility.hpp
+symbolic link created for boost\utility.hpp <<===>> ..\libs\utility\include\boost\utility.hpp
+link.mklink boost\format.hpp
+symbolic link created for boost\format.hpp <<===>> ..\libs\format\include\boost\format.hpp
+mklink-or-dir boost\system
+symbolic link created for boost\system <<===>> ..\libs\system\include\boost\system
+mklink-or-dir boost\detail\winapi
+symbolic link created for boost\detail\winapi <<===>> ..\..\libs\winapi\include\boost\detail\winapi
+mklink-or-dir boost\uuid
+symbolic link created for boost\uuid <<===>> ..\libs\uuid\include\boost\uuid
+link.mklink boost\detail\interlocked.hpp
+symbolic link created for boost\detail\interlocked.hpp <<===>> ..\..\libs\winapi\include\boost\detail\interlocked.hpp
+link.mklink boost\cast.hpp
+symbolic link created for boost\cast.hpp <<===>> ..\libs\numeric\conversion\include\boost\cast.hpp
+mklink-or-dir boost\numeric
+symbolic link created for boost\numeric <<===>> ..\libs\numeric\conversion\include\boost\numeric
+compile-c-c++ C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\boost-explicit-build\boost\bin.v2\libs\filesystem\build\msvc-14.3\release\link-static\threading-multi\utf8_codecvt_facet.obj
+utf8_codecvt_facet.cpp
+compile-c-c++ C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\boost-explicit-build\boost\bin.v2\libs\filesystem\build\msvc-14.3\release\link-static\threading-multi\codecvt_error_category.obj
+codecvt_error_category.cpp
+compile-c-c++ C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\boost-explicit-build\boost\bin.v2\libs\filesystem\build\msvc-14.3\release\link-static\threading-multi\windows_file_codecvt.obj
+windows_file_codecvt.cpp
+compile-c-c++ C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\boost-explicit-build\boost\bin.v2\libs\filesystem\build\msvc-14.3\release\link-static\threading-multi\portability.obj
+portability.cpp
+compile-c-c++ C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\boost-explicit-build\boost\bin.v2\libs\filesystem\build\msvc-14.3\release\link-static\threading-multi\exception.obj
+exception.cpp
+compile-c-c++ C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\boost-explicit-build\boost\bin.v2\libs\chrono\build\msvc-14.3\release\link-static\threading-multi\thread_clock.obj
+thread_clock.cpp
+compile-c-c++ C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\boost-explicit-build\boost\bin.v2\libs\chrono\build\msvc-14.3\release\link-static\threading-multi\chrono.obj
+chrono.cpp
+compile-c-c++ C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\boost-explicit-build\boost\bin.v2\libs\chrono\build\msvc-14.3\release\link-static\threading-multi\process_cpu_clocks.obj
+process_cpu_clocks.cpp
+compile-c-c++ C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\boost-explicit-build\boost\bin.v2\libs\system\build\msvc-14.3\release\link-static\threading-multi\error_code.obj
+error_code.cpp
+msvc.archive C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\boost-explicit-build\boost\bin.v2\libs\chrono\build\msvc-14.3\release\link-static\threading-multi\libboost_chrono-vc143-mt-x64-1_74.lib
+boost-install.generate-cmake-variant- C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\boost-explicit-build\boost\bin.v2\libs\chrono\build\msvc-14.3\release\link-static\threading-multi\libboost_chrono-variant-vc143-mt-x64-1_74-static.cmake
+common.copy C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\boost-explicit-stage\lib\libboost_chrono-vc143-mt-x64-1_74.lib
+C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\boost-explicit-build\boost\bin.v2\libs\chrono\build\msvc-14.3\release\link-static\threading-multi\libboost_chrono-vc143-mt-x64-1_74.lib
+        1 file(s) copied.
+common.copy C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\boost-explicit-stage\lib\cmake\boost_chrono-1.74.0\libboost_chrono-variant-vc143-mt-x64-1_74-static.cmake
+C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\boost-explicit-build\boost\bin.v2\libs\chrono\build\msvc-14.3\release\link-static\threading-multi\libboost_chrono-variant-vc143-mt-x64-1_74-static.cmake
+        1 file(s) copied.
+compile-c-c++ C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\boost-explicit-build\boost\bin.v2\libs\filesystem\build\msvc-14.3\release\link-static\threading-multi\unique_path.obj
+unique_path.cpp
+compile-c-c++ C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\boost-explicit-build\boost\bin.v2\libs\filesystem\build\msvc-14.3\release\link-static\threading-multi\path_traits.obj
+path_traits.cpp
+compile-c-c++ C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\boost-explicit-build\boost\bin.v2\libs\filesystem\build\msvc-14.3\release\link-static\threading-multi\path.obj
+path.cpp
+compile-c-c++ C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\boost-explicit-build\boost\bin.v2\libs\filesystem\build\msvc-14.3\release\link-static\threading-multi\directory.obj
+directory.cpp
+compile-c-c++ C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\boost-explicit-build\boost\bin.v2\libs\filesystem\build\msvc-14.3\release\link-static\threading-multi\operations.obj
+operations.cpp
+msvc.archive C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\boost-explicit-build\boost\bin.v2\libs\system\build\msvc-14.3\release\link-static\threading-multi\libboost_system-vc143-mt-x64-1_74.lib
+boost-install.generate-cmake-variant- C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\boost-explicit-build\boost\bin.v2\libs\system\build\msvc-14.3\release\link-static\threading-multi\libboost_system-variant-vc143-mt-x64-1_74-static.cmake
+common.copy C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\boost-explicit-stage\lib\libboost_system-vc143-mt-x64-1_74.lib
+C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\boost-explicit-build\boost\bin.v2\libs\system\build\msvc-14.3\release\link-static\threading-multi\libboost_system-vc143-mt-x64-1_74.lib
+        1 file(s) copied.
+common.copy C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\boost-explicit-stage\lib\cmake\boost_system-1.74.0\libboost_system-variant-vc143-mt-x64-1_74-static.cmake
+C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\boost-explicit-build\boost\bin.v2\libs\system\build\msvc-14.3\release\link-static\threading-multi\libboost_system-variant-vc143-mt-x64-1_74-static.cmake
+        1 file(s) copied.
+msvc.archive C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\boost-explicit-build\boost\bin.v2\libs\filesystem\build\msvc-14.3\release\link-static\threading-multi\libboost_filesystem-vc143-mt-x64-1_74.lib
+boost-install.generate-cmake-variant- C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\boost-explicit-build\boost\bin.v2\libs\filesystem\build\msvc-14.3\release\link-static\threading-multi\libboost_filesystem-variant-vc143-mt-x64-1_74-static.cmake
+common.copy C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\boost-explicit-stage\lib\libboost_filesystem-vc143-mt-x64-1_74.lib
+C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\boost-explicit-build\boost\bin.v2\libs\filesystem\build\msvc-14.3\release\link-static\threading-multi\libboost_filesystem-vc143-mt-x64-1_74.lib
+        1 file(s) copied.
+common.copy C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\boost-explicit-stage\lib\cmake\boost_filesystem-1.74.0\libboost_filesystem-variant-vc143-mt-x64-1_74-static.cmake
+C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\boost-explicit-build\boost\bin.v2\libs\filesystem\build\msvc-14.3\release\link-static\threading-multi\libboost_filesystem-variant-vc143-mt-x64-1_74-static.cmake
+        1 file(s) copied.
+...updated 264 targets...
+
+
+The Boost C++ Libraries were successfully built!
+
+The following directory should be added to compiler include paths:
+
+    C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\cmake-build\Boost\source
+
+The following directory should be added to linker library paths:
+
+    C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\boost-explicit-stage\lib
+

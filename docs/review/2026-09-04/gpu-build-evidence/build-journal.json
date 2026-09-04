@@ -1,0 +1,13 @@
+{
+  "lightgbm": "4.7.0",
+  "exit_code": 1,
+  "phase": "failed",
+  "python": "C:\\trader\\simple_ai_trading\\.tmp\\lightgbm-opencl-4.7.0\\venv\\Scripts\\python.exe",
+  "main_environment_changed": false,
+  "started_at_utc": "2026-09-04T20:51:38.8420035Z",
+  "completed_at_utc": "2026-09-04T20:51:56.1433100Z",
+  "visual_studio": "C:\\Program Files\\Microsoft Visual Studio\\18\\Community",
+  "toolset": "14.42.34433",
+  "integrate_opencl": true,
+  "log": "C:\\trader\\simple_ai_trading\\.tmp\\lightgbm-opencl-4.7.0\\build.log"
+}

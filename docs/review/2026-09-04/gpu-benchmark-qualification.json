@@ -1,0 +1,28 @@
+{
+  "schema_version": "gpu-benchmark-qualification-review-v1",
+  "reason": "User disclosed other active workstation tasks after initial timings and requires noninterference and low competing load",
+  "runtime_capability": "verified_OpenCL_training_and_application_backend_resolution",
+  "isolated_speedup_qualified": false,
+  "current_hardware_optimum_proved": false,
+  "actual_market_accuracy_improvement_proved": false,
+  "performance_records_with_unmeasured_background_contention": [
+    "gpu-benchmark-result.json",
+    "gpu-large-benchmark-result.json",
+    "gpu-throughput-profile-result.json",
+    "gpu-concurrency-result/result.json"
+  ],
+  "concurrency_status": "interrupted_at_user_request_after_one_complete_configuration; preserve_partial_workers; no_retry",
+  "our_worker_terminated_after_exact_process_ownership_check": 55724,
+  "unrelated_processes_modified": false,
+  "owned_benchmark_processes_remaining_at_post_stop_check": 0,
+  "passive_preflight": "gpu-background-load-preflight.json",
+  "initial_strict_preflight_decision": "not_quiet_under_superseded_strict_thresholds",
+  "current_headroom_preflight": "gpu-background-headroom-v2.json",
+  "current_headroom_decision": "passed_at_measurement_end_only",
+  "deferral_scope": "timing_benchmarks_only; ordinary_training_and_R&D_continue_with_bounded_resources",
+  "observed_preflight_max_cpu_percent": 21.728025354325307,
+  "observed_preflight_max_gpu_engine_percent": 26.85929118707517,
+  "next_requirement": "Sustained low-load preflight plus during-run competing-load monitoring with own process-tree load separated; never pause or alter other tasks; preserve all contaminated and interrupted timings",
+  "preflight_tool_limitation": "Passive only, no benchmark launch, no ongoing monitor or scheduling implementation",
+  "historical_records_modified": false
+}

@@ -1,0 +1,42 @@
+-- Selecting Windows SDK version 10.0.28000.0 to target Windows 10.0.26200.
+-- The C compiler identification is MSVC 19.42.34444.0
+-- The CXX compiler identification is MSVC 19.42.34444.0
+-- Detecting C compiler ABI info
+-- Detecting C compiler ABI info - done
+-- Check for working C compiler: C:/Program Files/Microsoft Visual Studio/18/Community/VC/Tools/MSVC/14.42.34433/bin/HostX64/x64/cl.exe - skipped
+-- Detecting C compile features
+-- Detecting C compile features - done
+-- Detecting CXX compiler ABI info
+-- Detecting CXX compiler ABI info - done
+-- Check for working CXX compiler: C:/Program Files/Microsoft Visual Studio/18/Community/VC/Tools/MSVC/14.42.34433/bin/HostX64/x64/cl.exe - skipped
+-- Detecting CXX compile features
+-- Detecting CXX compile features - done
+-- Performing Test CMAKE_HAVE_LIBC_PTHREAD
+-- Performing Test CMAKE_HAVE_LIBC_PTHREAD - Failed
+-- Looking for pthread_create in pthreads
+-- Looking for pthread_create in pthreads - not found
+-- Looking for pthread_create in pthread
+-- Looking for pthread_create in pthread - not found
+-- Found Threads: TRUE
+-- Looking for secure_getenv
+-- Looking for secure_getenv - not found
+-- Looking for __secure_getenv
+-- Looking for __secure_getenv - not found
+-- Configuring done (5.2s)
+-- Generating done (0.2s)
+-- Build files have been written to: C:/trader/simple_ai_trading/.tmp/lightgbm-opencl-4.7.0/loader-explicit-build
+MSBuild version 18.9.1+a81b43525 for .NET Framework
+
+  1>Checking Build System
+  Building Custom Rule C:/trader/simple_ai_trading/.tmp/lightgbm-opencl-4.7.0/cmake-build/_deps/opencl-icd-loader-src/CMakeLists.txt
+  icd.c
+  icd_dispatch.c
+  icd_dispatch_generated.c
+  icd_windows.c
+  icd_windows_dxgk.c
+  icd_windows_envvars.c
+  icd_windows_hkr.c
+  Generating Code...
+  icd_windows_apppackage.cpp
+     Creating library C:/trader/simple_ai_trading/.tmp/lightgbm-opencl-4.7.0/loader-explicit-build/Release/OpenCL.lib and object C:/trader/simple_ai_trading/.tmp/lightgbm-opencl-4.7.0/loader-explicit-build/Release/OpenCL.exp
+  OpenCL.vcxproj -> C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\loader-explicit-build\Release\OpenCL.dll

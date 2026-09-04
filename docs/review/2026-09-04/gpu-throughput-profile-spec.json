@@ -1,0 +1,17 @@
+{
+  "schema_version": "synthetic-lightgbm-throughput-profile-v1",
+  "seed": 20260906,
+  "rows": 4194304,
+  "features": 128,
+  "rounds": 200,
+  "maximum_input_bytes": 2147483648,
+  "numpy_version": "2.2.6",
+  "library_sha256": "59b23140f62d32daaec43ecdbee21c4a62e1d5807f139f20e229af07aac53a80",
+  "trial_order": [["cpu",16],["gpu",8],["gpu",16],["gpu",16],["gpu",8],["cpu",16]],
+  "sample_interval_seconds": 0.5,
+  "precision": "float32 input; OpenCL FP64 accumulation; no lower-precision retuning",
+  "comparison": "same full data and parameters; CPU16 versus GPU8/GPU16; repeated reverse order; generation separate; Dataset construction plus training plus prediction total and stage timings",
+  "telemetry": "Windows PDH own-process busiest engine percentage, not summed engines or shader occupancy; own-process dedicated/shared allocation samples, not all-device memory; unavailable counters stay null",
+  "stopping": "one bounded profile, no automatic retry or grid expansion; retain all runs; do not change global defaults from synthetic timing",
+  "limitations": ["No market data or model-accuracy claim", "No new independent holdout", "Observed free physical RAM about 33.8 GiB before launch; feature input 2 GiB", "No claim of maximum achievable hardware performance", "Costs of dataset generation reported separately", "Synthetic throughput is not extra permission to consume protected data"]
+}

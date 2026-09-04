@@ -1,0 +1,741 @@
+{
+  "spec_sha256": "47ac52ee68e70c3342af1e91cb9187cc5b9d391e069da4a2ea18818caf2650d6",
+  "implementation_sha256": "25496299a29f7644d50386e1a08b7c5f5e521e7409e68336465c9f3266a72a9d",
+  "library_sha256": "59b23140f62d32daaec43ecdbee21c4a62e1d5807f139f20e229af07aac53a80",
+  "trials": [
+    {
+      "index": 0,
+      "backend": "gpu",
+      "threads": 16,
+      "dataset_seconds": 1.4581624999991618,
+      "train_seconds": 11.336172600000282,
+      "prediction_seconds": 0.0017191000006278045,
+      "total_seconds": 12.796054200000071,
+      "cpu_seconds": 192.875,
+      "cpu_busy_core_equivalents": 15.073005864573387,
+      "logloss": 0.29440361771800677,
+      "reload_equal": true,
+      "samples": [
+        {
+          "collection_status": 0,
+          "seconds": 49881.8433981,
+          "engine_percent": {
+            "status": 0,
+            "values": {
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0_eng_0_engtype_3D": 0.0,
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0_eng_1_engtype_Copy": 0.0,
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0_eng_2_engtype_Compute 0": 0.0,
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0_eng_3_engtype_Copy": 0.0,
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0_eng_4_engtype_Timer 0": 0.0,
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0_eng_5_engtype_Security 1": 0.0,
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0_eng_6_engtype_Video JPEG 0": 0.0,
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0_eng_7_engtype_Video Codec Engine": 0.0
+            }
+          },
+          "dedicated_bytes": {
+            "status": 0,
+            "values": {
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0": 56963072.0
+            }
+          },
+          "shared_bytes": {
+            "status": 0,
+            "values": {
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0": 2617344.0
+            }
+          }
+        },
+        {
+          "collection_status": 0,
+          "seconds": 49882.3579667,
+          "engine_percent": {
+            "status": 0,
+            "values": {
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0_eng_0_engtype_3D": 0.0,
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0_eng_1_engtype_Copy": 0.0,
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0_eng_2_engtype_Compute 0": 0.0,
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0_eng_3_engtype_Copy": 0.0,
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0_eng_4_engtype_Timer 0": 0.0,
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0_eng_5_engtype_Security 1": 0.0,
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0_eng_6_engtype_Video JPEG 0": 0.0,
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0_eng_7_engtype_Video Codec Engine": 0.0
+            }
+          },
+          "dedicated_bytes": {
+            "status": 0,
+            "values": {
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0": 56963072.0
+            }
+          },
+          "shared_bytes": {
+            "status": 0,
+            "values": {
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0": 2617344.0
+            }
+          }
+        },
+        {
+          "collection_status": 0,
+          "seconds": 49882.8729122,
+          "engine_percent": {
+            "status": 0,
+            "values": {
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0_eng_0_engtype_3D": 0.0,
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0_eng_1_engtype_Copy": 0.3263642428051917,
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0_eng_2_engtype_Compute 0": 0.008559863306764686,
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0_eng_3_engtype_Copy": 0.0,
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0_eng_4_engtype_Timer 0": 0.0,
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0_eng_5_engtype_Security 1": 0.0,
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0_eng_6_engtype_Video JPEG 0": 0.0,
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0_eng_7_engtype_Video Codec Engine": 0.0
+            }
+          },
+          "dedicated_bytes": {
+            "status": 0,
+            "values": {
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0": 121675776.0
+            }
+          },
+          "shared_bytes": {
+            "status": 0,
+            "values": {
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0": 20938752.0
+            }
+          }
+        },
+        {
+          "collection_status": 0,
+          "seconds": 49883.3842528,
+          "engine_percent": {
+            "status": 0,
+            "values": {
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0_eng_0_engtype_3D": 0.0,
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0_eng_1_engtype_Copy": 7.894322297667255,
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0_eng_2_engtype_Compute 0": 21.452351044860027,
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0_eng_3_engtype_Copy": 0.0,
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0_eng_4_engtype_Timer 0": 0.0,
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0_eng_5_engtype_Security 1": 0.0,
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0_eng_6_engtype_Video JPEG 0": 0.0,
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0_eng_7_engtype_Video Codec Engine": 0.0
+            }
+          },
+          "dedicated_bytes": {
+            "status": 0,
+            "values": {
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0": 698925056.0
+            }
+          },
+          "shared_bytes": {
+            "status": 0,
+            "values": {
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0": 40931328.0
+            }
+          }
+        },
+        {
+          "collection_status": 0,
+          "seconds": 49883.8985399,
+          "engine_percent": {
+            "status": 0,
+            "values": {
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0_eng_0_engtype_3D": 0.0,
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0_eng_1_engtype_Copy": 4.840687668497351,
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0_eng_2_engtype_Compute 0": 28.3752018565455,
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0_eng_3_engtype_Copy": 0.0,
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0_eng_4_engtype_Timer 0": 0.0,
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0_eng_5_engtype_Security 1": 0.0,
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0_eng_6_engtype_Video JPEG 0": 0.0,
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0_eng_7_engtype_Video Codec Engine": 0.0
+            }
+          },
+          "dedicated_bytes": {
+            "status": 0,
+            "values": {
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0": 698925056.0
+            }
+          },
+          "shared_bytes": {
+            "status": 0,
+            "values": {
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0": 40931328.0
+            }
+          }
+        },
+        {
+          "collection_status": 0,
+          "seconds": 49884.4115,
+          "engine_percent": {
+            "status": 0,
+            "values": {
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0_eng_0_engtype_3D": 0.0,
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0_eng_1_engtype_Copy": 4.942987403757531,
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0_eng_2_engtype_Compute 0": 27.74290547697725,
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0_eng_3_engtype_Copy": 0.0,
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0_eng_4_engtype_Timer 0": 0.0,
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0_eng_5_engtype_Security 1": 0.0,
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0_eng_6_engtype_Video JPEG 0": 0.0,
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0_eng_7_engtype_Video Codec Engine": 0.0
+            }
+          },
+          "dedicated_bytes": {
+            "status": 0,
+            "values": {
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0": 698925056.0
+            }
+          },
+          "shared_bytes": {
+            "status": 0,
+            "values": {
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0": 40931328.0
+            }
+          }
+        },
+        {
+          "collection_status": 0,
+          "seconds": 49884.9261646,
+          "engine_percent": {
+            "status": 0,
+            "values": {
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0_eng_0_engtype_3D": 0.0,
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0_eng_1_engtype_Copy": 4.67616989044403,
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0_eng_2_engtype_Compute 0": 26.086062412247074,
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0_eng_3_engtype_Copy": 0.0,
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0_eng_4_engtype_Timer 0": 0.0,
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0_eng_5_engtype_Security 1": 0.0,
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0_eng_6_engtype_Video JPEG 0": 0.0,
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0_eng_7_engtype_Video Codec Engine": 0.0
+            }
+          },
+          "dedicated_bytes": {
+            "status": 0,
+            "values": {
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0": 698925056.0
+            }
+          },
+          "shared_bytes": {
+            "status": 0,
+            "values": {
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0": 40931328.0
+            }
+          }
+        },
+        {
+          "collection_status": 0,
+          "seconds": 49885.4387649,
+          "engine_percent": {
+            "status": 0,
+            "values": {
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0_eng_0_engtype_3D": 0.0,
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0_eng_1_engtype_Copy": 4.521840269811765,
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0_eng_2_engtype_Compute 0": 27.457088879628806,
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0_eng_3_engtype_Copy": 0.0,
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0_eng_4_engtype_Timer 0": 0.0,
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0_eng_5_engtype_Security 1": 0.0,
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0_eng_6_engtype_Video JPEG 0": 0.0,
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0_eng_7_engtype_Video Codec Engine": 0.0
+            }
+          },
+          "dedicated_bytes": {
+            "status": 0,
+            "values": {
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0": 698925056.0
+            }
+          },
+          "shared_bytes": {
+            "status": 0,
+            "values": {
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0": 40931328.0
+            }
+          }
+        },
+        {
+          "collection_status": 0,
+          "seconds": 49885.9531157,
+          "engine_percent": {
+            "status": 0,
+            "values": {
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0_eng_0_engtype_3D": 0.0,
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0_eng_1_engtype_Copy": 4.307974638968356,
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0_eng_2_engtype_Compute 0": 27.86509461304015,
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0_eng_3_engtype_Copy": 0.0,
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0_eng_4_engtype_Timer 0": 0.0,
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0_eng_5_engtype_Security 1": 0.0,
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0_eng_6_engtype_Video JPEG 0": 0.0,
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0_eng_7_engtype_Video Codec Engine": 0.0
+            }
+          },
+          "dedicated_bytes": {
+            "status": 0,
+            "values": {
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0": 698925056.0
+            }
+          },
+          "shared_bytes": {
+            "status": 0,
+            "values": {
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0": 40931328.0
+            }
+          }
+        },
+        {
+          "collection_status": 0,
+          "seconds": 49886.4664962,
+          "engine_percent": {
+            "status": 0,
+            "values": {
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0_eng_0_engtype_3D": 0.0,
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0_eng_1_engtype_Copy": 4.733507434704206,
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0_eng_2_engtype_Compute 0": 25.747282291603458,
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0_eng_3_engtype_Copy": 0.0,
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0_eng_4_engtype_Timer 0": 0.0,
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0_eng_5_engtype_Security 1": 0.0,
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0_eng_6_engtype_Video JPEG 0": 0.0,
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0_eng_7_engtype_Video Codec Engine": 0.0
+            }
+          },
+          "dedicated_bytes": {
+            "status": 0,
+            "values": {
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0": 698925056.0
+            }
+          },
+          "shared_bytes": {
+            "status": 0,
+            "values": {
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0": 40931328.0
+            }
+          }
+        },
+        {
+          "collection_status": 0,
+          "seconds": 49886.9811057,
+          "engine_percent": {
+            "status": 0,
+            "values": {
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0_eng_0_engtype_3D": 0.0,
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0_eng_1_engtype_Copy": 4.323123849749804,
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0_eng_2_engtype_Compute 0": 25.8667477108673,
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0_eng_3_engtype_Copy": 0.0,
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0_eng_4_engtype_Timer 0": 0.0,
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0_eng_5_engtype_Security 1": 0.0,
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0_eng_6_engtype_Video JPEG 0": 0.0,
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0_eng_7_engtype_Video Codec Engine": 0.0
+            }
+          },
+          "dedicated_bytes": {
+            "status": 0,
+            "values": {
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0": 698925056.0
+            }
+          },
+          "shared_bytes": {
+            "status": 0,
+            "values": {
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0": 40931328.0
+            }
+          }
+        },
+        {
+          "collection_status": 0,
+          "seconds": 49887.4957158,
+          "engine_percent": {
+            "status": 0,
+            "values": {
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0_eng_0_engtype_3D": 0.0,
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0_eng_1_engtype_Copy": 4.171480045041356,
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0_eng_2_engtype_Compute 0": 27.360464869745556,
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0_eng_3_engtype_Copy": 0.0,
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0_eng_4_engtype_Timer 0": 0.0,
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0_eng_5_engtype_Security 1": 0.0,
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0_eng_6_engtype_Video JPEG 0": 0.0,
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0_eng_7_engtype_Video Codec Engine": 0.0
+            }
+          },
+          "dedicated_bytes": {
+            "status": 0,
+            "values": {
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0": 698925056.0
+            }
+          },
+          "shared_bytes": {
+            "status": 0,
+            "values": {
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0": 40931328.0
+            }
+          }
+        },
+        {
+          "collection_status": 0,
+          "seconds": 49888.0093957,
+          "engine_percent": {
+            "status": 0,
+            "values": {
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0_eng_0_engtype_3D": 0.0,
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0_eng_1_engtype_Copy": 4.296571170878823,
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0_eng_2_engtype_Compute 0": 27.327950581717708,
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0_eng_3_engtype_Copy": 0.0,
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0_eng_4_engtype_Timer 0": 0.0,
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0_eng_5_engtype_Security 1": 0.0,
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0_eng_6_engtype_Video JPEG 0": 0.0,
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0_eng_7_engtype_Video Codec Engine": 0.0
+            }
+          },
+          "dedicated_bytes": {
+            "status": 0,
+            "values": {
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0": 698925056.0
+            }
+          },
+          "shared_bytes": {
+            "status": 0,
+            "values": {
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0": 40931328.0
+            }
+          }
+        },
+        {
+          "collection_status": 0,
+          "seconds": 49888.5227656,
+          "engine_percent": {
+            "status": 0,
+            "values": {
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0_eng_0_engtype_3D": 0.0,
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0_eng_1_engtype_Copy": 4.076143456202717,
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0_eng_2_engtype_Compute 0": 30.34892594741289,
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0_eng_3_engtype_Copy": 0.0,
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0_eng_4_engtype_Timer 0": 0.0,
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0_eng_5_engtype_Security 1": 0.0,
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0_eng_6_engtype_Video JPEG 0": 0.0,
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0_eng_7_engtype_Video Codec Engine": 0.0
+            }
+          },
+          "dedicated_bytes": {
+            "status": 0,
+            "values": {
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0": 698925056.0
+            }
+          },
+          "shared_bytes": {
+            "status": 0,
+            "values": {
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0": 40931328.0
+            }
+          }
+        },
+        {
+          "collection_status": 0,
+          "seconds": 49889.0384049,
+          "engine_percent": {
+            "status": 0,
+            "values": {
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0_eng_0_engtype_3D": 0.0,
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0_eng_1_engtype_Copy": 3.6526564721416537,
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0_eng_2_engtype_Compute 0": 31.440751940340334,
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0_eng_3_engtype_Copy": 0.0,
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0_eng_4_engtype_Timer 0": 0.0,
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0_eng_5_engtype_Security 1": 0.0,
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0_eng_6_engtype_Video JPEG 0": 0.0,
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0_eng_7_engtype_Video Codec Engine": 0.0
+            }
+          },
+          "dedicated_bytes": {
+            "status": 0,
+            "values": {
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0": 698925056.0
+            }
+          },
+          "shared_bytes": {
+            "status": 0,
+            "values": {
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0": 40931328.0
+            }
+          }
+        },
+        {
+          "collection_status": 0,
+          "seconds": 49889.5530728,
+          "engine_percent": {
+            "status": 0,
+            "values": {
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0_eng_0_engtype_3D": 0.0,
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0_eng_1_engtype_Copy": 3.5406722721711943,
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0_eng_2_engtype_Compute 0": 26.775598578557975,
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0_eng_3_engtype_Copy": 0.0,
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0_eng_4_engtype_Timer 0": 0.0,
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0_eng_5_engtype_Security 1": 0.0,
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0_eng_6_engtype_Video JPEG 0": 0.0,
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0_eng_7_engtype_Video Codec Engine": 0.0
+            }
+          },
+          "dedicated_bytes": {
+            "status": 0,
+            "values": {
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0": 698925056.0
+            }
+          },
+          "shared_bytes": {
+            "status": 0,
+            "values": {
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0": 40931328.0
+            }
+          }
+        },
+        {
+          "collection_status": 0,
+          "seconds": 49890.0669044,
+          "engine_percent": {
+            "status": 0,
+            "values": {
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0_eng_0_engtype_3D": 0.0,
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0_eng_1_engtype_Copy": 2.1850885233905326,
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0_eng_2_engtype_Compute 0": 27.9406756075583,
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0_eng_3_engtype_Copy": 0.0,
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0_eng_4_engtype_Timer 0": 0.0,
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0_eng_5_engtype_Security 1": 0.0,
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0_eng_6_engtype_Video JPEG 0": 0.0,
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0_eng_7_engtype_Video Codec Engine": 0.0
+            }
+          },
+          "dedicated_bytes": {
+            "status": 0,
+            "values": {
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0": 698925056.0
+            }
+          },
+          "shared_bytes": {
+            "status": 0,
+            "values": {
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0": 40931328.0
+            }
+          }
+        },
+        {
+          "collection_status": 0,
+          "seconds": 49890.5786642,
+          "engine_percent": {
+            "status": 0,
+            "values": {
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0_eng_0_engtype_3D": 0.0,
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0_eng_1_engtype_Copy": 2.069449741348119,
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0_eng_2_engtype_Compute 0": 28.887083052189983,
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0_eng_3_engtype_Copy": 0.0,
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0_eng_4_engtype_Timer 0": 0.0,
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0_eng_5_engtype_Security 1": 0.0,
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0_eng_6_engtype_Video JPEG 0": 0.0,
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0_eng_7_engtype_Video Codec Engine": 0.0
+            }
+          },
+          "dedicated_bytes": {
+            "status": 0,
+            "values": {
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0": 698925056.0
+            }
+          },
+          "shared_bytes": {
+            "status": 0,
+            "values": {
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0": 40931328.0
+            }
+          }
+        },
+        {
+          "collection_status": 0,
+          "seconds": 49891.0925023,
+          "engine_percent": {
+            "status": 0,
+            "values": {
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0_eng_0_engtype_3D": 0.0,
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0_eng_1_engtype_Copy": 2.2584332849247737,
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0_eng_2_engtype_Compute 0": 30.700817411997143,
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0_eng_3_engtype_Copy": 0.0,
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0_eng_4_engtype_Timer 0": 0.0,
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0_eng_5_engtype_Security 1": 0.0,
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0_eng_6_engtype_Video JPEG 0": 0.0,
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0_eng_7_engtype_Video Codec Engine": 0.0
+            }
+          },
+          "dedicated_bytes": {
+            "status": 0,
+            "values": {
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0": 698925056.0
+            }
+          },
+          "shared_bytes": {
+            "status": 0,
+            "values": {
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0": 40931328.0
+            }
+          }
+        },
+        {
+          "collection_status": 0,
+          "seconds": 49891.6054406,
+          "engine_percent": {
+            "status": 0,
+            "values": {
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0_eng_0_engtype_3D": 0.0,
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0_eng_1_engtype_Copy": 2.1020803181181233,
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0_eng_2_engtype_Compute 0": 30.105488169436278,
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0_eng_3_engtype_Copy": 0.0,
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0_eng_4_engtype_Timer 0": 0.0,
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0_eng_5_engtype_Security 1": 0.0,
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0_eng_6_engtype_Video JPEG 0": 0.0,
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0_eng_7_engtype_Video Codec Engine": 0.0
+            }
+          },
+          "dedicated_bytes": {
+            "status": 0,
+            "values": {
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0": 698925056.0
+            }
+          },
+          "shared_bytes": {
+            "status": 0,
+            "values": {
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0": 40931328.0
+            }
+          }
+        },
+        {
+          "collection_status": 0,
+          "seconds": 49892.1170749,
+          "engine_percent": {
+            "status": 0,
+            "values": {
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0_eng_0_engtype_3D": 0.0,
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0_eng_1_engtype_Copy": 1.7172251071043005,
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0_eng_2_engtype_Compute 0": 26.16942263820973,
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0_eng_3_engtype_Copy": 0.0,
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0_eng_4_engtype_Timer 0": 0.0,
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0_eng_5_engtype_Security 1": 0.0,
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0_eng_6_engtype_Video JPEG 0": 0.0,
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0_eng_7_engtype_Video Codec Engine": 0.0
+            }
+          },
+          "dedicated_bytes": {
+            "status": 0,
+            "values": {
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0": 698925056.0
+            }
+          },
+          "shared_bytes": {
+            "status": 0,
+            "values": {
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0": 40931328.0
+            }
+          }
+        },
+        {
+          "collection_status": 0,
+          "seconds": 49892.6322398,
+          "engine_percent": {
+            "status": 0,
+            "values": {
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0_eng_0_engtype_3D": 0.0,
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0_eng_1_engtype_Copy": 1.4577231739387475,
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0_eng_2_engtype_Compute 0": 28.419117254474447,
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0_eng_3_engtype_Copy": 0.0,
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0_eng_4_engtype_Timer 0": 0.0,
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0_eng_5_engtype_Security 1": 0.0,
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0_eng_6_engtype_Video JPEG 0": 0.0,
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0_eng_7_engtype_Video Codec Engine": 0.0
+            }
+          },
+          "dedicated_bytes": {
+            "status": 0,
+            "values": {
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0": 698925056.0
+            }
+          },
+          "shared_bytes": {
+            "status": 0,
+            "values": {
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0": 40931328.0
+            }
+          }
+        },
+        {
+          "collection_status": 0,
+          "seconds": 49893.1436472,
+          "engine_percent": {
+            "status": 0,
+            "values": {
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0_eng_0_engtype_3D": 0.0,
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0_eng_1_engtype_Copy": 1.2960490725938465,
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0_eng_2_engtype_Compute 0": 30.07773399897283,
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0_eng_3_engtype_Copy": 0.0,
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0_eng_4_engtype_Timer 0": 0.0,
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0_eng_5_engtype_Security 1": 0.0,
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0_eng_6_engtype_Video JPEG 0": 0.0,
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0_eng_7_engtype_Video Codec Engine": 0.0
+            }
+          },
+          "dedicated_bytes": {
+            "status": 0,
+            "values": {
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0": 698925056.0
+            }
+          },
+          "shared_bytes": {
+            "status": 0,
+            "values": {
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0": 40931328.0
+            }
+          }
+        },
+        {
+          "collection_status": 0,
+          "seconds": 49893.6567157,
+          "engine_percent": {
+            "status": 0,
+            "values": {
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0_eng_0_engtype_3D": 0.0,
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0_eng_1_engtype_Copy": 1.1122829428573824,
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0_eng_2_engtype_Compute 0": 26.814678696664085,
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0_eng_3_engtype_Copy": 0.0,
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0_eng_4_engtype_Timer 0": 0.0,
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0_eng_5_engtype_Security 1": 0.0,
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0_eng_6_engtype_Video JPEG 0": 0.0,
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0_eng_7_engtype_Video Codec Engine": 0.0
+            }
+          },
+          "dedicated_bytes": {
+            "status": 0,
+            "values": {
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0": 698925056.0
+            }
+          },
+          "shared_bytes": {
+            "status": 0,
+            "values": {
+              "pid_17264_luid_0x00000000_0x000145B0_phys_0": 40931328.0
+            }
+          }
+        }
+      ],
+      "telemetry_errors": [],
+      "train_window_counter_summary": {
+        "engine_percent": {
+          "valid_samples": 22,
+          "max": 31.440751940340334,
+          "mean": 26.51308214890236
+        },
+        "dedicated_bytes": {
+          "valid_samples": 22,
+          "max": 698925056.0,
+          "mean": 672686452.3636364
+        },
+        "shared_bytes": {
+          "valid_samples": 22,
+          "max": 40931328.0,
+          "mean": 40022574.54545455
+        }
+      }
+    }
+  ],
+  "financial_validation": false,
+  "generation_seconds": 3.1097895999992033,
+  "input_bytes": 2164260864,
+  "input_sha256": "cba7f39cd6c63c763ffa500910efb3df2e6df85d9eccce3d61b43c007ea5260e",
+  "status": "completed"
+}

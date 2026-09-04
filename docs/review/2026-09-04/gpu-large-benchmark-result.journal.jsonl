@@ -1,0 +1,19 @@
+{"phase": "started", "spec_sha256": "c0908826cd1276268ec3530081036b52a3695d580bbfa2ac0979b8a650d8fc41"}
+{"backend": "cpu", "phase": "warmup_started"}
+{"backend": "cpu", "logloss": 0.63835473310826, "model_sha256": "669114aa19f02ec40c84fc32e668f943b24823d49dcb39e2bba12ea96844c6bf", "phase": "warmup_completed", "prediction_sha256": "89bd8b6f9b018bcb0bd526b8f5185b3c285a95726574b45eb09e6e9e60ffea6a", "reload_equal": true, "seconds": 0.010354200006986503}
+{"backend": "gpu", "phase": "warmup_started"}
+{"backend": "gpu", "logloss": 0.63835473310826, "model_sha256": "c503384fba4be222a22b05e66716d43a39ed57aae78ff16b211f11281f4303dd", "phase": "warmup_completed", "prediction_sha256": "89bd8b6f9b018bcb0bd526b8f5185b3c285a95726574b45eb09e6e9e60ffea6a", "reload_equal": true, "seconds": 0.3263255999991088}
+{"backend": "cpu", "phase": "fit_started", "repeat": 0, "rows": 1048576}
+{"backend": "cpu", "logloss": 0.29750394919831935, "model_sha256": "53fd685f52ef499b18b16b038b6e37269a8ab9f5c431f4bfc2973dd5e9c3e568", "phase": "fit_completed", "prediction_sha256": "83d5191caffc68846c748c5edc81a699c518ba392a34018d0fc200ab217f8b28", "reload_equal": true, "repeat": 0, "rows": 1048576, "seconds": 8.975273700001708}
+{"backend": "gpu", "phase": "fit_started", "repeat": 0, "rows": 1048576}
+{"backend": "gpu", "logloss": 0.29750394919389256, "model_sha256": "02db17cf58d0db612e1f997476aa725d7cf3a195b3d20607d1408991c3a4c649", "phase": "fit_completed", "prediction_sha256": "37a0c732362acb7d26ac4bbec998c90f0646d75a20a95ec7224241f98ff94be7", "reload_equal": true, "repeat": 0, "rows": 1048576, "seconds": 4.087265699999989}
+{"backend": "gpu", "phase": "fit_started", "repeat": 1, "rows": 1048576}
+{"backend": "gpu", "logloss": 0.29750394919389256, "model_sha256": "02db17cf58d0db612e1f997476aa725d7cf3a195b3d20607d1408991c3a4c649", "phase": "fit_completed", "prediction_sha256": "37a0c732362acb7d26ac4bbec998c90f0646d75a20a95ec7224241f98ff94be7", "reload_equal": true, "repeat": 1, "rows": 1048576, "seconds": 4.06523919999745}
+{"backend": "cpu", "phase": "fit_started", "repeat": 1, "rows": 1048576}
+{"backend": "cpu", "logloss": 0.29750394919831935, "model_sha256": "53fd685f52ef499b18b16b038b6e37269a8ab9f5c431f4bfc2973dd5e9c3e568", "phase": "fit_completed", "prediction_sha256": "83d5191caffc68846c748c5edc81a699c518ba392a34018d0fc200ab217f8b28", "reload_equal": true, "repeat": 1, "rows": 1048576, "seconds": 8.928400999997393}
+{"backend": "cpu", "phase": "fit_started", "repeat": 2, "rows": 1048576}
+{"backend": "cpu", "logloss": 0.29750394919831935, "model_sha256": "53fd685f52ef499b18b16b038b6e37269a8ab9f5c431f4bfc2973dd5e9c3e568", "phase": "fit_completed", "prediction_sha256": "83d5191caffc68846c748c5edc81a699c518ba392a34018d0fc200ab217f8b28", "reload_equal": true, "repeat": 2, "rows": 1048576, "seconds": 8.862730200002261}
+{"backend": "gpu", "phase": "fit_started", "repeat": 2, "rows": 1048576}
+{"backend": "gpu", "logloss": 0.29750394919389256, "model_sha256": "02db17cf58d0db612e1f997476aa725d7cf3a195b3d20607d1408991c3a4c649", "phase": "fit_completed", "prediction_sha256": "37a0c732362acb7d26ac4bbec998c90f0646d75a20a95ec7224241f98ff94be7", "reload_equal": true, "repeat": 2, "rows": 1048576, "seconds": 4.085038999997778}
+{"paired_tolerances_passed": true, "phase": "workload_completed", "rows": 1048576, "speedup": 2.185634213039888}
+{"output": "docs\\review\\2026-09-04\\gpu-large-benchmark-result.json", "phase": "completed"}

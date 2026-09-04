@@ -1,0 +1,75 @@
+Using Python 3.12.10 environment at: .tmp\lightgbm-opencl-4.7.0\venv
+Resolved 4 packages in 100ms
+   Building lightgbm==4.7.0
+  × Failed to build `lightgbm==4.7.0`
+  ├─▶ The build backend returned an error
+  ╰─▶ Call to `scikit_build_core.build.build_wheel` failed (exit code: 1)
+
+      [stdout]
+      *** scikit-build-core 1.0.3 using CMake 4.3.1 (wheel)
+      *** Configuring CMake...
+      loading initial cache file
+      C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\cmake-build\CMakeInit.txt
+      -- Building for: Visual Studio 18 2026
+      -- Selecting Windows SDK version 10.0.28000.0 to target Windows 10.0.
+      -- The C compiler identification is MSVC 19.42.34444.0
+      -- The CXX compiler identification is MSVC 19.42.34444.0
+      -- Detecting C compiler ABI info
+      -- Detecting C compiler ABI info - done
+      -- Check for working C compiler: C:/Program Files/Microsoft Visual
+      Studio/18/Community/VC/Tools/MSVC/14.42.34433/bin/HostX64/x64/cl.exe
+      - skipped
+      -- Detecting C compile features
+      -- Detecting C compile features - done
+      -- Detecting CXX compiler ABI info
+      -- Detecting CXX compiler ABI info - done
+      -- Check for working CXX compiler: C:/Program Files/Microsoft Visual
+      Studio/18/Community/VC/Tools/MSVC/14.42.34433/bin/HostX64/x64/cl.exe
+      - skipped
+      -- Detecting CXX compile features
+      -- Detecting CXX compile features - done
+      -- Building library with integrated OpenCL components
+      -- Building using CMake version: 4.3.1-msvc1
+      -- Found OpenMP_C: -openmp (found version "2.0")
+      -- Found OpenMP_CXX: -openmp (found version "2.0")
+      -- Found OpenMP: TRUE (found version "2.0")
+      -- Populated OpenCL Headers
+      -- Configuring incomplete, errors occurred!
+
+      [stderr]
+      2026-09-04 22:51:43,063 - scikit_build_core -
+      INFO - RUN: C:\Program Files\Microsoft Visual
+      Studio\18\Community\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.EXE
+      -E capabilities
+      2026-09-04 22:51:43,084 - scikit_build_core - INFO - CMake version:
+      4.3.1
+      2026-09-04 22:51:43,173 - scikit_build_core - INFO - Implementation:
+      cpython win32 on AMD64
+      2026-09-04 22:51:43,175 - scikit_build_core - INFO - Build directory:
+      C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\cmake-build
+      2026-09-04 22:51:43,190 - scikit_build_core -
+      INFO - RUN: C:\Program Files\Microsoft Visual
+      Studio\18\Community\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.EXE
+      -S. -BC:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\cmake-build
+      -CC:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\cmake-build\CMakeInit.txt
+      -DCMAKE_INSTALL_PREFIX=C:\Users\strat\AppData\Local\Temp\tmpha3dlext\wheel\platlib
+      -D__BUILD_FOR_PYTHON=ON -D__INTEGRATE_OPENCL=ON
+      CMake Error at
+      C:/trader/simple_ai_trading/.tmp/lightgbm-opencl-4.7.0/cmake-build/_deps/opencl-icd-loader-src/CMakeLists.txt:1
+      (cmake_minimum_required):
+        Compatibility with CMake < 3.5 has been removed from CMake.
+
+        Update the VERSION argument <min> value.  Or, use the <min>...<max>
+      syntax
+        to tell CMake that the project requires at least <min> but has been
+      updated
+        to work with policies introduced by <max> or earlier.
+
+        Or, add -DCMAKE_POLICY_VERSION_MINIMUM=3.5 to try configuring anyway.
+
+
+
+      *** CMake configuration failed
+
+
+hint: Build failures usually indicate a problem with the package or the build environment

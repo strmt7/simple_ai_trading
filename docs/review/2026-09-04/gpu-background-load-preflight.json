@@ -1,0 +1,139 @@
+{
+  "schema_version": "passive-benchmark-preflight-load-v1",
+  "implementation_sha256": "5c318d93c3ac43f78e58e31316aadc9b397fd8aef14617768e0aa2cf54b65ef4",
+  "started_at_utc": "2026-09-04T21:27:34.9562540Z",
+  "finished_at_utc": "2026-09-04T21:27:52.1277887Z",
+  "can_start_at_measurement_end": false,
+  "benchmark_launched": false,
+  "unrelated_processes_modified": false,
+  "thresholds": {
+    "min_available_mib": 24576,
+    "cpu_percent": 10,
+    "disk_queue": 1,
+    "gpu_engine_percent": 5
+  },
+  "failure": null,
+  "samples": [
+    {
+      "time_utc": "2026-09-04T21:27:37.5206932Z",
+      "cpu_percent": 2.2905892627273383,
+      "busiest_gpu_engine_percent": 7.320737317053244,
+      "disk_queue_length": 0.005802666568312506,
+      "available_memory_mib": 33349.0,
+      "quiet": false
+    },
+    {
+      "time_utc": "2026-09-04T21:27:38.6443453Z",
+      "cpu_percent": 9.005247371908753,
+      "busiest_gpu_engine_percent": 7.0760513863677215,
+      "disk_queue_length": 0.044715151948803905,
+      "available_memory_mib": 33346.0,
+      "quiet": false
+    },
+    {
+      "time_utc": "2026-09-04T21:27:39.7041500Z",
+      "cpu_percent": 9.78929267717794,
+      "busiest_gpu_engine_percent": 7.0940240215956765,
+      "disk_queue_length": 0.005032072978173843,
+      "available_memory_mib": 33335.0,
+      "quiet": false
+    },
+    {
+      "time_utc": "2026-09-04T21:27:40.7540201Z",
+      "cpu_percent": 5.95893473973571,
+      "busiest_gpu_engine_percent": 7.344756270323347,
+      "disk_queue_length": 0.0503480683954278,
+      "available_memory_mib": 33334.0,
+      "quiet": false
+    },
+    {
+      "time_utc": "2026-09-04T21:27:41.7780078Z",
+      "cpu_percent": 2.8669790333932466,
+      "busiest_gpu_engine_percent": 7.025045320368595,
+      "disk_queue_length": 0.04949863989155816,
+      "available_memory_mib": 33328.0,
+      "quiet": false
+    },
+    {
+      "time_utc": "2026-09-04T21:27:42.8027069Z",
+      "cpu_percent": 21.728025354325307,
+      "busiest_gpu_engine_percent": 5.194110153897861,
+      "disk_queue_length": 0.0343674230054515,
+      "available_memory_mib": 33158.0,
+      "quiet": false
+    },
+    {
+      "time_utc": "2026-09-04T21:27:43.8431972Z",
+      "cpu_percent": 13.994528759565949,
+      "busiest_gpu_engine_percent": 2.235820939416735,
+      "disk_queue_length": 0.011309709084720086,
+      "available_memory_mib": 33133.0,
+      "quiet": false
+    },
+    {
+      "time_utc": "2026-09-04T21:27:44.8848645Z",
+      "cpu_percent": 8.65262913889131,
+      "busiest_gpu_engine_percent": 7.735003297117996,
+      "disk_queue_length": 0.01976789650132663,
+      "available_memory_mib": 32872.0,
+      "quiet": false
+    },
+    {
+      "time_utc": "2026-09-04T21:27:45.9222875Z",
+      "cpu_percent": 9.026420679587389,
+      "busiest_gpu_engine_percent": 6.396079516262894,
+      "disk_queue_length": 0.016670702985171114,
+      "available_memory_mib": 33072.0,
+      "quiet": false
+    },
+    {
+      "time_utc": "2026-09-04T21:27:46.9455988Z",
+      "cpu_percent": 5.3320599538538405,
+      "busiest_gpu_engine_percent": 6.453539602269612,
+      "disk_queue_length": 0.08998335505524846,
+      "available_memory_mib": 33079.0,
+      "quiet": false
+    },
+    {
+      "time_utc": "2026-09-04T21:27:47.9837740Z",
+      "cpu_percent": 8.850460232023206,
+      "busiest_gpu_engine_percent": 26.85929118707517,
+      "disk_queue_length": 0.0,
+      "available_memory_mib": 33087.0,
+      "quiet": false
+    },
+    {
+      "time_utc": "2026-09-04T21:27:49.0079290Z",
+      "cpu_percent": 4.882761459625318,
+      "busiest_gpu_engine_percent": 6.828624573428827,
+      "disk_queue_length": 0.04229942150126786,
+      "available_memory_mib": 33080.0,
+      "quiet": false
+    },
+    {
+      "time_utc": "2026-09-04T21:27:50.0342891Z",
+      "cpu_percent": 6.620654955707083,
+      "busiest_gpu_engine_percent": 6.525643387734968,
+      "disk_queue_length": 0.06189001080086501,
+      "available_memory_mib": 33081.0,
+      "quiet": false
+    },
+    {
+      "time_utc": "2026-09-04T21:27:51.0577031Z",
+      "cpu_percent": 8.59246360694279,
+      "busiest_gpu_engine_percent": 26.481335998921256,
+      "disk_queue_length": 0.05198721091023493,
+      "available_memory_mib": 33167.0,
+      "quiet": false
+    },
+    {
+      "time_utc": "2026-09-04T21:27:52.0828857Z",
+      "cpu_percent": 5.156187119029476,
+      "busiest_gpu_engine_percent": 6.4343659363707495,
+      "disk_queue_length": 0.017540761876148787,
+      "available_memory_mib": 33172.0,
+      "quiet": false
+    }
+  ],
+  "scope": "Preflight only, not a during-run contention monitor. Valid only immediately after measurement. A new background workload invalidates timing attribution; do not use this receipt to bless earlier or later runs."
+}

@@ -1,0 +1,3 @@
+import option ;
+using msvc : 14.3 : "C:/Program Files/Microsoft Visual Studio/18/Community/VC/Tools/MSVC/14.42.34433/bin/Hostx64/x64/cl.exe" : <setup-amd64>"C:/trader/simple_ai_trading/.tmp/lightgbm-opencl-4.7.0/msvc-setup.cmd" <rewrite-setup-scripts>off ;
+option.set keep-going : false ;

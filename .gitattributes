@@ -5,6 +5,14 @@
 pyproject.toml text eol=lf
 uv.lock text eol=lf
 docs/review/2026-09-04/** text eol=lf
+docs/review/2026-09-04/gpu-build-evidence/** binary -eol
+docs/review/2026-09-04/gpu-*.json binary -eol
+docs/review/2026-09-04/gpu-*.jsonl binary -eol
+docs/review/2026-09-04/gpu-concurrency-result/** binary -eol
+docs/review/2026-09-04/funding-notional-sensitivity.json binary -eol
+docs/review/2026-09-04/funding-notional-sensitivity.journal.jsonl binary -eol
+tools/measure_benchmark_background_load.ps1 text eol=lf
+tools/run_lightgbm_opencl.ps1 text eol=lf
 docs/review/2026-09-04/inventory.tsv whitespace=-blank-at-eol
 data/binance-usd1-sep4-campaign-v1/raw/** binary -eol
 docs/ai/foundation/latest/* text eol=lf

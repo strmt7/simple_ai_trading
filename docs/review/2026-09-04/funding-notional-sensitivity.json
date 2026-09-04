@@ -1,0 +1,304 @@
+{
+  "assets": {
+    "BTC": {
+      "raw_field_sets": {
+        "backpack": [
+          "fundingRate",
+          "intervalEndTimestamp",
+          "symbol"
+        ],
+        "binance": [
+          "fundingRate",
+          "fundingTime",
+          "markPrice",
+          "rateType",
+          "symbol"
+        ]
+      },
+      "roles": {
+        "test": {
+          "absolute_settlement_coefficients_bips": "114.774450000",
+          "illustrative_outer_bounds": [
+            {
+              "lower_net_bips": "-130.4502916210045662100456621",
+              "radius": "0.10",
+              "upper_net_bips": "-107.4954016210045662100456621"
+            },
+            {
+              "lower_net_bips": "-141.9277366210045662100456621",
+              "radius": "0.20",
+              "upper_net_bips": "-96.0179566210045662100456621"
+            }
+          ],
+          "retained_role_gross_reconstructed": true,
+          "settlement_cashflow_count": 612,
+          "symmetric_weight_radius_to_zero_net": "1.036579540315850489460377829",
+          "unchanged_frozen_hurdle_bips": "132.1004566210045662100456621",
+          "unit_weight_gross_bips": "13.127610000",
+          "unit_weight_net_bips": "-118.9728466210045662100456621"
+        },
+        "training": {
+          "absolute_settlement_coefficients_bips": "170.212320000",
+          "illustrative_outer_bounds": [
+            {
+              "lower_net_bips": "-158.4006632328767123287671233",
+              "radius": "0.10",
+              "upper_net_bips": "-124.3581992328767123287671233"
+            },
+            {
+              "lower_net_bips": "-175.4218952328767123287671233",
+              "radius": "0.20",
+              "upper_net_bips": "-107.3369672328767123287671233"
+            }
+          ],
+          "retained_role_gross_reconstructed": true,
+          "settlement_cashflow_count": 1215,
+          "symmetric_weight_radius_to_zero_net": "0.8306063346817475511100907578",
+          "unchanged_frozen_hurdle_bips": "193.2876712328767123287671233",
+          "unit_weight_gross_bips": "51.908240000",
+          "unit_weight_net_bips": "-141.3794312328767123287671233"
+        },
+        "validation": {
+          "absolute_settlement_coefficients_bips": "79.622480000",
+          "illustrative_outer_bounds": [
+            {
+              "lower_net_bips": "-140.9860426118721461187214612",
+              "radius": "0.10",
+              "upper_net_bips": "-125.0615466118721461187214612"
+            },
+            {
+              "lower_net_bips": "-148.9482906118721461187214612",
+              "radius": "0.20",
+              "upper_net_bips": "-117.0992986118721461187214612"
+            }
+          ],
+          "retained_role_gross_reconstructed": true,
+          "settlement_cashflow_count": 603,
+          "symmetric_weight_radius_to_zero_net": "1.670681378071521335667030984",
+          "unchanged_frozen_hurdle_bips": "131.1872146118721461187214612",
+          "unit_weight_gross_bips": "-1.836580000",
+          "unit_weight_net_bips": "-133.0237946118721461187214612"
+        }
+      },
+      "unchanged_orientation": "short_backpack_USDC_long_binance_USDT"
+    },
+    "ETH": {
+      "raw_field_sets": {
+        "backpack": [
+          "fundingRate",
+          "intervalEndTimestamp",
+          "symbol"
+        ],
+        "binance": [
+          "fundingRate",
+          "fundingTime",
+          "markPrice",
+          "rateType",
+          "symbol"
+        ]
+      },
+      "roles": {
+        "test": {
+          "absolute_settlement_coefficients_bips": "104.221540000",
+          "illustrative_outer_bounds": [
+            {
+              "lower_net_bips": "-124.0378506210045662100456621",
+              "radius": "0.10",
+              "upper_net_bips": "-103.1935426210045662100456621"
+            },
+            {
+              "lower_net_bips": "-134.4600046210045662100456621",
+              "radius": "0.20",
+              "upper_net_bips": "-92.7713886210045662100456621"
+            }
+          ],
+          "retained_role_gross_reconstructed": true,
+          "settlement_cashflow_count": 612,
+          "symmetric_weight_radius_to_zero_net": "1.090136421137171511858735364",
+          "unchanged_frozen_hurdle_bips": "132.1004566210045662100456621",
+          "unit_weight_gross_bips": "18.484760000",
+          "unit_weight_net_bips": "-113.6156966210045662100456621"
+        },
+        "training": {
+          "absolute_settlement_coefficients_bips": "176.867700000",
+          "illustrative_outer_bounds": [
+            {
+              "lower_net_bips": "-139.0732412328767123287671233",
+              "radius": "0.10",
+              "upper_net_bips": "-103.6997012328767123287671233"
+            },
+            {
+              "lower_net_bips": "-156.7600112328767123287671233",
+              "radius": "0.20",
+              "upper_net_bips": "-86.0129312328767123287671233"
+            }
+          ],
+          "retained_role_gross_reconstructed": true,
+          "settlement_cashflow_count": 1215,
+          "symmetric_weight_radius_to_zero_net": "0.6863122618368232997249759187",
+          "unchanged_frozen_hurdle_bips": "193.2876712328767123287671233",
+          "unit_weight_gross_bips": "71.901200000",
+          "unit_weight_net_bips": "-121.3864712328767123287671233"
+        },
+        "validation": {
+          "absolute_settlement_coefficients_bips": "82.404980000",
+          "illustrative_outer_bounds": [
+            {
+              "lower_net_bips": "-113.1335326118721461187214612",
+              "radius": "0.10",
+              "upper_net_bips": "-96.6525366118721461187214612"
+            },
+            {
+              "lower_net_bips": "-121.3740306118721461187214612",
+              "radius": "0.20",
+              "upper_net_bips": "-88.4120386118721461187214612"
+            }
+          ],
+          "retained_role_gross_reconstructed": true,
+          "settlement_cashflow_count": 603,
+          "symmetric_weight_radius_to_zero_net": "1.272896791090443151842539871",
+          "unchanged_frozen_hurdle_bips": "131.1872146118721461187214612",
+          "unit_weight_gross_bips": "26.294180000",
+          "unit_weight_net_bips": "-104.8930346118721461187214612"
+        }
+      },
+      "unchanged_orientation": "short_backpack_USDC_long_binance_USDT"
+    },
+    "SOL": {
+      "raw_field_sets": {
+        "backpack": [
+          "fundingRate",
+          "intervalEndTimestamp",
+          "symbol"
+        ],
+        "binance": [
+          "fundingRate",
+          "fundingTime",
+          "markPrice",
+          "rateType",
+          "symbol"
+        ]
+      },
+      "roles": {
+        "test": {
+          "absolute_settlement_coefficients_bips": "104.362040000",
+          "illustrative_outer_bounds": [
+            {
+              "lower_net_bips": "-120.6534406210045662100456621",
+              "radius": "0.10",
+              "upper_net_bips": "-99.7810326210045662100456621"
+            },
+            {
+              "lower_net_bips": "-131.0896446210045662100456621",
+              "radius": "0.20",
+              "upper_net_bips": "-89.3448286210045662100456621"
+            }
+          ],
+          "retained_role_gross_reconstructed": true,
+          "settlement_cashflow_count": 612,
+          "symmetric_weight_radius_to_zero_net": "1.056104658561720010552166881",
+          "unchanged_frozen_hurdle_bips": "132.1004566210045662100456621",
+          "unit_weight_gross_bips": "21.883220000",
+          "unit_weight_net_bips": "-110.2172366210045662100456621"
+        },
+        "training": {
+          "absolute_settlement_coefficients_bips": "206.489760000",
+          "illustrative_outer_bounds": [
+            {
+              "lower_net_bips": "-150.2100872328767123287671233",
+              "radius": "0.10",
+              "upper_net_bips": "-108.9121352328767123287671233"
+            },
+            {
+              "lower_net_bips": "-170.8590632328767123287671233",
+              "radius": "0.20",
+              "upper_net_bips": "-88.2631592328767123287671233"
+            }
+          ],
+          "retained_role_gross_reconstructed": true,
+          "settlement_cashflow_count": 1215,
+          "symmetric_weight_radius_to_zero_net": "0.6274456962557209245086396696",
+          "unchanged_frozen_hurdle_bips": "193.2876712328767123287671233",
+          "unit_weight_gross_bips": "63.726560000",
+          "unit_weight_net_bips": "-129.5611112328767123287671233"
+        },
+        "validation": {
+          "absolute_settlement_coefficients_bips": "89.492260000",
+          "illustrative_outer_bounds": [
+            {
+              "lower_net_bips": "-129.0528006118721461187214612",
+              "radius": "0.10",
+              "upper_net_bips": "-111.1543486118721461187214612"
+            },
+            {
+              "lower_net_bips": "-138.0020266118721461187214612",
+              "radius": "0.20",
+              "upper_net_bips": "-102.2051226118721461187214612"
+            }
+          ],
+          "retained_role_gross_reconstructed": true,
+          "settlement_cashflow_count": 603,
+          "symmetric_weight_radius_to_zero_net": "1.342055442692721651221250432",
+          "unchanged_frozen_hurdle_bips": "131.1872146118721461187214612",
+          "unit_weight_gross_bips": "11.083640000",
+          "unit_weight_net_bips": "-120.1035746118721461187214612"
+        }
+      },
+      "unchanged_orientation": "short_backpack_USDC_long_binance_USDT"
+    }
+  },
+  "historical_results_changed": false,
+  "implementation_sha256": "1cbcaa8bf1f8573e1b69259746360c640d59bf0e9f30891694d19aab44dd2cf7",
+  "inputs": [
+    {
+      "file_sha256": "09a921b3efa750a540f4cf6119bb289e834133165de40d9d93eac31121158535",
+      "path": "docs/model-research/action-value/binance-backpack-btc-eth-sol-funding-adjudication-contract-v2-2026-09-01.json"
+    },
+    {
+      "file_sha256": "bfafbbb07e5107ac4a5e88489e8d798daaadd1c796ed04e2a2c2249e1e10922b",
+      "path": "docs/model-research/action-value/binance-backpack-btc-eth-sol-funding-adjudication-result-v2-2026-09-01.json"
+    },
+    {
+      "file_sha256": "d20cad18fb7a21409921e445273db4094094adb49c6c3acf8a32a4e0267ff623",
+      "path": "tools/adjudicate_binance_backpack_funding.py"
+    },
+    {
+      "file_sha256": "9ba7d2db3a6fb41318b8f5358424f88c8a1d26f7d3a693305d4c4b4707586f83",
+      "path": "tools/adjudicate_binance_backpack_funding_v2.py"
+    },
+    {
+      "file_sha256": "64ef1f561e6d095d6a732a770b07dac8460d543ea592e148a517e1a7239c45b2",
+      "path": "docs/model-research/binance/raw/backpack-btc-eth-sol-funding-v1-2026-09-01/07-backpack-hourly-utc-anchor.raw.md"
+    },
+    {
+      "file_sha256": "0fabf713e50e2353f4fdf311c2ac01b053adce64a1b4536eac0e0591f5d4afb8",
+      "path": "docs/model-research/binance/raw/backpack-btc-eth-sol-funding-v1-2026-09-01/01-btc-backpack-funding.raw.json"
+    },
+    {
+      "file_sha256": "caa7222b1e3ce9f412cd51d84952f30f3e88550b1b1839f26386100dae386483",
+      "path": "docs/model-research/binance/raw/backpack-btc-eth-sol-funding-v1-2026-09-01/04-btc-binance-funding.raw.json"
+    },
+    {
+      "file_sha256": "405b0385c808b33b3d11d7c2eaeb4d9a9fa3886b6e90ba2294bd8354408c8226",
+      "path": "docs/model-research/binance/raw/backpack-btc-eth-sol-funding-v1-2026-09-01/02-eth-backpack-funding.raw.json"
+    },
+    {
+      "file_sha256": "8d9cef0513bad8dfb77f83a49f462e74ee5ab03915b1304363be0803d27e1a48",
+      "path": "docs/model-research/binance/raw/backpack-btc-eth-sol-funding-v1-2026-09-01/05-eth-binance-funding.raw.json"
+    },
+    {
+      "file_sha256": "c16c7c727342858104a74a2251e48621843c768454c63117c840088f00bcef75",
+      "path": "docs/model-research/binance/raw/backpack-btc-eth-sol-funding-v1-2026-09-01/03-sol-backpack-funding.raw.json"
+    },
+    {
+      "file_sha256": "8150891d65d0d2257b719b4ecc3d54a574d62905b76a6b09d6bd34e6e0a484e7",
+      "path": "docs/model-research/binance/raw/backpack-btc-eth-sol-funding-v1-2026-09-01/06-sol-binance-funding.raw.json"
+    }
+  ],
+  "interpretation": "Weights are settlement quote notionals converted to a common numeraire divided by initial reference notional. The 10/20 percent ranges are hypothetical independent-coordinate outer bounds, not observed ranges or feasible jointly delta-neutral price paths. Frozen costs stay fixed solely to isolate this sensitivity; they are not actual weighted strategy costs. A zero-crossing is not evidence of a profitable path or satisfaction of any retry trigger.",
+  "market_data_requests": 0,
+  "promotion_eligible": false,
+  "result_sha256": "21c829dcdafed0e6dbffb3b6abbce4da3253b2e423bbdca58ef10cb30bd39b9f",
+  "schema_version": "funding-notional-sensitivity-review-v1",
+  "study_kind": "retrospective_exploratory_sensitivity_not_validation"
+}

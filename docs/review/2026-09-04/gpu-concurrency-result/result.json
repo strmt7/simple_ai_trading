@@ -1,0 +1,163 @@
+{
+  "spec_sha256": "3966cde00cff755ebec536a3d1f29d8dc9af86a2897416cc14198dbabd8f3967",
+  "implementation_sha256": "3d3f0a41d4bd3b7a588ab83f5e66379b48fab371f72d3df4cae50f43ac5f7b65",
+  "financial_validation": false,
+  "configurations": [
+    {
+      "workers": 1,
+      "threads_per_worker": 16,
+      "total_wall_seconds": 72.74475610000081,
+      "records": [
+        {
+          "path": "docs\\review\\2026-09-04\\gpu-concurrency-result\\workers-1-fit-0.json",
+          "sha256": "ce292c4387f8330d1a51316113b601adc0d5152342d13819ddf21f529660dbf6",
+          "input_sha256": "cba7f39cd6c63c763ffa500910efb3df2e6df85d9eccce3d61b43c007ea5260e",
+          "trial": {
+            "index": 0,
+            "backend": "gpu",
+            "threads": 16,
+            "dataset_seconds": 1.4417501999996603,
+            "train_seconds": 11.665343900000153,
+            "prediction_seconds": 0.0016457999954582192,
+            "total_seconds": 13.108739899995271,
+            "cpu_seconds": 197.234375,
+            "cpu_busy_core_equivalents": 15.046020937532765,
+            "logloss": 0.29440361771800677,
+            "reload_equal": true,
+            "telemetry_errors": [],
+            "train_window_counter_summary": {
+              "engine_percent": {
+                "valid_samples": 23,
+                "max": 29.267469986286233,
+                "mean": 24.74345905899012
+              },
+              "dedicated_bytes": {
+                "valid_samples": 23,
+                "max": 698925056.0,
+                "mean": 691333921.3913044
+              },
+              "shared_bytes": {
+                "valid_samples": 23,
+                "max": 40955904.0,
+                "mean": 40086661.56521739
+              }
+            }
+          }
+        },
+        {
+          "path": "docs\\review\\2026-09-04\\gpu-concurrency-result\\workers-1-fit-1.json",
+          "sha256": "b844e89a13fcd6f96e8719a6098824db37fdf7cf8608bb95588e64f5b2b6995d",
+          "input_sha256": "cba7f39cd6c63c763ffa500910efb3df2e6df85d9eccce3d61b43c007ea5260e",
+          "trial": {
+            "index": 0,
+            "backend": "gpu",
+            "threads": 16,
+            "dataset_seconds": 1.4173525999940466,
+            "train_seconds": 11.62501290000364,
+            "prediction_seconds": 0.0015758000008645467,
+            "total_seconds": 13.04394129999855,
+            "cpu_seconds": 196.625,
+            "cpu_busy_core_equivalents": 15.074048209648248,
+            "logloss": 0.29440361771800677,
+            "reload_equal": true,
+            "telemetry_errors": [],
+            "train_window_counter_summary": {
+              "engine_percent": {
+                "valid_samples": 23,
+                "max": 28.79801834266191,
+                "mean": 24.242899994364258
+              },
+              "dedicated_bytes": {
+                "valid_samples": 23,
+                "max": 698925056.0,
+                "mean": 697192626.0869565
+              },
+              "shared_bytes": {
+                "valid_samples": 23,
+                "max": 40955904.0,
+                "mean": 40086661.56521739
+              }
+            }
+          }
+        },
+        {
+          "path": "docs\\review\\2026-09-04\\gpu-concurrency-result\\workers-1-fit-2.json",
+          "sha256": "dd0413c8c7a181d7df73eb7a5b23bee60678664fb32d30e3a94e512f918aa0b8",
+          "input_sha256": "cba7f39cd6c63c763ffa500910efb3df2e6df85d9eccce3d61b43c007ea5260e",
+          "trial": {
+            "index": 0,
+            "backend": "gpu",
+            "threads": 16,
+            "dataset_seconds": 1.5951938000071095,
+            "train_seconds": 11.887463199993363,
+            "prediction_seconds": 0.0016032000057748519,
+            "total_seconds": 13.484260200006247,
+            "cpu_seconds": 204.015625,
+            "cpu_busy_core_equivalents": 15.129908647113282,
+            "logloss": 0.29440361771800677,
+            "reload_equal": true,
+            "telemetry_errors": [],
+            "train_window_counter_summary": {
+              "engine_percent": {
+                "valid_samples": 23,
+                "max": 28.749964078758,
+                "mean": 25.27219985202791
+              },
+              "dedicated_bytes": {
+                "valid_samples": 23,
+                "max": 698925056.0,
+                "mean": 698925056.0
+              },
+              "shared_bytes": {
+                "valid_samples": 23,
+                "max": 40931328.0,
+                "mean": 40931328.0
+              }
+            }
+          }
+        },
+        {
+          "path": "docs\\review\\2026-09-04\\gpu-concurrency-result\\workers-1-fit-3.json",
+          "sha256": "fd2e0100b4f71c5379c825be4b9082caaa48abe476a74854f728ad814c1e5972",
+          "input_sha256": "cba7f39cd6c63c763ffa500910efb3df2e6df85d9eccce3d61b43c007ea5260e",
+          "trial": {
+            "index": 0,
+            "backend": "gpu",
+            "threads": 16,
+            "dataset_seconds": 1.4581624999991618,
+            "train_seconds": 11.336172600000282,
+            "prediction_seconds": 0.0017191000006278045,
+            "total_seconds": 12.796054200000071,
+            "cpu_seconds": 192.875,
+            "cpu_busy_core_equivalents": 15.073005864573387,
+            "logloss": 0.29440361771800677,
+            "reload_equal": true,
+            "telemetry_errors": [],
+            "train_window_counter_summary": {
+              "engine_percent": {
+                "valid_samples": 22,
+                "max": 31.440751940340334,
+                "mean": 26.51308214890236
+              },
+              "dedicated_bytes": {
+                "valid_samples": 22,
+                "max": 698925056.0,
+                "mean": 672686452.3636364
+              },
+              "shared_bytes": {
+                "valid_samples": 22,
+                "max": 40931328.0,
+                "mean": 40022574.54545455
+              }
+            }
+          }
+        }
+      ],
+      "fits_per_minute": 3.299206882625005
+    }
+  ],
+  "worker_implementation_sha256": "25496299a29f7644d50386e1a08b7c5f5e521e7409e68336465c9f3266a72a9d",
+  "worker_template_sha256": "ab54ec3378acf550d6a545a79afffd0ec59e36599f6f260cc195ae370078920c",
+  "status": "failed",
+  "error": "RuntimeError: worker 55724 failed; inspect retained log"
+}

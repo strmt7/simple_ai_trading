@@ -1,0 +1,2 @@
+{"phase": "started", "spec_sha256": "7aa08eac4216ca09ae6afe177e5eecba20484705505334e103bfa67f78d500dd"}
+{"phase": "trial_started", "index": 0, "backend": "gpu", "threads": 8}

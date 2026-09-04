@@ -1,0 +1,93 @@
+{
+  "schema_version": "retained-gpu-build-evidence-v1",
+  "files": [
+    {
+      "name": "build.log",
+      "bytes": 3641,
+      "sha256": "c292a696912caf0139d63d4ae199bd822e119cc18c55411d7b565d8b81614d23"
+    },
+    {
+      "name": "build-2.log",
+      "bytes": 34686,
+      "sha256": "16239b2ea01fb19e43d06274d60cdc5a8ec2250b405af6bb2ab9afeaeffbb8b0"
+    },
+    {
+      "name": "build-journal.json",
+      "bytes": 540,
+      "sha256": "e0e1f1b80a54a5a045e8635dc7cd43899733f228fca7327b98552e1af1289bed"
+    },
+    {
+      "name": "build-journal-2.json",
+      "bytes": 655,
+      "sha256": "016f2f5947a52efdacda8121ac79c7219407aac6455b5308f1706d435666fe49"
+    },
+    {
+      "name": "boost-explicit.stdout.log",
+      "bytes": 39129,
+      "sha256": "e8c693c8c579251d9f006012c0c16d45706ddd006dc027c8ae3976dbea73d900"
+    },
+    {
+      "name": "boost-explicit.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "name": "loader-explicit.stdout.log",
+      "bytes": 2148,
+      "sha256": "52d50a0bf60ab844178bdf48d5ba2d7bd144091a970188fad271204283a9e46d"
+    },
+    {
+      "name": "loader-explicit.stderr.log",
+      "bytes": 370,
+      "sha256": "2c9df83654cf880b9e3475142473b6c6255b65b84f817aa5b8e1c23ad8fba8f1"
+    },
+    {
+      "name": "loader-explicit-terminal.json",
+      "bytes": 72,
+      "sha256": "9fafb04034c5e7d7329e537fba61d4db946e789ab0e9d597a725844740380b61"
+    },
+    {
+      "name": "wheel-explicit.stdout.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "name": "wheel-explicit.stderr.log",
+      "bytes": 98130,
+      "sha256": "e9b93ed8c7840092b47c943ecf31a807b47b2ca05ca135bfbd495a3132ac0ea9"
+    },
+    {
+      "name": "wheel-explicit-terminal.json",
+      "bytes": 119,
+      "sha256": "883b772f66f8c60d06e5b82bc8a0c899e20d58cadcc827215196d13ddf5cfa91"
+    },
+    {
+      "name": "build-boost-explicit.cmd",
+      "bytes": 735,
+      "sha256": "028ad6a95107052e22f307ce450ed357a963b2852d053d31b70842901fc79742"
+    },
+    {
+      "name": "build-loader-explicit.cmd",
+      "bytes": 1015,
+      "sha256": "f074dcf6b45444f44410d810e8acc7ef965db8a5a19dc5c97d8eda53bc077dab"
+    },
+    {
+      "name": "build-wheel-explicit.cmd",
+      "bytes": 1588,
+      "sha256": "cbb583febe1ff53c639f159153364b79533d58950301bc9d106dd70bfb9ff8af"
+    },
+    {
+      "name": "msvc-setup.cmd",
+      "bytes": 147,
+      "sha256": "d17fe9a6d383ec5105ec5b7f40bc32eaee4bdc6d1be4329329a8691cbb4caaa9"
+    },
+    {
+      "name": "explicit-project-config.jam",
+      "bytes": 289,
+      "sha256": "9d8fb19038fa85e9a6e7d3262d426c0f3a5a83645e8595e6768fa44d01f0b0e3"
+    }
+  ],
+  "boost_exit_note": "worker handle is gone and explicit stdout reports successful libraries; no direct terminal exit-code receipt was captured for this first explicit Boost stage",
+  "dialog_cause": "exact app-picker launch unproven; retained Boost config identified msvc-6.0 and nonexistent setup; explicit msvc-14.3 x64 succeeded",
+  "source_files_edited": false
+}

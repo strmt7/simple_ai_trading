@@ -1,5 +1,10 @@
 # Accelerator readiness: measured capability, not a hardware assumption
 
+Later same-day update: [gpu-runtime.md](gpu-runtime.md) records the successful
+OpenCL wheel, verified application launcher and synthetic profiles. Its speed
+measurements are provisional because competing workstation load was not
+recorded. The section below preserves the earlier base-runtime observation.
+
 Observed September 4, 2026, from the clean `bbc1e943` research runtime. This is
 a local capability probe using one synthetic tree update, not market training
 or evidence of financial uplift.
