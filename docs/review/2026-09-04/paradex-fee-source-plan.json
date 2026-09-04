@@ -1,0 +1,28 @@
+{
+  "schema_version": "paradex-fee-source-plan-v1",
+  "frozen_at_utc": "2026-09-04T23:27:53Z",
+  "base_head": "88a90521bed217a038e283d70232ba56a384d9bd",
+  "implementation_sha256": "797fade28b061caf97330f4233ee379b6956fb0abf89c9362a627195f256b6b0",
+  "output_root": "docs/review/2026-09-04/paradex-fee-source",
+  "requests": [
+    {"Name": "fees", "Url": "https://docs.paradex.trade/trading/trading-fees.md"},
+    {"Name": "profiles", "Url": "https://docs.paradex.trade/trading/trader-profiles.md"}
+  ],
+  "deduplication": "Neither selected original URL nor its Markdown suffix had a retained source/contract/journal/prose match in the scoped docs search before capture. No funding-data URL is requested.",
+  "selection": "Official documentation search discovered fee and order-classification pages. The already retained provider guidance documents Markdown suffix support. Search snippets are discovery, not fee evidence.",
+  "admitted_format": "HTTP 200 UTF-8 Markdown for each exact page; HTML, binary, redirects and errors terminalize the source without alias or retry.",
+  "byte_ceiling_per_request": 262144,
+  "deadline_seconds_per_request": 30,
+  "maximum_requests": 2,
+  "retry_or_redirect_count": 0,
+  "questions": [
+    "Which fees apply to standard API and documented interactive API orders?",
+    "What submission, cancellation, rate-limit, classification-loss and fill-dependent discount conditions accompany lower fees?",
+    "Which facts can guide a future separately qualified execution design without claiming observed commissions or changing the consumed funding study?"
+  ],
+  "decision": "Bind source facts and unresolved effective-date/account questions. Do not authenticate, request tokens, submit or cancel orders, change a profile or fee payment setting, acquire or stake tokens, obtain books, or recompute promotion on the consumed funding population.",
+  "account_requests": 0,
+  "credentials_used": false,
+  "protected_capture_access": false,
+  "historical_result_changes": false
+}

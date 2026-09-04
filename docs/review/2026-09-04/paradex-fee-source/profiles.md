@@ -1,0 +1,77 @@
+> For clean Markdown of any page, append .md to the page URL.
+> For a complete documentation index, see https://docs.paradex.trade/llms.txt.
+> For AI client integration (Claude Code, Cursor, etc.), connect to the MCP server at https://docs.paradex.trade/_mcp/server.
+
+# Retail and Pro Orders
+
+Paradex classifies each order as either a **Retail Order** or a **Pro Order**.
+
+This classification is based on how the order is submitted, not on a permanent user profile. It determines speed bumps, rate limits, fee eligibility, queue priority, and access to [Retail Price Improvement](/trading/rpi) liquidity.
+
+## Overview
+
+|                               | Retail Orders                 | Pro Orders          |
+| ----------------------------- | ----------------------------- | ------------------- |
+| Description                   | Protected orders              | Standard API orders |
+| Intended flow                 | UI and interactive API orders | Standard API orders |
+| Order submission speed bump   | 300ms                         | None                |
+| Order cancellation speed bump | 300ms                         | None                |
+| Rate limit per second         | 3 orders / sec                | 800 orders / sec    |
+| Rate limit per minute         | 30 orders / min               | 17,250 orders / min |
+| Rate limit per hour           | 300 orders / hr               | —                   |
+| Rate limit per 24 hours       | 1,000 orders / 24 hrs         | —                   |
+| Retail fee eligibility        | ✅                             | -                   |
+| RPI liquidity access          | ✅                             | -                   |
+| Queue priority                | ✅ At each price level         | -                   |
+| Default API behavior          | -                             | ✅                   |
+
+## Retail Orders
+
+Retail Orders are protected orders for UI traders and interactive API users. They are subject to speed bumps and lower rate limits. In return, they qualify for [Retail fees](/trading/trading-fees), queue priority, and access to [RPI](/trading/rpi) liquidity.
+
+### Submitting Retail Orders Through the API
+
+An order is classified as a Retail Order when it is submitted through the Paradex web interface or through the API using an interactive JWT token.
+
+To submit a Retail Order through the API, request a JWT token using the `token_usage=interactive` query parameter:
+
+```bash
+POST /v1/auth?token_usage=interactive
+```
+
+Orders submitted with an interactive token are classified as Retail Orders. Orders submitted without an interactive token are classified as Pro Orders by default.
+
+See the [Get JWT](/api/prod/auth/get-jwt) endpoint for details.
+
+### Retail Rate Limits
+
+Retail Orders are subject to Retail rate limits.
+
+If an account exceeds Retail rate limits, the account automatically switches to Pro Order behavior and loses access to RPI liquidity.
+
+### Relationship to Retail Price Improvement
+
+[Retail Price Improvement](/trading/rpi) is available only to Retail Orders. RPI orders are posted by liquidity providers and are only eligible to match with Retail Orders. They are not accessible to Pro Orders or standard API flow.
+
+This allows liquidity providers to quote more competitively for Retail Orders because Retail Orders are speed bumped, rate limited, and separated from latency sensitive API flow.
+
+## Pro Orders
+
+Pro Orders are standard API orders designed for latency sensitive, programmatic, and high throughput trading. They use higher API rate limits and bypass the 300ms Retail speed bumps. In exchange, Pro Orders use the Pro fee schedule and do not receive Retail specific benefits, including Retail fees, queue priority, and RPI liquidity.
+
+By default, API orders are classified as Pro Orders.
+
+### FastFills Discount for Pro Orders
+
+[FastFills](/trading/fastfills) is designed to incentivize Pro Orders to take passive Retail Order liquidity. When a Pro Order matches with a passive Retail Order, the Pro trader receives a FastFills fee discount. This improves fill speed for Retail Orders while giving API traders a lower execution cost when interacting with passive Retail liquidity.
+
+Qualifying fills are identified with the `fastfill` flag in fill responses.
+
+## Examples
+
+| Example                                           | Classification     | Reason                                              |
+| ------------------------------------------------- | ------------------ | --------------------------------------------------- |
+| Order submitted through the Paradex web interface | Retail Order       | UI orders are treated as Retail Orders              |
+| API order submitted with a standard JWT token     | Pro Order          | API orders default to Pro Orders                    |
+| API order submitted with an interactive JWT token | Retail Order       | Interactive JWT orders are treated as Retail Orders |
+| Account exceeds Retail rate limits                | Pro Order behavior | Account loses Retail Order treatment and RPI access |

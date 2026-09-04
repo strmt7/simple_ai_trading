@@ -4096,6 +4096,10 @@
         {
           "path": "docs/review/2026-09-04/paradex-index-study/result.json",
           "result_sha256": "f2aa72d9d65d28bdd0f012deb85d2e65c5085d7c62ab9c69aee916401b6f99f9"
+        },
+        {
+          "path": "docs/review/2026-09-04/paradex-fee-source/review.json",
+          "result_sha256": "3ba0d1bb7bb025848fd7e3dfb8974633d28b782924be12df199ce5ee85779816"
         }
       ],
       "current_status": "The distinct August 27 00:00 through September 4 16:00 2026 nominal population is consumed, including the frozen five-minute post-boundary windows. All 84 public responses passed source gates (1,308,306 bytes): 27 index boundaries and one Binance history per BTC ETH SOL asset, 78 fixed-base intervals and 13/6/7 chronological roles. Training selected short Paradex and long Binance for each asset. All nine par-valued gross role funding spreads were positive at 0.7858-7.5875 bips, but each was negative after even the frozen 20-bip execution allowance alone. No survivor passed the full unchanged 80-bip reserves plus 10-percent-annual total-two-leg capital stress. These are stress diagnostics, not actual fees, converted realized account PnL, current profit or a family-wide negative-EV proof. No basis books accounts orders or protected data.",
@@ -4117,7 +4121,8 @@
       "retry_trigger": "a_distinct_prospectively_frozen_nonoverlapping_population_or_an_independently_known_material_Paradex_API_cadence_pagination_or_architecture_change_with_all_pages_total_bytes_rows_alignment_roles_orientation_and_costs_frozen_before_access_followed_by_exact_index_and_finite_size_confirmation_for_any_survivor",
       "venue_scope": "Binance_USDT_perpetuals_versus_Paradex_USDC_settled_BTC_ETH_SOL_perpetuals",
       "prior_90_bin_source_failure_status": "terminal_exact_90_bin_population_source_incomplete_before_economics_all_three_Paradex_histories_hit_5000_rows_and_returned_continuation_cursors_frozen_byte_ceilings_also_failed_no_funding_values_were_viewed_or_used_no_pagination_adaptation_basis_books_accounts_credentials_orders_or_funds_public_profit_floor_zero_not_accepted_stable_or_deployment_ready",
-      "index_boundary_study_status": "The distinct August 27 00:00 through September 4 16:00 2026 nominal population is consumed, including the frozen five-minute post-boundary windows. All 84 public responses passed source gates (1,308,306 bytes): 27 index boundaries and one Binance history per BTC ETH SOL asset, 78 fixed-base intervals and 13/6/7 chronological roles. Training selected short Paradex and long Binance for each asset. All nine par-valued gross role funding spreads were positive at 0.7858-7.5875 bips, but each was negative after even the frozen 20-bip execution allowance alone. No survivor passed the full unchanged 80-bip reserves plus 10-percent-annual total-two-leg capital stress. These are stress diagnostics, not actual fees, converted realized account PnL, current profit or a family-wide negative-EV proof. No basis books accounts orders or protected data."
+      "index_boundary_study_status": "The distinct August 27 00:00 through September 4 16:00 2026 nominal population is consumed, including the frozen five-minute post-boundary windows. All 84 public responses passed source gates (1,308,306 bytes): 27 index boundaries and one Binance history per BTC ETH SOL asset, 78 fixed-base intervals and 13/6/7 chronological roles. Training selected short Paradex and long Binance for each asset. All nine par-valued gross role funding spreads were positive at 0.7858-7.5875 bips, but each was negative after even the frozen 20-bip execution allowance alone. No survivor passed the full unchanged 80-bip reserves plus 10-percent-annual total-two-leg capital stress. These are stress diagnostics, not actual fees, converted realized account PnL, current profit or a family-wide negative-EV proof. No basis books accounts orders or protected data.",
+      "fee_route_source_status": "Two distinct official Markdown fee/classification sources were retained September 4, 2026. Standard API defaults Pro; documented Retail zero trading fees depend on per-order interactive classification, 300-ms submission/cancellation delays and rate caps. Intended workflow and account eligibility, actual commissions and all incremental execution costs remain unqualified. This is source-only execution-design evidence, not a new terminal market observation or an effective-dated fee-change trigger. Preserve both consumed funding populations, their gates and exact retry conditions; never reprice them into new validation or manufacture volume for discounts."
     },
     {
       "priority_rank": 60,
@@ -4320,7 +4325,7 @@
       ]
     }
   ],
-  "result_sha256": "b3aee5cabed7e9a52412b51e966d57072fad3de8db8cdb6700a6acdc7bd42b20",
+  "result_sha256": "201db0929e7f061823bc0ed02e76597b5f68436ae82ceaccfe9921dde9c5c61d",
   "schema_version": "structural-edge-priority-registry-v1",
   "terminal_do_not_repeat": [
     {
@@ -5270,6 +5275,6 @@
       "canonical_result_sha256": "f2aa72d9d65d28bdd0f012deb85d2e65c5085d7c62ab9c69aee916401b6f99f9"
     }
   ],
-  "updated_at_utc": "2026-09-04T23:14:46.412387Z",
+  "updated_at_utc": "2026-09-04T23:39:01.127871Z",
   "usage_rule": "advance_the_highest_ranked_hypothesis_whose_retry_trigger_is_satisfied_otherwise_do_not_repeat_a_blocked_or_terminal_screen"
 }
