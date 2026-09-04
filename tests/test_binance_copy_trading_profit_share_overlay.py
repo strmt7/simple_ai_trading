@@ -58,7 +58,6 @@ def test_copy_trading_rendered_source_contract_reconstructs() -> None:
 
 def test_realized_profit_share_overlay_is_narrow_and_fail_closed() -> None:
     artifact = json.loads(ARTIFACT.read_text(encoding="ascii"))
-    registry = json.loads(REGISTRY.read_text(encoding="utf-8"))
 
     assert _self_hash(artifact, "result_sha256") == artifact["result_sha256"]
     decision = artifact["adjudication"]

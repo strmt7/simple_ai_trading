@@ -31,3 +31,5 @@ updates:
           - torch
           - onnxruntime-directml
           - torchvision
+          - polymarket-client
+          - py-clob-client-v2
