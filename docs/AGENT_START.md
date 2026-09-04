@@ -6,6 +6,11 @@ operating contract. Historical handoff text is archived under
 
 ## Current Truth
 
+CPI annual/monthly markets do not yet have a proved exact cross-market map:
+seasonal adjustment, first-release precision and fallback vintages matter.
+See `review/2026-09-04/inflation-mapping.md` before this rank-31 subquestion.
+Both exact event captures are consumed; prices were not screened.
+
 Paradex fee-route terms are now source-bound: lower nominal fees require
 qualification of the actual order route and incremental execution costs.
 See `review/2026-09-04/paradex-fee-routes.md`. This source-only addition leaves
