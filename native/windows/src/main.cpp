@@ -979,7 +979,7 @@ class MainWindow {
             int x = plot.left + (plot.right - plot.left) * line / 6;
             fill_rect(dc, RECT{x, plot.top, x + scale(1), plot.bottom}, RGB(42, 55, 62));
         }
-        draw_text(dc, L"No verified run yet", plot, body_font_, kMuted, DT_CENTER | DT_VCENTER | DT_SINGLELINE);
+        draw_text(dc, L"Performance series not loaded", plot, body_font_, kMuted, DT_CENTER | DT_VCENTER | DT_SINGLELINE);
         draw_text(dc, L"UTC time", RECT{plot.left, plot.bottom + scale(8), plot.right, chart.bottom - scale(6)}, small_font_, kSubtle,
                   DT_CENTER | DT_SINGLELINE);
 
@@ -1016,7 +1016,7 @@ class MainWindow {
                       DT_LEFT | DT_SINGLELINE | DT_END_ELLIPSIS);
         }
         RECT empty{positions.left + scale(20), header_top + scale(34), positions.right - scale(20), positions.bottom - scale(12)};
-        draw_text(dc, L"No bot-owned positions", empty, body_font_, kMuted, DT_CENTER | DT_VCENTER | DT_SINGLELINE);
+        draw_text(dc, L"Position details not loaded", empty, body_font_, kMuted, DT_CENTER | DT_VCENTER | DT_SINGLELINE);
 
         draw_text(dc, L"Binance mode", RECT{main_left, settings_top + scale(18), main_left + scale(80), settings_top + scale(44)}, small_font_, kMuted,
                    DT_LEFT | DT_VCENTER | DT_SINGLELINE);

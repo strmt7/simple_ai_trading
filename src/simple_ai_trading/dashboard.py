@@ -22,13 +22,29 @@ def _section(title: str, lines: list[str], *, width: int) -> str:
     inner = max(28, width - 2)
     output = [title]
     for line in lines or [""]:
-        wrapped = textwrap.wrap(str(line), width=inner, break_long_words=False, break_on_hyphens=False) or [""]
+        wrapped = textwrap.wrap(
+            str(line), width=inner, break_long_words=False, break_on_hyphens=False
+        ) or [""]
         output.extend(f"  {item}" for item in wrapped)
     return "\n".join(output)
 
 
 def _runtime_lines(runtime: dict[str, Any]) -> list[str]:
-    environment = "demo" if runtime.get("demo") else ("testnet" if runtime.get("testnet") else "mainnet")
+    demo, testnet = runtime.get("demo"), runtime.get("testnet")
+    if any(
+        value is not None and not isinstance(value, bool) for value in (demo, testnet)
+    ):
+        environment = "unknown"
+    elif demo is True and testnet is True:
+        environment = "conflicting"
+    elif demo is True:
+        environment = "demo"
+    elif testnet is True:
+        environment = "testnet"
+    elif demo is False and testnet is False:
+        environment = "mainnet"
+    else:
+        environment = "unknown"
     return [
         f"{runtime.get('symbol', '-')}  interval={runtime.get('interval', '-')}  market={runtime.get('market_type', '-')}",
         f"environment={environment}  testnet={runtime.get('testnet', '-')}  demo={runtime.get('demo', '-')}",
@@ -51,7 +67,9 @@ def _strategy_lines(strategy: dict[str, Any]) -> list[str]:
 
 
 def _artifact_lines(artifacts: list[str]) -> list[str]:
-    return (artifacts[:3] if artifacts else []) or ["No recent artifacts found under data/."]
+    return (artifacts[:3] if artifacts else []) or [
+        "No recent artifacts found under data/."
+    ]
 
 
 def _account_lines(lines: list[str]) -> list[str]:
@@ -60,7 +78,11 @@ def _account_lines(lines: list[str]) -> list[str]:
 
 def render_dashboard(snapshot: DashboardSnapshot, *, width: int = 72) -> str:
     sections = [
-        _section("Session", [*_runtime_lines(snapshot.runtime), *snapshot.notes[:1]], width=width),
+        _section(
+            "Session",
+            [*_runtime_lines(snapshot.runtime), *snapshot.notes[:1]],
+            width=width,
+        ),
         _section("Model", _strategy_lines(snapshot.strategy), width=width),
         _section("Account", _account_lines(snapshot.account_lines), width=width),
         _section("Recent artifacts", _artifact_lines(snapshot.artifacts), width=width),
@@ -78,6 +100,10 @@ def load_artifact_preview(path: Path) -> str:
     command = payload.get("command", "json")
     timestamp = payload.get("timestamp", "-")
     runtime = payload.get("runtime", {})
+    if not isinstance(runtime, dict):
+        return f"{path.name} [invalid runtime]"
     symbol = payload.get("symbol") or runtime.get("symbol", "-")
     market = payload.get("market") or runtime.get("market_type", "-")
-    return f"{path.name} command={command} symbol={symbol} market={market} ts={timestamp}"
+    return (
+        f"{path.name} command={command} symbol={symbol} market={market} ts={timestamp}"
+    )

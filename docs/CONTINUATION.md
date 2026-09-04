@@ -10,6 +10,14 @@ durability-audit SHA-256 is
 
 ## September 4 resumed review and USD1 campaign
 
+Whole-product reevaluation is explicitly requested: include research ideas,
+economics, plans, interfaces and architecture, not only code/security checks.
+Read `docs/review/2026-09-04/product-reassessment.md` for the first keep/change/
+investigate decisions and open coverage. The current corrective patch changes
+misleading native empty-state labels, console malformed-artifact/environment
+handling, and the optional Tornado pin from 6.5.7 to 6.5.8. It does not implement
+the proposed edge-centric interface or prove the whole repository reviewed.
+
 The paused USD1 source work is retained under adjudication
 `f3eaf05ff817dba843d992c643718f0b6f26fbd57bb5bfd15159522b0899114d`.
 The September 4 to October 2 campaign exists independently of the ended

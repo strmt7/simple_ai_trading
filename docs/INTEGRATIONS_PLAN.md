@@ -1,6 +1,16 @@
 # Integrations Plan
 
-Simple AI Trading now targets BTC, ETH, and SOL high-liquidity day trading on Binance testnet or Demo Trading. This replaces the old single-symbol spot-only integration plan and rejects non-major assets before data sync, research, or execution.
+Execution remains restricted to BTC, ETH, and SOL on Binance paper, testnet or
+Demo, with the independent Polymarket boundary disabled by default. That does
+not prohibit public unauthenticated structural-edge research on other assets
+or market types. Such research has no account, order, funding or execution
+authority. The earlier blanket ban on non-major research was inconsistent with
+the current registry and `AGENTS.md`.
+
+The September 4 whole-product reassessment is in
+`docs/review/2026-09-04/product-reassessment.md`. Integration priority is
+mechanism-specific after-cost evidence and operator visibility, not adding
+providers or model features without an economic question.
 
 ## Active Integrations
 
@@ -25,7 +35,8 @@ Simple AI Trading now targets BTC, ETH, and SOL high-liquidity day trading on Bi
 
 - Mainnet signed execution.
 - Execution support outside the hard BTC/ETH/SOL base-asset scope.
-- Margin/staking/convert products.
+- Account/state-changing margin, staking or convert operations (public read-only
+  mechanism research remains in scope).
 - Unverified manual or third-party positions; only provably bot-owned exposure may be managed.
 
 All future integrations must preserve CLI/Windows app parity and fail closed when liquidity, position state, or account state cannot be verified.
