@@ -7,6 +7,7 @@ uv.lock text eol=lf
 docs/review/2026-09-04/** text eol=lf
 docs/review/2026-09-04/inverse-clearing-source.pdf binary -eol
 docs/review/2026-09-04/inverse-clearing-source-journal.jsonl binary -eol
+docs/review/2026-09-04/spot-funding-sources/** binary -eol
 docs/review/2026-09-04/gpu-build-evidence/** binary -eol
 docs/review/2026-09-04/gpu-*.json binary -eol
 docs/review/2026-09-04/gpu-*.jsonl binary -eol

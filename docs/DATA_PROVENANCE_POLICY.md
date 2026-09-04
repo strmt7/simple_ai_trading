@@ -5,6 +5,15 @@ results, or generated performance charts as optimization evidence.
 
 ## Rules
 
+September 4 review-session clarification: exact public, unauthenticated source
+responses already consumed by a frozen research contract may be preserved as
+immutable, hash-verified publication sidecars under `docs/review/2026-09-04/`.
+This exception supports offline reconstruction without refetching one-use
+sources; it does not permit account/credential data, invented market evidence,
+rewriting original results or treating exploratory calculations as performance
+proof. Keep operational caches under ignored `data/`; preserve original source
+paths in lineage and document the published byte-identical mapping.
+
 - No tracked files under `data/`.
 - No committed optimization result JSON/SVG/CSV unless it is generated from
   exchange-sourced candles or signed exchange/account evidence and includes

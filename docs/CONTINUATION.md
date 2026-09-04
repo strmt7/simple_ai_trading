@@ -10,6 +10,15 @@ durability-audit SHA-256 is
 
 ## September 4 resumed review and USD1 campaign
 
+The latest zero-request audit corrected fixed-base funding cash-flow weighting
+for all 17 pairs and 51 original roles of the broad spot/perpetual screen.
+BTC/ETH/SOL each retain a negative role after the unchanged 32-bp execution
+sensitivity, before capital cost. BNB/PYTH/SUI have positive role subtotals but
+only about 0.21%-0.49% weakest-role annual capital-cost headroom per reference
+leg, before missing basis/execution/risk terms. This is exploratory consumed
+history, not a qualified edge or a new sample. See
+`review/2026-09-04/spot-funding-cashflow-review.md`; preserve exact retry gates.
+
 Current R&D routing: `review/2026-09-04/economic-rd-rounds.md` separates
 mechanism accounting, source/data gaps, prospective baselines, model uplift
 and integration. The inverse-collateral review adds a research-only Decimal

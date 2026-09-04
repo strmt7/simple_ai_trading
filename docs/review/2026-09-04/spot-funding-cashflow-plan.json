@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "classification": "exploratory_offline_accounting_audit_of_consumed_history",
+  "question": "How do fixed-base settlement cash flows differ from summed funding rates across every original symbol and role, and what capital-cost break-even follows under the unchanged 32-bp execution sensitivity?",
+  "selection": "All 17 original selected symbols and all three original role endpoints. No winner selection, resampling, alternate holding period, market request, protected data, bootstrap rerun or promotion.",
+  "prior_outcome_access": "The old family failure and BTC role summary were inspected before this plan. This is explicitly not a prospective independent validation.",
+  "input_result": {"path": "docs/model-research/action-value/binance-broad-crypto-funding-carry-preflight-v1-2026-08-27.json", "result_sha256": "095009a36a5c6a8a5a2dfdfb3e57ebe6183721bb84600518552ccf6d463617c8"},
+  "input_contract": {"path": "docs/model-research/action-value/binance-broad-crypto-funding-carry-preflight-contract-v1.json", "contract_sha256": "7a2c34c4f9c0d44bcd6bed4564d33cda89831ab9a60341ac7ca23cc452231ed1"},
+  "raw_scope": "Only the 17 funding-history responses named and hash-bound by the original result; do not open its top books, selection snapshots or any other outcomes.",
+  "accounting": {
+    "quantity": "One base unit held fixed per role; the notional changes with each mark.",
+    "funding_cash_quote": "sum(fundingRate_t * markPrice_t) for the short; no funding reinvestment.",
+    "normalization_reference": "The immediately preceding retained funding mark before each original role. It is a scale reference, not an executable entry price.",
+    "duration": "Original role duration_days, unchanged; not a newly asserted exact holding duration.",
+    "execution_sensitivity": "Original 32 bps deducted once per original role on the reference notional, not measured commission.",
+    "capital_cost": "Original 1000 annual bps on each of two reference-notional legs retained as a labeled stress; derive break-even annual bps per leg algebraically, without changing any gate.",
+    "omissions": "Entry/exit basis, executable spot prices, actual commissions, spread/depth, custody, mark-to-market liquidity, liquidation, capital variation, taxes, and account eligibility. Positive funding cash is not total strategy PnL."
+  },
+  "validation": "Require original self-hashes and raw hashes, exact symbol identity, unique ascending integer timestamps, finite positive marks, finite rates, original role row count/endpoints and reconstructed original unweighted gross rate sums. Stop on mismatch without rerun or request.",
+  "outcome": "One exclusive output and durable journal. Preserve all old implementations/results and canonical status; no model or edge acceptance may follow. This audit can identify a better specification or establish that even the simpler cash-flow gate fails."
+}
