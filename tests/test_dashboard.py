@@ -1,4 +1,8 @@
-﻿from __future__ import annotations
+from __future__ import annotations
+
+import json
+
+import pytest
 
 from simple_ai_trading.dashboard import (
     DashboardSnapshot,
@@ -48,8 +52,36 @@ def test_render_dashboard_includes_all_sections() -> None:
 
 def test_load_artifact_preview_handles_unreadable_and_valid_json(tmp_path) -> None:
     valid = tmp_path / "valid.json"
-    valid.write_text('{"command":"backtest","timestamp":123,"runtime":{"symbol":"BTCUSDC","market_type":"spot"}}', encoding="utf-8")
+    valid.write_text(
+        '{"command":"backtest","timestamp":123,"runtime":{"symbol":"BTCUSDC","market_type":"spot"}}',
+        encoding="utf-8",
+    )
     invalid = tmp_path / "invalid.json"
     invalid.write_text("{bad", encoding="utf-8")
     assert load_artifact_preview(valid).startswith("valid.json command=backtest")
     assert load_artifact_preview(invalid) == "invalid.json [unreadable]"
+
+
+@pytest.mark.parametrize("runtime", [None, [], "unexpected", 123])
+def test_artifact_preview_rejects_nonobject_runtime(tmp_path, runtime) -> None:
+    path = tmp_path / "malformed.json"
+    path.write_text(json.dumps({"runtime": runtime}), encoding="utf-8")
+    assert load_artifact_preview(path) == "malformed.json [invalid runtime]"
+
+
+@pytest.mark.parametrize(
+    ("runtime", "environment"),
+    [
+        ({}, "unknown"),
+        ({"testnet": False}, "unknown"),
+        ({"testnet": "false", "demo": False}, "unknown"),
+        ({"testnet": 1, "demo": False}, "unknown"),
+        ({"testnet": True, "demo": True}, "conflicting"),
+        ({"testnet": True}, "testnet"),
+        ({"demo": True}, "demo"),
+        ({"testnet": False, "demo": False}, "mainnet"),
+    ],
+)
+def test_dashboard_does_not_invent_environment(runtime, environment) -> None:
+    snapshot = DashboardSnapshot(runtime, {}, [], [], [])
+    assert f"environment={environment} " in render_dashboard(snapshot)
