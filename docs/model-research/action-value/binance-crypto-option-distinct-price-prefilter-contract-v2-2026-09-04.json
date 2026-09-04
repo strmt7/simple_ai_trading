@@ -1,0 +1,64 @@
+{
+  "schema_version": "binance-crypto-option-distinct-price-prefilter-contract-v2",
+  "frozen_at_utc": "2026-09-04T18:45:36Z",
+  "purpose": "test only the 354 active BTC ETH and SOL option symbols not covered by any consumed population for a direction-independent terminal option plus opposite perpetual lower bound",
+  "population_result": {
+    "path": "docs/model-research/action-value/binance-crypto-option-population-gate-result-v2-2026-09-04.json",
+    "result_sha256": "8c10dd5d039bb0753207e86ee14e6761b46f160cf21a2114ba7fd6470632972c"
+  },
+  "population_rule": {
+    "distinct_unscreened_symbol_count": 354,
+    "distinct_unscreened_symbols_sha256": "c068e07dfaeb5a600a686b6862399fe25d43b4dfe93521ef6dd620d2318157f0",
+    "screen_no_symbol_outside_the_hash_bound_set": true,
+    "require_current_trading_crypto_option_usdt_metadata_and_positive_unit": true
+  },
+  "source_results": {
+    "option_tickers": {
+      "contract_path": "docs/model-research/action-value/binance-crypto-option-distinct-ticker-source-contract-v2-2026-09-04.json",
+      "contract_sha256": "b99d763b3db26b4168bde76d34241fd80709f77d89df51391f0bb5649b529138",
+      "result_path": "docs/model-research/action-value/binance-crypto-option-distinct-ticker-source-result-v2-2026-09-04.json"
+    },
+    "futures_books": {
+      "contract_path": "docs/model-research/action-value/binance-crypto-option-distinct-futures-book-source-contract-v2-2026-09-04.json",
+      "contract_sha256": "a1d42e3e9f9c78f4d50a5df84c22bdc7b879dfe133c5370d3af2c8e9e42d2c4f",
+      "result_path": "docs/model-research/action-value/binance-crypto-option-distinct-futures-book-source-result-v2-2026-09-04.json"
+    }
+  },
+  "economic_gate": {
+    "call_gross_terminal_floor_per_underlying_unit": "perpetual_bid_minus_strike_minus_option_ask",
+    "put_gross_terminal_floor_per_underlying_unit": "strike_minus_perpetual_ask_minus_option_ask",
+    "fixed_stress_bps": "33.5",
+    "fixed_stress_basis": "perpetual_entry_notional",
+    "required_positive_option_ask": true,
+    "required_positive_perpetual_entry": true,
+    "survivor_rule": "gross_terminal_floor_minus_fixed_stress_strictly_greater_than_zero"
+  },
+  "decision_rules": [
+    "Missing current metadata, option ticker, strike agreement, or BTCUSDT ETHUSDT SOLUSDT perpetual book fails closed.",
+    "Displayed ticker presence does not establish executable quantity.",
+    "If no row survives the 33.5-bip fixed rejection stress, terminalize only this exact 354-symbol population and stop without depth, funding, fee-account, credential, order, or fund access.",
+    "If any row survives, freeze a separate full cost, tick, funding, settlement, and quantity stress before any per-symbol depth request.",
+    "Never accept or deploy an edge from this prefilter alone."
+  ],
+  "capture": {
+    "public_unauthenticated_read_only_requests": 2,
+    "maximum_request_start_skew_ms": 10000,
+    "no_alias_retry": true,
+    "no_polling": true
+  },
+  "authority": {
+    "account_state_accessed": false,
+    "authenticated_requests": 0,
+    "credentials_used": false,
+    "funds_used": false,
+    "orders_quotes_transfers_or_wallet_actions": 0,
+    "paper_or_live_trading_authority": false,
+    "protected_capture_touched": false
+  },
+  "implementation": {
+    "path": "tools/adjudicate_binance_crypto_option_distinct_price_prefilter_v2.py",
+    "sha256": "d766afac6dfeba2fb447b95e56bac824a0db257b33444ed83041730900be57b7"
+  },
+  "output_path": "docs/model-research/action-value/binance-crypto-option-distinct-price-prefilter-result-v2-2026-09-04.json",
+  "contract_sha256": "7990c1d0ff3f37fd031e190921eb6bd07075a0495725acf121730e5ba634e0de"
+}

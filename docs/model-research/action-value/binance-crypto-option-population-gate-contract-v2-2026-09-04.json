@@ -1,0 +1,47 @@
+{
+  "schema_version": "binance-crypto-option-population-gate-contract-v2",
+  "frozen_at_utc": "2026-09-04T18:40:01Z",
+  "purpose": "determine with one non-polling metadata request whether rank 47 has any distinct active BTC ETH or SOL option population after the consumed 2026-09-01 late-ticker delta before spending requests on prices or books",
+  "source_contract": {
+    "path": "docs/model-research/action-value/binance-crypto-option-population-gate-source-contract-v2-2026-09-04.json",
+    "sha256": "b41ca8937b8cfa0275bda15a97d40879f19df515e544862185dd1057e28ea305"
+  },
+  "baseline": {
+    "path": "data/binance-stock-option-inventory-v1/raw/options-exchange-info.raw",
+    "sha256": "88db31aba07967eb9fcd6dd3c93b409e97b835365df9fd001590f53c6f3d3e23",
+    "captured_at_utc": "2026-08-31T17:29:52.716Z",
+    "expected_eligible_symbol_count": 1576
+  },
+  "population_rule": {
+    "allowed_underlyings": [
+      "BTCUSDT",
+      "ETHUSDT",
+      "SOLUSDT"
+    ],
+    "required_status": "TRADING",
+    "required_contract_type": "CRYPTO_OPTIONS",
+    "required_underlying_type": "CRYPTO",
+    "required_quote_asset": "USDT",
+    "required_positive_unit": true,
+    "new_symbol_definition": "current eligible symbol absent from the hash-bound baseline eligible symbol set",
+    "removed_or_expired_symbols_have_no_economic_credit": true
+  },
+  "decision_rules": [
+    "If the current eligible set has no new symbols, terminalize only this exact observation and stop without ticker, futures book, depth, funding, fee, account, credential, order, or fund access.",
+    "If one or more new symbols exist, retain their complete metadata and freeze a separate two-request all-option-ticker plus all-futures-book prefilter before economic access.",
+    "The later price prefilter must use the displayed positive option ask and the correct side-specific perpetual entry, then require a positive terminal floor after the already frozen 33.5-bip fixed fee and expiry-basis stress.",
+    "Never infer executable quantity from exchangeInfo or ticker presence, and never request per-symbol depth unless a later fixed-stress row survives.",
+    "Never use credentials, access accounts, or place orders under this contract."
+  ],
+  "authority": {
+    "account_requests": 0,
+    "credentials_used": false,
+    "funds_used": false,
+    "orders_or_transactions": 0,
+    "protected_capture_touched": false,
+    "public_unauthenticated_read_only_requests": 1,
+    "signed_requests": 0,
+    "trading_authority": false
+  },
+  "contract_sha256": "36f556f034dffa1f73d87283b8ab6cd8f01ccf561c244e39290a49df4456a415"
+}

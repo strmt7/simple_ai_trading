@@ -3609,12 +3609,20 @@
         {
           "path": "docs/model-research/action-value/binance-crypto-option-late-ticker-delta-result-v1-2026-09-01.json",
           "result_sha256": "b425fd356f5033e24313c5dbb166d381c045a4e794107a791acd49ed61992ab2"
+        },
+        {
+          "path": "docs/model-research/action-value/binance-crypto-option-population-gate-result-v2-2026-09-04.json",
+          "result_sha256": "8c10dd5d039bb0753207e86ee14e6761b46f160cf21a2114ba7fd6470632972c"
+        },
+        {
+          "path": "docs/model-research/action-value/binance-crypto-option-distinct-price-prefilter-result-v2-2026-09-04.json",
+          "result_sha256": "fbd10642d35ed469b7cc7f5554681d90d074be71fe718498738011af2fcb3b8e"
         }
       ],
-      "current_status": "unaccepted_direction_independent_long_crypto_option_plus_equal_opposite_USDT_perpetual_terminal_payoff_lower_bound_the_rank_47_later_population_trigger_was_satisfied_without_network_access_by_two_exact_BTC_261225_94000_call_and_put_symbols_present_in_the_retained_2026_08_31T22_44_19Z_all_options_ticker_but_absent_from_the_2026_08_31T17_29_50Z_complete_1576_symbol_exchangeInfo_baseline_the_zero_network_fixed_33_5_bip_screen_found_the_call_negative_17970_60_USDT_per_BTC_before_fixed_costs_and_the_put_missing_a_positive_displayed_ask_so_zero_rows_had_a_positive_complete_gross_terminal_floor_zero_survivors_zero_exchangeInfo_refresh_depth_funding_account_credential_order_or_fund_requests_not_an_edge_or_deployment_ready",
+      "current_status": "unaccepted_direction_independent_long_crypto_option_plus_equal_opposite_USDT_perpetual_terminal_payoff_lower_bound_the_prospectively_frozen_2026_09_04_population_gate_found_356_active_symbols_absent_from_the_1576_symbol_baseline_then_excluded_the_two_already_consumed_BTC_261225_94000_call_and_put_symbols_and_proved_zero_overlap_with_the_consumed_508_symbol_population_leaving_354_genuinely_unscreened_symbols_one_frozen_245ms_skew_two_request_price_prefilter_found_all_354_tickers_226_positive_entry_side_rows_one_gross_positive_BTC_260905_80500_put_at_11_10_USDT_per_BTC_but_zero_survivors_after_the_33_5_bip_fixed_stress_the_best_became_negative_255_455815_USDT_or_negative_32_1049826_bips_no_depth_funding_fee_account_credential_order_fund_or_protected_capture_access_not_an_edge_or_deployment_ready",
       "market_direction_forecast_required": false,
       "mechanism": "binance_long_crypto_option_opposite_USDT_perpetual_terminal_payoff_lower_bound",
-      "next_action": "do_not_repeat_rebuild_refresh_or_depth_capture_the_exhausted_1410_symbol_baseline_the_exact_508_symbol_August_31_delta_or_the_exact_two_symbol_late_ticker_delta_and_do_not_poll_within_the_same_UTC_day_reopen_only_for_a_later_distinct_active_option_population_after_2026_09_01T22_44_19Z_or_a_material_fee_settlement_tick_depth_funding_basis_or_capital_rule_change_or_an_independently_observed_nonpolling_displayed_terminal_floor_that_strictly_exceeds_every_frozen_cost_then_apply_the_same_rejection_first_sequence",
+      "next_action": "do_not_repeat_rebuild_refresh_reprice_or_depth_capture_the_exhausted_1410_symbol_baseline_the_exact_508_symbol_August_31_delta_the_exact_two_symbol_September_1_delta_or_the_exact_354_symbol_September_4_distinct_population_reopen_only_for_a_later_distinct_active_BTC_ETH_or_SOL_option_population_after_2026_09_04T18_49_36_306Z_or_a_material_fee_settlement_tick_depth_funding_expiry_basis_or_capital_rule_change_or_an_independently_observed_nonpolling_displayed_terminal_floor_strictly_above_every_applicable_cost_then_apply_the_same_rejection_first_sequence",
       "priority_rank": 47,
       "prohibited_shortcuts": [
         "calling_the_two_positive_gross_SOL_rows_after_cost_profit",
@@ -3626,7 +3634,8 @@
         "retesting_refreshing_or_subsetting_the_exact_508_symbol_August_31_delta_after_zero_gross_positive_rows",
         "refetching_exchangeInfo_tickers_or_books_for_the_exact_two_symbol_2026_09_01_late_ticker_delta_after_the_call_was_gross_negative_and_the_put_had_no_positive_displayed_ask",
         "calling_one_retained_snapshot_recurring_current_or_stable",
-        "using_credentials_accessing_accounts_or_placing_orders_without_separate_explicit_authority"
+        "using_credentials_accessing_accounts_or_placing_orders_without_separate_explicit_authority",
+        "calling_the_11_10_USDT_gross_BTC_260905_80500_put_row_an_edge_after_it_failed_the_frozen_33_5_bip_stress_by_255_455815_USDT_per_BTC"
       ],
       "retry_trigger": "new_distinct_active_BTC_ETH_or_SOL_option_population_or_material_option_fee_settlement_tick_depth_funding_expiry_basis_or_capital_rule_change_or_an_independently_observed_nonpolling_displayed_single_option_terminal_floor_strictly_above_every_applicable_cost",
       "venue_scope": "Binance_BTC_ETH_SOL_European_options_and_exact_matching_USDT_perpetuals"
@@ -4242,7 +4251,7 @@
       ]
     }
   ],
-  "result_sha256": "4ceb5de5af67264d50129ae2b44ee33e4ded59cdb3a32eef4ffe85459002e3ee",
+  "result_sha256": "51dba2cf9c5f61efa650cab4db66edc37189cd9aeb7ddfd97dbfe9fdd0e16698",
   "schema_version": "structural-edge-priority-registry-v1",
   "terminal_do_not_repeat": [
     {
@@ -5160,8 +5169,13 @@
       "family": "binance_Options_block_trade_API_atomic_vertical_or_four_leg_box_workaround_2026_09_01",
       "reason": "one_prospectively_frozen_exact_official_public_GET_retained_a_40487_byte_four_page_PDF_then_the_text_only_runner_failed_closed_on_non_UTF8_bytes_without_retry_complete_offline_extraction_and_visual_review_of_the_hash_bound_source_proved_POST_eapi_v1_block_order_create_accepts_a_mandatory_legs_LIST_but_explicitly_caps_it_at_Max_1_only_single_leg_supported_so_this_programmatic_endpoint_cannot_atomically_execute_a_two_leg_vertical_or_four_leg_box_stop_before_quotes_books_commissions_accounts_credentials_orders_funds_or_transactions_reopen_only_on_a_material_official_leg_count_or_atomicity_change_or_rank_37_existing_separately_authorized_account_gated_RFQ_trigger",
       "canonical_result_sha256": "31f0149202f997f0ba7015629d6c3df1e9f86b6580c5f98a34c024d2f3da7b6d"
+    },
+    {
+      "canonical_result_sha256": "fbd10642d35ed469b7cc7f5554681d90d074be71fe718498738011af2fcb3b8e",
+      "family": "binance_BTC_ETH_SOL_long_option_opposite_perpetual_exact_distinct_354_symbol_population_2026_09_04",
+      "reason": "the_prospectively_frozen_population_gate_found_356_symbols_absent_from_the_1576_symbol_baseline_then_source_bound_deduplication_removed_two_already_screened_symbols_and_proved_zero_overlap_with_the_consumed_508_symbol_population_leaving_354_genuinely_unscreened_active_BTC_ETH_SOL_options_one_frozen_two_request_ticker_and_side_specific_perpetual_book_prefilter_screened_all_354_with_245ms_start_skew_226_had_positive_entry_sides_and_only_BTC_260905_80500_P_had_a_positive_gross_floor_at_11_10_USDT_per_BTC_but_it_became_negative_255_455815_USDT_or_negative_32_1049826_bips_after_the_frozen_33_5_bip_fixed_stress_so_zero_survived_do_not_refetch_reprice_poll_request_depth_funding_fees_accounts_credentials_orders_or_funds_reopen_only_for_rank_47s_exact_later_population_or_material_economics_trigger"
     }
   ],
-  "updated_at_utc": "2026-09-04T18:20:00Z",
+  "updated_at_utc": "2026-09-04T18:52:41.444017Z",
   "usage_rule": "advance_the_highest_ranked_hypothesis_whose_retry_trigger_is_satisfied_otherwise_do_not_repeat_a_blocked_or_terminal_screen"
 }

@@ -1,12 +1,71 @@
 # Continue Development
 
-Current canonical status after the CXMT funding-cadence trigger gate:
-accepted edges 37, ranked hypotheses 65, terminal families 182,
+Current canonical status after the distinct Binance crypto-option population gate:
+accepted edges 37, ranked hypotheses 65, terminal families 183,
 and stable current account-qualified after-all-cost edges zero. Registry
 SHA-256 is
-`4ceb5de5af67264d50129ae2b44ee33e4ded59cdb3a32eef4ffe85459002e3ee`;
+`51dba2cf9c5f61efa650cab4db66edc37189cd9aeb7ddfd97dbfe9fdd0e16698`;
 durability-audit SHA-256 is
-`d0736b1f3da7af118516993839f271d10dcadc3a3edefaef9202a0d05f6ee2f7`.
+`e575d0084546053bc1ab2c07e9d23553796d4ef4dd8fc29bc2edcef314575801`.
+
+## 2026-09-04 Binance distinct crypto-option population rejection
+
+Rank 47's distinct-population trigger was satisfied. One prospectively frozen,
+non-polling public `exchangeInfo` GET found 1,488 currently eligible BTC, ETH,
+and SOL crypto options. Relative to the hash-bound 1,576-symbol baseline, 356
+were new and 444 had disappeared. Exact source-bound deduplication proved zero
+overlap with the consumed 508-symbol August 31 population and removed the two
+already screened December 25 94,000 BTC call and put symbols, leaving exactly
+354 genuinely unscreened contracts: 174 BTC, 90 ETH, and 90 SOL.
+
+A timestamp preflight initially failed because its typed freeze instant was
+later than the observed clock. No network request ran and no output existed.
+Only that invalid field was replaced with the actual observed
+2026-09-04T18:40:01Z instant and the self-hashes were recomputed before access;
+the request, population, and decision rules did not change. `AGENTS.md` already
+forbids guessed future freeze times, so no weaker or redundant rule was added.
+
+Before price access, a separate contract froze exactly two public requests,
+the complete 354-symbol identity hash, side-correct terminal-payoff formulas,
+positive displayed-entry requirements, and a 33.5-bip fixed fee and expiry-basis
+stress. The option-ticker and futures-book requests started 245 ms apart and
+returned every scoped ticker. Of 354 rows, 226 had positive option asks and
+perpetual entry sides. Only `BTC-260905-80500-P` had a positive displayed gross
+floor, 11.10 USDT per BTC. The frozen stress cost 266.555815 USDT and changed
+that row to -255.455815 USDT, or -32.1049826 bips. Zero rows survived, so no
+depth, funding, fee-account, credential, order, fund, transaction, or protected
+Polymarket capture access followed.
+
+This exact population is consumed and is not an edge. Do not refetch, poll,
+reprice, subset, or request depth for it. Reopen rank 47 only for a distinct
+active BTC, ETH, or SOL option population after the retained
+2026-09-04T18:49:36.306Z snapshot; a material fee, settlement, tick, depth,
+funding, expiry-basis, capital, or architecture change; or an independently
+observed non-polling displayed terminal floor strictly above every applicable
+cost. Then apply the same rejection-first sequence.
+
+Population source-contract, population source-result, population gate-contract,
+population result, option-ticker source-contract, option-ticker source-result,
+futures-book source-contract, futures-book source-result, price-prefilter
+contract, and price-prefilter result SHA-256 values are respectively
+`b41ca8937b8cfa0275bda15a97d40879f19df515e544862185dd1057e28ea305`,
+`be1f95a1d4affa5c700c5f2e5d9fa1f04f087767803394fbb1d5b0bd3d216dd0`,
+`36f556f034dffa1f73d87283b8ab6cd8f01ccf561c244e39290a49df4456a415`,
+`8c10dd5d039bb0753207e86ee14e6761b46f160cf21a2114ba7fd6470632972c`,
+`b99d763b3db26b4168bde76d34241fd80709f77d89df51391f0bb5649b529138`,
+`ecd384396fcb5432526f79fa67d9ac0dd560b1f631d30787974f27403427ce63`,
+`a1d42e3e9f9c78f4d50a5df84c22bdc7b879dfe133c5370d3af2c8e9e42d2c4f`,
+`3dbe4ba86772573e170091ee648f649412e23c5b8b6f5da98fade89241e74b71`,
+`7990c1d0ff3f37fd031e190921eb6bd07075a0495725acf121730e5ba634e0de`,
+and `fbd10642d35ed469b7cc7f5554681d90d074be71fe718498738011af2fcb3b8e`.
+Raw population, option-ticker, and futures-book SHA-256 values are
+`06da75d0e6ebacc007a73925213240c370751a79d0cb4ae624d044044746a396`,
+`b71de1f16145e96824cb456d87df7d7683d49cd4cf0124fcfc3d163027625222`,
+and `5f03b4c945760bb65c8e60c212fa81be4ca65794ff09de62e4a6f7662acd1be4`.
+Their journal SHA-256 values are
+`dac125f9f49e9dfcd615eb4e9c2ba53a791c87008169355a49ab85d4570f6bc4`,
+`7d8b79a7ba8a0002829faee2dbf95becff3dec48a377cbfca9b267642c43b3d6`,
+and `48d7f66357ddd33e7ae9823ef738d64b920467b220673441d689fafbb77d9147`.
 
 ## 2026-09-04 Binance CXMT four-hour funding trigger
 
