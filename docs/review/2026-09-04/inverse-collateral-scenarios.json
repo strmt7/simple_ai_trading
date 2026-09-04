@@ -1,0 +1,340 @@
+{
+  "accepted_edge": false,
+  "account_requests": 0,
+  "bindings": [
+    {
+      "path": "tools/review_inverse_collateral.py",
+      "sha256": "91c026c4751c21e43611ea23241650ad5b229fd5f3b7fa4cbce897adfc6aa149"
+    },
+    {
+      "path": "docs/review/2026-09-04/inverse-collateral-source-plan.json",
+      "sha256": "aa210edb2784c4c655a638401521f703a67735526eaa3a2dd259d8be8cb1b79e"
+    },
+    {
+      "path": "docs/review/2026-09-04/inverse-collateral-source-extraction.json",
+      "sha256": "7c052de8b5ab43114251992d5b57dc2499175a7a0047ad31993dc0810b73008f"
+    }
+  ],
+  "classification": "conditional_synthetic_accounting_only",
+  "generated_at_utc": "2026-09-04T21:48:54.868603+00:00",
+  "market_data_requests": 0,
+  "official_mechanics_verified": false,
+  "profitability_claim": false,
+  "result_sha256": "b97a07f3c00fee21769fa9cce4fb7352b69c4fc95f2c2824fa285fe01248eee4",
+  "scenarios": [
+    {
+      "inputs": {
+        "collateral_coin": "1",
+        "contract_count": "10",
+        "contract_size_quote": "10",
+        "entry_future": "100",
+        "maintenance_rate": "0.005",
+        "mark_future": "25",
+        "net_coin_cashflow": "0",
+        "outside_quote_cash": "0",
+        "spot_conversion": "25"
+      },
+      "label": "matched_no_cashflow",
+      "outputs": {
+        "common_price_residual_delta_coin": "0",
+        "equity_at_spot_quote": "100",
+        "equity_coin": "4",
+        "inverse_component_at_spot_quote": "100",
+        "matched_collateral_coin": "1",
+        "notional_quote": "100",
+        "scenario_maintenance_coin": "0.020",
+        "scenario_margin_surplus_coin": "3.980",
+        "short_pnl_coin": "3",
+        "total_wealth_quote": "100"
+      }
+    },
+    {
+      "inputs": {
+        "collateral_coin": "1",
+        "contract_count": "10",
+        "contract_size_quote": "10",
+        "entry_future": "100",
+        "maintenance_rate": "0.005",
+        "mark_future": "100",
+        "net_coin_cashflow": "0",
+        "outside_quote_cash": "0",
+        "spot_conversion": "100"
+      },
+      "label": "matched_no_cashflow",
+      "outputs": {
+        "common_price_residual_delta_coin": "0",
+        "equity_at_spot_quote": "100",
+        "equity_coin": "1",
+        "inverse_component_at_spot_quote": "100",
+        "matched_collateral_coin": "1",
+        "notional_quote": "100",
+        "scenario_maintenance_coin": "0.005",
+        "scenario_margin_surplus_coin": "0.995",
+        "short_pnl_coin": "0",
+        "total_wealth_quote": "100"
+      }
+    },
+    {
+      "inputs": {
+        "collateral_coin": "1",
+        "contract_count": "10",
+        "contract_size_quote": "10",
+        "entry_future": "100",
+        "maintenance_rate": "0.005",
+        "mark_future": "400",
+        "net_coin_cashflow": "0",
+        "outside_quote_cash": "0",
+        "spot_conversion": "400"
+      },
+      "label": "matched_no_cashflow",
+      "outputs": {
+        "common_price_residual_delta_coin": "0",
+        "equity_at_spot_quote": "100.00",
+        "equity_coin": "0.25",
+        "inverse_component_at_spot_quote": "100",
+        "matched_collateral_coin": "1",
+        "notional_quote": "100",
+        "scenario_maintenance_coin": "0.00125",
+        "scenario_margin_surplus_coin": "0.24875",
+        "short_pnl_coin": "-0.75",
+        "total_wealth_quote": "100.00"
+      }
+    },
+    {
+      "inputs": {
+        "collateral_coin": "1",
+        "contract_count": "10",
+        "contract_size_quote": "10",
+        "entry_future": "100",
+        "maintenance_rate": "0.005",
+        "mark_future": "25",
+        "net_coin_cashflow": "-0.0001",
+        "outside_quote_cash": "0",
+        "spot_conversion": "25"
+      },
+      "label": "coin_fee_debit",
+      "outputs": {
+        "common_price_residual_delta_coin": "-0.0001",
+        "equity_at_spot_quote": "99.9975",
+        "equity_coin": "3.9999",
+        "inverse_component_at_spot_quote": "100",
+        "matched_collateral_coin": "1",
+        "notional_quote": "100",
+        "scenario_maintenance_coin": "0.020",
+        "scenario_margin_surplus_coin": "3.9799",
+        "short_pnl_coin": "3",
+        "total_wealth_quote": "99.9975"
+      }
+    },
+    {
+      "inputs": {
+        "collateral_coin": "1",
+        "contract_count": "10",
+        "contract_size_quote": "10",
+        "entry_future": "100",
+        "maintenance_rate": "0.005",
+        "mark_future": "100",
+        "net_coin_cashflow": "-0.0001",
+        "outside_quote_cash": "0",
+        "spot_conversion": "100"
+      },
+      "label": "coin_fee_debit",
+      "outputs": {
+        "common_price_residual_delta_coin": "-0.0001",
+        "equity_at_spot_quote": "99.9900",
+        "equity_coin": "0.9999",
+        "inverse_component_at_spot_quote": "100",
+        "matched_collateral_coin": "1",
+        "notional_quote": "100",
+        "scenario_maintenance_coin": "0.005",
+        "scenario_margin_surplus_coin": "0.9949",
+        "short_pnl_coin": "0",
+        "total_wealth_quote": "99.9900"
+      }
+    },
+    {
+      "inputs": {
+        "collateral_coin": "1",
+        "contract_count": "10",
+        "contract_size_quote": "10",
+        "entry_future": "100",
+        "maintenance_rate": "0.005",
+        "mark_future": "400",
+        "net_coin_cashflow": "-0.0001",
+        "outside_quote_cash": "0",
+        "spot_conversion": "400"
+      },
+      "label": "coin_fee_debit",
+      "outputs": {
+        "common_price_residual_delta_coin": "-0.0001",
+        "equity_at_spot_quote": "99.9600",
+        "equity_coin": "0.2499",
+        "inverse_component_at_spot_quote": "100",
+        "matched_collateral_coin": "1",
+        "notional_quote": "100",
+        "scenario_maintenance_coin": "0.00125",
+        "scenario_margin_surplus_coin": "0.24865",
+        "short_pnl_coin": "-0.75",
+        "total_wealth_quote": "99.9600"
+      }
+    },
+    {
+      "inputs": {
+        "collateral_coin": "1",
+        "contract_count": "10",
+        "contract_size_quote": "10",
+        "entry_future": "100",
+        "maintenance_rate": "0.005",
+        "mark_future": "25",
+        "net_coin_cashflow": "0.0001",
+        "outside_quote_cash": "0",
+        "spot_conversion": "25"
+      },
+      "label": "coin_funding_retained",
+      "outputs": {
+        "common_price_residual_delta_coin": "0.0001",
+        "equity_at_spot_quote": "100.0025",
+        "equity_coin": "4.0001",
+        "inverse_component_at_spot_quote": "100",
+        "matched_collateral_coin": "1",
+        "notional_quote": "100",
+        "scenario_maintenance_coin": "0.020",
+        "scenario_margin_surplus_coin": "3.9801",
+        "short_pnl_coin": "3",
+        "total_wealth_quote": "100.0025"
+      }
+    },
+    {
+      "inputs": {
+        "collateral_coin": "1",
+        "contract_count": "10",
+        "contract_size_quote": "10",
+        "entry_future": "100",
+        "maintenance_rate": "0.005",
+        "mark_future": "100",
+        "net_coin_cashflow": "0.0001",
+        "outside_quote_cash": "0",
+        "spot_conversion": "100"
+      },
+      "label": "coin_funding_retained",
+      "outputs": {
+        "common_price_residual_delta_coin": "0.0001",
+        "equity_at_spot_quote": "100.0100",
+        "equity_coin": "1.0001",
+        "inverse_component_at_spot_quote": "100",
+        "matched_collateral_coin": "1",
+        "notional_quote": "100",
+        "scenario_maintenance_coin": "0.005",
+        "scenario_margin_surplus_coin": "0.9951",
+        "short_pnl_coin": "0",
+        "total_wealth_quote": "100.0100"
+      }
+    },
+    {
+      "inputs": {
+        "collateral_coin": "1",
+        "contract_count": "10",
+        "contract_size_quote": "10",
+        "entry_future": "100",
+        "maintenance_rate": "0.005",
+        "mark_future": "400",
+        "net_coin_cashflow": "0.0001",
+        "outside_quote_cash": "0",
+        "spot_conversion": "400"
+      },
+      "label": "coin_funding_retained",
+      "outputs": {
+        "common_price_residual_delta_coin": "0.0001",
+        "equity_at_spot_quote": "100.0400",
+        "equity_coin": "0.2501",
+        "inverse_component_at_spot_quote": "100",
+        "matched_collateral_coin": "1",
+        "notional_quote": "100",
+        "scenario_maintenance_coin": "0.00125",
+        "scenario_margin_surplus_coin": "0.24885",
+        "short_pnl_coin": "-0.75",
+        "total_wealth_quote": "100.0400"
+      }
+    },
+    {
+      "inputs": {
+        "collateral_coin": "1",
+        "contract_count": "10",
+        "contract_size_quote": "10",
+        "entry_future": "100",
+        "maintenance_rate": "0.005",
+        "mark_future": "25",
+        "net_coin_cashflow": "0",
+        "outside_quote_cash": "0.01",
+        "spot_conversion": "25"
+      },
+      "label": "coin_funding_converted_at_100",
+      "outputs": {
+        "common_price_residual_delta_coin": "0",
+        "equity_at_spot_quote": "100",
+        "equity_coin": "4",
+        "inverse_component_at_spot_quote": "100",
+        "matched_collateral_coin": "1",
+        "notional_quote": "100",
+        "scenario_maintenance_coin": "0.020",
+        "scenario_margin_surplus_coin": "3.980",
+        "short_pnl_coin": "3",
+        "total_wealth_quote": "100.01"
+      }
+    },
+    {
+      "inputs": {
+        "collateral_coin": "1",
+        "contract_count": "10",
+        "contract_size_quote": "10",
+        "entry_future": "100",
+        "maintenance_rate": "0.005",
+        "mark_future": "100",
+        "net_coin_cashflow": "0",
+        "outside_quote_cash": "0.01",
+        "spot_conversion": "100"
+      },
+      "label": "coin_funding_converted_at_100",
+      "outputs": {
+        "common_price_residual_delta_coin": "0",
+        "equity_at_spot_quote": "100",
+        "equity_coin": "1",
+        "inverse_component_at_spot_quote": "100",
+        "matched_collateral_coin": "1",
+        "notional_quote": "100",
+        "scenario_maintenance_coin": "0.005",
+        "scenario_margin_surplus_coin": "0.995",
+        "short_pnl_coin": "0",
+        "total_wealth_quote": "100.01"
+      }
+    },
+    {
+      "inputs": {
+        "collateral_coin": "1",
+        "contract_count": "10",
+        "contract_size_quote": "10",
+        "entry_future": "100",
+        "maintenance_rate": "0.005",
+        "mark_future": "400",
+        "net_coin_cashflow": "0",
+        "outside_quote_cash": "0.01",
+        "spot_conversion": "400"
+      },
+      "label": "coin_funding_converted_at_100",
+      "outputs": {
+        "common_price_residual_delta_coin": "0",
+        "equity_at_spot_quote": "100.00",
+        "equity_coin": "0.25",
+        "inverse_component_at_spot_quote": "100",
+        "matched_collateral_coin": "1",
+        "notional_quote": "100",
+        "scenario_maintenance_coin": "0.00125",
+        "scenario_margin_surplus_coin": "0.24875",
+        "short_pnl_coin": "-0.75",
+        "total_wealth_quote": "100.01"
+      }
+    }
+  ],
+  "schema_version": 1,
+  "source_result": "All three FAQ opens redirected to the regional landing page."
+}
