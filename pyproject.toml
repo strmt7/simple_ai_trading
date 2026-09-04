@@ -49,7 +49,7 @@ polymarket-live = [
 ]
 foundation-ai = [
     "einops==0.8.2",
-    "huggingface_hub==1.28.0",
+    "huggingface_hub==1.29.0",
     "pandas>=2.2,<4",
     "safetensors==0.8.0",
     "tqdm>=4.67,<5",
@@ -60,10 +60,10 @@ test = [
     "coverage==7.15.4",
     "diff-cover==10.5.1",
     "pytest==9.1.1",
-    "ruff==0.16.4",
+    "ruff==0.16.5",
 ]
 release = [
-    "build==1.5.0",
+    "build==1.6.0",
 ]
 
 [tool.uv]
@@ -84,7 +84,7 @@ addopts = ["-q"]
 
 [tool.ruff]
 # Retained third-party evidence is data, never an authored formatting target.
-extend-exclude = ["docs/model-research/**/raw/**"]
+extend-exclude = ["docs/model-research/**/raw/**", "data/**/raw/**"]
 force-exclude = true
 
 [tool.ruff.lint]
