@@ -1,0 +1,1443 @@
+{
+  "schema_version": "paradex-index-boundary-prefilter-v1",
+  "contract_sha256": "0bedfd6efc1fca0f7a8657d290e51f58b4c435eda89f2c54ee680b11902d166b",
+  "source_sha256": {
+    "tools/screen_paradex_index_boundaries.py": "3d76d057b7fc7fdcbd70e5b996ccda5952c072e7666166331f73d58c67640168",
+    "docs/review/2026-09-04/paradex-index-source/mechanism.html": "5ddb24572bed2276d0a4f4a47972fd7558b142a1497a228e89e91406045a84d7",
+    "docs/review/2026-09-04/paradex-index-source/history-api.html": "9ee9c68d822c8ac5720311f53e0cfa2f72254f2d33edbb21dd7f65f3fbe4b681",
+    "docs/review/2026-09-04/paradex-index-source-plan.json": "cefbc8bd0ae14559df3cb5b27a234fd4e87d5b3b1d6d6a11012ce21a14fab1a4",
+    "docs/model-research/action-value/binance-paradex-btc-eth-sol-funding-preregistration-v1-2026-09-01.json": "86df5e0a4d795e467228c0775f66e1f625f0bd1dbe62d33905b2ae4aed42c3eb"
+  },
+  "receipts": [
+    {
+      "phase": "request_completed",
+      "name": "btc-index-00",
+      "status": 200,
+      "bytes": 15928,
+      "raw_sha256": "2845c418e11ab2726fb9f78ca76c971244fa78a765d0b868b5601b2b4e376703",
+      "raw_path": "docs/review/2026-09-04/paradex-index-study/btc-index-00.json"
+    },
+    {
+      "phase": "request_completed",
+      "name": "btc-index-01",
+      "status": 200,
+      "bytes": 15920,
+      "raw_sha256": "0360a7ea86ad5d93e93eb0e42b4eac2c1299bfb166b6af4f3926a70c03a99e13",
+      "raw_path": "docs/review/2026-09-04/paradex-index-study/btc-index-01.json"
+    },
+    {
+      "phase": "request_completed",
+      "name": "btc-index-02",
+      "status": 200,
+      "bytes": 15953,
+      "raw_sha256": "e0d4921c75c689f4207c67f304cee4282e2904eea259dbea922ab385133c7122",
+      "raw_path": "docs/review/2026-09-04/paradex-index-study/btc-index-02.json"
+    },
+    {
+      "phase": "request_completed",
+      "name": "btc-index-03",
+      "status": 200,
+      "bytes": 15962,
+      "raw_sha256": "9a72a0a781ee600ab0e70b240cdd1d9bc5adc558e4334210e26b298bbb82768b",
+      "raw_path": "docs/review/2026-09-04/paradex-index-study/btc-index-03.json"
+    },
+    {
+      "phase": "request_completed",
+      "name": "btc-index-04",
+      "status": 200,
+      "bytes": 15883,
+      "raw_sha256": "11bb17cd9d071c9ad7cc6782469adbd063c654ada4da9e3c93e4ac2610bf0524",
+      "raw_path": "docs/review/2026-09-04/paradex-index-study/btc-index-04.json"
+    },
+    {
+      "phase": "request_completed",
+      "name": "btc-index-05",
+      "status": 200,
+      "bytes": 15909,
+      "raw_sha256": "f66aa0f154e01197ba441189b8ee294e46119ba0dd79227f611f4249007ad379",
+      "raw_path": "docs/review/2026-09-04/paradex-index-study/btc-index-05.json"
+    },
+    {
+      "phase": "request_completed",
+      "name": "btc-index-06",
+      "status": 200,
+      "bytes": 15968,
+      "raw_sha256": "67363810ac3ae851445449d5bbccc1cfe6b14cdab421d1f7737717c29b24e6b0",
+      "raw_path": "docs/review/2026-09-04/paradex-index-study/btc-index-06.json"
+    },
+    {
+      "phase": "request_completed",
+      "name": "btc-index-07",
+      "status": 200,
+      "bytes": 15958,
+      "raw_sha256": "4c5b1aa292c1acbb668acc8a717b342dcbdd4b8d571221dc0de68a55db0011da",
+      "raw_path": "docs/review/2026-09-04/paradex-index-study/btc-index-07.json"
+    },
+    {
+      "phase": "request_completed",
+      "name": "btc-index-08",
+      "status": 200,
+      "bytes": 15971,
+      "raw_sha256": "5a054596f7693aa3b57990d58cd7852ad42c051fc63d7ac577560e4c499b796c",
+      "raw_path": "docs/review/2026-09-04/paradex-index-study/btc-index-08.json"
+    },
+    {
+      "phase": "request_completed",
+      "name": "btc-index-09",
+      "status": 200,
+      "bytes": 15968,
+      "raw_sha256": "b4961db59c3105be7c8a432293170232125239d1a5e8e8f6f00dedecc23e0a05",
+      "raw_path": "docs/review/2026-09-04/paradex-index-study/btc-index-09.json"
+    },
+    {
+      "phase": "request_completed",
+      "name": "btc-index-10",
+      "status": 200,
+      "bytes": 15961,
+      "raw_sha256": "5bd9e95069383070ad722a4f79dcd6af14f9bffca5980c0b4976ee791007a109",
+      "raw_path": "docs/review/2026-09-04/paradex-index-study/btc-index-10.json"
+    },
+    {
+      "phase": "request_completed",
+      "name": "btc-index-11",
+      "status": 200,
+      "bytes": 15950,
+      "raw_sha256": "5ddb6035a84966c8996da51c26e78797f540d780c733376bb46c4f702ad5b7fd",
+      "raw_path": "docs/review/2026-09-04/paradex-index-study/btc-index-11.json"
+    },
+    {
+      "phase": "request_completed",
+      "name": "btc-index-12",
+      "status": 200,
+      "bytes": 15844,
+      "raw_sha256": "94319cf8a363df3aca88e4b6b0c9d86ec17f955e0cd4e20e6bfc1f3918faf55a",
+      "raw_path": "docs/review/2026-09-04/paradex-index-study/btc-index-12.json"
+    },
+    {
+      "phase": "request_completed",
+      "name": "btc-index-13",
+      "status": 200,
+      "bytes": 15904,
+      "raw_sha256": "fb296b0c08c895b3b983b1e582e54ef2ba922215bd7b702f7c08d5195604d26e",
+      "raw_path": "docs/review/2026-09-04/paradex-index-study/btc-index-13.json"
+    },
+    {
+      "phase": "request_completed",
+      "name": "btc-index-14",
+      "status": 200,
+      "bytes": 15969,
+      "raw_sha256": "3d5cba040091efeb87c183bd33a5608282c24fc15d268a621f7d8f3c2c17e3c6",
+      "raw_path": "docs/review/2026-09-04/paradex-index-study/btc-index-14.json"
+    },
+    {
+      "phase": "request_completed",
+      "name": "btc-index-15",
+      "status": 200,
+      "bytes": 15964,
+      "raw_sha256": "6b41531938f7e0944161a48f5f1a0e62bffc123ab33fb83a6a186ac2de76581b",
+      "raw_path": "docs/review/2026-09-04/paradex-index-study/btc-index-15.json"
+    },
+    {
+      "phase": "request_completed",
+      "name": "btc-index-16",
+      "status": 200,
+      "bytes": 15947,
+      "raw_sha256": "82a5eae2a35b23210c2d1a1fe45947b1208766e589b82a246285e0b0f8e8a276",
+      "raw_path": "docs/review/2026-09-04/paradex-index-study/btc-index-16.json"
+    },
+    {
+      "phase": "request_completed",
+      "name": "btc-index-17",
+      "status": 200,
+      "bytes": 15944,
+      "raw_sha256": "9d9ce2134029ddab9a15b8695f332e6b13c3d0f4db6b17999433e7ecd67a1ed3",
+      "raw_path": "docs/review/2026-09-04/paradex-index-study/btc-index-17.json"
+    },
+    {
+      "phase": "request_completed",
+      "name": "btc-index-18",
+      "status": 200,
+      "bytes": 15960,
+      "raw_sha256": "ac92a19317e9e4616e0ef369a960e504a3dc1f41c8c9385ea63366e5c7d1d6a8",
+      "raw_path": "docs/review/2026-09-04/paradex-index-study/btc-index-18.json"
+    },
+    {
+      "phase": "request_completed",
+      "name": "btc-index-19",
+      "status": 200,
+      "bytes": 15965,
+      "raw_sha256": "92eabbae5875be8b50dcd47e8b3e45695d4b6f2c17141675badb455b8214fa0d",
+      "raw_path": "docs/review/2026-09-04/paradex-index-study/btc-index-19.json"
+    },
+    {
+      "phase": "request_completed",
+      "name": "btc-index-20",
+      "status": 200,
+      "bytes": 15960,
+      "raw_sha256": "ce5d0dee2abd50bdfdcc037f4baf5b4750ddcb04a26e509e7ee37b58faff8ac6",
+      "raw_path": "docs/review/2026-09-04/paradex-index-study/btc-index-20.json"
+    },
+    {
+      "phase": "request_completed",
+      "name": "btc-index-21",
+      "status": 200,
+      "bytes": 15954,
+      "raw_sha256": "5f0b106232067e7a1d6908907abb19b997346ed6340d863a45001cd9abdf6112",
+      "raw_path": "docs/review/2026-09-04/paradex-index-study/btc-index-21.json"
+    },
+    {
+      "phase": "request_completed",
+      "name": "btc-index-22",
+      "status": 200,
+      "bytes": 15966,
+      "raw_sha256": "32038473331f3c36b2b28dda91e670172e6250fa6a11f4861f93b95426bdb2bc",
+      "raw_path": "docs/review/2026-09-04/paradex-index-study/btc-index-22.json"
+    },
+    {
+      "phase": "request_completed",
+      "name": "btc-index-23",
+      "status": 200,
+      "bytes": 15969,
+      "raw_sha256": "8f0e1a6ae090a5789a637e2ccaa8b8ae445e35fdd0462c30e8c3f3749e1e20e2",
+      "raw_path": "docs/review/2026-09-04/paradex-index-study/btc-index-23.json"
+    },
+    {
+      "phase": "request_completed",
+      "name": "btc-index-24",
+      "status": 200,
+      "bytes": 15953,
+      "raw_sha256": "46a59ce16914410a64756021ba3aa4df6e72cd03fb689f10daf20f5bf0e53235",
+      "raw_path": "docs/review/2026-09-04/paradex-index-study/btc-index-24.json"
+    },
+    {
+      "phase": "request_completed",
+      "name": "btc-index-25",
+      "status": 200,
+      "bytes": 15960,
+      "raw_sha256": "a4c7c9eb0b95b8552b2d1477a304ad52944a2a4db3bb16178b1c7fc77f85ab6a",
+      "raw_path": "docs/review/2026-09-04/paradex-index-study/btc-index-25.json"
+    },
+    {
+      "phase": "request_completed",
+      "name": "btc-index-26",
+      "status": 200,
+      "bytes": 15952,
+      "raw_sha256": "88f8fda7652672ba754c72f10c8687e78cec94327ce76b64d957e28897e15e11",
+      "raw_path": "docs/review/2026-09-04/paradex-index-study/btc-index-26.json"
+    },
+    {
+      "phase": "request_completed",
+      "name": "btc-binance",
+      "status": 200,
+      "bytes": 3403,
+      "raw_sha256": "c61a0b1227a30ef81eaf5d3a143ff23f69200d762e1c9eecd59881986f6ffb94",
+      "raw_path": "docs/review/2026-09-04/paradex-index-study/btc-binance.json"
+    },
+    {
+      "phase": "request_completed",
+      "name": "eth-index-00",
+      "status": 200,
+      "bytes": 15960,
+      "raw_sha256": "ef4481bad282df5f306dd2e43489bad976b55a54eef2c98ceef9ec891280040a",
+      "raw_path": "docs/review/2026-09-04/paradex-index-study/eth-index-00.json"
+    },
+    {
+      "phase": "request_completed",
+      "name": "eth-index-01",
+      "status": 200,
+      "bytes": 15905,
+      "raw_sha256": "d9b8f488c4b85da65e7572e8e14e97038d0039a3db2a1c6fb66abd61e5f1ba27",
+      "raw_path": "docs/review/2026-09-04/paradex-index-study/eth-index-01.json"
+    },
+    {
+      "phase": "request_completed",
+      "name": "eth-index-02",
+      "status": 200,
+      "bytes": 15964,
+      "raw_sha256": "9501bf25bd9242540b892bf90d5fddd664fc23f9567dd52e7d59a8998fdc534c",
+      "raw_path": "docs/review/2026-09-04/paradex-index-study/eth-index-02.json"
+    },
+    {
+      "phase": "request_completed",
+      "name": "eth-index-03",
+      "status": 200,
+      "bytes": 16008,
+      "raw_sha256": "c83a9782736391ce7bb4b18b8cbbe88962f439d117e841ab207823a6bfba38be",
+      "raw_path": "docs/review/2026-09-04/paradex-index-study/eth-index-03.json"
+    },
+    {
+      "phase": "request_completed",
+      "name": "eth-index-04",
+      "status": 200,
+      "bytes": 15853,
+      "raw_sha256": "e398fd43db8603e622d413305efc9d0c2c5d60990a7492f9f54d9e07f9939477",
+      "raw_path": "docs/review/2026-09-04/paradex-index-study/eth-index-04.json"
+    },
+    {
+      "phase": "request_completed",
+      "name": "eth-index-05",
+      "status": 200,
+      "bytes": 15988,
+      "raw_sha256": "c2fd9c5979a5e88268ce3efffa1a5f4625fc52283ba2a32fe4f4a5fb00365cd3",
+      "raw_path": "docs/review/2026-09-04/paradex-index-study/eth-index-05.json"
+    },
+    {
+      "phase": "request_completed",
+      "name": "eth-index-06",
+      "status": 200,
+      "bytes": 16025,
+      "raw_sha256": "2606add7e259f7570b387e6bd9de9824213ec2ea36fcc06ce3d8e8c2989c1133",
+      "raw_path": "docs/review/2026-09-04/paradex-index-study/eth-index-06.json"
+    },
+    {
+      "phase": "request_completed",
+      "name": "eth-index-07",
+      "status": 200,
+      "bytes": 16033,
+      "raw_sha256": "fc7cfbb87974d1e341431001a99ae25c91b5a908ecc4c03346392208a3c01ec3",
+      "raw_path": "docs/review/2026-09-04/paradex-index-study/eth-index-07.json"
+    },
+    {
+      "phase": "request_completed",
+      "name": "eth-index-08",
+      "status": 200,
+      "bytes": 16029,
+      "raw_sha256": "6f00335de00c5f7bc763f7de8f0ef544c08ce63ef9673b6946bb3543b42e1409",
+      "raw_path": "docs/review/2026-09-04/paradex-index-study/eth-index-08.json"
+    },
+    {
+      "phase": "request_completed",
+      "name": "eth-index-09",
+      "status": 200,
+      "bytes": 16026,
+      "raw_sha256": "d73a1b54b9f9333028b8872f2064aaf9d0b303aeddcf859d846112870e638735",
+      "raw_path": "docs/review/2026-09-04/paradex-index-study/eth-index-09.json"
+    },
+    {
+      "phase": "request_completed",
+      "name": "eth-index-10",
+      "status": 200,
+      "bytes": 15995,
+      "raw_sha256": "298a8f34add75e85fa91af015b4d96e9e2f1fa1b75534720269661cb75ac11fa",
+      "raw_path": "docs/review/2026-09-04/paradex-index-study/eth-index-10.json"
+    },
+    {
+      "phase": "request_completed",
+      "name": "eth-index-11",
+      "status": 200,
+      "bytes": 15848,
+      "raw_sha256": "534b26df8d97ee2968112dac8d96f2ce2bb8739faabdc2c6d8ee4dfc602d499f",
+      "raw_path": "docs/review/2026-09-04/paradex-index-study/eth-index-11.json"
+    },
+    {
+      "phase": "request_completed",
+      "name": "eth-index-12",
+      "status": 200,
+      "bytes": 15975,
+      "raw_sha256": "8714f123592b4b7c70b45d63dacd5ac6de8b5de89fa99f85ff40c4dc807960f6",
+      "raw_path": "docs/review/2026-09-04/paradex-index-study/eth-index-12.json"
+    },
+    {
+      "phase": "request_completed",
+      "name": "eth-index-13",
+      "status": 200,
+      "bytes": 15891,
+      "raw_sha256": "8b86e46fff30510af05555cb838587d18eb1ea24142b9af110b35785348299db",
+      "raw_path": "docs/review/2026-09-04/paradex-index-study/eth-index-13.json"
+    },
+    {
+      "phase": "request_completed",
+      "name": "eth-index-14",
+      "status": 200,
+      "bytes": 15970,
+      "raw_sha256": "8aea5541fabaf84e648e9abc809d7d0fea57071aa68bd0c983c10bb0f6661a29",
+      "raw_path": "docs/review/2026-09-04/paradex-index-study/eth-index-14.json"
+    },
+    {
+      "phase": "request_completed",
+      "name": "eth-index-15",
+      "status": 200,
+      "bytes": 15872,
+      "raw_sha256": "7d42536cf1c649f99bd9a8ac5346294adfdf1993adeff29e28faade30894cb77",
+      "raw_path": "docs/review/2026-09-04/paradex-index-study/eth-index-15.json"
+    },
+    {
+      "phase": "request_completed",
+      "name": "eth-index-16",
+      "status": 200,
+      "bytes": 15916,
+      "raw_sha256": "723b94c18e88e4d8321be927da5a65a6fd2fdd7c35b441322bcc0553b0267d4d",
+      "raw_path": "docs/review/2026-09-04/paradex-index-study/eth-index-16.json"
+    },
+    {
+      "phase": "request_completed",
+      "name": "eth-index-17",
+      "status": 200,
+      "bytes": 15917,
+      "raw_sha256": "8eada59130391254d9edeacdf919aa50f6aebe664191a3d236eb5135b921676e",
+      "raw_path": "docs/review/2026-09-04/paradex-index-study/eth-index-17.json"
+    },
+    {
+      "phase": "request_completed",
+      "name": "eth-index-18",
+      "status": 200,
+      "bytes": 15993,
+      "raw_sha256": "534db2c6f353823e64d75d1573091093363cd8ccad0487a92a55bf70da9409ad",
+      "raw_path": "docs/review/2026-09-04/paradex-index-study/eth-index-18.json"
+    },
+    {
+      "phase": "request_completed",
+      "name": "eth-index-19",
+      "status": 200,
+      "bytes": 15843,
+      "raw_sha256": "0c3df8a50f7613f5134ebb8844eb7fdb1448c3c22e9eee3bc69c061b18b9bb6b",
+      "raw_path": "docs/review/2026-09-04/paradex-index-study/eth-index-19.json"
+    },
+    {
+      "phase": "request_completed",
+      "name": "eth-index-20",
+      "status": 200,
+      "bytes": 15974,
+      "raw_sha256": "a3f9a5b533f7679e52a0a95e2af67b0c1f7b9d81f3bc09f776798257081be28f",
+      "raw_path": "docs/review/2026-09-04/paradex-index-study/eth-index-20.json"
+    },
+    {
+      "phase": "request_completed",
+      "name": "eth-index-21",
+      "status": 200,
+      "bytes": 16027,
+      "raw_sha256": "cd2809572913099e8f00001dbca6e347f6b5c60ef53b6699c56f86d33d3456b9",
+      "raw_path": "docs/review/2026-09-04/paradex-index-study/eth-index-21.json"
+    },
+    {
+      "phase": "request_completed",
+      "name": "eth-index-22",
+      "status": 200,
+      "bytes": 16025,
+      "raw_sha256": "743f6c1a8397f56e265a1414e9f8123084f62c962540ca6ad4d7a26b8c6429ae",
+      "raw_path": "docs/review/2026-09-04/paradex-index-study/eth-index-22.json"
+    },
+    {
+      "phase": "request_completed",
+      "name": "eth-index-23",
+      "status": 200,
+      "bytes": 15900,
+      "raw_sha256": "455fa81c192044bc33a5eb09b742f14298ed0e0ff2745726931f0a98ae335107",
+      "raw_path": "docs/review/2026-09-04/paradex-index-study/eth-index-23.json"
+    },
+    {
+      "phase": "request_completed",
+      "name": "eth-index-24",
+      "status": 200,
+      "bytes": 15941,
+      "raw_sha256": "1134e1df84b37545e61ea0a4327404fda5f9da82714fa3e302a54e154f3dc994",
+      "raw_path": "docs/review/2026-09-04/paradex-index-study/eth-index-24.json"
+    },
+    {
+      "phase": "request_completed",
+      "name": "eth-index-25",
+      "status": 200,
+      "bytes": 16029,
+      "raw_sha256": "c039db3ae9d1b968c74f31f701518cb74dc6b3e25b6ff3c7c9493c019e1833ab",
+      "raw_path": "docs/review/2026-09-04/paradex-index-study/eth-index-25.json"
+    },
+    {
+      "phase": "request_completed",
+      "name": "eth-index-26",
+      "status": 200,
+      "bytes": 16015,
+      "raw_sha256": "af9e8d15f9c7d7dd59694eb3b68a3a52ff9fbc54df1761520d49f42d9aca8a8b",
+      "raw_path": "docs/review/2026-09-04/paradex-index-study/eth-index-26.json"
+    },
+    {
+      "phase": "request_completed",
+      "name": "eth-binance",
+      "status": 200,
+      "bytes": 3377,
+      "raw_sha256": "2869289de162e9bfbb1235e3df93139ed00ec1a084c7f93a6602b9dd8305219b",
+      "raw_path": "docs/review/2026-09-04/paradex-index-study/eth-binance.json"
+    },
+    {
+      "phase": "request_completed",
+      "name": "sol-index-00",
+      "status": 200,
+      "bytes": 15526,
+      "raw_sha256": "86d061dc3eeeaf9fa3c02f6b0fbd4ea153c02ba77b9a76aa75827d906576584e",
+      "raw_path": "docs/review/2026-09-04/paradex-index-study/sol-index-00.json"
+    },
+    {
+      "phase": "request_completed",
+      "name": "sol-index-01",
+      "status": 200,
+      "bytes": 15994,
+      "raw_sha256": "2a49795538e18d5dc01d8fe7540b9d8ee13158176845bb7058644302f62f92af",
+      "raw_path": "docs/review/2026-09-04/paradex-index-study/sol-index-01.json"
+    },
+    {
+      "phase": "request_completed",
+      "name": "sol-index-02",
+      "status": 200,
+      "bytes": 16188,
+      "raw_sha256": "2bf2cd3fcb33a0233f842055e077530d2f46002e6cd236e0ea59c7260d1cbb16",
+      "raw_path": "docs/review/2026-09-04/paradex-index-study/sol-index-02.json"
+    },
+    {
+      "phase": "request_completed",
+      "name": "sol-index-03",
+      "status": 200,
+      "bytes": 16136,
+      "raw_sha256": "ec1be15f2acc88dae6ca4a72c531c6b83392aa883f3aeeabd908a267ad7f15a5",
+      "raw_path": "docs/review/2026-09-04/paradex-index-study/sol-index-03.json"
+    },
+    {
+      "phase": "request_completed",
+      "name": "sol-index-04",
+      "status": 200,
+      "bytes": 16146,
+      "raw_sha256": "d40db88cf6af96b79c626fc82f96e502a3e66d4144260de7d30502288ae9d53e",
+      "raw_path": "docs/review/2026-09-04/paradex-index-study/sol-index-04.json"
+    },
+    {
+      "phase": "request_completed",
+      "name": "sol-index-05",
+      "status": 200,
+      "bytes": 16175,
+      "raw_sha256": "a72577a2e2141232515f36e7048d0def9bd4a4dcecbf8b11c0fc3feb2a3a568b",
+      "raw_path": "docs/review/2026-09-04/paradex-index-study/sol-index-05.json"
+    },
+    {
+      "phase": "request_completed",
+      "name": "sol-index-06",
+      "status": 200,
+      "bytes": 16139,
+      "raw_sha256": "66b51b4bc96dd53c8f4e3d2d6a39c591461c7bc4fd1005d8eb393b8835953f68",
+      "raw_path": "docs/review/2026-09-04/paradex-index-study/sol-index-06.json"
+    },
+    {
+      "phase": "request_completed",
+      "name": "sol-index-07",
+      "status": 200,
+      "bytes": 16156,
+      "raw_sha256": "404178305c4ad55c0989e400a87eed3d57c393e5130ed8e212345f38dc4014d9",
+      "raw_path": "docs/review/2026-09-04/paradex-index-study/sol-index-07.json"
+    },
+    {
+      "phase": "request_completed",
+      "name": "sol-index-08",
+      "status": 200,
+      "bytes": 16141,
+      "raw_sha256": "62ca1decf4da6bc13eb39ee1b514a3855e4ddfc4bdd37952106944c039191708",
+      "raw_path": "docs/review/2026-09-04/paradex-index-study/sol-index-08.json"
+    },
+    {
+      "phase": "request_completed",
+      "name": "sol-index-09",
+      "status": 200,
+      "bytes": 16207,
+      "raw_sha256": "c6e5f9891762372c92acfb9ff998f91332097e461b688477e2e3d9f866f20df9",
+      "raw_path": "docs/review/2026-09-04/paradex-index-study/sol-index-09.json"
+    },
+    {
+      "phase": "request_completed",
+      "name": "sol-index-10",
+      "status": 200,
+      "bytes": 16199,
+      "raw_sha256": "2a57542caa83a7efce03c7fefe54d9095596e9ca2128210ecc224dec868210d4",
+      "raw_path": "docs/review/2026-09-04/paradex-index-study/sol-index-10.json"
+    },
+    {
+      "phase": "request_completed",
+      "name": "sol-index-11",
+      "status": 200,
+      "bytes": 16191,
+      "raw_sha256": "188dd717907cdbc3e7027bd0454ad2cd69fae37705cc61abbacc637a82063b21",
+      "raw_path": "docs/review/2026-09-04/paradex-index-study/sol-index-11.json"
+    },
+    {
+      "phase": "request_completed",
+      "name": "sol-index-12",
+      "status": 200,
+      "bytes": 16372,
+      "raw_sha256": "30b955eab9285afb9c4ee1c739f5360030a3c3be92c1aa5b90655f90e9d1d47b",
+      "raw_path": "docs/review/2026-09-04/paradex-index-study/sol-index-12.json"
+    },
+    {
+      "phase": "request_completed",
+      "name": "sol-index-13",
+      "status": 200,
+      "bytes": 16268,
+      "raw_sha256": "46c7d7787cd286ec980186741a835c9e77e10059de0b4de76d83e2e73852af06",
+      "raw_path": "docs/review/2026-09-04/paradex-index-study/sol-index-13.json"
+    },
+    {
+      "phase": "request_completed",
+      "name": "sol-index-14",
+      "status": 200,
+      "bytes": 16207,
+      "raw_sha256": "8b3d1751809c621da2d9339c97ff0529133f7e37c634f06f61dbad075f5c1ce8",
+      "raw_path": "docs/review/2026-09-04/paradex-index-study/sol-index-14.json"
+    },
+    {
+      "phase": "request_completed",
+      "name": "sol-index-15",
+      "status": 200,
+      "bytes": 16205,
+      "raw_sha256": "5749a12339a033ce0239e85d0e62f33757c5a53f5014432bfa85ef2965a4487a",
+      "raw_path": "docs/review/2026-09-04/paradex-index-study/sol-index-15.json"
+    },
+    {
+      "phase": "request_completed",
+      "name": "sol-index-16",
+      "status": 200,
+      "bytes": 16195,
+      "raw_sha256": "295ce34de70bf029a8daf441465e37c3bdda8fa4884d39bffc498b752e899488",
+      "raw_path": "docs/review/2026-09-04/paradex-index-study/sol-index-16.json"
+    },
+    {
+      "phase": "request_completed",
+      "name": "sol-index-17",
+      "status": 200,
+      "bytes": 16386,
+      "raw_sha256": "628c4eca9c721c3c27c72e264067157b1228fcae994a006e08bacd8b1b457fcf",
+      "raw_path": "docs/review/2026-09-04/paradex-index-study/sol-index-17.json"
+    },
+    {
+      "phase": "request_completed",
+      "name": "sol-index-18",
+      "status": 200,
+      "bytes": 16206,
+      "raw_sha256": "5c6f61c772b62d2269bf885f2f9889facde18e705396408666f9a40e3c4be1f5",
+      "raw_path": "docs/review/2026-09-04/paradex-index-study/sol-index-18.json"
+    },
+    {
+      "phase": "request_completed",
+      "name": "sol-index-19",
+      "status": 200,
+      "bytes": 16218,
+      "raw_sha256": "b5b22a31f816e6fdcfb1f7f5b739ccddb78cd531d6c5dcabcd2a278bb198acc1",
+      "raw_path": "docs/review/2026-09-04/paradex-index-study/sol-index-19.json"
+    },
+    {
+      "phase": "request_completed",
+      "name": "sol-index-20",
+      "status": 200,
+      "bytes": 16206,
+      "raw_sha256": "9daef6cc5a243f3deda3fdfba13857323102b69853913dd7a0bfcd13fa51b48f",
+      "raw_path": "docs/review/2026-09-04/paradex-index-study/sol-index-20.json"
+    },
+    {
+      "phase": "request_completed",
+      "name": "sol-index-21",
+      "status": 200,
+      "bytes": 16155,
+      "raw_sha256": "cb316656737feece6602d1eca802763f53d26467f9f55336b5a975f1d0f614af",
+      "raw_path": "docs/review/2026-09-04/paradex-index-study/sol-index-21.json"
+    },
+    {
+      "phase": "request_completed",
+      "name": "sol-index-22",
+      "status": 200,
+      "bytes": 16145,
+      "raw_sha256": "6e2484517d7ec8d09b8c2a362f0939922c4f24aadd662a32c94a3af8cbfcbc62",
+      "raw_path": "docs/review/2026-09-04/paradex-index-study/sol-index-22.json"
+    },
+    {
+      "phase": "request_completed",
+      "name": "sol-index-23",
+      "status": 200,
+      "bytes": 16128,
+      "raw_sha256": "5a03c4761f38982ce350b9519ad6fea67e3cb52bbd3f44a605f75e3c939f2dc3",
+      "raw_path": "docs/review/2026-09-04/paradex-index-study/sol-index-23.json"
+    },
+    {
+      "phase": "request_completed",
+      "name": "sol-index-24",
+      "status": 200,
+      "bytes": 16155,
+      "raw_sha256": "211b81f6063cb622ed271ec5c562cb4958eb43130b6edd42dd71628eb54e09d1",
+      "raw_path": "docs/review/2026-09-04/paradex-index-study/sol-index-24.json"
+    },
+    {
+      "phase": "request_completed",
+      "name": "sol-index-25",
+      "status": 200,
+      "bytes": 16209,
+      "raw_sha256": "e0ca83a672d6a5b88c4b89417846bb561f3f4055599bbddd49d4aa1d3157abcd",
+      "raw_path": "docs/review/2026-09-04/paradex-index-study/sol-index-25.json"
+    },
+    {
+      "phase": "request_completed",
+      "name": "sol-index-26",
+      "status": 200,
+      "bytes": 16448,
+      "raw_sha256": "fa9ccdc9903d1171438afe11dd12283e2324e4f2a323a29a3b14cf02e3cae1eb",
+      "raw_path": "docs/review/2026-09-04/paradex-index-study/sol-index-26.json"
+    },
+    {
+      "phase": "request_completed",
+      "name": "sol-binance",
+      "status": 200,
+      "bytes": 3361,
+      "raw_sha256": "f3ac13797b0acd78ad990d93d7f1f765ab780e2746735ab00737f7f7600530c8",
+      "raw_path": "docs/review/2026-09-04/paradex-index-study/sol-binance.json"
+    }
+  ],
+  "accepted_edge": false,
+  "profitability_claim": false,
+  "trading_authority": false,
+  "status": "complete_funding_only_prefilter",
+  "assets": {
+    "BTC": {
+      "sign": 1,
+      "rows": [
+        {
+          "start": 1787788802539,
+          "end": 1787817605654,
+          "paradex_short_cash_usdc_per_base": "7.79261400228074",
+          "binance_long_cash_usdt_per_base": "-7.9059044028990000",
+          "reference_mark": "78994.90523913"
+        },
+        {
+          "start": 1787817605654,
+          "end": 1787846405654,
+          "paradex_short_cash_usdc_per_base": "7.80085697832205",
+          "binance_long_cash_usdt_per_base": "-5.0821216160000000",
+          "reference_mark": "79059.04402899"
+        },
+        {
+          "start": 1787846405654,
+          "end": 1787875205654,
+          "paradex_short_cash_usdc_per_base": "7.17796595525694",
+          "binance_long_cash_usdt_per_base": "-5.2761848629964760",
+          "reference_mark": "80273.60000000"
+        },
+        {
+          "start": 1787875205654,
+          "end": 1787904003460,
+          "paradex_short_cash_usdc_per_base": "7.44278758525127",
+          "binance_long_cash_usdt_per_base": "-7.9645600000000000",
+          "reference_mark": "80209.56009420"
+        },
+        {
+          "start": 1787904003460,
+          "end": 1787932803460,
+          "paradex_short_cash_usdc_per_base": "7.45667280460490",
+          "binance_long_cash_usdt_per_base": "-4.6304052570000000",
+          "reference_mark": "79645.60000000"
+        },
+        {
+          "start": 1787932803460,
+          "end": 1787961603460,
+          "paradex_short_cash_usdc_per_base": "7.61923992480913",
+          "binance_long_cash_usdt_per_base": "-7.7806120434780000",
+          "reference_mark": "78308.90000000"
+        },
+        {
+          "start": 1787961603460,
+          "end": 1787990403460,
+          "paradex_short_cash_usdc_per_base": "7.37573903454816",
+          "binance_long_cash_usdt_per_base": "-7.7597931101450000",
+          "reference_mark": "77806.12043478"
+        },
+        {
+          "start": 1787990403460,
+          "end": 1788019203460,
+          "paradex_short_cash_usdc_per_base": "7.41284066856989",
+          "binance_long_cash_usdt_per_base": "-7.7826433239130000",
+          "reference_mark": "77597.93110145"
+        },
+        {
+          "start": 1788019203460,
+          "end": 1788048003460,
+          "paradex_short_cash_usdc_per_base": "7.60720529247383",
+          "binance_long_cash_usdt_per_base": "-6.4774426298857242",
+          "reference_mark": "77826.43323913"
+        },
+        {
+          "start": 1788048003460,
+          "end": 1788076803460,
+          "paradex_short_cash_usdc_per_base": "7.70441671315065",
+          "binance_long_cash_usdt_per_base": "-7.8081333333330000",
+          "reference_mark": "78201.64952174"
+        },
+        {
+          "start": 1788076803460,
+          "end": 1788105603460,
+          "paradex_short_cash_usdc_per_base": "7.66695668251335",
+          "binance_long_cash_usdt_per_base": "-5.5610828960000000",
+          "reference_mark": "78081.33333333"
+        },
+        {
+          "start": 1788105603460,
+          "end": 1788134403460,
+          "paradex_short_cash_usdc_per_base": "7.52405473398568",
+          "binance_long_cash_usdt_per_base": "-5.6456950175742820",
+          "reference_mark": "78791.20000000"
+        },
+        {
+          "start": 1788134403460,
+          "end": 1788163201684,
+          "paradex_short_cash_usdc_per_base": "7.56980468442250",
+          "binance_long_cash_usdt_per_base": "-7.8168283057970000",
+          "reference_mark": "77646.74759420"
+        },
+        {
+          "start": 1788163201684,
+          "end": 1788192001684,
+          "paradex_short_cash_usdc_per_base": "7.64161630912872",
+          "binance_long_cash_usdt_per_base": "-7.8544304123190000",
+          "reference_mark": "78168.28305797"
+        },
+        {
+          "start": 1788192001684,
+          "end": 1788220801684,
+          "paradex_short_cash_usdc_per_base": "6.92952448603771",
+          "binance_long_cash_usdt_per_base": "-6.6625770720000000",
+          "reference_mark": "78544.30412319"
+        },
+        {
+          "start": 1788220801684,
+          "end": 1788249602958,
+          "paradex_short_cash_usdc_per_base": "6.97373936001741",
+          "binance_long_cash_usdt_per_base": "-7.8600200000000000",
+          "reference_mark": "78549.60000000"
+        },
+        {
+          "start": 1788249602958,
+          "end": 1788278402958,
+          "paradex_short_cash_usdc_per_base": "7.35250655943050",
+          "binance_long_cash_usdt_per_base": "-2.9937677048386900",
+          "reference_mark": "78600.20000000"
+        },
+        {
+          "start": 1788278402958,
+          "end": 1788307202958,
+          "paradex_short_cash_usdc_per_base": "7.50683490044201",
+          "binance_long_cash_usdt_per_base": "-6.1883798721378465",
+          "reference_mark": "77881.57400725"
+        },
+        {
+          "start": 1788307202958,
+          "end": 1788336004353,
+          "paradex_short_cash_usdc_per_base": "7.49172591706980",
+          "binance_long_cash_usdt_per_base": "-6.1940351040000000",
+          "reference_mark": "77403.12535507"
+        },
+        {
+          "start": 1788336004353,
+          "end": 1788364804353,
+          "paradex_short_cash_usdc_per_base": "7.12552031398217",
+          "binance_long_cash_usdt_per_base": "-2.9502149862522474",
+          "reference_mark": "77444.80000000"
+        },
+        {
+          "start": 1788364804353,
+          "end": 1788393604353,
+          "paradex_short_cash_usdc_per_base": "6.05051828915228",
+          "binance_long_cash_usdt_per_base": "-5.6329570944957261",
+          "reference_mark": "77250.98157246"
+        },
+        {
+          "start": 1788393604353,
+          "end": 1788422402060,
+          "paradex_short_cash_usdc_per_base": "6.74559922909322",
+          "binance_long_cash_usdt_per_base": "-4.5533287317362922",
+          "reference_mark": "77301.45594203"
+        },
+        {
+          "start": 1788422402060,
+          "end": 1788451202060,
+          "paradex_short_cash_usdc_per_base": "6.24903729320436",
+          "binance_long_cash_usdt_per_base": "-7.2314941310000000",
+          "reference_mark": "77622.37865217"
+        },
+        {
+          "start": 1788451202060,
+          "end": 1788480002060,
+          "paradex_short_cash_usdc_per_base": "5.53113103469922",
+          "binance_long_cash_usdt_per_base": "-6.9520449218411268",
+          "reference_mark": "81316.70000000"
+        },
+        {
+          "start": 1788480002060,
+          "end": 1788508802155,
+          "paradex_short_cash_usdc_per_base": "5.95475338597178",
+          "binance_long_cash_usdt_per_base": "-5.2392074400000000",
+          "reference_mark": "81234.45807246"
+        },
+        {
+          "start": 1788508802155,
+          "end": 1788537603155,
+          "paradex_short_cash_usdc_per_base": "6.25914809302585",
+          "binance_long_cash_usdt_per_base": "-3.5366342003670150",
+          "reference_mark": "80628.00000000"
+        }
+      ],
+      "roles": {
+        "training": {
+          "rows": 13,
+          "actual_duration_days": "4.3333234375",
+          "paradex_cash_usdc_per_base": "98.15115506018909",
+          "binance_cash_usdt_per_base": "-87.4914067990214822",
+          "par_valuation_gross_bips": "1.3494222480423102708414212908249073370623068473630",
+          "reference_binance_mark_not_executable_entry": "78994.90523913",
+          "execution_stress_bips": "20",
+          "quote_unit_stress_bips": "25",
+          "custody_latency_stress_bips": "25",
+          "retained_extra_reserve_bips": "10",
+          "two_leg_annual_10_percent_capital_stress_bips": "11.872119006849315068493150684931506849315068493151",
+          "net_after_frozen_hurdles_bips": "-90.522696758807004797651729394106599512252761645788",
+          "positive_interval_fraction": "0.46153846153846153846153846153846153846153846153846",
+          "half_gross_cash_at_par": [
+            "6.6503490681515540",
+            "4.0093991930160538"
+          ],
+          "passes_prefilter": false
+        },
+        "validation": {
+          "rows": 6,
+          "actual_duration_days": "2.0000308912037037037037037037037037037037037037037",
+          "paradex_cash_usdc_per_base": "43.89594753212615",
+          "binance_cash_usdt_per_base": "-37.7532101652955365",
+          "par_valuation_gross_bips": "0.78583501217176894296632502950387356006860800208216",
+          "reference_binance_mark_not_executable_entry": "78168.28305797",
+          "execution_stress_bips": "20",
+          "quote_unit_stress_bips": "25",
+          "custody_latency_stress_bips": "25",
+          "retained_extra_reserve_bips": "10",
+          "two_leg_annual_10_percent_capital_stress_bips": "5.4795366882293252156265854895991882293252156265855",
+          "net_after_frozen_hurdles_bips": "-84.693701676057556272660260460095314669256607624504",
+          "positive_interval_fraction": "0.66666666666666666666666666666666666666666666666667",
+          "half_gross_cash_at_par": [
+            "-0.8321473291351600",
+            "6.9748846959657735"
+          ],
+          "passes_prefilter": false
+        },
+        "test": {
+          "rows": 7,
+          "actual_duration_days": "2.3333194675925925925925925925925925925925925925926",
+          "paradex_cash_usdc_per_base": "43.91570763912888",
+          "binance_cash_usdt_per_base": "-36.0958815056924075",
+          "par_valuation_gross_bips": "1.0097290113004969345908311468297419581430903043200",
+          "reference_binance_mark_not_executable_entry": "77444.80000000",
+          "execution_stress_bips": "20",
+          "quote_unit_stress_bips": "25",
+          "custody_latency_stress_bips": "25",
+          "retained_extra_reserve_bips": "10",
+          "two_leg_annual_10_percent_capital_stress_bips": "6.3926560755961440892947742262810755961440892947742",
+          "net_after_frozen_hurdles_bips": "-85.382927064295647154703943079451333638000998990454",
+          "positive_interval_fraction": "0.71428571428571428571428571428571428571428571428571",
+          "half_gross_cash_at_par": [
+            "6.7851370197434043",
+            "1.0346891136930682"
+          ],
+          "passes_prefilter": false
+        }
+      },
+      "passes_prefilter": false
+    },
+    "ETH": {
+      "sign": 1,
+      "rows": [
+        {
+          "start": 1787788802539,
+          "end": 1787817605654,
+          "paradex_short_cash_usdc_per_base": "0.233884354735249",
+          "binance_long_cash_usdt_per_base": "-0.1554240903140838",
+          "reference_mark": "2505.79220155"
+        },
+        {
+          "start": 1787817605654,
+          "end": 1787846405654,
+          "paradex_short_cash_usdc_per_base": "0.209916086958533",
+          "binance_long_cash_usdt_per_base": "-0.0272726756000000",
+          "reference_mark": "2496.37151163"
+        },
+        {
+          "start": 1787846405654,
+          "end": 1787875205654,
+          "paradex_short_cash_usdc_per_base": "0.199106786560986",
+          "binance_long_cash_usdt_per_base": "-0.0519757967750211",
+          "reference_mark": "2520.58000000"
+        },
+        {
+          "start": 1787875205654,
+          "end": 1787904003460,
+          "paradex_short_cash_usdc_per_base": "0.229341035691671",
+          "binance_long_cash_usdt_per_base": "0.0033188022000000",
+          "reference_mark": "2509.69564341"
+        },
+        {
+          "start": 1787904003460,
+          "end": 1787932803460,
+          "paradex_short_cash_usdc_per_base": "0.232005317272684",
+          "binance_long_cash_usdt_per_base": "-0.1388830770000000",
+          "reference_mark": "2495.34000000"
+        },
+        {
+          "start": 1787932803460,
+          "end": 1787961603460,
+          "paradex_short_cash_usdc_per_base": "0.217592873151262",
+          "binance_long_cash_usdt_per_base": "-0.0388516945999334",
+          "reference_mark": "2470.35000000"
+        },
+        {
+          "start": 1787961603460,
+          "end": 1787990403460,
+          "paradex_short_cash_usdc_per_base": "0.214385082342229",
+          "binance_long_cash_usdt_per_base": "-0.0683828750678112",
+          "reference_mark": "2441.96697674"
+        },
+        {
+          "start": 1787990403460,
+          "end": 1788019203460,
+          "paradex_short_cash_usdc_per_base": "0.224313949678170",
+          "binance_long_cash_usdt_per_base": "-0.1483478903805548",
+          "reference_mark": "2435.28757364"
+        },
+        {
+          "start": 1788019203460,
+          "end": 1788048003460,
+          "paradex_short_cash_usdc_per_base": "0.191209350493014",
+          "binance_long_cash_usdt_per_base": "-0.0777727900000000",
+          "reference_mark": "2443.54950388"
+        },
+        {
+          "start": 1788048003460,
+          "end": 1788076803460,
+          "paradex_short_cash_usdc_per_base": "0.244013049134594",
+          "binance_long_cash_usdt_per_base": "-0.0691347864852342",
+          "reference_mark": "2456.50000000"
+        },
+        {
+          "start": 1788076803460,
+          "end": 1788105603460,
+          "paradex_short_cash_usdc_per_base": "0.245711818010414",
+          "binance_long_cash_usdt_per_base": "-0.1020735072000000",
+          "reference_mark": "2454.19902326"
+        },
+        {
+          "start": 1788105603460,
+          "end": 1788134403460,
+          "paradex_short_cash_usdc_per_base": "0.236780329237526",
+          "binance_long_cash_usdt_per_base": "-0.0571108296092052",
+          "reference_mark": "2479.92000000"
+        },
+        {
+          "start": 1788134403460,
+          "end": 1788163201684,
+          "paradex_short_cash_usdc_per_base": "0.187220213111588",
+          "binance_long_cash_usdt_per_base": "-0.0859022844000000",
+          "reference_mark": "2415.85573643"
+        },
+        {
+          "start": 1788163201684,
+          "end": 1788192001684,
+          "paradex_short_cash_usdc_per_base": "0.187065040137870",
+          "binance_long_cash_usdt_per_base": "-0.1899628982000000",
+          "reference_mark": "2439.02000000"
+        },
+        {
+          "start": 1788192001684,
+          "end": 1788220801684,
+          "paradex_short_cash_usdc_per_base": "0.239887810424769",
+          "binance_long_cash_usdt_per_base": "-0.1409925708000000",
+          "reference_mark": "2466.41000000"
+        },
+        {
+          "start": 1788220801684,
+          "end": 1788249602958,
+          "paradex_short_cash_usdc_per_base": "0.232516742733225",
+          "binance_long_cash_usdt_per_base": "-0.2117776936000000",
+          "reference_mark": "2466.63000000"
+        },
+        {
+          "start": 1788249602958,
+          "end": 1788278402958,
+          "paradex_short_cash_usdc_per_base": "0.187052481388795",
+          "binance_long_cash_usdt_per_base": "-0.0269268334883900",
+          "reference_mark": "2471.44000000"
+        },
+        {
+          "start": 1788278402958,
+          "end": 1788307202958,
+          "paradex_short_cash_usdc_per_base": "0.231052731375322",
+          "binance_long_cash_usdt_per_base": "-0.0022240827196860",
+          "reference_mark": "2447.89395349"
+        },
+        {
+          "start": 1788307202958,
+          "end": 1788336004353,
+          "paradex_short_cash_usdc_per_base": "0.214627701296105",
+          "binance_long_cash_usdt_per_base": "-0.1231547116236528",
+          "reference_mark": "2417.48121705"
+        },
+        {
+          "start": 1788336004353,
+          "end": 1788364804353,
+          "paradex_short_cash_usdc_per_base": "0.204968543406364",
+          "binance_long_cash_usdt_per_base": "-0.1239071602602240",
+          "reference_mark": "2416.69371318"
+        },
+        {
+          "start": 1788364804353,
+          "end": 1788393604353,
+          "paradex_short_cash_usdc_per_base": "0.209235775831464",
+          "binance_long_cash_usdt_per_base": "-0.2145128778038212",
+          "reference_mark": "2390.18441860"
+        },
+        {
+          "start": 1788393604353,
+          "end": 1788422402060,
+          "paradex_short_cash_usdc_per_base": "0.205535384692877",
+          "binance_long_cash_usdt_per_base": "-0.2013058264455666",
+          "reference_mark": "2390.91482171"
+        },
+        {
+          "start": 1788422402060,
+          "end": 1788451202060,
+          "paradex_short_cash_usdc_per_base": "0.193143415598119",
+          "binance_long_cash_usdt_per_base": "-0.2211312400000000",
+          "reference_mark": "2397.35413178"
+        },
+        {
+          "start": 1788451202060,
+          "end": 1788480002060,
+          "paradex_short_cash_usdc_per_base": "0.245457868320791",
+          "binance_long_cash_usdt_per_base": "-0.2389370186000000",
+          "reference_mark": "2516.00000000"
+        },
+        {
+          "start": 1788480002060,
+          "end": 1788508802155,
+          "paradex_short_cash_usdc_per_base": "0.243350791079422",
+          "binance_long_cash_usdt_per_base": "-0.1503119412000000",
+          "reference_mark": "2506.42000000"
+        },
+        {
+          "start": 1788508802155,
+          "end": 1788537603155,
+          "paradex_short_cash_usdc_per_base": "0.227113377798299",
+          "binance_long_cash_usdt_per_base": "-0.0145586430000000",
+          "reference_mark": "2503.53000000"
+        }
+      ],
+      "roles": {
+        "training": {
+          "rows": 13,
+          "actual_duration_days": "4.3333234375",
+          "paradex_cash_usdc_per_base": "2.865480246377920",
+          "binance_cash_usdt_per_base": "-1.0178134952318437",
+          "par_valuation_gross_bips": "7.3735832923542937426538580090106913438526260944656",
+          "reference_binance_mark_not_executable_entry": "2505.79220155",
+          "execution_stress_bips": "20",
+          "quote_unit_stress_bips": "25",
+          "custody_latency_stress_bips": "25",
+          "retained_extra_reserve_bips": "10",
+          "two_leg_annual_10_percent_capital_stress_bips": "11.872119006849315068493150684931506849315068493151",
+          "net_after_frozen_hurdles_bips": "-84.498535714495021325839292675920815505462442398685",
+          "positive_interval_fraction": "1",
+          "half_gross_cash_at_par": [
+            "0.9127579222813467",
+            "0.9349088288647296"
+          ],
+          "passes_prefilter": false
+        },
+        "validation": {
+          "rows": 6,
+          "actual_duration_days": "2.0000308912037037037037037037037037037037037037037",
+          "paradex_cash_usdc_per_base": "1.292202507356086",
+          "binance_cash_usdt_per_base": "-0.6950387904317288",
+          "par_valuation_gross_bips": "2.4483756464660281588506859312346762224172003509606",
+          "reference_binance_mark_not_executable_entry": "2439.02000000",
+          "execution_stress_bips": "20",
+          "quote_unit_stress_bips": "25",
+          "custody_latency_stress_bips": "25",
+          "retained_extra_reserve_bips": "10",
+          "two_leg_annual_10_percent_capital_stress_bips": "5.4795366882293252156265854895991882293252156265855",
+          "net_after_frozen_hurdles_bips": "-83.031161041763297056775899558364512006908015275624",
+          "positive_interval_fraction": "0.83333333333333333333333333333333333333333333333333",
+          "half_gross_cash_at_par": [
+            "0.1167364306958640",
+            "0.4804272862284932"
+          ],
+          "passes_prefilter": false
+        },
+        "test": {
+          "rows": 7,
+          "actual_duration_days": "2.3333194675925925925925925925925925925925925925926",
+          "paradex_cash_usdc_per_base": "1.528805156727336",
+          "binance_cash_usdt_per_base": "-1.1646647073096118",
+          "par_valuation_gross_bips": "1.5067712032840560393384322562348148889638516306210",
+          "reference_binance_mark_not_executable_entry": "2416.69371318",
+          "execution_stress_bips": "20",
+          "quote_unit_stress_bips": "25",
+          "custody_latency_stress_bips": "25",
+          "retained_extra_reserve_bips": "10",
+          "two_leg_annual_10_percent_capital_stress_bips": "6.3926560755961440892947742262810755961440892947742",
+          "net_after_frozen_hurdles_bips": "-84.885884872312088049956341970046260707180237664153",
+          "positive_interval_fraction": "0.71428571428571428571428571428571428571428571428571",
+          "half_gross_cash_at_par": [
+            "0.0800138394210932",
+            "0.2841266099966310"
+          ],
+          "passes_prefilter": false
+        }
+      },
+      "passes_prefilter": false
+    },
+    "SOL": {
+      "sign": 1,
+      "rows": [
+        {
+          "start": 1787788802539,
+          "end": 1787817605654,
+          "paradex_short_cash_usdc_per_base": "0.00998756000877009",
+          "binance_long_cash_usdt_per_base": "-0.0101763338140000",
+          "reference_mark": "102.04857193"
+        },
+        {
+          "start": 1787817605654,
+          "end": 1787846405654,
+          "paradex_short_cash_usdc_per_base": "0.00935575692379168",
+          "binance_long_cash_usdt_per_base": "-0.0107124999290000",
+          "reference_mark": "101.76333814"
+        },
+        {
+          "start": 1787846405654,
+          "end": 1787875205654,
+          "paradex_short_cash_usdc_per_base": "0.00523212267202063",
+          "binance_long_cash_usdt_per_base": "0.0010722862040685",
+          "reference_mark": "107.12499929"
+        },
+        {
+          "start": 1787875205654,
+          "end": 1787904003460,
+          "paradex_short_cash_usdc_per_base": "0.00364332797365453",
+          "binance_long_cash_usdt_per_base": "0.0016150063651603",
+          "reference_mark": "109.08303195"
+        },
+        {
+          "start": 1787904003460,
+          "end": 1787932803460,
+          "paradex_short_cash_usdc_per_base": "0.00190016180160207",
+          "binance_long_cash_usdt_per_base": "0.0086656905000000",
+          "reference_mark": "106.32036637"
+        },
+        {
+          "start": 1787932803460,
+          "end": 1787961603460,
+          "paradex_short_cash_usdc_per_base": "0.00853390521762399",
+          "binance_long_cash_usdt_per_base": "-0.0069640520039190",
+          "reference_mark": "105.23000000"
+        },
+        {
+          "start": 1787961603460,
+          "end": 1787990403460,
+          "paradex_short_cash_usdc_per_base": "0.00909660641961327",
+          "binance_long_cash_usdt_per_base": "-0.0036348876684150",
+          "reference_mark": "104.09644251"
+        },
+        {
+          "start": 1787990403460,
+          "end": 1788019203460,
+          "paradex_short_cash_usdc_per_base": "0.00607808602172148",
+          "binance_long_cash_usdt_per_base": "0.0036074752000000",
+          "reference_mark": "103.67620275"
+        },
+        {
+          "start": 1788019203460,
+          "end": 1788048003460,
+          "paradex_short_cash_usdc_per_base": "0.00284692662229543",
+          "binance_long_cash_usdt_per_base": "0.0107183901729290",
+          "reference_mark": "104.96000000"
+        },
+        {
+          "start": 1788048003460,
+          "end": 1788076803460,
+          "paradex_short_cash_usdc_per_base": "0.00382363461515715",
+          "binance_long_cash_usdt_per_base": "0.0001456581000000",
+          "reference_mark": "105.55830385"
+        },
+        {
+          "start": 1788076803460,
+          "end": 1788105603460,
+          "paradex_short_cash_usdc_per_base": "0.00517854515925047",
+          "binance_long_cash_usdt_per_base": "-0.0007541681318440",
+          "reference_mark": "104.79000000"
+        },
+        {
+          "start": 1788105603460,
+          "end": 1788134403460,
+          "paradex_short_cash_usdc_per_base": "0.00092444184089618",
+          "binance_long_cash_usdt_per_base": "0.0126321570000000",
+          "reference_mark": "106.22086364"
+        },
+        {
+          "start": 1788134403460,
+          "end": 1788163201684,
+          "paradex_short_cash_usdc_per_base": "0.00046015294414931",
+          "binance_long_cash_usdt_per_base": "0.0041534476000000",
+          "reference_mark": "101.70000000"
+        },
+        {
+          "start": 1788163201684,
+          "end": 1788192001684,
+          "paradex_short_cash_usdc_per_base": "0.00120842923183404",
+          "binance_long_cash_usdt_per_base": "0.0016472676816396",
+          "reference_mark": "102.91000000"
+        },
+        {
+          "start": 1788192001684,
+          "end": 1788220801684,
+          "paradex_short_cash_usdc_per_base": "0.00533840768694009",
+          "binance_long_cash_usdt_per_base": "-0.0037895596874005",
+          "reference_mark": "102.82569798"
+        },
+        {
+          "start": 1788220801684,
+          "end": 1788249602958,
+          "paradex_short_cash_usdc_per_base": "0.00175940931017217",
+          "binance_long_cash_usdt_per_base": "0.0042081742142492",
+          "reference_mark": "103.00515595"
+        },
+        {
+          "start": 1788249602958,
+          "end": 1788278402958,
+          "paradex_short_cash_usdc_per_base": "-0.00269272746847334",
+          "binance_long_cash_usdt_per_base": "0.0089594020206425",
+          "reference_mark": "103.09099006"
+        },
+        {
+          "start": 1788278402958,
+          "end": 1788307202958,
+          "paradex_short_cash_usdc_per_base": "-0.00002379869210186",
+          "binance_long_cash_usdt_per_base": "0.0016068539264616",
+          "reference_mark": "101.98522505"
+        },
+        {
+          "start": 1788307202958,
+          "end": 1788336004353,
+          "paradex_short_cash_usdc_per_base": "0.00231266229700367",
+          "binance_long_cash_usdt_per_base": "0.0018980742855042",
+          "reference_mark": "99.92872677"
+        },
+        {
+          "start": 1788336004353,
+          "end": 1788364804353,
+          "paradex_short_cash_usdc_per_base": "0.00388614262853337",
+          "binance_long_cash_usdt_per_base": "-0.0052767320000000",
+          "reference_mark": "99.79360071"
+        },
+        {
+          "start": 1788364804353,
+          "end": 1788393604353,
+          "paradex_short_cash_usdc_per_base": "0.00463851346159974",
+          "binance_long_cash_usdt_per_base": "-0.0013450920000000",
+          "reference_mark": "99.28000000"
+        },
+        {
+          "start": 1788393604353,
+          "end": 1788422402060,
+          "paradex_short_cash_usdc_per_base": "0.00557548854806000",
+          "binance_long_cash_usdt_per_base": "-0.0044704782412785",
+          "reference_mark": "100.38000000"
+        },
+        {
+          "start": 1788422402060,
+          "end": 1788451202060,
+          "paradex_short_cash_usdc_per_base": "0.00659062794538448",
+          "binance_long_cash_usdt_per_base": "-0.0068183290000000",
+          "reference_mark": "100.34743527"
+        },
+        {
+          "start": 1788451202060,
+          "end": 1788480002060,
+          "paradex_short_cash_usdc_per_base": "0.00971914021084769",
+          "binance_long_cash_usdt_per_base": "-0.0103887066230000",
+          "reference_mark": "105.14000000"
+        },
+        {
+          "start": 1788480002060,
+          "end": 1788508802155,
+          "paradex_short_cash_usdc_per_base": "0.00438059336877978",
+          "binance_long_cash_usdt_per_base": "0.0042248400000000",
+          "reference_mark": "103.88706623"
+        },
+        {
+          "start": 1788508802155,
+          "end": 1788537603155,
+          "paradex_short_cash_usdc_per_base": "0.00432867727429443",
+          "binance_long_cash_usdt_per_base": "0.0035467879530798",
+          "reference_mark": "103.55000000"
+        }
+      ],
+      "roles": {
+        "training": {
+          "rows": 13,
+          "actual_duration_days": "4.3333234375",
+          "paradex_cash_usdc_per_base": "0.06706122822054628",
+          "binance_cash_usdt_per_base": "0.0103681695949798",
+          "par_valuation_gross_bips": "7.5875042983098881666045476036873728351447788849033",
+          "reference_binance_mark_not_executable_entry": "102.04857193",
+          "execution_stress_bips": "20",
+          "quote_unit_stress_bips": "25",
+          "custody_latency_stress_bips": "25",
+          "retained_extra_reserve_bips": "10",
+          "two_leg_annual_10_percent_capital_stress_bips": "11.872119006849315068493150684931506849315068493151",
+          "net_after_frozen_hurdles_bips": "-84.284614708539426901888603081244134014170289608248",
+          "positive_interval_fraction": "0.84615384615384615384615384615384615384615384615385",
+          "half_gross_cash_at_par": [
+            "0.02215293191977279",
+            "0.05527646589575329"
+          ],
+          "passes_prefilter": false
+        },
+        "validation": {
+          "rows": 6,
+          "actual_duration_days": "2.0000308912037037037037037037037037037037037037037",
+          "paradex_cash_usdc_per_base": "0.00790238236537477",
+          "binance_cash_usdt_per_base": "0.0145302124410966",
+          "par_valuation_gross_bips": "2.1798265286630424642891847245165678748420950344962",
+          "reference_binance_mark_not_executable_entry": "102.91000000",
+          "execution_stress_bips": "20",
+          "quote_unit_stress_bips": "25",
+          "custody_latency_stress_bips": "25",
+          "retained_extra_reserve_bips": "10",
+          "two_leg_annual_10_percent_capital_stress_bips": "5.4795366882293252156265854895991882293252156265855",
+          "net_after_frozen_hurdles_bips": "-83.299710159566282751337400765082620354483120592090",
+          "positive_interval_fraction": "1",
+          "half_gross_cash_at_par": [
+            "0.01037212843743460",
+            "0.01206046636903677"
+          ],
+          "passes_prefilter": false
+        },
+        "test": {
+          "rows": 7,
+          "actual_duration_days": "2.3333194675925925925925925925925925925925925925926",
+          "paradex_cash_usdc_per_base": "0.03911918343749949",
+          "binance_cash_usdt_per_base": "-0.0205277099111987",
+          "par_valuation_gross_bips": "1.8629925560384953064391737789616430005254191614187",
+          "reference_binance_mark_not_executable_entry": "99.79360071",
+          "execution_stress_bips": "20",
+          "quote_unit_stress_bips": "25",
+          "custody_latency_stress_bips": "25",
+          "retained_extra_reserve_bips": "10",
+          "two_leg_annual_10_percent_capital_stress_bips": "6.3926560755961440892947742262810755961440892947742",
+          "net_after_frozen_hurdles_bips": "-84.529663519557648782855600447319432595618670133355",
+          "positive_interval_fraction": "0.57142857142857142857142857142857142857142857142857",
+          "half_gross_cash_at_par": [
+            "0.00300784239691461",
+            "0.01558363112938618"
+          ],
+          "passes_prefilter": false
+        }
+      },
+      "passes_prefilter": false
+    }
+  },
+  "survivors": [],
+  "result_sha256": "f2aa72d9d65d28bdd0f012deb85d2e65c5085d7c62ab9c69aee916401b6f99f9"
+}

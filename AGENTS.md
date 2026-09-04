@@ -383,6 +383,11 @@ identity; its deadline grouping does not bind observation starts (review R4).
   keys and private-key blocks; if they do, preserve the response receipt hash,
   mechanically extract and hash-bind only the exact required secret-free section,
   and remove the unrelated full payload. Never commit public example secrets.
+  A PEM/assigned-key regex alone is insufficient: include provider-specific
+  credential patterns before staging (including AWS access-key IDs embedded in
+  site bundles). Never bypass push protection to publish documentation. If
+  extraction removes original bytes, preserve their receipt hashes and an
+  explicit section-disposition record; do not claim full-body reconstruction.
 - Before any public research request, search retained request journals and source
   bindings for the exact canonical method and URL. Reuse a same-day successful
   immutable response unless the registered retry trigger requires a fresh mutable

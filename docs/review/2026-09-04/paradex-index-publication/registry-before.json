@@ -4088,20 +4088,12 @@
         {
           "path": "docs/model-research/action-value/binance-paradex-btc-eth-sol-funding-terminal-v1-2026-09-01.json",
           "result_sha256": "98c5441b5f9828664c387b9f9b8a05e4eef919a3857054c8bbd73faa4c3ea30a"
-        },
-        {
-          "path": "docs/review/2026-09-04/paradex-index-contract.json",
-          "result_sha256": "0bedfd6efc1fca0f7a8657d290e51f58b4c435eda89f2c54ee680b11902d166b"
-        },
-        {
-          "path": "docs/review/2026-09-04/paradex-index-study/result.json",
-          "result_sha256": "f2aa72d9d65d28bdd0f012deb85d2e65c5085d7c62ab9c69aee916401b6f99f9"
         }
       ],
-      "current_status": "The distinct August 27 00:00 through September 4 16:00 2026 nominal population is consumed, including the frozen five-minute post-boundary windows. All 84 public responses passed source gates (1,308,306 bytes): 27 index boundaries and one Binance history per BTC ETH SOL asset, 78 fixed-base intervals and 13/6/7 chronological roles. Training selected short Paradex and long Binance for each asset. All nine par-valued gross role funding spreads were positive at 0.7858-7.5875 bips, but each was negative after even the frozen 20-bip execution allowance alone. No survivor passed the full unchanged 80-bip reserves plus 10-percent-annual total-two-leg capital stress. These are stress diagnostics, not actual fees, converted realized account PnL, current profit or a family-wide negative-EV proof. No basis books accounts orders or protected data.",
+      "current_status": "terminal_exact_90_bin_population_source_incomplete_before_economics_all_three_Paradex_histories_hit_5000_rows_and_returned_continuation_cursors_frozen_byte_ceilings_also_failed_no_funding_values_were_viewed_or_used_no_pagination_adaptation_basis_books_accounts_credentials_orders_or_funds_public_profit_floor_zero_not_accepted_stable_or_deployment_ready",
       "market_direction_forecast_required": false,
       "mechanism": "binance_Paradex_cross_venue_USD_perpetual_funding_spread",
-      "next_action": "do_not_refetch_alias_paginate_or_consume_any_continuation_cursor_for_the_exact_population_reopen_only_for_a_distinct_prospectively_frozen_nonoverlapping_population_or_independently_known_material_API_cadence_pagination_or_architecture_change_with_every_page_total_byte_and_row_ceiling_frozen_before_access_then_require_exact_realized_index_alignment_current_fees_finite_size_basis_depth_and_all_costs_also_do_not_refetch_reprice_interpolate_fill_missing_windows_or_reorient_the_consumed_2026_08_27_through_2026_09_04_16_05_01_index_population_a_new_study_requires_the_literal_nonoverlapping_population_or_material_architecture_trigger_and_an_explicit_information_gain_case_not_a_rolling_retry_to_hunt_a_winner",
+      "next_action": "do_not_refetch_alias_paginate_or_consume_any_continuation_cursor_for_the_exact_population_reopen_only_for_a_distinct_prospectively_frozen_nonoverlapping_population_or_independently_known_material_API_cadence_pagination_or_architecture_change_with_every_page_total_byte_and_row_ceiling_frozen_before_access_then_require_exact_realized_index_alignment_current_fees_finite_size_basis_depth_and_all_costs",
       "priority_rank": 59,
       "prohibited_shortcuts": [
         "using_a_partial_5000_row_page_as_complete_history",
@@ -4109,15 +4101,10 @@
         "changing_cadence_alignment_roles_orientation_or_costs_after_access",
         "treating_Paradex_as_an_independent_signal_when_its_funding_aggregation_includes_Binance",
         "using_hourly_sampled_rates_as_exact_realized_index_PnL",
-        "requesting_books_accounts_credentials_orders_or_funds_before_a_complete_funding_only_prefilter_survives",
-        "using_averaged_hourly_rates_instead_of_available_same_unit_funding_index_deltas",
-        "treating_USDC_USDT_par_valuation_as_observed_conversion_or_stress_allowances_as_actual_costs",
-        "discarding_partial_source_windows_or_reorienting_the_consumed_Aug27_Sep4_population"
+        "requesting_books_accounts_credentials_orders_or_funds_before_a_complete_funding_only_prefilter_survives"
       ],
       "retry_trigger": "a_distinct_prospectively_frozen_nonoverlapping_population_or_an_independently_known_material_Paradex_API_cadence_pagination_or_architecture_change_with_all_pages_total_bytes_rows_alignment_roles_orientation_and_costs_frozen_before_access_followed_by_exact_index_and_finite_size_confirmation_for_any_survivor",
-      "venue_scope": "Binance_USDT_perpetuals_versus_Paradex_USDC_settled_BTC_ETH_SOL_perpetuals",
-      "prior_90_bin_source_failure_status": "terminal_exact_90_bin_population_source_incomplete_before_economics_all_three_Paradex_histories_hit_5000_rows_and_returned_continuation_cursors_frozen_byte_ceilings_also_failed_no_funding_values_were_viewed_or_used_no_pagination_adaptation_basis_books_accounts_credentials_orders_or_funds_public_profit_floor_zero_not_accepted_stable_or_deployment_ready",
-      "index_boundary_study_status": "The distinct August 27 00:00 through September 4 16:00 2026 nominal population is consumed, including the frozen five-minute post-boundary windows. All 84 public responses passed source gates (1,308,306 bytes): 27 index boundaries and one Binance history per BTC ETH SOL asset, 78 fixed-base intervals and 13/6/7 chronological roles. Training selected short Paradex and long Binance for each asset. All nine par-valued gross role funding spreads were positive at 0.7858-7.5875 bips, but each was negative after even the frozen 20-bip execution allowance alone. No survivor passed the full unchanged 80-bip reserves plus 10-percent-annual total-two-leg capital stress. These are stress diagnostics, not actual fees, converted realized account PnL, current profit or a family-wide negative-EV proof. No basis books accounts orders or protected data."
+      "venue_scope": "Binance_USDT_perpetuals_versus_Paradex_USDC_settled_BTC_ETH_SOL_perpetuals"
     },
     {
       "priority_rank": 60,
@@ -4320,7 +4307,7 @@
       ]
     }
   ],
-  "result_sha256": "b3aee5cabed7e9a52412b51e966d57072fad3de8db8cdb6700a6acdc7bd42b20",
+  "result_sha256": "0591e4c2699a18a1cba1a8168a175779722e38c4e2c1b4dde3fa0bdba9866b41",
   "schema_version": "structural-edge-priority-registry-v1",
   "terminal_do_not_repeat": [
     {
@@ -5263,13 +5250,8 @@
       "family": "polymarket_nyc_september5_complete_long_only_frontier",
       "reason": "One prospectively fixed NYC September 5 event GET returned all 11 markets; 11 YES and 7 NO sides were price-complete. All 17 frontier rows were screened. Four gross-positive rows failed the one-tick gate. A retained fee-only audit also rejected all 17 rows: the strongest gross-positive seven-NO row had 0.060 pUSD gross headroom but 0.15394 configured fee at five shares, leaving negative 0.09394 pUSD before any adverse tick. Four NO sides remain incomplete. Do not refetch, reprice, fill missing sides, request books or reinterpret missing stress results as zero fees. No edge or account/order authority.",
       "canonical_result_sha256": "f53fb916a213fcd0dbddfedcb6be3473b104bae145333cf7543e5bac7a61cbd1"
-    },
-    {
-      "family": "binance_paradex_fixed_base_index_boundaries_aug27_sep4_2026",
-      "reason": "The distinct August 27 00:00 through September 4 16:00 2026 nominal population is consumed, including the frozen five-minute post-boundary windows. All 84 public responses passed source gates (1,308,306 bytes): 27 index boundaries and one Binance history per BTC ETH SOL asset, 78 fixed-base intervals and 13/6/7 chronological roles. Training selected short Paradex and long Binance for each asset. All nine par-valued gross role funding spreads were positive at 0.7858-7.5875 bips, but each was negative after even the frozen 20-bip execution allowance alone. No survivor passed the full unchanged 80-bip reserves plus 10-percent-annual total-two-leg capital stress. These are stress diagnostics, not actual fees, converted realized account PnL, current profit or a family-wide negative-EV proof. No basis books accounts orders or protected data.",
-      "canonical_result_sha256": "f2aa72d9d65d28bdd0f012deb85d2e65c5085d7c62ab9c69aee916401b6f99f9"
     }
   ],
-  "updated_at_utc": "2026-09-04T23:14:46.412387Z",
+  "updated_at_utc": "2026-09-04T22:35:17.490786Z",
   "usage_rule": "advance_the_highest_ranked_hypothesis_whose_retry_trigger_is_satisfied_otherwise_do_not_repeat_a_blocked_or_terminal_screen"
 }

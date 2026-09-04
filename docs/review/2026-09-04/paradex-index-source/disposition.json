@@ -1,0 +1,36 @@
+{
+  "schema_version": "public-source-secret-free-section-disposition-v1",
+  "created_at_utc": "2026-09-04T23:21:20.591550+00:00",
+  "reason": "GitHub push protection identified embedded AWS access-key patterns in site documentation outside the relevant visible page sections. No bypass and no source refetch.",
+  "extractor_path": "tools/extract_paradex_funding_sources.py",
+  "extractor_sha256": "e34c3c7ab1d9aeb9187dadc194b387317a767667ed6beb031510c553e3262a6f",
+  "request_journal_sha256": "bf7058a6c525f99da2f5e670e90df2b0756bd760edd0c2eb91cdd1921850cd02",
+  "algorithm": "HTMLParser visible text excluding script/style, unique title followed by Copy page, through but excluding Was this page helpful; whitespace-stripped text segments joined by LF",
+  "sources": [
+    {
+      "original_path": "docs/review/2026-09-04/paradex-index-source/mechanism.html",
+      "original_bytes": 1007567,
+      "original_sha256": "5ddb24572bed2276d0a4f4a47972fd7558b142a1497a228e89e91406045a84d7",
+      "removed_aws_identifier_pattern_occurrences": 44,
+      "section_path": "docs/review/2026-09-04/paradex-index-source/mechanism-section.txt",
+      "section_bytes": 11580,
+      "section_sha256": "ada44ea56dd258836a64bfc1ac4f3f4c291d1c54cc362bf31cf5db3081ecd077",
+      "title_marker": "Funding Mechanism",
+      "disposition": "original HTML removed from working tree and publishable commit; only receipt hash and exact selected visible text retained"
+    },
+    {
+      "original_path": "docs/review/2026-09-04/paradex-index-source/history-api.html",
+      "original_bytes": 1207581,
+      "original_sha256": "9ee9c68d822c8ac5720311f53e0cfa2f72254f2d33edbb21dd7f65f3fbe4b681",
+      "removed_aws_identifier_pattern_occurrences": 44,
+      "section_path": "docs/review/2026-09-04/paradex-index-source/history-api-section.txt",
+      "section_bytes": 1465,
+      "section_sha256": "d78f4812ed7a08aa636dc14ed346fcdc6e664d8ee80335ac8316394ea45b8707",
+      "title_marker": "Funding data history",
+      "disposition": "original HTML removed from working tree and publishable commit; only receipt hash and exact selected visible text retained"
+    }
+  ],
+  "original_bytes_reconstructible_from_published_section": false,
+  "economic_market_responses_changed": false,
+  "result_sha256": "d73c091f3d484f5585202d84102d7e5ce9bbcd73b91d29ec29b4e35a6f233b4a"
+}
