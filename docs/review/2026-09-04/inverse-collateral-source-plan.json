@@ -1,0 +1,20 @@
+{
+  "schema_version": 1,
+  "purpose": "Source-only mechanics review of fully collateralized inverse short; not an economic population capture or retry of any previous funding/basis screen.",
+  "freeze_order": "Plan was persisted immediately before the three web opens. Exact pre-access wall-clock time was not recorded; the response extraction records the later clock receipt.",
+  "source_urls": [
+    "https://www.binance.com/en-AU/support/faq/detail/3a55a23768cb416fb404f06ffedde4b2",
+    "https://www.binance.com/en-AE/support/faq/detail/be2c7d9d95b04a7e8044ed02dd7dfe5c",
+    "https://www.binance.com/en-AU/support/faq/detail/360033525271"
+  ],
+  "deduplication": "No matching article identifiers found by rg -l across docs and tools before source access; locale aliases were included through identifier search.",
+  "access": "One web open per listed URL, no retries or locale aliases. Retain complete tool-returned source extraction; this is not original HTTP response bytes.",
+  "bounds": {"max_open_requests": 3, "market_data_requests": 0, "authenticated_requests": 0},
+  "questions": [
+    "Does the official PnL formula support reciprocal-price short PnL in collateral coin?",
+    "What maintenance, opening cost, liquidation and cross-account caveats limit a one-position collateral identity?",
+    "Can source mechanics support an offline conditional scenario model without claiming actual margin qualification?"
+  ],
+  "decision": "Missing source mechanics remain unresolved. No current fee, basis, funding, capacity, liquidation exemption, profitability or accepted-edge claim is permitted.",
+  "preservation": "Prior results, registry gates and protected captures stay unchanged. Synthetic algebra is not training or independent market validation."
+}

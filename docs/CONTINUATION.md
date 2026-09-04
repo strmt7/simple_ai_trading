@@ -10,6 +10,15 @@ durability-audit SHA-256 is
 
 ## September 4 resumed review and USD1 campaign
 
+Current R&D routing: `review/2026-09-04/economic-rd-rounds.md` separates
+mechanism accounting, source/data gaps, prospective baselines, model uplift
+and integration. The inverse-collateral review adds a research-only Decimal
+evaluator: matched collateral cancels common-price exposure conditionally,
+but coin cash flows, sizing and spot/mark basis leave risk. Three FAQ opens
+redirected and did not verify actual exchange mechanics. No old funding/carry
+result, protected capture or registry gate was changed. See
+`review/2026-09-04/inverse-collateral-economics.md` before venue-specific work.
+
 GPU continuation: a custom LightGBM 4.7.0 OpenCL wheel now trains successfully
 on the RX 9070 XT, with a hash-checked `tools/run_lightgbm_opencl.ps1` launcher
 that preserves the base environment. See `review/2026-09-04/gpu-runtime.md`.
@@ -34,9 +43,11 @@ outperforms liquidating the existing inventory. See
 `docs/review/2026-09-04/inventory-completion-economics.md`; all original outcomes
 and exact retry triggers are preserved, and no new market capture was run.
 
-The requested GPU review verified an AMD RX 9070 XT/OpenCL driver, but the
-current LightGBM 4.7.0 binary is CPU-only and its real GPU probe fails before
-falling back to CPU. No speedup or trained-model uplift is claimed. The exact
+The initial GPU review verified an AMD RX 9070 XT/OpenCL driver, but the
+base-environment LightGBM 4.7.0 binary is CPU-only and its real GPU probe fails
+before falling back to CPU. The later isolated runtime above resolves GPU
+capability without replacing that base wheel. No qualified speedup or
+trained-model uplift is claimed. The initial
 runtime fingerprint and bounded build/benchmark requirements are in
 `docs/review/2026-09-04/accelerator-readiness.md`.
 
