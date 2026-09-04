@@ -1,0 +1,17 @@
+{
+  "schema_version": "local-lightgbm-opencl-runtime-v1",
+  "lightgbm_version": "4.7.0",
+  "device_name": "AMD Radeon RX 9070 XT",
+  "wheel_path": "C:/trader/runtimes/lightgbm-4.7.0-opencl/lightgbm-4.7.0-py3-none-win_amd64.whl",
+  "wheel_sha256": "375a733c1ded8e506ca60074775604e160775929bbc89b10f9fe31f789b49c0e",
+  "library_sha256": "59b23140f62d32daaec43ecdbee21c4a62e1d5807f139f20e229af07aac53a80",
+  "base_cpu_library_sha256_unchanged": "7e366d2e49cd061aac3ab21676b2f99b0c7a758dc3e888d4b23812af1b7d301c",
+  "compiler_toolset": "14.42.34433",
+  "boost_commit": "a7090e8ce184501cfc9e80afa6cafb5bfd3b371c",
+  "opencl_headers_commit": "1b2a1850f410aaaaeaa56cead5a179b5aea4918e",
+  "opencl_loader_commit": "98ca71fb9f8484f1cd1999f55224bf9e8d18693b",
+  "build_mode": "USE_GPU=ON; explicit Boost msvc-14.3 x64; shared OpenCL import library; system OpenCL runtime",
+  "small_benchmark": "docs/review/2026-09-04/gpu-benchmark-result.json",
+  "large_benchmark": "docs/review/2026-09-04/gpu-large-benchmark-result.json",
+  "limits": ["machine-local wheel, not distributed through Git", "base lock unchanged", "no automatic override of CPU or frozen model settings", "synthetic runtime evidence only", "not PyTorch or neural-training enablement", "fresh builds require their own hashes and capability check"]
+}

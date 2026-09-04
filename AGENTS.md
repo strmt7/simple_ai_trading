@@ -72,6 +72,21 @@ identity; its deadline grouping does not bind observation starts (review R4).
   Polymarket controls.
 - No network calls in tests unless explicitly stubbed. Do not hard-code host
   capabilities; detect and record effective backends and fallbacks.
+- This workstation is shared with the user's other active tasks. Never stop,
+  reprioritize, change affinity, or otherwise modify unrelated processes to
+  improve a benchmark. Before performance-timing benchmarks, require
+  a passive CPU/GPU/disk/memory headroom check that budgets our expected work;
+  normal background activity and brief spikes are acceptable. Do not demand an
+  almost-idle PC or treat total utilization below 100 percent as proof of no
+  shared-core, cache, bandwidth, or storage contention. Record competing load
+  during the run as well; a preflight alone does not validate later timings.
+  Deferral is only for timing validity when sustained contention could materially
+  distort a benchmark. Ordinary training and R&D may continue with bounded
+  resource use alongside other tasks; do not impose an idle-window prerequisite
+  on that work.
+  Stop only verified task-owned
+  benchmark processes if contention develops, preserve partial results, and
+  label unmonitored prior timings provisional rather than clean speed evidence.
 - For substantial new training, prefer a measured faster compatible accelerator,
   not a hardware-name assumption. Dependency upgrades can replace GPU-enabled
   libraries with CPU-only wheels: probe the actual installed backend and bind

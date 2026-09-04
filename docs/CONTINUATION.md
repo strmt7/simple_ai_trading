@@ -10,6 +10,23 @@ durability-audit SHA-256 is
 
 ## September 4 resumed review and USD1 campaign
 
+GPU continuation: a custom LightGBM 4.7.0 OpenCL wheel now trains successfully
+on the RX 9070 XT, with a hash-checked `tools/run_lightgbm_opencl.ps1` launcher
+that preserves the base environment. See `review/2026-09-04/gpu-runtime.md`.
+The user then disclosed other concurrent PC work. The concurrency benchmark
+was stopped by terminating only its verified worker; its controller recorded
+a terminal failure and zero owned benchmark processes remained. Prior speed
+ratios are provisional because competing load was not recorded. Do not rerun
+the interrupted study or present those timings as isolated-machine results.
+The user clarified that ordinary concurrent activity is acceptable: use
+workload-budgeted headroom, not an almost-idle threshold, and defer only
+significant sustained pressure. This deferral applies only to performance
+timing: ordinary training/R&D may continue with bounded resources. New timing
+benchmarks need passive preflight and during-run background-load evidence;
+never touch unrelated tasks. The passive
+preflight tool does not
+yet implement during-run subtraction of our own load or automatic scheduling.
+
 The next retained-evidence review identified a missing direct-sale comparator:
 none of the 66 historical opposite-lock rows supplies contemporaneous original
 token sell bids/depth/fees. Positive pair P&L is not proof that completion

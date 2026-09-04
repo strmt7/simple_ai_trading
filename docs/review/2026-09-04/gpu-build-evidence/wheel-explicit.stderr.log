@@ -1,0 +1,804 @@
+Building wheel...
+2026-09-04 23:09:36,389 - scikit_build_core - INFO - RUN: C:\Program Files\Microsoft Visual Studio\18\Community\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.EXE -E capabilities
+2026-09-04 23:09:36,410 - scikit_build_core - INFO - CMake version: 4.3.1
+*** scikit-build-core 1.0.3 using CMake 4.3.1 (wheel)
+2026-09-04 23:09:36,499 - scikit_build_core - INFO - Implementation: cpython win32 on AMD64
+2026-09-04 23:09:36,501 - scikit_build_core - INFO - Build directory: C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\gpu-wheel-build
+*** Configuring CMake...
+2026-09-04 23:09:36,516 - scikit_build_core - INFO - RUN: C:\Program Files\Microsoft Visual Studio\18\Community\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.EXE -S. -BC:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\gpu-wheel-build -CC:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\gpu-wheel-build\CMakeInit.txt -DCMAKE_INSTALL_PREFIX=C:\Users\strat\AppData\Local\Temp\tmpn41rc6i7\wheel\platlib -D__BUILD_FOR_PYTHON=ON -DBOOST_LIBRARYDIR=C:/trader/simple_ai_trading/.tmp/lightgbm-opencl-4.7.0/boost-explicit-stage/lib -DBoost_ARCHITECTURE=-x64 -DBoost_COMPILER=-vc143 -DBoost_INCLUDE_DIR=C:/trader/simple_ai_trading/.tmp/lightgbm-opencl-4.7.0/cmake-build/Boost/source -DBoost_NO_BOOST_CMAKE=ON -DCMAKE_POLICY_DEFAULT_CMP0167=OLD -DOpenCL_INCLUDE_DIR=C:/trader/simple_ai_trading/.tmp/lightgbm-opencl-4.7.0/cmake-build/_deps/opencl-headers-src -DOpenCL_LIBRARY=C:/trader/simple_ai_trading/.tmp/lightgbm-opencl-4.7.0/loader-explicit-build/Release/OpenCL.lib -DUSE_GPU=ON
+loading initial cache file C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\gpu-wheel-build\CMakeInit.txt
+-- Building for: Visual Studio 18 2026
+-- Selecting Windows SDK version 10.0.28000.0 to target Windows 10.0.
+-- The C compiler identification is MSVC 19.42.34444.0
+-- The CXX compiler identification is MSVC 19.42.34444.0
+-- Detecting C compiler ABI info
+-- Detecting C compiler ABI info - done
+-- Check for working C compiler: C:/Program Files/Microsoft Visual Studio/18/Community/VC/Tools/MSVC/14.42.34433/bin/HostX64/x64/cl.exe - skipped
+-- Detecting C compile features
+-- Detecting C compile features - done
+-- Detecting CXX compiler ABI info
+-- Detecting CXX compiler ABI info - done
+-- Check for working CXX compiler: C:/Program Files/Microsoft Visual Studio/18/Community/VC/Tools/MSVC/14.42.34433/bin/HostX64/x64/cl.exe - skipped
+-- Detecting CXX compile features
+-- Detecting CXX compile features - done
+-- Building using CMake version: 4.3.1-msvc1
+-- Found OpenMP_C: -openmp (found version "2.0")
+-- Found OpenMP_CXX: -openmp (found version "2.0")
+-- Found OpenMP: TRUE (found version "2.0")
+-- Looking for include file OpenCL/cl.h
+-- Looking for include file OpenCL/cl.h - not found
+-- Looking for CL_VERSION_3_0
+-- Looking for CL_VERSION_3_0 - not found
+-- Looking for CL_VERSION_2_2
+-- Looking for CL_VERSION_2_2 - found
+-- Found OpenCL: C:/trader/simple_ai_trading/.tmp/lightgbm-opencl-4.7.0/loader-explicit-build/Release/OpenCL.lib (found version "2.2")
+-- OpenCL include directory: C:/trader/simple_ai_trading/.tmp/lightgbm-opencl-4.7.0/cmake-build/_deps/opencl-headers-src
+-- Found Boost: C:/trader/simple_ai_trading/.tmp/lightgbm-opencl-4.7.0/cmake-build/Boost/source (found suitable version "1.74.0", minimum required is "1.56.0") found components: filesystem system
+-- Performing Test MM_PREFETCH
+-- Performing Test MM_PREFETCH - Failed
+-- Performing Test MM_MALLOC
+-- Performing Test MM_MALLOC - Failed
+-- Looking for inet_pton
+-- Looking for inet_pton - found
+-- Configuring done (8.5s)
+-- Generating done (0.1s)
+-- Build files have been written to: C:/trader/simple_ai_trading/.tmp/lightgbm-opencl-4.7.0/gpu-wheel-build
+*** Building project with Visual Studio 18 2026...
+2026-09-04 23:09:45,493 - scikit_build_core - INFO - RUN: C:\Program Files\Microsoft Visual Studio\18\Community\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.EXE --build C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\gpu-wheel-build --config Release --target _lightgbm
+MSBuild version 18.9.1+a81b43525 for .NET Framework
+
+  1>Checking Build System
+  Building Custom Rule C:/Users/strat/AppData/Local/uv/cache/sdists-v9/pypi/lightgbm/4.7.0/KAceDCsqSF6rJGy0/src/external_libs/nanoarrow/CMakeLists.txt
+  array.c
+  schema.c
+  array_stream.c
+  utils.c
+  Generating Code...
+  nanoarrow_static.vcxproj -> C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\gpu-wheel-build\external_libs\nanoarrow\Release\nanoarrow_static.lib
+  Building Custom Rule C:/Users/strat/AppData/Local/uv/cache/sdists-v9/pypi/lightgbm/4.7.0/KAceDCsqSF6rJGy0/src/CMakeLists.txt
+  Building Custom Rule C:/Users/strat/AppData/Local/uv/cache/sdists-v9/pypi/lightgbm/4.7.0/KAceDCsqSF6rJGy0/src/CMakeLists.txt
+  c_api.cpp
+  boosting.cpp
+  gbdt_model_text.cpp
+  gbdt_prediction.cpp
+  gbdt.cpp
+  prediction_early_stop.cpp
+  sample_strategy.cpp
+  bin.cpp
+  config_auto.cpp
+  config.cpp
+  dataset_loader.cpp
+  dataset.cpp
+  file_io.cpp
+  json11.cpp
+  metadata.cpp
+  parser.cpp
+  train_share_states.cpp
+  tree.cpp
+  dcg_calculator.cpp
+  metric.cpp
+  linker_topo.cpp
+  linkers_mpi.cpp
+  linkers_socket.cpp
+  network.cpp
+  objective_function.cpp
+  data_parallel_tree_learner.cpp
+  feature_histogram.cpp
+  feature_parallel_tree_learner.cpp
+  gpu_tree_learner.cpp
+  gradient_discretizer.cpp
+  linear_tree_learner.cpp
+  serial_tree_learner.cpp
+  tree_learner.cpp
+  voting_parallel_tree_learner.cpp
+  openmp_wrapper.cpp
+C:\Users\strat\AppData\Local\uv\cache\sdists-v9\pypi\lightgbm\4.7.0\KAceDCsqSF6rJGy0\src\src\arrow\array.hpp(76,12): warning C4456: declaration of 'ret' hides previous local declaration [C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\gpu-wheel-build\lightgbm_capi_objs.vcxproj]
+  (compiling source file '../../../../../Users/strat/AppData/Local/uv/cache/sdists-v9/pypi/lightgbm/4.7.0/KAceDCsqSF6rJGy0/src/src/c_api.cpp')
+      C:\Users\strat\AppData\Local\uv\cache\sdists-v9\pypi\lightgbm\4.7.0\KAceDCsqSF6rJGy0\src\src\arrow\array.hpp(64,10):
+      see declaration of 'ret'
+  
+C:\Users\strat\AppData\Local\uv\cache\sdists-v9\pypi\lightgbm\4.7.0\KAceDCsqSF6rJGy0\src\src\objective\rank_objective.hpp(337,64): warning C4244: '+=': conversion from 'double' to '_Ty', possible loss of data [C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\gpu-wheel-build\lightgbm_objs.vcxproj]
+C:\Users\strat\AppData\Local\uv\cache\sdists-v9\pypi\lightgbm\4.7.0\KAceDCsqSF6rJGy0\src\src\objective\rank_objective.hpp(337,64): warning C4244:         with [C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\gpu-wheel-build\lightgbm_objs.vcxproj]
+C:\Users\strat\AppData\Local\uv\cache\sdists-v9\pypi\lightgbm\4.7.0\KAceDCsqSF6rJGy0\src\src\objective\rank_objective.hpp(337,64): warning C4244:         [ [C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\gpu-wheel-build\lightgbm_objs.vcxproj]
+C:\Users\strat\AppData\Local\uv\cache\sdists-v9\pypi\lightgbm\4.7.0\KAceDCsqSF6rJGy0\src\src\objective\rank_objective.hpp(337,64): warning C4244:             _Ty=LightGBM::label_t [C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\gpu-wheel-build\lightgbm_objs.vcxproj]
+C:\Users\strat\AppData\Local\uv\cache\sdists-v9\pypi\lightgbm\4.7.0\KAceDCsqSF6rJGy0\src\src\objective\rank_objective.hpp(337,64): warning C4244:         ] [C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\gpu-wheel-build\lightgbm_objs.vcxproj]
+  (compiling source file '../../../../../Users/strat/AppData/Local/uv/cache/sdists-v9/pypi/lightgbm/4.7.0/KAceDCsqSF6rJGy0/src/src/objective/objective_function.cpp')
+  
+C:\Program Files\Microsoft Visual Studio\18\Community\VC\Tools\MSVC\14.42.34433\include\algorithm(3741,24): warning C4244: '=': conversion from 'int' to 'char', possible loss of data [C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\gpu-wheel-build\lightgbm_objs.vcxproj]
+  (compiling source file '../../../../../Users/strat/AppData/Local/uv/cache/sdists-v9/pypi/lightgbm/4.7.0/KAceDCsqSF6rJGy0/src/src/io/train_share_states.cpp')
+      C:\Program Files\Microsoft Visual Studio\18\Community\VC\Tools\MSVC\14.42.34433\include\algorithm(3741,24):
+      the template instantiation context (the oldest one first) is
+          C:\Users\strat\AppData\Local\uv\cache\sdists-v9\pypi\lightgbm\4.7.0\KAceDCsqSF6rJGy0\src\include\LightGBM\utils\common.h(339,12):
+          see reference to function template instantiation '_OutIt std::transform<std::_String_iterator<std::_String_val<std::_Simple_types<_Elem>>>,std::_String_iterator<std::_String_val<std::_Simple_types<_Elem>>>,LightGBM::Common::Atof::<lambda_3f82e38e99dcdde0328f71b31d77dafb>>(const _InIt,const _InIt,_OutIt,_Fn)' being compiled
+          with
+          [
+              _OutIt=std::_String_iterator<std::_String_val<std::_Simple_types<char>>>,
+              _Elem=char,
+              _InIt=std::_String_iterator<std::_String_val<std::_Simple_types<char>>>,
+              _Fn=LightGBM::Common::Atof::<lambda_3f82e38e99dcdde0328f71b31d77dafb>
+          ]
+  
+  cl_version.h: CL_TARGET_OPENCL_VERSION is not defined. Defaulting to 220 (OpenCL 2.2)
+  cl_version.h: CL_TARGET_OPENCL_VERSION is not defined. Defaulting to 220 (OpenCL 2.2)
+C:\Users\strat\AppData\Local\uv\cache\sdists-v9\pypi\lightgbm\4.7.0\KAceDCsqSF6rJGy0\src\src\arrow\array.hpp(76,12): warning C4456: declaration of 'ret' hides previous local declaration [C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\gpu-wheel-build\lightgbm_objs.vcxproj]
+  (compiling source file '../../../../../Users/strat/AppData/Local/uv/cache/sdists-v9/pypi/lightgbm/4.7.0/KAceDCsqSF6rJGy0/src/src/io/metadata.cpp')
+      C:\Users\strat\AppData\Local\uv\cache\sdists-v9\pypi\lightgbm\4.7.0\KAceDCsqSF6rJGy0\src\src\arrow\array.hpp(64,10):
+      see declaration of 'ret'
+  
+  cl_version.h: CL_TARGET_OPENCL_VERSION is not defined. Defaulting to 220 (OpenCL 2.2)
+C:\Program Files\Microsoft Visual Studio\18\Community\VC\Tools\MSVC\14.42.34433\include\algorithm(3741,24): warning C4244: '=': conversion from 'int' to 'char', possible loss of data [C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\gpu-wheel-build\lightgbm_objs.vcxproj]
+  (compiling source file '../../../../../Users/strat/AppData/Local/uv/cache/sdists-v9/pypi/lightgbm/4.7.0/KAceDCsqSF6rJGy0/src/src/network/linker_topo.cpp')
+      C:\Program Files\Microsoft Visual Studio\18\Community\VC\Tools\MSVC\14.42.34433\include\algorithm(3741,24):
+      the template instantiation context (the oldest one first) is
+          C:\Users\strat\AppData\Local\uv\cache\sdists-v9\pypi\lightgbm\4.7.0\KAceDCsqSF6rJGy0\src\include\LightGBM\utils\common.h(339,12):
+          see reference to function template instantiation '_OutIt std::transform<std::_String_iterator<std::_String_val<std::_Simple_types<_Elem>>>,std::_String_iterator<std::_String_val<std::_Simple_types<_Elem>>>,LightGBM::Common::Atof::<lambda_3f82e38e99dcdde0328f71b31d77dafb>>(const _InIt,const _InIt,_OutIt,_Fn)' being compiled
+          with
+          [
+              _OutIt=std::_String_iterator<std::_String_val<std::_Simple_types<char>>>,
+              _Elem=char,
+              _InIt=std::_String_iterator<std::_String_val<std::_Simple_types<char>>>,
+              _Fn=LightGBM::Common::Atof::<lambda_3f82e38e99dcdde0328f71b31d77dafb>
+          ]
+  
+C:\Program Files\Microsoft Visual Studio\18\Community\VC\Tools\MSVC\14.42.34433\include\algorithm(3741,24): warning C4244: '=': conversion from 'int' to 'char', possible loss of data [C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\gpu-wheel-build\lightgbm_objs.vcxproj]
+  (compiling source file '../../../../../Users/strat/AppData/Local/uv/cache/sdists-v9/pypi/lightgbm/4.7.0/KAceDCsqSF6rJGy0/src/src/io/bin.cpp')
+      C:\Program Files\Microsoft Visual Studio\18\Community\VC\Tools\MSVC\14.42.34433\include\algorithm(3741,24):
+      the template instantiation context (the oldest one first) is
+          C:\Users\strat\AppData\Local\uv\cache\sdists-v9\pypi\lightgbm\4.7.0\KAceDCsqSF6rJGy0\src\include\LightGBM\utils\common.h(339,12):
+          see reference to function template instantiation '_OutIt std::transform<std::_String_iterator<std::_String_val<std::_Simple_types<_Elem>>>,std::_String_iterator<std::_String_val<std::_Simple_types<_Elem>>>,LightGBM::Common::Atof::<lambda_3f82e38e99dcdde0328f71b31d77dafb>>(const _InIt,const _InIt,_OutIt,_Fn)' being compiled
+          with
+          [
+              _OutIt=std::_String_iterator<std::_String_val<std::_Simple_types<char>>>,
+              _Elem=char,
+              _InIt=std::_String_iterator<std::_String_val<std::_Simple_types<char>>>,
+              _Fn=LightGBM::Common::Atof::<lambda_3f82e38e99dcdde0328f71b31d77dafb>
+          ]
+  
+  cl_version.h: CL_TARGET_OPENCL_VERSION is not defined. Defaulting to 220 (OpenCL 2.2)
+C:\Program Files\Microsoft Visual Studio\18\Community\VC\Tools\MSVC\14.42.34433\include\algorithm(3741,24): warning C4244: '=': conversion from 'int' to 'char', possible loss of data [C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\gpu-wheel-build\lightgbm_objs.vcxproj]
+  (compiling source file '../../../../../Users/strat/AppData/Local/uv/cache/sdists-v9/pypi/lightgbm/4.7.0/KAceDCsqSF6rJGy0/src/src/io/config.cpp')
+      C:\Program Files\Microsoft Visual Studio\18\Community\VC\Tools\MSVC\14.42.34433\include\algorithm(3741,24):
+      the template instantiation context (the oldest one first) is
+          C:\Users\strat\AppData\Local\uv\cache\sdists-v9\pypi\lightgbm\4.7.0\KAceDCsqSF6rJGy0\src\include\LightGBM\utils\common.h(339,12):
+          see reference to function template instantiation '_OutIt std::transform<std::_String_iterator<std::_String_val<std::_Simple_types<_Elem>>>,std::_String_iterator<std::_String_val<std::_Simple_types<_Elem>>>,LightGBM::Common::Atof::<lambda_3f82e38e99dcdde0328f71b31d77dafb>>(const _InIt,const _InIt,_OutIt,_Fn)' being compiled
+          with
+          [
+              _OutIt=std::_String_iterator<std::_String_val<std::_Simple_types<char>>>,
+              _Elem=char,
+              _InIt=std::_String_iterator<std::_String_val<std::_Simple_types<char>>>,
+              _Fn=LightGBM::Common::Atof::<lambda_3f82e38e99dcdde0328f71b31d77dafb>
+          ]
+  
+C:\Program Files\Microsoft Visual Studio\18\Community\VC\Tools\MSVC\14.42.34433\include\algorithm(3741,24): warning C4244: '=': conversion from 'int' to 'char', possible loss of data [C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\gpu-wheel-build\lightgbm_objs.vcxproj]
+  (compiling source file '../../../../../Users/strat/AppData/Local/uv/cache/sdists-v9/pypi/lightgbm/4.7.0/KAceDCsqSF6rJGy0/src/src/io/dataset.cpp')
+      C:\Program Files\Microsoft Visual Studio\18\Community\VC\Tools\MSVC\14.42.34433\include\algorithm(3741,24):
+      the template instantiation context (the oldest one first) is
+          C:\Users\strat\AppData\Local\uv\cache\sdists-v9\pypi\lightgbm\4.7.0\KAceDCsqSF6rJGy0\src\include\LightGBM\utils\common.h(339,12):
+          see reference to function template instantiation '_OutIt std::transform<std::_String_iterator<std::_String_val<std::_Simple_types<_Elem>>>,std::_String_iterator<std::_String_val<std::_Simple_types<_Elem>>>,LightGBM::Common::Atof::<lambda_3f82e38e99dcdde0328f71b31d77dafb>>(const _InIt,const _InIt,_OutIt,_Fn)' being compiled
+          with
+          [
+              _OutIt=std::_String_iterator<std::_String_val<std::_Simple_types<char>>>,
+              _Elem=char,
+              _InIt=std::_String_iterator<std::_String_val<std::_Simple_types<char>>>,
+              _Fn=LightGBM::Common::Atof::<lambda_3f82e38e99dcdde0328f71b31d77dafb>
+          ]
+  
+  cl_version.h: CL_TARGET_OPENCL_VERSION is not defined. Defaulting to 220 (OpenCL 2.2)
+  cl_version.h: CL_TARGET_OPENCL_VERSION is not defined. Defaulting to 220 (OpenCL 2.2)
+C:\Program Files\Microsoft Visual Studio\18\Community\VC\Tools\MSVC\14.42.34433\include\algorithm(3741,24): warning C4244: '=': conversion from 'int' to 'char', possible loss of data [C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\gpu-wheel-build\lightgbm_objs.vcxproj]
+  (compiling source file '../../../../../Users/strat/AppData/Local/uv/cache/sdists-v9/pypi/lightgbm/4.7.0/KAceDCsqSF6rJGy0/src/src/boosting/gbdt_prediction.cpp')
+      C:\Program Files\Microsoft Visual Studio\18\Community\VC\Tools\MSVC\14.42.34433\include\algorithm(3741,24):
+      the template instantiation context (the oldest one first) is
+          C:\Users\strat\AppData\Local\uv\cache\sdists-v9\pypi\lightgbm\4.7.0\KAceDCsqSF6rJGy0\src\include\LightGBM\utils\common.h(339,12):
+          see reference to function template instantiation '_OutIt std::transform<std::_String_iterator<std::_String_val<std::_Simple_types<_Elem>>>,std::_String_iterator<std::_String_val<std::_Simple_types<_Elem>>>,LightGBM::Common::Atof::<lambda_3f82e38e99dcdde0328f71b31d77dafb>>(const _InIt,const _InIt,_OutIt,_Fn)' being compiled
+          with
+          [
+              _OutIt=std::_String_iterator<std::_String_val<std::_Simple_types<char>>>,
+              _Elem=char,
+              _InIt=std::_String_iterator<std::_String_val<std::_Simple_types<char>>>,
+              _Fn=LightGBM::Common::Atof::<lambda_3f82e38e99dcdde0328f71b31d77dafb>
+          ]
+  
+C:\Program Files\Microsoft Visual Studio\18\Community\VC\Tools\MSVC\14.42.34433\include\algorithm(3741,24): warning C4244: '=': conversion from 'int' to 'char', possible loss of data [C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\gpu-wheel-build\lightgbm_objs.vcxproj]
+  (compiling source file '../../../../../Users/strat/AppData/Local/uv/cache/sdists-v9/pypi/lightgbm/4.7.0/KAceDCsqSF6rJGy0/src/src/boosting/sample_strategy.cpp')
+      C:\Program Files\Microsoft Visual Studio\18\Community\VC\Tools\MSVC\14.42.34433\include\algorithm(3741,24):
+      the template instantiation context (the oldest one first) is
+          C:\Users\strat\AppData\Local\uv\cache\sdists-v9\pypi\lightgbm\4.7.0\KAceDCsqSF6rJGy0\src\include\LightGBM\utils\common.h(339,12):
+          see reference to function template instantiation '_OutIt std::transform<std::_String_iterator<std::_String_val<std::_Simple_types<_Elem>>>,std::_String_iterator<std::_String_val<std::_Simple_types<_Elem>>>,LightGBM::Common::Atof::<lambda_3f82e38e99dcdde0328f71b31d77dafb>>(const _InIt,const _InIt,_OutIt,_Fn)' being compiled
+          with
+          [
+              _OutIt=std::_String_iterator<std::_String_val<std::_Simple_types<char>>>,
+              _Elem=char,
+              _InIt=std::_String_iterator<std::_String_val<std::_Simple_types<char>>>,
+              _Fn=LightGBM::Common::Atof::<lambda_3f82e38e99dcdde0328f71b31d77dafb>
+          ]
+  
+C:\Users\strat\AppData\Local\uv\cache\sdists-v9\pypi\lightgbm\4.7.0\KAceDCsqSF6rJGy0\src\src\io\dataset.cpp(1572,56): warning C4244: 'initializing': conversion from 'int64_t' to 'PACKED_HIST_ACC_T', possible loss of data [C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\gpu-wheel-build\lightgbm_objs.vcxproj]
+C:\Users\strat\AppData\Local\uv\cache\sdists-v9\pypi\lightgbm\4.7.0\KAceDCsqSF6rJGy0\src\src\io\dataset.cpp(1572,56): warning C4244:         with [C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\gpu-wheel-build\lightgbm_objs.vcxproj]
+C:\Users\strat\AppData\Local\uv\cache\sdists-v9\pypi\lightgbm\4.7.0\KAceDCsqSF6rJGy0\src\src\io\dataset.cpp(1572,56): warning C4244:         [ [C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\gpu-wheel-build\lightgbm_objs.vcxproj]
+C:\Users\strat\AppData\Local\uv\cache\sdists-v9\pypi\lightgbm\4.7.0\KAceDCsqSF6rJGy0\src\src\io\dataset.cpp(1572,56): warning C4244:             PACKED_HIST_ACC_T=int32_t [C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\gpu-wheel-build\lightgbm_objs.vcxproj]
+C:\Users\strat\AppData\Local\uv\cache\sdists-v9\pypi\lightgbm\4.7.0\KAceDCsqSF6rJGy0\src\src\io\dataset.cpp(1572,56): warning C4244:         ] [C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\gpu-wheel-build\lightgbm_objs.vcxproj]
+      C:\Users\strat\AppData\Local\uv\cache\sdists-v9\pypi\lightgbm\4.7.0\KAceDCsqSF6rJGy0\src\src\io\dataset.cpp(1572,56):
+      the template instantiation context (the oldest one first) is
+          C:\Users\strat\AppData\Local\uv\cache\sdists-v9\pypi\lightgbm\4.7.0\KAceDCsqSF6rJGy0\src\src\io\dataset.cpp(1605,24):
+          see reference to function template instantiation 'void LightGBM::Dataset::FixHistogramInt<int32_t,int32_t,16,16>(int,int64_t,LightGBM::hist_t *) const' being compiled
+  
+C:\Users\strat\AppData\Local\uv\cache\sdists-v9\pypi\lightgbm\4.7.0\KAceDCsqSF6rJGy0\src\src\io\dataset.cpp(1597,66): warning C4293: '>>': shift count negative or too big, undefined behavior [C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\gpu-wheel-build\lightgbm_objs.vcxproj]
+C:\Program Files\Microsoft Visual Studio\18\Community\VC\Tools\MSVC\14.42.34433\include\algorithm(3741,24): warning C4244: '=': conversion from 'int' to 'char', possible loss of data [C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\gpu-wheel-build\lightgbm_objs.vcxproj]
+  (compiling source file '../../../../../Users/strat/AppData/Local/uv/cache/sdists-v9/pypi/lightgbm/4.7.0/KAceDCsqSF6rJGy0/src/src/metric/dcg_calculator.cpp')
+      C:\Program Files\Microsoft Visual Studio\18\Community\VC\Tools\MSVC\14.42.34433\include\algorithm(3741,24):
+      the template instantiation context (the oldest one first) is
+          C:\Users\strat\AppData\Local\uv\cache\sdists-v9\pypi\lightgbm\4.7.0\KAceDCsqSF6rJGy0\src\include\LightGBM\utils\common.h(339,12):
+          see reference to function template instantiation '_OutIt std::transform<std::_String_iterator<std::_String_val<std::_Simple_types<_Elem>>>,std::_String_iterator<std::_String_val<std::_Simple_types<_Elem>>>,LightGBM::Common::Atof::<lambda_3f82e38e99dcdde0328f71b31d77dafb>>(const _InIt,const _InIt,_OutIt,_Fn)' being compiled
+          with
+          [
+              _OutIt=std::_String_iterator<std::_String_val<std::_Simple_types<char>>>,
+              _Elem=char,
+              _InIt=std::_String_iterator<std::_String_val<std::_Simple_types<char>>>,
+              _Fn=LightGBM::Common::Atof::<lambda_3f82e38e99dcdde0328f71b31d77dafb>
+          ]
+  
+C:\Program Files\Microsoft Visual Studio\18\Community\VC\Tools\MSVC\14.42.34433\include\algorithm(3741,24): warning C4244: '=': conversion from 'int' to 'char', possible loss of data [C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\gpu-wheel-build\lightgbm_objs.vcxproj]
+  (compiling source file '../../../../../Users/strat/AppData/Local/uv/cache/sdists-v9/pypi/lightgbm/4.7.0/KAceDCsqSF6rJGy0/src/src/metric/metric.cpp')
+      C:\Program Files\Microsoft Visual Studio\18\Community\VC\Tools\MSVC\14.42.34433\include\algorithm(3741,24):
+      the template instantiation context (the oldest one first) is
+          C:\Users\strat\AppData\Local\uv\cache\sdists-v9\pypi\lightgbm\4.7.0\KAceDCsqSF6rJGy0\src\include\LightGBM\utils\common.h(339,12):
+          see reference to function template instantiation '_OutIt std::transform<std::_String_iterator<std::_String_val<std::_Simple_types<_Elem>>>,std::_String_iterator<std::_String_val<std::_Simple_types<_Elem>>>,LightGBM::Common::Atof::<lambda_3f82e38e99dcdde0328f71b31d77dafb>>(const _InIt,const _InIt,_OutIt,_Fn)' being compiled
+          with
+          [
+              _OutIt=std::_String_iterator<std::_String_val<std::_Simple_types<char>>>,
+              _Elem=char,
+              _InIt=std::_String_iterator<std::_String_val<std::_Simple_types<char>>>,
+              _Fn=LightGBM::Common::Atof::<lambda_3f82e38e99dcdde0328f71b31d77dafb>
+          ]
+  
+C:\Program Files\Microsoft Visual Studio\18\Community\VC\Tools\MSVC\14.42.34433\include\algorithm(3741,24): warning C4244: '=': conversion from 'int' to 'char', possible loss of data [C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\gpu-wheel-build\lightgbm_objs.vcxproj]
+  (compiling source file '../../../../../Users/strat/AppData/Local/uv/cache/sdists-v9/pypi/lightgbm/4.7.0/KAceDCsqSF6rJGy0/src/src/io/tree.cpp')
+      C:\Program Files\Microsoft Visual Studio\18\Community\VC\Tools\MSVC\14.42.34433\include\algorithm(3741,24):
+      the template instantiation context (the oldest one first) is
+          C:\Users\strat\AppData\Local\uv\cache\sdists-v9\pypi\lightgbm\4.7.0\KAceDCsqSF6rJGy0\src\include\LightGBM\utils\common.h(339,12):
+          see reference to function template instantiation '_OutIt std::transform<std::_String_iterator<std::_String_val<std::_Simple_types<_Elem>>>,std::_String_iterator<std::_String_val<std::_Simple_types<_Elem>>>,LightGBM::Common::Atof::<lambda_3f82e38e99dcdde0328f71b31d77dafb>>(const _InIt,const _InIt,_OutIt,_Fn)' being compiled
+          with
+          [
+              _OutIt=std::_String_iterator<std::_String_val<std::_Simple_types<char>>>,
+              _Elem=char,
+              _InIt=std::_String_iterator<std::_String_val<std::_Simple_types<char>>>,
+              _Fn=LightGBM::Common::Atof::<lambda_3f82e38e99dcdde0328f71b31d77dafb>
+          ]
+  
+C:\Program Files\Microsoft Visual Studio\18\Community\VC\Tools\MSVC\14.42.34433\include\algorithm(3741,24): warning C4244: '=': conversion from 'int' to 'char', possible loss of data [C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\gpu-wheel-build\lightgbm_objs.vcxproj]
+  (compiling source file '../../../../../Users/strat/AppData/Local/uv/cache/sdists-v9/pypi/lightgbm/4.7.0/KAceDCsqSF6rJGy0/src/src/io/dataset_loader.cpp')
+      C:\Program Files\Microsoft Visual Studio\18\Community\VC\Tools\MSVC\14.42.34433\include\algorithm(3741,24):
+      the template instantiation context (the oldest one first) is
+          C:\Users\strat\AppData\Local\uv\cache\sdists-v9\pypi\lightgbm\4.7.0\KAceDCsqSF6rJGy0\src\include\LightGBM\utils\common.h(339,12):
+          see reference to function template instantiation '_OutIt std::transform<std::_String_iterator<std::_String_val<std::_Simple_types<_Elem>>>,std::_String_iterator<std::_String_val<std::_Simple_types<_Elem>>>,LightGBM::Common::Atof::<lambda_3f82e38e99dcdde0328f71b31d77dafb>>(const _InIt,const _InIt,_OutIt,_Fn)' being compiled
+          with
+          [
+              _OutIt=std::_String_iterator<std::_String_val<std::_Simple_types<char>>>,
+              _Elem=char,
+              _InIt=std::_String_iterator<std::_String_val<std::_Simple_types<char>>>,
+              _Fn=LightGBM::Common::Atof::<lambda_3f82e38e99dcdde0328f71b31d77dafb>
+          ]
+  
+C:\Program Files\Microsoft Visual Studio\18\Community\VC\Tools\MSVC\14.42.34433\include\algorithm(3741,24): warning C4244: '=': conversion from 'int' to 'char', possible loss of data [C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\gpu-wheel-build\lightgbm_objs.vcxproj]
+  (compiling source file '../../../../../Users/strat/AppData/Local/uv/cache/sdists-v9/pypi/lightgbm/4.7.0/KAceDCsqSF6rJGy0/src/src/io/parser.cpp')
+      C:\Program Files\Microsoft Visual Studio\18\Community\VC\Tools\MSVC\14.42.34433\include\algorithm(3741,24):
+      the template instantiation context (the oldest one first) is
+          C:\Users\strat\AppData\Local\uv\cache\sdists-v9\pypi\lightgbm\4.7.0\KAceDCsqSF6rJGy0\src\include\LightGBM\utils\common.h(339,12):
+          see reference to function template instantiation '_OutIt std::transform<std::_String_iterator<std::_String_val<std::_Simple_types<_Elem>>>,std::_String_iterator<std::_String_val<std::_Simple_types<_Elem>>>,LightGBM::Common::Atof::<lambda_3f82e38e99dcdde0328f71b31d77dafb>>(const _InIt,const _InIt,_OutIt,_Fn)' being compiled
+          with
+          [
+              _OutIt=std::_String_iterator<std::_String_val<std::_Simple_types<char>>>,
+              _Elem=char,
+              _InIt=std::_String_iterator<std::_String_val<std::_Simple_types<char>>>,
+              _Fn=LightGBM::Common::Atof::<lambda_3f82e38e99dcdde0328f71b31d77dafb>
+          ]
+  
+C:\Program Files\Microsoft Visual Studio\18\Community\VC\Tools\MSVC\14.42.34433\include\algorithm(3741,24): warning C4244: '=': conversion from 'int' to 'char', possible loss of data [C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\gpu-wheel-build\lightgbm_objs.vcxproj]
+  (compiling source file '../../../../../Users/strat/AppData/Local/uv/cache/sdists-v9/pypi/lightgbm/4.7.0/KAceDCsqSF6rJGy0/src/src/objective/objective_function.cpp')
+      C:\Program Files\Microsoft Visual Studio\18\Community\VC\Tools\MSVC\14.42.34433\include\algorithm(3741,24):
+      the template instantiation context (the oldest one first) is
+          C:\Users\strat\AppData\Local\uv\cache\sdists-v9\pypi\lightgbm\4.7.0\KAceDCsqSF6rJGy0\src\include\LightGBM\utils\common.h(339,12):
+          see reference to function template instantiation '_OutIt std::transform<std::_String_iterator<std::_String_val<std::_Simple_types<_Elem>>>,std::_String_iterator<std::_String_val<std::_Simple_types<_Elem>>>,LightGBM::Common::Atof::<lambda_3f82e38e99dcdde0328f71b31d77dafb>>(const _InIt,const _InIt,_OutIt,_Fn)' being compiled
+          with
+          [
+              _OutIt=std::_String_iterator<std::_String_val<std::_Simple_types<char>>>,
+              _Elem=char,
+              _InIt=std::_String_iterator<std::_String_val<std::_Simple_types<char>>>,
+              _Fn=LightGBM::Common::Atof::<lambda_3f82e38e99dcdde0328f71b31d77dafb>
+          ]
+  
+C:\Program Files\Microsoft Visual Studio\18\Community\VC\Tools\MSVC\14.42.34433\include\algorithm(3741,24): warning C4244: '=': conversion from 'int' to 'char', possible loss of data [C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\gpu-wheel-build\lightgbm_objs.vcxproj]
+  (compiling source file '../../../../../Users/strat/AppData/Local/uv/cache/sdists-v9/pypi/lightgbm/4.7.0/KAceDCsqSF6rJGy0/src/src/boosting/gbdt_model_text.cpp')
+      C:\Program Files\Microsoft Visual Studio\18\Community\VC\Tools\MSVC\14.42.34433\include\algorithm(3741,24):
+      the template instantiation context (the oldest one first) is
+          C:\Users\strat\AppData\Local\uv\cache\sdists-v9\pypi\lightgbm\4.7.0\KAceDCsqSF6rJGy0\src\include\LightGBM\utils\common.h(339,12):
+          see reference to function template instantiation '_OutIt std::transform<std::_String_iterator<std::_String_val<std::_Simple_types<_Elem>>>,std::_String_iterator<std::_String_val<std::_Simple_types<_Elem>>>,LightGBM::Common::Atof::<lambda_3f82e38e99dcdde0328f71b31d77dafb>>(const _InIt,const _InIt,_OutIt,_Fn)' being compiled
+          with
+          [
+              _OutIt=std::_String_iterator<std::_String_val<std::_Simple_types<char>>>,
+              _Elem=char,
+              _InIt=std::_String_iterator<std::_String_val<std::_Simple_types<char>>>,
+              _Fn=LightGBM::Common::Atof::<lambda_3f82e38e99dcdde0328f71b31d77dafb>
+          ]
+  
+C:\Program Files\Microsoft Visual Studio\18\Community\VC\Tools\MSVC\14.42.34433\include\algorithm(3741,24): warning C4244: '=': conversion from 'int' to 'char', possible loss of data [C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\gpu-wheel-build\lightgbm_objs.vcxproj]
+  (compiling source file '../../../../../Users/strat/AppData/Local/uv/cache/sdists-v9/pypi/lightgbm/4.7.0/KAceDCsqSF6rJGy0/src/src/treelearner/feature_histogram.cpp')
+      C:\Program Files\Microsoft Visual Studio\18\Community\VC\Tools\MSVC\14.42.34433\include\algorithm(3741,24):
+      the template instantiation context (the oldest one first) is
+          C:\Users\strat\AppData\Local\uv\cache\sdists-v9\pypi\lightgbm\4.7.0\KAceDCsqSF6rJGy0\src\include\LightGBM\utils\common.h(339,12):
+          see reference to function template instantiation '_OutIt std::transform<std::_String_iterator<std::_String_val<std::_Simple_types<_Elem>>>,std::_String_iterator<std::_String_val<std::_Simple_types<_Elem>>>,LightGBM::Common::Atof::<lambda_3f82e38e99dcdde0328f71b31d77dafb>>(const _InIt,const _InIt,_OutIt,_Fn)' being compiled
+          with
+          [
+              _OutIt=std::_String_iterator<std::_String_val<std::_Simple_types<char>>>,
+              _Elem=char,
+              _InIt=std::_String_iterator<std::_String_val<std::_Simple_types<char>>>,
+              _Fn=LightGBM::Common::Atof::<lambda_3f82e38e99dcdde0328f71b31d77dafb>
+          ]
+  
+C:\Program Files\Microsoft Visual Studio\18\Community\VC\Tools\MSVC\14.42.34433\include\algorithm(3741,24): warning C4244: '=': conversion from 'int' to 'char', possible loss of data [C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\gpu-wheel-build\lightgbm_objs.vcxproj]
+  (compiling source file '../../../../../Users/strat/AppData/Local/uv/cache/sdists-v9/pypi/lightgbm/4.7.0/KAceDCsqSF6rJGy0/src/src/treelearner/gradient_discretizer.cpp')
+      C:\Program Files\Microsoft Visual Studio\18\Community\VC\Tools\MSVC\14.42.34433\include\algorithm(3741,24):
+      the template instantiation context (the oldest one first) is
+          C:\Users\strat\AppData\Local\uv\cache\sdists-v9\pypi\lightgbm\4.7.0\KAceDCsqSF6rJGy0\src\include\LightGBM\utils\common.h(339,12):
+          see reference to function template instantiation '_OutIt std::transform<std::_String_iterator<std::_String_val<std::_Simple_types<_Elem>>>,std::_String_iterator<std::_String_val<std::_Simple_types<_Elem>>>,LightGBM::Common::Atof::<lambda_3f82e38e99dcdde0328f71b31d77dafb>>(const _InIt,const _InIt,_OutIt,_Fn)' being compiled
+          with
+          [
+              _OutIt=std::_String_iterator<std::_String_val<std::_Simple_types<char>>>,
+              _Elem=char,
+              _InIt=std::_String_iterator<std::_String_val<std::_Simple_types<char>>>,
+              _Fn=LightGBM::Common::Atof::<lambda_3f82e38e99dcdde0328f71b31d77dafb>
+          ]
+  
+C:\Program Files\Microsoft Visual Studio\18\Community\VC\Tools\MSVC\14.42.34433\include\algorithm(3741,24): warning C4244: '=': conversion from 'int' to 'char', possible loss of data [C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\gpu-wheel-build\lightgbm_objs.vcxproj]
+  (compiling source file '../../../../../Users/strat/AppData/Local/uv/cache/sdists-v9/pypi/lightgbm/4.7.0/KAceDCsqSF6rJGy0/src/src/boosting/boosting.cpp')
+      C:\Program Files\Microsoft Visual Studio\18\Community\VC\Tools\MSVC\14.42.34433\include\algorithm(3741,24):
+      the template instantiation context (the oldest one first) is
+          C:\Users\strat\AppData\Local\uv\cache\sdists-v9\pypi\lightgbm\4.7.0\KAceDCsqSF6rJGy0\src\include\LightGBM\utils\common.h(339,12):
+          see reference to function template instantiation '_OutIt std::transform<std::_String_iterator<std::_String_val<std::_Simple_types<_Elem>>>,std::_String_iterator<std::_String_val<std::_Simple_types<_Elem>>>,LightGBM::Common::Atof::<lambda_3f82e38e99dcdde0328f71b31d77dafb>>(const _InIt,const _InIt,_OutIt,_Fn)' being compiled
+          with
+          [
+              _OutIt=std::_String_iterator<std::_String_val<std::_Simple_types<char>>>,
+              _Elem=char,
+              _InIt=std::_String_iterator<std::_String_val<std::_Simple_types<char>>>,
+              _Fn=LightGBM::Common::Atof::<lambda_3f82e38e99dcdde0328f71b31d77dafb>
+          ]
+  
+C:\Program Files\Microsoft Visual Studio\18\Community\VC\Tools\MSVC\14.42.34433\include\algorithm(3741,24): warning C4244: '=': conversion from 'int' to 'char', possible loss of data [C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\gpu-wheel-build\lightgbm_objs.vcxproj]
+  (compiling source file '../../../../../Users/strat/AppData/Local/uv/cache/sdists-v9/pypi/lightgbm/4.7.0/KAceDCsqSF6rJGy0/src/src/boosting/gbdt.cpp')
+      C:\Program Files\Microsoft Visual Studio\18\Community\VC\Tools\MSVC\14.42.34433\include\algorithm(3741,24):
+      the template instantiation context (the oldest one first) is
+          C:\Users\strat\AppData\Local\uv\cache\sdists-v9\pypi\lightgbm\4.7.0\KAceDCsqSF6rJGy0\src\include\LightGBM\utils\common.h(339,12):
+          see reference to function template instantiation '_OutIt std::transform<std::_String_iterator<std::_String_val<std::_Simple_types<_Elem>>>,std::_String_iterator<std::_String_val<std::_Simple_types<_Elem>>>,LightGBM::Common::Atof::<lambda_3f82e38e99dcdde0328f71b31d77dafb>>(const _InIt,const _InIt,_OutIt,_Fn)' being compiled
+          with
+          [
+              _OutIt=std::_String_iterator<std::_String_val<std::_Simple_types<char>>>,
+              _Elem=char,
+              _InIt=std::_String_iterator<std::_String_val<std::_Simple_types<char>>>,
+              _Fn=LightGBM::Common::Atof::<lambda_3f82e38e99dcdde0328f71b31d77dafb>
+          ]
+  
+C:\Program Files\Microsoft Visual Studio\18\Community\VC\Tools\MSVC\14.42.34433\include\algorithm(3741,24): warning C4244: '=': conversion from 'int' to 'char', possible loss of data [C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\gpu-wheel-build\lightgbm_objs.vcxproj]
+  (compiling source file '../../../../../Users/strat/AppData/Local/uv/cache/sdists-v9/pypi/lightgbm/4.7.0/KAceDCsqSF6rJGy0/src/src/io/config_auto.cpp')
+      C:\Program Files\Microsoft Visual Studio\18\Community\VC\Tools\MSVC\14.42.34433\include\algorithm(3741,24):
+      the template instantiation context (the oldest one first) is
+          C:\Users\strat\AppData\Local\uv\cache\sdists-v9\pypi\lightgbm\4.7.0\KAceDCsqSF6rJGy0\src\include\LightGBM\utils\common.h(339,12):
+          see reference to function template instantiation '_OutIt std::transform<std::_String_iterator<std::_String_val<std::_Simple_types<_Elem>>>,std::_String_iterator<std::_String_val<std::_Simple_types<_Elem>>>,LightGBM::Common::Atof::<lambda_3f82e38e99dcdde0328f71b31d77dafb>>(const _InIt,const _InIt,_OutIt,_Fn)' being compiled
+          with
+          [
+              _OutIt=std::_String_iterator<std::_String_val<std::_Simple_types<char>>>,
+              _Elem=char,
+              _InIt=std::_String_iterator<std::_String_val<std::_Simple_types<char>>>,
+              _Fn=LightGBM::Common::Atof::<lambda_3f82e38e99dcdde0328f71b31d77dafb>
+          ]
+  
+C:\Program Files\Microsoft Visual Studio\18\Community\VC\Tools\MSVC\14.42.34433\include\algorithm(3741,24): warning C4244: '=': conversion from 'int' to 'char', possible loss of data [C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\gpu-wheel-build\lightgbm_capi_objs.vcxproj]
+C:\Program Files\Microsoft Visual Studio\18\Community\VC\Tools\MSVC\14.42.34433\include\algorithm(3741,24): warning C4244: '=': conversion from 'int' to 'char', possible loss of data [C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\gpu-wheel-build\lightgbm_objs.vcxproj]
+  (compiling source file '../../../../../Users/strat/AppData/Local/uv/cache/sdists-v9/pypi/lightgbm/4.7.0/KAceDCsqSF6rJGy0/src/src/c_api.cpp')
+      C:\Program Files\Microsoft Visual Studio\18\Community\VC\Tools\MSVC\14.42.34433\include\algorithm(3741,24):
+      the template instantiation context (the oldest one first) is
+          C:\Users\strat\AppData\Local\uv\cache\sdists-v9\pypi\lightgbm\4.7.0\KAceDCsqSF6rJGy0\src\include\LightGBM\utils\common.h(339,12):
+          see reference to function template instantiation '_OutIt std::transform<std::_String_iterator<std::_String_val<std::_Simple_types<_Elem>>>,std::_String_iterator<std::_String_val<std::_Simple_types<_Elem>>>,LightGBM::Common::Atof::<lambda_3f82e38e99dcdde0328f71b31d77dafb>>(const _InIt,const _InIt,_OutIt,_Fn)' being compiled
+          with
+          [
+              _OutIt=std::_String_iterator<std::_String_val<std::_Simple_types<char>>>,
+              _Elem=char,
+              _InIt=std::_String_iterator<std::_String_val<std::_Simple_types<char>>>,
+              _Fn=LightGBM::Common::Atof::<lambda_3f82e38e99dcdde0328f71b31d77dafb>
+          ]
+  
+  (compiling source file '../../../../../Users/strat/AppData/Local/uv/cache/sdists-v9/pypi/lightgbm/4.7.0/KAceDCsqSF6rJGy0/src/src/io/metadata.cpp')
+      C:\Program Files\Microsoft Visual Studio\18\Community\VC\Tools\MSVC\14.42.34433\include\algorithm(3741,24):
+      the template instantiation context (the oldest one first) is
+          C:\Users\strat\AppData\Local\uv\cache\sdists-v9\pypi\lightgbm\4.7.0\KAceDCsqSF6rJGy0\src\include\LightGBM\utils\common.h(339,12):
+          see reference to function template instantiation '_OutIt std::transform<std::_String_iterator<std::_String_val<std::_Simple_types<_Elem>>>,std::_String_iterator<std::_String_val<std::_Simple_types<_Elem>>>,LightGBM::Common::Atof::<lambda_3f82e38e99dcdde0328f71b31d77dafb>>(const _InIt,const _InIt,_OutIt,_Fn)' being compiled
+          with
+          [
+              _OutIt=std::_String_iterator<std::_String_val<std::_Simple_types<char>>>,
+              _Elem=char,
+              _InIt=std::_String_iterator<std::_String_val<std::_Simple_types<char>>>,
+              _Fn=LightGBM::Common::Atof::<lambda_3f82e38e99dcdde0328f71b31d77dafb>
+          ]
+  
+C:\Program Files\Microsoft Visual Studio\18\Community\VC\Tools\MSVC\14.42.34433\include\algorithm(3741,24): warning C4244: '=': conversion from 'int' to 'char', possible loss of data [C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\gpu-wheel-build\lightgbm_objs.vcxproj]
+  (compiling source file '../../../../../Users/strat/AppData/Local/uv/cache/sdists-v9/pypi/lightgbm/4.7.0/KAceDCsqSF6rJGy0/src/src/treelearner/serial_tree_learner.cpp')
+      C:\Program Files\Microsoft Visual Studio\18\Community\VC\Tools\MSVC\14.42.34433\include\algorithm(3741,24):
+      the template instantiation context (the oldest one first) is
+          C:\Users\strat\AppData\Local\uv\cache\sdists-v9\pypi\lightgbm\4.7.0\KAceDCsqSF6rJGy0\src\include\LightGBM\utils\common.h(339,12):
+          see reference to function template instantiation '_OutIt std::transform<std::_String_iterator<std::_String_val<std::_Simple_types<_Elem>>>,std::_String_iterator<std::_String_val<std::_Simple_types<_Elem>>>,LightGBM::Common::Atof::<lambda_3f82e38e99dcdde0328f71b31d77dafb>>(const _InIt,const _InIt,_OutIt,_Fn)' being compiled
+          with
+          [
+              _OutIt=std::_String_iterator<std::_String_val<std::_Simple_types<char>>>,
+              _Elem=char,
+              _InIt=std::_String_iterator<std::_String_val<std::_Simple_types<char>>>,
+              _Fn=LightGBM::Common::Atof::<lambda_3f82e38e99dcdde0328f71b31d77dafb>
+          ]
+  
+C:\Users\strat\AppData\Local\uv\cache\sdists-v9\pypi\lightgbm\4.7.0\KAceDCsqSF6rJGy0\src\src\io\metadata.cpp(610,23): warning C4244: '=': conversion from '__int64' to 'LightGBM::data_size_t', possible loss of data [C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\gpu-wheel-build\lightgbm_objs.vcxproj]
+      C:\Users\strat\AppData\Local\uv\cache\sdists-v9\pypi\lightgbm\4.7.0\KAceDCsqSF6rJGy0\src\src\io\metadata.cpp(610,23):
+      the template instantiation context (the oldest one first) is
+          C:\Users\strat\AppData\Local\uv\cache\sdists-v9\pypi\lightgbm\4.7.0\KAceDCsqSF6rJGy0\src\src\io\metadata.cpp(633,3):
+          see reference to function template instantiation 'void LightGBM::Metadata::SetQueriesFromIterator<const LightGBM::data_size_t*>(It,It)' being compiled
+          with
+          [
+              It=const LightGBM::data_size_t *
+          ]
+  
+C:\Users\strat\AppData\Local\uv\cache\sdists-v9\pypi\lightgbm\4.7.0\KAceDCsqSF6rJGy0\src\src\io\metadata.cpp(610,23): warning C4244: '=': conversion from 'int64_t' to 'LightGBM::data_size_t', possible loss of data [C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\gpu-wheel-build\lightgbm_objs.vcxproj]
+      C:\Users\strat\AppData\Local\uv\cache\sdists-v9\pypi\lightgbm\4.7.0\KAceDCsqSF6rJGy0\src\src\io\metadata.cpp(610,23):
+      the template instantiation context (the oldest one first) is
+          C:\Users\strat\AppData\Local\uv\cache\sdists-v9\pypi\lightgbm\4.7.0\KAceDCsqSF6rJGy0\src\src\io\metadata.cpp(639,24):
+          see reference to function template instantiation 'void LightGBM::ArrowChunkedArray::View::visit<LightGBM::data_size_t,LightGBM::Metadata::SetQuery::<lambda_136578e51a9486aab6e42010eb83675f>>(F &&) const' being compiled
+          with
+          [
+              F=LightGBM::Metadata::SetQuery::<lambda_136578e51a9486aab6e42010eb83675f>
+          ]
+          C:\Users\strat\AppData\Local\uv\cache\sdists-v9\pypi\lightgbm\4.7.0\KAceDCsqSF6rJGy0\src\src\arrow\array.hpp(221,18):
+          see reference to function template instantiation 'void LightGBM::Metadata::SetQuery::<lambda_136578e51a9486aab6e42010eb83675f>::operator ()<LightGBM::ArrowChunkedArray::Visitor<int8_t,OutputT>>(LightGBM::ArrowChunkedArray::Visitor<int8_t,OutputT> &&) const' being compiled
+          with
+          [
+              OutputT=LightGBM::data_size_t
+          ]
+          C:\Users\strat\AppData\Local\uv\cache\sdists-v9\pypi\lightgbm\4.7.0\KAceDCsqSF6rJGy0\src\src\io\metadata.cpp(640,5):
+          see reference to function template instantiation 'void LightGBM::Metadata::SetQueriesFromIterator<LightGBM::ArrowChunkedArray::Iterator<ArrowT,OutputT>>(It,It)' being compiled
+          with
+          [
+              ArrowT=int8_t,
+              OutputT=LightGBM::data_size_t,
+              It=LightGBM::ArrowChunkedArray::Iterator<int8_t,LightGBM::data_size_t>
+          ]
+  
+C:\Users\strat\AppData\Local\uv\cache\sdists-v9\pypi\lightgbm\4.7.0\KAceDCsqSF6rJGy0\src\src\treelearner\feature_histogram.hpp(138,49): warning C4244: '=': conversion from 'THIS_HIST_T' to 'RESULT_HIST_T', possible loss of data [C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\gpu-wheel-build\lightgbm_objs.vcxproj]
+C:\Users\strat\AppData\Local\uv\cache\sdists-v9\pypi\lightgbm\4.7.0\KAceDCsqSF6rJGy0\src\src\treelearner\feature_histogram.hpp(138,49): warning C4244:         with [C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\gpu-wheel-build\lightgbm_objs.vcxproj]
+C:\Users\strat\AppData\Local\uv\cache\sdists-v9\pypi\lightgbm\4.7.0\KAceDCsqSF6rJGy0\src\src\treelearner\feature_histogram.hpp(138,49): warning C4244:         [ [C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\gpu-wheel-build\lightgbm_objs.vcxproj]
+C:\Users\strat\AppData\Local\uv\cache\sdists-v9\pypi\lightgbm\4.7.0\KAceDCsqSF6rJGy0\src\src\treelearner\feature_histogram.hpp(138,49): warning C4244:             THIS_HIST_T=int64_t [C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\gpu-wheel-build\lightgbm_objs.vcxproj]
+C:\Users\strat\AppData\Local\uv\cache\sdists-v9\pypi\lightgbm\4.7.0\KAceDCsqSF6rJGy0\src\src\treelearner\feature_histogram.hpp(138,49): warning C4244:         ] [C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\gpu-wheel-build\lightgbm_objs.vcxproj]
+C:\Users\strat\AppData\Local\uv\cache\sdists-v9\pypi\lightgbm\4.7.0\KAceDCsqSF6rJGy0\src\src\treelearner\feature_histogram.hpp(138,49): warning C4244:         and [C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\gpu-wheel-build\lightgbm_objs.vcxproj]
+C:\Users\strat\AppData\Local\uv\cache\sdists-v9\pypi\lightgbm\4.7.0\KAceDCsqSF6rJGy0\src\src\treelearner\feature_histogram.hpp(138,49): warning C4244:         [ [C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\gpu-wheel-build\lightgbm_objs.vcxproj]
+C:\Users\strat\AppData\Local\uv\cache\sdists-v9\pypi\lightgbm\4.7.0\KAceDCsqSF6rJGy0\src\src\treelearner\feature_histogram.hpp(138,49): warning C4244:             RESULT_HIST_T=int32_t [C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\gpu-wheel-build\lightgbm_objs.vcxproj]
+C:\Users\strat\AppData\Local\uv\cache\sdists-v9\pypi\lightgbm\4.7.0\KAceDCsqSF6rJGy0\src\src\treelearner\feature_histogram.hpp(138,49): warning C4244:         ] [C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\gpu-wheel-build\lightgbm_objs.vcxproj]
+  (compiling source file '../../../../../Users/strat/AppData/Local/uv/cache/sdists-v9/pypi/lightgbm/4.7.0/KAceDCsqSF6rJGy0/src/src/treelearner/serial_tree_learner.cpp')
+      C:\Users\strat\AppData\Local\uv\cache\sdists-v9\pypi\lightgbm\4.7.0\KAceDCsqSF6rJGy0\src\src\treelearner\feature_histogram.hpp(138,49):
+      the template instantiation context (the oldest one first) is
+          C:\Users\strat\AppData\Local\uv\cache\sdists-v9\pypi\lightgbm\4.7.0\KAceDCsqSF6rJGy0\src\src\treelearner\serial_tree_learner.cpp(572,55):
+          see reference to function template instantiation 'void LightGBM::FeatureHistogram::Subtract<true,int64_t,int32_t,int32_t,32,16,16>(const LightGBM::FeatureHistogram &,const int32_t *)' being compiled
+  
+C:\Users\strat\AppData\Local\uv\cache\sdists-v9\pypi\lightgbm\4.7.0\KAceDCsqSF6rJGy0\src\src\treelearner\feature_histogram.hpp(116,57): warning C4244: 'initializing': conversion from 'const THIS_HIST_T' to 'int64_t', possible loss of data [C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\gpu-wheel-build\lightgbm_objs.vcxproj]
+C:\Users\strat\AppData\Local\uv\cache\sdists-v9\pypi\lightgbm\4.7.0\KAceDCsqSF6rJGy0\src\src\treelearner\feature_histogram.hpp(116,57): warning C4244:         with [C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\gpu-wheel-build\lightgbm_objs.vcxproj]
+C:\Users\strat\AppData\Local\uv\cache\sdists-v9\pypi\lightgbm\4.7.0\KAceDCsqSF6rJGy0\src\src\treelearner\feature_histogram.hpp(116,57): warning C4244:         [ [C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\gpu-wheel-build\lightgbm_objs.vcxproj]
+C:\Users\strat\AppData\Local\uv\cache\sdists-v9\pypi\lightgbm\4.7.0\KAceDCsqSF6rJGy0\src\src\treelearner\feature_histogram.hpp(116,57): warning C4244:             THIS_HIST_T=LightGBM::hist_t [C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\gpu-wheel-build\lightgbm_objs.vcxproj]
+C:\Users\strat\AppData\Local\uv\cache\sdists-v9\pypi\lightgbm\4.7.0\KAceDCsqSF6rJGy0\src\src\treelearner\feature_histogram.hpp(116,57): warning C4244:         ] [C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\gpu-wheel-build\lightgbm_objs.vcxproj]
+  (compiling source file '../../../../../Users/strat/AppData/Local/uv/cache/sdists-v9/pypi/lightgbm/4.7.0/KAceDCsqSF6rJGy0/src/src/treelearner/serial_tree_learner.cpp')
+      C:\Users\strat\AppData\Local\uv\cache\sdists-v9\pypi\lightgbm\4.7.0\KAceDCsqSF6rJGy0\src\src\treelearner\feature_histogram.hpp(116,57):
+      the template instantiation context (the oldest one first) is
+          C:\Users\strat\AppData\Local\uv\cache\sdists-v9\pypi\lightgbm\4.7.0\KAceDCsqSF6rJGy0\src\src\treelearner\serial_tree_learner.cpp(582,53):
+          see reference to function template instantiation 'void LightGBM::FeatureHistogram::Subtract<false,LightGBM::hist_t,LightGBM::hist_t,LightGBM::hist_t,0,0,0>(const LightGBM::FeatureHistogram &,const int32_t *)' being compiled
+  
+C:\Users\strat\AppData\Local\uv\cache\sdists-v9\pypi\lightgbm\4.7.0\KAceDCsqSF6rJGy0\src\src\treelearner\feature_histogram.hpp(116,40): warning C4244: 'initializing': conversion from 'const THIS_HIST_T' to 'const int64_t', possible loss of data [C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\gpu-wheel-build\lightgbm_objs.vcxproj]
+C:\Users\strat\AppData\Local\uv\cache\sdists-v9\pypi\lightgbm\4.7.0\KAceDCsqSF6rJGy0\src\src\treelearner\feature_histogram.hpp(116,40): warning C4244:         with [C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\gpu-wheel-build\lightgbm_objs.vcxproj]
+C:\Users\strat\AppData\Local\uv\cache\sdists-v9\pypi\lightgbm\4.7.0\KAceDCsqSF6rJGy0\src\src\treelearner\feature_histogram.hpp(116,40): warning C4244:         [ [C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\gpu-wheel-build\lightgbm_objs.vcxproj]
+C:\Users\strat\AppData\Local\uv\cache\sdists-v9\pypi\lightgbm\4.7.0\KAceDCsqSF6rJGy0\src\src\treelearner\feature_histogram.hpp(116,40): warning C4244:             THIS_HIST_T=LightGBM::hist_t [C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\gpu-wheel-build\lightgbm_objs.vcxproj]
+C:\Users\strat\AppData\Local\uv\cache\sdists-v9\pypi\lightgbm\4.7.0\KAceDCsqSF6rJGy0\src\src\treelearner\feature_histogram.hpp(116,40): warning C4244:         ] [C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\gpu-wheel-build\lightgbm_objs.vcxproj]
+  (compiling source file '../../../../../Users/strat/AppData/Local/uv/cache/sdists-v9/pypi/lightgbm/4.7.0/KAceDCsqSF6rJGy0/src/src/treelearner/serial_tree_learner.cpp')
+  
+C:\Users\strat\AppData\Local\uv\cache\sdists-v9\pypi\lightgbm\4.7.0\KAceDCsqSF6rJGy0\src\src\treelearner\feature_histogram.hpp(126,57): warning C4244: 'initializing': conversion from 'const THIS_HIST_T' to 'int64_t', possible loss of data [C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\gpu-wheel-build\lightgbm_objs.vcxproj]
+C:\Users\strat\AppData\Local\uv\cache\sdists-v9\pypi\lightgbm\4.7.0\KAceDCsqSF6rJGy0\src\src\treelearner\feature_histogram.hpp(126,57): warning C4244:         with [C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\gpu-wheel-build\lightgbm_objs.vcxproj]
+C:\Users\strat\AppData\Local\uv\cache\sdists-v9\pypi\lightgbm\4.7.0\KAceDCsqSF6rJGy0\src\src\treelearner\feature_histogram.hpp(126,57): warning C4244:         [ [C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\gpu-wheel-build\lightgbm_objs.vcxproj]
+C:\Users\strat\AppData\Local\uv\cache\sdists-v9\pypi\lightgbm\4.7.0\KAceDCsqSF6rJGy0\src\src\treelearner\feature_histogram.hpp(126,57): warning C4244:             THIS_HIST_T=LightGBM::hist_t [C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\gpu-wheel-build\lightgbm_objs.vcxproj]
+C:\Users\strat\AppData\Local\uv\cache\sdists-v9\pypi\lightgbm\4.7.0\KAceDCsqSF6rJGy0\src\src\treelearner\feature_histogram.hpp(126,57): warning C4244:         ] [C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\gpu-wheel-build\lightgbm_objs.vcxproj]
+  (compiling source file '../../../../../Users/strat/AppData/Local/uv/cache/sdists-v9/pypi/lightgbm/4.7.0/KAceDCsqSF6rJGy0/src/src/treelearner/serial_tree_learner.cpp')
+  
+C:\Users\strat\AppData\Local\uv\cache\sdists-v9\pypi\lightgbm\4.7.0\KAceDCsqSF6rJGy0\src\src\treelearner\feature_histogram.hpp(126,40): warning C4244: 'initializing': conversion from 'const THIS_HIST_T' to 'const int64_t', possible loss of data [C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\gpu-wheel-build\lightgbm_objs.vcxproj]
+C:\Users\strat\AppData\Local\uv\cache\sdists-v9\pypi\lightgbm\4.7.0\KAceDCsqSF6rJGy0\src\src\treelearner\feature_histogram.hpp(126,40): warning C4244:         with [C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\gpu-wheel-build\lightgbm_objs.vcxproj]
+C:\Users\strat\AppData\Local\uv\cache\sdists-v9\pypi\lightgbm\4.7.0\KAceDCsqSF6rJGy0\src\src\treelearner\feature_histogram.hpp(126,40): warning C4244:         [ [C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\gpu-wheel-build\lightgbm_objs.vcxproj]
+C:\Users\strat\AppData\Local\uv\cache\sdists-v9\pypi\lightgbm\4.7.0\KAceDCsqSF6rJGy0\src\src\treelearner\feature_histogram.hpp(126,40): warning C4244:             THIS_HIST_T=LightGBM::hist_t [C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\gpu-wheel-build\lightgbm_objs.vcxproj]
+C:\Users\strat\AppData\Local\uv\cache\sdists-v9\pypi\lightgbm\4.7.0\KAceDCsqSF6rJGy0\src\src\treelearner\feature_histogram.hpp(126,40): warning C4244:         ] [C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\gpu-wheel-build\lightgbm_objs.vcxproj]
+  (compiling source file '../../../../../Users/strat/AppData/Local/uv/cache/sdists-v9/pypi/lightgbm/4.7.0/KAceDCsqSF6rJGy0/src/src/treelearner/serial_tree_learner.cpp')
+  
+C:\Program Files\Microsoft Visual Studio\18\Community\VC\Tools\MSVC\14.42.34433\include\algorithm(3741,24): warning C4244: '=': conversion from 'int' to 'char', possible loss of data [C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\gpu-wheel-build\lightgbm_objs.vcxproj]
+  (compiling source file '../../../../../Users/strat/AppData/Local/uv/cache/sdists-v9/pypi/lightgbm/4.7.0/KAceDCsqSF6rJGy0/src/src/network/network.cpp')
+      C:\Program Files\Microsoft Visual Studio\18\Community\VC\Tools\MSVC\14.42.34433\include\algorithm(3741,24):
+      the template instantiation context (the oldest one first) is
+          C:\Users\strat\AppData\Local\uv\cache\sdists-v9\pypi\lightgbm\4.7.0\KAceDCsqSF6rJGy0\src\include\LightGBM\utils\common.h(339,12):
+          see reference to function template instantiation '_OutIt std::transform<std::_String_iterator<std::_String_val<std::_Simple_types<_Elem>>>,std::_String_iterator<std::_String_val<std::_Simple_types<_Elem>>>,LightGBM::Common::Atof::<lambda_3f82e38e99dcdde0328f71b31d77dafb>>(const _InIt,const _InIt,_OutIt,_Fn)' being compiled
+          with
+          [
+              _OutIt=std::_String_iterator<std::_String_val<std::_Simple_types<char>>>,
+              _Elem=char,
+              _InIt=std::_String_iterator<std::_String_val<std::_Simple_types<char>>>,
+              _Fn=LightGBM::Common::Atof::<lambda_3f82e38e99dcdde0328f71b31d77dafb>
+          ]
+  
+C:\Program Files\Microsoft Visual Studio\18\Community\VC\Tools\MSVC\14.42.34433\include\algorithm(3741,24): warning C4244: '=': conversion from 'int' to 'char', possible loss of data [C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\gpu-wheel-build\lightgbm_objs.vcxproj]
+  (compiling source file '../../../../../Users/strat/AppData/Local/uv/cache/sdists-v9/pypi/lightgbm/4.7.0/KAceDCsqSF6rJGy0/src/src/network/linkers_socket.cpp')
+      C:\Program Files\Microsoft Visual Studio\18\Community\VC\Tools\MSVC\14.42.34433\include\algorithm(3741,24):
+      the template instantiation context (the oldest one first) is
+          C:\Users\strat\AppData\Local\uv\cache\sdists-v9\pypi\lightgbm\4.7.0\KAceDCsqSF6rJGy0\src\include\LightGBM\utils\common.h(339,12):
+          see reference to function template instantiation '_OutIt std::transform<std::_String_iterator<std::_String_val<std::_Simple_types<_Elem>>>,std::_String_iterator<std::_String_val<std::_Simple_types<_Elem>>>,LightGBM::Common::Atof::<lambda_3f82e38e99dcdde0328f71b31d77dafb>>(const _InIt,const _InIt,_OutIt,_Fn)' being compiled
+          with
+          [
+              _OutIt=std::_String_iterator<std::_String_val<std::_Simple_types<char>>>,
+              _Elem=char,
+              _InIt=std::_String_iterator<std::_String_val<std::_Simple_types<char>>>,
+              _Fn=LightGBM::Common::Atof::<lambda_3f82e38e99dcdde0328f71b31d77dafb>
+          ]
+  
+C:\Users\strat\AppData\Local\uv\cache\sdists-v9\pypi\lightgbm\4.7.0\KAceDCsqSF6rJGy0\src\external_libs\fast_double_parser\include\fast_double_parser.h(211,1): warning C4715: 'fast_double_parser::leading_zeroes': not all control paths return a value [C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\gpu-wheel-build\lightgbm_objs.vcxproj]
+C:\Users\strat\AppData\Local\uv\cache\sdists-v9\pypi\lightgbm\4.7.0\KAceDCsqSF6rJGy0\src\external_libs\fast_double_parser\include\fast_double_parser.h(211,1): warning C4715: 'fast_double_parser::leading_zeroes': not all control paths return a value [C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\gpu-wheel-build\lightgbm_objs.vcxproj]
+C:\Users\strat\AppData\Local\uv\cache\sdists-v9\pypi\lightgbm\4.7.0\KAceDCsqSF6rJGy0\src\src\treelearner\feature_histogram.cpp(599,99): warning C4293: '<<': shift count negative or too big, undefined behavior [C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\gpu-wheel-build\lightgbm_objs.vcxproj]
+      C:\Users\strat\AppData\Local\uv\cache\sdists-v9\pypi\lightgbm\4.7.0\KAceDCsqSF6rJGy0\src\src\treelearner\feature_histogram.cpp(599,99):
+      the template instantiation context (the oldest one first) is
+          C:\Users\strat\AppData\Local\uv\cache\sdists-v9\pypi\lightgbm\4.7.0\KAceDCsqSF6rJGy0\src\src\treelearner\feature_histogram.cpp(18,7):
+          see reference to function template instantiation 'void LightGBM::FeatureHistogram::FuncForCategoricalL1<true,false>(void)' being compiled
+          C:\Users\strat\AppData\Local\uv\cache\sdists-v9\pypi\lightgbm\4.7.0\KAceDCsqSF6rJGy0\src\src\treelearner\feature_histogram.cpp(34,5):
+          see reference to function template instantiation 'void LightGBM::FeatureHistogram::FuncForCategoricalL2<true,false,true>(void)' being compiled
+          C:\Users\strat\AppData\Local\uv\cache\sdists-v9\pypi\lightgbm\4.7.0\KAceDCsqSF6rJGy0\src\src\treelearner\feature_histogram.cpp(60,13):
+          see reference to function template instantiation 'void LightGBM::FeatureHistogram::FindBestThresholdCategoricalIntInner<true,false,true,true,true,int32_t,int32_t,int16_t,int16_t,16,16>(int64_t,const double,const double,LightGBM::data_size_t,const LightGBM::FeatureConstraint *,double,LightGBM::SplitInfo *)' being compiled
+  
+C:\Program Files\Microsoft Visual Studio\18\Community\VC\Tools\MSVC\14.42.34433\include\utility(263,16): warning C4244: 'initializing': conversion from 'int64_t' to '_Ty1', possible loss of data [C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\gpu-wheel-build\lightgbm_capi_objs.vcxproj]
+C:\Program Files\Microsoft Visual Studio\18\Community\VC\Tools\MSVC\14.42.34433\include\utility(263,16): warning C4244:         with [C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\gpu-wheel-build\lightgbm_capi_objs.vcxproj]
+C:\Program Files\Microsoft Visual Studio\18\Community\VC\Tools\MSVC\14.42.34433\include\utility(263,16): warning C4244:         [ [C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\gpu-wheel-build\lightgbm_capi_objs.vcxproj]
+C:\Program Files\Microsoft Visual Studio\18\Community\VC\Tools\MSVC\14.42.34433\include\utility(263,16): warning C4244:             _Ty1=int [C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\gpu-wheel-build\lightgbm_capi_objs.vcxproj]
+C:\Program Files\Microsoft Visual Studio\18\Community\VC\Tools\MSVC\14.42.34433\include\utility(263,16): warning C4244:         ] [C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\gpu-wheel-build\lightgbm_capi_objs.vcxproj]
+  (compiling source file '../../../../../Users/strat/AppData/Local/uv/cache/sdists-v9/pypi/lightgbm/4.7.0/KAceDCsqSF6rJGy0/src/src/c_api.cpp')
+      C:\Program Files\Microsoft Visual Studio\18\Community\VC\Tools\MSVC\14.42.34433\include\utility(263,16):
+      the template instantiation context (the oldest one first) is
+          C:\Users\strat\AppData\Local\uv\cache\sdists-v9\pypi\lightgbm\4.7.0\KAceDCsqSF6rJGy0\src\src\c_api.cpp(2693,14):
+          see reference to function template instantiation '_Ty &std::vector<_Ty,std::allocator<_Ty>>::emplace_back<int64_t&,_Ret>(int64_t &,_Ret &&)' being compiled
+          with
+          [
+              _Ty=std::pair<int,double>,
+              _Ret=double
+          ]
+          C:\Program Files\Microsoft Visual Studio\18\Community\VC\Tools\MSVC\14.42.34433\include\vector(858,24):
+          see reference to function template instantiation '_Ty &std::vector<_Ty,std::allocator<_Ty>>::_Emplace_one_at_back<int64_t&,double>(int64_t &,double &&)' being compiled
+          with
+          [
+              _Ty=std::pair<int,double>
+          ]
+          C:\Program Files\Microsoft Visual Studio\18\Community\VC\Tools\MSVC\14.42.34433\include\vector(776,20):
+          see reference to function template instantiation '_Ty &std::vector<_Ty,std::allocator<_Ty>>::_Emplace_back_with_unused_capacity<int64_t&,double>(int64_t &,double &&)' being compiled
+          with
+          [
+              _Ty=std::pair<int,double>
+          ]
+          C:\Program Files\Microsoft Visual Studio\18\Community\VC\Tools\MSVC\14.42.34433\include\vector(791,18):
+          see reference to function template instantiation 'void std::_Construct_in_place<std::pair<int,double>,int64_t&,_Ty>(std::pair<int,double> &,int64_t &,_Ty &&) noexcept' being compiled
+          with
+          [
+              _Ty=double
+          ]
+          C:\Program Files\Microsoft Visual Studio\18\Community\VC\Tools\MSVC\14.42.34433\include\xutility(406,61):
+          see reference to function template instantiation 'std::pair<int,double>::pair<int64_t&,_T,0>(_Other1,_Other2 &&) noexcept' being compiled
+          with
+          [
+              _T=double,
+              _Other1=int64_t &,
+              _Other2=double
+          ]
+  
+C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\cmake-build\Boost\source\boost/bind.hpp(41): message : The practice of declaring the Bind placeholders (_1, _2, ...) in the global namespace is deprecated. Please use <boost/bind/bind.hpp> + using namespace boost::placeholders, or define BOOST_BIND_GLOBAL_PLACEHOLDERS to retain the current behavior. [C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\gpu-wheel-build\lightgbm_objs.vcxproj]
+C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\cmake-build\Boost\source\boost/bind.hpp(41): message : The practice of declaring the Bind placeholders (_1, _2, ...) in the global namespace is deprecated. Please use <boost/bind/bind.hpp> + using namespace boost::placeholders, or define BOOST_BIND_GLOBAL_PLACEHOLDERS to retain the current behavior. [C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\gpu-wheel-build\lightgbm_objs.vcxproj]
+C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\cmake-build\Boost\source\boost/bind.hpp(41): message : The practice of declaring the Bind placeholders (_1, _2, ...) in the global namespace is deprecated. Please use <boost/bind/bind.hpp> + using namespace boost::placeholders, or define BOOST_BIND_GLOBAL_PLACEHOLDERS to retain the current behavior. [C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\gpu-wheel-build\lightgbm_objs.vcxproj]
+C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\cmake-build\Boost\source\boost/bind.hpp(41): message : The practice of declaring the Bind placeholders (_1, _2, ...) in the global namespace is deprecated. Please use <boost/bind/bind.hpp> + using namespace boost::placeholders, or define BOOST_BIND_GLOBAL_PLACEHOLDERS to retain the current behavior. [C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\gpu-wheel-build\lightgbm_objs.vcxproj]
+C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\cmake-build\Boost\source\boost/bind.hpp(41): message : The practice of declaring the Bind placeholders (_1, _2, ...) in the global namespace is deprecated. Please use <boost/bind/bind.hpp> + using namespace boost::placeholders, or define BOOST_BIND_GLOBAL_PLACEHOLDERS to retain the current behavior. [C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\gpu-wheel-build\lightgbm_objs.vcxproj]
+C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\cmake-build\Boost\source\boost/bind.hpp(41): message : The practice of declaring the Bind placeholders (_1, _2, ...) in the global namespace is deprecated. Please use <boost/bind/bind.hpp> + using namespace boost::placeholders, or define BOOST_BIND_GLOBAL_PLACEHOLDERS to retain the current behavior. [C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\gpu-wheel-build\lightgbm_objs.vcxproj]
+C:\Program Files\Microsoft Visual Studio\18\Community\VC\Tools\MSVC\14.42.34433\include\algorithm(3741,24): warning C4244: '=': conversion from 'int' to 'char', possible loss of data [C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\gpu-wheel-build\lightgbm_objs.vcxproj]
+  (compiling source file '../../../../../Users/strat/AppData/Local/uv/cache/sdists-v9/pypi/lightgbm/4.7.0/KAceDCsqSF6rJGy0/src/src/treelearner/feature_parallel_tree_learner.cpp')
+      C:\Program Files\Microsoft Visual Studio\18\Community\VC\Tools\MSVC\14.42.34433\include\algorithm(3741,24):
+      the template instantiation context (the oldest one first) is
+          C:\Users\strat\AppData\Local\uv\cache\sdists-v9\pypi\lightgbm\4.7.0\KAceDCsqSF6rJGy0\src\include\LightGBM\utils\common.h(339,12):
+          see reference to function template instantiation '_OutIt std::transform<std::_String_iterator<std::_String_val<std::_Simple_types<_Elem>>>,std::_String_iterator<std::_String_val<std::_Simple_types<_Elem>>>,LightGBM::Common::Atof::<lambda_3f82e38e99dcdde0328f71b31d77dafb>>(const _InIt,const _InIt,_OutIt,_Fn)' being compiled
+          with
+          [
+              _OutIt=std::_String_iterator<std::_String_val<std::_Simple_types<char>>>,
+              _Elem=char,
+              _InIt=std::_String_iterator<std::_String_val<std::_Simple_types<char>>>,
+              _Fn=LightGBM::Common::Atof::<lambda_3f82e38e99dcdde0328f71b31d77dafb>
+          ]
+  
+C:\Program Files\Microsoft Visual Studio\18\Community\VC\Tools\MSVC\14.42.34433\include\algorithm(3741,24): warning C4244: '=': conversion from 'int' to 'char', possible loss of data [C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\gpu-wheel-build\lightgbm_objs.vcxproj]
+  (compiling source file '../../../../../Users/strat/AppData/Local/uv/cache/sdists-v9/pypi/lightgbm/4.7.0/KAceDCsqSF6rJGy0/src/src/treelearner/data_parallel_tree_learner.cpp')
+      C:\Program Files\Microsoft Visual Studio\18\Community\VC\Tools\MSVC\14.42.34433\include\algorithm(3741,24):
+      the template instantiation context (the oldest one first) is
+          C:\Users\strat\AppData\Local\uv\cache\sdists-v9\pypi\lightgbm\4.7.0\KAceDCsqSF6rJGy0\src\include\LightGBM\utils\common.h(339,12):
+          see reference to function template instantiation '_OutIt std::transform<std::_String_iterator<std::_String_val<std::_Simple_types<_Elem>>>,std::_String_iterator<std::_String_val<std::_Simple_types<_Elem>>>,LightGBM::Common::Atof::<lambda_3f82e38e99dcdde0328f71b31d77dafb>>(const _InIt,const _InIt,_OutIt,_Fn)' being compiled
+          with
+          [
+              _OutIt=std::_String_iterator<std::_String_val<std::_Simple_types<char>>>,
+              _Elem=char,
+              _InIt=std::_String_iterator<std::_String_val<std::_Simple_types<char>>>,
+              _Fn=LightGBM::Common::Atof::<lambda_3f82e38e99dcdde0328f71b31d77dafb>
+          ]
+  
+C:\Program Files\Microsoft Visual Studio\18\Community\VC\Tools\MSVC\14.42.34433\include\algorithm(3741,24): warning C4244: '=': conversion from 'int' to 'char', possible loss of data [C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\gpu-wheel-build\lightgbm_objs.vcxproj]
+  (compiling source file '../../../../../Users/strat/AppData/Local/uv/cache/sdists-v9/pypi/lightgbm/4.7.0/KAceDCsqSF6rJGy0/src/src/treelearner/tree_learner.cpp')
+      C:\Program Files\Microsoft Visual Studio\18\Community\VC\Tools\MSVC\14.42.34433\include\algorithm(3741,24):
+      the template instantiation context (the oldest one first) is
+          C:\Users\strat\AppData\Local\uv\cache\sdists-v9\pypi\lightgbm\4.7.0\KAceDCsqSF6rJGy0\src\include\LightGBM\utils\common.h(339,12):
+          see reference to function template instantiation '_OutIt std::transform<std::_String_iterator<std::_String_val<std::_Simple_types<_Elem>>>,std::_String_iterator<std::_String_val<std::_Simple_types<_Elem>>>,LightGBM::Common::Atof::<lambda_3f82e38e99dcdde0328f71b31d77dafb>>(const _InIt,const _InIt,_OutIt,_Fn)' being compiled
+          with
+          [
+              _OutIt=std::_String_iterator<std::_String_val<std::_Simple_types<char>>>,
+              _Elem=char,
+              _InIt=std::_String_iterator<std::_String_val<std::_Simple_types<char>>>,
+              _Fn=LightGBM::Common::Atof::<lambda_3f82e38e99dcdde0328f71b31d77dafb>
+          ]
+  
+C:\Users\strat\AppData\Local\uv\cache\sdists-v9\pypi\lightgbm\4.7.0\KAceDCsqSF6rJGy0\src\src\treelearner\data_parallel_tree_learner.cpp(89,34): warning C4267: '+=': conversion from 'size_t' to '_Ty', possible loss of data [C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\gpu-wheel-build\lightgbm_objs.vcxproj]
+C:\Users\strat\AppData\Local\uv\cache\sdists-v9\pypi\lightgbm\4.7.0\KAceDCsqSF6rJGy0\src\src\treelearner\data_parallel_tree_learner.cpp(89,34): warning C4267:         with [C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\gpu-wheel-build\lightgbm_objs.vcxproj]
+C:\Users\strat\AppData\Local\uv\cache\sdists-v9\pypi\lightgbm\4.7.0\KAceDCsqSF6rJGy0\src\src\treelearner\data_parallel_tree_learner.cpp(89,34): warning C4267:         [ [C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\gpu-wheel-build\lightgbm_objs.vcxproj]
+C:\Users\strat\AppData\Local\uv\cache\sdists-v9\pypi\lightgbm\4.7.0\KAceDCsqSF6rJGy0\src\src\treelearner\data_parallel_tree_learner.cpp(89,34): warning C4267:             _Ty=int [C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\gpu-wheel-build\lightgbm_objs.vcxproj]
+C:\Users\strat\AppData\Local\uv\cache\sdists-v9\pypi\lightgbm\4.7.0\KAceDCsqSF6rJGy0\src\src\treelearner\data_parallel_tree_learner.cpp(89,34): warning C4267:         ] [C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\gpu-wheel-build\lightgbm_objs.vcxproj]
+      C:\Users\strat\AppData\Local\uv\cache\sdists-v9\pypi\lightgbm\4.7.0\KAceDCsqSF6rJGy0\src\src\treelearner\data_parallel_tree_learner.cpp(89,34):
+      the template instantiation context (the oldest one first) is
+          C:\Users\strat\AppData\Local\uv\cache\sdists-v9\pypi\lightgbm\4.7.0\KAceDCsqSF6rJGy0\src\src\treelearner\data_parallel_tree_learner.cpp(467,55):
+          see reference to class template instantiation 'LightGBM::DataParallelTreeLearner<LightGBM::GPUTreeLearner>' being compiled
+          C:\Users\strat\AppData\Local\uv\cache\sdists-v9\pypi\lightgbm\4.7.0\KAceDCsqSF6rJGy0\src\src\treelearner\data_parallel_tree_learner.cpp(79,27):
+          while compiling class template member function 'void LightGBM::DataParallelTreeLearner<LightGBM::GPUTreeLearner>::PrepareBufferPos(const std::vector<std::vector<int,std::allocator<int>>,std::allocator<std::vector<int,std::allocator<int>>>> &,std::vector<int,std::allocator<int>> *,std::vector<int,std::allocator<int>> *,std::vector<int,std::allocator<int>> *,std::vector<int,std::allocator<int>> *,LightGBM::comm_size_t *,size_t)'
+              C:\Users\strat\AppData\Local\uv\cache\sdists-v9\pypi\lightgbm\4.7.0\KAceDCsqSF6rJGy0\src\src\treelearner\data_parallel_tree_learner.cpp(153,21):
+              see the first reference to 'LightGBM::DataParallelTreeLearner<LightGBM::GPUTreeLearner>::PrepareBufferPos' in 'LightGBM::DataParallelTreeLearner<LightGBM::GPUTreeLearner>::BeforeTrain'
+  
+C:\Users\strat\AppData\Local\uv\cache\sdists-v9\pypi\lightgbm\4.7.0\KAceDCsqSF6rJGy0\src\src\treelearner\data_parallel_tree_learner.cpp(108,27): warning C4267: '+=': conversion from 'size_t' to 'int', possible loss of data [C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\gpu-wheel-build\lightgbm_objs.vcxproj]
+C:\Users\strat\AppData\Local\uv\cache\sdists-v9\pypi\lightgbm\4.7.0\KAceDCsqSF6rJGy0\src\src\treelearner\data_parallel_tree_learner.cpp(120,25): warning C4267: '+=': conversion from 'size_t' to 'int', possible loss of data [C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\gpu-wheel-build\lightgbm_objs.vcxproj]
+C:\Program Files\Microsoft Visual Studio\18\Community\VC\Tools\MSVC\14.42.34433\include\algorithm(3741,24): warning C4244: '=': conversion from 'int' to 'char', possible loss of data [C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\gpu-wheel-build\lightgbm_objs.vcxproj]
+  (compiling source file '../../../../../Users/strat/AppData/Local/uv/cache/sdists-v9/pypi/lightgbm/4.7.0/KAceDCsqSF6rJGy0/src/src/treelearner/voting_parallel_tree_learner.cpp')
+      C:\Program Files\Microsoft Visual Studio\18\Community\VC\Tools\MSVC\14.42.34433\include\algorithm(3741,24):
+      the template instantiation context (the oldest one first) is
+          C:\Users\strat\AppData\Local\uv\cache\sdists-v9\pypi\lightgbm\4.7.0\KAceDCsqSF6rJGy0\src\include\LightGBM\utils\common.h(339,12):
+          see reference to function template instantiation '_OutIt std::transform<std::_String_iterator<std::_String_val<std::_Simple_types<_Elem>>>,std::_String_iterator<std::_String_val<std::_Simple_types<_Elem>>>,LightGBM::Common::Atof::<lambda_3f82e38e99dcdde0328f71b31d77dafb>>(const _InIt,const _InIt,_OutIt,_Fn)' being compiled
+          with
+          [
+              _OutIt=std::_String_iterator<std::_String_val<std::_Simple_types<char>>>,
+              _Elem=char,
+              _InIt=std::_String_iterator<std::_String_val<std::_Simple_types<char>>>,
+              _Fn=LightGBM::Common::Atof::<lambda_3f82e38e99dcdde0328f71b31d77dafb>
+          ]
+  
+C:\Program Files\Microsoft Visual Studio\18\Community\VC\Tools\MSVC\14.42.34433\include\algorithm(3741,24): warning C4244: '=': conversion from 'int' to 'char', possible loss of data [C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\gpu-wheel-build\lightgbm_objs.vcxproj]
+  (compiling source file '../../../../../Users/strat/AppData/Local/uv/cache/sdists-v9/pypi/lightgbm/4.7.0/KAceDCsqSF6rJGy0/src/src/treelearner/gpu_tree_learner.cpp')
+      C:\Program Files\Microsoft Visual Studio\18\Community\VC\Tools\MSVC\14.42.34433\include\algorithm(3741,24):
+      the template instantiation context (the oldest one first) is
+          C:\Users\strat\AppData\Local\uv\cache\sdists-v9\pypi\lightgbm\4.7.0\KAceDCsqSF6rJGy0\src\include\LightGBM\utils\common.h(339,12):
+          see reference to function template instantiation '_OutIt std::transform<std::_String_iterator<std::_String_val<std::_Simple_types<_Elem>>>,std::_String_iterator<std::_String_val<std::_Simple_types<_Elem>>>,LightGBM::Common::Atof::<lambda_3f82e38e99dcdde0328f71b31d77dafb>>(const _InIt,const _InIt,_OutIt,_Fn)' being compiled
+          with
+          [
+              _OutIt=std::_String_iterator<std::_String_val<std::_Simple_types<char>>>,
+              _Elem=char,
+              _InIt=std::_String_iterator<std::_String_val<std::_Simple_types<char>>>,
+              _Fn=LightGBM::Common::Atof::<lambda_3f82e38e99dcdde0328f71b31d77dafb>
+          ]
+  
+C:\Users\strat\AppData\Local\uv\cache\sdists-v9\pypi\lightgbm\4.7.0\KAceDCsqSF6rJGy0\src\src\treelearner\feature_histogram.hpp(138,49): warning C4244: '=': conversion from 'THIS_HIST_T' to 'RESULT_HIST_T', possible loss of data [C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\gpu-wheel-build\lightgbm_objs.vcxproj]
+C:\Users\strat\AppData\Local\uv\cache\sdists-v9\pypi\lightgbm\4.7.0\KAceDCsqSF6rJGy0\src\src\treelearner\feature_histogram.hpp(138,49): warning C4244:         with [C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\gpu-wheel-build\lightgbm_objs.vcxproj]
+C:\Users\strat\AppData\Local\uv\cache\sdists-v9\pypi\lightgbm\4.7.0\KAceDCsqSF6rJGy0\src\src\treelearner\feature_histogram.hpp(138,49): warning C4244:         [ [C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\gpu-wheel-build\lightgbm_objs.vcxproj]
+C:\Users\strat\AppData\Local\uv\cache\sdists-v9\pypi\lightgbm\4.7.0\KAceDCsqSF6rJGy0\src\src\treelearner\feature_histogram.hpp(138,49): warning C4244:             THIS_HIST_T=int64_t [C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\gpu-wheel-build\lightgbm_objs.vcxproj]
+C:\Users\strat\AppData\Local\uv\cache\sdists-v9\pypi\lightgbm\4.7.0\KAceDCsqSF6rJGy0\src\src\treelearner\feature_histogram.hpp(138,49): warning C4244:         ] [C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\gpu-wheel-build\lightgbm_objs.vcxproj]
+C:\Users\strat\AppData\Local\uv\cache\sdists-v9\pypi\lightgbm\4.7.0\KAceDCsqSF6rJGy0\src\src\treelearner\feature_histogram.hpp(138,49): warning C4244:         and [C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\gpu-wheel-build\lightgbm_objs.vcxproj]
+C:\Users\strat\AppData\Local\uv\cache\sdists-v9\pypi\lightgbm\4.7.0\KAceDCsqSF6rJGy0\src\src\treelearner\feature_histogram.hpp(138,49): warning C4244:         [ [C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\gpu-wheel-build\lightgbm_objs.vcxproj]
+C:\Users\strat\AppData\Local\uv\cache\sdists-v9\pypi\lightgbm\4.7.0\KAceDCsqSF6rJGy0\src\src\treelearner\feature_histogram.hpp(138,49): warning C4244:             RESULT_HIST_T=int32_t [C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\gpu-wheel-build\lightgbm_objs.vcxproj]
+C:\Users\strat\AppData\Local\uv\cache\sdists-v9\pypi\lightgbm\4.7.0\KAceDCsqSF6rJGy0\src\src\treelearner\feature_histogram.hpp(138,49): warning C4244:         ] [C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\gpu-wheel-build\lightgbm_objs.vcxproj]
+  (compiling source file '../../../../../Users/strat/AppData/Local/uv/cache/sdists-v9/pypi/lightgbm/4.7.0/KAceDCsqSF6rJGy0/src/src/treelearner/data_parallel_tree_learner.cpp')
+      C:\Users\strat\AppData\Local\uv\cache\sdists-v9\pypi\lightgbm\4.7.0\KAceDCsqSF6rJGy0\src\src\treelearner\feature_histogram.hpp(138,49):
+      the template instantiation context (the oldest one first) is
+          C:\Users\strat\AppData\Local\uv\cache\sdists-v9\pypi\lightgbm\4.7.0\KAceDCsqSF6rJGy0\src\src\treelearner\data_parallel_tree_learner.cpp(306,127):
+          while compiling class template member function 'void LightGBM::DataParallelTreeLearner<LightGBM::GPUTreeLearner>::FindBestSplitsFromHistograms(const std::vector<int8_t,std::allocator<int8_t>> &,bool,const LightGBM::Tree *)'
+              C:\Users\strat\AppData\Local\uv\cache\sdists-v9\pypi\lightgbm\4.7.0\KAceDCsqSF6rJGy0\src\src\treelearner\data_parallel_tree_learner.cpp(301,37):
+              see the first reference to 'LightGBM::DataParallelTreeLearner<LightGBM::GPUTreeLearner>::FindBestSplitsFromHistograms' in 'LightGBM::DataParallelTreeLearner<LightGBM::GPUTreeLearner>::FindBestSplits'
+          C:\Users\strat\AppData\Local\uv\cache\sdists-v9\pypi\lightgbm\4.7.0\KAceDCsqSF6rJGy0\src\src\treelearner\data_parallel_tree_learner.cpp(401,68):
+          see reference to function template instantiation 'void LightGBM::FeatureHistogram::Subtract<true,int64_t,int32_t,int32_t,32,16,16>(const LightGBM::FeatureHistogram &,const int32_t *)' being compiled
+  
+C:\Users\strat\AppData\Local\uv\cache\sdists-v9\pypi\lightgbm\4.7.0\KAceDCsqSF6rJGy0\src\src\treelearner\feature_histogram.hpp(116,57): warning C4244: 'initializing': conversion from 'const THIS_HIST_T' to 'int64_t', possible loss of data [C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\gpu-wheel-build\lightgbm_objs.vcxproj]
+C:\Users\strat\AppData\Local\uv\cache\sdists-v9\pypi\lightgbm\4.7.0\KAceDCsqSF6rJGy0\src\src\treelearner\feature_histogram.hpp(116,57): warning C4244:         with [C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\gpu-wheel-build\lightgbm_objs.vcxproj]
+C:\Users\strat\AppData\Local\uv\cache\sdists-v9\pypi\lightgbm\4.7.0\KAceDCsqSF6rJGy0\src\src\treelearner\feature_histogram.hpp(116,57): warning C4244:         [ [C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\gpu-wheel-build\lightgbm_objs.vcxproj]
+C:\Users\strat\AppData\Local\uv\cache\sdists-v9\pypi\lightgbm\4.7.0\KAceDCsqSF6rJGy0\src\src\treelearner\feature_histogram.hpp(116,57): warning C4244:             THIS_HIST_T=LightGBM::hist_t [C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\gpu-wheel-build\lightgbm_objs.vcxproj]
+C:\Users\strat\AppData\Local\uv\cache\sdists-v9\pypi\lightgbm\4.7.0\KAceDCsqSF6rJGy0\src\src\treelearner\feature_histogram.hpp(116,57): warning C4244:         ] [C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\gpu-wheel-build\lightgbm_objs.vcxproj]
+  (compiling source file '../../../../../Users/strat/AppData/Local/uv/cache/sdists-v9/pypi/lightgbm/4.7.0/KAceDCsqSF6rJGy0/src/src/treelearner/data_parallel_tree_learner.cpp')
+      C:\Users\strat\AppData\Local\uv\cache\sdists-v9\pypi\lightgbm\4.7.0\KAceDCsqSF6rJGy0\src\src\treelearner\feature_histogram.hpp(116,57):
+      the template instantiation context (the oldest one first) is
+          C:\Users\strat\AppData\Local\uv\cache\sdists-v9\pypi\lightgbm\4.7.0\KAceDCsqSF6rJGy0\src\src\treelearner\data_parallel_tree_learner.cpp(411,57):
+          see reference to function template instantiation 'void LightGBM::FeatureHistogram::Subtract<false,LightGBM::hist_t,LightGBM::hist_t,LightGBM::hist_t,0,0,0>(const LightGBM::FeatureHistogram &,const int32_t *)' being compiled
+  
+C:\Users\strat\AppData\Local\uv\cache\sdists-v9\pypi\lightgbm\4.7.0\KAceDCsqSF6rJGy0\src\src\treelearner\feature_histogram.hpp(116,40): warning C4244: 'initializing': conversion from 'const THIS_HIST_T' to 'const int64_t', possible loss of data [C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\gpu-wheel-build\lightgbm_objs.vcxproj]
+C:\Users\strat\AppData\Local\uv\cache\sdists-v9\pypi\lightgbm\4.7.0\KAceDCsqSF6rJGy0\src\src\treelearner\feature_histogram.hpp(116,40): warning C4244:         with [C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\gpu-wheel-build\lightgbm_objs.vcxproj]
+C:\Users\strat\AppData\Local\uv\cache\sdists-v9\pypi\lightgbm\4.7.0\KAceDCsqSF6rJGy0\src\src\treelearner\feature_histogram.hpp(116,40): warning C4244:         [ [C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\gpu-wheel-build\lightgbm_objs.vcxproj]
+C:\Users\strat\AppData\Local\uv\cache\sdists-v9\pypi\lightgbm\4.7.0\KAceDCsqSF6rJGy0\src\src\treelearner\feature_histogram.hpp(116,40): warning C4244:             THIS_HIST_T=LightGBM::hist_t [C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\gpu-wheel-build\lightgbm_objs.vcxproj]
+C:\Users\strat\AppData\Local\uv\cache\sdists-v9\pypi\lightgbm\4.7.0\KAceDCsqSF6rJGy0\src\src\treelearner\feature_histogram.hpp(116,40): warning C4244:         ] [C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\gpu-wheel-build\lightgbm_objs.vcxproj]
+  (compiling source file '../../../../../Users/strat/AppData/Local/uv/cache/sdists-v9/pypi/lightgbm/4.7.0/KAceDCsqSF6rJGy0/src/src/treelearner/data_parallel_tree_learner.cpp')
+  
+C:\Users\strat\AppData\Local\uv\cache\sdists-v9\pypi\lightgbm\4.7.0\KAceDCsqSF6rJGy0\src\src\treelearner\feature_histogram.hpp(126,57): warning C4244: 'initializing': conversion from 'const THIS_HIST_T' to 'int64_t', possible loss of data [C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\gpu-wheel-build\lightgbm_objs.vcxproj]
+C:\Users\strat\AppData\Local\uv\cache\sdists-v9\pypi\lightgbm\4.7.0\KAceDCsqSF6rJGy0\src\src\treelearner\feature_histogram.hpp(126,57): warning C4244:         with [C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\gpu-wheel-build\lightgbm_objs.vcxproj]
+C:\Users\strat\AppData\Local\uv\cache\sdists-v9\pypi\lightgbm\4.7.0\KAceDCsqSF6rJGy0\src\src\treelearner\feature_histogram.hpp(126,57): warning C4244:         [ [C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\gpu-wheel-build\lightgbm_objs.vcxproj]
+C:\Users\strat\AppData\Local\uv\cache\sdists-v9\pypi\lightgbm\4.7.0\KAceDCsqSF6rJGy0\src\src\treelearner\feature_histogram.hpp(126,57): warning C4244:             THIS_HIST_T=LightGBM::hist_t [C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\gpu-wheel-build\lightgbm_objs.vcxproj]
+C:\Users\strat\AppData\Local\uv\cache\sdists-v9\pypi\lightgbm\4.7.0\KAceDCsqSF6rJGy0\src\src\treelearner\feature_histogram.hpp(126,57): warning C4244:         ] [C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\gpu-wheel-build\lightgbm_objs.vcxproj]
+  (compiling source file '../../../../../Users/strat/AppData/Local/uv/cache/sdists-v9/pypi/lightgbm/4.7.0/KAceDCsqSF6rJGy0/src/src/treelearner/data_parallel_tree_learner.cpp')
+  
+C:\Users\strat\AppData\Local\uv\cache\sdists-v9\pypi\lightgbm\4.7.0\KAceDCsqSF6rJGy0\src\src\treelearner\feature_histogram.hpp(126,40): warning C4244: 'initializing': conversion from 'const THIS_HIST_T' to 'const int64_t', possible loss of data [C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\gpu-wheel-build\lightgbm_objs.vcxproj]
+C:\Users\strat\AppData\Local\uv\cache\sdists-v9\pypi\lightgbm\4.7.0\KAceDCsqSF6rJGy0\src\src\treelearner\feature_histogram.hpp(126,40): warning C4244:         with [C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\gpu-wheel-build\lightgbm_objs.vcxproj]
+C:\Users\strat\AppData\Local\uv\cache\sdists-v9\pypi\lightgbm\4.7.0\KAceDCsqSF6rJGy0\src\src\treelearner\feature_histogram.hpp(126,40): warning C4244:         [ [C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\gpu-wheel-build\lightgbm_objs.vcxproj]
+C:\Users\strat\AppData\Local\uv\cache\sdists-v9\pypi\lightgbm\4.7.0\KAceDCsqSF6rJGy0\src\src\treelearner\feature_histogram.hpp(126,40): warning C4244:             THIS_HIST_T=LightGBM::hist_t [C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\gpu-wheel-build\lightgbm_objs.vcxproj]
+C:\Users\strat\AppData\Local\uv\cache\sdists-v9\pypi\lightgbm\4.7.0\KAceDCsqSF6rJGy0\src\src\treelearner\feature_histogram.hpp(126,40): warning C4244:         ] [C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\gpu-wheel-build\lightgbm_objs.vcxproj]
+  (compiling source file '../../../../../Users/strat/AppData/Local/uv/cache/sdists-v9/pypi/lightgbm/4.7.0/KAceDCsqSF6rJGy0/src/src/treelearner/data_parallel_tree_learner.cpp')
+  
+  lightgbm_capi_objs.vcxproj -> C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\gpu-wheel-build\lightgbm_capi_objs.dir\Release\lightgbm_capi_objs.lib
+C:\Program Files\Microsoft Visual Studio\18\Community\VC\Tools\MSVC\14.42.34433\include\algorithm(3741,24): warning C4244: '=': conversion from 'int' to 'char', possible loss of data [C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\gpu-wheel-build\lightgbm_objs.vcxproj]
+  (compiling source file '../../../../../Users/strat/AppData/Local/uv/cache/sdists-v9/pypi/lightgbm/4.7.0/KAceDCsqSF6rJGy0/src/src/treelearner/linear_tree_learner.cpp')
+      C:\Program Files\Microsoft Visual Studio\18\Community\VC\Tools\MSVC\14.42.34433\include\algorithm(3741,24):
+      the template instantiation context (the oldest one first) is
+          C:\Users\strat\AppData\Local\uv\cache\sdists-v9\pypi\lightgbm\4.7.0\KAceDCsqSF6rJGy0\src\include\LightGBM\utils\common.h(339,12):
+          see reference to function template instantiation '_OutIt std::transform<std::_String_iterator<std::_String_val<std::_Simple_types<_Elem>>>,std::_String_iterator<std::_String_val<std::_Simple_types<_Elem>>>,LightGBM::Common::Atof::<lambda_3f82e38e99dcdde0328f71b31d77dafb>>(const _InIt,const _InIt,_OutIt,_Fn)' being compiled
+          with
+          [
+              _OutIt=std::_String_iterator<std::_String_val<std::_Simple_types<char>>>,
+              _Elem=char,
+              _InIt=std::_String_iterator<std::_String_val<std::_Simple_types<char>>>,
+              _Fn=LightGBM::Common::Atof::<lambda_3f82e38e99dcdde0328f71b31d77dafb>
+          ]
+  
+C:\Users\strat\AppData\Local\uv\cache\sdists-v9\pypi\lightgbm\4.7.0\KAceDCsqSF6rJGy0\src\src\treelearner\feature_histogram.hpp(116,57): warning C4244: 'initializing': conversion from 'const THIS_HIST_T' to 'int64_t', possible loss of data [C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\gpu-wheel-build\lightgbm_objs.vcxproj]
+C:\Users\strat\AppData\Local\uv\cache\sdists-v9\pypi\lightgbm\4.7.0\KAceDCsqSF6rJGy0\src\src\treelearner\feature_histogram.hpp(116,57): warning C4244:         with [C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\gpu-wheel-build\lightgbm_objs.vcxproj]
+C:\Users\strat\AppData\Local\uv\cache\sdists-v9\pypi\lightgbm\4.7.0\KAceDCsqSF6rJGy0\src\src\treelearner\feature_histogram.hpp(116,57): warning C4244:         [ [C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\gpu-wheel-build\lightgbm_objs.vcxproj]
+C:\Users\strat\AppData\Local\uv\cache\sdists-v9\pypi\lightgbm\4.7.0\KAceDCsqSF6rJGy0\src\src\treelearner\feature_histogram.hpp(116,57): warning C4244:             THIS_HIST_T=LightGBM::hist_t [C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\gpu-wheel-build\lightgbm_objs.vcxproj]
+C:\Users\strat\AppData\Local\uv\cache\sdists-v9\pypi\lightgbm\4.7.0\KAceDCsqSF6rJGy0\src\src\treelearner\feature_histogram.hpp(116,57): warning C4244:         ] [C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\gpu-wheel-build\lightgbm_objs.vcxproj]
+  (compiling source file '../../../../../Users/strat/AppData/Local/uv/cache/sdists-v9/pypi/lightgbm/4.7.0/KAceDCsqSF6rJGy0/src/src/treelearner/voting_parallel_tree_learner.cpp')
+      C:\Users\strat\AppData\Local\uv\cache\sdists-v9\pypi\lightgbm\4.7.0\KAceDCsqSF6rJGy0\src\src\treelearner\feature_histogram.hpp(116,57):
+      the template instantiation context (the oldest one first) is
+          C:\Users\strat\AppData\Local\uv\cache\sdists-v9\pypi\lightgbm\4.7.0\KAceDCsqSF6rJGy0\src\src\treelearner\voting_parallel_tree_learner.cpp(513,57):
+          see reference to class template instantiation 'LightGBM::VotingParallelTreeLearner<LightGBM::GPUTreeLearner>' being compiled
+          C:\Users\strat\AppData\Local\uv\cache\sdists-v9\pypi\lightgbm\4.7.0\KAceDCsqSF6rJGy0\src\src\treelearner\voting_parallel_tree_learner.cpp(244,81):
+          while compiling class template member function 'void LightGBM::VotingParallelTreeLearner<LightGBM::GPUTreeLearner>::FindBestSplits(const LightGBM::Tree *)'
+          C:\Users\strat\AppData\Local\uv\cache\sdists-v9\pypi\lightgbm\4.7.0\KAceDCsqSF6rJGy0\src\src\treelearner\voting_parallel_tree_learner.cpp(338,57):
+          see reference to function template instantiation 'void LightGBM::FeatureHistogram::Subtract<false,LightGBM::hist_t,LightGBM::hist_t,LightGBM::hist_t,0,0,0>(const LightGBM::FeatureHistogram &,const int32_t *)' being compiled
+  
+C:\Users\strat\AppData\Local\uv\cache\sdists-v9\pypi\lightgbm\4.7.0\KAceDCsqSF6rJGy0\src\src\treelearner\feature_histogram.hpp(116,40): warning C4244: 'initializing': conversion from 'const THIS_HIST_T' to 'const int64_t', possible loss of data [C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\gpu-wheel-build\lightgbm_objs.vcxproj]
+C:\Users\strat\AppData\Local\uv\cache\sdists-v9\pypi\lightgbm\4.7.0\KAceDCsqSF6rJGy0\src\src\treelearner\feature_histogram.hpp(116,40): warning C4244:         with [C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\gpu-wheel-build\lightgbm_objs.vcxproj]
+C:\Users\strat\AppData\Local\uv\cache\sdists-v9\pypi\lightgbm\4.7.0\KAceDCsqSF6rJGy0\src\src\treelearner\feature_histogram.hpp(116,40): warning C4244:         [ [C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\gpu-wheel-build\lightgbm_objs.vcxproj]
+C:\Users\strat\AppData\Local\uv\cache\sdists-v9\pypi\lightgbm\4.7.0\KAceDCsqSF6rJGy0\src\src\treelearner\feature_histogram.hpp(116,40): warning C4244:             THIS_HIST_T=LightGBM::hist_t [C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\gpu-wheel-build\lightgbm_objs.vcxproj]
+C:\Users\strat\AppData\Local\uv\cache\sdists-v9\pypi\lightgbm\4.7.0\KAceDCsqSF6rJGy0\src\src\treelearner\feature_histogram.hpp(116,40): warning C4244:         ] [C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\gpu-wheel-build\lightgbm_objs.vcxproj]
+  (compiling source file '../../../../../Users/strat/AppData/Local/uv/cache/sdists-v9/pypi/lightgbm/4.7.0/KAceDCsqSF6rJGy0/src/src/treelearner/voting_parallel_tree_learner.cpp')
+  
+C:\Users\strat\AppData\Local\uv\cache\sdists-v9\pypi\lightgbm\4.7.0\KAceDCsqSF6rJGy0\src\src\treelearner\feature_histogram.hpp(126,57): warning C4244: 'initializing': conversion from 'const THIS_HIST_T' to 'int64_t', possible loss of data [C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\gpu-wheel-build\lightgbm_objs.vcxproj]
+C:\Users\strat\AppData\Local\uv\cache\sdists-v9\pypi\lightgbm\4.7.0\KAceDCsqSF6rJGy0\src\src\treelearner\feature_histogram.hpp(126,57): warning C4244:         with [C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\gpu-wheel-build\lightgbm_objs.vcxproj]
+C:\Users\strat\AppData\Local\uv\cache\sdists-v9\pypi\lightgbm\4.7.0\KAceDCsqSF6rJGy0\src\src\treelearner\feature_histogram.hpp(126,57): warning C4244:         [ [C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\gpu-wheel-build\lightgbm_objs.vcxproj]
+C:\Users\strat\AppData\Local\uv\cache\sdists-v9\pypi\lightgbm\4.7.0\KAceDCsqSF6rJGy0\src\src\treelearner\feature_histogram.hpp(126,57): warning C4244:             THIS_HIST_T=LightGBM::hist_t [C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\gpu-wheel-build\lightgbm_objs.vcxproj]
+C:\Users\strat\AppData\Local\uv\cache\sdists-v9\pypi\lightgbm\4.7.0\KAceDCsqSF6rJGy0\src\src\treelearner\feature_histogram.hpp(126,57): warning C4244:         ] [C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\gpu-wheel-build\lightgbm_objs.vcxproj]
+  (compiling source file '../../../../../Users/strat/AppData/Local/uv/cache/sdists-v9/pypi/lightgbm/4.7.0/KAceDCsqSF6rJGy0/src/src/treelearner/voting_parallel_tree_learner.cpp')
+  
+C:\Users\strat\AppData\Local\uv\cache\sdists-v9\pypi\lightgbm\4.7.0\KAceDCsqSF6rJGy0\src\src\treelearner\feature_histogram.hpp(126,40): warning C4244: 'initializing': conversion from 'const THIS_HIST_T' to 'const int64_t', possible loss of data [C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\gpu-wheel-build\lightgbm_objs.vcxproj]
+C:\Users\strat\AppData\Local\uv\cache\sdists-v9\pypi\lightgbm\4.7.0\KAceDCsqSF6rJGy0\src\src\treelearner\feature_histogram.hpp(126,40): warning C4244:         with [C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\gpu-wheel-build\lightgbm_objs.vcxproj]
+C:\Users\strat\AppData\Local\uv\cache\sdists-v9\pypi\lightgbm\4.7.0\KAceDCsqSF6rJGy0\src\src\treelearner\feature_histogram.hpp(126,40): warning C4244:         [ [C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\gpu-wheel-build\lightgbm_objs.vcxproj]
+C:\Users\strat\AppData\Local\uv\cache\sdists-v9\pypi\lightgbm\4.7.0\KAceDCsqSF6rJGy0\src\src\treelearner\feature_histogram.hpp(126,40): warning C4244:             THIS_HIST_T=LightGBM::hist_t [C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\gpu-wheel-build\lightgbm_objs.vcxproj]
+C:\Users\strat\AppData\Local\uv\cache\sdists-v9\pypi\lightgbm\4.7.0\KAceDCsqSF6rJGy0\src\src\treelearner\feature_histogram.hpp(126,40): warning C4244:         ] [C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\gpu-wheel-build\lightgbm_objs.vcxproj]
+  (compiling source file '../../../../../Users/strat/AppData/Local/uv/cache/sdists-v9/pypi/lightgbm/4.7.0/KAceDCsqSF6rJGy0/src/src/treelearner/voting_parallel_tree_learner.cpp')
+  
+  lightgbm_objs.vcxproj -> C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\gpu-wheel-build\lightgbm_objs.dir\Release\lightgbm_objs.lib
+  Building Custom Rule C:/Users/strat/AppData/Local/uv/cache/sdists-v9/pypi/lightgbm/4.7.0/KAceDCsqSF6rJGy0/src/CMakeLists.txt
+     Creating library C:/Users/strat/AppData/Local/uv/cache/sdists-v9/pypi/lightgbm/4.7.0/KAceDCsqSF6rJGy0/src/Release/lib_lightgbm.lib and object C:/Users/strat/AppData/Local/uv/cache/sdists-v9/pypi/lightgbm/4.7.0/KAceDCsqSF6rJGy0/src/Release/lib_lightgbm.exp
+  _lightgbm.vcxproj -> C:\Users\strat\AppData\Local\uv\cache\sdists-v9\pypi\lightgbm\4.7.0\KAceDCsqSF6rJGy0\src\Release\lib_lightgbm.dll
+*** Installing project into wheel...
+2026-09-04 23:09:59,152 - scikit_build_core - INFO - RUN: C:\Program Files\Microsoft Visual Studio\18\Community\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.EXE --install C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\gpu-wheel-build --prefix C:\Users\strat\AppData\Local\Temp\tmpn41rc6i7\wheel\platlib --config Release --strip
+-- Installing: C:\Users\strat\AppData\Local\Temp\tmpn41rc6i7\wheel\platlib/lightgbm/lib/lib_lightgbm.lib
+-- Installing: C:\Users\strat\AppData\Local\Temp\tmpn41rc6i7\wheel\platlib/lightgbm/bin/lib_lightgbm.dll
+*** Making wheel...
+*** Created lightgbm-4.7.0-py3-none-win_amd64.whl
+Successfully built .tmp\lightgbm-opencl-4.7.0\wheels\lightgbm-4.7.0-py3-none-win_amd64.whl

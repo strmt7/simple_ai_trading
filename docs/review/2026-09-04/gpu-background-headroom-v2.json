@@ -1,0 +1,144 @@
+{
+  "schema_version": "passive-benchmark-headroom-v2",
+  "implementation_sha256": "eb805489e21e481544536a8370819de3d6f547e3766f2bc1da297d2b6f4b1539",
+  "started_at_utc": "2026-09-04T21:33:24.1848505Z",
+  "finished_at_utc": "2026-09-04T21:33:41.2617468Z",
+  "can_start_at_measurement_end": true,
+  "benchmark_launched": false,
+  "unrelated_processes_modified": false,
+  "thresholds": {
+    "combined_cpu_ceiling_percent": 90,
+    "reserved_gpu_percent": 40.0,
+    "remaining_memory_reserve_gib": 4,
+    "pressure_samples_to_defer": 3,
+    "combined_gpu_ceiling_percent": 90,
+    "reserved_memory_gib": 12.0,
+    "disk_queue": 4.0,
+    "reserved_cpu_percent": 50.0
+  },
+  "longest_consecutive_pressure_samples": 0,
+  "failure": null,
+  "samples": [
+    {
+      "time_utc": "2026-09-04T21:33:26.7248993Z",
+      "cpu_percent": 3.243971867502138,
+      "busiest_gpu_engine_percent": 1.2318382630882632,
+      "disk_queue_length": 0.010148260285592962,
+      "available_memory_mib": 33372.0,
+      "headroom": true
+    },
+    {
+      "time_utc": "2026-09-04T21:33:27.8306731Z",
+      "cpu_percent": 5.944670234063265,
+      "busiest_gpu_engine_percent": 1.1493761201431973,
+      "disk_queue_length": 0.036395421594852546,
+      "available_memory_mib": 33353.0,
+      "headroom": true
+    },
+    {
+      "time_utc": "2026-09-04T21:33:28.8867666Z",
+      "cpu_percent": 9.803672358552307,
+      "busiest_gpu_engine_percent": 2.7229785999061633,
+      "disk_queue_length": 0.009655022730105293,
+      "available_memory_mib": 33267.0,
+      "headroom": true
+    },
+    {
+      "time_utc": "2026-09-04T21:33:29.9215091Z",
+      "cpu_percent": 4.862200266142869,
+      "busiest_gpu_engine_percent": 1.7752822562135024,
+      "disk_queue_length": 0.05735180128719316,
+      "available_memory_mib": 33323.0,
+      "headroom": true
+    },
+    {
+      "time_utc": "2026-09-04T21:33:30.9473630Z",
+      "cpu_percent": 2.8538147136837555,
+      "busiest_gpu_engine_percent": 1.4441140205247551,
+      "disk_queue_length": 0.012985962471878889,
+      "available_memory_mib": 33332.0,
+      "headroom": true
+    },
+    {
+      "time_utc": "2026-09-04T21:33:31.9748803Z",
+      "cpu_percent": 8.723830635436947,
+      "busiest_gpu_engine_percent": 1.6357291502537232,
+      "disk_queue_length": 0.03862836695882505,
+      "available_memory_mib": 33334.0,
+      "headroom": true
+    },
+    {
+      "time_utc": "2026-09-04T21:33:33.0039623Z",
+      "cpu_percent": 5.192084925379548,
+      "busiest_gpu_engine_percent": 1.8969042311497042,
+      "disk_queue_length": 0.03693064314551061,
+      "available_memory_mib": 33330.0,
+      "headroom": true
+    },
+    {
+      "time_utc": "2026-09-04T21:33:34.0328002Z",
+      "cpu_percent": 5.935197308727947,
+      "busiest_gpu_engine_percent": 2.366854875777807,
+      "disk_queue_length": 0.059407278257613036,
+      "available_memory_mib": 33313.0,
+      "headroom": true
+    },
+    {
+      "time_utc": "2026-09-04T21:33:35.0631067Z",
+      "cpu_percent": 15.510077951261447,
+      "busiest_gpu_engine_percent": 2.528723248858471,
+      "disk_queue_length": 0.03780027064901447,
+      "available_memory_mib": 33100.0,
+      "headroom": true
+    },
+    {
+      "time_utc": "2026-09-04T21:33:36.0857316Z",
+      "cpu_percent": 18.439022242227942,
+      "busiest_gpu_engine_percent": 1.6597385805880533,
+      "disk_queue_length": 0.0598349202000137,
+      "available_memory_mib": 33229.0,
+      "headroom": true
+    },
+    {
+      "time_utc": "2026-09-04T21:33:37.1112612Z",
+      "cpu_percent": 10.532714954917866,
+      "busiest_gpu_engine_percent": 5.1453414898994625,
+      "disk_queue_length": 0.011952086783496602,
+      "available_memory_mib": 33144.0,
+      "headroom": true
+    },
+    {
+      "time_utc": "2026-09-04T21:33:38.1390071Z",
+      "cpu_percent": 14.012118118213424,
+      "busiest_gpu_engine_percent": 3.546791089120375,
+      "disk_queue_length": 0.014537614285754615,
+      "available_memory_mib": 33022.0,
+      "headroom": true
+    },
+    {
+      "time_utc": "2026-09-04T21:33:39.1699836Z",
+      "cpu_percent": 6.5527165741210975,
+      "busiest_gpu_engine_percent": 1.4472492825976149,
+      "disk_queue_length": 0.034885042618636966,
+      "available_memory_mib": 33055.0,
+      "headroom": true
+    },
+    {
+      "time_utc": "2026-09-04T21:33:40.2010489Z",
+      "cpu_percent": 4.480709745804834,
+      "busiest_gpu_engine_percent": 1.4017249925877633,
+      "disk_queue_length": 0.01327078165320983,
+      "available_memory_mib": 33068.0,
+      "headroom": true
+    },
+    {
+      "time_utc": "2026-09-04T21:33:41.2295982Z",
+      "cpu_percent": 11.329519663922694,
+      "busiest_gpu_engine_percent": 1.3952758511429644,
+      "disk_queue_length": 0.022603878957437856,
+      "available_memory_mib": 33054.0,
+      "headroom": true
+    }
+  ],
+  "scope": "Advisory headroom preflight, not a proof of no contention or a during-run monitor. CPU/GPU reservations must reflect the intended workload, including concurrent workers. Allow brief spikes but defer sustained pressure. Valid only immediately after measurement; record actual competing load during the run and do not use this receipt to bless earlier or later timings."
+}

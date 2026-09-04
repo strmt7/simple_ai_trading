@@ -1,0 +1,4 @@
+{"phase": "started", "spec_sha256": "47ac52ee68e70c3342af1e91cb9187cc5b9d391e069da4a2ea18818caf2650d6"}
+{"phase": "trial_started", "index": 0, "backend": "gpu", "threads": 16}
+{"phase": "trial_completed", "index": 0, "backend": "gpu", "threads": 16, "dataset_seconds": 1.5951938000071095, "train_seconds": 11.887463199993363, "prediction_seconds": 0.0016032000057748519, "total_seconds": 13.484260200006247, "cpu_seconds": 204.015625, "cpu_busy_core_equivalents": 15.129908647113282, "logloss": 0.29440361771800677, "reload_equal": true, "telemetry_errors": [], "train_window_counter_summary": {"engine_percent": {"valid_samples": 23, "max": 28.749964078758, "mean": 25.27219985202791}, "dedicated_bytes": {"valid_samples": 23, "max": 698925056.0, "mean": 698925056.0}, "shared_bytes": {"valid_samples": 23, "max": 40931328.0, "mean": 40931328.0}}}
+{"phase": "completed"}

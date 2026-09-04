@@ -1,0 +1,274 @@
+{
+  "financial_validation": false,
+  "implementation_sha256": "87a01c2a92816ed32855afa563763d4bef22f5fb6d489809f0dd10888278078f",
+  "library_sha256": "59b23140f62d32daaec43ecdbee21c4a62e1d5807f139f20e229af07aac53a80",
+  "lightgbm": "4.7.0",
+  "numpy": "2.2.6",
+  "platform": "Windows-11-10.0.26200-SP0",
+  "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+  "spec_sha256": "dab629cc402a1d06d0fc45140d9bd3eb1614b5037b34d5cda367349587ac52d4",
+  "status": "completed",
+  "warmups": [
+    {
+      "backend": "cpu",
+      "logloss": 0.6449702462891136,
+      "model_sha256": "d93e8f3041184bb0ec85f2f9f074efe522153c6533b916470d6290cf46902fad",
+      "prediction_sha256": "69736e64f0a1d1063a1e04bd8b1f4dbaef33841f450e9944613773e7d9ed487c",
+      "reload_equal": true,
+      "seconds": 0.008306900002935436
+    },
+    {
+      "backend": "gpu",
+      "logloss": 0.6449702462891136,
+      "model_sha256": "725d98bbfcc7f3d3a1cf169db9a91ebc861022909d48be5e95c4c6259ca2f916",
+      "prediction_sha256": "69736e64f0a1d1063a1e04bd8b1f4dbaef33841f450e9944613773e7d9ed487c",
+      "reload_equal": true,
+      "seconds": 0.35498440000083065
+    }
+  ],
+  "workloads": [
+    {
+      "cpu_over_gpu_speedup": 0.11534873396010639,
+      "input_sha256": "ff2a5e5b2d21b1462d7076305be0cd00f8f07715d87154691fe2a592ddd25923",
+      "median_seconds": {
+        "cpu": 0.02120479999575764,
+        "gpu": 0.1838320999959251
+      },
+      "paired_checks": [
+        {
+          "logloss_difference": 2.0535043844804868e-06,
+          "max_prediction_difference": 0.007754935762539217
+        },
+        {
+          "logloss_difference": 2.0535043844804868e-06,
+          "max_prediction_difference": 0.007754935762539217
+        },
+        {
+          "logloss_difference": 2.0535043844804868e-06,
+          "max_prediction_difference": 0.007754935762539217
+        }
+      ],
+      "paired_tolerances_passed": false,
+      "prefer_gpu_for_this_workload": false,
+      "rows": 4096,
+      "trials": [
+        {
+          "backend": "cpu",
+          "logloss": 0.3105081979350646,
+          "model_sha256": "7312b9f75862827aaa8cae99a64e1e1304020d321519ac375afb00bab2e0cd79",
+          "prediction_sha256": "c16e116a0ab73a6a65ce76841b4053244fb2297cf9a7908d43d5940aecd0536c",
+          "reload_equal": true,
+          "repeat": 0,
+          "seconds": 0.021620700004859827
+        },
+        {
+          "backend": "gpu",
+          "logloss": 0.3105102514394491,
+          "model_sha256": "a0cb54db63a89f8e58b85cc0e0aa70a66afd201e4d440a495c3ec8d34e644f9a",
+          "prediction_sha256": "eaf2cc97a47933c8644522f37eee9c1f8d7c00e1968f7f43bdbc55648fa3b229",
+          "reload_equal": true,
+          "repeat": 0,
+          "seconds": 0.1796360000007553
+        },
+        {
+          "backend": "gpu",
+          "logloss": 0.3105102514394491,
+          "model_sha256": "a0cb54db63a89f8e58b85cc0e0aa70a66afd201e4d440a495c3ec8d34e644f9a",
+          "prediction_sha256": "eaf2cc97a47933c8644522f37eee9c1f8d7c00e1968f7f43bdbc55648fa3b229",
+          "reload_equal": true,
+          "repeat": 1,
+          "seconds": 0.1838320999959251
+        },
+        {
+          "backend": "cpu",
+          "logloss": 0.3105081979350646,
+          "model_sha256": "7312b9f75862827aaa8cae99a64e1e1304020d321519ac375afb00bab2e0cd79",
+          "prediction_sha256": "c16e116a0ab73a6a65ce76841b4053244fb2297cf9a7908d43d5940aecd0536c",
+          "reload_equal": true,
+          "repeat": 1,
+          "seconds": 0.02120479999575764
+        },
+        {
+          "backend": "cpu",
+          "logloss": 0.3105081979350646,
+          "model_sha256": "7312b9f75862827aaa8cae99a64e1e1304020d321519ac375afb00bab2e0cd79",
+          "prediction_sha256": "c16e116a0ab73a6a65ce76841b4053244fb2297cf9a7908d43d5940aecd0536c",
+          "reload_equal": true,
+          "repeat": 2,
+          "seconds": 0.019765700002608355
+        },
+        {
+          "backend": "gpu",
+          "logloss": 0.3105102514394491,
+          "model_sha256": "a0cb54db63a89f8e58b85cc0e0aa70a66afd201e4d440a495c3ec8d34e644f9a",
+          "prediction_sha256": "eaf2cc97a47933c8644522f37eee9c1f8d7c00e1968f7f43bdbc55648fa3b229",
+          "reload_equal": true,
+          "repeat": 2,
+          "seconds": 0.18862210000224877
+        }
+      ]
+    },
+    {
+      "cpu_over_gpu_speedup": 0.4810137165973004,
+      "input_sha256": "675c6ab838cf21a21d9120c66542ec0366de2d3f1086c28dee7dbce780fa48a5",
+      "median_seconds": {
+        "cpu": 0.13289369999984046,
+        "gpu": 0.27627840000059223
+      },
+      "paired_checks": [
+        {
+          "logloss_difference": 5.841604977518955e-12,
+          "max_prediction_difference": 5.169901173829317e-10
+        },
+        {
+          "logloss_difference": 5.841604977518955e-12,
+          "max_prediction_difference": 5.169901173829317e-10
+        },
+        {
+          "logloss_difference": 5.841604977518955e-12,
+          "max_prediction_difference": 5.169901173829317e-10
+        }
+      ],
+      "paired_tolerances_passed": true,
+      "prefer_gpu_for_this_workload": false,
+      "rows": 65536,
+      "trials": [
+        {
+          "backend": "cpu",
+          "logloss": 0.29451375144892755,
+          "model_sha256": "828963b2a7d3de299ce23c882d301f6a7a7609bc7ec427d17a23b5d893b9cd7c",
+          "prediction_sha256": "b927294ad90b77c3f5a15471f88046013d179031c6709e8096b96ad5dbecb95d",
+          "reload_equal": true,
+          "repeat": 0,
+          "seconds": 0.13636989999940852
+        },
+        {
+          "backend": "gpu",
+          "logloss": 0.29451375144308595,
+          "model_sha256": "40a72e2d9d181e428ee482b5f8be7e5fef9d9bf255b941c94569774523b292d2",
+          "prediction_sha256": "b66e632eda6aecfe0c98326416da188a9ec5b2469017750f0cc59dba7cde297d",
+          "reload_equal": true,
+          "repeat": 0,
+          "seconds": 0.2694398000021465
+        },
+        {
+          "backend": "gpu",
+          "logloss": 0.29451375144308595,
+          "model_sha256": "40a72e2d9d181e428ee482b5f8be7e5fef9d9bf255b941c94569774523b292d2",
+          "prediction_sha256": "b66e632eda6aecfe0c98326416da188a9ec5b2469017750f0cc59dba7cde297d",
+          "reload_equal": true,
+          "repeat": 1,
+          "seconds": 0.27627840000059223
+        },
+        {
+          "backend": "cpu",
+          "logloss": 0.29451375144892755,
+          "model_sha256": "828963b2a7d3de299ce23c882d301f6a7a7609bc7ec427d17a23b5d893b9cd7c",
+          "prediction_sha256": "b927294ad90b77c3f5a15471f88046013d179031c6709e8096b96ad5dbecb95d",
+          "reload_equal": true,
+          "repeat": 1,
+          "seconds": 0.13289369999984046
+        },
+        {
+          "backend": "cpu",
+          "logloss": 0.29451375144892755,
+          "model_sha256": "828963b2a7d3de299ce23c882d301f6a7a7609bc7ec427d17a23b5d893b9cd7c",
+          "prediction_sha256": "b927294ad90b77c3f5a15471f88046013d179031c6709e8096b96ad5dbecb95d",
+          "reload_equal": true,
+          "repeat": 2,
+          "seconds": 0.13157079999655252
+        },
+        {
+          "backend": "gpu",
+          "logloss": 0.29451375144308595,
+          "model_sha256": "40a72e2d9d181e428ee482b5f8be7e5fef9d9bf255b941c94569774523b292d2",
+          "prediction_sha256": "b66e632eda6aecfe0c98326416da188a9ec5b2469017750f0cc59dba7cde297d",
+          "reload_equal": true,
+          "repeat": 2,
+          "seconds": 0.331905299994105
+        }
+      ]
+    },
+    {
+      "cpu_over_gpu_speedup": 0.8394852966759017,
+      "input_sha256": "cca88cc039c184b7b1fb412ab2284a346897319c90f7faf29717f9410e225ff2",
+      "median_seconds": {
+        "cpu": 0.42739589999837335,
+        "gpu": 0.5091166000056546
+      },
+      "paired_checks": [
+        {
+          "logloss_difference": 1.5469847625126931e-12,
+          "max_prediction_difference": 8.858794253718827e-10
+        },
+        {
+          "logloss_difference": 1.5469847625126931e-12,
+          "max_prediction_difference": 8.858794253718827e-10
+        },
+        {
+          "logloss_difference": 1.5469847625126931e-12,
+          "max_prediction_difference": 8.858794253718827e-10
+        }
+      ],
+      "paired_tolerances_passed": true,
+      "prefer_gpu_for_this_workload": false,
+      "rows": 262144,
+      "trials": [
+        {
+          "backend": "cpu",
+          "logloss": 0.2926921537657622,
+          "model_sha256": "42291ea1c95407ee4498d09ca33d304a4a85b4d66f55c1416a30bda064fd313f",
+          "prediction_sha256": "554697f7dfac7a5d9a6dbb1a0492400656553eae4e05331ddc36607e2772906a",
+          "reload_equal": true,
+          "repeat": 0,
+          "seconds": 0.42739589999837335
+        },
+        {
+          "backend": "gpu",
+          "logloss": 0.29269215376730917,
+          "model_sha256": "8dd82d8385b727b7f12f8af3bfe04191f02d64b731f9896ff363c5971ab0598e",
+          "prediction_sha256": "8e350e93816a03d7f436ad70e9e8717b044e32f09bb899fbe802978fc8e0ecf9",
+          "reload_equal": true,
+          "repeat": 0,
+          "seconds": 0.507284700004675
+        },
+        {
+          "backend": "gpu",
+          "logloss": 0.29269215376730917,
+          "model_sha256": "8dd82d8385b727b7f12f8af3bfe04191f02d64b731f9896ff363c5971ab0598e",
+          "prediction_sha256": "8e350e93816a03d7f436ad70e9e8717b044e32f09bb899fbe802978fc8e0ecf9",
+          "reload_equal": true,
+          "repeat": 1,
+          "seconds": 0.5091166000056546
+        },
+        {
+          "backend": "cpu",
+          "logloss": 0.2926921537657622,
+          "model_sha256": "42291ea1c95407ee4498d09ca33d304a4a85b4d66f55c1416a30bda064fd313f",
+          "prediction_sha256": "554697f7dfac7a5d9a6dbb1a0492400656553eae4e05331ddc36607e2772906a",
+          "reload_equal": true,
+          "repeat": 1,
+          "seconds": 0.4214214000021457
+        },
+        {
+          "backend": "cpu",
+          "logloss": 0.2926921537657622,
+          "model_sha256": "42291ea1c95407ee4498d09ca33d304a4a85b4d66f55c1416a30bda064fd313f",
+          "prediction_sha256": "554697f7dfac7a5d9a6dbb1a0492400656553eae4e05331ddc36607e2772906a",
+          "reload_equal": true,
+          "repeat": 2,
+          "seconds": 0.4281674000012572
+        },
+        {
+          "backend": "gpu",
+          "logloss": 0.29269215376730917,
+          "model_sha256": "8dd82d8385b727b7f12f8af3bfe04191f02d64b731f9896ff363c5971ab0598e",
+          "prediction_sha256": "8e350e93816a03d7f436ad70e9e8717b044e32f09bb899fbe802978fc8e0ecf9",
+          "reload_equal": true,
+          "repeat": 2,
+          "seconds": 0.5360179999988759
+        }
+      ]
+    }
+  ]
+}

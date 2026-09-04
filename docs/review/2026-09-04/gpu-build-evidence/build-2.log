@@ -1,0 +1,630 @@
+Using Python 3.12.10 environment at: .tmp\lightgbm-opencl-4.7.0\venv
+Resolved 4 packages in 5ms
+   Building lightgbm==4.7.0
+  × Failed to build `lightgbm==4.7.0`
+  ├─▶ The build backend returned an error
+  ╰─▶ Call to `scikit_build_core.build.build_wheel` failed (exit code: 1)
+
+      [stdout]
+      *** scikit-build-core 1.0.3 using CMake 4.3.1 (wheel)
+      *** Configuring CMake...
+      loading initial cache file
+      C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\cmake-build\CMakeInit.txt
+      -- Building for: Visual Studio 18 2026
+      -- Selecting Windows SDK version 10.0.28000.0 to target Windows 10.0.
+      -- The C compiler identification is MSVC 19.42.34444.0
+      -- The CXX compiler identification is MSVC 19.42.34444.0
+      -- Detecting C compiler ABI info
+      -- Detecting C compiler ABI info - done
+      -- Check for working C compiler: C:/Program Files/Microsoft Visual
+      Studio/18/Community/VC/Tools/MSVC/14.42.34433/bin/HostX64/x64/cl.exe
+      - skipped
+      -- Detecting C compile features
+      -- Detecting C compile features - done
+      -- Detecting CXX compiler ABI info
+      -- Detecting CXX compiler ABI info - done
+      -- Check for working CXX compiler: C:/Program Files/Microsoft Visual
+      Studio/18/Community/VC/Tools/MSVC/14.42.34433/bin/HostX64/x64/cl.exe
+      - skipped
+      -- Detecting CXX compile features
+      -- Detecting CXX compile features - done
+      -- Building library with integrated OpenCL components
+      -- Building using CMake version: 4.3.1-msvc1
+      -- Found OpenMP_C: -openmp (found version "2.0")
+      -- Found OpenMP_CXX: -openmp (found version "2.0")
+      -- Found OpenMP: TRUE (found version "2.0")
+      -- Populated OpenCL Headers
+      -- Performing Test CMAKE_HAVE_LIBC_PTHREAD
+      -- Performing Test CMAKE_HAVE_LIBC_PTHREAD - Failed
+      -- Looking for pthread_create in pthreads
+      -- Looking for pthread_create in pthreads - not found
+      -- Looking for pthread_create in pthread
+      -- Looking for pthread_create in pthread - not found
+      -- Found Threads: TRUE
+      -- Looking for secure_getenv
+      -- Looking for secure_getenv - not found
+      -- Looking for __secure_getenv
+      -- Looking for __secure_getenv - not found
+      -- Populated OpenCL ICD Loader
+      -- Performing Test MM_PREFETCH
+      -- Performing Test MM_PREFETCH - Failed
+      -- Performing Test MM_MALLOC
+      -- Performing Test MM_MALLOC - Failed
+      -- Looking for inet_pton
+      -- Looking for inet_pton - found
+      -- Configuring done (12.0s)
+      -- Generating done (0.2s)
+      -- Build files have been written to:
+      C:/trader/simple_ai_trading/.tmp/lightgbm-opencl-4.7.0/cmake-build
+      *** Building project with Visual Studio 18 2026...
+      MSBuild version 18.9.1+a81b43525 for .NET Framework
+
+        1>Checking Build System
+        Building Custom Rule
+      C:/Users/strat/AppData/Local/uv/cache/sdists-v9/pypi/lightgbm/4.7.0/KAceDCsqSF6rJGy0/src/external_libs/nanoarrow/CMakeLists.txt
+        array.c
+        1>Creating directories for 'Boost'
+        schema.c
+        array_stream.c
+        utils.c
+        Generating Code...
+        Performing download step (git clone) for 'Boost'
+        Cloning into 'source'...
+        nanoarrow_static.vcxproj ->
+      C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\cmake-build\external_libs\nanoarrow\Release\nanoarrow_static.lib
+        Building Custom Rule
+      C:/Users/strat/AppData/Local/uv/cache/sdists-v9/pypi/lightgbm/4.7.0/KAceDCsqSF6rJGy0/src/CMakeLists.txt
+        c_api.cpp
+      C:\Users\strat\AppData\Local\uv\cache\sdists-v9\pypi\lightgbm\4.7.0\KAceDCsqSF6rJGy0\src\src\arrow\array.hpp(76,12):
+      warning C4456: declaration of 'ret' hides previous local declaration
+      [C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\cmake-build\lightgbm_capi_objs.vcxproj]
+        (compiling source file
+      '../../../../../Users/strat/AppData/Local/uv/cache/sdists-v9/pypi/lightgbm/4.7.0/KAceDCsqSF6rJGy0/src/src/c_api.cpp')
+      
+      C:\Users\strat\AppData\Local\uv\cache\sdists-v9\pypi\lightgbm\4.7.0\KAceDCsqSF6rJGy0\src\src\arrow\array.hpp(64,10):
+            see declaration of 'ret'
+      
+      C:\Program Files\Microsoft Visual
+      Studio\18\Community\VC\Tools\MSVC\14.42.34433\include\algorithm(3741,24):
+      warning C4244: '=': conversion from
+      'int' to 'char', possible loss of data
+      [C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\cmake-build\lightgbm_capi_objs.vcxproj]
+        (compiling source file
+      '../../../../../Users/strat/AppData/Local/uv/cache/sdists-v9/pypi/lightgbm/4.7.0/KAceDCsqSF6rJGy0/src/src/c_api.cpp')
+            C:\Program Files\Microsoft Visual
+      Studio\18\Community\VC\Tools\MSVC\14.42.34433\include\algorithm(3741,24):
+            the template instantiation context (the oldest one first) is
+      
+      C:\Users\strat\AppData\Local\uv\cache\sdists-v9\pypi\lightgbm\4.7.0\KAceDCsqSF6rJGy0\src\include\LightGBM\utils\common.h(339,12):
+                see reference to function template instantiation '_OutIt
+      std::transform<std::_String_iterator<std::_String_val<std::_Simple_types<_Elem>>>,std::_String_iterator<std::_String_val<std::_Simple_types<_Elem>>>,LightGBM::Common::Atof::<lambda_3f82e38e99dcdde0328f71b31d77dafb>>(const
+      _InIt,const _InIt,_OutIt,_Fn)' being compiled
+                with
+                [
+      
+      _OutIt=std::_String_iterator<std::_String_val<std::_Simple_types<char>>>,
+                    _Elem=char,
+      
+      _InIt=std::_String_iterator<std::_String_val<std::_Simple_types<char>>>,
+      
+      _Fn=LightGBM::Common::Atof::<lambda_3f82e38e99dcdde0328f71b31d77dafb>
+                ]
+      
+      C:\Program Files\Microsoft Visual
+      Studio\18\Community\VC\Tools\MSVC\14.42.34433\include\utility(263,16):
+      warning C4244: 'initializing': conversion from
+      'int64_t' to '_Ty1', possible loss of data
+      [C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\cmake-build\lightgbm_capi_objs.vcxproj]
+      C:\Program Files\Microsoft Visual
+      Studio\18\Community\VC\Tools\MSVC\14.42.34433\include\utility(263,16):
+      warning C4244:         with
+      [C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\cmake-build\lightgbm_capi_objs.vcxproj]
+      C:\Program Files\Microsoft Visual
+      Studio\18\Community\VC\Tools\MSVC\14.42.34433\include\utility(263,16):
+      warning C4244:         [
+      [C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\cmake-build\lightgbm_capi_objs.vcxproj]
+      C:\Program Files\Microsoft Visual
+      Studio\18\Community\VC\Tools\MSVC\14.42.34433\include\utility(263,16):
+      warning C4244:             _Ty1=int
+      [C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\cmake-build\lightgbm_capi_objs.vcxproj]
+      C:\Program Files\Microsoft Visual
+      Studio\18\Community\VC\Tools\MSVC\14.42.34433\include\utility(263,16):
+      warning C4244:         ]
+      [C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\cmake-build\lightgbm_capi_objs.vcxproj]
+        (compiling source file
+      '../../../../../Users/strat/AppData/Local/uv/cache/sdists-v9/pypi/lightgbm/4.7.0/KAceDCsqSF6rJGy0/src/src/c_api.cpp')
+            C:\Program Files\Microsoft Visual
+      Studio\18\Community\VC\Tools\MSVC\14.42.34433\include\utility(263,16):
+            the template instantiation context (the oldest one first) is
+      
+      C:\Users\strat\AppData\Local\uv\cache\sdists-v9\pypi\lightgbm\4.7.0\KAceDCsqSF6rJGy0\src\src\c_api.cpp(2693,14):
+                see reference to function template instantiation '_Ty
+      &std::vector<_Ty,std::allocator<_Ty>>::emplace_back<int64_t&,_Ret>(int64_t
+      &,_Ret &&)' being compiled
+                with
+                [
+                    _Ty=std::pair<int,double>,
+                    _Ret=double
+                ]
+                C:\Program Files\Microsoft Visual
+      Studio\18\Community\VC\Tools\MSVC\14.42.34433\include\vector(858,24):
+                see reference to function template instantiation '_Ty
+      &std::vector<_Ty,std::allocator<_Ty>>::_Emplace_one_at_back<int64_t&,double>(int64_t
+      &,double &&)' being compiled
+                with
+                [
+                    _Ty=std::pair<int,double>
+                ]
+                C:\Program Files\Microsoft Visual
+      Studio\18\Community\VC\Tools\MSVC\14.42.34433\include\vector(776,20):
+                see reference to function template instantiation '_Ty
+      &std::vector<_Ty,std::allocator<_Ty>>::_Emplace_back_with_unused_capacity<int64_t&,double>(int64_t
+      &,double &&)' being compiled
+                with
+                [
+                    _Ty=std::pair<int,double>
+                ]
+                C:\Program Files\Microsoft Visual
+      Studio\18\Community\VC\Tools\MSVC\14.42.34433\include\vector(791,18):
+                see reference to function template instantiation 'void
+      std::_Construct_in_place<std::pair<int,double>,int64_t&,_Ty>(std::pair<int,double>
+      &,int64_t &,_Ty &&) noexcept' being compiled
+                with
+                [
+                    _Ty=double
+                ]
+                C:\Program Files\Microsoft Visual
+      Studio\18\Community\VC\Tools\MSVC\14.42.34433\include\xutility(406,61):
+                see reference to function template instantiation
+      'std::pair<int,double>::pair<int64_t&,_T,0>(_Other1,_Other2 &&)
+      noexcept' being compiled
+                with
+                [
+                    _T=double,
+                    _Other1=int64_t &,
+                    _Other2=double
+                ]
+      
+        HEAD is now at a7090e8 Bug fix for 1.74.0 reelase
+        Submodule 'algorithm' (https://github.com/boostorg/algorithm.git)
+      registered for path 'libs/algorithm'
+        Submodule 'align' (https://github.com/boostorg/align.git) registered
+      for path 'libs/align'
+        Submodule 'any' (https://github.com/boostorg/any.git) registered for
+      path 'libs/any'
+        Submodule 'array' (https://github.com/boostorg/array.git) registered
+      for path 'libs/array'
+        Submodule 'assert' (https://github.com/boostorg/assert.git) registered
+      for path 'libs/assert'
+        Submodule 'bind' (https://github.com/boostorg/bind.git) registered for
+      path 'libs/bind'
+        Submodule 'chrono' (https://github.com/boostorg/chrono.git) registered
+      for path 'libs/chrono'
+        Submodule 'compute' (https://github.com/boostorg/compute.git)
+      registered for path 'libs/compute'
+        Submodule 'concept_check'
+      (https://github.com/boostorg/concept_check.git) registered for path
+      'libs/concept_check'
+        Submodule 'config' (https://github.com/boostorg/config.git) registered
+      for path 'libs/config'
+        Submodule 'container' (https://github.com/boostorg/container.git)
+      registered for path 'libs/container'
+        Submodule 'container_hash'
+      (https://github.com/boostorg/container_hash.git) registered for path
+      'libs/container_hash'
+        Submodule 'core' (https://github.com/boostorg/core.git) registered for
+      path 'libs/core'
+        Submodule 'detail' (https://github.com/boostorg/detail.git) registered
+      for path 'libs/detail'
+        Submodule 'filesystem' (https://github.com/boostorg/filesystem.git)
+      registered for path 'libs/filesystem'
+        Submodule 'foreach' (https://github.com/boostorg/foreach.git)
+      registered for path 'libs/foreach'
+        Submodule 'format' (https://github.com/boostorg/format.git) registered
+      for path 'libs/format'
+        Submodule 'function' (https://github.com/boostorg/function.git)
+      registered for path 'libs/function'
+        Submodule 'function_types'
+      (https://github.com/boostorg/function_types.git) registered for path
+      'libs/function_types'
+        Submodule 'fusion' (https://github.com/boostorg/fusion.git) registered
+      for path 'libs/fusion'
+        Submodule 'headers' (https://github.com/boostorg/headers.git)
+      registered for path 'libs/headers'
+        Submodule 'integer' (https://github.com/boostorg/integer.git)
+      registered for path 'libs/integer'
+        Submodule 'io' (https://github.com/boostorg/io.git) registered for
+      path 'libs/io'
+        Submodule 'iterator' (https://github.com/boostorg/iterator.git)
+      registered for path 'libs/iterator'
+        Submodule 'lexical_cast' (https://github.com/boostorg/lexical_cast.git)
+      registered for path 'libs/lexical_cast'
+        Submodule 'math' (https://github.com/boostorg/math.git) registered for
+      path 'libs/math'
+        Submodule 'move' (https://github.com/boostorg/move.git) registered for
+      path 'libs/move'
+        Submodule 'mpl' (https://github.com/boostorg/mpl.git) registered for
+      path 'libs/mpl'
+        Submodule 'multi_index' (https://github.com/boostorg/multi_index.git)
+      registered for path 'libs/multi_index'
+        Submodule 'numeric_conversion'
+      (https://github.com/boostorg/numeric_conversion.git) registered for path
+      'libs/numeric/conversion'
+        Submodule 'optional' (https://github.com/boostorg/optional.git)
+      registered for path 'libs/optional'
+        Submodule 'predef' (https://github.com/boostorg/predef.git) registered
+      for path 'libs/predef'
+        Submodule 'preprocessor' (https://github.com/boostorg/preprocessor.git)
+      registered for path 'libs/preprocessor'
+        Submodule 'property_tree'
+      (https://github.com/boostorg/property_tree.git) registered for path
+      'libs/property_tree'
+        Submodule 'range' (https://github.com/boostorg/range.git) registered
+      for path 'libs/range'
+        Submodule 'ratio' (https://github.com/boostorg/ratio.git) registered
+      for path 'libs/ratio'
+        Submodule 'serialization'
+      (https://github.com/boostorg/serialization.git) registered for path
+      'libs/serialization'
+        Submodule 'smart_ptr' (https://github.com/boostorg/smart_ptr.git)
+      registered for path 'libs/smart_ptr'
+        Submodule 'static_assert'
+      (https://github.com/boostorg/static_assert.git) registered for path
+      'libs/static_assert'
+        Submodule 'system' (https://github.com/boostorg/system.git) registered
+      for path 'libs/system'
+        Submodule 'throw_exception'
+      (https://github.com/boostorg/throw_exception.git) registered for path
+      'libs/throw_exception'
+        Submodule 'tuple' (https://github.com/boostorg/tuple.git) registered
+      for path 'libs/tuple'
+        Submodule 'type_index' (https://github.com/boostorg/type_index.git)
+      registered for path 'libs/type_index'
+        Submodule 'type_traits' (https://github.com/boostorg/type_traits.git)
+      registered for path 'libs/type_traits'
+        Submodule 'typeof' (https://github.com/boostorg/typeof.git) registered
+      for path 'libs/typeof'
+        Submodule 'utility' (https://github.com/boostorg/utility.git)
+      registered for path 'libs/utility'
+        Submodule 'uuid' (https://github.com/boostorg/uuid.git) registered for
+      path 'libs/uuid'
+        Submodule 'winapi' (https://github.com/boostorg/winapi.git) registered
+      for path 'libs/winapi'
+        Submodule 'boost_install'
+      (https://github.com/boostorg/boost_install.git) registered for path
+      'tools/boost_install'
+        Submodule 'build' (https://github.com/boostorg/build.git) registered
+      for path 'tools/build'
+        Cloning into
+      'C:/trader/simple_ai_trading/.tmp/lightgbm-opencl-4.7.0/cmake-build/Boost/source/libs/algorithm'...
+        lightgbm_capi_objs.vcxproj ->
+      C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\cmake-build\lightgbm_capi_objs.dir\Release\lightgbm_capi_objs.lib
+        Cloning into
+      'C:/trader/simple_ai_trading/.tmp/lightgbm-opencl-4.7.0/cmake-build/Boost/source/libs/align'...
+        Cloning into
+      'C:/trader/simple_ai_trading/.tmp/lightgbm-opencl-4.7.0/cmake-build/Boost/source/libs/any'...
+        Cloning into
+      'C:/trader/simple_ai_trading/.tmp/lightgbm-opencl-4.7.0/cmake-build/Boost/source/libs/array'...
+        Cloning into
+      'C:/trader/simple_ai_trading/.tmp/lightgbm-opencl-4.7.0/cmake-build/Boost/source/libs/assert'...
+        Cloning into
+      'C:/trader/simple_ai_trading/.tmp/lightgbm-opencl-4.7.0/cmake-build/Boost/source/libs/bind'...
+        Cloning into
+      'C:/trader/simple_ai_trading/.tmp/lightgbm-opencl-4.7.0/cmake-build/Boost/source/libs/chrono'...
+        Cloning into
+      'C:/trader/simple_ai_trading/.tmp/lightgbm-opencl-4.7.0/cmake-build/Boost/source/libs/compute'...
+        Cloning into
+      'C:/trader/simple_ai_trading/.tmp/lightgbm-opencl-4.7.0/cmake-build/Boost/source/libs/concept_check'...
+        Cloning into
+      'C:/trader/simple_ai_trading/.tmp/lightgbm-opencl-4.7.0/cmake-build/Boost/source/libs/config'...
+        Cloning into
+      'C:/trader/simple_ai_trading/.tmp/lightgbm-opencl-4.7.0/cmake-build/Boost/source/libs/container'...
+        Cloning into
+      'C:/trader/simple_ai_trading/.tmp/lightgbm-opencl-4.7.0/cmake-build/Boost/source/libs/container_hash'...
+        Cloning into
+      'C:/trader/simple_ai_trading/.tmp/lightgbm-opencl-4.7.0/cmake-build/Boost/source/libs/core'...
+        Cloning into
+      'C:/trader/simple_ai_trading/.tmp/lightgbm-opencl-4.7.0/cmake-build/Boost/source/libs/detail'...
+        Cloning into
+      'C:/trader/simple_ai_trading/.tmp/lightgbm-opencl-4.7.0/cmake-build/Boost/source/libs/filesystem'...
+        Cloning into
+      'C:/trader/simple_ai_trading/.tmp/lightgbm-opencl-4.7.0/cmake-build/Boost/source/libs/foreach'...
+        Cloning into
+      'C:/trader/simple_ai_trading/.tmp/lightgbm-opencl-4.7.0/cmake-build/Boost/source/libs/format'...
+        Cloning into
+      'C:/trader/simple_ai_trading/.tmp/lightgbm-opencl-4.7.0/cmake-build/Boost/source/libs/function'...
+        Cloning into
+      'C:/trader/simple_ai_trading/.tmp/lightgbm-opencl-4.7.0/cmake-build/Boost/source/libs/function_types'...
+        Cloning into
+      'C:/trader/simple_ai_trading/.tmp/lightgbm-opencl-4.7.0/cmake-build/Boost/source/libs/fusion'...
+        Cloning into
+      'C:/trader/simple_ai_trading/.tmp/lightgbm-opencl-4.7.0/cmake-build/Boost/source/libs/headers'...
+        Cloning into
+      'C:/trader/simple_ai_trading/.tmp/lightgbm-opencl-4.7.0/cmake-build/Boost/source/libs/integer'...
+        Cloning into
+      'C:/trader/simple_ai_trading/.tmp/lightgbm-opencl-4.7.0/cmake-build/Boost/source/libs/io'...
+        Cloning into
+      'C:/trader/simple_ai_trading/.tmp/lightgbm-opencl-4.7.0/cmake-build/Boost/source/libs/iterator'...
+        Cloning into
+      'C:/trader/simple_ai_trading/.tmp/lightgbm-opencl-4.7.0/cmake-build/Boost/source/libs/lexical_cast'...
+        Cloning into
+      'C:/trader/simple_ai_trading/.tmp/lightgbm-opencl-4.7.0/cmake-build/Boost/source/libs/math'...
+        Cloning into
+      'C:/trader/simple_ai_trading/.tmp/lightgbm-opencl-4.7.0/cmake-build/Boost/source/libs/move'...
+        Cloning into
+      'C:/trader/simple_ai_trading/.tmp/lightgbm-opencl-4.7.0/cmake-build/Boost/source/libs/mpl'...
+        Cloning into
+      'C:/trader/simple_ai_trading/.tmp/lightgbm-opencl-4.7.0/cmake-build/Boost/source/libs/multi_index'...
+        Cloning into
+      'C:/trader/simple_ai_trading/.tmp/lightgbm-opencl-4.7.0/cmake-build/Boost/source/libs/numeric/conversion'...
+        Cloning into
+      'C:/trader/simple_ai_trading/.tmp/lightgbm-opencl-4.7.0/cmake-build/Boost/source/libs/optional'...
+        Cloning into
+      'C:/trader/simple_ai_trading/.tmp/lightgbm-opencl-4.7.0/cmake-build/Boost/source/libs/predef'...
+        Cloning into
+      'C:/trader/simple_ai_trading/.tmp/lightgbm-opencl-4.7.0/cmake-build/Boost/source/libs/preprocessor'...
+        Cloning into
+      'C:/trader/simple_ai_trading/.tmp/lightgbm-opencl-4.7.0/cmake-build/Boost/source/libs/property_tree'...
+        Cloning into
+      'C:/trader/simple_ai_trading/.tmp/lightgbm-opencl-4.7.0/cmake-build/Boost/source/libs/range'...
+        Cloning into
+      'C:/trader/simple_ai_trading/.tmp/lightgbm-opencl-4.7.0/cmake-build/Boost/source/libs/ratio'...
+        Cloning into
+      'C:/trader/simple_ai_trading/.tmp/lightgbm-opencl-4.7.0/cmake-build/Boost/source/libs/serialization'...
+        Cloning into
+      'C:/trader/simple_ai_trading/.tmp/lightgbm-opencl-4.7.0/cmake-build/Boost/source/libs/smart_ptr'...
+        Cloning into
+      'C:/trader/simple_ai_trading/.tmp/lightgbm-opencl-4.7.0/cmake-build/Boost/source/libs/static_assert'...
+        Cloning into
+      'C:/trader/simple_ai_trading/.tmp/lightgbm-opencl-4.7.0/cmake-build/Boost/source/libs/system'...
+        Cloning into
+      'C:/trader/simple_ai_trading/.tmp/lightgbm-opencl-4.7.0/cmake-build/Boost/source/libs/throw_exception'...
+        Cloning into
+      'C:/trader/simple_ai_trading/.tmp/lightgbm-opencl-4.7.0/cmake-build/Boost/source/libs/tuple'...
+        Cloning into
+      'C:/trader/simple_ai_trading/.tmp/lightgbm-opencl-4.7.0/cmake-build/Boost/source/libs/type_index'...
+        Cloning into
+      'C:/trader/simple_ai_trading/.tmp/lightgbm-opencl-4.7.0/cmake-build/Boost/source/libs/type_traits'...
+        Cloning into
+      'C:/trader/simple_ai_trading/.tmp/lightgbm-opencl-4.7.0/cmake-build/Boost/source/libs/typeof'...
+        Cloning into
+      'C:/trader/simple_ai_trading/.tmp/lightgbm-opencl-4.7.0/cmake-build/Boost/source/libs/utility'...
+        Cloning into
+      'C:/trader/simple_ai_trading/.tmp/lightgbm-opencl-4.7.0/cmake-build/Boost/source/libs/uuid'...
+        Cloning into
+      'C:/trader/simple_ai_trading/.tmp/lightgbm-opencl-4.7.0/cmake-build/Boost/source/libs/winapi'...
+        Cloning into
+      'C:/trader/simple_ai_trading/.tmp/lightgbm-opencl-4.7.0/cmake-build/Boost/source/tools/boost_install'...
+        Cloning into
+      'C:/trader/simple_ai_trading/.tmp/lightgbm-opencl-4.7.0/cmake-build/Boost/source/tools/build'...
+        Submodule path 'libs/algorithm': checked out
+      '7f527f3c4dc3b88b11f1584d7decf0537450b441'
+        Submodule path 'libs/align': checked out
+      '05bfdf34c047418b7525502d76f95918190f8dc2'
+        Submodule path 'libs/any': checked out
+      '1483752ab69e064e4816e7a726fcfaff62712785'
+        Submodule path 'libs/array': checked out
+      'd026fbcee301275a101c5c67e1f4161766028108'
+        Submodule path 'libs/assert': checked out
+      '35c31e7778cd5e02cdcdea7bedce4c7f8d767803'
+        Submodule path 'libs/bind': checked out
+      'cd32792f0ef444347b1a522de945ee298e1112a8'
+        Submodule path 'libs/chrono': checked out
+      'aa51cbd5121ed29093484f53e5f96e13a9a915b4'
+        Submodule path 'libs/compute': checked out
+      '36c89134d4013b2e5e45bc55656a18bd6141995a'
+        Submodule path 'libs/concept_check': checked out
+      'a8cf003d4a5d0328b1c58610b2f5a7a84994b357'
+        Submodule path 'libs/config': checked out
+      '83fd6b3e9d3709d3efdc609a5aceb9d5851212b0'
+        Submodule path 'libs/container': checked out
+      '06417de498fbfd6f6684efe85a99c6adcc0721a5'
+        Submodule path 'libs/container_hash': checked out
+      '8a7fc581ed987fde8cae4e7145378d23b9b6b351'
+        Submodule path 'libs/core': checked out
+      'dcc04c55089b8a74c5a37e3d25694fca697ffb9f'
+        Submodule path 'libs/detail': checked out
+      '5d285a2d5a561308ad6703e1ff284d106eb01032'
+        Submodule path 'libs/filesystem': checked out
+      '4748f6e39da4948468391705fdd140433a7df21c'
+        Submodule path 'libs/foreach': checked out
+      '88c8eae6759f1984dd7e22629660f0e39c5907ee'
+        Submodule path 'libs/format': checked out
+      '5884c3d8140cdcd2d1bef374fcc216244d5faaa5'
+        Submodule path 'libs/function': checked out
+      '4841cbf4754043a8bcf02fc081106c6f26259324'
+        Submodule path 'libs/function_types': checked out
+      '0f29b0147885e525acc87e86169f538e55bdb3e9'
+        Submodule path 'libs/fusion': checked out
+      'c46e492d4556b97da12f35e8d9a4e0eef1ad7bde'
+        Submodule path 'libs/headers': checked out
+      '017c3cd1338b5437f28506cd14119b7dcfb1a86d'
+        Submodule path 'libs/integer': checked out
+      '54dcfa677d8883d0bc7179f32cb806d89d4f8e40'
+        Submodule path 'libs/io': checked out
+      '40b87939b2ce6a0d607e37877f2e36bbaf1f23f7'
+        Submodule path 'libs/iterator': checked out
+      '72f0ebe8d06991968c6f792c0a846519a795cac1'
+        Submodule path 'libs/lexical_cast': checked out
+      '9fdbf5ce67d9a9302cf16de4760d99090da97f44'
+        Submodule path 'libs/math': checked out
+      '692077bf1647c87117929ec111788e67a8bbf68a'
+        Submodule path 'libs/move': checked out
+      'fa3aa147b4b0a8e02edb0ac516acc21b4b139b78'
+        Submodule path 'libs/mpl': checked out
+      '9c0f98f088bbed5943382ebfcfd1b0159aaa7462'
+        Submodule path 'libs/multi_index': checked out
+      '1dcb5fe1370d7f76d4f3fe844533fc6fee30452a'
+        Submodule path 'libs/numeric/conversion': checked out
+      'de922921408bc7116a3c7c67b2fcfbe3e3214f3b'
+        Submodule path 'libs/optional': checked out
+      'c486bb724c087b18a1f9a6397408213219a4f3e2'
+        Submodule path 'libs/predef': checked out
+      '133ae86ef5a7811321b2dae92455ba609418885e'
+        Submodule path 'libs/preprocessor': checked out
+      'e4fb5f4866f69a917b7eeb522a3257d4625e52c1'
+        Submodule path 'libs/property_tree': checked out
+      'bdfe275d172ac30bc5e89a6375a5a64dea20b3c0'
+        Submodule path 'libs/range': checked out
+      'f3ff60c3bc41e42ffebef1452deb285047a5639f'
+        Submodule path 'libs/ratio': checked out
+      '96888514780dbe8d1729a8248fbafdeda79bcdc4'
+        Submodule path 'libs/serialization': checked out
+      'ed44fcd268e0691e8afe09d879a107fbff194d75'
+        Submodule path 'libs/smart_ptr': checked out
+      '620620df3d232365bb75216250eafb37421ba7eb'
+        Submodule path 'libs/static_assert': checked out
+      'ba846a309164183757683b64df4b88f2d72cb0ff'
+        Submodule path 'libs/system': checked out
+      '8220aa5700d0e23ffe88b3145f9269cc15b71ccc'
+        Submodule path 'libs/throw_exception': checked out
+      'da6f5420fe7e96f673ee185c2ff37cbaa3f95b84'
+        Submodule path 'libs/tuple': checked out
+      'a4dff52f676679d07a7ed74621fd4c0a371c0e21'
+        Submodule path 'libs/type_index': checked out
+      '9862011b6b5e900eee31d32684766c15d3506adf'
+        Submodule path 'libs/type_traits': checked out
+      '5588bb1ab7ba1809aaa492c4f6c6620dc2aaa927'
+        Submodule path 'libs/typeof': checked out
+      '27890f7ec1a1f25432474cb73abfc5bc4bafc0c7'
+        Submodule path 'libs/utility': checked out
+      'a4feaf4f243b9865dc8c65102232394d0c20473d'
+        Submodule path 'libs/uuid': checked out
+      'ca0185f9f2f1c8d58af8c54ce24579e1c6ebf348'
+        Submodule path 'libs/winapi': checked out
+      '37607cc3d3ea5145381f65b6fe51eac8bb8f361f'
+        Submodule path 'tools/boost_install': checked out
+      'ea28ed441fb04f2c5839e99e37f4c173fcfd48ec'
+        Submodule path 'tools/build': checked out
+      '632ea768f3eb225b4472c5ed6d20afee708724ad'
+        Building Custom Rule
+      C:/Users/strat/AppData/Local/uv/cache/sdists-v9/pypi/lightgbm/4.7.0/KAceDCsqSF6rJGy0/src/CMakeLists.txt
+        No update step for 'Boost'
+        No patch step for 'Boost'
+        Performing configure step for 'Boost'
+        Building Boost.Build engine
+      
+        Generating Boost.Build configuration in project-config.jam for msvc...
+      
+        Bootstrapping is done. To build, run:
+      
+            .\b2
+      
+            To generate header files, run:
+      
+            .\b2 headers
+      
+        To adjust configuration, edit 'project-config.jam'.
+        Further information:
+      
+            - Command line help:
+            .\b2 --help
+      
+            - Getting started guide:
+            http://boost.org/more/getting_started/windows.html
+      
+            - Boost.Build documentation:
+            http://www.boost.org/build/
+      
+        Performing build step for 'Boost'
+        Performing configuration checks
+      
+            - default address-model    : none
+            - default architecture     : none
+      
+        Building the Boost C++ Libraries.
+      
+      
+            - symlinks supported       : yes
+            - has BCrypt API           : no
+            - is Windows CE            : no
+            - has stat::st_mtim        : no
+            - has stat::st_mtimensec   : no
+            - has stat::st_mtimespec   : no
+            - has BCrypt API           : yes
+            - has stat::st_mtim        : yes
+            - has stat::st_mtimensec   : yes
+            - has stat::st_mtimespec   : yes
+      CUSTOMBUILD : error : Name clash for
+      '<pC:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\cmake-build\Boost\source\stage\lib>libboost_chrono-vc6-mt-1_74.lib'
+      [C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\cmake-build\Boost.vcxproj]
+      CUSTOMBUILD : error :
+      [C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\cmake-build\Boost.vcxproj]
+      CUSTOMBUILD : error : Tried to build the
+      target twice, with property sets having
+      [C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\cmake-build\Boost.vcxproj]
+      CUSTOMBUILD : error : these incompatible properties:
+      [C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\cmake-build\Boost.vcxproj]
+      CUSTOMBUILD : error :
+      [C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\cmake-build\Boost.vcxproj]
+      CUSTOMBUILD : error : -  <address-model>32
+      [C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\cmake-build\Boost.vcxproj]
+      CUSTOMBUILD : error : -  <address-model>64
+      [C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\cmake-build\Boost.vcxproj]
+      CUSTOMBUILD : error :
+      [C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\cmake-build\Boost.vcxproj]
+      CUSTOMBUILD : error : Please make sure
+      to have consistent requirements for these
+      [C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\cmake-build\Boost.vcxproj]
+      CUSTOMBUILD : error : properties everywhere
+      in your project, especially for install
+      [C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\cmake-build\Boost.vcxproj]
+      CUSTOMBUILD : error : targets.
+      [C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\cmake-build\Boost.vcxproj]
+      
+      C:\Program Files\Microsoft Visual
+      Studio\18\Community\MSBuild\Microsoft\VC\v170\Microsoft.CppCommon.targets(254,5):
+      error MSB8066: Custom build for
+      'C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\cmake-build\CMakeFiles\c0bc7e2d5a1cdcf6a6b87f2a77350521\Boost-download.rule;C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\cmake-build\CMakeFiles\c0bc7e2d5a1cdcf6a6b87f2a77350521\Boost-update.rule;C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\cmake-build\CMakeFiles\c0bc7e2d5a1cdcf6a6b87f2a77350521\Boost-patch.rule;C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\cmake-build\CMakeFiles\c0bc7e2d5a1cdcf6a6b87f2a77350521\Boost-configure.rule;C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\cmake-build\CMakeFiles\c0bc7e2d5a1cdcf6a6b87f2a77350521\Boost-build.rule;C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\cmake-build\CMakeFiles\c0bc7e2d5a1cdcf6a6b87f2a77350521\Boost-install.rule;C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\cmake-build\CMakeFiles\0f4e40907ef6ebcab0b437a641e7c55f\Boost-complete.rule;C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\cmake-build\CMakeFiles\48097df623c648b375c34b80458755ed\Boost.rule;C:\Users\strat\AppData\Local\uv\cache\sdists-v9\pypi\lightgbm\4.7.0\KAceDCsqSF6rJGy0\src\CMakeLists.txt'
+      exited with code 1.
+      [C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\cmake-build\Boost.vcxproj]
+
+      [stderr]
+      2026-09-04 22:53:08,473 - scikit_build_core -
+      INFO - RUN: C:\Program Files\Microsoft Visual
+      Studio\18\Community\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.EXE
+      -E capabilities
+      2026-09-04 22:53:08,494 - scikit_build_core - INFO - CMake version:
+      4.3.1
+      2026-09-04 22:53:08,582 - scikit_build_core - INFO - Implementation:
+      cpython win32 on AMD64
+      2026-09-04 22:53:08,584 - scikit_build_core - INFO - Build directory:
+      C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\cmake-build
+      2026-09-04 22:53:08,593 - scikit_build_core
+      - INFO - New isolated environment
+      C:\Users\strat\AppData\Local\uv\cache\builds-v0\.tmpjjcXP0\Lib\site-packages\scikit_build_core
+      ->
+      C:\Users\strat\AppData\Local\uv\cache\builds-v0\.tmp9t23tj\Lib\site-packages\scikit_build_core,
+      clearing cache
+      2026-09-04 22:53:08,610 - scikit_build_core -
+      INFO - RUN: C:\Program Files\Microsoft Visual
+      Studio\18\Community\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.EXE
+      -S. -BC:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\cmake-build
+      -CC:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\cmake-build\CMakeInit.txt
+      -DCMAKE_INSTALL_PREFIX=C:\Users\strat\AppData\Local\Temp\tmphbhvim5t\wheel\platlib
+      -D__BUILD_FOR_PYTHON=ON -DCMAKE_POLICY_VERSION_MINIMUM=3.5
+      -D__INTEGRATE_OPENCL=ON
+      CMake Deprecation Warning at
+      C:/trader/simple_ai_trading/.tmp/lightgbm-opencl-4.7.0/cmake-build/_deps/opencl-icd-loader-src/CMakeLists.txt:1
+      (cmake_minimum_required):
+        Compatibility with CMake < 3.10 will be removed from a future version
+      of
+        CMake.
+
+        Update the VERSION argument <min> value.  Or, use the <min>...<max>
+      syntax
+        to tell CMake that the project requires at least <min> but has been
+      updated
+        to work with policies introduced by <max> or earlier.
+
+
+      2026-09-04 22:53:21,254 - scikit_build_core -
+      INFO - RUN: C:\Program Files\Microsoft Visual
+      Studio\18\Community\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.EXE
+      --build C:\trader\simple_ai_trading\.tmp\lightgbm-opencl-4.7.0\cmake-build
+      --config Release --target _lightgbm
+
+      *** CMake build failed
+
+
+hint: Build failures usually indicate a problem with the package or the build environment

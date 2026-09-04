@@ -1,0 +1,8 @@
+{"phase": "worker_started", "workers": 1, "index": 0, "pid": 16588, "output": "docs\\review\\2026-09-04\\gpu-concurrency-result\\workers-1-fit-0.json"}
+{"phase": "worker_started", "workers": 1, "index": 1, "pid": 62308, "output": "docs\\review\\2026-09-04\\gpu-concurrency-result\\workers-1-fit-1.json"}
+{"phase": "worker_started", "workers": 1, "index": 2, "pid": 60732, "output": "docs\\review\\2026-09-04\\gpu-concurrency-result\\workers-1-fit-2.json"}
+{"phase": "worker_started", "workers": 1, "index": 3, "pid": 61896, "output": "docs\\review\\2026-09-04\\gpu-concurrency-result\\workers-1-fit-3.json"}
+{"phase": "configuration_completed", "workers": 1, "total_wall_seconds": 72.74475610000081, "fits_per_minute": 3.299206882625005}
+{"phase": "worker_started", "workers": 2, "index": 0, "pid": 55724, "output": "docs\\review\\2026-09-04\\gpu-concurrency-result\\workers-2-fit-0.json"}
+{"phase": "worker_started", "workers": 2, "index": 1, "pid": 57224, "output": "docs\\review\\2026-09-04\\gpu-concurrency-result\\workers-2-fit-1.json"}
+{"phase": "failed"}

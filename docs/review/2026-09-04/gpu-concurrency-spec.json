@@ -1,0 +1,12 @@
+{
+  "schema_version": "synthetic-lightgbm-concurrency-comparison-v1",
+  "worker_template": "docs/review/2026-09-04/gpu-throughput-profile-spec.json",
+  "total_fits_per_configuration": 4,
+  "configurations": [{"workers":1,"threads_per_worker":16},{"workers":2,"threads_per_worker":8},{"workers":4,"threads_per_worker":4}],
+  "worker_timeout_seconds": 180,
+  "host_budget": "At most 16 total LightGBM threads, four GPU contexts, and 8 GiB total raw feature inputs; observed host free RAM over 30 GiB before this sweep",
+  "scope": "Synthetic only; same dataset and fixed FP64 parameters for every worker; no extra hyperparameter search, new market sample, holdout access or model accuracy claim",
+  "timing": "Same four complete Python jobs per configuration including startup, generation, warmup, dataset construction, training, prediction, verification, telemetry and output",
+  "acceptance": "Prefer concurrency only if total batch wall time improves by at least 10 percent, every worker completes with reload equality and maximum paired synthetic logloss difference from serial is at most 0.00001; no claim of universal optimum",
+  "order_limitations": "Serial then two then four is a single bounded profiling sweep, not independent replicated significance evidence; no adaptive extra workers or retry"
+}
