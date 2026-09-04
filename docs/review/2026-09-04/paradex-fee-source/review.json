@@ -1,0 +1,59 @@
+{
+  "created_at_utc": "2026-09-04T23:31:41.660749+00:00",
+  "schema_version": "paradex-fee-route-source-review-v1",
+  "source_sha256": {
+    "docs/review/2026-09-04/paradex-fee-source/fees.md": "4a5ed378fb6b6b1717d37e498b746ca25fe43bd12cc718b52903b4181ae9ef06",
+    "docs/review/2026-09-04/paradex-fee-source/profiles.md": "02aee2bfacb541995cf8c028ea6d99156d9449510c389479f6b02b91016d65ac",
+    "docs/review/2026-09-04/paradex-fee-source/requests.jsonl": "4af38c153103a73643d18f5818ef923be3c7a43e67f23c42e1afd5c469a446d9",
+    "docs/review/2026-09-04/paradex-fee-source-plan.json": "942aff65452da38d5524d67725b467259e113780dca37215660529963cd3e603",
+    "tools/capture_paradex_trading_markdown.ps1": "797fade28b061caf97330f4233ee379b6956fb0abf89c9362a627195f256b6b0",
+    "tools/review_paradex_fee_routes.py": "7da52db954c668ce7210f795b3116912875b92fa926e1d0c6287144aecba04a4"
+  },
+  "terms": {
+    "retail_perps_spot_maker_fee_bps": "0",
+    "retail_perps_spot_taker_fee_bps": "0",
+    "pro_perps_spot_maker_fee_bps": "0.3",
+    "pro_perps_spot_base_taker_fee_bps_by_tier": {
+      "0": "4.500",
+      "1": "4.200",
+      "2": "3.900",
+      "3": "3.700",
+      "4": "3.500"
+    },
+    "pro_perps_spot_minimum_taker_fee_bps": "1.75",
+    "retail_documented_speed_bump_ms": {
+      "submission": 300,
+      "cancellation": 300
+    },
+    "retail_documented_order_limits": {
+      "second": 3,
+      "minute": 30,
+      "hour": 300,
+      "24 hours": 1000
+    },
+    "delisted_spot_perpetual_open_position_settlement_fee_bps": "1.500",
+    "classification_basis": "per order submission, not permanent user profile",
+    "standard_api_default": "Pro",
+    "documented_retail_api_route": "interactive token; token request not authorized or made",
+    "retail_limit_breach": "Pro behavior and loss of RPI access",
+    "fastfills_discount_is_fill_conditioned": true,
+    "historical_effective_year_of_july3_maker_notice": null,
+    "account_qualification": null,
+    "intended_automated_workflow_eligibility_confirmed": false
+  },
+  "decision": "Qualify exact order classification and all incremental latency, fill, currency, venue and counterparty costs before freezing a future execution route. No public fee is credited to an unqualified account. Preserve the consumed funding study and its rejection.",
+  "fee_cash_identity": "sum over actual executions of abs(base quantity) * execution price * applicable fee fraction, retaining each payment asset; not twice an entry notional unless quantities and prices justify it",
+  "retail_vs_pro_savings_condition": "The nominal rate difference is not execution improvement unless lower fees exceed changed spread, hedge latency, adverse selection, cancellation-race and other incremental costs.",
+  "independently_existing_token_discount_state_required": true,
+  "no_volume_manufacture_or_rate_limit_evasion": true,
+  "market_requests": 0,
+  "account_requests": 0,
+  "token_requests": 0,
+  "orders": 0,
+  "credentials_used": false,
+  "protected_capture_access": false,
+  "historical_results_changed": false,
+  "accepted_edge": false,
+  "profitability_claim": false,
+  "result_sha256": "3ba0d1bb7bb025848fd7e3dfb8974633d28b782924be12df199ce5ee85779816"
+}

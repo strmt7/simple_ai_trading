@@ -1,14 +1,20 @@
 # Continue Development
 
-Current canonical status after the Paradex index-boundary study:
+Current canonical status after the Paradex fee-route source review:
 accepted scopes 37, ranked hypotheses 65, terminal observations 188,
 and stable current account-qualified after-all-cost edges zero. Registry
 SHA-256 is
-`b3aee5cabed7e9a52412b51e966d57072fad3de8db8cdb6700a6acdc7bd42b20`;
+`201db0929e7f061823bc0ed02e76597b5f68436ae82ceaccfe9921dde9c5c61d`;
 durability-audit SHA-256 is
-`ffc6d693fb073233e94f172722c03d25b65c964cebbb67c57277b5abba3544af`.
+`e2026967fb53e717a7cf47ba0c0a22e3169aa65bcb64aafd20fb744388371513`.
 
 ## September 4 resumed review and USD1 campaign
+
+Rank 59 now includes a source-only fee-route review. Documented lower fees
+depend on order classification and execution constraints; workflow/account
+eligibility is unknown. Read `review/2026-09-04/paradex-fee-routes.md` before
+future execution design. No new market observation, effective-dated change,
+retry authority or accepted edge follows; the consumed studies stay unchanged.
 
 The disjoint August 27–September 4 Paradex/Binance cumulative-index study is
 consumed. All 84 responses passed source gates, yielding 78 fixed-base

@@ -6,6 +6,11 @@ operating contract. Historical handoff text is archived under
 
 ## Current Truth
 
+Paradex fee-route terms are now source-bound: lower nominal fees require
+qualification of the actual order route and incremental execution costs.
+See `review/2026-09-04/paradex-fee-routes.md`. This source-only addition leaves
+all acceptance counts, consumed market results and retry triggers unchanged.
+
 The new Paradex/Binance funding-index population is consumed with no survivor.
 Its 84 public responses reconstruct 78 intervals; gross spread fails even one
 20-bp execution allowance over the whole window. See

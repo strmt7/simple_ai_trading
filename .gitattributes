@@ -160,3 +160,5 @@ data/polymarket-us-combo-rfq-overview-v1/raw/overview.md binary
 docs/review/2026-09-04/paradex-index-source/** binary -eol
 docs/review/2026-09-04/paradex-index-study/** binary -eol
 docs/review/2026-09-04/paradex-index-publication/*before.json binary -eol
+docs/review/2026-09-04/paradex-fee-source/** binary -eol
+tools/capture_paradex_trading_markdown.ps1 text eol=lf
