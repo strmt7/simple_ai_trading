@@ -34,6 +34,12 @@ identity; its deadline grouping does not bind observation starts (review R4).
   `docs/model-research/cross-regime-edge-acceptance-contract-v1.json`; an
   unsupported bullish, bearish, sideways, choppy, volatility, liquidity, or
   latency slice must reject promotion or abstain from new exposure.
+- Portfolio correlation and tail-risk evidence must align returns by both
+  observation endpoints. Never substitute equally sized row tails for disjoint
+  histories, match unequal return horizons only by their final timestamp, or
+  replace nonfinite returns with zero. Duplicate endpoints are ambiguous and
+  cannot establish diversification. Preserve historical reports; verify their
+  alignment independently before treating them as current promotion evidence.
 - Risk, ownership, reconciliation, Stop, and close controls are deterministic.
   AI may only veto or reduce risk after matched uplift evidence and may never
   override a safety gate or block a close.

@@ -72,9 +72,16 @@ class PortfolioRiskReport:
         return payload
 
 
-def policy_for_strategy(strategy: StrategyConfig, *, min_symbols: int | None = None) -> PortfolioRiskPolicy:
+def policy_for_strategy(
+    strategy: StrategyConfig, *, min_symbols: int | None = None
+) -> PortfolioRiskPolicy:
     risk_level = str(strategy.risk_level or "conservative").lower()
-    configured_min = max(1, int(min_symbols if min_symbols is not None else strategy.min_diversified_assets))
+    configured_min = max(
+        1,
+        int(
+            min_symbols if min_symbols is not None else strategy.min_diversified_assets
+        ),
+    )
     if risk_level == "aggressive":
         max_corr = 0.97
         max_cluster = 0.85
@@ -98,7 +105,9 @@ def policy_for_strategy(strategy: StrategyConfig, *, min_symbols: int | None = N
         min_observations=40,
         max_pairwise_correlation=max_corr,
         max_cluster_weight=max_cluster,
-        max_portfolio_cvar_95=max(0.001, float(strategy.max_portfolio_risk_pct) * cvar_multiplier),
+        max_portfolio_cvar_95=max(
+            0.001, float(strategy.max_portfolio_risk_pct) * cvar_multiplier
+        ),
         max_portfolio_drawdown=max(0.001, float(strategy.max_drawdown_limit)),
         max_symbol_weight=min(1.0, max(0.01, float(strategy.max_asset_allocation_pct))),
         min_effective_symbols=min_effective,
@@ -150,41 +159,54 @@ def _max_drawdown(returns: Sequence[float]) -> float:
     return _finite(worst)
 
 
-def _returns_by_timestamp(candles: Sequence[Candle]) -> dict[int, float]:
+def _returns_by_interval(candles: Sequence[Candle]) -> dict[tuple[int, int], float]:
+    """Key close-to-close returns by both observation endpoints, not row order."""
     ordered = sorted(list(candles), key=lambda candle: int(candle.close_time))
-    returns: dict[int, float] = {}
+    timestamps = [int(candle.close_time) for candle in ordered]
+    if len(set(timestamps)) != len(timestamps):
+        return {}  # A duplicate endpoint cannot define an unambiguous return path.
+    returns: dict[tuple[int, int], float] = {}
     previous_close: float | None = None
+    previous_time: int | None = None
     for candle in ordered:
         close = float(candle.close)
         if not math.isfinite(close) or close <= 0.0:
             previous_close = None
+            previous_time = None
             continue
-        if previous_close is not None and previous_close > 0.0:
-            returns[int(candle.close_time)] = _finite((close - previous_close) / previous_close)
+        current_time = int(candle.close_time)
+        if previous_close is not None and previous_time is not None:
+            value = (close - previous_close) / previous_close
+            if not math.isfinite(value):
+                return {}  # An invalid return is not evidence of a flat market.
+            returns[(previous_time, current_time)] = value
         previous_close = close
+        previous_time = current_time
     return returns
 
 
-def _align_returns(candles_by_symbol: Mapping[str, Sequence[Candle]]) -> dict[str, list[float]]:
+def _align_returns(
+    candles_by_symbol: Mapping[str, Sequence[Candle]],
+) -> dict[str, list[float]]:
     series = {
-        str(symbol): _returns_by_timestamp(candles)
+        str(symbol): _returns_by_interval(candles)
         for symbol, candles in candles_by_symbol.items()
         if candles
     }
     if not series:
         return {}
-    common_times: set[int] | None = None
+    common_times: set[tuple[int, int]] | None = None
     for values in series.values():
         keys = set(values)
         common_times = keys if common_times is None else common_times & keys
     if common_times:
         times = sorted(common_times)
-        return {symbol: [values[time] for time in times] for symbol, values in series.items()}
-    raw = {symbol: list(values.values()) for symbol, values in series.items()}
-    length = min((len(values) for values in raw.values()), default=0)
-    if length <= 0:
-        return {}
-    return {symbol: values[-length:] for symbol, values in raw.items()}
+        return {
+            symbol: [values[time] for time in times]
+            for symbol, values in series.items()
+        }
+    # Equal-length tails from unrelated times are not contemporaneous evidence.
+    return {}
 
 
 def _correlation(left: Sequence[float], right: Sequence[float]) -> float:
@@ -200,10 +222,18 @@ def _correlation(left: Sequence[float], right: Sequence[float]) -> float:
     denom = math.sqrt(denom_x * denom_y)
     if denom <= 0.0:
         return 0.0
-    return max(-1.0, min(1.0, sum((a - mean_x) * (b - mean_y) for a, b in zip(x, y, strict=True)) / denom))
+    return max(
+        -1.0,
+        min(
+            1.0,
+            sum((a - mean_x) * (b - mean_y) for a, b in zip(x, y, strict=True)) / denom,
+        ),
+    )
 
 
-def _inverse_vol_weights(aligned: Mapping[str, Sequence[float]], max_symbol_weight: float) -> dict[str, float]:
+def _inverse_vol_weights(
+    aligned: Mapping[str, Sequence[float]], max_symbol_weight: float
+) -> dict[str, float]:
     symbols = list(aligned)
     if not symbols:
         return {}
@@ -226,13 +256,17 @@ def _inverse_vol_weights(aligned: Mapping[str, Sequence[float]], max_symbol_weig
     while remaining and remaining_budget > 1e-12:
         raw_total = sum(max(0.0, raw[symbol]) for symbol in remaining)
         if raw_total <= 0.0:
-            provisional = {symbol: remaining_budget / len(remaining) for symbol in remaining}
+            provisional = {
+                symbol: remaining_budget / len(remaining) for symbol in remaining
+            }
         else:
             provisional = {
                 symbol: remaining_budget * max(0.0, raw[symbol]) / raw_total
                 for symbol in remaining
             }
-        capped = [symbol for symbol, weight in provisional.items() if weight > cap + 1e-12]
+        capped = [
+            symbol for symbol, weight in provisional.items() if weight > cap + 1e-12
+        ]
         if not capped:
             for symbol, weight in provisional.items():
                 weights[symbol] = min(cap, max(0.0, weight))
@@ -252,7 +286,11 @@ def _normalised_weights(weights: Mapping[str, float]) -> dict[str, float]:
     return {symbol: max(0.0, float(value)) / total for symbol, value in weights.items()}
 
 
-def _clusters(symbols: Sequence[str], correlations: Mapping[tuple[str, str], float], threshold: float) -> list[list[str]]:
+def _clusters(
+    symbols: Sequence[str],
+    correlations: Mapping[tuple[str, str], float],
+    threshold: float,
+) -> list[list[str]]:
     parent = {symbol: symbol for symbol in symbols}
 
     def find(symbol: str) -> str:
@@ -276,7 +314,9 @@ def _clusters(symbols: Sequence[str], correlations: Mapping[tuple[str, str], flo
     return [sorted(group) for group in grouped.values()]
 
 
-def _symbol_metrics(symbol: str, returns: Sequence[float], weight: float) -> SymbolRiskMetrics:
+def _symbol_metrics(
+    symbol: str, returns: Sequence[float], weight: float
+) -> SymbolRiskMetrics:
     losses = [value for value in returns if value < 0.0]
     var_95, cvar_95 = _tail_risk(returns)
     return SymbolRiskMetrics(
@@ -301,7 +341,9 @@ def build_portfolio_risk_report(
     """Measure combined model-lab candidates before declaring portfolio acceptance."""
 
     policy = policy_for_strategy(strategy, min_symbols=min_symbols)
-    preliminary = sorted(str(symbol) for symbol in candles_by_symbol if candles_by_symbol[symbol])
+    preliminary = sorted(
+        str(symbol) for symbol in candles_by_symbol if candles_by_symbol[symbol]
+    )
     if not preliminary:
         return PortfolioRiskReport(
             accepted=False,
@@ -326,7 +368,9 @@ def build_portfolio_risk_report(
             policy=policy,
         )
 
-    aligned = _align_returns({symbol: candles_by_symbol[symbol] for symbol in preliminary})
+    aligned = _align_returns(
+        {symbol: candles_by_symbol[symbol] for symbol in preliminary}
+    )
     observations = min((len(values) for values in aligned.values()), default=0)
     weights = _inverse_vol_weights(aligned, policy.max_symbol_weight)
     relative_weights = _normalised_weights(weights)
@@ -336,22 +380,25 @@ def build_portfolio_risk_report(
     weighted_corr_num = 0.0
     weighted_corr_den = 0.0
     for left_index, left in enumerate(symbols):
-        for right in symbols[left_index + 1:]:
+        for right in symbols[left_index + 1 :]:
             corr = _correlation(aligned[left], aligned[right])
             correlations[(left, right)] = corr
             max_corr = max(max_corr, corr)
-            pair_weight = relative_weights.get(left, 0.0) * relative_weights.get(right, 0.0)
+            pair_weight = relative_weights.get(left, 0.0) * relative_weights.get(
+                right, 0.0
+            )
             weighted_corr_num += corr * pair_weight
             weighted_corr_den += pair_weight
     clusters = _clusters(symbols, correlations, policy.max_pairwise_correlation)
     cluster_weights = [
-        sum(weights.get(symbol, 0.0) for symbol in cluster)
-        for cluster in clusters
+        sum(weights.get(symbol, 0.0) for symbol in cluster) for cluster in clusters
     ]
     max_cluster_weight = max(cluster_weights, default=0.0)
     portfolio_returns: list[float] = []
     for index in range(observations):
-        portfolio_returns.append(sum(weights.get(symbol, 0.0) * aligned[symbol][index] for symbol in symbols))
+        portfolio_returns.append(
+            sum(weights.get(symbol, 0.0) * aligned[symbol][index] for symbol in symbols)
+        )
     var_95, cvar_95 = _tail_risk(portfolio_returns)
     effective_symbols = 0.0
     weight_square_sum = sum(weight * weight for weight in relative_weights.values())
@@ -368,15 +415,23 @@ def build_portfolio_risk_report(
     corr_adjusted_effective_symbols = 0.0
     if corr_adjusted_concentration > 0.0:
         corr_adjusted_effective_symbols = 1.0 / corr_adjusted_concentration
-    metrics = [_symbol_metrics(symbol, aligned[symbol], weights.get(symbol, 0.0)) for symbol in symbols]
+    metrics = [
+        _symbol_metrics(symbol, aligned[symbol], weights.get(symbol, 0.0))
+        for symbol in symbols
+    ]
     reasons: list[str] = []
+    if not aligned:
+        reasons.append("no_common_return_intervals")
     if len(symbols) < policy.min_symbols:
         reasons.append(f"symbols<{policy.min_symbols}")
     if observations < policy.min_observations:
         reasons.append(f"observations<{policy.min_observations}")
     if effective_symbols + 1e-3 < policy.min_effective_symbols:
         reasons.append(f"effective_symbols<{policy.min_effective_symbols:.2f}")
-    if corr_adjusted_effective_symbols + 1e-3 < policy.min_correlation_adjusted_effective_symbols:
+    if (
+        corr_adjusted_effective_symbols + 1e-3
+        < policy.min_correlation_adjusted_effective_symbols
+    ):
         reasons.append(
             "corr_adjusted_effective_symbols<"
             f"{policy.min_correlation_adjusted_effective_symbols:.2f}"
@@ -398,9 +453,13 @@ def build_portfolio_risk_report(
         deployed_weight=_finite(sum(weights.values())),
         reserve_weight=_finite(max(0.0, 1.0 - sum(weights.values()))),
         effective_symbol_count=_finite(effective_symbols),
-        correlation_adjusted_effective_symbol_count=_finite(corr_adjusted_effective_symbols),
+        correlation_adjusted_effective_symbol_count=_finite(
+            corr_adjusted_effective_symbols
+        ),
         max_pairwise_correlation=_finite(max_corr),
-        weighted_average_correlation=_finite(weighted_corr_num / weighted_corr_den if weighted_corr_den > 0 else 0.0),
+        weighted_average_correlation=_finite(
+            weighted_corr_num / weighted_corr_den if weighted_corr_den > 0 else 0.0
+        ),
         portfolio_var_95=_finite(var_95),
         portfolio_cvar_95=_finite(cvar_95),
         portfolio_max_drawdown=_finite(portfolio_drawdown),

@@ -56,3 +56,8 @@ control; neither enables the microstructure extra or opens network sockets.
 The tests skip if the optional library is absent in a base-only test run.
 Full optional-stack UI behavior, remote deployment exploitability and hosted
 alert closure are separate from these verified library-level results.
+
+After publication of `7ac11aaa850760dcdc80a9071560a7ec4ec16ae5`, a fresh
+read-only GitHub REST query returned no open Dependabot alerts. No alert was
+manually dismissed. This confirms that source's current closure, not a claim
+that the entire repository has no vulnerabilities.
