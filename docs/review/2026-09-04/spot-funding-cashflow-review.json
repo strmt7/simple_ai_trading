@@ -1,0 +1,1121 @@
+{
+  "accepted_edge": false,
+  "basis_execution_liquidation_and_stability_revalidated": false,
+  "bindings": [
+    {
+      "path": "docs/review/2026-09-04/spot-funding-cashflow-plan.json",
+      "sha256": "bf9d6335a175b4d2090fb7cd7b9a05369f8579a16be9f244654ce15b104e34b4"
+    },
+    {
+      "path": "docs/model-research/action-value/binance-broad-crypto-funding-carry-preflight-v1-2026-08-27.json",
+      "sha256": "7fc7c8be2d41c2089a57c7a268874254655acd7983ccb380b0a98577a4b64fae"
+    },
+    {
+      "path": "docs/model-research/action-value/binance-broad-crypto-funding-carry-preflight-contract-v1.json",
+      "sha256": "36e4ed618e6f2b75f538bc8ee7b5bb9a0dfec7d9fbd6f88287f60f99e2a5d5bf"
+    },
+    {
+      "path": "data/binance-broad-crypto-funding-carry-preflight-v1/raw/07-funding-btcusdt.raw",
+      "sha256": "6b4219597b85ee51a7b0601ba1399b2775a4ca1356fe3db48c459376fad9b9a8"
+    },
+    {
+      "path": "data/binance-broad-crypto-funding-carry-preflight-v1/raw/08-funding-ethusdt.raw",
+      "sha256": "73901ed47ae67f544b586133083ed8aefde10dcf52bd2a8574f4e05c0863d6cc"
+    },
+    {
+      "path": "data/binance-broad-crypto-funding-carry-preflight-v1/raw/09-funding-solusdt.raw",
+      "sha256": "fd94adb008bca4e083a8097fa3c675134ccb06fb2936546ee86d6b7fbe62d297"
+    },
+    {
+      "path": "data/binance-broad-crypto-funding-carry-preflight-v1/raw/10-funding-xrpusdt.raw",
+      "sha256": "5302849d52e2fa352ec0193308ff7af77aa32f42218e0bfe213a63650fd450ff"
+    },
+    {
+      "path": "data/binance-broad-crypto-funding-carry-preflight-v1/raw/11-funding-zecusdt.raw",
+      "sha256": "edec1ad460ebd754ec0c9a4e26eb54600605bd0d70650352b6de78ca3e2c73a4"
+    },
+    {
+      "path": "data/binance-broad-crypto-funding-carry-preflight-v1/raw/12-funding-bnbusdt.raw",
+      "sha256": "5680a767198a1cfd639c6a1284542f076992347642e4e2787bea8fe54fae4818"
+    },
+    {
+      "path": "data/binance-broad-crypto-funding-carry-preflight-v1/raw/13-funding-ongusdt.raw",
+      "sha256": "c98299e18bf40541c89d99d5e6eb524f018506aa95accdcf15fbc291935df4c1"
+    },
+    {
+      "path": "data/binance-broad-crypto-funding-carry-preflight-v1/raw/14-funding-dogeusdt.raw",
+      "sha256": "08d5a30a99b0bd0ca96b6a5911eb114aae0a81eaa6fb30963f24981a65fc2fb0"
+    },
+    {
+      "path": "data/binance-broad-crypto-funding-carry-preflight-v1/raw/15-funding-suiusdt.raw",
+      "sha256": "32226305d9267a1f24381b643f02e7ba324c0f7c3f69d4738536deec1fc67ec1"
+    },
+    {
+      "path": "data/binance-broad-crypto-funding-carry-preflight-v1/raw/16-funding-pumpusdt.raw",
+      "sha256": "63ed0532b615e736c9c648753885a192e8f07a09315d566739f1b0839f3af033"
+    },
+    {
+      "path": "data/binance-broad-crypto-funding-carry-preflight-v1/raw/17-funding-trxusdt.raw",
+      "sha256": "cb4d496e1831698c738c3b70b23ce5f0eca62c8c26a8a8d7ba38b2a5a4ab3df1"
+    },
+    {
+      "path": "data/binance-broad-crypto-funding-carry-preflight-v1/raw/18-funding-enausdt.raw",
+      "sha256": "511ae2e31b36ad2e3f89940e76a8d9cb7ffc2c2ed88b5aeea4ae94e609d5cb06"
+    },
+    {
+      "path": "data/binance-broad-crypto-funding-carry-preflight-v1/raw/19-funding-trumpusdt.raw",
+      "sha256": "087e9e01044c48cab8aa2cda39b44eb513bdee7a168a51b97450f5b73dd63bad"
+    },
+    {
+      "path": "data/binance-broad-crypto-funding-carry-preflight-v1/raw/20-funding-pythusdt.raw",
+      "sha256": "cf2fe65b51b430edd844adcce6448b2793613e286e136e9a8ba90b1ddaddfc0d"
+    },
+    {
+      "path": "data/binance-broad-crypto-funding-carry-preflight-v1/raw/21-funding-tutusdt.raw",
+      "sha256": "a04d7422d059950de0a12af94320bd57f02f983d4764284797ad4cf7ff4e9665"
+    },
+    {
+      "path": "data/binance-broad-crypto-funding-carry-preflight-v1/raw/22-funding-bmtusdt.raw",
+      "sha256": "7fc078b8e2f01fd1fe5a363a0be72050f52bac0640564ea0b95c26733e1c84c3"
+    },
+    {
+      "path": "data/binance-broad-crypto-funding-carry-preflight-v1/raw/23-funding-reusdt.raw",
+      "sha256": "76ccf0587c91b52af68e2fe7b8a5a1f52de2bc86d1088d763fe43f8afba424ec"
+    },
+    {
+      "path": "tools/review_spot_funding_cashflows.py",
+      "sha256": "e1e1aace7975131840abe0e122ba91ecc781a3e49692075020d3683bf2c19a7b"
+    }
+  ],
+  "classification": "exploratory_offline_accounting_audit_of_consumed_history",
+  "new_requests": 0,
+  "old_acceptance_rerun": false,
+  "profitability_claim": false,
+  "reference_is_executable_entry": false,
+  "result_sha256": "73e92f1f4389de38ef1d67be6e09009b1b9ffa9ea32e132bb1007fda9573b616",
+  "role_count": 51,
+  "rows": [
+    {
+      "duration_days": "99.33333325231481481481481481",
+      "first_time_ms": 1773504000007,
+      "last_time_ms": 1782057600000,
+      "metrics": {
+        "after_execution_and_original_capital_stress_bps": "-564.6035776240478044378212138",
+        "after_execution_sensitivity_before_capital_bps": "-20.31134062506251778130168056",
+        "break_even_annual_capital_cost_bps_per_reference_leg": "-37.31697651440210383766541130",
+        "fixed_base_funding_bps_at_reference": "11.68865937493748221869831944",
+        "funding_cash_quote_per_base": "82.4818430854025889",
+        "original_capital_stress_bps": "544.2922369989852866565195332",
+        "original_unit_weight_funding_bps": "12.12280000",
+        "reference_mark_quote_per_base": "70565.70000000",
+        "weighting_difference_bps": "-0.43414062506251778130168056"
+      },
+      "reference_time_ms": 1773475200000,
+      "role": "training",
+      "row_count": 298,
+      "symbol": "BTCUSDT"
+    },
+    {
+      "duration_days": "33.00000009259259259259259259",
+      "first_time_ms": 1782086400000,
+      "last_time_ms": 1784908800008,
+      "metrics": {
+        "after_execution_and_original_capital_stress_bps": "-160.4664503879284505423594954",
+        "after_execution_sensitivity_before_capital_bps": "20.35546792764739928006566948",
+        "break_even_annual_capital_cost_bps_per_reference_leg": "112.5719056476462355032637459",
+        "fixed_base_funding_bps_at_reference": "52.35546792764739928006566948",
+        "funding_cash_quote_per_base": "336.1236747595341328",
+        "original_capital_stress_bps": "180.8219183155758498224251649",
+        "original_unit_weight_funding_bps": "53.39090000",
+        "reference_mark_quote_per_base": "64200.30000000",
+        "weighting_difference_bps": "-1.03543207235260071993433052"
+      },
+      "reference_time_ms": 1782057600000,
+      "role": "validation",
+      "row_count": 99,
+      "symbol": "BTCUSDT"
+    },
+    {
+      "duration_days": "33.33333331018518518518518519",
+      "first_time_ms": 1784937600002,
+      "last_time_ms": 1787788800000,
+      "metrics": {
+        "after_execution_and_original_capital_stress_bps": "-148.1944731967377786239410751",
+        "after_execution_sensitivity_before_capital_bps": "34.45392850290707170584076156",
+        "break_even_annual_capital_cost_bps_per_reference_leg": "188.6352586844129250092093674",
+        "fixed_base_funding_bps_at_reference": "66.45392850290707170584076156",
+        "funding_cash_quote_per_base": "425.7616809074202305",
+        "original_capital_stress_bps": "182.6484016996448503297818367",
+        "original_unit_weight_funding_bps": "62.68270000",
+        "reference_mark_quote_per_base": "64068.70000000",
+        "weighting_difference_bps": "3.77122850290707170584076156"
+      },
+      "reference_time_ms": 1784908800008,
+      "role": "test",
+      "row_count": 100,
+      "symbol": "BTCUSDT"
+    },
+    {
+      "duration_days": "99.33333325231481481481481481",
+      "first_time_ms": 1773504000007,
+      "last_time_ms": 1782057600000,
+      "metrics": {
+        "after_execution_and_original_capital_stress_bps": "-560.0304728090771502926923023",
+        "after_execution_sensitivity_before_capital_bps": "-15.73823581009186363617276912",
+        "break_even_annual_capital_cost_bps_per_reference_leg": "-28.91504735923912161281763548",
+        "fixed_base_funding_bps_at_reference": "16.26176418990813636382723088",
+        "funding_cash_quote_per_base": "3.3766940704885066",
+        "original_capital_stress_bps": "544.2922369989852866565195332",
+        "original_unit_weight_funding_bps": "15.66830000",
+        "reference_mark_quote_per_base": "2076.46232663",
+        "weighting_difference_bps": "0.59346418990813636382723088"
+      },
+      "reference_time_ms": 1773475200000,
+      "role": "training",
+      "row_count": 298,
+      "symbol": "ETHUSDT"
+    },
+    {
+      "duration_days": "33.00000009259259259259259259",
+      "first_time_ms": 1782086400000,
+      "last_time_ms": 1784908800008,
+      "metrics": {
+        "after_execution_and_original_capital_stress_bps": "-181.6997081271801934261016780",
+        "after_execution_sensitivity_before_capital_bps": "-0.87778981160434360367651309",
+        "break_even_annual_capital_cost_bps_per_reference_leg": "-4.854443641463854100399980920",
+        "fixed_base_funding_bps_at_reference": "31.12221018839565639632348691",
+        "funding_cash_quote_per_base": "5.3838311404905646",
+        "original_capital_stress_bps": "180.8219183155758498224251649",
+        "original_unit_weight_funding_bps": "30.10270000",
+        "reference_mark_quote_per_base": "1729.90000000",
+        "weighting_difference_bps": "1.01951018839565639632348691"
+      },
+      "reference_time_ms": 1782057600000,
+      "role": "validation",
+      "row_count": 99,
+      "symbol": "ETHUSDT"
+    },
+    {
+      "duration_days": "33.33333331018518518518518519",
+      "first_time_ms": 1784937600002,
+      "last_time_ms": 1787788800000,
+      "metrics": {
+        "after_execution_and_original_capital_stress_bps": "-158.1447194244101181307994215",
+        "after_execution_sensitivity_before_capital_bps": "24.50368227523473219898241523",
+        "break_even_annual_capital_cost_bps_per_reference_leg": "134.1576605500752008380920573",
+        "fixed_base_funding_bps_at_reference": "56.50368227523473219898241523",
+        "funding_cash_quote_per_base": "10.5168608708426150",
+        "original_capital_stress_bps": "182.6484016996448503297818367",
+        "original_unit_weight_funding_bps": "49.78480000",
+        "reference_mark_quote_per_base": "1861.27000000",
+        "weighting_difference_bps": "6.71888227523473219898241523"
+      },
+      "reference_time_ms": 1784908800008,
+      "role": "test",
+      "row_count": 100,
+      "symbol": "ETHUSDT"
+    },
+    {
+      "duration_days": "99.33333325231481481481481481",
+      "first_time_ms": 1773504000007,
+      "last_time_ms": 1782057600000,
+      "metrics": {
+        "after_execution_and_original_capital_stress_bps": "-634.7512326253536559569942091",
+        "after_execution_sensitivity_before_capital_bps": "-90.45899562636836930047467586",
+        "break_even_annual_capital_cost_bps_per_reference_leg": "-166.1956380732599172309265602",
+        "fixed_base_funding_bps_at_reference": "-58.45899562636836930047467586",
+        "funding_cash_quote_per_base": "-0.5102455308086467",
+        "original_capital_stress_bps": "544.2922369989852866565195332",
+        "original_unit_weight_funding_bps": "-70.17620000",
+        "reference_mark_quote_per_base": "87.28263723",
+        "weighting_difference_bps": "11.71720437363163069952532414"
+      },
+      "reference_time_ms": 1773475200000,
+      "role": "training",
+      "row_count": 298,
+      "symbol": "SOLUSDT"
+    },
+    {
+      "duration_days": "33.00000009259259259259259259",
+      "first_time_ms": 1782086400000,
+      "last_time_ms": 1784908800008,
+      "metrics": {
+        "after_execution_and_original_capital_stress_bps": "-196.4007674950194770889261241",
+        "after_execution_sensitivity_before_capital_bps": "-15.57884917944362726650095919",
+        "break_even_annual_capital_cost_bps_per_reference_leg": "-86.1557565839720335530341106",
+        "fixed_base_funding_bps_at_reference": "16.42115082055637273349904081",
+        "funding_cash_quote_per_base": "0.1216997127296324",
+        "original_capital_stress_bps": "180.8219183155758498224251649",
+        "original_unit_weight_funding_bps": "15.08140000",
+        "reference_mark_quote_per_base": "74.11156140",
+        "weighting_difference_bps": "1.33975082055637273349904081"
+      },
+      "reference_time_ms": 1782057600000,
+      "role": "validation",
+      "row_count": 99,
+      "symbol": "SOLUSDT"
+    },
+    {
+      "duration_days": "33.33333331018518518518518519",
+      "first_time_ms": 1784937600002,
+      "last_time_ms": 1787788800000,
+      "metrics": {
+        "after_execution_and_original_capital_stress_bps": "-164.4668844498352666585193333",
+        "after_execution_sensitivity_before_capital_bps": "18.18151724980958367126250338",
+        "break_even_annual_capital_cost_bps_per_reference_leg": "99.5438070118351143583810354",
+        "fixed_base_funding_bps_at_reference": "50.18151724980958367126250338",
+        "funding_cash_quote_per_base": "0.3712428646140913",
+        "original_capital_stress_bps": "182.6484016996448503297818367",
+        "original_unit_weight_funding_bps": "44.25940000",
+        "reference_mark_quote_per_base": "73.98000000",
+        "weighting_difference_bps": "5.92211724980958367126250338"
+      },
+      "reference_time_ms": 1784908800008,
+      "role": "test",
+      "row_count": 100,
+      "symbol": "SOLUSDT"
+    },
+    {
+      "duration_days": "99.33333325231481481481481481",
+      "first_time_ms": 1773504000007,
+      "last_time_ms": 1782057600000,
+      "metrics": {
+        "after_execution_and_original_capital_stress_bps": "-597.6471957794108338398708070",
+        "after_execution_sensitivity_before_capital_bps": "-53.35495878042554718335127377",
+        "break_even_annual_capital_cost_bps_per_reference_leg": "-98.0263085775463958834251091",
+        "fixed_base_funding_bps_at_reference": "-21.35495878042554718335127377",
+        "funding_cash_quote_per_base": "-0.0029758135060523",
+        "original_capital_stress_bps": "544.2922369989852866565195332",
+        "original_unit_weight_funding_bps": "-26.67940000",
+        "reference_mark_quote_per_base": "1.39350000",
+        "weighting_difference_bps": "5.32444121957445281664872623"
+      },
+      "reference_time_ms": 1773475200000,
+      "role": "training",
+      "row_count": 298,
+      "symbol": "XRPUSDT"
+    },
+    {
+      "duration_days": "33.00000009259259259259259259",
+      "first_time_ms": 1782086400000,
+      "last_time_ms": 1784908800008,
+      "metrics": {
+        "after_execution_and_original_capital_stress_bps": "-217.2221517998961001629970109",
+        "after_execution_sensitivity_before_capital_bps": "-36.40023348432025034057184603",
+        "break_even_annual_capital_cost_bps_per_reference_leg": "-201.3043209772471729630188989",
+        "fixed_base_funding_bps_at_reference": "-4.400233484320250340571846033",
+        "funding_cash_quote_per_base": "-0.0005056520080070",
+        "original_capital_stress_bps": "180.8219183155758498224251649",
+        "original_unit_weight_funding_bps": "-5.35970000",
+        "reference_mark_quote_per_base": "1.14914813",
+        "weighting_difference_bps": "0.959466515679749659428153967"
+      },
+      "reference_time_ms": 1782057600000,
+      "role": "validation",
+      "row_count": 99,
+      "symbol": "XRPUSDT"
+    },
+    {
+      "duration_days": "33.33333331018518518518518519",
+      "first_time_ms": 1784937600002,
+      "last_time_ms": 1787788800000,
+      "metrics": {
+        "after_execution_and_original_capital_stress_bps": "-168.9576499744345882500601232",
+        "after_execution_sensitivity_before_capital_bps": "13.69075172521026207972171352",
+        "break_even_annual_capital_cost_bps_per_reference_leg": "74.95686574757956387785107865",
+        "fixed_base_funding_bps_at_reference": "45.69075172521026207972171352",
+        "funding_cash_quote_per_base": "0.0049825862991458",
+        "original_capital_stress_bps": "182.6484016996448503297818367",
+        "original_unit_weight_funding_bps": "40.35540000",
+        "reference_mark_quote_per_base": "1.09050215",
+        "weighting_difference_bps": "5.33535172521026207972171352"
+      },
+      "reference_time_ms": 1784908800008,
+      "role": "test",
+      "row_count": 100,
+      "symbol": "XRPUSDT"
+    },
+    {
+      "duration_days": "99.33333325231481481481481481",
+      "first_time_ms": 1773504000007,
+      "last_time_ms": 1782057600000,
+      "metrics": {
+        "after_execution_and_original_capital_stress_bps": "-1029.427326677170082431508632",
+        "after_execution_sensitivity_before_capital_bps": "-485.1350896781847957749890983",
+        "break_even_annual_capital_cost_bps_per_reference_leg": "-891.313630253170823027617434",
+        "fixed_base_funding_bps_at_reference": "-453.1350896781847957749890983",
+        "funding_cash_quote_per_base": "-9.3522551158680560",
+        "original_capital_stress_bps": "544.2922369989852866565195332",
+        "original_unit_weight_funding_bps": "-211.61490000",
+        "reference_mark_quote_per_base": "206.39000000",
+        "weighting_difference_bps": "-241.5201896781847957749890983"
+      },
+      "reference_time_ms": 1773475200000,
+      "role": "training",
+      "row_count": 298,
+      "symbol": "ZECUSDT"
+    },
+    {
+      "duration_days": "33.00000009259259259259259259",
+      "first_time_ms": 1782086400000,
+      "last_time_ms": 1784908800008,
+      "metrics": {
+        "after_execution_and_original_capital_stress_bps": "-165.3768786979467928222358215",
+        "after_execution_sensitivity_before_capital_bps": "15.44503961762905700018934336",
+        "break_even_annual_capital_cost_bps_per_reference_leg": "85.41574916086173453005460505",
+        "fixed_base_funding_bps_at_reference": "47.44503961762905700018934336",
+        "funding_cash_quote_per_base": "2.1513144639168518",
+        "original_capital_stress_bps": "180.8219183155758498224251649",
+        "original_unit_weight_funding_bps": "43.77240000",
+        "reference_mark_quote_per_base": "453.43295764",
+        "weighting_difference_bps": "3.67263961762905700018934336"
+      },
+      "reference_time_ms": 1782057600000,
+      "role": "validation",
+      "row_count": 99,
+      "symbol": "ZECUSDT"
+    },
+    {
+      "duration_days": "33.33333331018518518518518519",
+      "first_time_ms": 1784937600002,
+      "last_time_ms": 1787788800000,
+      "metrics": {
+        "after_execution_and_original_capital_stress_bps": "-138.6356592670264385805242459",
+        "after_execution_sensitivity_before_capital_bps": "44.01274243261841174925759076",
+        "break_even_annual_capital_cost_bps_per_reference_leg": "240.9697649859259189007449753",
+        "fixed_base_funding_bps_at_reference": "76.01274243261841174925759076",
+        "funding_cash_quote_per_base": "3.7627067631570440",
+        "original_capital_stress_bps": "182.6484016996448503297818367",
+        "original_unit_weight_funding_bps": "65.33060000",
+        "reference_mark_quote_per_base": "495.01000000",
+        "weighting_difference_bps": "10.68214243261841174925759076"
+      },
+      "reference_time_ms": 1784908800008,
+      "role": "test",
+      "row_count": 100,
+      "symbol": "ZECUSDT"
+    },
+    {
+      "duration_days": "99.33333325231481481481481481",
+      "first_time_ms": 1773504000007,
+      "last_time_ms": 1782057600000,
+      "metrics": {
+        "after_execution_and_original_capital_stress_bps": "-519.4847166428105889501162892",
+        "after_execution_sensitivity_before_capital_bps": "24.80752035617469770640324397",
+        "break_even_annual_capital_cost_bps_per_reference_leg": "45.57757518819976460570058529",
+        "fixed_base_funding_bps_at_reference": "56.80752035617469770640324397",
+        "funding_cash_quote_per_base": "3.7050898382313116",
+        "original_capital_stress_bps": "544.2922369989852866565195332",
+        "original_unit_weight_funding_bps": "58.06770000",
+        "reference_mark_quote_per_base": "652.21819488",
+        "weighting_difference_bps": "-1.26017964382530229359675603"
+      },
+      "reference_time_ms": 1773475200000,
+      "role": "training",
+      "row_count": 298,
+      "symbol": "BNBUSDT"
+    },
+    {
+      "duration_days": "33.00000009259259259259259259",
+      "first_time_ms": 1782086400000,
+      "last_time_ms": 1784908800008,
+      "metrics": {
+        "after_execution_and_original_capital_stress_bps": "-168.3967887150913251713946739",
+        "after_execution_sensitivity_before_capital_bps": "12.42512960048452465103049098",
+        "break_even_annual_capital_cost_bps_per_reference_leg": "68.7147316886651694683387437",
+        "fixed_base_funding_bps_at_reference": "44.42512960048452465103049098",
+        "funding_cash_quote_per_base": "2.6223103120061546",
+        "original_capital_stress_bps": "180.8219183155758498224251649",
+        "original_unit_weight_funding_bps": "45.75150000",
+        "reference_mark_quote_per_base": "590.27634485",
+        "weighting_difference_bps": "-1.32637039951547534896950902"
+      },
+      "reference_time_ms": 1782057600000,
+      "role": "validation",
+      "row_count": 99,
+      "symbol": "BNBUSDT"
+    },
+    {
+      "duration_days": "33.33333331018518518518518519",
+      "first_time_ms": 1784937600002,
+      "last_time_ms": 1787788800000,
+      "metrics": {
+        "after_execution_and_original_capital_stress_bps": "-156.9980181842940731277092978",
+        "after_execution_sensitivity_before_capital_bps": "25.65038351535077720207253886",
+        "break_even_annual_capital_cost_bps_per_reference_leg": "140.4358498440704009063960398",
+        "fixed_base_funding_bps_at_reference": "57.65038351535077720207253886",
+        "funding_cash_quote_per_base": "3.2378184893726457",
+        "original_capital_stress_bps": "182.6484016996448503297818367",
+        "original_unit_weight_funding_bps": "51.60810000",
+        "reference_mark_quote_per_base": "561.63000000",
+        "weighting_difference_bps": "6.04228351535077720207253886"
+      },
+      "reference_time_ms": 1784908800008,
+      "role": "test",
+      "row_count": 100,
+      "symbol": "BNBUSDT"
+    },
+    {
+      "duration_days": "49.83333333333333333333333333",
+      "first_time_ms": 1781769600000,
+      "last_time_ms": 1786060800000,
+      "metrics": {
+        "after_execution_and_original_capital_stress_bps": "-1658.443469028178655604970092",
+        "after_execution_sensitivity_before_capital_bps": "-1385.384108297585048299034019",
+        "break_even_annual_capital_cost_bps_per_reference_leg": "-5073.563874869082367516529265",
+        "fixed_base_funding_bps_at_reference": "-1353.384108297585048299034019",
+        "funding_cash_quote_per_base": "-0.0064448151237131",
+        "original_capital_stress_bps": "273.0593607305936073059360730",
+        "original_unit_weight_funding_bps": "-1330.24420000",
+        "reference_mark_quote_per_base": "0.04762000",
+        "weighting_difference_bps": "-23.139908297585048299034019"
+      },
+      "reference_time_ms": 1781755200000,
+      "role": "training",
+      "row_count": 298,
+      "symbol": "ONGUSDT"
+    },
+    {
+      "duration_days": "14.625",
+      "first_time_ms": 1786075200000,
+      "last_time_ms": 1787324400000,
+      "metrics": {
+        "after_execution_and_original_capital_stress_bps": "-4183.864262486450055479425314",
+        "after_execution_sensitivity_before_capital_bps": "-4103.727276185080192465726684",
+        "break_even_annual_capital_cost_bps_per_reference_leg": "-51208.90447205313744444411075",
+        "fixed_base_funding_bps_at_reference": "-4071.727276185080192465726684",
+        "funding_cash_quote_per_base": "-0.0171038767523432",
+        "original_capital_stress_bps": "80.13698630136986301369863014",
+        "original_unit_weight_funding_bps": "-1521.39030000",
+        "reference_mark_quote_per_base": "0.04200644",
+        "weighting_difference_bps": "-2550.336976185080192465726684"
+      },
+      "reference_time_ms": 1786060800000,
+      "role": "validation",
+      "row_count": 99,
+      "symbol": "ONGUSDT"
+    },
+    {
+      "duration_days": "5.374999988425925925925925926",
+      "first_time_ms": 1787328000001,
+      "last_time_ms": 1787788800000,
+      "metrics": {
+        "after_execution_and_original_capital_stress_bps": "-2728.633340657630841587467523",
+        "after_execution_sensitivity_before_capital_bps": "-2699.181285926529877609791217",
+        "break_even_annual_capital_cost_bps_per_reference_leg": "-91646.62060322167035610003935",
+        "fixed_base_funding_bps_at_reference": "-2667.181285926529877609791217",
+        "funding_cash_quote_per_base": "-0.0222282888369117",
+        "original_capital_stress_bps": "29.45205473110096397767630644",
+        "original_unit_weight_funding_bps": "-1698.15140000",
+        "reference_mark_quote_per_base": "0.08334000",
+        "weighting_difference_bps": "-969.029885926529877609791217"
+      },
+      "reference_time_ms": 1787324400000,
+      "role": "test",
+      "row_count": 100,
+      "symbol": "ONGUSDT"
+    },
+    {
+      "duration_days": "99.33333325231481481481481481",
+      "first_time_ms": 1773504000007,
+      "last_time_ms": 1782057600000,
+      "metrics": {
+        "after_execution_and_original_capital_stress_bps": "-502.5598539501182158524757629",
+        "after_execution_sensitivity_before_capital_bps": "41.73238304886707080404377033",
+        "break_even_annual_capital_cost_bps_per_reference_leg": "76.6727507982901319008893892",
+        "fixed_base_funding_bps_at_reference": "73.73238304886707080404377033",
+        "funding_cash_quote_per_base": "0.0006973612475381",
+        "original_capital_stress_bps": "544.2922369989852866565195332",
+        "original_unit_weight_funding_bps": "69.03680000",
+        "reference_mark_quote_per_base": "0.09458005",
+        "weighting_difference_bps": "4.69558304886707080404377033"
+      },
+      "reference_time_ms": 1773475200000,
+      "role": "training",
+      "row_count": 298,
+      "symbol": "DOGEUSDT"
+    },
+    {
+      "duration_days": "33.00000009259259259259259259",
+      "first_time_ms": 1782086400000,
+      "last_time_ms": 1784908800008,
+      "metrics": {
+        "after_execution_and_original_capital_stress_bps": "-181.0093113790606924574347416",
+        "after_execution_sensitivity_before_capital_bps": "-0.18739306348484263500957669",
+        "break_even_annual_capital_cost_bps_per_reference_leg": "-1.036340423940191946306632182",
+        "fixed_base_funding_bps_at_reference": "31.81260693651515736499042331",
+        "funding_cash_quote_per_base": "0.0002653183507296",
+        "original_capital_stress_bps": "180.8219183155758498224251649",
+        "original_unit_weight_funding_bps": "35.43720000",
+        "reference_mark_quote_per_base": "0.08340038",
+        "weighting_difference_bps": "-3.62459306348484263500957669"
+      },
+      "reference_time_ms": 1782057600000,
+      "role": "validation",
+      "row_count": 99,
+      "symbol": "DOGEUSDT"
+    },
+    {
+      "duration_days": "33.33333331018518518518518519",
+      "first_time_ms": 1784937600002,
+      "last_time_ms": 1787788800000,
+      "metrics": {
+        "after_execution_and_original_capital_stress_bps": "-143.9674126855367265945982576",
+        "after_execution_sensitivity_before_capital_bps": "38.68098901410812373518357907",
+        "break_even_annual_capital_cost_bps_per_reference_leg": "211.7784149993103211996511518",
+        "fixed_base_funding_bps_at_reference": "70.68098901410812373518357907",
+        "funding_cash_quote_per_base": "0.0004889710819996",
+        "original_capital_stress_bps": "182.6484016996448503297818367",
+        "original_unit_weight_funding_bps": "64.05660000",
+        "reference_mark_quote_per_base": "0.06918000",
+        "weighting_difference_bps": "6.62438901410812373518357907"
+      },
+      "reference_time_ms": 1784908800008,
+      "role": "test",
+      "row_count": 100,
+      "symbol": "DOGEUSDT"
+    },
+    {
+      "duration_days": "99.33333325231481481481481481",
+      "first_time_ms": 1773504000007,
+      "last_time_ms": 1782057600000,
+      "metrics": {
+        "after_execution_and_original_capital_stress_bps": "-526.0213668030943632485556202",
+        "after_execution_sensitivity_before_capital_bps": "18.27087019589092340796391300",
+        "break_even_annual_capital_cost_bps_per_reference_leg": "33.56812563895704695300548901",
+        "fixed_base_funding_bps_at_reference": "50.27087019589092340796391300",
+        "funding_cash_quote_per_base": "0.0049576406275822",
+        "original_capital_stress_bps": "544.2922369989852866565195332",
+        "original_unit_weight_funding_bps": "51.71770000",
+        "reference_mark_quote_per_base": "0.98618556",
+        "weighting_difference_bps": "-1.44682980410907659203608700"
+      },
+      "reference_time_ms": 1773475200000,
+      "role": "training",
+      "row_count": 298,
+      "symbol": "SUIUSDT"
+    },
+    {
+      "duration_days": "33.00000009259259259259259259",
+      "first_time_ms": 1782086400000,
+      "last_time_ms": 1784908800008,
+      "metrics": {
+        "after_execution_and_original_capital_stress_bps": "-176.9592760201737983228810674",
+        "after_execution_sensitivity_before_capital_bps": "3.86264229540205149954409751",
+        "break_even_annual_capital_cost_bps_per_reference_leg": "21.36158233130151844640824284",
+        "fixed_base_funding_bps_at_reference": "35.86264229540205149954409751",
+        "funding_cash_quote_per_base": "0.0025584343026278",
+        "original_capital_stress_bps": "180.8219183155758498224251649",
+        "original_unit_weight_funding_bps": "34.39820000",
+        "reference_mark_quote_per_base": "0.71339816",
+        "weighting_difference_bps": "1.46444229540205149954409751"
+      },
+      "reference_time_ms": 1782057600000,
+      "role": "validation",
+      "row_count": 99,
+      "symbol": "SUIUSDT"
+    },
+    {
+      "duration_days": "33.33333331018518518518518519",
+      "first_time_ms": 1784937600002,
+      "last_time_ms": 1787788800000,
+      "metrics": {
+        "after_execution_and_original_capital_stress_bps": "-172.6518205951485426803461393",
+        "after_execution_sensitivity_before_capital_bps": "9.99658110449630764943569737",
+        "break_even_annual_capital_cost_bps_per_reference_leg": "54.73128158512511881477510895",
+        "fixed_base_funding_bps_at_reference": "41.99658110449630764943569737",
+        "funding_cash_quote_per_base": "0.0030140946258697",
+        "original_capital_stress_bps": "182.6484016996448503297818367",
+        "original_unit_weight_funding_bps": "40.34380000",
+        "reference_mark_quote_per_base": "0.71770000",
+        "weighting_difference_bps": "1.65278110449630764943569737"
+      },
+      "reference_time_ms": 1784908800008,
+      "role": "test",
+      "row_count": 100,
+      "symbol": "SUIUSDT"
+    },
+    {
+      "duration_days": "49.83333333333333333333333333",
+      "first_time_ms": 1780632000001,
+      "last_time_ms": 1784923200001,
+      "metrics": {
+        "after_execution_and_original_capital_stress_bps": "-231.6591068836007274392492074",
+        "after_execution_sensitivity_before_capital_bps": "41.40025384699287986668686563",
+        "break_even_annual_capital_cost_bps_per_reference_leg": "151.6163142557097105485689560",
+        "fixed_base_funding_bps_at_reference": "73.40025384699287986668686563",
+        "funding_cash_quote_per_base": "0.0000121128768911",
+        "original_capital_stress_bps": "273.0593607305936073059360730",
+        "original_unit_weight_funding_bps": "75.05970000",
+        "reference_mark_quote_per_base": "0.00165025",
+        "weighting_difference_bps": "-1.65944615300712013331313437"
+      },
+      "reference_time_ms": 1780617600000,
+      "role": "training",
+      "row_count": 298,
+      "symbol": "PUMPUSDT"
+    },
+    {
+      "duration_days": "16.50000003472222222222222222",
+      "first_time_ms": 1784937600002,
+      "last_time_ms": 1786348800005,
+      "metrics": {
+        "after_execution_and_original_capital_stress_bps": "-93.40859770247644905179151753",
+        "after_execution_sensitivity_before_capital_bps": "-2.99763860810810810810810811",
+        "break_even_annual_capital_cost_bps_per_reference_leg": "-33.15569968657516104722444272",
+        "fixed_base_funding_bps_at_reference": "29.00236139189189189189189189",
+        "funding_cash_quote_per_base": "0.0000053654368575",
+        "original_capital_stress_bps": "90.41095909436834094368340942",
+        "original_unit_weight_funding_bps": "24.93580000",
+        "reference_mark_quote_per_base": "0.00185000",
+        "weighting_difference_bps": "4.06656139189189189189189189"
+      },
+      "reference_time_ms": 1784923200001,
+      "role": "validation",
+      "row_count": 99,
+      "symbol": "PUMPUSDT"
+    },
+    {
+      "duration_days": "16.66666666666666666666666667",
+      "first_time_ms": 1786363200000,
+      "last_time_ms": 1787788800000,
+      "metrics": {
+        "after_execution_and_original_capital_stress_bps": "-100.3706443281538731335514812",
+        "after_execution_sensitivity_before_capital_bps": "-9.04644341491186400113138991",
+        "break_even_annual_capital_cost_bps_per_reference_leg": "-99.0585553932849108123887195",
+        "fixed_base_funding_bps_at_reference": "22.95355658508813599886861009",
+        "funding_cash_quote_per_base": "0.0000063298334388",
+        "original_capital_stress_bps": "91.32420091324200913242009134",
+        "original_unit_weight_funding_bps": "12.67520000",
+        "reference_mark_quote_per_base": "0.00275767",
+        "weighting_difference_bps": "10.27835658508813599886861009"
+      },
+      "reference_time_ms": 1786348800005,
+      "role": "test",
+      "row_count": 100,
+      "symbol": "PUMPUSDT"
+    },
+    {
+      "duration_days": "99.33333325231481481481481481",
+      "first_time_ms": 1773504000007,
+      "last_time_ms": 1782057600000,
+      "metrics": {
+        "after_execution_and_original_capital_stress_bps": "-856.1337899878069156311837060",
+        "after_execution_sensitivity_before_capital_bps": "-311.8415529888216289746641728",
+        "break_even_annual_capital_cost_bps_per_reference_leg": "-572.930370471925340111854733",
+        "fixed_base_funding_bps_at_reference": "-279.8415529888216289746641728",
+        "funding_cash_quote_per_base": "-0.0082287408656363",
+        "original_capital_stress_bps": "544.2922369989852866565195332",
+        "original_unit_weight_funding_bps": "-256.93030000",
+        "reference_mark_quote_per_base": "0.29405000",
+        "weighting_difference_bps": "-22.9112529888216289746641728"
+      },
+      "reference_time_ms": 1773475200000,
+      "role": "training",
+      "row_count": 298,
+      "symbol": "TRXUSDT"
+    },
+    {
+      "duration_days": "33.00000009259259259259259259",
+      "first_time_ms": 1782086400000,
+      "last_time_ms": 1784908800008,
+      "metrics": {
+        "after_execution_and_original_capital_stress_bps": "-302.2569907637706932663894030",
+        "after_execution_sensitivity_before_capital_bps": "-121.4350724481948434439642381",
+        "break_even_annual_capital_cost_bps_per_reference_leg": "-671.572747260996883184782913",
+        "fixed_base_funding_bps_at_reference": "-89.43507244819484344396423814",
+        "funding_cash_quote_per_base": "-0.0029206837545578",
+        "original_capital_stress_bps": "180.8219183155758498224251649",
+        "original_unit_weight_funding_bps": "-91.17720000",
+        "reference_mark_quote_per_base": "0.32657029",
+        "weighting_difference_bps": "1.74212755180515655603576186"
+      },
+      "reference_time_ms": 1782057600000,
+      "role": "validation",
+      "row_count": 99,
+      "symbol": "TRXUSDT"
+    },
+    {
+      "duration_days": "33.33333331018518518518518519",
+      "first_time_ms": 1784937600002,
+      "last_time_ms": 1787788800000,
+      "metrics": {
+        "after_execution_and_original_capital_stress_bps": "-218.7039371144218295541335661",
+        "after_execution_sensitivity_before_capital_bps": "-36.05553541477697922435172943",
+        "break_even_annual_capital_cost_bps_per_reference_leg": "-197.4040565329901116234577406",
+        "fixed_base_funding_bps_at_reference": "-4.055535414776979224351729434",
+        "funding_cash_quote_per_base": "-0.0001339013045690",
+        "original_capital_stress_bps": "182.6484016996448503297818367",
+        "original_unit_weight_funding_bps": "-4.97390000",
+        "reference_mark_quote_per_base": "0.33016924",
+        "weighting_difference_bps": "0.918364585223020775648270566"
+      },
+      "reference_time_ms": 1784908800008,
+      "role": "test",
+      "row_count": 100,
+      "symbol": "TRXUSDT"
+    },
+    {
+      "duration_days": "49.83333333333333333333333333",
+      "first_time_ms": 1780632000001,
+      "last_time_ms": 1784923200001,
+      "metrics": {
+        "after_execution_and_original_capital_stress_bps": "-286.4422377824031311154598825",
+        "after_execution_sensitivity_before_capital_bps": "-13.38287705180952380952380952",
+        "break_even_annual_capital_cost_bps_per_reference_leg": "-49.01087080846631629240324892",
+        "fixed_base_funding_bps_at_reference": "18.61712294819047619047619048",
+        "funding_cash_quote_per_base": "0.0001759318118604",
+        "original_capital_stress_bps": "273.0593607305936073059360730",
+        "original_unit_weight_funding_bps": "16.97320000",
+        "reference_mark_quote_per_base": "0.09450000",
+        "weighting_difference_bps": "1.64392294819047619047619048"
+      },
+      "reference_time_ms": 1780617600000,
+      "role": "training",
+      "row_count": 298,
+      "symbol": "ENAUSDT"
+    },
+    {
+      "duration_days": "16.50000003472222222222222222",
+      "first_time_ms": 1784937600002,
+      "last_time_ms": 1786348800005,
+      "metrics": {
+        "after_execution_and_original_capital_stress_bps": "-107.4472879619070672775904662",
+        "after_execution_sensitivity_before_capital_bps": "-17.03632886753872633390705680",
+        "break_even_annual_capital_cost_bps_per_reference_leg": "-188.4321219262445784612182494",
+        "fixed_base_funding_bps_at_reference": "14.96367113246127366609294320",
+        "funding_cash_quote_per_base": "0.0001304083939194",
+        "original_capital_stress_bps": "90.41095909436834094368340942",
+        "original_unit_weight_funding_bps": "13.80400000",
+        "reference_mark_quote_per_base": "0.08715000",
+        "weighting_difference_bps": "1.15967113246127366609294320"
+      },
+      "reference_time_ms": 1784923200001,
+      "role": "validation",
+      "row_count": 99,
+      "symbol": "ENAUSDT"
+    },
+    {
+      "duration_days": "16.66666666666666666666666667",
+      "first_time_ms": 1786363200000,
+      "last_time_ms": 1787788800000,
+      "metrics": {
+        "after_execution_and_original_capital_stress_bps": "-76.05020429104196477668711285",
+        "after_execution_sensitivity_before_capital_bps": "15.27399662220004435573297849",
+        "break_even_annual_capital_cost_bps_per_reference_leg": "167.2502630130904856952761144",
+        "fixed_base_funding_bps_at_reference": "47.27399662220004435573297849",
+        "funding_cash_quote_per_base": "0.0004263169015390",
+        "original_capital_stress_bps": "91.32420091324200913242009134",
+        "original_unit_weight_funding_bps": "32.95200000",
+        "reference_mark_quote_per_base": "0.09018000",
+        "weighting_difference_bps": "14.32199662220004435573297849"
+      },
+      "reference_time_ms": 1786348800005,
+      "role": "test",
+      "row_count": 100,
+      "symbol": "ENAUSDT"
+    },
+    {
+      "duration_days": "49.83333333333333333333333333",
+      "first_time_ms": 1780632000001,
+      "last_time_ms": 1784923200001,
+      "metrics": {
+        "after_execution_and_original_capital_stress_bps": "-686.8658687425212416532787464",
+        "after_execution_sensitivity_before_capital_bps": "-413.8065080119276343473426734",
+        "break_even_annual_capital_cost_bps_per_reference_leg": "-1515.445238371440667593111128",
+        "fixed_base_funding_bps_at_reference": "-381.8065080119276343473426734",
+        "funding_cash_quote_per_base": "-0.0688147302675053",
+        "original_capital_stress_bps": "273.0593607305936073059360730",
+        "original_unit_weight_funding_bps": "-381.45250000",
+        "reference_mark_quote_per_base": "1.80234566",
+        "weighting_difference_bps": "-0.3540080119276343473426734"
+      },
+      "reference_time_ms": 1780617600000,
+      "role": "training",
+      "row_count": 298,
+      "symbol": "TRUMPUSDT"
+    },
+    {
+      "duration_days": "16.50000003472222222222222222",
+      "first_time_ms": 1784937600002,
+      "last_time_ms": 1786348800005,
+      "metrics": {
+        "after_execution_and_original_capital_stress_bps": "-120.7294262588807218960643618",
+        "after_execution_sensitivity_before_capital_bps": "-30.31846716451238095238095238",
+        "break_even_annual_capital_cost_bps_per_reference_leg": "-335.3406209624083613705932752",
+        "fixed_base_funding_bps_at_reference": "1.681532835487619047619047619",
+        "funding_cash_quote_per_base": "0.0002648414215893",
+        "original_capital_stress_bps": "90.41095909436834094368340942",
+        "original_unit_weight_funding_bps": "1.54380000",
+        "reference_mark_quote_per_base": "1.57500000",
+        "weighting_difference_bps": "0.137732835487619047619047619"
+      },
+      "reference_time_ms": 1784923200001,
+      "role": "validation",
+      "row_count": 99,
+      "symbol": "TRUMPUSDT"
+    },
+    {
+      "duration_days": "16.66666666666666666666666667",
+      "first_time_ms": 1786363200000,
+      "last_time_ms": 1787788800000,
+      "metrics": {
+        "after_execution_and_original_capital_stress_bps": "-125.3326324405473063721492281",
+        "after_execution_sensitivity_before_capital_bps": "-34.00843152730529723972913677",
+        "break_even_annual_capital_cost_bps_per_reference_leg": "-372.3923252239930047750340476",
+        "fixed_base_funding_bps_at_reference": "-2.008431527305297239729136774",
+        "funding_cash_quote_per_base": "-0.0003021479669864",
+        "original_capital_stress_bps": "91.32420091324200913242009134",
+        "original_unit_weight_funding_bps": "0.28280000",
+        "reference_mark_quote_per_base": "1.50439765",
+        "weighting_difference_bps": "-2.291231527305297239729136774"
+      },
+      "reference_time_ms": 1786348800005,
+      "role": "test",
+      "row_count": 100,
+      "symbol": "TRUMPUSDT"
+    },
+    {
+      "duration_days": "49.83333333333333333333333333",
+      "first_time_ms": 1780632000001,
+      "last_time_ms": 1784923200001,
+      "metrics": {
+        "after_execution_and_original_capital_stress_bps": "-184.1571901191733174508636092",
+        "after_execution_sensitivity_before_capital_bps": "88.9021706114202898550724638",
+        "break_even_annual_capital_cost_bps_per_reference_leg": "325.5781833428268140177402939",
+        "fixed_base_funding_bps_at_reference": "120.9021706114202898550724638",
+        "funding_cash_quote_per_base": "0.0004171124886094",
+        "original_capital_stress_bps": "273.0593607305936073059360730",
+        "original_unit_weight_funding_bps": "103.66940000",
+        "reference_mark_quote_per_base": "0.03450000",
+        "weighting_difference_bps": "17.2327706114202898550724638"
+      },
+      "reference_time_ms": 1780617600000,
+      "role": "training",
+      "row_count": 298,
+      "symbol": "PYTHUSDT"
+    },
+    {
+      "duration_days": "16.50000003472222222222222222",
+      "first_time_ms": 1784937600002,
+      "last_time_ms": 1786348800005,
+      "metrics": {
+        "after_execution_and_original_capital_stress_bps": "-85.96205514556440622425573225",
+        "after_execution_sensitivity_before_capital_bps": "4.44890394880393471942767717",
+        "break_even_annual_capital_cost_bps_per_reference_leg": "49.20757387564374370721407302",
+        "fixed_base_funding_bps_at_reference": "36.44890394880393471942767717",
+        "funding_cash_quote_per_base": "0.0001630359473630",
+        "original_capital_stress_bps": "90.41095909436834094368340942",
+        "original_unit_weight_funding_bps": "40.05940000",
+        "reference_mark_quote_per_base": "0.04473000",
+        "weighting_difference_bps": "-3.61049605119606528057232283"
+      },
+      "reference_time_ms": 1784923200001,
+      "role": "validation",
+      "row_count": 99,
+      "symbol": "PYTHUSDT"
+    },
+    {
+      "duration_days": "16.66666666666666666666666667",
+      "first_time_ms": 1786363200000,
+      "last_time_ms": 1787788800000,
+      "metrics": {
+        "after_execution_and_original_capital_stress_bps": "-74.88056004766127258851074290",
+        "after_execution_sensitivity_before_capital_bps": "16.44364086558073654390934844",
+        "break_even_annual_capital_cost_bps_per_reference_leg": "180.0578674781090651558073654",
+        "fixed_base_funding_bps_at_reference": "48.44364086558073654390934844",
+        "funding_cash_quote_per_base": "0.0002052072627066",
+        "original_capital_stress_bps": "91.32420091324200913242009134",
+        "original_unit_weight_funding_bps": "46.30070000",
+        "reference_mark_quote_per_base": "0.04236000",
+        "weighting_difference_bps": "2.14294086558073654390934844"
+      },
+      "reference_time_ms": 1786348800005,
+      "role": "test",
+      "row_count": 100,
+      "symbol": "PYTHUSDT"
+    },
+    {
+      "duration_days": "49.83333333333333333333333333",
+      "first_time_ms": 1780632000001,
+      "last_time_ms": 1784923200001,
+      "metrics": {
+        "after_execution_and_original_capital_stress_bps": "-133.0546483287087905520093714",
+        "after_execution_sensitivity_before_capital_bps": "140.0047124018848167539267016",
+        "break_even_annual_capital_cost_bps_per_reference_leg": "512.726287893190215202507486",
+        "fixed_base_funding_bps_at_reference": "172.0047124018848167539267016",
+        "funding_cash_quote_per_base": "0.0001642645003438",
+        "original_capital_stress_bps": "273.0593607305936073059360730",
+        "original_unit_weight_funding_bps": "145.89280000",
+        "reference_mark_quote_per_base": "0.00955000",
+        "weighting_difference_bps": "26.1119124018848167539267016"
+      },
+      "reference_time_ms": 1780617600000,
+      "role": "training",
+      "row_count": 298,
+      "symbol": "TUTUSDT"
+    },
+    {
+      "duration_days": "16.50000003472222222222222222",
+      "first_time_ms": 1784937600002,
+      "last_time_ms": 1786348800005,
+      "metrics": {
+        "after_execution_and_original_capital_stress_bps": "722.7828286536062186675557377",
+        "after_execution_sensitivity_before_capital_bps": "813.1937877479745596112391471",
+        "break_even_annual_capital_cost_bps_per_reference_leg": "8994.41611828480254005023236",
+        "fixed_base_funding_bps_at_reference": "845.1937877479745596112391471",
+        "funding_cash_quote_per_base": "0.0012025222817507",
+        "original_capital_stress_bps": "90.41095909436834094368340942",
+        "original_unit_weight_funding_bps": "97.72450000",
+        "reference_mark_quote_per_base": "0.01422777",
+        "weighting_difference_bps": "747.4692877479745596112391471"
+      },
+      "reference_time_ms": 1784923200001,
+      "role": "validation",
+      "row_count": 99,
+      "symbol": "TUTUSDT"
+    },
+    {
+      "duration_days": "16.66666666666666666666666667",
+      "first_time_ms": 1786363200000,
+      "last_time_ms": 1787788800000,
+      "metrics": {
+        "after_execution_and_original_capital_stress_bps": "-108.8207055842837376765070098",
+        "after_execution_sensitivity_before_capital_bps": "-17.49650467104172854408691847",
+        "break_even_annual_capital_cost_bps_per_reference_leg": "-191.5867261479069275577517572",
+        "fixed_base_funding_bps_at_reference": "14.50349532895827145591308153",
+        "funding_cash_quote_per_base": "0.0002328769826374",
+        "original_capital_stress_bps": "91.32420091324200913242009134",
+        "original_unit_weight_funding_bps": "36.49780000",
+        "reference_mark_quote_per_base": "0.16056611",
+        "weighting_difference_bps": "-21.99430467104172854408691847"
+      },
+      "reference_time_ms": 1786348800005,
+      "role": "test",
+      "row_count": 100,
+      "symbol": "TUTUSDT"
+    },
+    {
+      "duration_days": "49.83333333333333333333333333",
+      "first_time_ms": 1780632000001,
+      "last_time_ms": 1784923200001,
+      "metrics": {
+        "after_execution_and_original_capital_stress_bps": "-203.6979317998736015937445514",
+        "after_execution_sensitivity_before_capital_bps": "69.3614289307200057121915216",
+        "break_even_annual_capital_cost_bps_per_reference_leg": "254.0159353817338001834438667",
+        "fixed_base_funding_bps_at_reference": "101.3614289307200057121915216",
+        "funding_cash_quote_per_base": "0.0001391188652917",
+        "original_capital_stress_bps": "273.0593607305936073059360730",
+        "original_unit_weight_funding_bps": "112.20770000",
+        "reference_mark_quote_per_base": "0.01372503",
+        "weighting_difference_bps": "-10.8462710692799942878084784"
+      },
+      "reference_time_ms": 1780617600000,
+      "role": "training",
+      "row_count": 298,
+      "symbol": "BMTUSDT"
+    },
+    {
+      "duration_days": "16.50000003472222222222222222",
+      "first_time_ms": 1784937600002,
+      "last_time_ms": 1786348800005,
+      "metrics": {
+        "after_execution_and_original_capital_stress_bps": "-187.8953291081358594927353468",
+        "after_execution_sensitivity_before_capital_bps": "-97.48437001376751854905193735",
+        "break_even_annual_capital_cost_bps_per_reference_leg": "-1078.236211519625138834578796",
+        "fixed_base_funding_bps_at_reference": "-65.48437001376751854905193735",
+        "funding_cash_quote_per_base": "-0.0000794325408267",
+        "original_capital_stress_bps": "90.41095909436834094368340942",
+        "original_unit_weight_funding_bps": "-27.46770000",
+        "reference_mark_quote_per_base": "0.01213000",
+        "weighting_difference_bps": "-38.01667001376751854905193735"
+      },
+      "reference_time_ms": 1784923200001,
+      "role": "validation",
+      "row_count": 99,
+      "symbol": "BMTUSDT"
+    },
+    {
+      "duration_days": "16.66666666666666666666666667",
+      "first_time_ms": 1786363200000,
+      "last_time_ms": 1787788800000,
+      "metrics": {
+        "after_execution_and_original_capital_stress_bps": "-506.5398106921833209851243491",
+        "after_execution_sensitivity_before_capital_bps": "-415.2156097789413118527042578",
+        "break_even_annual_capital_cost_bps_per_reference_leg": "-4546.610927079407364787111622",
+        "fixed_base_funding_bps_at_reference": "-383.2156097789413118527042578",
+        "funding_cash_quote_per_base": "-0.0013320574595916",
+        "original_capital_stress_bps": "91.32420091324200913242009134",
+        "original_unit_weight_funding_bps": "-739.47420000",
+        "reference_mark_quote_per_base": "0.03476000",
+        "weighting_difference_bps": "356.2585902210586881472957422"
+      },
+      "reference_time_ms": 1786348800005,
+      "role": "test",
+      "row_count": 100,
+      "symbol": "BMTUSDT"
+    },
+    {
+      "duration_days": "41.33333333333333333333333333",
+      "first_time_ms": 1781841600000,
+      "last_time_ms": 1785398400000,
+      "metrics": {
+        "after_execution_and_original_capital_stress_bps": "-5091.594980265532472530318936",
+        "after_execution_sensitivity_before_capital_bps": "-4865.110962000692289881917110",
+        "break_even_annual_capital_cost_bps_per_reference_leg": "-21481.03428786595990895443240",
+        "fixed_base_funding_bps_at_reference": "-4833.110962000692289881917110",
+        "funding_cash_quote_per_base": "-0.2087420624488099",
+        "original_capital_stress_bps": "226.4840182648401826484018265",
+        "original_unit_weight_funding_bps": "-3131.07340000",
+        "reference_mark_quote_per_base": "0.43190000",
+        "weighting_difference_bps": "-1702.037562000692289881917110"
+      },
+      "reference_time_ms": 1781827200005,
+      "role": "training",
+      "row_count": 247,
+      "symbol": "REUSDT"
+    },
+    {
+      "duration_days": "13.83333333333333333333333333",
+      "first_time_ms": 1785412800000,
+      "last_time_ms": 1786593600000,
+      "metrics": {
+        "after_execution_and_original_capital_stress_bps": "-201.1135546491743989775308398",
+        "after_execution_sensitivity_before_capital_bps": "-125.3144678911835313976221640",
+        "break_even_annual_capital_cost_bps_per_reference_leg": "-1653.245088443927311812003248",
+        "fixed_base_funding_bps_at_reference": "-93.31446789118353139762216400",
+        "funding_cash_quote_per_base": "-0.0046283008402995",
+        "original_capital_stress_bps": "75.79908675799086757990867578",
+        "original_unit_weight_funding_bps": "-114.79940000",
+        "reference_mark_quote_per_base": "0.49598963",
+        "weighting_difference_bps": "21.48493210881646860237783600"
+      },
+      "reference_time_ms": 1785398400000,
+      "role": "validation",
+      "row_count": 83,
+      "symbol": "REUSDT"
+    },
+    {
+      "duration_days": "13.83333333333333333333333333",
+      "first_time_ms": 1786608000000,
+      "last_time_ms": 1787788800000,
+      "metrics": {
+        "after_execution_and_original_capital_stress_bps": "-101.4283055361013393865830141",
+        "after_execution_sensitivity_before_capital_bps": "-25.62921877811047180667433832",
+        "break_even_annual_capital_cost_bps_per_reference_leg": "-338.1204164100116461241975960",
+        "fixed_base_funding_bps_at_reference": "6.370781221889528193325661680",
+        "funding_cash_quote_per_base": "0.0002768104440911",
+        "original_capital_stress_bps": "75.79908675799086757990867578",
+        "original_unit_weight_funding_bps": "1.43790000",
+        "reference_mark_quote_per_base": "0.43450000",
+        "weighting_difference_bps": "4.932881221889528193325661680"
+      },
+      "reference_time_ms": 1786593600000,
+      "role": "test",
+      "row_count": 83,
+      "symbol": "REUSDT"
+    }
+  ],
+  "schema_version": 1,
+  "symbol_count": 17
+}
