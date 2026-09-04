@@ -39,6 +39,8 @@ AUTHORED_SUFFIXES = (
 MACHINE_EVIDENCE_JSON_PREFIXES = ("docs/ai/risk-review/latest/",)
 TEXT_EXCLUSIONS = {"tools/audit_financial_terminology.py"}
 IMMUTABLE_EVIDENCE_TEXT_EXCLUSIONS = {
+    "docs/model-research/action-value/accepted-edge-profitability-durability-audit-v1-2026-08-30.json",
+    "docs/model-research/action-value/polymarket-us-combo-rfq-overview-adjudication-v1-2026-09-01.json",
     "docs/model-research/action-value/round-040-causal-meta-label-capacity-ai-design.json",
     "docs/model-research/action-value/round-041-prequential-meta-label-ai-design.json",
     "docs/model-research/action-value/round-047-cost-aware-utility-tcn-design.json",
@@ -174,6 +176,8 @@ def _normalize(path: str) -> str:
 
 def _is_authored_text(path: str) -> bool:
     normalized = _normalize(path)
+    if normalized.startswith("docs/model-research/") and "/raw/" in normalized:
+        return False
     # Frozen evidence must retain its hash-bound historical bytes.
     if (
         normalized in TEXT_EXCLUSIONS

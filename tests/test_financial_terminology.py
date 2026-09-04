@@ -5,6 +5,37 @@ from __future__ import annotations
 from tools.audit_financial_terminology import audit_entries, audit_repository
 
 
+def test_audit_does_not_read_retained_raw_evidence(tmp_path, monkeypatch) -> None:
+    from pathlib import Path
+
+    from tools import audit_financial_terminology as audit
+
+    relative = "docs/model-research/polymarket/raw/example/source.raw.py"
+    target = tmp_path / relative
+    target.parent.mkdir(parents=True)
+    target.write_bytes(b"\xff")
+    monkeypatch.setattr(audit, "git_visible_files", lambda _root: [relative])
+
+    def forbidden_read(*_args, **_kwargs):
+        raise AssertionError("raw evidence must not be read by terminology lint")
+
+    monkeypatch.setattr(Path, "read_text", forbidden_read)
+    assert audit.audit_repository(tmp_path) == []
+
+
+def test_raw_exclusion_does_not_hide_authored_research() -> None:
+    term = "policy" + " replay"
+    findings = audit_entries(
+        [
+            ("docs/model-research/polymarket/raw/example/source.raw.md", term),
+            ("docs/model-research/polymarket/review.md", term),
+        ]
+    )
+    assert [item.path for item in findings] == [
+        "docs/model-research/polymarket/review.md"
+    ]
+
+
 def test_repository_authored_surfaces_use_financial_terminology() -> None:
     assert audit_repository() == []
 
@@ -46,6 +77,11 @@ def test_audit_preserves_exact_frozen_evidence_bytes() -> None:
                 f'"""Frozen {frozen_overlay_term} contract."""',
             ),
             ("docs/current.json", f'"uses": ["fixed-{frozen_term}"]'),
+            (
+                "docs/model-research/action-value/"
+                "polymarket-us-combo-rfq-overview-adjudication-v1-2026-09-01.json",
+                "executed" + " mean",
+            ),
         ]
     )
 

@@ -706,7 +706,7 @@ identity; its deadline grouping does not bind observation starts (review R4).
   well as every row-level gate. If a consumed runner omits a run-level gate,
   preserve it and adjudicate the retained values separately; never rerun when
   every omitted gate actually passed. In wide screens, rank and display feasible
-  rows only after latency, capacity, freshness, residual, fee, and stress gates;
+  rows only after latency, capacity, freshness, residual, fee, and stress-test acceptance criteria;
   infeasible gross headline rows must not appear ahead of actionable candidates.
 - Before an exhaustive graph or path extension, compute the rule-only topology
   cardinality and worst-case retained-output size before freezing. If either is

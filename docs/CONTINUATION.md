@@ -10,6 +10,20 @@ durability-audit SHA-256 is
 
 ## September 4 resumed review and USD1 campaign
 
+Dependency/branch review is recorded in
+`docs/review/2026-09-04/dependabot-reconciliation.md`. The September 4 GitHub
+check found zero open security alerts and four dependency PRs. Three Actions
+updates and ten Python/build/transitive package updates are integrated for focused
+verification; the Polymarket SDK remains at its audited 0.2.0 because a
+package-only upgrade contradicts the settlement adapter's exact-version guard.
+Seven of PR #9's eight routine upgrades are included; its SDK migration stays
+explicitly open. Old results and protected capture bytes remain unchanged.
+
+The expanded user mandate includes every file/text, model training, net
+profitability and risk-adjusted performance. Track semantic coverage separately
+from inventory. Prioritize economic mechanisms and prospective validation over
+larger models, version numbers, favorable historical samples or CI volume.
+
 Whole-product reevaluation is explicitly requested: include research ideas,
 economics, plans, interfaces and architecture, not only code/security checks.
 Read `docs/review/2026-09-04/product-reassessment.md` for the first keep/change/
