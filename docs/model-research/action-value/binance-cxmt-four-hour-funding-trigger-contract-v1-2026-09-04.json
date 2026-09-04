@@ -1,0 +1,67 @@
+{
+  "schema_version": "binance-cxmt-four-hour-funding-trigger-contract-v1",
+  "frozen_at_utc": "2026-09-04T18:28:00Z",
+  "purpose": "decide whether the official Binance funding-interval change creates a distinct exact-match post-change history test for rank 43 without prematurely sampling funding or prices",
+  "official_source_contract": {
+    "path": "docs/model-research/action-value/binance-cxmt-four-hour-funding-source-contract-v1-2026-09-04.json",
+    "canonical_sha256": "54e2ba6f701a13ba30da2c0035fbff41f5cd72b1d2bd3401bbd88b153324fa2d"
+  },
+  "required_official_terms": {
+    "effective_from_utc": "2026-09-04T08:15:00Z",
+    "old_funding_interval_hours": 8,
+    "new_funding_interval_hours": 4,
+    "new_funding_cap_percent_per_interval": "1.00",
+    "new_funding_floor_percent_per_interval": "-1.00",
+    "required_affected_symbol": "CXMTUSDT"
+  },
+  "retained_polymarket_inventory": {
+    "path": "data/binance-shein-quanto-polymarket-perps-match-v1/raw/polymarket-instruments.json",
+    "sha256": "427f7f9578285dc3c4200c3ad5c185f6cbb2a343f91e249184aae652805e9083",
+    "expected_symbol": "CXMT-USD",
+    "expected_base_asset": "CXMT",
+    "expected_instrument_id": 50,
+    "expected_funding_interval": "1h"
+  },
+  "exact_match_rule": "Binance base asset CXMT must equal the Polymarket base_asset CXMT literally; leveraged ETF, related-company, translated-name, or substring matches are prohibited.",
+  "economic_test_boundary": {
+    "post_change_binance_settlement_times_utc": [
+      "2026-09-04T12:00:00Z",
+      "2026-09-04T16:00:00Z",
+      "2026-09-04T20:00:00Z",
+      "2026-09-05T00:00:00Z",
+      "2026-09-05T04:00:00Z",
+      "2026-09-05T08:00:00Z",
+      "2026-09-05T12:00:00Z",
+      "2026-09-05T16:00:00Z",
+      "2026-09-05T20:00:00Z",
+      "2026-09-06T00:00:00Z",
+      "2026-09-06T04:00:00Z",
+      "2026-09-06T08:00:00Z"
+    ],
+    "minimum_complete_post_change_settlements": 12,
+    "earliest_history_capture_utc": "2026-09-06T08:10:00Z",
+    "role_split": "oldest 6 training, next 3 validation, newest 3 test with orientation frozen before history access",
+    "fixed_execution_hurdle_bips": "20",
+    "annual_opportunity_hurdle_bips_per_leg": "500",
+    "capital_legs": 2,
+    "premature_action": "make zero funding, price, book, fee, account, credential, order, fund, or transaction requests before the earliest history capture"
+  },
+  "decision_rules": [
+    "If any required official term or the exact retained Polymarket match fails, reject without market data.",
+    "If all source and match gates pass, admit only a future post-change history test; do not claim that a wider cap or shorter interval implies favorable realized funding.",
+    "At the future test, freeze one fixed receiving-leg orientation before history access and reject unless training, validation, and test are each positive after the fixed execution and two-leg capital hurdles.",
+    "Books, fees, account evidence, or execution testing require a separately frozen later gate after a persistent history survivor.",
+    "Never place or simulate an order under this contract."
+  ],
+  "authority": {
+    "account_requests": 0,
+    "credentials_used": false,
+    "funds_used": false,
+    "orders_or_transactions": 0,
+    "protected_capture_touched": false,
+    "public_unauthenticated_read_only_requests": 1,
+    "signed_requests": 0,
+    "trading_authority": false
+  },
+  "contract_sha256": "b03eb43353a1e935123cbbc3671f8d9739c91d1c2900867478ca3749e65372ed"
+}

@@ -3351,6 +3351,10 @@
       ],
       "canonical_artifacts": [
         {
+          "path": "docs/model-research/action-value/binance-cxmt-four-hour-funding-trigger-v1-2026-09-04.json",
+          "result_sha256": "99d0fded6f7378d0b398b33cd5221f515704cd8c31c3b360e9773eac784f6402"
+        },
+        {
           "path": "docs/model-research/action-value/polymarket-binance-tradfi-perps-funding-prefilter-contract-v1.json",
           "result_sha256": "b566862fd25b0fb485a5a20fb01b71f0cc0c43dd9cb5ca9bfede1e1b4fe0957e"
         },
@@ -3387,10 +3391,10 @@
           "result_sha256": "bce940e94a6846e2524f01d77f18b7e921bc273b1f027d9dc7cab4a5b99faf50"
         }
       ],
-      "current_status": "market_direction_independent_fixed_orientation_cross_venue_Polymarket_and_Binance_TradFi_perpetual_funding_spread_terminal_for_the_frozen_current_top_five_SKHYNIX_CRWV_ARM_HOOD_MSTR_the_current_prefilter_found_seven_of_36_matches_above_the_conservative_threshold_but_every_fixed_orientation_training_validation_and_test_role_failed_after_20_bips_execution_and_two_500_bip_annual_capital_hurdles_the_new_2026_09_01_HK0625USDT_SHEIN_quanto_announcement_triggered_one_current_Polymarket_Perps_inventory_reconciliation_but_the_inventory_retained_the_same_67_symbol_membership_with_zero_additions_zero_removals_and_zero_SHEIN_or_HK0625_matches_so_no_new_funding_population_exists_Binance_deployment_was_not_inferred_from_the_announcement_and_no_funding_ticker_book_conversion_credential_account_order_or_protected_capture_was_used_not_accepted_or_deployment_ready",
+      "current_status": "market_direction_independent_fixed_orientation_cross_venue_Polymarket_and_Binance_TradFi_perpetual_funding_spread_reopened_only_for_a_distinct_source_bound_CXMT_post_change_history_test_Binance_changed_CXMTUSDT_from_8_hour_to_4_hour_funding_effective_2026_09_04T08_15_00Z_and_halved_the_per_settlement_cap_from_2_to_1_percent_while_retained_inventories_prove_an_exact_active_CXMTUSDT_to_CXMT_USD_match_the_absolute_daily_cap_remains_6_percent_so_no_favorable_realized_carry_is_inferred_and_zero_history_price_book_fee_account_credential_order_or_fund_requests_are_allowed_before_twelve_complete_post_change_settlements_at_2026_09_06T08_10_00Z_the_prior_top_five_history_and_HK0625_SHEIN_no_match_rejections_remain_terminal_not_accepted_or_deployment_ready",
       "market_direction_forecast_required": false,
       "mechanism": "polymarket_binance_TradFi_perpetual_fixed_orientation_cross_venue_funding_spread",
-      "next_action": "do_not_request_books_or_repeat_the_frozen_top_five_window_or_the_exact_HK0625USDT_to_67_Polymarket_instrument_match_screen_reopen_only_after_a_later_exact_common_underlying_instrument_appears_or_a_material_funding_cash_flow_fee_session_unit_conversion_or_execution_architecture_change_capable_of_clearing_the_retained_role_deficits_then_preregister_one_complete_fixed_orientation_history_before_any_depth_or_account_access",
+      "next_action": "at_or_after_2026_09_06T08_10_00Z_run_only_one_prospectively_frozen_CXMT_post_change_history_test_freeze_the_receiving_leg_orientation_before_history_access_require_exactly_twelve_complete_4_hour_Binance_settlements_with_matching_Polymarket_hourly_cash_flows_split_6_training_3_validation_3_test_and_reject_unless_every_role_clears_20_bips_execution_plus_two_500_bip_annual_capital_hurdles_do_not_request_books_fees_accounts_credentials_orders_or_funds_before_a_persistent_survivor_and_do_not_repeat_the_prior_top_five_or_HK0625_SHEIN_work",
       "priority_rank": 43,
       "prohibited_shortcuts": [
         "selecting_or_inverting_orientation_after_viewing_history",
@@ -3401,7 +3405,7 @@
         "repairing_the_consumed_twelve_row_gate_into_a_promotion_from_eleven_rows",
         "calling_gross_funding_spread_an_edge_or_deployment_ready"
       ],
-      "retry_trigger": "material_Polymarket_or_Binance_TradFi_perpetual_funding_cash_flow_fee_market_session_instrument_conversion_or_execution_architecture_change_capable_of_clearing_the_retained_training_validation_and_test_deficits_after_2026_08_29T19_38_48Z",
+      "retry_trigger": "not_before_2026_09_06T08_10_00Z_when_twelve_complete_post_change_CXMTUSDT_4_hour_settlements_exist_or_a_later_material_Polymarket_or_Binance_TradFi_perpetual_funding_cash_flow_fee_market_session_instrument_conversion_or_execution_architecture_change",
       "venue_scope": "Polymarket_Perps_and_Binance_USDT_margined_TradFi_perpetuals_with_exact_non_crypto_base_asset_matches"
     },
     {
@@ -4238,7 +4242,7 @@
       ]
     }
   ],
-  "result_sha256": "8c99e661477a511cf24a64da40c665e4a3faeb95daca21dbf760ebfd320a3e08",
+  "result_sha256": "4ceb5de5af67264d50129ae2b44ee33e4ded59cdb3a32eef4ffe85459002e3ee",
   "schema_version": "structural-edge-priority-registry-v1",
   "terminal_do_not_repeat": [
     {

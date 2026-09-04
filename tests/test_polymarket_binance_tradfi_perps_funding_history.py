@@ -233,11 +233,11 @@ def test_consumed_history_and_offline_shortfall_adjudication_are_source_bound() 
     assert all(value["passes"] is False for value in arm["roles"].values())
 
 
-def test_registry_terminalizes_tradfi_cross_venue_funding_without_acceptance() -> None:
+def test_current_cxmt_trigger_reopens_only_a_future_history_test() -> None:
     registry = json.loads(REGISTRY.read_text(encoding="ascii"))
     assert registry["result_sha256"] == REGISTRY_HASH
     assert _canonical_hash(registry) == REGISTRY_HASH
-    assert len(registry["prioritized_hypotheses"]) == 44
+    assert len(registry["prioritized_hypotheses"]) == 65
     hypothesis = next(
         value
         for value in registry["prioritized_hypotheses"]
@@ -246,7 +246,36 @@ def test_registry_terminalizes_tradfi_cross_venue_funding_without_acceptance() -
     )
     assert hypothesis["priority_rank"] == 43
     assert hypothesis["market_direction_forecast_required"] is False
-    assert "negative_24_6296621005_bips" in hypothesis["current_status"]
+    assert "CXMT_post_change_history_test" in hypothesis["current_status"]
+    assert "not_before_2026_09_06T08_10_00Z" in hypothesis["retry_trigger"]
+    assert hypothesis["canonical_artifacts"][0] == {
+        "path": (
+            "docs/model-research/action-value/"
+            "binance-cxmt-four-hour-funding-trigger-v1-2026-09-04.json"
+        ),
+        "result_sha256": (
+            "99d0fded6f7378d0b398b33cd5221f515704cd8c31c3b360e9773eac784f6402"
+        ),
+    }
+
+    trigger_path = (
+        ACTION / "binance-cxmt-four-hour-funding-trigger-v1-2026-09-04.json"
+    )
+    trigger = json.loads(trigger_path.read_text(encoding="utf-8"))
+    assert _canonical_hash(trigger) == trigger["result_sha256"]
+    assert trigger["exact_cross_venue_match"]["exact_match_passed"] is True
+    assert trigger["official_change"]["daily_cap_increased"] is False
+    assert trigger["economic_interpretation"]["history_requests_made_now"] == 0
+    assert trigger["adjudication"]["candidate_for_post_change_history"] is True
+    assert trigger["adjudication"]["accepted_edge"] is False
+
+    source = trigger["official_change"]
+    raw = ROOT / source["raw_path"]
+    journal = ROOT / source["journal_path"]
+    assert len(raw.read_bytes()) == source["raw_bytes"]
+    assert hashlib.sha256(raw.read_bytes()).hexdigest() == source["raw_sha256"]
+    assert hashlib.sha256(journal.read_bytes()).hexdigest() == source["journal_sha256"]
+
     terminal = {value["family"]: value for value in registry["terminal_do_not_repeat"]}
     assert terminal[
         "polymarket_binance_TradFi_perpetual_fixed_orientation_cross_venue_funding_spread_top_five_snapshot"

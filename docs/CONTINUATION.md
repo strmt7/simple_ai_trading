@@ -1,12 +1,43 @@
 # Continue Development
 
-Current canonical status after the Binance scheduled-yield publication gate:
+Current canonical status after the CXMT funding-cadence trigger gate:
 accepted edges 37, ranked hypotheses 65, terminal families 182,
 and stable current account-qualified after-all-cost edges zero. Registry
 SHA-256 is
-`8c99e661477a511cf24a64da40c665e4a3faeb95daca21dbf760ebfd320a3e08`;
+`4ceb5de5af67264d50129ae2b44ee33e4ded59cdb3a32eef4ffe85459002e3ee`;
 durability-audit SHA-256 is
-`9e764a34aef6b6c669f4da1df50c8b5c7fa89cf931dd670845b88d94715c5395`.
+`d0736b1f3da7af118516993839f271d10dcadc3a3edefaef9202a0d05f6ee2f7`.
+
+## 2026-09-04 Binance CXMT four-hour funding trigger
+
+A fresh official Binance notice materially changed nine TradFi perpetuals from
+eight-hour to four-hour funding effective 2026-09-04T08:15:00Z, with the
+per-settlement cap/floor changed from plus or minus 2 percent to plus or minus
+1 percent. Exact retained inventories prove a literal active `CXMTUSDT` to
+`CXMT-USD` cross-venue match, so rank 43 has a distinct post-change history
+question. No alias or merely related product was used.
+
+This is not yet an edge. Three old 2-percent settlements per day and six new
+1-percent settlements per day both have the same arithmetic 6-percent absolute
+daily cap. The change affects timing, not the maximum daily bound, and proves
+nothing about the sign or persistence of realized funding. Sampling now would
+also be underpowered: twelve complete new four-hour settlements do not exist
+until the 2026-09-06 08:00 UTC settlement.
+
+At or after 2026-09-06T08:10:00Z, freeze the receiving-leg orientation before
+history access and run one exact twelve-settlement CXMT test split 6 training,
+3 validation, and 3 test. Every role must clear a fixed 20-bip execution hurdle
+plus two 500-bip annual capital hurdles. Request no books, fees, accounts,
+credentials, orders, funds, or transactions before a persistent survivor.
+Source contract/result, trigger contract/result, raw, and journal SHA-256 values
+are
+`54e2ba6f701a13ba30da2c0035fbff41f5cd72b1d2bd3401bbd88b153324fa2d`,
+`0943e3e603a75d3b3af28ed0c356b10f1980219bca66d98e1f8f1f40b2416ebd`,
+`b03eb43353a1e935123cbbc3671f8d9739c91d1c2900867478ca3749e65372ed`,
+`99d0fded6f7378d0b398b33cd5221f515704cd8c31c3b360e9773eac784f6402`,
+`3b570055daeccf38d9d9bc9d9130cd11b99142e4dbf1777a6af835ffa9c044da`,
+and `8fdf47248870819a032bc9bb856130c6685bd7856a54db7c6bba4322ede649bb`.
+No credentials or protected Polymarket capture bytes were touched.
 
 ## 2026-09-04 Binance scheduled-yield publication gate
 

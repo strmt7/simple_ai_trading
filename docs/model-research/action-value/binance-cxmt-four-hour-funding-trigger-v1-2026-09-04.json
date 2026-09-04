@@ -1,0 +1,103 @@
+{
+  "schema_version": "binance-cxmt-four-hour-funding-trigger-v1",
+  "created_at_utc": "2026-09-04T18:34:00Z",
+  "result_sha256": "99d0fded6f7378d0b398b33cd5221f515704cd8c31c3b360e9773eac784f6402",
+  "purpose": "source-bind the material CXMT funding-cadence change and determine the earliest non-wasteful post-change rank 43 history test",
+  "contract": {
+    "path": "docs/model-research/action-value/binance-cxmt-four-hour-funding-trigger-contract-v1-2026-09-04.json",
+    "sha256": "b03eb43353a1e935123cbbc3671f8d9739c91d1c2900867478ca3749e65372ed"
+  },
+  "official_change": {
+    "title": "Binance Futures Will Adjust the Funding Interval of Multiple USDⓈ-Margined TradFi Perpetual Contracts (2026-09-04)",
+    "article_code": "68eb952fbf3e4abbb105c78ed6c406e6",
+    "published_at_utc": "2026-09-02T07:15:13.359000Z",
+    "effective_from_utc": "2026-09-04T08:15:00Z",
+    "old_funding_interval_hours": 8,
+    "new_funding_interval_hours": 4,
+    "old_funding_cap_percent_per_interval": "2.00",
+    "new_funding_cap_percent_per_interval": "1.00",
+    "new_funding_floor_percent_per_interval": "-1.00",
+    "old_absolute_daily_cap_percent": "6.00",
+    "new_absolute_daily_cap_percent": "6.00",
+    "daily_cap_increased": false,
+    "affected_symbols": [
+      "KODEX200USDT",
+      "NAVERUSDT",
+      "LGELECTRONICSUSDT",
+      "HANMIUSDT",
+      "SAMSUNGEMUSDT",
+      "CXMTUSDT",
+      "ZHONGJIUSDT",
+      "CSOPSAMSUNG2LUSDT",
+      "CSOPSKHYNIX2LUSDT"
+    ],
+    "source_contract_path": "docs/model-research/action-value/binance-cxmt-four-hour-funding-source-contract-v1-2026-09-04.json",
+    "source_contract_sha256": "54e2ba6f701a13ba30da2c0035fbff41f5cd72b1d2bd3401bbd88b153324fa2d",
+    "source_result_path": "docs/model-research/action-value/binance-cxmt-four-hour-funding-source-result-v1-2026-09-04.json",
+    "source_result_sha256": "0943e3e603a75d3b3af28ed0c356b10f1980219bca66d98e1f8f1f40b2416ebd",
+    "raw_path": "data/binance-cxmt-four-hour-funding-trigger-v1/raw/announcement.json",
+    "raw_bytes": 54120,
+    "raw_sha256": "3b570055daeccf38d9d9bc9d9130cd11b99142e4dbf1777a6af835ffa9c044da",
+    "journal_path": "data/binance-cxmt-four-hour-funding-trigger-v1/request-journal.jsonl",
+    "journal_sha256": "8fdf47248870819a032bc9bb856130c6685bd7856a54db7c6bba4322ede649bb"
+  },
+  "exact_cross_venue_match": {
+    "matched_base_asset": "CXMT",
+    "binance": {
+      "symbol": "CXMTUSDT",
+      "status": "TRADING",
+      "contract_type": "TRADIFI_PERPETUAL",
+      "quote_and_margin_asset": "USDT",
+      "retained_exchange_info_path": "data/polymarket-binance-tradfi-perps-funding-prefilter-v1/response-03-binance-exchange-info.json",
+      "retained_exchange_info_sha256": "dccd2fa8bc4b1bb567e4e2d6117f154a57bc2f260b4b898a8c6869585598602c"
+    },
+    "polymarket": {
+      "instrument_id": 50,
+      "symbol": "CXMT-USD",
+      "base_asset": "CXMT",
+      "quote_asset": "pUSD",
+      "funding_interval": "1h",
+      "retained_inventory_path": "data/binance-shein-quanto-polymarket-perps-match-v1/raw/polymarket-instruments.json",
+      "retained_inventory_sha256": "427f7f9578285dc3c4200c3ad5c185f6cbb2a343f91e249184aae652805e9083"
+    },
+    "exact_match_passed": true,
+    "alias_or_related_asset_match_used": false
+  },
+  "economic_interpretation": {
+    "material_cash_flow_timing_change": true,
+    "larger_daily_absolute_cap_proved": false,
+    "favorable_realized_funding_proved": false,
+    "reason": "The interval halves and per-settlement cap halves, leaving the arithmetic absolute daily cap unchanged at 6 percent. Only realized post-change cross-venue cash flows can establish a direction-independent spread.",
+    "fixed_orientation_required_before_history_access": true,
+    "minimum_complete_post_change_settlements": 12,
+    "earliest_non_wasteful_history_capture_utc": "2026-09-06T08:10:00Z",
+    "post_change_role_split": "6 training, 3 validation, 3 test",
+    "fixed_execution_hurdle_bips": "20",
+    "annual_opportunity_hurdle_bips_per_leg": "500",
+    "history_requests_made_now": 0,
+    "price_or_book_requests_made_now": 0
+  },
+  "adjudication": {
+    "status": "material_rank_43_CXMT_cadence_trigger_source_bound_wait_for_twelve_complete_post_change_settlements",
+    "candidate_for_post_change_history": true,
+    "accepted_edge": false,
+    "deployment_ready": false,
+    "market_direction_forecast_required": false,
+    "profitability_claim": false,
+    "stable_current_account_qualified_after_all_cost_edge": false,
+    "accepted_edge_count_change": 0,
+    "ranked_hypothesis_count_change": 0,
+    "terminal_family_count_change": 0,
+    "next_action": "At or after 2026-09-06T08:10:00Z, and only once, freeze the exact CXMT receiving-leg orientation before history access, retain the twelve complete post-change Binance settlements and matching Polymarket hourly funding, and reject unless training, validation, and test each clear the frozen execution and two-leg capital hurdles. Request no books, fees, accounts, credentials, orders, funds, or transactions before a persistent history survivor."
+  },
+  "authority": {
+    "account_requests": 0,
+    "credentials_used": false,
+    "funds_used": false,
+    "orders_or_transactions": 0,
+    "protected_capture_touched": false,
+    "public_unauthenticated_read_only_requests": 1,
+    "signed_requests": 0,
+    "trading_authority": false
+  }
+}
