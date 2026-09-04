@@ -1,0 +1,67 @@
+{
+  "schema_version": "maker-execution-semantics-review-v1",
+  "status": "synthetic_counterexamples_and_retained_example_only",
+  "source_sha256": {
+    "src/simple_ai_trading/queue_censored_actions.py": "75e100e7c96d29a46d7fedc6cb795dc761db25ab13e539ee3473d82093b3c3c2",
+    "src/simple_ai_trading/paper_execution.py": "18e930b38d4fc8bacc8b4f1c0a00367ce28bef224ce6ed3f79aa14a3444b3a1d",
+    "src/simple_ai_trading/polymarket_liquidity_rewards.py": "9176eff0a8eb16d110fee86a8c6d71184f21919944d230606cb5505e0a209d19",
+    "src/simple_ai_trading/polymarket_maker_rebates.py": "059db170ac9e55fe0d454b26006f324580314995cded1b8328b77c27b6a524b0",
+    "tools/probe_round58_two_sided_maker_support.py": "4064e6202cea1264a50bca9f3aaa917033fcb29f1157b4e829814de76fa23934",
+    "tools/publish_round58_two_sided_maker_feasibility.py": "6db332d01bed052223af539947d298d5a5aac53c45045b86a238469e7a999c5e",
+    "docs/model-research/polymarket/crypto-maker-rebate-economics-v1.json": "0ee4a0fa19093bc24a48950f1286acd3a96f390762b40f4d73ffe405a020add5",
+    "tools/review_maker_execution_semantics.py": "97a6f7d576fcad6b6ac4feb6aaefb9d5438f055a29044b3e0f60490aa2d59f8c",
+    "docs/review/2026-09-04/maker-execution-review-plan.json": "d16c5f48b8c29b69fe105bdbd5766a8b93ab9611045a229b45889f7e51836b7d"
+  },
+  "equal_quote_notional_example": {
+    "buy_price": "100",
+    "sell_price": "125",
+    "quote_notional_per_side": "1000",
+    "bought_base": "10",
+    "sold_base": "8",
+    "net_cash_quote": "0",
+    "residual_base": "2",
+    "residual_liquidation_value": null
+  },
+  "equal_base_example": {
+    "net_cash_quote": "200",
+    "residual_base": "0"
+  },
+  "full_fill_censoring": {
+    "queue_ahead": 5,
+    "own_quantity": 10,
+    "four_matching_printed_units": {
+      "full_fill": false,
+      "reported_matching_trade_count": 0,
+      "reported_printed_quantity_through_fill": 0.0
+    },
+    "fourteen_matching_printed_units": {
+      "full_fill": false,
+      "reported_matching_trade_count": 0,
+      "reported_printed_quantity_through_fill": 0.0
+    },
+    "fifteen_matching_printed_units": {
+      "full_fill": true,
+      "reported_matching_trade_count": 1,
+      "reported_printed_quantity_through_fill": 15.0
+    },
+    "fourteen_units_implied_partial_under_same_fifo_assumption": 9,
+    "owned_fill_claim": false
+  },
+  "polymarket_conditional_stress_break_even": {
+    "source_example_not_market_observation": true,
+    "both_fill_gross_gain": "1.00",
+    "assumed_orphan_loss_equal_to_worst_settlement_loss": "24.50",
+    "completion_probability_must_exceed": "0.96078431372549019607843137254901960784313725490196",
+    "conditioning": "at_least_one_full_fill_binary_abstraction",
+    "actual_completion_probability": null,
+    "actual_conditional_orphan_mean_loss": null,
+    "incremental_costs_and_rewards": "excluded_not_assumed_zero_in_reality"
+  },
+  "venue_requests": 0,
+  "historical_outcomes_opened": false,
+  "model_trained": false,
+  "profitability_claim": false,
+  "accepted_edge": false,
+  "trading_authority": false,
+  "result_sha256": "7315e011b3f7b9b184252d38a378961b5bf69e88352597532af3f85cc3fee5da"
+}

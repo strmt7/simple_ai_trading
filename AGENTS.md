@@ -52,6 +52,11 @@ identity; its deadline grouping does not bind observation starts (review R4).
   Stop may cancel and sell only bot-owned hashes and
   parent-bound lots; foreign state is never modified.
 - Future books, labels, resolutions, fills, and PnL never enter inference.
+  Full-fill support is not an inventory ledger: a censored incomplete label
+  cannot establish zero partial fill or zero PnL, and equal quote notionals at
+  different leg prices do not establish equal net base quantities. Before any
+  forward maker economic replay, reconcile partial quantities, cash and residual
+  exposure; preserve frozen historical support implementations and results.
   Unknown order or redemption state blocks new exposure. Polymarket settlement
   never auto-deploys wallets or creates token approvals.
 - A public fill after an oracle deadline does not prove its maker order was

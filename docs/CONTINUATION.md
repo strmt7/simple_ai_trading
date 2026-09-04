@@ -10,6 +10,14 @@ durability-audit SHA-256 is
 
 ## September 4 resumed review and USD1 campaign
 
+The maker-execution source audit found two forward-use gaps: Round 58 uses
+equal quote notionals at different bid/ask prices, leaving residual base even
+when both full-fill flags are true; its incomplete full-fill summary also
+cannot distinguish no fill from partial inventory. See
+`review/2026-09-04/maker-execution-semantics.md` before maker replay/training.
+Synthetic counterexamples reconstruct; no historical result or retry trigger
+changed. This is not a new market observation or a proved edge.
+
 The prospectively fixed NYC September 5 eleven-bin event is now consumed.
 Its 17 frontier rows included four gross-positive ordering rows, but none
 passed the frozen fee/tick gate. A zero-network fee-only audit also rejected
