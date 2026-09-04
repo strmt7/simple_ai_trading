@@ -1,14 +1,22 @@
 # Continue Development
 
-Current canonical status after the NYC September 5 frontier:
-accepted scopes 37, ranked hypotheses 65, terminal observations 187,
+Current canonical status after the Paradex index-boundary study:
+accepted scopes 37, ranked hypotheses 65, terminal observations 188,
 and stable current account-qualified after-all-cost edges zero. Registry
 SHA-256 is
-`0591e4c2699a18a1cba1a8168a175779722e38c4e2c1b4dde3fa0bdba9866b41`;
+`b3aee5cabed7e9a52412b51e966d57072fad3de8db8cdb6700a6acdc7bd42b20`;
 durability-audit SHA-256 is
-`db071c55485a23d507ad8a009483710901c28f5d165ff5993b1ce85ae60aa4db`.
+`ffc6d693fb073233e94f172722c03d25b65c964cebbb67c57277b5abba3544af`.
 
 ## September 4 resumed review and USD1 campaign
+
+The disjoint August 27–September 4 Paradex/Binance cumulative-index study is
+consumed. All 84 responses passed source gates, yielding 78 fixed-base
+intervals. Every gross role spread was positive but below 8 bp; no asset
+covers even one 20-bp execution allowance across the entire window. Read
+`review/2026-09-04/paradex-index-review.md` before any rank-59 continuation.
+Do not refetch, roll the window mechanically, reorient or request books to
+rescue it. No account access or profitable edge was established.
 
 The maker-execution source audit found two forward-use gaps: Round 58 uses
 equal quote notionals at different bid/ask prices, leaving residual base even

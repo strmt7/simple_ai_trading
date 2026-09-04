@@ -1,0 +1,31 @@
+{
+  "schema_version": "paradex-index-source-plan-v1",
+  "base_head": "050c94242e1f74b10f2595507af157aea1295c5b",
+  "scope": "Source-only verification of public cumulative funding-index units and bounded historical endpoint semantics, prior to any new market population freeze.",
+  "source_selected_by": "Two public documentation search queries; discovery only, no search-result numbers accepted as economic evidence.",
+  "prior_search": "Exact docs.paradex.trade host and exact selected URLs had no retained prose, source, contract or request-journal hit in the scoped docs search before capture. The existing September 1 preregistration contains paraphrased semantics but no bound documentation URL or raw methodology source.",
+  "requests": [
+    "https://docs.paradex.trade/risk/funding-mechanism",
+    "https://docs.paradex.trade/api/prod/markets/get-funding-data"
+  ],
+  "transport": {
+    "method": "GET",
+    "maximum_requests": 2,
+    "response_byte_ceiling_each": 5242880,
+    "retained_overflow_bytes_maximum": 1,
+    "deadline_seconds_each": 30,
+    "redirects": false,
+    "retries": false,
+    "admitted_format": "HTTP 200 UTF-8 HTML documentation; all failed or partial bodies retained before adjudication"
+  },
+  "questions": [
+    "Does the published index encode cumulative settlement-asset funding per base quantity, including changing rates and oracle conversion?",
+    "Does public history expose the same index and exact timestamp bounds, with documented sorting, timestamp cadence, pagination and completeness?",
+    "Can a source-bound endpoint-difference study avoid consuming or repairing the terminal July 27-August 26 population?"
+  ],
+  "decision": "Do not infer missing history ordering, exact settlement timestamps or index continuity. Missing units or access semantics stop market capture. A new nonoverlapping population still needs its own complete frozen economic contract.",
+  "market_or_account_requests": 0,
+  "credentials_used": false,
+  "protected_capture_access": false,
+  "old_result_changes": false
+}

@@ -6,6 +6,12 @@ operating contract. Historical handoff text is archived under
 
 ## Current Truth
 
+The new Paradex/Binance funding-index population is consumed with no survivor.
+Its 84 public responses reconstruct 78 intervals; gross spread fails even one
+20-bp execution allowance over the whole window. See
+`review/2026-09-04/paradex-index-review.md`. Canonical terminal observations
+are now 188; counts in older checkpoint paragraphs are historical.
+
 Maker execution review: full-fill support flags do not establish flat inventory
 or zero partial exposure. Read `review/2026-09-04/maker-execution-semantics.md`
 before reusing Round 57/58 support infrastructure for economic labels. Preserve

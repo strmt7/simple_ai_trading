@@ -1,0 +1,172 @@
+Funding data history
+Copy page
+GET
+https://api.prod.paradex.trade/v1
+/
+funding
+/
+data
+GET
+/v1
+/
+funding
+/
+data
+cURL
+$
+curl
+-X
+GET
+https://api.prod.paradex.trade/v1/funding/data?market=BTC-USD-PERP
+\
+>
+-H
+'
+Accept: application/json
+'
+Try it
+200
+Retrieved
+1
+{
+2
+"
+next
+"
+:
+"
+eyJmaWx0ZXIiMsIm1hcmtlciI6eyJtYXJrZXIiOiIxNjc1NjUwMDE3NDMxMTAxNjk5N=
+"
+,
+3
+"
+prev
+"
+:
+"
+eyJmaWx0ZXIiOnsiTGltaXQiOjkwfSwidGltZSI6MTY4MTY3OTgzNzk3MTMwOTk1MywibWFya2VyIjp7Im1zMjExMD==
+"
+,
+4
+"
+results
+"
+:
+[
+5
+{
+6
+"
+created_at
+"
+:
+1
+,
+7
+"
+funding_index
+"
+:
+"
+string
+"
+,
+8
+"
+funding_period_hours
+"
+:
+1.1
+,
+9
+"
+funding_premium
+"
+:
+"
+string
+"
+,
+10
+"
+funding_rate
+"
+:
+"
+string
+"
+,
+11
+"
+funding_rate_8h
+"
+:
+"
+string
+"
+,
+12
+"
+impact_premium_rate
+"
+:
+"
+string
+"
+,
+13
+"
+market
+"
+:
+"
+string
+"
+14
+}
+15
+]
+16
+}
+List historical funding data by market
+Query parameters
+cursor
+string
+Optional
+Returns the ‘next’ paginated page.
+end_at
+integer
+Optional
+End Time (unix time millisecond)
+market
+string
+Required
+Market for which funding payments are queried
+page_size
+integer
+Optional
+1-5000
+Defaults to
+100
+Limit the number of responses in the page
+start_at
+integer
+Optional
+Start Time (unix time millisecond)
+Response
+OK
+next
+string
+Optional
+The pointer to fetch next set of records (null if there are no records left)
+prev
+string
+Optional
+The pointer to fetch previous set of records (null if there are no records left)
+results
+list of objects
+Optional
+Array of paginated results
+Errors
+400
+Bad Request Error
