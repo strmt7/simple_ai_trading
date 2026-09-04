@@ -1,14 +1,22 @@
 # Continue Development
 
-Current canonical status after the September USD1 campaign source gate:
-accepted scopes 37, ranked hypotheses 65, terminal observations 186,
+Current canonical status after the NYC September 5 frontier:
+accepted scopes 37, ranked hypotheses 65, terminal observations 187,
 and stable current account-qualified after-all-cost edges zero. Registry
 SHA-256 is
-`39a69bce3a5544cc33d2d6383cc7f9578ff8c2305fe36caa1c57b0e5f053de1a`;
+`0591e4c2699a18a1cba1a8168a175779722e38c4e2c1b4dde3fa0bdba9866b41`;
 durability-audit SHA-256 is
-`333c90c4cc471c6f2fa5544b2eecd367f8288009abe8278a3dbf9cf4120bcfe2`.
+`db071c55485a23d507ad8a009483710901c28f5d165ff5993b1ce85ae60aa4db`.
 
 ## September 4 resumed review and USD1 campaign
+
+The prospectively fixed NYC September 5 eleven-bin event is now consumed.
+Its 17 frontier rows included four gross-positive ordering rows, but none
+passed the frozen fee/tick gate. A zero-network fee-only audit also rejected
+all rows without adverse ticks; the seven-NO gross 0.060-pUSD headroom becomes
+negative 0.09394 pUSD after configured fees at five shares. Four NO sides are
+incomplete, not free. No books or account work is justified. See
+`review/2026-09-04/nyc-sep5-frontier/review.md`; do not refetch this event.
 
 The latest zero-request audit corrected fixed-base funding cash-flow weighting
 for all 17 pairs and 51 original roles of the broad spot/perpetual screen.

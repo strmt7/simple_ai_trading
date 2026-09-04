@@ -1,0 +1,116 @@
+{
+  "schema_version": "polymarket-exact-negrisk-long-only-frontier-contract-v1",
+  "status": "frozen_before_one_public_capture_and_complete_long_only_screen",
+  "frozen_at_utc": "2026-09-04T22:28:00Z",
+  "contract_path": "docs/review/2026-09-04/nyc-sep5-frontier/contract.json",
+  "trigger": {
+    "registry_rank": 31,
+    "literal_trigger": "explicit official deployment of a new fixed NegRisk event in a deterministic nonconsumed recurring series",
+    "selection_method": "At verified 2026-09-04T22:24:16Z (September 4 in America/New_York), choose the next full NYC calendar day, September 5. Construct only its date suffix from the retained official daily-series slug pattern. No current event page, search price, Gamma value or outcome was opened before this freeze. Deployment and the expected eleven-market structure must be established by this single response; absence or mismatch is terminal without date/size adjustment.",
+    "prior_exact_event_consumed": false,
+    "price_or_outcome_values_seen_before_freeze": false,
+    "promotion_eligible_at_source_gate": true,
+    "exact_url_deduplication": "No exact September 5 event slug hit in docs/data/tools JSON, journals, prose or code before this contract was created."
+  },
+  "research_question": "Does the prospectively selected exact eleven-bin NYC September 5 high-temperature fixed-NegRisk event contain any complete long-only direction-independent package with side-specific Gamma acquisition evidence strictly below its payout floor and positive after exact configured taker fees plus one adverse tick per leg?",
+  "event_slug": "highest-temperature-in-nyc-on-september-5-2026",
+  "expected_market_count": 11,
+  "common_quantity_shares_each_leg": "5",
+  "request": {
+    "method": "GET",
+    "url": "https://gamma-api.polymarket.com/events/slug/highest-temperature-in-nyc-on-september-5-2026",
+    "count": 1,
+    "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "payoff_basis": {
+    "all_yes": "One YES from every exhaustive fixed-NegRisk outcome pays exactly one pUSD.",
+    "binary_straddle": "YES plus NO in the same binary market pays exactly one pUSD.",
+    "k_no": "NO on any k distinct mutually exclusive outcomes pays at least k-minus-one pUSD.",
+    "basis_completeness": "For nonnegative long-only YES and NO holdings in one complete mutually exclusive event, all-YES, same-market YES-plus-NO, and optimal k-NO cardinality frontiers cover the primitive direction-independent payout floors; adding a positive-cost YES leg to a proper NO subset without covering every selected NO cannot raise its minimum payout."
+  },
+  "economics": {
+    "yes_acquisition": "direct Gamma YES bestAsk",
+    "no_acquisition": "conservative one minus direct Gamma YES bestBid",
+    "gamma_role": "prospective rejection-only source gate; it may authorize one exact book batch but cannot accept or promote an edge",
+    "missing_price_rule": "missing side-specific acquisition evidence is incomplete and never a free leg",
+    "stress_gate": "Require strict positive profit at five common shares after one adverse configured tick on every leg and the exact configured taker fee. An absent schedule is zero only when feesEnabled is false and feeType is empty.",
+    "selection_rule": "Screen the all-YES complete set, every same-market binary straddle, and for every k from two through the price-complete NO population the deterministic cheapest metadata and additive fee-and-one-tick frontiers. Rank only after every row is fixed and retain every row."
+  },
+  "outputs": {
+    "raw_path": "docs/review/2026-09-04/nyc-sep5-frontier/raw/event.json",
+    "journal_path": "docs/review/2026-09-04/nyc-sep5-frontier/request-journal.jsonl",
+    "result_path": "docs/review/2026-09-04/nyc-sep5-frontier/result.json"
+  },
+  "authority": {
+    "account_requests": 0,
+    "book_requests": 0,
+    "credentials_used": false,
+    "fee_requests": 0,
+    "funds_used": false,
+    "onchain_requests": 0,
+    "orders_or_transactions": 0,
+    "protected_capture_touched": false,
+    "public_unauthenticated_read_only_requests": 1,
+    "signed_requests": 0,
+    "trading_authority": false
+  },
+  "implementations": [
+    {
+      "sha256": "c2eced31b6d961de60742f855e8bece9778e4e8e551ed07081d4f7b49a88f7e5",
+      "path": "tools/screen_polymarket_exact_negrisk_long_only_frontier_v2.py"
+    },
+    {
+      "sha256": "1527dbf87fbaf7315a9f505d022c877f9c7b3eece9f1e5fc8dbb8cf2e19fdf2b",
+      "path": "tools/screen_polymarket_exact_negrisk_long_only_frontier.py"
+    },
+    {
+      "sha256": "374fcc3c3485c466b4929a91256450bdc7db70f93ef4c6bda627e05fe8938327",
+      "path": "tools/screen_polymarket_exact_two_leg_package.py"
+    },
+    {
+      "sha256": "59e610511f1e423c6191669931a6a887d190fa10c27eb90e36fd8a370407f71b",
+      "path": "tools/adjudicate_polymarket_retained_negrisk_pairwise_no.py"
+    },
+    {
+      "sha256": "fe601915bd4db210441dc56978dba919ba7e68cb4a586ee9f19d00f807f2afb1",
+      "path": "tools/adjudicate_polymarket_retained_negrisk_pairwise_no_v2.py"
+    },
+    {
+      "sha256": "a7011313fc3895312cbb85fd6a04972ffaf6101cdcc9d300345bbecdfdf16c8a",
+      "path": "tools/adjudicate_polymarket_retained_negrisk_no_cardinality_frontier.py"
+    },
+    {
+      "sha256": "5d5dd88fe9f77be92063d4b55bbcb8dd1b96db06b99dd0d021774916cf2b5ae9",
+      "path": "tools/screen_polymarket_negrisk_complete_set_catalog.py"
+    },
+    {
+      "sha256": "c6277f53adf269e818c12b187d7f5fef19dbb016d93b3c246052aedd52dc2c03",
+      "path": "tools/adjudicate_polymarket_release_date_deadline_graph.py"
+    },
+    {
+      "sha256": "4002aa8008874708931cc182f352adf436a65baee24e23bfc72617acdf127c8d",
+      "path": "src/simple_ai_trading/polymarket_fees.py"
+    }
+  ],
+  "retry_policy": "This exact event GET is one-use. Do not refetch, alias, change expected count, repair a missing row, reprice, or select a sibling after its result. A rejection is terminal absent a material price, fee, tick, rule, adapter, or architecture change. A positive stressed source gate may authorize only one prospectively frozen exact CLOB batch for its deterministic strongest package.",
+  "prohibited_shortcuts": [
+    "do not open the rendered event or any price-bearing search result before the frozen request",
+    "do not change the event date slug expected count package family or cardinality after economics",
+    "do not treat Gamma as executable acceptance evidence or a missing price as zero",
+    "do not request a book fee endpoint account credential order fund transaction or protected capture unless the frozen stressed source gate passes",
+    "do not use testnet credentials for Polymarket or any mainnet Binance branch"
+  ],
+  "contract_sha256": "2d2f891ce474a30bb93be365c818b28b452b624a3003ba43b740e5e7ac2e8b5d",
+  "transport": {
+    "response_byte_ceiling": 2097152,
+    "overflow_detection_bytes": 1,
+    "socket_timeout_seconds": 30,
+    "elapsed_budget_checked_between_chunks_seconds": 30,
+    "redirects_allowed": false,
+    "retries_allowed": false,
+    "partial_error_bytes_retained": true,
+    "request_intent_created_exclusively": true,
+    "timeout_note": "Blocking socket reads can extend elapsed wall time beyond the between-chunk budget; this is not a hard 30-second wall-clock guarantee."
+  },
+  "source_qualification": "A positive metadata/fee/tick subtotal is only a source candidate. Require complete exact day/station/bin/boundary/fallback rules and any required on-chain question-count/conversion proof before a separate exact book contract. The bridge makes no book or on-chain requests; no edge can be accepted."
+}

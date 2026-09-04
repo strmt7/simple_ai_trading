@@ -1,0 +1,165 @@
+{
+  "accepted_edge": false,
+  "bindings": [
+    {
+      "path": "docs/review/2026-09-04/nyc-sep5-frontier/fee-audit-plan.json",
+      "sha256": "1b24c1ff5c781589ead78e4dc7808c33a3d60fcb2a95cb9f613eedc02658e00b"
+    },
+    {
+      "path": "docs/review/2026-09-04/nyc-sep5-frontier/result.json",
+      "sha256": "08a56c3ec7727c87f32ee4c871dc9c51d28ac081015c9ffddf59fda5a319c2f2"
+    },
+    {
+      "path": "docs/review/2026-09-04/nyc-sep5-frontier/raw/event.json",
+      "sha256": "c85fdb71d0676e6a99295b6067fe88ae27fbae285537072309577c316c831c3d"
+    },
+    {
+      "path": "tools/review_polymarket_frontier_fee_headroom.py",
+      "sha256": "4f30a1075c75a6117d8fe2afd3587f7fa01fd7198232cbbf3a6b961ee92ad8ca"
+    }
+  ],
+  "classification": "post_capture_zero_network_rejection_strengthening_only",
+  "further_requests_authorized": false,
+  "new_requests": 0,
+  "original_gate_changed": false,
+  "result_sha256": "d26bbed784edc4aad898aec01744f0b02a00569fed5871619427b8e8df13ab24",
+  "rows": [
+    {
+      "after_configured_fee_without_ticks_pUSD": "-0.65954",
+      "configured_taker_fee_without_ticks_pUSD": "0.16954",
+      "gross_headroom_pUSD": "-0.490",
+      "largest_single_leg_fee_pUSD": "0.06128",
+      "leg_count": 11,
+      "original_row_index": 0
+    },
+    {
+      "after_configured_fee_without_ticks_pUSD": "-0.10976",
+      "configured_taker_fee_without_ticks_pUSD": "0.00976",
+      "gross_headroom_pUSD": "-0.10",
+      "largest_single_leg_fee_pUSD": "0.00728",
+      "leg_count": 2,
+      "original_row_index": 1
+    },
+    {
+      "after_configured_fee_without_ticks_pUSD": "-0.08468",
+      "configured_taker_fee_without_ticks_pUSD": "0.03468",
+      "gross_headroom_pUSD": "-0.05",
+      "largest_single_leg_fee_pUSD": "0.01840",
+      "leg_count": 2,
+      "original_row_index": 2
+    },
+    {
+      "after_configured_fee_without_ticks_pUSD": "-0.14738",
+      "configured_taker_fee_without_ticks_pUSD": "0.09738",
+      "gross_headroom_pUSD": "-0.05",
+      "largest_single_leg_fee_pUSD": "0.04928",
+      "leg_count": 2,
+      "original_row_index": 3
+    },
+    {
+      "after_configured_fee_without_ticks_pUSD": "-0.17288",
+      "configured_taker_fee_without_ticks_pUSD": "0.12288",
+      "gross_headroom_pUSD": "-0.05",
+      "largest_single_leg_fee_pUSD": "0.06160",
+      "leg_count": 2,
+      "original_row_index": 4
+    },
+    {
+      "after_configured_fee_without_ticks_pUSD": "-0.14890",
+      "configured_taker_fee_without_ticks_pUSD": "0.04890",
+      "gross_headroom_pUSD": "-0.10",
+      "largest_single_leg_fee_pUSD": "0.02640",
+      "leg_count": 2,
+      "original_row_index": 5
+    },
+    {
+      "after_configured_fee_without_ticks_pUSD": "-0.05738",
+      "configured_taker_fee_without_ticks_pUSD": "0.00738",
+      "gross_headroom_pUSD": "-0.05",
+      "largest_single_leg_fee_pUSD": "0.00490",
+      "leg_count": 2,
+      "original_row_index": 6
+    },
+    {
+      "after_configured_fee_without_ticks_pUSD": "-0.01150",
+      "configured_taker_fee_without_ticks_pUSD": "0.00150",
+      "gross_headroom_pUSD": "-0.010",
+      "largest_single_leg_fee_pUSD": "0.00100",
+      "leg_count": 2,
+      "original_row_index": 7
+    },
+    {
+      "after_configured_fee_without_ticks_pUSD": "-1.00970",
+      "configured_taker_fee_without_ticks_pUSD": "0.10970",
+      "gross_headroom_pUSD": "-0.90",
+      "largest_single_leg_fee_pUSD": "0.06160",
+      "leg_count": 2,
+      "original_row_index": 8
+    },
+    {
+      "after_configured_fee_without_ticks_pUSD": "-0.53220",
+      "configured_taker_fee_without_ticks_pUSD": "0.13220",
+      "gross_headroom_pUSD": "-0.40",
+      "largest_single_leg_fee_pUSD": "0.06160",
+      "leg_count": 3,
+      "original_row_index": 9
+    },
+    {
+      "after_configured_fee_without_ticks_pUSD": "-0.19848",
+      "configured_taker_fee_without_ticks_pUSD": "0.14848",
+      "gross_headroom_pUSD": "-0.05",
+      "largest_single_leg_fee_pUSD": "0.06160",
+      "leg_count": 4,
+      "original_row_index": 10
+    },
+    {
+      "after_configured_fee_without_ticks_pUSD": "-0.15096",
+      "configured_taker_fee_without_ticks_pUSD": "0.15096",
+      "gross_headroom_pUSD": "0.00",
+      "largest_single_leg_fee_pUSD": "0.06160",
+      "leg_count": 5,
+      "original_row_index": 11
+    },
+    {
+      "after_configured_fee_without_ticks_pUSD": "-0.18898",
+      "configured_taker_fee_without_ticks_pUSD": "0.14898",
+      "gross_headroom_pUSD": "-0.040",
+      "largest_single_leg_fee_pUSD": "0.06160",
+      "leg_count": 5,
+      "original_row_index": 12
+    },
+    {
+      "after_configured_fee_without_ticks_pUSD": "-0.10344",
+      "configured_taker_fee_without_ticks_pUSD": "0.15344",
+      "gross_headroom_pUSD": "0.05",
+      "largest_single_leg_fee_pUSD": "0.06160",
+      "leg_count": 6,
+      "original_row_index": 13
+    },
+    {
+      "after_configured_fee_without_ticks_pUSD": "-0.14146",
+      "configured_taker_fee_without_ticks_pUSD": "0.15146",
+      "gross_headroom_pUSD": "0.010",
+      "largest_single_leg_fee_pUSD": "0.06160",
+      "leg_count": 6,
+      "original_row_index": 14
+    },
+    {
+      "after_configured_fee_without_ticks_pUSD": "-0.09394",
+      "configured_taker_fee_without_ticks_pUSD": "0.15394",
+      "gross_headroom_pUSD": "0.060",
+      "largest_single_leg_fee_pUSD": "0.06160",
+      "leg_count": 7,
+      "original_row_index": 15
+    },
+    {
+      "after_configured_fee_without_ticks_pUSD": "-0.09394",
+      "configured_taker_fee_without_ticks_pUSD": "0.15394",
+      "gross_headroom_pUSD": "0.060",
+      "largest_single_leg_fee_pUSD": "0.06160",
+      "leg_count": 7,
+      "original_row_index": 16
+    }
+  ],
+  "schema_version": 1
+}
