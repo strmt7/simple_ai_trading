@@ -603,24 +603,34 @@ def test_run_model_lab_preserves_rejected_training_row_count(tmp_path: Path, mon
     assert report.outcomes[0].diagnostics == {"top_candidates": [{"validation_score": None, "full_sample_score": None}]}
 
 
-def test_run_model_lab_rejects_positive_suite_when_stress_fails(tmp_path: Path, monkeypatch) -> None:
+def test_run_model_lab_rejects_positive_suite_when_stress_fails(
+    tmp_path: Path, monkeypatch
+) -> None:
     def fake_suite(candles, strategy, **kwargs):
         return SimpleNamespace(
-            outcomes=[SimpleNamespace(
-                objective="regular",
-                best_score=0.12,
-                hybrid_profile="base_only",
-                walk_forward_gate=_walk_forward_gate(),
-                selection_risk=_selection_risk(),
-            )],
+            outcomes=[
+                SimpleNamespace(
+                    objective="regular",
+                    best_score=0.12,
+                    hybrid_profile="base_only",
+                    walk_forward_gate=_walk_forward_gate(),
+                    selection_risk=_selection_risk(),
+                )
+            ],
             total_rows=123,
             objectives_run=["regular"],
             summary_path=kwargs["summary_path"],
         )
 
     monkeypatch.setattr("simple_ai_trading.model_lab.run_training_suite", fake_suite)
-    monkeypatch.setattr("simple_ai_trading.model_lab.validate_suite_under_stress", lambda *_a, **_k: _Stress(False))
-    monkeypatch.setattr("simple_ai_trading.model_lab.validate_suite_temporal_robustness", lambda *_a, **_k: _Robustness(True))
+    monkeypatch.setattr(
+        "simple_ai_trading.model_lab.validate_suite_under_stress",
+        lambda *_a, **_k: _Stress(False),
+    )
+    monkeypatch.setattr(
+        "simple_ai_trading.model_lab.validate_suite_temporal_robustness",
+        lambda *_a, **_k: _Robustness(True),
+    )
     runtime = RuntimeConfig(symbols=("BTCUSDC",), quote_asset="USDC", interval="1m")
     strategy = StrategyConfig(
         min_quote_volume_usdc=1000.0,
@@ -746,21 +756,29 @@ def test_run_model_lab_rejects_positive_suite_when_selection_risk_fails(tmp_path
 def test_run_model_lab_rejects_positive_suite_when_temporal_robustness_fails(tmp_path: Path, monkeypatch) -> None:
     def fake_suite(candles, strategy, **kwargs):
         return SimpleNamespace(
-            outcomes=[SimpleNamespace(
-                objective="regular",
-                best_score=0.12,
-                hybrid_profile="base_only",
-                walk_forward_gate=_walk_forward_gate(),
-                selection_risk=_selection_risk(),
-            )],
+            outcomes=[
+                SimpleNamespace(
+                    objective="regular",
+                    best_score=0.12,
+                    hybrid_profile="base_only",
+                    walk_forward_gate=_walk_forward_gate(),
+                    selection_risk=_selection_risk(),
+                )
+            ],
             total_rows=123,
             objectives_run=["regular"],
             summary_path=kwargs["summary_path"],
         )
 
     monkeypatch.setattr("simple_ai_trading.model_lab.run_training_suite", fake_suite)
-    monkeypatch.setattr("simple_ai_trading.model_lab.validate_suite_under_stress", lambda *_a, **_k: _Stress(True))
-    monkeypatch.setattr("simple_ai_trading.model_lab.validate_suite_temporal_robustness", lambda *_a, **_k: _Robustness(False))
+    monkeypatch.setattr(
+        "simple_ai_trading.model_lab.validate_suite_under_stress",
+        lambda *_a, **_k: _Stress(True),
+    )
+    monkeypatch.setattr(
+        "simple_ai_trading.model_lab.validate_suite_temporal_robustness",
+        lambda *_a, **_k: _Robustness(False),
+    )
     runtime = RuntimeConfig(symbols=("BTCUSDC",), quote_asset="USDC", interval="1m")
     strategy = StrategyConfig(
         min_quote_volume_usdc=1000.0,
@@ -806,14 +824,16 @@ def test_run_model_lab_blocks_repeated_symbol_losses_without_recovery_evidence(
             model_path,
         )
         return SimpleNamespace(
-            outcomes=[SimpleNamespace(
-                objective="regular",
-                model_path=model_path,
-                best_score=0.12,
-                hybrid_profile="base_only",
-                walk_forward_gate=_walk_forward_gate(),
-                selection_risk=_selection_risk(),
-            )],
+            outcomes=[
+                SimpleNamespace(
+                    objective="regular",
+                    model_path=model_path,
+                    best_score=0.12,
+                    hybrid_profile="base_only",
+                    walk_forward_gate=_walk_forward_gate(),
+                    selection_risk=_selection_risk(),
+                )
+            ],
             total_rows=123,
             objectives_run=["regular"],
             summary_path=kwargs["summary_path"],
@@ -821,26 +841,28 @@ def test_run_model_lab_blocks_repeated_symbol_losses_without_recovery_evidence(
 
     feedback_path = tmp_path / "learning_feedback.json"
     feedback_path.write_text(
-        json.dumps({
-            "generated_at_ms": 123,
-            "lookback_trades": 100,
-            "closed_trades": 4,
-            "wins": 1,
-            "losses": 3,
-            "net_realized_pnl": -7.0,
-            "win_rate": 0.25,
-            "max_consecutive_losses": 3,
-            "worst_trade_pnl": -4.0,
-            "recurring_loss_reasons": {"auto-stop-loss": 3},
-            "loss_by_symbol": {"BTCUSDC": 3},
-            "loss_by_side": {"LONG": 3},
-            "recommendations": [
-                "trigger_cooldown_and_replay_recent_loss_streak_before_new_promotion",
-                "review_symbol_specific_edge:BTCUSDC",
-            ],
-            "promotion_safe": False,
-            "notes": [],
-        }),
+        json.dumps(
+            {
+                "generated_at_ms": 123,
+                "lookback_trades": 100,
+                "closed_trades": 4,
+                "wins": 1,
+                "losses": 3,
+                "net_realized_pnl": -7.0,
+                "win_rate": 0.25,
+                "max_consecutive_losses": 3,
+                "worst_trade_pnl": -4.0,
+                "recurring_loss_reasons": {"auto-stop-loss": 3},
+                "loss_by_symbol": {"BTCUSDC": 3},
+                "loss_by_side": {"LONG": 3},
+                "recommendations": [
+                    "trigger_cooldown_and_replay_recent_loss_streak_before_new_promotion",
+                    "review_symbol_specific_edge:BTCUSDC",
+                ],
+                "promotion_safe": False,
+                "notes": [],
+            }
+        ),
         encoding="utf-8",
     )
 
@@ -901,22 +923,30 @@ def test_run_model_lab_rejects_individual_passes_when_portfolio_gate_fails(tmp_p
             model_path,
         )
         return SimpleNamespace(
-            outcomes=[SimpleNamespace(
-                objective="regular",
-                model_path=model_path,
-                best_score=0.12,
-                hybrid_profile="base_only",
-                walk_forward_gate=_walk_forward_gate(),
-                selection_risk=_selection_risk(),
-            )],
+            outcomes=[
+                SimpleNamespace(
+                    objective="regular",
+                    model_path=model_path,
+                    best_score=0.12,
+                    hybrid_profile="base_only",
+                    walk_forward_gate=_walk_forward_gate(),
+                    selection_risk=_selection_risk(),
+                )
+            ],
             total_rows=len(candles),
             objectives_run=["regular"],
             summary_path=kwargs["summary_path"],
         )
 
     monkeypatch.setattr("simple_ai_trading.model_lab.run_training_suite", fake_suite)
-    monkeypatch.setattr("simple_ai_trading.model_lab.validate_suite_under_stress", lambda *_a, **_k: _Stress(True))
-    monkeypatch.setattr("simple_ai_trading.model_lab.validate_suite_temporal_robustness", lambda *_a, **_k: _Robustness(True))
+    monkeypatch.setattr(
+        "simple_ai_trading.model_lab.validate_suite_under_stress",
+        lambda *_a, **_k: _Stress(True),
+    )
+    monkeypatch.setattr(
+        "simple_ai_trading.model_lab.validate_suite_temporal_robustness",
+        lambda *_a, **_k: _Robustness(True),
+    )
     runtime = RuntimeConfig(symbols=("BTCUSDC", "ETHUSDC", "SOLUSDC"), quote_asset="USDC", interval="1m")
     strategy = StrategyConfig(
         min_quote_volume_usdc=1000.0,

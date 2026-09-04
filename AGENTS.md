@@ -72,6 +72,11 @@ identity; its deadline grouping does not bind observation starts (review R4).
   Polymarket controls.
 - No network calls in tests unless explicitly stubbed. Do not hard-code host
   capabilities; detect and record effective backends and fallbacks.
+- For substantial new training, prefer a measured faster compatible accelerator,
+  not a hardware-name assumption. Dependency upgrades can replace GPU-enabled
+  libraries with CPU-only wheels: probe the actual installed backend and bind
+  its library/runtime identity before large fits. Preserve each frozen model's
+  backend and precision contract; synthetic speed is not financial uplift.
 - Edge discovery is the current priority. Public, unauthenticated, read-only
   source, market-data, and blockchain research may proceed iteratively when
   each request tests a distinct question or materially refreshes stale evidence.
