@@ -1,0 +1,29 @@
+{
+  "schema_version": "inflation-definition-pair-plan-v1",
+  "frozen_at_utc": "2026-09-04T23:45:28Z",
+  "base_head": "055fd7fe388a6e58cb32b7ca288a0687d5c2be19",
+  "question": "Can annual and monthly August CPI outcomes be linked by a deterministic first-release index identity, rather than a statistical correlation? Establish the exact series, seasonal adjustment, rounding, vintage and fallback rules before any market-price calculation.",
+  "slugs": ["august-inflation-us-annual-1786474662954", "august-inflation-us-monthly-1786474662954"],
+  "expected_counts": [12, 9],
+  "selection": "One official Polymarket event search for August 2026 inflation returned annual and monthly events. Both are fixed now, not selected by price. Search exposed headline probabilities and volumes; they are discovery-only and not admissible economics or clean validation. No search-result page was opened. The old 2023 event and non-Polymarket mirrors are excluded.",
+  "discovery_query": "site.polymarket.com/event August 2026 inflation",
+  "deduplication": "Exact annual and monthly slugs had no matches in docs or tools, including canonical contracts, source results and journals, before freeze. Protected data was not searched. This is a distinct source-definition question, not a retry of a consumed catalog or funding history.",
+  "maximum_gets": 2,
+  "per_get_byte_ceiling": 2097152,
+  "redirects": false,
+  "retries": false,
+  "timeout": "30-second socket timeout and elapsed check between chunks; not a hard wall deadline",
+  "admitted_format": "HTTP 200 UTF-8 JSON exact event object with expected full market count; retain failure bytes without alias, count repair or pagination",
+  "inspection": "Inspect only identity, descriptions, question labels, source, dates and deployment flags. Raw public market responses are retained but prices, volumes, trades and outcome values are not projected or screened.",
+  "next_gate": "Require the same release vintage and exact raw index series or an independently source-bound conversion with rounding intervals, coefficients and exceptional cases. A different seasonal adjustment basis is not automatically an impossibility, but it forbids using monthly and annual labels as the same scalar. No books or fees are requested without a separate frozen economic gate.",
+  "implementation_sha256": {
+    "tools/capture_inflation_definition_pair.py": "86363cab0954ce76203a258567d41ef3f9fd90e8f5035f8799852b266496e43f",
+    "tools/screen_polymarket_exact_negrisk_long_only_frontier_v2.py": "c2eced31b6d961de60742f855e8bece9778e4e8e551ed07081d4f7b49a88f7e5"
+  },
+  "account_requests": 0,
+  "orders": 0,
+  "credentials_used": false,
+  "protected_capture_access": false,
+  "historical_results_changed": false,
+  "promotion_eligible": false
+}

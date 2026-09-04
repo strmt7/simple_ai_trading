@@ -1,0 +1,63 @@
+{
+  "created_at_utc": "2026-09-04T23:49:06.154612+00:00",
+  "schema_version": "inflation-mapping-method-review-v1",
+  "source_sha256": {
+    "docs/review/2026-09-04/inflation-definition-pair/0-journal.jsonl": "7a2ed2d44ca752230ab7235832f9c54dfab406d178cc11261ad81c9e539c7c15",
+    "docs/review/2026-09-04/inflation-definition-pair/0-raw.json": "c3721a775f0429f42895d5c9dfcac269c44317057e158ad28688ae4f5992b26f",
+    "docs/review/2026-09-04/inflation-definition-pair/1-journal.jsonl": "ebd987c3a76bf927608a5b6a5cffc9bc7739a9d0a82e3c9014db4eecbf406fe9",
+    "docs/review/2026-09-04/inflation-definition-pair/1-raw.json": "f13439424910dd65739025dfdd43965a6fc28fa1a4ee6b04f5f2f64d42f6fbb4",
+    "docs/review/2026-09-04/inflation-definition-pair/bls-aggregation-plan.json": "247d633fd5a7325c05855da50629fd538ee0f47680a55c87884f38838c661732",
+    "docs/review/2026-09-04/inflation-definition-pair/bls-aggregation-tool-extraction.json": "fba22f8873800053f0c27ab9bbd662f424e3c162e78706cbb88197acba331289",
+    "docs/review/2026-09-04/inflation-definition-pair/bls-source-plan.json": "dbe5823a4e90c6862e7a4a1bfbbf68127f07b180acaa983f902d706ea429db73",
+    "docs/review/2026-09-04/inflation-definition-pair/bls-tool-extraction.json": "4d6752ff3bd10fe2164ab74709d710a00a315a84c3588973497ff66b0c955856",
+    "docs/review/2026-09-04/inflation-definition-pair/definitions.json": "90de1cc0f214564016a91757fe778470d21af5e50db72d4e0e89c08ea5fae858",
+    "docs/review/2026-09-04/inflation-definition-pair/plan.json": "84c46d0c99304775bf0f91854ea8656758a37f468bde88e8056bcd188c60b134",
+    "tools/capture_inflation_definition_pair.py": "86363cab0954ce76203a258567d41ef3f9fd90e8f5035f8799852b266496e43f",
+    "tools/review_inflation_mapping.py": "9e5735102143525834424adfafd87741ca981698afafeb7c582bf6f1aa8aed0e",
+    "tools/screen_polymarket_exact_negrisk_long_only_frontier_v2.py": "c2eced31b6d961de60742f855e8bece9778e4e8e551ed07081d4f7b49a88f7e5"
+  },
+  "event_ids": [
+    "838710",
+    "838709"
+  ],
+  "market_counts": [
+    12,
+    9
+  ],
+  "annual_adjustment": "unadjusted",
+  "monthly_adjustment": "seasonally adjusted",
+  "rounding": "one decimal percentage point in the official release; exact half-boundary handling not proved",
+  "fallback": "most recent available previous month if release missing by next scheduled CPI release",
+  "bls_provenance": "Retained web-tool extractions, not original HTTP bodies. Usage page modified February 13 2026; aggregation page modified February 11 2019 and cites 2015 methods. No current full replication contract or factor matrix was obtained.",
+  "toy_only_counterexamples": [
+    {
+      "components": [
+        "90",
+        "110"
+      ],
+      "unadjusted": "200",
+      "adjusted": "200",
+      "annual_pct_with_base_200": "0",
+      "monthly_pct_with_previous_sa_200": "0"
+    },
+    {
+      "components": [
+        "110",
+        "90"
+      ],
+      "unadjusted": "200",
+      "adjusted": "204.0404040404040404040404040",
+      "annual_pct_with_base_200": "0",
+      "monthly_pct_with_previous_sa_200": "2.02020202020202020202020200"
+    }
+  ],
+  "conditional_bound": "If NSA=sum(v_i) and SA=sum(v_i/f_i), with common positive component contributions and f_i>0, SA/NSA is a convex combination of 1/f_i. Its range lies between min(1/f_i) and max(1/f_i). This is not yet a source-qualified BLS aggregation adapter.",
+  "decision": "Reject a single-known-factor or same-scalar exact-hedge claim for this pair. No prices, fees or books inspected. Do not infer negative expected value or impossibility of a future bounded component mapping.",
+  "next_evidence": "Source-bound first-release component aggregation, exact current factors, relevant denominator indexes, rounding intervals and every fallback vintage; prove an exhaustive joint outcome support before a separately frozen retained-price study. No refetch or sibling substitution on unchanged evidence.",
+  "prices_inspected": false,
+  "account_requests": 0,
+  "orders": 0,
+  "accepted_edge": false,
+  "profitability_claim": false,
+  "result_sha256": "06915e20cce504037f9890ff744beb8e1b176e03e111a0b325e3d5ae911f6154"
+}

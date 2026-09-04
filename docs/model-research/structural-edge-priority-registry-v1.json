@@ -2829,6 +2829,10 @@
         {
           "path": "docs/review/2026-09-04/nyc-sep5-frontier/fee-audit-result.json",
           "result_sha256": "d26bbed784edc4aad898aec01744f0b02a00569fed5871619427b8e8df13ab24"
+        },
+        {
+          "path": "docs/review/2026-09-04/inflation-definition-pair/review.json",
+          "result_sha256": "06915e20cce504037f9890ff744beb8e1b176e03e111a0b325e3d5ae911f6154"
         }
       ],
       "corner_graph_delta_status": "a_distinct_frozen_zero_network_retained_audit_exhausted_1820_corner_count_monotone_additive_half_additive_team_and_adjacent_interval_parity_superhedges_across_7_complete_23_market_events_all_1820_had_complete_side_specific_rejection_prices_zero_were_strictly_below_their_one_pUSD_floor_and_the_best_Over_12_5_plus_Under_13_5_cost_1_1_pUSD_the_v1_literal_48_hour_fallback_gate_and_v2_strict_zip_implementation_failure_are_preserved_before_the_v3_representation_and_mechanical_only_correction_no_current_or_historical_book_fee_account_credential_order_fund_or_protected_request_was_justified",
@@ -2915,7 +2919,8 @@
       "retained_holding_yield_delta_status": "the_zero_network_retained_August_26_market_audit_exhausted_7_exact_pairwise_triple_and_nested_threshold_relations_across_4_events_with_side_specific_bestAsk_or_conservative_one_minus_bestBid_rejection_prices_zero_were_strictly_below_their_optimistic_common_rule_floor_and_the_best_Fed_NO_no_change_plus_NO_25_bps_increase_cost_1_01_pUSD_for_a_1_pUSD_floor_no_book_fee_account_credential_order_fund_or_protected_capture_request_was_justified",
       "retry_trigger": "material_price_fee_rule_or_market_change_in_the_resolved_leg_House_family_or_explicit_official_deployment_of_a_new_fixed_NegRisk_event_in_a_source_selected_nonconsumed_series_or_not_before_2026_09_20T00_00_00Z_for_one_separately_frozen_distinct_series_45_window_from_2026_09_22_through_2026_09_28_or_a_distinct_active_accepting_orders_market_pair_with_complete_exact_rules_deterministic_subset_indicator_equality_and_side_specific_rejection_only_ask_economics_strictly_below_the_common_rule_floor_not_already_covered_by_the_specialized_NBA_family_or_a_distinct_rule_complete_joint_projection_to_exact_marginal_family_whose_conservative_side_specific_package_remains_strictly_positive_after_current_fees_and_at_least_one_adverse_tick_per_leg_before_depth_or_a_material_fee_tick_rule_or_market_architecture_change_or_a_distinct_active_BTC_ETH_or_SOL_threshold_ladder_outside_every_consumed_event_with_complete_exact_common_rules_and_at_least_one_rejection_only_side_specific_lower_YES_plus_higher_NO_sum_strictly_below_the_one_pUSD_optimistic_rule_consistent_floor_or_a_distinct_nonconsumed_active_BTC_ETH_or_SOL_range_plus_threshold_pair_with_the_same_exact_source_observation_complete_boundary_and_exceptional_settlement_rules_contemporaneous_frozen_complete_populations_and_at_least_one_rejection_only_side_specific_NO_T_plus_cumulative_upper_range_YES_sum_strictly_below_the_one_pUSD_optimistic_rule_consistent_floor_or_a_distinct_nonconsumed_exactly_aligned_BTC_ETH_or_SOL_interval_partition_with_source_proved_shared_open_close_value_continuity_complete_tie_semantics_and_at_least_one_rejection_only_side_specific_transitive_four_leg_package_strictly_below_its_one_pUSD_floor",
       "venue_scope": "polymarket_fixed_NegRisk_multioutcome_complete_sets_two_separately_traded_exact_rule_multioutcome_markets_soccer_exact_score_goalscorer_goal_total_corner_count_full_half_team_parity_and_full_game_result_implications_exact_within_event_BTC_ETH_SOL_monotone_threshold_ladders_and_cross_event_same_observation_crypto_range_threshold_coverage",
-      "nyc_september5_frontier_status": "One prospectively fixed NYC September 5 event GET returned all 11 markets; 11 YES and 7 NO sides were price-complete. All 17 frontier rows were screened. Four gross-positive rows failed the one-tick gate. A retained fee-only audit also rejected all 17 rows: the strongest gross-positive seven-NO row had 0.060 pUSD gross headroom but 0.15394 configured fee at five shares, leaving negative 0.09394 pUSD before any adverse tick. Four NO sides remain incomplete. Do not refetch, reprice, fill missing sides, request books or reinterpret missing stress results as zero fees. No edge or account/order authority."
+      "nyc_september5_frontier_status": "One prospectively fixed NYC September 5 event GET returned all 11 markets; 11 YES and 7 NO sides were price-complete. All 17 frontier rows were screened. Four gross-positive rows failed the one-tick gate. A retained fee-only audit also rejected all 17 rows: the strongest gross-positive seven-NO row had 0.060 pUSD gross headroom but 0.15394 configured fee at five shares, leaving negative 0.09394 pUSD before any adverse tick. Four NO sides remain incomplete. Do not refetch, reprice, fill missing sides, request books or reinterpret missing stress results as zero fees. No edge or account/order authority.",
+      "inflation_definition_mapping_status": "The exact August 2026 annual and monthly CPI definition pair is consumed: events 838710 and 838709, all 12 and 9 markets, with no price inspection. Annual is unadjusted; monthly is seasonally adjusted. Two retained BLS tool extractions distinguish component aggregation and seasonal revisions. No same-scalar or known single-factor hedge is proved. A positive-component reciprocal-factor bound is conditional algebra, not a current BLS adapter. Require exact first-release aggregation/factors/denominators, rounding and all fallback vintages before any separately frozen exploratory retained-price screen. Do not refetch, alias or select siblings on unchanged evidence. No economic observation, acceptance or negative-EV proof is added."
     },
     {
       "blocking_evidence": [
@@ -4325,7 +4330,7 @@
       ]
     }
   ],
-  "result_sha256": "201db0929e7f061823bc0ed02e76597b5f68436ae82ceaccfe9921dde9c5c61d",
+  "result_sha256": "96394c8e51621306a615bffa0fd0b107ecfe155cbc17bd9070a4bdccf60f3eb3",
   "schema_version": "structural-edge-priority-registry-v1",
   "terminal_do_not_repeat": [
     {
@@ -5275,6 +5280,6 @@
       "canonical_result_sha256": "f2aa72d9d65d28bdd0f012deb85d2e65c5085d7c62ab9c69aee916401b6f99f9"
     }
   ],
-  "updated_at_utc": "2026-09-04T23:39:01.127871Z",
+  "updated_at_utc": "2026-09-04T23:52:32.168128Z",
   "usage_rule": "advance_the_highest_ranked_hypothesis_whose_retry_trigger_is_satisfied_otherwise_do_not_repeat_a_blocked_or_terminal_screen"
 }

@@ -1,0 +1,11 @@
+{
+  "source_url": "https://www.bls.gov/cpi/seasonal-adjustment/estimation-seasonal-effects.htm",
+  "maximum_tool_opens": 1,
+  "selection": "The retained BLS usage page distinguishes direct factors from dependent aggregates but does not specify whether all-items factors can be fixed in advance. Its Estimation of Seasonal Effects link, also found in the prior official search, is selected for that remaining question only. No prior exact URL match in the scoped docs/tools source inventory.",
+  "question": "Is all-items CPI directly adjusted with a known fixed factor or indirectly aggregated from current component indexes?",
+  "evidence_format": "Complete retained web-tool extraction, not raw origin HTTP bytes; methodology qualification only",
+  "no_retry_alias_or_followup_market_request": true,
+  "prices_inspected": false,
+  "account_requests": 0,
+  "orders": 0
+}

@@ -1,0 +1,13 @@
+{
+  "schema_version": "bls-seasonal-method-source-plan-v1",
+  "source_url": "https://www.bls.gov/cpi/seasonal-adjustment/using-seasonally-adjusted-data.htm",
+  "question": "Does current BLS methodology establish a known advance seasonal conversion for headline all-items CPI, or derive its factor from components only when published?",
+  "maximum_tool_opens": 1,
+  "deduplication": "No retained BLS seasonal-method source URL found in docs/tools before this plan; index search only is discovery, not source evidence.",
+  "admitted_evidence": "Retain the complete web-tool response as a tool extraction, explicitly not raw origin HTTP bytes. Use only for method/source qualification, never market-price promotion. If inaccessible, preserve the failure and do not retry aliases.",
+  "market_data_requests": 0,
+  "account_requests": 0,
+  "credentials_used": false,
+  "protected_access": false,
+  "historical_result_changes": false
+}

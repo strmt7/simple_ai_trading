@@ -30,6 +30,13 @@ only where contracts match; leave historical implementations untouched.
 
 ## Round 2: evidence gaps and collection value
 
+For efficient registry inspection, use `prioritized_hypotheses`,
+`priority_rank` and `mechanism` (not guessed `family`/`name` fields). Project
+only the selected row's required fields; its `canonical_artifacts` can exceed
+an entire output budget. Read a required full row in bounded field chunks,
+not repeated truncated dumps. Use one-line diff context when mechanically
+updating a ledger next to very long status strings.
+
 Inventory retained data by exact contract, event/settlement interval, timestamp,
 source hash, costs, depth and role **without consuming protected outcomes**.
 Choose each request by the uncertainty it resolves and whether either answer

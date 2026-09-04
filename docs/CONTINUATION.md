@@ -1,14 +1,20 @@
 # Continue Development
 
-Current canonical status after the Paradex fee-route source review:
+Current canonical status after the CPI mapping source review:
 accepted scopes 37, ranked hypotheses 65, terminal observations 188,
 and stable current account-qualified after-all-cost edges zero. Registry
 SHA-256 is
-`201db0929e7f061823bc0ed02e76597b5f68436ae82ceaccfe9921dde9c5c61d`;
+`96394c8e51621306a615bffa0fd0b107ecfe155cbc17bd9070a4bdccf60f3eb3`;
 durability-audit SHA-256 is
-`e2026967fb53e717a7cf47ba0c0a22e3169aa65bcb64aafd20fb744388371513`.
+`e73436dfc31a9391e071e823b3cb77d96c020ac2de641406666011b297378c9e`.
 
 ## September 4 resumed review and USD1 campaign
+
+Rank 31 adds the source-only CPI mapping review: annual unadjusted and monthly
+seasonally adjusted figures cannot be identified by matching release dates.
+A component-based support bound is conditional on unresolved official inputs;
+no prices were screened. See `review/2026-09-04/inflation-mapping.md`. Do not
+repeat the two exact event GETs or the two consumed BLS source opens.
 
 Rank 59 now includes a source-only fee-route review. Documented lower fees
 depend on order classification and execution constraints; workflow/account
