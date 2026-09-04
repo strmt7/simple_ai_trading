@@ -19,6 +19,14 @@ redirected and did not verify actual exchange mechanics. No old funding/carry
 result, protected capture or registry gate was changed. See
 `review/2026-09-04/inverse-collateral-economics.md` before venue-specific work.
 
+The subsequent distinct clearing-procedures PDF was retained successfully,
+but visual review found opposite COIN-M PnL signs in sections 80 and 86.2.
+It also makes the delivery-index averaging and funding-margin debit risks
+explicit. See `review/2026-09-04/inverse-clearing-source-review.md` and its
+structured evidence. No new inverse-market sampling is justified by that
+ambiguous document; use independent official reconciliation, not a PDF/FAQ
+retry. Exact August 31 BTC/ETH/SOL contract metadata was reused offline only.
+
 GPU continuation: a custom LightGBM 4.7.0 OpenCL wheel now trains successfully
 on the RX 9070 XT, with a hash-checked `tools/run_lightgbm_opencl.ps1` launcher
 that preserves the base environment. See `review/2026-09-04/gpu-runtime.md`.

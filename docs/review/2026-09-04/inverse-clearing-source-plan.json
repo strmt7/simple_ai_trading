@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "frozen_at_utc": "2026-09-04T21:56:54Z",
+  "question": "Does the independently published clearing-rules PDF specify inverse COIN-M payoff and margin accounting, and which operational or applicability conditions prevent treating matched collateral as guaranteed safe carry?",
+  "source_url": "https://bin.bnbstatic.com/static/cms/cg08ou2ak0tn7mcplvfg/file/53197b612332da02c20b5b7d19b81ff53ee5f4938c6330c72a30a1ca4f91049f.pdf",
+  "provenance": "Official Binance static-host PDF discovered in prior-turn primary-source search for COIN-M collateral/PnL; snippet identifies clearing procedures section 85. Not a locale or transport alias of any failed FAQ.",
+  "deduplication": "Exact PDF identifiers searched across docs, data and tools; no retained hit before writing this plan.",
+  "request": {"method": "GET", "count": 1, "redirects": false, "timeout_seconds": 30, "max_bytes": 8388608, "allowed_format": "PDF"},
+  "retention": "Durable pre-request and terminal journal, exact body including partial/failed responses, body and runner SHA256. Parse only after retention; no format or URL retries.",
+  "interpretation": "Source-only review. Verify document title, publication/effective dates, applicability, exact equations, margin qualifiers, close/settlement and loss-allocation risks. Missing terms stay unknown. Mathematical applicability is not evidence of account eligibility, current prices or profit.",
+  "authority": {"public_unauthenticated_read_only": true, "market_data_requests": 0, "account_requests": 0, "orders": 0, "protected_captures": 0},
+  "no_reopen": "Preserve every old FAQ failure, funding/carry result, protected capture and exact retry trigger. This distinct primary rules document is not a new economic sample."
+}

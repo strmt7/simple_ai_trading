@@ -1,0 +1,66 @@
+{
+  "schema_version": 1,
+  "classification": "primary_document_review_with_unresolved_internal_formula_conflict",
+  "source": {
+    "publisher": "Binance RCH",
+    "title": "Clearing Procedures",
+    "url": "https://bin.bnbstatic.com/static/cms/cg08ou2ak0tn7mcplvfg/file/53197b612332da02c20b5b7d19b81ff53ee5f4938c6330c72a30a1ca4f91049f.pdf",
+    "path": "docs/review/2026-09-04/inverse-clearing-source.pdf",
+    "sha256": "53197b612332da02c20b5b7d19b81ff53ee5f4938c6330c72a30a1ca4f91049f",
+    "bytes": 716997,
+    "pdf_pages": 52,
+    "received_at_utc": "2026-09-04T21:58:58.6778706+00:00",
+    "effective_date_verified": false,
+    "applicability": "Procedures 1-3 concern Binance RCH clearing/settlement and incorporate separate Clearing Rules. This document alone does not establish this repository account's jurisdiction, product eligibility or current effective rules."
+  },
+  "source_claims": [
+    {"procedure": "27, 30", "printed_page": 11, "fact": "Maintenance uses position value times rate minus maintenance amount; tiers are separately published and amendable.", "effect": "The previous simple proportional scenario is not a complete exchange maintenance calculation."},
+    {"procedure": "72, 74-78, 85.2", "printed_pages": [22, 24, 28], "fact": "Funding uses position value times adjusted rate; positive funding pays shorts. Payments enter settlement-asset balances and debits may reduce position margin. COIN-M position value is reciprocal in mark price.", "effect": "Coin cash flows and each settlement mark belong in an integrated hedge ledger; rates and schedules are not immutable."},
+    {"procedure": "80", "printed_page": 26, "fact": "The other-position UPNL definition uses side times the reciprocal entry-minus-mark difference; side is positive for long and negative for short.", "visual_check": true},
+    {"procedure": "86.2", "printed_page": 28, "fact": "The COIN-M PnL equation instead uses reciprocal mark-minus-entry and again labels long positive and short negative.", "visual_check": true, "effect": "Internal sign conflict; do not silently repair source semantics or promote a venue-specific model."},
+    {"procedure": "120-124", "printed_page": 34, "fact": "Delivery settlement uses the every-second index arithmetic average over the preceding 30 minutes. Settlement can be delayed; new positions may be restricted before expiry; settlement fees apply.", "visual_check": true, "effect": "An instantaneous executable spot exit is not the stated settlement average. Source currentness and exact contract applicability remain unproved."},
+    {"procedure": "109-119", "printed_pages": [32, 33], "fact": "Default close-out need not achieve the best price. Settlement reversals can occur without exact restoration; realized PnL changes margin balances.", "effect": "Algebraic hedging is not an unconditional custody, execution or finality guarantee."},
+    {"procedure": "205-211", "printed_page": 49, "fact": "The procedures can be amended and incorporate separate rules and terms. The document states no historical versions are currently available.", "effect": "Access date and content hash identify this retained version but do not establish its effective date."}
+  ],
+  "sign_counterexample": {
+    "kind": "synthetic_algebra_not_market_observation",
+    "normalized_positive_notional_quote": "100",
+    "entry_price": "100",
+    "mark_price": "200",
+    "short_direction": "-1",
+    "section80_pnl_coin": "-0.5",
+    "section86_2_pnl_coin": "0.5",
+    "matched_initial_collateral_coin": "1",
+    "common_price_wealth_section80_quote": "100",
+    "common_price_wealth_section86_2_quote": "300"
+  },
+  "retained_inventory": {
+    "path": "data/binance-linear-inverse-funding-v1/raw/coin-exchange-info.json",
+    "sha256": "e894cfc039af725eebbc821a3501aa80494cc9c51b66bd955d02c488e96ad1a3",
+    "received_at_utc": "2026-08-31T20:06:28.717278Z",
+    "scope": "All nine BTC/ETH/SOL rows: perpetual, September 25 and December 25 contracts. Metadata only; no funding or price values accessed.",
+    "contract_size_quote": {"BTC": "100", "ETH": "10", "SOL": "10"},
+    "quote_asset": "USD",
+    "margin_asset": "Each underlying coin",
+    "current_instrument_availability_verified": false,
+    "implication": "Use actual contract units and separate USD quote from executable stablecoin conversion. No new instrument request is justified by this retained metadata alone."
+  },
+  "coverage": {
+    "text_reviewed_pdf_page_indexes": [0, 2, 3, 8, 13, 18, 20, 21, 24, 25, 26, 28, 29, 30, 33, 34, 35, 36, 37, 51],
+    "visually_reviewed_pdf_page_indexes": [28, 30, 36],
+    "entire_document_semantically_reviewed": false,
+    "parser": "bundled pypdf 6.10.0",
+    "renderer": "bundled pypdfium2"
+  },
+  "decision": {
+    "source_transport_passed": true,
+    "unambiguous_payoff_source_gate_passed": false,
+    "new_market_capture_authorized": false,
+    "account_qualification": false,
+    "accepted_edge": false,
+    "profitability_claim": false,
+    "existing_families": ["rank_14_quarterly_spot_future_cash_and_carry", "terminal_linear_inverse_perpetual_funding"],
+    "next_action": "Reuse this exact document offline. Require an independently evidenced official correction or authoritative reconciliation of the opposite signs, plus effective-version and contract-unit mapping, before using it to qualify a Binance inverse model. Continue other eligible economic work; do not refetch the PDF or FAQ aliases.",
+    "historical_results_and_retry_triggers_changed": false
+  }
+}
