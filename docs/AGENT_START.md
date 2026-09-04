@@ -21,6 +21,27 @@ profitable without reproducible source-bound after-cost evidence. AI may veto
 or reduce risk only; it never creates positions, selects leverage, overrides a
 safety gate, blocks Stop, or submits an order.
 
+### Latest WDCB/NVDAB dividend source-floor gate
+
+The distinct September 4 WDCB/NVDAB official dividend announcement is
+consumed. One frozen public CMS GET retained 69,675 bytes and proved that only
+the net cash amount after applicable withholding taxes, fees, costs, and other
+deductions is reinvested. It publishes no positive gross amount, no finite
+upper bound or complete formula for every deduction, and no deterministic
+positive final units or multiplier increment. Both exact episodes therefore
+have a zero source-bound conservative net-distribution floor and do not satisfy
+rank 34's full retry trigger.
+
+Do not refetch or alias the article and do not request WDC or NVDA issuer dates,
+books, funding, accounts, credentials, orders, or funds for these episodes.
+Reopen only when a future independent episode first binds a strictly positive
+net floor and its bStock snapshot materially precedes the official exchange
+ex-dividend adjustment. Accepted edges remain 37, ranked hypotheses remain 65,
+terminal families become 185, and stable current account-qualified after-all-
+cost edges remain zero. Registry and durability-audit SHA-256 values are
+`2b0a4ec1734c8e34362e978fd7d6fbccf2ad49db435b1d1a83c80f16c1cd52c6`
+and `4d956c98e5ef90a425f5dcd0c40017049c057e3d6d1fa6633a6020285c7ff4dd`.
+
 ### Latest Binance CXMT four-hour funding trigger
 
 An exact official notice proves that Binance changed `CXMTUSDT` from eight-hour

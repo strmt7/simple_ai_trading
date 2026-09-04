@@ -2998,14 +2998,26 @@
         {
           "path": "docs/model-research/action-value/binance-qcom-pypl-bstock-dividend-shared-net-floor-prefilter-v1-2026-08-31.json",
           "result_sha256": "ddb99b6d56e18e82218c057ee180eacdd7d0b055daab6701c762120a7a0d64df"
+        },
+        {
+          "path": "docs/model-research/action-value/binance-wdc-nvda-bstock-dividend-source-contract-v1-2026-09-04.json",
+          "result_sha256": "36019fbf294ae3f3182ed75c6a4e35e1f305fd1ef7d44e59d24609ca663e3f6f"
+        },
+        {
+          "path": "docs/model-research/action-value/binance-wdc-nvda-bstock-dividend-source-result-v1-2026-09-04.json",
+          "result_sha256": "fd294181f625d62967254bc97de6f55930b6af9194b97cc9280f493c82702e21"
+        },
+        {
+          "path": "docs/model-research/action-value/binance-wdc-nvda-bstock-dividend-net-floor-adjudication-v1-2026-09-04.json",
+          "result_sha256": "82bd2e0b0461b930218da3b7e01756cc2a5572d823bfc49586421fa3a7d5ce98"
         }
       ],
-      "current_status": "terminally_rejected_for_the_2026_GLW_GOOGL_QCOM_and_PYPL_episodes_GLW_had_its_gross_matching_Special_debit_1003_ms_after_snapshot_GOOGLs_holiday_adjusted_ex_dividend_date_equals_the_snapshot_date_and_prior_exact_gross_matching_debit_arrived_7_ms_after_midnight_while_the_already_retained_shared_QCOMB_PYPLB_GOOGLB_announcement_leaves_withholding_fees_costs_and_other_deductions_unbounded_so_QCOM_and_PYPL_each_have_zero_conservative_net_distribution_floor_before_issuer_date_or_market_requests_no_current_book_funding_account_order_or_profit_claim_is_permitted_not_accepted_or_deployment_ready",
-      "latest_sibling_prefilter_status": "the_same_immutable_announcement_already_bound_QCOMB_and_PYPLB_snapshots_and_the_shared_net_after_withholding_fees_costs_and_other_deductions_semantics_because_no_deduction_ceiling_or_complete_formula_is_retained_each_exact_sibling_episode_has_a_zero_public_conservative_net_distribution_floor_and_was_terminalized_with_zero_new_requests_before_issuer_calendar_funding_or_book_work",
+      "current_status": "terminally_rejected_for_the_2026_GLW_GOOGL_QCOM_PYPL_WDC_and_NVDA_episodes_the_distinct_current_WDCB_NVDAB_announcement_names_both_snapshot_dates_but_publishes_no_exact_positive_gross_amount_no_finite_withholding_or_other_deduction_ceiling_and_no_deterministic_positive_final_units_or_multiplier_increment_so_each_new_episode_has_zero_source_bound_net_distribution_floor_before_issuer_date_or_market_requests_no_current_book_funding_account_order_or_profit_claim_is_permitted_not_accepted_or_deployment_ready",
+      "latest_sibling_prefilter_status": "one_frozen_exact_official_WDCB_NVDAB_announcement_capture_retained_69675_bytes_and_passed_its_identity_date_and_deduction_phrase_gate_but_the_precommitted_economic_gate_rejected_both_siblings_because_the_shared_net_after_withholding_fees_costs_and_other_deductions_semantics_bind_no_positive_conservative_lower_bound_full_rank_34_retry_trigger_not_satisfied",
       "latest_terminal_delta_status": "the_GOOGL_announcement_capture_retained_HTTP_200_and_failed_only_its_generic_trading_phrase_while_exact_symbol_wording_was_retained_the_SEC_filing_capture_failed_before_response_on_DNS_and_was_not_retried_offline_adjudication_bound_the_holiday_adjusted_ex_date_to_the_snapshot_and_prior_same_underlying_gross_matching_debit_no_market_book_account_credential_order_or_fund_request_was_made",
       "market_direction_forecast_required": false,
       "mechanism": "binance_bstock_dividend_perpetual_funding_timing_gap",
-      "next_action": "do_not_repeat_or_alias_either_consumed_GOOGL_source_capture_do_not_repeat_the_GLW_history_capture_and_do_not_request_GOOGL_GLW_QCOM_or_PYPL_books_funding_or_issuer_dates_for_these_exact_episodes_reopen_only_for_a_future_event_where_current_primary_terms_first_bind_a_strictly_positive_conservative_net_distribution_floor_and_the_bStock_snapshot_materially_precedes_the_official_exchange_ex_dividend_adjustment",
+      "next_action": "do_not_repeat_or_alias_the_consumed_GOOGL_or_WDCB_NVDAB_source_captures_do_not_repeat_the_GLW_history_capture_and_do_not_request_GOOGL_GLW_QCOM_PYPL_WDC_or_NVDA_books_funding_or_issuer_dates_for_these_exact_episodes_reopen_only_for_a_future_event_where_current_primary_terms_first_bind_a_strictly_positive_conservative_net_distribution_floor_and_the_bStock_snapshot_materially_precedes_the_official_exchange_ex_dividend_adjustment",
       "priority_rank": 34,
       "prohibited_shortcuts": [
         "assuming_the_GLW_special_funding_timestamp_from_AMAT_and_MSFT",
@@ -4260,7 +4272,7 @@
       ]
     }
   ],
-  "result_sha256": "c6f6338f7d3b42baa2f6f61bbcf0b1433aff46cec541d9b3dbac5d6387ae0e59",
+  "result_sha256": "2b0a4ec1734c8e34362e978fd7d6fbccf2ad49db435b1d1a83c80f16c1cd52c6",
   "schema_version": "structural-edge-priority-registry-v1",
   "terminal_do_not_repeat": [
     {
@@ -5188,8 +5200,13 @@
       "family": "binance_CRWDBUSDT_CRWDUSDT_new_listing_topbook_2026_09_04",
       "reason": "the_official_September_2_listing_and_current_inventories_proved_a_new_exact_one_multiplier_CRWDBUSDT_bStock_and_active_exact_CRWDUSDT_TradFi_perpetual_the_frozen_lexicographic_selector_chose_CRWD_and_one_262ms_skew_two_request_top_book_snapshot_found_the_spot_ask_and_perpetual_bid_both_exactly_213_07_USDT_zero_gross_headroom_and_negative_1_06535_USDT_per_share_or_negative_50_bips_after_fixed_stress_do_not_refetch_reprice_request_depth_funding_fees_accounts_credentials_orders_or_funds_for_this_exact_CRWD_observation_MRNA_and_SQQQ_are_not_terminalized_or_inferred_from_it",
       "canonical_result_sha256": "a02367c4c0f7461a29ba857f947dc870ab6539be36419d7b068e5e685b58c744"
+    },
+    {
+      "family": "binance_WDCB_NVDAB_cash_dividend_shared_net_floor_source_gate_2026_09_04",
+      "reason": "one_frozen_exact_official_public_announcement_capture_retained_69675_bytes_and_bound_WDCB_NVDAB_their_September_8_and_September_10_snapshots_and_reinvestment_after_applicable_withholding_taxes_fees_costs_and_other_deductions_but_publishes_no_exact_positive_gross_amount_no_finite_ceiling_or_complete_formula_for_every_deduction_and_no_deterministic_positive_final_units_or_multiplier_increment_both_exact_siblings_have_zero_source_bound_conservative_net_distribution_floor_so_the_full_rank_34_retry_trigger_is_not_satisfied_stop_before_issuer_dates_books_funding_fees_accounts_credentials_orders_funds_or_rushed_pre_suspension_activity_do_not_refetch_or_alias_reopen_only_on_rank_34s_full_future_independent_positive_floor_and_material_ex_dividend_timing_trigger",
+      "canonical_result_sha256": "82bd2e0b0461b930218da3b7e01756cc2a5572d823bfc49586421fa3a7d5ce98"
     }
   ],
-  "updated_at_utc": "2026-09-04T19:07:06.461317Z",
+  "updated_at_utc": "2026-09-04T19:16:04.8141824Z",
   "usage_rule": "advance_the_highest_ranked_hypothesis_whose_retry_trigger_is_satisfied_otherwise_do_not_repeat_a_blocked_or_terminal_screen"
 }

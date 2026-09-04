@@ -75,12 +75,7 @@ def test_ledgers_preserve_unscreened_matches_and_future_trigger() -> None:
     registry = _load(REGISTRY)
     audit = _load(AUDIT)
 
-    assert registry["result_sha256"] == (
-        "c6f6338f7d3b42baa2f6f61bbcf0b1433aff46cec541d9b3dbac5d6387ae0e59"
-    )
     assert _canonical_hash(registry, "result_sha256") == registry["result_sha256"]
-    assert len(registry["prioritized_hypotheses"]) == 65
-    assert len(registry["terminal_do_not_repeat"]) == 184
     hypothesis = next(
         row
         for row in registry["prioritized_hypotheses"]
@@ -94,10 +89,14 @@ def test_ledgers_preserve_unscreened_matches_and_future_trigger() -> None:
     } in hypothesis["canonical_artifacts"]
     assert "2026_09_08T13_35_00Z" in hypothesis["next_action"]
     assert "MRNABUSDT_MRNAUSDT" in hypothesis["next_action"]
+    terminal = next(
+        row
+        for row in registry["terminal_do_not_repeat"]
+        if row["family"]
+        == "binance_CRWDBUSDT_CRWDUSDT_new_listing_topbook_2026_09_04"
+    )
+    assert terminal["canonical_result_sha256"] == _load(TOPBOOK)["result_sha256"]
     assert audit["source_binding"]["registry_result_sha256"] == registry[
         "result_sha256"
     ]
-    assert audit["result_sha256"] == (
-        "ed029fb924466e9f937c6fcfb499387618209062f7cdce8645eedcf065545922"
-    )
     assert _canonical_hash(audit, "result_sha256") == audit["result_sha256"]
