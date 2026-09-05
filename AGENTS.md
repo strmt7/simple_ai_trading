@@ -44,6 +44,10 @@ after its one execution. All other literal retry/protected-capture rules remain.
   decisions; preserve the old runner, source bindings and historical results.
 
 - Work in this session only; use no subagent.
+- Apply the shared [codebase consistency standard](CONTRIBUTING.md#codebase-consistency-standard)
+  through reasoned semantic and architectural review, not mechanical test or
+  formatting compliance alone. Keep naming, comments, types, errors, logging
+  and interfaces coherent; preserve frozen evidence and justified differences.
 - Complete the user's [capital-protection and final review requirements](docs/CAPITAL_PROTECTION_ARCHITECTURE.md):
   independent process safeguards, durable recovery and model-health controls;
   after the main revamp, review every code line and make justified refactors and

@@ -1,5 +1,12 @@
 # Continue Development
 
+The user's consistency requirement is now the shared
+[codebase standard](../CONTRIBUTING.md#codebase-consistency-standard): lead with
+reasoned semantic/architecture review, use consistent comments, naming, typing,
+errors, logging and interfaces, and use automated checks as supporting evidence.
+Apply it during implementation and complete the legacy migration in the final
+line-by-line review. This standards update does not mark that review complete.
+
 Latest engineering: [calibration and recovery checkpoint](review/2026-09-05/calibration-and-recovery.md)
 removes repeated inference across threshold grids and closes a reproduced stale
 heartbeat lease-renewal gap. Both are forward code changes, not rewritten model

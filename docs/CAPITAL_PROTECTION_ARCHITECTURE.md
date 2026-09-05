@@ -150,6 +150,15 @@ recorded authorization. Preserve previous models and results for reproduction.
 
 ## Mandatory final bug-hunting campaign
 
+Apply the [shared codebase consistency standard](../CONTRIBUTING.md#codebase-consistency-standard)
+throughout the final review/refactor. Lead with semantic understanding and
+architectural judgment: trace intent, financial invariants, ownership and
+failure propagation before deciding what to change. Review comments, naming,
+types, logging, errors and interface language as part of each file. Automated
+checks corroborate this work; mechanical uniformity and passing tests do not
+substitute for it. Record justified differences rather than force unlike
+contracts into a common abstraction.
+
 The user's final-pass instruction is explicit: be exhaustive and cut no corners.
 Maintain a hash-bound file and line-range coverage ledger for the complete release tree:
 code, configuration, build/dependency files, vendored material, scripts, skills,
