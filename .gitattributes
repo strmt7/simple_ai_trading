@@ -170,3 +170,5 @@ docs/review/2026-09-05/xinet-source/** binary -eol
 docs/review/2026-09-05/literature-discovery-*.json binary -eol
 docs/review/2026-09-05/spot-testnet-execution/** binary -eol
 docs/review/2026-09-05/inverse-sign-*.json binary -eol
+docs/review/2026-09-05/holding-yield-change-*.json binary -eol
+docs/review/2026-09-05/completion-decision-review.json binary -eol

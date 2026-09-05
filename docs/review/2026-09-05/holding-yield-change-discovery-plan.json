@@ -1,0 +1,11 @@
+{
+  "schema_version": "official-program-change-discovery-v1",
+  "question": "Is there a newly announced material Polymarket holding-reward program or rate change after the consumed August 31 continuity receipt?",
+  "query": "site:docs.polymarket.com OR site:polymarket.com holding rewards September 2026 rate update",
+  "maximum_search_calls": 1,
+  "freeze_order": "Persisted before the single search; exact request start time is not exposed by the tool",
+  "search_role": "Discovery only. An unchanged, undated or previously consumed page is not a material-change trigger. Do not use snippets as a current rate or payout.",
+  "gate": "Only independently identified material official program, rate, cross-asset payout or economic comparator change can justify a separately frozen new public source reconciliation. Deduplicate any selected exact URL before access.",
+  "protected": "No V7 partial payload access, no V7/V9/V10/V11/V12 replay or alias, no bridge quote, wallet activity or receipts, no account or funded operations",
+  "fallback": "If no qualifying change is identified, preserve the evidence, leave the gate closed and advance a distinct eligible question; do not repeat the unchanged search"
+}

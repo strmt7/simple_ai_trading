@@ -1,0 +1,217 @@
+{
+  "classification": "conditional_synthetic_arithmetic_not_edge_or_model_validation",
+  "historical_results_changed": false,
+  "holding_yield_discovery": {
+    "accidental_price_exposure": "All returned event pages excluded from prospective promotion based on this discovery. No prices used, no event follow-up, no economic screening claim.",
+    "followup_market_or_source_requests": 0,
+    "lesson": "This broad-domain dated query was ineffective; do not repeat it or count event metadata as program evidence. Prefer an independently identified official program announcement for a later material-change trigger.",
+    "program_change_proved": false,
+    "refresh_gate_satisfied": false,
+    "retrieval": "Unrelated event pages; no holding program evidence. Does not prove absence of a change.",
+    "searches": 1
+  },
+  "probabilities": "Illustrative supplied joint weights; not fitted, calibrated or empirically estimated",
+  "qualified_edge": false,
+  "quote_unit": "synthetic_common_quote_unit",
+  "rows": [
+    {
+      "case": "positive_historical_profit_but_sale_better",
+      "inputs": {
+        "historical_acquisition_cost": "35",
+        "liquidation_net_proceeds": "65",
+        "original_net_shares": "100",
+        "states": [
+          {
+            "acquisition_cash": "40",
+            "additional_cost": "0",
+            "label": "full",
+            "opposite_net_shares": "100",
+            "opposite_residual_net_bid": null,
+            "original_residual_net_bid": null,
+            "pair_net_realization": "1",
+            "probability": "1"
+          }
+        ]
+      },
+      "result": {
+        "expected_completion_net_value": "60",
+        "expected_incremental_value": "-5",
+        "positive_in_every_supplied_state": false,
+        "probability_underperforming_liquidation": "1",
+        "qualified_edge": false,
+        "states": [
+          {
+            "completion_net_value": "60",
+            "historical_completion_pnl": "25",
+            "historical_liquidation_pnl": "30",
+            "incremental_value": "-5",
+            "label": "full",
+            "liquidation_net_value": "65",
+            "matched_shares": "100",
+            "opposite_residual_shares": "0",
+            "original_residual_shares": "0",
+            "probability": "1"
+          }
+        ],
+        "worst_state_incremental_value": "-5"
+      }
+    },
+    {
+      "case": "partial_completion_retains_original_exposure",
+      "inputs": {
+        "historical_acquisition_cost": "35",
+        "liquidation_net_proceeds": "65",
+        "original_net_shares": "100",
+        "states": [
+          {
+            "acquisition_cash": "16",
+            "additional_cost": "0",
+            "label": "partial",
+            "opposite_net_shares": "40",
+            "opposite_residual_net_bid": null,
+            "original_residual_net_bid": "0.5",
+            "pair_net_realization": "1",
+            "probability": "1"
+          }
+        ]
+      },
+      "result": {
+        "expected_completion_net_value": "54.0",
+        "expected_incremental_value": "-11.0",
+        "positive_in_every_supplied_state": false,
+        "probability_underperforming_liquidation": "1",
+        "qualified_edge": false,
+        "states": [
+          {
+            "completion_net_value": "54.0",
+            "historical_completion_pnl": "19.0",
+            "historical_liquidation_pnl": "30",
+            "incremental_value": "-11.0",
+            "label": "partial",
+            "liquidation_net_value": "65",
+            "matched_shares": "40",
+            "opposite_residual_shares": "0",
+            "original_residual_shares": "60",
+            "probability": "1"
+          }
+        ],
+        "worst_state_incremental_value": "-11.0"
+      }
+    },
+    {
+      "case": "positive_mean_with_downside",
+      "inputs": {
+        "historical_acquisition_cost": "35",
+        "liquidation_net_proceeds": "65",
+        "original_net_shares": "100",
+        "states": [
+          {
+            "acquisition_cash": "30",
+            "additional_cost": "0",
+            "label": "full",
+            "opposite_net_shares": "100",
+            "opposite_residual_net_bid": null,
+            "original_residual_net_bid": null,
+            "pair_net_realization": "1",
+            "probability": "0.9"
+          },
+          {
+            "acquisition_cash": "16",
+            "additional_cost": "0",
+            "label": "partial",
+            "opposite_net_shares": "40",
+            "opposite_residual_net_bid": null,
+            "original_residual_net_bid": "0.5",
+            "pair_net_realization": "1",
+            "probability": "0.1"
+          }
+        ]
+      },
+      "result": {
+        "expected_completion_net_value": "68.40",
+        "expected_incremental_value": "3.40",
+        "positive_in_every_supplied_state": false,
+        "probability_underperforming_liquidation": "0.1",
+        "qualified_edge": false,
+        "states": [
+          {
+            "completion_net_value": "70",
+            "historical_completion_pnl": "35",
+            "historical_liquidation_pnl": "30",
+            "incremental_value": "5",
+            "label": "full",
+            "liquidation_net_value": "65",
+            "matched_shares": "100",
+            "opposite_residual_shares": "0",
+            "original_residual_shares": "0",
+            "probability": "0.9"
+          },
+          {
+            "completion_net_value": "54.0",
+            "historical_completion_pnl": "19.0",
+            "historical_liquidation_pnl": "30",
+            "incremental_value": "-11.0",
+            "label": "partial",
+            "liquidation_net_value": "65",
+            "matched_shares": "40",
+            "opposite_residual_shares": "0",
+            "original_residual_shares": "60",
+            "probability": "0.1"
+          }
+        ],
+        "worst_state_incremental_value": "-11.0"
+      }
+    },
+    {
+      "case": "opposite_overfill_is_not_free",
+      "inputs": {
+        "historical_acquisition_cost": "35",
+        "liquidation_net_proceeds": "65",
+        "original_net_shares": "100",
+        "states": [
+          {
+            "acquisition_cash": "44",
+            "additional_cost": "0",
+            "label": "full",
+            "opposite_net_shares": "110",
+            "opposite_residual_net_bid": "0.3",
+            "original_residual_net_bid": null,
+            "pair_net_realization": "1",
+            "probability": "1"
+          }
+        ]
+      },
+      "result": {
+        "expected_completion_net_value": "59.0",
+        "expected_incremental_value": "-6.0",
+        "positive_in_every_supplied_state": false,
+        "probability_underperforming_liquidation": "1",
+        "qualified_edge": false,
+        "states": [
+          {
+            "completion_net_value": "59.0",
+            "historical_completion_pnl": "24.0",
+            "historical_liquidation_pnl": "30",
+            "incremental_value": "-6.0",
+            "label": "full",
+            "liquidation_net_value": "65",
+            "matched_shares": "100",
+            "opposite_residual_shares": "10",
+            "original_residual_shares": "0",
+            "probability": "1"
+          }
+        ],
+        "worst_state_incremental_value": "-6.0"
+      }
+    }
+  ],
+  "schema_version": "completion-decision-synthetic-review-v1",
+  "source_sha256": {
+    "docs/review/2026-09-05/holding-yield-change-discovery-extraction.json": "d4bb3fc58d6049644e7bb531992b33b0b6dd979421b060cc41ada3492b262706",
+    "docs/review/2026-09-05/holding-yield-change-discovery-plan.json": "edeaa0147315942c0f383b8c0e4617e0f9cf19fe5bc69e9ebc1daaaffe2336d8",
+    "src/simple_ai_trading/completion_economics.py": "3316d56c71e6c1b6207a2c238d9c5c1d79a348042c66b6b88f74d1ed8dffa9bf",
+    "tests/test_completion_economics.py": "812d89b7be44b5cad7723ec88aff154de963a36d0a88e182a3f90b6cac063620",
+    "tools/review_completion_economics.py": "0399d23e13b3b7750f512cdde47e0017fa67cd339c4e17cbd05259f1f0f5d546"
+  },
+  "valuation_horizon": "same hypothetical horizon for every cash flow and comparator; not an observed timestamp"
+}
