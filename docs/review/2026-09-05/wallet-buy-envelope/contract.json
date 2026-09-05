@@ -1,0 +1,51 @@
+{
+  "schema_version": "retained-binary-buy-envelope-contract-v1",
+  "question": "How much outcome-dependent exposure lies outside the reported positive matched locks when every retained scoped buy is included?",
+  "role": "exploratory retrospective exposure audit; not independent validation, rematching, wallet PnL or a new strategy test",
+  "raw_path": "docs/model-research/polymarket/raw/wallet-opposite-lock-validation-v1-2026-08-31/01-trades.raw.json",
+  "output_path": "docs/review/2026-09-05/wallet-buy-envelope/result.json",
+  "expected_raw_rows": 1964,
+  "expected_conditions": 358,
+  "interpretation": {
+    "population": "All BTC ETH SOL 5m 15m 4h Up/Down buy rows in the original retained UTC day. No conditioning on lock membership, later success or profitable completion; no selected lock is removed or rematched.",
+    "identity": "Conditional on each condition having exactly two complementary net-share claims paying one quote unit in total, buys retained through resolution have gross cash payout q_up or q_down. Algebraically decompose into min(q_up,q_down) paired units and abs(q_up-q_down) residual directional units.",
+    "envelope": "Sum condition minima and maxima less all purchase cash. This is an outer envelope; cross-condition dependence can make joint endpoints unattainable. Intermediate fractional complementary payouts lie inside it. Exceptions to one-unit complement settlement are outside this conditional model.",
+    "costs": "Gross purchase cash only, before fees, share deductions, slippage, financing, redemption, taxes, operational costs or alternative cash yield. No fee schedule is newly inferred. An optimistic gross envelope is not after-cost profit.",
+    "not_a_wallet_ledger": "The source covers taker trades, not opening positions, maker fills, transfers, splits, merges, redemptions, final outcomes or owned state. Do not claim actual balances, realized wallet PnL, first-leg justification, causal strategy replication or independent binary outcomes.",
+    "residual_fraction": "The remaining quote payout required for gross break-even divided by residual share quantity is a quantity-weighted realized-payout requirement, not a probability, prediction, calibrated label or equal-weight win rate.",
+    "decision": "Quantify total exposure and stop without resolution, quote, fee, wallet, account or protected-data requests. Preserve original candidate/robustness results and literal retry triggers. No accepted edge or promotion follows."
+  },
+  "network_requests": 0,
+  "protected_capture_access": false,
+  "historical_mutation": false,
+  "scope": {
+    "wallet": "0xb27bc932bf8110d8f78e55da7d5f0497a18b5b82",
+    "start": 1788048000,
+    "end": 1788134400
+  },
+  "bindings": [
+    {
+      "path": "docs/model-research/polymarket/raw/wallet-opposite-lock-validation-v1-2026-08-31/01-trades.raw.json",
+      "sha256": "6415762d369fd3188c822e00b6a83f416b9061d47cbeabf4b874e953c28a0dd0"
+    },
+    {
+      "path": "docs/model-research/action-value/polymarket-wallet-opposite-lock-validation-contract-v1-2026-08-31.json",
+      "sha256": "a60fa4b49cc065a55c23a9076d5ffd6207943e936f5279e4ce8ed49ef981ebf6"
+    },
+    {
+      "path": "docs/model-research/action-value/polymarket-wallet-opposite-lock-validation-result-v1-2026-08-31.json",
+      "sha256": "b90553bc3701ee53d55f308ce58d5597c1904fee4ec66529655a73528c384ccc"
+    },
+    {
+      "path": "tools/audit_binary_buy_inventory.py",
+      "sha256": "f925ffc7a8fa8b83baab00905db4b6d1d5054203642c6e5d1bc9ce25f2ef256a"
+    },
+    {
+      "path": "tools/update_binance_crypto_option_distinct_population_registry.py",
+      "sha256": "cb1471fb5dce18ee81c1fba4f78686069b6b855eeab69220a41687cc518092d3"
+    }
+  ],
+  "base_commit": "dfae57ff43c74e6b9b2682e8e949313efd6d2937",
+  "frozen_at_utc": "2026-09-05T09:53:01.276925Z",
+  "contract_sha256": "dc17d6deb2933e7ac64ed5f43fbff2cbcd9ec6b6b8d4f09b2c52bd870a0fec6a"
+}

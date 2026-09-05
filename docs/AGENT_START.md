@@ -10,6 +10,12 @@ Scope blockers to their branch; a fresh user resumption resets the blocked audit
 
 ## Current Truth
 
+The retained wallet [buy-population exposure audit](review/2026-09-05/wallet-buy-envelope/review.md)
+quantifies substantial residual directional exposure outside the selected
+profitable locks. It is conditional buy-only accounting, not actual wallet PnL;
+do not train a standalone entry model on those selected locks or repeat this
+sample. All historical results, registry counts and retry triggers are unchanged.
+
 The September 5 Binance option population is consumed: 70 new contracts,
 23 positive-entry rows, zero gross-positive floors and zero stress survivors.
 Read `review/2026-09-05/option-population/review.md`. Include all 70 in future

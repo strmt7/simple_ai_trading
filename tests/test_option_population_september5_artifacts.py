@@ -181,7 +181,10 @@ def test_terminal_registry_lineage_preserves_nonpromotion():
     assert (
         audit["source_binding"]["registry_result_sha256"] == registry["result_sha256"]
     )
-    assert audit["source_binding"]["accepted_edge_count"] == 37
+    assert (
+        audit["source_binding"]["accepted_edge_count"]
+        == registry["accepted_edge_count"]
+    )
     (row,) = [r for r in registry["prioritized_hypotheses"] if r["priority_rank"] == 47]
     assert all(b in row["canonical_artifacts"] for b in plan["artifact_additions"])
     assert plan["terminal"] in registry["terminal_do_not_repeat"]
