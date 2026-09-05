@@ -1,0 +1,12 @@
+{
+  "schema_version": "source-reconciliation-v1",
+  "review_base_commit": "83a542287a69c39477a63bd915c300eb06b4ce41",
+  "source_url": "https://www.binance.com/en/support/faq/detail/4108bab5e4784a8db0a6b8b88dcb1ccd",
+  "question": "Can Multi-Assets Mode auto-exchange reduce the owned-asset leg of a matched linear carry hedge, and does its trigger use wallet balance or unrealized mark-to-market PnL?",
+  "why_distinct": "The completed collateral-rate review asked for current quantitative collateral/margin qualification and selected one different Pro guide. This investigation addresses a separate dynamic position/cash-flow transition expressly excluded by collateral_stress.py. It does not reopen the prior source-selection budget or seek replacement numerical rates.",
+  "discovery": "The exact URL and article identity are retained in collateral-semantics-discovery-extraction.json. Exact identifier search across docs, data and tools finds only that discovery and the prior plan, not a prior primary-source access. Discovery snippets are not admitted economic evidence.",
+  "access": "Exactly one web open of the specified official FAQ, no searches, clicks, aliases, retries, accounts, market data, orders or protected captures. Retain the complete returned tool representation with before/after UTC receipts. It is not origin HTTP bytes.",
+  "admission": "Require matching auto-exchange/Multi-Assets Mode identity and substantive primary text. Separate wallet balances, unrealized PnL, liquidation, open positions/orders and program variants. Preserve strict versus inclusive thresholds and any internally inconsistent boundary descriptions. Do not generalize to Portfolio Margin Pro or a dated contract without explicit source support.",
+  "decision": "Produce a source-bound conceptual cash/quantity transition and caller limitations. Source parameters remain descriptive document values, not account-qualified controls. Missing text or ambiguity is terminal for this access; do not infer a deterministic exchange algorithm. No new numerical scenario grid, training, profitable-edge claim, registry observation or capture retry follows.",
+  "freeze_order": "Written before primary-source access; retained carry results and the search-only lead were already seen. This is source research, not an untouched economic validation population."
+}

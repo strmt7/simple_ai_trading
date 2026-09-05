@@ -1,0 +1,44 @@
+{
+  "adjudication": {
+    "applicable_auto_exchange_terms_qualified": false,
+    "origin_http_bytes_retained": false,
+    "origin_http_status": null,
+    "plan_consumed": true,
+    "reported_lines": 89,
+    "reported_redirect_url": "https://www.binance.com/en-GB",
+    "requested_article_id": "4108bab5e4784a8db0a6b8b88dcb1ccd",
+    "retry_or_alias_authorized": false,
+    "search_snippet_values_admitted": false,
+    "status": "source_admission_failed_redirect_to_regional_landing_page"
+  },
+  "authority": {
+    "account_requests": 0,
+    "additional_searches": 0,
+    "market_data_requests": 0,
+    "orders": 0,
+    "protected_capture_access": false,
+    "public_source_requests": 1,
+    "training_runs": 0
+  },
+  "completed_after_utc": "2026-09-05 04:30:34 UTC",
+  "historical_results_changed": false,
+  "qualified_edge": false,
+  "registry_changed": false,
+  "requested_before_utc": "2026-09-05 04:30:30 UTC",
+  "result_sha256": "2efd42e923b184385838ce1007b219176e4283438d5f713a0f19e892fedb9d4f",
+  "review_base_commit": "83a542287a69c39477a63bd915c300eb06b4ce41",
+  "routing_check": {
+    "new_access_authorized": false,
+    "retained_event_count": 0,
+    "wnba_window_end_utc": "2026-09-09T23:59:59Z",
+    "wnba_window_start_utc": "2026-09-03T00:00:00Z"
+  },
+  "schema_version": "auto-exchange-source-review-v1",
+  "source_bindings": {
+    "docs/model-research/action-value/polymarket-post-sep2-wnba-monotone-catalog-result-v1-2026-09-01.json": "2a9a72b8cbc4b803cabc3622142cdcf806f0571bdfbede4e6278114ade7e7bcc",
+    "docs/review/2026-09-05/collateral-auto-exchange-extraction.json": "152c7676bcc0740850bd52e298e2e387b5af09018afea5e5b23c3d8cef79fe10",
+    "docs/review/2026-09-05/collateral-auto-exchange-plan.json": "97accc190656b50401dc566a4d66d80411b3bbca930cc5719ea2b2cf9f4ff64a",
+    "docs/review/2026-09-05/collateral-semantics-discovery-extraction.json": "a1e9a2a316ba1b4b512937945603d88c57393c71abb37cc85cad595d2ead6a9c",
+    "src/simple_ai_trading/collateral_stress.py": "e980c9e54df9b848b565ff575935dd345513dc50bb4e9a6294e6aaf7218b313c"
+  }
+}

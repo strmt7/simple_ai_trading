@@ -29,6 +29,13 @@ One new official Pro guide confirms haircut semantics, not actual current
 rates or account eligibility. The bounded source search/open is consumed;
 do not repeat it. No price, account, order or protected capture was accessed.
 
+The separate exact auto-exchange FAQ access redirected to a regional landing
+page; see `review/2026-09-05/collateral-auto-exchange-review.md`. It establishes
+no conversion terms. That access is consumed, with no alias/retry; search
+snippets remain unqualified. The unchanged-quantity stress evaluator does not
+cover forced asset disposal. The routing check also confirms the WNBA
+September 3-9 window is already consumed; no fresh catalog is authorized.
+
 The retained dated-carry capital-budget review is complete: all 12 original
 rows, 108 conditional scenarios, zero new requests. Read
 `review/2026-09-05/dated-carry-capital-budget/review.md`. At a hypothetical

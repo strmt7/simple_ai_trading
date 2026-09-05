@@ -24,6 +24,9 @@ Carry research now has a conditional collateral-stress evaluator; read
 equity can stay flat while haircut-adjusted margin headroom falls. The new
 official guide supplies no current numerical account haircut or dated-contract
 margin qualification. Do not replace that missing evidence with its example.
+The separate auto-exchange FAQ access failed source admission after redirect;
+read `review/2026-09-05/collateral-auto-exchange-review.md`. Do not use search
+snippets as conversion rules or retry the consumed source through a locale alias.
 
 The retained dated-carry capital budget is complete; read
 `review/2026-09-05/dated-carry-capital-budget/review.md`. At a hypothetical
