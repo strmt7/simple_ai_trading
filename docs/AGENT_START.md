@@ -6,6 +6,13 @@ operating contract. Historical handoff text is archived under
 
 ## Current Truth
 
+The one-time session-only Binance triangle future window is complete and
+consumed: 72 route observations, maximum ideal gross headroom 1.4093 bips,
+zero survivors above the unchanged 3-bip stress. Read
+`review/2026-09-05/triangle-window/review.md`. Do not repeat the window or infer
+realized losses from a stress failure. Canonical terminal count is now 190;
+older checkpoint counts below are historical. No edge was promoted.
+
 Maker research now has a quantity-aware completion-versus-liquidation evaluator;
 see `review/2026-09-05/completion-decision-review.md`. It handles partial and
 overfilled opposite shares and rejects missing nonzero-leg prices. Supplied

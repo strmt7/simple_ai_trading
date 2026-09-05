@@ -1,5 +1,12 @@
 # Continue Development
 
+The session-only prospective Binance triangle window is consumed: 12 public
+responses, 72 rate products, 18 positive before costs, zero above the frozen
+3-bip stress. Read `review/2026-09-05/triangle-window/review.md`. The largest
+ideal headroom was 1.4093 bips, not realized profit. No follow-up fees, depth,
+accounts, orders or another window. The old 60-snapshot rejection is unchanged;
+the explicit one-time future-window routing exception is now closed.
+
 The quantity-aware completion-versus-liquidation research evaluator is now
 implemented with 24 focused tests. Read
 `review/2026-09-05/completion-decision-review.md` before future maker labels.
@@ -37,13 +44,13 @@ funding subtotals cover one modeled round trip, but none clears the unchanged
 capital stress. No profitability, sufficient margin or new validation is proved.
 Missing fee credentials block only that branch, not useful offline/public R&D.
 
-Current canonical status after the source-only option-model attachment:
-accepted scopes 37, ranked hypotheses 65, terminal observations 189,
+Current canonical status after the prospective triangle window:
+accepted scopes 37, ranked hypotheses 65, terminal observations 190,
 and stable current account-qualified after-all-cost edges zero. Registry
 SHA-256 is
-`ce6f65bd0965ecc4172d9e5f375b55739e8ae3f9d7acbd23be7fbbadfc67ca2f`;
+`d43cb9cf9b3eba12f8b14eeba1fbff2019367ee1b22b17f6061086c8da15a440`;
 durability-audit SHA-256 is
-`ac001752ea43fb520825c5b2f6148e8712b6f233ed33d263aa0b724ebbf1041e`.
+`72fa52b3e745995cf8fadecb870dfc8a82f55ba4cc431f4d8adc5265a807772e`.
 
 ## September 4 resumed review and USD1 campaign
 

@@ -1,0 +1,40 @@
+{
+  "schema_version": "binance-major-triangle-prospective-window-v1",
+  "frozen_at_utc": "2026-09-05T03:15:12Z",
+  "not_before": "2026-09-05T03:15:12+00:00",
+  "start_deadline": "2026-09-05T03:35:12+00:00",
+  "output_directory": "docs/review/2026-09-05/triangle-window",
+  "url": "https://data-api.binance.vision/api/v3/ticker/bookTicker?symbols=%5B%22BTCUSDT%22%2C%22ETHUSDT%22%2C%22SOLUSDT%22%2C%22ETHBTC%22%2C%22SOLBTC%22%2C%22SOLETH%22%5D",
+  "sample_count": 12,
+  "interval_seconds": 5,
+  "implementation_sha256": "39139dab13515cd5252d8cbfd021abb7c909370c5203fe9540f97eb5b37be5a2",
+  "authority": "Public unauthenticated GET only, under the user's explicit session-only research-rule revision authority. No credentials, account, orders, funds, wallet, protected capture or old-population replay.",
+  "exception": "One prospective disjoint quote window for rank 16 only. The historical 60-snapshot negative result remains terminal. A finite negative sample does not prove all future market states are negative.",
+  "selection": "All six directed USDT-start cycles through distinct BTC/ETH/SOL assets, using exactly BTCUSDT ETHUSDT SOLUSDT ETHBTC SOLBTC SOLETH. Historical metadata established these identifiers; current availability and complete response are checked before economics. No current prices seen before freeze.",
+  "diagnostic": "For each response compute ideal zero-fee unit conversion products at bid/ask, then subtract the unchanged three-bip operational stress. All twelve strictly positive observations are required for a route to justify further consideration. No fee, lot rounding, size, capacity, activity, synchronization or recurrence qualification follows from this cheap diagnostic.",
+  "timing": "First launch within the fixed start window sets monotonic slot zero. All twelve request slots are five seconds apart; missed slot by more than one second or receipt span over two seconds stops. Public bookTicker has no exchange event timestamp, so receipt timing does not prove simultaneous or fresh exchange quotes.",
+  "transport": {
+    "requests_maximum": 12,
+    "method": "GET",
+    "body": "",
+    "response_byte_ceiling": 65536,
+    "overflow_detection_bytes": 1,
+    "socket_timeout_seconds": 3,
+    "elapsed_read_budget_between_chunks_seconds": 3,
+    "redirects": false,
+    "retries": false,
+    "proxy_or_credentials": false
+  },
+  "terminal": "No automatic next window, reprice, alias, substitute symbol, missed-slot repair, fee lookup or depth capture. Any failure consumes this contract. Even a positive diagnostic requires separate prospective account-fee, filtered-size, execution and unwind evidence before qualification. No data-based population or gate changes.",
+  "public_source": {
+    "path": "docs/model-research/binance/raw/spot-block-trade-public-price-concession-v1-2026-08-30/02-market-data-only.raw.md",
+    "sha256": "57d608507426215c43f11907c07ed693f02725840d9ee4d6630f134de402b6da",
+    "role": "Retained official public-only host/endpoint contract, reused without refetch"
+  },
+  "historical_rejection": {
+    "path": "docs/model-research/action-value/binance-all-symbol-triangular-cycle-retained-adjudication-v1-2026-08-29.json",
+    "result_sha256": "2fffd2044e72d1712ecdaa0c4e24cb829057ea2005c07e12129c443478b07902"
+  },
+  "preflight": "Thirteen offline checks passed, including six-cycle enumeration, zero/changed synthetic prices, invalid responses, exact URL denial, partial/error/overflow retention and fixed twelve-slot replay refusal. Module help and Ruff passed.",
+  "accepted_edge": false
+}

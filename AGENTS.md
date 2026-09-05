@@ -17,6 +17,15 @@ protected captures, credential restrictions, and account/order authority remain
 unchanged. Do not reuse the legacy logical-parity runner as proof of settlement
 identity; its deadline grouping does not bind observation starts (review R4).
 
+September 5 session-only exception, under the user's explicit permission to
+revise research rules for this session: rank 16 may run exactly the separately
+frozen `docs/review/2026-09-05/triangle-window/contract.json` public quote window.
+The old 60-observation rejection is finite-sample evidence, not a theorem about
+all future quote states. This exception permits one disjoint diagnostic window,
+not resampling until success, an old-result repair, account access, orders or
+edge promotion. The contract's budget and terminal stop override this exception
+after its one execution. All other literal retry/protected-capture rules remain.
+
 ## Hard Rules
 
 - Work in this session only; use no subagent.
