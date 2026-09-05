@@ -1,0 +1,44 @@
+{
+  "schema_version": 1,
+  "base_revision": "3ea78f33455b5ff589c4657971907119f1925d25",
+  "evidence_kind": "offline_scope_binding_and_persistence_regression",
+  "source_representation": "UTF-8 text with CRLF normalized to LF",
+  "sources": {
+    "src/simple_ai_trading/binance_execution_scope.py": "c2db4ceee142ae144f8a2c2ac453d33e3e141fc7be78cb17f4de93264e82dc4e",
+    "src/simple_ai_trading/api.py": "50f0a49c03ed1031f5da75ab68a3ce1befeb963b1f7b072c92cabff42ee0edee",
+    "src/simple_ai_trading/binance_open_intents.py": "5008885c9d78b12a45f7c8ce136dbd9c6571206f1da12e8a6e0f85fed249757b",
+    "src/simple_ai_trading/autonomous.py": "e05a7d94f167d98ccf2a6f319f50a516f2a40f2c4482bedf89fe3fd5b1569d68",
+    "tests/test_binance_execution_scope.py": "188821f1544790c005c1ecc3e7889f632aaabeb1a13c86de160b845dc80c7a2e",
+    "tests/test_binance_open_intents.py": "7f552dc04014adde138c869bbe57c7e69d58d920705965591208c551c5df7023",
+    "tests/test_autonomous.py": "1920285e5b19282e292094b75a84f733f7c0446d8fb5cc555c6384671cefc387",
+    "tests/test_execution_lifecycle.py": "5f1e5a4f9ed9829cb052858314d2bbb289ab837aa5419003f3a928974765c277"
+  },
+  "journal_schema": 2,
+  "intent_payload_version": 2,
+  "scope_fields": ["origin", "market_type", "credential_fingerprint"],
+  "fingerprint_semantics": "Domain-separated SHA-256 of the API-key identity, not a stable account UID, secret-key serialization or key-rotation authorization",
+  "verification": {
+    "pre_journal_fence_affected_passed": 392,
+    "unchanged_api_transport_cases_retained_from_that_run": 194,
+    "post_fence_affected_passed": 201,
+    "post_fence_command": "uv run --locked python -m pytest -o addopts='' -q --tb=short tests/test_binance_execution_scope.py tests/test_binance_open_intents.py tests/test_autonomous.py tests/test_execution_lifecycle.py tests/test_positions.py tests/test_position_lifecycle.py tests/test_reconciliation.py tests/test_binance_paper.py tests/test_paper_execution.py",
+    "distinct_affected_passed_across_stages": 395,
+    "new_scope_cases": 22,
+    "ruff_changed_python": "passed",
+    "diff_check": "passed",
+    "full_repository_final_review": "not_completed"
+  },
+  "venue_network_requests": 0,
+  "orders": 0,
+  "real_credentials_accessed": false,
+  "protected_captures_accessed": false,
+  "historical_results_modified": false,
+  "profitability_evidence": false,
+  "remaining": [
+    "Exact authenticated terminal-order recovery, partial/zero-fill adjudication and explicit rearm",
+    "Explicit verified migration of legacy journals and key rotations; no automatic migration implemented",
+    "Route remaining callers and close intents through durable scope-bound authority",
+    "Scope-bind position inventory, persistent policy and supervisor generations",
+    "Deletion/rollback detection across all ledgers, independent process containment, reboot/power-loss qualification"
+  ]
+}

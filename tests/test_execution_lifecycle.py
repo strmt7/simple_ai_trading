@@ -5,6 +5,10 @@ from dataclasses import asdict
 from pathlib import Path
 
 from simple_ai_trading.api_budget import build_api_budget_report
+from simple_ai_trading.binance_execution_scope import (
+    BINANCE_FUTURES_TESTNET,
+    BinanceExecutionScope,
+)
 from simple_ai_trading.execution_lifecycle import (
     build_execution_lifecycle_plan,
     render_execution_lifecycle_plan,
@@ -89,7 +93,12 @@ def test_unresolved_open_intent_blocks_entry_not_verified_close(tmp_path: Path) 
     store = PositionsStore(root=tmp_path)
     runtime = _runtime()
     position = _position()
-    store.opening_intents.prepare(position)
+    store.opening_intents.prepare(
+        position,
+        scope=BinanceExecutionScope.from_api_key(
+            BINANCE_FUTURES_TESTNET, "futures", "offline-placeholder"
+        ),
+    )
     store.record_open(position)
     plan = build_execution_lifecycle_plan(
         runtime, _strategy(), store, action="close",

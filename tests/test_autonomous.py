@@ -61,6 +61,11 @@ def _reset_logger():
 class FakeClient:
     base_url = "https://testnet.binance.vision"
 
+    def execution_scope(self):
+        from simple_ai_trading.binance_execution_scope import BinanceExecutionScope
+
+        return BinanceExecutionScope.from_api_key(self.base_url, "spot", "offline-placeholder")
+
     def __init__(self, price: float = 100.0):
         self._price = price
         self.orders: list[dict[str, object]] = []
@@ -88,6 +93,7 @@ class FakeClient:
         leverage: float = 1.0,
         reduce_only: bool = False,
         client_order_id: str | None = None,
+        expected_scope=None,
     ):
         order = {
             "orderId": len(self.orders) + 1,
@@ -104,7 +110,7 @@ class FakeClient:
         self.orders.append(order)
         return order
 
-    def get_order(self, symbol: str, *, order_id=None, orig_client_order_id=None):
+    def get_order(self, symbol: str, *, order_id=None, orig_client_order_id=None, expected_scope=None):
         for order in self.orders:
             if order.get("symbol") != symbol:
                 continue

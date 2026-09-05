@@ -10,6 +10,11 @@ from dataclasses import replace
 import pytest
 
 from simple_ai_trading.api import BinanceAPIError
+from simple_ai_trading.binance_execution_scope import (
+    BinanceExecutionScope,
+    BINANCE_SPOT_TESTNET,
+    BINANCE_FUTURES_TESTNET,
+)
 from simple_ai_trading.autonomous import _submit_durable_open_position
 from simple_ai_trading.binance_open_intents import (
     BinanceOpenIntentJournal,
@@ -37,12 +42,23 @@ def _position(**changes) -> OpenPosition:
     )
 
 
+def _scope(market_type="spot"):
+    origin = BINANCE_SPOT_TESTNET if market_type == "spot" else BINANCE_FUTURES_TESTNET
+    return BinanceExecutionScope.from_api_key(
+        origin, market_type, "offline-placeholder"
+    )
+
+
 class _Client:
-    def __init__(self, store, *, failure=None, status="FILLED"):
+    def __init__(self, store, *, failure=None, status="FILLED", market_type="spot"):
         self.store = store
         self.failure = failure
         self.status = status
         self.writes = 0
+        self.market_type = market_type
+
+    def execution_scope(self):
+        return _scope(self.market_type)
 
     def place_order(self, symbol, side, quantity, **kwargs):
         assert (
@@ -71,7 +87,7 @@ class _Client:
 @pytest.mark.parametrize("market_type", ["spot", "futures"])
 def test_intent_precedes_submission_and_releases_after_full_fill(tmp_path, market_type):
     store = PositionsStore(tmp_path)
-    client = _Client(store)
+    client = _Client(store, market_type=market_type)
     result = _submit_durable_open_position(
         client, _position(market_type=market_type), store
     )
@@ -91,6 +107,8 @@ def test_intent_precedes_submission_and_releases_after_full_fill(tmp_path, marke
         "side",
         "quantity",
         "position_template",
+        "intent_version",
+        "execution_scope",
     }
     with pytest.raises(OpenIntentError):
         _submit_durable_open_position(client, _position(market_type=market_type), store)
@@ -170,7 +188,7 @@ def test_existing_invalid_database_is_not_reinitialized(tmp_path, contents):
     journal.path.write_bytes(contents)
     assert journal.entry_block_reason() == "opening_intent_journal_unreadable"
     with pytest.raises(OpenIntentError):
-        journal.prepare(_position())
+        journal.prepare(_position(), scope=_scope())
     assert journal.path.read_bytes() == contents
 
 
@@ -191,12 +209,12 @@ def test_existing_invalid_database_is_not_reinitialized(tmp_path, contents):
 def test_invalid_acknowledgement_keeps_obligation(tmp_path, changes):
     journal = BinanceOpenIntentJournal(tmp_path / "journal.sqlite3")
     requested = _position()
-    journal.prepare(requested)
+    journal.prepare(requested, scope=_scope())
     recorded = replace(
         requested, exchange_status="FILLED", open_exchange_order_id="123"
     )
     with pytest.raises(OpenIntentError):
-        journal.record_complete(requested, replace(recorded, **changes))
+        journal.record_complete(requested, replace(recorded, **changes), scope=_scope())
     assert journal.entry_block_reason() == "unresolved_opening_intents=1"
 
 
@@ -205,7 +223,10 @@ def test_process_death_during_submission_retains_durable_intent(tmp_path):
 import os, sys
 from simple_ai_trading.autonomous import _submit_durable_open_position
 from simple_ai_trading.positions import OpenPosition, PositionsStore
+from simple_ai_trading.binance_execution_scope import BinanceExecutionScope, BINANCE_SPOT_TESTNET
 class Client:
+    def execution_scope(self):
+        return BinanceExecutionScope.from_api_key(BINANCE_SPOT_TESTNET, 'spot', 'offline-placeholder')
     def place_order(self, *args, **kwargs):
         os._exit(71)
 position = OpenPosition(id='crash', symbol='BTCUSDT', market_type='spot',
@@ -253,7 +274,7 @@ def test_raw_acknowledgement_must_bind_exact_intent(tmp_path, changes):
 def test_interruption_after_position_write_keeps_intent_blocked(tmp_path, monkeypatch):
     store = PositionsStore(tmp_path)
 
-    def interrupted(*args):
+    def interrupted(*args, **kwargs):
         raise KeyboardInterrupt()
 
     monkeypatch.setattr(BinanceOpenIntentJournal, "record_complete", interrupted)
@@ -294,7 +315,8 @@ def test_concurrent_preparations_admit_only_one_unresolved_intent(tmp_path):
     def prepare(number):
         try:
             journal.prepare(
-                _position(id=f"p{number}", open_client_order_id=f"sait-o-p{number}")
+                _position(id=f"p{number}", open_client_order_id=f"sait-o-p{number}"),
+                scope=_scope(),
             )
             return True
         except OpenIntentError:
@@ -313,7 +335,7 @@ def test_pending_intent_prevents_autonomous_restart_even_with_flat_account(tmp_p
     from simple_ai_trading.types import RuntimeConfig, StrategyConfig
 
     store = PositionsStore(tmp_path)
-    store.opening_intents.prepare(_position())
+    store.opening_intents.prepare(_position(), scope=_scope())
     client = _Client(store)
     client.base_url = "https://testnet.binance.vision"
     config = AutonomousConfig(

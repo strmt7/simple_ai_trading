@@ -19,19 +19,28 @@ from urllib.parse import parse_qsl, urlencode, urlsplit
 import requests
 
 from .assets import MAX_AUTONOMOUS_LEVERAGE
+from .binance_execution_scope import (
+    BINANCE_FUTURES_DEMO,
+    BINANCE_FUTURES_TESTNET,
+    BINANCE_SPOT_DEMO,
+    BINANCE_SPOT_TESTNET,
+    BinanceExecutionScope,
+)
 
-BINANCE_SPOT_TESTNET = "https://testnet.binance.vision"
 BINANCE_SPOT_LIVE = "https://api.binance.com"
-BINANCE_SPOT_DEMO = "https://demo-api.binance.com"
-BINANCE_FUTURES_TESTNET = "https://testnet.binancefuture.com"
 BINANCE_FUTURES_LIVE = "https://fapi.binance.com"
-BINANCE_FUTURES_DEMO = "https://demo-fapi.binance.com"
 _MAX_FUTURES_LEVERAGE = int(MAX_AUTONOMOUS_LEVERAGE)
 _RETRY_HTTP_STATUSES = {418, 429, 500, 502, 503, 504}
 _RETRY_BAPI_CODES = {-1003, -1007}
 _SENSITIVE_QUERY_FIELDS = {"signature", "timestamp", "recvWindow"}
 
 JsonMap = dict[str, Any]
+
+
+def _scope_kwargs(
+    scope: BinanceExecutionScope | None,
+) -> dict[str, BinanceExecutionScope]:
+    return {} if scope is None else {"expected_scope": scope}
 
 
 def _extract_retry_after(value: str | None) -> float | None:
@@ -358,12 +367,27 @@ class BinanceClient:
                 "Use the official testnet or demo endpoint."
             )
 
+    def execution_scope(self) -> BinanceExecutionScope:
+        """Capture a non-secret identity for a future durable signed operation."""
+        origin = _validated_base_origin(self.base_url).lower()
+        self._ensure_signed_endpoint_allowed(origin)
+        if not self.api_secret:
+            raise BinanceAPIError("signed endpoint requires api_key/api_secret")
+        try:
+            return BinanceExecutionScope.from_api_key(
+                origin, self.market_type, self.api_key
+            )
+        except ValueError:
+            raise BinanceAPIError("Binance execution scope is invalid") from None
+
     def _request(
         self,
         method: str,
         path: str,
         params: Mapping[str, Any] | None = None,
         signed: bool = False,
+        *,
+        expected_scope: BinanceExecutionScope | None = None,
     ) -> Any:
         if params is None:
             params = {}
@@ -385,6 +409,17 @@ class BinanceClient:
                 "Binance request path must be an absolute API path without URL components"
             )
         api_key, api_secret = self.api_key, self.api_secret
+        if expected_scope is not None:
+            try:
+                actual_scope = BinanceExecutionScope.from_api_key(
+                    base_url.lower(), self.market_type, api_key
+                )
+            except ValueError:
+                raise BinanceAPIError("Binance execution scope is invalid") from None
+            if not signed or actual_scope != expected_scope:
+                raise BinanceAPIError(
+                    "Binance execution scope differs from durable intent"
+                )
         if signed:
             self._ensure_signed_endpoint_allowed(base_url)
 
@@ -532,11 +567,14 @@ class BinanceClient:
         *,
         signed: bool = False,
         label: str,
+        expected_scope: BinanceExecutionScope | None = None,
     ) -> JsonMap:
         payload = (
-            self._request(method, path, params, signed=True)
+            self._request(
+                method, path, params, signed=True, **_scope_kwargs(expected_scope)
+            )
             if signed
-            else self._request(method, path, params)
+            else self._request(method, path, params, **_scope_kwargs(expected_scope))
         )
         if not isinstance(payload, dict):
             raise BinanceAPIError(f"Unexpected {label} payload")
@@ -738,7 +776,9 @@ class BinanceClient:
             normalized = min(normalized, constraints.max_qty)
         return normalized, constraints
 
-    def get_leverage_brackets(self, symbol: str) -> List[Dict[str, object]]:
+    def get_leverage_brackets(
+        self, symbol: str, *, expected_scope: BinanceExecutionScope | None = None
+    ) -> List[Dict[str, object]]:
         if self.market_type != "futures":
             raise BinanceAPIError(
                 "Leverage brackets are available only in futures mode"
@@ -749,6 +789,7 @@ class BinanceClient:
             "/fapi/v1/leverageBracket",
             {"symbol": symbol.upper()},
             signed=True,
+            **_scope_kwargs(expected_scope),
         )
         if isinstance(payload, dict):
             payload_items = [payload]
@@ -775,10 +816,12 @@ class BinanceClient:
                 values.append(parsed)
         return max(values) if values else 0
 
-    def get_max_leverage(self, symbol: str) -> int:
+    def get_max_leverage(
+        self, symbol: str, *, expected_scope: BinanceExecutionScope | None = None
+    ) -> int:
         if self.market_type != "futures":
             return 1
-        payload = self.get_leverage_brackets(symbol)
+        payload = self.get_leverage_brackets(symbol, **_scope_kwargs(expected_scope))
         symbol = symbol.upper()
         for item in payload:
             if not isinstance(item, dict) or item.get("symbol") != symbol:
@@ -798,7 +841,11 @@ class BinanceClient:
         return _MAX_FUTURES_LEVERAGE
 
     def get_max_leverage_for_notional(
-        self, symbol: str, notional: float | int | None
+        self,
+        symbol: str,
+        notional: float | int | None,
+        *,
+        expected_scope: BinanceExecutionScope | None = None,
     ) -> int:
         if self.market_type != "futures":
             return 1
@@ -807,9 +854,9 @@ class BinanceClient:
         except (TypeError, ValueError, OverflowError):
             notional_value = 0.0
         if not math.isfinite(notional_value) or notional_value <= 0.0:
-            return self.get_max_leverage(symbol)
+            return self.get_max_leverage(symbol, **_scope_kwargs(expected_scope))
 
-        payload = self.get_leverage_brackets(symbol)
+        payload = self.get_leverage_brackets(symbol, **_scope_kwargs(expected_scope))
         symbol = symbol.upper()
         fallback_max = 0
         largest_floor_leverage: int | None = None
@@ -1117,19 +1164,31 @@ class BinanceClient:
         )
 
     def set_leverage(
-        self, symbol: str, leverage: int, *, notional: float | int | None = None
+        self,
+        symbol: str,
+        leverage: int,
+        *,
+        notional: float | int | None = None,
+        expected_scope: BinanceExecutionScope | None = None,
     ) -> Dict[str, object]:
         if self.market_type != "futures":
             raise BinanceAPIError("Leverage is available only in futures mode")
         leverage = int(leverage)
         if leverage < 1:
             leverage = 1
-        max_leverage = self.get_max_leverage_for_notional(symbol, notional)
+        max_leverage = self.get_max_leverage_for_notional(
+            symbol, notional, **_scope_kwargs(expected_scope)
+        )
         if leverage > max_leverage:
             leverage = max_leverage
         payload = {"symbol": symbol, "leverage": leverage}
         return self._request_dict(
-            "POST", "/fapi/v1/leverage", payload, signed=True, label="leverage"
+            "POST",
+            "/fapi/v1/leverage",
+            payload,
+            signed=True,
+            label="leverage",
+            **_scope_kwargs(expected_scope),
         )
 
     def place_order(
@@ -1143,6 +1202,7 @@ class BinanceClient:
         notional: float | None = None,
         reduce_only: bool = False,
         client_order_id: str | None = None,
+        expected_scope: BinanceExecutionScope | None = None,
     ) -> Dict[str, object]:
         symbol = str(symbol or "").upper()
         side = str(side or "").upper()
@@ -1188,7 +1248,12 @@ class BinanceClient:
 
         if self.market_type == "spot":
             return self._request_dict(
-                "POST", "/api/v3/order", payload, signed=True, label="order"
+                "POST",
+                "/api/v3/order",
+                payload,
+                signed=True,
+                label="order",
+                **_scope_kwargs(expected_scope),
             )
 
         payload["newOrderRespType"] = "RESULT"
@@ -1198,10 +1263,18 @@ class BinanceClient:
         # Reduce-only closes must not mutate account leverage state.
         if not reduce_only:
             self.set_leverage(
-                symbol, int(max(1, round(leverage))), notional=notional_value
+                symbol,
+                int(max(1, round(leverage))),
+                notional=notional_value,
+                **_scope_kwargs(expected_scope),
             )
         return self._request_dict(
-            "POST", "/fapi/v1/order", payload, signed=True, label="order"
+            "POST",
+            "/fapi/v1/order",
+            payload,
+            signed=True,
+            label="order",
+            **_scope_kwargs(expected_scope),
         )
 
     def get_order(
@@ -1210,6 +1283,7 @@ class BinanceClient:
         *,
         order_id: int | str | None = None,
         orig_client_order_id: str | None = None,
+        expected_scope: BinanceExecutionScope | None = None,
     ) -> Dict[str, object]:
         symbol = str(symbol or "").upper()
         if not symbol:
@@ -1225,7 +1299,12 @@ class BinanceClient:
             raise BinanceAPIError("Order query requires orderId or origClientOrderId")
         endpoint = "/api/v3/order" if self.market_type == "spot" else "/fapi/v1/order"
         return self._request_dict(
-            "GET", endpoint, params, signed=True, label="order status"
+            "GET",
+            endpoint,
+            params,
+            signed=True,
+            label="order status",
+            **_scope_kwargs(expected_scope),
         )
 
     def get_exchange_time(self) -> Dict[str, object]:

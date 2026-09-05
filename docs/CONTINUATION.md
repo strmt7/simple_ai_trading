@@ -1,11 +1,19 @@
 # Continue Development
 
+Latest recovery foundation: [durable execution scope](review/2026-09-05/binance-execution-scope.md)
+binds autonomous intents and their journal to venue/product/API-key identity,
+with explicit checks through leverage, orders and exact-ID queries. Scope is not
+a permanent account UID. Legacy journals and key rotations need verified migration;
+no automatic migration or rearm. 395 distinct affected checks across staged runs.
+Next implement exact terminal-order recovery and explicit rearm, then remaining
+callers, close/inventory scope and process supervision. No profitable-edge claim.
+
 Latest safety repair: [Binance transport authority](review/2026-09-05/binance-transport-authority.md)
 closes reproduced HTTP acceptance and public-request API-key transmission at
 the shared request boundary. Final affected domain: 373 offline passes, including
 40 new transport cases; do not repeat this suite without a relevant change.
-Next bind durable intents to origin/account scope before exact-order recovery;
-legacy v1 intents cannot inherit whichever account is configured after restart.
+The later scope checkpoint supplies forward credential/origin binding;
+legacy v1 intents still cannot inherit the configured account after restart.
 No credentials, accounts, protected captures, historic results or promotion changed.
 
 Latest engineering: [durable Binance openings](review/2026-09-05/binance-durable-opening.md)
