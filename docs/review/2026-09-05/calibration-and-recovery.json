@@ -1,0 +1,64 @@
+{
+  "schema_version": 1,
+  "recorded_at_utc": "2026-09-05T10:36:54Z",
+  "base_commit": "e8e540e0c3237ddd65c89d886a067af59cc5b791",
+  "status": "scoped_engineering_checkpoint_not_full_revamp_or_live_readiness",
+  "source_hash_representation": "SHA256 of tested Windows worktree file bytes",
+  "source_sha256": {
+    "src/simple_ai_trading/model.py": "c5978c76bd9be351d6a32b4b2f610491929c97c758e95ae048daa2465c945cd0",
+    "src/simple_ai_trading/threshold_counts.py": "080025cc4427d46c38f430844dda3b2fe9d79fb006c71229ead33efcfc7925e5",
+    "src/simple_ai_trading/polymarket_runtime_control.py": "d767c14d145caa21a5aacc958f83d90c27519b4c4aafe4002c5fe1f6914da76b",
+    "tests/test_threshold_counts.py": "f4225225557fad6d114fe08129960fa405704142a98201fb12c3382c2ca2b0dc",
+    "tests/test_polymarket_runtime_control.py": "11325e42ec02d80cbb50fea1491052d979c11f49c38d28daf7b67da7d6c629c6"
+  },
+  "calibration": {
+    "question": "Can deterministic classification calibration avoid rescoring every row for every threshold while preserving its exact choice?",
+    "rows_in_call_count_regression": 60,
+    "thresholds": 61,
+    "legacy_probability_calls": 3660,
+    "optimized_probability_calls": 60,
+    "threshold_equal_to_legacy": true,
+    "custom_prediction_fallback_preserved": true,
+    "timing_benchmark_run": false,
+    "model_retraining_run": false,
+    "accuracy_or_profitability_uplift_claimed": false
+  },
+  "recovery": {
+    "reproduced_before_fix": "4 failed assertions: expired/future-dated heartbeat renewed in both running and paused states",
+    "implemented": "Persist Stop instead of renewal, retain ownership and old heartbeat, serialize transition with submission interlock",
+    "verified": ["expiry boundary", "clock correction cannot revive latched Stop", "controller reopen", "fresh interpreter", "foreign lease does not mutate state", "async service requests shutdown", "in-flight submission ordering", "failed write leaves old expired lease blocked"],
+    "os_reboot_tested": false,
+    "independent_process_supervisor_implemented": false,
+    "venue_cancellation_or_flat_position_proved": false
+  },
+  "verification": {
+    "model_training_domain": {"collected": 154, "passed": 153, "skipped": 1, "files": ["tests/test_model.py", "tests/test_model_coverage.py", "tests/test_training_suite.py", "tests/test_threshold_counts.py"]},
+    "runtime_risk_domain": {"passed_before_last_two_test_additions": 82, "additional_tests_passed": 2, "unique_passed": 84, "files": ["tests/test_polymarket_runtime_control.py", "tests/test_polymarket_autonomous_runtime.py", "tests/test_polymarket_live_runtime_subscription.py", "tests/test_risk_controls.py", "tests/test_execution_lifecycle.py", "tests/test_reconciliation.py"]},
+    "publication_reconstruction": {"passed": 1, "selector": "tests/test_polymarket_publication.py::test_current_status_manifest_reconstructs_every_artifact"},
+    "ruff_changed_python": "passed",
+    "full_repository_suite": "not_run",
+    "final_line_by_line_review": "pending_after_main_revamp",
+    "final_exhaustive_bug_hunt": "pending_after_final_refactor_and_integration"
+  },
+  "github_readonly_audit": {
+    "open_pull_requests": 0,
+    "open_dependabot_alerts": 0,
+    "main_reachable_commits": 2328,
+    "legacy_invalid_ai_identity_commits": 656,
+    "most_recent_five_identities": "AI agent <> author and committer",
+    "coauthor_trailers_found": 0,
+    "remote_pull_head_refs": 14,
+    "pull_head_identity_audit": "not_performed; closed PR refs separate from zero open PRs",
+    "history_rewrite": "not_authorized_or_performed"
+  },
+  "boundaries": {
+    "new_exchange_requests": 0,
+    "account_requests": 0,
+    "orders": 0,
+    "credentials_accessed": false,
+    "protected_captures_touched": false,
+    "historical_results_changed": false,
+    "qualified_profitable_edge_count_changed": false,
+    "unrelated_processes_modified": false
+  }
+}

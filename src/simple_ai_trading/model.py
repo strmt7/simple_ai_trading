@@ -19,6 +19,7 @@ from .compute import (
 from .features import FEATURE_VERSION, ModelRow, feature_dimension as _feature_dimension
 from .storage import write_json_atomic
 from .strategy_overrides import StrategyOverrideValue, clean_strategy_overrides
+from .threshold_counts import ThresholdCounts
 from .trade_tape_features import TRADE_TAPE_FEATURES_PER_WINDOW
 
 
@@ -2994,9 +2995,19 @@ def calibrate_threshold(rows: List[ModelRow], model: TrainedModel, *, start: flo
     if end <= start:
         end = min(1.0, start + 0.01)
 
+    counts = None
+    if type(model) is TrainedModel and not {"predict", "predict_proba"}.intersection(vars(model)):
+        counts = ThresholdCounts.from_predictions(
+            (model.predict_proba(row.features), row.label) for row in rows
+        )
+
     for i in range(steps):
         threshold = start + (end - start) * i / (steps - 1)
-        tp, fp, _, fn = _confusion(rows, model, threshold)
+        tp, fp, _, fn = (
+            _confusion(rows, model, threshold)
+            if counts is None
+            else counts.at(_clamp(threshold, 0.0, 1.0))
+        )
         score = _f1(tp, fp, fn)
         if score > best_f1:
             best_f1 = score

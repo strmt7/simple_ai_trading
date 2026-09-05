@@ -1,0 +1,36 @@
+{
+  "schema_version": "official-change-discovery-adjudication-v1",
+  "completed_at_utc": "2026-09-05T10:02:20.887464Z",
+  "source_bindings": [
+    {
+      "path": "docs/review/2026-09-05/official-change-check/plan.json",
+      "sha256": "538e471a65a3fa728bfc10b803a7f82e08451f0ff932a4b559430106481b0371"
+    },
+    {
+      "path": "docs/review/2026-09-05/official-change-check/extraction.json",
+      "sha256": "b37ab9895436dc6d3aa6615368f1f819f507075b97964a018e8a2569c57812e1"
+    }
+  ],
+  "search_queries": 2,
+  "primary_source_opens": 0,
+  "market_requests": 0,
+  "account_requests": 0,
+  "protected_capture_access": false,
+  "material_change_trigger_satisfied": false,
+  "findings": {
+    "polymarket": "The exact-title query returned the older indexed Positions & Tokens page. Its undated rate statement and three-month crawl metadata do not establish an effective change or reconcile the retained rate conflict. Do not reopen the consumed source or holding pulses.",
+    "binance": "Community Square pages are not controlling product terms. The developer changelog has recent page-modification metadata but returned dated entries no later than May 27, 2026; modification metadata alone is not a new effective RWUSD term. No qualifying primary change was identified.",
+    "coverage": "This is a bounded search result, not a complete announcement inventory or proof that no changes exist."
+  },
+  "decision": "Stop this discovery wave without keyword variants, page opens, market captures, training or new strategy claims. Preserve all existing literal triggers. No status-only commit; retain these receipts for the next substantive checkpoint.",
+  "goal_turn_classification": "No economic progress: better retrieval but no actionable change; not a verified wait and not goal completion. This is the first no-progress turn after the completed wallet exposure audit.",
+  "account_evidence_needed": "A dated redacted actual-account BTC ETH SOL product report of maker/taker commissions, fee asset/discounts, account mode, collateral ratios/limits, margin tiers, conversion/redemption and financing terms. No keys, signatures, account identifiers or unrelated activity. This may resolve only covered fields and does not authorize account access or orders.",
+  "next_timed_gates": {
+    "block_trade_not_before_utc": "2026-09-06T03:47:16.3134381Z",
+    "cxmt_not_before_utc": "2026-09-06T08:10:00Z",
+    "qualification": "Earliest gates only; all existing event, population, settlement, nonoverlap and authority clauses still apply. No live process or scheduled run is claimed."
+  },
+  "accepted_edge": false,
+  "profitability_claim": false,
+  "result_sha256": "ce84f4aac6cf58eb4fc2938b81ede6cd50877b07ac1a5933d0cb8a58b7ed8793"
+}
