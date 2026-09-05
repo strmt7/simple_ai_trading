@@ -13,7 +13,7 @@ skills are intentionally not copied.
 | CocoIndex Code | `0.2.37` | `tools/cocoindex_agent_search.py` |
 | CodeQL | `v4.37.8` | `.github/workflows/codeql.yml` |
 | uv | `0.12.1` | `pyproject.toml` and `uv.lock` |
-| Ruff | `0.15.22` | `.github/workflows/ruff.yml` |
+| Ruff | `0.16.5` | `pyproject.toml`, `uv.lock` and `.github/workflows/ruff.yml` |
 | Vulture | `2.16` | `tools/vulture_check.py` and `.github/workflows/vulture.yml` |
 | Super-Linter | `v8.7.0` | `.github/workflows/super-linter.yml` |
 | Agent skills | ECC `2.0.0` | `.agents/skills/` |
