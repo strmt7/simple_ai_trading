@@ -6,6 +6,12 @@ operating contract. Historical handoff text is archived under
 
 ## Current Truth
 
+The supplied keys passed a read-only BTCUSDT Spot-testnet commission check;
+no orders or credentials were saved. See
+`review/2026-09-05/testnet-and-literature-status.md`. Testnet fees are not mainnet
+evidence. A new option-model paper lead failed its exact HTML source request
+with 404; no methodology, model uplift or market retry is validated by it.
+
 The zero-request [carry turnover/liquidity audit](review/2026-09-05/carry-turnover-liquidity-review.md)
 separates funding cash, transaction-count sensitivity and interim funding needs.
 It does not promote a strategy or change consumed results. Missing mainnet fee

@@ -1,0 +1,17 @@
+{
+  "schema_version": "bounded-literature-discovery-plan-v1",
+  "frozen_at_utc": "2026-09-05T02:05:34Z",
+  "base_head": "b5a8ba539664e69215c5c57d2e5d634bc02a5bbe",
+  "question": "Has a distinct primary publication after the August 31 literature checkpoint supplied reproducible non-directional execution or capital methodology relevant to Polymarket or Binance?",
+  "previous_adjudication_path": "docs/model-research/action-value/recent-structural-edge-literature-post-2026-08-29-adjudication-v2-2026-08-31.json",
+  "published_after_utc": "2026-08-31T13:46:00Z",
+  "queries": [
+    "site:arxiv.org prediction market arbitrage market making after:2026-08-31",
+    "site:arxiv.org perpetual futures funding arbitrage collateral after:2026-08-31"
+  ],
+  "maximum_search_queries": 2,
+  "automatic_page_opens": 0,
+  "decision": "Search is discovery only, not complete catalog coverage or economic evidence. Inspect returned primary title, exact identifier and date against retained aliases before any separately frozen source open. Old, undated, already consumed or merely directional results cannot authorize a new experiment. Stop this discovery wave if no exact eligible lead exists; do not modify keywords to rescue it.",
+  "retention": "Retain the exact serialized web-tool result, labeled tool extraction rather than origin HTTP bytes. No protected outcomes, account access, credentials, market data, paper download or orders.",
+  "promotion_eligible": false
+}

@@ -1,0 +1,61 @@
+{
+  "schema_version": "public-source-capture-contract-v1",
+  "frozen_at_utc": "2026-09-05T02:08:23Z",
+  "contract_path": "docs/review/2026-09-05/xinet-source/contract.json",
+  "request_name": "xinet-new-primary-methodology-v1",
+  "question": "Does this newly discovered primary option-pricing paper identify a reproducible hedge or only model-dependent joint/path structure? Audit marginal calibration versus identification and exact relevance to rank 10, without changing any market gate.",
+  "trigger": {
+    "publication_id": "2609.01941",
+    "published_utc_from_discovery": "2026-09-01T23:09:23Z",
+    "exact_title_identifier_author_alias_hits": 0,
+    "new_market_access_authorized": false
+  },
+  "request": {
+    "method": "GET",
+    "url": "https://arxiv.org/html/2609.01941v1",
+    "count": 1,
+    "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "endpoint_classification": {
+    "operation": "public scholarly HTML article download",
+    "security": "public unauthenticated read-only document, not a venue or account endpoint"
+  },
+  "response_byte_ceiling": 3000000,
+  "required_utf8_phrases": [
+    "Empirical Option Pricing in Incomplete Markets",
+    "XiNet"
+  ],
+  "outputs": {
+    "raw_path": "docs/review/2026-09-05/xinet-source/paper.html",
+    "journal_path": "docs/review/2026-09-05/xinet-source/journal.jsonl",
+    "result_path": "docs/review/2026-09-05/xinet-source/capture.json"
+  },
+  "authority": {
+    "account_requests": 0,
+    "credentials_used": false,
+    "funds_used": false,
+    "orders_or_transactions": 0,
+    "protected_capture_touched": false,
+    "public_unauthenticated_read_only_requests": 1,
+    "signed_requests": 0,
+    "trading_authority": false
+  },
+  "implementations": [
+    {
+      "path": "tools/capture_public_source_contract.py",
+      "sha256": "9dbb14651455abade755fe96091b9eaafe1153f56a1baad4cd60b1a888d41b8c"
+    },
+    {
+      "path": "tools/screen_polymarket_exact_two_leg_package.py",
+      "sha256": "374fcc3c3485c466b4929a91256450bdc7db70f93ef4c6bda627e05fe8938327"
+    },
+    {
+      "path": "tools/adjudicate_polymarket_exact_mlb_monotone_prefilter.py",
+      "sha256": "958a44d78029b9a1eb69a3771ce18e53ac1ed3c7bc161c8e4318beedce2cf99f"
+    }
+  ],
+  "format_contract": "UTF-8 HTML containing the observed title suffix and model name. Missing representation is terminal; no PDF, version, route or mirror retry.",
+  "decision": "Source-methodology review only. No pricing, executable-value, profitability or neural-uplift claim follows from an abstract or model calibration. Keep old results and triggers.",
+  "retry_policy": "One use; retain failure and stop without aliases.",
+  "contract_sha256": "34ba647db4c030c07683f50914180b2e7ee40bb2593833abf24620858469b347"
+}
