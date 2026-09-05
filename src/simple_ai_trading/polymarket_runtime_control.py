@@ -567,6 +567,12 @@ class PolymarketRuntimeControl:
             yield
 
     def heartbeat(self, lease_id: str) -> bool:
+        """Renew a fresh lease; persist Stop if its worker missed the deadline."""
+        # Order expiry against the same last-mile interlock as order submission.
+        with self._interlock():
+            return self._heartbeat_locked(lease_id)
+
+    def _heartbeat_locked(self, lease_id: str) -> bool:
         connection = self._connect()
         try:
             connection.execute("BEGIN IMMEDIATE")
@@ -582,6 +588,30 @@ class PolymarketRuntimeControl:
                 connection.execute("COMMIT")
                 return False
             now = self._now_ms()
+            if (
+                current.heartbeat_at_ms <= 0
+                or current.heartbeat_at_ms > now + 5_000
+                or now - current.heartbeat_at_ms > self.maximum_heartbeat_age_ms
+            ):
+                # Do not refresh away evidence of a freeze or clock discontinuity.
+                # Keep ownership and the old heartbeat for exact recovery checks.
+                self._write(
+                    connection,
+                    {
+                        "schema_version": POLYMARKET_RUNTIME_CONTROL_SCHEMA_VERSION,
+                        **current.asdict(),
+                        "state": "stop_requested",
+                        "stop_epoch": current.stop_epoch + 1,
+                        "stop_requested_at_ms": now,
+                        "stop_reason": "heartbeat_invalid_or_expired",
+                        "paused": True,
+                        "pause_changed_at_ms": now,
+                        "pause_reason": "stop_requested",
+                        "updated_at_ms": now,
+                    },
+                )
+                connection.execute("COMMIT")
+                return False
             payload = {
                 "schema_version": POLYMARKET_RUNTIME_CONTROL_SCHEMA_VERSION,
                 **current.asdict(),

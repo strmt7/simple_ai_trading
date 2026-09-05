@@ -44,6 +44,13 @@ after its one execution. All other literal retry/protected-capture rules remain.
   decisions; preserve the old runner, source bindings and historical results.
 
 - Work in this session only; use no subagent.
+- Complete the user's [capital-protection and final review requirements](docs/CAPITAL_PROTECTION_ARCHITECTURE.md):
+  independent process safeguards, durable recovery and model-health controls;
+  after the main revamp, review every code line and make justified refactors and
+  upgrades, then perform exhaustive final bug hunting. Track exact file/revision
+  and line coverage. Documentation, syntax scans and passing tests alone do not
+  prove this complete; preserve historical sources/results and reopen affected
+  review coverage after subsequent changes.
 - AI Git history must use `AI agent <>` for author and committer. Read
   `docs/AI_COMMIT_IDENTITY.md` before committing or auditing; never use a human,
   host, tool, CI, global-config, or noreply identity.

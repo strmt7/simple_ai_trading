@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "purpose": "Engineering architecture guidance only; no venue economics, accounts or orders.",
+  "selected_urls": [
+    "https://www.finra.org/rules-guidance/notices/15-09",
+    "https://learn.microsoft.com/lb-lu/windows/win32/procthread/job-objects",
+    "https://www.cmegroup.com/tools-information/webhelp/globex-credit-controls/Content/Kill-Switch.html"
+  ],
+  "deduplication": "Filename-only exact URL/path search over retained docs found only unconsumed supervisor search extraction.",
+  "maximum_opens": 3,
+  "retries": 0,
+  "representation": "Retain web tool extraction, not original HTTP bytes.",
+  "frozen_at_utc": "2026-09-05 10:27:19 UTC"
+}

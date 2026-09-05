@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import asyncio
 import sqlite3
+import subprocess
+import sys
 from threading import Event, Thread
 
 import pytest
@@ -402,3 +404,174 @@ def test_resume_rejects_stale_heartbeat_and_preserves_pause(tmp_path) -> None:
     snapshot = control.snapshot()
     assert snapshot.paused is True
     assert snapshot.pause_epoch == 1
+
+
+@pytest.mark.parametrize("clock_delta", [5_001, -5_001])
+@pytest.mark.parametrize("paused", [False, True])
+def test_invalid_heartbeat_latches_stop_across_restart(
+    tmp_path, clock_delta, paused
+) -> None:
+    now = [100_000]
+    path = tmp_path / "ownership.sqlite3"
+    control = PolymarketRuntimeControl(
+        path, maximum_heartbeat_age_ms=5_000, clock_ms=lambda: now[0]
+    )
+    lease = control.acquire(owner_process_id=101)
+    if paused:
+        control.set_paused(True, reason="operator_pause")
+    previous = control.snapshot()
+    now[0] += clock_delta
+
+    assert control.heartbeat(lease) is False
+    stopped = control.snapshot()
+    assert stopped.state == "stop_requested"
+    assert stopped.paused is True
+    assert stopped.stop_reason == "heartbeat_invalid_or_expired"
+    assert stopped.heartbeat_at_ms == previous.heartbeat_at_ms
+    assert stopped.stop_epoch == previous.stop_epoch + 1
+    assert stopped.lease_id == lease
+
+    # A clock correction or a fresh controller must not revive the old worker.
+    now[0] = 100_001
+    reopened = PolymarketRuntimeControl(
+        path, maximum_heartbeat_age_ms=5_000, clock_ms=lambda: now[0]
+    )
+    assert reopened.heartbeat(lease) is False
+    assert reopened.snapshot() == stopped
+    with pytest.raises(PolymarketLiveBlocked):
+        reopened.assert_opening_allowed(lease)
+    with pytest.raises(PolymarketLiveBlocked):
+        reopened.set_paused(False, reason="operator_resume")
+    with pytest.raises(PolymarketLiveBlocked):
+        reopened.acquire(owner_process_id=202)
+
+
+def test_heartbeat_age_boundary_and_foreign_lease(tmp_path) -> None:
+    now = [100_000]
+    control = PolymarketRuntimeControl(
+        tmp_path / "ownership.sqlite3",
+        maximum_heartbeat_age_ms=5_000,
+        clock_ms=lambda: now[0],
+    )
+    lease = control.acquire()
+    initial = control.snapshot()
+    now[0] += 5_000
+    assert control.heartbeat("foreign") is False
+    assert control.snapshot() == initial
+    assert control.heartbeat(lease) is True
+    control.assert_opening_allowed(lease)
+
+
+def test_expired_control_service_requests_shutdown_without_renewal(tmp_path) -> None:
+    async def scenario() -> None:
+        now = [100_000]
+        control = PolymarketRuntimeControl(
+            tmp_path / "ownership.sqlite3",
+            maximum_heartbeat_age_ms=5_000,
+            clock_ms=lambda: now[0],
+        )
+        lease = control.acquire()
+        now[0] += 5_001
+        shutdown = asyncio.Event()
+        service = PolymarketRuntimeControlService(control, lease_id=lease)
+        await asyncio.wait_for(
+            service.run(asyncio.Event(), request_stop=shutdown.set), timeout=2
+        )
+        assert shutdown.is_set()
+        assert control.snapshot().state == "stop_requested"
+
+    asyncio.run(scenario())
+
+
+def test_expiry_is_ordered_after_inflight_submission(tmp_path) -> None:
+    now = [100_000]
+    control = PolymarketRuntimeControl(
+        tmp_path / "ownership.sqlite3",
+        maximum_heartbeat_age_ms=5_000,
+        clock_ms=lambda: now[0],
+    )
+    lease = control.acquire()
+    entered, release, renewed = Event(), Event(), Event()
+    outcomes = []
+
+    def hold_submission() -> None:
+        with control.submission_guard(lease):
+            entered.set()
+            assert release.wait(timeout=5)
+
+    def heartbeat() -> None:
+        outcomes.append(control.heartbeat(lease))
+        renewed.set()
+
+    holder = Thread(target=hold_submission)
+    renewer = Thread(target=heartbeat)
+    holder.start()
+    assert entered.wait(timeout=5)
+    now[0] += 5_001
+    try:
+        renewer.start()
+        assert not renewed.wait(timeout=0.1)
+        assert control.snapshot().state == "running"
+    finally:
+        release.set()
+        holder.join(timeout=5)
+        renewer.join(timeout=5)
+    assert outcomes == [False]
+    assert not holder.is_alive() and not renewer.is_alive()
+    assert control.snapshot().state == "stop_requested"
+
+
+def test_expired_heartbeat_write_failure_never_reenables_open(
+    tmp_path, monkeypatch
+) -> None:
+    now = [100_000]
+    control = PolymarketRuntimeControl(
+        tmp_path / "ownership.sqlite3",
+        maximum_heartbeat_age_ms=5_000,
+        clock_ms=lambda: now[0],
+    )
+    lease = control.acquire()
+    initial = control.snapshot()
+    now[0] += 5_001
+
+    def disk_full(connection, payload) -> None:
+        raise sqlite3.OperationalError("database or disk is full")
+
+    with monkeypatch.context() as patch:
+        patch.setattr(control, "_write", disk_full)
+        with pytest.raises(sqlite3.OperationalError, match="disk is full"):
+            control.heartbeat(lease)
+    assert control.snapshot() == initial
+    with pytest.raises(PolymarketLiveBlocked):
+        control.assert_opening_allowed(lease)
+    assert control.heartbeat(lease) is False
+    assert control.snapshot().state == "stop_requested"
+
+
+def test_expiry_stop_is_visible_in_a_fresh_interpreter(tmp_path) -> None:
+    now = [100_000]
+    path = tmp_path / "ownership.sqlite3"
+    control = PolymarketRuntimeControl(
+        path, maximum_heartbeat_age_ms=5_000, clock_ms=lambda: now[0]
+    )
+    lease = control.acquire()
+    now[0] += 5_001
+    assert control.heartbeat(lease) is False
+    # This is real cross-process persistence, not an OS reboot/power-loss test.
+    script = (
+        "import sys; "
+        "from simple_ai_trading.polymarket_runtime_control import PolymarketRuntimeControl; "
+        "control = PolymarketRuntimeControl(sys.argv[1]); "
+        "snapshot = control.snapshot(); "
+        "assert snapshot.state == 'stop_requested'; "
+        "assert not control.heartbeat(snapshot.lease_id); "
+        "print(snapshot.stop_reason)"
+    )
+    result = subprocess.run(
+        [sys.executable, "-c", script, str(path)],
+        capture_output=True,
+        text=True,
+        check=True,
+        timeout=10,
+    )
+    assert result.stdout.strip() == "heartbeat_invalid_or_expired"

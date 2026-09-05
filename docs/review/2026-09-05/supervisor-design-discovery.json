@@ -1,0 +1,13 @@
+{
+  "schema_version": "supervisor-primary-guidance-discovery-v1",
+  "purpose": "Research independent execution-risk supervision, crash recovery and persistent controls for the user's institutional-grade platform revamp. This is architecture research, not live-order or market-outcome access.",
+  "queries": [
+    "site:finra.org regulatory notice 15-09 algorithmic trading risk controls disable algorithm",
+    "site:cmegroup.com kill switch cancel on disconnect risk management",
+    "site:learn.microsoft.com windows job objects JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE"
+  ],
+  "maximum_search_queries": 3,
+  "source_policy": "Primary regulatory, exchange and OS documentation only. Separate implementation guidance from legal applicability. Deduplicate selected exact URLs before opening; preserve tool extractions as extractions, not HTTP bodies.",
+  "authority": "No process launch as a persistent service, no OS startup changes, no account access, credentials, orders or changes to unrelated processes. Existing trading and capture boundaries remain unchanged.",
+  "deliverable": "Durable staged plan mapping present source paths, unverified capabilities, supervisor/worker isolation, risk state persistence, degraded-model response and failure-injection acceptance tests. Planned is not implemented."
+}

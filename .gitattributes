@@ -5,6 +5,9 @@
 pyproject.toml text eol=lf
 uv.lock text eol=lf
 docs/review/2026-09-04/** text eol=lf
+docs/review/2026-09-05/supervisor-*.json text eol=lf
+docs/review/2026-09-05/official-change-check/** text eol=lf
+docs/review/2026-09-05/calibration-and-recovery.json text eol=lf
 docs/review/2026-09-04/inverse-clearing-source.pdf binary -eol
 docs/review/2026-09-04/inverse-clearing-source-journal.jsonl binary -eol
 docs/review/2026-09-04/spot-funding-sources/** binary -eol

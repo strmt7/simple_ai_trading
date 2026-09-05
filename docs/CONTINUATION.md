@@ -1,5 +1,18 @@
 # Continue Development
 
+Latest engineering: [calibration and recovery checkpoint](review/2026-09-05/calibration-and-recovery.md)
+removes repeated inference across threshold grids and closes a reproduced stale
+heartbeat lease-renewal gap. Both are forward code changes, not rewritten model
+or market outcomes. The user's added [capital-protection requirements](CAPITAL_PROTECTION_ARCHITECTURE.md)
+are a mandatory revamp track: independently terminatable workers, durable policy,
+loss state and recovery, model-health quarantine, then a final whole-codebase
+line-by-line review/refactor/upgrade and exhaustive bug-hunting campaign. Neither
+phase is complete. Do not mark review coverage from syntax checks or test counts.
+Next: map every order-capable call into the shared execution boundary, then
+implement supervisor/policy integration and proof of actual process isolation.
+Useful engineering and causal model work continue independently of account-only
+research blockers; do not repeat consumed captures or retrain inadequate labels.
+
 Latest offline R&D: [full buy-population exposure](review/2026-09-05/wallet-buy-envelope/review.md)
 includes all 1,222 scoped buys, not just selected successful locks. The 358
 conditions contain 47,891.745927 residual directional shares; 357 conditions

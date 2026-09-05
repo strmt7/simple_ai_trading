@@ -10,6 +10,15 @@ Scope blockers to their branch; a fresh user resumption resets the blocked audit
 
 ## Current Truth
 
+The full revamp also requires [capital-protection architecture and final review](CAPITAL_PROTECTION_ARCHITECTURE.md):
+independent process supervision, durable policy/recovery, model-health quarantine,
+then a final whole-codebase line-by-line review/refactor followed by exhaustive
+bug hunting. These requirements are not implemented merely by documenting them.
+The September 5 checkpoint fixes expired-heartbeat lease resurrection and removes
+repeated deterministic inference during threshold calibration; no model-accuracy
+or financial uplift is claimed. Missing account evidence blocks its own research
+branch, not this engineering work. Preserve all old results and capture gates.
+
 The retained wallet [buy-population exposure audit](review/2026-09-05/wallet-buy-envelope/review.md)
 quantifies substantial residual directional exposure outside the selected
 profitable locks. It is conditional buy-only accounting, not actual wallet PnL;

@@ -1,0 +1,16 @@
+{
+  "schema_version": "bounded-official-change-discovery-v1",
+  "base_commit": "e8e540e0c3237ddd65c89d886a067af59cc5b791",
+  "purpose": "One corrected official-document-only Polymarket program search and one exact Binance reward-bearing margin change search. These test current source-change eligibility, not prices or profits.",
+  "queries": [
+    "site:docs.polymarket.com \"Holding Rewards\" \"rate\"",
+    "site:binance.com/en/support/announcement \"RWUSD\" \"September\" \"2026\""
+  ],
+  "maximum_search_queries": 2,
+  "automatic_page_opens": 0,
+  "previous_search": "The earlier broad Polymarket OR-domain query returned event pages; this exact-title developer-document query is one terminal routing correction, not repeated market sampling.",
+  "decision": "Only a distinct dated primary announcement or explicit material effective term change can select a separately frozen source request. An undated, stale, already consumed or merely indexed economic value establishes no change or current return. No qualifying lead means stop this discovery wave without keyword variants, page opens, training or status-only repository changes.",
+  "protected": "No V7 partial data, consumed holding pulses, wallet activity, receipts, bridge quotes, option or triangle repricing, account access, keys or orders.",
+  "retention": "Preserve the exact serialized search tool output as a tool extraction, not origin HTTP bytes. Search snippets are not economic evidence.",
+  "profitability_claim": false
+}
