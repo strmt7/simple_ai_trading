@@ -1,5 +1,14 @@
 # Continue Development
 
+Forward make/take validation now has a source-bound chronology wrapper; read
+`review/2026-09-05/make-take-forward-boundary.md`. New evaluations must supply
+full calibration/evaluation batches, disjoint ordered days, all declared day
+paths and calibration labels ending strictly before evaluation decisions.
+The preserved legacy API permits an overlapping/missing-day synthetic pass;
+the frozen Round 57 runner separately enforces chronological windows, so
+historical leakage is not established. No historical source/result, trained
+model, retry trigger, registry count or profitability status changed.
+
 The next full NYC calendar-day screen (September 6, selected after 04:00 UTC
 September 5) is consumed. All 11 markets were returned; 21 price-complete
 frontier rows failed the gross gate. Read

@@ -6,6 +6,13 @@ operating contract. Historical handoff text is archived under
 
 ## Current Truth
 
+New make/take evaluations must use the forward chronology wrapper described in
+`review/2026-09-05/make-take-forward-boundary.md`. The old reusable evaluator
+can accept overlapping role dates and missing day-path coverage; its frozen
+runner separately checked chronological windows. No historical leakage is
+claimed. Preserve old sources; the new wrapper also checks all recorded
+calibration label endpoints before the first evaluation decision.
+
 The prospectively selected NYC September 6 event is consumed: all 21
 price-complete frontier rows failed before fees. Read
 `review/2026-09-05/nyc-sep6-frontier/review.md`. No book/account escalation;

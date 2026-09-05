@@ -28,6 +28,13 @@ after its one execution. All other literal retry/protected-capture rules remain.
 
 ## Hard Rules
 
+- For new make/take economic evaluations in this review session, use
+  `make_take_forward_evaluation.evaluate_make_take_policy_forward` with the
+  complete calibration and evaluation role inputs. The preserved Round 57
+  evaluator alone does not reject overlapping role days or absent day-path
+  evidence. Require calibration labels to end strictly before evaluation
+  decisions; preserve the old runner, source bindings and historical results.
+
 - Work in this session only; use no subagent.
 - AI Git history must use `AI agent <>` for author and committer. Read
   `docs/AI_COMMIT_IDENTITY.md` before committing or auditing; never use a human,
