@@ -1,5 +1,14 @@
 # Continue Development
 
+The retained dated-carry capital-budget review is complete: all 12 original
+rows, 108 conditional scenarios, zero new requests. Read
+`review/2026-09-05/dated-carry-capital-budget/review.md`. At a hypothetical
+3.25% annual capital charge and separate 35-bip noncapital reserve, December
+BTC supports at most 1.0008-1.0138 times initial spot cost at break-even;
+actual margin feasibility is unproved. Resolve exact collateral/cost questions
+next, not another grid on these same rows. No old result, retry trigger,
+protected capture, registry count or profitability status changed.
+
 The retained organic-conversion comparison is complete: 288 comparisons, three
 routes positive throughout at zero fees, none throughout at a hypothetical
 1.2-bip fee per leg. Best minimum equal-fee headroom was 0.6786 bips before

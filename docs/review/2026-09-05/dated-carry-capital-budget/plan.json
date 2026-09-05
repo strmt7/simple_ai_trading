@@ -1,0 +1,20 @@
+{
+  "schema_version": "retained-dated-carry-capital-budget-plan-v1",
+  "classification": "retrospective_conditional_sensitivity_not_validation",
+  "question": "How much noncapital cost can each retained gross dated basis afford after a hypothetical committed-capital charge?",
+  "prior_outcome_awareness": "The original aggregate and all economic rows already exist. This is explanatory reuse, not a prospective test or independent validation.",
+  "snapshot_path": "docs/model-research/action-value/binance-quarterly-carry-snapshot-v1-2026-08-25.json",
+  "population": "All 12 quantity rows across all four original contracts; retain original freshness flags, do not select winners.",
+  "hypothetical_annual_capital_rates": ["0.01", "0.0325", "0.05"],
+  "hypothetical_committed_capital_multiples": ["1", "1.5", "2"],
+  "annualization": "Simple ACT/365.25, matching the original 31557600000-millisecond year. Rates are arbitrary sensitivity inputs in the same quote unit, not current borrowing rates or any other venue's yield.",
+  "capital_model": "Committed capital divided by original spot acquisition cost, charged over the original capture-to-delivery interval. Not leverage, proved margin feasibility, liquidation resistance or financing availability; constant capital excludes path-dependent collateral needs.",
+  "separate_noncapital_reserve_bips": "35",
+  "accounting": "First subtract hypothetical capital cost from original gross basis to report the remaining budget for all noncapital costs. Second compare that budget with a separately allocated hypothetical 35-bip reserve. The original all-in 35-bip hurdle is NOT measured fees and is NOT assumed to exclude capital: this is a distinct conditional partition, not a correction or double deduction from original after-hurdle returns.",
+  "preservation": "Zero network requests, no current price, account, fee, order or protected capture access. Preserve every old result and all retry triggers. No registry population increment, feasibility claim, accepted edge, confidence probability or model promotion.",
+  "source_sha256": {
+    "docs/model-research/action-value/binance-quarterly-carry-snapshot-v1-2026-08-25.json": "d04d7618e30e07b72a894d413616f4ace8962cb1c7adecb82b5b59070d3622f2",
+    "tools/review_dated_carry_capital_budget.py": "08bbdd27e81261556cb1e8383738c1682356b491c677926087997090074ef1df",
+    "tests/test_dated_carry_capital_budget.py": "3322592466b67c3324f0178b808ef5446b8f209c313b54c417c78b3cdfc8b71a"
+  }
+}
