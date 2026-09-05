@@ -1,5 +1,13 @@
 # Continue Development
 
+Latest capital-risk repair: [account quantity evidence](review/2026-09-05/binance-account-quantity-evidence.md)
+rejects malformed/duplicate quantities that previously appeared reconciled and
+flat. Invalid account data is unknown, not evidence to mark verified inventory
+stale. 205 distinct staged affected checks pass, including valid-versus-invalid
+Spot/Futures entry controls. No new market capture or profitability evidence.
+Next continue exact terminal-order recovery/rearm; require a valid account report,
+not merely zero reported exposure. Do not repeat unchanged regression suites.
+
 Latest recovery foundation: [durable execution scope](review/2026-09-05/binance-execution-scope.md)
 binds autonomous intents and their journal to venue/product/API-key identity,
 with explicit checks through leverage, orders and exact-ID queries. Scope is not
