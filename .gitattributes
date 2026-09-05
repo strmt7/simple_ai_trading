@@ -174,3 +174,4 @@ docs/review/2026-09-05/holding-yield-change-*.json binary -eol
 docs/review/2026-09-05/completion-decision-review.json binary -eol
 docs/review/2026-09-05/triangle-window/*.json binary -eol
 docs/review/2026-09-05/triangle-window/*.jsonl binary -eol
+docs/review/2026-09-05/major-conversion-frontier/*.json binary -eol

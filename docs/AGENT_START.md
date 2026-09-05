@@ -6,6 +6,12 @@ operating contract. Historical handoff text is archived under
 
 ## Current Truth
 
+The one-intermediary organic-conversion fee frontier reuses the existing major
+quote window offline. No route stayed positive in all twelve samples at a
+hypothetical 1.2-bip uniform fee. See
+`review/2026-09-05/major-conversion-frontier/review.md`; no new population,
+account fee, live route or profitable edge is qualified by this diagnostic.
+
 The one-time session-only Binance triangle future window is complete and
 consumed: 72 route observations, maximum ideal gross headroom 1.4093 bips,
 zero survivors above the unchanged 3-bip stress. Read
