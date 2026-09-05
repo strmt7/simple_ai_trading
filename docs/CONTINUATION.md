@@ -1,5 +1,21 @@
 # Continue Development
 
+Latest R&D: the frozen September 5 Binance metadata gate proved 70 distinct
+options outside the complete 2,274-name prior union. One two-request screen
+found 23 positive-entry rows, zero gross-positive floors and zero survivors
+after the unchanged 33.5-bip stress. Read
+`review/2026-09-05/option-population/review.md`. Three public requests total;
+no depth, funding, fees, accounts, credentials, orders or protected captures.
+Both stages and all 70 contracts are consumed; include them in future unions.
+The exact rank-47 retry trigger and every prior restriction remain unchanged.
+Current counts: 37 accepted mechanism scopes, 65 hypotheses, 192 terminal
+observations, zero fully qualified stable profitable edges. Registry/audit
+self-hashes are
+`d8e23d654aa344e233c31eb1fc02e242285101f09cdb06a2f26d0ad7b594578d`
+and `196ec88d530aa6f1a658abad03dbf97e377c612c9370d59f7d4984524704ebd4`.
+Lower checkpoint counts and hashes are historical. No full-repo completion
+or family-wide impossibility claim follows from this finite screen.
+
 The user-requested full continuation rules are in
 `AGENT_WORKFLOWS.md#progress-blocking-and-resumption`, required by `AGENTS.md`.
 The detailed capture rules moved intact to `RESEARCH_CAPTURE_BOUNDARIES.md`,
@@ -34,7 +50,7 @@ September 5) is consumed. All 11 markets were returned; 21 price-complete
 frontier rows failed the gross gate. Read
 `review/2026-09-05/nyc-sep6-frontier/review.md`. No books, missing-side repair,
 fees, accounts, orders or protected captures. Do not reprice this event.
-Current canonical terminal count is 191; accepted scopes remain 37 and fully
+That checkpoint's canonical terminal count was 191; accepted scopes remained 37 and fully
 qualified stable profitable edges remain zero. Registry/audit self-hashes are
 `b2c325becc7b5ccfdc684654af28b3b899b7c1c3a61a397c9e53cfdb9ab015b6`
 and `fb4cd282d89d9385bfe6acf9037200b70f184ebc70c149783842d50cb948e737`.

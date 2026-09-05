@@ -1,0 +1,47 @@
+{
+  "schema_version": "distinct-option-floor-contract-v3",
+  "frozen_at_utc": "2026-09-05T09:33:19.067712Z",
+  "population_path": "docs/review/2026-09-05/option-population/population-result.json",
+  "population_sha256": "6ee7a4a3e4cf13acde7f75bfb80226cea074e64f3e5ca68050948d0a2bcfed7f",
+  "source_results": {
+    "option_tickers": {
+      "contract_path": "docs/review/2026-09-05/option-population/option_tickers-contract.json",
+      "contract_sha256": "f87289f949a773a351ca08e3c82c3508826c7ac66631f9f25eab278bfb55db9f",
+      "result_path": "docs/review/2026-09-05/option-population/option_tickers-source-result.json"
+    },
+    "futures_books": {
+      "contract_path": "docs/review/2026-09-05/option-population/futures_books-contract.json",
+      "contract_sha256": "1fc468c0541d4bcea961ad9c8f3cf2d92b401a47f78b66dec23a2b0a952a383f",
+      "result_path": "docs/review/2026-09-05/option-population/futures_books-source-result.json"
+    }
+  },
+  "implementation_sha256": {
+    "tools/capture_public_source_bounded.py": "760339a7602abfa9eb97f3f1cca0ef79191b07ff5f5aa42515f30f191f9888fc",
+    "tools/capture_public_source_contract.py": "9dbb14651455abade755fe96091b9eaafe1153f56a1baad4cd60b1a888d41b8c",
+    "tools/adjudicate_option_population_v3.py": "143b41dec215298086dcfac2548f6b409f57a913aa60206d027838d905489dd0",
+    "tools/adjudicate_binance_crypto_option_population_gate_v2.py": "4d0d12aacb6e7ec30cf6c63ff667e03c0f167071dc2f4328ac7d9c62df71d5b6",
+    "tools/adjudicate_polymarket_exact_mlb_monotone_prefilter.py": "958a44d78029b9a1eb69a3771ce18e53ac1ed3c7bc161c8e4318beedce2cf99f",
+    "tools/screen_polymarket_exact_two_leg_package.py": "374fcc3c3485c466b4929a91256450bdc7db70f93ef4c6bda627e05fe8938327",
+    "tools/screen_option_floor_population.py": "af84521818df7dc17594df5b7e3a89b6abd24ef4b77fb8a2657b84220396d825",
+    "tools/adjudicate_binance_crypto_option_distinct_price_prefilter_v2.py": "d766afac6dfeba2fb447b95e56bac824a0db257b33444ed83041730900be57b7"
+  },
+  "fixed_stress_bps": "33.5",
+  "maximum_start_skew_ms": 10000,
+  "output_path": "docs/review/2026-09-05/option-population/price-result.json",
+  "information_gain": "Price only the 70 newly proved symbols. Market-neutral terminal-payoff floor, not a forecast; preserve every eligible and ineligible row. This is one metadata-qualified population, not repeated polling.",
+  "request_order": [
+    "option_tickers",
+    "futures_books"
+  ],
+  "maximum_requests": 2,
+  "cost_interpretation": "33.5-bip stress is the unchanged rejection hurdle, not an actual account commission or a complete executable cost. No favorable funding, zero expiry basis or executable quantity is proved.",
+  "decision_rules": [
+    "Source failure stops before further requests; any failed source, missing required ticker, expired contract or malformed value terminalizes without repair.",
+    "Call gross floor is perpetual bid minus strike minus option ask; put floor is strike minus perpetual ask minus option ask; unit must equal one.",
+    "Zero/missing entry prices are not free; all tested symbols remain in evidence or the run fails closed.",
+    "Survivors must conjoin strict positive gross less fixed stress with the 10000ms request-start-skew gate. Request receipts do not prove internal quote freshness.",
+    "No survivor means no depth, funding, fee, account, order or follow-up price request. A survivor needs separately frozen full costs, expiry basis, adverse funding, ticks and quantity before any depth.",
+    "Account qualification, recurring all-cost economics and all original promotion requirements remain mandatory; no accepted edge or trading authority follows."
+  ],
+  "contract_sha256": "d458e4ed0314a0771e157482629ce91b8159fcd860a0d14e93ac61c490041d62"
+}

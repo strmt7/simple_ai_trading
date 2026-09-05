@@ -3709,12 +3709,20 @@
         {
           "path": "docs/model-research/action-value/binance-crypto-option-distinct-price-prefilter-result-v2-2026-09-04.json",
           "result_sha256": "fbd10642d35ed469b7cc7f5554681d90d074be71fe718498738011af2fcb3b8e"
+        },
+        {
+          "path": "docs/review/2026-09-05/option-population/population-result.json",
+          "result_sha256": "6ee7a4a3e4cf13acde7f75bfb80226cea074e64f3e5ca68050948d0a2bcfed7f"
+        },
+        {
+          "path": "docs/review/2026-09-05/option-population/price-result.json",
+          "result_sha256": "1e4c24e06665f206782360224bad16f536641bb4a5a259ec2e3acef2966a1658"
         }
       ],
-      "current_status": "unaccepted_direction_independent_long_crypto_option_plus_equal_opposite_USDT_perpetual_terminal_payoff_lower_bound_the_prospectively_frozen_2026_09_04_population_gate_found_356_active_symbols_absent_from_the_1576_symbol_baseline_then_excluded_the_two_already_consumed_BTC_261225_94000_call_and_put_symbols_and_proved_zero_overlap_with_the_consumed_508_symbol_population_leaving_354_genuinely_unscreened_symbols_one_frozen_245ms_skew_two_request_price_prefilter_found_all_354_tickers_226_positive_entry_side_rows_one_gross_positive_BTC_260905_80500_put_at_11_10_USDT_per_BTC_but_zero_survivors_after_the_33_5_bip_fixed_stress_the_best_became_negative_255_455815_USDT_or_negative_32_1049826_bips_no_depth_funding_fee_account_credential_order_fund_or_protected_capture_access_not_an_edge_or_deployment_ready",
+      "current_status": "unaccepted: the frozen September 5 metadata gate subtracted the complete 2274-symbol prior union from 1436 currently eligible symbols, proving 70 distinct contracts. One two-request price prefilter found 23 positive-entry rows, zero gross-positive floors and zero survivors after the unchanged 33.5-bip stress. Request-start skew was 1984 ms, not internal quote freshness or execution proof. All 70 are consumed; no depth, funding, fee, account, credential, order or protected capture access followed. This snapshot is not an edge or a family-wide impossibility result.",
       "market_direction_forecast_required": false,
       "mechanism": "binance_long_crypto_option_opposite_USDT_perpetual_terminal_payoff_lower_bound",
-      "next_action": "do_not_repeat_rebuild_refresh_reprice_or_depth_capture_the_exhausted_1410_symbol_baseline_the_exact_508_symbol_August_31_delta_the_exact_two_symbol_September_1_delta_or_the_exact_354_symbol_September_4_distinct_population_reopen_only_for_a_later_distinct_active_BTC_ETH_or_SOL_option_population_after_2026_09_04T18_49_36_306Z_or_a_material_fee_settlement_tick_depth_funding_expiry_basis_or_capital_rule_change_or_an_independently_observed_nonpolling_displayed_terminal_floor_strictly_above_every_applicable_cost_then_apply_the_same_rejection_first_sequence",
+      "next_action": "do_not_repeat_rebuild_refresh_reprice_or_depth_capture_the_exhausted_1410_symbol_baseline_the_exact_508_symbol_August_31_delta_the_exact_two_symbol_September_1_delta_or_the_exact_354_symbol_September_4_distinct_population_reopen_only_for_a_later_distinct_active_BTC_ETH_or_SOL_option_population_after_2026_09_04T18_49_36_306Z_or_a_material_fee_settlement_tick_depth_funding_expiry_basis_or_capital_rule_change_or_an_independently_observed_nonpolling_displayed_terminal_floor_strictly_above_every_applicable_cost_then_apply_the_same_rejection_first_sequence; also exclude the exact 70-symbol September 5 population bound by docs/review/2026-09-05/option-population/population-result.json from every future population union; do not repair its 47 missing entry-quote rows or repeat its metadata/price capture. Preserve the exact existing retry trigger and every prior population restriction.",
       "priority_rank": 47,
       "prohibited_shortcuts": [
         "calling_the_two_positive_gross_SOL_rows_after_cost_profit",
@@ -3727,7 +3735,8 @@
         "refetching_exchangeInfo_tickers_or_books_for_the_exact_two_symbol_2026_09_01_late_ticker_delta_after_the_call_was_gross_negative_and_the_put_had_no_positive_displayed_ask",
         "calling_one_retained_snapshot_recurring_current_or_stable",
         "using_credentials_accessing_accounts_or_placing_orders_without_separate_explicit_authority",
-        "calling_the_11_10_USDT_gross_BTC_260905_80500_put_row_an_edge_after_it_failed_the_frozen_33_5_bip_stress_by_255_455815_USDT_per_BTC"
+        "calling_the_11_10_USDT_gross_BTC_260905_80500_put_row_an_edge_after_it_failed_the_frozen_33_5_bip_stress_by_255_455815_USDT_per_BTC",
+        "reprice_or_repair_the_consumed_70_symbol_September_5_population_or_count_its_47_zero_entry_quote_rows_as_free_options"
       ],
       "retry_trigger": "new_distinct_active_BTC_ETH_or_SOL_option_population_or_material_option_fee_settlement_tick_depth_funding_expiry_basis_or_capital_rule_change_or_an_independently_observed_nonpolling_displayed_single_option_terminal_floor_strictly_above_every_applicable_cost",
       "venue_scope": "Binance_BTC_ETH_SOL_European_options_and_exact_matching_USDT_perpetuals"
@@ -4361,7 +4370,7 @@
       ]
     }
   ],
-  "result_sha256": "b2c325becc7b5ccfdc684654af28b3b899b7c1c3a61a397c9e53cfdb9ab015b6",
+  "result_sha256": "d8e23d654aa344e233c31eb1fc02e242285101f09cdb06a2f26d0ad7b594578d",
   "schema_version": "structural-edge-priority-registry-v1",
   "terminal_do_not_repeat": [
     {
@@ -5330,8 +5339,13 @@
       "family": "polymarket_nyc_september6_complete_long_only_frontier",
       "reason": "One prospectively selected NYC September 6 Gamma GET returned event 963328 and all 11 expected markets. Eleven YES and eight NO sides were price-complete. All 21 frontier rows failed the gross gate; the best metadata binary straddle cost 1.003 pUSD per share, losing 0.015 pUSD at five shares. The best finite fee-and-one-tick result was negative 0.04837 pUSD. Three NO sides remain incomplete; no missing-side request, book, fee endpoint, account, credential, order or protected capture. This exact event is terminal; do not refetch, reprice, alias or book-test it under unchanged economics. No edge promoted.",
       "canonical_result_sha256": "36c17d54a1ee45ac21d962b542b74f254b05c60e4f7f451bd047b130f1d02b56"
+    },
+    {
+      "family": "binance_crypto_option_distinct_population_70_september5_2026",
+      "reason": "One frozen metadata request proved 70 symbols outside the complete 2274-symbol prior union. One frozen two-request screen at 1984 ms request-start skew retained all 70 rows: 23 positive-entry, zero gross-positive and zero after the unchanged 33.5-bip stress. The remaining 47 rows have zero entry quotes, not free acquisition. No survivor means no depth, funding, fee or account escalation. Do not repeat or repair this population; only the unchanged exact rank-47 distinct-population or material-economics retry trigger can reopen the branch.",
+      "canonical_result_sha256": "1e4c24e06665f206782360224bad16f536641bb4a5a259ec2e3acef2966a1658"
     }
   ],
-  "updated_at_utc": "2026-09-05T04:02:45.762079Z",
+  "updated_at_utc": "2026-09-05T09:41:09.025556Z",
   "usage_rule": "advance_the_highest_ranked_hypothesis_whose_retry_trigger_is_satisfied_otherwise_do_not_repeat_a_blocked_or_terminal_screen"
 }

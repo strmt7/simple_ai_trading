@@ -1,0 +1,44 @@
+{
+  "schema_version": "option-population-registry-amendment-v1",
+  "base_commit": "f5a459e61825fd9de9c782752824ad0f0c8a7eea",
+  "prior_registry_sha256": "b2c325becc7b5ccfdc684654af28b3b899b7c1c3a61a397c9e53cfdb9ab015b6",
+  "prior_audit_sha256": "fb4cd282d89d9385bfe6acf9037200b70f184ebc70c149783842d50cb948e737",
+  "scope": "Post-outcome publication only; no request or economic re-adjudication authorized.",
+  "priority_rank": 47,
+  "artifact_additions": [
+    {
+      "path": "docs/review/2026-09-05/option-population/population-result.json",
+      "result_sha256": "6ee7a4a3e4cf13acde7f75bfb80226cea074e64f3e5ca68050948d0a2bcfed7f"
+    },
+    {
+      "path": "docs/review/2026-09-05/option-population/price-result.json",
+      "result_sha256": "1e4c24e06665f206782360224bad16f536641bb4a5a259ec2e3acef2966a1658"
+    }
+  ],
+  "current_status": "unaccepted: the frozen September 5 metadata gate subtracted the complete 2274-symbol prior union from 1436 currently eligible symbols, proving 70 distinct contracts. One two-request price prefilter found 23 positive-entry rows, zero gross-positive floors and zero survivors after the unchanged 33.5-bip stress. Request-start skew was 1984 ms, not internal quote freshness or execution proof. All 70 are consumed; no depth, funding, fee, account, credential, order or protected capture access followed. This snapshot is not an edge or a family-wide impossibility result.",
+  "next_action_suffix": "; also exclude the exact 70-symbol September 5 population bound by docs/review/2026-09-05/option-population/population-result.json from every future population union; do not repair its 47 missing entry-quote rows or repeat its metadata/price capture. Preserve the exact existing retry trigger and every prior population restriction.",
+  "prohibited_shortcut": "reprice_or_repair_the_consumed_70_symbol_September_5_population_or_count_its_47_zero_entry_quote_rows_as_free_options",
+  "terminal": {
+    "family": "binance_crypto_option_distinct_population_70_september5_2026",
+    "reason": "One frozen metadata request proved 70 symbols outside the complete 2274-symbol prior union. One frozen two-request screen at 1984 ms request-start skew retained all 70 rows: 23 positive-entry, zero gross-positive and zero after the unchanged 33.5-bip stress. The remaining 47 rows have zero entry quotes, not free acquisition. No survivor means no depth, funding, fee or account escalation. Do not repeat or repair this population; only the unchanged exact rank-47 distinct-population or material-economics retry trigger can reopen the branch.",
+    "canonical_result_sha256": "1e4c24e06665f206782360224bad16f536641bb4a5a259ec2e3acef2966a1658"
+  },
+  "audit_routing_key": "binance_crypto_option_opposite_perpetual_terminal_trigger",
+  "audit_routing_suffix": " The separately frozen September 5 population is also terminal: 70 distinct symbols outside the complete 2274-symbol union; 23 positive-entry rows, zero gross-positive and zero after the unchanged 33.5-bip stress, at 1984 ms request-start skew. Include these 70 in future exclusions. Do not repair zero quotes or reprice this population. The exact registry retry trigger, historical results and all account/economic qualification requirements are unchanged.",
+  "expected_counts": {
+    "accepted_scopes": 37,
+    "hypotheses": 65,
+    "terminal_before": 191,
+    "terminal_after": 192,
+    "qualified_stable_edges": 0
+  },
+  "allowed_other_changes": [
+    "registry.updated_at_utc",
+    "registry.result_sha256",
+    "audit.source_binding.registry_result_sha256",
+    "audit.updated_at_utc",
+    "audit.result_sha256"
+  ],
+  "preserve": "Every unrelated row, field, classification, decision, frontier and literal retry trigger must equal the base Git JSON. All historical artifacts remain byte-identical.",
+  "plan_sha256": "229b34ca94aa17d740bea27667e534a13c1f5f0556dc89ac3cff2e2bb23740bd"
+}
