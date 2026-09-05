@@ -17,8 +17,7 @@ ADJUDICATION = ROOT / (
 )
 JOURNAL = ROOT / "data/binance-spot-amend-keep-priority-source-v1/journal.json"
 RAW = (
-    ROOT
-    / "data/binance-spot-amend-keep-priority-source-v1/raw/"
+    ROOT / "data/binance-spot-amend-keep-priority-source-v1/raw/"
     "order_amend_keep_priority.raw.md"
 )
 REGISTRY = ROOT / "docs/model-research/structural-edge-priority-registry-v1.json"
@@ -55,12 +54,11 @@ def test_consumed_source_failure_and_offline_semantics_reconstruct() -> None:
 
     assert _self_hash(contract, "contract_sha256") == contract["contract_sha256"]
     implementation = contract["implementation"]
-    assert _sha256((ROOT / implementation["path"]).read_bytes()) == implementation[
-        "sha256"
-    ]
-    lineage = adjudication["consumed_run"][
-        "retained_source_line_ending_reconstruction"
-    ]
+    assert (
+        _sha256((ROOT / implementation["path"]).read_bytes())
+        == implementation["sha256"]
+    )
+    lineage = adjudication["consumed_run"]["retained_source_line_ending_reconstruction"]
     for source in contract["retained_sources"]:
         payload = (ROOT / source["path"]).read_bytes()
         if source["path"] == lineage["path"] and _sha256(payload) != source["sha256"]:
@@ -69,16 +67,16 @@ def test_consumed_source_failure_and_offline_semantics_reconstruct() -> None:
             assert source["sha256"] == lineage["frozen_worktree_sha256"]
         else:
             assert _sha256(payload) == source["sha256"]
-    native_index = (
-        ROOT / contract["retained_sources"][0]["path"]
-    ).read_text(encoding="utf-8")
+    native_index = (ROOT / contract["retained_sources"][0]["path"]).read_text(
+        encoding="utf-8"
+    )
     assert (
         "`PUT /api/v3/order/amend/keepPriority` — Order Amend Keep Priority (TRADE)"
         in native_index
     )
-    changelog = (
-        ROOT / contract["retained_sources"][1]["path"]
-    ).read_text(encoding="utf-8")
+    changelog = (ROOT / contract["retained_sources"][1]["path"]).read_text(
+        encoding="utf-8"
+    )
     assert "request weights have been increased from 1 to 4" in changelog
     assert "Order Amend Keep Priority will be enabled on all symbols" in changelog
 
@@ -101,7 +99,12 @@ def test_consumed_source_failure_and_offline_semantics_reconstruct() -> None:
         assert phrase.casefold().replace("`", "") in normalized
     facts = adjudication["offline_retained_source_facts"]
     assert facts["successful_amend_keeps_time_priority_at_the_same_price"] is True
-    assert facts["cancel_replace_loses_time_priority_and_executes_after_existing_same_price_orders"] is True
+    assert (
+        facts[
+            "cancel_replace_loses_time_priority_and_executes_after_existing_same_price_orders"
+        ]
+        is True
+    )
     assert facts["failed_amend_is_rejected_and_leaves_the_order_unchanged"] is True
     assert facts["unfilled_order_count_per_amend"] == 0
     assert facts["request_weight"] == 4
@@ -140,11 +143,16 @@ def test_retained_production_configuration_and_rank_five_lineage_reconstruct() -
         "result_sha256": adjudication["result_sha256"],
     } in rank_five["canonical_artifacts"]
     assert adjudication["adjudication"]["accepted_edge"] is False
-    assert adjudication["economic_adjudication"]["public_forward_profit_floor_quote_units"] == "0"
+    assert (
+        adjudication["economic_adjudication"]["public_forward_profit_floor_quote_units"]
+        == "0"
+    )
 
 
 def test_markdown_gate_rule_records_the_consumed_methodology_correction() -> None:
-    agents = (ROOT / "AGENTS.md").read_text(encoding="utf-8")
+    agents = (ROOT / "docs" / "RESEARCH_CAPTURE_BOUNDARIES.md").read_text(
+        encoding="utf-8"
+    )
     assert "Freeze text gates against the exact retained representation" in agents
     assert "adjudicate the retained bytes offline" in agents
     assert "never refetch" in agents

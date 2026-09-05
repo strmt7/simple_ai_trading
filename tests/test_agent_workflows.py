@@ -108,6 +108,30 @@ def test_root_agent_context_is_compact_without_dropping_hard_routes() -> None:
     assert (ROOT / "docs" / "AI_COMMIT_IDENTITY.md").is_file()
 
 
+def test_continuation_protocol_and_capture_companion_are_mandatory() -> None:
+    root = _read("AGENTS.md")
+    assert (
+        "[Research Capture Boundaries](docs/RESEARCH_CAPTURE_BOUNDARIES.md) completely"
+        in root
+    )
+    boundaries = _read("docs/RESEARCH_CAPTURE_BOUNDARIES.md")
+    assert "Read this file completely" in boundaries
+    assert "does not reopen any consumed" in boundaries
+    for path in ("AGENTS.md", "docs/AGENT_START.md", "docs/CONTINUATION.md"):
+        assert "AGENT_WORKFLOWS.md#progress-blocking-and-resumption" in _read(path)
+    workflow = " ".join(_read("docs/AGENT_WORKFLOWS.md").split())
+    for required in (
+        "three consecutive goal turns",
+        "On user resumption, start a fresh blocked audit",
+        "A scheduled timestamp is only an earliest gate",
+        "Missing mainnet account evidence blocks account qualification, not public research",
+        "Do not demand mainnet secrets in chat",
+        "It does not mean all Polymarket research is prohibited",
+        "an administrative edit is not market evidence",
+    ):
+        assert required in workflow
+
+
 def test_ci_enforces_financial_terminology_audit() -> None:
     workflow = _read(".github/workflows/ci.yml")
     documentation = _read("docs/AGENT_WORKFLOWS.md")

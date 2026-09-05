@@ -13,8 +13,7 @@ CONTRACT = BASE / (
     "source-contract-v1-2026-08-30.json"
 )
 JOURNAL = BASE / (
-    "binance-bnsol-boost-airdrop-existing-holding-overlay-"
-    "journal-v1-2026-08-30.json"
+    "binance-bnsol-boost-airdrop-existing-holding-overlay-journal-v1-2026-08-30.json"
 )
 ARTIFACT = BASE / (
     "binance-bnsol-boost-airdrop-existing-holding-overlay-"
@@ -80,9 +79,12 @@ def test_boost_lead_is_fail_closed_and_bound_to_existing_yield_family() -> None:
     assert artifact["authority"]["account_state_accessed"] is False
     assert artifact["authority"]["credentials_used"] is False
     assert artifact["authority"]["claim_or_other_state_changes"] == 0
-    assert artifact["discovery_only_web_rendered_evidence"][
-        "admitted_as_positive_acceptance_evidence"
-    ] is False
+    assert (
+        artifact["discovery_only_web_rendered_evidence"][
+            "admitted_as_positive_acceptance_evidence"
+        ]
+        is False
+    )
     assert artifact["retry_contract"]["terminal_without_trigger"] is True
 
     source = artifact["retained_current_official_api_index"]
@@ -108,6 +110,8 @@ def test_boost_lead_is_fail_closed_and_bound_to_existing_yield_family() -> None:
 
 
 def test_agent_rules_prevent_repeating_known_empty_dynamic_pages() -> None:
-    rules = (ROOT / "AGENTS.md").read_text(encoding="utf-8")
+    rules = (ROOT / "docs" / "RESEARCH_CAPTURE_BOUNDARIES.md").read_text(
+        encoding="utf-8"
+    )
     assert "HTTP 202 shells of about 2 KB" in rules
     assert "stop without URL aliases" in rules
