@@ -6,6 +6,12 @@ operating contract. Historical handoff text is archived under
 
 ## Current Truth
 
+The retained dated-carry capital budget is complete; read
+`review/2026-09-05/dated-carry-capital-budget/review.md`. At a hypothetical
+3.25% annual capital cost and separate 35-bip noncapital reserve, December BTC
+has little extra-capital headroom. This is a distinct conditional sensitivity,
+not a correction to the original all-in hurdle or a current profitable edge.
+
 The one-intermediary organic-conversion fee frontier reuses the existing major
 quote window offline. No route stayed positive in all twelve samples at a
 hypothetical 1.2-bip uniform fee. See
