@@ -1,0 +1,112 @@
+{
+  "completed": true,
+  "live_case_coverage": {
+    "BTCUSDT": {
+      "resting_order_observed": true,
+      "cancellation_observed": false,
+      "buy_fill_observed": true,
+      "sell_fill_observed": true,
+      "owned_flat": true
+    },
+    "ETHUSDT": {
+      "resting_order_observed": true,
+      "cancellation_observed": false,
+      "buy_fill_observed": true,
+      "sell_fill_observed": true,
+      "owned_flat": true
+    },
+    "SOLUSDT": {
+      "resting_order_observed": true,
+      "cancellation_observed": false,
+      "buy_fill_observed": true,
+      "sell_fill_observed": true,
+      "owned_flat": true
+    }
+  },
+  "required_live_cases_passed": false,
+  "testnet_only": true,
+  "residual_base": {
+    "BTCUSDT": "0E-8",
+    "ETHUSDT": "0E-8",
+    "SOLUSDT": "0E-8"
+  },
+  "owned_order_intents": 9,
+  "order_cash": {
+    "sat-e1-0905-4c19-00": {
+      "symbol": "BTCUSDT",
+      "base_delta": "0",
+      "quote_delta": "-0",
+      "third_asset_fees": {},
+      "trade_count": 0,
+      "partial_fill": false
+    },
+    "sat-e1-0905-4c19-01": {
+      "symbol": "BTCUSDT",
+      "base_delta": "0.00125000",
+      "quote_delta": "-99.48750000",
+      "third_asset_fees": {},
+      "trade_count": 1,
+      "partial_fill": false
+    },
+    "sat-e1-0905-4c19-02": {
+      "symbol": "BTCUSDT",
+      "base_delta": "-0.00125000",
+      "quote_delta": "99.48748750",
+      "third_asset_fees": {},
+      "trade_count": 1,
+      "partial_fill": false
+    },
+    "sat-e1-0905-4c19-03": {
+      "symbol": "ETHUSDT",
+      "base_delta": "0",
+      "quote_delta": "-0",
+      "third_asset_fees": {},
+      "trade_count": 0,
+      "partial_fill": false
+    },
+    "sat-e1-0905-4c19-04": {
+      "symbol": "ETHUSDT",
+      "base_delta": "0.04060000",
+      "quote_delta": "-99.57393600",
+      "third_asset_fees": {},
+      "trade_count": 1,
+      "partial_fill": false
+    },
+    "sat-e1-0905-4c19-05": {
+      "symbol": "ETHUSDT",
+      "base_delta": "-0.04060000",
+      "quote_delta": "99.57353000",
+      "third_asset_fees": {},
+      "trade_count": 1,
+      "partial_fill": false
+    },
+    "sat-e1-0905-4c19-06": {
+      "symbol": "SOLUSDT",
+      "base_delta": "0",
+      "quote_delta": "-0",
+      "third_asset_fees": {},
+      "trade_count": 0,
+      "partial_fill": false
+    },
+    "sat-e1-0905-4c19-07": {
+      "symbol": "SOLUSDT",
+      "base_delta": "0.97800000",
+      "quote_delta": "-99.70710000",
+      "third_asset_fees": {},
+      "trade_count": 1,
+      "partial_fill": false
+    },
+    "sat-e1-0905-4c19-08": {
+      "symbol": "SOLUSDT",
+      "base_delta": "-0.97800000",
+      "quote_delta": "99.69732000",
+      "third_asset_fees": {},
+      "trade_count": 1,
+      "partial_fill": false
+    }
+  },
+  "quote_cash_delta": "-0.01019850",
+  "partial_fills_observed": 0,
+  "cold_process_restart_tested": false,
+  "profitability_evidence": false
+}

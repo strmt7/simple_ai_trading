@@ -6,7 +6,14 @@ operating contract. Historical handoff text is archived under
 
 ## Current Truth
 
-The supplied keys passed a read-only BTCUSDT Spot-testnet commission check;
+Latest: a bounded Spot-testnet lifecycle campaign completed nine orders and
+three exact cancellations across BTC/ETH/SOL; six owned trades reconcile to
+zero residual base and no final open orders. See
+`review/2026-09-05/spot-testnet-execution-review.md` for the preserved original
+reporting defect and zero-network correction. The virtual quote delta is
+-0.01019850 USDT, not profitability evidence. No replay or recovery is needed.
+
+Earlier, the supplied keys passed a read-only BTCUSDT Spot-testnet commission check;
 no orders or credentials were saved. See
 `review/2026-09-05/testnet-and-literature-status.md`. Testnet fees are not mainnet
 evidence. A new option-model paper lead failed its exact HTML source request

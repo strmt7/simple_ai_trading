@@ -1,0 +1,60 @@
+{
+  "cold_process_restart_tested": false,
+  "corrected_required_live_cases_passed": true,
+  "input_sha256": {
+    "docs/review/2026-09-05/spot-testnet-execution/frozen-api.py.base64": "c4ac6c306c254f3446e6ff9b429b956e272da367bed75113edffade8a7ea37af",
+    "docs/review/2026-09-05/spot-testnet-execution/frozen-runner.py": "68456cff03d68b94dda7fc44be71cd6d00def9dc50e9ecfe6fc9ed382300fdaa",
+    "docs/review/2026-09-05/spot-testnet-execution/journal.jsonl": "6dc4d44d042c40a956b9f3d8290b09f57ad99684cdb35b649f953bde704f4131",
+    "docs/review/2026-09-05/spot-testnet-execution/official-source-extraction.json": "0d569131d212e54f495e6e107ef7e1c25da67d509184527c251c8af1ba39b207",
+    "docs/review/2026-09-05/spot-testnet-execution/plan.json": "1a64d174a7b593e7820b3dd3a7080a75c5596562cf36304a4156dbb6a8180560",
+    "docs/review/2026-09-05/spot-testnet-execution/result.json": "7a2f889f051e08f933742c457b8c6d110b479e03908450512c6e28da1c9b0984",
+    "docs/review/2026-09-05/spot-testnet-execution/source-disposition.json": "5b05892194363a59fed217c0ace3e28683ad9e7baa545cdc30a2de026314b7a1",
+    "src/simple_ai_trading/spot_testnet_coverage.py": "069fe4b4b190b24eceda992370812ef99b65d2df3874c8ee03cb2bc9df33b08d",
+    "tools/review_spot_testnet_execution.py": "8cdcf2ac437ac78df952becfb94b867f6ed521619892b50fef6865686298a3fe"
+  },
+  "live_case_coverage": {
+    "BTCUSDT": {
+      "buy_fill_observed": true,
+      "cancellation_observed": true,
+      "no_open_orders": true,
+      "owned_flat": true,
+      "resting_order_observed": true,
+      "sell_fill_observed": true
+    },
+    "ETHUSDT": {
+      "buy_fill_observed": true,
+      "cancellation_observed": true,
+      "no_open_orders": true,
+      "owned_flat": true,
+      "resting_order_observed": true,
+      "sell_fill_observed": true
+    },
+    "SOLUSDT": {
+      "buy_fill_observed": true,
+      "cancellation_observed": true,
+      "no_open_orders": true,
+      "owned_flat": true,
+      "resting_order_observed": true,
+      "sell_fill_observed": true
+    }
+  },
+  "network_requests_for_this_review": 0,
+  "original_reporting_gate_passed": false,
+  "owned_order_intents": 9,
+  "owned_trade_count": 6,
+  "partial_fills_observed": 0,
+  "profitability_evidence": false,
+  "quote_cash_delta_virtual_USDT": "-0.01019850",
+  "request_counts": {
+    "DELETE": 3,
+    "GET": 48,
+    "POST": 9
+  },
+  "residual_base": {
+    "BTCUSDT": "0E-8",
+    "ETHUSDT": "0E-8",
+    "SOLUSDT": "0E-8"
+  },
+  "schema_version": "spot-testnet-execution-offline-review-v1",
+  "scope": "Normalized owned evidence replay, not origin HTTP bytes or independent economic validation"
+}

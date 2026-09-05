@@ -1,0 +1,79 @@
+{
+  "schema_version": "spot-testnet-execution-campaign-v1",
+  "frozen_at_utc": "2026-09-05T02:34:54Z",
+  "base_head": "c6df48589d33e5cfdcd5ff57ef8cc4cf4c544c63",
+  "authority": "User explicitly rejected a minimal testnet check and requested substantive enterprise-grade trading-tool development. This campaign uses only virtual Spot-testnet orders; no live-money, mainnet, futures, Polymarket, transfer or unrelated-account authority.",
+  "client_id_prefix": "sat-e1-0905-4c19",
+  "symbols": [
+    "BTCUSDT",
+    "ETHUSDT",
+    "SOLUSDT"
+  ],
+  "base_url": "https://testnet.binance.vision",
+  "question": "Can durable owned client IDs support resting-limit cancellation and IOC buy/unwind cycles with exact trade cash reconciliation across all three assets, without duplicate submissions or foreign-state mutation?",
+  "design": {
+    "asset_order": [
+      "BTCUSDT",
+      "ETHUSDT",
+      "SOLUSDT"
+    ],
+    "per_asset": [
+      "Confirm no foreign open orders; never cancel those orders",
+      "Submit one LIMIT_MAKER BUY at tick-rounded 99 percent of observed bid, quantity rounded down toward at most 100 virtual USDT",
+      "Discard acknowledgement body, reload hash-chained journal, query exact owned order, cancel it if still active, reconcile authenticated fills",
+      "Close any acquired campaign base through at most three total IOC sells per symbol",
+      "Submit one LIMIT IOC BUY capped at tick-rounded 100.2 percent of observed ask and at most 100 virtual USDT; ignore acknowledgement body and reconcile the durable client ID",
+      "Unwind only net acquired campaign base using tick-rounded 99.5 percent of current bid, exact step rounding and at most three total closes per symbol",
+      "Final per-symbol open-order and exact owned-quantity checks"
+    ],
+    "partial_fills": "Reconcile if observed; do not manufacture them or claim unobserved behavior was tested. Synthetic partial-fill fee tests are distinct evidence.",
+    "restart_scope": "Reload persistent journal while an order may rest. This is not a cold process restart or actual packet-drop test."
+  },
+  "limits": {
+    "maximum_buy_notional_per_order_virtual_USDT": 100,
+    "maximum_gross_intended_buys_virtual_USDT": 600,
+    "initial_required_free_virtual_USDT": 650,
+    "maximum_order_intents": 15,
+    "maximum_HTTP_requests_including_recovery": 150,
+    "requests_per_minute": 60,
+    "maximum_retries_per_mutating_request": 0,
+    "timeout_seconds_each": 15,
+    "shared_IP_new_entry_stop_fraction": 0.8,
+    "minimum_disclosed_minute_request_weight_limit": 600,
+    "zero_testnet_fee_precondition": true,
+    "parallel_requests": false,
+    "redirects": false
+  },
+  "allowed_endpoints": {
+    "public_GET": [
+      "/api/v3/time",
+      "/api/v3/exchangeInfo exact three symbols",
+      "/api/v3/ticker/bookTicker exact symbol"
+    ],
+    "USER_DATA_GET": [
+      "/api/v3/account preflight in RAM only",
+      "/api/v3/account/commission exact symbol",
+      "/api/v3/openOrders exact symbol counts only for foreign rows",
+      "/api/v3/order exact owned identity",
+      "/api/v3/myTrades exact owned orderId limit 1000"
+    ],
+    "TRADE": [
+      "POST /api/v3/order LIMIT_MAKER or LIMIT IOC with EXPIRE_TAKER only",
+      "DELETE /api/v3/order exact owned order only"
+    ]
+  },
+  "failure_policy": "Stop new entries on failure. Never resubmit an attempted POST. A separate recover invocation may reconcile the same durable intents and close only their acquired base; it may not create a new buy. Preserve original journal/results. No blanket cancellation, foreign-inventory rounding, funds injection or alternate host.",
+  "success": "All three assets must source-prove resting NEW, cancellation CANCELED, nonzero buy and sell fills, zero net owned base and no remaining open orders. Report separate coverage flags; workflow completion alone is not coverage success.",
+  "retention": "Hash-chained durable pre-request and outcome journals; normalized public configuration, typed owned-order/trade views and cash ledger. Never retain keys, signed URLs/headers, raw private responses, account identifiers, absolute balances, free-form exchange errors or foreign order details. This is not origin-HTTP-byte replay.",
+  "credentials": "Masked transient getpass input only, no script literals, argv, environment persistence or credential files. Process exit releases memory, without claiming secure erasure.",
+  "profitability_claim": false,
+  "mainnet_economics_qualified": false,
+  "protected_capture_access": false,
+  "implementation_sha256": {
+    "src/simple_ai_trading/api.py": "7c0a1b95969a05996b2abd3cf1588dd970b5e8e5f6a45598a2a993af97077d50",
+    "src/simple_ai_trading/spot_testnet_evidence.py": "48ef0c5bcebf6b9b9ea8f92a65af29fb0fcd64888f1847382b91f029dc77629e",
+    "tools/spot_testnet_campaign_transport.py": "cf6ed19b210620e6b097b8d8d7feb082daec13f7afbaab5b1f46095ccaf23664",
+    "tools/run_spot_testnet_execution_campaign.py": "68456cff03d68b94dda7fc44be71cd6d00def9dc50e9ecfe6fc9ed382300fdaa"
+  },
+  "preflight": "Twelve focused offline checks passed, including stateful three-asset venue simulation, lost acknowledgement without resubmission, foreign-state denial, quantity grids, journal tampering and partial-fill fee accounting. Ruff and module help passed."
+}
