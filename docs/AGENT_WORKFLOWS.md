@@ -264,6 +264,118 @@ Bounded HTTP preflights must capture the status code and size-limited response
 body on the first request, including non-2xx responses. Do not use a success-only
 body helper that discards the error payload and forces an identical retry.
 
+## Progress, blocking and resumption
+
+### Objective and meaningful progress
+
+Prioritize sound, repeatable, direction-independent after-cost edges on
+Polymarket and Binance. Direction independence does not remove execution,
+financing, collateral, liquidity, resolution or venue risks. Neither accepted
+mechanism counts, positive gross spreads, synthetic cases, testnet gains nor
+passing tests establish a stable profitable strategy. Preserve historical
+results; qualify each current claim with its actual evidence and limitations.
+
+At each continuation, classify the previous goal turn honestly:
+
+- **Progress:** completed relevant work, changed authoritative behavior, or
+  obtained evidence that changes the next research decision. Explain its
+  connection to the objective; an administrative edit is not market evidence.
+- **Verified wait:** checked a specific process, session or job handle confirmed
+  live now. A lock file, earlier intent or an observation timeout is not proof
+  of a live job or its termination. Recheck the same handle before restarting.
+- **No progress:** repeated status, an unexecuted plan, unchanged reassurance
+  tests, or another known-negative scan without an eligible new question.
+
+Do not reset a no-progress audit by generating cosmetic commits, duplicating
+rules/tools, adding hypothetical grids, or retraining unchanged invalid labels.
+User-requested rule repairs are legitimate deliverables, but do not resolve
+the underlying economic evidence gap or qualify an edge.
+
+### Scope a blocker before stopping
+
+Name the blocked branch, exact missing evidence or authority, controlling
+artifact, last verified state and smallest condition that would change it.
+Missing mainnet account evidence blocks account qualification, not public
+research, eligible retained-data analysis or a concrete relevant implementation
+repair. Absence of a guaranteed floor, or a negative snapshot, is not a
+family-wide impossibility proof.
+No currently qualified edge is not, by itself, a reason to stop investigation.
+
+Before declaring the whole goal blocked, check the highest-ranked eligible
+alternatives and unresolved relevant work. Prefer a distinct question with
+explicit information gain, a materially changed source, or an exact satisfied
+retry trigger. Reuse admissible retained bytes before fetching again. Do not
+claim every family is closed merely because one needs credentials or two timed
+studies are not due. Conversely, do not manufacture an alternative by choosing
+a known losing population again or inventing unmeasured costs or probabilities.
+
+For a genuine impasse with no meaningful authorized next action, count the same
+underlying blocker across **three consecutive goal turns**, including automatic
+continuations. Different wording does not create a new blocker. Before the
+third occurrence, report the limitation and leave the goal active; at the third,
+use the product's blocked-status mechanism when available. Do not leave an
+unchanged automatic loop active solely to repeat status. Blocked means awaiting
+new input or external state, never completed, profitable or abandoned.
+
+### Resume from evidence, not permission inferred from a date
+
+On user resumption, start a fresh blocked audit; do not immediately reuse the
+old three-turn count. Verify time, HEAD/worktree and the relevant current
+instructions, source bindings and boundaries. An interruption does not prove
+a process stopped: reconcile any live task-owned handle before another run.
+
+A scheduled timestamp is only an earliest gate. Verify all remaining clauses:
+source change or distinct population, completed settlements, nonoverlap,
+required account evidence/authority and any frozen access budget. Freeze
+outcome-sensitive choices before access. Never widen a date, population, cost
+threshold or retry budget after an unfavorable result. A generic "continue"
+does not grant live-money authority or reopen protected/consumed studies.
+
+Use the product's existing wait/automation mechanisms for requested monitoring;
+do not claim a future run is scheduled unless verified. Prefer an existing
+matching automation over duplicates and keep unchanged checks quiet unless
+the user requests updates. Do not create tight polling or long blocking sleeps
+to bridge a future research window.
+
+### Account evidence and protected data in plain language
+
+Binance testnet credentials authorize only the separately permitted testnet
+workflow. Testnet commissions, balances, liquidity, fills and profits do not
+establish mainnet costs, eligibility, execution quality or profitable capacity.
+Do not demand mainnet secrets in chat or retrieve credentials from history.
+Where sufficient, request a redacted, dated report of the exact products and
+BTC/ETH/SOL symbols: maker/taker commissions and discounts, fee asset, account
+mode, collateral ratios/limits, margin tiers and relevant conversion/financing
+terms. Remove keys, signatures, account identifiers and unrelated activity.
+Validate its source, timestamp, applicability and completeness; redaction or
+receipt of a report alone is not qualification. Missing fields remain unknown.
+Authenticated reads still require explicit read-only authority and approved
+secure credential handling. Orders, transfers and other account mutations
+require their own authority; a fee report supplies none.
+
+"Protected Polymarket data" means specifically reserved or partially accessed
+captures and consumed one-use studies whose boundaries must remain intact. It
+does not mean all Polymarket research is prohibited. Identify the exact artifact
+and restriction, preserve its bytes/results, and pursue eligible public work
+outside that boundary. Do not repair a protected partial, alias a consumed URL,
+or replace failed results. A user-authorized session rule change must explicitly
+identify its scope without silently rewriting historical contracts or outcomes.
+
+### Efficient execution and truthful handoff
+
+Use focused verification proportional to the change. Do not launch broad CI,
+GPU benchmarks or larger training sets to fill a research wait. Expand training
+only when valid labels, a defined economic comparison and independent evaluation
+justify it. Respect the shared workstation and existing benchmark-only headroom
+rules; never interfere with unrelated tasks.
+
+Record material decisions in the existing handoff/evidence locations, avoiding
+duplicate status-only artifacts or pushes. Report exactly what changed, what
+failed, what remains unknown, and the next actionable condition. A whole-repo
+review requires content-level coverage, not just inventory/AST parsing. Never
+promise zero mistakes or certify completion from a narrow passing check. Mark
+the overall goal complete only when its full requested end state is proved.
+
 ## Verification Lanes
 
 Use the narrowest relevant checks while iterating, then the complete suite at a

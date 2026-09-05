@@ -90,7 +90,9 @@ def _self_hash(payload: dict[str, object], field: str) -> str:
     return _sha256(_canonical(body))
 
 
-def test_complete_catalog_is_one_request_hash_bound_and_excludes_consumed_games() -> None:
+def test_complete_catalog_is_one_request_hash_bound_and_excludes_consumed_games() -> (
+    None
+):
     contract = _load(CATALOG_CONTRACT)
     source = _load(SOURCE_RESULT)
     result = _load(CATALOG_RESULT)
@@ -135,9 +137,10 @@ def test_precommitted_best_package_fails_depth_and_freshness_before_fees() -> No
         for row in (PACKAGE_DATA / "request-journal.jsonl").read_text().splitlines()
     ]
 
-    assert _self_hash(metadata_contract, "contract_sha256") == metadata_contract[
-        "contract_sha256"
-    ]
+    assert (
+        _self_hash(metadata_contract, "contract_sha256")
+        == metadata_contract["contract_sha256"]
+    )
     assert _self_hash(metadata, "result_sha256") == metadata["result_sha256"]
     assert _self_hash(contract, "contract_sha256") == contract["contract_sha256"]
     assert _self_hash(result, "result_sha256") == result["result_sha256"]
@@ -152,9 +155,7 @@ def test_precommitted_best_package_fails_depth_and_freshness_before_fees() -> No
     assert result["capture"]["within_frozen_age_gate"] is False
     actual = result["economics"]["actual"]
     assert Decimal(actual["cost_pUSD"]) == Decimal("9.2")
-    assert Decimal(actual["optimistic_zero_fee_profit_floor_pUSD"]) == Decimal(
-        "-4.2"
-    )
+    assert Decimal(actual["optimistic_zero_fee_profit_floor_pUSD"]) == Decimal("-4.2")
     assert result["adjudication"]["passes_frozen_candidate_gate"] is False
     assert result["adjudication"]["accepted_edge"] is False
     assert result["authority"]["credentials_used"] is False
@@ -167,9 +168,7 @@ def test_registry_terminalizes_exact_population_without_global_count_pinning() -
 
     assert _self_hash(registry, "result_sha256") == registry["result_sha256"]
     family = next(
-        row
-        for row in registry["prioritized_hypotheses"]
-        if row["priority_rank"] == 30
+        row for row in registry["prioritized_hypotheses"] if row["priority_rank"] == 30
     )
     assert {
         "path": PACKAGE_RESULT.relative_to(ROOT).as_posix(),
@@ -185,7 +184,9 @@ def test_registry_terminalizes_exact_population_without_global_count_pinning() -
         if row["canonical_result_sha256"] == result["result_sha256"]
     )
     assert "do_not_repeat_paginate_narrow_refetch_or_cherry_pick" in terminal["reason"]
-    rules = (ROOT / "AGENTS.md").read_text(encoding="utf-8")
+    rules = (ROOT / "docs" / "RESEARCH_CAPTURE_BOUNDARIES.md").read_text(
+        encoding="utf-8"
+    )
     assert "oldest-book-age ceiling" in rules
     assert "freeze one deterministic candidate ordering" in rules
 
@@ -211,10 +212,10 @@ def test_september6_complete_catalog_precommits_one_depth_candidate() -> None:
     assert screen["included_event_count"] == 15
     assert screen["complete_relation_count"] == len(screen["relations"]) == 31
     assert screen["candidate_count_strictly_below_payout_floor"] == 2
-    assert screen["depth_candidate"]["event_slug"] == (
-        "cfb-mhud34ce7-nmxst-2026-09-05"
-    )
-    assert Decimal(screen["depth_candidate"]["displayed_price_sum_per_share_pUSD"]) == Decimal("0.995")
+    assert screen["depth_candidate"]["event_slug"] == ("cfb-mhud34ce7-nmxst-2026-09-05")
+    assert Decimal(
+        screen["depth_candidate"]["displayed_price_sum_per_share_pUSD"]
+    ) == Decimal("0.995")
 
 
 def test_september6_best_package_fails_depth_before_fee_access() -> None:

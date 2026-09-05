@@ -1,5 +1,25 @@
 # Continue Development
 
+The user-requested full continuation rules are in
+`AGENT_WORKFLOWS.md#progress-blocking-and-resumption`, required by `AGENTS.md`.
+The detailed capture rules moved intact to `RESEARCH_CAPTURE_BOUNDARIES.md`,
+mandatory before research access; the root file is compact without dropping
+those restrictions. Historical contracts, data and results are unchanged.
+The earlier goal-wide blocked status is not a permanent repository stop or
+permission to skip useful alternatives. User resumption starts a fresh audit.
+As checked September 5 at 09:09 UTC, the block-trade earliest gate remains
+September 6 at 03:47:16.3134381 UTC and CXMT remains September 6 at 08:10 UTC;
+all other registry/contract clauses still apply. These are earliest gates,
+not proof that a run is scheduled or that the whole research backlog is blocked.
+Actual account fees/collateral/margin evidence is still required for the
+account-specific carry branch; testnet evidence cannot substitute for it.
+Rules-checkpoint verification: 30 relevant checks pass. Five other tests in
+the affected files fail identically when invoked from the pre-change sources:
+four obsolete workflow-pin expectations and the CFB September 7 retry-date
+expectation. Those workflows and the canonical registry are unchanged; the
+five failures were not weakened or presented as passing. This is not a full
+CI pass or any new market-profit evidence.
+
 Forward make/take validation now has a source-bound chronology wrapper; read
 `review/2026-09-05/make-take-forward-boundary.md`. New evaluations must supply
 full calibration/evaluation batches, disjoint ordered days, all declared day

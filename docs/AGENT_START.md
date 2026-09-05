@@ -4,6 +4,10 @@ Read `AGENTS.md`, then `docs/CONTINUATION.md`. Those two files are the current
 operating contract. Historical handoff text is archived under
 `docs/archive/agent-history/`; use it only for provenance.
 
+Every continuation follows the full
+[progress, blocking and resumption protocol](AGENT_WORKFLOWS.md#progress-blocking-and-resumption).
+Scope blockers to their branch; a fresh user resumption resets the blocked audit.
+
 ## Current Truth
 
 New make/take evaluations must use the forward chronology wrapper described in
