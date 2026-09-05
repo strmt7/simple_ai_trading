@@ -1,0 +1,14 @@
+{
+  "schema_version": "bounded-source-discovery-v1",
+  "question": "Is there an independent official public collateral table or exact dated-futures margin eligibility rule that can narrow the retained carry capital uncertainty?",
+  "queries": [
+    "site:binance.com Portfolio Margin collateral rate haircut public table 2026",
+    "site:binance.com USD-M delivery futures Multi-Assets Mode collateral"
+  ],
+  "maximum_search_calls": 1,
+  "maximum_queries": 2,
+  "admitted_representation": "Complete web-tool search extraction retained as JSON, not origin HTTP bytes; source discovery only.",
+  "decision": "Select at most one distinct relevant official source after exact URL and article-identifier deduplication. Freeze its admitted representation and semantic gate before opening. Search snippets cannot qualify economic values, collateral rates, account eligibility or profitability.",
+  "exclusions": "No retry or alias of consumed portfolio-margin-capital-netting sources; no account, credential, price, funding, order, transfer, protected capture or old-result mutation. A missing useful source is terminal for this bounded discovery, not proof no public documentation exists.",
+  "freeze_order": "Persisted before search access; retained dated-carry outcomes are already known and this search is not a prospective economic test."
+}

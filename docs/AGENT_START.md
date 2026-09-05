@@ -6,6 +6,12 @@ operating contract. Historical handoff text is archived under
 
 ## Current Truth
 
+Carry research now has a conditional collateral-stress evaluator; read
+`review/2026-09-05/collateral-stress-review.md`. A matched hedge's economic
+equity can stay flat while haircut-adjusted margin headroom falls. The new
+official guide supplies no current numerical account haircut or dated-contract
+margin qualification. Do not replace that missing evidence with its example.
+
 The retained dated-carry capital budget is complete; read
 `review/2026-09-05/dated-carry-capital-budget/review.md`. At a hypothetical
 3.25% annual capital cost and separate 35-bip noncapital reserve, December BTC
