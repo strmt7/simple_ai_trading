@@ -1,5 +1,16 @@
 # Continue Development
 
+The next full NYC calendar-day screen (September 6, selected after 04:00 UTC
+September 5) is consumed. All 11 markets were returned; 21 price-complete
+frontier rows failed the gross gate. Read
+`review/2026-09-05/nyc-sep6-frontier/review.md`. No books, missing-side repair,
+fees, accounts, orders or protected captures. Do not reprice this event.
+Current canonical terminal count is 191; accepted scopes remain 37 and fully
+qualified stable profitable edges remain zero. Registry/audit self-hashes are
+`b2c325becc7b5ccfdc684654af28b3b899b7c1c3a61a397c9e53cfdb9ab015b6`
+and `fb4cd282d89d9385bfe6acf9037200b70f184ebc70c149783842d50cb948e737`.
+Older checkpoint counts and hashes below are historical, not current bindings.
+
 The new conditional collateral-stress evaluator separates economic equity
 from credited collateral and total margin headroom; see
 `review/2026-09-05/collateral-stress-review.md`. It handles joint marks, quantity

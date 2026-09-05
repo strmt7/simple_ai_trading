@@ -178,3 +178,6 @@ docs/review/2026-09-05/major-conversion-frontier/*.json binary -eol
 docs/review/2026-09-05/dated-carry-capital-budget/*.json binary -eol
 docs/review/2026-09-05/collateral-semantics-*.json binary -eol
 docs/review/2026-09-05/collateral-stress-review.json binary -eol
+docs/review/2026-09-05/nyc-sep6-frontier/*.json binary -eol
+docs/review/2026-09-05/nyc-sep6-frontier/*.jsonl binary -eol
+docs/review/2026-09-05/nyc-sep6-frontier/raw/*.json binary -eol

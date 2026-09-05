@@ -6,6 +6,12 @@ operating contract. Historical handoff text is archived under
 
 ## Current Truth
 
+The prospectively selected NYC September 6 event is consumed: all 21
+price-complete frontier rows failed before fees. Read
+`review/2026-09-05/nyc-sep6-frontier/review.md`. No book/account escalation;
+three NO sides remain incomplete. Current terminal count is 191, with no edge
+promotion; lower counts in older checkpoint paragraphs are historical.
+
 Carry research now has a conditional collateral-stress evaluator; read
 `review/2026-09-05/collateral-stress-review.md`. A matched hedge's economic
 equity can stay flat while haircut-adjusted margin headroom falls. The new
