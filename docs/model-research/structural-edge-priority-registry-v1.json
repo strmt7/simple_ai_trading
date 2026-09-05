@@ -4335,7 +4335,7 @@
       ]
     }
   ],
-  "result_sha256": "a4136d0d76c700bb77fb12ae558d3e52aa4dae7e27b968f5e6b2f9e21f179048",
+  "result_sha256": "3f98e88307e9128c108e4a3a600278ce76ee451bb1aaea3e13bb805d33d971a5",
   "schema_version": "structural-edge-priority-registry-v1",
   "terminal_do_not_repeat": [
     {
@@ -4426,7 +4426,13 @@
     {
       "canonical_result_sha256": "095009a36a5c6a8a5a2dfdfb3e57ebe6183721bb84600518552ccf6d463617c8",
       "family": "binance_broad_crypto_current_liquidity_selected_spot_perpetual_funding_carry_preflight",
-      "reason": "zero_of_17_exact_liquid_crypto_spot_perpetual_pairs_passed_the_frozen_funding_only_training_validation_test_cross_regime_family_adjusted_execution_and_two_leg_capital_gate_do_not_resample_the_current_liquidity_selected_history"
+      "reason": "zero_of_17_exact_liquid_crypto_spot_perpetual_pairs_passed_the_frozen_funding_only_training_validation_test_cross_regime_family_adjusted_execution_and_two_leg_capital_gate_do_not_resample_the_current_liquidity_selected_history",
+      "turnover_liquidity_review_2026_09_05": {
+        "path": "docs/review/2026-09-05/carry-turnover-liquidity/result.json",
+        "result_sha256": "dac3c9ad5b1eb5e7781d2c4f7d8bb5ccd33499e6ca95c3580f675b9163acef43",
+        "classification": "exploratory consumed-history accounting; no new observation or acceptance",
+        "review_path": "docs/review/2026-09-05/carry-turnover-liquidity-review.md"
+      }
     },
     {
       "canonical_result_sha256": "03b652fcd7e50c0671abbfb73f68f69509a2e5d7f75d8166f6b74743eab630d3",
@@ -5290,6 +5296,6 @@
       "canonical_result_sha256": "5ae8f3c92dfa944ffeb00459e339bc8bfa93d2ea0b315d579e83f7d84a578ef6"
     }
   ],
-  "updated_at_utc": "2026-09-05T00:02:48.456606Z",
+  "updated_at_utc": "2026-09-05T02:03:36.523620+00:00",
   "usage_rule": "advance_the_highest_ranked_hypothesis_whose_retry_trigger_is_satisfied_otherwise_do_not_repeat_a_blocked_or_terminal_screen"
 }

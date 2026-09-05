@@ -1,12 +1,18 @@
 # Continue Development
 
-Current canonical status after the retained CPI within-event partition screen:
+The retained carry turnover/liquidity audit adds explanatory evidence only;
+read `review/2026-09-05/carry-turnover-liquidity-review.md`. Nine of 17 joined
+funding subtotals cover one modeled round trip, but none clears the unchanged
+capital stress. No profitability, sufficient margin or new validation is proved.
+Missing fee credentials block only that branch, not useful offline/public R&D.
+
+Current canonical status after the carry turnover/liquidity attachment:
 accepted scopes 37, ranked hypotheses 65, terminal observations 189,
 and stable current account-qualified after-all-cost edges zero. Registry
 SHA-256 is
-`a4136d0d76c700bb77fb12ae558d3e52aa4dae7e27b968f5e6b2f9e21f179048`;
+`3f98e88307e9128c108e4a3a600278ce76ee451bb1aaea3e13bb805d33d971a5`;
 durability-audit SHA-256 is
-`bf6743642570d3c9e043a3f9ebe4a12ff6a76de24c3bcd5af0c14fd6d1223f29`.
+`493d827e0178b03180a9e2519d334763e4886429b9837e5079d47373ba6a2b6d`.
 
 ## September 4 resumed review and USD1 campaign
 

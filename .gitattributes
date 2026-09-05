@@ -164,3 +164,4 @@ docs/review/2026-09-04/paradex-fee-source/** binary -eol
 tools/capture_paradex_trading_markdown.ps1 text eol=lf
 docs/review/2026-09-04/inflation-definition-pair/** binary -eol
 docs/review/2026-09-04/cpi-partitions/** binary -eol
+docs/review/2026-09-05/carry-turnover-liquidity/** binary -eol
