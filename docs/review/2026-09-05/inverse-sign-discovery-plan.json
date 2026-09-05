@@ -1,0 +1,11 @@
+{
+  "schema_version": "public-source-discovery-v1",
+  "question": "Can an independent official source resolve the contradictory COIN-M reciprocal PnL signs in sections 80 and 86.2 of the retained clearing PDF?",
+  "freeze_order": "This plan was durably written before the single search; exact request start time is not exposed by the search tool.",
+  "queries": ["site:binance.com COIN-M futures profit loss short inverse entry price formula"],
+  "maximum_search_calls": 1,
+  "sources": "Official Binance domains only; snippets are discovery, not economic or implementation evidence",
+  "before_open": "Deduplicate the exact selected canonical URL against retained source contracts and journals. No consumed PDF or FAQ aliases; no market, account, order, funding or protected capture access.",
+  "scope": "Source clarification only; original rank-14 account/fee trigger and terminal funding study remain unchanged",
+  "stop": "No new independently authoritative source means preserve unresolved sign/applicability gate, without new inverse-market sampling"
+}
