@@ -147,7 +147,21 @@ def ensure_non_mainnet_base_url(url: str, *, testnet: bool, demo: bool) -> None:
 
 
 class BinanceAPIError(RuntimeError):
-    """Raised for non-2xx responses from Binance endpoints."""
+    """Raised for invalid requests or failed Binance responses."""
+
+
+def _validated_client_order_id(value: str) -> str:
+    """Reject ambiguous caller identities instead of changing their meaning."""
+    if (
+        not isinstance(value, str)
+        or not 1 <= len(value) <= 36
+        or value != value.strip()
+    ):
+        raise BinanceAPIError(
+            "client order ID must be a nonempty string of at most 36 characters "
+            "without surrounding whitespace"
+        )
+    return value
 
 
 @dataclass(frozen=True)
@@ -231,6 +245,9 @@ class BinanceClient:
                 self.base_url, testnet=self.testnet, demo=self.demo
             )
         self.session = requests.Session()
+        # A redirect is not an approved venue route or permission to replay a
+        # write. Stop before requests can forward headers or the request body.
+        self.session.max_redirects = 0
         self.session.headers.update({"X-MBX-APIKEY": api_key})
         self.session.headers.update({"User-Agent": "simple-ai-trading/0.1"})
         self.timeout = timeout
@@ -322,7 +339,10 @@ class BinanceClient:
         if not isinstance(params, Mapping):
             params = {}
 
-        max_attempts = self.max_retries + 1
+        # A failed response can follow an accepted write. The owning workflow
+        # must reconcile the exact intent before deciding whether to resubmit.
+        retry_budget = self.max_retries if method.upper() == "GET" else 0
+        max_attempts = retry_budget + 1
         last_error = None
         response_status: int | None = None
         last_url: str | None = None
@@ -355,7 +375,7 @@ class BinanceClient:
                 )
             except requests.RequestException as err:
                 last_error = _redact_sensitive_text(str(err), url)
-                if attempt < self.max_retries:
+                if attempt < retry_budget:
                     delay = self._retry_delay(attempt, response_status=response_status)
                     time.sleep(delay)
                     continue
@@ -372,7 +392,7 @@ class BinanceClient:
                 last_error = f"HTTP {response_status}: {response_text}"
                 if (
                     response_status in _RETRY_HTTP_STATUSES
-                    and attempt < self.max_retries
+                    and attempt < retry_budget
                 ):
                     delay = self._retry_delay(
                         attempt,
@@ -398,7 +418,7 @@ class BinanceClient:
                 data = response.json()
             except json.JSONDecodeError as err:
                 last_error = "Malformed response from Binance"
-                if attempt < self.max_retries:
+                if attempt < retry_budget:
                     delay = self._retry_delay(attempt, response_status=response_status)
                     time.sleep(delay)
                     continue
@@ -416,7 +436,7 @@ class BinanceClient:
             if isinstance(data, dict) and data.get("code") and data.get("msg"):
                 if (
                     self._is_retryable_code(data.get("code"))
-                    and attempt < self.max_retries
+                    and attempt < retry_budget
                 ):
                     code = data.get("code")
                     last_error = _redact_sensitive_text(
@@ -1095,8 +1115,8 @@ class BinanceClient:
             "type": "MARKET",
             "quantity": f"{quantity_value:.8f}",
         }
-        if client_order_id is not None and str(client_order_id).strip():
-            payload["newClientOrderId"] = str(client_order_id).strip()[:36]
+        if client_order_id is not None:
+            payload["newClientOrderId"] = _validated_client_order_id(client_order_id)
 
         if dry_run:
             return {
@@ -1144,8 +1164,10 @@ class BinanceClient:
         params: Dict[str, object] = {"symbol": symbol}
         if order_id is not None and str(order_id).strip():
             params["orderId"] = str(order_id).strip()
-        if orig_client_order_id is not None and str(orig_client_order_id).strip():
-            params["origClientOrderId"] = str(orig_client_order_id).strip()
+        if orig_client_order_id is not None:
+            params["origClientOrderId"] = _validated_client_order_id(
+                orig_client_order_id
+            )
         if "orderId" not in params and "origClientOrderId" not in params:
             raise BinanceAPIError("Order query requires orderId or origClientOrderId")
         endpoint = "/api/v3/order" if self.market_type == "spot" else "/fapi/v1/order"
