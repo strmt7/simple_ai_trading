@@ -1,5 +1,12 @@
 # Continue Development
 
+The inverse short's conventional PnL sign now has independent official
+educational corroboration. Read `review/2026-09-05/inverse-sign-review.md`.
+No sign-code change or further generic sign search is needed for conditional
+research; the conflicting clearing text is not legally amended. Contract
+applicability, exact costs and executable settlement basis remain unresolved.
+This source-only round changes no market retry trigger or canonical count.
+
 The substantive Spot-testnet campaign is complete: nine orders, three exact
 cancellations, six owned trades, zero acquired residual base and zero final
 open orders across BTC/ETH/SOL. Read

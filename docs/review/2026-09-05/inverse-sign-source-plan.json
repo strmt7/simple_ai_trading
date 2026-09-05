@@ -1,0 +1,11 @@
+{
+  "schema_version": "source-reconciliation-v1",
+  "source_url": "https://www.binance.com/en-NG/support/faq/detail/360039304272",
+  "question": "Does the independently published beginner guide state the COIN-M reciprocal PnL order and long/short direction convention unambiguously?",
+  "deduplication": "Article identifier 360039304272 has no retained matches in docs, data or tools before this plan, excluding the just-written discovery receipt. The previously consumed PnL and leverage FAQ identifiers are excluded; this is not a locale alias of either.",
+  "access": "Exactly one web open, tool extraction retained in full; not origin HTTP-byte capture. No follow-up locale, linked page or endpoint retry.",
+  "admitted_representation": "UTF-8 tool-extracted official article text. A regional landing redirect or missing reciprocal equation/direction mapping fails the source gate.",
+  "interpretation": "Educational corroboration can support an accounting convention but cannot amend the conflicting clearing PDF or establish current contract/account applicability. Missing legal precedence, effective version, fees, margin, close-out and basis remain unresolved.",
+  "prohibited": "No economic prices, funding, account, credentials, orders, protected outcomes or change to market retry triggers",
+  "freeze_order": "Persisted after discovery and deduplication, before the single open"
+}

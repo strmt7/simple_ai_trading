@@ -18,8 +18,10 @@ need their own evidence. Preserve historical full-fill support results.
 cash flows, borrowing, fees and executable quote conversion into one cash
 ledger. Compare a fixed-quantity linear hedge, matched inverse collateral,
 and separately qualified portfolio offsets on equal capital-at-risk and
-liquidity constraints. The new inverse evaluator is conditional algebra;
-official mechanics are unresolved. Retained funding sensitivity did not rescue
+liquidity constraints. The inverse evaluator is conditional algebra;
+its conventional sign now has [independent official educational corroboration](../2026-09-05/inverse-sign-review.md),
+but effective contract applicability and the legal-text conflict are unresolved.
+Retained funding sensitivity did not rescue
 the prior failed samples. Do not relabel those samples independent evidence.
 
 **Polymarket:** prove settlement identities before pricing. For existing

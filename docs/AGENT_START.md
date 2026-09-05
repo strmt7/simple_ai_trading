@@ -6,6 +6,11 @@ operating contract. Historical handoff text is archived under
 
 ## Current Truth
 
+Inverse-collateral research now has independent official educational support
+for the conventional short PnL sign. See `review/2026-09-05/inverse-sign-review.md`.
+Preserve the clearing-document conflict; no new market sample or qualification
+follows. Advance precise contract/cost/basis questions, not repeat sign searches.
+
 Latest: a bounded Spot-testnet lifecycle campaign completed nine orders and
 three exact cancellations across BTC/ETH/SOL; six owned trades reconcile to
 zero residual base and no final open orders. See

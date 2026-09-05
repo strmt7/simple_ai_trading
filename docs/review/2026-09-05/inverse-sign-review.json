@@ -1,0 +1,38 @@
+{
+  "schema_version": "inverse-sign-source-review-v1",
+  "classification": "independent_official_educational_corroboration_not_legal_amendment",
+  "review_date_utc": "2026-09-05",
+  "source": {
+    "publisher": "Binance",
+    "title": "A Beginner's Guide to Futures Trading",
+    "url": "https://www.binance.com/en-NG/support/faq/detail/360039304272",
+    "displayed_updated": "2026-04-13 10:36; timezone not stated",
+    "representation": "Full web-tool extraction, not original HTTP bytes",
+    "relevant_lines": [18, 21, 22, 67, 68, 69, 82, 86, 90]
+  },
+  "facts": [
+    "The guide gives COIN-M PnL as positive contract notional times direction times reciprocal entry-minus-mark; long direction is positive and short negative.",
+    "It is expressly educational, may be outdated, and defers to legal rules and contract specifications. It cannot amend the retained clearing PDF."
+  ],
+  "inference": "The conventional short equation N*(1/M-1/F0) is independently corroborated and agrees with clearing section 80, not section 86.2. The conditional scenario implementation needs no sign change. Conflicting legal text and account applicability are not resolved by majority voting between pages.",
+  "decision": {
+    "conditional_research_sign_corroborated": true,
+    "clearing_document_conflict_resolved": false,
+    "current_contract_applicability_proved": false,
+    "new_market_capture_authorized": false,
+    "accepted_edge": false,
+    "registry_count_change": 0,
+    "repeat_generic_sign_search": false,
+    "next": "Use the conventional sign for explicitly conditional offline inverse-versus-linear economics. Seek effective contract applicability and precise fees, maintenance, delivery-to-exit basis and capital-at-risk before venue qualification. Preserve rank-14 account trigger and consumed funding/carry populations."
+  },
+  "requests": {"discovery_searches": 1, "selected_article_opens": 1, "market": 0, "account": 0, "orders": 0, "protected": 0},
+  "source_sha256": {
+    "docs/review/2026-09-05/inverse-sign-discovery-plan.json": "21b7002c7343d9e16b70909960bc2bc639148f20931a39bd521b3ee1d7c3deaf",
+    "docs/review/2026-09-05/inverse-sign-discovery-extraction.json": "bc4273cb6f2c31037d0d92d4202c92375da850b239ac78a8861c175bea2a96ed",
+    "docs/review/2026-09-05/inverse-sign-source-plan.json": "b7e68a6b80a43816ee7601682606df2cc82837d954940d2db447223b57cf54c4",
+    "docs/review/2026-09-05/inverse-sign-source-extraction.json": "1392e50f8298343995624e3a1e3016d70edb4c7f86196e1f1957592075ef7730",
+    "docs/review/2026-09-04/inverse-clearing-source-review.json": "fb09d321c6defbc8ad20104cbf65cbefca22e9ce54983ecb38fbfbdb936625f1",
+    "docs/review/2026-09-04/inverse-collateral-scenarios.json": "010d3b77f60407fe997728f2d5aad038248cdf70e5fd753e54ced5493761d372"
+  },
+  "preservation": "All prior source failures, sign-conflict evidence, synthetic scenarios and economic results are unchanged. Search snippets from already consumed FAQs were excluded from corroboration. The selected guide passed exact-article deduplication before access. No locale retry."
+}
