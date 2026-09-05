@@ -1,0 +1,11 @@
+{
+  "schema_version": "source-reconciliation-v1",
+  "source_url": "https://www.binance.com/kk-KZ/support/faq/detail/146ac090710a49f99c4732b00f8c09df",
+  "question": "Does the exact Portfolio Margin Pro limits guide prove a public current quantitative BTC/ETH collateral table, or only explain haircut and wallet semantics with illustrative rates?",
+  "deduplication": "Exact article identifiers 146ac090710a49f99c4732b00f8c09df and 4108bab5e4784a8db0a6b8b88dcb1ccd have no prior retained matches across docs, data and tools, excluding this round's discovery extraction. Select only the former guide; no account-document or locale alias of a consumed article.",
+  "access": "One web open of the exact discovered URL; retain the complete tool extraction, not origin HTTP bytes. No redirects followed manually, locale retry, API or linked-page request.",
+  "admitted_representation": "Official text with matching Portfolio Margin Pro limits identity and explicit collateral treatment. Missing content is terminal. Distinguish illustrative examples from actual current rates, program variants and trading-product scope.",
+  "decision": "Document exact supported wallet treatment, collateral calculation and limitations. Only an explicit current supported-asset/rate table can narrow a numerical haircut; examples, marketing or a link alone cannot. No economic data request or account eligibility follows from source support alone.",
+  "prohibited": "No prices, funding, credentials, account configuration, orders, transfers, protected captures, hypothetical-to-actual fee conversion, old-result rewrite or edge promotion.",
+  "freeze_order": "Persisted after discovery and exact identifier deduplication, before the single source open."
+}

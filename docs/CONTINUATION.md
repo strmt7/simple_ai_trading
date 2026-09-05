@@ -1,5 +1,14 @@
 # Continue Development
 
+The new conditional collateral-stress evaluator separates economic equity
+from credited collateral and total margin headroom; see
+`review/2026-09-05/collateral-stress-review.md`. It handles joint marks, quantity
+mismatch, changing credit ratios, cost debits and supplied requirements, but
+does not implement Binance's margin engine or prove a complete stress envelope.
+One new official Pro guide confirms haircut semantics, not actual current
+rates or account eligibility. The bounded source search/open is consumed;
+do not repeat it. No price, account, order or protected capture was accessed.
+
 The retained dated-carry capital-budget review is complete: all 12 original
 rows, 108 conditional scenarios, zero new requests. Read
 `review/2026-09-05/dated-carry-capital-budget/review.md`. At a hypothetical
