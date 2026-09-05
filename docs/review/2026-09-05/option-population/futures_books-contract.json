@@ -1,0 +1,76 @@
+{
+  "schema_version": "public-source-capture-contract-v1",
+  "frozen_at_utc": "2026-09-05T09:33:19.067712Z",
+  "contract_path": "docs/review/2026-09-05/option-population/futures_books-contract.json",
+  "request_name": "distinct_70_futures_books",
+  "request": {
+    "method": "GET",
+    "url": "https://fapi.binance.com/fapi/v1/ticker/bookTicker",
+    "count": 1,
+    "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "response_byte_ceiling": 1000000,
+  "required_utf8_phrases": [
+    "\"symbol\":\"BTCUSDT\"",
+    "\"bidPrice\"",
+    "\"askPrice\""
+  ],
+  "outputs": {
+    "raw_path": "docs/review/2026-09-05/option-population/futures_books.json",
+    "journal_path": "docs/review/2026-09-05/option-population/futures_books-requests.jsonl",
+    "result_path": "docs/review/2026-09-05/option-population/futures_books-source-result.json"
+  },
+  "authority": {
+    "account_requests": 0,
+    "credentials_used": false,
+    "funds_used": false,
+    "orders_or_transactions": 0,
+    "protected_capture_touched": false,
+    "public_unauthenticated_read_only_requests": 1,
+    "signed_requests": 0,
+    "trading_authority": false
+  },
+  "implementations": [
+    {
+      "path": "tools/capture_public_source_bounded.py",
+      "sha256": "760339a7602abfa9eb97f3f1cca0ef79191b07ff5f5aa42515f30f191f9888fc"
+    },
+    {
+      "path": "tools/capture_public_source_contract.py",
+      "sha256": "9dbb14651455abade755fe96091b9eaafe1153f56a1baad4cd60b1a888d41b8c"
+    },
+    {
+      "path": "tools/adjudicate_option_population_v3.py",
+      "sha256": "143b41dec215298086dcfac2548f6b409f57a913aa60206d027838d905489dd0"
+    },
+    {
+      "path": "tools/adjudicate_binance_crypto_option_population_gate_v2.py",
+      "sha256": "4d0d12aacb6e7ec30cf6c63ff667e03c0f167071dc2f4328ac7d9c62df71d5b6"
+    },
+    {
+      "path": "tools/adjudicate_polymarket_exact_mlb_monotone_prefilter.py",
+      "sha256": "958a44d78029b9a1eb69a3771ce18e53ac1ed3c7bc161c8e4318beedce2cf99f"
+    },
+    {
+      "path": "tools/screen_polymarket_exact_two_leg_package.py",
+      "sha256": "374fcc3c3485c466b4929a91256450bdc7db70f93ef4c6bda627e05fe8938327"
+    },
+    {
+      "path": "tools/screen_option_floor_population.py",
+      "sha256": "af84521818df7dc17594df5b7e3a89b6abd24ef4b77fb8a2657b84220396d825"
+    },
+    {
+      "path": "tools/adjudicate_binance_crypto_option_distinct_price_prefilter_v2.py",
+      "sha256": "d766afac6dfeba2fb447b95e56bac824a0db257b33444ed83041730900be57b7"
+    }
+  ],
+  "contract_sha256": "1fc468c0541d4bcea961ad9c8f3cf2d92b401a47f78b66dec23a2b0a952a383f",
+  "transport": {
+    "socket_timeout_seconds": 10,
+    "read_budget_seconds": 30,
+    "redirects": false,
+    "retries": 0,
+    "proxies": false
+  },
+  "repeat_justification": "The source-bound September 5 gate proves 70 symbols absent from every prior population. One time-sensitive two-source rejection screen, no reprice of known symbols. No matching same-day URL found in the current review artifacts; prior September 4 capture is consumed and not reused as current economics."
+}

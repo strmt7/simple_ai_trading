@@ -10,6 +10,13 @@ Scope blockers to their branch; a fresh user resumption resets the blocked audit
 
 ## Current Truth
 
+The September 5 Binance option population is consumed: 70 new contracts,
+23 positive-entry rows, zero gross-positive floors and zero stress survivors.
+Read `review/2026-09-05/option-population/review.md`. Include all 70 in future
+exclusion unions; do not repair missing quotes or repeat this screen. Current
+terminal count is 192, with zero qualified stable profitable edges; lower
+checkpoint counts below are historical.
+
 New make/take evaluations must use the forward chronology wrapper described in
 `review/2026-09-05/make-take-forward-boundary.md`. The old reusable evaluator
 can accept overlapping role dates and missing day-path coverage; its frozen
@@ -20,7 +27,7 @@ calibration label endpoints before the first evaluation decision.
 The prospectively selected NYC September 6 event is consumed: all 21
 price-complete frontier rows failed before fees. Read
 `review/2026-09-05/nyc-sep6-frontier/review.md`. No book/account escalation;
-three NO sides remain incomplete. Current terminal count is 191, with no edge
+three NO sides remain incomplete. That checkpoint's terminal count was 191, with no edge
 promotion; lower counts in older checkpoint paragraphs are historical.
 
 Carry research now has a conditional collateral-stress evaluator; read

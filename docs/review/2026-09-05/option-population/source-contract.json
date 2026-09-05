@@ -1,0 +1,67 @@
+{
+  "schema_version": "public-source-capture-contract-v1",
+  "frozen_at_utc": "2026-09-05T09:28:01.634145Z",
+  "contract_path": "docs/review/2026-09-05/option-population/source-contract.json",
+  "request_name": "option_population_september5_deployment_discovery",
+  "request": {
+    "method": "GET",
+    "url": "https://eapi.binance.com/eapi/v1/exchangeInfo",
+    "count": 1,
+    "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "response_byte_ceiling": 5000000,
+  "required_utf8_phrases": [
+    "\"optionSymbols\"",
+    "\"contractType\":\"CRYPTO_OPTIONS\"",
+    "\"status\":\"TRADING\""
+  ],
+  "outputs": {
+    "raw_path": "docs/review/2026-09-05/option-population/exchange-info.json",
+    "journal_path": "docs/review/2026-09-05/option-population/requests.jsonl",
+    "result_path": "docs/review/2026-09-05/option-population/source-result.json"
+  },
+  "authority": {
+    "account_requests": 0,
+    "credentials_used": false,
+    "funds_used": false,
+    "orders_or_transactions": 0,
+    "protected_capture_touched": false,
+    "public_unauthenticated_read_only_requests": 1,
+    "signed_requests": 0,
+    "trading_authority": false
+  },
+  "implementations": [
+    {
+      "path": "tools/capture_public_source_bounded.py",
+      "sha256": "760339a7602abfa9eb97f3f1cca0ef79191b07ff5f5aa42515f30f191f9888fc"
+    },
+    {
+      "path": "tools/capture_public_source_contract.py",
+      "sha256": "9dbb14651455abade755fe96091b9eaafe1153f56a1baad4cd60b1a888d41b8c"
+    },
+    {
+      "path": "tools/adjudicate_option_population_v3.py",
+      "sha256": "143b41dec215298086dcfac2548f6b409f57a913aa60206d027838d905489dd0"
+    },
+    {
+      "path": "tools/adjudicate_binance_crypto_option_population_gate_v2.py",
+      "sha256": "4d0d12aacb6e7ec30cf6c63ff667e03c0f167071dc2f4328ac7d9c62df71d5b6"
+    },
+    {
+      "path": "tools/adjudicate_polymarket_exact_mlb_monotone_prefilter.py",
+      "sha256": "958a44d78029b9a1eb69a3771ce18e53ac1ed3c7bc161c8e4318beedce2cf99f"
+    },
+    {
+      "path": "tools/screen_polymarket_exact_two_leg_package.py",
+      "sha256": "374fcc3c3485c466b4929a91256450bdc7db70f93ef4c6bda627e05fe8938327"
+    }
+  ],
+  "contract_sha256": "6e2c71ace291d413eb3f9f1b2852fc9fd39319808e421e54f988e29f9212a461",
+  "transport": {
+    "socket_timeout_seconds": 10,
+    "read_budget_seconds": 30,
+    "redirects": false,
+    "retries": 0,
+    "proxies": false
+  }
+}
