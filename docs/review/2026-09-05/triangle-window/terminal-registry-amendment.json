@@ -1,0 +1,23 @@
+{
+  "next": {
+    "audit": "72fa52b3e745995cf8fadecb870dfc8a82f55ba4cc431f4d8adc5265a807772e",
+    "registry": "d43cb9cf9b3eba12f8b14eeba1fbff2019367ee1b22b17f6061086c8da15a440"
+  },
+  "phase": "terminal",
+  "previous_committed_state": "4944ecba7c649dbae94a8ae020b37377a397c6a0",
+  "prior": {
+    "audit": "ec09350d04e1f93731032136249e56ad6ff30081eb74ebabe932f631cfcc60d4",
+    "registry": "7ec52b6471e7e1e85fdeae3235404ab730580ce8466af22de575561e7a8c3c29"
+  },
+  "scope": {
+    "complete": true,
+    "contract_file_sha256": "927822d6a367bb701bb1a7289a53bad2548b4caacd84b246f064cafd977bdcb8",
+    "contract_path": "docs/review/2026-09-05/triangle-window/contract.json",
+    "diagnostic_survivors": 0,
+    "result_file_sha256": "eb5db876fd4b8336f3d8853e732d309e877b5534c80bdce4953d23aee6be32ab",
+    "result_path": "docs/review/2026-09-05/triangle-window/result.json",
+    "samples": 12,
+    "scope": "One disjoint major-asset rate-product diagnostic; old results, account and execution gates unchanged",
+    "status": "consumed_terminal"
+  }
+}

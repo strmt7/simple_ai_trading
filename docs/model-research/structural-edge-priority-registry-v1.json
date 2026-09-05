@@ -1039,7 +1039,7 @@
       "current_status": "terminal_current_complete_retained_graph_zero_of_3480_unique_directed_cycles_and_zero_of_1442_activity_qualified_cycles_passed_the_frozen_recurring_zero_fee_upper_bound_candidate_gate_across_60_books_100_and_1000_USDT_exact_rounding_displayed_capacity_residual_and_3_bip_stress",
       "market_direction_forecast_required": false,
       "mechanism": "three_leg_spot_conversion",
-      "next_action": "do_not_resample_the_same_population_or_query_account_fees_absent_a_material_structural_retry_trigger_that_first_reopens_the_gross_upper_bound",
+      "next_action": "September_5_session_window_consumed_do_not_repeat_extend_or_select_another_window; do_not_resample_the_same_population_or_query_account_fees_absent_a_material_structural_retry_trigger_that_first_reopens_the_gross_upper_bound",
       "priority_rank": 16,
       "prohibited_shortcuts": [
         "USD-M futures commission as spot fee",
@@ -1048,8 +1048,19 @@
         "more book snapshots or account queries without a structural gross-upper-bound retry trigger",
         "ranking positive median rows before capacity residual and recurrence feasibility gates"
       ],
-      "retry_trigger": "a_material_Binance_Spot_fee_filter_order_batch_atomic_execution_or_market_structure_change_then_an_independently_frozen_complete_graph_screen",
-      "venue_scope": "binance_spot_all_active_three_asset_cycles_with_direct_USDT_valuation"
+      "retry_trigger": "a_material_Binance_Spot_fee_filter_order_batch_atomic_execution_or_market_structure_change_then_an_independently_frozen_complete_graph_screen_or_exactly_once_under_the_frozen_2026_09_05_session_only_prospective_window_contract_before_its_start_deadline",
+      "venue_scope": "binance_spot_all_active_three_asset_cycles_with_direct_USDT_valuation",
+      "september5_session_only_prospective_window": {
+        "status": "consumed_terminal",
+        "contract_path": "docs/review/2026-09-05/triangle-window/contract.json",
+        "contract_file_sha256": "927822d6a367bb701bb1a7289a53bad2548b4caacd84b246f064cafd977bdcb8",
+        "scope": "One disjoint major-asset rate-product diagnostic; old results, account and execution gates unchanged",
+        "result_path": "docs/review/2026-09-05/triangle-window/result.json",
+        "result_file_sha256": "eb5db876fd4b8336f3d8853e732d309e877b5534c80bdce4953d23aee6be32ab",
+        "complete": true,
+        "samples": 12,
+        "diagnostic_survivors": 0
+      }
     },
     {
       "blocking_evidence": [
@@ -4340,7 +4351,7 @@
       ]
     }
   ],
-  "result_sha256": "ce6f65bd0965ecc4172d9e5f375b55739e8ae3f9d7acbd23be7fbbadfc67ca2f",
+  "result_sha256": "d43cb9cf9b3eba12f8b14eeba1fbff2019367ee1b22b17f6061086c8da15a440",
   "schema_version": "structural-edge-priority-registry-v1",
   "terminal_do_not_repeat": [
     {
@@ -5299,8 +5310,13 @@
       "family": "polymarket_august_2026_cpi_retained_within_event_partitions",
       "reason": "The distinct zero-request within-event CPI screen is consumed: event 838710 has 12 markets and 24 frontier rows; event 838709 has 9 markets and 18 rows. All sides were price-complete. Every one of 42 long-only rows failed before fees, and none survived configured fees plus one tick per leg at five shares. Complete YES costs were 1.217 and 1.102 pUSD for a one-pUSD optimistic common-valid-resolution floor. Best gross floors were negative 0.020 and 0.015 pUSD at five shares. No annual/monthly map, fresh validation or family-wide negative-EV inference; no network, account or protected access. Do not refresh, reprice, repair, substitute siblings or request books for these exact partitions. The prior component-mapping source question and its requirements remain unchanged.",
       "canonical_result_sha256": "5ae8f3c92dfa944ffeb00459e339bc8bfa93d2ea0b315d579e83f7d84a578ef6"
+    },
+    {
+      "family": "binance_major_triangle_prospective_quote_window_2026_09_05",
+      "reason": "One session-only future rate-product diagnostic consumed; no automatic repeat, qualified profit or account authority",
+      "canonical_result_sha256": "eb5db876fd4b8336f3d8853e732d309e877b5534c80bdce4953d23aee6be32ab"
     }
   ],
-  "updated_at_utc": "2026-09-05T02:17:12.004735+00:00",
+  "updated_at_utc": "2026-09-05T03:18:09.746893+00:00",
   "usage_rule": "advance_the_highest_ranked_hypothesis_whose_retry_trigger_is_satisfied_otherwise_do_not_repeat_a_blocked_or_terminal_screen"
 }

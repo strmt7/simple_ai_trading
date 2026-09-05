@@ -1,0 +1,18 @@
+{
+  "next": {
+    "audit": "ec09350d04e1f93731032136249e56ad6ff30081eb74ebabe932f631cfcc60d4",
+    "registry": "7ec52b6471e7e1e85fdeae3235404ab730580ce8466af22de575561e7a8c3c29"
+  },
+  "phase": "freeze",
+  "previous_committed_state": "4944ecba7c649dbae94a8ae020b37377a397c6a0",
+  "prior": {
+    "audit": "ac001752ea43fb520825c5b2f6148e8712b6f233ed33d263aa0b724ebbf1041e",
+    "registry": "ce6f65bd0965ecc4172d9e5f375b55739e8ae3f9d7acbd23be7fbbadfc67ca2f"
+  },
+  "scope": {
+    "contract_file_sha256": "927822d6a367bb701bb1a7289a53bad2548b4caacd84b246f064cafd977bdcb8",
+    "contract_path": "docs/review/2026-09-05/triangle-window/contract.json",
+    "scope": "One disjoint major-asset rate-product diagnostic; old results, account and execution gates unchanged",
+    "status": "frozen_unconsumed"
+  }
+}

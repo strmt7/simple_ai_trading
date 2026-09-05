@@ -1,0 +1,582 @@
+{
+  "accepted_edge": false,
+  "complete": true,
+  "contract_sha256": "927822d6a367bb701bb1a7289a53bad2548b4caacd84b246f064cafd977bdcb8",
+  "cycles": [
+    {
+      "all_twelve_positive": false,
+      "cycle": "USDT->BTC->ETH->USDT",
+      "positive_after_stress_observations": 0
+    },
+    {
+      "all_twelve_positive": false,
+      "cycle": "USDT->BTC->SOL->USDT",
+      "positive_after_stress_observations": 0
+    },
+    {
+      "all_twelve_positive": false,
+      "cycle": "USDT->ETH->BTC->USDT",
+      "positive_after_stress_observations": 0
+    },
+    {
+      "all_twelve_positive": false,
+      "cycle": "USDT->ETH->SOL->USDT",
+      "positive_after_stress_observations": 0
+    },
+    {
+      "all_twelve_positive": false,
+      "cycle": "USDT->SOL->BTC->USDT",
+      "positive_after_stress_observations": 0
+    },
+    {
+      "all_twelve_positive": false,
+      "cycle": "USDT->SOL->ETH->USDT",
+      "positive_after_stress_observations": 0
+    }
+  ],
+  "failure_type": null,
+  "observations": [
+    {
+      "cycles": [
+        {
+          "after_three_bip_stress": "-4.662545618132830875102071000",
+          "cycle": "USDT->BTC->ETH->USDT",
+          "ideal_zero_fee_bips": "-1.662545618132830875102071000"
+        },
+        {
+          "after_three_bip_stress": "-3.945472149568201692355913000",
+          "cycle": "USDT->BTC->SOL->USDT",
+          "ideal_zero_fee_bips": "-0.9454721495682016923559130000"
+        },
+        {
+          "after_three_bip_stress": "-4.623316093851251390773816000",
+          "cycle": "USDT->ETH->BTC->USDT",
+          "ideal_zero_fee_bips": "-1.623316093851251390773816000"
+        },
+        {
+          "after_three_bip_stress": "-2.998871995949268792708110000",
+          "cycle": "USDT->ETH->SOL->USDT",
+          "ideal_zero_fee_bips": "0.001128004050731207291890000"
+        },
+        {
+          "after_three_bip_stress": "-3.817262455865045115731661000",
+          "cycle": "USDT->SOL->BTC->USDT",
+          "ideal_zero_fee_bips": "-0.8172624558650451157316610000"
+        },
+        {
+          "after_three_bip_stress": "-6.429148685759121224009414000",
+          "cycle": "USDT->SOL->ETH->USDT",
+          "ideal_zero_fee_bips": "-3.429148685759121224009414000"
+        }
+      ],
+      "index": 0,
+      "receipt": {
+        "bytes": 706,
+        "error_type": null,
+        "finished_ms": 1788578206033,
+        "index": 0,
+        "phase": "request_completed",
+        "sha256": "b0ed8fafe9343015e9ebd457e6c105e216d940e9f30b528127b5e40db6f0971d",
+        "started_ms": 1788578204754,
+        "status": 200
+      }
+    },
+    {
+      "cycles": [
+        {
+          "after_three_bip_stress": "-4.662545618132830875102071000",
+          "cycle": "USDT->BTC->ETH->USDT",
+          "ideal_zero_fee_bips": "-1.662545618132830875102071000"
+        },
+        {
+          "after_three_bip_stress": "-3.945472149568201692355913000",
+          "cycle": "USDT->BTC->SOL->USDT",
+          "ideal_zero_fee_bips": "-0.9454721495682016923559130000"
+        },
+        {
+          "after_three_bip_stress": "-4.623316093851251390773816000",
+          "cycle": "USDT->ETH->BTC->USDT",
+          "ideal_zero_fee_bips": "-1.623316093851251390773816000"
+        },
+        {
+          "after_three_bip_stress": "-2.998871995949268792708110000",
+          "cycle": "USDT->ETH->SOL->USDT",
+          "ideal_zero_fee_bips": "0.001128004050731207291890000"
+        },
+        {
+          "after_three_bip_stress": "-3.817262455865045115731661000",
+          "cycle": "USDT->SOL->BTC->USDT",
+          "ideal_zero_fee_bips": "-0.8172624558650451157316610000"
+        },
+        {
+          "after_three_bip_stress": "-6.429148685759121224009414000",
+          "cycle": "USDT->SOL->ETH->USDT",
+          "ideal_zero_fee_bips": "-3.429148685759121224009414000"
+        }
+      ],
+      "index": 1,
+      "receipt": {
+        "bytes": 706,
+        "error_type": null,
+        "finished_ms": 1788578210801,
+        "index": 1,
+        "phase": "request_completed",
+        "sha256": "b989d0ce18fa68b58fb8c2336803922513e6c4824eb5e7854e181e8509b4ded8",
+        "started_ms": 1788578209754,
+        "status": 200
+      }
+    },
+    {
+      "cycles": [
+        {
+          "after_three_bip_stress": "-4.662545618132830875102071000",
+          "cycle": "USDT->BTC->ETH->USDT",
+          "ideal_zero_fee_bips": "-1.662545618132830875102071000"
+        },
+        {
+          "after_three_bip_stress": "-3.945472149568201692355913000",
+          "cycle": "USDT->BTC->SOL->USDT",
+          "ideal_zero_fee_bips": "-0.9454721495682016923559130000"
+        },
+        {
+          "after_three_bip_stress": "-4.623316093851251390773816000",
+          "cycle": "USDT->ETH->BTC->USDT",
+          "ideal_zero_fee_bips": "-1.623316093851251390773816000"
+        },
+        {
+          "after_three_bip_stress": "-2.998871995949268792708110000",
+          "cycle": "USDT->ETH->SOL->USDT",
+          "ideal_zero_fee_bips": "0.001128004050731207291890000"
+        },
+        {
+          "after_three_bip_stress": "-3.817262455865045115731661000",
+          "cycle": "USDT->SOL->BTC->USDT",
+          "ideal_zero_fee_bips": "-0.8172624558650451157316610000"
+        },
+        {
+          "after_three_bip_stress": "-6.429148685759121224009414000",
+          "cycle": "USDT->SOL->ETH->USDT",
+          "ideal_zero_fee_bips": "-3.429148685759121224009414000"
+        }
+      ],
+      "index": 2,
+      "receipt": {
+        "bytes": 706,
+        "error_type": null,
+        "finished_ms": 1788578215835,
+        "index": 2,
+        "phase": "request_completed",
+        "sha256": "18445896913a594c569f0d7522b778f725ac6cff0b138859d133a2e9ad8d29aa",
+        "started_ms": 1788578214741,
+        "status": 200
+      }
+    },
+    {
+      "cycles": [
+        {
+          "after_three_bip_stress": "-5.565166418726110864095388000",
+          "cycle": "USDT->BTC->ETH->USDT",
+          "ideal_zero_fee_bips": "-2.565166418726110864095388000"
+        },
+        {
+          "after_three_bip_stress": "-4.723182808922831724668844000",
+          "cycle": "USDT->BTC->SOL->USDT",
+          "ideal_zero_fee_bips": "-1.723182808922831724668844000"
+        },
+        {
+          "after_three_bip_stress": "-3.720606549627528648507673000",
+          "cycle": "USDT->ETH->BTC->USDT",
+          "ideal_zero_fee_bips": "-0.7206065496275286485076730000"
+        },
+        {
+          "after_three_bip_stress": "-2.873870515863901539597690000",
+          "cycle": "USDT->ETH->SOL->USDT",
+          "ideal_zero_fee_bips": "0.126129484136098460402310000"
+        },
+        {
+          "after_three_bip_stress": "-3.039384917132489948023930000",
+          "cycle": "USDT->SOL->BTC->USDT",
+          "ideal_zero_fee_bips": "-0.0393849171324899480239300000"
+        },
+        {
+          "after_three_bip_stress": "-6.554006080219672452682160000",
+          "cycle": "USDT->SOL->ETH->USDT",
+          "ideal_zero_fee_bips": "-3.554006080219672452682160000"
+        }
+      ],
+      "index": 3,
+      "receipt": {
+        "bytes": 705,
+        "error_type": null,
+        "finished_ms": 1788578220845,
+        "index": 3,
+        "phase": "request_completed",
+        "sha256": "f5e86c2b31bb63777dcd2c9fca44e11791160151f3b47a55978a2c549e189251",
+        "started_ms": 1788578219743,
+        "status": 200
+      }
+    },
+    {
+      "cycles": [
+        {
+          "after_three_bip_stress": "-3.749169232789835903319346000",
+          "cycle": "USDT->BTC->ETH->USDT",
+          "ideal_zero_fee_bips": "-0.7491692327898359033193460000"
+        },
+        {
+          "after_three_bip_stress": "-5.191443371159394691930826000",
+          "cycle": "USDT->BTC->SOL->USDT",
+          "ideal_zero_fee_bips": "-2.191443371159394691930826000"
+        },
+        {
+          "after_three_bip_stress": "-5.537680255384728286794117000",
+          "cycle": "USDT->ETH->BTC->USDT",
+          "ideal_zero_fee_bips": "-2.537680255384728286794117000"
+        },
+        {
+          "after_three_bip_stress": "-5.754571870575248470365995000",
+          "cycle": "USDT->ETH->SOL->USDT",
+          "ideal_zero_fee_bips": "-2.754571870575248470365995000"
+        },
+        {
+          "after_three_bip_stress": "-2.572474722685775989005600000",
+          "cycle": "USDT->SOL->BTC->USDT",
+          "ideal_zero_fee_bips": "0.427525277314224010994400000"
+        },
+        {
+          "after_three_bip_stress": "-3.675095710218906449396290000",
+          "cycle": "USDT->SOL->ETH->USDT",
+          "ideal_zero_fee_bips": "-0.6750957102189064493962900000"
+        }
+      ],
+      "index": 4,
+      "receipt": {
+        "bytes": 704,
+        "error_type": null,
+        "finished_ms": 1788578225846,
+        "index": 4,
+        "phase": "request_completed",
+        "sha256": "ccc121fc6c51767f36b6acb2ce59f078ee99347d1ede1f731f8cdfe8d92a0243",
+        "started_ms": 1788578224754,
+        "status": 200
+      }
+    },
+    {
+      "cycles": [
+        {
+          "after_three_bip_stress": "-3.256617960419249112107461000",
+          "cycle": "USDT->BTC->ETH->USDT",
+          "ideal_zero_fee_bips": "-0.2566179604192491121074610000"
+        },
+        {
+          "after_three_bip_stress": "-5.480060543298531220144170000",
+          "cycle": "USDT->BTC->SOL->USDT",
+          "ideal_zero_fee_bips": "-2.480060543298531220144170000"
+        },
+        {
+          "after_three_bip_stress": "-6.030124200808977035490608000",
+          "cycle": "USDT->ETH->BTC->USDT",
+          "ideal_zero_fee_bips": "-3.030124200808977035490608000"
+        },
+        {
+          "after_three_bip_stress": "-6.535591622331470132668867000",
+          "cycle": "USDT->ETH->SOL->USDT",
+          "ideal_zero_fee_bips": "-3.535591622331470132668867000"
+        },
+        {
+          "after_three_bip_stress": "-2.283966617574864997545410000",
+          "cycle": "USDT->SOL->BTC->USDT",
+          "ideal_zero_fee_bips": "0.716033382425135002454590000"
+        },
+        {
+          "after_three_bip_stress": "-2.894050073637702503681880000",
+          "cycle": "USDT->SOL->ETH->USDT",
+          "ideal_zero_fee_bips": "0.105949926362297496318120000"
+        }
+      ],
+      "index": 5,
+      "receipt": {
+        "bytes": 705,
+        "error_type": null,
+        "finished_ms": 1788578230853,
+        "index": 5,
+        "phase": "request_completed",
+        "sha256": "ef1ba1ca775567318b8f4679f4511276a9a2c0ce556b5f6a326a0347f770eae2",
+        "started_ms": 1788578229754,
+        "status": 200
+      }
+    },
+    {
+      "cycles": [
+        {
+          "after_three_bip_stress": "-3.749169232789835903319346000",
+          "cycle": "USDT->BTC->ETH->USDT",
+          "ideal_zero_fee_bips": "-0.7491692327898359033193460000"
+        },
+        {
+          "after_three_bip_stress": "-6.172967871122956502779842000",
+          "cycle": "USDT->BTC->SOL->USDT",
+          "ideal_zero_fee_bips": "-3.172967871122956502779842000"
+        },
+        {
+          "after_three_bip_stress": "-5.537680255384728286794117000",
+          "cycle": "USDT->ETH->BTC->USDT",
+          "ideal_zero_fee_bips": "-2.537680255384728286794117000"
+        },
+        {
+          "after_three_bip_stress": "-6.736041085981632207998985000",
+          "cycle": "USDT->ETH->SOL->USDT",
+          "ideal_zero_fee_bips": "-3.736041085981632207998985000"
+        },
+        {
+          "after_three_bip_stress": "-1.590693108187708619674060000",
+          "cycle": "USDT->SOL->BTC->USDT",
+          "ideal_zero_fee_bips": "1.409306891812291380325940000"
+        },
+        {
+          "after_three_bip_stress": "-2.693422344394266640486940000",
+          "cycle": "USDT->SOL->ETH->USDT",
+          "ideal_zero_fee_bips": "0.306577655605733359513060000"
+        }
+      ],
+      "index": 6,
+      "receipt": {
+        "bytes": 705,
+        "error_type": null,
+        "finished_ms": 1788578235816,
+        "index": 6,
+        "phase": "request_completed",
+        "sha256": "6498d8a89d0c52db58660a621cfb6480aedff95e5c99e3403997c9c2b43585c2",
+        "started_ms": 1788578234745,
+        "status": 200
+      }
+    },
+    {
+      "cycles": [
+        {
+          "after_three_bip_stress": "-3.749169232789835903319346000",
+          "cycle": "USDT->BTC->ETH->USDT",
+          "ideal_zero_fee_bips": "-0.7491692327898359033193460000"
+        },
+        {
+          "after_three_bip_stress": "-6.172967871122956502779842000",
+          "cycle": "USDT->BTC->SOL->USDT",
+          "ideal_zero_fee_bips": "-3.172967871122956502779842000"
+        },
+        {
+          "after_three_bip_stress": "-5.537680255384728286794117000",
+          "cycle": "USDT->ETH->BTC->USDT",
+          "ideal_zero_fee_bips": "-2.537680255384728286794117000"
+        },
+        {
+          "after_three_bip_stress": "-6.736041085981632207998985000",
+          "cycle": "USDT->ETH->SOL->USDT",
+          "ideal_zero_fee_bips": "-3.736041085981632207998985000"
+        },
+        {
+          "after_three_bip_stress": "-1.590693108187708619674060000",
+          "cycle": "USDT->SOL->BTC->USDT",
+          "ideal_zero_fee_bips": "1.409306891812291380325940000"
+        },
+        {
+          "after_three_bip_stress": "-2.693422344394266640486940000",
+          "cycle": "USDT->SOL->ETH->USDT",
+          "ideal_zero_fee_bips": "0.306577655605733359513060000"
+        }
+      ],
+      "index": 7,
+      "receipt": {
+        "bytes": 705,
+        "error_type": null,
+        "finished_ms": 1788578240829,
+        "index": 7,
+        "phase": "request_completed",
+        "sha256": "ba047072a07f653e084183e7cb94bb28b35ec80ac5d522200159e6cfd3cf7b4a",
+        "started_ms": 1788578239755,
+        "status": 200
+      }
+    },
+    {
+      "cycles": [
+        {
+          "after_three_bip_stress": "-3.749169232789835903319346000",
+          "cycle": "USDT->BTC->ETH->USDT",
+          "ideal_zero_fee_bips": "-0.7491692327898359033193460000"
+        },
+        {
+          "after_three_bip_stress": "-4.610841606238375356831375000",
+          "cycle": "USDT->BTC->SOL->USDT",
+          "ideal_zero_fee_bips": "-1.610841606238375356831375000"
+        },
+        {
+          "after_three_bip_stress": "-5.537680255384728286794117000",
+          "cycle": "USDT->ETH->BTC->USDT",
+          "ideal_zero_fee_bips": "-2.537680255384728286794117000"
+        },
+        {
+          "after_three_bip_stress": "-6.736041085981632207998985000",
+          "cycle": "USDT->ETH->SOL->USDT",
+          "ideal_zero_fee_bips": "-3.736041085981632207998985000"
+        },
+        {
+          "after_three_bip_stress": "-3.153413312389554290202242000",
+          "cycle": "USDT->SOL->BTC->USDT",
+          "ideal_zero_fee_bips": "-0.1534133123895542902022420000"
+        },
+        {
+          "after_three_bip_stress": "-2.693422344394266640486940000",
+          "cycle": "USDT->SOL->ETH->USDT",
+          "ideal_zero_fee_bips": "0.306577655605733359513060000"
+        }
+      ],
+      "index": 8,
+      "receipt": {
+        "bytes": 705,
+        "error_type": null,
+        "finished_ms": 1788578245811,
+        "index": 8,
+        "phase": "request_completed",
+        "sha256": "d06f3b81e50eaa99d663b1d7afe22a0313d22292e81801690f7322ebdf5799b0",
+        "started_ms": 1788578244752,
+        "status": 200
+      }
+    },
+    {
+      "cycles": [
+        {
+          "after_three_bip_stress": "-4.094655025784490246542677000",
+          "cycle": "USDT->BTC->ETH->USDT",
+          "ideal_zero_fee_bips": "-1.094655025784490246542677000"
+        },
+        {
+          "after_three_bip_stress": "-5.156799057644924835155538000",
+          "cycle": "USDT->BTC->SOL->USDT",
+          "ideal_zero_fee_bips": "-2.156799057644924835155538000"
+        },
+        {
+          "after_three_bip_stress": "-5.192244278917305740040854000",
+          "cycle": "USDT->ETH->BTC->USDT",
+          "ideal_zero_fee_bips": "-2.192244278917305740040854000"
+        },
+        {
+          "after_three_bip_stress": "-7.717510301388015945631975000",
+          "cycle": "USDT->ETH->SOL->USDT",
+          "ideal_zero_fee_bips": "-4.717510301388015945631975000"
+        },
+        {
+          "after_three_bip_stress": "-2.607503878252331860579280000",
+          "cycle": "USDT->SOL->BTC->USDT",
+          "ideal_zero_fee_bips": "0.392496121747668139420720000"
+        },
+        {
+          "after_three_bip_stress": "-1.711556210112911143838980000",
+          "cycle": "USDT->SOL->ETH->USDT",
+          "ideal_zero_fee_bips": "1.288443789887088856161020000"
+        }
+      ],
+      "index": 9,
+      "receipt": {
+        "bytes": 705,
+        "error_type": null,
+        "finished_ms": 1788578250858,
+        "index": 9,
+        "phase": "request_completed",
+        "sha256": "0a566447d7a5e95cd812a28f918e6e82f4c2cd38a04943dadbb9074a27e0fb0c",
+        "started_ms": 1788578249749,
+        "status": 200
+      }
+    },
+    {
+      "cycles": [
+        {
+          "after_three_bip_stress": "-4.100434202054652537463471000",
+          "cycle": "USDT->BTC->ETH->USDT",
+          "ideal_zero_fee_bips": "-1.100434202054652537463471000"
+        },
+        {
+          "after_three_bip_stress": "-4.836474339608411179258872000",
+          "cycle": "USDT->BTC->SOL->USDT",
+          "ideal_zero_fee_bips": "-1.836474339608411179258872000"
+        },
+        {
+          "after_three_bip_stress": "-5.186467103465990402374533000",
+          "cycle": "USDT->ETH->BTC->USDT",
+          "ideal_zero_fee_bips": "-2.186467103465990402374533000"
+        },
+        {
+          "after_three_bip_stress": "-7.391491685429256804148809000",
+          "cycle": "USDT->ETH->SOL->USDT",
+          "ideal_zero_fee_bips": "-4.391491685429256804148809000"
+        },
+        {
+          "after_three_bip_stress": "-2.927900049091801669121260000",
+          "cycle": "USDT->SOL->BTC->USDT",
+          "ideal_zero_fee_bips": "0.072099950908198330878740000"
+        },
+        {
+          "after_three_bip_stress": "-2.037761413843888070692190000",
+          "cycle": "USDT->SOL->ETH->USDT",
+          "ideal_zero_fee_bips": "0.962238586156111929307810000"
+        }
+      ],
+      "index": 10,
+      "receipt": {
+        "bytes": 706,
+        "error_type": null,
+        "finished_ms": 1788578255874,
+        "index": 10,
+        "phase": "request_completed",
+        "sha256": "a10320b86b95394edf8f2cbb18d83425ebbebda4c8dcefb79d0dccc3c3da465c",
+        "started_ms": 1788578254750,
+        "status": 200
+      }
+    },
+    {
+      "cycles": [
+        {
+          "after_three_bip_stress": "-4.100434202054652537463471000",
+          "cycle": "USDT->BTC->ETH->USDT",
+          "ideal_zero_fee_bips": "-1.100434202054652537463471000"
+        },
+        {
+          "after_three_bip_stress": "-4.836474339608411179258872000",
+          "cycle": "USDT->BTC->SOL->USDT",
+          "ideal_zero_fee_bips": "-1.836474339608411179258872000"
+        },
+        {
+          "after_three_bip_stress": "-5.186467103465990402374533000",
+          "cycle": "USDT->ETH->BTC->USDT",
+          "ideal_zero_fee_bips": "-2.186467103465990402374533000"
+        },
+        {
+          "after_three_bip_stress": "-7.391491685429256804148809000",
+          "cycle": "USDT->ETH->SOL->USDT",
+          "ideal_zero_fee_bips": "-4.391491685429256804148809000"
+        },
+        {
+          "after_three_bip_stress": "-2.927900049091801669121260000",
+          "cycle": "USDT->SOL->BTC->USDT",
+          "ideal_zero_fee_bips": "0.072099950908198330878740000"
+        },
+        {
+          "after_three_bip_stress": "-2.037761413843888070692190000",
+          "cycle": "USDT->SOL->ETH->USDT",
+          "ideal_zero_fee_bips": "0.962238586156111929307810000"
+        }
+      ],
+      "index": 11,
+      "receipt": {
+        "bytes": 706,
+        "error_type": null,
+        "finished_ms": 1788578260876,
+        "index": 11,
+        "phase": "request_completed",
+        "sha256": "e8535d2c5b2f9d3451a7dc88f462e042c2ffbc05d495504ac197df53b98085a2",
+        "started_ms": 1788578259751,
+        "status": 200
+      }
+    }
+  ],
+  "schema_version": "prospective-triangle-rate-window-v1",
+  "scope": "Rate-product diagnostic; no size, rounding, fee, account or simultaneous-fill qualification"
+}
