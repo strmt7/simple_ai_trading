@@ -1,0 +1,3060 @@
+{
+  "schema_version": "retained-cpi-partition-screen-v1",
+  "created_at_utc": "2026-09-04T23:59:43.956234+00:00",
+  "plan_sha256": "57b1c850888d686fbfd881837d2472653199ea5a1beee895c389c6ef3b3e58f4",
+  "populations": [
+    {
+      "event_id": "838710",
+      "market_count": 12,
+      "yes_price_complete_market_count": 12,
+      "no_price_complete_market_count": 12,
+      "frontier_rows": 24
+    },
+    {
+      "event_id": "838709",
+      "market_count": 9,
+      "yes_price_complete_market_count": 9,
+      "no_price_complete_market_count": 9,
+      "frontier_rows": 18
+    }
+  ],
+  "rows": [
+    {
+      "event_id": "838710",
+      "event_slug": "august-inflation-us-annual-1786474662954",
+      "event_title": "August Inflation US - Annual",
+      "package": "all YES complete set",
+      "guaranteed_payout_floor_pUSD_per_share": "1",
+      "quantity_shares_each_leg": "5",
+      "legs": [
+        {
+          "market_id": "3539669",
+          "condition_id": "0xe484c6415870fe28012b423cb286f9700ef0f95dc7cf95ae0144d920af3a4ed2",
+          "question": "Will annual inflation be 2.9% or less in August?",
+          "label": "\u22642.9%",
+          "outcome": "Yes",
+          "token_id": "106840607505959910443331151571065295863165911028929867515186677513569814290596",
+          "price_pUSD_per_share": "0.006",
+          "price_source": "direct_YES_bestAsk",
+          "tick_size_pUSD": "0.001",
+          "minimum_order_shares": "5"
+        },
+        {
+          "market_id": "3539670",
+          "condition_id": "0xb10a5fa939d4a22ef6888d90092239fb1911a94610219b44d605db499f48db61",
+          "question": "Will annual inflation be 3.0% in August?",
+          "label": "3.0%",
+          "outcome": "Yes",
+          "token_id": "115589117161151487625218177166150394104974759548200392194646275383215016804508",
+          "price_pUSD_per_share": "0.012",
+          "price_source": "direct_YES_bestAsk",
+          "tick_size_pUSD": "0.001",
+          "minimum_order_shares": "5"
+        },
+        {
+          "market_id": "3539671",
+          "condition_id": "0xf5ce15bcea18506b7bcac6a95f1ed2ca831e505bf9520781f48ee70ec4c6dfb9",
+          "question": "Will annual inflation be 3.1% in August?",
+          "label": "3.1%",
+          "outcome": "Yes",
+          "token_id": "50093558737615393898934799626433723830873068502825713885800148225857934870952",
+          "price_pUSD_per_share": "0.05",
+          "price_source": "direct_YES_bestAsk",
+          "tick_size_pUSD": "0.001",
+          "minimum_order_shares": "5"
+        },
+        {
+          "market_id": "3539672",
+          "condition_id": "0x09e0f4ead19cc9f8ccfcbf972a13751379c84f498168bbf1be38542fc8e547ca",
+          "question": "Will annual inflation be 3.2% in August?",
+          "label": "3.2%",
+          "outcome": "Yes",
+          "token_id": "36326104665947844663550055472150608031335258357235021832550809717719446200428",
+          "price_pUSD_per_share": "0.117",
+          "price_source": "direct_YES_bestAsk",
+          "tick_size_pUSD": "0.001",
+          "minimum_order_shares": "5"
+        },
+        {
+          "market_id": "3539673",
+          "condition_id": "0x8153bb8767d01033f362f7b7b89bb3e12c3007442bf34e3e3bfbcc5b4fee9f16",
+          "question": "Will annual inflation be 3.3% in August?",
+          "label": "3.3%",
+          "outcome": "Yes",
+          "token_id": "26063740770264847975909828483674339905169640280928913439648364858587094079220",
+          "price_pUSD_per_share": "0.32",
+          "price_source": "direct_YES_bestAsk",
+          "tick_size_pUSD": "0.01",
+          "minimum_order_shares": "5"
+        },
+        {
+          "market_id": "3539674",
+          "condition_id": "0x7155f240d44c8ab4f1796cb6decf0dd567e19de9c0079aed0726792ddeb29ab2",
+          "question": "Will annual inflation be 3.4% in August?",
+          "label": "3.4%",
+          "outcome": "Yes",
+          "token_id": "72877767861912491898413410013608342980810361251681698180583462936286964444778",
+          "price_pUSD_per_share": "0.46",
+          "price_source": "direct_YES_bestAsk",
+          "tick_size_pUSD": "0.01",
+          "minimum_order_shares": "5"
+        },
+        {
+          "market_id": "3539675",
+          "condition_id": "0x91690c110a71a068d5033ef3114e941d0141415b4e797e22c0a136283e07728d",
+          "question": "Will annual inflation be 3.5% in August?",
+          "label": "3.5%",
+          "outcome": "Yes",
+          "token_id": "37115167239458644215784672393211604704410195130081732021361416141336418775297",
+          "price_pUSD_per_share": "0.18",
+          "price_source": "direct_YES_bestAsk",
+          "tick_size_pUSD": "0.01",
+          "minimum_order_shares": "5"
+        },
+        {
+          "market_id": "3539676",
+          "condition_id": "0x364cadd03f8fe6237fdc377afb93df97c4d766b063e39c7897b458047812a964",
+          "question": "Will annual inflation be 3.6% in August?",
+          "label": "3.6%",
+          "outcome": "Yes",
+          "token_id": "95632069404250764949863033543643234017842487339046498836612133857486548041274",
+          "price_pUSD_per_share": "0.02",
+          "price_source": "direct_YES_bestAsk",
+          "tick_size_pUSD": "0.001",
+          "minimum_order_shares": "5"
+        },
+        {
+          "market_id": "3539677",
+          "condition_id": "0x211958971f5390d9e0c7593a81ff512fc36c674f0b4aae1186a9e185ce95831c",
+          "question": "Will annual inflation be 3.7% in August?",
+          "label": "3.7%",
+          "outcome": "Yes",
+          "token_id": "11475457345978889957905295464256594480390404554058039341013040868040199908447",
+          "price_pUSD_per_share": "0.03",
+          "price_source": "direct_YES_bestAsk",
+          "tick_size_pUSD": "0.001",
+          "minimum_order_shares": "5"
+        },
+        {
+          "market_id": "3539678",
+          "condition_id": "0x07fb6279fb00b8c320066b2618ed8cc657429bf5e78517f210aa823d5c51baf8",
+          "question": "Will annual inflation be 3.8% in August?",
+          "label": "3.8%",
+          "outcome": "Yes",
+          "token_id": "16301343979873876983342137991058482836421415583636076670613118288096158101958",
+          "price_pUSD_per_share": "0.008",
+          "price_source": "direct_YES_bestAsk",
+          "tick_size_pUSD": "0.001",
+          "minimum_order_shares": "5"
+        },
+        {
+          "market_id": "3539679",
+          "condition_id": "0xaaa67f6b394b129ef10b0d28fb0e458b5a8ea40e09c32738bf6f77e035ebbdfd",
+          "question": "Will annual inflation be 3.9% in August?",
+          "label": "3.9%",
+          "outcome": "Yes",
+          "token_id": "97644560759069626353861620010997444362730087599656695557688059866944442587445",
+          "price_pUSD_per_share": "0.005",
+          "price_source": "direct_YES_bestAsk",
+          "tick_size_pUSD": "0.001",
+          "minimum_order_shares": "5"
+        },
+        {
+          "market_id": "3539680",
+          "condition_id": "0xa336827fbf10820b79cc4c84262eb1e89ddc5266f308638bd93ffe648e318aa0",
+          "question": "Will annual inflation be 4.0% or more in August?",
+          "label": "\u22654.0%",
+          "outcome": "Yes",
+          "token_id": "94201422916680318418926751295604299309587068677187651549242584144623775224039",
+          "price_pUSD_per_share": "0.009",
+          "price_source": "direct_YES_bestAsk",
+          "tick_size_pUSD": "0.001",
+          "minimum_order_shares": "5"
+        }
+      ],
+      "metadata_cost_pUSD_per_share": "1.217",
+      "metadata_profit_floor_pUSD": "-1.085",
+      "one_adverse_tick_per_leg_prices_pUSD": [
+        "0.007",
+        "0.013",
+        "0.051",
+        "0.118",
+        "0.33",
+        "0.47",
+        "0.19",
+        "0.021",
+        "0.031",
+        "0.009",
+        "0.006",
+        "0.010"
+      ],
+      "stressed_taker_fee_pUSD": "0.21797",
+      "after_fee_one_tick_profit_floor_pUSD": "-1.49797",
+      "passes_strict_metadata_gate": false,
+      "passes_fee_and_one_tick_gate": false
+    },
+    {
+      "event_id": "838710",
+      "event_slug": "august-inflation-us-annual-1786474662954",
+      "event_title": "August Inflation US - Annual",
+      "package": "same-market YES plus NO binary straddle",
+      "guaranteed_payout_floor_pUSD_per_share": "1",
+      "quantity_shares_each_leg": "5",
+      "legs": [
+        {
+          "market_id": "3539669",
+          "condition_id": "0xe484c6415870fe28012b423cb286f9700ef0f95dc7cf95ae0144d920af3a4ed2",
+          "question": "Will annual inflation be 2.9% or less in August?",
+          "label": "\u22642.9%",
+          "outcome": "Yes",
+          "token_id": "106840607505959910443331151571065295863165911028929867515186677513569814290596",
+          "price_pUSD_per_share": "0.006",
+          "price_source": "direct_YES_bestAsk",
+          "tick_size_pUSD": "0.001",
+          "minimum_order_shares": "5"
+        },
+        {
+          "market_id": "3539669",
+          "condition_id": "0xe484c6415870fe28012b423cb286f9700ef0f95dc7cf95ae0144d920af3a4ed2",
+          "question": "Will annual inflation be 2.9% or less in August?",
+          "outcome": "No",
+          "token_id": "15012115490194995028015085922142792837035990317698221008533835941176202988041",
+          "price_pUSD_per_share": "0.998",
+          "price_source": "one_minus_direct_YES_bestBid",
+          "tick_size_pUSD": "0.001",
+          "minimum_order_shares": "5"
+        }
+      ],
+      "metadata_cost_pUSD_per_share": "1.004",
+      "metadata_profit_floor_pUSD": "-0.020",
+      "one_adverse_tick_per_leg_prices_pUSD": [
+        "0.007",
+        "0.999"
+      ],
+      "stressed_taker_fee_pUSD": "0.00199",
+      "after_fee_one_tick_profit_floor_pUSD": "-0.03199",
+      "passes_strict_metadata_gate": false,
+      "passes_fee_and_one_tick_gate": false
+    },
+    {
+      "event_id": "838710",
+      "event_slug": "august-inflation-us-annual-1786474662954",
+      "event_title": "August Inflation US - Annual",
+      "package": "same-market YES plus NO binary straddle",
+      "guaranteed_payout_floor_pUSD_per_share": "1",
+      "quantity_shares_each_leg": "5",
+      "legs": [
+        {
+          "market_id": "3539670",
+          "condition_id": "0xb10a5fa939d4a22ef6888d90092239fb1911a94610219b44d605db499f48db61",
+          "question": "Will annual inflation be 3.0% in August?",
+          "label": "3.0%",
+          "outcome": "Yes",
+          "token_id": "115589117161151487625218177166150394104974759548200392194646275383215016804508",
+          "price_pUSD_per_share": "0.012",
+          "price_source": "direct_YES_bestAsk",
+          "tick_size_pUSD": "0.001",
+          "minimum_order_shares": "5"
+        },
+        {
+          "market_id": "3539670",
+          "condition_id": "0xb10a5fa939d4a22ef6888d90092239fb1911a94610219b44d605db499f48db61",
+          "question": "Will annual inflation be 3.0% in August?",
+          "outcome": "No",
+          "token_id": "83362123839633153588530962098759536698607220897032984032214066698235095955065",
+          "price_pUSD_per_share": "0.996",
+          "price_source": "one_minus_direct_YES_bestBid",
+          "tick_size_pUSD": "0.001",
+          "minimum_order_shares": "5"
+        }
+      ],
+      "metadata_cost_pUSD_per_share": "1.008",
+      "metadata_profit_floor_pUSD": "-0.040",
+      "one_adverse_tick_per_leg_prices_pUSD": [
+        "0.013",
+        "0.997"
+      ],
+      "stressed_taker_fee_pUSD": "0.00396",
+      "after_fee_one_tick_profit_floor_pUSD": "-0.05396",
+      "passes_strict_metadata_gate": false,
+      "passes_fee_and_one_tick_gate": false
+    },
+    {
+      "event_id": "838710",
+      "event_slug": "august-inflation-us-annual-1786474662954",
+      "event_title": "August Inflation US - Annual",
+      "package": "same-market YES plus NO binary straddle",
+      "guaranteed_payout_floor_pUSD_per_share": "1",
+      "quantity_shares_each_leg": "5",
+      "legs": [
+        {
+          "market_id": "3539671",
+          "condition_id": "0xf5ce15bcea18506b7bcac6a95f1ed2ca831e505bf9520781f48ee70ec4c6dfb9",
+          "question": "Will annual inflation be 3.1% in August?",
+          "label": "3.1%",
+          "outcome": "Yes",
+          "token_id": "50093558737615393898934799626433723830873068502825713885800148225857934870952",
+          "price_pUSD_per_share": "0.05",
+          "price_source": "direct_YES_bestAsk",
+          "tick_size_pUSD": "0.001",
+          "minimum_order_shares": "5"
+        },
+        {
+          "market_id": "3539671",
+          "condition_id": "0xf5ce15bcea18506b7bcac6a95f1ed2ca831e505bf9520781f48ee70ec4c6dfb9",
+          "question": "Will annual inflation be 3.1% in August?",
+          "outcome": "No",
+          "token_id": "61456022134205691583517951596033194948331779343778214321720285056173375438629",
+          "price_pUSD_per_share": "0.995",
+          "price_source": "one_minus_direct_YES_bestBid",
+          "tick_size_pUSD": "0.001",
+          "minimum_order_shares": "5"
+        }
+      ],
+      "metadata_cost_pUSD_per_share": "1.045",
+      "metadata_profit_floor_pUSD": "-0.225",
+      "one_adverse_tick_per_leg_prices_pUSD": [
+        "0.051",
+        "0.996"
+      ],
+      "stressed_taker_fee_pUSD": "0.01310",
+      "after_fee_one_tick_profit_floor_pUSD": "-0.24810",
+      "passes_strict_metadata_gate": false,
+      "passes_fee_and_one_tick_gate": false
+    },
+    {
+      "event_id": "838710",
+      "event_slug": "august-inflation-us-annual-1786474662954",
+      "event_title": "August Inflation US - Annual",
+      "package": "same-market YES plus NO binary straddle",
+      "guaranteed_payout_floor_pUSD_per_share": "1",
+      "quantity_shares_each_leg": "5",
+      "legs": [
+        {
+          "market_id": "3539672",
+          "condition_id": "0x09e0f4ead19cc9f8ccfcbf972a13751379c84f498168bbf1be38542fc8e547ca",
+          "question": "Will annual inflation be 3.2% in August?",
+          "label": "3.2%",
+          "outcome": "Yes",
+          "token_id": "36326104665947844663550055472150608031335258357235021832550809717719446200428",
+          "price_pUSD_per_share": "0.117",
+          "price_source": "direct_YES_bestAsk",
+          "tick_size_pUSD": "0.001",
+          "minimum_order_shares": "5"
+        },
+        {
+          "market_id": "3539672",
+          "condition_id": "0x09e0f4ead19cc9f8ccfcbf972a13751379c84f498168bbf1be38542fc8e547ca",
+          "question": "Will annual inflation be 3.2% in August?",
+          "outcome": "No",
+          "token_id": "42223636595710464621263397314670891087326227025612797770951296754146529109222",
+          "price_pUSD_per_share": "0.936",
+          "price_source": "one_minus_direct_YES_bestBid",
+          "tick_size_pUSD": "0.001",
+          "minimum_order_shares": "5"
+        }
+      ],
+      "metadata_cost_pUSD_per_share": "1.053",
+      "metadata_profit_floor_pUSD": "-0.265",
+      "one_adverse_tick_per_leg_prices_pUSD": [
+        "0.118",
+        "0.937"
+      ],
+      "stressed_taker_fee_pUSD": "0.04078",
+      "after_fee_one_tick_profit_floor_pUSD": "-0.31578",
+      "passes_strict_metadata_gate": false,
+      "passes_fee_and_one_tick_gate": false
+    },
+    {
+      "event_id": "838710",
+      "event_slug": "august-inflation-us-annual-1786474662954",
+      "event_title": "August Inflation US - Annual",
+      "package": "same-market YES plus NO binary straddle",
+      "guaranteed_payout_floor_pUSD_per_share": "1",
+      "quantity_shares_each_leg": "5",
+      "legs": [
+        {
+          "market_id": "3539673",
+          "condition_id": "0x8153bb8767d01033f362f7b7b89bb3e12c3007442bf34e3e3bfbcc5b4fee9f16",
+          "question": "Will annual inflation be 3.3% in August?",
+          "label": "3.3%",
+          "outcome": "Yes",
+          "token_id": "26063740770264847975909828483674339905169640280928913439648364858587094079220",
+          "price_pUSD_per_share": "0.32",
+          "price_source": "direct_YES_bestAsk",
+          "tick_size_pUSD": "0.01",
+          "minimum_order_shares": "5"
+        },
+        {
+          "market_id": "3539673",
+          "condition_id": "0x8153bb8767d01033f362f7b7b89bb3e12c3007442bf34e3e3bfbcc5b4fee9f16",
+          "question": "Will annual inflation be 3.3% in August?",
+          "outcome": "No",
+          "token_id": "22135049264937995879283456922850521759398563843606909206401751008552533261725",
+          "price_pUSD_per_share": "0.71",
+          "price_source": "one_minus_direct_YES_bestBid",
+          "tick_size_pUSD": "0.01",
+          "minimum_order_shares": "5"
+        }
+      ],
+      "metadata_cost_pUSD_per_share": "1.03",
+      "metadata_profit_floor_pUSD": "-0.15",
+      "one_adverse_tick_per_leg_prices_pUSD": [
+        "0.33",
+        "0.72"
+      ],
+      "stressed_taker_fee_pUSD": "0.10568",
+      "after_fee_one_tick_profit_floor_pUSD": "-0.35568",
+      "passes_strict_metadata_gate": false,
+      "passes_fee_and_one_tick_gate": false
+    },
+    {
+      "event_id": "838710",
+      "event_slug": "august-inflation-us-annual-1786474662954",
+      "event_title": "August Inflation US - Annual",
+      "package": "same-market YES plus NO binary straddle",
+      "guaranteed_payout_floor_pUSD_per_share": "1",
+      "quantity_shares_each_leg": "5",
+      "legs": [
+        {
+          "market_id": "3539674",
+          "condition_id": "0x7155f240d44c8ab4f1796cb6decf0dd567e19de9c0079aed0726792ddeb29ab2",
+          "question": "Will annual inflation be 3.4% in August?",
+          "label": "3.4%",
+          "outcome": "Yes",
+          "token_id": "72877767861912491898413410013608342980810361251681698180583462936286964444778",
+          "price_pUSD_per_share": "0.46",
+          "price_source": "direct_YES_bestAsk",
+          "tick_size_pUSD": "0.01",
+          "minimum_order_shares": "5"
+        },
+        {
+          "market_id": "3539674",
+          "condition_id": "0x7155f240d44c8ab4f1796cb6decf0dd567e19de9c0079aed0726792ddeb29ab2",
+          "question": "Will annual inflation be 3.4% in August?",
+          "outcome": "No",
+          "token_id": "6461243017402905481530151872266690321999974436388010179965720256928124461181",
+          "price_pUSD_per_share": "0.56",
+          "price_source": "one_minus_direct_YES_bestBid",
+          "tick_size_pUSD": "0.01",
+          "minimum_order_shares": "5"
+        }
+      ],
+      "metadata_cost_pUSD_per_share": "1.02",
+      "metadata_profit_floor_pUSD": "-0.10",
+      "one_adverse_tick_per_leg_prices_pUSD": [
+        "0.47",
+        "0.57"
+      ],
+      "stressed_taker_fee_pUSD": "0.12356",
+      "after_fee_one_tick_profit_floor_pUSD": "-0.32356",
+      "passes_strict_metadata_gate": false,
+      "passes_fee_and_one_tick_gate": false
+    },
+    {
+      "event_id": "838710",
+      "event_slug": "august-inflation-us-annual-1786474662954",
+      "event_title": "August Inflation US - Annual",
+      "package": "same-market YES plus NO binary straddle",
+      "guaranteed_payout_floor_pUSD_per_share": "1",
+      "quantity_shares_each_leg": "5",
+      "legs": [
+        {
+          "market_id": "3539675",
+          "condition_id": "0x91690c110a71a068d5033ef3114e941d0141415b4e797e22c0a136283e07728d",
+          "question": "Will annual inflation be 3.5% in August?",
+          "label": "3.5%",
+          "outcome": "Yes",
+          "token_id": "37115167239458644215784672393211604704410195130081732021361416141336418775297",
+          "price_pUSD_per_share": "0.18",
+          "price_source": "direct_YES_bestAsk",
+          "tick_size_pUSD": "0.01",
+          "minimum_order_shares": "5"
+        },
+        {
+          "market_id": "3539675",
+          "condition_id": "0x91690c110a71a068d5033ef3114e941d0141415b4e797e22c0a136283e07728d",
+          "question": "Will annual inflation be 3.5% in August?",
+          "outcome": "No",
+          "token_id": "51704872889123121135145359520550981527960291966171368432330134976559236787442",
+          "price_pUSD_per_share": "0.85",
+          "price_source": "one_minus_direct_YES_bestBid",
+          "tick_size_pUSD": "0.01",
+          "minimum_order_shares": "5"
+        }
+      ],
+      "metadata_cost_pUSD_per_share": "1.03",
+      "metadata_profit_floor_pUSD": "-0.15",
+      "one_adverse_tick_per_leg_prices_pUSD": [
+        "0.19",
+        "0.86"
+      ],
+      "stressed_taker_fee_pUSD": "0.06858",
+      "after_fee_one_tick_profit_floor_pUSD": "-0.31858",
+      "passes_strict_metadata_gate": false,
+      "passes_fee_and_one_tick_gate": false
+    },
+    {
+      "event_id": "838710",
+      "event_slug": "august-inflation-us-annual-1786474662954",
+      "event_title": "August Inflation US - Annual",
+      "package": "same-market YES plus NO binary straddle",
+      "guaranteed_payout_floor_pUSD_per_share": "1",
+      "quantity_shares_each_leg": "5",
+      "legs": [
+        {
+          "market_id": "3539676",
+          "condition_id": "0x364cadd03f8fe6237fdc377afb93df97c4d766b063e39c7897b458047812a964",
+          "question": "Will annual inflation be 3.6% in August?",
+          "label": "3.6%",
+          "outcome": "Yes",
+          "token_id": "95632069404250764949863033543643234017842487339046498836612133857486548041274",
+          "price_pUSD_per_share": "0.02",
+          "price_source": "direct_YES_bestAsk",
+          "tick_size_pUSD": "0.001",
+          "minimum_order_shares": "5"
+        },
+        {
+          "market_id": "3539676",
+          "condition_id": "0x364cadd03f8fe6237fdc377afb93df97c4d766b063e39c7897b458047812a964",
+          "question": "Will annual inflation be 3.6% in August?",
+          "outcome": "No",
+          "token_id": "10705093910447884959640953270477374710094427405855579526255155356201687979693",
+          "price_pUSD_per_share": "0.99",
+          "price_source": "one_minus_direct_YES_bestBid",
+          "tick_size_pUSD": "0.001",
+          "minimum_order_shares": "5"
+        }
+      ],
+      "metadata_cost_pUSD_per_share": "1.01",
+      "metadata_profit_floor_pUSD": "-0.05",
+      "one_adverse_tick_per_leg_prices_pUSD": [
+        "0.021",
+        "0.991"
+      ],
+      "stressed_taker_fee_pUSD": "0.00737",
+      "after_fee_one_tick_profit_floor_pUSD": "-0.06737",
+      "passes_strict_metadata_gate": false,
+      "passes_fee_and_one_tick_gate": false
+    },
+    {
+      "event_id": "838710",
+      "event_slug": "august-inflation-us-annual-1786474662954",
+      "event_title": "August Inflation US - Annual",
+      "package": "same-market YES plus NO binary straddle",
+      "guaranteed_payout_floor_pUSD_per_share": "1",
+      "quantity_shares_each_leg": "5",
+      "legs": [
+        {
+          "market_id": "3539677",
+          "condition_id": "0x211958971f5390d9e0c7593a81ff512fc36c674f0b4aae1186a9e185ce95831c",
+          "question": "Will annual inflation be 3.7% in August?",
+          "label": "3.7%",
+          "outcome": "Yes",
+          "token_id": "11475457345978889957905295464256594480390404554058039341013040868040199908447",
+          "price_pUSD_per_share": "0.03",
+          "price_source": "direct_YES_bestAsk",
+          "tick_size_pUSD": "0.001",
+          "minimum_order_shares": "5"
+        },
+        {
+          "market_id": "3539677",
+          "condition_id": "0x211958971f5390d9e0c7593a81ff512fc36c674f0b4aae1186a9e185ce95831c",
+          "question": "Will annual inflation be 3.7% in August?",
+          "outcome": "No",
+          "token_id": "95094329359091163515074549670690360523505151140992432751372922643330313224402",
+          "price_pUSD_per_share": "0.997",
+          "price_source": "one_minus_direct_YES_bestBid",
+          "tick_size_pUSD": "0.001",
+          "minimum_order_shares": "5"
+        }
+      ],
+      "metadata_cost_pUSD_per_share": "1.027",
+      "metadata_profit_floor_pUSD": "-0.135",
+      "one_adverse_tick_per_leg_prices_pUSD": [
+        "0.031",
+        "0.998"
+      ],
+      "stressed_taker_fee_pUSD": "0.00801",
+      "after_fee_one_tick_profit_floor_pUSD": "-0.15301",
+      "passes_strict_metadata_gate": false,
+      "passes_fee_and_one_tick_gate": false
+    },
+    {
+      "event_id": "838710",
+      "event_slug": "august-inflation-us-annual-1786474662954",
+      "event_title": "August Inflation US - Annual",
+      "package": "same-market YES plus NO binary straddle",
+      "guaranteed_payout_floor_pUSD_per_share": "1",
+      "quantity_shares_each_leg": "5",
+      "legs": [
+        {
+          "market_id": "3539678",
+          "condition_id": "0x07fb6279fb00b8c320066b2618ed8cc657429bf5e78517f210aa823d5c51baf8",
+          "question": "Will annual inflation be 3.8% in August?",
+          "label": "3.8%",
+          "outcome": "Yes",
+          "token_id": "16301343979873876983342137991058482836421415583636076670613118288096158101958",
+          "price_pUSD_per_share": "0.008",
+          "price_source": "direct_YES_bestAsk",
+          "tick_size_pUSD": "0.001",
+          "minimum_order_shares": "5"
+        },
+        {
+          "market_id": "3539678",
+          "condition_id": "0x07fb6279fb00b8c320066b2618ed8cc657429bf5e78517f210aa823d5c51baf8",
+          "question": "Will annual inflation be 3.8% in August?",
+          "outcome": "No",
+          "token_id": "90950809128723700146137630865754692565807725647115761065121770768040449070715",
+          "price_pUSD_per_share": "0.998",
+          "price_source": "one_minus_direct_YES_bestBid",
+          "tick_size_pUSD": "0.001",
+          "minimum_order_shares": "5"
+        }
+      ],
+      "metadata_cost_pUSD_per_share": "1.006",
+      "metadata_profit_floor_pUSD": "-0.030",
+      "one_adverse_tick_per_leg_prices_pUSD": [
+        "0.009",
+        "0.999"
+      ],
+      "stressed_taker_fee_pUSD": "0.00248",
+      "after_fee_one_tick_profit_floor_pUSD": "-0.04248",
+      "passes_strict_metadata_gate": false,
+      "passes_fee_and_one_tick_gate": false
+    },
+    {
+      "event_id": "838710",
+      "event_slug": "august-inflation-us-annual-1786474662954",
+      "event_title": "August Inflation US - Annual",
+      "package": "same-market YES plus NO binary straddle",
+      "guaranteed_payout_floor_pUSD_per_share": "1",
+      "quantity_shares_each_leg": "5",
+      "legs": [
+        {
+          "market_id": "3539679",
+          "condition_id": "0xaaa67f6b394b129ef10b0d28fb0e458b5a8ea40e09c32738bf6f77e035ebbdfd",
+          "question": "Will annual inflation be 3.9% in August?",
+          "label": "3.9%",
+          "outcome": "Yes",
+          "token_id": "97644560759069626353861620010997444362730087599656695557688059866944442587445",
+          "price_pUSD_per_share": "0.005",
+          "price_source": "direct_YES_bestAsk",
+          "tick_size_pUSD": "0.001",
+          "minimum_order_shares": "5"
+        },
+        {
+          "market_id": "3539679",
+          "condition_id": "0xaaa67f6b394b129ef10b0d28fb0e458b5a8ea40e09c32738bf6f77e035ebbdfd",
+          "question": "Will annual inflation be 3.9% in August?",
+          "outcome": "No",
+          "token_id": "74732802999363321962971204387275159764826242938907733375884349798497544293533",
+          "price_pUSD_per_share": "0.999",
+          "price_source": "one_minus_direct_YES_bestBid",
+          "tick_size_pUSD": "0.001",
+          "minimum_order_shares": "5"
+        }
+      ],
+      "metadata_cost_pUSD_per_share": "1.004",
+      "metadata_profit_floor_pUSD": "-0.020",
+      "one_adverse_tick_per_leg_prices_pUSD": [
+        "0.006",
+        "1.000"
+      ],
+      "stressed_taker_fee_pUSD": null,
+      "after_fee_one_tick_profit_floor_pUSD": null,
+      "passes_strict_metadata_gate": false,
+      "passes_fee_and_one_tick_gate": false
+    },
+    {
+      "event_id": "838710",
+      "event_slug": "august-inflation-us-annual-1786474662954",
+      "event_title": "August Inflation US - Annual",
+      "package": "same-market YES plus NO binary straddle",
+      "guaranteed_payout_floor_pUSD_per_share": "1",
+      "quantity_shares_each_leg": "5",
+      "legs": [
+        {
+          "market_id": "3539680",
+          "condition_id": "0xa336827fbf10820b79cc4c84262eb1e89ddc5266f308638bd93ffe648e318aa0",
+          "question": "Will annual inflation be 4.0% or more in August?",
+          "label": "\u22654.0%",
+          "outcome": "Yes",
+          "token_id": "94201422916680318418926751295604299309587068677187651549242584144623775224039",
+          "price_pUSD_per_share": "0.009",
+          "price_source": "direct_YES_bestAsk",
+          "tick_size_pUSD": "0.001",
+          "minimum_order_shares": "5"
+        },
+        {
+          "market_id": "3539680",
+          "condition_id": "0xa336827fbf10820b79cc4c84262eb1e89ddc5266f308638bd93ffe648e318aa0",
+          "question": "Will annual inflation be 4.0% or more in August?",
+          "outcome": "No",
+          "token_id": "101101003352904740290800935780381689312220338146159125641234988361688449841988",
+          "price_pUSD_per_share": "0.999",
+          "price_source": "one_minus_direct_YES_bestBid",
+          "tick_size_pUSD": "0.001",
+          "minimum_order_shares": "5"
+        }
+      ],
+      "metadata_cost_pUSD_per_share": "1.008",
+      "metadata_profit_floor_pUSD": "-0.040",
+      "one_adverse_tick_per_leg_prices_pUSD": [
+        "0.010",
+        "1.000"
+      ],
+      "stressed_taker_fee_pUSD": null,
+      "after_fee_one_tick_profit_floor_pUSD": null,
+      "passes_strict_metadata_gate": false,
+      "passes_fee_and_one_tick_gate": false
+    },
+    {
+      "event_id": "838710",
+      "event_slug": "august-inflation-us-annual-1786474662954",
+      "event_title": "August Inflation US - Annual",
+      "cardinality": 2,
+      "frontier_basis": "lowest_metadata_cost",
+      "guaranteed_payout_floor_pUSD_per_share": "1",
+      "quantity_shares_each_leg": "5",
+      "legs": [
+        {
+          "market_id": "3539674",
+          "condition_id": "0x7155f240d44c8ab4f1796cb6decf0dd567e19de9c0079aed0726792ddeb29ab2",
+          "question": "Will annual inflation be 3.4% in August?",
+          "outcome": "No",
+          "token_id": "6461243017402905481530151872266690321999974436388010179965720256928124461181",
+          "price_pUSD_per_share": "0.56",
+          "price_source": "one_minus_direct_YES_bestBid",
+          "tick_size_pUSD": "0.01",
+          "minimum_order_shares": "5"
+        },
+        {
+          "market_id": "3539673",
+          "condition_id": "0x8153bb8767d01033f362f7b7b89bb3e12c3007442bf34e3e3bfbcc5b4fee9f16",
+          "question": "Will annual inflation be 3.3% in August?",
+          "outcome": "No",
+          "token_id": "22135049264937995879283456922850521759398563843606909206401751008552533261725",
+          "price_pUSD_per_share": "0.71",
+          "price_source": "one_minus_direct_YES_bestBid",
+          "tick_size_pUSD": "0.01",
+          "minimum_order_shares": "5"
+        }
+      ],
+      "metadata_cost_pUSD_per_share": "1.27",
+      "metadata_profit_floor_pUSD": "-1.35",
+      "one_adverse_tick_per_leg_prices_pUSD": [
+        "0.57",
+        "0.72"
+      ],
+      "stressed_taker_fee_pUSD": "0.11168",
+      "after_fee_one_tick_profit_floor_pUSD": "-1.56168",
+      "passes_strict_metadata_gate": false,
+      "passes_fee_and_one_tick_gate": false
+    },
+    {
+      "event_id": "838710",
+      "event_slug": "august-inflation-us-annual-1786474662954",
+      "event_title": "August Inflation US - Annual",
+      "cardinality": 3,
+      "frontier_basis": "lowest_metadata_cost",
+      "guaranteed_payout_floor_pUSD_per_share": "2",
+      "quantity_shares_each_leg": "5",
+      "legs": [
+        {
+          "market_id": "3539674",
+          "condition_id": "0x7155f240d44c8ab4f1796cb6decf0dd567e19de9c0079aed0726792ddeb29ab2",
+          "question": "Will annual inflation be 3.4% in August?",
+          "outcome": "No",
+          "token_id": "6461243017402905481530151872266690321999974436388010179965720256928124461181",
+          "price_pUSD_per_share": "0.56",
+          "price_source": "one_minus_direct_YES_bestBid",
+          "tick_size_pUSD": "0.01",
+          "minimum_order_shares": "5"
+        },
+        {
+          "market_id": "3539673",
+          "condition_id": "0x8153bb8767d01033f362f7b7b89bb3e12c3007442bf34e3e3bfbcc5b4fee9f16",
+          "question": "Will annual inflation be 3.3% in August?",
+          "outcome": "No",
+          "token_id": "22135049264937995879283456922850521759398563843606909206401751008552533261725",
+          "price_pUSD_per_share": "0.71",
+          "price_source": "one_minus_direct_YES_bestBid",
+          "tick_size_pUSD": "0.01",
+          "minimum_order_shares": "5"
+        },
+        {
+          "market_id": "3539675",
+          "condition_id": "0x91690c110a71a068d5033ef3114e941d0141415b4e797e22c0a136283e07728d",
+          "question": "Will annual inflation be 3.5% in August?",
+          "outcome": "No",
+          "token_id": "51704872889123121135145359520550981527960291966171368432330134976559236787442",
+          "price_pUSD_per_share": "0.85",
+          "price_source": "one_minus_direct_YES_bestBid",
+          "tick_size_pUSD": "0.01",
+          "minimum_order_shares": "5"
+        }
+      ],
+      "metadata_cost_pUSD_per_share": "2.12",
+      "metadata_profit_floor_pUSD": "-0.60",
+      "one_adverse_tick_per_leg_prices_pUSD": [
+        "0.57",
+        "0.72",
+        "0.86"
+      ],
+      "stressed_taker_fee_pUSD": "0.14178",
+      "after_fee_one_tick_profit_floor_pUSD": "-0.89178",
+      "passes_strict_metadata_gate": false,
+      "passes_fee_and_one_tick_gate": false
+    },
+    {
+      "event_id": "838710",
+      "event_slug": "august-inflation-us-annual-1786474662954",
+      "event_title": "August Inflation US - Annual",
+      "cardinality": 4,
+      "frontier_basis": "lowest_metadata_cost",
+      "guaranteed_payout_floor_pUSD_per_share": "3",
+      "quantity_shares_each_leg": "5",
+      "legs": [
+        {
+          "market_id": "3539674",
+          "condition_id": "0x7155f240d44c8ab4f1796cb6decf0dd567e19de9c0079aed0726792ddeb29ab2",
+          "question": "Will annual inflation be 3.4% in August?",
+          "outcome": "No",
+          "token_id": "6461243017402905481530151872266690321999974436388010179965720256928124461181",
+          "price_pUSD_per_share": "0.56",
+          "price_source": "one_minus_direct_YES_bestBid",
+          "tick_size_pUSD": "0.01",
+          "minimum_order_shares": "5"
+        },
+        {
+          "market_id": "3539673",
+          "condition_id": "0x8153bb8767d01033f362f7b7b89bb3e12c3007442bf34e3e3bfbcc5b4fee9f16",
+          "question": "Will annual inflation be 3.3% in August?",
+          "outcome": "No",
+          "token_id": "22135049264937995879283456922850521759398563843606909206401751008552533261725",
+          "price_pUSD_per_share": "0.71",
+          "price_source": "one_minus_direct_YES_bestBid",
+          "tick_size_pUSD": "0.01",
+          "minimum_order_shares": "5"
+        },
+        {
+          "market_id": "3539675",
+          "condition_id": "0x91690c110a71a068d5033ef3114e941d0141415b4e797e22c0a136283e07728d",
+          "question": "Will annual inflation be 3.5% in August?",
+          "outcome": "No",
+          "token_id": "51704872889123121135145359520550981527960291966171368432330134976559236787442",
+          "price_pUSD_per_share": "0.85",
+          "price_source": "one_minus_direct_YES_bestBid",
+          "tick_size_pUSD": "0.01",
+          "minimum_order_shares": "5"
+        },
+        {
+          "market_id": "3539672",
+          "condition_id": "0x09e0f4ead19cc9f8ccfcbf972a13751379c84f498168bbf1be38542fc8e547ca",
+          "question": "Will annual inflation be 3.2% in August?",
+          "outcome": "No",
+          "token_id": "42223636595710464621263397314670891087326227025612797770951296754146529109222",
+          "price_pUSD_per_share": "0.936",
+          "price_source": "one_minus_direct_YES_bestBid",
+          "tick_size_pUSD": "0.001",
+          "minimum_order_shares": "5"
+        }
+      ],
+      "metadata_cost_pUSD_per_share": "3.056",
+      "metadata_profit_floor_pUSD": "-0.280",
+      "one_adverse_tick_per_leg_prices_pUSD": [
+        "0.57",
+        "0.72",
+        "0.86",
+        "0.937"
+      ],
+      "stressed_taker_fee_pUSD": "0.15654",
+      "after_fee_one_tick_profit_floor_pUSD": "-0.59154",
+      "passes_strict_metadata_gate": false,
+      "passes_fee_and_one_tick_gate": false
+    },
+    {
+      "event_id": "838710",
+      "event_slug": "august-inflation-us-annual-1786474662954",
+      "event_title": "August Inflation US - Annual",
+      "cardinality": 5,
+      "frontier_basis": "lowest_metadata_cost",
+      "guaranteed_payout_floor_pUSD_per_share": "4",
+      "quantity_shares_each_leg": "5",
+      "legs": [
+        {
+          "market_id": "3539674",
+          "condition_id": "0x7155f240d44c8ab4f1796cb6decf0dd567e19de9c0079aed0726792ddeb29ab2",
+          "question": "Will annual inflation be 3.4% in August?",
+          "outcome": "No",
+          "token_id": "6461243017402905481530151872266690321999974436388010179965720256928124461181",
+          "price_pUSD_per_share": "0.56",
+          "price_source": "one_minus_direct_YES_bestBid",
+          "tick_size_pUSD": "0.01",
+          "minimum_order_shares": "5"
+        },
+        {
+          "market_id": "3539673",
+          "condition_id": "0x8153bb8767d01033f362f7b7b89bb3e12c3007442bf34e3e3bfbcc5b4fee9f16",
+          "question": "Will annual inflation be 3.3% in August?",
+          "outcome": "No",
+          "token_id": "22135049264937995879283456922850521759398563843606909206401751008552533261725",
+          "price_pUSD_per_share": "0.71",
+          "price_source": "one_minus_direct_YES_bestBid",
+          "tick_size_pUSD": "0.01",
+          "minimum_order_shares": "5"
+        },
+        {
+          "market_id": "3539675",
+          "condition_id": "0x91690c110a71a068d5033ef3114e941d0141415b4e797e22c0a136283e07728d",
+          "question": "Will annual inflation be 3.5% in August?",
+          "outcome": "No",
+          "token_id": "51704872889123121135145359520550981527960291966171368432330134976559236787442",
+          "price_pUSD_per_share": "0.85",
+          "price_source": "one_minus_direct_YES_bestBid",
+          "tick_size_pUSD": "0.01",
+          "minimum_order_shares": "5"
+        },
+        {
+          "market_id": "3539672",
+          "condition_id": "0x09e0f4ead19cc9f8ccfcbf972a13751379c84f498168bbf1be38542fc8e547ca",
+          "question": "Will annual inflation be 3.2% in August?",
+          "outcome": "No",
+          "token_id": "42223636595710464621263397314670891087326227025612797770951296754146529109222",
+          "price_pUSD_per_share": "0.936",
+          "price_source": "one_minus_direct_YES_bestBid",
+          "tick_size_pUSD": "0.001",
+          "minimum_order_shares": "5"
+        },
+        {
+          "market_id": "3539676",
+          "condition_id": "0x364cadd03f8fe6237fdc377afb93df97c4d766b063e39c7897b458047812a964",
+          "question": "Will annual inflation be 3.6% in August?",
+          "outcome": "No",
+          "token_id": "10705093910447884959640953270477374710094427405855579526255155356201687979693",
+          "price_pUSD_per_share": "0.99",
+          "price_source": "one_minus_direct_YES_bestBid",
+          "tick_size_pUSD": "0.001",
+          "minimum_order_shares": "5"
+        }
+      ],
+      "metadata_cost_pUSD_per_share": "4.046",
+      "metadata_profit_floor_pUSD": "-0.230",
+      "one_adverse_tick_per_leg_prices_pUSD": [
+        "0.57",
+        "0.72",
+        "0.86",
+        "0.937",
+        "0.991"
+      ],
+      "stressed_taker_fee_pUSD": "0.15877",
+      "after_fee_one_tick_profit_floor_pUSD": "-0.54877",
+      "passes_strict_metadata_gate": false,
+      "passes_fee_and_one_tick_gate": false
+    },
+    {
+      "event_id": "838710",
+      "event_slug": "august-inflation-us-annual-1786474662954",
+      "event_title": "August Inflation US - Annual",
+      "cardinality": 6,
+      "frontier_basis": "lowest_metadata_cost",
+      "guaranteed_payout_floor_pUSD_per_share": "5",
+      "quantity_shares_each_leg": "5",
+      "legs": [
+        {
+          "market_id": "3539674",
+          "condition_id": "0x7155f240d44c8ab4f1796cb6decf0dd567e19de9c0079aed0726792ddeb29ab2",
+          "question": "Will annual inflation be 3.4% in August?",
+          "outcome": "No",
+          "token_id": "6461243017402905481530151872266690321999974436388010179965720256928124461181",
+          "price_pUSD_per_share": "0.56",
+          "price_source": "one_minus_direct_YES_bestBid",
+          "tick_size_pUSD": "0.01",
+          "minimum_order_shares": "5"
+        },
+        {
+          "market_id": "3539673",
+          "condition_id": "0x8153bb8767d01033f362f7b7b89bb3e12c3007442bf34e3e3bfbcc5b4fee9f16",
+          "question": "Will annual inflation be 3.3% in August?",
+          "outcome": "No",
+          "token_id": "22135049264937995879283456922850521759398563843606909206401751008552533261725",
+          "price_pUSD_per_share": "0.71",
+          "price_source": "one_minus_direct_YES_bestBid",
+          "tick_size_pUSD": "0.01",
+          "minimum_order_shares": "5"
+        },
+        {
+          "market_id": "3539675",
+          "condition_id": "0x91690c110a71a068d5033ef3114e941d0141415b4e797e22c0a136283e07728d",
+          "question": "Will annual inflation be 3.5% in August?",
+          "outcome": "No",
+          "token_id": "51704872889123121135145359520550981527960291966171368432330134976559236787442",
+          "price_pUSD_per_share": "0.85",
+          "price_source": "one_minus_direct_YES_bestBid",
+          "tick_size_pUSD": "0.01",
+          "minimum_order_shares": "5"
+        },
+        {
+          "market_id": "3539672",
+          "condition_id": "0x09e0f4ead19cc9f8ccfcbf972a13751379c84f498168bbf1be38542fc8e547ca",
+          "question": "Will annual inflation be 3.2% in August?",
+          "outcome": "No",
+          "token_id": "42223636595710464621263397314670891087326227025612797770951296754146529109222",
+          "price_pUSD_per_share": "0.936",
+          "price_source": "one_minus_direct_YES_bestBid",
+          "tick_size_pUSD": "0.001",
+          "minimum_order_shares": "5"
+        },
+        {
+          "market_id": "3539676",
+          "condition_id": "0x364cadd03f8fe6237fdc377afb93df97c4d766b063e39c7897b458047812a964",
+          "question": "Will annual inflation be 3.6% in August?",
+          "outcome": "No",
+          "token_id": "10705093910447884959640953270477374710094427405855579526255155356201687979693",
+          "price_pUSD_per_share": "0.99",
+          "price_source": "one_minus_direct_YES_bestBid",
+          "tick_size_pUSD": "0.001",
+          "minimum_order_shares": "5"
+        },
+        {
+          "market_id": "3539671",
+          "condition_id": "0xf5ce15bcea18506b7bcac6a95f1ed2ca831e505bf9520781f48ee70ec4c6dfb9",
+          "question": "Will annual inflation be 3.1% in August?",
+          "outcome": "No",
+          "token_id": "61456022134205691583517951596033194948331779343778214321720285056173375438629",
+          "price_pUSD_per_share": "0.995",
+          "price_source": "one_minus_direct_YES_bestBid",
+          "tick_size_pUSD": "0.001",
+          "minimum_order_shares": "5"
+        }
+      ],
+      "metadata_cost_pUSD_per_share": "5.041",
+      "metadata_profit_floor_pUSD": "-0.205",
+      "one_adverse_tick_per_leg_prices_pUSD": [
+        "0.57",
+        "0.72",
+        "0.86",
+        "0.937",
+        "0.991",
+        "0.996"
+      ],
+      "stressed_taker_fee_pUSD": "0.15977",
+      "after_fee_one_tick_profit_floor_pUSD": "-0.52977",
+      "passes_strict_metadata_gate": false,
+      "passes_fee_and_one_tick_gate": false
+    },
+    {
+      "event_id": "838710",
+      "event_slug": "august-inflation-us-annual-1786474662954",
+      "event_title": "August Inflation US - Annual",
+      "cardinality": 7,
+      "frontier_basis": "lowest_metadata_cost",
+      "guaranteed_payout_floor_pUSD_per_share": "6",
+      "quantity_shares_each_leg": "5",
+      "legs": [
+        {
+          "market_id": "3539674",
+          "condition_id": "0x7155f240d44c8ab4f1796cb6decf0dd567e19de9c0079aed0726792ddeb29ab2",
+          "question": "Will annual inflation be 3.4% in August?",
+          "outcome": "No",
+          "token_id": "6461243017402905481530151872266690321999974436388010179965720256928124461181",
+          "price_pUSD_per_share": "0.56",
+          "price_source": "one_minus_direct_YES_bestBid",
+          "tick_size_pUSD": "0.01",
+          "minimum_order_shares": "5"
+        },
+        {
+          "market_id": "3539673",
+          "condition_id": "0x8153bb8767d01033f362f7b7b89bb3e12c3007442bf34e3e3bfbcc5b4fee9f16",
+          "question": "Will annual inflation be 3.3% in August?",
+          "outcome": "No",
+          "token_id": "22135049264937995879283456922850521759398563843606909206401751008552533261725",
+          "price_pUSD_per_share": "0.71",
+          "price_source": "one_minus_direct_YES_bestBid",
+          "tick_size_pUSD": "0.01",
+          "minimum_order_shares": "5"
+        },
+        {
+          "market_id": "3539675",
+          "condition_id": "0x91690c110a71a068d5033ef3114e941d0141415b4e797e22c0a136283e07728d",
+          "question": "Will annual inflation be 3.5% in August?",
+          "outcome": "No",
+          "token_id": "51704872889123121135145359520550981527960291966171368432330134976559236787442",
+          "price_pUSD_per_share": "0.85",
+          "price_source": "one_minus_direct_YES_bestBid",
+          "tick_size_pUSD": "0.01",
+          "minimum_order_shares": "5"
+        },
+        {
+          "market_id": "3539672",
+          "condition_id": "0x09e0f4ead19cc9f8ccfcbf972a13751379c84f498168bbf1be38542fc8e547ca",
+          "question": "Will annual inflation be 3.2% in August?",
+          "outcome": "No",
+          "token_id": "42223636595710464621263397314670891087326227025612797770951296754146529109222",
+          "price_pUSD_per_share": "0.936",
+          "price_source": "one_minus_direct_YES_bestBid",
+          "tick_size_pUSD": "0.001",
+          "minimum_order_shares": "5"
+        },
+        {
+          "market_id": "3539676",
+          "condition_id": "0x364cadd03f8fe6237fdc377afb93df97c4d766b063e39c7897b458047812a964",
+          "question": "Will annual inflation be 3.6% in August?",
+          "outcome": "No",
+          "token_id": "10705093910447884959640953270477374710094427405855579526255155356201687979693",
+          "price_pUSD_per_share": "0.99",
+          "price_source": "one_minus_direct_YES_bestBid",
+          "tick_size_pUSD": "0.001",
+          "minimum_order_shares": "5"
+        },
+        {
+          "market_id": "3539671",
+          "condition_id": "0xf5ce15bcea18506b7bcac6a95f1ed2ca831e505bf9520781f48ee70ec4c6dfb9",
+          "question": "Will annual inflation be 3.1% in August?",
+          "outcome": "No",
+          "token_id": "61456022134205691583517951596033194948331779343778214321720285056173375438629",
+          "price_pUSD_per_share": "0.995",
+          "price_source": "one_minus_direct_YES_bestBid",
+          "tick_size_pUSD": "0.001",
+          "minimum_order_shares": "5"
+        },
+        {
+          "market_id": "3539670",
+          "condition_id": "0xb10a5fa939d4a22ef6888d90092239fb1911a94610219b44d605db499f48db61",
+          "question": "Will annual inflation be 3.0% in August?",
+          "outcome": "No",
+          "token_id": "83362123839633153588530962098759536698607220897032984032214066698235095955065",
+          "price_pUSD_per_share": "0.996",
+          "price_source": "one_minus_direct_YES_bestBid",
+          "tick_size_pUSD": "0.001",
+          "minimum_order_shares": "5"
+        }
+      ],
+      "metadata_cost_pUSD_per_share": "6.037",
+      "metadata_profit_floor_pUSD": "-0.185",
+      "one_adverse_tick_per_leg_prices_pUSD": [
+        "0.57",
+        "0.72",
+        "0.86",
+        "0.937",
+        "0.991",
+        "0.996",
+        "0.997"
+      ],
+      "stressed_taker_fee_pUSD": "0.16052",
+      "after_fee_one_tick_profit_floor_pUSD": "-0.51552",
+      "passes_strict_metadata_gate": false,
+      "passes_fee_and_one_tick_gate": false
+    },
+    {
+      "event_id": "838710",
+      "event_slug": "august-inflation-us-annual-1786474662954",
+      "event_title": "August Inflation US - Annual",
+      "cardinality": 8,
+      "frontier_basis": "lowest_metadata_cost",
+      "guaranteed_payout_floor_pUSD_per_share": "7",
+      "quantity_shares_each_leg": "5",
+      "legs": [
+        {
+          "market_id": "3539674",
+          "condition_id": "0x7155f240d44c8ab4f1796cb6decf0dd567e19de9c0079aed0726792ddeb29ab2",
+          "question": "Will annual inflation be 3.4% in August?",
+          "outcome": "No",
+          "token_id": "6461243017402905481530151872266690321999974436388010179965720256928124461181",
+          "price_pUSD_per_share": "0.56",
+          "price_source": "one_minus_direct_YES_bestBid",
+          "tick_size_pUSD": "0.01",
+          "minimum_order_shares": "5"
+        },
+        {
+          "market_id": "3539673",
+          "condition_id": "0x8153bb8767d01033f362f7b7b89bb3e12c3007442bf34e3e3bfbcc5b4fee9f16",
+          "question": "Will annual inflation be 3.3% in August?",
+          "outcome": "No",
+          "token_id": "22135049264937995879283456922850521759398563843606909206401751008552533261725",
+          "price_pUSD_per_share": "0.71",
+          "price_source": "one_minus_direct_YES_bestBid",
+          "tick_size_pUSD": "0.01",
+          "minimum_order_shares": "5"
+        },
+        {
+          "market_id": "3539675",
+          "condition_id": "0x91690c110a71a068d5033ef3114e941d0141415b4e797e22c0a136283e07728d",
+          "question": "Will annual inflation be 3.5% in August?",
+          "outcome": "No",
+          "token_id": "51704872889123121135145359520550981527960291966171368432330134976559236787442",
+          "price_pUSD_per_share": "0.85",
+          "price_source": "one_minus_direct_YES_bestBid",
+          "tick_size_pUSD": "0.01",
+          "minimum_order_shares": "5"
+        },
+        {
+          "market_id": "3539672",
+          "condition_id": "0x09e0f4ead19cc9f8ccfcbf972a13751379c84f498168bbf1be38542fc8e547ca",
+          "question": "Will annual inflation be 3.2% in August?",
+          "outcome": "No",
+          "token_id": "42223636595710464621263397314670891087326227025612797770951296754146529109222",
+          "price_pUSD_per_share": "0.936",
+          "price_source": "one_minus_direct_YES_bestBid",
+          "tick_size_pUSD": "0.001",
+          "minimum_order_shares": "5"
+        },
+        {
+          "market_id": "3539676",
+          "condition_id": "0x364cadd03f8fe6237fdc377afb93df97c4d766b063e39c7897b458047812a964",
+          "question": "Will annual inflation be 3.6% in August?",
+          "outcome": "No",
+          "token_id": "10705093910447884959640953270477374710094427405855579526255155356201687979693",
+          "price_pUSD_per_share": "0.99",
+          "price_source": "one_minus_direct_YES_bestBid",
+          "tick_size_pUSD": "0.001",
+          "minimum_order_shares": "5"
+        },
+        {
+          "market_id": "3539671",
+          "condition_id": "0xf5ce15bcea18506b7bcac6a95f1ed2ca831e505bf9520781f48ee70ec4c6dfb9",
+          "question": "Will annual inflation be 3.1% in August?",
+          "outcome": "No",
+          "token_id": "61456022134205691583517951596033194948331779343778214321720285056173375438629",
+          "price_pUSD_per_share": "0.995",
+          "price_source": "one_minus_direct_YES_bestBid",
+          "tick_size_pUSD": "0.001",
+          "minimum_order_shares": "5"
+        },
+        {
+          "market_id": "3539670",
+          "condition_id": "0xb10a5fa939d4a22ef6888d90092239fb1911a94610219b44d605db499f48db61",
+          "question": "Will annual inflation be 3.0% in August?",
+          "outcome": "No",
+          "token_id": "83362123839633153588530962098759536698607220897032984032214066698235095955065",
+          "price_pUSD_per_share": "0.996",
+          "price_source": "one_minus_direct_YES_bestBid",
+          "tick_size_pUSD": "0.001",
+          "minimum_order_shares": "5"
+        },
+        {
+          "market_id": "3539677",
+          "condition_id": "0x211958971f5390d9e0c7593a81ff512fc36c674f0b4aae1186a9e185ce95831c",
+          "question": "Will annual inflation be 3.7% in August?",
+          "outcome": "No",
+          "token_id": "95094329359091163515074549670690360523505151140992432751372922643330313224402",
+          "price_pUSD_per_share": "0.997",
+          "price_source": "one_minus_direct_YES_bestBid",
+          "tick_size_pUSD": "0.001",
+          "minimum_order_shares": "5"
+        }
+      ],
+      "metadata_cost_pUSD_per_share": "7.034",
+      "metadata_profit_floor_pUSD": "-0.170",
+      "one_adverse_tick_per_leg_prices_pUSD": [
+        "0.57",
+        "0.72",
+        "0.86",
+        "0.937",
+        "0.991",
+        "0.996",
+        "0.997",
+        "0.998"
+      ],
+      "stressed_taker_fee_pUSD": "0.16102",
+      "after_fee_one_tick_profit_floor_pUSD": "-0.50602",
+      "passes_strict_metadata_gate": false,
+      "passes_fee_and_one_tick_gate": false
+    },
+    {
+      "event_id": "838710",
+      "event_slug": "august-inflation-us-annual-1786474662954",
+      "event_title": "August Inflation US - Annual",
+      "cardinality": 9,
+      "frontier_basis": "lowest_metadata_cost",
+      "guaranteed_payout_floor_pUSD_per_share": "8",
+      "quantity_shares_each_leg": "5",
+      "legs": [
+        {
+          "market_id": "3539674",
+          "condition_id": "0x7155f240d44c8ab4f1796cb6decf0dd567e19de9c0079aed0726792ddeb29ab2",
+          "question": "Will annual inflation be 3.4% in August?",
+          "outcome": "No",
+          "token_id": "6461243017402905481530151872266690321999974436388010179965720256928124461181",
+          "price_pUSD_per_share": "0.56",
+          "price_source": "one_minus_direct_YES_bestBid",
+          "tick_size_pUSD": "0.01",
+          "minimum_order_shares": "5"
+        },
+        {
+          "market_id": "3539673",
+          "condition_id": "0x8153bb8767d01033f362f7b7b89bb3e12c3007442bf34e3e3bfbcc5b4fee9f16",
+          "question": "Will annual inflation be 3.3% in August?",
+          "outcome": "No",
+          "token_id": "22135049264937995879283456922850521759398563843606909206401751008552533261725",
+          "price_pUSD_per_share": "0.71",
+          "price_source": "one_minus_direct_YES_bestBid",
+          "tick_size_pUSD": "0.01",
+          "minimum_order_shares": "5"
+        },
+        {
+          "market_id": "3539675",
+          "condition_id": "0x91690c110a71a068d5033ef3114e941d0141415b4e797e22c0a136283e07728d",
+          "question": "Will annual inflation be 3.5% in August?",
+          "outcome": "No",
+          "token_id": "51704872889123121135145359520550981527960291966171368432330134976559236787442",
+          "price_pUSD_per_share": "0.85",
+          "price_source": "one_minus_direct_YES_bestBid",
+          "tick_size_pUSD": "0.01",
+          "minimum_order_shares": "5"
+        },
+        {
+          "market_id": "3539672",
+          "condition_id": "0x09e0f4ead19cc9f8ccfcbf972a13751379c84f498168bbf1be38542fc8e547ca",
+          "question": "Will annual inflation be 3.2% in August?",
+          "outcome": "No",
+          "token_id": "42223636595710464621263397314670891087326227025612797770951296754146529109222",
+          "price_pUSD_per_share": "0.936",
+          "price_source": "one_minus_direct_YES_bestBid",
+          "tick_size_pUSD": "0.001",
+          "minimum_order_shares": "5"
+        },
+        {
+          "market_id": "3539676",
+          "condition_id": "0x364cadd03f8fe6237fdc377afb93df97c4d766b063e39c7897b458047812a964",
+          "question": "Will annual inflation be 3.6% in August?",
+          "outcome": "No",
+          "token_id": "10705093910447884959640953270477374710094427405855579526255155356201687979693",
+          "price_pUSD_per_share": "0.99",
+          "price_source": "one_minus_direct_YES_bestBid",
+          "tick_size_pUSD": "0.001",
+          "minimum_order_shares": "5"
+        },
+        {
+          "market_id": "3539671",
+          "condition_id": "0xf5ce15bcea18506b7bcac6a95f1ed2ca831e505bf9520781f48ee70ec4c6dfb9",
+          "question": "Will annual inflation be 3.1% in August?",
+          "outcome": "No",
+          "token_id": "61456022134205691583517951596033194948331779343778214321720285056173375438629",
+          "price_pUSD_per_share": "0.995",
+          "price_source": "one_minus_direct_YES_bestBid",
+          "tick_size_pUSD": "0.001",
+          "minimum_order_shares": "5"
+        },
+        {
+          "market_id": "3539670",
+          "condition_id": "0xb10a5fa939d4a22ef6888d90092239fb1911a94610219b44d605db499f48db61",
+          "question": "Will annual inflation be 3.0% in August?",
+          "outcome": "No",
+          "token_id": "83362123839633153588530962098759536698607220897032984032214066698235095955065",
+          "price_pUSD_per_share": "0.996",
+          "price_source": "one_minus_direct_YES_bestBid",
+          "tick_size_pUSD": "0.001",
+          "minimum_order_shares": "5"
+        },
+        {
+          "market_id": "3539677",
+          "condition_id": "0x211958971f5390d9e0c7593a81ff512fc36c674f0b4aae1186a9e185ce95831c",
+          "question": "Will annual inflation be 3.7% in August?",
+          "outcome": "No",
+          "token_id": "95094329359091163515074549670690360523505151140992432751372922643330313224402",
+          "price_pUSD_per_share": "0.997",
+          "price_source": "one_minus_direct_YES_bestBid",
+          "tick_size_pUSD": "0.001",
+          "minimum_order_shares": "5"
+        },
+        {
+          "market_id": "3539669",
+          "condition_id": "0xe484c6415870fe28012b423cb286f9700ef0f95dc7cf95ae0144d920af3a4ed2",
+          "question": "Will annual inflation be 2.9% or less in August?",
+          "outcome": "No",
+          "token_id": "15012115490194995028015085922142792837035990317698221008533835941176202988041",
+          "price_pUSD_per_share": "0.998",
+          "price_source": "one_minus_direct_YES_bestBid",
+          "tick_size_pUSD": "0.001",
+          "minimum_order_shares": "5"
+        }
+      ],
+      "metadata_cost_pUSD_per_share": "8.032",
+      "metadata_profit_floor_pUSD": "-0.160",
+      "one_adverse_tick_per_leg_prices_pUSD": [
+        "0.57",
+        "0.72",
+        "0.86",
+        "0.937",
+        "0.991",
+        "0.996",
+        "0.997",
+        "0.998",
+        "0.999"
+      ],
+      "stressed_taker_fee_pUSD": "0.16127",
+      "after_fee_one_tick_profit_floor_pUSD": "-0.50127",
+      "passes_strict_metadata_gate": false,
+      "passes_fee_and_one_tick_gate": false
+    },
+    {
+      "event_id": "838710",
+      "event_slug": "august-inflation-us-annual-1786474662954",
+      "event_title": "August Inflation US - Annual",
+      "cardinality": 10,
+      "frontier_basis": "lowest_metadata_cost",
+      "guaranteed_payout_floor_pUSD_per_share": "9",
+      "quantity_shares_each_leg": "5",
+      "legs": [
+        {
+          "market_id": "3539674",
+          "condition_id": "0x7155f240d44c8ab4f1796cb6decf0dd567e19de9c0079aed0726792ddeb29ab2",
+          "question": "Will annual inflation be 3.4% in August?",
+          "outcome": "No",
+          "token_id": "6461243017402905481530151872266690321999974436388010179965720256928124461181",
+          "price_pUSD_per_share": "0.56",
+          "price_source": "one_minus_direct_YES_bestBid",
+          "tick_size_pUSD": "0.01",
+          "minimum_order_shares": "5"
+        },
+        {
+          "market_id": "3539673",
+          "condition_id": "0x8153bb8767d01033f362f7b7b89bb3e12c3007442bf34e3e3bfbcc5b4fee9f16",
+          "question": "Will annual inflation be 3.3% in August?",
+          "outcome": "No",
+          "token_id": "22135049264937995879283456922850521759398563843606909206401751008552533261725",
+          "price_pUSD_per_share": "0.71",
+          "price_source": "one_minus_direct_YES_bestBid",
+          "tick_size_pUSD": "0.01",
+          "minimum_order_shares": "5"
+        },
+        {
+          "market_id": "3539675",
+          "condition_id": "0x91690c110a71a068d5033ef3114e941d0141415b4e797e22c0a136283e07728d",
+          "question": "Will annual inflation be 3.5% in August?",
+          "outcome": "No",
+          "token_id": "51704872889123121135145359520550981527960291966171368432330134976559236787442",
+          "price_pUSD_per_share": "0.85",
+          "price_source": "one_minus_direct_YES_bestBid",
+          "tick_size_pUSD": "0.01",
+          "minimum_order_shares": "5"
+        },
+        {
+          "market_id": "3539672",
+          "condition_id": "0x09e0f4ead19cc9f8ccfcbf972a13751379c84f498168bbf1be38542fc8e547ca",
+          "question": "Will annual inflation be 3.2% in August?",
+          "outcome": "No",
+          "token_id": "42223636595710464621263397314670891087326227025612797770951296754146529109222",
+          "price_pUSD_per_share": "0.936",
+          "price_source": "one_minus_direct_YES_bestBid",
+          "tick_size_pUSD": "0.001",
+          "minimum_order_shares": "5"
+        },
+        {
+          "market_id": "3539676",
+          "condition_id": "0x364cadd03f8fe6237fdc377afb93df97c4d766b063e39c7897b458047812a964",
+          "question": "Will annual inflation be 3.6% in August?",
+          "outcome": "No",
+          "token_id": "10705093910447884959640953270477374710094427405855579526255155356201687979693",
+          "price_pUSD_per_share": "0.99",
+          "price_source": "one_minus_direct_YES_bestBid",
+          "tick_size_pUSD": "0.001",
+          "minimum_order_shares": "5"
+        },
+        {
+          "market_id": "3539671",
+          "condition_id": "0xf5ce15bcea18506b7bcac6a95f1ed2ca831e505bf9520781f48ee70ec4c6dfb9",
+          "question": "Will annual inflation be 3.1% in August?",
+          "outcome": "No",
+          "token_id": "61456022134205691583517951596033194948331779343778214321720285056173375438629",
+          "price_pUSD_per_share": "0.995",
+          "price_source": "one_minus_direct_YES_bestBid",
+          "tick_size_pUSD": "0.001",
+          "minimum_order_shares": "5"
+        },
+        {
+          "market_id": "3539670",
+          "condition_id": "0xb10a5fa939d4a22ef6888d90092239fb1911a94610219b44d605db499f48db61",
+          "question": "Will annual inflation be 3.0% in August?",
+          "outcome": "No",
+          "token_id": "83362123839633153588530962098759536698607220897032984032214066698235095955065",
+          "price_pUSD_per_share": "0.996",
+          "price_source": "one_minus_direct_YES_bestBid",
+          "tick_size_pUSD": "0.001",
+          "minimum_order_shares": "5"
+        },
+        {
+          "market_id": "3539677",
+          "condition_id": "0x211958971f5390d9e0c7593a81ff512fc36c674f0b4aae1186a9e185ce95831c",
+          "question": "Will annual inflation be 3.7% in August?",
+          "outcome": "No",
+          "token_id": "95094329359091163515074549670690360523505151140992432751372922643330313224402",
+          "price_pUSD_per_share": "0.997",
+          "price_source": "one_minus_direct_YES_bestBid",
+          "tick_size_pUSD": "0.001",
+          "minimum_order_shares": "5"
+        },
+        {
+          "market_id": "3539669",
+          "condition_id": "0xe484c6415870fe28012b423cb286f9700ef0f95dc7cf95ae0144d920af3a4ed2",
+          "question": "Will annual inflation be 2.9% or less in August?",
+          "outcome": "No",
+          "token_id": "15012115490194995028015085922142792837035990317698221008533835941176202988041",
+          "price_pUSD_per_share": "0.998",
+          "price_source": "one_minus_direct_YES_bestBid",
+          "tick_size_pUSD": "0.001",
+          "minimum_order_shares": "5"
+        },
+        {
+          "market_id": "3539678",
+          "condition_id": "0x07fb6279fb00b8c320066b2618ed8cc657429bf5e78517f210aa823d5c51baf8",
+          "question": "Will annual inflation be 3.8% in August?",
+          "outcome": "No",
+          "token_id": "90950809128723700146137630865754692565807725647115761065121770768040449070715",
+          "price_pUSD_per_share": "0.998",
+          "price_source": "one_minus_direct_YES_bestBid",
+          "tick_size_pUSD": "0.001",
+          "minimum_order_shares": "5"
+        }
+      ],
+      "metadata_cost_pUSD_per_share": "9.030",
+      "metadata_profit_floor_pUSD": "-0.150",
+      "one_adverse_tick_per_leg_prices_pUSD": [
+        "0.57",
+        "0.72",
+        "0.86",
+        "0.937",
+        "0.991",
+        "0.996",
+        "0.997",
+        "0.998",
+        "0.999",
+        "0.999"
+      ],
+      "stressed_taker_fee_pUSD": "0.16152",
+      "after_fee_one_tick_profit_floor_pUSD": "-0.49652",
+      "passes_strict_metadata_gate": false,
+      "passes_fee_and_one_tick_gate": false
+    },
+    {
+      "event_id": "838710",
+      "event_slug": "august-inflation-us-annual-1786474662954",
+      "event_title": "August Inflation US - Annual",
+      "cardinality": 11,
+      "frontier_basis": "lowest_metadata_cost",
+      "guaranteed_payout_floor_pUSD_per_share": "10",
+      "quantity_shares_each_leg": "5",
+      "legs": [
+        {
+          "market_id": "3539674",
+          "condition_id": "0x7155f240d44c8ab4f1796cb6decf0dd567e19de9c0079aed0726792ddeb29ab2",
+          "question": "Will annual inflation be 3.4% in August?",
+          "outcome": "No",
+          "token_id": "6461243017402905481530151872266690321999974436388010179965720256928124461181",
+          "price_pUSD_per_share": "0.56",
+          "price_source": "one_minus_direct_YES_bestBid",
+          "tick_size_pUSD": "0.01",
+          "minimum_order_shares": "5"
+        },
+        {
+          "market_id": "3539673",
+          "condition_id": "0x8153bb8767d01033f362f7b7b89bb3e12c3007442bf34e3e3bfbcc5b4fee9f16",
+          "question": "Will annual inflation be 3.3% in August?",
+          "outcome": "No",
+          "token_id": "22135049264937995879283456922850521759398563843606909206401751008552533261725",
+          "price_pUSD_per_share": "0.71",
+          "price_source": "one_minus_direct_YES_bestBid",
+          "tick_size_pUSD": "0.01",
+          "minimum_order_shares": "5"
+        },
+        {
+          "market_id": "3539675",
+          "condition_id": "0x91690c110a71a068d5033ef3114e941d0141415b4e797e22c0a136283e07728d",
+          "question": "Will annual inflation be 3.5% in August?",
+          "outcome": "No",
+          "token_id": "51704872889123121135145359520550981527960291966171368432330134976559236787442",
+          "price_pUSD_per_share": "0.85",
+          "price_source": "one_minus_direct_YES_bestBid",
+          "tick_size_pUSD": "0.01",
+          "minimum_order_shares": "5"
+        },
+        {
+          "market_id": "3539672",
+          "condition_id": "0x09e0f4ead19cc9f8ccfcbf972a13751379c84f498168bbf1be38542fc8e547ca",
+          "question": "Will annual inflation be 3.2% in August?",
+          "outcome": "No",
+          "token_id": "42223636595710464621263397314670891087326227025612797770951296754146529109222",
+          "price_pUSD_per_share": "0.936",
+          "price_source": "one_minus_direct_YES_bestBid",
+          "tick_size_pUSD": "0.001",
+          "minimum_order_shares": "5"
+        },
+        {
+          "market_id": "3539676",
+          "condition_id": "0x364cadd03f8fe6237fdc377afb93df97c4d766b063e39c7897b458047812a964",
+          "question": "Will annual inflation be 3.6% in August?",
+          "outcome": "No",
+          "token_id": "10705093910447884959640953270477374710094427405855579526255155356201687979693",
+          "price_pUSD_per_share": "0.99",
+          "price_source": "one_minus_direct_YES_bestBid",
+          "tick_size_pUSD": "0.001",
+          "minimum_order_shares": "5"
+        },
+        {
+          "market_id": "3539671",
+          "condition_id": "0xf5ce15bcea18506b7bcac6a95f1ed2ca831e505bf9520781f48ee70ec4c6dfb9",
+          "question": "Will annual inflation be 3.1% in August?",
+          "outcome": "No",
+          "token_id": "61456022134205691583517951596033194948331779343778214321720285056173375438629",
+          "price_pUSD_per_share": "0.995",
+          "price_source": "one_minus_direct_YES_bestBid",
+          "tick_size_pUSD": "0.001",
+          "minimum_order_shares": "5"
+        },
+        {
+          "market_id": "3539670",
+          "condition_id": "0xb10a5fa939d4a22ef6888d90092239fb1911a94610219b44d605db499f48db61",
+          "question": "Will annual inflation be 3.0% in August?",
+          "outcome": "No",
+          "token_id": "83362123839633153588530962098759536698607220897032984032214066698235095955065",
+          "price_pUSD_per_share": "0.996",
+          "price_source": "one_minus_direct_YES_bestBid",
+          "tick_size_pUSD": "0.001",
+          "minimum_order_shares": "5"
+        },
+        {
+          "market_id": "3539677",
+          "condition_id": "0x211958971f5390d9e0c7593a81ff512fc36c674f0b4aae1186a9e185ce95831c",
+          "question": "Will annual inflation be 3.7% in August?",
+          "outcome": "No",
+          "token_id": "95094329359091163515074549670690360523505151140992432751372922643330313224402",
+          "price_pUSD_per_share": "0.997",
+          "price_source": "one_minus_direct_YES_bestBid",
+          "tick_size_pUSD": "0.001",
+          "minimum_order_shares": "5"
+        },
+        {
+          "market_id": "3539669",
+          "condition_id": "0xe484c6415870fe28012b423cb286f9700ef0f95dc7cf95ae0144d920af3a4ed2",
+          "question": "Will annual inflation be 2.9% or less in August?",
+          "outcome": "No",
+          "token_id": "15012115490194995028015085922142792837035990317698221008533835941176202988041",
+          "price_pUSD_per_share": "0.998",
+          "price_source": "one_minus_direct_YES_bestBid",
+          "tick_size_pUSD": "0.001",
+          "minimum_order_shares": "5"
+        },
+        {
+          "market_id": "3539678",
+          "condition_id": "0x07fb6279fb00b8c320066b2618ed8cc657429bf5e78517f210aa823d5c51baf8",
+          "question": "Will annual inflation be 3.8% in August?",
+          "outcome": "No",
+          "token_id": "90950809128723700146137630865754692565807725647115761065121770768040449070715",
+          "price_pUSD_per_share": "0.998",
+          "price_source": "one_minus_direct_YES_bestBid",
+          "tick_size_pUSD": "0.001",
+          "minimum_order_shares": "5"
+        },
+        {
+          "market_id": "3539679",
+          "condition_id": "0xaaa67f6b394b129ef10b0d28fb0e458b5a8ea40e09c32738bf6f77e035ebbdfd",
+          "question": "Will annual inflation be 3.9% in August?",
+          "outcome": "No",
+          "token_id": "74732802999363321962971204387275159764826242938907733375884349798497544293533",
+          "price_pUSD_per_share": "0.999",
+          "price_source": "one_minus_direct_YES_bestBid",
+          "tick_size_pUSD": "0.001",
+          "minimum_order_shares": "5"
+        }
+      ],
+      "metadata_cost_pUSD_per_share": "10.029",
+      "metadata_profit_floor_pUSD": "-0.145",
+      "one_adverse_tick_per_leg_prices_pUSD": [
+        "0.57",
+        "0.72",
+        "0.86",
+        "0.937",
+        "0.991",
+        "0.996",
+        "0.997",
+        "0.998",
+        "0.999",
+        "0.999",
+        "1.000"
+      ],
+      "stressed_taker_fee_pUSD": null,
+      "after_fee_one_tick_profit_floor_pUSD": null,
+      "passes_strict_metadata_gate": false,
+      "passes_fee_and_one_tick_gate": false
+    },
+    {
+      "event_id": "838710",
+      "event_slug": "august-inflation-us-annual-1786474662954",
+      "event_title": "August Inflation US - Annual",
+      "cardinality": 12,
+      "frontier_basis": "lowest_metadata_cost",
+      "guaranteed_payout_floor_pUSD_per_share": "11",
+      "quantity_shares_each_leg": "5",
+      "legs": [
+        {
+          "market_id": "3539674",
+          "condition_id": "0x7155f240d44c8ab4f1796cb6decf0dd567e19de9c0079aed0726792ddeb29ab2",
+          "question": "Will annual inflation be 3.4% in August?",
+          "outcome": "No",
+          "token_id": "6461243017402905481530151872266690321999974436388010179965720256928124461181",
+          "price_pUSD_per_share": "0.56",
+          "price_source": "one_minus_direct_YES_bestBid",
+          "tick_size_pUSD": "0.01",
+          "minimum_order_shares": "5"
+        },
+        {
+          "market_id": "3539673",
+          "condition_id": "0x8153bb8767d01033f362f7b7b89bb3e12c3007442bf34e3e3bfbcc5b4fee9f16",
+          "question": "Will annual inflation be 3.3% in August?",
+          "outcome": "No",
+          "token_id": "22135049264937995879283456922850521759398563843606909206401751008552533261725",
+          "price_pUSD_per_share": "0.71",
+          "price_source": "one_minus_direct_YES_bestBid",
+          "tick_size_pUSD": "0.01",
+          "minimum_order_shares": "5"
+        },
+        {
+          "market_id": "3539675",
+          "condition_id": "0x91690c110a71a068d5033ef3114e941d0141415b4e797e22c0a136283e07728d",
+          "question": "Will annual inflation be 3.5% in August?",
+          "outcome": "No",
+          "token_id": "51704872889123121135145359520550981527960291966171368432330134976559236787442",
+          "price_pUSD_per_share": "0.85",
+          "price_source": "one_minus_direct_YES_bestBid",
+          "tick_size_pUSD": "0.01",
+          "minimum_order_shares": "5"
+        },
+        {
+          "market_id": "3539672",
+          "condition_id": "0x09e0f4ead19cc9f8ccfcbf972a13751379c84f498168bbf1be38542fc8e547ca",
+          "question": "Will annual inflation be 3.2% in August?",
+          "outcome": "No",
+          "token_id": "42223636595710464621263397314670891087326227025612797770951296754146529109222",
+          "price_pUSD_per_share": "0.936",
+          "price_source": "one_minus_direct_YES_bestBid",
+          "tick_size_pUSD": "0.001",
+          "minimum_order_shares": "5"
+        },
+        {
+          "market_id": "3539676",
+          "condition_id": "0x364cadd03f8fe6237fdc377afb93df97c4d766b063e39c7897b458047812a964",
+          "question": "Will annual inflation be 3.6% in August?",
+          "outcome": "No",
+          "token_id": "10705093910447884959640953270477374710094427405855579526255155356201687979693",
+          "price_pUSD_per_share": "0.99",
+          "price_source": "one_minus_direct_YES_bestBid",
+          "tick_size_pUSD": "0.001",
+          "minimum_order_shares": "5"
+        },
+        {
+          "market_id": "3539671",
+          "condition_id": "0xf5ce15bcea18506b7bcac6a95f1ed2ca831e505bf9520781f48ee70ec4c6dfb9",
+          "question": "Will annual inflation be 3.1% in August?",
+          "outcome": "No",
+          "token_id": "61456022134205691583517951596033194948331779343778214321720285056173375438629",
+          "price_pUSD_per_share": "0.995",
+          "price_source": "one_minus_direct_YES_bestBid",
+          "tick_size_pUSD": "0.001",
+          "minimum_order_shares": "5"
+        },
+        {
+          "market_id": "3539670",
+          "condition_id": "0xb10a5fa939d4a22ef6888d90092239fb1911a94610219b44d605db499f48db61",
+          "question": "Will annual inflation be 3.0% in August?",
+          "outcome": "No",
+          "token_id": "83362123839633153588530962098759536698607220897032984032214066698235095955065",
+          "price_pUSD_per_share": "0.996",
+          "price_source": "one_minus_direct_YES_bestBid",
+          "tick_size_pUSD": "0.001",
+          "minimum_order_shares": "5"
+        },
+        {
+          "market_id": "3539677",
+          "condition_id": "0x211958971f5390d9e0c7593a81ff512fc36c674f0b4aae1186a9e185ce95831c",
+          "question": "Will annual inflation be 3.7% in August?",
+          "outcome": "No",
+          "token_id": "95094329359091163515074549670690360523505151140992432751372922643330313224402",
+          "price_pUSD_per_share": "0.997",
+          "price_source": "one_minus_direct_YES_bestBid",
+          "tick_size_pUSD": "0.001",
+          "minimum_order_shares": "5"
+        },
+        {
+          "market_id": "3539669",
+          "condition_id": "0xe484c6415870fe28012b423cb286f9700ef0f95dc7cf95ae0144d920af3a4ed2",
+          "question": "Will annual inflation be 2.9% or less in August?",
+          "outcome": "No",
+          "token_id": "15012115490194995028015085922142792837035990317698221008533835941176202988041",
+          "price_pUSD_per_share": "0.998",
+          "price_source": "one_minus_direct_YES_bestBid",
+          "tick_size_pUSD": "0.001",
+          "minimum_order_shares": "5"
+        },
+        {
+          "market_id": "3539678",
+          "condition_id": "0x07fb6279fb00b8c320066b2618ed8cc657429bf5e78517f210aa823d5c51baf8",
+          "question": "Will annual inflation be 3.8% in August?",
+          "outcome": "No",
+          "token_id": "90950809128723700146137630865754692565807725647115761065121770768040449070715",
+          "price_pUSD_per_share": "0.998",
+          "price_source": "one_minus_direct_YES_bestBid",
+          "tick_size_pUSD": "0.001",
+          "minimum_order_shares": "5"
+        },
+        {
+          "market_id": "3539679",
+          "condition_id": "0xaaa67f6b394b129ef10b0d28fb0e458b5a8ea40e09c32738bf6f77e035ebbdfd",
+          "question": "Will annual inflation be 3.9% in August?",
+          "outcome": "No",
+          "token_id": "74732802999363321962971204387275159764826242938907733375884349798497544293533",
+          "price_pUSD_per_share": "0.999",
+          "price_source": "one_minus_direct_YES_bestBid",
+          "tick_size_pUSD": "0.001",
+          "minimum_order_shares": "5"
+        },
+        {
+          "market_id": "3539680",
+          "condition_id": "0xa336827fbf10820b79cc4c84262eb1e89ddc5266f308638bd93ffe648e318aa0",
+          "question": "Will annual inflation be 4.0% or more in August?",
+          "outcome": "No",
+          "token_id": "101101003352904740290800935780381689312220338146159125641234988361688449841988",
+          "price_pUSD_per_share": "0.999",
+          "price_source": "one_minus_direct_YES_bestBid",
+          "tick_size_pUSD": "0.001",
+          "minimum_order_shares": "5"
+        }
+      ],
+      "metadata_cost_pUSD_per_share": "11.028",
+      "metadata_profit_floor_pUSD": "-0.140",
+      "one_adverse_tick_per_leg_prices_pUSD": [
+        "0.57",
+        "0.72",
+        "0.86",
+        "0.937",
+        "0.991",
+        "0.996",
+        "0.997",
+        "0.998",
+        "0.999",
+        "0.999",
+        "1.000",
+        "1.000"
+      ],
+      "stressed_taker_fee_pUSD": null,
+      "after_fee_one_tick_profit_floor_pUSD": null,
+      "passes_strict_metadata_gate": false,
+      "passes_fee_and_one_tick_gate": false
+    },
+    {
+      "event_id": "838709",
+      "event_slug": "august-inflation-us-monthly-1786474662954",
+      "event_title": "August Inflation US - Monthly",
+      "package": "all YES complete set",
+      "guaranteed_payout_floor_pUSD_per_share": "1",
+      "quantity_shares_each_leg": "5",
+      "legs": [
+        {
+          "market_id": "3539660",
+          "condition_id": "0xfa6373afc5134d38d914f85d1cf609e8294e1a06d1f8a924af9210e9f86adc46",
+          "question": "Will monthly inflation decrease by 0.3% or more in August?",
+          "label": "\u2264-0.3%",
+          "outcome": "Yes",
+          "token_id": "104330646028744130247856466502084148018486119084556986333478071741220449956941",
+          "price_pUSD_per_share": "0.005",
+          "price_source": "direct_YES_bestAsk",
+          "tick_size_pUSD": "0.001",
+          "minimum_order_shares": "5"
+        },
+        {
+          "market_id": "3539661",
+          "condition_id": "0xb1cbac9857603a17f9462f00db8e98493a29004c95caf7fe04a32bd58270cc07",
+          "question": "Will monthly inflation decrease by 0.2% in August?",
+          "label": "-0.2%",
+          "outcome": "Yes",
+          "token_id": "65084126261380755389776517703645654478079386550439846383715979344730728295575",
+          "price_pUSD_per_share": "0.078",
+          "price_source": "direct_YES_bestAsk",
+          "tick_size_pUSD": "0.001",
+          "minimum_order_shares": "5"
+        },
+        {
+          "market_id": "3539663",
+          "condition_id": "0x77429ae02f9d443c83c536952de7c1133f745050f312d715e67886e4b378cbaf",
+          "question": "Will monthly inflation stay flat (0.0%) in August?",
+          "label": "0.0%",
+          "outcome": "Yes",
+          "token_id": "48441541797967417039181000844989269361668245408956311444074038733042612747278",
+          "price_pUSD_per_share": "0.019",
+          "price_source": "direct_YES_bestAsk",
+          "tick_size_pUSD": "0.001",
+          "minimum_order_shares": "5"
+        },
+        {
+          "market_id": "3539664",
+          "condition_id": "0x9f0d927c3dca8bdce8ac2c195249cdc8edaf4ce56c100920592a6e1a71b19a23",
+          "question": "Will monthly inflation increase by 0.1% in August?",
+          "label": "0.1%",
+          "outcome": "Yes",
+          "token_id": "4298532161625744203109577934460755062070497764849604950038868024660006708045",
+          "price_pUSD_per_share": "0.03",
+          "price_source": "direct_YES_bestAsk",
+          "tick_size_pUSD": "0.001",
+          "minimum_order_shares": "5"
+        },
+        {
+          "market_id": "3539665",
+          "condition_id": "0xb877fb09e91541b716d6564807a1acabeb18f58068363472fd8d2960e26bdeff",
+          "question": "Will monthly inflation increase by 0.2% in August?",
+          "label": "0.2%",
+          "outcome": "Yes",
+          "token_id": "115153540624188772101197593078999846291970135131310653477375501431493675431371",
+          "price_pUSD_per_share": "0.08",
+          "price_source": "direct_YES_bestAsk",
+          "tick_size_pUSD": "0.01",
+          "minimum_order_shares": "5"
+        },
+        {
+          "market_id": "3539666",
+          "condition_id": "0x733cb95ac129c9b9660b7c14b3636554e775921e839277636e458ba0ee2703af",
+          "question": "Will monthly inflation increase by 0.3% in August?",
+          "label": "0.3%",
+          "outcome": "Yes",
+          "token_id": "48334291568435081495355039717432110116506737764481389658557262606487151571922",
+          "price_pUSD_per_share": "0.29",
+          "price_source": "direct_YES_bestAsk",
+          "tick_size_pUSD": "0.01",
+          "minimum_order_shares": "5"
+        },
+        {
+          "market_id": "3539667",
+          "condition_id": "0x81cff3df5f29ddcaac209487bebfa4e7868d68ff8c1c68f2c022089b06d895f2",
+          "question": "Will monthly inflation increase by 0.4% in August?",
+          "label": "0.4%",
+          "outcome": "Yes",
+          "token_id": "3683656010122359160017402401298981233854654293964162284936853049954793238683",
+          "price_pUSD_per_share": "0.49",
+          "price_source": "direct_YES_bestAsk",
+          "tick_size_pUSD": "0.01",
+          "minimum_order_shares": "5"
+        },
+        {
+          "market_id": "3539668",
+          "condition_id": "0x3263f1e07bea95db5233380c85f4388a408a443b7db19770950c2b65b0ae0b67",
+          "question": "Will monthly inflation increase by 0.5% or more in August?",
+          "label": "\u22650.5%",
+          "outcome": "Yes",
+          "token_id": "113468107675915924616418474460502622412564893450953788253513113269963238885084",
+          "price_pUSD_per_share": "0.1",
+          "price_source": "direct_YES_bestAsk",
+          "tick_size_pUSD": "0.01",
+          "minimum_order_shares": "5"
+        },
+        {
+          "market_id": "3539662",
+          "condition_id": "0x5db295aaaf9885a0c0523c86241a7d039439b6ecec39540489ee7b09006b3879",
+          "question": "Will monthly inflation decrease by 0.1% in August?",
+          "label": "-0.1%",
+          "outcome": "Yes",
+          "token_id": "59800607792423054757410285140071617613995536465563980967257835183838933842590",
+          "price_pUSD_per_share": "0.01",
+          "price_source": "direct_YES_bestAsk",
+          "tick_size_pUSD": "0.001",
+          "minimum_order_shares": "5"
+        }
+      ],
+      "metadata_cost_pUSD_per_share": "1.102",
+      "metadata_profit_floor_pUSD": "-0.510",
+      "one_adverse_tick_per_leg_prices_pUSD": [
+        "0.006",
+        "0.079",
+        "0.020",
+        "0.031",
+        "0.09",
+        "0.30",
+        "0.50",
+        "0.11",
+        "0.011"
+      ],
+      "stressed_taker_fee_pUSD": "0.19478",
+      "after_fee_one_tick_profit_floor_pUSD": "-0.92978",
+      "passes_strict_metadata_gate": false,
+      "passes_fee_and_one_tick_gate": false
+    },
+    {
+      "event_id": "838709",
+      "event_slug": "august-inflation-us-monthly-1786474662954",
+      "event_title": "August Inflation US - Monthly",
+      "package": "same-market YES plus NO binary straddle",
+      "guaranteed_payout_floor_pUSD_per_share": "1",
+      "quantity_shares_each_leg": "5",
+      "legs": [
+        {
+          "market_id": "3539660",
+          "condition_id": "0xfa6373afc5134d38d914f85d1cf609e8294e1a06d1f8a924af9210e9f86adc46",
+          "question": "Will monthly inflation decrease by 0.3% or more in August?",
+          "label": "\u2264-0.3%",
+          "outcome": "Yes",
+          "token_id": "104330646028744130247856466502084148018486119084556986333478071741220449956941",
+          "price_pUSD_per_share": "0.005",
+          "price_source": "direct_YES_bestAsk",
+          "tick_size_pUSD": "0.001",
+          "minimum_order_shares": "5"
+        },
+        {
+          "market_id": "3539660",
+          "condition_id": "0xfa6373afc5134d38d914f85d1cf609e8294e1a06d1f8a924af9210e9f86adc46",
+          "question": "Will monthly inflation decrease by 0.3% or more in August?",
+          "outcome": "No",
+          "token_id": "48525729497418933937308582895177923005181231133784448259287416273770184057866",
+          "price_pUSD_per_share": "0.998",
+          "price_source": "one_minus_direct_YES_bestBid",
+          "tick_size_pUSD": "0.001",
+          "minimum_order_shares": "5"
+        }
+      ],
+      "metadata_cost_pUSD_per_share": "1.003",
+      "metadata_profit_floor_pUSD": "-0.015",
+      "one_adverse_tick_per_leg_prices_pUSD": [
+        "0.006",
+        "0.999"
+      ],
+      "stressed_taker_fee_pUSD": "0.00175",
+      "after_fee_one_tick_profit_floor_pUSD": "-0.02675",
+      "passes_strict_metadata_gate": false,
+      "passes_fee_and_one_tick_gate": false
+    },
+    {
+      "event_id": "838709",
+      "event_slug": "august-inflation-us-monthly-1786474662954",
+      "event_title": "August Inflation US - Monthly",
+      "package": "same-market YES plus NO binary straddle",
+      "guaranteed_payout_floor_pUSD_per_share": "1",
+      "quantity_shares_each_leg": "5",
+      "legs": [
+        {
+          "market_id": "3539661",
+          "condition_id": "0xb1cbac9857603a17f9462f00db8e98493a29004c95caf7fe04a32bd58270cc07",
+          "question": "Will monthly inflation decrease by 0.2% in August?",
+          "label": "-0.2%",
+          "outcome": "Yes",
+          "token_id": "65084126261380755389776517703645654478079386550439846383715979344730728295575",
+          "price_pUSD_per_share": "0.078",
+          "price_source": "direct_YES_bestAsk",
+          "tick_size_pUSD": "0.001",
+          "minimum_order_shares": "5"
+        },
+        {
+          "market_id": "3539661",
+          "condition_id": "0xb1cbac9857603a17f9462f00db8e98493a29004c95caf7fe04a32bd58270cc07",
+          "question": "Will monthly inflation decrease by 0.2% in August?",
+          "outcome": "No",
+          "token_id": "71274895918576675559573398387422273544216321057770497632619885419937060137821",
+          "price_pUSD_per_share": "0.997",
+          "price_source": "one_minus_direct_YES_bestBid",
+          "tick_size_pUSD": "0.001",
+          "minimum_order_shares": "5"
+        }
+      ],
+      "metadata_cost_pUSD_per_share": "1.075",
+      "metadata_profit_floor_pUSD": "-0.375",
+      "one_adverse_tick_per_leg_prices_pUSD": [
+        "0.079",
+        "0.998"
+      ],
+      "stressed_taker_fee_pUSD": "0.01869",
+      "after_fee_one_tick_profit_floor_pUSD": "-0.40369",
+      "passes_strict_metadata_gate": false,
+      "passes_fee_and_one_tick_gate": false
+    },
+    {
+      "event_id": "838709",
+      "event_slug": "august-inflation-us-monthly-1786474662954",
+      "event_title": "August Inflation US - Monthly",
+      "package": "same-market YES plus NO binary straddle",
+      "guaranteed_payout_floor_pUSD_per_share": "1",
+      "quantity_shares_each_leg": "5",
+      "legs": [
+        {
+          "market_id": "3539662",
+          "condition_id": "0x5db295aaaf9885a0c0523c86241a7d039439b6ecec39540489ee7b09006b3879",
+          "question": "Will monthly inflation decrease by 0.1% in August?",
+          "label": "-0.1%",
+          "outcome": "Yes",
+          "token_id": "59800607792423054757410285140071617613995536465563980967257835183838933842590",
+          "price_pUSD_per_share": "0.01",
+          "price_source": "direct_YES_bestAsk",
+          "tick_size_pUSD": "0.001",
+          "minimum_order_shares": "5"
+        },
+        {
+          "market_id": "3539662",
+          "condition_id": "0x5db295aaaf9885a0c0523c86241a7d039439b6ecec39540489ee7b09006b3879",
+          "question": "Will monthly inflation decrease by 0.1% in August?",
+          "outcome": "No",
+          "token_id": "114501860935133099833908939147365429822161597765072322499724334875611846662643",
+          "price_pUSD_per_share": "0.997",
+          "price_source": "one_minus_direct_YES_bestBid",
+          "tick_size_pUSD": "0.001",
+          "minimum_order_shares": "5"
+        }
+      ],
+      "metadata_cost_pUSD_per_share": "1.007",
+      "metadata_profit_floor_pUSD": "-0.035",
+      "one_adverse_tick_per_leg_prices_pUSD": [
+        "0.011",
+        "0.998"
+      ],
+      "stressed_taker_fee_pUSD": "0.00322",
+      "after_fee_one_tick_profit_floor_pUSD": "-0.04822",
+      "passes_strict_metadata_gate": false,
+      "passes_fee_and_one_tick_gate": false
+    },
+    {
+      "event_id": "838709",
+      "event_slug": "august-inflation-us-monthly-1786474662954",
+      "event_title": "August Inflation US - Monthly",
+      "package": "same-market YES plus NO binary straddle",
+      "guaranteed_payout_floor_pUSD_per_share": "1",
+      "quantity_shares_each_leg": "5",
+      "legs": [
+        {
+          "market_id": "3539663",
+          "condition_id": "0x77429ae02f9d443c83c536952de7c1133f745050f312d715e67886e4b378cbaf",
+          "question": "Will monthly inflation stay flat (0.0%) in August?",
+          "label": "0.0%",
+          "outcome": "Yes",
+          "token_id": "48441541797967417039181000844989269361668245408956311444074038733042612747278",
+          "price_pUSD_per_share": "0.019",
+          "price_source": "direct_YES_bestAsk",
+          "tick_size_pUSD": "0.001",
+          "minimum_order_shares": "5"
+        },
+        {
+          "market_id": "3539663",
+          "condition_id": "0x77429ae02f9d443c83c536952de7c1133f745050f312d715e67886e4b378cbaf",
+          "question": "Will monthly inflation stay flat (0.0%) in August?",
+          "outcome": "No",
+          "token_id": "38991218613058574274368100377325924866941382780705083174056407159136313686033",
+          "price_pUSD_per_share": "0.995",
+          "price_source": "one_minus_direct_YES_bestBid",
+          "tick_size_pUSD": "0.001",
+          "minimum_order_shares": "5"
+        }
+      ],
+      "metadata_cost_pUSD_per_share": "1.014",
+      "metadata_profit_floor_pUSD": "-0.070",
+      "one_adverse_tick_per_leg_prices_pUSD": [
+        "0.020",
+        "0.996"
+      ],
+      "stressed_taker_fee_pUSD": "0.00590",
+      "after_fee_one_tick_profit_floor_pUSD": "-0.08590",
+      "passes_strict_metadata_gate": false,
+      "passes_fee_and_one_tick_gate": false
+    },
+    {
+      "event_id": "838709",
+      "event_slug": "august-inflation-us-monthly-1786474662954",
+      "event_title": "August Inflation US - Monthly",
+      "package": "same-market YES plus NO binary straddle",
+      "guaranteed_payout_floor_pUSD_per_share": "1",
+      "quantity_shares_each_leg": "5",
+      "legs": [
+        {
+          "market_id": "3539664",
+          "condition_id": "0x9f0d927c3dca8bdce8ac2c195249cdc8edaf4ce56c100920592a6e1a71b19a23",
+          "question": "Will monthly inflation increase by 0.1% in August?",
+          "label": "0.1%",
+          "outcome": "Yes",
+          "token_id": "4298532161625744203109577934460755062070497764849604950038868024660006708045",
+          "price_pUSD_per_share": "0.03",
+          "price_source": "direct_YES_bestAsk",
+          "tick_size_pUSD": "0.001",
+          "minimum_order_shares": "5"
+        },
+        {
+          "market_id": "3539664",
+          "condition_id": "0x9f0d927c3dca8bdce8ac2c195249cdc8edaf4ce56c100920592a6e1a71b19a23",
+          "question": "Will monthly inflation increase by 0.1% in August?",
+          "outcome": "No",
+          "token_id": "45522349743051142630765670856667964505020943549149550843922272170040652044527",
+          "price_pUSD_per_share": "0.99",
+          "price_source": "one_minus_direct_YES_bestBid",
+          "tick_size_pUSD": "0.001",
+          "minimum_order_shares": "5"
+        }
+      ],
+      "metadata_cost_pUSD_per_share": "1.02",
+      "metadata_profit_floor_pUSD": "-0.10",
+      "one_adverse_tick_per_leg_prices_pUSD": [
+        "0.031",
+        "0.991"
+      ],
+      "stressed_taker_fee_pUSD": "0.00974",
+      "after_fee_one_tick_profit_floor_pUSD": "-0.11974",
+      "passes_strict_metadata_gate": false,
+      "passes_fee_and_one_tick_gate": false
+    },
+    {
+      "event_id": "838709",
+      "event_slug": "august-inflation-us-monthly-1786474662954",
+      "event_title": "August Inflation US - Monthly",
+      "package": "same-market YES plus NO binary straddle",
+      "guaranteed_payout_floor_pUSD_per_share": "1",
+      "quantity_shares_each_leg": "5",
+      "legs": [
+        {
+          "market_id": "3539665",
+          "condition_id": "0xb877fb09e91541b716d6564807a1acabeb18f58068363472fd8d2960e26bdeff",
+          "question": "Will monthly inflation increase by 0.2% in August?",
+          "label": "0.2%",
+          "outcome": "Yes",
+          "token_id": "115153540624188772101197593078999846291970135131310653477375501431493675431371",
+          "price_pUSD_per_share": "0.08",
+          "price_source": "direct_YES_bestAsk",
+          "tick_size_pUSD": "0.01",
+          "minimum_order_shares": "5"
+        },
+        {
+          "market_id": "3539665",
+          "condition_id": "0xb877fb09e91541b716d6564807a1acabeb18f58068363472fd8d2960e26bdeff",
+          "question": "Will monthly inflation increase by 0.2% in August?",
+          "outcome": "No",
+          "token_id": "105104869481617725866344645525255435718123184167330399438508651949931946357445",
+          "price_pUSD_per_share": "0.94",
+          "price_source": "one_minus_direct_YES_bestBid",
+          "tick_size_pUSD": "0.01",
+          "minimum_order_shares": "5"
+        }
+      ],
+      "metadata_cost_pUSD_per_share": "1.02",
+      "metadata_profit_floor_pUSD": "-0.10",
+      "one_adverse_tick_per_leg_prices_pUSD": [
+        "0.09",
+        "0.95"
+      ],
+      "stressed_taker_fee_pUSD": "0.03236",
+      "after_fee_one_tick_profit_floor_pUSD": "-0.23236",
+      "passes_strict_metadata_gate": false,
+      "passes_fee_and_one_tick_gate": false
+    },
+    {
+      "event_id": "838709",
+      "event_slug": "august-inflation-us-monthly-1786474662954",
+      "event_title": "August Inflation US - Monthly",
+      "package": "same-market YES plus NO binary straddle",
+      "guaranteed_payout_floor_pUSD_per_share": "1",
+      "quantity_shares_each_leg": "5",
+      "legs": [
+        {
+          "market_id": "3539666",
+          "condition_id": "0x733cb95ac129c9b9660b7c14b3636554e775921e839277636e458ba0ee2703af",
+          "question": "Will monthly inflation increase by 0.3% in August?",
+          "label": "0.3%",
+          "outcome": "Yes",
+          "token_id": "48334291568435081495355039717432110116506737764481389658557262606487151571922",
+          "price_pUSD_per_share": "0.29",
+          "price_source": "direct_YES_bestAsk",
+          "tick_size_pUSD": "0.01",
+          "minimum_order_shares": "5"
+        },
+        {
+          "market_id": "3539666",
+          "condition_id": "0x733cb95ac129c9b9660b7c14b3636554e775921e839277636e458ba0ee2703af",
+          "question": "Will monthly inflation increase by 0.3% in August?",
+          "outcome": "No",
+          "token_id": "9651897388714484151929467364624644247361486431940198770262779646091338863257",
+          "price_pUSD_per_share": "0.72",
+          "price_source": "one_minus_direct_YES_bestBid",
+          "tick_size_pUSD": "0.01",
+          "minimum_order_shares": "5"
+        }
+      ],
+      "metadata_cost_pUSD_per_share": "1.01",
+      "metadata_profit_floor_pUSD": "-0.05",
+      "one_adverse_tick_per_leg_prices_pUSD": [
+        "0.30",
+        "0.73"
+      ],
+      "stressed_taker_fee_pUSD": "0.10178",
+      "after_fee_one_tick_profit_floor_pUSD": "-0.25178",
+      "passes_strict_metadata_gate": false,
+      "passes_fee_and_one_tick_gate": false
+    },
+    {
+      "event_id": "838709",
+      "event_slug": "august-inflation-us-monthly-1786474662954",
+      "event_title": "August Inflation US - Monthly",
+      "package": "same-market YES plus NO binary straddle",
+      "guaranteed_payout_floor_pUSD_per_share": "1",
+      "quantity_shares_each_leg": "5",
+      "legs": [
+        {
+          "market_id": "3539667",
+          "condition_id": "0x81cff3df5f29ddcaac209487bebfa4e7868d68ff8c1c68f2c022089b06d895f2",
+          "question": "Will monthly inflation increase by 0.4% in August?",
+          "label": "0.4%",
+          "outcome": "Yes",
+          "token_id": "3683656010122359160017402401298981233854654293964162284936853049954793238683",
+          "price_pUSD_per_share": "0.49",
+          "price_source": "direct_YES_bestAsk",
+          "tick_size_pUSD": "0.01",
+          "minimum_order_shares": "5"
+        },
+        {
+          "market_id": "3539667",
+          "condition_id": "0x81cff3df5f29ddcaac209487bebfa4e7868d68ff8c1c68f2c022089b06d895f2",
+          "question": "Will monthly inflation increase by 0.4% in August?",
+          "outcome": "No",
+          "token_id": "59533291979005451027301161253701619382906657645157548326972285410455577606339",
+          "price_pUSD_per_share": "0.52",
+          "price_source": "one_minus_direct_YES_bestBid",
+          "tick_size_pUSD": "0.01",
+          "minimum_order_shares": "5"
+        }
+      ],
+      "metadata_cost_pUSD_per_share": "1.01",
+      "metadata_profit_floor_pUSD": "-0.05",
+      "one_adverse_tick_per_leg_prices_pUSD": [
+        "0.50",
+        "0.53"
+      ],
+      "stressed_taker_fee_pUSD": "0.12478",
+      "after_fee_one_tick_profit_floor_pUSD": "-0.27478",
+      "passes_strict_metadata_gate": false,
+      "passes_fee_and_one_tick_gate": false
+    },
+    {
+      "event_id": "838709",
+      "event_slug": "august-inflation-us-monthly-1786474662954",
+      "event_title": "August Inflation US - Monthly",
+      "package": "same-market YES plus NO binary straddle",
+      "guaranteed_payout_floor_pUSD_per_share": "1",
+      "quantity_shares_each_leg": "5",
+      "legs": [
+        {
+          "market_id": "3539668",
+          "condition_id": "0x3263f1e07bea95db5233380c85f4388a408a443b7db19770950c2b65b0ae0b67",
+          "question": "Will monthly inflation increase by 0.5% or more in August?",
+          "label": "\u22650.5%",
+          "outcome": "Yes",
+          "token_id": "113468107675915924616418474460502622412564893450953788253513113269963238885084",
+          "price_pUSD_per_share": "0.1",
+          "price_source": "direct_YES_bestAsk",
+          "tick_size_pUSD": "0.01",
+          "minimum_order_shares": "5"
+        },
+        {
+          "market_id": "3539668",
+          "condition_id": "0x3263f1e07bea95db5233380c85f4388a408a443b7db19770950c2b65b0ae0b67",
+          "question": "Will monthly inflation increase by 0.5% or more in August?",
+          "outcome": "No",
+          "token_id": "69614179107145335991624060148444006794661724025265344542264623622611366340110",
+          "price_pUSD_per_share": "0.91",
+          "price_source": "one_minus_direct_YES_bestBid",
+          "tick_size_pUSD": "0.01",
+          "minimum_order_shares": "5"
+        }
+      ],
+      "metadata_cost_pUSD_per_share": "1.01",
+      "metadata_profit_floor_pUSD": "-0.05",
+      "one_adverse_tick_per_leg_prices_pUSD": [
+        "0.11",
+        "0.92"
+      ],
+      "stressed_taker_fee_pUSD": "0.04288",
+      "after_fee_one_tick_profit_floor_pUSD": "-0.19288",
+      "passes_strict_metadata_gate": false,
+      "passes_fee_and_one_tick_gate": false
+    },
+    {
+      "event_id": "838709",
+      "event_slug": "august-inflation-us-monthly-1786474662954",
+      "event_title": "August Inflation US - Monthly",
+      "cardinality": 2,
+      "frontier_basis": "lowest_metadata_cost",
+      "guaranteed_payout_floor_pUSD_per_share": "1",
+      "quantity_shares_each_leg": "5",
+      "legs": [
+        {
+          "market_id": "3539667",
+          "condition_id": "0x81cff3df5f29ddcaac209487bebfa4e7868d68ff8c1c68f2c022089b06d895f2",
+          "question": "Will monthly inflation increase by 0.4% in August?",
+          "outcome": "No",
+          "token_id": "59533291979005451027301161253701619382906657645157548326972285410455577606339",
+          "price_pUSD_per_share": "0.52",
+          "price_source": "one_minus_direct_YES_bestBid",
+          "tick_size_pUSD": "0.01",
+          "minimum_order_shares": "5"
+        },
+        {
+          "market_id": "3539666",
+          "condition_id": "0x733cb95ac129c9b9660b7c14b3636554e775921e839277636e458ba0ee2703af",
+          "question": "Will monthly inflation increase by 0.3% in August?",
+          "outcome": "No",
+          "token_id": "9651897388714484151929467364624644247361486431940198770262779646091338863257",
+          "price_pUSD_per_share": "0.72",
+          "price_source": "one_minus_direct_YES_bestBid",
+          "tick_size_pUSD": "0.01",
+          "minimum_order_shares": "5"
+        }
+      ],
+      "metadata_cost_pUSD_per_share": "1.24",
+      "metadata_profit_floor_pUSD": "-1.20",
+      "one_adverse_tick_per_leg_prices_pUSD": [
+        "0.53",
+        "0.73"
+      ],
+      "stressed_taker_fee_pUSD": "0.11156",
+      "after_fee_one_tick_profit_floor_pUSD": "-1.41156",
+      "passes_strict_metadata_gate": false,
+      "passes_fee_and_one_tick_gate": false
+    },
+    {
+      "event_id": "838709",
+      "event_slug": "august-inflation-us-monthly-1786474662954",
+      "event_title": "August Inflation US - Monthly",
+      "cardinality": 3,
+      "frontier_basis": "lowest_metadata_cost",
+      "guaranteed_payout_floor_pUSD_per_share": "2",
+      "quantity_shares_each_leg": "5",
+      "legs": [
+        {
+          "market_id": "3539667",
+          "condition_id": "0x81cff3df5f29ddcaac209487bebfa4e7868d68ff8c1c68f2c022089b06d895f2",
+          "question": "Will monthly inflation increase by 0.4% in August?",
+          "outcome": "No",
+          "token_id": "59533291979005451027301161253701619382906657645157548326972285410455577606339",
+          "price_pUSD_per_share": "0.52",
+          "price_source": "one_minus_direct_YES_bestBid",
+          "tick_size_pUSD": "0.01",
+          "minimum_order_shares": "5"
+        },
+        {
+          "market_id": "3539666",
+          "condition_id": "0x733cb95ac129c9b9660b7c14b3636554e775921e839277636e458ba0ee2703af",
+          "question": "Will monthly inflation increase by 0.3% in August?",
+          "outcome": "No",
+          "token_id": "9651897388714484151929467364624644247361486431940198770262779646091338863257",
+          "price_pUSD_per_share": "0.72",
+          "price_source": "one_minus_direct_YES_bestBid",
+          "tick_size_pUSD": "0.01",
+          "minimum_order_shares": "5"
+        },
+        {
+          "market_id": "3539668",
+          "condition_id": "0x3263f1e07bea95db5233380c85f4388a408a443b7db19770950c2b65b0ae0b67",
+          "question": "Will monthly inflation increase by 0.5% or more in August?",
+          "outcome": "No",
+          "token_id": "69614179107145335991624060148444006794661724025265344542264623622611366340110",
+          "price_pUSD_per_share": "0.91",
+          "price_source": "one_minus_direct_YES_bestBid",
+          "tick_size_pUSD": "0.01",
+          "minimum_order_shares": "5"
+        }
+      ],
+      "metadata_cost_pUSD_per_share": "2.15",
+      "metadata_profit_floor_pUSD": "-0.75",
+      "one_adverse_tick_per_leg_prices_pUSD": [
+        "0.53",
+        "0.73",
+        "0.92"
+      ],
+      "stressed_taker_fee_pUSD": "0.12996",
+      "after_fee_one_tick_profit_floor_pUSD": "-1.02996",
+      "passes_strict_metadata_gate": false,
+      "passes_fee_and_one_tick_gate": false
+    },
+    {
+      "event_id": "838709",
+      "event_slug": "august-inflation-us-monthly-1786474662954",
+      "event_title": "August Inflation US - Monthly",
+      "cardinality": 4,
+      "frontier_basis": "lowest_metadata_cost",
+      "guaranteed_payout_floor_pUSD_per_share": "3",
+      "quantity_shares_each_leg": "5",
+      "legs": [
+        {
+          "market_id": "3539667",
+          "condition_id": "0x81cff3df5f29ddcaac209487bebfa4e7868d68ff8c1c68f2c022089b06d895f2",
+          "question": "Will monthly inflation increase by 0.4% in August?",
+          "outcome": "No",
+          "token_id": "59533291979005451027301161253701619382906657645157548326972285410455577606339",
+          "price_pUSD_per_share": "0.52",
+          "price_source": "one_minus_direct_YES_bestBid",
+          "tick_size_pUSD": "0.01",
+          "minimum_order_shares": "5"
+        },
+        {
+          "market_id": "3539666",
+          "condition_id": "0x733cb95ac129c9b9660b7c14b3636554e775921e839277636e458ba0ee2703af",
+          "question": "Will monthly inflation increase by 0.3% in August?",
+          "outcome": "No",
+          "token_id": "9651897388714484151929467364624644247361486431940198770262779646091338863257",
+          "price_pUSD_per_share": "0.72",
+          "price_source": "one_minus_direct_YES_bestBid",
+          "tick_size_pUSD": "0.01",
+          "minimum_order_shares": "5"
+        },
+        {
+          "market_id": "3539668",
+          "condition_id": "0x3263f1e07bea95db5233380c85f4388a408a443b7db19770950c2b65b0ae0b67",
+          "question": "Will monthly inflation increase by 0.5% or more in August?",
+          "outcome": "No",
+          "token_id": "69614179107145335991624060148444006794661724025265344542264623622611366340110",
+          "price_pUSD_per_share": "0.91",
+          "price_source": "one_minus_direct_YES_bestBid",
+          "tick_size_pUSD": "0.01",
+          "minimum_order_shares": "5"
+        },
+        {
+          "market_id": "3539665",
+          "condition_id": "0xb877fb09e91541b716d6564807a1acabeb18f58068363472fd8d2960e26bdeff",
+          "question": "Will monthly inflation increase by 0.2% in August?",
+          "outcome": "No",
+          "token_id": "105104869481617725866344645525255435718123184167330399438508651949931946357445",
+          "price_pUSD_per_share": "0.94",
+          "price_source": "one_minus_direct_YES_bestBid",
+          "tick_size_pUSD": "0.01",
+          "minimum_order_shares": "5"
+        }
+      ],
+      "metadata_cost_pUSD_per_share": "3.09",
+      "metadata_profit_floor_pUSD": "-0.45",
+      "one_adverse_tick_per_leg_prices_pUSD": [
+        "0.53",
+        "0.73",
+        "0.92",
+        "0.95"
+      ],
+      "stressed_taker_fee_pUSD": "0.14184",
+      "after_fee_one_tick_profit_floor_pUSD": "-0.79184",
+      "passes_strict_metadata_gate": false,
+      "passes_fee_and_one_tick_gate": false
+    },
+    {
+      "event_id": "838709",
+      "event_slug": "august-inflation-us-monthly-1786474662954",
+      "event_title": "August Inflation US - Monthly",
+      "cardinality": 5,
+      "frontier_basis": "lowest_metadata_cost",
+      "guaranteed_payout_floor_pUSD_per_share": "4",
+      "quantity_shares_each_leg": "5",
+      "legs": [
+        {
+          "market_id": "3539667",
+          "condition_id": "0x81cff3df5f29ddcaac209487bebfa4e7868d68ff8c1c68f2c022089b06d895f2",
+          "question": "Will monthly inflation increase by 0.4% in August?",
+          "outcome": "No",
+          "token_id": "59533291979005451027301161253701619382906657645157548326972285410455577606339",
+          "price_pUSD_per_share": "0.52",
+          "price_source": "one_minus_direct_YES_bestBid",
+          "tick_size_pUSD": "0.01",
+          "minimum_order_shares": "5"
+        },
+        {
+          "market_id": "3539666",
+          "condition_id": "0x733cb95ac129c9b9660b7c14b3636554e775921e839277636e458ba0ee2703af",
+          "question": "Will monthly inflation increase by 0.3% in August?",
+          "outcome": "No",
+          "token_id": "9651897388714484151929467364624644247361486431940198770262779646091338863257",
+          "price_pUSD_per_share": "0.72",
+          "price_source": "one_minus_direct_YES_bestBid",
+          "tick_size_pUSD": "0.01",
+          "minimum_order_shares": "5"
+        },
+        {
+          "market_id": "3539668",
+          "condition_id": "0x3263f1e07bea95db5233380c85f4388a408a443b7db19770950c2b65b0ae0b67",
+          "question": "Will monthly inflation increase by 0.5% or more in August?",
+          "outcome": "No",
+          "token_id": "69614179107145335991624060148444006794661724025265344542264623622611366340110",
+          "price_pUSD_per_share": "0.91",
+          "price_source": "one_minus_direct_YES_bestBid",
+          "tick_size_pUSD": "0.01",
+          "minimum_order_shares": "5"
+        },
+        {
+          "market_id": "3539665",
+          "condition_id": "0xb877fb09e91541b716d6564807a1acabeb18f58068363472fd8d2960e26bdeff",
+          "question": "Will monthly inflation increase by 0.2% in August?",
+          "outcome": "No",
+          "token_id": "105104869481617725866344645525255435718123184167330399438508651949931946357445",
+          "price_pUSD_per_share": "0.94",
+          "price_source": "one_minus_direct_YES_bestBid",
+          "tick_size_pUSD": "0.01",
+          "minimum_order_shares": "5"
+        },
+        {
+          "market_id": "3539664",
+          "condition_id": "0x9f0d927c3dca8bdce8ac2c195249cdc8edaf4ce56c100920592a6e1a71b19a23",
+          "question": "Will monthly inflation increase by 0.1% in August?",
+          "outcome": "No",
+          "token_id": "45522349743051142630765670856667964505020943549149550843922272170040652044527",
+          "price_pUSD_per_share": "0.99",
+          "price_source": "one_minus_direct_YES_bestBid",
+          "tick_size_pUSD": "0.001",
+          "minimum_order_shares": "5"
+        }
+      ],
+      "metadata_cost_pUSD_per_share": "4.08",
+      "metadata_profit_floor_pUSD": "-0.40",
+      "one_adverse_tick_per_leg_prices_pUSD": [
+        "0.53",
+        "0.73",
+        "0.92",
+        "0.95",
+        "0.991"
+      ],
+      "stressed_taker_fee_pUSD": "0.14407",
+      "after_fee_one_tick_profit_floor_pUSD": "-0.74907",
+      "passes_strict_metadata_gate": false,
+      "passes_fee_and_one_tick_gate": false
+    },
+    {
+      "event_id": "838709",
+      "event_slug": "august-inflation-us-monthly-1786474662954",
+      "event_title": "August Inflation US - Monthly",
+      "cardinality": 6,
+      "frontier_basis": "lowest_metadata_cost",
+      "guaranteed_payout_floor_pUSD_per_share": "5",
+      "quantity_shares_each_leg": "5",
+      "legs": [
+        {
+          "market_id": "3539667",
+          "condition_id": "0x81cff3df5f29ddcaac209487bebfa4e7868d68ff8c1c68f2c022089b06d895f2",
+          "question": "Will monthly inflation increase by 0.4% in August?",
+          "outcome": "No",
+          "token_id": "59533291979005451027301161253701619382906657645157548326972285410455577606339",
+          "price_pUSD_per_share": "0.52",
+          "price_source": "one_minus_direct_YES_bestBid",
+          "tick_size_pUSD": "0.01",
+          "minimum_order_shares": "5"
+        },
+        {
+          "market_id": "3539666",
+          "condition_id": "0x733cb95ac129c9b9660b7c14b3636554e775921e839277636e458ba0ee2703af",
+          "question": "Will monthly inflation increase by 0.3% in August?",
+          "outcome": "No",
+          "token_id": "9651897388714484151929467364624644247361486431940198770262779646091338863257",
+          "price_pUSD_per_share": "0.72",
+          "price_source": "one_minus_direct_YES_bestBid",
+          "tick_size_pUSD": "0.01",
+          "minimum_order_shares": "5"
+        },
+        {
+          "market_id": "3539668",
+          "condition_id": "0x3263f1e07bea95db5233380c85f4388a408a443b7db19770950c2b65b0ae0b67",
+          "question": "Will monthly inflation increase by 0.5% or more in August?",
+          "outcome": "No",
+          "token_id": "69614179107145335991624060148444006794661724025265344542264623622611366340110",
+          "price_pUSD_per_share": "0.91",
+          "price_source": "one_minus_direct_YES_bestBid",
+          "tick_size_pUSD": "0.01",
+          "minimum_order_shares": "5"
+        },
+        {
+          "market_id": "3539665",
+          "condition_id": "0xb877fb09e91541b716d6564807a1acabeb18f58068363472fd8d2960e26bdeff",
+          "question": "Will monthly inflation increase by 0.2% in August?",
+          "outcome": "No",
+          "token_id": "105104869481617725866344645525255435718123184167330399438508651949931946357445",
+          "price_pUSD_per_share": "0.94",
+          "price_source": "one_minus_direct_YES_bestBid",
+          "tick_size_pUSD": "0.01",
+          "minimum_order_shares": "5"
+        },
+        {
+          "market_id": "3539664",
+          "condition_id": "0x9f0d927c3dca8bdce8ac2c195249cdc8edaf4ce56c100920592a6e1a71b19a23",
+          "question": "Will monthly inflation increase by 0.1% in August?",
+          "outcome": "No",
+          "token_id": "45522349743051142630765670856667964505020943549149550843922272170040652044527",
+          "price_pUSD_per_share": "0.99",
+          "price_source": "one_minus_direct_YES_bestBid",
+          "tick_size_pUSD": "0.001",
+          "minimum_order_shares": "5"
+        },
+        {
+          "market_id": "3539663",
+          "condition_id": "0x77429ae02f9d443c83c536952de7c1133f745050f312d715e67886e4b378cbaf",
+          "question": "Will monthly inflation stay flat (0.0%) in August?",
+          "outcome": "No",
+          "token_id": "38991218613058574274368100377325924866941382780705083174056407159136313686033",
+          "price_pUSD_per_share": "0.995",
+          "price_source": "one_minus_direct_YES_bestBid",
+          "tick_size_pUSD": "0.001",
+          "minimum_order_shares": "5"
+        }
+      ],
+      "metadata_cost_pUSD_per_share": "5.075",
+      "metadata_profit_floor_pUSD": "-0.375",
+      "one_adverse_tick_per_leg_prices_pUSD": [
+        "0.53",
+        "0.73",
+        "0.92",
+        "0.95",
+        "0.991",
+        "0.996"
+      ],
+      "stressed_taker_fee_pUSD": "0.14507",
+      "after_fee_one_tick_profit_floor_pUSD": "-0.73007",
+      "passes_strict_metadata_gate": false,
+      "passes_fee_and_one_tick_gate": false
+    },
+    {
+      "event_id": "838709",
+      "event_slug": "august-inflation-us-monthly-1786474662954",
+      "event_title": "August Inflation US - Monthly",
+      "cardinality": 7,
+      "frontier_basis": "lowest_metadata_cost",
+      "guaranteed_payout_floor_pUSD_per_share": "6",
+      "quantity_shares_each_leg": "5",
+      "legs": [
+        {
+          "market_id": "3539667",
+          "condition_id": "0x81cff3df5f29ddcaac209487bebfa4e7868d68ff8c1c68f2c022089b06d895f2",
+          "question": "Will monthly inflation increase by 0.4% in August?",
+          "outcome": "No",
+          "token_id": "59533291979005451027301161253701619382906657645157548326972285410455577606339",
+          "price_pUSD_per_share": "0.52",
+          "price_source": "one_minus_direct_YES_bestBid",
+          "tick_size_pUSD": "0.01",
+          "minimum_order_shares": "5"
+        },
+        {
+          "market_id": "3539666",
+          "condition_id": "0x733cb95ac129c9b9660b7c14b3636554e775921e839277636e458ba0ee2703af",
+          "question": "Will monthly inflation increase by 0.3% in August?",
+          "outcome": "No",
+          "token_id": "9651897388714484151929467364624644247361486431940198770262779646091338863257",
+          "price_pUSD_per_share": "0.72",
+          "price_source": "one_minus_direct_YES_bestBid",
+          "tick_size_pUSD": "0.01",
+          "minimum_order_shares": "5"
+        },
+        {
+          "market_id": "3539668",
+          "condition_id": "0x3263f1e07bea95db5233380c85f4388a408a443b7db19770950c2b65b0ae0b67",
+          "question": "Will monthly inflation increase by 0.5% or more in August?",
+          "outcome": "No",
+          "token_id": "69614179107145335991624060148444006794661724025265344542264623622611366340110",
+          "price_pUSD_per_share": "0.91",
+          "price_source": "one_minus_direct_YES_bestBid",
+          "tick_size_pUSD": "0.01",
+          "minimum_order_shares": "5"
+        },
+        {
+          "market_id": "3539665",
+          "condition_id": "0xb877fb09e91541b716d6564807a1acabeb18f58068363472fd8d2960e26bdeff",
+          "question": "Will monthly inflation increase by 0.2% in August?",
+          "outcome": "No",
+          "token_id": "105104869481617725866344645525255435718123184167330399438508651949931946357445",
+          "price_pUSD_per_share": "0.94",
+          "price_source": "one_minus_direct_YES_bestBid",
+          "tick_size_pUSD": "0.01",
+          "minimum_order_shares": "5"
+        },
+        {
+          "market_id": "3539664",
+          "condition_id": "0x9f0d927c3dca8bdce8ac2c195249cdc8edaf4ce56c100920592a6e1a71b19a23",
+          "question": "Will monthly inflation increase by 0.1% in August?",
+          "outcome": "No",
+          "token_id": "45522349743051142630765670856667964505020943549149550843922272170040652044527",
+          "price_pUSD_per_share": "0.99",
+          "price_source": "one_minus_direct_YES_bestBid",
+          "tick_size_pUSD": "0.001",
+          "minimum_order_shares": "5"
+        },
+        {
+          "market_id": "3539663",
+          "condition_id": "0x77429ae02f9d443c83c536952de7c1133f745050f312d715e67886e4b378cbaf",
+          "question": "Will monthly inflation stay flat (0.0%) in August?",
+          "outcome": "No",
+          "token_id": "38991218613058574274368100377325924866941382780705083174056407159136313686033",
+          "price_pUSD_per_share": "0.995",
+          "price_source": "one_minus_direct_YES_bestBid",
+          "tick_size_pUSD": "0.001",
+          "minimum_order_shares": "5"
+        },
+        {
+          "market_id": "3539661",
+          "condition_id": "0xb1cbac9857603a17f9462f00db8e98493a29004c95caf7fe04a32bd58270cc07",
+          "question": "Will monthly inflation decrease by 0.2% in August?",
+          "outcome": "No",
+          "token_id": "71274895918576675559573398387422273544216321057770497632619885419937060137821",
+          "price_pUSD_per_share": "0.997",
+          "price_source": "one_minus_direct_YES_bestBid",
+          "tick_size_pUSD": "0.001",
+          "minimum_order_shares": "5"
+        }
+      ],
+      "metadata_cost_pUSD_per_share": "6.072",
+      "metadata_profit_floor_pUSD": "-0.360",
+      "one_adverse_tick_per_leg_prices_pUSD": [
+        "0.53",
+        "0.73",
+        "0.92",
+        "0.95",
+        "0.991",
+        "0.996",
+        "0.998"
+      ],
+      "stressed_taker_fee_pUSD": "0.14557",
+      "after_fee_one_tick_profit_floor_pUSD": "-0.72057",
+      "passes_strict_metadata_gate": false,
+      "passes_fee_and_one_tick_gate": false
+    },
+    {
+      "event_id": "838709",
+      "event_slug": "august-inflation-us-monthly-1786474662954",
+      "event_title": "August Inflation US - Monthly",
+      "cardinality": 8,
+      "frontier_basis": "lowest_metadata_cost",
+      "guaranteed_payout_floor_pUSD_per_share": "7",
+      "quantity_shares_each_leg": "5",
+      "legs": [
+        {
+          "market_id": "3539667",
+          "condition_id": "0x81cff3df5f29ddcaac209487bebfa4e7868d68ff8c1c68f2c022089b06d895f2",
+          "question": "Will monthly inflation increase by 0.4% in August?",
+          "outcome": "No",
+          "token_id": "59533291979005451027301161253701619382906657645157548326972285410455577606339",
+          "price_pUSD_per_share": "0.52",
+          "price_source": "one_minus_direct_YES_bestBid",
+          "tick_size_pUSD": "0.01",
+          "minimum_order_shares": "5"
+        },
+        {
+          "market_id": "3539666",
+          "condition_id": "0x733cb95ac129c9b9660b7c14b3636554e775921e839277636e458ba0ee2703af",
+          "question": "Will monthly inflation increase by 0.3% in August?",
+          "outcome": "No",
+          "token_id": "9651897388714484151929467364624644247361486431940198770262779646091338863257",
+          "price_pUSD_per_share": "0.72",
+          "price_source": "one_minus_direct_YES_bestBid",
+          "tick_size_pUSD": "0.01",
+          "minimum_order_shares": "5"
+        },
+        {
+          "market_id": "3539668",
+          "condition_id": "0x3263f1e07bea95db5233380c85f4388a408a443b7db19770950c2b65b0ae0b67",
+          "question": "Will monthly inflation increase by 0.5% or more in August?",
+          "outcome": "No",
+          "token_id": "69614179107145335991624060148444006794661724025265344542264623622611366340110",
+          "price_pUSD_per_share": "0.91",
+          "price_source": "one_minus_direct_YES_bestBid",
+          "tick_size_pUSD": "0.01",
+          "minimum_order_shares": "5"
+        },
+        {
+          "market_id": "3539665",
+          "condition_id": "0xb877fb09e91541b716d6564807a1acabeb18f58068363472fd8d2960e26bdeff",
+          "question": "Will monthly inflation increase by 0.2% in August?",
+          "outcome": "No",
+          "token_id": "105104869481617725866344645525255435718123184167330399438508651949931946357445",
+          "price_pUSD_per_share": "0.94",
+          "price_source": "one_minus_direct_YES_bestBid",
+          "tick_size_pUSD": "0.01",
+          "minimum_order_shares": "5"
+        },
+        {
+          "market_id": "3539664",
+          "condition_id": "0x9f0d927c3dca8bdce8ac2c195249cdc8edaf4ce56c100920592a6e1a71b19a23",
+          "question": "Will monthly inflation increase by 0.1% in August?",
+          "outcome": "No",
+          "token_id": "45522349743051142630765670856667964505020943549149550843922272170040652044527",
+          "price_pUSD_per_share": "0.99",
+          "price_source": "one_minus_direct_YES_bestBid",
+          "tick_size_pUSD": "0.001",
+          "minimum_order_shares": "5"
+        },
+        {
+          "market_id": "3539663",
+          "condition_id": "0x77429ae02f9d443c83c536952de7c1133f745050f312d715e67886e4b378cbaf",
+          "question": "Will monthly inflation stay flat (0.0%) in August?",
+          "outcome": "No",
+          "token_id": "38991218613058574274368100377325924866941382780705083174056407159136313686033",
+          "price_pUSD_per_share": "0.995",
+          "price_source": "one_minus_direct_YES_bestBid",
+          "tick_size_pUSD": "0.001",
+          "minimum_order_shares": "5"
+        },
+        {
+          "market_id": "3539661",
+          "condition_id": "0xb1cbac9857603a17f9462f00db8e98493a29004c95caf7fe04a32bd58270cc07",
+          "question": "Will monthly inflation decrease by 0.2% in August?",
+          "outcome": "No",
+          "token_id": "71274895918576675559573398387422273544216321057770497632619885419937060137821",
+          "price_pUSD_per_share": "0.997",
+          "price_source": "one_minus_direct_YES_bestBid",
+          "tick_size_pUSD": "0.001",
+          "minimum_order_shares": "5"
+        },
+        {
+          "market_id": "3539662",
+          "condition_id": "0x5db295aaaf9885a0c0523c86241a7d039439b6ecec39540489ee7b09006b3879",
+          "question": "Will monthly inflation decrease by 0.1% in August?",
+          "outcome": "No",
+          "token_id": "114501860935133099833908939147365429822161597765072322499724334875611846662643",
+          "price_pUSD_per_share": "0.997",
+          "price_source": "one_minus_direct_YES_bestBid",
+          "tick_size_pUSD": "0.001",
+          "minimum_order_shares": "5"
+        }
+      ],
+      "metadata_cost_pUSD_per_share": "7.069",
+      "metadata_profit_floor_pUSD": "-0.345",
+      "one_adverse_tick_per_leg_prices_pUSD": [
+        "0.53",
+        "0.73",
+        "0.92",
+        "0.95",
+        "0.991",
+        "0.996",
+        "0.998",
+        "0.998"
+      ],
+      "stressed_taker_fee_pUSD": "0.14607",
+      "after_fee_one_tick_profit_floor_pUSD": "-0.71107",
+      "passes_strict_metadata_gate": false,
+      "passes_fee_and_one_tick_gate": false
+    },
+    {
+      "event_id": "838709",
+      "event_slug": "august-inflation-us-monthly-1786474662954",
+      "event_title": "August Inflation US - Monthly",
+      "cardinality": 9,
+      "frontier_basis": "lowest_metadata_cost",
+      "guaranteed_payout_floor_pUSD_per_share": "8",
+      "quantity_shares_each_leg": "5",
+      "legs": [
+        {
+          "market_id": "3539667",
+          "condition_id": "0x81cff3df5f29ddcaac209487bebfa4e7868d68ff8c1c68f2c022089b06d895f2",
+          "question": "Will monthly inflation increase by 0.4% in August?",
+          "outcome": "No",
+          "token_id": "59533291979005451027301161253701619382906657645157548326972285410455577606339",
+          "price_pUSD_per_share": "0.52",
+          "price_source": "one_minus_direct_YES_bestBid",
+          "tick_size_pUSD": "0.01",
+          "minimum_order_shares": "5"
+        },
+        {
+          "market_id": "3539666",
+          "condition_id": "0x733cb95ac129c9b9660b7c14b3636554e775921e839277636e458ba0ee2703af",
+          "question": "Will monthly inflation increase by 0.3% in August?",
+          "outcome": "No",
+          "token_id": "9651897388714484151929467364624644247361486431940198770262779646091338863257",
+          "price_pUSD_per_share": "0.72",
+          "price_source": "one_minus_direct_YES_bestBid",
+          "tick_size_pUSD": "0.01",
+          "minimum_order_shares": "5"
+        },
+        {
+          "market_id": "3539668",
+          "condition_id": "0x3263f1e07bea95db5233380c85f4388a408a443b7db19770950c2b65b0ae0b67",
+          "question": "Will monthly inflation increase by 0.5% or more in August?",
+          "outcome": "No",
+          "token_id": "69614179107145335991624060148444006794661724025265344542264623622611366340110",
+          "price_pUSD_per_share": "0.91",
+          "price_source": "one_minus_direct_YES_bestBid",
+          "tick_size_pUSD": "0.01",
+          "minimum_order_shares": "5"
+        },
+        {
+          "market_id": "3539665",
+          "condition_id": "0xb877fb09e91541b716d6564807a1acabeb18f58068363472fd8d2960e26bdeff",
+          "question": "Will monthly inflation increase by 0.2% in August?",
+          "outcome": "No",
+          "token_id": "105104869481617725866344645525255435718123184167330399438508651949931946357445",
+          "price_pUSD_per_share": "0.94",
+          "price_source": "one_minus_direct_YES_bestBid",
+          "tick_size_pUSD": "0.01",
+          "minimum_order_shares": "5"
+        },
+        {
+          "market_id": "3539664",
+          "condition_id": "0x9f0d927c3dca8bdce8ac2c195249cdc8edaf4ce56c100920592a6e1a71b19a23",
+          "question": "Will monthly inflation increase by 0.1% in August?",
+          "outcome": "No",
+          "token_id": "45522349743051142630765670856667964505020943549149550843922272170040652044527",
+          "price_pUSD_per_share": "0.99",
+          "price_source": "one_minus_direct_YES_bestBid",
+          "tick_size_pUSD": "0.001",
+          "minimum_order_shares": "5"
+        },
+        {
+          "market_id": "3539663",
+          "condition_id": "0x77429ae02f9d443c83c536952de7c1133f745050f312d715e67886e4b378cbaf",
+          "question": "Will monthly inflation stay flat (0.0%) in August?",
+          "outcome": "No",
+          "token_id": "38991218613058574274368100377325924866941382780705083174056407159136313686033",
+          "price_pUSD_per_share": "0.995",
+          "price_source": "one_minus_direct_YES_bestBid",
+          "tick_size_pUSD": "0.001",
+          "minimum_order_shares": "5"
+        },
+        {
+          "market_id": "3539661",
+          "condition_id": "0xb1cbac9857603a17f9462f00db8e98493a29004c95caf7fe04a32bd58270cc07",
+          "question": "Will monthly inflation decrease by 0.2% in August?",
+          "outcome": "No",
+          "token_id": "71274895918576675559573398387422273544216321057770497632619885419937060137821",
+          "price_pUSD_per_share": "0.997",
+          "price_source": "one_minus_direct_YES_bestBid",
+          "tick_size_pUSD": "0.001",
+          "minimum_order_shares": "5"
+        },
+        {
+          "market_id": "3539662",
+          "condition_id": "0x5db295aaaf9885a0c0523c86241a7d039439b6ecec39540489ee7b09006b3879",
+          "question": "Will monthly inflation decrease by 0.1% in August?",
+          "outcome": "No",
+          "token_id": "114501860935133099833908939147365429822161597765072322499724334875611846662643",
+          "price_pUSD_per_share": "0.997",
+          "price_source": "one_minus_direct_YES_bestBid",
+          "tick_size_pUSD": "0.001",
+          "minimum_order_shares": "5"
+        },
+        {
+          "market_id": "3539660",
+          "condition_id": "0xfa6373afc5134d38d914f85d1cf609e8294e1a06d1f8a924af9210e9f86adc46",
+          "question": "Will monthly inflation decrease by 0.3% or more in August?",
+          "outcome": "No",
+          "token_id": "48525729497418933937308582895177923005181231133784448259287416273770184057866",
+          "price_pUSD_per_share": "0.998",
+          "price_source": "one_minus_direct_YES_bestBid",
+          "tick_size_pUSD": "0.001",
+          "minimum_order_shares": "5"
+        }
+      ],
+      "metadata_cost_pUSD_per_share": "8.067",
+      "metadata_profit_floor_pUSD": "-0.335",
+      "one_adverse_tick_per_leg_prices_pUSD": [
+        "0.53",
+        "0.73",
+        "0.92",
+        "0.95",
+        "0.991",
+        "0.996",
+        "0.998",
+        "0.998",
+        "0.999"
+      ],
+      "stressed_taker_fee_pUSD": "0.14632",
+      "after_fee_one_tick_profit_floor_pUSD": "-0.70632",
+      "passes_strict_metadata_gate": false,
+      "passes_fee_and_one_tick_gate": false
+    }
+  ],
+  "gross_positive_rows": 0,
+  "fee_tick_positive_rows": 0,
+  "promotion_eligible": false,
+  "accepted_edge": false,
+  "profitability_claim": false,
+  "cross_event_packages": 0,
+  "network_requests": 0,
+  "account_requests": 0,
+  "protected_access": false,
+  "historical_result_changes": false,
+  "decision": "Retained metadata is exploratory and rejection-only. Any positive row needs a distinct prospective confirmation with exact rules, synchronized finite depth and every cost. No refresh, missing-side repair, book or account request follows this run.",
+  "result_sha256": "5ae8f3c92dfa944ffeb00459e339bc8bfa93d2ea0b315d579e83f7d84a578ef6"
+}
