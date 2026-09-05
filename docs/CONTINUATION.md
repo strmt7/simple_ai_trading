@@ -1,5 +1,12 @@
 # Continue Development
 
+The retained organic-conversion comparison is complete: 288 comparisons, three
+routes positive throughout at zero fees, none throughout at a hypothetical
+1.2-bip fee per leg. Best minimum equal-fee headroom was 0.6786 bips before
+other frictions. Read `review/2026-09-05/major-conversion-frontier/review.md`.
+This is exploratory reuse, not a new independent sample, static route, qualified
+edge or permission for another capture. Rank-44 organic-flow/account gates stay.
+
 The session-only prospective Binance triangle window is consumed: 12 public
 responses, 72 rate products, 18 positive before costs, zero above the frozen
 3-bip stress. Read `review/2026-09-05/triangle-window/review.md`. The largest

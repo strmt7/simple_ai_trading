@@ -1,0 +1,84 @@
+{
+  "schema_version": "retained-major-conversion-fee-frontier-plan-v1",
+  "classification": "post_capture_exploratory_not_independent_validation",
+  "question": "Do already-required direct conversions have a one-intermediary received-asset fee advantage in the exact retained major-asset window?",
+  "universe": "All 24 source-via-target permutations of BTC ETH SOL USDT, all 12 retained responses; no selected-only routes",
+  "inputs": [
+    {
+      "path": "docs/review/2026-09-05/triangle-window/book-00.json",
+      "sha256": "b0ed8fafe9343015e9ebd457e6c105e216d940e9f30b528127b5e40db6f0971d",
+      "sample_index": 0
+    },
+    {
+      "path": "docs/review/2026-09-05/triangle-window/book-01.json",
+      "sha256": "b989d0ce18fa68b58fb8c2336803922513e6c4824eb5e7854e181e8509b4ded8",
+      "sample_index": 1
+    },
+    {
+      "path": "docs/review/2026-09-05/triangle-window/book-02.json",
+      "sha256": "18445896913a594c569f0d7522b778f725ac6cff0b138859d133a2e9ad8d29aa",
+      "sample_index": 2
+    },
+    {
+      "path": "docs/review/2026-09-05/triangle-window/book-03.json",
+      "sha256": "f5e86c2b31bb63777dcd2c9fca44e11791160151f3b47a55978a2c549e189251",
+      "sample_index": 3
+    },
+    {
+      "path": "docs/review/2026-09-05/triangle-window/book-04.json",
+      "sha256": "ccc121fc6c51767f36b6acb2ce59f078ee99347d1ede1f731f8cdfe8d92a0243",
+      "sample_index": 4
+    },
+    {
+      "path": "docs/review/2026-09-05/triangle-window/book-05.json",
+      "sha256": "ef1ba1ca775567318b8f4679f4511276a9a2c0ce556b5f6a326a0347f770eae2",
+      "sample_index": 5
+    },
+    {
+      "path": "docs/review/2026-09-05/triangle-window/book-06.json",
+      "sha256": "6498d8a89d0c52db58660a621cfb6480aedff95e5c99e3403997c9c2b43585c2",
+      "sample_index": 6
+    },
+    {
+      "path": "docs/review/2026-09-05/triangle-window/book-07.json",
+      "sha256": "ba047072a07f653e084183e7cb94bb28b35ec80ac5d522200159e6cfd3cf7b4a",
+      "sample_index": 7
+    },
+    {
+      "path": "docs/review/2026-09-05/triangle-window/book-08.json",
+      "sha256": "d06f3b81e50eaa99d663b1d7afe22a0313d22292e81801690f7322ebdf5799b0",
+      "sample_index": 8
+    },
+    {
+      "path": "docs/review/2026-09-05/triangle-window/book-09.json",
+      "sha256": "0a566447d7a5e95cd812a28f918e6e82f4c2cd38a04943dadbb9074a27e0fb0c",
+      "sample_index": 9
+    },
+    {
+      "path": "docs/review/2026-09-05/triangle-window/book-10.json",
+      "sha256": "a10320b86b95394edf8f2cbb18d83425ebbebda4c8dcefb79d0dccc3c3da465c",
+      "sample_index": 10
+    },
+    {
+      "path": "docs/review/2026-09-05/triangle-window/book-11.json",
+      "sha256": "e8535d2c5b2f9d3451a7dc88f462e042c2ffbc05d495504ac197df53b98085a2",
+      "sample_index": 11
+    }
+  ],
+  "uniform_fee_bips": [
+    "0",
+    "1.2",
+    "2.4",
+    "10"
+  ],
+  "fee_model": "Hypothetical uniform proportional fee deducted from received asset on each leg; direct pays once and indirect twice. Never exact account-fee evidence. Also report exact equal-fee break-even without clamping negative values.",
+  "additional_stress_bips": "3",
+  "preservation": "No new market source, account, fee, order, depth, protected data or independent validation. The prior triangle failure and all old route studies stay unchanged. This may not select a new capture or static trading route.",
+  "source_sha256": {
+    "tools/review_major_conversion_fee_frontier.py": "d56bc9c3cdffac17aa039fbbd2d51763825a0e934ee0ebab45cf9fb7131c855e",
+    "tools/capture_binance_triangle_window.py": "39139dab13515cd5252d8cbfd021abb7c909370c5203fe9540f97eb5b37be5a2",
+    "tests/test_major_conversion_fee_frontier.py": "4629c32f3114bf5b01e3fd504d5f7e68c1c382a10a0697953d599c54651cdf76",
+    "docs/review/2026-09-05/triangle-window/result.json": "eb5db876fd4b8336f3d8853e732d309e877b5534c80bdce4953d23aee6be32ab",
+    "docs/review/2026-09-05/triangle-window/contract.json": "927822d6a367bb701bb1a7289a53bad2548b4caacd84b246f064cafd977bdcb8"
+  }
+}
