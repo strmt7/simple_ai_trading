@@ -138,16 +138,47 @@ def classify_base_url(url: str) -> str:
 
 
 def ensure_non_mainnet_base_url(url: str, *, testnet: bool, demo: bool) -> None:
+    url = _validated_base_origin(url)
     classification = classify_base_url(url)
     if classification == "live" or ((testnet or demo) and classification == "custom"):
         raise BinanceAPIError(
-            f"Refusing non-mainnet runtime with unsafe Binance base URL {url!r}. "
+            "Refusing non-mainnet runtime with unsafe Binance base URL. "
             "Remove BINANCE_*_BASE_URL overrides or use an official testnet/demo endpoint."
         )
 
 
 class BinanceAPIError(RuntimeError):
     """Raised for invalid requests or failed Binance responses."""
+
+
+def _validated_base_origin(url: str) -> str:
+    """Require a transport origin, not URL components that can redirect signing."""
+    invalid = "Refusing unsafe Binance base URL; use a bare HTTPS origin."
+    if not isinstance(url, str) or any(
+        c.isspace() or ord(c) < 32 or ord(c) == 127 for c in url
+    ):
+        raise BinanceAPIError(invalid)
+    try:
+        parts = urlsplit(url)
+        valid = (
+            parts.scheme == "https"
+            and bool(parts.hostname)
+            and parts.username is None
+            and parts.password is None
+            and parts.path in {"", "/"}
+            and not parts.query
+            and not parts.fragment
+            and "?" not in url
+            and "#" not in url
+            and "\\" not in url
+        )
+        # Accessing port also rejects malformed numeric ports before transport.
+        _ = parts.port
+    except ValueError:
+        raise BinanceAPIError(invalid) from None
+    if not valid:
+        raise BinanceAPIError(invalid)
+    return url.rstrip("/")
 
 
 def _validated_client_order_id(value: str) -> str:
@@ -248,7 +279,6 @@ class BinanceClient:
         # A redirect is not an approved venue route or permission to replay a
         # write. Stop before requests can forward headers or the request body.
         self.session.max_redirects = 0
-        self.session.headers.update({"X-MBX-APIKEY": api_key})
         self.session.headers.update({"User-Agent": "simple-ai-trading/0.1"})
         self.timeout = timeout
         try:
@@ -320,8 +350,9 @@ class BinanceClient:
         base = 0.5
         return min(30.0, base * (2 ** max(0, attempt)))
 
-    def _ensure_signed_endpoint_allowed(self) -> None:
-        if classify_base_url(self.base_url) not in {"testnet", "demo"}:
+    def _ensure_signed_endpoint_allowed(self, base_url: str | None = None) -> None:
+        origin = _validated_base_origin(self.base_url if base_url is None else base_url)
+        if classify_base_url(origin) not in {"testnet", "demo"}:
             raise BinanceAPIError(
                 "Signed Binance calls are disabled for mainnet/custom endpoints. "
                 "Use the official testnet or demo endpoint."
@@ -339,6 +370,24 @@ class BinanceClient:
         if not isinstance(params, Mapping):
             params = {}
 
+        # Validate and use the same origin for every attempt of this operation.
+        base_url = _validated_base_origin(self.base_url)
+        if self.testnet or self.demo:
+            ensure_non_mainnet_base_url(base_url, testnet=self.testnet, demo=self.demo)
+        if (
+            not isinstance(path, str)
+            or not path.startswith("/")
+            or path.startswith("//")
+            or any(c in path for c in "?#\\")
+            or any(c.isspace() or ord(c) < 32 or ord(c) == 127 for c in path)
+        ):
+            raise BinanceAPIError(
+                "Binance request path must be an absolute API path without URL components"
+            )
+        api_key, api_secret = self.api_key, self.api_secret
+        if signed:
+            self._ensure_signed_endpoint_allowed(base_url)
+
         # A failed response can follow an accepted write. The owning workflow
         # must reconcile the exact intent before deciding whether to resubmit.
         retry_budget = self.max_retries if method.upper() == "GET" else 0
@@ -351,27 +400,31 @@ class BinanceClient:
             self._throttle()
 
             if signed:
-                if not self.api_key or not self.api_secret:
+                if not api_key or not api_secret:
                     raise BinanceAPIError("signed endpoint requires api_key/api_secret")
-                self._ensure_signed_endpoint_allowed()
                 request_params = dict(params)
                 request_params["timestamp"] = int(time.time() * 1000)
                 request_params.setdefault("recvWindow", self.recv_window_ms)
                 query = urlencode(sorted((k, v) for k, v in request_params.items()))
                 signature = hmac.new(
-                    self.api_secret, query.encode("utf-8"), hashlib.sha256
+                    api_secret, query.encode("utf-8"), hashlib.sha256
                 ).hexdigest()
                 query += f"&signature={signature}"
-                url = f"{self.base_url}{path}?{query}"
+                url = f"{base_url}{path}?{query}"
                 payload = None
             else:
                 payload = dict(params)
-                url = f"{self.base_url}{path}"
+                url = f"{base_url}{path}"
             last_url = url
 
             try:
                 response = self.session.request(
-                    method, url, params=payload, timeout=self.timeout
+                    method,
+                    url,
+                    params=payload,
+                    timeout=self.timeout,
+                    # None explicitly removes any stale session-level key.
+                    headers={"X-MBX-APIKEY": api_key if signed else None},
                 )
             except requests.RequestException as err:
                 last_error = _redact_sensitive_text(str(err), url)

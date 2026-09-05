@@ -57,6 +57,14 @@ support this reasoning; they cannot establish design quality, semantic review or
 financial correctness by themselves. Do not optimize for a green badge, comment
 count or uniform appearance at the expense of clarity and correct behavior.
 
+Repair root causes at the owning shared boundary. Do not mask defects with
+caller-specific bypasses, silent exception suppression, weakened validation or
+test-only production branches. Any supported degraded mode must be explicit,
+observable and preserve the relevant safety invariants; it is not permission
+to fabricate successful state. Challenge each proposed action's information gain,
+failure consequences and complexity cost. Enterprise readiness is an acceptance
+obligation backed by evidence, never a label inferred from passing tests alone.
+
 Use one shared style for maintained code throughout the revamp and final
 line-by-line review. This is a migration requirement, not a claim that legacy
 code already complies:
