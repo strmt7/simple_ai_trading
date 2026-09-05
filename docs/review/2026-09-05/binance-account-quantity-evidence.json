@@ -1,0 +1,37 @@
+{
+  "schema_version": 1,
+  "base_revision": "cbacb486ef6ebba2f27cf2321619c7451a00c5a1",
+  "evidence_kind": "offline_account_quantity_reconciliation_regression",
+  "source_representation": "UTF-8 text with CRLF normalized to LF",
+  "sources": {
+    "src/simple_ai_trading/binance_account_validation.py": "981deddb5136cc22200110e3ea8e041aef8b4b8f4af4666e86322c82f6a7ea47",
+    "src/simple_ai_trading/reconciliation.py": "88d317d015fcca6877eb58a9a329ce6c875564e08bd11d4a9b8d1370337ddff9",
+    "tests/test_binance_account_validation.py": "700f42d27315cc47cd99a614e097398c46c360ef3401c8a71018d7e2e16e4d89"
+  },
+  "pre_fix_reproduced_failures": 4,
+  "verification": {
+    "affected_domain_passed_before_two_additional_lifecycle_cases": 199,
+    "additional_lifecycle_cases_passed": 2,
+    "selected_cli_cases_passed": 4,
+    "distinct_affected_passed": 205,
+    "new_validation_cases": 46,
+    "affected_domain_command": "uv run --locked python -m pytest -o addopts='' -q --tb=short tests/test_binance_account_validation.py tests/test_reconciliation.py tests/test_execution_lifecycle.py tests/test_autonomous.py tests/test_binance_open_intents.py tests/test_binance_execution_scope.py",
+    "additional_lifecycle_selector": "tests/test_binance_account_validation.py::test_invalid_account_blocks_lifecycle_that_accepts_valid_flat_account",
+    "cli_selectors": [
+      "tests/test_cli_new_commands.py::test_command_reconcile_requires_credentials",
+      "tests/test_cli_new_commands.py::test_command_reconcile_writes_ok_report",
+      "tests/test_cli_new_commands.py::test_command_reconcile_returns_nonzero_on_exchange_mismatch",
+      "tests/test_cli_coverage.py::test_command_live_reconciliation_mismatch_after_balance"
+    ],
+    "ruff": "passed",
+    "diff_check": "passed",
+    "full_repository_final_review": "not_completed"
+  },
+  "venue_network_requests": 0,
+  "orders": 0,
+  "real_credentials_accessed": false,
+  "protected_captures_accessed": false,
+  "historical_results_modified": false,
+  "profitability_evidence": false,
+  "scope_limit": "Account row identities, quantity validity and reconciliation interpretation; not snapshot authenticity, freshness, stable account UID, fee accounting or complete recovery"
+}

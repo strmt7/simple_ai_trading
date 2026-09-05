@@ -10,6 +10,11 @@ Scope blockers to their branch; a fresh user resumption resets the blocked audit
 
 ## Current Truth
 
+The [account quantity checkpoint](review/2026-09-05/binance-account-quantity-evidence.md)
+closes a false-flat reconciliation pass. Invalid account rows cannot establish
+flatness or stale verified local inventory. 205 distinct affected checks pass;
+full recovery, rearm, final review and profitable-edge qualification remain open.
+
 The [execution-scope checkpoint](review/2026-09-05/binance-execution-scope.md)
 binds new autonomous intents and journal history to origin/product/API-key identity.
 395 distinct staged checks pass. Next: exact terminal-order recovery and explicit

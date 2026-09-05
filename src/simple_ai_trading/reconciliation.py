@@ -7,6 +7,7 @@ from dataclasses import asdict, dataclass, field
 from typing import Mapping, Sequence
 
 from .positions import OpenPosition, PositionsStore, bot_ownership_rejection_reason
+from .binance_account_validation import account_quantity_rejection
 from .types import RuntimeConfig
 
 
@@ -167,6 +168,9 @@ def exchange_exposures_from_account(
     runtime: RuntimeConfig,
     local_positions: Sequence[OpenPosition],
 ) -> list[ExchangeExposure]:
+    rejection = account_quantity_rejection(account, runtime.market_type)
+    if rejection is not None:
+        raise ValueError(rejection)
     symbols = _symbol_set(runtime, local_positions)
     if runtime.market_type == "futures":
         return _exposures_from_futures_account(account, symbols)
@@ -190,11 +194,7 @@ def _aggregate_exchange(exposures: Sequence[ExchangeExposure]) -> dict[tuple[str
 
 
 def _account_payload_rejection(account: object, runtime: RuntimeConfig) -> str | None:
-    if not isinstance(account, Mapping):
-        return "account_payload_not_mapping"
-    if runtime.market_type == "futures":
-        return None if isinstance(account.get("positions"), list) else "futures_positions_missing_or_not_list"
-    return None if isinstance(account.get("balances"), list) else "spot_balances_missing_or_not_list"
+    return account_quantity_rejection(account, runtime.market_type)
 
 
 def reconcile_account_positions(
@@ -204,6 +204,13 @@ def reconcile_account_positions(
     *,
     quantity_tolerance: float = 1e-8,
 ) -> ReconciliationReport:
+    if (
+        isinstance(quantity_tolerance, bool)
+        or not isinstance(quantity_tolerance, (int, float))
+        or not math.isfinite(quantity_tolerance)
+        or quantity_tolerance < 0
+    ):
+        raise ValueError("quantity tolerance must be finite and nonnegative")
     ledger_integrity_errors = store.open_integrity_errors()
     open_positions = [] if ledger_integrity_errors else store.load_open()
     live_positions = [position for position in open_positions if not position.dry_run]
@@ -219,21 +226,30 @@ def reconcile_account_positions(
         if bot_ownership_rejection_reason(position) is None
     ]
     account_rejection = _account_payload_rejection(account, runtime)
-    account_mapping: Mapping[str, object] = account if isinstance(account, Mapping) else {}
-    exposures = exchange_exposures_from_account(account_mapping, runtime, open_positions)
+    account_mapping: Mapping[str, object] = (
+        account if isinstance(account, Mapping) else {}
+    )
+    exposures = (
+        exchange_exposures_from_account(account_mapping, runtime, open_positions)
+        if account_rejection is None
+        else []
+    )
     local = _aggregate_local(verified_live_positions)
     exchange = _aggregate_exchange(exposures)
-    keys = sorted(set(local) | set(exchange))
+    # Invalid quantity evidence is unknown, not proof that local inventory vanished.
+    keys = [] if account_rejection is not None else sorted(set(local) | set(exchange))
     mismatches: list[ReconciliationMismatch] = []
     for error in ledger_integrity_errors:
-        mismatches.append(ReconciliationMismatch(
-            symbol=str(runtime.symbol).upper(),
-            side="UNKNOWN",
-            local_qty=0.0,
-            exchange_qty=0.0,
-            difference=0.0,
-            reason=f"local_ledger_integrity_failed:{error}",
-        ))
+        mismatches.append(
+            ReconciliationMismatch(
+                symbol=str(runtime.symbol).upper(),
+                side="UNKNOWN",
+                local_qty=0.0,
+                exchange_qty=0.0,
+                difference=0.0,
+                reason=f"local_ledger_integrity_failed:{error}",
+            )
+        )
     if account_rejection is not None:
         mismatches.append(ReconciliationMismatch(
             symbol=str(runtime.symbol).upper(),
