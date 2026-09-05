@@ -6,6 +6,12 @@ operating contract. Historical handoff text is archived under
 
 ## Current Truth
 
+The separate retained within-event CPI partitions are now economically
+screened and terminal: all 42 rows failed even before fees. See
+`review/2026-09-04/cpi-partition-review.md`; no refresh or book escalation.
+The earlier cross-event mapping review remains unchanged. Current canonical
+terminal observations are 189; lower checkpoint counts are historical.
+
 CPI annual/monthly markets do not yet have a proved exact cross-market map:
 seasonal adjustment, first-release precision and fallback vintages matter.
 See `review/2026-09-04/inflation-mapping.md` before this rank-31 subquestion.

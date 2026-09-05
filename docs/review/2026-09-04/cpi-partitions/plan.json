@@ -1,0 +1,88 @@
+{
+  "schema_version": "retained-cpi-partition-screen-plan-v1",
+  "frozen_at_utc": "2026-09-04T23:59:41.429773+00:00",
+  "base_head": "8e65239ea3882553c731a69fa91e1b7cf5ed2aa4",
+  "events": [
+    {
+      "id": "838710",
+      "slug": "august-inflation-us-annual-1786474662954",
+      "raw_path": "docs/review/2026-09-04/inflation-definition-pair/0-raw.json",
+      "market_count": 12,
+      "labels": [
+        "\u22642.9%",
+        "3.0%",
+        "3.1%",
+        "3.2%",
+        "3.3%",
+        "3.4%",
+        "3.5%",
+        "3.6%",
+        "3.7%",
+        "3.8%",
+        "3.9%",
+        "\u22654.0%"
+      ],
+      "required_rule_phrases": [
+        "August 2026",
+        "one decimal point",
+        "most recent previous month with available data",
+        "before seasonal adjustment"
+      ]
+    },
+    {
+      "id": "838709",
+      "slug": "august-inflation-us-monthly-1786474662954",
+      "raw_path": "docs/review/2026-09-04/inflation-definition-pair/1-raw.json",
+      "market_count": 9,
+      "labels": [
+        "\u2264-0.3%",
+        "-0.2%",
+        "0.0%",
+        "0.1%",
+        "0.2%",
+        "0.3%",
+        "0.4%",
+        "\u22650.5%",
+        "-0.1%"
+      ],
+      "required_rule_phrases": [
+        "August 2026",
+        "one decimal point",
+        "most recent previous month with available data",
+        "seasonally adjusted Consumer Price Index for All Urban Consumers"
+      ]
+    }
+  ],
+  "quantity_shares": "5",
+  "question": "Do either of the two already retained, individually complete one-decimal CPI partitions contain a positive long-only package after configured fees and one adverse tick per leg? No annual-monthly conversion is used.",
+  "scope_interpretation": "The prior cross-event mapping failure is unchanged. This distinct within-event question needs only that event's common measure, reported precision, exhaustive tail/interior labels and common fallback. It does not assert complete cross-event support or reopen a capture. Search headline probabilities were seen before either plan; this remains exploratory, never new independent validation.",
+  "payoff_proof": "For every reported one-decimal value including the common previous-month fallback, one label in each complete tail/interior partition is true. A complete YES set pays 1; a same-market YES+NO pair pays 1; k distinct NOs pay at least k-1 under the common valid-resolution rules. Operational/on-chain dispute and conversion qualification remains absent.",
+  "selection": "Both events, all declared markets, all YES, every binary straddle and every optimal NO cardinality under both raw-price and fee/tick cost are fixed before any retained side-specific price calculation. Missing sides are incomplete, never free; do not fill them.",
+  "fee_gate": "Reuse the exact existing supported per-market taker fee and quantity rounding at five shares, plus one adverse configured tick per leg. Absent schedule means zero only if feesEnabled is false and feeType empty. Both counts and rule gates must pass before prices.",
+  "promotion_eligible": false,
+  "network_requests": 0,
+  "book_requests": 0,
+  "credentials_used": false,
+  "protected_access": false,
+  "historical_results_changed": false,
+  "retry": "One-use retained screen. Preserve every result/failure. No refetch, alias, repair, reprice, sibling substitution or downstream book/account request. A positive exploratory row needs a distinct prospective source/depth/all-cost confirmation, not reinterpretation as profit.",
+  "source_sha256": {
+    "tools/screen_polymarket_exact_negrisk_long_only_frontier_v2.py": "c2eced31b6d961de60742f855e8bece9778e4e8e551ed07081d4f7b49a88f7e5",
+    "tools/screen_polymarket_exact_negrisk_long_only_frontier.py": "1527dbf87fbaf7315a9f505d022c877f9c7b3eece9f1e5fc8dbb8cf2e19fdf2b",
+    "tools/screen_polymarket_exact_two_leg_package.py": "374fcc3c3485c466b4929a91256450bdc7db70f93ef4c6bda627e05fe8938327",
+    "tools/adjudicate_polymarket_retained_negrisk_pairwise_no.py": "59e610511f1e423c6191669931a6a887d190fa10c27eb90e36fd8a370407f71b",
+    "tools/adjudicate_polymarket_retained_negrisk_pairwise_no_v2.py": "fe601915bd4db210441dc56978dba919ba7e68cb4a586ee9f19d00f807f2afb1",
+    "tools/adjudicate_polymarket_retained_negrisk_no_cardinality_frontier.py": "a7011313fc3895312cbb85fd6a04972ffaf6101cdcc9d300345bbecdfdf16c8a",
+    "tools/screen_polymarket_negrisk_complete_set_catalog.py": "5d5dd88fe9f77be92063d4b55bbcb8dd1b96db06b99dd0d021774916cf2b5ae9",
+    "tools/adjudicate_polymarket_release_date_deadline_graph.py": "c6277f53adf269e818c12b187d7f5fef19dbb016d93b3c246052aedd52dc2c03",
+    "src/simple_ai_trading/polymarket_fees.py": "4002aa8008874708931cc182f352adf436a65baee24e23bfc72617acdf127c8d",
+    "tools/screen_retained_cpi_partitions.py": "fc30d114db3a3d808aac51d74781a54b93d51aa7cf7be7ebf722f34e0e7c5d55",
+    "docs/review/2026-09-04/inflation-definition-pair/definitions.json": "90de1cc0f214564016a91757fe778470d21af5e50db72d4e0e89c08ea5fae858",
+    "docs/review/2026-09-04/inflation-definition-pair/review.json": "47be2ad0d7c7c3ac9b656ef82a3330568ffda337b26a23555d3b70f8ae03da2b",
+    "docs/review/2026-09-04/inflation-definition-pair/plan.json": "84c46d0c99304775bf0f91854ea8656758a37f468bde88e8056bcd188c60b134",
+    "docs/review/2026-09-04/inflation-definition-pair/0-raw.json": "c3721a775f0429f42895d5c9dfcac269c44317057e158ad28688ae4f5992b26f",
+    "docs/review/2026-09-04/inflation-definition-pair/0-journal.jsonl": "7a2ed2d44ca752230ab7235832f9c54dfab406d178cc11261ad81c9e539c7c15",
+    "docs/review/2026-09-04/inflation-definition-pair/1-raw.json": "f13439424910dd65739025dfdd43965a6fc28fa1a4ee6b04f5f2f64d42f6fbb4",
+    "docs/review/2026-09-04/inflation-definition-pair/1-journal.jsonl": "ebd987c3a76bf927608a5b6a5cffc9bc7739a9d0a82e3c9014db4eecbf406fe9"
+  }
+}

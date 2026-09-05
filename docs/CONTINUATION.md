@@ -1,14 +1,19 @@
 # Continue Development
 
-Current canonical status after the CPI mapping source review:
-accepted scopes 37, ranked hypotheses 65, terminal observations 188,
+Current canonical status after the retained CPI within-event partition screen:
+accepted scopes 37, ranked hypotheses 65, terminal observations 189,
 and stable current account-qualified after-all-cost edges zero. Registry
 SHA-256 is
-`96394c8e51621306a615bffa0fd0b107ecfe155cbc17bd9070a4bdccf60f3eb3`;
+`a4136d0d76c700bb77fb12ae558d3e52aa4dae7e27b968f5e6b2f9e21f179048`;
 durability-audit SHA-256 is
-`e73436dfc31a9391e071e823b3cb77d96c020ac2de641406666011b297378c9e`.
+`bf6743642570d3c9e043a3f9ebe4a12ff6a76de24c3bcd5af0c14fd6d1223f29`.
 
 ## September 4 resumed review and USD1 campaign
+
+The separate CPI within-event partition screen is consumed: 42 rows across
+the complete 12-market annual and 9-market monthly events failed before fees.
+No new requests or cross-event mapping were used. Read
+`review/2026-09-04/cpi-partition-review.md`; no refresh, reprice or books.
 
 Rank 31 adds the source-only CPI mapping review: annual unadjusted and monthly
 seasonally adjusted figures cannot be identified by matching release dates.
