@@ -185,4 +185,5 @@ docs/review/2026-09-05/make-take-forward-boundary.json binary -eol
 docs/review/2026-09-05/collateral-auto-exchange-*.json binary -eol
 docs/review/2026-09-05/option-population/*.json binary -eol
 docs/review/2026-09-05/option-population/*.jsonl binary -eol
+docs/review/2026-09-05/wallet-buy-envelope/*.json binary -eol
 data/binance-commodity-option-perpetual-lower-bound-v1/raw/options-exchange-info.raw binary -eol

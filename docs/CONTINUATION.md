@@ -1,5 +1,15 @@
 # Continue Development
 
+Latest offline R&D: [full buy-population exposure](review/2026-09-05/wallet-buy-envelope/review.md)
+includes all 1,222 scoped buys, not just selected successful locks. The 358
+conditions contain 47,891.745927 residual directional shares; 357 conditions
+are unbalanced. The conditional gross outer PnL range spans both signs, not
+an actual wallet PnL statement or proof of a profitable first-leg strategy.
+No new requests, original-result edits, promotion or retry permission. Do not
+repeat this sample or add hypothetical grids; the missing causal cash/inventory
+ledger and feasible liquidation comparator are the next substantive evidence.
+Registry/audit hashes and counts below remain current and unchanged.
+
 Latest R&D: the frozen September 5 Binance metadata gate proved 70 distinct
 options outside the complete 2,274-name prior union. One two-request screen
 found 23 positive-entry rows, zero gross-positive floors and zero survivors
