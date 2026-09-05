@@ -25,6 +25,7 @@ from .binance_execution_scope import (
     BINANCE_SPOT_DEMO,
     BINANCE_SPOT_TESTNET,
     BinanceExecutionScope,
+    parse_execution_id,
 )
 
 BINANCE_SPOT_LIVE = "https://api.binance.com"
@@ -588,11 +589,14 @@ class BinanceClient:
         *,
         signed: bool = False,
         label: str,
+        expected_scope: BinanceExecutionScope | None = None,
     ) -> list[Any]:
         payload = (
-            self._request(method, path, params, signed=True)
+            self._request(
+                method, path, params, signed=True, **_scope_kwargs(expected_scope)
+            )
             if signed
-            else self._request(method, path, params)
+            else self._request(method, path, params, **_scope_kwargs(expected_scope))
         )
         if not isinstance(payload, list):
             raise BinanceAPIError(f"Unexpected {label} payload")
@@ -1305,6 +1309,34 @@ class BinanceClient:
             signed=True,
             label="order status",
             **_scope_kwargs(expected_scope),
+        )
+
+    def get_order_trades(
+        self,
+        symbol: str,
+        *,
+        order_id: int | str,
+        expected_scope: BinanceExecutionScope,
+    ) -> list[Any]:
+        """Read one exact-order page; cumulative reconciliation determines completeness."""
+        if not isinstance(expected_scope, BinanceExecutionScope):
+            raise BinanceAPIError("Order trades require an execution scope")
+        if not isinstance(symbol, str) or not re.fullmatch(r"[A-Z0-9]{1,32}", symbol):
+            raise BinanceAPIError("Order trade symbol is invalid")
+        identity = parse_execution_id(order_id)
+        if identity is None:
+            raise BinanceAPIError("Order trade identity is invalid")
+        params = {"symbol": symbol, "orderId": identity, "limit": 1000}
+        endpoint = (
+            "/api/v3/myTrades" if self.market_type == "spot" else "/fapi/v1/userTrades"
+        )
+        return self._request_list(
+            "GET",
+            endpoint,
+            params,
+            signed=True,
+            label="order trades",
+            expected_scope=expected_scope,
         )
 
     def get_exchange_time(self) -> Dict[str, object]:

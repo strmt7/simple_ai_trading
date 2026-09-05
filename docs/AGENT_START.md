@@ -10,6 +10,13 @@ Scope blockers to their branch; a fresh user resumption resets the blocked audit
 
 ## Current Truth
 
+The [terminal opening evidence stage](review/2026-09-05/binance-terminal-opening-evidence.md)
+now retains exact terminal order/trade quantities and native fees for pending
+Binance intents. 371 affected offline checks pass, including 82 new cases and
+abrupt process exit. UNKNOWN remains intact; inventory application, explicit
+rearm and CLI/Windows integration are still open. Do not refetch retained
+observations or label this stage full recovery or enterprise readiness.
+
 The [account quantity checkpoint](review/2026-09-05/binance-account-quantity-evidence.md)
 closes a false-flat reconciliation pass. Invalid account rows cannot establish
 flatness or stale verified local inventory. 205 distinct affected checks pass;

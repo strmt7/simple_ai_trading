@@ -12,6 +12,15 @@ BINANCE_FUTURES_TESTNET = "https://testnet.binancefuture.com"
 BINANCE_FUTURES_DEMO = "https://demo-fapi.binance.com"
 
 
+def parse_execution_id(value: object) -> str | None:
+    """Parse an exchange order/trade ID without coercion, trimming or truncation."""
+    if type(value) is int and 0 <= value < 10**30:
+        return str(value)
+    if isinstance(value, str) and re.fullmatch(r"0|[1-9][0-9]{0,29}", value):
+        return value
+    return None
+
+
 @dataclass(frozen=True)
 class BinanceExecutionScope:
     origin: str
