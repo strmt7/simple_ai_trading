@@ -127,7 +127,7 @@ def test_request_supports_unsigned_and_signed_paths(monkeypatch) -> None:
         def json(self):
             return {}
 
-    def fake_request(method: str, url: str, params=None, timeout=None):
+    def fake_request(method: str, url: str, params=None, timeout=None, headers=None):
         calls.append((method, url.split("?")[0], params or {}))
         if "?" in url:
             assert "signature=" in url
@@ -380,7 +380,7 @@ def test_place_order_branches_and_leverage_clamping(monkeypatch) -> None:
         def json(self):
             return {"ok": True}
 
-    def request(method: str, url: str, params=None, timeout=None):
+    def request(method: str, url: str, params=None, timeout=None, headers=None):
         call_log.append((method, url, params or {}))
         return _FakeResponse()
 

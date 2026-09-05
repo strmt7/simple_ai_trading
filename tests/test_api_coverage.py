@@ -95,7 +95,7 @@ def test_client_can_target_demo_environment() -> None:
 def test_request_parses_json_and_raises_http_errors(monkeypatch) -> None:
     client = BinanceClient(api_key="k", api_secret="s", market_type="spot", max_retries=0)
 
-    def request(method: str, url: str, params=None, timeout=None):
+    def request(method: str, url: str, params=None, timeout=None, headers=None):
         assert method == "GET"
         assert "ping" in url
         return _FakeResponse(429, text="{\"code\": -1003}")
@@ -125,7 +125,7 @@ def test_request_retries_when_params_are_non_dict(monkeypatch) -> None:
     client = BinanceClient(api_key="k", api_secret="s", max_retries=0)
     observed: list[dict] = []
 
-    def request(_method: str, _url: str, params=None, timeout=None):
+    def request(_method: str, _url: str, params=None, timeout=None, headers=None):
         observed.append(params if isinstance(params, dict) else {})
         return _FakeResponse(200, {"ok": True})
 
@@ -140,7 +140,7 @@ def test_request_retries_transport_error_then_succeeds(monkeypatch) -> None:
     calls: list[float] = []
     seq: list[object] = [requests.Timeout("timeout"), _FakeResponse(200, {"ok": True})]
 
-    def request(_method: str, _url: str, params=None, timeout=None):
+    def request(_method: str, _url: str, params=None, timeout=None, headers=None):
         next_value = seq.pop(0)
         if isinstance(next_value, Exception):
             raise next_value
@@ -161,7 +161,7 @@ def test_request_retries_on_malformed_json_then_succeeds(monkeypatch) -> None:
     ]
     sleeps: list[float] = []
 
-    def request(method: str, url: str, params=None, timeout=None):
+    def request(method: str, url: str, params=None, timeout=None, headers=None):
         return responses.pop(0)
 
     monkeypatch.setattr(client.session, "request", request)
@@ -175,7 +175,7 @@ def test_request_retry_status_stops_after_exhaustion(monkeypatch) -> None:
     client._call_delay = 0.0
     responses = [_FakeResponse(500, text="server down"), _FakeResponse(500, text="server down")]
 
-    def request(method: str, url: str, params=None, timeout=None):
+    def request(method: str, url: str, params=None, timeout=None, headers=None):
         return responses.pop(0)
 
     sleeps: list[float] = []
@@ -200,7 +200,7 @@ def test_request_retries_on_rate_limits(monkeypatch) -> None:
     calls: list[tuple[str, str]] = []
     sleep_calls: list[float] = []
 
-    def request(method: str, url: str, params=None, timeout=None):
+    def request(method: str, url: str, params=None, timeout=None, headers=None):
         calls.append((method, url))
         return responses.pop(0)
 
@@ -223,7 +223,7 @@ def test_request_retries_on_retry_after_header(monkeypatch) -> None:
     ]
     sleep_calls: list[float] = []
 
-    def request(method: str, url: str, params=None, timeout=None):
+    def request(method: str, url: str, params=None, timeout=None, headers=None):
         return responses.pop(0)
 
     monkeypatch.setattr(client.session, "request", request)
@@ -241,7 +241,7 @@ def test_request_retries_on_api_rate_limit_code(monkeypatch) -> None:
     ]
     calls = 0
 
-    def request(method: str, url: str, params=None, timeout=None):
+    def request(method: str, url: str, params=None, timeout=None, headers=None):
         nonlocal calls
         calls += 1
         return responses.pop(0)
@@ -256,7 +256,7 @@ def test_request_retries_on_api_rate_limit_code(monkeypatch) -> None:
 def test_request_raises_for_malformed_json(monkeypatch) -> None:
     client = BinanceClient(api_key="k", api_secret="s")
 
-    def request(method: str, url: str, params=None, timeout=None):
+    def request(method: str, url: str, params=None, timeout=None, headers=None):
         return _FakeResponse(200, payload=JSONDecodeError("bad json", "{}", 0), text="bad json")
 
     monkeypatch.setattr(client.session, "request", request)
@@ -266,7 +266,7 @@ def test_request_raises_for_malformed_json(monkeypatch) -> None:
 
 def test_last_request_info_records_success(monkeypatch) -> None:
     client = BinanceClient(api_key="k", api_secret="s", market_type="spot")
-    monkeypatch.setattr(client.session, "request", lambda _method, _url, params=None, timeout=None: _FakeResponse(200, {"ok": True}))
+    monkeypatch.setattr(client.session, "request", lambda _method, _url, params=None, timeout=None, headers=None: _FakeResponse(200, {"ok": True}))
     assert client._request("GET", "/api/v3/ping") == {"ok": True}
     assert client.last_request_info["status"] == 200
     assert client.last_request_info["method"] == "GET"
@@ -285,7 +285,7 @@ def test_last_request_info_records_binance_rate_limit_headers(monkeypatch) -> No
             "Content-Type": "application/json",
         },
     )
-    monkeypatch.setattr(client.session, "request", lambda _method, _url, params=None, timeout=None: response)
+    monkeypatch.setattr(client.session, "request", lambda _method, _url, params=None, timeout=None, headers=None: response)
 
     assert client._request("GET", "/api/v3/ping") == {"ok": True}
     assert client.last_request_info["rate_limit_headers"] == {
@@ -297,7 +297,7 @@ def test_last_request_info_records_binance_rate_limit_headers(monkeypatch) -> No
 def test_last_request_info_records_retry_after_on_exhausted_rate_limit(monkeypatch) -> None:
     client = BinanceClient(api_key="k", api_secret="s", market_type="spot", max_retries=0)
     response = _FakeResponse(429, text="rate limit", headers={"Retry-After": "2.5"})
-    monkeypatch.setattr(client.session, "request", lambda _method, _url, params=None, timeout=None: response)
+    monkeypatch.setattr(client.session, "request", lambda _method, _url, params=None, timeout=None, headers=None: response)
 
     with pytest.raises(BinanceAPIError, match="429"):
         client._request("GET", "/api/v3/ping")
@@ -307,7 +307,7 @@ def test_last_request_info_records_retry_after_on_exhausted_rate_limit(monkeypat
 def test_request_raises_for_transport_errors(monkeypatch) -> None:
     client = BinanceClient(api_key="k", api_secret="s", max_retries=0)
 
-    def request(method: str, url: str, params=None, timeout=None):
+    def request(method: str, url: str, params=None, timeout=None, headers=None):
         raise requests.Timeout("timeout")
 
     monkeypatch.setattr(client.session, "request", request)
@@ -318,7 +318,7 @@ def test_request_raises_for_transport_errors(monkeypatch) -> None:
 def test_request_raises_for_binance_payload_errors(monkeypatch) -> None:
     client = BinanceClient(api_key="k", api_secret="s")
 
-    def request(method: str, url: str, params=None, timeout=None):
+    def request(method: str, url: str, params=None, timeout=None, headers=None):
         return _FakeResponse(200, payload={"code": -1, "msg": "boom"})
 
     monkeypatch.setattr(client.session, "request", request)
@@ -329,7 +329,7 @@ def test_request_raises_for_binance_payload_errors(monkeypatch) -> None:
 def test_request_signed_payload_and_unsigned_payload_paths(monkeypatch) -> None:
     client = BinanceClient(api_key="k", api_secret="s", market_type="futures")
 
-    def request_unsigned(method: str, url: str, params=None, timeout=None):
+    def request_unsigned(method: str, url: str, params=None, timeout=None, headers=None):
         assert method == "GET"
         assert url.endswith("/fapi/v1/time")
         assert params == {"symbol": "BTCUSDC"}
@@ -340,7 +340,7 @@ def test_request_signed_payload_and_unsigned_payload_paths(monkeypatch) -> None:
 
     captured: list[str] = []
 
-    def request_signed(method: str, url: str, params=None, timeout=None):
+    def request_signed(method: str, url: str, params=None, timeout=None, headers=None):
         assert method == "POST"
         assert "/fapi/v1/order" in url
         assert params is None
@@ -650,7 +650,7 @@ def test_last_request_info_is_populated(monkeypatch) -> None:
     monkeypatch.setattr(
         client.session,
         "request",
-        lambda _method, _url, params=None, timeout=None: _FakeResponse(200, {"ok": True}),
+        lambda _method, _url, params=None, timeout=None, headers=None: _FakeResponse(200, {"ok": True}),
     )
     monkeypatch.setattr(time, "sleep", lambda _seconds: None)
 
@@ -707,7 +707,7 @@ def test_request_retryable_api_code_exhausts_and_raises(monkeypatch) -> None:
     ]
     sleep_calls: list[float] = []
 
-    def request(_method: str, _url: str, params=None, timeout=None):
+    def request(_method: str, _url: str, params=None, timeout=None, headers=None):
         return responses.pop(0)
 
     monkeypatch.setattr(client.session, "request", request)

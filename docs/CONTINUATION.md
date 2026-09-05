@@ -1,5 +1,13 @@
 # Continue Development
 
+Latest safety repair: [Binance transport authority](review/2026-09-05/binance-transport-authority.md)
+closes reproduced HTTP acceptance and public-request API-key transmission at
+the shared request boundary. Final affected domain: 373 offline passes, including
+40 new transport cases; do not repeat this suite without a relevant change.
+Next bind durable intents to origin/account scope before exact-order recovery;
+legacy v1 intents cannot inherit whichever account is configured after restart.
+No credentials, accounts, protected captures, historic results or promotion changed.
+
 Latest engineering: [durable Binance openings](review/2026-09-05/binance-durable-opening.md)
 commit UNKNOWN before autonomous submission and block fresh exposure after an
 unresolved response or process death. Partial fills retain the obligation;
@@ -19,8 +27,8 @@ obfuscation architecture. No plugin install, license or visibility change.
 Latest execution repair: [Binance write boundary](review/2026-09-05/binance-write-boundary.md)
 rejects silently altered client IDs, blind non-GET transport retries and HTTP
 redirects. The 279 affected checks are offline, not profitability or complete
-capital-protection evidence. Next close the durable pre-transmission intent /
-UNKNOWN gap and inventory remaining callers; do not repeat the test campaign.
+capital-protection evidence. The later durable-opening checkpoint addresses
+autonomous pre-transmission intents; exact recovery and other callers remain open.
 
 The user's consistency requirement is now the shared
 [codebase standard](../CONTRIBUTING.md#codebase-consistency-standard): lead with

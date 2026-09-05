@@ -1,0 +1,36 @@
+{
+  "schema_version": 1,
+  "base_revision": "2b516c2ced00428d638bbf4b56dec0c208f25814",
+  "outcome": "fixed",
+  "scope": "BinanceClient credential transport authority",
+  "evidence_kind": "offline_behavior_regression",
+  "source_representation": "UTF-8 text with CRLF normalized to LF",
+  "sources": {
+    "src/simple_ai_trading/api.py": "20be905d16e124ba2aa9c30685ed8f32fbc1c3b9cb606fef4cda61b7c109d592",
+    "tests/test_binance_transport_authority.py": "94c1c8865991ecf046af6bd97f713a7185d9ef6ee2a483350418c54be1ac1b61",
+    "tests/test_api.py": "02226e89e8c12a37a555e608ecae523d16f86f0796a94573a50b47f75c272592",
+    "tests/test_api_coverage.py": "48019fdbc31198f2a935b2851f18608026b9678d0603a716f291ddae591472d8"
+  },
+  "pre_fix_reproduced_failures": 3,
+  "verification": {
+    "command": "uv run --locked python -m pytest -o addopts='' -q --tb=short tests/test_binance_transport_authority.py tests/test_api.py tests/test_api_coverage.py tests/test_binance_order_identity.py tests/test_binance_write_replay.py tests/test_binance_open_intents.py tests/test_autonomous.py tests/test_positions.py tests/test_position_lifecycle.py tests/test_execution_lifecycle.py tests/test_reconciliation.py tests/test_binance_paper.py tests/test_paper_execution.py",
+    "passed": 373,
+    "new_transport_cases": 40,
+    "ruff_changed_python": "passed",
+    "diff_check": "passed",
+    "full_repository_final_review": "not_completed"
+  },
+  "network_requests": 0,
+  "orders": 0,
+  "credentials_accessed": false,
+  "protected_captures_accessed": false,
+  "historical_results_modified": false,
+  "profitability_evidence": false,
+  "remaining": [
+    "Bind new durable intents to execution origin and credential/account scope before exact-order recovery",
+    "Do not infer a current account binding for legacy version-1 intents",
+    "Implement terminal recovery/rearm, remaining order callers and close intents",
+    "Complete independent process containment and whole-repository final review",
+    "This fix does not establish protection from hostile in-process code, secret-bearing exception chains, or all other HTTP clients"
+  ]
+}
