@@ -5,6 +5,13 @@ or a replacement for frozen experiment contracts. Expand a round only when its
 result can change a financial or engineering decision. No guarantee of profit
 or comprehensive review completion is implied.
 
+The [Spot-testnet owned execution checkpoint](../2026-09-05/spot-testnet-execution-review.md)
+now demonstrates exact fill/cash reconciliation across BTC/ETH/SOL and clean
+virtual round-trip closure. Use its small ledger for forward execution labels;
+do not treat lifecycle success or zero testnet fees as an economic edge.
+Partial fills, cold recovery, mainnet costs and maker selection effects still
+need their own evidence. Preserve historical full-fill support results.
+
 ## Round 1: mechanisms and comparable cash flows (in progress)
 
 **Binance:** integrate entry/exit basis, correctly weighted funding, collateral

@@ -1,6 +1,16 @@
 # Continue Development
 
-The user-authorized Spot-testnet credential check succeeded (HTTP 200) with
+The substantive Spot-testnet campaign is complete: nine orders, three exact
+cancellations, six owned trades, zero acquired residual base and zero final
+open orders across BTC/ETH/SOL. Read
+`review/2026-09-05/spot-testnet-execution-review.md`. Original results preserve
+a false cancellation-report flag; a separately source-bound offline correction
+confirms numeric order identity and all required cases without new requests.
+Virtual quote delta was -0.01019850 USDT, not strategy profitability evidence.
+The consumed runner is archived byte-identically; do not replay the campaign.
+No credentials were persisted. No new market observation or registry count.
+
+The earlier user-authorized Spot-testnet credential check succeeded (HTTP 200) with
 two read-only GETs and no orders. Keys were not persisted. See
 `review/2026-09-05/testnet-and-literature-status.md`; do not confuse testnet's
 zero fee fields with mainnet eligibility. The newly discovered XiNet paper's

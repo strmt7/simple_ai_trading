@@ -1,0 +1,11 @@
+{
+  "schema_version": "frozen-implementation-disposition-v1",
+  "archived_sources": {
+    "tools/run_spot_testnet_execution_campaign.py": "docs/review/2026-09-05/spot-testnet-execution/frozen-runner.py"
+  },
+  "base64_archived_sources": {
+    "src/simple_ai_trading/api.py": "docs/review/2026-09-05/spot-testnet-execution/frozen-api.py.base64"
+  },
+  "line_ending_note": "The consumed plan bound Windows CRLF working-copy bytes of api.py, while Git stores its unchanged LF source. The base64 sidecar preserves those exact executed bytes without changing either source or plan. Decode before verifying its original SHA-256; never execute the sidecar.",
+  "reason": "Preserve the exact consumed implementation while correcting forward cancellation coverage to bind numeric order identity and successful DELETE receipt. The original plan, result and journal are unchanged. The forward runner must reject this consumed plan's implementation hash; no live replay is authorized by this disposition."
+}
