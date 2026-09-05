@@ -28,6 +28,11 @@ after its one execution. All other literal retry/protected-capture rules remain.
 
 ## Hard Rules
 
+- Apply [work prioritization](docs/WORK_PRIORITIES.md): informative financial
+  research and demonstrated capital-risk repairs before speculative tooling or
+  cosmetic work. Commercial code protection is required before a protected/paid
+  release, not permission to change licensing, visibility or safety controls.
+
 - Apply the full [progress, blocking and resumption protocol](docs/AGENT_WORKFLOWS.md#progress-blocking-and-resumption)
   on every continuation. A blocked research branch is not a blocked repository.
   Exhaust safe, relevant alternatives before declaring a goal-wide impasse;

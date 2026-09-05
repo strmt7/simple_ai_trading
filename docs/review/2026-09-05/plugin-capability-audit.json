@@ -1,0 +1,1285 @@
+{
+  "date": "2026-09-05",
+  "coverage": {
+    "exposed_tool_definitions": 510,
+    "cli_installed": 37,
+    "cli_uninstalled_available": 3378,
+    "cli_total": 3415,
+    "remote_marketplace_entries": 3402,
+    "bundled_entries": 8,
+    "primary_runtime_entries": 5,
+    "local_curated_manifest_review": 180,
+    "local_api_catalog_entries": 29,
+    "local_api_catalog_additional_names": 0,
+    "remote_3402_full_description_review": false
+  },
+  "local_curated_revision": "2f1a8948f85c0919f2362d6e1884ece190b856ed",
+  "caveats": [
+    "The configured local curated catalog is a different snapshot from remote installed versions.",
+    "Complete CLI enumeration is not a semantic or security audit of all remote entries.",
+    "No installs, purchases, permission changes or account reads were performed.",
+    "Per-entry assessment is a task-relevance screen of the observed manifest, not provider-quality endorsement."
+  ],
+  "reviewed_curated_entries": [
+    {
+      "name": "linear",
+      "display": "Linear",
+      "category": "Productivity",
+      "manifest_version": "0.0.3",
+      "assessment": "conditional_no_new_dependency_now"
+    },
+    {
+      "name": "atlassian-rovo",
+      "display": "Atlassian Rovo",
+      "category": "Productivity",
+      "manifest_version": "1.0.3",
+      "assessment": "no_current_task_advantage"
+    },
+    {
+      "name": "google-calendar",
+      "display": "Google Calendar",
+      "category": "Productivity",
+      "manifest_version": "1.2.3",
+      "assessment": "no_current_task_advantage"
+    },
+    {
+      "name": "gmail",
+      "display": "Gmail",
+      "category": "Communication",
+      "manifest_version": "0.1.3",
+      "assessment": "no_current_task_advantage"
+    },
+    {
+      "name": "slack",
+      "display": "Slack",
+      "category": "Communication",
+      "manifest_version": "0.1.2",
+      "assessment": "no_current_task_advantage"
+    },
+    {
+      "name": "teams",
+      "display": "Teams",
+      "category": "Communication",
+      "manifest_version": "0.1.3",
+      "assessment": "no_current_task_advantage"
+    },
+    {
+      "name": "sharepoint",
+      "display": "SharePoint",
+      "category": "Productivity",
+      "manifest_version": "0.1.3",
+      "assessment": "no_current_task_advantage"
+    },
+    {
+      "name": "outlook-email",
+      "display": "Outlook Email",
+      "category": "Communication",
+      "manifest_version": "0.1.3",
+      "assessment": "no_current_task_advantage"
+    },
+    {
+      "name": "outlook-calendar",
+      "display": "Outlook Calendar",
+      "category": "Productivity",
+      "manifest_version": "0.1.3",
+      "assessment": "no_current_task_advantage"
+    },
+    {
+      "name": "canva",
+      "display": "Canva",
+      "category": "Creativity",
+      "manifest_version": "1.0.2",
+      "assessment": "no_current_task_advantage"
+    },
+    {
+      "name": "figma",
+      "display": "Figma",
+      "category": "Creativity",
+      "manifest_version": "2.0.12",
+      "assessment": "conditional_no_new_dependency_now"
+    },
+    {
+      "name": "hugging-face",
+      "display": "Hugging Face",
+      "category": "Developer Tools",
+      "manifest_version": "1.0.3",
+      "assessment": "candidate_requires_specific_gap_and_access"
+    },
+    {
+      "name": "jam",
+      "display": "Jam",
+      "category": "Productivity",
+      "manifest_version": "1.0.2",
+      "assessment": "no_current_task_advantage"
+    },
+    {
+      "name": "netlify",
+      "display": "Netlify",
+      "category": "Developer Tools",
+      "manifest_version": "1.1.2",
+      "assessment": "conditional_no_new_dependency_now"
+    },
+    {
+      "name": "stripe",
+      "display": "Stripe",
+      "category": "Finance",
+      "manifest_version": "1.0.2",
+      "assessment": "no_current_task_advantage"
+    },
+    {
+      "name": "vercel",
+      "display": "Vercel",
+      "category": "Developer Tools",
+      "manifest_version": "0.21.3",
+      "assessment": "conditional_no_new_dependency_now"
+    },
+    {
+      "name": "game-studio",
+      "display": "Game Studio",
+      "category": "Developer Tools",
+      "manifest_version": "0.1.2",
+      "assessment": "no_current_task_advantage"
+    },
+    {
+      "name": "superpowers",
+      "display": "Superpowers",
+      "category": "Developer Tools",
+      "manifest_version": "5.1.3",
+      "assessment": "conditional_no_new_dependency_now"
+    },
+    {
+      "name": "box",
+      "display": "Box",
+      "category": "Productivity",
+      "manifest_version": "0.0.3",
+      "assessment": "no_current_task_advantage"
+    },
+    {
+      "name": "github",
+      "display": "GitHub",
+      "category": "Developer Tools",
+      "manifest_version": "0.1.6",
+      "assessment": "available_use_when_relevant"
+    },
+    {
+      "name": "circleci",
+      "display": "CircleCI",
+      "category": "Developer Tools",
+      "manifest_version": "1.0.4",
+      "assessment": "conditional_no_new_dependency_now"
+    },
+    {
+      "name": "google-drive",
+      "display": "Google Drive",
+      "category": "Productivity",
+      "manifest_version": "0.1.7",
+      "assessment": "conditional_no_new_dependency_now"
+    },
+    {
+      "name": "deepnote",
+      "display": "Deepnote",
+      "category": "Data & Analytics",
+      "manifest_version": "0.1.5",
+      "assessment": "conditional_no_new_dependency_now"
+    },
+    {
+      "name": "notion",
+      "display": "Notion",
+      "category": "Productivity",
+      "manifest_version": "0.1.5",
+      "assessment": "conditional_no_new_dependency_now"
+    },
+    {
+      "name": "cloudflare",
+      "display": "Cloudflare",
+      "category": "Developer Tools",
+      "manifest_version": "0.1.2",
+      "assessment": "conditional_no_new_dependency_now"
+    },
+    {
+      "name": "sentry",
+      "display": "Sentry",
+      "category": "Developer Tools",
+      "manifest_version": "0.1.2",
+      "assessment": "candidate_requires_specific_gap_and_access"
+    },
+    {
+      "name": "build-ios-apps",
+      "display": "Build iOS Apps",
+      "category": "Developer Tools",
+      "manifest_version": "0.1.2",
+      "assessment": "no_current_task_advantage"
+    },
+    {
+      "name": "build-macos-apps",
+      "display": "Build macOS Apps",
+      "category": "Developer Tools",
+      "manifest_version": "0.1.4",
+      "assessment": "no_current_task_advantage"
+    },
+    {
+      "name": "build-web-apps",
+      "display": "Build Web Apps",
+      "category": "Developer Tools",
+      "manifest_version": "0.1.2",
+      "assessment": "available_use_when_relevant"
+    },
+    {
+      "name": "build-web-data-visualization",
+      "display": "Build Web Data Visualization",
+      "category": "Developer Tools",
+      "manifest_version": "0.1.21",
+      "assessment": "available_use_when_relevant"
+    },
+    {
+      "name": "test-android-apps",
+      "display": "Test Android Apps",
+      "category": "Developer Tools",
+      "manifest_version": "0.1.2",
+      "assessment": "no_current_task_advantage"
+    },
+    {
+      "name": "life-science-research",
+      "display": "Life Science Research",
+      "category": "Education & Research",
+      "manifest_version": "1.0.3",
+      "assessment": "no_current_task_advantage"
+    },
+    {
+      "name": "zotero",
+      "display": "Zotero",
+      "category": "Education & Research",
+      "manifest_version": "0.1.2",
+      "assessment": "candidate_requires_specific_gap_and_access"
+    },
+    {
+      "name": "expo",
+      "display": "Expo",
+      "category": "Developer Tools",
+      "manifest_version": "1.0.2",
+      "assessment": "no_current_task_advantage"
+    },
+    {
+      "name": "coderabbit",
+      "display": "CodeRabbit",
+      "category": "Developer Tools",
+      "manifest_version": "1.1.4",
+      "assessment": "conditional_no_new_dependency_now"
+    },
+    {
+      "name": "neon-postgres",
+      "display": "Neon Postgres",
+      "category": "Developer Tools",
+      "manifest_version": "1.0.3",
+      "assessment": "conditional_no_new_dependency_now"
+    },
+    {
+      "name": "remotion",
+      "display": "Remotion",
+      "category": "Creativity",
+      "manifest_version": "1.0.3",
+      "assessment": "no_current_task_advantage"
+    },
+    {
+      "name": "plugin-eval",
+      "display": "Plugin Eval",
+      "category": "Developer Tools",
+      "manifest_version": "0.1.2",
+      "assessment": "conditional_no_new_dependency_now"
+    },
+    {
+      "name": "alpaca",
+      "display": "Alpaca",
+      "category": "Finance",
+      "manifest_version": "1.0.2",
+      "assessment": "no_current_task_advantage"
+    },
+    {
+      "name": "amplitude",
+      "display": "Amplitude",
+      "category": "Data & Analytics",
+      "manifest_version": "1.0.2",
+      "assessment": "no_current_task_advantage"
+    },
+    {
+      "name": "attio",
+      "display": "Attio",
+      "category": "Business & Operations",
+      "manifest_version": "1.0.3",
+      "assessment": "no_current_task_advantage"
+    },
+    {
+      "name": "binance",
+      "display": "Binance",
+      "category": "Finance",
+      "manifest_version": "1.0.2",
+      "assessment": "available_use_when_relevant"
+    },
+    {
+      "name": "biorender",
+      "display": "BioRender",
+      "category": "Creativity",
+      "manifest_version": "1.0.2",
+      "assessment": "no_current_task_advantage"
+    },
+    {
+      "name": "brand24",
+      "display": "Brand24",
+      "category": "Productivity",
+      "manifest_version": "1.0.3",
+      "assessment": "no_current_task_advantage"
+    },
+    {
+      "name": "brex",
+      "display": "Brex",
+      "category": "Finance",
+      "manifest_version": "1.0.3",
+      "assessment": "no_current_task_advantage"
+    },
+    {
+      "name": "carta-crm",
+      "display": "Carta CRM",
+      "category": "Business & Operations",
+      "manifest_version": "1.0.3",
+      "assessment": "no_current_task_advantage"
+    },
+    {
+      "name": "cb-insights",
+      "display": "CB Insights",
+      "category": "Finance",
+      "manifest_version": "1.0.3",
+      "assessment": "no_current_task_advantage"
+    },
+    {
+      "name": "channel99",
+      "display": "Channel99",
+      "category": "Productivity",
+      "manifest_version": "1.0.3",
+      "assessment": "no_current_task_advantage"
+    },
+    {
+      "name": "circleback",
+      "display": "Circleback",
+      "category": "Communication",
+      "manifest_version": "1.0.2",
+      "assessment": "no_current_task_advantage"
+    },
+    {
+      "name": "clickup",
+      "display": "ClickUp",
+      "category": "Productivity",
+      "manifest_version": "1.0.3",
+      "assessment": "no_current_task_advantage"
+    },
+    {
+      "name": "cloudinary",
+      "display": "Cloudinary",
+      "category": "Developer Tools",
+      "manifest_version": "1.0.2",
+      "assessment": "no_current_task_advantage"
+    },
+    {
+      "name": "cogedim",
+      "display": "Cogedim",
+      "category": "Other",
+      "manifest_version": "1.0.3",
+      "assessment": "no_current_task_advantage"
+    },
+    {
+      "name": "common-room",
+      "display": "Common Room",
+      "category": "Productivity",
+      "manifest_version": "1.0.3",
+      "assessment": "no_current_task_advantage"
+    },
+    {
+      "name": "conductor",
+      "display": "Conductor",
+      "category": "Productivity",
+      "manifest_version": "1.0.3",
+      "assessment": "no_current_task_advantage"
+    },
+    {
+      "name": "coupler-io",
+      "display": "Coupler.io",
+      "category": "Data & Analytics",
+      "manifest_version": "1.0.2",
+      "assessment": "no_current_task_advantage"
+    },
+    {
+      "name": "coveo",
+      "display": "Coveo",
+      "category": "Productivity",
+      "manifest_version": "1.0.2",
+      "assessment": "no_current_task_advantage"
+    },
+    {
+      "name": "cube",
+      "display": "Cube",
+      "category": "Finance",
+      "manifest_version": "1.0.3",
+      "assessment": "no_current_task_advantage"
+    },
+    {
+      "name": "daloopa",
+      "display": "Daloopa",
+      "category": "Finance",
+      "manifest_version": "1.0.3",
+      "assessment": "candidate_requires_specific_gap_and_access"
+    },
+    {
+      "name": "demandbase",
+      "display": "Demandbase",
+      "category": "Business & Operations",
+      "manifest_version": "1.0.3",
+      "assessment": "no_current_task_advantage"
+    },
+    {
+      "name": "dnb-finance-analytics",
+      "display": "D&B Finance Analytics",
+      "category": "Finance",
+      "manifest_version": "1.0.2",
+      "assessment": "no_current_task_advantage"
+    },
+    {
+      "name": "docket",
+      "display": "Docket",
+      "category": "Productivity",
+      "manifest_version": "1.0.3",
+      "assessment": "no_current_task_advantage"
+    },
+    {
+      "name": "domotz-preview",
+      "display": "Domotz (Preview)",
+      "category": "Productivity",
+      "manifest_version": "1.0.3",
+      "assessment": "no_current_task_advantage"
+    },
+    {
+      "name": "dovetail",
+      "display": "Dovetail ",
+      "category": "Productivity",
+      "manifest_version": "1.0.3",
+      "assessment": "no_current_task_advantage"
+    },
+    {
+      "name": "dow-jones-factiva",
+      "display": "Dow Jones Factiva",
+      "category": "Education & Research",
+      "manifest_version": "1.0.3",
+      "assessment": "candidate_requires_specific_gap_and_access"
+    },
+    {
+      "name": "egnyte",
+      "display": "Egnyte",
+      "category": "Productivity",
+      "manifest_version": "1.0.3",
+      "assessment": "no_current_task_advantage"
+    },
+    {
+      "name": "finn",
+      "display": "FINN",
+      "category": "Travel",
+      "manifest_version": "1.0.4",
+      "assessment": "no_current_task_advantage"
+    },
+    {
+      "name": "fireflies",
+      "display": "Fireflies",
+      "category": "Communication",
+      "manifest_version": "1.0.2",
+      "assessment": "no_current_task_advantage"
+    },
+    {
+      "name": "fyxer",
+      "display": "Fyxer",
+      "category": "Communication",
+      "manifest_version": "1.0.2",
+      "assessment": "no_current_task_advantage"
+    },
+    {
+      "name": "govtribe",
+      "display": "GovTribe",
+      "category": "Education & Research",
+      "manifest_version": "1.0.3",
+      "assessment": "no_current_task_advantage"
+    },
+    {
+      "name": "granola",
+      "display": "Granola",
+      "category": "Communication",
+      "manifest_version": "1.0.3",
+      "assessment": "no_current_task_advantage"
+    },
+    {
+      "name": "happenstance",
+      "display": "Happenstance",
+      "category": "Productivity",
+      "manifest_version": "1.0.3",
+      "assessment": "no_current_task_advantage"
+    },
+    {
+      "name": "help-scout",
+      "display": "Help Scout",
+      "category": "Productivity",
+      "manifest_version": "1.0.3",
+      "assessment": "no_current_task_advantage"
+    },
+    {
+      "name": "hex",
+      "display": "Hex",
+      "category": "Data & Analytics",
+      "manifest_version": "0.1.0",
+      "assessment": "conditional_no_new_dependency_now"
+    },
+    {
+      "name": "highlevel",
+      "display": "HighLevel",
+      "category": "Productivity",
+      "manifest_version": "1.0.2",
+      "assessment": "no_current_task_advantage"
+    },
+    {
+      "name": "hostinger",
+      "display": "Hostinger",
+      "category": "Developer Tools",
+      "manifest_version": "1.0.3",
+      "assessment": "no_current_task_advantage"
+    },
+    {
+      "name": "hubspot",
+      "display": "HubSpot",
+      "category": "Business & Operations",
+      "manifest_version": "2.0.3",
+      "assessment": "no_current_task_advantage"
+    },
+    {
+      "name": "keybid-puls",
+      "display": "KeyBid Puls",
+      "category": "Finance",
+      "manifest_version": "1.0.3",
+      "assessment": "no_current_task_advantage"
+    },
+    {
+      "name": "marcopolo",
+      "display": "MarcoPolo",
+      "category": "Developer Tools",
+      "manifest_version": "1.0.3",
+      "assessment": "no_current_task_advantage"
+    },
+    {
+      "name": "mem",
+      "display": "Mem",
+      "category": "Productivity",
+      "manifest_version": "1.0.2",
+      "assessment": "no_current_task_advantage"
+    },
+    {
+      "name": "monday-com",
+      "display": "Monday.com",
+      "category": "Productivity",
+      "manifest_version": "1.0.2",
+      "assessment": "no_current_task_advantage"
+    },
+    {
+      "name": "moody-s",
+      "display": "Moody's",
+      "category": "Finance",
+      "manifest_version": "1.0.2",
+      "assessment": "no_current_task_advantage"
+    },
+    {
+      "name": "morningstar",
+      "display": "Morningstar",
+      "category": "Finance",
+      "manifest_version": "1.0.3",
+      "assessment": "no_current_task_advantage"
+    },
+    {
+      "name": "motherduck",
+      "display": "MotherDuck",
+      "category": "Data & Analytics",
+      "manifest_version": "1.0.2",
+      "assessment": "conditional_no_new_dependency_now"
+    },
+    {
+      "name": "mt-newswires",
+      "display": "MT Newswires",
+      "category": "Finance",
+      "manifest_version": "1.0.3",
+      "assessment": "candidate_requires_specific_gap_and_access"
+    },
+    {
+      "name": "myregistry-com",
+      "display": "MyRegistry.com",
+      "category": "Other",
+      "manifest_version": "1.0.3",
+      "assessment": "no_current_task_advantage"
+    },
+    {
+      "name": "network-solutions",
+      "display": "Network Solutions",
+      "category": "Productivity",
+      "manifest_version": "1.0.3",
+      "assessment": "no_current_task_advantage"
+    },
+    {
+      "name": "omni-analytics",
+      "display": "Omni Analytics",
+      "category": "Data & Analytics",
+      "manifest_version": "1.0.4",
+      "assessment": "conditional_no_new_dependency_now"
+    },
+    {
+      "name": "otter-ai",
+      "display": "Otter.ai",
+      "category": "Communication",
+      "manifest_version": "1.0.3",
+      "assessment": "no_current_task_advantage"
+    },
+    {
+      "name": "particl-market-research",
+      "display": "Particl Market Research",
+      "category": "Education & Research",
+      "manifest_version": "1.0.3",
+      "assessment": "no_current_task_advantage"
+    },
+    {
+      "name": "pipedrive",
+      "display": "Pipedrive",
+      "category": "Business & Operations",
+      "manifest_version": "1.0.3",
+      "assessment": "no_current_task_advantage"
+    },
+    {
+      "name": "pitchbook",
+      "display": "PitchBook",
+      "category": "Finance",
+      "manifest_version": "1.0.3",
+      "assessment": "no_current_task_advantage"
+    },
+    {
+      "name": "policynote",
+      "display": "PolicyNote",
+      "category": "Education & Research",
+      "manifest_version": "1.0.3",
+      "assessment": "candidate_requires_specific_gap_and_access"
+    },
+    {
+      "name": "pylon",
+      "display": "Pylon",
+      "category": "Productivity",
+      "manifest_version": "1.0.3",
+      "assessment": "no_current_task_advantage"
+    },
+    {
+      "name": "quartr",
+      "display": "Quartr",
+      "category": "Finance",
+      "manifest_version": "1.0.3",
+      "assessment": "candidate_requires_specific_gap_and_access"
+    },
+    {
+      "name": "quicknode",
+      "display": "Quicknode",
+      "category": "Developer Tools",
+      "manifest_version": "1.0.3",
+      "assessment": "candidate_requires_specific_gap_and_access"
+    },
+    {
+      "name": "ranked-ai",
+      "display": "Ranked AI",
+      "category": "Productivity",
+      "manifest_version": "1.0.3",
+      "assessment": "no_current_task_advantage"
+    },
+    {
+      "name": "razorpay",
+      "display": "Razorpay",
+      "category": "Finance",
+      "manifest_version": "1.0.3",
+      "assessment": "no_current_task_advantage"
+    },
+    {
+      "name": "read-ai",
+      "display": "Read AI",
+      "category": "Communication",
+      "manifest_version": "1.0.3",
+      "assessment": "no_current_task_advantage"
+    },
+    {
+      "name": "readwise",
+      "display": "Readwise",
+      "category": "Education & Research",
+      "manifest_version": "1.0.3",
+      "assessment": "candidate_requires_specific_gap_and_access"
+    },
+    {
+      "name": "responsive",
+      "display": "Responsive",
+      "category": "Productivity",
+      "manifest_version": "1.0.3",
+      "assessment": "no_current_task_advantage"
+    },
+    {
+      "name": "scite",
+      "display": "Scite",
+      "category": "Education & Research",
+      "manifest_version": "1.0.3",
+      "assessment": "candidate_requires_specific_gap_and_access"
+    },
+    {
+      "name": "semrush",
+      "display": "Semrush",
+      "category": "Productivity",
+      "manifest_version": "1.0.3",
+      "assessment": "no_current_task_advantage"
+    },
+    {
+      "name": "sendgrid",
+      "display": "SendGrid",
+      "category": "Developer Tools",
+      "manifest_version": "0.1.2",
+      "assessment": "no_current_task_advantage"
+    },
+    {
+      "name": "setu-bharat-connect-billpay",
+      "display": "Setu Bharat Connect BillPay ",
+      "category": "Finance",
+      "manifest_version": "1.0.2",
+      "assessment": "no_current_task_advantage"
+    },
+    {
+      "name": "signnow",
+      "display": "SignNow",
+      "category": "Productivity",
+      "manifest_version": "1.0.3",
+      "assessment": "no_current_task_advantage"
+    },
+    {
+      "name": "skywatch",
+      "display": "SkyWatch",
+      "category": "Productivity",
+      "manifest_version": "1.0.3",
+      "assessment": "no_current_task_advantage"
+    },
+    {
+      "name": "statsig",
+      "display": "Statsig",
+      "category": "Developer Tools",
+      "manifest_version": "2.0.3",
+      "assessment": "conditional_no_new_dependency_now"
+    },
+    {
+      "name": "streak",
+      "display": "Streak",
+      "category": "Business & Operations",
+      "manifest_version": "1.0.2",
+      "assessment": "no_current_task_advantage"
+    },
+    {
+      "name": "taxdown",
+      "display": "Taxdown",
+      "category": "Finance",
+      "manifest_version": "1.0.3",
+      "assessment": "no_current_task_advantage"
+    },
+    {
+      "name": "teamwork-com",
+      "display": "Teamwork.com",
+      "category": "Productivity",
+      "manifest_version": "1.0.3",
+      "assessment": "no_current_task_advantage"
+    },
+    {
+      "name": "third-bridge",
+      "display": "Third Bridge",
+      "category": "Finance",
+      "manifest_version": "1.0.3",
+      "assessment": "no_current_task_advantage"
+    },
+    {
+      "name": "tinman-ai",
+      "display": "Tinman AI",
+      "category": "Finance",
+      "manifest_version": "1.0.3",
+      "assessment": "no_current_task_advantage"
+    },
+    {
+      "name": "united-rentals",
+      "display": "United Rentals",
+      "category": "Productivity",
+      "manifest_version": "1.0.3",
+      "assessment": "no_current_task_advantage"
+    },
+    {
+      "name": "vantage",
+      "display": "Vantage",
+      "category": "Developer Tools",
+      "manifest_version": "1.0.2",
+      "assessment": "conditional_no_new_dependency_now"
+    },
+    {
+      "name": "waldo",
+      "display": "Waldo",
+      "category": "Productivity",
+      "manifest_version": "1.0.3",
+      "assessment": "no_current_task_advantage"
+    },
+    {
+      "name": "weatherpromise",
+      "display": "WeatherPromise",
+      "category": "Travel",
+      "manifest_version": "1.0.2",
+      "assessment": "no_current_task_advantage"
+    },
+    {
+      "name": "windsor-ai",
+      "display": "Windsor.ai",
+      "category": "Data & Analytics",
+      "manifest_version": "1.0.3",
+      "assessment": "no_current_task_advantage"
+    },
+    {
+      "name": "yepcode",
+      "display": "YepCode",
+      "category": "Developer Tools",
+      "manifest_version": "1.0.3",
+      "assessment": "no_current_task_advantage"
+    },
+    {
+      "name": "render",
+      "display": "Render",
+      "category": "Developer Tools",
+      "manifest_version": "0.1.3",
+      "assessment": "conditional_no_new_dependency_now"
+    },
+    {
+      "name": "temporal",
+      "display": "Temporal",
+      "category": "Developer Tools",
+      "manifest_version": "0.2.2",
+      "assessment": "candidate_requires_specific_gap_and_access"
+    },
+    {
+      "name": "hyperframes",
+      "display": "HyperFrames by HeyGen",
+      "category": "Creativity",
+      "manifest_version": "0.1.2",
+      "assessment": "no_current_task_advantage"
+    },
+    {
+      "name": "heygen",
+      "display": "HeyGen",
+      "category": "Creativity",
+      "manifest_version": "2.2.4",
+      "assessment": "no_current_task_advantage"
+    },
+    {
+      "name": "supabase",
+      "display": "Supabase",
+      "category": "Developer Tools",
+      "manifest_version": "0.1.10",
+      "assessment": "conditional_no_new_dependency_now"
+    },
+    {
+      "name": "codex-security",
+      "display": "Codex Security",
+      "category": "Security",
+      "manifest_version": "0.1.10",
+      "assessment": "available_use_when_relevant"
+    },
+    {
+      "name": "twilio-developer-kit",
+      "display": "Twilio Developer Kit",
+      "category": "Developer Tools",
+      "manifest_version": "0.2.2",
+      "assessment": "no_current_task_advantage"
+    },
+    {
+      "name": "openai-developers",
+      "display": "OpenAI Developers",
+      "category": "Developer Tools",
+      "manifest_version": "1.2.3",
+      "assessment": "available_use_when_relevant"
+    },
+    {
+      "name": "asana",
+      "display": "Asana",
+      "category": "Productivity",
+      "manifest_version": "0.1.4",
+      "assessment": "no_current_task_advantage"
+    },
+    {
+      "name": "datadog",
+      "display": "Datadog (Preview)",
+      "category": "Developer Tools",
+      "manifest_version": "0.1.2",
+      "assessment": "candidate_requires_specific_gap_and_access"
+    },
+    {
+      "name": "zoom",
+      "display": "Zoom",
+      "category": "Communication",
+      "manifest_version": "1.0.2",
+      "assessment": "no_current_task_advantage"
+    },
+    {
+      "name": "similarweb",
+      "display": "Similarweb",
+      "category": "Data & Analytics",
+      "manifest_version": "1.0.2",
+      "assessment": "no_current_task_advantage"
+    },
+    {
+      "name": "lseg",
+      "display": "LSEG",
+      "category": "Finance",
+      "manifest_version": "1.0.2",
+      "assessment": "candidate_requires_specific_gap_and_access"
+    },
+    {
+      "name": "s-p",
+      "display": "S&P Global",
+      "category": "Finance",
+      "manifest_version": "1.0.3",
+      "assessment": "candidate_requires_specific_gap_and_access"
+    },
+    {
+      "name": "datasite",
+      "display": "Datasite",
+      "category": "Productivity",
+      "manifest_version": "1.0.3",
+      "assessment": "no_current_task_advantage"
+    },
+    {
+      "name": "factset",
+      "display": "FactSet",
+      "category": "Finance",
+      "manifest_version": "1.0.2",
+      "assessment": "candidate_requires_specific_gap_and_access"
+    },
+    {
+      "name": "zoominfo",
+      "display": "ZoomInfo",
+      "category": "Business & Operations",
+      "manifest_version": "1.0.2",
+      "assessment": "no_current_task_advantage"
+    },
+    {
+      "name": "docusign",
+      "display": "Docusign",
+      "category": "Productivity",
+      "manifest_version": "1.0.3",
+      "assessment": "no_current_task_advantage"
+    },
+    {
+      "name": "mixpanel",
+      "display": "Mixpanel",
+      "category": "Data & Analytics",
+      "manifest_version": "2.0.3",
+      "assessment": "conditional_no_new_dependency_now"
+    },
+    {
+      "name": "mixpanel-headless",
+      "display": "Mixpanel Headless",
+      "category": "Data & Analytics",
+      "manifest_version": "0.1.2",
+      "assessment": "conditional_no_new_dependency_now"
+    },
+    {
+      "name": "aiera",
+      "display": "Aiera",
+      "category": "Finance",
+      "manifest_version": "1.0.2",
+      "assessment": "candidate_requires_specific_gap_and_access"
+    },
+    {
+      "name": "close",
+      "display": "Close",
+      "category": "Business & Operations",
+      "manifest_version": "1.0.3",
+      "assessment": "no_current_task_advantage"
+    },
+    {
+      "name": "apollo",
+      "display": "Apollo",
+      "category": "Business & Operations",
+      "manifest_version": "1.0.2",
+      "assessment": "no_current_task_advantage"
+    },
+    {
+      "name": "meticulate",
+      "display": "Meticulate",
+      "category": "Productivity",
+      "manifest_version": "1.0.2",
+      "assessment": "no_current_task_advantage"
+    },
+    {
+      "name": "thoughtspot",
+      "display": "ThoughtSpot",
+      "category": "Data & Analytics",
+      "manifest_version": "1.0.3",
+      "assessment": "no_current_task_advantage"
+    },
+    {
+      "name": "midpage",
+      "display": "Midpage",
+      "category": "Education & Research",
+      "manifest_version": "1.0.3",
+      "assessment": "no_current_task_advantage"
+    },
+    {
+      "name": "clay",
+      "display": "Clay",
+      "category": "Business & Operations",
+      "manifest_version": "1.0.2",
+      "assessment": "no_current_task_advantage"
+    },
+    {
+      "name": "calendly",
+      "display": "Calendly",
+      "category": "Productivity",
+      "manifest_version": "1.0.2",
+      "assessment": "no_current_task_advantage"
+    },
+    {
+      "name": "rox",
+      "display": "Rox",
+      "category": "Productivity",
+      "manifest_version": "1.0.3",
+      "assessment": "no_current_task_advantage"
+    },
+    {
+      "name": "hg-insights",
+      "display": "HG Insights",
+      "category": "Productivity",
+      "manifest_version": "1.0.3",
+      "assessment": "no_current_task_advantage"
+    },
+    {
+      "name": "airtable",
+      "display": "Airtable",
+      "category": "Productivity",
+      "manifest_version": "0.1.3",
+      "assessment": "no_current_task_advantage"
+    },
+    {
+      "name": "convex",
+      "display": "Convex",
+      "category": "Developer Tools",
+      "manifest_version": "0.1.2",
+      "assessment": "no_current_task_advantage"
+    },
+    {
+      "name": "outreach",
+      "display": "Outreach",
+      "category": "Business & Operations",
+      "manifest_version": "1.0.2",
+      "assessment": "no_current_task_advantage"
+    },
+    {
+      "name": "shutterstock",
+      "display": "Shutterstock",
+      "category": "Creativity",
+      "manifest_version": "1.0.3",
+      "assessment": "no_current_task_advantage"
+    },
+    {
+      "name": "replit",
+      "display": "Replit",
+      "category": "Developer Tools",
+      "manifest_version": "1.0.2",
+      "assessment": "no_current_task_advantage"
+    },
+    {
+      "name": "lovable",
+      "display": "Lovable",
+      "category": "Developer Tools",
+      "manifest_version": "1.0.2",
+      "assessment": "no_current_task_advantage"
+    },
+    {
+      "name": "quickbooks",
+      "display": "QuickBooks",
+      "category": "Finance",
+      "manifest_version": "1.0.3",
+      "assessment": "no_current_task_advantage"
+    },
+    {
+      "name": "intercom",
+      "display": "Intercom",
+      "category": "Business & Operations",
+      "manifest_version": "1.0.3",
+      "assessment": "no_current_task_advantage"
+    },
+    {
+      "name": "chronograph-lp",
+      "display": "Chronograph LP",
+      "category": "Finance",
+      "manifest_version": "1.0.3",
+      "assessment": "no_current_task_advantage"
+    },
+    {
+      "name": "nvidia",
+      "display": "NVIDIA",
+      "category": "Developer Tools",
+      "manifest_version": "1.0.2",
+      "assessment": "candidate_requires_specific_gap_and_access"
+    },
+    {
+      "name": "posthog",
+      "display": "PostHog",
+      "category": "Data & Analytics",
+      "manifest_version": "0.1.2",
+      "assessment": "conditional_no_new_dependency_now"
+    },
+    {
+      "name": "actively",
+      "display": "Actively",
+      "category": "Business & Operations",
+      "manifest_version": "1.0.3",
+      "assessment": "no_current_task_advantage"
+    },
+    {
+      "name": "zoho",
+      "display": "Zoho",
+      "category": "Business & Operations",
+      "manifest_version": "1.0.3",
+      "assessment": "no_current_task_advantage"
+    },
+    {
+      "name": "fiscal-ai",
+      "display": "Fiscal AI",
+      "category": "Finance",
+      "manifest_version": "1.0.3",
+      "assessment": "candidate_requires_specific_gap_and_access"
+    },
+    {
+      "name": "picsart",
+      "display": "Picsart",
+      "category": "Creativity",
+      "manifest_version": "1.0.3",
+      "assessment": "no_current_task_advantage"
+    },
+    {
+      "name": "alation",
+      "display": "Alation",
+      "category": "Data & Analytics",
+      "manifest_version": "1.0.3",
+      "assessment": "no_current_task_advantage"
+    },
+    {
+      "name": "fal",
+      "display": "Fal",
+      "category": "Creativity",
+      "manifest_version": "1.0.3",
+      "assessment": "no_current_task_advantage"
+    },
+    {
+      "name": "hebbia",
+      "display": "Hebbia",
+      "category": "Business & Operations",
+      "manifest_version": "1.0.3",
+      "assessment": "no_current_task_advantage"
+    },
+    {
+      "name": "wix",
+      "display": "Wix",
+      "category": "Developer Tools",
+      "manifest_version": "1.1.2",
+      "assessment": "no_current_task_advantage"
+    },
+    {
+      "name": "base44",
+      "display": "Base44",
+      "category": "Developer Tools",
+      "manifest_version": "1.0.3-beta.1",
+      "assessment": "no_current_task_advantage"
+    },
+    {
+      "name": "ngs-analysis",
+      "display": "Life Sciences NGS Analysis",
+      "category": "Education & Research",
+      "manifest_version": "1.0.3",
+      "assessment": "no_current_task_advantage"
+    },
+    {
+      "name": "superhuman",
+      "display": "Superhuman Mail",
+      "category": "Communication",
+      "manifest_version": "0.1.2",
+      "assessment": "no_current_task_advantage"
+    },
+    {
+      "name": "shopify",
+      "display": "Shopify",
+      "category": "Developer Tools",
+      "manifest_version": "1.3.3",
+      "assessment": "no_current_task_advantage"
+    },
+    {
+      "name": "magicpath",
+      "display": "MagicPath",
+      "category": "Developer Tools",
+      "manifest_version": "0.1.1",
+      "assessment": "no_current_task_advantage"
+    },
+    {
+      "name": "brighthire",
+      "display": "BrightHire",
+      "category": "Productivity",
+      "manifest_version": "0.1.1",
+      "assessment": "no_current_task_advantage"
+    },
+    {
+      "name": "catalyst-by-zoho",
+      "display": "Catalyst by Zoho",
+      "category": "Developer Tools",
+      "manifest_version": "1.0.1",
+      "assessment": "no_current_task_advantage"
+    },
+    {
+      "name": "glean",
+      "display": "Glean",
+      "category": "Productivity",
+      "manifest_version": "1.0.0",
+      "assessment": "no_current_task_advantage"
+    },
+    {
+      "name": "chronograph-gp",
+      "display": "Chronograph GP",
+      "category": "Finance",
+      "manifest_version": "1.0.0",
+      "assessment": "no_current_task_advantage"
+    },
+    {
+      "name": "openai-ads-conversions",
+      "display": "OpenAI Ads Conversions",
+      "category": "Developer Tools",
+      "manifest_version": "0.1.0",
+      "assessment": "no_current_task_advantage"
+    },
+    {
+      "name": "boltz-api-cli",
+      "display": "Boltz",
+      "category": "Education & Research",
+      "manifest_version": "0.1.1",
+      "assessment": "no_current_task_advantage"
+    },
+    {
+      "name": "replayio",
+      "display": "Replay.io",
+      "category": "Developer Tools",
+      "manifest_version": "0.1.0",
+      "assessment": "no_current_task_advantage"
+    },
+    {
+      "name": "digitalocean",
+      "display": "DigitalOcean",
+      "category": "Developer Tools",
+      "manifest_version": "0.2.2",
+      "assessment": "conditional_no_new_dependency_now"
+    }
+  ]
+}

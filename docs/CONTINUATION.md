@@ -1,5 +1,13 @@
 # Continue Development
 
+Apply the user's [priority order and commercial-release requirements](WORK_PRIORITIES.md).
+The [plugin audit](review/2026-09-05/plugin-capability-audit.md) inventories 37
+installed plugins and screens all 180 local curated entries; the full remote
+semantic review remains incomplete. NVIDIA/Hugging Face are useful uninstalled
+candidates, not automatic new dependencies. Commercial packaging evidence is
+recorded; do not spend the next research round on an unselected hosting or
+obfuscation architecture. No plugin install, license or visibility change.
+
 Latest execution repair: [Binance write boundary](review/2026-09-05/binance-write-boundary.md)
 rejects silently altered client IDs, blind non-GET transport retries and HTTP
 redirects. The 279 affected checks are offline, not profitability or complete
