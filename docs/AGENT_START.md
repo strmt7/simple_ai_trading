@@ -10,6 +10,11 @@ Scope blockers to their branch; a fresh user resumption resets the blocked audit
 
 ## Current Truth
 
+The [Binance write-boundary checkpoint](review/2026-09-05/binance-write-boundary.md)
+fixes altered client IDs, blind write retries and redirects with 279 offline
+affected checks. Durable pre-transmission intents and independent process
+containment remain required; this is not trading-profit or readiness evidence.
+
 The full revamp also requires [capital-protection architecture and final review](CAPITAL_PROTECTION_ARCHITECTURE.md):
 independent process supervision, durable policy/recovery, model-health quarantine,
 then a final whole-codebase line-by-line review/refactor followed by exhaustive

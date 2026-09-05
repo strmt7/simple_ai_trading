@@ -1,0 +1,43 @@
+{
+  "schema_version": 1,
+  "base_revision": "8963d6f5ceef970e4b88c11f8b65f1fb500cec8d",
+  "evidence_kind": "offline_behavior_regression",
+  "source_representation": "UTF-8 text with CRLF normalized to LF",
+  "sources": {
+    "src/simple_ai_trading/api.py": "b7bd4604f92b66f1772ec7ec2e43fed0eca002f27a6e3cac65b75fd02f0560a2",
+    "tests/test_binance_order_identity.py": "f3c0fe266e267b659bf0f898c77be5a6e24b98550887899a598b91a68ba45172",
+    "tests/test_binance_write_replay.py": "1593616acc0d937c2f7c57d6988efd7988e6253988f4f34e97d9a8da29bfd0e3"
+  },
+  "requests_version": "2.34.2",
+  "repairs": [
+    "Reject invalid client-order identities instead of silently truncating or normalizing them.",
+    "Make non-GET transport calls single-attempt; exact-intent reconciliation belongs to the owning workflow.",
+    "Reject redirects before Requests forwards a request to another route."
+  ],
+  "verification": {
+    "affected_domain_passed": 270,
+    "selected_cli_passed": 9,
+    "selected_cli_deselected": 173,
+    "distinct_passed": 279,
+    "ruff_changed_python": "passed",
+    "diff_check": "passed",
+    "full_repository_final_review": "not_completed"
+  },
+  "pre_fix_reproductions": [
+    "Invalid client-order identity did not raise after correcting the test fixture's required constructor arguments.",
+    "POST timeout was retried before workflow reconciliation.",
+    "A stubbed HTTP 307 redirect was followed by the real Requests session machinery."
+  ],
+  "network_requests": 0,
+  "orders": 0,
+  "credentials_accessed": false,
+  "protected_captures_accessed": false,
+  "historical_results_modified": false,
+  "profitability_evidence": false,
+  "remaining": [
+    "Persist pre-transmission intent and UNKNOWN state across crashes before autonomous position recording.",
+    "Cover every order-capable caller, including CLI roundtrip identities.",
+    "Verify returned execution identities and quantities at the owning boundary.",
+    "Implement independent process containment and persistent policy integration."
+  ]
+}

@@ -27,6 +27,13 @@ OS-reboot recovery. Historical results remain unchanged.
 
 ## Target process and authority boundaries
 
+The [Binance write-boundary repair](review/2026-09-05/binance-write-boundary.md)
+preserves valid client IDs exactly, rejects ambiguous IDs and prevents blind
+transport write retries and redirects. Its offline recovery test proves a
+POST-to-exact-ID-GET sequence, not durable crash recovery. The autonomous loop
+still needs intent persistence before submission and explicit UNKNOWN recovery;
+the current after-success position recording is insufficient for that guarantee.
+
 ```text
 Operator UI / CLI --- same authenticated control contract
                          |

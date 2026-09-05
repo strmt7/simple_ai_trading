@@ -1,5 +1,11 @@
 # Continue Development
 
+Latest execution repair: [Binance write boundary](review/2026-09-05/binance-write-boundary.md)
+rejects silently altered client IDs, blind non-GET transport retries and HTTP
+redirects. The 279 affected checks are offline, not profitability or complete
+capital-protection evidence. Next close the durable pre-transmission intent /
+UNKNOWN gap and inventory remaining callers; do not repeat the test campaign.
+
 The user's consistency requirement is now the shared
 [codebase standard](../CONTRIBUTING.md#codebase-consistency-standard): lead with
 reasoned semantic/architecture review, use consistent comments, naming, typing,
