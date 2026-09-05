@@ -1,5 +1,13 @@
 # Continue Development
 
+Latest engineering: [durable Binance openings](review/2026-09-05/binance-durable-opening.md)
+commit UNKNOWN before autonomous submission and block fresh exposure after an
+unresolved response or process death. Partial fills retain the obligation;
+separately verified closes remain available. Final affected domain: 216 passes,
+plus 9 selected CLI checks. Next implement exact-order recovery/rearm and the
+remaining gateway callers; do not delete journals or repeat this regression run.
+This is not full crash/reboot protection, profitable-edge evidence or completion.
+
 Apply the user's [priority order and commercial-release requirements](WORK_PRIORITIES.md).
 The [plugin audit](review/2026-09-05/plugin-capability-audit.md) inventories 37
 installed plugins and screens all 180 local curated entries; the full remote

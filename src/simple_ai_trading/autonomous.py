@@ -38,6 +38,7 @@ from .api_budget import (
     summarize_api_budget,
 )
 from .api import BinanceAPIError, BinanceClient
+from .binance_open_intents import OpenIntentError
 from .binance_paper import BinancePaperBroker
 from .execution_lifecycle import ExecutionLifecyclePlan, build_execution_lifecycle_plan
 from .intervals import interval_milliseconds
@@ -643,12 +644,43 @@ def _submit_open_position(client: BinanceClient, position: OpenPosition) -> Open
         # The request may have reached the exchange before the network failed.
         # Query by the deterministic client id before treating the position as
         # untracked.
-        recovered = client.get_order(
+        order = client.get_order(
             position.symbol,
             orig_client_order_id=position.open_client_order_id,
         )
-        return _apply_open_order(position, recovered)
+    identities = [
+        order[key] for key in ("clientOrderId", "origClientOrderId") if key in order
+    ]
+    if (
+        not identities
+        or any(identity != position.open_client_order_id for identity in identities)
+        or order.get("symbol") != position.symbol
+        or order.get("status") not in {"FILLED", "PARTIALLY_FILLED"}
+        or (
+            "side" in order
+            and order["side"] != _position_order_side(position, close=False)
+        )
+    ):
+        raise BinanceAPIError(
+            "opening acknowledgement identity or status is unresolved"
+        )
     return _apply_open_order(position, order)
+
+
+def _submit_durable_open_position(
+    client: BinanceClient, position: OpenPosition, store: PositionsStore
+) -> OpenPosition:
+    """Persist uncertainty before submission and the fill before releasing admission."""
+    journal = store.opening_intents
+    reason = journal.entry_block_reason(positions_present=store.open_path.is_file())
+    if reason:
+        raise OpenIntentError(reason)
+    journal.prepare(position)
+    recorded = _submit_open_position(client, position)
+    journal.validate_result(position, recorded)
+    store.record_open(recorded)
+    journal.record_complete(position, recorded)
+    return recorded
 
 
 def _submit_close_position(
@@ -1632,8 +1664,8 @@ def run_loop(
                             )
                         position, paper_result = paper_broker.open_position(position)
                     else:
-                        position = _submit_open_position(client, position)
-                except (BinanceAPIError, ValueError) as exc:
+                        position = _submit_durable_open_position(client, position, store)
+                except (BinanceAPIError, ValueError, OSError) as exc:
                     logger.error("autonomous iter=%d open-order-failed id=%s error=%s", iteration, position.id, exc)
                     exit_reason = "open-order-failed"
                     break
@@ -1649,7 +1681,8 @@ def run_loop(
                         exit_reason = "paper-open-unknown"
                         break
                 else:
-                    store.record_open(position)
+                    if position.dry_run:
+                        store.record_open(position)
                     opened += 1
                     logger.info(
                         "autonomous iter=%d open id=%s side=%s qty=%.6f entry=%.2f",

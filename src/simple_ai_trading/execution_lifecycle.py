@@ -193,6 +193,20 @@ def build_execution_lifecycle_plan(
     else:
         checks.append(_check("ok", "ledger integrity", f"open_positions={len(open_positions)}"))
 
+    if not dry_run:
+        intent_reason = store.opening_intents.entry_block_reason(
+            positions_present=store.open_path.is_file()
+        )
+        checks.append(
+            _check(
+                "block" if intent_reason else "ok",
+                "opening intents",
+                intent_reason or "no unresolved opening intent",
+                blocks_open=bool(intent_reason),
+                blocks_close=False,
+            )
+        )
+
     if dry_run:
         checks.append(_check("ok", "order mode", "paper/dry-run"))
         if require_paper_reconciliation:

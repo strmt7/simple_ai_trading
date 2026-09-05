@@ -27,6 +27,12 @@ OS-reboot recovery. Historical results remain unchanged.
 
 ## Target process and authority boundaries
 
+The subsequent [durable opening checkpoint](review/2026-09-05/binance-durable-opening.md)
+now commits UNKNOWN before autonomous Binance submission. Its exact identity,
+partial-fill, interruption and entry-only lifecycle checks are implemented;
+remaining recovery and caller coverage below are still required. The earlier
+after-success-only description refers to the prior write-boundary checkpoint.
+
 The [Binance write-boundary repair](review/2026-09-05/binance-write-boundary.md)
 preserves valid client IDs exactly, rejects ambiguous IDs and prevents blind
 transport write retries and redirects. Its offline recovery test proves a

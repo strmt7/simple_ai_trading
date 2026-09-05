@@ -10,6 +10,11 @@ Scope blockers to their branch; a fresh user resumption resets the blocked audit
 
 ## Current Truth
 
+The [durable opening checkpoint](review/2026-09-05/binance-durable-opening.md)
+adds write-ahead UNKNOWN intents to autonomous Binance opens and shared
+entry-only lifecycle blocking. Exact recovery/rearm, other callers and closes,
+account/policy fencing and independent process supervision remain unfinished.
+
 The [Binance write-boundary checkpoint](review/2026-09-05/binance-write-boundary.md)
 fixes altered client IDs, blind write retries and redirects with 279 offline
 affected checks. Durable pre-transmission intents and independent process
