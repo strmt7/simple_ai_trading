@@ -82,6 +82,12 @@ already implemented or that an arbitrary number of rows guarantees power.
 
 ## Round 4: models only where they improve a measurable decision
 
+The [completion decision evaluator](../2026-09-05/completion-decision-review.md)
+implements the incremental-value target for explicitly supplied joint scenarios.
+Use it only with externally verified common-unit/horizon, quantity, payoff and
+execution premises; its synthetic examples are not training data or calibrated
+probabilities. Historical selected lock rows still lack a liquidation comparator.
+
 Model completion probability, conditional adverse selection, net carry
 persistence or abstention value only after labels represent actual cash-flow
 decisions. A forward candle-direction label is not a matched-carry objective.

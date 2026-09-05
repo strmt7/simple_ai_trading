@@ -1,5 +1,13 @@
 # Continue Development
 
+The quantity-aware completion-versus-liquidation research evaluator is now
+implemented with 24 focused tests. Read
+`review/2026-09-05/completion-decision-review.md` before future maker labels.
+Synthetic positive-mean scenarios still expose downside; no model was trained
+or promoted. Missing residual prices/comparators reject rather than become zero.
+The holding-yield change search returned irrelevant events, not qualifying
+program evidence; no protected capture or consumed pulse was reopened.
+
 The inverse short's conventional PnL sign now has independent official
 educational corroboration. Read `review/2026-09-05/inverse-sign-review.md`.
 No sign-code change or further generic sign search is needed for conditional

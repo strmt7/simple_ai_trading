@@ -6,6 +6,12 @@ operating contract. Historical handoff text is archived under
 
 ## Current Truth
 
+Maker research now has a quantity-aware completion-versus-liquidation evaluator;
+see `review/2026-09-05/completion-decision-review.md`. It handles partial and
+overfilled opposite shares and rejects missing nonzero-leg prices. Supplied
+scenario weights are not measured probabilities or edge evidence. No old labels,
+execution controls or promotion gates changed; holding-yield refresh stays closed.
+
 Inverse-collateral research now has independent official educational support
 for the conventional short PnL sign. See `review/2026-09-05/inverse-sign-review.md`.
 Preserve the clearing-document conflict; no new market sample or qualification
