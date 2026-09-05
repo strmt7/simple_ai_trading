@@ -6,6 +6,11 @@ operating contract. Historical handoff text is archived under
 
 ## Current Truth
 
+The zero-request [carry turnover/liquidity audit](review/2026-09-05/carry-turnover-liquidity-review.md)
+separates funding cash, transaction-count sensitivity and interim funding needs.
+It does not promote a strategy or change consumed results. Missing mainnet fee
+credentials block only that account branch; useful public/offline R&D continues.
+
 The separate retained within-event CPI partitions are now economically
 screened and terminal: all 42 rows failed even before fees. See
 `review/2026-09-04/cpi-partition-review.md`; no refresh or book escalation.
