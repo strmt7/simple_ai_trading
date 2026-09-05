@@ -1517,8 +1517,19 @@ def test_run_loop_paper_close_book_outage_preserves_retryable_position(
 
 
 def test_run_loop_live_open_submits_bot_client_order_id(tmp_path: Path) -> None:
+    from simple_ai_trading.binance_open_intents import BinanceOpenIntentJournal
+
     cfg = _make_config(tmp_path, stop_after_iterations=1, dry_run=False)
-    client = FakeClient(price=125.0)
+
+    class ObservingClient(FakeClient):
+        def place_order(self, *args, **kwargs):
+            journal = BinanceOpenIntentJournal(
+                cfg.positions_root / "binance_open_intents.sqlite3"
+            )
+            assert journal.entry_block_reason() == "unresolved_opening_intents=1"
+            return super().place_order(*args, **kwargs)
+
+    client = ObservingClient(price=125.0)
 
     def dec(_c, _r, _s, _o):
         return Decision(side="LONG", confidence=0.8, mark_price=125.0)

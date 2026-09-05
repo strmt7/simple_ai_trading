@@ -26,7 +26,8 @@ from dataclasses import asdict, dataclass, field, fields, replace
 from pathlib import Path
 from typing import Any, Mapping
 
-from .storage import write_json_atomic
+from .binance_open_intents import BinanceOpenIntentJournal
+from .storage import write_bytes_atomic, write_json_atomic
 
 BOT_OWNER = "simple_ai_trading"
 BOT_CLIENT_ORDER_PREFIX = "sait"
@@ -232,6 +233,10 @@ class PositionsStore:
     def ledger_path(self) -> Path:
         return self.root / "ledger.json"
 
+    @property
+    def opening_intents(self) -> BinanceOpenIntentJournal:
+        return BinanceOpenIntentJournal(self.root / "binance_open_intents.sqlite3")
+
     # ---- low-level I/O ------------------------------------------------------
 
     def _load(self, path: Path) -> list[dict[str, Any]]:
@@ -246,7 +251,11 @@ class PositionsStore:
         return [entry for entry in payload if isinstance(entry, dict)]
 
     def _write(self, path: Path, payload: list[dict[str, Any]]) -> None:
-        write_json_atomic(path, payload, indent=2, sort_keys=True)
+        # Flush the replacement bytes before an intent can be acknowledged.
+        encoded = (
+            json.dumps(payload, indent=2, sort_keys=True, allow_nan=False) + "\n"
+        ).encode("utf-8")
+        write_bytes_atomic(path, encoded)
 
     # ---- public API ---------------------------------------------------------
 

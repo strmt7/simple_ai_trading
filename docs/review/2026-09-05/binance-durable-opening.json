@@ -1,0 +1,43 @@
+{
+  "schema_version": 1,
+  "base_revision": "af9180340abaed62bec63418f4fb3e38536c2cc7",
+  "source_representation": "UTF-8 text with CRLF normalized to LF",
+  "sources": {
+    "src/simple_ai_trading/binance_open_intents.py": "d4a2e43d8e4eeb0e122a8adb8dc164040a983bb715d3eaac045e0a0e4b276d33",
+    "src/simple_ai_trading/autonomous.py": "39b3791de9dd088911783a5379ec1ce53fafef7796e43833083cb668e22a9a6b",
+    "src/simple_ai_trading/positions.py": "fb405b6e96bfa62efe59cfc1dd59bb4f93fa2095b81bcafd6d9d62be3983c5c0",
+    "src/simple_ai_trading/execution_lifecycle.py": "a3323c02e13a88bc203b3feae004f8f1250a60657072fb52236f148fa279ba44",
+    "tests/test_binance_open_intents.py": "61d1e40d6c2511b112880cfccb37151b9b2b85f680ddd2261911ba9f395870b6",
+    "tests/test_autonomous.py": "12cecea333824482724f430c8464d1c7f270cc629c21089fd565fd8d7ef07ae8",
+    "tests/test_execution_lifecycle.py": "26dbddaa37d17ec79269d5c8f26c4d4913c4d83dfc097fc9202a4388c0bd3054"
+  },
+  "scope": "Autonomous Binance opening admission and shared lifecycle entry checks",
+  "pre_fix_reproduction": "The real autonomous loop reached the stubbed order submission with no durable pending intent.",
+  "verification": {
+    "final_affected_domain_passed": 216,
+    "selected_cli_passed": 9,
+    "selected_cli_deselected": 173,
+    "distinct_passed": 225,
+    "new_intent_test_cases": 40,
+    "subsequent_partial_fill_fixture_check": "passed with an actual half-quantity fill",
+    "abrupt_task_owned_subprocess_exit_code": 71,
+    "concurrent_preparations": 2,
+    "concurrent_preparations_admitted": 1,
+    "ruff_changed_python": "passed",
+    "full_repository_review": "not_completed",
+    "os_reboot_or_power_loss_test": "not_run",
+    "performance_benchmark": "not_run"
+  },
+  "venue_requests": 0,
+  "orders": 0,
+  "credentials_accessed": false,
+  "historical_results_modified": false,
+  "protected_captures_accessed": false,
+  "profitability_evidence": false,
+  "remaining": [
+    "Explicit exact-order recovery and rearming for UNKNOWN intents, including terminal zero-fill and partial-fill cases.",
+    "Durable close intents, CLI caller integration and complete gateway coverage.",
+    "Account/endpoint/policy binding, generation fencing and independent process containment.",
+    "Transactional inventory/closed-ledger consolidation and storage deletion/rollback/power-loss qualification."
+  ]
+}

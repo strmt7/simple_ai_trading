@@ -85,6 +85,22 @@ def test_dry_run_lifecycle_does_not_require_signed_reconciliation(tmp_path: Path
     assert "paper/dry-run" in render_execution_lifecycle_plan(plan)
 
 
+def test_unresolved_open_intent_blocks_entry_not_verified_close(tmp_path: Path) -> None:
+    store = PositionsStore(root=tmp_path)
+    runtime = _runtime()
+    position = _position()
+    store.opening_intents.prepare(position)
+    store.record_open(position)
+    plan = build_execution_lifecycle_plan(
+        runtime, _strategy(), store, action="close",
+        reconciliation=_ok_reconciliation(runtime, local_live=1, exchange=1),
+        require_api_budget_headroom=False,
+    )
+    assert plan.can_open is False
+    assert plan.can_close is True
+    assert any("opening intents" in reason for reason in plan.open_block_reasons)
+
+
 def test_required_paper_reconciliation_blocks_when_missing(tmp_path: Path) -> None:
     plan = build_execution_lifecycle_plan(
         _runtime(dry_run=True, api_key="", api_secret=""),
