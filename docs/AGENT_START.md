@@ -10,10 +10,15 @@ Scope blockers to their branch; a fresh user resumption resets the blocked audit
 
 ## Current Truth
 
+The [execution-scope checkpoint](review/2026-09-05/binance-execution-scope.md)
+binds new autonomous intents and journal history to origin/product/API-key identity.
+395 distinct staged checks pass. Next: exact terminal-order recovery and explicit
+rearm. Preserve legacy journals; migration/rotation requires verified ownership.
+
 The [transport authority checkpoint](review/2026-09-05/binance-transport-authority.md)
 requires a validated HTTPS origin snapshot and keeps API keys off public calls.
-373 affected offline checks pass. Bind new durable intents to origin/account
-scope before recovery; never infer legacy intent ownership from current settings.
+373 affected offline checks passed at that checkpoint. The later scope work
+adds binding; never infer legacy intent ownership from current settings.
 
 The [durable opening checkpoint](review/2026-09-05/binance-durable-opening.md)
 adds write-ahead UNKNOWN intents to autonomous Binance opens and shared

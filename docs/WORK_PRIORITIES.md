@@ -11,9 +11,10 @@ easy-to-count activity replace useful financial or engineering progress.
    alone. Preserve negative results and distinguish missing proof from a theorem
    of impossibility. Do not spend requests repeating a consumed population.
 2. Close demonstrated capital-loss paths and execution/recovery gaps. Current
-   next boundary: bind Binance intents to origin/account scope before exact-order
-   recovery, preserve unresolved obligations, and route remaining callers through
-   the durable authority boundary. Autonomous opening persistence is implemented;
+   next boundary: exact terminal-order recovery/rearm and verified legacy scope
+   migration; preserve unresolved obligations and route remaining callers through
+   the durable authority boundary. Autonomous opening persistence and forward
+   venue/product/API-key scope binding are implemented, not permanent account UID;
    independent supervisor/process containment remains core.
 3. Improve models, datasets and GPU utilization when causal labels, coverage or
    a measured bottleneck justify it. More rows and more GPU activity alone are

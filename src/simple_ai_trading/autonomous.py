@@ -38,6 +38,7 @@ from .api_budget import (
     summarize_api_budget,
 )
 from .api import BinanceAPIError, BinanceClient
+from .binance_execution_scope import BinanceExecutionScope
 from .binance_open_intents import OpenIntentError
 from .binance_paper import BinancePaperBroker
 from .execution_lifecycle import ExecutionLifecyclePlan, build_execution_lifecycle_plan
@@ -622,7 +623,12 @@ def _apply_close_order(
     )
 
 
-def _submit_open_position(client: BinanceClient, position: OpenPosition) -> OpenPosition:
+def _submit_open_position(
+    client: BinanceClient,
+    position: OpenPosition,
+    *,
+    expected_scope: BinanceExecutionScope | None = None,
+) -> OpenPosition:
     if position.dry_run:
         return position
     order_kwargs = {
@@ -633,6 +639,8 @@ def _submit_open_position(client: BinanceClient, position: OpenPosition) -> Open
     }
     if hasattr(client, "get_max_leverage_for_notional"):
         order_kwargs["notional"] = abs(float(position.notional))
+    if expected_scope is not None:
+        order_kwargs["expected_scope"] = expected_scope
     try:
         order = client.place_order(
             position.symbol,
@@ -647,6 +655,7 @@ def _submit_open_position(client: BinanceClient, position: OpenPosition) -> Open
         order = client.get_order(
             position.symbol,
             orig_client_order_id=position.open_client_order_id,
+            **({"expected_scope": expected_scope} if expected_scope is not None else {}),
         )
     identities = [
         order[key] for key in ("clientOrderId", "origClientOrderId") if key in order
@@ -675,11 +684,12 @@ def _submit_durable_open_position(
     reason = journal.entry_block_reason(positions_present=store.open_path.is_file())
     if reason:
         raise OpenIntentError(reason)
-    journal.prepare(position)
-    recorded = _submit_open_position(client, position)
+    scope = client.execution_scope()
+    journal.prepare(position, scope=scope)
+    recorded = _submit_open_position(client, position, expected_scope=scope)
     journal.validate_result(position, recorded)
     store.record_open(recorded)
-    journal.record_complete(position, recorded)
+    journal.record_complete(position, recorded, scope=scope)
     return recorded
 
 
