@@ -1,0 +1,104 @@
+{
+  "schema_version": 1,
+  "kind": "binance_terminal_opening_observation_checkpoint",
+  "reviewed_at_utc": "2026-09-05T13:17:26Z",
+  "base_commit": "fba4e3cece2682e597014e14abaf5be3390b4d7a",
+  "status": "implemented_offline_observation_stage_not_rearm",
+  "source_binding": {
+    "encoding": "UTF-8 with CRLF normalized to LF",
+    "sha256": {
+      "src/simple_ai_trading/api.py": "d83ce55b9f6bc9e4b1b317d56c49555bcaeb1a82b5416e9cb1ff5e2fc39ca4a7",
+      "src/simple_ai_trading/binance_execution_scope.py": "03b65d88f29595c069e4ef0de3ab6def497ce74f2756e762a932a8765cdd2b6d",
+      "src/simple_ai_trading/binance_terminal_fills.py": "b6db3ed07e05a5920ea1fa0c5251414e6d2f2a1909fbfe7d27fd0207fe9db11f",
+      "src/simple_ai_trading/binance_open_recovery.py": "ecc4cc4a7a8fd736ba201fa73594b8525ba50a4fb22d3fd4478d7553b74dbc86",
+      "tests/test_binance_open_recovery.py": "8f972deb6f73b96cbbb78904e7ca29b7ba849b43949882fd19b87f659c5d2b21"
+    }
+  },
+  "verification": {
+    "initial_red": "Missing implementation import; a feature gap, not a reproduced false acceptance.",
+    "new_cases": 82,
+    "affected_cases_passed": 371,
+    "command": "uv run --locked python -m pytest -o addopts='' -q tests/test_binance_open_recovery.py tests/test_binance_open_intents.py tests/test_binance_execution_scope.py tests/test_binance_transport_authority.py tests/test_binance_write_replay.py tests/test_api.py tests/test_api_coverage.py tests/test_api_budget.py tests/test_autonomous.py",
+    "abrupt_exit_code": 71,
+    "concurrent_identical_observations": "one durable record; both readers receive evidence",
+    "concurrent_conflicting_observations": "one durable record; conflicting writer rejected",
+    "ruff": "passed",
+    "performance_claim": false,
+    "hosted_verification": "not run for this checkpoint"
+  },
+  "boundaries": {
+    "scope": "official Binance Spot or USD-M testnet/Demo origin, product and API-key fingerprint",
+    "supported_openings": [
+      "Spot long MARKET",
+      "USD-M one-way MARKET long",
+      "USD-M one-way MARKET short"
+    ],
+    "terminal_statuses": [
+      "FILLED",
+      "CANCELED",
+      "EXPIRED",
+      "EXPIRED_IN_MATCH",
+      "REJECTED"
+    ],
+    "max_trade_rows": 1000,
+    "logical_queries_without_cache": "one exact-client-ID order query, then at most one exact-order-ID trade page; existing bounded GET transport retries still apply",
+    "zero_fill": "requires exact terminal order with zero cumulative base and quote; no fill request",
+    "completeness": "distinct trade IDs, exact base/quote sums and exact price times quantity; no guessed rounding tolerance",
+    "commissions": "signed decimal amounts grouped by native asset; no valuation or base-inventory deduction inferred",
+    "storage": "additive opening_recovery table inside an already scope-bound v2 journal; schema1 is not migrated",
+    "persisted_fields": "validated execution allowlist and exact intent binding, not raw arbitrary API payloads",
+    "unknown_intent_cleared": false,
+    "position_store_modified": false,
+    "automatic_rearm": false
+  },
+  "engineering_sources": [
+    {
+      "url": "https://raw.githubusercontent.com/binance/binance-spot-api-docs/master/rest-api.md",
+      "section": "Account trade list /api/v3/myTrades",
+      "access": "browser documentation inspection; not a retained raw reference artifact"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/binance/binance-connector-python/master/clients/derivatives_trading_usds_futures/src/binance_sdk_derivatives_trading_usds_futures/rest_api/api/trade_api.py",
+      "section": "account_trade_list",
+      "access": "browser documentation inspection; not a retained raw reference artifact"
+    },
+    {
+      "url": "https://developers.binance.com/en/docs/catalog/core-trading-derivatives-trading-usd-s-m-futures/api/rest-api/trade#account-trade-list",
+      "section": "Account Trade List query parameters and responses",
+      "access": "browser documentation inspection on 2026-09-05",
+      "supported_findings": [
+        "orderId with symbol",
+        "limit maximum 1000",
+        "without explicit times the documented default is recent seven days",
+        "limited historical availability"
+      ]
+    }
+  ],
+  "not_done": [
+    "CLI/Windows recovery command and frozen authenticated invocation workflow",
+    "durable failed-attempt capture and receipt timestamps",
+    "native-asset inventory and fee valuation integration",
+    "atomic position application and explicit rearm",
+    "account UID, inventory, policy and process-generation fencing",
+    "legacy migration, key rotation, storage rollback or whole-journal deletion detection",
+    "independent supervisor and child-process integration",
+    "full repository final semantic review and exhaustive bug hunt",
+    "financial edge qualification"
+  ],
+  "activity": {
+    "real_credentials_read": false,
+    "signed_venue_requests": 0,
+    "venue_orders": 0,
+    "market_data_captures": 0,
+    "protected_capture_changes": false,
+    "historical_result_changes": false,
+    "other_process_changes": false
+  },
+  "identity_audit": {
+    "head_author_and_committer": "AI agent <>",
+    "head_trailers": "none",
+    "fresh_anonymous_contributor_query": true,
+    "remote_pr_head_refs": 14,
+    "legacy_violations": "previously surfaced shared-history identities remain; no rewrite authorized or performed"
+  }
+}

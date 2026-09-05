@@ -1,5 +1,14 @@
 # Continue Development
 
+Latest recovery implementation: [terminal opening evidence](review/2026-09-05/binance-terminal-opening-evidence.md)
+adds a bounded, scope-bound exact-order/fill collector with durable native-fee
+observations. 371 affected checks pass, including 82 new cases, concurrent
+writers and abrupt process exit. It never clears UNKNOWN or applies positions.
+Next integrate native inventory/fee accounting, atomic recovery and explicit
+rearm with current account/policy/process fencing, then shared CLI/Windows
+controls. Preserve cached observations and old results; do not rerun unchanged
+suites or claim a completed recovery workflow, profitable edge or full review.
+
 Latest capital-risk repair: [account quantity evidence](review/2026-09-05/binance-account-quantity-evidence.md)
 rejects malformed/duplicate quantities that previously appeared reconciled and
 flat. Invalid account data is unknown, not evidence to mark verified inventory
