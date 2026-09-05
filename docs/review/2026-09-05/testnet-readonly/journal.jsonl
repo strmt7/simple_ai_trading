@@ -1,0 +1,4 @@
+{"method": "GET", "path": "/api/v3/time", "phase": "intent", "signed": false, "utc": "2026-09-05T02:14:21.166038+00:00"}
+{"http_status": 200, "path": "/api/v3/time", "phase": "completed", "utc": "2026-09-05T02:14:22.880125+00:00"}
+{"method": "GET", "path": "/api/v3/account/commission", "phase": "intent", "signed": true, "symbol": "BTCUSDT", "utc": "2026-09-05T02:14:22.882125+00:00"}
+{"authenticated": true, "http_status": 200, "orders": 0, "path": "/api/v3/account/commission", "phase": "completed", "symbol": "BTCUSDT", "testnet_fee_fields_not_mainnet_evidence": {"specialCommission": {"buyer": "0E-8", "maker": "0E-8", "seller": "0E-8", "taker": "0E-8"}, "standardCommission": {"buyer": "0E-8", "maker": "0E-8", "seller": "0E-8", "taker": "0E-8"}, "taxCommission": {"buyer": "0E-8", "maker": "0E-8", "seller": "0E-8", "taker": "0E-8"}}, "testnet_only": true, "utc": "2026-09-05T02:14:23.118682+00:00"}

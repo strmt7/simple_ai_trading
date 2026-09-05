@@ -1,0 +1,27 @@
+{
+  "testnet_only": true,
+  "orders": 0,
+  "authenticated": true,
+  "http_status": 200,
+  "symbol": "BTCUSDT",
+  "testnet_fee_fields_not_mainnet_evidence": {
+    "standardCommission": {
+      "maker": "0E-8",
+      "taker": "0E-8",
+      "buyer": "0E-8",
+      "seller": "0E-8"
+    },
+    "specialCommission": {
+      "maker": "0E-8",
+      "taker": "0E-8",
+      "buyer": "0E-8",
+      "seller": "0E-8"
+    },
+    "taxCommission": {
+      "maker": "0E-8",
+      "taker": "0E-8",
+      "buyer": "0E-8",
+      "seller": "0E-8"
+    }
+  }
+}

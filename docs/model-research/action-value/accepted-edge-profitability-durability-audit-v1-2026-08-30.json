@@ -158,7 +158,7 @@
       "why_not_stable_deployable": "Current rate remains conflict-qualified rather than proven, the evidence is from public wallets rather than the owned account, every external friction and best alternative is not bound, and future persistence is not guaranteed."
     }
   },
-  "result_sha256": "493d827e0178b03180a9e2519d334763e4886429b9837e5079d47373ba6a2b6d",
+  "result_sha256": "ac001752ea43fb520825c5b2f6148e8712b6f233ed33d263aa0b724ebbf1041e",
   "routing": {
     "binance_usd1_september_campaign": "The separate September 4 to October 2 USD1 campaign is source-proved in article 3dd432ca980c469389d18f2f69c9d4ae. Its 150 million WLFI pool does not establish individual returns: all first-period APR and valuation cells remain unpublished. The earlier August campaign has ended; that does not mean the new campaign is absent. Resume one separately frozen first-distribution reconciliation after September 11 at 18:00 UTC or an independently observed material official update. No guaranteed positive return, account eligibility or after-cost realized profit is established. Adjudication f3eaf05ff817dba843d992c643718f0b6f26fbd57bb5bfd15159522b0899114d preserves the exact source question; lack of a guaranteed floor alone does not prove negative expected value.",
     "binance_futures_free_position_zero_capital_option_terminal_trigger": "Rank 63 is terminal for its exact one-use public source question. The retained official FAQ proves given trading margin, fixed voucher parameters, user-selected Long or Short, withdrawable or transferable profits, and close-anytime control. It does not prove that losses, commissions, funding, liquidation, deficits, clawbacks, or other liabilities are capped at supplied voucher margin or cannot touch other user balances. Supplied margin plus withdrawable upside therefore does not establish a nonnegative personal-capital payoff, positive expected value, stable profit, or deployment readiness. Do not refetch, alias, follow the adaptively discovered terms link, open Rewards Hub, use testnet credentials, request prices or books, or take voucher actions. Reopen only on a material official downside-term change or a distinct prospectively frozen complete official terms package selected before economic access, plus explicit signed GET-only Binance mainnet authority and an independently existing owned voucher. Every activation, terms acceptance, side selection, position, transfer, withdrawal, or state change requires separate explicit authority.",
@@ -227,13 +227,17 @@
       "result_sha256": "dac3c9ad5b1eb5e7781d2c4f7d8bb5ccd33499e6ca95c3580f675b9163acef43",
       "classification": "exploratory consumed-history accounting; no new observation or acceptance",
       "review_path": "docs/review/2026-09-05/carry-turnover-liquidity-review.md"
+    },
+    "option_wedge_xinet_source_review": {
+      "path": "docs/review/2026-09-05/xinet-source/adjudication.json",
+      "result_sha256": "085c7fea51a1cf4ba2a7c15f024328d939a59ee4f3f872ba6e0aa87713d9555a"
     }
   },
   "schema_version": "accepted-edge-profitability-durability-audit-v1",
   "source_binding": {
     "accepted_edge_count": 37,
     "registry_path": "docs/model-research/structural-edge-priority-registry-v1.json",
-    "registry_result_sha256": "3f98e88307e9128c108e4a3a600278ce76ee451bb1aaea3e13bb805d33d971a5"
+    "registry_result_sha256": "ce6f65bd0965ecc4172d9e5f375b55739e8ae3f9d7acbd23be7fbbadfc67ca2f"
   },
-  "updated_at_utc": "2026-09-05T02:03:36.523620+00:00"
+  "updated_at_utc": "2026-09-05T02:17:12.004735+00:00"
 }

@@ -1,0 +1,18 @@
+{
+  "frozen_at_utc": "2026-09-05T02:13:36Z",
+  "authority": "User explicitly requested use of supplied testnet keys without repository leakage. Read-only authentication check only; no trading authority inferred.",
+  "venue_selection": "Existing runtime configuration is spot with testnet true. Do not try other products or hosts on failure.",
+  "base_url": "https://testnet.binance.vision",
+  "requests": ["GET /api/v3/time public weight 1", "GET /api/v3/account/commission USER_DATA BTCUSDT weight 20"],
+  "maximum_requests": 2,
+  "maximum_retries": 0,
+  "redirects": false,
+  "timeout_seconds_each": 15,
+  "source": "https://developers.binance.com/en/docs/products/spot/testnet/rest-api",
+  "source_representation": "Current official web-tool extraction identifies Spot testnet base endpoint, public server time and USER_DATA commission GET. Source output retained separately, not origin HTTP bytes.",
+  "secret_handling": "Transient masked process input; no credential in script, command arguments, environment persistence, repository files, terminal output or application journals. Do not retain signed query, headers, raw account response, balance, identifier or free-form error message. No promise of secure memory erasure in Python; process exit releases its memory.",
+  "outputs": "Sanitized status, numeric exchange error code and bounded numeric testnet fee fields only. Testnet fees never qualify mainnet economics.",
+  "implementation": "tools/check_spot_testnet_credentials_once.py",
+  "implementation_sha256": "190fb160f0f655a265d2426bccde53852c78f1a707413554c57fd1d97485c64e",
+  "preflight": "Masked input tested with a non-secret dummy; no input echo occurred. Ruff passed. Stop on any failure; no account mutation, orders or protected research capture."
+}

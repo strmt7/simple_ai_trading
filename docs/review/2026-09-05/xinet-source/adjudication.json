@@ -1,0 +1,40 @@
+{
+  "schema_version": "xinet-primary-source-review-v1",
+  "created_at_utc": "2026-09-05T02:17:09.473054+00:00",
+  "paper_id": "2609.01941",
+  "source_url": "https://arxiv.org/html/2609.01941v1",
+  "classification": "source access failure, not a methodology rejection",
+  "http_status": 404,
+  "response_bytes": 7901,
+  "full_methodology_reviewed": false,
+  "neural_uplift_verified": false,
+  "new_market_requests": 0,
+  "accepted_edge": false,
+  "profitability_claim": false,
+  "existing_rank": 10,
+  "market_retry_trigger_changed": false,
+  "sources": [
+    {
+      "path": "docs/review/2026-09-05/xinet-source/contract.json",
+      "sha256": "94327cb02efec5ffcbfbc115cb4bf3e5b644612c773609f6c48fabfe7c7f4022"
+    },
+    {
+      "path": "docs/review/2026-09-05/xinet-source/paper.html",
+      "sha256": "8172e6acadbe04da0b823f44c40de9e03a48322181ec806cc4fbe97bb39dbb3a"
+    },
+    {
+      "path": "docs/review/2026-09-05/xinet-source/journal.jsonl",
+      "sha256": "e76ccd9682c7e7862591e2cfc624073366bfbb488fb08154b6478462c6de2a35"
+    },
+    {
+      "path": "docs/review/2026-09-05/literature-discovery-plan.json",
+      "sha256": "1f064c3a9e64b19d27006c84905b2ce746d8465a9dba2d579653e919c6321be2"
+    },
+    {
+      "path": "docs/review/2026-09-05/literature-discovery-tool-result.json",
+      "sha256": "318c64989457af23ecfef1f0068c1d71d0ec3e61c4fca0653eba58e32392199f"
+    }
+  ],
+  "next_action": "Do not retry this HTML, version, PDF or mirror under the consumed contract. Require independently available materially new complete primary methodology or reproducible evidence; no market or training permission follows from the abstract.",
+  "result_sha256": "085c7fea51a1cf4ba2a7c15f024328d939a59ee4f3f872ba6e0aa87713d9555a"
+}

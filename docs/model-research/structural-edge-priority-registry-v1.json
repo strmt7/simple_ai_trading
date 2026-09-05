@@ -760,6 +760,10 @@
         {
           "path": "docs/model-research/action-value/binance-polymarket-option-threshold-wedge-gate-v1-2026-08-26.json",
           "result_sha256": "22a99f25de487774ac4d22f4666a242fe3cb961e31f7f610de7a079cd6d9d7e7"
+        },
+        {
+          "path": "docs/review/2026-09-05/xinet-source/adjudication.json",
+          "result_sha256": "085c7fea51a1cf4ba2a7c15f024328d939a59ee4f3f872ba6e0aa87713d9555a"
         }
       ],
       "current_status": "historical_paper_reports_a_6_33_point_mean_model_wedge_but_its_16_trade_net_alpha_interval_crosses_zero_and_current_20_pair_snapshot_has_zero_exact_expiries_an_8_hour_terminal_gap_only_15_two_sided_option_quotes_and_zero_model_midpoint_gaps_above_the_paper_4_27_point_mean_friction_term",
@@ -776,7 +780,8 @@
         "repeated_snapshot_search_until_a_positive_gap_appears"
       ],
       "retry_trigger": "exact_same_strike_expiry_and_settlement_pair_or_two_sided_same_date_model_gap_above_0_0427",
-      "venue_scope": "binance_BTC_options_spot_and_polymarket_BTC_point_thresholds"
+      "venue_scope": "binance_BTC_options_spot_and_polymarket_BTC_point_thresholds",
+      "xinet_source_review_2026_09_05": "New September 1 paper lead; exact HTML-v1 source returned HTTP 404. Full method and neural uplift unverified; original current status and literal market retry unchanged. No source alias retry."
     },
     {
       "blocking_evidence": [
@@ -4335,7 +4340,7 @@
       ]
     }
   ],
-  "result_sha256": "3f98e88307e9128c108e4a3a600278ce76ee451bb1aaea3e13bb805d33d971a5",
+  "result_sha256": "ce6f65bd0965ecc4172d9e5f375b55739e8ae3f9d7acbd23be7fbbadfc67ca2f",
   "schema_version": "structural-edge-priority-registry-v1",
   "terminal_do_not_repeat": [
     {
@@ -5296,6 +5301,6 @@
       "canonical_result_sha256": "5ae8f3c92dfa944ffeb00459e339bc8bfa93d2ea0b315d579e83f7d84a578ef6"
     }
   ],
-  "updated_at_utc": "2026-09-05T02:03:36.523620+00:00",
+  "updated_at_utc": "2026-09-05T02:17:12.004735+00:00",
   "usage_rule": "advance_the_highest_ranked_hypothesis_whose_retry_trigger_is_satisfied_otherwise_do_not_repeat_a_blocked_or_terminal_screen"
 }
