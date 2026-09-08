@@ -8,6 +8,12 @@ against gaps, illiquidity, exchange failure, custody loss, or every outage.
 
 ## What the current code actually establishes
 
+The September 8 [mutation-integrity repair](review/2026-09-08/position-mutation-integrity.md)
+prevents corrupt or filtered retained position rows from being overwritten as
+empty state. Both ledgers are admitted before close recording starts. This
+does not make the two replacements atomic, fence concurrent writers, detect a
+deleted file or integrate native-fee inventory recovery. Those remain mandatory.
+
 Reviewed relevant implementations at base commit
 `e8e540e0c3237ddd65c89d886a067af59cc5b791`:
 
