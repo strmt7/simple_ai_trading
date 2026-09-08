@@ -1,5 +1,21 @@
 # Continue Development
 
+GitHub read-only check on September 8: zero open Dependabot alerts and zero
+open pull requests. Fourteen retained PR-head refs are historical refs, not
+fourteen pending PRs. No branch merge, deletion or account mutation was needed.
+This is a dated observation, not a permanent all-vulnerabilities claim.
+
+Latest public R&D: [USDT Flexible renewal](review/2026-09-08/usdt-flexible/review.md)
+and [BYD/Lenovo exact counterpart gate](review/2026-09-08/hk-listing-match/review.md).
+The USDT bonus cap rises to 800 with unchanged 4% bonus APR through September
+22; roughly 1.227397 USDT for fourteen days is only a 365-day sensitivity, not
+a source-proved payout or full-principal 7% return. Rank 8 requires actual
+eligibility, capacity and alternatives; its expired September 7 retry is removed.
+Neither BYD nor HK0992 exists in the 67-row Polymarket inventory; both siblings
+stop before funding/prices. Three one-use public GETs total, no accounts or
+protected partial data. Do not repeat either consumed question without its
+new exact trigger. Current counts and hashes below include these outcomes.
+
 Latest safety repair: [position mutation integrity](review/2026-09-08/position-mutation-integrity.md)
 closes a reproduced silent overwrite of corrupt or filtered retained records.
 Mutations require strict lossless reads and both files are admitted before close
@@ -119,11 +135,11 @@ after the unchanged 33.5-bip stress. Read
 no depth, funding, fees, accounts, credentials, orders or protected captures.
 Both stages and all 70 contracts are consumed; include them in future unions.
 The exact rank-47 retry trigger and every prior restriction remain unchanged.
-Current counts after the September 8 CXMT study: 37 accepted mechanism scopes, 65 hypotheses, 193 terminal
+Current counts after the September 8 listing gate: 37 accepted mechanism scopes, 65 hypotheses, 194 terminal
 observations, zero fully qualified stable profitable edges. Registry/audit
 self-hashes are
-`97b48ded00c92bd356cd15700a1802e3cb4099af99fce1e930f55d04d6e349b7`
-and `becf4054b7c8191e70e8bbcc4bcdc586bfe2929a5ba0e278c9380a5b96547087`.
+`9ad0995e03bfc9d42936e713b3bd7ed89664cc1cdd697cb3f1a27d05fd8f6cd8`
+and `3885449afe0dbc15b264627c44abdaf7a4dd87fb28e78a3e42ed2193bb8f9586`.
 Lower checkpoint counts and hashes are historical. No full-repo completion
 or family-wide impossibility claim follows from this finite screen.
 

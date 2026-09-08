@@ -663,12 +663,16 @@
         {
           "path": "docs/model-research/action-value/binance-usd1-sep4-campaign-public-floor-adjudication-v1-2026-09-04.json",
           "result_sha256": "f3eaf05ff817dba843d992c643718f0b6f26fbd57bb5bfd15159522b0899114d"
+        },
+        {
+          "path": "docs/review/2026-09-08/usdt-flexible/result.json",
+          "result_sha256": "399bdb6b27b7464f522bfaf7c32c89cf7725ad8bb030e2494ccf10c370b5eede"
         }
       ],
-      "current_status": "a_distinct_2026_09_04_through_2026_10_02_USD1_holding_airdrop_campaign_is_currently_source_proved_with_a_150_million_WLFI_total_pool_weekly_distribution_lowest_snapshot_balance_formula_and_1_2x_organic_open_interest_multiplier_but_its_first_period_base_APR_boosted_APR_and_WLFI_valuation_are_all_To_be_updated_on_2026_09_11_individual_allocation_depends_on_total_eligible_balance_and_other_factors_rewards_round_down_to_two_decimals_and_public_account_eligibility_USD1_basis_opportunity_cost_and_WLFI_liquidation_are_unbound_so_the_current_stable_account_qualified_after_all_cost_floor_is_zero_the_fixed_7_percent_USD1_Simple_Earn_candidate_remains_separately_account_capacity_horizon_transition_and_cost_gated_and_no_scope_is_deployment_ready",
+      "current_status": "a_distinct_2026_09_04_through_2026_10_02_USD1_holding_airdrop_campaign_is_currently_source_proved_with_a_150_million_WLFI_total_pool_weekly_distribution_lowest_snapshot_balance_formula_and_1_2x_organic_open_interest_multiplier_but_its_first_period_base_APR_boosted_APR_and_WLFI_valuation_are_all_To_be_updated_on_2026_09_11_individual_allocation_depends_on_total_eligible_balance_and_other_factors_rewards_round_down_to_two_decimals_and_public_account_eligibility_USD1_basis_opportunity_cost_and_WLFI_liquidation_are_unbound_so_the_current_stable_account_qualified_after_all_cost_floor_is_zero_the_fixed_7_percent_USD1_Simple_Earn_candidate_remains_separately_account_capacity_horizon_transition_and_cost_gated_and_no_scope_is_deployment_ready September 8 USDT Flexible renewal retained: bonus remains 4 percent, cap rises from 500 to 800 USDT, September 8-22. Approximately 3 percent variable base is not fixed income. Fourteen eligible days illustrate 1.22739726 USDT capped bonus under a non-source-proved 365-day convention. Actual eligibility, capacity, alternatives and payouts remain unqualified.",
       "market_direction_forecast_required": false,
       "mechanism": "same_account_stable_value_yield_allocation",
-      "next_action": "do_not_repeat_or_alias_the_consumed_September_4_USD1_campaign_catalog_or_article_and_do_not_infer_APR_from_the_150_million_WLFI_pool_prior_campaigns_examples_or_current_token_price_at_or_after_2026_09_11T18_00_00Z_run_one_separately_frozen_first_distribution_public_reconciliation_only_if_an_independently_observed_official_update_or_the_exact_deadline_trigger_is_satisfied_then_require_positive_period_APR_contractual_WLFI_valuation_account_eligibility_USD1_basis_best_alternative_and_executable_after_cost_liquidation_before_any_capital_action_the_same_deadline_also_reopens_the_distinct_RLUSD_fourth_distribution_question_do_not_reprice_the_expired_Lite_Loan_offer_and_require_separate_authority_for_every_account_or_funded_action",
+      "next_action": "do_not_repeat_or_alias_the_consumed_September_4_USD1_campaign_catalog_or_article_and_do_not_infer_APR_from_the_150_million_WLFI_pool_prior_campaigns_examples_or_current_token_price_at_or_after_2026_09_11T18_00_00Z_run_one_separately_frozen_first_distribution_public_reconciliation_only_if_an_independently_observed_official_update_or_the_exact_deadline_trigger_is_satisfied_then_require_positive_period_APR_contractual_WLFI_valuation_account_eligibility_USD1_basis_best_alternative_and_executable_after_cost_liquidation_before_any_capital_action_the_same_deadline_also_reopens_the_distinct_RLUSD_fourth_distribution_question_do_not_reprice_the_expired_Lite_Loan_offer_and_require_separate_authority_for_every_account_or_funded_action For the consumed September 8 USDT renewal, do not refetch or extrapolate the headline rate; require actual same-account eligibility/quota and independently idle USDT plus best alternative and native credited payouts before treating it as deployable income.",
       "priority_rank": 8,
       "prohibited_shortcuts": [
         "logged-out marketing APR as account rate evidence",
@@ -711,7 +715,7 @@
         "freezing another signed collector while credentials are absent",
         "treating_Yield_Arena_as_a_distinct_edge_or_comparable_headline_APR_instead_of_routing_each_exact_product_to_its_existing_family"
       ],
-      "retry_trigger": "an_independently_observed_official_September_4_USD1_campaign_article_update_after_the_retained_zero_last_update_baseline_or_2026_09_11T18_00_00Z_first_USD1_distribution_and_RLUSD_fourth_distribution_deadline_or_an_independently_observed_official_RLUSD_article_last_update_after_2026_08_28T08_25_00Z_or_before_2026_09_14T23_59_00Z_both_SIMPLE_AI_TRADING_BINANCE_MAINNET_API_KEY_and_SIMPLE_AI_TRADING_BINANCE_MAINNET_API_SECRET_available_with_explicit_read_only_account_evidence_authority_for_first_USD_deposit_Promotion_A_and_current_USD1_Simple_Earn_state_or_a_new_official_Lite_Loan_offer_with_a_fresh_enrollment_window_complete_service_fee_and_stablecoin_reward_terms_or_a_material_new_first_deposit_reward_capacity_fee_eligibility_valuation_or_distribution_term_or_published_USD1_Simple_Earn_U_RWUSD_USDT_or_USDe_rate_quota_fee_product_eligibility_snapshot_distribution_or_redemption_change_or_an_explicit_effective_BFUSD_reward_asset_reconciliation_or_2026_09_07_USDT_global_campaign_end_or_2026_09_14_U_campaign_end_or_2026_09_17_RWUSD_campaign_end_or_2026_09_21_USDT_regional_campaign_end",
+      "retry_trigger": "an_independently_observed_official_September_4_USD1_campaign_article_update_after_the_retained_zero_last_update_baseline_or_2026_09_11T18_00_00Z_first_USD1_distribution_and_RLUSD_fourth_distribution_deadline_or_an_independently_observed_official_RLUSD_article_last_update_after_2026_08_28T08_25_00Z_or_before_2026_09_14T23_59_00Z_both_SIMPLE_AI_TRADING_BINANCE_MAINNET_API_KEY_and_SIMPLE_AI_TRADING_BINANCE_MAINNET_API_SECRET_available_with_explicit_read_only_account_evidence_authority_for_first_USD_deposit_Promotion_A_and_current_USD1_Simple_Earn_state_or_a_new_official_Lite_Loan_offer_with_a_fresh_enrollment_window_complete_service_fee_and_stablecoin_reward_terms_or_a_material_new_first_deposit_reward_capacity_fee_eligibility_valuation_or_distribution_term_or_published_USD1_Simple_Earn_U_RWUSD_USDT_or_USDe_rate_quota_fee_product_eligibility_snapshot_distribution_or_redemption_change_or_an_explicit_effective_BFUSD_reward_asset_reconciliation_or_2026_09_14_U_campaign_end_or_2026_09_17_RWUSD_campaign_end_or_2026_09_21_USDT_regional_campaign_end_or_2026_09_22T23_59_59Z_USDT_September8_campaign_end_or_independently_observed_material_change_to_that_exact_campaign",
       "venue_scope": "binance_bfusd_rwusd_rlusd_usd1_usdt_usde_Lite_Loan_first_USD_deposit_SPCXB_reward_and_same_currency_cash_alternatives"
     },
     {
@@ -3489,12 +3493,16 @@
         {
           "path": "docs/review/2026-09-08/cxmt-post-change/result.json",
           "result_sha256": "fb72b55226a32a45e568d9a9bf62a06e40bd7450e193f2ba52a93e3bdc8ee210"
+        },
+        {
+          "path": "docs/review/2026-09-08/hk-listing-match/result.json",
+          "result_sha256": "51c451164a07004c35e7def5dca8d7ba4b2a3866a25362af40e9975262312f94"
         }
       ],
-      "current_status": "The original CXMT September 4-6 first-twelve-settlement trigger is consumed. Two public GETs on September 8 retained 48 Polymarket hourly and 12 regular Binance four-hour observations. Fixed long Polymarket / short Binance gross carry was negative in all 12 observations. Training/validation/test gross was -4.3037/-5.6561/-4.1478 bips; all roles failed execution, capital and quote-stress hurdles. This is an equal-notional funding-rate proxy, not realized fixed-base PnL or a family-wide impossibility claim. Prior top-five and HK0625/SHEIN studies remain consumed. No qualified edge.",
+      "current_status": "The original CXMT September 4-6 first-twelve-settlement trigger is consumed. Two public GETs on September 8 retained 48 Polymarket hourly and 12 regular Binance four-hour observations. Fixed long Polymarket / short Binance gross carry was negative in all 12 observations. Training/validation/test gross was -4.3037/-5.6561/-4.1478 bips; all roles failed execution, capital and quote-stress hurdles. This is an equal-notional funding-rate proxy, not realized fixed-base PnL or a family-wide impossibility claim. Prior top-five and HK0625/SHEIN studies remain consumed. No qualified edge. The separate September 7 BYDUSDT and HK0992USDT listing population was source-bound on September 8: no exact BYD or HK0992 counterpart among 67 returned Polymarket instruments. Both siblings stop before funding or prices; HK0992 is quanto, not a linear hedge.",
       "market_direction_forecast_required": false,
       "mechanism": "polymarket_binance_TradFi_perpetual_fixed_orientation_cross_venue_funding_spread",
-      "next_action": "Do not refetch, reverse orientation, extend the September 4-6 window, reprice or request books/accounts for this rejected sample. Reopen only after the exact later material-change trigger with a separately frozen causal study; preserve all historical samples, protected data and authority gates.",
+      "next_action": "Do not refetch, reverse orientation, extend the September 4-6 window, reprice or request books/accounts for this rejected sample. Reopen only after the exact later material-change trigger with a separately frozen causal study; preserve all historical samples, protected data and authority gates. Material independently observed exact Polymarket counterpart listing with matching share class, unit and settlement, or a separately source-proved conversion architecture. Do not repeat this inventory, request funding or prices, or use a similar ticker as a hedge.",
       "priority_rank": 43,
       "prohibited_shortcuts": [
         "selecting_or_inverting_orientation_after_viewing_history",
@@ -3505,7 +3513,7 @@
         "repairing_the_consumed_twelve_row_gate_into_a_promotion_from_eleven_rows",
         "calling_gross_funding_spread_an_edge_or_deployment_ready"
       ],
-      "retry_trigger": "A later material Polymarket or Binance TradFi perpetual funding cash-flow, fee, market-session, instrument-conversion or execution-architecture change; the September 6 time gate has been consumed and is not a rolling-window trigger.",
+      "retry_trigger": "A later material Polymarket or Binance TradFi perpetual funding cash-flow, fee, market-session, instrument-conversion or execution-architecture change; the September 6 time gate has been consumed and is not a rolling-window trigger. For the exact BYD/HK0992 no-match population: Material independently observed exact Polymarket counterpart listing with matching share class, unit and settlement, or a separately source-proved conversion architecture. Do not repeat this inventory, request funding or prices, or use a similar ticker as a hedge.",
       "venue_scope": "Polymarket_Perps_and_Binance_USDT_margined_TradFi_perpetuals_with_exact_non_crypto_base_asset_matches"
     },
     {
@@ -4378,7 +4386,7 @@
       ]
     }
   ],
-  "result_sha256": "97b48ded00c92bd356cd15700a1802e3cb4099af99fce1e930f55d04d6e349b7",
+  "result_sha256": "9ad0995e03bfc9d42936e713b3bd7ed89664cc1cdd697cb3f1a27d05fd8f6cd8",
   "schema_version": "structural-edge-priority-registry-v1",
   "terminal_do_not_repeat": [
     {
@@ -5357,8 +5365,13 @@
       "family": "CXMT_fixed_long_Polymarket_short_Binance_first_twelve_four_hour_settlements_2026_09_04_06",
       "reason": "The original CXMT September 4-6 first-twelve-settlement trigger is consumed. Two public GETs on September 8 retained 48 Polymarket hourly and 12 regular Binance four-hour observations. Fixed long Polymarket / short Binance gross carry was negative in all 12 observations. Training/validation/test gross was -4.3037/-5.6561/-4.1478 bips; all roles failed execution, capital and quote-stress hurdles. This is an equal-notional funding-rate proxy, not realized fixed-base PnL or a family-wide impossibility claim. Prior top-five and HK0625/SHEIN studies remain consumed. No qualified edge. Do not refetch, reverse orientation, extend the September 4-6 window, reprice or request books/accounts for this rejected sample. Reopen only after the exact later material-change trigger with a separately frozen causal study; preserve all historical samples, protected data and authority gates.",
       "canonical_result_sha256": "fb72b55226a32a45e568d9a9bf62a06e40bd7450e193f2ba52a93e3bdc8ee210"
+    },
+    {
+      "family": "binance_September7_BYD_HK0992_no_exact_Polymarket_counterpart_2026_09_08",
+      "reason": "The original CXMT September 4-6 first-twelve-settlement trigger is consumed. Two public GETs on September 8 retained 48 Polymarket hourly and 12 regular Binance four-hour observations. Fixed long Polymarket / short Binance gross carry was negative in all 12 observations. Training/validation/test gross was -4.3037/-5.6561/-4.1478 bips; all roles failed execution, capital and quote-stress hurdles. This is an equal-notional funding-rate proxy, not realized fixed-base PnL or a family-wide impossibility claim. Prior top-five and HK0625/SHEIN studies remain consumed. No qualified edge. The separate September 7 BYDUSDT and HK0992USDT listing population was source-bound on September 8: no exact BYD or HK0992 counterpart among 67 returned Polymarket instruments. Both siblings stop before funding or prices; HK0992 is quanto, not a linear hedge. Material independently observed exact Polymarket counterpart listing with matching share class, unit and settlement, or a separately source-proved conversion architecture. Do not repeat this inventory, request funding or prices, or use a similar ticker as a hedge.",
+      "canonical_result_sha256": "51c451164a07004c35e7def5dca8d7ba4b2a3866a25362af40e9975262312f94"
     }
   ],
-  "updated_at_utc": "2026-09-08T10:08:39.114674+00:00",
+  "updated_at_utc": "2026-09-08T10:29:11.693475+00:00",
   "usage_rule": "advance_the_highest_ranked_hypothesis_whose_retry_trigger_is_satisfied_otherwise_do_not_repeat_a_blocked_or_terminal_screen"
 }

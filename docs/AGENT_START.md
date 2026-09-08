@@ -10,6 +10,15 @@ Scope blockers to their branch; a fresh user resumption resets the blocked audit
 
 ## Current Truth
 
+The [USDT renewal](review/2026-09-08/usdt-flexible/review.md) raises the capped
+4% bonus principal from 500 to 800 USDT through September 22. It remains a
+small, unqualified same-asset allocation overlay, not a new trading edge.
+The [BYD/Lenovo listing gate](review/2026-09-08/hk-listing-match/review.md)
+found neither exact counterpart among 67 Polymarket instruments and stopped
+before funding or prices. Three public GETs across these two questions; all
+raw bytes and journals retained. Current terminal count is 194; accepted
+mechanism count remains 37 and qualified stable profitable edges remain zero.
+
 The [position mutation repair](review/2026-09-08/position-mutation-integrity.md)
 prevents corrupt/filtered retained ledger rows from silently disappearing during
 writes. Both files are admitted before close recording; 242 distinct affected
@@ -21,7 +30,7 @@ consumed the exact September 4-6 twelve-settlement trigger on September 8.
 All twelve gross observations were negative for the prospectively fixed long
 Polymarket / short Binance direction; all 6/3/3 roles failed. Two public GETs,
 complete retained raw coverage, 15 offline checks and exact reconstruction.
-No books/accounts or protected data touched. Current terminal count is 193,
+No books/accounts or protected data touched. That checkpoint's terminal count was 193,
 with zero qualified stable profitable edges. No repeat, reversed direction or
 rolling window; rank 43 now requires a later material economic/rule change.
 

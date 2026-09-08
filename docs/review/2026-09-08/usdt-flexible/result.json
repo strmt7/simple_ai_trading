@@ -1,0 +1,52 @@
+{
+  "accepted_edge": false,
+  "accepted_scope_count_delta": 0,
+  "account_qualified": false,
+  "article_code": "2d943377ecae4ef18a33cc90047a1d80",
+  "article_last_update_ms": 0,
+  "article_publish_time_ms": 1788768003121,
+  "canonical_url": "https://www.binance.com/en/support/announcement/detail/2d943377ecae4ef18a33cc90047a1d80",
+  "created_at_utc": "2026-09-08T10:25:35.270854+00:00",
+  "decision": "material renewal and cap increase for existing same-asset allocation overlay; not a scalable standalone trading strategy",
+  "deployment_ready": false,
+  "economic_sensitivity": {
+    "bonus_USDT_per_complete_eligible_day_at_cap": "0.0876712328767123287671232876712328767123287671232876712328767",
+    "classification": "conditional simple-APR illustration, not contracted or realized payout",
+    "complete_eligible_days_if_subscribed_September8_held_through_September22": 14,
+    "day_count_basis": 365,
+    "day_count_basis_source_proved": false,
+    "fourteen_day_bonus_USDT_at_cap": "1.22739726027397260273972602739726027397260273972602739726027",
+    "fourteen_day_bonus_bips_of_800_USDT": "15.3424657534246575342465753424657534246575342465753424657534",
+    "future_guaranteed_bonus_floor_USDT": "0",
+    "variable_base_APR_credited": false
+  },
+  "new_network_requests_by_adjudicator": 0,
+  "prior_result_sha256": "0126a1feef4e8bb5c46a7b7cab45e2471857a2e105fe0f41d73d4710b6abceda",
+  "raw_sha256": "a9f713bf76f2b0744c989201ca005dad1fc419e83375b1e3bbfd2b89903a1f4c",
+  "result_sha256": "399bdb6b27b7464f522bfaf7c32c89cf7725ad8bb030e2494ccf10c370b5eede",
+  "retry_trigger": "New independently observed material terms change or the exact 2026-09-22T23:59:59Z campaign end; no daily polling or alias refetch. Signed or funded work requires separate authority and current account evidence.",
+  "reviewer_sha256": "a2024e073fdfc948f323622d18da52a048fb877a953994fc5ce2b1f288aa0f63",
+  "schema_version": 1,
+  "source_contract_sha256": "d8b6c8093cef25549219ed01008c479021528de329172643fdf6f41f417f8284",
+  "source_result_sha256": "f7bfce2e17fe58eea0ae68e8b37f1490c6b16e2775d893926d4bdf6017675db5",
+  "terms": {
+    "approximate_variable_base_apr_percent": "3",
+    "bonus_apr_percent": "4",
+    "bonus_principal_cap_USDT": "800",
+    "end_utc": "2026-09-22T23:59:59Z",
+    "global_old_campaign_expired": true,
+    "headline_apr_percent": "7",
+    "minimum_subscription_USDT": "0.01",
+    "no_old_or_regional_bonus_stacking": true,
+    "old_bonus_cap_USDT": "500",
+    "old_campaign_evidence": "docs/model-research/action-value/binance-usdt-flexible-current-bonus-overlay-v1-2026-08-26.json",
+    "start_utc": "2026-09-08T00:00:00Z"
+  },
+  "unresolved": [
+    "Account region, master-account identity verification eligibility, quota and existing idle funds are unknown",
+    "Table says unlimited maximum subscription while general terms mention an upper limit; actual capacity is unresolved",
+    "Random snapshot, redemption-day reward loss and delayed redemptions constrain usable liquidity",
+    "Bonus terms may change or terminate without notice; variable base APR is not a fixed floor",
+    "Actual credited days, fees, best alternative, taxes and future distributions are unproved"
+  ]
+}
