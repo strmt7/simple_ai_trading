@@ -1,5 +1,15 @@
 # Continue Development
 
+Latest recovery stage: [native opening inventory observations](review/2026-09-08/binance-native-opening-inventory.md)
+adds exact native asset/derivative deltas to the existing scoped intent journal.
+Spot base fees reduce received base; futures notional is not a cash purchase;
+fees/rebates stay native. Retention is idempotent and transactionally rechecks
+UNKNOWN plus terminal evidence. 190 distinct affected checks passed across
+staged runs. No active-position application, balance qualification, rearm,
+CLI/Windows integration or real account access occurred. Next implement the
+atomic inventory/close application and explicit account/policy/process-fenced
+recovery workflow, not another disconnected cash ledger or repeated test run.
+
 GitHub read-only check on September 8: zero open Dependabot alerts and zero
 open pull requests. Fourteen retained PR-head refs are historical refs, not
 fourteen pending PRs. No branch merge, deletion or account mutation was needed.

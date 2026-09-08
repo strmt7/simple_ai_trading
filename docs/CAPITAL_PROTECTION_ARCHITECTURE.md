@@ -8,6 +8,13 @@ against gaps, illiquidity, exchange failure, custody loss, or every outage.
 
 ## What the current code actually establishes
 
+The September 8 [native opening observation stage](review/2026-09-08/binance-native-opening-inventory.md)
+retains exact execution-derived asset and derivative movements in the existing
+scoped intent database. It does not qualify account balances, apply active
+positions, clear UNKNOWN, rearm or integrate CLI/Windows recovery controls.
+That application must preserve native fees and transactions across the complete
+open/close lifecycle; the older floating-point adapter is not silently upgraded.
+
 The September 8 [mutation-integrity repair](review/2026-09-08/position-mutation-integrity.md)
 prevents corrupt or filtered retained position rows from being overwritten as
 empty state. Both ledgers are admitted before close recording starts. This
