@@ -1,0 +1,219 @@
+{
+  "accepted_edge": false,
+  "analysis": {
+    "cross_regime_qualified": false,
+    "fixed_orientation": "long_polymarket_short_binance",
+    "history_survivor": false,
+    "notional_mark_path_qualified": false,
+    "qualified_edge": false,
+    "roles": {
+      "test": {
+        "capital_hurdle_bips": "1.36986301369863013698630136986301369863013698630136986301370",
+        "count": 3,
+        "gross_bips": "-4.14780000",
+        "net_after_execution_and_capital_bips": "-25.5176630136986301369863013698630136986301369863013698630137",
+        "net_after_quote_stress_bips": "-35.5176630136986301369863013698630136986301369863013698630137",
+        "passes": false,
+        "positive_count": 0,
+        "worst_drop_one_with_full_costs_bips": "-34.8383630136986301369863013698630136986301369863013698630137"
+      },
+      "training": {
+        "capital_hurdle_bips": "2.73972602739726027397260273972602739726027397260273972602740",
+        "count": 6,
+        "gross_bips": "-4.30370000",
+        "net_after_execution_and_capital_bips": "-27.0434260273972602739726027397260273972602739726027397260274",
+        "net_after_quote_stress_bips": "-37.0434260273972602739726027397260273972602739726027397260274",
+        "passes": false,
+        "positive_count": 0,
+        "worst_drop_one_with_full_costs_bips": "-36.5351260273972602739726027397260273972602739726027397260274"
+      },
+      "validation": {
+        "capital_hurdle_bips": "1.36986301369863013698630136986301369863013698630136986301370",
+        "count": 3,
+        "gross_bips": "-5.65610000",
+        "net_after_execution_and_capital_bips": "-27.0259630136986301369863013698630136986301369863013698630137",
+        "net_after_quote_stress_bips": "-37.0259630136986301369863013698630136986301369863013698630137",
+        "passes": false,
+        "positive_count": 0,
+        "worst_drop_one_with_full_costs_bips": "-35.7317630136986301369863013698630136986301369863013698630137"
+      }
+    },
+    "rows": [
+      {
+        "binance_rate": "0E-8",
+        "end_ms": 1788523200000,
+        "gross_equal_notional_carry_bips": "-0.50830000",
+        "polymarket_four_hour_rate": "0.00005083"
+      },
+      {
+        "binance_rate": "0.00018970",
+        "end_ms": 1788537600000,
+        "gross_equal_notional_carry_bips": "-0.56170000",
+        "polymarket_four_hour_rate": "0.00024587"
+      },
+      {
+        "binance_rate": "0E-8",
+        "end_ms": 1788552000000,
+        "gross_equal_notional_carry_bips": "-0.89130000",
+        "polymarket_four_hour_rate": "0.00008913"
+      },
+      {
+        "binance_rate": "0E-8",
+        "end_ms": 1788566400000,
+        "gross_equal_notional_carry_bips": "-0.93700000",
+        "polymarket_four_hour_rate": "0.00009370"
+      },
+      {
+        "binance_rate": "0E-8",
+        "end_ms": 1788580800000,
+        "gross_equal_notional_carry_bips": "-0.69610000",
+        "polymarket_four_hour_rate": "0.00006961"
+      },
+      {
+        "binance_rate": "0E-8",
+        "end_ms": 1788595200000,
+        "gross_equal_notional_carry_bips": "-0.70930000",
+        "polymarket_four_hour_rate": "0.00007093"
+      },
+      {
+        "binance_rate": "0E-8",
+        "end_ms": 1788609600000,
+        "gross_equal_notional_carry_bips": "-1.29420000",
+        "polymarket_four_hour_rate": "0.00012942"
+      },
+      {
+        "binance_rate": "0E-8",
+        "end_ms": 1788624000000,
+        "gross_equal_notional_carry_bips": "-2.68300000",
+        "polymarket_four_hour_rate": "0.00026830"
+      },
+      {
+        "binance_rate": "0E-8",
+        "end_ms": 1788638400000,
+        "gross_equal_notional_carry_bips": "-1.67890000",
+        "polymarket_four_hour_rate": "0.00016789"
+      },
+      {
+        "binance_rate": "0E-8",
+        "end_ms": 1788652800000,
+        "gross_equal_notional_carry_bips": "-0.67930000",
+        "polymarket_four_hour_rate": "0.00006793"
+      },
+      {
+        "binance_rate": "0E-8",
+        "end_ms": 1788667200000,
+        "gross_equal_notional_carry_bips": "-1.72510000",
+        "polymarket_four_hour_rate": "0.00017251"
+      },
+      {
+        "binance_rate": "0E-8",
+        "end_ms": 1788681600000,
+        "gross_equal_notional_carry_bips": "-1.74340000",
+        "polymarket_four_hour_rate": "0.00017434"
+      }
+    ]
+  },
+  "candidate_for_books": false,
+  "completed_at_utc": "2026-09-08T10:01:29.799148+00:00",
+  "plan_path": "docs/review/2026-09-08/cxmt-post-change/plan.json",
+  "plan_sha256": "ddc65e514321de09dce7139b20854af860fdab969b8b0826de71d35539a0b561",
+  "result_sha256": "fb72b55226a32a45e568d9a9bf62a06e40bd7450e193f2ba52a93e3bdc8ee210",
+  "schema_version": 1,
+  "source_results": [
+    {
+      "accepted_edge": false,
+      "authority": {
+        "account_requests": 0,
+        "credentials_used": false,
+        "funds_used": false,
+        "orders_or_transactions": 0,
+        "protected_capture_touched": false,
+        "public_unauthenticated_read_only_requests": 1,
+        "signed_requests": 0,
+        "trading_authority": false
+      },
+      "capture": {
+        "journal_path": "docs/review/2026-09-08/cxmt-post-change/polymarket-journal.jsonl",
+        "receipt": {
+          "completed_at_ms": 1788861689030,
+          "error_type": null,
+          "oversize_body_is_truncated": false,
+          "phase": "completed",
+          "raw_path": "docs/review/2026-09-08/cxmt-post-change/raw/polymarket.json",
+          "requested_at_ms": 1788861687535,
+          "response_bytes": 2708,
+          "response_sha256": "94c4795408f3dc50612733cdc2f525da454a78675c6a4b150ec62d4ee7835f61",
+          "status_code": 200
+        }
+      },
+      "contract": {
+        "path": "docs/review/2026-09-08/cxmt-post-change/polymarket-contract.json",
+        "sha256": "0b2dca6d30576fdff8eaaba494be7eea9318a5122eb2a4c5ad085477f3f43af3"
+      },
+      "created_at_utc": "2026-09-08T10:01:29.031930+00:00",
+      "profitability_claim": false,
+      "result_sha256": "ece3b449bb9d31e7d1469aff26815ef602755e20174948454a41532229a53ec0",
+      "schema_version": "bounded-public-source-result-v1",
+      "source_gate": {
+        "passed": true,
+        "phrases": {
+          "\"data\"": true,
+          "\"more\"": true
+        },
+        "representation": {
+          "decode_error": null,
+          "detected_format": "utf8_text",
+          "utf8_decode_passed": true
+        }
+      }
+    },
+    {
+      "accepted_edge": false,
+      "authority": {
+        "account_requests": 0,
+        "credentials_used": false,
+        "funds_used": false,
+        "orders_or_transactions": 0,
+        "protected_capture_touched": false,
+        "public_unauthenticated_read_only_requests": 1,
+        "signed_requests": 0,
+        "trading_authority": false
+      },
+      "capture": {
+        "journal_path": "docs/review/2026-09-08/cxmt-post-change/binance-journal.jsonl",
+        "receipt": {
+          "completed_at_ms": 1788861689794,
+          "error_type": null,
+          "oversize_body_is_truncated": false,
+          "phase": "completed",
+          "raw_path": "docs/review/2026-09-08/cxmt-post-change/raw/binance.json",
+          "requested_at_ms": 1788861689035,
+          "response_bytes": 1477,
+          "response_sha256": "ed5db171af04bb0af164a50faf034c926a9185db56a0314ab195496ef9b85a10",
+          "status_code": 200
+        }
+      },
+      "contract": {
+        "path": "docs/review/2026-09-08/cxmt-post-change/binance-contract.json",
+        "sha256": "a8e8b8117cfb8163e23074fb0d4b0843124da79af6df6705b5c4a1e90b26e6fb"
+      },
+      "created_at_utc": "2026-09-08T10:01:29.795148+00:00",
+      "profitability_claim": false,
+      "result_sha256": "e411f21cfff057618c192a3623f02406665c2c4217c392f9b973c66e14b46643",
+      "schema_version": "bounded-public-source-result-v1",
+      "source_gate": {
+        "passed": true,
+        "phrases": {
+          "\"fundingRate\"": true,
+          "\"fundingTime\"": true
+        },
+        "representation": {
+          "decode_error": null,
+          "detected_format": "utf8_text",
+          "utf8_decode_passed": true
+        }
+      }
+    }
+  ],
+  "status": "terminal_history_rejection"
+}

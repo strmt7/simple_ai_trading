@@ -64,8 +64,8 @@ source gate stops that source route, not unrelated offline engineering.
 | Funding carry | Settlement notionals and quote conversion, matched costs and both-leg capital, causal funding persistence | Unweighted rates, headline APR or a directional candle predictor |
 | Polymarket completion | Original-token executable liquidation comparator, completion/orphan outcomes, exact settlement semantics | Public trade prints as our fills, winner-only sampling, gross completed P&L |
 
-Existing scheduled routes remain exact: CXMT no earlier than
-`2026-09-06T08:10:00Z` under its frozen 6/3/3 roles; spot block-trade no earlier
+The CXMT first-twelve-settlement route is now [consumed and rejected](../2026-09-08/cxmt-post-change/review.md);
+its old date no longer permits access. Spot block-trade remains no earlier
 than `2026-09-06T03:47:16.3134381Z`; MRNA September 8 and USD1/RLUSD September 11
 retain every additional canonical condition. Read the **complete current
 registry row** before any request. Time alone does not satisfy compound gates.

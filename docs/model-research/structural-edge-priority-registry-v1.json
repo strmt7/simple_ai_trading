@@ -3481,12 +3481,20 @@
         {
           "path": "docs/model-research/action-value/binance-shein-quanto-polymarket-perps-match-adjudication-v1-2026-09-01.json",
           "result_sha256": "bce940e94a6846e2524f01d77f18b7e921bc273b1f027d9dc7cab4a5b99faf50"
+        },
+        {
+          "path": "docs/review/2026-09-08/cxmt-post-change/plan.json",
+          "plan_sha256": "ddc65e514321de09dce7139b20854af860fdab969b8b0826de71d35539a0b561"
+        },
+        {
+          "path": "docs/review/2026-09-08/cxmt-post-change/result.json",
+          "result_sha256": "fb72b55226a32a45e568d9a9bf62a06e40bd7450e193f2ba52a93e3bdc8ee210"
         }
       ],
-      "current_status": "market_direction_independent_fixed_orientation_cross_venue_Polymarket_and_Binance_TradFi_perpetual_funding_spread_reopened_only_for_a_distinct_source_bound_CXMT_post_change_history_test_Binance_changed_CXMTUSDT_from_8_hour_to_4_hour_funding_effective_2026_09_04T08_15_00Z_and_halved_the_per_settlement_cap_from_2_to_1_percent_while_retained_inventories_prove_an_exact_active_CXMTUSDT_to_CXMT_USD_match_the_absolute_daily_cap_remains_6_percent_so_no_favorable_realized_carry_is_inferred_and_zero_history_price_book_fee_account_credential_order_or_fund_requests_are_allowed_before_twelve_complete_post_change_settlements_at_2026_09_06T08_10_00Z_the_prior_top_five_history_and_HK0625_SHEIN_no_match_rejections_remain_terminal_not_accepted_or_deployment_ready",
+      "current_status": "The original CXMT September 4-6 first-twelve-settlement trigger is consumed. Two public GETs on September 8 retained 48 Polymarket hourly and 12 regular Binance four-hour observations. Fixed long Polymarket / short Binance gross carry was negative in all 12 observations. Training/validation/test gross was -4.3037/-5.6561/-4.1478 bips; all roles failed execution, capital and quote-stress hurdles. This is an equal-notional funding-rate proxy, not realized fixed-base PnL or a family-wide impossibility claim. Prior top-five and HK0625/SHEIN studies remain consumed. No qualified edge.",
       "market_direction_forecast_required": false,
       "mechanism": "polymarket_binance_TradFi_perpetual_fixed_orientation_cross_venue_funding_spread",
-      "next_action": "at_or_after_2026_09_06T08_10_00Z_run_only_one_prospectively_frozen_CXMT_post_change_history_test_freeze_the_receiving_leg_orientation_before_history_access_require_exactly_twelve_complete_4_hour_Binance_settlements_with_matching_Polymarket_hourly_cash_flows_split_6_training_3_validation_3_test_and_reject_unless_every_role_clears_20_bips_execution_plus_two_500_bip_annual_capital_hurdles_do_not_request_books_fees_accounts_credentials_orders_or_funds_before_a_persistent_survivor_and_do_not_repeat_the_prior_top_five_or_HK0625_SHEIN_work",
+      "next_action": "Do not refetch, reverse orientation, extend the September 4-6 window, reprice or request books/accounts for this rejected sample. Reopen only after the exact later material-change trigger with a separately frozen causal study; preserve all historical samples, protected data and authority gates.",
       "priority_rank": 43,
       "prohibited_shortcuts": [
         "selecting_or_inverting_orientation_after_viewing_history",
@@ -3497,7 +3505,7 @@
         "repairing_the_consumed_twelve_row_gate_into_a_promotion_from_eleven_rows",
         "calling_gross_funding_spread_an_edge_or_deployment_ready"
       ],
-      "retry_trigger": "not_before_2026_09_06T08_10_00Z_when_twelve_complete_post_change_CXMTUSDT_4_hour_settlements_exist_or_a_later_material_Polymarket_or_Binance_TradFi_perpetual_funding_cash_flow_fee_market_session_instrument_conversion_or_execution_architecture_change",
+      "retry_trigger": "A later material Polymarket or Binance TradFi perpetual funding cash-flow, fee, market-session, instrument-conversion or execution-architecture change; the September 6 time gate has been consumed and is not a rolling-window trigger.",
       "venue_scope": "Polymarket_Perps_and_Binance_USDT_margined_TradFi_perpetuals_with_exact_non_crypto_base_asset_matches"
     },
     {
@@ -4370,7 +4378,7 @@
       ]
     }
   ],
-  "result_sha256": "d8e23d654aa344e233c31eb1fc02e242285101f09cdb06a2f26d0ad7b594578d",
+  "result_sha256": "97b48ded00c92bd356cd15700a1802e3cb4099af99fce1e930f55d04d6e349b7",
   "schema_version": "structural-edge-priority-registry-v1",
   "terminal_do_not_repeat": [
     {
@@ -5344,8 +5352,13 @@
       "family": "binance_crypto_option_distinct_population_70_september5_2026",
       "reason": "One frozen metadata request proved 70 symbols outside the complete 2274-symbol prior union. One frozen two-request screen at 1984 ms request-start skew retained all 70 rows: 23 positive-entry, zero gross-positive and zero after the unchanged 33.5-bip stress. The remaining 47 rows have zero entry quotes, not free acquisition. No survivor means no depth, funding, fee or account escalation. Do not repeat or repair this population; only the unchanged exact rank-47 distinct-population or material-economics retry trigger can reopen the branch.",
       "canonical_result_sha256": "1e4c24e06665f206782360224bad16f536641bb4a5a259ec2e3acef2966a1658"
+    },
+    {
+      "family": "CXMT_fixed_long_Polymarket_short_Binance_first_twelve_four_hour_settlements_2026_09_04_06",
+      "reason": "The original CXMT September 4-6 first-twelve-settlement trigger is consumed. Two public GETs on September 8 retained 48 Polymarket hourly and 12 regular Binance four-hour observations. Fixed long Polymarket / short Binance gross carry was negative in all 12 observations. Training/validation/test gross was -4.3037/-5.6561/-4.1478 bips; all roles failed execution, capital and quote-stress hurdles. This is an equal-notional funding-rate proxy, not realized fixed-base PnL or a family-wide impossibility claim. Prior top-five and HK0625/SHEIN studies remain consumed. No qualified edge. Do not refetch, reverse orientation, extend the September 4-6 window, reprice or request books/accounts for this rejected sample. Reopen only after the exact later material-change trigger with a separately frozen causal study; preserve all historical samples, protected data and authority gates.",
+      "canonical_result_sha256": "fb72b55226a32a45e568d9a9bf62a06e40bd7450e193f2ba52a93e3bdc8ee210"
     }
   ],
-  "updated_at_utc": "2026-09-05T09:41:09.025556Z",
+  "updated_at_utc": "2026-09-08T10:08:39.114674+00:00",
   "usage_rule": "advance_the_highest_ranked_hypothesis_whose_retry_trigger_is_satisfied_otherwise_do_not_repeat_a_blocked_or_terminal_screen"
 }
