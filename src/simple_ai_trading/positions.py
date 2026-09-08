@@ -10,6 +10,10 @@ Two JSON files live under ``data/autonomous/``:
 * ``open_positions.json`` — a list of currently open positions.
 * ``ledger.json`` — a list of every closed trade in chronological order.
 
+Participating access is serialized through a recoverable paired replacement
+record in ``binance_open_intents.sqlite3``. Do not edit enrolled JSON files
+directly or run an older writer against this directory.
+
 Entries are small and human-readable.  No credentials, no raw order IDs beyond
 what the exchange already returned, and all numeric fields are plain floats so
 the file loads fine with ``python -m json.tool``.
@@ -27,7 +31,8 @@ from pathlib import Path
 from typing import Any, Mapping
 
 from .binance_open_intents import BinanceOpenIntentJournal
-from .storage import write_bytes_atomic, write_json_atomic
+from .position_transactions import position_transaction
+from .storage import write_json_atomic
 
 BOT_OWNER = "simple_ai_trading"
 BOT_CLIENT_ORDER_PREFIX = "sait"
@@ -123,47 +128,55 @@ class ClosedTrade:
     ai_review_status: str = ""
 
 
-_OPEN_REQUIRED_FIELDS = frozenset({
-    "id",
-    "symbol",
-    "market_type",
-    "side",
-    "qty",
-    "entry_price",
-    "leverage",
-    "opened_at_ms",
-    "notional",
-})
-_CLOSED_REQUIRED_FIELDS = frozenset({
-    "id",
-    "symbol",
-    "market_type",
-    "side",
-    "qty",
-    "entry_price",
-    "exit_price",
-    "leverage",
-    "opened_at_ms",
-    "closed_at_ms",
-    "realized_pnl",
-    "realized_pnl_pct",
-})
+_OPEN_REQUIRED_FIELDS = frozenset(
+    {
+        "id",
+        "symbol",
+        "market_type",
+        "side",
+        "qty",
+        "entry_price",
+        "leverage",
+        "opened_at_ms",
+        "notional",
+    }
+)
+_CLOSED_REQUIRED_FIELDS = frozenset(
+    {
+        "id",
+        "symbol",
+        "market_type",
+        "side",
+        "qty",
+        "entry_price",
+        "exit_price",
+        "leverage",
+        "opened_at_ms",
+        "closed_at_ms",
+        "realized_pnl",
+        "realized_pnl_pct",
+    }
+)
 _OPEN_KNOWN_FIELDS = frozenset(item.name for item in fields(OpenPosition))
 _OPEN_REQUIRED_TEXT_FIELDS = frozenset({"id", "symbol", "market_type", "side"})
-_OPEN_OPTIONAL_TEXT_FIELDS = frozenset({
-    "strategy_profile",
-    "objective",
-    "owner",
-    "open_client_order_id",
-    "open_exchange_order_id",
-    "exchange_status",
-    "paper_open_intent_id",
-    "ai_review_mode",
-    "ai_review_case_id",
-    "ai_review_status",
-})
+_OPEN_OPTIONAL_TEXT_FIELDS = frozenset(
+    {
+        "strategy_profile",
+        "objective",
+        "owner",
+        "open_client_order_id",
+        "open_exchange_order_id",
+        "exchange_status",
+        "paper_open_intent_id",
+        "ai_review_mode",
+        "ai_review_case_id",
+        "ai_review_status",
+    }
+)
 _OPEN_REQUIRED_FINITE_FIELDS = frozenset({"qty", "entry_price", "leverage", "notional"})
-_OPEN_OPTIONAL_FINITE_FIELDS = frozenset({"stop_loss_pct", "take_profit_pct", "entry_fees"})
+_OPEN_OPTIONAL_FINITE_FIELDS = frozenset(
+    {"stop_loss_pct", "take_profit_pct", "entry_fees"}
+)
 _OPEN_POSITIVE_FIELDS = frozenset({"qty", "entry_price", "leverage", "notional"})
 _OPEN_NONNEGATIVE_FIELDS = frozenset({"entry_fees"})
 _OPEN_MARKET_TYPES = frozenset({"spot", "futures"})
@@ -253,12 +266,13 @@ class PositionsStore:
 
     # ---- low-level I/O ------------------------------------------------------
 
-    def _load(self, path: Path, *, strict: bool = False) -> list[dict[str, Any]]:
-        if not path.exists():
+    @staticmethod
+    def _decode(body: bytes | None, *, strict: bool = False) -> list[dict[str, Any]]:
+        if body is None:
             return []
         try:
             payload = json.loads(
-                path.read_text(encoding="utf-8"),
+                body.decode("utf-8"),
                 **(
                     {
                         "object_pairs_hook": _unique_ledger_fields,
@@ -289,17 +303,25 @@ class PositionsStore:
             return []
         return [entry for entry in payload if isinstance(entry, dict)]
 
-    def _write(self, path: Path, payload: list[dict[str, Any]]) -> None:
-        # Flush the replacement bytes before an intent can be acknowledged.
-        encoded = (
+    def _load(self, path: Path, *, strict: bool = False) -> list[dict[str, Any]]:
+        with position_transaction(self.opening_intents) as transaction:
+            return self._decode(transaction.read(path), strict=strict)
+
+    @staticmethod
+    def _encode(payload: list[dict[str, Any]]) -> bytes:
+        return (
             json.dumps(payload, indent=2, sort_keys=True, allow_nan=False) + "\n"
         ).encode("utf-8")
-        write_bytes_atomic(path, encoded)
 
     # ---- public API ---------------------------------------------------------
 
     def load_open(self, *, strict: bool = False) -> list[OpenPosition]:
         entries = self._load(self.open_path, strict=strict)
+        return self._open_entries(entries, strict=strict)
+
+    def _open_entries(
+        self, entries: list[dict[str, Any]], *, strict: bool
+    ) -> list[OpenPosition]:
         if strict:
             if any(not self._valid_open_entry(entry) for entry in entries):
                 raise ValueError("open ledger has incomplete rows; refusing mutation")
@@ -316,6 +338,27 @@ class PositionsStore:
 
     def load_ledger(self, *, strict: bool = False) -> list[ClosedTrade]:
         entries = self._load(self.ledger_path, strict=strict)
+        return self._closed_entries(entries, strict=strict)
+
+    def load_snapshot(
+        self, *, strict: bool = False
+    ) -> tuple[list[OpenPosition], list[ClosedTrade]]:
+        """Read open and closed state from the same fenced generation."""
+        with position_transaction(self.opening_intents) as transaction:
+            return (
+                self._open_entries(
+                    self._decode(transaction.read(self.open_path), strict=strict),
+                    strict=strict,
+                ),
+                self._closed_entries(
+                    self._decode(transaction.read(self.ledger_path), strict=strict),
+                    strict=strict,
+                ),
+            )
+
+    def _closed_entries(
+        self, entries: list[dict[str, Any]], *, strict: bool
+    ) -> list[ClosedTrade]:
         if strict and any(not self._valid_closed_entry(entry) for entry in entries):
             raise ValueError("closed ledger has incomplete rows; refusing mutation")
         return [
@@ -323,23 +366,55 @@ class PositionsStore:
         ]
 
     def record_open(self, position: OpenPosition) -> OpenPosition:
-        existing = self.load_open(strict=True)
-        existing = [p for p in existing if p.id != position.id]
-        existing.append(position)
-        self._write(self.open_path, [asdict(p) for p in existing])
+        with position_transaction(self.opening_intents, write=True) as transaction:
+            self._closed_entries(
+                self._decode(transaction.read(self.ledger_path), strict=True),
+                strict=True,
+            )
+            existing = self._open_entries(
+                self._decode(transaction.read(self.open_path), strict=True), strict=True
+            )
+            existing = [p for p in existing if p.id != position.id]
+            existing.append(position)
+            transaction.replace(
+                {self.open_path.name: self._encode([asdict(p) for p in existing])}
+            )
         return position
 
     def record_close(self, trade: ClosedTrade) -> ClosedTrade:
-        # Admit both retained files before the first write. This avoids destroying
-        # evidence on corruption; it is not a multi-file transaction or writer lock.
-        existing = self.load_ledger(strict=True)
-        opens = [p for p in self.load_open(strict=True) if p.id != trade.id]
-        existing.append(trade)
-        self._write(self.ledger_path, [asdict(t) for t in existing])
-        # also drop the matching open entry if present
-        self._write(self.open_path, [asdict(p) for p in opens])
+        self._record_close_pair(trade)
         write_learning_feedback(self)
         return trade
+
+    def _record_close_pair(
+        self,
+        trade: ClosedTrade,
+        *,
+        remaining: OpenPosition | None = None,
+        expected: OpenPosition | None = None,
+    ) -> None:
+        with position_transaction(self.opening_intents, write=True) as transaction:
+            existing = self._closed_entries(
+                self._decode(transaction.read(self.ledger_path), strict=True),
+                strict=True,
+            )
+            opens = self._open_entries(
+                self._decode(transaction.read(self.open_path), strict=True), strict=True
+            )
+            if expected is not None and [p for p in opens if p.id == expected.id] != [
+                expected
+            ]:
+                raise ValueError("partial close position changed before recording")
+            opens = [p for p in opens if p.id != trade.id]
+            if remaining is not None:
+                opens.append(remaining)
+            existing.append(trade)
+            transaction.replace(
+                {
+                    self.ledger_path.name: self._encode([asdict(t) for t in existing]),
+                    self.open_path.name: self._encode([asdict(p) for p in opens]),
+                }
+            )
 
     def record_close_result(
         self, position: OpenPosition, trade: ClosedTrade
@@ -352,11 +427,6 @@ class PositionsStore:
         if open_qty <= 0.0 or close_qty >= open_qty - tolerance:
             return self.record_close(trade)
 
-        existing = self.load_ledger(strict=True)
-        opens = [p for p in self.load_open(strict=True) if p.id != position.id]
-        existing.append(trade)
-        self._write(self.ledger_path, [asdict(t) for t in existing])
-
         remaining_qty = max(0.0, open_qty - close_qty)
         remaining = replace(
             position,
@@ -368,18 +438,26 @@ class PositionsStore:
                 float(position.entry_fees) * (remaining_qty / max(open_qty, 1e-18)),
             ),
         )
-        opens.append(remaining)
-        self._write(self.open_path, [asdict(p) for p in opens])
+        self._record_close_pair(trade, remaining=remaining, expected=position)
         write_learning_feedback(self)
         return trade
 
     def remove_open(self, position_id: str) -> bool:
-        opens = self.load_open(strict=True)
-        filtered = [p for p in opens if p.id != position_id]
-        if len(filtered) == len(opens):
-            return False
-        self._write(self.open_path, [asdict(p) for p in filtered])
-        return True
+        with position_transaction(self.opening_intents, write=True) as transaction:
+            self._closed_entries(
+                self._decode(transaction.read(self.ledger_path), strict=True),
+                strict=True,
+            )
+            opens = self._open_entries(
+                self._decode(transaction.read(self.open_path), strict=True), strict=True
+            )
+            filtered = [p for p in opens if p.id != position_id]
+            if len(filtered) == len(opens):
+                return False
+            transaction.replace(
+                {self.open_path.name: self._encode([asdict(p) for p in filtered])}
+            )
+            return True
 
     def find_open(self, position_id: str) -> OpenPosition | None:
         for position in self.load_open():
@@ -389,8 +467,11 @@ class PositionsStore:
 
     def open_integrity_errors(self) -> tuple[str, ...]:
         """Return lossless validation errors for the durable open-position ledger."""
-
-        return self._open_file_integrity_errors(self.open_path)
+        try:
+            with position_transaction(self.opening_intents):
+                return self._open_file_integrity_errors(self.open_path)
+        except (ValueError, OSError):
+            return ("position_transaction_unresolved",)
 
     # ---- validation helpers -------------------------------------------------
 
@@ -431,10 +512,14 @@ class PositionsStore:
         keys = set(entry)
         missing = sorted(_OPEN_REQUIRED_FIELDS - keys)
         if missing:
-            errors.append(f"open_positions_entry_{index}_missing_fields={','.join(missing)}")
+            errors.append(
+                f"open_positions_entry_{index}_missing_fields={','.join(missing)}"
+            )
         unknown = sorted(keys - _OPEN_KNOWN_FIELDS)
         if unknown:
-            errors.append(f"open_positions_entry_{index}_unknown_fields={','.join(unknown)}")
+            errors.append(
+                f"open_positions_entry_{index}_unknown_fields={','.join(unknown)}"
+            )
 
         for name in sorted(_OPEN_REQUIRED_TEXT_FIELDS):
             if name not in entry:
@@ -451,7 +536,9 @@ class PositionsStore:
 
         market_type = str(entry.get("market_type") or "").lower()
         if "market_type" in entry and market_type not in _OPEN_MARKET_TYPES:
-            errors.append(f"open_positions_entry_{index}_invalid_market_type={market_type}")
+            errors.append(
+                f"open_positions_entry_{index}_invalid_market_type={market_type}"
+            )
         side = str(entry.get("side") or "").upper()
         if "side" in entry and side not in _OPEN_SIDES:
             errors.append(f"open_positions_entry_{index}_invalid_side={side}")
@@ -468,18 +555,17 @@ class PositionsStore:
                 errors.append(f"open_positions_entry_{index}_non_finite_number={name}")
                 continue
             if name in _OPEN_POSITIVE_FIELDS and float(value) <= 0.0:
-                errors.append(f"open_positions_entry_{index}_non_positive_number={name}")
+                errors.append(
+                    f"open_positions_entry_{index}_non_positive_number={name}"
+                )
             if name in _OPEN_NONNEGATIVE_FIELDS and float(value) < 0.0:
                 errors.append(f"open_positions_entry_{index}_negative_number={name}")
 
         opened_at_ms = entry.get("opened_at_ms")
-        if (
-            "opened_at_ms" in entry
-            and (
-                isinstance(opened_at_ms, bool)
-                or not isinstance(opened_at_ms, int)
-                or opened_at_ms < 0
-            )
+        if "opened_at_ms" in entry and (
+            isinstance(opened_at_ms, bool)
+            or not isinstance(opened_at_ms, int)
+            or opened_at_ms < 0
         ):
             errors.append(f"open_positions_entry_{index}_invalid_opened_at_ms")
         if "dry_run" in entry and not isinstance(entry.get("dry_run"), bool):
@@ -488,7 +574,9 @@ class PositionsStore:
             try:
                 OpenPosition(**entry)
             except TypeError as exc:
-                errors.append(f"open_positions_entry_{index}_constructor_failed:{exc.__class__.__name__}")
+                errors.append(
+                    f"open_positions_entry_{index}_constructor_failed:{exc.__class__.__name__}"
+                )
         return errors
 
     @property
@@ -518,7 +606,9 @@ def bot_client_order_id(
     attempt_number = int(attempt)
     if attempt_number < 1 or attempt_number > 999_999:
         raise ValueError("client order attempt must lie in [1, 999999]")
-    clean_id = "".join(ch for ch in str(position_id) if ch.isalnum())[:18] or new_position_id()
+    clean_id = (
+        "".join(ch for ch in str(position_id) if ch.isalnum())[:18] or new_position_id()
+    )
     clean_action = "o" if str(action).lower().startswith("open") else "c"
     suffix = "" if attempt_number == 1 else f"-{attempt_number}"
     prefix = f"{BOT_CLIENT_ORDER_PREFIX}-{clean_action}-{clean_id}"
@@ -548,7 +638,11 @@ def bot_ownership_rejection_reason(position: OpenPosition) -> str | None:
 
     exchange_order_id = str(position.open_exchange_order_id or "").strip()
     market_type = str(position.market_type or "").strip().lower()
-    if market_type == "futures" and exchange_order_id and status in _LIVE_FUTURES_ACK_STATUSES:
+    if (
+        market_type == "futures"
+        and exchange_order_id
+        and status in _LIVE_FUTURES_ACK_STATUSES
+    ):
         return None
     return f"exchange-status-unverified:{status.lower() or 'missing'}"
 
@@ -590,14 +684,17 @@ def compute_stats(
     rather than raising.
     """
 
-    closed = store.load_ledger()
-    opens = store.load_open()
+    opens, closed = store.load_snapshot()
     wins = sum(1 for t in closed if t.realized_pnl > 0)
     losses = sum(1 for t in closed if t.realized_pnl < 0)
     realized = sum(t.realized_pnl for t in closed)
     total_fees = sum(t.fees for t in closed)
-    largest_win = max((t.realized_pnl for t in closed if t.realized_pnl > 0), default=0.0)
-    largest_loss = min((t.realized_pnl for t in closed if t.realized_pnl < 0), default=0.0)
+    largest_win = max(
+        (t.realized_pnl for t in closed if t.realized_pnl > 0), default=0.0
+    )
+    largest_loss = min(
+        (t.realized_pnl for t in closed if t.realized_pnl < 0), default=0.0
+    )
     unrealized = 0.0
     unrealized_pct = 0.0
     if mark_price is not None and opens:
@@ -605,7 +702,9 @@ def compute_stats(
         entry_notional = sum(abs(p.entry_price * p.qty) for p in opens)
         if entry_notional > 0:
             unrealized_pct = unrealized / entry_notional
-    realized_pct = (realized / starting_reference_cash) if starting_reference_cash > 0 else 0.0
+    realized_pct = (
+        (realized / starting_reference_cash) if starting_reference_cash > 0 else 0.0
+    )
     return LedgerStats(
         closed_trades=len(closed),
         wins=wins,
@@ -667,18 +766,28 @@ def build_learning_feedback(
 
     max_loss_streak = _max_consecutive_losses(recent)
     worst = min((float(trade.realized_pnl) for trade in recent), default=0.0)
-    recurring = Counter({key: value for key, value in loss_reasons.items() if value >= 2})
+    recurring = Counter(
+        {key: value for key, value in loss_reasons.items() if value >= 2}
+    )
     recommendations: list[str] = []
     notes: list[str] = []
     if not recent:
-        recommendations.append("collect_more_closed_trade_outcomes_before_self_improvement")
+        recommendations.append(
+            "collect_more_closed_trade_outcomes_before_self_improvement"
+        )
         notes.append("no_closed_trades")
     if max_loss_streak >= 2:
-        recommendations.append("trigger_cooldown_and_replay_recent_loss_streak_before_new_promotion")
+        recommendations.append(
+            "trigger_cooldown_and_replay_recent_loss_streak_before_new_promotion"
+        )
     if net <= 0.0 and recent:
-        recommendations.append("require_retraining_or_model_lab_replay_before_promoting_this_profile")
+        recommendations.append(
+            "require_retraining_or_model_lab_replay_before_promoting_this_profile"
+        )
     if recurring:
-        recommendations.append("increase_penalty_for_recurring_exit_reason_or_market_mode")
+        recommendations.append(
+            "increase_penalty_for_recurring_exit_reason_or_market_mode"
+        )
     if loss_symbols:
         symbol, count = loss_symbols.most_common(1)[0]
         if count >= 2:
@@ -689,7 +798,9 @@ def build_learning_feedback(
             recommendations.append(f"review_side_specific_edge:{side}")
     if not recommendations:
         recommendations.append("continue_monitoring_no_retraining_change_required")
-    promotion_safe = bool(recent) and net > 0.0 and max_loss_streak < 2 and not recurring
+    promotion_safe = (
+        bool(recent) and net > 0.0 and max_loss_streak < 2 and not recurring
+    )
     return LearningFeedbackReport(
         generated_at_ms=generated,
         lookback_trades=lookback,
@@ -722,7 +833,9 @@ def write_learning_feedback(
         lookback_trades=lookback_trades,
         generated_at_ms=generated_at_ms,
     )
-    write_json_atomic(store.learning_feedback_path, report.asdict(), indent=2, sort_keys=True)
+    write_json_atomic(
+        store.learning_feedback_path, report.asdict(), indent=2, sort_keys=True
+    )
     return report
 
 
@@ -744,7 +857,9 @@ def _string_tuple_payload(raw: object) -> tuple[str, ...]:
     return tuple(str(item) for item in raw)
 
 
-def learning_feedback_from_mapping(payload: Mapping[str, Any]) -> LearningFeedbackReport:
+def learning_feedback_from_mapping(
+    payload: Mapping[str, Any],
+) -> LearningFeedbackReport:
     """Parse a persisted learning-feedback artifact with bounded defaults."""
 
     return LearningFeedbackReport(
@@ -757,7 +872,9 @@ def learning_feedback_from_mapping(payload: Mapping[str, Any]) -> LearningFeedba
         win_rate=float(payload.get("win_rate") or 0.0),
         max_consecutive_losses=int(payload.get("max_consecutive_losses") or 0),
         worst_trade_pnl=float(payload.get("worst_trade_pnl") or 0.0),
-        recurring_loss_reasons=_int_counter_payload(payload.get("recurring_loss_reasons")),
+        recurring_loss_reasons=_int_counter_payload(
+            payload.get("recurring_loss_reasons")
+        ),
         loss_by_symbol=_int_counter_payload(payload.get("loss_by_symbol")),
         loss_by_side=_int_counter_payload(payload.get("loss_by_side")),
         recommendations=_string_tuple_payload(payload.get("recommendations")),
@@ -805,10 +922,14 @@ def render_learning_feedback(report: LearningFeedbackReport) -> list[str]:
         ),
     ]
     if report.recurring_loss_reasons:
-        reasons = ", ".join(f"{key}:{value}" for key, value in report.recurring_loss_reasons.items())
+        reasons = ", ".join(
+            f"{key}:{value}" for key, value in report.recurring_loss_reasons.items()
+        )
         lines.append(f"recurring_loss_reasons={reasons}")
     if report.loss_by_symbol:
-        symbols = ", ".join(f"{key}:{value}" for key, value in report.loss_by_symbol.items())
+        symbols = ", ".join(
+            f"{key}:{value}" for key, value in report.loss_by_symbol.items()
+        )
         lines.append(f"loss_by_symbol={symbols}")
     for item in report.recommendations:
         lines.append(f"- {item}")
@@ -837,7 +958,11 @@ def render_positions_table(
         mark_value = mark_price if mark_price is not None else pos.entry_price
         pnl_usd = pos.unrealized_pnl(mark_value) if mark_price is not None else 0.0
         pnl_pct = pos.unrealized_pnl_pct(mark_value) if mark_price is not None else 0.0
-        ownership = "paper" if pos.dry_run else ("verified" if is_bot_owned_position(pos) else "unknown")
+        ownership = (
+            "paper"
+            if pos.dry_run
+            else ("verified" if is_bot_owned_position(pos) else "unknown")
+        )
         rows.append(
             f"{idx:>2} {pos.id:<12} {ownership:<9} {pos.side:<5} "
             f"{pos.qty:>10.6f} {pos.entry_price:>12.2f} "

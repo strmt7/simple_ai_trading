@@ -10,6 +10,14 @@ Scope blockers to their branch; a fresh user resumption resets the blocked audit
 
 ## Current Truth
 
+The [paired position transaction repair](review/2026-09-08/position-paired-transactions.md)
+now commits recoverable paired replacements through the existing intent DB and
+serializes participating active-store readers/writers. It fixes a reproduced
+interrupted close that left one lot both closed and open. 384 distinct staged
+checks include actual child exit and concurrent writers. Native inventory
+application, exactly-once close acknowledgements, explicit rearm, complete
+rollback detection and independent supervision remain unfinished.
+
 The [native opening inventory stage](review/2026-09-08/binance-native-opening-inventory.md)
 retains exact Spot asset deltas and separate futures position/fee movements in
 the existing scoped intent database. 190 distinct affected checks passed across

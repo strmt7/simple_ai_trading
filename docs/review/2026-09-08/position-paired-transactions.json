@@ -1,0 +1,59 @@
+{
+  "schema_version": 1,
+  "base_commit": "0631ed851140459e1a3a299547a586f0c6ada2aa",
+  "finding": "Interrupted paired close writes leave one position both closed and open; competing writers can lose changes",
+  "pre_fix_reproduced": true,
+  "pre_fix_observation": {
+    "method": "Execute baseline positions.py from its Git object in an isolated module and temporary directory; interrupt the second close replacement",
+    "closed_trades": 1,
+    "still_open_positions": 1,
+    "same_position_id": true
+  },
+  "source_hash_format": "SHA-256 of UTF-8 source bytes with CRLF normalized to LF",
+  "source_bindings": {
+    "src/simple_ai_trading/position_transactions.py": "464be0a5e50819bc77b5c7f08496424c341fce86c7925102bb7cfd1367c6751b",
+    "src/simple_ai_trading/positions.py": "a4cf1eabf80d96d55f15812794015a0bd9ac69826f8daaa423a506d7a243d9e6",
+    "tests/test_position_transactions.py": "09cd44e3111a35c9e0cc8f193ca69498885ae4bd07efa3ebff11701813349d2b",
+    "src/simple_ai_trading/binance_open_intents.py": "5008885c9d78b12a45f7c8ce136dbd9c6571206f1da12e8a6e0f85fed249757b",
+    "src/simple_ai_trading/storage.py": "325b5f407896d2d2655040de33115e8d763f646d97f6d3a99f91ed889b0e6610"
+  },
+  "verification": {
+    "affected_suite_passed": 361,
+    "checksum_and_additional_lifecycle_stage_passed": 40,
+    "final_admission_stage_passed": 70,
+    "final_initialization_stage_passed": 29,
+    "distinct_checks_across_stages": 384,
+    "new_transaction_checks": 29,
+    "actual_child_exit_code": 72,
+    "concurrent_writer_threads": 4,
+    "concurrently_added_unique_positions": 12,
+    "ruff_passed": true,
+    "exchange_network_requests": 0,
+    "account_mutations": 0,
+    "actual_user_ledgers_modified": 0,
+    "initial_local_collection_error": "A test imported another test as a package, but tests is not a package. Replaced it with local fixture constructors and explicit child JSON arguments before executing the cases."
+  },
+  "implemented": [
+    "Existing intent SQLite database serializes participating position readers and writers",
+    "Checksummed committed PREPARED pair precedes either flushed JSON replacement",
+    "Restart completes the current retained transaction, not a stale caller snapshot",
+    "APPLIED bytes bind both enrolled files and reject unexpected edits or deletion",
+    "Both conflicting files are checked before any recovery overwrite",
+    "Active open, remove, full close and partial close methods use the shared boundary",
+    "Partial close compares the supplied lot to current stored state before replacing it",
+    "Aggregate statistics read one paired snapshot",
+    "UNKNOWN opening obligations and execution-scope rows are not released by recovery"
+  ],
+  "not_established": [
+    "Atomic visibility to programs that bypass PositionsStore or to old-version writers",
+    "Exactly-once repeated close acknowledgement accounting or prevention of venue-side duplicate closes",
+    "Native opening movement application or account-qualified sellable quantities",
+    "Atomic transaction joining opening inventory application and explicit rearm",
+    "Detection of coordinated rollback, deleted database or deleted enrollment table",
+    "Full semantic validation of every position field",
+    "Power-loss, OS reboot, independent supervisor or model-health protection",
+    "Performance benchmark, profitable edge or enterprise readiness"
+  ],
+  "accepted_edge": false,
+  "historical_research_results_changed": false
+}
