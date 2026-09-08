@@ -6994,6 +6994,33 @@ def _order_response_text(order: object, *names: str) -> str:
     return ""
 
 
+def _checked_order_fill_details(
+    order: object, runtime: RuntimeConfig, *, fallback_price: float
+) -> tuple[float, float, float]:
+    """Project only reconciled execution evidence; a missing fill stays zero."""
+    from .binance_acknowledgements import acknowledged_fill
+
+    fill = acknowledged_fill(order, market_type=runtime.market_type)
+    normalized = (
+        {}
+        if fill is None
+        else {
+            "executedQty": fill.quantity,
+            "avgPrice": fill.price,
+        }
+    )
+    if fill is not None and fill.quote_quantity is not None:
+        normalized[
+            "cummulativeQuoteQty" if runtime.market_type == "spot" else "cumQuote"
+        ] = fill.quote_quantity
+    return _order_fill_details(
+        normalized,
+        fallback_qty=0.0,
+        fallback_price=fallback_price,
+        allow_quantity_fallback=False,
+    )
+
+
 def _resolved_order_fill_details(
     client: BinanceClient,
     runtime: RuntimeConfig,
@@ -7003,14 +7030,17 @@ def _resolved_order_fill_details(
     fallback_price: float,
     dry_run: bool,
 ) -> tuple[float, float, float, str]:
-    allow_fallback = bool(dry_run)
-    qty, average, notional = _order_fill_details(
-        order,
-        fallback_qty=fallback_qty,
-        fallback_price=fallback_price,
-        allow_quantity_fallback=allow_fallback,
+    if dry_run:
+        qty, average, notional = _order_fill_details(
+            order,
+            fallback_qty=fallback_qty,
+            fallback_price=fallback_price,
+        )
+        return qty, average, notional, "order_response"
+    qty, average, notional = _checked_order_fill_details(
+        order, runtime, fallback_price=fallback_price
     )
-    if dry_run or qty > 0.0:
+    if qty > 0.0:
         return qty, average, notional, "order_response"
     order_id, client_order_id = _order_query_keys(order)
     if order_id is None and client_order_id is None:
@@ -7025,11 +7055,8 @@ def _resolved_order_fill_details(
         )
     except BinanceAPIError:
         raise
-    refreshed_qty, refreshed_average, refreshed_notional = _order_fill_details(
-        refreshed,
-        fallback_qty=0.0,
-        fallback_price=fallback_price,
-        allow_quantity_fallback=False,
+    refreshed_qty, refreshed_average, refreshed_notional = _checked_order_fill_details(
+        refreshed, runtime, fallback_price=fallback_price
     )
     return refreshed_qty, refreshed_average, refreshed_notional, "order_query"
 

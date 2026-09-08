@@ -10,6 +10,14 @@ Scope blockers to their branch; a fresh user resumption resets the blocked audit
 
 ## Current Truth
 
+The [acknowledgement consistency repair](review/2026-09-08/binance-acknowledgement-consistency.md)
+fixes a reproduced false-full-close admission: contradictory cumulative/fill
+quantities could remove a whole lot and clear its block. Autonomous and direct
+CLI response/query projections now share exact quantity/cash checks; cash/fills
+take precedence over convenience averages, and order limit prices cannot prove
+fills. 495 affected checks pass, including 50 new cases. Native-fee application,
+direct CLI durable-gateway coverage and explicit rearm remain unfinished.
+
 The [terminal closing observation stage](review/2026-09-08/binance-terminal-closing-evidence.md)
 retains exact pending-close terminal fills, native commissions and separately
 labelled venue futures PnL in the existing intent database. Cached evidence is
