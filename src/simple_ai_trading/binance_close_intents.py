@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import json
 import math
+import re
 import sqlite3
 from dataclasses import asdict
 from typing import TYPE_CHECKING
@@ -21,6 +22,15 @@ if TYPE_CHECKING:
     from .positions import ClosedTrade, OpenPosition, PositionsStore
 
 _COLUMNS = ("client_id", "position_id", "request_json", "state")
+
+
+def validate_closing_client_id(client_id: object) -> str:
+    """Admit the same bot closing identity before persistence and recovery I/O."""
+    if not isinstance(client_id, str) or not re.fullmatch(
+        r"sait-c-[A-Za-z0-9_-]{1,29}", client_id
+    ):
+        raise OpenIntentError("closing requires an exact valid bot client ID")
+    return client_id
 
 
 def unresolved_close_count(connection: sqlite3.Connection) -> int:
@@ -48,13 +58,10 @@ def _request(
 
     if not isinstance(scope, BinanceExecutionScope):
         raise OpenIntentError("closing requires an execution scope")
+    validate_closing_client_id(client_id)
     opening = json.loads(store.opening_intents._request(position, scope))
     if (
         bot_ownership_rejection_reason(position) is not None
-        or not isinstance(client_id, str)
-        or not client_id.startswith("sait-c-")
-        or not 1 <= len(client_id) <= 36
-        or client_id != client_id.strip()
         or type(reduce_only) is not bool
         or position.market_type == "spot"
         and position.side != "LONG"

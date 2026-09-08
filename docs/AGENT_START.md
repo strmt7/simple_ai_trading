@@ -10,6 +10,15 @@ Scope blockers to their branch; a fresh user resumption resets the blocked audit
 
 ## Current Truth
 
+The [terminal closing observation stage](review/2026-09-08/binance-terminal-closing-evidence.md)
+retains exact pending-close terminal fills, native commissions and separately
+labelled venue futures PnL in the existing intent database. Cached evidence is
+revalidated without refetching; UNKNOWN and active inventory remain untouched.
+414 distinct affected checks pass across stages, including 75 new cases and
+actual child exit. Both recovery paths now share product-specific field retention.
+Next apply incremental native inventory/fees exactly once and integrate explicit
+account/policy/process-fenced recovery/rearm; this observation stage is not that.
+
 The [durable closing repair](review/2026-09-08/binance-durable-closing.md)
 commits a scoped close obligation before either active Binance close path sends
 an order. Partial/uncertain closes block a second order for that lot after restart

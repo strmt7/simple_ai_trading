@@ -7,6 +7,7 @@ from collections.abc import Mapping
 from dataclasses import dataclass
 from decimal import Decimal, localcontext
 
+from .binance_close_intents import validate_closing_client_id
 from .binance_execution_scope import BinanceExecutionScope, parse_execution_id
 from .binance_open_intents import BinanceOpenIntentJournal, OpenIntentError
 from .positions import OpenPosition
@@ -80,20 +81,28 @@ class TerminalFillEvidence:
 
 
 def validate_terminal_order(
-    requested: OpenPosition, scope: BinanceExecutionScope, order: Mapping[str, object]
+    requested: OpenPosition,
+    scope: BinanceExecutionScope,
+    order: Mapping[str, object],
+    *,
+    closing_client_id: str | None = None,
 ) -> TerminalOrder:
     if not isinstance(scope, BinanceExecutionScope):
         raise OpenIntentError("terminal recovery requires an execution scope")
     BinanceOpenIntentJournal._request(requested, scope)
-    side = "BUY" if requested.side == "LONG" else "SELL"
+    closing = closing_client_id is not None
+    if closing:
+        validate_closing_client_id(closing_client_id)
+    client_id = closing_client_id if closing else requested.open_client_order_id
+    side = "BUY" if (requested.side == "LONG") != closing else "SELL"
     if (
         not isinstance(order, Mapping)
         or requested.market_type == "spot"
         and requested.side != "LONG"
         or order.get("symbol") != requested.symbol
-        or order.get("clientOrderId") != requested.open_client_order_id
+        or order.get("clientOrderId") != client_id
         or "origClientOrderId" in order
-        and order["origClientOrderId"] != requested.open_client_order_id
+        and order["origClientOrderId"] != client_id
         or order.get("side") != side
         or order.get("type") != "MARKET"
         or order.get("status")
@@ -102,14 +111,17 @@ def validate_terminal_order(
         raise OpenIntentError("terminal order identity or state is unresolved")
     order_id = execution_id(order.get("orderId"))
     if (
-        requested.open_exchange_order_id
+        not closing
+        and requested.open_exchange_order_id
         and requested.open_exchange_order_id != order_id
     ):
         raise OpenIntentError("terminal order differs from recorded exchange identity")
     if requested.market_type == "futures" and (
-        order.get("positionSide") != "BOTH" or order.get("reduceOnly") is not False
+        order.get("positionSide") != "BOTH" or order.get("reduceOnly") is not closing
     ):
-        raise OpenIntentError("terminal order does not match one-way opening semantics")
+        raise OpenIntentError(
+            "terminal order does not match one-way execution semantics"
+        )
     original = _decimal(order.get("origQty"))
     executed = _decimal(order.get("executedQty"))
     quote = _decimal(
@@ -147,9 +159,13 @@ def validate_terminal_fills(
     scope: BinanceExecutionScope,
     order: Mapping[str, object],
     trades: object,
+    *,
+    closing_client_id: str | None = None,
 ) -> TerminalFillEvidence:
     """Require exact totals and native commissions, never a guessed fee conversion."""
-    terminal = validate_terminal_order(requested, scope, order)
+    terminal = validate_terminal_order(
+        requested, scope, order, closing_client_id=closing_client_id
+    )
     if not isinstance(trades, list) or len(trades) > 1000:
         raise OpenIntentError(
             "terminal trade evidence exceeds its single-page contract"
@@ -173,17 +189,22 @@ def validate_terminal_fills(
                 trade_id in seen
                 or execution_id(trade.get("orderId")) != terminal.order_id
                 or trade.get("symbol") != requested.symbol
-                or trade.get(buyer_key) is not (requested.side == "LONG")
+                or trade.get(buyer_key) is not (order["side"] == "BUY")
                 or trade.get(maker_key) is not False
             ):
                 raise OpenIntentError("terminal trade identity or side is inconsistent")
             if scope.market_type == "futures" and (
                 trade.get("side") != order["side"]
                 or trade.get("positionSide") != "BOTH"
-                or _decimal(trade.get("realizedPnl"), signed=True) != 0
+                or (
+                    _decimal(trade.get("realizedPnl"), signed=True) != 0
+                    and closing_client_id is None
+                )
             ):
                 raise OpenIntentError(
-                    "trade cannot establish an opening-only execution"
+                    "trade cannot establish a closing-only execution"
+                    if closing_client_id is not None
+                    else "trade cannot establish an opening-only execution"
                 )
             price, qty, quote = (
                 _decimal(trade.get(key)) for key in ("price", "qty", "quoteQty")

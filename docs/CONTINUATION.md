@@ -1,5 +1,21 @@
 # Continue Development
 
+Latest recovery integration: [terminal closing observations](review/2026-09-08/binance-terminal-closing-evidence.md).
+An exact pending close now has a scoped terminal order/fill collector in the
+existing intent DB, with native fees and separate venue-reported futures PnL.
+It queries the original frozen quantity, not a partially reduced local lot,
+and never applies the already-recorded partial fill again. Cached observations
+are revalidated without another venue query; UNKNOWN is never released.
+Opening/closing recovery share a product-specific field encoder verified against
+the previous opening byte format. 414 distinct affected checks across stages,
+including 75 new cases and actual child exit 74. All exchange interactions were
+offline fakes; no credentials, real ledgers or research captures were accessed.
+Next implement transactional incremental native-fee inventory application and
+explicit account/policy/process-fenced recovery/rearm, then shared CLI/Windows
+integration. Do not collect unchanged cached observations or repeat passing
+suites. This is neither account-qualified cash PnL nor full runtime recovery.
+Research counters/triggers remain unchanged; MRNA is still not before 13:35 UTC.
+
 Latest capital-risk repair: [durable scoped Binance closes](review/2026-09-08/binance-durable-closing.md).
 The old partial-close test reproduced a second distinct order while the first
 was still PARTIALLY_FILLED. Both active operator/autonomous close paths now

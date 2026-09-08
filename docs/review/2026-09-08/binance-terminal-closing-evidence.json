@@ -1,0 +1,55 @@
+{
+  "schema_version": 1,
+  "base_commit": "655fe9efb53723212cb1ea30e1dcda327a73f827",
+  "capability": "Scope-bound terminal closing observations without inventory application or rearm",
+  "source_hash_format": "SHA-256 of UTF-8 source bytes with CRLF normalized to LF",
+  "source_bindings": {
+    "src/simple_ai_trading/binance_close_intents.py": "a8e7d75e1ca63f1173ed8eff5b4526535f661b071b69d8b39f6963adda50be49",
+    "src/simple_ai_trading/binance_terminal_fills.py": "d2b8444453b936b71f516d735e8a43a48c8ab17091de31b6cce1a66b3f76eb2f",
+    "src/simple_ai_trading/binance_open_recovery.py": "b3bb8f5ff75b8f64622f5e8bb120453b0655daea09470aef14804064ad42e4b6",
+    "src/simple_ai_trading/binance_close_recovery.py": "768322f2ba84c8819507dd8e9beaa29994e67595d9812d6e9f42f7e6d25e2aea",
+    "src/simple_ai_trading/binance_execution_payloads.py": "7337b1ff06533584f60c67dd528a478d36614f55dc259033efc0cc901c57e583",
+    "tests/test_binance_close_recovery.py": "0b368d1ecc0141bf6a944a4fc9fd58fd28e309a74cfbad5049384226ddc1e0fa"
+  },
+  "verification": {
+    "affected_domain_passed": 414,
+    "shared_encoder_affected_stage_passed": 203,
+    "distinct_checks_across_stages": 414,
+    "new_closing_cases": 75,
+    "actual_child_exit_code": 74,
+    "shared_encoder_matches_baseline_product_projections": true,
+    "opening_evidence_schema_preserved": true,
+    "ruff_passed": true,
+    "exchange_network_requests": 0,
+    "credentials_used": false,
+    "actual_user_ledgers_modified": 0,
+    "benchmark_claim": false,
+    "domain_command": "uv run --locked python -m pytest -o addopts='' -q --junitxml=.pytest_cache/closing-recovery-final.xml tests/test_binance_close_recovery.py tests/test_binance_close_intents.py tests/test_binance_open_recovery.py tests/test_binance_opening_inventory.py tests/test_binance_open_intents.py tests/test_binance_execution_scope.py tests/test_position_transactions.py tests/test_autonomous.py tests/test_execution_lifecycle.py",
+    "encoder_stage_command": "uv run --locked python -m pytest -o addopts='' -q tests/test_binance_close_recovery.py tests/test_binance_open_recovery.py tests/test_binance_opening_inventory.py"
+  },
+  "implemented": [
+    "Exact pending close request and execution-scope validation before queries",
+    "Shared valid bot closing client-ID admission before persistence and recovery I/O",
+    "Explicit closing semantics in shared exact terminal order and fill validation",
+    "Terminal cumulative quantities checked against original intent rather than remaining local inventory",
+    "Native commission assets and separately labelled signed venue futures realized PnL",
+    "Additive terminal observation in the existing intent database with transactional pending-request recheck",
+    "Cached exact evidence revalidation without refetch or overwrite",
+    "Shared product-specific opening and closing payload retention",
+    "UNKNOWN and active inventory remain unchanged"
+  ],
+  "not_established": [
+    "Incremental cumulative-fill or native opening/closing inventory application",
+    "Native margin currency, account balances, current flatness or managed-lot PnL qualification",
+    "Receipt-time provenance or failed/nonterminal HTTP response capture",
+    "Authenticated-operation authority or automatic runtime/CLI/Windows recovery integration",
+    "Explicit current account, policy and process-fenced rearm",
+    "Legacy/key migration, coordinated database rollback/loss detection or independent supervision",
+    "Whole-repository final review, exhaustive final bug hunt or enterprise readiness",
+    "Profitable edge, improved predictive accuracy or performance benchmark"
+  ],
+  "accepted_edge": false,
+  "research_registry_changed": false,
+  "historical_results_changed": false,
+  "whole_repository_line_review_complete": false
+}
