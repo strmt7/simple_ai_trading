@@ -10,6 +10,13 @@ Scope blockers to their branch; a fresh user resumption resets the blocked audit
 
 ## Current Truth
 
+The [native opening inventory stage](review/2026-09-08/binance-native-opening-inventory.md)
+retains exact Spot asset deltas and separate futures position/fee movements in
+the existing scoped intent database. 190 distinct affected checks passed across
+stages, including 46 new cases and abrupt child exit. UNKNOWN is never cleared.
+This is not active-position application, account balance qualification or CLI
+recovery integration; those and explicit account/policy/process-fenced rearm remain.
+
 The [USDT renewal](review/2026-09-08/usdt-flexible/review.md) raises the capped
 4% bonus principal from 500 to 800 USDT through September 22. It remains a
 small, unqualified same-asset allocation overlay, not a new trading edge.

@@ -1,0 +1,51 @@
+{
+  "schema_version": 1,
+  "base_commit": "148a4aa791ae092881a148e24d6eb3f7cb3483e9",
+  "stage": "Native execution movements retained in the existing scoped opening journal",
+  "source_hash_format": "SHA-256 of source bytes with CRLF normalized to LF",
+  "source_bindings": {
+    "src/simple_ai_trading/binance_opening_inventory.py": "a3fbe458cd6d822e29dd251c85713df19b6848cd07ab0d8e9bba975cf58a2594",
+    "tests/test_binance_opening_inventory.py": "4a4d621f2ffd59fc8f39bec2d629d8a0e5a0680d7252cc471d9fe865251f0047",
+    "src/simple_ai_trading/binance_terminal_fills.py": "b6db3ed07e05a5920ea1fa0c5251414e6d2f2a1909fbfe7d27fd0207fe9db11f",
+    "src/simple_ai_trading/binance_open_recovery.py": "ecc4cc4a7a8fd736ba201fa73594b8525ba50a4fb22d3fd4478d7553b74dbc86",
+    "src/simple_ai_trading/binance_open_intents.py": "5008885c9d78b12a45f7c8ce136dbd9c6571206f1da12e8a6e0f85fed249757b"
+  },
+  "verification": {
+    "new_tests": 46,
+    "first_affected_suite_passed": 116,
+    "final_affected_suite_passed": 108,
+    "distinct_checks_across_stages": 190,
+    "first_stage_files": ["tests/test_binance_opening_inventory.py", "tests/test_binance_open_recovery.py"],
+    "final_stage_files": ["tests/test_binance_opening_inventory.py", "tests/test_binance_open_intents.py", "tests/test_binance_execution_scope.py"],
+    "ruff_passed": true,
+    "actual_child_abrupt_exit_code": 71,
+    "concurrent_projection_writers": 4,
+    "live_network_requests": 0,
+    "user_account_or_ledger_access": false,
+    "protected_capture_access": false
+  },
+  "implemented": [
+    "Explicit major-asset and quote unit admission under matching instrument and journal scopes",
+    "Spot net asset deltas including base, quote and third-asset fees and rebates",
+    "Linear futures signed position delta separate from native fee cash movements",
+    "No invented quote-fee conversion or notional cash purchase",
+    "Exact retained terminal order/trade evidence revalidation inside a serialized SQLite transaction",
+    "Idempotent additive opening_inventory table in the existing intent database",
+    "Conflict, corruption, changed intent and failed-write rejection without repair or rearm",
+    "Caller Decimal precision does not change native arithmetic",
+    "UNKNOWN is retained even for terminal zero fills"
+  ],
+  "not_implemented_or_not_proved": [
+    "Prior futures position flatness; zero realized PnL does not establish it",
+    "Account balance or available-to-close quantity qualification",
+    "Metadata source freshness and current venue instrument availability",
+    "Atomic application to active positions and close/fee/PnL ledgers",
+    "Explicit rearm with current account, policy and process fencing",
+    "CLI/Windows recovery command integration",
+    "Key rotation, legacy migration, missing-file rollback and deletion detection",
+    "Supervisor isolation, operating-system reboot or power-loss recovery",
+    "Mainnet profitability, live-money readiness or completion of the full revamp"
+  ],
+  "research_registry_changed": false,
+  "qualified_edge": false
+}
