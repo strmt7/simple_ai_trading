@@ -10,6 +10,14 @@ Scope blockers to their branch; a fresh user resumption resets the blocked audit
 
 ## Current Truth
 
+The [September 8 MRNA bStock/perpetual screen](review/2026-09-08/mrna-topbook/review.md)
+consumed its separately authorized 13:35 UTC trigger with two public GETs.
+Spot ask 141.23 exceeded perpetual bid 140.87 USDT: -0.36 per share gross,
+-1.06615 after the fixed 50-bip stress. No depth/funding escalation or SQQQ
+fallback is justified. Current totals: 37 accepted mechanism scopes, 65
+hypotheses, 197 terminal observations and zero qualified stable profitable edges.
+Preserve CRWD, MRNA and all previous results; this is not a family-wide rejection.
+
 The [order-response binding repair](review/2026-09-08/binance-order-response-binding.md)
 rejects a reproduced foreign-order response at the shared Binance client and
 preserves original MARKET semantics through response-loss/pending-fill queries.
@@ -21,7 +29,7 @@ integration, explicit rearm and independent supervision remain unfinished.
 The [September 9 NYC partition screen](review/2026-09-08/nyc-sep9-frontier/review.md)
 used one prospectively frozen public GET. All 11 YES and 11 NO sides were
 price-complete; all 28 long-only frontier rows failed before fees. No downstream
-book or account request was justified. Current research totals are 37 accepted
+book or account request was justified. That checkpoint's research totals were 37 accepted
 mechanism scopes, 65 hypotheses, 196 terminal observations and zero qualified
 stable profitable edges. This is a finite source-price rejection, not a claim
 that the entire family has negative expected value. Preserve the exact event.

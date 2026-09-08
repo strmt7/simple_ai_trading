@@ -879,12 +879,20 @@
         {
           "path": "docs/model-research/action-value/binance-crwdb-bstock-perpetual-topbook-result-v1-2026-09-04.json",
           "result_sha256": "a02367c4c0f7461a29ba857f947dc870ab6539be36419d7b068e5e685b58c744"
+        },
+        {
+          "path": "docs/review/2026-09-08/mrna-topbook/contract.json",
+          "result_sha256": "65d406b2643aea5da7392d54fb684934b064370eee13284fe3a5d1690b1a6eea"
+        },
+        {
+          "path": "docs/review/2026-09-08/mrna-topbook/result.json",
+          "result_sha256": "e0f7b9b607a8a01304ce3dd0fd1feeaeedfa1c52fa7a7a15e2fdc60291c3117b"
         }
       ],
-      "current_status": "the_official_September_2_listing_trigger_advanced_the_public_bStock_inventory_from_68_to_72_exact_rows_with_new_CRWD_MRNA_SQQQ_and_STX_tickers_all_at_exact_one_multiplier_current_futures_metadata_proved_active_exact_CRWD_MRNA_and_SQQQ_TradFi_perpetual_matches_while_STXUSDT_was_not_an_equity_TradFi_match_the_frozen_lexicographic_selector_chose_CRWD_one_262ms_skew_two_request_top_book_prefilter_found_CRWDBUSDT_spot_ask_and_CRWDUSDT_perpetual_bid_both_exactly_213_07_USDT_so_gross_entry_headroom_was_zero_and_the_50_bip_fixed_stress_made_it_negative_1_06535_USDT_per_share_or_negative_50_bips_no_depth_funding_fee_account_credential_order_fund_or_protected_capture_access_MRNA_and_SQQQ_remain_unscreened_and_are_not_inferred_from_CRWD_not_an_edge_or_deployment_ready",
+      "current_status": "The separately prospectively authorized September 8 MRNA screen consumed two public GETs after 13:35 UTC. MRNABUSDT spot ask 141.23 USDT exceeded MRNAUSDT perpetual bid 140.87: negative 0.36 USDT per share gross and negative 1.06615 after the frozen 50-bip stress. Displayed common size 0.938 shares; request starts 456 ms apart, not proof of quote freshness or fill. The exact observation failed before fees; no depth, funding, account, credential, order, funds or protected capture. No edge accepted or family-wide negative-EV inference. CRWD stays consumed; SQQQ remains unscreened and is not an adaptive fallback.",
       "market_direction_forecast_required": false,
       "mechanism": "bstock_reference_conversion_and_delta_neutral_perpetual_funding",
-      "next_action": "do_not_repeat_reprice_or_depth_capture_CRWDBUSDT_CRWDUSDT_and_do_not_adaptively_cherry_pick_MRNA_or_SQQQ_after_observing_CRWD_at_or_after_2026_09_08T13_35_00Z_after_the_official_September_7_US_market_holiday_freeze_one_separate_lexicographically_next_MRNABUSDT_MRNAUSDT_two_request_top_book_gate_with_the_same_50_bip_rejection_rule_then_request_depth_and_adverse_funding_only_if_it_survives_otherwise_wait_for_a_new_official_exact_multiplier_bStock_listing_and_matching_previously_unscreened_TradFi_perpetual_or_material_economics_change_or_explicit_account_read_only_authority_for_the_separate_stock_transfer_FPSL_or_permanent_scope_questions",
+      "next_action": "Do not repeat or reprice the consumed CRWD or September 8 MRNA observations or select SQQQ adaptively. The September 8 13:35 one-use exception is consumed. Advance this family only on its remaining literal new official exact-multiplier bStock plus previously unscreened matching TradFi listing, material economic change, or separately authorized account-read-only stock-transfer/FPSL/scope trigger. A date alone does not reopen it.",
       "priority_rank": 12,
       "prohibited_shortcuts": [
         "external_reference_price_as_an_executable_stock_quote",
@@ -903,10 +911,15 @@
         "buying_transferring_or_retaining_stock_to_manufacture_FPSL_income_or_importing_an_Alpaca_direct_retail_fee_share_into_the_Binance_account_contract",
         "treating_FPSL_enrollment_as_guaranteed_lending_or_calling_gross_interest_profit_before_owned_after_cost_distribution_recurrence",
         "enabling_FPSL_or_answering_suitability_questions_without_separate_explicit_user_authority",
-        "generalizing_the_CRWD_zero_basis_to_MRNA_or_SQQQ_or_screening_them_adaptively_before_the_prospectively_recorded_2026_09_08T13_35_00Z_trigger"
+        "generalizing_the_CRWD_zero_basis_to_MRNA_or_SQQQ_or_screening_them_adaptively_before_the_prospectively_recorded_2026_09_08T13_35_00Z_trigger",
+        "repeating_the_consumed_September8_MRNA_topbook_or_selecting_SQQQ_adaptively_after_its_negative_gross_and_50_bip_stressed_entry_headroom"
       ],
       "retry_trigger": "explicit_read_only_Binance_Stocks_account_authority_before_the_2026_09_30_activity_end_to_prove_region_first_transfer_live_pool_and_existing_settled_inventory_FPSL_availability_or_new_official_exact_multiplier_bStock_listing_announcement_after_2026_08_29T13_50_30Z_with_a_matching_previously_unscreened_TradFi_perpetual_for_one_symbol_only_public_prefilter_or_for_the_terminal_funding_family_a_material_funding_cash_flow_capital_credit_executable_basis_or_atomic_conversion_change_capable_of_exceeding_the_retained_test_upper_bound_deficits_plus_exact_account_eligibility_and_costs_or_explicit_permanent_bStock_scope_authority_plus_eligible_same_account_read_only_stock_quote_conversion_and_commission_evidence",
-      "venue_scope": "binance_bstocks_stocks_existing_stock_transfer_reward_existing_inventory_FPSL_yield_and_matching_tradifi_perpetuals_research_only"
+      "venue_scope": "binance_bstocks_stocks_existing_stock_transfer_reward_existing_inventory_FPSL_yield_and_matching_tradifi_perpetuals_research_only",
+      "pre_mrna_september8_routing": {
+        "current_status": "the_official_September_2_listing_trigger_advanced_the_public_bStock_inventory_from_68_to_72_exact_rows_with_new_CRWD_MRNA_SQQQ_and_STX_tickers_all_at_exact_one_multiplier_current_futures_metadata_proved_active_exact_CRWD_MRNA_and_SQQQ_TradFi_perpetual_matches_while_STXUSDT_was_not_an_equity_TradFi_match_the_frozen_lexicographic_selector_chose_CRWD_one_262ms_skew_two_request_top_book_prefilter_found_CRWDBUSDT_spot_ask_and_CRWDUSDT_perpetual_bid_both_exactly_213_07_USDT_so_gross_entry_headroom_was_zero_and_the_50_bip_fixed_stress_made_it_negative_1_06535_USDT_per_share_or_negative_50_bips_no_depth_funding_fee_account_credential_order_fund_or_protected_capture_access_MRNA_and_SQQQ_remain_unscreened_and_are_not_inferred_from_CRWD_not_an_edge_or_deployment_ready",
+        "next_action": "do_not_repeat_reprice_or_depth_capture_CRWDBUSDT_CRWDUSDT_and_do_not_adaptively_cherry_pick_MRNA_or_SQQQ_after_observing_CRWD_at_or_after_2026_09_08T13_35_00Z_after_the_official_September_7_US_market_holiday_freeze_one_separate_lexicographically_next_MRNABUSDT_MRNAUSDT_two_request_top_book_gate_with_the_same_50_bip_rejection_rule_then_request_depth_and_adverse_funding_only_if_it_survives_otherwise_wait_for_a_new_official_exact_multiplier_bStock_listing_and_matching_previously_unscreened_TradFi_perpetual_or_material_economics_change_or_explicit_account_read_only_authority_for_the_separate_stock_transfer_FPSL_or_permanent_scope_questions"
+      }
     },
     {
       "blocking_evidence": [
@@ -4400,7 +4413,7 @@
       ]
     }
   ],
-  "result_sha256": "64f45e2998af719280461fbac763f6c43c084b39f5cb98f027fd8012f8bbe0a2",
+  "result_sha256": "669a5a73a24b00a00867a5df7510e1df183fd88932dbd909ce9e593f515b2aa0",
   "schema_version": "structural-edge-priority-registry-v1",
   "terminal_do_not_repeat": [
     {
@@ -5394,8 +5407,13 @@
       "family": "polymarket_nyc_september9_complete_long_only_frontier",
       "reason": "One prospectively selected NYC September 9 Gamma GET returned event 981253 and all 11 expected markets. Every YES and NO side was price-complete. All 28 frontier rows failed the gross gate; the best metadata binary straddle cost 1.001 pUSD per share, losing 0.005 pUSD at five shares. The best finite fee-and-one-tick result was negative 0.04773 pUSD. Complete YES acquisition cost 1.093 pUSD per share for a one-pUSD optimistic common-resolution floor. No book, fee endpoint, on-chain, account, credential, order or protected capture. This exact event is terminal under unchanged economics; do not refetch, reprice, alias or book-test it. No edge promoted and no family-wide negative-EV claim.",
       "canonical_result_sha256": "1b6d1f9454c36e908f4d36ede8f3c25864949d0911b039c06ec4ff666d582c45"
+    },
+    {
+      "family": "binance_MRNABUSDT_MRNAUSDT_september8_topbook",
+      "reason": "The separately prospectively authorized September 8 MRNA screen consumed two public GETs after 13:35 UTC. MRNABUSDT spot ask 141.23 USDT exceeded MRNAUSDT perpetual bid 140.87: negative 0.36 USDT per share gross and negative 1.06615 after the frozen 50-bip stress. Displayed common size 0.938 shares; request starts 456 ms apart, not proof of quote freshness or fill. The exact observation failed before fees; no depth, funding, account, credential, order, funds or protected capture. No edge accepted or family-wide negative-EV inference. CRWD stays consumed; SQQQ remains unscreened and is not an adaptive fallback.",
+      "canonical_result_sha256": "e0f7b9b607a8a01304ce3dd0fd1feeaeedfa1c52fa7a7a15e2fdc60291c3117b"
     }
   ],
-  "updated_at_utc": "2026-09-08T12:37:40Z",
+  "updated_at_utc": "2026-09-08T13:39:21.719649Z",
   "usage_rule": "advance_the_highest_ranked_hypothesis_whose_retry_trigger_is_satisfied_otherwise_do_not_repeat_a_blocked_or_terminal_screen"
 }

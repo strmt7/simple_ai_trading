@@ -1,5 +1,14 @@
 # Continue Development
 
+Latest financial R&D: [September 8 MRNA top-book screen](review/2026-09-08/mrna-topbook/review.md).
+The prospectively scheduled rank-12 exception is now consumed. Two public GETs
+at 13:37:15.995 and 13:37:16.451 UTC found spot ask 141.23 and perpetual bid
+140.87 USDT: -0.36 per share before fees, -1.06615 after the frozen 50-bip
+stress. No downstream depth/funding/account requests and no adaptive SQQQ
+selection. Current count is 197 terminal observations; stable qualified edges
+remain zero. Older MRNA not-before instructions below are historical and no
+longer authorize another request. The updated complete rank-12 row controls.
+
 Latest execution repair: [request-bound order responses](review/2026-09-08/binance-order-response-binding.md).
 At 019db70c, the shared client accepted a foreign-symbol/side/quantity/client-ID
 response for both submission and exact-order GET. The common API now binds outgoing
@@ -14,7 +23,7 @@ credential, user ledger, protected capture or economic observation was accessed.
 MRNA's 13:35 UTC gate was still future at the 13:16:47 UTC review checkpoint;
 recheck its entire trigger before access. Research totals remain those below.
 
-Latest financial R&D: [September 9 NYC partition](review/2026-09-08/nyc-sep9-frontier/review.md).
+Preceding financial R&D: [September 9 NYC partition](review/2026-09-08/nyc-sep9-frontier/review.md).
 One prospectively frozen Gamma GET returned event 981253 and all 11 expected
 markets. Every YES and NO side was price-complete; all 28 frontier rows failed
 before fees. Best gross floor at five shares was -0.005 pUSD; best finite
@@ -241,11 +250,11 @@ after the unchanged 33.5-bip stress. Read
 no depth, funding, fees, accounts, credentials, orders or protected captures.
 Both stages and all 70 contracts are consumed; include them in future unions.
 The exact rank-47 retry trigger and every prior restriction remain unchanged.
-Current counts after the September 9 NYC partition screen: 37 accepted mechanism scopes, 65 hypotheses, 196 terminal
+Current counts after the September 8 MRNA screen: 37 accepted mechanism scopes, 65 hypotheses, 197 terminal
 observations, zero fully qualified stable profitable edges. Registry/audit
 self-hashes are
-`64f45e2998af719280461fbac763f6c43c084b39f5cb98f027fd8012f8bbe0a2`
-and `a8fd94da066f8685d1ab0c47b69cc583ebbd9dc85f7d50d61931f68b7f9e9269`.
+`669a5a73a24b00a00867a5df7510e1df183fd88932dbd909ce9e593f515b2aa0`
+and `c3c695ea0172f9e241e8a34e83cb8d09150d3eb41d1e5ff3c5127691595d1bd6`.
 Lower checkpoint counts and hashes are historical. No full-repo completion
 or family-wide impossibility claim follows from this finite screen.
 
@@ -588,7 +597,9 @@ stress made the row -1.06535 USDT per share, or -50 bips. The sequence stopped
 before depth, funding, fees, accounts, credentials, orders, funds, transactions,
 or protected Polymarket capture access.
 
-Only the exact CRWD observation is terminal. MRNA and SQQQ remain unscreened
+Historical September 4 routing (MRNA was consumed September 8; see the latest
+result above, and do not reuse the date below as a fresh trigger):
+Only the exact CRWD observation was terminal. MRNA and SQQQ remained unscreened
 and are not inferred from CRWD. To prevent adaptive cherry-picking after seeing
 CRWD, do not inspect them now. Nasdaq's official 2026 calendar closes the U.S.
 market for Labor Day on September 7. At or after

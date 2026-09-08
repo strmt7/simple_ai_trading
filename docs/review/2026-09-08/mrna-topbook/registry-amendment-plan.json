@@ -1,0 +1,15 @@
+{
+  "schema_version": "structural-terminal-append-plan-v1",
+  "prior_git_checkpoint": "c0dfb1d99260b8dd9cb3d5dfe98575e73326ac8c",
+  "prior_registry_sha256": "64f45e2998af719280461fbac763f6c43c084b39f5cb98f027fd8012f8bbe0a2",
+  "prior_audit_sha256": "a8fd94da066f8685d1ab0c47b69cc583ebbd9dc85f7d50d61931f68b7f9e9269",
+  "prior_terminal_count": 196,
+  "priority_rank": 12,
+  "terminal_family": "binance_MRNABUSDT_MRNAUSDT_september8_topbook",
+  "contract_sha256": "65d406b2643aea5da7392d54fb684934b064370eee13284fe3a5d1690b1a6eea",
+  "result_sha256": "e0f7b9b607a8a01304ce3dd0fd1feeaeedfa1c52fa7a7a15e2fdc60291c3117b",
+  "summary": "The separately prospectively authorized September 8 MRNA screen consumed two public GETs after 13:35 UTC. MRNABUSDT spot ask 141.23 USDT exceeded MRNAUSDT perpetual bid 140.87: negative 0.36 USDT per share gross and negative 1.06615 after the frozen 50-bip stress. Displayed common size 0.938 shares; request starts 456 ms apart, not proof of quote freshness or fill. The exact observation failed before fees; no depth, funding, account, credential, order, funds or protected capture. No edge accepted or family-wide negative-EV inference. CRWD stays consumed; SQQQ remains unscreened and is not an adaptive fallback.",
+  "next_action": "Do not repeat or reprice the consumed CRWD or September 8 MRNA observations or select SQQQ adaptively. The September 8 13:35 one-use exception is consumed. Advance this family only on its remaining literal new official exact-multiplier bStock plus previously unscreened matching TradFi listing, material economic change, or separately authorized account-read-only stock-transfer/FPSL/scope trigger. A date alone does not reopen it.",
+  "prohibited_shortcut": "repeating_the_consumed_September8_MRNA_topbook_or_selecting_SQQQ_adaptively_after_its_negative_gross_and_50_bip_stressed_entry_headroom",
+  "operation": "Verify the prior checkpoint and both self-hashes, exact prior terminal count, and retained outcome. Preserve the preceding rank-12 status and next action in a dated history field; replace current status/next action, append contract/result bindings and one shortcut, and append one terminal row. Update the existing bStock audit route and registry binding. Preserve every other JSON value and all frozen results. Previous ledger bytes remain at the exact Git checkpoint."
+}
