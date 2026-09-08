@@ -9,6 +9,7 @@ from dataclasses import asdict
 from typing import TYPE_CHECKING
 
 from .binance_execution_scope import BinanceExecutionScope
+from .binance_execution_payloads import encode_execution_payloads
 from .binance_open_intents import BinanceOpenIntentJournal, OpenIntentError
 from .binance_terminal_fills import (
     TerminalFillEvidence,
@@ -22,30 +23,6 @@ if TYPE_CHECKING:
 
 
 _COLUMNS = ("client_id", "request_json", "order_json", "trades_json", "evidence_json")
-_ORDER_FIELDS = (
-    "symbol",
-    "orderId",
-    "clientOrderId",
-    "origClientOrderId",
-    "side",
-    "type",
-    "status",
-    "origQty",
-    "executedQty",
-    "time",
-    "updateTime",
-)
-_TRADE_FIELDS = (
-    "symbol",
-    "orderId",
-    "id",
-    "price",
-    "qty",
-    "quoteQty",
-    "commission",
-    "commissionAsset",
-    "time",
-)
 
 
 def _encode(value: object) -> str:
@@ -121,23 +98,7 @@ def collect_opening_recovery(
         evidence = validate_terminal_fills(position, scope, order, trades)
         # Persist only validated execution fields, never arbitrary account payloads
         # or request headers. No native commission is converted into a quote fee.
-        order_fields = _ORDER_FIELDS + (
-            ("cummulativeQuoteQty",)
-            if scope.market_type == "spot"
-            else ("cumQuote", "positionSide", "reduceOnly")
-        )
-        trade_fields = _TRADE_FIELDS + (
-            ("isBuyer", "isMaker")
-            if scope.market_type == "spot"
-            else ("side", "positionSide", "buyer", "maker", "realizedPnl")
-        )
-        order_json = _encode({key: order[key] for key in order_fields if key in order})
-        trades_json = _encode(
-            [
-                {key: trade[key] for key in trade_fields if key in trade}
-                for trade in trades
-            ]
-        )
+        order_json, trades_json = encode_execution_payloads(scope, order, trades)
         request_json = journal._request(position, scope)
         encoded = _encode(asdict(evidence))
         with closing(journal._connect(write=True)) as connection, connection:

@@ -8,6 +8,16 @@ against gaps, illiquidity, exchange failure, custody loss, or every outage.
 
 ## What the current code actually establishes
 
+The September 8 [terminal closing observation stage](review/2026-09-08/binance-terminal-closing-evidence.md)
+retains exact scoped pending-close terminal fills and native fees without
+clearing UNKNOWN or applying inventory. Explicit closing semantics preserve
+opening validation and distinguish venue futures realized PnL from local lot
+accounting. Both collectors share product-specific retained-field selection.
+414 distinct affected staged checks include competing observations, corruption,
+partial cumulative fills and actual child exit. Incremental native inventory
+application, account/margin qualification, explicit rearm and CLI/Windows
+recovery integration remain mandatory; observation alone cannot close them.
+
 The September 8 [durable closing repair](review/2026-09-08/binance-durable-closing.md)
 adds scoped pre-transmission UNKNOWN obligations to both active Binance close
 paths in the existing execution journal. Partial/uncertain closes cannot trigger
