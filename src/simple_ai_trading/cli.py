@@ -7149,10 +7149,26 @@ def _roundtrip_second_quantity(
     executed_qty: float,
     account: object,
     price: float,
+    *,
+    first_order: Mapping[str, object] | None = None,
 ) -> float:
     if side == "SELL":
+        from decimal import Decimal, ROUND_DOWN, localcontext
+
+        from .binance_spot_receipts import spot_buy_received_quantity
+
+        received = spot_buy_received_quantity(
+            first_order, symbol=symbol, base_asset=base_asset, quote_asset=quote_asset
+        )
         available = _asset_free_balance(account, base_asset)
-        target = min(max(0.0, executed_qty), available)
+        with localcontext() as context:
+            context.prec = 128
+            sale_limit = min(received, Decimal(str(max(0.0, available))))
+            # Match the shared adapter's eight-decimal wire quantity without
+            # rounding a received-asset fee back into a foreign-inventory sale.
+            target = float(
+                sale_limit.quantize(Decimal("0.00000001"), rounding=ROUND_DOWN)
+            )
     else:
         available_quote = _asset_free_balance(account, quote_asset)
         target = min(
@@ -7160,6 +7176,17 @@ def _roundtrip_second_quantity(
             (available_quote / price) * 0.995 if price > 0.0 else 0.0,
         )
     quantity, _constraints = client.normalize_quantity(symbol, target)
+    if side == "SELL" and (
+        isinstance(quantity, bool)
+        or not isinstance(quantity, (int, float))
+        or not math.isfinite(quantity)
+        or quantity < 0
+        or Decimal(str(quantity)) > sale_limit
+        or Decimal(f"{quantity:.8f}") > sale_limit
+    ):
+        raise BinanceAPIError(
+            "normalized resale quantity exceeds the received inventory"
+        )
     return quantity
 
 
@@ -7255,6 +7282,7 @@ def command_spot_roundtrip(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
             executed,
             mid,
             float(price),
+            first_order=first if isinstance(first, Mapping) else None,
         )
         if second_quantity <= 0.0:
             raise BinanceAPIError(

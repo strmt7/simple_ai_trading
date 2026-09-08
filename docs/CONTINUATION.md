@@ -1,5 +1,18 @@
 # Continue Development
 
+Latest execution repair: [spot resale ownership](review/2026-09-08/binance-spot-resale-ownership.md).
+At 60d72b99, a 1 BTC buy with 0.001 BTC fee could authorize a 1 BTC resale using
+pre-existing holdings. The active buy-then-sell command now limits sale quantity
+to complete native received-asset evidence, permits proved terminal partial
+fills, rejects live partial/missing fees and rejects normalization/wire overshoot.
+104 distinct checks pass (49 new), including command-level preserved inventory,
+partial-failure handling and entrypoint/launcher parity. Research counts below
+are unchanged. Do not rerun unchanged checks or the consumed MRNA capture.
+Next integrate autonomous gross/net receipt persistence with original intent
+validation and incremental native accounting; do not simply subtract fees from
+the existing FILLED quantity field. Direct-CLI durable recovery, sell-then-buy
+cash budgeting, native PnL and independent supervision remain unfinished.
+
 Latest financial R&D: [September 8 MRNA top-book screen](review/2026-09-08/mrna-topbook/review.md).
 The prospectively scheduled rank-12 exception is now consumed. Two public GETs
 at 13:37:15.995 and 13:37:16.451 UTC found spot ask 141.23 and perpetual bid

@@ -10,6 +10,13 @@ Scope blockers to their branch; a fresh user resumption resets the blocked audit
 
 ## Current Truth
 
+The [spot resale ownership repair](review/2026-09-08/binance-spot-resale-ownership.md)
+fixes a reproduced buy-then-sell command that could consume pre-existing base
+inventory to cover a BUY commission. Resale now requires terminal native fee
+evidence and cannot exceed received quantity after normalization/wire rounding.
+104 distinct checks pass, including 49 new cases. This is not native PnL,
+autonomous gross/net migration, sell-then-buy cash budgeting or durable CLI recovery.
+
 The [September 8 MRNA bStock/perpetual screen](review/2026-09-08/mrna-topbook/review.md)
 consumed its separately authorized 13:35 UTC trigger with two public GETs.
 Spot ask 141.23 exceeded perpetual bid 140.87 USDT: -0.36 per share gross,
