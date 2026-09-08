@@ -1,0 +1,59 @@
+{
+  "schema_version": 1,
+  "base_commit": "353b558036c4b2d6587cea02fa79b842bc56fdbd",
+  "finding": "Contradictory cumulative and fill-row quantities could remove a full owned lot and clear its admission block",
+  "pre_fix_reproduced": true,
+  "pre_fix_observation": {
+    "method": "Execute the baseline active durable-close gateway with isolated temporary store and offline fake client",
+    "reported_executed_quantity": "0.5",
+    "fill_rows_quantity": "1",
+    "recorded_closed_quantity": "1",
+    "remaining_positions": 0,
+    "entry_block_reason": null
+  },
+  "source_hash_format": "SHA-256 of UTF-8 source bytes with CRLF normalized to LF",
+  "source_bindings": {
+    "src/simple_ai_trading/binance_acknowledgements.py": "ee91860a6a4469518aa8735b199222f9e97a53ee490ea02ebd3197ea562b570e",
+    "src/simple_ai_trading/autonomous.py": "b5fc432ff80397be8be7bbf944026514f88503b4a6252c0bfd88a5b88a2036a3",
+    "src/simple_ai_trading/cli.py": "97ee6a994647376e8aef9f5ae6812c043d2288daf2a85c31409738e3980b818b",
+    "tests/test_binance_acknowledgements.py": "3655a4a1b6e6ff3e68284aa616a10a3e917ba1a1402444973c85637c3d14002c",
+    "tests/test_cli_coverage.py": "cc88337c517beed52b6e71d355d004e98023a0cb0ac29ecd05b3737cf816e1e6"
+  },
+  "verification": {
+    "execution_domain_passed": 437,
+    "cli_cases_passed": 58,
+    "distinct_checks": 495,
+    "new_acknowledgement_cases": 50,
+    "ruff_passed": true,
+    "changed_line_formatting_passed": true,
+    "formatter_ast_equivalence_passed": true,
+    "exchange_network_requests": 0,
+    "credentials_used": false,
+    "actual_user_ledgers_modified": 0,
+    "domain_command": "uv run --locked python -m pytest -o addopts='' -q --junitxml=.pytest_cache/acknowledgement-domain.xml tests/test_binance_acknowledgements.py tests/test_autonomous.py tests/test_binance_open_intents.py tests/test_binance_close_intents.py tests/test_binance_open_recovery.py tests/test_binance_close_recovery.py tests/test_binance_opening_inventory.py tests/test_execution_lifecycle.py tests/test_positions.py",
+    "cli_command": "uv run --locked python -m pytest -o addopts='' -q --junitxml=.pytest_cache/acknowledgement-cli.xml tests/test_cli_coverage.py -k 'order_fill or order_executed or spot_roundtrip or command_live'"
+  },
+  "implemented": [
+    "One acknowledgement quantity/cash consistency boundary for autonomous and direct CLI response/query projections",
+    "Contradictions reject before inventory accounting or adaptive refetch",
+    "Original, cumulative and fill-row quantities and cash reconcile when present",
+    "Malformed rows, duplicate supplied trade IDs and invalid native fee syntax reject",
+    "Product-specific cash units and strict supplied order IDs",
+    "Cash/fill execution prices take precedence over convenience averages",
+    "Order limit prices and market-price fallbacks cannot establish positive execution",
+    "Explicit CLI dry-run simulation behavior is preserved"
+  ],
+  "not_established": [
+    "Exact native net inventory or native-fee PnL application",
+    "Unrounded average division or exact float projections",
+    "Instrument-specific precision adjudication",
+    "Complete submitted-order identity and durable-gateway coverage for direct CLI execution",
+    "Transactional recovery application, current account qualification or explicit rearm",
+    "Independent supervision, comprehensive final review or enterprise readiness",
+    "Profitable edge or a performance benchmark"
+  ],
+  "accepted_edge": false,
+  "research_registry_changed": false,
+  "historical_results_changed": false,
+  "whole_repository_line_review_complete": false
+}

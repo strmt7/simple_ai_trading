@@ -3561,7 +3561,12 @@ def test_command_spot_roundtrip_validation_and_success(tmp_path, monkeypatch, ca
             else:
                 self.btc -= quantity
                 self.usdc += quantity * 76000.0
-            return {"status": "FILLED", "orderId": len(self.orders), "executedQty": f"{quantity:.8f}"}
+            return {
+                "status": "FILLED",
+                "orderId": len(self.orders),
+                "executedQty": f"{quantity:.8f}",
+                "cummulativeQuoteQty": f"{quantity * 76000.0:.8f}",
+            }
 
     persisted: list[dict[str, object]] = []
     monkeypatch.setattr(cli, "_build_client", lambda _runtime: _RoundtripClient(usdc=20.0, btc=0.5))
@@ -3605,7 +3610,12 @@ def test_command_spot_roundtrip_validation_and_success(tmp_path, monkeypatch, ca
             else:
                 self.eth -= quantity
                 self.usdt += quantity * 3000.0
-            return {"status": "FILLED", "orderId": len(self.orders), "executedQty": f"{quantity:.8f}"}
+            return {
+                "status": "FILLED",
+                "orderId": len(self.orders),
+                "executedQty": f"{quantity:.8f}",
+                "cummulativeQuoteQty": f"{quantity * 3000.0:.8f}",
+            }
 
     save_runtime(RuntimeConfig(symbol="ETHUSDT", quote_asset="USDT", market_type="spot", testnet=True, api_key="k", api_secret="s"))
     monkeypatch.setattr(cli, "_build_client", lambda _runtime: _EthRoundtripClient())
@@ -3632,7 +3642,12 @@ def test_command_spot_roundtrip_validation_and_success(tmp_path, monkeypatch, ca
         def place_order(self, _symbol: str, side: str, quantity: float, *, dry_run: bool, leverage: float = 1.0):
             assert dry_run is False
             self.orders.append(side)
-            return {"status": "FILLED", "orderId": len(self.orders), "executedQty": f"{quantity:.8f}"}
+            return {
+                "status": "FILLED",
+                "orderId": len(self.orders),
+                "executedQty": f"{quantity:.8f}",
+                "cummulativeQuoteQty": f"{quantity * 76000.0:.8f}",
+            }
 
     monkeypatch.setattr(cli, "_build_client", lambda _runtime: _NoSecondLegBalanceClient(usdc=20.0, btc=0.0))
     assert cli.command_spot_roundtrip(argparse.Namespace(quantity=0.00008, mode="buy-sell", yes=True)) == 2
@@ -6187,7 +6202,7 @@ def test_command_live_signed_entry_records_bot_owned_position(tmp_path, monkeypa
                 "clientOrderId": client_order_id,
                 "executedQty": str(size),
                 "avgPrice": "100",
-                "cummulativeQuoteQty": str(size * 100.0),
+                "cumQuote": str(size * 100.0),
             }
 
     client = _SignedEntryClient()
@@ -6309,7 +6324,7 @@ def test_command_live_signed_close_records_ledger_and_removes_open(tmp_path, mon
                 "clientOrderId": client_order_id,
                 "executedQty": str(size),
                 "avgPrice": "102",
-                "cummulativeQuoteQty": str(size * 102.0),
+                "cumQuote": str(size * 102.0),
             }
 
     client = _SignedCloseClient()

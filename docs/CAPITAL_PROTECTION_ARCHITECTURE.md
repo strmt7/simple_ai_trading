@@ -8,6 +8,14 @@ against gaps, illiquidity, exchange failure, custody loss, or every outage.
 
 ## What the current code actually establishes
 
+The September 8 [acknowledgement consistency repair](review/2026-09-08/binance-acknowledgement-consistency.md)
+prevents contradictory first-response totals from becoming accepted inventory
+or false flatness. Autonomous and direct CLI response/query projections share
+exact quantity/cash consistency checks. The reproduced false-full-close case
+now preserves its lot and UNKNOWN. 495 affected checks pass. This does not
+replace modeled fees with native accounting, complete direct CLI durable-intent
+and submitted-identity coverage, apply recovery movements or authorize rearm.
+
 The September 8 [terminal closing observation stage](review/2026-09-08/binance-terminal-closing-evidence.md)
 retains exact scoped pending-close terminal fills and native fees without
 clearing UNKNOWN or applying inventory. Explicit closing semantics preserve

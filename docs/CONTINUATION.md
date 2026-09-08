@@ -1,5 +1,18 @@
 # Continue Development
 
+Latest demonstrated risk repair: [acknowledgement consistency](review/2026-09-08/binance-acknowledgement-consistency.md).
+At baseline 353b5580, a close reporting executedQty=0.5 with fill rows totaling
+1.0 removed the whole 1.0 lot and released the entry block. The shared new
+validator rejects that contradiction before accounting in autonomous and direct
+CLI response/query paths. Cash and fill prices override convenience averages;
+an order limit price cannot establish an executed price. 437 execution-domain
+and 58 CLI checks pass, including 50 new cases. This preempted native recovery
+application because its first-response accounting was not yet trustworthy.
+Next: native-fee incremental inventory application, durable-gateway/submitted-
+identity coverage for direct CLI execution, and explicit account/policy/process
+rearm. No real account, credential, ledger or protected capture was accessed.
+Do not repeat unchanged suites; research counts/gates remain unchanged.
+
 Latest recovery integration: [terminal closing observations](review/2026-09-08/binance-terminal-closing-evidence.md).
 An exact pending close now has a scoped terminal order/fill collector in the
 existing intent DB, with native fees and separate venue-reported futures PnL.

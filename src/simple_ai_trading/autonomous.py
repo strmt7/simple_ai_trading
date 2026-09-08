@@ -515,30 +515,13 @@ def _order_fill_details(
     *,
     fallback_qty: float,
     fallback_price: float,
+    market_type: str,
 ) -> tuple[float, float]:
     del fallback_qty, fallback_price
+    from .binance_acknowledgements import acknowledged_fill
 
-    qty = _order_float(order, "executedQty")
-    quote = _order_float(order, "cummulativeQuoteQty", "cumQuote", "cumBase")
-    avg = _order_float(order, "avgPrice", "averagePrice", "price")
-    fills = order.get("fills")
-    if isinstance(fills, list):
-        fill_qty = 0.0
-        fill_quote = 0.0
-        for fill in fills:
-            if not isinstance(fill, Mapping):
-                continue
-            q = _order_float(fill, "qty")
-            p = _order_float(fill, "price")
-            if q > 0.0 and p > 0.0:
-                fill_qty += q
-                fill_quote += q * p
-        if fill_qty > 0.0:
-            qty = fill_qty
-            quote = fill_quote
-    if avg <= 0.0 and qty > 0.0 and quote > 0.0:
-        avg = quote / qty
-    return qty, avg
+    fill = acknowledged_fill(order, market_type=market_type)
+    return (0.0, 0.0) if fill is None else (float(fill.quantity), float(fill.price))
 
 
 def _order_has_fill_evidence(order: Mapping[str, object]) -> bool:
@@ -556,17 +539,24 @@ def _order_has_fill_evidence(order: Mapping[str, object]) -> bool:
 
 
 def _order_exchange_status(order: Mapping[str, object]) -> str:
-    return _order_text(order, "status") or ("FILLED" if _order_has_fill_evidence(order) else "accepted")
+    return _order_text(order, "status") or (
+        "FILLED" if _order_has_fill_evidence(order) else "accepted"
+    )
 
 
-def _apply_open_order(position: OpenPosition, order: Mapping[str, object]) -> OpenPosition:
+def _apply_open_order(
+    position: OpenPosition, order: Mapping[str, object]
+) -> OpenPosition:
     qty, entry_price = _order_fill_details(
         order,
         fallback_qty=position.qty,
         fallback_price=position.entry_price,
+        market_type=position.market_type,
     )
     if qty <= 0.0 or entry_price <= 0.0:
-        raise BinanceAPIError("open order response did not include resolved execution fill")
+        raise BinanceAPIError(
+            "open order response did not include resolved execution fill"
+        )
     modeled_entry_fee_rate = max(0.0, float(position.entry_fees)) / max(
         float(position.notional),
         1e-18,
@@ -578,7 +568,8 @@ def _apply_open_order(position: OpenPosition, order: Mapping[str, object]) -> Op
         notional=qty * entry_price,
         entry_fees=qty * entry_price * modeled_entry_fee_rate,
         open_exchange_order_id=_order_text(order, "orderId"),
-        open_client_order_id=_order_text(order, "clientOrderId", "origClientOrderId") or position.open_client_order_id,
+        open_client_order_id=_order_text(order, "clientOrderId", "origClientOrderId")
+        or position.open_client_order_id,
         exchange_status=_order_exchange_status(order),
     )
 
@@ -594,9 +585,12 @@ def _apply_close_order(
         order,
         fallback_qty=trade.qty,
         fallback_price=trade.exit_price,
+        market_type=trade.market_type,
     )
     if qty <= 0.0 or exit_price <= 0.0:
-        raise BinanceAPIError("close order response did not include resolved execution fill")
+        raise BinanceAPIError(
+            "close order response did not include resolved execution fill"
+        )
     fee_bps = float(exit_taker_fee_bps)
     if not math.isfinite(fee_bps) or fee_bps < 0.0:
         raise BinanceAPIError("close order fee rate must be finite and non-negative")
@@ -618,7 +612,8 @@ def _apply_close_order(
         realized_pnl_pct=(realized / entry_notional) if entry_notional > 0.0 else 0.0,
         fees=fees,
         close_exchange_order_id=_order_text(order, "orderId"),
-        close_client_order_id=_order_text(order, "clientOrderId", "origClientOrderId") or close_client_order_id,
+        close_client_order_id=_order_text(order, "clientOrderId", "origClientOrderId")
+        or close_client_order_id,
         exchange_status=_order_exchange_status(order),
     )
 
