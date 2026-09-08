@@ -216,6 +216,20 @@ class LearningFeedbackReport:
         return asdict(self)
 
 
+def _unique_ledger_fields(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
+    """Do not resolve ambiguous persisted keys by silently taking the last value."""
+    result: dict[str, Any] = {}
+    for name, value in pairs:
+        if name in result:
+            raise ValueError("duplicate position ledger field")
+        result[name] = value
+    return result
+
+
+def _reject_ledger_constant(value: str) -> None:
+    raise ValueError("nonfinite position ledger value")
+
+
 @dataclass
 class PositionsStore:
     """Durable storage for open positions + closed trades ledger."""
@@ -239,14 +253,39 @@ class PositionsStore:
 
     # ---- low-level I/O ------------------------------------------------------
 
-    def _load(self, path: Path) -> list[dict[str, Any]]:
+    def _load(self, path: Path, *, strict: bool = False) -> list[dict[str, Any]]:
         if not path.exists():
             return []
         try:
-            payload = json.loads(path.read_text(encoding="utf-8"))
-        except (json.JSONDecodeError, OSError):
+            payload = json.loads(
+                path.read_text(encoding="utf-8"),
+                **(
+                    {
+                        "object_pairs_hook": _unique_ledger_fields,
+                        "parse_constant": _reject_ledger_constant,
+                    }
+                    if strict
+                    else {}
+                ),
+            )
+            if strict:
+                # JSON exponent overflow (e.g. 1e999) does not use parse_constant.
+                json.dumps(payload, allow_nan=False)
+        except (ValueError, OSError) as failure:
+            if strict:
+                raise ValueError(
+                    "position ledger is unreadable; refusing mutation"
+                ) from None
+            if not isinstance(failure, (json.JSONDecodeError, OSError)):
+                raise
             return []
-        if not isinstance(payload, list):
+        if (
+            not isinstance(payload, list)
+            or strict
+            and any(not isinstance(entry, dict) for entry in payload)
+        ):
+            if strict:
+                raise ValueError("position ledger shape is invalid; refusing mutation")
             return []
         return [entry for entry in payload if isinstance(entry, dict)]
 
@@ -259,32 +298,52 @@ class PositionsStore:
 
     # ---- public API ---------------------------------------------------------
 
-    def load_open(self) -> list[OpenPosition]:
-        return [OpenPosition(**entry) for entry in self._load(self.open_path)
-                if self._valid_open_entry(entry)]
+    def load_open(self, *, strict: bool = False) -> list[OpenPosition]:
+        entries = self._load(self.open_path, strict=strict)
+        if strict:
+            if any(not self._valid_open_entry(entry) for entry in entries):
+                raise ValueError("open ledger has incomplete rows; refusing mutation")
+            identities = [entry["id"] for entry in entries]
+            if any(
+                not isinstance(value, str) or not value.strip() for value in identities
+            ):
+                raise ValueError("open ledger identity is invalid; refusing mutation")
+            if len(set(identities)) != len(identities):
+                raise ValueError("open ledger identity is ambiguous; refusing mutation")
+        return [
+            OpenPosition(**entry) for entry in entries if self._valid_open_entry(entry)
+        ]
 
-    def load_ledger(self) -> list[ClosedTrade]:
-        return [ClosedTrade(**entry) for entry in self._load(self.ledger_path)
-                if self._valid_closed_entry(entry)]
+    def load_ledger(self, *, strict: bool = False) -> list[ClosedTrade]:
+        entries = self._load(self.ledger_path, strict=strict)
+        if strict and any(not self._valid_closed_entry(entry) for entry in entries):
+            raise ValueError("closed ledger has incomplete rows; refusing mutation")
+        return [
+            ClosedTrade(**entry) for entry in entries if self._valid_closed_entry(entry)
+        ]
 
     def record_open(self, position: OpenPosition) -> OpenPosition:
-        existing = self.load_open()
+        existing = self.load_open(strict=True)
         existing = [p for p in existing if p.id != position.id]
         existing.append(position)
         self._write(self.open_path, [asdict(p) for p in existing])
         return position
 
     def record_close(self, trade: ClosedTrade) -> ClosedTrade:
-        existing = self.load_ledger()
+        # Admit both retained files before the first write. This avoids destroying
+        # evidence on corruption; it is not a multi-file transaction or writer lock.
+        existing = self.load_ledger(strict=True)
+        opens = [p for p in self.load_open(strict=True) if p.id != trade.id]
         existing.append(trade)
         self._write(self.ledger_path, [asdict(t) for t in existing])
         # also drop the matching open entry if present
-        opens = [p for p in self.load_open() if p.id != trade.id]
         self._write(self.open_path, [asdict(p) for p in opens])
         write_learning_feedback(self)
         return trade
 
-    def record_close_result(self, position: OpenPosition, trade: ClosedTrade) -> ClosedTrade:
+    def record_close_result(
+        self, position: OpenPosition, trade: ClosedTrade
+    ) -> ClosedTrade:
         """Record a close fill while preserving any unfilled open remainder."""
 
         open_qty = max(0.0, float(position.qty))
@@ -293,7 +352,8 @@ class PositionsStore:
         if open_qty <= 0.0 or close_qty >= open_qty - tolerance:
             return self.record_close(trade)
 
-        existing = self.load_ledger()
+        existing = self.load_ledger(strict=True)
+        opens = [p for p in self.load_open(strict=True) if p.id != position.id]
         existing.append(trade)
         self._write(self.ledger_path, [asdict(t) for t in existing])
 
@@ -308,14 +368,13 @@ class PositionsStore:
                 float(position.entry_fees) * (remaining_qty / max(open_qty, 1e-18)),
             ),
         )
-        opens = [p for p in self.load_open() if p.id != position.id]
         opens.append(remaining)
         self._write(self.open_path, [asdict(p) for p in opens])
         write_learning_feedback(self)
         return trade
 
     def remove_open(self, position_id: str) -> bool:
-        opens = self.load_open()
+        opens = self.load_open(strict=True)
         filtered = [p for p in opens if p.id != position_id]
         if len(filtered) == len(opens):
             return False
@@ -350,7 +409,9 @@ class PositionsStore:
         try:
             payload = json.loads(path.read_text(encoding="utf-8"))
         except json.JSONDecodeError as exc:
-            return (f"open_positions_json_invalid:line={exc.lineno}:column={exc.colno}",)
+            return (
+                f"open_positions_json_invalid:line={exc.lineno}:column={exc.colno}",
+            )
         except OSError as exc:
             return (f"open_positions_unreadable:{exc.__class__.__name__}",)
         if not isinstance(payload, list):

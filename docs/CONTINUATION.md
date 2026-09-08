@@ -1,5 +1,13 @@
 # Continue Development
 
+Latest safety repair: [position mutation integrity](review/2026-09-08/position-mutation-integrity.md)
+closes a reproduced silent overwrite of corrupt or filtered retained records.
+Mutations require strict lossless reads and both files are admitted before close
+recording. 242 distinct affected checks passed across staged runs; no real ledger
+or venue was touched. Atomic inventory/close transactions, concurrent fencing,
+native fees, missing-file detection and explicit rearm remain open. Do not treat
+legacy forgiving read projections as empty-state evidence or repeat this suite.
+
 Latest market R&D: [CXMT post-change funding](review/2026-09-08/cxmt-post-change/review.md)
 completed the exact first-twelve-settlement September 4-6 sample with two public
 GETs on September 8. All twelve gross observations were negative for the fixed

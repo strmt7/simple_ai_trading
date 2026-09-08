@@ -10,6 +10,12 @@ Scope blockers to their branch; a fresh user resumption resets the blocked audit
 
 ## Current Truth
 
+The [position mutation repair](review/2026-09-08/position-mutation-integrity.md)
+prevents corrupt/filtered retained ledger rows from silently disappearing during
+writes. Both files are admitted before close recording; 242 distinct affected
+checks passed across two stages. This is not atomic multi-file recovery or
+concurrent-writer fencing. Actual ledgers and all historical results are untouched.
+
 The [CXMT post-change study](review/2026-09-08/cxmt-post-change/review.md)
 consumed the exact September 4-6 twelve-settlement trigger on September 8.
 All twelve gross observations were negative for the prospectively fixed long
