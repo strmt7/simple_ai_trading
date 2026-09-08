@@ -9,6 +9,7 @@ import re
 import time
 import hashlib
 import hmac
+import uuid
 from decimal import Decimal, ROUND_DOWN, InvalidOperation
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
@@ -19,6 +20,7 @@ from urllib.parse import parse_qsl, urlencode, urlsplit
 import requests
 
 from .assets import MAX_AUTONOMOUS_LEVERAGE
+from .binance_order_responses import MarketOrderBinding, validate_queried_order
 from .binance_execution_scope import (
     BINANCE_FUTURES_DEMO,
     BINANCE_FUTURES_TESTNET,
@@ -1232,6 +1234,12 @@ class BinanceClient:
             "type": "MARKET",
             "quantity": f"{quantity_value:.8f}",
         }
+        if Decimal(payload["quantity"]) <= 0:
+            raise BinanceAPIError(
+                "Order quantity rounds to zero at transmission precision"
+            )
+        if type(reduce_only) is not bool:
+            raise BinanceAPIError("Order reduce_only must be a boolean")
         if client_order_id is not None:
             payload["newClientOrderId"] = _validated_client_order_id(client_order_id)
 
@@ -1250,8 +1258,23 @@ class BinanceClient:
 
         self._ensure_signed_endpoint_allowed()
 
+        # Unspecified IDs still need a locally known selector before transmission.
+        # This in-memory binding is not a durable intent or restart recovery record.
+        if "newClientOrderId" not in payload:
+            payload["newClientOrderId"] = "sait-r-" + uuid.uuid4().hex[:29]
+        try:
+            binding = MarketOrderBinding(
+                symbol,
+                side,
+                payload["quantity"],
+                payload["newClientOrderId"],
+                self.market_type,
+                reduce_only,
+            )
+        except ValueError as exc:
+            raise BinanceAPIError(str(exc)) from None
         if self.market_type == "spot":
-            return self._request_dict(
+            response = self._request_dict(
                 "POST",
                 "/api/v3/order",
                 payload,
@@ -1260,26 +1283,32 @@ class BinanceClient:
                 **_scope_kwargs(expected_scope),
             )
 
-        payload["newOrderRespType"] = "RESULT"
-        if reduce_only:
-            payload["reduceOnly"] = "true"
-        # Fresh futures opens configure leverage immediately before order submission.
-        # Reduce-only closes must not mutate account leverage state.
-        if not reduce_only:
-            self.set_leverage(
-                symbol,
-                int(max(1, round(leverage))),
-                notional=notional_value,
+        else:
+            payload["newOrderRespType"] = "RESULT"
+            if reduce_only:
+                payload["reduceOnly"] = "true"
+            # Fresh futures opens configure leverage immediately before submission.
+            # Reduce-only closes must not mutate account leverage state.
+            if not reduce_only:
+                self.set_leverage(
+                    symbol,
+                    int(max(1, round(leverage))),
+                    notional=notional_value,
+                    **_scope_kwargs(expected_scope),
+                )
+            response = self._request_dict(
+                "POST",
+                "/fapi/v1/order",
+                payload,
+                signed=True,
+                label="order",
                 **_scope_kwargs(expected_scope),
             )
-        return self._request_dict(
-            "POST",
-            "/fapi/v1/order",
-            payload,
-            signed=True,
-            label="order",
-            **_scope_kwargs(expected_scope),
-        )
+        try:
+            binding.validate(response)
+        except ValueError as exc:
+            raise BinanceAPIError(str(exc)) from None
+        return response
 
     def get_order(
         self,
@@ -1288,21 +1317,36 @@ class BinanceClient:
         order_id: int | str | None = None,
         orig_client_order_id: str | None = None,
         expected_scope: BinanceExecutionScope | None = None,
+        expected_order_binding: MarketOrderBinding | None = None,
     ) -> Dict[str, object]:
         symbol = str(symbol or "").upper()
         if not symbol:
             raise BinanceAPIError("Order symbol is required")
         params: Dict[str, object] = {"symbol": symbol}
-        if order_id is not None and str(order_id).strip():
-            params["orderId"] = str(order_id).strip()
+        if order_id is not None:
+            parsed_order_id = parse_execution_id(order_id)
+            if parsed_order_id is None:
+                raise BinanceAPIError(
+                    "Order query identity must be an exact integer ID"
+                )
+            params["orderId"] = parsed_order_id
         if orig_client_order_id is not None:
             params["origClientOrderId"] = _validated_client_order_id(
                 orig_client_order_id
             )
         if "orderId" not in params and "origClientOrderId" not in params:
             raise BinanceAPIError("Order query requires orderId or origClientOrderId")
+        if expected_order_binding is not None and (
+            not isinstance(expected_order_binding, MarketOrderBinding)
+            or expected_order_binding.symbol != symbol
+            or expected_order_binding.market_type != self.market_type
+            or expected_order_binding.client_order_id != orig_client_order_id
+        ):
+            raise BinanceAPIError(
+                "Order query binding differs from its selectors or product scope"
+            )
         endpoint = "/api/v3/order" if self.market_type == "spot" else "/fapi/v1/order"
-        return self._request_dict(
+        response = self._request_dict(
             "GET",
             endpoint,
             params,
@@ -1310,6 +1354,18 @@ class BinanceClient:
             label="order status",
             **_scope_kwargs(expected_scope),
         )
+        try:
+            validate_queried_order(
+                response,
+                symbol=symbol,
+                order_id=params.get("orderId"),
+                client_order_id=orig_client_order_id,
+            )
+            if expected_order_binding is not None:
+                expected_order_binding.validate(response)
+        except ValueError as exc:
+            raise BinanceAPIError(str(exc)) from None
+        return response
 
     def get_order_trades(
         self,

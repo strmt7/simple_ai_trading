@@ -1,5 +1,19 @@
 # Continue Development
 
+Latest execution repair: [request-bound order responses](review/2026-09-08/binance-order-response-binding.md).
+At 019db70c, the shared client accepted a foreign-symbol/side/quantity/client-ID
+response for both submission and exact-order GET. The common API now binds outgoing
+MARKET semantics and validates every supplied query selector. Autonomous open/close
+and direct-CLI recovery carry the original plan through query fallback; mismatches
+preserve UNKNOWN and owned lots. Missing caller IDs receive in-memory random IDs,
+not durable intents. 595 affected-domain, 61 CLI and four additional normal-recovery
+checks pass: 660 distinct, including 105 new cases. Do not repeat unchanged suites.
+Native-fee incremental application, direct-CLI durable/account-scope integration,
+explicit rearm and independent process controls are still required. No real account,
+credential, user ledger, protected capture or economic observation was accessed.
+MRNA's 13:35 UTC gate was still future at the 13:16:47 UTC review checkpoint;
+recheck its entire trigger before access. Research totals remain those below.
+
 Latest financial R&D: [September 9 NYC partition](review/2026-09-08/nyc-sep9-frontier/review.md).
 One prospectively frozen Gamma GET returned event 981253 and all 11 expected
 markets. Every YES and NO side was price-complete; all 28 frontier rows failed
@@ -11,7 +25,7 @@ literal distinct-series and material-change rules remain; no same-session
 sibling/date hunt. MRNA's September 8 13:35 UTC gate was still future at this
 screen; recheck the clock and its complete rank-12 row before any later access.
 
-Latest demonstrated risk repair: [acknowledgement consistency](review/2026-09-08/binance-acknowledgement-consistency.md).
+Preceding demonstrated risk repair: [acknowledgement consistency](review/2026-09-08/binance-acknowledgement-consistency.md).
 At baseline 353b5580, a close reporting executedQty=0.5 with fill rows totaling
 1.0 removed the whole 1.0 lot and released the entry block. The shared new
 validator rejects that contradiction before accounting in autonomous and direct

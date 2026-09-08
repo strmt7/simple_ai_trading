@@ -3468,7 +3468,14 @@ def test_resolved_order_fill_queries_exchange_when_live_ack_has_no_fill() -> Non
         def __init__(self) -> None:
             self.queries: list[tuple[str, object, str | None]] = []
 
-        def get_order(self, symbol: str, *, order_id=None, orig_client_order_id=None):
+        def get_order(
+            self,
+            symbol: str,
+            *,
+            order_id=None,
+            orig_client_order_id=None,
+            expected_order_binding=None,
+        ):
             self.queries.append((symbol, order_id, orig_client_order_id))
             return {
                 "symbol": symbol,
@@ -3482,7 +3489,13 @@ def test_resolved_order_fill_queries_exchange_when_live_ack_has_no_fill() -> Non
     qty, average, notional, source = cli._resolved_order_fill_details(
         client,  # type: ignore[arg-type]
         runtime,
-        {"status": "NEW", "orderId": 123, "clientOrderId": "abc", "origQty": "0.4"},
+        {
+            "status": "NEW",
+            "orderId": 123,
+            "clientOrderId": "abc",
+            "origQty": "0.4",
+            "side": "BUY",
+        },
         fallback_qty=0.4,
         fallback_price=100.0,
         dry_run=False,

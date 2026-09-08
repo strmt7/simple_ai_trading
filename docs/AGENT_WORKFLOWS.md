@@ -19,6 +19,14 @@ skills are intentionally not copied.
 | Agent skills | ECC `2.0.0` | `.agents/skills/` |
 | Karpathy guidelines | commit `2c606141936f1eeef17fa3043a72095b4765b9c2` | `.agents/skills/karpathy-guidelines/` |
 
+For scoped Ruff formatting, the local help defines `--range START-END` for line
+ranges; `START:END` means a line/column position extending to EOF, not two lines.
+Inspect the resulting diff. Ruff 0.16.5 also panicked on the inspected older
+API test files with valid range syntax; do not repeatedly retry that failure.
+Use UTF-8-sig-aware reading for BOM-bearing Python sources, format in memory,
+verify unchanged AST semantics, and apply only the edited function blocks.
+Do not turn a formatter problem into unrelated whole-file churn.
+
 ## AI Commit Identity Gate
 
 Run the author, committer, and trailer audit as a standalone read command and

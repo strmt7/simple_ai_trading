@@ -8,6 +8,14 @@ against gaps, illiquidity, exchange failure, custody loss, or every outage.
 
 ## What the current code actually establishes
 
+The September 8 [order-response binding repair](review/2026-09-08/binance-order-response-binding.md)
+binds original MARKET semantics and exact query selectors at the shared Binance
+client. Autonomous open/close and direct-CLI query fallback retain those semantics;
+conflicting responses cannot substitute a different order before accounting.
+660 distinct staged checks include accepted and rejected Spot/Futures recovery.
+This does not complete direct-CLI durable/account-scope integration, native-fee
+application, account qualification, explicit rearm or independent supervision.
+
 The September 8 [acknowledgement consistency repair](review/2026-09-08/binance-acknowledgement-consistency.md)
 prevents contradictory first-response totals from becoming accepted inventory
 or false flatness. Autonomous and direct CLI response/query projections share

@@ -10,6 +10,14 @@ Scope blockers to their branch; a fresh user resumption resets the blocked audit
 
 ## Current Truth
 
+The [order-response binding repair](review/2026-09-08/binance-order-response-binding.md)
+rejects a reproduced foreign-order response at the shared Binance client and
+preserves original MARKET semantics through response-loss/pending-fill queries.
+660 distinct staged checks pass, including 105 new cases and matching/conflicting
+Spot/Futures open/close recovery. Generated IDs are in-memory selectors, not
+durable intents. Native-fee application, direct-CLI durable/account-scope
+integration, explicit rearm and independent supervision remain unfinished.
+
 The [September 9 NYC partition screen](review/2026-09-08/nyc-sep9-frontier/review.md)
 used one prospectively frozen public GET. All 11 YES and 11 NO sides were
 price-complete; all 28 long-only frontier rows failed before fees. No downstream

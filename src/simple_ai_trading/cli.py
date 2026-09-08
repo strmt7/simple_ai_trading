@@ -6895,6 +6895,8 @@ def _paper_or_live_order(
     reduce_only: bool = False,
     client_order_id: str | None = None,
 ) -> dict[str, object]:
+    from .binance_order_responses import MarketOrderBinding
+
     if leverage is None:
         leverage = _effective_leverage(strategy, runtime.market_type)
     kwargs = {"dry_run": dry_run, "leverage": leverage}
@@ -6919,7 +6921,16 @@ def _paper_or_live_order(
     except BinanceAPIError:
         if not dry_run and client_order_id and hasattr(client, "get_order"):
             response = client.get_order(
-                runtime.symbol, orig_client_order_id=client_order_id
+                runtime.symbol,
+                orig_client_order_id=client_order_id,
+                expected_order_binding=MarketOrderBinding(
+                    runtime.symbol,
+                    side,
+                    f"{float(size):.8f}",
+                    client_order_id,
+                    runtime.market_type,
+                    reduce_only,
+                ),
             )
         else:
             raise
@@ -7030,6 +7041,8 @@ def _resolved_order_fill_details(
     fallback_price: float,
     dry_run: bool,
 ) -> tuple[float, float, float, str]:
+    from .binance_order_responses import MarketOrderBinding
+
     if dry_run:
         qty, average, notional = _order_fill_details(
             order,
@@ -7048,13 +7061,24 @@ def _resolved_order_fill_details(
     if not hasattr(client, "get_order"):
         return qty, average, notional, "unresolved_no_order_query"
     try:
-        refreshed = client.get_order(
+        binding = MarketOrderBinding(
             runtime.symbol,
-            order_id=order_id,
-            orig_client_order_id=client_order_id,
+            _order_response_text(order, "side"),
+            _order_response_text(order, "origQty"),
+            client_order_id,
+            runtime.market_type,
+            order.get("reduceOnly", False),
         )
-    except BinanceAPIError:
-        raise
+    except ValueError:
+        raise BinanceAPIError(
+            "Unresolved order lacks valid request semantics"
+        ) from None
+    refreshed = client.get_order(
+        runtime.symbol,
+        order_id=order_id,
+        orig_client_order_id=client_order_id,
+        expected_order_binding=binding,
+    )
     refreshed_qty, refreshed_average, refreshed_notional = _checked_order_fill_details(
         refreshed, runtime, fallback_price=fallback_price
     )

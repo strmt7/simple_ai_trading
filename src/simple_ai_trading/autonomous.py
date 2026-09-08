@@ -40,6 +40,7 @@ from .api_budget import (
 from .api import BinanceAPIError, BinanceClient
 from .binance_execution_scope import BinanceExecutionScope
 from .binance_open_intents import OpenIntentError
+from .binance_order_responses import MarketOrderBinding
 from .binance_paper import BinancePaperBroker
 from .execution_lifecycle import ExecutionLifecyclePlan, build_execution_lifecycle_plan
 from .intervals import interval_milliseconds
@@ -650,7 +651,17 @@ def _submit_open_position(
         order = client.get_order(
             position.symbol,
             orig_client_order_id=position.open_client_order_id,
-            **({"expected_scope": expected_scope} if expected_scope is not None else {}),
+            expected_order_binding=MarketOrderBinding(
+                position.symbol,
+                _position_order_side(position, close=False),
+                f"{position.qty:.8f}",
+                position.open_client_order_id,
+                position.market_type,
+                False,
+            ),
+            **(
+                {"expected_scope": expected_scope} if expected_scope is not None else {}
+            ),
         )
     identities = [
         order[key] for key in ("clientOrderId", "origClientOrderId") if key in order
@@ -721,6 +732,14 @@ def _submit_close_position(
         order = client.get_order(
             position.symbol,
             orig_client_order_id=close_client_order_id,
+            expected_order_binding=MarketOrderBinding(
+                position.symbol,
+                _position_order_side(position, close=True),
+                f"{position.qty:.8f}",
+                close_client_order_id,
+                position.market_type,
+                reduce_only,
+            ),
             **(
                 {"expected_scope": expected_scope} if expected_scope is not None else {}
             ),

@@ -373,25 +373,49 @@ def test_place_order_branches_and_leverage_clamping(monkeypatch) -> None:
     call_log: list[tuple[str, str, dict]] = []
 
     class _FakeResponse:
-        def __init__(self) -> None:
+        def __init__(self, params) -> None:
             self.status_code = 200
-            self.text = "{\"ok\": true}"
+            self.params = params or {
+                "symbol": "BTCUSDC",
+                "side": "SELL",
+                "type": "MARKET",
+                "quantity": "0.1",
+                "newClientOrderId": "sait-o-clamp",
+            }
+            self.text = '{"ok": true}'
 
         def json(self):
-            return {"ok": True}
+            return {
+                "ok": True,
+                **self.params,
+                "orderId": 1,
+                "clientOrderId": self.params.get("newClientOrderId"),
+                "origQty": self.params.get("quantity"),
+                "positionSide": "BOTH",
+                "reduceOnly": False,
+            }
 
     def request(method: str, url: str, params=None, timeout=None, headers=None):
         call_log.append((method, url, params or {}))
-        return _FakeResponse()
+        return _FakeResponse(params)
 
     monkeypatch.setattr(client.session, "request", request)
     monkeypatch.setattr(client, "get_max_leverage", lambda _symbol: 2)
 
-    result_dry = client.place_order("BTCUSDC", "BUY", 0.123, dry_run=True, leverage=10.0)
+    result_dry = client.place_order(
+        "BTCUSDC", "BUY", 0.123, dry_run=True, leverage=10.0
+    )
     assert result_dry["dryRun"] is True
     assert result_dry["leverage"] == 10.0
 
-    result_live = client.place_order("BTCUSDC", "SELL", 0.1, dry_run=False, leverage=10.0)
+    result_live = client.place_order(
+        "BTCUSDC",
+        "SELL",
+        0.1,
+        dry_run=False,
+        leverage=10.0,
+        client_order_id="sait-o-clamp",
+    )
     assert result_live["ok"] is True
     assert call_log[-1][0] == "POST"
     assert "/fapi/v1/order" in call_log[-1][1]
@@ -409,8 +433,16 @@ def test_place_order_clamps_futures_leverage_by_notional_bracket(monkeypatch) ->
                 {
                     "symbol": "BTCUSDC",
                     "brackets": [
-                        {"initialLeverage": "20", "notionalFloor": "0", "notionalCap": "1000"},
-                        {"initialLeverage": "8", "notionalFloor": "1000", "notionalCap": "10000"},
+                        {
+                            "initialLeverage": "20",
+                            "notionalFloor": "0",
+                            "notionalCap": "1000",
+                        },
+                        {
+                            "initialLeverage": "8",
+                            "notionalFloor": "1000",
+                            "notionalCap": "10000",
+                        },
                     ],
                 }
             ]
@@ -419,12 +451,24 @@ def test_place_order_clamps_futures_leverage_by_notional_bracket(monkeypatch) ->
             return {"symbol": params["symbol"], "leverage": params["leverage"]}
         if path == "/fapi/v1/order":
             order_posts += 1
-            return {"status": "FILLED", "executedQty": params["quantity"]}
+            return {
+                "ok": True,
+                **params,
+                "orderId": 1,
+                "clientOrderId": params["newClientOrderId"],
+                "origQty": params["quantity"],
+                "status": "FILLED",
+                "executedQty": params["quantity"],
+                "positionSide": "BOTH",
+                "reduceOnly": False,
+            }
         raise AssertionError(f"unexpected endpoint: {path}")
 
     monkeypatch.setattr(client, "_request", fake_request)
 
-    response = client.place_order("BTCUSDC", "BUY", 0.1, dry_run=False, leverage=20.0, notional=2_500.0)
+    response = client.place_order(
+        "BTCUSDC", "BUY", 0.1, dry_run=False, leverage=20.0, notional=2_500.0
+    )
 
     assert response["status"] == "FILLED"
     assert leverage_posts == [8]

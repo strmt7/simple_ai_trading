@@ -1,0 +1,153 @@
+{
+  "schema_version": 1,
+  "base_commit": "019db70c869a81b95c1c536b754e9d5bf1f0a576",
+  "reviewed_at_utc": "2026-09-08 13:16:47 UTC",
+  "finding": "The shared Binance client accepted another symbol, side, quantity and order identity for both a MARKET submission and an exact-order query.",
+  "pre_fix_reproduced": true,
+  "pre_fix_observation": {
+    "requested_symbol": "BTCUSDT",
+    "requested_side": "BUY",
+    "requested_quantity": "1",
+    "requested_client_order_id": "sait-o-requested",
+    "queried_exchange_order_id": "1",
+    "returned_symbol": "ETHUSDT",
+    "returned_side": "SELL",
+    "returned_quantity": "2",
+    "returned_client_order_id": "foreign-order",
+    "returned_exchange_order_id": "99",
+    "post_and_get_returned_foreign_payload": true,
+    "transport": "offline instance _request_dict stub; no signing or network"
+  },
+  "source_hash_format": "SHA-256 of UTF-8 source bytes with CRLF normalized to LF",
+  "source_bindings": {
+    "src/simple_ai_trading/binance_order_responses.py": "a86d8208f0fd47264b620144d82ac8239c382a0f80878fe83e4377e3123c4c5b",
+    "src/simple_ai_trading/api.py": "7c9560bd7f13ee880a425ba5c854c16583b596c2560632e5462c9509c063102d",
+    "src/simple_ai_trading/autonomous.py": "eee66f6565ec8cfa858d89dea5746405c2b45e95484b5264a9a0fd845a01b955",
+    "src/simple_ai_trading/cli.py": "580143c27172057251f9b0eedce5431f50e7394cab65308b8f1de47ad1e1bb30",
+    "tests/test_binance_order_responses.py": "99dcc58ceff37f797ee8b87bc17238480d961dd447c539237e99aa4b719aa5ac",
+    "tests/test_api.py": "500fc5a23515b2896b70311dce09e6ab5dbf1729551dee9ded66f7449e8b925a",
+    "tests/test_api_coverage.py": "b26c9e09560d1f20b3bbadb2eed4a010dce60ab067548c77debf91ac43a5fd31",
+    "tests/test_autonomous.py": "ebe7e9d902584b9722b649a873142c276d0ed64242c987a10839d3e214251ed8",
+    "tests/test_binance_acknowledgements.py": "0f646bb39cc63ab2b5881ecd65633b0a79c1f0200da543557ae2ec2792522b7f",
+    "tests/test_binance_close_intents.py": "b399a258c57284a356bf356660b3ddb9e51ba32541b4c309744d5a0e5b87343d",
+    "tests/test_binance_execution_scope.py": "5ddb0438ebeeea28294b9e3b2171e2a8b9208d2c18b4da29f24f1d5544d7ac66",
+    "tests/test_cli_coverage.py": "c390bcb0dac1b20a7736688b8ba98136ad19a51e85f339d93e37c9b0cfb33565",
+    "tests/test_binance_write_replay.py": "66c58f7c6bee6fa7f7d3ddff201ae19dc3619b4b9ebbefc24a3c74d956078f4f"
+  },
+  "implemented": [
+    "Before actual MARKET transmission, bind exact symbol, side, eight-decimal transmitted quantity, product, client ID and reduction intent in an immutable object.",
+    "Generate an in-memory 36-character client ID before transmission when the caller omitted one; preserve explicit IDs exactly.",
+    "Reject zero-at-transmission quantities and nonboolean reduce_only before order or leverage transmission.",
+    "Validate response symbol, exact integer order identity, client identity aliases, MARKET type, original quantity and side before returning a submitted order.",
+    "Require futures BOTH positionSide, exact boolean reduceOnly and noncontradictory optional origType/closePosition.",
+    "Exact-order GET admission verifies every provided selector. Reject ambiguous caller order IDs before access.",
+    "Carry original submission semantics through autonomous opening/closing and direct CLI response-loss queries; retain first validated response semantics through CLI pending-fill queries.",
+    "Keep no-blind-POST-retry, testnet/Demo-only signed authority, scoped autonomous persistence and native accounting boundaries unchanged."
+  ],
+  "verification": {
+    "distinct_checks": 660,
+    "execution_domain_passed": 595,
+    "cli_cases_passed": 61,
+    "additional_normal_recovery_passed": 4,
+    "new_request_binding_cases": 105,
+    "reports": [
+      {
+        "local_ignored_path": ".pytest_cache/order-binding-domain.xml",
+        "sha256": "6e3b289e5c1968e3a53cd327f1551c4a34bff2ff3259dc33d0aa98c669bced54",
+        "passed": 595
+      },
+      {
+        "local_ignored_path": ".pytest_cache/order-binding-cli.xml",
+        "sha256": "cf377b5f2e65c2bbbec95e17223759e5fc235fb56ff31050d6cc9d19915704d0",
+        "passed": 61
+      },
+      {
+        "local_ignored_path": ".pytest_cache/order-binding-normal-recovery.xml",
+        "sha256": "cd64339510bae6949e1684ebd920088cfade189e5b179370ee2a004cbd87a63c",
+        "passed": 4
+      }
+    ],
+    "ruff_passed": true,
+    "git_diff_whitespace_passed": true,
+    "source_semantics_preserved_during_targeted_formatting": true,
+    "exchange_network_requests": 0,
+    "actual_user_ledgers_modified": 0,
+    "protected_captures_modified": 0
+  },
+  "review_coverage": {
+    "new_module_fully_read": "src/simple_ai_trading/binance_order_responses.py",
+    "existing_functions_base_plus_complete_patch": {
+      "src/simple_ai_trading/api.py": [
+        {
+          "name": "place_order",
+          "start_line": 1200,
+          "end_line": 1311
+        },
+        {
+          "name": "get_order",
+          "start_line": 1313,
+          "end_line": 1368
+        }
+      ],
+      "src/simple_ai_trading/autonomous.py": [
+        {
+          "name": "_submit_open_position",
+          "start_line": 622,
+          "end_line": 682
+        },
+        {
+          "name": "_submit_close_position",
+          "start_line": 702,
+          "end_line": 767
+        }
+      ],
+      "src/simple_ai_trading/cli.py": [
+        {
+          "name": "_paper_or_live_order",
+          "start_line": 6885,
+          "end_line": 6942
+        },
+        {
+          "name": "_resolved_order_fill_details",
+          "start_line": 7035,
+          "end_line": 7085
+        }
+      ]
+    },
+    "other_modified_files": "Only changed test/fixture functions and documentation; no whole-file semantic review claim for the large existing modules.",
+    "whole_repository_review_complete": false
+  },
+  "source_research": [
+    {
+      "publisher": "Binance",
+      "classification": "official API documentation",
+      "access_date_utc": "2026-09-08",
+      "requested_url": "https://developers.binance.com/docs/binance-spot-api-docs/rest-api/trading-endpoints",
+      "canonical_url": "https://developers.binance.com/en/docs/catalog/core-trading-spot-trading/api/rest-api/trade",
+      "supported_fact": "The caller may supply newClientOrderId; otherwise the venue can generate one. Client IDs are only unique among open orders, not permanent economic deduplication.",
+      "retention": "Web-tool text extraction; not a retained raw HTTP snapshot or exchange observation."
+    },
+    {
+      "publisher": "Binance",
+      "classification": "official API documentation",
+      "access_date_utc": "2026-09-08",
+      "requested_urls": [
+        "https://developers.binance.com/docs/derivatives/usds-margined-futures/trade/rest-api/New-Order",
+        "https://developers.binance.com/docs/derivatives/usds-margined-futures/trade/rest-api/Query-Order"
+      ],
+      "canonical_url": "https://developers.binance.com/en/docs/catalog/core-trading-derivatives-trading-usd-s-m-futures/api/rest-api/trade",
+      "supported_fact": "Order query uses symbol and orderId or origClientOrderId. Returned identity, original quantity, side, positionSide and reduceOnly are separate fields; orderId is per symbol.",
+      "retention": "Web-tool text extraction; both original URLs redirect to the same consolidated page; not two independent sources."
+    }
+  ],
+  "remaining": [
+    "Generated in-memory client IDs do not create durable intents, permanent idempotence or restart recovery.",
+    "Direct CLI paths still lack complete durable intent/account-scope/gateway integration. API selector checks do not prove bot ownership or venue account UID.",
+    "Generic order-ID-only queries validate that selector and symbol, not an original trading plan absent supplied context.",
+    "Identity admission does not prove terminal fills, native-fee inventory application, balance or margin qualification, liquidation safety, explicit rearm, independent supervision, or model profitability.",
+    "RuntimeConfig effective symbol normalization remains existing behavior; no broader symbol admission or parser/native command change was made.",
+    "Research registry remains 37 accepted mechanism scopes, 65 hypotheses, 196 terminal observations and zero qualified stable profitable edges.",
+    "No mainnet authority, market-data capture, training/GPU benchmark, full-repository review or profitable-edge claim."
+  ],
+  "workflow_learning": "Use Ruff START-END line ranges, not START:END line/column-to-EOF. Correct range invocations still panicked on the inspected older BOM-bearing API tests; UTF-8-sig decoding plus in-memory full formatting, AST equality and edited-function-only application avoided unrelated churn without changing tool versions."
+}

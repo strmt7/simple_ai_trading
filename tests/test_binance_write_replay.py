@@ -120,6 +120,9 @@ def test_autonomous_recovery_queries_before_any_resubmission(
             "status": "FILLED",
             "executedQty": "0.001",
             "cummulativeQuoteQty": "50",
+            "side": "BUY",
+            "type": "MARKET",
+            "origQty": "0.001",
         }
         if query_found
         else {"code": -2013, "msg": "order not found"}

@@ -93,7 +93,9 @@ class _Client:
             raise BinanceAPIError("injected response loss")
         return self.order
 
-    def get_order(self, symbol, *, orig_client_order_id, expected_scope):
+    def get_order(
+        self, symbol, *, orig_client_order_id, expected_scope, expected_order_binding
+    ):
         assert expected_scope == self.execution_scope()
         self.queries += 1
         if self.order is None:

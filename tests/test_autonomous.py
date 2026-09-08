@@ -122,6 +122,7 @@ class FakeClient:
         order_id=None,
         orig_client_order_id=None,
         expected_scope=None,
+        expected_order_binding=None,
     ):
         for order in self.orders:
             if order.get("symbol") != symbol:
