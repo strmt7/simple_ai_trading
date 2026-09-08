@@ -701,6 +701,7 @@ def _submit_close_position(
     reduce_only: bool,
     taker_fee_bps: float = 0.0,
     close_client_order_id: str | None = None,
+    expected_scope: BinanceExecutionScope | None = None,
 ) -> ClosedTrade:
     if position.dry_run:
         return replace(trade, exchange_status="paper")
@@ -717,11 +718,32 @@ def _submit_close_position(
             leverage=position.leverage,
             reduce_only=reduce_only,
             client_order_id=close_client_order_id,
+            **(
+                {"expected_scope": expected_scope} if expected_scope is not None else {}
+            ),
         )
     except BinanceAPIError:
         order = client.get_order(
             position.symbol,
             orig_client_order_id=close_client_order_id,
+            **(
+                {"expected_scope": expected_scope} if expected_scope is not None else {}
+            ),
+        )
+    identities = [
+        order[key] for key in ("clientOrderId", "origClientOrderId") if key in order
+    ]
+    if (
+        not identities
+        or any(value != close_client_order_id for value in identities)
+        or order.get("symbol") != position.symbol
+        or order.get("status") not in {"FILLED", "PARTIALLY_FILLED"}
+        or order.get("side") != _position_order_side(position, close=True)
+        or position.market_type == "futures"
+        and (order.get("reduceOnly") is not True or order.get("positionSide") != "BOTH")
+    ):
+        raise BinanceAPIError(
+            "closing acknowledgement identity or status is unresolved"
         )
     return _apply_close_order(
         trade,
@@ -729,6 +751,49 @@ def _submit_close_position(
         close_client_order_id,
         exit_taker_fee_bps=taker_fee_bps,
     )
+
+
+def _submit_durable_close_position(
+    client: BinanceClient,
+    position: OpenPosition,
+    trade: ClosedTrade,
+    store: PositionsStore,
+    *,
+    reduce_only: bool,
+    taker_fee_bps: float = 0.0,
+) -> ClosedTrade:
+    """Persist the close obligation before transmission and retain uncertainty."""
+    from .binance_close_intents import (
+        complete_close,
+        prepare_close,
+        validate_close_result,
+    )
+
+    scope = client.execution_scope()
+    client_id = _next_close_client_order_id(store, position)
+    prepare_close(
+        store, position, client_id=client_id, scope=scope, reduce_only=reduce_only
+    )
+    recorded = _submit_close_position(
+        client,
+        position,
+        trade,
+        reduce_only=reduce_only,
+        taker_fee_bps=taker_fee_bps,
+        close_client_order_id=client_id,
+        expected_scope=scope,
+    )
+    validate_close_result(position, recorded, client_id=client_id)
+    store.record_close_result(position, recorded)
+    complete_close(
+        store,
+        position,
+        recorded,
+        client_id=client_id,
+        scope=scope,
+        reduce_only=reduce_only,
+    )
+    return recorded
 
 
 def _next_close_client_order_id(
@@ -824,13 +889,13 @@ def close_tracked_open_positions(
             if not position.dry_run:
                 if client is None:
                     raise BinanceAPIError("live close requires Binance client")
-                trade = _submit_close_position(
+                trade = _submit_durable_close_position(
                     client,
                     position,
                     trade,
+                    store,
                     reduce_only=reduce_only,
                     taker_fee_bps=taker_fee_bps,
-                    close_client_order_id=_next_close_client_order_id(store, position),
                 )
             else:
                 if paper_broker is None:
@@ -848,14 +913,21 @@ def close_tracked_open_positions(
             failed += 1
             failures.append(f"{position.id}:{exc}")
             continue
-        store.record_close_result(position, trade)
+        if position.dry_run:
+            store.record_close_result(position, trade)
         closed += 1
         if _is_partial_close(position, trade):
             partial += 1
-            failures.append(f"{position.id}:partial-close {trade.qty:.12g}/{position.qty:.12g}")
-    return CloseAllReport(closed=closed, skipped=skipped, failed=failed, partial=partial, failures=tuple(failures))
-
-
+            failures.append(
+                f"{position.id}:partial-close {trade.qty:.12g}/{position.qty:.12g}"
+            )
+    return CloseAllReport(
+        closed=closed,
+        skipped=skipped,
+        failed=failed,
+        partial=partial,
+        failures=tuple(failures),
+    )
 
 
 def _stop_close_mark_price(
@@ -1551,13 +1623,14 @@ def run_loop(
                     )
                     try:
                         if not position.dry_run:
-                            trade = _submit_close_position(
+                            trade = _submit_durable_close_position(
                                 client,
                                 position,
                                 trade,
-                                reduce_only=runtime.market_type == "futures" and strategy.reduce_only_on_close,
+                                store,
+                                reduce_only=runtime.market_type == "futures"
+                                and strategy.reduce_only_on_close,
                                 taker_fee_bps=strategy.taker_fee_bps,
-                                close_client_order_id=_next_close_client_order_id(store, position),
                             )
                         else:
                             if paper_broker is None:
@@ -1580,14 +1653,24 @@ def run_loop(
                                 break
                             trade = paper_trade
                     except (BinanceAPIError, ValueError) as exc:
-                        logger.error("autonomous iter=%d close-order-failed id=%s error=%s", iteration, position.id, exc)
+                        logger.error(
+                            "autonomous iter=%d close-order-failed id=%s error=%s",
+                            iteration,
+                            position.id,
+                            exc,
+                        )
                         exit_reason = "close-order-failed"
                         break
-                    store.record_close_result(position, trade)
+                    if position.dry_run:
+                        store.record_close_result(position, trade)
                     closed += 1
                     logger.info(
                         "autonomous iter=%d close id=%s reason=%s pnl=%+.2f (%+.2f%%)",
-                        iteration, trade.id, reason, trade.realized_pnl, trade.realized_pnl_pct,
+                        iteration,
+                        trade.id,
+                        reason,
+                        trade.realized_pnl,
+                        trade.realized_pnl_pct,
                     )
                     if _is_partial_close(position, trade):
                         logger.error(
@@ -1599,7 +1682,9 @@ def run_loop(
                         )
                         exit_reason = f"{reason}:close-incomplete"
                         break
-            if exit_reason == "close-order-failed" or exit_reason.endswith(":close-incomplete"):
+            if exit_reason == "close-order-failed" or exit_reason.endswith(
+                ":close-incomplete"
+            ):
                 break
             if exit_reason in {
                 "close-reconciliation-failed",

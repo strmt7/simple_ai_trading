@@ -404,7 +404,7 @@ class PositionsStore:
             if expected is not None and [p for p in opens if p.id == expected.id] != [
                 expected
             ]:
-                raise ValueError("partial close position changed before recording")
+                raise ValueError("close position changed before recording")
             opens = [p for p in opens if p.id != trade.id]
             if remaining is not None:
                 opens.append(remaining)
@@ -425,7 +425,9 @@ class PositionsStore:
         close_qty = max(0.0, float(trade.qty))
         tolerance = max(1e-12, open_qty * 1e-8)
         if open_qty <= 0.0 or close_qty >= open_qty - tolerance:
-            return self.record_close(trade)
+            self._record_close_pair(trade, expected=position)
+            write_learning_feedback(self)
+            return trade
 
         remaining_qty = max(0.0, open_qty - close_qty)
         remaining = replace(

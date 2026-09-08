@@ -14,8 +14,15 @@ from simple_ai_trading.execution_lifecycle import (
     render_execution_lifecycle_plan,
 )
 from simple_ai_trading.paper_execution import PaperReconciliationReport
-from simple_ai_trading.positions import OpenPosition, PositionsStore, bot_client_order_id
-from simple_ai_trading.reconciliation import ReconciliationMismatch, ReconciliationReport
+from simple_ai_trading.positions import (
+    OpenPosition,
+    PositionsStore,
+    bot_client_order_id,
+)
+from simple_ai_trading.reconciliation import (
+    ReconciliationMismatch,
+    ReconciliationReport,
+)
 from simple_ai_trading.types import RuntimeConfig, StrategyConfig
 
 
@@ -40,7 +47,9 @@ def _strategy(**overrides) -> StrategyConfig:
     return StrategyConfig(**payload)
 
 
-def _ok_reconciliation(runtime: RuntimeConfig, *, local_live: int = 0, exchange: int = 0) -> ReconciliationReport:
+def _ok_reconciliation(
+    runtime: RuntimeConfig, *, local_live: int = 0, exchange: int = 0
+) -> ReconciliationReport:
     return ReconciliationReport(
         ok=True,
         market_type=runtime.market_type,
@@ -65,13 +74,17 @@ def _position(*, verified: bool = True, dry_run: bool = False) -> OpenPosition:
         opened_at_ms=1,
         notional=500.0,
         dry_run=dry_run,
-        open_client_order_id=bot_client_order_id(position_id, "open") if verified and not dry_run else "",
+        open_client_order_id=bot_client_order_id(position_id, "open")
+        if verified and not dry_run
+        else "",
         open_exchange_order_id="123" if verified and not dry_run else "",
         exchange_status="FILLED" if verified and not dry_run else "local",
     )
 
 
-def test_dry_run_lifecycle_does_not_require_signed_reconciliation(tmp_path: Path) -> None:
+def test_dry_run_lifecycle_does_not_require_signed_reconciliation(
+    tmp_path: Path,
+) -> None:
     store = PositionsStore(root=tmp_path)
     runtime = _runtime(dry_run=True, api_key="", api_secret="")
 
@@ -101,13 +114,16 @@ def test_unresolved_open_intent_blocks_entry_not_verified_close(tmp_path: Path) 
     )
     store.record_open(position)
     plan = build_execution_lifecycle_plan(
-        runtime, _strategy(), store, action="close",
+        runtime,
+        _strategy(),
+        store,
+        action="close",
         reconciliation=_ok_reconciliation(runtime, local_live=1, exchange=1),
         require_api_budget_headroom=False,
     )
     assert plan.can_open is False
     assert plan.can_close is True
-    assert any("opening intents" in reason for reason in plan.open_block_reasons)
+    assert any("execution intents" in reason for reason in plan.open_block_reasons)
 
 
 def test_required_paper_reconciliation_blocks_when_missing(tmp_path: Path) -> None:
@@ -123,8 +139,7 @@ def test_required_paper_reconciliation_blocks_when_missing(tmp_path: Path) -> No
     assert plan.can_open is False
     assert plan.can_close is False
     assert any(
-        reason.startswith("paper reconciliation:")
-        for reason in plan.open_block_reasons
+        reason.startswith("paper reconciliation:") for reason in plan.open_block_reasons
     )
 
 
@@ -197,8 +212,14 @@ def test_live_lifecycle_blocks_without_reconciliation(tmp_path: Path) -> None:
 
     assert plan.can_open is False
     assert plan.can_close is False
-    assert "reconciliation:missing signed account reconciliation" in plan.open_block_reasons
-    assert "reconciliation:missing signed account reconciliation" in plan.close_block_reasons
+    assert (
+        "reconciliation:missing signed account reconciliation"
+        in plan.open_block_reasons
+    )
+    assert (
+        "reconciliation:missing signed account reconciliation"
+        in plan.close_block_reasons
+    )
 
 
 def test_live_lifecycle_blocks_external_exchange_exposure(tmp_path: Path) -> None:
@@ -237,10 +258,15 @@ def test_live_lifecycle_blocks_external_exchange_exposure(tmp_path: Path) -> Non
     assert plan.can_open is False
     assert plan.can_close is False
     assert plan.external_exchange_exposure_count == 1
-    assert any("exchange_exposure_without_local_position" in reason for reason in plan.open_block_reasons)
+    assert any(
+        "exchange_exposure_without_local_position" in reason
+        for reason in plan.open_block_reasons
+    )
 
 
-def test_live_lifecycle_blocks_unverified_local_position_even_when_quantities_match(tmp_path: Path) -> None:
+def test_live_lifecycle_blocks_unverified_local_position_even_when_quantities_match(
+    tmp_path: Path,
+) -> None:
     store = PositionsStore(root=tmp_path)
     store.record_open(_position(verified=False))
     runtime = _runtime()
@@ -282,7 +308,9 @@ def test_live_lifecycle_allows_verified_bot_owned_close_even_when_risk_blocks_ne
     assert plan.close_block_reasons == ()
 
 
-def test_api_budget_exhaustion_blocks_open_but_not_verified_close(tmp_path: Path) -> None:
+def test_api_budget_exhaustion_blocks_open_but_not_verified_close(
+    tmp_path: Path,
+) -> None:
     store = PositionsStore(root=tmp_path)
     store.record_open(_position(verified=True))
     runtime = _runtime()
@@ -316,7 +344,9 @@ def test_api_budget_exhaustion_blocks_open_but_not_verified_close(tmp_path: Path
     assert any(reason.startswith("api budget:") for reason in plan.open_block_reasons)
 
 
-def test_corrupt_open_ledger_blocks_all_signed_lifecycle_actions(tmp_path: Path) -> None:
+def test_corrupt_open_ledger_blocks_all_signed_lifecycle_actions(
+    tmp_path: Path,
+) -> None:
     store = PositionsStore(root=tmp_path)
     store.open_path.parent.mkdir(parents=True, exist_ok=True)
     store.open_path.write_text("{", encoding="utf-8")
@@ -333,7 +363,9 @@ def test_corrupt_open_ledger_blocks_all_signed_lifecycle_actions(tmp_path: Path)
 
     assert plan.can_open is False
     assert plan.can_close is False
-    assert any(reason.startswith("ledger integrity:") for reason in plan.open_block_reasons)
+    assert any(
+        reason.startswith("ledger integrity:") for reason in plan.open_block_reasons
+    )
 
 
 def test_unknown_open_ledger_fields_block_lifecycle(tmp_path: Path) -> None:

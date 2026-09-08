@@ -1,4 +1,4 @@
-﻿"""Comprehensive unit tests for the autonomous loop module."""
+"""Comprehensive unit tests for the autonomous loop module."""
 
 from __future__ import annotations
 
@@ -38,7 +38,10 @@ from simple_ai_trading.autonomous import (
     ensure_testnet,
     run_loop,
 )
-from simple_ai_trading.reconciliation import ReconciliationMismatch, ReconciliationReport
+from simple_ai_trading.reconciliation import (
+    ReconciliationMismatch,
+    ReconciliationReport,
+)
 from simple_ai_trading.logging_ext import reset as reset_logger
 from simple_ai_trading.objective import get_objective
 from simple_ai_trading.positions import (
@@ -64,7 +67,9 @@ class FakeClient:
     def execution_scope(self):
         from simple_ai_trading.binance_execution_scope import BinanceExecutionScope
 
-        return BinanceExecutionScope.from_api_key(self.base_url, "spot", "offline-placeholder")
+        return BinanceExecutionScope.from_api_key(
+            self.base_url, "spot", "offline-placeholder"
+        )
 
     def __init__(self, price: float = 100.0):
         self._price = price
@@ -110,13 +115,23 @@ class FakeClient:
         self.orders.append(order)
         return order
 
-    def get_order(self, symbol: str, *, order_id=None, orig_client_order_id=None, expected_scope=None):
+    def get_order(
+        self,
+        symbol: str,
+        *,
+        order_id=None,
+        orig_client_order_id=None,
+        expected_scope=None,
+    ):
         for order in self.orders:
             if order.get("symbol") != symbol:
                 continue
             if order_id is not None and str(order.get("orderId")) == str(order_id):
                 return order
-            if orig_client_order_id is not None and order.get("clientOrderId") == orig_client_order_id:
+            if (
+                orig_client_order_id is not None
+                and order.get("clientOrderId") == orig_client_order_id
+            ):
                 return order
         raise BinanceAPIError("order not found")
 
@@ -168,7 +183,9 @@ def _make_config(tmp_path: Path, **overrides) -> AutonomousConfig:
     return AutonomousConfig(**defaults)
 
 
-def _runtime(testnet: bool = True, *, api_key: str = "k", api_secret: str = "s") -> RuntimeConfig:
+def _runtime(
+    testnet: bool = True, *, api_key: str = "k", api_secret: str = "s"
+) -> RuntimeConfig:
     return RuntimeConfig(
         symbol="BTCUSDC",
         interval="15m",
@@ -351,7 +368,9 @@ def test_autonomous_live_blocks_when_api_budget_is_too_tight(tmp_path: Path) -> 
             runtime,
             _strategy(),
             cfg,
-            decision_fn=lambda *_args: Decision(side="FLAT", confidence=0.0, mark_price=100.0),
+            decision_fn=lambda *_args: Decision(
+                side="FLAT", confidence=0.0, mark_price=100.0
+            ),
         )
     assert not (tmp_path / "state.json").exists()
 
@@ -426,7 +445,9 @@ def _stage_paper_position(
     *,
     taker_fee_bps: float = 10.0,
 ) -> OpenPosition:
-    journal_path = cfg.paper_journal_path or Path(cfg.positions_root) / "paper_execution.duckdb"
+    journal_path = (
+        cfg.paper_journal_path or Path(cfg.positions_root) / "paper_execution.duckdb"
+    )
     with BinancePaperBroker(
         journal_path,
         client,  # type: ignore[arg-type]
@@ -492,7 +513,12 @@ def test_open_position_from_decision_clamps_price(tmp_path: Path) -> None:
     strat = StrategyConfig()
     cfg = _make_config(tmp_path)
     position = _open_position_from_decision(
-        decision, runtime, strat, get_objective("default"), cfg, clock=lambda: 1.0,
+        decision,
+        runtime,
+        strat,
+        get_objective("default"),
+        cfg,
+        clock=lambda: 1.0,
     )
     assert position.entry_price == 0.01
     assert position.side == "LONG"
@@ -505,7 +531,12 @@ def test_open_position_from_decision_live_sets_dry_run_false(tmp_path: Path) -> 
     strat = StrategyConfig()
     cfg = _make_config(tmp_path, dry_run=False)
     position = _open_position_from_decision(
-        decision, runtime, strat, get_objective("default"), cfg, clock=lambda: 2.0,
+        decision,
+        runtime,
+        strat,
+        get_objective("default"),
+        cfg,
+        clock=lambda: 2.0,
     )
     assert position.entry_price == 200.0
     assert position.notional == pytest.approx(80.0)
@@ -555,7 +586,10 @@ def test_apply_open_order_rejects_ack_without_execution() -> None:
     position.dry_run = False
     position.open_client_order_id = bot_client_order_id(position.id, "open")
 
-    with pytest.raises(BinanceAPIError, match="open order response did not include resolved execution fill"):
+    with pytest.raises(
+        BinanceAPIError,
+        match="open order response did not include resolved execution fill",
+    ):
         _apply_open_order(
             position,
             {
@@ -572,7 +606,10 @@ def test_apply_close_order_rejects_ack_without_execution() -> None:
     position = _make_position("LONG", entry=100.0)
     trade = _close_to_trade(position, 99.0, "risk-close", clock=lambda: 3.0)
 
-    with pytest.raises(BinanceAPIError, match="close order response did not include resolved execution fill"):
+    with pytest.raises(
+        BinanceAPIError,
+        match="close order response did not include resolved execution fill",
+    ):
         _apply_close_order(
             trade,
             {
@@ -647,9 +684,18 @@ def test_default_decision_returns_flat(tmp_path: Path) -> None:
 
 
 def test_directional_confidence_handles_short_and_invalid_values() -> None:
-    assert _directional_confidence(Decision(side="LONG", confidence=0.8, mark_price=1.0)) == 0.8
-    assert _directional_confidence(Decision(side="SHORT", confidence=0.2, mark_price=1.0)) == 0.8
-    assert _directional_confidence(Decision(side="LONG", confidence="bad", mark_price=1.0)) == 0.0
+    assert (
+        _directional_confidence(Decision(side="LONG", confidence=0.8, mark_price=1.0))
+        == 0.8
+    )
+    assert (
+        _directional_confidence(Decision(side="SHORT", confidence=0.2, mark_price=1.0))
+        == 0.8
+    )
+    assert (
+        _directional_confidence(Decision(side="LONG", confidence="bad", mark_price=1.0))
+        == 0.0
+    )
 
 
 # ----- run_loop: integration-ish branches ----------------------------------
@@ -839,8 +885,13 @@ def test_run_loop_paused_and_resumed_and_stopped(tmp_path: Path) -> None:
             ctl.write(STATE_STOPPING)
 
     result = run_loop(
-        client, runtime=_runtime(), strategy=_strategy(), cfg=cfg,
-        decision_fn=dec, sleep=sleep_and_flip, clock=_tick_clock(),
+        client,
+        runtime=_runtime(),
+        strategy=_strategy(),
+        cfg=cfg,
+        decision_fn=dec,
+        sleep=sleep_and_flip,
+        clock=_tick_clock(),
     )
     assert result.exit_reason == "operator-stop"
     assert result.iterations >= 3
@@ -877,7 +928,9 @@ def test_run_loop_operator_stop_closes_open_positions(tmp_path: Path) -> None:
     assert ledger[-1].reason == "operator-stop"
 
 
-def test_close_all_open_positions_without_broker_preserves_position(tmp_path: Path) -> None:
+def test_close_all_open_positions_without_broker_preserves_position(
+    tmp_path: Path,
+) -> None:
     store = PositionsStore(root=tmp_path / "positions")
     position = _make_position("SHORT", entry=75.0)
     store.record_open(position)
@@ -887,7 +940,9 @@ def test_close_all_open_positions_without_broker_preserves_position(tmp_path: Pa
     assert store.load_ledger() == []
 
 
-def test_run_loop_refuses_untracked_paper_position_without_mutation(tmp_path: Path) -> None:
+def test_run_loop_refuses_untracked_paper_position_without_mutation(
+    tmp_path: Path,
+) -> None:
     cfg = _make_config(tmp_path)
     store = PositionsStore(root=cfg.positions_root)
     position = _make_position("LONG", entry=100.0)
@@ -910,13 +965,25 @@ def test_run_loop_refuses_untracked_paper_position_without_mutation(tmp_path: Pa
     assert store.load_ledger() == []
 
 
-def test_close_tracked_live_verified_position_uses_reduce_only_order(tmp_path: Path) -> None:
+def _stage_scoped_live_position(store: PositionsStore, position: OpenPosition) -> None:
+    """Fixture a completed opening under an explicit simulated execution scope."""
+    scope = FakeClient().execution_scope()
+    requested = replace(position, exchange_status="PENDING_OPEN")
+    position.open_exchange_order_id = "fixture-open"
+    store.opening_intents.prepare(requested, scope=scope)
+    store.record_open(position)
+    store.opening_intents.record_complete(requested, position, scope=scope)
+
+
+def test_close_tracked_live_verified_position_uses_reduce_only_order(
+    tmp_path: Path,
+) -> None:
     store = PositionsStore(root=tmp_path / "positions")
     position = _make_position("LONG", entry=100.0)
     position.dry_run = False
     position.open_client_order_id = bot_client_order_id(position.id, "open")
     position.exchange_status = "FILLED"
-    store.record_open(position)
+    _stage_scoped_live_position(store, position)
     client = FakeClient(price=111.0)
 
     report = close_tracked_open_positions(
@@ -933,13 +1000,17 @@ def test_close_tracked_live_verified_position_uses_reduce_only_order(tmp_path: P
     assert store.load_open() == []
     assert client.orders[-1]["side"] == "SELL"
     assert client.orders[-1]["reduceOnly"] is True
-    assert client.orders[-1]["clientOrderId"] == bot_client_order_id(position.id, "close")
+    assert client.orders[-1]["clientOrderId"] == bot_client_order_id(
+        position.id, "close"
+    )
     trade = store.load_ledger()[0]
     assert trade.close_client_order_id == bot_client_order_id(position.id, "close")
     assert trade.exchange_status == "FILLED"
 
 
-def test_close_tracked_live_ack_without_execution_preserves_open_position(tmp_path: Path) -> None:
+def test_close_tracked_live_ack_without_execution_preserves_open_position(
+    tmp_path: Path,
+) -> None:
     class AckOnlyCloseClient(FakeClient):
         def place_order(self, symbol: str, side: str, quantity: float, **kwargs):
             order = super().place_order(symbol, side, quantity, **kwargs)
@@ -954,7 +1025,7 @@ def test_close_tracked_live_ack_without_execution_preserves_open_position(tmp_pa
     position.dry_run = False
     position.open_client_order_id = bot_client_order_id(position.id, "open")
     position.exchange_status = "FILLED"
-    store.record_open(position)
+    _stage_scoped_live_position(store, position)
 
     report = close_tracked_open_positions(
         store,
@@ -968,12 +1039,16 @@ def test_close_tracked_live_ack_without_execution_preserves_open_position(tmp_pa
     assert report.closed == 0
     assert report.failed == 1
     assert report.ok is False
-    assert "close order response did not include resolved execution fill" in report.failures[0]
+    assert (
+        "closing acknowledgement identity or status is unresolved" in report.failures[0]
+    )
     assert len(store.load_open()) == 1
     assert store.load_ledger() == []
 
 
-def test_close_tracked_live_partial_fill_preserves_open_remainder(tmp_path: Path) -> None:
+def test_close_tracked_live_partial_fill_preserves_open_remainder(
+    tmp_path: Path,
+) -> None:
     class PartialCloseClient(FakeClient):
         def place_order(self, symbol: str, side: str, quantity: float, **kwargs):
             order = super().place_order(symbol, side, quantity / 2.0, **kwargs)
@@ -987,7 +1062,7 @@ def test_close_tracked_live_partial_fill_preserves_open_remainder(tmp_path: Path
     position.dry_run = False
     position.open_client_order_id = bot_client_order_id(position.id, "open")
     position.exchange_status = "FILLED"
-    store.record_open(position)
+    _stage_scoped_live_position(store, position)
     client = PartialCloseClient(price=110.0)
 
     report = close_tracked_open_positions(
@@ -1027,7 +1102,7 @@ def test_close_tracked_live_recovers_lost_response_by_client_order_id(
     position.dry_run = False
     position.open_client_order_id = bot_client_order_id(position.id, "open")
     position.exchange_status = "FILLED"
-    store.record_open(position)
+    _stage_scoped_live_position(store, position)
     client = LostResponseClient(price=111.0)
 
     report = close_tracked_open_positions(
@@ -1049,7 +1124,7 @@ def test_close_tracked_live_recovers_lost_response_by_client_order_id(
     assert trade.close_client_order_id == bot_client_order_id(position.id, "close")
 
 
-def test_close_tracked_live_partial_retry_uses_new_idempotency_key(
+def test_close_tracked_live_partial_retry_requires_terminal_reconciliation(
     tmp_path: Path,
 ) -> None:
     class PartialThenFullClient(FakeClient):
@@ -1065,7 +1140,7 @@ def test_close_tracked_live_partial_retry_uses_new_idempotency_key(
     position.dry_run = False
     position.open_client_order_id = bot_client_order_id(position.id, "open")
     position.exchange_status = "FILLED"
-    store.record_open(position)
+    _stage_scoped_live_position(store, position)
     client = PartialThenFullClient(price=110.0)
 
     first = close_tracked_open_positions(
@@ -1084,17 +1159,16 @@ def test_close_tracked_live_partial_retry_uses_new_idempotency_key(
     )
 
     assert first.partial == 1
-    assert second.ok is True
-    assert store.load_open() == []
+    assert second.ok is False
+    assert second.failed == 1
+    assert "unresolved closing" in second.failures[0]
+    assert len(client.orders) == 1
+    assert store.load_open()[0].qty == pytest.approx(position.qty / 2)
     ledger = store.load_ledger()
-    assert sum(trade.qty for trade in ledger) == pytest.approx(position.qty)
+    assert len(ledger) == 1
+    assert sum(trade.qty for trade in ledger) == pytest.approx(position.qty / 2)
     assert ledger[0].close_client_order_id == bot_client_order_id(position.id, "close")
-    assert ledger[1].close_client_order_id == bot_client_order_id(
-        position.id,
-        "close",
-        attempt=2,
-    )
-    assert ledger[0].close_client_order_id != ledger[1].close_client_order_id
+    assert store.opening_intents.entry_block_reason() == "unresolved_closing_intents=1"
 
 
 def test_close_tracked_live_unverified_position_is_not_touched(tmp_path: Path) -> None:
@@ -1123,7 +1197,9 @@ def test_close_tracked_live_unverified_position_is_not_touched(tmp_path: Path) -
     assert store.load_ledger() == []
 
 
-def test_close_tracked_live_pending_open_position_is_not_touched(tmp_path: Path) -> None:
+def test_close_tracked_live_pending_open_position_is_not_touched(
+    tmp_path: Path,
+) -> None:
     store = PositionsStore(root=tmp_path / "positions")
     position = _make_position("LONG", entry=100.0)
     position.dry_run = False
@@ -1163,8 +1239,13 @@ def test_run_loop_decision_binance_error_continues(tmp_path: Path) -> None:
         return Decision(side="FLAT", confidence=0.0, mark_price=100.0)
 
     result = run_loop(
-        FakeClient(), _runtime(), _strategy(), cfg,
-        decision_fn=dec, sleep=lambda _d: None, clock=_tick_clock(),
+        FakeClient(),
+        _runtime(),
+        _strategy(),
+        cfg,
+        decision_fn=dec,
+        sleep=lambda _d: None,
+        clock=_tick_clock(),
     )
     # iteration 1 raised => continue; iteration 2 ran normally => iteration-cap
     assert result.exit_reason == "iteration-cap"
@@ -1214,7 +1295,9 @@ def test_run_loop_live_startup_mismatch_never_publishes_running_state(
     assert not cfg.control_path.exists()
 
 
-def test_run_loop_reconciles_and_observes_before_post_outage_entry(tmp_path: Path) -> None:
+def test_run_loop_reconciles_and_observes_before_post_outage_entry(
+    tmp_path: Path,
+) -> None:
     cfg = _make_config(tmp_path, stop_after_iterations=3, dry_run=False)
     attempts = {"n": 0}
     reconciliations: list[str] = []
@@ -1223,7 +1306,11 @@ def test_run_loop_reconciles_and_observes_before_post_outage_entry(tmp_path: Pat
         attempts["n"] += 1
         if attempts["n"] == 1:
             raise BinanceAPIError("temporary network outage")
-        return Decision(side="LONG", confidence=0.9, mark_price=100.0 if attempts["n"] == 2 else 125.0)
+        return Decision(
+            side="LONG",
+            confidence=0.9,
+            mark_price=100.0 if attempts["n"] == 2 else 125.0,
+        )
 
     def reconcile(_client, runtime, _store):
         reconciliations.append(runtime.symbol)
@@ -1263,7 +1350,11 @@ def test_run_loop_recovery_cooldown_observes_before_entry(tmp_path: Path) -> Non
         attempts["n"] += 1
         if attempts["n"] == 1:
             raise BinanceAPIError("temporary network outage")
-        return Decision(side="LONG", confidence=0.9, mark_price=100.0 if attempts["n"] == 2 else 125.0)
+        return Decision(
+            side="LONG",
+            confidence=0.9,
+            mark_price=100.0 if attempts["n"] == 2 else 125.0,
+        )
 
     result = run_loop(
         FakeClient(),
@@ -1292,7 +1383,9 @@ def test_run_loop_recovery_cooldown_observes_before_entry(tmp_path: Path) -> Non
     assert opened[0].qty == pytest.approx(0.64)
 
 
-def test_run_loop_reconciliation_mismatch_after_outage_fails_closed(tmp_path: Path) -> None:
+def test_run_loop_reconciliation_mismatch_after_outage_fails_closed(
+    tmp_path: Path,
+) -> None:
     cfg = _make_config(tmp_path, stop_after_iterations=3, dry_run=False)
     attempts = {"n": 0}
 
@@ -1356,8 +1449,13 @@ def test_run_loop_decision_generic_exception_breaks(tmp_path: Path) -> None:
         raise RuntimeError("boom")
 
     result = run_loop(
-        FakeClient(), _runtime(), _strategy(), cfg,
-        decision_fn=dec, sleep=lambda _d: None, clock=_tick_clock(),
+        FakeClient(),
+        _runtime(),
+        _strategy(),
+        cfg,
+        decision_fn=dec,
+        sleep=lambda _d: None,
+        clock=_tick_clock(),
     )
     assert result.exit_reason == "decision-exception"
     assert result.iterations == 1
@@ -1377,8 +1475,13 @@ def test_run_loop_closes_position_via_auto_close(tmp_path: Path) -> None:
         return Decision(side="FLAT", confidence=0.0, mark_price=200.0)
 
     result = run_loop(
-        client, _runtime(), _strategy(), cfg,
-        decision_fn=dec, sleep=lambda _d: None, clock=_tick_clock(),
+        client,
+        _runtime(),
+        _strategy(),
+        cfg,
+        decision_fn=dec,
+        sleep=lambda _d: None,
+        clock=_tick_clock(),
     )
     assert result.closed_trades == 1
     assert result.iterations == 1
@@ -1404,7 +1507,7 @@ def test_run_loop_partial_auto_close_exits_incomplete(tmp_path: Path) -> None:
     position.dry_run = False
     position.open_client_order_id = bot_client_order_id(position.id, "open")
     position.exchange_status = "FILLED"
-    store.record_open(position)
+    _stage_scoped_live_position(store, position)
 
     def dec(_c, _r, _s, _o):
         return Decision(side="LONG", confidence=0.9, mark_price=110.0)
@@ -1445,8 +1548,13 @@ def test_run_loop_opens_position_when_flat_and_long_signal(tmp_path: Path) -> No
         return Decision(side="LONG", confidence=0.8, mark_price=100.0)
 
     result = run_loop(
-        client, _runtime(), _strategy(), cfg,
-        decision_fn=dec, sleep=lambda _d: None, clock=_tick_clock(),
+        client,
+        _runtime(),
+        _strategy(),
+        cfg,
+        decision_fn=dec,
+        sleep=lambda _d: None,
+        clock=_tick_clock(),
     )
     assert result.opened_trades == 1
     store = PositionsStore(root=cfg.positions_root)
@@ -1496,9 +1604,7 @@ def test_run_loop_paper_close_book_outage_preserves_retryable_position(
         _runtime(),
         _strategy(),
         cfg,
-        decision_fn=lambda *_: Decision(
-            side="FLAT", confidence=0.0, mark_price=200.0
-        ),
+        decision_fn=lambda *_: Decision(side="FLAT", confidence=0.0, mark_price=200.0),
         sleep=lambda _d: None,
         clock=_tick_clock(),
     )
@@ -1652,9 +1758,9 @@ def test_run_loop_respects_max_open_positions(tmp_path: Path) -> None:
     # Pre-stage a position so the open branch is skipped.
     client = FakeClient(price=50.0)
     _stage_paper_position(cfg, client, _make_position("LONG", entry=50.0))
-    strat = replace(StrategyConfig(),
-                    take_profit_pct=10.0, stop_loss_pct=10.0,
-                    max_open_positions=1)
+    strat = replace(
+        StrategyConfig(), take_profit_pct=10.0, stop_loss_pct=10.0, max_open_positions=1
+    )
 
     def dec(_c, _r, _s, _o):
         # Signal LONG on every iter; because max_open_positions=1 and one is
@@ -1662,8 +1768,13 @@ def test_run_loop_respects_max_open_positions(tmp_path: Path) -> None:
         return Decision(side="LONG", confidence=0.9, mark_price=50.0)
 
     result = run_loop(
-        client, _runtime(), strat, cfg,
-        decision_fn=dec, sleep=lambda _d: None, clock=_tick_clock(),
+        client,
+        _runtime(),
+        strat,
+        cfg,
+        decision_fn=dec,
+        sleep=lambda _d: None,
+        clock=_tick_clock(),
     )
     # No new opens despite LONG signal
     assert result.opened_trades == 0
@@ -1675,7 +1786,10 @@ def test_run_loop_respects_zero_max_open_positions(tmp_path: Path) -> None:
     strat = replace(StrategyConfig(), max_open_positions=0)
 
     result = run_loop(
-        FakeClient(), _runtime(), strat, cfg,
+        FakeClient(),
+        _runtime(),
+        strat,
+        cfg,
         decision_fn=lambda *_: Decision(side="LONG", confidence=0.9, mark_price=100.0),
         sleep=lambda _d: None,
         clock=_tick_clock(),
@@ -1686,7 +1800,9 @@ def test_run_loop_respects_zero_max_open_positions(tmp_path: Path) -> None:
     assert PositionsStore(root=cfg.positions_root).load_open() == []
 
 
-def test_entry_gate_blocks_daily_cap_cooldown_drawdown_and_low_confidence(tmp_path: Path) -> None:
+def test_entry_gate_blocks_daily_cap_cooldown_drawdown_and_low_confidence(
+    tmp_path: Path,
+) -> None:
     cfg = _make_config(tmp_path, starting_reference_cash=1000.0)
     store = PositionsStore(root=cfg.positions_root)
     strategy = replace(
@@ -1776,20 +1892,22 @@ def test_entry_gate_blocks_daily_cap_cooldown_drawdown_and_low_confidence(tmp_pa
 def test_loss_budget_guard_and_entry_gate_block_capital_erosion(tmp_path: Path) -> None:
     cfg = _make_config(tmp_path, starting_reference_cash=1000.0)
     store = PositionsStore(root=cfg.positions_root)
-    store.record_close(ClosedTrade(
-        id="loss",
-        symbol="BTCUSDC",
-        market_type="spot",
-        side="LONG",
-        qty=1.0,
-        entry_price=100.0,
-        exit_price=94.0,
-        leverage=1.0,
-        opened_at_ms=1_000,
-        closed_at_ms=2_000,
-        realized_pnl=-12.0,
-        realized_pnl_pct=-0.12,
-    ))
+    store.record_close(
+        ClosedTrade(
+            id="loss",
+            symbol="BTCUSDC",
+            market_type="spot",
+            side="LONG",
+            qty=1.0,
+            entry_price=100.0,
+            exit_price=94.0,
+            leverage=1.0,
+            opened_at_ms=1_000,
+            closed_at_ms=2_000,
+            realized_pnl=-12.0,
+            realized_pnl_pct=-0.12,
+        )
+    )
     strategy = replace(
         StrategyConfig(),
         max_trades_per_day=0,
@@ -1817,24 +1935,28 @@ def test_loss_budget_guard_and_entry_gate_block_capital_erosion(tmp_path: Path) 
     assert gate.reason.startswith("daily-loss-lockout")
 
 
-def test_loss_budget_guard_blocks_loss_streak_without_forced_close(tmp_path: Path) -> None:
+def test_loss_budget_guard_blocks_loss_streak_without_forced_close(
+    tmp_path: Path,
+) -> None:
     cfg = _make_config(tmp_path, starting_reference_cash=1000.0)
     store = PositionsStore(root=cfg.positions_root)
     for idx in range(2):
-        store.record_close(ClosedTrade(
-            id=f"loss-{idx}",
-            symbol="BTCUSDC",
-            market_type="spot",
-            side="LONG",
-            qty=1.0,
-            entry_price=100.0,
-            exit_price=99.9,
-            leverage=1.0,
-            opened_at_ms=1_000 + idx,
-            closed_at_ms=2_000 + idx,
-            realized_pnl=-0.1,
-            realized_pnl_pct=-0.001,
-        ))
+        store.record_close(
+            ClosedTrade(
+                id=f"loss-{idx}",
+                symbol="BTCUSDC",
+                market_type="spot",
+                side="LONG",
+                qty=1.0,
+                entry_price=100.0,
+                exit_price=99.9,
+                leverage=1.0,
+                opened_at_ms=1_000 + idx,
+                closed_at_ms=2_000 + idx,
+                realized_pnl=-0.1,
+                realized_pnl_pct=-0.001,
+            )
+        )
     strategy = replace(
         StrategyConfig(),
         max_daily_loss_pct=0.05,
@@ -1853,7 +1975,10 @@ def test_run_loop_custom_logger_is_honored(tmp_path: Path) -> None:
     cfg = _make_config(tmp_path, stop_after_iterations=1)
     logger = logging.getLogger("autonomous-test-custom")
     result = run_loop(
-        FakeClient(), _runtime(), _strategy(), cfg,
+        FakeClient(),
+        _runtime(),
+        _strategy(),
+        cfg,
         decision_fn=lambda *_: Decision(side="FLAT", confidence=0.0, mark_price=100.0),
         sleep=lambda _d: None,
         clock=_tick_clock(),
@@ -1868,7 +1993,10 @@ def test_run_loop_skips_heartbeat_when_not_on_cadence(tmp_path: Path) -> None:
     cfg = _make_config(tmp_path, stop_after_iterations=1, heartbeat_every=2)
     logger = logging.getLogger("autonomous-test-skip-hb")
     result = run_loop(
-        FakeClient(), _runtime(), _strategy(), cfg,
+        FakeClient(),
+        _runtime(),
+        _strategy(),
+        cfg,
         decision_fn=lambda *_: Decision(side="FLAT", confidence=0.0, mark_price=100.0),
         sleep=lambda _d: None,
         clock=_tick_clock(),

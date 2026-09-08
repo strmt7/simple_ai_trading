@@ -1,5 +1,21 @@
 # Continue Development
 
+Latest capital-risk repair: [durable scoped Binance closes](review/2026-09-08/binance-durable-closing.md).
+The old partial-close test reproduced a second distinct order while the first
+was still PARTIALLY_FILLED. Both active operator/autonomous close paths now
+commit UNKNOWN in the existing intent database before sending. Another close
+for that lot and new exposure remain blocked across restart; independently
+verified closes of other owned lots remain available. A full acknowledgement
+releases only after unique paired-ledger persistence, and full close recording
+now rejects a concurrently changed source lot. 422 affected offline checks
+pass, including 38 new cases, competing callers and actual child exit 73.
+No venue calls, user-ledger mutations, credentials or research captures occurred.
+Next integrate exact terminal close observations and incremental native-fee
+accounting with opening inventory and explicit account/policy/process-fenced
+rearm. Do not clear UNKNOWN, manually edit ledgers, infer terminality from a
+partial fill, rerun unchanged suites or claim complete exactly-once recovery.
+Legacy/unbound lots require verified migration, not adoption of current settings.
+
 Latest financial R&D: [September 10 nine-contract funding change](review/2026-09-08/tradfi-september10-change/review.md).
 One new official-source GET verifies the future 8h-to-4h interval and 2%-to-1%
 cap change. None of the nine exact base labels exists in today's retained
