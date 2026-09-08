@@ -146,12 +146,16 @@ class BinanceOpenIntentJournal:
 
     def prepare(self, position: OpenPosition, *, scope: BinanceExecutionScope) -> None:
         """Commit UNKNOWN before transmission; an existing identity is never replayable."""
+        from .binance_close_intents import unresolved_close_count
+
         if not isinstance(scope, BinanceExecutionScope):
             raise OpenIntentError("opening requires an execution scope")
         payload = self._request(position, scope)
         try:
             with closing(self._connect(create=True)) as connection, connection:
                 self._bind_scope(connection, scope, initialize=True)
+                if unresolved_close_count(connection):
+                    raise OpenIntentError("an unresolved closing blocks new exposure")
                 if connection.execute(
                     "SELECT 1 FROM open_intent WHERE state != 'RECORDED' LIMIT 1"
                 ).fetchone():
@@ -266,6 +270,8 @@ class BinanceOpenIntentJournal:
 
     def entry_block_reason(self, *, positions_present: bool = True) -> str | None:
         """Read the admission barrier without creating or repairing storage."""
+        from .binance_close_intents import unresolved_close_count
+
         if not Path(self.path).exists():
             return None
         try:
@@ -276,6 +282,9 @@ class BinanceOpenIntentJournal:
                 ).fetchone()
                 if row[1]:
                     return f"unresolved_opening_intents={row[1]}"
+                closing_count = unresolved_close_count(connection)
+                if closing_count:
+                    return f"unresolved_closing_intents={closing_count}"
                 if row[0] and not positions_present:
                     return "recorded_openings_missing_position_ledger"
                 return None

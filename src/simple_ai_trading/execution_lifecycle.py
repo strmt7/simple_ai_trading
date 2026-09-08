@@ -65,11 +65,15 @@ class ExecutionLifecyclePlan:
 
     @property
     def can_open(self) -> bool:
-        return not any(check.status == "block" and check.blocks_open for check in self.checks)
+        return not any(
+            check.status == "block" and check.blocks_open for check in self.checks
+        )
 
     @property
     def can_close(self) -> bool:
-        return not any(check.status == "block" and check.blocks_close for check in self.checks)
+        return not any(
+            check.status == "block" and check.blocks_close for check in self.checks
+        )
 
     @property
     def fail_closed(self) -> bool:
@@ -119,11 +123,17 @@ def _check(
 
 
 def _risk_block_detail(report: RiskPolicyReport) -> str:
-    blocked = [f"{check.label}={check.detail}" for check in report.checks if check.status == "block"]
+    blocked = [
+        f"{check.label}={check.detail}"
+        for check in report.checks
+        if check.status == "block"
+    ]
     return "; ".join(blocked) if blocked else "passed"
 
 
-def _position_ownership_rejections(positions: list[OpenPosition]) -> list[tuple[OpenPosition, str]]:
+def _position_ownership_rejections(
+    positions: list[OpenPosition],
+) -> list[tuple[OpenPosition, str]]:
     rejections: list[tuple[OpenPosition, str]] = []
     for position in positions:
         if position.dry_run:
@@ -134,7 +144,9 @@ def _position_ownership_rejections(positions: list[OpenPosition]) -> list[tuple[
     return rejections
 
 
-def _api_budget_reason(report: ApiBudgetReport | Mapping[str, object] | None) -> str | None:
+def _api_budget_reason(
+    report: ApiBudgetReport | Mapping[str, object] | None,
+) -> str | None:
     return api_budget_startup_block_reason(report, max_used_ratio=0.80)
 
 
@@ -191,7 +203,9 @@ def build_execution_lifecycle_plan(
             )
         )
     else:
-        checks.append(_check("ok", "ledger integrity", f"open_positions={len(open_positions)}"))
+        checks.append(
+            _check("ok", "ledger integrity", f"open_positions={len(open_positions)}")
+        )
 
     if not dry_run:
         intent_reason = store.opening_intents.entry_block_reason(
@@ -200,8 +214,8 @@ def build_execution_lifecycle_plan(
         checks.append(
             _check(
                 "block" if intent_reason else "ok",
-                "opening intents",
-                intent_reason or "no unresolved opening intent",
+                "execution intents",
+                intent_reason or "no unresolved opening or closing intent",
                 blocks_open=bool(intent_reason),
                 blocks_close=False,
             )
@@ -244,8 +258,7 @@ def build_execution_lifecycle_plan(
             )
         )
         has_credentials = bool(
-            str(runtime.api_key or "").strip()
-            and str(runtime.api_secret or "").strip()
+            str(runtime.api_key or "").strip() and str(runtime.api_secret or "").strip()
         )
         checks.append(
             _check(
@@ -305,7 +318,9 @@ def build_execution_lifecycle_plan(
                 _check(
                     status,
                     "api budget",
-                    "headroom ok" if api_budget_report is not None else "no current sample",
+                    "headroom ok"
+                    if api_budget_report is not None
+                    else "no current sample",
                 )
             )
         else:
@@ -342,7 +357,10 @@ def build_execution_lifecycle_plan(
                 )
             )
         else:
-            reasons = ",".join(mismatch.reason for mismatch in reconciliation.mismatches) or "mismatch"
+            reasons = (
+                ",".join(mismatch.reason for mismatch in reconciliation.mismatches)
+                or "mismatch"
+            )
             checks.append(
                 _check(
                     "block",
@@ -354,7 +372,9 @@ def build_execution_lifecycle_plan(
             )
 
     if ownership_rejections:
-        detail = ",".join(f"{position.id}:{reason}" for position, reason in ownership_rejections)
+        detail = ",".join(
+            f"{position.id}:{reason}" for position, reason in ownership_rejections
+        )
         checks.append(
             _check(
                 "block",
@@ -365,7 +385,11 @@ def build_execution_lifecycle_plan(
             )
         )
     elif live_positions:
-        checks.append(_check("ok", "bot ownership", f"verified_live_positions={len(live_positions)}"))
+        checks.append(
+            _check(
+                "ok", "bot ownership", f"verified_live_positions={len(live_positions)}"
+            )
+        )
 
     max_open = max(0, int(strategy.max_open_positions))
     if len(open_positions) >= max_open and max_open >= 0:
@@ -379,9 +403,14 @@ def build_execution_lifecycle_plan(
             )
         )
     else:
-        checks.append(_check("ok", "open capacity", f"{len(open_positions)}/{max_open}"))
+        checks.append(
+            _check("ok", "open capacity", f"{len(open_positions)}/{max_open}")
+        )
 
-    if normalized_action in {"stop", "close", "risk-close", "operator-stop"} and not open_positions:
+    if (
+        normalized_action in {"stop", "close", "risk-close", "operator-stop"}
+        and not open_positions
+    ):
         checks.append(_check("ok", "close intent", "no local open positions"))
 
     return ExecutionLifecyclePlan(
@@ -392,14 +421,17 @@ def build_execution_lifecycle_plan(
         local_paper_open_count=len(paper_positions),
         bot_owned_live_open_count=bot_owned_live_count,
         unverified_live_open_count=len(ownership_rejections),
-        exchange_exposure_count=0 if reconciliation is None else reconciliation.exchange_exposure_count,
+        exchange_exposure_count=0
+        if reconciliation is None
+        else reconciliation.exchange_exposure_count,
         external_exchange_exposure_count=0
         if reconciliation is None
         else reconciliation.external_exchange_exposure_count,
         stale_local_position_count=0
         if reconciliation is None
         else reconciliation.stale_local_position_count,
-        close_requires_reduce_only=runtime.market_type == "futures" and bool(strategy.reduce_only_on_close),
+        close_requires_reduce_only=runtime.market_type == "futures"
+        and bool(strategy.reduce_only_on_close),
         checks=tuple(checks),
     )
 

@@ -374,7 +374,7 @@ def test_pending_intent_prevents_autonomous_restart_even_with_flat_account(tmp_p
     )
     assert plan.can_close is True
     assert [check.label for check in plan.checks if check.status == "block"] == [
-        "opening intents"
+        "execution intents"
     ]
     with pytest.raises(RuntimeError, match="unsafe execution lifecycle"):
         run_loop(

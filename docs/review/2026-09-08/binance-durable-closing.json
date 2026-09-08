@@ -1,0 +1,68 @@
+{
+  "schema_version": 1,
+  "base_commit": "de8c0ad28a1c991c79bb1368461e113fc4e550aa",
+  "finding": "A partial close allowed a second distinct order without terminal evidence for the first",
+  "pre_fix_reproduced": true,
+  "pre_fix_method": "Execute baseline autonomous module and existing partial-retry test from Git objects in isolated temporary state; all old assertions passed with two distinct close IDs and no terminal-order query before retry",
+  "source_hash_format": "SHA-256 of UTF-8 source bytes with CRLF normalized to LF",
+  "source_bindings": {
+    "src/simple_ai_trading/binance_close_intents.py": "bad020716d566f8f224133d706e0d0dc38d0d7511b544b26cd2d8fb833e5c91c",
+    "src/simple_ai_trading/binance_open_intents.py": "9f8aa672a97519b08733e3e64c7762a02beb6d3fce6cefd6c2b568234a22aef5",
+    "src/simple_ai_trading/autonomous.py": "b6d02ab78aae1fadaa3510c82e291583eb8798a893dad28f60ddc1687e9337dc",
+    "src/simple_ai_trading/positions.py": "3abd0644b7b8e47121f99b220f04bc8a17a82a099749ad5f2c931771fe31a3fa",
+    "src/simple_ai_trading/execution_lifecycle.py": "74624cda62a054908447ae0cdee7a584c168904c57efa24c7a14ce90ba42a7a6",
+    "src/simple_ai_trading/position_transactions.py": "464be0a5e50819bc77b5c7f08496424c341fce86c7925102bb7cfd1367c6751b",
+    "tests/test_binance_close_intents.py": "5b030f3a3234033eab78653dd80b124d3db23bfa00e13a7562724d0fb1890911",
+    "tests/test_autonomous.py": "155ada7336c6c74605dc0f33f0cae79a7dec3380fc1271ac8e205fab937b201b",
+    "tests/test_binance_open_intents.py": "bc520c7e852b7ccf13c453b1da73fccfe98b568ffa34a7a2e8e87a0b7c18e983",
+    "tests/test_execution_lifecycle.py": "386473168053ae4d13d8a3b7b74e4551a2fc159b29ea40b087bc8be8e27468eb"
+  },
+  "verification": {
+    "affected_suite_passed": 422,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "new_close_cases": 38,
+    "actual_child_exit_code": 73,
+    "concurrent_close_callers": 2,
+    "concurrent_close_orders": 1,
+    "test_command": "uv run --locked python -m pytest -o addopts='' -q --junitxml=.pytest_cache/durable-close-final.xml tests/test_binance_close_intents.py tests/test_autonomous.py tests/test_positions.py tests/test_position_mutation_integrity.py tests/test_position_transactions.py tests/test_binance_open_intents.py tests/test_binance_execution_scope.py tests/test_binance_open_recovery.py tests/test_binance_opening_inventory.py tests/test_execution_lifecycle.py tests/test_reconciliation.py tests/test_position_lifecycle.py",
+    "unavailable_earlier_suite_output_counted_as_pass": false,
+    "ruff_check_passed": true,
+    "changed_line_formatting_passed": true,
+    "formatting_ast_equivalence_passed": true,
+    "source_bindings_verified": 10,
+    "exchange_network_requests": 0,
+    "actual_user_ledgers_modified": 0,
+    "credentials_used": false,
+    "benchmark_claim": false
+  },
+  "semantic_review_scope": {
+    "whole_files": ["src/simple_ai_trading/binance_close_intents.py", "tests/test_binance_close_intents.py"],
+    "active_boundaries": ["_submit_close_position", "_submit_durable_close_position", "close_tracked_open_positions", "run_loop closing branch", "BinanceOpenIntentJournal.prepare and entry_block_reason", "PositionsStore.record_close_result and _record_close_pair", "execution lifecycle intent gate"],
+    "whole_repository_line_review_complete": false
+  },
+  "implemented": [
+    "Scoped UNKNOWN close obligation committed in the existing database before active submission",
+    "Same-lot partial or uncertain close blocks a new close order across restart",
+    "Unresolved close blocks lifecycle and direct-intent new exposure",
+    "Other independently verified owned close admission remains available",
+    "Frozen execution scope accompanies submission and exact-client-ID response-loss query",
+    "Close acknowledgement identity, side, interpreted quantity and futures reduction gates",
+    "Full and partial accounting reject a changed source lot before replacement",
+    "Normal full completion releases only after unique paired-ledger persistence"
+  ],
+  "not_established": [
+    "Exact terminal partial-close recovery and incremental cumulative-fill application",
+    "Comprehensive raw acknowledgement validation or native-fee inventory accounting",
+    "Independent authenticated account and per-lot provenance or verified legacy migration",
+    "Generic out-of-band record_close deduplication",
+    "Explicit account, policy and process-fenced rearm",
+    "Database/enrollment deletion and coordinated rollback detection",
+    "Old or out-of-band writer fencing, power-loss and OS-reboot proof",
+    "Independent supervisor, complete model-health protection or enterprise readiness",
+    "Profitable edge, model accuracy uplift or whole-repository final review"
+  ],
+  "accepted_edge": false,
+  "historical_research_results_changed": false
+}

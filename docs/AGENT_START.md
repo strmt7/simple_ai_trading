@@ -10,6 +10,15 @@ Scope blockers to their branch; a fresh user resumption resets the blocked audit
 
 ## Current Truth
 
+The [durable closing repair](review/2026-09-08/binance-durable-closing.md)
+commits a scoped close obligation before either active Binance close path sends
+an order. Partial/uncertain closes block a second order for that lot after restart
+and block new exposure, without globally disabling other verified owned closes.
+Full closes also compare the current lot before removal. 422 affected checks
+pass, including 38 new cases and actual child exit. Exact terminal close recovery,
+native-fee inventory application and explicit rearm remain unfinished; this is
+not a profitable edge, complete acknowledgement validator or enterprise release.
+
 The [September 10 funding-change gate](review/2026-09-08/tradfi-september10-change/review.md)
 verified one new official notice covering nine TradFi contracts, then reused
 today's retained 67-instrument Polymarket snapshot: no exact counterpart labels.

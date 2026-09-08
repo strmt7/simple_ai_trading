@@ -8,6 +8,18 @@ against gaps, illiquidity, exchange failure, custody loss, or every outage.
 
 ## What the current code actually establishes
 
+The September 8 [durable closing repair](review/2026-09-08/binance-durable-closing.md)
+adds scoped pre-transmission UNKNOWN obligations to both active Binance close
+paths in the existing execution journal. Partial/uncertain closes cannot trigger
+a second order for the same lot or new exposure after restart. Other verified
+owned close admission remains available. Full close recording now compares its
+source lot before removal; release requires a unique persisted full trade.
+422 affected offline checks include actual process exit and competing callers.
+This is not terminal partial-close recovery, comprehensive raw acknowledgement
+validation, native-fee accounting, explicit rearm or independent supervision.
+The current float/modeled-fee adapter is retained, not promoted to native cash
+truth; generic out-of-band ledger appends are not an exactly-once venue gateway.
+
 The September 8 [paired transaction repair](review/2026-09-08/position-paired-transactions.md)
 uses the existing intent DB for serialized, checksummed, recoverable publication
 of both active JSON ledgers. It rejects enrolled-file drift/deletion and stale
