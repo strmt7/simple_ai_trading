@@ -479,6 +479,8 @@ def _close_to_trade(
         ai_review_mode=position.ai_review_mode,
         ai_review_case_id=position.ai_review_case_id,
         ai_review_status=position.ai_review_status,
+        spot_gross_entry_quantity=position.spot_gross_entry_quantity,
+        spot_entry_base_commission=position.spot_entry_base_commission,
     )
 
 
@@ -558,6 +560,32 @@ def _apply_open_order(
         raise BinanceAPIError(
             "open order response did not include resolved execution fill"
         )
+    gross_qty = qty
+    gross_text = base_fee_text = ""
+    if position.market_type == "spot" and not position.dry_run:
+        from decimal import Decimal, localcontext
+
+        from .assets import symbol_base_for_supported_quote
+        from .binance_spot_receipts import (
+            exact_spot_wire_quantity,
+            spot_buy_received_quantity,
+        )
+        from .binance_terminal_fills import _text
+
+        base = symbol_base_for_supported_quote(position.symbol)
+        received = exact_spot_wire_quantity(
+            spot_buy_received_quantity(
+                order,
+                symbol=position.symbol,
+                base_asset=base,
+                quote_asset=position.symbol[len(base) :],
+            )
+        )
+        with localcontext() as context:
+            context.prec = 128
+            gross = Decimal(str(order["executedQty"]))
+            gross_text, base_fee_text = _text(gross), _text(gross - received)
+        qty = float(received)
     modeled_entry_fee_rate = max(0.0, float(position.entry_fees)) / max(
         float(position.notional),
         1e-18,
@@ -567,7 +595,9 @@ def _apply_open_order(
         qty=qty,
         entry_price=entry_price,
         notional=qty * entry_price,
-        entry_fees=qty * entry_price * modeled_entry_fee_rate,
+        entry_fees=gross_qty * entry_price * modeled_entry_fee_rate,
+        spot_gross_entry_quantity=gross_text,
+        spot_entry_base_commission=base_fee_text,
         open_exchange_order_id=_order_text(order, "orderId"),
         open_client_order_id=_order_text(order, "clientOrderId", "origClientOrderId")
         or position.open_client_order_id,
@@ -711,6 +741,9 @@ def _submit_close_position(
 ) -> ClosedTrade:
     if position.dry_run:
         return replace(trade, exchange_status="paper")
+    from .binance_spot_receipts import exact_spot_wire_quantity, native_spot_entry_net
+
+    native_net = native_spot_entry_net(position)
     close_client_order_id = close_client_order_id or bot_client_order_id(
         position.id,
         "close",
@@ -759,6 +792,8 @@ def _submit_close_position(
         raise BinanceAPIError(
             "closing acknowledgement identity or status is unresolved"
         )
+    if native_net is not None:
+        exact_spot_wire_quantity(order.get("executedQty"))
     return _apply_close_order(
         trade,
         order,

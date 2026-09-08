@@ -1,6 +1,18 @@
 # Continue Development
 
-Latest execution repair: [spot resale ownership](review/2026-09-08/binance-spot-resale-ownership.md).
+Latest execution repair: [autonomous Spot gross/net inventory](review/2026-09-08/autonomous-spot-native-inventory.md).
+New FILLED Spot lots now retain exact original gross/base-commission metadata
+while closing only net received inventory. Gross intent checks remain exact;
+legacy pending request bytes stay compatible. Native partial closes retain a
+one-satoshi remainder. 744 distinct staged checks pass, including 60 new cases.
+Missing/nonterminal/unrepresentable receipts retain UNKNOWN; no inferred fees,
+old-lot migration, terminal recovery application or native PnL qualification.
+Next integrate retained terminal movements exactly once with native cash/fee
+accounting and explicit recovery/rearm. Independent supervision and CLI durable
+recovery remain required. Research counters and capture rules are unchanged;
+do not repeat these passing suites or consumed market captures without cause.
+
+Preceding execution repair: [spot resale ownership](review/2026-09-08/binance-spot-resale-ownership.md).
 At 60d72b99, a 1 BTC buy with 0.001 BTC fee could authorize a 1 BTC resale using
 pre-existing holdings. The active buy-then-sell command now limits sale quantity
 to complete native received-asset evidence, permits proved terminal partial

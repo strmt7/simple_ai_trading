@@ -105,7 +105,16 @@ class FakeClient:
             "clientOrderId": client_order_id or "",
             "symbol": symbol,
             "side": side,
+            "type": "MARKET",
             "executedQty": str(quantity),
+            "fills": [
+                {
+                    "qty": str(quantity),
+                    "price": str(self._price),
+                    "commission": "0",
+                    "commissionAsset": "BTC",
+                }
+            ],
             "avgPrice": str(self._price),
             "status": "FILLED",
             "reduceOnly": reduce_only,
@@ -548,6 +557,7 @@ def test_open_position_from_decision_live_sets_dry_run_false(tmp_path: Path) -> 
 
 def test_apply_open_order_infers_filled_status_from_execution() -> None:
     position = _make_position("LONG", entry=100.0)
+    position.market_type = "futures"
     position.dry_run = False
     position.open_client_order_id = bot_client_order_id(position.id, "open")
 
@@ -575,6 +585,18 @@ def test_apply_open_order_rescales_modeled_entry_fee_to_exchange_fill() -> None:
         {
             "executedQty": "0.05",
             "avgPrice": "110",
+            "symbol": position.symbol,
+            "side": "BUY",
+            "type": "MARKET",
+            "status": "FILLED",
+            "fills": [
+                {
+                    "qty": "0.05",
+                    "price": "110",
+                    "commission": "0",
+                    "commissionAsset": "BTC",
+                }
+            ],
         },
     )
 

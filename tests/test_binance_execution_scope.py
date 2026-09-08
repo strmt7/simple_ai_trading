@@ -305,6 +305,14 @@ def test_full_signed_operation_preserves_scope_through_all_requests(
                 "avgPrice": "50000",
                 "orderId": "123",
                 "clientOrderId": "sait-o-scopeone",
+                "fills": [
+                    {
+                        "qty": "0.001",
+                        "price": "50000",
+                        "commission": "0",
+                        "commissionAsset": "BTC",
+                    }
+                ],
                 "origQty": "0.001",
                 "type": "MARKET",
                 "positionSide": "BOTH",

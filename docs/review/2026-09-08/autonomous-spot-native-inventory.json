@@ -1,0 +1,224 @@
+{
+  "schema_version": "autonomous-spot-native-inventory-review-v1",
+  "baseline_git_checkpoint": "317c1a317fef0d7afecd1a5e310bf224b001f7f7",
+  "scope": "Active first-response Spot net inventory with original gross intent preservation; not full native cash accounting or terminal recovery application.",
+  "reproduction": {
+    "network_requests": 0,
+    "method": "Execute the baseline _apply_open_order AST from Git HEAD with current unchanged acknowledgement helpers and a synthetic complete BUY receipt.",
+    "gross_buy_BTC": "1",
+    "base_commission_BTC": "0.001",
+    "baseline_recorded_sellable_BTC": "1",
+    "actual_received_BTC": "0.999",
+    "patched_recorded_sellable_BTC": "0.999"
+  },
+  "implementation": {
+    "metadata": [
+      "spot_gross_entry_quantity",
+      "spot_entry_base_commission"
+    ],
+    "new_spot_open": "Only exact FILLED original gross quantity plus complete native commissions can release the opening intent. Active qty is net base received. Partial or missing native evidence leaves UNKNOWN without applying a guessed lot.",
+    "legacy": "Empty receipt fields are omitted from canonical request templates to preserve old opening and nested closing request bytes. Legacy lots receive no invented commission history.",
+    "close": "Retain original receipt metadata, submit remaining net quantity, validate eight-decimal float-wire representability, and subtract native quantities with a private 128-digit Decimal context. Do not drop a nonzero native remainder under the old float tolerance.",
+    "modeled_fees": "Entry fee estimate remains based on gross traded notional. Quote/BNB valuation and full native PnL are not implemented.",
+    "network_market_requests": 0,
+    "account_requests": 0,
+    "orders_executed": 0,
+    "credentials_used": false,
+    "protected_capture_touched": false,
+    "historical_results_modified": false
+  },
+  "verification": {
+    "total_distinct_passed": 744,
+    "new_cases": 60,
+    "stages": [
+      {
+        "suite": "11 affected execution/position test files",
+        "collected": 620,
+        "passed_initially": 618,
+        "fixture_failures": 2,
+        "focused_corrected_cases_passed": 2
+      },
+      {
+        "suite": "two additional native interruption and close-wire cases",
+        "passed": 2
+      },
+      {
+        "suite": "native opening observation, execution scope, position mutation and reconciliation",
+        "collected": 122,
+        "passed_initially": 121,
+        "fixture_failures": 1,
+        "focused_corrected_cases_passed": 1
+      }
+    ],
+    "notes": "Staged distinct passing coverage, not a single all-green 744-case run. Initial JUnit files intentionally retain their fixture failures; later focused reruns passed. Existing fakes now explicitly provide native zero commissions, and an unfilled-order fixture has no fills. Missing evidence remains a rejection in production. Final whitespace-only edits were checked for AST equivalence.",
+    "junit_records": [
+      {
+        "path": ".pytest_cache/autonomous-native-inventory.xml",
+        "sha256": "127ac6d4c83d6b8e7068c4cb3d2cb465bdfea86de993afce2fb3c07a44d90ad5"
+      },
+      {
+        "path": ".pytest_cache/native-inventory-compatibility.xml",
+        "sha256": "6b5a0b777e3b1c589b2f7b0e581e4f7233677d18f98b4dc00d06595d52dab622"
+      }
+    ],
+    "ruff": "9 changed Python files pass; edited hunks in legacy BOM files match Ruff without unrelated formatting."
+  },
+  "source_hash_convention": "UTF-8 bytes with CRLF normalized to LF, preserving BOM. Bindings identify complete file revisions; only listed boundaries and changed dataclass fields are claimed reviewed, not the whole repository.",
+  "source_bindings": [
+    {
+      "path": "src/simple_ai_trading/autonomous.py",
+      "sha256": "7d064b14f27c5a052c3428606c533f817b6629e5d5d41b466e0fd46d16abad40"
+    },
+    {
+      "path": "src/simple_ai_trading/binance_open_intents.py",
+      "sha256": "d20e5b4d95b2a2d36655d280ca3b4a09be545cad9756b2feb77a9e5bda1b0e64"
+    },
+    {
+      "path": "src/simple_ai_trading/binance_spot_receipts.py",
+      "sha256": "4c0ee7c05df80f3642ea043c963841ff87cae6b1bebfd89614a27a8245475945"
+    },
+    {
+      "path": "src/simple_ai_trading/positions.py",
+      "sha256": "0b3c919b6651aa4c12162a2db26f758670f9a9a39e417a94fad3e0d396de0622"
+    },
+    {
+      "path": "tests/test_autonomous.py",
+      "sha256": "232b1608b8850a965af0997698bd360a660901db25473a4f74d0765eb4e1f3cb"
+    },
+    {
+      "path": "tests/test_autonomous_spot_inventory.py",
+      "sha256": "fde1df1171f6b28f5d38de3b898ed15475fdd796137fe3a98bad10211d9412d8"
+    },
+    {
+      "path": "tests/test_binance_open_intents.py",
+      "sha256": "dc4ef26d5807e347d1e452e2db5dcbbe5d191caba573337aa2c18620448fcd7a"
+    },
+    {
+      "path": "tests/test_binance_order_responses.py",
+      "sha256": "2942cf2a47fedaa51fc8c5e573ba9b8d5b08d72e2356c595d4b8e97d609e55bb"
+    },
+    {
+      "path": "tests/test_binance_execution_scope.py",
+      "sha256": "79e38c30cd7e343c16f5cfdbb490da4340f21479041a5929049b4aaac0e4333a"
+    }
+  ],
+  "reviewed_boundaries": [
+    {
+      "path": "src/simple_ai_trading/autonomous.py",
+      "function": "_close_to_trade",
+      "start": 446,
+      "end": 484
+    },
+    {
+      "path": "src/simple_ai_trading/autonomous.py",
+      "function": "_apply_open_order",
+      "start": 550,
+      "end": 605
+    },
+    {
+      "path": "src/simple_ai_trading/autonomous.py",
+      "function": "_submit_durable_open_position",
+      "start": 715,
+      "end": 729
+    },
+    {
+      "path": "src/simple_ai_trading/autonomous.py",
+      "function": "_submit_close_position",
+      "start": 732,
+      "end": 802
+    },
+    {
+      "path": "src/simple_ai_trading/autonomous.py",
+      "function": "_submit_durable_close_position",
+      "start": 805,
+      "end": 845
+    },
+    {
+      "path": "src/simple_ai_trading/binance_open_intents.py",
+      "function": "_request",
+      "start": 99,
+      "end": 150
+    },
+    {
+      "path": "src/simple_ai_trading/binance_open_intents.py",
+      "function": "validate_result",
+      "start": 245,
+      "end": 294
+    },
+    {
+      "path": "src/simple_ai_trading/binance_spot_receipts.py",
+      "function": "exact_spot_wire_quantity",
+      "start": 15,
+      "end": 20
+    },
+    {
+      "path": "src/simple_ai_trading/binance_spot_receipts.py",
+      "function": "native_spot_entry_net",
+      "start": 23,
+      "end": 56
+    },
+    {
+      "path": "src/simple_ai_trading/binance_spot_receipts.py",
+      "function": "spot_buy_received_quantity",
+      "start": 59,
+      "end": 101
+    },
+    {
+      "path": "src/simple_ai_trading/positions.py",
+      "function": "record_open",
+      "start": 374,
+      "end": 391
+    },
+    {
+      "path": "src/simple_ai_trading/positions.py",
+      "function": "_record_close_pair",
+      "start": 398,
+      "end": 431
+    },
+    {
+      "path": "src/simple_ai_trading/positions.py",
+      "function": "record_close_result",
+      "start": 433,
+      "end": 488
+    },
+    {
+      "path": "src/simple_ai_trading/positions.py",
+      "function": "_valid_open_entry",
+      "start": 524,
+      "end": 527
+    },
+    {
+      "path": "src/simple_ai_trading/positions.py",
+      "function": "_valid_closed_entry",
+      "start": 530,
+      "end": 533
+    },
+    {
+      "path": "src/simple_ai_trading/positions.py",
+      "function": "_valid_native_entry",
+      "start": 536,
+      "end": 548
+    },
+    {
+      "path": "src/simple_ai_trading/positions.py",
+      "function": "_open_entry_integrity_errors",
+      "start": 574,
+      "end": 646
+    }
+  ],
+  "financial_research": {
+    "accepted_mechanism_scopes": 37,
+    "hypotheses": 65,
+    "terminal_observations": 197,
+    "qualified_stable_profitable_edges": 0,
+    "capture_retry_rules_changed": false
+  },
+  "remaining": [
+    "Apply retained terminal opening and closing movements incrementally, atomically and exactly once; the UNKNOWN recovery path remains observation-only.",
+    "Replace modeled PnL with source-bound native quote/base/third-asset fees and cash accounting before profitability or capital-protection qualification.",
+    "Qualify current account balances, policy/process ownership and explicit rearm; no legacy lot auto-migration or inferred account ownership.",
+    "Direct CLI write-ahead recovery, sell-then-buy cash budgeting and independent process supervision remain unfinished.",
+    "Full source review, exhaustive final bug hunting and enterprise release qualification remain open."
+  ],
+  "result_sha256": "59b91cbbf3052773480c946cfd7c9743953315a698e68f533932dd102bdc9cd0"
+}

@@ -119,6 +119,11 @@ class BinanceOpenIntentJournal:
             or position.qty <= 0
         ):
             raise OpenIntentError("opening intent identity or quantity is invalid")
+        template = asdict(position)
+        # Empty new receipt fields must not change old pending request bytes.
+        for field in ("spot_gross_entry_quantity", "spot_entry_base_commission"):
+            if template.get(field) == "":
+                template.pop(field)
         payload = {
             "position_id": position.id,
             "client_id": client_id,
@@ -128,7 +133,7 @@ class BinanceOpenIntentJournal:
             "quantity": position.qty,
             # Retain the original risk/ownership template for exact recovery;
             # OpenPosition has no account credentials or signed-request fields.
-            "position_template": asdict(position),
+            "position_template": template,
         }
         if scope is not None:
             if (
@@ -259,11 +264,31 @@ class BinanceOpenIntentJournal:
             raise OpenIntentError("opening fill remains unresolved")
         # Match the adapter's eight-decimal transmitted quantity, allowing only
         # floating-point aggregation noise rather than an unfilled remainder.
+        from decimal import Decimal
+
+        from .binance_spot_receipts import native_spot_entry_net
+
+        net = native_spot_entry_net(recorded)
+        comparison_qty = recorded.qty
+        if net is not None:
+            if Decimal(str(recorded.qty)) != net:
+                raise OpenIntentError(
+                    "new spot fill must retain all received inventory"
+                )
+            if (
+                Decimal(recorded.spot_gross_entry_quantity)
+                != Decimal(f"{requested.qty:.8f}")
+                or recorded.exchange_status != "FILLED"
+            ):
+                raise OpenIntentError(
+                    "opening gross fill quantity differs from its intent"
+                )
+            return
         transmitted_qty = float(f"{requested.qty:.8f}")
         quantity_matches = math.isclose(
-            recorded.qty, transmitted_qty, rel_tol=1e-12, abs_tol=1e-12
+            comparison_qty, transmitted_qty, rel_tol=1e-12, abs_tol=1e-12
         )
-        if (recorded.qty > transmitted_qty and not quantity_matches) or (
+        if (comparison_qty > transmitted_qty and not quantity_matches) or (
             recorded.exchange_status.upper() == "FILLED" and not quantity_matches
         ):
             raise OpenIntentError("opening fill quantity differs from its intent")

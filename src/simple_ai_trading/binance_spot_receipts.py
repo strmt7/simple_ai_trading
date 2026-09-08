@@ -4,11 +4,56 @@ from __future__ import annotations
 
 from collections.abc import Mapping
 from decimal import Decimal, localcontext
+import math
 
 from .assets import SUPPORTED_MAJOR_BASE_ASSETS, SUPPORTED_MAJOR_QUOTE_ASSETS
 from .binance_acknowledgements import acknowledged_fill
 from .binance_open_intents import OpenIntentError
 from .binance_terminal_fills import _decimal
+
+
+def exact_spot_wire_quantity(value: object) -> Decimal:
+    """Reject quantities the current eight-decimal float adapter cannot transmit exactly."""
+    quantity = _decimal(format(value, "f") if isinstance(value, Decimal) else value)
+    if quantity <= 0 or Decimal(f"{float(quantity):.8f}") != quantity:
+        raise OpenIntentError("native spot quantity cannot be represented on the wire")
+    return quantity
+
+
+def native_spot_entry_net(position: object) -> Decimal | None:
+    """Validate optional original gross/base-fee evidence without inventing legacy proof."""
+    gross_text = getattr(position, "spot_gross_entry_quantity", "")
+    fee_text = getattr(position, "spot_entry_base_commission", "")
+    if gross_text == "" and fee_text == "":
+        return None
+    quantity = getattr(position, "qty", None)
+    if (
+        not isinstance(quantity, (int, float))
+        or isinstance(quantity, bool)
+        or not math.isfinite(quantity)
+        or not isinstance(gross_text, str)
+        or not isinstance(fee_text, str)
+        or getattr(position, "market_type", None) != "spot"
+        or getattr(position, "side", None) != "LONG"
+        or getattr(position, "dry_run", None) is not False
+        or getattr(position, "symbol", None)
+        not in {
+            base + quote
+            for base in SUPPORTED_MAJOR_BASE_ASSETS
+            for quote in SUPPORTED_MAJOR_QUOTE_ASSETS
+        }
+    ):
+        raise OpenIntentError("native spot entry metadata has inconsistent identity")
+    with localcontext() as context:
+        context.prec = 128
+        gross, fee = _decimal(gross_text), _decimal(fee_text)
+        net = exact_spot_wire_quantity(gross - fee)
+        remaining = exact_spot_wire_quantity(Decimal(str(quantity)))
+        if gross <= 0 or remaining > net:
+            raise OpenIntentError(
+                "native spot quantity exceeds received entry inventory"
+            )
+        return net
 
 
 def spot_buy_received_quantity(

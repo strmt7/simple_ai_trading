@@ -80,6 +80,8 @@ class OpenPosition:
     ai_review_mode: str = ""
     ai_review_case_id: str = ""
     ai_review_status: str = ""
+    spot_gross_entry_quantity: str = ""
+    spot_entry_base_commission: str = ""
 
     def unrealized_pnl(self, mark_price: float) -> float:
         if self.side == "LONG":
@@ -126,6 +128,8 @@ class ClosedTrade:
     ai_review_mode: str = ""
     ai_review_case_id: str = ""
     ai_review_status: str = ""
+    spot_gross_entry_quantity: str = ""
+    spot_entry_base_commission: str = ""
 
 
 _OPEN_REQUIRED_FIELDS = frozenset(
@@ -171,6 +175,8 @@ _OPEN_OPTIONAL_TEXT_FIELDS = frozenset(
         "ai_review_mode",
         "ai_review_case_id",
         "ai_review_status",
+        "spot_gross_entry_quantity",
+        "spot_entry_base_commission",
     }
 )
 _OPEN_REQUIRED_FINITE_FIELDS = frozenset({"qty", "entry_price", "leverage", "notional"})
@@ -366,6 +372,9 @@ class PositionsStore:
         ]
 
     def record_open(self, position: OpenPosition) -> OpenPosition:
+        from .binance_spot_receipts import native_spot_entry_net
+
+        native_spot_entry_net(position)
         with position_transaction(self.opening_intents, write=True) as transaction:
             self._closed_entries(
                 self._decode(transaction.read(self.ledger_path), strict=True),
@@ -393,6 +402,11 @@ class PositionsStore:
         remaining: OpenPosition | None = None,
         expected: OpenPosition | None = None,
     ) -> None:
+        from .binance_spot_receipts import native_spot_entry_net
+
+        native_spot_entry_net(trade)
+        if remaining is not None:
+            native_spot_entry_net(remaining)
         with position_transaction(self.opening_intents, write=True) as transaction:
             existing = self._closed_entries(
                 self._decode(transaction.read(self.ledger_path), strict=True),
@@ -421,15 +435,44 @@ class PositionsStore:
     ) -> ClosedTrade:
         """Record a close fill while preserving any unfilled open remainder."""
 
+        from decimal import Decimal, localcontext
+
+        from .binance_spot_receipts import native_spot_entry_net
+
+        native_net = native_spot_entry_net(position)
+        if native_net is not None:
+            native_spot_entry_net(trade)
+            if (
+                trade.spot_gross_entry_quantity != position.spot_gross_entry_quantity
+                or trade.spot_entry_base_commission
+                != position.spot_entry_base_commission
+            ):
+                raise ValueError(
+                    "native close lost its original entry quantity evidence"
+                )
+            with localcontext() as context:
+                context.prec = 128
+                native_remainder = Decimal(str(position.qty)) - Decimal(str(trade.qty))
+            if native_remainder < 0:
+                raise ValueError("native close exceeds remaining owned inventory")
         open_qty = max(0.0, float(position.qty))
         close_qty = max(0.0, float(trade.qty))
         tolerance = max(1e-12, open_qty * 1e-8)
-        if open_qty <= 0.0 or close_qty >= open_qty - tolerance:
+        fully_closed = (
+            native_remainder == 0
+            if native_net is not None
+            else open_qty <= 0.0 or close_qty >= open_qty - tolerance
+        )
+        if fully_closed:
             self._record_close_pair(trade, expected=position)
             write_learning_feedback(self)
             return trade
 
-        remaining_qty = max(0.0, open_qty - close_qty)
+        remaining_qty = (
+            float(native_remainder)
+            if native_net is not None
+            else max(0.0, open_qty - close_qty)
+        )
         remaining = replace(
             position,
             qty=remaining_qty,
@@ -479,11 +522,30 @@ class PositionsStore:
 
     @staticmethod
     def _valid_open_entry(entry: dict[str, Any]) -> bool:
-        return _OPEN_REQUIRED_FIELDS.issubset(entry.keys())
+        if not _OPEN_REQUIRED_FIELDS.issubset(entry.keys()):
+            return False
+        return PositionsStore._valid_native_entry(entry, OpenPosition)
 
     @staticmethod
     def _valid_closed_entry(entry: dict[str, Any]) -> bool:
-        return _CLOSED_REQUIRED_FIELDS.issubset(entry.keys())
+        if not _CLOSED_REQUIRED_FIELDS.issubset(entry.keys()):
+            return False
+        return PositionsStore._valid_native_entry(entry, ClosedTrade)
+
+    @staticmethod
+    def _valid_native_entry(entry: dict[str, Any], record_type: type) -> bool:
+        from .binance_spot_receipts import native_spot_entry_net
+
+        if not any(
+            entry.get(key, "") != ""
+            for key in ("spot_gross_entry_quantity", "spot_entry_base_commission")
+        ):
+            return True
+        try:
+            native_spot_entry_net(record_type(**entry))
+        except (TypeError, ValueError):
+            return False
+        return True
 
     @classmethod
     def _open_file_integrity_errors(cls, path: Path) -> tuple[str, ...]:
@@ -574,8 +636,10 @@ class PositionsStore:
             errors.append(f"open_positions_entry_{index}_non_boolean_field=dry_run")
         if not errors:
             try:
-                OpenPosition(**entry)
-            except TypeError as exc:
+                from .binance_spot_receipts import native_spot_entry_net
+
+                native_spot_entry_net(OpenPosition(**entry))
+            except (TypeError, ValueError) as exc:
                 errors.append(
                     f"open_positions_entry_{index}_constructor_failed:{exc.__class__.__name__}"
                 )
