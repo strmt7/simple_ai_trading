@@ -2865,6 +2865,14 @@
         {
           "path": "docs/review/2026-09-05/nyc-sep6-frontier/result.json",
           "result_sha256": "36c17d54a1ee45ac21d962b542b74f254b05c60e4f7f451bd047b130f1d02b56"
+        },
+        {
+          "path": "docs/review/2026-09-08/nyc-sep9-frontier/contract.json",
+          "result_sha256": "0826157dd5f99aa0e8e1a5a468a28c55f4a5c14d1863405f73f75d490308ca46"
+        },
+        {
+          "path": "docs/review/2026-09-08/nyc-sep9-frontier/result.json",
+          "result_sha256": "1b6d1f9454c36e908f4d36ede8f3c25864949d0911b039c06ec4ff666d582c45"
         }
       ],
       "corner_graph_delta_status": "a_distinct_frozen_zero_network_retained_audit_exhausted_1820_corner_count_monotone_additive_half_additive_team_and_adjacent_interval_parity_superhedges_across_7_complete_23_market_events_all_1820_had_complete_side_specific_rejection_prices_zero_were_strictly_below_their_one_pUSD_floor_and_the_best_Over_12_5_plus_Under_13_5_cost_1_1_pUSD_the_v1_literal_48_hour_fallback_gate_and_v2_strict_zip_implementation_failure_are_preserved_before_the_v3_representation_and_mechanical_only_correction_no_current_or_historical_book_fee_account_credential_order_fund_or_protected_request_was_justified",
@@ -2899,6 +2907,7 @@
       "mechanism": "polymarket_cross_market_exact_multi_outcome_subset_equivalence",
       "next_action": "do_not_paginate_narrow_refresh_alias_or_repeat_the_consumed_post_2026_08_30T16_07_16_021321Z_created_event_delta_do_not_repeat_split_narrow_paginate_reorder_or_alias_the_consumed_48_condition_historical_trade_query_do_not_repeat_reprice_or_book_capture_the_7_relation_retained_August_26_holding_yield_market_graph_do_not_repeat_the_consumed_September_2_September_4_September_6_retained_August_26_and_31_interval_Los_Angeles_Galaxy_New_England_Revolution_or_broader_retained_soccer_populations_including_the_1428_relation_cross_family_exact_score_graph_do_not_adaptively_fill_the_108_missing_soccer_price_rows_never_use_Gamma_outcomePrices_alone_to_authorize_a_book_advance_other_ranked_triggers_reopen_only_for_a_future_distinct_nonconsumed_exact_pair_or_interval_partition_with_complete_rules_and_a_side_specific_rejection_proxy_strictly_below_its_floor_then_freeze_one_prospective_exact_live_CLOB_package_capture_and_require_strict_positive_fresh_synchronized_exact_depth_fee_and_resolution_risk_economics_before_any_onchain_or_account_request_do_not_repeat_refresh_reprice_or_book_capture_the_consumed_Qwen_Flash_3_9_October_31_December_31_ladder_after_its_exact_Gamma_sum_was_1_02_pUSD_for_a_one_pUSD_floor_do_not_repeat_refresh_alias_omit_a_row_or_book_capture_the_consumed_2026_joint_Senate_House_to_exact_Senate_50_51_52_projection_after_its_one_tick_after_fee_floor_was_negative_do_not_repeat_refresh_alias_omit_the_hidden_Other_A_B_C_D_or_E_OR_06_House_winner_siblings_or_book_capture_after_the_complete_eight_market_YES_sum_was_6_971_pUSD_do_not_repeat_refresh_alias_omit_or_party_map_the_53_inactive_or_one_closed_Next_Senate_Majority_Leader_siblings_or_book_capture_after_the_complete_returned_YES_sum_was_53_931_pUSD_do_not_repeat_refresh_alias_reprice_or_book_capture_the_consumed_Gemini_Pro_October_31_to_November_1_interval_deadline_pair_after_its_conservative_metadata_sum_equaled_the_one_pUSD_floor_do_not_refetch_or_request_the_missing_Kharg_September_market_or_books_for_the_consumed_island_OR_family_after_every_single_implication_cost_1_018_pUSD_and_the_complete_replication_lower_bound_cost_1_041_pUSD_before_the_Kharg_leg_do_not_repeat_refetch_reprice_book_capture_or_fill_the_165_missing_prices_for_the_exact_consumed_three_event_646_pair_fixed_NegRisk_NO_plus_NO_population_after_zero_complete_pairs_were_strictly_subfloor",
       "priority_rank": 31,
+      "nyc_september9_frontier_status": "One prospectively selected NYC September 9 Gamma GET returned event 981253 and all 11 expected markets. Every YES and NO side was price-complete. All 28 frontier rows failed the gross gate; the best metadata binary straddle cost 1.001 pUSD per share, losing 0.005 pUSD at five shares. The best finite fee-and-one-tick result was negative 0.04773 pUSD. Complete YES acquisition cost 1.093 pUSD per share for a one-pUSD optimistic common-resolution floor. No book, fee endpoint, on-chain, account, credential, order or protected capture. This exact event is terminal under unchanged economics; do not refetch, reprice, alias or book-test it. No edge promoted and no family-wide negative-EV claim.",
       "prohibited_shortcuts": [
         "calling_the_39_6_million_USD_all_strategy_headline_cross_market_subset_profit",
         "admitting_dependency_from_LLM_embedding_topic_date_or_historical_tendency",
@@ -2947,7 +2956,8 @@
         "brute_force_enumerating_or_repricing_the_2148007910_NO_subsets_after_the_exact_sorted_cardinality_frontiers_failed_or_treating_the_post_price_retained_screen_as_prospective_evidence",
         "repeating_refreshing_repricing_or_book_capturing_the_consumed_NYC_September_2_complete_long_only_basis_after_its_best_binary_straddle_cost_1_001_pUSD_and_lost_0_01625_pUSD_after_fees_and_one_adverse_tick_per_leg",
         "retrying_or_book_capturing_the_consumed_NYC_September_5_event_or_calling_its_0_060_pUSD_gross_seven_NO_headroom_profitable_after_0_15394_configured_fees",
-        "retrying_repricing_aliasing_filling_missing_NO_sides_or_book_capturing_the_consumed_NYC_September_6_frontier_after_all_21_price_complete_rows_failed_the_gross_gate"
+        "retrying_repricing_aliasing_filling_missing_NO_sides_or_book_capturing_the_consumed_NYC_September_6_frontier_after_all_21_price_complete_rows_failed_the_gross_gate",
+        "retrying_repricing_aliasing_or_book_capturing_the_consumed_NYC_September_9_frontier_after_all_28_price_complete_rows_failed_the_gross_gate"
       ],
       "retained_holding_yield_delta_status": "the_zero_network_retained_August_26_market_audit_exhausted_7_exact_pairwise_triple_and_nested_threshold_relations_across_4_events_with_side_specific_bestAsk_or_conservative_one_minus_bestBid_rejection_prices_zero_were_strictly_below_their_optimistic_common_rule_floor_and_the_best_Fed_NO_no_change_plus_NO_25_bps_increase_cost_1_01_pUSD_for_a_1_pUSD_floor_no_book_fee_account_credential_order_fund_or_protected_capture_request_was_justified",
       "retry_trigger": "material_price_fee_rule_or_market_change_in_the_resolved_leg_House_family_or_explicit_official_deployment_of_a_new_fixed_NegRisk_event_in_a_source_selected_nonconsumed_series_or_not_before_2026_09_20T00_00_00Z_for_one_separately_frozen_distinct_series_45_window_from_2026_09_22_through_2026_09_28_or_a_distinct_active_accepting_orders_market_pair_with_complete_exact_rules_deterministic_subset_indicator_equality_and_side_specific_rejection_only_ask_economics_strictly_below_the_common_rule_floor_not_already_covered_by_the_specialized_NBA_family_or_a_distinct_rule_complete_joint_projection_to_exact_marginal_family_whose_conservative_side_specific_package_remains_strictly_positive_after_current_fees_and_at_least_one_adverse_tick_per_leg_before_depth_or_a_material_fee_tick_rule_or_market_architecture_change_or_a_distinct_active_BTC_ETH_or_SOL_threshold_ladder_outside_every_consumed_event_with_complete_exact_common_rules_and_at_least_one_rejection_only_side_specific_lower_YES_plus_higher_NO_sum_strictly_below_the_one_pUSD_optimistic_rule_consistent_floor_or_a_distinct_nonconsumed_active_BTC_ETH_or_SOL_range_plus_threshold_pair_with_the_same_exact_source_observation_complete_boundary_and_exceptional_settlement_rules_contemporaneous_frozen_complete_populations_and_at_least_one_rejection_only_side_specific_NO_T_plus_cumulative_upper_range_YES_sum_strictly_below_the_one_pUSD_optimistic_rule_consistent_floor_or_a_distinct_nonconsumed_exactly_aligned_BTC_ETH_or_SOL_interval_partition_with_source_proved_shared_open_close_value_continuity_complete_tie_semantics_and_at_least_one_rejection_only_side_specific_transitive_four_leg_package_strictly_below_its_one_pUSD_floor",
@@ -4390,7 +4400,7 @@
       ]
     }
   ],
-  "result_sha256": "d8ee3a2147dc8c9f568f9236549d509f1c2d172711eeb7de31128298b5e21652",
+  "result_sha256": "64f45e2998af719280461fbac763f6c43c084b39f5cb98f027fd8012f8bbe0a2",
   "schema_version": "structural-edge-priority-registry-v1",
   "terminal_do_not_repeat": [
     {
@@ -5379,8 +5389,13 @@
       "family": "September10_nine_TradFi_funding_changes_no_exact_Polymarket_counterparts_2026_09_08",
       "reason": "September 8 source aff73212559d4951945600e973240c52 announces nine TradFi funding intervals changing 8h to 4h and cap 2% to 1% effective September 10 08:15 UTC. All nine lack exact Polymarket base labels in the complete retained September 8 10:27:29 UTC 67-instrument snapshot. One new source GET, no new inventory or economic requests. Nominal daily cap-sum bound is unchanged at 6%, not expected income. The September 10 clock alone is not a counterpart or a funding-study trigger. Independently observed exact counterpart listing or source-proved conversion architecture, or later material exact funding/fee/settlement change. Passage of September 10 alone cannot reopen a missing-counterpart population.",
       "canonical_result_sha256": "f337fd2adc1229725b65182391bc92ee3825c135ca8e274ce59c3f7a98dad641"
+    },
+    {
+      "family": "polymarket_nyc_september9_complete_long_only_frontier",
+      "reason": "One prospectively selected NYC September 9 Gamma GET returned event 981253 and all 11 expected markets. Every YES and NO side was price-complete. All 28 frontier rows failed the gross gate; the best metadata binary straddle cost 1.001 pUSD per share, losing 0.005 pUSD at five shares. The best finite fee-and-one-tick result was negative 0.04773 pUSD. Complete YES acquisition cost 1.093 pUSD per share for a one-pUSD optimistic common-resolution floor. No book, fee endpoint, on-chain, account, credential, order or protected capture. This exact event is terminal under unchanged economics; do not refetch, reprice, alias or book-test it. No edge promoted and no family-wide negative-EV claim.",
+      "canonical_result_sha256": "1b6d1f9454c36e908f4d36ede8f3c25864949d0911b039c06ec4ff666d582c45"
     }
   ],
-  "updated_at_utc": "2026-09-08T11:17:56.820195+00:00",
+  "updated_at_utc": "2026-09-08T12:37:40Z",
   "usage_rule": "advance_the_highest_ranked_hypothesis_whose_retry_trigger_is_satisfied_otherwise_do_not_repeat_a_blocked_or_terminal_screen"
 }

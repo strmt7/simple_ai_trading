@@ -1,0 +1,16 @@
+{
+  "schema_version": "structural-terminal-append-plan-v1",
+  "prior_git_checkpoint": "dafb6b6eebf16b60cf255ffe6bbb6ebe491690b2",
+  "prior_registry_sha256": "d8ee3a2147dc8c9f568f9236549d509f1c2d172711eeb7de31128298b5e21652",
+  "prior_audit_sha256": "feaff849c63918d90e60adae15971485cf5a19ed78fa72c772e4eeca208b56d8",
+  "prior_terminal_count": 195,
+  "priority_rank": 31,
+  "terminal_family": "polymarket_nyc_september9_complete_long_only_frontier",
+  "status_field": "nyc_september9_frontier_status",
+  "audit_routing_field": "polymarket_nyc_september9_frontier",
+  "contract_sha256": "0826157dd5f99aa0e8e1a5a468a28c55f4a5c14d1863405f73f75d490308ca46",
+  "result_sha256": "1b6d1f9454c36e908f4d36ede8f3c25864949d0911b039c06ec4ff666d582c45",
+  "summary": "One prospectively selected NYC September 9 Gamma GET returned event 981253 and all 11 expected markets. Every YES and NO side was price-complete. All 28 frontier rows failed the gross gate; the best metadata binary straddle cost 1.001 pUSD per share, losing 0.005 pUSD at five shares. The best finite fee-and-one-tick result was negative 0.04773 pUSD. Complete YES acquisition cost 1.093 pUSD per share for a one-pUSD optimistic common-resolution floor. No book, fee endpoint, on-chain, account, credential, order or protected capture. This exact event is terminal under unchanged economics; do not refetch, reprice, alias or book-test it. No edge promoted and no family-wide negative-EV claim.",
+  "operation": "Verify both starting self-hashes, prior count, exact contract/result self-hashes and zero source candidates. Append contract/result bindings to rank 31, set its new status field, append exactly one terminal observation and shortcut prohibition, update the audit registry binding and routing field, then recompute both canonical self-hashes. Preserve all old fields and results; previous mutable ledger bytes remain at the exact Git checkpoint rather than duplicating them.",
+  "prohibited_shortcut": "retrying_repricing_aliasing_or_book_capturing_the_consumed_NYC_September_9_frontier_after_all_28_price_complete_rows_failed_the_gross_gate"
+}

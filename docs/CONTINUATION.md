@@ -1,5 +1,16 @@
 # Continue Development
 
+Latest financial R&D: [September 9 NYC partition](review/2026-09-08/nyc-sep9-frontier/review.md).
+One prospectively frozen Gamma GET returned event 981253 and all 11 expected
+markets. Every YES and NO side was price-complete; all 28 frontier rows failed
+before fees. Best gross floor at five shares was -0.005 pUSD; best finite
+fee-and-one-tick floor was -0.04773 pUSD. No books, fee endpoints, on-chain,
+accounts, credentials, orders or protected captures. Do not refetch, reprice,
+alias or depth-test this exact event under unchanged economics. Rank 31's
+literal distinct-series and material-change rules remain; no same-session
+sibling/date hunt. MRNA's September 8 13:35 UTC gate was still future at this
+screen; recheck the clock and its complete rank-12 row before any later access.
+
 Latest demonstrated risk repair: [acknowledgement consistency](review/2026-09-08/binance-acknowledgement-consistency.md).
 At baseline 353b5580, a close reporting executedQty=0.5 with fill rows totaling
 1.0 removed the whole 1.0 lot and released the entry block. The shared new
@@ -11,7 +22,8 @@ application because its first-response accounting was not yet trustworthy.
 Next: native-fee incremental inventory application, durable-gateway/submitted-
 identity coverage for direct CLI execution, and explicit account/policy/process
 rearm. No real account, credential, ledger or protected capture was accessed.
-Do not repeat unchanged suites; research counts/gates remain unchanged.
+Do not repeat unchanged execution suites; research counts below include the
+later September 9 NYC screen, while its other retry gates remain unchanged.
 
 Latest recovery integration: [terminal closing observations](review/2026-09-08/binance-terminal-closing-evidence.md).
 An exact pending close now has a scoped terminal order/fill collector in the
@@ -215,11 +227,11 @@ after the unchanged 33.5-bip stress. Read
 no depth, funding, fees, accounts, credentials, orders or protected captures.
 Both stages and all 70 contracts are consumed; include them in future unions.
 The exact rank-47 retry trigger and every prior restriction remain unchanged.
-Current counts after the September 10 funding-change source gate: 37 accepted mechanism scopes, 65 hypotheses, 195 terminal
+Current counts after the September 9 NYC partition screen: 37 accepted mechanism scopes, 65 hypotheses, 196 terminal
 observations, zero fully qualified stable profitable edges. Registry/audit
 self-hashes are
-`d8ee3a2147dc8c9f568f9236549d509f1c2d172711eeb7de31128298b5e21652`
-and `feaff849c63918d90e60adae15971485cf5a19ed78fa72c772e4eeca208b56d8`.
+`64f45e2998af719280461fbac763f6c43c084b39f5cb98f027fd8012f8bbe0a2`
+and `a8fd94da066f8685d1ab0c47b69cc583ebbd9dc85f7d50d61931f68b7f9e9269`.
 Lower checkpoint counts and hashes are historical. No full-repo completion
 or family-wide impossibility claim follows from this finite screen.
 
