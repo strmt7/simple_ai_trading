@@ -3497,12 +3497,16 @@
         {
           "path": "docs/review/2026-09-08/hk-listing-match/result.json",
           "result_sha256": "51c451164a07004c35e7def5dca8d7ba4b2a3866a25362af40e9975262312f94"
+        },
+        {
+          "path": "docs/review/2026-09-08/tradfi-september10-change/result.json",
+          "result_sha256": "f337fd2adc1229725b65182391bc92ee3825c135ca8e274ce59c3f7a98dad641"
         }
       ],
-      "current_status": "The original CXMT September 4-6 first-twelve-settlement trigger is consumed. Two public GETs on September 8 retained 48 Polymarket hourly and 12 regular Binance four-hour observations. Fixed long Polymarket / short Binance gross carry was negative in all 12 observations. Training/validation/test gross was -4.3037/-5.6561/-4.1478 bips; all roles failed execution, capital and quote-stress hurdles. This is an equal-notional funding-rate proxy, not realized fixed-base PnL or a family-wide impossibility claim. Prior top-five and HK0625/SHEIN studies remain consumed. No qualified edge. The separate September 7 BYDUSDT and HK0992USDT listing population was source-bound on September 8: no exact BYD or HK0992 counterpart among 67 returned Polymarket instruments. Both siblings stop before funding or prices; HK0992 is quanto, not a linear hedge.",
+      "current_status": "The original CXMT September 4-6 first-twelve-settlement trigger is consumed. Two public GETs on September 8 retained 48 Polymarket hourly and 12 regular Binance four-hour observations. Fixed long Polymarket / short Binance gross carry was negative in all 12 observations. Training/validation/test gross was -4.3037/-5.6561/-4.1478 bips; all roles failed execution, capital and quote-stress hurdles. This is an equal-notional funding-rate proxy, not realized fixed-base PnL or a family-wide impossibility claim. Prior top-five and HK0625/SHEIN studies remain consumed. No qualified edge. The separate September 7 BYDUSDT and HK0992USDT listing population was source-bound on September 8: no exact BYD or HK0992 counterpart among 67 returned Polymarket instruments. Both siblings stop before funding or prices; HK0992 is quanto, not a linear hedge. September 8 source aff73212559d4951945600e973240c52 announces nine TradFi funding intervals changing 8h to 4h and cap 2% to 1% effective September 10 08:15 UTC. All nine lack exact Polymarket base labels in the complete retained September 8 10:27:29 UTC 67-instrument snapshot. One new source GET, no new inventory or economic requests. Nominal daily cap-sum bound is unchanged at 6%, not expected income. The September 10 clock alone is not a counterpart or a funding-study trigger.",
       "market_direction_forecast_required": false,
       "mechanism": "polymarket_binance_TradFi_perpetual_fixed_orientation_cross_venue_funding_spread",
-      "next_action": "Do not refetch, reverse orientation, extend the September 4-6 window, reprice or request books/accounts for this rejected sample. Reopen only after the exact later material-change trigger with a separately frozen causal study; preserve all historical samples, protected data and authority gates. Material independently observed exact Polymarket counterpart listing with matching share class, unit and settlement, or a separately source-proved conversion architecture. Do not repeat this inventory, request funding or prices, or use a similar ticker as a hedge.",
+      "next_action": "Do not refetch, reverse orientation, extend the September 4-6 window, reprice or request books/accounts for this rejected sample. Reopen only after the exact later material-change trigger with a separately frozen causal study; preserve all historical samples, protected data and authority gates. Material independently observed exact Polymarket counterpart listing with matching share class, unit and settlement, or a separately source-proved conversion architecture. Do not repeat this inventory, request funding or prices, or use a similar ticker as a hedge. For the nine September 10 contracts: Independently observed exact counterpart listing or source-proved conversion architecture, or later material exact funding/fee/settlement change. Passage of September 10 alone cannot reopen a missing-counterpart population.",
       "priority_rank": 43,
       "prohibited_shortcuts": [
         "selecting_or_inverting_orientation_after_viewing_history",
@@ -3513,7 +3517,7 @@
         "repairing_the_consumed_twelve_row_gate_into_a_promotion_from_eleven_rows",
         "calling_gross_funding_spread_an_edge_or_deployment_ready"
       ],
-      "retry_trigger": "A later material Polymarket or Binance TradFi perpetual funding cash-flow, fee, market-session, instrument-conversion or execution-architecture change; the September 6 time gate has been consumed and is not a rolling-window trigger. For the exact BYD/HK0992 no-match population: Material independently observed exact Polymarket counterpart listing with matching share class, unit and settlement, or a separately source-proved conversion architecture. Do not repeat this inventory, request funding or prices, or use a similar ticker as a hedge.",
+      "retry_trigger": "A later material Polymarket or Binance TradFi perpetual funding cash-flow, fee, market-session, instrument-conversion or execution-architecture change; the September 6 time gate has been consumed and is not a rolling-window trigger. For the exact BYD/HK0992 no-match population: Material independently observed exact Polymarket counterpart listing with matching share class, unit and settlement, or a separately source-proved conversion architecture. Do not repeat this inventory, request funding or prices, or use a similar ticker as a hedge. For the nine September 10 contracts: Independently observed exact counterpart listing or source-proved conversion architecture, or later material exact funding/fee/settlement change. Passage of September 10 alone cannot reopen a missing-counterpart population.",
       "venue_scope": "Polymarket_Perps_and_Binance_USDT_margined_TradFi_perpetuals_with_exact_non_crypto_base_asset_matches"
     },
     {
@@ -4386,7 +4390,7 @@
       ]
     }
   ],
-  "result_sha256": "9ad0995e03bfc9d42936e713b3bd7ed89664cc1cdd697cb3f1a27d05fd8f6cd8",
+  "result_sha256": "d8ee3a2147dc8c9f568f9236549d509f1c2d172711eeb7de31128298b5e21652",
   "schema_version": "structural-edge-priority-registry-v1",
   "terminal_do_not_repeat": [
     {
@@ -5370,8 +5374,13 @@
       "family": "binance_September7_BYD_HK0992_no_exact_Polymarket_counterpart_2026_09_08",
       "reason": "The original CXMT September 4-6 first-twelve-settlement trigger is consumed. Two public GETs on September 8 retained 48 Polymarket hourly and 12 regular Binance four-hour observations. Fixed long Polymarket / short Binance gross carry was negative in all 12 observations. Training/validation/test gross was -4.3037/-5.6561/-4.1478 bips; all roles failed execution, capital and quote-stress hurdles. This is an equal-notional funding-rate proxy, not realized fixed-base PnL or a family-wide impossibility claim. Prior top-five and HK0625/SHEIN studies remain consumed. No qualified edge. The separate September 7 BYDUSDT and HK0992USDT listing population was source-bound on September 8: no exact BYD or HK0992 counterpart among 67 returned Polymarket instruments. Both siblings stop before funding or prices; HK0992 is quanto, not a linear hedge. Material independently observed exact Polymarket counterpart listing with matching share class, unit and settlement, or a separately source-proved conversion architecture. Do not repeat this inventory, request funding or prices, or use a similar ticker as a hedge.",
       "canonical_result_sha256": "51c451164a07004c35e7def5dca8d7ba4b2a3866a25362af40e9975262312f94"
+    },
+    {
+      "family": "September10_nine_TradFi_funding_changes_no_exact_Polymarket_counterparts_2026_09_08",
+      "reason": "September 8 source aff73212559d4951945600e973240c52 announces nine TradFi funding intervals changing 8h to 4h and cap 2% to 1% effective September 10 08:15 UTC. All nine lack exact Polymarket base labels in the complete retained September 8 10:27:29 UTC 67-instrument snapshot. One new source GET, no new inventory or economic requests. Nominal daily cap-sum bound is unchanged at 6%, not expected income. The September 10 clock alone is not a counterpart or a funding-study trigger. Independently observed exact counterpart listing or source-proved conversion architecture, or later material exact funding/fee/settlement change. Passage of September 10 alone cannot reopen a missing-counterpart population.",
+      "canonical_result_sha256": "f337fd2adc1229725b65182391bc92ee3825c135ca8e274ce59c3f7a98dad641"
     }
   ],
-  "updated_at_utc": "2026-09-08T10:29:11.693475+00:00",
+  "updated_at_utc": "2026-09-08T11:17:56.820195+00:00",
   "usage_rule": "advance_the_highest_ranked_hypothesis_whose_retry_trigger_is_satisfied_otherwise_do_not_repeat_a_blocked_or_terminal_screen"
 }

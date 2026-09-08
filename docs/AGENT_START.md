@@ -10,6 +10,14 @@ Scope blockers to their branch; a fresh user resumption resets the blocked audit
 
 ## Current Truth
 
+The [September 10 funding-change gate](review/2026-09-08/tradfi-september10-change/review.md)
+verified one new official notice covering nine TradFi contracts, then reused
+today's retained 67-instrument Polymarket snapshot: no exact counterpart labels.
+No new inventory, funding or books. The shorter interval and halved cap leave
+the nominal daily cap-sum unchanged; September 10 alone is not a retry trigger.
+Fourteen focused checks pass. Current terminal count is 195; mechanism scopes
+remain 37 and qualified stable profitable edges zero. Preserve the earlier studies.
+
 The [paired position transaction repair](review/2026-09-08/position-paired-transactions.md)
 now commits recoverable paired replacements through the existing intent DB and
 serializes participating active-store readers/writers. It fixes a reproduced
@@ -31,7 +39,7 @@ small, unqualified same-asset allocation overlay, not a new trading edge.
 The [BYD/Lenovo listing gate](review/2026-09-08/hk-listing-match/review.md)
 found neither exact counterpart among 67 Polymarket instruments and stopped
 before funding or prices. Three public GETs across these two questions; all
-raw bytes and journals retained. Current terminal count is 194; accepted
+raw bytes and journals retained. That checkpoint's terminal count was 194; accepted
 mechanism count remains 37 and qualified stable profitable edges remain zero.
 
 The [position mutation repair](review/2026-09-08/position-mutation-integrity.md)

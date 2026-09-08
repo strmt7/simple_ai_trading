@@ -28,6 +28,7 @@ def _load(path: Path, field: str = "result_sha256") -> dict:
         "usdt-flexible/source-contract.json",
         "hk-listing-match/announcement-contract.json",
         "hk-listing-match/polymarket-instruments-contract.json",
+        "tradfi-september10-change/source-contract.json",
     ],
 )
 def test_source_bytes_chronology_and_journals_reconstruct(relative):
@@ -96,6 +97,81 @@ def test_usdt_bonus_is_capped_conditional_and_not_promoted():
         .replace(b"\r\n", b"\n")
     )
     assert hashlib.sha256(source_bytes).hexdigest() == result["reviewer_sha256"]
+
+
+def test_september10_change_reuses_inventory_without_income_or_access_claim():
+    from tools.review_september10_tradfi_funding_change import review
+
+    result = _load(BASE / "tradfi-september10-change/result.json")
+    reconstructed = review()
+    assert reconstructed == {
+        key: value
+        for key, value in result.items()
+        if key not in {"created_at_utc", "result_sha256"}
+    }
+    analysis, terms = result["analysis"], result["terms"]
+    assert analysis["inventory_count"] == 67
+    assert len(analysis["siblings"]) == 9
+    assert all(not row["exact_label_candidates"] for row in analysis["siblings"])
+    assert not analysis["downstream_requests_authorized"]
+    assert result["new_source_requests"] == 1
+    assert (
+        result["new_inventory_requests"]
+        == result["funding_price_book_account_or_order_requests"]
+        == 0
+    )
+    for prefix in ("prior", "new"):
+        bound = (
+            24
+            / terms[f"{prefix}_interval_hours"]
+            * float(terms[f"{prefix}_cap_percent"])
+        )
+        assert bound == 6
+    assert not terms["bound_is_expected_or_realized_income"]
+    assert not result["accepted_edge"] and not result["deployment_ready"]
+
+
+@pytest.mark.parametrize(
+    "change", ["duplicate", "boolean_id", "missing_quote", "empty"]
+)
+def test_funding_change_inventory_rejects_ambiguous_identity(change):
+    from tools.review_september10_tradfi_funding_change import counterparts
+
+    row = {
+        "instrument_id": 1,
+        "symbol": "TENCENT-USD",
+        "base_asset": "TENCENT",
+        "quote_asset": "pUSD",
+    }
+    rows = [row]
+    if change == "duplicate":
+        rows.append(dict(row))
+    elif change == "boolean_id":
+        row["instrument_id"] = True
+    elif change == "missing_quote":
+        del row["quote_asset"]
+    else:
+        rows = []
+    with pytest.raises(ValueError):
+        counterparts(rows, ["TENCENTUSDT"])
+
+
+def test_matching_funding_label_still_requires_separate_hedge_qualification():
+    from tools.review_september10_tradfi_funding_change import counterparts
+
+    rows = [
+        {
+            "instrument_id": 1,
+            "symbol": "TENCENT-USD",
+            "base_asset": "TENCENT",
+            "quote_asset": "pUSD",
+        }
+    ]
+    result = counterparts(rows, ["TENCENTUSDT", "HK0700USDT"])
+    assert result["status"] == "label_match_requires_separate_qualification"
+    assert result["siblings"][0]["exact_label_candidates"] == rows
+    assert result["siblings"][1]["exact_label_candidates"] == []
+    assert not result["downstream_requests_authorized"] and not result["accepted_edge"]
 
 
 def test_listing_no_match_projection_does_not_authorize_economic_access():

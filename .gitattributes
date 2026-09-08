@@ -197,3 +197,5 @@ docs/review/2026-09-08/usdt-flexible/*.json binary -eol
 docs/review/2026-09-08/usdt-flexible/*.jsonl binary -eol
 docs/review/2026-09-08/hk-listing-match/*.json binary -eol
 docs/review/2026-09-08/hk-listing-match/*.jsonl binary -eol
+docs/review/2026-09-08/tradfi-september10-change/*.json binary -eol
+docs/review/2026-09-08/tradfi-september10-change/*.jsonl binary -eol
