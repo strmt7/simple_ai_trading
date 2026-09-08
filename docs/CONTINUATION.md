@@ -1,5 +1,16 @@
 # Continue Development
 
+Latest financial R&D: [September 10 nine-contract funding change](review/2026-09-08/tradfi-september10-change/review.md).
+One new official-source GET verifies the future 8h-to-4h interval and 2%-to-1%
+cap change. None of the nine exact base labels exists in today's retained
+10:27:29 UTC Polymarket snapshot; no new inventory or economic requests.
+Rank 43 retains every sibling and requires an independent counterpart/conversion
+or later material economic trigger, not September 10 alone. The nominal daily
+cap-sum is unchanged at 6%, not expected income. Fourteen focused checks pass.
+No new Paradex/Backpack window was spent merely because a disjoint sample could
+be named. MRNA remains not-before September 8 at 13:35 UTC. Current hashes below
+include terminal observation 195; zero qualified stable profitable edges.
+
 Latest active-store repair: [paired position transactions](review/2026-09-08/position-paired-transactions.md)
 commits checksummed redo in the existing intent DB before publishing either
 JSON file. Participating reads/writes recover interrupted pairs and serialize;
@@ -159,11 +170,11 @@ after the unchanged 33.5-bip stress. Read
 no depth, funding, fees, accounts, credentials, orders or protected captures.
 Both stages and all 70 contracts are consumed; include them in future unions.
 The exact rank-47 retry trigger and every prior restriction remain unchanged.
-Current counts after the September 8 listing gate: 37 accepted mechanism scopes, 65 hypotheses, 194 terminal
+Current counts after the September 10 funding-change source gate: 37 accepted mechanism scopes, 65 hypotheses, 195 terminal
 observations, zero fully qualified stable profitable edges. Registry/audit
 self-hashes are
-`9ad0995e03bfc9d42936e713b3bd7ed89664cc1cdd697cb3f1a27d05fd8f6cd8`
-and `3885449afe0dbc15b264627c44abdaf7a4dd87fb28e78a3e42ed2193bb8f9586`.
+`d8ee3a2147dc8c9f568f9236549d509f1c2d172711eeb7de31128298b5e21652`
+and `feaff849c63918d90e60adae15971485cf5a19ed78fa72c772e4eeca208b56d8`.
 Lower checkpoint counts and hashes are historical. No full-repo completion
 or family-wide impossibility claim follows from this finite screen.
 

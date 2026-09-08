@@ -1,0 +1,60 @@
+{
+  "schema_version": 1,
+  "contract_path": "docs/review/2026-09-08/tradfi-september10-change/source-contract.json",
+  "request_name": "september10-nine-tradfi-funding-change",
+  "frozen_at_utc": "2026-09-08T11:11:37Z",
+  "request": {
+    "method": "GET",
+    "url": "https://www.binance.com/bapi/composite/v1/public/cms/article/detail/query?articleCode=aff73212559d4951945600e973240c52",
+    "count": 1,
+    "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "response_byte_ceiling": 1048576,
+  "required_utf8_phrases": [
+    "2026-09-10", "MEITUANUSDT", "KUAISHOUUSDT", "GIGADEVUSDT",
+    "POPMARTUSDT", "TENCENTUSDT", "HK1810USDT", "HK0700USDT",
+    "ZHIPUUSDT", "MINIMAXUSDT"
+  ],
+  "transport": {
+    "socket_timeout_seconds": 10,
+    "read_budget_seconds": 30,
+    "redirects": false,
+    "retries": 0,
+    "proxies": false
+  },
+  "outputs": {
+    "raw_path": "docs/review/2026-09-08/tradfi-september10-change/raw.json",
+    "journal_path": "docs/review/2026-09-08/tradfi-september10-change/journal.jsonl",
+    "result_path": "docs/review/2026-09-08/tradfi-september10-change/source-result.json"
+  },
+  "authority": {
+    "account_requests": 0, "credentials_used": false, "funds_used": false,
+    "orders_or_transactions": 0, "protected_capture_touched": false,
+    "public_unauthenticated_read_only_requests": 1, "signed_requests": 0,
+    "trading_authority": false
+  },
+  "implementations": [
+    {"path": "tools/capture_public_source_bounded.py", "sha256": "760339a7602abfa9eb97f3f1cca0ef79191b07ff5f5aa42515f30f191f9888fc"},
+    {"path": "tools/capture_public_source_contract.py", "sha256": "9dbb14651455abade755fe96091b9eaafe1153f56a1baad4cd60b1a888d41b8c"},
+    {"path": "tools/adjudicate_polymarket_exact_mlb_monotone_prefilter.py", "sha256": "958a44d78029b9a1eb69a3771ce18e53ac1ed3c7bc161c8e4318beedce2cf99f"}
+  ],
+  "adjudication": {
+    "purpose": "Rank 43 newly discovered material funding-schedule source change; source and retained counterpart gate only.",
+    "official_discovery_url": "https://www.binance.com/en/support/announcement/detail/aff73212559d4951945600e973240c52",
+    "article_code": "aff73212559d4951945600e973240c52",
+    "novelty": "Exact article code absent from retained non-raw source contracts, results and journals before this freeze. Search discovery values are not economic evidence.",
+    "source_representation": "UTF-8 Binance CMS JSON with exact successful article identity. Decode body JSON node/child/text recursively; normalize HTML entities and nonbreaking spaces only. Retain bytes before decoding. Required phrases are source-observed exact symbols/date, not guessed formatting of rate clauses.",
+    "symbols": ["MEITUANUSDT", "KUAISHOUUSDT", "GIGADEVUSDT", "POPMARTUSDT", "TENCENTUSDT", "HK1810USDT", "HK0700USDT", "ZHIPUUSDT", "MINIMAXUSDT"],
+    "retained_inventory": {
+      "path": "docs/review/2026-09-08/hk-listing-match/polymarket-instruments-raw.json",
+      "sha256": "ee7164660bdb47c98be17d1af4486b41a71e2c960230616a755db3c1ad985e6a",
+      "source_result_path": "docs/review/2026-09-08/hk-listing-match/polymarket-instruments-source-result.json",
+      "source_result_sha256": "c24b8eafd892aac8ab5879d85b8a158eabcd7562095e2764f43931589136e05f"
+    },
+    "counterpart_gate": "Use all returned inventory rows, require unique integer IDs and symbols plus nonempty base/quote identity. Compare each announced contract label without its exact USDT suffix to exact base_asset only. No aliases, share-class mapping, currency parity or name-only hedge assumptions. Exact label is necessary here, not sufficient proof of matching units or settlement. Retain every sibling decision and inventory identity projection.",
+    "consequences": "If a sibling has no exact counterpart in the retained snapshot, stop it before funding, price, fee, book or account requests. A matching label merely routes separate unit/share-class/settlement qualification after the source passes; this contract authorizes no downstream requests. Changes are not effective until the exact source time; never infer more expected income from shorter intervals or doubled settlement count.",
+    "failure": "Retain failed source and journal. No refetch, alias, new inventory request, economic request, or relaxation after access. Any zero-network adjudication remains explicitly source-only.",
+    "retry": "Independently observed exact counterpart listing or source-proved conversion architecture, or later material exact funding/fee/settlement change. Passage of September 10 alone cannot reopen a missing-counterpart population."
+  },
+  "contract_sha256": "6825d7cac379c63c980f526f72f12150fd4d2c4b6ac2c3bde1fbac44302e2628"
+}
