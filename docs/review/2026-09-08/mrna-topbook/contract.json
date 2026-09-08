@@ -1,0 +1,64 @@
+{
+  "authority": {
+    "account_requests": 0,
+    "credentials_used": false,
+    "orders_or_funds": 0,
+    "protected_capture_touched": false,
+    "public_only": true
+  },
+  "consequences": "A failed exact observation stops without any downstream requests or adaptive SQQQ selection. A survivor permits only a separately frozen depth/adverse-funding/exit-basis/cost study, never orders or edge acceptance.",
+  "contract_sha256": "65d406b2643aea5da7392d54fb684934b064370eee13284fe3a5d1690b1a6eea",
+  "economic_gate": "Buy MRNABUSDT at ask and short equal MRNAUSDT at bid. Exact-one multiplier from retained inventory; require positive displayed entry prices/quantities, request-start skew <=10000 ms, and bid-ask minus 50 bips of spot ask strictly positive. No favorable funding credited.",
+  "frozen_at_utc": "2026-09-08T13:37:07.724158Z",
+  "implementations": [
+    {
+      "path": "tools/screen_mrna_bstock_topbook.py",
+      "sha256": "4255fc1b52056ab521c73c8bee10bb0874c22ab84ab702ef2a5a4a717c3f7fc5"
+    },
+    {
+      "path": "tools/capture_public_source_bounded.py",
+      "sha256": "760339a7602abfa9eb97f3f1cca0ef79191b07ff5f5aa42515f30f191f9888fc"
+    },
+    {
+      "path": "tools/capture_public_source_contract.py",
+      "sha256": "9dbb14651455abade755fe96091b9eaafe1153f56a1baad4cd60b1a888d41b8c"
+    },
+    {
+      "path": "tools/adjudicate_polymarket_exact_mlb_monotone_prefilter.py",
+      "sha256": "958a44d78029b9a1eb69a3771ce18e53ac1ed3c7bc161c8e4318beedce2cf99f"
+    },
+    {
+      "path": "tools/screen_polymarket_exact_two_leg_package.py",
+      "sha256": "374fcc3c3485c466b4929a91256450bdc7db70f93ef4c6bda627e05fe8938327"
+    }
+  ],
+  "inventory": {
+    "path": "docs/model-research/action-value/binance-bstock-sep2-listing-inventory-result-v2-2026-09-04.json",
+    "result_sha256": "ba5ebb29ce89c8cc09bde5066bbe4a0cfc7dc11fa926f5a00de6321054caba26"
+  },
+  "limitations": "Screening stress is not actual fees or an economic guarantee. Request receipt/start times and futures transaction time do not prove quote-update freshness. No depth, fill, atomicity, conversion, exit basis, funding persistence, account, tax or capital-cost qualification.",
+  "not_before_utc": "2026-09-08T13:35:00+00:00",
+  "request_budget": {
+    "maximum_GETs": 2,
+    "sequential_no_polling_or_retry": true,
+    "stop_after_source_failure": true,
+    "weight_each": 2
+  },
+  "schema_version": "mrna-bstock-topbook-contract-v1",
+  "source_documentation": "docs/review/2026-09-08/mrna-source-classification.md",
+  "sources": [
+    {
+      "leg": "spot",
+      "path": "docs/review/2026-09-08/mrna-topbook/spot-contract.json",
+      "sha256": "e22bdd5ccce193ad5cee00a6e737a1b1de8fbe17fd8ea76ebf6caf47c3aca3a1",
+      "symbol": "MRNABUSDT"
+    },
+    {
+      "leg": "futures",
+      "path": "docs/review/2026-09-08/mrna-topbook/futures-contract.json",
+      "sha256": "dc4b12f06e1d175b95f75213baf477e7a9cb5d78a49308bcb51a1c4525fa72df",
+      "symbol": "MRNAUSDT"
+    }
+  ],
+  "trigger": "Rank 12 next_action at Git c0dfb1d99260b8dd9cb3d5dfe98575e73326ac8c authorizes exactly the next lexicographic MRNA observation after September 8 13:35 UTC; CRWD remains consumed and SQQQ is not a fallback."
+}

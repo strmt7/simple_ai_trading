@@ -1,0 +1,42 @@
+{
+  "accepted_edge": false,
+  "authority": {
+    "account_requests": 0,
+    "credentials_used": false,
+    "orders_or_funds": 0,
+    "protected_capture_touched": false,
+    "public_only": true
+  },
+  "contract_sha256": "65d406b2643aea5da7392d54fb684934b064370eee13284fe3a5d1690b1a6eea",
+  "deployment_ready": false,
+  "economics": {
+    "common_displayed_quantity_shares": "0.93800000",
+    "fixed_50_bip_stress_USDT_per_share": "0.70615000000",
+    "gross_entry_headroom_USDT_per_share": "-0.36000000",
+    "passes_fixed_rejection_gate": false,
+    "perpetual_bid_USDT_per_share": "140.87000",
+    "perpetual_bid_quantity_shares": "1.14",
+    "positive_entry_sides": true,
+    "request_start_skew_ms": 456,
+    "request_start_skew_passed": true,
+    "spot_ask_USDT_per_share": "141.23000000",
+    "spot_ask_quantity_shares": "0.93800000",
+    "stressed_headroom_USDT_per_share": "-1.06615000000",
+    "stressed_headroom_bps": "-75.49033491467818452170218792041350987750477943779650215959781916023507753310203214614458684415492459"
+  },
+  "profitability_claim": false,
+  "request_count": 2,
+  "result_sha256": "e0f7b9b607a8a01304ce3dd0fd1feeaeedfa1c52fa7a7a15e2fdc60291c3117b",
+  "schema_version": "mrna-bstock-topbook-result-v1",
+  "source_results": [
+    {
+      "path": "docs/review/2026-09-08/mrna-topbook/spot-result.json",
+      "result_sha256": "676abaf7711e1acb6301bf27e835c717620be853fb26046895557b59df091d57"
+    },
+    {
+      "path": "docs/review/2026-09-08/mrna-topbook/futures-result.json",
+      "result_sha256": "30ef0b054393dd11a0955e1cc502ea5648caad02d88bf02249b0b110164226ae"
+    }
+  ],
+  "status": "exact_observation_rejected"
+}
