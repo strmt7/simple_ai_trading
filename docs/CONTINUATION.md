@@ -1,5 +1,14 @@
 # Continue Development
 
+Latest market R&D: [CXMT post-change funding](review/2026-09-08/cxmt-post-change/review.md)
+completed the exact first-twelve-settlement September 4-6 sample with two public
+GETs on September 8. All twelve gross observations were negative for the fixed
+long Polymarket / short Binance direction; no 6/3/3 role survived. Raw, journals,
+contracts and source-bound reconstruction are retained. Fifteen offline checks
+passed. Do not refetch, reverse orientation, extend the window or escalate to
+books/accounts. A later material economic/rule change is now required for rank
+43; the old September 6 clock trigger is consumed. No profitable-edge claim.
+
 Latest financial model: [settlement tracking decomposition](review/2026-09-05/settlement-tracking-review.md)
 quantifies linear carry index, exit-timing and execution effects separately.
 Exact rational weights handle equal-second settlement without rounded-weight
@@ -92,7 +101,7 @@ an actual wallet PnL statement or proof of a profitable first-leg strategy.
 No new requests, original-result edits, promotion or retry permission. Do not
 repeat this sample or add hypothetical grids; the missing causal cash/inventory
 ledger and feasible liquidation comparator are the next substantive evidence.
-Registry/audit hashes and counts below remain current and unchanged.
+That wallet checkpoint did not change registry counts; current hashes follow.
 
 Latest R&D: the frozen September 5 Binance metadata gate proved 70 distinct
 options outside the complete 2,274-name prior union. One two-request screen
@@ -102,11 +111,11 @@ after the unchanged 33.5-bip stress. Read
 no depth, funding, fees, accounts, credentials, orders or protected captures.
 Both stages and all 70 contracts are consumed; include them in future unions.
 The exact rank-47 retry trigger and every prior restriction remain unchanged.
-Current counts: 37 accepted mechanism scopes, 65 hypotheses, 192 terminal
+Current counts after the September 8 CXMT study: 37 accepted mechanism scopes, 65 hypotheses, 193 terminal
 observations, zero fully qualified stable profitable edges. Registry/audit
 self-hashes are
-`d8e23d654aa344e233c31eb1fc02e242285101f09cdb06a2f26d0ad7b594578d`
-and `196ec88d530aa6f1a658abad03dbf97e377c612c9370d59f7d4984524704ebd4`.
+`97b48ded00c92bd356cd15700a1802e3cb4099af99fce1e930f55d04d6e349b7`
+and `becf4054b7c8191e70e8bbcc4bcdc586bfe2929a5ba0e278c9380a5b96547087`.
 Lower checkpoint counts and hashes are historical. No full-repo completion
 or family-wide impossibility claim follows from this finite screen.
 
@@ -540,6 +549,10 @@ Their journal SHA-256 values are
 and `48d7f66357ddd33e7ae9823ef738d64b920467b220673441d689fafbb77d9147`.
 
 ## 2026-09-04 Binance CXMT four-hour funding trigger
+
+Historical trigger below was consumed on September 8; see the current
+[terminal study](review/2026-09-08/cxmt-post-change/review.md). Its old time gate
+does not authorize another access.
 
 A fresh official Binance notice materially changed nine TradFi perpetuals from
 eight-hour to four-hour funding effective 2026-09-04T08:15:00Z, with the

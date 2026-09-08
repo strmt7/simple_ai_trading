@@ -1,0 +1,77 @@
+{
+  "schema_version": 1,
+  "contract_path": "docs/review/2026-09-08/cxmt-post-change/binance-contract.json",
+  "request_name": "cxmt-post-change-binance",
+  "frozen_at_utc": "2026-09-08T10:00:00Z",
+  "request": {
+    "method": "GET",
+    "url": "https://fapi.binance.com/fapi/v1/fundingRate?symbol=CXMTUSDT&startTime=1788523140000&endTime=1788681660000&limit=1000",
+    "count": 1,
+    "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "response_byte_ceiling": 1048576,
+  "required_utf8_phrases": [
+    "\"fundingRate\"",
+    "\"fundingTime\""
+  ],
+  "transport": {
+    "socket_timeout_seconds": 10,
+    "read_budget_seconds": 30,
+    "redirects": false,
+    "retries": 0,
+    "proxies": false
+  },
+  "outputs": {
+    "raw_path": "docs/review/2026-09-08/cxmt-post-change/raw/binance.json",
+    "journal_path": "docs/review/2026-09-08/cxmt-post-change/binance-journal.jsonl",
+    "result_path": "docs/review/2026-09-08/cxmt-post-change/binance-source-result.json"
+  },
+  "authority": {
+    "account_requests": 0,
+    "credentials_used": false,
+    "funds_used": false,
+    "orders_or_transactions": 0,
+    "protected_capture_touched": false,
+    "public_unauthenticated_read_only_requests": 1,
+    "signed_requests": 0,
+    "trading_authority": false
+  },
+  "implementations": [
+    {
+      "path": "tools/review_cxmt_post_change_funding.py",
+      "sha256": "57c510bccc1d7fa1749000d99623621b13ed71146339332020e030027c5d7ff9"
+    },
+    {
+      "path": "tools/capture_public_source_bounded.py",
+      "sha256": "760339a7602abfa9eb97f3f1cca0ef79191b07ff5f5aa42515f30f191f9888fc"
+    },
+    {
+      "path": "tools/capture_public_source_contract.py",
+      "sha256": "9dbb14651455abade755fe96091b9eaafe1153f56a1baad4cd60b1a888d41b8c"
+    },
+    {
+      "path": "tools/adjudicate_polymarket_exact_mlb_monotone_prefilter.py",
+      "sha256": "958a44d78029b9a1eb69a3771ce18e53ac1ed3c7bc161c8e4318beedce2cf99f"
+    }
+  ],
+  "adjudication": {
+    "orientation": "long_polymarket_short_binance",
+    "orientation_selection": "fixed before all new history access; directional hypothesis, not an inferred winner",
+    "roles": [
+      6,
+      3,
+      3
+    ],
+    "execution_hurdle_bips": "20",
+    "annual_capital_bips_per_leg": "500",
+    "capital_legs": 2,
+    "quote_unit_stress_bips_per_role": "10",
+    "within_role_positive_fraction_minimum": "0.75",
+    "worst_drop_one_must_clear_all_original_role_costs": true,
+    "capital_year_hours": 8760,
+    "binance_rate_type": "Regular only; Special cash flows require separate matching and fail this study",
+    "timestamp_phase_tolerance_ms": 60000,
+    "no_notional_mark_path_or_quote_parity_qualification": true
+  },
+  "contract_sha256": "a8e8b8117cfb8163e23074fb0d4b0843124da79af6df6705b5c4a1e90b26e6fb"
+}

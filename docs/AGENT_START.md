@@ -10,6 +10,15 @@ Scope blockers to their branch; a fresh user resumption resets the blocked audit
 
 ## Current Truth
 
+The [CXMT post-change study](review/2026-09-08/cxmt-post-change/review.md)
+consumed the exact September 4-6 twelve-settlement trigger on September 8.
+All twelve gross observations were negative for the prospectively fixed long
+Polymarket / short Binance direction; all 6/3/3 roles failed. Two public GETs,
+complete retained raw coverage, 15 offline checks and exact reconstruction.
+No books/accounts or protected data touched. Current terminal count is 193,
+with zero qualified stable profitable edges. No repeat, reversed direction or
+rolling window; rank 43 now requires a later material economic/rule change.
+
 The [settlement tracking model](review/2026-09-05/settlement-tracking-review.md)
 separates linear carry index, timing and execution losses. Matched settlement
 weights remove timing error only; 33 focused checks and source-bound synthetic
@@ -68,7 +77,7 @@ The September 5 Binance option population is consumed: 70 new contracts,
 23 positive-entry rows, zero gross-positive floors and zero stress survivors.
 Read `review/2026-09-05/option-population/review.md`. Include all 70 in future
 exclusion unions; do not repair missing quotes or repeat this screen. Current
-terminal count is 192, with zero qualified stable profitable edges; lower
+terminal count at that checkpoint was 192, with zero qualified stable profitable edges; lower
 checkpoint counts below are historical.
 
 New make/take evaluations must use the forward chronology wrapper described in
@@ -219,6 +228,9 @@ cost edges remain zero. Registry and durability-audit SHA-256 values are
 and `4d956c98e5ef90a425f5dcd0c40017049c057e3d6d1fa6633a6020285c7ff4dd`.
 
 ### Latest Binance CXMT four-hour funding trigger
+
+Historical trigger below was consumed on September 8; the current terminal
+result and later-material-change retry gate are linked at the top of this file.
 
 An exact official notice proves that Binance changed `CXMTUSDT` from eight-hour
 to four-hour funding effective 2026-09-04T08:15:00Z and halved the
