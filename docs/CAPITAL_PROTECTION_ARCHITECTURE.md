@@ -1,5 +1,12 @@
 # Capital protection and final release verification
 
+The September 8 [spot resale ownership repair](review/2026-09-08/binance-spot-resale-ownership.md)
+binds the buy-then-sell command's resale to native net received quantity and
+rejects normalization/wire overshoot. It prevents a demonstrated use of
+pre-existing base inventory to cover a BUY commission. 104 distinct checks
+pass. Autonomous gross/net migration, native PnL, sell-then-buy cash budgeting
+and durable/account-scoped CLI recovery remain required; this is one boundary.
+
 Status: implementation roadmap, not a claim of complete protection or live
 readiness. Requested September 5, 2026. No live-money authority exists.
 Safeguards are core requirements during development, not an afterthought once

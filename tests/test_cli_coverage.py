@@ -3415,6 +3415,16 @@ def test_roundtrip_helpers_cover_balances_and_sizing() -> None:
             0.0002,
             {"balances": [{"asset": "BTC", "free": "0.0001"}]},
             76000.0,
+            first_order={
+                "symbol": "BTCUSDC",
+                "side": "BUY",
+                "type": "MARKET",
+                "status": "FILLED",
+                "executedQty": "0.0002",
+                "fills": [
+                    {"qty": "0.0002", "price": "76000", "commission": "0", "commissionAsset": "BTC"}
+                ],
+            },
         )
         == 0.0001
     )
@@ -3579,6 +3589,12 @@ def test_command_spot_roundtrip_validation_and_success(tmp_path, monkeypatch, ca
                 "orderId": len(self.orders),
                 "executedQty": f"{quantity:.8f}",
                 "cummulativeQuoteQty": f"{quantity * 76000.0:.8f}",
+                "symbol": _symbol,
+                "side": side,
+                "type": "MARKET",
+                "fills": [
+                    {"qty": f"{quantity:.8f}", "price": "76000", "commission": "0", "commissionAsset": "BTC"}
+                ],
             }
 
     persisted: list[dict[str, object]] = []
@@ -3628,6 +3644,12 @@ def test_command_spot_roundtrip_validation_and_success(tmp_path, monkeypatch, ca
                 "orderId": len(self.orders),
                 "executedQty": f"{quantity:.8f}",
                 "cummulativeQuoteQty": f"{quantity * 3000.0:.8f}",
+                "symbol": _symbol,
+                "side": side,
+                "type": "MARKET",
+                "fills": [
+                    {"qty": f"{quantity:.8f}", "price": "3000", "commission": "0", "commissionAsset": "ETH"}
+                ],
             }
 
     save_runtime(RuntimeConfig(symbol="ETHUSDT", quote_asset="USDT", market_type="spot", testnet=True, api_key="k", api_secret="s"))

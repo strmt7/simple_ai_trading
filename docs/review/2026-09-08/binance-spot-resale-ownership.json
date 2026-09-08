@@ -1,0 +1,79 @@
+{
+  "schema_version": "binance-spot-resale-ownership-review-v1",
+  "baseline_git_checkpoint": "60d72b999c390e2ed75a19d8ab624da7727ada62",
+  "scope": "buy-then-sell spot-roundtrip received-inventory limit; not autonomous ledger migration or sell-then-buy cash budgeting",
+  "reproduction": {
+    "network_requests": 0,
+    "preexisting_BTC": "1",
+    "gross_buy_BTC": "1",
+    "base_commission_BTC": "0.001",
+    "received_BTC": "0.999",
+    "baseline_planned_sell_BTC": "1",
+    "patched_planned_sell_BTC": "0.999",
+    "baseline_foreign_inventory_consumed_BTC": "0.001"
+  },
+  "implementation": {
+    "native_fee_policy": "Complete reconciled fill rows with nonnegative native commissions; subtract only base-asset commissions. No inferred commission when rows or fields are missing. No third-asset conversion or rebate inventory credit.",
+    "terminal_states": [
+      "FILLED",
+      "CANCELED",
+      "EXPIRED",
+      "EXPIRED_IN_MATCH"
+    ],
+    "nonterminal_partial": "Stop before resale while first order can still fill.",
+    "quantity_policy": "Minimum of validated net received quantity and available balance, floored to eight wire decimals before normalization; reject normalization or wire rounding above that limit.",
+    "cli_options_changed": false,
+    "account_calls_executed": false,
+    "orders_executed": false,
+    "credentials_used": false,
+    "protected_capture_touched": false
+  },
+  "verification": {
+    "affected_domain_passed": 100,
+    "additional_terminal_partial_cases_passed": 3,
+    "runtime_entrypoint_parity_passed": 1,
+    "total_distinct_passed": 104,
+    "new_cases": 49,
+    "junit_path": ".pytest_cache/spot-receipt-checks.xml",
+    "junit_sha256": "54fc16b29da69d87a3b9ea3f6d2034d9820792dd50fed82ee47539a413f0c079",
+    "note": "The JUnit file covers the 100-case domain run; the three later terminal-partial cases and one entrypoint check are separate passing runs. All exchange behavior was stubbed."
+  },
+  "source_hash_convention": "UTF-8 bytes with CRLF normalized to LF; preserve BOM. Hashes bind this source revision, not a claim that all lines of the large files were reviewed.",
+  "source_bindings": [
+    {
+      "path": "src/simple_ai_trading/binance_spot_receipts.py",
+      "sha256": "34d5509b7617c6eaf6c95857b75bfcfd224e6a2b410f15e41ca0212c3c688e30"
+    },
+    {
+      "path": "src/simple_ai_trading/cli.py",
+      "sha256": "ed26fb495555fde94a24daa58727d6f42d39ed5189e59a4955d54639398042ee"
+    },
+    {
+      "path": "tests/test_binance_spot_receipts.py",
+      "sha256": "c047a84e7e4acdcd248ec90e7d02a253db1bb596b0bf72ab3a08c670d4311921"
+    },
+    {
+      "path": "tests/test_cli_coverage.py",
+      "sha256": "7a6f1ed1fb054d30f51d833d4dcfb440f8edb8e32f6d27962fd143dfe34d72c5"
+    }
+  ],
+  "reviewed_production_boundaries": [
+    "binance_spot_receipts.py complete module",
+    "cli.py::_roundtrip_second_quantity",
+    "cli.py::command_spot_roundtrip receipt routing and partial-failure handling"
+  ],
+  "remaining": [
+    "Autonomous openings still project gross quantity and modeled fees; native gross/net migration must integrate original intent validation rather than silently replacing quantity.",
+    "Direct CLI write-ahead obligations, account identity, explicit crash recovery/rearm and independent supervision remain unfinished.",
+    "The opposite sell-then-buy branch retains its existing wallet-based cash sizing; this patch does not prove it self-financing.",
+    "Returned receipt is assumed bound to the submitted order by the existing shared API validator; this helper is not a substitute for that binding.",
+    "Exit fees, quote/BNB valuation, exact net PnL, filters and slippage remain separate boundaries."
+  ],
+  "financial_research": {
+    "accepted_edge_count_changed": false,
+    "terminal_observation_count_changed": false,
+    "qualified_stable_profitable_edges": 0,
+    "discovery_note": "Four targeted search queries did not establish a new qualifying Launchpool campaign. A USDC 8-percent / 10000-cap headline resolved in discovery to a 2025-10-10 through 2025-11-08 offer. Search is not exhaustive availability proof and no economic input or current rate was admitted."
+  },
+  "result_sha256": "e912567e90cb0b699c57b6ea457002db2c0ee43ef74773798fbd1ef83ec592fe"
+}
