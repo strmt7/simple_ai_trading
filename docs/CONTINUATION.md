@@ -1,5 +1,19 @@
 # Continue Development
 
+Latest active-store repair: [paired position transactions](review/2026-09-08/position-paired-transactions.md)
+commits checksummed redo in the existing intent DB before publishing either
+JSON file. Participating reads/writes recover interrupted pairs and serialize;
+unexpected enrolled-file changes/deletion reject. Statistics use one paired
+snapshot and stale partial closes cannot recreate a changed/absent lot. 384
+distinct affected checks across stages, including 29 new cases, actual child
+exit and four concurrent writers. Actual user ledgers remain untouched.
+Do not rerun unchanged suites or edit enrolled JSON files manually. Native
+opening movements are still not applied: integrate those with close accounting
+and explicit account/policy/process-fenced rearm next, preserving UNKNOWN.
+Repeated close acknowledgement deduplication, database/enrollment loss or rollback
+detection and independent supervision remain mandatory. This is not atomic
+visibility for old/direct-file writers, power-loss proof or a profitable edge.
+
 Latest recovery stage: [native opening inventory observations](review/2026-09-08/binance-native-opening-inventory.md)
 adds exact native asset/derivative deltas to the existing scoped intent journal.
 Spot base fees reduce received base; futures notional is not a cash purchase;
@@ -30,8 +44,8 @@ Latest safety repair: [position mutation integrity](review/2026-09-08/position-m
 closes a reproduced silent overwrite of corrupt or filtered retained records.
 Mutations require strict lossless reads and both files are admitted before close
 recording. 242 distinct affected checks passed across staged runs; no real ledger
-or venue was touched. Atomic inventory/close transactions, concurrent fencing,
-native fees, missing-file detection and explicit rearm remain open. Do not treat
+or venue was touched. The later paired repair above adds active-store serialization
+and recoverable publication, not native-fee application or explicit rearm. Do not treat
 legacy forgiving read projections as empty-state evidence or repeat this suite.
 
 Latest market R&D: [CXMT post-change funding](review/2026-09-08/cxmt-post-change/review.md)

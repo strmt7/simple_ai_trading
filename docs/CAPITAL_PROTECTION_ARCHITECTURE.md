@@ -8,6 +8,15 @@ against gaps, illiquidity, exchange failure, custody loss, or every outage.
 
 ## What the current code actually establishes
 
+The September 8 [paired transaction repair](review/2026-09-08/position-paired-transactions.md)
+uses the existing intent DB for serialized, checksummed, recoverable publication
+of both active JSON ledgers. It rejects enrolled-file drift/deletion and stale
+partial-lot replacement; statistics read one pair. This is not direct-file
+atomic visibility, exactly-once venue/close processing, native inventory
+application, explicit rearm, complete rollback detection or power-loss proof.
+384 distinct staged checks include an actual interrupted child and concurrent
+writers. No actual user ledger was migrated or changed.
+
 The September 8 [native opening observation stage](review/2026-09-08/binance-native-opening-inventory.md)
 retains exact execution-derived asset and derivative movements in the existing
 scoped intent database. It does not qualify account balances, apply active
@@ -17,9 +26,10 @@ open/close lifecycle; the older floating-point adapter is not silently upgraded.
 
 The September 8 [mutation-integrity repair](review/2026-09-08/position-mutation-integrity.md)
 prevents corrupt or filtered retained position rows from being overwritten as
-empty state. Both ledgers are admitted before close recording starts. This
-does not make the two replacements atomic, fence concurrent writers, detect a
-deleted file or integrate native-fee inventory recovery. Those remain mandatory.
+empty state. Both ledgers are admitted before close recording starts. That
+checkpoint alone did not serialize or recover the two replacements; the later
+paired transaction repair above adds those participating-access guarantees.
+Native-fee inventory recovery and the remaining boundaries are still mandatory.
 
 Reviewed relevant implementations at base commit
 `e8e540e0c3237ddd65c89d886a067af59cc5b791`:
