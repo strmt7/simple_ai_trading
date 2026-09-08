@@ -1,5 +1,18 @@
 # Continue Development
 
+Latest financial R&D: [post-catalog CFB deployment](review/2026-09-08/cfb-deployment/review.md).
+One session-authorized public GET proved Florida A&M/Miami was created after
+the August 31 empty catalog. The separately frozen retained-response screen
+exhausted 553 price-complete identical-rule spread/total pairs: none sub-floor;
+best cost 1.07 pUSD for a conditional 1 pUSD floor before fees. No book/fee
+request, refresh, account, order or protected data. Both exact contracts are
+consumed. Rank 30's literal exclusion now includes the previously omitted
+consumed September 3-9 WNBA window. Current totals: 198 terminal observations,
+65 hypotheses, 37 mechanism scopes and zero qualified stable profitable edges.
+35 focused checks pass. Do not repeat the event or infer that an old empty
+future catalog proves later-created markets cannot exist; any later deployment
+exception requires its own independent evidence and prospective session scope.
+
 Latest execution repair: [autonomous Spot gross/net inventory](review/2026-09-08/autonomous-spot-native-inventory.md).
 New FILLED Spot lots now retain exact original gross/base-commission metadata
 while closing only net received inventory. Gross intent checks remain exact;

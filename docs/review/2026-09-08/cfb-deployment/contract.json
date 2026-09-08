@@ -1,0 +1,88 @@
+{
+  "schema_version": "public-source-capture-contract-v1",
+  "contract_sha256": "4286cdd65d27fa178d69fac81807e1660d1a8780ab30469bd4169c1955f1b0d1",
+  "contract_path": "docs/review/2026-09-08/cfb-deployment/contract.json",
+  "frozen_at_utc": "2026-09-08T14:30:58.768844Z",
+  "request_name": "exact-new-cfb-deployment-only",
+  "purpose": "Test whether the independently discovered exact event was created after the retained empty catalog, without examining economic fields.",
+  "request": {
+    "method": "GET",
+    "url": "https://gamma-api.polymarket.com/events/slug/cfb-flam-mia-2026-09-10",
+    "count": 1,
+    "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "response_byte_ceiling": 16777216,
+  "required_utf8_phrases": [
+    "cfb-flam-mia-2026-09-10"
+  ],
+  "transport": {
+    "socket_timeout_seconds": 10,
+    "read_budget_seconds": 30,
+    "redirects": false,
+    "retries": 0,
+    "proxies": false
+  },
+  "authority": {
+    "account_requests": 0,
+    "credentials_used": false,
+    "funds_used": false,
+    "orders_or_transactions": 0,
+    "protected_capture_touched": false,
+    "public_unauthenticated_read_only_requests": 1,
+    "signed_requests": 0,
+    "trading_authority": false
+  },
+  "outputs": {
+    "raw_path": "docs/review/2026-09-08/cfb-deployment/raw/event.json",
+    "journal_path": "docs/review/2026-09-08/cfb-deployment/request-journal.jsonl",
+    "result_path": "docs/review/2026-09-08/cfb-deployment/source-result.json"
+  },
+  "deployment_gate": {
+    "event_slug": "cfb-flam-mia-2026-09-10",
+    "after_utc": "2026-08-31T16:33:29.370Z",
+    "result_path": "docs/review/2026-09-08/cfb-deployment/deployment-result.json",
+    "require_future_active_open_event_and_at_least_one_accepting_market": true,
+    "require_created_after_baseline": true,
+    "maximum_embedded_markets": 1000,
+    "economic_field_access": false,
+    "on_failure": "terminal_no_retry_no_economics_no_new_requests",
+    "on_success": "separately_freeze_one_offline_payoff_and_side_specific_rejection_test_using_only_retained_raw_bytes"
+  },
+  "source_classification": {
+    "method": "GET",
+    "security": "public unauthenticated event metadata",
+    "primary_contract": "https://docs.polymarket.com/market-data/overview",
+    "exact_route_prior_usage": "tools/capture_polymarket_exact_sports_event.py",
+    "discovery_url": "https://polymarket.com/zh-hant/sports/cfb/cfb-flam-mia-2026-09-10",
+    "discovery_status": "search metadata suggests publication after baseline; not admitted creation-time proof"
+  },
+  "baseline": {
+    "result_path": "docs/model-research/action-value/polymarket-cfb-september-8-12-complete-monotone-catalog-result-v1-2026-08-31.json",
+    "result_sha256": "5511d2446585d02577c91249f454e458b1b7551e656cd4f68abd8dae0ac526be",
+    "raw_sha256": "1caf48c002786edb458302862e4e33fbff3b2afecb9ec796169d7a3881ad7e9e",
+    "returned_events": 0,
+    "source_completed_at_utc": "2026-08-31T16:33:29.370Z"
+  },
+  "implementations": [
+    {
+      "path": "tools/adjudicate_sports_deployment.py",
+      "sha256": "a4f990b967b0afce3c92b07a7055b1c74fd871d220b0b25f0a49640cbaffc94d"
+    },
+    {
+      "path": "tools/capture_public_source_bounded.py",
+      "sha256": "760339a7602abfa9eb97f3f1cca0ef79191b07ff5f5aa42515f30f191f9888fc"
+    },
+    {
+      "path": "tools/capture_public_source_contract.py",
+      "sha256": "9dbb14651455abade755fe96091b9eaafe1153f56a1baad4cd60b1a888d41b8c"
+    },
+    {
+      "path": "tools/adjudicate_polymarket_exact_mlb_monotone_prefilter.py",
+      "sha256": "958a44d78029b9a1eb69a3771ce18e53ac1ed3c7bc161c8e4318beedce2cf99f"
+    },
+    {
+      "path": "tools/screen_polymarket_exact_two_leg_package.py",
+      "sha256": "374fcc3c3485c466b4929a91256450bdc7db70f93ef4c6bda627e05fe8938327"
+    }
+  ]
+}

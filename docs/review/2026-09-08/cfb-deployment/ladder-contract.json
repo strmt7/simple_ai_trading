@@ -1,0 +1,62 @@
+{
+  "schema_version": "retained-sports-rule-ladder-contract-v1",
+  "contract_sha256": "be38d073a460f2af1fff66adfe817a51ae9d1427bc7e03aeb9178fec42b466a6",
+  "frozen_at_utc": "2026-09-08T14:38:42.001313Z",
+  "event_slug": "cfb-flam-mia-2026-09-10",
+  "source": {
+    "path": "docs/review/2026-09-08/cfb-deployment/raw/event.json",
+    "sha256": "17bfdc911797f5a584ed1f664a8f1309962a19b194cf22eae39a5cdd0405fce1"
+  },
+  "deployment_result_sha256": "71700eac1ee75d5ad7563666a40f65f6643cc5334a55e62772886c8335d05096",
+  "result_path": "docs/review/2026-09-08/cfb-deployment/ladder-result.json",
+  "gate": {
+    "network_requests": 0,
+    "book_requests_authorized": false,
+    "maximum_relations": 10000,
+    "price_semantics": "bestAsk_or_1-bestBid_rejection_only",
+    "families": [
+      "spreads",
+      "totals"
+    ]
+  },
+  "scope": "All compatible spread and total lower-positive/higher-complement pairs in this one retained event. Group by identical full rules after replacing only the exact verified threshold phrases, preserving outcomes, times, overtime and resolution source. This is not a complete cross-family sports graph.",
+  "rule_only_preflight": {
+    "spread_count": 23,
+    "total_count": 25,
+    "group_sizes": [
+      23,
+      25
+    ],
+    "planned_relations": 553,
+    "excluded_markets": 10,
+    "economic_fields_examined": false
+  },
+  "payoff": "For common integer scalar X and L<=H, 1[X>=L]+1[X<H]>=1; shared 50/50 cancellation pays one. Conditional common-rule floor, not independent resolution, fill or execution guarantee.",
+  "consequences": "Zero positive gross candidates stops this ladder population before fees or books. Positive gross rows are only leads for a separate exact-fee-and-one-tick retained-data gate; this contract authorizes no book, account or new source request. Missing or zero acquisition evidence is incomplete, never free.",
+  "implementations": [
+    {
+      "path": "tools/screen_sports_rule_ladders.py",
+      "sha256": "d9068fca85d4af2b8e7ec14549dc9eeb2d1e7bdaedb82670d2169f8649d335f5"
+    },
+    {
+      "path": "tools/adjudicate_sports_deployment.py",
+      "sha256": "a4f990b967b0afce3c92b07a7055b1c74fd871d220b0b25f0a49640cbaffc94d"
+    },
+    {
+      "path": "tools/adjudicate_polymarket_nfl_catalog_side_specific.py",
+      "sha256": "fadc60b24861405093c3c3d4fda8c897153fa980f373cc2fad4e783f724fbceb"
+    },
+    {
+      "path": "tools/capture_public_source_contract.py",
+      "sha256": "9dbb14651455abade755fe96091b9eaafe1153f56a1baad4cd60b1a888d41b8c"
+    },
+    {
+      "path": "tools/adjudicate_polymarket_exact_mlb_monotone_prefilter.py",
+      "sha256": "958a44d78029b9a1eb69a3771ce18e53ac1ed3c7bc161c8e4318beedce2cf99f"
+    },
+    {
+      "path": "tools/screen_polymarket_exact_two_leg_package.py",
+      "sha256": "374fcc3c3485c466b4929a91256450bdc7db70f93ef4c6bda627e05fe8938327"
+    }
+  ]
+}

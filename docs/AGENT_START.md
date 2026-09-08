@@ -10,6 +10,13 @@ Scope blockers to their branch; a fresh user resumption resets the blocked audit
 
 ## Current Truth
 
+The [post-catalog CFB deployment study](review/2026-09-08/cfb-deployment/review.md)
+proved a later-created event after the old empty snapshot, then rejected all
+553 compatible side-specific spread/total pairs before fees. One public GET,
+retained bytes and journals, no book escalation; both contracts are consumed.
+35 focused checks pass. Current totals: 198 terminal observations, 65 hypotheses,
+37 accepted mechanism scopes and zero qualified stable profitable edges.
+
 The [autonomous Spot gross/net repair](review/2026-09-08/autonomous-spot-native-inventory.md)
 records net received base separately from original gross intent quantity and
 preserves older pending request bytes. Native partial closes retain nonzero
