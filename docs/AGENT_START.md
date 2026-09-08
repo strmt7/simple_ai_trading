@@ -10,6 +10,13 @@ Scope blockers to their branch; a fresh user resumption resets the blocked audit
 
 ## Current Truth
 
+The [settlement tracking model](review/2026-09-05/settlement-tracking-review.md)
+separates linear carry index, timing and execution losses. Matched settlement
+weights remove timing error only; 33 focused checks and source-bound synthetic
+examples pass. No new market observation or qualified edge. Do not repeat its
+example grid; next evidence is actual contract/index and executable schedule
+coverage under the unchanged fee/account and capture gates.
+
 The [terminal opening evidence stage](review/2026-09-05/binance-terminal-opening-evidence.md)
 now retains exact terminal order/trade quantities and native fees for pending
 Binance intents. 371 affected offline checks pass, including 82 new cases and

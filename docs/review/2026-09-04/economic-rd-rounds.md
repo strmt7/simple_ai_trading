@@ -14,6 +14,12 @@ need their own evidence. Preserve historical full-fill support results.
 
 ## Round 1: mechanisms and comparable cash flows (in progress)
 
+The [settlement tracking decomposition](../2026-09-05/settlement-tracking-review.md)
+now isolates linear carry index, timing and execution effects. Matched weights
+eliminate timing error conditionally, not basis, slippage or interim margin risk.
+Use it with independently source-bound schedules; do not rerun its synthetic
+examples as market research or change old cost/capture gates.
+
 **Binance:** integrate entry/exit basis, correctly weighted funding, collateral
 cash flows, borrowing, fees and executable quote conversion into one cash
 ledger. Compare a fixed-quantity linear hedge, matched inverse collateral,
