@@ -10,6 +10,13 @@ Scope blockers to their branch; a fresh user resumption resets the blocked audit
 
 ## Current Truth
 
+The [autonomous Spot gross/net repair](review/2026-09-08/autonomous-spot-native-inventory.md)
+records net received base separately from original gross intent quantity and
+preserves older pending request bytes. Native partial closes retain nonzero
+remainders exactly. 744 distinct staged checks pass, including 60 new cases.
+Missing native evidence keeps UNKNOWN. Native cash PnL, terminal recovery
+application, account qualification/rearm and independent supervision remain open.
+
 The [spot resale ownership repair](review/2026-09-08/binance-spot-resale-ownership.md)
 fixes a reproduced buy-then-sell command that could consume pre-existing base
 inventory to cover a BUY commission. Resale now requires terminal native fee

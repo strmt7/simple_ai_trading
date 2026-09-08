@@ -1,5 +1,12 @@
 # Capital protection and final release verification
 
+The September 8 [autonomous Spot gross/net repair](review/2026-09-08/autonomous-spot-native-inventory.md)
+separates new net received inventory from the original gross order obligation,
+preserves legacy request bytes and retains native partial-close remainders
+exactly. 744 distinct staged checks pass. No old lot is automatically migrated;
+missing native evidence remains UNKNOWN. This does not complete native PnL,
+terminal recovery application, account qualification/rearm or supervision.
+
 The September 8 [spot resale ownership repair](review/2026-09-08/binance-spot-resale-ownership.md)
 binds the buy-then-sell command's resale to native net received quantity and
 rejects normalization/wire overshoot. It prevents a demonstrated use of

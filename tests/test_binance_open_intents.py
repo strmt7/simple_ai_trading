@@ -71,6 +71,7 @@ class _Client:
         return {
             "symbol": symbol,
             "side": side,
+            "type": "MARKET",
             "executedQty": str(
                 quantity / 2 if self.status == "PARTIALLY_FILLED" else quantity
             ),
@@ -78,6 +79,16 @@ class _Client:
             "status": self.status,
             "orderId": "123",
             "clientOrderId": kwargs["client_order_id"],
+            "fills": [
+                {
+                    "qty": str(
+                        quantity / 2 if self.status == "PARTIALLY_FILLED" else quantity
+                    ),
+                    "price": "50000",
+                    "commission": "0",
+                    "commissionAsset": "BTC",
+                }
+            ],
         }
 
     def get_order(self, *args, **kwargs):
@@ -147,11 +158,20 @@ def test_ledger_write_failure_preserves_obligation(tmp_path, monkeypatch):
     assert client.writes == 1
 
 
-def test_partial_fill_is_recorded_without_releasing_pending_remainder(tmp_path):
+@pytest.mark.parametrize("market_type", ["spot", "futures"])
+def test_partial_fill_keeps_pending_remainder(tmp_path, market_type):
     store = PositionsStore(tmp_path)
-    result = _submit_durable_open_position(
-        _Client(store, status="PARTIALLY_FILLED"), _position(), store
-    )
+    client = _Client(store, status="PARTIALLY_FILLED", market_type=market_type)
+    position = _position(market_type=market_type)
+    if market_type == "spot":
+        with pytest.raises(OpenIntentError, match="terminal"):
+            _submit_durable_open_position(client, position, store)
+        assert store.load_open() == []
+        assert (
+            store.opening_intents.entry_block_reason() == "unresolved_opening_intents=1"
+        )
+        return
+    result = _submit_durable_open_position(client, position, store)
     assert store.load_open() == [result]
     assert result.qty == 0.0005
     assert store.opening_intents.entry_block_reason() == "unresolved_opening_intents=1"

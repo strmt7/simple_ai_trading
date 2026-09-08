@@ -49,6 +49,14 @@ def _response(binding: MarketOrderBinding) -> dict:
         "reduceOnly": binding.reduce_only,
         "closePosition": False,
         "origType": "MARKET",
+        "fills": [
+            {
+                "qty": binding.quantity,
+                "price": "100",
+                "commission": "0",
+                "commissionAsset": "BTC",
+            }
+        ],
     }
     value["cummulativeQuoteQty" if binding.market_type == "spot" else "cumQuote"] = str(
         Decimal(binding.quantity) * 100
@@ -260,7 +268,7 @@ def test_cli_pending_query_uses_first_validated_submission_semantics(
     client = _client(product, monkeypatch)
     binding = _binding(product)
     original = _response(binding)
-    original.update(executedQty="0", status="NEW", avgPrice="0")
+    original.update(executedQty="0", status="NEW", avgPrice="0", fills=[])
     original["cummulativeQuoteQty" if product == "spot" else "cumQuote"] = "0"
     monkeypatch.setattr(
         client,
