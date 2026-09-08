@@ -735,12 +735,32 @@ def test_place_order_spot_live_uses_spot_endpoint(monkeypatch) -> None:
 
     def request(method: str, path: str, params=None, signed: bool = False):
         calls.append((method, path, params or {}, signed))
-        return {"ok": True}
+        return {
+            "ok": True,
+            **params,
+            "orderId": 1,
+            "clientOrderId": params["newClientOrderId"],
+            "origQty": params["quantity"],
+        }
 
     monkeypatch.setattr(client, "_request", request)
     payload = client.place_order("BTCUSDC", "BUY", 0.25, dry_run=False, leverage=1.0)
-    assert payload == {"ok": True}
-    assert calls == [("POST", "/api/v3/order", {"symbol": "BTCUSDC", "side": "BUY", "type": "MARKET", "quantity": "0.25000000"}, True)]
+    assert payload["ok"] is True
+    assert payload["clientOrderId"].startswith("sait-r-")
+    assert calls == [
+        (
+            "POST",
+            "/api/v3/order",
+            {
+                "symbol": "BTCUSDC",
+                "side": "BUY",
+                "type": "MARKET",
+                "quantity": "0.25000000",
+                "newClientOrderId": payload["clientOrderId"],
+            },
+            True,
+        )
+    ]
 
 
 def test_place_order_passes_client_order_id(monkeypatch) -> None:
@@ -749,16 +769,25 @@ def test_place_order_passes_client_order_id(monkeypatch) -> None:
 
     def request(method: str, path: str, params=None, signed: bool = False):
         calls.append((method, path, params or {}, signed))
-        return {"ok": True}
+        return {
+            "ok": True,
+            **params,
+            "orderId": 1,
+            "clientOrderId": params["newClientOrderId"],
+            "origQty": params["quantity"],
+        }
 
     monkeypatch.setattr(client, "_request", request)
-    assert client.place_order(
-        "BTCUSDC",
-        "BUY",
-        0.25,
-        dry_run=False,
-        client_order_id="sait-o-abc123",
-    ) == {"ok": True}
+    assert (
+        client.place_order(
+            "BTCUSDC",
+            "BUY",
+            0.25,
+            dry_run=False,
+            client_order_id="sait-o-abc123",
+        )["ok"]
+        is True
+    )
     assert calls[-1][2]["newClientOrderId"] == "sait-o-abc123"
 
 
@@ -768,12 +797,18 @@ def test_get_order_spot_uses_signed_query(monkeypatch) -> None:
 
     def request(method: str, path: str, params=None, signed: bool = False):
         calls.append((method, path, params or {}, signed))
-        return {"status": "FILLED"}
+        return {"status": "FILLED", "symbol": params["symbol"], "orderId": 123}
 
     monkeypatch.setattr(client, "_request", request)
 
-    assert client.get_order("btcusdc", order_id=123) == {"status": "FILLED"}
-    assert calls == [("GET", "/api/v3/order", {"symbol": "BTCUSDC", "orderId": "123"}, True)]
+    assert client.get_order("btcusdc", order_id=123) == {
+        "status": "FILLED",
+        "symbol": "BTCUSDC",
+        "orderId": 123,
+    }
+    assert calls == [
+        ("GET", "/api/v3/order", {"symbol": "BTCUSDC", "orderId": "123"}, True)
+    ]
 
 
 def test_get_order_futures_accepts_client_order_id(monkeypatch) -> None:
@@ -782,12 +817,24 @@ def test_get_order_futures_accepts_client_order_id(monkeypatch) -> None:
 
     def request(method: str, path: str, params=None, signed: bool = False):
         calls.append((method, path, params or {}, signed))
-        return {"status": "FILLED"}
+        return {
+            "status": "FILLED",
+            "symbol": params["symbol"],
+            "orderId": 1,
+            "clientOrderId": params["origClientOrderId"],
+        }
 
     monkeypatch.setattr(client, "_request", request)
 
-    assert client.get_order("ethusdc", orig_client_order_id="abc") == {"status": "FILLED"}
-    assert calls == [("GET", "/fapi/v1/order", {"symbol": "ETHUSDC", "origClientOrderId": "abc"}, True)]
+    assert client.get_order("ethusdc", orig_client_order_id="abc")["status"] == "FILLED"
+    assert calls == [
+        (
+            "GET",
+            "/fapi/v1/order",
+            {"symbol": "ETHUSDC", "origClientOrderId": "abc"},
+            True,
+        )
+    ]
 
 
 def test_get_order_requires_identifier() -> None:
@@ -829,18 +876,29 @@ def test_place_order_futures_reduce_only_requests_result(monkeypatch) -> None:
         calls.append((method, path, params or {}, signed))
         if path == "/fapi/v1/leverage":
             raise AssertionError("reduce-only close must not change leverage")
-        return {"ok": True}
+        return {
+            "ok": True,
+            **params,
+            "orderId": 1,
+            "clientOrderId": params["newClientOrderId"],
+            "origQty": params["quantity"],
+            "positionSide": "BOTH",
+            "reduceOnly": True,
+        }
 
     monkeypatch.setattr(client, "_request", request)
-    assert client.place_order(
-        "BTCUSDC",
-        "SELL",
-        0.25,
-        dry_run=False,
-        leverage=2.0,
-        reduce_only=True,
-        client_order_id="sait-c-abc123",
-    ) == {"ok": True}
+    assert (
+        client.place_order(
+            "BTCUSDC",
+            "SELL",
+            0.25,
+            dry_run=False,
+            leverage=2.0,
+            reduce_only=True,
+            client_order_id="sait-c-abc123",
+        )["ok"]
+        is True
+    )
     order_call = calls[-1]
     assert order_call == (
         "POST",
@@ -928,7 +986,13 @@ def test_place_order_uses_spot_live_endpoint(monkeypatch) -> None:
 
     def request(method: str, path: str, params=None, signed: bool = False):
         called.append((method, path, signed))
-        return {"ok": True, "method": method, "path": path, "signed": signed, "params": params}
+        return {
+            "ok": True,
+            **params,
+            "orderId": 1,
+            "clientOrderId": params["newClientOrderId"],
+            "origQty": params["quantity"],
+        }
 
     monkeypatch.setattr(client, "_request", request)
     response = client.place_order("BTCUSDC", "BUY", 1.0, dry_run=False)

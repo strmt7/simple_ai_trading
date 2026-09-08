@@ -305,6 +305,10 @@ def test_full_signed_operation_preserves_scope_through_all_requests(
                 "avgPrice": "50000",
                 "orderId": "123",
                 "clientOrderId": "sait-o-scopeone",
+                "origQty": "0.001",
+                "type": "MARKET",
+                "positionSide": "BOTH",
+                "reduceOnly": False,
             }
         return Mock(status_code=200, headers={}, json=lambda: payload)
 

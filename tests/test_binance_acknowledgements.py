@@ -261,7 +261,14 @@ def test_cli_active_response_and_query_use_same_consistency_gate(product, query)
         cli._resolved_order_fill_details(
             client,
             RuntimeConfig(market_type=product),
-            {"orderId": 200} if query else contradictory,
+            {
+                "orderId": 200,
+                "clientOrderId": "sait-o-ack",
+                "side": "BUY",
+                "origQty": "1",
+            }
+            if query
+            else contradictory,
             fallback_qty=1,
             fallback_price=100,
             dry_run=False,
