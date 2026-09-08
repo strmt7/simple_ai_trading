@@ -10,6 +10,14 @@ Scope blockers to their branch; a fresh user resumption resets the blocked audit
 
 ## Current Truth
 
+The [September 9 NYC partition screen](review/2026-09-08/nyc-sep9-frontier/review.md)
+used one prospectively frozen public GET. All 11 YES and 11 NO sides were
+price-complete; all 28 long-only frontier rows failed before fees. No downstream
+book or account request was justified. Current research totals are 37 accepted
+mechanism scopes, 65 hypotheses, 196 terminal observations and zero qualified
+stable profitable edges. This is a finite source-price rejection, not a claim
+that the entire family has negative expected value. Preserve the exact event.
+
 The [acknowledgement consistency repair](review/2026-09-08/binance-acknowledgement-consistency.md)
 fixes a reproduced false-full-close admission: contradictory cumulative/fill
 quantities could remove a whole lot and clear its block. Autonomous and direct
