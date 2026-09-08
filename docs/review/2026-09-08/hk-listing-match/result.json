@@ -1,0 +1,531 @@
+{
+  "accepted_edge": false,
+  "account_requests": 0,
+  "announced_population": [
+    {
+      "contract_type": "USDT-Priced",
+      "launch_utc": "2026-09-07T02:00:00Z",
+      "symbol": "BYDUSDT",
+      "underlying": "BYD CO. LTD. - H SHARES (HKEX: 1211)"
+    },
+    {
+      "contract_type": "Quanto",
+      "launch_utc": "2026-09-07T02:05:00Z",
+      "symbol": "HK0992USDT",
+      "underlying": "LENOVO GROUP LTD. (HKEX: 0992)"
+    }
+  ],
+  "created_at_utc": "2026-09-08T10:29:11.693475+00:00",
+  "deployment_ready": false,
+  "economic_requests": 0,
+  "exact_base_matches": [],
+  "identity_projection": [
+    {
+      "base_asset": "SP500",
+      "instrument_id": 1,
+      "quote_asset": "pUSD",
+      "symbol": "SP500-USD"
+    },
+    {
+      "base_asset": "GOLD",
+      "instrument_id": 2,
+      "quote_asset": "pUSD",
+      "symbol": "GOLD-USD"
+    },
+    {
+      "base_asset": "WTIOIL",
+      "instrument_id": 3,
+      "quote_asset": "pUSD",
+      "symbol": "WTIOIL-USD"
+    },
+    {
+      "base_asset": "NAS100",
+      "instrument_id": 4,
+      "quote_asset": "pUSD",
+      "symbol": "NAS100-USD"
+    },
+    {
+      "base_asset": "SILVER",
+      "instrument_id": 5,
+      "quote_asset": "pUSD",
+      "symbol": "SILVER-USD"
+    },
+    {
+      "base_asset": "BTC",
+      "instrument_id": 6,
+      "quote_asset": "pUSD",
+      "symbol": "BTC-USD"
+    },
+    {
+      "base_asset": "ETH",
+      "instrument_id": 7,
+      "quote_asset": "pUSD",
+      "symbol": "ETH-USD"
+    },
+    {
+      "base_asset": "SOL",
+      "instrument_id": 8,
+      "quote_asset": "pUSD",
+      "symbol": "SOL-USD"
+    },
+    {
+      "base_asset": "SPCX",
+      "instrument_id": 9,
+      "quote_asset": "pUSD",
+      "symbol": "SPCX-USD"
+    },
+    {
+      "base_asset": "HYPE",
+      "instrument_id": 10,
+      "quote_asset": "pUSD",
+      "symbol": "HYPE-USD"
+    },
+    {
+      "base_asset": "MU",
+      "instrument_id": 11,
+      "quote_asset": "pUSD",
+      "symbol": "MU-USD"
+    },
+    {
+      "base_asset": "SKHY",
+      "instrument_id": 13,
+      "quote_asset": "pUSD",
+      "symbol": "SKHY-USD"
+    },
+    {
+      "base_asset": "SKHYNIX",
+      "instrument_id": 14,
+      "quote_asset": "pUSD",
+      "symbol": "SKHYNIX-USD"
+    },
+    {
+      "base_asset": "AAPL",
+      "instrument_id": 15,
+      "quote_asset": "pUSD",
+      "symbol": "AAPL-USD"
+    },
+    {
+      "base_asset": "MSFT",
+      "instrument_id": 16,
+      "quote_asset": "pUSD",
+      "symbol": "MSFT-USD"
+    },
+    {
+      "base_asset": "GOOGL",
+      "instrument_id": 17,
+      "quote_asset": "pUSD",
+      "symbol": "GOOG-USD"
+    },
+    {
+      "base_asset": "AMZN",
+      "instrument_id": 18,
+      "quote_asset": "pUSD",
+      "symbol": "AMZN-USD"
+    },
+    {
+      "base_asset": "NVDA",
+      "instrument_id": 19,
+      "quote_asset": "pUSD",
+      "symbol": "NVDA-USD"
+    },
+    {
+      "base_asset": "META",
+      "instrument_id": 20,
+      "quote_asset": "pUSD",
+      "symbol": "META-USD"
+    },
+    {
+      "base_asset": "TSLA",
+      "instrument_id": 21,
+      "quote_asset": "pUSD",
+      "symbol": "TSLA-USD"
+    },
+    {
+      "base_asset": "AMD",
+      "instrument_id": 22,
+      "quote_asset": "pUSD",
+      "symbol": "AMD-USD"
+    },
+    {
+      "base_asset": "INTC",
+      "instrument_id": 23,
+      "quote_asset": "pUSD",
+      "symbol": "INTC-USD"
+    },
+    {
+      "base_asset": "AVGO",
+      "instrument_id": 24,
+      "quote_asset": "pUSD",
+      "symbol": "AVGO-USD"
+    },
+    {
+      "base_asset": "QCOM",
+      "instrument_id": 25,
+      "quote_asset": "pUSD",
+      "symbol": "QCOM-USD"
+    },
+    {
+      "base_asset": "ARM",
+      "instrument_id": 26,
+      "quote_asset": "pUSD",
+      "symbol": "ARM-USD"
+    },
+    {
+      "base_asset": "TSM",
+      "instrument_id": 27,
+      "quote_asset": "pUSD",
+      "symbol": "TSM-USD"
+    },
+    {
+      "base_asset": "ASML",
+      "instrument_id": 28,
+      "quote_asset": "pUSD",
+      "symbol": "ASML-USD"
+    },
+    {
+      "base_asset": "SNDK",
+      "instrument_id": 29,
+      "quote_asset": "pUSD",
+      "symbol": "SNDK-USD"
+    },
+    {
+      "base_asset": "DRAM",
+      "instrument_id": 30,
+      "quote_asset": "pUSD",
+      "symbol": "DRAM-USD"
+    },
+    {
+      "base_asset": "PUMP",
+      "instrument_id": 31,
+      "quote_asset": "pUSD",
+      "symbol": "PUMP-USD"
+    },
+    {
+      "base_asset": "ZEC",
+      "instrument_id": 32,
+      "quote_asset": "pUSD",
+      "symbol": "ZEC-USD"
+    },
+    {
+      "base_asset": "XRP",
+      "instrument_id": 33,
+      "quote_asset": "pUSD",
+      "symbol": "XRP-USD"
+    },
+    {
+      "base_asset": "LIT",
+      "instrument_id": 34,
+      "quote_asset": "pUSD",
+      "symbol": "LIT-USD"
+    },
+    {
+      "base_asset": "KPEPE",
+      "instrument_id": 35,
+      "quote_asset": "pUSD",
+      "symbol": "KPEPE-USD"
+    },
+    {
+      "base_asset": "HOOD",
+      "instrument_id": 36,
+      "quote_asset": "pUSD",
+      "symbol": "HOOD-USD"
+    },
+    {
+      "base_asset": "MSTR",
+      "instrument_id": 37,
+      "quote_asset": "pUSD",
+      "symbol": "MSTR-USD"
+    },
+    {
+      "base_asset": "STRC",
+      "instrument_id": 38,
+      "quote_asset": "pUSD",
+      "symbol": "STRC-USD"
+    },
+    {
+      "base_asset": "CRCL",
+      "instrument_id": 39,
+      "quote_asset": "pUSD",
+      "symbol": "CRCL-USD"
+    },
+    {
+      "base_asset": "COIN",
+      "instrument_id": 40,
+      "quote_asset": "pUSD",
+      "symbol": "COIN-USD"
+    },
+    {
+      "base_asset": "RKLB",
+      "instrument_id": 41,
+      "quote_asset": "pUSD",
+      "symbol": "RKLB-USD"
+    },
+    {
+      "base_asset": "LITE",
+      "instrument_id": 42,
+      "quote_asset": "pUSD",
+      "symbol": "LITE-USD"
+    },
+    {
+      "base_asset": "NBIS",
+      "instrument_id": 43,
+      "quote_asset": "pUSD",
+      "symbol": "NBIS-USD"
+    },
+    {
+      "base_asset": "ORCL",
+      "instrument_id": 44,
+      "quote_asset": "pUSD",
+      "symbol": "ORCL-USD"
+    },
+    {
+      "base_asset": "PLTR",
+      "instrument_id": 45,
+      "quote_asset": "pUSD",
+      "symbol": "PLTR-USD"
+    },
+    {
+      "base_asset": "BRENTOIL",
+      "instrument_id": 46,
+      "quote_asset": "pUSD",
+      "symbol": "BRENTOIL-USD"
+    },
+    {
+      "base_asset": "BABA",
+      "instrument_id": 47,
+      "quote_asset": "pUSD",
+      "symbol": "BABA-USD"
+    },
+    {
+      "base_asset": "ZM",
+      "instrument_id": 48,
+      "quote_asset": "pUSD",
+      "symbol": "ZM-USD"
+    },
+    {
+      "base_asset": "DELL",
+      "instrument_id": 49,
+      "quote_asset": "pUSD",
+      "symbol": "DELL-USD"
+    },
+    {
+      "base_asset": "CXMT",
+      "instrument_id": 50,
+      "quote_asset": "pUSD",
+      "symbol": "CXMT-USD"
+    },
+    {
+      "base_asset": "KIOXIA",
+      "instrument_id": 51,
+      "quote_asset": "pUSD",
+      "symbol": "KIOXIA-USD"
+    },
+    {
+      "base_asset": "SAMSUNG",
+      "instrument_id": 52,
+      "quote_asset": "pUSD",
+      "symbol": "SAMSUNG-USD"
+    },
+    {
+      "base_asset": "CRWV",
+      "instrument_id": 53,
+      "quote_asset": "pUSD",
+      "symbol": "CRWV-USD"
+    },
+    {
+      "base_asset": "AAVE",
+      "instrument_id": 54,
+      "quote_asset": "pUSD",
+      "symbol": "AAVE-USD"
+    },
+    {
+      "base_asset": "UNI",
+      "instrument_id": 55,
+      "quote_asset": "pUSD",
+      "symbol": "UNI-USD"
+    },
+    {
+      "base_asset": "WLD",
+      "instrument_id": 56,
+      "quote_asset": "pUSD",
+      "symbol": "WLD-USD"
+    },
+    {
+      "base_asset": "NEAR",
+      "instrument_id": 57,
+      "quote_asset": "pUSD",
+      "symbol": "NEAR-USD"
+    },
+    {
+      "base_asset": "KSHIB",
+      "instrument_id": 58,
+      "quote_asset": "pUSD",
+      "symbol": "KSHIB-USD"
+    },
+    {
+      "base_asset": "FARTCOIN",
+      "instrument_id": 59,
+      "quote_asset": "pUSD",
+      "symbol": "FARTCOIN-USD"
+    },
+    {
+      "base_asset": "DOGE",
+      "instrument_id": 60,
+      "quote_asset": "pUSD",
+      "symbol": "DOGE-USD"
+    },
+    {
+      "base_asset": "ENA",
+      "instrument_id": 61,
+      "quote_asset": "pUSD",
+      "symbol": "ENA-USD"
+    },
+    {
+      "base_asset": "ONDO",
+      "instrument_id": 62,
+      "quote_asset": "pUSD",
+      "symbol": "ONDO-USD"
+    },
+    {
+      "base_asset": "SUI",
+      "instrument_id": 63,
+      "quote_asset": "pUSD",
+      "symbol": "SUI-USD"
+    },
+    {
+      "base_asset": "VVV",
+      "instrument_id": 64,
+      "quote_asset": "pUSD",
+      "symbol": "VVV-USD"
+    },
+    {
+      "base_asset": "TAO",
+      "instrument_id": 65,
+      "quote_asset": "pUSD",
+      "symbol": "TAO-USD"
+    },
+    {
+      "base_asset": "ADA",
+      "instrument_id": 66,
+      "quote_asset": "pUSD",
+      "symbol": "ADA-USD"
+    },
+    {
+      "base_asset": "ZRO",
+      "instrument_id": 67,
+      "quote_asset": "pUSD",
+      "symbol": "ZRO-USD"
+    },
+    {
+      "base_asset": "BNB",
+      "instrument_id": 68,
+      "quote_asset": "pUSD",
+      "symbol": "BNB-USD"
+    }
+  ],
+  "inventory_count": 67,
+  "limits": "No exact counterpart in this complete returned inventory. No assertion about other exchanges, future listings, aliases or current Binance execution availability. Quanto and linear settlement are not interchangeable.",
+  "orders_or_funds": 0,
+  "result_sha256": "51c451164a07004c35e7def5dca8d7ba4b2a3866a25362af40e9975262312f94",
+  "retry_trigger": "Material independently observed exact Polymarket counterpart listing with matching share class, unit and settlement, or a separately source-proved conversion architecture. Do not repeat this inventory, request funding or prices, or use a similar ticker as a hedge.",
+  "reviewer_sha256": "812cf73930ac53ed88ce9548fed5afc0dca411ad6c312c33c6c09f14ad1d623f",
+  "schema_version": 1,
+  "source_results": {
+    "announcement": {
+      "accepted_edge": false,
+      "authority": {
+        "account_requests": 0,
+        "credentials_used": false,
+        "funds_used": false,
+        "orders_or_transactions": 0,
+        "protected_capture_touched": false,
+        "public_unauthenticated_read_only_requests": 1,
+        "signed_requests": 0,
+        "trading_authority": false
+      },
+      "capture": {
+        "journal_path": "docs/review/2026-09-08/hk-listing-match/announcement-journal.jsonl",
+        "receipt": {
+          "completed_at_ms": 1788863232238,
+          "error_type": null,
+          "oversize_body_is_truncated": false,
+          "phase": "completed",
+          "raw_path": "docs/review/2026-09-08/hk-listing-match/announcement-raw.json",
+          "requested_at_ms": 1788863231907,
+          "response_bytes": 88620,
+          "response_sha256": "2e72a9f3030fca7d8a694e1447137c438772658baac05d78d15f40d883ebb9b5",
+          "status_code": 200
+        }
+      },
+      "contract": {
+        "path": "docs/review/2026-09-08/hk-listing-match/announcement-contract.json",
+        "sha256": "531c9d0c3c80a8d99a70109832de88f8b207a16aeef5842a35eedb9843f9d0d9"
+      },
+      "created_at_utc": "2026-09-08T10:27:12.240016+00:00",
+      "profitability_claim": false,
+      "result_sha256": "4972b5703740c47046622e9298999ff432e6b683f61bf639f9f479404866f34a",
+      "schema_version": "bounded-public-source-result-v1",
+      "source_gate": {
+        "passed": true,
+        "phrases": {
+          "2026-09-07": true,
+          "BYDUSDT": true,
+          "HK0992USDT": true
+        },
+        "representation": {
+          "decode_error": null,
+          "detected_format": "utf8_text",
+          "utf8_decode_passed": true
+        }
+      }
+    },
+    "polymarket-instruments": {
+      "accepted_edge": false,
+      "authority": {
+        "account_requests": 0,
+        "credentials_used": false,
+        "funds_used": false,
+        "orders_or_transactions": 0,
+        "protected_capture_touched": false,
+        "public_unauthenticated_read_only_requests": 1,
+        "signed_requests": 0,
+        "trading_authority": false
+      },
+      "capture": {
+        "journal_path": "docs/review/2026-09-08/hk-listing-match/polymarket-instruments-journal.jsonl",
+        "receipt": {
+          "completed_at_ms": 1788863249279,
+          "error_type": null,
+          "oversize_body_is_truncated": false,
+          "phase": "completed",
+          "raw_path": "docs/review/2026-09-08/hk-listing-match/polymarket-instruments-raw.json",
+          "requested_at_ms": 1788863249166,
+          "response_bytes": 44614,
+          "response_sha256": "ee7164660bdb47c98be17d1af4486b41a71e2c960230616a755db3c1ad985e6a",
+          "status_code": 200
+        }
+      },
+      "contract": {
+        "path": "docs/review/2026-09-08/hk-listing-match/polymarket-instruments-contract.json",
+        "sha256": "2eed6cbef41f36eaee4f5f12ccbc08c3e968520682b6350cbcc5ea42d26b52f2"
+      },
+      "created_at_utc": "2026-09-08T10:27:29.288448+00:00",
+      "profitability_claim": false,
+      "result_sha256": "c24b8eafd892aac8ab5879d85b8a158eabcd7562095e2764f43931589136e05f",
+      "schema_version": "bounded-public-source-result-v1",
+      "source_gate": {
+        "passed": true,
+        "phrases": {
+          "\"base_asset\"": true,
+          "\"symbol\"": true
+        },
+        "representation": {
+          "decode_error": null,
+          "detected_format": "utf8_text",
+          "utf8_decode_passed": true
+        }
+      }
+    }
+  },
+  "status": "terminal_no_exact_counterpart"
+}

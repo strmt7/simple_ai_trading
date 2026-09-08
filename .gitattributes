@@ -193,3 +193,7 @@ data/binance-commodity-option-perpetual-lower-bound-v1/raw/options-exchange-info
 docs/review/2026-09-08/cxmt-post-change/*.json binary -eol
 docs/review/2026-09-08/cxmt-post-change/*.jsonl binary -eol
 docs/review/2026-09-08/cxmt-post-change/raw/* binary -eol
+docs/review/2026-09-08/usdt-flexible/*.json binary -eol
+docs/review/2026-09-08/usdt-flexible/*.jsonl binary -eol
+docs/review/2026-09-08/hk-listing-match/*.json binary -eol
+docs/review/2026-09-08/hk-listing-match/*.jsonl binary -eol

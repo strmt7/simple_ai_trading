@@ -1,0 +1,66 @@
+{
+  "schema_version": 1,
+  "contract_path": "docs/review/2026-09-08/usdt-flexible/source-contract.json",
+  "request_name": "usdt-flexible-september8-new-campaign",
+  "frozen_at_utc": "2026-09-08T10:21:35Z",
+  "request": {
+    "method": "GET",
+    "url": "https://www.binance.com/bapi/composite/v1/public/cms/article/detail/query?articleCode=2d943377ecae4ef18a33cc90047a1d80",
+    "count": 1,
+    "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "response_byte_ceiling": 1048576,
+  "required_utf8_phrases": [
+    "USDT Flexible Products",
+    "2026-09-08"
+  ],
+  "transport": {
+    "socket_timeout_seconds": 10,
+    "read_budget_seconds": 30,
+    "redirects": false,
+    "retries": 0,
+    "proxies": false
+  },
+  "outputs": {
+    "raw_path": "docs/review/2026-09-08/usdt-flexible/raw.json",
+    "journal_path": "docs/review/2026-09-08/usdt-flexible/journal.jsonl",
+    "result_path": "docs/review/2026-09-08/usdt-flexible/source-result.json"
+  },
+  "authority": {
+    "account_requests": 0,
+    "credentials_used": false,
+    "funds_used": false,
+    "orders_or_transactions": 0,
+    "protected_capture_touched": false,
+    "public_unauthenticated_read_only_requests": 1,
+    "signed_requests": 0,
+    "trading_authority": false
+  },
+  "implementations": [
+    {
+      "path": "tools/capture_public_source_bounded.py",
+      "sha256": "760339a7602abfa9eb97f3f1cca0ef79191b07ff5f5aa42515f30f191f9888fc"
+    },
+    {
+      "path": "tools/capture_public_source_contract.py",
+      "sha256": "9dbb14651455abade755fe96091b9eaafe1153f56a1baad4cd60b1a888d41b8c"
+    },
+    {
+      "path": "tools/adjudicate_polymarket_exact_mlb_monotone_prefilter.py",
+      "sha256": "958a44d78029b9a1eb69a3771ce18e53ac1ed3c7bc161c8e4318beedce2cf99f"
+    }
+  ],
+  "adjudication": {
+    "hypothesis_rank": 8,
+    "novelty": "New exact September 8 official campaign article after the prior September 7 global end; same existing USDT Flexible overlay, not a new mechanism.",
+    "discovery_only_url": "https://www.binance.com/en/support/announcement/detail/2d943377ecae4ef18a33cc90047a1d80",
+    "deduplication": "No exact article-code hit in retained docs, tools or data JSON/JSONL before access.",
+    "source_gate": "Require successful exact article identity and its complete bonus/base APR, principal tier cap, minimum, dates, accrual/redemption, eligibility and change-reservation clauses. Missing terms remain unknown.",
+    "comparison": "Independently existing idle same-account USDT against leaving the same USDT available; no new purchase, transfer, borrowing or subscription.",
+    "economics": "Separate capped bonus from variable base APR; no stacking with expired or regional campaigns without explicit terms. Compute only conditional gross bonus per explicitly eligible complete UTC accrual day and remaining horizon. Exclude variable APR from any fixed-rate calculation.",
+    "qualification": "No accepted-edge count change, no account qualification or guaranteed forward reward. Require actual same-account eligibility, quota, realized cash flows and best available alternative after costs before deployment.",
+    "outcome_policy": "Stop after this one source. No aliases, refetch, price or account escalation. One offline adjudication of retained bytes is allowed, never repairs a failed capture.",
+    "retry": "Material independently observed terms change or exact source-proved campaign end; no daily polling."
+  },
+  "contract_sha256": "d8b6c8093cef25549219ed01008c479021528de329172643fdf6f41f417f8284"
+}

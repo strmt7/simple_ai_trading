@@ -45,12 +45,23 @@ only where contracts match; leave historical implementations untouched.
 
 ## Round 2: evidence gaps and collection value
 
+September 8: the [USDT renewal](../2026-09-08/usdt-flexible/review.md) enlarges
+an existing capped allocation overlay, not scalable trading income. The
+[BYD/Lenovo gate](../2026-09-08/hk-listing-match/review.md) finds no exact
+Polymarket counterpart, avoiding unnecessary economic requests. Do not repeat
+these source/counterpart studies, old literature hits or the consumed CXMT window.
+
 For efficient registry inspection, use `prioritized_hypotheses`,
 `priority_rank` and `mechanism` (not guessed `family`/`name` fields). Project
 only the selected row's required fields; its `canonical_artifacts` can exceed
 an entire output budget. Read a required full row in bounded field chunks,
 not repeated truncated dumps. Use one-line diff context when mechanically
 updating a ledger next to very long status strings.
+
+In PowerShell, pass `rg` a real directory plus `-g` filters, not a wildcard
+inside a positional path. For retained Binance CMS responses, decode the body
+node tree and display only its visible text or selected blocks; printing the
+encoded `.body` wastes output and hides the terms that matter.
 
 Inventory retained data by exact contract, event/settlement interval, timestamp,
 source hash, costs, depth and role **without consuming protected outcomes**.
