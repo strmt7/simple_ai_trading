@@ -28,6 +28,18 @@ after its one execution. All other literal retry/protected-capture rules remain.
 
 ## Hard Rules
 
+September 8 session-only research exception, using the user's explicit authority
+to revise research rules for this session: the source-selected
+`cfb-flam-mia-2026-09-10` may receive exactly the one public unauthenticated
+deployment-only GET frozen in `docs/review/2026-09-08/cfb-deployment/contract.json`.
+The August 31 September 8-12 CFB catalog was empty, not a price rejection.
+Require exact event creation strictly after that retained receipt before any
+economic use. This is not permission to refresh the catalog or request books,
+fees, accounts or orders. No economic values may be printed or selected in this
+stage. Failure is terminal; success permits only a separately frozen offline
+payoff/side-specific rejection test of the retained bytes. Preserve every old
+result and all other consumed populations, including WNBA September 3-9.
+
 - Apply [work prioritization](docs/WORK_PRIORITIES.md): informative financial
   research and demonstrated capital-risk repairs before speculative tooling or
   cosmetic work. Commercial code protection is required before a protected/paid

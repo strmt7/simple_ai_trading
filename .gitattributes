@@ -199,3 +199,6 @@ docs/review/2026-09-08/hk-listing-match/*.json binary -eol
 docs/review/2026-09-08/hk-listing-match/*.jsonl binary -eol
 docs/review/2026-09-08/tradfi-september10-change/*.json binary -eol
 docs/review/2026-09-08/tradfi-september10-change/*.jsonl binary -eol
+docs/review/2026-09-08/cfb-deployment/*.json binary -eol
+docs/review/2026-09-08/cfb-deployment/*.jsonl binary -eol
+docs/review/2026-09-08/cfb-deployment/raw/* binary -eol
