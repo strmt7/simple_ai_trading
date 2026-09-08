@@ -1,0 +1,256 @@
+{
+  "base_commit": "538792180379e66578b208094baa9d54ba859839",
+  "classification": "conditional_linear_settlement_accounting_not_market_outcomes",
+  "examples": [
+    {
+      "inputs": {
+        "declared_timestamps_ms": [
+          1,
+          2
+        ],
+        "futures_entry_price": "101",
+        "observations": [
+          {
+            "index_price": "90",
+            "settlement_weight_units": "1",
+            "spot_execution_price": "90",
+            "spot_exit_weight": "0.5",
+            "spot_reference_price": "90",
+            "timestamp_ms": 1
+          },
+          {
+            "index_price": "110",
+            "settlement_weight_units": "1",
+            "spot_execution_price": "110",
+            "spot_exit_weight": "0.5",
+            "spot_reference_price": "110",
+            "timestamp_ms": 2
+          }
+        ],
+        "quantity": "1",
+        "spot_entry_price": "100",
+        "spot_price_lower_bound": "90",
+        "spot_price_upper_bound": "110",
+        "total_cost_quote": "0.2"
+      },
+      "label": "matched_rising",
+      "result": {
+        "conditional_timing_loss_bound_quote": "0",
+        "direct_cashflow_quote": "0.8",
+        "entry_basis_quote": "1",
+        "execution_tracking_quote": "0",
+        "index_tracking_quote": "0",
+        "net_cashflow_quote": "0.8",
+        "qualified_edge": false,
+        "settlement_price": "100",
+        "spot_exit_price": "100",
+        "timing_tracking_quote": "0",
+        "timing_weight_distance": "0",
+        "total_cost_quote": "0.2"
+      }
+    },
+    {
+      "inputs": {
+        "declared_timestamps_ms": [
+          1,
+          2
+        ],
+        "futures_entry_price": "101",
+        "observations": [
+          {
+            "index_price": "110",
+            "settlement_weight_units": "1",
+            "spot_execution_price": "110",
+            "spot_exit_weight": "0.5",
+            "spot_reference_price": "110",
+            "timestamp_ms": 1
+          },
+          {
+            "index_price": "90",
+            "settlement_weight_units": "1",
+            "spot_execution_price": "90",
+            "spot_exit_weight": "0.5",
+            "spot_reference_price": "90",
+            "timestamp_ms": 2
+          }
+        ],
+        "quantity": "1",
+        "spot_entry_price": "100",
+        "spot_price_lower_bound": "90",
+        "spot_price_upper_bound": "110",
+        "total_cost_quote": "0.2"
+      },
+      "label": "matched_falling",
+      "result": {
+        "conditional_timing_loss_bound_quote": "0",
+        "direct_cashflow_quote": "0.8",
+        "entry_basis_quote": "1",
+        "execution_tracking_quote": "0",
+        "index_tracking_quote": "0",
+        "net_cashflow_quote": "0.8",
+        "qualified_edge": false,
+        "settlement_price": "100",
+        "spot_exit_price": "100",
+        "timing_tracking_quote": "0",
+        "timing_weight_distance": "0",
+        "total_cost_quote": "0.2"
+      }
+    },
+    {
+      "inputs": {
+        "declared_timestamps_ms": [
+          1,
+          2
+        ],
+        "futures_entry_price": "101",
+        "observations": [
+          {
+            "index_price": "110",
+            "settlement_weight_units": "1",
+            "spot_execution_price": null,
+            "spot_exit_weight": "0",
+            "spot_reference_price": "110",
+            "timestamp_ms": 1
+          },
+          {
+            "index_price": "90",
+            "settlement_weight_units": "1",
+            "spot_execution_price": "90",
+            "spot_exit_weight": "1",
+            "spot_reference_price": "90",
+            "timestamp_ms": 2
+          }
+        ],
+        "quantity": "1",
+        "spot_entry_price": "100",
+        "spot_price_lower_bound": "90",
+        "spot_price_upper_bound": "110",
+        "total_cost_quote": "0.2"
+      },
+      "label": "endpoint_exit_falling",
+      "result": {
+        "conditional_timing_loss_bound_quote": "10",
+        "direct_cashflow_quote": "-9.2",
+        "entry_basis_quote": "1",
+        "execution_tracking_quote": "0",
+        "index_tracking_quote": "0",
+        "net_cashflow_quote": "-9.2",
+        "qualified_edge": false,
+        "settlement_price": "100",
+        "spot_exit_price": "90",
+        "timing_tracking_quote": "-10",
+        "timing_weight_distance": "0.5",
+        "total_cost_quote": "0.2"
+      }
+    },
+    {
+      "inputs": {
+        "declared_timestamps_ms": [
+          1,
+          2
+        ],
+        "futures_entry_price": "101",
+        "observations": [
+          {
+            "index_price": "92",
+            "settlement_weight_units": "1",
+            "spot_execution_price": "90",
+            "spot_exit_weight": "0.5",
+            "spot_reference_price": "90",
+            "timestamp_ms": 1
+          },
+          {
+            "index_price": "112",
+            "settlement_weight_units": "1",
+            "spot_execution_price": "110",
+            "spot_exit_weight": "0.5",
+            "spot_reference_price": "110",
+            "timestamp_ms": 2
+          }
+        ],
+        "quantity": "1",
+        "spot_entry_price": "100",
+        "spot_price_lower_bound": "90",
+        "spot_price_upper_bound": "110",
+        "total_cost_quote": "0.2"
+      },
+      "label": "matched_but_index_basis",
+      "result": {
+        "conditional_timing_loss_bound_quote": "0",
+        "direct_cashflow_quote": "-1.2",
+        "entry_basis_quote": "1",
+        "execution_tracking_quote": "0",
+        "index_tracking_quote": "-2",
+        "net_cashflow_quote": "-1.2",
+        "qualified_edge": false,
+        "settlement_price": "102",
+        "spot_exit_price": "100",
+        "timing_tracking_quote": "0",
+        "timing_weight_distance": "0",
+        "total_cost_quote": "0.2"
+      }
+    },
+    {
+      "inputs": {
+        "declared_timestamps_ms": [
+          1,
+          2
+        ],
+        "futures_entry_price": "101",
+        "observations": [
+          {
+            "index_price": "90",
+            "settlement_weight_units": "1",
+            "spot_execution_price": "87",
+            "spot_exit_weight": "0.5",
+            "spot_reference_price": "90",
+            "timestamp_ms": 1
+          },
+          {
+            "index_price": "110",
+            "settlement_weight_units": "1",
+            "spot_execution_price": "107",
+            "spot_exit_weight": "0.5",
+            "spot_reference_price": "110",
+            "timestamp_ms": 2
+          }
+        ],
+        "quantity": "1",
+        "spot_entry_price": "100",
+        "spot_price_lower_bound": "90",
+        "spot_price_upper_bound": "110",
+        "total_cost_quote": "0.2"
+      },
+      "label": "matched_but_execution_loss",
+      "result": {
+        "conditional_timing_loss_bound_quote": "0",
+        "direct_cashflow_quote": "-2.2",
+        "entry_basis_quote": "1",
+        "execution_tracking_quote": "-3",
+        "index_tracking_quote": "0",
+        "net_cashflow_quote": "-2.2",
+        "qualified_edge": false,
+        "settlement_price": "100",
+        "spot_exit_price": "97",
+        "timing_tracking_quote": "0",
+        "timing_weight_distance": "0",
+        "total_cost_quote": "0.2"
+      }
+    }
+  ],
+  "historical_results_changed": false,
+  "new_account_requests": 0,
+  "new_market_requests": 0,
+  "qualified_edge": false,
+  "retained_pdf_sha256": "53197b612332da02c20b5b7d19b81ff53ee5f4938c6330c72a30a1ca4f91049f",
+  "rounding": "exact rational internal arithmetic; recurring result fields rounded to 60 decimal significant digits",
+  "schema_version": 1,
+  "source_applicability_verified": false,
+  "source_binding_encoding": "UTF-8 with CRLF normalized to LF",
+  "source_bindings": {
+    "docs/review/2026-09-04/inverse-clearing-source-review.json": "fb09d321c6defbc8ad20104cbf65cbefca22e9ce54983ecb38fbfbdb936625f1",
+    "src/simple_ai_trading/settlement_tracking.py": "d125db86f11d2cf24662896771cd3c78faf62b98a3b4315aa21e7e29dc09ede1",
+    "tests/test_settlement_tracking.py": "719868818e1ed003b42c44e5f95d9161215e33c6a66fe829749349ede3c38d06",
+    "tools/review_settlement_tracking.py": "6b94b4799ab229db3b9daa4225aba5c2d59937d5d11a097a289a3de2ab9adfb2"
+  }
+}

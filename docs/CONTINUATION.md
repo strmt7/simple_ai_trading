@@ -1,5 +1,14 @@
 # Continue Development
 
+Latest financial model: [settlement tracking decomposition](review/2026-09-05/settlement-tracking-review.md)
+quantifies linear carry index, exit-timing and execution effects separately.
+Exact rational weights handle equal-second settlement without rounded-weight
+loss; missing/fictional executions reject. 33 focused checks pass and all five
+fixed synthetic examples reconstruct. No real quote, fee, PnL or new capture is
+claimed. Do not repeat this grid, generic inverse tutorials or oversized registry
+projections. Next carry evidence must bind the actual index/contract and feasible
+quantity schedule, costs and margin; every existing account/retry gate remains.
+
 Latest recovery implementation: [terminal opening evidence](review/2026-09-05/binance-terminal-opening-evidence.md)
 adds a bounded, scope-bound exact-order/fill collector with durable native-fee
 observations. 371 affected checks pass, including 82 new cases, concurrent
