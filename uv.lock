@@ -2312,7 +2312,7 @@ wheels = [
 
 [[package]]
 name = "polymarket-client"
-version = "0.2.0"
+version = "0.11.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "eth-abi" },
@@ -2321,11 +2321,12 @@ dependencies = [
     { name = "httpx", extra = ["http2"] },
     { name = "msgpack" },
     { name = "pydantic" },
+    { name = "typing-extensions" },
     { name = "websockets" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/5f/b6/ea0c83b18704c2582b2cd4d556b631dbb240e1bfe179bdf01988ecf54a44/polymarket_client-0.2.0.tar.gz", hash = "sha256:a7bc2c3810b46589f2aa33fbb43d7376fce450c2f05ccc71bf7277c14ebd44dd", size = 315282, upload-time = "2026-07-24T21:18:51.014Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/70/bf/00e68a6e577bdc9c0386a5f6a859182b3d294f53a6aa9243399fd5f3135c/polymarket_client-0.11.0.tar.gz", hash = "sha256:a5ecbfbc1e4c7633d3dce47f59a2e3356c1c51299343ca944e73fd4fa862be6e", size = 406680, upload-time = "2026-09-23T13:20:21.573Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/52/54/ce76542a9298efe59620ea6f7768ef05d2d2e39d65b71d1dbf7b8cc31bf0/polymarket_client-0.2.0-py3-none-any.whl", hash = "sha256:052600be28c9479bc4566961fa9a41502063dfb10ace45dab1a92dfe153c0857", size = 286897, upload-time = "2026-07-24T21:18:49.373Z" },
+    { url = "https://files.pythonhosted.org/packages/11/d2/4227688fd82a6864cf07528e33e9f859a154f70343c22a4fe66e113a4ef7/polymarket_client-0.11.0-py3-none-any.whl", hash = "sha256:aaef43da3c40ef70c147aa8715edfce85b8c8731c3d6b142666e087b194734e5", size = 365624, upload-time = "2026-09-23T13:20:19.793Z" },
 ]
 
 [[package]]
@@ -3042,7 +3043,7 @@ requires-dist = [
     { name = "onnxruntime-directml", marker = "sys_platform == 'win32' and extra == 'directml'", specifier = "==1.24.4" },
     { name = "pandas", marker = "extra == 'foundation-ai'", specifier = ">=2.2,<4" },
     { name = "pexpect", marker = "sys_platform != 'win32' and extra == 'terminal-test'", specifier = ">=4.9.0,<5" },
-    { name = "polymarket-client", marker = "extra == 'polymarket-live'", specifier = "==0.2.0" },
+    { name = "polymarket-client", marker = "extra == 'polymarket-live'", specifier = "==0.11.0" },
     { name = "py-clob-client-v2", marker = "extra == 'polymarket-live'", specifier = "==1.1.0" },
     { name = "pyte", marker = "extra == 'terminal-test'", specifier = ">=0.8.2,<1" },
     { name = "pywinpty", marker = "sys_platform == 'win32' and extra == 'terminal-test'", specifier = ">=3.0.3,<4" },
