@@ -38,10 +38,10 @@ microstructure = [
     "hftbacktest==2.4.4",
     # Patch the optional Bokeh/Panel server dependency (GHSA-mpf4-983q-p7j4,
     # GHSA-8423-8fgw-73vq, GHSA-wwv5-g3v4-889x), including non-uv installs.
-    "tornado==6.5.8",
+    "tornado==6.5.10",
 ]
 reporting = [
-    "matplotlib==3.11.1",
+    "matplotlib==3.11.2",
 ]
 polymarket-live = [
     "polymarket-client==0.2.0",
@@ -49,7 +49,7 @@ polymarket-live = [
 ]
 foundation-ai = [
     "einops==0.8.2",
-    "huggingface_hub==1.29.0",
+    "huggingface_hub==1.32.0",
     "pandas>=2.2,<4",
     "safetensors==0.8.0",
     "tqdm>=4.67,<5",
@@ -57,13 +57,13 @@ foundation-ai = [
 
 [dependency-groups]
 test = [
-    "coverage==7.15.4",
-    "diff-cover==10.5.1",
+    "coverage==7.16.1",
+    "diff-cover==10.6.0",
     "pytest==9.1.1",
-    "ruff==0.16.5",
+    "ruff==0.16.8",
 ]
 release = [
-    "build==1.6.0",
+    "build==1.6.1",
 ]
 
 [tool.uv]
