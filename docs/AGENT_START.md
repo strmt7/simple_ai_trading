@@ -10,6 +10,12 @@ Scope blockers to their branch; a fresh user resumption resets the blocked audit
 
 ## Current Truth
 
+October 7 [paper partial cash](review/2026-10-07/paper-partial-cash.md):
+journal cash now retains partial losses and chronological FIFO costs; 51 affected
+checks pass, including owned close before full fill and restart. Native origin,
+fee assets, automatic protection and maker training integration remain unqualified.
+Use the journal projection for recorded-event diagnostics, not venue profit claims.
+
 October 7 [maker input integrity](review/2026-10-07/make-take-source-integrity.md):
 fill/entry/target guards now cover all current entry consumers; 85 focused checks
 pass with valid golden outputs unchanged. Synthetic partial inventory can lose cash
