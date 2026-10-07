@@ -1,5 +1,15 @@
 # Continue Development
 
+October 7 [Binance distinct option/perpetual screen](review/2026-10-07/option-population/review.md)
+proved 600 new contracts outside the complete 2,344-symbol consumed union.
+All 600 rows retained: 418 positive entry quotes, 182 unavailable/zero, no positive
+gross floor or survivor after the unchanged 33.5-bip hurdle. Three frozen public
+GETs; no depth, funding/fee endpoint, account, credential, order or protected
+access. All 600 consumed; future unions must exclude all 2,944 symbols.
+No campaign or runtime code added, no family-wide impossibility claim.
+Current totals: 201 observations, 65 hypotheses, 37 mechanism scopes, zero
+qualified stable profitable edges. Keep prior dated counts and results intact.
+
 October 7 [NYC October 8 complete long-only screen](review/2026-10-07/nyc-oct8-frontier/review.md)
 reused the frozen collector for one prospectively selected public Gamma GET.
 All 20 complete rows failed the gross floor; one NO side remained unavailable.

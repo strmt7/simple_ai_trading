@@ -3800,12 +3800,29 @@
         {
           "path": "docs/review/2026-09-05/option-population/price-result.json",
           "result_sha256": "1e4c24e06665f206782360224bad16f536641bb4a5a259ec2e3acef2966a1658"
+        },
+        {
+          "path": "docs/review/2026-10-07/option-population/population-contract.json",
+          "result_sha256": "5adbfef6764420ec0486d377790b52ac8788e5a65d766c39f8f85049e46b0577"
+        },
+        {
+          "path": "docs/review/2026-10-07/option-population/population-result.json",
+          "result_sha256": "322a2ddbdfdb943e6883e2b153280d5ab28af833889230a11c7dfcb074f1e727"
+        },
+        {
+          "path": "docs/review/2026-10-07/option-population/price-contract.json",
+          "result_sha256": "1f1d15321c24224b40fb1092ae072c97b376601ac1a2dc8c114ee0b51beac04d"
+        },
+        {
+          "path": "docs/review/2026-10-07/option-population/price-result.json",
+          "result_sha256": "2ac08ca9d18137027844b5add7ff999afdf98e33d9a7ad4e0b9d4ca2cb50884b"
         }
       ],
+      "october7_distinct_population_status": "One prospectively frozen October 7 public metadata GET subtracted the complete 2344-symbol consumed union from 1300 active eligible contracts, proving 600 distinct unit-one BTC/ETH/SOL contracts. One frozen two-source acquisition-side screen retained all 600 rows: 418 positive entry-side quotes, 182 zero/unavailable, zero gross-positive floors and zero survivors after the unchanged 33.5-bip necessary-cost hurdle. Request-start skew 1476 ms passes the 10000-ms gate but proves neither quote freshness nor executable capacity. No depth, fee, funding, accounts, credentials, orders, funds or protected capture. All 600 consumed without repair, subset or repricing; include them in the future complete 2944-symbol exclusion union. No accepted edge, recurrence or family-wide impossibility claim.",
       "current_status": "unaccepted: the frozen September 5 metadata gate subtracted the complete 2274-symbol prior union from 1436 currently eligible symbols, proving 70 distinct contracts. One two-request price prefilter found 23 positive-entry rows, zero gross-positive floors and zero survivors after the unchanged 33.5-bip stress. Request-start skew was 1984 ms, not internal quote freshness or execution proof. All 70 are consumed; no depth, funding, fee, account, credential, order or protected capture access followed. This snapshot is not an edge or a family-wide impossibility result.",
       "market_direction_forecast_required": false,
       "mechanism": "binance_long_crypto_option_opposite_USDT_perpetual_terminal_payoff_lower_bound",
-      "next_action": "do_not_repeat_rebuild_refresh_reprice_or_depth_capture_the_exhausted_1410_symbol_baseline_the_exact_508_symbol_August_31_delta_the_exact_two_symbol_September_1_delta_or_the_exact_354_symbol_September_4_distinct_population_reopen_only_for_a_later_distinct_active_BTC_ETH_or_SOL_option_population_after_2026_09_04T18_49_36_306Z_or_a_material_fee_settlement_tick_depth_funding_expiry_basis_or_capital_rule_change_or_an_independently_observed_nonpolling_displayed_terminal_floor_strictly_above_every_applicable_cost_then_apply_the_same_rejection_first_sequence; also exclude the exact 70-symbol September 5 population bound by docs/review/2026-09-05/option-population/population-result.json from every future population union; do not repair its 47 missing entry-quote rows or repeat its metadata/price capture. Preserve the exact existing retry trigger and every prior population restriction.",
+      "next_action": "do_not_repeat_rebuild_refresh_reprice_or_depth_capture_the_exhausted_1410_symbol_baseline_the_exact_508_symbol_August_31_delta_the_exact_two_symbol_September_1_delta_or_the_exact_354_symbol_September_4_distinct_population_reopen_only_for_a_later_distinct_active_BTC_ETH_or_SOL_option_population_after_2026_09_04T18_49_36_306Z_or_a_material_fee_settlement_tick_depth_funding_expiry_basis_or_capital_rule_change_or_an_independently_observed_nonpolling_displayed_terminal_floor_strictly_above_every_applicable_cost_then_apply_the_same_rejection_first_sequence; also exclude the exact 70-symbol September 5 population bound by docs/review/2026-09-05/option-population/population-result.json from every future population union; do not repair its 47 missing entry-quote rows or repeat its metadata/price capture. Preserve the exact existing retry trigger and every prior population restriction. Also exclude all 600 October 7 symbols bound by docs/review/2026-10-07/option-population/population-result.json from every later population union (2944 total consumed symbols); no repair, repricing or economic use of this exhausted population. This dated rejection is not a theorem about future or differently structured opportunities.",
       "priority_rank": 47,
       "prohibited_shortcuts": [
         "calling_the_two_positive_gross_SOL_rows_after_cost_profit",
@@ -3819,7 +3836,8 @@
         "calling_one_retained_snapshot_recurring_current_or_stable",
         "using_credentials_accessing_accounts_or_placing_orders_without_separate_explicit_authority",
         "calling_the_11_10_USDT_gross_BTC_260905_80500_put_row_an_edge_after_it_failed_the_frozen_33_5_bip_stress_by_255_455815_USDT_per_BTC",
-        "reprice_or_repair_the_consumed_70_symbol_September_5_population_or_count_its_47_zero_entry_quote_rows_as_free_options"
+        "reprice_or_repair_the_consumed_70_symbol_September_5_population_or_count_its_47_zero_entry_quote_rows_as_free_options",
+        "reprice_repair_subset_or_depth_capture_the_consumed_600_symbol_October_7_population_or_treat_its_182_zero_or_unavailable_entry_quotes_as_free_options"
       ],
       "retry_trigger": "new_distinct_active_BTC_ETH_or_SOL_option_population_or_material_option_fee_settlement_tick_depth_funding_expiry_basis_or_capital_rule_change_or_an_independently_observed_nonpolling_displayed_single_option_terminal_floor_strictly_above_every_applicable_cost",
       "venue_scope": "Binance_BTC_ETH_SOL_European_options_and_exact_matching_USDT_perpetuals"
@@ -4453,7 +4471,7 @@
       ]
     }
   ],
-  "result_sha256": "b8e4fe4bf7b5a5336398ea7490f598e9832ce24bba793d5a9d34820151a5a107",
+  "result_sha256": "de18222a991cf88d23322d429389413889e041be04579fb4e33d56f765d605d3",
   "schema_version": "structural-edge-priority-registry-v1",
   "terminal_do_not_repeat": [
     {
@@ -5467,8 +5485,13 @@
       "family": "polymarket_nyc_october8_complete_long_only_frontier",
       "reason": "One prospectively frozen NYC October 8 Gamma GET returned event 1141602 and all 11 expected markets: 11 YES and 10 NO acquisition proxies complete. All 20 retained complete frontier rows failed the gross gate; the missing NO side remained unavailable. All-YES cost 1.076 pUSD per share for a conditional one-pUSD common-valid-resolution floor. Best gross binary straddle cost 1.001; best finite fee-plus-one-tick result lost 0.02150 pUSD at five shares. Exceptional oracle correction/clarification states are not source-proved by that floor. No book, fee endpoint, on-chain, account, credential, order, fund or protected access. Exact event terminal without refetch, repricing, alias or missing-side repair; no edge promoted and no family-wide negative-EV claim.",
       "canonical_result_sha256": "4b822134e10541888170d5f522e484b2a25a2c9ce9c8317f1e0bb6e62fbfd159"
+    },
+    {
+      "family": "binance_october7_distinct_option_opposite_perpetual_floor_population",
+      "reason": "One prospectively frozen October 7 public metadata GET subtracted the complete 2344-symbol consumed union from 1300 active eligible contracts, proving 600 distinct unit-one BTC/ETH/SOL contracts. One frozen two-source acquisition-side screen retained all 600 rows: 418 positive entry-side quotes, 182 zero/unavailable, zero gross-positive floors and zero survivors after the unchanged 33.5-bip necessary-cost hurdle. Request-start skew 1476 ms passes the 10000-ms gate but proves neither quote freshness nor executable capacity. No depth, fee, funding, accounts, credentials, orders, funds or protected capture. All 600 consumed without repair, subset or repricing; include them in the future complete 2944-symbol exclusion union. No accepted edge, recurrence or family-wide impossibility claim.",
+      "canonical_result_sha256": "2ac08ca9d18137027844b5add7ff999afdf98e33d9a7ad4e0b9d4ca2cb50884b"
     }
   ],
-  "updated_at_utc": "2026-10-07T08:51:17Z",
+  "updated_at_utc": "2026-10-07T09:01:46Z",
   "usage_rule": "advance_the_highest_ranked_hypothesis_whose_retry_trigger_is_satisfied_otherwise_do_not_repeat_a_blocked_or_terminal_screen"
 }

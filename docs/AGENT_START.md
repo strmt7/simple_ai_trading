@@ -10,6 +10,12 @@ Scope blockers to their branch; a fresh user resumption resets the blocked audit
 
 ## Current Truth
 
+October 7 [Binance new-option screen](review/2026-10-07/option-population/review.md):
+600 distinct contracts, 418 positive entry quotes, zero positive gross floors
+or cost-hurdle survivors. Exact population consumed, no depth/account escalation.
+Future complete exclusions: 2,944 symbols. Current totals: 201 observations,
+65 hypotheses, 37 mechanism scopes, zero qualified stable profitable edges.
+
 October 7 [NYC October 8 source screen](review/2026-10-07/nyc-oct8-frontier/review.md):
 all 20 complete payoff-frontier rows failed gross; one NO side unavailable.
 One frozen public GET, no executable/account escalation. Exact event consumed.

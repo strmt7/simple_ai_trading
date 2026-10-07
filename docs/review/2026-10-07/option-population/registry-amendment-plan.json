@@ -1,0 +1,44 @@
+{
+  "schema_version": "source-bound-terminal-registry-amendment-v1",
+  "created_at_utc": "2026-10-07T09:01:46Z",
+  "prior_head": "2fba1b747de3e4166a8162055d754c31e168da81",
+  "prior_registry_result_sha256": "b8e4fe4bf7b5a5336398ea7490f598e9832ce24bba793d5a9d34820151a5a107",
+  "prior_audit_result_sha256": "93296ff15fab02d4e69116f7f7155632862167c3005aacccf08fea768493f14e",
+  "rank": 47,
+  "status_field": "october7_distinct_population_status",
+  "routing_field": "binance_october7_distinct_option_population",
+  "terminal_family": "binance_october7_distinct_option_opposite_perpetual_floor_population",
+  "summary": "One prospectively frozen October 7 public metadata GET subtracted the complete 2344-symbol consumed union from 1300 active eligible contracts, proving 600 distinct unit-one BTC/ETH/SOL contracts. One frozen two-source acquisition-side screen retained all 600 rows: 418 positive entry-side quotes, 182 zero/unavailable, zero gross-positive floors and zero survivors after the unchanged 33.5-bip necessary-cost hurdle. Request-start skew 1476 ms passes the 10000-ms gate but proves neither quote freshness nor executable capacity. No depth, fee, funding, accounts, credentials, orders, funds or protected capture. All 600 consumed without repair, subset or repricing; include them in the future complete 2944-symbol exclusion union. No accepted edge, recurrence or family-wide impossibility claim.",
+  "prohibited_shortcut": "reprice_repair_subset_or_depth_capture_the_consumed_600_symbol_October_7_population_or_treat_its_182_zero_or_unavailable_entry_quotes_as_free_options",
+  "next_action_append": " Also exclude all 600 October 7 symbols bound by docs/review/2026-10-07/option-population/population-result.json from every later population union (2944 total consumed symbols); no repair, repricing or economic use of this exhausted population. This dated rejection is not a theorem about future or differently structured opportunities.",
+  "canonical_artifacts_append": [
+    {
+      "path": "docs/review/2026-10-07/option-population/population-contract.json",
+      "result_sha256": "5adbfef6764420ec0486d377790b52ac8788e5a65d766c39f8f85049e46b0577"
+    },
+    {
+      "path": "docs/review/2026-10-07/option-population/population-result.json",
+      "result_sha256": "322a2ddbdfdb943e6883e2b153280d5ab28af833889230a11c7dfcb074f1e727"
+    },
+    {
+      "path": "docs/review/2026-10-07/option-population/price-contract.json",
+      "result_sha256": "1f1d15321c24224b40fb1092ae072c97b376601ac1a2dc8c114ee0b51beac04d"
+    },
+    {
+      "path": "docs/review/2026-10-07/option-population/price-result.json",
+      "result_sha256": "2ac08ca9d18137027844b5add7ff999afdf98e33d9a7ad4e0b9d4ca2cb50884b"
+    }
+  ],
+  "terminal_result_sha256": "2ac08ca9d18137027844b5add7ff999afdf98e33d9a7ad4e0b9d4ca2cb50884b",
+  "permitted_changes": [
+    "Append four exact study-contract/result bindings, one October 7 status and one prohibited shortcut to rank 47 only; preserve every old field except append the exact new population exclusion to next_action",
+    "Append one terminal observation preserving the original 200-record prefix",
+    "Append audit routing summary and update only registry binding, timestamps and canonical hashes",
+    "Current handoff prose: 201 observations, 65 hypotheses, 37 mechanism scopes, zero qualified stable profitable edges"
+  ],
+  "not_permitted": [
+    "Modify frozen source, contract, result, old observation, acceptance decision, cost threshold or retry gate",
+    "Refetch, reprice, subset, repair missing quotes or request further depth/funding/fee/account access for this population"
+  ],
+  "result_sha256": "f47f87ee3d7adbca3b2f9758b267a10f38fe969516fb7ca481273b6430f7f1f7"
+}
