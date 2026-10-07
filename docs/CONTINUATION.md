@@ -1,5 +1,16 @@
 # Continue Development
 
+October 7 [NYC October 8 complete long-only screen](review/2026-10-07/nyc-oct8-frontier/review.md)
+reused the frozen collector for one prospectively selected public Gamma GET.
+All 20 complete rows failed the gross floor; one NO side remained unavailable.
+Best finite fee-plus-one-tick result: negative 0.02150 pUSD at five shares.
+Floors are conditional on common valid resolution, not exceptional oracle states.
+No books, account access, orders, protected data or runtime campaign logic.
+Exact event terminal; no refetch, repricing or missing-side repair. Current totals:
+200 observations, 65 hypotheses, 37 mechanism scopes, zero qualified stable
+profitable edges. Preserve old results; next work must answer a distinct durable
+economic question whose literal retry trigger and information gain are verified.
+
 October 7 financial R&D: [new maker-income methodology review](review/2026-10-07/maker-income-source/review.md)
 retained a September 17 primary preprint through two frozen public document
 GETs. Its selected maker profits mainly reflect settlement inventory; source

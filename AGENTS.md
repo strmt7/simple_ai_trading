@@ -164,6 +164,11 @@ result and all other consumed populations, including WNBA September 3-9.
   funded, order-capable, or state-changing operations.
 - Before source selection, market-data access or any research capture, read
   [Research Capture Boundaries](docs/RESEARCH_CAPTURE_BOUNDARIES.md) completely.
+  October 7 session-only efficiency clarification: when the main agent already
+  read this exact file completely in the active conversation, verify its full
+  byte hash against that reviewed revision and reuse that reading. Re-read the
+  complete file if the bytes differ or prior coverage is uncertain. This avoids
+  repeated large dumps; it changes no trigger, access or protected-data boundary.
   That mandatory companion preserves the full detailed capture/retry rules;
   do not treat its separation from this file as optional guidance or permission
   to reopen consumed studies. Relevant executable contracts remain controlling.

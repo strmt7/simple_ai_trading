@@ -10,6 +10,12 @@ Scope blockers to their branch; a fresh user resumption resets the blocked audit
 
 ## Current Truth
 
+October 7 [NYC October 8 source screen](review/2026-10-07/nyc-oct8-frontier/review.md):
+all 20 complete payoff-frontier rows failed gross; one NO side unavailable.
+One frozen public GET, no executable/account escalation. Exact event consumed.
+Current totals: 200 observations, 65 hypotheses, 37 mechanism scopes, zero
+qualified stable profitable edges. No expiring campaign or runtime hardcode.
+
 October 7 [maker-income source review](review/2026-10-07/maker-income-source/review.md)
 adds a distinct primary methodology, not a neutral-edge result. Keep settlement
 inventory separate from matched-package cash, and prefix-only regime features

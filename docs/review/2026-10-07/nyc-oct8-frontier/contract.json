@@ -1,0 +1,93 @@
+{
+  "schema_version": "polymarket-exact-negrisk-long-only-frontier-contract-v1",
+  "status": "frozen_before_one_public_capture_and_complete_long_only_screen",
+  "frozen_at_utc": "2026-10-07T08:42:40Z",
+  "contract_path": "docs/review/2026-10-07/nyc-oct8-frontier/contract.json",
+  "trigger": {
+    "registry_rank": 31,
+    "literal_trigger": "next distinct daily weather fixed-NegRisk event; deterministic series member, expected complete count and one-use source access frozen before any price-bearing view",
+    "selection_method": "Verified UTC clock is October 7 and America/New_York is October 7. Select the next full local calendar day, October 8, by the retained official NYC daily-series slug pattern. No current event page, search price, Gamma value or outcome was viewed. This one response must prove deployment and the expected eleven-market structure; absence or change is terminal without a date or count adjustment.",
+    "prior_exact_event_consumed": false,
+    "price_or_outcome_values_seen_before_freeze": false,
+    "promotion_eligible_at_source_gate": true,
+    "exact_url_deduplication": "No exact October 8 URL or slug hit in retained docs, tools or tests; no URL hit in 97 nonprotected public Polymarket contract/journal metadata files. Protected holding-yield/round74/round75 files and account/credential history excluded; no protected raw data inspected. New output paths absent.",
+    "information_gain": "A first October observation, disjoint from all consumed September episodes, tests current configured fee/tick-adjusted cash floors for the entire long-only basis. The new September 17 primary methodology identifies weather as a discordant category in descriptive set-premium slopes, a prioritization lead only: neither its last-trade proxy nor a negative slope supplies current executable profit. This is one complete diagnostic, not daily polling or resampling until a winner.",
+    "new_source_review": {"path": "docs/review/2026-10-07/maker-income-source/review.json", "result_sha256": "dde7b78c8327aec5bf3beb4fd26299bb3d2dc061b0aa6a378c6498ad16b937f1"},
+    "capture_boundaries_sha256": "f971726268ba2e630b2ebbe8d5bcf02f7b3f23b92ccb16efe23aef82cebe950f"
+  },
+  "research_question": "Does the prospectively selected NYC October 8 fixed-NegRisk event expose any complete long-only direction-independent package with side-specific Gamma acquisition evidence below its conditional payout floor and positive after exact configured fees plus one adverse tick per leg?",
+  "event_slug": "highest-temperature-in-nyc-on-october-8-2026",
+  "expected_market_count": 11,
+  "common_quantity_shares_each_leg": "5",
+  "request": {
+    "method": "GET",
+    "url": "https://gamma-api.polymarket.com/events/slug/highest-temperature-in-nyc-on-october-8-2026",
+    "count": 1,
+    "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "endpoint_classification": "Public unauthenticated read-only Gamma exact event metadata GET, same published endpoint and no account/order operation as the retained source-selected daily-series captures",
+  "payoff_basis": {
+    "all_yes": "One YES on each exhaustive mutually exclusive outcome pays one pUSD in the common-rule valid-resolution model.",
+    "binary_straddle": "Same-market YES plus NO pays one pUSD in that model.",
+    "k_no": "NO on k distinct mutually exclusive outcomes has a k-minus-one pUSD floor in that model.",
+    "basis_completeness": "Screen all-YES, every same-market straddle and exact optimal NO cardinality frontiers; positive-cost YES additions that do not cover a selected proper NO subset cannot improve its minimum payout."
+  },
+  "economics": {
+    "yes_acquisition": "Direct YES bestAsk only",
+    "no_acquisition": "Conservative one minus direct YES bestBid; no midpoint/outcomePrices admission",
+    "missing_price_rule": "Incomplete, never a free leg; do not request missing prices",
+    "gamma_role": "Conditional rejection-only source diagnostic, never executable profit or owned fills",
+    "stress_gate": "Strict positive floor at five common shares after exact configured taker fee and one adverse tick per leg; absent fee schedule admits zero only when feesEnabled=false and feeType is empty",
+    "selection_rule": "Retain all-YES, every binary straddle and every optimal gross/fee-tick k-NO frontier; deterministic source cost then numeric market-ID ordering, strongest feasible stressed row only after every row is fixed",
+    "source_rule_limit": "Metadata eligibility is not complete legal/on-chain settlement proof. Source descriptions, station, whole-day boundaries, complete bins and fallback identity must be audited before any candidate may authorize a separate book contract. A positive preliminary subtotal alone does not pass that qualification."
+  },
+  "outputs": {
+    "raw_path": "docs/review/2026-10-07/nyc-oct8-frontier/raw/event.json",
+    "journal_path": "docs/review/2026-10-07/nyc-oct8-frontier/request-journal.jsonl",
+    "result_path": "docs/review/2026-10-07/nyc-oct8-frontier/result.json"
+  },
+  "authority": {
+    "account_requests": 0,
+    "book_requests": 0,
+    "credentials_used": false,
+    "fee_requests": 0,
+    "funds_used": false,
+    "onchain_requests": 0,
+    "orders_or_transactions": 0,
+    "protected_capture_touched": false,
+    "public_unauthenticated_read_only_requests": 1,
+    "signed_requests": 0,
+    "trading_authority": false
+  },
+  "implementations": [
+    {"path": "tools/screen_polymarket_exact_negrisk_long_only_frontier_v2.py", "sha256": "c2eced31b6d961de60742f855e8bece9778e4e8e551ed07081d4f7b49a88f7e5"},
+    {"path": "tools/screen_polymarket_exact_negrisk_long_only_frontier.py", "sha256": "1527dbf87fbaf7315a9f505d022c877f9c7b3eece9f1e5fc8dbb8cf2e19fdf2b"},
+    {"path": "tools/screen_polymarket_exact_two_leg_package.py", "sha256": "374fcc3c3485c466b4929a91256450bdc7db70f93ef4c6bda627e05fe8938327"},
+    {"path": "tools/adjudicate_polymarket_retained_negrisk_pairwise_no.py", "sha256": "59e610511f1e423c6191669931a6a887d190fa10c27eb90e36fd8a370407f71b"},
+    {"path": "tools/adjudicate_polymarket_retained_negrisk_pairwise_no_v2.py", "sha256": "fe601915bd4db210441dc56978dba919ba7e68cb4a586ee9f19d00f807f2afb1"},
+    {"path": "tools/adjudicate_polymarket_retained_negrisk_no_cardinality_frontier.py", "sha256": "a7011313fc3895312cbb85fd6a04972ffaf6101cdcc9d300345bbecdfdf16c8a"},
+    {"path": "tools/screen_polymarket_negrisk_complete_set_catalog.py", "sha256": "5d5dd88fe9f77be92063d4b55bbcb8dd1b96db06b99dd0d021774916cf2b5ae9"},
+    {"path": "tools/adjudicate_polymarket_release_date_deadline_graph.py", "sha256": "c6277f53adf269e818c12b187d7f5fef19dbb016d93b3c246052aedd52dc2c03"},
+    {"path": "src/simple_ai_trading/polymarket_fees.py", "sha256": "4002aa8008874708931cc182f352adf436a65baee24e23bfc72617acdf127c8d"}
+  ],
+  "transport": {
+    "response_byte_ceiling": 2097152,
+    "overflow_detection_bytes": 1,
+    "socket_timeout_seconds": 30,
+    "elapsed_budget_checked_between_chunks_seconds": 30,
+    "redirects_allowed": false,
+    "retries_allowed": false,
+    "partial_error_bytes_retained": true,
+    "request_intent_created_exclusively": true,
+    "timeout_note": "Between-chunk elapsed budget is not a hard wall-time guarantee for a blocking socket read"
+  },
+  "retry_policy": "This exact event GET is one-use. Do not refetch, alias, change count, repair missing rows, reprice or select a sibling after the result. A rejection is terminal absent material economic/rule evidence. Only a positive stressed diagnostic plus complete independent rule/adapter qualification can authorize one separately frozen exact book batch.",
+  "prohibited_shortcuts": [
+    "No rendered event or price-bearing search before capture",
+    "No adaptive event date count cardinality cost or family changes",
+    "No Gamma price as executable acceptance or missing leg as zero",
+    "No book fee account credential order fund transaction on-chain or protected request from a failed or unqualified source gate",
+    "No current profit inferred from a historical paper, fee promotion, expired campaign or favorable regression slope"
+  ],
+  "contract_sha256": "0f20aac27f83ff25e3dacc67404c5af192ff925a060a6dea25da06fcf25ddfe5"
+}
