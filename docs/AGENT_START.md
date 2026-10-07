@@ -10,6 +10,14 @@ Scope blockers to their branch; a fresh user resumption resets the blocked audit
 
 ## Current Truth
 
+October 7 [funding-aware audit and cash-label defect](review/2026-10-07/funding-aware-maker-source/review.md)
+confirms two rate-only derivative funding helpers can reverse a near-zero cash
+control's sign. Cash math not yet fixed; new source-bound settlement marks,
+entitlement and paired-consumer targets precede further affected fits. The AI
+prompt now labels the proxy honestly; type-only Torch import decoupled. Five
+focused tests pass, not an AI benchmark or financial validation. See
+FUNDING_AWARE_NEUTRAL_CONTROL. Existing research counts/gates unchanged.
+
 October 7 [Binance new-option screen](review/2026-10-07/option-population/review.md):
 600 distinct contracts, 418 positive entry quotes, zero positive gross floors
 or cost-hurdle survivors. Exact population consumed, no depth/account escalation.

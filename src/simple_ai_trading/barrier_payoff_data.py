@@ -6,7 +6,7 @@ from dataclasses import asdict, dataclass
 import hashlib
 import json
 import math
-from typing import Mapping
+from typing import TYPE_CHECKING, Mapping
 
 import numpy as np
 
@@ -15,7 +15,9 @@ from .derivatives_hurdle_data import (
     DerivativesHurdleDataset,
     FundingState,
 )
-from .minute_logistic_mixture_tcn_model import MinuteTemporalDataset
+
+if TYPE_CHECKING:
+    from .minute_logistic_mixture_tcn_model import MinuteTemporalDataset
 
 
 STOP_EVENT = 0

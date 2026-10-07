@@ -265,11 +265,9 @@ def build_derivatives_ai_cases(
         relative_day,
         action_probability,
     ) in ordered[:MAX_CASES_PER_MODEL]:
-        prior = [
-            value
-            for day, value in completed[symbol_index]
-            if day < relative_day
-        ][-20:]
+        prior = [value for day, value in completed[symbol_index] if day < relative_day][
+            -20:
+        ]
         loss_streak = 0
         for value in reversed(prior):
             if value >= 0.0:
@@ -285,9 +283,7 @@ def build_derivatives_ai_cases(
             "ml_feature_set": candidate.feature_set,
             "action_probability": round(action_probability, 6),
             "opposing_action_probability": round(
-                float(
-                    candidate.probabilities[row, 0 if direction > 0 else 2]
-                ),
+                float(candidate.probabilities[row, 0 if direction > 0 else 2]),
                 6,
             ),
             "action_probability_threshold": candidate.maximum_action_probability,
@@ -360,9 +356,11 @@ def _prompt(case: DerivativesAITradeCase) -> str:
     )
     return (
         "You are the fail-closed risk coordinator for an autonomous crypto day-trading research system. "
-        "Evaluate one ML-proposed action using only the causal structured evidence below. Exact taker "
-        "charges and historical funding cash flows are already included in matched ML replay, but the "
-        "current outcome is hidden. You cannot create a trade, reverse direction, increase risk, infer a "
+        "Evaluate one ML-proposed action using only the causal structured evidence below. Matched ML "
+        "replay uses a fixed execution allowance and a settled funding-rate proxy, not native account "
+        "fees and not settlement-mark-scaled funding cash. These modeled labels do not qualify actual "
+        "cash profitability. Veto apparent profitability that depends on unqualified cash. The current "
+        "outcome is hidden. You cannot create a trade, reverse direction, increase risk, infer a "
         "calendar date, retrieve news, or assume missing information is favorable. Approve only when the "
         "action probability, past-only analogs, liquidity, volatility, cross-asset state, premium, settled "
         "funding, and recent risk state are coherent. Veto weak or contradictory evidence; choose cooldown "

@@ -138,6 +138,11 @@ def test_derivatives_cases_are_causal_deterministic_and_outcome_hidden(
     assert "CASE=" in prompt
     assert "outcome_net_bps" not in prompt
     assert "cannot create a trade" in prompt
+    assert "fixed execution allowance" in prompt
+    assert "funding-rate proxy" in prompt
+    assert "not settlement-mark-scaled funding cash" in prompt
+    assert "not native account fees" in prompt
+    assert "Veto apparent profitability that depends on unqualified cash" in prompt
 
 
 def test_ai_case_helpers_fail_closed_and_delegate_frozen_prompt(monkeypatch) -> None:

@@ -210,3 +210,5 @@ docs/review/2026-10-07/nyc-oct8-frontier/*.jsonl binary -eol
 docs/review/2026-10-07/nyc-oct8-frontier/raw/* binary -eol
 docs/review/2026-10-07/option-population/*.json binary -eol
 docs/review/2026-10-07/option-population/*.jsonl binary -eol
+docs/review/2026-10-07/funding-aware-maker-source/*.json binary -eol
+docs/review/2026-10-07/funding-aware-maker-source/*.jsonl binary -eol
