@@ -223,3 +223,6 @@ docs/review/2026-10-07/fifo-identification-source/*.jsonl binary -eol
 docs/review/2026-10-07/fifo-identification-source/*.xml binary -eol
 docs/review/2026-10-07/make-take-source-integrity.json binary -eol
 docs/review/2026-10-07/paper-partial-cash.json binary -eol
+docs/review/2026-10-07/recent-funding-values/*.json binary -eol
+docs/review/2026-10-07/recent-funding-values/*.jsonl binary -eol
+docs/review/2026-10-07/recent-funding-values/*.raw binary -eol

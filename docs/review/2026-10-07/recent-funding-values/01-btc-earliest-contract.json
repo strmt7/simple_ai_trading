@@ -1,0 +1,79 @@
+{
+  "schema_version": "public-source-capture-contract-v1",
+  "frozen_at_utc": "2026-10-07T12:20:37Z",
+  "contract_path": "docs/review/2026-10-07/recent-funding-values/01-btc-earliest-contract.json",
+  "request_name": "recent_native_funding_values_01-btc-earliest",
+  "request": {
+    "method": "GET",
+    "url": "https://fapi.binance.com/fapi/v1/fundingRate?symbol=BTCUSDT&startTime=1788566400000&endTime=1788652799999&limit=1000",
+    "count": 1,
+    "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "response_byte_ceiling": 1024000,
+  "byte_ceiling_basis": "Maximum 1000 rows times conservative 1024 bytes per row. Limit saturation or oversize is terminal, never permission to paginate or retry.",
+  "required_utf8_phrases": [
+    "fundingTime",
+    "fundingRate",
+    "markPrice",
+    "BTCUSDT"
+  ],
+  "outputs": {
+    "raw_path": "docs/review/2026-10-07/recent-funding-values/01-btc-earliest.raw",
+    "journal_path": "docs/review/2026-10-07/recent-funding-values/01-btc-earliest-requests.jsonl",
+    "result_path": "docs/review/2026-10-07/recent-funding-values/01-btc-earliest-capture.json"
+  },
+  "authority": {
+    "account_requests": 0,
+    "credentials_used": false,
+    "funds_used": false,
+    "orders_or_transactions": 0,
+    "protected_capture_touched": false,
+    "public_unauthenticated_read_only_requests": 1,
+    "signed_requests": 0,
+    "trading_authority": false
+  },
+  "transport": {
+    "socket_timeout_seconds": 10,
+    "read_budget_seconds": 30,
+    "redirects": false,
+    "retries": 0,
+    "proxies": false
+  },
+  "implementations": [
+    {
+      "path": "tools/capture_public_source_bounded.py",
+      "sha256": "760339a7602abfa9eb97f3f1cca0ef79191b07ff5f5aa42515f30f191f9888fc"
+    },
+    {
+      "path": "tools/capture_public_source_contract.py",
+      "sha256": "9dbb14651455abade755fe96091b9eaafe1153f56a1baad4cd60b1a888d41b8c"
+    },
+    {
+      "path": "tools/adjudicate_polymarket_exact_mlb_monotone_prefilter.py",
+      "sha256": "958a44d78029b9a1eb69a3771ce18e53ac1ed3c7bc161c8e4318beedce2cf99f"
+    },
+    {
+      "path": "tools/screen_polymarket_exact_two_leg_package.py",
+      "sha256": "374fcc3c3485c466b4929a91256450bdc7db70f93ef4c6bda627e05fe8938327"
+    },
+    {
+      "path": "src/simple_ai_trading/funding_cash.py",
+      "sha256": "3bb8fdaf50b545d93d42df5bd1b901743cc53cd11f4223e58364f160fe3b1aea"
+    },
+    {
+      "path": "tools/qualify_native_funding_window.py",
+      "sha256": "dd224d8299dd2a10db860c6b7d212a06e3f31adaa4562eae691d821925cddf0d"
+    }
+  ],
+  "funding_window": {
+    "symbol": "BTCUSDT",
+    "start_ms": 1788566400000,
+    "end_ms": 1788652799999,
+    "limit": 1000
+  },
+  "adjudication_output": "docs/review/2026-10-07/recent-funding-values/01-btc-earliest-qualified.json",
+  "adjudication_journal": "docs/review/2026-10-07/recent-funding-values/01-btc-earliest-qualification.jsonl",
+  "batch_path": "docs/review/2026-10-07/recent-funding-values/batch-contract.json",
+  "adjudication_rule": "Exactly one retained-input qualification; nonempty unsaturated ordered exact-symbol rows within frozen inclusive clocks, strict native decimal rates and positive settlement marks. Any source/schema/value/limit failure forbids every remaining batch request. No candle substitute, time rounding, repricing, aliases, later-page salvage, economic metrics, training or edge promotion.",
+  "contract_sha256": "9e8043b1d80d16905137565de60f37509914509ee871f0913d2550ac63574442"
+}

@@ -10,6 +10,12 @@ Scope blockers to their branch; a fresh user resumption resets the blocked audit
 
 ## Current Truth
 
+October 7 [new native funding period](review/2026-10-07/recent-funding-values/review.md):
+288 BTC/ETH/SOL events have valid native marks in the frozen Sep 5-Oct 6 period.
+Four GETs used 36 KB; 38 affected checks pass. No old-batch repair, economic
+metrics, labels or fit. Qualify complete hedge cash/coverage and costs next;
+do not turn available funding values into a stable-profit claim.
+
 October 7 [paper partial cash](review/2026-10-07/paper-partial-cash.md):
 journal cash now retains partial losses and chronological FIFO costs; 51 affected
 checks pass, including owned close before full fill and restart. Native origin,

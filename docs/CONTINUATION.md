@@ -1,5 +1,16 @@
 # Continue Development
 
+October 7 [recent native funding values](review/2026-10-07/recent-funding-values/review.md):
+the separately frozen September 5-October 6 BTC/ETH/SOL period passes native
+value qualification: 288 marked events, four GETs, 36,041 response bytes. Earliest
+BTC day passed before the three fixed bulk requests. The failed old 11,847-event
+batch remains terminal; no old-data repair, resampling or candle substitution.
+38 focused transport/window checks pass. No funding amounts, strategy metrics
+or training computed. Next freeze a complete equal-base hedge/cash question,
+qualify independent event coverage, basis/fees/capital and holding entitlement;
+native value availability alone is not cash-label or profitability admission.
+All raw bytes/journals retained; counts unchanged: 201/65/37/0.
+
 October 7 [paper partial cash](review/2026-10-07/paper-partial-cash.md):
 `PaperOrderJournal.inventory_cash` now reconstructs recorded long Spot/token
 cash chronologically, preserving partial quantities, quote fees, FIFO entry costs,

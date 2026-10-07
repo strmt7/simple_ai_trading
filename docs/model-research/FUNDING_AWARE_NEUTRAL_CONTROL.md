@@ -8,6 +8,13 @@ Binance or Polymarket execution. No paper parameter or return is adopted.
 
 ## Cash state and settlement clock
 
+The [October 7 recent-period qualification](../review/2026-10-07/recent-funding-values/review.md)
+provides 288 native BTC/ETH/SOL marked events for September 5-October 6, 2026,
+from four prospectively fixed public requests. It does not repair the failed
+old 11,847-event population or admit new cash labels. Reuse the retained bytes
+for a separately frozen complete hedge/cash question; independently qualify
+event coverage, holding entitlement, basis, fees and capital before fitting.
+
 For fixed base quantity `q`, a linear perpetual's discrete funding cash is
 `-q * settlement_mark * fractional_rate` in that instrument's payment asset.
 Normalize by the actual entry notional only when reporting an entry-relative
