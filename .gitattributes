@@ -234,3 +234,6 @@ docs/review/2026-10-07/native-funding-hedge-frontier/*.jsonl binary -eol
 docs/review/2026-10-07/model-integration/*.json binary -eol
 docs/review/2026-10-07/model-integration/*.jsonl binary -eol
 docs/review/2026-10-07/model-integration/*.raw binary -eol
+docs/review/2026-10-07/nfl-oct8-9-total-floor/*.json binary -eol
+docs/review/2026-10-07/nfl-oct8-9-total-floor/*.jsonl binary -eol
+docs/review/2026-10-07/nfl-oct8-9-total-floor/*.raw binary -eol

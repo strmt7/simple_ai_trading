@@ -1,0 +1,46 @@
+{
+  "schema_version": "structural_edge_ledger_amendment_v1",
+  "created_at_utc": "2026-10-07T15:48:16Z",
+  "previous_git_revision": "7380de3722c865dc668a2abc9120afd7893a7345",
+  "prior": {
+    "registry_result_sha256": "fcf672654e2e8ba19fc1374995ee0dd99185ec535833def14dc576f77a0818b5",
+    "audit_result_sha256": "2bffc1b9156fa0dc80080c8182cf1d3781cb7c5960cabe93fa4772512ce83304",
+    "observations": 201,
+    "hypotheses": 65,
+    "accepted_mechanism_scopes": 37,
+    "stable_current_after_cost_edges": 0
+  },
+  "next": {
+    "registry_result_sha256": "91cbf72283d724a9f493f28edeb0c73fd6b73d85dbc9f5201427fddd32550bd1",
+    "audit_result_sha256": "cddcd608f7aefe758fea7e4e8a4991b36b3752d5050865f70ed949ccc3078d38",
+    "observations": 202,
+    "hypotheses": 65,
+    "accepted_mechanism_scopes": 37,
+    "stable_current_after_cost_edges": 0
+  },
+  "affected_rank": 30,
+  "terminal_result_sha256": "bd1f430444c33f60f811134d622c639e39e9a502cb57747fe469d15bd6e8c0d3",
+  "semantics": "One new discovery observation, resource-unqualified before economic evaluation. No negative-EV, profitability, execution, cash-label or independent stability claim. Historical financial fields and decisions unchanged.",
+  "new_research_request_count": 1,
+  "response_bytes": 1995956,
+  "economic_values_evaluated": false,
+  "focused_checks": {
+    "screen_controls_passed": 33,
+    "additional_post_capture_mocked_terminal_failures_passed": 4,
+    "active_ledger_integration_passed": 2,
+    "ruff_passed": true
+  },
+  "cash_label_trace": {
+    "numerical_integration_completed": false,
+    "new_cash_labels_or_fits": false,
+    "full_module_review_claimed": false,
+    "inspected_sources": [
+      {"path": "src/simple_ai_trading/derivatives_hurdle_data.py", "sha256": "a5b68a74a1b5a8cd9ecb42ff1e68ead2fba51888111d09dba023b19d38880176", "helper_lines": [734, 744], "exit_boundary": "included"},
+      {"path": "src/simple_ai_trading/barrier_payoff_data.py", "sha256": "715aa811e635c3c836866383663563e37b6967a6486bc395a420be15fe34f62b", "helper_lines": [118, 130], "exit_boundary": "included; exit is minute-bucketed"},
+      {"path": "src/simple_ai_trading/stop_time_payoff_data.py", "sha256": "6c6dc6730ea4d8b75bcf4eb6fac66cf13ca685690ec66d7432b731f7bcf07554", "helper_lines": [108, 120], "exit_boundary": "included; exit is minute-bucketed"},
+      {"path": "src/simple_ai_trading/second_flow_execution_model.py", "sha256": "7d2202df2b910b96a23159126bf7e980fe55c53338e8147575b5f30564862c5e", "helper_lines": [435, 445], "exit_boundary": "excluded"},
+      {"path": "src/simple_ai_trading/stateful_turnover_model.py", "sha256": "5bfde440553e4ebbe6a03e45e8a0002ebdb2526399de7f0f3daa7431096f8444", "helper_lines": [360, 367], "exit_boundary": "included through the hurdle helper"}
+    ]
+  },
+  "result_sha256": "ccda29a886b7b9e34ac8ff8dcc07a7bb55355aef438d15e2601fc1fc6aab3dc9"
+}

@@ -1,0 +1,100 @@
+{
+  "schema_version": "public-source-capture-contract-v1",
+  "frozen_at_utc": "2026-10-07T15:29:09Z",
+  "contract_path": "docs/review/2026-10-07/nfl-oct8-9-total-floor/contract.json",
+  "request_name": "future_fixed_nfl_october8_9_total_floor_rejection",
+  "request": {
+    "method": "GET",
+    "url": "https://gamma-api.polymarket.com/events/keyset?limit=50&order=startTime&ascending=true&closed=false&start_time_min=2026-10-08T00%3A00%3A00Z&start_time_max=2026-10-09T23%3A59%3A59Z&series_id=12185",
+    "count": 1,
+    "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "response_byte_ceiling": 52428800,
+  "byte_ceiling_basis": "Fixed 50-event page ceiling times 1 MiB declared per-event resource budget. Oversize, cursor, rule or schema failures are terminal; this resource budget is not a claim that every future response fits it.",
+  "required_utf8_phrases": [
+    "\"events\""
+  ],
+  "outputs": {
+    "raw_path": "docs/review/2026-10-07/nfl-oct8-9-total-floor/events.raw",
+    "journal_path": "docs/review/2026-10-07/nfl-oct8-9-total-floor/request-journal.jsonl",
+    "result_path": "docs/review/2026-10-07/nfl-oct8-9-total-floor/capture.json"
+  },
+  "authority": {
+    "account_requests": 0,
+    "credentials_used": false,
+    "funds_used": false,
+    "orders_or_transactions": 0,
+    "protected_capture_touched": false,
+    "public_unauthenticated_read_only_requests": 1,
+    "signed_requests": 0,
+    "trading_authority": false
+  },
+  "transport": {
+    "socket_timeout_seconds": 10,
+    "read_budget_seconds": 30,
+    "redirects": false,
+    "retries": 0,
+    "proxies": false
+  },
+  "implementations": [
+    {
+      "path": "tools/screen_future_nfl_payoff_floor.py",
+      "sha256": "119d6a8d834e281b1e30ee8c0bb254285ba24f9ad949350c7c1c1f096361d21c"
+    },
+    {
+      "path": "tools/capture_public_source_bounded.py",
+      "sha256": "760339a7602abfa9eb97f3f1cca0ef79191b07ff5f5aa42515f30f191f9888fc"
+    },
+    {
+      "path": "tools/capture_public_source_contract.py",
+      "sha256": "9dbb14651455abade755fe96091b9eaafe1153f56a1baad4cd60b1a888d41b8c"
+    },
+    {
+      "path": "tools/adjudicate_polymarket_exact_mlb_monotone_prefilter.py",
+      "sha256": "958a44d78029b9a1eb69a3771ce18e53ac1ed3c7bc161c8e4318beedce2cf99f"
+    },
+    {
+      "path": "tools/screen_polymarket_exact_two_leg_package.py",
+      "sha256": "374fcc3c3485c466b4929a91256450bdc7db70f93ef4c6bda627e05fe8938327"
+    },
+    {
+      "path": "tools/adjudicate_polymarket_nfl_catalog_side_specific.py",
+      "sha256": "fadc60b24861405093c3c3d4fda8c897153fa980f373cc2fad4e783f724fbceb"
+    },
+    {
+      "path": "tools/screen_polymarket_mlb_cross_period_catalog.py",
+      "sha256": "a916790e7e0320089b9f76c49aff43c072312f24599de351820d3fb872e6eddd"
+    }
+  ],
+  "question": "Does the earliest deployed NFL full-game event in this fixed distinct future window contain a complete rule-identical total ladder whose side-specific Gamma acquisition proxy is strictly below its conditional one-unit floor?",
+  "selection": "Choose earliest (startTime,slug,id) across the complete native bounded population before economic fields. Only its active full-game total ladders; never select a later sibling after failure. Require named teams, distinct native market/condition/token IDs and the full observed resolver/postponement/cancellation template. No midpoint fields are read.",
+  "adjudication_rule": "One capture and one frozen zero-network classification. For lower<upper, Over(lower)+Under(upper) pays 1 outside the middle score interval, 2 inside it and 1 on common cancellation, conditional on consistent shared scoring/resolution. Require selected bestAsk and 1-bestBid; missing selected quotes never become zero. Rank all declared pairs by cost then thresholds and retain only strongest package plus complete counts. Gross surplus is not fee/depth, timing, recurrence, oracle-risk or cash qualification. No follow-up request is authorized by this contract, even if a gross candidate appears.",
+  "prior_scope_distinction": "New native future deployment window outside all consumed September NFL/WNBA/CFB windows and exact events. Reuses rank-30 recurring monotone-payoff family, not a new mechanism; never retries their metadata, quotes or missing-price relations.",
+  "capture_boundaries_sha256": "f971726268ba2e630b2ebbe8d5bcf02f7b3f23b92ccb16efe23aef82cebe950f",
+  "edge_promotion_eligible": false,
+  "research_observation_count_effect": "One terminal structural discovery observation if captured; no accepted mechanism or stable-edge effect.",
+  "contract_sha256": "6a0c75f59b9168bf82b454ea80a6935a679c2e77bad00eba8deaac21756d4a90",
+  "screen_outputs": {
+    "result_path": "docs/review/2026-10-07/nfl-oct8-9-total-floor/result.json",
+    "journal_path": "docs/review/2026-10-07/nfl-oct8-9-total-floor/screen-journal.jsonl"
+  },
+  "screen": {
+    "event_limit": 50,
+    "market_limit": 256,
+    "threshold_limit": 32,
+    "maximum_line": 128,
+    "series_id": "12185",
+    "selection": "earliest_startTime_then_slug_then_id_before_prices",
+    "family": "full_game_total_only"
+  },
+  "window": {
+    "minimum": "2026-10-08T00:00:00Z",
+    "maximum": "2026-10-09T23:59:59Z"
+  },
+  "hypothesis_rank": 30,
+  "registry_prior_result_sha256": "fcf672654e2e8ba19fc1374995ee0dd99185ec535833def14dc576f77a0818b5",
+  "profitability_audit_prior_result_sha256": "2bffc1b9156fa0dc80080c8182cf1d3781cb7c5960cabe93fa4772512ce83304",
+  "protected_capture_touched": false,
+  "fee_requests": 0,
+  "book_requests": 0
+}

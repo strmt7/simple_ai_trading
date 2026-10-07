@@ -1,0 +1,52 @@
+{
+  "schema_version": "nfl_price_blind_resource_diagnostic_v1",
+  "created_at_utc": "2026-10-07T15:48:16Z",
+  "source": {
+    "path": "docs/review/2026-10-07/nfl-oct8-9-total-floor/events.raw",
+    "sha256": "b98c98824b436b2f3403697a05ef997811d069ef8311e80325840fc17ce7927a"
+  },
+  "events": [
+    {
+      "active_full_game_total_count": 42,
+      "compact_serialized_bytes": 1005628,
+      "default_serialized_bytes": 1058321,
+      "id": "925590",
+      "market_count": 328,
+      "slug": "nfl-tb-dal-2026-10-09",
+      "start_time": "2026-10-09T00:15:00Z"
+    },
+    {
+      "active_full_game_total_count": 0,
+      "compact_serialized_bytes": 21242,
+      "default_serialized_bytes": 22269,
+      "id": "1116790",
+      "market_count": 5,
+      "slug": "nfl-tb-dal-2026-10-09-highest-scoring-quarter",
+      "start_time": "2026-10-09T00:15:00Z"
+    },
+    {
+      "active_full_game_total_count": 0,
+      "compact_serialized_bytes": 875418,
+      "default_serialized_bytes": 916635,
+      "id": "1131931",
+      "market_count": 257,
+      "slug": "nfl-tb-dal-2026-10-09-player-props",
+      "start_time": "2026-10-09T00:15:00Z"
+    },
+    {
+      "active_full_game_total_count": 0,
+      "compact_serialized_bytes": 93568,
+      "default_serialized_bytes": 97873,
+      "id": "1134243",
+      "market_count": 25,
+      "slug": "nfl-tb-dal-2026-10-09-first-td-scorer",
+      "start_time": "2026-10-09T00:15:00Z"
+    }
+  ],
+  "economic_values_evaluated": false,
+  "original_frozen_classification_unchanged": true,
+  "new_network_requests": 0,
+  "edge_promotion_or_followup_authority": false,
+  "lesson": "The default-serialized per-event ceiling is representation-dependent and smaller than the successful whole-response byte budget. Cardinalities also exceed frozen market/threshold caps. For distinct future studies, prequalify current price-blind schema/cardinality, separate transport/memory/computation limits, and avoid claiming a resserialization limit is a native raw-byte property. This diagnostic cannot repair, reprice or admit the consumed window.",
+  "result_sha256": "3eda8c021456e9e5b58876c18d24cdbcec887cdc0452e6341d78345d987e5605"
+}
