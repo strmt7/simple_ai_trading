@@ -17,6 +17,7 @@ dependencies = [
     "requests>=2.32.0,<3",
     "scipy==1.17.1",
     "textual==8.2.8",
+    "urllib3>=2.8.0,<3",
     "websockets==15.0.1",
     "zstandard==0.25.0",
 ]

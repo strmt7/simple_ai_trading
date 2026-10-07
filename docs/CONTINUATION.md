@@ -1,5 +1,18 @@
 # Continue Development
 
+October 7 security checkpoint: Dependabot #14 reports the urllib3 chunked Deflate
+CPU-loop advisory GHSA-gh4c-6fx4-qh6g. Upgrade 2.7.0 to 2.8.0 and add the explicit
+runtime floor `urllib3>=2.8.0,<3`; no other package version changed. Two bounded
+malformed-response decoder regressions fail before the patch; all eight decoder/
+Requests-path controls pass after it. With 23 neighboring checks and the new
+dependency-floor assertion, 32 distinct checks pass. No sockets or credentials
+in validation; managed security artifacts retain the before/after evidence.
+The full suite and other Python/platform matrices were not run. This is a
+dependency repair, not proof of an actually compromised upstream or a full scan.
+PR #19 is superseded by this direct-main repair. Four other newly observed PRs
+remain to review: #15 Actions, #16 routine Python, #17 Polymarket SDK, #18 Torch.
+Do not merge the SDK/GPU upgrades without preserving contracts/backend evidence.
+
 October 7 continuation: [receipt-native Spot realized cash PnL](review/2026-10-07/spot-native-cash.md).
 Fixed a reproduced false break-even: a 100 USDC purchase with 0.001 BTC fee
 and 99.9 USDC sale now records -0.10, not zero. New native lots retain validated

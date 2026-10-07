@@ -12,6 +12,18 @@ from simple_ai_trading.polymarket_live_settlement import (
 ROOT = Path(__file__).resolve().parents[1]
 
 
+def test_urllib3_security_floor_and_lock_exclude_deflate_loop_versions() -> None:
+    project = tomllib.loads((ROOT / "pyproject.toml").read_text(encoding="utf-8"))
+    assert "urllib3>=2.8.0,<3" in project["project"]["dependencies"]
+    lock = tomllib.loads((ROOT / "uv.lock").read_text(encoding="utf-8"))
+    versions = [
+        item["version"] for item in lock["package"] if item["name"] == "urllib3"
+    ]
+    assert len(versions) == 1
+    version = tuple(int(part) for part in versions[0].split("."))
+    assert (2, 8, 0) <= version < (3, 0, 0)
+
+
 def test_settlement_dependency_matches_the_audited_adapter() -> None:
     project = tomllib.loads((ROOT / "pyproject.toml").read_text(encoding="utf-8"))
     requirements = project["project"]["optional-dependencies"]["polymarket-live"]
