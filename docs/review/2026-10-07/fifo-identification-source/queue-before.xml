@@ -1,0 +1,197 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="12" skipped="0" tests="18" time="0.788" timestamp="2026-10-07T13:14:43.757330+02:00" hostname="Zurich_Desktop"><testcase classname="tests.test_passive_queue_lifecycle" name="test_completed_marker_remains_valid_and_later_print_cannot_overfill[BUY-SELL]" time="0.007"><failure message="ValueError: passive queue quantities are invalid">maker = 'BUY', taker = 'SELL'
+
+    @pytest.mark.parametrize("maker,taker", [("BUY", "SELL"), ("SELL", "BUY")])
+    def test_completed_marker_remains_valid_and_later_print_cannot_overfill(maker, taker):
+        initial = _state(maker)
+        complete, fill = apply_passive_trade_print(initial, _trade(taker))
+        assert fill == Decimal("3")
+        assert complete.remaining_quantity == 0
+        assert complete.filled_quantity == 3
+&gt;       assert complete.validated() == complete
+               ^^^^^^^^^^^^^^^^^^^^
+
+tests\test_passive_queue_lifecycle.py:49: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = PassiveQueueState(intent_id='virtual-marker', asset_id='BTCUSDT', side='BUY', price=Decimal('100'), queue_ahead_quantity=Decimal('0'), remaining_quantity=Decimal('0'), filled_quantity=Decimal('3'), activated_at_ms=1000, expires_at_ms=2000)
+
+    def validated(self) -&gt; "PassiveQueueState":
+        side = str(self.side or "").upper()
+        if side not in _SIDES:
+            raise ValueError("passive queue side must be BUY or SELL")
+        queue = _decimal(self.queue_ahead_quantity, name="queue_ahead_quantity")
+        remaining = _decimal(self.remaining_quantity, name="remaining_quantity")
+        filled = _decimal(self.filled_quantity, name="filled_quantity")
+        if min(queue, remaining, filled) &lt; 0 or remaining &lt;= 0:
+&gt;           raise ValueError("passive queue quantities are invalid")
+E           ValueError: passive queue quantities are invalid
+
+src\simple_ai_trading\paper_execution.py:1722: ValueError</failure></testcase><testcase classname="tests.test_passive_queue_lifecycle" name="test_completed_marker_remains_valid_and_later_print_cannot_overfill[SELL-BUY]" time="0.002"><failure message="ValueError: passive queue quantities are invalid">maker = 'SELL', taker = 'BUY'
+
+    @pytest.mark.parametrize("maker,taker", [("BUY", "SELL"), ("SELL", "BUY")])
+    def test_completed_marker_remains_valid_and_later_print_cannot_overfill(maker, taker):
+        initial = _state(maker)
+        complete, fill = apply_passive_trade_print(initial, _trade(taker))
+        assert fill == Decimal("3")
+        assert complete.remaining_quantity == 0
+        assert complete.filled_quantity == 3
+&gt;       assert complete.validated() == complete
+               ^^^^^^^^^^^^^^^^^^^^
+
+tests\test_passive_queue_lifecycle.py:49: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = PassiveQueueState(intent_id='virtual-marker', asset_id='BTCUSDT', side='SELL', price=Decimal('100'), queue_ahead_quantity=Decimal('0'), remaining_quantity=Decimal('0'), filled_quantity=Decimal('3'), activated_at_ms=1000, expires_at_ms=2000)
+
+    def validated(self) -&gt; "PassiveQueueState":
+        side = str(self.side or "").upper()
+        if side not in _SIDES:
+            raise ValueError("passive queue side must be BUY or SELL")
+        queue = _decimal(self.queue_ahead_quantity, name="queue_ahead_quantity")
+        remaining = _decimal(self.remaining_quantity, name="remaining_quantity")
+        filled = _decimal(self.filled_quantity, name="filled_quantity")
+        if min(queue, remaining, filled) &lt; 0 or remaining &lt;= 0:
+&gt;           raise ValueError("passive queue quantities are invalid")
+E           ValueError: passive queue quantities are invalid
+
+src\simple_ai_trading\paper_execution.py:1722: ValueError</failure></testcase><testcase classname="tests.test_passive_queue_lifecycle" name="test_marker_rejects_lossy_or_ambiguous_timestamp_coercion[activated_at_ms-True]" time="0.002"><failure message="Failed: DID NOT RAISE ValueError">field = 'activated_at_ms', value = True
+
+    @pytest.mark.parametrize("value", [True, 1000.5, "1000", None])
+    @pytest.mark.parametrize("field", ["activated_at_ms", "expires_at_ms"])
+    def test_marker_rejects_lossy_or_ambiguous_timestamp_coercion(field, value):
+&gt;       with pytest.raises(ValueError):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+tests\test_passive_queue_lifecycle.py:59: Failed</failure></testcase><testcase classname="tests.test_passive_queue_lifecycle" name="test_marker_rejects_lossy_or_ambiguous_timestamp_coercion[activated_at_ms-1000.5]" time="0.001"><failure message="Failed: DID NOT RAISE ValueError">field = 'activated_at_ms', value = 1000.5
+
+    @pytest.mark.parametrize("value", [True, 1000.5, "1000", None])
+    @pytest.mark.parametrize("field", ["activated_at_ms", "expires_at_ms"])
+    def test_marker_rejects_lossy_or_ambiguous_timestamp_coercion(field, value):
+&gt;       with pytest.raises(ValueError):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+tests\test_passive_queue_lifecycle.py:59: Failed</failure></testcase><testcase classname="tests.test_passive_queue_lifecycle" name="test_marker_rejects_lossy_or_ambiguous_timestamp_coercion[activated_at_ms-1000]" time="0.002"><failure message="Failed: DID NOT RAISE ValueError">field = 'activated_at_ms', value = '1000'
+
+    @pytest.mark.parametrize("value", [True, 1000.5, "1000", None])
+    @pytest.mark.parametrize("field", ["activated_at_ms", "expires_at_ms"])
+    def test_marker_rejects_lossy_or_ambiguous_timestamp_coercion(field, value):
+&gt;       with pytest.raises(ValueError):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+tests\test_passive_queue_lifecycle.py:59: Failed</failure></testcase><testcase classname="tests.test_passive_queue_lifecycle" name="test_marker_rejects_lossy_or_ambiguous_timestamp_coercion[activated_at_ms-None]" time="0.001"><failure message="TypeError: int() argument must be a string, a bytes-like object or a real number, not 'NoneType'">field = 'activated_at_ms', value = None
+
+    @pytest.mark.parametrize("value", [True, 1000.5, "1000", None])
+    @pytest.mark.parametrize("field", ["activated_at_ms", "expires_at_ms"])
+    def test_marker_rejects_lossy_or_ambiguous_timestamp_coercion(field, value):
+        with pytest.raises(ValueError):
+&gt;           replace(_state(), **{field: value}).validated()
+
+tests\test_passive_queue_lifecycle.py:60: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = PassiveQueueState(intent_id='virtual-marker', asset_id='BTCUSDT', side='BUY', price=Decimal('100'), queue_ahead_quantity=Decimal('5'), remaining_quantity=Decimal('3'), filled_quantity=Decimal('0'), activated_at_ms=None, expires_at_ms=2000)
+
+    def validated(self) -&gt; "PassiveQueueState":
+        side = str(self.side or "").upper()
+        if side not in _SIDES:
+            raise ValueError("passive queue side must be BUY or SELL")
+        queue = _decimal(self.queue_ahead_quantity, name="queue_ahead_quantity")
+        remaining = _decimal(self.remaining_quantity, name="remaining_quantity")
+        filled = _decimal(self.filled_quantity, name="filled_quantity")
+        if min(queue, remaining, filled) &lt; 0 or remaining &lt;= 0:
+            raise ValueError("passive queue quantities are invalid")
+&gt;       activated = int(self.activated_at_ms)
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^
+E       TypeError: int() argument must be a string, a bytes-like object or a real number, not 'NoneType'
+
+src\simple_ai_trading\paper_execution.py:1723: TypeError</failure></testcase><testcase classname="tests.test_passive_queue_lifecycle" name="test_marker_rejects_lossy_or_ambiguous_timestamp_coercion[expires_at_ms-True]" time="0.002" /><testcase classname="tests.test_passive_queue_lifecycle" name="test_marker_rejects_lossy_or_ambiguous_timestamp_coercion[expires_at_ms-1000.5]" time="0.002" /><testcase classname="tests.test_passive_queue_lifecycle" name="test_marker_rejects_lossy_or_ambiguous_timestamp_coercion[expires_at_ms-1000]" time="0.002" /><testcase classname="tests.test_passive_queue_lifecycle" name="test_marker_rejects_lossy_or_ambiguous_timestamp_coercion[expires_at_ms-None]" time="0.002"><failure message="TypeError: int() argument must be a string, a bytes-like object or a real number, not 'NoneType'">field = 'expires_at_ms', value = None
+
+    @pytest.mark.parametrize("value", [True, 1000.5, "1000", None])
+    @pytest.mark.parametrize("field", ["activated_at_ms", "expires_at_ms"])
+    def test_marker_rejects_lossy_or_ambiguous_timestamp_coercion(field, value):
+        with pytest.raises(ValueError):
+&gt;           replace(_state(), **{field: value}).validated()
+
+tests\test_passive_queue_lifecycle.py:60: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = PassiveQueueState(intent_id='virtual-marker', asset_id='BTCUSDT', side='BUY', price=Decimal('100'), queue_ahead_quantity=Decimal('5'), remaining_quantity=Decimal('3'), filled_quantity=Decimal('0'), activated_at_ms=1000, expires_at_ms=None)
+
+    def validated(self) -&gt; "PassiveQueueState":
+        side = str(self.side or "").upper()
+        if side not in _SIDES:
+            raise ValueError("passive queue side must be BUY or SELL")
+        queue = _decimal(self.queue_ahead_quantity, name="queue_ahead_quantity")
+        remaining = _decimal(self.remaining_quantity, name="remaining_quantity")
+        filled = _decimal(self.filled_quantity, name="filled_quantity")
+        if min(queue, remaining, filled) &lt; 0 or remaining &lt;= 0:
+            raise ValueError("passive queue quantities are invalid")
+        activated = int(self.activated_at_ms)
+&gt;       expires = int(self.expires_at_ms)
+                  ^^^^^^^^^^^^^^^^^^^^^^^
+E       TypeError: int() argument must be a string, a bytes-like object or a real number, not 'NoneType'
+
+src\simple_ai_trading\paper_execution.py:1724: TypeError</failure></testcase><testcase classname="tests.test_passive_queue_lifecycle" name="test_print_rejects_lossy_or_ambiguous_timestamp_coercion[True]" time="0.002"><failure message="Failed: DID NOT RAISE ValueError">value = True
+
+    @pytest.mark.parametrize("value", [True, 1100.5, "1100", None, -1])
+    def test_print_rejects_lossy_or_ambiguous_timestamp_coercion(value):
+&gt;       with pytest.raises(ValueError):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+tests\test_passive_queue_lifecycle.py:65: Failed</failure></testcase><testcase classname="tests.test_passive_queue_lifecycle" name="test_print_rejects_lossy_or_ambiguous_timestamp_coercion[1100.5]" time="0.001"><failure message="Failed: DID NOT RAISE ValueError">value = 1100.5
+
+    @pytest.mark.parametrize("value", [True, 1100.5, "1100", None, -1])
+    def test_print_rejects_lossy_or_ambiguous_timestamp_coercion(value):
+&gt;       with pytest.raises(ValueError):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+tests\test_passive_queue_lifecycle.py:65: Failed</failure></testcase><testcase classname="tests.test_passive_queue_lifecycle" name="test_print_rejects_lossy_or_ambiguous_timestamp_coercion[1100]" time="0.002"><failure message="Failed: DID NOT RAISE ValueError">value = '1100'
+
+    @pytest.mark.parametrize("value", [True, 1100.5, "1100", None, -1])
+    def test_print_rejects_lossy_or_ambiguous_timestamp_coercion(value):
+&gt;       with pytest.raises(ValueError):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+tests\test_passive_queue_lifecycle.py:65: Failed</failure></testcase><testcase classname="tests.test_passive_queue_lifecycle" name="test_print_rejects_lossy_or_ambiguous_timestamp_coercion[None]" time="0.001"><failure message="TypeError: int() argument must be a string, a bytes-like object or a real number, not 'NoneType'">value = None
+
+    @pytest.mark.parametrize("value", [True, 1100.5, "1100", None, -1])
+    def test_print_rejects_lossy_or_ambiguous_timestamp_coercion(value):
+        with pytest.raises(ValueError):
+&gt;           apply_passive_trade_print(_state(), replace(_trade(), occurred_at_ms=value))
+
+tests\test_passive_queue_lifecycle.py:66: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+state = PassiveQueueState(intent_id='virtual-marker', asset_id='BTCUSDT', side='BUY', price=Decimal('100'), queue_ahead_quantity=Decimal('5'), remaining_quantity=Decimal('3'), filled_quantity=Decimal('0'), activated_at_ms=1000, expires_at_ms=2000)
+trade = AggressiveTradePrint(asset_id='BTCUSDT', side='SELL', price=Decimal('100'), quantity=Decimal('8'), occurred_at_ms=None, source_payload_sha256='aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa')
+
+    def apply_passive_trade_print(
+        state: PassiveQueueState,
+        trade: AggressiveTradePrint,
+    ) -&gt; tuple[PassiveQueueState, Decimal]:
+        """Consume queue only with a matching post-arrival aggressive print."""
+    
+        current = state.validated()
+        trade_asset = _identifier(trade.asset_id, name="trade asset_id")
+        trade_side = str(trade.side or "").upper()
+        price = _decimal(trade.price, name="trade price", positive=True)
+        quantity = _decimal(trade.quantity, name="trade quantity", positive=True)
+&gt;       occurred = int(trade.occurred_at_ms)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^
+E       TypeError: int() argument must be a string, a bytes-like object or a real number, not 'NoneType'
+
+src\simple_ai_trading\paper_execution.py:1762: TypeError</failure></testcase><testcase classname="tests.test_passive_queue_lifecycle" name="test_print_rejects_lossy_or_ambiguous_timestamp_coercion[-1]" time="0.002"><failure message="Failed: DID NOT RAISE ValueError">value = -1
+
+    @pytest.mark.parametrize("value", [True, 1100.5, "1100", None, -1])
+    def test_print_rejects_lossy_or_ambiguous_timestamp_coercion(value):
+&gt;       with pytest.raises(ValueError):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+tests\test_passive_queue_lifecycle.py:65: Failed</failure></testcase><testcase classname="tests.test_passive_queue_lifecycle" name="test_zero_total_or_negative_quantity_state_is_not_a_completed_marker" time="0.002" /><testcase classname="tests.test_passive_queue_lifecycle" name="test_completion_does_not_turn_invalid_print_into_valid_evidence" time="0.002" /><testcase classname="tests.test_passive_queue_lifecycle" name="test_exact_activation_and_expiry_boundaries_preserve_declared_behavior" time="0.001" /></testsuite></testsuites>

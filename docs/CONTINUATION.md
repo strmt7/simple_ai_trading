@@ -1,5 +1,18 @@
 # Continue Development
 
+October 7 [FIFO primary source and virtual-queue repair](review/2026-10-07/fifo-identification-source/review.md):
+new v2 methodology separates conditional cancellation sensitivity from universal
+profit bounds; Tokyo-equity zero-fee/latency results are not venue edge evidence.
+Completed virtual markers now remain valid, cannot overfill, and reject lossy
+timestamps. Twelve of eighteen new cases failed before; 36 focused final cases
+pass. Same aggregate background path yields one versus zero virtual fills under
+compatible cancellations. No runtime queue integration or partial-cash model
+claim; initial queue origin and unique ordered prints remain caller requirements.
+Next maker evaluation needs causal L1/L2 reconciliation and matched full-cash
+outcomes, not holdout-selected cancellation assumptions. No market retry gate,
+old result, account, order, fit, dependency, campaign or GPU benchmark changed.
+Research counts unchanged: 201/65/37/0. Reuse source review and passing checks.
+
 October 7 [historical native funding marks](review/2026-10-07/funding-mark-population/review.md):
 the complete 11,847-event BTC/ETH/SOL prefix failed source qualification on the
 first 1,000 records, all with empty settlement marks. One of 12 planned GETs

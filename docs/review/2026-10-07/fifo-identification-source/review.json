@@ -1,0 +1,76 @@
+{
+  "schema_version": "fifo-primary-methodology-and-queue-repair-v1",
+  "result_sha256": "5ca5941bc5eeffb3f66afe246b47f58603bc6617cf6e7756181ed2f639a72278",
+  "source": {
+    "publisher": "arXiv",
+    "url": "https://arxiv.org/html/2609.13597v2",
+    "title": "Same Book, Different Fills: Partial Identification of FIFO Execution from Aggregate Order Books",
+    "authors": ["Riya Danait", "Yuliana Zamora", "Ioana Boier"],
+    "version": "2609.13597v2",
+    "version_date": "2026-09-17T01:45:40Z",
+    "access_date_utc": "2026-10-07",
+    "primary_preprint_not_peer_review_verified": true,
+    "reviewed_sections": "Abstract and Sections 1 through 10, including Proposition 3.1 proof sketch; no independent proof, author-code, proprietary-data or JAX replay replication",
+    "abstract_contract_sha256": "81c174da841294ebbca2357059d0fa4e78c884918b0389b1b49e27ee7d42fe51",
+    "abstract_body_sha256": "edf661722e454e5bf692da8fdac45ef7353e1af991aa2c4ae8a62ee42acffcb9",
+    "abstract_result_sha256": "8f526316e4a906795c997a3550dbde0b40153e96f0c21cbbe0c1b16f86b81926",
+    "paper_contract_sha256": "22ab7a734fc31adceae78cc0951df61418d0cc0d802a1a6373a5a53e2e5d3b63",
+    "paper_body_sha256": "84c9c5ea651774844580130af3bad44fdddb6e070566fa6c3648c230f1285542",
+    "paper_result_sha256": "53721d10bff05252e783cbd0dce733323de23b0cbe1a0e93d4fb97ccfc539536",
+    "body_storage": "Retained local-only HTML; public contracts, receipts and journals bind exact bytes"
+  },
+  "methodology_admission": {
+    "identical_aggregate_paths_can_imply_different_virtual_fills": true,
+    "compiler_class_is_not_complete_compatible_history_set": true,
+    "tagged_fill_ordering_requires_single_touch_and_ahead_cancellation_ordering": true,
+    "front_back_are_universal_policy_profit_bounds": false,
+    "zero_fees_latency_and_price_taking_transfer_to_our_venues": false,
+    "empirical_fill_statistics_or_equity_costs_adopted": false,
+    "market_retry_or_protected_capture_gates_relaxed": false
+  },
+  "code_repair": {
+    "source_path": "src/simple_ai_trading/paper_execution.py",
+    "reviewed_scope": "PassiveQueueState, AggressiveTradePrint, apply_passive_trade_print and their validation dependencies/call-site inventory; not the whole repository or paper execution module",
+    "before_commit": "8afda049632c13ae4bf026124de3e371485f09a6",
+    "before_git_blob_sha256": "18e930b38d4fc8bacc8b4f1c0a00367ce28bef224ce6ed3f79aa14a3444b3a1d",
+    "after_source_sha256": "3029d1ab22472e26990e6cf58907798f9618954eacdd9ec00c3778c4fedaee09",
+    "test_path": "tests/test_passive_queue_lifecycle.py",
+    "test_sha256": "89395c00240741c8dde6848adf76a790198bf56f9eecfbd6a3836c93ccaffc2f",
+    "completion_remains_valid_and_cannot_overfill": true,
+    "timestamp_coercion_replaced_with_exact_integer_validation": true,
+    "caller_owned_origin_deduplication_and_ordering_remain_required": true,
+    "initial_zero_total_marker_admitted": false,
+    "new_cancellation_compiler_or_profit_evaluator_added": false,
+    "production_queue_integration_claim": false,
+    "current_call_sites": "Definitions and tests only; no src/tools caller found by exact symbol search"
+  },
+  "synthetic_counterexample": {
+    "initial_older_background_quantity": 10,
+    "newer_background_addition": 10,
+    "background_cancellation": 10,
+    "common_market_removal": 1,
+    "virtual_marker_quantity": 1,
+    "common_displayed_background_path": [10, 20, 10, 9],
+    "front_cancellation_virtual_fill": 1,
+    "back_cancellation_virtual_fill": 0,
+    "owned_historical_fill_or_profit_claim": false
+  },
+  "verification": {
+    "before": {"tests": 18, "failures": 12, "errors": 0, "xml_sha256": "9fe89680b2dd1ab5745038287ac3332733f3b17f39b72babee0e61e66367acfa"},
+    "after": {"tests": 35, "failures": 0, "errors": 0, "xml_sha256": "36a519ccde325ced651fffcd3e5892139aab4266f85d3e3f8d5a6919723ea9e1"},
+    "final_with_ambiguity_case": {"tests": 36, "failures": 0, "errors": 0, "xml_sha256": "f9d0ee3b34a3fed7a1f6fa6bcf6d6e083f4507cb689451a226a91fb90d630547"},
+    "ruff_touched_source_and_test": "passed",
+    "financial_validation_or_full_suite": false
+  },
+  "authority": {
+    "primary_document_gets": 2,
+    "venue_market_captures": 0,
+    "accounts_credentials_orders_protected_data_or_funds": false,
+    "new_fits_dependencies_gpu_benchmarks_or_campaign_logic": false,
+    "old_source_results_or_frozen_targets_rewritten": false
+  },
+  "economic_research_counts_unchanged": {"observations": 201, "hypotheses": 65, "mechanism_scopes": 37, "qualified_stable_edges": 0},
+  "next_action": "Qualify causal same-path L1/L2 removals, additions/cancellations, priority and boundary handling before a new maker comparison. Carry partial base quantities into the existing cash/completion ledger and evaluate complete fee/latency/hedge/orphan outcomes across matched histories, not fill-count endpoints as universal profit bounds. No consumed market study reopens on this source review alone.",
+  "accepted_edge": false,
+  "profitability_claim": false
+}
