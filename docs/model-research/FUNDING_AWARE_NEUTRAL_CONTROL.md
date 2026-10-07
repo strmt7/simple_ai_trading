@@ -73,6 +73,15 @@ or runtime benefit. Public trades/volume hits do not prove our queue fills.
 
 ## Confirmed current label defect and repair sequence
 
+The [October 7 native history qualification](../review/2026-10-07/funding-mark-population/review.md)
+stopped at its first 1,000 records: every settlement mark was empty. Its whole
+11,847-event batch is rejected; the remaining 11 requests cannot resume. A
+separate three-event exact clock/rate join on June 30, 2025 does not prove earlier
+mark coverage. Missing marks must not become zero payments or candle prices.
+Further label admission needs independent complete primary mark evidence for
+the missing scope or a distinct prospectively frozen cash-qualified dataset.
+This is a branch-specific data gap, not proof that funding edges cannot exist.
+
 The [implemented cash core](../review/2026-10-07/funding-aware-maker-source/cash-core-review.md)
 now provides exact supplied-event fixed-base math, retained-byte parsing,
 strict event-population alignment and unknown-entitlement bounds. It does not

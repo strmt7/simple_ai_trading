@@ -212,3 +212,9 @@ docs/review/2026-10-07/option-population/*.json binary -eol
 docs/review/2026-10-07/option-population/*.jsonl binary -eol
 docs/review/2026-10-07/funding-aware-maker-source/*.json binary -eol
 docs/review/2026-10-07/funding-aware-maker-source/*.jsonl binary -eol
+docs/review/2026-10-07/funding-archive-clock/*.json binary -eol
+docs/review/2026-10-07/funding-archive-clock/*.jsonl binary -eol
+docs/review/2026-10-07/funding-archive-clock/*.raw binary -eol
+docs/review/2026-10-07/funding-mark-population/*.json binary -eol
+docs/review/2026-10-07/funding-mark-population/*.jsonl binary -eol
+docs/review/2026-10-07/funding-mark-population/*.raw binary -eol

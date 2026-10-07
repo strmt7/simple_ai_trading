@@ -1,0 +1,25 @@
+{
+  "archive_metadata": {
+    "archive_sha256": "a1f4a40953740fa83ee9ad97776ff8325d1958654a67f1325614071a983819d4",
+    "checksum_status": "verified",
+    "row_stream_sha256": "0839eefac51cbff1a98ea3a0f46917975d749bc997f34c13e2a6f66059026643",
+    "rows_read": 90,
+    "status": "complete",
+    "url": "https://data.binance.vision/data/futures/um/monthly/fundingRate/BTCUSDT/BTCUSDT-fundingRate-2025-06.zip"
+  },
+  "complete_month_stream_recomputed_and_matched": true,
+  "end_time_ms": 1751327999999,
+  "reference_sha256": "8a149a088fde2d9339c5b46f582b17e3b558f887231aa99e052fd603df597fbd",
+  "rows": [
+    {"calc_time": 1751241600000, "funding_rate_float_repr": "1.084e-05", "interval_hours": 8},
+    {"calc_time": 1751270400005, "funding_rate_float_repr": "2.959e-05", "interval_hours": 8},
+    {"calc_time": 1751299200002, "funding_rate_float_repr": "4.923e-05", "interval_hours": 8}
+  ],
+  "schema_version": "funding-archive-clock-reference-v1",
+  "selection_rule": "Final complete UTC day of the previously certified prefix; calendar-only, not funding-rate or price selection",
+  "snapshot_only_not_native_decimal_or_mark_proof": true,
+  "source_database": "data/market_data.sqlite",
+  "start_time_ms": 1751241600000,
+  "symbol": "BTCUSDT",
+  "warehouse_is_not_full_file_hash_bound": true
+}

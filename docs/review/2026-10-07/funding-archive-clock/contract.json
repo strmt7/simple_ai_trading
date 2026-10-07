@@ -1,0 +1,52 @@
+{
+  "schema_version": "public-source-capture-contract-v1",
+  "frozen_at_utc": "2026-10-07T10:32:01Z",
+  "contract_path": "docs/review/2026-10-07/funding-archive-clock/contract.json",
+  "request_name": "native_funding_archive_clock_join_diagnostic",
+  "request": {
+    "method": "GET",
+    "url": "https://fapi.binance.com/fapi/v1/fundingRate?symbol=BTCUSDT&startTime=1751241600000&endTime=1751327999999&limit=1000",
+    "count": 1,
+    "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "response_byte_ceiling": 1024000,
+  "byte_ceiling_basis": "Documented maximum 1000 rows times conservative 1024 bytes per row; a consumed ceiling is terminal, not permission to refetch",
+  "required_utf8_phrases": ["fundingTime", "fundingRate", "markPrice", "BTCUSDT"],
+  "outputs": {
+    "raw_path": "docs/review/2026-10-07/funding-archive-clock/native.raw",
+    "journal_path": "docs/review/2026-10-07/funding-archive-clock/native-requests.jsonl",
+    "result_path": "docs/review/2026-10-07/funding-archive-clock/native-result.json"
+  },
+  "authority": {
+    "account_requests": 0,
+    "credentials_used": false,
+    "funds_used": false,
+    "orders_or_transactions": 0,
+    "protected_capture_touched": false,
+    "public_unauthenticated_read_only_requests": 1,
+    "signed_requests": 0,
+    "trading_authority": false
+  },
+  "transport": {"socket_timeout_seconds": 10, "read_budget_seconds": 30, "redirects": false, "retries": 0, "proxies": false},
+  "implementations": [
+    {"path": "tools/capture_public_source_bounded.py", "sha256": "760339a7602abfa9eb97f3f1cca0ef79191b07ff5f5aa42515f30f191f9888fc"},
+    {"path": "tools/capture_public_source_contract.py", "sha256": "9dbb14651455abade755fe96091b9eaafe1153f56a1baad4cd60b1a888d41b8c"},
+    {"path": "tools/adjudicate_polymarket_exact_mlb_monotone_prefilter.py", "sha256": "958a44d78029b9a1eb69a3771ce18e53ac1ed3c7bc161c8e4318beedce2cf99f"},
+    {"path": "tools/screen_polymarket_exact_two_leg_package.py", "sha256": "374fcc3c3485c466b4929a91256450bdc7db70f93ef4c6bda627e05fe8938327"},
+    {"path": "src/simple_ai_trading/funding_cash.py", "sha256": "3bb8fdaf50b545d93d42df5bd1b901743cc53cd11f4223e58364f160fe3b1aea"},
+    {"path": "src/simple_ai_trading/derivatives_archive.py", "sha256": "895fdf87f8ba99531dd19e9294446b6f85f7d8f7ad2341c1d689bc3a6a76ef5b"},
+    {"path": "tools/adjudicate_funding_archive_clock.py", "sha256": "4968221f0296ebce5fc66d712962d14c6f6811c218aec6afc748b937930c9ec3"}
+  ],
+  "archive_reference": {"path": "docs/review/2026-10-07/funding-archive-clock/reference.json", "reference_sha256": "8a149a088fde2d9339c5b46f582b17e3b558f887231aa99e052fd603df597fbd"},
+  "adjudication_output": "docs/review/2026-10-07/funding-archive-clock/comparison.json",
+  "adjudication_journal": "docs/review/2026-10-07/funding-archive-clock/comparison-journal.jsonl",
+  "question": "Do the final complete UTC day's three BTC archived calc_time/rate rows join exactly to native fundingTime/rate/mark rows, before gathering larger mark populations or modifying model labels?",
+  "selection": "Calendar-only final UTC day of the old warmup-through-viability source prefix; no rate, mark or return ranking. Complete June month warehouse row stream recomputed and matched to its verified archive metadata before this request. No protected later-period data read.",
+  "adjudication_rule": "Exactly one zero-network comparison. Exact ordered timestamp/rate equality is the only join success. Equal counts and ordinal rates may report offsets solely as an unadmitted diagnostic. No rounding, tolerance, interpolation, timestamp overwrite, candle marks or aliases. Any disagreement or access/schema failure is terminal; no retry or larger mark capture under this contract.",
+  "not_authorized": ["old acceptance rerun", "model fit", "prediction or edge promotion", "fees/books/account requests", "credentials", "orders", "protected capture access", "full-history capture"],
+  "parser_preflight": {"path": "docs/review/2026-09-04/spot-funding-sources/07-funding-btcusdt.raw", "sha256": "6b4219597b85ee51a7b0601ba1399b2775a4ca1356fe3db48c459376fad9b9a8", "native_rows_parsed": 500, "new_requests": 0, "economic_metrics_computed": false},
+  "capture_boundaries_sha256": "f971726268ba2e630b2ebbe8d5bcf02f7b3f23b92ccb16efe23aef82cebe950f",
+  "edge_promotion_eligible": false,
+  "research_observation_count_effect": 0,
+  "contract_sha256": "b1bd0f3e1a4fcdbd1f345c7d3237378b116c96234d1f448494892dcaf29ffa09"
+}

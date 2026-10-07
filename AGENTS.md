@@ -119,6 +119,11 @@ result and all other consumed populations, including WNBA September 3-9.
   numerical labels. Reuse `funding_cash.py` for the shared supplied-event law;
   complete mark population, source origin, clocks and quantity/rebalancing
   semantics must qualify new labels before expanding affected training.
+  The October 7 full-history native mark batch is terminal: its first 1,000
+  records have empty marks; remaining 11 requests are forbidden. Missing marks
+  are not zero cash. Reuse its evidence; independent complete primary evidence
+  or a distinct prospective cash-qualified dataset is required for further
+  admission, not candle substitution or selection of later successful pages.
   Full-fill support is not an inventory ledger: a censored incomplete label
   cannot establish zero partial fill or zero PnL, and equal quote notionals at
   different leg prices do not establish equal net base quantities. Before any
@@ -203,6 +208,9 @@ and verify reproducibly. Do not load upstream `EXAMPLES.md`.
    failure reuses evidence instead of refetching it. For a large discovery or
    inventory response, persist it and print only a bounded aggregate in the same
    request; never stream the full payload to the console as the only copy.
+   A later-date parser control does not qualify historical field availability.
+   Before bulk historical field additions, prospectively validate required value
+   coverage on an earliest slice; field-name presence alone is not a value gate.
    For a documented cursor endpoint whose sampling cadence or total row count is
    not source-proved, freeze the conditional cursor traversal, maximum pages,
    total rows, total bytes, deduplication key, and fail-closed stop conditions
