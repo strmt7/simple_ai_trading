@@ -1,0 +1,136 @@
+{
+  "schema_version": "model-integration-research-cycle-v1",
+  "created_at_utc": "2026-10-07T15:01:36Z",
+  "starting_git_revision": "56bacc15b36124de0bb9c7676e19ed8830939053",
+  "scope": "Bounded source-to-implementation cycle; not whole-repository review or financial qualification",
+  "source_capture": {
+    "technical_get_count": 4,
+    "total_response_bytes": 134223,
+    "complete_http_200_response_count": 6,
+    "request_journal_records": 12,
+    "sources": [
+      {
+        "name": "ollama_revision",
+        "contract_path": "docs/review/2026-10-07/model-integration/ollama-revision-contract.json",
+        "response_sha256": "4ca4e772d05dcf7c628f14e80d83243582ee37c3b4a3e10aa411493197535571",
+        "response_bytes": 4744
+      },
+      {
+        "name": "freqai_revision",
+        "contract_path": "docs/review/2026-10-07/model-integration/freqai-revision-contract.json",
+        "response_sha256": "7ed9449e61aafc595357504b9e39f66940204c3f358e8e513a6150d44e42b9a9",
+        "response_bytes": 3274
+      },
+      {
+        "name": "ollama_api_types",
+        "revision": "efe43c5561047d8baf8c862730b2151249d51fd5",
+        "contract_path": "docs/review/2026-10-07/model-integration/ollama-source-contract.json",
+        "response_sha256": "75369e029dcfc815013243b1e728fcff32514a3b38b26f3288eb1ee2b7fa4d1b",
+        "response_bytes": 42713,
+        "inspected_lines": [
+          [
+            529,
+            552
+          ]
+        ],
+        "semantic_scope": "ChatResponse completion status and reason wire fields, not enumerated reason semantics or a whole API review"
+      },
+      {
+        "name": "freqai_lifecycle",
+        "revision": "73b23ef9673e2e28bf7bfe6174eb175222cb29df",
+        "contract_path": "docs/review/2026-10-07/model-integration/freqai-source-contract.json",
+        "response_sha256": "fa0c3d1835ea3e2804d23617095d877d760b357bfd02ec30a954b4ae16154065",
+        "response_bytes": 47293,
+        "inspected_lines": [
+          [
+            190,
+            278
+          ],
+          [
+            434,
+            533
+          ]
+        ],
+        "semantic_scope": "Threaded scheduling/shutdown and expiry branch routing; no callee/loader or whole-framework qualification"
+      },
+      {
+        "name": "ollama_license",
+        "contract_path": "docs/review/2026-10-07/model-integration/ollama-license-contract.json",
+        "response_sha256": "5934ed2ce0d15154bcdb9c85203210abac0da4314af34081e36df4599f90b226",
+        "response_bytes": 1058,
+        "semantic_scope": "Upstream MIT copyright and full license terms"
+      },
+      {
+        "name": "freqai_license",
+        "contract_path": "docs/review/2026-10-07/model-integration/freqai-license-contract.json",
+        "response_sha256": "589ed823e9a84c56feb95ac58e7cf384626b9cbf4fda2a907bc36e103de1bad2",
+        "response_bytes": 35141,
+        "semantic_scope": "Upstream full GNU GPL version 3 license text"
+      }
+    ],
+    "license_get_count": 2,
+    "total_request_count": 6,
+    "notices_path": "docs/review/2026-10-07/model-integration/UPSTREAM_NOTICES.md"
+  },
+  "repair_evidence": {
+    "natural_completion": {
+      "path": "src/simple_ai_trading/live_ai_assist.py",
+      "prior_git_blob_sha256": "7a0c3fc7bd4aa498a789fb56065d970e99f3f1046505d170265fbcd2bbc7a8e4",
+      "implementation_sha256": "1fe71b432dd345edc63557415136d99a2a06b2f669ee43004940be7bb8fcbb1c",
+      "test_path": "tests/test_live_ai_assist.py",
+      "test_sha256": "ced0a19ef2d7b2af8ee32b9e53634e1d873fb0245c5cf7f25cdc0f06aab33096",
+      "reproduction": "9 failed/2 passed natural-completion rejection cases before repair; valid schema alone was accepted",
+      "forward_rule": "Require done is True and done_reason exactly stop before action parsing or residency access",
+      "legacy_ai_records_requalified": false
+    },
+    "audit_binding": {
+      "registry_result_sha256": "fcf672654e2e8ba19fc1374995ee0dd99185ec535833def14dc576f77a0818b5",
+      "prior_audit_result_sha256": "ae864b0937dec6bf33aa6413aae328f4d95fb3d588b4a301c7fd5c97e63def04",
+      "corrected_audit_result_sha256": "2bffc1b9156fa0dc80080c8182cf1d3781cb7c5960cabe93fa4772512ce83304",
+      "prior_payload_path": "docs/review/2026-10-07/model-integration/audit-before.json",
+      "prior_original_bytes_preserved_in_git": true,
+      "canonical_snapshot_not_original_byte_copy": true,
+      "financial_frontier_classification_and_decision_fields_unchanged": true
+    }
+  },
+  "focused_verification": {
+    "command": "uv run python -m pytest tests/test_live_ai_assist.py tests/test_live_ai_uplift.py tests/test_accepted_edge_profitability_durability_audit.py -q --tb=short",
+    "passed": 54,
+    "failed": 0,
+    "ruff_format_and_check_passed": true,
+    "raw_contract_capture_and_journal_hash_validation_passed": true,
+    "whole_repo_tests_or_semantic_review_claimed": false
+  },
+  "routing": {
+    "research_cycles": "docs/review/2026-10-07/model-integration/review.md",
+    "next_cycle": "Cash-qualified forward labels and integration before model/ensemble fits; five legacy rate-only funding consumers remain unresolved",
+    "llm_uplift_qualified": false,
+    "independent_process_containment_qualified": false,
+    "whole_model_lifecycle_qualified": false,
+    "superiority_or_permanent_profit_claim": false
+  },
+  "counters": {
+    "research_observations": 201,
+    "hypotheses": 65,
+    "accepted_mechanism_scopes": 37,
+    "stable_account_qualified_after_cost_edges": 0,
+    "new_economic_observations": 0
+  },
+  "authority": {
+    "market_requests": 0,
+    "credentials_used": false,
+    "models_queried": 0,
+    "training_runs": 0,
+    "benchmarks": 0,
+    "orders_or_transactions": 0,
+    "protected_capture_touched": false,
+    "live_money": false
+  },
+  "process_lessons": [
+    "A local revision-classifier expression was corrected using already retained bytes; no repeat request",
+    "Incomplete new audit snapshot was detected by JSON validation and replaced from complete parsed prior Git artifact before publication; no historical result lost",
+    "Synchronize paired active ledgers after registry changes and reject truncated tool output as evidence input"
+  ],
+  "result_sha256": "b6095265d80d12907c8ca81ff096ec12042cec0a7b484ea26ff073bfa804925c",
+  "updated_at_utc": "2026-10-07T15:05:24Z"
+}

@@ -1,0 +1,65 @@
+{
+  "schema_version": "public-source-capture-contract-v1",
+  "frozen_at_utc": "2026-10-07T15:04:10Z",
+  "contract_path": "docs/review/2026-10-07/model-integration/ollama-license-contract.json",
+  "request_name": "ollama_immutable_source_license",
+  "request": {
+    "method": "GET",
+    "url": "https://raw.githubusercontent.com/ollama/ollama/efe43c5561047d8baf8c862730b2151249d51fd5/LICENSE",
+    "count": 1,
+    "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "response_byte_ceiling": 131072,
+  "byte_ceiling_basis": "One root license text, 128 KiB hard bound; no retry, alias or fallback.",
+  "required_utf8_phrases": [
+    "\n"
+  ],
+  "outputs": {
+    "raw_path": "docs/review/2026-10-07/model-integration/ollama-LICENSE.raw",
+    "journal_path": "docs/review/2026-10-07/model-integration/ollama-license-journal.jsonl",
+    "result_path": "docs/review/2026-10-07/model-integration/ollama-license-capture.json"
+  },
+  "authority": {
+    "account_requests": 0,
+    "credentials_used": false,
+    "funds_used": false,
+    "orders_or_transactions": 0,
+    "protected_capture_touched": false,
+    "public_unauthenticated_read_only_requests": 1,
+    "signed_requests": 0,
+    "trading_authority": false
+  },
+  "transport": {
+    "socket_timeout_seconds": 10,
+    "read_budget_seconds": 30,
+    "redirects": false,
+    "retries": 0,
+    "proxies": false
+  },
+  "implementations": [
+    {
+      "path": "tools/capture_public_source_bounded.py",
+      "sha256": "760339a7602abfa9eb97f3f1cca0ef79191b07ff5f5aa42515f30f191f9888fc"
+    },
+    {
+      "path": "tools/capture_public_source_contract.py",
+      "sha256": "9dbb14651455abade755fe96091b9eaafe1153f56a1baad4cd60b1a888d41b8c"
+    },
+    {
+      "path": "tools/adjudicate_polymarket_exact_mlb_monotone_prefilter.py",
+      "sha256": "958a44d78029b9a1eb69a3771ce18e53ac1ed3c7bc161c8e4318beedce2cf99f"
+    },
+    {
+      "path": "tools/screen_polymarket_exact_two_leg_package.py",
+      "sha256": "374fcc3c3485c466b4929a91256450bdc7db70f93ef4c6bda627e05fe8938327"
+    }
+  ],
+  "question": "Retain the native root license accompanying the exact upstream revision already captured for research; no runtime code integration or repository license change.",
+  "selection": "Exact fixed root LICENSE at the already source-selected immutable revision.",
+  "adjudication_rule": "One zero-network license classification. Preserve copyright/notices and source identity; no relabeling external source as repository-authored. If unavailable, do not publish the complete upstream source without resolving distribution requirements.",
+  "prior_scope_distinction": "Technical model integration audit; not a new structural mechanism or economic observation.",
+  "capture_boundaries_sha256": "f971726268ba2e630b2ebbe8d5bcf02f7b3f23b92ccb16efe23aef82cebe950f",
+  "edge_promotion_eligible": false,
+  "research_observation_count_effect": 0,
+  "contract_sha256": "f0fca2c3b9337923717a11bdc35a29b1a9bfee028fbcaa8eda00e7d13a5745ab"
+}

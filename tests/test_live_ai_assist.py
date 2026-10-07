@@ -313,7 +313,12 @@ def test_provider_parser_is_exact_and_semantically_fail_closed() -> None:
         }
     )
     parsed = _parse_provider_decision(
-        {"model": "qwen3:14b", "done": True, "message": {"content": content}},
+        {
+            "model": "qwen3:14b",
+            "done": True,
+            "done_reason": "stop",
+            "message": {"content": content},
+        },
         expected_model="qwen3:14b",
     )
     assert parsed.action == "approve"
@@ -335,10 +340,52 @@ def test_provider_parser_is_exact_and_semantically_fail_closed() -> None:
                 {
                     "model": "qwen3:14b",
                     "done": True,
+                    "done_reason": "stop",
                     "message": {"content": invalid},
                 },
                 expected_model="qwen3:14b",
             )
+
+
+@pytest.mark.parametrize(
+    "done, reason",
+    [
+        (True, "length"),
+        (True, "error"),
+        (True, "unknown"),
+        (True, "STOP"),
+        (True, ""),
+        (True, None),
+        (True, False),
+        (True, 1),
+        (True, "missing"),
+        (False, "stop"),
+        (1, "stop"),
+    ],
+)
+def test_provider_parser_rejects_non_natural_completion(
+    done: object, reason: object
+) -> None:
+    payload = {
+        "model": "qwen3:14b",
+        "done": done,
+        "done_reason": reason,
+        "message": {
+            "content": json.dumps(
+                {
+                    "action": "approve",
+                    "risk_multiplier": 0.4,
+                    "confidence": 0.8,
+                    "reason_codes": ["edge_after_costs"],
+                    "summary": "Syntactically complete but unqualified response.",
+                }
+            )
+        },
+    }
+    if reason == "missing":
+        payload.pop("done_reason")
+    with pytest.raises(ValueError, match="incomplete|natural completion"):
+        _parse_provider_decision(payload, expected_model="qwen3:14b")
 
 
 def test_approval_requires_bound_after_cost_model_evidence() -> None:
@@ -716,6 +763,7 @@ def test_ollama_provider_binds_response_to_digest_gpu_and_token_budget(
     response_payload = {
         "model": "qwen3:14b",
         "done": True,
+        "done_reason": "stop",
         "message": {"content": content},
         "prompt_eval_count": 321,
         "eval_count": 47,
@@ -797,6 +845,19 @@ def test_ollama_provider_binds_response_to_digest_gpu_and_token_budget(
     )
     with pytest.raises(ValueError, match="approved GPU-resident model"):
         provider(_case(observed_at_ms=3_000))
+
+    def unexpected_residency(*_args, **_kwargs):
+        pytest.fail("Rejected completion must not consume a residency request")
+
+    monkeypatch.setattr(
+        live_ai_assist_module, "inspect_ollama_model_residency", unexpected_residency
+    )
+    response_payload["done_reason"] = "length"
+    with pytest.raises(ValueError, match="natural completion"):
+        provider(_case(observed_at_ms=4_000))
+    response_payload.pop("done_reason")
+    with pytest.raises(ValueError, match="natural completion"):
+        provider(_case(observed_at_ms=5_000))
 
 
 @pytest.mark.parametrize(

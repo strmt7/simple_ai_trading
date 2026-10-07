@@ -843,6 +843,8 @@ def _parse_provider_decision(
         raise ValueError("Ollama response is not an object")
     if payload.get("done") is not True:
         raise ValueError("Ollama response is incomplete")
+    if payload.get("done_reason") != "stop":
+        raise ValueError("Ollama response lacks verified natural completion")
     if str(payload.get("model") or "") != expected_model:
         raise ValueError("Ollama response model differs from the requested model")
     message = payload.get("message")

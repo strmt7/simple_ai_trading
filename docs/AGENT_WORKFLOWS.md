@@ -393,6 +393,15 @@ Record each passing command, relevant tree state, and artifact. Do not rerun an
 unchanged gate merely for reassurance; invalidate it only when code,
 configuration, fixtures, dependencies, runtime artifacts, or platform inputs
 change. Run the complete required matrix once against the final release tree.
+An active structural-edge registry amendment invalidates the profitability
+audit's cross-binding even when no accepted-edge count or financial number
+changes. Synchronize both ledgers and run
+`uv run python -m pytest tests/test_accepted_edge_profitability_durability_audit.py -q`
+before publishing such an amendment. Checking only the new study's self-hash
+or arithmetic does not verify its integration into the current routing state.
+Never build an evidence snapshot from a truncated terminal/tool response. Check
+the complete output and parse structured data before writing; bind preserved
+Git revisions or raw files directly rather than relying on a console excerpt.
 Resolve focused test paths with `rg --files tests` before invoking pytest; do
 not infer filenames from module names. Copy the returned path into the command.
 When bundling PowerShell verification gates, join dependent commands with
