@@ -1,5 +1,22 @@
 # Continue Development
 
+October 7 [model/LLM source-to-implementation cycle 1](review/2026-10-07/model-integration/review.md):
+reuse Round 71 and the existing similar-repo survey. Four bounded technical
+GETs retain 98,024 bytes at exact primary revisions; no financial requests.
+Reproduced and fixed the live provider's missing natural-completion check:
+done=true alone no longer admits output with absent/non-stop finish reasons.
+The active profitability audit now binds the current registry; old classifications,
+returns and admission decisions remain unchanged. 54 affected checks and Ruff pass.
+Prior audit payload preserved; workflow prevents stale cross-bindings and
+evidence snapshots made from truncated tool output. No model inference/fit,
+GPU benchmark, accounts, credentials or orders. Counts remain 201/65/37/0.
+Next complete source/mark/quantity/fee/basis/partial-fill cash labels before fits,
+then low-cost surplus baselines and genuinely complementary ensembles; causal
+retrieval and LLMs require untouched matched after-cost uplift. Independent
+terminable processes, persistent model-health gates and complete model expiry
+coverage remain unqualified. Do not repeat framework surveys or treat research
+plans/provider functionality as alpha, full code review or enterprise completion.
+
 October 7 [native full-hedge funding frontier](review/2026-10-07/native-funding-hedge-frontier/review.md):
 one separately frozen zero-request study calculates all three major assets and
 four fixed eight-day panels plus the full Sep 5-Oct 6 period. Reference-event

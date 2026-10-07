@@ -231,3 +231,6 @@ docs/review/2026-10-07/inverse-collateral-source/*.jsonl binary -eol
 docs/review/2026-10-07/inverse-collateral-source/*.raw binary -eol
 docs/review/2026-10-07/native-funding-hedge-frontier/*.json binary -eol
 docs/review/2026-10-07/native-funding-hedge-frontier/*.jsonl binary -eol
+docs/review/2026-10-07/model-integration/*.json binary -eol
+docs/review/2026-10-07/model-integration/*.jsonl binary -eol
+docs/review/2026-10-07/model-integration/*.raw binary -eol

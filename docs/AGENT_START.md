@@ -10,6 +10,13 @@ Scope blockers to their branch; a fresh user resumption resets the blocked audit
 
 ## Current Truth
 
+October 7 [model/LLM source-to-implementation cycle](review/2026-10-07/model-integration/review.md):
+current primary Ollama/FreqAI sources retained once; natural-completion AI gate
+and stale profitability-audit binding repaired. 54 affected checks pass.
+The cycle routes cash-qualified surplus models, complementary ensembles,
+causal retrieval/paired LLM uplift and independent process/model-health controls.
+It does not qualify training, profitability or enterprise readiness. Counts unchanged.
+
 October 7 [native funding hedge frontier](review/2026-10-07/native-funding-hedge-frontier/review.md):
 zero-request complete-hedge break-even calculation reuses the new native data.
 After a 32-bp sensitivity reserve, full-period basis budgets are only 2-12 bps
