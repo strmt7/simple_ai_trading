@@ -1,0 +1,36 @@
+{
+  "schema_version": "retained-financial-screen-verification-v1",
+  "verified_at_utc": "2026-10-07T09:06:05Z",
+  "population_result_sha256": "322a2ddbdfdb943e6883e2b153280d5ab28af833889230a11c7dfcb074f1e727",
+  "price_result_sha256": "2ac08ca9d18137027844b5add7ff999afdf98e33d9a7ad4e0b9d4ca2cb50884b",
+  "amendment_plan_result_sha256": "f47f87ee3d7adbca3b2f9758b267a10f38fe969516fb7ca481273b6430f7f1f7",
+  "registry_result_sha256": "de18222a991cf88d23322d429389413889e041be04579fb4e33d56f765d605d3",
+  "audit_result_sha256": "ae864b0937dec6bf33aa6413aae328f4d95fb3d588b4a301c7fd5c97e63def04",
+  "request_journal_byte_sha256": {
+    "futures_books-requests.jsonl": "f030fe534aaddb61cd96d8112a957aa6d23f032396bbc0dbde654a29a5680ea6",
+    "option_tickers-requests.jsonl": "fd90dec989db483dc98f9684759d6c6e4cfed943f04c6ca670b81c55dddf5837",
+    "requests.jsonl": "301497475dffa066bafd18a6dc24211a888216efb5827979fc5db267b206002c"
+  },
+  "checks": {
+    "all_five_contract_and_five_result_self_hashes": "passed",
+    "unchanged_frozen_implementation_hashes": "passed",
+    "three_raw_response_byte_hashes_status_ceiling_and_clock": "passed",
+    "all_three_two_phase_journals_and_exact_request_intents": "passed",
+    "complete_2344_consumed_union": "passed",
+    "all_600_new_metadata_records_no_price_selection": "passed",
+    "all_600_price_rows_exact_reconstruction": "passed",
+    "all_418_positive_entry_quotes_gross_negative": "passed",
+    "all_182_unavailable_entries_fail_closed": "passed",
+    "future_complete_consumed_union_2944": "passed",
+    "prior_200_terminal_observations_exact_prefix": "passed",
+    "all_other_ledger_values_except_frozen_append_delta": "passed",
+    "two_existing_central_audit_tests": "passed_in_1.52_seconds",
+    "git_diff_check": "passed"
+  },
+  "scope_limits": [
+    "No model training, engine source change, full suite, CI or performance benchmark",
+    "Necessary snapshot rejection only; no complete cost/settlement proof, executable capacity, owned cash or recurring expectancy",
+    "Publication, staged-byte equality and commit identity are verified separately after this artifact is frozen"
+  ],
+  "result_sha256": "2ebe1a3ca44b2d4d0d44d074ddb93ba28dd90d62912ba901bc8c0f51438fc6e0"
+}
