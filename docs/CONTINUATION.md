@@ -1,5 +1,26 @@
 # Continue Development
 
+October 7 [native full-hedge funding frontier](review/2026-10-07/native-funding-hedge-frontier/review.md):
+one separately frozen zero-request study calculates all three major assets and
+four fixed eight-day panels plus the full Sep 5-Oct 6 period. Reference-event
+payments are excluded; held funding uses exact native mark cash, with separate
+unknown-entitlement bounds. Full-period cash leaves 11.03/11.58/2.32 bps for
+BTC/ETH/SOL basis deterioration after an illustrative 32-bp reserve and zero
+capital cost. All twelve eight-day panels fall short of that reserve. At 3.25%
+annual cost on two reference capital units, all full-period budgets are negative.
+These are break-even sensitivities, not executable returns or family-wide
+negative-EV proof. Native fees, quantities, basis, continuous margin, independent
+coverage, entitlement and untouched stability remain unqualified. Next compare
+all-in-cost/basis and collateral economics before new captures or fits; avoid
+churning and do not select an outcome-favorable sensitivity for promotion.
+96 affected checks pass; no runtime campaign, GPU timing, credentials, orders,
+old-result rewrite or changed family retry gate. Counts unchanged: 201/65/37/0.
+[Current inverse metadata](review/2026-10-07/inverse-collateral-source/review.md)
+identifies one BTC dated row only; existing inverse algebra and legal-sign
+conflict already cover this mechanism. Duplicate FAQ locale discovery was a
+process violation, excluded from evidence and escalation. Search exact source
+identifiers and prior mechanism reviews before browsing, not after.
+
 October 7 [recent native funding values](review/2026-10-07/recent-funding-values/review.md):
 the separately frozen September 5-October 6 BTC/ETH/SOL period passes native
 value qualification: 288 marked events, four GETs, 36,041 response bytes. Earliest

@@ -8,6 +8,14 @@ Binance or Polymarket execution. No paper parameter or return is adopted.
 
 ## Cash state and settlement clock
 
+The [native full-hedge frontier](../review/2026-10-07/native-funding-hedge-frontier/review.md)
+now calculates retained-period break-even budgets without new requests. All
+eight-day panels fall below the illustrative 32-bp cost reserve, while the full
+period leaves thin positive budgets only before capital/basis cost. This is
+not a complete hedge replay, repaired training label or new acceptance. Reuse
+its source-bound cost/basis frontier; qualify actual paired execution, cash
+entitlement and margin paths before training or selecting an optimistic scenario.
+
 The [October 7 recent-period qualification](../review/2026-10-07/recent-funding-values/review.md)
 provides 288 native BTC/ETH/SOL marked events for September 5-October 6, 2026,
 from four prospectively fixed public requests. It does not repair the failed
