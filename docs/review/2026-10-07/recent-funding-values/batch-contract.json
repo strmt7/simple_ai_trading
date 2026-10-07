@@ -1,0 +1,40 @@
+{
+  "schema_version": "recent-funding-value-batch-v1",
+  "frozen_at_utc": "2026-10-07T12:20:37Z",
+  "source_revision": "2b12a4e9d48fbcb7d2776b3660672320d77881ff",
+  "contracts_in_fixed_order": [
+    "docs/review/2026-10-07/recent-funding-values/01-btc-earliest-contract.json",
+    "docs/review/2026-10-07/recent-funding-values/02-btc-remainder-contract.json",
+    "docs/review/2026-10-07/recent-funding-values/03-eth-complete-contract.json",
+    "docs/review/2026-10-07/recent-funding-values/04-sol-complete-contract.json"
+  ],
+  "selection": "Calendar-only September 5 through October 6, 2026 UTC, disjoint from the rejected December 2021-June 2025 scope and all August/September 4 consumed cross-venue windows; no rate, price or return selection.",
+  "information_gain": "Determine whether a new completed native period supports exact supplied settlement-mark cash instead of unavailable old marks/rate-only labels. Earliest BTC value check precedes bulk access. No cross-venue orientation selection or rolling profitability hunt.",
+  "api_documentation": {
+    "url": "https://developers.binance.com/en/docs/catalog/core-trading-derivatives-trading-usd-s-m-futures/api/rest-api/market-data",
+    "access_date": "2026-10-07",
+    "publisher": "Binance",
+    "source_type": "official primary API documentation",
+    "supported": "Inclusive start/end milliseconds, ascending response, maximum 1000 rows, markPrice associated with a funding fee charge; documentation does not prove historical value coverage."
+  },
+  "max_new_requests": 4,
+  "maximum_new_response_bytes": 4096000,
+  "stop_on_first_failure": true,
+  "remaining_requests_forbidden_after_failure": true,
+  "all_or_nothing_value_admission": true,
+  "independent_event_population_qualified": false,
+  "owned_entitlement_qualified": false,
+  "cash_labels_admitted": false,
+  "economic_metrics_computed": false,
+  "accepted_edge": false,
+  "research_observation_count_effect": 0,
+  "parser_preflight": {
+    "path": "docs/review/2026-09-04/spot-funding-sources/07-funding-btcusdt.raw",
+    "sha256": "6b4219597b85ee51a7b0601ba1399b2775a4ca1356fe3db48c459376fad9b9a8",
+    "rows": 500,
+    "last_funding_time_ms": 1787788800000,
+    "new_requests": 0
+  },
+  "capture_boundaries_sha256": "f971726268ba2e630b2ebbe8d5bcf02f7b3f23b92ccb16efe23aef82cebe950f",
+  "batch_sha256": "9b3a07b2ea90d799b1aa79abc0d97420c82310be3116a11b36117039f279d43f"
+}
