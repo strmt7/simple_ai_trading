@@ -1,0 +1,65 @@
+{
+  "accepted_edge": false,
+  "article": {
+    "code": "3dd432ca980c469389d18f2f69c9d4ae",
+    "id": 283723,
+    "lastUpdateTime": 1790310480000,
+    "publishDate": 1788415206916,
+    "title": "Extension to the USD1 Airdrop Campaign (2026-09-04)",
+    "version": "1"
+  },
+  "campaign_ended_at_observation": true,
+  "contract_sha256": "362e34194fb34e97416d7ba0a828fc7db239fbb091ad44487e01aa51b697bad0",
+  "error": null,
+  "executable_after_all_cost_profit_proved": false,
+  "first_period_numeric_base_published": true,
+  "first_period_numeric_reference_published": false,
+  "guaranteed_forward_reward_usd": "0",
+  "market_or_account_escalation_authorized": false,
+  "observed_at_utc": "2026-10-07T07:42:18.490000+00:00",
+  "owned_account_qualified": false,
+  "period_rows": [
+    {
+      "base_apr": "4.33%",
+      "base_state": "published_numeric",
+      "boosted_apr": "5.20%",
+      "boosted_state": "published_numeric",
+      "period": "1st Distribution on 2026-09-11 Reward Period: 2026-09-04 00:00 (UTC) to 2026-09-11 00:00 (UTC)",
+      "token_value": "USD 0.0561",
+      "token_value_state": "unparsed_no_numeric_claim"
+    },
+    {
+      "base_apr": "4.48%",
+      "base_state": "published_numeric",
+      "boosted_apr": "5.38%",
+      "boosted_state": "published_numeric",
+      "period": "2nd Distribution on 2026-09-18 Reward Period: 2026-09-11 00:00 (UTC) to 2026-09-18 00:00 (UTC)",
+      "token_value": "USD 0.0584",
+      "token_value_state": "unparsed_no_numeric_claim"
+    },
+    {
+      "base_apr": "4.31%",
+      "base_state": "published_numeric",
+      "boosted_apr": "5.17%",
+      "boosted_state": "published_numeric",
+      "period": "3rd Distribution on 2026-09-25 Reward Period: 2026-09-18 00:00 (UTC) to 2026-09-25 00:00 (UTC)",
+      "token_value": "USD 0.0565",
+      "token_value_state": "unparsed_no_numeric_claim"
+    },
+    {
+      "base_apr": "To be updated on 2026-10-02",
+      "base_state": "unpublished_placeholder",
+      "boosted_apr": "To be updated on 2026-10-02",
+      "boosted_state": "unpublished_placeholder",
+      "period": "4th Distribution on 2026-10-02 Reward Period: 2026-09-25 00:00 (UTC) to 2026-10-02 00:00 (UTC)",
+      "token_value": "To be updated on 2026-10-02",
+      "token_value_state": "unpublished_placeholder"
+    }
+  ],
+  "raw_sha256": "d7557eea0888bc71a498c3b6a6fd8b24c63ea189a6a0795e573ea03c7f6826fd",
+  "result_sha256": "b2a3f712a34c83190869d015e8b9e9e08bd9adbd58db9388c75929bb8f6fb40e",
+  "retry": "Only independently observed material official program/terms change; this deadline trigger is consumed",
+  "schema_version": "completed-yield-distribution-reconciliation-v1",
+  "source_and_table_passed": true,
+  "source_result_sha256": "3b9cdcc060a4f3f6abd6bf793838f96a11cc9be291fbc8e5282999983145af1a"
+}

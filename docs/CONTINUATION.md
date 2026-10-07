@@ -1,5 +1,20 @@
 # Continue Development
 
+October 7 priority correction: long-term profitability, not temporary campaigns.
+See WORK_PRIORITIES. No campaign-specific runtime logic or promotion farming.
+The [already collected USD1 reconciliation](review/2026-10-07/usd1-distribution/review.md)
+is retained as a closed historical branch: three published base APRs, expired
+campaign, no current profit. Do not pursue the other due promotion deadlines as
+strategy priorities. Totals now 199 observations, 65 hypotheses, 37 mechanism
+scopes and zero qualified stable profitable edges; older dated counts remain.
+
+All Dependabot AND code-scanning findings require professional triage and repair,
+before/after evidence and exact-main reevaluation, not dashboard suppression.
+October 7 current API inventory: urllib3 #14 cleared; Tornado #15/#16 high and
+#17 medium (fixed version 6.5.9); CodeQL #6 high at binance_execution_scope.py:51.
+Investigation pending; no full-audit/all-alerts-resolved claim. Four upgrade PRs
+still need compatibility review, particularly Polymarket SDK and GPU backend.
+
 October 7 security checkpoint: Dependabot #14 reports the urllib3 chunked Deflate
 CPU-loop advisory GHSA-gh4c-6fx4-qh6g. Upgrade 2.7.0 to 2.8.0 and add the explicit
 runtime floor `urllib3>=2.8.0,<3`; no other package version changed. Two bounded

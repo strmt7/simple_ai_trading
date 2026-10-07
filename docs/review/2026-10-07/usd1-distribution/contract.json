@@ -1,0 +1,90 @@
+{
+  "schema_version": "public-source-capture-contract-v1",
+  "frozen_at_utc": "2026-10-07T07:41:20Z",
+  "contract_path": "docs/review/2026-10-07/usd1-distribution/contract.json",
+  "request_name": "usd1-sep4-first-distribution-reconciliation",
+  "question": "Did the exact completed September USD1 campaign publish its distribution APRs and reference token values, and does this retained source establish any unexpired forward reward?",
+  "trigger": {
+    "registry_priority_rank": 8,
+    "hypothesis": "same_account_stable_value_yield_allocation",
+    "not_before_utc": "2026-09-11T18:00:00Z",
+    "verified_at_utc": "2026-10-07T07:41:20Z",
+    "baseline_contract_sha256": "dc8edd7d20c889d2ff6b3dd1cb06a47b1ef7cb2d7f49fff39d2d30d3a7b0a2a4",
+    "baseline_adjudication_sha256": "f3eaf05ff817dba843d992c643718f0b6f26fbd57bb5bfd15159522b0899114d",
+    "exact_url_deduplication": "Only the consumed September 4 baseline contract, source result, and request journal matched; this distinct first-distribution deadline observation has not been consumed.",
+    "fresh_outcomes_viewed_before_freeze": false,
+    "baseline_representation_preflight": "Production parser passed against retained JSON rich-document table and all four exact period labels."
+  },
+  "request": {
+    "method": "GET",
+    "url": "https://www.binance.com/bapi/composite/v1/public/cms/article/detail/query?articleCode=3dd432ca980c469389d18f2f69c9d4ae",
+    "count": 1,
+    "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "response_byte_ceiling": 500000,
+  "required_utf8_phrases": [
+    "Extension to the USD1 Airdrop Campaign (2026-09-04)",
+    "3dd432ca980c469389d18f2f69c9d4ae",
+    "Effective Base APR",
+    "WLFI Token Value"
+  ],
+  "baseline_raw": {
+    "path": "data/binance-usd1-sep4-campaign-v1/raw/02-campaign-announcement.raw.json",
+    "sha256": "dbe0aaf08282ccdf1eae921722d1e3d4852da4164cd738ebaf5b0decd5c98caf"
+  },
+  "article": {
+    "id": 283723,
+    "code": "3dd432ca980c469389d18f2f69c9d4ae",
+    "title": "Extension to the USD1 Airdrop Campaign (2026-09-04)",
+    "headers": ["Period", "Effective Base APR", "Effective Boosted APR (1.2x)", "WLFI Token Value"],
+    "period_labels": [
+      "1st Distribution on 2026-09-11 Reward Period: 2026-09-04 00:00 (UTC) to 2026-09-11 00:00 (UTC)",
+      "2nd Distribution on 2026-09-18 Reward Period: 2026-09-11 00:00 (UTC) to 2026-09-18 00:00 (UTC)",
+      "3rd Distribution on 2026-09-25 Reward Period: 2026-09-18 00:00 (UTC) to 2026-09-25 00:00 (UTC)",
+      "4th Distribution on 2026-10-02 Reward Period: 2026-09-25 00:00 (UTC) to 2026-10-02 00:00 (UTC)"
+    ]
+  },
+  "campaign_end_utc": "2026-10-02T00:00:00Z",
+  "economic_decision": {
+    "population": "All four exact ordered distribution rows; no row selection based on reported yield.",
+    "numeric_grammar": "ASCII unsigned decimal percent for APR; dollar-prefixed unsigned decimal for token reference. Other representations remain unparsed, never coerced.",
+    "published_rates_are_account_receipts": false,
+    "published_rates_are_executable_liquidation_quotes": false,
+    "expired_campaign_is_forward_yield": false,
+    "forward_after_all_cost_floor_usd": "0",
+    "accepted_edge": false,
+    "followup_market_or_account_requests": 0
+  },
+  "transport": {
+    "socket_timeout_seconds": 10,
+    "read_budget_seconds": 30,
+    "redirects": false,
+    "retries": 0,
+    "proxies": false
+  },
+  "outputs": {
+    "raw_path": "docs/review/2026-10-07/usd1-distribution/article.raw.json",
+    "journal_path": "docs/review/2026-10-07/usd1-distribution/request-journal.jsonl",
+    "result_path": "docs/review/2026-10-07/usd1-distribution/source-result.json"
+  },
+  "adjudication_result_path": "docs/review/2026-10-07/usd1-distribution/reconciliation.json",
+  "authority": {
+    "account_requests": 0,
+    "credentials_used": false,
+    "funds_used": false,
+    "orders_or_transactions": 0,
+    "protected_capture_touched": false,
+    "public_unauthenticated_read_only_requests": 1,
+    "signed_requests": 0,
+    "trading_authority": false
+  },
+  "implementations": [
+    {"path": "tools/capture_public_source_bounded.py", "sha256": "760339a7602abfa9eb97f3f1cca0ef79191b07ff5f5aa42515f30f191f9888fc"},
+    {"path": "tools/capture_public_source_contract.py", "sha256": "9dbb14651455abade755fe96091b9eaafe1153f56a1baad4cd60b1a888d41b8c"},
+    {"path": "tools/screen_polymarket_exact_two_leg_package.py", "sha256": "374fcc3c3485c466b4929a91256450bdc7db70f93ef4c6bda627e05fe8938327"},
+    {"path": "tools/adjudicate_polymarket_exact_mlb_monotone_prefilter.py", "sha256": "958a44d78029b9a1eb69a3771ce18e53ac1ed3c7bc161c8e4318beedce2cf99f"},
+    {"path": "tools/reconcile_binance_yield_distribution.py", "sha256": "16cd028a77351e3c060a62dc41fc00912f3dca6211686a3a34dcb043094916e0"}
+  ],
+  "retry_policy": "Exactly one GET consumes the first-distribution deadline trigger regardless of HTTP, transport, schema, phrase, table or numeric outcome. No alias, adaptive parser, extra market request or second pulse. Reopen this campaign only on an independently observed material official program or terms change. Other rank-8 campaigns retain their separate original triggers.",
+  "contract_sha256": "362e34194fb34e97416d7ba0a828fc7db239fbb091ad44487e01aa51b697bad0"
+}

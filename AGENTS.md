@@ -28,6 +28,12 @@ after its one execution. All other literal retry/protected-capture rules remain.
 
 ## Hard Rules
 
+October 7 user priority: long-term profitability, not expiring campaigns or
+promotional tricks. Follow the clarified WORK_PRIORITIES decision order. Do not
+hardcode campaign rules in runtime trading logic or spend resources collecting
+temporary promotions solely because old deadlines permit it. Preserve their
+historical artifacts; existing access permissions are ceilings, not obligations.
+
 September 8 session-only research exception, using the user's explicit authority
 to revise research rules for this session: the source-selected
 `cfb-flam-mia-2026-09-10` may receive exactly the one public unauthenticated

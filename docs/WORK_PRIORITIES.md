@@ -5,6 +5,18 @@ easy-to-count activity replace useful financial or engineering progress.
 
 ## Decision order
 
+October 7 explicit user clarification: LONG-TERM profitability is the objective.
+Expiring campaigns, promotional APRs, finite signup bonuses and similar tricks
+are not strategy-development priorities. Do not hardcode campaign names, dates,
+caps or eligibility into the trading engine. Preserve previous observations as
+historical evidence, not current income or durable-edge proof. A due promotion
+deadline alone does not justify spending more R&D resources on that branch.
+Prioritize persistent payoff identities, execution/cost advantages and hedged
+cashflows with sound net economics and repeatable capacity. Direction-neutral
+does not mean profitable in every liquidity/funding regime: require documented
+abstention, costs, inventory and tail-risk controls, chronological untouched
+evaluation and stability evidence. Do not manufacture guaranteed profit claims.
+
 1. Advance a sound structural/expected-value hypothesis when its exact evidence
    and retry conditions permit a genuinely informative test. Prefer after-cost
    economic value, risk/reward and deployable capacity to prediction accuracy
