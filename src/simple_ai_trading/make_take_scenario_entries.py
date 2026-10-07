@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 import hashlib
 import json
 from typing import Sequence
@@ -10,7 +10,11 @@ from typing import Sequence
 import numpy as np
 
 from .make_take_action_features import MAKE_TAKE_ACTION_NAMES
-from .queue_censored_actions import PASSIVE_FILL_BUCKETS_MS, PassiveFillResult
+from .queue_censored_actions import (
+    PASSIVE_FILL_BUCKETS_MS,
+    PassiveFillResult,
+    validate_passive_fill_result,
+)
 
 
 MAKE_TAKE_SCENARIO_ENTRY_SCHEMA_VERSION = "queue-censored-scenario-entry-v1"
@@ -158,6 +162,7 @@ def _validate_fill_contract(
     prices: np.ndarray,
     queue: np.ndarray,
 ) -> None:
+    validate_passive_fill_result(fill)
     if (
         fill.buyer_is_maker is not buyer_is_maker
         or fill.expiry_ms != PASSIVE_FILL_BUCKETS_MS[-1]
@@ -169,6 +174,38 @@ def _validate_fill_contract(
         or len(fill.result_sha256) != 64
     ):
         raise ValueError("make/take passive-fill source contract drifted")
+
+
+def _scenario_entry_payload(batch: MakeTakeScenarioEntryBatch) -> dict[str, object]:
+    return {
+        "schema_version": batch.schema_version,
+        "scenario": batch.scenario,
+        "contract": _scenario_contract(batch.scenario),
+        "passive_expiry_ms": batch.passive_expiry_ms,
+        "order_notional_quote": batch.order_notional_quote,
+        "max_l1_participation": batch.max_l1_participation,
+        "long_fill_sha256": batch.long_fill_sha256,
+        "short_fill_sha256": batch.short_fill_sha256,
+        "action_names": list(MAKE_TAKE_ACTION_NAMES),
+        "arrays": {
+            name: _array_sha256(getattr(batch, name))
+            for name in (
+                "action_code",
+                "action_side",
+                "passive",
+                "eligible",
+                "filled",
+                "fill_bucket",
+                "order_start_time_ms",
+                "entry_time_ms",
+                "unfilled_expiry_time_ms",
+                "entry_price",
+                "displayed_l1_participation",
+                "entry_cost_bps",
+                "exit_cost_bps",
+            )
+        },
+    }
 
 
 def build_make_take_scenario_entries(
@@ -197,7 +234,10 @@ def build_make_take_scenario_entries(
     if np.any(bid >= ask):
         raise ValueError("make/take entry quotes are crossed or locked")
     placement_latency = int(contract["placement_latency_ms"])
-    if np.any(decisions > np.iinfo(np.int64).max - placement_latency - PASSIVE_FILL_BUCKETS_MS[-1]):
+    if np.any(
+        decisions
+        > np.iinfo(np.int64).max - placement_latency - PASSIVE_FILL_BUCKETS_MS[-1]
+    ):
         raise ValueError("make/take decision times overflow the order lifecycle")
     arrivals = decisions + placement_latency
     _validate_fill_contract(
@@ -263,33 +303,6 @@ def build_make_take_scenario_entries(
     slippage = float(contract["additional_slippage_bps_per_side"])
     entry_cost = entry_fee + slippage
     exit_cost = np.full(rows * 4, float(contract["exit_fee_bps"]) + slippage)
-    payload = {
-        "schema_version": MAKE_TAKE_SCENARIO_ENTRY_SCHEMA_VERSION,
-        "scenario": selected_scenario,
-        "contract": contract,
-        "passive_expiry_ms": PASSIVE_FILL_BUCKETS_MS[-1],
-        "order_notional_quote": MAKE_TAKE_ORDER_NOTIONAL_QUOTE,
-        "max_l1_participation": MAKE_TAKE_MAX_L1_PARTICIPATION,
-        "long_fill_sha256": long_fill.result_sha256,
-        "short_fill_sha256": short_fill.result_sha256,
-        "action_names": list(MAKE_TAKE_ACTION_NAMES),
-        "arrays": {
-            "action_code": _array_sha256(action_code),
-            "action_side": _array_sha256(action_side),
-            "passive": _array_sha256(passive),
-            "eligible": _array_sha256(eligible),
-            "filled": _array_sha256(filled),
-            "fill_bucket": _array_sha256(fill_bucket),
-            "order_start_time_ms": _array_sha256(order_start),
-            "entry_time_ms": _array_sha256(entry_time),
-            "unfilled_expiry_time_ms": _array_sha256(unfilled_expiry),
-            "entry_price": _array_sha256(prices),
-            "displayed_l1_participation": _array_sha256(participation),
-            "entry_cost_bps": _array_sha256(entry_cost),
-            "exit_cost_bps": _array_sha256(exit_cost),
-        },
-    }
-    batch_sha256 = _sha256(payload)
     retained = (
         action_code,
         action_side,
@@ -307,7 +320,7 @@ def build_make_take_scenario_entries(
     )
     for array in retained:
         array.setflags(write=False)
-    return MakeTakeScenarioEntryBatch(
+    provisional = MakeTakeScenarioEntryBatch(
         schema_version=MAKE_TAKE_SCENARIO_ENTRY_SCHEMA_VERSION,
         scenario=selected_scenario,
         placement_latency_ms=placement_latency,
@@ -334,7 +347,10 @@ def build_make_take_scenario_entries(
         displayed_l1_participation=participation,
         entry_cost_bps=entry_cost,
         exit_cost_bps=exit_cost,
-        batch_sha256=batch_sha256,
+        batch_sha256="",
+    )
+    return replace(
+        provisional, batch_sha256=_sha256(_scenario_entry_payload(provisional))
     )
 
 

@@ -10,6 +10,13 @@ Scope blockers to their branch; a fresh user resumption resets the blocked audit
 
 ## Current Truth
 
+October 7 [maker input integrity](review/2026-10-07/make-take-source-integrity.md):
+fill/entry/target guards now cover all current entry consumers; 85 focused checks
+pass with valid golden outputs unchanged. Synthetic partial inventory can lose cash
+behind a zero full-fill label. This is not a cash-ledger repair or market evidence.
+Implement qualified partial quantities and first-fill protection before affected
+training; feature-batch identity and venue origin remain open. Counts: 201/65/37/0.
+
 October 7 [FIFO source/queue repair](review/2026-10-07/fifo-identification-source/review.md):
 completed virtual markers stay valid and cannot overfill; lossy timestamps reject.
 36 focused checks pass, not market profitability. Conditional fill ordering is

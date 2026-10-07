@@ -1,0 +1,50 @@
+{
+  "schema": "make-take-source-integrity-review-v1",
+  "review_date": "2026-10-07",
+  "source_revision": "a8411fb3f6c1e1cbc25b0617fe82f90a67d3c552",
+  "result_sha256": "e2fde6269c5e44277442d50b775b1318a31e1947507e4c1c479f0956aad312c7",
+  "source_bindings": [
+    {"path": "src/simple_ai_trading/make_take_scenario_entries.py", "before_sha256": "bb0dc83c1c30ba4161b78d01c855dd0484ede99ac1ab3368451f111a7339efa4", "after_sha256": "feb1e51bea720d17c5bf86d41b87d1e5fd8f033710ec876bd653dc14a6e55aec"},
+    {"path": "src/simple_ai_trading/make_take_entry_integrity.py", "before_sha256": null, "after_sha256": "760a56807832b443dc5cdf9d2cca250e494a17f1e4e33ed828161f3c72d12213"},
+    {"path": "src/simple_ai_trading/make_take_targets.py", "before_sha256": "8aa8c7db340071a059ba019198fe16d534442c370b99ea10ee974eeb26338c0c", "after_sha256": "ebc6007143853669f32e72780abaf4530445392cd207bbbd7add94821acfa43d"},
+    {"path": "src/simple_ai_trading/queue_fill_survival.py", "before_sha256": "18d5389fbdcc574e2f2463f77c98297113253443f5259511b803b0631fbf12ea", "after_sha256": "2ccd037bbc778a793a396177b6ed47b4a963aa8a19c79f55ff3c771907be4160"},
+    {"path": "src/simple_ai_trading/make_take_payoff_panel.py", "before_sha256": "38b315abd6e205e80eb037cc59445447c0b2a3d26f8c88c06ab9251348107392", "after_sha256": "b9fafbc60717564f3e5c0604a5d06c6a28711505f37888307be574c513211669"},
+    {"path": "tests/test_make_take_source_integrity.py", "before_sha256": null, "after_sha256": "1208444658adf355f48a6470ee8f3cfebd5bd30eea592ae10692e1ee9e6f539d"},
+    {"path": "tests/test_make_take_payoff_panel.py", "before_sha256": "2c323bd50608da17bbde859fce30e38512454a4e30b1c97f1683152328f74389", "after_sha256": "e09bf46218c128b1790af2cc981fb7407f8c41852fb4eebeb054536c2593db23"}
+  ],
+  "valid_output_identity": {
+    "entry_before_and_after_sha256": "d6400e580a375f2bf74204f36055a9247dca4e66bee479417851614eb8294837",
+    "target_before_and_after_sha256": "c84b90b973ad7fd871051f4725d4916ed24a5a5cf25b23dfeb54626f2bbb40f5"
+  },
+  "verification": {
+    "initial_before": {"failed": 11, "passed": 1, "evidence": "console transcript, no XML retained"},
+    "panel_guards_before": {"failed": 3, "evidence": "console transcript, no XML retained"},
+    "final_affected_passed": 85,
+    "final_test_paths": ["tests/test_make_take_source_integrity.py", "tests/test_make_take_scenario_entries.py", "tests/test_make_take_targets.py", "tests/test_queue_fill_survival.py", "tests/test_make_take_payoff_panel.py", "tests/test_make_take_replay.py", "tests/test_make_take_forward_evaluation.py"],
+    "ruff_check_and_format": "passed on five touched source files and two tests",
+    "full_suite": false,
+    "hosted_ci": false
+  },
+  "synthetic_counterexample": {
+    "assumption": "No-cancellation FIFO; explicit synthetic prices and base-scenario cost/slippage assumptions, not native fees or owned fills",
+    "printed_base_quantity": "104",
+    "queue_ahead_base_quantity": "100",
+    "intended_own_base_quantity": "10",
+    "partial_base_quantity": "4",
+    "remaining_base_quantity": "6",
+    "entry_price": "100",
+    "close_price": "98",
+    "entry_cost_and_slippage_bps": "3",
+    "exit_cost_and_slippage_bps": "6",
+    "entry_cost_quote": "0.12",
+    "exit_cost_quote": "0.2352",
+    "partial_net_cash_quote": "-8.3552",
+    "legacy_full_fill": false,
+    "legacy_realized_valid": true,
+    "legacy_realized_net_bps": "0",
+    "market_performance_evidence": false
+  },
+  "open_items": ["Native or qualified simulated partial-quantity cash ledger", "Protective exits from first partial fill", "Base-quantity and hedge/orphan cash matching", "Maker/taker role and native fee evidence", "Feature-batch content identity", "Venue origin, causal queue reconstruction and unique ordered prints"],
+  "research_counts_unchanged": {"economic_observations": 201, "hypotheses": 65, "mechanism_scopes": 37, "qualified_stable_edges": 0},
+  "no_actions": ["market-data/financial-source access", "credentials", "account/order mutation", "protected partial data access", "market retry", "model fit", "dependency change", "GPU/timing benchmark", "temporary campaign", "historical result rewrite"]
+}

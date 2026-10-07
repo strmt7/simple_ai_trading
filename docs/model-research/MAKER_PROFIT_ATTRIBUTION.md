@@ -37,6 +37,15 @@ The virtual queue completion/timestamp repair does not integrate a venue queue
 model or qualify source coverage. Existing full-fill targets remain historical
 proxies, not zero-partial-fill cash ledgers. Do not expand their fits on that basis.
 
+The [maker input integrity repair](../review/2026-10-07/make-take-source-integrity.md)
+closes fill-content and downstream entry/target validation holes without changing
+valid output hashes. Its explicit synthetic four-unit partial-fill example loses
+8.3552 quote units while the legacy full-fill label remains zero. Hash validation
+does not recover discarded quantities, authenticate venue origin or qualify fees.
+Next connect native or qualified simulated partial quantities to cash, protective
+exits beginning at the first partial fill, hedge/orphan costs and role evidence.
+Feature-batch identity remains a separate open item; no affected fit is qualified.
+
 For funding-aware control, use [the cash/clock and neutral-objective design](FUNDING_AWARE_NEUTRAL_CONTROL.md).
 The October 7 audit confirms that both derivative funding-label helpers still
 use rate-only proxies, not fixed-quantity settlement-mark cash. The prompt truth

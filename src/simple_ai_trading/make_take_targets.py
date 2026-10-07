@@ -11,6 +11,7 @@ from typing import Callable, Mapping, Sequence
 import numpy as np
 
 from .make_take_action_features import MAKE_TAKE_ACTION_NAMES
+from .make_take_entry_integrity import validate_make_take_scenario_entry_batch
 from .make_take_path_payoffs import build_action_path_payoffs
 from .make_take_scenario_entries import MakeTakeScenarioEntryBatch
 
@@ -18,7 +19,9 @@ from .make_take_scenario_entries import MakeTakeScenarioEntryBatch
 MAKE_TAKE_TARGET_SCHEMA_VERSION = "queue-censored-make-take-targets-v1"
 MAKE_TAKE_UNFILLED_OUTCOME = -2
 _DAY_MS = 86_400_000
-DayPathLoader = Callable[[int], Mapping[str, Sequence[int] | Sequence[float] | np.ndarray]]
+DayPathLoader = Callable[
+    [int], Mapping[str, Sequence[int] | Sequence[float] | np.ndarray]
+]
 
 
 def _canonical_json(value: object) -> str:
@@ -46,7 +49,9 @@ def _array_sha256(value: np.ndarray) -> str:
 
 def _is_sha256(value: object) -> bool:
     text = str(value)
-    return len(text) == 64 and all(character in "0123456789abcdef" for character in text)
+    return len(text) == 64 and all(
+        character in "0123456789abcdef" for character in text
+    )
 
 
 def _barrier_array(
@@ -243,6 +248,7 @@ def build_make_take_targets(
 ) -> MakeTakeTargetBatch:
     """Build conditional and realized action targets without hiding non-fills."""
 
+    validate_make_take_scenario_entry_batch(entries)
     normalized_symbol = str(symbol).strip().upper()
     if (
         normalized_symbol not in {"BTCUSDT", "ETHUSDT", "SOLUSDT"}
@@ -334,7 +340,9 @@ def build_make_take_targets(
             markout_5s[valid_rows] = payoff.markout_5s_bps[payoff.valid]
             markout_15s[valid_rows] = payoff.markout_15s_bps[payoff.valid]
             if progress is not None:
-                progress(day_offset, len(unique_days), int(np.count_nonzero(realized_valid)))
+                progress(
+                    day_offset, len(unique_days), int(np.count_nonzero(realized_valid))
+                )
 
     retained = (
         conditional_valid,
@@ -376,7 +384,10 @@ def build_make_take_targets(
         target_sha256="",
     )
     target = MakeTakeTargetBatch(
-        **{**provisional.__dict__, "target_sha256": _sha256(_target_payload(provisional))}
+        **{
+            **provisional.__dict__,
+            "target_sha256": _sha256(_target_payload(provisional)),
+        }
     )
     validate_make_take_target_batch(target)
     return target
