@@ -12,6 +12,18 @@ from simple_ai_trading.polymarket_live_settlement import (
 ROOT = Path(__file__).resolve().parents[1]
 
 
+def test_tornado_optional_security_pin_matches_lock() -> None:
+    project = tomllib.loads((ROOT / "pyproject.toml").read_text(encoding="utf-8"))
+    assert (
+        "tornado==6.5.10"
+        in project["project"]["optional-dependencies"]["microstructure"]
+    )
+    lock = tomllib.loads((ROOT / "uv.lock").read_text(encoding="utf-8"))
+    assert [
+        item["version"] for item in lock["package"] if item["name"] == "tornado"
+    ] == ["6.5.10"]
+
+
 def test_urllib3_security_floor_and_lock_exclude_deflate_loop_versions() -> None:
     project = tomllib.loads((ROOT / "pyproject.toml").read_text(encoding="utf-8"))
     assert "urllib3>=2.8.0,<3" in project["project"]["dependencies"]
