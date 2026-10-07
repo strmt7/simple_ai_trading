@@ -10,6 +10,13 @@ Scope blockers to their branch; a fresh user resumption resets the blocked audit
 
 ## Current Truth
 
+October 7 [future NFL discovery](review/2026-10-07/nfl-oct8-9-total-floor/review.md):
+one GET retained four October 8-9 deployed events, but a representation-dependent
+resource guard stopped the screen before prices. No price rejection or edge.
+That exact window/siblings are consumed; no adaptive ceiling repair or repricing.
+Use current price-blind cardinality and actual byte/computation budgets only for
+distinct future studies. Both active ledgers are synchronized. Counts: 202/65/37/0.
+
 October 7 [model/LLM source-to-implementation cycle](review/2026-10-07/model-integration/review.md):
 current primary Ollama/FreqAI sources retained once; natural-completion AI gate
 and stale profitability-audit binding repaired. 54 affected checks pass.

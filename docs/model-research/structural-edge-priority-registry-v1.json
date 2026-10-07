@@ -2256,8 +2256,30 @@
       },
       "market_direction_forecast_required": false,
       "mechanism": "polymarket_sports_moneyline_spread_total_monotone_payoff_implication",
-      "next_action": "do_not_resample_Toronto_Phoenix_Lynx_Dream_Ball_State_Ohio_State_Clemson_LSU_Fordham_North_Dakota_State_Mercyhurst_New_Mexico_State_SMU_Florida_State_or_Patriots_Seahawks_do_not_rebuild_reprice_or_book_capture_any_retained_Patriots_Seahawks_team_full_half_quarter_team_period_spread_ladder_or_additive_partition_graph_do_not_select_the_already_observed_49ers_Rams_sibling_after_the_source_selected_event_failed_and_do_not_repeat_the_consumed_WNBA_2026_08_30_through_2026_09_09_CFB_2026_09_03_through_2026_09_12_NFL_2026_09_13T00_00_00Z_through_20_25_00Z_or_NFL_2026_09_13T20_25_01Z_through_2026_09_21_windows_do_not_refetch_or_substitute_outcomePrices_for_the_13_price_incomplete_Atlanta_Pittsburgh_relations_the_7901_team_half_quarter_price_incomplete_relations_or_the_12_period_moneyline_spread_price_incomplete_relations_or_repair_missing_quotes_for_a_future_distinct_event_outside_all_consumed_populations_first_source_prove_actual_deployment_and_exhaustive_payoffs_then_use_side_specific_Gamma_asks_only_as_a_rejection_gate_request_one_frozen_exact_depth_batch_for_the_precommitted_strongest_strictly_sub_floor_package_and_require_independent_synchronized_after_fee_positive_recurrence_before_escalation_the_separately_authorized_Florida_AM_Miami_September10_deployment_and_553_rule_identical_spread_total_ladders_are_consumed_do_not_refetch_or_reprice",
+      "next_action": "October_8_9_native_NFL_catalog_consumed_resource_failure_not_price_rejection_do_not_refetch_reprice_relax_caps_or_switch_to_its_native_siblings; do_not_resample_Toronto_Phoenix_Lynx_Dream_Ball_State_Ohio_State_Clemson_LSU_Fordham_North_Dakota_State_Mercyhurst_New_Mexico_State_SMU_Florida_State_or_Patriots_Seahawks_do_not_rebuild_reprice_or_book_capture_any_retained_Patriots_Seahawks_team_full_half_quarter_team_period_spread_ladder_or_additive_partition_graph_do_not_select_the_already_observed_49ers_Rams_sibling_after_the_source_selected_event_failed_and_do_not_repeat_the_consumed_WNBA_2026_08_30_through_2026_09_09_CFB_2026_09_03_through_2026_09_12_NFL_2026_09_13T00_00_00Z_through_20_25_00Z_or_NFL_2026_09_13T20_25_01Z_through_2026_09_21_windows_do_not_refetch_or_substitute_outcomePrices_for_the_13_price_incomplete_Atlanta_Pittsburgh_relations_the_7901_team_half_quarter_price_incomplete_relations_or_the_12_period_moneyline_spread_price_incomplete_relations_or_repair_missing_quotes_for_a_future_distinct_event_outside_all_consumed_populations_first_source_prove_actual_deployment_and_exhaustive_payoffs_then_use_side_specific_Gamma_asks_only_as_a_rejection_gate_request_one_frozen_exact_depth_batch_for_the_precommitted_strongest_strictly_sub_floor_package_and_require_independent_synchronized_after_fee_positive_recurrence_before_escalation_the_separately_authorized_Florida_AM_Miami_September10_deployment_and_553_rule_identical_spread_total_ladders_are_consumed_do_not_refetch_or_reprice",
       "priority_rank": 30,
+      "october8_9_total_ladder_resource_failure": {
+        "status": "terminal_resource_unqualified_no_price_evaluation",
+        "contract_path": "docs/review/2026-10-07/nfl-oct8-9-total-floor/contract.json",
+        "contract_sha256": "6a0c75f59b9168bf82b454ea80a6935a679c2e77bad00eba8deaac21756d4a90",
+        "result_path": "docs/review/2026-10-07/nfl-oct8-9-total-floor/result.json",
+        "result_sha256": "bd1f430444c33f60f811134d622c639e39e9a502cb57747fe469d15bd6e8c0d3",
+        "raw_sha256": "b98c98824b436b2f3403697a05ef997811d069ef8311e80325840fc17ce7927a",
+        "window_minimum": "2026-10-08T00:00:00Z",
+        "window_maximum": "2026-10-09T23:59:59Z",
+        "native_event_count": 4,
+        "economic_values_evaluated": false,
+        "fee_requests": 0,
+        "book_requests": 0,
+        "accepted_edge": false,
+        "excluded_native_event_slugs": [
+          "nfl-tb-dal-2026-10-09",
+          "nfl-tb-dal-2026-10-09-highest-scoring-quarter",
+          "nfl-tb-dal-2026-10-09-player-props",
+          "nfl-tb-dal-2026-10-09-first-td-scorer"
+        ],
+        "retry_rule": "Do not refetch, reprice or adaptively relax the consumed October 8-9 population. For a distinct unobserved future window only, use source-informed deployment/cardinality budgets, then the unchanged complete-payoff/selected-quote/current-fee/depth/independent-recurrence gates."
+      },
       "prohibited_shortcuts": [
         "reusing_the_paper_zero_fee_median_as_current_profit",
         "assuming_integer_handicap_push_or_other_unmapped_settlement_states_preserve_the_one_dollar_floor",
@@ -2282,7 +2304,7 @@
         "refetching_or_repricing_the_consumed_September_13_period_moneyline_to_negative_half_point_spread_cover_after_215_complete_relations_had_zero_strict_sub_floor_candidates_or_treating_any_of_12_missing_selected_side_quotes_as_free"
       ],
       "retained_cfb_side_specific_correction_status": "a_zero_network_correction_repriced_all_139_retained_CFB_relations_across_the_complete_September_3_through_7_populations_with_bestAsk_or_conservative_one_minus_bestBid_the_8_midpoint_like_candidates_became_zero_strict_side_specific_sub_floor_candidates_and_the_best_corrected_sums_were_1_07_1_08_1_07_and_1_62_pUSD_for_1_pUSD_floors_the_payoff_relations_remain_valid_but_every_prior_outcomePrices_economic_gate_is_superseded_no_books_fees_accounts_credentials_orders_funds_or_protected_capture_requests_were_justified",
-      "retry_trigger": "first_future_distinct_source_proved_deployed_active_accepting_orders_NBA_WNBA_NFL_or_CFB_full_game_event_outside_all_consumed_exact_events_and_the_consumed_WNBA_2026_08_30T19_00_01Z_through_2026_09_09T23_59_59Z_CFB_2026_09_03T00_00_00Z_through_2026_09_12T23_59_59Z_NFL_2026_09_13T00_00_00Z_through_2026_09_13T20_25_00Z_and_NFL_2026_09_13T20_25_01Z_through_2026_09_21T23_59_59Z_windows_with_source_proved_same_game_moneyline_spread_or_total_payoff_implication_exact_current_market_fee_schedules_and_at_least_one_rejection_only_Gamma_displayed_package_sum_strictly_below_its_guaranteed_payout_floor_or_a_material_sports_price_fee_delay_or_resolution_rule_change",
+      "retry_trigger": "first_future_distinct_source_proved_deployed_active_accepting_orders_NBA_WNBA_NFL_or_CFB_full_game_event_outside_all_consumed_exact_events_and_the_consumed_WNBA_2026_08_30T19_00_01Z_through_2026_09_09T23_59_59Z_CFB_2026_09_03T00_00_00Z_through_2026_09_12T23_59_59Z_NFL_2026_09_13T00_00_00Z_through_2026_09_13T20_25_00Z_and_NFL_2026_09_13T20_25_01Z_through_2026_09_21T23_59_59Z_windows_and_outside_consumed_NFL_2026_10_08T00_00_00Z_through_2026_10_09T23_59_59Z_with_source_proved_same_game_moneyline_spread_or_total_payoff_implication_exact_current_market_fee_schedules_and_at_least_one_rejection_only_Gamma_displayed_package_sum_strictly_below_its_guaranteed_payout_floor_or_a_material_sports_price_fee_delay_or_resolution_rule_change",
       "venue_scope": "polymarket_future_NBA_WNBA_NFL_and_CFB_full_game_same_game_moneyline_point_spread_and_total_markets",
       "pre_september8_deployment_retry_trigger": "first_future_distinct_source_proved_deployed_active_accepting_orders_NBA_WNBA_NFL_or_CFB_full_game_event_outside_all_consumed_exact_events_and_the_consumed_WNBA_2026_08_30T19_00_01Z_through_2026_09_02T23_59_59Z_CFB_2026_09_03T00_00_00Z_through_2026_09_12T23_59_59Z_NFL_2026_09_13T00_00_00Z_through_2026_09_13T20_25_00Z_and_NFL_2026_09_13T20_25_01Z_through_2026_09_21T23_59_59Z_windows_with_source_proved_same_game_moneyline_spread_or_total_payoff_implication_exact_current_market_fee_schedules_and_at_least_one_rejection_only_Gamma_displayed_package_sum_strictly_below_its_guaranteed_payout_floor_or_a_material_sports_price_fee_delay_or_resolution_rule_change",
       "latest_cfb_deployment_status": "A separately authorized September 8 deployment-only exact-event GET proved cfb-flam-mia-2026-09-10 was created on August 31 at 22:00:14.747908 UTC, after the prior empty catalog receipt at 16:33:29.370 UTC. All 58 embedded markets were active and accepting. The separately frozen zero-network exact-rule ladder screen included 48 spread/total markets in two groups, retained all 553 price-complete relations, and found zero strict sub-floor candidates. Best cost 1.07 pUSD for a conditional common-rule floor of 1 pUSD. Ten out-of-scope markets are not price-screened; this is not a complete cross-family graph or negative-EV theorem. No book, fee, account, credential, order or protected capture access. The old empty result is preserved, not overwritten."
@@ -4479,7 +4501,7 @@
       ]
     }
   ],
-  "result_sha256": "fcf672654e2e8ba19fc1374995ee0dd99185ec535833def14dc576f77a0818b5",
+  "result_sha256": "91cbf72283d724a9f493f28edeb0c73fd6b73d85dbc9f5201427fddd32550bd1",
   "schema_version": "structural-edge-priority-registry-v1",
   "terminal_do_not_repeat": [
     {
@@ -5511,8 +5533,9 @@
       "family": "binance_october7_distinct_option_opposite_perpetual_floor_population",
       "reason": "One prospectively frozen October 7 public metadata GET subtracted the complete 2344-symbol consumed union from 1300 active eligible contracts, proving 600 distinct unit-one BTC/ETH/SOL contracts. One frozen two-source acquisition-side screen retained all 600 rows: 418 positive entry-side quotes, 182 zero/unavailable, zero gross-positive floors and zero survivors after the unchanged 33.5-bip necessary-cost hurdle. Request-start skew 1476 ms passes the 10000-ms gate but proves neither quote freshness nor executable capacity. No depth, fee, funding, accounts, credentials, orders, funds or protected capture. All 600 consumed without repair, subset or repricing; include them in the future complete 2944-symbol exclusion union. No accepted edge, recurrence or family-wide impossibility claim.",
       "canonical_result_sha256": "2ac08ca9d18137027844b5add7ff999afdf98e33d9a7ad4e0b9d4ca2cb50884b"
-    }
+    },
+    {"family":"polymarket_future_nfl_october8_9_total_ladder_resource_failure","reason":"One new fixed-window public discovery response retained four deployed NFL events, but the precommitted per-event resource envelope failed before any price evaluation. Exact window and all native event siblings consumed. This is not negative-EV proof or a fee/depth trigger; no refetch, reprice, adaptive ceiling repair or sibling fallback.","canonical_result_sha256":"bd1f430444c33f60f811134d622c639e39e9a502cb57747fe469d15bd6e8c0d3"}
   ],
-  "updated_at_utc": "2026-10-07T14:29:41.076836Z",
+  "updated_at_utc": "2026-10-07T15:40:15Z",
   "usage_rule": "advance_the_highest_ranked_hypothesis_whose_retry_trigger_is_satisfied_otherwise_do_not_repeat_a_blocked_or_terminal_screen"
 }

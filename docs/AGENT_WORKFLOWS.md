@@ -402,6 +402,12 @@ or arithmetic does not verify its integration into the current routing state.
 Never build an evidence snapshot from a truncated terminal/tool response. Check
 the complete output and parse structured data before writing; bind preserved
 Git revisions or raw files directly rather than relying on a console excerpt.
+For a distinct future sports study, qualify current price-blind deployment and
+cardinality before freezing its economic test. Earlier early-deployment cards
+do not bound later full cards. Separate actual response/memory limits from the
+eligible payoff computation budget; formatting-dependent JSON re-serialization
+is not a native byte measurement. A resource failure is not a price rejection
+and does not permit raising a consumed ceiling, repricing or sibling fallback.
 Resolve focused test paths with `rg --files tests` before invoking pytest; do
 not infer filenames from module names. Copy the returned path into the command.
 When bundling PowerShell verification gates, join dependent commands with

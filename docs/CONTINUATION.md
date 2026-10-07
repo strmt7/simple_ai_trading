@@ -1,5 +1,28 @@
 # Continue Development
 
+October 7 user-requested pause: stop new R&D and preserve this checkpoint for
+manual resumption. The latest NFL discovery is resource-unqualified, not a
+financial rejection or accepted edge. Numerical cash-label integration remains
+unfinished. No scheduled continuation is authorized by this pause; do not create
+an automation or resume research without a new user instruction.
+
+October 7 [future NFL total-ladder discovery](review/2026-10-07/nfl-oct8-9-total-floor/review.md):
+one frozen public GET retained 1,995,956 bytes/four active native events in the
+distinct October 8-9 window. The original per-event resource guard failed before
+any quote comparison: default re-serialization is 1,058,321 bytes versus compact
+1,005,628 for the same main event. Its 328 markets and 42 active totals also exceed
+the declared 256/32 caps. Original contract/result/source remain unchanged; no
+price rejection, reprice, alternate sibling, fee/book request, inference or order.
+Future distinct studies must prequalify current price-blind cardinality and use
+actual byte/computation budgets rather than infer them from an older card. Do not
+reopen the consumed window or use these failures as negative-EV evidence.
+33 pre-capture controls, four additional mocked terminal-failure checks and two
+paired-ledger checks pass; Ruff passes. Counts: 202/65/37/0. Cash-label tracing
+confirms divergent exit-boundary rules and minute-only stop clocks in the five
+unchanged rate-proxy consumers; numerical forward integration remains undone.
+The prior model/LLM commit is still local after GitHub server errors; publication
+is separate from unblocked local R&D. No live-money authority or source-history rewrite.
+
 October 7 [model/LLM source-to-implementation cycle 1](review/2026-10-07/model-integration/review.md):
 reuse Round 71 and the existing similar-repo survey. Four bounded technical
 GETs retain 98,024 bytes at exact primary revisions; no financial requests.
