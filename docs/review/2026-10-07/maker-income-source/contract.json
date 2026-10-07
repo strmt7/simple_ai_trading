@@ -1,0 +1,52 @@
+{
+  "schema_version": "public-source-capture-contract-v1",
+  "frozen_at_utc": "2026-10-07T08:27:53Z",
+  "contract_path": "docs/review/2026-10-07/maker-income-source/contract.json",
+  "request_name": "new-maker-income-methodology-representation-discovery",
+  "question": "Does the primary September 17 paper expose an available full-methodology representation to distinguish neutral spread income from directional inventory carry? This GET selects a source representation, not market economics or an edge.",
+  "trigger": {
+    "publication_id": "2609.20017",
+    "title": "Who Aggregates Information? Screening, Rent, and the Coexistence of CLOB and AMM Prediction Markets",
+    "authors": ["Chengqi Zang", "Gabriel P. Andrade", "Tomoyuki Nakajima"],
+    "published_from_discovery": "2026-09-17",
+    "exact_identifier_title_author_alias_hits": 0,
+    "deduplication_scope": "Prose/code outside raw data and bounded filename-only checks; parsed registry and action-value canonical JSON. No retained exact title, authors or arXiv identifier hit.",
+    "economic_values_from_discovery_admitted": false,
+    "new_market_access_authorized": false
+  },
+  "request": {
+    "method": "GET",
+    "url": "https://arxiv.org/abs/2609.20017",
+    "count": 1,
+    "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "endpoint_classification": {"security": "Public unauthenticated read-only scholarly metadata, not venue/account access"},
+  "response_byte_ceiling": 1000000,
+  "required_utf8_phrases": ["Who Aggregates Information?", "2609.20017"],
+  "outputs": {
+    "raw_path": "docs/review/2026-10-07/maker-income-source/abstract.html",
+    "journal_path": "docs/review/2026-10-07/maker-income-source/abstract-journal.jsonl",
+    "result_path": "docs/review/2026-10-07/maker-income-source/abstract-capture.json"
+  },
+  "authority": {
+    "account_requests": 0,
+    "credentials_used": false,
+    "funds_used": false,
+    "orders_or_transactions": 0,
+    "protected_capture_touched": false,
+    "public_unauthenticated_read_only_requests": 1,
+    "signed_requests": 0,
+    "trading_authority": false
+  },
+  "implementations": [
+    {"path": "tools/capture_public_source_bounded.py", "sha256": "760339a7602abfa9eb97f3f1cca0ef79191b07ff5f5aa42515f30f191f9888fc"},
+    {"path": "tools/capture_public_source_contract.py", "sha256": "9dbb14651455abade755fe96091b9eaafe1153f56a1baad4cd60b1a888d41b8c"},
+    {"path": "tools/screen_polymarket_exact_two_leg_package.py", "sha256": "374fcc3c3485c466b4929a91256450bdc7db70f93ef4c6bda627e05fe8938327"},
+    {"path": "tools/adjudicate_polymarket_exact_mlb_monotone_prefilter.py", "sha256": "958a44d78029b9a1eb69a3771ce18e53ac1ed3c7bc161c8e4318beedce2cf99f"}
+  ],
+  "transport": {"socket_timeout_seconds": 10, "read_budget_seconds": 30, "redirects": false, "retries": 0, "proxies": false},
+  "format_contract": "UTF-8 primary abstract page; inspect its versioned PDF/HTML links only after durable retention. Do not guess an HTML representation from an identifier.",
+  "decision": "Source-only discovery. Full paper must be separately frozen from an exposed available link. Neither abstract claims nor metadata grant market access or profitability promotion.",
+  "retry_policy": "One use; a missing page or source gate is terminal without version, host or format aliases.",
+  "contract_sha256": "6502d8206043010b83b9fec8cd9f9f17c0951cff4a2d7cbf80acae9ede1a189a"
+}

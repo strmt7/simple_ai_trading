@@ -10,6 +10,12 @@ Scope blockers to their branch; a fresh user resumption resets the blocked audit
 
 ## Current Truth
 
+October 7 [maker-income source review](review/2026-10-07/maker-income-source/review.md)
+adds a distinct primary methodology, not a neutral-edge result. Keep settlement
+inventory separate from matched-package cash, and prefix-only regime features
+separate from full-path descriptive labels. See MAKER_PROFIT_ATTRIBUTION before
+the next fit. Source bodies are local-only; no protected gate or count changed.
+
 October 7 [entry-cost-aware native Spot risk marks](review/2026-10-07/spot-cash-mark.md)
 now include actual entry fees in exits and loss/drawdown limits. 575 affected
 checks pass, 24 new. Wrong instrument/quote or unvalued fees reject admission;

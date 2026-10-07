@@ -203,3 +203,5 @@ docs/review/2026-09-08/tradfi-september10-change/*.jsonl binary -eol
 docs/review/2026-09-08/cfb-deployment/*.json binary -eol
 docs/review/2026-09-08/cfb-deployment/*.jsonl binary -eol
 docs/review/2026-09-08/cfb-deployment/raw/* binary -eol
+docs/review/2026-10-07/maker-income-source/*.json binary -eol
+docs/review/2026-10-07/maker-income-source/*.jsonl binary -eol

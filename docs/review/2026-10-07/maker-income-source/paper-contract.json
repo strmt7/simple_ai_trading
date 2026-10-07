@@ -1,0 +1,51 @@
+{
+  "schema_version": "public-source-capture-contract-v1",
+  "frozen_at_utc": "2026-10-07T08:28:51Z",
+  "contract_path": "docs/review/2026-10-07/maker-income-source/paper-contract.json",
+  "request_name": "maker-income-full-methodology-v1",
+  "question": "Audit the empirical PnL decomposition, data population, model assumptions and funding of allegedly neutral CLOB maker returns. Identify whether full methodology justifies a distinct causal evaluation target; no strategy promotion or new market access.",
+  "trigger": {
+    "publication_id": "2609.20017v1",
+    "new_primary_methodology": true,
+    "exact_url_prior_capture_hits": 0,
+    "source_selected_representation": "Exact versioned HTML link exposed by retained primary abstract, not inferred from paper ID",
+    "abstract_raw_path": "docs/review/2026-10-07/maker-income-source/abstract.html",
+    "abstract_raw_sha256": "55a75b6ab9ca794edc19c5b82ba7eab1f69e6ad9f4f2383b9500372be86fd082",
+    "abstract_capture_sha256": "2fb6f77d66f03263d8b6afdf8a66dcc9c83981c0c0a07400254f59272c3a110b"
+  },
+  "request": {
+    "method": "GET",
+    "url": "https://arxiv.org/html/2609.20017v1",
+    "count": 1,
+    "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "endpoint_classification": {"security": "Public unauthenticated read-only scholarly HTML paper, not venue/account access"},
+  "response_byte_ceiling": 5000000,
+  "required_utf8_phrases": ["Who Aggregates Information?"],
+  "outputs": {
+    "raw_path": "docs/review/2026-10-07/maker-income-source/paper.html",
+    "journal_path": "docs/review/2026-10-07/maker-income-source/paper-journal.jsonl",
+    "result_path": "docs/review/2026-10-07/maker-income-source/paper-capture.json"
+  },
+  "authority": {
+    "account_requests": 0,
+    "credentials_used": false,
+    "funds_used": false,
+    "orders_or_transactions": 0,
+    "protected_capture_touched": false,
+    "public_unauthenticated_read_only_requests": 1,
+    "signed_requests": 0,
+    "trading_authority": false
+  },
+  "implementations": [
+    {"path": "tools/capture_public_source_bounded.py", "sha256": "760339a7602abfa9eb97f3f1cca0ef79191b07ff5f5aa42515f30f191f9888fc"},
+    {"path": "tools/capture_public_source_contract.py", "sha256": "9dbb14651455abade755fe96091b9eaafe1153f56a1baad4cd60b1a888d41b8c"},
+    {"path": "tools/screen_polymarket_exact_two_leg_package.py", "sha256": "374fcc3c3485c466b4929a91256450bdc7db70f93ef4c6bda627e05fe8938327"},
+    {"path": "tools/adjudicate_polymarket_exact_mlb_monotone_prefilter.py", "sha256": "958a44d78029b9a1eb69a3771ce18e53ac1ed3c7bc161c8e4318beedce2cf99f"}
+  ],
+  "transport": {"socket_timeout_seconds": 10, "read_budget_seconds": 30, "redirects": false, "retries": 0, "proxies": false},
+  "format_contract": "UTF-8 full-paper HTML, exact source-exposed version. Title admission alone does not prove complete methodology; review all retained sections, assumptions and limitations.",
+  "decision": "New primary-source methodological review only. Preserve all old studies, market retry gates and protected data. No abstract performance figure is strategy evidence.",
+  "retry_policy": "One use; failure is terminal without PDF, host, format or version aliases.",
+  "contract_sha256": "1ea9e831467f6a4ed89ed94df91b9c8d28ba1a231dced3a995bd2b79b68be479"
+}
