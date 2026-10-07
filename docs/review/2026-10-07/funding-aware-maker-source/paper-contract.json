@@ -1,0 +1,71 @@
+{
+  "schema_version": "public-source-capture-contract-v1",
+  "frozen_at_utc": "2026-10-07T09:19:22Z",
+  "contract_path": "docs/review/2026-10-07/funding-aware-maker-source/paper-contract.json",
+  "request_name": "funding_aware_maker_exact_v1_paper",
+  "request": {
+    "method": "GET",
+    "url": "https://arxiv.org/html/2605.06405v1",
+    "count": 1,
+    "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "response_byte_ceiling": 5000000,
+  "required_utf8_phrases": [
+    "Funding-Aware",
+    "inventory",
+    "funding"
+  ],
+  "outputs": {
+    "raw_path": "docs/review/2026-10-07/funding-aware-maker-source/paper.html",
+    "journal_path": "docs/review/2026-10-07/funding-aware-maker-source/paper-requests.jsonl",
+    "result_path": "docs/review/2026-10-07/funding-aware-maker-source/paper-result.json"
+  },
+  "authority": {
+    "account_requests": 0,
+    "credentials_used": false,
+    "funds_used": false,
+    "orders_or_transactions": 0,
+    "protected_capture_touched": false,
+    "public_unauthenticated_read_only_requests": 1,
+    "signed_requests": 0,
+    "trading_authority": false
+  },
+  "implementations": [
+    {
+      "path": "tools/capture_public_source_bounded.py",
+      "sha256": "760339a7602abfa9eb97f3f1cca0ef79191b07ff5f5aa42515f30f191f9888fc"
+    },
+    {
+      "path": "tools/capture_public_source_contract.py",
+      "sha256": "9dbb14651455abade755fe96091b9eaafe1153f56a1baad4cd60b1a888d41b8c"
+    },
+    {
+      "path": "tools/adjudicate_polymarket_exact_mlb_monotone_prefilter.py",
+      "sha256": "958a44d78029b9a1eb69a3771ce18e53ac1ed3c7bc161c8e4318beedce2cf99f"
+    },
+    {
+      "path": "tools/screen_polymarket_exact_two_leg_package.py",
+      "sha256": "374fcc3c3485c466b4929a91256450bdc7db70f93ef4c6bda627e05fe8938327"
+    }
+  ],
+  "contract_sha256": "333c789dc166e9633e8873b3fdb76bc38da0cdd308057769a528fdc7bef1be5c",
+  "transport": {
+    "socket_timeout_seconds": 10,
+    "read_budget_seconds": 30,
+    "redirects": false,
+    "retries": 0,
+    "proxies": false
+  },
+  "question": "Audit the exact primary v1 paper's objective, funding/inventory coupling, fill proxies, training/holdout chronology, fees and hedge assumptions, heavy-tail funding limits and matched benchmark comparisons. No simulated value function or inventory-funded profit is neutral cash, causal execution, current Binance/Polymarket profit or promotion proof.",
+  "prior_url_or_identifier_hits_in_relevant_retained_docs": 0,
+  "source_classification": "Primary author preprint, not exchange operating rules, current market prices, account evidence or independently replicated profit",
+  "capture_boundaries_sha256": "f971726268ba2e630b2ebbe8d5bcf02f7b3f23b92ccb16efe23aef82cebe950f",
+  "market_or_account_requests": 0,
+  "edge_promotion_eligible": false,
+  "selected_html_url_source": {
+    "path": "docs/review/2026-10-07/funding-aware-maker-source/abstract-result.json",
+    "result_sha256": "8845414c63a3ed00388a7f159e2073ea1321cebcbc062eb6e959b5228dcdb30a",
+    "literal_observed_link": "https://arxiv.org/html/2605.06405v1"
+  },
+  "source_link_rule": "URL observed in retained successful abstract response; not constructed, guessed, searched after a failure or a retry of any prior paper. One GET; source gate failure remains terminal without alias or PDF retry."
+}

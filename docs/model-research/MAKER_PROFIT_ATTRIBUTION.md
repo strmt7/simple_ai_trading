@@ -25,6 +25,13 @@ capital stress sensitivity is not an observed saving. Retain the October 7
 native cash repairs; default UI price-only marks remain explicitly unqualified
 as a net cash reporting surface.
 
+For funding-aware control, use [the cash/clock and neutral-objective design](FUNDING_AWARE_NEUTRAL_CONTROL.md).
+The October 7 audit confirms that both derivative funding-label helpers still
+use rate-only proxies, not fixed-quantity settlement-mark cash. The prompt truth
+and type-only import repairs do not repair those labels. Qualify new cash targets
+before expanding affected model fits; preserve old reports. Repeated simulation
+seeds on one market path are not independent financial validations.
+
 The next model/data deliverable must use decision-time prefixes only, with a
 fixed chronological population and all failed/incomplete episodes retained.
 Freeze account/cohort eligibility independently of evaluation-period PnL.

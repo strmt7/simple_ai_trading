@@ -1,0 +1,108 @@
+{
+  "schema_version": "funding-aware-methodology-review-v1",
+  "created_at_utc": "2026-10-07T09:55:09Z",
+  "base_commit": "9b082093fcec109c15814dbe829f79096f250f5b",
+  "status": "confirmed_cash_label_defect_with_scoped_prompt_and_import_repairs",
+  "paper": {
+    "title": "Funding-Aware Optimal Market Making for Perpetual DEXs",
+    "author": "Nam Anh Le",
+    "version": "2605.06405v1",
+    "url": "https://arxiv.org/html/2605.06405v1",
+    "reviewed_sections": ["1", "4", "5", "6", "7", "8", "Appendix A"],
+    "not_completed": ["Sections 2-3", "all proofs and cited literature", "author code and data inspection", "independent empirical replication"],
+    "reported_not_replicated": {
+      "market_path": "November 26 through December 31, 2025",
+      "simulation_seeds": 100,
+      "independent_market_paths": 1,
+      "optional_hedge_in_final_table": false,
+      "complete_native_after_all_cost_cash_qualification": false,
+      "selected_losing_stress_comparisons": 4,
+      "queue_latency_cancel_and_conditional_adverse_selection_qualification": false
+    },
+    "bodies": "ignored local-only HTML; public checkpoint is not a self-contained paper reproduction"
+  },
+  "captures": [
+    {
+      "name": "abstract",
+      "contract_sha256": "3a5b78453feca0ff18bf5c986f45e5003640d19c925dab6fd5d05fd011b44a4b",
+      "result_sha256": "8845414c63a3ed00388a7f159e2073ea1321cebcbc062eb6e959b5228dcdb30a",
+      "raw_sha256": "cedee0052df199493719a04b9e2a5442419deb7ac27acdd0b97edc7ecc12da1e",
+      "journal_sha256": "94076d7cecd7f05076f4e7bab50a95a255e4f097d05741150013ce9f335cea42",
+      "raw_bytes": 40401
+    },
+    {
+      "name": "paper",
+      "contract_sha256": "333c789dc166e9633e8873b3fdb76bc38da0cdd308057769a528fdc7bef1be5c",
+      "result_sha256": "03ff2925a5771d28270d866ef6ef615962fc101fb868322edb207f95631795fc",
+      "raw_sha256": "4bba3820b6d6222224b623a258d4542c8a9430687defdb2fba48e7d8ca485230",
+      "journal_sha256": "fadbdf6b089feb00dc9c41f7eb1a9421cfe6626942c12b7020f793968738d2ea",
+      "raw_bytes": 272655
+    }
+  ],
+  "cash_unit_finding": {
+    "status": "numerical_calculation_unrepaired",
+    "consumers": ["derivatives_hurdle_data", "barrier_payoff_data"],
+    "before_source_sha256": {
+      "src/simple_ai_trading/derivatives_hurdle_data.py": "a5b68a74a1b5a8cd9ecb42ff1e68ead2fba51888111d09dba023b19d38880176",
+      "src/simple_ai_trading/barrier_payoff_data.py": "5630145fc4cc3d79740b347dc95c24ec148d29de4d2d205ff40186af1b22498c",
+      "src/simple_ai_trading/market_store.py": "37862843b1f1a011c6b3ad0770b9582a0ffb70c4cd4485a0c34c3965724852c0"
+    },
+    "after_source_sha256": {
+      "src/simple_ai_trading/derivatives_hurdle_data.py": "a5b68a74a1b5a8cd9ecb42ff1e68ead2fba51888111d09dba023b19d38880176",
+      "src/simple_ai_trading/barrier_payoff_data.py": "715aa811e635c3c836866383663563e37b6967a6486bc395a420be15fe34f62b",
+      "src/simple_ai_trading/market_store.py": "37862843b1f1a011c6b3ad0770b9582a0ffb70c4cd4485a0c34c3965724852c0"
+    },
+    "barrier_helper_unchanged_source_sha256": "e6b4ba36782e6ddedaf4518e747f7b4260e412e42e54c94376199e08a781ec9b",
+    "control": {
+      "kind": "synthetic algebraic counterexample, not market observation or after-all-cost trade",
+      "entry_price": "100",
+      "exit_price": "100.505",
+      "settlement_mark": "102",
+      "settled_rate": "0.005",
+      "existing_funding_bps": "50",
+      "fixed_base_cash_funding_bps": "51",
+      "gross_long_price_return_bps": "50.5",
+      "existing_long_before_execution_fees_bps": "0.5",
+      "correct_long_before_execution_fees_bps": "-0.5",
+      "existing_short_before_execution_fees_bps": "-0.5",
+      "correct_short_before_execution_fees_bps": "0.5"
+    },
+    "reproduction_path": "docs/review/2026-10-07/funding-aware-maker-source/reproduce_funding_cash_units.py",
+    "reproduction_sha256": "4544d353a41913a250fdfacee0fb3783a8847e0e3fa379324bc0490f4d1850f4",
+    "initial_runtime": "Existing .venv311 Python 3.11.9, NumPy 2.2.6, CPU Torch 2.4.1; locked lightweight import initially lacked Torch",
+    "after_runtime": "Locked lightweight environment; both actual helpers directly reproduced after removing type-only Torch coupling",
+    "real_trade_or_full_pipeline_flip_observed": false,
+    "historical_results_rewritten": false
+  },
+  "scoped_repairs": {
+    "ai_veto_prompt": "Fixed execution allowance and settled-rate proxy explicitly distinguished from native fees and settlement-mark-scaled cash; no deterministic cash gate or measured uplift",
+    "src/simple_ai_trading/derivatives_ai_veto.py_sha256": "aa062a60f82fc41abae4a93dff839eb7e8a2d49f20d1f510ac42dffba5f3e10e",
+    "tests/test_derivatives_ai_veto.py_sha256": "a300c48e4cbdae8483c8ba50d4fe645397b831791f8b348aac19ce4f47105477",
+    "type_import": "MinuteTemporalDataset annotation import under TYPE_CHECKING; no funding math, training backend or GPU policy change"
+  },
+  "verification": {
+    "prompt_pre_repair_regression_failures": 1,
+    "prompt_post_repair_module_tests_passed": 2,
+    "final_affected_barrier_and_ai_tests_passed": 5,
+    "final_affected_test_seconds": 4.13,
+    "type_import_without_torch_passed": true,
+    "frozen_counterexample_both_helpers_passed": true,
+    "ruff_passed": true,
+    "full_suite_run": false,
+    "model_fit_or_ai_request": false,
+    "gpu_benchmark_or_speedup_claim": false
+  },
+  "next_work": "Implement source-bound settlement marks, product/currency/clock coverage and intrabar entitlement before cash-qualified new targets; see docs/model-research/FUNDING_AWARE_NEUTRAL_CONTROL.md",
+  "authority": {
+    "public_document_gets": 2,
+    "new_market_observations": 0,
+    "account_requests": 0,
+    "credentials_used": false,
+    "orders_or_transactions": 0,
+    "protected_capture_touched": false
+  },
+  "unchanged_counts": {"terminal_observations": 201, "hypotheses": 65, "mechanism_scopes": 37, "qualified_stable_edges": 0},
+  "accepted_edge": false,
+  "profitability_claim": false,
+  "result_sha256": "45402ec1e73a7445a70ef6df8b6b755020122d383c840397b4266e920eae128c"
+}
