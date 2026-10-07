@@ -1,0 +1,71 @@
+{
+  "schema_version": "linear-funding-cash-core-review-v1",
+  "created_at_utc": "2026-10-07T10:09:31Z",
+  "base_commit": "d644567a0af2a43223b0c5d6bf16f9d8c401d1d5",
+  "status": "exact_supplied_event_cash_core_implemented_label_integration_pending",
+  "implementation_sha256": {
+    "src/simple_ai_trading/funding_cash.py": "3bb8fdaf50b545d93d42df5bd1b901743cc53cd11f4223e58364f160fe3b1aea",
+    "tests/test_funding_cash.py": "f196db0837e5d0fcae33a8a8e39fb59c1e521e32df439f81f0870535bf911f21"
+  },
+  "new_behavior": [
+    "Exact Fraction fixed-base settlement-mark funding cash and entry-notional normalization",
+    "Hash-matched retained-byte USD-M funding-history parser with strict schema, decimal, product, order and resource bounds",
+    "Exact expected timestamp/rate population reconciliation; no inferred completeness",
+    "Known-held, known-not-held and unknown entitlement; conservative per-event signed cash bounds"
+  ],
+  "scope": {
+    "symbols": ["BTCUSDT", "ETHUSDT", "SOLUSDT"],
+    "payment_asset": "USDT",
+    "product": "linear USD-M perpetual funding",
+    "rate_type": "Regular or unreported; absence is not asserted Regular",
+    "inverse_special_dividend_fx_or_native_rounding_support": false,
+    "complete_cash_or_label_admission_qualification": false
+  },
+  "official_sources": [
+    {
+      "publisher": "Binance",
+      "url": "https://www.binance.com/en/support/faq/detail/360033525031",
+      "accessed_utc_date": "2026-10-07",
+      "supports": "Position value times funding rate, mark-based position value and specified funding times",
+      "does_not_prove": "Historical jurisdiction/date-specific settlement clocks, actual fills or intrabar entitlement"
+    },
+    {
+      "publisher": "Binance Developer Docs",
+      "url": "https://developers.binance.com/en/docs/catalog/core-trading-derivatives-trading-usd-s-m-futures/api/rest-api/market-data#get-funding-rate-history",
+      "accessed_utc_date": "2026-10-07",
+      "supports": "fundingTime, decimal rate, charge-associated markPrice, ascending rows, 1000-row maximum and Regular/Special rate types",
+      "does_not_prove": "Caller capture origin, page-population completeness or own payment entitlement"
+    }
+  ],
+  "expanded_legacy_consumers": [
+    {"path": "src/simple_ai_trading/derivatives_hurdle_data.py", "sha256": "a5b68a74a1b5a8cd9ecb42ff1e68ead2fba51888111d09dba023b19d38880176", "scope": "Previously confirmed rate-only helper and fixed-base label normalization"},
+    {"path": "src/simple_ai_trading/barrier_payoff_data.py", "sha256": "715aa811e635c3c836866383663563e37b6967a6486bc395a420be15fe34f62b", "scope": "Previously confirmed rate-only helper and minute-end stop/take entitlement proxy"},
+    {"path": "src/simple_ai_trading/stop_time_payoff_data.py", "sha256": "6c6dc6730ea4d8b75bcf4eb6fac66cf13ca685690ec66d7432b731f7bcf07554", "scope": "Rate-only helper and side simulation; no implementation change"},
+    {"path": "src/simple_ai_trading/second_flow_execution_model.py", "sha256": "7d2202df2b910b96a23159126bf7e980fe55c53338e8147575b5f30564862c5e", "scope": "Funding helper and timing-label call; exit excluded, rate-only, no complete file review"},
+    {"path": "src/simple_ai_trading/stateful_turnover_model.py", "sha256": "5bfde440553e4ebbe6a03e45e8a0002ebdb2526399de7f0f3daa7431096f8444", "scope": "Hourly dataset builder and replay input routing; quantity/rebalancing semantics pending, no complete file review"}
+  ],
+  "verification": {
+    "command": "uv run --locked python -m pytest tests/test_funding_cash.py tests/test_barrier_payoff_data.py tests/test_stop_time_payoff_data.py tests/test_derivatives_ai_veto.py",
+    "new_core_cases_passed": 66,
+    "existing_neighbor_cases_passed": 9,
+    "total_passed": 75,
+    "seconds": 2.63,
+    "ruff_passed": true,
+    "evidence_kind": "synthetic financial unit controls, not market performance",
+    "full_suite_or_coverage_run": false,
+    "model_fit_ai_request_gpu_benchmark_or_uplift": false
+  },
+  "unresolved": [
+    "Retained official schema/rule body and capture-origin qualification for actual input admission",
+    "Complete mark-page population aligned to certified old rate coverage",
+    "Supported historical settlement clocks, simultaneous/intrabar entitlement and native rounding",
+    "Integration into all five consumers with cash-label identities and mandatory evidence gates",
+    "Chronological economic comparison and all-cost execution qualification"
+  ],
+  "authority": {"new_market_api_requests": 0, "account_requests": 0, "credentials_used": false, "orders_or_transactions": 0, "protected_capture_touched": false},
+  "historical_sources_and_results_rewritten": false,
+  "research_counts_unchanged": true,
+  "qualified_stable_edges": 0,
+  "profitability_claim": false,
+  "result_sha256": "5f4d2e5bc53afdc4daef16e624ced978073da6ba92390d5d32dfa4b4f47f24a8"
+}

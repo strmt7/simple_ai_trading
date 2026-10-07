@@ -110,12 +110,15 @@ result and all other consumed populations, including WNBA September 3-9.
   Stop may cancel and sell only bot-owned hashes and
   parent-bound lots; foreign state is never modified.
 - Future books, labels, resolutions, fills, and PnL never enter inference.
-  October 7 source audit: fixed-quantity derivative funding labels in
-  `derivatives_hurdle_data` and `barrier_payoff_data` are rate-only proxies,
-  not settlement-mark-scaled cash. Before expanding affected fits or qualifying
+  October 7 source audit: derivative funding calculations in hurdle, barrier,
+  stop-time, second-flow timing and stateful hourly consumers are rate-only
+  proxies, not settlement-mark-scaled cash. Before expanding affected fits or qualifying
   their cash profitability, complete the mark/clock/provenance repair routed by
   `docs/model-research/FUNDING_AWARE_NEUTRAL_CONTROL.md`. Preserve old results;
-  a prompt warning or pure-import repair does not fix numerical labels.
+  a prompt warning, pure-import repair or unintegrated cash core does not fix
+  numerical labels. Reuse `funding_cash.py` for the shared supplied-event law;
+  complete mark population, source origin, clocks and quantity/rebalancing
+  semantics must qualify new labels before expanding affected training.
   Full-fill support is not an inventory ledger: a censored incomplete label
   cannot establish zero partial fill or zero PnL, and equal quote notionals at
   different leg prices do not establish equal net base quantities. Before any

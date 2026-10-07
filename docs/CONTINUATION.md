@@ -1,5 +1,16 @@
 # Continue Development
 
+October 7 [exact funding cash core](review/2026-10-07/funding-aware-maker-source/cash-core-review.md)
+implements mark-scaled fixed-base cash, strict retained-byte parsing/population
+matching and conservative unknown-entitlement bounds, without I/O or Torch.
+66 core plus nine neighboring cases pass (75 total); not financial uplift.
+Legacy label integration remains pending. Expanded affected scope: hurdle,
+barrier, stop-time, second-flow timing and stateful hourly targets. Next implement
+complete mark/clock/provenance admission and all-consumer integration before
+affected retraining; a bare hash, empty page or supplied holding flag is not
+coverage/entitlement proof. No market/account/order access, old-result rewrite,
+campaign rule or GPU benchmark. Research counts and protected gates unchanged.
+
 October 7 [funding-aware source/model audit](review/2026-10-07/funding-aware-maker-source/review.md)
 retains a distinct primary paper but does not import its simulated profits.
 Its unhedged inventory, proxy fills, single-path seed intervals and losing stress
@@ -8,7 +19,8 @@ account, credentials, order, protected or dependency access. The concrete
 repository reproduction confirms rate-only funding in both derivative-label
 helpers where fixed-quantity cash needs settlement-mark/entry-price scaling;
 a 50-versus-51-bip debit can reverse a near-zero control's sign.
-Cash math remains unrepaired and old results unchanged. Next model deliverable:
+Legacy label cash math remains unrepaired and old results unchanged. Next model
+deliverable:
 [cash-qualified mark/clock/provenance and paired-consumer repair](model-research/FUNDING_AWARE_NEUTRAL_CONTROL.md),
 before any larger affected fit. AI prompt truth corrected (one regression failed
 before, two after pass); type-only Torch coupling removed (five affected tests
