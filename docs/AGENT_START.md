@@ -10,6 +10,16 @@ Scope blockers to their branch; a fresh user resumption resets the blocked audit
 
 ## Current Truth
 
+October 7 [native funding hedge frontier](review/2026-10-07/native-funding-hedge-frontier/review.md):
+zero-request complete-hedge break-even calculation reuses the new native data.
+After a 32-bp sensitivity reserve, full-period basis budgets are only 2-12 bps
+before capital cost; every eight-day panel falls below that reserve. No observed
+hedge return or stable edge. Reuse the frontier for cost/basis qualification;
+do not refit, resample or promote the favorable zero-capital scenario. Counts unchanged.
+[Inverse metadata](review/2026-10-07/inverse-collateral-source/review.md) is listing-only;
+reuse existing algebra and unresolved legal-sign gate. Deduplicate source article
+IDs and prior mechanism reviews before browsing; locale aliases are not new sources.
+
 October 7 [new native funding period](review/2026-10-07/recent-funding-values/review.md):
 288 BTC/ETH/SOL events have valid native marks in the frozen Sep 5-Oct 6 period.
 Four GETs used 36 KB; 38 affected checks pass. No old-batch repair, economic

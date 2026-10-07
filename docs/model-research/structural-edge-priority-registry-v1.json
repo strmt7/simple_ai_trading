@@ -991,6 +991,14 @@
       "mechanism": "quarterly_spot_future_cash_and_carry",
       "next_action": "when_both_documented_ephemeral_environment_variables_are_available_run_the_frozen_capture_once_then_apply_the_exact_components_as_a_non_synchronous_fee_gate_before_any_new_book_sampling",
       "priority_rank": 14,
+      "inverse_metadata_review_2026_10_07": {
+        "path": "docs/review/2026-10-07/inverse-collateral-source/classification.json",
+        "result_sha256": "ff063fd3cbc15325b2b16263a454fc313e32a967326c3bff446776a3969b1433",
+        "review_path": "docs/review/2026-10-07/inverse-collateral-source/review.md",
+        "classification": "current inverse listing metadata only; reuse existing conditional algebra and unresolved legal-sign gate; no price authorization or changed account trigger",
+        "new_hypothesis": false,
+        "accepted_edge": false
+      },
       "prohibited_shortcuts": [
         "35_bps_sensitivity_as_actual_account_cost",
         "historical deliveryTime as exact delivery epoch",
@@ -4471,7 +4479,7 @@
       ]
     }
   ],
-  "result_sha256": "de18222a991cf88d23322d429389413889e041be04579fb4e33d56f765d605d3",
+  "result_sha256": "fcf672654e2e8ba19fc1374995ee0dd99185ec535833def14dc576f77a0818b5",
   "schema_version": "structural-edge-priority-registry-v1",
   "terminal_do_not_repeat": [
     {
@@ -4562,6 +4570,19 @@
     {
       "canonical_result_sha256": "095009a36a5c6a8a5a2dfdfb3e57ebe6183721bb84600518552ccf6d463617c8",
       "family": "binance_broad_crypto_current_liquidity_selected_spot_perpetual_funding_carry_preflight",
+      "native_hedge_frontier_review_2026_10_07": {
+        "path": "docs/review/2026-10-07/native-funding-hedge-frontier/result.json",
+        "result_sha256": "d25fbc802da6bdb3529b2ef1c6baba92371a2dffa6b5911e71ef544f3b991eb9",
+        "contract_path": "docs/review/2026-10-07/native-funding-hedge-frontier/contract.json",
+        "contract_sha256": "236545a5758697b2069b2cd68f55b8af13e635168de46396c63aa052f276d378",
+        "review_path": "docs/review/2026-10-07/native-funding-hedge-frontier/review.md",
+        "classification": "exploratory retained new-period full-hedge break-even, not independent validation or executable return",
+        "finding": "all twelve eight-day panels fall below the illustrative 32-bp cost reserve; full-period zero-capital basis budgets are thin positive but all turn negative under the 3.25-percent two-reference-capital scenario",
+        "new_requests": 0,
+        "accepted_edge": false,
+        "research_observation_count_effect": 0,
+        "retry_trigger_changed": false
+      },
       "reason": "zero_of_17_exact_liquid_crypto_spot_perpetual_pairs_passed_the_frozen_funding_only_training_validation_test_cross_regime_family_adjusted_execution_and_two_leg_capital_gate_do_not_resample_the_current_liquidity_selected_history",
       "turnover_liquidity_review_2026_09_05": {
         "path": "docs/review/2026-09-05/carry-turnover-liquidity/result.json",
@@ -5492,6 +5513,6 @@
       "canonical_result_sha256": "2ac08ca9d18137027844b5add7ff999afdf98e33d9a7ad4e0b9d4ca2cb50884b"
     }
   ],
-  "updated_at_utc": "2026-10-07T09:01:46Z",
+  "updated_at_utc": "2026-10-07T14:29:41.076836Z",
   "usage_rule": "advance_the_highest_ranked_hypothesis_whose_retry_trigger_is_satisfied_otherwise_do_not_repeat_a_blocked_or_terminal_screen"
 }
