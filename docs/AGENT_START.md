@@ -10,6 +10,12 @@ Scope blockers to their branch; a fresh user resumption resets the blocked audit
 
 ## Current Truth
 
+October 7 [FIFO source/queue repair](review/2026-10-07/fifo-identification-source/review.md):
+completed virtual markers stay valid and cannot overfill; lossy timestamps reject.
+36 focused checks pass, not market profitability. Conditional fill ordering is
+not a general policy-profit bound. No runtime queue integration, new fit or
+consumed market retry; qualify causal paths and partial-quantity cash first.
+
 October 7 [funding history gap](review/2026-10-07/funding-mark-population/review.md):
 first 1,000 native records have empty marks; whole 11,847-event batch rejected,
 remaining 11 requests forbidden. Three exact late-history clock joins do not

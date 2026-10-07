@@ -1701,6 +1701,8 @@ class PolymarketPaperExecutionAdapter(ConservativePaperExecutionAdapter):
 
 @dataclass(frozen=True)
 class PassiveQueueState:
+    """Conditional virtual marker, not an authenticated owned-fill ledger."""
+
     intent_id: str
     asset_id: str
     side: str
@@ -1718,11 +1720,16 @@ class PassiveQueueState:
         queue = _decimal(self.queue_ahead_quantity, name="queue_ahead_quantity")
         remaining = _decimal(self.remaining_quantity, name="remaining_quantity")
         filled = _decimal(self.filled_quantity, name="filled_quantity")
-        if min(queue, remaining, filled) < 0 or remaining <= 0:
+        if min(queue, remaining, filled) < 0 or remaining + filled <= 0:
             raise ValueError("passive queue quantities are invalid")
-        activated = int(self.activated_at_ms)
-        expires = int(self.expires_at_ms)
-        if activated < 0 or expires <= activated:
+        activated = self.activated_at_ms
+        expires = self.expires_at_ms
+        if (
+            type(activated) is not int
+            or type(expires) is not int
+            or activated < 0
+            or expires <= activated
+        ):
             raise ValueError("passive queue timestamps are invalid")
         return replace(
             self,
@@ -1752,14 +1759,21 @@ def apply_passive_trade_print(
     state: PassiveQueueState,
     trade: AggressiveTradePrint,
 ) -> tuple[PassiveQueueState, Decimal]:
-    """Consume queue only with a matching post-arrival aggressive print."""
+    """Advance a virtual marker; callers qualify queue origin and print identity.
+
+    Matching prints are conditional inputs, not proof of our historical fills.
+    Callers must provide unique, causally ordered prints and the initial queue;
+    this helper neither reconstructs cancellations nor deduplicates raw feeds.
+    """
 
     current = state.validated()
     trade_asset = _identifier(trade.asset_id, name="trade asset_id")
     trade_side = str(trade.side or "").upper()
     price = _decimal(trade.price, name="trade price", positive=True)
     quantity = _decimal(trade.quantity, name="trade quantity", positive=True)
-    occurred = int(trade.occurred_at_ms)
+    occurred = trade.occurred_at_ms
+    if type(occurred) is not int or occurred < 0:
+        raise ValueError("trade occurred_at_ms must be a nonnegative integer")
     source_sha = str(trade.source_payload_sha256 or "").lower()
     if not _SHA256.fullmatch(source_sha):
         raise ValueError("trade source_payload_sha256 is invalid")

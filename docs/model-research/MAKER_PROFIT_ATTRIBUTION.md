@@ -25,6 +25,18 @@ capital stress sensitivity is not an observed saving. Retain the October 7
 native cash repairs; default UI price-only marks remain explicitly unqualified
 as a net cash reporting surface.
 
+The [October 7 FIFO source/repair review](../review/2026-10-07/fifo-identification-source/review.md)
+shows why L2 accuracy is not unique maker execution. Reconcile causal market
+removals and residual additions/cancellations before pairing compatible queue
+histories. Preserve common partitions, actions, roles and boundary conventions;
+stop unresolved transitions, do not interpolate them into known fills. Conditional
+single-touch fill ordering does not bound general policy profit or all compatible
+histories. Compare complete partial-quantity cash, inventory and orphan outcomes
+across matched histories; never select a simulator convention from holdout profit.
+The virtual queue completion/timestamp repair does not integrate a venue queue
+model or qualify source coverage. Existing full-fill targets remain historical
+proxies, not zero-partial-fill cash ledgers. Do not expand their fits on that basis.
+
 For funding-aware control, use [the cash/clock and neutral-objective design](FUNDING_AWARE_NEUTRAL_CONTROL.md).
 The October 7 audit confirms that both derivative funding-label helpers still
 use rate-only proxies, not fixed-quantity settlement-mark cash. The prompt truth

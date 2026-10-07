@@ -32,4 +32,5 @@ artifacts/dependency-audit/
 # Local scholarly bodies; source receipts are published, redistribution is unqualified.
 /docs/review/2026-10-07/maker-income-source/*.html
 /docs/review/2026-10-07/funding-aware-maker-source/*.html
+/docs/review/2026-10-07/fifo-identification-source/*.html
 
