@@ -1,5 +1,18 @@
 # Continue Development
 
+October 7 [native entry-cost-aware risk marking](review/2026-10-07/spot-cash-mark.md)
+fixes fee losses missed at unchanged prices. Native retained entry cost now
+feeds automatic/lifecycle exits, daily/session budgets and entry drawdown;
+remaining cost allocation is rational and the loss guard uses one snapshot.
+Native open lots reject wrong/unattached marks, other open instruments, mixed
+ledger quotes and unvalued third-asset fees. Explicit owned reduction remains
+available. 575 affected-domain checks pass, 24 new; no new market observation,
+orders, credentials, protected data or old-result edits. Default UI statistics
+remain price-only, not native liquidation PnL. General portfolio FX/mark maps,
+no-open mixed-quote accounting, recovery/rearm and supervision remain required.
+Return to distinct durable-edge questions; do not repeat these passing checks
+or reopen expiring campaigns. Research totals and acceptance claims unchanged.
+
 October 7 security follow-through: optional Tornado pin/lock upgraded 6.5.8 to
 6.5.10 for Dependabot #15/#16/#17. Nine bounded offline triggers fail before;
 27 server/curl/legitimate controls pass after, plus 43 neighboring scope,
@@ -11,7 +24,9 @@ existing rotation/scope/redaction controls pass. Per-alert false-positive
 disposition recorded, no rule suppression, hash/KDF substitution or frozen source
 rewrite. Before/after XML, complete intake, triage and fix report are retained in
 the managed Codex Security collection for this repository. GitHub Dependabot
-reevaluation after publication still needs verification. This is a scoped repair,
+reevaluation returned zero open Dependabot and zero open code-scanning alerts
+on October 7 at 08:22 UTC after the dependency repairs and scoped CodeQL
+disposition. This is a scoped repair,
 not a full security audit, optional app deployment test or whole-codebase review.
 
 October 7 priority correction: long-term profitability, not temporary campaigns.

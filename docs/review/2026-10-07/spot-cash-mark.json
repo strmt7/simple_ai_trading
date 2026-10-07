@@ -1,0 +1,73 @@
+{
+  "schema": "spot-cash-mark-review-v1",
+  "result_sha256": "9e91b7617d7cd9bf401ad4b15eaa48c13cc5c1be35c6be0d73ae21b8ef3a204a",
+  "baseline_commit": "a8d9202294ba387faa38739fd2131941c47d1da5",
+  "reviewed_at_utc": "2026-10-07T08:20:47Z",
+  "source_hash_convention": "SHA256 of UTF-8 bytes with CRLF normalized to LF; preserve BOM",
+  "source_sha256": {
+    "src/simple_ai_trading/autonomous.py": "25223fee921a2459dd09abd8cd41d6e899d1f06037f3a77949ee91897f4f48d8",
+    "src/simple_ai_trading/positions.py": "59c6237322cda2904710151ba41038ce41f953b045a22ef82b7f360c4916bd04",
+    "src/simple_ai_trading/binance_spot_cash.py": "61027340d2645c281c44395e276e1545e35d6b25f39b20a58932e461ac8be2f5",
+    "tests/test_autonomous_spot_cash.py": "4aa6979f8d0e05e52cb10c5b43bc81fdda101d2d48981d77d6619872c3043045"
+  },
+  "reproduction": {
+    "entry_quote_cash": "100",
+    "entry_gross_base": "1",
+    "native_base_commission": "0.001",
+    "remaining_base": "0.999",
+    "unchanged_mark": "100",
+    "price_only_pnl": "0",
+    "native_marked_cash_pnl": "-0.1",
+    "native_cash_return": "-0.001",
+    "before": "Two financial stop/daily-budget reproductions failed",
+    "after": "Both reproductions pass in the complete affected-domain run"
+  },
+  "valuation_contract": {
+    "allocation": "remaining native inventory / original net received inventory",
+    "entry_cost": "(original entry quote cash + native quote commission) * allocation",
+    "marked_value": "remaining native base * supplied instrument mark",
+    "marked_cash_pnl": "marked_value - allocated entry_cost",
+    "return_denominator": "allocated entry_cost",
+    "arithmetic": "Exact Fraction allocation independent of Decimal precision; float projections remain approximate",
+    "future_sell_fees_slippage_taxes": "Not observed or included; no executable liquidation-profit claim",
+    "modeled_entry_fees": "Do not replace or double-count native receipts",
+    "nonzero_third_asset_fees": "Reject numeric native valuation and admission, without guessing FX",
+    "instrument_binding": "Native open lots require exact mark symbol/product; other open instruments reject",
+    "quote_binding": "With native open lots, all realized ledger symbols must share the supported mark quote",
+    "snapshot": "One paired snapshot for loss amounts and consecutive losses",
+    "risk_consumers": "Daily/session loss, entry drawdown, explicit auto-close thresholds and lifecycle exits",
+    "legacy": "No-receipt lots retain legacy price/model semantics; no automatic qualification or migration",
+    "display": "Default compute_stats and UI retain price-only unrealized fields; native entry costs are explicit opt-in",
+    "unqualified_guard_metrics": "Zero fields are uncalculated placeholders, not zero-loss evidence; allowed=false is authoritative",
+    "owned_reduction": "Explicit close template and durable SELL submission remain independent of mark valuation"
+  },
+  "verification": {
+    "affected_domain_passed": 575,
+    "affected_domain_failed": 0,
+    "new_cases": 24,
+    "native_cash_file_cases": 70,
+    "junit_local": ".pytest_cache/spot-cash-mark.xml",
+    "lint": "All four touched Python files pass Ruff",
+    "development_errors": [
+      "New test imported Decision from types instead of autonomous; corrected locally",
+      "New entry-gate test omitted objective; corrected after checking the actual signature"
+    ],
+    "full_suite_run": false,
+    "hosted_ci_run": false,
+    "coverage_claim": "None",
+    "network_requests": 0,
+    "credentials_used": false,
+    "orders_submitted": 0,
+    "historical_results_modified": false,
+    "protected_capture_data_modified": false
+  },
+  "remaining_boundaries": [
+    "General multi-instrument mark map and mixed-quote FX-qualified portfolio valuation",
+    "Native UI cash reporting and no-open-position mixed-quote risk accounting",
+    "Unvalued third-asset commissions and SELL base-commission reconciliation",
+    "Legacy, paper and Futures native-fee qualification",
+    "Account-balance qualification, terminal recovery/rearm and independent process supervision",
+    "Direct CLI durable/native-cash integration",
+    "Stable profitable-edge qualification: no new economic observation or promotion"
+  ]
+}

@@ -1,5 +1,13 @@
 # Capital protection and final release verification
 
+The October 7 [native entry-cost-aware mark](review/2026-10-07/spot-cash-mark.md)
+adds actual entry fees to automatic/lifecycle exits and loss/drawdown limits.
+575 affected checks pass. A native open lot requires exact mark context and
+same-quote ledger cash; unknown third-asset fees block admission, not explicit
+owned reduction. This is not general portfolio/FX valuation, future exit-cost
+proof, native UI reporting, recovery/rearm or independent supervision. Older
+checkpoints below describe their original boundaries, not current completion.
+
 The October 7 [native Spot cash repair](review/2026-10-07/spot-native-cash.md)
 binds new realized quote PnL to validated retained entry/close cash and native
 commissions, with rational partial allocations. It fixes a demonstrated false
