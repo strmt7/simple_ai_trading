@@ -1,10 +1,13 @@
 """Socket-free regression checks for the optional Tornado security boundary.
 
-Run with ``uv run --locked --with tornado==6.5.8 python -m pytest``. The base
+Run with ``uv run --locked --with tornado==6.5.10 python -m pytest``. The base
 installation intentionally need not install the microstructure server stack.
+The curl callback checks additionally require pycurl; they never open sockets.
 """
 
 from http.cookies import CookieError
+from io import BytesIO
+from types import SimpleNamespace
 
 import pytest
 
@@ -73,3 +76,101 @@ def test_normal_and_legacy_cookie_calls_preserve_valid_attributes() -> None:
     assert handler._new_cookie["normal"]["domain"] == "example.invalid"
     assert handler._new_cookie["normal"]["secure"] is True
     assert handler._new_cookie["legacy"]["domain"] == "example.invalid"
+
+
+@pytest.mark.parametrize("query", ["a=1&" * 1001, "&" * 1001], ids=["named", "empty"])
+def test_query_field_count_is_bounded(query):
+    with pytest.raises(httputil.HTTPInputError):
+        httputil.HTTPServerRequest(uri="/?" + query)
+
+
+def test_query_at_limit_preserves_repeated_and_blank_values():
+    request = httputil.HTTPServerRequest(uri="/?" + "a=1&" * 998 + "a=2&b=")
+    assert request.arguments == {"a": [b"1"] * 998 + [b"2"], "b": [b""]}
+
+
+@pytest.mark.parametrize("escape", ["file", "directory", "index"])
+def test_static_symlinks_cannot_escape_served_root(tmp_path, escape):
+    root, outside = tmp_path / "static", tmp_path / "outside"
+    root.mkdir()
+    outside.mkdir()
+    (outside / "data.txt").write_bytes(b"offline test content")
+    (root / "index").mkdir()
+    link = (
+        root
+        / {"file": "link.txt", "directory": "link", "index": "index/data.txt"}[escape]
+    )
+    target = outside if escape == "directory" else outside / "data.txt"
+    try:
+        link.symlink_to(target, target_is_directory=escape == "directory")
+    except OSError as failure:
+        pytest.skip(f"host cannot create test symlink: {failure.errno}")
+    relative = {"file": "link.txt", "directory": "link/data.txt", "index": "index"}[
+        escape
+    ]
+    handler = object.__new__(web.StaticFileHandler)
+    handler.initialize(str(root), default_filename="data.txt")
+    handler.path = relative
+    handler.request = SimpleNamespace(path="/static/" + relative + "/")
+    with pytest.raises(web.HTTPError) as denied:
+        handler.validate_absolute_path(
+            str(root), handler.get_absolute_path(str(root), relative)
+        )
+    assert denied.value.status_code == 403
+
+
+def test_static_ordinary_file_remains_accessible(tmp_path):
+    path = tmp_path / "ordinary.txt"
+    path.write_bytes(b"offline ordinary content")
+    handler = object.__new__(web.StaticFileHandler)
+    handler.initialize(str(tmp_path))
+    handler.path = path.name
+    assert handler.validate_absolute_path(str(tmp_path), str(path)) == str(path)
+
+
+@pytest.mark.parametrize("streaming", [False, True], ids=["buffered", "streaming"])
+@pytest.mark.parametrize("decompress", [False, True], ids=["plain", "decoded"])
+@pytest.mark.parametrize("overflow", [False, True], ids=["valid", "over-limit"])
+def test_curl_body_boundary_before_buffering(streaming, decompress, overflow):
+    pycurl = pytest.importorskip("pycurl")
+    from tornado.curl_httpclient import CurlAsyncHTTPClient
+    from tornado.httpclient import HTTPRequest
+
+    class CurlOptions:
+        def __init__(self):
+            self.options, self.info = {}, {}
+
+        def setopt(self, name, value):
+            self.options[name] = value
+
+        def unsetopt(self, name):
+            self.options.pop(name, None)
+
+    pending, received = [], []
+    client = object.__new__(CurlAsyncHTTPClient)
+    client.max_body_size = 64
+    client.io_loop = SimpleNamespace(
+        add_callback=lambda fn, *args: pending.append((fn, args))
+    )
+    curl, buffer = CurlOptions(), BytesIO()
+    request = HTTPRequest(
+        "https://example.invalid/never-requested",
+        connect_timeout=1,
+        request_timeout=1,
+        validate_cert=True,
+        decompress_response=decompress,
+        streaming_callback=received.append if streaming else None,
+    )
+    client._curl_setup_request(curl, request, buffer, httputil.HTTPHeaders())
+    write = curl.options[pycurl.WRITEFUNCTION]
+    # Bytes are supplied at libcurl's decoded WRITEFUNCTION boundary. Never
+    # create an actual decompression bomb, network connection or memory load.
+    assert write(b"a" * 32) == 32
+    assert write(b"b" * 32) == 32
+    if overflow:
+        assert write(b"x") == 0
+    while pending:
+        fn, args = pending.pop(0)
+        fn(*args)
+    data = b"".join(received) if streaming else buffer.getvalue()
+    assert data == b"a" * 32 + b"b" * 32

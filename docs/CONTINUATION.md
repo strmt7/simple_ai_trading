@@ -1,5 +1,19 @@
 # Continue Development
 
+October 7 security follow-through: optional Tornado pin/lock upgraded 6.5.8 to
+6.5.10 for Dependabot #15/#16/#17. Nine bounded offline triggers fail before;
+27 server/curl/legitimate controls pass after, plus 43 neighboring scope,
+dependency and warehouse checks. Only Tornado's package version changes; GPU
+dependencies and unrelated processes untouched. Source-based CodeQL #6 review
+found an API-key identity fingerprint, not password authentication; separate
+API-secret HMAC authenticates requests. All seven reported caller paths reviewed,
+existing rotation/scope/redaction controls pass. Per-alert false-positive
+disposition recorded, no rule suppression, hash/KDF substitution or frozen source
+rewrite. Before/after XML, complete intake, triage and fix report are retained in
+the managed Codex Security collection for this repository. GitHub Dependabot
+reevaluation after publication still needs verification. This is a scoped repair,
+not a full security audit, optional app deployment test or whole-codebase review.
+
 October 7 priority correction: long-term profitability, not temporary campaigns.
 See WORK_PRIORITIES. No campaign-specific runtime logic or promotion farming.
 The [already collected USD1 reconciliation](review/2026-10-07/usd1-distribution/review.md)
