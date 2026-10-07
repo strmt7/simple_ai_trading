@@ -10,7 +10,7 @@ readme = "README.md"
 requires-python = ">=3.11,<3.15"
 dependencies = [
     "defusedxml>=0.7.1,<1",
-    "duckdb==1.5.5",
+    "duckdb==1.5.6",
     "lightgbm==4.7.0",
     "numba==0.67.0",
     "numpy==2.2.6",
@@ -42,7 +42,7 @@ microstructure = [
     "tornado==6.5.10",
 ]
 reporting = [
-    "matplotlib==3.11.1",
+    "matplotlib==3.11.2",
 ]
 polymarket-live = [
     "polymarket-client==0.2.0",
@@ -50,7 +50,7 @@ polymarket-live = [
 ]
 foundation-ai = [
     "einops==0.8.2",
-    "huggingface_hub==1.29.0",
+    "huggingface_hub==2.0.0",
     "pandas>=2.2,<4",
     "safetensors==0.8.0",
     "tqdm>=4.67,<5",
@@ -58,13 +58,13 @@ foundation-ai = [
 
 [dependency-groups]
 test = [
-    "coverage==7.15.4",
-    "diff-cover==10.5.1",
+    "coverage==7.16.2",
+    "diff-cover==10.6.0",
     "pytest==9.1.1",
-    "ruff==0.16.5",
+    "ruff==0.16.9",
 ]
 release = [
-    "build==1.6.0",
+    "build==1.6.1",
 ]
 
 [tool.uv]
