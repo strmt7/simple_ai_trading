@@ -579,12 +579,15 @@ def test_apply_open_order_rescales_modeled_entry_fee_to_exchange_fill() -> None:
     position = _make_position("LONG", entry=100.0)
     position.dry_run = False
     position.entry_fees = 0.01
+    position.open_client_order_id = "sait-o-fee-scaling"
 
     opened = _apply_open_order(
         position,
         {
             "executedQty": "0.05",
             "avgPrice": "110",
+            "orderId": "123",
+            "clientOrderId": position.open_client_order_id,
             "symbol": position.symbol,
             "side": "BUY",
             "type": "MARKET",

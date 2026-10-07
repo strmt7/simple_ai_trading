@@ -15,8 +15,9 @@ record in ``binance_open_intents.sqlite3``. Do not edit enrolled JSON files
 directly or run an older writer against this directory.
 
 Entries are small and human-readable.  No credentials, no raw order IDs beyond
-what the exchange already returned, and all numeric fields are plain floats so
-the file loads fine with ``python -m json.tool``.
+what the exchange already returned. Legacy numerical projections use floats;
+optional native Spot receipts preserve exact decimal strings and are revalidated
+when read. The files remain readable with ``python -m json.tool``.
 """
 
 from __future__ import annotations
@@ -82,6 +83,7 @@ class OpenPosition:
     ai_review_status: str = ""
     spot_gross_entry_quantity: str = ""
     spot_entry_base_commission: str = ""
+    spot_entry_cash_receipt: str = ""
 
     def unrealized_pnl(self, mark_price: float) -> float:
         if self.side == "LONG":
@@ -130,6 +132,8 @@ class ClosedTrade:
     ai_review_status: str = ""
     spot_gross_entry_quantity: str = ""
     spot_entry_base_commission: str = ""
+    spot_entry_cash_receipt: str = ""
+    spot_close_cash_receipt: str = ""
 
 
 _OPEN_REQUIRED_FIELDS = frozenset(
@@ -177,6 +181,7 @@ _OPEN_OPTIONAL_TEXT_FIELDS = frozenset(
         "ai_review_status",
         "spot_gross_entry_quantity",
         "spot_entry_base_commission",
+        "spot_entry_cash_receipt",
     }
 )
 _OPEN_REQUIRED_FINITE_FIELDS = frozenset({"qty", "entry_price", "leverage", "notional"})
@@ -372,9 +377,11 @@ class PositionsStore:
         ]
 
     def record_open(self, position: OpenPosition) -> OpenPosition:
+        from .binance_spot_cash import validate_spot_cash_record
         from .binance_spot_receipts import native_spot_entry_net
 
         native_spot_entry_net(position)
+        validate_spot_cash_record(position)
         with position_transaction(self.opening_intents, write=True) as transaction:
             self._closed_entries(
                 self._decode(transaction.read(self.ledger_path), strict=True),
@@ -402,11 +409,14 @@ class PositionsStore:
         remaining: OpenPosition | None = None,
         expected: OpenPosition | None = None,
     ) -> None:
+        from .binance_spot_cash import validate_spot_cash_record
         from .binance_spot_receipts import native_spot_entry_net
 
         native_spot_entry_net(trade)
+        validate_spot_cash_record(trade)
         if remaining is not None:
             native_spot_entry_net(remaining)
+            validate_spot_cash_record(remaining)
         with position_transaction(self.opening_intents, write=True) as transaction:
             existing = self._closed_entries(
                 self._decode(transaction.read(self.ledger_path), strict=True),
@@ -446,6 +456,7 @@ class PositionsStore:
                 trade.spot_gross_entry_quantity != position.spot_gross_entry_quantity
                 or trade.spot_entry_base_commission
                 != position.spot_entry_base_commission
+                or trade.spot_entry_cash_receipt != position.spot_entry_cash_receipt
             ):
                 raise ValueError(
                     "native close lost its original entry quantity evidence"
@@ -534,15 +545,22 @@ class PositionsStore:
 
     @staticmethod
     def _valid_native_entry(entry: dict[str, Any], record_type: type) -> bool:
+        from .binance_spot_cash import validate_spot_cash_record
         from .binance_spot_receipts import native_spot_entry_net
 
         if not any(
             entry.get(key, "") != ""
-            for key in ("spot_gross_entry_quantity", "spot_entry_base_commission")
+            for key in (
+                "spot_gross_entry_quantity",
+                "spot_entry_base_commission",
+                "spot_entry_cash_receipt",
+                "spot_close_cash_receipt",
+            )
         ):
             return True
         try:
             native_spot_entry_net(record_type(**entry))
+            validate_spot_cash_record(record_type(**entry))
         except (TypeError, ValueError):
             return False
         return True
@@ -636,9 +654,11 @@ class PositionsStore:
             errors.append(f"open_positions_entry_{index}_non_boolean_field=dry_run")
         if not errors:
             try:
+                from .binance_spot_cash import validate_spot_cash_record
                 from .binance_spot_receipts import native_spot_entry_net
 
                 native_spot_entry_net(OpenPosition(**entry))
+                validate_spot_cash_record(OpenPosition(**entry))
             except (TypeError, ValueError) as exc:
                 errors.append(
                     f"open_positions_entry_{index}_constructor_failed:{exc.__class__.__name__}"

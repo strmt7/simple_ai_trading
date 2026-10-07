@@ -481,6 +481,7 @@ def _close_to_trade(
         ai_review_status=position.ai_review_status,
         spot_gross_entry_quantity=position.spot_gross_entry_quantity,
         spot_entry_base_commission=position.spot_entry_base_commission,
+        spot_entry_cash_receipt=position.spot_entry_cash_receipt,
     )
 
 
@@ -562,10 +563,12 @@ def _apply_open_order(
         )
     gross_qty = qty
     gross_text = base_fee_text = ""
+    cash_receipt = ""
     if position.market_type == "spot" and not position.dry_run:
         from decimal import Decimal, localcontext
 
         from .assets import symbol_base_for_supported_quote
+        from .binance_spot_cash import encode_spot_cash_receipt
         from .binance_spot_receipts import (
             exact_spot_wire_quantity,
             spot_buy_received_quantity,
@@ -586,6 +589,13 @@ def _apply_open_order(
             gross = Decimal(str(order["executedQty"]))
             gross_text, base_fee_text = _text(gross), _text(gross - received)
         qty = float(received)
+        cash_receipt = encode_spot_cash_receipt(
+            order,
+            symbol=position.symbol,
+            side="BUY",
+            client_id=position.open_client_order_id,
+            order_id=_order_text(order, "orderId"),
+        )
     modeled_entry_fee_rate = max(0.0, float(position.entry_fees)) / max(
         float(position.notional),
         1e-18,
@@ -598,6 +608,7 @@ def _apply_open_order(
         entry_fees=gross_qty * entry_price * modeled_entry_fee_rate,
         spot_gross_entry_quantity=gross_text,
         spot_entry_base_commission=base_fee_text,
+        spot_entry_cash_receipt=cash_receipt,
         open_exchange_order_id=_order_text(order, "orderId"),
         open_client_order_id=_order_text(order, "clientOrderId", "origClientOrderId")
         or position.open_client_order_id,
@@ -622,6 +633,35 @@ def _apply_close_order(
         raise BinanceAPIError(
             "close order response did not include resolved execution fill"
         )
+    recorded = replace(
+        trade,
+        qty=qty,
+        exit_price=exit_price,
+        close_exchange_order_id=_order_text(order, "orderId"),
+        close_client_order_id=_order_text(order, "clientOrderId", "origClientOrderId")
+        or close_client_order_id,
+        exchange_status=_order_exchange_status(order),
+    )
+    if trade.spot_entry_cash_receipt:
+        from .binance_spot_cash import (
+            encode_spot_cash_receipt,
+            native_spot_cash_projection,
+        )
+
+        recorded = replace(
+            recorded,
+            spot_close_cash_receipt=encode_spot_cash_receipt(
+                order,
+                symbol=trade.symbol,
+                side="SELL",
+                client_id=close_client_order_id,
+                order_id=recorded.close_exchange_order_id,
+            ),
+        )
+        pnl, native_fees, pct = native_spot_cash_projection(recorded)
+        return replace(
+            recorded, realized_pnl=pnl, fees=native_fees, realized_pnl_pct=pct
+        )
     fee_bps = float(exit_taker_fee_bps)
     if not math.isfinite(fee_bps) or fee_bps < 0.0:
         raise BinanceAPIError("close order fee rate must be finite and non-negative")
@@ -636,16 +676,10 @@ def _apply_close_order(
     realized = gross_pnl - fees
     entry_notional = float(trade.entry_price) * qty
     return replace(
-        trade,
-        qty=qty,
-        exit_price=exit_price,
+        recorded,
         realized_pnl=realized,
         realized_pnl_pct=(realized / entry_notional) if entry_notional > 0.0 else 0.0,
         fees=fees,
-        close_exchange_order_id=_order_text(order, "orderId"),
-        close_client_order_id=_order_text(order, "clientOrderId", "origClientOrderId")
-        or close_client_order_id,
-        exchange_status=_order_exchange_status(order),
     )
 
 
