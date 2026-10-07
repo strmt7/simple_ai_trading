@@ -14,6 +14,7 @@ from .make_take_action_features import (
     MakeTakeActionFeatureBatch,
 )
 from .make_take_path_payoffs import ACTION_PATH_HORIZON_SECONDS
+from .make_take_entry_integrity import validate_make_take_scenario_entry_batch
 from .make_take_scenario_entries import (
     MAKE_TAKE_SCENARIO_ENTRY_SCHEMA_VERSION,
     MakeTakeScenarioEntryBatch,
@@ -21,6 +22,7 @@ from .make_take_scenario_entries import (
 from .make_take_targets import (
     MAKE_TAKE_TARGET_SCHEMA_VERSION,
     MakeTakeTargetBatch,
+    validate_make_take_target_batch,
 )
 
 
@@ -54,7 +56,9 @@ def _array_sha256(value: np.ndarray) -> str:
 
 def _is_sha256(value: object) -> bool:
     text = str(value)
-    return len(text) == 64 and all(character in "0123456789abcdef" for character in text)
+    return len(text) == 64 and all(
+        character in "0123456789abcdef" for character in text
+    )
 
 
 @dataclass(frozen=True)
@@ -164,7 +168,10 @@ def validate_make_take_conditional_payoff_panel(
         or rows <= 0
         or not panel.feature_names
         or len(set(panel.feature_names)) != len(panel.feature_names)
-        or any(not isinstance(name, str) or not name.strip() for name in panel.feature_names)
+        or any(
+            not isinstance(name, str) or not name.strip()
+            for name in panel.feature_names
+        )
         or any(
             not _is_sha256(value)
             for value in (
@@ -217,6 +224,8 @@ def build_make_take_conditional_payoff_panel(
 ) -> MakeTakeConditionalPayoffPanel:
     """Join observable action features only to executed conditional payoffs."""
 
+    validate_make_take_scenario_entry_batch(entries)
+    validate_make_take_target_batch(targets)
     normalized_symbol = str(symbol).strip().upper()
     event_indexes = np.asarray(action_features.event_indexes, dtype=np.int64)
     if (
@@ -257,8 +266,12 @@ def build_make_take_conditional_payoff_panel(
     )
     local_decisions = np.repeat(action_features.decision_time_ms, 4)
     if (
-        not np.array_equal(action_features.action_code, entries.action_code[source_rows])
-        or not np.array_equal(action_features.action_side, entries.action_side[source_rows])
+        not np.array_equal(
+            action_features.action_code, entries.action_code[source_rows]
+        )
+        or not np.array_equal(
+            action_features.action_side, entries.action_side[source_rows]
+        )
         or not np.array_equal(action_features.eligible, entries.eligible[source_rows])
         or not np.array_equal(entries.action_code, targets.action_code)
         or not np.array_equal(entries.action_side, targets.action_side)
@@ -287,12 +300,21 @@ def build_make_take_conditional_payoff_panel(
     arrays = {
         "event_index": np.repeat(event_indexes, 4)[keep].astype(np.int64, copy=True),
         "decision_time_ms": local_decisions[keep].astype(np.int64, copy=True),
-        "action_code": action_features.action_code[selected_local].astype(np.uint8, copy=True),
-        "action_side": action_features.action_side[selected_local].astype(np.int8, copy=True),
-        "features": np.array(
-            action_features.features[selected_local], dtype=np.float32, order="C", copy=True
+        "action_code": action_features.action_code[selected_local].astype(
+            np.uint8, copy=True
         ),
-        "net_bps": targets.conditional_net_bps[selected_source].astype(np.float64, copy=True),
+        "action_side": action_features.action_side[selected_local].astype(
+            np.int8, copy=True
+        ),
+        "features": np.array(
+            action_features.features[selected_local],
+            dtype=np.float32,
+            order="C",
+            copy=True,
+        ),
+        "net_bps": targets.conditional_net_bps[selected_source].astype(
+            np.float64, copy=True
+        ),
         "markout_5s_bps": targets.markout_5s_bps[selected_source].astype(
             np.float64, copy=True
         ),

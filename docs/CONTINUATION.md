@@ -1,5 +1,16 @@
 # Continue Development
 
+October 7 [maker input integrity](review/2026-10-07/make-take-source-integrity.md):
+fill-to-entry content validation and all three entry consumers now reject altered
+bytes/lifecycle before downstream access; payoff construction also validates targets.
+Valid entry/target hashes are unchanged; 85 focused checks pass. A synthetic four-unit
+partial fill loses 8.3552 quote units while the legacy full-fill label reports zero.
+This demonstrates a cash-label gap, not a trade, venue fill or profitable edge.
+Next implement qualified partial-quantity cash and first-fill protective exits;
+do not retrain these proxies. Feature-batch integrity and venue origin remain open.
+No historical result, protected capture, market retry, credential, order or fit
+changed. Research counts remain 201/65/37/0; reuse completed focused checks.
+
 October 7 [FIFO primary source and virtual-queue repair](review/2026-10-07/fifo-identification-source/review.md):
 new v2 methodology separates conditional cancellation sensitivity from universal
 profit bounds; Tokyo-equity zero-fee/latency results are not venue edge evidence.

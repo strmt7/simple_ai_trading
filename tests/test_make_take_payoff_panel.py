@@ -16,13 +16,15 @@ from simple_ai_trading.make_take_payoff_panel import (
     validate_make_take_conditional_payoff_panel,
 )
 from simple_ai_trading.make_take_scenario_entries import (
-    MAKE_TAKE_SCENARIO_ENTRY_SCHEMA_VERSION,
-    MakeTakeScenarioEntryBatch,
+    build_make_take_scenario_entries,
 )
 from simple_ai_trading.make_take_targets import (
     MAKE_TAKE_TARGET_SCHEMA_VERSION,
     MakeTakeTargetBatch,
+    _target_payload,
+    _sha256,
 )
+from simple_ai_trading.queue_censored_actions import build_passive_fill_result
 
 
 def _sources():
@@ -46,46 +48,40 @@ def _sources():
         features=np.arange(16, dtype=np.float32).reshape(8, 2),
         batch_sha256="c" * 64,
     )
-    filled = np.asarray([True, False, True, True, False, True, True, True])
-    fill_bucket = np.asarray([1, 0, 0, 0, 0, 2, 0, 0], dtype=np.uint8)
-    entry_time = np.asarray(
-        [2_000, -1, 1_750, 1_750, -1, 13_000, 11_750, 11_750], dtype=np.int64
-    )
-    passive = action_code < 2
-    entries = MakeTakeScenarioEntryBatch(
-        schema_version=MAKE_TAKE_SCENARIO_ENTRY_SCHEMA_VERSION,
+    common = {
+        "arrival_time_ms": decisions + 750,
+        "queue_ahead_quantity": [100.0, 100.0],
+        "order_notional_quote": 1000.0,
+        "trade_id": [1, 2],
+        "trade_time_ms": [2000, 17000],
+        "trade_price": [100.0, 100.1],
+        "trade_quantity": [120.0, 120.0],
+        "trade_buyer_is_maker": [True, False],
+    }
+    entries = build_make_take_scenario_entries(
         scenario="base",
-        placement_latency_ms=750,
-        passive_expiry_ms=15_000,
-        order_notional_quote=1_000.0,
-        max_l1_participation=0.10,
-        passive_entry_fee_bps=2.0,
-        aggressive_entry_fee_bps=5.0,
-        exit_fee_bps=5.0,
-        additional_slippage_bps_per_side=1.0,
-        long_fill_sha256="d" * 64,
-        short_fill_sha256="e" * 64,
-        event_rows=2,
-        action_code=action_code,
-        action_side=action_side,
-        passive=passive,
-        eligible=eligible,
-        filled=filled,
-        fill_bucket=fill_bucket,
-        order_start_time_ms=np.repeat(decisions + 750, 4),
-        entry_time_ms=entry_time,
-        unfilled_expiry_time_ms=np.where(passive & ~filled, np.repeat(decisions + 15_750, 4), -1),
-        entry_price=np.full(8, 100.0),
-        displayed_l1_participation=np.full(8, 0.01),
-        entry_cost_bps=np.full(8, 3.0),
-        exit_cost_bps=np.full(8, 6.0),
-        batch_sha256="f" * 64,
+        decision_time_ms=decisions,
+        bid_price=[100.0, 100.0],
+        ask_price=[100.1, 100.1],
+        bid_quantity=[100.0, 100.0],
+        ask_quantity=[100.0, 100.0],
+        long_fill=build_passive_fill_result(
+            placement_price=[100.0, 100.0], buyer_is_maker=True, **common
+        ),
+        short_fill=build_passive_fill_result(
+            placement_price=[100.1, 100.1], buyer_is_maker=False, **common
+        ),
     )
+    filled, fill_bucket = entries.filled, entries.fill_bucket
     conditional_valid = filled.copy()
     net = np.where(conditional_valid, np.arange(8, dtype=np.float64) - 4.0, np.nan)
     markout_5s = np.where(conditional_valid, 2.0, np.nan)
     markout_15s = np.where(conditional_valid, 3.0, np.nan)
-    terminal = np.where(conditional_valid, np.repeat(decisions + 300_750, 4), -1)
+    terminal = np.where(
+        conditional_valid,
+        np.repeat(decisions + 300_750, 4),
+        entries.unfilled_expiry_time_ms,
+    )
     targets = MakeTakeTargetBatch(
         schema_version=MAKE_TAKE_TARGET_SCHEMA_VERSION,
         scenario="base",
@@ -111,6 +107,7 @@ def _sources():
         take_bps=np.full(8, 60.0),
         target_sha256="2" * 64,
     )
+    targets = replace(targets, target_sha256=_sha256(_target_payload(targets)))
     return features, entries, targets
 
 
@@ -145,7 +142,7 @@ def test_payoff_panel_rejects_feature_entry_alignment_drift() -> None:
     drifted_side[0] = -1
     entries = replace(entries, action_side=drifted_side)
 
-    with pytest.raises(ValueError, match="action alignment drifted"):
+    with pytest.raises(ValueError, match="entry identity or lifecycle"):
         build_make_take_conditional_payoff_panel(
             symbol="BTCUSDT",
             action_features=features,

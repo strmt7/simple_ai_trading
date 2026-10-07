@@ -10,6 +10,7 @@ from numbers import Integral
 import numpy as np
 
 from .make_take_action_features import MakeTakeActionFeatureBatch
+from .make_take_entry_integrity import validate_make_take_scenario_entry_batch
 from .make_take_scenario_entries import MakeTakeScenarioEntryBatch
 
 
@@ -132,7 +133,10 @@ def validate_passive_fill_survival_panel(panel: PassiveFillSurvivalPanel) -> Non
         or rows <= 0
         or not panel.feature_names
         or len(set(panel.feature_names)) != len(panel.feature_names)
-        or any(not isinstance(name, str) or not name.strip() for name in panel.feature_names)
+        or any(
+            not isinstance(name, str) or not name.strip()
+            for name in panel.feature_names
+        )
         or any(
             len(str(value)) != 64
             or any(character not in "0123456789abcdef" for character in str(value))
@@ -169,6 +173,7 @@ def build_passive_fill_survival_panel(
 ) -> PassiveFillSurvivalPanel:
     """Bind eligible passive action rows to exact right-censored fill buckets."""
 
+    validate_make_take_scenario_entry_batch(entries)
     normalized_symbol = str(symbol).strip().upper()
     if (
         normalized_symbol not in {"BTCUSDT", "ETHUSDT", "SOLUSDT"}
@@ -178,8 +183,7 @@ def build_passive_fill_survival_panel(
         or action_features.spec.order_notional_quote != entries.order_notional_quote
         or action_features.spec.max_l1_participation != entries.max_l1_participation
         or action_features.spec.maker_entry_fee_bps != entries.passive_entry_fee_bps
-        or action_features.spec.taker_entry_fee_bps
-        != entries.aggressive_entry_fee_bps
+        or action_features.spec.taker_entry_fee_bps != entries.aggressive_entry_fee_bps
         or action_features.spec.taker_exit_fee_bps != entries.exit_fee_bps
         or action_features.spec.additional_slippage_bps_per_side
         != entries.additional_slippage_bps_per_side
@@ -197,9 +201,7 @@ def build_passive_fill_survival_panel(
             np.arange(1, action_features.action_rows, 4, dtype=np.int64),
         )
     ).ravel()
-    source_passive = np.column_stack(
-        (event_indexes * 4, event_indexes * 4 + 1)
-    ).ravel()
+    source_passive = np.column_stack((event_indexes * 4, event_indexes * 4 + 1)).ravel()
     if (
         not np.array_equal(
             action_features.action_code[local_passive],
@@ -394,8 +396,7 @@ def evaluate_fill_survival_probabilities(
         "log_loss_skill": 1.0 - log_loss / baseline_log_loss,
         "integrated_brier": integrated_brier,
         "baseline_integrated_brier": baseline_integrated_brier,
-        "integrated_brier_skill": 1.0
-        - integrated_brier / baseline_integrated_brier,
+        "integrated_brier_skill": 1.0 - integrated_brier / baseline_integrated_brier,
         "horizon_brier": {
             f"{seconds}s": float(value)
             for seconds, value in zip((5, 10, 15), horizon_brier, strict=True)
