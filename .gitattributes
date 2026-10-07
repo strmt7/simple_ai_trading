@@ -205,3 +205,6 @@ docs/review/2026-09-08/cfb-deployment/*.jsonl binary -eol
 docs/review/2026-09-08/cfb-deployment/raw/* binary -eol
 docs/review/2026-10-07/maker-income-source/*.json binary -eol
 docs/review/2026-10-07/maker-income-source/*.jsonl binary -eol
+docs/review/2026-10-07/nyc-oct8-frontier/*.json binary -eol
+docs/review/2026-10-07/nyc-oct8-frontier/*.jsonl binary -eol
+docs/review/2026-10-07/nyc-oct8-frontier/raw/* binary -eol

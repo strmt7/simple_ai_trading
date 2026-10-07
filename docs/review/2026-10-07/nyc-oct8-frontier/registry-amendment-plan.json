@@ -1,0 +1,31 @@
+{
+  "schema_version": "source-bound-terminal-registry-amendment-v1",
+  "created_at_utc": "2026-10-07T08:51:17Z",
+  "prior_head": "0f75967109e9d8732b947804688259858b2ba088",
+  "prior_registry_result_sha256": "da43f66224bff4cca8f963df1935e3728a3707be6bbd360d97f8610262f39bb7",
+  "prior_audit_result_sha256": "ee70b163f86e9e7644aa8ec05e2cb43747dbe6a47b3c8bc7aa006a2437eb0cf7",
+  "contract_sha256": "0f20aac27f83ff25e3dacc67404c5af192ff925a060a6dea25da06fcf25ddfe5",
+  "source_result_sha256": "4b822134e10541888170d5f522e484b2a25a2c9ce9c8317f1e0bb6e62fbfd159",
+  "raw_sha256": "796f5975baa7950a107fab7e49beda12386e3d25f88b7f449d835f519bddca61",
+  "journal_sha256": "8be691a523f9e07543d8dcb1c87f7801e87b0b88cda146d01db06fc9015d45d9",
+  "rank": 31,
+  "status_field": "nyc_october8_frontier_status",
+  "routing_field": "polymarket_nyc_october8_frontier",
+  "terminal_family": "polymarket_nyc_october8_complete_long_only_frontier",
+  "summary": "One prospectively frozen NYC October 8 Gamma GET returned event 1141602 and all 11 expected markets: 11 YES and 10 NO acquisition proxies complete. All 20 retained complete frontier rows failed the gross gate; the missing NO side remained unavailable. All-YES cost 1.076 pUSD per share for a conditional one-pUSD common-valid-resolution floor. Best gross binary straddle cost 1.001; best finite fee-plus-one-tick result lost 0.02150 pUSD at five shares. Exceptional oracle correction/clarification states are not source-proved by that floor. No book, fee endpoint, on-chain, account, credential, order, fund or protected access. Exact event terminal without refetch, repricing, alias or missing-side repair; no edge promoted and no family-wide negative-EV claim.",
+  "prohibited_shortcut": "retrying_repricing_aliasing_filling_missing_NO_sides_or_book_capturing_the_consumed_NYC_October_8_frontier_after_all_20_complete_rows_failed_the_gross_gate",
+  "permitted_changes": [
+    "Append exact contract and result bindings, one status field and one prohibited shortcut to rank 31 only",
+    "Append one terminal observation; retain all 199 prior observations in original order",
+    "Append one audit routing summary and rebind audit to the new canonical registry",
+    "Update ledger timestamps and self hashes only; preserve all other ledger values",
+    "Update current handoff prose to 200 observations, 65 hypotheses, 37 mechanism scopes and zero qualified stable profitable edges"
+  ],
+  "not_permitted": [
+    "Rewrite frozen source, result, contract, historical observation or audit decision",
+    "Promote an edge, relax acceptance/access/retry gates or add campaign-specific runtime behavior",
+    "Repeat this capture, acquire missing prices or escalate a rejected package"
+  ],
+  "verification": "Zero-network reconstruction with the exact nine frozen implementations; source/journal/time/rule checks; canonical self hashes and staged byte equality; JSON-value comparison against prior HEAD proving only the permitted append-only ledger delta; two existing central audit tests",
+  "result_sha256": "18715825136b0dcb5699f21ee1eb0d85e5d02de6666a277f258baba1fcc8125e"
+}

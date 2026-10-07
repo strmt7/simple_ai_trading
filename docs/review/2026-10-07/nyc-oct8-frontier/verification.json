@@ -1,0 +1,30 @@
+{
+  "schema_version": "retained-financial-screen-verification-v1",
+  "verified_at_utc": "2026-10-07T08:55:47Z",
+  "source_result_sha256": "4b822134e10541888170d5f522e484b2a25a2c9ce9c8317f1e0bb6e62fbfd159",
+  "amendment_plan_result_sha256": "18715825136b0dcb5699f21ee1eb0d85e5d02de6666a277f258baba1fcc8125e",
+  "registry_result_sha256": "b8e4fe4bf7b5a5336398ea7490f598e9832ce24bba793d5a9d34820151a5a107",
+  "audit_result_sha256": "93296ff15fab02d4e69116f7f7155632862167c3005aacccf08fea768493f14e",
+  "checks": {
+    "frozen_contract_and_nine_implementation_byte_hashes": "passed",
+    "capture_raw_and_journal_hashes_status_url_time_and_byte_ceiling": "passed",
+    "next_full_new_york_local_day_selection": "passed",
+    "all_twenty_frontier_rows_reconstructed_from_retained_bytes": "passed",
+    "eleven_common_rule_integer_bins_no_gaps": "passed",
+    "exceptional_oracle_correction_and_clarification_clause_retained": "passed",
+    "gross_and_stressed_cash_arithmetic_and_unavailable_side": "passed",
+    "prior_199_terminal_observations_exact_prefix_preserved": "passed",
+    "all_other_ledger_json_values_exact_prior_head_comparison": "passed",
+    "canonical_registry_audit_self_hashes_and_downstream_binding": "passed",
+    "two_existing_central_audit_tests": "passed_in_0.57_seconds",
+    "git_diff_check": "passed"
+  },
+  "verification_correction": "First retained-only verifier stopped on an overly literal rule-text assertion: the source says seven (7) calendar days (ET), not 7 calendar days. Inspected retained text, corrected the assertion, and verified the remaining checks without refetch, source edits, economic gate changes or retries. Initial preceding byte/time/implementation checks had already passed.",
+  "scope_limits": [
+    "No current books, account qualification, owned fills or realized profit",
+    "No complete proof across exceptional resolution states",
+    "No engine source change, new test module, full suite, CI or timing benchmark",
+    "Git publication and identity must be verified separately after this artifact is frozen"
+  ],
+  "result_sha256": "200d42e53a9b2323294928650d9bfa124900be0cd42aca65f435c100eebe0b0a"
+}
