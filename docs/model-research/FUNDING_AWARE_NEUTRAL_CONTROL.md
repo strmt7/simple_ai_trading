@@ -73,6 +73,15 @@ or runtime benefit. Public trades/volume hits do not prove our queue fills.
 
 ## Confirmed current label defect and repair sequence
 
+The [implemented cash core](../review/2026-10-07/funding-aware-maker-source/cash-core-review.md)
+now provides exact supplied-event fixed-base math, retained-byte parsing,
+strict event-population alignment and unknown-entitlement bounds. It does not
+yet integrate with the legacy builders or qualify complete source coverage.
+Reuse it rather than duplicate the law. The expanded consumer audit includes
+stop-time, second-flow timing and stateful hourly targets as well as the original
+hurdle/barrier pair. All five still use rate-only proxies; their clocks and
+quantity/rebalancing semantics require separate qualification.
+
 `derivatives_hurdle_data._funding_in_holding_window` and the corresponding
 `barrier_payoff_data` helper currently sum funding rates without mark/entry-price
 weighting, although price returns use fixed-quantity entry normalization.
@@ -81,7 +90,7 @@ The source-bound [counterexample](../review/2026-10-07/funding-aware-maker-sourc
 confirms a 50-versus-51-bip debit and opposite signs near a zero-return boundary.
 It is synthetic algebra, not an observed edge or fee-qualified full replay.
 
-The cash computation remains unfixed. Before retraining affected targets:
+Legacy cash computations remain unfixed. Before retraining affected targets:
 
 1. Add source-bound settlement marks with exact symbol, product, currency and
    timestamps; preserve existing rate rows and all old results. Conflicting,
@@ -89,7 +98,7 @@ The cash computation remains unfixed. Before retraining affected targets:
 2. Centralize fixed-quantity cash weighting and declared entitlement boundaries.
    For intrabar barrier exits, retain uncertain settlement eligibility or use a
    justified adverse cash bound; a minute's end is not the known stop-fill time.
-3. Route both builders through that cash layer, bind mark coverage/hash into new
+3. Route all five consumers through that cash layer, bind mark coverage/hash into new
    dataset provenance and test paired long/short, signed-rate, price-change,
    missing-evidence and timing cases. Preserve old reports as rate-only proxies;
    generate distinct cash-qualified targets rather than rewriting them.

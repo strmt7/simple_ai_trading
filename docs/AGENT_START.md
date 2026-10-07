@@ -10,6 +10,14 @@ Scope blockers to their branch; a fresh user resumption resets the blocked audit
 
 ## Current Truth
 
+October 7 [funding cash core](review/2026-10-07/funding-aware-maker-source/cash-core-review.md):
+exact fixed-base mark-scaled math and uncertainty bounds implemented; strict
+retained-byte parsing and expected-event reconciliation, no Torch or I/O.
+75 focused tests pass. Not integrated into existing labels: hurdle, barrier,
+stop-time, second-flow and stateful consumers remain proxies. Qualify complete
+mark population, clocks and quantity semantics before affected retraining.
+No profitable edge, new market capture, old-result rewrite or GPU claim.
+
 October 7 [funding-aware audit and cash-label defect](review/2026-10-07/funding-aware-maker-source/review.md)
 confirms two rate-only derivative funding helpers can reverse a near-zero cash
 control's sign. Cash math not yet fixed; new source-bound settlement marks,
