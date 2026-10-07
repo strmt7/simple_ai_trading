@@ -7,12 +7,15 @@ from decimal import Decimal, InvalidOperation
 import hashlib
 import json
 import re
-from typing import Callable, Iterable, Mapping
+from typing import TYPE_CHECKING, Callable, Iterable, Mapping
 
 import duckdb
 
 from .polymarket_fees import PolymarketFeeModel
 from .positions import BOT_OWNER
+
+if TYPE_CHECKING:
+    from .paper_inventory_cash import PaperInventoryCash
 
 
 PAPER_JOURNAL_SCHEMA_VERSION = "paper-order-journal-v1"
@@ -1174,6 +1177,12 @@ class PaperOrderJournal:
             integrity_errors=self.integrity_errors(),
             ownership_errors=tuple(sorted(set(ownership_errors))),
         )
+
+    def inventory_cash(self, opening_intent_id: str) -> PaperInventoryCash:
+        """Project recorded long-inventory cash, including incomplete opening fills."""
+        from .paper_inventory_cash import derive_paper_inventory_cash
+
+        return derive_paper_inventory_cash(self, opening_intent_id)
 
     def owned_quantity(self, opening_intent_id: str) -> Decimal:
         """Return remaining bot-owned quantity or fail on inconsistent ownership."""

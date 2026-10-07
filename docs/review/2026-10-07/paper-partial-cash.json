@@ -1,0 +1,17 @@
+{
+  "schema": "paper-partial-cash-review-v1",
+  "review_date": "2026-10-07",
+  "source_revision": "d0e42288cefc1ab2842c64aaf258a327a36fab63",
+  "result_sha256": "8c06f035860230fbef35defcff1b2461f9a33705374836d17048b6480748f1db",
+  "source_bindings": [
+    {"path": "src/simple_ai_trading/paper_execution.py", "before_sha256": "3029d1ab22472e26990e6cf58907798f9618954eacdd9ec00c3778c4fedaee09", "after_sha256": "8be067a0c919278db7ad49e2bf84dcb188fe5c53e501b01d6f5e8117220a4723"},
+    {"path": "src/simple_ai_trading/paper_inventory_cash.py", "before_sha256": null, "after_sha256": "53bb8e7a51d070bf58914591433d01bb53aa00badc6bc934a76506d85b8b9308"},
+    {"path": "tests/test_paper_inventory_cash.py", "before_sha256": null, "after_sha256": "6c1acf9019bc528b4a025ad216e657f9a03fbd2377c53aaff0dc1d26cd7291b2"}
+  ],
+  "verification": {"affected_passed": 51, "new_cash_cases": 21, "test_paths": ["tests/test_paper_inventory_cash.py", "tests/test_paper_execution.py", "tests/test_passive_queue_lifecycle.py"], "ruff_check_and_format": "passed", "evidence": "console transcript", "full_suite": false, "hosted_ci": false},
+  "synthetic_end_to_end": {"partial_quantity": "4", "unfilled_opening_remainder": "6", "entry_price": "100", "assumed_entry_quote_charge": "0.12", "close_price": "98", "assumed_close_quote_charge": "0.2352", "realized_pnl_quote_units": "-8.3552", "close_before_complete_opening_fill": true, "restart_equality": true, "native_cash_qualified": false, "market_performance_evidence": false},
+  "fifo_causal_control": {"first_acquisition_quote_with_fee": "101", "first_disposal_quote_after_fee": "108", "early_realized_pnl": "7", "later_remaining_entry_cost": "202", "total_recorded_cash_change": "-195"},
+  "limitations": ["Exact only for recorded quantities, cumulative averages and quote fees", "Upstream rounded averages cannot recover exact per-fill cash", "Source and quote identity, fee assets, late fills and liquidation costs unqualified", "Diagnostic first-fill protection flag is not automatic execution", "Maker training integration and hedge/orphan cash remain incomplete", "Shorts/futures not implemented", "Native cash and profitability flags remain false"],
+  "research_counts_unchanged": {"economic_observations": 201, "hypotheses": 65, "mechanism_scopes": 37, "qualified_stable_edges": 0},
+  "preserved": ["historical results", "legacy maker targets", "protected captures", "market retry gates", "no temporary campaign logic"]
+}

@@ -1,5 +1,15 @@
 # Continue Development
 
+October 7 [paper partial cash](review/2026-10-07/paper-partial-cash.md):
+`PaperOrderJournal.inventory_cash` now reconstructs recorded long Spot/token
+cash chronologically, preserving partial quantities, quote fees, FIFO entry costs,
+settlements and unresolved orders. Existing owned-close execution closes the
+synthetic four-unit partial before full fill; -8.3552 survives restart. All 51
+affected checks pass. This is conditional journal cash, not native qualification,
+automatic protective execution or repaired historical training labels. Next bind
+causal partial events, exact fill cash, native fee assets and role coverage to
+new maker targets; preserve legacy results. Research counts remain 201/65/37/0.
+
 October 7 [maker input integrity](review/2026-10-07/make-take-source-integrity.md):
 fill-to-entry content validation and all three entry consumers now reject altered
 bytes/lifecycle before downstream access; payoff construction also validates targets.

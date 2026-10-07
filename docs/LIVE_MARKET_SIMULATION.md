@@ -12,6 +12,21 @@ terminal costs before using a support label as PnL. The
 [September 4 audit](review/2026-09-04/maker-execution-semantics.md) preserves
 historical implementations and explains the required quantity-aware successor.
 
+`PaperOrderJournal.inventory_cash(opening_intent_id)` reconstructs recorded BUY
+inventory cash for `binance-spot` and `polymarket` from a consistent journal
+snapshot. It preserves partial quantities and recorded quote fees, allocates
+entry costs chronologically by FIFO, and includes parent-bound sales/settlement.
+`requires_inventory_protection` becomes true on the first partial fill; this is
+a diagnostic, not an automatic stop-order controller. Existing owned-close
+execution can reduce that inventory while the opening remainder still blocks
+new exposure. See [the partial-cash review](review/2026-10-07/paper-partial-cash.md).
+The call must be outside an existing transaction. It rejects ambiguous equal-time
+economic events, unsupported shorts/futures, broken ownership and impossible cash.
+Rational reconstruction is exact for recorded quantities/averages/quote fees,
+not for upstream rounded per-fill cash. Quote currency, native fee assets/source
+origin, missing late fills, liquidation costs and training integration are not
+qualified; `native_cash_qualified` and `profitability_claim` remain false.
+
 Primary references used for the current design:
 
 - Binance Spot testnet and market data docs: https://developers.binance.com/docs/binance-spot-api-docs/testnet and https://developers.binance.com/docs/binance-spot-api-docs/rest-api/market-data-endpoints
