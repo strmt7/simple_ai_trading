@@ -10,6 +10,13 @@ Scope blockers to their branch; a fresh user resumption resets the blocked audit
 
 ## Current Truth
 
+The October 7 [Spot native cash repair](review/2026-10-07/spot-native-cash.md)
+fixes reproduced false break-even accounting using retained native entry/close
+receipts and rational partial cost allocation. 730 distinct staged checks pass,
+46 new. Missing/unvalued commissions preserve UNKNOWN. Unrealized cash/risk
+aggregation, account qualification, terminal recovery/rearm and supervision are
+not complete. No research counters, historical results or protected data changed.
+
 The [post-catalog CFB deployment study](review/2026-09-08/cfb-deployment/review.md)
 proved a later-created event after the old empty snapshot, then rejected all
 553 compatible side-specific spread/total pairs before fees. One public GET,

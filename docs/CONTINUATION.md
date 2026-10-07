@@ -1,5 +1,20 @@
 # Continue Development
 
+October 7 continuation: [receipt-native Spot realized cash PnL](review/2026-10-07/spot-native-cash.md).
+Fixed a reproduced false break-even: a 100 USDC purchase with 0.001 BTC fee
+and 99.9 USDC sale now records -0.10, not zero. New native lots retain validated
+entry/close receipts; exact rational partial cost allocation and restart checks
+bind the float ledger projections to them. Unvalued third-asset fees, SELL base
+fees and missing commissions preserve closing UNKNOWN, never guessed profit.
+730 distinct staged checks pass, including 46 new cases. No market/account/order
+requests, credentials, protected captures or historical result changes.
+Next: re-evaluate current eligible financial triggers under the complete capture
+boundaries; date passage alone does not reopen consumed studies. Native unrealized
+PnL and quote-aware risk aggregation, terminal recovery application/rearm and
+independent supervision remain open. Old fee models are not native cash proof.
+Research totals remain 37 mechanism scopes, 65 hypotheses, 198 observations and
+zero qualified stable profitable edges. No full-suite/hosted-CI/readiness claim.
+
 Latest financial R&D: [post-catalog CFB deployment](review/2026-09-08/cfb-deployment/review.md).
 One session-authorized public GET proved Florida A&M/Miami was created after
 the August 31 empty catalog. The separately frozen retained-response screen

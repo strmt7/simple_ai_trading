@@ -121,7 +121,11 @@ class BinanceOpenIntentJournal:
             raise OpenIntentError("opening intent identity or quantity is invalid")
         template = asdict(position)
         # Empty new receipt fields must not change old pending request bytes.
-        for field in ("spot_gross_entry_quantity", "spot_entry_base_commission"):
+        for field in (
+            "spot_gross_entry_quantity",
+            "spot_entry_base_commission",
+            "spot_entry_cash_receipt",
+        ):
             if template.get(field) == "":
                 template.pop(field)
         payload = {

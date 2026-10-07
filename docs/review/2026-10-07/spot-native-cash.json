@@ -1,0 +1,94 @@
+{
+  "schema": "spot-native-cash-review-v1",
+  "result_sha256": "1a1c96077900bee723b4246c1c8813c201cb8a12be505f9cbc6cf21ba244d2a3",
+  "baseline_commit": "86edabe77efbd865459a3ad913a6aa66da8d7b2a",
+  "reviewed_at_utc": "2026-10-07T07:18:05Z",
+  "source_hash_convention": "SHA256 of UTF-8 bytes with CRLF normalized to LF; preserve BOM",
+  "source_sha256": {
+    "src/simple_ai_trading/binance_spot_cash.py": "d4119667fdb99c3ad9a5dcabed415425df10515dc5d468176bcd0b8a45d407b4",
+    "src/simple_ai_trading/autonomous.py": "710c42f24fa3668960404f15e844ff3bdaa4b56852a49b9e074fed76b1f6d0a4",
+    "src/simple_ai_trading/positions.py": "207d19615747fb7a8f28992e5f27c4ad17d8c8f630e136849b20ae10c8e42769",
+    "src/simple_ai_trading/binance_open_intents.py": "74b95f5534c57db04912c811503fefa7529a20066c9c72bd5d36e714d2a3e4d1",
+    "tests/test_autonomous_spot_cash.py": "4c2eeca2e993895f9b88c897fd09e7d07c2a6b47b1f818d29fb8f099bccaa408",
+    "tests/test_autonomous_spot_inventory.py": "2cc7dd2e097b5179218e10376e2c15a49e28159dcf909053d2ba9e7ca17a46fb",
+    "tests/test_autonomous.py": "6b1685d91068a94e67edd93049b1d984941ab9309d41b10a61a0bf91e83491bf"
+  },
+  "baseline_reproduction": {
+    "test": "test_flat_price_native_base_fee_is_a_real_cash_loss",
+    "buy_gross_base": "1",
+    "buy_quote_cash": "100",
+    "buy_base_commission": "0.001",
+    "sell_base": "0.999",
+    "sell_quote_cash": "99.9",
+    "sell_commission": "0",
+    "baseline_realized_quote_pnl": "0",
+    "correct_realized_quote_pnl": "-0.1",
+    "baseline_test_failed_as_expected": true,
+    "patched_test_passed": true
+  },
+  "accounting_contract": {
+    "scope": "New autonomous BTC/ETH/SOL Spot receipts quoted in USDC or USDT; no legacy migration",
+    "entry_net_base": "gross bought base minus native base commission",
+    "partial_allocation": "gross sold base divided by original net received base, using exact rational arithmetic",
+    "allocated_entry_quote_cost": "(gross entry quote cash plus entry quote commission) times partial allocation",
+    "realized_quote_pnl": "gross sale quote cash minus sale quote commission minus allocated entry quote cost",
+    "reported_fee_projection": "allocated entry quote commission plus allocated entry base commission at entry VWAP plus sale quote commission",
+    "return_denominator": "allocated entry quote cost",
+    "third_asset_nonzero_commission": "No assumed conversion; native PnL unresolved",
+    "sell_base_nonzero_commission": "Requires separate inventory reconciliation; native PnL unresolved",
+    "negative_commission": "Rejected, never inferred as additional inventory or a rebate",
+    "unknown_response_fields": "Not retained",
+    "retained_receipt_size_limit_characters": 1000000,
+    "legacy_request_bytes": "Empty new entry receipt omitted from durable intent templates",
+    "failed_post_submission_accounting": "Preserve closing UNKNOWN; no false ledger completion or repeat SELL"
+  },
+  "verification": {
+    "distinct_affected_checks_passed": 730,
+    "new_test_cases": 46,
+    "affected_domain_run": {
+      "junit_local": ".pytest_cache/spot-cash-affected.xml",
+      "cases": 464,
+      "initial_passed": 463,
+      "initial_failed": 1,
+      "failure": "Existing modeled-fee-rescaling fixture omitted native order/client identities",
+      "focused_corrected_case_passed": true
+    },
+    "final_native_and_compatibility_run": {
+      "junit_local": ".pytest_cache/spot-cash-final.xml",
+      "passed": 265,
+      "failed": 0
+    },
+    "additional_case": "test_interrupted_native_close_keeps_cash_record_and_unknown_after_restart: passed",
+    "lint": "Seven touched Python files pass Ruff",
+    "full_suite_run": false,
+    "hosted_ci_run": false,
+    "coverage_claim": "None; pytest-cov is unavailable in the locked environment",
+    "interruption_scope": "Injected exception after paired publication, not a new power-loss or process-kill claim"
+  },
+  "remaining_boundaries": [
+    "Native unrealized mark-to-cash and risk-budget integration",
+    "Mixed quote currencies must not be treated as a single qualified cash currency",
+    "Legacy, paper and Futures fee projections are not upgraded or qualified",
+    "Third-asset fee valuation and SELL base-commission ownership/budgeting",
+    "Exactly-once incremental terminal recovery application and explicit rearm",
+    "Account-balance qualification and independent process supervision",
+    "Direct CLI durable/native-cash integration",
+    "Float display and portfolio aggregation are not an exact native account ledger"
+  ],
+  "authority": {
+    "market_data_requests": 0,
+    "credentials_used": false,
+    "exchange_accounts_accessed": false,
+    "orders_placed": false,
+    "protected_captures_touched": false,
+    "historical_results_modified": false,
+    "edge_qualification_changed": false,
+    "unrelated_processes_modified": false
+  },
+  "iteration_lessons": [
+    "Use explicit short pytest IDs for oversized test inputs; default IDs caused excessive output before correction",
+    "Test modules are not a tests package; correct the local fixture import before running",
+    "Do not assume optional coverage tooling is installed; no dependencies were installed for a coverage count",
+    "Apply ordered, uniquely contextualized patch hunks; failed patch validation made no source changes"
+  ]
+}

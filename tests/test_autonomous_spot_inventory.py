@@ -8,6 +8,7 @@ from decimal import Decimal, localcontext
 import pytest
 
 from simple_ai_trading.autonomous import (
+    _apply_close_order,
     _apply_open_order,
     _close_to_trade,
     _submit_durable_close_position,
@@ -90,6 +91,14 @@ class Client:
             "executedQty": str(quantity),
             "origQty": str(quantity),
             "avgPrice": "100",
+            "fills": [
+                {
+                    "qty": str(quantity),
+                    "price": "100",
+                    "commission": "0",
+                    "commissionAsset": symbol[-4:],
+                }
+            ],
             "orderId": "124",
             "clientOrderId": kwargs["client_order_id"],
         }
@@ -128,6 +137,19 @@ def test_native_open_close_persists_only_received_inventory(
         )
     assert original["quantity"] == 1
     trade = _close_to_trade(opened, 100, "native-check", clock=lambda: 2)
+    if fee_kind == "BNB":
+        with pytest.raises(OpenIntentError, match="third-asset"):
+            _submit_durable_close_position(
+                client, opened, trade, reopened, reduce_only=False
+            )
+        assert reopened.load_open() == [opened]
+        assert reopened.load_ledger() == []
+        assert (
+            reopened.opening_intents.entry_block_reason()
+            == "unresolved_closing_intents=1"
+        )
+        assert client.orders == [(p.symbol, "BUY", 1), (p.symbol, "SELL", expected)]
+        return
     closed = _submit_durable_close_position(
         client, opened, trade, reopened, reduce_only=False
     )
@@ -222,8 +244,14 @@ def test_partial_native_close_retains_one_satoshi_exactly(tmp_path):
     opened = _apply_open_order(p, receipt(p))
     store = PositionsStore(tmp_path)
     store.record_open(opened)
-    trade = replace(
-        _close_to_trade(opened, 100, "partial", clock=lambda: 2), qty=1.99899999
+    close_order = Client({}).place_order(
+        p.symbol, "SELL", 1.99899999, client_order_id="sait-c-native"
+    )
+    close_order.update(status="PARTIALLY_FILLED", origQty="1.999")
+    trade = _apply_close_order(
+        _close_to_trade(opened, 100, "partial", clock=lambda: 2),
+        close_order,
+        "sait-c-native",
     )
     with localcontext() as context:
         context.prec = 3
@@ -261,6 +289,7 @@ def test_empty_receipt_fields_preserve_legacy_pending_request_bytes(tmp_path):
     template = asdict(p)
     template.pop("spot_gross_entry_quantity")
     template.pop("spot_entry_base_commission")
+    template.pop("spot_entry_cash_receipt")
     assert payload["position_template"] == template
     original = json.dumps(payload, sort_keys=True, allow_nan=False)
     store.opening_intents.prepare(p, scope=scope)

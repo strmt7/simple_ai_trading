@@ -1,5 +1,14 @@
 # Capital protection and final release verification
 
+The October 7 [native Spot cash repair](review/2026-10-07/spot-native-cash.md)
+binds new realized quote PnL to validated retained entry/close cash and native
+commissions, with rational partial allocations. It fixes a demonstrated false
+break-even and verifies projections on restart. 730 distinct staged checks pass.
+Missing fees, unvalued third-asset fees and SELL base fees cannot clear UNKNOWN.
+This is not native unrealized PnL, quote-aware portfolio/risk aggregation,
+account balance qualification, terminal recovery application/rearm, direct CLI
+native accounting or independent process supervision. Legacy results are intact.
+
 The September 8 [autonomous Spot gross/net repair](review/2026-09-08/autonomous-spot-native-inventory.md)
 separates new net received inventory from the original gross order obligation,
 preserves legacy request bytes and retains native partial-close remainders
