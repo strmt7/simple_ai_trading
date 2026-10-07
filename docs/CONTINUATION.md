@@ -1,5 +1,17 @@
 # Continue Development
 
+October 7 [historical native funding marks](review/2026-10-07/funding-mark-population/review.md):
+the complete 11,847-event BTC/ETH/SOL prefix failed source qualification on the
+first 1,000 records, all with empty settlement marks. One of 12 planned GETs
+ran; the remaining 11 are forbidden, not a resumable job. Missing prices are
+not zero payments. A separate three-event exact native/archive clock join is
+limited to June 30, 2025; it does not qualify earlier marks or owned entitlement.
+All five legacy labels remain proxies; no affected fit or edge promotion.
+Require independent complete primary mark evidence or a distinct prospectively
+frozen cash-qualified dataset; never salvage later pages, candles or rounded
+times. Other durable-edge/capital-risk work remains active. Counters unchanged:
+201 observations, 65 hypotheses, 37 scopes, zero qualified stable edges.
+
 October 7 [exact funding cash core](review/2026-10-07/funding-aware-maker-source/cash-core-review.md)
 implements mark-scaled fixed-base cash, strict retained-byte parsing/population
 matching and conservative unknown-entitlement bounds, without I/O or Torch.

@@ -10,6 +10,13 @@ Scope blockers to their branch; a fresh user resumption resets the blocked audit
 
 ## Current Truth
 
+October 7 [funding history gap](review/2026-10-07/funding-mark-population/review.md):
+first 1,000 native records have empty marks; whole 11,847-event batch rejected,
+remaining 11 requests forbidden. Three exact late-history clock joins do not
+prove older mark coverage. No cash-label integration or training qualified.
+Move to independent complete primary evidence or a distinct prospective dataset,
+or another eligible durable-edge/capital-risk task; do not repeat this batch.
+
 October 7 [funding cash core](review/2026-10-07/funding-aware-maker-source/cash-core-review.md):
 exact fixed-base mark-scaled math and uncertainty bounds implemented; strict
 retained-byte parsing and expected-event reconciliation, no Torch or I/O.
