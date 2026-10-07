@@ -762,15 +762,34 @@ def compute_stats(
     *,
     mark_price: float | None,
     starting_reference_cash: float = 1000.0,
+    include_native_entry_costs: bool = False,
 ) -> LedgerStats:
     """Compute aggregate statistics from the ledger + open positions.
 
     ``mark_price`` is the current symbol mark used to value open positions;
     pass ``None`` if the mark is unavailable — unrealized fields will be zero
     rather than raising.
+    Native entry-cost valuation is opt-in, rejects unvalued commissions, and
+    does not include future exit costs or qualify mixed-instrument marks.
     """
 
-    opens, closed = store.load_snapshot()
+    return compute_snapshot_stats(
+        store.load_snapshot(),
+        mark_price=mark_price,
+        starting_reference_cash=starting_reference_cash,
+        include_native_entry_costs=include_native_entry_costs,
+    )
+
+
+def compute_snapshot_stats(
+    snapshot: tuple[list[OpenPosition], list[ClosedTrade]],
+    *,
+    mark_price: float | None,
+    starting_reference_cash: float = 1000.0,
+    include_native_entry_costs: bool = False,
+) -> LedgerStats:
+    """Value one coherent snapshot; callers must bind the mark's instrument/quote."""
+    opens, closed = snapshot
     wins = sum(1 for t in closed if t.realized_pnl > 0)
     losses = sum(1 for t in closed if t.realized_pnl < 0)
     realized = sum(t.realized_pnl for t in closed)
@@ -784,8 +803,21 @@ def compute_stats(
     unrealized = 0.0
     unrealized_pct = 0.0
     if mark_price is not None and opens:
-        unrealized = sum(p.unrealized_pnl(float(mark_price)) for p in opens)
-        entry_notional = sum(abs(p.entry_price * p.qty) for p in opens)
+        from .binance_spot_cash import native_spot_cash_mark
+
+        entry_notional = 0.0
+        for position in opens:
+            cash_mark = (
+                native_spot_cash_mark(position, mark_price)
+                if include_native_entry_costs
+                else None
+            )
+            if cash_mark is None:
+                unrealized += position.unrealized_pnl(float(mark_price))
+                entry_notional += abs(position.entry_price * position.qty)
+            else:
+                unrealized += float(cash_mark.pnl)
+                entry_notional += float(cash_mark.entry_cost)
         if entry_notional > 0:
             unrealized_pct = unrealized / entry_notional
     realized_pct = (

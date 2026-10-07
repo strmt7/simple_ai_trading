@@ -53,6 +53,7 @@ from .positions import (
     bot_client_order_id,
     bot_ownership_rejection_reason,
     compute_stats,
+    compute_snapshot_stats,
     new_position_id,
     now_ms,
 )
@@ -366,7 +367,14 @@ def _evaluate_auto_close(
 ) -> tuple[bool, str]:
     """Return (should_close, reason) for an open position at the given mark."""
 
-    pnl_pct = position.unrealized_pnl_pct(mark_price)
+    from .binance_spot_cash import native_spot_cash_mark
+
+    cash_mark = native_spot_cash_mark(position, mark_price)
+    pnl_pct = (
+        float(cash_mark.return_fraction)
+        if cash_mark is not None
+        else position.unrealized_pnl_pct(mark_price)
+    )
     if cfg.max_unrealized_close_pct is not None and pnl_pct >= cfg.max_unrealized_close_pct:
         return True, f"auto-take-profit@{cfg.max_unrealized_close_pct:+.2%}"
     if cfg.min_unrealized_close_pct is not None and pnl_pct <= cfg.min_unrealized_close_pct:
@@ -1090,16 +1098,6 @@ def _daily_entry_count(store: PositionsStore, day: int) -> int:
     return opened + closed
 
 
-def _consecutive_losses(store: PositionsStore) -> int:
-    losses = 0
-    for trade in reversed(store.load_ledger()):
-        if trade.realized_pnl < 0.0:
-            losses += 1
-            continue
-        break
-    return losses
-
-
 def _loss_budget_guard(
     store: PositionsStore,
     mark_price: float | None,
@@ -1107,20 +1105,68 @@ def _loss_budget_guard(
     cfg: AutonomousConfig,
     *,
     now_ms_value: int,
+    mark_symbol: str = "",
+    mark_market_type: str = "",
 ) -> CapitalGuard:
-    mark = float(mark_price) if mark_price is not None and mark_price > 0.0 else None
-    stats = compute_stats(store, mark_price=mark, starting_reference_cash=cfg.starting_reference_cash)
+    """Apply cash-aware native loss limits; unqualified metrics never admit risk."""
+    mark = (
+        float(mark_price)
+        if not isinstance(mark_price, bool)
+        and isinstance(mark_price, (int, float))
+        and math.isfinite(mark_price)
+        and mark_price > 0.0
+        else None
+    )
+    snapshot = store.load_snapshot()
+    opens, closed = snapshot
+    consecutive_losses = 0
+    for trade in reversed(closed):
+        if trade.realized_pnl >= 0.0:
+            break
+        consecutive_losses += 1
+    native_cash_present = any(position.spot_entry_cash_receipt for position in opens)
+    if native_cash_present:
+        if (
+            mark is None
+            or not mark_symbol
+            or not mark_market_type
+            or any(
+                (position.symbol, position.market_type) != (mark_symbol, mark_market_type)
+                for position in opens
+            )
+        ):
+            return CapitalGuard(
+                False, "cash-valuation-instrument-unqualified", 0.0, 0.0, consecutive_losses
+            )
+        from .assets import symbol_base_for_supported_quote
+
+        base = symbol_base_for_supported_quote(mark_symbol)
+        quote = mark_symbol[len(base) :] if base else ""
+        if not quote or any(not trade.symbol.endswith(quote) for trade in closed):
+            return CapitalGuard(
+                False, "cash-valuation-quote-unqualified", 0.0, 0.0, consecutive_losses
+            )
+    try:
+        stats = compute_snapshot_stats(
+            snapshot,
+            mark_price=mark,
+            starting_reference_cash=cfg.starting_reference_cash,
+            include_native_entry_costs=True,
+        )
+    except OpenIntentError:
+        return CapitalGuard(
+            False, "cash-valuation-fees-unqualified", 0.0, 0.0, consecutive_losses
+        )
     reference = max(1.0, float(cfg.starting_reference_cash))
     day = _safe_day_ms(now_ms_value)
     realized_today = sum(
         trade.realized_pnl
-        for trade in store.load_ledger()
+        for trade in closed
         if _safe_day_ms(trade.closed_at_ms) == day
     )
     unrealized = float(stats.unrealized_pnl) if mark is not None else 0.0
     daily_loss = max(0.0, -(realized_today + unrealized) / reference)
     session_loss = max(0.0, -(float(stats.realized_pnl) + unrealized) / reference)
-    consecutive_losses = _consecutive_losses(store)
     if strategy.max_daily_loss_pct > 0.0 and daily_loss >= strategy.max_daily_loss_pct:
         return CapitalGuard(
             False,
@@ -1174,21 +1220,21 @@ def _entry_gate(
     max_open = int(strategy.max_open_positions)
     day = _safe_day_ms(now_ms_value)
     daily_entries = _daily_entry_count(store, day)
-    stats = compute_stats(
-        store,
-        mark_price=decision.mark_price,
-        starting_reference_cash=cfg.starting_reference_cash,
-    )
-    drawdown = 0.0
-    if cfg.starting_reference_cash > 0:
-        equity_delta = stats.realized_pnl + stats.unrealized_pnl
-        drawdown = max(0.0, -equity_delta / cfg.starting_reference_cash)
     capital_guard = _loss_budget_guard(
         store,
         decision.mark_price,
         strategy,
         cfg,
         now_ms_value=now_ms_value,
+        mark_symbol=symbol,
+        mark_market_type=market_type,
+    )
+    drawdown = (
+        capital_guard.session_loss
+        * max(1.0, float(cfg.starting_reference_cash))
+        / cfg.starting_reference_cash
+        if cfg.starting_reference_cash > 0
+        else 0.0
     )
     confidence = _directional_confidence(decision)
     min_confidence = (
@@ -1500,6 +1546,8 @@ def run_loop(
                     strategy,
                     cfg,
                     now_ms_value=int(clock() * 1000),
+                    mark_symbol=runtime.symbol,
+                    mark_market_type=runtime.market_type,
                 )
                 if not capital_guard.allowed:
                     if capital_guard.force_close:
@@ -1587,6 +1635,8 @@ def run_loop(
                 strategy,
                 cfg,
                 now_ms_value=int(clock() * 1000),
+                mark_symbol=runtime.symbol,
+                mark_market_type=runtime.market_type,
             )
             if not capital_guard.allowed:
                 if capital_guard.force_close:

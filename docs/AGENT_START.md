@@ -10,6 +10,13 @@ Scope blockers to their branch; a fresh user resumption resets the blocked audit
 
 ## Current Truth
 
+October 7 [entry-cost-aware native Spot risk marks](review/2026-10-07/spot-cash-mark.md)
+now include actual entry fees in exits and loss/drawdown limits. 575 affected
+checks pass, 24 new. Wrong instrument/quote or unvalued fees reject admission;
+owned reductions remain possible. Default UI unrealized fields stay price-only.
+General portfolio valuation, recovery/rearm and supervision remain incomplete.
+This is capital-risk correctness, not a new profitable edge or campaign strategy.
+
 October 7 user direction: long-term profitability; no temporary-campaign strategy
 development. See WORK_PRIORITIES and latest CONTINUATION. Already collected
 USD1 reconciliation is historical only. Current totals: 199 observations,

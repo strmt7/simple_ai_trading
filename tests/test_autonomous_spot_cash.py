@@ -2,19 +2,30 @@
 
 from dataclasses import asdict, replace
 from decimal import localcontext
+from fractions import Fraction
 
 import pytest
 
 from simple_ai_trading.autonomous import (
+    Decision,
     _apply_close_order,
     _apply_open_order,
     _close_to_trade,
     _submit_durable_close_position,
     _submit_durable_open_position,
+    _evaluate_auto_close,
+    _entry_gate,
+    _loss_budget_guard,
+    AutonomousConfig,
 )
 from simple_ai_trading.binance_open_intents import OpenIntentError
-from simple_ai_trading.binance_spot_cash import validate_spot_cash_record
-from simple_ai_trading.positions import OpenPosition, PositionsStore
+from simple_ai_trading.binance_spot_cash import (
+    native_spot_cash_mark,
+    validate_spot_cash_record,
+)
+from simple_ai_trading.positions import OpenPosition, PositionsStore, compute_stats
+from simple_ai_trading.objective import get_objective
+from simple_ai_trading.types import StrategyConfig
 from test_autonomous_spot_inventory import Client
 
 
@@ -65,6 +76,248 @@ def test_flat_price_native_base_fee_is_a_real_cash_loss():
         "sait-c-cash",
     )
     assert closed.realized_pnl == pytest.approx(-0.1)
+
+
+def test_native_entry_cash_loss_triggers_open_position_stop() -> None:
+    opened = _apply_open_order(
+        position(), receipt("BUY", "1", fee="0.001", asset="BTC")
+    )
+    should_close, reason = _evaluate_auto_close(
+        opened,
+        100,
+        AutonomousConfig(min_unrealized_close_pct=-0.0005),
+        StrategyConfig(),
+    )
+    assert should_close is True
+    assert reason.startswith("auto-stop-loss")
+
+
+def test_native_entry_cash_loss_reaches_daily_budget(tmp_path) -> None:
+    opened = _apply_open_order(
+        position(), receipt("BUY", "1", fee="0.001", asset="BTC")
+    )
+    store = PositionsStore(tmp_path)
+    store.record_open(opened)
+    guard = _loss_budget_guard(
+        store,
+        100,
+        replace(StrategyConfig(), max_daily_loss_pct=0.0005),
+        AutonomousConfig(starting_reference_cash=100),
+        now_ms_value=2000,
+        mark_symbol="BTCUSDC",
+        mark_market_type="spot",
+    )
+    assert guard.allowed is False
+    assert guard.force_close is True
+    assert guard.daily_loss == pytest.approx(0.001)
+
+
+@pytest.mark.parametrize(
+    "asset,fee,expected",
+    [
+        ("BTC", "0.001", Fraction(-1, 10)),
+        ("USDC", "0.4", Fraction(-2, 5)),
+        ("BNB", "0", Fraction(0)),
+    ],
+)
+def test_cash_mark_uses_actual_cost_not_modeled_entry_fee(asset, fee, expected) -> None:
+    opened = _apply_open_order(
+        replace(position(), entry_fees=88), receipt("BUY", "1", fee=fee, asset=asset)
+    )
+    value = native_spot_cash_mark(opened, 100)
+    assert value is not None
+    assert value.quote == "USDC"
+    assert value.pnl == expected
+    assert value.return_fraction == expected / value.entry_cost
+
+
+@pytest.mark.parametrize(
+    "mark",
+    [True, 0, -1, float("nan"), float("inf"), "100"],
+    ids=["bool", "zero", "negative", "nan", "inf", "string"],
+)
+def test_native_cash_mark_rejects_invalid_marks(mark) -> None:
+    opened = _apply_open_order(position(), receipt("BUY", "1"))
+    with pytest.raises(OpenIntentError, match="finite and positive"):
+        native_spot_cash_mark(opened, mark)
+
+
+def test_cash_mark_partial_allocation_conserves_entry_cost(tmp_path) -> None:
+    opened = _apply_open_order(
+        position(), receipt("BUY", "1", fee="0.001", asset="BTC")
+    )
+    store = PositionsStore(tmp_path)
+    store.record_open(opened)
+    order = receipt("SELL", "0.1")
+    order.update(status="PARTIALLY_FILLED", origQty="0.999")
+    closed = _apply_close_order(
+        _close_to_trade(opened, 100, "partial"), order, "sait-c-cash"
+    )
+    store.record_close_result(opened, closed)
+    remaining = PositionsStore(tmp_path).load_open(strict=True)[0]
+    with localcontext() as context:
+        context.prec = 3
+        mark = native_spot_cash_mark(remaining, 100)
+    assert mark.entry_cost == Fraction(100) * Fraction(899, 999)
+    assert float(mark.pnl) + closed.realized_pnl == pytest.approx(-0.1)
+    legacy_stats = compute_stats(store, mark_price=100)
+    cash_stats = compute_stats(store, mark_price=100, include_native_entry_costs=True)
+    assert legacy_stats.unrealized_pnl == 0
+    assert cash_stats.unrealized_pnl == float(mark.pnl)
+
+
+def test_unvalued_fee_blocks_admission_not_reduction_template(tmp_path) -> None:
+    opened = _apply_open_order(position(), receipt("BUY", "1", fee="0.1", asset="BNB"))
+    store = PositionsStore(tmp_path)
+    store.record_open(opened)
+    guard = _loss_budget_guard(
+        store,
+        100,
+        StrategyConfig(),
+        AutonomousConfig(),
+        now_ms_value=2000,
+        mark_symbol="BTCUSDC",
+        mark_market_type="spot",
+    )
+    assert guard.allowed is False
+    assert guard.force_close is False
+    assert guard.reason == "cash-valuation-fees-unqualified"
+    # An owned reduction does not depend on a guessed third-asset valuation.
+    template = _close_to_trade(opened, 100, "operator-stop")
+    assert template.qty == opened.qty
+    assert template.spot_entry_cash_receipt == opened.spot_entry_cash_receipt
+
+
+@pytest.mark.parametrize(
+    "symbol,market_type,mark",
+    [
+        ("ETHUSDC", "spot", 100),
+        ("BTCUSDC", "futures", 100),
+        ("", "", 100),
+        ("BTCUSDC", "spot", None),
+    ],
+)
+def test_native_guard_requires_exact_instrument_mark(
+    tmp_path, symbol, market_type, mark
+) -> None:
+    store = PositionsStore(tmp_path)
+    store.record_open(_apply_open_order(position(), receipt("BUY", "1")))
+    guard = _loss_budget_guard(
+        store,
+        mark,
+        StrategyConfig(),
+        AutonomousConfig(),
+        now_ms_value=2000,
+        mark_symbol=symbol,
+        mark_market_type=market_type,
+    )
+    assert guard.allowed is False
+    assert guard.force_close is False
+    assert guard.reason == "cash-valuation-instrument-unqualified"
+
+
+def test_guard_uses_one_coherent_snapshot(tmp_path, monkeypatch) -> None:
+    store = PositionsStore(tmp_path)
+    store.record_open(_apply_open_order(position(), receipt("BUY", "1")))
+    original, calls = store.load_snapshot, []
+
+    def snapshot():
+        calls.append(True)
+        return original()
+
+    monkeypatch.setattr(store, "load_snapshot", snapshot)
+    guard = _loss_budget_guard(
+        store,
+        100,
+        StrategyConfig(),
+        AutonomousConfig(),
+        now_ms_value=2000,
+        mark_symbol="BTCUSDC",
+        mark_market_type="spot",
+    )
+    assert guard.allowed is True
+    assert calls == [True]
+
+
+def test_entry_fee_prevents_premature_take_profit() -> None:
+    opened = _apply_open_order(
+        position(), receipt("BUY", "1", fee="0.001", asset="BTC")
+    )
+    assert opened.unrealized_pnl_pct(100.1) == pytest.approx(0.001)
+    should_close, _ = _evaluate_auto_close(
+        opened,
+        100.1,
+        AutonomousConfig(max_unrealized_close_pct=0.0005),
+        StrategyConfig(),
+    )
+    assert should_close is False
+
+
+def test_native_guard_rejects_mixed_quote_realized_cash(tmp_path) -> None:
+    store = PositionsStore(tmp_path)
+    legacy = replace(position(), id="legacy", symbol="ETHUSDT")
+    store.record_open(legacy)
+    store.record_close(_close_to_trade(legacy, 100, "legacy"))
+    store.record_open(_apply_open_order(position(), receipt("BUY", "1")))
+    guard = _loss_budget_guard(
+        store,
+        100,
+        StrategyConfig(),
+        AutonomousConfig(),
+        now_ms_value=2000,
+        mark_symbol="BTCUSDC",
+        mark_market_type="spot",
+    )
+    assert guard.allowed is False
+    assert guard.force_close is False
+    assert guard.reason == "cash-valuation-quote-unqualified"
+
+
+def test_native_guard_never_values_other_instrument_with_current_mark(tmp_path) -> None:
+    store = PositionsStore(tmp_path)
+    store.record_open(replace(position(), id="legacy", symbol="ETHUSDC"))
+    store.record_open(_apply_open_order(position(), receipt("BUY", "1")))
+    guard = _loss_budget_guard(
+        store,
+        100,
+        StrategyConfig(),
+        AutonomousConfig(),
+        now_ms_value=2000,
+        mark_symbol="BTCUSDC",
+        mark_market_type="spot",
+    )
+    assert guard.allowed is False
+    assert guard.force_close is False
+    assert guard.reason == "cash-valuation-instrument-unqualified"
+
+
+@pytest.mark.parametrize("reference", [100, 0.5])
+def test_entry_gate_drawdown_includes_native_entry_cost(tmp_path, reference) -> None:
+    store = PositionsStore(tmp_path)
+    opened = _apply_open_order(
+        position(), receipt("BUY", "1", fee="0.001", asset="BTC")
+    )
+    store.record_open(opened)
+    gate = _entry_gate(
+        store,
+        Decision(side="LONG", confidence=0.9, mark_price=100),
+        StrategyConfig(),
+        AutonomousConfig(starting_reference_cash=reference),
+        get_objective("default"),
+        now_ms_value=2000,
+        symbol="BTCUSDC",
+        market_type="spot",
+    )
+    assert gate.allowed is False
+    assert gate.drawdown == pytest.approx(0.1 / reference)
+
+
+def test_opt_in_cash_stats_preserve_legacy_mark_behavior(tmp_path) -> None:
+    store = PositionsStore(tmp_path)
+    store.record_open(position())
+    assert compute_stats(store, mark_price=101, include_native_entry_costs=True) == (
+        compute_stats(store, mark_price=101)
+    )
 
 
 @pytest.mark.parametrize(

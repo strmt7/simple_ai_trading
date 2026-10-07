@@ -7,6 +7,7 @@ existing float fields are checked projections, not an account balance ledger.
 from __future__ import annotations
 
 import json
+import math
 import re
 from collections.abc import Mapping
 from dataclasses import dataclass
@@ -172,6 +173,51 @@ def entry_cash_receipt(record: OpenPosition | ClosedTrade) -> SpotCashReceipt | 
     ):
         raise OpenIntentError("native cash differs from original inventory or price")
     return entry
+
+
+@dataclass(frozen=True)
+class SpotCashMark:
+    """Quote-denominated marked cash, before unobserved liquidation costs."""
+
+    quote: str
+    entry_cost: Fraction
+    marked_value: Fraction
+
+    @property
+    def pnl(self) -> Fraction:
+        return self.marked_value - self.entry_cost
+
+    @property
+    def return_fraction(self) -> Fraction:
+        return self.pnl / self.entry_cost
+
+
+def native_spot_cash_mark(
+    position: OpenPosition, mark_price: float
+) -> SpotCashMark | None:
+    """Allocate actual entry cash to remaining inventory, without guessed fee FX."""
+    entry = entry_cash_receipt(position)
+    if entry is None:
+        return None
+    if (
+        isinstance(mark_price, bool)
+        or not isinstance(mark_price, (int, float))
+        or not math.isfinite(mark_price)
+        or mark_price <= 0
+    ):
+        raise OpenIntentError("native cash mark must be finite and positive")
+    if any(
+        fee and asset not in {entry.base, entry.quote}
+        for asset, fee in entry.commissions
+    ):
+        raise OpenIntentError("third-asset commission valuation remains unresolved")
+    quantity = Fraction(Decimal(str(position.qty)))
+    allocation = quantity / (entry.quantity - entry.fee(entry.base))
+    return SpotCashMark(
+        entry.quote,
+        (entry.cash + entry.fee(entry.quote)) * allocation,
+        quantity * Fraction(Decimal(str(mark_price))),
+    )
 
 
 def native_spot_cash_projection(record: ClosedTrade) -> tuple[float, float, float]:
