@@ -10,6 +10,12 @@ Scope blockers to their branch; a fresh user resumption resets the blocked audit
 
 ## Current Truth
 
+October 7 user direction: long-term profitability; no temporary-campaign strategy
+development. See WORK_PRIORITIES and latest CONTINUATION. Already collected
+USD1 reconciliation is historical only. Current totals: 199 observations,
+65 hypotheses, 37 mechanism scopes, zero qualified stable profitable edges.
+All Dependabot/code-scanning alerts require evidence-backed triage and repairs.
+
 The October 7 [Spot native cash repair](review/2026-10-07/spot-native-cash.md)
 fixes reproduced false break-even accounting using retained native entry/close
 receipts and rational partial cost allocation. 730 distinct staged checks pass,

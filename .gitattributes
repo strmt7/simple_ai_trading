@@ -1,5 +1,6 @@
 # Hash-bound evidence must retain the exact bytes recorded in its manifest.
 .gitattributes text eol=lf
+docs/review/2026-10-07/usd1-distribution/** binary -eol
 *.py text eol=lf
 *.sh text eol=lf
 pyproject.toml text eol=lf

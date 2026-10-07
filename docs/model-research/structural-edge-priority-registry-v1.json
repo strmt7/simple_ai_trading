@@ -667,12 +667,24 @@
         {
           "path": "docs/review/2026-09-08/usdt-flexible/result.json",
           "result_sha256": "399bdb6b27b7464f522bfaf7c32c89cf7725ad8bb030e2494ccf10c370b5eede"
+        },
+        {
+          "path": "docs/review/2026-10-07/usd1-distribution/contract.json",
+          "result_sha256": "362e34194fb34e97416d7ba0a828fc7db239fbb091ad44487e01aa51b697bad0"
+        },
+        {
+          "path": "docs/review/2026-10-07/usd1-distribution/source-result.json",
+          "result_sha256": "3b9cdcc060a4f3f6abd6bf793838f96a11cc9be291fbc8e5282999983145af1a"
+        },
+        {
+          "path": "docs/review/2026-10-07/usd1-distribution/reconciliation.json",
+          "result_sha256": "b2a3f712a34c83190869d015e8b9e9e08bd9adbd58db9388c75929bb8f6fb40e"
         }
       ],
-      "current_status": "a_distinct_2026_09_04_through_2026_10_02_USD1_holding_airdrop_campaign_is_currently_source_proved_with_a_150_million_WLFI_total_pool_weekly_distribution_lowest_snapshot_balance_formula_and_1_2x_organic_open_interest_multiplier_but_its_first_period_base_APR_boosted_APR_and_WLFI_valuation_are_all_To_be_updated_on_2026_09_11_individual_allocation_depends_on_total_eligible_balance_and_other_factors_rewards_round_down_to_two_decimals_and_public_account_eligibility_USD1_basis_opportunity_cost_and_WLFI_liquidation_are_unbound_so_the_current_stable_account_qualified_after_all_cost_floor_is_zero_the_fixed_7_percent_USD1_Simple_Earn_candidate_remains_separately_account_capacity_horizon_transition_and_cost_gated_and_no_scope_is_deployment_ready September 8 USDT Flexible renewal retained: bonus remains 4 percent, cap rises from 500 to 800 USDT, September 8-22. Approximately 3 percent variable base is not fixed income. Fourteen eligible days illustrate 1.22739726 USDT capped bonus under a non-source-proved 365-day convention. Actual eligibility, capacity, alternatives and payouts remain unqualified.",
+      "current_status": "October 7 completed USD1 September campaign reconciliation: first three base APRs 4.33%, 4.48%, 4.31% and boosted APRs 5.20%, 5.38%, 5.17%; fourth row still unpublished. Raw WLFI reference strings USD 0.0561/0.0584/0.0565 are retained, not numeric under the frozen dollar-prefix grammar. Campaign ended October 2; no unexpired forward entitlement, owned account qualification or after-all-cost profit. Prior USD1 Simple Earn, USDT, U, RWUSD and USDe artifacts remain historical and separately gated, never current yield by extrapolation.",
       "market_direction_forecast_required": false,
       "mechanism": "same_account_stable_value_yield_allocation",
-      "next_action": "do_not_repeat_or_alias_the_consumed_September_4_USD1_campaign_catalog_or_article_and_do_not_infer_APR_from_the_150_million_WLFI_pool_prior_campaigns_examples_or_current_token_price_at_or_after_2026_09_11T18_00_00Z_run_one_separately_frozen_first_distribution_public_reconciliation_only_if_an_independently_observed_official_update_or_the_exact_deadline_trigger_is_satisfied_then_require_positive_period_APR_contractual_WLFI_valuation_account_eligibility_USD1_basis_best_alternative_and_executable_after_cost_liquidation_before_any_capital_action_the_same_deadline_also_reopens_the_distinct_RLUSD_fourth_distribution_question_do_not_reprice_the_expired_Lite_Loan_offer_and_require_separate_authority_for_every_account_or_funded_action For the consumed September 8 USDT renewal, do not refetch or extrapolate the headline rate; require actual same-account eligibility/quota and independently idle USDT plus best alternative and native credited payouts before treating it as deployable income.",
+      "next_action": "October 7 user priority overrides due-promotion routing: no further temporary-campaign collection or campaign-specific runtime development. Preserve all retained evidence. September USD1 deadline is consumed and cannot reopen on its already observed update. Other product access triggers remain ceilings only, not tasks. Focus on long-term structural economics; account or funded work still requires separate authority.",
       "priority_rank": 8,
       "prohibited_shortcuts": [
         "logged-out marketing APR as account rate evidence",
@@ -715,7 +727,7 @@
         "freezing another signed collector while credentials are absent",
         "treating_Yield_Arena_as_a_distinct_edge_or_comparable_headline_APR_instead_of_routing_each_exact_product_to_its_existing_family"
       ],
-      "retry_trigger": "an_independently_observed_official_September_4_USD1_campaign_article_update_after_the_retained_zero_last_update_baseline_or_2026_09_11T18_00_00Z_first_USD1_distribution_and_RLUSD_fourth_distribution_deadline_or_an_independently_observed_official_RLUSD_article_last_update_after_2026_08_28T08_25_00Z_or_before_2026_09_14T23_59_00Z_both_SIMPLE_AI_TRADING_BINANCE_MAINNET_API_KEY_and_SIMPLE_AI_TRADING_BINANCE_MAINNET_API_SECRET_available_with_explicit_read_only_account_evidence_authority_for_first_USD_deposit_Promotion_A_and_current_USD1_Simple_Earn_state_or_a_new_official_Lite_Loan_offer_with_a_fresh_enrollment_window_complete_service_fee_and_stablecoin_reward_terms_or_a_material_new_first_deposit_reward_capacity_fee_eligibility_valuation_or_distribution_term_or_published_USD1_Simple_Earn_U_RWUSD_USDT_or_USDe_rate_quota_fee_product_eligibility_snapshot_distribution_or_redemption_change_or_an_explicit_effective_BFUSD_reward_asset_reconciliation_or_2026_09_14_U_campaign_end_or_2026_09_17_RWUSD_campaign_end_or_2026_09_21_USDT_regional_campaign_end_or_2026_09_22T23_59_59Z_USDT_September8_campaign_end_or_independently_observed_material_change_to_that_exact_campaign",
+      "retry_trigger": "a_new_independently_observed_material_official_USD1_campaign_program_or_terms_change_beyond_the_October_7_retained_source_not_the_already_observed_update_or_the_distinct_2026_09_11T18_00_00Z_RLUSD_fourth_distribution_deadline_or_an_independently_observed_official_RLUSD_article_last_update_after_2026_08_28T08_25_00Z_or_before_2026_09_14T23_59_00Z_both_SIMPLE_AI_TRADING_BINANCE_MAINNET_API_KEY_and_SIMPLE_AI_TRADING_BINANCE_MAINNET_API_SECRET_available_with_explicit_read_only_account_evidence_authority_for_first_USD_deposit_Promotion_A_and_current_USD1_Simple_Earn_state_or_a_new_official_Lite_Loan_offer_with_a_fresh_enrollment_window_complete_service_fee_and_stablecoin_reward_terms_or_a_material_new_first_deposit_reward_capacity_fee_eligibility_valuation_or_distribution_term_or_published_USD1_Simple_Earn_U_RWUSD_USDT_or_USDe_rate_quota_fee_product_eligibility_snapshot_distribution_or_redemption_change_or_an_explicit_effective_BFUSD_reward_asset_reconciliation_or_2026_09_14_U_campaign_end_or_2026_09_17_RWUSD_campaign_end_or_2026_09_21_USDT_regional_campaign_end_or_2026_09_22T23_59_59Z_USDT_September8_campaign_end_or_independently_observed_material_change_to_that_exact_campaign",
       "venue_scope": "binance_bfusd_rwusd_rlusd_usd1_usdt_usde_Lite_Loan_first_USD_deposit_SPCXB_reward_and_same_currency_cash_alternatives"
     },
     {
@@ -4431,7 +4443,7 @@
       ]
     }
   ],
-  "result_sha256": "77559fc956e7ab00af5ac0527113875848230263f0811a24eb492a7b77be7003",
+  "result_sha256": "da43f66224bff4cca8f963df1935e3728a3707be6bbd360d97f8610262f39bb7",
   "schema_version": "structural-edge-priority-registry-v1",
   "terminal_do_not_repeat": [
     {
@@ -5435,8 +5447,13 @@
       "family": "polymarket_florida_am_miami_september10_post_catalog_deployment_ladders",
       "reason": "One frozen public deployment GET proved a genuinely later-created event after the retained empty catalog. A separate frozen offline test exhausted 553 price-complete compatible spread and total ladders; none was sub-floor. Best side-specific cost 1.07 pUSD for a conditional common-rule floor of 1 pUSD before fees. No book/fee escalation. Preserve the empty catalog and this exact event; no refetch, reprice or inferred negative expected value for the entire family.",
       "canonical_result_sha256": "cb855483afdb1cd8fa23e13f40d806403ae56470611186b516fb233631cd0ec3"
+    },
+    {
+      "family": "binance_usd1_september_campaign_first_distribution_reconciliation",
+      "reason": "One deadline-triggered public GET retained the exact four-period table. Three historical numeric base APRs published; fourth remains a placeholder. Campaign already ended, raw token references outside frozen numeric grammar, no account receipts or forward after-all-cost profit. Do not refetch, alias, reparse adaptively or treat the observed update as another trigger.",
+      "canonical_result_sha256": "b2a3f712a34c83190869d015e8b9e9e08bd9adbd58db9388c75929bb8f6fb40e"
     }
   ],
-  "updated_at_utc": "2026-09-08T14:43:08.059364Z",
+  "updated_at_utc": "2026-10-07T07:42:18.490Z",
   "usage_rule": "advance_the_highest_ranked_hypothesis_whose_retry_trigger_is_satisfied_otherwise_do_not_repeat_a_blocked_or_terminal_screen"
 }

@@ -903,3 +903,13 @@ otherwise. The original text is preserved from commit
   100 percent share of every remaining exact pool does not strictly exceed the
   maximum orphan loss, or an exact sponsored population is empty, stop without
   refreshing books, accessing an account, or repeating the condition.
+
+October 7 USD1 September campaign reconciliation consumed the distinct
+September 11 first-distribution deadline in one public GET. Preserve
+`docs/review/2026-10-07/usd1-distribution/contract.json`, raw response and journal.
+Do not reuse the deadline or already observed article update, refetch an alias,
+or change the numeric grammar after outcome access. Other campaign deadlines
+remain distinct access ceilings, not research obligations. The user's October 7
+direction removes temporary campaigns from strategy priorities: preserve old
+results, no further promotion collection merely because a deadline is due.
+No account, order, funded action or protected capture authority is expanded.
