@@ -1,0 +1,42 @@
+# Cash-attributed research targets for durable edges
+
+Direction independence must describe exposure and cashflows, not an account
+label. A market maker can quote both sides yet retain directional inventory;
+a positive cohort total can coexist with many losing accounts. Do not use
+those descriptions as neutral-profit labels. The new
+[October 7 source review](../review/2026-10-07/maker-income-source/review.md)
+illustrates why; its reported returns are not replicated or admitted as an edge.
+
+For Polymarket, keep completed payoff-matched package cash separate from
+unmatched inventory, speculative settlement gains, rewards and imputed values.
+Prove each source, boundary and fallback before assigning a floor. Evaluate
+completion against feasible liquidation or abstention using partial quantities,
+native fees, delay, capital and orphan losses. A favorable conditional completion
+trade does not justify the original speculative first leg. Reuse existing
+`completion_economics.py`, the forward make/take contract and the retained
+wallet buy-envelope findings; do not build a duplicate evaluator or rematch
+selected profitable locks into new validation.
+
+For Binance, quantity matching removes ordinary first-order price direction,
+not exit basis, funding reversal, liquidation, custody or financing risk.
+Attribute realized funding, basis convergence and native commissions separately;
+qualify margin/reserve capital over the entire path. A lower headline fee or
+capital stress sensitivity is not an observed saving. Retain the October 7
+native cash repairs; default UI price-only marks remain explicitly unqualified
+as a net cash reporting surface.
+
+The next model/data deliverable must use decision-time prefixes only, with a
+fixed chronological population and all failed/incomplete episodes retained.
+Freeze account/cohort eligibility independently of evaluation-period PnL.
+Labels may use future settlement; features and decision-time cohort/regime
+membership may not. Evaluate economic value against the identical feasible
+counterfactual, with a reconciliation of every cash flow and residual lot.
+Only then is a bounded CPU/GPU fit warranted. Additional rows or accelerator
+utilization do not fix unavailable labels, noncausal classifications or missing
+execution evidence.
+
+This clarifies research design, not a new acceptance gate implementation or
+permission to recapture consumed/protected populations. Existing exact triggers,
+costs, untouched-role and cross-regime requirements remain controlling. No
+stable profitable edge, exhaustive model retraining or final enterprise review
+is claimed.

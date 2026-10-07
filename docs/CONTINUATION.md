@@ -1,5 +1,20 @@
 # Continue Development
 
+October 7 financial R&D: [new maker-income methodology review](review/2026-10-07/maker-income-source/review.md)
+retained a September 17 primary preprint through two frozen public document
+GETs. Its selected maker profits mainly reflect settlement inventory; source
+classification, full-path regime labels and last-trade proxies cannot qualify
+causal neutral execution. Relevant empirical/model sections reviewed, no
+independent replication or complete proof audit. Updated
+[cash-attributed research targets](model-research/MAKER_PROFIT_ATTRIBUTION.md):
+complete packages versus residual directional inventory; prefix-only decisions,
+PnL-independent cohort selection and feasible liquidation/abstention comparisons.
+No new model fit, runtime rule, market observation, campaign logic, protected
+access or altered acceptance/retry gate. Full scholarly bodies stay local pending
+redistribution qualification; source receipts/hashes and attribution are public.
+Research counters remain 199 observations, 65 hypotheses, 37 mechanism scopes,
+zero qualified stable profitable edges. Reuse this review, do not refetch it.
+
 October 7 [native entry-cost-aware risk marking](review/2026-10-07/spot-cash-mark.md)
 fixes fee losses missed at unchanged prices. Native retained entry cost now
 feeds automatic/lifecycle exits, daily/session budgets and entry drawdown;

@@ -1,0 +1,84 @@
+{
+  "schema": "maker-income-methodology-review-v1",
+  "result_sha256": "dde7b78c8327aec5bf3beb4fd26299bb3d2dc061b0aa6a378c6498ad16b937f1",
+  "reviewed_at_utc": "2026-10-07T08:33:22Z",
+  "baseline_commit": "53bec142c3e3dd164d47fe487cb475ed0cf703ff",
+  "publisher": "arXiv author-submitted preprint; peer review not established",
+  "publication": {
+    "id": "2609.20017v1",
+    "title": "Who Aggregates Information? Screening, Rent, and the Coexistence of CLOB and AMM Prediction Markets",
+    "authors": ["Chengqi Zang", "Gabriel P. Andrade", "Tomoyuki Nakajima"],
+    "submitted_date": "2026-09-17",
+    "primary_url": "https://arxiv.org/html/2609.20017v1",
+    "declared_license": "http://arxiv.org/licenses/nonexclusive-distrib/1.0/",
+    "body_disposition": "Exact bodies retained locally and excluded from Git; third-party redistribution is not qualified. Public checkpoint retains links, author attribution, contracts, hashes and journals, not a self-contained paper copy."
+  },
+  "source_bindings": {
+    "abstract_contract_sha256": "6502d8206043010b83b9fec8cd9f9f17c0951cff4a2d7cbf80acae9ede1a189a",
+    "abstract_raw_sha256": "55a75b6ab9ca794edc19c5b82ba7eab1f69e6ad9f4f2383b9500372be86fd082",
+    "abstract_result_sha256": "2fb6f77d66f03263d8b6afdf8a66dcc9c83981c0c0a07400254f59272c3a110b",
+    "abstract_journal_sha256": "8b0dd9ff43dabaa529a12d8700b9f11ad31e1fb52f4b0e77442a5770aae083c2",
+    "paper_contract_sha256": "1ea9e831467f6a4ed89ed94df91b9c8d28ba1a231dced3a995bd2b79b68be479",
+    "paper_raw_sha256": "284807e0165d4b04d5b483fd572e9fed109e2956bb78e7b394bbebb83ac1e3a9",
+    "paper_result_sha256": "a721a4ed3da6614ada0ae5390658d89fecf2221f3c8a61692ca447ea83381d34",
+    "paper_journal_sha256": "270d341d883fae0cabd1768c6744ad1ca77ee7e61f4d2099b064310808724097"
+  },
+  "review_scope": {
+    "sections_read": ["1.1", "3 including assumptions", "4.1 including Lemma 1", "5.3", "6", "Appendix B.1", "Appendix B.2"],
+    "section_outline_inventoried": true,
+    "all_theoretical_proofs_reviewed": false,
+    "authors_data_or_results_replicated": false,
+    "independent_statistical_validation": false,
+    "exact_wallet_classification_thresholds_and_prefix_classifier": "Not established by the reviewed methodology",
+    "machine_readable_replication_data_or_code_link": "Not found in retained paper links; not a claim none exists elsewhere"
+  },
+  "reported_not_replicated": {
+    "binary_sample_trades": 738393,
+    "binary_sample_markets": 275,
+    "binary_sample_duration": "Approximately 24 hours; exact UTC boundaries not supplied in reviewed data description",
+    "all_maker_accounts": 451,
+    "all_maker_quote_pnl_usd": 29000,
+    "persistent_maker_accounts": 407,
+    "persistent_maker_quote_pnl_usd": 45300,
+    "residual_maker_accounts": 44,
+    "residual_maker_quote_pnl_usd": -16300,
+    "persistent_resolution_profit_fraction": "0.914",
+    "persistent_round_trip_profit_fraction": "0.086",
+    "regime_description": "Within-market full-window directional runs and reversals; decision-time prefix mapping not demonstrated",
+    "multi_outcome_proxy": "Last taker-buy execution as ask, last maker-buy execution as bid; not live executable depth",
+    "multi_outcome_selection": "All siblings resolved and exactly one YES; descriptive ex-post validation, not prospective rule identity",
+    "paper_model_collateral_comparison": "Conditional on independent book collateral segregation, equal-depth normalization and assumed atomic switches",
+    "fee_scope": "Paper binary sample assumption, not a current per-condition Polymarket receipt or Binance fee contract"
+  },
+  "local_inferences": [
+    "A resolution-heavy maker cohort does not establish state-complete or delta-neutral cash income",
+    "Whole-maker versus selected-cohort performance must stay separate; no causal entry eligibility for the persistent cohort is proved",
+    "A descriptive full-path regime label must not become a contemporaneous inference feature without prefix-only construction",
+    "Executed trade proxies cannot qualify immediate quote fillability, synchronized capacity or a maker's queue position",
+    "One realized YES per historical event does not prove all future states are mutually exclusive and exhaustive under the written rules",
+    "Nonnegative expected quote rent under model beliefs is not nonnegative realized payoff in every settlement state",
+    "The displayed Lemma 1 last inequality conflicts with positive screening-band room; do not import it as an executable gate without resolution"
+  ],
+  "research_decision": {
+    "paper_as_profitable_neutral_strategy_evidence": "rejected",
+    "causal_maker_abstention_hypothesis": "methodological lead only; requires untouched prefix-built episodes and complete cost/inventory paths",
+    "neutral_target": "Cash on completed payoff-matched packages, separated from residual directional inventory and compared against feasible liquidation or no trade",
+    "binance_target": "Funding receipts plus entry/exit basis and native commissions on quantity-matched legs; no direct transfer of this paper's empirical claims to Binance",
+    "training_run": false,
+    "new_runtime_rules_or_model_parameters": false,
+    "market_retry_authority_expanded": false,
+    "new_terminal_market_observation": false,
+    "qualified_stable_profitable_edges": 0
+  },
+  "execution": {
+    "public_primary_document_gets": 2,
+    "responses_status": [200, 200],
+    "response_bytes": [42000, 1222372],
+    "new_market_account_book_or_fee_requests": 0,
+    "credentials_used": false,
+    "orders_or_transactions": 0,
+    "protected_capture_touched": false,
+    "historical_results_modified": false,
+    "development_errors": ["Local Windows decode and output encoding errors corrected by explicit UTF-8 input and ASCII-safe metadata projection; no request repeated"]
+  }
+}
