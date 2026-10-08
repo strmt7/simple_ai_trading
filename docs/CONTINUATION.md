@@ -1,5 +1,29 @@
 # Continue Development
 
+October 8 [stateful fixed-base cash checkpoint](review/2026-10-08/stateful-inventory-cash.md):
+new `replay_stateful_fixed_base_cash` consumes explicit aligned prices, marked
+funding populations, starting quote capital and execution-cost fraction. The
+shared position policy keeps base quantity until a direction change; costs use
+actual traded quote, including reversal and final close. Payment at an unchanged
+shared boundary is counted once; quantity-change boundaries enclose old/new/flat
+inventory. Portfolio equity adds exact quote cash, never compounded proxy labels.
+Missing clocks, marks, population alignment or scope reject without interpolation.
+225 affected checks and eight exact paired legacy comparisons pass. No capture,
+fit, GPU timing, account or order; historical results and ledgers are untouched.
+
+Correction to the prior sizing interpretation: +4,988 bps is the sum of the hourly
+return array, NOT its reported total. On the synthetic 100 -> 200 -> 100 path,
+the legacy summary compounds to -14.9964 bps with modeled 6-bp entry/exit costs.
+The explicit fixed one-unit cash model returns -12 bps on opening 100 quote.
+There is no synthetic +50% reported profit and no financial edge. Retain the
+prior receipt and use the new source-bound correction, not a rewritten result.
+Four of five training builders remain supplied-cash capable; the new stateful
+REPLAY does not repair its signed training labels or qualify original sources.
+Next qualify complete direction-neutral hedge cash, costs, capital/margin and
+native price/mark coverage, then two-sided surplus labels and paired causal
+model objectives. Do not fit fabricated marks or repeat consumed market screens.
+Research counts remain 202 observations/65 hypotheses/37 mechanisms/0 stable edges.
+
 October 8 [hurdle/second-flow funding cash checkpoint](review/2026-10-08/funding-cash-hurdle-timing.md):
 explicit supplied cash now reaches four of the five audited builders. Hurdle
 labels retain both sides' lower/upper funding and uncertain counts, with mark

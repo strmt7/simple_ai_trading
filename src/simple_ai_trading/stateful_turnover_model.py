@@ -26,6 +26,7 @@ from .derivatives_hurdle_data import (
     _funding_in_holding_window,
 )
 from .lightgbm_backend import lightgbm_backend_parameters
+from .stateful_position_policy import stateful_position_schedule
 
 
 ROUND = 43
@@ -992,69 +993,22 @@ def replay_stateful_policy(
     if mode not in MODES or cost_bps <= 0.0:
         raise ValueError("Round 43 replay mode or cost is invalid")
     timestamps, forecasts, targets = _evaluation_grid(dataset, predictions)
-    hours = timestamps.size
-    positions = np.zeros((hours, len(SYMBOLS)), dtype=np.int8)
-    ages = np.zeros((hours, len(SYMBOLS)), dtype=np.int16)
-    transitions = np.zeros((hours, len(SYMBOLS)), dtype=np.float64)
-    reasons = np.zeros((hours, len(SYMBOLS)), dtype=np.int8)
-    symbol_net = np.zeros((hours, len(SYMBOLS)), dtype=np.float64)
-    current = np.zeros(len(SYMBOLS), dtype=np.int8)
-    current_age = np.zeros(len(SYMBOLS), dtype=np.int16)
-    holding_durations: list[int] = []
-    for hour in range(hours):
-        forecast = forecasts[hour]
-        if mode == "long_only":
-            proposed = np.where(forecast > 0.0, 1, 0).astype(np.int8)
-        else:
-            proposed = np.sign(forecast).astype(np.int8)
-        next_position = current.copy()
-        for symbol_index in range(len(SYMBOLS)):
-            previous = int(current[symbol_index])
-            desired = int(proposed[symbol_index])
-            if (
-                previous != 0
-                and int(current_age[symbol_index]) >= MAXIMUM_HOLDING_HOURS
-            ):
-                next_position[symbol_index] = 0
-                reasons[hour, symbol_index] = 4
-                holding_durations.append(int(current_age[symbol_index]))
-                continue
-            if desired == previous:
-                continue
-            units = abs(desired - previous)
-            hurdle = COST_FILTER_LAMBDA * cost_bps * units
-            if abs(float(forecast[symbol_index])) <= hurdle:
-                continue
-            next_position[symbol_index] = desired
-            if previous == 0 and desired != 0:
-                reasons[hour, symbol_index] = 1
-            elif previous != 0 and desired == 0:
-                reasons[hour, symbol_index] = 2
-                holding_durations.append(int(current_age[symbol_index]))
-            else:
-                reasons[hour, symbol_index] = 3
-                holding_durations.append(int(current_age[symbol_index]))
-        transition = np.abs(next_position - current).astype(np.float64)
-        transitions[hour] = transition
-        positions[hour] = next_position
-        symbol_net[hour] = (
-            next_position.astype(np.float64) * targets[hour] - cost_bps * transition
-        ) * SLEEVE_FRACTION
-        for symbol_index in range(len(SYMBOLS)):
-            if next_position[symbol_index] == 0:
-                current_age[symbol_index] = 0
-            elif next_position[symbol_index] == current[symbol_index]:
-                current_age[symbol_index] += 1
-            else:
-                current_age[symbol_index] = 1
-        ages[hour] = current_age
-        current = next_position
-    final_transition = np.abs(current).astype(np.float64)
+    schedule = stateful_position_schedule(
+        forecasts,
+        mode=mode,
+        cost_bps=cost_bps,
+        maximum_holding_hours=MAXIMUM_HOLDING_HOURS,
+        cost_filter_multiplier=COST_FILTER_LAMBDA,
+    )
+    positions, ages = schedule.positions, schedule.ages
+    transitions, reasons = schedule.transitions.copy(), schedule.reasons
+    final_transition = schedule.final_transition
+    symbol_net = (
+        positions.astype(np.float64) * targets - cost_bps * transitions
+    ) * SLEEVE_FRACTION
     if np.any(final_transition > 0.0):
         transitions[-1] += final_transition
         symbol_net[-1] -= cost_bps * final_transition * SLEEVE_FRACTION
-        for symbol_index in np.flatnonzero(final_transition > 0.0):
-            holding_durations.append(int(current_age[symbol_index]))
     candidate_id = f"{feature_set}_{mode}"
     metrics = _economic_metrics(
         candidate_id=candidate_id,
@@ -1068,7 +1022,7 @@ def replay_stateful_policy(
         transition_reasons=reasons,
         final_boundary_exit_mask=final_transition > 0.0,
         symbol_net_bps=symbol_net,
-        holding_durations=holding_durations,
+        holding_durations=list(schedule.holding_durations),
         seed=seed,
     )
     return ReplayResult(

@@ -1,0 +1,72 @@
+{
+  "schema": "stateful-inventory-cash-implementation-receipt-v1",
+  "baseline_commit": "d3d05ac59371191766beef5ecfc6fdeb955870d8",
+  "implementation_sha256": {
+    "src/simple_ai_trading/funding_cash_inventory.py": "7a332c969380ca567da0c3bfd5012275a32f6b77676fcade8b03a0d7ce9b9b18",
+    "src/simple_ai_trading/stateful_position_policy.py": "c86713d488aac5a77fba2b24beaa992ac59db3fe3cded0b0adc44049887ee2c2",
+    "src/simple_ai_trading/stateful_cash_replay.py": "f35d39bc3577cf4c17094d9ec5d1a8e9700968b74562f38f35c88e0311d4821b",
+    "src/simple_ai_trading/stateful_turnover_model.py": "e5abb9ff8f4a7f24d0780b2ac9cb5bb73afa0f4b3a5a92ed05b1e616280620bf",
+    "src/simple_ai_trading/funding_cash.py": "3bb8fdaf50b545d93d42df5bd1b901743cc53cd11f4223e58364f160fe3b1aea",
+    "src/simple_ai_trading/funding_cash_labels.py": "a167fca77c9529c232c5a4dc4cd7e1fb5d558ebb6c1a6bc48c49078b322eb57b",
+    "tests/test_stateful_inventory_cash.py": "dfd8672dccf0316c4a94f617631c06767b1163f36cfafe94aac97b79942bbcab"
+  },
+  "verification": {
+    "affected_command": "uv run python -m pytest tests/test_stateful_inventory_cash.py tests/test_stateful_turnover_model.py tests/test_stateful_fixed_base_cash_counterexample.py tests/test_funding_cash_remaining_routes.py tests/test_derivatives_hurdle_model.py tests/test_second_flow_execution_model.py tests/test_funding_cash_labels.py tests/test_funding_cash.py tests/test_barrier_payoff_data.py tests/test_stop_time_payoff_data.py --tb=short",
+    "affected_passed": 225,
+    "new_cases": 62,
+    "exit_code": 0,
+    "ruff_five_touched_python_files": "passed",
+    "legacy_paired_cases": 8,
+    "legacy_paired_hours_each": 72,
+    "legacy_paired_seed": 4301,
+    "legacy_paired_modes": ["long_only", "long_short"],
+    "legacy_paired_forecasts": ["constant_25", "constant_0", "rng_choice_-25_-24_-13_-12_0_12_13_24_25", "rng_normal_mean_0_std_30"],
+    "legacy_paired_targets": "first_default_rng_4301_draw_normal_mean_1_std_20_216_values",
+    "legacy_paired_array_fields": ["timestamps_ms", "forecasts_bps", "target_bps", "positions", "position_age_hours", "transition_units", "transition_reasons", "symbol_net_bps", "portfolio_return_bps"],
+    "legacy_paired_arrays_and_all_metrics_exact": true,
+    "initial_decorator_collection_error": "corrected_before_successful_affected_lane",
+    "full_suite": "not_run",
+    "test_evidence": "synthetic_unit_and_paired_regression_controls_not_market_observations"
+  },
+  "correction": {
+    "preserved_prior_receipt": "docs/review/2026-10-08/funding-cash-hurdle-timing-implementation.json",
+    "preserved_prior_receipt_sha256": "b9c6a1604b271cf781381fc17bd06eb40e2d4dd252c1a38b1efba78e1d22658c",
+    "preserved_prior_test": "tests/test_stateful_fixed_base_cash_counterexample.py",
+    "preserved_prior_test_sha256": "d6ec9359b2cb287501004722eb4eb1dcb058d3c9f8ac9b210fd19e33e61d4898",
+    "prices": ["100", "200", "100"],
+    "cost_sensitivity_one_way_bps": "6",
+    "legacy_hourly_array_sum_bps": "4988",
+    "legacy_reported_compounded_total_fraction": "-0.00149964",
+    "legacy_reported_compounded_total_bps": "-14.9964",
+    "fixed_base_one_unit_gross_quote_cash": "0",
+    "fixed_base_one_unit_execution_quote_cost": "0.12",
+    "fixed_base_net_total_fraction_on_opening_100_quote": "-0.0012",
+    "unsupported_prior_interpretation": "hourly_array_sum_as_reported_total_profit",
+    "financial_edge": false
+  },
+  "scope": {
+    "stateful_shared_decisions": "legacy_policy_reused_without_future_target_access",
+    "stateful_forward_replay": "supplied_fixed_base_quote_cash_and_marked_funding_bounds",
+    "stateful_training_builder": "unchanged_rate_proxy_not_repaired",
+    "supplied_cash_training_builders": 4,
+    "capital_exhaustion": "boundary_diagnostic_flag_not_intrabar_protection",
+    "cost_model": "explicit_supplied_aggregate_fraction_not_observed_execution",
+    "native_origin_qualified": false,
+    "independent_coverage_qualified": false,
+    "complete_hedge_execution_cash_qualified": false,
+    "new_training_qualified": false,
+    "profitable_edge_qualified": false
+  },
+  "identity_audit": {
+    "fresh_anonymous_contributors_checked": true,
+    "shared_legacy_placeholder_identity_violations": "previously_surfaced_remain_unrewritten",
+    "new_commit_identity_required": "AI agent <> for author and committer",
+    "history_force_rewritten": false
+  },
+  "new_market_requests": 0,
+  "model_fits": 0,
+  "orders": 0,
+  "automations_created_or_edited": 0,
+  "historical_result_files_changed": false,
+  "research_counts_changed": false
+}

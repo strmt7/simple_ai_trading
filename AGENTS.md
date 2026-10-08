@@ -123,10 +123,15 @@ result and all other consumed populations, including WNBA September 3-9.
   semantics must qualify new labels before expanding affected training.
   October 8 forward supplied-cash paths exist for hurdle, barrier, stop-time
   and second-flow; legacy defaults remain proxies. Their digest strings do not
-  prove native origin or coverage. Stateful hourly return summation is not
-  fixed-base cash and its transition counter omits quote-notional resizing.
-  Complete the actual quantity/rebalancing ledger and two-sided cash semantics
-  before treating that replay as cash-qualified or expanding affected fits.
+  prove native origin or coverage. The new stateful fixed-base cash replay
+  retains actual modeled quantity changes, marked payments and quote costs;
+  its shared forecast policy preserves the legacy compounded replay. The
+  stateful training builder remains a rate proxy, not a fifth repaired builder.
+  Before accounting claims, trace final metric aggregation and normalization:
+  an hourly-array sum, compounded total and fixed-base quote cash differ.
+  Preserve historical diagnostics and append corrections; never infer a
+  reported profit from an intermediate array alone. Independent data/cost,
+  hedge/margin and two-sided objective qualification still precede new fits.
   The October 7 full-history native mark batch is terminal: its first 1,000
   records have empty marks; remaining 11 requests are forbidden. Missing marks
   are not zero cash. Reuse its evidence; independent complete primary evidence
