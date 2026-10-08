@@ -121,6 +121,12 @@ result and all other consumed populations, including WNBA September 3-9.
   numerical labels. Reuse `funding_cash.py` for the shared supplied-event law;
   complete mark population, source origin, clocks and quantity/rebalancing
   semantics must qualify new labels before expanding affected training.
+  October 8 forward supplied-cash paths exist for hurdle, barrier, stop-time
+  and second-flow; legacy defaults remain proxies. Their digest strings do not
+  prove native origin or coverage. Stateful hourly return summation is not
+  fixed-base cash and its transition counter omits quote-notional resizing.
+  Complete the actual quantity/rebalancing ledger and two-sided cash semantics
+  before treating that replay as cash-qualified or expanding affected fits.
   The October 7 full-history native mark batch is terminal: its first 1,000
   records have empty marks; remaining 11 requests are forbidden. Missing marks
   are not zero cash. Reuse its evidence; independent complete primary evidence

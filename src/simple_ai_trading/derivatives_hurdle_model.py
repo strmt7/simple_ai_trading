@@ -162,7 +162,9 @@ def _lightgbm_parameters(
     parameters.update(
         {
             "objective": objective,
-            "metric": "multi_logloss" if objective == "multiclass" else "binary_logloss",
+            "metric": "multi_logloss"
+            if objective == "multiclass"
+            else "binary_logloss",
             "learning_rate": 0.03,
             "num_leaves": 63,
             "min_data_in_leaf": 1000,
@@ -523,12 +525,16 @@ def classification_metrics(
         multiclass_log_loss=float(
             -np.mean(np.log(np.clip(probabilities[rows, labels], 1e-12, 1.0)))
         ),
-        multiclass_brier_score=float(np.mean(np.sum((probabilities - target) ** 2, axis=1))),
+        multiclass_brier_score=float(
+            np.mean(np.sum((probabilities - target) ** 2, axis=1))
+        ),
         expected_calibration_error=ece,
         accuracy=float(np.mean(correct)),
         balanced_accuracy=float(np.mean(recalls)),
         confusion_matrix=tuple(tuple(int(value) for value in row) for row in confusion),
-        mean_probabilities=tuple(float(value) for value in np.mean(probabilities, axis=0)),
+        mean_probabilities=tuple(
+            float(value) for value in np.mean(probabilities, axis=0)
+        ),
         maximum_probability_mean=float(np.mean(confidence)),
         nonfinite_probabilities=nonfinite,
     )
@@ -639,9 +645,7 @@ def replay_actions(
         selected.extend(symbol_selected)
         trades_by_symbol[symbol] = len(symbol_selected)
     if not selected:
-        empty = _empty_replay(
-            maximum_action_probability, direction_probability_margin
-        )
+        empty = _empty_replay(maximum_action_probability, direction_probability_margin)
         return ReplayOutcome(
             metrics=ActionReplayMetrics(
                 **{
@@ -663,8 +667,47 @@ def replay_actions(
         dataset.long_net_utility_bps[horizon][indices],
         dataset.short_net_utility_bps[horizon][indices],
     ).astype(np.float64)
-    raw_funding = dataset.funding_cash_flow_bps[horizon][indices].astype(np.float64)
-    funding_component = np.where(long_mask, -raw_funding, raw_funding)
+    if (
+        dataset.source_evidence is not None
+        and dataset.source_evidence.funding_cash_provenance is not None
+    ):
+        cash_fields = (
+            dataset.funding_cash_lower_bps,
+            dataset.funding_cash_upper_bps,
+            dataset.funding_cash_uncertain_events,
+        )
+        if any(value is None or horizon not in value for value in cash_fields):
+            raise ValueError("cash action replay lacks paired funding bounds")
+        paired_cash = dataset.funding_cash_lower_bps[horizon]
+        upper = dataset.funding_cash_upper_bps[horizon]
+        uncertain = dataset.funding_cash_uncertain_events[horizon]
+        if (
+            any(
+                value.shape != (dataset.rows, 2)
+                for value in (paired_cash, upper, uncertain)
+            )
+            or not np.isfinite(paired_cash).all()
+            or not np.isfinite(upper).all()
+            or np.any(paired_cash > upper)
+            or uncertain.dtype.kind not in "iu"
+            or np.any(uncertain < 0)
+        ):
+            raise ValueError("cash action replay funding bound shape/value is invalid")
+        funding_component = paired_cash[indices, long_mask.astype(np.int8)].astype(
+            np.float64
+        )
+    else:
+        if any(
+            value is not None
+            for value in (
+                dataset.funding_cash_lower_bps,
+                dataset.funding_cash_upper_bps,
+                dataset.funding_cash_uncertain_events,
+            )
+        ):
+            raise ValueError("cash action replay lacks cash source provenance")
+        raw_funding = dataset.funding_cash_flow_bps[horizon][indices].astype(np.float64)
+        funding_component = np.where(long_mask, -raw_funding, raw_funding)
     nonfinite = int(
         np.count_nonzero(~np.isfinite(net))
         + np.count_nonzero(~np.isfinite(funding_component))
@@ -796,7 +839,9 @@ def _evaluate_candidate(
             support = (
                 metrics.total_trades >= 90
                 and metrics.active_utc_days >= 45
-                and all(metrics.trades_by_symbol.get(symbol, 0) >= 15 for symbol in SYMBOLS)
+                and all(
+                    metrics.trades_by_symbol.get(symbol, 0) >= 15 for symbol in SYMBOLS
+                )
             )
             if support:
                 metrics = replay_actions(
@@ -830,7 +875,9 @@ def _evaluate_candidate(
             horizon=horizon,
             role="viability",
             maximum_action_probability=float(selected["maximum_action_probability"]),
-            direction_probability_margin=float(selected["direction_probability_margin"]),
+            direction_probability_margin=float(
+                selected["direction_probability_margin"]
+            ),
             bootstrap_samples=2000,
             bootstrap_seed=3812,
         )
@@ -903,9 +950,7 @@ def _evaluate_candidate(
             architecture=architecture,
             feature_set=feature_set,
             horizon_minutes=horizon,
-            maximum_action_probability=float(
-                selected["maximum_action_probability"]
-            ),
+            maximum_action_probability=float(selected["maximum_action_probability"]),
             direction_probability_margin=float(
                 selected["direction_probability_margin"]
             ),
@@ -1002,9 +1047,7 @@ def run_fixed_model_screen(
                             "candidate_index": candidate_index,
                             "candidate_total": 32,
                             "status": "complete",
-                            "viability_gate_passed": result[
-                                "viability_gate_passed"
-                            ],
+                            "viability_gate_passed": result["viability_gate_passed"],
                             "viability_trades": result["viability_replay"][
                                 "total_trades"
                             ],
