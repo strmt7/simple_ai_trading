@@ -1,5 +1,16 @@
 # Continue Development
 
+October 8 [September funding population checkpoint](review/2026-10-08/september-funding-population/review.md):
+all 234 September 5-30 native timestamps and exact decimal rates match the
+checksum-verified official monthly archive channel, 78 per BTC/ETH/SOL asset.
+Six GETs retained 3,066 bytes and durable journals; 115 affected checks pass.
+This qualifies that intersection only. Same publisher is not independent truth;
+October coverage, owned entitlement, paired net quantities, fees, basis, capital
+and continuous margin remain open. No old frontier rerun, economic observation,
+model fit or capture-boundary relaxation occurred. Use the exact subset proof
+without refetch; do not mark the whole recent dataset or any hedge admitted.
+Research counts stay 202 observations/65 hypotheses/37 mechanisms/0 stable edges.
+
 October 8 [flat native cash admission checkpoint](review/2026-10-08/native-flat-quote-guard.md):
 closed native receipts now retain instrument/product and quote qualification
 when inventory is flat. A demonstrated -1 USDC / +2 USDT false offset rejects

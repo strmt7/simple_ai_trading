@@ -1,5 +1,14 @@
 # Funding-aware control: cash truth before an optimizer
 
+October 8 [September archive/API corroboration](../review/2026-10-08/september-funding-population/review.md):
+the complete September 5-30 intersection now joins exactly across the retained
+native marked records and checksum-verified monthly archive channel: 78 events
+per BTC/ETH/SOL asset, 234 total. This qualifies only that subset's population;
+both channels share Binance as publisher. October coverage, owned entitlement,
+paired execution quantities, full costs, basis, capital and margin remain open.
+No cash-label admission, frontier rerun or model fit follows. Reuse its frozen
+certificate/raw bytes rather than refetching or extending the scope by inference.
+
 October 8 [two-sided hourly label adapter](../review/2026-10-08/stateful-two-sided-cash.md):
 the fifth consumer now has a separate supplied-cash adapter for independent
 hourly long/short bounds, not a repaired historical builder or stateful model.

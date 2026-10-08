@@ -10,6 +10,13 @@ Scope blockers to their branch; a fresh user resumption resets the blocked audit
 
 ## Current Truth
 
+October 8 [September archive/API population](review/2026-10-08/september-funding-population/review.md):
+six checksum-bound public GETs corroborate all 234 September 5-30 native events
+exactly across BTC/ETH/SOL. Monthly archives each contain 90 rows; intersections
+have 78. Same publisher, distinct channel; no October or owned-entitlement proof.
+115 affected checks pass (24 new). No return calculation, fit or hedge promotion;
+reuse the qualified subset and retained bytes. Counts remain 202/65/37/0.
+
 October 8 [flat native cash quote guard](review/2026-10-08/native-flat-quote-guard.md):
 native closed history retains currency qualification after the last close.
 A synthetic -1 USDC loss could previously be offset by +2 USDT; admission now
