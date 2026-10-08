@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, replace
 import hashlib
 import json
 import math
@@ -11,6 +11,12 @@ import sqlite3
 from typing import Callable, Mapping
 
 import numpy as np
+
+from .funding_cash_labels import (
+    FundingCashLabelSeries,
+    bind_funding_cash_panel,
+    outward_float32,
+)
 
 from .cross_asset_cost_data import (
     HORIZONS_MINUTES,
@@ -63,6 +69,7 @@ class DerivativesSourceEvidence:
     derivatives_series: tuple[DerivativesSeriesEvidence, ...]
     derivatives_panel_sha256: str
     selection_confirmation_or_terminal_rows_read: bool
+    funding_cash_provenance: Mapping[str, object] | None = None
 
     def asdict(self) -> dict[str, object]:
         return {
@@ -73,6 +80,11 @@ class DerivativesSourceEvidence:
             "derivatives_panel_sha256": self.derivatives_panel_sha256,
             "selection_confirmation_or_terminal_rows_read": (
                 self.selection_confirmation_or_terminal_rows_read
+            ),
+            **(
+                {"funding_cash_provenance": self.funding_cash_provenance}
+                if self.funding_cash_provenance is not None
+                else {}
             ),
         }
 
@@ -154,6 +166,9 @@ class DerivativesHurdleDataset:
     role_masks: Mapping[int, Mapping[str, np.ndarray]]
     source_evidence: DerivativesSourceEvidence
     source_exclusions: Mapping[str, int]
+    funding_cash_lower_bps: Mapping[int, np.ndarray] | None = None
+    funding_cash_upper_bps: Mapping[int, np.ndarray] | None = None
+    funding_cash_uncertain_events: Mapping[int, np.ndarray] | None = None
 
     @property
     def rows(self) -> int:
@@ -191,8 +206,7 @@ def _load_source_certificate(path: Path) -> tuple[dict[str, object], str]:
     canonical = dict(value)
     claimed = str(canonical.pop("source_certificate_sha256", ""))
     if (
-        value.get("schema_version")
-        != "round-038-derivatives-source-certificate-v1"
+        value.get("schema_version") != "round-038-derivatives-source-certificate-v1"
         or value.get("round") != 38
         or value.get("symbols") != list(SYMBOLS)
         or value.get("start_period") != "2021-12"
@@ -251,8 +265,7 @@ def _rolling_observed_std(
     valid = count >= minimum
     variance = np.zeros_like(total)
     variance[valid] = np.maximum(
-        total_square[valid] / count[valid]
-        - (total[valid] / count[valid]) ** 2,
+        total_square[valid] / count[valid] - (total[valid] / count[valid]) ** 2,
         0.0,
     )
     target = result[window - 1 :]
@@ -270,13 +283,11 @@ def _lagged_change(values: np.ndarray, window: int) -> np.ndarray:
 
 def _grid_age(observed: np.ndarray) -> np.ndarray:
     indices = np.arange(observed.size, dtype=np.int64)
-    last = np.maximum.accumulate(np.where(observed, indices, -10**12))
+    last = np.maximum.accumulate(np.where(observed, indices, -(10**12)))
     return (indices - last).astype(np.float64)
 
 
-def _source_hash_update(
-    digest: "hashlib._Hash", values: tuple[object, ...]
-) -> None:
+def _source_hash_update(digest: "hashlib._Hash", values: tuple[object, ...]) -> None:
     digest.update(
         json.dumps(
             list(values),
@@ -317,9 +328,7 @@ def _load_premium_state(
             raise ValueError(f"{symbol} premium timestamp is outside the source grid")
         if int(grid_time_ms[index]) != int(open_time) or observed[index]:
             raise ValueError(f"{symbol} premium timestamp is misaligned or duplicated")
-        numeric = tuple(
-            float(item) for item in (open_value, high, low, close)
-        )
+        numeric = tuple(float(item) for item in (open_value, high, low, close))
         if not all(math.isfinite(item) for item in numeric):
             raise ValueError(f"{symbol} premium contains a non-finite value")
         observed[index] = True
@@ -421,9 +430,7 @@ def _load_funding_state(
         raise ValueError(f"{symbol} funding source failed integrity checks")
     digest = hashlib.sha256()
     for values in zip(event_time, interval, rate, strict=True):
-        _source_hash_update(
-            digest, (int(values[0]), int(values[1]), float(values[2]))
-        )
+        _source_hash_update(digest, (int(values[0]), int(values[1]), float(values[2])))
     index = np.searchsorted(event_time, grid_time_ms, side="right") - 1
     if np.any(index < 0):
         raise ValueError(f"{symbol} has no settled funding state at grid start")
@@ -720,9 +727,7 @@ def _derivatives_feature_arrays(
     )
     add("target_funding_event_mean_30_bps", target_funding.event_mean_30_bps)
     add("target_funding_event_zscore_30", target_funding.event_zscore_30)
-    funding_matrix = np.vstack(
-        [funding[symbol].last_rate_bps for symbol in SYMBOLS]
-    )
+    funding_matrix = np.vstack([funding[symbol].last_rate_bps for symbol in SYMBOLS])
     add("cross_asset_funding_dispersion_bps", np.std(funding_matrix, axis=0))
     add(
         "cross_asset_funding_sign_agreement",
@@ -750,10 +755,18 @@ def build_derivatives_hurdle_dataset(
     source_evidence: DerivativesSourceEvidence,
     *,
     progress: ProgressCallback | None = None,
+    funding_cash: Mapping[str, FundingCashLabelSeries] | None = None,
 ) -> DerivativesHurdleDataset:
     """Build matched price-only and derivatives-augmented action labels."""
 
     reference = panel[SYMBOLS[0]]
+    cash_provenance = bind_funding_cash_panel(funding_cash, funding)
+    if funding_cash is not None:
+        if set(funding_cash) != set(SYMBOLS):
+            raise ValueError("hurdle funding cash symbols are incomplete")
+        source_evidence = replace(
+            source_evidence, funding_cash_provenance=cash_provenance
+        )
     common_eligible = np.ones(reference.open_time_ms.size, dtype=bool)
     for symbol in SYMBOLS:
         state = premium[symbol]
@@ -769,13 +782,10 @@ def build_derivatives_hurdle_dataset(
             lag_is_finite = np.zeros(reference.open_time_ms.size, dtype=bool)
             lag_is_finite[window:] = np.isfinite(state.close_bps[:-window])
             common_eligible &= lag_is_finite
-    role_window = (
-        (reference.open_time_ms >= ROLES[0].start_ms)
-        & (reference.open_time_ms < ROLES[3].end_exclusive_ms)
+    role_window = (reference.open_time_ms >= ROLES[0].start_ms) & (
+        reference.open_time_ms < ROLES[3].end_exclusive_ms
     )
-    cadence = (
-        (reference.open_time_ms // MINUTE_MS) % 5 == 0
-    )
+    cadence = (reference.open_time_ms // MINUTE_MS) % 5 == 0
     index_valid = (
         np.arange(reference.open_time_ms.size, dtype=np.int64)
         + 1
@@ -809,6 +819,10 @@ def build_derivatives_hurdle_dataset(
     }
     expected_names: tuple[str, ...] | None = None
     price_feature_count: int | None = None
+    cash_blocks: dict[str, dict[int, list[np.ndarray]]] = {
+        field: {horizon: [] for horizon in HORIZONS_MINUTES}
+        for field in ("lower", "upper", "uncertain")
+    }
     for symbol_index, symbol in enumerate(SYMBOLS):
         if progress is not None:
             progress("round38_feature_build", {"symbol": symbol, "status": "started"})
@@ -827,7 +841,9 @@ def build_derivatives_hurdle_dataset(
         ).astype(np.float32, copy=False)
         if not np.isfinite(block).all():
             invalid = int(np.count_nonzero(~np.isfinite(block)))
-            raise ValueError(f"{symbol} Round 38 features contain {invalid} nonfinite values")
+            raise ValueError(
+                f"{symbol} Round 38 features contain {invalid} nonfinite values"
+            )
         feature_blocks.append(block)
         decision_times = panel[symbol].open_time_ms[decision_indices].copy()
         time_blocks.append(decision_times)
@@ -841,13 +857,36 @@ def build_derivatives_hurdle_dataset(
             exit_values = panel[symbol].open[exit_indices]
             entry_time = panel[symbol].open_time_ms[entry_indices]
             exit_time = panel[symbol].open_time_ms[exit_indices]
-            funding_bps = _funding_in_holding_window(
-                funding[symbol], entry_time, exit_time
-            )
             long_gross = 10_000.0 * (exit_values / entry - 1.0)
             short_gross = 10_000.0 * (1.0 - exit_values / entry)
-            long_net = long_gross - EXECUTION_CHARGE_BPS - funding_bps
-            short_net = short_gross - EXECUTION_CHARGE_BPS + funding_bps
+            if funding_cash is None:
+                funding_bps = _funding_in_holding_window(
+                    funding[symbol], entry_time, exit_time
+                )
+                long_net = long_gross - EXECUTION_CHARGE_BPS - funding_bps
+                short_net = short_gross - EXECUTION_CHARGE_BPS + funding_bps
+            else:
+                if panel[symbol].symbol != symbol:
+                    raise ValueError("hurdle cash price series symbol differs")
+                bounds = tuple(
+                    funding_cash[symbol].holding_bounds(
+                        entry_time, exit_time, exit_time, entry, side=side
+                    )
+                    for side in (-1, 1)
+                )
+                lower = np.column_stack([value.lower_bps for value in bounds])
+                upper = np.column_stack([value.upper_bps for value in bounds])
+                uncertain = np.column_stack(
+                    [value.uncertain_events for value in bounds]
+                )
+                cash_blocks["lower"][horizon].append(outward_float32(lower, lower=True))
+                cash_blocks["upper"][horizon].append(
+                    outward_float32(upper, lower=False)
+                )
+                cash_blocks["uncertain"][horizon].append(uncertain)
+                funding_bps = -lower[:, 1]
+                long_net = long_gross - EXECUTION_CHARGE_BPS + lower[:, 1]
+                short_net = short_gross - EXECUTION_CHARGE_BPS + lower[:, 0]
             target = np.full(decision_indices.size, 1, dtype=np.int8)
             target[(short_net > 0.0) & (short_net > long_net)] = 0
             target[(long_net > 0.0) & (long_net >= short_net)] = 2
@@ -858,9 +897,21 @@ def build_derivatives_hurdle_dataset(
             ):
                 raise ValueError(f"{symbol} h{horizon} produced nonfinite labels")
             target_blocks[horizon].append(target)
-            long_blocks[horizon].append(long_net.astype(np.float32))
-            short_blocks[horizon].append(short_net.astype(np.float32))
-            funding_blocks[horizon].append(funding_bps.astype(np.float32))
+            long_blocks[horizon].append(
+                long_net.astype(np.float32)
+                if funding_cash is None
+                else outward_float32(long_net, lower=True)
+            )
+            short_blocks[horizon].append(
+                short_net.astype(np.float32)
+                if funding_cash is None
+                else outward_float32(short_net, lower=True)
+            )
+            funding_blocks[horizon].append(
+                funding_bps.astype(np.float32)
+                if funding_cash is None
+                else -outward_float32(-funding_bps, lower=True)
+            )
         if progress is not None:
             progress(
                 "round38_feature_build",
@@ -877,8 +928,7 @@ def build_derivatives_hurdle_dataset(
     decision_time_ms = np.concatenate(time_blocks)
     symbol_index = np.concatenate(symbol_blocks)
     target_class = {
-        horizon: np.concatenate(blocks)
-        for horizon, blocks in target_blocks.items()
+        horizon: np.concatenate(blocks) for horizon, blocks in target_blocks.items()
     }
     long_net = {
         horizon: np.concatenate(blocks) for horizon, blocks in long_blocks.items()
@@ -887,12 +937,10 @@ def build_derivatives_hurdle_dataset(
         horizon: np.concatenate(blocks) for horizon, blocks in short_blocks.items()
     }
     funding_cash_flow = {
-        horizon: np.concatenate(blocks)
-        for horizon, blocks in funding_blocks.items()
+        horizon: np.concatenate(blocks) for horizon, blocks in funding_blocks.items()
     }
     role_masks = {
-        horizon: _role_masks(decision_time_ms, horizon)
-        for horizon in HORIZONS_MINUTES
+        horizon: _role_masks(decision_time_ms, horizon) for horizon in HORIZONS_MINUTES
     }
     return DerivativesHurdleDataset(
         feature_names=expected_names,
@@ -907,6 +955,15 @@ def build_derivatives_hurdle_dataset(
         role_masks=role_masks,
         source_evidence=source_evidence,
         source_exclusions=source_exclusions,
+        funding_cash_lower_bps=None
+        if funding_cash is None
+        else {h: np.concatenate(v) for h, v in cash_blocks["lower"].items()},
+        funding_cash_upper_bps=None
+        if funding_cash is None
+        else {h: np.concatenate(v) for h, v in cash_blocks["upper"].items()},
+        funding_cash_uncertain_events=None
+        if funding_cash is None
+        else {h: np.concatenate(v) for h, v in cash_blocks["uncertain"].items()},
     )
 
 

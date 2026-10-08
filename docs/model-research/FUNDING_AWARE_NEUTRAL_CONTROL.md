@@ -1,5 +1,15 @@
 # Funding-aware control: cash truth before an optimizer
 
+October 8 [hurdle/second-flow checkpoint](../review/2026-10-08/funding-cash-hurdle-timing.md)
+extends explicit supplied cash support to four of five builders, with paired
+hurdle replay reporting and batched timing cash. It does not admit native data
+or training. The remaining stateful replay needs a quantity/rebalancing ledger:
+an hourly entry-relative return sum is not fixed-base holding cash, and constant
+quote exposure requires trades absent from its position-transition counter.
+Retain both side-specific cash consequences, actual base inventory, entry
+notional and every resizing cost before that route or affected fits. Historical
+results/defaults remain proxies; the prior two-route scope below is preserved.
+
 October 8 [forward integration checkpoint](../review/2026-10-08/funding-cash-labels.md):
 the stop-time and barrier builders now accept explicit mark-bound supplied cash
 series. They retain side-specific adverse bounds, upper cash and uncertain-event

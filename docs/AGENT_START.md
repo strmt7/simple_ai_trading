@@ -10,6 +10,16 @@ Scope blockers to their branch; a fresh user resumption resets the blocked audit
 
 ## Current Truth
 
+October 8 [hurdle/second-flow cash integration](review/2026-10-08/funding-cash-hurdle-timing.md):
+four of five builders now support explicit mark-bound funding inputs; the hurdle
+replay reports each side's actual adverse bound instead of a sign-flipped long
+debit. Second-flow cash is batched and cannot enter features. 156 distinct checks
+pass (21 new). Stateful return summation needs an explicit quantity/rebalancing
+ledger: a fixed-base round-trip price control has zero gross cash, not its +50%
+hourly-return sum. This is a synthetic limitation, not a financial result.
+Legacy results/defaults remain proxies. Native origin/coverage, complete hedge
+costs and training admission remain open; counts stay 202/65/37/0.
+
 October 8 [forward funding cash-label integration](review/2026-10-08/funding-cash-labels.md):
 stop-time and barrier builders accept mark-bound supplied cash inputs, retain
 uncertain entitlement and store adverse/upper bounds. Missing or conflicting

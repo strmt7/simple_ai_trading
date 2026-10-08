@@ -1,0 +1,58 @@
+{
+  "schema": "funding-cash-hurdle-timing-implementation-receipt-v1",
+  "baseline_commit": "5292c8b5566e134e6b1f05d04226a935bcf091d7",
+  "implementation_sha256": {
+    "src/simple_ai_trading/derivatives_hurdle_data.py": "800594f303a56ea5f2e10bfa64941181874bba4fd3a3d35d8cce1125e51087a5",
+    "src/simple_ai_trading/derivatives_hurdle_model.py": "694fb1f8a89748d549f528d51cdecf0550a79ee1c136fb98e8c795fe9357ac35",
+    "src/simple_ai_trading/second_flow_execution_model.py": "d6980920876efd8995169f3bfb2d70d62b05ff64ead756a113fe07aa0a053ada",
+    "src/simple_ai_trading/stateful_turnover_model.py": "5bfde440553e4ebbe6a03e45e8a0002ebdb2526399de7f0f3daa7431096f8444",
+    "src/simple_ai_trading/funding_cash_labels.py": "a167fca77c9529c232c5a4dc4cd7e1fb5d558ebb6c1a6bc48c49078b322eb57b",
+    "tests/test_funding_cash_remaining_routes.py": "8402a261918721399d7f9341bf0c40828686c656701472a2a5e8ee53e62056d8",
+    "tests/test_stateful_fixed_base_cash_counterexample.py": "d6ec9359b2cb287501004722eb4eb1dcb058d3c9f8ac9b210fd19e33e61d4898"
+  },
+  "verification": {
+    "affected_command": "uv run python -m pytest tests/test_funding_cash_remaining_routes.py tests/test_derivatives_hurdle_model.py tests/test_second_flow_execution_model.py tests/test_funding_cash_labels.py tests/test_funding_cash.py tests/test_barrier_payoff_data.py tests/test_stop_time_payoff_data.py -q --tb=short",
+    "affected_passed": 155,
+    "additional_command": "uv run python -m pytest tests/test_stateful_fixed_base_cash_counterexample.py -q --tb=short",
+    "additional_passed": 1,
+    "distinct_passed": 156,
+    "new_cases": 21,
+    "exit_codes": [0, 0],
+    "ruff_five_touched_python_files": "passed",
+    "full_suite": "not_run",
+    "test_evidence": "synthetic_unit_controls_not_market_observations"
+  },
+  "consumer_scope": {
+    "hurdle": "explicit_supplied_cash_and_paired_replay_reporting_integrated",
+    "second_flow": "explicit_supplied_cash_batched_by_symbol_and_side",
+    "stop_time": "previous_explicit_supplied_cash_route_unchanged",
+    "barrier": "previous_explicit_supplied_cash_route_unchanged",
+    "stateful": "unchanged_rate_proxy_requires_actual_quantity_and_rebalancing_ledger"
+  },
+  "synthetic_sizing_control": {
+    "source": "deterministic_arithmetic_not_native_market_data",
+    "prices": ["100", "200", "100"],
+    "fixed_base_quantity": "1",
+    "fixed_base_gross_quote_cash": "0",
+    "hourly_return_bps": ["10000", "-5000"],
+    "hourly_return_sum_bps": "5000",
+    "current_always_long_replay_after_two_6_bps_transition_costs": "4988",
+    "constant_initial_quote_notional": "100",
+    "required_interior_rebalance_base_quantity": "-0.5",
+    "real_fees_spread_latency_qualified": false,
+    "financial_edge": false
+  },
+  "admission": {
+    "native_origin_qualified": false,
+    "independent_coverage_qualified": false,
+    "complete_execution_cash_qualified": false,
+    "new_training_qualified": false,
+    "profitable_edge_qualified": false
+  },
+  "new_market_requests": 0,
+  "model_fits": 0,
+  "orders": 0,
+  "automations_created_or_edited": 0,
+  "historical_result_files_changed": false,
+  "research_counts_changed": false
+}

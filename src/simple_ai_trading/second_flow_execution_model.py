@@ -10,6 +10,11 @@ import lightgbm as lgb
 import numpy as np
 
 from .derivatives_hurdle_data import DerivativesHurdleDataset, FundingState
+from .funding_cash_labels import (
+    FundingCashLabelSeries,
+    bind_funding_cash_panel,
+    outward_float32,
+)
 from .lightgbm_backend import lightgbm_backend_parameters
 from .microstructure_architecture import average_label_uniqueness
 from .second_flow_data import (
@@ -110,6 +115,10 @@ class TimingDataset:
     option_funding_bps: np.ndarray
     primary_artifacts: tuple[Mapping[str, object], ...]
     proposal_exclusions: Mapping[str, object]
+    funding_cash_provenance: Mapping[str, object] | None = None
+    option_funding_cash_lower_bps: np.ndarray | None = None
+    option_funding_cash_upper_bps: np.ndarray | None = None
+    option_funding_uncertain_events: np.ndarray | None = None
 
     @property
     def proposals(self) -> int:
@@ -473,7 +482,11 @@ def build_timing_dataset(
     round41_report: Mapping[str, object],
     round41_evidence_root: Path,
     progress: ProgressCallback | None = None,
+    funding_cash: Mapping[str, FundingCashLabelSeries] | None = None,
 ) -> TimingDataset:
+    cash_provenance = bind_funding_cash_panel(funding_cash, funding)
+    if funding_cash is not None and set(funding_cash) != set(SYMBOLS):
+        raise ValueError("timing funding cash symbols are incomplete")
     probabilities, primary_artifacts = _primary_probabilities(
         minute_dataset,
         round41_report=round41_report,
@@ -566,6 +579,22 @@ def build_timing_dataset(
     base_net = np.empty(option_proposal.size, dtype=np.float32)
     stress_net = np.empty(option_proposal.size, dtype=np.float32)
     funding_bps = np.empty(option_proposal.size, dtype=np.float32)
+    cash_entries = (
+        None if funding_cash is None else np.empty(option_proposal.size, dtype=np.int64)
+    )
+    cash_exits = (
+        None if funding_cash is None else np.empty(option_proposal.size, dtype=np.int64)
+    )
+    cash_prices = (
+        None
+        if funding_cash is None
+        else np.empty(option_proposal.size, dtype=np.float64)
+    )
+    cash_base_net = (
+        None
+        if funding_cash is None
+        else np.empty(option_proposal.size, dtype=np.float64)
+    )
     for option_index, proposal_index in enumerate(option_proposal):
         symbol_index = int(symbols[proposal_index])
         symbol = SYMBOLS[symbol_index]
@@ -578,13 +607,54 @@ def build_timing_dataset(
         entry_price = float(series.open[entry_index])
         exit_price = float(series.open[exit_index])
         gross = int(side[proposal_index]) * 10_000.0 * (exit_price / entry_price - 1.0)
-        cash_flow = _funding_bps(
-            funding[symbol], entry_time_ms=entry_ms, exit_time_ms=exit_ms
+        cash_flow = (
+            0.0
+            if funding_cash is not None
+            else _funding_bps(
+                funding[symbol], entry_time_ms=entry_ms, exit_time_ms=exit_ms
+            )
         )
         utility = gross - BASE_CHARGE_BPS - int(side[proposal_index]) * cash_flow
         base_net[option_index] = utility
         stress_net[option_index] = utility - (STRESS_CHARGE_BPS - BASE_CHARGE_BPS)
         funding_bps[option_index] = cash_flow
+        if funding_cash is not None:
+            (
+                cash_entries[option_index],
+                cash_exits[option_index],
+                cash_prices[option_index],
+            ) = entry_ms, exit_ms, entry_price
+            cash_base_net[option_index] = utility
+    cash_lower = cash_upper = cash_uncertain = None
+    if funding_cash is not None:
+        cash_lower = np.empty(option_proposal.size, dtype=np.float32)
+        cash_upper = np.empty(option_proposal.size, dtype=np.float32)
+        cash_uncertain = np.empty(option_proposal.size, dtype=np.int64)
+        option_symbols, option_sides = symbols[option_proposal], side[option_proposal]
+        for symbol_index, symbol in enumerate(SYMBOLS):
+            if second_flow[symbol].symbol != symbol:
+                raise ValueError("timing cash price series symbol differs")
+            for direction in (-1, 1):
+                mask = (option_symbols == symbol_index) & (option_sides == direction)
+                bounds = funding_cash[symbol].holding_bounds(
+                    cash_entries[mask],
+                    cash_exits[mask],
+                    cash_exits[mask],
+                    cash_prices[mask],
+                    side=direction,
+                )
+                cash_lower[mask] = outward_float32(bounds.lower_bps, lower=True)
+                cash_upper[mask] = outward_float32(bounds.upper_bps, lower=False)
+                cash_uncertain[mask] = bounds.uncertain_events
+                base_net[mask] = outward_float32(
+                    cash_base_net[mask] + bounds.lower_bps, lower=True
+                )
+                stress_net[mask] = outward_float32(
+                    base_net[mask].astype(np.float64)
+                    - (STRESS_CHARGE_BPS - BASE_CHARGE_BPS),
+                    lower=True,
+                )
+                funding_bps[mask] = -direction * cash_lower[mask]
     proposal_weights = _proposal_uniqueness(entries, symbols)
     if progress is not None:
         progress(
@@ -615,6 +685,10 @@ def build_timing_dataset(
         option_stress_net_bps=stress_net,
         option_funding_bps=funding_bps,
         primary_artifacts=primary_artifacts,
+        funding_cash_provenance=cash_provenance,
+        option_funding_cash_lower_bps=cash_lower,
+        option_funding_cash_upper_bps=cash_upper,
+        option_funding_uncertain_events=cash_uncertain,
         proposal_exclusions={
             "frozen_primary_margin_proposals": raw_proposal_count,
             "incomplete_feature_or_same_day_horizon": raw_proposal_count
@@ -654,6 +728,34 @@ def _validate_timing_dataset(dataset: TimingDataset) -> None:
         or dataset.option_rows != expected_options
     ):
         raise ValueError("Round 42 timing dataset shape is invalid")
+    cash_fields = (
+        dataset.option_funding_cash_lower_bps,
+        dataset.option_funding_cash_upper_bps,
+        dataset.option_funding_uncertain_events,
+    )
+    if dataset.funding_cash_provenance is None:
+        if any(value is not None for value in cash_fields):
+            raise ValueError("timing cash bounds lack source provenance")
+    else:
+        if any(
+            not isinstance(value, np.ndarray) or value.shape != (expected_options,)
+            for value in cash_fields
+        ):
+            raise ValueError("timing cash bound shape is invalid")
+        low, high, uncertain = cash_fields
+        if (
+            not np.isfinite(low).all()
+            or not np.isfinite(high).all()
+            or np.any(low > high)
+            or uncertain.dtype.kind not in "iu"
+            or np.any(uncertain < 0)
+            or not np.array_equal(
+                -dataset.proposal_side[dataset.option_proposal_index]
+                * dataset.option_funding_bps,
+                low,
+            )
+        ):
+            raise ValueError("timing cash bound values or debit sign conflict")
     proposal_fields = (
         dataset.proposal_decision_time_ms,
         dataset.proposal_entry_time_ms,

@@ -1,5 +1,24 @@
 # Continue Development
 
+October 8 [hurdle/second-flow funding cash checkpoint](review/2026-10-08/funding-cash-hurdle-timing.md):
+explicit supplied cash now reaches four of the five audited builders. Hurdle
+labels retain both sides' lower/upper funding and uncertain counts, with mark
+provenance included in serialized source evidence. Its replay no longer turns
+an uncertain long debit into fictional short income. Second-flow cash batches
+by symbol/side, preserves float64 utility until outward storage, retains upper
+cash/counts/provenance and leaves features unchanged. Conflicting metadata rejects.
+155 affected checks plus one new sizing control pass; Ruff passes. No public
+market capture, fit, inference, GPU timing, account or order. Old results and
+both financial ledgers remain unchanged (202/65/37/0).
+The stateful module is unchanged and unqualified for fixed-base cash: the
+100 -> 200 -> 100 control has zero fixed-unit gross cash but +5,000 bps in its
+hourly-return sum; constant quote notional requires an interior -0.5-unit trade
+that position-transition costs omit. Next retain actual base quantities, marks,
+entry notionals and all resizing costs before the stateful cash/forecast repair.
+Independent native origin/coverage and a complete after-cost hedge replay still
+precede affected fits or any profitable-edge claim. The four-route
+implementation checkpoint is source-bound; do not edit historical receipts.
+
 October 8 explicit user resumption: the goal is active again; no automation was
 created. [Forward funding cash labels](review/2026-10-08/funding-cash-labels.md)
 now route stop-time and barrier builders through the shared exact event law.
