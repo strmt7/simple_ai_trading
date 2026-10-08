@@ -18,6 +18,22 @@ skills are intentionally not copied.
 | Super-Linter | `v8.7.0` | `.github/workflows/super-linter.yml` |
 | Agent skills | ECC `2.0.0` | `.agents/skills/` |
 | Karpathy guidelines | commit `2c606141936f1eeef17fa3043a72095b4765b9c2` | `.agents/skills/karpathy-guidelines/` |
+| Crawl4AI | verified provider `0.9.4+superzip.portable2` | [Mandatory isolated research integration](CRAWL4AI_RESEARCH.md) |
+| Caveman | repository-local internal communication overlay | `.agents/skills/caveman/SKILL.md` |
+
+October 8 user requirement: Crawl4AI is mandatory for web-page source reading.
+Use search only to discover/select sources, then retain the crawler result and
+inspect its status, actual content and product scope. Existing native API,
+stream, archive and one-use financial captures must not be silently replaced
+by a browser. See the integration's setup, provenance and failure rules below.
+
+Caveman and CocoIndex Code are mandatory for every AI agent. Caveman applies
+lite compression only to internal communication; public prose and exact
+evidence remain normal. CocoIndex precedes broad conceptual code navigation,
+not precise filenames/symbols or small known scopes. Verify current-root/index
+binding and actual search use; disclose unavailable tooling rather than pretend
+it ran. The [cross-repository audit](review/2026-10-08/mandatory-agent-tools.md)
+distinguishes tracked requirements, shared Codex discovery and runtime evidence.
 
 For scoped Ruff formatting, the local help defines `--range START-END` for line
 ranges; `START:END` means a line/column position extending to EOF, not two lines.

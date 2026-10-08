@@ -69,6 +69,18 @@ result and all other consumed populations, including WNBA September 3-9.
   decisions; preserve the old runner, source bindings and historical results.
 
 - Work in this session only; use no subagent.
+- Caveman and CocoIndex Code are mandatory for every AI agent: apply
+  `.agents/skills/caveman/SKILL.md` to concise internal communication, and
+  `.agents/skills/cocoindex-code-search/SKILL.md` before broad conceptual code
+  navigation. Exact small-scope `rg` and live source verification remain required.
+  Neither skill relaxes safety, financial evidence, authority or verification.
+- October 8 explicit user requirement: use [Crawl4AI](docs/CRAWL4AI_RESEARCH.md)
+  for web-page research and source-content reading. Search may locate sources,
+  but never substitute snippets for the crawler's retained content. Reuse the
+  verified isolated integration; do not duplicate its installation in trading
+  dependencies. Exact API/stream/archive captures retain their existing native
+  transports and frozen contracts. A blocked crawl is not permission to retry
+  through aliases, bypass challenges or reopen protected/consumed studies.
 - Apply the shared [codebase consistency standard](CONTRIBUTING.md#codebase-consistency-standard)
   through reasoned semantic and architectural review, not mechanical test or
   formatting compliance alone. Keep naming, comments, types, errors, logging

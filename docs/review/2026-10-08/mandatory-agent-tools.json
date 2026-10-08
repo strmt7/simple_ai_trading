@@ -1,0 +1,50 @@
+{
+  "schema": "mandatory-agent-tools-audit-v1",
+  "reviewed_at_utc": "2026-10-08T08:15:49Z",
+  "baseline_commit": "02b499b272018b4c7bebba70bb30fca74d75b39d",
+  "requirements": {
+    "crawl4ai": "Mandatory trading web-page content research; native financial transports and consumed contracts preserved",
+    "caveman": "Mandatory internal lite compression; exact evidence, safety and normal public prose preserved",
+    "cocoindex_code": "Mandatory broad/fuzzy navigation with current-root/index binding, actual search evidence and live-source confirmation; exact small-scope rg remains appropriate"
+  },
+  "available_repositories_checked": {
+    "SuperZip": {"both_preexisting": true, "root_changed": false, "agents_sha256_host_bytes": "56fc5beb9b4795bbb8c568c58fa3ea7efeec287134576434914e88b40522fd11", "local_cocoindex_adapter": true},
+    "VulnerabilityScreener": {"root_changed": true, "agents_sha256_host_bytes": "4bd6337a9b15765d7b10a13a2d9ad211263843199b42a95c76fbecc8c8b55c88", "local_cocoindex_adapter": true},
+    "simple_ai_trading": {"root_changed": true, "agents_sha256_host_bytes": "d41dea1d6c56ad883b47a96e327142e188e2a23e9090febfc9d98fcd3f6e8701", "local_cocoindex_adapter": true, "local_caveman_added": true},
+    "ai skills": {"root_changed": true, "agents_sha256_host_bytes": "f3effe670d620aad0a38e8e1edb9da3089f38bebde9de4beafe2dfad9383187b", "local_cocoindex_adapter": false, "original_instruction_text_preserved_against_backup": true},
+    "qfales": {"root_changed": true, "agents_sha256_host_bytes": "94451473680fa9e18881b55434afadbcb8052f822db6aabaf1454c905b7b9924", "local_cocoindex_adapter": false},
+    "omero-docker-extended": {"new_root_rules": true, "agents_sha256_host_bytes": "018e93cbb2a0b27c73b6fedab8ad39d3bb87fc09eb820d67fb9b20498d7167c1", "local_cocoindex_adapter": false},
+    "Raspberry": {"new_root_rules": true, "agents_sha256_host_bytes": "e63b3c9ded7b5252030a7e19645c42ca9ea71c66cadd8f2f2805c7c11a7f519e", "local_cocoindex_adapter": false}
+  },
+  "shared_codex_configuration": {
+    "agents_was_empty": true,
+    "agents_sha256_host_bytes": "5ea1819613e7bdcd8b537399332560fcadaf054126b5db0c55743a672314169b",
+    "caveman_skill_sha256_host_bytes": "ffdef0a9472ca5e26600068b245e744bc01a0c3c9bde11932b6c33d7b9ef5772",
+    "cocoindex_code_skill_sha256_host_bytes": "84459ed32de671f5674390b86930d2285aba36837d60eacedf5784d780c9e618",
+    "both_implicit_invocation_enabled": true,
+    "arbitrary_agent_compliance_proven": false
+  },
+  "trading_source_sha256": {
+    ".agents/skills/caveman/SKILL.md": "e9b2bf7f503fb247e024d6917595d50510a7bf4e6a1f22086ef3c8661a12608a",
+    "tests/test_crawl4ai_research_policy.py": "837e9921c724187bb2882e93f29e5401e6028bcde020ce3db4d6a68d9c4f687d"
+  },
+  "trading_root_git_blob_sha256": "004547d1f9ae89c80e72046dbfa526d794f84b777f104ce855d1083728e8027f",
+  "publication_source_binding": "Root instruction host bytes retain CRLF while Git stores LF. The initial staged identity audit rejected comparing those different representations; the host hash is preserved and the Git blob hash is recorded separately. New skill, policy test and pre-access intent match their staged bytes exactly.",
+  "verification": {
+    "trading_command": "uv run python -m pytest tests/test_crawl4ai_research_policy.py tests/test_agent_workflows.py::test_root_agent_context_is_compact_without_dropping_hard_routes tests/test_agent_workflows.py::test_continuation_protocol_and_capture_companion_are_mandatory --tb=short -x",
+    "trading_policy_checks_passed": 6,
+    "qfales_agent_surfaces": "passed",
+    "qfales_runtime_contract": "passed",
+    "all_seven_mandatory_pairs_present": true,
+    "shared_and_trading_skill_validator": "passed; two shared skills and the local trading Caveman overlay",
+    "ruff_check_and_format": "passed for the touched policy test",
+    "full_suite_or_broad_site_matrix_run": false,
+    "skill_efficacy_benchmark_run": false,
+    "new_semantic_search_or_index_run": false,
+    "crawler_result": "HTTP 202 with one Markdown character; retained and excluded, no retry",
+    "local_counterexamples_or_financial_results_rewritten": false
+  },
+  "publication_scope": "Trading changes only. Other-repository rule additions remain local/unstaged; shared Codex configuration is local. No unrelated changes included.",
+  "remaining": "Policies and static guards cannot technically compel arbitrary software. Missing local adapters need qualified setup/shared-root binding before their next broad search; no per-repository search success is fabricated.",
+  "financial_counts_unchanged": {"observations": 202, "hypotheses": 65, "scoped_mechanisms": 37, "qualified_stable_edges": 0}
+}

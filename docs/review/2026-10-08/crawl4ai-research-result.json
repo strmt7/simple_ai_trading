@@ -1,0 +1,32 @@
+{
+  "schema": "crawl4ai-documentation-result-v1",
+  "reviewed_at_utc": "2026-10-08T08:05:22Z",
+  "baseline_commit": "02b499b272018b4c7bebba70bb30fca74d75b39d",
+  "intent_path": "docs/review/2026-10-08/crawl4ai-research-intent.json",
+  "intent_sha256_host_bytes": "c3e80962c6462a2efb588e78e65cd5661b439525bee27f20184f49b09abfd13a",
+  "provider_reused": "SuperZip isolated 0.9.4+superzip.portable2; native crawl CLI; existing dependency/source-repair admission verified before execution",
+  "native_result": {
+    "retained_path": "C:/trader/retained-public-evidence/crawl4ai-20261008-usdm-trade/result.json",
+    "sha256": "d67ea58c6a6817ec6e205e9723909e9cbd655ac837f8a2375fd9c9e735fa0637",
+    "bytes": 4514,
+    "url": "https://developers.binance.com/en/docs/catalog/core-trading-derivatives-trading-usd-s-m-futures/api/rest-api/trade",
+    "redirected_url": "https://developers.binance.com/en/docs/catalog/core-trading-derivatives-trading-usd-s-m-futures/api/rest-api/trade",
+    "http_status": 202,
+    "success": true,
+    "error_message": "",
+    "html_characters": 2103,
+    "markdown_utf8_bytes": 1,
+    "representation": "Native crawler JSON containing browser HTML and extraction fields; not original HTTP wire bytes"
+  },
+  "source_admitted": false,
+  "rejection": "HTTP 202 and non-substantive Markdown; native success is insufficient",
+  "research_consequence": "Reported USD-M realized PnL remains separate from native fee components. This failed document extraction cannot establish pre-fee/net-fee, posted cash or local-lot attribution semantics.",
+  "retry_or_alternate_url_used": false,
+  "financial_claims_qualified": false,
+  "historical_results_or_capture_contracts_changed": false,
+  "accounts_credentials_orders_funds_or_automations": false,
+  "trading_runtime_dependencies_changed": false,
+  "other_repository_files_changed": false,
+  "broad_site_qualification_or_trading_suite_repeated": false,
+  "financial_counts_unchanged": {"observations": 202, "hypotheses": 65, "scoped_mechanisms": 37, "qualified_stable_edges": 0}
+}

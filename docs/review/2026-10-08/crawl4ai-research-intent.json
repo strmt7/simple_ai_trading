@@ -1,0 +1,30 @@
+{
+  "schema": "crawl4ai-documentation-intent-v1",
+  "recorded_before_access_utc": "2026-10-08T08:02:50Z",
+  "question": "Does the retained official USD-M REST trade documentation explicitly establish whether reported realizedPnl is posted account cash net of commission? Keep reported PnL separate if semantics or scope remain unproved.",
+  "source_selection": "Canonical USD-M trade page already referenced in the September 5 opening-evidence review, not a guessed product path; no prior exact capture journal/contract found in this checkout",
+  "canonical_url": "https://developers.binance.com/en/docs/catalog/core-trading-derivatives-trading-usd-s-m-futures/api/rest-api/trade",
+  "provider": {
+    "repository_revision": "847e54719e650981d2432c05416271e1c6b783d0",
+    "version": "0.9.4+superzip.portable2",
+    "tool_sha256_host_bytes": "d1cedc752bc87848a4291e9ab006045cf6fa4bd3dbc9f796af0b304a702cce41",
+    "research_helper_sha256_host_bytes": "7756fcf079b963e90b45b64dfe67f4691ccf8f9a0d780d8edf9631b59ec8cb24",
+    "lock_sha256_host_bytes": "84ccd9ea9cbfdafa2e02e9218844da75ed3054b2c6a2d4304fe03e632cfe5f29",
+    "installed_graph_identity": "19db3f52578fdb076c4585951c65a52bb359834066064567b153f8b3efb32bbc",
+    "cli_help_and_dependency_admission_completed": true
+  },
+  "output": "C:/trader/retained-public-evidence/crawl4ai-20261008-usdm-trade/result.json",
+  "access": {
+    "top_level_page_navigations_max": 1,
+    "native_page_timeout_ms": 45000,
+    "explicit_robots_check": true,
+    "browser_subresources": "Native browser/robots resources are not exactly one HTTP GET; no exact transmission count or hard network-byte ceiling is claimed",
+    "output_admission_ceiling_bytes": 10485760,
+    "output_ceiling_is_pre_network_bound": false,
+    "deep_crawl": false,
+    "credentials_accounts_orders_or_funds": false,
+    "protected_or_consumed_capture_changed": false
+  },
+  "terminal_consequence": "Retain native result/error. No repeat, alternate product, locale, alias or challenge bypass. Documentation research only; no economic observation, fee rate, account cash, model admission or edge qualification from illustrative examples.",
+  "automations_created": 0
+}
