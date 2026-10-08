@@ -1,5 +1,17 @@
 # Continue Development
 
+October 8 [carry financing checkpoint](review/2026-10-08/carry-financing-research/review.md):
+the user requested this bounded round be wrapped up, committed and paused.
+Crawl4AI retained a substantive HTTP-200 BIS carry summary. An exact post-hoc
+capital bound from unchanged native-funding frontier outputs shows that reduced
+perpetual margin alone cannot rescue the fully funded spot comparison under
+the original 3.25% annual/32-bp sensitivity. This is not native costs, a new
+economic observation or an all-strategy rejection; counts remain 202/65/37/0.
+On explicit resumption, prioritize source-qualified financing/collateral,
+equal-wealth alternatives, complete paired cash and continuous solvency before
+more funding-only fits. Do not refetch/replay the consumed frontier or inflate
+independence by reusing its panels. No automation or account/order changes.
+
 October 8 [CocoIndex restoration](review/2026-10-08/cocoindex-restoration.md):
 the user's immediate priority is actual source-bound semantic routing. Read the
 restoration receipt for completion evidence; registration alone is not use.

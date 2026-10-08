@@ -1,0 +1,13 @@
+{
+  "schema": "bounded-primary-source-discovery-v1",
+  "recorded_before_access_utc": "2026-10-08T11:16:50Z",
+  "timestamp_source": "Original file CreationTimeUtc, inspected after discovery; replaces an inaccurate manually entered timestamp. Question and access bounds were written before the search.",
+  "question": "What institutional evidence explains persistent crypto carry and the capital/liquidation constraints on a market-direction-neutral hedge? Use it to prioritize the next financing comparison, not to assert venue profitability.",
+  "queries": ["site.bis.org crypto carry arbitrage capital margin liquidation"],
+  "query_calls_max": 1,
+  "page_selection": "First primary BIS HTML research page directly addressing the question. Search results identify a canonical URL only; their economics are not admitted.",
+  "financial_access": false,
+  "credentials_accounts_orders_or_funds": false,
+  "protected_or_consumed_market_studies_changed": false,
+  "repeat_or_alias_permission": false
+}
