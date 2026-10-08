@@ -225,7 +225,11 @@ and verify reproducibly. Do not load upstream `EXAMPLES.md`.
    For large JSON registries, inspect keys/counts and field lengths before
    printing. Use bounded scalar triage, then page only the selected full row's
    remaining required fields; never dump multiple long rows or reread their
-   already-reviewed artifact lists. Triage alone still cannot authorize capture.
+   already-reviewed artifact lists. `Get-Content -TotalCount` limits lines, not
+   bytes: it cannot bound a compact single-line JSON document. Parse such files
+   and print selected scalar fields instead. PowerShell does not expand globs
+   for `rg` path arguments; use `rg -g '<pattern>' <directory>` or `rg --files`.
+   Triage alone still cannot authorize capture.
 4. Freeze causal inputs, costs, roles, rejection gates, and test access before
    viewing a new model outcome.
    Before a multi-request public screen, validate parsing and aggregation on one

@@ -1,0 +1,64 @@
+{
+  "schema": "funding-archive-population-contract-v1",
+  "contract_path": "docs/review/2026-10-08/september-funding-population/contract.json",
+  "contract_sha256": "f5bfc9a88224b473d48a0126c69d22839ce9bdc05c332b9334acab5fb9d448b0",
+  "frozen_at_utc": "2026-10-08T07:04:06Z",
+  "source_revision": "2aa1c690c30027b7b960deeaa824a32ab67c7508",
+  "period": "2026-09",
+  "archive_start_ms": 1788220800000,
+  "archive_end_ms": 1790812800000,
+  "intersection_start_ms": 1788566400000,
+  "intersection_end_ms": 1790812800000,
+  "expected_intersection_events_per_symbol": 78,
+  "symbols": ["BTCUSDT", "ETHUSDT", "SOLUSDT"],
+  "max_requests": 6,
+  "maximum_response_bytes": 3158016,
+  "output_directory": "docs/review/2026-10-08/september-funding-population",
+  "capture_boundaries_sha256": "f971726268ba2e630b2ebbe8d5bcf02f7b3f23b92ccb16efe23aef82cebe950f",
+  "native_certificate": {
+    "path": "docs/review/2026-10-07/recent-funding-values/terminal.json",
+    "result_sha256": "9ac29a81861b158a527b6873f8dab4dd76f8f45a05feedb849a173a61d733007"
+  },
+  "native_inputs": {
+    "BTCUSDT": [
+      {"path": "docs/review/2026-10-07/recent-funding-values/01-btc-earliest.raw", "sha256": "fa9e3248b57a9116b29ae858de14b43e6c594a1eba46ae2e6ca3b99a0f3f0886"},
+      {"path": "docs/review/2026-10-07/recent-funding-values/02-btc-remainder.raw", "sha256": "af72f363b39f4c98ad2fe7f46725721dcc3ac0db3fdc14b64b16c9defaefab78"}
+    ],
+    "ETHUSDT": [
+      {"path": "docs/review/2026-10-07/recent-funding-values/03-eth-complete.raw", "sha256": "d216b954cd4a07a7702b00d209080b19654a998416af7545bcc63cc09cdfa964"}
+    ],
+    "SOLUSDT": [
+      {"path": "docs/review/2026-10-07/recent-funding-values/04-sol-complete.raw", "sha256": "7c2051b85e8b4871cd73e88e65f91d4630f4112c2b9dee859a210ad57e4db099"}
+    ]
+  },
+  "implementations": [
+    {"path": "tools/qualify_funding_archive_population.py", "sha256": "774134c4c401126e834f1edc220f1bf7630e6b3e0da6c1a0305ef8243ddcbd31"},
+    {"path": "tools/capture_public_source_bounded.py", "sha256": "760339a7602abfa9eb97f3f1cca0ef79191b07ff5f5aa42515f30f191f9888fc"},
+    {"path": "tools/capture_public_source_contract.py", "sha256": "9dbb14651455abade755fe96091b9eaafe1153f56a1baad4cd60b1a888d41b8c"},
+    {"path": "tools/adjudicate_polymarket_exact_mlb_monotone_prefilter.py", "sha256": "958a44d78029b9a1eb69a3771ce18e53ac1ed3c7bc161c8e4318beedce2cf99f"},
+    {"path": "src/simple_ai_trading/funding_cash.py", "sha256": "3bb8fdaf50b545d93d42df5bd1b901743cc53cd11f4223e58364f160fe3b1aea"},
+    {"path": "src/simple_ai_trading/derivatives_archive.py", "sha256": "895fdf87f8ba99531dd19e9294446b6f85f7d8f7ad2341c1d689bc3a6a76ef5b"}
+  ],
+  "fixed_request_order": [
+    "https://data.binance.vision/data/futures/um/monthly/fundingRate/BTCUSDT/BTCUSDT-fundingRate-2026-09.zip",
+    "https://data.binance.vision/data/futures/um/monthly/fundingRate/BTCUSDT/BTCUSDT-fundingRate-2026-09.zip.CHECKSUM",
+    "https://data.binance.vision/data/futures/um/monthly/fundingRate/ETHUSDT/ETHUSDT-fundingRate-2026-09.zip",
+    "https://data.binance.vision/data/futures/um/monthly/fundingRate/ETHUSDT/ETHUSDT-fundingRate-2026-09.zip.CHECKSUM",
+    "https://data.binance.vision/data/futures/um/monthly/fundingRate/SOLUSDT/SOLUSDT-fundingRate-2026-09.zip",
+    "https://data.binance.vision/data/futures/um/monthly/fundingRate/SOLUSDT/SOLUSDT-fundingRate-2026-09.zip.CHECKSUM"
+  ],
+  "question": "Does a distinct official monthly archive channel supply exactly the same September 5-30 event timestamps and decimal rates as the retained recent native marked population for all three majors?",
+  "selection": "Calendar intersection of the already retained September 5-October 6 native population with the latest completed month. All three majors and the complete intersection are fixed before new archive access. No rate, return or cost selection.",
+  "information_gain": "Independent-channel population corroboration for only the September intersection, not another funding sample or profitability test. Archive and API share Binance as publisher; this is not independent publisher evidence or owned entitlement.",
+  "source_definition": "Official archive URLs come from the existing derivatives_archive_file_url production builder. Native bytes and their prior source qualification are immutable hash-bound inputs. No source alias or manual timestamp/rate correction.",
+  "transport": "Public unauthenticated GET, no request body, no proxy, no redirects or retries; socket timeout 10 seconds, post-open read budget 30 seconds, archive ceiling 1048576 bytes and checksum ceiling 4096 bytes; retain partial/failed bytes and fsynced intent/completion.",
+  "archive_parser": "Exactly one correctly named unencrypted stored/deflated CSV, at most 1048576 expanded bytes and compression ratio 250; exact existing calc_time/funding_interval_hours/last_funding_rate header; nonempty at most 744 strictly increasing valid monthly event rows, exact Fraction decimal rates and unrounded millisecond timestamps; published SHA256 checksum must match raw ZIP bytes.",
+  "failure_rule": "Stop all remaining requests after the first HTTP, transport, checksum, ZIP, CSV, scope or exact-population failure. BTC archive/checksum parsing and full exact intersection comparison precede ETH access. Keep the terminal failure; no retry, alias, alternate month, tolerance, rounded clock, alternate parser or sibling requests under this contract.",
+  "qualification_rule": "All three complete intersections must exactly match 78 retained native events each. No archive value substitutes for a native settlement mark. No October coverage, owned holding/payment entitlement, native execution fees, full hedge return, margin solvency, causal model role or cash-label admission follows.",
+  "authority": {"public_unauthenticated_read_only_requests_maximum": 6, "account_requests": 0, "credentials_used": false, "orders_or_transactions": 0, "funds_used": false, "protected_capture_touched": false, "trading_authority": false},
+  "economic_metrics_computed": false,
+  "training_runs": 0,
+  "accepted_edge": false,
+  "research_observation_count_effect": 0,
+  "financial_counts_unchanged": {"observations": 202, "hypotheses": 65, "scoped_mechanisms": 37, "qualified_stable_edges": 0}
+}
