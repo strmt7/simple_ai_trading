@@ -111,6 +111,8 @@ class BinanceOpenIntentJournal:
             or not position.id.strip()
             or position.market_type not in {"spot", "futures"}
             or position.side not in {"LONG", "SHORT"}
+            or position.market_type == "spot"
+            and position.side != "LONG"
             or not isinstance(position.symbol, str)
             or not position.symbol.strip()
             or isinstance(position.qty, bool)

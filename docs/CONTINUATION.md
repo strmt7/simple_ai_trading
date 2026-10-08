@@ -1,5 +1,18 @@
 # Continue Development
 
+October 8 [native closing-component checkpoint](review/2026-10-08/closing-native-components.md):
+new offline recovery observation preserves sale/derivative units and native
+commission assets in the existing journal. Futures reported PnL remains separate
+from fees and principal; all account/financial/application/rearm flags are false.
+A proven Spot SHORT intent could enter the opening boundary although closing
+supports Spot LONG only; it now rejects before creation/submission. Historical
+UNKNOWN records are preserved and block admission. 562 affected checks pass.
+Normal live Futures fees remain modeled, and no CLI/inventory/rearm integration,
+posted cash, paired hedge qualification or stateful objective completion follows.
+Next connect source-qualified fee/settlement components, residual ownership and
+full hedge costs before cash-objective fits. Do not train rate proxies or rerun
+consumed capture families to create apparent progress. Counts stay 202/65/37/0.
+
 October 8 [September funding population checkpoint](review/2026-10-08/september-funding-population/review.md):
 all 234 September 5-30 native timestamps and exact decimal rates match the
 checksum-verified official monthly archive channel, 78 per BTC/ETH/SOL asset.
