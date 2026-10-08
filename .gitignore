@@ -33,4 +33,7 @@ artifacts/dependency-audit/
 /docs/review/2026-10-07/maker-income-source/*.html
 /docs/review/2026-10-07/funding-aware-maker-source/*.html
 /docs/review/2026-10-07/fifo-identification-source/*.html
+# Local discovery/source bodies; publish provenance, not unqualified redistribution.
+/docs/review/2026-10-08/structural-change-discovery/*.local.json
+/docs/review/2026-10-08/structural-change-discovery/*.local.raw
 

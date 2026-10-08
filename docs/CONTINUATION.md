@@ -1,5 +1,16 @@
 # Continue Development
 
+October 8 [bounded source-discovery checkpoint](review/2026-10-08/structural-change-discovery/review.md):
+two frozen official queries found a new account-migration FAQ lead; its exact
+GET returned HTTP 202/zero bytes. No retry, alias or unsupported interpretation.
+Search snippets are excluded from economics and do not prove deployed stock
+options, changed BTC/ETH/SOL hedge terms or income from a wallet rename.
+Rank 46 gains failure lineage only; its inventory/retry gates remain unchanged.
+No market request, fit, runtime change, credentials, orders or automation.
+Counts stay 202/65/37/0. Reuse the consumed source/query journals; advance an
+informative eligible source or the remaining native cash/hedge/model-admission
+gaps, not a date-only refresh, cheaper retrospective scenario or proxy-label fit.
+
 October 8 [two-sided cash-label checkpoint](review/2026-10-08/stateful-two-sided-cash.md):
 new `build_stateful_cash_labels` encloses each independent hourly long/short
 counterfactual separately, keeps exact mark/entry scaling and charges exit

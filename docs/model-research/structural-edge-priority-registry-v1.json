@@ -3767,12 +3767,17 @@
         {
           "path": "docs/model-research/action-value/binance-stock-option-inventory-result-v1-2026-08-31.json",
           "result_sha256": "b72592efad26563aacc4e6d8611f15f3172039ffc220153ab824bf57231afcb3"
+        },
+        {
+          "path": "docs/review/2026-10-08/structural-change-discovery/review.json",
+          "result_sha256": "e51c758fae57f97dd0c58d72d7e6e6ba7ea1c9c646ae476f995a3ac03d3b2e47"
         }
       ],
       "current_status": "unaccepted_direction_independent_long_stock_option_plus_equal_opposite_TradFi_perpetual_terminal_payoff_lower_bound_the_current_official_API_supports_TradFi_Options_account_contracting_and_public_contractType_underlyingType_inventory_fields_but_the_one_use_complete_public_exchangeInfo_request_returned_zero_active_TRADFI_OPTIONS_EQUITY_rows_so_no_deployed_population_and_zero_ticker_futures_book_premium_funding_account_credential_order_or_fund_requests_exist_not_an_edge_or_deployment_ready",
       "market_direction_forecast_required": false,
       "mechanism": "binance_long_stock_option_opposite_TradFi_perpetual_terminal_payoff_lower_bound",
       "next_action": "do_not_repeat_or_poll_the_current_zero_row_inventory_wait_for_an_official_stock_option_listing_or_material_option_settlement_fee_access_or_matching_perpetual_architecture_change_then_freeze_one_exact_active_population_and_request_downstream_economics_only_if_the_deployment_trigger_exists",
+      "october8_migration_source_status": "One bounded two-query official search selected the previously unused migration FAQ article d33306bf39ba4afca2b96833f74dc423. Its one frozen exact GET returned HTTP 202 with an empty body; source gate failed without retry or alias. Search snippets and wallet/API support are not deployed active equity-option or economic evidence. Failure lineage only: no verified deployment/material-change trigger, old inventory refresh, ticker, funding, book, fee, account, credential, order, fund, protected access or edge. Preserve the original family trigger and every consumed population.",
       "priority_rank": 46,
       "prohibited_shortcuts": [
         "calling_API_feature_support_a_deployed_active_stock_option_population",

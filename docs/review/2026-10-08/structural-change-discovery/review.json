@@ -1,0 +1,65 @@
+{
+  "schema": "official-structural-change-discovery-review-v1",
+  "source_revision": "ff628ba17facc62b209276c364b1e99d605cbb38",
+  "capture_boundaries_sha256": "f971726268ba2e630b2ebbe8d5bcf02f7b3f23b92ccb16efe23aef82cebe950f",
+  "search": {
+    "calls": 1,
+    "queries": 2,
+    "contract_sha256": "4f796ca3b99ec74d0e115f7bdd7bab42843271338e789a9051fe5e71692d3853",
+    "intent_sha256": "b832cb4d52887c3907033d0afc9fc083833668e2cc37b9ea5bc070f088123ca1",
+    "local_raw_sha256": "141d7db7cf6bfbc3f400b24099076a5cf425ac734a38790def3ba4e795e61978",
+    "discovery_only": true,
+    "economic_values_excluded": true,
+    "polymarket_primary_result_surfaced": false,
+    "absence_of_polymarket_change_proved": false
+  },
+  "selected_source": {
+    "publisher": "Binance Support",
+    "title": "Frequently Asked Questions on Funding Account to Spot Account Migration",
+    "canonical_article_id": "d33306bf39ba4afca2b96833f74dc423",
+    "exact_url": "https://www.binance.com/en-IA/support/faq/detail/d33306bf39ba4afca2b96833f74dc423",
+    "access_date_utc": "2026-10-08",
+    "deduplication": "No exact article-ID or URL hit in nonprotected retained contracts/journals/results/routing before freeze; no account or credential history searched.",
+    "capture_contract_sha256": "c50dd62e0a1045588830d8f6271c1b75f9429dfdc3f1c02376011319883c4699",
+    "capture_result_sha256": "77cd205eb41ec5d064a8161496afce660fcdfdb4ecb69d4dea7900f3310b9d32",
+    "capture_file_sha256": "227f4712d55dad1549f2b61b424844781d6a5820a728add85900e3b0d056d44f",
+    "journal_sha256": "95fa1affda92039fe7b89747c6f19002bb7ca5fe28e6dd3fabcbc27ac98a4880",
+    "raw_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "http_status": 202,
+    "response_bytes": 0,
+    "transport_error": null,
+    "source_gate_passed": false,
+    "retry_or_alias_used": false,
+    "cause_of_empty_response_established": false
+  },
+  "other_discovery_leads": [
+    {"canonical_article_id": "74c7657a53f141e8b2d584bf44e6dd87", "url": "https://www.binance.com/en/support/announcement/detail/74c7657a53f141e8b2d584bf44e6dd87", "classification": "Search-only collateral adjustment lead; displayed assets outside BTC/ETH/SOL, no complete current major-asset hedge-cost or income evidence; no GET selected."},
+    {"canonical_article_id": "2200ab5284594d8a8b8239326e3d1fff", "url": "https://www.binance.com/en/support/announcement/detail/2200ab5284594d8a8b8239326e3d1fff", "classification": "Search-only collateral/leverage change lead; duplicate Square syndications excluded from additional selection; increased leverage is not an edge; no GET selected."},
+    {"url": "https://www.binance.com/en-ZA/square/post/374597484885713", "classification": "Official-account search-only bStocks collateral lead, not source-proved deployed native stock options or an exact quantity/settlement/perpetual hedge; no GET selected."}
+  ],
+  "decisions": {
+    "rank46_deployment_trigger_verified": false,
+    "old_empty_stock_option_inventory_reopened": false,
+    "new_option_or_major_asset_hedge_economics_requested": false,
+    "funding_wallet_name_as_perpetual_funding_income": "prohibited_scope_inference",
+    "search_or_empty_source_as_new_fee_capital_or_eligibility_evidence": "excluded",
+    "next_action": "Do not retry/alias this exact source or adapt the consumed queries. Advance a distinct informative eligible source/cash/execution question. A future native stock-option inventory still requires independently proved deployment or relevant material architecture change, complete contract rules and unchanged rejection-first gates. Account fee, queue, basis, capital and full hedge cash qualification remain open."
+  },
+  "preserved_registry_sha256_before": "2e9bcd078f756636dc536995d0d1a6bc98849d56f881ff08ffc1759c6f894262",
+  "verification": {
+    "locked_runner_help_and_contract_preflight": "passed_before_access",
+    "raw_receipt_journal_and_canonical_result_hashes": "verified",
+    "economic_or_runtime_python_changed": false,
+    "unchanged_unit_suites": "not_repeated",
+    "source_bodies": "Retained locally and excluded from Git; no unqualified third-party redistribution. Published contracts, hashes, journals and scoped conclusions are not self-contained source copies.",
+    "local_pre_access_timestamp_correction": "Future draft timestamp replaced with the already verified clock before either search or source GET; no consumed plan repaired."
+  },
+  "market_requests": 0,
+  "official_document_gets": 1,
+  "accounts_credentials_orders_funds_onchain_protected_or_automation_actions": 0,
+  "model_fits_or_gpu_benchmarks": 0,
+  "new_economic_observations": 0,
+  "accepted_edge": false,
+  "research_counts": {"observations": 202, "hypotheses": 65, "scoped_mechanisms": 37, "qualified_stable_edges": 0},
+  "result_sha256": "e51c758fae57f97dd0c58d72d7e6e6ba7ea1c9c646ae476f995a3ac03d3b2e47"
+}
