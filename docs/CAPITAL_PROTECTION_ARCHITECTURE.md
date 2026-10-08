@@ -1,5 +1,17 @@
 # Capital protection and final release verification
 
+The October 8 [foundation-worker containment repair](review/2026-10-08/owned-worker-containment.md)
+replaces termination by a worker-reported PID with owned Windows Job handles.
+The original child starts suspended, is assigned before resume and cannot
+request job breakaway; descendants inherit containment. Ready PIDs are checked
+read-only against the job. Last-handle close, including abrupt controller death,
+reaps the owned tree. Unsupported enrollment and startup failure reject/clean up.
+57 affected checks pass, including five actual Windows process scenarios.
+This is only the foundation-model worker boundary. It does not isolate order
+credentials, make blocking IPC bounded, persist model quarantine or supervise
+the trading gateway independently. Non-Windows descendant containment remains
+unqualified; it no longer signals arbitrary worker-reported PIDs either.
+
 The October 7 [native entry-cost-aware mark](review/2026-10-07/spot-cash-mark.md)
 adds actual entry fees to automatic/lifecycle exits and loss/drawdown limits.
 575 affected checks pass. A native open lot requires exact mark context and

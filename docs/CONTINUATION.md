@@ -1,5 +1,27 @@
 # Continue Development
 
+October 8 [foundation-worker ownership checkpoint](review/2026-10-08/owned-worker-containment.md):
+source review reproduced a supervisor signaling an unverified reported PID,
+including after its launcher exited. That could touch another task after PID
+reuse or false worker metadata. New Windows-owned jobs contain the original
+suspended Popen child before resume, inherit descendants without breakaway,
+verify ready membership read-only, and kill only their own tree on last-handle
+close. Unsupported enrollment rejects; startup exceptions also reap resources.
+Five actual Windows process cases include forged PID, valid ready identity,
+descendant cleanup, startup timeout and abrupt controller death. 57 affected
+checks pass (29 new). No GPU workload/model fit or unrelated-process mutation.
+
+The source-audit reuse check confirmed inverse collateral math already exists
+and its legal applicability, actual fees, settlement basis and margin gates
+remain open; no duplicate inverse tool or generic tutorial was built. Holding
+yield still lacks a verified material-change trigger. Consumed sports windows
+were not reopened. This risk repair does not supply market evidence or justify
+a new quote capture. Counts remain 202/65/37/0. Continue eligible structural/
+after-cost research and complete hedge/source/objective qualification; do not
+equate process containment with profitability or enterprise readiness.
+Independent trading/gateway supervision, credential separation, bounded IPC,
+useful-progress monitoring, durable recovery/rearm and model quarantine remain.
+
 October 8 [stateful fixed-base cash checkpoint](review/2026-10-08/stateful-inventory-cash.md):
 new `replay_stateful_fixed_base_cash` consumes explicit aligned prices, marked
 funding populations, starting quote capital and execution-cost fraction. The

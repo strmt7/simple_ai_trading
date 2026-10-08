@@ -5,7 +5,6 @@ from __future__ import annotations
 import json
 import os
 import queue
-import signal
 import subprocess  # nosec B404 - fixed interpreter/module invocation, no shell
 import sys
 import threading
@@ -13,6 +12,8 @@ from collections import deque
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Sequence
+
+from .windows_owned_job import CREATE_SUSPENDED, WindowsOwnedJob
 
 
 @dataclass(frozen=True)
@@ -44,12 +45,15 @@ class FoundationWorkerSupervisor:
         self.model_size = str(model_size)
         self.backend = str(backend)
         self.source_cache_root = (
-            str(Path(source_cache_root).resolve()) if source_cache_root is not None else None
+            str(Path(source_cache_root).resolve())
+            if source_cache_root is not None
+            else None
         )
         self.require_accelerator = bool(require_accelerator)
         self.startup_timeout_seconds = max(1.0, float(startup_timeout_seconds))
         self.request_timeout_seconds = max(1.0, float(request_timeout_seconds))
         self.process: subprocess.Popen[str] | None = None
+        self._job: WindowsOwnedJob | None = None
         self._runtime_pid: int | None = None
         self.report: dict[str, object] | None = None
         self._stdout: queue.Queue[str | None] = queue.Queue()
@@ -107,11 +111,22 @@ class FoundationWorkerSupervisor:
 
     def start(self) -> dict[str, object]:
         self.stop()
+        try:
+            return self._start_owned_worker()
+        except BaseException:
+            # __exit__ is not invoked when __enter__/startup fails.
+            self.stop()
+            raise
+
+    def _start_owned_worker(self) -> dict[str, object]:
         self._stdout = queue.Queue()
         self._stderr = deque(maxlen=100)
         creation_flags = 0
         if os.name == "nt":
-            creation_flags = int(getattr(subprocess, "CREATE_NO_WINDOW", 0))
+            self._job = WindowsOwnedJob()
+            creation_flags = (
+                int(getattr(subprocess, "CREATE_NO_WINDOW", 0)) | CREATE_SUSPENDED
+            )
         self.process = subprocess.Popen(  # nosec B603
             self._command(),
             stdin=subprocess.PIPE,
@@ -124,6 +139,8 @@ class FoundationWorkerSupervisor:
             creationflags=creation_flags,
         )
         process = self.process
+        if self._job is not None:
+            self._job.enroll_and_resume(process)
         stdin = process.stdin
         stdout = process.stdout
         stderr = process.stderr
@@ -146,24 +163,38 @@ class FoundationWorkerSupervisor:
             name="foundation-worker-stderr",
         ).start()
         message = self._message(self.startup_timeout_seconds, startup=True)
-        if message.get("type") != "ready" or not isinstance(message.get("report"), dict):
+        if message.get("type") != "ready" or not isinstance(
+            message.get("report"), dict
+        ):
             self.stop()
             raise FoundationWorkerError(
                 f"foundation worker did not become ready: {message}",
                 restartable=False,
             )
-        runtime_pid = int(message.get("worker_pid", 0))
-        if runtime_pid <= 0:
+        runtime_pid = message.get("worker_pid")
+        if type(runtime_pid) is not int or runtime_pid <= 0:
             self.stop()
             raise FoundationWorkerError(
                 "foundation worker omitted its runtime PID",
+                restartable=False,
+            )
+        owned_runtime = (
+            self._job.contains_pid(runtime_pid)
+            if self._job is not None
+            else runtime_pid == process.pid
+        )
+        if not owned_runtime:
+            raise FoundationWorkerError(
+                "foundation worker runtime is outside its owned process boundary",
                 restartable=False,
             )
         self._runtime_pid = runtime_pid
         self.report = dict(message["report"])
         return self.report
 
-    def _message(self, timeout_seconds: float, *, startup: bool = False) -> dict[str, Any]:
+    def _message(
+        self, timeout_seconds: float, *, startup: bool = False
+    ) -> dict[str, Any]:
         try:
             line = self._stdout.get(timeout=max(0.1, float(timeout_seconds)))
         except queue.Empty as exc:
@@ -199,10 +230,12 @@ class FoundationWorkerSupervisor:
     def _context_payload(context: Any) -> dict[str, object]:
         frame = context.frame
         history_ms = (
-            context.history_timestamps.astype("int64").to_numpy(dtype="int64") // 1_000_000
+            context.history_timestamps.astype("int64").to_numpy(dtype="int64")
+            // 1_000_000
         )
         future_ms = (
-            context.future_timestamps.astype("int64").to_numpy(dtype="int64") // 1_000_000
+            context.future_timestamps.astype("int64").to_numpy(dtype="int64")
+            // 1_000_000
         )
         return {
             "columns": [str(column) for column in frame.columns],
@@ -224,7 +257,9 @@ class FoundationWorkerSupervisor:
     ) -> WorkerPrediction:
         process = self.process
         if process is None or process.poll() is not None or process.stdin is None:
-            raise FoundationWorkerError("foundation worker is not running", restartable=True)
+            raise FoundationWorkerError(
+                "foundation worker is not running", restartable=True
+            )
         self._request_id += 1
         request_id = self._request_id
         request = {
@@ -239,7 +274,9 @@ class FoundationWorkerSupervisor:
             "contexts": [self._context_payload(context) for context in contexts],
         }
         try:
-            process.stdin.write(json.dumps(request, separators=(",", ":"), allow_nan=False) + "\n")
+            process.stdin.write(
+                json.dumps(request, separators=(",", ":"), allow_nan=False) + "\n"
+            )
             process.stdin.flush()
         except (BrokenPipeError, OSError) as exc:
             raise FoundationWorkerError(
@@ -265,12 +302,16 @@ class FoundationWorkerSupervisor:
                 restartable=False,
             )
         raw_predictions = message.get("predicted_closes")
-        if not isinstance(raw_predictions, list) or len(raw_predictions) != len(contexts):
+        if not isinstance(raw_predictions, list) or len(raw_predictions) != len(
+            contexts
+        ):
             raise FoundationWorkerError(
                 "foundation worker returned the wrong prediction count",
                 restartable=False,
             )
-        predictions = tuple(tuple(float(value) for value in values) for values in raw_predictions)
+        predictions = tuple(
+            tuple(float(value) for value in values) for values in raw_predictions
+        )
         if any(len(values) != int(prediction_length) for values in predictions):
             raise FoundationWorkerError(
                 "foundation worker returned the wrong prediction horizon",
@@ -282,18 +323,12 @@ class FoundationWorkerSupervisor:
             worker_pid=response_pid,
         )
 
-    @staticmethod
-    def _terminate_runtime_pid(runtime_pid: int | None) -> None:
-        if runtime_pid is None or runtime_pid <= 0 or runtime_pid == os.getpid():
-            return
-        try:
-            os.kill(runtime_pid, signal.SIGTERM)
-        except (OSError, ProcessLookupError):
-            pass
-
     def stop(self) -> None:
+        if self._job is not None:
+            # Kill only kernel-associated owned processes, never a reported PID.
+            self._job.close()
+            self._job = None
         process = self.process
-        runtime_pid = self._runtime_pid
         self.process = None
         self._runtime_pid = None
         self.report = None
@@ -308,8 +343,6 @@ class FoundationWorkerSupervisor:
             try:
                 process.wait(timeout=3.0)
             except subprocess.TimeoutExpired:
-                if runtime_pid != process.pid:
-                    self._terminate_runtime_pid(runtime_pid)
                 try:
                     process.terminate()
                     process.wait(timeout=3.0)
@@ -322,11 +355,7 @@ class FoundationWorkerSupervisor:
                 except OSError:
                     pass
             except OSError:
-                if runtime_pid != process.pid:
-                    self._terminate_runtime_pid(runtime_pid)
-        elif runtime_pid != process.pid:
-            # A Windows venv launcher can exit while its interpreter child remains.
-            self._terminate_runtime_pid(runtime_pid)
+                pass
         for stream in (process.stdout, process.stderr):
             if stream is not None:
                 try:
