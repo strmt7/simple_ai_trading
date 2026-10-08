@@ -100,10 +100,35 @@ cold index is created only by an explicit indexing command; `.cocoindex_code/`
 must never be written to the live checkout.
 
 Use `index --allow-dirty-index` only when the worktree snapshot is intentional,
-or `search --refresh "<query>"` on a clean tree. MCP search itself never refreshes.
-It can therefore return stale active-index text until an explicit
-refresh. The mirror includes Git-visible text-decodable files and skips binary
-content; semantic results are routing evidence, not correctness evidence.
+or `search --refresh "<query>"` on a clean tree. After edits, prefer the explicit
+`index --reuse-active-cache` mode, adding `--allow-dirty-index` for an intentional
+dirty snapshot. It preserves old source bytes under external `snapshots/`, keeps
+the existing physical working path/database and lets CocoIndex invalidate changed
+files while retaining its embedding memoization. Storage identity is distinct
+from the current source fingerprint; neither implies the other is current. A
+pending/failed index update, stale manifest or changed mirror rejects search.
+MCP search itself never refreshes.
+CLI/MCP searches reject a source digest different from the explicitly indexed
+snapshot. After edits, refresh intentionally; do not fall back to broad `rg`.
+Successful searches retain the exact output, query arguments, snapshot digest,
+current digest and candidate byte comparisons under the external cache's
+`receipts/`. This local audit write is not a trading mutation or financial proof.
+Keep secrets out of queries. Still read relevant live source to verify meaning.
+
+The mirror includes Git-visible text-decodable source/configuration files and active instructions.
+It excludes `data/`, `artifacts/`, `docs/review/`, `docs/model-research/`,
+`docs/archive/`, ignored files and binary formats before content reads. Benchmark
+query fixtures are also excluded from indexing so they cannot match themselves.
+The public fixture from an older index may be archived during cache migration;
+it is never reindexed. Benchmark broad `rg` uses that same safe mirror, not
+protected market evidence. The Windows
+runtime uses `Scripts/python.exe`; automated CLI commands receive a closed input
+pipe so initialization cannot mistake Windows NUL for an interactive console.
+MCP installation refuses to overwrite foreign or unbound registrations.
+Windows native CLI calls use the pinned interpreter and Click's supported
+`windows_expand_args=False` entry point. Without it, Click expands path globs
+into filenames, shifts query arguments and introduces non-matching backslashes.
+Do not patch vendor code or reinterpret an empty search as absent source.
 
 `mcp-smoke` validates registration and the JSON-RPC handshake without creating
 an index. The package benchmark cases and dependency hashes are recorded in
@@ -114,6 +139,16 @@ queries or add path/language filters before widening. Benchmark artifacts record
 both characters and exact UTF-8 output bytes for broad `rg`, semantic routing,
 and the focused hybrid path. Bytes are a reproducible context-volume proxy, not
 a claim about model-specific token usage.
+
+For the ten-case workflow check, `benchmark --reuse-current-index` verifies the
+current source digest and reuses one daemon across all queries. It does not
+reindex. Every semantic case retains a raw source-bound search receipt. Keep
+benchmark outputs outside the checkout and qualify timing separately from
+functional routing under shared-host load.
+Optional case `langs` and `path` fields declare retrieval scope prospectively;
+keep the original questions and expected paths unchanged and report controls
+separately. Sparse results or poor recall require refinement and live verification,
+not a claim that installation alone establishes reliable routing.
 
 ## Structural Edge Evidence Boundaries
 

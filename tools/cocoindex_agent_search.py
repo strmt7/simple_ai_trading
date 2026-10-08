@@ -17,6 +17,7 @@ import time
 import tempfile
 import tomllib
 import venv
+import uuid
 from contextlib import contextmanager
 from dataclasses import dataclass
 from pathlib import Path, PurePosixPath
@@ -48,6 +49,41 @@ DENIED_MIRROR_SUFFIXES = (".env",)
 DENIED_MIRROR_PARTS = frozenset({".codex", ".cocoindex_code"})
 MIRROR_INCLUDE_PATTERNS = ("*",)
 MIRROR_EXCLUDE_PATTERNS = (".cocoindex_code/**", "**/.cocoindex_code/**")
+SEMANTIC_QUERY_FIXTURE = PurePosixPath(
+    "docs/reference/cocoindex-code-agent-benchmark-2026-07-11-cases.json"
+)
+NON_SOURCE_PREFIXES = (
+    ("data",),
+    ("artifacts",),
+    ("docs", "review"),
+    ("docs", "model-research"),
+    ("docs", "archive"),
+)
+SOURCE_SUFFIXES = frozenset(
+    {
+        ".py",
+        ".ps1",
+        ".sh",
+        ".cmd",
+        ".bat",
+        ".c",
+        ".cpp",
+        ".h",
+        ".hpp",
+        ".rs",
+        ".js",
+        ".mjs",
+        ".ts",
+        ".tsx",
+        ".jsx",
+        ".sql",
+        ".md",
+        ".toml",
+        ".yaml",
+        ".yml",
+        ".json",
+    }
+)
 DISK_BYTES_ENV_PREFIX = "AGENT_COCOINDEX_DISK_"
 MIN_DEFAULT_FREE_BYTES = 2 * 1024 * 1024 * 1024
 MAX_DEFAULT_FREE_BYTES = 20 * 1024 * 1024 * 1024
@@ -113,6 +149,12 @@ class CocoIndexContext:
     artifact_root: Path
     mirror_repo: Path
     mirror_digest: str
+    storage_digest: str | None = None
+
+    @property
+    def storage_key(self) -> str:
+        """Separate reusable index storage from the current source fingerprint."""
+        return self.storage_digest or self.mirror_digest
 
     @property
     def venv_dir(self) -> Path:
@@ -141,6 +183,13 @@ class CocoIndexContext:
         return self.venv_dir / "bin" / "ccc"
 
     @property
+    def venv_python(self) -> Path:
+        """Resolve the interpreter using the actual platform's venv layout."""
+        if os.name == "nt":
+            return self.venv_dir / "Scripts" / "python.exe"
+        return self.venv_dir / "bin" / "python"
+
+    @property
     def settings_dir(self) -> Path:
         """Return the settings directory.
 
@@ -154,7 +203,7 @@ class CocoIndexContext:
 
         Inputs: none. Output: `Path`.
         """
-        return self.artifact_root / "runtime" / self.mirror_digest
+        return self.artifact_root / "runtime" / self.storage_key
 
     @property
     def db_root(self) -> Path:
@@ -170,7 +219,7 @@ class CocoIndexContext:
 
         Inputs: none. Output: `Path`.
         """
-        return self.db_root / self.mirror_digest
+        return self.db_root / self.storage_key
 
     @property
     def cache_dir(self) -> Path:
@@ -205,6 +254,8 @@ class BenchmarkCase:
     query: str
     rg: str
     expected: tuple[str, ...]
+    langs: tuple[str, ...] = ()
+    path: str | None = None
 
 
 @dataclass(frozen=True)
@@ -235,6 +286,8 @@ class BenchmarkResult:
     focused_rg_unique_files: int
     hybrid_chars: int
     hybrid_bytes: int
+    coco_query: str = ""
+    coco_source_receipt: str | None = None
 
     def as_payload(self) -> dict[str, object]:
         """Return a JSON-serializable benchmark record.
@@ -266,6 +319,8 @@ class BenchmarkResult:
             "focused_rg_unique_files": self.focused_rg_unique_files,
             "hybrid_chars": self.hybrid_chars,
             "hybrid_bytes": self.hybrid_bytes,
+            "coco_query": self.coco_query,
+            "coco_source_receipt": self.coco_source_receipt,
         }
 
 
@@ -279,6 +334,60 @@ def resolve_required_executable(name: str) -> str:
     if not resolved:
         raise RuntimeError(f"Required command is not available in PATH: {name}")
     return resolved
+
+
+def run_captured_process(
+    args: list[str],
+    *,
+    cwd: Path,
+    env: dict[str, str] | None,
+    input_text: str,
+    timeout: int | None,
+) -> subprocess.CompletedProcess[str]:
+    """Capture an unattended command and contain its entire Windows child tree."""
+    child_env = os.environ.copy()
+    if env is not None:
+        child_env.update(env)
+    child_env.update({"PYTHONUTF8": "1", "PYTHONIOENCODING": "utf-8"})
+    if os.name != "nt":
+        return subprocess.run(
+            args,
+            cwd=cwd,
+            env=child_env,
+            input=input_text,
+            check=False,
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            timeout=timeout,
+        )
+    from simple_ai_trading.windows_owned_job import CREATE_SUSPENDED, WindowsOwnedJob
+
+    job = WindowsOwnedJob()
+    process = None
+    try:
+        process = subprocess.Popen(
+            args,
+            cwd=cwd,
+            env=child_env,
+            stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            encoding="utf-8",
+            creationflags=CREATE_SUSPENDED | subprocess.CREATE_NO_WINDOW,
+        )
+        job.enroll_and_resume(process)
+        stdout, stderr = process.communicate(input=input_text, timeout=timeout)
+        return subprocess.CompletedProcess(args, process.returncode, stdout, stderr)
+    finally:
+        # This original job handle, not any PID from child output, owns cleanup.
+        job.close()
+        if process is not None:
+            process.wait(timeout=timeout_seconds("daemon_stop"))
+            for stream in (process.stdin, process.stdout, process.stderr):
+                if stream is not None:
+                    stream.close()
 
 
 def run_command(
@@ -296,13 +405,11 @@ def run_command(
     the called operation fails.
     """
     try:
-        return subprocess.run(
+        return run_captured_process(
             args,
             cwd=cwd,
             env=env,
-            check=False,
-            capture_output=True,
-            text=True,
+            input_text="",
             timeout=timeout,
         )
     except OSError as exc:
@@ -357,14 +464,11 @@ def run_command_with_input(
     RuntimeError when validation or the called operation fails.
     """
     try:
-        return subprocess.run(
+        return run_captured_process(
             args,
             cwd=cwd,
             env=env,
-            input=input_text,
-            check=False,
-            capture_output=True,
-            text=True,
+            input_text=input_text,
             timeout=timeout,
         )
     except OSError as exc:
@@ -634,7 +738,22 @@ def tracked_files(
             "Refusing to mirror deployment-local or CocoIndex artifact paths: "
             + ", ".join(sorted(denied))
         )
-    return sorted((path for path in paths if path not in excluded_paths), key=str)
+    return sorted(
+        (path for path in paths if path not in excluded_paths and is_source_path(path)),
+        key=str,
+    )
+
+
+def is_source_path(path: PurePosixPath) -> bool:
+    """Exclude market evidence/binaries before reading or copying index inputs."""
+    if path == SEMANTIC_QUERY_FIXTURE or any(
+        path.parts[: len(prefix)] == prefix for prefix in NON_SOURCE_PREFIXES
+    ):
+        return False
+    return path.suffix.lower() in SOURCE_SUFFIXES or path.name in {
+        "Dockerfile",
+        "LICENSE",
+    }
 
 
 def repo_status_porcelain(repo_root: Path) -> str:
@@ -873,6 +992,13 @@ def ccc_env(context: CocoIndexContext) -> dict[str, str]:
             "PIP_CACHE_DIR": str(context.pip_cache),
             "NO_COLOR": "1",
             "TERM": "dumb",
+            "COCOINDEX_DISABLE_USAGE_TRACKING": "1",
+            "HF_HUB_DISABLE_IMPLICIT_TOKEN": "1",
+            "OMP_NUM_THREADS": "2",
+            "MKL_NUM_THREADS": "2",
+            "TOKENIZERS_PARALLELISM": "false",
+            "PYTHONUTF8": "1",
+            "PYTHONIOENCODING": "utf-8",
         }
     )
     return env
@@ -991,6 +1117,21 @@ def resolve_mcp_handshake_context() -> CocoIndexContext:
     )
 
 
+def resolve_reusable_index_context(repo_root: Path) -> CocoIndexContext:
+    """Bind an explicit refresh to this repository's existing physical cache."""
+    active = resolve_active_index_context()
+    if active.repo_root.resolve() != repo_root.resolve():
+        raise RuntimeError("Reusable CocoIndex cache belongs to another repository.")
+    digest = file_digest(repo_root, tracked_files(repo_root))
+    return CocoIndexContext(
+        repo_root,
+        active.artifact_root,
+        active.mirror_repo,
+        digest,
+        active.storage_key,
+    )
+
+
 def repo_active_key(repo_root: Path) -> str:
     """Return a host-local key for active-index metadata.
 
@@ -1056,11 +1197,13 @@ def resolve_active_index_context() -> CocoIndexContext:
             f"Active CocoIndex metadata does not match this repo: {metadata_path}"
         )
     digest = validate_mirror_digest(payload.get("mirror_digest"))
+    storage = validate_mirror_digest(payload.get("storage_digest", digest))
     return CocoIndexContext(
         repo_root=repo_root,
         artifact_root=artifact_root,
-        mirror_repo=artifact_root / "mirrors" / digest / "repo",
+        mirror_repo=artifact_root / "mirrors" / storage / "repo",
         mirror_digest=digest,
+        storage_digest=storage if storage != digest else None,
     )
 
 
@@ -1075,6 +1218,7 @@ def write_active_index_metadata(context: CocoIndexContext) -> None:
         "package": PACKAGE_REQUIREMENT,
         "source_repo": str(context.repo_root),
         "mirror_digest": context.mirror_digest,
+        "storage_digest": context.storage_key,
     }
     metadata_path.parent.mkdir(parents=True, exist_ok=True)
     atomic_write_text(
@@ -1101,7 +1245,7 @@ def ensure_installed(context: CocoIndexContext) -> None:
         if context.venv_dir.exists():
             shutil.rmtree(context.venv_dir)
         venv.EnvBuilder(with_pip=True, clear=True).create(context.venv_dir)
-        pip = context.venv_dir / "bin" / "python"
+        pip = context.venv_python
         install_env = os.environ.copy()
         install_env["PIP_CACHE_DIR"] = str(context.pip_cache)
         context.pip_cache.mkdir(parents=True, exist_ok=True)
@@ -1119,7 +1263,7 @@ def verify_install(context: CocoIndexContext) -> None:
 
     Inputs: `context`. Output: None.
     """
-    python = context.venv_dir / "bin" / "python"
+    python = context.venv_python
     script = (
         "import importlib.metadata, importlib.util\n"
         f"version = importlib.metadata.version({PACKAGE_NAME!r})\n"
@@ -1152,6 +1296,9 @@ def ensure_mirror(
     Output: None. Raises: RuntimeError when validation or the called operation fails.
     """
     require_disk_budget(context, "mirror")
+    if context.storage_digest is not None:
+        refresh_reusable_mirror(context, excluded_paths)
+        return
     manifest_path = context.mirror_repo.parent / "manifest.json"
     if manifest_path.exists() and context.mirror_repo.exists():
         return
@@ -1194,6 +1341,128 @@ def ensure_mirror(
             "package": PACKAGE_REQUIREMENT,
         }
         manifest_path.write_text(json.dumps(manifest, indent=2, sort_keys=True) + "\n")
+
+
+def refresh_reusable_mirror(
+    context: CocoIndexContext, excluded_paths: frozenset[PurePosixPath]
+) -> None:
+    """Preserve the old source snapshot, then update the same index working path.
+
+    The active index fingerprint remains unchanged until indexing succeeds.
+    Partial updates cannot admit current searches and require explicit diagnosis
+    and recovery. Settings and other repositories are never removed.
+    """
+    expected = context.artifact_root / "mirrors" / context.storage_key / "repo"
+    if context.mirror_repo.resolve() != expected.resolve():
+        raise RuntimeError("Reusable mirror is outside its declared cache boundary.")
+    manifest_path = expected.parent / "manifest.json"
+    paths = tracked_files(context.repo_root, excluded_paths)
+    require_mirror_write_budget(
+        context, 2 * repo_visible_file_total_bytes(context.repo_root, paths)
+    )
+    with FileLock(lock_path(context.artifact_root, f"daemon-{context.storage_key}")):
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        if (
+            manifest.get("source_repo") != str(context.repo_root)
+            or manifest.get("package") != PACKAGE_REQUIREMENT
+        ):
+            raise RuntimeError(
+                "Reusable mirror manifest belongs to another source or package."
+            )
+        if manifest.get("digest") == context.mirror_digest:
+            if file_digest(expected, paths) != context.mirror_digest:
+                raise RuntimeError(
+                    "Reusable mirror content does not match its fingerprint."
+                )
+            return
+        old_digest = validate_mirror_digest(manifest.get("digest"))
+        old_paths = sorted(
+            (
+                PurePosixPath(p.relative_to(expected).as_posix())
+                for p in expected.rglob("*")
+                if p.is_file()
+                and ".cocoindex_code" not in p.relative_to(expected).parts
+            ),
+            key=str,
+        )
+        if "source_paths" in manifest:
+            old_paths = [
+                validate_repo_relative_path(p) for p in manifest["source_paths"]
+            ]
+        if any(
+            (not is_source_path(p) and p != SEMANTIC_QUERY_FIXTURE)
+            or is_denied_mirror_path(p)
+            for p in old_paths
+        ):
+            raise RuntimeError(
+                "Reusable mirror contains inputs outside the source scope."
+            )
+        if file_digest(expected, old_paths) != old_digest:
+            raise RuntimeError(
+                "Old reusable snapshot is incomplete or modified; preserve it and diagnose."
+            )
+        require_mirror_write_budget(
+            context,
+            repo_visible_file_total_bytes(expected, old_paths)
+            + repo_visible_file_total_bytes(context.repo_root, paths),
+        )
+        snapshot = context.artifact_root / "snapshots" / old_digest / "repo"
+        if snapshot.exists():
+            if file_digest(snapshot, old_paths) != old_digest:
+                raise RuntimeError(
+                    "Retained CocoIndex snapshot failed its content identity check."
+                )
+        else:
+            copied_digest, _ = copy_repo_files(expected, old_paths, snapshot)
+            if copied_digest != old_digest:
+                raise RuntimeError(
+                    "Old CocoIndex source changed during snapshot preservation."
+                )
+        with tempfile.TemporaryDirectory(
+            dir=expected.parent, prefix="refresh-"
+        ) as temporary:
+            staged = Path(temporary) / "repo"
+            staged.mkdir()
+            copied_digest, copied_files = copy_repo_files(
+                context.repo_root, paths, staged
+            )
+            if copied_digest != context.mirror_digest:
+                raise RuntimeError(
+                    "Live source changed before reusable mirror publication."
+                )
+            for relative in old_paths:
+                if relative not in paths:
+                    verified_repo_source_path(expected, relative).unlink(
+                        missing_ok=True
+                    )
+            for relative in paths:
+                source = verified_repo_source_path(staged, relative)
+                target = verified_repo_source_path(expected, relative)
+                if not source.is_file():
+                    target.unlink(missing_ok=True)
+                    continue
+                if target.is_file() and repo_file_sha256(target) == repo_file_sha256(
+                    source
+                ):
+                    continue
+                target.parent.mkdir(parents=True, exist_ok=True)
+                os.replace(source, target)
+            if (
+                file_digest(expected, paths) != context.mirror_digest
+                or file_digest(context.repo_root, paths) != context.mirror_digest
+            ):
+                raise RuntimeError(
+                    "Reusable mirror publication failed source verification."
+                )
+        manifest.update(
+            digest=context.mirror_digest,
+            mirrored_files=copied_files,
+            git_visible_non_ignored_files=len(paths),
+            source_paths=[p.as_posix() for p in paths],
+        )
+        atomic_write_text(
+            manifest_path, json.dumps(manifest, indent=2, sort_keys=True) + "\n"
+        )
 
 
 def ensure_project_initialized(context: CocoIndexContext) -> None:
@@ -1286,6 +1555,18 @@ def repo_relative_path_if_inside(repo_root: Path, path: Path) -> PurePosixPath |
     return validate_repo_relative_path(relative.as_posix())
 
 
+def ccc_command(context: CocoIndexContext, args: list[str]) -> list[str]:
+    """Preserve literal query and glob arguments through Click on Windows."""
+    if os.name == "nt":
+        return [
+            str(context.venv_python),
+            "-c",
+            "from cocoindex_code.cli import app; app(windows_expand_args=False)",
+            *args,
+        ]
+    return [str(context.ccc_bin), *args]
+
+
 def run_ccc(
     context: CocoIndexContext,
     args: list[str],
@@ -1300,7 +1581,7 @@ def run_ccc(
     ensure_ready(context, excluded_paths)
     with daemon_session(context):
         return checked_command(
-            [str(context.ccc_bin), *args],
+            ccc_command(context, args),
             cwd=context.mirror_repo,
             env=ccc_supervised_env(context),
             timeout=timeout,
@@ -1342,14 +1623,14 @@ def run_ccc_existing(
     command_env = ccc_supervised_env(context)
     if not manage_daemon:
         return checked_command(
-            [str(context.ccc_bin), *args],
+            ccc_command(context, args),
             cwd=context.mirror_repo,
             env=command_env,
             timeout=timeout,
         )
     with daemon_session(context):
         return checked_command(
-            [str(context.ccc_bin), *args],
+            ccc_command(context, args),
             cwd=context.mirror_repo,
             env=command_env,
             timeout=timeout,
@@ -1377,6 +1658,10 @@ def run_index(
     require_clean_index_target(context.repo_root, allow_dirty=allow_dirty)
     require_disk_budget(context, "index")
     emit_cold_index_notice_if_needed(context)
+    pending = context.db_dir / "index-update-pending.json"
+    atomic_write_text(
+        pending, json.dumps({"source_digest": context.mirror_digest}) + "\n"
+    )
     output = run_ccc(
         context,
         ["index"],
@@ -1384,6 +1669,7 @@ def run_index(
         excluded_paths=excluded_paths,
     )
     write_active_index_metadata(context)
+    pending.unlink()
     return output.stdout
 
 
@@ -1458,12 +1744,24 @@ def load_benchmark_cases(path: Path) -> list[BenchmarkCase]:
             raise RuntimeError(
                 f"Benchmark case {index} expected must be a non-empty string list."
             )
+        langs = item.get("langs", [])
+        if not isinstance(langs, list) or any(
+            not isinstance(lang, str) or not lang.strip() for lang in langs
+        ):
+            raise RuntimeError(f"Benchmark case {index} langs must be a string list.")
+        path = item.get("path")
+        if path is not None and (not isinstance(path, str) or not path.strip()):
+            raise RuntimeError(
+                f"Benchmark case {index} path must be a non-empty string."
+            )
         cases.append(
             BenchmarkCase(
                 name=item["name"],
                 query=item["query"],
                 rg=item["rg"],
                 expected=tuple(expected),
+                langs=tuple(langs),
+                path=path,
             )
         )
     return cases
@@ -1503,11 +1801,21 @@ def run_rg_baseline(
             case.rg,
             ".",
         ],
-        cwd=context.repo_root,
+        cwd=context.mirror_repo,
         timeout=timeout_seconds("rg"),
     )
     elapsed_ms = (time.perf_counter() - start) * 1000
     return result, elapsed_ms, parse_file_hits(RG_FILE_RE, result.stdout)
+
+
+def benchmark_search_arguments(case: BenchmarkCase) -> list[str]:
+    """Keep declared filters identical in invocation and raw receipts."""
+    arguments = ["search", "--limit", "5"]
+    if case.path is not None:
+        arguments.extend(["--path", case.path])
+    for lang in case.langs:
+        arguments.extend(["--lang", lang])
+    return [*arguments, case.query]
 
 
 def run_coco_search(
@@ -1525,7 +1833,7 @@ def run_coco_search(
     start = time.perf_counter()
     result = run_ccc_existing(
         context,
-        ["search", "--limit", "5", case.query],
+        benchmark_search_arguments(case),
         timeout=timeout_seconds("search"),
         manage_daemon=manage_daemon,
     )
@@ -1607,6 +1915,9 @@ def benchmark_case(
     rg_bytes = len(rg_result.stdout.encode("utf-8"))
     coco_bytes = len(coco_result.stdout.encode("utf-8"))
     focused_rg_bytes = len(focused_rg_result.stdout.encode("utf-8"))
+    receipt = retain_search_receipt(
+        context, benchmark_search_arguments(case), coco_result.stdout
+    )
     return BenchmarkResult(
         case=case.name,
         rg_ms=round(rg_ms, 1),
@@ -1632,6 +1943,8 @@ def benchmark_case(
         focused_rg_unique_files=len(focused_rg_files),
         hybrid_chars=len(coco_result.stdout) + len(focused_rg_result.stdout),
         hybrid_bytes=coco_bytes + focused_rg_bytes,
+        coco_query=case.query,
+        coco_source_receipt=str(receipt),
     )
 
 
@@ -1657,16 +1970,12 @@ def benchmark_summary(results: list[BenchmarkResult]) -> dict[str, object]:
         "coco_total_chars": sum(result.coco_chars for result in results),
         "coco_total_bytes": sum(result.coco_bytes for result in results),
         "focused_rg_total_chars": sum(result.focused_rg_chars for result in results),
-        "focused_rg_total_bytes": sum(
-            result.focused_rg_bytes for result in results
-        ),
+        "focused_rg_total_bytes": sum(result.focused_rg_bytes for result in results),
         "hybrid_total_chars": sum(result.hybrid_chars for result in results),
         "hybrid_total_bytes": hybrid_total_bytes,
         "hybrid_minus_rg_bytes": hybrid_total_bytes - rg_total_bytes,
         "hybrid_to_rg_output_ratio": (
-            round(hybrid_total_bytes / rg_total_bytes, 6)
-            if rg_total_bytes
-            else None
+            round(hybrid_total_bytes / rg_total_bytes, 6) if rg_total_bytes else None
         ),
         "rg_avg_ms": round(sum(result.rg_ms for result in results) / len(results), 1),
         "coco_avg_ms": round(
@@ -1691,6 +2000,7 @@ def run_benchmark(
     excluded_paths: frozenset[PurePosixPath] = frozenset(),
     *,
     allow_dirty: bool = False,
+    reuse_current_index: bool = False,
 ) -> dict[str, object]:
     """The reproducible hybrid search benchmark.
 
@@ -1699,12 +2009,18 @@ def run_benchmark(
     """
     require_clean_index_target(context.repo_root, allow_dirty=allow_dirty)
     require_disk_budget(context, "benchmark")
-    ensure_installed(context)
-    ensure_mirror(context, excluded_paths)
-    ensure_project_initialized(context)
-    index_start = time.perf_counter()
-    run_index(context, allow_dirty=allow_dirty, excluded_paths=excluded_paths)
-    index_elapsed = time.perf_counter() - index_start
+    if reuse_current_index:
+        require_current_index(context)
+        if not target_sqlite_db(context).is_file():
+            raise IndexRequiredError(INDEX_REQUIRED_MESSAGE)
+        index_elapsed = 0.0
+    else:
+        ensure_installed(context)
+        ensure_mirror(context, excluded_paths)
+        ensure_project_initialized(context)
+        index_start = time.perf_counter()
+        run_index(context, allow_dirty=allow_dirty, excluded_paths=excluded_paths)
+        index_elapsed = time.perf_counter() - index_start
 
     rg_bin = resolve_required_executable("rg")
     with daemon_session(context):
@@ -1718,6 +2034,8 @@ def run_benchmark(
             )
             for case in cases
         ]
+    if reuse_current_index:
+        require_current_index(context)
 
     payload = {
         "benchmark_schema": 2,
@@ -1731,6 +2049,12 @@ def run_benchmark(
             path.as_posix() for path in sorted(excluded_paths, key=str)
         ],
         "index_elapsed_seconds": round(index_elapsed, 2),
+        "reused_current_index": reuse_current_index,
+        "timing_qualified": False,
+        "timing_qualification_note": (
+            "Recorded timings require separate concurrent host-load qualification; "
+            "functional routing does not establish clean speed evidence."
+        ),
         "index_db_bytes": target_sqlite_db(context).stat().st_size,
         "results": [result.as_payload() for result in results],
         "summary": benchmark_summary(results),
@@ -1776,7 +2100,11 @@ def command_index(args: argparse.Namespace) -> None:
     allow_dirty = getattr(args, "allow_dirty_index", False)
     repo_root = resolve_repo_root()
     require_clean_index_target(repo_root, allow_dirty=allow_dirty)
-    context = resolve_context(repo_root=repo_root)
+    context = (
+        resolve_reusable_index_context(repo_root)
+        if getattr(args, "reuse_active_cache", False)
+        else resolve_context(repo_root=repo_root)
+    )
     output = run_index(context, allow_dirty=allow_dirty)
     print(output, end="")
 
@@ -1838,8 +2166,98 @@ def run_search(
     for lang in langs:
         ccc_args.extend(["--lang", lang])
     ccc_args.extend(query)
+    require_current_index(context)
     output = run_ccc_existing(context, ccc_args, timeout=timeout_seconds("search"))
+    receipt = retain_search_receipt(context, ccc_args, output.stdout)
+    require_current_index(context, receipt=receipt)
     return output.stdout
+
+
+def require_current_index(
+    context: CocoIndexContext, *, receipt: Path | None = None
+) -> None:
+    """Reject stale routing instead of silently searching a different snapshot."""
+    if (context.db_dir / "index-update-pending.json").exists():
+        raise IndexRequiredError(
+            "CocoIndex update is pending or failed; complete explicit indexing before search."
+        )
+    digest = file_digest(context.repo_root, tracked_files(context.repo_root))
+    if digest != context.mirror_digest:
+        detail = f" Retained query receipt: {receipt}." if receipt is not None else ""
+        raise IndexRequiredError(
+            "CocoIndex source snapshot is stale. Explicitly index the current "
+            f"worktree before broad navigation.{detail}"
+        )
+    manifest_path = context.mirror_repo.parent / "manifest.json"
+    if not manifest_path.is_file():
+        raise IndexRequiredError("CocoIndex source mirror has no verified manifest.")
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    if (
+        manifest.get("digest") != context.mirror_digest
+        or file_digest(context.mirror_repo, tracked_files(context.repo_root))
+        != context.mirror_digest
+    ):
+        raise IndexRequiredError(
+            "CocoIndex mirror snapshot is stale or modified; diagnose before search."
+        )
+
+
+def retain_search_receipt(
+    context: CocoIndexContext, arguments: list[str], output: str
+) -> Path:
+    """Retain actual routing output and its snapshot binding outside the checkout.
+
+    A stale snapshot is explicitly labelled; matching candidate bytes do not
+    establish freshness of the entire index. Receipts are not financial evidence.
+    """
+    current_digest = file_digest(context.repo_root, tracked_files(context.repo_root))
+    candidates = parse_file_hits(SEARCH_FILE_RE, output)
+    source_checks = []
+    for candidate in candidates:
+        relative = PurePosixPath(candidate)
+        if (
+            relative.is_absolute()
+            or ".." in relative.parts
+            or not is_source_path(relative)
+        ):
+            raise RuntimeError("CocoIndex returned a path outside the source scope.")
+        live = context.repo_root.joinpath(*relative.parts)
+        mirror = context.mirror_repo.joinpath(*relative.parts)
+        if not live.resolve().is_relative_to(context.repo_root.resolve()):
+            raise RuntimeError("CocoIndex candidate escapes the live repository.")
+        live_hash = (
+            hashlib.sha256(live.read_bytes()).hexdigest() if live.is_file() else None
+        )
+        mirror_hash = (
+            hashlib.sha256(mirror.read_bytes()).hexdigest()
+            if mirror.is_file()
+            else None
+        )
+        source_checks.append(
+            {
+                "path": candidate,
+                "live_sha256": live_hash,
+                "mirror_sha256": mirror_hash,
+                "matches": live_hash is not None and live_hash == mirror_hash,
+            }
+        )
+    payload = {
+        "schema": 1,
+        "created_unix_seconds": time.time(),
+        "package": PACKAGE_REQUIREMENT,
+        "source_repo": str(context.repo_root),
+        "mirror_digest": context.mirror_digest,
+        "current_source_digest": current_digest,
+        "index_matches_current_source": current_digest == context.mirror_digest,
+        "arguments": arguments,
+        "raw_output": output,
+        "raw_output_sha256": hashlib.sha256(output.encode("utf-8")).hexdigest(),
+        "candidate_source_checks": source_checks,
+        "financial_evidence": False,
+    }
+    receipt = context.artifact_root / "receipts" / f"search-{uuid.uuid4().hex}.json"
+    atomic_write_text(receipt, json.dumps(payload, indent=2, sort_keys=True) + "\n")
+    return receipt
 
 
 def command_status(_args: argparse.Namespace) -> None:
@@ -1967,9 +2385,7 @@ def mcp_search_arguments(arguments: object) -> dict[str, object]:
             -32602,
             "refresh_index is not supported by MCP; run the CLI index command explicitly.",
         )
-    limit = mcp_positive_int(
-        arguments.get("limit"), "limit", DEFAULT_SEARCH_LIMIT
-    )
+    limit = mcp_positive_int(arguments.get("limit"), "limit", DEFAULT_SEARCH_LIMIT)
     if limit > MAX_SEARCH_LIMIT:
         raise JsonRpcError(-32602, f"limit must not exceed {MAX_SEARCH_LIMIT}.")
     return {
@@ -2264,8 +2680,17 @@ def start_daemon_process(context: CocoIndexContext) -> subprocess.Popen[bytes]:
     """
     context.runtime_dir.mkdir(parents=True, exist_ok=True)
     log_handle = daemon_log_path(context).open("w", encoding="utf-8")
+    job = None
+    proc = None
     try:
-        return subprocess.Popen(
+        if os.name == "nt":
+            from simple_ai_trading.windows_owned_job import (
+                CREATE_SUSPENDED,
+                WindowsOwnedJob,
+            )
+
+            job = WindowsOwnedJob()
+        proc = subprocess.Popen(
             [str(context.ccc_bin), "run-daemon"],
             cwd=context.mirror_repo,
             env=ccc_env(context),
@@ -2273,8 +2698,19 @@ def start_daemon_process(context: CocoIndexContext) -> subprocess.Popen[bytes]:
             stdout=log_handle,
             stderr=log_handle,
             start_new_session=True,
+            creationflags=(CREATE_SUSPENDED | subprocess.CREATE_NO_WINDOW)
+            if job
+            else 0,
         )
+        if job is not None:
+            job.enroll_and_resume(proc)
+            proc._cocoindex_owned_job = job
+        return proc
     except OSError as exc:
+        if job is not None:
+            job.close()
+        if proc is not None:
+            reap_started_daemon_process(proc, terminate_first=True)
         raise RuntimeError(f"Could not start CocoIndex daemon: {exc}") from exc
     finally:
         log_handle.close()
@@ -2341,6 +2777,12 @@ def stop_owned_daemon(context: CocoIndexContext, proc: subprocess.Popen[bytes]) 
 
     Inputs: `context`, `proc`. Output: None.
     """
+    job = getattr(proc, "_cocoindex_owned_job", None)
+    if job is not None:
+        # Close the original owned job, including Windows launcher descendants.
+        # Never use a daemon-reported PID as termination authority.
+        reap_started_daemon_process(proc)
+        return
     recorded_pid = daemon_pid(context)
     if recorded_pid is not None and recorded_pid != proc.pid:
         LOGGER.warning(
@@ -2369,6 +2811,9 @@ def reap_started_daemon_process(
     Inputs: `proc`, `terminate_first`. Output: None. Raises: RuntimeError when the owned
     process does not exit after termination.
     """
+    job = getattr(proc, "_cocoindex_owned_job", None)
+    if job is not None:
+        job.close()
     if proc.poll() is not None:
         return
     timeout = timeout_seconds("daemon_stop")
@@ -2397,7 +2842,7 @@ def daemon_session(context: CocoIndexContext) -> Any:
     Inputs: `context`. Output: context manager yielding None.
     """
     proc: subprocess.Popen[bytes] | None = None
-    with FileLock(lock_path(context.artifact_root, f"daemon-{context.mirror_digest}")):
+    with FileLock(lock_path(context.artifact_root, f"daemon-{context.storage_key}")):
         if not daemon_handshake_succeeds(context):
             cleanup_stale_daemon_files(context)
             proc = start_daemon_process(context)
@@ -2752,6 +3197,16 @@ def command_mcp_install(_args: argparse.Namespace) -> None:
     """
     context = resolve_mcp_handshake_context()
     config_path = codex_config_path()
+    configured = (
+        load_codex_config(config_path).get("mcp_servers", {}).get(MCP_SERVER_NAME)
+    )
+    if configured:
+        binding = configured.get("env", {}).get(REPO_ROOT_ENV)
+        if not binding or Path(binding).resolve() != context.repo_root.resolve():
+            raise RuntimeError(
+                "Refusing to overwrite a CocoIndex MCP registration not bound to "
+                "this repository. Keep the other repository's server intact."
+            )
     ensure_mcp_launcher(context)
     expected = expected_codex_mcp_server(context)
     try:
@@ -3122,13 +3577,19 @@ def command_benchmark(args: argparse.Namespace) -> None:
         for path in [repo_relative_path_if_inside(repo_root, args.cases)]
         if path is not None
     )
-    context = resolve_context(excluded_paths, repo_root=repo_root)
+    reuse_current_index = getattr(args, "reuse_current_index", False)
+    if reuse_current_index:
+        excluded_paths = frozenset()
+        context = resolve_active_index_context()
+    else:
+        context = resolve_context(excluded_paths, repo_root=repo_root)
     payload = run_benchmark(
         context,
         load_benchmark_cases(args.cases),
         args.output,
         excluded_paths,
         allow_dirty=allow_dirty,
+        reuse_current_index=reuse_current_index,
     )
     print(json.dumps(payload, indent=2, sort_keys=True))
 
@@ -3162,6 +3623,11 @@ def build_parser() -> argparse.ArgumentParser:
     prepare.set_defaults(func=command_prepare)
 
     index = subparsers.add_parser("index", help="Build or refresh the semantic index.")
+    index.add_argument(
+        "--reuse-active-cache",
+        action="store_true",
+        help="Preserve the old source snapshot and incrementally refresh this repository's cache.",
+    )
     index.add_argument(
         "--allow-dirty-index",
         action="store_true",
@@ -3242,6 +3708,11 @@ def build_parser() -> argparse.ArgumentParser:
     )
     benchmark.add_argument("--cases", type=Path, required=True)
     benchmark.add_argument("--output", type=Path)
+    benchmark.add_argument(
+        "--reuse-current-index",
+        action="store_true",
+        help="Verify and reuse the current source-bound index without reindexing.",
+    )
     benchmark.add_argument(
         "--allow-dirty-index",
         action="store_true",

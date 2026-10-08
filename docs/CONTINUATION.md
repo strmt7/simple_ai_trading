@@ -1,5 +1,13 @@
 # Continue Development
 
+October 8 [CocoIndex restoration](review/2026-10-08/cocoindex-restoration.md):
+the user's immediate priority is actual source-bound semantic routing. Read the
+restoration receipt for completion evidence; registration alone is not use.
+Refresh intentionally after source edits, retain actual queries externally and
+verify candidates in live source. No broad `rg` bypass or other-repo overwrite.
+Windows CLI preserves literal globs through Click's supported expansion switch;
+prior failed routing runs remain evidence, not overwritten successes.
+
 October 8 [transition-aware cash checkpoint](review/2026-10-08/inventory-cash-actions.md):
 shared inventory cash supports initial quantity and explicit target resizing;
 one-interval action values compare cash bounds against immediate flattening.

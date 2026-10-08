@@ -20,12 +20,24 @@ directly to `rg`.
    probes must pass.
 4. Create or refresh an index only when the disk write is intentional:
    `index --allow-dirty-index` for an intentional worktree snapshot, or
-   `search --refresh "<query>"` on a clean tree.
+   `index --reuse-active-cache` after source changes when this repository already
+   has a valid cache. Dirty snapshots require `--allow-dirty-index`. Reuse archives
+   prior source bytes, preserves storage/model memoization and still indexes the
+   new fingerprint explicitly. A pending/failed update rejects searching.
 5. Route broad queries through MCP or
    `python tools/cocoindex_agent_search.py search --limit 5 "<query>"`.
+   For Python runtime-code questions, use `--lang python` (this wrapper's MCP
+   argument is `lang: ["python"]`, not the upstream server's `langs` field)
+   to avoid old prose reports dominating matches. Other languages need their own
+   appropriate filter. For source-only routing add `--path 'src/simple_ai_trading/**'`.
+   The wrapper disables Click's automatic Windows argument expansion so literal
+   globs reach the native search unchanged. Preserve the earlier failed pilot;
+   an empty result still does not establish absent code or adequate recall.
 6. Confirm every candidate with exact `rg` and direct reads in the live repo.
 7. Run the ten-case benchmark after changing this workflow or upgrading the
-   pinned package.
+   pinned package. Once a current source-bound index exists, use
+   `benchmark --reuse-current-index --cases <cases> --output <external-result>`
+   to avoid an unnecessary new index. Dirty snapshots require the explicit flag.
 
 ## Safety Contract
 
@@ -36,8 +48,16 @@ directly to `rg`.
   `AGENT_COCOINDEX_HOME` or the platform-specific external default.
 - Do not mirror real `.env` files, credentials, ignored files, or private
   artifacts. Binary files are not semantic-search evidence.
-- MCP search is read-only and never refreshes an index implicitly. Treat stale
-  results as routing hints, not current truth.
+- MCP search never refreshes an index implicitly. CLI/MCP search rejects a stale
+  source snapshot and retains actual search output, source checks and snapshot
+  binding under the external cache's `receipts/`. Explicitly refresh after source
+  edits; do not bypass semantic routing or substitute an installation receipt.
+- Search receipt writes are local audit metadata, not source/account mutations
+  or financial evidence. Never put secrets in search queries.
+- The source mirror excludes `data/`, `artifacts/`, `docs/review/`,
+  `docs/model-research/`, `docs/archive/`, ignored inputs and binary formats before
+  reading their contents. Historical research remains separately protected.
+- Never overwrite another repository's or an unbound MCP registration.
 - Keep routing output bounded: five results is the default and ten is the hard
   maximum. Refine the query or add path/language filters instead of loading a
   larger result set.
