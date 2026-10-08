@@ -1,5 +1,14 @@
 # Funding-aware control: cash truth before an optimizer
 
+October 8 [incumbent action cash](../review/2026-10-08/inventory-cash-actions.md):
+the shared ledger supports initial quantity and explicit resizing/reversal.
+Single-interval values retain each side's adverse/upper cash and conservative
+surplus against immediate flattening; holding does not incur a fresh entry fee.
+This is a supplied horizon-liquidation primitive, not a continuous Bellman value,
+admitted dataset or hedge. 378 affected checks and three artifact checks pass;
+legacy behavior/results stay unchanged. Native paired coverage/full costs,
+causal state and continuation-aware forecasts still precede fits.
+
 October 8 [September archive/API corroboration](../review/2026-10-08/september-funding-population/review.md):
 the complete September 5-30 intersection now joins exactly across the retained
 native marked records and checksum-verified monthly archive channel: 78 events

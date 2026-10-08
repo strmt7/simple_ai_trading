@@ -30,6 +30,8 @@ class InventoryCashPath:
     coverage_start_ms: int
     coverage_end_exclusive_ms: int
     population_certificate_sha256: str
+    initial_signed_base_quantity: Fraction = Fraction(0)
+    target_signed_base_quantity: tuple[Fraction, ...] | None = None
 
     def __post_init__(self) -> None:
         if (
@@ -66,6 +68,24 @@ class InventoryCashPath:
             or self.opening_quote_notional <= 0
             or not isinstance(self.one_way_cost_fraction, Fraction)
             or self.one_way_cost_fraction < 0
+            or not isinstance(self.initial_signed_base_quantity, Fraction)
+            or (
+                self.target_signed_base_quantity is not None
+                and (
+                    not isinstance(self.target_signed_base_quantity, tuple)
+                    or len(self.target_signed_base_quantity)
+                    != len(self.desired_position)
+                    or any(
+                        not isinstance(quantity, Fraction)
+                        or (quantity > 0) - (quantity < 0) != position
+                        for quantity, position in zip(
+                            self.target_signed_base_quantity,
+                            self.desired_position,
+                            strict=True,
+                        )
+                    )
+                )
+            )
             or type(self.coverage_start_ms) is not int
             or type(self.coverage_end_exclusive_ms) is not int
             or not 0 <= self.coverage_start_ms <= self.boundary_time_ms[0]
@@ -136,28 +156,33 @@ class InventoryCashReplay:
 
 
 def replay_fixed_base_inventory(path: InventoryCashPath) -> InventoryCashReplay:
-    """Keep quantity until a direction change, charging every modeled trade.
+    """Keep quantity until a direction change or explicit target, charging trades.
 
     Opening/reversal quote size is explicit, not a leverage or capital gate.
     Native fills, fees, financing, margin and capture origin are not qualified.
-    Funding at a modeled quantity-change boundary encloses old, new and flat
-    inventory, once; continuous interior holdings use the supplied event law.
+    Explicit targets permit incumbent holdings and same-sign resizing. Exclude
+    sunk pre-path cash. A modeled quantity change is a monotone net transition;
+    boundary funding encloses old/new and intervening partial quantities once.
+    Unchanged holdings use the supplied event law, including shared boundaries.
     """
     if not isinstance(path, InventoryCashPath):
         raise ValueError("inventory cash replay requires a validated path")
     quantities: list[Fraction] = []
     changes: list[Fraction] = []
     traded: list[Fraction] = []
-    previous_position = 0
-    previous_quantity = Fraction(0)
-    for position, price in zip(
-        path.desired_position, path.boundary_price[:-1], strict=True
+    previous_quantity = path.initial_signed_base_quantity
+    previous_position = (previous_quantity > 0) - (previous_quantity < 0)
+    for index, (position, price) in enumerate(
+        zip(path.desired_position, path.boundary_price[:-1], strict=True)
     ):
-        quantity = (
-            previous_quantity
-            if position == previous_position
-            else position * path.opening_quote_notional / price
-        )
+        if path.target_signed_base_quantity is not None:
+            quantity = path.target_signed_base_quantity[index]
+        else:
+            quantity = (
+                previous_quantity
+                if position == previous_position
+                else position * path.opening_quote_notional / price
+            )
         change = quantity - previous_quantity
         quantities.append(quantity)
         changes.append(change)
@@ -179,12 +204,18 @@ def replay_fixed_base_inventory(path: InventoryCashPath) -> InventoryCashReplay:
             len(quantities) - 1, bisect_right(path.boundary_time_ms, time) - 1
         )
         if at_boundary:
-            before = quantities[boundary - 1] if boundary else Fraction(0)
+            before = (
+                quantities[boundary - 1]
+                if boundary
+                else path.initial_signed_base_quantity
+            )
             after = quantities[boundary] if boundary < len(quantities) else Fraction(0)
         else:
             before = after = quantities[interval]
         uncertain = before != after
-        candidates = {before, after, Fraction(0)} if uncertain else {after}
+        # Funding is linear in quantity: endpoint payments enclose every
+        # monotone partial fill. Same-sign resizing does not pass through flat.
+        candidates = {before, after} if uncertain else {after}
         payments = [
             Fraction(0)
             if quantity == 0

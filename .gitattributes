@@ -247,3 +247,6 @@ docs/review/2026-10-08/structural-change-discovery/*.md text eol=lf
 docs/review/2026-10-08/september-funding-population/*.raw binary -eol
 docs/review/2026-10-08/september-funding-population/*.json binary -eol
 docs/review/2026-10-08/september-funding-population/*.jsonl binary -eol
+
+# New generated action controls bind the exact intent bytes across checkouts.
+docs/review/2026-10-08/inventory-action-*.json text eol=lf

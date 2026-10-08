@@ -1,0 +1,257 @@
+{
+  "baseline_commit": "5c0a95698e5dbbf9760c637542b5cbc988388038",
+  "controls": [
+    {
+      "initial_signed_base_quantity": "1",
+      "input_sha256": "df217ed7944f5ab4dbb103458d01c2f02a021aca0024cfce0999a262cbd742f0",
+      "name": "existing_unit_flat_prices",
+      "values": [
+        {
+          "action": "flatten",
+          "cash_lower": "-3/50",
+          "cash_upper": "-3/50",
+          "execution_cost": "3/50",
+          "quantity": "0",
+          "surplus_lower": "0",
+          "surplus_upper": "0",
+          "traded_quote": "100"
+        },
+        {
+          "action": "long",
+          "cash_lower": "-3/50",
+          "cash_upper": "-3/50",
+          "execution_cost": "3/50",
+          "quantity": "1",
+          "surplus_lower": "0",
+          "surplus_upper": "0",
+          "traded_quote": "100"
+        },
+        {
+          "action": "reduce_long",
+          "cash_lower": "-3/50",
+          "cash_upper": "-3/50",
+          "execution_cost": "3/50",
+          "quantity": "1/2",
+          "surplus_lower": "0",
+          "surplus_upper": "0",
+          "traded_quote": "100"
+        },
+        {
+          "action": "short",
+          "cash_lower": "-9/50",
+          "cash_upper": "-9/50",
+          "execution_cost": "9/50",
+          "quantity": "-1",
+          "surplus_lower": "-3/25",
+          "surplus_upper": "-3/25",
+          "traded_quote": "300"
+        },
+        {
+          "action": "increase_long",
+          "cash_lower": "-9/50",
+          "cash_upper": "-9/50",
+          "execution_cost": "9/50",
+          "quantity": "2",
+          "surplus_lower": "-3/25",
+          "surplus_upper": "-3/25",
+          "traded_quote": "300"
+        }
+      ]
+    },
+    {
+      "initial_signed_base_quantity": "0",
+      "input_sha256": "9ff2a1cdcbc9b53336afa2b09b208ba6b4ec7d857fd378e212e699b6a091a371",
+      "name": "new_unit_flat_prices",
+      "values": [
+        {
+          "action": "flatten",
+          "cash_lower": "0",
+          "cash_upper": "0",
+          "execution_cost": "0",
+          "quantity": "0",
+          "surplus_lower": "0",
+          "surplus_upper": "0",
+          "traded_quote": "0"
+        },
+        {
+          "action": "long",
+          "cash_lower": "-3/25",
+          "cash_upper": "-3/25",
+          "execution_cost": "3/25",
+          "quantity": "1",
+          "surplus_lower": "-3/25",
+          "surplus_upper": "-3/25",
+          "traded_quote": "200"
+        },
+        {
+          "action": "reduce_long",
+          "cash_lower": "-3/50",
+          "cash_upper": "-3/50",
+          "execution_cost": "3/50",
+          "quantity": "1/2",
+          "surplus_lower": "-3/50",
+          "surplus_upper": "-3/50",
+          "traded_quote": "100"
+        },
+        {
+          "action": "short",
+          "cash_lower": "-3/25",
+          "cash_upper": "-3/25",
+          "execution_cost": "3/25",
+          "quantity": "-1",
+          "surplus_lower": "-3/25",
+          "surplus_upper": "-3/25",
+          "traded_quote": "200"
+        },
+        {
+          "action": "increase_long",
+          "cash_lower": "-6/25",
+          "cash_upper": "-6/25",
+          "execution_cost": "6/25",
+          "quantity": "2",
+          "surplus_lower": "-6/25",
+          "surplus_upper": "-6/25",
+          "traded_quote": "400"
+        }
+      ]
+    },
+    {
+      "initial_signed_base_quantity": "1",
+      "input_sha256": "2476f3c3994d0d990b4e664b99e71888bc5c4ea18cd41e76a88cfea3528ffb52",
+      "name": "existing_unit_price_doubles",
+      "values": [
+        {
+          "action": "flatten",
+          "cash_lower": "-3/50",
+          "cash_upper": "-3/50",
+          "execution_cost": "3/50",
+          "quantity": "0",
+          "surplus_lower": "0",
+          "surplus_upper": "0",
+          "traded_quote": "100"
+        },
+        {
+          "action": "long",
+          "cash_lower": "2497/25",
+          "cash_upper": "2497/25",
+          "execution_cost": "3/25",
+          "quantity": "1",
+          "surplus_lower": "4997/50",
+          "surplus_upper": "4997/50",
+          "traded_quote": "200"
+        },
+        {
+          "action": "reduce_long",
+          "cash_lower": "4991/100",
+          "cash_upper": "4991/100",
+          "execution_cost": "9/100",
+          "quantity": "1/2",
+          "surplus_lower": "4997/100",
+          "surplus_upper": "4997/100",
+          "traded_quote": "150"
+        },
+        {
+          "action": "short",
+          "cash_lower": "-2506/25",
+          "cash_upper": "-2506/25",
+          "execution_cost": "6/25",
+          "quantity": "-1",
+          "surplus_lower": "-5009/50",
+          "surplus_upper": "-5009/50",
+          "traded_quote": "400"
+        },
+        {
+          "action": "increase_long",
+          "cash_lower": "1997/10",
+          "cash_upper": "1997/10",
+          "execution_cost": "3/10",
+          "quantity": "2",
+          "surplus_lower": "4994/25",
+          "surplus_upper": "4994/25",
+          "traded_quote": "500"
+        }
+      ]
+    },
+    {
+      "initial_signed_base_quantity": "1",
+      "input_sha256": "abdc59b4c881c45029e7d986196ecf82967d097d00b08344577658261640da8e",
+      "name": "existing_unit_entry_funding",
+      "values": [
+        {
+          "action": "flatten",
+          "cash_lower": "-39/25",
+          "cash_upper": "-3/50",
+          "execution_cost": "3/50",
+          "quantity": "0",
+          "surplus_lower": "0",
+          "surplus_upper": "0",
+          "traded_quote": "100"
+        },
+        {
+          "action": "long",
+          "cash_lower": "-39/25",
+          "cash_upper": "-39/25",
+          "execution_cost": "3/50",
+          "quantity": "1",
+          "surplus_lower": "-3/2",
+          "surplus_upper": "0",
+          "traded_quote": "100"
+        },
+        {
+          "action": "reduce_long",
+          "cash_lower": "-39/25",
+          "cash_upper": "-81/100",
+          "execution_cost": "3/50",
+          "quantity": "1/2",
+          "surplus_lower": "-3/2",
+          "surplus_upper": "3/4",
+          "traded_quote": "100"
+        },
+        {
+          "action": "short",
+          "cash_lower": "-42/25",
+          "cash_upper": "33/25",
+          "execution_cost": "9/50",
+          "quantity": "-1",
+          "surplus_lower": "-81/50",
+          "surplus_upper": "72/25",
+          "traded_quote": "300"
+        },
+        {
+          "action": "increase_long",
+          "cash_lower": "-159/50",
+          "cash_upper": "-42/25",
+          "execution_cost": "9/50",
+          "quantity": "2",
+          "surplus_lower": "-78/25",
+          "surplus_upper": "-3/25",
+          "traded_quote": "300"
+        }
+      ]
+    }
+  ],
+  "financial_counts_unchanged": {
+    "hypotheses": 65,
+    "observations": 202,
+    "qualified_stable_edges": 0,
+    "scoped_mechanisms": 37
+  },
+  "financially_qualified": false,
+  "historical_results_modified": false,
+  "limitations": [
+    "Synthetic single-instrument horizon-liquidation labels, not an edge or continuous Bellman objective",
+    "Supplied state/source digests do not authenticate origin or decision-time availability",
+    "Monotone net quantity transitions do not qualify owned partial executions",
+    "Hedge legs, basis, all-in costs, financing, margin and chronological roles remain required before fits"
+  ],
+  "model_fit_or_market_access": false,
+  "schema": "synthetic-inventory-action-controls-v1",
+  "source_sha256": {
+    "docs/review/2026-10-08/inventory-action-intent.json": "7ebfc9f1b4e18f7800b2aba86cccd4844dc6fa68ea5781e5a61c427a358daf6d",
+    "src/simple_ai_trading/funding_cash.py": "3bb8fdaf50b545d93d42df5bd1b901743cc53cd11f4223e58364f160fe3b1aea",
+    "src/simple_ai_trading/funding_cash_inventory.py": "fa6f60fcf171d5a623be6d3156ebdb8cb4ba6c459f8caa6aa6ca61d74a1d649c",
+    "src/simple_ai_trading/inventory_cash_actions.py": "7a714e321e77292e65ec468e4d6d10fd2438ecf89b755266319a88ea175b2d48",
+    "tests/test_inventory_cash_actions.py": "e3220dc0ed8293b924ed6273678fb38ccfdbcc278ea013264c1691aeddbdf926",
+    "tools/reproduce_inventory_cash_actions.py": "a67dea8bdb1e726fc3d6f2ff0eb58812922193e3ee7d42e0cc92f3901527d9d3"
+  }
+}

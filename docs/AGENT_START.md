@@ -10,6 +10,14 @@ Scope blockers to their branch; a fresh user resumption resets the blocked audit
 
 ## Current Truth
 
+October 8 [incumbent action cash](review/2026-10-08/inventory-cash-actions.md):
+the shared ledger retains initial quantity and explicit resize/reversal trades.
+Single-interval values compare conservatively against immediate flattening;
+holding is not a new hourly entry. 378 affected checks and three artifact checks
+pass. Synthetic horizon-liquidation values are not a continuous objective,
+training admission or hedge; no fit, capture or edge promotion. Counts stay
+202/65/37/0. Qualify paired cash/full costs before state-conditional fits.
+
 October 8 [mandatory agent-tool audit](review/2026-10-08/mandatory-agent-tools.md):
 Caveman and CocoIndex Code are explicitly required for every AI agent. Caveman
 is internal lite compression; CocoIndex precedes broad/fuzzy code navigation,

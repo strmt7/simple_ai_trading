@@ -1,0 +1,20 @@
+{
+  "schema": "offline-inventory-action-intent-v1",
+  "baseline_commit": "5c0a95698e5dbbf9760c637542b5cbc988388038",
+  "question": "Can the shared cash ledger value holding, reducing, resizing or reversing supplied incumbent base inventory relative to immediate flattening without counting a fresh entry for every hour?",
+  "scope": "Exact supplied algebra and regression controls only; no market access, fitting, parameter selection, orders or edge promotion",
+  "law": "Target quantity earns its interval price change and marked funding; charge absolute target-minus-incumbent quantity at entry price and terminal liquidation at exit price. Sunk pre-entry cash is excluded.",
+  "comparison": "Each action's adverse surplus is its lower cash minus immediate-flatten upper cash. Upper surplus is action upper minus flatten lower. Identical flatten action has exactly zero surplus; no signed-side contrast.",
+  "funding_boundary": "At an entry or resize boundary enclose monotone partial quantities between before and after; unchanged inventory is held, terminal liquidation includes held-to-flat. Independent uncertainty differences are conservative, not attainable joint extrema.",
+  "causal_state": "Require supplied incumbent state timestamp no later than the decision and decision strictly before modeled entry, plus a state-source digest. These declarations do not authenticate state or features.",
+  "controls": [
+    "Flat prices and no funding: holding one existing base unit costs terminal liquidation only, while opening the same unit costs entry and exit; hold-minus-flatten is zero, not minus a second entry fee.",
+    "Price change 100 to 200 with incumbent quantity one: holding retains one unit and does not silently rebalance to half a unit; an explicit resize to half charges the half-unit trade.",
+    "Reversal from plus one to minus one trades two units, not one; partial funding entitlements enclose both signs.",
+    "Positive funding at a same-sign resize boundary cannot become income or assume the inventory was flat; old/new adverse debits remain.",
+    "All existing fixed-base replay tests and legacy stateful behavior remain unchanged.",
+    "Malformed state, duplicate actions, absent flatten comparator and nonpositive costs reject before evaluation. Source, state, action and cost mutations change the canonical binding."
+  ],
+  "admission": "Supplied single-instrument horizon-liquidation counterfactual only. Not a continuous Bellman objective, neutral hedge, fill evidence, native account PnL, admissible training batch or trading policy.",
+  "terminal": "Retain exact controls and source identities; do not interpret passing accounting checks as profitability or repeat consumed financial screens."
+}
