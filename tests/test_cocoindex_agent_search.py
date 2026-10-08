@@ -1036,6 +1036,7 @@ def test_mcp_install_uses_host_stable_codex_launcher(
             "tools.cocoindex_agent_search.run_command",
             return_value=missing,
         ),
+        mock.patch("tools.cocoindex_agent_search.load_codex_config", return_value={}),
         mock.patch("tools.cocoindex_agent_search.checked_command") as mocked_checked,
         mock.patch("tools.cocoindex_agent_search.ensure_codex_mcp_timeouts"),
     ):
@@ -2030,6 +2031,11 @@ def test_benchmark_case_records_exact_utf8_output_bytes(
         mirror_repo=tmp_path / "artifacts" / "mirrors" / "abc" / "repo",
         mirror_digest="abc",
     )
+    monkeypatch.setattr(
+        cocoindex_agent_search,
+        "retain_search_receipt",
+        mock.Mock(return_value=tmp_path / "receipt.json"),
+    )
     case = cocoindex_agent_search.BenchmarkCase(
         name="unicode", query="risk", rg="risk", expected=("risk.py",)
     )
@@ -2310,6 +2316,8 @@ def test_command_search_indexes_only_with_explicit_flag(
     )
     monkeypatch.setattr(cocoindex_agent_search, "run_index", mocked_index)
     monkeypatch.setattr(cocoindex_agent_search, "run_ccc_existing", mocked_existing)
+    monkeypatch.setattr(cocoindex_agent_search, "require_current_index", mock.Mock())
+    monkeypatch.setattr(cocoindex_agent_search, "retain_search_receipt", mock.Mock())
 
     cocoindex_agent_search.command_search(
         SimpleNamespace(
@@ -2360,6 +2368,9 @@ def test_command_search_skips_cold_notice_when_index_exists(
         mock.Mock(return_value=context),
     )
     monkeypatch.setattr(cocoindex_agent_search, "run_ccc_existing", mocked_run_ccc)
+
+    monkeypatch.setattr(cocoindex_agent_search, "require_current_index", mock.Mock())
+    monkeypatch.setattr(cocoindex_agent_search, "retain_search_receipt", mock.Mock())
 
     cocoindex_agent_search.command_search(
         SimpleNamespace(
@@ -2669,7 +2680,8 @@ def test_cross_agent_surfaces_describe_generic_cocoindex_workflow() -> None:
         "--refresh",
         "--allow-dirty-index",
         "MCP search itself never refreshes",
-        "stale active-index text",
+        "searches reject a source digest",
+        "receipts/",
         ".cocoindex_code/",
     ):
         assert required in canonical_text, required

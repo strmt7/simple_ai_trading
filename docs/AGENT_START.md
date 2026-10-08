@@ -10,6 +10,12 @@ Scope blockers to their branch; a fresh user resumption resets the blocked audit
 
 ## Current Truth
 
+October 8 [CocoIndex restoration](review/2026-10-08/cocoindex-restoration.md):
+follow the actual index/query receipts, not the earlier installation-only audit.
+Windows initialization, source scope, durable query receipts, stale rejection,
+registration ownership and owned daemon cleanup have focused verification. Broad
+navigation must use a current semantic index; no broad-search fallback.
+
 October 8 [incumbent action cash](review/2026-10-08/inventory-cash-actions.md):
 the shared ledger retains initial quantity and explicit resize/reversal trades.
 Single-interval values compare conservatively against immediate flattening;
