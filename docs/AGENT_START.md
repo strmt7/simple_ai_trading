@@ -10,6 +10,17 @@ Scope blockers to their branch; a fresh user resumption resets the blocked audit
 
 ## Current Truth
 
+October 8 [stateful inventory cash and diagnostic correction](review/2026-10-08/stateful-inventory-cash.md):
+forward replay retains fixed base quantities, every modeled trade's quote cost,
+marked payments and uncertain boundary entitlement. Shared policy extraction
+matches all legacy arrays/metrics in eight paired cases; 225 affected checks pass.
+The prior +4,988-bps array sum is NOT the reported total: the legacy compounded
+round-trip report is -14.9964 bps; explicit fixed-unit cash is -12 bps under the
+named synthetic cost model. Prior receipts remain unchanged. Four of five
+training builders have supplied-cash routes; the stateful builder/objective,
+native origin/coverage and complete hedge costs remain open. No fit or capture;
+counts remain 202/65/37/0. This is accounting infrastructure, not an edge.
+
 October 8 [hurdle/second-flow cash integration](review/2026-10-08/funding-cash-hurdle-timing.md):
 four of five builders now support explicit mark-bound funding inputs; the hurdle
 replay reports each side's actual adverse bound instead of a sign-flipped long

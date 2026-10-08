@@ -1,5 +1,16 @@
 # Funding-aware control: cash truth before an optimizer
 
+October 8 [stateful inventory replay and correction](../review/2026-10-08/stateful-inventory-cash.md):
+fixed-base replay now uses exact supplied inventory/marked cash and every modeled
+quote trade cost, with conservative quantity-change boundary entitlement and
+explicit reference-equity cash accumulation. Its shared policy preserves legacy
+outputs. This repairs forward accounting, not the fifth training builder or
+source/execution admission. Before surplus-objective fits, qualify both hedge
+legs, native coverage, financing/margin and side-specific adverse cash labels.
+The earlier +4,988-bps sum is NOT the legacy reported return; that report
+compounds to -14.9964 bps in the same named synthetic round-trip control.
+Historical receipts remain intact; use the new correction for interpretation.
+
 October 8 [hurdle/second-flow checkpoint](../review/2026-10-08/funding-cash-hurdle-timing.md)
 extends explicit supplied cash support to four of five builders, with paired
 hurdle replay reporting and batched timing cash. It does not admit native data
