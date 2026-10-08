@@ -1,5 +1,14 @@
 # Funding-aware control: cash truth before an optimizer
 
+October 8 [two-sided hourly label adapter](../review/2026-10-08/stateful-two-sided-cash.md):
+the fifth consumer now has a separate supplied-cash adapter for independent
+hourly long/short bounds, not a repaired historical builder or stateful model.
+It retains uncertain boundary debits and exit-value trade costs without
+antisymmetric short inference. A signed contrast drops common costs and cannot
+represent both adverse bounds. The legacy trainer rejects the new batch; 241
+affected checks pass. Complete native paired cash/cost qualification, causal
+roles and a two-sided transition-aware objective still precede any fit.
+
 October 8 [stateful inventory replay and correction](../review/2026-10-08/stateful-inventory-cash.md):
 fixed-base replay now uses exact supplied inventory/marked cash and every modeled
 quote trade cost, with conservative quantity-change boundary entitlement and
