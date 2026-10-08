@@ -238,3 +238,4 @@ docs/review/2026-10-07/nfl-oct8-9-total-floor/*.json binary -eol
 docs/review/2026-10-07/nfl-oct8-9-total-floor/*.jsonl binary -eol
 docs/review/2026-10-07/nfl-oct8-9-total-floor/*.raw binary -eol
 docs/review/2026-10-08/stateful-inventory-cash* text eol=lf
+docs/review/2026-10-08/owned-worker-containment* text eol=lf

@@ -164,7 +164,11 @@ result and all other consumed populations, including WNBA September 3-9.
   capabilities; detect and record effective backends and fallbacks.
 - This workstation is shared with the user's other active tasks. Never stop,
   reprioritize, change affinity, or otherwise modify unrelated processes to
-  improve a benchmark. Before performance-timing benchmarks, require
+  improve a benchmark. A worker-reported PID is not proof of process ownership
+  and must never authorize termination. Use original owned OS handles and,
+  on Windows, assign suspended children to an owned no-breakaway job before
+  resuming them. Containment failure must reject startup, not run uncontained.
+  Before performance-timing benchmarks, require
   a passive CPU/GPU/disk/memory headroom check that budgets our expected work;
   normal background activity and brief spikes are acceptable. Do not demand an
   almost-idle PC or treat total utilization below 100 percent as proof of no
@@ -213,6 +217,10 @@ and verify reproducibly. Do not load upstream `EXAMPLES.md`.
 3. Use exact `rg` first. For broad semantic routing, use the external
    `cocoindex-code-search` workflow with at most five results, then confirm each
    candidate in live source. Never build its index during high system load.
+   For large JSON registries, inspect keys/counts and field lengths before
+   printing. Use bounded scalar triage, then page only the selected full row's
+   remaining required fields; never dump multiple long rows or reread their
+   already-reviewed artifact lists. Triage alone still cannot authorize capture.
 4. Freeze causal inputs, costs, roles, rejection gates, and test access before
    viewing a new model outcome.
    Before a multi-request public screen, validate parsing and aggregation on one

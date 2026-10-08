@@ -10,6 +10,15 @@ Scope blockers to their branch; a fresh user resumption resets the blocked audit
 
 ## Current Truth
 
+October 8 [owned foundation-worker containment](review/2026-10-08/owned-worker-containment.md):
+removed termination by worker-reported PID. Windows children start suspended,
+join an owned no-breakaway kill-on-close job, then resume; ready identity needs
+OS job membership. Startup failures clean up, and actual controller death reaps
+its child. 57 affected checks pass, including five native Windows process cases.
+This covers the foundation-model worker, not the independent trading gateway,
+credential sandbox, useful-progress supervision or persistent model quarantine.
+No market capture, model fit, GPU timing or order; financial counts unchanged.
+
 October 8 [stateful inventory cash and diagnostic correction](review/2026-10-08/stateful-inventory-cash.md):
 forward replay retains fixed base quantities, every modeled trade's quote cost,
 marked payments and uncertain boundary entitlement. Shared policy extraction

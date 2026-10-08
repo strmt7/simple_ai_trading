@@ -1,0 +1,84 @@
+{
+  "schema": "owned-foundation-worker-containment-receipt-v1",
+  "baseline_commit": "6afa80911e17119f5c6416edbd60c3a2193ad4ba",
+  "implementation_sha256": {
+    "src/simple_ai_trading/windows_owned_job.py": "844deaa5e4bc26a0e99af9a4c346af48b77ad2ba7236bf65a9bdf40d84eb370d",
+    "src/simple_ai_trading/foundation_worker_client.py": "48b958ed795815c4f2d19b1fde7e50e3d7b18d8bf101bc5e9a260fcfa28c676e",
+    "tests/test_windows_owned_job.py": "be1d91b65ba67e4f74650ac135921ada1025e472a99b2d2648c08aeee2738cf3",
+    "tests/test_foundation_worker_client.py": "d5212019040c8ba575169cbe24820209d8624c4a497a4ef3f1610243b55de775"
+  },
+  "retained_primary_tool_extractions": {
+    "docs/review/2026-09-05/supervisor-source-open-extraction.json": "bcf4c43f0f08ba913722467c54ec8d680fa9b15d36f5f70fb12acecb8c115d66",
+    "docs/review/2026-09-05/supervisor-source-detail-extraction.json": "05e70fc17cc49ef171d0d9da6a709207dc0106a961ae31161d76616fa387f983"
+  },
+  "installed_sdk_binding": {
+    "publisher": "Microsoft",
+    "version": "10.0.26100.0",
+    "header_sha256": {
+      "winnt.h": "bc603675b330e624fd6f3de9ed3497ed6101e4c56e12cf819a9ef7c41f1c78d8",
+      "TlHelp32.h": "1e9cfa226eda9e8767eb6a3cdc300db2cc0986744913d524b6c0c80c435fc9a1",
+      "processthreadsapi.h": "436ae4cbb017d1cdb381aaf2119a3f89b04bae257fd4c881ef251daa02533540",
+      "winbase.h": "ec538199f5ebe8cec2dfd4f1ba48316ef776c82d37277aed3a677965e494f192"
+    },
+    "headers_not_copied_into_repository": true,
+    "host": "Windows",
+    "python": "3.12.10",
+    "pointer_bytes": 8,
+    "basic_limit_structure_bytes": 64,
+    "extended_limit_structure_bytes": 144,
+    "thread_entry_structure_bytes": 28
+  },
+  "safe_before_reproduction": {
+    "launcher_pid": 101,
+    "reported_runtime_pid": 202,
+    "launcher_state": "exited",
+    "mocked_signal_target": 202,
+    "mocked_signal_value": 15,
+    "real_processes_signaled": 0
+  },
+  "verification": {
+    "command": "uv run python -m pytest tests/test_windows_owned_job.py tests/test_foundation_worker_client.py tests/test_foundation_forecast.py tests/test_foundation_benchmark.py tests/test_foundation_promotion.py tests/test_foundation_model_source.py tests/test_process_security.py --tb=short",
+    "affected_passed": 57,
+    "new_cases": 29,
+    "native_windows_process_cases": 5,
+    "native_windows_skipped_on_this_host": 0,
+    "native_scope": ["owned_runtime_and_grandchild_reaped_sibling_alive", "forged_runtime_pid_rejected_sibling_alive", "startup_timeout_cleanup", "valid_owned_ready_and_stop", "controller_crash_after_enrollment_reaps_worker"],
+    "exit_code": 0,
+    "ruff_four_touched_python_files": "passed",
+    "full_suite": "not_run",
+    "initial_native_assertion_failure": "incorrect_nonzero_exit_code_requirement_replaced_by_original_handle_liveness_proof",
+    "initial_control_fixture_cleanup_gap": "test_owned_venv_sibling_runtime_could_remain_until_60_second_self_exit_future_stdlib_siblings_use_direct_base_interpreter",
+    "native_models_loaded": 0,
+    "performance_timing_claim": false
+  },
+  "scope": {
+    "subsystem": "foundation_model_worker_on_windows",
+    "worker_reported_pid_termination_removed": true,
+    "suspended_child_enrollment_before_resume": true,
+    "job_handle_inherited": false,
+    "breakaway_allowed": false,
+    "startup_exception_cleanup": true,
+    "controller_crash_before_enrollment_qualified": false,
+    "non_windows_descendant_containment_qualified": false,
+    "credential_security_sandbox": false,
+    "bounded_request_pipe_qualified": false,
+    "independent_trading_gateway_supervisor_complete": false,
+    "persistent_model_quarantine_complete": false,
+    "enterprise_readiness_claim": false,
+    "profitable_edge_qualified": false
+  },
+  "identity_audit": {
+    "fresh_anonymous_contributors_checked": true,
+    "shared_legacy_identity_violations": "previously_surfaced_remain_unrewritten",
+    "new_author_and_committer_required": "AI agent <>",
+    "force_rewrite": false
+  },
+  "new_market_requests": 0,
+  "new_technical_source_requests": 0,
+  "model_fits": 0,
+  "orders": 0,
+  "unrelated_processes_mutated": 0,
+  "automations_created_or_edited": 0,
+  "historical_financial_results_changed": false,
+  "research_counts_changed": false
+}
