@@ -1,0 +1,22 @@
+{
+  "schema": "bounded-official-structural-change-discovery-v1",
+  "source_revision": "ff628ba17facc62b209276c364b1e99d605cbb38",
+  "frozen_at_utc": "2026-10-08T06:23:14Z",
+  "question": "Has a new official long-term funding, collateral, settlement or execution architecture change appeared that satisfies a retained structural-family retry trigger?",
+  "tool": "web.run",
+  "requests": {
+    "search_query": [
+      {"q": "site:binance.com funding collateral settlement change October 2026 after:2026-09-17", "domains": ["binance.com"]},
+      {"q": "site:docs.polymarket.com execution collateral negative risk update October 2026 after:2026-09-17", "domains": ["docs.polymarket.com"]}
+    ],
+    "response_length": "long"
+  },
+  "budget": {"search_calls": 1, "queries": 2, "adaptive_query_retries": 0},
+  "selection_rule": "Inspect all returned primary-source metadata once. A distinct dated official change or new canonical product/API source may select a separately frozen source-document request only after exact URL/article-ID deduplication. An old source, changed search ranking, current snippet, inferred date or lack of result is not an independently observed material change.",
+  "economic_rule": "Discovery rates, prices, yields, model returns and promotional values are excluded from all economics, source acceptance, quote selection and edge claims. No market data, books, fee endpoints, accounts, credentials, orders, funds or protected capture authorized. Promotions are not prioritized.",
+  "failure_rule": "Empty, stale, unsupported or inconclusive discovery is terminal for these exact queries; do not adjust keywords, dates, aliases or domains to force a result. Reuse existing evidence or advance another informative authorized question.",
+  "outputs": {"intent": "docs/review/2026-10-08/structural-change-discovery/search-intent.json", "raw_result": "docs/review/2026-10-08/structural-change-discovery/search-result.local.json"},
+  "protected_boundaries_sha256": "f971726268ba2e630b2ebbe8d5bcf02f7b3f23b92ccb16efe23aef82cebe950f",
+  "market_requests": 0,
+  "accepted_edge": false
+}

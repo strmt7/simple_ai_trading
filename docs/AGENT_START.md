@@ -10,6 +10,12 @@ Scope blockers to their branch; a fresh user resumption resets the blocked audit
 
 ## Current Truth
 
+October 8 [official structural-change round](review/2026-10-08/structural-change-discovery/review.md):
+one two-query search and one new migration FAQ GET; the GET returned empty HTTP
+202 and is terminal without retry/alias. No edge/deployment trigger qualified;
+no prices, books, accounts or fits. Reuse evidence, not date-only refreshes.
+Financial counts stay 202/65/37/0; runtime Python is unchanged.
+
 October 8 [two-sided hourly cash labels](review/2026-10-08/stateful-two-sided-cash.md):
 a separate adapter retains long/short adverse and upper cash, marked payments,
 uncertain boundaries and entry/exit quote costs. Both sides can have negative

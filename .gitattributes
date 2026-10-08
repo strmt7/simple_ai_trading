@@ -240,3 +240,6 @@ docs/review/2026-10-07/nfl-oct8-9-total-floor/*.raw binary -eol
 docs/review/2026-10-08/stateful-inventory-cash* text eol=lf
 docs/review/2026-10-08/owned-worker-containment* text eol=lf
 docs/review/2026-10-08/stateful-two-sided-cash* text eol=lf
+docs/review/2026-10-08/structural-change-discovery/*.json text eol=lf
+docs/review/2026-10-08/structural-change-discovery/*.jsonl text eol=lf
+docs/review/2026-10-08/structural-change-discovery/*.md text eol=lf

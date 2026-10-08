@@ -1,0 +1,52 @@
+{
+  "schema_version": "public-source-capture-contract-v1",
+  "frozen_at_utc": "2026-10-08T06:25:12Z",
+  "contract_path": "docs/review/2026-10-08/structural-change-discovery/migration-source-contract.json",
+  "request_name": "binance_funding_to_spot_stocks_account_migration_source",
+  "request": {
+    "method": "GET",
+    "url": "https://www.binance.com/en-IA/support/faq/detail/d33306bf39ba4afca2b96833f74dc423",
+    "count": 1,
+    "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "response_byte_ceiling": 4194304,
+  "byte_ceiling_basis": "Single official FAQ HTML including application wrapper, capped at four MiB; retain ceiling+1 overflow byte and terminate without retry or route/locale alias.",
+  "required_utf8_phrases": ["2026-09-29", "Convert"],
+  "phrase_selection": "Both lexical forms occurred in the frozen official-source search result. They are transport/source-identity aids, not proof of native products, API routing, eligibility or economic value.",
+  "outputs": {
+    "raw_path": "docs/review/2026-10-08/structural-change-discovery/migration-source.local.raw",
+    "journal_path": "docs/review/2026-10-08/structural-change-discovery/migration-source-journal.jsonl",
+    "result_path": "docs/review/2026-10-08/structural-change-discovery/migration-source-capture.json"
+  },
+  "authority": {
+    "account_requests": 0,
+    "credentials_used": false,
+    "funds_used": false,
+    "orders_or_transactions": 0,
+    "protected_capture_touched": false,
+    "public_unauthenticated_read_only_requests": 1,
+    "signed_requests": 0,
+    "trading_authority": false
+  },
+  "transport": {
+    "socket_timeout_seconds": 10,
+    "read_budget_seconds": 30,
+    "redirects": false,
+    "retries": 0,
+    "proxies": false
+  },
+  "implementations": [
+    {"path": "tools/capture_public_source_bounded.py", "sha256": "760339a7602abfa9eb97f3f1cca0ef79191b07ff5f5aa42515f30f191f9888fc"},
+    {"path": "tools/capture_public_source_contract.py", "sha256": "9dbb14651455abade755fe96091b9eaafe1153f56a1baad4cd60b1a888d41b8c"},
+    {"path": "tools/adjudicate_polymarket_exact_mlb_monotone_prefilter.py", "sha256": "958a44d78029b9a1eb69a3771ce18e53ac1ed3c7bc161c8e4318beedce2cf99f"},
+    {"path": "tools/screen_polymarket_exact_two_leg_package.py", "sha256": "374fcc3c3485c466b4929a91256450bdc7db70f93ef4c6bda627e05fe8938327"}
+  ],
+  "question": "Does this exact official migration source change an existing active stock-option deployment/settlement trigger, or only wallet/account reconciliation? Distinguish native stocks/options from bStocks, perpetual funding cash and Funding wallet names.",
+  "selection": "One frozen two-query official-source search returned this exact official FAQ URL. Its canonical article ID and exact URL had no hit in nonprotected retained source contracts/journals/results and review routing. No translated or guessed canonical route substitutes for this URL.",
+  "adjudication_rule": "Read retained primary bytes only after format/transport gates. Record every relevant product/account distinction and source gap. General stock-option account support is not active contract deployment. Do not repeat the old empty option inventory, request prices/funding/books/accounts, count a new hypothesis or promote an edge unless independent complete exact trigger evidence exists. Terminal capture failure permits only retained failure classification, not repair.",
+  "economic_discovery_excluded": true,
+  "capture_boundaries_sha256": "f971726268ba2e630b2ebbe8d5bcf02f7b3f23b92ccb16efe23aef82cebe950f",
+  "edge_promotion_eligible": false,
+  "research_observation_count_effect": 0,
+  "contract_sha256": "c50dd62e0a1045588830d8f6271c1b75f9429dfdc3f1c02376011319883c4699"
+}
