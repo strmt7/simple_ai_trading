@@ -10,6 +10,20 @@ Scope blockers to their branch; a fresh user resumption resets the blocked audit
 
 ## Current Truth
 
+October 8 [mandatory agent-tool audit](review/2026-10-08/mandatory-agent-tools.md):
+Caveman and CocoIndex Code are explicitly required for every AI agent. Caveman
+is internal lite compression; CocoIndex precedes broad/fuzzy code navigation,
+with exact-source verification. Seven available repos were checked; missing
+root policies were added locally, shared Codex skills enabled, existing pins
+preserved. No new index/search, GPU job or unrelated application change claimed.
+
+October 8 explicit user requirement: [Crawl4AI is mandatory](CRAWL4AI_RESEARCH.md)
+for web-page research. Reuse the verified isolated SuperZip integration; search
+is source discovery, not content evidence. The first official USD-M documentation
+crawl retained HTTP 202/one Markdown character despite native success=true and
+was excluded without retry. Native financial captures keep their existing
+transports/contracts. No trading dependency, other repo, account or edge changed.
+
 October 8 [closing native components](review/2026-10-08/closing-native-components.md):
 offline parent-bound closing observations retain native units/fees and reported
 Futures PnL separately, without treating notional as cash or applying/rearming.

@@ -1,5 +1,23 @@
 # Continue Development
 
+October 8 [cross-repository tool requirement](review/2026-10-08/mandatory-agent-tools.md):
+Caveman and CocoIndex Code are mandatory for all agents following the repo's
+AGENTS contract. Missing policies were added across the seven checked local
+repos; shared Codex skills are discoverable and existing adapters/pins preserved.
+Other-repo changes remain local/unstaged and unrelated work is untouched. Exact
+instruction-file edits needed no semantic query or cold index; do not claim one.
+Actual broad search requires current-root/index and live-source confirmation.
+
+October 8 user-directed [mandatory Crawl4AI integration](CRAWL4AI_RESEARCH.md):
+the verified SuperZip provider is reused without a duplicate browser/LLM install
+or trading dependency change. Use it for web-page research/content; native API,
+stream/archive and financial one-use contracts remain separate. The retained
+official USD-M documentation probe returned HTTP 202 and one Markdown character,
+so native success=true did not admit any fee/PnL claim. No retry or alternate URL;
+preserve its [intent/result](review/2026-10-08/crawl4ai-research-result.json).
+Next use Crawl4AI for a distinct eligible source question, not as permission to
+reopen consumed captures. Financial counts stay 202/65/37/0; overall goal active.
+
 October 8 [native closing-component checkpoint](review/2026-10-08/closing-native-components.md):
 new offline recovery observation preserves sale/derivative units and native
 commission assets in the existing journal. Futures reported PnL remains separate
