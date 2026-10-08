@@ -15,6 +15,11 @@ from .derivatives_hurdle_data import (
     DerivativesHurdleDataset,
     FundingState,
 )
+from .funding_cash_labels import (
+    FundingCashLabelSeries,
+    bind_funding_cash_panel,
+    outward_float32,
+)
 
 if TYPE_CHECKING:
     from .minute_logistic_mixture_tcn_model import MinuteTemporalDataset
@@ -82,6 +87,9 @@ class BarrierPayoffDataset:
     role_masks: Mapping[str, np.ndarray]
     specification: BarrierSpecification
     dataset_sha256: str
+    funding_cash_provenance: Mapping[str, object] | None = None
+    funding_cash_upper_bps: np.ndarray | None = None
+    funding_cash_uncertain_events: np.ndarray | None = None
 
     @property
     def timestamps(self) -> int:
@@ -164,6 +172,7 @@ def _simulate_side(
     *,
     side: int,
     specification: BarrierSpecification,
+    funding_cash: FundingCashLabelSeries | None = None,
 ) -> tuple[np.ndarray, ...]:
     if side not in (-1, 1):
         raise ValueError("barrier side must be -1 or 1")
@@ -224,7 +233,20 @@ def _simulate_side(
 
     entry_time = series.open_time_ms[entry_indices]
     exit_time = entry_time + event_minute.astype(np.int64) * MINUTE_MS
-    funding_bps = _funding_in_holding_window(funding, entry_time, exit_time)
+    if funding_cash is None:
+        funding_bps = _funding_in_holding_window(funding, entry_time, exit_time)
+    else:
+        if funding_cash.symbol != series.symbol:
+            raise ValueError("barrier funding cash symbol differs from price series")
+        funding_cash.validate_rate_state(funding)
+        earliest_exit = np.where(
+            event_code == TIMEOUT_EVENT, exit_time, exit_time - MINUTE_MS
+        )
+        cash = funding_cash.holding_bounds(
+            entry_time, earliest_exit, exit_time, entry, side=side
+        )
+        # Preserve the debit/sign convention, using this side's adverse cash bound.
+        funding_bps = -side * cash.lower_bps
     if side == 1:
         price_return_bps = 10_000.0 * (fill_price / entry - 1.0)
         net_payoff_bps = (
@@ -250,6 +272,8 @@ def _simulate_side(
     )
     if not all(np.isfinite(value).all() for value in outputs[2:-1]):
         raise ValueError("barrier simulation produced nonfinite values")
+    if funding_cash is not None:
+        return outputs + (cash.upper_bps, cash.uncertain_events)
     return outputs
 
 
@@ -259,12 +283,15 @@ def build_barrier_payoff_dataset(
     source: DerivativesHurdleDataset,
     temporal: MinuteTemporalDataset,
     specification: BarrierSpecification,
+    *,
+    funding_cash: Mapping[str, FundingCashLabelSeries] | None = None,
 ) -> BarrierPayoffDataset:
-    """Build exact stop/take/timeout targets without persisting a feature copy."""
+    """Build stop/take/timeout targets with optional supplied funding bounds."""
 
     specification.validate()
     if set(panel) != set(SYMBOLS) or set(funding) != set(SYMBOLS):
         raise ValueError("barrier panel or funding symbols are incomplete")
+    cash_provenance = bind_funding_cash_panel(funding_cash, funding)
     if REALIZED_VOLATILITY_FEATURE not in temporal.feature_names:
         raise ValueError("barrier volatility feature is absent")
     timestamps = temporal.timestamps
@@ -298,6 +325,8 @@ def build_barrier_payoff_dataset(
     net_payoff_bps = np.empty(shape, dtype=np.float32)
     gap_through_slippage_bps = np.empty(shape, dtype=np.float32)
     ambiguous_stop_first = np.empty(shape, dtype=bool)
+    cash_upper = None if funding_cash is None else np.empty(shape, dtype=np.float32)
+    cash_uncertain = None if funding_cash is None else np.empty(shape, dtype=np.int64)
     for symbol_index, symbol in enumerate(SYMBOLS):
         series = panel[symbol]
         decision_indices = np.searchsorted(series.open_time_ms, temporal.timestamps_ms)
@@ -314,6 +343,7 @@ def build_barrier_payoff_dataset(
                 take_profit_bps[:, symbol_index],
                 side=side,
                 specification=specification,
+                funding_cash=None if funding_cash is None else funding_cash[symbol],
             )
             event_code[:, symbol_index, side_index] = outputs[0]
             event_minute[:, symbol_index, side_index] = outputs[1]
@@ -322,6 +352,17 @@ def build_barrier_payoff_dataset(
             net_payoff_bps[:, symbol_index, side_index] = outputs[4]
             gap_through_slippage_bps[:, symbol_index, side_index] = outputs[5]
             ambiguous_stop_first[:, symbol_index, side_index] = outputs[6]
+            if funding_cash is not None:
+                funding_cash_flow_bps[:, symbol_index, side_index] = (
+                    -side * outward_float32(-side * outputs[3], lower=True)
+                )
+                net_payoff_bps[:, symbol_index, side_index] = outward_float32(
+                    outputs[4], lower=True
+                )
+                cash_upper[:, symbol_index, side_index] = outward_float32(
+                    outputs[7], lower=False
+                )
+                cash_uncertain[:, symbol_index, side_index] = outputs[8]
 
     for symbol_index in range(len(SYMBOLS)):
         for side_index in range(len(SIDE_NAMES)):
@@ -355,6 +396,13 @@ def build_barrier_payoff_dataset(
             net_payoff_bps, label="barrier-net-payoff-bps"
         ),
     }
+    if funding_cash is not None:
+        streams["funding_cash_upper_bps"] = _stream_array_sha256(
+            cash_upper, label="barrier-funding-cash-upper"
+        )
+        streams["funding_cash_uncertain_events"] = _stream_array_sha256(
+            cash_uncertain, label="barrier-funding-cash-uncertain"
+        )
     identity = _canonical_sha256(
         {
             "schema": "path-bounded-barrier-payoff-dataset-v1",
@@ -362,6 +410,9 @@ def build_barrier_payoff_dataset(
             "symbols": list(SYMBOLS),
             "specification": specification.asdict(),
             "streams": streams,
+            **(
+                {"funding_cash": cash_provenance} if cash_provenance is not None else {}
+            ),
         }
     )
     return BarrierPayoffDataset(
@@ -378,6 +429,9 @@ def build_barrier_payoff_dataset(
         role_masks=role_masks,
         specification=specification,
         dataset_sha256=identity,
+        funding_cash_provenance=cash_provenance,
+        funding_cash_upper_bps=cash_upper,
+        funding_cash_uncertain_events=cash_uncertain,
     )
 
 

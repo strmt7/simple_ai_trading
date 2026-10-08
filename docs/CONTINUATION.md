@@ -1,5 +1,22 @@
 # Continue Development
 
+October 8 explicit user resumption: the goal is active again; no automation was
+created. [Forward funding cash labels](review/2026-10-08/funding-cash-labels.md)
+now route stop-time and barrier builders through the shared exact event law.
+Explicit supplied cash inputs bind event marks, independent population-certificate
+digests and coverage; conflicting/missing inputs fail without a rate-proxy fallback.
+Entry/exit boundaries and intrabar exit intervals remain uncertain. Labels retain
+side-specific adverse cash, upper bounds and uncertain-event counts, with outward
+floating-point storage. Legacy defaults and historical results remain proxies.
+128 affected checks pass (55 new); no capture, fit, GPU timing, account or order.
+Source origin/completeness and real execution are not qualified by digest strings;
+hurdle, second-flow and stateful integration remain undone. The stateful signed
+target must not hide asymmetric adverse cash bounds behind a long/short sign flip.
+Complete these remaining routes and independently qualified data/cost/hedge replay
+before affected retraining or financial admission. Counts unchanged: 202/65/37/0.
+The October 7 checkpoints were pushed successfully as `44030170`; the earlier
+server-error publication note below is historical, not the current Git state.
+
 October 7 user-requested pause: stop new R&D and preserve this checkpoint for
 manual resumption. The latest NFL discovery is resource-unqualified, not a
 financial rejection or accepted edge. Numerical cash-label integration remains

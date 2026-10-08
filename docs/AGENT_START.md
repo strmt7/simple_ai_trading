@@ -10,6 +10,15 @@ Scope blockers to their branch; a fresh user resumption resets the blocked audit
 
 ## Current Truth
 
+October 8 [forward funding cash-label integration](review/2026-10-08/funding-cash-labels.md):
+stop-time and barrier builders accept mark-bound supplied cash inputs, retain
+uncertain entitlement and store adverse/upper bounds. Missing or conflicting
+explicit cash inputs fail; legacy defaults remain historical rate proxies.
+128 affected checks pass, not a qualified dataset or profitable edge. Hurdle,
+second-flow, stateful, native origin/coverage and complete hedge costs remain open.
+Explicit user resumption revoked the pause; no automation was created. The
+October 7 checkpoint is published at `44030170`. Counts unchanged: 202/65/37/0.
+
 October 7 [future NFL discovery](review/2026-10-07/nfl-oct8-9-total-floor/review.md):
 one GET retained four October 8-9 deployed events, but a representation-dependent
 resource guard stopped the screen before prices. No price rejection or edge.
