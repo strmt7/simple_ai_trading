@@ -1,6 +1,8 @@
 # AGENTS
 
-Read `docs/AGENT_START.md` first. Hash-bound evidence and executable contracts
+Read the first 80 lines of `docs/AGENT_START.md` first; older appended checkpoints
+are routing/provenance, not a requirement to dump the entire history on every
+continuation. Follow exact links as needed. Hash-bound evidence and executable contracts
 override prose.
 
 ## September 4 review session interpretation

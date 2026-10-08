@@ -12,6 +12,11 @@ import numpy as np
 
 from .cross_asset_cost_data import MINUTE_MS, MinuteSeries, SYMBOLS
 from .derivatives_hurdle_data import FundingState
+from .funding_cash_labels import (
+    FundingCashLabelSeries,
+    bind_funding_cash_panel,
+    outward_float32,
+)
 
 
 STOP_EVENT = 0
@@ -72,6 +77,9 @@ class StopTimePayoffDataset:
     source_dataset_sha256: str
     specification: StopTimeSpecification
     dataset_sha256: str
+    funding_cash_provenance: Mapping[str, object] | None = None
+    funding_cash_upper_bps: np.ndarray | None = None
+    funding_cash_uncertain_events: np.ndarray | None = None
 
     @property
     def timestamps(self) -> int:
@@ -125,6 +133,7 @@ def _simulate_side(
     *,
     side: int,
     specification: StopTimeSpecification,
+    funding_cash: FundingCashLabelSeries | None = None,
 ) -> tuple[np.ndarray, ...]:
     if side not in (-1, 1):
         raise ValueError("stop-time side must be -1 or 1")
@@ -157,17 +166,13 @@ def _simulate_side(
             stop_fill = np.minimum(stop_price[stopped], bar_open[stopped])
             gap_slippage[stopped] = np.maximum(
                 0.0,
-                10_000.0
-                * (stop_price[stopped] - stop_fill)
-                / entry[stopped],
+                10_000.0 * (stop_price[stopped] - stop_fill) / entry[stopped],
             )
         else:
             stop_fill = np.maximum(stop_price[stopped], bar_open[stopped])
             gap_slippage[stopped] = np.maximum(
                 0.0,
-                10_000.0
-                * (stop_fill - stop_price[stopped])
-                / entry[stopped],
+                10_000.0 * (stop_fill - stop_price[stopped]) / entry[stopped],
             )
         fill_price[stopped] = stop_fill
         event_code[stopped] = STOP_EVENT
@@ -176,13 +181,25 @@ def _simulate_side(
 
     entry_time = np.asarray(series.open_time_ms[entry_indices], dtype=np.int64)
     exit_time = entry_time + event_minute.astype(np.int64) * MINUTE_MS
-    funding_bps = _funding_in_holding_window(funding, entry_time, exit_time)
     if side == 1:
         price_return_bps = 10_000.0 * (fill_price / entry - 1.0)
-        funding_cash_flow_bps = -funding_bps
     else:
         price_return_bps = 10_000.0 * (1.0 - fill_price / entry)
-        funding_cash_flow_bps = funding_bps
+    if funding_cash is None:
+        funding_cash_flow_bps = -side * _funding_in_holding_window(
+            funding, entry_time, exit_time
+        )
+    else:
+        if funding_cash.symbol != series.symbol:
+            raise ValueError("stop-time funding cash symbol differs from price series")
+        funding_cash.validate_rate_state(funding)
+        earliest_exit = np.where(
+            event_code == TIMEOUT_EVENT, exit_time, exit_time - MINUTE_MS
+        )
+        cash = funding_cash.holding_bounds(
+            entry_time, earliest_exit, exit_time, entry, side=side
+        )
+        funding_cash_flow_bps = cash.lower_bps
     net_payoff_bps = (
         price_return_bps
         + funding_cash_flow_bps
@@ -204,6 +221,8 @@ def _simulate_side(
         price_return_bps[stopped] <= -stop_bps[stopped] + 1e-7
     ):
         raise RuntimeError("stop-time payoff violates the stop loss")
+    if funding_cash is not None:
+        return outputs + (cash.upper_bps, cash.uncertain_events)
     return outputs
 
 
@@ -215,8 +234,9 @@ def build_stop_time_payoff_dataset(
     *,
     source_dataset_sha256: str,
     specification: StopTimeSpecification,
+    funding_cash: Mapping[str, FundingCashLabelSeries] | None = None,
 ) -> StopTimePayoffDataset:
-    """Build side-specific after-cost payoffs without copying feature data."""
+    """Build side-specific payoffs with optional supplied funding cash bounds."""
 
     specification.validate()
     timestamps_ms = np.asarray(decision_timestamps_ms, dtype=np.int64)
@@ -234,6 +254,7 @@ def build_stop_time_payoff_dataset(
         or len(source_dataset_sha256) != 64
     ):
         raise ValueError("stop-time source contract is invalid")
+    cash_provenance = bind_funding_cash_panel(funding_cash, funding)
 
     stop_bps = np.clip(
         volatility
@@ -267,15 +288,21 @@ def build_stop_time_payoff_dataset(
         "net_payoff_bps",
         "gap_through_slippage_bps",
     )
+    cash_shape = (*expected_shape, 2)
+    cash_upper = (
+        None if funding_cash is None else np.empty(cash_shape, dtype=np.float32)
+    )
+    cash_uncertain = (
+        None if funding_cash is None else np.empty(cash_shape, dtype=np.int64)
+    )
     for symbol_index, symbol in enumerate(SYMBOLS):
         series = panel[symbol]
         decision_indices = np.searchsorted(series.open_time_ms, timestamps_ms)
-        if (
-            np.any(decision_indices >= series.open_time_ms.size)
-            or not np.array_equal(series.open_time_ms[decision_indices], timestamps_ms)
+        if np.any(decision_indices >= series.open_time_ms.size) or not np.array_equal(
+            series.open_time_ms[decision_indices], timestamps_ms
         ):
             raise ValueError(f"stop-time decision timestamps differ for {symbol}")
-        for side_name, side in (("long", 1), ("short", -1)):
+        for side_index, (side_name, side) in enumerate((("long", 1), ("short", -1))):
             values = _simulate_side(
                 series,
                 funding[symbol],
@@ -283,9 +310,20 @@ def build_stop_time_payoff_dataset(
                 stop_bps[:, symbol_index],
                 side=side,
                 specification=specification,
+                funding_cash=None if funding_cash is None else funding_cash[symbol],
             )
-            for field, value in zip(field_order, values, strict=True):
+            for field, value in zip(field_order, values[:7], strict=True):
+                if funding_cash is not None and field in (
+                    "funding_cash_flow_bps",
+                    "net_payoff_bps",
+                ):
+                    value = outward_float32(value, lower=True)
                 outputs[f"{side_name}_{field}"][:, symbol_index] = value
+            if funding_cash is not None:
+                cash_upper[:, symbol_index, side_index] = outward_float32(
+                    values[7], lower=False
+                )
+                cash_uncertain[:, symbol_index, side_index] = values[8]
 
     streams = {
         "timestamps_ms": _stream_array_sha256(
@@ -305,6 +343,13 @@ def build_stop_time_payoff_dataset(
             outputs["short_net_payoff_bps"], label="stop-time-short-net"
         ),
     }
+    if funding_cash is not None:
+        streams["funding_cash_upper_bps"] = _stream_array_sha256(
+            cash_upper, label="stop-time-funding-cash-upper"
+        )
+        streams["funding_cash_uncertain_events"] = _stream_array_sha256(
+            cash_uncertain, label="stop-time-funding-cash-uncertain"
+        )
     identity = _canonical_sha256(
         {
             "schema": "stop-time-payoff-dataset-v1",
@@ -312,6 +357,9 @@ def build_stop_time_payoff_dataset(
             "symbols": list(SYMBOLS),
             "specification": specification.asdict(),
             "streams": streams,
+            **(
+                {"funding_cash": cash_provenance} if cash_provenance is not None else {}
+            ),
         }
     )
     return StopTimePayoffDataset(
@@ -320,6 +368,9 @@ def build_stop_time_payoff_dataset(
         source_dataset_sha256=source_dataset_sha256,
         specification=specification,
         dataset_sha256=identity,
+        funding_cash_provenance=cash_provenance,
+        funding_cash_upper_bps=cash_upper,
+        funding_cash_uncertain_events=cash_uncertain,
         **outputs,
     )
 

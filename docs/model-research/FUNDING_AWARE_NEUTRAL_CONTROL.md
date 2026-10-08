@@ -1,5 +1,16 @@
 # Funding-aware control: cash truth before an optimizer
 
+October 8 [forward integration checkpoint](../review/2026-10-08/funding-cash-labels.md):
+the stop-time and barrier builders now accept explicit mark-bound supplied cash
+series. They retain side-specific adverse bounds, upper cash and uncertain-event
+counts; absent/conflicting explicit inputs do not fall back to rate proxies.
+Their legacy defaults and old results remain unchanged. This is two of five
+consumer routes, not complete numerical integration or dataset admission.
+Independent origin/coverage validation, all-in execution costs and the remaining
+hurdle/second-flow/stateful consumers still precede affected retraining. Digest
+strings bind supplied evidence, not authenticity. Historical descriptions below
+record the pre-integration checkpoint and do not supersede this current scope.
+
 The [October 7 primary-source audit](../review/2026-10-07/funding-aware-maker-source/review.md)
 supports funding as a useful inventory-control state, not a direction-neutral
 profitable strategy. The paper leaves hedge accounting off and uses proxy fills.

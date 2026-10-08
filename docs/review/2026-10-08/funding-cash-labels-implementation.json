@@ -1,0 +1,40 @@
+{
+  "schema": "funding-cash-label-implementation-receipt-v1",
+  "baseline_commit": "44030170df8e1bd8051fb4484b964d9a45e6bad3",
+  "implementation_sha256": {
+    "src/simple_ai_trading/funding_cash.py": "3bb8fdaf50b545d93d42df5bd1b901743cc53cd11f4223e58364f160fe3b1aea",
+    "src/simple_ai_trading/funding_cash_labels.py": "a167fca77c9529c232c5a4dc4cd7e1fb5d558ebb6c1a6bc48c49078b322eb57b",
+    "src/simple_ai_trading/barrier_payoff_data.py": "8514751ed835fa663a16d4d78e0e0439178a9e0db5197afba1350240976ed5d3",
+    "src/simple_ai_trading/stop_time_payoff_data.py": "a88e61a399628ad7f040f2ea23ca2e6469a6b1df72c653d73ddbbe2e9b357c93",
+    "tests/test_funding_cash_labels.py": "e6c634fb236c1c3cefad14f0ba93dfee5963fc4a7ad43da6d203bb04ff35526e"
+  },
+  "verification": {
+    "command": "uv run python -m pytest tests/test_funding_cash_labels.py tests/test_funding_cash.py tests/test_barrier_payoff_data.py tests/test_stop_time_payoff_data.py -q --tb=short",
+    "exit_code": 0,
+    "passed": 128,
+    "new_cases": 55,
+    "ruff_touched_python": "passed",
+    "full_suite": "not_run",
+    "test_evidence": "synthetic_unit_controls_not_market_observations"
+  },
+  "consumer_scope": {
+    "stop_time": "explicit_supplied_cash_bounds_integrated_legacy_default_preserved",
+    "barrier": "explicit_supplied_cash_bounds_integrated_legacy_default_preserved",
+    "hurdle": "rate_proxy_unchanged",
+    "second_flow": "rate_proxy_unchanged",
+    "stateful": "rate_proxy_unchanged_two_sided_uncertainty_representation_required"
+  },
+  "admission": {
+    "native_origin_qualified": false,
+    "independent_coverage_qualified": false,
+    "complete_execution_cash_qualified": false,
+    "new_training_qualified": false,
+    "profitable_edge_qualified": false
+  },
+  "new_market_requests": 0,
+  "model_fits": 0,
+  "orders": 0,
+  "automations_created_or_edited": 0,
+  "historical_result_files_changed": false,
+  "research_counts_changed": false
+}
