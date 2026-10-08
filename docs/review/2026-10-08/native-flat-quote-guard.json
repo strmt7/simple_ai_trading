@@ -1,0 +1,85 @@
+{
+  "schema": "native-flat-quote-guard-review-v1",
+  "baseline_commit": "86106d49643e2ec137e5a7bbeab7be4d10c44481",
+  "reviewed_at_utc": "2026-10-08T06:51:01Z",
+  "evidence_kind": "Synthetic cash-unit regression and local affected-domain verification; not market or account evidence",
+  "source_hash_convention": "SHA256 of UTF-8 bytes with CRLF normalized to LF; preserve BOM",
+  "source_sha256": {
+    "src/simple_ai_trading/autonomous.py": "07faeb30684d3d26d4ead996d1c55c4f601f413d66cfe50ce0f3b8a464d1c755",
+    "src/simple_ai_trading/positions.py": "59c6237322cda2904710151ba41038ce41f953b045a22ef82b7f360c4916bd04",
+    "src/simple_ai_trading/binance_spot_cash.py": "61027340d2645c281c44395e276e1545e35d6b25f39b20a58932e461ac8be2f5",
+    "src/simple_ai_trading/assets.py": "a2532c31f4667905ed6c3b3f5e969a17eeadfc43ee351763adcd31efe2707ea1",
+    "tests/test_native_flat_ledger_quote_guard.py": "cd7c4a0017e34a57bccd5b7d7f5b3798292a4314d2612512c072da28d874b0d1",
+    "tests/test_autonomous_spot_cash.py": "4aa6979f8d0e05e52cb10c5b43bc81fdda101d2d48981d77d6619872c3043045"
+  },
+  "reproduction": {
+    "open_positions": 0,
+    "native_BTCUSDC_round_trip": {
+      "buy_quote_cash": "100 USDC",
+      "buy_base_quantity": "1 BTC",
+      "buy_quote_commission": "1 USDC",
+      "sell_quote_cash": "100 USDC",
+      "sell_commission": "0",
+      "realized_cash": "-1 USDC"
+    },
+    "legacy_ETHUSDT_round_trip": {
+      "entry_price": "100 USDT",
+      "exit_price": "102 USDT",
+      "quantity": "1 ETH",
+      "legacy_realized_pnl": "+2 USDT",
+      "native_cash_qualification": false
+    },
+    "current_admission_symbol": "BTCUSDC",
+    "before": "allowed=true; daily_loss=0; session_loss=0 despite unrelated cash denominations",
+    "after": "allowed=false; reason=cash-valuation-quote-unqualified; force_close=false",
+    "before_test": "The first mixed-quote regression failed before the production repair"
+  },
+  "contract": {
+    "native_history": "Any native entry cash receipt in the paired open/closed snapshot keeps quote qualification active",
+    "flat_inventory": "Same-quote realized cash needs instrument/product context but no current mark",
+    "open_inventory": "Existing positive finite mark and exact open instrument/product requirements remain",
+    "product_context": "spot or futures; this does not qualify native Futures fees or cash",
+    "quote_context": "Supported quote and all closed-trade symbols share that quote; no guessed FX",
+    "unknown_valuation": "Blocks new exposure without forcing an uncertain close; zero guard fields are uncalculated placeholders",
+    "known_loss": "Existing daily/session loss thresholds still apply to qualified same-quote cash",
+    "restart": "Boundary is derived from persisted native trade history, not an ephemeral open-position flag",
+    "legacy_only": "Unchanged legacy semantics, not newly cash-qualified",
+    "owned_reduction": "No close, order transmission, account or credential implementation changed"
+  },
+  "verification": {
+    "affected_domain_command": "uv run python -m pytest tests/test_native_flat_ledger_quote_guard.py tests/test_autonomous_spot_cash.py tests/test_autonomous_spot_inventory.py tests/test_autonomous.py tests/test_binance_close_intents.py tests/test_binance_close_recovery.py tests/test_position_transactions.py tests/test_positions.py --tb=short -x",
+    "affected_domain_passed": 378,
+    "affected_domain_failed": 0,
+    "new_cases": 13,
+    "lint": "Ruff check passed for the changed source and new test; new test format check passed",
+    "development_errors": [
+      "Same-quote fixture initially expected admission despite the configured 0.6 percent daily-loss limit; corrected assertion, not production policy",
+      "Entry-gate integration initially stopped at cooldown; advanced the injected clock beyond the unchanged cooldown"
+    ],
+    "full_suite_run": false,
+    "hosted_ci_run": false,
+    "performance_benchmark_run": false,
+    "model_training_run": false,
+    "market_account_requests": 0,
+    "credentials_used": false,
+    "orders_submitted": 0,
+    "historical_results_modified": false,
+    "protected_capture_data_modified": false,
+    "automation_created": false
+  },
+  "remaining_boundaries": [
+    "General portfolio FX/denomination valuation and same-quote legacy/native comparability",
+    "Default UI price-only unrealized PnL and mixed-quote statistical aggregation",
+    "Third-asset commissions, SELL base-commission reconciliation and native Futures fees",
+    "Qualified direction-neutral hedge quantities, full costs, collateral, capital and margin",
+    "Native source coverage and stateful two-sided training objective before fitting",
+    "Independent trading supervision, durable recovery/rearm and model-health quarantine",
+    "Whole-codebase final line review and exhaustive final bug hunting remain incomplete"
+  ],
+  "financial_registry_counts_unchanged": {
+    "observations": 202,
+    "hypotheses": 65,
+    "scoped_mechanisms_or_overlays": 37,
+    "qualified_stable_edges": 0
+  }
+}

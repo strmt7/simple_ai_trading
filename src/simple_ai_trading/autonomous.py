@@ -1124,19 +1124,30 @@ def _loss_budget_guard(
         if trade.realized_pnl >= 0.0:
             break
         consecutive_losses += 1
-    native_cash_present = any(position.spot_entry_cash_receipt for position in opens)
+    # Closing inventory does not erase the denomination of its realized cash.
+    native_cash_present = any(
+        record.spot_entry_cash_receipt for record in (*opens, *closed)
+    )
     if native_cash_present:
         if (
-            mark is None
-            or not mark_symbol
-            or not mark_market_type
-            or any(
-                (position.symbol, position.market_type) != (mark_symbol, mark_market_type)
-                for position in opens
+            not mark_symbol
+            or mark_market_type not in {"spot", "futures"}
+            or opens
+            and (
+                mark is None
+                or any(
+                    (position.symbol, position.market_type)
+                    != (mark_symbol, mark_market_type)
+                    for position in opens
+                )
             )
         ):
             return CapitalGuard(
-                False, "cash-valuation-instrument-unqualified", 0.0, 0.0, consecutive_losses
+                False,
+                "cash-valuation-instrument-unqualified",
+                0.0,
+                0.0,
+                consecutive_losses,
             )
         from .assets import symbol_base_for_supported_quote
 
@@ -1176,7 +1187,10 @@ def _loss_budget_guard(
             consecutive_losses,
             force_close=True,
         )
-    if strategy.max_session_loss_pct > 0.0 and session_loss >= strategy.max_session_loss_pct:
+    if (
+        strategy.max_session_loss_pct > 0.0
+        and session_loss >= strategy.max_session_loss_pct
+    ):
         return CapitalGuard(
             False,
             f"session-loss-lockout:{session_loss:.2%}",
@@ -1185,7 +1199,10 @@ def _loss_budget_guard(
             consecutive_losses,
             force_close=True,
         )
-    if strategy.max_consecutive_losses > 0 and consecutive_losses >= strategy.max_consecutive_losses:
+    if (
+        strategy.max_consecutive_losses > 0
+        and consecutive_losses >= strategy.max_consecutive_losses
+    ):
         return CapitalGuard(
             False,
             f"loss-streak-lockout:{consecutive_losses}",
