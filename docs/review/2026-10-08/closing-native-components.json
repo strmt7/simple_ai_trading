@@ -1,0 +1,85 @@
+{
+  "schema": "closing-native-components-review-v1",
+  "baseline_commit": "22dc15ff44b8a7da53a708509a182737f820fe2f",
+  "reviewed_at_utc": "2026-10-08T07:47:25Z",
+  "source_hash_convention": "SHA256 of exact current source bytes; Python files use LF",
+  "source_sha256": {
+    "src/simple_ai_trading/binance_closing_inventory.py": "ebe0a64ea63564463c290b0d6a44215abe8930e06f1c1502c81e1ecbd8c8811e",
+    "src/simple_ai_trading/binance_instrument_units.py": "b6522e2ae53078e351ad62e2ca8282cabaa34c51245dbc82dd3eee836628098b",
+    "src/simple_ai_trading/binance_opening_inventory.py": "768bcc1ab1b36669c4b6f7e8a1223fa47702ac5e84fe0c1dd697b40c2cab3e21",
+    "src/simple_ai_trading/binance_open_intents.py": "570ba10db9c9ca28df559858db7a7b93771c5b6d2fb70545233b66daf4259a2b",
+    "tests/test_binance_closing_inventory.py": "33a09db60c616198f265cb12e70fc78bfce04f875f698c6a7b458f0f6184a3cc",
+    "tests/test_spot_short_opening_scope.py": "8199b52961f29d12735c0e3e38441ae343f62fe09f77a7d86369dde922830294"
+  },
+  "demonstrated_capital_boundary": {
+    "before": "Opening journal accepted Spot SHORT although closing ownership permits Spot LONG only; direct rejection test failed before repair",
+    "after": "Opening request validation rejects Spot SHORT before journal creation and durable submission; fake exchange writes remain zero",
+    "preserved": "Spot LONG and Futures LONG/SHORT; valid request serialization unchanged",
+    "historical_invalid_obligation": "Existing unsupported UNKNOWN record remains byte-identical and admission-blocking; no deletion, migration, replay or rearm"
+  },
+  "closing_observation": {
+    "entry_point": "retain_closing_inventory: offline library recovery boundary, not an installed CLI command or live-loop integration",
+    "source": "Existing retained terminal closing recovery, revalidated against the current parent request, execution scope, exact native fills and stored evidence",
+    "transaction": "Existing journal write helper owns BEGIN IMMEDIATE and synchronous FULL; no second transaction or separate authority database",
+    "instrument_units": "Shared explicit BTC/ETH/SOL and USDT/USDC validation; Futures require supplied PERPETUAL, COIN and marginAsset=quoteAsset metadata",
+    "metadata_quality": "Scope and supplied field identity only; not metadata origin, freshness or current eligibility",
+    "spot": "SELL base principal and quote proceeds, minus each native commission in its own asset",
+    "futures": "Signed reduction in derivative quantity and separate native commission deltas; quote notional is never principal cash",
+    "reported_futures_pnl": "Retained separately with the supplied margin-asset unit; not combined with fees into a posted account-profit figure",
+    "fee_fx": "No conversion, par valuation or omitted third-asset fees; signed reported rebates remain in their own asset",
+    "persistence": "Canonical allowed fields in closing_inventory inside the existing intent journal; exact replay is idempotent, conflicting source/schema/movement rejects",
+    "authority": "No inventory application, account-balance qualification, local-lot PnL qualification, financial qualification or rearm",
+    "partial_or_zero_fill": "Retains only executed components; never erases the tracked position or resolves the UNKNOWN close"
+  },
+  "synthetic_controls": {
+    "spot_sale": "0.002 BTC / 110 USDT gross, 0.11 USDT commission -> observed-component projection BTC -0.002 and USDT +109.89, not account balance",
+    "futures_long_reduction": "0.002 contracts reduced, 110 quote notional, reported PnL 10, commission 0.11 USDT -> derivative -0.002 and fee delta -0.11 USDT; reported 10 remains separate",
+    "futures_short_reduction": "Derivative +0.002; reported -10 remains separate from fee delta -0.11 USDT",
+    "native_decimal_context": "Thirty-digit fee survives an ambient two-digit Decimal context",
+    "market_or_account_observation": false
+  },
+  "schema_discovery": {
+    "type": "Two public web search queries, not a repository byte-bound primary capture",
+    "queries": [
+      "site:developers.binance.com USD-M account update \"Accumulated Realized\" \"Pre-fee\"",
+      "site:developers.binance.com \"usd\" \"ACCOUNT_UPDATE\" \"(Pre-fee)\" -\"coin-futures\""
+    ],
+    "first_result": "Official COIN-M user-data-stream document; product scope excluded for USD-M cash qualification",
+    "first_result_url": "https://developers.binance.com/en/docs/products/derivatives-trading-coin-futures/user-data-streams",
+    "second_result": "No results",
+    "examples_used_as_financial_evidence": false,
+    "usd_m_posted_cash_or_pre_fee_semantics_qualified": false,
+    "consequence": "Keep reported PnL separate; do not infer USD-M posted cash from a COIN-M example"
+  },
+  "verification": {
+    "command": "uv run python -m pytest tests/test_binance_closing_inventory.py tests/test_spot_short_opening_scope.py tests/test_binance_opening_inventory.py tests/test_binance_close_recovery.py tests/test_binance_open_recovery.py tests/test_binance_close_intents.py tests/test_binance_open_intents.py tests/test_position_transactions.py tests/test_positions.py tests/test_autonomous.py tests/test_autonomous_spot_cash.py tests/test_autonomous_spot_inventory.py --tb=short -x",
+    "affected_domain_passed": 562,
+    "affected_domain_failed": 0,
+    "new_cases": 28,
+    "lint_and_format": "All six touched Python files pass Ruff check and format check",
+    "development_errors": [
+      "Initial new projection attempted a second BEGIN IMMEDIATE; removed after inspecting the existing write helper",
+      "New integration test initially passed positional arguments in the wrong order; corrected with explicit keyword arguments after reading the signature"
+    ],
+    "full_suite_run": false,
+    "hosted_ci_run": false,
+    "benchmark_or_gpu_workload": false,
+    "model_fit": false,
+    "exchange_market_or_account_requests": 0,
+    "public_schema_search_queries": 2,
+    "credentials_used": false,
+    "orders_submitted": 0,
+    "historical_results_modified": false,
+    "protected_data_modified": false,
+    "automation_created": false
+  },
+  "remaining": [
+    "Normal live Futures accounting still uses modeled fees; this offline observation does not replace that path",
+    "Authoritative posted-cash/fee semantics, metadata origin/freshness and owned lot/account attribution",
+    "Exact residual inventory, native base-fee reconciliation, recovery application and terminal rearm",
+    "Paired direction-neutral hedge quantities, complete costs, basis, financing and margin paths",
+    "Source-qualified state-dependent two-sided model objective and training admission",
+    "Independent trading supervision and final exhaustive whole-repo review"
+  ],
+  "financial_counts_unchanged": {"observations": 202, "hypotheses": 65, "scoped_mechanisms": 37, "qualified_stable_edges": 0}
+}

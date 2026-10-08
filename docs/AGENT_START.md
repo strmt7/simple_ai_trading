@@ -10,6 +10,15 @@ Scope blockers to their branch; a fresh user resumption resets the blocked audit
 
 ## Current Truth
 
+October 8 [closing native components](review/2026-10-08/closing-native-components.md):
+offline parent-bound closing observations retain native units/fees and reported
+Futures PnL separately, without treating notional as cash or applying/rearming.
+Shared instrument-unit validation preserves opening behavior. Demonstrated
+Spot SHORT opening/closing mismatch now rejects before durable submission;
+Futures shorts and historical UNKNOWN obligations remain. 562 affected checks
+pass (28 new). Normal Futures fees, native cash attribution, residual recovery
+and stateful objective remain open. No fit or venue request; counts 202/65/37/0.
+
 October 8 [September archive/API population](review/2026-10-08/september-funding-population/review.md):
 six checksum-bound public GETs corroborate all 234 September 5-30 native events
 exactly across BTC/ETH/SOL. Monthly archives each contain 90 rows; intersections

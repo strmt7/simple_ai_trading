@@ -15,6 +15,7 @@ from dataclasses import asdict, dataclass, field
 from decimal import Decimal, localcontext
 
 from .binance_execution_scope import BinanceExecutionScope
+from .binance_instrument_units import instrument_asset_units
 from .binance_open_intents import BinanceOpenIntentJournal, OpenIntentError
 from .binance_open_recovery import _encode, _read_record
 from .binance_terminal_fills import _text, validate_terminal_fills
@@ -39,34 +40,6 @@ class OpeningInventoryObservation:
     rearmed: bool = field(default=False, init=False)
 
 
-def _assets(
-    instrument: Mapping[str, object], symbol: str, scope: BinanceExecutionScope
-) -> dict[str, str]:
-    """Admit explicit instrument units, never infer base from a suffix alone."""
-    if not isinstance(instrument, Mapping):
-        raise OpenIntentError("opening inventory requires explicit instrument metadata")
-    base, quote = instrument.get("baseAsset"), instrument.get("quoteAsset")
-    if (
-        base not in ("BTC", "ETH", "SOL")
-        or quote not in ("USDT", "USDC")
-        or instrument.get("symbol") != symbol
-        or symbol != base + quote
-    ):
-        raise OpenIntentError("opening instrument asset identity is inconsistent")
-    result = {"symbol": symbol, "baseAsset": base, "quoteAsset": quote}
-    if scope.market_type == "futures":
-        if (
-            instrument.get("contractType") != "PERPETUAL"
-            or instrument.get("marginAsset") != quote
-            or instrument.get("underlyingType") != "COIN"
-        ):
-            raise OpenIntentError("opening inventory requires linear crypto units")
-        result.update(
-            contractType="PERPETUAL", marginAsset=quote, underlyingType="COIN"
-        )
-    return result
-
-
 def retain_opening_inventory(
     journal: BinanceOpenIntentJournal,
     *,
@@ -89,7 +62,7 @@ def retain_opening_inventory(
     position = journal.pending_position(scope=scope)
     if position is None:
         return None
-    assets = _assets(instrument, position.symbol, scope)
+    assets = instrument_asset_units(instrument, position.symbol, scope)
     request = journal._request(position, scope)
     try:
         with closing(journal._connect(write=True)) as connection, connection:
