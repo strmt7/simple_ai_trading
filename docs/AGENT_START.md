@@ -10,6 +10,14 @@ Scope blockers to their branch; a fresh user resumption resets the blocked audit
 
 ## Current Truth
 
+October 8 [flat native cash quote guard](review/2026-10-08/native-flat-quote-guard.md):
+native closed history retains currency qualification after the last close.
+A synthetic -1 USDC loss could previously be offset by +2 USDT; admission now
+rejects without guessed FX. Flat same-quote cash needs no current mark; existing
+loss limits and owned reduction remain. 378 affected checks pass (13 new).
+General UI/portfolio denomination and hedge/model qualification remain open.
+No market/account request, order or fit; counts unchanged at 202/65/37/0.
+
 October 8 [official structural-change round](review/2026-10-08/structural-change-discovery/review.md):
 one two-query search and one new migration FAQ GET; the GET returned empty HTTP
 202 and is terminal without retry/alias. No edge/deployment trigger qualified;

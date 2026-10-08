@@ -1,5 +1,17 @@
 # Continue Development
 
+October 8 [flat native cash admission checkpoint](review/2026-10-08/native-flat-quote-guard.md):
+closed native receipts now retain instrument/product and quote qualification
+when inventory is flat. A demonstrated -1 USDC / +2 USDT false offset rejects
+new exposure rather than assuming FX. Same-quote realized cash remains usable
+without a current mark, subject to unchanged loss limits. Persistence and the
+actual entry gate are covered; 378 affected checks pass, including 13 new.
+No order path, historical result, protected data, model or market capture changed.
+Default UI/statistics and general FX valuation remain unqualified. Next advance
+native paired hedge coverage/full cash costs or the stateful two-sided objective,
+not an already-fixed fee defect, consumed capture or inadequate-label fit.
+Research counts stay 202 observations/65 hypotheses/37 mechanisms/0 stable edges.
+
 October 8 [bounded source-discovery checkpoint](review/2026-10-08/structural-change-discovery/review.md):
 two frozen official queries found a new account-migration FAQ lead; its exact
 GET returned HTTP 202/zero bytes. No retry, alias or unsupported interpretation.
