@@ -1,5 +1,25 @@
 # Continue Development
 
+October 8 [two-sided cash-label checkpoint](review/2026-10-08/stateful-two-sided-cash.md):
+new `build_stateful_cash_labels` encloses each independent hourly long/short
+counterfactual separately, keeps exact mark/entry scaling and charges exit
+quote costs at exit value. It excludes old targets from labels and feature
+bindings and rejects missing/conflicting inputs. Synthetic controls show both
+adverse bounds can be -63 bps even though their signed contrast is zero; this
+is accounting/objective evidence, not a market edge. 241 affected checks pass
+(50 new). The new batch is rejected by the legacy signed trainer before I/O.
+Original builders/models/results stay unchanged; no fifth admitted dataset,
+stateful objective repair, fit or native hedge qualification is claimed.
+
+Avoid a daily weather capture solely to repeat yesterday's financial question.
+Advance only an informative distinct research question or a demonstrated cash,
+execution or model-admission gap. Next qualify paired native coverage, complete
+hedge costs/capital/margin and chronological roles; then connect a two-sided
+surplus/abstention objective with actual stateful transitions. Preserve the
+separate continuous inventory replay and all old results. No public market,
+account, credential, order, protected or automation work occurred. Research
+counts remain 202 observations/65 hypotheses/37 mechanisms/0 stable edges.
+
 October 8 [foundation-worker ownership checkpoint](review/2026-10-08/owned-worker-containment.md):
 source review reproduced a supervisor signaling an unverified reported PID,
 including after its launcher exited. That could touch another task after PID

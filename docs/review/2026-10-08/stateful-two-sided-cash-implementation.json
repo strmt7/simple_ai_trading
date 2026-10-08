@@ -1,0 +1,82 @@
+{
+  "schema": "stateful-two-sided-cash-implementation-receipt-v1",
+  "baseline_commit": "c9850f9af236ee4039b792b35e16f498a529b73b",
+  "implementation_sha256": {
+    "src/simple_ai_trading/stateful_cash_labels.py": "7e0fd124133f01cad16250ac9bf6befa9745af49ccfb4be088462b211a8e2b3a",
+    "src/simple_ai_trading/stateful_turnover_model.py": "44bf7bc5bb194e65fe4c539c30713e84faf97b7b9893306c3f6dad721707f093",
+    "src/simple_ai_trading/stateful_cash_replay.py": "f35d39bc3577cf4c17094d9ec5d1a8e9700968b74562f38f35c88e0311d4821b",
+    "src/simple_ai_trading/funding_cash_labels.py": "a167fca77c9529c232c5a4dc4cd7e1fb5d558ebb6c1a6bc48c49078b322eb57b",
+    "src/simple_ai_trading/funding_cash.py": "3bb8fdaf50b545d93d42df5bd1b901743cc53cd11f4223e58364f160fe3b1aea",
+    "src/simple_ai_trading/funding_cash_inventory.py": "7a332c969380ca567da0c3bfd5012275a32f6b77676fcade8b03a0d7ce9b9b18",
+    "tests/test_stateful_cash_labels.py": "ac02bafbbfb6cc4a4c5f0d7aa1fa2fec4b42dd91740c2e58ee715e1f5eb4f4f7"
+  },
+  "verification": {
+    "affected_command": "uv run python -m pytest tests/test_stateful_cash_labels.py tests/test_stateful_turnover_model.py tests/test_stateful_inventory_cash.py tests/test_stateful_fixed_base_cash_counterexample.py tests/test_funding_cash_labels.py tests/test_funding_cash.py --tb=short",
+    "affected_passed": 241,
+    "new_cases": 50,
+    "exact_inventory_paired_cases": 18,
+    "paired_sides_each": 2,
+    "source_and_preservation_digests_verified": 10,
+    "saved_cash_controls_reconstructed_exactly": 3,
+    "exit_code": 0,
+    "ruff_three_touched_python_files": "passed",
+    "full_suite": "not_run",
+    "coverage": "not_run",
+    "initial_fixture_error": "FundingState positional arity corrected with explicit field names",
+    "test_evidence": "synthetic_controls_not_market_observations"
+  },
+  "controls": {
+    "interior_mark_102": {
+      "label_sha256": "3f5f5f6325465c07d74f4c24381c53a3aed45bbaa301b965b20039887fe81b57",
+      "row_zero": {
+        "long_net_lower_bps": -63.000000000000064,
+        "long_net_upper_bps": -62.999999999999936,
+        "short_net_lower_bps": 38.999999999999936,
+        "short_net_upper_bps": 39.000000000000064,
+        "uncertain_funding_events": 0
+      }
+    },
+    "opposite_sign_entry_exit_uncertainty": {
+      "label_sha256": "2390957c53bdac297a9b61dcade2e95dc213910b377704e870f944de9c8a3e3b",
+      "row_zero": {
+        "long_net_lower_bps": -63.00000000000007,
+        "long_net_upper_bps": 39.00000000000004,
+        "short_net_lower_bps": -63.00000000000004,
+        "short_net_upper_bps": 39.00000000000007,
+        "uncertain_funding_events": 2
+      }
+    },
+    "doubled_exit_price": {
+      "label_sha256": "503eebe1e9835bb56e344ed163afb8bfb2468e58e24dfa51d868f9c116393bfc",
+      "row_zero": {
+        "long_net_lower_bps": 9930.999999999998,
+        "long_net_upper_bps": 9931.000000000002,
+        "short_net_lower_bps": -9967.000000000002,
+        "short_net_upper_bps": -9966.999999999998,
+        "uncertain_funding_events": 0
+      }
+    }
+  },
+  "preserved_artifact_sha256": {
+    "docs/review/2026-10-08/stateful-inventory-cash-implementation.json": "dbefa783535b40a12a4ddb0e27261bec43d264b74fa131abf51cc27ec06cfcb6",
+    "docs/review/2026-10-08/funding-cash-hurdle-timing-implementation.json": "b9c6a1604b271cf781381fc17bd06eb40e2d4dd252c1a38b1efba78e1d22658c",
+    "docs/model-research/structural-edge-priority-registry-v1.json": "2e9bcd078f756636dc536995d0d1a6bc98849d56f881ff08ffc1759c6f894262"
+  },
+  "scope": {
+    "original_stateful_builder": "unchanged_rate_proxy",
+    "new_adapter": "two_sided_independent_hourly_supplied_cash_bounds",
+    "continuous_stateful_replay": "existing_separate_fixed_base_inventory_adapter",
+    "native_origin_qualified": false,
+    "independent_coverage_qualified": false,
+    "complete_hedge_cash_qualified": false,
+    "stateful_training_objective_repaired": false,
+    "new_training_qualified": false,
+    "profitable_edge_qualified": false
+  },
+  "new_market_requests": 0,
+  "model_fits": 0,
+  "orders": 0,
+  "automations_created_or_edited": 0,
+  "historical_result_files_changed": false,
+  "research_counts": {"observations": 202, "hypotheses": 65, "scoped_mechanisms": 37, "qualified_stable_edges": 0}
+}

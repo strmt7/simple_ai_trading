@@ -127,6 +127,11 @@ result and all other consumed populations, including WNBA September 3-9.
   retains actual modeled quantity changes, marked payments and quote costs;
   its shared forecast policy preserves the legacy compounded replay. The
   stateful training builder remains a rate proxy, not a fifth repaired builder.
+  October 8 `stateful_cash_labels` is a separate two-sided supplied hourly adapter,
+  not a repaired legacy builder or continuous holding objective. Do not collapse
+  adverse long/short bounds into a signed contrast or negate one side's adverse
+  payment into the other's income. Retain actual entry/exit quote costs; native
+  paired coverage and a transition-aware surplus/abstention objective precede fits.
   Before accounting claims, trace final metric aggregation and normalization:
   an hourly-array sum, compounded total and fixed-base quote cash differ.
   Preserve historical diagnostics and append corrections; never infer a

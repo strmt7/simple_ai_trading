@@ -553,6 +553,8 @@ def train_stateful_forecasts(
 ) -> ForecastBundle:
     """Fit the twelve frozen monthly OpenCL-first regressors."""
 
+    if not isinstance(dataset, StatefulHourlyDataset):
+        raise ValueError("legacy signed trainer requires a legacy hourly dataset")
     predictions = {
         feature_set: np.full(dataset.rows, np.nan, dtype=np.float32)
         for feature_set in FEATURE_SETS

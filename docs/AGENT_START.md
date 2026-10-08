@@ -10,6 +10,15 @@ Scope blockers to their branch; a fresh user resumption resets the blocked audit
 
 ## Current Truth
 
+October 8 [two-sided hourly cash labels](review/2026-10-08/stateful-two-sided-cash.md):
+a separate adapter retains long/short adverse and upper cash, marked payments,
+uncertain boundaries and entry/exit quote costs. Both sides can have negative
+adverse bounds; a signed contrast is not net cash. 241 affected checks pass,
+including 50 new cases. Original hourly builder/results remain rate proxies;
+the cash batch cannot enter the legacy signed trainer. Native paired hedge
+coverage/costs and a stateful two-sided objective remain required before fits.
+No new market request or financial observation; counts stay 202/65/37/0.
+
 October 8 [owned foundation-worker containment](review/2026-10-08/owned-worker-containment.md):
 removed termination by worker-reported PID. Windows children start suspended,
 join an owned no-breakaway kill-on-close job, then resume; ready identity needs
