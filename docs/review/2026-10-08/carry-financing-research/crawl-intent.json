@@ -1,0 +1,19 @@
+{
+  "schema": "crawl4ai-primary-carry-research-v1",
+  "clock_observed_before_access_utc": "2026-10-08T11:18:20Z",
+  "question": "Does the BIS primary HTML summary distinguish a structural carry mechanism from a guaranteed or unconstrained arbitrage, and identify capital or margin constraints?",
+  "canonical_url": "https://www.bis.org/publications/working-paper-1087-crypto-carry",
+  "source_selection": "First primary BIS HTML result from the separately retained one-query discovery. Exact document/topic searches found no prior retained contract or review; snippets are discovery only.",
+  "provider": "SuperZip isolated Crawl4AI 0.9.4+superzip.portable2",
+  "provider_tool_sha256": "d1cedc752bc87848a4291e9ab006045cf6fa4bd3dbc9f796af0b304a702cce41",
+  "lock_sha256": "84ccd9ea9cbfdafa2e02e9218844da75ed3054b2c6a2d4304fe03e632cfe5f29",
+  "interpreter": "C:/Users/strat/AppData/Local/Programs/Python/Python313/python.exe",
+  "output": "C:/trader/retained-public-evidence/crawl4ai-20261008-bis-carry/result.json",
+  "page_navigations_max": 1,
+  "page_timeout_ms": 45000,
+  "robots_check": true,
+  "external_llm_personal_profile_stealth_or_challenge_bypass": false,
+  "admission": "Require HTTP 200, correct document scope and substantive extracted text without a challenge. No PDF extraction, full-paper reading, venue-cost evidence or return transfer is implied.",
+  "terminal_consequence": "Preserve failure and result; no retry or alias. Source question only, not a market experiment or an accepted edge.",
+  "protected_capture_credentials_accounts_orders_funds_or_automation": false
+}

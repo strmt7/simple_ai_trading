@@ -1,0 +1,55 @@
+{
+  "accepted_edge": false,
+  "cash_law_bps": "funding - noncapital_cost - basis_deterioration - annual_capital_cost_bps * capital_multiple * days / 365",
+  "classification": "post-hoc algebraic design constraint, not a new replay or independent evaluation",
+  "conclusion": "Perpetual-margin compression alone cannot make this fully funded spot hedge positive under the declared scenario, even at zero perpetual margin. Different financing, incremental costs, collateral yield or basis outcomes require their own evidence.",
+  "continuous_solvency_qualified": false,
+  "new_market_requests": 0,
+  "research_observation_count_effect": 0,
+  "rows": [
+    {
+      "capital_cost_bps_per_reference_unit": "2080/73",
+      "net_bps_at_one_spot_unit_and_illustrative_one_twentieth_margin": "-109782122348847924631/5811978926724680000",
+      "net_bps_at_one_spot_unit_and_zero_perpetual_margin": "-101502042782007284631/5811978926724680000",
+      "retained_funding_bps": "3425792797397195553/79616149681160000",
+      "strict_positive_net_requires_capital_multiple_below": "64099548554805515369/165601591336812800000",
+      "symbol": "BTCUSDT",
+      "threshold_below_one_fully_funded_spot_unit": true,
+      "threshold_identity_exact": true
+    },
+    {
+      "capital_cost_bps_per_reference_unit": "2080/73",
+      "net_bps_at_one_spot_unit_and_illustrative_one_twentieth_margin": "-3285172526059068863/179183610000000000",
+      "net_bps_at_one_spot_unit_and_zero_perpetual_margin": "-3029897246059068863/179183610000000000",
+      "retained_funding_bps": "106979231149875769/2454570000000000",
+      "strict_positive_net_requires_capital_multiple_below": "2075608353940931137/5105505600000000000",
+      "symbol": "ETHUSDT",
+      "threshold_below_one_fully_funded_spot_unit": true,
+      "threshold_identity_exact": true
+    },
+    {
+      "capital_cost_bps_per_reference_unit": "2080/73",
+      "net_bps_at_one_spot_unit_and_illustrative_one_twentieth_margin": "-102617667617157481/3717890000000000",
+      "net_bps_at_one_spot_unit_and_zero_perpetual_margin": "-97320947617157481/3717890000000000",
+      "retained_funding_bps": "1747752498395103/50930000000000",
+      "strict_positive_net_requires_capital_multiple_below": "8613452382842519/105934400000000000",
+      "symbol": "SOLUSDT",
+      "threshold_below_one_fully_funded_spot_unit": true,
+      "threshold_identity_exact": true
+    }
+  ],
+  "scenario": {
+    "annual_capital_cost_bps": "325",
+    "basis_deterioration_bps": "0",
+    "capital_minimum_one_applies_to": "Fully cash-funded spot purchase normalized to the same reference unit; not every account/collateral structure",
+    "capital_rates_and_margin_are_native_terms": false,
+    "duration_days": "32",
+    "funding_entitlement": "Original hypothetical HELD case; not owned receipts",
+    "noncapital_cost_reserve_bps": "32"
+  },
+  "schema": "posthoc-retained-capital-bound-v1",
+  "source_host_bytes_sha256": "11312e21e0d3bf5e3805e0a08e590e9100cb92c28b3fd166eeacbb7b0f32f79e",
+  "source_path": "docs/review/2026-10-07/native-funding-hedge-frontier/result.json",
+  "source_recorded_result_sha256": "d25fbc802da6bdb3529b2ef1c6baba92371a2dffa6b5911e71ef544f3b991eb9",
+  "training_admitted": false
+}

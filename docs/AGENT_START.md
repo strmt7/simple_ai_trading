@@ -10,6 +10,14 @@ Scope blockers to their branch; a fresh user resumption resets the blocked audit
 
 ## Current Truth
 
+October 8 [carry financing wrap-up](review/2026-10-08/carry-financing-research/review.md):
+the user requested commit and pause. Crawl4AI admitted the BIS primary HTML
+research summary. A post-hoc exact inversion of the retained funding frontier
+shows that perpetual-margin compression alone cannot rescue its fully funded
+spot hedge under the original 3.25% annual/32-bp scenario, even at zero margin.
+No universal rejection, new market experiment, fit or edge promotion follows;
+counts remain 202/65/37/0. Next qualify financing/collateral and full paired cash.
+
 October 8 [CocoIndex restoration](review/2026-10-08/cocoindex-restoration.md):
 follow the actual index/query receipts, not the earlier installation-only audit.
 Windows initialization, source scope, durable query receipts, stale rejection,
