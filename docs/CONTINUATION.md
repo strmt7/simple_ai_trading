@@ -1,5 +1,18 @@
 # Continue Development
 
+October 8 [transition-aware cash checkpoint](review/2026-10-08/inventory-cash-actions.md):
+shared inventory cash supports initial quantity and explicit target resizing;
+one-interval action values compare cash bounds against immediate flattening.
+Holding does not incur a fresh hourly entry, reversal trades actual units and
+same-sign boundary resizing cannot invent a flat payment state. 378 affected
+checks and three source-bound artifact checks pass. This is synthetic supplied
+horizon-liquidation accounting, not a continuous objective, neutral hedge,
+admitted dataset or fit. Legacy paths/results stay unchanged and the signed
+trainer rejects the table before I/O. Next qualify paired cash/full costs and
+causal state, then integrate continuation-aware surplus/abstention forecasts.
+No capture, credential, order or promotion; counts stay 202/65/37/0 and goal
+active. Reuse retained controls until their source bindings are invalidated.
+
 October 8 [cross-repository tool requirement](review/2026-10-08/mandatory-agent-tools.md):
 Caveman and CocoIndex Code are mandatory for all agents following the repo's
 AGENTS contract. Missing policies were added across the seven checked local
