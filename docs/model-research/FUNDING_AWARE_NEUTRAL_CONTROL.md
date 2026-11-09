@@ -1,5 +1,15 @@
 # Funding-aware control: cash truth before an optimizer
 
+November 9 [historical paired-source review](../review/2026-11-09/paired-data-source/review.md)
+finds actual third-party-collected native spot/perpetual BBO records overlapping
+the retained marked-funding window. The one-minute format probe passes for all
+three assets, but spot messages contain no native exchange clock. Neither the
+metadata nor collector arrival time qualifies native freshness, sequence
+continuity, executable fills, full costs or training. Prefer a separately frozen
+raw depth/snapshot/clock question over more funding-only fits; generated snapshots
+are on-subscription and must actually be present. Preserve consumed financial
+populations and every failed source contract. No stable edge is admitted.
+
 November 9 [paired inventory cash](../review/2026-11-09/paired-inventory-cash/review.md)
 now composes the existing derivative replay with incremental spot fills, actual
 declared net base quantities, full supplied spot cash, independent quote debits

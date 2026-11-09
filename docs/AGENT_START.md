@@ -10,6 +10,14 @@ Scope blockers to their branch; a fresh user resumption resets the blocked audit
 
 ## Current Truth
 
+November 9 [historical source qualification](review/2026-11-09/paired-data-source/review.md):
+one fixed minute supplies 81,821 native spot/perpetual BBO messages, with no
+native exchange clock on spot; normalized arrival time is not native book age.
+Vendor metadata also lists Polymarket history. These are source/format results,
+not continuous data, costs, training or profitability. Counts stay 203/65/37/0.
+Use the retained contracts/journals and next distinct source questions; do not
+repeat consumed requests. Work remains local, bounded and without persistence.
+
 November 9 [paired-cash checkpoint](review/2026-11-09/paired-inventory-cash/review.md):
 incremental spot cash and net quantities now compose with the existing exact
 derivative replay. Residual base exposure, every declared debit and non-atomic

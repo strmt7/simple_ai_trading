@@ -1,5 +1,17 @@
 # Continue Development
 
+November 9 [historical paired-data source](review/2026-11-09/paired-data-source/review.md):
+three distinct technical documents and anonymous vendor metadata qualify a route
+to historical native spot/perpetual records and Polymarket channels. One fixed
+minute contains 81,821 BTC/ETH/SOL BBO messages. Spot has no native exchange-clock
+field; collector time cannot establish native book age. No continuous coverage,
+full-cost economics, training or edge admission. Counts remain 203/65/37/0.
+Preserve the overview's exact-URL failure and all consumed requests; no alias,
+replacement minute or financial rerun. Next qualify raw depth/snapshot/sequence
+clocks and Polymarket token/payout identity under distinct frozen questions.
+Controllers are inert, raw responses/journals ignored, work local and goal active.
+Refresh the index before broad navigation after these documentation edits.
+
 November 9 [paired inventory accounting](review/2026-11-09/paired-inventory-cash/review.md):
 the existing derivative ledger now composes with explicit incremental spot fills,
 net base quantities, financing/opportunity/other quote debits and boundary orphan

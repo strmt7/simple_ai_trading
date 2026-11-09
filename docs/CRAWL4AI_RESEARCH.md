@@ -54,6 +54,16 @@ Installation/help success does not prove a successful source extraction.
    provider/version, new output path, page/time limits and terminal consequence.
    Ensure the output parent exists and the file does not. The upstream CLI can
    overwrite files: operators must reserve a new destination before invocation.
+   Preflight the actual controller entry point, project imports, owned process
+   lifecycle and durable output writes before freezing access. A private script
+   outside the package tree needs a project-root module or reviewed `runpy`
+   entry point; do not discover its import failure during capture.
+   Declare any allowed same-publisher canonical redirects before access, including
+   the intended document scope. Retain original and final URLs and both native
+   `status_code` and `redirected_status_code` when present. For an allowed
+   redirect, qualify the effective final status; a different document, host,
+   challenge or forbidden redirect still fails. Never retrofit this policy into
+   a consumed exact-URL contract or fetch its canonical alias to repair failure.
 3. Retain the full result outside Git until source and credential-pattern review.
    Record timestamps, exact result hash/size, native success, status, URL and
    content fingerprint. Read bounded relevant sections, not the entire payload.
@@ -87,6 +97,13 @@ The [November 9 source check](review/2026-11-09/structural-change-discovery/revi
 used the already-installed current cohort and its hidden owned-child cleanup.
 Its separate source returned HTTP 202/one Markdown character and was also
 excluded, without an alternative reader or retry. No persistent task was created.
+
+The [historical-data source review](review/2026-11-09/paired-data-source/review.md)
+preserves an exact-URL failure caused by a 307 redirect despite a substantive
+final HTTP-200 document. A separately frozen zero-network review used retained
+bytes for documentation routing only. Three distinct technical documents then
+passed their own predeclared source gates. Neither the failed document nor its
+canonical alias was refetched, and the original second navigation stayed forbidden.
 
 This product includes software developed by UncleCode (https://x.com/unclecode)
 as part of the Crawl4AI project (https://github.com/unclecode/crawl4ai).

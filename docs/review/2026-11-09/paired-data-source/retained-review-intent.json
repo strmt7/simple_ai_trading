@@ -1,0 +1,14 @@
+{
+  "allowed": "One zero-network semantic review of original rendered bytes for source-planning facts only. Do not repair the consumed run, infer actual file availability or admit data/training/profit.",
+  "final_status": 200,
+  "frozen_at_utc": "2026-11-09T13:17:44.689699+00:00",
+  "new_navigation_dataset_account_or_order_requests": 0,
+  "observed_final_url": "https://docs.tardis.dev/downloadable-csv-files/overview",
+  "original_status": 307,
+  "preserved_failure": "Original exact-URL crawler failed after HTTP 307 redirect to /downloadable-csv-files/overview with final HTTP 200. Source two remains forbidden; original intent and journal unchanged.",
+  "question": "What documented data formats, public sample access, source clocks and coverage limitations are substantively supported by this retained vendor page?",
+  "schema": "retained-documentation-only-review-v1",
+  "sha256": "0a413a5645c3142d36abc0899b39d0ab3da0626122b7c73f42ef53c583d5885d",
+  "source_sha256": "56232d640eaf9a416f379e0c8a19573a983a08877225058eba739ff80c277514",
+  "url": "https://docs.tardis.dev/downloadable-csv-files"
+}

@@ -1,0 +1,53 @@
+{
+  "base_revision": "2579e7217d833173865fc464386fd32564ed7123",
+  "capture_boundaries_sha256": "f971726268ba2e630b2ebbe8d5bcf02f7b3f23b92ccb16efe23aef82cebe950f",
+  "compressed_byte_ceiling": 16777216,
+  "contract_sha256": "a95b4c73389bd32d8c6036922cabc7d2024639ae7e97d014a888bbd15b7889ee",
+  "controller_sha256": "a4d2c2a9a7f5b17da791f2dcec4a8019e7eb7872f98c041e3fa3ca326cfd5acc",
+  "decoded_byte_ceiling": 134217728,
+  "forbidden": "No price/spread/funding/return ranking, cross-book economic comparison, full-day or replacement download, native book-age assertion, continuous-coverage qualification, model fit, account request, credential, order, funds or accepted-edge claim. A positive schema result cannot repair or promote a consumed financial study.",
+  "frozen_at_utc": "2026-11-09T13:51:24.134477Z",
+  "gates": "Durable raw response and receipt precede decoding. Require HTTP 200/gzip within both caps, complete gzip decoding, explicit UTC ISO local clocks preserved as exact nanoseconds within the fixed minute, documented NDJSON native object framing, all three exact symbols, unsigned update ID and finite nonnegative native decimal quote fields. Count native field coverage, disconnect markers and local-clock regression only. Stop before futures if any spot gate fails.",
+  "preflight": "Same locked project runtime; imports, nanosecond clock preservation, synthetic gzip/framing and incorrect scope rejection passed before access. Explicit capture mode required; no installed or detached task.",
+  "question": "Do anonymous native raw WebSocket slices actually exist and preserve documented framing/fields for all three fixed spot/perpetual symbols? This is an availability/format probe, not a carry, arbitrage, funding-cost or price test.",
+  "requests_in_order": [
+    {
+      "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "exchange": "binance",
+      "headers": {
+        "Accept-Encoding": "gzip"
+      },
+      "method": "GET",
+      "url": "https://api.tardis.dev/v1/data-feeds/binance?from=2026-10-01T00%3A00%3A00.000Z&offset=0&sliceSize=1&filters=%5B%7B%22channel%22%3A%22bookTicker%22%2C%22symbols%22%3A%5B%22btcusdt%22%2C%22ethusdt%22%2C%22solusdt%22%5D%7D%5D"
+    },
+    {
+      "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "exchange": "binance-futures",
+      "headers": {
+        "Accept-Encoding": "gzip"
+      },
+      "method": "GET",
+      "url": "https://api.tardis.dev/v1/data-feeds/binance-futures?from=2026-10-01T00%3A00%3A00.000Z&offset=0&sliceSize=1&filters=%5B%7B%22channel%22%3A%22bookTicker%22%2C%22symbols%22%3A%5B%22btcusdt%22%2C%22ethusdt%22%2C%22solusdt%22%5D%7D%5D"
+    }
+  ],
+  "research_role": "format_only_not_training_or_economic_evaluation",
+  "schema": "native-one-minute-format-probe-v1",
+  "selection": "The sole first-of-month calendar day intersecting the previously captured September 5-October 6 native marked-funding window, selected before any quote values. Fixed first UTC minute, all three symbols combined per venue, no alternate date/offset/channel on failure.",
+  "source_authority": {
+    "metadata_sha256": [
+      "209723332c69f707298098cd1d7c1bfc85a1da30b61113b7c983d5ff53258355",
+      "fbfd8ca8eeaecfefb92c32edea08a69f4068dc00bea2659ab477e584ea7820bd"
+    ],
+    "native_sha256": "30d41569b75bd9c08381105eee4f9df50f55f0975a2064651c03e11328afecc6",
+    "operation": "Documented read-only raw historical data endpoint; first UTC day of each month accessible without Data API key, gzip supported, one minute and case-sensitive symbols. Catalogs source-bind bookTicker and lowercase IDs. No exchange account/API credential used.",
+    "publisher": "Tardis.dev",
+    "url": "https://docs.tardis.dev/api/http-api-reference"
+  },
+  "transport": {
+    "proxies": false,
+    "read_budget_seconds": 30,
+    "redirects": false,
+    "retries": 0,
+    "socket_timeout_seconds": 10
+  }
+}

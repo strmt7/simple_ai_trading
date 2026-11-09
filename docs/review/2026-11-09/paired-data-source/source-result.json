@@ -1,0 +1,532 @@
+{
+  "authority": {
+    "account_requests": 0,
+    "credentials_used": false,
+    "github_push": false,
+    "orders_or_funds": 0,
+    "protected_partial_payloads_read": false
+  },
+  "base_revision": "2579e7217d833173865fc464386fd32564ed7123",
+  "capture_boundaries_sha256": "f971726268ba2e630b2ebbe8d5bcf02f7b3f23b92ccb16efe23aef82cebe950f",
+  "created_at_utc": "2026-11-09T14:02:35.005992+00:00",
+  "documentation": [
+    {
+      "bytes": 1172700,
+      "effective_status": 200,
+      "final_url": "https://docs.tardis.dev/downloadable-csv-files/overview",
+      "markdown_characters": 17214,
+      "markdown_sha256": "9a060f4036704c52771dbfef16f276ead5d8939c40fc82908d65ab10ed600e6b",
+      "native_error": "",
+      "native_success": true,
+      "original_contract_admitted": false,
+      "requested_url": "https://docs.tardis.dev/downloadable-csv-files",
+      "sha256": "56232d640eaf9a416f379e0c8a19573a983a08877225058eba739ff80c277514",
+      "status": 307,
+      "title": "Quickstart | Tardis.dev Documentation"
+    },
+    {
+      "bytes": 2052321,
+      "effective_status": 200,
+      "final_url": "https://docs.tardis.dev/downloadable-csv-files/data-types",
+      "markdown_characters": 30629,
+      "markdown_sha256": "f63f8eb85ac8960c3c40b4bf2229053c8420dd71795d9d0050232fdb21a05598",
+      "native_error": "",
+      "native_success": true,
+      "original_contract_admitted": true,
+      "requested_url": "https://docs.tardis.dev/downloadable-csv-files/data-types",
+      "sha256": "307c6046b7dd55456426f91750a8e27d640d43677c00b31b2734412a77e662e9",
+      "status": 200,
+      "title": "Data Types | Tardis.dev Documentation"
+    },
+    {
+      "bytes": 959754,
+      "effective_status": 200,
+      "final_url": "https://docs.tardis.dev/downloadable-csv-files/api",
+      "markdown_characters": 17373,
+      "markdown_sha256": "6769064ce1321b1b147f5ebaeded7d50b4779cbe619a67a1eaa41c5519f6ad60",
+      "native_error": "",
+      "native_success": true,
+      "original_contract_admitted": true,
+      "requested_url": "https://docs.tardis.dev/downloadable-csv-files/api",
+      "sha256": "2c9de17c1d739bcbdf3b62ba8f9ba67120c6f76c5a4112bc2ecb1529741c5e92",
+      "status": 200,
+      "title": "API Reference | Tardis.dev Documentation"
+    },
+    {
+      "bytes": 1510109,
+      "effective_status": 200,
+      "final_url": "https://docs.tardis.dev/api/http-api-reference",
+      "markdown_characters": 29381,
+      "markdown_sha256": "1e19f89cc1400bf4300f824b64fadeda5b33994076a655227411ee3bc37d96dc",
+      "native_error": "",
+      "native_success": true,
+      "original_contract_admitted": true,
+      "requested_url": "https://docs.tardis.dev/api/http-api-reference",
+      "sha256": "30d41569b75bd9c08381105eee4f9df50f55f0975a2064651c03e11328afecc6",
+      "status": 200,
+      "title": "HTTP API Reference | Tardis.dev Documentation"
+    }
+  ],
+  "financial_admission": {
+    "accepted_edge": false,
+    "continuous_coverage_qualified": false,
+    "hypotheses": 65,
+    "native_book_age_qualified": false,
+    "native_full_costs_qualified": false,
+    "new_market_observations": 0,
+    "observations": 203,
+    "qualified_stable_edges": 0,
+    "scoped_mechanisms": 37,
+    "training_admitted": false
+  },
+  "frozen_contracts": [
+    {
+      "bytes": 3513,
+      "content_digest": "be894ae1b8ddd4d69e6c401c3fc77f06ba15c8526d9f53b46d8a593018eba9eb",
+      "content_digest_field": "contract_sha256",
+      "path": "docs/review/2026-11-09/paired-data-source/binance-futures-metadata-contract.json",
+      "sha256": "343997a1c9978c6406dbaa8aa05465a98e0fbdf2082c8170e9dc8ad6148f3367"
+    },
+    {
+      "bytes": 3465,
+      "content_digest": "141f3198dbcc7e1381a4318ef6e069c8c06e87a8c9c6415ecc62c4743838e89e",
+      "content_digest_field": "contract_sha256",
+      "path": "docs/review/2026-11-09/paired-data-source/binance-metadata-contract.json",
+      "sha256": "a5b56dc0aaa5dd570aff1bb673963c49fc9a80c0b2cec262a9f1d1e6e36cd3a7"
+    },
+    {
+      "bytes": 2422,
+      "content_digest": "7c00882830590f6aa31d00ea2d248b34e31a54f94451410ca085ee170f5d43a6",
+      "content_digest_field": "sha256",
+      "path": "docs/review/2026-11-09/paired-data-source/crawl-intent.json",
+      "sha256": "2845ee426bdd9711ee44619bf3275584ae9aea02bb818dd075ada4d8c4c55301"
+    },
+    {
+      "bytes": 3021,
+      "content_digest": "26d0e1890054e06d8bc588f0eb287898c6e693480bd50f944154230e1db7c91a",
+      "content_digest_field": "contract_sha256",
+      "path": "docs/review/2026-11-09/paired-data-source/exchanges-contract.json",
+      "sha256": "1a60be901ee23a2b4635394e84089056ee60a392a489d19085f323ac0c526765"
+    },
+    {
+      "bytes": 3934,
+      "content_digest": "a95b4c73389bd32d8c6036922cabc7d2024639ae7e97d014a888bbd15b7889ee",
+      "content_digest_field": "contract_sha256",
+      "path": "docs/review/2026-11-09/paired-data-source/native-minute-contract.json",
+      "sha256": "e3ea03299e5c4fdfb328473497d091974f26bbaac770430d22ab9db83069f9a2"
+    },
+    {
+      "bytes": 3091,
+      "content_digest": "cd7aa74d05208778e95bbf4bfa56f4a2333b7e663be8a54ebc67cbd0755c02cc",
+      "content_digest_field": "contract_sha256",
+      "path": "docs/review/2026-11-09/paired-data-source/polymarket-summary-contract.json",
+      "sha256": "1d369d97d32b8470fd21ba1ba1aeb069bfe9491e4a09d0984f574ec93dce0960"
+    },
+    {
+      "bytes": 1566,
+      "content_digest": "173526892b116ebfeb59a6b380bc3f9bf32249e2c90a6bff57a5aeed187d6fba",
+      "content_digest_field": "sha256",
+      "path": "docs/review/2026-11-09/paired-data-source/raw-api-intent.json",
+      "sha256": "8d8056b3dd24a815bf57622a0dbcf2e0d09b136b56548aceb727f54e17cede79"
+    },
+    {
+      "bytes": 1104,
+      "content_digest": "0a413a5645c3142d36abc0899b39d0ab3da0626122b7c73f42ef53c583d5885d",
+      "content_digest_field": "sha256",
+      "path": "docs/review/2026-11-09/paired-data-source/retained-review-intent.json",
+      "sha256": "94504d025a55ce58b31b0dc99d62ac8639bfbd768786caf931400e92ed407c64"
+    },
+    {
+      "bytes": 2223,
+      "content_digest": "1eaa56b2ff875c28e17ea4308b34f8211f2886d882b834396e8092d2599d47d3",
+      "content_digest_field": "sha256",
+      "path": "docs/review/2026-11-09/paired-data-source/schema-access-intent.json",
+      "sha256": "c1adcd2bd04680e8ea25f916bcd0382d4ae62d621bf45d14b8f5f06d4f4c2e7e"
+    },
+    {
+      "bytes": 1560,
+      "content_digest": "3cb261f559714d71ef14add749eabd83ff7f510a88790ca17d48b04f49242132",
+      "content_digest_field": "sha256",
+      "path": "docs/review/2026-11-09/paired-data-source/search-intent.json",
+      "sha256": "852ab1fd39b0fb44e71f2436fb9bbb9d31709d3d00b0c4d86e62af12c6a0c6e0"
+    }
+  ],
+  "native_api_metadata": [
+    {
+      "bytes": 1117130,
+      "kind": "binance",
+      "sha256": "209723332c69f707298098cd1d7c1bfc85a1da30b61113b7c983d5ff53258355",
+      "source_gate_passed": true,
+      "status": 200
+    },
+    {
+      "bytes": 391886,
+      "kind": "binance-futures",
+      "sha256": "fbfd8ca8eeaecfefb92c32edea08a69f4068dc00bea2659ab477e584ea7820bd",
+      "source_gate_passed": true,
+      "status": 200
+    },
+    {
+      "bytes": 20043,
+      "kind": "exchanges",
+      "sha256": "f20c5e774aa6b9d825074eb73ec0a64ed249acaa6c01e35ba4fc1b55f50759b1",
+      "source_gate_passed": true,
+      "status": 200
+    },
+    {
+      "bytes": 4353,
+      "kind": "polymarket-summary",
+      "sha256": "1c58dccd3862952eff978eef0c38740affe0370bbb25cd7dc4211d01b9b22af4",
+      "source_gate_passed": true,
+      "status": 200
+    }
+  ],
+  "native_minute": {
+    "compressed_bytes": 1208323,
+    "day": "2026-10-01",
+    "decoded_bytes": 18149575,
+    "end_exclusive_utc": "2026-10-01T00:01:00Z",
+    "feeds": [
+      {
+        "collector_clock_regressions": 0,
+        "compressed_bytes": 203538,
+        "compressed_sha256": "28f8e7e94cda83e4261e2a32b12ef1ab7d695099eafe2a782e5c46eb134bbe3b",
+        "continuous_coverage_qualified": false,
+        "decoded_bytes": 2710038,
+        "disconnect_markers": 0,
+        "economic_values_printed": false,
+        "exchange": "binance",
+        "messages_with_native_clock_fields": {
+          "BTCUSDT": 0,
+          "ETHUSDT": 0,
+          "SOLUSDT": 0
+        },
+        "native_book_age_qualified": false,
+        "native_fields_by_symbol": {
+          "BTCUSDT": [
+            "A",
+            "B",
+            "a",
+            "b",
+            "s",
+            "u"
+          ],
+          "ETHUSDT": [
+            "A",
+            "B",
+            "a",
+            "b",
+            "s",
+            "u"
+          ],
+          "SOLUSDT": [
+            "A",
+            "B",
+            "a",
+            "b",
+            "s",
+            "u"
+          ]
+        },
+        "rows_by_symbol": {
+          "BTCUSDT": 9119,
+          "ETHUSDT": 3905,
+          "SOLUSDT": 2355
+        },
+        "schema_gate_passed": true,
+        "status": 200,
+        "training_or_edge_admission": false
+      },
+      {
+        "collector_clock_regressions": 0,
+        "compressed_bytes": 1004785,
+        "compressed_sha256": "a3176e2cc0eec9dfa4c497104f87de8ee6bbf8bd6159d3149a9baa2e3da8c8a2",
+        "continuous_coverage_qualified": false,
+        "decoded_bytes": 15439537,
+        "disconnect_markers": 0,
+        "economic_values_printed": false,
+        "exchange": "binance-futures",
+        "messages_with_native_clock_fields": {
+          "BTCUSDT": 35658,
+          "ETHUSDT": 22507,
+          "SOLUSDT": 8277
+        },
+        "native_book_age_qualified": false,
+        "native_fields_by_symbol": {
+          "BTCUSDT": [
+            "A",
+            "B",
+            "E",
+            "T",
+            "a",
+            "b",
+            "e",
+            "ps",
+            "s",
+            "st",
+            "u"
+          ],
+          "ETHUSDT": [
+            "A",
+            "B",
+            "E",
+            "T",
+            "a",
+            "b",
+            "e",
+            "ps",
+            "s",
+            "st",
+            "u"
+          ],
+          "SOLUSDT": [
+            "A",
+            "B",
+            "E",
+            "T",
+            "a",
+            "b",
+            "e",
+            "ps",
+            "s",
+            "st",
+            "u"
+          ]
+        },
+        "rows_by_symbol": {
+          "BTCUSDT": 35658,
+          "ETHUSDT": 22507,
+          "SOLUSDT": 8277
+        },
+        "schema_gate_passed": true,
+        "status": 200,
+        "training_or_edge_admission": false
+      }
+    ],
+    "messages": 81821,
+    "role": "format_only",
+    "start_utc": "2026-10-01T00:00:00Z"
+  },
+  "polymarket_catalog": {
+    "available_since": "2026-05-25T00:00:00.000Z",
+    "declared_channels": [
+      "book",
+      "price_change",
+      "tick_size_change",
+      "last_trade_price",
+      "best_bid_ask",
+      "sport_result",
+      "new_market",
+      "market_resolved"
+    ],
+    "exact_id_matches": 1,
+    "exported_until": "2026-11-09T00:00:00.000Z",
+    "token_identity_or_data_qualified": false,
+    "venues": 71
+  },
+  "private_evidence": [
+    {
+      "bytes": 1172700,
+      "path": "data/research/2026-11-09-paired-quotes/01.native.json",
+      "sha256": "56232d640eaf9a416f379e0c8a19573a983a08877225058eba739ff80c277514"
+    },
+    {
+      "bytes": 0,
+      "path": "data/research/2026-11-09-paired-quotes/01.provider.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "bytes": 622,
+      "path": "data/research/2026-11-09-paired-quotes/controller-admission.json",
+      "sha256": "d143740817af3ef8f8a608ca08f51bdac1ee4e5bc09c2e01b4023840a126637b"
+    },
+    {
+      "bytes": 1250,
+      "path": "data/research/2026-11-09-paired-quotes/crawl-journal.jsonl",
+      "sha256": "613f5a706fcc6e92d8d6a3a1fbe063caec46f13965bcccb133b927a0aae1e087"
+    },
+    {
+      "bytes": 64,
+      "path": "data/research/2026-11-09-paired-quotes/crawl.started",
+      "sha256": "0d1352c281ae41b555d8f1b46e90e63c546347c17e9711fa52c36a7fbda8d8ab"
+    },
+    {
+      "bytes": 4919,
+      "path": "data/research/2026-11-09-paired-quotes/crawl_once.py.completed.txt",
+      "sha256": "02e8ea2ed19b5f13dd2a17ba55fbbaea0634810008c0e9075f665e4e449eb453"
+    },
+    {
+      "bytes": 1420,
+      "path": "data/research/2026-11-09-paired-quotes/metadata/binance-futures.capture.json",
+      "sha256": "bc61bdc4142c534703cc87dd82e36c92b11f005a04cf6c6668df993d2a4c9f04"
+    },
+    {
+      "bytes": 391886,
+      "path": "data/research/2026-11-09-paired-quotes/metadata/binance-futures.raw",
+      "sha256": "fbfd8ca8eeaecfefb92c32edea08a69f4068dc00bea2659ab477e584ea7820bd"
+    },
+    {
+      "bytes": 692,
+      "path": "data/research/2026-11-09-paired-quotes/metadata/binance-futures.requests.jsonl",
+      "sha256": "b7a028bb030375a216b39bec3e7edf7cf4b246f9a31d0c6ecbfb05097cf80dc0"
+    },
+    {
+      "bytes": 1365,
+      "path": "data/research/2026-11-09-paired-quotes/metadata/binance-schema-qualified.json",
+      "sha256": "b130b59d9b1a25afce332f903f2de58d2e70e2bc3ff45ad3bdbb1809d75b015d"
+    },
+    {
+      "bytes": 1397,
+      "path": "data/research/2026-11-09-paired-quotes/metadata/binance.capture.json",
+      "sha256": "1f680ee0ceee8437a4b82f0375485e51b7f36ffda460250b0a5958a4b094f97d"
+    },
+    {
+      "bytes": 1117130,
+      "path": "data/research/2026-11-09-paired-quotes/metadata/binance.raw",
+      "sha256": "209723332c69f707298098cd1d7c1bfc85a1da30b61113b7c983d5ff53258355"
+    },
+    {
+      "bytes": 677,
+      "path": "data/research/2026-11-09-paired-quotes/metadata/binance.requests.jsonl",
+      "sha256": "c05a1d6a2a877031aa7e3a0d02459566a07918759e892e571245e5d93853852c"
+    },
+    {
+      "bytes": 3212,
+      "path": "data/research/2026-11-09-paired-quotes/metadata/paired-metadata-review.json",
+      "sha256": "9934dd0b7272f6408e677901cd36684845bd83fc4b85558d2ebce6ead1f7fa1c"
+    },
+    {
+      "bytes": 1004785,
+      "path": "data/research/2026-11-09-paired-quotes/native-minute/binance-futures.gzip",
+      "sha256": "a3176e2cc0eec9dfa4c497104f87de8ee6bbf8bd6159d3149a9baa2e3da8c8a2"
+    },
+    {
+      "bytes": 203538,
+      "path": "data/research/2026-11-09-paired-quotes/native-minute/binance.gzip",
+      "sha256": "28f8e7e94cda83e4261e2a32b12ef1ab7d695099eafe2a782e5c46eb134bbe3b"
+    },
+    {
+      "bytes": 3285,
+      "path": "data/research/2026-11-09-paired-quotes/native-minute/journal.jsonl",
+      "sha256": "8b65ae2bab62199d95c14a5e9474635301a8b0298d29ed134a434210f9e7c56b"
+    },
+    {
+      "bytes": 679,
+      "path": "data/research/2026-11-09-paired-quotes/polymarket-catalog/exchanges.journal.jsonl",
+      "sha256": "a404a7b56fe7e117d6f87191d2703337f32e2381f2ff83d030466cfa5c625864"
+    },
+    {
+      "bytes": 20043,
+      "path": "data/research/2026-11-09-paired-quotes/polymarket-catalog/exchanges.raw",
+      "sha256": "f20c5e774aa6b9d825074eb73ec0a64ed249acaa6c01e35ba4fc1b55f50759b1"
+    },
+    {
+      "bytes": 1332,
+      "path": "data/research/2026-11-09-paired-quotes/polymarket-catalog/exchanges.result.json",
+      "sha256": "957b84b36ecdcece6b9dbb8b18a673bb991ab5e8a4b99c1dd61c9344add767dd"
+    },
+    {
+      "bytes": 706,
+      "path": "data/research/2026-11-09-paired-quotes/polymarket-catalog/polymarket-summary.journal.jsonl",
+      "sha256": "d3c2b7f4122f4ea7177f1ed6a7f9b7fb96d9e95eb2748d525104c6cd5a441309"
+    },
+    {
+      "bytes": 4353,
+      "path": "data/research/2026-11-09-paired-quotes/polymarket-catalog/polymarket-summary.raw",
+      "sha256": "1c58dccd3862952eff978eef0c38740affe0370bbb25cd7dc4211d01b9b22af4"
+    },
+    {
+      "bytes": 1364,
+      "path": "data/research/2026-11-09-paired-quotes/polymarket-catalog/polymarket-summary.result.json",
+      "sha256": "834074471fb6c67fafe55ef4a7939339cdea3598ee077de3fa8ec8a25cfee8c0"
+    },
+    {
+      "bytes": 1510109,
+      "path": "data/research/2026-11-09-paired-quotes/raw-api/01.native.json",
+      "sha256": "30d41569b75bd9c08381105eee4f9df50f55f0975a2064651c03e11328afecc6"
+    },
+    {
+      "bytes": 0,
+      "path": "data/research/2026-11-09-paired-quotes/raw-api/01.provider.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "bytes": 5139,
+      "path": "data/research/2026-11-09-paired-quotes/raw-api/controller.py.completed.txt",
+      "sha256": "a8971852061cdbe1c78c9d01fea1be264951fc87cf70c783957983e0f466f455"
+    },
+    {
+      "bytes": 1288,
+      "path": "data/research/2026-11-09-paired-quotes/raw-api/crawl-journal.jsonl",
+      "sha256": "7353f15ec159b494b30949bdde7572c5a5331668893a2fc920ba9ed42e922df3"
+    },
+    {
+      "bytes": 64,
+      "path": "data/research/2026-11-09-paired-quotes/raw-api/crawl.started",
+      "sha256": "f0d56f3038d0ecb752b63f746897a7b30e67a4b8c84db659c43e3f51545dd0b7"
+    },
+    {
+      "bytes": 8377,
+      "path": "data/research/2026-11-09-paired-quotes/raw_feed_probe.py.completed.txt",
+      "sha256": "a4d2c2a9a7f5b17da791f2dcec4a8019e7eb7872f98c041e3fa3ca326cfd5acc"
+    },
+    {
+      "bytes": 2052321,
+      "path": "data/research/2026-11-09-paired-quotes/schema-access/01.native.json",
+      "sha256": "307c6046b7dd55456426f91750a8e27d640d43677c00b31b2734412a77e662e9"
+    },
+    {
+      "bytes": 0,
+      "path": "data/research/2026-11-09-paired-quotes/schema-access/01.provider.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "bytes": 959754,
+      "path": "data/research/2026-11-09-paired-quotes/schema-access/02.native.json",
+      "sha256": "2c9de17c1d739bcbdf3b62ba8f9ba67120c6f76c5a4112bc2ecb1529741c5e92"
+    },
+    {
+      "bytes": 0,
+      "path": "data/research/2026-11-09-paired-quotes/schema-access/02.provider.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "bytes": 5151,
+      "path": "data/research/2026-11-09-paired-quotes/schema-access/controller.py.completed.txt",
+      "sha256": "67635ab40bf70aa6e64b83839a247567ac59fabf30eabf698b064c6d7672b317"
+    },
+    {
+      "bytes": 2471,
+      "path": "data/research/2026-11-09-paired-quotes/schema-access/crawl-journal.jsonl",
+      "sha256": "93a97d3f2bfa81d0bbfa5c6f44d252c30658c8758b93c3b1e43c17b629e0d4cf"
+    },
+    {
+      "bytes": 64,
+      "path": "data/research/2026-11-09-paired-quotes/schema-access/crawl.started",
+      "sha256": "caba7953048e22acc6e8683e1656a955bc29084abc4da4682f2166e13b2f4dae"
+    },
+    {
+      "bytes": 32504,
+      "path": "data/research/2026-11-09-paired-quotes/search.native.json",
+      "sha256": "785a83b491312a96cad807fdf56ebe7cd715875c44d0af4f920f491ff2080e4d"
+    }
+  ],
+  "provider": {
+    "cache_identity": "27a0fdd2df3d636cedc4caef2b4dc34016ebb633a221ebe9421ea75ee843136c",
+    "lock_sha256": "60dca0cb2b1e1aafc131ca2758a7f75d60dae2fe413455796cc611c6690dbef1",
+    "preflight": "Existing locked cohort reused through the reviewed CLI admission; crawl --help passed. No provider mutation or new dependency installation.",
+    "tool_sha256": "0de1dff8963dbaef5257553ba5af09eef19a7ad58c9b6cdbfe9df0aba6ee1657",
+    "version": "0.9.5+flitzzip.portable2"
+  },
+  "result_sha256": "e4a2de78096a25ede7f739789e6d747a0b7d8bfd7b00d9b15f3881f256cd2861",
+  "schema": "historical-paired-source-qualification-v1",
+  "verification": {
+    "controllers_retained_as_inert_text": true,
+    "frozen_contract_digests_match": true,
+    "markdown_hashes_and_lengths_match": true,
+    "market_value_reanalysis": false,
+    "network_replays": 0,
+    "original_controller_hashes_match": true,
+    "raw_hashes_and_lengths_match_journals": true
+  }
+}

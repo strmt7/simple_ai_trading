@@ -1,0 +1,40 @@
+{
+  "accepted_edge": false,
+  "accounts_credentials_orders_purchases_training": false,
+  "admission": {
+    "http_status": 200,
+    "intended_document_scope": "Same exact requested canonical URL, ignoring only a final slash; substantive document about CSV files or Binance spot as selected; no challenge. No strict economics phrase test.",
+    "minimum_substantive_markdown_characters": 600,
+    "native_success": true,
+    "order": "Stop before source two if source one fails. Preserve every error/empty/robots/challenge response and no aliases or retries."
+  },
+  "budget": {
+    "cache_bypass": true,
+    "external_llm_personal_profile_stealth_challenge_bypass": false,
+    "headless": true,
+    "owned_process_timeout_seconds_per_page": 150,
+    "page_timeout_ms": 45000,
+    "robots_check": true,
+    "top_level_navigations": 2
+  },
+  "dataset_downloads": 0,
+  "financial_observations_added": 0,
+  "frozen_at_utc": "2026-11-09T13:12:17.824077+00:00",
+  "outputs": "Ignored data/research/2026-11-09-paired-quotes; native output plus durable per-page journals and hashes. Publish sanitized source metadata only.",
+  "provider": {
+    "cache_identity": "27a0fdd2df3d636cedc4caef2b4dc34016ebb633a221ebe9421ea75ee843136c",
+    "lock_sha256": "60dca0cb2b1e1aafc131ca2758a7f75d60dae2fe413455796cc611c6690dbef1",
+    "preflight": "Existing locked cohort reused through the reviewed CLI admission; crawl --help passed. No provider mutation or new dependency installation.",
+    "tool_sha256": "0de1dff8963dbaef5257553ba5af09eef19a7ad58c9b6cdbfe9df0aba6ee1657",
+    "version": "0.9.5+flitzzip.portable2"
+  },
+  "question": "Establish documented historical CSV format, clock/incident limitations, public access boundaries, and Binance spot coverage. Do not infer actual October file availability or execution qualification.",
+  "schema": "two-page-paired-data-documentation-v1",
+  "search_result_sha256": "785a83b491312a96cad807fdf56ebe7cd715875c44d0af4f920f491ff2080e4d",
+  "selection": "Primary vendor documentation discovered by frozen search; no Tardis URL/title matches in reviewed contract, intent, journal, registry, tool or continuation metadata. Vendor claims are not exchange-signed evidence.",
+  "sha256": "7c00882830590f6aa31d00ea2d248b34e31a54f94451410ca085ee170f5d43a6",
+  "urls_in_order": [
+    "https://docs.tardis.dev/downloadable-csv-files",
+    "https://docs.tardis.dev/historical-data-details/binance"
+  ]
+}

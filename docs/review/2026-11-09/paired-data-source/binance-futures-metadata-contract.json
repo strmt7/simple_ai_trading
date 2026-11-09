@@ -1,0 +1,74 @@
+{
+  "adjudication": "Fixed BTCUSDT/ETHUSDT/SOLUSDT and sole first-of-month UTC day 2026-10-01 intersecting the retained native funding window. Print keys/counts only before schema validation; then record only dataset type and dated metadata. Require complete object identity and all three exact IDs. Metadata range/type support does not prove the existence or complete continuity of that day file. No dataset download, returns, fee values, training or edge. Stop before futures if spot transport or schema gate fails.",
+  "authority": {
+    "account_requests": 0,
+    "credentials_used": false,
+    "funds_used": false,
+    "orders_or_transactions": 0,
+    "protected_capture_touched": false,
+    "public_unauthenticated_read_only_requests": 1,
+    "signed_requests": 0,
+    "trading_authority": false
+  },
+  "batch_order": [
+    "binance",
+    "binance-futures"
+  ],
+  "byte_ceiling_basis": "Explicitly capped complete exchange metadata; allow 50,000 instruments at roughly 512 bytes plus nesting headroom. Exceeding the cap is terminal, never an adaptive enlargement. No file data or prices requested.",
+  "contract_path": "docs/review/2026-11-09/paired-data-source/binance-futures-metadata-contract.json",
+  "contract_sha256": "be894ae1b8ddd4d69e6c401c3fc77f06ba15c8526d9f53b46d8a593018eba9eb",
+  "frozen_at_utc": "2026-11-09T13:28:40.665527Z",
+  "implementations": [
+    {
+      "path": "tools/capture_public_source_bounded.py",
+      "sha256": "760339a7602abfa9eb97f3f1cca0ef79191b07ff5f5aa42515f30f191f9888fc"
+    },
+    {
+      "path": "tools/capture_public_source_contract.py",
+      "sha256": "9dbb14651455abade755fe96091b9eaafe1153f56a1baad4cd60b1a888d41b8c"
+    },
+    {
+      "path": "tools/adjudicate_polymarket_exact_mlb_monotone_prefilter.py",
+      "sha256": "958a44d78029b9a1eb69a3771ce18e53ac1ed3c7bc161c8e4318beedce2cf99f"
+    },
+    {
+      "path": "tools/screen_polymarket_exact_two_leg_package.py",
+      "sha256": "374fcc3c3485c466b4929a91256450bdc7db70f93ef4c6bda627e05fe8938327"
+    }
+  ],
+  "operation_classification": {
+    "evidence": "Dataset reference directs callers to exchange metadata for dataset IDs/types; complete client example calls get_exchange_details without credentials before an optionally credentialed data download. This is an anonymous instrument/dataset catalog, not account or venue execution state.",
+    "publisher": "Tardis.dev",
+    "source_native_sha256": "2c9de17c1d739bcbdf3b62ba8f9ba67120c6f76c5a4112bc2ecb1529741c5e92",
+    "source_url": "https://docs.tardis.dev/downloadable-csv-files/api"
+  },
+  "outputs": {
+    "journal_path": "data/research/2026-11-09-paired-quotes/metadata/binance-futures.requests.jsonl",
+    "raw_path": "data/research/2026-11-09-paired-quotes/metadata/binance-futures.raw",
+    "result_path": "data/research/2026-11-09-paired-quotes/metadata/binance-futures.capture.json"
+  },
+  "request": {
+    "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "count": 1,
+    "method": "GET",
+    "url": "https://api.tardis.dev/v1/exchanges/binance-futures"
+  },
+  "request_name": "tardis_binance-futures_quote_dataset_metadata_only",
+  "required_utf8_phrases": [
+    "datasets",
+    "symbols",
+    "dataTypes",
+    "BTCUSDT",
+    "ETHUSDT",
+    "SOLUSDT"
+  ],
+  "response_byte_ceiling": 33554432,
+  "schema_version": "public-source-capture-contract-v1",
+  "transport": {
+    "proxies": false,
+    "read_budget_seconds": 30,
+    "redirects": false,
+    "retries": 0,
+    "socket_timeout_seconds": 10
+  }
+}

@@ -1,0 +1,25 @@
+{
+  "admission": "Native success, effective final HTTP 200, same-host canonical URI or descendant path and substantive intended raw-API document; manual semantic review required. No retries, aliases, data downloads, accounts, credentials, orders, purchases or training.",
+  "budget": {
+    "cache_bypass": true,
+    "headless_upstream_defaults": true,
+    "navigations": 1,
+    "owned_process_timeout_seconds": 150,
+    "page_timeout_ms": 45000,
+    "robots_checked": true
+  },
+  "frozen_at_utc": "2026-11-09T13:38:31.806946+00:00",
+  "parent_native_sha256": "2c9de17c1d739bcbdf3b62ba8f9ba67120c6f76c5a4112bc2ecb1529741c5e92",
+  "provider": {
+    "lock_sha256": "60dca0cb2b1e1aafc131ca2758a7f75d60dae2fe413455796cc611c6690dbef1",
+    "tool_sha256": "0de1dff8963dbaef5257553ba5af09eef19a7ad58c9b6cdbfe9df0aba6ee1657",
+    "version": "0.9.5+flitzzip.portable2"
+  },
+  "question": "Does the documented raw historical WebSocket API preserve native event fields/disconnect markers and permit anonymous bounded samples? CSV normalization loses relevant continuity information. Do not request raw market data under this document contract.",
+  "schema": "native-raw-feed-access-documentation-v1",
+  "selection": "Distinct raw HTTP API reference linked by the admitted CSV API page. Not a retry of the failed overview or its forbidden Spot sibling. Exact URL capture-binding deduplication found no prior request.",
+  "sha256": "173526892b116ebfeb59a6b380bc3f9bf32249e2c90a6bff57a5aeed187d6fba",
+  "urls_in_order": [
+    "https://docs.tardis.dev/api/http-api-reference"
+  ]
+}

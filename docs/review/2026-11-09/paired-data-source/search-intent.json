@@ -1,0 +1,20 @@
+{
+  "base_revision": "2579e7217d833173865fc464386fd32564ed7123",
+  "capture_boundaries_sha256": "f971726268ba2e630b2ebbe8d5bcf02f7b3f23b92ccb16efe23aef82cebe950f",
+  "credentials_used": false,
+  "financial_observations_added": 0,
+  "frozen_at_utc": "2026-11-09T13:06:13.302901+00:00",
+  "market_dataset_requests": 0,
+  "maximum_queries": 2,
+  "maximum_search_calls": 1,
+  "orders_or_funds": false,
+  "queries": [
+    "site:github.com/binance/binance-public-data spot historical bookTicker order book data",
+    "site:docs.tardis.dev downloadable csv files free first day month Binance spot futures order book"
+  ],
+  "question": "Can a documented no-cost public source provide contemporaneous Binance spot and USDT-perpetual historical best bid/ask or depth during the retained marked-funding window? Existing metadata lists futures bookTicker only through March 2024, so old candles and archives cannot be assumed to fill this gap.",
+  "schema": "paired-quote-source-discovery-v1",
+  "selection_rule": "Select at most two primary documentation URLs after canonical URL deduplication; source content only via reviewed Crawl4AI, separately frozen. Search snippets select URLs only. No data file download, market economics, current quotes, native-fee inference, account request, purchase or model fitting.",
+  "sha256": "3cb261f559714d71ef14add749eabd83ff7f510a88790ca17d48b04f49242132",
+  "stop_rule": "A missing, paid, date-incompatible or ambiguous data path is not permission to improvise a substitute dataset. Preserve source failures; no alias retries."
+}

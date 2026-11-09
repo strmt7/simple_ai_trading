@@ -1,0 +1,32 @@
+{
+  "admission": "Use redirected_status_code when present, otherwise status_code. Require effective HTTP 200, native success, substantive intended technical document and no challenge. Same-publisher canonical redirects may append a child path beneath the exact selected documentation section; record both statuses and URLs. Manual semantic review remains required. Stop on transport/format failure. No retries or aliases.",
+  "budget": {
+    "cache_bypass": true,
+    "headless_upstream_defaults": true,
+    "navigations": 2,
+    "owned_process_timeout_seconds": 150,
+    "page_timeout_ms": 45000,
+    "robots_checked": true
+  },
+  "forbidden": "No personal profiles, stealth, challenge bypass, external LLM, data-file downloads, market economics, credentials, purchases, orders, account state or training. CSV documentation is vendor evidence, not exchange-signed execution.",
+  "frozen_at_utc": "2026-11-09T13:19:50.553817+00:00",
+  "new_market_observations": 0,
+  "parent": "The original exact-URL run remains failed; its Binance spot second navigation remains forbidden. This follow-up does not request either original URL or its /overview alias.",
+  "parent_native_sha256": "56232d640eaf9a416f379e0c8a19573a983a08877225058eba739ff80c277514",
+  "provider": {
+    "lock_sha256": "60dca0cb2b1e1aafc131ca2758a7f75d60dae2fe413455796cc611c6690dbef1",
+    "tool_sha256": "0de1dff8963dbaef5257553ba5af09eef19a7ad58c9b6cdbfe9df0aba6ee1657",
+    "version": "0.9.5+flitzzip.portable2"
+  },
+  "questions": [
+    "Which normalized quotes/depth timestamps and disconnect/empty-data limitations are documented?",
+    "Which download/metadata operations are documented and what access credentials are required?"
+  ],
+  "schema": "distinct-csv-schema-and-access-documentation-v1",
+  "selection": "Two distinct canonical links in the retained primary vendor overview, needed for CSV clock semantics and API access/coverage semantics. Exact URL metadata searches found no previous retained source binding.",
+  "sha256": "1eaa56b2ff875c28e17ea4308b34f8211f2886d882b834396e8092d2599d47d3",
+  "urls_in_order": [
+    "https://docs.tardis.dev/downloadable-csv-files/data-types",
+    "https://docs.tardis.dev/downloadable-csv-files/api"
+  ]
+}

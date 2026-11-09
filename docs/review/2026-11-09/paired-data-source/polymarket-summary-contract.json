@@ -1,0 +1,66 @@
+{
+  "authority": {
+    "account_requests": 0,
+    "credentials_used": false,
+    "funds_used": false,
+    "orders_or_transactions": 0,
+    "protected_capture_touched": false,
+    "public_unauthenticated_read_only_requests": 1,
+    "signed_requests": 0,
+    "trading_authority": false
+  },
+  "contract_path": "docs/review/2026-11-09/paired-data-source/polymarket-summary-contract.json",
+  "contract_sha256": "cd7aa74d05208778e95bbf4bfa56f4a2333b7e663be8a54ebc67cbd0755c02cc",
+  "frozen_at_utc": "2026-11-09T13:55:14.418055Z",
+  "implementations": [
+    {
+      "path": "tools/capture_public_source_bounded.py",
+      "sha256": "760339a7602abfa9eb97f3f1cca0ef79191b07ff5f5aa42515f30f191f9888fc"
+    },
+    {
+      "path": "tools/capture_public_source_contract.py",
+      "sha256": "9dbb14651455abade755fe96091b9eaafe1153f56a1baad4cd60b1a888d41b8c"
+    },
+    {
+      "path": "tools/adjudicate_polymarket_exact_mlb_monotone_prefilter.py",
+      "sha256": "958a44d78029b9a1eb69a3771ce18e53ac1ed3c7bc161c8e4318beedce2cf99f"
+    },
+    {
+      "path": "tools/screen_polymarket_exact_two_leg_package.py",
+      "sha256": "374fcc3c3485c466b4929a91256450bdc7db70f93ef4c6bda627e05fe8938327"
+    }
+  ],
+  "ordering": "Only request polymarket-summary after successful complete catalog transport/schema and exactly one returned id polymarket. No guess, replacement, pagination, new source search or dataset request if absent.",
+  "outputs": {
+    "journal_path": "data/research/2026-11-09-paired-quotes/polymarket-catalog/polymarket-summary.journal.jsonl",
+    "raw_path": "data/research/2026-11-09-paired-quotes/polymarket-catalog/polymarket-summary.raw",
+    "result_path": "data/research/2026-11-09-paired-quotes/polymarket-catalog/polymarket-summary.result.json"
+  },
+  "protected_evidence": "No existing Polymarket capture payload or failed economic population is read or repaired. No price or account evidence requested.",
+  "question": "Does the current complete vendor catalog contain the exact global Polymarket venue, and what raw-channel/calendar/incident metadata does its compact summary declare? This does not establish token identity, event rules, fee schedules, file availability or profit.",
+  "request": {
+    "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "count": 1,
+    "method": "GET",
+    "url": "https://api.tardis.dev/v1/exchanges/polymarket/summary"
+  },
+  "request_name": "vendor_prediction_source_polymarket-summary",
+  "required_utf8_phrases": [
+    "id",
+    "polymarket"
+  ],
+  "response_byte_ceiling": 4194304,
+  "schema_version": "public-source-capture-contract-v1",
+  "source_authority": {
+    "classification": "Documented anonymous read-only vendor venue catalog and compact exchange summary; no venue account operation.",
+    "native_sha256": "30d41569b75bd9c08381105eee4f9df50f55f0975a2064651c03e11328afecc6",
+    "url": "https://docs.tardis.dev/api/http-api-reference"
+  },
+  "transport": {
+    "proxies": false,
+    "read_budget_seconds": 30,
+    "redirects": false,
+    "retries": 0,
+    "socket_timeout_seconds": 10
+  }
+}
