@@ -1,0 +1,19 @@
+{
+  "schema": "bounded-structural-change-discovery-v1",
+  "clock_observed_before_access_utc": "2026-11-09T07:50:13Z",
+  "repo_head": "4c215e0c01a73b0e7706c3b6158cdb76a2f06119",
+  "capture_boundaries_sha256": "f971726268ba2e630b2ebbe8d5bcf02f7b3f23b92ccb16efe23aef82cebe950f",
+  "question": "Has a distinct official change since the October 8 checkpoint altered long-term holding-reward economics on Polymarket or reward-bearing hedge collateral on Binance?",
+  "queries": [
+    "site:docs.polymarket.com holding rewards change after:2026-10-08",
+    "site:binance.com LDUSDT RWUSD collateral change after:2026-10-08"
+  ],
+  "search_calls_max": 1,
+  "queries_max": 2,
+  "selection_rule": "Inspect returned primary metadata once. A distinct, dated official change or new canonical product/rule source can select at most one separately frozen Crawl4AI source extraction after exact URL/article-ID deduplication. Elapsed time, search recency or an old page newly ranked is not a material change.",
+  "excluded": "Search snippets and their economic figures cannot qualify a rate, cost, trade, retry trigger, book request or edge. Do not revisit consumed payouts, aliases, failed docs or temporary campaigns.",
+  "terminal_rule": "No adaptive query retries. If no new source qualifies, retain that limitation and continue independent useful work; this does not prove unchanged terms or family-wide impossibility.",
+  "accounts_credentials_orders_funds_or_persistent_tasks": false,
+  "new_market_requests": 0,
+  "accepted_edge": false
+}

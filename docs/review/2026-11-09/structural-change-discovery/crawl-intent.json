@@ -1,0 +1,23 @@
+{
+  "schema": "one-source-collateral-qualification-intent-v1",
+  "clock_observed_before_access_utc": "2026-11-09T07:52:53Z",
+  "question": "Does the newly discovered Binance Academy RWUSD article provide official, source-dated collateral/financing terms that materially change the retained hedge-capital decision? Reject secondary attribution, missing dates, unchanged mechanics and unsupported compatibility claims.",
+  "canonical_url": "https://www.binance.com/en/square/post/378922639494986",
+  "source_selection": "The bounded discovery returned this as Binance Academy's What Is RWUSD article. Publisher identity is a hypothesis to verify, not an admitted fact. Exact article-ID search found no prior reviewed contract, intent or note. Other-language aliases and the consumed 2025 announcement are excluded.",
+  "provider": {
+    "path": "C:/SuperZip/tools/crawl4ai_tool.py",
+    "version": "0.9.5+flitzzip.portable2",
+    "tool_host_sha256": "0de1dff8963dbaef5257553ba5af09eef19a7ad58c9b6cdbfe9df0aba6ee1657",
+    "lock_host_sha256": "60dca0cb2b1e1aafc131ca2758a7f75d60dae2fe413455796cc611c6690dbef1",
+    "existing_cache_identity": "27a0fdd2df3d636cedc4caef2b4dc34016ebb633a221ebe9421ea75ee843136c",
+    "interpreter": "C:/Users/strat/AppData/Local/Programs/Python/Python313/python.exe",
+    "runtime_admission": "Use the reviewed provider's exact-version/repair admission; the current cache and receipt already exist. Do not patch its environment or install an unattended service.",
+    "windows_lifetime": "Provider uses no-window suspended-child containment and original handles, with bounded cleanup; no persistent scheduler is permitted."
+  },
+  "output": "C:/trader/retained-public-evidence/crawl4ai-20261109-rwusd-academy/result.json",
+  "budget": {"top_level_navigations": 1, "page_timeout_ms": 45000, "robots_check": true, "external_llm_personal_profile_stealth_or_challenge_bypass": false},
+  "admission": "Require substantive intended-document content, HTTP 200, no challenge, verified official publisher and source date/scope. Historical headline returns and search figures are excluded. A source update alone is not a material economic change.",
+  "terminal_consequence": "Retain native failure/empty/challenge/robots result without retry or alias. No account, book, fee, quote, order, funding, training or edge admission follows without its own complete gates.",
+  "protected_or_consumed_study_changed": false,
+  "automations_created": 0
+}

@@ -42,6 +42,25 @@ def test_settlement_dependency_matches_the_audited_adapter() -> None:
     assert f"polymarket-client=={POLYMARKET_UNIFIED_SDK_VERSION}" in requirements
 
 
+def test_image_and_tls_security_floors_cover_every_installation_route() -> None:
+    project = tomllib.loads((ROOT / "pyproject.toml").read_text(encoding="utf-8"))
+    assert "certifi>=2026.10.19" in project["project"]["dependencies"]
+    for extra in ("reporting", "microstructure"):
+        assert (
+            "pillow>=13.0.0,<14" in project["project"]["optional-dependencies"][extra]
+        )
+    lock = tomllib.loads((ROOT / "uv.lock").read_text(encoding="utf-8"))
+    for name, minimum, maximum in (
+        ("certifi", (2026, 10, 19), None),
+        ("pillow", (13, 0, 0), (14, 0, 0)),
+    ):
+        versions = [item["version"] for item in lock["package"] if item["name"] == name]
+        assert len(versions) == 1
+        version = tuple(int(part) for part in versions[0].split("."))
+        assert version >= minimum
+        assert maximum is None or version < maximum
+
+
 def test_ruff_dependency_matches_workflow_and_explicit_rule_contract() -> None:
     project = tomllib.loads((ROOT / "pyproject.toml").read_text(encoding="utf-8"))
     requirement = next(

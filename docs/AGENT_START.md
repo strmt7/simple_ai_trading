@@ -10,6 +10,15 @@ Scope blockers to their branch; a fresh user resumption resets the blocked audit
 
 ## Current Truth
 
+November 9 dependency/source checkpoint: certifi is now locked at 2026.10.23
+and Pillow at 13.0.0, with patched floors for ordinary pip and both optional
+image paths. 57 focused checks pass, including actual TLS trust and image/chart
+consumers; model/GPU pins are unchanged. Full security evidence is retained in
+the target-bound Codex Security artifact collection, not a whole-repo clearance.
+The [bounded collateral source check](review/2026-11-09/structural-change-discovery/review.md)
+returned HTTP 202/empty text and admitted no economic change or retry trigger.
+No market capture, fit, account/order access or persistent task; counts 202/65/37/0.
+
 November 9 [host lifecycle incident](review/2026-11-09/host-lifecycle-incident.md):
 28 legacy project Windows tasks were removed, including an enabled capture
 supervisor with periodic and logon triggers. Four launchers were quarantined as

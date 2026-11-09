@@ -9,6 +9,8 @@ description = "Autonomous BTC/ETH/SOL day-trading CLI and Windows app with conse
 readme = "README.md"
 requires-python = ">=3.11,<3.15"
 dependencies = [
+    # Remove the compromised emSign G3 root while retaining unaffected roots.
+    "certifi>=2026.10.19",
     "defusedxml>=0.7.1,<1",
     "duckdb==1.5.5",
     "lightgbm==4.7.0",
@@ -37,12 +39,15 @@ terminal-test = [
 ]
 microstructure = [
     "hftbacktest==2.4.4",
+    # Bokeh's image dependency must also be patched for non-uv installs.
+    "pillow>=13.0.0,<14",
     # Pin the patched optional server/client dependency for non-uv installs too;
     # 6.5.10 includes the 6.5.9 security fixes and Jupyter compatibility repair.
     "tornado==6.5.10",
 ]
 reporting = [
     "matplotlib==3.11.1",
+    "pillow>=13.0.0,<14",
 ]
 polymarket-live = [
     "polymarket-client==0.2.0",

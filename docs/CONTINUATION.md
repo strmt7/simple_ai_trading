@@ -1,5 +1,18 @@
 # Continue Development
 
+November 9 source/security checkpoint: one bounded official-change discovery
+and one terminal [RWUSD source check](review/2026-11-09/structural-change-discovery/review.md)
+admitted no current terms or economic trigger. No retry/alias and no market,
+account, order or model access. Counts remain 202/65/37/0; goal active.
+The six critical dependency alerts mapped to certifi and Pillow. Floors now
+cover non-uv installs and both image extras; lock resolves 2026.10.23/13.0.0.
+57 affected checks and actual SSL/Agg rendering pass; only those two package
+versions changed. Native G3 trust was removed without disabling TLS checks.
+The detailed report/output is in the target-bound Codex Security collection
+under `artifacts/dependency-critical-2026-11-09/`. Hosted closure must be checked
+after publication; other dependency/code-scanning findings are not resolved by
+this change. Do not repeat unchanged financial panels or train inadequate labels.
+
 November 9 [host persistence cleanup](review/2026-11-09/host-lifecycle-incident.md):
 the user resumed the goal but prioritized removing stale background execution.
 Removed 28 Windows tasks and quarantined four external launchers; none was

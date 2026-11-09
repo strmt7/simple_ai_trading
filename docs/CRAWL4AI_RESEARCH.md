@@ -13,9 +13,13 @@ managed, hash-locked development integration instead of importing a browser,
 LLM stack or an unpatched crawler into the trading runtime. Its source is
 [SuperZip at the inspected revision](https://github.com/strmt7/SuperZip/tree/847e54719e650981d2432c05416271e1c6b783d0).
 Read that checkout's `docs/crawl4ai.md` before setup or provider changes. The
-verified provider identifies itself as `0.9.4+superzip.portable2`, with a
-Windows download-opener repair and a separate NLTK security source build.
-These are provider-specific repairs, not features inferred from stock 0.9.4.
+October 8 provider identified itself as `0.9.4+superzip.portable2`. That is
+historical evidence, not a permanent assertion about the other checkout.
+On November 9 the existing checkout identifies itself as FlitzZip with provider
+`0.9.5+flitzzip.portable2`, a Windows download-opener repair and the pinned
+official NLTK 3.10.4 distribution. Re-read its current guide and verify its exact
+tool, lock and admitted cache identity before reuse; do not infer runtime
+qualification from a version label. These are provider-specific repairs.
 Preserve its full licenses and attribution. No provider files were copied or
 modified, and no new runtime dependency or paid service was installed here.
 
@@ -76,6 +80,11 @@ The [October 8 retained run](review/2026-10-08/crawl4ai-research-result.json)
 used this integration on official USD-M trade documentation. Native success was
 true, but HTTP 202 and one Markdown character rejected source admission. No
 semantic, economic or account qualification follows; no alias or retry occurred.
+
+The [November 9 source check](review/2026-11-09/structural-change-discovery/review.md)
+used the already-installed current cohort and its hidden owned-child cleanup.
+Its separate source returned HTTP 202/one Markdown character and was also
+excluded, without an alternative reader or retry. No persistent task was created.
 
 This product includes software developed by UncleCode (https://x.com/unclecode)
 as part of the Crawl4AI project (https://github.com/unclecode/crawl4ai).
