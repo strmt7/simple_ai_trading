@@ -1388,6 +1388,7 @@ def test_lightweight_mcp_search_tool_defers_cocoindex_work_until_call(
         langs=["Markdown"],
         refresh=False,
         allow_index=False,
+        hybrid=True,
     )
 
 
@@ -1502,6 +1503,7 @@ def test_mcp_search_tool_uses_active_index_without_resolving_content(
         langs=[],
         refresh=False,
         allow_index=False,
+        hybrid=True,
     )
 
 
@@ -2295,7 +2297,10 @@ def test_command_search_indexes_only_with_explicit_flag(
     )
 
     def fake_index(
-        _context: cocoindex_agent_search.CocoIndexContext, *, allow_dirty: bool
+        _context: cocoindex_agent_search.CocoIndexContext,
+        *,
+        allow_dirty: bool,
+        build_hybrid: bool = False,
     ) -> str:
         """Simulate index so the surrounding test controls that dependency.
 
@@ -2321,6 +2326,7 @@ def test_command_search_indexes_only_with_explicit_flag(
 
     cocoindex_agent_search.command_search(
         SimpleNamespace(
+            semantic_only=True,
             refresh=False,
             index_if_missing=True,
             allow_dirty_index=True,
@@ -2333,7 +2339,7 @@ def test_command_search_indexes_only_with_explicit_flag(
 
     captured = capsys.readouterr()
     assert captured.out == completed.stdout
-    mocked_index.assert_called_once_with(context, allow_dirty=True)
+    mocked_index.assert_called_once_with(context, allow_dirty=True, build_hybrid=False)
     assert mocked_existing.call_args.args[1] == [
         "search",
         "--limit",
@@ -2374,6 +2380,7 @@ def test_command_search_skips_cold_notice_when_index_exists(
 
     cocoindex_agent_search.command_search(
         SimpleNamespace(
+            semantic_only=True,
             refresh=False,
             index_if_missing=False,
             allow_dirty_index=False,

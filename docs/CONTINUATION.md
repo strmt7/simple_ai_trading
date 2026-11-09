@@ -68,6 +68,14 @@ LLMs may veto/reduce risk, never bypass deterministic Stop/ownership/close contr
 
 ## Platform work and publication
 
+- [Source-bound navigation](review/2026-11-09/semantic-routing/review.md) now fuses
+  native CocoIndex semantics with lexical ranks from the same approved index.
+  The frozen paired check improved expected-file hits from 0/10 to 7/10 on
+  observed cases and 3/5 to 4/5 on fixed follow-up questions; four misses remain.
+  167 focused checks and real MCP probes pass. This is developer evidence, not
+  independent validation, financial evidence or a timing claim. Search never
+  builds a cache or falls back after native failure. Preserve native-only mode,
+  linked receipts and historical source phases; return to financial/capital work.
 - [Dependency/publication review](review/2026-11-09/dependencies/review.md): latest
   compatible locks and owned automatic installation are verified in their stated
   scopes. Readback at 16:57 UTC November 9 confirmed all 17 audited Dependabot

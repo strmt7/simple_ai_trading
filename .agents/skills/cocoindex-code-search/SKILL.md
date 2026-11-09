@@ -33,6 +33,13 @@ directly to `rg`.
    The wrapper disables Click's automatic Windows argument expansion so literal
    globs reach the native search unchanged. Preserve the earlier failed pilot;
    an empty result still does not establish absent code or adequate recall.
+   CLI/MCP search now fuses the actual native semantic response with lexical
+   matches from the same source-bound CocoIndex corpus. Native retrieval always
+   runs first; failure never falls back to lexical-only output. Both receipts
+   remain linked. `--semantic-only` (MCP `semantic_only: true`) reproduces the
+   native route. The explicit `index` command builds both artifacts; search
+   never builds or refreshes the lexical cache implicitly. RRF scores are ranks,
+   not confidence or financial evidence. Keep path/language scope explicit.
 6. Confirm every candidate with exact `rg` and direct reads in the live repo.
 7. Run the ten-case benchmark after changing this workflow or upgrading the
    pinned package. Once a current source-bound index exists, use

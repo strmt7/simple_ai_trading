@@ -1687,6 +1687,7 @@ def run_ccc_existing(
     timeout: int | None = None,
     *,
     manage_daemon: bool = True,
+    check: bool = True,
 ) -> subprocess.CompletedProcess[str]:
     """Ccc only against already-created artifacts.
 
@@ -1695,20 +1696,62 @@ def run_ccc_existing(
     """
     require_existing_search_artifacts(context)
     command_env = ccc_supervised_env(context)
+
+    def capture() -> subprocess.CompletedProcess[str]:
+        if check:
+            return checked_command(
+                ccc_command(context, args),
+                cwd=context.mirror_repo,
+                env=command_env,
+                timeout=timeout,
+            )
+        return run_captured_process(
+            ccc_command(context, args),
+            cwd=context.mirror_repo,
+            env=command_env,
+            input_text="",
+            timeout=timeout,
+        )
+
     if not manage_daemon:
-        return checked_command(
-            ccc_command(context, args),
-            cwd=context.mirror_repo,
-            env=command_env,
-            timeout=timeout,
-        )
+        return capture()
     with daemon_session(context):
-        return checked_command(
-            ccc_command(context, args),
-            cwd=context.mirror_repo,
-            env=command_env,
-            timeout=timeout,
-        )
+        return capture()
+
+
+def run_hybrid_process(
+    context: CocoIndexContext, arguments: list[str], *, input_text: str = ""
+) -> subprocess.CompletedProcess[str]:
+    """Run the isolated lexical component in the admitted CocoIndex runtime."""
+    command = [
+        str(context.venv_python),
+        str(Path(__file__).with_name("cocoindex_hybrid.py")),
+        "--native-db",
+        str(target_sqlite_db(context)),
+        "--cache",
+        str(context.db_dir / "agent-hybrid-fts.sqlite3"),
+        "--owner",
+        hashlib.sha256(str(context.repo_root.resolve()).encode()).hexdigest(),
+        "--source-digest",
+        context.mirror_digest,
+        "--mirror",
+        str(context.mirror_repo),
+        *arguments,
+    ]
+    child_env = {
+        key: value
+        for key, value in os.environ.items()
+        if key.upper()
+        in {"PATH", "SYSTEMROOT", "WINDIR", "COMSPEC", "TEMP", "TMP", "LANG", "LC_ALL"}
+    }
+    return run_captured_process(
+        command,
+        cwd=context.repo_root,
+        env=child_env,
+        input_text=input_text,
+        timeout=120,
+        inherit_environment=False,
+    )
 
 
 def target_sqlite_db(context: CocoIndexContext) -> Path:
@@ -1724,6 +1767,7 @@ def run_index(
     *,
     allow_dirty: bool,
     excluded_paths: frozenset[PurePosixPath] = frozenset(),
+    build_hybrid: bool = False,
 ) -> str:
     """An explicit disk-heavy CocoIndex index operation.
 
@@ -1742,6 +1786,12 @@ def run_index(
         timeout=timeout_seconds("index"),
         excluded_paths=excluded_paths,
     )
+    if build_hybrid:
+        built = run_hybrid_process(context, ["--build"])
+        if built.returncode:
+            raise RuntimeError(
+                f"Explicit lexical index build failed: {built.stderr.strip()}"
+            )
     write_active_index_metadata(context)
     pending.unlink()
     return output.stdout
@@ -2181,7 +2231,7 @@ def command_index(args: argparse.Namespace) -> None:
         if getattr(args, "reuse_active_cache", False)
         else resolve_context(repo_root=repo_root)
     )
-    output = run_index(context, allow_dirty=allow_dirty)
+    output = run_index(context, allow_dirty=allow_dirty, build_hybrid=True)
     print(output, end="")
 
 
@@ -2206,6 +2256,7 @@ def command_search(args: argparse.Namespace) -> None:
         refresh=args.refresh,
         allow_index=getattr(args, "index_if_missing", False),
         allow_dirty=allow_dirty,
+        hybrid=not getattr(args, "semantic_only", False),
     )
     print(output, end="")
 
@@ -2220,6 +2271,7 @@ def run_search(
     refresh: bool,
     allow_index: bool,
     allow_dirty: bool = False,
+    hybrid: bool = False,
 ) -> str:
     """A CocoIndex Code search and return the rendered search output.
 
@@ -2231,21 +2283,55 @@ def run_search(
     if isinstance(limit, bool) or not 1 <= limit <= MAX_SEARCH_LIMIT:
         raise ValueError(f"limit must lie in [1, {MAX_SEARCH_LIMIT}]")
     if refresh:
-        run_index(context, allow_dirty=allow_dirty)
+        run_index(context, allow_dirty=allow_dirty, build_hybrid=hybrid)
     elif not target_sqlite_db(context).exists():
         if not allow_index:
             raise IndexRequiredError(INDEX_REQUIRED_MESSAGE)
-        run_index(context, allow_dirty=allow_dirty)
+        run_index(context, allow_dirty=allow_dirty, build_hybrid=hybrid)
     ccc_args = ["search", "--limit", str(limit)]
     if path:
         ccc_args.extend(["--path", path])
     for lang in langs:
         ccc_args.extend(["--lang", lang])
+    if hybrid:
+        ccc_args.append("--json")
     ccc_args.extend(query)
     require_current_index(context)
-    output = run_ccc_existing(context, ccc_args, timeout=timeout_seconds("search"))
+    if hybrid:
+        output = run_ccc_existing(
+            context, ccc_args, timeout=timeout_seconds("search"), check=False
+        )
+    else:
+        output = run_ccc_existing(context, ccc_args, timeout=timeout_seconds("search"))
     receipt = retain_search_receipt(context, ccc_args, output.stdout)
     require_current_index(context, receipt=receipt)
+    if hybrid and output.returncode:
+        raise RuntimeError(
+            f"Native semantic search failed; no lexical fallback; receipt: {receipt}"
+        )
+    if hybrid:
+        native_receipt = receipt
+        child_args = ["--query", " ".join(query), "--limit", str(limit)]
+        if path:
+            child_args.extend(["--path", path])
+        for lang in langs:
+            child_args.extend(["--lang", lang])
+        rendered = run_hybrid_process(context, child_args, input_text=output.stdout)
+        if rendered.returncode:
+            raise RuntimeError(
+                f"Hybrid source retrieval failed: {rendered.stderr.strip()}; native receipt retained: {native_receipt}"
+            )
+        receipt = retain_search_receipt(
+            context,
+            ["hybrid", *ccc_args],
+            rendered.stdout,
+            provenance={
+                "retrieval_mode": "native-semantic-plus-same-index-lexical-v1",
+                "native_semantic_receipt": native_receipt.name,
+            },
+        )
+        require_current_index(context, receipt=receipt)
+        return rendered.stdout
     return output.stdout
 
 
@@ -2279,7 +2365,11 @@ def require_current_index(
 
 
 def retain_search_receipt(
-    context: CocoIndexContext, arguments: list[str], output: str
+    context: CocoIndexContext,
+    arguments: list[str],
+    output: str,
+    *,
+    provenance: Mapping[str, object] | None = None,
 ) -> Path:
     """Retain actual routing output and its snapshot binding outside the checkout.
 
@@ -2330,6 +2420,7 @@ def retain_search_receipt(
         "raw_output_sha256": hashlib.sha256(output.encode("utf-8")).hexdigest(),
         "candidate_source_checks": source_checks,
         "financial_evidence": False,
+        "provenance": dict(provenance or {}),
     }
     receipt = context.artifact_root / "receipts" / f"search-{uuid.uuid4().hex}.json"
     atomic_write_text(receipt, json.dumps(payload, indent=2, sort_keys=True) + "\n")
@@ -2355,7 +2446,7 @@ def mcp_search_tool_definition() -> dict[str, object]:
         "name": MCP_SEARCH_TOOL_NAME,
         "description": (
             "Search the target Git repository with the pinned CocoIndex Code "
-            "semantic index. The MCP tool never installs, mirrors, refreshes, "
+            "semantic index and same-index lexical rank fusion. The MCP tool never installs, mirrors, refreshes, "
             "or builds an index; run the CLI index command explicitly first."
         ),
         "inputSchema": {
@@ -2380,6 +2471,11 @@ def mcp_search_tool_definition() -> dict[str, object]:
                     "type": "array",
                     "items": {"type": "string"},
                     "description": "Optional CocoIndex language filters.",
+                },
+                "semantic_only": {
+                    "type": "boolean",
+                    "default": False,
+                    "description": "Return native semantic results without same-index lexical fusion.",
                 },
             },
             "required": ["query"],
@@ -2464,11 +2560,15 @@ def mcp_search_arguments(arguments: object) -> dict[str, object]:
     limit = mcp_positive_int(arguments.get("limit"), "limit", DEFAULT_SEARCH_LIMIT)
     if limit > MAX_SEARCH_LIMIT:
         raise JsonRpcError(-32602, f"limit must not exceed {MAX_SEARCH_LIMIT}.")
+    semantic_only = arguments.get("semantic_only", False)
+    if type(semantic_only) is not bool:
+        raise JsonRpcError(-32602, "semantic_only must be a boolean.")
     return {
         "query": query,
         "limit": limit,
         "path": mcp_optional_string(arguments.get("path"), "path"),
         "langs": mcp_string_list(arguments.get("lang"), "lang"),
+        "semantic_only": semantic_only,
     }
 
 
@@ -2490,6 +2590,7 @@ def run_mcp_search_tool(arguments: object) -> str:
             langs=cast(list[str], parsed["langs"]),
             refresh=False,
             allow_index=False,
+            hybrid=not cast(bool, parsed["semantic_only"]),
         )
     except RuntimeError as exc:
         raise RuntimeError(sanitize_mcp_error_text(str(exc), context)) from exc
@@ -3720,6 +3821,11 @@ def build_parser() -> argparse.ArgumentParser:
     )
     search.add_argument("--path", help="Optional CocoIndex file path glob.")
     search.add_argument("--lang", action="append", default=[])
+    search.add_argument(
+        "--semantic-only",
+        action="store_true",
+        help="Use native semantic retrieval without source-bound lexical fusion.",
+    )
     search.add_argument(
         "--index-if-missing",
         action="store_true",

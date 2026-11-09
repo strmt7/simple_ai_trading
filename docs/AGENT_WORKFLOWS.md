@@ -115,6 +115,15 @@ files while retaining its embedding memoization. Storage identity is distinct
 from the current source fingerprint; neither implies the other is current. A
 pending/failed index update, stale manifest or changed mirror rejects search.
 MCP search itself never refreshes.
+CLI/MCP search defaults to native semantic retrieval plus same-index lexical
+rank fusion. The explicit `index` operation builds the owned, bounded lexical
+cache alongside the native source index; a missing/stale cache rejects search
+instead of triggering a hidden build. Native semantic failure forbids lexical
+fallback. Raw native JSON and final source checks remain linked in private
+receipts. Use CLI `--semantic-only` or MCP `semantic_only: true` to reproduce
+the native route. Fused ranking scores are not semantic confidence, code-absence
+proof or financial evidence. Language/path filters remain appropriate for code
+questions; no query-specific filename map is used.
 CLI/MCP searches reject a source digest different from the explicitly indexed
 snapshot. After edits, refresh intentionally; do not fall back to broad `rg`.
 Successful searches retain the exact output, query arguments, snapshot digest,

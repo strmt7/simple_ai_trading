@@ -1,0 +1,461 @@
+{
+  "base_commit": "eaad2d1605f6256ba43cd78ab6b96479294b6155",
+  "documentation_contracts": {
+    "initial_failure": "Shared host pytest temporary-directory cleanup permission; test assertions passed",
+    "initial_invocation_exit": 1,
+    "isolated_owned_basetemp_retry_exit": 0,
+    "passed": 22
+  },
+  "fixed_integration": {
+    "classification": "Development and prospectively fixed developer questions; not independent statistical or financial validation",
+    "financial_observations": 0,
+    "observed-development": {
+      "cases": 10,
+      "hybrid_hits": 7,
+      "native_hits": 0
+    },
+    "prospective-developer-followup": {
+      "cases": 5,
+      "hybrid_hits": 4,
+      "native_hits": 3
+    },
+    "results": [
+      {
+        "final_receipt_sha256": "988c59d0e51f4a170a69060b86943629b6b39100074eb9e918e64fe6fc262c82",
+        "hybrid_files": [
+          "docs/LIVE_MARKET_SIMULATION.md",
+          "docs/ai/risk-review/latest/comparison.json",
+          "src/simple_ai_trading/execution_lifecycle.py",
+          "docs/ai/risk-review/latest/fin-r1-8b-source-v7.json",
+          "docs/ai/risk-review/latest/qwen35-9b-source-v7.json"
+        ],
+        "hybrid_rank": 3,
+        "name": "execution_ownership_reconciliation",
+        "native_files": [
+          "docs/ai/risk-review/latest/comparison.json",
+          "docs/ai/risk-review/latest/fin-r1-8b-source-v7.json",
+          "docs/ai/risk-review/latest/qwen35-9b-source-v7.json",
+          "docs/LIVE_MARKET_SIMULATION.md"
+        ],
+        "native_rank": null,
+        "native_receipt_sha256": "85acd2a228b3ea0ea07c43ec366ea114660b70de6eabfb9aa3a4f631507c12ad",
+        "role": "observed-development"
+      },
+      {
+        "final_receipt_sha256": "bf158eb45ddb102a0d99a3c03e1bdaf25dc61fde165afe0e10823705e5bad2d5",
+        "hybrid_files": [
+          "docs/ai/risk-review/latest/comparison.json",
+          "docs/ai/risk-review/latest/qwen3-8b-source-v7.json",
+          "docs/ai/risk-review/latest/fin-r1-8b-source-v7.json",
+          "docs/ai/risk-review/latest/fino1-8b-source-v7.json",
+          "docs/ai/risk-review/latest/qwen35-9b-source-v7.json"
+        ],
+        "hybrid_rank": null,
+        "name": "outage_recovery_risk",
+        "native_files": [
+          "docs/ai/risk-review/latest/fin-r1-8b-source-v7.json",
+          "docs/ai/risk-review/latest/comparison.json",
+          "docs/ai/risk-review/latest/qwen3-8b-source-v7.json"
+        ],
+        "native_rank": null,
+        "native_receipt_sha256": "73522c65d0eabb06a1bb338cf1fa5895a7792a30824d38c6ea8bdd1218988bef",
+        "role": "observed-development"
+      },
+      {
+        "final_receipt_sha256": "a13f52009db53b53df8d40343900156824a5da5f3d884f777c56e256c7ddfae2",
+        "hybrid_files": [
+          "docs/LIVE_MARKET_SIMULATION.md",
+          "tests/test_cli_coverage.py",
+          "docs/POLYMARKET_LIVE_EXECUTION.md",
+          "docs/MODEL_RESEARCH_AND_OPTIMIZATION.md",
+          "tests/test_api_budget.py"
+        ],
+        "hybrid_rank": 5,
+        "name": "api_budget_start_gate",
+        "native_files": [
+          "docs/LIVE_MARKET_SIMULATION.md",
+          "docs/POLYMARKET_LIVE_EXECUTION.md",
+          "docs/MODEL_RESEARCH_AND_OPTIMIZATION.md",
+          "src/simple_ai_trading/round74_public_target_sources.py"
+        ],
+        "native_rank": null,
+        "native_receipt_sha256": "fdc1b6f9e3aee300e6f187344b3d6f74f7d918f65fdb051ec2f8ab37824bd683",
+        "role": "observed-development"
+      },
+      {
+        "final_receipt_sha256": "61b4c6f9b0169846cc79daa899b84a0ef6442d0900f2ecd4dcb1d59846910566",
+        "hybrid_files": [
+          "docs/MODEL_RESEARCH_AND_OPTIMIZATION.md",
+          "src/simple_ai_trading/market_universe.py",
+          "src/simple_ai_trading/cli.py",
+          "tools/publish_causal_refit_utility_ai_ablation.py",
+          "tools/publish_round55_bounded_alpha.py"
+        ],
+        "hybrid_rank": 2,
+        "name": "liquidity_universe_filter",
+        "native_files": [
+          "docs/MODEL_RESEARCH_AND_OPTIMIZATION.md",
+          "tools/publish_causal_refit_utility_ai_ablation.py",
+          "tools/publish_round55_bounded_alpha.py",
+          "docs/POLYMARKET_PAPER_TRADING.md",
+          "docs/AGENT_WORKFLOWS.md"
+        ],
+        "native_rank": null,
+        "native_receipt_sha256": "50ad9db5da0792c480dff9981d4bc32eb00bb7d95da10b3af5237a054ed5aded",
+        "role": "observed-development"
+      },
+      {
+        "final_receipt_sha256": "0367a973310e852edb226594d0394c0b049877a730264a5ad3932f56d3a0323e",
+        "hybrid_files": [
+          "docs/MODEL_RESEARCH_AND_OPTIMIZATION.md",
+          "tests/test_microstructure_outcome_lightgbm.py",
+          "tests/test_microstructure_barriers.py",
+          "tools/publish_daily_walkforward_screen.py",
+          "native/windows/generated/command_contract.hpp"
+        ],
+        "hybrid_rank": 3,
+        "name": "microstructure_barrier_labels",
+        "native_files": [
+          "docs/MODEL_RESEARCH_AND_OPTIMIZATION.md",
+          "tools/publish_daily_walkforward_screen.py",
+          "native/windows/generated/command_contract.hpp",
+          "docs/ai/risk-review/latest/qwen3-8b-source-v7.json",
+          "docs/ai/risk-review/latest/comparison.json"
+        ],
+        "native_rank": null,
+        "native_receipt_sha256": "f51afaf39aa0fad2e1efcc476661963acdbffabfec7a0361c90b76f4200a0233",
+        "role": "observed-development"
+      },
+      {
+        "final_receipt_sha256": "0495593f0a282dd394134789fca61271d99073216410f5b38363e989afc3552d",
+        "hybrid_files": [
+          "docs/MODEL_RESEARCH_AND_OPTIMIZATION.md",
+          "tests/test_publish_adaptive_action_screen.py",
+          "tests/test_impact_absorption_event_action_policy.py",
+          "tools/publish_adaptive_action_screen.py",
+          "tools/publish_causal_meta_label_screen.py"
+        ],
+        "hybrid_rank": null,
+        "name": "action_value_policy_gates",
+        "native_files": [
+          "docs/MODEL_RESEARCH_AND_OPTIMIZATION.md",
+          "tools/publish_adaptive_action_screen.py",
+          "tools/publish_causal_meta_label_screen.py"
+        ],
+        "native_rank": null,
+        "native_receipt_sha256": "fe8cc4913fbf8abceab7b59f1a03de90bae5e2321775abba2ea04bfdda4a2512",
+        "role": "observed-development"
+      },
+      {
+        "final_receipt_sha256": "d41e77cf1d4833005e45c0a48381274df93b705d25c6f7c213d1b0bb64fe7d8f",
+        "hybrid_files": [
+          "docs/MODEL_RESEARCH_AND_OPTIMIZATION.md",
+          "tests/test_risk_controls.py",
+          "docs/CAPITAL_PROTECTION_ARCHITECTURE.md",
+          "tests/test_round74_terminal_one_use.py",
+          "docs/MODEL_AND_SIGNAL_VALIDATION.md"
+        ],
+        "hybrid_rank": null,
+        "name": "terminal_holdout_integrity",
+        "native_files": [
+          "docs/MODEL_RESEARCH_AND_OPTIMIZATION.md",
+          "docs/CAPITAL_PROTECTION_ARCHITECTURE.md",
+          "docs/MODEL_AND_SIGNAL_VALIDATION.md"
+        ],
+        "native_rank": null,
+        "native_receipt_sha256": "9dbaf7f5d7537bc6541d9d444ce56aa167ac620905eb13675ffaa683466ace5c",
+        "role": "observed-development"
+      },
+      {
+        "final_receipt_sha256": "e30f8a6b4e5397a81282d13a2246987bf001ae181f4a17f5030c797565753fb3",
+        "hybrid_files": [
+          "docs/AI_MODEL_SELECTION.md",
+          "tests/test_ai_runtime_and_parity.py",
+          "docs/DIRECTML_GPU.md",
+          "docs/MODEL_TRAINING_INSPIRATION.md",
+          "tests/test_ai_review.py"
+        ],
+        "hybrid_rank": 3,
+        "name": "directml_gpu_resolution",
+        "native_files": [
+          "docs/AI_MODEL_SELECTION.md",
+          "docs/MODEL_TRAINING_INSPIRATION.md"
+        ],
+        "native_rank": null,
+        "native_receipt_sha256": "5538dc080943ea05a119c4ca2af4d40fb37a8d646652346c222abd2659e4a92d",
+        "role": "observed-development"
+      },
+      {
+        "final_receipt_sha256": "9a4751d47acf0c9733716623cb651d52f547bcee6a1906c89b971ecd209598bc",
+        "hybrid_files": [
+          "docs/MODEL_RESEARCH_AND_OPTIMIZATION.md",
+          ".agents/skills/ai-regression-testing/SKILL.md",
+          "README.md",
+          "tools/generate_windows_contract.py",
+          "docs/optimization/round-004-regime-entry-gate.md"
+        ],
+        "hybrid_rank": 4,
+        "name": "cli_windows_parity",
+        "native_files": [
+          "docs/MODEL_RESEARCH_AND_OPTIMIZATION.md",
+          "README.md",
+          "docs/optimization/round-004-regime-entry-gate.md",
+          ".github/actions/windows-beta-release/action.yml"
+        ],
+        "native_rank": null,
+        "native_receipt_sha256": "3ead83d0264cff01bd61871ae2ab1c3baad669fe7d03c9c476f5d410a6d80a30",
+        "role": "observed-development"
+      },
+      {
+        "final_receipt_sha256": "de8ed3e974c4d34dfb3038fb7dd9eb15bfa1757bc45ed616c8cdfd43dcf639b0",
+        "hybrid_files": [
+          "docs/LIVE_MARKET_SIMULATION.md",
+          "docs/DATA_PROVENANCE_POLICY.md",
+          "docs/optimization/round-003-data-coverage-api-efficiency.md",
+          "tools/optimization_round.py",
+          "docs/optimization/README.md"
+        ],
+        "hybrid_rank": 2,
+        "name": "archive_data_provenance",
+        "native_files": [
+          "docs/optimization/round-003-data-coverage-api-efficiency.md",
+          "docs/LIVE_MARKET_SIMULATION.md",
+          "docs/optimization/README.md"
+        ],
+        "native_rank": null,
+        "native_receipt_sha256": "7764e748d6292db53ff1116575629206b0675bf41273e375d881f1917b647baf",
+        "role": "observed-development"
+      },
+      {
+        "final_receipt_sha256": "b10c56d1a421d571d572e79d15e8efc4880d173c13df1266268a530a60d4911e",
+        "hybrid_files": [
+          "src/simple_ai_trading/paper_execution.py",
+          "src/simple_ai_trading/impact_absorption_target_store.py",
+          "src/simple_ai_trading/polymarket_round25_materialization.py",
+          "src/simple_ai_trading/polymarket_historical_shadow_opportunity.py",
+          "src/simple_ai_trading/round74_delayed_execution_panel.py"
+        ],
+        "hybrid_rank": null,
+        "name": "timed_order_book_seed",
+        "native_files": [
+          "src/simple_ai_trading/polymarket_round25_materialization.py",
+          "src/simple_ai_trading/round74_delayed_execution_panel.py",
+          "src/simple_ai_trading/microstructure_shadow.py",
+          "src/simple_ai_trading/paper_execution.py",
+          "src/simple_ai_trading/bounded_alpha_lightgbm.py"
+        ],
+        "native_rank": null,
+        "native_receipt_sha256": "2f4340aaee5d73056460761efb66112eedb9ce147741fb3a5be0ae266bb0f6cf",
+        "role": "prospective-developer-followup"
+      },
+      {
+        "final_receipt_sha256": "a00b58f0db9c96b4e33488276427e491da96ac2b4a4cd99ced1ba124324b86dc",
+        "hybrid_files": [
+          "src/simple_ai_trading/spot_prefunding.py",
+          "src/simple_ai_trading/binance_spot_cash.py",
+          "src/simple_ai_trading/stateful_cash_labels.py",
+          "src/simple_ai_trading/cli.py",
+          "src/simple_ai_trading/hedged_inventory_cash.py"
+        ],
+        "hybrid_rank": 1,
+        "name": "spot_cash_prefix",
+        "native_files": [
+          "src/simple_ai_trading/spot_prefunding.py",
+          "src/simple_ai_trading/stateful_cash_labels.py",
+          "src/simple_ai_trading/hedged_inventory_cash.py"
+        ],
+        "native_rank": 1,
+        "native_receipt_sha256": "d1f27b37f2be9b62baa33156744cfc3e2fb5f14de2b7436de5f61cc7efdaf598",
+        "role": "prospective-developer-followup"
+      },
+      {
+        "final_receipt_sha256": "c405ab0fa123133d799f677dd900562507f84043e08bc86d02e17b34e2576e71",
+        "hybrid_files": [
+          "src/simple_ai_trading/funding_cash_inventory.py",
+          "src/simple_ai_trading/stateful_cash_labels.py",
+          "src/simple_ai_trading/hedged_inventory_cash.py",
+          "src/simple_ai_trading/microstructure_features.py",
+          "src/simple_ai_trading/microstructure_barriers.py"
+        ],
+        "hybrid_rank": 3,
+        "name": "paired_orphan_quantity",
+        "native_files": [
+          "src/simple_ai_trading/stateful_cash_labels.py",
+          "src/simple_ai_trading/funding_cash_inventory.py",
+          "src/simple_ai_trading/microstructure_features.py",
+          "src/simple_ai_trading/microstructure_barriers.py",
+          "src/simple_ai_trading/price_discovery_spec.py"
+        ],
+        "native_rank": null,
+        "native_receipt_sha256": "263f4855bfe6e5d7ae2394288b2d7aaf7539294442e34b1e59be0671a1990ad2",
+        "role": "prospective-developer-followup"
+      },
+      {
+        "final_receipt_sha256": "fae437787b8a5580adef3d2e6990c11d8c81d9c4438267fbdcdc10dab2bd2843",
+        "hybrid_files": [
+          "src/simple_ai_trading/windows_owned_job.py",
+          "src/simple_ai_trading/round75_capture_supervisor.py",
+          "src/simple_ai_trading/impact_absorption_event_dataset.py"
+        ],
+        "hybrid_rank": 1,
+        "name": "owned_windows_children",
+        "native_files": [
+          "src/simple_ai_trading/windows_owned_job.py",
+          "src/simple_ai_trading/round75_capture_supervisor.py",
+          "src/simple_ai_trading/impact_absorption_event_dataset.py"
+        ],
+        "native_rank": 1,
+        "native_receipt_sha256": "2a5989e53353a10fb956f22569052868976da452b5d12b7ab88bb063eedc949e",
+        "role": "prospective-developer-followup"
+      },
+      {
+        "final_receipt_sha256": "859836a92ca4e68bb4022ce79061f2b64113bd27e1ae22b7a17a3993793fb19f",
+        "hybrid_files": [
+          "src/simple_ai_trading/binance_spot_receipts.py",
+          "src/simple_ai_trading/hedged_inventory_cash.py",
+          "src/simple_ai_trading/binance_spot_cash.py",
+          "src/simple_ai_trading/stateful_cash_replay.py",
+          "src/simple_ai_trading/stateful_cash_labels.py"
+        ],
+        "hybrid_rank": 2,
+        "name": "base_fee_hedge",
+        "native_files": [
+          "src/simple_ai_trading/hedged_inventory_cash.py",
+          "src/simple_ai_trading/binance_spot_receipts.py",
+          "src/simple_ai_trading/stateful_cash_replay.py",
+          "src/simple_ai_trading/stateful_cash_labels.py",
+          "src/simple_ai_trading/collateral_stress.py"
+        ],
+        "native_rank": 1,
+        "native_receipt_sha256": "64ed60e648702ff570db3367cb3b9686f2c74f9458dd95e37aba84e8646e8f9a",
+        "role": "prospective-developer-followup"
+      }
+    ],
+    "source_mirror_digest": "0ca142f3c6eca1626e8c9170fc0c1d43",
+    "timing_qualified": false
+  },
+  "focused_tests": {
+    "errors": 0,
+    "failures": 0,
+    "skipped": 0,
+    "tests": 167
+  },
+  "journal_budget": {
+    "completed": 15,
+    "planned": 15,
+    "retries": 0,
+    "started": 15
+  },
+  "mcp_smoke": {
+    "jsonrpc_protocol_probes": [
+      {
+        "negotiated_protocol_version": "2024-11-05",
+        "protocol_version": "2024-11-05",
+        "tools": [
+          "search"
+        ]
+      },
+      {
+        "negotiated_protocol_version": "2025-03-26",
+        "protocol_version": "2025-03-26",
+        "tools": [
+          "search"
+        ]
+      },
+      {
+        "negotiated_protocol_version": "2025-06-18",
+        "protocol_version": "2025-06-18",
+        "tools": [
+          "search"
+        ]
+      },
+      {
+        "negotiated_protocol_version": "2025-11-25",
+        "protocol_version": "2025-11-25",
+        "tools": [
+          "search"
+        ]
+      }
+    ],
+    "stdio_probe": {
+      "server_name": "cocoindex-code",
+      "server_version": "0.2.43",
+      "tools": [
+        "search"
+      ]
+    },
+    "stdio_search_probe": {
+      "search_tool_content_items": 1,
+      "server_name": "cocoindex-code",
+      "server_version": "0.2.43",
+      "tools": [
+        "search"
+      ]
+    }
+  },
+  "pilot": {
+    "cases": 10,
+    "classification": "Exploratory observed development cases",
+    "hybrid_hits": 7,
+    "native_hits": 0
+  },
+  "preceding_distinct_source_phase": {
+    "connector_created_commit": "4c67e74a885f26b54b0e649b0eb58059f84dbf7e",
+    "prior_report_unchanged": true,
+    "tree": "da10ce977803ef60f5909f19c5c23594e0b21cd5"
+  },
+  "qualification": {
+    "account_or_order_access": false,
+    "financial_observations_added": 0,
+    "full_suite_run": false,
+    "independent_statistical_validation": false,
+    "persistence_installed": false,
+    "protected_capture_access": false,
+    "provider_registration_modified": false,
+    "qualified_stable_edges": 0,
+    "timing_qualified": false,
+    "whole_repo_review_complete": false
+  },
+  "retained_private_artifact_sha256": {
+    "action_value_policy_gates.hybrid.log": "e5dc91b8b668b9caa44a11bff36870a6feae29eb15da93628d538a7209b6fd08",
+    "api_budget_start_gate.hybrid.log": "f38b94eb5c28c494c7ced2ffe97270ad6f54a74b2bcaf142792b815994f1111b",
+    "archive_data_provenance.hybrid.log": "48b6e18d239f789e188751aa3c078d2f28fcc35f55a9fb88585268f1b4056591",
+    "base_fee_hedge.hybrid.log": "da4248703e7e777248bf18493687321f4ecb38535a4bb13e8f98eb62858ff867",
+    "cli_windows_parity.hybrid.log": "169a6d3bb3245b37a826f8cfde95a1a85dc49ccb1abda2af8e46b418de7045d9",
+    "directml_gpu_resolution.hybrid.log": "1460ffdb17d45f1c1f6eaa061b460ad1b313bf3db66e22d1829fa7f2d14ff732",
+    "docs-check.log": "b0310c4c5145379f2c48b31c5e6ef1fd34385df8e15c448b5ff8d364623e854d",
+    "docs-owned-check.log": "005660608b2669367e8019f3f36a0242baa6203f014ce6bff8ce1fa75bdb4ab1",
+    "evaluate_integrated.py": "043986ef57fc37c5bdd6354653106bf7d71578706de585891281f30ef2f64877",
+    "execution_ownership_reconciliation.hybrid.log": "20a9e5bfc4527a5db6ade6470944e4d07df467f1db7ae383dc87ff27d1d6437f",
+    "hybrid-pilot-intent.json": "ce32d99cb1ffbd0a68cb457184672e5b4566550c08e28b99014f094905fff985",
+    "hybrid-pilot-result.json": "e9faa838c5fc4c77f12f68e82917c45d81048c1e1ee957e6d30d58f434bab03c",
+    "hybrid_pilot.py": "1519f58964556f9f4874e088272b2e7b796baa77b493feccf14e1bb56a8b3a75",
+    "index-hybrid.log": "fa416c595cf2b3f0afdd405b526b7f3fc39d9e6291579d6609ac855bfc96a0e5",
+    "integration-intent.json": "b440704f1dd9bfcf947d7dc2928b5226d0851f1632d440b84bff70edcc6c19af",
+    "integration-journal.jsonl": "fa1b544ccd89757775fe0f3a8fa203112dbd49c1da98fea4b6eaaff7fe866c80",
+    "integration-result.json": "da9503603d1d2a78fd48c5819a90aa41636c85898f6ff95bca344f32a8f9c069",
+    "liquidity_universe_filter.hybrid.log": "69dc6747742fae68b0eaabbb037a6c2a28c851ba3149630a0e75efb18537f644",
+    "mcp-smoke.json": "ed144f5dc4796cef3ba62163a4ecb8600b5948268a9fb664c1d31b04ef4e0b06",
+    "mcp-smoke.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "microstructure_barrier_labels.hybrid.log": "dc780614887a01a552d5f4fd9220aeb7b86cadf511adb5afeb75d48afc31a7f8",
+    "outage_recovery_risk.hybrid.log": "c3901c0ef6cb49e9d83bf04a17dcf604f24747715a2fc8b19d09e04e69ad86fc",
+    "owned_windows_children.hybrid.log": "ec65b32066ca643c41b9dc23fd20f366568936f97d15eb2bb819fcb2d3eb5bdc",
+    "paired_orphan_quantity.hybrid.log": "1c8a6d34ffd2d6773050bb7ee159cb907b881ef17ca8a6765f822c9466b49d6e",
+    "spot_cash_prefix.hybrid.log": "40623ef3f7a0195b3a97015dec8ee33f967494fff11c9de2736d48764186033e",
+    "terminal_holdout_integrity.hybrid.log": "5fe785a8bb1180d8a5889088526d59ed04a86ff7f2b204cbf8c3c95a426c858c",
+    "tests-final.log": "17f8626278ba7deb28d42492256554499a5f0426b1c70afe7a994d547a4455f2",
+    "tests-final.xml": "ab7efcad44ff5ed8f098408c6605b3ea2bddd3dafe755622d8cfe8eefcced389",
+    "timed_order_book_seed.hybrid.log": "5a94d63c4824f359d26e882500e8fb99fceeab740048948323dce80a2bb5fc6d",
+    "transport-preflight-intent.json": "e45d9ed44b2550d1468b89c3ccb074a65869b3d29b91b0caeb884e076fed1938",
+    "transport-preflight.native.log": "f52d938d87f682f7402cf9487664e97584c4abc5b97ab30560e2023eb90652be"
+  },
+  "schema": "source-bound-semantic-routing-review-v1",
+  "source_digest_kind": "Exact local runtime Python bytes, identical to canonical staged blobs before publication",
+  "source_sha256": {
+    "tests/test_cocoindex_agent_search.py": "71c43698369e153143e56f7b6c84baf827300bf2bc56601f48e659a8b0a17f69",
+    "tests/test_cocoindex_hybrid.py": "c9093851f090c9c75d7dbf3c8e8dbd858eaddc64620ece51fe67da3c1950423d",
+    "tests/test_cocoindex_windows_source_scope.py": "b4dc3a71a028c7b779f8d053d6411ee56756f3f03df6efeb634df3136c85e1e0",
+    "tools/cocoindex_agent_search.py": "6816e66b07646a4d7c68ea46a82d72f0f2eba2c991e341e64f6b06d9b4357a32",
+    "tools/cocoindex_hybrid.py": "b542d72b544716370777ea01ecb05b522c981c3401c5dfee63b17dfd16500d36"
+  }
+}
