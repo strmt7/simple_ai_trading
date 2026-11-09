@@ -191,10 +191,15 @@ class OfficialPolymarketV2Venue:
         timeout_seconds: float = 10.0,
     ) -> None:
         self.credentials = credentials
-        self.session = session or _public_session()
         self.timeout_seconds = max(1.0, min(30.0, float(timeout_seconds)))
         self.maximum_response_bytes = 8 * 1024 * 1024
-        self._client = client or self._build_client()
+        self.session = session or _public_session()
+        try:
+            self._client = client or self._build_client()
+        except BaseException:
+            if session is None:
+                self.session.close()
+            raise
         self._dispatch_mode_lock = Lock()
         self._dispatch_blocked_until = 0.0
         self._dispatch_block_reason = ""
@@ -228,8 +233,50 @@ class OfficialPolymarketV2Venue:
             api_secret=self.credentials.api_secret,
             api_passphrase=self.credentials.api_passphrase,
         )
+        from .polymarket_sdk_transport import PolymarketSdkTransport
+
+        transport = PolymarketSdkTransport(
+            base_url=CLOB_BASE_URL,
+            timeout_seconds=self.timeout_seconds,
+            maximum_response_bytes=self.maximum_response_bytes,
+        )
 
         class _ImmediateResponseClobClient(ClobClient):
+            def _get(
+                self,
+                endpoint: str,
+                headers: Mapping[str, str] | None = None,
+                params: Mapping[str, object] | None = None,
+            ) -> object:
+                return transport.request(
+                    "GET", endpoint, headers=headers, params=params
+                )
+
+            def _post(
+                self,
+                endpoint: str,
+                headers: Mapping[str, str] | None = None,
+                data: object = None,
+                params: Mapping[str, object] | None = None,
+            ) -> object:
+                return transport.request(
+                    "POST", endpoint, headers=headers, data=data, params=params
+                )
+
+            def _delete(
+                self,
+                endpoint: str,
+                headers: Mapping[str, str] | None = None,
+                data: object = None,
+                params: Mapping[str, object] | None = None,
+            ) -> object:
+                return transport.request(
+                    "DELETE", endpoint, headers=headers, data=data, params=params
+                )
+
+            def close(self) -> None:
+                transport.close()
+
             def _resolve_transactions_hashes(self, response: object) -> object:
                 # The SDK may poll for 30 seconds after the CLOB has accepted a
                 # matched order. Fill authority comes from the authenticated user
@@ -237,25 +284,29 @@ class OfficialPolymarketV2Venue:
                 # returning the initial server response to the action loop.
                 return response
 
-        client = _ImmediateResponseClobClient(
-            host=CLOB_BASE_URL,
-            chain_id=POLYGON_CHAIN_ID,
-            key=self.credentials.private_key,
-            creds=creds,
-            signature_type=self.credentials.signature_type,
-            funder=self.credentials.funder_address,
-            # The coordinator performs a fresh server-clock preflight before every
-            # submission. Avoid another blocking /time request between the final
-            # intent-age check and the order POST.
-            use_server_time=False,
-            retry_on_error=False,
-        )
-        funder = str(getattr(client.builder, "funder", "")).lower()
-        if funder != self.credentials.funder_address:
-            raise PolymarketLiveBlocked(
-                "SDK funder differs from configured dedicated wallet"
+        try:
+            client = _ImmediateResponseClobClient(
+                host=CLOB_BASE_URL,
+                chain_id=POLYGON_CHAIN_ID,
+                key=self.credentials.private_key,
+                creds=creds,
+                signature_type=self.credentials.signature_type,
+                funder=self.credentials.funder_address,
+                # The coordinator performs a fresh server-clock preflight before every
+                # submission. Avoid another blocking /time request between the final
+                # intent-age check and the order POST.
+                use_server_time=False,
+                retry_on_error=False,
             )
-        return client
+            funder = str(getattr(client.builder, "funder", "")).lower()
+            if funder != self.credentials.funder_address:
+                raise PolymarketLiveBlocked(
+                    "SDK funder differs from configured dedicated wallet"
+                )
+            return client
+        except BaseException:
+            transport.close()
+            raise
 
     def _get_json(
         self,
@@ -1316,10 +1367,12 @@ class OfficialPolymarketV2Venue:
         return PolymarketCancelResult(cancelled, failed)
 
     def close(self) -> None:
-        close = getattr(self._client, "close", None)
-        if callable(close):
-            close()
-        self.session.close()
+        try:
+            close = getattr(self._client, "close", None)
+            if callable(close):
+                close()
+        finally:
+            self.session.close()
 
 
 __all__ = [

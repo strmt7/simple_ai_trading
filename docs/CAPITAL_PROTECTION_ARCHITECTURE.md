@@ -1,5 +1,12 @@
 # Capital protection and final release verification
 
+The [owned SDK transport](review/2026-11-10/sdk-transport/review.md) now applies
+per-venue native request timeouts, an observed response deadline and bounded
+bodies without SDK-global mutation, write retry or redirects. Incomplete errors
+remain unresolved; construction/shutdown release owned clients. 187 focused
+checks pass, including real SDK serialization and an owned loopback response.
+This does not preempt frozen native calls or implement independent supervision.
+
 The [runtime control storage repair](review/2026-11-10/runtime-control-storage/review.md)
 rejects a missing record in an existing namespace instead of recreating stopped
 state and erasing its Stop epoch. Fresh bootstrap is atomic; cancelled bootstrap

@@ -112,6 +112,13 @@ LLMs may veto/reduce risk, never bypass deterministic Stop/ownership/close contr
 
 ## Platform work and publication
 
+- [Owned SDK transport](review/2026-11-10/sdk-transport/review.md) binds native
+  Polymarket GET/POST/DELETE hooks to each venue's configured timeout and body cap,
+  preserving signing bytes, no write retries and no redirects. Incomplete/late
+  error bodies remain unresolved; cleanup releases owned clients. All 187 focused
+  checks pass, including actual SDK serialization and an owned loopback response.
+  Supplied external clients and hard process deadlines remain unqualified.
+  Independent supervision, gateway fencing and the full caller inventory stay open.
 - [Control storage](review/2026-11-10/runtime-control-storage/review.md) no longer
   recreates a missing current/legacy record as fresh stopped state. Bootstrap is
   atomic; cancellation rolls back and closes connections; a completed concurrent

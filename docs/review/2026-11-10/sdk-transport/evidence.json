@@ -1,0 +1,80 @@
+{
+  "base_revision": "f7c0d30ede2b519e08184381e52c2eea2d9c69a3",
+  "before_adapter_sha256": "5fb6075a3e13d5f01034ce92a86bce27f9740b5ee6cd14fb4c15b034de05a992",
+  "created_at_utc": "2026-11-09T23:46:37.736564+00:00",
+  "financial_counts": [
+    204,
+    65,
+    37,
+    0
+  ],
+  "installed_sdk_source_receipt": {
+    "files": {
+      "py_clob_client_v2/client.py": {
+        "retained": "data/research/2026-11-10-supervision/native-sdk/py_clob_client_v2__client.py",
+        "sha256": "8e81187bd84ed83609799ccb5cdbbc77fb799ef17279a913a5656e259752f7e4"
+      },
+      "py_clob_client_v2/http_helpers/helpers.py": {
+        "retained": "data/research/2026-11-10-supervision/native-sdk/py_clob_client_v2__http_helpers__helpers.py",
+        "sha256": "7192a252e73d9d3e6daf0d45c003e237191e9b9cbfad4fb6797d86b2ce98bfe9"
+      }
+    },
+    "source": "installed owned locked dependency; source read only; no client constructed or account request",
+    "version": "1.2.1"
+  },
+  "native_market_account_order_or_real_credentials_access": false,
+  "not_proved": [
+    "Independent OS process hard deadlines, credential separation, frozen-thread interruption or complete native-write caller inventory",
+    "Whole-database loss/replacement detection, controlled rearm, physical crash/reboot or comprehensive capital protection",
+    "Native account/order behavior, economic profitability, complete codebase review or exhaustive final bug hunt"
+  ],
+  "original_adapter_tests_unchanged": true,
+  "previous_goal_turn_classification": "progress: committed missing Stop-record and interlock lifetime repairs; source tracing identified the separate SDK transport boundary",
+  "private_artifacts_sha256": {
+    "intent.json": "044aade7f429373be518c985e0234ad8db91da320fed47afff39bf4374ee49e0",
+    "old-tests.log": "bd1010512b52024db5999d6994bf7165f0531bbea4c6cd9b4f9acc2df2e94b35",
+    "old-tests.xml": "f0289f25be45d02cc92db77f2b6079dd85aa1774c9a9d762edc1ba4de38ff7e0",
+    "verified-tests.log": "eacf0eedace3380cee9b86ea9cff7c67078a42d817b630e9ebd5d68843a28029",
+    "verified-tests.xml": "21532f9aada1149e3029baf88e721f2a0619708eea83c702e0220e5cf556a039"
+  },
+  "private_retention_directory": "data/research/2026-11-10-sdk-transport",
+  "production_sources_sha256": {
+    "src/simple_ai_trading/polymarket_live_v2.py": "0ff79e5828b13255ea3a2c52aed11ede50f58f653d76a1ea735834089f1f78a6",
+    "src/simple_ai_trading/polymarket_sdk_transport.py": "f5d880fbc7087cdba8c6149f21cfad733a7dccaedf1bd94ca64b8cd39d140651"
+  },
+  "proof_scope": [
+    "Actual pinned SDK signing/order serialization with synthetic offline credentials and mocked HTTP transport; global SDK client never used or replaced",
+    "One HTTP attempt for redirects and error statuses; raw serialized UTF-8 body, signature headers and phase timeout values preserved",
+    "Incomplete, oversized, encoded, interrupted and observed-late responses retain status unknown, including partial 422 and parsing past deadline",
+    "Actual session-owned loopback server sends frequent chunks until observed deadline; server and handler finish and listener closes",
+    "Cancelled constructor and SDK close failure release owned transport/public session; independent venues retain independent clients"
+  ],
+  "result_sha256": "c7a4e6d6c01b166519e0b76b8f58227f6c6c96a528cdd20fb2d45545e19e543e",
+  "schema": "polymarket-sdk-owned-transport-repair-v1",
+  "services_tasks_or_persistent_workers_installed": false,
+  "source_routing_receipt": {
+    "path": "data/research/2026-11-10-supervision/gateway-source-routing.log",
+    "sha256": "aa1c08ef0c807dfba6403f27bbe329d9c0e57da3cb557c71b8c15a29c47c0edf",
+    "source_revision": "f7c0d30ede2b519e08184381e52c2eea2d9c69a3"
+  },
+  "tests_sha256": {
+    "tests/test_polymarket_live.py": "ec793bd0b2381d350bea64338ac1bdf0de5cb2db9b9f2d9c4f6aa539c6872267",
+    "tests/test_polymarket_live_v2.py": "9ff1aa18f72d1b7995e0b84ea4b63dd21d314f4e9c0d90d5ef9fed84d5fb1a39",
+    "tests/test_polymarket_sdk_transport.py": "23295af780b5ab6c89dd9acdeace8810372cac9676f0d9266121d7ed28628152"
+  },
+  "unchanged_adapter_definitions_AST_verified": true,
+  "verification": {
+    "old-tests.xml": {
+      "errors": 0,
+      "failures": 3,
+      "skipped": 0,
+      "tests": 3
+    },
+    "verified-tests.xml": {
+      "errors": 0,
+      "failures": 0,
+      "skipped": 0,
+      "tests": 187
+    }
+  }
+}
