@@ -952,12 +952,16 @@
         {
           "path": "docs/model-research/action-value/binance-option-future-settlement-equivalence-terminal-adjudication-v1.json",
           "result_sha256": "a5d34919c4e9c94ca794b73dea57c96bf9c6f9e968cc6c77f240f243c7597601"
+        },
+        {
+          "path": "docs/review/2026-11-09/settlement-equivalence/result.json",
+          "result_sha256": "55d45cc84594e2e1fd9d69e0a3dc0a30b3dea086d6b174474e1ab110e7ac5a24"
         }
       ],
-      "current_status": "terminal_first_valid_empty_history_response_numeric_settlement_equivalence_unproved_and_depth_screen_prohibited",
+      "current_status": "post_expiry_v2_consumed_100_native_BTC_option_rows_at_44_same_strike_call_put_pairs_share_one_exact_settlement_value_but_18_futures_delivery_rows_have_no_2026_09_25_calendar_marker_latest_is_2026_06_26_zero_numeric_comparisons_no_books_no_edge",
       "market_direction_forecast_required": false,
       "mechanism": "same_expiry_option_put_call_parity_against_quarterly_future",
-      "next_action": "none_until_an_official_static_history_or_explicit_retention_contract_exists_or_after_the_2026_09_25_matching_expiry_under_a_separately_frozen_prospective_contract",
+      "next_action": "do_not_repeat_alias_paginate_or_shift_the_consumed_September_25_window_wait_for_independently_new_official_exact_date_futures_settlement_evidence_or_a_distinct_later_source_qualified_common_expiry_after_actual_settlement_under_a_separate_prospective_contract_no_depth_or_profitability_claim_from_missing_records",
       "priority_rank": 13,
       "prohibited_shortcuts": [
         "matching expiry timestamps as proof of matching settlement values",
@@ -966,8 +970,15 @@
         "historical equality as an accepted current edge",
         "rerunning_reordering_or_adapting_the_terminal_eight_get_contract"
       ],
-      "retry_trigger": "official_static_history_or_explicit_retention_contract_available_or_post_2026_09_25_separately_frozen_prospective_settlement_contract",
-      "venue_scope": "binance_btc_eth_options_and_quarterly_futures"
+      "retry_trigger": "independently_new_official_static_history_or_explicit_retention_evidence_that_supplies_the_missing_exact_2026_09_25_futures_delivery_record_or_a_separately_frozen_distinct_later_source_qualified_common_expiry_after_its_actual_settlement_not_an_adaptive_replacement_for_the_consumed_2026_09_25_population",
+      "venue_scope": "binance_btc_eth_options_and_quarterly_futures",
+      "post_expiry_review_2026_11_09": {
+        "accepted_edge": false,
+        "contract_path": "docs/review/2026-11-09/settlement-equivalence/contract.json",
+        "new_hypothesis": false,
+        "original_retry_trigger": "official_static_history_or_explicit_retention_contract_available_or_post_2026_09_25_separately_frozen_prospective_settlement_contract",
+        "result_sha256": "55d45cc84594e2e1fd9d69e0a3dc0a30b3dea086d6b174474e1ab110e7ac5a24"
+      }
     },
     {
       "blocking_evidence": [
@@ -4534,7 +4545,7 @@
       ]
     }
   ],
-  "result_sha256": "a855fe50efb4c0909b5657f97f2fc30497dc21254f29d8ec670ec8bcfcf0bbf3",
+  "result_sha256": "1dfce593b3e4c4a8467aabc989b86c39c4637b9165563075b137846d8beca1c2",
   "schema_version": "structural-edge-priority-registry-v1",
   "terminal_do_not_repeat": [
     {
@@ -4664,7 +4675,12 @@
     {
       "canonical_result_sha256": "a5d34919c4e9c94ca794b73dea57c96bf9c6f9e968cc6c77f240f243c7597601",
       "family": "binance_option_future_settlement_equivalence_history_contract_v1",
-      "reason": "the_oldest_first_one_use_contract_stopped_terminally_on_its_first_valid_empty_history_response_and_permits_no_retry_reordering_or_depth_escalation"
+      "reason": "the_oldest_first_one_use_contract_stopped_terminally_on_its_first_valid_empty_history_response_and_permits_no_retry_reordering_or_depth_escalation",
+      "post_expiry_successor": {
+        "path": "docs/review/2026-11-09/settlement-equivalence/result.json",
+        "result_sha256": "55d45cc84594e2e1fd9d69e0a3dc0a30b3dea086d6b174474e1ab110e7ac5a24",
+        "status": "distinct_post_expiry_contract_consumed_missing_exact_date_future_record_no_numeric_comparison"
+      }
     },
     {
       "canonical_result_sha256": "85d0be66391b53bef87dda33ea73acaf6995d0200e6423de7999d44a8fed3c8f",
@@ -5573,6 +5589,6 @@
       "canonical_result_sha256": "bd1f430444c33f60f811134d622c639e39e9a502cb57747fe469d15bd6e8c0d3"
     }
   ],
-  "updated_at_utc": "2026-11-09T08:53:08Z",
+  "updated_at_utc": "2026-11-09T17:54:41.761475+00:00",
   "usage_rule": "advance_the_highest_ranked_hypothesis_whose_retry_trigger_is_satisfied_otherwise_do_not_repeat_a_blocked_or_terminal_screen"
 }

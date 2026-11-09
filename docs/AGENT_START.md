@@ -10,6 +10,22 @@ Scope blockers to their branch; a fresh user resumption resets the blocked audit
 
 ## Current Truth
 
+November 9 [spot prefunding](review/2026-11-09/spot-prefunding/review.md):
+new exact prefix-cash analysis exposes acquisition cash and intermediate fills
+hidden by boundary netting. It composes with paired wealth without assumed
+derivative-wallet credit. 70 focused checks pass, including unchanged historical
+cash-control reproduction. This is a necessary spot-only capital constraint;
+native finance, reserves and continuous derivative margin remain unqualified.
+Counts 203/65/37/0; no market request or fit. Goal active; no persistent worker.
+
+November 9 [post-expiry settlement study](review/2026-11-09/settlement-equivalence/review.md):
+rank 13's date gate permitted one separately frozen BTC September 25 comparison.
+100 option rows validate 44 call/put strike pairs and one settlement value; the
+18-row futures response lacks that date, so zero comparisons complete. Both
+HTTP 200 responses/journals are retained; no date shift, retry, books or edge.
+The controller is inert and the exact follow-up consumed. Reopen only on its
+new missing-record/distinct-later-expiry gate. Counts 203/65/37/0; goal active.
+
 November 9 [timed native replay](review/2026-11-09/timed-snapshot-normalization/review.md):
 the actual HftBacktest engine exposed a static initial book before receipt.
 New normalization seeds a timed stream, gates buffered updates and rejects clock/

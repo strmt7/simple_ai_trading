@@ -1,0 +1,30 @@
+{
+  "base_revision": "0a930e037a4399ee65047db7f88379468cdfaaba",
+  "controls": [
+    "Ending profit does not finance the initial purchase.",
+    "Same-boundary fill order must retain within-boundary cash demand despite zero net cash.",
+    "Initial owned inventory supplies sale proceeds but retains initial marked wealth in the comparator.",
+    "Quote commissions consume cash; base commissions reduce received quantity without an invented second quote charge.",
+    "A supplied nonnegative quote buffer applies to initial cash and every fill prefix; equality is cash-feasible for this model, not a strict safety margin.",
+    "Pre-existing inventory validity, unique fill identities and terminal unwind retain existing validation.",
+    "Spot acquisition cash must never be offset by derivative marked wealth or assumed transfers.",
+    "All native financing, source, settlement, reserve-lock, margin, solvency, training and edge qualification remain false."
+  ],
+  "frozen_at_utc": "2026-11-09T18:04:28.709184+00:00",
+  "implementation": "Add a separate prefix-cash analysis around the existing unchanged inventory/wealth replay. Bind exact rational inputs. Compose with paired replay without changing existing reports or historical source hashes.",
+  "question": "Expose necessary quote cash for ordered incremental spot fills, separately from ending wealth and derivative margin. Preserve existing accounting/result bytes.",
+  "schema": "supplied-spot-prefunding-intent-v1",
+  "scope": {
+    "fits": 0,
+    "market_dataset_reads": 0,
+    "network_requests": 0,
+    "orders": 0,
+    "protected_partial_data_access": false
+  },
+  "sha256": "c3006e02dcf3c1bd3b565d2036487f180bab7ac42b71ecd972a875f9970c67c7",
+  "source_sha256": {
+    "src/simple_ai_trading/collateral_stress.py": "e980c9e54df9b848b565ff575935dd345513dc50bb4e9a6294e6aaf7218b313c",
+    "src/simple_ai_trading/hedged_inventory_cash.py": "18b260dae49ef9af8f53624ffcf09c483066a1992e9f1a8d29d0c06e70450dd1",
+    "src/simple_ai_trading/spot_inventory_cash.py": "5793cd881c9e357ca31d219cc021da525d0d50185c92005dc11ff2a9140c3d95"
+  }
+}

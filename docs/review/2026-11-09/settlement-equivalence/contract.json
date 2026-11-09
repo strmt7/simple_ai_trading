@@ -1,0 +1,78 @@
+{
+  "base_revision": "0a930e037a4399ee65047db7f88379468cdfaaba",
+  "budget": {
+    "alternative_underlying_or_expiry": 0,
+    "bytes_per_response": 65536,
+    "max_requests": 2,
+    "owned_process_seconds": 90,
+    "pagination": 0,
+    "redirects": 0,
+    "request_seconds": 25,
+    "retries": 0
+  },
+  "controller_sha256": "310b80abc33772332d357a1bdbcab52e1c6532353ce40437c41e9ccc1d9017a1",
+  "day_start_ms": 1790294400000,
+  "decision": {
+    "accepted_edge": false,
+    "depth_permitted": false,
+    "equal": "Historical numeric support only for the returned rows and one date; no current/future settlement identity or payoff/trading/edge qualification.",
+    "failure": "No equality conclusion; stop, preserve receipts; no aliases, pagination, altered dates or fallback source.",
+    "fit_permitted": false,
+    "mismatch": "Observed numeric disagreement rejects common fixed-payoff identity for this observed date; no books.",
+    "new_economic_strategy_observations": 0
+  },
+  "duplicate_audit": {
+    "new_window": "BTCUSDT 2026-09-25 only",
+    "old_contract_consumed": true,
+    "old_failed_window": "BTCUSDT 2025-09-26",
+    "remaining_old_requests_permitted": 0,
+    "scope": "21 retained settlement/delivery JSON artifacts, their exact request bindings, current continuation and capture boundaries; exact endpoint references in November 9/October 27 prose. No September 25, 2026 option request or same-day delivery response found in that scoped inventory. No protected partial data inspected."
+  },
+  "execution_source_sha256": {
+    "docs/RESEARCH_CAPTURE_BOUNDARIES.md": "f971726268ba2e630b2ebbe8d5bcf02f7b3f23b92ccb16efe23aef82cebe950f",
+    "src/simple_ai_trading/windows_owned_job.py": "844deaa5e4bc26a0e99af9a4c346af48b77ad2ba7236bf65a9bdf40d84eb370d",
+    "tools/audit_binance_option_future_settlement_equivalence.py": "684301d30a589a8bebcea577c6c4fd2e14a34835454fe198b13c2913e6dc0cb7",
+    "tools/cocoindex_agent_search.py": "42157142cac581b72016633c5d76cf56da5830fdb8b80d0828fe9e29bff9a1a0"
+  },
+  "expected_option_expiry_ms": 1790323200000,
+  "forbidden": "No market quotes/books, credentials, accounts, orders, transfers, paper fills, model fitting, old-source repricing, protected partial data, web-page alias, stealth, persistence or scheduled tasks.",
+  "frozen_at_utc": "2026-11-09T17:51:30.590084+00:00",
+  "hypothesis_rank": 13,
+  "new_hypothesis": false,
+  "parser_contract": [
+    "JSON numeric decoding uses Decimal; native timestamps must be ints, not floats/strings/bools.",
+    "Option native strings and expiry token must match BTC-260925; strike/result/sides validated; duplicate symbols rejected. All returned settlement prices must be exactly equal.",
+    "Returned option rows are a bounded observed sample, not proof of the entire option population; at least one same-strike call/put pair is mandatory.",
+    "Delivery response limited to 64 rows; exactly one integer calendar marker within the frozen UTC day; no invented exact settlement epoch.",
+    "All HTTP/parse/schema/empty/mismatch/limit/transport failures terminal; raw body or bounded partial body and receipt durably retained before downstream decoding."
+  ],
+  "preflight_sha256": "c60b4f7c96620d9e4655d443d51e9e2e0c9af52d13f92d5078d129e406c0db62",
+  "question": "Do returned native BTC same-strike CALL/PUT exercise records for September 25, 2026 have one exact realStrikePrice equal to the dated futures deliveryPrice on that UTC calendar date?",
+  "requests": [
+    {
+      "id": "options",
+      "params": {
+        "endTime": 1790380799999,
+        "limit": 100,
+        "startTime": 1790294400000,
+        "underlying": "BTCUSDT"
+      },
+      "url": "https://eapi.binance.com/eapi/v1/exerciseHistory"
+    },
+    {
+      "condition": "Only after first response validates the exact expiry, both sides at a common strike, unique finite exact settlement text, and native integer timestamps.",
+      "id": "futures",
+      "params": {
+        "pair": "BTCUSDT"
+      },
+      "url": "https://fapi.binance.com/futures/data/delivery-price"
+    }
+  ],
+  "schema": "binance-post-expiry-settlement-equivalence-v2",
+  "selection": "BTC selected before access from the previously retained matching-expiry candidate universe; no new quotes or outcomes used. No runner-up asset/date after failure.",
+  "trigger": {
+    "literal_registry_retry": "official_static_history_or_explicit_retention_contract_available_or_post_2026_09_25_separately_frozen_prospective_settlement_contract",
+    "literal_terminal_retry": "a new prospective contract is frozen after the 2026-09-25 matching option and future expiry",
+    "satisfied_by": "Observed UTC is November 9, 2026; September 25 is the newest elapsed matching quarterly expiry declared in the retained original catalogs. This separately frozen contract precedes every access and does not repair or continue the old eight-request contract."
+  }
+}

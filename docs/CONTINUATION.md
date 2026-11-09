@@ -1,5 +1,35 @@
 # Continue Development
 
+November 9 [spot cash prefunding](review/2026-11-09/spot-prefunding/review.md):
+exact ordered-fill prefixes now expose necessary acquisition quote cash even
+when boundary net cash or terminal wealth is positive. The paired wrapper keeps
+derivative income, spot cash and wealth-comparator opportunity costs separate.
+70 focused checks pass: 20 new, 45 existing cash and five unchanged historical
+artifact checks. Seven source-bound controls are synthetic, not market evidence.
+Existing replay/report bytes are unchanged. Native funding sources, reservation
+locks, settlement delays, actual wallet debits, collateral and continuous margin
+remain unqualified. Use the new constraint in future paired-carry evaluations
+before deployable-model claims; counts 203/65/37/0. Goal active, no fit/order or
+persistent worker. The source/capital checkpoint combines this code with the
+preceding settlement R&D; do not create a release or extra PR.
+
+November 9 [rank-13 post-expiry source test](review/2026-11-09/settlement-equivalence/review.md):
+the exact date trigger was satisfied and a distinct one-use BTC September 25
+contract frozen before access. Two bounded public GETs returned HTTP 200. The
+100-row option page supplies 44 same-strike call/put pairs with one exact
+settlement value; the futures history supplies 18 calendar markers, latest
+June 26, with no September 25 record. Zero numeric comparisons completed: do
+not claim equality, mismatch or a profitable fixed payoff. No books, pagination,
+aliases, older-date replacement, fit, credentials or orders. Raw responses and
+durable journals are private, controller inert, original results unchanged.
+The current registry narrows the now-consumed trigger to independently new
+missing-record evidence or a distinct later source-qualified common expiry after
+settlement. Option-only boxes are an existing terminal family, not a new escape
+route. Counts 203/65/37/0; account/fee gates unchanged; goal active. This research
+was retained locally for the combined source/capital checkpoint, following the
+user's request for fewer pushes. Refresh the source-bound index before broad
+navigation.
+
 November 9 [timed HftBacktest initialization](review/2026-11-09/timed-snapshot-normalization/review.md):
 native synthetic integration proves the former static snapshot leaked prices
 before receipt. Normalization now emits timed snapshot events and snapshot-gated

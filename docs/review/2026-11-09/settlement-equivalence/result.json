@@ -1,0 +1,63 @@
+{
+  "accepted_edge": false,
+  "base_revision": "0a930e037a4399ee65047db7f88379468cdfaaba",
+  "completed_at_utc": "2026-11-09T17:51:46.969832+00:00",
+  "contract_file_sha256": "10cfb285a56437a69357a72d007a5613a191a26d64b0cc122cf9050736c503bb",
+  "contract_path": "docs/review/2026-11-09/settlement-equivalence/contract.json",
+  "controller_terminal": true,
+  "credentials_used": false,
+  "current_or_future_equality_proved": false,
+  "depth_permitted": false,
+  "futures_stage": {
+    "exact_settlement_epoch_inferred": false,
+    "frozen_2026_09_25_marker_count": 0,
+    "latest_returned_delivery_calendar_marker_utc": "2026-06-26T00:00:00Z",
+    "requested_pair": "BTCUSDT",
+    "returned_rows": 18
+  },
+  "historical_equality_proved": false,
+  "historical_mismatch_proved": false,
+  "historical_result_bytes_changed": false,
+  "journal_sha256": "533ff28c7beb73b37fbe98e609d301e1ad91780c1c2dc24d73871cd8eb6f10fc",
+  "lesson": "A current HTTP Date is not proof that a settlement-history payload contains the elapsed expiry. The missing marker blocks this comparison; do not shift to an older date, repeat, paginate or interpret missing evidence as a numeric mismatch.",
+  "new_economic_strategy_observations": 0,
+  "new_public_requests": 2,
+  "next_gate": "Independently new official evidence that supplies the missing exact-date futures settlement, or a separately frozen distinct later source-qualified common expiry after its actual settlement. No rolling or adaptive retry of this population.",
+  "numeric_comparisons_completed": 0,
+  "option_stage": {
+    "entire_population_proved": false,
+    "expiry_ms": 1790323200000,
+    "page_saturated": true,
+    "pagination_permitted": false,
+    "returned_rows": 100,
+    "same_strike_call_put_pairs": 44,
+    "unique_exact_settlement_value": true
+  },
+  "orders": 0,
+  "outcome": "terminal_failure_without_retry",
+  "protected_partial_data_access": false,
+  "raw_capture_result_sha256": "49d6f814bbaa58749465211bdde36b0dd7b5c4f6298a05bd3f2c5ec5a860c70f",
+  "result_sha256": "55d45cc84594e2e1fd9d69e0a3dc0a30b3dea086d6b174474e1ab110e7ac5a24",
+  "retries": 0,
+  "schema_version": "binance-post-expiry-settlement-equivalence-result-v2",
+  "source_aliases": 0,
+  "source_responses": {
+    "futures": {
+      "bytes": 1119,
+      "complete": true,
+      "native_sha256": "4c11fe09afdd8a46e6496440d1c99ba7ac325326732b3dc0fda327044f02d8c4",
+      "receipt_sha256": "92e7119b6080f7bc1853573e91d43080d346529494a74c2b78c27ebf623a4203",
+      "status_code": 200,
+      "url": "https://fapi.binance.com/futures/data/delivery-price?pair=BTCUSDT"
+    },
+    "options": {
+      "bytes": 15292,
+      "complete": true,
+      "native_sha256": "c5f0dd75791dc8d2ac717616c4c1a2fb23fb4a6cf6c6284083101493f4868a74",
+      "receipt_sha256": "d6d1461d091f2b4283e01ac3d30b5e6a7ccef64c92339f884b7682fa3aa6f62e",
+      "status_code": 200,
+      "url": "https://eapi.binance.com/eapi/v1/exerciseHistory?endTime=1790380799999&limit=100&startTime=1790294400000&underlying=BTCUSDT"
+    }
+  },
+  "terminal_error": "ValueError: exactly one delivery marker on the frozen UTC date required"
+}

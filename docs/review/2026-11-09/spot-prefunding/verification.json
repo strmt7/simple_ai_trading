@@ -1,0 +1,12 @@
+{
+  "control_file_sha256": "cc1dc61f27a27405e92767ff212abe3367f4c3e2310fccd577d53b3789f065c5",
+  "control_result_sha256": "e3b29545d82f79aa6fb2b265301e37ad306c3a40a1d8bc0f7485fd518a2bbeef",
+  "errors": 0,
+  "failures": 0,
+  "focused_tests": 70,
+  "junit_sha256": "2a083137ed2598c8a47b779ade0035978c94fc5c4137d483c5320b1ce6367943",
+  "new_economic_observations": 0,
+  "old_accounting_report_exact_reproduction": true,
+  "qualified_edge": false,
+  "schema": "spot-prefunding-verification-v1"
+}

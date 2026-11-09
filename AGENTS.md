@@ -116,6 +116,15 @@ result and all other consumed populations, including WNBA September 3-9.
   cosmetic work. Commercial code protection is required before a protected/paid
   release, not permission to change licensing, visibility or safety controls.
 
+- For future paired spot/derivative carry evaluations, report ordered-fill spot
+  quote prefunding separately from terminal wealth and derivative collateral.
+  Use `spot_prefunding.evaluate_hedged_spot_prefunding` for supported supplied
+  paths; keep unfilled-order reserves, settlement delays, actual financing and
+  native margin qualification explicit. A buy/sell boundary's net cash, positive
+  portfolio wealth or derivative funding cannot finance a spot-wallet purchase
+  through an assumed transfer. Compare feasible alternatives at equal initial
+  wealth before model/deployment claims; preserve historical results.
+
 - Apply the full [progress, blocking and resumption protocol](docs/AGENT_WORKFLOWS.md#progress-blocking-and-resumption)
   on every continuation. A blocked research branch is not a blocked repository.
   Exhaust safe, relevant alternatives before declaring a goal-wide impasse;
