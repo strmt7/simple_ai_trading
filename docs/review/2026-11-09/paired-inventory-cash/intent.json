@@ -1,0 +1,35 @@
+{
+  "access": {
+    "credentials": false,
+    "market_dataset_reads": 0,
+    "network_requests": 0,
+    "orders": false,
+    "protected_partial_analysis": false,
+    "training": false
+  },
+  "base_revision": "878eb3518155977fb0e0be6e2fbca5a85a0fdb90",
+  "capture_boundaries_sha256": "f971726268ba2e630b2ebbe8d5bcf02f7b3f23b92ccb16efe23aef82cebe950f",
+  "controls": [
+    "matched base quantities cancel common spot/perpetual price changes at constant basis",
+    "equal quote notionals at different prices retain nonzero base residual",
+    "base-denominated BUY fees reduce spot inventory and cash exactly once",
+    "partial fills and same-sign resize preserve actual quantities; oversells and missing terminal unwind reject",
+    "funding at entry/exit retains original conservative entitlement bounds",
+    "every explicit financing/opportunity/other debit reduces cash once",
+    "no new initial entry charged to unchanged incumbent inventory",
+    "malformed units/clocks/digests/duplicate fill identities reject",
+    "supplied cash results never qualify execution, solvency, training or a market edge"
+  ],
+  "economic_adoption": "No consumed family reopened, independent observation added, model fit or edge promotion.",
+  "frozen_at_utc": "2026-11-09T12:31:34.467169+00:00",
+  "implementation": "Compose the existing exact fixed-base derivative replay with explicit individual spot fills; do not duplicate funding law or assume matched quote notionals imply matched base. Reconcile cash against initial marked inventory and mandatory terminal flattening. Retain non-atomic boundary orphan enclosures and independent financing, opportunity and other quote debits.",
+  "question": "Can one supplied two-leg cash path preserve actual net spot quantities, derivative funding bounds, every declared debit and boundary orphan exposure without claiming native qualification?",
+  "schema_version": "supplied-paired-inventory-cash-intent-v1",
+  "sha256": "a6fb6776f390569fc8e3eab2b7bd0f331ce599a5d49d96b2202527618ee8f638",
+  "source_sha256": {
+    "src/simple_ai_trading/binance_spot_cash.py": "61027340d2645c281c44395e276e1545e35d6b25f39b20a58932e461ac8be2f5",
+    "src/simple_ai_trading/funding_cash.py": "3bb8fdaf50b545d93d42df5bd1b901743cc53cd11f4223e58364f160fe3b1aea",
+    "src/simple_ai_trading/funding_cash_inventory.py": "fa6f60fcf171d5a623be6d3156ebdb8cb4ba6c459f8caa6aa6ca61d74a1d649c",
+    "src/simple_ai_trading/inventory_cash_actions.py": "7a714e321e77292e65ec468e4d6d10fd2438ecf89b755266319a88ea175b2d48"
+  }
+}

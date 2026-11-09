@@ -32,5 +32,5 @@ Use this skill whenever you add or refactor Python in `src/simple_ai_trading/`, 
 ## Don't
 
 - Don't silently widen exception handling to make a test pass — catch only what you know you need to recover from.
-- Don't add CLI output that isn't covered by a test. The repo runs `coverage --fail-under=100`; an uncovered branch will break CI, not just coverage drift.
+- Cover CLI output changes with focused contract tests. Read the current CI workflow for its actual coverage gates; do not assume whole-suite 100% coverage or run full coverage during ordinary iteration.
 - Don't stash config inside module-level mutable state — use `config_paths()` / `load_runtime()` each time.

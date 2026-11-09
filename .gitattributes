@@ -259,3 +259,5 @@ native/windows/**/*.cpp text eol=lf
 native/windows/**/*.hpp text eol=lf
 native/windows/CMakeLists.txt text eol=lf
 docs/review/2026-11-09/operator-overview/*.json binary -eol
+
+docs/review/2026-11-09/paired-inventory-cash/*.json text eol=lf

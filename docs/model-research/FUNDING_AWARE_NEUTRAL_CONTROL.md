@@ -1,5 +1,15 @@
 # Funding-aware control: cash truth before an optimizer
 
+November 9 [paired inventory cash](../review/2026-11-09/paired-inventory-cash/review.md)
+now composes the existing derivative replay with incremental spot fills, actual
+declared net base quantities, full supplied spot cash, independent quote debits
+and non-atomic boundary orphan ranges. Equal quote notionals do not imply a
+neutral base position; base fees and partial fills remain explicit. The eight
+source-bound controls are synthetic accounting, not native paired data or a fit.
+The result keeps training, margin and edge admission false. Complete native
+cash/cost/alternative and continuous solvency qualification still precede fits;
+legacy outputs and the funding law remain unchanged.
+
 October 8 [incumbent action cash](../review/2026-10-08/inventory-cash-actions.md):
 the shared ledger supports initial quantity and explicit resizing/reversal.
 Single-interval values retain each side's adverse/upper cash and conservative

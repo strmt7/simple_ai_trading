@@ -10,6 +10,15 @@ Scope blockers to their branch; a fresh user resumption resets the blocked audit
 
 ## Current Truth
 
+November 9 [paired-cash checkpoint](review/2026-11-09/paired-inventory-cash/review.md):
+incremental spot cash and net quantities now compose with the existing exact
+derivative replay. Residual base exposure, every declared debit and non-atomic
+boundary orphan ranges remain explicit. Eight controls are synthetic algebra;
+290 cash/funding checks and five artifact checks pass. No native data/fit,
+execution, solvency or edge admission; counts stay 203/65/37/0. Goal active,
+changes local. Qualify native paired costs/cash before new fits and refresh the
+source-bound index before broad navigation.
+
 November 9 [storage relocation](review/2026-11-09/research-storage/review.md):
 6,783 retained files passed full SSD SHA-256 readback; the authorized old HDD
 directory was removed and destination identities rechecked. Historical inputs

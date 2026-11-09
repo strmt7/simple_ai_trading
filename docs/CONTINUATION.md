@@ -1,5 +1,18 @@
 # Continue Development
 
+November 9 [paired inventory accounting](review/2026-11-09/paired-inventory-cash/review.md):
+the existing derivative ledger now composes with explicit incremental spot fills,
+net base quantities, financing/opportunity/other quote debits and boundary orphan
+ranges. Eight generated synthetic controls bind exact sources and reproduce
+equal-notional residuals and a positive-funding/negative-after-cost example.
+290 distinct cash/funding checks and five artifact checks pass. No native paired
+dataset, fit, inference/order integration, solvency, account qualification or
+edge is claimed; flags remain false and counts 203/65/37/0. Registry/consumed
+capture boundaries are unchanged. Continue native paired cash/cost qualification
+and transition-aware objectives. Do not train on the controls or repeat terminal
+families. The source index is stale after these edits; refresh intentionally
+before the next broad query. Work remains local; no GitHub push.
+
 November 9 storage repair: [selective relocation](review/2026-11-09/research-storage/review.md)
 completed with 6,783 full SHA-256 readbacks and post-removal SSD identity checks.
 The authorized old HDD directory is absent; current databases were not replaced.

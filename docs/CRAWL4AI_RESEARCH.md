@@ -24,13 +24,15 @@ Preserve its full licenses and attribution. No provider files were copied or
 modified, and no new runtime dependency or paid service was installed here.
 
 Configure an available provider checkout and compatible CPython 3.13/3.14
-explicitly. The paths below are host examples, not hardcoded application paths.
+explicitly through private session configuration. Do not put workstation paths
+in tracked examples or application defaults.
 The provider validates its dependency/repair identities on reuse; its installer
 chooses an external OS cache, serializes setup and provisions only when needed.
 
 ```powershell
-$crawlerCheckout = 'C:\SuperZip'
-$crawlerPython = '<absolute path to compatible Python>'
+$crawlerCheckout = $env:SIMPLE_AI_TRADING_CRAWL4AI_CHECKOUT
+$crawlerPython = $env:SIMPLE_AI_TRADING_CRAWL4AI_PYTHON
+if (-not $crawlerCheckout -or -not $crawlerPython) { throw 'Configure the provider checkout and compatible interpreter.' }
 & $crawlerPython "$crawlerCheckout\tools\crawl4ai_tool.py" crawl --help
 & $crawlerPython "$crawlerCheckout\tools\crawl4ai_tool.py" crawl '<selected public HTTPS page>' -o all -O '<new absolute result.json>' -c check_robots_txt=true,page_timeout=45000 --json-ensure-ascii
 ```
