@@ -31,6 +31,12 @@ current full-suite failure count without rerunning the appropriate scope.
   `spot_prefunding.evaluate_hedged_spot_prefunding` keeps derivative income and
   opportunity charges separate from spot-wallet funding. Native cash provenance,
   locks, settlement delays, financing and continuous derivative margin remain open.
+- [Reserved quote cash](review/2026-11-09/spot-reserved-cash/review.md) adds explicit
+  maximum remaining locks at every fill prefix, including intervals with no fill.
+  It preserves the old fill-only report and avoids double-charging partial fills.
+  This is supplied-scenario accounting; native reserve coverage, settlement and
+  continuous solvency remain unqualified. It neither releases live locks nor
+  changes order authority. Polymarket already blocks unresolved-order reopening.
 - Rank 13's new BTC September 25 settlement contract is consumed. The option API
   returned 100 rows, 44 same-strike call/put pairs and one exact settlement value.
   The 18-row futures response lacks that date; its latest marker is June 26.

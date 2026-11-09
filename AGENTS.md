@@ -135,6 +135,14 @@ result and all other consumed populations, including WNBA September 3-9.
   through an assumed transfer. Compare feasible alternatives at equal initial
   wealth before model/deployment claims; preserve historical results.
 
+- Fill-only prefunding is a necessary lower bound, not proof of available cash.
+  For a declared spot path with complete independently bound quote-lock maxima,
+  also use `spot_reserved_cash.evaluate_spot_reserved_cash`. Include every
+  fill-prefix interval, initial/final locks and peaks without fills; count only
+  remaining locks after partial execution. Missing/unknown reserves may not be
+  defaulted to zero, and a cancel request is not release evidence. Supplied
+  declarations do not qualify native locks, settlement, margin or solvency.
+
 - Apply the full [progress, blocking and resumption protocol](docs/AGENT_WORKFLOWS.md#progress-blocking-and-resumption)
   on every continuation. A blocked research branch is not a blocked repository.
   Exhaust safe, relevant alternatives before declaring a goal-wide impasse;

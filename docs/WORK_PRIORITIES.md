@@ -59,8 +59,9 @@ The user requests resistance to easy source inspection/copying for a possible
 future private/paid edition. [Inspected packaging evidence](hardening/commercial-distribution/context.md)
 shows that the native launcher still invokes a Python source runtime and the
 beta pipeline distributes wheel/sdist artifacts. The current repository is
-public and carries an MIT license. Preserve current licensing and releases;
-changing visibility cannot recall copies and GitHub retains detached public
+public and carries an MIT license. Preserve current licensing. The user withdrew
+all releases and release tags; creating new ones requires separate explicit
+authority. Changing visibility cannot recall copies and GitHub retains detached public
 forks, as explained in its
 [visibility documentation](https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/managing-repository-settings/setting-repository-visibility).
 
