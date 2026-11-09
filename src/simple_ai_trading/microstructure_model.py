@@ -15,6 +15,7 @@ import lightgbm as lgb
 import numpy as np
 
 from .lightgbm_backend import lightgbm_backend_parameters
+from .microstructure_availability import SnapshotAvailability
 from .microstructure_features import (
     MICROSTRUCTURE_FEATURE_NAMES,
     MICROSTRUCTURE_TRADE_EMBARGO_MS,
@@ -31,7 +32,7 @@ MICROSTRUCTURE_MODEL_SCHEMA_VERSION = "microstructure-action-value-v16"
 MICROSTRUCTURE_PREQUENTIAL_EVIDENCE_VERSION = (
     "microstructure-prequential-fixed-refit-v1"
 )
-MICROSTRUCTURE_SHADOW_EVIDENCE_VERSION = "microstructure-public-feed-shadow-v1"
+MICROSTRUCTURE_SHADOW_EVIDENCE_VERSION = "microstructure-public-feed-shadow-v2"
 _RISK_LEVELS = frozenset({"conservative", "regular", "aggressive"})
 _MINIMUM_TRAIN_CLASS_ROWS = 256
 _MINIMUM_EARLY_STOP_CLASS_ROWS = 64
@@ -236,6 +237,8 @@ class ShadowValidationEvidence:
     forced_closes: int
     orders_submitted: int
     attached_at: str
+    snapshot_received_at_ns: int | None = None
+    decision_not_before_ms: int | None = None
 
 
 @dataclass(frozen=True)
@@ -851,6 +854,16 @@ def load_microstructure_model_artifact(path: str | Path) -> MicrostructureModelA
     else:
         raise ValueError("microstructure terminal prequential evidence is invalid")
     raw_shadow = payload.get("shadow_validation")
+    if (
+        isinstance(raw_shadow, Mapping)
+        and raw_shadow.get("version") == "microstructure-public-feed-shadow-v1"
+    ):
+        # Legacy evidence stays readable; the current runtime rejects its version.
+        raw_shadow = {
+            "snapshot_received_at_ns": None,
+            "decision_not_before_ms": None,
+            **raw_shadow,
+        }
     values["shadow_validation"] = (
         None
         if raw_shadow is None
@@ -2561,6 +2574,17 @@ def _validated_shadow_binding(
     _validated_terminal_prequential_binding(artifact)
     if evidence.version != MICROSTRUCTURE_SHADOW_EVIDENCE_VERSION:
         raise ValueError("microstructure shadow evidence version is unsupported")
+    if evidence.snapshot_received_at_ns is None:
+        raise ValueError("microstructure shadow snapshot receipt is missing")
+    boundary = SnapshotAvailability(
+        evidence.snapshot_received_at_ns, evidence.clock_offset_ms
+    ).decision_not_before_ms
+    if (
+        type(evidence.decision_not_before_ms) is not int
+        or evidence.decision_not_before_ms != boundary
+        or evidence.started_at_ms < boundary
+    ):
+        raise ValueError("microstructure shadow snapshot availability is invalid")
     for label, digest in (
         ("report", evidence.report_sha256),
         ("trades", evidence.trades_sha256),

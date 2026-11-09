@@ -1,0 +1,121 @@
+{
+  "artifact_class": "synthetic_regression_and_implementation_evidence_not_market_performance",
+  "base_revision": "daf77f573f2e9e3d358230be87df976d135ac42c",
+  "capture_boundaries_sha256": "f971726268ba2e630b2ebbe8d5bcf02f7b3f23b92ccb16efe23aef82cebe950f",
+  "changed_existing_definitions": {
+    "src/simple_ai_trading/microstructure_data.py": [
+      "SymbolMicrostructureEvidence",
+      "capture_binance_futures_microstructure"
+    ],
+    "src/simple_ai_trading/microstructure_live.py": [
+      "StreamingMicrostructureCoordinator"
+    ],
+    "src/simple_ai_trading/microstructure_model.py": [
+      "ShadowValidationEvidence",
+      "_validated_shadow_binding",
+      "load_microstructure_model_artifact"
+    ],
+    "src/simple_ai_trading/microstructure_shadow.py": [
+      "ShadowReplayResult",
+      "evaluate_shadow_capture",
+      "replay_shadow_capture"
+    ]
+  },
+  "created_at_utc": "2026-11-09T14:40:46.663503+00:00",
+  "financial_counts": {
+    "hypotheses": 65,
+    "observations": 203,
+    "qualified_stable_edges": 0,
+    "scoped_mechanisms": 37
+  },
+  "implementation_and_tests": [
+    {
+      "bytes": 1156,
+      "path": "src/simple_ai_trading/microstructure_availability.py",
+      "sha256": "66a16691baad0e28100ecf1fa8a27914dc0e3146ee40d777f4075944ad37b10a"
+    },
+    {
+      "bytes": 42353,
+      "path": "src/simple_ai_trading/microstructure_data.py",
+      "sha256": "88142a82778b7bfb6868a6cefb906939e3dbe46aea74f10122e931a265ae022a"
+    },
+    {
+      "bytes": 22311,
+      "path": "src/simple_ai_trading/microstructure_live.py",
+      "sha256": "1cb86a6b8ed0655cbc6d5869b28d777a8ee7872f46e05371482ebfe3914b49fd"
+    },
+    {
+      "bytes": 33219,
+      "path": "src/simple_ai_trading/microstructure_shadow.py",
+      "sha256": "47a9ea7748149dd4aa9ce99ab49ef611c962ca97bea8866c16ab7747918773aa"
+    },
+    {
+      "bytes": 130291,
+      "path": "src/simple_ai_trading/microstructure_model.py",
+      "sha256": "9a6c962108b24f315f8ae0779418e5e255b64c658cc021a1123552aedb6775f8"
+    },
+    {
+      "bytes": 1621,
+      "path": "tests/test_microstructure_availability.py",
+      "sha256": "47a2a46e75d09b8f1e7ea0ffdd2917bd70fc6cb491543685e4ea3c609127377d"
+    },
+    {
+      "bytes": 11410,
+      "path": "tests/test_microstructure_live.py",
+      "sha256": "f55575166bf92d0f3cf402fe4a3a42a4f0d83ae7a2a4f4f1de29c6bb65fbd340"
+    },
+    {
+      "bytes": 17463,
+      "path": "tests/test_microstructure_shadow.py",
+      "sha256": "5307f0f10fa050c39dc3cd512f0b9bd0b29eec1d21c191383642aa120e39b765"
+    },
+    {
+      "bytes": 43865,
+      "path": "tests/test_microstructure_model.py",
+      "sha256": "908240f55d2fc0dac516d43da9f8e3eac7787584fb6b824107bda42968814eee"
+    }
+  ],
+  "limits": {
+    "account_or_credential_access": false,
+    "clock_offset_is_estimate": true,
+    "github_push": false,
+    "market_model_fit_performed": false,
+    "new_market_observations": 0,
+    "new_source_requests": 0,
+    "normalized_hftbacktest_initialization_qualified": false,
+    "orders_or_funds": false,
+    "paired_native_full_costs_qualified": false,
+    "protected_partial_payloads_read": false,
+    "qualified_stable_edges": 0,
+    "third_party_historical_adapter_qualified": false
+  },
+  "previous_source_result": {
+    "path": "docs/review/2026-11-09/depth-source/source-result.json",
+    "sha256": "48494deb800006acfc7e0c2df9c16dd68824ef7b4a93ed0542d433a205a285c7"
+  },
+  "protocol": {
+    "capture": "binance-usdm-l2-v4",
+    "exchange_decision_tick": "floor(exact_local_ns/1000000 + exact_declared_float_offset_ms) + 1",
+    "legacy_v1_current_runtime_accepted": false,
+    "legacy_v1_readable": true,
+    "raw_receipt_ties_eligible": false,
+    "shadow": "microstructure-public-feed-shadow-v2",
+    "unavailable_prefix_counts_as_eligible_duration": false,
+    "warmup_drains_while_inference_disabled": true
+  },
+  "schema": "snapshot-availability-integration-verification-v1",
+  "tests": {
+    "failures": 0,
+    "junit_bytes": 16300,
+    "junit_path": "data/research/2026-11-09-snapshot-availability/focused-tests.xml",
+    "junit_sha256": "361581747b23b12cae8c0252e6abbeef1d1f0d207b39610b995084ecdcda3400",
+    "passed": 107,
+    "ruff_format_changed_model_blocks": true,
+    "ruff_format_eight_full_files": true,
+    "ruff_lint_all_changed_files": true,
+    "skip_reason": "Optional HftBacktest integration unavailable",
+    "skipped": 1,
+    "whole_suite_run": false
+  },
+  "verification_sha256": "4d4b525db08b7edf0be4725b5e8bf231e9bc3c77d9dfd13c40b7b6134e92f1fd"
+}

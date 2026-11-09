@@ -26,7 +26,7 @@ from .assets import is_supported_major_symbol, normalize_symbol
 BINANCE_FUTURES_REST_URL = "https://fapi.binance.com"
 BINANCE_FUTURES_PUBLIC_STREAM_URL = "wss://fstream.binance.com/public/stream"
 BINANCE_FUTURES_MARKET_STREAM_URL = "wss://fstream.binance.com/market/stream"
-MICROSTRUCTURE_SCHEMA_VERSION = "binance-usdm-l2-v3"
+MICROSTRUCTURE_SCHEMA_VERSION = "binance-usdm-l2-v4"
 MAX_LATENCY_SAMPLES = 100_000
 _STREAM_REORDER_WINDOW_NS = 20_000_000
 _STREAM_QUEUE_CAPACITY = 32_768
@@ -84,6 +84,7 @@ class SymbolMicrostructureEvidence:
     replay_first_bid: float | None
     replay_first_ask: float | None
     error: str = ""
+    snapshot_received_at_ns: int | None = None
 
     def asdict(self) -> dict[str, object]:
         return asdict(self)
@@ -776,7 +777,7 @@ def capture_binance_futures_microstructure(
     capture_id: str | None = None,
     progress: Callable[[float, float], None] | None = None,
 ) -> MicrostructureCaptureResult:
-    """Capture real L2/trade/BBO events and produce promotion-grade replay evidence."""
+    """Capture public L2/trade/BBO events with source and replay diagnostics."""
 
     from websockets.sync.client import connect
 
@@ -825,6 +826,7 @@ def capture_binance_futures_microstructure(
     )
     rng = random.Random(0)
     snapshots: dict[str, dict[str, object]] = {}
+    snapshot_receipts: dict[str, int] = {}
     filters: dict[str, tuple[float, float]] = {}
     clock_sync: ClockSyncEvidence | None = None
     writers: dict[str, object] = {}
@@ -930,6 +932,7 @@ def capture_binance_futures_microstructure(
                 rest_url=rest_url,
                 timeout_seconds=timeout_seconds,
             )
+            snapshot_receipts[symbol] = time.time_ns()
             snapshots[symbol] = snapshot
             _write_json(snapshot_paths[symbol], snapshot)
         deadline = time.perf_counter() + requested_duration
@@ -1093,6 +1096,7 @@ def capture_binance_futures_microstructure(
                 replay_first_bid=replay_bid,
                 replay_first_ask=replay_ask,
                 error="; ".join(item_errors),
+                snapshot_received_at_ns=snapshot_receipts.get(symbol),
             )
         )
     if clock_sync is None:

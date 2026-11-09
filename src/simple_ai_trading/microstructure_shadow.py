@@ -16,6 +16,7 @@ import time
 from typing import Mapping, Sequence
 
 from .microstructure_data import MicrostructureCaptureResult
+from .microstructure_availability import SnapshotAvailability
 from .microstructure_data import (
     BINANCE_FUTURES_MARKET_STREAM_URL,
     BINANCE_FUTURES_PUBLIC_STREAM_URL,
@@ -109,6 +110,9 @@ class ShadowReplayResult:
     inference_failures: int
     forced_closes: int
     orders_submitted: int
+    snapshot_received_at_ns: int | None = None
+    decision_not_before_ms: int | None = None
+    availability_rejections: int = 0
 
     @property
     def duration_seconds(self) -> float:
@@ -210,7 +214,10 @@ class _VirtualShadowLedger:
         self.last_quote = quote
         pending = self.pending_entry
         if pending is not None and quote.event_time_ms >= pending.execute_at_ms:
-            if quote.event_time_ms - pending.execute_at_ms > self.scorer.max_quote_age_ms:
+            if (
+                quote.event_time_ms - pending.execute_at_ms
+                > self.scorer.max_quote_age_ms
+            ):
                 self.expired_entries += 1
                 self.pending_entry = None
             else:
@@ -314,7 +321,9 @@ class _VirtualShadowLedger:
         if self.open_position is None or self.last_quote is None:
             return
         position = self.open_position
-        exit_price = self.last_quote.bid if position.side == "LONG" else self.last_quote.ask
+        exit_price = (
+            self.last_quote.bid if position.side == "LONG" else self.last_quote.ask
+        )
         self.forced_closes += 1
         self._close(
             position,
@@ -339,7 +348,9 @@ class _VirtualShadowLedger:
                 else 1.0 + slippage_fraction
             )
             if execution_price <= 0.0:
-                raise ValueError("shadow trigger slippage produced a non-positive price")
+                raise ValueError(
+                    "shadow trigger slippage produced a non-positive price"
+                )
         if position.side == "LONG":
             exit_notional_ratio = execution_price / position.entry_price
             gross_bps = (exit_notional_ratio - 1.0) * 10_000.0
@@ -347,12 +358,9 @@ class _VirtualShadowLedger:
             exit_notional_ratio = execution_price / position.entry_price
             gross_bps = (1.0 - exit_notional_ratio) * 10_000.0
         execution_cost_bps_per_side = (
-            self.scorer.taker_fee_bps
-            + self.scorer.additional_slippage_bps_per_side
+            self.scorer.taker_fee_bps + self.scorer.additional_slippage_bps_per_side
         )
-        realized = gross_bps - execution_cost_bps_per_side * (
-            1.0 + exit_notional_ratio
-        )
+        realized = gross_bps - execution_cost_bps_per_side * (1.0 + exit_notional_ratio)
         self.trades.append(
             VirtualShadowTrade(
                 side=position.side,
@@ -385,7 +393,9 @@ def _write_trades(path: Path, trades: Sequence[VirtualShadowTrade]) -> str:
     fields = tuple(VirtualShadowTrade.__dataclass_fields__)
     try:
         with os.fdopen(descriptor, "w", encoding="utf-8", newline="\n") as handle:
-            writer = csv.DictWriter(handle, fieldnames=list(fields), lineterminator="\n")
+            writer = csv.DictWriter(
+                handle, fieldnames=list(fields), lineterminator="\n"
+            )
             writer.writeheader()
             for trade in trades:
                 writer.writerow(trade.asdict())
@@ -418,12 +428,21 @@ def replay_shadow_capture(
     settlement_delay_ms: int = 100,
     clock_offset_ms: float,
     entry_cutoff_ms: int | None,
+    snapshot_received_at_ns: int | None = None,
 ) -> ShadowReplayResult:
     """Replay a just-captured public feed through the exact no-order live engine."""
 
+    boundary = (
+        None
+        if snapshot_received_at_ns is None
+        else SnapshotAvailability(
+            snapshot_received_at_ns, clock_offset_ms
+        ).decision_not_before_ms
+    )
     coordinator = StreamingMicrostructureCoordinator(
         scorer,
         settlement_delay_ms=int(settlement_delay_ms),
+        decision_not_before_ms=boundary or 0,
     )
     offset_ms = float(clock_offset_ms)
     if not math.isfinite(offset_ms) or abs(offset_ms) > 60_000.0:
@@ -477,14 +496,21 @@ def replay_shadow_capture(
             last_event_ms = max(last_event_ms, event_time_ms)
             try:
                 coordinator.ingest(payload)
-                if str(payload.get("e")) == "bookTicker":
+                available = (
+                    snapshot_received_at_ns is None
+                    or received_at_ns > snapshot_received_at_ns
+                )
+                if available and str(payload.get("e")) == "bookTicker":
                     current_quote = coordinator.aggregator.current_quote()
                     if current_quote is None:
-                        raise ValueError("shadow live aggregator lost its current quote")
+                        raise ValueError(
+                            "shadow live aggregator lost its current quote"
+                        )
                     ledger.observe_quote(current_quote)
                 predictions = coordinator.evaluate_ready(
                     exchange_now_ms=last_observed_exchange_ms,
                     order_notional_quote=scorer.reference_order_notional_quote,
+                    allow_inference=available,
                 )
             except MicrostructureFeedIntegrityError:
                 feed_sequence_gaps += 1
@@ -494,14 +520,15 @@ def replay_shadow_capture(
                 continue
             for prediction in predictions:
                 ledger.observe_prediction(prediction)
-    if first_event_ms <= 0 or last_event_ms <= first_event_ms:
+    eligible_start_ms = max(first_event_ms, boundary or 0)
+    if first_event_ms <= 0 or last_event_ms <= eligible_start_ms:
         raise ValueError("shadow capture contains no usable market interval")
     ledger.finish_capture()
     pnls = [trade.realized_net_bps for trade in ledger.trades]
     sides = [1 if trade.side == "LONG" else -1 for trade in ledger.trades]
     timestamps = [trade.entry_time_ms for trade in ledger.trades]
     return ShadowReplayResult(
-        started_at_ms=first_event_ms,
+        started_at_ms=eligible_start_ms,
         completed_at_ms=last_event_ms,
         decisions=ledger.decisions,
         actionable_decisions=ledger.actionable_decisions,
@@ -518,6 +545,9 @@ def replay_shadow_capture(
         feature_gap_resets=coordinator.engine.gap_resets,
         deadline_misses=coordinator.deadline_misses,
         inference_failures=coordinator.inference_failures,
+        snapshot_received_at_ns=snapshot_received_at_ns,
+        decision_not_before_ms=boundary,
+        availability_rejections=coordinator.availability_rejections,
         forced_closes=ledger.forced_closes,
         orders_submitted=0,
     )
@@ -550,10 +580,25 @@ def evaluate_shadow_capture(
     ):
         raise ValueError("shadow capture did not pass the futures feed contract")
     if tuple(capture.symbols) != (artifact.symbol,) or len(capture.evidence) != 1:
-        raise ValueError("shadow capture does not belong exclusively to the model symbol")
+        raise ValueError(
+            "shadow capture does not belong exclusively to the model symbol"
+        )
     capture_evidence = capture.evidence[0]
     if capture_evidence.error:
         raise ValueError("shadow capture symbol evidence contains an error")
+    receipt_ns = capture_evidence.snapshot_received_at_ns
+    if (
+        type(receipt_ns) is not int
+        or not capture.started_at_ms * 1_000_000
+        <= receipt_ns
+        < (capture.completed_at_ms + 1) * 1_000_000
+    ):
+        raise ValueError(
+            "shadow capture snapshot receipt is missing or outside capture"
+        )
+    boundary = SnapshotAvailability(
+        receipt_ns, capture.clock_sync.offset_ms
+    ).decision_not_before_ms
     lower_symbol = artifact.symbol.lower()
     expected_stream_urls = (
         f"{BINANCE_FUTURES_PUBLIC_STREAM_URL}?streams="
@@ -633,7 +678,15 @@ def evaluate_shadow_capture(
         settlement_delay_ms=cfg.settlement_delay_ms,
         clock_offset_ms=capture.clock_sync.offset_ms,
         entry_cutoff_ms=entry_cutoff_ms,
+        snapshot_received_at_ns=receipt_ns,
     )
+    if (
+        replay.snapshot_received_at_ns != receipt_ns
+        or replay.decision_not_before_ms != boundary
+        or replay.started_at_ms < boundary
+        or any(trade.entry_time_ms < boundary for trade in replay.trades)
+    ):
+        raise ValueError("shadow replay did not enforce snapshot availability")
     reasons: list[str] = []
     if cfg.asdict() != PROMOTION_SHADOW_CONFIG.asdict():
         reasons.append("shadow_protocol_deviates_from_locked_promotion_config")
@@ -643,9 +696,10 @@ def evaluate_shadow_capture(
         reasons.append("shadow_decisions_below_minimum")
     if len(replay.trades) < cfg.minimum_virtual_trades:
         reasons.append("shadow_virtual_trades_below_minimum")
-    if replay.metrics.total_net_bps <= 0.0 or _risk_utility(
-        replay.metrics, artifact.risk_level
-    ) <= 0.0:
+    if (
+        replay.metrics.total_net_bps <= 0.0
+        or _risk_utility(replay.metrics, artifact.risk_level) <= 0.0
+    ):
         reasons.append("shadow_not_profitable_after_drawdown_penalty")
     if replay.metrics.profit_factor is None or replay.metrics.profit_factor <= 1.0:
         reasons.append("shadow_profit_factor_not_above_one")
@@ -695,6 +749,9 @@ def evaluate_shadow_capture(
             "symbol_evidence": capture_evidence.asdict(),
         },
         replay={
+            "snapshot_received_at_ns": replay.snapshot_received_at_ns,
+            "decision_not_before_ms": replay.decision_not_before_ms,
+            "availability_rejections": replay.availability_rejections,
             "started_at_ms": replay.started_at_ms,
             "completed_at_ms": replay.completed_at_ms,
             "duration_seconds": replay.duration_seconds,
@@ -737,6 +794,8 @@ def evaluate_shadow_capture(
         symbol=artifact.symbol,
         provider=_PROVIDER,
         clock_offset_ms=float(capture.clock_sync.offset_ms),
+        snapshot_received_at_ns=receipt_ns,
+        decision_not_before_ms=boundary,
         started_at_ms=replay.started_at_ms,
         completed_at_ms=replay.completed_at_ms,
         duration_seconds=replay.duration_seconds,

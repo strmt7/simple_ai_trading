@@ -15,7 +15,9 @@ from simple_ai_trading.microstructure_live import (
 from simple_ai_trading.microstructure_model import MicrostructureActionPrediction
 
 
-def _quote(second_ms: int, index: int, *, event_offset_ms: int = 100) -> dict[str, object]:
+def _quote(
+    second_ms: int, index: int, *, event_offset_ms: int = 100
+) -> dict[str, object]:
     mid = 50_000.0 + index * 0.2 + math.sin(index / 19.0)
     return {
         "e": "bookTicker",
@@ -191,10 +193,13 @@ def _warm_coordinator(
         second_ms = base_ms + index * 1_000
         coordinator.ingest(_quote(second_ms, index))
         coordinator.ingest(_trade(second_ms, index))
-        assert coordinator.evaluate_ready(
-            exchange_now_ms=second_ms + 1_100,
-            order_notional_quote=500.0,
-        ) == ()
+        assert (
+            coordinator.evaluate_ready(
+                exchange_now_ms=second_ms + 1_100,
+                order_notional_quote=500.0,
+            )
+            == ()
+        )
     return base_ms + (count - 1) * 1_000
 
 
@@ -221,8 +226,12 @@ def test_streaming_coordinator_preserves_warmup_cadence_and_latency_budget() -> 
     assert coordinator.engine.gap_resets == 0
 
 
-def test_streaming_coordinator_resets_on_invalid_feed_and_fails_closed_on_scorer_error() -> None:
-    coordinator = StreamingMicrostructureCoordinator(_FailingScorer(), settlement_delay_ms=100)
+def test_streaming_coordinator_resets_on_invalid_feed_and_fails_closed_on_scorer_error() -> (
+    None
+):
+    coordinator = StreamingMicrostructureCoordinator(
+        _FailingScorer(), settlement_delay_ms=100
+    )
     last_second_ms = _warm_coordinator(coordinator)
     assert coordinator.engine.ready
     next_second_ms = last_second_ms + 1_000
@@ -242,7 +251,9 @@ def test_streaming_coordinator_resets_on_invalid_feed_and_fails_closed_on_scorer
     assert coordinator.engine.warmup_remaining_seconds == 3_601
 
 
-def test_streaming_coordinator_rejects_prediction_that_finishes_after_deadline() -> None:
+def test_streaming_coordinator_rejects_prediction_that_finishes_after_deadline() -> (
+    None
+):
     clock = _Clock()
     coordinator = StreamingMicrostructureCoordinator(
         _Scorer(),
@@ -278,3 +289,44 @@ def test_streaming_coordinator_validates_notional_before_consuming_ready_rows() 
             order_notional_quote=0.0,
         )
     assert coordinator.engine.ready
+
+
+def test_streaming_coordinator_blocks_inference_before_availability_and_keeps_warmup() -> (
+    None
+):
+    boundary = 1_700_000_000_000 + 3_610_000
+
+    class Scorer(_Scorer):
+        def __init__(self) -> None:
+            self.calls: list[int] = []
+
+        def score(self, features, **kwargs):
+            self.calls.append(kwargs["decision_time_ms"])
+            return super().score(features, **kwargs)
+
+    scorer = Scorer()
+    coordinator = StreamingMicrostructureCoordinator(
+        scorer, decision_not_before_ms=boundary
+    )
+    predictions = []
+    for index in range(3_615):
+        second_ms = 1_700_000_000_000 + index * 1_000
+        coordinator.ingest(_quote(second_ms, index))
+        coordinator.ingest(_trade(second_ms, index))
+        predictions.extend(
+            coordinator.evaluate_ready(
+                exchange_now_ms=second_ms + 1_100, order_notional_quote=500.0
+            )
+        )
+    assert predictions and scorer.calls
+    assert min(scorer.calls) == boundary
+    assert coordinator.availability_rejections > 0
+    assert coordinator.engine.ready
+
+
+@pytest.mark.parametrize("boundary", [True, -1, 1.5, "1"])
+def test_streaming_coordinator_rejects_invalid_availability_before_ingestion(
+    boundary: object,
+) -> None:
+    with pytest.raises(ValueError, match="availability boundary"):
+        StreamingMicrostructureCoordinator(_Scorer(), decision_not_before_ms=boundary)

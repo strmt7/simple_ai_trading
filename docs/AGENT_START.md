@@ -10,6 +10,16 @@ Scope blockers to their branch; a fresh user resumption resets the blocked audit
 
 ## Current Truth
 
+November 9 [snapshot timing checkpoint](review/2026-11-09/snapshot-availability/review.md):
+local capture v4 records snapshot availability; shadow v2 gates inference/entries,
+preserves warmup and excludes unavailable duration. Runtime rejects missing or
+contradictory timing and old promotion versions; old evidence stays readable.
+107 checks pass, one optional integration skips. Historical source/HftBacktest
+causality, costs and fitting remain unqualified; counts 203/65/37/0. No new source
+request, capture/training worker or push. Separate MCP adapter ownership remains
+unresolved; do not terminate other tasks by PID. Refresh the index before broad
+navigation.
+
 November 9 [native depth checkpoint](review/2026-11-09/depth-source/review.md):
 six initial snapshots and native depth clocks exist in the fixed minute; snapshots
 arrive after some updates, so causal availability remains unqualified. Strict

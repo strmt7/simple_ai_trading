@@ -45,7 +45,10 @@ from simple_ai_trading.microstructure_model import (
 
 def _five_day_dataset() -> MicrostructureDataset:
     timestamps = np.concatenate(
-        [day * 86_400_000 + np.arange(1_000, dtype=np.int64) * 1_000 for day in range(5)]
+        [
+            day * 86_400_000 + np.arange(1_000, dtype=np.int64) * 1_000
+            for day in range(5)
+        ]
     )
     rows = len(timestamps)
     exits = timestamps + 60_100
@@ -135,7 +138,11 @@ def test_purged_split_separates_policy_selection_and_terminal_days() -> None:
         evidence.tuning_early_stop_rows - 1
     ]
     assert tuning_early_end + evidence.purge_ms < evidence.tuning_calibration_start_ms
-    for left, right in (("train", "tuning"), ("tuning", "policy"), ("policy", "selection")):
+    for left, right in (
+        ("train", "tuning"),
+        ("tuning", "policy"),
+        ("policy", "selection"),
+    ):
         assert (
             dataset.decision_time_ms[splits[left][-1]] + evidence.purge_ms
             < dataset.decision_time_ms[splits[right][0]]
@@ -167,7 +174,9 @@ def test_simulator_uses_eligible_side_and_realized_exit_time() -> None:
     assert metrics.total_net_bps == 5.0
 
 
-def test_simulator_never_executes_a_side_that_exceeds_the_l1_participation_gate() -> None:
+def test_simulator_never_executes_a_side_that_exceeds_the_l1_participation_gate() -> (
+    None
+):
     metrics = _simulate_non_overlapping(
         timestamps=np.asarray([0], dtype=np.int64),
         long_exit_times=np.asarray([1_000], dtype=np.int64),
@@ -242,9 +251,7 @@ def test_platt_scaling_does_not_collapse_when_raw_base_rate_is_too_low() -> None
     assert 0.05 <= calibration[0] <= 10.0
     assert -10.0 < calibration[1] < 10.0
     assert np.mean(calibrated) == pytest.approx(np.mean(labels), abs=0.005)
-    assert np.mean(np.square(calibrated - labels)) < np.mean(
-        np.square(raw - labels)
-    )
+    assert np.mean(np.square(calibrated - labels)) < np.mean(np.square(raw - labels))
 
 
 def test_binary_class_support_reports_the_exact_failing_role() -> None:
@@ -466,7 +473,7 @@ def _runtime_artifact_payload(*, status: str = "accepted") -> dict[str, object]:
                     "required_data_types": ["bookTicker", "trades"],
                     "certificate_sha256": "e" * 64,
                 },
-            }
+            },
         },
         "threshold_policy": {
             "minimum_predicted_edge_bps": 1.0,
@@ -617,7 +624,7 @@ def _runtime_artifact_payload(*, status: str = "accepted") -> dict[str, object]:
     shadow_start_ms = training_cutoff_ms + 1_000
     shadow_complete_ms = shadow_start_ms + 21_600_000
     payload["shadow_validation"] = {
-        "version": "microstructure-public-feed-shadow-v1",
+        "version": "microstructure-public-feed-shadow-v2",
         "report_sha256": "7" * 64,
         "trades_sha256": "8" * 64,
         "capture_manifest_sha256": "9" * 64,
@@ -627,6 +634,8 @@ def _runtime_artifact_payload(*, status: str = "accepted") -> dict[str, object]:
         "symbol": "BTCUSDT",
         "provider": "binance_public_usdm_websocket",
         "clock_offset_ms": 0.0,
+        "snapshot_received_at_ns": (shadow_start_ms - 1) * 1_000_000,
+        "decision_not_before_ms": shadow_start_ms,
         "started_at_ms": shadow_start_ms,
         "completed_at_ms": shadow_complete_ms,
         "duration_seconds": 21_600.0,
@@ -748,9 +757,65 @@ def test_promoted_runtime_scorer_loads_exact_contract_and_selects_best_side(
         )
 
 
+@pytest.mark.parametrize(
+    "defect",
+    [
+        "missing_receipt",
+        "lossy_receipt",
+        "missing_boundary",
+        "wrong_boundary",
+        "float_boundary",
+        "early_start",
+        "legacy_version",
+    ],
+)
+def test_runtime_scorer_rejects_unproven_snapshot_availability(
+    tmp_path, defect: str
+) -> None:
+    payload = _runtime_artifact_payload()
+    shadow = payload["shadow_validation"]
+    if defect == "missing_receipt":
+        shadow.pop("snapshot_received_at_ns")
+    elif defect == "lossy_receipt":
+        shadow["snapshot_received_at_ns"] = float(shadow["snapshot_received_at_ns"])
+    elif defect == "missing_boundary":
+        shadow.pop("decision_not_before_ms")
+    elif defect == "wrong_boundary":
+        shadow["decision_not_before_ms"] += 1
+    elif defect == "float_boundary":
+        shadow["decision_not_before_ms"] = float(shadow["decision_not_before_ms"])
+    elif defect == "early_start":
+        shadow["started_at_ms"] -= 1
+    else:
+        shadow["version"] = "microstructure-public-feed-shadow-v1"
+    path = tmp_path / "unproven-availability.json"
+    path.write_text(json.dumps(payload), encoding="utf-8")
+    with pytest.raises(ValueError, match="snapshot|version|shadow validation evidence"):
+        load_microstructure_action_scorer(path)
+
+
+def test_legacy_shadow_evidence_remains_readable_without_becoming_runtime_authority(
+    tmp_path,
+) -> None:
+    payload = _runtime_artifact_payload()
+    payload["shadow_validation"]["version"] = "microstructure-public-feed-shadow-v1"
+    payload["shadow_validation"].pop("snapshot_received_at_ns")
+    payload["shadow_validation"].pop("decision_not_before_ms")
+    path = tmp_path / "legacy.json"
+    path.write_text(json.dumps(payload), encoding="utf-8")
+    original = path.read_bytes()
+    artifact = load_microstructure_model_artifact(path)
+    assert artifact.shadow_validation.snapshot_received_at_ns is None
+    with pytest.raises(ValueError, match="version is unsupported"):
+        load_microstructure_action_scorer(path)
+    assert path.read_bytes() == original
+
+
 def test_runtime_scorer_rejects_unpromoted_or_drifted_artifacts(tmp_path) -> None:
     rejected = tmp_path / "rejected.json"
-    rejected.write_text(json.dumps(_runtime_artifact_payload(status="rejected")), encoding="utf-8")
+    rejected.write_text(
+        json.dumps(_runtime_artifact_payload(status="rejected")), encoding="utf-8"
+    )
     with pytest.raises(ValueError, match="rejected"):
         load_microstructure_action_scorer(rejected)
 
@@ -885,8 +950,12 @@ def test_terminal_validated_artifact_requires_a_source_bound_expiring_deployment
         short_liquidity_eligible=np.ones(rows, dtype=bool),
         source_evidence=source,
     )
-    metrics = TradingMetrics(40, 100.0, 2.5, 2.0, 0.6, 1.5, 20.0, -5.0, 8.0, 20, 20, 20, 2.0)
-    confidence = PerformanceConfidence(20, 20, 3, 2_000, 5.0, 4.0, -2.0, 12.0, 2.0, 0.5, 8.0, 0.99)
+    metrics = TradingMetrics(
+        40, 100.0, 2.5, 2.0, 0.6, 1.5, 20.0, -5.0, 8.0, 20, 20, 20, 2.0
+    )
+    confidence = PerformanceConfidence(
+        20, 20, 3, 2_000, 5.0, 4.0, -2.0, 12.0, 2.0, 0.5, 8.0, 0.99
+    )
     model_strings = {
         name: f"validation-{name}"
         for name in (
@@ -954,7 +1023,9 @@ def test_terminal_validated_artifact_requires_a_source_bound_expiring_deployment
         best_iterations={name: 1 for name in model_strings},
         probability_calibration={"long": (1.0, 0.0), "short": (1.0, 0.0)},
         threshold_policy=ThresholdPolicy(1.0, 0.6, 10.0),
-        policy_search=ThresholdSearchEvidence(1_000, 100, 100, 20, 10, 5, 10.0, metrics),
+        policy_search=ThresholdSearchEvidence(
+            1_000, 100, 100, 20, 10, 5, 10.0, metrics
+        ),
         tuning_auc={"long": 0.6, "short": 0.6},
         tuning_brier={"long": 0.2, "short": 0.2},
         selection_auc={"long": 0.6, "short": 0.6},
@@ -966,8 +1037,16 @@ def test_terminal_validated_artifact_requires_a_source_bound_expiring_deployment
         terminal_metrics=metrics,
         selection_confidence=confidence,
         terminal_confidence=confidence,
-        selection_baselines={"no_trade": TradingMetrics(0, 0.0, 0.0, 0.0, 0.0, None, 0.0, 0.0, 0.0, 0, 0, 0, 0.0)},
-        terminal_baselines={"no_trade": TradingMetrics(0, 0.0, 0.0, 0.0, 0.0, None, 0.0, 0.0, 0.0, 0, 0, 0, 0.0)},
+        selection_baselines={
+            "no_trade": TradingMetrics(
+                0, 0.0, 0.0, 0.0, 0.0, None, 0.0, 0.0, 0.0, 0, 0, 0, 0.0
+            )
+        },
+        terminal_baselines={
+            "no_trade": TradingMetrics(
+                0, 0.0, 0.0, 0.0, 0.0, None, 0.0, 0.0, 0.0, 0, 0, 0, 0.0
+            )
+        },
         model_strings=model_strings,
         deployment_model_strings=None,
         deployment_refit=None,
@@ -1088,8 +1167,9 @@ def test_terminal_validated_artifact_requires_a_source_bound_expiring_deployment
     assert shadow_candidate.deployment_refit.training_rows == rows
     assert shadow_candidate.deployment_refit.calibration_days == 2
     assert shadow_candidate.deployment_refit.expires_at_ms == timestamps[-1] + 3_600_000
-    assert shadow_candidate.deployment_refit.validation_model_sha256 == _model_strings_sha256(
-        model_strings
+    assert (
+        shadow_candidate.deployment_refit.validation_model_sha256
+        == _model_strings_sha256(model_strings)
     )
     path = tmp_path / "shadow-candidate-microstructure.json"
     save_microstructure_model_artifact(shadow_candidate, path)

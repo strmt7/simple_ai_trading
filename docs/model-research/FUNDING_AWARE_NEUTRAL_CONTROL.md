@@ -1,5 +1,13 @@
 # Funding-aware control: cash truth before an optimizer
 
+November 9 [snapshot-availability integration](../review/2026-11-09/snapshot-availability/review.md)
+records local snapshot receipt time and enforces it in streaming inference,
+shadow replay duration and saved-model acceptance. Warmup drains while inference
+is blocked; timestamp ties fail closed. This is the local collector/shadow path,
+not repaired HftBacktest initialization or a qualified third-party paired dataset.
+Do not infer native clock accuracy, full-cost labels or funding-model admission;
+those remaining source, financing and solvency gates still precede market fits.
+
 November 9 [native depth follow-up](../review/2026-11-09/depth-source/review.md)
 retains initial snapshots for all six spot/perpetual books and exact native
 depth-clock/ID shapes. Every snapshot follows some updates; a static ID is not

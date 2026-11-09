@@ -1,5 +1,20 @@
 # Continue Development
 
+November 9 [snapshot availability](review/2026-11-09/snapshot-availability/review.md):
+local capture v4 records post-validation receipt nanoseconds; coordinator and
+shadow replay keep warmup moving while blocking earlier/tied inference and
+virtual entries. Eligible duration excludes the unavailable prefix. Saved shadow
+v2 evidence binds/rechecks timing; v1 remains readable but cannot pass current
+runtime acceptance. 107 focused checks pass, one optional HftBacktest check skips.
+This repairs local collector/shadow promotion, not HftBacktest initialization or
+the third-party historical adapter. No new source/economic evaluation, market fit
+or edge; counts 203/65/37/0. Historical failures/boundaries unchanged. Continue
+native historical clock/causal adapter and full-cost paired cash qualification;
+do not repeat consumed requests or train unqualified data. Goal active, no push.
+Cleanup observed ten separate Python MCP adapters with unresolved client ownership;
+no capture/training/test/index worker remains. Preserve other tasks; missing parent
+PIDs alone do not authorize terminating an adapter.
+
 November 9 [native depth and ingestion repair](review/2026-11-09/depth-source/review.md):
 all six fixed books have generated snapshots and native depth clocks; exact
 offline ID diagnostics show no observed link breaks. Every snapshot follows some

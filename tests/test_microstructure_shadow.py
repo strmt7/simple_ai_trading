@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, replace
 from datetime import UTC, datetime
 import gzip
 import hashlib
@@ -82,7 +82,9 @@ def _quote(event_time_ms: int, update_id: int, *, mid: float = 100.0) -> LiveTop
     )
 
 
-def test_virtual_shadow_entry_waits_for_latency_deadline_and_closes_on_horizon() -> None:
+def test_virtual_shadow_entry_waits_for_latency_deadline_and_closes_on_horizon() -> (
+    None
+):
     scorer = _AlwaysLongScorer()
     ledger = _VirtualShadowLedger(scorer, entry_cutoff_ms=None)
     feature_row = StreamingFeatureRow(
@@ -203,6 +205,60 @@ def test_shadow_replay_uses_live_coordinator_and_never_submits_orders(tmp_path) 
     assert result.orders_submitted == 0
 
 
+def test_shadow_snapshot_gate_blocks_early_inference_and_excludes_unavailable_duration(
+    tmp_path,
+) -> None:
+    path = tmp_path / "capture.gz"
+    first_ms, last_ms = _write_replay_capture(path)
+    receipt = (first_ms + 3_620_000) * 1_000_000 + 1
+    boundary = first_ms + 3_620_001
+
+    class Scorer(_AlwaysLongScorer):
+        def __init__(self) -> None:
+            self.calls: list[tuple[int, int]] = []
+
+        def score(self, features, **kwargs):
+            self.calls.append(
+                (kwargs["decision_time_ms"], kwargs["observation_time_ms"])
+            )
+            return super().score(features, **kwargs)
+
+    scorer = Scorer()
+    result = replay_shadow_capture(
+        scorer,
+        path,
+        clock_offset_ms=0.0,
+        entry_cutoff_ms=last_ms - 4_000,
+        snapshot_received_at_ns=receipt,
+    )
+    assert scorer.calls and result.trades
+    assert all(
+        decision >= boundary and observation >= boundary
+        for decision, observation in scorer.calls
+    )
+    assert all(trade.entry_time_ms >= boundary for trade in result.trades)
+    assert result.snapshot_received_at_ns == receipt
+    assert result.decision_not_before_ms == result.started_at_ms == boundary
+    assert result.availability_rejections > 0
+    assert result.duration_seconds == (last_ms - boundary) / 1_000
+    assert result.orders_submitted == 0
+
+
+def test_shadow_snapshot_gate_rejects_capture_ending_before_availability(
+    tmp_path,
+) -> None:
+    path = tmp_path / "capture.gz"
+    _first, last = _write_replay_capture(path, seconds=2)
+    with pytest.raises(ValueError, match="no usable market interval"):
+        replay_shadow_capture(
+            _AlwaysLongScorer(),
+            path,
+            clock_offset_ms=0.0,
+            entry_cutoff_ms=None,
+            snapshot_received_at_ns=(last + 1_000) * 1_000_000,
+        )
+
+
 def _sha256(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
@@ -224,7 +280,9 @@ class _ShadowCandidate:
             "deployment_refit": None,
             "deployment_model_strings": None,
             "shadow_validation": (
-                None if self.shadow_validation is None else asdict(self.shadow_validation)
+                None
+                if self.shadow_validation is None
+                else asdict(self.shadow_validation)
             ),
             "symbol": self.symbol,
             "risk_level": self.risk_level,
@@ -279,6 +337,7 @@ def _capture_fixture(tmp_path: Path, *, started_at_ms: int, completed_at_ms: int
         replay_smoke_passed=False,
         replay_first_bid=None,
         replay_first_ask=None,
+        snapshot_received_at_ns=(started_at_ms + 1_000) * 1_000_000,
     )
     lower = "btcusdt"
     capture = MicrostructureCaptureResult(
@@ -307,6 +366,41 @@ def _capture_fixture(tmp_path: Path, *, started_at_ms: int, completed_at_ms: int
         encoding="utf-8",
     )
     return capture
+
+
+@pytest.mark.parametrize(
+    "defect", ["missing", "boolean", "float", "before_capture", "after_capture"]
+)
+def test_shadow_evaluation_rejects_unknown_snapshot_receipt_before_replay(
+    tmp_path, defect: str
+) -> None:
+    start = 1_800_000_000_000
+    capture = _capture_fixture(
+        tmp_path, started_at_ms=start, completed_at_ms=start + 100_000
+    )
+    receipt = {
+        "missing": None,
+        "boolean": True,
+        "float": float(start * 1_000_000),
+        "before_capture": start * 1_000_000 - 1,
+        "after_capture": (start + 100_001) * 1_000_000,
+    }[defect]
+    capture = replace(
+        capture,
+        evidence=(replace(capture.evidence[0], snapshot_received_at_ns=receipt),),
+    )
+    artifact = _ShadowCandidate(
+        "shadow_candidate", (), object(), {"fixture": "model"}, None
+    )
+    with pytest.raises(ValueError, match="snapshot receipt"):
+        evaluate_shadow_capture(
+            artifact,
+            tmp_path / "not-loaded.json",
+            capture,
+            report_path=tmp_path / "report.json",
+            trades_path=tmp_path / "trades.csv",
+        )
+    assert not (tmp_path / "report.json").exists()
 
 
 def test_shadow_evaluation_binds_capture_and_returns_accepted_artifact(
@@ -357,6 +451,8 @@ def test_shadow_evaluation_binds_capture_and_returns_accepted_artifact(
     )
     replay = ShadowReplayResult(
         started_at_ms=replay_start_ms,
+        snapshot_received_at_ns=(started_at_ms + 1_000) * 1_000_000,
+        decision_not_before_ms=started_at_ms + 1_001,
         completed_at_ms=replay_start_ms + 21_600_000,
         decisions=150,
         actionable_decisions=50,

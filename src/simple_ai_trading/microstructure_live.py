@@ -67,7 +67,9 @@ class _QuoteAccumulator:
     microprice_offset_sum_bps: float = 0.0
     quote_updates: int = 0
     event_delays_ms: list[float] = field(default_factory=list)
-    fingerprints: dict[tuple[int, int, int], tuple[float, ...]] = field(default_factory=dict)
+    fingerprints: dict[tuple[int, int, int], tuple[float, ...]] = field(
+        default_factory=dict
+    )
 
     def append(self, payload: Mapping[str, object]) -> bool:
         event_time = int(payload.get("E", 0) or 0)
@@ -83,9 +85,16 @@ class _QuoteAccumulator:
             or transaction_time > event_time
             or update_id <= 0
         ):
-            raise MicrostructureFeedIntegrityError("bookTicker identifiers or timestamps are invalid")
-        if not all(math.isfinite(value) and value > 0.0 for value in (bid, ask, bid_qty, ask_qty)):
-            raise MicrostructureFeedIntegrityError("bookTicker quote values are invalid")
+            raise MicrostructureFeedIntegrityError(
+                "bookTicker identifiers or timestamps are invalid"
+            )
+        if not all(
+            math.isfinite(value) and value > 0.0
+            for value in (bid, ask, bid_qty, ask_qty)
+        ):
+            raise MicrostructureFeedIntegrityError(
+                "bookTicker quote values are invalid"
+            )
         if bid >= ask:
             raise MicrostructureFeedIntegrityError("bookTicker quote is crossed")
         key = (event_time, transaction_time, update_id)
@@ -93,7 +102,9 @@ class _QuoteAccumulator:
         existing = self.fingerprints.get(key)
         if existing is not None:
             if existing != fingerprint:
-                raise MicrostructureFeedIntegrityError("conflicting duplicate bookTicker update")
+                raise MicrostructureFeedIntegrityError(
+                    "conflicting duplicate bookTicker update"
+                )
             return False
         self.fingerprints[key] = fingerprint
         mid = (bid + ask) / 2.0
@@ -132,8 +143,8 @@ class _TradeAccumulator:
     aggressive_buy_volume: float = 0.0
     aggressive_sell_volume: float = 0.0
     trade_count: int = 0
-    fingerprints: dict[tuple[int, int, int], tuple[float, float, bool, int, int]] = field(
-        default_factory=dict
+    fingerprints: dict[tuple[int, int, int], tuple[float, float, bool, int, int]] = (
+        field(default_factory=dict)
     )
 
     def append(self, payload: Mapping[str, object]) -> bool:
@@ -146,7 +157,9 @@ class _TradeAccumulator:
         quantity = float(payload.get("q", 0.0))
         maker_value = payload.get("m")
         if not isinstance(maker_value, bool):
-            raise MicrostructureFeedIntegrityError("trade maker flag must be a JSON boolean")
+            raise MicrostructureFeedIntegrityError(
+                "trade maker flag must be a JSON boolean"
+            )
         buyer_is_maker = maker_value
         first_trade_id = trade_id
         last_trade_id = trade_id
@@ -161,7 +174,9 @@ class _TradeAccumulator:
             or first_trade_id <= 0
             or last_trade_id < first_trade_id
         ):
-            raise MicrostructureFeedIntegrityError("trade identifiers or timestamps are invalid")
+            raise MicrostructureFeedIntegrityError(
+                "trade identifiers or timestamps are invalid"
+            )
         if not all(math.isfinite(value) and value > 0.0 for value in (price, quantity)):
             raise MicrostructureFeedIntegrityError("trade values are invalid")
         key = (event_time, transaction_time, trade_id)
@@ -175,7 +190,9 @@ class _TradeAccumulator:
         existing = self.fingerprints.get(key)
         if existing is not None:
             if existing != fingerprint:
-                raise MicrostructureFeedIntegrityError("conflicting duplicate trade update")
+                raise MicrostructureFeedIntegrityError(
+                    "conflicting duplicate trade update"
+                )
             return False
         self.fingerprints[key] = fingerprint
         if self.last_key is None or key >= self.last_key:
@@ -274,9 +291,9 @@ class LiveMicrostructureSecondAggregator:
                         f"late {event_type or 'unknown'} event for finalized second {second_ms}"
                     )
                 if event_type == "bookTicker":
-                    appended = self._quotes.setdefault(second_ms, _QuoteAccumulator()).append(
-                        payload
-                    )
+                    appended = self._quotes.setdefault(
+                        second_ms, _QuoteAccumulator()
+                    ).append(payload)
                     if appended:
                         quote = LiveTopOfBook(
                             symbol=self.symbol,
@@ -300,9 +317,9 @@ class LiveMicrostructureSecondAggregator:
                         ):
                             self._latest_quote = quote
                 elif event_type in {"trade", "aggTrade"}:
-                    appended = self._trades.setdefault(second_ms, _TradeAccumulator()).append(
-                        payload
-                    )
+                    appended = self._trades.setdefault(
+                        second_ms, _TradeAccumulator()
+                    ).append(payload)
                 else:
                     raise MicrostructureFeedIntegrityError(
                         f"unsupported live microstructure event: {event_type or 'missing'}"
@@ -310,7 +327,10 @@ class LiveMicrostructureSecondAggregator:
                 if not appended:
                     self.duplicate_event_count += 1
                 pending = set(self._quotes) | set(self._trades)
-                if pending and max(pending) - min(pending) > self.max_pending_seconds * 1_000:
+                if (
+                    pending
+                    and max(pending) - min(pending) > self.max_pending_seconds * 1_000
+                ):
                     raise MicrostructureFeedIntegrityError(
                         "live microstructure pending-event window exceeded its bound"
                     )
@@ -324,7 +344,11 @@ class LiveMicrostructureSecondAggregator:
                 ) from exc
 
     def drain(self, exchange_now_ms: int | None = None) -> list[MicrostructureSecond]:
-        now_ms = int(time.time() * 1_000) if exchange_now_ms is None else int(exchange_now_ms)
+        now_ms = (
+            int(time.time() * 1_000)
+            if exchange_now_ms is None
+            else int(exchange_now_ms)
+        )
         with self._lock:
             if now_ms < 0 or now_ms < self._last_exchange_now_ms:
                 self.invalid_event_count += 1
@@ -335,9 +359,7 @@ class LiveMicrostructureSecondAggregator:
             self._last_exchange_now_ms = now_ms
             complete_before = now_ms - self.settlement_delay_ms
             completed_quote_seconds = sorted(
-                second
-                for second in self._quotes
-                if second + 1_000 <= complete_before
+                second for second in self._quotes if second + 1_000 <= complete_before
             )
             output: list[MicrostructureSecond] = []
             for second_ms in completed_quote_seconds:
@@ -376,21 +398,23 @@ class LiveMicrostructureSecondAggregator:
                         aggressive_buy_volume=buy_volume,
                         aggressive_sell_volume=sell_volume,
                         trade_imbalance=(
-                            (buy_volume - sell_volume) / base_volume if base_volume > 0.0 else 0.0
+                            (buy_volume - sell_volume) / base_volume
+                            if base_volume > 0.0
+                            else 0.0
                         ),
                         trade_count=0 if trade is None else trade.trade_count,
                     )
                 )
                 self.last_finalized_second_ms = second_ms
             stale_trade_seconds = [
-                second
-                for second in self._trades
-                if second + 1_000 <= complete_before
+                second for second in self._trades if second + 1_000 <= complete_before
             ]
             for second_ms in stale_trade_seconds:
                 self._trades.pop(second_ms, None)
                 self.discarded_trade_only_seconds += 1
-                self.last_finalized_second_ms = max(self.last_finalized_second_ms, second_ms)
+                self.last_finalized_second_ms = max(
+                    self.last_finalized_second_ms, second_ms
+                )
             return output
 
 
@@ -403,7 +427,14 @@ class StreamingMicrostructureCoordinator:
         *,
         settlement_delay_ms: int = 100,
         monotonic_ns: Callable[[], int] = time.perf_counter_ns,
+        decision_not_before_ms: int = 0,
     ) -> None:
+        if type(decision_not_before_ms) is not int or decision_not_before_ms < 0:
+            raise ValueError(
+                "decision availability boundary must be a non-negative integer"
+            )
+        self.decision_not_before_ms = decision_not_before_ms
+        self.availability_rejections = 0
         self.scorer = scorer
         self.aggregator = LiveMicrostructureSecondAggregator(
             scorer.symbol,
@@ -414,7 +445,9 @@ class StreamingMicrostructureCoordinator:
             decision_cadence_seconds=scorer.decision_cadence_seconds,
         )
         if settlement_delay_ms >= int(scorer.total_latency_ms):
-            raise ValueError("settlement delay must leave a positive execution-latency budget")
+            raise ValueError(
+                "settlement delay must leave a positive execution-latency budget"
+            )
         self._monotonic_ns = monotonic_ns
         self.late_event_resets = 0
         self.feed_integrity_resets = 0
@@ -439,7 +472,11 @@ class StreamingMicrostructureCoordinator:
         *,
         exchange_now_ms: int,
         order_notional_quote: float,
+        allow_inference: bool = True,
     ) -> tuple[LiveMicrostructurePrediction, ...]:
+        """Keep bounded feature warmup moving even when inference is unavailable."""
+        if type(allow_inference) is not bool:
+            raise ValueError("inference availability must be boolean")
         notional = float(order_notional_quote)
         if not math.isfinite(notional) or notional <= 0.0:
             raise ValueError("order_notional_quote must be finite and positive")
@@ -448,6 +485,12 @@ class StreamingMicrostructureCoordinator:
         for second in self.aggregator.drain(exchange_now_ms):
             feature_row = self.engine.append(second)
             if feature_row is None:
+                continue
+            if (
+                not allow_inference
+                or feature_row.decision_time_ms < self.decision_not_before_ms
+            ):
+                self.availability_rejections += 1
                 continue
             execution_quote = self.aggregator.current_quote()
             if execution_quote is None:
