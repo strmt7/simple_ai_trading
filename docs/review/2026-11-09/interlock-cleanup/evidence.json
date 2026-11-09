@@ -1,0 +1,47 @@
+{
+  "actual_os_probe": "Real file on this Windows host, second-thread reacquisition after setup/unlock failure and acquisition cancellation; ordered Stop, Pause and cross-process owned-close tests also pass in the existing runtime suite.",
+  "affected_scope": "_CrossProcessFileLock resource ownership only, plus imports; other production definitions AST-identical. No ledger schema, lease-state or order-authority change.",
+  "base_revision": "33e61dfb5c0399e169b37e65a02f57728abeb067",
+  "created_at_utc": "2026-11-09T23:01:14.746266+00:00",
+  "financial_counts": [
+    204,
+    65,
+    37,
+    0
+  ],
+  "focused_verification": {
+    "errors": 0,
+    "failures": 0,
+    "skipped": 0,
+    "tests": 29
+  },
+  "installed_persistent_worker_or_service": false,
+  "log_sha256": {
+    "final-tests.log": "c2d871562b2fa0c02e95fde1458fcfd7ee7f58c9b51d93bfda0cbce141d2c2a5",
+    "final-tests.xml": "677381d1fbc50e897657a676e66a0d9247de08cfb44afd8c6d2c6eef4cad4f14",
+    "red-final-tests.log": "7c4d8744192aaff889586ea3576116a3eb2fc477efd414f892a3d82311c9cf24",
+    "red-final-tests.xml": "15c17b26d47212cb84dffe86082f5b3815d3890d1d540a99512d291e36226594"
+  },
+  "market_account_credentials_orders_or_protected_data_access": false,
+  "not_qualified": [
+    "independent trading supervisor or gateway",
+    "bounded hanging native venue call or IPC",
+    "abrupt-death/power-loss/reboot protection",
+    "persistent capital-policy and model-health quarantine acceptance",
+    "non-Windows execution of these new scenarios",
+    "whole-tree semantic review or final exhaustive bug hunt"
+  ],
+  "previous_implementation_regressions": {
+    "errors": 0,
+    "failures": 3,
+    "skipped": 0,
+    "tests": 3
+  },
+  "previous_source_sha256": "d767c14d145caa21a5aacc958f83d90c27519b4c4aafe4002c5fe1f6914da76b",
+  "private_retention_directory": "data/research/2026-11-09-interlock-cleanup",
+  "production_source_sha256": "595de225c57eee352c98706e3f76de80569023f2bc4ca5f00c63ef6de661a58f",
+  "repair": "Register local-mutex and file-handle cleanup during acquisition; transfer the cleanup stack to the held interlock after OS lock success; always attempt OS unlock, file close and local mutex release on exit. Tested acquisition cancellation unwinds resources through BaseException handling by the context stack.",
+  "result_sha256": "0091ad664b6c8b596115094e4e562151bf9fa0756416f5861c9b3b842c815e91",
+  "schema": "runtime-interlock-cleanup-evidence-v1",
+  "tests_sha256": "761a5807785eae8fbde2ce354e1b28f5fe36d3c0b1bb137bf91dc1ced5b41432"
+}

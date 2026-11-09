@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+from contextlib import closing
 import sqlite3
 import subprocess
 import sys
@@ -575,3 +576,279 @@ def test_expiry_stop_is_visible_in_a_fresh_interpreter(tmp_path) -> None:
         timeout=10,
     )
     assert result.stdout.strip() == "heartbeat_invalid_or_expired"
+
+
+def _legacy_stopped_by_operator():
+    return {
+        "schema_version": "polymarket-runtime-control-v1",
+        "state": "stop_requested",
+        "lease_id": "legacy-lease",
+        "owner_process_id": 101,
+        "started_at_ms": 100,
+        "heartbeat_at_ms": 200,
+        "stop_epoch": 7,
+        "stop_requested_at_ms": 300,
+        "stop_reason": "operator_stop",
+        "updated_at_ms": 300,
+    }
+
+
+def _delete_runtime_record(path, *, connect=sqlite3.connect):
+    with closing(connect(path)) as connection:
+        connection.execute("DELETE FROM polymarket_runtime_control")
+        connection.commit()
+
+
+@pytest.mark.parametrize("operation", ["snapshot", "acquire"])
+def test_missing_runtime_record_never_recreates_stop_or_admits_replacement(
+    tmp_path, operation
+):
+    path = tmp_path / "missing.sqlite3"
+    control = PolymarketRuntimeControl(path)
+    control.acquire(owner_process_id=101)
+    assert control.request_stop(reason="operator_stop").stop_epoch == 1
+    _delete_runtime_record(path)
+
+    with pytest.raises(PolymarketLiveError, match="record is missing"):
+        getattr(PolymarketRuntimeControl(path), operation)()
+    with closing(sqlite3.connect(path)) as connection:
+        assert connection.execute(
+            "SELECT COUNT(*) FROM polymarket_runtime_control"
+        ).fetchone() == (0,)
+
+
+def test_missing_legacy_runtime_record_never_migrates_into_fresh_state(tmp_path):
+    path = tmp_path / "missing-v1.sqlite3"
+    _write_v1_runtime_control(path, _legacy_stopped_by_operator())
+    _delete_runtime_record(path)
+
+    with pytest.raises(PolymarketLiveError, match="record is missing"):
+        PolymarketRuntimeControl(path).snapshot()
+    with closing(sqlite3.connect(path)) as connection:
+        assert "paused" not in {
+            row[1]
+            for row in connection.execute(
+                "PRAGMA table_info(polymarket_runtime_control)"
+            )
+        }
+        assert connection.execute(
+            "SELECT COUNT(*) FROM polymarket_runtime_control"
+        ).fetchone() == (0,)
+
+
+def test_missing_control_record_preserves_the_separate_close_guard(tmp_path):
+    path = tmp_path / "closing-guard.sqlite3"
+    control = PolymarketRuntimeControl(path)
+    control.snapshot()
+    _delete_runtime_record(path)
+    with control.close_guard(timeout_seconds=1):
+        with pytest.raises(PolymarketLiveError, match="record is missing"):
+            control.acquire(owner_process_id=101)
+    with closing(sqlite3.connect(path)) as connection:
+        assert connection.execute(
+            "SELECT COUNT(*) FROM polymarket_runtime_control"
+        ).fetchone() == (0,)
+
+
+def test_cancelled_bootstrap_rolls_back_schema_and_closes_connection(
+    tmp_path, monkeypatch
+):
+    path = tmp_path / "cancel-bootstrap.sqlite3"
+    connect = sqlite3.connect
+    opened = []
+
+    def tracked_connect(*args, **kwargs):
+        connection = connect(*args, **kwargs)
+        opened.append(connection)
+        return connection
+
+    def cancelled_clock():
+        raise KeyboardInterrupt("cancelled bootstrap")
+
+    monkeypatch.setattr(runtime_control_module.sqlite3, "connect", tracked_connect)
+    try:
+        with pytest.raises(KeyboardInterrupt, match="cancelled bootstrap"):
+            PolymarketRuntimeControl(path, clock_ms=cancelled_clock).snapshot()
+        with pytest.raises(sqlite3.ProgrammingError, match="closed database"):
+            opened[0].execute("SELECT 1")
+        with closing(connect(path)) as connection:
+            assert (
+                connection.execute(
+                    "SELECT name FROM sqlite_master WHERE name='polymarket_runtime_control'"
+                ).fetchone()
+                is None
+            )
+        assert PolymarketRuntimeControl(path).snapshot().state == "stopped"
+    finally:
+        for connection in opened:
+            connection.close()
+
+
+def test_cancelled_legacy_migration_preserves_record_schema_and_closes_connection(
+    tmp_path, monkeypatch
+):
+    path = tmp_path / "cancel-migration.sqlite3"
+    legacy = _legacy_stopped_by_operator()
+    _write_v1_runtime_control(path, legacy)
+    connect = sqlite3.connect
+    opened = []
+
+    class InterruptedConnection(sqlite3.Connection):
+        def execute(self, statement, parameters=()):
+            if "ADD COLUMN pause_epoch" in statement:
+                raise KeyboardInterrupt("cancelled migration")
+            return super().execute(statement, parameters)
+
+    def tracked_connect(*args, **kwargs):
+        connection = connect(*args, **{**kwargs, "factory": InterruptedConnection})
+        opened.append(connection)
+        return connection
+
+    monkeypatch.setattr(runtime_control_module.sqlite3, "connect", tracked_connect)
+    try:
+        with pytest.raises(KeyboardInterrupt, match="cancelled migration"):
+            PolymarketRuntimeControl(path).snapshot()
+        with pytest.raises(sqlite3.ProgrammingError, match="closed database"):
+            opened[0].execute("SELECT 1")
+        with closing(connect(path)) as connection:
+            connection.row_factory = sqlite3.Row
+            row = dict(
+                connection.execute(
+                    "SELECT * FROM polymarket_runtime_control"
+                ).fetchone()
+            )
+        assert row == {
+            "singleton": 1,
+            **legacy,
+            "record_sha256": runtime_control_module._canonical_sha256(legacy),
+        }
+    finally:
+        for connection in opened:
+            connection.close()
+
+
+def test_first_bootstrap_is_atomic_to_other_connections_and_readers(
+    tmp_path, monkeypatch
+):
+    path = tmp_path / "concurrent-bootstrap.sqlite3"
+    created, proceed, second_finished = Event(), Event(), Event()
+    errors, snapshots = [], []
+    connect = sqlite3.connect
+
+    class PausingConnection(sqlite3.Connection):
+        def execute(self, statement, parameters=()):
+            result = super().execute(statement, parameters)
+            if (
+                statement.lstrip().startswith("CREATE TABLE")
+                and "polymarket_runtime_control" in statement
+            ):
+                created.set()
+                if not proceed.wait(timeout=5):
+                    raise RuntimeError("bootstrap test release did not arrive")
+            return result
+
+    def tracked_connect(*args, **kwargs):
+        return connect(*args, **{**kwargs, "factory": PausingConnection})
+
+    def snapshot(*, second=False):
+        try:
+            snapshots.append(PolymarketRuntimeControl(path).snapshot())
+        except BaseException as error:
+            errors.append(error)
+        finally:
+            if second:
+                second_finished.set()
+
+    monkeypatch.setattr(runtime_control_module.sqlite3, "connect", tracked_connect)
+    first = Thread(target=snapshot)
+    second = Thread(target=lambda: snapshot(second=True))
+    first.start()
+    try:
+        assert created.wait(timeout=5)
+        with closing(connect(path, timeout=1)) as observer:
+            assert (
+                observer.execute(
+                    "SELECT name FROM sqlite_master WHERE name='polymarket_runtime_control'"
+                ).fetchone()
+                is None
+            )
+        second.start()
+        assert not second_finished.wait(timeout=0.1)
+    finally:
+        proceed.set()
+        first.join(timeout=5)
+        if second.ident is not None:
+            second.join(timeout=5)
+    assert not first.is_alive() and not second.is_alive()
+    assert not errors
+    assert len(snapshots) == 2 and all(s.state == "stopped" for s in snapshots)
+
+
+def test_stale_absence_observation_cannot_overwrite_an_existing_stop(
+    tmp_path, monkeypatch
+):
+    path = tmp_path / "stale-bootstrap.sqlite3"
+    other = PolymarketRuntimeControl(path)
+    other.acquire(owner_process_id=101)
+    expected = other.request_stop(reason="operator_stop")
+    control = PolymarketRuntimeControl(path)
+    actual_exists = control._control_table_exists
+    first = True
+
+    def stale_once(connection):
+        nonlocal first
+        if first:
+            first = False
+            return False
+        return actual_exists(connection)
+
+    monkeypatch.setattr(control, "_control_table_exists", stale_once)
+    assert control.snapshot() == expected
+
+
+def test_stale_legacy_migrator_accepts_the_already_committed_valid_migration(tmp_path):
+    path = tmp_path / "competing-migration.sqlite3"
+    _write_v1_runtime_control(path, _legacy_stopped_by_operator())
+    with closing(sqlite3.connect(path, isolation_level=None)) as stale:
+        stale.row_factory = sqlite3.Row
+        assert (
+            "paused"
+            not in stale.execute("SELECT * FROM polymarket_runtime_control")
+            .fetchone()
+            .keys()
+        )
+        expected = PolymarketRuntimeControl(path).snapshot()
+        PolymarketRuntimeControl(path)._migrate_v1(stale)
+    assert PolymarketRuntimeControl(path).snapshot() == expected
+
+
+@pytest.mark.parametrize("phase", ["before", "after"])
+def test_record_disappearing_at_migration_boundary_never_becomes_fresh_state(
+    tmp_path, monkeypatch, phase
+):
+    path = tmp_path / "migration-gap.sqlite3"
+    _write_v1_runtime_control(path, _legacy_stopped_by_operator())
+    control = PolymarketRuntimeControl(path)
+    migrate = control._migrate_v1
+
+    def interrupted(connection):
+        if phase == "before":
+            _delete_runtime_record(path)
+        migrate(connection)
+        if phase == "after":
+            _delete_runtime_record(path)
+
+    monkeypatch.setattr(control, "_migrate_v1", interrupted)
+    with pytest.raises(PolymarketLiveError, match="record is missing"):
+        control.snapshot()
+    with closing(sqlite3.connect(path)) as connection:
+        assert connection.execute(
+            "SELECT COUNT(*) FROM polymarket_runtime_control"
+        ).fetchone() == (0,)
+        columns = {
+            row[1]
+            for row in connection.execute(
+                "PRAGMA table_info(polymarket_runtime_control)"
+            )
+        }
+    assert ("paused" in columns) is (phase == "after")

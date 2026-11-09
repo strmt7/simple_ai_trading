@@ -1,0 +1,11 @@
+{
+  "base_revision": "33e61dfb5c0399e169b37e65a02f57728abeb067",
+  "patch_path": "phase-source.patch",
+  "patch_sha256": "5a82f03bc674429e78c6d186c8765cab3b1583ec3733342c087836d535b3327d",
+  "private_exact_source": "data/research/2026-11-09-interlock-cleanup/runtime-control.after-cleanup.py.txt",
+  "reconstructed_source_sha256": "595de225c57eee352c98706e3f76de80569023f2bc4ca5f00c63ef6de661a58f",
+  "reconstruction_verified": true,
+  "schema": "interlock-phase-source-reconstruction-v1",
+  "scope": "Exact interlock-cleanup phase before the following runtime-storage repair. Historical source only; the current module includes later changes.",
+  "source_path": "src/simple_ai_trading/polymarket_runtime_control.py"
+}

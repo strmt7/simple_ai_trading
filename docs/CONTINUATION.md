@@ -112,6 +112,20 @@ LLMs may veto/reduce risk, never bypass deterministic Stop/ownership/close contr
 
 ## Platform work and publication
 
+- [Control storage](review/2026-11-10/runtime-control-storage/review.md) no longer
+  recreates a missing current/legacy record as fresh stopped state. Bootstrap is
+  atomic; cancellation rolls back and closes connections; a completed concurrent
+  migration is verified. Seven old-source regressions fail; all 61 combined
+  runtime checks pass. Complete namespace/database loss still needs an independent
+  storage-identity and recovery contract. Order-caller inventory and independent
+  trading supervision remain incomplete; no native account/order was used.
+- [Runtime interlock cleanup](review/2026-11-09/interlock-cleanup/review.md) repairs
+  leaked file handles after setup/unlock failure and a held mutex after tested
+  acquisition cancellation. Three old-code regressions fail; 29 scoped checks
+  pass, including real-file peer reacquisition and existing Stop/close ordering.
+  The capital blueprint now explicitly scopes the supervisor to app sessions,
+  without persistent service/autostart installation. Independent trading-process
+  supervision, bounded native calls, durable policy and reboot proof remain open.
 - [Capital admission](review/2026-11-09/capital-admission/review.md) extends the
   [pending-order fix](review/2026-11-09/order-admission/review.md): openings bind
   the preflight-start ledger revision and captured risk limits through admission;

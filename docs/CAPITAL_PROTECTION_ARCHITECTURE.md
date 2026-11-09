@@ -1,5 +1,21 @@
 # Capital protection and final release verification
 
+The [runtime control storage repair](review/2026-11-10/runtime-control-storage/review.md)
+rejects a missing record in an existing namespace instead of recreating stopped
+state and erasing its Stop epoch. Fresh bootstrap is atomic; cancelled bootstrap
+and legacy migration roll back and close their connections. Seven old-source
+regressions fail; 61 combined runtime checks pass. Whole namespace/database loss,
+storage enrollment and controlled recovery still need independent protection.
+
+The November 9 [runtime interlock cleanup repair](review/2026-11-09/interlock-cleanup/review.md)
+closes acquired file handles after setup/unlock errors and releases the local
+mutex after tested acquisition cancellation. Three regressions fail against the
+previous implementation; 29 focused runtime/cleanup checks pass, including real
+file-lock reacquisition from another thread. This repairs a resource-lifetime
+boundary that could obstruct later Stop/control calls. It does not create an
+independent trading supervisor, bound a hanging native order call, or qualify
+crash/reboot recovery. The remaining process and policy requirements below stand.
+
 The October 8 [foundation-worker containment repair](review/2026-10-08/owned-worker-containment.md)
 replaces termination by a worker-reported PID with owned Windows Job handles.
 The original child starts suspended, is assigned before resume and cannot
@@ -147,7 +163,7 @@ the current after-success position recording is insufficient for that guarantee.
 ```text
 Operator UI / CLI --- same authenticated control contract
                          |
-                 supervisor service (user mode)
+                 session supervisor process
                    |                 |
            strategy worker jobs   deterministic execution/risk gateway
            research / GPU jobs       |             |
@@ -156,8 +172,11 @@ Operator UI / CLI --- same authenticated control contract
                                                owned orders/fills
 ```
 
-Use a user-mode service, not a new privileged kernel driver. A small independent
-supervisor must observe progress even if the model process hangs. Training and
+Run the user-mode supervisor only for an explicitly started application session.
+Its policy and recovery state persist independently of process lifetime. This
+design does not install a machine service, recurring task, startup hook or
+auto-restarting helper. A small independent supervisor must observe progress
+even if the model process hangs. Training and
 strategy workers belong to explicitly owned, terminatable process groups. On
 Windows, evaluate Job Objects with kill-on-last-handle-close, no breakaway, and
 assignment before allowing worker code to run. Detect unsupported containment;

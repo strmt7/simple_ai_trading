@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import asyncio
-from contextlib import contextmanager
+from contextlib import ExitStack, contextmanager
 from dataclasses import asdict, dataclass
 import hashlib
 import json
@@ -12,7 +12,7 @@ from pathlib import Path
 import sqlite3
 from threading import Lock, RLock
 import time
-from typing import Callable, Iterator, Mapping
+from typing import BinaryIO, Callable, Iterator, Mapping
 import uuid
 
 from .polymarket_live import PolymarketLiveBlocked, PolymarketLiveError
@@ -65,15 +65,18 @@ class _CrossProcessFileLock:
         self._monotonic = monotonic
         self._sleep = sleep
         self._local = _local_lock(path)
-        self._handle: object | None = None
+        self._handle: BinaryIO | None = None
+        self._cleanup: ExitStack | None = None
 
     def __enter__(self) -> "_CrossProcessFileLock":
         deadline = self._monotonic() + self.timeout_seconds
         if not self._local.acquire(timeout=self.timeout_seconds):
             raise PolymarketLiveBlocked("Polymarket runtime interlock timed out")
-        try:
+        with ExitStack() as cleanup:
+            cleanup.callback(self._local.release)
             self.path.parent.mkdir(parents=True, exist_ok=True)
             handle = self.path.open("a+b", buffering=0)
+            cleanup.callback(handle.close)
             if handle.seek(0, os.SEEK_END) == 0:
                 handle.write(b"\0")
                 handle.flush()
@@ -92,36 +95,36 @@ class _CrossProcessFileLock:
                             handle.fileno(),
                             fcntl.LOCK_EX | fcntl.LOCK_NB,
                         )
+                    cleanup.callback(self._unlock, handle)
                     self._handle = handle
+                    self._cleanup = cleanup.pop_all()
                     return self
                 except OSError as exc:
                     if self._monotonic() >= deadline:
-                        handle.close()
                         raise PolymarketLiveBlocked(
                             "Polymarket runtime interlock timed out"
                         ) from exc
                     self._sleep(min(0.05, max(0.0, deadline - self._monotonic())))
-        except Exception:
-            self._local.release()
-            raise
+
+    @staticmethod
+    def _unlock(handle: BinaryIO) -> None:
+        handle.seek(0)
+        if os.name == "nt":
+            import msvcrt
+
+            msvcrt.locking(handle.fileno(), msvcrt.LK_UNLCK, 1)
+        else:
+            import fcntl
+
+            fcntl.flock(handle.fileno(), fcntl.LOCK_UN)
 
     def __exit__(self, _type: object, _value: object, _traceback: object) -> None:
-        handle = self._handle
+        cleanup = self._cleanup
+        self._cleanup = None
         self._handle = None
-        try:
-            if handle is not None:
-                handle.seek(0)
-                if os.name == "nt":
-                    import msvcrt
-
-                    msvcrt.locking(handle.fileno(), msvcrt.LK_UNLCK, 1)
-                else:
-                    import fcntl
-
-                    fcntl.flock(handle.fileno(), fcntl.LOCK_UN)
-                handle.close()
-        finally:
-            self._local.release()
+        if cleanup is not None:
+            # ExitStack attempts every release, even when unlock or close raises.
+            cleanup.close()
 
 
 @dataclass(frozen=True, slots=True)
@@ -213,14 +216,59 @@ class PolymarketRuntimeControl:
                     "Polymarket runtime control integrity check failed"
                 )
             return connection
-        except Exception:
+        except BaseException:
             connection.close()
             raise
 
     def _initialize(self, connection: sqlite3.Connection) -> None:
+        if self._control_table_exists(connection):
+            self._require_initialized_record(connection)
+            return
+        connection.execute("BEGIN IMMEDIATE")
+        try:
+            # Another first-time reader may have initialized while this writer
+            # waited. Never interpret its existing namespace as a fresh store.
+            if not self._control_table_exists(connection):
+                self._bootstrap_control(connection)
+            connection.execute("COMMIT")
+        except BaseException:
+            if connection.in_transaction:
+                connection.execute("ROLLBACK")
+            raise
+        self._require_initialized_record(connection)
+
+    @staticmethod
+    def _control_table_exists(connection: sqlite3.Connection) -> bool:
+        return (
+            connection.execute(
+                "SELECT 1 FROM sqlite_master "
+                "WHERE type = 'table' AND name = 'polymarket_runtime_control'"
+            ).fetchone()
+            is not None
+        )
+
+    def _require_initialized_record(self, connection: sqlite3.Connection) -> None:
+        row = connection.execute(
+            "SELECT * FROM polymarket_runtime_control WHERE singleton = 1"
+        ).fetchone()
+        if row is None:
+            raise PolymarketLiveError("Polymarket runtime control record is missing")
+        if "paused" not in row.keys():
+            self._migrate_v1(connection)
+            row = connection.execute(
+                "SELECT * FROM polymarket_runtime_control WHERE singleton = 1"
+            ).fetchone()
+            if row is None:
+                raise PolymarketLiveError(
+                    "Polymarket runtime control record is missing"
+                )
+        self._verify_row(row)
+
+    def _bootstrap_control(self, connection: sqlite3.Connection) -> None:
+        """Create table and first record inside the caller's writer transaction."""
         connection.execute(
             """
-            CREATE TABLE IF NOT EXISTS polymarket_runtime_control (
+            CREATE TABLE polymarket_runtime_control (
                 singleton INTEGER PRIMARY KEY CHECK (singleton = 1),
                 schema_version TEXT NOT NULL,
                 state TEXT NOT NULL,
@@ -243,71 +291,45 @@ class PolymarketRuntimeControl:
             )
             """
         )
-        columns = {
-            str(item[1])
-            for item in connection.execute(
-                "PRAGMA table_info(polymarket_runtime_control)"
-            ).fetchall()
+        now = self._now_ms()
+        payload = {
+            "schema_version": POLYMARKET_RUNTIME_CONTROL_SCHEMA_VERSION,
+            "state": "stopped",
+            "lease_id": "",
+            "owner_process_id": 0,
+            "started_at_ms": 0,
+            "heartbeat_at_ms": 0,
+            "stop_epoch": 0,
+            "stop_requested_at_ms": 0,
+            "stop_reason": "never_started",
+            "paused": False,
+            "pause_epoch": 0,
+            "pause_changed_at_ms": now,
+            "pause_reason": "never_started",
+            "updated_at_ms": now,
         }
-        if "paused" not in columns:
-            self._migrate_v1(connection)
-        row = connection.execute(
-            "SELECT * FROM polymarket_runtime_control WHERE singleton = 1"
-        ).fetchone()
-        if row is None:
-            now = self._now_ms()
-            payload = {
-                "schema_version": POLYMARKET_RUNTIME_CONTROL_SCHEMA_VERSION,
-                "state": "stopped",
-                "lease_id": "",
-                "owner_process_id": 0,
-                "started_at_ms": 0,
-                "heartbeat_at_ms": 0,
-                "stop_epoch": 0,
-                "stop_requested_at_ms": 0,
-                "stop_reason": "never_started",
-                "paused": False,
-                "pause_epoch": 0,
-                "pause_changed_at_ms": now,
-                "pause_reason": "never_started",
-                "updated_at_ms": now,
-            }
-            connection.execute(
-                """
-                INSERT OR IGNORE INTO polymarket_runtime_control (
-                    singleton, schema_version, state, lease_id,
-                    owner_process_id, started_at_ms, heartbeat_at_ms,
-                    stop_epoch, stop_requested_at_ms, stop_reason,
-                    paused, pause_epoch, pause_changed_at_ms, pause_reason,
-                    updated_at_ms, record_sha256
-                ) VALUES (1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                """,
-                [
-                    payload["schema_version"],
-                    payload["state"],
-                    payload["lease_id"],
-                    payload["owner_process_id"],
-                    payload["started_at_ms"],
-                    payload["heartbeat_at_ms"],
-                    payload["stop_epoch"],
-                    payload["stop_requested_at_ms"],
-                    payload["stop_reason"],
-                    int(payload["paused"]),
-                    payload["pause_epoch"],
-                    payload["pause_changed_at_ms"],
-                    payload["pause_reason"],
-                    payload["updated_at_ms"],
-                    _canonical_sha256(payload),
-                ],
+        connection.execute(
+            """
+            INSERT INTO polymarket_runtime_control (
+                singleton, schema_version, state, lease_id,
+                owner_process_id, started_at_ms, heartbeat_at_ms,
+                stop_epoch, stop_requested_at_ms, stop_reason,
+                paused, pause_epoch, pause_changed_at_ms, pause_reason,
+                updated_at_ms, record_sha256
+            ) VALUES (
+                1, :schema_version, :state, :lease_id,
+                :owner_process_id, :started_at_ms, :heartbeat_at_ms,
+                :stop_epoch, :stop_requested_at_ms, :stop_reason,
+                :paused, :pause_epoch, :pause_changed_at_ms, :pause_reason,
+                :updated_at_ms, :record_sha256
             )
-            row = connection.execute(
-                "SELECT * FROM polymarket_runtime_control WHERE singleton = 1"
-            ).fetchone()
-            if row is None:
-                raise PolymarketLiveError(
-                    "Polymarket runtime control initialization failed"
-                )
-        self._verify_row(row)
+            """,
+            {
+                **payload,
+                "paused": int(payload["paused"]),
+                "record_sha256": _canonical_sha256(payload),
+            },
+        )
 
     def _migrate_v1(self, connection: sqlite3.Connection) -> None:
         """Add a durable pause latch without weakening an existing Stop latch."""
@@ -317,27 +339,36 @@ class PolymarketRuntimeControl:
             row = connection.execute(
                 "SELECT * FROM polymarket_runtime_control WHERE singleton = 1"
             ).fetchone()
-            if row is not None:
-                legacy = {
-                    "schema_version": str(row["schema_version"]),
-                    "state": str(row["state"]),
-                    "lease_id": str(row["lease_id"]),
-                    "owner_process_id": int(row["owner_process_id"]),
-                    "started_at_ms": int(row["started_at_ms"]),
-                    "heartbeat_at_ms": int(row["heartbeat_at_ms"]),
-                    "stop_epoch": int(row["stop_epoch"]),
-                    "stop_requested_at_ms": int(row["stop_requested_at_ms"]),
-                    "stop_reason": str(row["stop_reason"]),
-                    "updated_at_ms": int(row["updated_at_ms"]),
-                }
-                if legacy[
-                    "schema_version"
-                ] != _POLYMARKET_RUNTIME_CONTROL_V1_SCHEMA_VERSION or str(
-                    row["record_sha256"]
-                ) != _canonical_sha256(legacy):
-                    raise PolymarketLiveError(
-                        "Polymarket runtime control v1 record differs"
-                    )
+            if row is None:
+                raise PolymarketLiveError(
+                    "Polymarket runtime control record is missing"
+                )
+            # A concurrent caller can complete migration before this writer
+            # acquires its transaction. Verify that result instead of migrating twice.
+            if "paused" in row.keys():
+                self._verify_row(row)
+                connection.execute("COMMIT")
+                return
+            legacy = {
+                "schema_version": str(row["schema_version"]),
+                "state": str(row["state"]),
+                "lease_id": str(row["lease_id"]),
+                "owner_process_id": int(row["owner_process_id"]),
+                "started_at_ms": int(row["started_at_ms"]),
+                "heartbeat_at_ms": int(row["heartbeat_at_ms"]),
+                "stop_epoch": int(row["stop_epoch"]),
+                "stop_requested_at_ms": int(row["stop_requested_at_ms"]),
+                "stop_reason": str(row["stop_reason"]),
+                "updated_at_ms": int(row["updated_at_ms"]),
+            }
+            if legacy[
+                "schema_version"
+            ] != _POLYMARKET_RUNTIME_CONTROL_V1_SCHEMA_VERSION or str(
+                row["record_sha256"]
+            ) != _canonical_sha256(legacy):
+                raise PolymarketLiveError(
+                    "Polymarket runtime control v1 record differs"
+                )
             connection.execute(
                 "ALTER TABLE polymarket_runtime_control "
                 "ADD COLUMN paused INTEGER NOT NULL DEFAULT 0 "
@@ -356,33 +387,32 @@ class PolymarketRuntimeControl:
                 "ALTER TABLE polymarket_runtime_control "
                 "ADD COLUMN pause_reason TEXT NOT NULL DEFAULT ''"
             )
-            if row is not None:
-                migrated = {
-                    **legacy,
-                    "schema_version": POLYMARKET_RUNTIME_CONTROL_SCHEMA_VERSION,
-                    "paused": False,
-                    "pause_epoch": 0,
-                    "pause_changed_at_ms": int(legacy["updated_at_ms"]),
-                    "pause_reason": "migrated_from_v1",
-                }
-                connection.execute(
-                    """
-                    UPDATE polymarket_runtime_control
-                    SET schema_version = ?, paused = ?, pause_epoch = ?,
-                        pause_changed_at_ms = ?, pause_reason = ?, record_sha256 = ?
-                    WHERE singleton = 1
-                    """,
-                    [
-                        migrated["schema_version"],
-                        int(migrated["paused"]),
-                        migrated["pause_epoch"],
-                        migrated["pause_changed_at_ms"],
-                        migrated["pause_reason"],
-                        _canonical_sha256(migrated),
-                    ],
-                )
+            migrated = {
+                **legacy,
+                "schema_version": POLYMARKET_RUNTIME_CONTROL_SCHEMA_VERSION,
+                "paused": False,
+                "pause_epoch": 0,
+                "pause_changed_at_ms": int(legacy["updated_at_ms"]),
+                "pause_reason": "migrated_from_v1",
+            }
+            connection.execute(
+                """
+                UPDATE polymarket_runtime_control
+                SET schema_version = ?, paused = ?, pause_epoch = ?,
+                    pause_changed_at_ms = ?, pause_reason = ?, record_sha256 = ?
+                WHERE singleton = 1
+                """,
+                [
+                    migrated["schema_version"],
+                    int(migrated["paused"]),
+                    migrated["pause_epoch"],
+                    migrated["pause_changed_at_ms"],
+                    migrated["pause_reason"],
+                    _canonical_sha256(migrated),
+                ],
+            )
             connection.execute("COMMIT")
-        except Exception:
+        except BaseException:
             if connection.in_transaction:
                 connection.execute("ROLLBACK")
             raise

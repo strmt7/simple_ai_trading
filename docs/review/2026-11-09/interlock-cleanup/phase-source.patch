@@ -1,0 +1,99 @@
+diff --git a/src/simple_ai_trading/polymarket_runtime_control.py b/src/simple_ai_trading/polymarket_runtime_control.py
+index 44dd6cb34b4d0bca51e669623a97662ce4088c9a..2b2404d75b80388ef2695864fcd76b6517f46709 100644
+--- a/src/simple_ai_trading/polymarket_runtime_control.py
++++ b/src/simple_ai_trading/polymarket_runtime_control.py
+@@ -3,7 +3,7 @@
+ from __future__ import annotations
+ 
+ import asyncio
+-from contextlib import contextmanager
++from contextlib import ExitStack, contextmanager
+ from dataclasses import asdict, dataclass
+ import hashlib
+ import json
+@@ -12,7 +12,7 @@ from pathlib import Path
+ import sqlite3
+ from threading import Lock, RLock
+ import time
+-from typing import Callable, Iterator, Mapping
++from typing import BinaryIO, Callable, Iterator, Mapping
+ import uuid
+ 
+ from .polymarket_live import PolymarketLiveBlocked, PolymarketLiveError
+@@ -65,15 +65,18 @@ class _CrossProcessFileLock:
+         self._monotonic = monotonic
+         self._sleep = sleep
+         self._local = _local_lock(path)
+-        self._handle: object | None = None
++        self._handle: BinaryIO | None = None
++        self._cleanup: ExitStack | None = None
+ 
+     def __enter__(self) -> "_CrossProcessFileLock":
+         deadline = self._monotonic() + self.timeout_seconds
+         if not self._local.acquire(timeout=self.timeout_seconds):
+             raise PolymarketLiveBlocked("Polymarket runtime interlock timed out")
+-        try:
++        with ExitStack() as cleanup:
++            cleanup.callback(self._local.release)
+             self.path.parent.mkdir(parents=True, exist_ok=True)
+             handle = self.path.open("a+b", buffering=0)
++            cleanup.callback(handle.close)
+             if handle.seek(0, os.SEEK_END) == 0:
+                 handle.write(b"\0")
+                 handle.flush()
+@@ -92,36 +95,36 @@ class _CrossProcessFileLock:
+                             handle.fileno(),
+                             fcntl.LOCK_EX | fcntl.LOCK_NB,
+                         )
++                    cleanup.callback(self._unlock, handle)
+                     self._handle = handle
++                    self._cleanup = cleanup.pop_all()
+                     return self
+                 except OSError as exc:
+                     if self._monotonic() >= deadline:
+-                        handle.close()
+                         raise PolymarketLiveBlocked(
+                             "Polymarket runtime interlock timed out"
+                         ) from exc
+                     self._sleep(min(0.05, max(0.0, deadline - self._monotonic())))
+-        except Exception:
+-            self._local.release()
+-            raise
+ 
+-    def __exit__(self, _type: object, _value: object, _traceback: object) -> None:
+-        handle = self._handle
+-        self._handle = None
+-        try:
+-            if handle is not None:
+-                handle.seek(0)
+-                if os.name == "nt":
+-                    import msvcrt
++    @staticmethod
++    def _unlock(handle: BinaryIO) -> None:
++        handle.seek(0)
++        if os.name == "nt":
++            import msvcrt
+ 
+-                    msvcrt.locking(handle.fileno(), msvcrt.LK_UNLCK, 1)
+-                else:
+-                    import fcntl
++            msvcrt.locking(handle.fileno(), msvcrt.LK_UNLCK, 1)
++        else:
++            import fcntl
+ 
+-                    fcntl.flock(handle.fileno(), fcntl.LOCK_UN)
+-                handle.close()
+-        finally:
+-            self._local.release()
++            fcntl.flock(handle.fileno(), fcntl.LOCK_UN)
++
++    def __exit__(self, _type: object, _value: object, _traceback: object) -> None:
++        cleanup = self._cleanup
++        self._cleanup = None
++        self._handle = None
++        if cleanup is not None:
++            # ExitStack attempts every release, even when unlock or close raises.
++            cleanup.close()
+ 
+ 
+ @dataclass(frozen=True, slots=True)

@@ -18,6 +18,8 @@ docs/review/2026-11-09/spot-clock-audit/** text eol=lf
 docs/review/2026-11-09/long-hold-source/** text eol=lf
 docs/review/2026-11-09/market-spec-source/** text eol=lf
 docs/review/2026-11-09/year-funding/** text eol=lf
+docs/review/2026-11-09/interlock-cleanup/** text eol=lf
+docs/review/2026-11-10/runtime-control-storage/** text eol=lf
 docs/review/2026-10-07/usd1-distribution/** binary -eol
 *.py text eol=lf
 *.sh text eol=lf

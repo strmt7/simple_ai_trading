@@ -1,0 +1,78 @@
+{
+  "base_revision": "33e61dfb5c0399e169b37e65a02f57728abeb067",
+  "before_storage_source_sha256": "595de225c57eee352c98706e3f76de80569023f2bc4ca5f00c63ef6de661a58f",
+  "changed_production_definitions": [
+    "_bootstrap_control",
+    "_connect",
+    "_control_table_exists",
+    "_initialize",
+    "_migrate_v1",
+    "_require_initialized_record"
+  ],
+  "created_at_utc": "2026-11-09T23:27:38.912600+00:00",
+  "demonstrated_failure": {
+    "after_deleted_record": {
+      "state": "stopped",
+      "stop_epoch": 0
+    },
+    "before": {
+      "state": "stop_requested",
+      "stop_epoch": 1
+    },
+    "replacement_lease_admitted": true,
+    "scope": "Isolated synthetic control database only; no native account/order or real user state."
+  },
+  "final_focused_verification": {
+    "errors": 0,
+    "failures": 0,
+    "skipped": 0,
+    "tests": 61
+  },
+  "financial_counts": [
+    204,
+    65,
+    37,
+    0
+  ],
+  "logs_sha256": {
+    "final-tests.log": "684d4fbae388dd5cc9634003a0146ad118ad12244ffd69d34a2e4f29f8d33de5",
+    "final-tests.xml": "e2d1a6cf7d436da319ba247048141e0f6756d2474d7cd012d48e22ae85208f89",
+    "red-storage-tests.log": "134a7a54d45253300249acc59e80c8790dbc1a0a457ec11478092ce7fbfe6330",
+    "red-storage-tests.xml": "3282d0fa781187ef79a4a96e7a440673adadfb6cda1a58eef3a0d39b28b252bc"
+  },
+  "native_market_account_order_or_credentials_access": false,
+  "navigation_receipt_sha256": "cf80c2e5438b57a0016af130898ce250a851003ccbb035024fefb521c90480eb",
+  "not_proved": [
+    "Whole database or complete namespace deletion/replacement detection",
+    "Account-scoped storage enrollment, rollback protection or physical power-loss/reboot recovery",
+    "Independent trading supervisor, credential-separated gateway or complete order-caller inventory",
+    "Bounded hanging native calls, cross-process persistent capital policy or model-health quarantine",
+    "Whole-codebase final semantic review or exhaustive final bug hunt"
+  ],
+  "other_production_definitions_AST_unchanged": true,
+  "previous_storage_implementation_regressions": {
+    "errors": 0,
+    "failures": 7,
+    "skipped": 0,
+    "tests": 7
+  },
+  "prior_goal_turn_classification": "progress: runtime interlock ownership repaired with actual file-lock and mutex regressions; phase source preserved separately",
+  "prior_test_function_AST_unchanged": true,
+  "private_retention_directory": "data/research/2026-11-10-supervision",
+  "production_source_sha256": "48f91bee8aaa111e21f67a9d7466be49a35e61e3f4c522d4e691e5661e0ada7d",
+  "repair_scope": [
+    "Existing runtime namespace with missing singleton fails closed; snapshot/acquire do not manufacture fresh state",
+    "First table and initial row are committed atomically, rechecking namespace existence after writer acquisition",
+    "Missing legacy row fails before schema change; valid concurrent migration is verified instead of repeated",
+    "Cancelled bootstrap/migration rolls back and closes the SQLite connection",
+    "Separate serialized close guard remains available without recreating control state"
+  ],
+  "reproduction_sha256": "4a3195bf41a5890f5e3bd5bf5b446a829d7abbe945b091296ee1efda81894657",
+  "result_sha256": "b003d21eccf3c027fee99e8e6f2aba529a1746c326f9b0d1b2ad29422a0ce0be",
+  "schema": "runtime-control-storage-integrity-repair-v1",
+  "service_or_persistent_worker_installed": false,
+  "tests_sha256": {
+    "tests/test_polymarket_runtime_control.py": "08f9e67427030504041e027c38e620cb8fdda06f7b3117586defd8c7acec24b4",
+    "tests/test_polymarket_runtime_interlock_cleanup.py": "761a5807785eae8fbde2ce354e1b28f5fe36d3c0b1bb137bf91dc1ced5b41432"
+  }
+}
