@@ -1,0 +1,55 @@
+{
+  "abrupt_parent_death_before_job_enrollment_qualified": false,
+  "after_entry_bytes": 10149,
+  "archive_source_sha256": {
+    "agent-start": "9c307b5aabd2f27566427c5afb3adc7ce6ab08eeb82e8e32828101fbaf84d6b9",
+    "continuation": "f4032976224d2ddc67203a56e6568aecf87a84a595f31075736beba81ca43c87"
+  },
+  "archived_lines": 17028,
+  "at_utc": "2026-11-09T18:37:54.945373+00:00",
+  "before_canonical_bytes": 1099244,
+  "byte_reduction_fraction": "1089095/1099244",
+  "focused_tests": {
+    "errors": 0,
+    "failures": 0,
+    "skipped": 0,
+    "tests": 186
+  },
+  "full_repository_semantic_review": false,
+  "goal_status": "active",
+  "junit_sha256": "1669b5b301bd14e20d028d9d3ab40ec633bb392ea0e9500e803506efee0d1a3d",
+  "native_objects_and_private_originals_equal": true,
+  "new_economic_observations": 0,
+  "new_network_research_requests": 0,
+  "qualified_stable_edges": 0,
+  "relative_links_checked": 34,
+  "result_sha256": "bb1a7ceb6b2fe0781559891831497103fa658d74a878c2a7f5d8663f1930362b",
+  "schema": "handoff-compaction-verification-v1",
+  "semantic_integration": {
+    "canonical_benchmark_cases": 10,
+    "mcp_smoke_sha256": "b5563e3733c074a7a24515609ca5daed678a997419ac66d459bd212a3c091ead",
+    "protocol_probes": 4,
+    "raw_benchmark_sha256": "bb73cedbfc44775af3d1c881ac06c695ebec1c016d03280a27323162bdf5fa9b",
+    "reused_current_index": true,
+    "semantic_top5_named_file_hits": 0,
+    "source_mirror_digest": "8e6adb05f1070561e33b668ab23f0429",
+    "stdio_search_probe": true,
+    "timing_qualified": false,
+    "version": "0.2.43"
+  },
+  "source_binding": "SHA-256 of LF-normalized current source bytes; original archive SHA-256 binds exact published blob bytes",
+  "source_revision": "eaad2d1605f6256ba43cd78ab6b96479294b6155",
+  "source_sha256": {
+    ".gitattributes": "d3ed254f9adb4507dc9b48ac00a36705172a4ecb5dcbdb544c845619e6bdb14a",
+    "AGENTS.md": "ee7e59a902cb35ed7c149b761b69715091db1516a96eb30ffea613e04d8d9883",
+    "docs/AGENT_START.md": "a20741998249b0477bc36221697e1e8a37c1dc01d540baad0d0ebffc154f6b79",
+    "docs/CONTINUATION.md": "6a29dfe808d6670cd78f3362fdcc2a928a5e981619d04e0b82406933e2270fc7",
+    "docs/REVAMP_2026_11_09.md": "abdbf00c5d073db6169ceb32b1ecb904a7c153f90832846b5946cf2b8808a925",
+    "docs/archive/agent-history/README.md": "cc430b5844471f937726889638dc5fc29186e4d89d6616369f1ba200b91e8973",
+    "docs/archive/agent-history/handoff-2026-11-09.json": "0cfd5736ad2bcea1e53e5bedc0566c7115edf3c252b8c1f02c5f9de305d2fdc3",
+    "tests/test_cocoindex_windows_source_scope.py": "b4dc3a71a028c7b779f8d053d6411ee56756f3f03df6efeb634df3136c85e1e0",
+    "tests/test_handoff_archive.py": "2b88f36bfce21aa9123fbd756e3f1ff2338308d99f2de60953a9f38258a9cda2",
+    "tools/cocoindex_agent_search.py": "841415b5072614062bd82a4d6d506a1b295c79546ebf5210ce1c2fdb08ef2f91",
+    "tools/read_handoff_archive.py": "8b84f5777b83abe46db90426aadae1cae47a9178f4e76c92f3f59c5b05fe43cd"
+  }
+}

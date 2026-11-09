@@ -1,5 +1,8 @@
 # Hash-bound evidence must retain the exact bytes recorded in its manifest.
 .gitattributes text eol=lf
+docs/AGENT_START.md text eol=lf
+docs/CONTINUATION.md text eol=lf
+docs/archive/agent-history/handoff-2026-11-09.json text eol=lf
 docs/review/2026-11-09/paired-data-source/** text eol=lf
 docs/review/2026-11-09/depth-source/** text eol=lf
 docs/review/2026-11-09/snapshot-availability/** text eol=lf

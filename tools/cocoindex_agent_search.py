@@ -18,7 +18,7 @@ import tempfile
 import tomllib
 import venv
 import uuid
-from contextlib import contextmanager
+from contextlib import ExitStack, contextmanager
 from dataclasses import dataclass
 from pathlib import Path, PurePosixPath
 from typing import Any, TextIO, cast
@@ -383,12 +383,19 @@ def run_captured_process(
         return subprocess.CompletedProcess(args, process.returncode, stdout, stderr)
     finally:
         # This original job handle, not any PID from child output, owns cleanup.
-        job.close()
-        if process is not None:
-            process.wait(timeout=timeout_seconds("daemon_stop"))
-            for stream in (process.stdin, process.stdout, process.stderr):
-                if stream is not None:
-                    stream.close()
+        try:
+            job.close()
+        finally:
+            if process is not None:
+                with ExitStack() as pipes:
+                    for stream in (process.stdin, process.stdout, process.stderr):
+                        if stream is not None:
+                            pipes.callback(stream.close)
+                    # Enrollment can fail before the suspended child belongs to
+                    # the job. Only this original Popen handle grants cleanup.
+                    if process.poll() is None:
+                        process.kill()
+                    process.wait(timeout=timeout_seconds("daemon_stop"))
 
 
 def run_command(

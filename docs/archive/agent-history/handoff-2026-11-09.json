@@ -1,0 +1,31 @@
+{
+  "access": "Use the bounded local reader. It performs no fetch. A shallow clone missing objects must explicitly fetch the recorded source revision or use the official connector at that revision.",
+  "archives": {
+    "agent-start": {
+      "bytes": 371074,
+      "git_blob_sha1": "e1cb5ef180a509e012c8803e16746af528037bca",
+      "lines": 5572,
+      "permalink": "https://github.com/strmt7/simple_ai_trading/blob/eaad2d1605f6256ba43cd78ab6b96479294b6155/docs/AGENT_START.md",
+      "reference_base": "docs/",
+      "sha256": "9c307b5aabd2f27566427c5afb3adc7ce6ab08eeb82e8e32828101fbaf84d6b9",
+      "source_path": "docs/AGENT_START.md",
+      "source_revision": "eaad2d1605f6256ba43cd78ab6b96479294b6155"
+    },
+    "continuation": {
+      "bytes": 728170,
+      "git_blob_sha1": "7f0ecf780c0a3c58174dd09c8f27be6202af87ed",
+      "lines": 11456,
+      "permalink": "https://github.com/strmt7/simple_ai_trading/blob/eaad2d1605f6256ba43cd78ab6b96479294b6155/docs/CONTINUATION.md",
+      "reference_base": "docs/",
+      "sha256": "f4032976224d2ddc67203a56e6568aecf87a84a595f31075736beba81ca43c87",
+      "source_path": "docs/CONTINUATION.md",
+      "source_revision": "eaad2d1605f6256ba43cd78ab6b96479294b6155"
+    }
+  },
+  "created_at_utc": "2026-11-09T18:19:01.184192+00:00",
+  "object_retention": "Keep the recorded source revision and blobs reachable during any separately authorized future history rewrite; do not silently substitute rewritten text.",
+  "relative_reference_rule": "Resolve original relative paths from docs/, not from this manifest directory. Use the immutable permalink for rendered original links.",
+  "result_sha256": "68470de6a0d49141772dac1c440b59de74dd3afb5f18b26e3090b5bd744409eb",
+  "schema": "immutable-handoff-archive-v1",
+  "scope": "Immutable published originals. Historical progress is provenance; affected studies retain every non-superseded access/retry/account constraint. Current user instructions, AGENTS and exact canonical contracts control. Archiving creates no authority."
+}

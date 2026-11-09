@@ -354,6 +354,7 @@ def test_captured_command_closes_original_job_on_success_or_failure(tmp_path, fa
 
     job = mock.Mock()
     process = mock.Mock(returncode=0)
+    process.poll.return_value = 0 if failure is None else None
     process.communicate.return_value = ("output", "")
     if failure == "timeout":
         process.communicate.side_effect = adapter.subprocess.TimeoutExpired(
@@ -383,6 +384,55 @@ def test_captured_command_closes_original_job_on_success_or_failure(tmp_path, fa
         stream.close.assert_called_once_with()
     if failure != "enrollment":
         process.communicate.assert_called_once_with(input="input", timeout=1)
+    if failure is None:
+        process.kill.assert_not_called()
+    else:
+        process.kill.assert_called_once_with()
+
+
+@pytest.mark.skipif(
+    os.name != "nt", reason="Windows command containment requires Win32"
+)
+def test_captured_command_closes_all_pipes_when_one_close_fails(tmp_path):
+    from simple_ai_trading import windows_owned_job
+
+    job = mock.Mock()
+    process = mock.Mock(returncode=0)
+    process.poll.return_value = 0
+    process.communicate.return_value = ("output", "")
+    process.stdout.close.side_effect = OSError("pipe close failed")
+    with mock.patch.object(windows_owned_job, "WindowsOwnedJob", return_value=job):
+        with mock.patch.object(adapter.subprocess, "Popen", return_value=process):
+            with pytest.raises(OSError, match="pipe close failed"):
+                adapter.run_captured_process(
+                    ["command"], cwd=tmp_path, env={}, input_text="", timeout=1
+                )
+    job.close.assert_called_once_with()
+    for stream in (process.stdin, process.stdout, process.stderr):
+        stream.close.assert_called_once_with()
+
+
+@pytest.mark.skipif(
+    os.name != "nt", reason="Windows command containment requires Win32"
+)
+def test_captured_command_reaps_original_child_even_if_job_close_fails(tmp_path):
+    from simple_ai_trading import windows_owned_job
+
+    job = mock.Mock()
+    job.close.side_effect = OSError("job close failed")
+    process = mock.Mock(returncode=0)
+    process.poll.return_value = None
+    process.communicate.return_value = ("output", "")
+    with mock.patch.object(windows_owned_job, "WindowsOwnedJob", return_value=job):
+        with mock.patch.object(adapter.subprocess, "Popen", return_value=process):
+            with pytest.raises(OSError, match="job close failed"):
+                adapter.run_captured_process(
+                    ["command"], cwd=tmp_path, env={}, input_text="", timeout=1
+                )
+    process.kill.assert_called_once_with()
+    process.wait.assert_called_once()
+    for stream in (process.stdin, process.stdout, process.stderr):
+        stream.close.assert_called_once_with()
 
 
 def test_incremental_refresh_preserves_prior_snapshot_and_cache_identity(

@@ -5,6 +5,16 @@ are routing/provenance, not a requirement to dump the entire history on every
 continuation. Follow exact links as needed. Hash-bound evidence and executable contracts
 override prose.
 
+Keep `docs/AGENT_START.md` and `docs/CONTINUATION.md` compact and current; do not
+append chronological transcripts. Detailed results belong in source-bound review
+artifacts. The immutable handoff manifest and bounded reader under
+`docs/archive/agent-history/` preserve original published bytes and exact lookup.
+Historical progress is provenance; non-superseded study constraints still apply.
+Archiving or omission from a compact summary never creates retry, capture,
+training, account or trading authority. Preserve archived Git objects during any
+separately authorized future history change; current user instructions, AGENTS,
+exact canonical contracts and the current registry control conflicts.
+
 ## Communication and resource efficiency
 
 - Be laconic: lead with the outcome, material changes, blockers and next decision.
