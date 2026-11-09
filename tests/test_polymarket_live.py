@@ -765,6 +765,253 @@ def test_opening_admission_rechecks_pending_orders_created_during_signing(
     ]
 
 
+def test_opening_rejects_completed_fill_created_during_signing(tmp_path: Path) -> None:
+    ledger = PolymarketLiveOrderLedger(tmp_path / "filled-during-signing.sqlite3")
+    venue = FakeVenue()
+    limits = replace(
+        RISK_LIMITS,
+        maximum_order_quote=Decimal("0.65"),
+        maximum_total_at_risk_quote=Decimal("0.70"),
+    )
+    coordinator = PolymarketLiveCoordinator(venue, ledger, risk_limits=limits)
+    original_prepare = venue.prepare_order
+
+    def prepare(intent, *, tick_size, neg_risk):
+        prepared = original_prepare(intent, tick_size=tick_size, neg_risk=neg_risk)
+        if intent.intent_id == _intent(1).intent_id:
+            admitted = coordinator.submit(
+                _intent(2), tick_size=tick_size, neg_risk=neg_risk
+            )
+            ledger.record_fill(_fill(admitted.intent, admitted.expected_order_id))
+            ledger.transition(
+                admitted.intent.intent_id,
+                expected_states=("live",),
+                state="filled",
+                observed_at_ms=NOW_MS + 2,
+                remote_status="MATCHED",
+                matched_quantity=Decimal("1"),
+            )
+        return prepared
+
+    venue.prepare_order = prepare
+    with pytest.raises(PolymarketLiveBlocked, match="ledger changed"):
+        coordinator.submit(_intent(1), tick_size=Decimal("0.01"), neg_risk=False)
+    assert venue.submit_calls == 1
+    assert len(ledger.records()) == 1
+    assert ledger.condition_accounting(MARKET_ID).maximum_loss_quote == Decimal("0.51")
+
+
+def test_opening_rejects_risk_limits_changed_during_signing(tmp_path: Path) -> None:
+    ledger = PolymarketLiveOrderLedger(tmp_path / "changed-limits.sqlite3")
+    venue = FakeVenue()
+    coordinator = PolymarketLiveCoordinator(venue, ledger, risk_limits=RISK_LIMITS)
+    original_prepare = venue.prepare_order
+
+    def prepare(intent, *, tick_size, neg_risk):
+        prepared = original_prepare(intent, tick_size=tick_size, neg_risk=neg_risk)
+        coordinator.risk_limits = replace(
+            RISK_LIMITS, maximum_order_quote=Decimal("0.50")
+        )
+        return prepared
+
+    venue.prepare_order = prepare
+    with pytest.raises(PolymarketLiveBlocked, match="risk limits changed"):
+        coordinator.submit(_intent(), tick_size=Decimal("0.01"), neg_risk=False)
+    assert venue.submit_calls == 0
+    assert not ledger.records()
+
+
+def _confirmed_admission_parent(ledger, venue):
+    parent = _intent(1)
+    prepared = _seed_live_order(ledger, venue, parent)
+    ledger.record_fill(_fill(parent, prepared.expected_order_id))
+    ledger.transition(
+        parent.intent_id,
+        expected_states=("live",),
+        state="filled",
+        observed_at_ms=NOW_MS + 2,
+        remote_status="MATCHED",
+        matched_quantity=Decimal("1"),
+    )
+    venue.remote_positions = (
+        PolymarketRemotePosition(
+            market_id=MARKET_ID,
+            token_id=TOKEN_ID,
+            quantity=Decimal("1"),
+            redeemable=False,
+        ),
+    )
+    return parent
+
+
+def test_close_rechecks_lot_reserved_during_signing(tmp_path: Path) -> None:
+    ledger = PolymarketLiveOrderLedger(tmp_path / "close-during-signing.sqlite3")
+    venue = FakeVenue()
+    _confirmed_admission_parent(ledger, venue)
+    coordinator = PolymarketLiveCoordinator(venue, ledger, risk_limits=RISK_LIMITS)
+    original_prepare = venue.prepare_order
+
+    def prepare(intent, *, tick_size, neg_risk):
+        prepared = original_prepare(intent, tick_size=tick_size, neg_risk=neg_risk)
+        if intent.intent_id == _intent(2).intent_id:
+            coordinator.submit(
+                _intent(3, side="SELL", closing_only=True),
+                tick_size=tick_size,
+                neg_risk=neg_risk,
+            )
+        return prepared
+
+    venue.prepare_order = prepare
+    with pytest.raises(PolymarketLiveBlocked, match="unreserved bot-owned lot"):
+        coordinator.submit(
+            _intent(2, side="SELL", closing_only=True),
+            tick_size=Decimal("0.01"),
+            neg_risk=False,
+        )
+    assert venue.submit_calls == 1
+    assert len(ledger.records()) == 2
+    lot = ledger.owned_lots()[0]
+    assert lot.quantity == lot.reserved_close_quantity == Decimal("1")
+
+
+def test_close_stays_available_after_unrelated_opening_reservation(
+    tmp_path: Path,
+) -> None:
+    ledger = PolymarketLiveOrderLedger(tmp_path / "unrelated-order.sqlite3")
+    venue = FakeVenue()
+    _confirmed_admission_parent(ledger, venue)
+    coordinator = PolymarketLiveCoordinator(venue, ledger, risk_limits=RISK_LIMITS)
+    original_prepare = venue.prepare_order
+
+    def prepare(intent, *, tick_size, neg_risk):
+        prepared = original_prepare(intent, tick_size=tick_size, neg_risk=neg_risk)
+        unrelated = replace(_intent(9), market_id="0x" + "2" * 64, token_id="2" * 40)
+        ledger.reserve(
+            original_prepare(unrelated, tick_size=tick_size, neg_risk=neg_risk),
+            observed_at_ms=NOW_MS,
+        )
+        return prepared
+
+    venue.prepare_order = prepare
+    admitted = coordinator.submit(
+        _intent(2, side="SELL", closing_only=True),
+        tick_size=Decimal("0.01"),
+        neg_risk=False,
+    )
+    assert admitted.state == "live" and venue.submit_calls == 1
+    assert ledger.owned_lots()[0].reserved_close_quantity == Decimal("1")
+
+
+def test_owned_lot_read_keeps_one_snapshot_when_another_connection_reserves_a_close(
+    tmp_path: Path,
+) -> None:
+    path = tmp_path / "read-snapshot.sqlite3"
+    reader, writer = PolymarketLiveOrderLedger(path), PolymarketLiveOrderLedger(path)
+    venue = FakeVenue()
+    _confirmed_admission_parent(reader, venue)
+    prepared = venue.prepare_order(
+        _intent(2, side="SELL", closing_only=True),
+        tick_size=Decimal("0.01"),
+        neg_risk=False,
+    )
+    original_records = reader._records
+    changed = False
+
+    def records_after_other_writer(connection):
+        nonlocal changed
+        if not changed:
+            writer.reserve(prepared, observed_at_ms=NOW_MS)
+            changed = True
+        return original_records(connection)
+
+    reader._records = records_after_other_writer
+    snapshot = reader.owned_lots()[0]
+    assert changed
+    assert snapshot.quantity == Decimal("1")
+    assert snapshot.reserved_close_quantity == Decimal("0")
+    assert writer.owned_lots()[0].reserved_close_quantity == Decimal("1")
+
+
+def test_distinct_connections_cannot_reserve_the_same_close_lot_twice(
+    tmp_path: Path,
+) -> None:
+    path = tmp_path / "concurrent-closes.sqlite3"
+    ledgers = (PolymarketLiveOrderLedger(path), PolymarketLiveOrderLedger(path))
+    venue = FakeVenue()
+    _confirmed_admission_parent(ledgers[0], venue)
+    prepared = tuple(
+        venue.prepare_order(
+            _intent(i, side="SELL", closing_only=True),
+            tick_size=Decimal("0.01"),
+            neg_risk=False,
+        )
+        for i in (2, 3)
+    )
+    barrier = Barrier(2)
+
+    def reserve(index):
+        barrier.wait(timeout=5)
+        try:
+            ledgers[index].reserve_submission(
+                prepared[index], observed_at_ms=NOW_MS, expected_revision=None
+            )
+        except PolymarketLiveBlocked as error:
+            assert "unreserved bot-owned lot" in str(error)
+            return "blocked"
+        return "reserved"
+
+    with ThreadPoolExecutor(max_workers=2) as workers:
+        outcomes = list(workers.map(reserve, (0, 1)))
+    assert sorted(outcomes) == ["blocked", "reserved"]
+    assert ledgers[0].owned_lots()[0].reserved_close_quantity == Decimal("1")
+    assert len(ledgers[0].records()) == 2
+
+
+def test_risk_limit_update_is_ordered_after_opening_dispatch(tmp_path: Path) -> None:
+    ledger = PolymarketLiveOrderLedger(tmp_path / "policy-order.sqlite3")
+    venue = FakeVenue()
+    coordinator = PolymarketLiveCoordinator(venue, ledger, risk_limits=RISK_LIMITS)
+    started, finished = Event(), Event()
+    stricter = replace(RISK_LIMITS, maximum_order_quote=Decimal("0.50"))
+    updater = None
+
+    def update():
+        started.set()
+        coordinator.risk_limits = stricter
+        finished.set()
+
+    def before_submit(prepared):
+        nonlocal updater
+        updater = Thread(target=update)
+        updater.start()
+        assert started.wait(timeout=5)
+        assert not finished.wait(timeout=0.1)
+
+    venue.before_submit = before_submit
+    try:
+        admitted = coordinator.submit(
+            _intent(), tick_size=Decimal("0.01"), neg_risk=False
+        )
+    finally:
+        if updater is not None:
+            updater.join(timeout=5)
+    assert finished.is_set() and updater is not None and not updater.is_alive()
+    assert coordinator.risk_limits == stricter
+    assert admitted.state == "live" and venue.submit_calls == 1
+
+
+def test_opening_cannot_omit_its_approval_revision(tmp_path: Path) -> None:
+    ledger = PolymarketLiveOrderLedger(tmp_path / "missing-revision.sqlite3")
+    prepared = FakeVenue().prepare_order(
+        _intent(), tick_size=Decimal("0.01"), neg_risk=False
+    )
+    with pytest.raises(ValueError, match="approved ledger revision"):
+        ledger.reserve_submission(
+            prepared, observed_at_ms=NOW_MS, expected_revision=None
+        )
+    assert not ledger.records()
+
+
 def test_distinct_ledger_connections_admit_only_one_concurrent_opening(
     tmp_path: Path,
 ) -> None:
@@ -776,11 +1023,14 @@ def test_distinct_ledger_connections_admit_only_one_concurrent_opening(
         for i in (1, 2)
     )
     barrier = Barrier(2)
+    revision = ledgers[0].revision()
 
     def reserve(index):
         barrier.wait(timeout=5)
         try:
-            ledgers[index].reserve_submission(prepared[index], observed_at_ms=NOW_MS)
+            ledgers[index].reserve_submission(
+                prepared[index], observed_at_ms=NOW_MS, expected_revision=revision
+            )
         except PolymarketLiveBlocked as error:
             assert "unresolved" in str(error)
             return "blocked"
@@ -795,7 +1045,9 @@ def test_distinct_ledger_connections_admit_only_one_concurrent_opening(
     original = next(
         p for p in prepared if p.intent.intent_id == admitted.intent.intent_id
     )
-    ledgers[1].reserve_submission(original, observed_at_ms=NOW_MS)
+    ledgers[1].reserve_submission(
+        original, observed_at_ms=NOW_MS, expected_revision=ledgers[1].revision()
+    )
     assert len(ledgers[1].records()) == 1
 
 

@@ -81,13 +81,15 @@ LLMs may veto/reduce risk, never bypass deterministic Stop/ownership/close contr
 
 ## Platform work and publication
 
-- [Atomic order admission](review/2026-11-09/order-admission/review.md) fixes a
-  reproduced Polymarket stale-preflight race: a pending order created during
-  another order's signing can no longer admit a second opening. The same SQLite
-  writer transaction checks unresolved orders and inserts the reservation;
-  separate connections admit one opening. 240 focused lifecycle/runtime checks
-  pass. Closing gates remain separate; complete capital/supervisor qualification
-  and races involving completed fills or changing risk limits remain open.
+- [Capital admission](review/2026-11-09/capital-admission/review.md) extends the
+  [pending-order fix](review/2026-11-09/order-admission/review.md): openings bind
+  the preflight-start ledger revision and captured risk limits through admission;
+  completed fills or policy changes during signing reject the stale decision.
+  Close capacity is rechecked against its exact parent in the reservation's writer
+  transaction; unrelated activity does not veto a valid close. Lot reads use one
+  SQLite snapshot. 248 focused lifecycle/runtime checks pass. Native balances,
+  cross-process policy governance, supervisor/recovery and full capital acceptance
+  remain open; no market-model or profitability qualification follows.
 - [Source-bound navigation](review/2026-11-09/semantic-routing/review.md) now fuses
   native CocoIndex semantics with lexical ranks from the same approved index.
   The frozen paired check improved expected-file hits from 0/10 to 7/10 on

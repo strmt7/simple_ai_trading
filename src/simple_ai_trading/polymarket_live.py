@@ -7,12 +7,13 @@ recovery remain entirely owned by this subsystem.
 
 from __future__ import annotations
 
-from contextlib import nullcontext
+from contextlib import closing, nullcontext
 from dataclasses import dataclass, field
 from decimal import Decimal, InvalidOperation
 import hashlib
 import json
 from pathlib import Path
+from threading import RLock
 import re
 import sqlite3
 import time
@@ -1840,7 +1841,11 @@ class PolymarketLiveOrderLedger:
         self._reserve(prepared, observed_at_ms=observed_at_ms, admit_submission=False)
 
     def reserve_submission(
-        self, prepared: PolymarketPreparedOrder, *, observed_at_ms: int
+        self,
+        prepared: PolymarketPreparedOrder,
+        *,
+        observed_at_ms: int,
+        expected_revision: PolymarketLedgerRevision | None,
     ) -> None:
         """Atomically admit a new reservation against unresolved owned orders.
 
@@ -1849,7 +1854,16 @@ class PolymarketLiveOrderLedger:
         Closing-only reservations retain their separate ownership/quantity gates;
         an unrelated pending order must not prevent an owned risk reduction.
         """
-        self._reserve(prepared, observed_at_ms=observed_at_ms, admit_submission=True)
+        if not prepared.intent.closing_only and not isinstance(
+            expected_revision, PolymarketLedgerRevision
+        ):
+            raise ValueError("opening admission requires its approved ledger revision")
+        self._reserve(
+            prepared,
+            observed_at_ms=observed_at_ms,
+            admit_submission=True,
+            expected_revision=expected_revision,
+        )
 
     def _reserve(
         self,
@@ -1857,6 +1871,7 @@ class PolymarketLiveOrderLedger:
         *,
         observed_at_ms: int,
         admit_submission: bool,
+        expected_revision: PolymarketLedgerRevision | None = None,
     ) -> None:
         intent = prepared.intent
         intent_payload = intent.asdict()
@@ -1894,6 +1909,12 @@ class PolymarketLiveOrderLedger:
                     raise PolymarketLiveBlocked(
                         "opening reservation blocked by an unresolved owned order"
                     )
+                if self._revision(connection) != expected_revision:
+                    raise PolymarketLiveBlocked(
+                        "ledger changed after opening approval; obtain a new decision"
+                    )
+            elif admit_submission:
+                self._assert_close_capacity(connection, intent)
             connection.execute(
                 """
                 INSERT INTO polymarket_live_orders (
@@ -2377,33 +2398,38 @@ class PolymarketLiveOrderLedger:
     def records(self) -> tuple[PolymarketLiveOrderRecord, ...]:
         connection = self._connect()
         try:
-            rows = connection.execute(
-                "SELECT * FROM polymarket_live_orders ORDER BY created_at_ms, intent_id"
-            ).fetchall()
-            return tuple(self._record(row) for row in rows)
+            return self._records(connection)
         finally:
             connection.close()
+
+    def _records(
+        self, connection: sqlite3.Connection
+    ) -> tuple[PolymarketLiveOrderRecord, ...]:
+        rows = connection.execute(
+            "SELECT * FROM polymarket_live_orders ORDER BY created_at_ms, intent_id"
+        ).fetchall()
+        return tuple(self._record(row) for row in rows)
 
     def revision(self) -> PolymarketLedgerRevision:
         """Return the audit-chain tip without rescanning immutable history."""
 
         connection = self._connect()
         try:
-            row = connection.execute(
-                """
-                SELECT sequence, record_sha256
-                FROM polymarket_live_audit
-                ORDER BY sequence DESC LIMIT 1
-                """
-            ).fetchone()
-            if row is None:
-                return PolymarketLedgerRevision(0, _ZERO_SHA256)
-            return PolymarketLedgerRevision(
-                sequence=int(row["sequence"]),
-                record_sha256=str(row["record_sha256"]),
-            )
+            return self._revision(connection)
         finally:
             connection.close()
+
+    @staticmethod
+    def _revision(connection: sqlite3.Connection) -> PolymarketLedgerRevision:
+        row = connection.execute(
+            """
+            SELECT sequence, record_sha256 FROM polymarket_live_audit
+            ORDER BY sequence DESC LIMIT 1
+            """
+        ).fetchone()
+        if row is None:
+            return PolymarketLedgerRevision(0, _ZERO_SHA256)
+        return PolymarketLedgerRevision(int(row["sequence"]), str(row["record_sha256"]))
 
     def record(self, intent_id: str) -> PolymarketLiveOrderRecord:
         normalized = _identifier(intent_id, name="intent_id")
@@ -2668,15 +2694,20 @@ class PolymarketLiveOrderLedger:
     def redemption_records(self) -> tuple[PolymarketRedemptionRecord, ...]:
         connection = self._connect()
         try:
-            rows = connection.execute(
-                """
-                SELECT * FROM polymarket_live_redemptions
-                ORDER BY created_at_ms, condition_id, attempt
-                """
-            ).fetchall()
-            return tuple(self._redemption_record(row) for row in rows)
+            return self._redemption_records(connection)
         finally:
             connection.close()
+
+    def _redemption_records(
+        self, connection: sqlite3.Connection
+    ) -> tuple[PolymarketRedemptionRecord, ...]:
+        rows = connection.execute(
+            """
+            SELECT * FROM polymarket_live_redemptions
+            ORDER BY created_at_ms, condition_id, attempt
+            """
+        ).fetchall()
+        return tuple(self._redemption_record(row) for row in rows)
 
     def unverified_redemption_accounting_count(self) -> int:
         connection = self._connect()
@@ -3022,20 +3053,22 @@ class PolymarketLiveOrderLedger:
             connection.close()
 
     def owned_lots(self) -> tuple[PolymarketOwnedLot, ...]:
-        connection = self._connect()
-        try:
-            rows = connection.execute(
-                """
-                SELECT f.*
-                FROM polymarket_live_fills AS f
-                JOIN polymarket_live_orders AS o
-                  ON o.expected_order_id = f.order_id
-                WHERE f.status != 'FAILED'
-                """
-            ).fetchall()
-        finally:
-            connection.close()
-        records = self.records()
+        with closing(self._connect()) as connection:
+            connection.execute("BEGIN")
+            return self._owned_lots(connection)
+
+    def _owned_lots(
+        self, connection: sqlite3.Connection
+    ) -> tuple[PolymarketOwnedLot, ...]:
+        rows = connection.execute(
+            """
+            SELECT f.*
+            FROM polymarket_live_fills AS f
+            JOIN polymarket_live_orders AS o ON o.expected_order_id = f.order_id
+            WHERE f.status != 'FAILED'
+            """
+        ).fetchall()
+        records = self._records(connection)
         by_intent = {record.intent.intent_id: record for record in records}
         fills_by_order: dict[str, list[sqlite3.Row]] = {}
         for row in rows:
@@ -3096,7 +3129,7 @@ class PolymarketLiveOrderLedger:
                 reserved[parent_id] = (
                     reserved.get(parent_id, Decimal("0")) + outstanding
                 )
-        for redemption in self.redemption_records():
+        for redemption in self._redemption_records(connection):
             if redemption.state != "confirmed":
                 continue
             for item in redemption.inventory:
@@ -3150,6 +3183,54 @@ class PolymarketLiveOrderLedger:
                     )
                 )
         return tuple(output)
+
+    def assert_close_capacity(self, intent: PolymarketLiveOrderIntent) -> None:
+        """Check one close against a coherent local evidence snapshot."""
+        with closing(self._connect()) as connection:
+            connection.execute("BEGIN")
+            self._assert_close_capacity(connection, intent)
+
+    def _assert_close_capacity(
+        self, connection: sqlite3.Connection, intent: PolymarketLiveOrderIntent
+    ) -> None:
+        if not intent.closing_only:
+            raise ValueError("close capacity requires a closing-only intent")
+        row = connection.execute(
+            "SELECT * FROM polymarket_live_orders WHERE intent_id = ?",
+            [intent.parent_intent_id],
+        ).fetchone()
+        if row is None:
+            raise PolymarketLiveBlocked("closing intent parent is not bot-owned")
+        parent = self._record(row)
+        if (
+            parent.intent.bot_id != intent.bot_id
+            or parent.intent.market_id != intent.market_id
+            or parent.intent.token_id != intent.token_id
+            or parent.intent.side != "BUY"
+            or parent.intent.closing_only
+            or parent.state not in _TERMINAL_STATES
+        ):
+            raise PolymarketLiveBlocked(
+                "closing intent differs from its bot-owned parent"
+            )
+        lot = next(
+            (
+                lot
+                for lot in self._owned_lots(connection)
+                if lot.parent_intent_id == intent.parent_intent_id
+            ),
+            None,
+        )
+        if (
+            lot is None
+            or lot.market_id != intent.market_id
+            or lot.token_id != intent.token_id
+            or lot.provisional
+            or lot.available_quantity < intent.quantity
+        ):
+            raise PolymarketLiveBlocked(
+                "closing intent exceeds its confirmed unreserved bot-owned lot"
+            )
 
     def owned_inventory(self) -> tuple[PolymarketOwnedInventory, ...]:
         quantities: dict[tuple[str, str], Decimal] = {}
@@ -3643,13 +3724,25 @@ class PolymarketLiveCoordinator:
         self.ledger = ledger
         if not isinstance(risk_limits, PolymarketLiveRiskLimits):
             raise TypeError("risk_limits must be PolymarketLiveRiskLimits")
-        self.risk_limits = risk_limits
+        self._risk_limits_lock = RLock()
+        self._risk_limits = risk_limits
         self.runtime_authority = runtime_authority
         self.maximum_clock_skew_ms = int(maximum_clock_skew_ms)
         if not 0 <= self.maximum_clock_skew_ms <= 60_000:
             raise ValueError("maximum_clock_skew_ms must lie in [0, 60000]")
         if not require_dedicated_wallet:
             raise ValueError("live Polymarket execution requires a dedicated wallet")
+
+    @property
+    def risk_limits(self) -> PolymarketLiveRiskLimits:
+        return self._risk_limits
+
+    @risk_limits.setter
+    def risk_limits(self, limits: PolymarketLiveRiskLimits) -> None:
+        if not isinstance(limits, PolymarketLiveRiskLimits):
+            raise TypeError("risk_limits must be PolymarketLiveRiskLimits")
+        with self._risk_limits_lock:
+            self._risk_limits = limits
 
     def preflight(self) -> PolymarketReconciliation:
         checkpoint = (
@@ -4048,6 +4141,8 @@ class PolymarketLiveCoordinator:
         now = int(time.time() * 1_000)
         self._assert_intent_current(intent, observed_at_ms=now)
         self._assert_order_dispatch_available()
+        risk_limits = self.risk_limits
+        approved_revision = None if intent.closing_only else self.ledger.revision()
         gate = self.preflight()
         if self.runtime_authority is not None:
             self.runtime_authority.assert_submission_allowed(
@@ -4058,35 +4153,7 @@ class PolymarketLiveCoordinator:
                 raise PolymarketLiveBlocked(
                     f"live close blocked by reconciliation: {gate.errors}"
                 )
-            try:
-                parent = self.ledger.record(intent.parent_intent_id)
-            except KeyError as exc:
-                raise PolymarketLiveBlocked(
-                    "closing intent parent is not bot-owned"
-                ) from exc
-            if (
-                parent.intent.bot_id != intent.bot_id
-                or parent.intent.market_id != intent.market_id
-                or parent.intent.token_id != intent.token_id
-                or parent.intent.side != "BUY"
-                or parent.intent.closing_only
-                or parent.state not in _TERMINAL_STATES
-            ):
-                raise PolymarketLiveBlocked(
-                    "closing intent differs from its bot-owned parent"
-                )
-            lots = {item.parent_intent_id: item for item in self.ledger.owned_lots()}
-            lot = lots.get(intent.parent_intent_id)
-            if (
-                lot is None
-                or lot.market_id != intent.market_id
-                or lot.token_id != intent.token_id
-                or lot.provisional
-                or lot.available_quantity < intent.quantity
-            ):
-                raise PolymarketLiveBlocked(
-                    "closing intent exceeds its confirmed unreserved bot-owned lot"
-                )
+            self.ledger.assert_close_capacity(intent)
         elif not gate.can_open:
             raise PolymarketLiveBlocked(
                 f"live open blocked by reconciliation: {gate.errors}"
@@ -4095,7 +4162,7 @@ class PolymarketLiveCoordinator:
             order_quote = (
                 intent.limit_price * intent.quantity + intent.fee_reserve_quote
             )
-            if order_quote > self.risk_limits.maximum_order_quote:
+            if order_quote > risk_limits.maximum_order_quote:
                 raise PolymarketLiveBlocked("live order exceeds its quote ceiling")
             current_at_risk, active_markets = self._owned_at_risk()
             if intent.market_id in active_markets or any(
@@ -4121,13 +4188,13 @@ class PolymarketLiveCoordinator:
                 projected_total_at_risk += projected_condition_loss
             else:
                 projected_total_at_risk = current_at_risk + order_quote
-            if projected_total_at_risk > self.risk_limits.maximum_total_at_risk_quote:
+            if projected_total_at_risk > risk_limits.maximum_total_at_risk_quote:
                 raise PolymarketLiveBlocked(
                     "live order exceeds the aggregate capital-at-risk ceiling"
                 )
             if (
                 intent.market_id not in active_markets
-                and len(active_markets) >= self.risk_limits.maximum_active_markets
+                and len(active_markets) >= risk_limits.maximum_active_markets
             ):
                 raise PolymarketLiveBlocked(
                     "live order exceeds the active-market ceiling"
@@ -4137,7 +4204,7 @@ class PolymarketLiveCoordinator:
             }
             if (
                 inventory.get(intent.token_id, Decimal("0")) + intent.quantity
-                > self.risk_limits.maximum_token_quantity
+                > risk_limits.maximum_token_quantity
             ):
                 raise PolymarketLiveBlocked(
                     "live order exceeds its token inventory ceiling"
@@ -4180,7 +4247,10 @@ class PolymarketLiveCoordinator:
                 submission_guard = guard_factory(closing_only=intent.closing_only)
         dispatch_started = False
         try:
-            with submission_guard:
+            policy_guard = (
+                nullcontext() if intent.closing_only else self._risk_limits_lock
+            )
+            with submission_guard, policy_guard:
                 if self.runtime_authority is not None:
                     self.runtime_authority.assert_submission_allowed(
                         closing_only=intent.closing_only
@@ -4188,7 +4258,15 @@ class PolymarketLiveCoordinator:
                 self._assert_order_dispatch_available()
                 now = int(time.time() * 1_000)
                 self._assert_intent_current(intent, observed_at_ms=now)
-                self.ledger.reserve_submission(prepared, observed_at_ms=now)
+                if not intent.closing_only and self.risk_limits != risk_limits:
+                    raise PolymarketLiveBlocked(
+                        "risk limits changed after opening approval"
+                    )
+                self.ledger.reserve_submission(
+                    prepared,
+                    observed_at_ms=now,
+                    expected_revision=approved_revision,
+                )
                 self.ledger.transition(
                     intent.intent_id,
                     expected_states=("prepared",),

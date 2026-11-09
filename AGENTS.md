@@ -150,6 +150,12 @@ result and all other consumed populations, including WNBA September 3-9.
   prepared evidence; it is not submission admission. Do not replace the atomic
   gate with a cached preflight result or an in-process-only lock. Closing-only
   actions retain their separate ownership/quantity and runtime Stop rules.
+  Openings must bind the ledger revision captured before preflight through the
+  required `expected_revision` argument; a changed audit tip rejects admission.
+  Preserve the coordinator's risk-limit update/dispatch lock. Closing admission
+  instead rechecks the exact parent and remaining unreserved lot within its
+  writer transaction; unrelated ledger changes are not a blanket close veto.
+  Lot readers must use one SQLite snapshot for fills, orders and redemptions.
 
 - Apply the full [progress, blocking and resumption protocol](docs/AGENT_WORKFLOWS.md#progress-blocking-and-resumption)
   on every continuation. A blocked research branch is not a blocked repository.

@@ -1,0 +1,78 @@
+{
+  "accounting_review": {
+    "after_source_sha256": "118ee7a385e2b8b8fe013114ba441d59a037904c30265d21f2737e839650781b",
+    "normalization": "Only redemption reader connection plumbing, not quantities or formulas",
+    "owned_lot_accounting_tail_unchanged": true,
+    "unchanged_methods": [
+      "_record",
+      "_redemption_record",
+      "_verify_fill_row",
+      "condition_accounting"
+    ]
+  },
+  "after_focused_checks": {
+    "errors": 0,
+    "failures": 0,
+    "skipped": 0,
+    "tests": 248
+  },
+  "base_commit": "e99ac52b53447c73c9891572266183db5c2f1548",
+  "before_corrected_regressions": {
+    "errors": 0,
+    "failures": 3,
+    "skipped": 0,
+    "tests": 3
+  },
+  "before_fixture_correction": "Initial completed-fill case used aggregate ceiling below single-order ceiling; retained but excluded from defect proof. The corrected isolated old-module run exercises all three target paths and fails because the required block is absent.",
+  "mechanisms": {
+    "close_parent_capacity_checked": "Inside the same writer transaction using one connection",
+    "opening_revision_captured": "Before preflight",
+    "opening_revision_checked": "Inside the same SQLite writer transaction as prepared insertion",
+    "policy_lock_scope": "One coordinator; held for final opening admission/dispatch and limit updates, never acquired by closing",
+    "unrelated_ledger_change_vetoes_closing": false
+  },
+  "original_implementation_sha256": "eb3aabcb400dafc002c11c3fdd635e0fc0f26cf054de97e289f5ec06a2acc327",
+  "qualifications": {
+    "account_requests": 0,
+    "credentials_used": false,
+    "cross_process_policy_qualified": false,
+    "full_suite_run": false,
+    "independent_supervisor_qualified": false,
+    "market_observations_added": 0,
+    "native_account_execution": false,
+    "orders": 0,
+    "persistent_worker_installed": false,
+    "protected_capture_access": false,
+    "qualified_stable_edges": 0,
+    "timing_qualified": false
+  },
+  "retained_private_artifact_sha256": {
+    "accounting-review.json": "5e3a6f9eb39b142030b8395f5811f7b6c9c4f9c7db91e9b76df96cd49b385a7d",
+    "before-source-binding.json": "eab1c1649e61551d884a99120c344e7f4028888acd85500bc4f11bae6c460911",
+    "before.log": "709ed546254d6abefec5e3389c44edca323cbc46e25c744158e286af451667ac",
+    "before.xml": "14208e778d0559bbc2baf0a9d19ca2e0ad019d14e01c966837db46c28626881b",
+    "corrected-before-binding.json": "5f99ab9406aeef791c178b02fd2bd3c96c46141c57c0d917cb861e9faec2d733",
+    "corrected-before.log": "c33afcb2eb09b2a847966a5da50a9c523afeb12685836c38b99b641321bb0edb",
+    "corrected-before.xml": "71c2ef0e2f244e3abf2917743dd66f9bfcf2814900f268dc4caa235f063526a4",
+    "final.log": "6bfc48a9f9d2c7fd352efffd38bdf08600e269e65cd68561abd3c837abbc90f3",
+    "final.xml": "fb80942db46dcaa9fab70346f2a90d5787396135233f776b2e71d111a6416fb7",
+    "polymarket_live.py.before": "eb3aabcb400dafc002c11c3fdd635e0fc0f26cf054de97e289f5ec06a2acc327",
+    "reproduce_old_module.py": "2365ae33e4913d344b11b0b648ce4d86ad55577404706d03814750ba9d7a6bd8",
+    "source-routing.log": "6508ced0c63da35aaa3cd815613b7f5cf54ffbb442add9c6029704268eb075e2",
+    "test_corrected_before.py": "c9214d0eaf4a93c108ffc56a799bac40ca9b6e2246c6ca42ccbbe1559d84760f",
+    "test_polymarket_live.py.before": "61af52fa4b0b1ec7cfdb83a249702a3b4a92253d28273a15d9d7bc69c1d2e299"
+  },
+  "schema": "local-capital-admission-evidence-v1",
+  "source_binding": "Exact LF Python source bytes",
+  "source_sha256": {
+    "src/simple_ai_trading/polymarket_live.py": "118ee7a385e2b8b8fe013114ba441d59a037904c30265d21f2737e839650781b",
+    "src/simple_ai_trading/polymarket_live_runtime.py": "6aa78e9be1d78c52b911d0201ed9633a4ebac849320ae2007e5480aa73cc487c",
+    "src/simple_ai_trading/polymarket_runtime_control.py": "d767c14d145caa21a5aacc958f83d90c27519b4c4aafe4002c5fe1f6914da76b",
+    "tests/test_polymarket_live.py": "ec793bd0b2381d350bea64338ac1bdf0de5cb2db9b9f2d9c4f6aa539c6872267",
+    "tests/test_polymarket_live_manifest.py": "694d071fad93c770dc2865e202154a126a1b2cfd01bea7828fd3acdbb9d8f92d",
+    "tests/test_polymarket_live_runtime_subscription.py": "9240b18363d717c33e095de652ba6b60d7ee49fbaf0ad071a3d4ee6ab6c4625c",
+    "tests/test_polymarket_live_settlement.py": "513f4aafa93aca745e6ece163b89a8f633e893ed0eabd541885612ad8be83011",
+    "tests/test_polymarket_runtime_control.py": "11325e42ec02d80cbb50fea1491052d979c11f49c38d28daf7b67da7d6c629c6"
+  },
+  "verification_sha256": "8625b9b51e18800aece2865dad12d66f758988b1c162827044cabb4a21f37111"
+}
