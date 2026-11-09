@@ -21,7 +21,7 @@ def test_package_pin_and_hashes_are_exact() -> None:
     Inputs: repository fixtures. Output: fails on regressions in package pin and hashes are exact.
     """
     assert cocoindex_agent_search.PACKAGE_REQUIREMENT == (
-        "cocoindex-code[full]==0.2.37"
+        "cocoindex-code[full]==0.2.43"
     )
     assert "latest" not in cocoindex_agent_search.PACKAGE_REQUIREMENT
 
@@ -2408,7 +2408,7 @@ def test_mcp_smoke_uses_workspace_root_and_minimal_env(
         returncode=0,
         stdout=(
             '{"jsonrpc":"2.0","id":1,"result":'
-            '{"serverInfo":{"name":"cocoindex-code","version":"0.2.37"}}}\n'
+            '{"serverInfo":{"name":"cocoindex-code","version":"0.2.43"}}}\n'
             '{"jsonrpc":"2.0","id":2,"result":'
             '{"tools":[{"name":"search"},{"name":"status"}]}}\n'
         ),
@@ -2426,7 +2426,7 @@ def test_mcp_smoke_uses_workspace_root_and_minimal_env(
         include_search=False,
     ) == {
         "server_name": "cocoindex-code",
-        "server_version": "0.2.37",
+        "server_version": "0.2.43",
         "tools": ["search", "status"],
     }
     assert mocked_run.call_args.args[0] == [
@@ -2462,7 +2462,7 @@ def test_mcp_stdio_smoke_include_search_fails_on_tool_error(
         returncode=0,
         stdout=(
             '{"jsonrpc":"2.0","id":1,"result":'
-            '{"serverInfo":{"name":"cocoindex-code","version":"0.2.37"}}}\n'
+            '{"serverInfo":{"name":"cocoindex-code","version":"0.2.43"}}}\n'
             '{"jsonrpc":"2.0","id":2,"result":{"tools":[{"name":"search"}]}}\n'
             '{"jsonrpc":"2.0","id":3,"result":'
             '{"content":[{"type":"text","text":"missing index"}],"isError":true}}\n'
@@ -2497,7 +2497,7 @@ def test_mcp_stdio_smoke_include_search_records_success(
         returncode=0,
         stdout=(
             '{"jsonrpc":"2.0","id":1,"result":'
-            '{"serverInfo":{"name":"cocoindex-code","version":"0.2.37"}}}\n'
+            '{"serverInfo":{"name":"cocoindex-code","version":"0.2.43"}}}\n'
             '{"jsonrpc":"2.0","id":2,"result":{"tools":[{"name":"search"}]}}\n'
             '{"jsonrpc":"2.0","id":3,"result":'
             '{"content":[{"type":"text","text":"File: AGENTS.md:1"}],"isError":false}}\n'
@@ -2769,3 +2769,11 @@ def test_cli_supports_help() -> None:
 
     assert result.returncode == 0
     assert "usage:" in result.stdout.lower()
+
+
+def test_search_file_identity_normalizes_windows_and_posix_separators():
+    from tools.cocoindex_agent_search import unique
+
+    assert unique([r".\src\module.py", "./src/module.py", "src/module.py"]) == [
+        "src/module.py"
+    ]

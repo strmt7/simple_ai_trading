@@ -1,5 +1,20 @@
 # Continue Development
 
+November 9 [dependency and publication refresh](review/2026-11-09/dependencies/review.md):
+the new lock resolves the 17 audited Dependabot findings above their patched
+versions, with explicit numerical/SDK compatibility bounds. Isolated automatic
+Windows installation, native build and offline/read-only Linux startup are
+verified. DuckDB completion and SDK single-submission behavior are repaired;
+the broad suite is not green: 86 failures remain after focused remediation.
+Preserve frozen results and source guards. Read the linked review for actual
+validation and publication coverage. The user's current rule requires official
+GitHub connector commits with its assigned attribution; the synthetic-identity
+policy is superseded. Historical cleanup uses the exact empty-connector-commit
+reference and invariant-checked recovery material. The premature prerelease,
+six assets and public release tag were deleted; do not publish releases/tags
+without a new explicit request. Goal active; no economic observation or edge
+admission. Financial counts remain 203/65/37/0.
+
 November 9 [funding versus term premium](review/2026-11-09/funding-term-premium/review.md):
 retained metadata identifies four BTC/ETH dated-contract candidates spanning the
 fixed research day; no quote/file/unit/margin equivalence is admitted. Six source-

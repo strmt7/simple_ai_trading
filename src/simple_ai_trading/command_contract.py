@@ -313,7 +313,11 @@ def command_specs() -> tuple[CommandSpec, ...]:
         specs.append(
             CommandSpec(
                 name=name,
-                help=str(subparser.description or subparser.format_usage()).strip(),
+                help=(
+                    str(subparser.description).strip()
+                    if subparser.description
+                    else " ".join(subparser.format_usage().split())
+                ),
                 options=tuple(options),
                 positionals=tuple(positionals),
             )

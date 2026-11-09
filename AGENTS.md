@@ -25,6 +25,21 @@ override prose.
 
 ## Portable paths and publication privacy
 
+- Runtime, installation and build behavior must be host-agnostic within each
+  supported OS/architecture. Declare and resolve dependencies; accept explicit
+  configuration or verify discovered tools and capabilities before use. Never
+  assume a particular user profile, drive, virtual environment, application
+  install directory or preinstalled optional package. Missing prerequisites must
+  fail with actionable instructions. Do not alter other applications or their
+  environments to satisfy this project's requirements.
+- Install missing project dependencies automatically only inside an owned,
+  isolated application environment from reviewed version/hash locks. Keep tool
+  caches and managed interpreters private/configurable; do not upgrade system
+  packages, edit global PATH, replace another app's provider, install services or
+  require administrator access as a side effect. Never rewrite an environment
+  currently serving another process. Container-only OS libraries may be installed
+  in the image; host-level prerequisites require a separate explicit action.
+
 - Never add workstation-specific absolute filesystem paths, user-profile names
   or drive mappings to tracked code, configuration, documentation or evidence.
   Derive storage from explicit configuration, environment or application-relative
@@ -140,9 +155,15 @@ result and all other consumed populations, including WNBA September 3-9.
   and line coverage. Documentation, syntax scans and passing tests alone do not
   prove this complete; preserve historical sources/results and reopen affected
   review coverage after subsequent changes.
-- AI Git history must use `AI agent <>` for author and committer. Read
-  `docs/AI_COMMIT_IDENTITY.md` before committing or auditing; never use a human,
-  host, tool, CI, global-config, or noreply identity.
+- Create commits only through the authenticated official GitHub connector and
+  let it assign author and committer. Never invent, substitute or manually fix
+  identities. Read `docs/AI_COMMIT_IDENTITY.md` before publication or history work.
+  For the user's explicitly authorized historical cleanup, first create an empty
+  connector commit and use its exact returned identity; preserve human commits,
+  historical result bytes, a verified recovery copy and an expected-head lease.
+- This project remains in development. Do not create or publish releases or
+  release tags without a new explicit user request. The November 9 instruction
+  removes the premature published releases and associated release tags.
 - Binance execution is BTC/ETH/SOL testnet, Demo, or paper only. Polymarket
   order-capable research remains BTC/ETH/SOL and its BTC-only live-capable
   boundary defaults off. Public unauthenticated read-only structural discovery

@@ -38,7 +38,7 @@ from .polymarket_live import (
 from .polymarket_fees import PolymarketFeeModel
 
 
-POLYMARKET_LIVE_SDK_VERSION = "1.1.0"
+POLYMARKET_LIVE_SDK_VERSION = "1.2.1"
 POLYGON_CHAIN_ID = 137
 POLYMARKET_GEOBLOCK_URL = "https://polymarket.com/api/geoblock"
 POLYMARKET_DATA_POSITIONS_URL = "https://data-api.polymarket.com/positions"
@@ -231,7 +231,7 @@ class OfficialPolymarketV2Venue:
 
         class _ImmediateResponseClobClient(ClobClient):
             def _resolve_transactions_hashes(self, response: object) -> object:
-                # SDK 1.1.0 may poll for 30 seconds after the CLOB has accepted a
+                # The SDK may poll for 30 seconds after the CLOB has accepted a
                 # matched order. Fill authority comes from the authenticated user
                 # stream and exact reconciliation, so preserve deferExec=false while
                 # returning the initial server response to the action loop.

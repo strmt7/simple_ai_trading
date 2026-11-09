@@ -41,7 +41,9 @@ directly to `rg`.
 
 ## Safety Contract
 
-- Keep `cocoindex-code[full]==0.2.37` pinned.
+- Keep `cocoindex-code[full]==0.2.43` pinned. Package upgrades require the
+  source-bound smoke/search and ten-case compatibility benchmark before acceptance;
+  retain earlier versioned runtimes and receipts without altering other clients.
 - Never run `ccc init` in the live checkout and never commit
   `.cocoindex_code/`.
 - Store the shared install and per-repository mirrors/databases under

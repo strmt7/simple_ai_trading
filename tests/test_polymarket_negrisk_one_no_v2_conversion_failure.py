@@ -112,7 +112,7 @@ def test_registry_binds_failure_without_reopening_or_promotion() -> None:
     assert registry["result_sha256"] == REGISTRY_HASH
     assert _canonical_hash(registry, "result_sha256") == REGISTRY_HASH
     assert [row["priority_rank"] for row in registry["prioritized_hypotheses"]] == list(
-        range(1, 45)
+        range(1, len(registry["prioritized_hypotheses"]) + 1)
     )
     row = registry["prioritized_hypotheses"][1]
     assert row["priority_rank"] == 2

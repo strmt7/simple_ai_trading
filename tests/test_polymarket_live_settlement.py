@@ -1949,8 +1949,10 @@ def test_official_adapter_requires_explicit_smart_wallet_credentials() -> None:
         )
 
 
+@pytest.mark.parametrize("failure", ["timeout", "nonce_rejection"])
 def test_smart_wallet_submission_bypasses_sdk_retry_wrapper(
     monkeypatch: pytest.MonkeyPatch,
+    failure: str,
 ) -> None:
     client = FakeUnifiedClient(wallet_type="DEPOSIT_WALLET")
     submitted_calls: list[tuple[object, ...]] = []
@@ -1965,6 +1967,11 @@ def test_smart_wallet_submission_bypasses_sdk_retry_wrapper(
         assert len(calls) == 1
         assert metadata
         submitted_calls.append(tuple(calls))
+        return {"signed": "offline-payload"}
+
+    def submit_once(relayer, *, payload):
+        assert relayer is client._ctx.relayer
+        assert payload == {"signed": "offline-payload"}
         return type(
             "Response",
             (),
@@ -1976,7 +1983,17 @@ def test_smart_wallet_submission_bypasses_sdk_retry_wrapper(
 
     from polymarket._internal.actions.relayer import gasless
 
-    monkeypatch.setattr(gasless, "_submit_for_wallet_type_sync", observe_submit)
+    monkeypatch.setattr(
+        gasless, "build_signed_payload_for_wallet_type_sync", observe_submit
+    )
+    monkeypatch.setattr(gasless, "submit_gasless_sync", submit_once)
+
+    def forbidden_retry_wrapper(*args, **kwargs):
+        raise AssertionError("The SDK's automatic resubmission wrapper must not run")
+
+    monkeypatch.setattr(
+        gasless, "_submit_for_wallet_type_sync", forbidden_retry_wrapper
+    )
     venue = OfficialPolymarketUnifiedRedemptionVenue(
         _credentials(signature_type=3),
         gasless_credentials=PolymarketGaslessCredentials(
@@ -1995,6 +2012,31 @@ def test_smart_wallet_submission_bypasses_sdk_retry_wrapper(
     assert submission.transaction_id == "transaction-0001"
     assert client.conditions == []
     assert len(submitted_calls) == 1
+
+    attempts = []
+
+    from polymarket.errors import RequestRejectedError
+
+    error = (
+        TimeoutError("offline lost response")
+        if failure == "timeout"
+        else RequestRejectedError(
+            "batch nonce 1 does not match on-chain nonce 2", status=400
+        )
+    )
+
+    def uncertain_submission(*args, **kwargs):
+        attempts.append(1)
+        raise error
+
+    monkeypatch.setattr(gasless, "submit_gasless_sync", uncertain_submission)
+    venue.assert_redemption_ready(CONDITION_ID)
+    with pytest.raises(type(error)):
+        venue.submit_redemption(CONDITION_ID)
+    assert attempts == [1]
+    with pytest.raises(PolymarketRedemptionRejected, match="single-use"):
+        venue.submit_redemption(CONDITION_ID)
+    assert attempts == [1]
 
 
 def test_gasless_credentials_are_environment_only_and_redacted() -> None:

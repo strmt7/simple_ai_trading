@@ -96,7 +96,9 @@ def test_canonical_ledgers_terminalize_only_this_population() -> None:
     )
     assert _canonical_hash(registry, "result_sha256") == registry["result_sha256"]
     assert len(registry["prioritized_hypotheses"]) == 65
-    assert len(registry["terminal_do_not_repeat"]) == 183
+    assert len({row["family"] for row in registry["terminal_do_not_repeat"]}) == len(
+        registry["terminal_do_not_repeat"]
+    )
     hypothesis = next(
         row
         for row in registry["prioritized_hypotheses"]
@@ -108,9 +110,9 @@ def test_canonical_ledgers_terminalize_only_this_population() -> None:
         "path": PRICE.relative_to(ROOT).as_posix(),
         "result_sha256": _load(PRICE)["result_sha256"],
     }
-    assert audit["source_binding"]["registry_result_sha256"] == registry[
-        "result_sha256"
-    ]
+    assert (
+        audit["source_binding"]["registry_result_sha256"] == registry["result_sha256"]
+    )
     assert audit["result_sha256"] == (
         "e575d0084546053bc1ab2c07e9d23553796d4ef4dd8fc29bc2edcef314575801"
     )

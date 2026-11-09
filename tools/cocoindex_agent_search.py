@@ -30,7 +30,7 @@ else:  # pragma: no cover - selected by the host platform
 
 
 PACKAGE_NAME = "cocoindex-code"
-PACKAGE_VERSION = "0.2.37"
+PACKAGE_VERSION = "0.2.43"
 PACKAGE_REQUIREMENT = f"{PACKAGE_NAME}[full]=={PACKAGE_VERSION}"
 MCP_SERVER_NAME = "cocoindex-code"
 MCP_PYTHON_COMMAND = sys.executable
@@ -343,9 +343,10 @@ def run_captured_process(
     env: dict[str, str] | None,
     input_text: str,
     timeout: int | None,
+    inherit_environment: bool = True,
 ) -> subprocess.CompletedProcess[str]:
     """Capture an unattended command and contain its entire Windows child tree."""
-    child_env = os.environ.copy()
+    child_env = os.environ.copy() if inherit_environment else {}
     if env is not None:
         child_env.update(env)
     child_env.update({"PYTHONUTF8": "1", "PYTHONIOENCODING": "utf-8"})
@@ -1747,7 +1748,9 @@ def unique(seq: list[str]) -> list[str]:
     seen: set[str] = set()
     output: list[str] = []
     for item in seq:
-        normalized = item[2:] if item.startswith("./") else item
+        normalized = item.replace("\\", "/")
+        if normalized.startswith("./"):
+            normalized = normalized[2:]
         if normalized not in seen:
             seen.add(normalized)
             output.append(normalized)

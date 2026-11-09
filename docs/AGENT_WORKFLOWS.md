@@ -10,15 +10,15 @@ skills are intentionally not copied.
 
 | Tool | Pinned version | Repository entry point |
 | --- | --- | --- |
-| CocoIndex Code | `0.2.37` | `tools/cocoindex_agent_search.py` |
-| CodeQL | `v4.37.8` | `.github/workflows/codeql.yml` |
-| uv | `0.12.1` | `pyproject.toml` and `uv.lock` |
-| Ruff | `0.16.5` | `pyproject.toml`, `uv.lock` and `.github/workflows/ruff.yml` |
+| CocoIndex Code | `0.2.43` | `tools/cocoindex_agent_search.py` |
+| CodeQL | `v4.39.3` | `.github/workflows/codeql.yml` |
+| uv | `0.13.7` | `pyproject.toml` and `uv.lock` |
+| Ruff | `0.17.4` | `pyproject.toml`, `uv.lock` and `.github/workflows/ruff.yml` |
 | Vulture | `2.16` | `tools/vulture_check.py` and `.github/workflows/vulture.yml` |
-| Super-Linter | `v8.7.0` | `.github/workflows/super-linter.yml` |
+| Super-Linter | `v9.0.0` | `.github/workflows/super-linter.yml` |
 | Agent skills | ECC `2.0.0` | `.agents/skills/` |
 | Karpathy guidelines | commit `2c606141936f1eeef17fa3043a72095b4765b9c2` | `.agents/skills/karpathy-guidelines/` |
-| Crawl4AI | verified provider `0.9.4+superzip.portable2` | [Mandatory isolated research integration](CRAWL4AI_RESEARCH.md) |
+| Crawl4AI | verified provider `0.9.5+flitzzip.portable2` | [Mandatory isolated research integration](CRAWL4AI_RESEARCH.md) |
 | Caveman | repository-local internal communication overlay | `.agents/skills/caveman/SKILL.md` |
 
 October 8 user requirement: Crawl4AI is mandatory for web-page source reading.
@@ -43,16 +43,15 @@ Use UTF-8-sig-aware reading for BOM-bearing Python sources, format in memory,
 verify unchanged AST semantics, and apply only the edited function blocks.
 Do not turn a formatter problem into unrelated whole-file churn.
 
-## AI Commit Identity Gate
+## GitHub publication and historical attribution
 
-Run the author, committer, and trailer audit as a standalone read command and
-inspect its output before invoking `git add`, `git commit`, amend, merge,
-cherry-pick, squash, or rebase. Never combine the identity audit and a mutating
-Git command in one shell or tool call: a prohibited identity must stop
-publication before mutation. Use the command-scoped literal identity from
-`docs/AI_COMMIT_IDENTITY.md` for every AI-created commit. If a violation is
-already shared, surface its exact commit before publishing another checkpoint
-and do not rewrite shared history without explicit approval.
+Create new commits only through the authenticated official GitHub connector;
+let it assign contributor attribution and verify the returned metadata. Never
+substitute a synthetic identity, override author/committer fields or alter global
+Git configuration. The earlier `AI agent <>` requirement is superseded by the
+user's November 9 instruction. See `docs/AI_COMMIT_IDENTITY.md` for the current
+connector workflow and the separately authorized historical-cleanup boundary.
+Historical research source identities and result bytes remain immutable.
 
 A fresh 2026-07-18 upstream check found CocoIndex Code `0.2.37`, Vulture
 `2.16`, and Super-Linter `v8.7.0` still current. The pinned Karpathy commit is
@@ -65,6 +64,14 @@ CI and release jobs use `uv sync --locked`; `uv.lock` is the cross-platform,
 hash-bound dependency record. Dependabot may propose monthly `uv` and GitHub
 Actions updates, but it cannot merge them. Accelerator and numerical-library
 changes still require host compatibility and model-parity evidence.
+
+The Windows `tools/install_environment.py` bootstrap installs missing locked
+dependencies, tools and a managed interpreter into owned, configurable storage.
+It requires a bootstrap CPython 3.11+ and never repairs a running environment or
+installs global packages. Native builds accept explicit Python/CMake/Ninja paths;
+otherwise they can provision the isolated tools. A C++ compiler is an explicit
+system prerequisite. See the [dependency refresh](review/2026-11-09/dependencies/review.md)
+for compatibility bounds, validation coverage and unresolved historical checks.
 
 The main CI workflow also runs `tools/audit_financial_terminology.py`. It rejects
 superseded labels in authored documentation, Windows UI text, publication

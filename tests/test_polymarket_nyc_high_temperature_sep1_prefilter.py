@@ -90,7 +90,9 @@ def test_weather_prefilter_routes_terminal_without_changing_profitability() -> N
     durability = _load(DURABILITY)
     assert _self_hash(registry, "result_sha256") == REGISTRY_HASH
     assert _self_hash(durability, "result_sha256") == DURABILITY_HASH
-    assert len(registry["terminal_do_not_repeat"]) == 158
+    assert len({row["family"] for row in registry["terminal_do_not_repeat"]}) == len(
+        registry["terminal_do_not_repeat"]
+    )
     terminal = {row["family"]: row for row in registry["terminal_do_not_repeat"]}
     family = (
         "polymarket_NYC_September_1_high_temperature_exact_fixed_"

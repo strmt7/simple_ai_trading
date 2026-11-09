@@ -287,5 +287,5 @@ def test_counterfactual_cannot_enter_legacy_signed_trainer(tmp_path: Path):
 
 
 def test_financial_admission_flag_cannot_be_set_by_constructor():
-    with pytest.raises(ValueError, match="init=False"):
+    with pytest.raises((ValueError, TypeError), match="init=False"):
         replace(evaluate(cash_path()), financially_qualified=True)

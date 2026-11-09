@@ -905,6 +905,9 @@ def _insert_anchors_columnar(
 ) -> None:
     if not anchors:
         return
+    # DuckDB 2 requires the preceding result to finish before view registration.
+    # Complete it on this connection so the caller's transaction stays intact.
+    connection.complete()
     rows = [anchor.as_row() for anchor in anchors]
     views: list[str] = []
     projections: list[str] = []
@@ -932,6 +935,7 @@ def _insert_anchors_columnar(
             + " FROM "
             + " POSITIONAL JOIN ".join(views)
         )
+        connection.complete()
     finally:
         for view in views:
             connection.unregister(view)

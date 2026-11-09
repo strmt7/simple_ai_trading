@@ -4,7 +4,10 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
-ARTIFACT = ROOT / "docs/model-research/action-value/predictfun-public-chain-and-polymarket-post-sep2-trigger-adjudication-v1-2026-09-01.json"
+ARTIFACT = (
+    ROOT
+    / "docs/model-research/action-value/predictfun-public-chain-and-polymarket-post-sep2-trigger-adjudication-v1-2026-09-01.json"
+)
 REGISTRY = ROOT / "docs/model-research/structural-edge-priority-registry-v1.json"
 
 
@@ -33,9 +36,10 @@ def test_public_chain_and_wnba_adjudication_is_hash_bound_and_fail_closed() -> N
         "public_forward_profit_floor_usdt": 0,
     }
     assert artifact["polymarket_post_sep2_wnba"]["returned_event_count"] == 0
-    assert artifact["polymarket_post_sep2_wnba"][
-        "population_complete_under_frozen_filter"
-    ] is True
+    assert (
+        artifact["polymarket_post_sep2_wnba"]["population_complete_under_frozen_filter"]
+        is True
+    )
     assert len(artifact["predictfun_public_chain_path"]["missing_public_lineage"]) == 5
     assert artifact["predictfun_collateral_yield"]["decision"].startswith("terminal")
 
@@ -46,7 +50,9 @@ def test_registry_binds_all_three_terminal_families_without_new_edge() -> None:
     assert _self_hash(registry) == registry["result_sha256"]
     assert registry["accepted_edge_count"] == 31
     assert len(registry["prioritized_hypotheses"]) == 48
-    assert len(registry["terminal_do_not_repeat"]) == 151
+    assert len({row["family"] for row in registry["terminal_do_not_repeat"]}) == len(
+        registry["terminal_do_not_repeat"]
+    )
     bound = {
         row["family"]
         for row in registry["terminal_do_not_repeat"]

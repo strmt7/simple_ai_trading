@@ -45,23 +45,23 @@ jobs:
 
       - name: Setup Python for native build
         if: matrix.language == 'c-cpp'
-        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with:
           python-version: '3.12'
 
       - name: Setup uv for native build
         if: matrix.language == 'c-cpp'
-        uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
+        uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
         with:
-          version: '0.12.1'
+          version: '0.13.7'
           enable-cache: true
 
       - name: Install native build environment
         if: matrix.language == 'c-cpp'
-        run: uv sync --locked --group test
+        run: uv sync --locked --group test --group tools
 
       - name: Initialize CodeQL
-        uses: github/codeql-action/init@cdf488f595d80d6e07e03d4674febd5ab45fa938 # v4.37.9
+        uses: github/codeql-action/init@33d7b85da1a04171e211befe2c739303b9a4c066 # v4.39.3
         with:
           languages: ${{ matrix.language }}
           build-mode: ${{ matrix.build-mode }}
@@ -73,8 +73,11 @@ jobs:
         run: >-
           uv run --locked powershell -ExecutionPolicy Bypass
           -File tools\build_native_windows.ps1
+          -PythonExecutable .venv\Scripts\python.exe
+          -CMakeExecutable .venv\Scripts\cmake.exe
+          -NinjaExecutable .venv\Scripts\ninja.exe
 
       - name: Analyze
-        uses: github/codeql-action/analyze@cdf488f595d80d6e07e03d4674febd5ab45fa938 # v4.37.9
+        uses: github/codeql-action/analyze@33d7b85da1a04171e211befe2c739303b9a4c066 # v4.39.3
         with:
           category: /language:${{ matrix.language }}

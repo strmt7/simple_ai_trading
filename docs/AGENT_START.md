@@ -10,6 +10,13 @@ Scope blockers to their branch; a fresh user resumption resets the blocked audit
 
 ## Current Truth
 
+November 9 [dependency/publication refresh](review/2026-11-09/dependencies/review.md):
+new locks and isolated installation address the audited advisories; the full
+suite still has unresolved historical/application checks. Use official GitHub
+connector commits and preserve original result identities during the authorized
+history cleanup. Premature public releases/tags were removed. Goal remains
+active, with no new economic observation or qualified stable edge.
+
 November 9 [term-premium R&D](review/2026-11-09/funding-term-premium/review.md):
 retained catalog metadata lists four BTC/ETH dated candidates for the research
 date. A conditional cash identity compares funding with paid term premium and

@@ -452,6 +452,7 @@ def _insert_rows_columnar(
                 )
             else:
                 raise TypeError("Round 73 grid insert column type is unsupported")
+            connection.complete()
             connection.register(view, array)
             views.append(view)
             projections.append(projection)
@@ -459,6 +460,7 @@ def _insert_rows_columnar(
         connection.execute(
             f"INSERT INTO {table} SELECT {', '.join(projections)} FROM {sources}"
         )
+        connection.complete()
     finally:
         for view in views:
             connection.unregister(view)

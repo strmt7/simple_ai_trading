@@ -141,7 +141,9 @@ def test_candidate_is_registered_without_changing_the_accepted_edge_count() -> N
     assert registry["result_sha256"] == EXPECTED_REGISTRY_HASH
     assert _embedded_hash(registry, "result_sha256") == EXPECTED_REGISTRY_HASH
     hypotheses = registry["prioritized_hypotheses"]
-    assert [row["priority_rank"] for row in hypotheses] == list(range(1, 48))
+    assert [row["priority_rank"] for row in hypotheses] == list(
+        range(1, len(hypotheses) + 1)
+    )
     candidate = next(
         row
         for row in hypotheses

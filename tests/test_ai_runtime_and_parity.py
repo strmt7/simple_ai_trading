@@ -770,6 +770,43 @@ def test_windows_app_commands_match_cli_contract() -> None:
     assert "model-lab" in WINDOWS_APP_COMMANDS
 
 
+def test_command_contract_ignores_usage_wrapping_but_preserves_options(monkeypatch):
+    from simple_ai_trading import command_contract as contract
+
+    monkeypatch.setattr(contract, "_WORKFLOW_GROUPS", (("Test", "Probe", ("probe",)),))
+
+    def clear_contract():
+        contract.command_specs.cache_clear()
+        contract.workflow_commands.cache_clear()
+        contract.command_contract_digest.cache_clear()
+
+    def parser(width: int, extra: bool = False):
+        root = argparse.ArgumentParser(prog="trader")
+        commands = root.add_subparsers()
+        command = commands.add_parser(
+            "probe",
+            formatter_class=lambda prog: argparse.HelpFormatter(prog, width=width),
+        )
+        command.add_argument("--long-option-name", required=True)
+        command.add_argument("--another-long-option-name")
+        if extra:
+            command.add_argument("--new-option")
+        return root
+
+    try:
+        monkeypatch.setattr(contract, "_build_parser", lambda: parser(36))
+        clear_contract()
+        narrow = contract.command_contract_digest()
+        monkeypatch.setattr(contract, "_build_parser", lambda: parser(120))
+        clear_contract()
+        assert contract.command_contract_digest() == narrow
+        monkeypatch.setattr(contract, "_build_parser", lambda: parser(120, True))
+        clear_contract()
+        assert contract.command_contract_digest() != narrow
+    finally:
+        clear_contract()
+
+
 def test_windows_workflow_taxonomy_is_complete_unique_and_model_first() -> None:
     workflow = workflow_commands()
     names = tuple(item.name for item in workflow)
@@ -1043,10 +1080,11 @@ def test_native_build_fails_closed_on_command_generation_error() -> None:
         windows_app._repo_root() / "tools" / "build_native_windows.ps1"
     ).read_text(encoding="utf-8")
 
-    assert '".venv\\Scripts\\python.exe"' in source
-    assert source.index('".venv\\Scripts\\python.exe"') < source.index(
-        '".venv311\\Scripts\\python.exe"'
-    )
+    assert "[string]$PythonExecutable" in source
+    assert "[string]$CMakeExecutable" in source
+    assert "[string]$NinjaExecutable" in source
+    assert 'Resolve-Executable $PythonExecutable "python.exe"' in source
+    assert ".venv311" not in source
     assert "tools\\verify_runtime_entrypoint.py" in source
     assert "Runtime entry-point verification failed" in source
     assert "Native command-contract generation failed" in source

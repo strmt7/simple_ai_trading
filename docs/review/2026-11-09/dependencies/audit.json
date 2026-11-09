@@ -1,0 +1,233 @@
+{
+  "code_scanning_coverage_claim": false,
+  "code_scanning_open_at_audit": 0,
+  "dependabot_at_initial_audit": [
+    {
+      "first_patched_version": "6.6",
+      "ghsa": "GHSA-r4j5-9xpp-3985",
+      "number": 77,
+      "package": "tornado",
+      "resolved_version": "6.6",
+      "severity": "medium"
+    },
+    {
+      "first_patched_version": "6.6",
+      "ghsa": "GHSA-pw9p-v7r6-gx4p",
+      "number": 76,
+      "package": "tornado",
+      "resolved_version": "6.6",
+      "severity": "low"
+    },
+    {
+      "first_patched_version": "6.6",
+      "ghsa": "GHSA-pcg2-g6cj-q92c",
+      "number": 75,
+      "package": "tornado",
+      "resolved_version": "6.6",
+      "severity": "medium"
+    },
+    {
+      "first_patched_version": "4.2.1",
+      "ghsa": "GHSA-6627-m3xw-93mp",
+      "number": 74,
+      "package": "filelock",
+      "resolved_version": "4.2.9",
+      "severity": "medium"
+    },
+    {
+      "first_patched_version": "4.2.1",
+      "ghsa": "GHSA-9c4x-gm8v-wgc4",
+      "number": 73,
+      "package": "filelock",
+      "resolved_version": "4.2.9",
+      "severity": "medium"
+    },
+    {
+      "first_patched_version": "4.2.1",
+      "ghsa": "GHSA-8mx5-7m5m-r77g",
+      "number": 72,
+      "package": "filelock",
+      "resolved_version": "4.2.9",
+      "severity": "medium"
+    },
+    {
+      "first_patched_version": "4.2.1",
+      "ghsa": "GHSA-cwqr-hh33-gh44",
+      "number": 71,
+      "package": "filelock",
+      "resolved_version": "4.2.9",
+      "severity": "medium"
+    },
+    {
+      "first_patched_version": "4.2.1",
+      "ghsa": "GHSA-rfpc-qcw5-3pc4",
+      "number": 70,
+      "package": "filelock",
+      "resolved_version": "4.2.9",
+      "severity": "medium"
+    },
+    {
+      "first_patched_version": "4.2.1",
+      "ghsa": "GHSA-69hj-f68j-2879",
+      "number": 69,
+      "package": "filelock",
+      "resolved_version": "4.2.9",
+      "severity": "medium"
+    },
+    {
+      "first_patched_version": "4.0.9",
+      "ghsa": "GHSA-j8f7-rjxc-mr56",
+      "number": 68,
+      "package": "filelock",
+      "resolved_version": "4.2.9",
+      "severity": "medium"
+    },
+    {
+      "first_patched_version": "4.2.1",
+      "ghsa": "GHSA-m462-7rxw-wvpg",
+      "number": 67,
+      "package": "filelock",
+      "resolved_version": "4.2.9",
+      "severity": "medium"
+    },
+    {
+      "first_patched_version": "4.2.1",
+      "ghsa": "GHSA-fq56-3cx3-fjxp",
+      "number": 66,
+      "package": "filelock",
+      "resolved_version": "4.2.9",
+      "severity": "medium"
+    },
+    {
+      "first_patched_version": "1.2.3",
+      "ghsa": "GHSA-j586-36cw-2gc2",
+      "number": 65,
+      "package": "msgpack",
+      "resolved_version": "1.2.4",
+      "severity": "high"
+    },
+    {
+      "first_patched_version": "4.2.1",
+      "ghsa": "GHSA-9vhv-jxww-xfm5",
+      "number": 63,
+      "package": "filelock",
+      "resolved_version": "4.2.9",
+      "severity": "low"
+    },
+    {
+      "first_patched_version": "4.2.1",
+      "ghsa": "GHSA-567q-5qvw-pf92",
+      "number": 62,
+      "package": "filelock",
+      "resolved_version": "4.2.9",
+      "severity": "low"
+    },
+    {
+      "first_patched_version": "4.2.1",
+      "ghsa": "GHSA-v4x8-3wr5-3wq8",
+      "number": 61,
+      "package": "filelock",
+      "resolved_version": "4.2.9",
+      "severity": "high"
+    },
+    {
+      "first_patched_version": "84.1.0",
+      "ghsa": "GHSA-xmj3-9gf7-h52w",
+      "number": 58,
+      "package": "setuptools",
+      "resolved_version": "84.2.1",
+      "severity": "low"
+    }
+  ],
+  "financial_authority": {
+    "account_requests": 0,
+    "financial_fits": 0,
+    "new_market_observations": 0,
+    "orders": 0,
+    "qualified_stable_edges": 0
+  },
+  "hosted_alert_closure": "not_yet_verified",
+  "lock_package_records": 150,
+  "original_base_revision": "039a3fc002133fc15e60d3ab1e90cc7378a796c6",
+  "private_source_receipts": [
+    {
+      "bytes": 81339,
+      "path": "data/research/2026-11-09-dependency-refresh/inventory.json",
+      "sha256": "162596d43d2842e78dfea550ecd43d41ad3e6c554a79d85370c6bc76b6ecbbde"
+    },
+    {
+      "bytes": 285197,
+      "path": "data/research/2026-11-09-dependency-refresh/alerts.native.json",
+      "sha256": "b7305913cc9c38d01117d8d482b03f5a384a95c2c7a56a735ec8b725a6ca7912"
+    },
+    {
+      "bytes": 159996,
+      "path": "data/research/2026-11-09-dependency-refresh/pulls.native.json",
+      "sha256": "62a833e776a9b006617f6fab60081ca64c78741ee4214900b452a4ca386afc9a"
+    },
+    {
+      "bytes": 4,
+      "path": "data/research/2026-11-09-dependency-refresh/github-code-scanning.native.json",
+      "sha256": "cf1cbb66a638b4860a516671fb74850e6ccf787fe6c4c8d29e9c04efe880bd05"
+    },
+    {
+      "bytes": 1453984,
+      "path": "data/research/2026-11-09-dependency-refresh/tests-comprehensive.xml",
+      "sha256": "2abd6f95f82778777db377b6a9aa08d02096c0f953edcf3960780c14e0a42309"
+    },
+    {
+      "bytes": 89504,
+      "path": "data/research/2026-11-09-dependency-refresh/tests-failed-recheck.xml",
+      "sha256": "0603c8e1eb251850e44f5c5fd75c3ed337aa2f447369b3f1b3486688d2104517"
+    },
+    {
+      "bytes": 14764,
+      "path": "data/research/2026-11-09-dependency-refresh/coco-benchmark.json",
+      "sha256": "054aebd0fcc3821015da9ff8012d5409055d1f62e7cd5475060acd9944643e71"
+    },
+    {
+      "bytes": 15672,
+      "path": "data/research/2026-11-09-dependency-refresh/coco-scoped-benchmark.json",
+      "sha256": "1a06d82d3c9bca377e2a018106cc4b3b4f305aa96b69b6b2bd6e9d8f221b962e"
+    },
+    {
+      "bytes": 1202,
+      "path": "data/research/2026-11-09-dependency-refresh/connector-anchor.native.json",
+      "sha256": "85701f14b77cdd2b53a4f9e61e6c3e54380a88ebbf16679daac8fa7a5d37859b"
+    },
+    {
+      "bytes": 224530,
+      "path": "data/research/2026-11-09-dependency-refresh/history-verification.json",
+      "sha256": "299d919a9b72b954471d469b278959436aa95ac31240330c4c42383266a9ca0b"
+    },
+    {
+      "bytes": 11483,
+      "path": "data/research/2026-11-09-dependency-refresh/releases-before-removal.native.json",
+      "sha256": "d5dd6aa9ae40da802808d670e97782af5614779eade9687e96dced8a48812d0a"
+    },
+    {
+      "bytes": 2,
+      "path": "data/research/2026-11-09-dependency-refresh/releases-after-removal.native.json",
+      "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    }
+  ],
+  "pypi_metadata_queries": 143,
+  "result_sha256": "320921f7bfd0c1f8b61629db14bcfd4dba0bc0a1d9a9e0fd802b131e9e470703",
+  "schema": "dependency-refresh-audit-v1",
+  "validation": {
+    "alternate_directml_runtime_tested": false,
+    "failed_only_recheck": {
+      "failed": 86,
+      "passed": 11
+    },
+    "full_suite_green": false,
+    "initial_integration": {
+      "failed": 97,
+      "passed": 9436,
+      "skipped": 28
+    },
+    "linux_offline_readonly_cli_and_native_imports": true,
+    "lock_and_installed_dependency_compatibility": true,
+    "windows_native_build_and_ctest": true
+  }
+}

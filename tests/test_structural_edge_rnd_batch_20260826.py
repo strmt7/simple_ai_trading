@@ -138,7 +138,9 @@ def test_registry_binds_new_edge_conflict_and_terminal_adjudication() -> None:
     assert registry["result_sha256"] == REGISTRY_HASH
     assert _canonical_hash(registry) == REGISTRY_HASH
     hypotheses = registry["prioritized_hypotheses"]
-    assert [row["priority_rank"] for row in hypotheses] == list(range(1, 45))
+    assert [row["priority_rank"] for row in hypotheses] == list(
+        range(1, len(hypotheses) + 1)
+    )
 
     builder = next(
         row

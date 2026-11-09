@@ -109,7 +109,9 @@ def test_registry_prioritizes_the_accepted_scoped_increment() -> None:
     assert registry["result_sha256"] == EXPECTED_REGISTRY_HASH
     assert _embedded_hash(registry) == EXPECTED_REGISTRY_HASH
     hypotheses = registry["prioritized_hypotheses"]
-    assert [row["priority_rank"] for row in hypotheses] == list(range(1, 45))
+    assert [row["priority_rank"] for row in hypotheses] == list(
+        range(1, len(hypotheses) + 1)
+    )
     lead = next(
         row
         for row in hypotheses

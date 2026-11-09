@@ -96,7 +96,7 @@ def test_root_agent_context_is_compact_without_dropping_hard_routes() -> None:
     for required in (
         "docs/AGENT_START.md",
         "docs/AI_COMMIT_IDENTITY.md",
-        "AI agent <>\u0060 for author and committer",
+        "authenticated official GitHub connector",
         "Work in this session only",
         "No live-money authority exists",
         "Never print, prompt, log, serialize, test, document, or commit credentials",
@@ -174,9 +174,9 @@ def test_ruff_workflow_is_pinned_and_checks_changed_format_scope() -> None:
     assert "pull_request:" in text
     assert "branches:\n      - main" in text
     assert "workflow_dispatch:" in text
-    assert "actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0" in text
+    assert "actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1" in text
     assert "astral-sh/ruff-action@278981a28ce3188b1e39527901f38254bf3aac89" in text
-    assert "version: 0.15.22" in text
+    assert "version: 0.17.4" in text
     assert "run: ruff check ." in text
     assert "git diff --name-only --diff-filter=ACMR -z" in text
     assert 'cp -- "${file}" "${formatted}"' in text
@@ -187,7 +187,7 @@ def test_ruff_workflow_is_pinned_and_checks_changed_format_scope() -> None:
 
 def test_pre_commit_toolchain_matches_reviewed_ruff_release() -> None:
     text = _read(".pre-commit-config.yaml")
-    assert "rev: v0.15.22" in text
+    assert "rev: v0.17.4" in text
     assert "- id: ruff-check" in text
     assert "- id: ruff-format" in text
     assert "rev: v6.0.0" in text
@@ -197,8 +197,8 @@ def test_vulture_workflow_and_requirements_are_hash_pinned() -> None:
     workflow = _read(".github/workflows/vulture.yml")
     requirements = _read(".github/requirements/vulture-ci.txt")
     assert "pull_request:" in workflow
-    assert "actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0" in workflow
-    assert "actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1" in workflow
+    assert "actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1" in workflow
+    assert "actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0" in workflow
     assert "python-version: '3.12'" in workflow
     assert "python tools/vulture_check.py" in workflow
     assert "vulture==2.16" in requirements
@@ -209,8 +209,8 @@ def test_super_linter_workflow_is_digest_pinned_and_scoped() -> None:
     text = _read(".github/workflows/super-linter.yml")
     assert "pull_request:" in text
     assert (
-        "ghcr.io/super-linter/super-linter:v8.7.0@sha256:"
-        "c05768164eed53bac7c82aade7a14a76955206d4962cd41be97118db96fa5996" in text
+        "ghcr.io/super-linter/super-linter:v9.0.0@sha256:"
+        "7620fb6f07a1908b0642d9ddc4f49da7d9f2b9497bcafee4d3d151d1e5567c0b" in text
     )
     for gate in (
         "VALIDATE_GIT_MERGE_CONFLICT_MARKERS: 'true'",
@@ -225,7 +225,7 @@ def test_super_linter_workflow_is_digest_pinned_and_scoped() -> None:
 
 def test_codeql_scans_python_and_native_windows_with_least_privilege() -> None:
     text = _read(".github/workflows/codeql.yml")
-    action = "github/codeql-action/{}@db488ddef3bf6cb639b32c2e9a7c0a7ea8271d28"
+    action = "github/codeql-action/{}@33d7b85da1a04171e211befe2c739303b9a4c066"
 
     assert "schedule:" in text
     assert "workflow_dispatch:" in text
@@ -240,8 +240,8 @@ def test_codeql_scans_python_and_native_windows_with_least_privilege() -> None:
     assert "queries: security-extended" in text
     assert action.format("init") in text
     assert action.format("analyze") in text
-    assert "astral-sh/setup-uv@11f9893b081a58869d3b5fccaea48c9e9e46f990" in text
-    assert "version: '0.12.1'" in text
+    assert "astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2" in text
+    assert "version: '0.13.7'" in text
     assert "uv sync --locked --group test" in text
     assert "pip install" not in text
     assert "tools\\build_native_windows.ps1" in text
@@ -276,11 +276,11 @@ def test_all_remote_github_actions_are_commit_pinned() -> None:
 def test_full_test_workflows_use_locked_uv_environments() -> None:
     ci = _read(".github/workflows/ci.yml")
     release = _read(".github/actions/windows-beta-release/action.yml")
-    setup_uv = "astral-sh/setup-uv@11f9893b081a58869d3b5fccaea48c9e9e46f990"
+    setup_uv = "astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2"
     assert ci.count(setup_uv) == 2
     assert setup_uv in release
-    assert ci.count('version: "0.12.1"') == 2
-    assert 'version: "0.12.1"' in release
+    assert ci.count('version: "0.13.7"') == 2
+    assert 'version: "0.13.7"' in release
     assert (
         "uv sync --locked --extra foundation-ai --extra gpu --extra polymarket-live "
         "--extra reporting --group test" in ci
@@ -445,7 +445,7 @@ def test_accelerator_lock_excludes_vulnerable_legacy_directml_stack() -> None:
     project = tomllib.loads((ROOT / "pyproject.toml").read_text(encoding="utf-8"))
     lock = tomllib.loads((ROOT / "uv.lock").read_text(encoding="utf-8"))
 
-    assert project["tool"]["uv"]["required-version"] == ">=0.12.1,<0.13"
+    assert project["tool"]["uv"]["required-version"] == ">=0.12.1,<0.14"
     assert project["project"]["optional-dependencies"]["directml"] == [
         "onnxruntime-directml==1.24.4; platform_system == 'Windows'"
     ]
@@ -454,6 +454,6 @@ def test_accelerator_lock_excludes_vulnerable_legacy_directml_stack() -> None:
     for package in lock["package"]:
         versions.setdefault(package["name"], set()).add(package["version"])
     assert "torch-directml" not in versions
-    assert versions["torch"] == {"2.13.0"}
+    assert versions["torch"] == {"2.15.0"}
     assert versions["h2"] == {"4.4.1"}
     assert versions["onnxruntime-directml"] == {"1.24.4"}

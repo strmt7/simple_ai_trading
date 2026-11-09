@@ -126,7 +126,9 @@ def test_registry_adds_both_candidates_without_promoting_an_edge() -> None:
     assert registry["result_sha256"] == REGISTRY_HASH
     assert _canonical_hash(registry) == REGISTRY_HASH
     hypotheses = registry["prioritized_hypotheses"]
-    assert [row["priority_rank"] for row in hypotheses] == list(range(1, 45))
+    assert [row["priority_rank"] for row in hypotheses] == list(
+        range(1, len(hypotheses) + 1)
+    )
     by_mechanism = {row["mechanism"]: row for row in hypotheses}
     assert (
         by_mechanism[

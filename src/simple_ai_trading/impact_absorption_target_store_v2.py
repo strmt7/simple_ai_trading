@@ -676,6 +676,7 @@ def _insert_option_batch(
                 projection = f"{view}.column0"
             else:
                 raise TypeError("Round 73 v2 target insert column type is unsupported")
+            connection.complete()
             connection.register(view, array)
             views.append(view)
             projections.append(projection)
@@ -685,6 +686,7 @@ def _insert_option_batch(
             + " FROM "
             + " POSITIONAL JOIN ".join(views)
         )
+        connection.complete()
     finally:
         for view in views:
             connection.unregister(view)

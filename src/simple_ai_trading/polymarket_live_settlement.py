@@ -30,7 +30,7 @@ from .polymarket_live import (
 from .polymarket_live_v2 import PolymarketLiveCredentials
 
 
-POLYMARKET_UNIFIED_SDK_VERSION = "0.2.0"
+POLYMARKET_UNIFIED_SDK_VERSION = "0.17.0"
 POLYMARKET_POLYGON_RPC_URL = "https://polygon.drpc.org"
 _TRANSACTION_HASH = re.compile(r"^0x[0-9a-f]{64}$")
 _TRANSACTION_ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:-]{7,127}$")
@@ -899,7 +899,8 @@ class OfficialPolymarketUnifiedRedemptionVenue:
                 ctf_redeem_positions_call,
             )
             from polymarket._internal.actions.relayer.gasless import (
-                _submit_for_wallet_type_sync,
+                build_signed_payload_for_wallet_type_sync,
+                submit_gasless_sync,
             )
             from polymarket.transactions import SyncGaslessTransactionHandle
         except ImportError as exc:
@@ -914,11 +915,14 @@ class OfficialPolymarketUnifiedRedemptionVenue:
             collateral=client_context.environment.collateral_token,
             condition_id=condition_id,
         )
-        response = _submit_for_wallet_type_sync(
+        # The SDK's wallet wrapper can resubmit after a deposit-wallet nonce
+        # rejection. Keep one transport submission; our ledger owns recovery.
+        payload = build_signed_payload_for_wallet_type_sync(
             client_context,
             calls=[call],
             metadata=f"Simple AI Trading redemption {condition_id}",
         )
+        response = submit_gasless_sync(client_context.relayer, payload=payload)
         poll_delay = client_context.environment.relayer_poll_frequency_ms / 1_000
         return SyncGaslessTransactionHandle(
             transaction_id=response.transaction_id,

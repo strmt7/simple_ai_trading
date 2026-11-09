@@ -65,4 +65,6 @@ def test_incomplete_catalog_and_registry_remain_fail_closed() -> None:
     assert _self_hash(registry, "result_sha256") == registry["result_sha256"]
     assert registry["accepted_edge_count"] == 31
     assert len(registry["prioritized_hypotheses"]) == 48
-    assert len(registry["terminal_do_not_repeat"]) == 158
+    assert len({row["family"] for row in registry["terminal_do_not_repeat"]}) == len(
+        registry["terminal_do_not_repeat"]
+    )

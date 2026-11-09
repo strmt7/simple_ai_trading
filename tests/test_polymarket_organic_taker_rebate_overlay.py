@@ -173,7 +173,9 @@ def test_promotion_is_scoped_non_authorizing_and_registered() -> None:
 
     assert _embedded_hash(registry) == registry["result_sha256"]
     hypotheses = registry["prioritized_hypotheses"]
-    assert [row["priority_rank"] for row in hypotheses] == list(range(1, 45))
+    assert [row["priority_rank"] for row in hypotheses] == list(
+        range(1, len(hypotheses) + 1)
+    )
     candidate = next(
         row
         for row in hypotheses

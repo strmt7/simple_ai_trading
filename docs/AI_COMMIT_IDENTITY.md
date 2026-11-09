@@ -1,42 +1,35 @@
-# AI Commit Identity
+# GitHub publication and historical attribution
 
-This is the detailed audit policy referenced by `AGENTS.md`. It is read only
-when an agent creates or audits Git history.
+Create new commits only through the authenticated official GitHub connector.
+Let GitHub assign author and committer, then verify the returned commit metadata.
+Do not invent, substitute, normalize or manually fix an identity. Do not override
+attribution through environment variables, command-scoped Git configuration,
+global configuration, copied profile fields or fabricated co-author trailers.
+The former synthetic-identity requirement is superseded by the user's explicit
+November 9 instruction.
 
-Every commit, amend, merge, cherry-pick, squash, rebase, or history rewrite
-produced by an AI agent must have this literal identity:
+Use connector blob/tree/commit operations for a coherent batch, then update the
+intended branch with an exact expected-head lease. Preserve file modes and exact
+reviewed bytes. Read back the resulting tree and commit; a tool success message
+alone does not prove the intended publication. Do not create extra branches or
+pull requests without task-specific authority. If a required connector operation
+is unavailable, disclose its exact limitation before using another publication
+method. No credential or workstation path belongs in published content.
 
-```text
-Author:     AI agent <>
-Commit:     AI agent <>
-```
+## Explicitly authorized historical cleanup
 
-Use command-scoped configuration so no value leaks into repository or global
-Git configuration:
+The user separately authorized correcting contaminated history, with this
+prerequisite: first create an empty commit through the official GitHub connector,
+then use that commit's exact author and committer identity. Obtain those fields
+from the created Git object; never guess them or hardcode an expected account.
+This is a bounded historical-cleanup exception, not permission to create ordinary
+local commits or apply a standing manual identity override.
 
-```bash
-git -c user.name='AI agent' -c user.email= commit ...
-```
-
-Any AI co-author trailer must be `Co-authored-by: AI agent` with no email.
-AI commits must never use a human identity, the account owner's identity, a
-GitHub noreply address, a host or local-placeholder email, a previous commit's
-identity, a CI runner identity, a global Git identity, a model/vendor/tool
-identity, or the hyphenated name `AI-agent`.
-
-Human contributors continue to use their real GitHub identities. Audits must
-check authors, committers, co-author trailers, and fresh anonymous-contributor
-results from `GET /repos/{owner}/{repo}/contributors?anon=1`; report PR-head
-refs separately. An invalid AI identity or a fake identity attributed to a
-human is a policy violation. Do not publish another commit until the violation
-has been surfaced. Before a first push, rewrite the affected local history with
-`git filter-repo`; if the history is already shared, do not force-rewrite it
-without explicit approval and a coordinated correction plan.
-
-On PowerShell, use Git format delimiters such as `%x09`; a backtick inside a
-single-quoted Git format string is literal and can make a field-splitting audit
-silently inspect zero records. Fail closed unless every parsed identity record
-has the expected commit, author, author-email, committer, and committer-email
-fields. Keep multiline `%B` commit text out of that delimited identity record;
-inspect co-author trailers in a separate command so message newlines cannot
-change the parsed field count.
+Prepare the rewrite in an isolated copy after making and verifying a recovery
+bundle. Limit attribution changes to demonstrably synthetic AI records. Preserve
+human and dependency-bot attribution, file trees, historical result bytes, commit
+messages, timestamps, topology and empty commits. Retain an exact old/new commit
+map and validate every invariant before publishing with an expected-head lease.
+Historical evidence keeps its original source identifiers; do not edit old
+results to pretend they were produced under rewritten identities or new tools.
+Keep detailed identity records and recovery material in ignored private storage.

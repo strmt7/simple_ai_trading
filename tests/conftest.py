@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import sys
+from decimal import Context, localcontext
 from pathlib import Path
 
 import pytest
@@ -14,3 +15,10 @@ if str(SRC) not in sys.path:
 @pytest.fixture(autouse=True)
 def isolate_home(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     monkeypatch.setenv("HOME", str(tmp_path))
+
+
+@pytest.fixture(autouse=True)
+def isolate_decimal_context():
+    """Keep legacy research imports from changing another test's arithmetic."""
+    with localcontext(Context()):
+        yield

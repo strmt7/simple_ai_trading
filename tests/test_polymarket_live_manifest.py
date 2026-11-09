@@ -60,8 +60,8 @@ def test_manifest_verifies_exact_installed_runtime(
     assert verified.manifest_sha256 == implementation_manifest["manifest_sha256"]
     assert "polymarket_live.py" in verified.source_files
     assert verified.dependency_versions == {
-        "polymarket-client": "0.2.0",
-        "py-clob-client-v2": "1.1.0",
+        "polymarket-client": "0.17.0",
+        "py-clob-client-v2": "1.2.1",
     }
 
 

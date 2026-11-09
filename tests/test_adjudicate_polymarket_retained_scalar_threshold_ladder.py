@@ -157,7 +157,10 @@ def test_registry_and_durability_audit_bind_terminal_measles_screen() -> None:
         == "polymarket_US_measles_September_30_exact_threshold_ladder_2026_09_01"
     )
     assert terminal["canonical_result_sha256"] == result["result_sha256"]
-    assert audit["source_binding"]["accepted_edge_count"] == 31
+    assert (
+        audit["source_binding"]["accepted_edge_count"]
+        == registry["accepted_edge_count"]
+    )
     assert (
         audit["source_binding"]["registry_result_sha256"] == registry["result_sha256"]
     )

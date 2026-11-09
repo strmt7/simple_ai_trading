@@ -20,14 +20,14 @@ runs:
   using: composite
   steps:
     - name: Setup Python
-      uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
+      uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
       with:
         python-version: "3.11"
 
     - name: Setup uv
-      uses: astral-sh/setup-uv@11f9893b081a58869d3b5fccaea48c9e9e46f990 # v8.3.2
+      uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
       with:
-        version: "0.12.1"
+        version: "0.13.7"
         enable-cache: true
 
     - name: Resolve release metadata
@@ -105,7 +105,7 @@ runs:
       shell: pwsh
       run: |
         $ErrorActionPreference = "Stop"
-        uv sync --locked --extra foundation-ai --extra gpu --extra polymarket-live --extra reporting --group test --group release
+        uv sync --locked --extra foundation-ai --extra gpu --extra polymarket-live --extra reporting --group test --group release --group tools
 
     - name: Run Python tests and coverage gate
       shell: pwsh
@@ -117,7 +117,7 @@ runs:
 
     - name: Build native Windows app
       shell: pwsh
-      run: powershell -ExecutionPolicy Bypass -File tools\build_native_windows.ps1
+      run: powershell -ExecutionPolicy Bypass -File tools\build_native_windows.ps1 -PythonExecutable .venv\Scripts\python.exe -CMakeExecutable .venv\Scripts\cmake.exe -NinjaExecutable .venv\Scripts\ninja.exe
 
     - name: Smoke CLI and native launcher
       shell: pwsh
@@ -175,7 +175,7 @@ runs:
             }
 
     - name: Upload release candidate artifacts
-      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
       with:
         name: simple-ai-trading-beta-release-candidate
         path: |

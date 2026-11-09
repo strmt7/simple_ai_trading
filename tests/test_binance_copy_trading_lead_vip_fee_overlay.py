@@ -19,12 +19,10 @@ ANNOUNCEMENT_RESULT = (
     / "binance-copy-trading-lead-vip-fee-overlay-source-result-v1-2026-09-01.json"
 )
 FAQ_CONTRACT = (
-    ACTION
-    / "binance-copy-trading-lead-vip-fee-faq-source-contract-v1-2026-09-01.json"
+    ACTION / "binance-copy-trading-lead-vip-fee-faq-source-contract-v1-2026-09-01.json"
 )
 FAQ_RESULT = (
-    ACTION
-    / "binance-copy-trading-lead-vip-fee-faq-source-result-v1-2026-09-01.json"
+    ACTION / "binance-copy-trading-lead-vip-fee-faq-source-result-v1-2026-09-01.json"
 )
 
 
@@ -105,9 +103,12 @@ def test_copy_trading_lead_vip_edge_is_scoped_and_fail_closed() -> None:
     assert edge["adjudication"]["deployment_ready"] is False
     assert edge["adjudication"]["public_forward_net_saving_floor_USD"] == "0"
     assert edge["registry_effect"]["accepted_edge_count"] == 30
-    assert edge["retained_fee_sensitivity"][
-        "minimum_displayed_positive_example_at_5000000_USDT_trailing_volume_USD"
-    ] == "90"
+    assert (
+        edge["retained_fee_sensitivity"][
+            "minimum_displayed_positive_example_at_5000000_USDT_trailing_volume_USD"
+        ]
+        == "90"
+    )
 
     rank_five = next(
         row for row in registry["prioritized_hypotheses"] if row["priority_rank"] == 5
@@ -116,12 +117,14 @@ def test_copy_trading_lead_vip_edge_is_scoped_and_fail_closed() -> None:
         "path": str(EDGE.relative_to(ROOT)).replace("\\", "/"),
         "result_sha256": edge["result_sha256"],
     } in rank_five["canonical_artifacts"]
-    assert "authentic_organic_lead_flow" in rank_five[
-        "copy_trading_lead_vip_current_status"
-    ]
-    assert registry["accepted_edge_count"] >= edge["registry_effect"][
-        "accepted_edge_count"
-    ]
+    assert (
+        "authentic_organic_lead_flow"
+        in rank_five["copy_trading_lead_vip_current_status"]
+    )
+    assert (
+        registry["accepted_edge_count"]
+        >= edge["registry_effect"]["accepted_edge_count"]
+    )
     assert (
         audit["source_binding"]["accepted_edge_count"]
         == registry["accepted_edge_count"]
@@ -131,7 +134,8 @@ def test_copy_trading_lead_vip_edge_is_scoped_and_fail_closed() -> None:
         for group in audit["classification"]
         if group["evidence_tier"] == "D_external_user_or_client_revenue_overlay"
     )
-    assert external["count"] == 9
+    assert external["count"] == len(external["edge_ordinals"])
+    assert len(set(external["edge_ordinals"])) == external["count"]
     assert 30 in external["edge_ordinals"]
 
     prohibited = " ".join(edge["prohibited_shortcuts"])

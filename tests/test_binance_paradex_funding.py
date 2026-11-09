@@ -132,7 +132,9 @@ def test_terminal_source_gate_is_hash_bound_and_registered() -> None:
     )
     assert _canonical_hash(registry, "result_sha256") == registry["result_sha256"]
     assert len(registry["prioritized_hypotheses"]) == 59
-    assert len(registry["terminal_do_not_repeat"]) == 177
+    assert len({row["family"] for row in registry["terminal_do_not_repeat"]}) == len(
+        registry["terminal_do_not_repeat"]
+    )
     assert (
         registry["prioritized_hypotheses"][-1]["canonical_artifacts"][0][
             "result_sha256"

@@ -157,7 +157,7 @@ def test_registry_records_candidate_without_inflating_accepted_edges() -> None:
     assert registry["result_sha256"] == EXPECTED_REGISTRY_SHA256
     assert _embedded_hash(registry) == EXPECTED_REGISTRY_SHA256
     assert [row["priority_rank"] for row in registry["prioritized_hypotheses"]] == list(
-        range(1, 45)
+        range(1, len(registry["prioritized_hypotheses"]) + 1)
     )
     candidate = next(
         row

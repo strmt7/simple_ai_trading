@@ -11,8 +11,7 @@ INVENTORY = (
     ACTION_VALUE / "binance-bstock-sep2-listing-inventory-result-v2-2026-09-04.json"
 )
 TOPBOOK = (
-    ACTION_VALUE
-    / "binance-crwdb-bstock-perpetual-topbook-result-v1-2026-09-04.json"
+    ACTION_VALUE / "binance-crwdb-bstock-perpetual-topbook-result-v1-2026-09-04.json"
 )
 REGISTRY = ROOT / "docs/model-research/structural-edge-priority-registry-v1.json"
 AUDIT = ACTION_VALUE / "accepted-edge-profitability-durability-audit-v1-2026-08-30.json"
@@ -40,9 +39,12 @@ def test_listing_delta_selects_only_the_first_exact_match() -> None:
     body = dict(result)
     claimed = body.pop("result_sha256")
 
-    assert hashlib.sha256(
-        json.dumps(body, sort_keys=True, separators=(",", ":")).encode()
-    ).hexdigest() == claimed
+    assert (
+        hashlib.sha256(
+            json.dumps(body, sort_keys=True, separators=(",", ":")).encode()
+        ).hexdigest()
+        == claimed
+    )
     assert result["baseline_row_count"] == 68
     assert result["current_row_count"] == 72
     assert result["new_tickers"] == ["CRWD", "MRNA", "SQQQ", "STX"]
@@ -87,16 +89,17 @@ def test_ledgers_preserve_unscreened_matches_and_future_trigger() -> None:
         "path": TOPBOOK.relative_to(ROOT).as_posix(),
         "result_sha256": _load(TOPBOOK)["result_sha256"],
     } in hypothesis["canonical_artifacts"]
-    assert "2026_09_08T13_35_00Z" in hypothesis["next_action"]
-    assert "MRNABUSDT_MRNAUSDT" in hypothesis["next_action"]
+    assert "Do not repeat" in hypothesis["next_action"]
+    assert "CRWD" in hypothesis["next_action"]
+    assert "MRNA" in hypothesis["next_action"]
+    assert "A date alone does not reopen" in hypothesis["next_action"]
     terminal = next(
         row
         for row in registry["terminal_do_not_repeat"]
-        if row["family"]
-        == "binance_CRWDBUSDT_CRWDUSDT_new_listing_topbook_2026_09_04"
+        if row["family"] == "binance_CRWDBUSDT_CRWDUSDT_new_listing_topbook_2026_09_04"
     )
     assert terminal["canonical_result_sha256"] == _load(TOPBOOK)["result_sha256"]
-    assert audit["source_binding"]["registry_result_sha256"] == registry[
-        "result_sha256"
-    ]
+    assert (
+        audit["source_binding"]["registry_result_sha256"] == registry["result_sha256"]
+    )
     assert _canonical_hash(audit, "result_sha256") == audit["result_sha256"]

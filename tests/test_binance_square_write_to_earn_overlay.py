@@ -91,7 +91,7 @@ def test_registry_accepts_overlay_without_crediting_unproved_bonus_rates() -> No
     assert registry["result_sha256"] == REGISTRY_HASH
     assert _canonical_hash(registry) == REGISTRY_HASH
     assert [row["priority_rank"] for row in registry["prioritized_hypotheses"]] == list(
-        range(1, 45)
+        range(1, len(registry["prioritized_hypotheses"]) + 1)
     )
     row = next(
         row

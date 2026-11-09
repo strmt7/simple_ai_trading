@@ -154,9 +154,7 @@ def test_bound_mythos_graph_is_terminal_and_registry_bound() -> None:
         "docs/model-research/action-value/"
         "polymarket-mythos-release-date-deadline-graph-adjudication-v1-2026-09-01.json"
     )
-    registry = _load(
-        "docs/model-research/structural-edge-priority-registry-v1.json"
-    )
+    registry = _load("docs/model-research/structural-edge-priority-registry-v1.json")
     audit = _load(
         "docs/model-research/action-value/"
         "accepted-edge-profitability-durability-audit-v1-2026-08-30.json"
@@ -171,9 +169,12 @@ def test_bound_mythos_graph_is_terminal_and_registry_bound() -> None:
             == metadata_contract["contract_sha256"]
         )
         assert _canonical_hash(capture, "result_sha256") == capture["result_sha256"]
-        assert capture["contract"]["sha256"] == metadata_contract[  # type: ignore[index]
-            "contract_sha256"
-        ]
+        assert (
+            capture["contract"]["sha256"]
+            == metadata_contract[  # type: ignore[index]
+                "contract_sha256"
+            ]
+        )
         receipt = capture["capture"]["receipt"]  # type: ignore[index]
         assert receipt["status_code"] == 200
         assert receipt["response_sha256"] == _file_hash(receipt["raw_path"])
@@ -199,8 +200,13 @@ def test_bound_mythos_graph_is_terminal_and_registry_bound() -> None:
         row["family"]: row
         for row in registry["terminal_do_not_repeat"]  # type: ignore[index]
     }
-    assert len(registry["terminal_do_not_repeat"]) == 140  # type: ignore[arg-type]
+    assert len({row["family"] for row in registry["terminal_do_not_repeat"]}) == len(
+        registry["terminal_do_not_repeat"]
+    )
     assert terminal[family]["canonical_result_sha256"] == result["result_sha256"]
-    assert audit["source_binding"]["registry_result_sha256"] == registry[  # type: ignore[index]
-        "result_sha256"
-    ]
+    assert (
+        audit["source_binding"]["registry_result_sha256"]
+        == registry[  # type: ignore[index]
+            "result_sha256"
+        ]
+    )

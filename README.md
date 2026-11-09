@@ -15,10 +15,10 @@ Simple AI Trading is a Windows-first day-trading research platform for BTC,
 ETH, and SOL. It provides one Python backend, a CLI, and a native Win32 operator
 app. Both interfaces consume the same generated command contract.
 
-> **Beta warning:** `0.1.0-beta.1` is experimental. No model currently has
-> demonstrated production-grade profitability or live-money authority. Binance
+> **Development status:** There are no published releases. No model currently
+> has demonstrated production-grade profitability or live-money authority. Binance
 > execution is limited to paper, testnet, or Demo Trading. The independent
-> Polymarket boundary is disabled by default. Do not use this release to protect
+> Polymarket boundary is disabled by default. Do not use this software to protect
 > capital or assume positive returns.
 
 ## What Exists Today
@@ -39,8 +39,29 @@ backtest, paper result, model score, or AI opinion as a guarantee.
 
 ## Install
 
-Install [uv](https://docs.astral.sh/uv/) `0.12.1` or newer in the `0.12` line,
-then sync the locked environment:
+On Windows, use CPython 3.11+ as the bootstrap interpreter. The installer downloads
+the locked package manager, a private Python 3.13 interpreter and missing project
+dependencies automatically. It uses application-owned storage, verifies package
+hashes and leaves host installations and running environments alone:
+
+```powershell
+$installation = python tools/install_environment.py | ConvertFrom-Json
+if ($LASTEXITCODE -ne 0) { throw 'Installation failed.' }
+$env:SIMPLE_AI_TRADING_PYTHON = $installation.python
+& $installation.python -m simple_ai_trading --help
+```
+
+Pass `--storage <application-owned-directory>` to choose storage or repeated
+`--extra` options to select declared features. A changed lock or feature profile
+gets a separate environment. GPU and DirectML profiles remain separate. Nothing
+registers a service, startup hook or recurring task. An incomplete installation is
+retained for diagnosis and cannot overwrite a runtime; choose new owned storage
+for recovery. Visual Studio C++ Build Tools remain an explicit Windows native
+build prerequisite. The installer does not install system components.
+
+For an explicitly managed development environment on a supported platform,
+install [uv](https://docs.astral.sh/uv/) `0.13.7` (accepted range
+`>=0.12.1,<0.14`), then sync the lock:
 
 ```powershell
 uv sync --locked --group test
