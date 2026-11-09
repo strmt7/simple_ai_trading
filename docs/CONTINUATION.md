@@ -14,11 +14,11 @@ Financial counts remain **203 observations / 65 hypotheses / 37 scoped mechanism
 expiring promotions and larger datasets alone are not the objective. Use the full
 [revamp work map](REVAMP_2026_11_09.md) and [work priorities](WORK_PRIORITIES.md).
 
-The last verified published source/capital checkpoint is
-`eaad2d1605f6256ba43cd78ab6b96479294b6155`. Reverify HEAD/worktree and external state.
-It combines [spot prefunding](review/2026-11-09/spot-prefunding/review.md) with
-[post-expiry settlement research](review/2026-11-09/settlement-equivalence/review.md).
-70 focused accounting checks pass, including exact old-control reproduction.
+Reverify HEAD/worktree and external state. The completed
+[reserved-cash checkpoint](review/2026-11-09/spot-reserved-cash/review.md) has 41
+focused checks and byte-identical reproduction of the old prefunding controls.
+[Post-expiry settlement research](review/2026-11-09/settlement-equivalence/review.md)
+remains source-incomplete. Each linked report retains its exact source phase.
 There is no green whole-suite, qualified stable-edge or institutional-readiness
 claim. The earlier dependency full-suite recheck retained 86 failures; one stale
 readiness fixture was subsequently repaired in a focused lane. Do not infer a
@@ -43,6 +43,13 @@ current full-suite failure count without rerunning the appropriate scope.
   Zero numeric comparisons completed. No equality, mismatch, books or edge follows.
   Its updated missing-record/distinct-later-expiry gate controls; do not shift dates,
   paginate, alias, repeat the window or reopen existing box-spread rejections.
+- Rank 59's [nine-week funding study](review/2026-11-09/weekly-funding/review.md)
+  consumed its September 7-November 9 population when the first inventory GET
+  exceeded its frozen 1 MiB body cap. HTTP 200 is not complete-source admission:
+  1,048,577 partial bytes are retained; zero funding/index requests followed.
+  No economic rejection follows. Do not enlarge the cap, alias, retry or request
+  that population's funding/books. A later study needs its literal independent
+  material-source or informative distinct-population trigger, not time alone.
 - [Timed native replay](review/2026-11-09/timed-snapshot-normalization/review.md)
   fixes the actual HftBacktest time-zero snapshot leak. 64 capture/normalization
   and 20 readiness checks pass in overlapping lanes. EOF is not a valid clock step.
@@ -74,6 +81,13 @@ LLMs may veto/reduce risk, never bypass deterministic Stop/ownership/close contr
 
 ## Platform work and publication
 
+- [Atomic order admission](review/2026-11-09/order-admission/review.md) fixes a
+  reproduced Polymarket stale-preflight race: a pending order created during
+  another order's signing can no longer admit a second opening. The same SQLite
+  writer transaction checks unresolved orders and inserts the reservation;
+  separate connections admit one opening. 240 focused lifecycle/runtime checks
+  pass. Closing gates remain separate; complete capital/supervisor qualification
+  and races involving completed fills or changing risk limits remain open.
 - [Source-bound navigation](review/2026-11-09/semantic-routing/review.md) now fuses
   native CocoIndex semantics with lexical ranks from the same approved index.
   The frozen paired check improved expected-file hits from 0/10 to 7/10 on

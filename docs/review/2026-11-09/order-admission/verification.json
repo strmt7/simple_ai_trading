@@ -1,0 +1,56 @@
+{
+  "after_focused_tests": {
+    "errors": 0,
+    "failures": 0,
+    "skipped": 0,
+    "tests": 240
+  },
+  "atomicity": "Unresolved-order check and prepared insert share BEGIN IMMEDIATE; closing-only entries do not use the new opening blocker",
+  "base_commit": "531210d245d71b153896ac5c653d3ac5f63ebb86",
+  "before_evidence_limit": "Published implementation identity plus actual failed regression log and XML; a separate full pre-repair test-file snapshot was not retained",
+  "before_implementation_sha256": "5b24c3a080db26a81b12e7b5d670fb93ff47e7c7c28ea742e7032b78d433423f",
+  "before_regression": {
+    "errors": 0,
+    "failures": 1,
+    "skipped": 0,
+    "tests": 1
+  },
+  "production_call_audit": {
+    "coordinator_reserve_submission_calls": 1,
+    "remaining_exact_symbol_ledger_reserve_calls_under_src_and_tools": 0,
+    "scope": "Exact ledger.reserve symbol lookup and direct coordinator inspection; terminal_ledger.reserve belongs to a different training ledger"
+  },
+  "qualification": {
+    "account_requests": 0,
+    "complete_capital_limits_audit": false,
+    "full_suite_run": false,
+    "native_account_execution": false,
+    "orders": 0,
+    "persistent_worker_installed": false,
+    "protected_capture_access": false,
+    "qualified_stable_edges": 0,
+    "supervisor_recovery_qualified": false,
+    "timing_qualified": false
+  },
+  "regression_identity": "tests/test_polymarket_live.py::test_opening_admission_rechecks_pending_orders_created_during_signing",
+  "retained_private_artifact_sha256": {
+    "admission-before.log": "8fbe4fea0b205969cd0e903cd0a1ce518d56285a8fa7af3cd8d6778f76fc3de3",
+    "admission-before.xml": "759ba4c0c6d85f34f565f315d72225ae868e8d4b8d287c139def446d61e61681",
+    "admission-final.log": "3dc5c332dd15b86040a9b39a42768810e0b0129bec3eed4008f2d0d7af1b55a5",
+    "admission-final.xml": "10615f44b762a77165ecb476d22860ff399b762d8a82b62399cc735396e8f58f",
+    "order-reservation-source.log": "b992c4e51a623236a995622d21653440780f7e038c16395b73ddc51106506d7d"
+  },
+  "schema": "atomic-opening-admission-review-v1",
+  "source_binding": "Exact LF Python source bytes",
+  "source_sha256": {
+    "src/simple_ai_trading/polymarket_live.py": "eb3aabcb400dafc002c11c3fdd635e0fc0f26cf054de97e289f5ec06a2acc327",
+    "src/simple_ai_trading/polymarket_live_runtime.py": "6aa78e9be1d78c52b911d0201ed9633a4ebac849320ae2007e5480aa73cc487c",
+    "src/simple_ai_trading/polymarket_runtime_control.py": "d767c14d145caa21a5aacc958f83d90c27519b4c4aafe4002c5fe1f6914da76b",
+    "tests/test_polymarket_live.py": "4abe650a385a74078153071fa85fdbdd215f82c0f093bbfdd63bdbdccfa16333",
+    "tests/test_polymarket_live_manifest.py": "694d071fad93c770dc2865e202154a126a1b2cfd01bea7828fd3acdbb9d8f92d",
+    "tests/test_polymarket_live_runtime_subscription.py": "9240b18363d717c33e095de652ba6b60d7ee49fbaf0ad071a3d4ee6ab6c4625c",
+    "tests/test_polymarket_live_settlement.py": "513f4aafa93aca745e6ece163b89a8f633e893ed0eabd541885612ad8be83011",
+    "tests/test_polymarket_runtime_control.py": "11325e42ec02d80cbb50fea1491052d979c11f49c38d28daf7b67da7d6c629c6"
+  },
+  "verification_sha256": "370b14a7cd8f358adc46f82ad1ce9a4b5a3a986534f18a144857ee2d71665606"
+}

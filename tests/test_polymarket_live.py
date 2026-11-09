@@ -1,12 +1,13 @@
 from __future__ import annotations
 
 from dataclasses import replace
+from concurrent.futures import ThreadPoolExecutor
 from decimal import Decimal
 import hashlib
 import json
 from pathlib import Path
 import sqlite3
-from threading import Event, Thread
+from threading import Barrier, Event, Thread
 import time
 from typing import Callable, Sequence
 
@@ -738,6 +739,64 @@ def test_realized_event_loss_cannot_disappear_before_same_event_reentry(
 
     assert ledger.condition_accounting(MARKET_ID).maximum_loss_quote == Decimal("0.11")
     assert venue.submit_calls == 0
+
+
+def test_opening_admission_rechecks_pending_orders_created_during_signing(
+    tmp_path: Path,
+) -> None:
+    ledger = PolymarketLiveOrderLedger(tmp_path / "live.sqlite3")
+    venue = FakeVenue()
+    coordinator = PolymarketLiveCoordinator(venue, ledger, risk_limits=RISK_LIMITS)
+    original_prepare = venue.prepare_order
+
+    def prepare_with_interleaved_submission(intent, *, tick_size, neg_risk):
+        prepared = original_prepare(intent, tick_size=tick_size, neg_risk=neg_risk)
+        if intent.intent_id == _intent(1).intent_id:
+            coordinator.submit(_intent(2), tick_size=tick_size, neg_risk=neg_risk)
+        return prepared
+
+    venue.prepare_order = prepare_with_interleaved_submission
+    with pytest.raises(PolymarketLiveBlocked, match="unresolved"):
+        coordinator.submit(_intent(1), tick_size=Decimal("0.01"), neg_risk=False)
+
+    assert venue.submit_calls == 1
+    assert [record.intent.intent_id for record in ledger.records()] == [
+        _intent(2).intent_id
+    ]
+
+
+def test_distinct_ledger_connections_admit_only_one_concurrent_opening(
+    tmp_path: Path,
+) -> None:
+    path = tmp_path / "live.sqlite3"
+    ledgers = (PolymarketLiveOrderLedger(path), PolymarketLiveOrderLedger(path))
+    venue = FakeVenue()
+    prepared = tuple(
+        venue.prepare_order(_intent(i), tick_size=Decimal("0.01"), neg_risk=False)
+        for i in (1, 2)
+    )
+    barrier = Barrier(2)
+
+    def reserve(index):
+        barrier.wait(timeout=5)
+        try:
+            ledgers[index].reserve_submission(prepared[index], observed_at_ms=NOW_MS)
+        except PolymarketLiveBlocked as error:
+            assert "unresolved" in str(error)
+            return "blocked"
+        return "reserved"
+
+    with ThreadPoolExecutor(max_workers=2) as workers:
+        outcomes = list(workers.map(reserve, (0, 1)))
+    assert sorted(outcomes) == ["blocked", "reserved"]
+    assert len(ledgers[0].records()) == 1
+    admitted = ledgers[0].records()[0]
+    assert admitted.state == "prepared"
+    original = next(
+        p for p in prepared if p.intent.intent_id == admitted.intent.intent_id
+    )
+    ledgers[1].reserve_submission(original, observed_at_ms=NOW_MS)
+    assert len(ledgers[1].records()) == 1
 
 
 def test_submission_reserves_expected_hash_before_network_and_stores_no_signature(

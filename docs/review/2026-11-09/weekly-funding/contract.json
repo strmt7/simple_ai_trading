@@ -1,0 +1,419 @@
+{
+  "authority": {
+    "accepted_edge": false,
+    "account_requests": 0,
+    "credentials_used": false,
+    "funds": 0,
+    "orders": 0,
+    "profitability_claim": false,
+    "protected_data_access": false
+  },
+  "base_head": "531210d245d71b153896ac5c653d3ac5f63ebb86",
+  "cash_alignment": "One constant base unit per leg. Difference Paradex continuous funding indices at actual endpoints. Sum all and only Binance funding events strictly inside each actual endpoint interval; require 21 per whole week, preserve separate USDC and USDT amounts and reference marks.",
+  "contract_sha256": "d70b5f6f162dff05d496076f77470d6aebbace67e7d1492a7e877880bfcfe6a3",
+  "economics": {
+    "annual_total_two_leg_capital_percent": "10",
+    "custody_latency_stress_bips": "25",
+    "execution_stress_bips": "20",
+    "quote_unit_stress_bips": "25",
+    "retained_extra_stress_bips": "10"
+  },
+  "end_boundary_ms": 1794182400000,
+  "end_utc": "2026-11-09T00:00:00+00:00",
+  "failure": "Stop the complete study on first source or alignment failure. Preserve raw error bodies and durable journal. No refetch, missing-window fill, alternate asset/date/host, cursor, interpolation, relaxation or reorientation. No price/book/account/order request follows failed economics.",
+  "frozen_at_utc": "2026-11-09T20:15:19.632032+00:00",
+  "gate": "Each role requires strictly positive net after all unchanged 80-bip fixed stresses and 10-percent annual total-two-leg capital stress, positive first and second half cash, at least half of weekly blocks positive. Also record an unattainable perfect-foresight weekly-sign zero-execution upper bound after full capital; a failed role forbids books. No family-wide impossibility claim.",
+  "index_selection": "Same bounded five-minute post-boundary window and earliest timestamp-only selection as the prior source-bound parser; no continuation cursor or interpolation.",
+  "information_gain": "The consumed 26 eight-hour intervals tested short holds. Nine previously unaccessed whole weeks test telescoped continuous funding indices and all discrete settlements, with original costs retained per role. This is one prospectively fixed historical access study, not a rolling retry to hunt winners or future trading validation.",
+  "limitations": [
+    "No current/historical account fee or native execution qualification",
+    "USDC/USDT parity is only a diagnostic scenario, not observed conversion",
+    "Funding is not total hedged wealth; basis, native collateral, margin, custody, depth and loss tails remain open",
+    "The archived primary funding document is source-bound but its historical version over this new period is not independently proved",
+    "Nine weekly observations per asset are not evidence of permanent profitability or independent model superiority"
+  ],
+  "orientation": "Choose each asset sign once using only the first five weekly fixed-base par-valued funding spreads. Tie chooses short Paradex and long Binance. Never refit other roles.",
+  "output_root": "data/research/2026-11-09-weekly-funding-study",
+  "prior_consumed_contract": "docs/review/2026-09-04/paradex-index-contract.json",
+  "question": "Can longer unchanged equal-base hedge holding blocks retain funding surplus after the original fixed execution and capital hurdles, across all three chronological roles?",
+  "requests": [
+    {
+      "kind": "inventory",
+      "name": "inventory",
+      "request_body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "url": "https://api.prod.paradex.trade/v1/markets"
+    },
+    {
+      "asset": "BTC",
+      "boundary": 1788739200000,
+      "end": 1788739501000,
+      "kind": "index",
+      "name": "btc-index-00",
+      "request_body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "start": 1788739201001,
+      "url": "https://api.prod.paradex.trade/v1/funding/data?market=BTC-USD-PERP&start_at=1788739201001&end_at=1788739501000&page_size=5000"
+    },
+    {
+      "asset": "BTC",
+      "boundary": 1789344000000,
+      "end": 1789344301000,
+      "kind": "index",
+      "name": "btc-index-01",
+      "request_body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "start": 1789344001001,
+      "url": "https://api.prod.paradex.trade/v1/funding/data?market=BTC-USD-PERP&start_at=1789344001001&end_at=1789344301000&page_size=5000"
+    },
+    {
+      "asset": "BTC",
+      "boundary": 1789948800000,
+      "end": 1789949101000,
+      "kind": "index",
+      "name": "btc-index-02",
+      "request_body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "start": 1789948801001,
+      "url": "https://api.prod.paradex.trade/v1/funding/data?market=BTC-USD-PERP&start_at=1789948801001&end_at=1789949101000&page_size=5000"
+    },
+    {
+      "asset": "BTC",
+      "boundary": 1790553600000,
+      "end": 1790553901000,
+      "kind": "index",
+      "name": "btc-index-03",
+      "request_body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "start": 1790553601001,
+      "url": "https://api.prod.paradex.trade/v1/funding/data?market=BTC-USD-PERP&start_at=1790553601001&end_at=1790553901000&page_size=5000"
+    },
+    {
+      "asset": "BTC",
+      "boundary": 1791158400000,
+      "end": 1791158701000,
+      "kind": "index",
+      "name": "btc-index-04",
+      "request_body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "start": 1791158401001,
+      "url": "https://api.prod.paradex.trade/v1/funding/data?market=BTC-USD-PERP&start_at=1791158401001&end_at=1791158701000&page_size=5000"
+    },
+    {
+      "asset": "BTC",
+      "boundary": 1791763200000,
+      "end": 1791763501000,
+      "kind": "index",
+      "name": "btc-index-05",
+      "request_body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "start": 1791763201001,
+      "url": "https://api.prod.paradex.trade/v1/funding/data?market=BTC-USD-PERP&start_at=1791763201001&end_at=1791763501000&page_size=5000"
+    },
+    {
+      "asset": "BTC",
+      "boundary": 1792368000000,
+      "end": 1792368301000,
+      "kind": "index",
+      "name": "btc-index-06",
+      "request_body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "start": 1792368001001,
+      "url": "https://api.prod.paradex.trade/v1/funding/data?market=BTC-USD-PERP&start_at=1792368001001&end_at=1792368301000&page_size=5000"
+    },
+    {
+      "asset": "BTC",
+      "boundary": 1792972800000,
+      "end": 1792973101000,
+      "kind": "index",
+      "name": "btc-index-07",
+      "request_body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "start": 1792972801001,
+      "url": "https://api.prod.paradex.trade/v1/funding/data?market=BTC-USD-PERP&start_at=1792972801001&end_at=1792973101000&page_size=5000"
+    },
+    {
+      "asset": "BTC",
+      "boundary": 1793577600000,
+      "end": 1793577901000,
+      "kind": "index",
+      "name": "btc-index-08",
+      "request_body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "start": 1793577601001,
+      "url": "https://api.prod.paradex.trade/v1/funding/data?market=BTC-USD-PERP&start_at=1793577601001&end_at=1793577901000&page_size=5000"
+    },
+    {
+      "asset": "BTC",
+      "boundary": 1794182400000,
+      "end": 1794182701000,
+      "kind": "index",
+      "name": "btc-index-09",
+      "request_body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "start": 1794182401001,
+      "url": "https://api.prod.paradex.trade/v1/funding/data?market=BTC-USD-PERP&start_at=1794182401001&end_at=1794182701000&page_size=5000"
+    },
+    {
+      "asset": "BTC",
+      "end": 1794182401000,
+      "kind": "binance",
+      "name": "btc-binance",
+      "request_body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "start": 1788739200000,
+      "url": "https://fapi.binance.com/fapi/v1/fundingRate?symbol=BTCUSDT&startTime=1788739200000&endTime=1794182401000&limit=1000"
+    },
+    {
+      "asset": "ETH",
+      "boundary": 1788739200000,
+      "end": 1788739501000,
+      "kind": "index",
+      "name": "eth-index-00",
+      "request_body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "start": 1788739201001,
+      "url": "https://api.prod.paradex.trade/v1/funding/data?market=ETH-USD-PERP&start_at=1788739201001&end_at=1788739501000&page_size=5000"
+    },
+    {
+      "asset": "ETH",
+      "boundary": 1789344000000,
+      "end": 1789344301000,
+      "kind": "index",
+      "name": "eth-index-01",
+      "request_body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "start": 1789344001001,
+      "url": "https://api.prod.paradex.trade/v1/funding/data?market=ETH-USD-PERP&start_at=1789344001001&end_at=1789344301000&page_size=5000"
+    },
+    {
+      "asset": "ETH",
+      "boundary": 1789948800000,
+      "end": 1789949101000,
+      "kind": "index",
+      "name": "eth-index-02",
+      "request_body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "start": 1789948801001,
+      "url": "https://api.prod.paradex.trade/v1/funding/data?market=ETH-USD-PERP&start_at=1789948801001&end_at=1789949101000&page_size=5000"
+    },
+    {
+      "asset": "ETH",
+      "boundary": 1790553600000,
+      "end": 1790553901000,
+      "kind": "index",
+      "name": "eth-index-03",
+      "request_body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "start": 1790553601001,
+      "url": "https://api.prod.paradex.trade/v1/funding/data?market=ETH-USD-PERP&start_at=1790553601001&end_at=1790553901000&page_size=5000"
+    },
+    {
+      "asset": "ETH",
+      "boundary": 1791158400000,
+      "end": 1791158701000,
+      "kind": "index",
+      "name": "eth-index-04",
+      "request_body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "start": 1791158401001,
+      "url": "https://api.prod.paradex.trade/v1/funding/data?market=ETH-USD-PERP&start_at=1791158401001&end_at=1791158701000&page_size=5000"
+    },
+    {
+      "asset": "ETH",
+      "boundary": 1791763200000,
+      "end": 1791763501000,
+      "kind": "index",
+      "name": "eth-index-05",
+      "request_body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "start": 1791763201001,
+      "url": "https://api.prod.paradex.trade/v1/funding/data?market=ETH-USD-PERP&start_at=1791763201001&end_at=1791763501000&page_size=5000"
+    },
+    {
+      "asset": "ETH",
+      "boundary": 1792368000000,
+      "end": 1792368301000,
+      "kind": "index",
+      "name": "eth-index-06",
+      "request_body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "start": 1792368001001,
+      "url": "https://api.prod.paradex.trade/v1/funding/data?market=ETH-USD-PERP&start_at=1792368001001&end_at=1792368301000&page_size=5000"
+    },
+    {
+      "asset": "ETH",
+      "boundary": 1792972800000,
+      "end": 1792973101000,
+      "kind": "index",
+      "name": "eth-index-07",
+      "request_body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "start": 1792972801001,
+      "url": "https://api.prod.paradex.trade/v1/funding/data?market=ETH-USD-PERP&start_at=1792972801001&end_at=1792973101000&page_size=5000"
+    },
+    {
+      "asset": "ETH",
+      "boundary": 1793577600000,
+      "end": 1793577901000,
+      "kind": "index",
+      "name": "eth-index-08",
+      "request_body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "start": 1793577601001,
+      "url": "https://api.prod.paradex.trade/v1/funding/data?market=ETH-USD-PERP&start_at=1793577601001&end_at=1793577901000&page_size=5000"
+    },
+    {
+      "asset": "ETH",
+      "boundary": 1794182400000,
+      "end": 1794182701000,
+      "kind": "index",
+      "name": "eth-index-09",
+      "request_body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "start": 1794182401001,
+      "url": "https://api.prod.paradex.trade/v1/funding/data?market=ETH-USD-PERP&start_at=1794182401001&end_at=1794182701000&page_size=5000"
+    },
+    {
+      "asset": "ETH",
+      "end": 1794182401000,
+      "kind": "binance",
+      "name": "eth-binance",
+      "request_body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "start": 1788739200000,
+      "url": "https://fapi.binance.com/fapi/v1/fundingRate?symbol=ETHUSDT&startTime=1788739200000&endTime=1794182401000&limit=1000"
+    },
+    {
+      "asset": "SOL",
+      "boundary": 1788739200000,
+      "end": 1788739501000,
+      "kind": "index",
+      "name": "sol-index-00",
+      "request_body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "start": 1788739201001,
+      "url": "https://api.prod.paradex.trade/v1/funding/data?market=SOL-USD-PERP&start_at=1788739201001&end_at=1788739501000&page_size=5000"
+    },
+    {
+      "asset": "SOL",
+      "boundary": 1789344000000,
+      "end": 1789344301000,
+      "kind": "index",
+      "name": "sol-index-01",
+      "request_body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "start": 1789344001001,
+      "url": "https://api.prod.paradex.trade/v1/funding/data?market=SOL-USD-PERP&start_at=1789344001001&end_at=1789344301000&page_size=5000"
+    },
+    {
+      "asset": "SOL",
+      "boundary": 1789948800000,
+      "end": 1789949101000,
+      "kind": "index",
+      "name": "sol-index-02",
+      "request_body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "start": 1789948801001,
+      "url": "https://api.prod.paradex.trade/v1/funding/data?market=SOL-USD-PERP&start_at=1789948801001&end_at=1789949101000&page_size=5000"
+    },
+    {
+      "asset": "SOL",
+      "boundary": 1790553600000,
+      "end": 1790553901000,
+      "kind": "index",
+      "name": "sol-index-03",
+      "request_body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "start": 1790553601001,
+      "url": "https://api.prod.paradex.trade/v1/funding/data?market=SOL-USD-PERP&start_at=1790553601001&end_at=1790553901000&page_size=5000"
+    },
+    {
+      "asset": "SOL",
+      "boundary": 1791158400000,
+      "end": 1791158701000,
+      "kind": "index",
+      "name": "sol-index-04",
+      "request_body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "start": 1791158401001,
+      "url": "https://api.prod.paradex.trade/v1/funding/data?market=SOL-USD-PERP&start_at=1791158401001&end_at=1791158701000&page_size=5000"
+    },
+    {
+      "asset": "SOL",
+      "boundary": 1791763200000,
+      "end": 1791763501000,
+      "kind": "index",
+      "name": "sol-index-05",
+      "request_body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "start": 1791763201001,
+      "url": "https://api.prod.paradex.trade/v1/funding/data?market=SOL-USD-PERP&start_at=1791763201001&end_at=1791763501000&page_size=5000"
+    },
+    {
+      "asset": "SOL",
+      "boundary": 1792368000000,
+      "end": 1792368301000,
+      "kind": "index",
+      "name": "sol-index-06",
+      "request_body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "start": 1792368001001,
+      "url": "https://api.prod.paradex.trade/v1/funding/data?market=SOL-USD-PERP&start_at=1792368001001&end_at=1792368301000&page_size=5000"
+    },
+    {
+      "asset": "SOL",
+      "boundary": 1792972800000,
+      "end": 1792973101000,
+      "kind": "index",
+      "name": "sol-index-07",
+      "request_body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "start": 1792972801001,
+      "url": "https://api.prod.paradex.trade/v1/funding/data?market=SOL-USD-PERP&start_at=1792972801001&end_at=1792973101000&page_size=5000"
+    },
+    {
+      "asset": "SOL",
+      "boundary": 1793577600000,
+      "end": 1793577901000,
+      "kind": "index",
+      "name": "sol-index-08",
+      "request_body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "start": 1793577601001,
+      "url": "https://api.prod.paradex.trade/v1/funding/data?market=SOL-USD-PERP&start_at=1793577601001&end_at=1793577901000&page_size=5000"
+    },
+    {
+      "asset": "SOL",
+      "boundary": 1794182400000,
+      "end": 1794182701000,
+      "kind": "index",
+      "name": "sol-index-09",
+      "request_body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "start": 1794182401001,
+      "url": "https://api.prod.paradex.trade/v1/funding/data?market=SOL-USD-PERP&start_at=1794182401001&end_at=1794182701000&page_size=5000"
+    },
+    {
+      "asset": "SOL",
+      "end": 1794182401000,
+      "kind": "binance",
+      "name": "sol-binance",
+      "request_body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "start": 1788739200000,
+      "url": "https://fapi.binance.com/fapi/v1/fundingRate?symbol=SOLUSDT&startTime=1788739200000&endTime=1794182401000&limit=1000"
+    }
+  ],
+  "retry_authority": "Registry rank 59 explicitly permits a distinct prospectively frozen nonoverlapping population. Start is the first Monday after the consumed September 4 source end; end is the last fully elapsed Monday at freeze. No funding values from this population were inspected before freeze.",
+  "roles": {
+    "test": [
+      7,
+      9
+    ],
+    "training": [
+      0,
+      5
+    ],
+    "validation": [
+      5,
+      7
+    ]
+  },
+  "schema": "hedged-weekly-funding-contract-v1",
+  "source_sha256": {
+    "data/research/2026-11-09-semantic-routing/run_owned_weekly.py": "357c40ed7b38df7af202eb5f12edd6c56825888293b2be7920623d4bbb8a1fb1",
+    "docs/model-research/structural-edge-priority-registry-v1.json": "6f21140968152c524b963481d8ac12eb829ea88c7755304caca371e731f840e6",
+    "docs/review/2026-09-04/paradex-index-contract.json": "bb33eff7e0cd48c73e1dfda014a956ded7f74ad4c0e5242cebe8ec9eedc21e19",
+    "docs/review/2026-09-04/paradex-index-source/disposition.json": "8f1d00c7787c9c58a8ee93ef348312a8f617e5ac745adcc05aa736d105edee64",
+    "docs/review/2026-09-04/paradex-index-source/history-api-section.txt": "d78f4812ed7a08aa636dc14ed346fcdc6e664d8ee80335ac8316394ea45b8707",
+    "docs/review/2026-09-04/paradex-index-source/mechanism-section.txt": "ada44ea56dd258836a64bfc1ac4f3f4c291d1c54cc362bf31cf5db3081ecd077",
+    "src/simple_ai_trading/windows_owned_job.py": "844deaa5e4bc26a0e99af9a4c346af48b77ad2ba7236bf65a9bdf40d84eb370d",
+    "tests/test_hedged_funding_blocks.py": "c565d45a2d59c01ee1d6874ec95f58abe75e11e5ae157ca7e574c102ab8bc418",
+    "tests/test_paradex_index_boundaries.py": "ba62adc7fee4fa0b3ee342815558ea924a23859f07fe9371c65cacc26c3c6b62",
+    "tools/cocoindex_agent_search.py": "6816e66b07646a4d7c68ea46a82d72f0f2eba2c991e341e64f6b06d9b4357a32",
+    "tools/screen_hedged_funding_blocks.py": "6c99775742a8ce44d2a6d91f91d1cfb87dfa543bc9ba7afb8c8b0a8a3d64c847",
+    "tools/screen_paradex_index_boundaries.py": "3d76d057b7fc7fdcbd70e5b996ccda5952c072e7666166331f73d58c67640168"
+  },
+  "start_boundary_ms": 1788739200000,
+  "start_utc": "2026-09-07T00:00:00+00:00",
+  "survivor": "Only prioritization for separately frozen source-qualified current fees, exact instrument/currency, native capital and synchronized finite-size basis/depth confirmation plus untouched prospective recurrence. No accepted edge or deployment follows this study.",
+  "transport": {
+    "cursor_requests": 0,
+    "elapsed_budget_checked_between_chunks_seconds": 30,
+    "maximum_retained_bytes": 35651618,
+    "owned_parent_deadline_seconds": 1800,
+    "page_size": 5000,
+    "per_response_retained_byte_ceiling": 1048577,
+    "public_unauthenticated_GET_requests": 34,
+    "redirects": 0,
+    "retries": 0,
+    "socket_timeout_seconds": 20
+  }
+}

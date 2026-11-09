@@ -4320,12 +4320,23 @@
         {
           "path": "docs/review/2026-09-04/paradex-fee-source/review.json",
           "result_sha256": "3ba0d1bb7bb025848fd7e3dfb8974633d28b782924be12df199ce5ee85779816"
+        },
+        {
+          "contract_sha256": "d70b5f6f162dff05d496076f77470d6aebbace67e7d1492a7e877880bfcfe6a3",
+          "path": "docs/review/2026-11-09/weekly-funding/contract.json"
+        },
+        {
+          "path": "docs/review/2026-11-09/weekly-funding/result.json",
+          "result_sha256": "04577ceab771ac6b93140b97c774d90fd93b65125339124458a38b9171324e6e"
         }
       ],
-      "current_status": "The distinct August 27 00:00 through September 4 16:00 2026 nominal population is consumed, including the frozen five-minute post-boundary windows. All 84 public responses passed source gates (1,308,306 bytes): 27 index boundaries and one Binance history per BTC ETH SOL asset, 78 fixed-base intervals and 13/6/7 chronological roles. Training selected short Paradex and long Binance for each asset. All nine par-valued gross role funding spreads were positive at 0.7858-7.5875 bips, but each was negative after even the frozen 20-bip execution allowance alone. No survivor passed the full unchanged 80-bip reserves plus 10-percent-annual total-two-leg capital stress. These are stress diagnostics, not actual fees, converted realized account PnL, current profit or a family-wide negative-EV proof. No basis books accounts orders or protected data.",
+      "current_status": "The separately frozen nine-week September 7 through November 9 BTC ETH SOL weekly index study is consumed at its first inventory GET. HTTP 200 returned more than the frozen 1 MiB complete-body ceiling; 1,048,577 partial bytes and the durable journal were retained. Zero funding/index requests or economic observations followed. This is source failure, not negative economic evidence. The prior complete August27-September4 short-hold funding prefilter remains rejected under its unchanged costs and all original result bytes remain unchanged.",
+      "fee_route_source_status": "Two distinct official Markdown fee/classification sources were retained September 4, 2026. Standard API defaults Pro; documented Retail zero trading fees depend on per-order interactive classification, 300-ms submission/cancellation delays and rate caps. Intended workflow and account eligibility, actual commissions and all incremental execution costs remain unqualified. This is source-only execution-design evidence, not a new terminal market observation or an effective-dated fee-change trigger. Preserve both consumed funding populations, their gates and exact retry conditions; never reprice them into new validation or manufacture volume for discounts.",
+      "index_boundary_study_status": "The distinct August 27 00:00 through September 4 16:00 2026 nominal population is consumed, including the frozen five-minute post-boundary windows. All 84 public responses passed source gates (1,308,306 bytes): 27 index boundaries and one Binance history per BTC ETH SOL asset, 78 fixed-base intervals and 13/6/7 chronological roles. Training selected short Paradex and long Binance for each asset. All nine par-valued gross role funding spreads were positive at 0.7858-7.5875 bips, but each was negative after even the frozen 20-bip execution allowance alone. No survivor passed the full unchanged 80-bip reserves plus 10-percent-annual total-two-leg capital stress. These are stress diagnostics, not actual fees, converted realized account PnL, current profit or a family-wide negative-EV proof. No basis books accounts orders or protected data.",
       "market_direction_forecast_required": false,
       "mechanism": "binance_Paradex_cross_venue_USD_perpetual_funding_spread",
-      "next_action": "do_not_refetch_alias_paginate_or_consume_any_continuation_cursor_for_the_exact_population_reopen_only_for_a_distinct_prospectively_frozen_nonoverlapping_population_or_independently_known_material_API_cadence_pagination_or_architecture_change_with_every_page_total_byte_and_row_ceiling_frozen_before_access_then_require_exact_realized_index_alignment_current_fees_finite_size_basis_depth_and_all_costs_also_do_not_refetch_reprice_interpolate_fill_missing_windows_or_reorient_the_consumed_2026_08_27_through_2026_09_04_16_05_01_index_population_a_new_study_requires_the_literal_nonoverlapping_population_or_material_architecture_trigger_and_an_explicit_information_gain_case_not_a_rolling_retry_to_hunt_a_winner",
+      "next_action": "do_not_refetch_alias_paginate_or_consume_any_continuation_cursor_for_the_exact_population_reopen_only_for_a_distinct_prospectively_frozen_nonoverlapping_population_or_independently_known_material_API_cadence_pagination_or_architecture_change_with_every_page_total_byte_and_row_ceiling_frozen_before_access_then_require_exact_realized_index_alignment_current_fees_finite_size_basis_depth_and_all_costs_also_do_not_refetch_reprice_interpolate_fill_missing_windows_or_reorient_the_consumed_2026_08_27_through_2026_09_04_16_05_01_index_population_a_new_study_requires_the_literal_nonoverlapping_population_or_material_architecture_trigger_and_an_explicit_information_gain_case_not_a_rolling_retry_to_hunt_a_winner The nine-week September7-November9 study is now consumed after inventory byte-ceiling failure. Do not increase its cap, retry or alias inventory, or request its funding histories, indices, prices or books. Time alone is not a rolling retry; require an independent material source-access/architecture fact or a genuinely informative distinct frozen nonoverlapping population.",
+      "prior_90_bin_source_failure_status": "terminal_exact_90_bin_population_source_incomplete_before_economics_all_three_Paradex_histories_hit_5000_rows_and_returned_continuation_cursors_frozen_byte_ceilings_also_failed_no_funding_values_were_viewed_or_used_no_pagination_adaptation_basis_books_accounts_credentials_orders_or_funds_public_profit_floor_zero_not_accepted_stable_or_deployment_ready",
       "priority_rank": 59,
       "prohibited_shortcuts": [
         "using_a_partial_5000_row_page_as_complete_history",
@@ -4339,10 +4350,7 @@
         "discarding_partial_source_windows_or_reorienting_the_consumed_Aug27_Sep4_population"
       ],
       "retry_trigger": "a_distinct_prospectively_frozen_nonoverlapping_population_or_an_independently_known_material_Paradex_API_cadence_pagination_or_architecture_change_with_all_pages_total_bytes_rows_alignment_roles_orientation_and_costs_frozen_before_access_followed_by_exact_index_and_finite_size_confirmation_for_any_survivor",
-      "venue_scope": "Binance_USDT_perpetuals_versus_Paradex_USDC_settled_BTC_ETH_SOL_perpetuals",
-      "prior_90_bin_source_failure_status": "terminal_exact_90_bin_population_source_incomplete_before_economics_all_three_Paradex_histories_hit_5000_rows_and_returned_continuation_cursors_frozen_byte_ceilings_also_failed_no_funding_values_were_viewed_or_used_no_pagination_adaptation_basis_books_accounts_credentials_orders_or_funds_public_profit_floor_zero_not_accepted_stable_or_deployment_ready",
-      "index_boundary_study_status": "The distinct August 27 00:00 through September 4 16:00 2026 nominal population is consumed, including the frozen five-minute post-boundary windows. All 84 public responses passed source gates (1,308,306 bytes): 27 index boundaries and one Binance history per BTC ETH SOL asset, 78 fixed-base intervals and 13/6/7 chronological roles. Training selected short Paradex and long Binance for each asset. All nine par-valued gross role funding spreads were positive at 0.7858-7.5875 bips, but each was negative after even the frozen 20-bip execution allowance alone. No survivor passed the full unchanged 80-bip reserves plus 10-percent-annual total-two-leg capital stress. These are stress diagnostics, not actual fees, converted realized account PnL, current profit or a family-wide negative-EV proof. No basis books accounts orders or protected data.",
-      "fee_route_source_status": "Two distinct official Markdown fee/classification sources were retained September 4, 2026. Standard API defaults Pro; documented Retail zero trading fees depend on per-order interactive classification, 300-ms submission/cancellation delays and rate caps. Intended workflow and account eligibility, actual commissions and all incremental execution costs remain unqualified. This is source-only execution-design evidence, not a new terminal market observation or an effective-dated fee-change trigger. Preserve both consumed funding populations, their gates and exact retry conditions; never reprice them into new validation or manufacture volume for discounts."
+      "venue_scope": "Binance_USDT_perpetuals_versus_Paradex_USDC_settled_BTC_ETH_SOL_perpetuals"
     },
     {
       "priority_rank": 60,
@@ -5587,8 +5595,13 @@
       "family": "polymarket_future_nfl_october8_9_total_ladder_resource_failure",
       "reason": "One new fixed-window public discovery response retained four deployed NFL events, but the precommitted per-event resource envelope failed before any price evaluation. Exact window and all native event siblings consumed. This is not negative-EV proof or a fee/depth trigger; no refetch, reprice, adaptive ceiling repair or sibling fallback.",
       "canonical_result_sha256": "bd1f430444c33f60f811134d622c639e39e9a502cb57747fe469d15bd6e8c0d3"
+    },
+    {
+      "canonical_result_sha256": "04577ceab771ac6b93140b97c774d90fd93b65125339124458a38b9171324e6e",
+      "family": "binance_paradex_weekly_2026_09_07_through_2026_11_09_inventory_capped_source",
+      "reason": "One-use nine-week funding study consumed by its first HTTP200 inventory response exceeding the frozen 1 MiB ceiling; no funding/economics accessed. No larger-cap retry, source alias or missing-window fill."
     }
   ],
-  "updated_at_utc": "2026-11-09T17:54:41.761475+00:00",
+  "updated_at_utc": "2026-11-09T20:19:06.027701+00:00",
   "usage_rule": "advance_the_highest_ranked_hypothesis_whose_retry_trigger_is_satisfied_otherwise_do_not_repeat_a_blocked_or_terminal_screen"
 }

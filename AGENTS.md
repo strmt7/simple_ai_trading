@@ -143,6 +143,14 @@ result and all other consumed populations, including WNBA September 3-9.
   defaulted to zero, and a cancel request is not release evidence. Supplied
   declarations do not qualify native locks, settlement, margin or solvency.
 
+- Polymarket execution must reserve through
+  `PolymarketLiveOrderLedger.reserve_submission` after preflight and signing.
+  It atomically checks unresolved owned orders and inserts the prepared record
+  under the same SQLite writer transaction. The lower-level `reserve` records
+  prepared evidence; it is not submission admission. Do not replace the atomic
+  gate with a cached preflight result or an in-process-only lock. Closing-only
+  actions retain their separate ownership/quantity and runtime Stop rules.
+
 - Apply the full [progress, blocking and resumption protocol](docs/AGENT_WORKFLOWS.md#progress-blocking-and-resumption)
   on every continuation. A blocked research branch is not a blocked repository.
   Exhaust safe, relevant alternatives before declaring a goal-wide impasse;

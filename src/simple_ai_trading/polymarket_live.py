@@ -1264,6 +1264,8 @@ class PolymarketLiveOrderLedger:
                 CHECK (order_type IN ('FAK', 'FOK', 'GTD')),
                 CHECK (closing_only IN (0, 1))
             );
+            CREATE INDEX IF NOT EXISTS polymarket_live_orders_state_index
+                ON polymarket_live_orders(state);
             CREATE TABLE IF NOT EXISTS polymarket_live_fills (
                 trade_id TEXT NOT NULL,
                 order_id TEXT NOT NULL,
@@ -1834,6 +1836,28 @@ class PolymarketLiveOrderLedger:
     def reserve(
         self, prepared: PolymarketPreparedOrder, *, observed_at_ms: int
     ) -> None:
+        """Record prepared evidence; this operation does not admit a submission."""
+        self._reserve(prepared, observed_at_ms=observed_at_ms, admit_submission=False)
+
+    def reserve_submission(
+        self, prepared: PolymarketPreparedOrder, *, observed_at_ms: int
+    ) -> None:
+        """Atomically admit a new reservation against unresolved owned orders.
+
+        Execution callers must use this operation after preflight/signing. The
+        SQLite writer transaction serializes separate processes using this ledger.
+        Closing-only reservations retain their separate ownership/quantity gates;
+        an unrelated pending order must not prevent an owned risk reduction.
+        """
+        self._reserve(prepared, observed_at_ms=observed_at_ms, admit_submission=True)
+
+    def _reserve(
+        self,
+        prepared: PolymarketPreparedOrder,
+        *,
+        observed_at_ms: int,
+        admit_submission: bool,
+    ) -> None:
         intent = prepared.intent
         intent_payload = intent.asdict()
         now = int(observed_at_ms)
@@ -1858,6 +1882,18 @@ class PolymarketLiveOrderLedger:
                     )
                 connection.execute("COMMIT")
                 return
+            if admit_submission and not intent.closing_only:
+                pending = connection.execute(
+                    "SELECT * FROM polymarket_live_orders WHERE state IN ("
+                    + ",".join("?" for _ in _OPEN_STATES)
+                    + ") LIMIT 1",
+                    sorted(_OPEN_STATES),
+                ).fetchone()
+                if pending is not None:
+                    self._verify_order_row(pending)
+                    raise PolymarketLiveBlocked(
+                        "opening reservation blocked by an unresolved owned order"
+                    )
             connection.execute(
                 """
                 INSERT INTO polymarket_live_orders (
@@ -4152,7 +4188,7 @@ class PolymarketLiveCoordinator:
                 self._assert_order_dispatch_available()
                 now = int(time.time() * 1_000)
                 self._assert_intent_current(intent, observed_at_ms=now)
-                self.ledger.reserve(prepared, observed_at_ms=now)
+                self.ledger.reserve_submission(prepared, observed_at_ms=now)
                 self.ledger.transition(
                     intent.intent_id,
                     expected_states=("prepared",),
