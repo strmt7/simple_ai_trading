@@ -26,6 +26,15 @@ current full-suite failure count without rerunning the appropriate scope.
 
 ## Financial and source frontier
 
+- [Spot protocol sources](review/2026-11-09/native-clock-source/review.md): two
+  immutable official revisions passed native source admission. Both document
+  default milliseconds and optional microseconds; Spot bookTicker has no native
+  event-time field. Collector configuration, historical deployment and clock
+  offsets remain unqualified. Preserve the initial/subsequent bridge boundary
+  distinction; the existing futures `T`/`pu` normalizer is not a Spot adapter.
+  Routine public technical-document decisions now use the user's explicit
+  session delegation in AGENTS, without repeated approval requests. Earlier
+  source failures, consumed financial tests and protected captures stay intact.
 - Ordered-fill spot cash must cover acquisition, quote fees and a declared buffer.
   Boundary net cash and terminal wealth can hide intermediate cash demand.
   `spot_prefunding.evaluate_hedged_spot_prefunding` keeps derivative income and

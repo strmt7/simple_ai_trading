@@ -320,6 +320,19 @@ result and all other consumed populations, including WNBA September 3-9.
   push, or hosted CI run before exploratory public requests. The stricter
   frozen one-use workflow remains mandatory for authenticated, account-specific,
   funded, order-capable, or state-changing operations.
+- November 9 resumed-session authority: the user explicitly delegates routine
+  development and public technical-document research decisions to the agent's
+  judgment. Do not request approval again for those already-authorized actions.
+  A failed documentation capture may be followed by a separately predeclared
+  public primary-source copy or revision, including an official source repository.
+  Preserve the failed contract, raw result and terminal consequence; the new
+  receipt qualifies only its own document/version. Record selection, bounds and
+  admission before access, use the mandatory crawler and respect robots/access
+  controls. Never use challenge bypass, impersonation or an alternate reader.
+  This session exception supersedes documentation-only no-alias restrictions;
+  it does not reopen a consumed market population, protected partial capture,
+  economic test or account operation, or grant live-money authority. Source
+  availability is not collector, clock, execution or profitability qualification.
 - Before source selection, market-data access or any research capture, read
   [Research Capture Boundaries](docs/RESEARCH_CAPTURE_BOUNDARIES.md) completely.
   October 7 session-only efficiency clarification: when the main agent already
@@ -430,6 +443,10 @@ large CSV files. The detailed workflow and imported-tool provenance are in
 - Invoke repository tests as `uv run python -m pytest`; the `uv run pytest`
   console entry may omit the repository root and cause false collection errors
   for tests that import `tools.*`.
+- Give each test invocation a new, verified-nonexistent `--basetemp` under
+  ignored task-owned storage. Pytest can delete an existing explicit base and
+  inspect shared default temporary directories during cleanup. Never reuse a
+  base, remove another session's files or change host ACLs to repair that cleanup.
 - During iteration, run the smallest focused test and Ruff check. Every new
   branch needs a direct assertion, including normal and fallback error paths.
 - At a behavior checkpoint, run the complete affected-domain suite once.

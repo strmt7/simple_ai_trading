@@ -1,0 +1,47 @@
+{
+  "admission": "Native success true, exact selected immutable source URL (same-host/path canonical redirects only), effective HTTP200, no nonempty native errors/challenge, >=600 substantive extracted characters and intended Spot stream document scope. No timestamp-unit inference from digit length. Retain original/final status and URLs.",
+  "base_revision": "a6abe7d02d17c6a1f72a7315a465528bf1d52067",
+  "budget": {
+    "cache_bypass": true,
+    "external_llm_profile_stealth_challenge_bypass": false,
+    "headless_defaults": true,
+    "navigations": 2,
+    "owned_process_timeout_seconds_per_page": 150,
+    "page_timeout_ms": 45000,
+    "retries": 0,
+    "robots_checked": true
+  },
+  "cache_identity": "9d7721db4b1e71517be18c2739fa223422a77155d6155a7cc44c4a5ab28845af",
+  "capture_boundaries_sha256": "f971726268ba2e630b2ebbe8d5bcf02f7b3f23b92ccb16efe23aef82cebe950f",
+  "controller_sha256": "623cd6c8aeda7cbb7884efcc2b193b7593eef3b4247f00073c71e9d0ea1b7136",
+  "documents": [
+    {
+      "commit": "e556feb906511189fc423e3b58c0452366e802d3",
+      "commit_date": "2026-06-09T10:10:48Z",
+      "name": "asof-archive",
+      "output": "asof-native.json",
+      "url": "https://raw.githubusercontent.com/binance/binance-spot-api-docs/e556feb906511189fc423e3b58c0452366e802d3/web-socket-streams.md"
+    },
+    {
+      "commit": "f0ee79c8ce24dbeda6645211b9504e237fddef19",
+      "commit_date": "2026-10-15T06:14:38Z",
+      "name": "current",
+      "output": "current-native.json",
+      "url": "https://raw.githubusercontent.com/binance/binance-spot-api-docs/f0ee79c8ce24dbeda6645211b9504e237fddef19/web-socket-streams.md"
+    }
+  ],
+  "failure": "Preserve each source failure. The independently fixed other version may still run, but no alternative source for a failed version is requested. This is technical documentation, never independent financial validation or a market-window retry.",
+  "frozen_at_utc": "2026-11-09T21:27:45.805421+00:00",
+  "intent_sha256": "7e234cc2f4df907e4b65f3517a7ccc7def0bcc52143113728d398ac241dfc0a9",
+  "limits": "Document semantics alone do not prove vendor collector configuration, physical clock offsets, fills, native costs, strategy economics, margin or deployment. No market/stream/account/order request, credentials, training, protected partial data or financial-family reopening.",
+  "preflight": "Current admitted installed cohort passed its actual native CLI help with an owned 90-second parent, without a source URL. Actual study controller also requires an fsync/import preflight before access.",
+  "provider_sources": {
+    "tools/crawl4ai_tool.py": "e84a0e54ee07e4e13d3d2f35491f641730096a78126068f232c1f2397a467d8c",
+    "tools/requirements/crawl4ai.txt": "5fc27973200b72184199428bee436c8deee9fe65ef3f0762cb871ac5c69abe53"
+  },
+  "provider_version": "0.9.5+flitzzip.portable2",
+  "question": "Qualify official Spot stream time units, optional timeUnit configuration, event/update identity semantics and document-version drift before historical adapter admission.",
+  "schema": "immutable-spot-stream-document-comparison-v1",
+  "selection": "Official unauthenticated GitHub commit metadata selects the last file revision not after the fixed October 1 sample starts and the latest file revision. No document body or market outcome was used for selection.",
+  "session_authority": "User explicitly delegated routine research/restriction decisions. This new public technical-document-only exception supersedes the old no-alias restriction for these sources; the original failed attempt and all financial-study consequences remain untouched."
+}

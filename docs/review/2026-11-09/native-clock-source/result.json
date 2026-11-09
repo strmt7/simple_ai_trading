@@ -1,0 +1,131 @@
+{
+  "base_revision": "a6abe7d02d17c6a1f72a7315a465528bf1d52067",
+  "cache_identity": "9d7721db4b1e71517be18c2739fa223422a77155d6155a7cc44c4a5ab28845af",
+  "capture_boundaries_sha256": "f971726268ba2e630b2ebbe8d5bcf02f7b3f23b92ccb16efe23aef82cebe950f",
+  "completed_at_utc": "2026-11-09T21:30:40.771669+00:00",
+  "controller_sha256": "623cd6c8aeda7cbb7884efcc2b193b7593eef3b4247f00073c71e9d0ea1b7136",
+  "documents": [
+    {
+      "admitted": true,
+      "commit": "e556feb906511189fc423e3b58c0452366e802d3",
+      "commit_date": "2026-06-09T10:10:48Z",
+      "effective_status": 200,
+      "final_url": "https://raw.githubusercontent.com/binance/binance-spot-api-docs/e556feb906511189fc423e3b58c0452366e802d3/web-socket-streams.md",
+      "http_status": 200,
+      "markdown_characters": 22969,
+      "markdown_sha256": "a54800614fc50650c0950f0840abdbe0c2e8c0714e133e823bc015f1806d3c0d",
+      "name": "asof-archive",
+      "native_bytes": 106770,
+      "native_error": "",
+      "native_sha256": "18a92700f0b820bfda7940e430c1ca1df30f427c24d47adcd782640d5afebe94",
+      "native_success": true,
+      "output": "asof-native.json",
+      "section_bindings": {
+        "book_ticker": {
+          "characters": 595,
+          "sha256": "8cc4518ef4620b175d8566c854b6712e0340bb9c393329f5e19c5aa8bdd98bf3"
+        },
+        "diff_depth": {
+          "characters": 818,
+          "sha256": "a5265aede46da215f0733799cf5d14a79b35242f1634d2c55595a571aa534d3b"
+        },
+        "general": {
+          "characters": 2108,
+          "sha256": "cf85e1735edda61bbfc927b7c7b757b16a228258f7bea4db3971ed2d2b82f9a8"
+        },
+        "local_book": {
+          "characters": 2147,
+          "sha256": "b4f901f22412541b407fb3d2830e71c33b80829649813c2648d1290d96ff4092"
+        }
+      },
+      "url": "https://raw.githubusercontent.com/binance/binance-spot-api-docs/e556feb906511189fc423e3b58c0452366e802d3/web-socket-streams.md"
+    },
+    {
+      "admitted": true,
+      "commit": "f0ee79c8ce24dbeda6645211b9504e237fddef19",
+      "commit_date": "2026-10-15T06:14:38Z",
+      "effective_status": 200,
+      "final_url": "https://raw.githubusercontent.com/binance/binance-spot-api-docs/f0ee79c8ce24dbeda6645211b9504e237fddef19/web-socket-streams.md",
+      "http_status": 200,
+      "markdown_characters": 26856,
+      "markdown_sha256": "6533a68c24b8ed43b3fdc401dbd4388e7dbdaa543ed31444b88d6bc79e9c72de",
+      "name": "current",
+      "native_bytes": 124477,
+      "native_error": "",
+      "native_sha256": "0d9202520b323b875383d8d82000a4c4ff7d1fbe5f772f34c93f44c26aa8d524",
+      "native_success": true,
+      "output": "current-native.json",
+      "section_bindings": {
+        "book_ticker": {
+          "characters": 641,
+          "sha256": "5f303cf4779f4e024e0fae62b8da415718c5369ae63678d8996f3ba5393d734a"
+        },
+        "diff_depth": {
+          "characters": 750,
+          "sha256": "76469380348f12e256a69bd1d76328d3abe27a45df058ddc6235cc6fef651e78"
+        },
+        "general": {
+          "characters": 2184,
+          "sha256": "ad2e3fe7a62c6f0f243b1620c020fcc4570eaf92228a156c171faa21598f23e5"
+        },
+        "local_book": {
+          "characters": 2163,
+          "sha256": "ef7fcae4f9930cf1bc6d2b94646547b7deeb4cbd00f7008f4110b30e1ee6ae78"
+        }
+      },
+      "url": "https://raw.githubusercontent.com/binance/binance-spot-api-docs/f0ee79c8ce24dbeda6645211b9504e237fddef19/web-socket-streams.md"
+    }
+  ],
+  "historical_failures_preserved": [
+    "docs/review/2026-11-09/depth-source/documentation-intent.json",
+    "docs/review/2026-11-09/timed-snapshot-normalization/crawl-intent.json"
+  ],
+  "intent_sha256": "7e234cc2f4df907e4b65f3517a7ccc7def0bcc52143113728d398ac241dfc0a9",
+  "journal_sha256": "f9cbbb845685b94985c9544451c18fd96117c545374de2ec499bfeb93e67dcae",
+  "next_decision": "Bind actual vendor collector configuration and its as-of clock semantics before Spot historical normalization; current futures T/pu adapter must not be treated as a Spot adapter.",
+  "not_qualified": [
+    "third-party collector WebSocket URL or timeUnit configuration",
+    "source transport and deployment at the historical sample date",
+    "physical clock offsets or feed latency",
+    "USD-M futures T/pu rules or REST snapshot clock semantics",
+    "continuous paired data, fills, execution costs, financing or margin",
+    "any market-model, independent economic validation or profitable edge"
+  ],
+  "provider_sources": {
+    "tools/crawl4ai_tool.py": "e84a0e54ee07e4e13d3d2f35491f641730096a78126068f232c1f2397a467d8c",
+    "tools/requirements/crawl4ai.txt": "5fc27973200b72184199428bee436c8deee9fe65ef3f0762cb871ac5c69abe53"
+  },
+  "provider_version": "0.9.5+flitzzip.portable2",
+  "qualified_protocol_facts": {
+    "book_ticker_example_keys": [
+      "u",
+      "s",
+      "b",
+      "B",
+      "a",
+      "A"
+    ],
+    "book_ticker_limit": "The documented payload contains no E/T event timestamp; update IDs are not timestamps. Do not invent exchange time from local receipt.",
+    "bridge_boundary_limit": "The initial-buffer inclusion statement and subsequent gap rule differ at U = snapshot ID + 1. No protocol qualification of that boundary case is claimed.",
+    "diff_depth_event_time": "E; distinct from U first-update ID and u final-update ID",
+    "levels": "Absolute replacement quantities; zero removes a level. Snapshot is bounded; unchanged levels outside its coverage remain unknown.",
+    "limited_version_comparison": "No change in these reviewed time-unit, bookTicker, update-identity, bridge and level rules was observed between the two revisions. This is not whole-document equivalence.",
+    "scope": "Binance Spot WebSocket streams only, at the two exact file revisions",
+    "snapshot_bridge": "Buffer before snapshot. Discard buffered u <= snapshot ID. The text requires the first retained range to include snapshot ID; subsequent U > local ID + 1 means a gap. Do not substitute futures pu linkage.",
+    "timestamp_default": "milliseconds",
+    "timestamp_option": "URL timeUnit=MICROSECOND or timeUnit=microsecond selects microseconds"
+  },
+  "retention": {
+    "economic_observations_added": 0,
+    "financial_counts": [
+      203,
+      65,
+      37,
+      0
+    ],
+    "private_directory": "data/research/2026-11-09-stream-source/",
+    "raw_results": "Native full results, logs, discovery bytes, selected revisions and durable navigation journal remain private and unchanged."
+  },
+  "schema": "spot-stream-source-qualification-v1",
+  "source_navigations": 2
+}

@@ -84,6 +84,18 @@ Installation/help success does not prove a successful source extraction.
    If a contract forbids browser subrequests, use Crawl4AI for separate eligible
    documentation research, not as a replacement transport for that contract.
 
+For the November 9 resumed session, the user's explicit delegation permits
+routine public technical-document decisions without another approval request.
+A separately selected official source copy or immutable revision may receive a
+new bounded documentation-only attempt after a failed page. Freeze the question,
+version, URL, limits and admission first; retain the earlier failure unchanged.
+This exception supersedes the documentation-only no-alias language above, not
+robots/access controls, mandatory crawler use, financial-study retry triggers,
+protected captures or account boundaries. A public publisher repository is a
+new source receipt, never a retroactive success for a failed website capture.
+Use an as-of revision for historical semantics and keep collector configuration
+and clock-offset qualification separate from the protocol's documented defaults.
+
 Missing provider setup is an explicit tool limitation, not permission to claim
 that Crawl4AI was used. Qualify a provider change only in its own affected lane;
 do not repeat a broad website matrix or trading suite for ordinary page reading.
