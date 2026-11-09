@@ -13,6 +13,8 @@ from pathlib import Path
 import shutil
 from typing import Mapping, Sequence
 
+from simple_ai_trading.research_paths import historical_research_path
+
 
 ROOT = Path(__file__).resolve().parents[1]
 ROUND = 52
@@ -598,8 +600,7 @@ def _bar_svg(
                 direction = -1.0 if numeric_value >= 0 else 1.0
                 for _attempt in range(len(placed_labels) + 1):
                     collision = any(
-                        abs(label_x - prior_x)
-                        < (label_width + prior_width) / 2.0 + 4.0
+                        abs(label_x - prior_x) < (label_width + prior_width) / 2.0 + 4.0
                         and abs(label_y - prior_y) < 14.0
                         for prior_x, prior_y, prior_width in placed_labels
                     )
@@ -1108,8 +1109,8 @@ def _parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--report",
         type=Path,
-        default=Path(
-            r"E:\SimpleAITradingData\round52-executable-support-hurdle-20260713-v1\report.json"
+        default=historical_research_path(
+            ROOT, "round52-executable-support-hurdle-20260713-v1/report.json"
         ),
     )
     parser.add_argument(

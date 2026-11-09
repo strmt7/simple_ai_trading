@@ -33,6 +33,8 @@ from tools.publish_round52_executable_support_hurdle import (  # noqa: E402
     _write_text,
 )
 
+from simple_ai_trading.research_paths import historical_research_path
+
 
 ROUND = 57
 REPORT_SCHEMA = "round-057-queue-censored-make-take-report-v1"
@@ -736,7 +738,7 @@ def publish(
 
 def _parser() -> argparse.ArgumentParser:
     research = ROOT / "docs" / "model-research" / "action-value"
-    evidence = Path(r"E:\SimpleAITradingData\evidence\round57-20260715-1509-v2")
+    evidence = historical_research_path(ROOT, "evidence/round57-20260715-1509-v2")
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--report", type=Path, default=evidence / "round57-report.json")
     parser.add_argument(

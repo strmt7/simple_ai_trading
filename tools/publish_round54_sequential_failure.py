@@ -33,6 +33,8 @@ from tools.publish_round52_executable_support_hurdle import (  # noqa: E402
     _write_text,
 )
 
+from simple_ai_trading.research_paths import historical_research_path
+
 
 ROUND = 54
 REPORT_SCHEMA = "round-054-sequential-action-value-prototype-report-v1"
@@ -40,10 +42,16 @@ DIAGNOSTIC_SCHEMA = "round-054-sequential-failure-diagnostic-v1"
 PUBLICATION_SCHEMA = "round-054-action-value-publication-v1"
 DESIGN_SHA256 = "bc6bc8ea8e4fb8f2d44234c5a987201530786754e2e821e804e7fdb1b3a8a5c4"
 DESIGN_FILE_SHA256 = "fbb92bf3cae13144f61f7db5488af72ea04e78aeacf0def47246ff4b870e6e3a"
-REPORT_CANONICAL_SHA256 = "8aff454b63201ccab8a53d7a9cf4a9f46bad04a284074c7e7a22e001fb9385ff"
+REPORT_CANONICAL_SHA256 = (
+    "8aff454b63201ccab8a53d7a9cf4a9f46bad04a284074c7e7a22e001fb9385ff"
+)
 REPORT_FILE_SHA256 = "e1a6e53d4be1d21ef101f7172083740af5ad332ec8933ca445625b32f5085642"
-DIAGNOSTIC_CANONICAL_SHA256 = "dd392f0fa1278860424bc27e5764ad84ac943c98ad992f4ec707ff6a94d7369f"
-DIAGNOSTIC_FILE_SHA256 = "c2de85558288bbd9befa9e4cc7ecd5966b9d7db8e281bfd4090562ca445b8bec"
+DIAGNOSTIC_CANONICAL_SHA256 = (
+    "dd392f0fa1278860424bc27e5764ad84ac943c98ad992f4ec707ff6a94d7369f"
+)
+DIAGNOSTIC_FILE_SHA256 = (
+    "c2de85558288bbd9befa9e4cc7ecd5966b9d7db8e281bfd4090562ca445b8bec"
+)
 DIAGNOSTIC_IMPLEMENTATION_COMMIT = "3b2500c7c44532bec51e374c6577b75773a0a54a"
 DIAGNOSTIC_IMPLEMENTATION_BLOB = "85a825f2695b601e63470ea9d4724fee708c70b9"
 POLICIES = (
@@ -117,10 +125,8 @@ def _validate_sources(
         or diagnostic.get("status") != "rejected"
         or diagnostic.get("evaluation_role_read") is not False
         or diagnostic.get("source_report_file_sha256") != REPORT_FILE_SHA256
-        or diagnostic.get("source_report_canonical_sha256")
-        != REPORT_CANONICAL_SHA256
-        or diagnostic.get("implementation_commit")
-        != DIAGNOSTIC_IMPLEMENTATION_COMMIT
+        or diagnostic.get("source_report_canonical_sha256") != REPORT_CANONICAL_SHA256
+        or diagnostic.get("implementation_commit") != DIAGNOSTIC_IMPLEMENTATION_COMMIT
         or any(
             value is not False
             for value in (
@@ -202,8 +208,7 @@ def _holding_summary_rows(
     diagnostic: Mapping[str, object],
 ) -> list[dict[str, object]]:
     return [
-        {"round": ROUND, **dict(row)}
-        for row in diagnostic["original_policy_summary"]
+        {"round": ROUND, **dict(row)} for row in diagnostic["original_policy_summary"]
     ]
 
 
@@ -312,7 +317,13 @@ def _model_svg(rows: Sequence[Mapping[str, object]]) -> str:
         groups=tuple(
             (
                 f"Seed {row['seed']}",
-                (("TD residual skill", 100.0 * float(row["early_stop_td_skill"]), COLORS["teal"]),),
+                (
+                    (
+                        "TD residual skill",
+                        100.0 * float(row["early_stop_td_skill"]),
+                        COLORS["teal"],
+                    ),
+                ),
             )
             for row in rows
         ),
@@ -386,8 +397,16 @@ def _holding_svg(rows: Sequence[Mapping[str, object]]) -> str:
             (
                 DISPLAY[str(row["policy_id"])],
                 (
-                    ("Maximum hold", float(row["maximum_holding_hours"]), COLORS["red"]),
-                    ("Median hold", float(row["median_holding_hours"]), COLORS["amber"]),
+                    (
+                        "Maximum hold",
+                        float(row["maximum_holding_hours"]),
+                        COLORS["red"],
+                    ),
+                    (
+                        "Median hold",
+                        float(row["median_holding_hours"]),
+                        COLORS["amber"],
+                    ),
                 ),
             )
             for row in rows
@@ -484,9 +503,9 @@ def _readme(
 
 > **Rejected before evaluation.** No profitability, AI-uplift, leverage, testnet, live-trading, or promotion claim is made.
 
-Three DirectML-trained dueling causal TCNs reduced matched early-stop Bellman residual loss by `25.76%` to `26.20%`, but that was not directional or economic proof. Calibration directional rank peaked at `{rank:.6f}`. The median-Q controller held a position for up to `791` hours and returned `{100.0 * float(median['total_net_return_fraction']):.2f}%` under stress with `{100.0 * float(median['maximum_drawdown_fraction']):.2f}%` drawdown.
+Three DirectML-trained dueling causal TCNs reduced matched early-stop Bellman residual loss by `25.76%` to `26.20%`, but that was not directional or economic proof. Calibration directional rank peaked at `{rank:.6f}`. The median-Q controller held a position for up to `791` hours and returned `{100.0 * float(median["total_net_return_fraction"]):.2f}%` under stress with `{100.0 * float(median["maximum_drawdown_fraction"]):.2f}%` drawdown.
 
-A post-hoc finite-hold diagnostic found its least-bad point at `{finite['maximum_holding_hours']}h`: `{100.0 * float(finite['stress_total_net_return_fraction']):+.2f}%` stress return across `{finite['closed_trades']}` trades, `{100.0 * float(finite['stress_maximum_drawdown_fraction']):.2f}%` drawdown, and a `{float(finite['bootstrap_lower_mean_hourly_bps']):.4f}` bps/hour bootstrap lower bound. It remains rejected and selection-contaminated.
+A post-hoc finite-hold diagnostic found its least-bad point at `{finite["maximum_holding_hours"]}h`: `{100.0 * float(finite["stress_total_net_return_fraction"]):+.2f}%` stress return across `{finite["closed_trades"]}` trades, `{100.0 * float(finite["stress_maximum_drawdown_fraction"]):.2f}%` drawdown, and a `{float(finite["bootstrap_lower_mean_hourly_bps"]):.4f}` bps/hour bootstrap lower bound. It remains rejected and selection-contaminated.
 
 Round 55 must forecast finite-horizon return distributions directly, keep the controller bounded, and gate directional skill, proper scores, path risk, net action value, bootstrap evidence, activity, and asset breadth separately. The evaluation interval remains unread.
 
@@ -604,8 +623,7 @@ def publish(
             "calibration_policies": len(policy_rows),
             "passed_calibration_policies": 0,
             "maximum_observed_holding_hours": max(
-                int(row["maximum_holding_hours"])
-                for row in holding_summary_rows
+                int(row["maximum_holding_hours"]) for row in holding_summary_rows
             ),
             "finite_hold_rules_tested": len(finite_hold_rows),
             "evaluation_replayed": False,
@@ -623,15 +641,15 @@ def _parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--report",
         type=Path,
-        default=Path(
-            r"E:\SimpleAITradingData\round54-sequential-action-value-20260714-v2\report.json"
+        default=historical_research_path(
+            ROOT, "round54-sequential-action-value-20260714-v2/report.json"
         ),
     )
     parser.add_argument(
         "--diagnostic",
         type=Path,
-        default=Path(
-            r"E:\SimpleAITradingData\round54-sequential-failure-diagnostic-20260714-v1.json"
+        default=historical_research_path(
+            ROOT, "round54-sequential-failure-diagnostic-20260714-v1.json"
         ),
     )
     parser.add_argument(

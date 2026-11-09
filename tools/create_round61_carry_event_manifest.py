@@ -37,6 +37,8 @@ from tools.run_round60_full_history_funding_replication import (  # noqa: E402
     _validate_design,
 )
 
+from simple_ai_trading.research_paths import historical_research_path
+
 
 ROUND60_REPORT_FILE_SHA256 = (
     "0bf9dc26b6bc53a9bfebedba9f6ae43cca879f14ced85bc7b4b64de70f388b5d"
@@ -234,15 +236,15 @@ def _parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--certificate",
         type=Path,
-        default=Path(
-            r"E:\SimpleAITradingData\round60-full-funding-source-20260715-v1\certificate.json"
+        default=historical_research_path(
+            ROOT, "round60-full-funding-source-20260715-v1/certificate.json"
         ),
     )
     parser.add_argument(
         "--report",
         type=Path,
-        default=Path(
-            r"E:\SimpleAITradingData\evidence\round60-full-history-funding-replication-20260715-v1.json"
+        default=historical_research_path(
+            ROOT, "evidence/round60-full-history-funding-replication-20260715-v1.json"
         ),
     )
     parser.add_argument(

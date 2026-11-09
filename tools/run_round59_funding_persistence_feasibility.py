@@ -29,6 +29,8 @@ from simple_ai_trading.types import (  # noqa: E402
     DEFAULT_SPOT_TAKER_FEE_BPS,
 )
 
+from simple_ai_trading.research_paths import historical_research_path
+
 
 ROUND = 59
 DESIGN_SCHEMA = "round-059-funding-persistence-feasibility-design-v1"
@@ -711,8 +713,8 @@ def _parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--certificate",
         type=Path,
-        default=Path(
-            r"E:\SimpleAITradingData\round38-derivatives-source-20260712-v2\certificate.json"
+        default=historical_research_path(
+            ROOT, "round38-derivatives-source-20260712-v2/certificate.json"
         ),
     )
     parser.add_argument(

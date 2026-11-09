@@ -10,6 +10,15 @@ Scope blockers to their branch; a fresh user resumption resets the blocked audit
 
 ## Current Truth
 
+November 9 [storage relocation](review/2026-11-09/research-storage/review.md):
+6,783 retained files passed full SSD SHA-256 readback; the authorized old HDD
+directory was removed and destination identities rechecked. Historical inputs
+remain immutable, current databases unchanged, and private paths/receipts ignored.
+Portable research paths, a publication privacy gate and a bounded provider
+launcher replace machine-specific defaults and unsafe provider replacement.
+59 focused checks pass. No new market result, training, order, persistent task
+or GitHub push; goal active. Refresh the index before broad source navigation.
+
 November 9 resumed scope: the active goal now also includes substantial app
 refactoring and visual improvement. Follow the [revamp work map](REVAMP_2026_11_09.md)
 without reducing the profitability objective to a UI exercise. The first

@@ -8,7 +8,7 @@ The previous wrap-up did not provide a complete host persistence audit.
 
 - 28 `SimpleAITrading-*` scheduled tasks were registered. 27 were disabled; one
   capture supervisor was enabled. Its exact action was `wscript.exe` with
-  `C:\trader\automation\run_capture_supervisor_hidden.vbs`.
+  the external `run_capture_supervisor_hidden.vbs` launcher.
 - That wrapper invoked `capture_supervisor.ps1`, bound to this trading project
   and its older capture worktrees. The task had a five-minute repetition trigger
   with a 40-day duration and a separate logon trigger. Its last recorded run was
@@ -21,13 +21,13 @@ The previous wrap-up did not provide a complete host persistence audit.
   attributed to the project before removal. All 28 definitions were exported to
   recoverable inert CLIXML backups, then stopped and unregistered. Nothing was
   recreated. No unrelated scheduled task was removed.
-- Four external PS1/VBS launchers were moved from `C:\trader\automation` into
-  `C:\trader\retired-task-evidence\2026-11-09-0735\disabled-launchers` with
+- Four external PS1/VBS launchers were moved from the external automation
+  directory into a local dated evidence directory under `disabled-launchers`, with
   `.disabled.txt` suffixes. Hashes were retained. Historical logs, captured data
   and state were not deleted or repaired.
 
-Task-definition backups are under
-`C:\trader\retired-task-evidence\2026-11-09-0735`. They are evidence, not active
+Task-definition backups and their physical-path mappings remain in the private
+local retired-task evidence directory. They are evidence, not active
 tasks or executable startup files. Do not restore or re-register them without a
 new explicit user request. The user requested no ongoing background installation.
 

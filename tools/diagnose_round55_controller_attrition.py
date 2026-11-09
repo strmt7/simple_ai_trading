@@ -39,6 +39,8 @@ from simple_ai_trading.stop_time_payoff_data import (  # noqa: E402
 )
 from simple_ai_trading.storage import write_json_atomic  # noqa: E402
 
+from simple_ai_trading.research_paths import historical_research_path
+
 
 ROUND = 55
 DESIGN_SCHEMA = "round-055-controller-attrition-diagnostic-design-v1"
@@ -50,9 +52,7 @@ SOURCE_REPORT_FILE_SHA256 = (
 SOURCE_REPORT_CANONICAL_SHA256 = (
     "47dc22e987fff9cb508ff09fed2222e80391d18797496d4f2f9e476aee887919"
 )
-FEATURE_FILE_SHA256 = (
-    "7cec94d8a025203652ed9b7db4fba6fd383f3dbd84c7edb5be794e4003471b14"
-)
+FEATURE_FILE_SHA256 = "7cec94d8a025203652ed9b7db4fba6fd383f3dbd84c7edb5be794e4003471b14"
 TIMESTAMP_FILE_SHA256 = (
     "b85c541d78c29f34a12b75f42656cf09ae4c6a47dcef5334c4d60d2e90e6591f"
 )
@@ -111,22 +111,22 @@ def _parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--report",
         type=Path,
-        default=Path(
-            r"E:\SimpleAITradingData\round55-bounded-alpha-20260714-v2\report.json"
+        default=historical_research_path(
+            ROOT, "round55-bounded-alpha-20260714-v2/report.json"
         ),
     )
     parser.add_argument(
         "--feature-cache",
         type=Path,
-        default=Path(
-            r"E:\SimpleAITradingData\round45-joint-sam-tcn-20260713-v1\derived_dataset"
+        default=historical_research_path(
+            ROOT, "round45-joint-sam-tcn-20260713-v1/derived_dataset"
         ),
     )
     parser.add_argument(
         "--output-dir",
         type=Path,
-        default=Path(
-            r"E:\SimpleAITradingData\round55-controller-attrition-20260714-v1"
+        default=historical_research_path(
+            ROOT, "round55-controller-attrition-20260714-v1"
         ),
     )
     return parser
@@ -237,10 +237,8 @@ def _validate_sources(
     )
     source_contract = design["source_contract"]
     if (
-        report.get("binding_sha256")
-        != source_contract["execution_binding_sha256"]
-        or report["data"]["dataset_sha256"]
-        != source_contract["source_dataset_sha256"]
+        report.get("binding_sha256") != source_contract["execution_binding_sha256"]
+        or report["data"]["dataset_sha256"] != source_contract["source_dataset_sha256"]
         or report["data"]["payoff"]["dataset_sha256"]
         != source_contract["payoff_dataset_sha256"]
         or report["data"]["selection_confirmation_or_terminal_rows_read"] is not False
@@ -286,7 +284,9 @@ def _validate_sources(
         payoff.timestamps != int(report["data"]["development_timestamps"])
         or feature_matrix.shape[0] < payoff.timestamps
         or feature_matrix.shape[1:] != (len(SYMBOLS), len(feature_names))
-        or not np.array_equal(feature_timestamps[: payoff.timestamps], payoff.timestamps_ms)
+        or not np.array_equal(
+            feature_timestamps[: payoff.timestamps], payoff.timestamps_ms
+        )
     ):
         raise ValueError("diagnostic feature/payoff alignment drifted")
     features = np.asarray(feature_matrix[: payoff.timestamps], dtype=np.float64)
@@ -296,7 +296,11 @@ def _validate_sources(
     predictions: dict[str, np.ndarray] = {}
     for treatment in TREATMENTS:
         record = report["model"]["artifacts"][treatment]
-        expected = str(source_contract[f"{'baseline' if treatment == TREATMENTS[0] else 'ai'}_prediction_file_sha256"])
+        expected = str(
+            source_contract[
+                f"{'baseline' if treatment == TREATMENTS[0] else 'ai'}_prediction_file_sha256"
+            ]
+        )
         prediction_path = Path(str(record["prediction_path"]))
         if str(record["prediction_sha256"]) != expected:
             raise ValueError(f"{treatment} prediction record drifted")
@@ -322,8 +326,12 @@ def _interval_masks(timestamps_ms: np.ndarray) -> dict[str, np.ndarray]:
         )
 
     return {
-        "policy_development": mask("2024-07-01T00:00:00+00:00", "2024-09-01T00:00:00+00:00"),
-        "development_holdout": mask("2024-09-01T00:00:00+00:00", "2024-10-01T00:00:00+00:00"),
+        "policy_development": mask(
+            "2024-07-01T00:00:00+00:00", "2024-09-01T00:00:00+00:00"
+        ),
+        "development_holdout": mask(
+            "2024-09-01T00:00:00+00:00", "2024-10-01T00:00:00+00:00"
+        ),
     }
 
 
@@ -364,8 +372,7 @@ def _market_masks(
 ) -> tuple[np.ndarray, np.ndarray]:
     positions = {name: index for index, name in enumerate(feature_names)}
     liquidity = (
-        features[..., positions["target_same_minute_of_week_liquidity_ratio"]]
-        >= 0.5
+        features[..., positions["target_same_minute_of_week_liquidity_ratio"]] >= 0.5
     ) & (features[..., positions["target_quote_volume_vs_1440m_mean"]] >= 0.25)
     volatility = features[..., positions["target_realized_volatility_60m_bps"]] <= (
         2.5 * features[..., positions["target_realized_volatility_1440m_bps"]]
@@ -419,7 +426,10 @@ def _controller_states(
     exact_model_actions = np.zeros(features.shape[:2], dtype=np.int8)
     exact_model_actions[np.all(long_vote, axis=0)] = 1
     exact_model_actions[np.all(short_vote, axis=0)] = -1
-    if not np.array_equal(exact.actions, np.where(exact.model_eligible & liquidity & volatility, exact_model_actions, 0)):
+    if not np.array_equal(
+        exact.actions,
+        np.where(exact.model_eligible & liquidity & volatility, exact_model_actions, 0),
+    ):
         raise RuntimeError("exact controller reconstruction differs")
 
     majority_long = (long_votes >= 2) & (short_votes < 2)
@@ -430,7 +440,9 @@ def _controller_states(
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", category=RuntimeWarning)
         long_score = np.nanmedian(np.where(long_vote, medians[..., 0], np.nan), axis=0)
-        short_score = np.nanmedian(np.where(short_vote, medians[..., 1], np.nan), axis=0)
+        short_score = np.nanmedian(
+            np.where(short_vote, medians[..., 1], np.nan), axis=0
+        )
     majority_score = np.zeros(features.shape[:2], dtype=np.float64)
     majority_score[majority_long] = long_score[majority_long]
     majority_score[majority_short] = short_score[majority_short]
@@ -624,7 +636,9 @@ def _score_calibration_rows(
     interval_mask: np.ndarray,
     payoff: ReplayPayoffView,
 ) -> list[dict[str, object]]:
-    time_index, symbol_index = np.where(interval_mask[:, None] & (state.decisions.actions != 0))
+    time_index, symbol_index = np.where(
+        interval_mask[:, None] & (state.decisions.actions != 0)
+    )
     if time_index.size == 0:
         return []
     actions = state.decisions.actions[time_index, symbol_index]
@@ -694,7 +708,9 @@ def _plan_rows(
                 "event": EVENT_NAMES[int(plan.event_code[index])],
                 "stress_net_payoff_bps": float(plan.stress_net_payoff_bps[index]),
                 "stress_initial_capital_return_fraction": float(
-                    plan.size_fraction[index] * plan.stress_net_payoff_bps[index] / 10_000.0
+                    plan.size_fraction[index]
+                    * plan.stress_net_payoff_bps[index]
+                    / 10_000.0
                 ),
             }
         )
@@ -769,7 +785,9 @@ def _overlap_rows(
                 "control_signals": int(np.count_nonzero(control_mask)),
                 "diagnostic_signals": int(np.count_nonzero(candidate_mask)),
                 "overlap_signals": int(np.count_nonzero(overlap)),
-                "same_side_overlap": int(np.count_nonzero(overlap & (control == actions))),
+                "same_side_overlap": int(
+                    np.count_nonzero(overlap & (control == actions))
+                ),
                 "opposite_side_overlap": int(
                     np.count_nonzero(overlap & (control == -actions))
                 ),
@@ -873,10 +891,12 @@ def diagnose(
     )
     intervals = _interval_masks(payoff.timestamps_ms)
     expected_rows = {
-        name: int(source_report["chronology"][name]["timestamps"])
-        for name in INTERVALS
+        name: int(source_report["chronology"][name]["timestamps"]) for name in INTERVALS
     }
-    if any(int(np.count_nonzero(intervals[name])) != expected_rows[name] for name in INTERVALS):
+    if any(
+        int(np.count_nonzero(intervals[name])) != expected_rows[name]
+        for name in INTERVALS
+    ):
         raise ValueError("diagnostic interval chronology drifted")
 
     attrition_rows: list[dict[str, object]] = []
@@ -921,9 +941,7 @@ def diagnose(
                     "interval": interval,
                     "controller": controller,
                     **dict(replay.metrics),
-                    "stop_loss_fraction": float(
-                        np.mean(plan.event_code == STOP_EVENT)
-                    )
+                    "stop_loss_fraction": float(np.mean(plan.event_code == STOP_EVENT))
                     if plan.closed_trades
                     else 0.0,
                 }
@@ -977,9 +995,7 @@ def diagnose(
             "report_file_sha256": SOURCE_REPORT_FILE_SHA256,
             "report_canonical_sha256": SOURCE_REPORT_CANONICAL_SHA256,
             "source_dataset_sha256": source_report["data"]["dataset_sha256"],
-            "payoff_dataset_sha256": source_report["data"]["payoff"][
-                "dataset_sha256"
-            ],
+            "payoff_dataset_sha256": source_report["data"]["payoff"]["dataset_sha256"],
             "selection_confirmation_or_terminal_rows_read": False,
             "forbidden_existing_rows_loaded": False,
             "synthetic_rows": 0,

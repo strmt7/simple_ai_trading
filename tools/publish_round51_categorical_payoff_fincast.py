@@ -25,6 +25,8 @@ from tools.publish_cross_asset_cost_aware_ai_ablation import (  # noqa: E402
     _research_progress_svg,
 )
 
+from simple_ai_trading.research_paths import historical_research_path
+
 
 ROUND = 51
 DESIGN_SCHEMA = "categorical-payoff-fincast-screen-design-v1"
@@ -166,9 +168,7 @@ def _validated_source(
     design = _read_object(design_path, "Round 51 design")
     design_sha = _canonical_identity(design, "design_sha256", "Round 51 design")
     binding = _read_object(binding_path, "Round 51 binding")
-    binding_sha = _canonical_identity(
-        binding, "binding_sha256", "Round 51 binding"
-    )
+    binding_sha = _canonical_identity(binding, "binding_sha256", "Round 51 binding")
     source_path = evidence_root / "report.json"
     report = _read_object(source_path, "Round 51 report")
     report_sha = _canonical_identity(
@@ -213,8 +213,7 @@ def _validated_source(
             "testnet_authority": False,
             "trading_authority": False,
         }
-        or report.get("round_gate")
-        != {"passed": False, "promotion_permitted": False}
+        or report.get("round_gate") != {"passed": False, "promotion_permitted": False}
         or not isinstance(data, Mapping)
         or tuple(data) != SYMBOLS
         or not isinstance(symbol_results, Mapping)
@@ -249,8 +248,7 @@ def _validated_source(
             or source.get("verified") is not True
             or not isinstance(fincast, Mapping)
             or fincast.get("runtime", {}).get("backend_kind") != "directml"
-            or fincast.get("runtime", {}).get("backend_device")
-            != "privateuseone:0"
+            or fincast.get("runtime", {}).get("backend_device") != "privateuseone:0"
             or fincast.get("warning_count") != 0
             or fincast.get("cpu_fallback_warning_count") != 0
             or fincast.get("runtime", {}).get("parameter_count") != 991_437_160
@@ -270,21 +268,20 @@ def _validated_source(
                 or len(models) != 3
                 or {model.get("seed") for model in models} != {5101, 5102, 5103}
                 or candidate_report.get("selection", {}).get("eligible_rows") != 0
-                or candidate_report.get("base_trace", {}).get("metrics", {}).get(
-                    "trades"
-                )
+                or candidate_report.get("base_trace", {})
+                .get("metrics", {})
+                .get("trades")
                 != 0
-                or candidate_report.get("stress_trace", {}).get("metrics", {}).get(
-                    "trades"
-                )
+                or candidate_report.get("stress_trace", {})
+                .get("metrics", {})
+                .get("trades")
                 != 0
             ):
                 raise ValueError(f"Round 51 {symbol} {candidate} evidence drifted")
             for model in models:
-                if (
-                    model.get("backend_kind") != "opencl"
-                    or not str(model.get("backend_device") or "").startswith("opencl:")
-                ):
+                if model.get("backend_kind") != "opencl" or not str(
+                    model.get("backend_device") or ""
+                ).startswith("opencl:"):
                     raise ValueError("Round 51 LightGBM GPU evidence drifted")
                 verified_bytes += _verified_artifact(model["model"], "model")
                 verified_bytes += _validate_prediction(
@@ -329,7 +326,9 @@ def _write_csv(path: Path, rows: Sequence[Mapping[str, object]]) -> None:
         writer = csv.DictWriter(handle, fieldnames=fields, lineterminator="\n")
         writer.writeheader()
         for source in rows:
-            writer.writerow({field: _json_cell(source.get(field, "")) for field in fields})
+            writer.writerow(
+                {field: _json_cell(source.get(field, "")) for field in fields}
+            )
 
 
 def _write_text(path: Path, value: str) -> None:
@@ -401,9 +400,7 @@ def _prediction_tail_rows(report: Mapping[str, object]) -> list[dict[str, object
                     "seed_5101_positive_rows": positive_by_seed[side][0],
                     "seed_5102_positive_rows": positive_by_seed[side][1],
                     "seed_5103_positive_rows": positive_by_seed[side][2],
-                    "selected_rows": int(
-                        result["selection"][f"{side}_eligible_rows"]
-                    ),
+                    "selected_rows": int(result["selection"][f"{side}_eligible_rows"]),
                 }
                 if probabilities[side]:
                     mean_probability = np.mean(np.stack(probabilities[side]), axis=0)
@@ -445,9 +442,7 @@ def _symbol_rows(report: Mapping[str, object]) -> list[dict[str, object]]:
         for scenario in SCENARIOS:
             portfolio = report["portfolio_results"][candidate][scenario]
             for symbol in SYMBOLS:
-                trace = report["symbol_results"][symbol][candidate][
-                    f"{scenario}_trace"
-                ]
+                trace = report["symbol_results"][symbol][candidate][f"{scenario}_trace"]
                 rows.append(
                     {
                         "candidate_id": candidate,
@@ -573,9 +568,7 @@ def _source_rows(report: Mapping[str, object]) -> list[dict[str, object]]:
                     "certificate_sha256"
                 ],
                 "fincast_rows": evidence["fincast"]["rows"],
-                "fincast_inference_seconds": evidence["fincast"][
-                    "inference_seconds"
-                ],
+                "fincast_inference_seconds": evidence["fincast"]["inference_seconds"],
                 "fincast_warning_count": evidence["fincast"]["warning_count"],
                 "fincast_cpu_fallback_warning_count": evidence["fincast"][
                     "cpu_fallback_warning_count"
@@ -742,8 +735,7 @@ def _progress_rows(
             "best_model_id": "none",
             "ensemble_models": 27,
             "valid_barrier_rows": sum(
-                int(report["data"][symbol]["valid_barrier_rows"])
-                for symbol in SYMBOLS
+                int(report["data"][symbol]["valid_barrier_rows"]) for symbol in SYMBOLS
             ),
             "calibration_eligible_rows": 0,
             "policy_eligible_rows": 0,
@@ -781,12 +773,7 @@ def _forecast_svg(rows: Sequence[Mapping[str, object]]) -> str:
             ),
             "rps_skill": (
                 float(
-                    np.mean(
-                        [
-                            float(row["ranked_probability_skill"])
-                            for row in subset
-                        ]
-                    )
+                    np.mean([float(row["ranked_probability_skill"]) for row in subset])
                 )
                 if candidate != "direct_mean_lightgbm"
                 else 0.0
@@ -916,7 +903,9 @@ def _prediction_tail_svg(rows: Sequence[Mapping[str, object]]) -> str:
         y = top + index * row_height
         value = float(row["worst_seed_prediction_max_bps"])
         x0, x1 = x(value), x(0.0)
-        label = f'{row["symbol"]} {row["side"]} | {SHORT_LABELS[str(row["candidate_id"])]}'
+        label = (
+            f"{row['symbol']} {row['side']} | {SHORT_LABELS[str(row['candidate_id'])]}"
+        )
         lines.append(
             f'<text x="{left - 18}" y="{y + 14}" text-anchor="end" class="label">{html.escape(label)}</text>'
         )
@@ -934,11 +923,7 @@ def _prediction_tail_svg(rows: Sequence[Mapping[str, object]]) -> str:
 
 
 def _calibration_svg(rows: Sequence[Mapping[str, object]]) -> str:
-    categorical = [
-        row
-        for row in rows
-        if row["candidate_id"] != "direct_mean_lightgbm"
-    ]
+    categorical = [row for row in rows if row["candidate_id"] != "direct_mean_lightgbm"]
     grouped: dict[tuple[str, str, str], float] = {}
     for row in categorical:
         key = (str(row["candidate_id"]), str(row["symbol"]), str(row["side"]))
@@ -1041,7 +1026,10 @@ def _ai_svg(report: Mapping[str, object]) -> str:
                 f'<text x="{x0 - 10}" y="{y + 4:.1f}" text-anchor="end" class="axis">{tick:.3f}</text>'
             )
         for bar_index, (label, value, color) in enumerate(
-            (("Control", control, COLORS[CANDIDATES[1]]), ("FinCast", treatment, COLORS[CANDIDATES[2]]))
+            (
+                ("Control", control, COLORS[CANDIDATES[1]]),
+                ("FinCast", treatment, COLORS[CANDIDATES[2]]),
+            )
         ):
             x = x0 + 55 + bar_index * 145
             y = y0 + panel_height * (high - value) / (high - low)
@@ -1131,11 +1119,15 @@ def _clean_output(output_dir: Path) -> None:
     resolved = output_dir.resolve()
     expected_parent = (ROOT / "docs" / "model-research" / "action-value").resolve()
     if not resolved.is_relative_to(expected_parent) or resolved.name != "latest":
-        raise ValueError("publication output must be the repository action-value/latest path")
+        raise ValueError(
+            "publication output must be the repository action-value/latest path"
+        )
     if not output_dir.exists():
         output_dir.mkdir(parents=True)
         return
-    for path in sorted(output_dir.rglob("*"), key=lambda item: len(item.parts), reverse=True):
+    for path in sorted(
+        output_dir.rglob("*"), key=lambda item: len(item.parts), reverse=True
+    ):
         if path.is_file() or path.is_symlink():
             path.unlink()
         elif path.is_dir():
@@ -1170,7 +1162,7 @@ The categorical models showed positive aggregate proper-score skill, but short-s
 
 ![Calibration](charts/calibration.svg)
 
-FinCast changed average ranked-probability skill by `{float(ai['ranked_probability_skill_improvement']):+.6f}`, expected-payoff Spearman by `{float(ai['expected_payoff_spearman_improvement']):+.6f}`, and expected-payoff MSE by a ratio of `{float(ai['expected_payoff_mse_ratio']):.6f}`. It missed both precommitted `+0.005` uplift gates and did not establish economic uplift.
+FinCast changed average ranked-probability skill by `{float(ai["ranked_probability_skill_improvement"]):+.6f}`, expected-payoff Spearman by `{float(ai["expected_payoff_spearman_improvement"]):+.6f}`, and expected-payoff MSE by a ratio of `{float(ai["expected_payoff_mse_ratio"]):.6f}`. It missed both precommitted `+0.005` uplift gates and did not establish economic uplift.
 
 ![AI uplift](charts/ai-uplift.svg)
 
@@ -1308,8 +1300,8 @@ def _parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--evidence-root",
         type=Path,
-        default=Path(
-            r"E:\SimpleAITradingData\round51-categorical-payoff-fincast-20260713-v2"
+        default=historical_research_path(
+            ROOT, "round51-categorical-payoff-fincast-20260713-v2"
         ),
     )
     parser.add_argument(

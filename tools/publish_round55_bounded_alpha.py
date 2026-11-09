@@ -33,6 +33,8 @@ from tools.publish_round52_executable_support_hurdle import (  # noqa: E402
     _write_text,
 )
 
+from simple_ai_trading.research_paths import historical_research_path
+
 
 ROUND = 55
 REPORT_SCHEMA = "round-055-bounded-alpha-report-v1"
@@ -42,9 +44,7 @@ BINDING_SCHEMA = "round-055-bounded-alpha-execution-binding-v1"
 REPORT_CANONICAL_SHA256 = (
     "47dc22e987fff9cb508ff09fed2222e80391d18797496d4f2f9e476aee887919"
 )
-REPORT_FILE_SHA256 = (
-    "b556ff0302d230ef620a7bfb11ad49ad35f5d083ebc390d5174657a4f466fda2"
-)
+REPORT_FILE_SHA256 = "b556ff0302d230ef620a7bfb11ad49ad35f5d083ebc390d5174657a4f466fda2"
 DESIGN_SHA256 = "e6746db669ffc2633f197cf61dd73b369c2889381900f4e73a375192922f2827"
 BINDING_SHA256 = "731c0216b53226376bb465c3fce0d3d32cb6bcecf063d98e3cd2ac9e9c9315ed"
 IMPLEMENTATION_COMMIT = "e1bb011385a326602ac73c9c86b017c48178b20d"
@@ -141,7 +141,9 @@ def _validate_sources(
     ):
         raise ValueError("Round 55 source contracts or claims drifted")
     _validate_finite(report)
-    if _git("rev-parse", f"{IMPLEMENTATION_COMMIT}:tools/run_round55_bounded_alpha.py") != next(
+    if _git(
+        "rev-parse", f"{IMPLEMENTATION_COMMIT}:tools/run_round55_bounded_alpha.py"
+    ) != next(
         str(row["git_blob_oid"])
         for row in binding["blobs"]
         if row["path"] == "tools/run_round55_bounded_alpha.py"
@@ -204,8 +206,7 @@ def _validate_diagnostic(path: Path) -> dict[str, object]:
     if (
         report.get("schema_version") != DIAGNOSTIC_SCHEMA
         or report.get("round") != ROUND
-        or _canonical_value(report, "report_sha256")
-        != DIAGNOSTIC_CANONICAL_SHA256
+        or _canonical_value(report, "report_sha256") != DIAGNOSTIC_CANONICAL_SHA256
         or report.get("diagnostic_design_sha256") != DIAGNOSTIC_DESIGN_SHA256
         or report.get("implementation", {}).get("commit")
         != DIAGNOSTIC_IMPLEMENTATION_COMMIT
@@ -409,9 +410,7 @@ def _equity_rows(hourly_rows: Sequence[Mapping[str, str]]) -> list[dict[str, obj
     state: dict[tuple[str, str, str], float] = {}
     for row in hourly_rows:
         key = (row["treatment"], row["interval"], row["scenario"])
-        state[key] = state.get(key, 1.0) + float(
-            row["initial_capital_return_fraction"]
-        )
+        state[key] = state.get(key, 1.0) + float(row["initial_capital_return_fraction"])
         output.append(
             {
                 **dict(row),
@@ -465,9 +464,7 @@ def _progress_rows(
             "best_policy_total_net_bps": str(
                 10_000.0 * float(best["total_return_fraction"])
             ),
-            "best_policy_mean_net_bps": str(
-                best["mean_trade_initial_capital_bps"]
-            ),
+            "best_policy_mean_net_bps": str(best["mean_trade_initial_capital_bps"]),
             "best_policy_max_drawdown_bps": str(
                 10_000.0 * float(best["maximum_drawdown_fraction"])
             ),
@@ -578,8 +575,7 @@ def _controller_attrition_svg(rows: Sequence[Mapping[str, str]]) -> str:
     selected = [
         row
         for row in rows
-        if row["symbol"] == "ALL"
-        and row["controller"] == "all_view_consensus"
+        if row["symbol"] == "ALL" and row["controller"] == "all_view_consensus"
     ]
 
     def count(treatment: str, interval: str, stage: str) -> float:
@@ -651,9 +647,7 @@ def _controller_economics_svg(rows: Sequence[Mapping[str, str]]) -> str:
                         color,
                     )
                 )
-            groups.append(
-                (f"{DISPLAY[treatment]} {DISPLAY[interval]}", tuple(values))
-            )
+            groups.append((f"{DISPLAY[treatment]} {DISPLAY[interval]}", tuple(values)))
     return _bar_svg(
         title="Relaxing consensus added trades but did not establish an edge",
         subtitle="Post-hoc consumed-data diagnostics at 16 bps round trip; none is promotable evidence",
@@ -712,9 +706,7 @@ def _score_calibration_svg(rows: Sequence[Mapping[str, str]]) -> str:
 def _ai_uplift_svg(report: Mapping[str, object]) -> str:
     groups = []
     for interval in INTERVALS:
-        baseline = report["treatments"][TREATMENTS[0]]["intervals"][interval][
-            "stress"
-        ]
+        baseline = report["treatments"][TREATMENTS[0]]["intervals"][interval]["stress"]
         ai = report["treatments"][TREATMENTS[1]]["intervals"][interval]["stress"]
         delta_bps = 10_000.0 * (
             float(ai["total_return_fraction"])
@@ -723,7 +715,13 @@ def _ai_uplift_svg(report: Mapping[str, object]) -> str:
         groups.append(
             (
                 DISPLAY[interval],
-                (("AI minus baseline", delta_bps, COLORS["teal"] if delta_bps >= 0 else COLORS["red"]),),
+                (
+                    (
+                        "AI minus baseline",
+                        delta_bps,
+                        COLORS["teal"] if delta_bps >= 0 else COLORS["red"],
+                    ),
+                ),
             )
         )
     return _bar_svg(
@@ -745,7 +743,10 @@ def _equity_svg(rows: Sequence[Mapping[str, object]]) -> str:
     timestamps = sorted({row["timestamp_utc"] for row in selected})
     x_by_time = {value: float(index) for index, value in enumerate(timestamps)}
     series = []
-    for treatment, color in ((TREATMENTS[0], COLORS["blue"]), (TREATMENTS[1], COLORS["teal"])):
+    for treatment, color in (
+        (TREATMENTS[0], COLORS["blue"]),
+        (TREATMENTS[1], COLORS["teal"]),
+    ):
         points = [
             (
                 x_by_time[row["timestamp_utc"]],
@@ -859,18 +860,18 @@ Round 55 trained `18` OpenCL LightGBM artifacts (`36` side models) on BTCUSDT, E
 
 | Treatment | Period | Trades | Stress return | Max drawdown | Profit factor |
 |---|---:|---:|---:|---:|---:|
-| Baseline | Jul-Aug 2024 | {baseline_dev['closed_trades']} | {100 * float(baseline_dev['total_return_fraction']):+.4f}% | {100 * float(baseline_dev['maximum_drawdown_fraction']):.4f}% | {float(baseline_dev['profit_factor']):.3f} |
-| 8B AI factors | Jul-Aug 2024 | {ai_dev['closed_trades']} | {100 * float(ai_dev['total_return_fraction']):+.4f}% | {100 * float(ai_dev['maximum_drawdown_fraction']):.4f}% | {float(ai_dev['profit_factor']):.3f} |
-| Baseline | Sep 2024 | {baseline_hold['closed_trades']} | {100 * float(baseline_hold['total_return_fraction']):+.4f}% | {100 * float(baseline_hold['maximum_drawdown_fraction']):.4f}% | {float(baseline_hold['profit_factor']):.3f} |
-| 8B AI factors | Sep 2024 | {ai_hold['closed_trades']} | {100 * float(ai_hold['total_return_fraction']):+.4f}% | {100 * float(ai_hold['maximum_drawdown_fraction']):.4f}% | {float(ai_hold['profit_factor']):.3f} |
+| Baseline | Jul-Aug 2024 | {baseline_dev["closed_trades"]} | {100 * float(baseline_dev["total_return_fraction"]):+.4f}% | {100 * float(baseline_dev["maximum_drawdown_fraction"]):.4f}% | {float(baseline_dev["profit_factor"]):.3f} |
+| 8B AI factors | Jul-Aug 2024 | {ai_dev["closed_trades"]} | {100 * float(ai_dev["total_return_fraction"]):+.4f}% | {100 * float(ai_dev["maximum_drawdown_fraction"]):.4f}% | {float(ai_dev["profit_factor"]):.3f} |
+| Baseline | Sep 2024 | {baseline_hold["closed_trades"]} | {100 * float(baseline_hold["total_return_fraction"]):+.4f}% | {100 * float(baseline_hold["maximum_drawdown_fraction"]):.4f}% | {float(baseline_hold["profit_factor"]):.3f} |
+| 8B AI factors | Sep 2024 | {ai_hold["closed_trades"]} | {100 * float(ai_hold["total_return_fraction"]):+.4f}% | {100 * float(ai_hold["maximum_drawdown_fraction"]):.4f}% | {float(ai_hold["profit_factor"]):.3f} |
 
-Both treatments failed six frozen gates: development and September trade/day counts, September P&L concentration, and the familywise block-bootstrap lower bound. The seven Fino1/Qwen3 factor programs improved July-August descriptively but reduced September stress return by `{100 * float(paired['holdout_stress_return_delta_fraction']):.4f}%`; the paired lower bound was `{float(paired['paired_hourly_bootstrap']['lower_bps']):.5f} bps/hour`. AI uplift therefore failed.
+Both treatments failed six frozen gates: development and September trade/day counts, September P&L concentration, and the familywise block-bootstrap lower bound. The seven Fino1/Qwen3 factor programs improved July-August descriptively but reduced September stress return by `{100 * float(paired["holdout_stress_return_delta_fraction"]):.4f}%`; the paired lower bound was `{float(paired["paired_hourly_bootstrap"]["lower_bps"]):.5f} bps/hour`. AI uplift therefore failed.
 
 The run read `24,096` hourly timestamps and `72,288` symbol paths through September 2024. It generated no synthetic rows and did not load the `6,551` excluded October 2024-June 2025 timestamps. A future interval remains untouched, but Round 55 authorized no access to it.
 
 ## Frozen Attrition Diagnostic
 
-The separately frozen diagnostic exactly reproduced the control without refitting a model or trying a threshold. The baseline had `{any_view_count}` July-August symbol-hours where at least one view voted, `{two_view_count}` where two views agreed, and only `{all_view_count}` where all three agreed; market-state gates then removed just `{market_gate_removals}`. Relaxed baseline controllers lost money in both consumed periods. The pooled-nine AI diagnostic returned {100 * float(ai_pooled_dev['stress_return_fraction']):+.4f}% over {ai_pooled_dev['closed_trades']} July-August trades and {100 * float(ai_pooled_hold['stress_return_fraction']):+.4f}% over {ai_pooled_hold['closed_trades']} September trades, while its matched baselines returned {100 * float(baseline_pooled_dev['stress_return_fraction']):+.4f}% and {100 * float(baseline_pooled_hold['stress_return_fraction']):+.4f}%. Those are post-hoc, sparse, non-monotonic score diagnostics on consumed data, not AI-uplift or profitability evidence.
+The separately frozen diagnostic exactly reproduced the control without refitting a model or trying a threshold. The baseline had `{any_view_count}` July-August symbol-hours where at least one view voted, `{two_view_count}` where two views agreed, and only `{all_view_count}` where all three agreed; market-state gates then removed just `{market_gate_removals}`. Relaxed baseline controllers lost money in both consumed periods. The pooled-nine AI diagnostic returned {100 * float(ai_pooled_dev["stress_return_fraction"]):+.4f}% over {ai_pooled_dev["closed_trades"]} July-August trades and {100 * float(ai_pooled_hold["stress_return_fraction"]):+.4f}% over {ai_pooled_hold["closed_trades"]} September trades, while its matched baselines returned {100 * float(baseline_pooled_dev["stress_return_fraction"]):+.4f}% and {100 * float(baseline_pooled_hold["stress_return_fraction"]):+.4f}%. Those are post-hoc, sparse, non-monotonic score diagnostics on consumed data, not AI-uplift or profitability evidence.
 
 ## Evidence
 
@@ -899,9 +900,7 @@ def publish(
     previous_progress_path: Path,
     output_dir: Path,
 ) -> dict[str, object]:
-    report, _design, binding = _validate_sources(
-        report_path, design_path, binding_path
-    )
+    report, _design, binding = _validate_sources(report_path, design_path, binding_path)
     diagnostic = _validate_diagnostic(diagnostic_path)
     treatment_rows = _treatment_rows(report)
     model_rows = _model_rows(report)
@@ -919,9 +918,7 @@ def publish(
         "controller-economics.csv": _read_csv(
             diagnostic_root / "controller-economics.csv"
         ),
-        "controller-overlap.csv": _read_csv(
-            diagnostic_root / "controller-overlap.csv"
-        ),
+        "controller-overlap.csv": _read_csv(diagnostic_root / "controller-overlap.csv"),
         "controller-score-calibration.csv": _read_csv(
             diagnostic_root / "score-calibration.csv"
         ),
@@ -969,9 +966,7 @@ def publish(
     )
     _write_text(
         charts / "controller-score-calibration.svg",
-        _score_calibration_svg(
-            diagnostic_tables["controller-score-calibration.csv"]
-        ),
+        _score_calibration_svg(diagnostic_tables["controller-score-calibration.csv"]),
     )
     _write_text(charts / "research-progress.svg", _progress_svg(progress_rows))
     _write_text(
@@ -1058,8 +1053,8 @@ def _parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--report",
         type=Path,
-        default=Path(
-            r"E:\SimpleAITradingData\round55-bounded-alpha-20260714-v2\report.json"
+        default=historical_research_path(
+            ROOT, "round55-bounded-alpha-20260714-v2/report.json"
         ),
     )
     parser.add_argument(
@@ -1075,8 +1070,8 @@ def _parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--diagnostic-report",
         type=Path,
-        default=Path(
-            r"E:\SimpleAITradingData\round55-controller-attrition-20260714-v1\report.json"
+        default=historical_research_path(
+            ROOT, "round55-controller-attrition-20260714-v1/report.json"
         ),
     )
     parser.add_argument(

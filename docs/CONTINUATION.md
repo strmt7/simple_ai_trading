@@ -1,5 +1,17 @@
 # Continue Development
 
+November 9 storage repair: [selective relocation](review/2026-11-09/research-storage/review.md)
+completed with 6,783 full SHA-256 readbacks and post-removal SSD identity checks.
+The authorized old HDD directory is absent; current databases were not replaced.
+Private path mappings and original sources stay ignored. Historical tools use
+the [portable storage resolver](RESEARCH_STORAGE.md); staged/CI publication checks
+reject new workstation paths and private migration content. The bounded ROCm
+launcher leaves other providers alone and does not synchronize dependencies.
+59 focused checks pass; no new financial observation, fit, account/order access
+or edge. No worker, installed persistence or GitHub push from this round.
+The goal remains active. Batch substantive development before publication and
+refresh the source-bound index before the next broad semantic query.
+
 November 9 resumption: goal active, expanded to a whole-app refactor and visual
 upgrade alongside profitable structural-edge R&D. The [work map](REVAMP_2026_11_09.md)
 preserves the full scope and incomplete gates. The [operator view](review/2026-11-09/operator-overview/review.md)
@@ -5766,7 +5778,7 @@ result SHA-256
 
 ## Protected Local Work
 
-`C:\trader\simple_ai_trading-model-dev` remains detached at
+The protected `simple_ai_trading-model-dev` worktree remains detached at
 `c42219d47dc781a46411a4ec96838f8a26c3924c`. Its terminal evidence is frozen.
 The latest read-only preservation snapshot reports:
 
@@ -5851,7 +5863,7 @@ narrowly accepted scoped overlays, and has canonical result SHA-256
 `e712a9086d31944b42f93270256c393c6d8ab38997c20b7f8638cd4aa9088a34`.
 
 The Round 21 sidecar worktree
-`C:\trader\simple_ai_trading-round21-sidecar-v2` remains protected through
+named `simple_ai_trading-round21-sidecar-v2` remains protected through
 `2026-08-29T23:40:00Z`. Its process IDs are ephemeral. Do not touch it until a
 contract-defined terminal audit proves the boundary has passed and the process,
 lease, state, database, and WAL agree.

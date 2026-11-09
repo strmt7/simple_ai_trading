@@ -33,6 +33,8 @@ from tools.publish_round52_executable_support_hurdle import (  # noqa: E402
     _write_text,
 )
 
+from simple_ai_trading.research_paths import historical_research_path
+
 
 ROUND = 59
 REPORT_SCHEMA = "round-059-funding-persistence-feasibility-report-v1"
@@ -648,16 +650,16 @@ def _parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--report",
         type=Path,
-        default=Path(
-            r"E:\SimpleAITradingData\evidence\round59-funding-persistence-20260715-v1.json"
+        default=historical_research_path(
+            ROOT, "evidence/round59-funding-persistence-20260715-v1.json"
         ),
     )
     parser.add_argument("--design", type=Path, default=ROOT / DESIGN_PATH)
     parser.add_argument(
         "--certificate",
         type=Path,
-        default=Path(
-            r"E:\SimpleAITradingData\round38-derivatives-source-20260712-v2\certificate.json"
+        default=historical_research_path(
+            ROOT, "round38-derivatives-source-20260712-v2/certificate.json"
         ),
     )
     parser.add_argument(

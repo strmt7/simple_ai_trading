@@ -37,6 +37,8 @@ from tools.run_round51_categorical_payoff_fincast import (  # noqa: E402
     _role_indexes,
 )
 
+from simple_ai_trading.research_paths import historical_research_path
+
 
 ROUND = 51
 SCHEMA = "round-051-payoff-tail-failure-analysis-v1"
@@ -700,19 +702,19 @@ def _parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--report",
         type=Path,
-        default=Path(
-            r"E:\SimpleAITradingData\round51-categorical-payoff-fincast-20260713-v2\report.json"
+        default=historical_research_path(
+            ROOT, "round51-categorical-payoff-fincast-20260713-v2/report.json"
         ),
     )
     parser.add_argument(
         "--warehouse",
         type=Path,
-        default=Path(r"E:\SimpleAITradingData\tick-warehouse\round51-screen.duckdb"),
+        default=historical_research_path(ROOT, "tick-warehouse/round51-screen.duckdb"),
     )
     parser.add_argument(
         "--cache-root",
         type=Path,
-        default=Path(r"E:\SimpleAITradingData\tick-warehouse\archive-cache"),
+        default=historical_research_path(ROOT, "tick-warehouse/archive-cache"),
     )
     parser.add_argument(
         "--output",

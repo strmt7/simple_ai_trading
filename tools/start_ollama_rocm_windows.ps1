@@ -1,56 +1,29 @@
 param(
-    [string]$RocmRoot = "C:\Program Files\AMD\ROCm\7.1",
-    [string]$OllamaHost = "127.0.0.1:11434",
+    [string]$RocmRoot = $env:ROCM_PATH,
+    [string]$OllamaHost = "",
+    [ValidateRange(1, 3600)][int]$SessionSeconds = 300,
     [switch]$NoStop,
     [switch]$DebugLog
 )
 
 $ErrorActionPreference = "Stop"
-
-$tensilePath = Join-Path $RocmRoot "bin\rocblas\library"
-if (-not (Test-Path $tensilePath)) {
-    throw "ROCm rocBLAS library path not found: $tensilePath"
+if (-not $RocmRoot) { $RocmRoot = $env:HIP_PATH }
+if (-not $RocmRoot -or -not $OllamaHost) {
+    throw "Provide an installed ROCm root and a dedicated loopback endpoint explicitly."
 }
-
-$gfx1201Kernel = Join-Path $tensilePath "TensileLibrary_lazy_gfx1201.dat"
-if (-not (Test-Path $gfx1201Kernel)) {
-    throw "ROCm library path exists but does not include gfx1201 kernels for RX 9070 XT: $tensilePath"
-}
-
-if (-not $NoStop) {
-    Get-Process ollama -ErrorAction SilentlyContinue | Stop-Process -Force
-    Start-Sleep -Seconds 2
-}
-
-$env:OLLAMA_LLM_LIBRARY = "rocm"
-$env:ROCBLAS_TENSILE_LIBPATH = $tensilePath
-$env:HIP_PATH = $RocmRoot
-$env:ROCM_PATH = $RocmRoot
-$env:HIP_VISIBLE_DEVICES = "0"
-$env:OLLAMA_HOST = "http://$OllamaHost"
-Remove-Item Env:OLLAMA_VULKAN -ErrorAction SilentlyContinue
-Remove-Item Env:ROCR_VISIBLE_DEVICES -ErrorAction SilentlyContinue
-
-$ollama = Get-Command ollama -ErrorAction Stop
 if ($DebugLog) {
-    $logRoot = Join-Path (Get-Location) "data\logs"
-    New-Item -ItemType Directory -Force -Path $logRoot | Out-Null
-    $stdout = Join-Path $logRoot "ollama-rocm-stdout.log"
-    $stderr = Join-Path $logRoot "ollama-rocm-stderr.log"
-    Start-Process -FilePath $ollama.Source -ArgumentList "serve" -WindowStyle Hidden `
-        -RedirectStandardOutput $stdout -RedirectStandardError $stderr
-} else {
-    Start-Process -FilePath $ollama.Source -ArgumentList "serve" -WindowStyle Hidden
+    throw "Raw provider logging is disabled; use redacted operator diagnostics."
 }
 
-Start-Sleep -Seconds 8
-$version = Invoke-RestMethod -Uri "http://$OllamaHost/api/version" -TimeoutSec 10
-
-[pscustomobject]@{
-    status = "started"
-    version = $version.version
-    host = "http://$OllamaHost"
-    llm_library = $env:OLLAMA_LLM_LIBRARY
-    rocm_root = $RocmRoot
-    rocblas_tensile_libpath = $env:ROCBLAS_TENSILE_LIBPATH
+# NoStop remains accepted for compatibility. All invocations leave existing
+# providers untouched and terminate only the newly owned session's children.
+$runtime = Get-Command uv -ErrorAction Stop
+$repository = Split-Path -Parent $PSScriptRoot
+Push-Location -LiteralPath $repository
+try {
+    & $runtime.Source run --no-sync python -m tools.run_ollama_rocm_session `
+        --rocm-root $RocmRoot --host $OllamaHost --seconds $SessionSeconds
+    if ($LASTEXITCODE -ne 0) { throw "Bounded provider session failed." }
+} finally {
+    Pop-Location
 }

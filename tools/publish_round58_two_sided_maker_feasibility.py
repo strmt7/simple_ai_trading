@@ -33,6 +33,8 @@ from tools.publish_round52_executable_support_hurdle import (  # noqa: E402
     _write_text,
 )
 
+from simple_ai_trading.research_paths import historical_research_path
+
 
 ROUND = 58
 REPORT_SCHEMA = "round-058-two-sided-maker-support-v1"
@@ -768,8 +770,8 @@ def _parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--report",
         type=Path,
-        default=Path(
-            r"E:\SimpleAITradingData\evidence\round58-two-sided-support-20260715.json"
+        default=historical_research_path(
+            ROOT, "evidence/round58-two-sided-support-20260715.json"
         ),
     )
     parser.add_argument(

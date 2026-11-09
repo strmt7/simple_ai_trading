@@ -36,9 +36,7 @@ DIAGNOSTIC_CANONICAL_SHA256 = (
 DIAGNOSTIC_FILE_SHA256 = (
     "9195f1757541c11df0d09367fca792f506b887a04bc1bade4ee53dd987fde8f5"
 )
-DIAGNOSTIC_IMPLEMENTATION_COMMIT = (
-    "7e15ab84210799a3ef7764f7923eb5d03f253dfd"
-)
+DIAGNOSTIC_IMPLEMENTATION_COMMIT = "7e15ab84210799a3ef7764f7923eb5d03f253dfd"
 DIAGNOSTIC_IMPLEMENTATION_BLOB = "96d539abecce9a4156004d30c3fe90b643618f66"
 SYMBOLS = ("BTCUSDT", "ETHUSDT", "SOLUSDT")
 SEEDS = (5201, 5202, 5203)
@@ -69,6 +67,8 @@ from tools.publish_round52_executable_support_hurdle import (  # noqa: E402
     _write_text,
 )
 from simple_ai_trading.storage import write_json_atomic  # noqa: E402
+
+from simple_ai_trading.research_paths import historical_research_path
 
 
 def _git(*arguments: str) -> str:
@@ -258,9 +258,7 @@ def _model_rows(report: Mapping[str, object]) -> list[dict[str, object]]:
                         "role_mask_sha256": model.get("role_mask_sha256", ""),
                         "minimum_leaf_rows": model.get("minimum_leaf_rows", ""),
                         "best_iterations": model.get("best_iterations", ""),
-                        "magnitude_temperature": model.get(
-                            "magnitude_temperature", ""
-                        ),
+                        "magnitude_temperature": model.get("magnitude_temperature", ""),
                         "sign_probability_calibration": model.get(
                             "sign_probability_calibration", ""
                         ),
@@ -278,9 +276,7 @@ def _policy_rows(report: Mapping[str, object]) -> list[dict[str, object]]:
                 "candidate": candidate,
                 "coverage": item["coverage"],
                 "thresholds_bps": item["thresholds_bps"],
-                "policy_calibration_passed": item["policy_calibration_gate"][
-                    "passed"
-                ],
+                "policy_calibration_passed": item["policy_calibration_gate"]["passed"],
                 "policy_calibration_reasons": item["policy_calibration_gate"][
                     "reasons"
                 ],
@@ -312,9 +308,7 @@ def _policy_rows(report: Mapping[str, object]) -> list[dict[str, object]]:
                         "trades_per_active_day",
                     ):
                         row[f"{prefix}_{metric}"] = metrics[metric]
-                    row[f"{prefix}_symbol_net_bps"] = result[scenario][
-                        "symbol_net_bps"
-                    ]
+                    row[f"{prefix}_symbol_net_bps"] = result[scenario]["symbol_net_bps"]
             rows.append(row)
     return rows
 
@@ -345,9 +339,7 @@ def _rank_tail_rows(diagnostic: Mapping[str, object]) -> list[dict[str, object]]
                 prefix = f"{role_key}_{scenario}"
                 for metric, value in result[scenario]["metrics"].items():
                     row[f"{prefix}_{metric}"] = value
-                row[f"{prefix}_symbol_net_bps"] = result[scenario][
-                    "symbol_net_bps"
-                ]
+                row[f"{prefix}_symbol_net_bps"] = result[scenario]["symbol_net_bps"]
             for symbol in SYMBOLS:
                 opportunities = result["symbols"][symbol]["opportunities"]
                 for metric, value in opportunities.items():
@@ -409,9 +401,7 @@ def _ai_rows(report: Mapping[str, object]) -> list[dict[str, object]]:
             "round": ROUND,
             "control": CANDIDATES[1],
             "treatment": CANDIDATES[2],
-            "control_average_joint_log_loss": ai[
-                "control_average_joint_log_loss"
-            ],
+            "control_average_joint_log_loss": ai["control_average_joint_log_loss"],
             "treatment_average_joint_log_loss": ai["ai_average_joint_log_loss"],
             "joint_log_loss_improvement": ai["joint_log_loss_improvement"],
             "required_joint_log_loss_improvement": 0.005,
@@ -479,9 +469,9 @@ def _daily_rows(report: Mapping[str, object]) -> list[dict[str, object]]:
                         "coverage": 0.001,
                         "period": period,
                         "scenario": scenario,
-                        "utc_date": datetime.fromtimestamp(
-                            day_id * 86_400, tz=UTC
-                        ).date().isoformat(),
+                        "utc_date": datetime.fromtimestamp(day_id * 86_400, tz=UTC)
+                        .date()
+                        .isoformat(),
                         "daily_weighted_net_bps": value,
                         "cumulative_weighted_net_bps": cumulative,
                         "formally_selected": False,
@@ -519,9 +509,7 @@ def _progress_rows(
             "feature_set": "118 causal microstructure; +30 cached FinCast treatment",
             "risk_level": "consumed development only; unlevered",
             "spearman_ic": str(
-                report["ai_uplift_gate"][
-                    "control_average_expected_payoff_spearman"
-                ]
+                report["ai_uplift_gate"]["control_average_expected_payoff_spearman"]
             ),
             "selected_signals": "0",
             "executable_trades": "0",
@@ -591,12 +579,16 @@ def _forecast_svg(rows: Sequence[Mapping[str, object]]) -> str:
             for row in rows
             if row["candidate"] == candidate and row["role"] == "evaluation"
         ]
-        mse = 100.0 * sum(
-            float(row["expected_payoff_mse_skill"]) for row in selected
-        ) / len(selected)
-        rank = 100.0 * sum(
-            float(row["expected_payoff_spearman"]) for row in selected
-        ) / len(selected)
+        mse = (
+            100.0
+            * sum(float(row["expected_payoff_mse_skill"]) for row in selected)
+            / len(selected)
+        )
+        rank = (
+            100.0
+            * sum(float(row["expected_payoff_spearman"]) for row in selected)
+            / len(selected)
+        )
         proper = [
             float(row["joint_log_loss_skill"])
             for row in selected
@@ -677,16 +669,13 @@ def _rank_tail_svg(diagnostic: Mapping[str, object]) -> str:
     rows = [
         row
         for row in diagnostic["grid"]
-        if row["candidate"] == CANDIDATES[1]
-        and row["aggregation"] == "worst_seed"
+        if row["candidate"] == CANDIDATES[1] and row["aggregation"] == "worst_seed"
     ]
     points_calibration = [
         (
             float(index),
             float(
-                row["policy_calibration"]["paired_stress"]["metrics"][
-                    "mean_net_bps"
-                ]
+                row["policy_calibration"]["paired_stress"]["metrics"]["mean_net_bps"]
             ),
         )
         for index, row in enumerate(rows)
@@ -695,9 +684,7 @@ def _rank_tail_svg(diagnostic: Mapping[str, object]) -> str:
         (
             float(index),
             float(
-                row["consumed_evaluation"]["paired_stress"]["metrics"][
-                    "mean_net_bps"
-                ]
+                row["consumed_evaluation"]["paired_stress"]["metrics"]["mean_net_bps"]
             ),
         )
         for index, row in enumerate(rows)
@@ -838,9 +825,7 @@ def _clean_output(output_dir: Path) -> None:
     resolved.mkdir(parents=True, exist_ok=True)
 
 
-def _readme(
-    report: Mapping[str, object], diagnostic: Mapping[str, object]
-) -> str:
+def _readme(report: Mapping[str, object], diagnostic: Mapping[str, object]) -> str:
     fixed = _fixed_policy(report)
     calibration = fixed["policy_calibration"]["paired_stress"]["metrics"]
     evaluation = fixed["consumed_evaluation_diagnostic"]["paired_stress"]["metrics"]
@@ -854,11 +839,11 @@ def _readme(
 
 Round 53 factorized each side's executable payoff into six magnitude states and a magnitude-conditioned sign model. Eighteen new OpenCL LightGBM models used verified Binance USD-M BTC, ETH, and SOL event data; nine direct controls and sealed causal FinCast features were reused.
 
-The CSM improved average expected-payoff rank to `{float(ai['control_average_expected_payoff_spearman']):.6f}` and every joint proper-score comparison, but mean calibration remained wrong. Its frozen 0.10% policy had {int(calibration['trades'])} calibration trade at `{float(calibration['mean_net_bps']):.6f}` stressed bps/trade. The {int(evaluation['trades'])} later trades averaged `+{float(evaluation['mean_net_bps']):.6f}` bps, but calibration did not authorize them.
+The CSM improved average expected-payoff rank to `{float(ai["control_average_expected_payoff_spearman"]):.6f}` and every joint proper-score comparison, but mean calibration remained wrong. Its frozen 0.10% policy had {int(calibration["trades"])} calibration trade at `{float(calibration["mean_net_bps"]):.6f}` stressed bps/trade. The {int(evaluation["trades"])} later trades averaged `+{float(evaluation["mean_net_bps"]):.6f}` bps, but calibration did not authorize them.
 
-A separate fixed 54-rule rank-tail diagnostic removed the positive-EV requirement. Zero rules passed calibration. The least-bad calibration rule was `{best_tail['aggregation']}` at `{100.0 * float(best_tail['coverage']):g}%` coverage: {int(tail_calibration['trades'])} trades at `{float(tail_calibration['mean_net_bps']):.6f}` stressed bps/trade; its consumed result was `{float(tail_evaluation['mean_net_bps']):.6f}`. Global correlation therefore did not establish executable top-tail alpha.
+A separate fixed 54-rule rank-tail diagnostic removed the positive-EV requirement. Zero rules passed calibration. The least-bad calibration rule was `{best_tail["aggregation"]}` at `{100.0 * float(best_tail["coverage"]):g}%` coverage: {int(tail_calibration["trades"])} trades at `{float(tail_calibration["mean_net_bps"]):.6f}` stressed bps/trade; its consumed result was `{float(tail_evaluation["mean_net_bps"]):.6f}`. Global correlation therefore did not establish executable top-tail alpha.
 
-FinCast worsened joint log loss by `{abs(float(ai['joint_log_loss_improvement'])):.6f}` and expected-payoff rank by `{abs(float(ai['expected_payoff_spearman_improvement'])):.6f}` versus the matched CSM control.
+FinCast worsened joint log loss by `{abs(float(ai["joint_log_loss_improvement"])):.6f}` and expected-payoff rank by `{abs(float(ai["expected_payoff_spearman_improvement"])):.6f}` versus the matched CSM control.
 
 ## Evidence
 
@@ -979,9 +964,7 @@ def publish(
             "csm_calibration_trades": calibration["trades"],
             "csm_calibration_stress_mean_net_bps": calibration["mean_net_bps"],
             "csm_consumed_evaluation_trades": evaluation["trades"],
-            "csm_consumed_evaluation_stress_mean_net_bps": evaluation[
-                "mean_net_bps"
-            ],
+            "csm_consumed_evaluation_stress_mean_net_bps": evaluation["mean_net_bps"],
             "rank_tail_rules_tested": len(diagnostic["grid"]),
             "rank_tail_calibration_rules_passed": diagnostic["diagnosis"][
                 "calibration_rows_passed"
@@ -1014,15 +997,15 @@ def _parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--report",
         type=Path,
-        default=Path(
-            r"E:\SimpleAITradingData\round53-executable-csm-20260714-v1\report.json"
+        default=historical_research_path(
+            ROOT, "round53-executable-csm-20260714-v1/report.json"
         ),
     )
     parser.add_argument(
         "--diagnostic",
         type=Path,
-        default=Path(
-            r"E:\SimpleAITradingData\round53-csm-rank-tail-diagnostic-20260714-v1.json"
+        default=historical_research_path(
+            ROOT, "round53-csm-rank-tail-diagnostic-20260714-v1.json"
         ),
     )
     parser.add_argument(
@@ -1035,7 +1018,9 @@ def _parser() -> argparse.ArgumentParser:
         type=Path,
         default=research / "round-053-executable-csm-fincast-binding.json",
     )
-    parser.add_argument("--progress", type=Path, default=research / "latest" / "progress.csv")
+    parser.add_argument(
+        "--progress", type=Path, default=research / "latest" / "progress.csv"
+    )
     parser.add_argument("--output", type=Path, default=research / "latest")
     return parser
 

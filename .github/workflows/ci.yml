@@ -41,6 +41,16 @@ jobs:
           version: "0.12.1"
           enable-cache: true
 
+      - name: Reject new workstation paths and private migration files
+        env:
+          PATH_AUDIT_BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
+        run: |
+          base="$PATH_AUDIT_BASE"
+          if [ -z "$base" ] || [[ "$base" =~ ^0+$ ]]; then
+            base="$(git rev-parse HEAD^)"
+          fi
+          python tools/check_portable_paths.py --base "$base"
+
       - name: Install project and test dependencies
         run: uv sync --locked --extra foundation-ai --extra gpu --extra polymarket-live --extra reporting --group test
 

@@ -19,6 +19,29 @@ override prose.
   requested result. Reuse valid evidence, keep searches/output bounded, and rerun
   only invalidated checks. Prioritize informative financial R&D and demonstrated
   risk repairs over repetitive testing, speculative tooling or cosmetic churn.
+- Batch coherent, substantive local changes before publishing. Do not push
+  routine status updates or every small checkpoint; follow explicit user
+  publication requests and preserve reviewable local evidence between pushes.
+
+## Portable paths and publication privacy
+
+- Never add workstation-specific absolute filesystem paths, user-profile names
+  or drive mappings to tracked code, configuration, documentation or evidence.
+  Derive storage from explicit configuration, environment or application-relative
+  locations. Do not bind runtime behavior to one developer's machine.
+- Keep detailed migration inventories, physical-path mappings, raw provider logs
+  and retained original source snapshots in ignored local storage. Never force-add
+  them. Publish relative references and sanitized summaries only. Review images,
+  archives and generated outputs as well as text before tracking them.
+- Preserve historical result bytes and private originals; do not blindly redact
+  hash-bound numerical artifacts or rewrite shared history. Existing historical
+  path references are not permission to publish another local path.
+- Before every commit run `uv run python tools/check_portable_paths.py --staged`.
+  It rejects new workstation-path candidates and private migration content;
+  values are withheld from its diagnostics. It is a publication gate, not proof
+  that old history or every possible binary artifact is free of private data.
+- Follow [historical storage guidance](docs/RESEARCH_STORAGE.md) for portable
+  input resolution, low-I/O relocation and separate verified source retirement.
 
 ## September 4 review session interpretation
 

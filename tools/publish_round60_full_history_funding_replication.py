@@ -40,6 +40,8 @@ from tools.publish_round59_funding_persistence_feasibility import (  # noqa: E40
     _transition_rows as _round59_transition_rows,
 )
 
+from simple_ai_trading.research_paths import historical_research_path
+
 
 ROUND = 60
 REPORT_SCHEMA = "round-060-full-history-funding-replication-report-v1"
@@ -694,23 +696,23 @@ def _parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--report",
         type=Path,
-        default=Path(
-            r"E:\SimpleAITradingData\evidence\round60-full-history-funding-replication-20260715-v1.json"
+        default=historical_research_path(
+            ROOT, "evidence/round60-full-history-funding-replication-20260715-v1.json"
         ),
     )
     parser.add_argument("--design", type=Path, default=ROOT / DESIGN_PATH)
     parser.add_argument(
         "--certificate",
         type=Path,
-        default=Path(
-            r"E:\SimpleAITradingData\round60-full-funding-source-20260715-v1\certificate.json"
+        default=historical_research_path(
+            ROOT, "round60-full-funding-source-20260715-v1/certificate.json"
         ),
     )
     parser.add_argument(
         "--prior-report",
         type=Path,
-        default=Path(
-            r"E:\SimpleAITradingData\evidence\round59-funding-persistence-20260715-v1.json"
+        default=historical_research_path(
+            ROOT, "evidence/round59-funding-persistence-20260715-v1.json"
         ),
     )
     parser.add_argument(

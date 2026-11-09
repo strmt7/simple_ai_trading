@@ -36,6 +36,8 @@ from tools.publish_round52_executable_support_hurdle import (  # noqa: E402
     _write_text,
 )
 
+from simple_ai_trading.research_paths import historical_research_path
+
 
 ROUND = 56
 REPORT_SCHEMA = "round-056-paired-action-report-v1"
@@ -45,9 +47,7 @@ BINDING_SCHEMA = "round-056-paired-action-execution-binding-v1"
 REPORT_CANONICAL_SHA256 = (
     "8fb9cdca77608554e187830d5ff636ea7013a7bce9a4a3a1805afd76e5a8f764"
 )
-REPORT_FILE_SHA256 = (
-    "08fa37b8a5d896786e07cd90262574556531796df48c33373a3057eb2f99b6a7"
-)
+REPORT_FILE_SHA256 = "08fa37b8a5d896786e07cd90262574556531796df48c33373a3057eb2f99b6a7"
 DESIGN_SHA256 = "893cbc7e24b1125d16e36affa23329a3e18fc74f08131231619870ab831d99d4"
 BINDING_SHA256 = "ffdcd1226fe55af6edaf331d4908ec0945b5871fa021035fd2702d0795aeaa9a"
 IMPLEMENTATION_COMMIT = "244902e1604f664c1693db8620a782ab88ca7da7"
@@ -133,8 +133,7 @@ def _validate_sources(
     _validate_finite(report)
 
     expected_blobs = {
-        str(row["path"]): str(row["git_blob_oid"])
-        for row in binding["blobs"]
+        str(row["path"]): str(row["git_blob_oid"]) for row in binding["blobs"]
     }
     for source_path, expected_oid in expected_blobs.items():
         if _git("rev-parse", f"{IMPLEMENTATION_COMMIT}:{source_path}") != expected_oid:
@@ -347,20 +346,14 @@ def _score_diagnostics(
         )
     start_ms = int(np.datetime64("2024-01-01", "ms").astype(np.int64))
     end_ms = int(np.datetime64("2024-07-01", "ms").astype(np.int64))
-    mask = (
-        (timestamps >= start_ms)
-        & (timestamps < end_ms)
-        & (maximum_exit_ms < end_ms)
-    )
+    mask = (timestamps >= start_ms) & (timestamps < end_ms) & (maximum_exit_ms < end_ms)
     if np.count_nonzero(mask) != 4367:
         raise ValueError("Round 56 diagnostic interval differs")
 
     percentile_rows: list[dict[str, object]] = []
     decomposition_rows: list[dict[str, object]] = []
     for treatment in TREATMENTS:
-        path = Path(
-            report["model"]["artifacts"][treatment]["prediction_cache"]["path"]
-        )
+        path = Path(report["model"]["artifacts"][treatment]["prediction_cache"]["path"])
         with np.load(path, allow_pickle=False) as predictions:
             raw = np.asarray(predictions["point_oof_bps"][:, :, mask], dtype=np.float64)
         if not np.isfinite(raw).all():
@@ -370,12 +363,12 @@ def _score_diagnostics(
         flat_score = score.reshape(-1)
         flat_target = target.reshape(-1)
         selected_action = np.argmax(score, axis=-1)
-        best_score = np.take_along_axis(
-            score, selected_action[..., None], axis=-1
-        )[..., 0]
-        best_target = np.take_along_axis(
-            target, selected_action[..., None], axis=-1
-        )[..., 0]
+        best_score = np.take_along_axis(score, selected_action[..., None], axis=-1)[
+            ..., 0
+        ]
+        best_target = np.take_along_axis(target, selected_action[..., None], axis=-1)[
+            ..., 0
+        ]
         for scope, scope_score, scope_target in (
             ("all_action_rows", flat_score, flat_target),
             ("model_preferred_action", best_score.reshape(-1), best_target.reshape(-1)),
@@ -468,9 +461,7 @@ def _progress_rows(
             "horizon_seconds": "3600",
             "feature_set": "72 paired-action causal features; +2 AI programs",
             "risk_level": "predictive gate only; unlevered; no economic replay",
-            "spearman_ic": str(
-                ai["predictive_validation"]["point"]["pooled_spearman"]
-            ),
+            "spearman_ic": str(ai["predictive_validation"]["point"]["pooled_spearman"]),
             "selected_signals": "0",
             "executable_trades": "0",
             "status": "rejected",
@@ -613,7 +604,9 @@ def _percentile_svg(rows: Sequence[Mapping[str, object]]) -> str:
             "not a selected policy or promotion result"
         ),
         series=tuple(series),
-        x_labels={x_by_fraction[value]: f"top {100 * value:.0f}%" for value in fractions},
+        x_labels={
+            x_by_fraction[value]: f"top {100 * value:.0f}%" for value in fractions
+        },
         y_label="Mean realized stress payoff (bps)",
     )
 
@@ -742,14 +735,14 @@ Round 56 trained `24` AMD OpenCL LightGBM artifacts on BTCUSDT, ETHUSDT, and SOL
 
 | Held-forward metric (Jan-Jun 2024) | Baseline | Governed AI factors |
 |---|---:|---:|
-| Point MSE skill vs causal constant | {100 * float(baseline['point']['pooled_mse_skill']):.3f}% | {100 * float(ai['point']['pooled_mse_skill']):.3f}% |
-| Pooled Spearman | {float(baseline['point']['pooled_spearman']):.5f} | {float(ai['point']['pooled_spearman']):.5f} |
-| Positive-Spearman months | {baseline['point']['positive_spearman_months']}/6 | {ai['point']['positive_spearman_months']}/6 |
-| Top score quintile, realized stress payoff | {float(baseline['point']['top_score_quintile_realized_mean_bps']):+.2f} bps | {float(ai['point']['top_score_quintile_realized_mean_bps']):+.2f} bps |
-| q20 pinball skill | {100 * float(baseline['lower_tail']['pooled_pinball_skill']):.3f}% | {100 * float(ai['lower_tail']['pooled_pinball_skill']):.3f}% |
-| q20 coverage | {100 * float(baseline['lower_tail']['pooled_coverage']):.2f}% | {100 * float(ai['lower_tail']['pooled_coverage']):.2f}% |
+| Point MSE skill vs causal constant | {100 * float(baseline["point"]["pooled_mse_skill"]):.3f}% | {100 * float(ai["point"]["pooled_mse_skill"]):.3f}% |
+| Pooled Spearman | {float(baseline["point"]["pooled_spearman"]):.5f} | {float(ai["point"]["pooled_spearman"]):.5f} |
+| Positive-Spearman months | {baseline["point"]["positive_spearman_months"]}/6 | {ai["point"]["positive_spearman_months"]}/6 |
+| Top score quintile, realized stress payoff | {float(baseline["point"]["top_score_quintile_realized_mean_bps"]):+.2f} bps | {float(ai["point"]["top_score_quintile_realized_mean_bps"]):+.2f} bps |
+| q20 pinball skill | {100 * float(baseline["lower_tail"]["pooled_pinball_skill"]):.3f}% | {100 * float(ai["lower_tail"]["pooled_pinball_skill"]):.3f}% |
+| q20 coverage | {100 * float(baseline["lower_tail"]["pooled_coverage"]):.2f}% | {100 * float(ai["lower_tail"]["pooled_coverage"]):.2f}% |
 
-The baseline failed monthly rank consistency and positive top-quintile payoff. The two accepted Fino1 factor programs improved rank consistency to `5/6` positive months and pooled Spearman to `{float(ai['point']['pooled_spearman']):.5f}`, but the top quintile still lost `{abs(float(ai['point']['top_score_quintile_realized_mean_bps'])):.2f} bps` per action row after stress costs. The AI treatment therefore failed before economic replay. Trades, ROI, drawdown, and leverage were not evaluated.
+The baseline failed monthly rank consistency and positive top-quintile payoff. The two accepted Fino1 factor programs improved rank consistency to `5/6` positive months and pooled Spearman to `{float(ai["point"]["pooled_spearman"]):.5f}`, but the top quintile still lost `{abs(float(ai["point"]["top_score_quintile_realized_mean_bps"])):.2f} bps` per action row after stress costs. The AI treatment therefore failed before economic replay. Trades, ROI, drawdown, and leverage were not evaluated.
 
 The run used `24,096` hourly timestamps and `144,576` paired action rows derived from real minute paths. It generated no synthetic rows and did not read October 2024 or later observations. The percentile analysis is explicitly post-hoc and cannot select a policy.
 
@@ -775,9 +768,7 @@ def publish(
     previous_progress_path: Path,
     output_dir: Path,
 ) -> dict[str, object]:
-    report, _design, binding = _validate_sources(
-        report_path, design_path, binding_path
-    )
+    report, _design, binding = _validate_sources(report_path, design_path, binding_path)
     summary_rows = _summary_rows(report)
     monthly_rows = _monthly_rows(report)
     model_rows = _model_rows(report)
@@ -871,8 +862,8 @@ def _parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--report",
         type=Path,
-        default=Path(
-            r"E:\SimpleAITradingData\round56-paired-action-20260714-v1\report.json"
+        default=historical_research_path(
+            ROOT, "round56-paired-action-20260714-v1/report.json"
         ),
     )
     parser.add_argument(
