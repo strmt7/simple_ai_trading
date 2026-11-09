@@ -15,6 +15,14 @@ proof. Keep operational caches under ignored `data/`; preserve original source
 paths in lineage and document the published byte-identical mapping.
 
 - No tracked files under `data/`.
+- Preserve exact integer identity when exporting evidence through tool layers.
+  Epoch nanoseconds and large update IDs exceed JavaScript's exact `Number`
+  range (`2**53 - 1`): forward serialized JSON text without a numeric parse/
+  stringify round trip, or use an explicitly agreed lossless representation.
+  Never silently change the source schema to hide rounding. Verify exported
+  integer fields against retained source values and canonical digests before
+  publication. Preserve a faulty derived export privately; correct the export
+  from unchanged source bytes rather than rehashing rounded values as valid.
 - No committed optimization result JSON/SVG/CSV unless it is generated from
   exchange-sourced candles or signed exchange/account evidence and includes
   machine-readable provenance. The round `report.json` must declare

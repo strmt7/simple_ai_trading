@@ -1,0 +1,37 @@
+{
+  "admission": "Effective final HTTP 200, native success, at least 600 substantive Markdown characters, no challenge and intended primary research identity. Same-publisher exact or canonical child redirects only, both statuses/URLs retained. Stop before source two on any failure; no retry or alternate reader.",
+  "base_revision": "06e9db6cb0399e6df90cd2832272ffa45129c24e",
+  "budget": {
+    "cache_bypass": true,
+    "headless_upstream_defaults": true,
+    "navigations": 2,
+    "owned_process_timeout_seconds": 150,
+    "page_timeout_ms": 45000,
+    "robots_checked": true
+  },
+  "controller_sha256": "eb159ae5c80fa53d177686cd2340b8b4a7102386f280b3ef7a2f5e1b80381624",
+  "forbidden": "No external LLM, profiles, stealth, login, challenge bypass, alias retry, market price/data request, old-study repricing, model fit, account, credential, order or funds. No new independent economic observation or accepted-edge claim.",
+  "frozen_at_utc": "2026-11-09T14:50:48.430932+00:00",
+  "outputs": "Ignored data/research/2026-11-09-funding-term-premium/pages; full native outputs and durable journals. Publish sanitized metadata only. Controller retained as inert text after terminal.",
+  "preflight": "Actual root entry, imports, owned job creation/close and durable output passed; reviewed provider tool and lock match the existing admitted cohort. No installation or provider change.",
+  "provider": {
+    "cache_identity": "27a0fdd2df3d636cedc4caef2b4dc34016ebb633a221ebe9421ea75ee843136c",
+    "lock_sha256": "60dca0cb2b1e1aafc131ca2758a7f75d60dae2fe413455796cc611c6690dbef1",
+    "preflight": "Existing locked cohort reused through the reviewed CLI admission; crawl --help passed. No provider mutation or new dependency installation.",
+    "tool_sha256": "0de1dff8963dbaef5257553ba5af09eef19a7ad58c9b6cdbfe9df0aba6ee1657",
+    "version": "0.9.5+flitzzip.portable2"
+  },
+  "questions": [
+    "What does the primary institutional record on funding discontinuities actually state about valuation assumptions, payment timing and no-arbitrage? Retain publication identity and explicit limits; do not infer full-paper theorems from an abstract.",
+    "What does the primary authors research record state about perpetual versus dated futures, funding mechanics and limits of conventional carry explanations? An abstract or venue example is not native Binance eligibility or a fee/cost receipt."
+  ],
+  "schema": "funding-contract-research-crawl-v1",
+  "search_response_sha256": "762c678b97f46c31002827a9a0df0a623b8780de2c2eb046af0f5e69ba00c0a7",
+  "selection": "Two exact primary URLs discovered by the frozen search and absent from reviewed retained contract/result/journal and citation metadata. The older 2310.11771 and 2212.06888 papers are already cited in prior designs and are not fetched in this run.",
+  "sha256": "b716fc6ce091252ae17284dd9e1c8d3f7e4ac048379604234900944e0fb29801",
+  "training_or_edge_admission": false,
+  "urls_in_order": [
+    "https://infoscience.epfl.ch/entities/publication/3b02babb-0cec-4dac-a60d-d022575b8bc4",
+    "https://papers.ssrn.com/sol3/papers.cfm?abstract_id=7059779"
+  ]
+}

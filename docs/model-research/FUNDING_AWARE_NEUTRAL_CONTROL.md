@@ -1,5 +1,14 @@
 # Funding-aware control: cash truth before an optimizer
 
+November 9 [term-premium research](../review/2026-11-09/funding-term-premium/review.md)
+adds a conditional comparison of a dated future against an opposite perpetual:
+matched-base price cash is `q * ((D_T - P_T) - (D_0 - P_0))`. Add both legs' actual
+cash and every cost; terminal basis and margin compatibility are not zero by
+assumption. Four dated BTC/ETH candidates are declared in retained metadata, with
+no file, unit or economic admission. This routes a possible capital/execution
+variant without changing existing family/account gates or repricing old funding
+panels. The new primary-page request failed, so no new literature claim is used.
+
 November 9 [snapshot-availability integration](../review/2026-11-09/snapshot-availability/review.md)
 records local snapshot receipt time and enforces it in streaming inference,
 shadow replay duration and saved-model acceptance. Warmup drains while inference

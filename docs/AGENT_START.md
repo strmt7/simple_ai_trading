@@ -10,6 +10,14 @@ Scope blockers to their branch; a fresh user resumption resets the blocked audit
 
 ## Current Truth
 
+November 9 [term-premium R&D](review/2026-11-09/funding-term-premium/review.md):
+retained catalog metadata lists four BTC/ETH dated candidates for the research
+date. A conditional cash identity compares funding with paid term premium and
+terminal basis; no margin saving or edge is proved. Snapshot delays are quantified
+per source, not synchronized across collectors. A primary research crawl failed
+429; its second page is forbidden. No economic observation/fit; counts 203/65/37/0.
+All old retry/account/capture restrictions remain. No new collector or push.
+
 November 9 [snapshot timing checkpoint](review/2026-11-09/snapshot-availability/review.md):
 local capture v4 records snapshot availability; shadow v2 gates inference/entries,
 preserves warmup and excludes unavailable duration. Runtime rejects missing or

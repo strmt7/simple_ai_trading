@@ -1,0 +1,15 @@
+{
+  "schema": "funding-term-premium-source-discovery-v1",
+  "frozen_at_utc": "2026-11-09T14:43:22Z",
+  "base_revision": "06e9db6cb0399e6df90cd2832272ffa45129c24e",
+  "question": "What primary research distinguishes accumulated perpetual funding from the executable premium of a matched dated future, including convergence, no-arbitrage limits and capital risks? Investigate a same-venue derivative hedge as a capital/execution variant, not a newly accepted edge or a rerun of consumed carry populations.",
+  "queries": [
+    "perpetual futures pricing dated futures funding term structure arbitrage paper",
+    "perpetual futures replication funding rates dated futures capital margin research"
+  ],
+  "budget": {"search_calls": 1, "queries": 2},
+  "source_use": "Search discovers primary URLs only. Deduplicate exact URLs against retained source metadata, then freeze distinct page questions and use the reviewed isolated Crawl4AI provider. Snippets are not research evidence.",
+  "forbidden": "No market prices, native data extension, economic backtest, training, account, credential, order, funds, source-failure alias retry or accepted-edge claim.",
+  "outputs": "Ignored data/research/2026-11-09-funding-term-premium; preserve native search response before selecting sources.",
+  "financial_observations_added": 0
+}

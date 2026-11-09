@@ -1,0 +1,19 @@
+{
+  "schema": "retained-source-timing-and-dated-instrument-inventory-v1",
+  "frozen_at_utc": "2026-11-09T14:49:01Z",
+  "base_revision": "06e9db6cb0399e6df90cd2832272ffa45129c24e",
+  "questions": [
+    "What are the exact source-local receipt timestamps and ordinal positions of the six generated snapshots, relative to their first incremental updates?",
+    "Does the retained vendor futures catalog contain non-perpetual BTCUSDT or ETHUSDT dated-instrument candidates spanning the fixed October 1 day? Inventory metadata, not settlement equivalence or prices."
+  ],
+  "inputs": {
+    "data/research/2026-11-09-depth-source/binance.gzip": "dfc2547f0d2cfcb819e07f90319fa65af15db5f3ed8fce17ccafc9c1dfbf7158",
+    "data/research/2026-11-09-depth-source/binance-futures.gzip": "0202cd7d299e68be478d5d06d8646dc5be69b8b84710c905dfc9980562cd23d1",
+    "data/research/2026-11-09-paired-quotes/metadata/binance-futures.raw": "fbfd8ca8eeaecfefb92c32edea08a69f4068dc00bea2659ab477e584ea7820bd"
+  },
+  "scope": "All six fixed books and all matching dated catalog rows. Read only raw envelope stream identity and collector timestamps; leave price/size, native E/T values, funding and return fields opaque. Preserve all source bytes and prior contracts.",
+  "clock_rule": "Parse explicit UTC collector clocks as exact integer nanoseconds. Record per-book source-local availability only. Do not assume measured inter-collector synchronization, zero clock offset, native event-clock units or an executable cross-book snapshot.",
+  "forbidden": "No network, price/size inspection, reconstruction, economic selection, new market observation, training, account, credential, order, funds, family replay or qualification of the historical adapter.",
+  "output": "Ignored data/research/2026-11-09-funding-term-premium/offline-result.json, exclusive creation and digest-bound input receipts; sanitized metadata may be published.",
+  "training_or_edge_admission": false
+}

@@ -1,0 +1,274 @@
+{
+  "all_btc_eth_dated_candidates": 50,
+  "artifact_class": "source_inventory_and_conditional_financial_derivation_not_market_performance",
+  "base_revision": "06e9db6cb0399e6df90cd2832272ffa45129c24e",
+  "capture_boundaries_sha256": "f971726268ba2e630b2ebbe8d5bcf02f7b3f23b92ccb16efe23aef82cebe950f",
+  "catalog_type_counts": {
+    "future": 53,
+    "perpetual": 1011
+  },
+  "created_at_utc": "2026-11-09T14:57:01.761383+00:00",
+  "declared_candidates_spanning_target": [
+    {
+      "availableSince": "2026-06-26T00:00:00.000Z",
+      "availableTo": "2026-11-09T00:00:00.000Z",
+      "dataTypes": [
+        "trades",
+        "incremental_book_L2",
+        "quotes",
+        "book_snapshot_5",
+        "book_snapshot_25",
+        "derivative_ticker",
+        "liquidations",
+        "book_ticker"
+      ],
+      "id": "BTCUSDT_261225",
+      "type": "future"
+    },
+    {
+      "availableSince": "2026-09-25T00:00:00.000Z",
+      "availableTo": "2026-11-09T00:00:00.000Z",
+      "dataTypes": [
+        "trades",
+        "incremental_book_L2",
+        "quotes",
+        "book_snapshot_5",
+        "book_snapshot_25",
+        "derivative_ticker",
+        "liquidations",
+        "book_ticker"
+      ],
+      "id": "BTCUSDT_270326",
+      "type": "future"
+    },
+    {
+      "availableSince": "2026-06-26T00:00:00.000Z",
+      "availableTo": "2026-11-09T00:00:00.000Z",
+      "dataTypes": [
+        "trades",
+        "incremental_book_L2",
+        "quotes",
+        "book_snapshot_5",
+        "book_snapshot_25",
+        "derivative_ticker",
+        "liquidations",
+        "book_ticker"
+      ],
+      "id": "ETHUSDT_261225",
+      "type": "future"
+    },
+    {
+      "availableSince": "2026-09-25T00:00:00.000Z",
+      "availableTo": "2026-11-09T00:00:00.000Z",
+      "dataTypes": [
+        "trades",
+        "incremental_book_L2",
+        "quotes",
+        "book_snapshot_5",
+        "book_snapshot_25",
+        "derivative_ticker",
+        "liquidations",
+        "book_ticker"
+      ],
+      "id": "ETHUSDT_270326",
+      "type": "future"
+    }
+  ],
+  "discovery_search_native_sha256": "762c678b97f46c31002827a9a0df0a623b8780de2c2eb046af0f5e69ba00c0a7",
+  "financial_counts": {
+    "hypotheses": 65,
+    "observations": 203,
+    "qualified_stable_edges": 0,
+    "scoped_mechanisms": 37
+  },
+  "limits": {
+    "account_credentials_orders_or_funds": false,
+    "additional_cash_includes_already_counted_variation_margin": false,
+    "controller_is_inert": true,
+    "cross_collector_synchronization_qualified": false,
+    "dated_native_contract_units_qualified": false,
+    "dated_quote_files_verified": false,
+    "economic_replay_or_market_fit": false,
+    "github_push": false,
+    "literature_content_admitted": false,
+    "margin_netting_or_capital_saving_qualified": false,
+    "market_price_or_size_values_inspected": false,
+    "native_market_requests": 0,
+    "new_economic_observations": 0,
+    "protected_partial_payloads_read": false,
+    "zero_terminal_basis_assumed": false
+  },
+  "official_research_attempt": {
+    "admitted": false,
+    "controller_error": null,
+    "effective_status": 429,
+    "final_url": "https://infoscience.epfl.ch/entities/publication/3b02babb-0cec-4dac-a60d-d022575b8bc4",
+    "index": 1,
+    "markdown_characters": 464,
+    "markdown_sha256": "6669f13a1d30dfbe013f4a1709ebb391f86d350c0697ed9239a9c466ddd2cb44",
+    "native_bytes": 6397,
+    "native_error": "Blocked by anti-bot protection: HTTP 429 Too Many Requests",
+    "native_sha256": "2ef9a2f4a4da825e04f15eb556a9e0986d336b4cd06efd8f73d1a8f1766356a0",
+    "native_status": 429,
+    "native_success": false,
+    "native_title": null,
+    "native_url": "https://infoscience.epfl.ch/entities/publication/3b02babb-0cec-4dac-a60d-d022575b8bc4",
+    "phase": "complete",
+    "process_return_code": 0,
+    "recorded_at_utc": "2026-11-09T14:51:02.907912+00:00",
+    "url": "https://infoscience.epfl.ch/entities/publication/3b02babb-0cec-4dac-a60d-d022575b8bc4"
+  },
+  "private_evidence": [
+    {
+      "bytes": 24041,
+      "path": "data/research/2026-11-09-funding-term-premium/offline-result.json",
+      "sha256": "1cce4e8ddf29ac21a5c6d944951c245ff97b7c376017c8b8c15f39e998fcf246"
+    },
+    {
+      "bytes": 6397,
+      "path": "data/research/2026-11-09-funding-term-premium/pages/01.native.json",
+      "sha256": "2ef9a2f4a4da825e04f15eb556a9e0986d336b4cd06efd8f73d1a8f1766356a0"
+    },
+    {
+      "bytes": 310,
+      "path": "data/research/2026-11-09-funding-term-premium/pages/01.provider.log",
+      "sha256": "b029b9249f19d39ac22a67ee88e4b839714794e35b7900d6b6481438cc83ed6e"
+    },
+    {
+      "bytes": 1441,
+      "path": "data/research/2026-11-09-funding-term-premium/pages/crawl-journal.jsonl",
+      "sha256": "76a34188d32bef29c335acebdcc41fd96f7bc829a631214862440daf254211d6"
+    },
+    {
+      "bytes": 64,
+      "path": "data/research/2026-11-09-funding-term-premium/pages/crawl.started",
+      "sha256": "745ece2b429a60f7fa0e5dce2a58be9a468c45f2307875276ec627b433d2cdf8"
+    },
+    {
+      "bytes": 73,
+      "path": "data/research/2026-11-09-funding-term-premium/pages/preflight.json",
+      "sha256": "1a1b19a4594228de709f2f46be723fe65ddeaa0050f58bccc973f0c3012a74b3"
+    },
+    {
+      "bytes": 36683,
+      "path": "data/research/2026-11-09-funding-term-premium/search.native.json",
+      "sha256": "762c678b97f46c31002827a9a0df0a623b8780de2c2eb046af0f5e69ba00c0a7"
+    },
+    {
+      "bytes": 5702,
+      "path": "data/research/term_premium_crawl.py.failed.txt",
+      "sha256": "eb159ae5c80fa53d177686cd2340b8b4a7102386f280b3ef7a2f5e1b80381624"
+    }
+  ],
+  "result_sha256": "6a8e615f4d0eff39ff3dd1d57245597201fce108ccaed4c16744542c472703e1",
+  "retained_offline_result": {
+    "bytes": 24041,
+    "content_sha256": "94fd172be29769837acff3d85b207befd0d226be9bccbdf001b6a205827c3413",
+    "path": "data/research/2026-11-09-funding-term-premium/offline-result.json",
+    "sha256": "1cce4e8ddf29ac21a5c6d944951c245ff97b7c376017c8b8c15f39e998fcf246"
+  },
+  "schema": "funding-term-premium-source-planning-result-v1",
+  "second_page_requested": false,
+  "serialization_correction": {
+    "not_a_source_refetch_or_contract_repair": true,
+    "old_invalid_sha256": "6b80cac7cda21f8eb35fae16531ce1aaaf6cee3056775288511962b57fcef208",
+    "old_invalid_summary_retained_privately": "data/research/2026-11-09-funding-term-premium/invalid-summary-before-integer-repair.json",
+    "reason": "Pre-publication canonical digest verification caught JavaScript numeric round-trip precision loss in derived nanosecond integers. Native capture and private Python result were unchanged; restore exact private integers and preserve serialized JSON text across tool forwarding."
+  },
+  "source_intents": [
+    {
+      "bytes": 3112,
+      "path": "docs/review/2026-11-09/funding-term-premium/crawl-intent.json",
+      "sha256": "73d9a79f7d5a4d0e56ae4cf540a0050224ad34124e9fc39f0077e49662a17ff5"
+    },
+    {
+      "bytes": 1948,
+      "path": "docs/review/2026-11-09/funding-term-premium/offline-intent.json",
+      "sha256": "663ae1de5c2de0b4e51227161d7a7755c7179f3b7318a8399d7658a2c0de17d9"
+    },
+    {
+      "bytes": 1321,
+      "path": "docs/review/2026-11-09/funding-term-premium/search-intent.json",
+      "sha256": "0cd3b471d08552f403a132c72cfac4a93970f2fd64dfae1911c9533cfed1b5ed"
+    }
+  ],
+  "source_local_snapshot_timing": [
+    {
+      "books": {
+        "BTCUSDT": {
+          "first_increment_received_at_ns": 1790812800031831400,
+          "increments": 600,
+          "increments_before_snapshot": 16,
+          "last_increment_received_at_ns": 1790812859916600000,
+          "snapshot_count": 1,
+          "snapshot_delay_from_first_increment_ns": 1575867800,
+          "snapshot_ordinal": 50,
+          "snapshot_received_at_ns": 1790812801607699200,
+          "snapshot_received_utc": "2026-10-01T00:00:01.6076992Z"
+        },
+        "ETHUSDT": {
+          "first_increment_received_at_ns": 1790812800031881500,
+          "increments": 600,
+          "increments_before_snapshot": 7,
+          "last_increment_received_at_ns": 1790812859917335300,
+          "snapshot_count": 1,
+          "snapshot_delay_from_first_increment_ns": 585287700,
+          "snapshot_ordinal": 21,
+          "snapshot_received_at_ns": 1790812800617169200,
+          "snapshot_received_utc": "2026-10-01T00:00:00.6171692Z"
+        },
+        "SOLUSDT": {
+          "first_increment_received_at_ns": 1790812800097217900,
+          "increments": 555,
+          "increments_before_snapshot": 23,
+          "last_increment_received_at_ns": 1790812859997365200,
+          "snapshot_count": 1,
+          "snapshot_delay_from_first_increment_ns": 2317425600,
+          "snapshot_ordinal": 74,
+          "snapshot_received_at_ns": 1790812802414643500,
+          "snapshot_received_utc": "2026-10-01T00:00:02.4146435Z"
+        }
+      },
+      "venue": "binance"
+    },
+    {
+      "books": {
+        "BTCUSDT": {
+          "first_increment_received_at_ns": 1790812800014022100,
+          "increments": 2263,
+          "increments_before_snapshot": 28,
+          "last_increment_received_at_ns": 1790812859985893000,
+          "snapshot_count": 1,
+          "snapshot_delay_from_first_increment_ns": 714923200,
+          "snapshot_ordinal": 84,
+          "snapshot_received_at_ns": 1790812800728945300,
+          "snapshot_received_utc": "2026-10-01T00:00:00.7289453Z"
+        },
+        "ETHUSDT": {
+          "first_increment_received_at_ns": 1790812800014464600,
+          "increments": 2238,
+          "increments_before_snapshot": 19,
+          "last_increment_received_at_ns": 1790812859996180700,
+          "snapshot_count": 1,
+          "snapshot_delay_from_first_increment_ns": 487459600,
+          "snapshot_ordinal": 57,
+          "snapshot_received_at_ns": 1790812800501924200,
+          "snapshot_received_utc": "2026-10-01T00:00:00.5019242Z"
+        },
+        "SOLUSDT": {
+          "first_increment_received_at_ns": 1790812800019119400,
+          "increments": 2073,
+          "increments_before_snapshot": 18,
+          "last_increment_received_at_ns": 1790812859968502800,
+          "snapshot_count": 1,
+          "snapshot_delay_from_first_increment_ns": 507561800,
+          "snapshot_ordinal": 59,
+          "snapshot_received_at_ns": 1790812800526681200,
+          "snapshot_received_utc": "2026-10-01T00:00:00.5266812Z"
+        }
+      },
+      "venue": "binance-futures"
+    }
+  ],
+  "target_utc_day": "2026-10-01"
+}

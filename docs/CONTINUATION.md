@@ -1,5 +1,17 @@
 # Continue Development
 
+November 9 [funding versus term premium](review/2026-11-09/funding-term-premium/review.md):
+retained metadata identifies four BTC/ETH dated-contract candidates spanning the
+fixed research day; no quote/file/unit/margin equivalence is admitted. Six source-
+local snapshot delays are now exact, about 0.49–2.32 seconds; cross-collector clock
+comparability remains unknown. The research memo derives the conditional dated/
+perpetual cash identity and its term-premium, terminal-basis and capital hurdles.
+This is an existing-carry variant, not another accepted mechanism or account-gate
+exception. A new primary-page attempt failed HTTP 429; its second page is forbidden.
+No aliases, market values, financial replay, fit or account/order access. Counts
+stay 203/65/37/0. Reuse receipts and qualify contract/cost/clock/role evidence before
+any new paired study. No push; goal active.
+
 November 9 [snapshot availability](review/2026-11-09/snapshot-availability/review.md):
 local capture v4 records post-validation receipt nanoseconds; coordinator and
 shadow replay keep warmup moving while blocking earlier/tied inference and
