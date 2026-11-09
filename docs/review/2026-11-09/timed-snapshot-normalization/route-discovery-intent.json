@@ -1,0 +1,15 @@
+{
+  "domains": [
+    "developers.binance.com"
+  ],
+  "financial_observations_added": 0,
+  "frozen_at_utc": "2026-11-09T17:13:09.608742+00:00",
+  "maximum_search_calls": 1,
+  "previous_discovery_preserved": true,
+  "query": "\"fapi/v1/depth\"",
+  "question": "The first field-name search returned only wrong-product COIN-M/Options pages. Locate the official current USD-M REST documentation route using the exact fapi/v1/depth endpoint and a domain filter, without inferring field semantics from another product.",
+  "schema": "exact-endpoint-document-route-discovery-v1",
+  "selection": "At most one official REST documentation URL whose discovered scope is USD-M and fapi/v1/depth. A separate Crawl4AI gate is mandatory for content. No aliases of the consumed WebSocket documents, market API or account access.",
+  "sha256": "a3285b71df35ad797e1d3368f9bfa55b5e2042897bf4a21e6542e3343eb4eb58",
+  "supersedes": null
+}

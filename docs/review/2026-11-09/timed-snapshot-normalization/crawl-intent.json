@@ -1,0 +1,25 @@
+{
+  "admission": "Native success, final HTTP 200, substantive Markdown >=600 characters, no challenge, and manually verified response scope for fapi/v1/depth. Allow only same-publisher canonical REST child/catalog redirects. dapi/eapi or mere change-log mentions cannot qualify fapi field semantics. Timestamp units require explicit evidence, not example digit length.",
+  "base_revision": "969b06d912dbe15da742171225a7cff12b2dd09c",
+  "budget": {
+    "navigations": 1,
+    "owned_process_timeout_seconds": 150,
+    "page_timeout_ms": 45000,
+    "robots_checked": true
+  },
+  "controller_sha256": "d01284eb3f034ae1bde927f40326b673517a74dfdec592e2c9e8e4678f789fbd",
+  "forbidden": "No old-document alias retry, sibling navigation, alternative reader, external LLM/profile/stealth, market or account API, credentials, orders, economic evaluation or protected partial-data access.",
+  "frozen_at_utc": "2026-11-09T17:30:21.638349+00:00",
+  "new_economic_observations": 0,
+  "preflight": "Actual isolated provider CLI, version, owned child containment and output fsync passed. No new installation or source navigation.",
+  "provider": {
+    "lock_sha256": "60dca0cb2b1e1aafc131ca2758a7f75d60dae2fe413455796cc611c6690dbef1",
+    "provider_version": "0.9.5+flitzzip.portable2",
+    "tool_sha256": "0de1dff8963dbaef5257553ba5af09eef19a7ad58c9b6cdbfe9df0aba6ee1657"
+  },
+  "question": "Qualify the REST snapshot E/T fields for the native HftBacktest timed-snapshot input. This is distinct from the consumed Spot stream guide and forbidden USD-M local-book guide.",
+  "schema": "usd-m-rest-snapshot-timestamp-doc-v1",
+  "selection": "Explicit legacy USD-M REST document-route candidate, existence and current scope unproven. Both discovery attempts returned wrong-product/change-log pages, retained without source admission; no cross-product field equivalence is inferred.",
+  "sha256": "edda2371db06697a88cf3e0c1ada1b4b4cee89431e914147a9f4622b0b780f0c",
+  "url": "https://developers.binance.com/docs/derivatives/usds-margined-futures/market-data/rest-api/Order-Book"
+}

@@ -356,7 +356,7 @@ def test_model_readiness_requires_substantial_hftbacktest_evidence_for_live_prom
         "immutable_market_data": True,
         "engine": "hftbacktest",
         "engine_version": "2.4.4",
-        "schema_version": "binance-usdm-l2-v3",
+        "schema_version": "binance-usdm-l2-v4",
         "symbol": "BTCUSDC",
         "queue_model": "risk_adverse_queue_model",
         "latency_model": "empirical_feed_and_order_latency",
@@ -378,6 +378,28 @@ def test_model_readiness_requires_substantial_hftbacktest_evidence_for_live_prom
 
     assert report.allowed is True
     assert any(check.label == "microstructure replay" and check.status == "ok" for check in report.checks)
+
+    evidence = model.execution_validation["microstructure_replay"]
+    evidence["strategy_replay_passed"] = False
+    smoke_only = build_model_readiness_report(
+        model, require_microstructure_evidence=True, expected_symbol="BTCUSDC"
+    )
+    assert not smoke_only.allowed
+    assert any(
+        check.label == "microstructure replay" and "strategy_replay_passed=false" in check.detail
+        for check in smoke_only.checks
+    )
+    evidence["strategy_replay_passed"] = True
+    evidence["schema_version"] = "binance-usdm-l2-v3"
+    legacy = build_model_readiness_report(
+        model, require_microstructure_evidence=True, expected_symbol="BTCUSDC"
+    )
+    assert not legacy.allowed
+    assert any(
+        check.label == "microstructure replay" and "schema=" in check.detail
+        for check in legacy.checks
+    )
+    evidence["schema_version"] = "binance-usdm-l2-v4"
 
     model.execution_validation["microstructure_replay"]["captured_seconds"] = 6
     failed = build_model_readiness_report(

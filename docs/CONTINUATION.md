@@ -1,5 +1,26 @@
 # Continue Development
 
+November 9 [timed HftBacktest initialization](review/2026-11-09/timed-snapshot-normalization/review.md):
+native synthetic integration proves the former static snapshot leaked prices
+before receipt. Normalization now emits timed snapshot events and snapshot-gated
+buffered messages, preserves raw bytes, checks exact identities/clocks/sequence,
+and rejects static initial state or end-of-file clock steps in the smoke check.
+64 capture/normalization and 20 readiness checks pass in overlapping focused
+lanes; a stale v3 fixture was corrected while retaining rejection of v3 and
+smoke-only promotion. No green full-suite claim. The REST documentation attempt
+returned 302/202 with empty extraction and remains rejected/consumed. Declared
+units/clock estimates, third-party historical normalization and native strategy
+economics remain unqualified. No fit, economic observation, account/order access
+or protected partial-data use; counts 203/65/37/0. Continue eligible paired cash/
+cost qualification, not repeated checks or consumed source requests. Goal active.
+
+Publication readback for `969b06d912dbe15da742171225a7cff12b2dd09c` confirmed all
+17 audited Dependabot alerts fixed, zero open alerts/PRs and no public releases/
+tags at 16:57 UTC. Historical cleanup preserved every exported tree; normal
+commits use only the official connector's assigned identity. Temporary-directory
+removal was blocked by automatic review; files were retained, no cleanup worker
+started. Do not bypass that rejection or disturb unrelated host tasks.
+
 November 9 [dependency and publication refresh](review/2026-11-09/dependencies/review.md):
 the new lock resolves the 17 audited Dependabot findings above their patched
 versions, with explicit numerical/SDK compatibility bounds. Isolated automatic

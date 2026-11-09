@@ -21,6 +21,13 @@ from typing import Callable, Mapping, Sequence
 import requests
 
 from .assets import is_supported_major_symbol, normalize_symbol
+from .microstructure_normalization import TimedNormalization, normalize_capture
+from .microstructure_validation import (
+    depth_update_ids as _depth_update_ids,
+    positive_native_integer as _positive_native_integer,
+    nonnegative_native_integer,
+    validate_price_levels as _validate_price_levels,
+)
 
 
 BINANCE_FUTURES_REST_URL = "https://fapi.binance.com"
@@ -85,6 +92,7 @@ class SymbolMicrostructureEvidence:
     replay_first_ask: float | None
     error: str = ""
     snapshot_received_at_ns: int | None = None
+    normalization: Mapping[str, object] | None = None
 
     def asdict(self) -> dict[str, object]:
         return asdict(self)
@@ -381,40 +389,6 @@ def _fetch_depth_snapshot(
     return payload
 
 
-def _positive_native_integer(value: object, field: str) -> int:
-    """Keep native clock and sequence identities exact instead of coercing them."""
-    if type(value) is not int or value <= 0:
-        raise ValueError(f"{field} must be a positive native integer")
-    return value
-
-
-def _depth_update_ids(data: Mapping[str, object]) -> tuple[int, int, int]:
-    first = _positive_native_integer(data.get("U"), "U")
-    final = _positive_native_integer(data.get("u"), "u")
-    previous = _positive_native_integer(data.get("pu"), "pu")
-    if final < first:
-        raise ValueError("invalid depth update identifiers")
-    return first, final, previous
-
-
-def _validate_price_levels(levels: object) -> int:
-    if not isinstance(levels, list):
-        raise ValueError("depth levels must be a list")
-    for level in levels:
-        if not isinstance(level, list) or len(level) < 2:
-            raise ValueError("invalid depth level")
-        price = float(level[0])
-        quantity = float(level[1])
-        if (
-            not math.isfinite(price)
-            or price <= 0.0
-            or not math.isfinite(quantity)
-            or quantity < 0.0
-        ):
-            raise ValueError("non-finite or negative depth level")
-    return len(levels)
-
-
 def _observe_event(
     stats: _MutableSymbolStats,
     data: Mapping[str, object],
@@ -669,7 +643,9 @@ def _prepare_hftbacktest_input(source_path: Path, output_path: Path) -> int:
             if isinstance(data, Mapping) and str(data.get("e", "")) == "aggTrade":
                 normalized_data = dict(data)
                 normalized_data["e"] = "trade"
-                normalized_data["t"] = int(data["a"])
+                normalized_data["t"] = nonnegative_native_integer(
+                    data["a"], "aggregate trade ID"
+                )
                 normalized_data["X"] = "MARKET"
                 if payload is data:
                     normalized_payload: dict[str, object] = normalized_data
@@ -693,35 +669,19 @@ def _convert_to_hftbacktest(
     snapshot_path: Path,
     snapshot_payload: Mapping[str, object],
     *,
-    row_estimate: int,
-) -> int:
-    try:
-        import numpy as np
-        from hftbacktest.data.utils import binancefutures
-    except (
-        ImportError
-    ) as exc:  # pragma: no cover - exercised by dependency readiness checks
-        raise RuntimeError(
-            "hftbacktest is required for normalized L2 replay data"
-        ) from exc
-    snapshot = _initial_snapshot_array(snapshot_payload)
-    np.savez_compressed(snapshot_path, data=snapshot)
-    buffer_size = max(10_000, int(max(1, row_estimate) * 1.15) + 10_000)
-    converter_input = synchronized_path.with_name(
-        synchronized_path.name.removesuffix(".jsonl.gz") + ".hft-input.jsonl.gz"
+    symbol: str,
+    snapshot_received_at_ns: int,
+    clock_offset_ms: float,
+) -> TimedNormalization:
+    return normalize_capture(
+        synchronized_path,
+        normalized_path,
+        snapshot_path,
+        snapshot_payload,
+        symbol=symbol,
+        snapshot_received_at_ns=snapshot_received_at_ns,
+        clock_offset_ms=clock_offset_ms,
     )
-    _prepare_hftbacktest_input(synchronized_path, converter_input)
-    try:
-        converted = binancefutures.convert(
-            str(converter_input),
-            output_filename=str(normalized_path),
-            opt="t",
-            combined_stream=True,
-            buffer_size=buffer_size,
-        )
-    finally:
-        converter_input.unlink(missing_ok=True)
-    return int(len(converted))
 
 
 def _replay_smoke(
@@ -730,17 +690,21 @@ def _replay_smoke(
     *,
     tick_size: float,
     lot_size: float,
+    normalization: TimedNormalization,
 ) -> tuple[bool, float | None, float | None]:
     try:
+        import numpy as np
         from hftbacktest import BacktestAsset, HashMapMarketDepthBacktest
     except ImportError as exc:  # pragma: no cover
         raise RuntimeError("hftbacktest is required for L2 replay validation") from exc
+    with np.load(snapshot_path, allow_pickle=False) as archive:
+        if len(archive["data"]) != 0:
+            raise ValueError("timed replay forbids a static initial snapshot")
     asset = (
         BacktestAsset()
         .data([str(normalized_path)])
-        .initial_snapshot(str(snapshot_path))
         .linear_asset(1.0)
-        .constant_latency(10_000_000, 10_000_000)
+        .constant_order_latency(10_000_000, 10_000_000)
         .risk_adverse_queue_model()
         .no_partial_fill_exchange()
         .trading_value_fee_model(0.0002, 0.0005)
@@ -750,7 +714,13 @@ def _replay_smoke(
     )
     replay = HashMapMarketDepthBacktest([asset])
     try:
-        replay.elapse(1_000_000_000)
+        if replay.elapse(0) != 0:
+            return False, None, None
+        target = normalization.snapshot_available_at_ns + 1
+        if replay.elapse(max(0, target - int(replay.current_timestamp))) != 0:
+            return False, None, None
+        if int(replay.current_timestamp) < target:
+            return False, None, None
         depth = replay.depth(0)
         bid = float(depth.best_bid)
         ask = float(depth.best_ask)
@@ -989,6 +959,7 @@ def capture_binance_futures_microstructure(
         replay_passed = False
         replay_bid: float | None = None
         replay_ask: float | None = None
+        normalization: TimedNormalization | None = None
         snapshot = snapshots.get(symbol)
         tick_size, lot_size = filters.get(symbol, (0.0, 0.0))
         if stats[symbol].raw_messages <= 0:
@@ -1011,24 +982,30 @@ def capture_binance_futures_microstructure(
             item_errors.append(f"invalid_events:{stats[symbol].invalid_event_count}")
         if snapshot is not None and stats[symbol].raw_messages > 0:
             try:
-                synchronized_messages, row_estimate = _synchronize_raw_capture(
+                synchronized_messages, _ = _synchronize_raw_capture(
                     raw_paths[symbol],
                     synchronized_paths[symbol],
                     snapshot_last_update_id=int(snapshot["lastUpdateId"]),
                 )
                 if convert:
-                    normalized_rows = _convert_to_hftbacktest(
+                    normalization = _convert_to_hftbacktest(
                         synchronized_paths[symbol],
                         normalized_paths[symbol],
                         initial_snapshot_paths[symbol],
                         snapshot,
-                        row_estimate=row_estimate,
+                        symbol=symbol,
+                        snapshot_received_at_ns=_positive_native_integer(
+                            snapshot_receipts.get(symbol), "snapshot receipt"
+                        ),
+                        clock_offset_ms=clock_sync.offset_ms if clock_sync else 0.0,
                     )
+                    normalized_rows = normalization.normalized_rows
                     replay_passed, replay_bid, replay_ask = _replay_smoke(
                         normalized_paths[symbol],
                         initial_snapshot_paths[symbol],
                         tick_size=tick_size,
                         lot_size=lot_size,
+                        normalization=normalization,
                     )
                     if not replay_passed:
                         item_errors.append("hftbacktest_replay_smoke_failed")
@@ -1097,6 +1074,7 @@ def capture_binance_futures_microstructure(
                 replay_first_ask=replay_ask,
                 error="; ".join(item_errors),
                 snapshot_received_at_ns=snapshot_receipts.get(symbol),
+                normalization=normalization.asdict() if normalization else None,
             )
         )
     if clock_sync is None:

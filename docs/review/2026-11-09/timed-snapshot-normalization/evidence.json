@@ -1,0 +1,76 @@
+{
+  "base_revision": "969b06d912dbe15da742171225a7cff12b2dd09c",
+  "classification": "Synthetic native-engine causality validation; no financial, clock-source or historical-data admission",
+  "documentation": {
+    "admitted": false,
+    "native_sha256": "d11f70d09347093d90aeaf5389204776a24affa3c1f662e7488fbedcedef91f3",
+    "native_success": true,
+    "raw_markdown_characters": 1,
+    "reason": "Empty extracted content does not meet final-200 and substantive-content contract. No retry or substitute reader permitted.",
+    "redirected_status_code": 202,
+    "redirected_url": "https://developers.binance.com/en/docs/catalog/core-trading-derivatives-trading-usd-s-m-futures/api/rest-api/market-data#order-book",
+    "source_facts_qualified": false,
+    "status_code": 302,
+    "substantive_characters": 0,
+    "url": "https://developers.binance.com/docs/derivatives/usds-margined-futures/market-data/rest-api/Order-Book"
+  },
+  "economic_observations": 0,
+  "financial_counts": {
+    "hypotheses": 65,
+    "observations": 203,
+    "qualified_stable_edges": 0,
+    "scoped_mechanisms": 37
+  },
+  "fit_runs": 0,
+  "focused_verification": {
+    "focused-tests": {
+      "errors": 0,
+      "failures": 1,
+      "sha256": "2b4f0643c3e8933382281de218f0bfa198e01404caaa20b9243c8fe7ffd09197",
+      "skipped": 0,
+      "tests": 116
+    },
+    "normalizer-recheck": {
+      "errors": 0,
+      "failures": 0,
+      "sha256": "2003939d18ab6fa6e3a04a44a25c18b01c3c074e2567bbe1f54c3ec01d481b55",
+      "skipped": 0,
+      "tests": 64
+    },
+    "readiness-recheck": {
+      "errors": 0,
+      "failures": 0,
+      "sha256": "1917cd132712bb7c2a02390ff29a90081c9ff5a19c4069b5fb0fd5c1055de0dd",
+      "skipped": 0,
+      "tests": 20
+    }
+  },
+  "historical_result_bytes_changed": false,
+  "limitations": [
+    "Declared milliseconds and receipt-clock estimate are conditional adapter inputs, not independent publisher qualification.",
+    "Aggregate L2 cannot establish actual passive fills.",
+    "A replay smoke check does not establish strategy execution or profitability.",
+    "Third-party historical normalization, complete financing/cost/capital evidence and native paired strategy replay remain unqualified."
+  ],
+  "native_engine_probe": {
+    "end_of_file_is_not_a_valid_clock_step": true,
+    "sha256": "e564305e0518877485ac3e0264ee4df80e10793ba45085dcadb464a986a9c344",
+    "static_initial_book_visible_before_receipt": true,
+    "timed_stream_book_unavailable_before_receipt": true,
+    "version": "2.4.4"
+  },
+  "orders": 0,
+  "protected_partial_data_access": false,
+  "schema": "timed-hftbacktest-snapshot-technical-review-v1",
+  "semantic_search_receipt_sha256": "fdb6bf5f62d229493ac236dfac29d8adf2bc4eb7dafd1a57a91a17cc2885d37e",
+  "source_binding": "Canonical Git index blob bytes; unchanged source uses the current tracked blob. Evidence does not hash itself.",
+  "source_sha256": {
+    "docs/RESEARCH_CAPTURE_BOUNDARIES.md": "f971726268ba2e630b2ebbe8d5bcf02f7b3f23b92ccb16efe23aef82cebe950f",
+    "src/simple_ai_trading/microstructure_data.py": "dd6256076fe1fe7a45ce81467dc4791e93a1d7d1d28d35fd27b3f985e75aa777",
+    "src/simple_ai_trading/microstructure_normalization.py": "08752f5f299b3613b9f899eb37d558fb3fc7bc882dc89bdb353b524c9a0400c5",
+    "src/simple_ai_trading/microstructure_validation.py": "f1ca5fd2cc0a93ee92bfdb83c35db478c137ad33766cc185aac212981256baf9",
+    "tests/test_microstructure_data.py": "9d97bda22329b2cdc41e07b13a8bb8a4d3dc72c982db0346a291bce47408d5e1",
+    "tests/test_microstructure_normalization.py": "b8b2b015cca2d83a621a4479e9d7d2450883cbc92708596509ead9b9bb0a0051",
+    "tests/test_model_readiness.py": "557dc0eb068303cdceff9f9b2d99164ad5c59df94b9f6e20782ddb21ec67a03c"
+  }
+}

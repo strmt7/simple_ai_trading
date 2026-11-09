@@ -6,6 +6,13 @@ packages above the reported patched versions: Tornado 6.6, filelock 4.2.9,
 msgpack 1.2.4 and setuptools 84.2.1. This is a local remediation result;
 hosted closure requires publication and GitHub's subsequent evaluation.
 
+Subsequent API readback at 16:57 UTC for published commit
+`969b06d912dbe15da742171225a7cff12b2dd09c` confirmed all 17 alerts fixed and zero
+open Dependabot alerts. The five superseded dependency PRs (#24, #23, #22, #18,
+#17) were closed. The leased historical rewrite and connector-created development
+commit were published with exact tree/attribution verification. This closes the
+audited dependency alerts, not every hosted code-quality finding or release gate.
+
 The lock upgrades the scientific, SDK, test and build stack together. Current
 direct pins include DuckDB 2.0.0, Numba 0.68.1, Torch 2.15.0,
 polymarket-client 0.17.0, py-clob-client-v2 1.2.1, huggingface_hub 2.4.0,

@@ -10,6 +10,16 @@ Scope blockers to their branch; a fresh user resumption resets the blocked audit
 
 ## Current Truth
 
+November 9 [timed native replay](review/2026-11-09/timed-snapshot-normalization/review.md):
+the actual HftBacktest engine exposed a static initial book before receipt.
+New normalization seeds a timed stream, gates buffered updates and rejects clock/
+identity/sequence defects; end-of-file cannot pass the smoke check. Final focused
+lanes pass 64 capture/normalization and 20 readiness checks. This is synthetic
+causality validation, not historical clock, strategy or edge admission. The REST
+documentation crawl ended 302/202/empty and is consumed; no alias retry. Counts
+203/65/37/0. Preserve protected boundaries; prioritize eligible paired cash/cost
+qualification before fits. Goal active; no persistent worker or release.
+
 November 9 [dependency/publication refresh](review/2026-11-09/dependencies/review.md):
 new locks and isolated installation address the audited advisories; the full
 suite still has unresolved historical/application checks. Use official GitHub

@@ -1,0 +1,16 @@
+{
+  "admission": "Discovery only. No source fact from snippets. Selected page needs a separately frozen reviewed Crawl4AI extraction; preserve denial and prohibit alias retries.",
+  "base_revision": "969b06d912dbe15da742171225a7cff12b2dd09c",
+  "financial_observations_added": 0,
+  "forbidden": "No failed-document retry, WebSocket-guide alias, economic values, market/account API, credential, order, model fit or protected partial-data access.",
+  "frozen_at_utc": "2026-11-09T17:11:47.779295+00:00",
+  "maximum_queries": 1,
+  "maximum_search_calls": 1,
+  "maximum_selected_primary_pages": 1,
+  "queries": [
+    "site:developers.binance.com/docs/derivatives/usds-margined-futures \"Order Book\" \"Transaction time\""
+  ],
+  "question": "Locate the distinct official USD-M REST order-book response documentation to establish snapshot E/T field meaning; this is not the consumed Spot WebSocket page or its forbidden USD-M local-book follow-up.",
+  "schema": "snapshot-time-source-discovery-v1",
+  "sha256": "fbdc94473d04a9b17e4566029225736d9cf27703f02659111bf142867151dad5"
+}
