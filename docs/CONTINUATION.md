@@ -1,5 +1,22 @@
 # Continue Development
 
+November 9 closing checkpoint: commit and pause at the user's request. The
+[future NFL test](review/2026-11-09/nfl-nov10-total-floor/review.md) returned 21
+eligible totals, 210 price-complete pairs and zero sub-floor candidates. Best
+conditional one-unit floor cost: 1.04 before fees; no accepted edge. All three
+returned events and the entire November 10 window are terminal/consumed. Do not
+refetch, reprice, repair, choose a sibling or request books/fees for this population.
+Counts: 203 observations / 65 hypotheses / 37 scoped mechanisms / 0 qualified
+stable edges; the 210 dependent pairs count as one observation. No new fit,
+account, credential, order or funds access. On explicit resumption, prefer a
+different informative structural question, qualified financing/collateral and
+complete paired cash over another daily repeat of the same floor screen.
+The [restart repair](review/2026-11-09/cocoindex-header-repair.md) migrates only
+the owned legacy CP1252 stock comment. No model/settings values, package pin,
+other-repo registration or historical results changed. No persistence may be
+installed or left behind. Current hosted critical dependency count was checked
+as zero after the preceding published dependency repair; other findings remain.
+
 November 9 source/security checkpoint: one bounded official-change discovery
 and one terminal [RWUSD source check](review/2026-11-09/structural-change-discovery/review.md)
 admitted no current terms or economic trigger. No retry/alias and no market,

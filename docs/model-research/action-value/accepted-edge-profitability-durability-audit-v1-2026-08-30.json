@@ -158,7 +158,7 @@
       "why_not_stable_deployable": "Current rate remains conflict-qualified rather than proven, the evidence is from public wallets rather than the owned account, every external friction and best alternative is not bound, and future persistence is not guaranteed."
     }
   },
-  "result_sha256": "cddcd608f7aefe758fea7e4e8a4991b36b3752d5050865f70ed949ccc3078d38",
+  "result_sha256": "55b566da2a3073ba3cf76c56327e50d27479c2f6495b79b922bac11b3e8a5f4d",
   "routing": {
     "october8_9_nfl_total_ladder_resource_failure": {
       "status": "terminal_resource_unqualified_no_price_evaluation",
@@ -279,13 +279,39 @@
       "result_sha256": "cb855483afdb1cd8fa23e13f40d806403ae56470611186b516fb233631cd0ec3",
       "status": "New deployment proved; all 553 price-complete compatible spread/total ladders rejected before fees. Exact event consumed; no book request.",
       "scope": "Session-only new-deployment exception; preserve old empty catalog and other capture gates."
+    },
+    "november10_nfl_total_pair_rejection": {
+      "status": "terminal_complete_gross_floor_rejection",
+      "contract_path": "docs/review/2026-11-09/nfl-nov10-total-floor/contract.json",
+      "contract_sha256": "1d7b3a8160965b9c7fda8626228bcbab1a0a43fd1a541458ec2316a549736bab",
+      "result_path": "docs/review/2026-11-09/nfl-nov10-total-floor/result.json",
+      "result_sha256": "db4d6fd9e9c478d070f9d5410de52f5b987f1c48cb188d26be201c4b0c008922",
+      "window_minimum": "2026-11-10T00:00:00Z",
+      "window_maximum": "2026-11-10T23:59:59Z",
+      "response_sha256": "34c9c9cbb09c878229b455d019b230c579433a5114c94dd6dd2197a9085ab592",
+      "returned_events_consumed": [
+        "nfl-buf-min-2026-11-10",
+        "nfl-buf-min-2026-11-10-player-props",
+        "nfl-buf-min-2026-11-10-first-td-scorer"
+      ],
+      "selected_event": "nfl-buf-min-2026-11-10",
+      "eligible_total_count": 21,
+      "relation_count": 210,
+      "price_complete_count": 210,
+      "strict_sub_floor_count": 0,
+      "best_conditional_floor_cost": "1.04",
+      "conditional_floor": "1",
+      "accepted_edge": false,
+      "book_requests": 0,
+      "fee_requests": 0,
+      "retry_rule": "Do not refetch, reprice, repair or book-capture this entire window or any returned sibling. This is a scoped gross-floor rejection, not family-wide impossibility or a guarantee about future states."
     }
   },
   "schema_version": "accepted-edge-profitability-durability-audit-v1",
   "source_binding": {
     "accepted_edge_count": 37,
     "registry_path": "docs/model-research/structural-edge-priority-registry-v1.json",
-    "registry_result_sha256": "91cbf72283d724a9f493f28edeb0c73fd6b73d85dbc9f5201427fddd32550bd1"
+    "registry_result_sha256": "a855fe50efb4c0909b5657f97f2fc30497dc21254f29d8ec670ec8bcfcf0bbf3"
   },
-  "updated_at_utc": "2026-10-07T15:40:15Z"
+  "updated_at_utc": "2026-11-09T08:53:08Z"
 }

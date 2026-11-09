@@ -1,0 +1,96 @@
+{
+  "schema_version": "public-source-capture-contract-v1",
+  "frozen_at_utc": "2026-11-09T08:48:30Z",
+  "contract_path": "docs/review/2026-11-09/nfl-nov10-total-floor/contract.json",
+  "request_name": "distinct_future_nfl_november10_complete_total_pair_rejection",
+  "request": {
+    "method": "GET",
+    "url": "https://gamma-api.polymarket.com/events/keyset?limit=50&order=startTime&ascending=true&closed=false&start_time_min=2026-11-10T00%3A00%3A00Z&start_time_max=2026-11-10T23%3A59%3A59Z&series_id=12185",
+    "count": 1,
+    "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "response_byte_ceiling": 52428800,
+  "byte_ceiling_basis": "One 50-event native response, bounded at 50 MiB; no formatting-dependent per-event serialization bound. Prior distinct deployment had 328 markets and 42 totals. The eligible computation cap is 128 full-game totals/8128 unordered pairs; unrelated props are not payoff states. No adaptive increase, pagination or retry.",
+  "required_utf8_phrases": [
+    "\"events\""
+  ],
+  "outputs": {
+    "raw_path": "docs/review/2026-11-09/nfl-nov10-total-floor/events.raw",
+    "journal_path": "docs/review/2026-11-09/nfl-nov10-total-floor/request-journal.jsonl",
+    "result_path": "docs/review/2026-11-09/nfl-nov10-total-floor/capture.json"
+  },
+  "screen_outputs": {
+    "result_path": "docs/review/2026-11-09/nfl-nov10-total-floor/result.json",
+    "journal_path": "docs/review/2026-11-09/nfl-nov10-total-floor/screen-journal.jsonl"
+  },
+  "authority": {
+    "account_requests": 0,
+    "credentials_used": false,
+    "funds_used": false,
+    "orders_or_transactions": 0,
+    "protected_capture_touched": false,
+    "public_unauthenticated_read_only_requests": 1,
+    "signed_requests": 0,
+    "trading_authority": false
+  },
+  "transport": {
+    "socket_timeout_seconds": 10,
+    "read_budget_seconds": 30,
+    "redirects": false,
+    "retries": 0,
+    "proxies": false
+  },
+  "implementations": [
+    {
+      "path": "tools/screen_future_nfl_pair_ladders.py",
+      "sha256": "9f161c5b79659c1d41aca4f50429f6ee8aba0c363752475064402b5c50234e9c"
+    },
+    {
+      "path": "tools/screen_future_nfl_payoff_floor.py",
+      "sha256": "119d6a8d834e281b1e30ee8c0bb254285ba24f9ad949350c7c1c1f096361d21c"
+    },
+    {
+      "path": "tools/capture_public_source_bounded.py",
+      "sha256": "760339a7602abfa9eb97f3f1cca0ef79191b07ff5f5aa42515f30f191f9888fc"
+    },
+    {
+      "path": "tools/capture_public_source_contract.py",
+      "sha256": "9dbb14651455abade755fe96091b9eaafe1153f56a1baad4cd60b1a888d41b8c"
+    },
+    {
+      "path": "tools/adjudicate_polymarket_exact_mlb_monotone_prefilter.py",
+      "sha256": "958a44d78029b9a1eb69a3771ce18e53ac1ed3c7bc161c8e4318beedce2cf99f"
+    },
+    {
+      "path": "tools/adjudicate_polymarket_nfl_catalog_side_specific.py",
+      "sha256": "fadc60b24861405093c3c3d4fda8c897153fa980f373cc2fad4e783f724fbceb"
+    },
+    {
+      "path": "tools/screen_polymarket_exact_two_leg_package.py",
+      "sha256": "374fcc3c3485c466b4929a91256450bdc7db70f93ef4c6bda627e05fe8938327"
+    },
+    {
+      "path": "tools/screen_polymarket_mlb_cross_period_catalog.py",
+      "sha256": "a916790e7e0320089b9f76c49aff43c072312f24599de351820d3fb872e6eddd"
+    }
+  ],
+  "screen": {
+    "event_limit": 50,
+    "eligible_total_limit": 128,
+    "series_id": "12185",
+    "selection": "earliest_native_full_game_start_slug_id_before_prices",
+    "evaluation": "all_unordered_total_pairs_with_unchanged_complete_rule_validator"
+  },
+  "window": {
+    "minimum": "2026-11-10T00:00:00Z",
+    "maximum": "2026-11-10T23:59:59Z"
+  },
+  "hypothesis_rank": 30,
+  "capture_boundaries_sha256": "f971726268ba2e630b2ebbe8d5bcf02f7b3f23b92ccb16efe23aef82cebe950f",
+  "question": "Does the earliest deployed full-game NFL event in this distinct future native population have a complete shared-rule total ladder with a strictly sub-floor selected-side acquisition proxy?",
+  "selection": "Full-game native NFL slug only, earliest (startTime,slug,id) before prices. Exhaust every unordered active-total pair with the unchanged complete resolver/asset validator; no later event or sibling after a failure. outcomePrices are never used. Zero quotes are incomplete, not free inventory.",
+  "interpretation": "Conditional common-rule one-unit payoff floor only; Gamma can reject, never accept. Oracle/collateral identity, current fees, synchronized depth, every leg fill/cost and independent recurrence remain unqualified. No book/fee/account/order authority even on a positive proxy.",
+  "retry_rule": "This exact November10 native scope and all returned events become consumed. Failure including resource/schema/transport is terminal: no refetch, alias, repaired row, candidate substitution or budget increase. Preserve the old October8-9 failure and all earlier populations unchanged.",
+  "accepted_edge": false,
+  "contract_sha256": "1d7b3a8160965b9c7fda8626228bcbab1a0a43fd1a541458ec2316a549736bab"
+}

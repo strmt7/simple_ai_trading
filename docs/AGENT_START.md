@@ -10,6 +10,15 @@ Scope blockers to their branch; a fresh user resumption resets the blocked audit
 
 ## Current Truth
 
+November 9 closing checkpoint: the [one-use future NFL screen](review/2026-11-09/nfl-nov10-total-floor/review.md)
+evaluated 210 complete total-ladder pairs; none was strictly below its conditional
+one-unit payout floor. The best acquisition proxy was 1.04 before fees. All three
+returned events and the entire November 10 window are consumed; no book/fee
+requests or retries. Counts are now 203 observations / 65 hypotheses / 37 scoped
+mechanisms / 0 qualified stable edges. The [search restart repair](review/2026-11-09/cocoindex-header-repair.md)
+preserves configuration values and restores actual source-bound queries. Wrap up
+and pause as requested; do not install or leave recurring/background work.
+
 November 9 dependency/source checkpoint: certifi is now locked at 2026.10.23
 and Pillow at 13.0.0, with patched floors for ordinary pip and both optional
 image paths. 57 focused checks pass, including actual TLS trust and image/chart

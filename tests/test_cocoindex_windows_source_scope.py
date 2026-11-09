@@ -536,3 +536,129 @@ def test_benchmark_rejects_malformed_optional_filters(tmp_path, field, value):
     )
     with pytest.raises(RuntimeError, match=field):
         adapter.load_benchmark_cases(fixture)
+
+
+@pytest.mark.parametrize("newline", [b"\n", b"\r\n"])
+def test_legacy_header_migration_preserves_every_configuration_byte(tmp_path, newline):
+    context = adapter.CocoIndexContext(
+        tmp_path, tmp_path / "cache", tmp_path / "mirror", "a" * 32
+    )
+    path = context.settings_dir / "global_settings.yml"
+    path.parent.mkdir(parents=True)
+    body = b"embedding:" + newline + b"  model: local-model" + newline
+    original = b"# CocoIndex Code \x97 global settings." + newline + body
+    path.write_bytes(original)
+    assert adapter.migrate_legacy_global_settings_header(context)
+    assert (
+        path.read_bytes()
+        == "# CocoIndex Code — global settings.".encode() + newline + body
+    )
+    assert not adapter.migrate_legacy_global_settings_header(context)
+    records = list((context.artifact_root / "receipts").glob("settings-header-*.json"))
+    assert len(records) == 1
+    record = json.loads(records[0].read_text())
+    assert record["status"] == "complete"
+    assert not record["configuration_values_in_receipt"]
+    assert "local-model" not in records[0].read_text()
+
+
+@pytest.mark.parametrize(
+    "body",
+    [
+        b"# custom \x97 settings\nmodel: local\n",
+        b"# CocoIndex Code \x97 global settings.\nmodel: \x97\n",
+    ],
+)
+def test_unknown_settings_encoding_is_not_guessed_or_rewritten(tmp_path, body):
+    context = adapter.CocoIndexContext(
+        tmp_path, tmp_path / "cache", tmp_path / "mirror", "a" * 32
+    )
+    path = context.settings_dir / "global_settings.yml"
+    path.parent.mkdir(parents=True)
+    path.write_bytes(body)
+    with pytest.raises(RuntimeError, match="no migration applied"):
+        adapter.migrate_legacy_global_settings_header(context)
+    assert path.read_bytes() == body
+
+
+def test_missing_settings_and_utf8_settings_need_no_migration(tmp_path):
+    context = adapter.CocoIndexContext(
+        tmp_path, tmp_path / "cache", tmp_path / "mirror", "a" * 32
+    )
+    assert not adapter.migrate_legacy_global_settings_header(context)
+    path = context.settings_dir / "global_settings.yml"
+    path.parent.mkdir(parents=True)
+    original = "# CocoIndex Code — global settings.\nembedding: {}\n".encode()
+    path.write_bytes(original)
+    assert not adapter.migrate_legacy_global_settings_header(context)
+    assert path.read_bytes() == original
+
+
+def test_failed_legacy_settings_replacement_keeps_original_and_removes_temp(
+    tmp_path, monkeypatch
+):
+    context = adapter.CocoIndexContext(
+        tmp_path, tmp_path / "cache", tmp_path / "mirror", "a" * 32
+    )
+    path = context.settings_dir / "global_settings.yml"
+    path.parent.mkdir(parents=True)
+    original = b"# CocoIndex Code \x97 global settings.\nembedding: {}\n"
+    path.write_bytes(original)
+    replace = adapter.os.replace
+
+    def reject_target(source, target):
+        if Path(target) == path:
+            raise OSError("replacement refused")
+        return replace(source, target)
+
+    monkeypatch.setattr(adapter.os, "replace", reject_target)
+    with pytest.raises(OSError, match="replacement refused"):
+        adapter.migrate_legacy_global_settings_header(context)
+    assert path.read_bytes() == original
+    assert list(path.parent.iterdir()) == [path]
+
+
+def test_legacy_settings_outside_owned_root_are_never_read(tmp_path):
+    context = mock.Mock(
+        artifact_root=tmp_path / "owned", settings_dir=tmp_path / "foreign"
+    )
+    with pytest.raises(RuntimeError, match="escape the owned artifact root"):
+        adapter.migrate_legacy_global_settings_header(context)
+    assert not (tmp_path / "owned").exists()
+
+
+def test_legacy_settings_symlink_is_rejected(tmp_path, monkeypatch):
+    context = adapter.CocoIndexContext(
+        tmp_path, tmp_path / "cache", tmp_path / "mirror", "a" * 32
+    )
+    path = context.settings_dir / "global_settings.yml"
+    original = Path.is_symlink
+    monkeypatch.setattr(Path, "is_symlink", lambda p: p == path or original(p))
+    with pytest.raises(RuntimeError, match="escape the owned artifact root"):
+        adapter.migrate_legacy_global_settings_header(context)
+
+
+def test_concurrent_settings_edit_is_preserved(tmp_path, monkeypatch):
+    context = adapter.CocoIndexContext(
+        tmp_path, tmp_path / "cache", tmp_path / "mirror", "a" * 32
+    )
+    path = context.settings_dir / "global_settings.yml"
+    path.parent.mkdir(parents=True)
+    path.write_bytes(b"# CocoIndex Code \x97 global settings.\nembedding: {}\n")
+    newer = b"# concurrent UTF-8 edit\nembedding: {}\n"
+    read = Path.read_bytes
+    reads = 0
+
+    def concurrent_read(p):
+        nonlocal reads
+        if p == path:
+            reads += 1
+            if reads == 2:
+                path.write_bytes(newer)
+        return read(p)
+
+    monkeypatch.setattr(Path, "read_bytes", concurrent_read)
+    with pytest.raises(RuntimeError, match="changed during migration"):
+        adapter.migrate_legacy_global_settings_header(context)
+    assert read(path) == newer
+    assert list(path.parent.iterdir()) == [path]

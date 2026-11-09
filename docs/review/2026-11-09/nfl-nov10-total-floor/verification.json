@@ -1,0 +1,21 @@
+{
+  "contract_sha256": "1d7b3a8160965b9c7fda8626228bcbab1a0a43fd1a541458ec2316a549736bab",
+  "implementation_count_verified": 8,
+  "independent_new_observation_count": 1,
+  "new_network_requests": 0,
+  "qualified_stable_edge_count": 0,
+  "raw_sha256": "34c9c9cbb09c878229b455d019b230c579433a5114c94dd6dd2197a9085ab592",
+  "relation_count": 210,
+  "request_completion_count": 1,
+  "request_intent_count": 1,
+  "result_sha256": "db4d6fd9e9c478d070f9d5410de52f5b987f1c48cb188d26be201c4b0c008922",
+  "returned_events_consumed": [
+    "nfl-buf-min-2026-11-10",
+    "nfl-buf-min-2026-11-10-player-props",
+    "nfl-buf-min-2026-11-10-first-td-scorer"
+  ],
+  "screen_completion_count": 1,
+  "screen_intent_count": 1,
+  "status": "passed",
+  "verification_scope": "retained artifact hashes, frozen implementation bytes, two bounded journals, native candidate quote arithmetic and fail-closed authority; no capture or population re-evaluation"
+}

@@ -1465,6 +1465,71 @@ def refresh_reusable_mirror(
         )
 
 
+def migrate_legacy_global_settings_header(context: CocoIndexContext) -> bool:
+    """Migrate only the pinned CLI's CP1252 comment; preserve configuration bytes."""
+    path = context.settings_dir / "global_settings.yml"
+    if (
+        not path.resolve().is_relative_to(context.artifact_root.resolve())
+        or path.is_symlink()
+    ):
+        raise RuntimeError("CocoIndex settings escape the owned artifact root.")
+    with FileLock(lock_path(context.artifact_root, "global-settings")):
+        if not path.is_file():
+            return False
+        original = path.read_bytes()
+        try:
+            original.decode("utf-8")
+        except UnicodeDecodeError:
+            legacy = b"# CocoIndex Code \x97 global settings."
+            first_line, separator, body = original.partition(b"\n")
+            if first_line.rstrip(b"\r") != legacy:
+                raise RuntimeError(
+                    "Unknown CocoIndex settings encoding; no migration applied."
+                ) from None
+            replacement = (
+                first_line.replace(b"\x97", "—".encode("utf-8")) + separator + body
+            )
+            try:
+                replacement.decode("utf-8")
+            except UnicodeDecodeError:
+                raise RuntimeError(
+                    "Non-UTF-8 settings values require explicit review; no migration applied."
+                ) from None
+        else:
+            return False
+        before = hashlib.sha256(original).hexdigest()
+        receipt = context.artifact_root / "receipts" / f"settings-header-{before}.json"
+        record = {
+            "schema": 1,
+            "change": "CP1252 stock comment to UTF-8; remaining bytes unchanged",
+            "before_sha256": before,
+            "after_sha256": hashlib.sha256(replacement).hexdigest(),
+            "original_comment_hex": first_line.hex(),
+            "configuration_values_in_receipt": False,
+            "status": "pending",
+        }
+        atomic_write_text(receipt, json.dumps(record, sort_keys=True) + "\n")
+        temporary: str | None = None
+        try:
+            with tempfile.NamedTemporaryFile(
+                mode="wb", dir=path.parent, delete=False
+            ) as handle:
+                temporary = handle.name
+                handle.write(replacement)
+                handle.flush()
+                os.fsync(handle.fileno())
+            if path.is_symlink() or path.read_bytes() != original:
+                raise RuntimeError("CocoIndex settings changed during migration.")
+            os.replace(temporary, path)
+            temporary = None
+        finally:
+            if temporary is not None:
+                Path(temporary).unlink(missing_ok=True)
+        record["status"] = "complete"
+        atomic_write_text(receipt, json.dumps(record, sort_keys=True) + "\n")
+        return True
+
+
 def ensure_project_initialized(context: CocoIndexContext) -> None:
     """Initialize CocoIndex settings in the mirror, never in the live checkout.
 
@@ -1472,6 +1537,7 @@ def ensure_project_initialized(context: CocoIndexContext) -> None:
     """
     settings_file = context.mirror_repo / ".cocoindex_code" / "settings.yml"
     global_settings_file = context.settings_dir / "global_settings.yml"
+    migrate_legacy_global_settings_header(context)
     if settings_file.exists() and global_settings_file.exists():
         return
     if not global_settings_file.exists():
