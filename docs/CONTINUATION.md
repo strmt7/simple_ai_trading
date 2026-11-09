@@ -1,5 +1,17 @@
 # Continue Development
 
+November 9 [host persistence cleanup](review/2026-11-09/host-lifecycle-incident.md):
+the user resumed the goal but prioritized removing stale background execution.
+Removed 28 Windows tasks and quarantined four external launchers; none was
+recreated, and no legacy capture process remained. Read the incident scope;
+MCP adapters are not capture workers, and their client lifetime must be checked
+separately rather than terminating them by PID. No unattended task installation
+or popup helper windows;
+use bounded owned lifecycles. Concise communication applies to all present and
+future tools. No new economic result, fit or edge qualification this checkpoint.
+Instruction edits require an explicit incremental index refresh before broad
+semantic navigation; none was started solely for this exact-scope cleanup.
+
 October 8 [carry financing checkpoint](review/2026-10-08/carry-financing-research/review.md):
 the user requested this bounded round be wrapped up, committed and paused.
 Crawl4AI retained a substantive HTTP-200 BIS carry summary. An exact post-hoc

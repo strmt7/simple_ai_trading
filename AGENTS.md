@@ -5,6 +5,21 @@ are routing/provenance, not a requirement to dump the entire history on every
 continuation. Follow exact links as needed. Hash-bound evidence and executable contracts
 override prose.
 
+## Communication and resource efficiency
+
+- Be laconic: lead with the outcome, material changes, blockers and next decision.
+  Use normal clear prose; omit repeated plans, status recaps and unnecessary detail.
+- Do not routinely announce, name or explain internal tools or skills, including
+  Crawl4AI, CocoIndex Code, Caveman and any other current or future repository
+  tool. Their required use does not itself require user-facing narration.
+- Explain a tool only when requested, required by higher-priority instructions,
+  or necessary to disclose a material limitation, risk, cost, permission or result.
+  Keep required progress updates, evidence receipts and safety disclosures intact.
+- Spend tokens, time and compute where they change a decision or improve the
+  requested result. Reuse valid evidence, keep searches/output bounded, and rerun
+  only invalidated checks. Prioritize informative financial R&D and demonstrated
+  risk repairs over repetitive testing, speculative tooling or cosmetic churn.
+
 ## September 4 review session interpretation
 
 For the comprehensive review session explicitly resumed on September 4, use
@@ -29,6 +44,16 @@ edge promotion. The contract's budget and terminal stop override this exception
 after its one execution. All other literal retry/protected-capture rules remain.
 
 ## Hard Rules
+
+November 9 explicit user requirement: no unattended development remnants or
+visible helper terminals. Do not install or register recurring tasks, services,
+logon/startup hooks, auto-restarting launchers or app/cloud automations, or leave
+research/capture/training processes running after their authorized session.
+A general goal, "continue", mandatory tool use or background execution is not
+permission for persistence. Helpers must be bounded, silent, session-owned and
+cleaned up on completion, cancellation, parent death and failure. Keep historical
+data/results; never confuse preserving evidence with keeping a launcher active.
+Follow the [host lifecycle and teardown rules](docs/AGENT_WORKFLOWS.md#host-lifecycle-and-teardown).
 
 October 7 user priority: long-term profitability, not expiring campaigns or
 promotional tricks. Follow the clarified WORK_PRIORITIES decision order. Do not

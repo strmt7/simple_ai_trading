@@ -422,6 +422,13 @@ identify its scope without silently rewriting historical contracts or outcomes.
 
 ### Efficient execution and truthful handoff
 
+Default to laconic user-facing responses. Do not narrate routine use of any
+current or future internal tool or skill; required use and retained receipts
+do not imply a tool-by-tool explanation. Mention tools only when requested,
+required by higher-priority instructions, or material to a limitation, risk,
+cost, permission or result. Preserve required progress updates and safety
+disclosures. Prefer useful outcomes and decisions to repeated plans or recaps.
+
 Use focused verification proportional to the change. Do not launch broad CI,
 GPU benchmarks or larger training sets to fill a research wait. Expand training
 only when valid labels, a defined economic comparison and independent evaluation
@@ -434,6 +441,33 @@ failed, what remains unknown, and the next actionable condition. A whole-repo
 review requires content-level coverage, not just inventory/AST parsing. Never
 promise zero mistakes or certify completion from a narrow passing check. Mark
 the overall goal complete only when its full requested end state is proved.
+
+### Host lifecycle and teardown
+
+- Background means non-interactive work within the authorized session, not
+  installation of persistent execution. Do not register Windows scheduled tasks,
+  services, startup/logon entries, cron jobs, app/cloud schedules or auto-restart
+  mechanisms. A future exception requires a new explicit user request specifying
+  the persistent mechanism, duration and teardown; existing generic goals do not.
+- Give temporary helpers a bounded lifetime and retain their original owned OS
+  handles. On Windows start children suspended, assign the owned no-breakaway
+  kill-on-close job before resuming, and use no-window creation for every helper
+  and descendant. Hiding an outer wrapper alone is not sufficient. Never use a
+  worker-reported PID as authority to terminate a process or touch other tasks.
+- Cleanup must execute on normal completion, cancellation, startup failure and
+  parent death. On pause or stop, reconcile task-owned work and leave no capture,
+  training or restart loop behind. Preserve partial evidence without resuming it.
+  On-demand tools must not install unattended jobs to remain available.
+- Check authoritative host state before claiming cleanup: matching scheduled
+  tasks/actions (including encoded actions), services, startup/Run entries,
+  legacy launchers and live owned processes. An empty Codex automation directory,
+  a stale status file or an expired periodic trigger does not establish absence:
+  a separate logon trigger can remain enabled. Keep audits scoped and redact
+  command lines; do not read or modify unrelated tasks or credentials.
+- Remove confirmed project registrations and quarantine legacy executable
+  launchers outside startup paths, with inert filenames and recoverable evidence.
+  Verify zero matching active registrations and capture processes afterward;
+  distinguish host cleanup from proving every historical popup's exact origin.
 
 ## Verification Lanes
 

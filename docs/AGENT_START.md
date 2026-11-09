@@ -10,6 +10,13 @@ Scope blockers to their branch; a fresh user resumption resets the blocked audit
 
 ## Current Truth
 
+November 9 [host lifecycle incident](review/2026-11-09/host-lifecycle-incident.md):
+28 legacy project Windows tasks were removed, including an enabled capture
+supervisor with periodic and logon triggers. Four launchers were quarantined as
+inert text; backups and historical data remain. No legacy capture process was
+running afterward. Do not reinstall persistence from a generic goal or tool
+requirement. User-facing updates are concise, without routine tool narration.
+
 October 8 [carry financing wrap-up](review/2026-10-08/carry-financing-research/review.md):
 the user requested commit and pause. Crawl4AI admitted the BIS primary HTML
 research summary. A post-hoc exact inversion of the retained funding frontier
