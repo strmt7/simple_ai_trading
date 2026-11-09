@@ -1,0 +1,38 @@
+{
+  "forbidden": "No book reconstruction, price/size values, spreads, funding, return, economic/training/owned-fill/native-book-age qualification or new market observation. No alteration of raw, consumed financial results or failure contracts.",
+  "frozen_at_utc": "2026-11-09T14:17:01.111772+00:00",
+  "implementation": {
+    "helpers": "_positive_native_integer and _depth_update_ids; exact identity validation only, no prices, sizes, returns or model access",
+    "path": "src/simple_ai_trading/microstructure_data.py",
+    "sha256": "aadf60046a3541ba66f02fca62ff0ae2d0edc0e54377ea176a03930465bbbfeb"
+  },
+  "network_requests": 0,
+  "question": "Do the retained generated snapshots and incrementals carry exact positive native integer IDs/clocks, ordered per-symbol event clocks and uninterrupted observed ID link/range relationships? This is an offline source-shape audit, not official protocol or full book qualification.",
+  "schema": "retained-depth-identity-clock-shape-audit-v1",
+  "scope": "Both retained first-minute BTC/ETH/SOL feeds; every source row. No source selection, row repair, alternate window or network request. Read only envelope/identity/clock fields; retain price/size strings opaque. Count snapshot order and native E/T field coverage. Exact observed spot interval adjacency and futures pu-to-prior-u equality are diagnostics, not current official-rule admission.",
+  "sha256": "673c1b69c565440f9625f1d0ffad7b44c765da70abab2e0b7a50d4ead6afa951",
+  "source_limitation": "Official spot page returned original 302/effective 202/one Markdown character; source failed and USD-M second page forbidden. No alias, replacement reader or inferred current protocol/clock-unit qualification. Vendor metadata remains the only newly admitted sequence description.",
+  "source_receipts": [
+    {
+      "bytes": 319935,
+      "content_encoding": "gzip",
+      "error_type": null,
+      "exchange": "binance",
+      "phase": "response",
+      "recorded_at_utc": "2026-11-09T14:08:24.016406+00:00",
+      "sha256": "dfc2547f0d2cfcb819e07f90319fa65af15db5f3ed8fce17ccafc9c1dfbf7158",
+      "status": 200
+    },
+    {
+      "bytes": 1399877,
+      "content_encoding": "gzip",
+      "error_type": null,
+      "exchange": "binance-futures",
+      "phase": "response",
+      "recorded_at_utc": "2026-11-09T14:08:24.869174+00:00",
+      "sha256": "0202cd7d299e68be478d5d06d8646dc5be69b8b84710c905dfc9980562cd23d1",
+      "status": 200
+    }
+  ],
+  "training_or_edge_admission": false
+}

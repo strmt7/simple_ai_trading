@@ -1,0 +1,33 @@
+{
+  "admission": "Effective final HTTP 200, native success, at least 600 substantive Markdown characters, no challenge. Same publisher canonical child redirects only; preserve both statuses/URLs. Stop before second source on any failed gate. Manual intended-product/sequence-rule review required.",
+  "budget": {
+    "cache_bypass": true,
+    "headless_upstream_defaults": true,
+    "navigations": 2,
+    "owned_process_timeout_seconds": 150,
+    "page_timeout_ms": 45000,
+    "robots_checked": true
+  },
+  "controller_sha256": "63349e28b6c57aec7e676ff75aeea67cbe44d0f6879374d11e1b94c7390ed550",
+  "forbidden": "No external LLM, personal profile, stealth, challenge bypass, alias retry, alternative reader, market API, account, credential, order, funds, price/size data review or economic evaluation. Preserve failures.",
+  "frozen_at_utc": "2026-11-09T14:10:33.478179+00:00",
+  "new_market_observations": 0,
+  "outputs": "Ignored data/research/2026-11-09-depth-docs, full native outputs/logs/journals retained; private controller made inert after terminal.",
+  "preflight": "Actual project-root runpy entry, imports, owned job create/close and fsync output passed before freeze; current tool/lock hashes match existing admitted provider. No install/provider mutation.",
+  "provider": {
+    "cache_identity": "27a0fdd2df3d636cedc4caef2b4dc34016ebb633a221ebe9421ea75ee843136c",
+    "lock_sha256": "60dca0cb2b1e1aafc131ca2758a7f75d60dae2fe413455796cc611c6690dbef1",
+    "preflight": "Existing locked cohort reused through the reviewed CLI admission; crawl --help passed. No provider mutation or new dependency installation.",
+    "tool_sha256": "0de1dff8963dbaef5257553ba5af09eef19a7ad58c9b6cdbfe9df0aba6ee1657",
+    "version": "0.9.5+flitzzip.portable2"
+  },
+  "question": "Verify current official spot and USD-M snapshot bridge, stale update, gap, absolute quantity and timestamp-unit rules before a source-bound historical sequence validator. Do not read market prices or refetch failed documentation.",
+  "schema": "native-book-sequence-official-documentation-v1",
+  "selection": "Native vendor metadata links spot stream docs; existing live source blueprint links exact USD-M local book guide. Exact link/contract metadata search found citations but no retained source capture for these exact documents. No legacy coin-margined page or alternate reader.",
+  "sha256": "5c9ced1e79036e4218e7db0cfe8bdac889498457a32d3cb4ac8f9797d642dc45",
+  "training_or_edge_admission": false,
+  "urls_in_order": [
+    "https://developers.binance.com/docs/binance-spot-api-docs/web-socket-streams",
+    "https://developers.binance.com/docs/derivatives/usds-margined-futures/websocket-market-streams/How-to-manage-a-local-order-book-correctly"
+  ]
+}

@@ -27,7 +27,9 @@ def test_exchange_filters_require_real_tick_and_lot_sizes() -> None:
         ]
     }
 
-    assert microstructure._exchange_filters(payload, ("BTCUSDT",)) == {"BTCUSDT": (0.1, 0.001)}
+    assert microstructure._exchange_filters(payload, ("BTCUSDT",)) == {
+        "BTCUSDT": (0.1, 0.001)
+    }
     with pytest.raises(ValueError, match="missing exchange filters"):
         microstructure._exchange_filters(payload, ("BTCUSDT", "ETHUSDT"))
 
@@ -122,32 +124,82 @@ def test_synchronize_raw_capture_drops_pre_snapshot_events_and_enforces_continui
         _stream_line(
             1,
             "btcusdt@depth@100ms",
-            {"e": "depthUpdate", "s": "BTCUSDT", "U": 95, "u": 100, "pu": 94, "b": [["99", "1"]], "a": []},
+            {
+                "e": "depthUpdate",
+                "s": "BTCUSDT",
+                "U": 95,
+                "u": 100,
+                "pu": 94,
+                "b": [["99", "1"]],
+                "a": [],
+            },
         ),
         _stream_line(
             2,
             "btcusdt@trade",
-            {"e": "trade", "s": "BTCUSDT", "E": 1, "T": 1, "p": "100", "q": "1", "m": False},
+            {
+                "e": "trade",
+                "s": "BTCUSDT",
+                "E": 1,
+                "T": 1,
+                "p": "100",
+                "q": "1",
+                "m": False,
+            },
         ),
         _stream_line(
             3,
             "btcusdt@depth@100ms",
-            {"e": "depthUpdate", "s": "BTCUSDT", "U": 107, "u": 110, "pu": 100, "b": [["100", "2"]], "a": [["101", "3"]]},
+            {
+                "e": "depthUpdate",
+                "s": "BTCUSDT",
+                "U": 107,
+                "u": 110,
+                "pu": 100,
+                "b": [["100", "2"]],
+                "a": [["101", "3"]],
+            },
         ),
         _stream_line(
             4,
             "btcusdt@trade",
-            {"e": "trade", "s": "BTCUSDT", "E": 2, "T": 2, "p": "0", "q": "0", "X": "NA", "m": True},
+            {
+                "e": "trade",
+                "s": "BTCUSDT",
+                "E": 2,
+                "T": 2,
+                "p": "0",
+                "q": "0",
+                "X": "NA",
+                "m": True,
+            },
         ),
         _stream_line(
             5,
             "btcusdt@bookTicker",
-            {"e": "bookTicker", "s": "BTCUSDT", "E": 2, "T": 2, "b": "100", "B": "2", "a": "101", "A": "3"},
+            {
+                "e": "bookTicker",
+                "s": "BTCUSDT",
+                "E": 2,
+                "T": 2,
+                "b": "100",
+                "B": "2",
+                "a": "101",
+                "A": "3",
+            },
         ),
         _stream_line(
             6,
             "btcusdt@depth@100ms",
-            {"e": "depthUpdate", "s": "BTCUSDT", "U": 120, "u": 125, "pu": 110, "b": [], "a": [["102", "1"]]},
+            {
+                "e": "depthUpdate",
+                "s": "BTCUSDT",
+                "U": 120,
+                "u": 125,
+                "pu": 110,
+                "b": [],
+                "a": [["102", "1"]],
+            },
         ),
     ]
     with gzip.open(raw_path, "wt", encoding="utf-8") as handle:
@@ -163,24 +215,42 @@ def test_synchronize_raw_capture_drops_pre_snapshot_events_and_enforces_continui
     assert estimated_rows == 5
     with gzip.open(synchronized_path, "rt", encoding="utf-8") as handle:
         synchronized = handle.readlines()
-    assert "\"U\":107" in synchronized[0]
+    assert '"U":107' in synchronized[0]
     assert "bookTicker" in synchronized[1]
-    assert "\"U\":120" in synchronized[2]
+    assert '"U":120' in synchronized[2]
 
 
-def test_synchronize_raw_capture_rejects_post_snapshot_sequence_gap(tmp_path: Path) -> None:
+def test_synchronize_raw_capture_rejects_post_snapshot_sequence_gap(
+    tmp_path: Path,
+) -> None:
     raw_path = tmp_path / "raw.jsonl.gz"
     synchronized_path = tmp_path / "synchronized.jsonl.gz"
     lines = [
         _stream_line(
             1,
             "btcusdt@depth@100ms",
-            {"e": "depthUpdate", "s": "BTCUSDT", "U": 101, "u": 105, "pu": 100, "b": [], "a": []},
+            {
+                "e": "depthUpdate",
+                "s": "BTCUSDT",
+                "U": 101,
+                "u": 105,
+                "pu": 100,
+                "b": [],
+                "a": [],
+            },
         ),
         _stream_line(
             2,
             "btcusdt@depth@100ms",
-            {"e": "depthUpdate", "s": "BTCUSDT", "U": 109, "u": 110, "pu": 108, "b": [], "a": []},
+            {
+                "e": "depthUpdate",
+                "s": "BTCUSDT",
+                "U": 109,
+                "u": 110,
+                "pu": 108,
+                "b": [],
+                "a": [],
+            },
         ),
     ]
     with gzip.open(raw_path, "wt", encoding="utf-8") as handle:
@@ -194,7 +264,185 @@ def test_synchronize_raw_capture_rejects_post_snapshot_sequence_gap(tmp_path: Pa
         )
 
 
-def test_prepare_hftbacktest_input_maps_real_aggregate_trade_schema(tmp_path: Path) -> None:
+@pytest.mark.parametrize("field", ["U", "u", "pu"])
+@pytest.mark.parametrize("representation", ["fractional", "float", "string", "boolean"])
+def test_synchronizer_rejects_lossy_native_update_ids(
+    tmp_path: Path, field: str, representation: str
+) -> None:
+    event = {
+        "e": "depthUpdate",
+        "s": "BTCUSDT",
+        "U": 101,
+        "u": 105,
+        "pu": 100,
+        "b": [],
+        "a": [],
+    }
+    original = event[field]
+    event[field] = {
+        "fractional": float(original) + 0.5,
+        "float": float(original),
+        "string": str(original),
+        "boolean": True,
+    }[representation]
+    raw = tmp_path / "raw.gz"
+    with gzip.open(raw, "wt", encoding="utf-8") as out:
+        out.write(_stream_line(1, "btcusdt@depth", event))
+    with pytest.raises(ValueError, match="positive native integer"):
+        microstructure._synchronize_raw_capture(
+            raw, tmp_path / "out.gz", snapshot_last_update_id=100
+        )
+
+
+@pytest.mark.parametrize("snapshot", [True, False, 0, -1, 100.5, 100.0, "100"])
+def test_synchronizer_rejects_invalid_snapshot_identity(
+    tmp_path: Path, snapshot: object
+) -> None:
+    with pytest.raises(ValueError, match="positive native integer"):
+        microstructure._synchronize_raw_capture(
+            tmp_path / "missing.gz",
+            tmp_path / "out.gz",
+            snapshot_last_update_id=snapshot,
+        )
+    assert not (tmp_path / "out.gz").exists()
+
+
+def test_synchronizer_preserves_native_integer_precision_above_float_range(
+    tmp_path: Path,
+) -> None:
+    snapshot = 2**53 + 1
+    event = {
+        "e": "depthUpdate",
+        "s": "BTCUSDT",
+        "U": snapshot + 1,
+        "u": snapshot + 5,
+        "pu": snapshot,
+        "b": [],
+        "a": [],
+    }
+    raw = tmp_path / "raw.gz"
+    with gzip.open(raw, "wt", encoding="utf-8") as out:
+        out.write(_stream_line(1, "btcusdt@depth", event))
+    target = tmp_path / "out.gz"
+    assert microstructure._synchronize_raw_capture(
+        raw, target, snapshot_last_update_id=snapshot
+    ) == (1, 0)
+    with gzip.open(target, "rt", encoding="utf-8") as inp:
+        assert json.loads(inp.read().split(" ", 1)[1])["data"]["pu"] == snapshot
+
+
+@pytest.mark.parametrize("event_type", ["trade", "bookTicker"])
+@pytest.mark.parametrize("bad", ["NaN", "Infinity", "-Infinity"])
+def test_observer_rejects_nonfinite_market_values(event_type: str, bad: str) -> None:
+    event = {
+        "e": event_type,
+        "E": 1,
+        "T": 1,
+        "t": 1,
+        "p": bad,
+        "q": "1",
+        "m": False,
+        "b": bad,
+        "B": "1",
+        "a": "101",
+        "A": "1",
+    }
+    stats = microstructure._MutableSymbolStats("BTCUSDT")
+    microstructure._observe_event(
+        stats,
+        event,
+        receive_time_ns=2_000_000,
+        clock_offset_ms=0.0,
+        rng=random.Random(0),
+    )
+    assert stats.invalid_event_count == 1
+    assert stats.trade_messages == stats.book_ticker_messages == 0
+    assert stats.latency_samples_ms == []
+
+
+@pytest.mark.parametrize("bad_clock", [True, 1.5, "1", "invalid", None])
+def test_observer_rejects_malformed_clock_without_crashing_or_advancing_stats(
+    bad_clock: object,
+) -> None:
+    stats = microstructure._MutableSymbolStats("BTCUSDT")
+    event = {
+        "e": "depthUpdate",
+        "E": bad_clock,
+        "U": 101,
+        "u": 105,
+        "pu": 100,
+        "b": [],
+        "a": [],
+    }
+    microstructure._observe_event(
+        stats,
+        event,
+        receive_time_ns=2_000_000,
+        clock_offset_ms=0.0,
+        rng=random.Random(0),
+    )
+    assert stats.invalid_event_count == 1
+    assert stats.previous_depth_update_id is None
+    assert stats.depth_messages == 0
+
+
+def test_observer_invalid_levels_do_not_advance_sequence_or_clock() -> None:
+    stats = microstructure._MutableSymbolStats("BTCUSDT")
+    event = {
+        "e": "depthUpdate",
+        "E": 1,
+        "U": 101,
+        "u": 105,
+        "pu": 100,
+        "b": [["NaN", "1"]],
+        "a": [],
+    }
+    microstructure._observe_event(
+        stats,
+        event,
+        receive_time_ns=2_000_000,
+        clock_offset_ms=0.0,
+        rng=random.Random(0),
+    )
+    assert stats.invalid_event_count == 1
+    assert stats.previous_depth_update_id is None
+    assert stats.depth_messages == 0
+    assert stats.first_exchange_time_ms is None
+
+
+@pytest.mark.parametrize(
+    "snapshot",
+    [
+        {"lastUpdateId": True, "bids": [["100", "1"]], "asks": [["101", "1"]]},
+        {"lastUpdateId": 100.5, "bids": [["100", "1"]], "asks": [["101", "1"]]},
+        {"lastUpdateId": "100", "bids": [["100", "1"]], "asks": [["101", "1"]]},
+        {"lastUpdateId": 100, "bids": [["NaN", "1"]], "asks": [["101", "1"]]},
+        {"lastUpdateId": 100, "bids": [["100", "Infinity"]], "asks": [["101", "1"]]},
+    ],
+)
+def test_snapshot_fetch_rejects_malformed_source_before_normalization(
+    snapshot: dict[str, object],
+) -> None:
+    class Response:
+        def raise_for_status(self) -> None:
+            pass
+
+        def json(self) -> dict[str, object]:
+            return snapshot
+
+    class Session:
+        def get(self, *args: object, **kwargs: object) -> Response:
+            return Response()
+
+    with pytest.raises(ValueError):
+        microstructure._fetch_depth_snapshot(
+            Session(), "BTCUSDT", rest_url="https://example.invalid", timeout_seconds=1
+        )
+
+
+def test_prepare_hftbacktest_input_maps_real_aggregate_trade_schema(
+    tmp_path: Path,
+) -> None:
     source = tmp_path / "synchronized.jsonl.gz"
     output = tmp_path / "hft-input.jsonl.gz"
     line = _stream_line(

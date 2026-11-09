@@ -1,0 +1,54 @@
+{
+  "base_revision": "c1d75cc5cfb21fae5b43c49470907a030b791280",
+  "capture_boundaries_sha256": "f971726268ba2e630b2ebbe8d5bcf02f7b3f23b92ccb16efe23aef82cebe950f",
+  "compressed_byte_ceiling": 16777216,
+  "contract_sha256": "3e0253444ca0fef0672b1a776df8655eb720f899b594c1c0e8aa0cabb58b6ea7",
+  "controller_sha256": "70d485d847ec4a5504bb53b4854745289ba6455a7d0f82a3f5220aa11d29cd84",
+  "decoded_byte_ceiling": 134217728,
+  "economic_or_training_admission": false,
+  "forbidden": "No price/size inspection, spread/return/funding ranking, reconstructed book, dataset or training admission, accepted edge, account, credential, order, funds, protected partial data, alternate/refreshed minute or financial-family replay. No exchange-native timestamp may be synthesized from collector time.",
+  "frozen_at_utc": "2026-11-09T14:08:22.744702Z",
+  "gates": "Raw bytes and durable receipt before decoding. Inventory stream identity, exact scope, field names/counts, disconnects and exact local nanosecond clocks only; no numeric book values. Require all three depth streams. Spot absence of any fixed-symbol generated snapshot, failed framing, scope, transport or clock window is terminal; remaining futures request forbidden. Presence permits the futures format inventory only, not reconstruction or economic use.",
+  "outputs": "Ignored data/research/2026-11-09-depth-source; private controller archived inert after terminal. Publish sanitized source receipts only.",
+  "preflight": "Actual project-root runpy entry and original module imports; synthetic gzip/framing, exact nanosecond preservation, snapshot absence/presence and wrong scope/window rejection passed. Explicit capture required.",
+  "prior_turn_classification": "progress: actual raw BBO availability and missing spot native clock changed the next source question; no edge admitted.",
+  "question": "Does the source deliver native incremental depth with exchange clock fields and actual generated initial snapshots for each fixed symbol in the same frozen minute? This materially distinct source-state question does not refresh BBOs, rank prices or repair the consumed funding frontier.",
+  "requests_in_order": [
+    {
+      "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "exchange": "binance",
+      "headers": {
+        "Accept-Encoding": "gzip"
+      },
+      "method": "GET",
+      "url": "https://api.tardis.dev/v1/data-feeds/binance?from=2026-10-01T00%3A00%3A00.000Z&offset=0&sliceSize=1&filters=%5B%7B%22channel%22%3A%22depth%22%2C%22symbols%22%3A%5B%22btcusdt%22%2C%22ethusdt%22%2C%22solusdt%22%5D%7D%2C%7B%22channel%22%3A%22depthSnapshot%22%2C%22symbols%22%3A%5B%22btcusdt%22%2C%22ethusdt%22%2C%22solusdt%22%5D%7D%5D"
+    },
+    {
+      "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "exchange": "binance-futures",
+      "headers": {
+        "Accept-Encoding": "gzip"
+      },
+      "method": "GET",
+      "url": "https://api.tardis.dev/v1/data-feeds/binance-futures?from=2026-10-01T00%3A00%3A00.000Z&offset=0&sliceSize=1&filters=%5B%7B%22channel%22%3A%22depth%22%2C%22symbols%22%3A%5B%22btcusdt%22%2C%22ethusdt%22%2C%22solusdt%22%5D%7D%2C%7B%22channel%22%3A%22depthSnapshot%22%2C%22symbols%22%3A%5B%22btcusdt%22%2C%22ethusdt%22%2C%22solusdt%22%5D%7D%5D"
+    }
+  ],
+  "schema": "native-depth-snapshot-source-inventory-v1",
+  "selection": "Same sole calendar-first UTC day intersecting retained marked funding; first minute fixed before any depth payload. All three fixed symbols, both documented channels combined. No adaptive dates, offsets, symbols or fallback channel.",
+  "source_authority": {
+    "metadata_sha256": [
+      "209723332c69f707298098cd1d7c1bfc85a1da30b61113b7c983d5ff53258355",
+      "fbfd8ca8eeaecfefb92c32edea08a69f4068dc00bea2659ab477e584ea7820bd"
+    ],
+    "native_sha256": "30d41569b75bd9c08381105eee4f9df50f55f0975a2064651c03e11328afecc6",
+    "operation": "Public anonymous read-only historical raw feed; first day access and channel IDs documented. Generated depthSnapshot is on-subscribe, not guaranteed to be in the selected minute.",
+    "url": "https://docs.tardis.dev/api/http-api-reference"
+  },
+  "transport": {
+    "proxies": false,
+    "read_budget_seconds": 30,
+    "redirects": false,
+    "retries": 0,
+    "socket_timeout_seconds": 10
+  }
+}

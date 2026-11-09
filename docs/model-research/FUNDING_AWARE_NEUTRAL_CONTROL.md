@@ -1,5 +1,14 @@
 # Funding-aware control: cash truth before an optimizer
 
+November 9 [native depth follow-up](../review/2026-11-09/depth-source/review.md)
+retains initial snapshots for all six spot/perpetual books and exact native
+depth-clock/ID shapes. Every snapshot follows some updates; a static ID is not
+proof of causal snapshot availability. Current official protocol reading failed,
+so clock units/bridge rules and a causal historical adapter remain unqualified.
+Independent futures ingestion repairs reject lossy IDs/nonfinite values and keep
+invalid events out of sequence/timing statistics. Reuse retained source bytes;
+do not admit training or repeat source/financial requests to hide these limits.
+
 November 9 [historical paired-source review](../review/2026-11-09/paired-data-source/review.md)
 finds actual third-party-collected native spot/perpetual BBO records overlapping
 the retained marked-funding window. The one-minute format probe passes for all

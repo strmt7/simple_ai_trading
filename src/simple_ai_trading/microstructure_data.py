@@ -210,7 +210,9 @@ def _stream_receiver(
 
 
 def _utc_capture_id(now_ms: int) -> str:
-    stamp = datetime.fromtimestamp(now_ms / 1000.0, tz=timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+    stamp = datetime.fromtimestamp(now_ms / 1000.0, tz=timezone.utc).strftime(
+        "%Y%m%dT%H%M%SZ"
+    )
     return f"binance-usdm-{stamp}-{secrets.token_hex(4)}"
 
 
@@ -225,7 +227,9 @@ def _sha256(path: Path) -> str:
 def _write_json(path: Path, payload: Mapping[str, object]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     temporary = path.with_suffix(path.suffix + ".tmp")
-    temporary.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    temporary.write_text(
+        json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+    )
     temporary.replace(path)
 
 
@@ -298,7 +302,9 @@ def _normalize_symbols(symbols: Sequence[str]) -> tuple[str, ...]:
     return tuple(output)
 
 
-def _exchange_filters(payload: Mapping[str, object], symbols: Sequence[str]) -> dict[str, tuple[float, float]]:
+def _exchange_filters(
+    payload: Mapping[str, object], symbols: Sequence[str]
+) -> dict[str, tuple[float, float]]:
     requested = set(symbols)
     output: dict[str, tuple[float, float]] = {}
     for item in payload.get("symbols", []):
@@ -356,12 +362,38 @@ def _fetch_depth_snapshot(
     payload = response.json()
     if not isinstance(payload, dict):
         raise ValueError(f"invalid depth snapshot payload for {symbol}")
-    last_update_id = int(payload.get("lastUpdateId", 0))
+    last_update_id = _positive_native_integer(
+        payload.get("lastUpdateId"), "lastUpdateId"
+    )
     bids = payload.get("bids")
     asks = payload.get("asks")
-    if last_update_id <= 0 or not isinstance(bids, list) or not isinstance(asks, list) or not bids or not asks:
+    if (
+        last_update_id <= 0
+        or not isinstance(bids, list)
+        or not isinstance(asks, list)
+        or not bids
+        or not asks
+    ):
         raise ValueError(f"incomplete depth snapshot for {symbol}")
+    _validate_price_levels(bids)
+    _validate_price_levels(asks)
     return payload
+
+
+def _positive_native_integer(value: object, field: str) -> int:
+    """Keep native clock and sequence identities exact instead of coercing them."""
+    if type(value) is not int or value <= 0:
+        raise ValueError(f"{field} must be a positive native integer")
+    return value
+
+
+def _depth_update_ids(data: Mapping[str, object]) -> tuple[int, int, int]:
+    first = _positive_native_integer(data.get("U"), "U")
+    final = _positive_native_integer(data.get("u"), "u")
+    previous = _positive_native_integer(data.get("pu"), "pu")
+    if final < first:
+        raise ValueError("invalid depth update identifiers")
+    return first, final, previous
 
 
 def _validate_price_levels(levels: object) -> int:
@@ -372,7 +404,12 @@ def _validate_price_levels(levels: object) -> int:
             raise ValueError("invalid depth level")
         price = float(level[0])
         quantity = float(level[1])
-        if not math.isfinite(price) or price <= 0.0 or not math.isfinite(quantity) or quantity < 0.0:
+        if (
+            not math.isfinite(price)
+            or price <= 0.0
+            or not math.isfinite(quantity)
+            or quantity < 0.0
+        ):
             raise ValueError("non-finite or negative depth level")
     return len(levels)
 
@@ -386,31 +423,39 @@ def _observe_event(
     rng: random.Random,
 ) -> None:
     event_type = str(data.get("e", ""))
-    exchange_time_ms = int(data.get("E", data.get("T", 0)) or 0)
-    if exchange_time_ms > 0:
-        if stats.first_exchange_time_ms is None:
-            stats.first_exchange_time_ms = exchange_time_ms
-        stats.last_exchange_time_ms = max(exchange_time_ms, stats.last_exchange_time_ms or exchange_time_ms)
-        corrected_receive_ms = receive_time_ns / 1_000_000.0 + float(clock_offset_ms)
-        stats.observe_latency(corrected_receive_ms - exchange_time_ms, rng)
     try:
+        exchange_time_ms = 0
+        if "E" in data or "T" in data:
+            exchange_time_ms = _positive_native_integer(
+                data.get("E", data.get("T")), "exchange clock"
+            )
         if event_type == "depthUpdate":
-            first_update = int(data["U"])
-            final_update = int(data["u"])
-            previous_update = int(data["pu"])
-            if first_update <= 0 or final_update < first_update or previous_update <= 0:
-                raise ValueError("invalid depth update identifiers")
-            if stats.previous_depth_update_id is not None and previous_update != stats.previous_depth_update_id:
+            _first_update, final_update, previous_update = _depth_update_ids(data)
+            depth_rows = _validate_price_levels(
+                data.get("b", [])
+            ) + _validate_price_levels(data.get("a", []))
+            if (
+                stats.previous_depth_update_id is not None
+                and previous_update != stats.previous_depth_update_id
+            ):
                 stats.sequence_gap_count += 1
             stats.previous_depth_update_id = final_update
             stats.depth_messages += 1
-            stats.depth_rows += _validate_price_levels(data.get("b", []))
-            stats.depth_rows += _validate_price_levels(data.get("a", []))
+            stats.depth_rows += depth_rows
         elif event_type in {"trade", "aggTrade"}:
             price = float(data.get("p", 0.0))
             quantity = float(data.get("q", 0.0))
-            if price <= 0.0 or quantity <= 0.0:
-                if str(data.get("X", "")).upper() == "NA" and price == 0.0 and quantity == 0.0:
+            if (
+                not math.isfinite(price)
+                or not math.isfinite(quantity)
+                or price <= 0.0
+                or quantity <= 0.0
+            ):
+                if (
+                    str(data.get("X", "")).upper() == "NA"
+                    and price == 0.0
+                    and quantity == 0.0
+                ):
                     stats.ignored_non_market_trade_messages += 1
                     return
                 raise ValueError("invalid trade price or quantity")
@@ -439,7 +484,10 @@ def _observe_event(
             ask = float(data.get("a", 0.0))
             bid_quantity = float(data.get("B", 0.0))
             ask_quantity = float(data.get("A", 0.0))
-            if min(bid, ask, bid_quantity, ask_quantity) <= 0.0:
+            if not all(
+                math.isfinite(value) and value > 0.0
+                for value in (bid, ask, bid_quantity, ask_quantity)
+            ):
                 raise ValueError("invalid book ticker")
             if bid >= ask:
                 stats.crossed_book_count += 1
@@ -448,6 +496,15 @@ def _observe_event(
             raise ValueError(f"unsupported stream event: {event_type or 'missing'}")
     except (KeyError, TypeError, ValueError, OverflowError):
         stats.invalid_event_count += 1
+        return
+    if exchange_time_ms > 0:
+        if stats.first_exchange_time_ms is None:
+            stats.first_exchange_time_ms = exchange_time_ms
+        stats.last_exchange_time_ms = max(
+            exchange_time_ms, stats.last_exchange_time_ms or exchange_time_ms
+        )
+        corrected_receive_ms = receive_time_ns / 1_000_000.0 + float(clock_offset_ms)
+        stats.observe_latency(corrected_receive_ms - exchange_time_ms, rng)
 
 
 def _stream_urls(
@@ -484,8 +541,12 @@ def _initial_snapshot_array(payload: Mapping[str, object]):
             SELL_EVENT,
             event_dtype,
         )
-    except ImportError as exc:  # pragma: no cover - exercised by dependency readiness checks
-        raise RuntimeError("hftbacktest is required for normalized L2 replay data") from exc
+    except (
+        ImportError
+    ) as exc:  # pragma: no cover - exercised by dependency readiness checks
+        raise RuntimeError(
+            "hftbacktest is required for normalized L2 replay data"
+        ) from exc
     bids = payload.get("bids", [])
     asks = payload.get("asks", [])
     _validate_price_levels(bids)
@@ -516,18 +577,21 @@ def _synchronize_raw_capture(
 ) -> tuple[int, int]:
     """Drop pre-snapshot events and require the first depth update to bridge the snapshot."""
 
-    snapshot_update = int(snapshot_last_update_id)
+    snapshot_update = _positive_native_integer(snapshot_last_update_id, "lastUpdateId")
     synchronized = False
     previous_update: int | None = None
     message_count = 0
     normalized_row_estimate = 0
-    with gzip.open(raw_path, "rt", encoding="utf-8") as source, gzip.open(
-        output_path,
-        "wt",
-        encoding="utf-8",
-        compresslevel=6,
-        newline="\n",
-    ) as target:
+    with (
+        gzip.open(raw_path, "rt", encoding="utf-8") as source,
+        gzip.open(
+            output_path,
+            "wt",
+            encoding="utf-8",
+            compresslevel=6,
+            newline="\n",
+        ) as target,
+    ):
         for line in source:
             stripped = line.rstrip("\n")
             try:
@@ -538,9 +602,7 @@ def _synchronize_raw_capture(
             except (AttributeError, json.JSONDecodeError, ValueError) as exc:
                 raise ValueError(f"invalid raw capture line: {exc}") from exc
             if event_type == "depthUpdate":
-                first_update = int(data["U"])
-                final_update = int(data["u"])
-                previous = int(data["pu"])
+                first_update, final_update, previous = _depth_update_ids(data)
                 if not synchronized:
                     if final_update <= snapshot_update:
                         continue
@@ -557,7 +619,9 @@ def _synchronize_raw_capture(
                         f"depth sequence gap after snapshot: expected_previous={previous_update} actual_previous={previous}"
                     )
                 previous_update = final_update
-                normalized_row_estimate += len(data.get("b", [])) + len(data.get("a", []))
+                normalized_row_estimate += len(data.get("b", [])) + len(
+                    data.get("a", [])
+                )
             elif not synchronized:
                 continue
             elif event_type in {"trade", "aggTrade"}:
@@ -583,13 +647,16 @@ def _prepare_hftbacktest_input(source_path: Path, output_path: Path) -> int:
     """Map real aggregate trades to HftBacktest's equivalent trade event schema."""
 
     transformed = 0
-    with gzip.open(source_path, "rt", encoding="utf-8") as source, gzip.open(
-        output_path,
-        "wt",
-        encoding="utf-8",
-        compresslevel=6,
-        newline="\n",
-    ) as target:
+    with (
+        gzip.open(source_path, "rt", encoding="utf-8") as source,
+        gzip.open(
+            output_path,
+            "wt",
+            encoding="utf-8",
+            compresslevel=6,
+            newline="\n",
+        ) as target,
+    ):
         for line in source:
             stripped = line.rstrip("\n")
             try:
@@ -610,7 +677,9 @@ def _prepare_hftbacktest_input(source_path: Path, output_path: Path) -> int:
                     normalized_payload["data"] = normalized_data
                     stream = str(normalized_payload.get("stream", ""))
                     if stream.endswith("@aggTrade"):
-                        normalized_payload["stream"] = stream[: -len("@aggTrade")] + "@trade"
+                        normalized_payload["stream"] = (
+                            stream[: -len("@aggTrade")] + "@trade"
+                        )
                 raw_json = json.dumps(normalized_payload, separators=(",", ":"))
                 transformed += 1
             target.write(f"{received_at} {raw_json}\n")
@@ -628,8 +697,12 @@ def _convert_to_hftbacktest(
     try:
         import numpy as np
         from hftbacktest.data.utils import binancefutures
-    except ImportError as exc:  # pragma: no cover - exercised by dependency readiness checks
-        raise RuntimeError("hftbacktest is required for normalized L2 replay data") from exc
+    except (
+        ImportError
+    ) as exc:  # pragma: no cover - exercised by dependency readiness checks
+        raise RuntimeError(
+            "hftbacktest is required for normalized L2 replay data"
+        ) from exc
     snapshot = _initial_snapshot_array(snapshot_payload)
     np.savez_compressed(snapshot_path, data=snapshot)
     buffer_size = max(10_000, int(max(1, row_estimate) * 1.15) + 10_000)
@@ -681,7 +754,11 @@ def _replay_smoke(
         bid = float(depth.best_bid)
         ask = float(depth.best_ask)
         passed = math.isfinite(bid) and math.isfinite(ask) and bid > 0.0 and ask > bid
-        return passed, (bid if math.isfinite(bid) else None), (ask if math.isfinite(ask) else None)
+        return (
+            passed,
+            (bid if math.isfinite(bid) else None),
+            (ask if math.isfinite(ask) else None),
+        )
     finally:
         replay.close()
 
@@ -721,15 +798,26 @@ def capture_binance_futures_microstructure(
     manifest_path = capture_dir / "manifest.json"
     errors: list[str] = []
     stats = {symbol: _MutableSymbolStats(symbol) for symbol in normalized_symbols}
-    raw_paths = {symbol: capture_dir / f"{symbol.lower()}.raw.jsonl.gz" for symbol in normalized_symbols}
+    raw_paths = {
+        symbol: capture_dir / f"{symbol.lower()}.raw.jsonl.gz"
+        for symbol in normalized_symbols
+    }
     synchronized_paths = {
-        symbol: capture_dir / f"{symbol.lower()}.synchronized.jsonl.gz" for symbol in normalized_symbols
+        symbol: capture_dir / f"{symbol.lower()}.synchronized.jsonl.gz"
+        for symbol in normalized_symbols
     }
-    snapshot_paths = {symbol: capture_dir / f"{symbol.lower()}.initial-depth.json" for symbol in normalized_symbols}
+    snapshot_paths = {
+        symbol: capture_dir / f"{symbol.lower()}.initial-depth.json"
+        for symbol in normalized_symbols
+    }
     initial_snapshot_paths = {
-        symbol: capture_dir / f"{symbol.lower()}.initial-depth.npz" for symbol in normalized_symbols
+        symbol: capture_dir / f"{symbol.lower()}.initial-depth.npz"
+        for symbol in normalized_symbols
     }
-    normalized_paths = {symbol: capture_dir / f"{symbol.lower()}.hft.npz" for symbol in normalized_symbols}
+    normalized_paths = {
+        symbol: capture_dir / f"{symbol.lower()}.hft.npz"
+        for symbol in normalized_symbols
+    }
     stream_urls = _stream_urls(
         normalized_symbols,
         stream_base_url,
@@ -808,7 +896,9 @@ def capture_binance_futures_microstructure(
             timeout_seconds=timeout_seconds,
         )
         for symbol, path in raw_paths.items():
-            writers[symbol] = gzip.open(path, "wt", encoding="utf-8", compresslevel=6, newline="\n")
+            writers[symbol] = gzip.open(
+                path, "wt", encoding="utf-8", compresslevel=6, newline="\n"
+            )
         for route, url in zip(("public", "market"), stream_urls, strict=True):
             thread = threading.Thread(
                 target=_stream_receiver,
@@ -909,7 +999,9 @@ def capture_binance_futures_microstructure(
         if snapshot is None:
             item_errors.append("missing_initial_snapshot")
         if stats[symbol].sequence_gap_count > 0:
-            item_errors.append(f"depth_sequence_gaps:{stats[symbol].sequence_gap_count}")
+            item_errors.append(
+                f"depth_sequence_gaps:{stats[symbol].sequence_gap_count}"
+            )
         if stats[symbol].crossed_book_count > 0:
             item_errors.append(f"crossed_books:{stats[symbol].crossed_book_count}")
         if stats[symbol].invalid_event_count > 0:
@@ -938,7 +1030,9 @@ def capture_binance_futures_microstructure(
                     if not replay_passed:
                         item_errors.append("hftbacktest_replay_smoke_failed")
             except Exception as exc:
-                item_errors.append(f"normalization:{type(exc).__name__}:{str(exc)[:500]}")
+                item_errors.append(
+                    f"normalization:{type(exc).__name__}:{str(exc)[:500]}"
+                )
         latencies = stats[symbol].latency_samples_ms
         raw_path = raw_paths[symbol]
         normalized_path = normalized_paths[symbol]
@@ -948,7 +1042,9 @@ def capture_binance_futures_microstructure(
                 raw_path=str(raw_path),
                 synchronized_raw_path=str(synchronized_paths[symbol]),
                 snapshot_json_path=str(snapshot_paths[symbol]),
-                initial_snapshot_path=(str(initial_snapshot_paths[symbol]) if convert else ""),
+                initial_snapshot_path=(
+                    str(initial_snapshot_paths[symbol]) if convert else ""
+                ),
                 normalized_path=(str(normalized_path) if convert else ""),
                 raw_sha256=(_sha256(raw_path) if raw_path.exists() else ""),
                 synchronized_raw_sha256=(
@@ -961,10 +1057,16 @@ def capture_binance_futures_microstructure(
                     if snapshot_paths[symbol].exists()
                     else ""
                 ),
-                normalized_sha256=(_sha256(normalized_path) if normalized_path.exists() else ""),
+                normalized_sha256=(
+                    _sha256(normalized_path) if normalized_path.exists() else ""
+                ),
                 raw_bytes=(raw_path.stat().st_size if raw_path.exists() else 0),
-                normalized_bytes=(normalized_path.stat().st_size if normalized_path.exists() else 0),
-                snapshot_last_update_id=int(snapshot.get("lastUpdateId", 0)) if snapshot else 0,
+                normalized_bytes=(
+                    normalized_path.stat().st_size if normalized_path.exists() else 0
+                ),
+                snapshot_last_update_id=int(snapshot.get("lastUpdateId", 0))
+                if snapshot
+                else 0,
                 tick_size=float(tick_size),
                 lot_size=float(lot_size),
                 raw_messages=int(stats[symbol].raw_messages),
@@ -974,7 +1076,9 @@ def capture_binance_futures_microstructure(
                 depth_rows=int(stats[symbol].depth_rows),
                 trade_messages=int(stats[symbol].trade_messages),
                 trade_fill_count=int(stats[symbol].trade_fill_count),
-                ignored_non_market_trade_messages=int(stats[symbol].ignored_non_market_trade_messages),
+                ignored_non_market_trade_messages=int(
+                    stats[symbol].ignored_non_market_trade_messages
+                ),
                 book_ticker_messages=int(stats[symbol].book_ticker_messages),
                 sequence_gap_count=int(stats[symbol].sequence_gap_count),
                 crossed_book_count=int(stats[symbol].crossed_book_count),
@@ -996,7 +1100,9 @@ def capture_binance_futures_microstructure(
     completed_at_ms = int(time.time() * 1000)
     passed = not errors and all(not item.error for item in evidence)
     if not convert:
-        passed = passed and all(item.raw_messages > 0 and item.sequence_gap_count == 0 for item in evidence)
+        passed = passed and all(
+            item.raw_messages > 0 and item.sequence_gap_count == 0 for item in evidence
+        )
     result = MicrostructureCaptureResult(
         status="pass" if passed else "fail",
         capture_id=resolved_capture_id,

@@ -1,0 +1,467 @@
+{
+  "authority": {
+    "account_requests": 0,
+    "credentials_used": false,
+    "github_push": false,
+    "orders_or_funds": 0,
+    "protected_partial_payloads_read": false
+  },
+  "base_revision": "c1d75cc5cfb21fae5b43c49470907a030b791280",
+  "capture_boundaries_sha256": "f971726268ba2e630b2ebbe8d5bcf02f7b3f23b92ccb16efe23aef82cebe950f",
+  "cleanup": {
+    "controllers_retained_as_inert_text": true,
+    "persistent_installations": 0,
+    "relevant_workers_observed": 0
+  },
+  "created_at_utc": "2026-11-09T14:20:51.351639+00:00",
+  "financial_counts": {
+    "hypotheses": 65,
+    "new_economic_observations": 0,
+    "observations": 203,
+    "qualified_stable_edges": 0,
+    "scoped_mechanisms": 37
+  },
+  "frozen_contracts": [
+    {
+      "bytes": 4332,
+      "content_digest": "3e0253444ca0fef0672b1a776df8655eb720f899b594c1c0e8aa0cabb58b6ea7",
+      "path": "docs/review/2026-11-09/depth-source/contract.json",
+      "sha256": "782c96104bee89d872d5bdaff875d8c530a3c2308dd4c0eb75a71b948a5f5b80"
+    },
+    {
+      "bytes": 2733,
+      "content_digest": "5c9ced1e79036e4218e7db0cfe8bdac889498457a32d3cb4ac8f9797d642dc45",
+      "path": "docs/review/2026-11-09/depth-source/documentation-intent.json",
+      "sha256": "bc31a38b3ea5377fb4334a5c8f43f9bae9944217db43d0d3aa6b6d293180308f"
+    },
+    {
+      "bytes": 2489,
+      "content_digest": "673c1b69c565440f9625f1d0ffad7b44c765da70abab2e0b7a50d4ead6afa951",
+      "path": "docs/review/2026-11-09/depth-source/offline-intent.json",
+      "sha256": "a24f9431d2d9e43f4e3ae19a5345bd50eef56b4797ab47de83d22c3389dceda4"
+    }
+  ],
+  "limits": {
+    "book_reconstructed": false,
+    "causal_snapshot_availability_qualified": false,
+    "continuous_coverage_qualified": false,
+    "current_official_protocol_qualified": false,
+    "economic_values_inspected": false,
+    "native_clock_units_qualified_by_current_primary_source": false,
+    "owned_fills_qualified": false,
+    "qualified_edge": false,
+    "training_admitted": false
+  },
+  "native_feeds": [
+    {
+      "inventory": {
+        "collector_clock_regressions": 0,
+        "continuous_coverage_qualified": false,
+        "decoded_bytes": 2014926,
+        "disconnect_markers": 0,
+        "economic_values_inspected": false,
+        "exchange": "binance",
+        "initial_snapshot_present_all_symbols": true,
+        "messages_with_native_clock_fields": {
+          "BTCUSDT": 600,
+          "ETHUSDT": 600,
+          "SOLUSDT": 555
+        },
+        "native_book_age_qualified": false,
+        "native_fields_by_symbol_and_channel": {
+          "BTCUSDT": {
+            "depth": [
+              "E",
+              "U",
+              "a",
+              "b",
+              "e",
+              "s",
+              "u"
+            ],
+            "depthSnapshot": [
+              "asks",
+              "bids",
+              "lastUpdateId"
+            ]
+          },
+          "ETHUSDT": {
+            "depth": [
+              "E",
+              "U",
+              "a",
+              "b",
+              "e",
+              "s",
+              "u"
+            ],
+            "depthSnapshot": [
+              "asks",
+              "bids",
+              "lastUpdateId"
+            ]
+          },
+          "SOLUSDT": {
+            "depth": [
+              "E",
+              "U",
+              "a",
+              "b",
+              "e",
+              "s",
+              "u"
+            ],
+            "depthSnapshot": [
+              "asks",
+              "bids",
+              "lastUpdateId"
+            ]
+          }
+        },
+        "phase": "qualification",
+        "recorded_at_utc": "2026-11-09T14:08:24.043531+00:00",
+        "rows_by_symbol_and_channel": {
+          "BTCUSDT": {
+            "depth": 600,
+            "depthSnapshot": 1
+          },
+          "ETHUSDT": {
+            "depth": 600,
+            "depthSnapshot": 1
+          },
+          "SOLUSDT": {
+            "depth": 555,
+            "depthSnapshot": 1
+          }
+        },
+        "schema_inventory_gate_passed": true,
+        "training_or_edge_admission": false
+      },
+      "response": {
+        "bytes": 319935,
+        "content_encoding": "gzip",
+        "error_type": null,
+        "exchange": "binance",
+        "phase": "response",
+        "recorded_at_utc": "2026-11-09T14:08:24.016406+00:00",
+        "sha256": "dfc2547f0d2cfcb819e07f90319fa65af15db5f3ed8fce17ccafc9c1dfbf7158",
+        "status": 200
+      }
+    },
+    {
+      "inventory": {
+        "collector_clock_regressions": 0,
+        "continuous_coverage_qualified": false,
+        "decoded_bytes": 6526742,
+        "disconnect_markers": 0,
+        "economic_values_inspected": false,
+        "exchange": "binance-futures",
+        "initial_snapshot_present_all_symbols": true,
+        "messages_with_native_clock_fields": {
+          "BTCUSDT": 2264,
+          "ETHUSDT": 2239,
+          "SOLUSDT": 2074
+        },
+        "native_book_age_qualified": false,
+        "native_fields_by_symbol_and_channel": {
+          "BTCUSDT": {
+            "depth": [
+              "E",
+              "T",
+              "U",
+              "a",
+              "b",
+              "e",
+              "ps",
+              "pu",
+              "s",
+              "st",
+              "u"
+            ],
+            "depthSnapshot": [
+              "E",
+              "T",
+              "asks",
+              "bids",
+              "lastUpdateId"
+            ]
+          },
+          "ETHUSDT": {
+            "depth": [
+              "E",
+              "T",
+              "U",
+              "a",
+              "b",
+              "e",
+              "ps",
+              "pu",
+              "s",
+              "st",
+              "u"
+            ],
+            "depthSnapshot": [
+              "E",
+              "T",
+              "asks",
+              "bids",
+              "lastUpdateId"
+            ]
+          },
+          "SOLUSDT": {
+            "depth": [
+              "E",
+              "T",
+              "U",
+              "a",
+              "b",
+              "e",
+              "ps",
+              "pu",
+              "s",
+              "st",
+              "u"
+            ],
+            "depthSnapshot": [
+              "E",
+              "T",
+              "asks",
+              "bids",
+              "lastUpdateId"
+            ]
+          }
+        },
+        "phase": "qualification",
+        "recorded_at_utc": "2026-11-09T14:08:24.948459+00:00",
+        "rows_by_symbol_and_channel": {
+          "BTCUSDT": {
+            "depth": 2263,
+            "depthSnapshot": 1
+          },
+          "ETHUSDT": {
+            "depth": 2238,
+            "depthSnapshot": 1
+          },
+          "SOLUSDT": {
+            "depth": 2073,
+            "depthSnapshot": 1
+          }
+        },
+        "schema_inventory_gate_passed": true,
+        "training_or_edge_admission": false
+      },
+      "response": {
+        "bytes": 1399877,
+        "content_encoding": "gzip",
+        "error_type": null,
+        "exchange": "binance-futures",
+        "phase": "response",
+        "recorded_at_utc": "2026-11-09T14:08:24.869174+00:00",
+        "sha256": "0202cd7d299e68be478d5d06d8646dc5be69b8b84710c905dfc9980562cd23d1",
+        "status": 200
+      }
+    }
+  ],
+  "official_documentation": {
+    "admitted": false,
+    "controller_error": null,
+    "effective_status": 202,
+    "final_url": "https://developers.binance.com/en/docs/catalog/core-trading-spot-trading/api/ws-streams/~",
+    "index": 1,
+    "markdown_characters": 1,
+    "markdown_sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+    "native_bytes": 5069,
+    "native_error": "",
+    "native_sha256": "cafc5874c3de42b5ad3254663d2a33ed877cea02527969fe390c57df0649f95d",
+    "native_status": 302,
+    "native_success": true,
+    "native_title": null,
+    "native_url": "https://developers.binance.com/docs/binance-spot-api-docs/web-socket-streams",
+    "phase": "complete",
+    "process_return_code": 0,
+    "recorded_at_utc": "2026-11-09T14:10:48.073199+00:00",
+    "url": "https://developers.binance.com/docs/binance-spot-api-docs/web-socket-streams"
+  },
+  "offline_identity_audit": {
+    "continuous_coverage_qualified": false,
+    "contract_sha256": "673c1b69c565440f9625f1d0ffad7b44c765da70abab2e0b7a50d4ead6afa951",
+    "current_official_protocol_qualified": false,
+    "economic_values_inspected": false,
+    "native_book_age_qualified": false,
+    "network_requests": 0,
+    "schema": "retained-depth-identity-result-v1",
+    "sha256": "03b6e4ef106778fe2a3f40a974d242d6103c49badad711741857412d38edfe35",
+    "sources": [
+      {
+        "exchange": "binance",
+        "raw_sha256": "dfc2547f0d2cfcb819e07f90319fa65af15db5f3ed8fce17ccafc9c1dfbf7158",
+        "symbols": {
+          "BTCUSDT": {
+            "increments": 600,
+            "native_E_regressions": 0,
+            "observed_link_breaks": 0,
+            "snapshot_before_first_increment": false,
+            "snapshots": 1,
+            "strict_integer_fields_passed": true
+          },
+          "ETHUSDT": {
+            "increments": 600,
+            "native_E_regressions": 0,
+            "observed_link_breaks": 0,
+            "snapshot_before_first_increment": false,
+            "snapshots": 1,
+            "strict_integer_fields_passed": true
+          },
+          "SOLUSDT": {
+            "increments": 555,
+            "native_E_regressions": 0,
+            "observed_link_breaks": 0,
+            "snapshot_before_first_increment": false,
+            "snapshots": 1,
+            "strict_integer_fields_passed": true
+          }
+        }
+      },
+      {
+        "exchange": "binance-futures",
+        "raw_sha256": "0202cd7d299e68be478d5d06d8646dc5be69b8b84710c905dfc9980562cd23d1",
+        "symbols": {
+          "BTCUSDT": {
+            "increments": 2263,
+            "native_E_regressions": 0,
+            "observed_link_breaks": 0,
+            "snapshot_before_first_increment": false,
+            "snapshots": 1,
+            "strict_integer_fields_passed": true
+          },
+          "ETHUSDT": {
+            "increments": 2238,
+            "native_E_regressions": 0,
+            "observed_link_breaks": 0,
+            "snapshot_before_first_increment": false,
+            "snapshots": 1,
+            "strict_integer_fields_passed": true
+          },
+          "SOLUSDT": {
+            "increments": 2073,
+            "native_E_regressions": 0,
+            "observed_link_breaks": 0,
+            "snapshot_before_first_increment": false,
+            "snapshots": 1,
+            "strict_integer_fields_passed": true
+          }
+        }
+      }
+    ],
+    "training_or_edge_admission": false
+  },
+  "private_evidence": [
+    {
+      "bytes": 5069,
+      "path": "data/research/2026-11-09-depth-docs/01.native.json",
+      "sha256": "cafc5874c3de42b5ad3254663d2a33ed877cea02527969fe390c57df0649f95d"
+    },
+    {
+      "bytes": 0,
+      "path": "data/research/2026-11-09-depth-docs/01.provider.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "bytes": 1357,
+      "path": "data/research/2026-11-09-depth-docs/crawl-journal.jsonl",
+      "sha256": "e7dc29b38d1dcb71c5aace30853443446fd892b23ba212ac29a5d8d852bec543"
+    },
+    {
+      "bytes": 64,
+      "path": "data/research/2026-11-09-depth-docs/crawl.started",
+      "sha256": "b9a51b16119edf1dd253890f6814339f47e92321e896ff5aa5fa4a594b8a9cfe"
+    },
+    {
+      "bytes": 73,
+      "path": "data/research/2026-11-09-depth-docs/preflight.json",
+      "sha256": "1a1b19a4594228de709f2f46be723fe65ddeaa0050f58bccc973f0c3012a74b3"
+    },
+    {
+      "bytes": 1399877,
+      "path": "data/research/2026-11-09-depth-source/binance-futures.gzip",
+      "sha256": "0202cd7d299e68be478d5d06d8646dc5be69b8b84710c905dfc9980562cd23d1"
+    },
+    {
+      "bytes": 319935,
+      "path": "data/research/2026-11-09-depth-source/binance.gzip",
+      "sha256": "dfc2547f0d2cfcb819e07f90319fa65af15db5f3ed8fce17ccafc9c1dfbf7158"
+    },
+    {
+      "bytes": 30,
+      "path": "data/research/2026-11-09-depth-source/format.stderr.txt",
+      "sha256": "16f9676045ac196ab6db0970c56aaf747d4399820136697d88abc8182ac11d94"
+    },
+    {
+      "bytes": 2353,
+      "path": "data/research/2026-11-09-depth-source/identity-result.json",
+      "sha256": "4f39ae59031c1d680e5efaf92b5cc68942c376557d63d4b72fa014bae96bdb15"
+    },
+    {
+      "bytes": 64,
+      "path": "data/research/2026-11-09-depth-source/identity.started",
+      "sha256": "0ccb8e5c9b3704a2953a6774796d4ca535271967e7456dd89cfe885ebe4c96a1"
+    },
+    {
+      "bytes": 4271,
+      "path": "data/research/2026-11-09-depth-source/journal.jsonl",
+      "sha256": "858399c6eb5be483356be56fa4767be2a6bc3510cdb4fac8d913f4a35fda39ce"
+    },
+    {
+      "bytes": 6834,
+      "path": "data/research/2026-11-09-depth-source/microstructure-tests.xml",
+      "sha256": "29c73e9ef0afe1bc48e0259206d007d659d986c65ee0a830e472e229e03c883d"
+    },
+    {
+      "bytes": 42144,
+      "path": "data/research/2026-11-09-depth-source/microstructure_data.source.py.completed.txt",
+      "sha256": "aadf60046a3541ba66f02fca62ff0ae2d0edc0e54377ea176a03930465bbbfeb"
+    },
+    {
+      "bytes": 5686,
+      "path": "data/research/depth_docs_controller.py.failed.txt",
+      "sha256": "63349e28b6c57aec7e676ff75aeea67cbe44d0f6879374d11e1b94c7390ed550"
+    },
+    {
+      "bytes": 4162,
+      "path": "data/research/depth_identity_audit.py.completed.txt",
+      "sha256": "548b09742e089c6fb7c96970f73684b6831c3674e8bf1077c68ee19a1cef0723"
+    },
+    {
+      "bytes": 9371,
+      "path": "data/research/depth_source_probe.py.completed.txt",
+      "sha256": "70d485d847ec4a5504bb53b4854745289ba6455a7d0f82a3f5220aa11d29cd84"
+    }
+  ],
+  "result_sha256": "131ac7c4329a8e0e7db8e9dc275a3e428203ae3e91aea90f156e70d04e607a9b",
+  "schema": "native-depth-source-and-ingestion-repair-v1",
+  "source_implementation": {
+    "path": "src/simple_ai_trading/microstructure_data.py",
+    "private_exact_source_archive": "data/research/2026-11-09-depth-source/microstructure_data.source.py.completed.txt",
+    "sha256": "aadf60046a3541ba66f02fca62ff0ae2d0edc0e54377ea176a03930465bbbfeb"
+  },
+  "tests": {
+    "after_repair_passed": 44,
+    "after_repair_skipped": 1,
+    "ast_added_definitions": [
+      "_depth_update_ids",
+      "_positive_native_integer"
+    ],
+    "ast_changed_existing_definitions": [
+      "_fetch_depth_snapshot",
+      "_observe_event",
+      "_synchronize_raw_capture"
+    ],
+    "before_repair_behavioral_failures_observed": 24,
+    "file": "tests/test_microstructure_data.py",
+    "other_definitions_ast_unchanged": true,
+    "ruff_lint_and_format_passed": true,
+    "sha256": "9d97bda22329b2cdc41e07b13a8bb8a4d3dc72c982db0346a291bce47408d5e1",
+    "skip": "Optional HftBacktest integration unavailable; not counted as pass",
+    "whole_suite_run": false
+  }
+}

@@ -10,6 +10,15 @@ Scope blockers to their branch; a fresh user resumption resets the blocked audit
 
 ## Current Truth
 
+November 9 [native depth checkpoint](review/2026-11-09/depth-source/review.md):
+six initial snapshots and native depth clocks exist in the fixed minute; snapshots
+arrive after some updates, so causal availability remains unqualified. Strict
+input validation repairs demonstrated futures ingestion defects; 44 checks pass,
+one optional integration skips. Official documentation failed and its second
+page stayed forbidden. No economic/training admission; counts 203/65/37/0.
+Reuse retained bytes, finish snapshot availability and remaining ingestion review,
+and refresh the source-bound index before broad queries. No background remnants.
+
 November 9 [historical source qualification](review/2026-11-09/paired-data-source/review.md):
 one fixed minute supplies 81,821 native spot/perpetual BBO messages, with no
 native exchange clock on spot; normalized arrival time is not native book age.

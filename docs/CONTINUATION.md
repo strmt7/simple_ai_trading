@@ -1,5 +1,17 @@
 # Continue Development
 
+November 9 [native depth and ingestion repair](review/2026-11-09/depth-source/review.md):
+all six fixed books have generated snapshots and native depth clocks; exact
+offline ID diagnostics show no observed link breaks. Every snapshot follows some
+updates, so snapshot availability/buffering must be qualified before causal fits.
+The official Spot documentation attempt failed (302/202/empty); its USD-M second
+page is forbidden, with no alias retry. Independent production fixes reject lossy
+depth/snapshot IDs, nonfinite market values and malformed clocks without advancing
+statistics. 44 focused checks pass, one optional HftBacktest check skips. Remaining
+trade-ID coercion and snapshot availability integration need review. Counts stay
+203/65/37/0; no economic evaluation or training. Raw evidence and inert controllers
+remain ignored; goal active, no push. Refresh the index before broad navigation.
+
 November 9 [historical paired-data source](review/2026-11-09/paired-data-source/review.md):
 three distinct technical documents and anonymous vendor metadata qualify a route
 to historical native spot/perpetual records and Polymarket channels. One fixed
