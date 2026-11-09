@@ -13,8 +13,18 @@ def test_api_budget_combines_exchange_limits_and_headers() -> None:
         market_type="spot",
         exchange_info={
             "rateLimits": [
-                {"rateLimitType": "REQUEST_WEIGHT", "interval": "MINUTE", "intervalNum": 1, "limit": 1200},
-                {"rateLimitType": "ORDERS", "interval": "SECOND", "intervalNum": 10, "limit": 50},
+                {
+                    "rateLimitType": "REQUEST_WEIGHT",
+                    "interval": "MINUTE",
+                    "intervalNum": 1,
+                    "limit": 1200,
+                },
+                {
+                    "rateLimitType": "ORDERS",
+                    "interval": "SECOND",
+                    "intervalNum": 10,
+                    "limit": 50,
+                },
             ]
         },
         request_info={
@@ -39,7 +49,16 @@ def test_api_budget_combines_exchange_limits_and_headers() -> None:
 def test_api_budget_startup_guard_blocks_at_eighty_percent_and_retry_after() -> None:
     report = build_api_budget_report(
         market_type="spot",
-        exchange_info={"rateLimits": [{"rateLimitType": "REQUEST_WEIGHT", "interval": "MINUTE", "intervalNum": 1, "limit": 1200}]},
+        exchange_info={
+            "rateLimits": [
+                {
+                    "rateLimitType": "REQUEST_WEIGHT",
+                    "interval": "MINUTE",
+                    "intervalNum": 1,
+                    "limit": 1200,
+                }
+            ]
+        },
         request_info={"rate_limit_headers": {"X-MBX-USED-WEIGHT-1M": "960"}},
     )
 
@@ -65,3 +84,35 @@ def test_api_budget_allows_unknown_limits_but_reports_unknown() -> None:
     assert report.status == "unknown"
     assert api_budget_startup_block_reason(report) is None
     assert "used weight unknown" in summarize_api_budget(report)
+
+
+def test_exhausted_window_remains_the_compact_summary_bottleneck() -> None:
+    report = build_api_budget_report(
+        market_type="spot",
+        exchange_info={
+            "rateLimits": [
+                {
+                    "rateLimitType": "REQUEST_WEIGHT",
+                    "interval": "MINUTE",
+                    "intervalNum": 1,
+                    "limit": 1200,
+                },
+                {
+                    "rateLimitType": "ORDERS",
+                    "interval": "SECOND",
+                    "intervalNum": 10,
+                    "limit": 50,
+                },
+            ]
+        },
+        request_info={
+            "rate_limit_headers": {
+                "X-MBX-USED-WEIGHT-1M": "1200",
+                "X-MBX-ORDER-COUNT-10S": "25",
+            }
+        },
+    )
+    assert report.status == "critical"
+    assert "critical REQUEST_WEIGHT remaining=0/1200" in summarize_api_budget(report)
+    assert "REQUEST_WEIGHT remaining=0/1200" in report.asdict()["summary"]
+    assert api_budget_startup_block_reason(report) is not None

@@ -1,5 +1,26 @@
 # Continue Development
 
+November 9 resumption: goal active, expanded to a whole-app refactor and visual
+upgrade alongside profitable structural-edge R&D. The [work map](REVAMP_2026_11_09.md)
+preserves the full scope and incomplete gates. The [operator view](review/2026-11-09/operator-overview/review.md)
+now retains exhausted API windows as the summary bottleneck; typed observed,
+unknown, warning, critical and simulation states replace the footer's permissive
+green heuristic. Unknown compute backends do not acquire a GPU label. Cached
+budget text no longer claims independent network verification. Empty performance
+evidence is explicit, risk failures are emphasized, dropdown drawing is shared
+and the minimum-width footer overlap is repaired. Two actual hidden native
+previews were inspected, at 1280x860 and 1680x1020 DIPs; the concept image is
+separate. All preview data are simulated, not loaded account/model evidence.
+The bounded preview tool forces dry-run, contains suspended children before
+resume, waits for initialized controls, refuses overwrite and cleans its own job
+and temporary files on failure. No visible window, input/focus change, recurring
+installation or lingering native preview process was needed.
+Counts remain 203/65/37/0; no market capture, training or profit claim. Next
+prioritize qualified paired cash/cost/financing evidence and the transition-aware
+objective, then verify source-bound operator evidence loading and the remaining
+pages/keyboard/error states. Do not repeat consumed populations, treat the
+concept as an implemented whole-app redesign, or claim exhaustive review.
+
 November 9 closing checkpoint: commit and pause at the user's request. The
 [future NFL test](review/2026-11-09/nfl-nov10-total-floor/review.md) returned 21
 eligible totals, 210 price-complete pairs and zero sub-floor candidates. Best

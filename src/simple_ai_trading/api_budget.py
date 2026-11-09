@@ -43,7 +43,9 @@ class ApiBudgetLine:
 
     @property
     def interval_ms(self) -> int:
-        multiplier = {"S": 1000, "M": 60_000, "H": 3_600_000, "D": 86_400_000}.get(self.interval_letter, 0)
+        multiplier = {"S": 1000, "M": 60_000, "H": 3_600_000, "D": 86_400_000}.get(
+            self.interval_letter, 0
+        )
         return max(0, self.interval_num * multiplier)
 
     def asdict(self) -> dict[str, object]:
@@ -94,7 +96,9 @@ def _safe_float(value: object) -> float | None:
     return parsed if math.isfinite(parsed) and parsed >= 0 else None
 
 
-def _limits_by_key(exchange_info: Mapping[str, object] | None) -> dict[tuple[str, int, str], int]:
+def _limits_by_key(
+    exchange_info: Mapping[str, object] | None,
+) -> dict[tuple[str, int, str], int]:
     if not exchange_info:
         return {}
     rate_limits = exchange_info.get("rateLimits")
@@ -109,13 +113,20 @@ def _limits_by_key(exchange_info: Mapping[str, object] | None) -> dict[tuple[str
         interval_letter = _INTERVAL_LETTERS.get(interval)
         interval_num = _safe_int(item.get("intervalNum"))
         limit = _safe_int(item.get("limit"))
-        if not rate_type or interval_letter is None or interval_num is None or limit is None:
+        if (
+            not rate_type
+            or interval_letter is None
+            or interval_num is None
+            or limit is None
+        ):
             continue
         limits[(rate_type, interval_num, interval_letter)] = limit
     return limits
 
 
-def _headers_from_request_info(request_info: Mapping[str, object] | None) -> Mapping[str, object]:
+def _headers_from_request_info(
+    request_info: Mapping[str, object] | None,
+) -> Mapping[str, object]:
     if not request_info:
         return {}
     headers = request_info.get("rate_limit_headers")
@@ -148,7 +159,11 @@ def build_api_budget_report(
         remaining_pct = None if remaining is None or not limit else remaining / limit
         status = "unknown"
         if remaining_pct is not None:
-            status = "critical" if remaining_pct < 0.05 else ("warn" if remaining_pct < 0.15 else "ok")
+            status = (
+                "critical"
+                if remaining_pct < 0.05
+                else ("warn" if remaining_pct < 0.15 else "ok")
+            )
         lines_by_key[(rate_type, interval_num, interval_letter)] = ApiBudgetLine(
             rate_limit_type=rate_type,
             interval_num=interval_num,
@@ -180,10 +195,16 @@ def build_api_budget_report(
     lines = tuple(
         sorted(
             lines_by_key.values(),
-            key=lambda line: (line.rate_limit_type, line.interval_letter, line.interval_num),
+            key=lambda line: (
+                line.rate_limit_type,
+                line.interval_letter,
+                line.interval_num,
+            ),
         )
     )
-    retry_after = _safe_float(request_info.get("retry_after_seconds")) if request_info else None
+    retry_after = (
+        _safe_float(request_info.get("retry_after_seconds")) if request_info else None
+    )
     statuses = {line.status for line in lines}
     if retry_after is not None:
         status = "blocked"
@@ -215,18 +236,36 @@ def summarize_api_budget(report: ApiBudgetReport | Mapping[str, object] | None) 
         status = str(report.get("status") or "unknown")
         retry_after = _safe_float(report.get("retry_after_seconds"))
         raw_lines = report.get("lines")
-        lines = [dict(item) for item in raw_lines if isinstance(item, Mapping)] if isinstance(raw_lines, list) else []
+        lines = (
+            [dict(item) for item in raw_lines if isinstance(item, Mapping)]
+            if isinstance(raw_lines, list)
+            else []
+        )
     if retry_after is not None:
         return f"API budget: blocked retry_after={retry_after:.1f}s"
-    measured = [line for line in lines if line.get("remaining") is not None and line.get("limit") is not None]
+    measured = [
+        line
+        for line in lines
+        if line.get("remaining") is not None and line.get("limit") is not None
+    ]
     if not measured:
         return f"API budget: {status} used weight unknown"
-    measured.sort(key=lambda line: float(line.get("remaining_pct") or 1.0))
+    # Zero headroom is the tightest budget, not a missing observation.
+    measured.sort(
+        key=lambda line: (
+            float(line["remaining_pct"])
+            if line.get("remaining_pct") is not None
+            else 1.0
+        )
+    )
     tightest = measured[0]
     remaining = int(tightest.get("remaining") or 0)
     limit = int(tightest.get("limit") or 0)
     used = int(tightest.get("used") or 0)
-    label = str(tightest.get("interval_label") or f"{tightest.get('interval_num', '')}{tightest.get('interval_letter', '')}")
+    label = str(
+        tightest.get("interval_label")
+        or f"{tightest.get('interval_num', '')}{tightest.get('interval_letter', '')}"
+    )
     rate_type = str(tightest.get("rate_limit_type") or "REQUEST_WEIGHT")
     return f"API budget: {status} {rate_type} remaining={remaining}/{limit} used={used} window={label}"
 
@@ -245,7 +284,11 @@ def api_budget_startup_block_reason(
     if retry_after is not None:
         return f"Binance API budget guard blocked startup: exchange requested retry-after {retry_after:.1f}s"
     raw_lines = payload.get("lines")
-    lines = [dict(item) for item in raw_lines if isinstance(item, Mapping)] if isinstance(raw_lines, list) else []
+    lines = (
+        [dict(item) for item in raw_lines if isinstance(item, Mapping)]
+        if isinstance(raw_lines, list)
+        else []
+    )
     threshold = max(0.0, min(1.0, float(max_used_ratio)))
     for line in lines:
         used = _safe_int(line.get("used"))
@@ -254,7 +297,10 @@ def api_budget_startup_block_reason(
             continue
         used_ratio = used / limit
         if used_ratio >= threshold:
-            label = str(line.get("interval_label") or f"{line.get('interval_num', '')}{line.get('interval_letter', '')}")
+            label = str(
+                line.get("interval_label")
+                or f"{line.get('interval_num', '')}{line.get('interval_letter', '')}"
+            )
             rate_type = str(line.get("rate_limit_type") or "REQUEST_WEIGHT")
             return (
                 "Binance API budget guard blocked startup: "
@@ -266,22 +312,36 @@ def api_budget_startup_block_reason(
 
 def render_api_budget(report: ApiBudgetReport | Mapping[str, object] | None) -> str:
     if report is None:
-        return "API budget\nstatus=unknown\nwarning: no cached Binance rate-limit sample"
+        return (
+            "API budget\nstatus=unknown\nwarning: no cached Binance rate-limit sample"
+        )
     payload = report.asdict() if isinstance(report, ApiBudgetReport) else dict(report)
-    lines = ["API budget", f"status={payload.get('status') or 'unknown'} market={payload.get('market_type') or 'unknown'}"]
+    lines = [
+        "API budget",
+        f"status={payload.get('status') or 'unknown'} market={payload.get('market_type') or 'unknown'}",
+    ]
     if payload.get("retry_after_seconds") is not None:
         lines.append(f"retry_after_seconds={float(payload['retry_after_seconds']):.1f}")
-    for item in payload.get("lines", []) if isinstance(payload.get("lines"), list) else []:
+    for item in (
+        payload.get("lines", []) if isinstance(payload.get("lines"), list) else []
+    ):
         if not isinstance(item, Mapping):
             continue
         remaining = item.get("remaining")
         limit = item.get("limit")
         used = item.get("used")
-        label = item.get("interval_label") or f"{item.get('interval_num', '')}{item.get('interval_letter', '')}"
+        label = (
+            item.get("interval_label")
+            or f"{item.get('interval_num', '')}{item.get('interval_letter', '')}"
+        )
         if remaining is None or limit is None:
-            lines.append(f"{item.get('rate_limit_type')} {label}: used={used if used is not None else 'unknown'} limit={limit if limit is not None else 'unknown'}")
+            lines.append(
+                f"{item.get('rate_limit_type')} {label}: used={used if used is not None else 'unknown'} limit={limit if limit is not None else 'unknown'}"
+            )
         else:
-            lines.append(f"{item.get('rate_limit_type')} {label}: remaining={remaining}/{limit} used={used} status={item.get('status')}")
+            lines.append(
+                f"{item.get('rate_limit_type')} {label}: remaining={remaining}/{limit} used={used} status={item.get('status')}"
+            )
     lines.append(str(payload.get("summary") or summarize_api_budget(payload)))
     return "\n".join(lines)
 

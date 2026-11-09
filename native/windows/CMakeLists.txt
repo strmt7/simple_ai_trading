@@ -26,3 +26,10 @@ target_link_libraries(SimpleAITrading PRIVATE
     dwmapi
     shell32
 )
+
+include(CTest)
+if(BUILD_TESTING)
+    add_executable(OperatorPresentationTests tests/operator_presentation_tests.cpp)
+    target_include_directories(OperatorPresentationTests PRIVATE src)
+    add_test(NAME operator_presentation COMMAND OperatorPresentationTests)
+endif()

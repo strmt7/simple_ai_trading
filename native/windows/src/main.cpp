@@ -1,4 +1,6 @@
 #include "command_contract.hpp"
+#include "operator_presentation.hpp"
+#include "window_snapshot.hpp"
 
 #include <dwmapi.h>
 #include <shellapi.h>
@@ -21,6 +23,7 @@
 #include <vector>
 
 namespace app {
+namespace presentation = simple_ai_trading::presentation;
 using simple_ai_trading::native_contract::CommandSpec;
 using simple_ai_trading::native_contract::kCommandCount;
 using simple_ai_trading::native_contract::kCommandContractSha256;
@@ -130,6 +133,10 @@ struct HiddenCommandResult {
 class MainWindow {
   public:
     int run(HINSTANCE instance, int show) {
+        if (env_present(L"SIMPLE_AI_TRADING_GUI_PREVIEW_BMP") && !env_present(L"SIMPLE_AI_TRADING_GUI_DRY_RUN")) {
+            return 2;
+        }
+        if (env_present(L"SIMPLE_AI_TRADING_GUI_PREVIEW_BMP")) show = SW_HIDE;
         instance_ = instance;
         SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
         WNDCLASSEXW wc{};
@@ -156,6 +163,17 @@ class MainWindow {
         }
         if (work_height > 0) {
             height = std::min(height, std::max(560, work_height - 24));
+        }
+        if (env_present(L"SIMPLE_AI_TRADING_GUI_PREVIEW_BMP")) {
+            std::uint64_t requested_width = 0, requested_height = 0;
+            const auto preview_width = env_string(L"SIMPLE_AI_TRADING_GUI_PREVIEW_WIDTH_DIPS");
+            const auto preview_height = env_string(L"SIMPLE_AI_TRADING_GUI_PREVIEW_HEIGHT_DIPS");
+            if (!presentation::unsigned_count(preview_width, requested_width) ||
+                !presentation::unsigned_count(preview_height, requested_height) ||
+                requested_width < kMinWidth || requested_width > 3840 ||
+                requested_height < kMinHeight || requested_height > 2160) return 2;
+            width = MulDiv(static_cast<int>(requested_width), system_dpi, 96);
+            height = MulDiv(static_cast<int>(requested_height), system_dpi, 96);
         }
         RECT frame{0, 0, width, height};
         AdjustWindowRectEx(&frame, WS_OVERLAPPEDWINDOW | WS_CLIPCHILDREN, FALSE, 0);
@@ -275,6 +293,9 @@ class MainWindow {
     std::wstring ledger_state_{L"Not checked"};
     std::wstring api_reserve_state_{L"Loading"};
     std::wstring network_state_{L"Not checked"};
+    presentation::Tone api_reserve_tone_ = presentation::Tone::unknown;
+    presentation::Tone compute_tone_ = presentation::Tone::unknown;
+    presentation::Tone ledger_tone_ = presentation::Tone::unknown;
     std::wstring command_contract_state_{L"Contract checking"};
     bool persisted_ai_enabled_ = true;
     bool persisted_reinvest_ = false;
@@ -290,6 +311,8 @@ class MainWindow {
     bool reinvest_enabled_ = false;
     bool smoke_ = false;
     bool dry_run_ = false;
+    int preview_exit_code_ = 0;
+    std::wstring preview_path_;
 
     static constexpr std::array<const wchar_t*, 7> kPages{
         L"Overview",
@@ -302,7 +325,7 @@ class MainWindow {
     };
 
     static constexpr std::array<const wchar_t*, 7> kPageSummaries{
-        L"Verified performance, bot-owned positions, and safety state at a glance.",
+        L"Inspect performance evidence, bot-owned positions and independently verified safety state.",
         L"Launch guarded testnet runs and inspect autonomous lifecycle state.",
         L"Train, evaluate, review, and preserve optimization evidence artifacts.",
         L"Inspect universe eligibility, audits, signals, readiness, and risk controls.",
@@ -375,6 +398,10 @@ class MainWindow {
         case WM_PAINT:
             paint();
             return 0;
+        case WM_PRINTCLIENT:
+            render(reinterpret_cast<HDC>(wparam));
+            GdiFlush();
+            return 0;
         case WM_APP + 1:
             sync_output();
             return 0;
@@ -385,6 +412,12 @@ class MainWindow {
             sync_operator_status();
             return 0;
         case WM_APP + 4:
+            if (!preview_path_.empty() && active_workers_.load() == 0 && operator_status_initialized_) {
+                preview_exit_code_ = presentation::save_hidden_snapshot(
+                    hwnd_, preview_path_, [this](HDC dc) { render(dc); }) ? 0 : 2;
+                preview_path_.clear();
+                request_close();
+            }
             try_complete_close();
             return 0;
         case WM_CLOSE:
@@ -392,7 +425,7 @@ class MainWindow {
             return 0;
         case WM_DESTROY:
             cleanup();
-            PostQuitMessage(0);
+            PostQuitMessage(preview_exit_code_);
             return 0;
         default:
             return DefWindowProcW(hwnd_, message, wparam, lparam);
@@ -406,6 +439,7 @@ class MainWindow {
         edit_brush_ = CreateSolidBrush(RGB(14, 18, 21));
         smoke_ = env_present(L"SIMPLE_AI_TRADING_GUI_SMOKE");
         dry_run_ = env_present(L"SIMPLE_AI_TRADING_GUI_DRY_RUN");
+        preview_path_ = dry_run_ ? env_string(L"SIMPLE_AI_TRADING_GUI_PREVIEW_BMP") : L"";
         rebuild_fonts();
         create_controls();
         populate_pages();
@@ -560,7 +594,7 @@ class MainWindow {
         command_combo_ = create_control(
             L"COMBOBOX",
             L"",
-            CBS_DROPDOWNLIST | CBS_HASSTRINGS | WS_TABSTOP | WS_VSCROLL,
+            CBS_DROPDOWNLIST | CBS_OWNERDRAWFIXED | CBS_HASSTRINGS | WS_TABSTOP | WS_VSCROLL,
             kCommandComboId);
         args_label_ = create_control(L"STATIC", L"Extra Flags", SS_LEFT, 0);
         args_edit_ = create_control(L"EDIT", L"", ES_AUTOHSCROLL | WS_TABSTOP, kArgsEditId);
@@ -599,21 +633,21 @@ class MainWindow {
         risk_report_ = create_control(L"BUTTON", L"Risk Review", BS_OWNERDRAW | WS_TABSTOP, kRiskReportId);
         model_lab_ = create_control(L"BUTTON", L"Positions", BS_OWNERDRAW | WS_TABSTOP, kModelLabId);
         backtest_chart_ = create_control(L"BUTTON", L"Reconcile", BS_OWNERDRAW | WS_TABSTOP, kBacktestChartId);
-        status_bar_ = create_control(L"STATIC", L"API budget: loading", SS_LEFT | SS_NOPREFIX, kStatusBarId);
+        status_bar_ = create_control(L"STATIC", L"API budget: loading", SS_LEFT | SS_NOPREFIX | SS_ENDELLIPSIS, kStatusBarId);
         profile_combo_ = create_control(
             L"COMBOBOX",
             L"",
-            CBS_DROPDOWNLIST | CBS_HASSTRINGS | WS_TABSTOP | WS_VSCROLL,
+            CBS_DROPDOWNLIST | CBS_OWNERDRAWFIXED | CBS_HASSTRINGS | WS_TABSTOP | WS_VSCROLL,
             kProfileComboId);
         leverage_combo_ = create_control(
             L"COMBOBOX",
             L"",
-            CBS_DROPDOWNLIST | CBS_HASSTRINGS | WS_TABSTOP | WS_VSCROLL,
+            CBS_DROPDOWNLIST | CBS_OWNERDRAWFIXED | CBS_HASSTRINGS | WS_TABSTOP | WS_VSCROLL,
             kLeverageComboId);
         mode_combo_ = create_control(
             L"COMBOBOX",
             L"",
-            CBS_DROPDOWNLIST | CBS_HASSTRINGS | WS_TABSTOP | WS_VSCROLL,
+            CBS_DROPDOWNLIST | CBS_OWNERDRAWFIXED | CBS_HASSTRINGS | WS_TABSTOP | WS_VSCROLL,
             kModeComboId);
         ai_toggle_ = create_control(
             L"BUTTON",
@@ -676,7 +710,8 @@ class MainWindow {
 
         MoveWindow(title_, scale(58), scale(13), sidebar - scale(76), scale(34), TRUE);
         MoveWindow(page_list_, scale(10), header_h + scale(18), sidebar - scale(20), footer_top - header_h - scale(36), TRUE);
-        MoveWindow(status_bar_, scale(148), footer_top + scale(18), scale(190), scale(30), TRUE);
+        const int first_cell_right = scale(28) + telemetry_cell_width(client.right);
+        MoveWindow(status_bar_, scale(148), footer_top + scale(18), std::max(scale(1), first_cell_right - scale(8) - scale(148)), scale(30), TRUE);
 
         const OverviewActionLayout actions = overview_action_layout(right);
         MoveWindow(
@@ -855,6 +890,10 @@ class MainWindow {
         MoveWindow(status_bar_, scale(28), footer_top + scale(24), client.right - scale(56), scale(30), TRUE);
     }
 
+    int telemetry_cell_width(int client_width) const {
+        return std::max(scale(1), (client_width - scale(146)) / 4);
+    }
+
     void paint_overview(HDC dc, const RECT& client) {
         const int sidebar = scale(220);
         const int header_h = scale(60);
@@ -892,6 +931,9 @@ class MainWindow {
         std::wstring api_reserve_state;
         std::wstring network_state;
         std::wstring command_contract_state;
+        presentation::Tone api_reserve_tone;
+        presentation::Tone compute_tone;
+        presentation::Tone ledger_tone;
         bool ai_enabled = false;
         {
             std::lock_guard lock(operator_status_mutex_);
@@ -906,9 +948,12 @@ class MainWindow {
             api_reserve_state = api_reserve_state_;
             network_state = network_state_;
             command_contract_state = command_contract_state_;
+            api_reserve_tone = api_reserve_tone_;
+            compute_tone = compute_tone_;
+            ledger_tone = ledger_tone_;
             ai_enabled = persisted_ai_enabled_;
         }
-        const bool ai_gpu_resident = ai_enabled && ai_runtime_state == L"gpu";
+        const bool ai_gpu_resident = !dry_run_ && ai_enabled && ai_runtime_state == L"gpu";
         std::wstring ai_state = L"AI off";
         if (ai_enabled) {
             if (ai_assist_state == L"shadow_idle") {
@@ -934,6 +979,10 @@ class MainWindow {
             } else {
                 ai_state = ai_model_state + L" / gated";
             }
+        }
+        if (dry_run_) {
+            environment_state = L"Dry-run preview";
+            ai_state = L"AI simulated";
         }
         const std::array<std::wstring, 5> states{
             environment_state,
@@ -968,20 +1017,16 @@ class MainWindow {
         round_rect(dc, chart, RGB(20, 29, 34), RGB(48, 64, 72), scale(4));
         round_rect(dc, gates, RGB(20, 29, 34), RGB(48, 64, 72), scale(4));
 
-        draw_text(dc, L"Verified performance", RECT{chart.left + scale(16), chart.top + scale(12), chart.right - scale(16), chart.top + scale(38)},
+        draw_text(dc, L"Performance evidence", RECT{chart.left + scale(16), chart.top + scale(12), chart.right - scale(16), chart.top + scale(38)},
                   body_font_, kText, DT_LEFT | DT_SINGLELINE);
-        RECT plot{chart.left + scale(64), chart.top + scale(62), chart.right - scale(20), chart.bottom - scale(38)};
-        for (int line = 0; line <= 4; ++line) {
-            int y = plot.top + (plot.bottom - plot.top) * line / 4;
-            fill_rect(dc, RECT{plot.left, y, plot.right, y + scale(1)}, RGB(48, 61, 68));
-        }
-        for (int line = 0; line <= 6; ++line) {
-            int x = plot.left + (plot.right - plot.left) * line / 6;
-            fill_rect(dc, RECT{x, plot.top, x + scale(1), plot.bottom}, RGB(42, 55, 62));
-        }
-        draw_text(dc, L"Performance series not loaded", plot, body_font_, kMuted, DT_CENTER | DT_VCENTER | DT_SINGLELINE);
-        draw_text(dc, L"UTC time", RECT{plot.left, plot.bottom + scale(8), plot.right, chart.bottom - scale(6)}, small_font_, kSubtle,
-                  DT_CENTER | DT_SINGLELINE);
+        fill_rect(dc, RECT{chart.left, chart.top + scale(48), chart.right, chart.top + scale(49)}, RGB(48, 64, 72));
+        const int evidence_center = (chart.top + scale(49) + chart.bottom) / 2;
+        RECT evidence_title{chart.left + scale(20), evidence_center - scale(28), chart.right - scale(20), evidence_center + scale(4)};
+        draw_text(dc, L"No verified series loaded", evidence_title, body_font_, kText,
+                  DT_CENTER | DT_VCENTER | DT_SINGLELINE | DT_END_ELLIPSIS);
+        draw_text(dc, L"Choose Research to review source-bound results.",
+                  RECT{chart.left + scale(20), evidence_center + scale(8), chart.right - scale(20), evidence_center + scale(60)},
+                  small_font_, kMuted, DT_CENTER | DT_WORDBREAK);
 
         draw_text(dc, L"Risk controls", RECT{gates.left + scale(16), gates.top + scale(12), gates.right - scale(16), gates.top + scale(38)},
                   body_font_, kText, DT_LEFT | DT_SINGLELINE);
@@ -989,6 +1034,9 @@ class MainWindow {
         const std::array<const wchar_t*, 5> gate_names{L"Bot ledger", L"Market regime", L"Data freshness", L"API reserve", L"Reconciliation"};
         const std::array<std::wstring, 5> gate_values{
             ledger_state, L"Not evaluated", L"Not checked", api_reserve_state, L"Not checked"};
+        const std::array<presentation::Tone, 5> gate_tones{
+            ledger_tone, presentation::Tone::unknown, presentation::Tone::unknown,
+            api_reserve_tone, presentation::Tone::unknown};
         const int gate_row_h = std::max(scale(36), static_cast<int>(gates.bottom - gates.top - scale(49)) / 5);
         for (int index = 0; index < 5; ++index) {
             int top = gates.top + scale(49) + index * gate_row_h;
@@ -997,7 +1045,7 @@ class MainWindow {
             RECT value_rect{name_rect.right, top, gates.right - scale(14), top + gate_row_h};
             draw_text(dc, gate_names[static_cast<std::size_t>(index)], name_rect, small_font_, kText,
                       DT_LEFT | DT_VCENTER | DT_SINGLELINE | DT_END_ELLIPSIS);
-            draw_text(dc, gate_values[static_cast<std::size_t>(index)], value_rect, small_font_, kMuted,
+            draw_text(dc, gate_values[static_cast<std::size_t>(index)], value_rect, small_font_, status_color(gate_tones[static_cast<std::size_t>(index)]),
                       DT_LEFT | DT_VCENTER | DT_SINGLELINE | DT_END_ELLIPSIS);
         }
 
@@ -1029,16 +1077,17 @@ class MainWindow {
             L"API budget", L"Compute backend", L"Network", L"Data freshness"};
         const std::array<std::wstring, 4> telemetry_values{
             api_reserve_state, compute_state, network_state, L"Not checked"};
+        const std::array<presentation::Tone, 4> telemetry_tones{
+            api_reserve_tone, compute_tone, presentation::Tone::unknown, presentation::Tone::unknown};
         const int telemetry_left = scale(28);
-        const int telemetry_right = client.right - scale(118);
-        const int telemetry_width = (telemetry_right - telemetry_left) / 4;
+        const int telemetry_width = telemetry_cell_width(client.right);
         for (int index = 0; index < 4; ++index) {
             RECT cell{telemetry_left + index * telemetry_width, footer_top, telemetry_left + (index + 1) * telemetry_width, client.bottom};
             if (index > 0) fill_rect(dc, RECT{cell.left, cell.top + scale(16), cell.left + scale(1), cell.bottom - scale(16)}, RGB(54, 69, 76));
             RECT dot{cell.left + scale(4), cell.top + scale(27), cell.left + scale(12), cell.top + scale(35)};
             const std::wstring& value = telemetry_values[static_cast<std::size_t>(index)];
-            const bool confirmed = value != L"Not checked" && value != L"Checking" && value != L"Unavailable" && value != L"Loading";
-            HBRUSH brush = CreateSolidBrush(confirmed ? RGB(68, 207, 137) : RGB(126, 139, 146));
+            const COLORREF color = status_color(telemetry_tones[static_cast<std::size_t>(index)]);
+            HBRUSH brush = CreateSolidBrush(color);
             HGDIOBJ old = SelectObject(dc, brush);
             Ellipse(dc, dot.left, dot.top, dot.right, dot.bottom);
             SelectObject(dc, old);
@@ -1048,7 +1097,7 @@ class MainWindow {
                       DT_LEFT | DT_VCENTER | DT_SINGLELINE | DT_END_ELLIPSIS);
             if (index > 0) {
                 draw_text(dc, value,
-                          RECT{cell.left + telemetry_width * 62 / 100, cell.top, cell.right - scale(8), cell.bottom}, small_font_, kMuted,
+                          RECT{cell.left + telemetry_width * 62 / 100, cell.top, cell.right - scale(8), cell.bottom}, small_font_, color,
                           DT_LEFT | DT_VCENTER | DT_SINGLELINE | DT_END_ELLIPSIS);
             }
         }
@@ -1059,12 +1108,16 @@ class MainWindow {
     void paint() {
         PAINTSTRUCT ps{};
         HDC dc = BeginPaint(hwnd_, &ps);
+        render(dc);
+        EndPaint(hwnd_, &ps);
+    }
+
+    void render(HDC dc) {
         RECT client{};
         GetClientRect(hwnd_, &client);
         fill_rect(dc, client, kBg);
         if (page_index_ == 0) {
             paint_overview(dc, client);
-            EndPaint(hwnd_, &ps);
             return;
         }
 
@@ -1141,7 +1194,6 @@ class MainWindow {
 
         RECT footer_line{pad, footer_top, client.right - pad, footer_top + scale(1)};
         fill_rect(dc, footer_line, RGB(37, 50, 58));
-        EndPaint(hwnd_, &ps);
     }
 
     void fill_rect(HDC dc, const RECT& rect, COLORREF color) {
@@ -1160,6 +1212,16 @@ class MainWindow {
         SelectObject(dc, old_pen);
         DeleteObject(brush);
         DeleteObject(pen);
+    }
+
+    static COLORREF status_color(presentation::Tone tone) {
+        switch (tone) {
+        case presentation::Tone::observed: return RGB(118, 192, 218);
+        case presentation::Tone::caution:
+        case presentation::Tone::simulation: return RGB(239, 190, 99);
+        case presentation::Tone::critical: return RGB(255, 120, 130);
+        default: return kMuted;
+        }
     }
 
     void draw_text(HDC dc, const std::wstring& value, RECT rect, HFONT font, COLORREF color, UINT format) {
@@ -1205,6 +1267,10 @@ class MainWindow {
             item->itemHeight = scale(42);
             return TRUE;
         }
+        if (item->CtlType == ODT_COMBOBOX) {
+            item->itemHeight = scale(24);
+            return TRUE;
+        }
         return FALSE;
     }
 
@@ -1215,10 +1281,37 @@ class MainWindow {
         if (item->CtlType == ODT_LISTBOX && id == kPageListId) {
             return draw_page_item(item);
         }
+        if (item->CtlType == ODT_COMBOBOX) {
+            return draw_combo_item(item);
+        }
         if (item->CtlType != ODT_BUTTON) {
             return FALSE;
         }
         return draw_button_item(id, item);
+    }
+
+    LRESULT draw_combo_item(DRAWITEMSTRUCT* item) {
+        const bool focused = (item->itemState & ODS_FOCUS) != 0;
+        const bool disabled = (item->itemState & ODS_DISABLED) != 0;
+        const bool selected = (item->itemState & ODS_SELECTED) != 0;
+        fill_rect(item->hDC, item->rcItem, selected ? kPanel2 : kPanel);
+        int index = static_cast<int>(item->itemID);
+        if (index < 0) index = static_cast<int>(SendMessageW(item->hwndItem, CB_GETCURSEL, 0, 0));
+        std::wstring value = L"Select an option";
+        if (index >= 0) {
+            const auto length = SendMessageW(item->hwndItem, CB_GETLBTEXTLEN, index, 0);
+            if (length >= 0 && length < 4096) {
+                value.resize(static_cast<std::size_t>(length) + 1);
+                const auto copied = SendMessageW(item->hwndItem, CB_GETLBTEXT, index, reinterpret_cast<LPARAM>(value.data()));
+                value.resize(copied >= 0 ? static_cast<std::size_t>(copied) : 0);
+            }
+        }
+        RECT text = item->rcItem;
+        InflateRect(&text, -scale(8), 0);
+        draw_text(item->hDC, value, text, body_font_, disabled ? kSubtle : kText,
+                  DT_LEFT | DT_VCENTER | DT_SINGLELINE | DT_END_ELLIPSIS);
+        if (focused) DrawFocusRect(item->hDC, &item->rcItem);
+        return TRUE;
     }
 
     LRESULT draw_page_item(DRAWITEMSTRUCT* item) {
@@ -2114,26 +2207,19 @@ class MainWindow {
             if (text.empty()) {
                 text = L"API budget: unavailable";
             }
-            std::wstring reserve = L"Unavailable";
-            const std::size_t remaining_at = text.find(L"remaining=");
-            if (remaining_at != std::wstring::npos) {
-                const std::size_t value_start = remaining_at + std::wstring(L"remaining=").size();
-                const std::size_t value_end = text.find(L' ', value_start);
-                reserve = text.substr(value_start, value_end == std::wstring::npos ? std::wstring::npos : value_end - value_start);
-                reserve += L" remaining";
-            } else if (text.find(L"dry-run") != std::wstring::npos) {
-                reserve = L"Dry-run";
-            }
+            const auto reserve = dry_run_enabled()
+                ? presentation::Status{L"Dry-run", presentation::Tone::simulation}
+                : presentation::api_budget(text);
             {
                 std::lock_guard lock(api_budget_mutex_);
                 api_budget_ = text;
             }
             {
                 std::lock_guard lock(operator_status_mutex_);
-                api_reserve_state_ = reserve;
-                if (!cached_only) {
-                    network_state_ = remaining_at == std::wstring::npos ? L"Unavailable" : L"Exchange queried";
-                }
+                api_reserve_state_ = reserve.label;
+                api_reserve_tone_ = reserve.tone;
+                // The compact budget can be cached; it does not verify connectivity.
+                network_state_ = L"Not checked";
             }
         });
     }
@@ -2225,30 +2311,16 @@ class MainWindow {
                 ai_assist_state_ = ai_assist.empty() ? L"gated" : ai_assist;
                 if (!reinvest.empty()) persisted_reinvest_ = reinvest == L"on";
                 if (!execution.empty()) persisted_execution_ = execution == L"live" ? L"Testnet live" : L"Paper";
-                if (ledger == L"invalid") {
-                    ledger_state_ = L"Integrity failure";
-                } else if (ledger == L"tracked") {
-                    ledger_state_ = (positions.empty() ? L"Open positions" : positions + L" tracked");
-                } else if (ledger == L"clear") {
-                    ledger_state_ = L"Clear - 0 open";
-                } else {
-                    ledger_state_ = L"Unavailable";
-                }
-                if (compute.empty()) {
-                    compute_state_ = L"Unavailable";
-                } else if (compute == L"cpu") {
-                    compute_state_ = L"CPU";
-                } else if (compute == L"directml") {
-                    compute_state_ = L"DirectML GPU";
-                } else if (compute == L"cuda") {
-                    compute_state_ = L"CUDA GPU";
-                } else if (compute == L"rocm") {
-                    compute_state_ = L"ROCm GPU";
-                } else if (compute == L"mps") {
-                    compute_state_ = L"MPS GPU";
-                } else {
-                    compute_state_ = display_token(compute) + L" GPU";
-                }
+                const auto ledger_view = dry_run_enabled()
+                    ? presentation::Status{L"Simulated ledger", presentation::Tone::simulation}
+                    : presentation::ledger(ledger, positions);
+                ledger_state_ = ledger_view.label;
+                ledger_tone_ = ledger_view.tone;
+                const auto compute_view = dry_run_enabled()
+                    ? presentation::Status{L"Simulated", presentation::Tone::simulation}
+                    : presentation::compute(compute);
+                compute_state_ = compute_view.label;
+                compute_tone_ = compute_view.tone;
                 if (ui_contract.empty()) {
                     command_contract_state_ = L"Contract unavailable";
                 } else if (command_contract_synced) {

@@ -1,0 +1,180 @@
+{
+  "base_head": "68d426ebf566e7ac6af03ce074befe501905ac3c",
+  "classification": "synthetic visual and operator-information verification; no financial edge or GPU/model performance evidence",
+  "financial_authority": {
+    "account_requests": 0,
+    "credentials_used": false,
+    "funds_used": false,
+    "model_fits": 0,
+    "new_market_requests": 0,
+    "orders_or_transactions": 0,
+    "profitability_claim": false,
+    "qualified_stable_edge_count": 0
+  },
+  "goal_status": "active",
+  "images": [
+    {
+      "bytes": 1405809,
+      "height_pixels": 941,
+      "path": "docs/review/2026-11-09/operator-overview/overview-concept.png",
+      "role": "generated_design_concept",
+      "sha256": "152c7c360d3d7f805ad5f2b2207d716f83b7122b58d65570b35ac330e34dfa6c",
+      "width_pixels": 1672
+    },
+    {
+      "bytes": 69842,
+      "height_pixels": 1290,
+      "path": "docs/review/2026-11-09/operator-overview/overview-native-1280.png",
+      "role": "superseded_intermediate_preview",
+      "sha256": "aa74445829f4cc120e3b289dd7170a26b89ce57ea2013768571edea3b0974e67",
+      "width_pixels": 1920
+    },
+    {
+      "bytes": 69977,
+      "height_pixels": 1290,
+      "path": "docs/review/2026-11-09/operator-overview/overview-native-final-1280.png",
+      "role": "superseded_intermediate_preview",
+      "sha256": "46017b1a279af3932580a606aaa640711546853d837e20119373fa6d4f0001b2",
+      "width_pixels": 1920
+    },
+    {
+      "bytes": 75746,
+      "height_pixels": 1530,
+      "path": "docs/review/2026-11-09/operator-overview/overview-native-final-1680.png",
+      "role": "superseded_intermediate_preview",
+      "sha256": "062231f2ba63e5cd80ca45316dee336575563fa4bcb96c2128e2070bf1dc9ff0",
+      "width_pixels": 2520
+    },
+    {
+      "bytes": 72561,
+      "height_pixels": 1290,
+      "path": "docs/review/2026-11-09/operator-overview/overview-native-inspected-1280.png",
+      "role": "inspected_current_native_dry_run",
+      "sha256": "0cccdb6f1c773d62367a1b22f081734d3128fd5b77551935aed18d2af13b9204",
+      "width_pixels": 1920
+    },
+    {
+      "bytes": 78324,
+      "height_pixels": 1530,
+      "path": "docs/review/2026-11-09/operator-overview/overview-native-inspected-1680.png",
+      "role": "inspected_current_native_dry_run",
+      "sha256": "2d416c4a6624b9488a87c3b0eb5b3142ae7310c18d0fba96b0d6626d45b975e8",
+      "width_pixels": 2520
+    },
+    {
+      "bytes": 75756,
+      "height_pixels": 1530,
+      "path": "docs/review/2026-11-09/operator-overview/overview-native-verified.png",
+      "role": "superseded_intermediate_preview",
+      "sha256": "69f31d95e0f2d0a7022e6fd91dd09d9f2cf170d6d14b9933261cdf8678034c5d",
+      "width_pixels": 2520
+    },
+    {
+      "bytes": 78267,
+      "height_pixels": 1530,
+      "path": "docs/review/2026-11-09/operator-overview/overview-native.png",
+      "role": "superseded_intermediate_preview",
+      "sha256": "3ffaf4b080d1aba3d69bd7c238993f4f1553b566c91527ac6936aaaa346bb807",
+      "width_pixels": 2520
+    }
+  ],
+  "line_endings": "Tested worktree bytes and LF Git text identity are both retained. CRLF to LF changes no source tokens; no economic consumed implementation is modified.",
+  "native_executable": {
+    "mode": "Release C++20; local build, not a released binary",
+    "path": "build/windows/SimpleAITrading.exe",
+    "sha256": "ea91adaa78f066843d11d3c23a8f50123a1d9f93512967a376df27cd3e2fa8b5"
+  },
+  "pillow_version": "13.0.0",
+  "python_version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+  "result_sha256": "14815f19687fc62885a551c55191097a8992da09a819d0d8ab227078b2bdf558",
+  "schema_version": "native-operator-overview-evidence-v1",
+  "source_binding": [
+    {
+      "crlf_count": 0,
+      "git_lf_canonical_sha256": "0c7fa5f48ac0075ec143fd66526bd0f4e6007cf47c228ab486bced68dd107ae1",
+      "path": "native/windows/CMakeLists.txt",
+      "semantic_review_scope": "new implementation/test or changed build definition",
+      "tested_worktree_sha256": "0c7fa5f48ac0075ec143fd66526bd0f4e6007cf47c228ab486bced68dd107ae1"
+    },
+    {
+      "crlf_count": 2071,
+      "git_lf_canonical_sha256": "34d7a83d00d6cdaa733c0577539413bb9e04438bdf6882372a7fde6f32c1d6f0",
+      "path": "native/windows/src/main.cpp",
+      "semantic_review_scope": "changed sections and immediate boundaries",
+      "tested_worktree_sha256": "b4c7568981949b31ef27c7e3f19ca2511b3bf35dd801a25d81da9d7e6dd893b9"
+    },
+    {
+      "crlf_count": 0,
+      "git_lf_canonical_sha256": "4540a71dfe3757542fa13aef5b81cb40fbf8b18b630ffb6d07d267960fa03ec7",
+      "path": "native/windows/src/operator_presentation.hpp",
+      "semantic_review_scope": "new implementation/test or changed build definition",
+      "tested_worktree_sha256": "4540a71dfe3757542fa13aef5b81cb40fbf8b18b630ffb6d07d267960fa03ec7"
+    },
+    {
+      "crlf_count": 0,
+      "git_lf_canonical_sha256": "f1d438f68ca9c6f3ff54c001258365ba85af6944cbe1d14e5f70ccf28d0bb8b9",
+      "path": "native/windows/src/window_snapshot.hpp",
+      "semantic_review_scope": "new implementation/test or changed build definition",
+      "tested_worktree_sha256": "f1d438f68ca9c6f3ff54c001258365ba85af6944cbe1d14e5f70ccf28d0bb8b9"
+    },
+    {
+      "crlf_count": 0,
+      "git_lf_canonical_sha256": "fcf74abd5528b63fc087720380c41777ac3ae6ea6ac527abd58027547e56781f",
+      "path": "native/windows/tests/operator_presentation_tests.cpp",
+      "semantic_review_scope": "new implementation/test or changed build definition",
+      "tested_worktree_sha256": "fcf74abd5528b63fc087720380c41777ac3ae6ea6ac527abd58027547e56781f"
+    },
+    {
+      "crlf_count": 0,
+      "git_lf_canonical_sha256": "afd3b7b29159b2b4ece25aaa5547de07eb602e45bbb60d39cdd7bafa61db7aea",
+      "path": "src/simple_ai_trading/api_budget.py",
+      "semantic_review_scope": "changed sections and immediate boundaries",
+      "tested_worktree_sha256": "afd3b7b29159b2b4ece25aaa5547de07eb602e45bbb60d39cdd7bafa61db7aea"
+    },
+    {
+      "crlf_count": 0,
+      "git_lf_canonical_sha256": "b60ee22979840c4a53159a0dabec01aa3306a3692cb461a8144bfe9155a082f7",
+      "path": "tests/test_api_budget.py",
+      "semantic_review_scope": "new implementation/test or changed build definition",
+      "tested_worktree_sha256": "b60ee22979840c4a53159a0dabec01aa3306a3692cb461a8144bfe9155a082f7"
+    },
+    {
+      "crlf_count": 0,
+      "git_lf_canonical_sha256": "3b7a15df4f20064e02aa2c650ad40332ce1138b8cf5bb3dca987f06f3e791de3",
+      "path": "tools/capture_native_windows_preview.py",
+      "semantic_review_scope": "new implementation/test or changed build definition",
+      "tested_worktree_sha256": "3b7a15df4f20064e02aa2c650ad40332ce1138b8cf5bb3dca987f06f3e791de3"
+    },
+    {
+      "crlf_count": 0,
+      "git_lf_canonical_sha256": "ed4b2c28808e88ec4a19eca4326ad257f0c23d6312fcf25f57a40bbbdb78385d",
+      "path": "tests/test_native_windows_preview.py",
+      "semantic_review_scope": "new implementation/test or changed build definition",
+      "tested_worktree_sha256": "ed4b2c28808e88ec4a19eca4326ad257f0c23d6312fcf25f57a40bbbdb78385d"
+    }
+  ],
+  "verification": {
+    "affected_python_checks_passed": 62,
+    "hidden_previews_completed_and_exited": 2,
+    "inspected_logical_sizes_dips": [
+      [
+        1280,
+        860
+      ],
+      [
+        1680,
+        1020
+      ]
+    ],
+    "keyboard_all_pages_and_all_dpi_verified": false,
+    "native_ctest_executables_passed": 1,
+    "native_preview_without_dry_run_exit_code": 2,
+    "negative_preview_output_created": false,
+    "preview_processes_remaining_in_scoped_host_scan": 0,
+    "project_scheduled_tasks_in_scoped_host_scan": 0,
+    "rejected_black_cross_process_attempts": 4,
+    "ruff_check": "passed",
+    "ruff_format_check": "passed"
+  },
+  "whole_app_review_complete": false
+}

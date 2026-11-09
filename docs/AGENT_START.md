@@ -10,6 +10,15 @@ Scope blockers to their branch; a fresh user resumption resets the blocked audit
 
 ## Current Truth
 
+November 9 resumed scope: the active goal now also includes substantial app
+refactoring and visual improvement. Follow the [revamp work map](REVAMP_2026_11_09.md)
+without reducing the profitability objective to a UI exercise. The first
+[operator-view checkpoint](review/2026-11-09/operator-overview/review.md) fixes
+zero-headroom budget summaries and misleading health colors, separates typed
+presentation, and verifies two hidden native dry-run renders. Simulation is
+explicit; no market experiment, account access, fit or new edge. Counts stay
+203/65/37/0. The earlier pause below is historical; the goal is active again.
+
 November 9 closing checkpoint: the [one-use future NFL screen](review/2026-11-09/nfl-nov10-total-floor/review.md)
 evaluated 210 complete total-ladder pairs; none was strictly below its conditional
 one-unit payout floor. The best acquisition proxy was 1.04 before fees. All three

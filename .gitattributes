@@ -254,3 +254,8 @@ docs/review/2026-10-08/inventory-action-*.json text eol=lf
 docs/review/2026-11-09/nfl-nov10-total-floor/*.raw binary -eol
 docs/review/2026-11-09/nfl-nov10-total-floor/*.json binary -eol
 docs/review/2026-11-09/nfl-nov10-total-floor/*.jsonl binary -eol
+
+native/windows/**/*.cpp text eol=lf
+native/windows/**/*.hpp text eol=lf
+native/windows/CMakeLists.txt text eol=lf
+docs/review/2026-11-09/operator-overview/*.json binary -eol
