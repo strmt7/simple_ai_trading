@@ -1,0 +1,9 @@
+{
+  "monthly_cash_rows_verified_against_typed_funding_core_and_native_index_deltas": 36,
+  "new_network_requests": 0,
+  "old_registry_terminal_rows_unchanged": 203,
+  "other_hypothesis_rows_unchanged": 64,
+  "role_capital_and_net_identities_verified": 9,
+  "schema": "annual-fixed-law-independent-reconciliation-v1",
+  "scope": "Identity reconciliation of the frozen law, not another economic test or account entitlement proof."
+}

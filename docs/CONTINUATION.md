@@ -9,7 +9,7 @@ Neither partial verification nor an administrative checkpoint completes it.
 
 ## Current decision
 
-Financial counts remain **203 observations / 65 hypotheses / 37 scoped mechanisms
+Financial counts are **204 observations / 65 hypotheses / 37 scoped mechanisms
 / 0 qualified stable edges**. Favor recurring net cash and sound payoff identities;
 expiring promotions and larger datasets alone are not the objective. Use the full
 [revamp work map](REVAMP_2026_11_09.md) and [work priorities](WORK_PRIORITIES.md).
@@ -38,8 +38,13 @@ current full-suite failure count without rerunning the appropriate scope.
   boundary distinction; the futures `T`/`pu` normalizer is not a Spot adapter.
   Its clock probe now rejects malformed clocks and discontinuities and preserves
   small integer differences; 86 scoped checks pass, without clock qualification.
-  Next is a separately bounded zero-network clock-only audit of retained Spot
-  depth, preserving all original source and financial-window restrictions.
+  The [retained clock audit](review/2026-11-09/spot-clock-audit/review.md) completed
+  once: 1,755 depth events, no E regression and observed receipt-minus-E ranges
+  of 1.6642-17.5574 ms across symbols. These are cross-clock differences, not
+  measured latency. All three snapshots lack E/T. Preserve nullable snapshot
+  exchange time and actual collector availability in a future causal Spot path;
+  native-clock replay, full coverage and paired costs remain open. No new market
+  download or economic observation followed, and old window restrictions stand.
   Routine public technical-document decisions now use the user's explicit
   session delegation in AGENTS, without repeated approval requests. Earlier
   source failures, consumed financial tests and protected captures stay intact.
@@ -67,6 +72,15 @@ current full-suite failure count without rerunning the appropriate scope.
   No economic rejection follows. Do not enlarge the cap, alias, retry or request
   that population's funding/books. A later study needs its literal independent
   material-source or informative distinct-population trigger, not time alone.
+  The separate [2025 annual diagnostic](review/2026-11-09/year-funding/review.md)
+  completed 46 native responses, 36 monthly cash intervals and 6/3/3-month roles.
+  BTC/ETH have positive conditional at-par funding cash in all twelve months,
+  but all nine role nets fail the fixed reserves and explicit two-leg capital
+  hurdle; SOL also fails late persistence. Zero survivors; this population is
+  consumed. All 36 cash rows and nine capital/net identities were reconciled.
+  Historical terms/index continuity and actual total hedged profit remain
+  unqualified. No reprice, subset, reorientation or book/account follow-up;
+  use the unchanged literal trigger for an informative distinct future study.
 - [Timed native replay](review/2026-11-09/timed-snapshot-normalization/review.md)
   fixes the actual HftBacktest time-zero snapshot leak. 64 capture/normalization
   and 20 readiness checks pass in overlapping lanes. EOF is not a valid clock step.

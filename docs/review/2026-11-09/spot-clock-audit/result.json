@@ -1,0 +1,53 @@
+{
+  "clock_offset_assumed_zero": false,
+  "economic_fields_inspected": false,
+  "intent_sha256": "2a8151fd275fc89586c26edb501c42e6317da961ccb3daef545fd1880abeb67a",
+  "interpretation": "Receipt minus E is an observed cross-clock difference, not physical latency. Unknown relative clock offsets remain unknown; no unit was selected from these outcomes.",
+  "native_event_unit": "source-declared microsecond",
+  "network_requests": 0,
+  "raw_sha256": "dfc2547f0d2cfcb819e07f90319fa65af15db5f3ed8fce17ccafc9c1dfbf7158",
+  "schema": "retained-spot-clock-diagnostic-v1",
+  "symbols": {
+    "BTCUSDT": {
+      "E_regressions": 0,
+      "depth_events": 600,
+      "negative_receipt_minus_E_count": 0,
+      "receipt_minus_E_ns_max": 17557400,
+      "receipt_minus_E_ns_min": 2204400,
+      "snapshot_native_E_count": 0,
+      "snapshot_native_T_count": 0,
+      "snapshot_receipts_ns": [
+        1790812801607699200
+      ],
+      "snapshots": 1
+    },
+    "ETHUSDT": {
+      "E_regressions": 0,
+      "depth_events": 600,
+      "negative_receipt_minus_E_count": 0,
+      "receipt_minus_E_ns_max": 16588500,
+      "receipt_minus_E_ns_min": 1664200,
+      "snapshot_native_E_count": 0,
+      "snapshot_native_T_count": 0,
+      "snapshot_receipts_ns": [
+        1790812800617169200
+      ],
+      "snapshots": 1
+    },
+    "SOLUSDT": {
+      "E_regressions": 0,
+      "depth_events": 555,
+      "negative_receipt_minus_E_count": 0,
+      "receipt_minus_E_ns_max": 11584700,
+      "receipt_minus_E_ns_min": 1811300,
+      "snapshot_native_E_count": 0,
+      "snapshot_native_T_count": 0,
+      "snapshot_receipts_ns": [
+        1790812802414643500
+      ],
+      "snapshots": 1
+    }
+  },
+  "training_or_edge_admission": false,
+  "true_latency_or_native_book_age_qualified": false
+}

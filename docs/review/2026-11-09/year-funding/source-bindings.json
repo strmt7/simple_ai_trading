@@ -1,0 +1,13 @@
+{
+  "independent_reconciliation_sha256": "591adc726786a7fef4da6df2bd171534888180fa1c037978b03e27dfa07b43d8",
+  "inert_source_sha256": {
+    "source/annual_core.py.txt": "6c43f37006bce0947445982122943464e2ed1f4a3b7eaf719a3573ecda978581",
+    "source/earliest_marks.py.txt": "aa237b9f9836a081b3245fe7dac616e6c2301c0e0d79cf59f95491756a78e847",
+    "source/full_capture.py.txt": "6fdb90ff4d56d471d3bf027b9ca1e9272d1eef48efd74e09313a4b8179da36b0",
+    "source/owned_full.py.txt": "8c000e262677d599701e49ca4968bc1ba3c19346f0089a77356961fd16749647",
+    "source/owned_phase_a.py.txt": "d47c4f511610093e733c8ad07f62a872b1956af7d38977eaa5cee1b76dbaba92"
+  },
+  "preflight_sha256": "a63cd1aebd094dcfc3299989b6156d701c2f69bea16d91e3987a8314303cbf33",
+  "schema": "annual-funding-source-implementation-bindings-v1",
+  "source_mode": "Inert exact implementation snapshots; no automatic launcher or persistent installation."
+}

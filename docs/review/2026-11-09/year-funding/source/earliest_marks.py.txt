@@ -1,0 +1,112 @@
+"""One-use earliest-slice gate before a nonoverlapping annual funding study."""
+
+import argparse
+import hashlib
+import json
+import os
+from pathlib import Path
+import time
+
+import requests
+
+from simple_ai_trading.funding_cash import parse_binance_usdm_funding_history
+
+ROOT = Path.cwd()
+OUT = ROOT / "data/research/2026-11-09-year-funding"
+CONTRACT = ROOT / "docs/review/2026-11-09/year-funding/contract.json"
+
+
+def sha(path):
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def write_json(path, value):
+    with path.open("x", encoding="utf-8", newline="\n") as stream:
+        json.dump(value, stream, indent=2, sort_keys=True)
+        stream.write("\n")
+        stream.flush()
+        os.fsync(stream.fileno())
+
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--preflight", action="store_true")
+    args = parser.parse_args()
+    if args.preflight:
+        raw = json.dumps([{"symbol": "BTCUSDT", "fundingTime": index * 28_800_000,
+                           "fundingRate": "0.001", "markPrice": "100"} for index in range(4)]).encode()
+        parsed = parse_binance_usdm_funding_history(raw, expected_sha256=hashlib.sha256(raw).hexdigest(), expected_symbol="BTCUSDT")
+        if len(parsed) != 4:
+            raise ValueError("Native cash parser synthetic preflight failed")
+        write_json(OUT / "preflight-v2.json", {"controller_sha256": sha(Path(__file__)),
+                   "parser_sha256": sha(ROOT / "src/simple_ai_trading/funding_cash.py"),
+                   "synthetic_rows": 4, "network_requests": 0})
+        print("Exact entry, transport import, strict native cash parser and durable write passed.")
+        return
+    contract = json.loads(CONTRACT.read_bytes())
+    expected = contract["contract_sha256"]
+    canonical = json.dumps({k: v for k, v in contract.items() if k != "contract_sha256"}, sort_keys=True, separators=(",", ":")).encode()
+    if hashlib.sha256(canonical).hexdigest() != expected:
+        raise ValueError("Annual research contract changed")
+    for relative, digest in contract["source_sha256"].items():
+        if sha(ROOT / relative) != digest:
+            raise ValueError("Frozen source identity changed")
+    request = contract["phase_a_request"]
+    result = {"schema": "annual-funding-earliest-mark-gate-v1", "contract_sha256": expected,
+              "economic_calculations": 0, "economic_values_printed": False,
+              "training_or_edge_admission": False, "remaining_study_requests_started": 0}
+    with (OUT / "journal.jsonl").open("x", encoding="utf-8", newline="\n") as journal:
+        def record(phase, **fields):
+            journal.write(json.dumps({"phase": phase, **fields}, sort_keys=True) + "\n")
+            journal.flush()
+            os.fsync(journal.fileno())
+
+        record("request_started", url=request["url"], contract_sha256=expected)
+        try:
+            started = time.monotonic()
+            count = 0
+            with requests.Session() as session:
+                session.trust_env = False
+                with session.get(request["url"], timeout=(5, 10), stream=True, allow_redirects=False) as response:
+                    result["http_status"] = response.status_code
+                    with (OUT / "earliest.raw.json").open("xb") as raw:
+                        try:
+                            for chunk in response.iter_content(chunk_size=65536):
+                                remaining = contract["phase_a_byte_ceiling"] + 1 - count
+                                if remaining <= 0:
+                                    raise ValueError("Earliest-slice byte ceiling exceeded")
+                                raw.write(chunk[:remaining])
+                                count += min(len(chunk), remaining)
+                                if count > contract["phase_a_byte_ceiling"] or time.monotonic() - started > 30:
+                                    raise ValueError("Earliest-slice byte or elapsed ceiling exceeded")
+                        finally:
+                            raw.flush()
+                            os.fsync(raw.fileno())
+                    if response.status_code != 200:
+                        raise ValueError("Earliest-slice HTTP status is not 200")
+            body = (OUT / "earliest.raw.json").read_bytes()
+            digest = hashlib.sha256(body).hexdigest()
+            record("response_retained", bytes=len(body), sha256=digest, http_status=result["http_status"])
+            payload = json.loads(body)
+            if not isinstance(payload, list) or len(payload) != 4:
+                raise ValueError("Earliest slice does not contain the four required settlements")
+            result["rows"] = len(payload)
+            result["nonempty_mark_fields"] = sum(isinstance(row, dict) and isinstance(row.get("markPrice"), str) and bool(row["markPrice"]) for row in payload)
+            parsed = parse_binance_usdm_funding_history(body, expected_sha256=digest, expected_symbol="BTCUSDT")
+            if any(not 0 <= row.funding_time_ms - expected <= contract["max_settlement_jitter_ms"]
+                   for row, expected in zip(parsed, request["expected_times_ms"], strict=True)):
+                raise ValueError("Earliest native settlement timestamps differ")
+            result["source_gate_passed"] = True
+            result["status"] = "earliest_native_mark_fields_passed_full_study_not_started"
+        except Exception as error:
+            result.update({"source_gate_passed": False, "status": "terminal_source_failure_before_economics",
+                           "error_type": type(error).__name__, "error": str(error)})
+        result["raw_sha256"] = sha(OUT / "earliest.raw.json") if (OUT / "earliest.raw.json").exists() else None
+        result["raw_bytes"] = (OUT / "earliest.raw.json").stat().st_size if (OUT / "earliest.raw.json").exists() else 0
+        write_json(OUT / "result.json", result)
+        record("phase_a_terminal", result_sha256=sha(OUT / "result.json"), source_gate_passed=result["source_gate_passed"])
+    print(json.dumps({k: result.get(k) for k in ("status", "rows", "nonempty_mark_fields", "source_gate_passed", "economic_calculations")}))
+
+
+if __name__ == "__main__":
+    main()

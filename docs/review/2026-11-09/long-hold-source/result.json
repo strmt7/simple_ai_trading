@@ -1,0 +1,29 @@
+{
+  "controller_sha256": "42e6654082f8448c063bbba1f5b28582e445b468105d7cb9a2a07fc9340b9310",
+  "economic_or_account_admission": false,
+  "effective_status": 200,
+  "final_url": "https://docs.paradex.trade/api/prod/markets/get-funding-data",
+  "http_status": 200,
+  "intent_sha256": "33df8c30fb78c69f1d33bc169eff4380aaad27851418dbc3b24c561d06caf50a",
+  "journal_sha256": "29c65ea78c518944da9535f37513e7b63666db246e45f6b5ea2e8b9ebe7af97e",
+  "markdown_characters": 29890,
+  "markdown_sha256": "67c00b4d865073f0bd01823661122e604f09106a8d0eae6fcd2b9e2b00038574",
+  "native_bytes": 701834,
+  "native_error": "",
+  "native_sha256": "de2cdbf5725a038420525edc9a3be9c5c80bd2353b344fb81c73d7d667e52809",
+  "native_success": true,
+  "new_economic_observations": 0,
+  "old_results_changed": false,
+  "outcome": "Supports market/start_at/end_at/page_size and continuation metadata, including funding_index. No historical retention duration is stated; no full-year coverage is inferred.",
+  "provider": {
+    "cache_identity": "9d7721db4b1e71517be18c2739fa223422a77155d6155a7cc44c4a5ab28845af",
+    "provider_lock_sha256": "5fc27973200b72184199428bee436c8deee9fe65ef3f0762cb871ac5c69abe53",
+    "provider_tool_sha256": "e84a0e54ee07e4e13d3d2f35491f641730096a78126068f232c1f2397a467d8c",
+    "provider_version": "0.9.5+flitzzip.portable2"
+  },
+  "question": "Funding API history, filter and response semantics",
+  "requested_url": "https://docs.paradex.trade/api/prod/markets/get-funding-data",
+  "retained_directory": "data/research/2026-11-09-long-hold-source",
+  "schema": "historical-funding-source-admission-v1",
+  "source_admitted": true
+}

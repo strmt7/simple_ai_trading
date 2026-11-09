@@ -1,0 +1,29 @@
+{
+  "controller_sha256": "4942aa25d03888b0ffd517acead667eca21f993eab10380b28d064dcb9a9adce",
+  "economic_or_account_admission": false,
+  "effective_status": 200,
+  "final_url": "https://docs.paradex.trade/api/prod/markets/get-markets-history",
+  "http_status": 200,
+  "intent_sha256": "2d5239b826eb2b4a953322be8bc50ec40820dccc3bcaadf56e84291730578297",
+  "journal_sha256": "24414428c3d54d5ef2bd8b21de5f2776ed51537c8d468e00a0185614017745de",
+  "markdown_characters": 30188,
+  "markdown_sha256": "d27313973e8b0f1d71e4cc41e3dfb8d54bdfe062b19756adc39275e55190d5b3",
+  "native_bytes": 666987,
+  "native_error": "",
+  "native_sha256": "be4baa6bfddec7d50070c16fa2f9713070e6a777f772e2c1d7a3a243d8172e9a",
+  "native_success": true,
+  "new_economic_observations": 0,
+  "old_results_changed": false,
+  "outcome": "Documented change history covers only the last seven days. It cannot qualify historical contract terms across 2025; no native specification API request was made.",
+  "provider": {
+    "cache_identity": "9d7721db4b1e71517be18c2739fa223422a77155d6155a7cc44c4a5ab28845af",
+    "provider_lock_sha256": "5fc27973200b72184199428bee436c8deee9fe65ef3f0762cb871ac5c69abe53",
+    "provider_tool_sha256": "e84a0e54ee07e4e13d3d2f35491f641730096a78126068f232c1f2397a467d8c",
+    "provider_version": "0.9.5+flitzzip.portable2"
+  },
+  "question": "Historical market specifications",
+  "requested_url": "https://docs.paradex.trade/api/prod/markets/get-markets-history",
+  "retained_directory": "data/research/2026-11-09-market-spec-source",
+  "schema": "historical-funding-source-admission-v1",
+  "source_admitted": true
+}

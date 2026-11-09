@@ -1,0 +1,170 @@
+"""Exact supplied-event accounting for the frozen annual research population."""
+
+import calendar
+import datetime
+from fractions import Fraction
+
+STEP = 28_800_000
+DAY = 86_400_000
+
+
+def boundaries(contract):
+    start = datetime.datetime.fromtimestamp(
+        contract["start_boundary_ms"] / 1000, datetime.timezone.utc
+    )
+    year = start.year
+    result = [
+        calendar.timegm(datetime.datetime(year, month, 1).timetuple()) * 1000
+        for month in range(1, 13)
+    ]
+    result.append(calendar.timegm(datetime.datetime(year + 1, 1, 1).timetuple()) * 1000)
+    if (
+        result[0] != contract["start_boundary_ms"]
+        or result[-1] != contract["end_boundary_ms"]
+    ):
+        raise ValueError("The frozen calendar endpoints differ")
+    return result
+
+
+def monthly_rows(indices, funding, nominal, *, alignment_only=False):
+    if len(indices) != 13 or len(funding) != (nominal[-1] - nominal[0]) // STEP + 1:
+        raise ValueError("Annual source population is incomplete")
+    mapped = {}
+    previous = None
+    for event in funding:
+        bucket = event.funding_time_ms // STEP * STEP
+        if bucket in mapped or not 0 <= event.funding_time_ms - bucket <= 1000:
+            raise ValueError("Funding schedule is ambiguous")
+        if previous is not None and event.funding_time_ms <= previous:
+            raise ValueError("Funding source order differs")
+        previous = event.funding_time_ms
+        mapped[bucket] = event
+    if set(mapped) != set(range(nominal[0], nominal[-1] + 1, STEP)):
+        raise ValueError("Funding source has missing or extra settlements")
+    blocks, used = [], []
+    for position, (left, right) in enumerate(zip(indices, indices[1:])):
+        for item, boundary in (
+            (left, nominal[position]),
+            (right, nominal[position + 1]),
+        ):
+            if not boundary + 1001 <= item["time"] <= boundary + 301000:
+                raise ValueError(
+                    "Index timestamp is outside its frozen boundary window"
+                )
+        events = [
+            event
+            for event in funding
+            if left["time"] < event.funding_time_ms < right["time"]
+        ]
+        expected = (nominal[position + 1] - nominal[position]) // STEP
+        if len(events) != expected:
+            raise ValueError(
+                "Actual index endpoints do not enclose every monthly settlement"
+            )
+        used.extend(event.funding_time_ms for event in events)
+        blocks.append((left, right, events, mapped[nominal[position]]))
+    expected_times = [
+        event.funding_time_ms
+        for event in funding
+        if indices[0]["time"] < event.funding_time_ms < indices[-1]["time"]
+    ]
+    if used != expected_times or len(set(used)) != len(used):
+        raise ValueError("Monthly cash omits or double-counts settlements")
+    if alignment_only:
+        return ()
+    rows = []
+    for left, right, events, reference in blocks:
+        rows.append(
+            {
+                "start": left["time"],
+                "end": right["time"],
+                "paradex_short_cash_usdc_per_base": Fraction(right["index"])
+                - Fraction(left["index"]),
+                "binance_long_cash_usdt_per_base": -sum(
+                    (event.rate * event.settlement_mark for event in events), Fraction()
+                ),
+                "reference_mark": reference.settlement_mark,
+                "binance_settlements": len(events),
+            }
+        )
+    return rows
+
+
+def adjudicate(rows, roles):
+    if (
+        roles != {"training": [0, 6], "validation": [6, 9], "test": [9, 12]}
+        or len(rows) != 12
+    ):
+        raise ValueError("Frozen chronological roles differ")
+    calibration = sum(
+        (
+            r["paradex_short_cash_usdc_per_base"] + r["binance_long_cash_usdt_per_base"]
+            for r in rows[:6]
+        ),
+        Fraction(),
+    )
+    sign = 1 if calibration >= 0 else -1
+    outputs = {}
+    for name in ("training", "validation", "test"):
+        begin, end = roles[name]
+        subset = rows[begin:end]
+        p_cash = sum(
+            (sign * r["paradex_short_cash_usdc_per_base"] for r in subset), Fraction()
+        )
+        b_cash = sum(
+            (sign * r["binance_long_cash_usdt_per_base"] for r in subset), Fraction()
+        )
+        cash = [
+            sign
+            * (
+                r["paradex_short_cash_usdc_per_base"]
+                + r["binance_long_cash_usdt_per_base"]
+            )
+            for r in subset
+        ]
+        reference = subset[0]["reference_mark"]
+        if reference <= 0:
+            raise ValueError("Reference mark is not positive")
+        duration = subset[-1]["end"] - subset[0]["start"]
+        capital_bps = Fraction(1, 5) * Fraction(duration, 365 * DAY) * 10000
+        gross_bps = (p_cash + b_cash) / reference * 10000
+        net_bps = gross_bps - 80 - capital_bps
+        split = len(subset) // 2
+        halves = (sum(cash[:split], Fraction()), sum(cash[split:], Fraction()))
+        positive = Fraction(sum(value > 0 for value in cash), len(cash))
+        outputs[name] = {
+            "monthly_blocks": len(subset),
+            "orientation": sign,
+            "paradex_cash_usdc_per_base": str(p_cash),
+            "binance_cash_usdt_per_base": str(b_cash),
+            "par_valuation_gross_bps": str(gross_bps),
+            "reference_mark_not_entry": str(reference),
+            "actual_duration_ms": duration,
+            "declared_two_leg_capital_per_base": str(2 * reference),
+            "annual_charge_fraction_on_declared_capital": "1/10",
+            "capital_stress_bps": str(capital_bps),
+            "fixed_stress_bps": "80",
+            "net_after_stresses_bps": str(net_bps),
+            "positive_month_fraction": str(positive),
+            "half_role_cash_at_par": [str(value) for value in halves],
+            "passes_conditional_funding_prefilter": net_bps > 0
+            and positive >= Fraction(1, 2)
+            and min(halves) > 0,
+        }
+    return {
+        "training_only_orientation": sign,
+        "roles": outputs,
+        "passes_conditional_funding_prefilter": all(
+            x["passes_conditional_funding_prefilter"] for x in outputs.values()
+        ),
+    }
+
+
+def serializable_rows(rows):
+    return [
+        {
+            key: str(value) if isinstance(value, Fraction) else value
+            for key, value in row.items()
+        }
+        for row in rows
+    ]

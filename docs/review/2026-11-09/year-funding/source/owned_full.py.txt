@@ -1,0 +1,66 @@
+"""Run the frozen annual source capture in an owned bounded child."""
+
+import argparse
+import hashlib
+import json
+import os
+from pathlib import Path
+import sys
+
+from tools.cocoindex_agent_search import run_captured_process
+
+parser = argparse.ArgumentParser()
+parser.add_argument("--preflight", action="store_true")
+args = parser.parse_args()
+out = Path.cwd() / "data/research/2026-11-09-year-funding"
+name = "full-parent-preflight-v2" if args.preflight else "full-parent-execution"
+allowed = {
+    "PATH",
+    "SYSTEMROOT",
+    "WINDIR",
+    "COMSPEC",
+    "TEMP",
+    "TMP",
+    "USERPROFILE",
+    "LOCALAPPDATA",
+    "APPDATA",
+}
+env = {k: v for k, v in os.environ.items() if k.upper() in allowed}
+env.update(
+    {"OMP_NUM_THREADS": "2", "OPENBLAS_NUM_THREADS": "2", "MKL_NUM_THREADS": "2"}
+)
+entry = (
+    "import runpy,sys;sys.argv=['full_capture.py'"
+    + (",'--help'" if args.preflight else "")
+    + "];runpy.run_path('data/research/2026-11-09-year-funding/full_capture.py',run_name='__main__')"
+)
+result = run_captured_process(
+    [sys.executable, "-c", entry],
+    cwd=Path.cwd(),
+    env=env,
+    timeout=1800,
+    input_text="",
+    inherit_environment=False,
+)
+log = (result.stdout + "\n" + result.stderr).encode("utf-8")
+with (out / (name + ".log")).open("xb") as stream:
+    stream.write(log)
+    stream.flush()
+    os.fsync(stream.fileno())
+with (out / (name + ".json")).open("x", encoding="utf-8") as stream:
+    json.dump(
+        {
+            "returncode": result.returncode,
+            "log_sha256": hashlib.sha256(log).hexdigest(),
+            "owned_deadline_seconds": 1800,
+            "native_request_mode": not args.preflight,
+        },
+        stream,
+    )
+    stream.flush()
+    os.fsync(stream.fileno())
+print(result.stdout)
+if result.returncode:
+    raise RuntimeError(
+        "Owned earliest-mark phase failed; retain and inspect original outputs"
+    )

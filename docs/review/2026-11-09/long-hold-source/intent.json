@@ -1,0 +1,35 @@
+{
+  "admission": "Native success true, effective HTTP200, no error/challenge, at least 600 substantive characters in the intended historical funding API reference. Same-publisher canonical redirects under the selected documentation section allowed and recorded.",
+  "authority": "Routine public technical-document research under explicit delegated judgment; no market-population access or old-study retry.",
+  "base_revision": "fdd75a420892add4b46991f2c87b48414e90d09c",
+  "budget": {
+    "cache_bypass": true,
+    "headless": true,
+    "navigations": 1,
+    "owned_process_timeout_seconds": 150,
+    "page_timeout_ms": 45000,
+    "retries": 0,
+    "robots_checked": true
+  },
+  "cache_identity": "9d7721db4b1e71517be18c2739fa223422a77155d6155a7cc44c4a5ab28845af",
+  "capture_boundaries_sha256": "f971726268ba2e630b2ebbe8d5bcf02f7b3f23b92ccb16efe23aef82cebe950f",
+  "controller_sha256": "42e6654082f8448c063bbba1f5b28582e445b468105d7cb9a2a07fc9340b9310",
+  "documents": [
+    {
+      "name": "funding-api",
+      "output": "funding-api.native.json",
+      "selection": "Exact primary API reference in the retained September 4 source plan, selected before new page content. New coverage/retention question; original captures unchanged.",
+      "url": "https://docs.paradex.trade/api/prod/markets/get-funding-data"
+    }
+  ],
+  "failure": "Preserve source failure. No market API request, alias, alternate reader, larger cap, cursor or financial-population retry follows this source attempt.",
+  "frozen_at_utc": "2026-11-09T22:10:04.748287+00:00",
+  "intent_sha256": "33df8c30fb78c69f1d33bc169eff4380aaad27851418dbc3b24c561d06caf50a",
+  "limits": "No market feed, account, credential, order, training, protected partial data or economic result. Illustrative values ignored. API documentation does not independently attest historical deployment or coverage.",
+  "preflight_sha256": "193c21d36bb45a431c4611775c1aae33dc9c693aa2331d3b1c99bdbdbe3150cd",
+  "provider_lock_sha256": "5fc27973200b72184199428bee436c8deee9fe65ef3f0762cb871ac5c69abe53",
+  "provider_tool_sha256": "e84a0e54ee07e4e13d3d2f35491f641730096a78126068f232c1f2397a467d8c",
+  "provider_version": "0.9.5+flitzzip.portable2",
+  "question": "Does the official historical funding API document retained history, time-window/cursor bounds, realized index units, or effective-version limits sufficient to plan a genuinely nonoverlapping longer-hold funding-only diagnostic?",
+  "schema": "long-hold-funding-source-document-intent-v1"
+}

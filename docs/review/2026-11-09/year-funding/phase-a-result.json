@@ -1,0 +1,15 @@
+{
+  "contract_sha256": "a7cad92318eed597b1e41a58c99e5d71a837404c72775befb333336cddc443a3",
+  "economic_calculations": 0,
+  "economic_values_printed": false,
+  "http_status": 200,
+  "nonempty_mark_fields": 4,
+  "raw_bytes": 505,
+  "raw_sha256": "3f67c17c997b731f599d5d4008115a779e63c9ba56c9d31ebc571cff111753bf",
+  "remaining_study_requests_started": 0,
+  "rows": 4,
+  "schema": "annual-funding-earliest-mark-gate-v1",
+  "source_gate_passed": true,
+  "status": "earliest_native_mark_fields_passed_full_study_not_started",
+  "training_or_edge_admission": false
+}

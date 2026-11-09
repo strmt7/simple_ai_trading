@@ -1,0 +1,33 @@
+{
+  "baseline_file_sha256": {
+    "docs/review/2026-09-04/nyc-sep5-frontier/durability-before.json": "a727031f643003aab7516742d9ef49fb855c396b9289d5303f78de53f8151253",
+    "docs/review/2026-09-04/paradex-index-publication/durability-before.json": "5412354d9dc5861e9e49acfa7fc4025db39e1227a2c56fea62c5a6398549ab61",
+    "docs/review/2026-10-07/model-integration/audit-before.json": "9359919129109c78651272955bd8a558f686aa188bf65e431cc19c49b020d052",
+    "docs/review/2026-10-07/model-integration/review.md": "bf81672840e13babcfb0d521dec1211cda203635cfe410b8aa781a6031d84cf5"
+  },
+  "baseline_head": "fdd75a420892add4b46991f2c87b48414e90d09c",
+  "changed_file_terminology_findings": [],
+  "full_private_receipt_sha256": "02955da913dfd10186da43ad9a931c9c0587b3917b8efd24edea8e5e4ff7c4b7",
+  "full_repository_terminology_audit": "failed with four unchanged pre-existing findings; not claimed green",
+  "historical_bytes_changed_or_suppressions_added": false,
+  "schema": "annual-research-publication-checks-v1",
+  "staged_paths_checked": 27,
+  "verified_unchanged_baseline_findings": [
+    {
+      "line": 170,
+      "path": "docs/review/2026-09-04/nyc-sep5-frontier/durability-before.json"
+    },
+    {
+      "line": 170,
+      "path": "docs/review/2026-09-04/paradex-index-publication/durability-before.json"
+    },
+    {
+      "line": 173,
+      "path": "docs/review/2026-10-07/model-integration/audit-before.json"
+    },
+    {
+      "line": 49,
+      "path": "docs/review/2026-10-07/model-integration/review.md"
+    }
+  ]
+}

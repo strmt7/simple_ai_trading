@@ -1,0 +1,919 @@
+{
+  "accepted_edge": false,
+  "account_or_order_requests": 0,
+  "assets": {
+    "BTC": {
+      "passes_conditional_funding_prefilter": false,
+      "roles": {
+        "test": {
+          "actual_duration_ms": 7948799842,
+          "annual_charge_fraction_on_declared_capital": "1/10",
+          "binance_cash_usdt_per_base": "-11871202568308551353/10000000000000000",
+          "capital_stress_bps": "3974399921/7884000",
+          "declared_two_leg_capital_per_base": "1139887/5",
+          "fixed_stress_bps": "80",
+          "half_role_cash_at_par": [
+            "5283285646500986921/10000000000000000",
+            "2084162854601588413/5000000000000000"
+          ],
+          "monthly_blocks": 3,
+          "net_after_stresses_bps": "-112603782302630268254663/224671727700000000000",
+          "orientation": 1,
+          "par_valuation_gross_bps": "9451611355704163747/113988700000000000",
+          "paradex_cash_usdc_per_base": "213228139240127151/100000000000000",
+          "passes_conditional_funding_prefilter": false,
+          "positive_month_fraction": "1",
+          "reference_mark_not_entry": "1139887/10"
+        },
+        "training": {
+          "actual_duration_ms": 15638397256,
+          "annual_charge_fraction_on_declared_capital": "1/10",
+          "binance_cash_usdt_per_base": "-5311499953995217077/2500000000000000",
+          "capital_stress_bps": "1954799657/1971000",
+          "declared_two_leg_capital_per_base": "9354966175177/50000000",
+          "fixed_stress_bps": "80",
+          "half_role_cash_at_par": [
+            "11204731460057742197/10000000000000000",
+            "2239522029970402999/2000000000000000"
+          ],
+          "monthly_blocks": 6,
+          "net_after_stresses_bps": "-76733371028356488658729/92193191656369335000",
+          "orientation": 1,
+          "par_valuation_gross_bps": "2800292701238719649/11693707718971250",
+          "paradex_cash_usdc_per_base": "87296682851781251/20000000000000",
+          "passes_conditional_funding_prefilter": false,
+          "positive_month_fraction": "1",
+          "reference_mark_not_entry": "9354966175177/100000000"
+        },
+        "validation": {
+          "actual_duration_ms": 7948802266,
+          "annual_charge_fraction_on_declared_capital": "1/10",
+          "binance_cash_usdt_per_base": "-102205056405135427/50000000000000",
+          "capital_stress_bps": "3974401133/7884000",
+          "declared_two_leg_capital_per_base": "5354841305797/25000000",
+          "fixed_stress_bps": "80",
+          "half_role_cash_at_par": [
+            "631410683505105719/2500000000000000",
+            "791131598140488003/1250000000000000"
+          ],
+          "monthly_blocks": 3,
+          "net_after_stresses_bps": "-21169171887540386444021/42217568854903548000",
+          "orientation": 1,
+          "par_valuation_gross_bps": "88546955191443269/1070968261159400",
+          "paradex_cash_usdc_per_base": "292957068001714123/100000000000000",
+          "passes_conditional_funding_prefilter": false,
+          "positive_month_fraction": "1",
+          "reference_mark_not_entry": "5354841305797/50000000"
+        }
+      },
+      "training_only_orientation": 1
+    },
+    "ETH": {
+      "passes_conditional_funding_prefilter": false,
+      "roles": {
+        "test": {
+          "actual_duration_ms": 7948799842,
+          "annual_charge_fraction_on_declared_capital": "1/10",
+          "binance_cash_usdt_per_base": "-11808155342917399/312500000000000",
+          "capital_stress_bps": "3974399921/7884000",
+          "declared_two_leg_capital_per_base": "207149/25",
+          "fixed_stress_bps": "80",
+          "half_role_cash_at_par": [
+            "10045519163319761/1000000000000000",
+            "40366215001746473/2500000000000000"
+          ],
+          "monthly_blocks": 3,
+          "net_after_stresses_bps": "-2126742755396671658779/4082906790000000000",
+          "orientation": 1,
+          "par_valuation_gross_bps": "130960025820091751/2071490000000000",
+          "paradex_cash_usdc_per_base": "63978102261354027/1000000000000000",
+          "passes_conditional_funding_prefilter": false,
+          "positive_month_fraction": "1",
+          "reference_mark_not_entry": "207149/50"
+        },
+        "training": {
+          "actual_duration_ms": 15638397256,
+          "annual_charge_fraction_on_declared_capital": "1/10",
+          "binance_cash_usdt_per_base": "-15873356308356417/250000000000000",
+          "capital_stress_bps": "1954799657/1971000",
+          "declared_two_leg_capital_per_base": "20854098911/3125000",
+          "fixed_stress_bps": "80",
+          "half_role_cash_at_par": [
+            "14511752249416761/500000000000000",
+            "198792879181102389/10000000000000000"
+          ],
+          "monthly_blocks": 6,
+          "net_after_stresses_bps": "-6084743515790575036981/6576548632572960000",
+          "orientation": 1,
+          "par_valuation_gross_bps": "489027924169437609/3336655825760000",
+          "paradex_cash_usdc_per_base": "1123962176503694289/10000000000000000",
+          "passes_conditional_funding_prefilter": false,
+          "positive_month_fraction": "1",
+          "reference_mark_not_entry": "20854098911/6250000"
+        },
+        "validation": {
+          "actual_duration_ms": 7948802266,
+          "annual_charge_fraction_on_declared_capital": "1/10",
+          "binance_cash_usdt_per_base": "-583802067255995603/10000000000000000",
+          "capital_stress_bps": "3974401133/7884000",
+          "declared_two_leg_capital_per_base": "124216856783/25000000",
+          "fixed_stress_bps": "80",
+          "half_role_cash_at_par": [
+            "5428219903729279/400000000000000",
+            "1254918660770097/39062500000000"
+          ],
+          "monthly_blocks": 3,
+          "net_after_stresses_bps": "-979745493649072894549/2448314247192930000",
+          "orientation": 1,
+          "par_valuation_gross_bps": "456964674750376807/2484337135660000",
+          "paradex_cash_usdc_per_base": "104076674200637241/1000000000000000",
+          "passes_conditional_funding_prefilter": false,
+          "positive_month_fraction": "1",
+          "reference_mark_not_entry": "124216856783/50000000"
+        }
+      },
+      "training_only_orientation": 1
+    },
+    "SOL": {
+      "passes_conditional_funding_prefilter": false,
+      "roles": {
+        "test": {
+          "actual_duration_ms": 7948799842,
+          "annual_charge_fraction_on_declared_capital": "1/10",
+          "binance_cash_usdt_per_base": "2019316593161699/1250000000000000",
+          "capital_stress_bps": "3974399921/7884000",
+          "declared_two_leg_capital_per_base": "2086/5",
+          "fixed_stress_bps": "80",
+          "half_role_cash_at_par": [
+            "49750959432535421/50000000000000000",
+            "-47059525174792891/100000000000000000"
+          ],
+          "monthly_blocks": 3,
+          "net_after_stresses_bps": "-2298206080837962158579/4111506000000000000",
+          "orientation": 1,
+          "par_valuation_gross_bps": "52442393690277951/2086000000000000",
+          "paradex_cash_usdc_per_base": "-109102933762657969/100000000000000000",
+          "passes_conditional_funding_prefilter": false,
+          "positive_month_fraction": "1/3",
+          "reference_mark_not_entry": "1043/5"
+        },
+        "training": {
+          "actual_duration_ms": 15638397256,
+          "annual_charge_fraction_on_declared_capital": "1/10",
+          "binance_cash_usdt_per_base": "-324991435933277/10000000000000000",
+          "capital_stress_bps": "1954799657/1971000",
+          "declared_two_leg_capital_per_base": "9459987113/25000000",
+          "fixed_stress_bps": "80",
+          "half_role_cash_at_par": [
+            "294480785820542989/100000000000000000",
+            "36448484738116623/100000000000000000"
+          ],
+          "monthly_blocks": 6,
+          "net_after_stresses_bps": "-836136118516953488237/932281729986150000",
+          "orientation": 1,
+          "par_valuation_gross_bps": "82732317639664903/472999355650000",
+          "paradex_cash_usdc_per_base": "167089592458996191/50000000000000000",
+          "passes_conditional_funding_prefilter": false,
+          "positive_month_fraction": "5/6",
+          "reference_mark_not_entry": "9459987113/50000000"
+        },
+        "validation": {
+          "actual_duration_ms": 7948802266,
+          "annual_charge_fraction_on_declared_capital": "1/10",
+          "binance_cash_usdt_per_base": "-11974655818557881/5000000000000000",
+          "capital_stress_bps": "3974401133/7884000",
+          "declared_two_leg_capital_per_base": "15474839561/50000000",
+          "fixed_stress_bps": "80",
+          "half_role_cash_at_par": [
+            "6228408326084447/20000000000000000",
+            "211994759666990087/100000000000000000"
+          ],
+          "monthly_blocks": 3,
+          "net_after_stresses_bps": "-1302365131946438878663/3050090877473100000",
+          "orientation": 1,
+          "par_valuation_gross_bps": "121568400648706161/773741978050000",
+          "paradex_cash_usdc_per_base": "241314958834284971/50000000000000000",
+          "passes_conditional_funding_prefilter": false,
+          "positive_month_fraction": "1",
+          "reference_mark_not_entry": "15474839561/100000000"
+        }
+      },
+      "training_only_orientation": 1
+    }
+  },
+  "conditional_funding_survivors": [],
+  "contract_sha256": "a7cad92318eed597b1e41a58c99e5d71a837404c72775befb333336cddc443a3",
+  "economic_calculations": 3,
+  "economic_evaluation_started": true,
+  "exact_fraction_format": "numerator/denominator, or integer when denominator is one",
+  "execution_sha256": "85b5fda33d2bd0f8f53840fa3485b7b4196143765e86d00a6b9014e7fafc236b",
+  "historical_terms_and_index_continuity_qualified": false,
+  "monthly_cash_rows": {
+    "BTC": [
+      {
+        "binance_long_cash_usdt_per_base": "-3627945313994362661/5000000000000000",
+        "binance_settlements": 93,
+        "end": 1738368001035,
+        "paradex_short_cash_usdc_per_base": "4093453717539471/5000000000000",
+        "reference_mark": "9354966175177/100000000",
+        "start": 1735689605821
+      },
+      {
+        "binance_long_cash_usdt_per_base": "-3605596350162368213/10000000000000000",
+        "binance_settlements": 84,
+        "end": 1740787205452,
+        "paradex_short_cash_usdc_per_base": "22313565885093577/25000000000000",
+        "reference_mark": "1023797/10",
+        "start": 1738368001035
+      },
+      {
+        "binance_long_cash_usdt_per_base": "-388488255089763117/2500000000000000",
+        "binance_settlements": 93,
+        "end": 1743465605187,
+        "paradex_short_cash_usdc_per_base": "32539188347257577/50000000000000",
+        "reference_mark": "2107515562037/25000000",
+        "start": 1740787205452
+      },
+      {
+        "binance_long_cash_usdt_per_base": "-1769001059117234093/10000000000000000",
+        "binance_settlements": 90,
+        "end": 1746057602739,
+        "paradex_short_cash_usdc_per_base": "2439051827098119/6250000000000",
+        "reference_mark": "1650353534963/20000000",
+        "start": 1743465605187
+      },
+      {
+        "binance_long_cash_usdt_per_base": "-4536695415879180223/10000000000000000",
+        "binance_settlements": 93,
+        "end": 1748736004367,
+        "paradex_short_cash_usdc_per_base": "16357416083231749/20000000000000",
+        "reference_mark": "588317189221/6250000",
+        "start": 1746057602739
+      },
+      {
+        "binance_long_cash_usdt_per_base": "-2524863342474307989/10000000000000000",
+        "binance_settlements": 90,
+        "end": 1751328003077,
+        "paradex_short_cash_usdc_per_base": "19867447505874681/25000000000000",
+        "reference_mark": "1045447/10",
+        "start": 1748736004367
+      },
+      {
+        "binance_long_cash_usdt_per_base": "-2120730958114713581/2500000000000000",
+        "binance_settlements": 93,
+        "end": 1754006403728,
+        "paradex_short_cash_usdc_per_base": "27521416416198193/25000000000000",
+        "reference_mark": "5354841305797/50000000",
+        "start": 1751328003077
+      },
+      {
+        "binance_long_cash_usdt_per_base": "-220020234086892373/312500000000000",
+        "binance_settlements": 93,
+        "end": 1756684801367,
+        "paradex_short_cash_usdc_per_base": "55527973575294549/50000000000000",
+        "reference_mark": "11570216776087/100000000",
+        "start": 1754006403728
+      },
+      {
+        "binance_long_cash_usdt_per_base": "-245871997889383757/500000000000000",
+        "binance_settlements": 90,
+        "end": 1759276805343,
+        "paradex_short_cash_usdc_per_base": "71815455186332253/100000000000000",
+        "reference_mark": "1082083/10",
+        "start": 1756684801367
+      },
+      {
+        "binance_long_cash_usdt_per_base": "-3715045104240134879/10000000000000000",
+        "binance_settlements": 93,
+        "end": 1761955203212,
+        "paradex_short_cash_usdc_per_base": "44991653753705609/50000000000000",
+        "reference_mark": "1139887/10",
+        "start": 1759276805343
+      },
+      {
+        "binance_long_cash_usdt_per_base": "-1083583169999117577/2500000000000000",
+        "binance_settlements": 90,
+        "end": 1764547201684,
+        "paradex_short_cash_usdc_per_base": "70756976263862929/100000000000000",
+        "reference_mark": "1095573/10",
+        "start": 1761955203212
+      },
+      {
+        "binance_long_cash_usdt_per_base": "-1910912392035973083/5000000000000000",
+        "binance_settlements": 93,
+        "end": 1767225605185,
+        "paradex_short_cash_usdc_per_base": "13121963867213251/25000000000000",
+        "reference_mark": "9032718313043/100000000",
+        "start": 1764547201684
+      }
+    ],
+    "ETH": [
+      {
+        "binance_long_cash_usdt_per_base": "-33742588019003331/1250000000000000",
+        "binance_settlements": 93,
+        "end": 1738368001035,
+        "paradex_short_cash_usdc_per_base": "308616038332944851/10000000000000000",
+        "reference_mark": "20854098911/6250000",
+        "start": 1735689605821
+      },
+      {
+        "binance_long_cash_usdt_per_base": "-12751186328556227/2000000000000000",
+        "binance_settlements": 84,
+        "end": 1740787205452,
+        "paradex_short_cash_usdc_per_base": "49302157844430427/2500000000000000",
+        "reference_mark": "6599/2",
+        "start": 1738368001035
+      },
+      {
+        "binance_long_cash_usdt_per_base": "-4091039847799793/1000000000000000",
+        "binance_settlements": 93,
+        "end": 1743465605187,
+        "paradex_short_cash_usdc_per_base": "79508704775237187/5000000000000000",
+        "reference_mark": "27950953869/12500000",
+        "start": 1740787205452
+      },
+      {
+        "binance_long_cash_usdt_per_base": "-28750632018923527/10000000000000000",
+        "binance_settlements": 90,
+        "end": 1746057602739,
+        "paradex_short_cash_usdc_per_base": "13051655325971313/2500000000000000",
+        "reference_mark": "182159/100",
+        "start": 1743465605187
+      },
+      {
+        "binance_long_cash_usdt_per_base": "-8060868609988519/625000000000000",
+        "binance_settlements": 93,
+        "end": 1748736004367,
+        "paradex_short_cash_usdc_per_base": "184790696910882121/10000000000000000",
+        "reference_mark": "17928135969/10000000",
+        "start": 1746057602739
+      },
+      {
+        "binance_long_cash_usdt_per_base": "-3206334008834723/312500000000000",
+        "binance_settlements": 90,
+        "end": 1751328003077,
+        "paradex_short_cash_usdc_per_base": "222122779027785983/10000000000000000",
+        "reference_mark": "252709/100",
+        "start": 1748736004367
+      },
+      {
+        "binance_long_cash_usdt_per_base": "-45860585225154271/2000000000000000",
+        "binance_settlements": 93,
+        "end": 1754006403728,
+        "paradex_short_cash_usdc_per_base": "36500842371900333/1000000000000000",
+        "reference_mark": "124216856783/50000000",
+        "start": 1751328003077
+      },
+      {
+        "binance_long_cash_usdt_per_base": "-57932035256558813/2500000000000000",
+        "binance_settlements": 93,
+        "end": 1756684801367,
+        "paradex_short_cash_usdc_per_base": "2745856497199123/62500000000000",
+        "reference_mark": "369657/100",
+        "start": 1754006403728
+      },
+      {
+        "binance_long_cash_usdt_per_base": "-30692750025997249/2500000000000000",
+        "binance_settlements": 90,
+        "end": 1759276805343,
+        "paradex_short_cash_usdc_per_base": "1182106393677547/50000000000000",
+        "reference_mark": "87809447497/20000000",
+        "start": 1756684801367
+      },
+      {
+        "binance_long_cash_usdt_per_base": "-12900323705343671/1000000000000000",
+        "binance_settlements": 93,
+        "end": 1761955203212,
+        "paradex_short_cash_usdc_per_base": "2868230358582929/125000000000000",
+        "reference_mark": "207149/50",
+        "start": 1759276805343
+      },
+      {
+        "binance_long_cash_usdt_per_base": "-8638462701406343/625000000000000",
+        "binance_settlements": 90,
+        "end": 1764547201684,
+        "paradex_short_cash_usdc_per_base": "18320729122697849/1000000000000000",
+        "reference_mark": "384641/100",
+        "start": 1761955203212
+      },
+      {
+        "binance_long_cash_usdt_per_base": "-11064233069741857/1000000000000000",
+        "binance_settlements": 93,
+        "end": 1767225605185,
+        "paradex_short_cash_usdc_per_base": "11355765134996373/500000000000000",
+        "reference_mark": "299024148837/100000000",
+        "start": 1764547201684
+      }
+    ],
+    "SOL": [
+      {
+        "binance_long_cash_usdt_per_base": "-2981558073501701/10000000000000000",
+        "binance_settlements": 93,
+        "end": 1738368001035,
+        "paradex_short_cash_usdc_per_base": "17755174127448547/12500000000000000",
+        "reference_mark": "9459987113/50000000",
+        "start": 1735689605821
+      },
+      {
+        "binance_long_cash_usdt_per_base": "4835736804558063/10000000000000000",
+        "binance_settlements": 84,
+        "end": 1740787205452,
+        "paradex_short_cash_usdc_per_base": "19371440735371413/25000000000000000",
+        "reference_mark": "579027653/2500000",
+        "start": 1738368001035
+      },
+      {
+        "binance_long_cash_usdt_per_base": "2772576179726969/10000000000000000",
+        "binance_settlements": 93,
+        "end": 1743465605187,
+        "paradex_short_cash_usdc_per_base": "28686080751635651/100000000000000000",
+        "reference_mark": "7403274351/50000000",
+        "start": 1740787205452
+      },
+      {
+        "binance_long_cash_usdt_per_base": "1289820486795021/5000000000000000",
+        "binance_settlements": 90,
+        "end": 1746057602739,
+        "paradex_short_cash_usdc_per_base": "-2397397197378083/5000000000000000",
+        "reference_mark": "1556159649/12500000",
+        "start": 1743465605187
+      },
+      {
+        "binance_long_cash_usdt_per_base": "-1960797311498427/5000000000000000",
+        "binance_settlements": 93,
+        "end": 1748736004367,
+        "paradex_short_cash_usdc_per_base": "17237145618955803/25000000000000000",
+        "reference_mark": "737386193/5000000",
+        "start": 1746057602739
+      },
+      {
+        "binance_long_cash_usdt_per_base": "-902448174327449/2500000000000000",
+        "binance_settlements": 90,
+        "end": 1751328003077,
+        "paradex_short_cash_usdc_per_base": "64965309677021151/100000000000000000",
+        "reference_mark": "15637/100",
+        "start": 1748736004367
+      },
+      {
+        "binance_long_cash_usdt_per_base": "-9508526985226007/10000000000000000",
+        "binance_settlements": 93,
+        "end": 1754006403728,
+        "paradex_short_cash_usdc_per_base": "25245462296536461/20000000000000000",
+        "reference_mark": "15474839561/100000000",
+        "start": 1751328003077
+      },
+      {
+        "binance_long_cash_usdt_per_base": "-8905890265824047/10000000000000000",
+        "binance_settlements": 93,
+        "end": 1756684801367,
+        "paradex_short_cash_usdc_per_base": "35858530754588801/20000000000000000",
+        "reference_mark": "4304136283/25000000",
+        "start": 1754006403728
+      },
+      {
+        "binance_long_cash_usdt_per_base": "-1383723596516427/2500000000000000",
+        "binance_settlements": 90,
+        "end": 1759276805343,
+        "paradex_short_cash_usdc_per_base": "11069372025808977/6250000000000000",
+        "reference_mark": "626802311/3125000",
+        "start": 1756684801367
+      },
+      {
+        "binance_long_cash_usdt_per_base": "3666377555543097/2000000000000000",
+        "binance_settlements": 93,
+        "end": 1761955203212,
+        "paradex_short_cash_usdc_per_base": "-10477119864010501/12500000000000000",
+        "reference_mark": "1043/5",
+        "start": 1759276805343
+      },
+      {
+        "binance_long_cash_usdt_per_base": "237187316212763/2500000000000000",
+        "binance_settlements": 90,
+        "end": 1764547201684,
+        "paradex_short_cash_usdc_per_base": "-52596582101696313/100000000000000000",
+        "reference_mark": "18712627193/100000000",
+        "start": 1761955203212
+      },
+      {
+        "binance_long_cash_usdt_per_base": "-625220859454589/2000000000000000",
+        "binance_settlements": 93,
+        "end": 1767225605185,
+        "paradex_short_cash_usdc_per_base": "1706912953195147/6250000000000000",
+        "reference_mark": "667055633/5000000",
+        "start": 1764547201684
+      }
+    ]
+  },
+  "new_native_requests_started": 45,
+  "profitability_claim": false,
+  "receipts": [
+    {
+      "asset": "BTC",
+      "bytes": 68212,
+      "file": "001-btc-binance-history.raw.json",
+      "http_status": 200,
+      "kind": "binance-history",
+      "position": 1,
+      "sha256": "f5b49dbbf9bf46931c96f020da6a41fba50a0a1f604fd74f8dbdcb6ee13f585d"
+    },
+    {
+      "asset": "BTC",
+      "bytes": 70142,
+      "file": "002-btc-binance-history.raw.json",
+      "http_status": 200,
+      "kind": "binance-history",
+      "position": 2,
+      "sha256": "5a84b05dc45bb11464b76573ee8094069dd09e604391898ecfc36360c4986237"
+    },
+    {
+      "asset": "BTC",
+      "bytes": 12753,
+      "file": "003-btc-paradex-index.raw.json",
+      "http_status": 200,
+      "kind": "paradex-index",
+      "position": 3,
+      "sha256": "bde874d5ff2a9fc0a2cbe3b403679f192f91068c989500781f8504590b6a23cf"
+    },
+    {
+      "asset": "BTC",
+      "bytes": 12888,
+      "file": "004-btc-paradex-index.raw.json",
+      "http_status": 200,
+      "kind": "paradex-index",
+      "position": 4,
+      "sha256": "68ea791b2270245ab40996ac303c8347d127c319be2d231f8c4b5f31cd2af7e2"
+    },
+    {
+      "asset": "BTC",
+      "bytes": 12600,
+      "file": "005-btc-paradex-index.raw.json",
+      "http_status": 200,
+      "kind": "paradex-index",
+      "position": 5,
+      "sha256": "3081d9ef34b78b1f1850346d15aad751c4359f772e6dc8bcd80fbca88c4a6c1f"
+    },
+    {
+      "asset": "BTC",
+      "bytes": 13394,
+      "file": "006-btc-paradex-index.raw.json",
+      "http_status": 200,
+      "kind": "paradex-index",
+      "position": 6,
+      "sha256": "14cc25cb88af2ef60ddb2493b00099b0b569fcdc3ad86b88af8ac28940f08eb4"
+    },
+    {
+      "asset": "BTC",
+      "bytes": 13701,
+      "file": "007-btc-paradex-index.raw.json",
+      "http_status": 200,
+      "kind": "paradex-index",
+      "position": 7,
+      "sha256": "565b023dd9007299d14c6429c40ddc54056ec23a8e4dd22b2d933d76d11eaaef"
+    },
+    {
+      "asset": "BTC",
+      "bytes": 12834,
+      "file": "008-btc-paradex-index.raw.json",
+      "http_status": 200,
+      "kind": "paradex-index",
+      "position": 8,
+      "sha256": "c196f129355db1f0b58b4e2741a14335b295898e92aab9094c25ac6a85a739b6"
+    },
+    {
+      "asset": "BTC",
+      "bytes": 13684,
+      "file": "009-btc-paradex-index.raw.json",
+      "http_status": 200,
+      "kind": "paradex-index",
+      "position": 9,
+      "sha256": "3454a6557c9189db41183c99208f01ea2a4002393cf3d29765c27a01a34818f2"
+    },
+    {
+      "asset": "BTC",
+      "bytes": 13162,
+      "file": "010-btc-paradex-index.raw.json",
+      "http_status": 200,
+      "kind": "paradex-index",
+      "position": 10,
+      "sha256": "0db4633d01b5e92fdcd0163ff95e8cb212861cbcc4b9b896c3caf49cd6d526a5"
+    },
+    {
+      "asset": "BTC",
+      "bytes": 13172,
+      "file": "011-btc-paradex-index.raw.json",
+      "http_status": 200,
+      "kind": "paradex-index",
+      "position": 11,
+      "sha256": "2ae628926fbfaa64633055ed03665864d6a3f46302d6c4e3177acd5341a785fb"
+    },
+    {
+      "asset": "BTC",
+      "bytes": 13386,
+      "file": "012-btc-paradex-index.raw.json",
+      "http_status": 200,
+      "kind": "paradex-index",
+      "position": 12,
+      "sha256": "803a0200640e6bdb84c7e0f1cb5a0d7f1b90af201181b6df28fc0939e1339c21"
+    },
+    {
+      "asset": "BTC",
+      "bytes": 13410,
+      "file": "013-btc-paradex-index.raw.json",
+      "http_status": 200,
+      "kind": "paradex-index",
+      "position": 13,
+      "sha256": "42db18c33cacb4988a2a7698882d4756af9756a3684d1d6c479ed9aaaec8396f"
+    },
+    {
+      "asset": "BTC",
+      "bytes": 13468,
+      "file": "014-btc-paradex-index.raw.json",
+      "http_status": 200,
+      "kind": "paradex-index",
+      "position": 14,
+      "sha256": "f2124d8c2eca6738dd143cc8856207ffa2086564205d3925d49f0282db22bdde"
+    },
+    {
+      "asset": "BTC",
+      "bytes": 13346,
+      "file": "015-btc-paradex-index.raw.json",
+      "http_status": 200,
+      "kind": "paradex-index",
+      "position": 15,
+      "sha256": "1008c58ae4e2aa94cd4f0024d0ec7d69ae320e9aba653e3a2e91357e42fe48ac"
+    },
+    {
+      "asset": "ETH",
+      "bytes": 67980,
+      "file": "016-eth-binance-history.raw.json",
+      "http_status": 200,
+      "kind": "binance-history",
+      "position": 16,
+      "sha256": "c915ba038496f885119d2980dcda6abf31aebaa4631f8aafb5c901e9a5ea25b8"
+    },
+    {
+      "asset": "ETH",
+      "bytes": 69199,
+      "file": "017-eth-binance-history.raw.json",
+      "http_status": 200,
+      "kind": "binance-history",
+      "position": 17,
+      "sha256": "fbabcf732b46cbe7f459c45eb0485babc1a46d3241a9e74a8b6d6b7f447c9f00"
+    },
+    {
+      "asset": "ETH",
+      "bytes": 13819,
+      "file": "018-eth-paradex-index.raw.json",
+      "http_status": 200,
+      "kind": "paradex-index",
+      "position": 18,
+      "sha256": "573651ee007768c0092a2463e184fd43f117a897f67729616e0c25046a05b304"
+    },
+    {
+      "asset": "ETH",
+      "bytes": 12674,
+      "file": "019-eth-paradex-index.raw.json",
+      "http_status": 200,
+      "kind": "paradex-index",
+      "position": 19,
+      "sha256": "d9ec79cd4e910ba589877973567ec410066cd173a8614f69c8f8e3e12f882f0d"
+    },
+    {
+      "asset": "ETH",
+      "bytes": 13747,
+      "file": "020-eth-paradex-index.raw.json",
+      "http_status": 200,
+      "kind": "paradex-index",
+      "position": 20,
+      "sha256": "4dfdda75ee37b86d149debf89ee81649a45abe103ae8f7dea0d006d693d14e2e"
+    },
+    {
+      "asset": "ETH",
+      "bytes": 13311,
+      "file": "021-eth-paradex-index.raw.json",
+      "http_status": 200,
+      "kind": "paradex-index",
+      "position": 21,
+      "sha256": "983af68b8a75c2a4d770146914e6326638e60a5504a63f46fb803248a104bad9"
+    },
+    {
+      "asset": "ETH",
+      "bytes": 13786,
+      "file": "022-eth-paradex-index.raw.json",
+      "http_status": 200,
+      "kind": "paradex-index",
+      "position": 22,
+      "sha256": "6656f9e1184a0bf2e120c6771466ab906304f94a25c43e18426f4e365a29eda0"
+    },
+    {
+      "asset": "ETH",
+      "bytes": 12731,
+      "file": "023-eth-paradex-index.raw.json",
+      "http_status": 200,
+      "kind": "paradex-index",
+      "position": 23,
+      "sha256": "c20e9f83c0c6621f7a76f0d6d8059eaeea9fafa9b91dab5d29c23cf10cd92e0a"
+    },
+    {
+      "asset": "ETH",
+      "bytes": 13757,
+      "file": "024-eth-paradex-index.raw.json",
+      "http_status": 200,
+      "kind": "paradex-index",
+      "position": 24,
+      "sha256": "31b950294dc076adf64a43213ca4a8dcad6f91605757d23a6fae24ce0625f038"
+    },
+    {
+      "asset": "ETH",
+      "bytes": 13407,
+      "file": "025-eth-paradex-index.raw.json",
+      "http_status": 200,
+      "kind": "paradex-index",
+      "position": 25,
+      "sha256": "0b6333f640c4aade1698e105c6e4f1e9035dc0cbd3124f5f7536d6690e6e0573"
+    },
+    {
+      "asset": "ETH",
+      "bytes": 13397,
+      "file": "026-eth-paradex-index.raw.json",
+      "http_status": 200,
+      "kind": "paradex-index",
+      "position": 26,
+      "sha256": "b9934205f605b5d7baba1faf0c0fbdff25fb9fce88e75d98feceef95aecfaa53"
+    },
+    {
+      "asset": "ETH",
+      "bytes": 13576,
+      "file": "027-eth-paradex-index.raw.json",
+      "http_status": 200,
+      "kind": "paradex-index",
+      "position": 27,
+      "sha256": "889bfa3c98a691d2454978d42ccae758609e1bf4fe726a185b8da1c9abe1f826"
+    },
+    {
+      "asset": "ETH",
+      "bytes": 13580,
+      "file": "028-eth-paradex-index.raw.json",
+      "http_status": 200,
+      "kind": "paradex-index",
+      "position": 28,
+      "sha256": "fcc7560ec9e679b235f6fde15056003f6a6ddeab7ea7744547f16e841abada57"
+    },
+    {
+      "asset": "ETH",
+      "bytes": 13398,
+      "file": "029-eth-paradex-index.raw.json",
+      "http_status": 200,
+      "kind": "paradex-index",
+      "position": 29,
+      "sha256": "98a4777eaa2f4af47518492afb21f3368f831d6fe69c36923e34a49c154bcbb0"
+    },
+    {
+      "asset": "ETH",
+      "bytes": 13408,
+      "file": "030-eth-paradex-index.raw.json",
+      "http_status": 200,
+      "kind": "paradex-index",
+      "position": 30,
+      "sha256": "b5ab5d84c5538f7a5c495fd784c4b1b6c324b5155ff48ab7122bb65bb337437b"
+    },
+    {
+      "asset": "SOL",
+      "bytes": 67582,
+      "file": "031-sol-binance-history.raw.json",
+      "http_status": 200,
+      "kind": "binance-history",
+      "position": 31,
+      "sha256": "bb7e86671a36995f0d79c0c03ac86bb9728a3bb4f79f82475cb5c9a95b485988"
+    },
+    {
+      "asset": "SOL",
+      "bytes": 68755,
+      "file": "032-sol-binance-history.raw.json",
+      "http_status": 200,
+      "kind": "binance-history",
+      "position": 32,
+      "sha256": "7a30d40d986d82131eda076b97bf3dd8907d8f17ac8b3679188110f73617c6b2"
+    },
+    {
+      "asset": "SOL",
+      "bytes": 13033,
+      "file": "033-sol-paradex-index.raw.json",
+      "http_status": 200,
+      "kind": "paradex-index",
+      "position": 33,
+      "sha256": "dd196d45193120d61b8c1c4e0b0ea3fe3549afbe9e34bd3a9af31064b2567bcf"
+    },
+    {
+      "asset": "SOL",
+      "bytes": 13780,
+      "file": "034-sol-paradex-index.raw.json",
+      "http_status": 200,
+      "kind": "paradex-index",
+      "position": 34,
+      "sha256": "5fba2f8b8eb65f0ac414e78d3f63a6b84dc8f282760d240574619429ca24b7fc"
+    },
+    {
+      "asset": "SOL",
+      "bytes": 13937,
+      "file": "035-sol-paradex-index.raw.json",
+      "http_status": 200,
+      "kind": "paradex-index",
+      "position": 35,
+      "sha256": "4b7deb1194403e654b52c22ac30cb57d24d1a2a34bf7ca477029f562e85d5bf2"
+    },
+    {
+      "asset": "SOL",
+      "bytes": 13853,
+      "file": "036-sol-paradex-index.raw.json",
+      "http_status": 200,
+      "kind": "paradex-index",
+      "position": 36,
+      "sha256": "dbbb3b428bbfc0e67ef31ef8d690f5b4d71726614f16d0598814c803249c1000"
+    },
+    {
+      "asset": "SOL",
+      "bytes": 13081,
+      "file": "037-sol-paradex-index.raw.json",
+      "http_status": 200,
+      "kind": "paradex-index",
+      "position": 37,
+      "sha256": "b643e965c57c13add90fcdd0bf316c4d6f2fdb5632c3625ad7f2e85db69efde5"
+    },
+    {
+      "asset": "SOL",
+      "bytes": 13924,
+      "file": "038-sol-paradex-index.raw.json",
+      "http_status": 200,
+      "kind": "paradex-index",
+      "position": 38,
+      "sha256": "1c2f2a00af26138ad33cf8b231d208a59ddb047aede0c997d811c4d0437fca3d"
+    },
+    {
+      "asset": "SOL",
+      "bytes": 13851,
+      "file": "039-sol-paradex-index.raw.json",
+      "http_status": 200,
+      "kind": "paradex-index",
+      "position": 39,
+      "sha256": "66b286b8575c4c696c8d409093ece474e0b791ea8800fa6f97494cb9a651a719"
+    },
+    {
+      "asset": "SOL",
+      "bytes": 13517,
+      "file": "040-sol-paradex-index.raw.json",
+      "http_status": 200,
+      "kind": "paradex-index",
+      "position": 40,
+      "sha256": "2d87055c80670202f5bfaf10512c6d80c0b70865f9bbf90c04604c17d05f74f1"
+    },
+    {
+      "asset": "SOL",
+      "bytes": 13526,
+      "file": "041-sol-paradex-index.raw.json",
+      "http_status": 200,
+      "kind": "paradex-index",
+      "position": 41,
+      "sha256": "ca140d5577b4354ae06ea658d0eab251a780f097bc04ac5b5703eccf73815c4b"
+    },
+    {
+      "asset": "SOL",
+      "bytes": 13517,
+      "file": "042-sol-paradex-index.raw.json",
+      "http_status": 200,
+      "kind": "paradex-index",
+      "position": 42,
+      "sha256": "644ac8fc038364b52a4d3bfee80ca40f88e44c59eb806b161ba68a80104a2758"
+    },
+    {
+      "asset": "SOL",
+      "bytes": 13515,
+      "file": "043-sol-paradex-index.raw.json",
+      "http_status": 200,
+      "kind": "paradex-index",
+      "position": 43,
+      "sha256": "3a761955336b72bf207a127b76ba5ea006a8f58c1d176b7fe877a6f15b747605"
+    },
+    {
+      "asset": "SOL",
+      "bytes": 13690,
+      "file": "044-sol-paradex-index.raw.json",
+      "http_status": 200,
+      "kind": "paradex-index",
+      "position": 44,
+      "sha256": "9dac3be17f834c4f45509027d9b97762dfbb77d05df884d3981b5f5b35579f8d"
+    },
+    {
+      "asset": "SOL",
+      "bytes": 13518,
+      "file": "045-sol-paradex-index.raw.json",
+      "http_status": 200,
+      "kind": "paradex-index",
+      "position": 45,
+      "sha256": "53f22998a2865648f47cea5b8d8a4ff9e870ff68b57395ad220529ce2e8751f6"
+    }
+  ],
+  "retained_bytes_including_phase_a": 935506,
+  "schema": "annual-hedged-funding-source-diagnostic-v1",
+  "status": "complete_conditional_funding_diagnostic"
+}

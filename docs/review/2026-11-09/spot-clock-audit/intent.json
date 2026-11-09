@@ -1,0 +1,30 @@
+{
+  "base_revision": "fdd75a420892add4b46991f2c87b48414e90d09c",
+  "budget": "One complete pass through one hash-bound 319935-byte compressed source; native E and envelope/receipt fields only. No follow-up read with changed units or window.",
+  "capture_boundaries_sha256": "f971726268ba2e630b2ebbe8d5bcf02f7b3f23b92ccb16efe23aef82cebe950f",
+  "controller_sha256": "c0d9346e93deb00ff45d0641a0bdbf6483bcb54cf902d1573073baf655810a80",
+  "forbidden": "No price/size access, book reconstruction, spread/funding/return computation, economic ranking, native-book-age or true-latency qualification, assumption of zero relative offset, training, strategy replay, new economic observation, protected partial data, credentials, accounts or orders. Preserve every old raw/result byte and financial-window restriction.",
+  "frozen_at_utc": "2026-11-09T21:57:54.171990+00:00",
+  "gates": "Exact source/controller/intent identities, duplicate-free native object framing, every declared symbol, exact UTC receipt in fixed minute and positive native E converted within int64. Report all clock differences including negatives; never repair an offset or infer unit validity from favorable signs.",
+  "intent_sha256": "2a8151fd275fc89586c26edb501c42e6317da961ccb3daef545fd1880abeb67a",
+  "limits": "Retrospective vendor documentation is not deployed-collector attestation. Receipt-minus-E is a cross-clock diagnostic, not physical delay or freshness proof. No independent market validation or family reopening.",
+  "minute_end_ns": 1790812860000000000,
+  "minute_start_ns": 1790812800000000000,
+  "native_event_unit_to_ns": 1000,
+  "network_requests": 0,
+  "output": "New private result.json and durable journal.jsonl; failures preserved. Canonical results may be summarized in the next coherent checkpoint.",
+  "preflight_sha256": "d1b2bfdc42ef15d6db2cc43f7972df3460e2abfda0054752b18111257b3ce1bd",
+  "previous_turn": "progress: documented vendor microsecond Spot capture and repaired exact clock-probe arithmetic; no economic edge admitted",
+  "question": "Using the vendor-declared microsecond E mode, what are the exact per-symbol observed collector-receipt-minus-E differences, clock regressions, and snapshot native-clock coverage in the already-retained minute?",
+  "raw_path": "data/research/2026-11-09-depth-source/binance.gzip",
+  "raw_sha256": "dfc2547f0d2cfcb819e07f90319fa65af15db5f3ed8fce17ccafc9c1dfbf7158",
+  "schema": "retained-spot-declared-unit-clock-audit-v1",
+  "scope": [
+    "BTCUSDT",
+    "ETHUSDT",
+    "SOLUSDT"
+  ],
+  "source_evidence_path": "docs/review/2026-11-09/collector-clock/result.json",
+  "source_evidence_sha256": "4908d91a45b96810fa66eb3ec0789ee58cc8a9f0c8b1c53ae3d9c60c8717b5f5",
+  "unit_selection": "Chosen solely from admitted vendor collection details before any E-to-receipt comparison. No alternate-unit comparison or digit-length inference."
+}

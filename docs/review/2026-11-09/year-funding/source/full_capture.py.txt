@@ -1,0 +1,454 @@
+"""One-use complete annual source capture; all economics await source completion."""
+
+import argparse
+from decimal import Decimal, InvalidOperation
+from datetime import datetime, timezone
+from fractions import Fraction
+import hashlib
+import json
+import os
+from pathlib import Path
+import runpy
+import time
+from urllib.parse import parse_qs, urlsplit
+
+import requests
+
+from simple_ai_trading.funding_cash import (
+    LinearFundingSettlement,
+    parse_binance_usdm_funding_history,
+)
+from tools.screen_paradex_index_boundaries import index_row
+
+ROOT = Path.cwd()
+OUT = ROOT / "data/research/2026-11-09-year-funding"
+CONTRACT = ROOT / "docs/review/2026-11-09/year-funding/contract.json"
+EXECUTION = OUT / "full-execution-intent.json"
+CORE = runpy.run_path(str(OUT / "annual_core.py"))
+
+
+def sha(path):
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def canonical(value):
+    return json.dumps(value, sort_keys=True, separators=(",", ":")).encode()
+
+
+def write_json(path, value):
+    with path.open("x", encoding="utf-8", newline="\n") as stream:
+        json.dump(value, stream, indent=2, sort_keys=True)
+        stream.write("\n")
+        stream.flush()
+        os.fsync(stream.fileno())
+
+
+def unique_object(pairs):
+    output = {}
+    for key, value in pairs:
+        if key in output:
+            raise ValueError("Native JSON contains a duplicate key")
+        output[key] = value
+    return output
+
+
+def reject_constant(value):
+    raise ValueError("Native JSON contains a nonfinite constant")
+
+
+def load(request, raw):
+    body = raw.read_bytes()
+    asset = request["asset"]
+    query = {
+        key: values[0]
+        for key, values in parse_qs(urlsplit(request["url"]).query).items()
+    }
+    if request["kind"].startswith("binance"):
+        events = parse_binance_usdm_funding_history(
+            body,
+            expected_sha256=hashlib.sha256(body).hexdigest(),
+            expected_symbol=asset + "USDT",
+        )
+        start, end = int(query["startTime"]), int(query["endTime"])
+        expected = list(
+            range(
+                (start + CORE["STEP"] - 1) // CORE["STEP"] * CORE["STEP"],
+                end // CORE["STEP"] * CORE["STEP"] + 1,
+                CORE["STEP"],
+            )
+        )
+        if len(events) != len(expected) or not expected:
+            raise ValueError(
+                "Native funding page does not cover its exact scheduled interval"
+            )
+        for event, nominal in zip(events, expected, strict=True):
+            if (
+                not start <= event.funding_time_ms <= end
+                or not 0 <= event.funding_time_ms - nominal <= 1000
+            ):
+                raise ValueError("Native funding timestamp escaped its frozen interval")
+        return events
+    payload = json.loads(
+        body, object_pairs_hook=unique_object, parse_constant=reject_constant
+    )
+    if not isinstance(payload, dict) or not isinstance(payload.get("results"), list):
+        raise ValueError("Native index envelope is not a bounded row array")
+    for item in payload["results"]:
+        value = item.get("funding_index") if isinstance(item, dict) else None
+        if not isinstance(value, str) or len(value) > 128:
+            raise ValueError("Index field is not a bounded decimal string")
+        try:
+            number = Decimal(value)
+        except InvalidOperation as error:
+            raise ValueError("Index decimal is malformed") from error
+        if not number.is_finite() or abs(number.as_tuple().exponent) > 256:
+            raise ValueError(
+                "Index decimal is nonfinite or exceeds the numeric resource bound"
+            )
+    row = index_row(
+        payload,
+        {"asset": asset, "start": int(query["start_at"]), "end": int(query["end_at"])},
+    )
+    return {"time": row["time"], "index": Fraction(row["index"])}
+
+
+def synthetic_preflight(contract):
+    nominal = CORE["boundaries"](contract)
+    events = [
+        LinearFundingSettlement(
+            "BTCUSDT", "USDT", stamp, Fraction(), Fraction(100), "0" * 64
+        )
+        for stamp in range(nominal[0], nominal[-1] + 1, CORE["STEP"])
+    ]
+    indices = [
+        {"time": stamp + 1001, "index": Fraction(position * 100)}
+        for position, stamp in enumerate(nominal)
+    ]
+    rows = CORE["monthly_rows"](indices, events, nominal)
+    output = CORE["adjudicate"](rows, contract["roles"])
+    if (
+        sum(x["binance_settlements"] for x in rows) != 1095
+        or not output["passes_conditional_funding_prefilter"]
+    ):
+        raise ValueError("Synthetic complete-period control failed")
+    if Fraction(output["roles"]["training"]["capital_stress_bps"]) != Fraction(
+        2000 * 181, 365
+    ):
+        raise ValueError("Synthetic two-leg capital law failed")
+    adverse = [
+        dict(item, index=Fraction((position if position <= 6 else 12 - position) * 100))
+        for position, item in enumerate(indices)
+    ]
+    rejected = CORE["adjudicate"](
+        CORE["monthly_rows"](adverse, events, nominal), contract["roles"]
+    )
+    if (
+        rejected["training_only_orientation"] != 1
+        or rejected["passes_conditional_funding_prefilter"]
+    ):
+        raise ValueError("Synthetic forward-role/no-reorientation control failed")
+    try:
+        CORE["monthly_rows"](indices, events[:-1], nominal)
+    except ValueError:
+        pass
+    else:
+        raise ValueError("Synthetic missing-settlement control failed")
+    actual = load(contract["future_full_source_plan"][0], OUT / "earliest.raw.json")
+    if len(actual) != 4:
+        raise ValueError("Retained earliest native loader failed")
+    request = next(
+        item
+        for item in contract["future_full_source_plan"]
+        if item["kind"] == "paradex-index"
+    )
+    query = parse_qs(urlsplit(request["url"]).query)
+    payload = {
+        "next": None,
+        "results": [
+            {
+                "created_at": int(query["start_at"][0]),
+                "market": "BTC-USD-PERP",
+                "funding_index": "1.25",
+                "funding_period_hours": 8,
+            }
+        ],
+    }
+    fixtures = OUT / "preflight-fixtures-v5"
+    fixtures.mkdir(exist_ok=False)
+    synthetic = fixtures / "index-loader-positive.json"
+    write_json(synthetic, payload)
+    if load(request, synthetic)["index"] != Fraction(5, 4):
+        raise ValueError("Synthetic native index loader failed")
+    payload["results"][0]["funding_index"] = "1.25e-2"
+    synthetic = fixtures / "index-loader-exponent.json"
+    write_json(synthetic, payload)
+    if load(request, synthetic)["index"] != Fraction(1, 80):
+        raise ValueError("Bounded native index exponent loader failed")
+    for name in ("exponent", "cursor", "duplicate", "scope"):
+        variant = json.loads(json.dumps(payload))
+        if name == "exponent":
+            variant["results"][0]["funding_index"] = "1e999999999"
+        elif name == "cursor":
+            variant["next"] = "unconsumed-cursor"
+        elif name == "scope":
+            variant["results"][0]["market"] = "ETH-USD-PERP"
+        synthetic = fixtures / ("index-loader-reject-" + name + ".json")
+        if name == "duplicate":
+            with synthetic.open("x", encoding="utf-8") as stream:
+                stream.write('{"next":null,"next":null,"results":[]}')
+        else:
+            write_json(synthetic, variant)
+        try:
+            load(request, synthetic)
+        except ValueError:
+            pass
+        else:
+            raise ValueError("Synthetic native index rejection failed")
+
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--preflight", action="store_true")
+    args = parser.parse_args()
+    contract = json.loads(CONTRACT.read_bytes())
+    if (
+        hashlib.sha256(
+            canonical({k: v for k, v in contract.items() if k != "contract_sha256"})
+        ).hexdigest()
+        != contract["contract_sha256"]
+    ):
+        raise ValueError("Frozen annual contract changed")
+    phase_a = json.loads((OUT / "result.json").read_bytes())
+    if (
+        not phase_a["source_gate_passed"]
+        or sha(OUT / "earliest.raw.json") != phase_a["raw_sha256"]
+    ):
+        raise ValueError("Earliest native gate/source differs")
+    plan = contract["future_full_source_plan"]
+    if len(plan) != 46 or plan[0]["url"] != contract["phase_a_request"]["url"]:
+        raise ValueError("Frozen complete request plan differs")
+    if args.preflight:
+        synthetic_preflight(contract)
+        write_json(
+            OUT / "full-preflight-v5.json",
+            {
+                "controller_sha256": sha(Path(__file__)),
+                "core_sha256": sha(OUT / "annual_core.py"),
+                "contract_sha256": contract["contract_sha256"],
+                "synthetic_complete_alignment_capital_forward_rejection_missing_event_controls": True,
+                "actual_retained_loader_rows": 4,
+                "new_network_requests": 0,
+            },
+        )
+        print(
+            "Annual controller, exact retained loader and synthetic alignment/capital/forward controls passed."
+        )
+        return
+    execution = json.loads(EXECUTION.read_bytes())
+    if (
+        hashlib.sha256(
+            canonical({k: v for k, v in execution.items() if k != "execution_sha256"})
+        ).hexdigest()
+        != execution["execution_sha256"]
+    ):
+        raise ValueError("Full execution intent changed")
+    for relative, expected in execution["source_sha256"].items():
+        if sha(ROOT / relative) != expected:
+            raise ValueError("Frozen full-study implementation or source changed")
+    indices = {asset: [] for asset in ("BTC", "ETH", "SOL")}
+    funding = {asset: [] for asset in indices}
+    funding["BTC"].extend(load(plan[0], OUT / "earliest.raw.json"))
+    result = {
+        "schema": "annual-hedged-funding-source-diagnostic-v1",
+        "contract_sha256": contract["contract_sha256"],
+        "execution_sha256": execution["execution_sha256"],
+        "accepted_edge": False,
+        "profitability_claim": False,
+        "historical_terms_and_index_continuity_qualified": False,
+        "account_or_order_requests": 0,
+        "economic_calculations": 0,
+        "new_native_requests_started": 0,
+        "receipts": [],
+    }
+    result["economic_evaluation_started"] = False
+    active_raw = None
+    active_position = None
+    active_status = None
+    total_bytes = (OUT / "earliest.raw.json").stat().st_size
+    with (OUT / "full-journal.jsonl").open(
+        "x", encoding="utf-8", newline="\n"
+    ) as journal:
+
+        def record(phase, **fields):
+            journal.write(
+                json.dumps(
+                    {
+                        "phase": phase,
+                        "at_utc": datetime.now(timezone.utc).isoformat(),
+                        **fields,
+                    },
+                    sort_keys=True,
+                )
+                + "\n"
+            )
+            journal.flush()
+            os.fsync(journal.fileno())
+
+        record("full_study_started", execution_sha256=execution["execution_sha256"])
+        try:
+            with requests.Session() as session:
+                session.trust_env = False
+                for position, request in enumerate(plan[1:], 1):
+                    filename = f"{position:03d}-{request['asset'].lower()}-{request['kind']}.raw.json"
+                    destination = OUT / filename
+                    active_raw, active_position, active_status = (
+                        destination,
+                        position,
+                        None,
+                    )
+                    limit = contract["future_transport_ceiling"][
+                        "binance_response_bytes_maximum"
+                        if request["kind"].startswith("binance")
+                        else "paradex_response_bytes_maximum"
+                    ]
+                    record("request_started", position=position, url=request["url"])
+                    result["new_native_requests_started"] += 1
+                    count = 0
+                    started = time.monotonic()
+                    with session.get(
+                        request["url"],
+                        timeout=(5, 10),
+                        stream=True,
+                        allow_redirects=False,
+                    ) as response:
+                        status = response.status_code
+                        active_status = status
+                        with destination.open("xb") as raw:
+                            try:
+                                for chunk in response.iter_content(65536):
+                                    remaining = min(
+                                        limit + 1 - count,
+                                        contract["future_transport_ceiling"][
+                                            "aggregate_bytes_maximum"
+                                        ]
+                                        + 1
+                                        - total_bytes,
+                                    )
+                                    if remaining <= 0:
+                                        raise ValueError(
+                                            "Full source byte ceiling exceeded"
+                                        )
+                                    retained = chunk[:remaining]
+                                    raw.write(retained)
+                                    count += len(retained)
+                                    total_bytes += len(retained)
+                                    if (
+                                        count > limit
+                                        or total_bytes
+                                        > contract["future_transport_ceiling"][
+                                            "aggregate_bytes_maximum"
+                                        ]
+                                        or time.monotonic() - started > 30
+                                    ):
+                                        raise ValueError(
+                                            "Full source byte or elapsed ceiling exceeded"
+                                        )
+                            finally:
+                                raw.flush()
+                                os.fsync(raw.fileno())
+                    receipt = {
+                        "position": position,
+                        "asset": request["asset"],
+                        "kind": request["kind"],
+                        "http_status": status,
+                        "bytes": count,
+                        "sha256": sha(destination),
+                        "file": filename,
+                    }
+                    result["receipts"].append(receipt)
+                    record("response_retained", **receipt)
+                    if status != 200:
+                        raise ValueError("Required source returned non-200 status")
+                    parsed = load(request, destination)
+                    if request["kind"].startswith("binance"):
+                        funding[request["asset"]].extend(parsed)
+                    else:
+                        indices[request["asset"]].append(parsed)
+                    record("source_gate_passed", position=position)
+                    active_raw = None
+            nominal = CORE["boundaries"](contract)
+            for asset in indices:
+                CORE["monthly_rows"](
+                    indices[asset], funding[asset], nominal, alignment_only=True
+                )
+            record("complete_population_aligned")
+            result["economic_evaluation_started"] = True
+            rows = {
+                asset: CORE["monthly_rows"](indices[asset], funding[asset], nominal)
+                for asset in indices
+            }
+            # No orientation or cash result is evaluated until every required
+            # native response and the complete cross-source population pass.
+            outputs = {
+                asset: CORE["adjudicate"](rows[asset], contract["roles"])
+                for asset in rows
+            }
+            result.update(
+                {
+                    "status": "complete_conditional_funding_diagnostic",
+                    "economic_calculations": 3,
+                    "assets": outputs,
+                    "monthly_cash_rows": {
+                        asset: CORE["serializable_rows"](rows[asset]) for asset in rows
+                    },
+                    "conditional_funding_survivors": [
+                        asset
+                        for asset, value in outputs.items()
+                        if value["passes_conditional_funding_prefilter"]
+                    ],
+                    "exact_fraction_format": "numerator/denominator, or integer when denominator is one",
+                }
+            )
+        except Exception as error:
+            if active_raw is not None and active_raw.is_file():
+                record(
+                    "failed_source_retained",
+                    position=active_position,
+                    http_status=active_status,
+                    file=active_raw.name,
+                    bytes=active_raw.stat().st_size,
+                    sha256=sha(active_raw),
+                )
+            result.update(
+                {
+                    "status": "terminal_local_evaluation_failure_retained_source"
+                    if result["economic_evaluation_started"]
+                    else "terminal_source_failure_before_economics",
+                    "error_type": type(error).__name__,
+                    "error": str(error),
+                }
+            )
+        result["retained_bytes_including_phase_a"] = total_bytes
+        write_json(OUT / "full-result.json", result)
+        record(
+            "full_study_terminal",
+            result_sha256=sha(OUT / "full-result.json"),
+            status=result["status"],
+        )
+    print(
+        json.dumps(
+            {
+                k: result.get(k)
+                for k in (
+                    "status",
+                    "new_native_requests_started",
+                    "economic_calculations",
+                    "conditional_funding_survivors",
+                )
+            }
+        )
+    )
+
+
+if __name__ == "__main__":
+    main()

@@ -14,6 +14,10 @@ docs/review/2026-11-09/order-admission/** text eol=lf
 docs/review/2026-11-09/capital-admission/** text eol=lf
 docs/review/2026-11-09/native-clock-source/** text eol=lf
 docs/review/2026-11-09/collector-clock/** text eol=lf
+docs/review/2026-11-09/spot-clock-audit/** text eol=lf
+docs/review/2026-11-09/long-hold-source/** text eol=lf
+docs/review/2026-11-09/market-spec-source/** text eol=lf
+docs/review/2026-11-09/year-funding/** text eol=lf
 docs/review/2026-10-07/usd1-distribution/** binary -eol
 *.py text eol=lf
 *.sh text eol=lf

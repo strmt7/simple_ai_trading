@@ -1,0 +1,36 @@
+{
+  "admission": "Native success true, effective HTTP200, no error/challenge, at least 600 substantive extracted characters and intended market-spec history scope. Same-publisher canonical redirects under the selected documentation section allowed and recorded.",
+  "authority": "User-delegated routine public technical-document research only; all consumed financial populations remain closed.",
+  "base_revision": "fdd75a420892add4b46991f2c87b48414e90d09c",
+  "budget": {
+    "cache_bypass": true,
+    "headless": true,
+    "navigations": 1,
+    "owned_process_timeout_seconds": 150,
+    "page_timeout_ms": 45000,
+    "retries": 0,
+    "robots_checked": true
+  },
+  "cache_identity": "9d7721db4b1e71517be18c2739fa223422a77155d6155a7cc44c4a5ab28845af",
+  "capture_boundaries_sha256": "f971726268ba2e630b2ebbe8d5bcf02f7b3f23b92ccb16efe23aef82cebe950f",
+  "controller_sha256": "4942aa25d03888b0ffd517acead667eca21f993eab10380b28d064dcb9a9adce",
+  "documents": [
+    {
+      "name": "spec-history",
+      "output": "spec-history.native.json",
+      "selection": "Exact primary link discovered in the newly admitted native funding API page before content access.",
+      "url": "https://docs.paradex.trade/api/prod/markets/get-markets-history"
+    }
+  ],
+  "failure": "Preserve failure; no market API request or alternate reader follows failed document admission.",
+  "frozen_at_utc": "2026-11-09T22:11:32.594868+00:00",
+  "intent_sha256": "2d5239b826eb2b4a953322be8bc50ec40820dccc3bcaadf56e84291730578297",
+  "limits": "No market data, book, account, credential, order, training, protected partial capture or economic result. A newly discovered document is not proof of an effective API change or authority to reopen an old population.",
+  "parent_native_sha256": "de2cdbf5725a038420525edc9a3be9c5c80bd2353b344fb81c73d7d667e52809",
+  "preflight_sha256": "7b4cba65e2a52ce72214cd001d0af6fb30425a3165efd6f6e5b14fb20446cccf",
+  "provider_lock_sha256": "5fc27973200b72184199428bee436c8deee9fe65ef3f0762cb871ac5c69abe53",
+  "provider_tool_sha256": "e84a0e54ee07e4e13d3d2f35491f641730096a78126068f232c1f2397a467d8c",
+  "provider_version": "0.9.5+flitzzip.portable2",
+  "question": "Can the documented market-specification change history qualify historical contract identity, funding-period or settlement-unit changes without assuming current inventory applies to 2025? Determine supported filters, response and bounds before any native market request.",
+  "schema": "historical-market-spec-document-intent-v1"
+}

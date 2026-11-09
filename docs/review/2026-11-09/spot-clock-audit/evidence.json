@@ -1,0 +1,20 @@
+{
+  "base_revision": "fdd75a420892add4b46991f2c87b48414e90d09c",
+  "controller_sha256": "c0d9346e93deb00ff45d0641a0bdbf6483bcb54cf902d1573073baf655810a80",
+  "financial_counts": [
+    203,
+    65,
+    37,
+    0
+  ],
+  "initial_preflight_error": "Exact channel allowlist omitted the depth@100ms suffix. Corrected before freezing and before any native E comparison; retained separately.",
+  "intent_sha256": "6c71898437c49954ec4f00b4cf01d4ecf8316bf79ab212214c964961a0fcc36d",
+  "journal_sha256": "a9fb21eddcc79c6ecf69041912ef5e5f0a96f552606b1dd254830b1d5c6fffc6",
+  "new_network_requests": 0,
+  "original_sources_and_results_unchanged": true,
+  "outcome": "clock-only diagnostic complete; no economic/model admission",
+  "preflight_sha256": "d1b2bfdc42ef15d6db2cc43f7972df3460e2abfda0054752b18111257b3ce1bd",
+  "result_sha256": "934d3fe8d4294af1d5de0230af6611be901c8bde2ed46a4b01d8fc801f2103c0",
+  "retained_directory": "data/research/2026-11-09-spot-clock-audit",
+  "schema": "retained-spot-clock-audit-evidence-v1"
+}

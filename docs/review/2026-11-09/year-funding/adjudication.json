@@ -1,0 +1,112 @@
+{
+  "accepted_edge": false,
+  "account_credentials_orders_books_training_or_protected_partial_access": false,
+  "assets": {
+    "BTC": {
+      "discrete_settlements": 1095,
+      "monthly_blocks": 12,
+      "orientation": 1,
+      "positive_months_at_par": 12,
+      "roles": {
+        "test": {
+          "capital_charge_bps_rounded_4dp": "504.1096",
+          "gross_bps_rounded_4dp": "82.9171",
+          "net_bps_rounded_4dp": "-501.1925",
+          "passes": false
+        },
+        "training": {
+          "capital_charge_bps_rounded_4dp": "991.7806",
+          "gross_bps_rounded_4dp": "239.4700",
+          "net_bps_rounded_4dp": "-832.3106",
+          "passes": false
+        },
+        "validation": {
+          "capital_charge_bps_rounded_4dp": "504.1097",
+          "gross_bps_rounded_4dp": "82.6793",
+          "net_bps_rounded_4dp": "-501.4304",
+          "passes": false
+        }
+      }
+    },
+    "ETH": {
+      "discrete_settlements": 1095,
+      "monthly_blocks": 12,
+      "orientation": 1,
+      "positive_months_at_par": 12,
+      "roles": {
+        "test": {
+          "capital_charge_bps_rounded_4dp": "504.1096",
+          "gross_bps_rounded_4dp": "63.2202",
+          "net_bps_rounded_4dp": "-520.8894",
+          "passes": false
+        },
+        "training": {
+          "capital_charge_bps_rounded_4dp": "991.7806",
+          "gross_bps_rounded_4dp": "146.5623",
+          "net_bps_rounded_4dp": "-925.2184",
+          "passes": false
+        },
+        "validation": {
+          "capital_charge_bps_rounded_4dp": "504.1097",
+          "gross_bps_rounded_4dp": "183.9383",
+          "net_bps_rounded_4dp": "-400.1715",
+          "passes": false
+        }
+      }
+    },
+    "SOL": {
+      "discrete_settlements": 1095,
+      "monthly_blocks": 12,
+      "orientation": 1,
+      "positive_months_at_par": 9,
+      "roles": {
+        "test": {
+          "capital_charge_bps_rounded_4dp": "504.1096",
+          "gross_bps_rounded_4dp": "25.1402",
+          "net_bps_rounded_4dp": "-558.9694",
+          "passes": false
+        },
+        "training": {
+          "capital_charge_bps_rounded_4dp": "991.7806",
+          "gross_bps_rounded_4dp": "174.9100",
+          "net_bps_rounded_4dp": "-896.8706",
+          "passes": false
+        },
+        "validation": {
+          "capital_charge_bps_rounded_4dp": "504.1097",
+          "gross_bps_rounded_4dp": "157.1175",
+          "net_bps_rounded_4dp": "-426.9922",
+          "passes": false
+        }
+      }
+    }
+  },
+  "complete_retained_body_bytes": 935506,
+  "conditional_funding_survivors": [],
+  "contract_sha256": "a7cad92318eed597b1e41a58c99e5d71a837404c72775befb333336cddc443a3",
+  "created_at_utc": "2026-11-09T22:37:23.265254+00:00",
+  "discrete_settlements_in_intervals": 3285,
+  "execution_sha256": "85b5fda33d2bd0f8f53840fa3485b7b4196143765e86d00a6b9014e7fafc236b",
+  "financial_counts_after_this_completed_diagnostic": [
+    204,
+    65,
+    37,
+    0
+  ],
+  "full_journal_sha256": "97d30498d12e79d371ca684e118810f0eecec9d5253e57cadcb4fd35f636f2a6",
+  "full_result_file_sha256": "4236abe674a3e559fdc147f9f0fdfeeb5fc8b3003ad2a051ac5d6db31070c580",
+  "historical_terms_and_index_continuity_qualified": false,
+  "initial_reference_settlements": 3,
+  "interpretation": "A rejection under declared stress and historical-unit assumptions, not measured actual all-in fees, a family-wide negative-EV theorem, or a new reason to relax costs or reprice this population.",
+  "monthly_cash_intervals": 36,
+  "new_native_responses_full_phase": 45,
+  "owned_parent_exit": 0,
+  "owned_parent_result_sha256": "56a01c9b93e82dda57e38cd3c1b26c42ed71bf88285b194a6a1c1c3fef0a00b3",
+  "private_retention_directory": "data/research/2026-11-09-year-funding",
+  "raw_and_older_results_unchanged": true,
+  "reason": "All nine role nets fail the fixed 80-bip plus explicit fully-funded two-leg capital charge. BTC and ETH have positive conditional at-par funding cash in all twelve months, but that is not total hedged profit. SOL additionally fails late-role persistence.",
+  "result_sha256": "70b9b8dccce9da88a9178f999ae62e75fb432691eaa8a3137d6a0186896d3e9e",
+  "schema": "annual-funding-complete-adjudication-v1",
+  "stable_profitability_proved": false,
+  "total_native_responses_including_phase_a": 46
+}

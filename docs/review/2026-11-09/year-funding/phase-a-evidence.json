@@ -1,0 +1,23 @@
+{
+  "contract_sha256": "a7cad92318eed597b1e41a58c99e5d71a837404c72775befb333336cddc443a3",
+  "controller_sha256": "aa237b9f9836a081b3245fe7dac616e6c2301c0e0d79cf59f95491756a78e847",
+  "economic_calculations": 0,
+  "financial_counts": [
+    203,
+    65,
+    37,
+    0
+  ],
+  "journal_sha256": "9dc6564da16698827fe40a17ec5736fb1499157f8da5fa1a832c8eee980e56b5",
+  "native_GET_requests": 1,
+  "nonempty_native_mark_fields": 4,
+  "parent_exit": 0,
+  "parent_log_sha256": "4fa885483f31d568e8836e248ea59a35ae323fbe2d477c36809b96f850960880",
+  "parent_sha256": "d47c4f511610093e733c8ad07f62a872b1956af7d38977eaa5cee1b76dbaba92",
+  "phase_a_result_file_sha256": "a36bb62a62d82febed410dcaac9247a71b49078e387125648ea657a17accc064",
+  "phase_b": "Full source controller and preflight required under unchanged frozen annual population, roles and cost law; no automatic worker or schedule was installed.",
+  "remaining_requests_started": 0,
+  "retained_directory": "data/research/2026-11-09-year-funding",
+  "rows": 4,
+  "schema": "annual-funding-phase-a-evidence-v1"
+}
