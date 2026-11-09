@@ -1,0 +1,125 @@
+{
+  "base_revision": "8f5b7391fe8fcc87c95f9f8bb733e95e3a1259d4",
+  "controller_sha256": "6a0e6dc4b45d9fe209299c49897c69372dd8e652c55118427a661fe56546941c",
+  "documents": [
+    {
+      "effective_http_status": 200,
+      "final_url": "https://docs.tardis.dev/historical-data-details/binance",
+      "http_status": 200,
+      "markdown_characters": 18632,
+      "markdown_sha256": "c33d79f3a0a90702eeda530b57f99decae53cf91c8ccfad777172be7dcff1de8",
+      "name": "spot-details",
+      "native_bytes": 1068526,
+      "native_error": "",
+      "native_sha256": "ac651206e5710a0187815321c6118bede83faf0d189691b1b9a84cc68cd4d4d8",
+      "native_success": true,
+      "output": "spot.native.json",
+      "selection": "Exact formerly-unrequested URL in the old source intent and independently discovered publisher page; new session documentation-only authority.",
+      "source_admitted": true,
+      "url": "https://docs.tardis.dev/historical-data-details/binance"
+    },
+    {
+      "effective_http_status": 200,
+      "final_url": "https://docs.tardis.dev/historical-data-details",
+      "http_status": 200,
+      "markdown_characters": 23390,
+      "markdown_sha256": "7af72ba793f9befb2bbaebc7794df36e73d67a8de240b70f71142c39608d90f8",
+      "name": "collection-overview",
+      "native_bytes": 1273168,
+      "native_error": "",
+      "native_sha256": "bf0cea3ed68c2e453883a19520f886a64d622a14b01a57a44b1143387aa9bd05",
+      "native_success": true,
+      "output": "collection.native.json",
+      "selection": "Publisher collection overview discovered before content access.",
+      "source_admitted": true,
+      "url": "https://docs.tardis.dev/historical-data-details"
+    },
+    {
+      "commit": "2f13277771f75ef43571025d6cf5d93cee4b9584",
+      "commit_date": "2026-08-22T18:01:22Z",
+      "effective_http_status": 200,
+      "final_url": "https://raw.githubusercontent.com/tardis-dev/tardis-node/2f13277771f75ef43571025d6cf5d93cee4b9584/src/mappers/binance.ts",
+      "http_status": 200,
+      "markdown_characters": 19911,
+      "markdown_sha256": "499f6a5a732816363e25adf088562019f04513589e33756dc8dc7e386e930036",
+      "name": "asof-mapper",
+      "native_bytes": 85991,
+      "native_error": "",
+      "native_sha256": "982ba8f3ee259ed4c17918d311b08e727da133c7e0eab4d2c6a7b66c056b6088",
+      "native_success": true,
+      "output": "mapper.native.json",
+      "selection": "Official public GitHub metadata selected last returned Binance mapper file revision not after 2026-10-01; source body not yet read.",
+      "source_admitted": true,
+      "url": "https://raw.githubusercontent.com/tardis-dev/tardis-node/2f13277771f75ef43571025d6cf5d93cee4b9584/src/mappers/binance.ts"
+    }
+  ],
+  "intent_sha256": "33ad40b7682cc88d5b16546de541e34aa766f9fe0707efd5d0f2e452107914e0",
+  "journal_sha256": "cae95324fd9a9f59efa1595d5f955553922c4127d6d00a4e266fffa4be8d2e7e",
+  "next_action": "One separately frozen zero-network clock-only audit may test the declared vendor unit against retained Spot depth fields and collector receipts, preserving unknown offsets and every original source restriction. No new market capture or economic qualification follows.",
+  "provider": {
+    "cache_identity": "9d7721db4b1e71517be18c2739fa223422a77155d6155a7cc44c4a5ab28845af",
+    "provider_lock_sha256": "5fc27973200b72184199428bee436c8deee9fe65ef3f0762cb871ac5c69abe53",
+    "provider_tool_sha256": "e84a0e54ee07e4e13d3d2f35491f641730096a78126068f232c1f2397a467d8c",
+    "provider_version": "0.9.5+flitzzip.portable2"
+  },
+  "repair": {
+    "behavior": [
+      "Exact positive integer serverTime and int64-nanosecond range required",
+      "Policy rejects noninteger sample counts and nonfinite/nonpositive timeout or disagreement limit before creating a session",
+      "Reject negative monotonic or wall intervals instead of clamping negative RTT",
+      "Compare wall elapsed against monotonic elapsed; default 1 ms limit is an explicit policy, not accuracy evidence",
+      "Subtract integer epochs before float scaling; retain final wall receipt as integer measured_at_ms",
+      "Preserve external session ownership; close owned sessions on successful and failed probes"
+    ],
+    "function": "microstructure_data.probe_binance_futures_clock",
+    "limits": "Server millisecond quantization, request asymmetry, source timestamp timing, host drift between probes and absolute synchronization remain unqualified. This is a point estimate, not an arbitrage or execution-latency certificate.",
+    "scope": "Only this production definition changed; other module AST unchanged"
+  },
+  "retention": {
+    "credentials_orders_training_or_protected_partial_access": false,
+    "financial_counts": [
+      203,
+      65,
+      37,
+      0
+    ],
+    "native_and_prior_results_unchanged": true,
+    "new_market_observations": 0,
+    "new_market_or_account_requests": 0,
+    "private_directory": "data/research/2026-11-09-collector-clock/"
+  },
+  "schema": "vendor-clock-source-and-probe-repair-v1",
+  "source_reported": {
+    "arrival_clock": "Vendor claims synchronized arrival timestamps with 100 ns precision; this is not measured absolute clock accuracy or a cross-collector offset bound",
+    "connections": "Multiple Spot connections; do not infer exchange-wide event ordering from one collector clock",
+    "historical_sample_consequence": "2026-10-01 Spot native E should be interpreted in the documented vendor microsecond mode, conditional on that retrospective deployment claim; do not apply the exchange default by habit or infer mode from digit length",
+    "mapper": "Immutable pre-sample client passes fields to fromMicroSecondsToDate; helper implementation and deployed collector are not verified by this file",
+    "mapper_admission_limit": "Historical mode can ignore snapshot overlap errors; Spot first-join check uses snapshot ID + 1 and does not resolve the exchange document boundary wording. Do not blindly import permissive mapping behavior or treat normalized output as continuity proof",
+    "snapshot": "Generated REST top-1000-level snapshot, tagged generated=true; retain its actual collector arrival and buffer updates",
+    "spot_stream_mode": "microsecond URL mode since 2025-02-28; before then the unparameterized URL"
+  },
+  "verification": {
+    "current_focus": {
+      "errors": 0,
+      "failures": 0,
+      "skipped": 0,
+      "tests": 86
+    },
+    "initial_fixture_failure": "A three-probe synthetic clock fixture was mistakenly used with the default five samples. It was corrected and excluded from production-defect evidence.",
+    "logs": {
+      "published-tests.log": "3855e10b45ab26386c1495c460550e2e6d9132bd9129afdfdcf80df6fd51baf9",
+      "published-tests.xml": "78b3a74ceb4371a2b5fc7d02548d5892eeb9be65496e63026da851d8251fb6d9",
+      "red-tests.log": "419b9457a210507c306998a488d8b93dcc4e4c9807b7c84e7193141ca36120e3",
+      "red-tests.xml": "6f37fbbce342f8c0d693675310497ef5fc14cc3be0896b134ba109e774b4cf10"
+    },
+    "previous_implementation_regressions": {
+      "errors": 0,
+      "failures": 2,
+      "skipped": 0,
+      "tests": 2
+    },
+    "ruff": "check and format --check pass",
+    "source_sha256": "3aa9e55d3ff252b472cc19221d378b4538db25ba662a73dab1be8ba0ad926984",
+    "tests_sha256": "45d9111ba9466c88b4f9c6d8a671b2483f2f8bf8bfc4b2b89f53ad55f10d8022"
+  }
+}

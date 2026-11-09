@@ -29,9 +29,17 @@ current full-suite failure count without rerunning the appropriate scope.
 - [Spot protocol sources](review/2026-11-09/native-clock-source/review.md): two
   immutable official revisions passed native source admission. Both document
   default milliseconds and optional microseconds; Spot bookTicker has no native
-  event-time field. Collector configuration, historical deployment and clock
-  offsets remain unqualified. Preserve the initial/subsequent bridge boundary
-  distinction; the existing futures `T`/`pu` normalizer is not a Spot adapter.
+  event-time field. [Vendor collection evidence](review/2026-11-09/collector-clock/review.md)
+  documents microsecond Spot capture since February 28, 2025; use that declared
+  vendor mode for the October sample, conditional on its retrospective claim.
+  Arrival precision is not accuracy; actual historical deployment and clock
+  offsets remain independently unverified. The vendor's historical mapper may
+  suppress snapshot-overlap errors. Preserve the initial/subsequent bridge
+  boundary distinction; the futures `T`/`pu` normalizer is not a Spot adapter.
+  Its clock probe now rejects malformed clocks and discontinuities and preserves
+  small integer differences; 86 scoped checks pass, without clock qualification.
+  Next is a separately bounded zero-network clock-only audit of retained Spot
+  depth, preserving all original source and financial-window restrictions.
   Routine public technical-document decisions now use the user's explicit
   session delegation in AGENTS, without repeated approval requests. Earlier
   source failures, consumed financial tests and protected captures stay intact.

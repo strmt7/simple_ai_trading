@@ -1,0 +1,50 @@
+{
+  "admission": "Native success true, effective HTTP 200, no native error/challenge, >=600 substantive extracted characters, intended scope. Publisher documentation may canonicalize beneath the same selected host/path; raw immutable source must retain exact URL. Failures remain terminal for their page; fixed independent other pages may run without interpreting outcomes during capture.",
+  "authority": "User delegated routine public technical-document research; preserve prior failed and forbidden-at-that-time attempts unchanged. This new documentation-only budget does not reopen a financial population.",
+  "base_revision": "8f5b7391fe8fcc87c95f9f8bb733e95e3a1259d4",
+  "budget": {
+    "cache_bypass": true,
+    "external_llm_profile_stealth_challenge_bypass": false,
+    "headless_defaults": true,
+    "navigations": 3,
+    "owned_process_timeout_seconds_per_document": 150,
+    "page_timeout_ms": 45000,
+    "retries": 0,
+    "robots_checked": true
+  },
+  "cache_identity": "9d7721db4b1e71517be18c2739fa223422a77155d6155a7cc44c4a5ab28845af",
+  "capture_boundaries_sha256": "f971726268ba2e630b2ebbe8d5bcf02f7b3f23b92ccb16efe23aef82cebe950f",
+  "controller_sha256": "6a0e6dc4b45d9fe209299c49897c69372dd8e652c55118427a661fe56546941c",
+  "documents": [
+    {
+      "name": "spot-details",
+      "output": "spot.native.json",
+      "selection": "Exact formerly-unrequested URL in the old source intent and independently discovered publisher page; new session documentation-only authority.",
+      "url": "https://docs.tardis.dev/historical-data-details/binance"
+    },
+    {
+      "name": "collection-overview",
+      "output": "collection.native.json",
+      "selection": "Publisher collection overview discovered before content access.",
+      "url": "https://docs.tardis.dev/historical-data-details"
+    },
+    {
+      "commit": "2f13277771f75ef43571025d6cf5d93cee4b9584",
+      "commit_date": "2026-08-22T18:01:22Z",
+      "name": "asof-mapper",
+      "output": "mapper.native.json",
+      "selection": "Official public GitHub metadata selected last returned Binance mapper file revision not after 2026-10-01; source body not yet read.",
+      "url": "https://raw.githubusercontent.com/tardis-dev/tardis-node/2f13277771f75ef43571025d6cf5d93cee4b9584/src/mappers/binance.ts"
+    }
+  ],
+  "frozen_at_utc": "2026-11-09T21:38:57.356124+00:00",
+  "intent_sha256": "33ad40b7682cc88d5b16546de541e34aa766f9fe0707efd5d0f2e452107914e0",
+  "limits": "Documentation/source code only. No market feed/archive, account, credentials, orders, model fit, protected partial data, economic outcome calculation or financial-window retry. Ignore illustrative prices and do not count them as observations. Current documentation and dated source code do not prove deployed historical collector configuration, physical clock accuracy, source completeness or profitability.",
+  "preflight": "Exact project-root runpy entry, imports, actual provider source identities and durable fsync passed before freezing; recent admitted native CLI cohort reused.",
+  "previous_goal_turn": "progress: admitted immutable Spot protocol documents and corrected repeated-approval guidance; collector mode remains unqualified",
+  "provider_lock_sha256": "5fc27973200b72184199428bee436c8deee9fe65ef3f0762cb871ac5c69abe53",
+  "provider_tool_sha256": "e84a0e54ee07e4e13d3d2f35491f641730096a78126068f232c1f2397a467d8c",
+  "provider_version": "0.9.5+flitzzip.portable2",
+  "question": "What timestamp mode, arrival clock precision, synchronization, buffering, snapshot availability and native-field normalization does the vendor actually document? Does its pre-sample client source distinguish raw fields from mapped timestamps?",
+  "schema": "vendor-collector-clock-document-contract-v1"
+}

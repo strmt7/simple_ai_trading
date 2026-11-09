@@ -143,6 +143,13 @@ result and all other consumed populations, including WNBA September 3-9.
   defaulted to zero, and a cancel request is not release evidence. Supplied
   declarations do not qualify native locks, settlement, margin or solvency.
 
+- Historical native timestamp units must bind the actual source transport mode,
+  not merely the exchange default or timestamp digit length. The source-bound
+  [collector review](docs/review/2026-11-09/collector-clock/review.md) documents a
+  vendor Spot microsecond mode and distinguishes precision from clock accuracy.
+  Preserve generated-snapshot availability, unknown offsets and bridge gaps.
+  Vendor normalization or a permissive historical mapper is not continuity proof.
+
 - Polymarket execution must reserve through
   `PolymarketLiveOrderLedger.reserve_submission` after preflight and signing.
   It atomically checks unresolved owned orders and inserts the prepared record

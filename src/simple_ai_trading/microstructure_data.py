@@ -263,14 +263,28 @@ def probe_binance_futures_clock(
     rest_url: str = BINANCE_FUTURES_REST_URL,
     samples: int = 5,
     timeout_seconds: float = 5.0,
+    wall_clock_disagreement_limit_ms: float = 1.0,
 ) -> ClockSyncEvidence:
-    """Estimate server-minus-host clock offset using minimum-RTT probes."""
+    """Estimate offset; reject malformed clocks and host clock discontinuities.
+
+    The disagreement limit is a declared probe policy, not a bound on exchange
+    clock accuracy, network asymmetry or collector synchronization.
+    """
+
+    if type(samples) is not int or samples <= 0:
+        raise ValueError("clock samples must be a positive integer")
+    for value, field_name in (
+        (timeout_seconds, "clock timeout"),
+        (wall_clock_disagreement_limit_ms, "wall clock disagreement limit"),
+    ):
+        if type(value) not in (int, float) or not math.isfinite(value) or value <= 0:
+            raise ValueError(f"{field_name} must be finite and positive")
 
     own_session = session is None
     active_session = session or requests.Session()
     measurements: list[tuple[float, float]] = []
     try:
-        for _ in range(max(3, int(samples))):
+        for _ in range(max(3, samples)):
             wall_start_ns = time.time_ns()
             monotonic_start_ns = time.perf_counter_ns()
             response = active_session.get(
@@ -278,12 +292,29 @@ def probe_binance_futures_clock(
                 timeout=max(0.5, float(timeout_seconds)),
             )
             monotonic_end_ns = time.perf_counter_ns()
+            wall_end_ns = time.time_ns()
             response.raise_for_status()
             payload = response.json()
-            server_time_ms = int(payload["serverTime"])
-            rtt_ns = max(0, monotonic_end_ns - monotonic_start_ns)
+            if not isinstance(payload, dict):
+                raise ValueError("server clock response must be an object")
+            server_time_ms = _positive_native_integer(
+                payload.get("serverTime"), "serverTime"
+            )
+            if server_time_ms > ((1 << 63) - 1) // 1_000_000:
+                raise ValueError("serverTime exceeds int64 nanosecond range")
+            rtt_ns = monotonic_end_ns - monotonic_start_ns
+            wall_elapsed_ns = wall_end_ns - wall_start_ns
+            if rtt_ns < 0 or wall_elapsed_ns < 0:
+                raise ValueError("probe clock regressed")
+            if (
+                abs(wall_elapsed_ns - rtt_ns)
+                > wall_clock_disagreement_limit_ms * 1_000_000
+            ):
+                raise ValueError("wall and monotonic probe clocks disagree")
             midpoint_wall_ns = wall_start_ns + rtt_ns // 2
-            offset_ms = server_time_ms - midpoint_wall_ns / 1_000_000.0
+            # Subtract exact epochs before scaling; epoch-sized float subtraction
+            # otherwise erases small offsets even with exact native integer input.
+            offset_ms = (server_time_ms * 1_000_000 - midpoint_wall_ns) / 1_000_000
             measurements.append((rtt_ns / 1_000_000.0, float(offset_ms)))
     finally:
         if own_session:
@@ -294,7 +325,7 @@ def probe_binance_futures_clock(
         median_rtt_ms=float(median(item[0] for item in measurements)),
         minimum_rtt_ms=float(min(item[0] for item in measurements)),
         samples=len(measurements),
-        measured_at_ms=int(time.time() * 1000),
+        measured_at_ms=wall_end_ns // 1_000_000,
     )
 
 
