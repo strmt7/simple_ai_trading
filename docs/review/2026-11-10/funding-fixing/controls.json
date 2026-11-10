@@ -1,0 +1,134 @@
+{
+  "checks": 13,
+  "coupon_basis_cases": [
+    {
+      "funding_cash": {
+        "denominator": "100",
+        "numerator": "1"
+      },
+      "futures_entry": "100",
+      "futures_exit": {
+        "denominator": "1",
+        "numerator": "100"
+      },
+      "matched_base_quantity": "1",
+      "net_after_costs": {
+        "denominator": "100",
+        "numerator": "-1"
+      },
+      "net_before_costs": {
+        "denominator": "100",
+        "numerator": "1"
+      },
+      "spot_entry_and_exit": "100",
+      "supplied_total_cost_quote": "0.02"
+    },
+    {
+      "funding_cash": {
+        "denominator": "100",
+        "numerator": "1"
+      },
+      "futures_entry": "100",
+      "futures_exit": {
+        "denominator": "100",
+        "numerator": "10001"
+      },
+      "matched_base_quantity": "1",
+      "net_after_costs": {
+        "denominator": "50",
+        "numerator": "-1"
+      },
+      "net_before_costs": {
+        "denominator": "1",
+        "numerator": "0"
+      },
+      "spot_entry_and_exit": "100",
+      "supplied_total_cost_quote": "0.02"
+    },
+    {
+      "funding_cash": {
+        "denominator": "100",
+        "numerator": "1"
+      },
+      "futures_entry": "100",
+      "futures_exit": {
+        "denominator": "50",
+        "numerator": "5001"
+      },
+      "matched_base_quantity": "1",
+      "net_after_costs": {
+        "denominator": "100",
+        "numerator": "-3"
+      },
+      "net_before_costs": {
+        "denominator": "100",
+        "numerator": "-1"
+      },
+      "spot_entry_and_exit": "100",
+      "supplied_total_cost_quote": "0.02"
+    }
+  ],
+  "market_observations": 0,
+  "prefix_cases": [
+    {
+      "funding_rate_lower": {
+        "denominator": "10000",
+        "numerator": "1"
+      },
+      "known_raw_premium": "0",
+      "premium_lower": {
+        "denominator": "5761",
+        "numerator": "-2"
+      },
+      "remaining_weight": {
+        "denominator": "5761",
+        "numerator": "2"
+      },
+      "supplied_unknown_raw_lower": "-1",
+      "total_samples": 5760,
+      "unknown_final_samples": 1
+    },
+    {
+      "funding_rate_lower": {
+        "denominator": "414792000",
+        "numerator": "-80579"
+      },
+      "known_raw_premium": "0",
+      "premium_lower": {
+        "denominator": "16591680",
+        "numerator": "-11519"
+      },
+      "remaining_weight": {
+        "denominator": "16591680",
+        "numerator": "11519"
+      },
+      "supplied_unknown_raw_lower": "-1",
+      "total_samples": 5760,
+      "unknown_final_samples": 2
+    }
+  ],
+  "qualified_edge": false,
+  "schema": "conditional-funding-fixing-controls-v1",
+  "scope": "Constructed exact rational scenarios only; ordered mathematical clamp and declared interval hours. No source-applicability, native sampling/clock/entitlement, financial performance or deployability qualification.",
+  "unit_interpretation": {
+    "interval_hours_interpretation": {
+      "denominator": "4000",
+      "numerator": "1"
+    },
+    "literal_seconds_substitution": {
+      "denominator": "400",
+      "numerator": "3"
+    },
+    "same_supplied_premium": "0.001"
+  },
+  "unknown_entitlement_cash": {
+    "lower": {
+      "denominator": "1",
+      "numerator": "0"
+    },
+    "upper": {
+      "denominator": "100",
+      "numerator": "1"
+    }
+  }
+}

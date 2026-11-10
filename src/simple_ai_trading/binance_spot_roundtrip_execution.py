@@ -14,12 +14,13 @@ from pathlib import Path
 import time
 
 from .api import BinanceClient
-from .binance_execution_scope import BinanceExecutionScope, parse_execution_id
+from .binance_execution_scope import BinanceExecutionScope
 from .binance_execution_storage import BinanceExecutionStorage
 from .binance_open_intents import OpenIntentError
 from .binance_order_responses import SpotQuoteOrderBinding
 from .binance_runtime_control import BinanceRuntimeControl, RuntimeLeaseInterlock
 from .binance_spot_commissions import SpotCommissionSchedule
+from .binance_spot_order_trades import observe_spot_order_trades
 from .binance_spot_roundtrip_intents import (
     SpotRoundtripJournal,
     SpotRoundtripRequest,
@@ -270,50 +271,9 @@ class SpotRoundtripExecution:
             expected_scope=scope,
             expected_order_binding=binding,
         )
-        if not isinstance(order, Mapping):
-            raise OpenIntentError("roundtrip recovery response is not an order")
-        binding.validate(order)
-        order = dict(order)
-        if "fills" in order:
-            raise OpenIntentError(
-                "roundtrip order query unexpectedly embeds fill evidence"
-            )
-        if _decimal(order.get("executedQty")) > 0:
-            trades = self.client.get_order_trades(
-                request.symbol, order_id=order.get("orderId"), expected_scope=scope
-            )
-            if not isinstance(trades, list) or not 1 <= len(trades) <= 1_000:
-                raise OpenIntentError(
-                    "roundtrip exact-order trades are missing or unbounded"
-                )
-            fills = []
-            for trade in trades:
-                if (
-                    not isinstance(trade, Mapping)
-                    or trade.get("symbol") != request.symbol
-                    or parse_execution_id(trade.get("orderId")) is None
-                    or parse_execution_id(trade.get("orderId"))
-                    != parse_execution_id(order.get("orderId"))
-                    or parse_execution_id(trade.get("id")) is None
-                    or trade.get("isBuyer")
-                    is not isinstance(binding, SpotQuoteOrderBinding)
-                ):
-                    raise OpenIntentError(
-                        "roundtrip trade does not bind its exact order/side"
-                    )
-                fills.append(
-                    {
-                        "tradeId": trade["id"],
-                        "qty": trade.get("qty"),
-                        "price": trade.get("price"),
-                        "quoteQty": trade.get("quoteQty"),
-                        "commission": trade.get("commission"),
-                        "commissionAsset": trade.get("commissionAsset"),
-                    }
-                )
-            order["fills"] = fills
-        else:
-            order["fills"] = []
+        order = observe_spot_order_trades(
+            self.client, order, binding=binding, scope=scope
+        )
         self.journal.record_order(
             operation_id, order, first=first, scope=scope, expected_revision=revision
         )

@@ -103,6 +103,14 @@ serialization still rejects the attempt; closing still needs the original owned
 inventory, scope and exact acknowledgement. These are local synthetic-path
 verification results, not authority to trade or proof of venue execution.
 
+After an ambiguous ordinary Spot submission, a usable exact status response
+without inline fills now receives one bound order-trade-page collection. The
+same helper serves paired Spot recovery. Scope, order/side, cumulative cash and
+quantity, and native commissions must reconcile; incomplete or advancing pages
+retain uncertainty. The order is never resubmitted. This is in-flight receipt
+recovery, not automatic application/rearm of historical terminal observations.
+See the [source-bound repair](review/2026-11-10/spot-response-receipts/review.md).
+
 ## Scope and remaining work
 
 Owned closing retains its separate enrolled lock and can serialize even when

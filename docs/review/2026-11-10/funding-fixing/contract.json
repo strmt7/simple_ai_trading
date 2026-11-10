@@ -1,0 +1,32 @@
+{
+  "admission": "Manually verify publisher, document title/date, affected products, old/new formulas, interval units and any precise sampling/weight rule. Missing, ambiguous or out-of-scope clauses remain unknown; a formula alone does not qualify raw weights, remaining-sample support, own settlement entitlement or profitable hedging. Search snippets and article links are not admitted facts.",
+  "base_head": "7efcd5c46f4a34a0fda095a58dcea8d6d8167bf2",
+  "contract_sha256": "4603fba489006647c83fdaa5d4cb103daa6d765963751b03257892f65baca9da",
+  "controller_sha256": "09901908ba3324853b6af16465c075137f5b17267463e0cb2f7ed0ee60519dfb",
+  "failure_policy": "Terminal source failure remains retained. No retry, locale, mirror, follow-up link, economic access, account/order, training or source-law qualification follows this one-use plan.",
+  "frozen_at_utc": "2026-11-10T21:08:47.634997+00:00",
+  "global_novelty_claim": false,
+  "limits": {
+    "minimum_markdown_characters": 1000,
+    "native_output_admission_limit_bytes": 8388608,
+    "native_retries": 0,
+    "native_robots_policy_checks_maximum": 1,
+    "output_limit_is_not_network_byte_limit": true,
+    "owned_child_timeout_seconds": 150,
+    "page_timeout_ms": 45000,
+    "strict_robots_requests_maximum": 1,
+    "top_level_source_navigations": 1
+  },
+  "market_account_order_training_access": false,
+  "no_external_llm_profile_or_challenge_bypass": true,
+  "oversized_skipped": 33,
+  "private_intent_sha256": "58eff863cbba1498524a3c6d1e24c745f57be1cf5b72390c51cab27323c85abf",
+  "provider": "0.9.5+flitzzip.portable2",
+  "question": "What exact effective formula, interval scaling, premium/mark computation or observation timing does this distinct publisher notice establish for USD-M funding? Does it supply raw sample weights/support sufficient for causal remaining-rate bounds?",
+  "schema": "one-use-funding-formula-source-contract-v1",
+  "selection": "Exact official announcement URL discovered by search; snippets are URL discovery only. Earlier FAQ citation has no retained source body and is not recaptured.",
+  "shim_sha256": "f019c6e445af17431052613457f114e380f2dfa7735067e1ecaf31e97978a650",
+  "source_inventory_scope": "Published Markdown/JSON except archive, plus topic-selected private contract/result/journal metadata only; excluded raw/protected/partial/v7/tool directories before reading. No universal novelty claim.",
+  "source_inventory_sha256": "e6412446e99e02ccdc8b2ccdb3b0ea8fd0696d26296e4843367e8ac514890d23",
+  "url": "https://www.binance.com/en-IN/support/announcement/detail/c00588a7e8504b3eb28d02a2da00530b"
+}

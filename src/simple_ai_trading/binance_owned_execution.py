@@ -20,6 +20,7 @@ from .binance_runtime_control import (
     RuntimeControlError,
     RuntimeLeaseInterlock,
 )
+from .binance_spot_order_trades import observe_spot_order_trades
 from .positions import ClosedTrade, OpenPosition, PositionsStore, bot_client_order_id
 
 
@@ -262,21 +263,37 @@ def _submit_open_order(
         # The request may have reached the exchange before the network failed.
         # Query by the deterministic client id before treating the position as
         # untracked.
+        binding = MarketOrderBinding(
+            position.symbol,
+            _position_order_side(position, close=False),
+            f"{position.qty:.8f}",
+            position.open_client_order_id,
+            position.market_type,
+            False,
+        )
         order = client.get_order(
             position.symbol,
             orig_client_order_id=position.open_client_order_id,
-            expected_order_binding=MarketOrderBinding(
-                position.symbol,
-                _position_order_side(position, close=False),
-                f"{position.qty:.8f}",
-                position.open_client_order_id,
-                position.market_type,
-                False,
-            ),
+            expected_order_binding=binding,
             **(
                 {"expected_scope": expected_scope} if expected_scope is not None else {}
             ),
         )
+        if (
+            position.market_type == "spot"
+            and order.get("status") == "FILLED"
+            and "fills" not in order
+        ):
+            if expected_scope is None:
+                raise OpenIntentError(
+                    "Spot response recovery requires its execution scope"
+                )
+            order = observe_spot_order_trades(
+                client,
+                order,
+                binding=binding,
+                scope=expected_scope,
+            )
     identities = [
         order[key] for key in ("clientOrderId", "origClientOrderId") if key in order
     ]
@@ -413,21 +430,37 @@ def _submit_close_order(
             ),
         )
     except BinanceAPIError:
+        binding = MarketOrderBinding(
+            position.symbol,
+            _position_order_side(position, close=True),
+            f"{position.qty:.8f}",
+            close_client_order_id,
+            position.market_type,
+            reduce_only,
+        )
         order = client.get_order(
             position.symbol,
             orig_client_order_id=close_client_order_id,
-            expected_order_binding=MarketOrderBinding(
-                position.symbol,
-                _position_order_side(position, close=True),
-                f"{position.qty:.8f}",
-                close_client_order_id,
-                position.market_type,
-                reduce_only,
-            ),
+            expected_order_binding=binding,
             **(
                 {"expected_scope": expected_scope} if expected_scope is not None else {}
             ),
         )
+        if (
+            position.market_type == "spot"
+            and order.get("status") in {"FILLED", "PARTIALLY_FILLED"}
+            and "fills" not in order
+        ):
+            if expected_scope is None:
+                raise OpenIntentError(
+                    "Spot response recovery requires its execution scope"
+                )
+            order = observe_spot_order_trades(
+                client,
+                order,
+                binding=binding,
+                scope=expected_scope,
+            )
     identities = [
         order[key] for key in ("clientOrderId", "origClientOrderId") if key in order
     ]

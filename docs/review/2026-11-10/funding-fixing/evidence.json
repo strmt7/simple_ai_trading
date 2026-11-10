@@ -1,0 +1,119 @@
+{
+  "authority": {
+    "account_requests": 0,
+    "census_and_canonical_ledgers_unchanged": true,
+    "new_economic_observations": 0,
+    "new_hypotheses": 0,
+    "new_market_requests": 0,
+    "orders": 0,
+    "protected_partial_access": false,
+    "qualified_stable_edges": 0
+  },
+  "base_head": "7efcd5c46f4a34a0fda095a58dcea8d6d8167bf2",
+  "contract_sha256": "4603fba489006647c83fdaa5d4cb103daa6d765963751b03257892f65baca9da",
+  "created_at_utc": "2026-11-10T21:18:45.961713+00:00",
+  "evidence_sha256": "e73a82642509968412f6ea284db06cfb0d750cdcea38415f0704d2a2cd846537",
+  "goal_complete": false,
+  "native_document_failure": {
+    "markdown_characters": 1,
+    "native_bytes": 4471,
+    "native_sha256": "4744c08f2304030a28404b3cecb7f78a06e0eb910f8e32fd434d87040bbb50f2",
+    "native_success": true,
+    "source_admitted": false,
+    "status_code": 202
+  },
+  "navigation": {
+    "funding": {
+      "all_candidates_match": true,
+      "candidates": [
+        "src/simple_ai_trading/round74_segmented_model_operator.py",
+        "tests/test_funding_cash_remaining_routes.py",
+        "tools/publish_round61_carry_economic_replay.py",
+        "tools/screen_binance_commodity_option_perpetual_lower_bound.py",
+        "tools/publish_adaptive_action_screen.py"
+      ],
+      "sha256": "17c2602d190f26b1e780317bfb73b56c3c8149915905c4ab28ae562b7df9c2ec",
+      "source_digest": "143b5089eb46c22c0b667df75e378596"
+    },
+    "law": {
+      "all_candidates_match": true,
+      "candidates": [
+        "src/simple_ai_trading/hedged_inventory_cash.py",
+        "tools/screen_binance_option_parity.py",
+        "tests/test_inverse_clearing_source_review.py",
+        "tools/audit_polymarket_crypto_interval_composition_settlement.py",
+        "src/simple_ai_trading/option_long_floor.py"
+      ],
+      "sha256": "fd9e1e73aaabb0c7dc5679ebbae2838ea1256fed9532fac5b1450345395ef8af",
+      "source_digest": "143b5089eb46c22c0b667df75e378596"
+    }
+  },
+  "next_requirement": "Applicable formula/units, raw sample support and availability clocks, exact entitlement and total paired execution cash against a feasible equal-wealth alternative before new population selection or fitting.",
+  "private_failure_records": {
+    "controller_result_sha256": "7313f92c1a986ae6fb69dd4274388fce0f177554ec0f9f1c82b43758169b139a",
+    "journal_sha256": "f0951981e688e164a6a25475b7762c22574622ea9b84757e928f3235965424e8",
+    "provider_verification_sha256": "d53ef55f91d6665063338d7b6e085daf12da0ac30e2910eb76fd2e751c80924f",
+    "terminal_result_sha256": "275a6f7ea00ea870808c9d0ac8cfb47424265ae236408f4137be3f2075411d5e"
+  },
+  "resources": {
+    "all_current_capture_render_and_control_helpers_returned": true,
+    "persistent_services_jobs_automations_created": 0,
+    "transient_directories": {
+      "crawler-state": {
+        "files": 3
+      },
+      "temporary": {
+        "files": 0
+      }
+    },
+    "unrelated_tasks_modified": false
+  },
+  "retained_source": {
+    "effective_version_or_account_applicability_qualified": false,
+    "native_extracted_pages": 52,
+    "native_pages_sha256": "2d30d6197e1b46583672c162ec59f2eb24027c28ecf37cb1c33c37523e215d50",
+    "new_download": false,
+    "newly_reviewed_pdf_pages": [
+      25,
+      26,
+      27
+    ],
+    "path": "docs/review/2026-09-04/inverse-clearing-source.pdf",
+    "render_receipt_sha256": "bfe85d4f761152f5fbcc86e0cabbaa80ce0c747ff0ccd8b37d3149085bc289a9",
+    "sha256": "53197b612332da02c20b5b7d19b81ff53ee5f4938c6330c72a30a1ca4f91049f",
+    "visual_page_records": [
+      {
+        "pdf_page": 25,
+        "sha256": "cf04f9e9281a1be83d8a6e5675e2c2ca22c6e0dac6636cbe4f5df88cbcc03417"
+      },
+      {
+        "pdf_page": 26,
+        "sha256": "7930606f5ad9291176524707d7151a051d7d4a3f2ffa229bb786ba12d80a1833"
+      },
+      {
+        "pdf_page": 27,
+        "sha256": "22cb1828b69add5c87670508eccfd3f28ea28ae25643ee7a15ffc12d1cc1fa0e"
+      }
+    ]
+  },
+  "schema": "funding-fixing-source-and-conditional-controls-v1",
+  "source_findings": {
+    "explicit_sample_weights_present": true,
+    "inner_outer_clamp_endpoint_order_differs": true,
+    "interval_hours_seconds_conflict_visually_confirmed": true,
+    "native_funding_adapter_qualified": false,
+    "raw_prefix_not_rolling_estimate_required": true
+  },
+  "verification": {
+    "application_suites_rerun": 0,
+    "constructed_checks": 13,
+    "controls_sha256": "63ef8b623e00aee18b081815fac3da2efadfd6f7bc08ccdf95aa23b3ff8947ab",
+    "exact_control_reproduction": true,
+    "lint_and_format": "passed",
+    "tested_source_sha256": {
+      "docs/review/2026-11-10/funding-fixing/controls.py": "b9a9517c4b20795f58eafb5ed87f0a9362979e09c489075481cb2e93395e1c91",
+      "src/simple_ai_trading/funding_cash.py": "3bb8fdaf50b545d93d42df5bd1b901743cc53cd11f4223e58364f160fe3b1aea"
+    },
+    "training_or_gpu_benchmarks": 0
+  }
+}

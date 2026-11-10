@@ -178,6 +178,13 @@ current full-suite failure count without rerunning the appropriate scope.
   algebra, not a margin saving. Its paper crawl failed 429; the second page stayed
   forbidden. Do not fit inadequate data, reprice consumed panels into independent
   validation, or bypass account gates with another carry variant.
+- [Partial funding information](review/2026-11-10/funding-fixing/review.md) reuses
+  retained clearing pages 25–27: weights are explicit, but interval units/clamp
+  notation and current applicability remain unresolved. Thirteen constructed
+  controls show a possible positive rate floor and why a basis move can consume
+  its coupon. Target incremental executable hedged cash, not coupon sign. A
+  distinct formula notice failed HTTP-202/one-character admission; no market
+  window, account or fit followed. The original census and retry gates stand.
 - Polymarket remains open to eligible public/offline structural research, not
   unrestricted account/order access. Match exact settlement/payoff identity,
   token/lot ownership and costs. Protected partial captures, all consumed windows
@@ -246,6 +253,14 @@ the unchanged account-fee gate before economic access. No new observation added.
   now has an admitted immutable publisher copy; the first HTML shell remains
   rejected. It informs the roundtrip's outstanding operation-cash/two-leg design,
   without changing transport or qualifying any edge.
+- [Spot response receipts](review/2026-11-10/spot-response-receipts/review.md)
+  closes a reproduced in-flight recovery gap: ordinary Spot status responses
+  without fills now receive the same exact trade-page validation as paired
+  recovery, including scope and cumulative fee/cash checks. No order replay or
+  implicit authority follows. The source-bound 451-case union replaces one old
+  close-mock phase with its passing 38-case module, without double-counting.
+  Incomplete/advancing pages retain UNKNOWN; historical terminal application,
+  independent supervision and native capital qualification remain open.
 - [Scoped Spot command](review/2026-11-10/roundtrip-command/review.md) now routes
   both diagnostic writes through the paired durable gateway. Base/quote amounts
   remain explicit decimal strings; auto never selects wallet inventory. The

@@ -8,6 +8,7 @@ import sys
 from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import asdict, replace
+from decimal import Decimal
 
 import pytest
 
@@ -70,6 +71,7 @@ class _Client:
         self.store, self.product = store, product
         self.changes, self.failure, self.lost = changes or {}, failure, lost
         self.writes = self.queries = 0
+        self.trade_queries = 0
         self.order = None
 
     def execution_scope(self):
@@ -82,6 +84,7 @@ class _Client:
             == "unresolved_closing_intents=1"
         )
         self.writes += 1
+        self.requested_quantity = quantity
         if self.failure:
             raise self.failure
         self.order = {
@@ -108,7 +111,36 @@ class _Client:
         if self.order is None:
             raise BinanceAPIError("injected query uncertainty")
         assert self.order["clientOrderId"] == orig_client_order_id
-        return self.order
+        response = {
+            **self.order,
+            "type": "MARKET",
+            "origQty": f"{self.requested_quantity:.8f}",
+            "cummulativeQuoteQty" if self.product == "spot" else "cumQuote": str(
+                Decimal(self.order["executedQty"]) * Decimal(self.order["avgPrice"])
+            ),
+        }
+        expected_order_binding.validate(response)
+        return response
+
+    def get_order_trades(self, symbol, *, order_id, expected_scope):
+        assert self.product == "spot" and expected_scope == self.execution_scope()
+        assert symbol == self.order["symbol"] and order_id == self.order["orderId"]
+        self.trade_queries += 1
+        return [
+            {
+                "symbol": symbol,
+                "orderId": order_id,
+                "id": 1,
+                "isBuyer": self.order["side"] == "BUY",
+                "qty": self.order["executedQty"],
+                "price": self.order["avgPrice"],
+                "quoteQty": str(
+                    Decimal(self.order["executedQty"]) * Decimal(self.order["avgPrice"])
+                ),
+                "commission": "0",
+                "commissionAsset": "USDT",
+            }
+        ]
 
 
 def _close(client, store, position):
@@ -129,6 +161,7 @@ def test_full_close_commits_before_release_and_queries_only_exact_id(
     client = _Client(store, product=product, lost=lost)
     trade = _close(client, store, position)
     assert client.writes == 1 and client.queries == int(lost)
+    assert client.trade_queries == int(lost and product == "spot")
     assert store.load_snapshot(strict=True) == ([], [trade])
     assert store.opening_intents.entry_block_reason() is None
     with sqlite3.connect(store.opening_intents.path) as connection:
