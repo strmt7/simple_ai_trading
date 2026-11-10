@@ -158,6 +158,10 @@ universal caller fencing, physical reboot behavior or independent supervision.
 Ordinary owned Binance opening now requires the shared durable gateway's current
 lease and independent execution-journal enrollment. Never bypass that rejection
 through a legacy nondurable helper, automatic Stop completion or implicit setup.
+Keep native preparation, position accounting and completion transactions
+noncreating even after a valid acknowledgement. An accepted order or callback
+failure does not authorize recreating a missing journal; setup/adoption remains
+a separate explicit action. Preserve any retained original UNKNOWN obligations.
 Owned reductions use the separate enrolled closing guard; preserve reconciliation
 barriers and original obligations when opening authority is unavailable. Follow
 the [owned-order procedure](docs/RUNTIME_CONTROL_STORAGE.md#ordinary-owned-binance-orders).

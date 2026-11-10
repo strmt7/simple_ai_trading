@@ -1,0 +1,155 @@
+{
+  "schema": "noncreating-post-dispatch-accounting-review-v1",
+  "base_head": "393ad444afe0399ddb3c7bb8d3808d5f9d6509a3",
+  "created_at_utc": "2026-11-10T22:00:01.955260+00:00",
+  "original_reproduction": {
+    "behavior": {
+      "cases": [
+        {
+          "phase": "opening",
+          "synthetic_writes": 1,
+          "journal_path_recreated": true,
+          "original_obligations": {
+            "open_intent": 1,
+            "close_intent": null
+          },
+          "replacement_obligations": {
+            "open_intent": 0,
+            "close_intent": null
+          },
+          "recorded_open_positions": 1,
+          "recorded_closed_trades": 0,
+          "error": {
+            "type": "OpenIntentError",
+            "message": "journal belongs to a different or missing execution scope"
+          },
+          "following_open_rejected": true
+        },
+        {
+          "phase": "closing",
+          "synthetic_writes": 2,
+          "journal_path_recreated": true,
+          "original_obligations": {
+            "open_intent": 0,
+            "close_intent": 1
+          },
+          "replacement_obligations": {
+            "open_intent": 0,
+            "close_intent": null
+          },
+          "recorded_open_positions": 0,
+          "recorded_closed_trades": 1,
+          "error": {
+            "type": "OpenIntentError",
+            "message": "journal belongs to a different or missing execution scope"
+          },
+          "following_open_rejected": true
+        }
+      ],
+      "all_venue_calls_synthetic": true
+    },
+    "recorded_source_sha256": {
+      "binance_owned_execution.py": "27fd350b0279d788fc9ac25eae096957aede5ef93606cdef299542d2051c679e",
+      "api.py": "2909349385a5112565750fec73e92b9c159d24aba4cbe69af9b33bea6fdce12d",
+      "binance_spot_roundtrip_execution.py": "ebb2d69cfcb297782ee1039179f0288d7ba7f11f935e698f3e7172353f652251"
+    },
+    "native_result_sha256": "4e734181cd5ee6c04ceee77c16b96e2fe595c30c077223d713e1cf578ec9e1d7",
+    "probe_source_sha256": "ee74c2d86d7f8dd10280a151284820876e53f76cae842c0c954797e4946877ed",
+    "original_database_copies_retained": true,
+    "subsequent_opening_already_blocked_by_independent_enrollment": true
+  },
+  "verification": {
+    "distinct_passing_cases": 452,
+    "unaffected_cases_reused": 445,
+    "complete_regression_module_replaced": 7,
+    "source_phase_case_ids_equal": true,
+    "expanded_lane": {
+      "tests": 452,
+      "failures": 6,
+      "errors": 0,
+      "skipped": 0
+    },
+    "final_regression_module": {
+      "tests": 7,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "test_only_correction": "Use the existing close_guard minimum of 1 second instead of 0.1; production unchanged after expanded verification.",
+    "initial_fault_injection_correction": "Accept and assert create=False before raising the original injected accounting error.",
+    "tested_source_sha256": {
+      "src/simple_ai_trading/api.py": "2909349385a5112565750fec73e92b9c159d24aba4cbe69af9b33bea6fdce12d",
+      "src/simple_ai_trading/autonomous.py": "e5e83fce127d666a9e0a8cc516f0ad7e3b9d08af440beac72b88add9c81218b0",
+      "src/simple_ai_trading/binance_acknowledgements.py": "ee91860a6a4469518aa8735b199222f9e97a53ee490ea02ebd3197ea562b570e",
+      "src/simple_ai_trading/binance_close_intents.py": "fe5fb6a8d92ff892b777c53792a1220be1bf771420d4fa4eeef4b5e2eff9f5e8",
+      "src/simple_ai_trading/binance_execution_storage.py": "8d90728155f01b078be024f855f45b6185159c3f4fa7f8f21538a8fd803f3533",
+      "src/simple_ai_trading/binance_open_intents.py": "9a78e005880962a9d2d6b638e581a2f3d77cfcdd08dee413da9b1ddf8ff0408d",
+      "src/simple_ai_trading/binance_order_responses.py": "0094163663698b5ba63303e4c7a68153d37a4e6c3ca819d1a5283ca343de7e38",
+      "src/simple_ai_trading/binance_owned_execution.py": "cbe5e05a306116c25e7f63b4fa1880488753092785dd3271c19f9f09507281a7",
+      "src/simple_ai_trading/binance_runtime_control.py": "98fa0ef62a27b7bf659ab77602fd4a34381b0819d44978077c359c05a55e2fa3",
+      "src/simple_ai_trading/binance_spot_cash.py": "61027340d2645c281c44395e276e1545e35d6b25f39b20a58932e461ac8be2f5",
+      "src/simple_ai_trading/binance_spot_order_trades.py": "9f165976852b62a5c0d86d0a798dbd7f2a90ae954b4cde12f81fff4abb7ea38e",
+      "src/simple_ai_trading/binance_spot_receipts.py": "4c0ee7c05df80f3642ea043c963841ff87cae6b1bebfd89614a27a8245475945",
+      "src/simple_ai_trading/binance_spot_roundtrip_execution.py": "ebb2d69cfcb297782ee1039179f0288d7ba7f11f935e698f3e7172353f652251",
+      "src/simple_ai_trading/cli.py": "fea05f643fa9d0876e2824a3d5d5337ef7d5c0c43a68a4db13cd9685a9fd5d6c",
+      "src/simple_ai_trading/positions.py": "a69d2fcb16818409958b80dc8a684323636bab610d565241830c374606d4676c",
+      "src/simple_ai_trading/runtime_control.py": "e5e61583eed5e97bd6aa51c44cd9866435d9d8117ed58611443fd1cedf644791",
+      "tests/conftest.py": "090974084e8c25f16dc18ed084269d75edb9fdb5f4d7d15e6e72bb23853d9abc",
+      "tests/test_autonomous.py": "2b870d25f717f6f2cfaa21a8543c14a5cfb4b1057fc49309c085899a548841b3",
+      "tests/test_autonomous_spot_inventory.py": "15409804f10f5f0e97eef4abdcfc1ed63ffe7e20212afaf856511358ba2c3091",
+      "tests/test_binance_close_intents.py": "2c941c274d1f06ea0d1e0bd040fa6299213330d1aad55ffed07fcb6c51c0c6ae",
+      "tests/test_binance_open_intents.py": "c439f6d917c66a6b29b4c925ef1b791ef2f62f12a52ed7da244a7bb5e2967417",
+      "tests/test_binance_owned_runtime.py": "afd64cf5573834f43caec275ec157b49b685761c3c9b5db31c3ce4dd1e6e85dd",
+      "tests/test_binance_post_dispatch_storage.py": "9b3000accb1aecd0373a6cc52e256ea75e4d5bbd748bc716f155a468f428c8c1",
+      "tests/test_binance_spot_recovery_receipts.py": "012a5b06367e9357f2bd1bfc2d00468b196538527f72612edaf2a82bc0d6c7a8",
+      "tests/test_position_lifecycle.py": "445ee07d12ffcf3abdea879487721a2a04669d444b144d6bc3b778c0ec6a6da3",
+      "tests/test_position_mutation_integrity.py": "a16ab8980e6c90b4b8c8c040684656e1293917d199bc157cb46a3afd0986d9f8",
+      "tests/test_position_transactions.py": "09cd44e3111a35c9e0cc8f193ca69498885ae4bd07efa3ebff11701813349d2b",
+      "tests/test_positions.py": "bd3c83ef26d4df48c9f61b2514ec5792a618749fe0e6a14fa370f3ba3522684d",
+      "tests/test_spot_roundtrip_cli.py": "d25b1b6d2376cd12067f8bcb523ebf26dd93a866f384aaf35aa968c89a6392a7",
+      "tests/test_spot_roundtrip_execution.py": "4f8ff70a450901775b09ba052ea5b72f528aa9a8d7cd80439d890bf17681ec86"
+    },
+    "junit_sha256": {
+      "noncreating-first": "a63afd1b62d4062a58555fdd0bf037be9b917e6c2689ebd639891f1e0012c0f8",
+      "noncreating-final": "037d46e259e963a1c72164f01f1c719561d8b3850bc74820e1ae3554bb684097",
+      "noncreating-regression-final": "86286a863248dcd9e2da1aabdbbad54b95bf1b12e4748f8ff8146c9f126b4d7a"
+    },
+    "native_results_sha256": {
+      "noncreating-first": "5055a92c357cfb9fd7d47eff77ac67ef7605f11e586fd6fce35e5d95c9e383c0",
+      "noncreating-final": "e4d2d1762ea677dfe524fd2266553e92d4097deb11299f550c4d001ac2b20397",
+      "noncreating-regression-final": "330aa47dbf1b4b653d4cb19673267f5467fb8017f9a0cc5d5b4a9d834b993780"
+    },
+    "lint_and_format": "passed",
+    "whole_suite_run": false
+  },
+  "failure_scope": {
+    "after_acknowledgement": true,
+    "inside_accounting": true,
+    "before_completion": true,
+    "before_close_preparation": true,
+    "no_replacement_namespace": true,
+    "already_committed_json_accounting_preserved": true,
+    "retained_original_unknown_preserved": true,
+    "stop_and_close_lock_reacquired_after_failure": true
+  },
+  "limits": [
+    "Original databases were retained by the synthetic loss probes; destroyed data is not reconstructed.",
+    "No full filesystem replacement, coordinated rollback, reboot, native account or continuous solvency qualification.",
+    "Independent session supervision, credential/generation fencing and complete caller coverage remain open."
+  ],
+  "resources": {
+    "bounded_helpers_terminal": true,
+    "new_session_worker_service_or_automation": false,
+    "unrelated_host_tasks_modified": false
+  },
+  "authority": {
+    "real_native_requests": 0,
+    "real_orders": 0,
+    "model_fits": 0,
+    "new_economic_observations": 0,
+    "qualified_stable_edges": 0,
+    "canonical_ledgers_or_protected_partials_changed": false
+  },
+  "goal_complete": false,
+  "evidence_sha256": "e1b5590d6133f8a64ec30f07ff7ed8df328b3d2bca1b1083f491f228dad1d2d9"
+}

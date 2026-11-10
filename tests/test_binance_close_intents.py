@@ -278,7 +278,8 @@ def test_crash_before_accounting_retains_barrier(tmp_path, monkeypatch):
     store, position = _stage(tmp_path)
     client = _Client(store)
 
-    def fail(*args):
+    def fail(*args, **kwargs):
+        assert kwargs["create"] is False
         raise OSError("injected accounting failure")
 
     monkeypatch.setattr(store, "record_close_result", fail)

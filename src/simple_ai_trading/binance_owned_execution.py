@@ -362,7 +362,7 @@ def submit_durable_open(
             response = _submit_open_order(client, position, expected_scope=scope)
             recorded = _apply_open_order(position, response)
             journal.validate_result(position, recorded)
-            store.record_open(recorded)
+            store.record_open(recorded, create=False)
             journal.record_complete(position, recorded, scope=scope)
     except RuntimeControlError as exc:
         raise OpenIntentError(
@@ -511,6 +511,7 @@ def submit_durable_close(
                 client_id=client_id,
                 scope=scope,
                 reduce_only=reduce_only,
+                create=False,
             )
             response = _submit_close_order(
                 client,
@@ -523,7 +524,7 @@ def submit_durable_close(
                 trade, response, client_id, exit_taker_fee_bps=taker_fee_bps
             )
             validate_close_result(position, recorded, client_id=client_id)
-            store.record_close_result(position, recorded)
+            store.record_close_result(position, recorded, create=False)
             complete_close(
                 store,
                 position,
@@ -531,6 +532,7 @@ def submit_durable_close(
                 client_id=client_id,
                 scope=scope,
                 reduce_only=reduce_only,
+                create=False,
             )
     except RuntimeControlError as exc:
         raise OpenIntentError("owned closing interlock is unavailable") from exc

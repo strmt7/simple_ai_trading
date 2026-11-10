@@ -87,11 +87,14 @@ def prepare_close(
     client_id: str,
     scope: BinanceExecutionScope,
     reduce_only: bool,
+    create: bool = True,
 ) -> None:
     """Commit UNKNOWN against the current owned lot before an order can be sent."""
     payload = _request(store, position, client_id, scope, reduce_only)
     try:
-        with position_transaction(store.opening_intents, write=True) as transaction:
+        with position_transaction(
+            store.opening_intents, write=True, create=create
+        ) as transaction:
             connection = transaction.connection
             if connection is None:
                 raise OpenIntentError("closing requires durable execution storage")
@@ -184,6 +187,7 @@ def complete_close(
     client_id: str,
     scope: BinanceExecutionScope,
     reduce_only: bool,
+    create: bool = True,
 ) -> None:
     """Release only a full acknowledgement proven present in the paired ledger."""
     payload = _request(store, position, client_id, scope, reduce_only)
@@ -191,7 +195,9 @@ def complete_close(
     if trade.exchange_status != "FILLED":
         return
     try:
-        with position_transaction(store.opening_intents, write=True) as transaction:
+        with position_transaction(
+            store.opening_intents, write=True, create=create
+        ) as transaction:
             connection = transaction.connection
             if connection is None:
                 raise OpenIntentError("closing requires durable execution storage")

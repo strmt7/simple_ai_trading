@@ -96,6 +96,15 @@ a missing execution journal. Interrupted or ambiguous execution retains the
 existing reconciliation barrier. Signed uses of the legacy nondurable position
 helpers are rejected; paper uses keep their existing behavior.
 
+Noncreating access continues through native position accounting and close
+completion, including after a valid acknowledgement. Loss during or after
+dispatch must not bootstrap an empty replacement journal. The generic position
+and journal APIs retain creation for setup/paper callers; the native gateway
+explicitly passes `create=False`. If accounting already committed before
+completion fails, its receipt can remain in the JSON pair. Preserve available
+original obligations and reconcile the actual venue state; failure is not proof
+that an order was absent. Never re-enroll simply to make the next order proceed.
+
 `submit_durable_close` uses the separate enrolled closing lock around the entire
 owned close attempt. Persisted Stop, loss of the opening marker, or loss of the
 controller database does not itself disable this reduction path. Lost closing

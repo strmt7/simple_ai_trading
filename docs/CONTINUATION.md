@@ -220,6 +220,17 @@ the unchanged account-fee gate before economic access. No new observation added.
 
 ## Platform work and publication
 
+- [Post-dispatch persistence](review/2026-11-10/post-dispatch-storage/review.md)
+  closes a reproduced empty-journal recreation after an accepted synthetic fill.
+  Native accounting and close preparation/completion now remain noncreating;
+  generic setup/paper defaults are separate. Seven loss/cleanup regressions and
+  445 unchanged cases form a 452-case source-bound passing union. A test-only
+  invalid timeout was corrected without altering production. Already committed
+  receipt accounting and available original UNKNOWN records are preserved.
+  Independent enrollment already blocked the next opening in the old case;
+  destroyed-data recovery, full replacement/rollback proof and supervision remain
+  open. No real venue request/order or financial observation followed.
+
 - [Runtime storage enrollment](review/2026-11-10/runtime-storage-enrollment/review.md)
   implements strict noncreating access for both controller adapters and local
   CLI setup/inspection/recovery. The 321-case lane and overlapping 121-case

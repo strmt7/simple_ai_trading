@@ -376,13 +376,18 @@ class PositionsStore:
             ClosedTrade(**entry) for entry in entries if self._valid_closed_entry(entry)
         ]
 
-    def record_open(self, position: OpenPosition) -> OpenPosition:
+    def record_open(
+        self, position: OpenPosition, *, create: bool = True
+    ) -> OpenPosition:
+        """Record inventory; native dispatch must use noncreating persistence."""
         from .binance_spot_cash import validate_spot_cash_record
         from .binance_spot_receipts import native_spot_entry_net
 
         native_spot_entry_net(position)
         validate_spot_cash_record(position)
-        with position_transaction(self.opening_intents, write=True) as transaction:
+        with position_transaction(
+            self.opening_intents, write=True, create=create
+        ) as transaction:
             self._closed_entries(
                 self._decode(transaction.read(self.ledger_path), strict=True),
                 strict=True,
@@ -408,6 +413,7 @@ class PositionsStore:
         *,
         remaining: OpenPosition | None = None,
         expected: OpenPosition | None = None,
+        create: bool = True,
     ) -> None:
         from .binance_spot_cash import validate_spot_cash_record
         from .binance_spot_receipts import native_spot_entry_net
@@ -417,7 +423,9 @@ class PositionsStore:
         if remaining is not None:
             native_spot_entry_net(remaining)
             validate_spot_cash_record(remaining)
-        with position_transaction(self.opening_intents, write=True) as transaction:
+        with position_transaction(
+            self.opening_intents, write=True, create=create
+        ) as transaction:
             existing = self._closed_entries(
                 self._decode(transaction.read(self.ledger_path), strict=True),
                 strict=True,
@@ -441,9 +449,9 @@ class PositionsStore:
             )
 
     def record_close_result(
-        self, position: OpenPosition, trade: ClosedTrade
+        self, position: OpenPosition, trade: ClosedTrade, *, create: bool = True
     ) -> ClosedTrade:
-        """Record a close fill while preserving any unfilled open remainder."""
+        """Record a close fill and remainder; native dispatch must forbid creation."""
 
         from decimal import Decimal, localcontext
 
@@ -475,7 +483,7 @@ class PositionsStore:
             else open_qty <= 0.0 or close_qty >= open_qty - tolerance
         )
         if fully_closed:
-            self._record_close_pair(trade, expected=position)
+            self._record_close_pair(trade, expected=position, create=create)
             write_learning_feedback(self)
             return trade
 
@@ -494,7 +502,9 @@ class PositionsStore:
                 float(position.entry_fees) * (remaining_qty / max(open_qty, 1e-18)),
             ),
         )
-        self._record_close_pair(trade, remaining=remaining, expected=position)
+        self._record_close_pair(
+            trade, remaining=remaining, expected=position, create=create
+        )
         write_learning_feedback(self)
         return trade
 
