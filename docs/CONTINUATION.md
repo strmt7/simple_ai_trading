@@ -39,6 +39,12 @@ current full-suite failure count without rerunning the appropriate scope.
 
 ## Financial and source frontier
 
+- [Partial-fixing feasibility](review/2026-11-10/fixing-floor-source/review.md)
+  identifies the raw-weight/clock proof needed for prepaid-call or binary floors.
+  Futures/removal one-second rules cannot be imported into ordinary options;
+  equal rolling TWAP publications can conceal different terminal payouts. One
+  frozen developer-doc navigation returned HTTP 202/one character and admits no
+  facts. No metadata, quotes, accounts or training followed; counts stay unchanged.
 - [Capital necessary bound](review/2026-11-10/capital-bound/review.md) reconciles
   all nine retained annual-funding roles without new market access. Every asset
   still fails at least one unchanged role even at an optimistic one-leg 20x

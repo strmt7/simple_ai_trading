@@ -1,0 +1,60 @@
+{
+  "schema": "partial-fixing-supplied-controls-v1",
+  "native_sample_schedule_qualified": false,
+  "vendor_observations": false,
+  "economic_test": false,
+  "qualified_edge": false,
+  "cases": [
+    {
+      "path": "A",
+      "raw_indices": [
+        -2,
+        -1,
+        0,
+        1,
+        2,
+        3
+      ],
+      "raw_values": [
+        "100",
+        "100",
+        "100",
+        "100",
+        "1",
+        "1"
+      ],
+      "observed_rolling_means": [
+        "100",
+        "100"
+      ],
+      "terminal_mean": "34",
+      "gross_call_at_strike_20": "14"
+    },
+    {
+      "path": "B",
+      "raw_indices": [
+        -2,
+        -1,
+        0,
+        1,
+        2,
+        3
+      ],
+      "raw_values": [
+        "1",
+        "298",
+        "1",
+        "1",
+        "1",
+        "1"
+      ],
+      "observed_rolling_means": [
+        "100",
+        "100"
+      ],
+      "terminal_mean": "1",
+      "gross_call_at_strike_20": "0"
+    }
+  ],
+  "controls_sha256": "201a3c3ee9afc58623e7caff2baedd6a65b0c9a4c4bef0f990c2bc45479b1b4a"
+}

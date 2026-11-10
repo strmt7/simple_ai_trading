@@ -451,6 +451,32 @@ only when valid labels, a defined economic comparison and independent evaluation
 justify it. Respect the shared workstation and existing benchmark-only headroom
 rules; never interfere with unrelated tasks.
 
+Inspect decisive evidence early. Choose the next useful work unit within the
+full goal, state its unresolved question, and check the smallest relevant source
+scope. Spend deep reasoning on consequential financial, architectural and safety
+decisions; do not rehearse the same argument or generate more alternatives
+without inspecting the assumptions. A bounded work unit never narrows the goal
+or supplies completion evidence for its unverified remainder.
+
+Reuse a check only with its actual scope and source binding. A passing result
+remains evidence until an affected implementation, dependency, configuration,
+input, runtime assumption or acceptance requirement changes. Reopen that affected
+scope, not every unrelated suite. If only a fixture changes, verify the corrected
+lane and prove production/other test definitions unchanged before combining
+coverage; report the separate lanes and original failure honestly. Fresh market,
+credential, process, quota and other external-state claims still need their own
+current evidence. Do not repeat negative/consumed research to fill time.
+
+Use existing bounded readers and reviewed command/capture profiles. Keep full
+raw evidence privately, return only the decision-relevant excerpt and digest,
+and batch independent inspections when their outputs fit the declared budget.
+For source parsing, declare encoding and handle an actual UTF-8 BOM explicitly;
+preserve original bytes for evidence. Verify paths/options before launching and
+prefer a script file to nested shell/interpreter quoting. Standardize repeated
+plumbing when the avoided work justifies its maintenance and verification cost;
+do not duplicate generic controllers for each date or optimize prompts endlessly.
+Never claim a measured token/speed saving from output-byte counts alone.
+
 Record material decisions in the existing handoff/evidence locations, avoiding
 duplicate status-only artifacts or pushes. Report exactly what changed, what
 failed, what remains unknown, and the next actionable condition. A whole-repo

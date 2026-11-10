@@ -1,0 +1,68 @@
+{
+  "schema": "partial-fixing-source-feasibility-v1",
+  "base_revision": "42e5951edb60e3b6af16b1d15abef088b3ce8cf7",
+  "native_weighting_qualified": false,
+  "partial_fixing_edge_qualified": false,
+  "retained_pdf": {
+    "source_sha256": "53197b612332da02c20b5b7d19b81ff53ee5f4938c6330c72a30a1ca4f91049f",
+    "native_pages_sha256": "2d30d6197e1b46583672c162ec59f2eb24027c28ecf37cb1c33c37523e215d50",
+    "pages_read": [
+      37,
+      38
+    ],
+    "effective_date_verified": false,
+    "new_download": false
+  },
+  "inspected_source_sha256": {
+    "src/simple_ai_trading/option_long_floor.py": "8fa1cb19c79db1d7bf904a72373b00414be31786304558364ae22e8633540b50",
+    "src/simple_ai_trading/settlement_tracking.py": "d125db86f11d2cf24662896771cd3c78faf62b98a3b4315aa21e7e29dc09ede1",
+    "src/simple_ai_trading/polymarket_round25_twap_features.py": "de036539605aa338f483f4675015b19e189c8597e28260da85c065da8de8415d",
+    "src/simple_ai_trading/polymarket_round29_settlement_features.py": "9faf5cdec0b46bbf81c5c26a2708b92fa8f5c22734e95ab6429ed6e167f6e395"
+  },
+  "new_document_attempt": {
+    "url": "https://developers.binance.com/en/docs/catalog/core-trading-derivatives-trading-options/api/rest-api/market-data",
+    "provider": "0.9.5+flitzzip.portable2",
+    "read_only_dependency_repair_check": "passed",
+    "status_code": 202,
+    "native_success": true,
+    "markdown_characters": 1,
+    "native_bytes": 4512,
+    "native_sha256": "9cf483fbcd516aa325fe04da9ef5791fbd37814c9c445a9497a4ee117c8cb439",
+    "source_admitted": false,
+    "navigation_count": 1,
+    "output_limit_is_not_network_byte_limit": true,
+    "no_alias_or_followup_market_access": true
+  },
+  "provenance_lookup": {
+    "metadata_files_read": 98,
+    "matches": 0,
+    "limited_scope_not_universal_novelty": true
+  },
+  "retained_artifact_sha256": {
+    "data/research/2026-11-10-fixing-floor-source/source-plan.json": "b544ce7fb709a442b0f771dfbf3d200c371d04c317fbd06f9828e94b9b25ce52",
+    "data/research/2026-11-10-fixing-floor-source/index.stdout.log": "9556faf767409b79c39921d4a3ca80686c97f9f4f0592c122a1a25d8f84fd178",
+    "data/research/2026-11-10-fixing-floor-source/search.stdout.log": "ff423e96f68af2f70b52df05633eb4d5979de11a1f8e1c8aff0a8096e81c055f",
+    "data/research/2026-11-10-fixing-floor-source/polymarket-search.stdout.log": "c9b532dd5fd62a4b92be0d855bb345c5245956d0ea9722b815f92c59de549648",
+    "data/research/2026-11-10-fixing-floor-source/efficiency-search.stdout.log": "7bff2956f965464889222378c5c6b6d43cb74ec253f58122c6d129b667caaa5f",
+    "data/research/2026-11-10-fixing-floor-source/provider-source-check.json": "25c8075fa0c0fab4d0f3218966ec0ca4b8486d01ffcdacb1e8ac209d4f902c2d",
+    "data/research/2026-11-10-fixing-floor-source/provider-verification.stdout.log": "87aca5e0ca32ace93cb6728ac600dea2b477605e68ed7881f2bdb46f58e6fb49",
+    "data/research/2026-11-10-fixing-floor-source/market-data-provenance.json": "d10ac59a22686950634bee4cd7dac66c1f771e12695720b656a8de5d809e728c",
+    "data/research/2026-11-10-fixing-floor-source/option-market-data/intent.local.json": "bf102131c9f1f1570d392ed5bac441014de233f22436ec02c8f859c4b0c1dcb5",
+    "data/research/2026-11-10-fixing-floor-source/option-market-data/preflight.json": "54b5eb004b637a3d9501c2291c3d3f8b976e9b60905825e2e84439487f672c82",
+    "data/research/2026-11-10-fixing-floor-source/option-market-data/journal.jsonl": "46fe294e44f7e3e96daa0ea00cf5837b54cb696873d84d93dee0883fdd9a697d",
+    "data/research/2026-11-10-fixing-floor-source/option-market-data/result.json": "4890e780ae82425292b0954b495911518106a4cb292b7349829f6d5749d8202b",
+    "data/research/2026-11-10-fixing-floor-source/option-market-data/options-doc.native.json": "9cf483fbcd516aa325fe04da9ef5791fbd37814c9c445a9497a4ee117c8cb439"
+  },
+  "controls_sha256": "201a3c3ee9afc58623e7caff2baedd6a65b0c9a4c4bef0f990c2bc45479b1b4a",
+  "application_code_changed": false,
+  "training_or_benchmarks": false,
+  "new_terminal_economic_observation": false,
+  "census_unchanged": {
+    "observations": 205,
+    "hypotheses": 65,
+    "scoped_mechanisms": 37,
+    "qualified_stable_edges": 0
+  },
+  "next_gate": "Applicable native weight schedule, raw observation/clock binding and ordinary-settlement/cost eligibility; do not use other-product clauses or rolling TWAP values as raw components.",
+  "evidence_sha256": "374befdb5c3cc7faeed0f505440be4bebbf3d12a1efe362726b92021c1c61cd7"
+}

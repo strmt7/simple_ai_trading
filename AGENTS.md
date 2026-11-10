@@ -1,6 +1,7 @@
 # AGENTS
 
-Read the first 80 lines of `docs/AGENT_START.md` first; older appended checkpoints
+Read the first 80 lines of `docs/AGENT_START.md` first, subject to the verified
+same-conversation reuse rule below; older appended checkpoints
 are routing/provenance, not a requirement to dump the entire history on every
 continuation. Follow exact links as needed. Hash-bound evidence and executable contracts
 override prose.
@@ -29,6 +30,22 @@ exact canonical contracts and the current registry control conflicts.
   requested result. Reuse valid evidence, keep searches/output bounded, and rerun
   only invalidated checks. Prioritize informative financial R&D and demonstrated
   risk repairs over repetitive testing, speculative tooling or cosmetic churn.
+- Preserve reasoning quality, code quality and every required evidence/safety
+  gate. Reduce repeated context, payloads and mechanical work first; do not save
+  tokens by guessing, dropping uncertainty or substituting weaker verification.
+- In the same active conversation, a complete instruction/source reading may be
+  reused only when its reviewed content remains available and its current byte
+  hash matches the recorded revision. Read changed, new or uncertain material.
+  A hash, marker or summary alone does not establish complete prior review.
+  This never substitutes for fresh repository/index binding or external evidence.
+  Stricter study/skill freshness and mandatory-reading rules still control.
+- Resolve uncertainty with the smallest decisive inspection before prolonged
+  speculation. Keep output bounded at its producer; inspect schema/counts before
+  large values, then read the complete relevant scope. Verify filenames and CLI
+  options before invocation; use script files for nontrivial shell quoting.
+- Reuse reviewed controllers and structured plans. Automate demonstrated repeated
+  work only when it saves net effort; do not turn efficiency work into another
+  speculative tooling project. Follow the [verification-reuse workflow](docs/AGENT_WORKFLOWS.md#efficient-execution-and-truthful-handoff).
 - Batch coherent, substantive local changes before publishing. Do not push
   routine status updates or every small checkpoint; follow explicit user
   publication requests and preserve reviewable local evidence between pushes.
