@@ -934,7 +934,7 @@ def test_cli_tui_actions_cover_cancel_invalid_and_success_paths(tmp_path, monkey
         return 0
 
     monkeypatch.setattr(cli, "command_spot_roundtrip", capture_roundtrip)
-    assert asyncio.run(_action("Spot roundtrip").run(_ScriptedUI(confirms=[True], forms=[{"quantity": "0.1", "mode": "buy-sell"}]))) == 0
+    assert asyncio.run(_action("Spot roundtrip").run(_ScriptedUI(confirms=[True], forms=[{"quantity": "", "quote_budget": "0.1", "mode": "buy-sell"}]))) == 0
     assert captured_roundtrip["args"].mode == "buy-sell"
 
     monkeypatch.setattr(cli, "command_report", capture("report"))

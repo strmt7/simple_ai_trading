@@ -1,9 +1,38 @@
-﻿from __future__ import annotations
+from __future__ import annotations
 
 import pytest
 
 from simple_ai_trading.api import BinanceAPIError, BinanceClient
 from simple_ai_trading.api import SymbolConstraints
+
+
+@pytest.mark.parametrize(
+    "options", [{"max_calls_per_minute": "invalid"}, {"max_retries": "invalid"}]
+)
+def test_invalid_client_scalars_do_not_allocate_a_session(monkeypatch, options):
+    from unittest.mock import Mock
+    from simple_ai_trading import api
+
+    factory = Mock(
+        side_effect=AssertionError("invalid scalar must precede resource allocation")
+    )
+    monkeypatch.setattr(api.requests, "Session", factory)
+    with pytest.raises(TypeError):
+        BinanceClient("offline-key", "offline-secret", **options)
+    factory.assert_not_called()
+
+
+@pytest.mark.parametrize("failure", [KeyboardInterrupt, RuntimeError])
+def test_interrupted_client_session_setup_closes_owned_session(monkeypatch, failure):
+    from unittest.mock import Mock
+    from simple_ai_trading import api
+
+    session = Mock()
+    session.headers.update.side_effect = failure()
+    monkeypatch.setattr(api.requests, "Session", Mock(return_value=session))
+    with pytest.raises(failure):
+        BinanceClient("offline-key", "offline-secret")
+    session.close.assert_called_once()
 
 
 def test_futures_leverage_bracket_parsing(monkeypatch) -> None:

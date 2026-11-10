@@ -1,0 +1,53 @@
+{
+  "schema": "spot-command-publication-binding-v1",
+  "base_revision": "5ad8ba35c33fde8ec4e34c914069a49014828fa3",
+  "evidence_sha256": "6ee88f3e882a68ea6d6769cb6f679f3f43b74d138894f980f50c7fd456cedbac",
+  "changed_tested_files": {
+    "native/windows/generated/command_contract.hpp": {
+      "tested_raw_sha256": "ec080b10e5a9f72374919ba154dc228c422d6650493c42d4d22438e4a918faba",
+      "git_lf_sha256": "03607d8e080ebdd5c258913d170ff57da8e301cf1aaf3e19080fe2d672ad4148",
+      "crlf_to_lf_only": true
+    },
+    "src/simple_ai_trading/api.py": {
+      "tested_raw_sha256": "2909349385a5112565750fec73e92b9c159d24aba4cbe69af9b33bea6fdce12d",
+      "git_lf_sha256": "2909349385a5112565750fec73e92b9c159d24aba4cbe69af9b33bea6fdce12d",
+      "crlf_to_lf_only": false
+    },
+    "src/simple_ai_trading/cli.py": {
+      "tested_raw_sha256": "62d4ba54d1357340f8fe83b3f625699307726f2f71eff6f90d719625a59dac3c",
+      "git_lf_sha256": "62d4ba54d1357340f8fe83b3f625699307726f2f71eff6f90d719625a59dac3c",
+      "crlf_to_lf_only": false
+    },
+    "src/simple_ai_trading/binance_spot_roundtrip_cli.py": {
+      "tested_raw_sha256": "5a44ebc9cea3ef371c22cff543e7a36a4a71e877fe59afa7584b3eed5c5dc60a",
+      "git_lf_sha256": "5a44ebc9cea3ef371c22cff543e7a36a4a71e877fe59afa7584b3eed5c5dc60a",
+      "crlf_to_lf_only": false
+    },
+    "tests/test_api.py": {
+      "tested_raw_sha256": "33a79474519bfaa2fbf991e759b1dc3cf3f0462aae2cf47652f95cc1e6c97530",
+      "git_lf_sha256": "33a79474519bfaa2fbf991e759b1dc3cf3f0462aae2cf47652f95cc1e6c97530",
+      "crlf_to_lf_only": false
+    },
+    "tests/test_spot_roundtrip_cli.py": {
+      "tested_raw_sha256": "425268d28fe5724de783ab7277c766527289d20efd496757564afb792f62c06c",
+      "git_lf_sha256": "425268d28fe5724de783ab7277c766527289d20efd496757564afb792f62c06c",
+      "crlf_to_lf_only": false
+    },
+    "tests/test_binance_spot_receipts.py": {
+      "tested_raw_sha256": "85e587bd53db7135af226746e8807f4aa8cbdc3cedb3fed0f2e01edcee63649d",
+      "git_lf_sha256": "85e587bd53db7135af226746e8807f4aa8cbdc3cedb3fed0f2e01edcee63649d",
+      "crlf_to_lf_only": false
+    },
+    "tests/test_cli_coverage.py": {
+      "tested_raw_sha256": "63ea2f8b00a13bed0f4c3e34c159a37b6ff01779ac77b2ed6ac8f06509345379",
+      "git_lf_sha256": "63ea2f8b00a13bed0f4c3e34c159a37b6ff01779ac77b2ed6ac8f06509345379",
+      "crlf_to_lf_only": false
+    },
+    "tests/test_full_line_coverage.py": {
+      "tested_raw_sha256": "97cdeb1fc9a69b09a6a688774adbf15bcb4023a6353329729ee365b3765572b8",
+      "git_lf_sha256": "b3f0719ff57dd9bb030650ddd0d24c55f875466a46ef247a7c29c8357cb69afb",
+      "crlf_to_lf_only": true
+    }
+  },
+  "binding_sha256": "0a8ceaad55a720be6c94f9ec580fae0e5f9aa126dab31edefd73f062836020d1"
+}

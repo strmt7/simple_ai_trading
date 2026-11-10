@@ -2,7 +2,6 @@
 
 from copy import deepcopy
 from decimal import Decimal
-from argparse import Namespace
 
 import pytest
 
@@ -10,7 +9,6 @@ from simple_ai_trading import cli
 from simple_ai_trading.api import BinanceAPIError
 from simple_ai_trading.binance_open_intents import OpenIntentError
 from simple_ai_trading.binance_spot_receipts import spot_buy_received_quantity
-from simple_ai_trading.config import RuntimeConfig
 
 
 def receipt(base="BTC", quote="USDC", fee="0.001", fee_asset=None):
@@ -185,72 +183,3 @@ def test_complete_receipt_is_not_modified():
     before = deepcopy(order)
     second(first=order)
     assert order == before
-
-
-@pytest.mark.parametrize("missing_fee", [False, True])
-def test_active_command_preserves_preexisting_base_or_stops_before_resale(
-    tmp_path, monkeypatch, capsys, missing_fee
-):
-    class RoundtripClient(Client):
-        def __init__(self):
-            self.base = Decimal("1")
-            self.quote = Decimal("1000")
-            self.orders = []
-
-        def get_symbol_price(self, symbol):
-            return 100.0, 1
-
-        def get_account(self):
-            return {
-                "balances": [
-                    {"asset": "BTC", "free": str(self.base)},
-                    {"asset": "USDC", "free": str(self.quote)},
-                ]
-            }
-
-        def place_order(self, symbol, side, quantity, **kwargs):
-            assert kwargs["dry_run"] is False
-            self.orders.append((side, quantity))
-            if side == "BUY":
-                self.base += Decimal("0.999")
-                self.quote -= 100
-                order = receipt()
-                order["orderId"] = 1
-                if missing_fee:
-                    order["fills"][0].pop("commission")
-                    order["fills"][0].pop("commissionAsset")
-                return order
-            self.base -= Decimal(str(quantity))
-            self.quote += Decimal(str(quantity)) * 100
-            return {"orderId": 2, "status": "FILLED", "executedQty": str(quantity)}
-
-    client = RoundtripClient()
-    artifacts = []
-    monkeypatch.setattr(
-        cli, "load_runtime", lambda: RuntimeConfig(market_type="spot", testnet=True)
-    )
-    monkeypatch.setattr(cli, "_has_api_credentials", lambda _: True)
-    monkeypatch.setattr(cli, "_build_client", lambda _: client)
-    monkeypatch.setattr(cli, "_ensure_runtime_symbol", lambda *_: None)
-    monkeypatch.setattr(cli, "_roundtrip_quantity", lambda *_: (1.0, None, 100.0))
-    monkeypatch.setattr(
-        cli,
-        "_persist_run_artifact",
-        lambda _, directory, payload: (
-            artifacts.append(payload) or tmp_path / "result.json"
-        ),
-    )
-    status = cli.command_spot_roundtrip(
-        Namespace(yes=True, mode="buy-sell", quantity=1.0)
-    )
-    capsys.readouterr()
-    if missing_fee:
-        assert status == 2
-        assert client.orders == [("BUY", 1.0)]
-        assert client.base == Decimal("1.999")
-        assert artifacts[-1]["status"] == "partial_failed"
-    else:
-        assert status == 0
-        assert client.orders == [("BUY", 1.0), ("SELL", 0.999)]
-        assert client.base == Decimal("1")
-        assert artifacts[-1]["quantity_second"] == 0.999

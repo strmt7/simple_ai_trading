@@ -294,11 +294,6 @@ class BinanceClient:
             ensure_non_mainnet_base_url(
                 self.base_url, testnet=self.testnet, demo=self.demo
             )
-        self.session = requests.Session()
-        # A redirect is not an approved venue route or permission to replay a
-        # write. Stop before requests can forward headers or the request body.
-        self.session.max_redirects = 0
-        self.session.headers.update({"User-Agent": "simple-ai-trading/0.1"})
         self.timeout = timeout
         try:
             recv_window_ms = int(recv_window_ms)
@@ -319,6 +314,17 @@ class BinanceClient:
             "method": None,
             "path": None,
         }
+        # Allocate the owned session only after scalar setup can no longer fail.
+        # Cancellation during session configuration must release its adapters.
+        session = requests.Session()
+        try:
+            # A redirect never grants permission to replay a signed write.
+            session.max_redirects = 0
+            session.headers.update({"User-Agent": "simple-ai-trading/0.1"})
+        except BaseException:
+            session.close()
+            raise
+        self.session = session
 
     def _record_request(
         self,

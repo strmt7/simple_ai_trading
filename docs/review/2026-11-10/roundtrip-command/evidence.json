@@ -1,0 +1,175 @@
+{
+  "schema": "spot-roundtrip-command-review-v1",
+  "base_revision": "5ad8ba35c33fde8ec4e34c914069a49014828fa3",
+  "verification": {
+    "combined_lane": {
+      "cases": 224,
+      "passed": 223,
+      "failed": 1,
+      "failure_classification": "New test fixture constructed RuntimeConfig with invalid input that its existing post-init correctly normalized; no production repair was needed for that failure."
+    },
+    "corrected_command_lane": {
+      "cases": 32,
+      "passed": 32,
+      "failed": 0,
+      "only_one_fixture_definition_changed": true,
+      "production_unchanged_since_combined_lane": true
+    },
+    "distinct_final_source_cases_covered": 224,
+    "modules": {
+      "test_ai_runtime_and_parity": 4,
+      "test_api": 23,
+      "test_api_coverage": 58,
+      "test_binance_execution_scope": 22,
+      "test_binance_spot_receipts": 47,
+      "test_cli": 2,
+      "test_cli_coverage": 3,
+      "test_full_line_coverage": 1,
+      "test_spot_roundtrip_cli": 32,
+      "test_spot_roundtrip_execution": 32
+    },
+    "runtime_lifecycle_properties": {
+      "roundtrip_lifecycle_handles_first": 238,
+      "roundtrip_lifecycle_handles_max": 238,
+      "roundtrip_lifecycle_handles_last": 238,
+      "roundtrip_lifecycle_mutexes_first": 0,
+      "roundtrip_lifecycle_mutexes_max": 0,
+      "roundtrip_lifecycle_mutexes_last": 0,
+      "roundtrip_lifecycle_private_bytes_first": 279113728,
+      "roundtrip_lifecycle_private_bytes_max": 279113728,
+      "roundtrip_lifecycle_private_bytes_last": 279113728
+    },
+    "legacy_cli_direct_place_order_calls": 0,
+    "tested_source_sha256": {
+      "src/simple_ai_trading/cli.py": "62d4ba54d1357340f8fe83b3f625699307726f2f71eff6f90d719625a59dac3c",
+      "src/simple_ai_trading/binance_spot_roundtrip_cli.py": "5a44ebc9cea3ef371c22cff543e7a36a4a71e877fe59afa7584b3eed5c5dc60a",
+      "src/simple_ai_trading/binance_spot_roundtrip_execution.py": "dc9113ddabd62b1fce5af09a26232117d7bd6d6b40bf23eca7320078b6432dcc",
+      "src/simple_ai_trading/binance_spot_roundtrip_intents.py": "8eef57ee357053dcc5b0a3adde3f3114da175aaa6a055cd38198599932303234",
+      "src/simple_ai_trading/runtime_control.py": "e5e61583eed5e97bd6aa51c44cd9866435d9d8117ed58611443fd1cedf644791",
+      "src/simple_ai_trading/runtime_control_storage.py": "30fbebef310e209f1fd2f74a7a96622b76e86b51f6bfeb55d944e53e962897d3",
+      "src/simple_ai_trading/binance_runtime_control.py": "f41c91aff53f75a3c728f6ee68a4b09879a6132591df3b75e0d808f4258d6433",
+      "src/simple_ai_trading/api.py": "2909349385a5112565750fec73e92b9c159d24aba4cbe69af9b33bea6fdce12d",
+      "src/simple_ai_trading/binance_spot_commissions.py": "f5d735860fc2ecfdf637fda192d14e183a2060f83d390b0afeae09c4843fea3f",
+      "src/simple_ai_trading/binance_spot_receipts.py": "4c0ee7c05df80f3642ea043c963841ff87cae6b1bebfd89614a27a8245475945",
+      "src/simple_ai_trading/binance_open_intents.py": "6b61bbb0401007e70bb2ae0ebef475dd8aa32dedfe3fd16b54b24a3fe85e2793",
+      "src/simple_ai_trading/position_transactions.py": "743275b5e92337bd24825c7b4e4f2d79c1ecb7556bf02d8d56cadfcbe148d97b",
+      "src/simple_ai_trading/positions.py": "42121e8130a4a660ba0d39a893c50666af00327261148a7752aeceea89ca6046",
+      "src/simple_ai_trading/command_contract.py": "96745bd629f7928e3b19bae213e82e2273b5aad26aba185392accf7bce5a2243",
+      "native/windows/generated/command_contract.hpp": "ec080b10e5a9f72374919ba154dc228c422d6650493c42d4d22438e4a918faba",
+      "tests/test_spot_roundtrip_cli.py": "425268d28fe5724de783ab7277c766527289d20efd496757564afb792f62c06c",
+      "tests/test_spot_roundtrip_execution.py": "837c36337230a562b343a28fd664756497faf96f33427cb9dcb4d8730f347496",
+      "tests/test_binance_spot_receipts.py": "85e587bd53db7135af226746e8807f4aa8cbdc3cedb3fed0f2e01edcee63649d",
+      "tests/test_cli.py": "2946d2bd191be487a4687661bb8cee445e3189cea169f711c8cbf8094282dd40",
+      "tests/test_cli_coverage.py": "63ea2f8b00a13bed0f4c3e34c159a37b6ff01779ac77b2ed6ac8f06509345379",
+      "tests/test_full_line_coverage.py": "97cdeb1fc9a69b09a6a688774adbf15bcb4023a6353329729ee365b3765572b8",
+      "tests/test_ai_runtime_and_parity.py": "1f6490adcf1895f916a2b4ee1708af93c97b2bc06ed02097a657043450d7d193",
+      "tests/test_api.py": "33a79474519bfaa2fbf991e759b1dc3cf3f0462aae2cf47652f95cc1e6c97530",
+      "tests/test_api_coverage.py": "66bf7140ec0fe4c99b504689e4e7fe41aa1232818fac1870184f1220e7e72d2e",
+      "tests/test_binance_execution_scope.py": "79e38c30cd7e343c16f5cfdbb490da4340f21479041a5929049b4aaac0e4333a"
+    }
+  },
+  "source_bytes": "Actual pre-launch bytes are retained privately. Publication verifies staged Git bytes separately and records CRLF-to-LF normalization without changing the tested source phase.",
+  "retained_artifact_sha256": {
+    "data/research/2026-11-10-roundtrip-command-1040/verification-first/source.json": "c52dd36ed1e14c475717db5fcc208c1d0ee83f3a06d13fa5798e6de8deca950c",
+    "data/research/2026-11-10-roundtrip-command-1040/verification-first/pytest.xml": "f838345c5e8bdf4705347f0ac8b6b3d9ea9cb1c0fb3106aeddad2a6b6378777a",
+    "data/research/2026-11-10-roundtrip-command-1040/verification-first/lint.stdout.log": "a4443afdcfb6d7363adb285762515ccf7cf50473b1a05c20c1a50f6bed4d26b0",
+    "data/research/2026-11-10-roundtrip-command-1040/verification-first/local-preflight-error.json": "e0acf57b3b4473db093f768fd9423027a7fbd3f70d0ab6109a90c8a7b789d398",
+    "data/research/2026-11-10-roundtrip-command-1040/verification-final/source.json": "236917dd0ddd32c2943a6a469c75307fe36d0abe82a04909e0c790c136782b30",
+    "data/research/2026-11-10-roundtrip-command-1040/verification-final/pytest.xml": "d58e00ab8f9656117004faa554d0e98e5280bde46663ab34a5929c28d5fecb1a",
+    "data/research/2026-11-10-roundtrip-command-1040/verification-final/lint.stdout.log": "a4443afdcfb6d7363adb285762515ccf7cf50473b1a05c20c1a50f6bed4d26b0",
+    "data/research/2026-11-10-roundtrip-command-1040/verification-final/pytest.stdout.log": "8d2cce4dda2ceb22e645219bc2d9a6e691d4669130442fcd026a0e934539323b",
+    "data/research/2026-11-10-roundtrip-command-1040/verification-final/pytest.stderr.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "data/research/2026-11-10-roundtrip-command-1040/fixture-correction/source.json": "68e5202093472201ec5cfbbb80711e81e947ef236e57bf5e2baae365d2a5c170",
+    "data/research/2026-11-10-roundtrip-command-1040/fixture-correction/pytest.xml": "4b95d7e01091b72721d0ae6df6167ecc66d9fdd2e14f8f60632b26f4832c01c6",
+    "data/research/2026-11-10-roundtrip-command-1040/fixture-correction/definition-binding.json": "29129587b299a3c7cd451d2751e9ab2532a9e8b3b4aab0ec0f576520490b3e7f",
+    "data/research/2026-11-10-roundtrip-command-1040/fixture-correction/pytest.stdout.log": "3833adcbec29e6fc3ba05401d9ffa921159c26e2b47365a157b6aa9c189f0be2",
+    "data/research/2026-11-10-roundtrip-command-1040/fixture-correction/pytest.stderr.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "data/research/2026-11-10-roundtrip-command-1040/constructor-before.stdout.json": "f48df0dd2cdf610dfc9178d05f850862a06d31ab006f496a4e496e991d48651a",
+    "data/research/2026-11-10-roundtrip-command-1040/constructor-after.stdout.json": "92328f0a1c6bfab4b844a01c1eea92f4d5229759a840dd24edaae9bb352467e5",
+    "data/research/2026-11-10-roundtrip-command-1040/frontier-triage.json": "acaf80f6f34041c5493b91eb966cae02fd69113544675d094deb9616fa36d5c3",
+    "data/research/2026-11-10-roundtrip-command-1040/native-contract.stderr.log": "6cc6b39cc17956c49d93ba7b5a0515a1a2cb0c0506987fed353c2a5659ece903",
+    "data/research/2026-11-10-roundtrip-command-1040/native-contract-fixed.stdout.log": "da35103b82c0ae87d372d99677222f16efa6575d1b8079a2441486544bdc64be",
+    "data/research/2026-11-10-roundtrip-command-1040/verification-final/format-api-tests.stderr.log": "f722f580a851c4ee946ee822b90b1f7a60927bada31c96331c49667b7468df17",
+    "data/research/2026-11-10-roundtrip-command-1040/verification-final/format-api-tests-fixed.stderr.log": "f722f580a851c4ee946ee822b90b1f7a60927bada31c96331c49667b7468df17",
+    "data/research/2026-11-10-roundtrip-command-1040/verification-final/format-fragment.stdout.log": "c20264f65a1ded5e011d831b6c4108f6541849cdffc71a6d21a8661d0708a15d",
+    "data/research/2026-11-10-roundtrip-command-1040/verification-final/format-fragment.stderr.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "constructor_probe": {
+    "before": {
+      "api_sha256": "675ae1c4d160da6d82d1fe49d261a1bcce5d1855bedc5f5eac194042f617b756",
+      "results": [
+        {
+          "case": "invalid_rate",
+          "exception": "TypeError",
+          "created": 1,
+          "closed": 0
+        },
+        {
+          "case": "header_interrupt",
+          "exception": "KeyboardInterrupt",
+          "created": 1,
+          "closed": 0
+        }
+      ]
+    },
+    "after": {
+      "api_sha256": "2909349385a5112565750fec73e92b9c159d24aba4cbe69af9b33bea6fdce12d",
+      "results": [
+        {
+          "case": "invalid_rate",
+          "exception": "TypeError",
+          "created": 0,
+          "closed": 0
+        },
+        {
+          "case": "header_interrupt",
+          "exception": "KeyboardInterrupt",
+          "created": 1,
+          "closed": 1
+        }
+      ]
+    },
+    "native_connections_used": false,
+    "historical_host_leak_proved": false
+  },
+  "source_frontier": {
+    "kind": "limited local retry routing, not a current web or economic survey",
+    "ranks": [
+      1,
+      14,
+      47,
+      59
+    ],
+    "registry_self_hash": "ba3d5455ff37edf89929d50fb2af7cc7a3df4ee9a56f04f4b229508b2ded27f4",
+    "registry_raw_sha256": "0fb3a1d1cc083e3259f86ed0a1e742259ac8d092a910618eec048afccd4ce6bb",
+    "capture_boundaries_sha256": "f971726268ba2e630b2ebbe8d5bcf02f7b3f23b92ccb16efe23aef82cebe950f",
+    "positive_new_trigger_evidence_obtained": false,
+    "new_captures": 0
+  },
+  "scope": {
+    "native_account_calls": 0,
+    "native_order_calls": 0,
+    "public_market_or_web_captures": 0,
+    "model_fits": 0,
+    "gpu_benchmarks": 0,
+    "persistent_registrations_created": 0,
+    "native_binary_rebuilt": false,
+    "full_suite_qualified": false,
+    "qualified_edge": false
+  },
+  "financial_census_unchanged": {
+    "observations": 205,
+    "hypotheses": 65,
+    "scoped_mechanisms": 37,
+    "qualified_stable_edges": 0
+  },
+  "limitations": [
+    "Caller-owned enrolled lease required; no qualified independent Binance session owner is yet integrated.",
+    "External fee/FX and full native eligibility/capital admission remain unqualified.",
+    "Partial resolution/rearm, independent execution-namespace loss/rollback detection and universal caller fencing remain open.",
+    "Hard native deadlines, credential isolation and independent session supervision remain incomplete.",
+    "Two reconciled orders do not establish flat assets or profit.",
+    "Bounded lifetime observations do not establish whole-application leak freedom."
+  ],
+  "evidence_sha256": "6ee88f3e882a68ea6d6769cb6f679f3f43b74d138894f980f50c7fd456cedbac"
+}

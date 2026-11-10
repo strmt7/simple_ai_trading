@@ -265,8 +265,12 @@ result and all other consumed populations, including WNBA September 3-9.
   Never treat a sell-buy acquisition as an owned close, retry UNKNOWN writes,
   or equate two reconciled orders with flat assets or profit. External fee
   routes require native FX/cost admission; a fee-asset grant alone is insufficient.
-  The legacy Spot roundtrip CLI still has two direct writes and is not wired
-  to this gateway; do not copy that pattern or claim universal caller fencing.
+  The Spot roundtrip CLI routes through this gateway and requires explicit
+  base or quote allocation units. Its caller supplies the existing lease. The
+  diagnostic command must not acquire/release that lease, clear Stop or provision
+  storage as an error repair.
+  Recovery may observe an exact UNKNOWN order but never resubmit it. Do not
+  restore the old direct-write pattern or claim universal caller fencing.
   First scope enrollment must reject unscoped live/unclassified history and
   bind the exact paired inventory bytes atomically with UNKNOWN. Do not reset
   lost enrollment or automatically qualify an old binding from current keys;

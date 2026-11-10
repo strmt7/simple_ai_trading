@@ -487,6 +487,10 @@ the overall goal complete only when its full requested end state is proved.
   retention; join owned threads or terminate the contained child when cooperative
   shutdown cannot complete. Preserve durable UNKNOWN/reconciliation obligations
   if interruption could have crossed a trading boundary.
+  Initialization failure is also a lifetime exit: validate fallible scalar
+  configuration before allocating resources where possible, and release partially
+  configured objects if setup raises or is canceled. Cleanup only after a
+  constructor returns misses resources acquired before that return.
 - When changing a long-lived worker, cancellation path, streaming loop or large
   repeated allocation, verify resource behavior with a bounded representative
   lifecycle check. Compare owned process/handle counts and relevant memory after

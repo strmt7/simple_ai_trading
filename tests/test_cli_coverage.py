@@ -463,7 +463,7 @@ def test_parse_args_and_main_dispatch(monkeypatch) -> None:
     assert audit_args.input == "i.json"
     assert audit_args.model == "m.json"
     roundtrip_args = cli._parse_args(["spot-roundtrip", "--quantity", "0.0002", "--mode", "sell-buy", "--yes"])
-    assert roundtrip_args.quantity == 0.0002
+    assert roundtrip_args.quantity == "0.0002"
     assert roundtrip_args.mode == "sell-buy"
     assert roundtrip_args.yes is True
     train_args = cli._parse_args(["train", "--preset", "quick", "--compute-backend", "directml", "--batch-size", "128"])
@@ -3672,186 +3672,39 @@ def test_resolved_order_fill_does_not_query_or_trust_orig_qty_for_unidentified_l
     assert source == "unresolved_no_order_id"
 
 
-def test_command_spot_roundtrip_validation_and_success(tmp_path, monkeypatch, capsys) -> None:
-    monkeypatch.setenv("HOME", str(tmp_path))
-    save_runtime(RuntimeConfig(market_type="futures", testnet=True, api_key="k", api_secret="s"))
-    assert cli.command_spot_roundtrip(argparse.Namespace(quantity=0.0001, mode="auto", yes=True)) == 2
-    save_runtime(RuntimeConfig(market_type="spot", testnet=False, api_key="k", api_secret="s"))
-    assert cli.command_spot_roundtrip(argparse.Namespace(quantity=0.0001, mode="auto", yes=True)) == 2
-    save_runtime(RuntimeConfig(market_type="spot", testnet=True, api_key="", api_secret=""))
-    assert cli.command_spot_roundtrip(argparse.Namespace(quantity=0.0001, mode="auto", yes=True)) == 2
-    save_runtime(RuntimeConfig(market_type="spot", testnet=True, api_key="k", api_secret="s"))
-    assert cli.command_spot_roundtrip(argparse.Namespace(quantity=0.0001, mode="auto", yes=False)) == 2
-
-    constraints = SymbolConstraints("BTCUSDC", 0.00001, 1.0, 0.00001, 5.0, 1000.0)
-
-    class _RoundtripClient:
-        def __init__(self, *, usdc: float = 20.0, btc: float = 0.5, fail_order: bool = False) -> None:
-            self.usdc = usdc
-            self.btc = btc
-            self.fail_order = fail_order
-            self.orders: list[str] = []
-
-        def ensure_btcusdc(self):
-            return {"symbol": "BTCUSDC"}
-
-        def get_symbol_price(self, _symbol: str):
-            return 76000.0, 1
-
-        def normalize_quantity(self, _symbol: str, quantity: float):
-            rounded = math.floor(quantity * 100000) / 100000
-            return rounded, constraints
-
-        def get_account(self):
-            return {
-                "balances": [
-                    {"asset": "USDC", "free": str(self.usdc), "locked": "0"},
-                    {"asset": "BTC", "free": str(self.btc), "locked": "0"},
-                ]
-            }
-
-        def place_order(self, _symbol: str, side: str, quantity: float, *, dry_run: bool, leverage: float = 1.0):
-            assert dry_run is False
-            if self.fail_order:
-                raise BinanceAPIError("order failed")
-            self.orders.append(side)
-            if side == "BUY":
-                self.btc += quantity
-                self.usdc -= quantity * 76000.0
-            else:
-                self.btc -= quantity
-                self.usdc += quantity * 76000.0
-            return {
-                "status": "FILLED",
-                "orderId": len(self.orders),
-                "executedQty": f"{quantity:.8f}",
-                "cummulativeQuoteQty": f"{quantity * 76000.0:.8f}",
-                "symbol": _symbol,
-                "side": side,
-                "type": "MARKET",
-                "fills": [
-                    {"qty": f"{quantity:.8f}", "price": "76000", "commission": "0", "commissionAsset": "BTC"}
-                ],
-            }
-
-    persisted: list[dict[str, object]] = []
-    monkeypatch.setattr(cli, "_build_client", lambda _runtime: _RoundtripClient(usdc=20.0, btc=0.5))
-    monkeypatch.setattr(cli, "_persist_run_artifact", lambda _kind, output_dir, payload: persisted.append(payload) or output_dir / "roundtrip.json")
-    assert cli.command_spot_roundtrip(argparse.Namespace(quantity=0.00008, mode="auto", yes=True)) == 0
-    output = capsys.readouterr().out
-    assert "Spot testnet roundtrip complete." in output
-    assert persisted[-1]["mode"] == "buy-sell"
-    assert persisted[-1]["runtime"]["api_key"] == "<redacted>"
-
-    class _EthRoundtripClient:
-        def __init__(self) -> None:
-            self.usdt = 100.0
-            self.eth = 1.0
-            self.orders: list[str] = []
-
-        def ensure_symbol(self, symbol: str):
-            return {"symbol": symbol}
-
-        def get_symbol_price(self, _symbol: str):
-            return 3000.0, 1
-
-        def normalize_quantity(self, _symbol: str, quantity: float):
-            rounded = math.floor(quantity * 1000) / 1000
-            return rounded, SymbolConstraints("ETHUSDT", 0.001, 10.0, 0.001, 5.0, 1000.0)
-
-        def get_account(self):
-            return {
-                "balances": [
-                    {"asset": "USDT", "free": str(self.usdt), "locked": "0"},
-                    {"asset": "ETH", "free": str(self.eth), "locked": "0"},
-                ]
-            }
-
-        def place_order(self, _symbol: str, side: str, quantity: float, *, dry_run: bool, leverage: float = 1.0):
-            assert dry_run is False
-            self.orders.append(side)
-            if side == "BUY":
-                self.eth += quantity
-                self.usdt -= quantity * 3000.0
-            else:
-                self.eth -= quantity
-                self.usdt += quantity * 3000.0
-            return {
-                "status": "FILLED",
-                "orderId": len(self.orders),
-                "executedQty": f"{quantity:.8f}",
-                "cummulativeQuoteQty": f"{quantity * 3000.0:.8f}",
-                "symbol": _symbol,
-                "side": side,
-                "type": "MARKET",
-                "fills": [
-                    {"qty": f"{quantity:.8f}", "price": "3000", "commission": "0", "commissionAsset": "ETH"}
-                ],
-            }
-
-    save_runtime(RuntimeConfig(symbol="ETHUSDT", quote_asset="USDT", market_type="spot", testnet=True, api_key="k", api_secret="s"))
-    monkeypatch.setattr(cli, "_build_client", lambda _runtime: _EthRoundtripClient())
-    assert cli.command_spot_roundtrip(argparse.Namespace(quantity=0.01, mode="auto", yes=True)) == 0
-    assert "ETH" in persisted[-1]["balances_before"]
-    assert "USDT" in persisted[-1]["balances_before"]
-    assert persisted[-1]["mode"] == "buy-sell"
-
-    save_runtime(RuntimeConfig(market_type="spot", testnet=True, api_key="k", api_secret="s"))
-    monkeypatch.setattr(cli, "_build_client", lambda _runtime: _RoundtripClient(usdc=0.0, btc=0.5))
-    assert cli.command_spot_roundtrip(argparse.Namespace(quantity=0.00008, mode="auto", yes=True)) == 0
-    assert persisted[-1]["mode"] == "sell-buy"
-
-    monkeypatch.setattr(cli, "_build_client", lambda _runtime: _RoundtripClient(usdc=0.0, btc=0.5))
-    assert cli.command_spot_roundtrip(argparse.Namespace(quantity=0.00008, mode="buy-sell", yes=True)) == 2
-
-    monkeypatch.setattr(cli, "_build_client", lambda _runtime: _RoundtripClient(usdc=0.0, btc=0.0))
-    assert cli.command_spot_roundtrip(argparse.Namespace(quantity=0.00008, mode="sell-buy", yes=True)) == 2
-
-    monkeypatch.setattr(cli, "_build_client", lambda _runtime: _RoundtripClient(usdc=20.0, btc=0.5))
-    assert cli.command_spot_roundtrip(argparse.Namespace(quantity=0.00008, mode="bad-mode", yes=True)) == 2
-
-    class _NoSecondLegBalanceClient(_RoundtripClient):
-        def place_order(self, _symbol: str, side: str, quantity: float, *, dry_run: bool, leverage: float = 1.0):
-            assert dry_run is False
-            self.orders.append(side)
-            return {
-                "status": "FILLED",
-                "orderId": len(self.orders),
-                "executedQty": f"{quantity:.8f}",
-                "cummulativeQuoteQty": f"{quantity * 76000.0:.8f}",
-            }
-
-    monkeypatch.setattr(cli, "_build_client", lambda _runtime: _NoSecondLegBalanceClient(usdc=20.0, btc=0.0))
-    assert cli.command_spot_roundtrip(argparse.Namespace(quantity=0.00008, mode="buy-sell", yes=True)) == 2
-    assert persisted[-1]["status"] == "partial_failed"
-    assert persisted[-1]["first_order"]["side"] == "BUY"
-    assert persisted[-1]["second_order"]["status"] == "not_completed"
-
-    class _AckOnlyFirstLegClient(_RoundtripClient):
-        def place_order(self, _symbol: str, side: str, quantity: float, *, dry_run: bool, leverage: float = 1.0):
-            assert dry_run is False
-            self.orders.append(side)
-            return {"status": "NEW", "orderId": len(self.orders), "origQty": f"{quantity:.8f}"}
-
-    monkeypatch.setattr(cli, "_persist_run_artifact", lambda _kind, output_dir, payload: persisted.append(payload) or output_dir / "roundtrip.json")
-    monkeypatch.setattr(cli, "_build_client", lambda _runtime: _AckOnlyFirstLegClient(usdc=20.0, btc=0.0))
-    assert cli.command_spot_roundtrip(argparse.Namespace(quantity=0.00008, mode="buy-sell", yes=True)) == 2
-    assert "First roundtrip order response did not include executed quantity" in capsys.readouterr().err
-    assert persisted[-1]["status"] == "partial_failed"
-    assert persisted[-1]["first_order"]["fill_source"] == "unresolved_no_order_query"
-    assert persisted[-1]["second_order"]["status"] == "not_completed"
-
-    def raise_persist(*_args, **_kwargs):
-        raise RuntimeError("disk full")
-
-    monkeypatch.setattr(cli, "_persist_run_artifact", raise_persist)
-    monkeypatch.setattr(cli, "_build_client", lambda _runtime: _NoSecondLegBalanceClient(usdc=20.0, btc=0.0))
-    assert cli.command_spot_roundtrip(argparse.Namespace(quantity=0.00008, mode="buy-sell", yes=True)) == 2
-    assert "Partial spot roundtrip could not be recorded" in capsys.readouterr().err
-
-    monkeypatch.setattr(cli, "_build_client", lambda _runtime: _RoundtripClient(usdc=20.0, btc=0.5, fail_order=True))
-    assert cli.command_spot_roundtrip(argparse.Namespace(quantity=0.00008, mode="buy-sell", yes=True)) == 2
-    assert persisted[-1]["status"] == "partial_failed"
+def test_command_spot_roundtrip_rejects_invalid_authority_before_client_creation(
+    monkeypatch, capsys
+) -> None:
+    monkeypatch.setattr(
+        cli,
+        "_build_client",
+        lambda _: pytest.fail("invalid authority must not create a client"),
+    )
+    configurations = [
+        RuntimeConfig(market_type="futures", testnet=True, api_key="k", api_secret="s"),
+        RuntimeConfig(
+            market_type="spot", testnet=False, demo=False, api_key="k", api_secret="s"
+        ),
+        RuntimeConfig(market_type="spot", testnet=True, api_key="", api_secret=""),
+    ]
+    for runtime in configurations:
+        monkeypatch.setattr(cli, "load_runtime", lambda: runtime)
+        assert (
+            cli.command_spot_roundtrip(
+                argparse.Namespace(quote_budget="10", mode="auto", yes=True)
+            )
+            == 2
+        )
+    monkeypatch.setattr(
+        cli, "load_runtime", lambda: RuntimeConfig(market_type="spot", testnet=True)
+    )
+    assert (
+        cli.command_spot_roundtrip(
+            argparse.Namespace(quote_budget="10", mode="auto", yes=False)
+        )
+        == 2
+    )
+    assert "error" in capsys.readouterr().err
 
 
 def test_command_status_prints_masked_secret(tmp_path, monkeypatch, capsys) -> None:

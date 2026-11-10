@@ -469,19 +469,50 @@ def _build_parser() -> argparse.ArgumentParser:
 
     parser_roundtrip = subparsers.add_parser(
         "spot-roundtrip",
-        help="place a tiny signed spot testnet/demo roundtrip order with balance and filter prechecks",
+        help="execute or reconcile an explicitly allocated Spot testnet/Demo diagnostic",
     )
     parser_roundtrip.add_argument(
-        "--quantity", type=float, default=0.00008, help="base-asset quantity to test"
+        "--action",
+        choices=["execute", "status", "recover", "continue", "complete"],
+        default="execute",
+        help="new operation, local status, exact-order recovery, continuation or local completion",
+    )
+    parser_roundtrip.add_argument(
+        "--quantity",
+        help="exact base allocation for sell-buy; never increased automatically",
+    )
+    parser_roundtrip.add_argument(
+        "--quote-budget",
+        help="exact quote principal for buy-sell, excluding received-asset commissions",
     )
     parser_roundtrip.add_argument(
         "--mode",
         choices=["auto", "buy-sell", "sell-buy"],
         default="auto",
-        help="order sequence; auto buys first when quote balance is available, otherwise sells first when base balance is available",
+        help="auto resolves only the explicit allocation units; it never selects wallet inventory",
     )
     parser_roundtrip.add_argument(
-        "--yes", action="store_true", help="confirm signed testnet/demo order placement"
+        "--operation-id",
+        help="exact 29-character stored operation ID; optional new-operation ID",
+    )
+    parser_roundtrip.add_argument(
+        "--data-dir",
+        type=Path,
+        default="data/autonomous",
+        help="shared owned execution directory",
+    )
+    parser_roundtrip.add_argument(
+        "--runtime-control",
+        type=Path,
+        help="existing enrolled Binance control database",
+    )
+    parser_roundtrip.add_argument(
+        "--runtime-enrollment", type=Path, help="independent control enrollment record"
+    )
+    parser_roundtrip.add_argument(
+        "--yes",
+        action="store_true",
+        help="confirm the requested testnet/Demo execution or reconciliation action",
     )
     parser_roundtrip.set_defaults(func=command_spot_roundtrip)
 
@@ -5902,44 +5933,48 @@ def _tui_actions(credential_state: dict[str, str] | None = None):  # skipcq: PY-
         )
 
     async def _roundtrip(ui):
+        from .binance_spot_roundtrip_cli import parse_roundtrip_allocation
+
         if not _credentials_ready(ui, "Test order"):
             return 2
         payload = await ui.form(
             "Test order",
             [
-                FormField("quantity", "Order quantity", "0.00008"),
+                FormField(
+                    "quantity",
+                    "Base allocation for sell-buy (blank for quote budget)",
+                    "0.00008",
+                ),
+                FormField(
+                    "quote_budget",
+                    "Quote principal for buy-sell (blank for base allocation)",
+                    "",
+                ),
                 FormField("mode", "Mode [auto/buy-sell/sell-buy]", "auto"),
             ],
         )
         if payload is None:
             print("Test order cancelled.")
             return 0
+        args = argparse.Namespace(
+            quantity=payload.get("quantity", "").strip() or None,
+            quote_budget=payload.get("quote_budget", "").strip() or None,
+            mode=payload.get("mode", "auto").strip().lower() or "auto",
+            yes=True,
+        )
         try:
-            quantity = _parse_form_float(
-                payload["quantity"],
-                label="Order quantity",
-                default=0.00008,
-                minimum=0.00001,
-            )
+            mode, allocation = parse_roundtrip_allocation(args)
         except ValueError as exc:
             print(f"Test order settings invalid: {exc}", file=sys.stderr)
             return 2
-        mode = payload["mode"].strip().lower() or "auto"
-        if mode not in {"auto", "buy-sell", "sell-buy"}:
-            print(
-                "Test order mode must be auto, buy-sell, or sell-buy.", file=sys.stderr
-            )
-            return 2
         runtime = load_runtime()
+        unit = _fund_asset_labels(runtime)[0 if mode == "buy-sell" else 1]
         if not await ui.confirm(
-            f"Place {mode} spot {_runtime_environment(runtime)} roundtrip for quantity={quantity:.8f}?"
+            f"Place {mode} spot {_runtime_environment(runtime)} roundtrip with an explicit allocation of {allocation} {unit}? An existing runtime lease is required."
         ):
             print("Test order cancelled.")
             return 0
-        return await ui.run_blocking(
-            command_spot_roundtrip,
-            argparse.Namespace(quantity=quantity, mode=mode, yes=True),
-        )
+        return await ui.run_blocking(command_spot_roundtrip, args)
 
     async def _report(ui):
         payload = await ui.form(
@@ -7165,209 +7200,15 @@ def _roundtrip_second_quantity(
     return quantity
 
 
-def command_spot_roundtrip(args: argparse.Namespace) -> int:  # skipcq: PY-R1000
-    runtime = load_runtime()
-    if not getattr(args, "yes", False):
-        print(
-            "Pass --yes to confirm signed spot testnet/demo order placement.",
-            file=sys.stderr,
-        )
-        return 2
-    if runtime.market_type != "spot":
-        print(
-            "Test order requires market_type=spot in Connection settings.",
-            file=sys.stderr,
-        )
-        return 2
-    if not _allows_signed_execution(runtime):
-        print(
-            "Test order requires testnet=true or demo=true in Connection settings.",
-            file=sys.stderr,
-        )
-        return 2
-    if not _has_api_credentials(runtime):
-        print(_credential_required_message("Test order"), file=sys.stderr)
-        return 2
+def command_spot_roundtrip(args: argparse.Namespace) -> int:
+    from .binance_spot_roundtrip_cli import run_spot_roundtrip
 
-    quote_asset, base_asset = _fund_asset_labels(runtime)
-    mode = str(getattr(args, "mode", "auto"))
-    quantity_requested = float(getattr(args, "quantity", 0.0))
-    client = _build_client(runtime)
-    price = 0.0
-    quantity = 0.0
-    second_quantity = 0.0
-    notional = 0.0
-    before: object | None = None
-    mid: object | None = None
-    first: object | None = None
-    first_side = ""
-    second_side = ""
-    first_fill_source = ""
-    try:
-        _ensure_runtime_symbol(runtime, client)
-        price, _timestamp = client.get_symbol_price(runtime.symbol)
-        quantity, _constraints, notional = _roundtrip_quantity(
-            client,
-            runtime.symbol,
-            quantity_requested,
-            float(price),
-        )
-        before = client.get_account()
-        base_free = _asset_free_balance(before, base_asset)
-        quote_free = _asset_free_balance(before, quote_asset)
-        if mode == "auto":
-            mode = "buy-sell" if quote_free >= notional * 1.01 else "sell-buy"
-        if mode == "buy-sell":
-            if quote_free < notional * 1.01:
-                raise BinanceAPIError(
-                    f"Insufficient {quote_asset} for BUY leg: need about {notional:.2f}, have {quote_free:.2f}"
-                )
-            first_side, second_side = "BUY", "SELL"
-        elif mode == "sell-buy":
-            if base_free < quantity:
-                raise BinanceAPIError(
-                    f"Insufficient {base_asset} for SELL leg: need {quantity:.8f}, have {base_free:.8f}"
-                )
-            first_side, second_side = "SELL", "BUY"
-        else:
-            raise ValueError(f"Unsupported roundtrip mode: {mode}")
-
-        first = client.place_order(runtime.symbol, first_side, quantity, dry_run=False)
-        executed, _first_fill_price, _first_notional, first_fill_source = (
-            _resolved_order_fill_details(
-                client,
-                runtime,
-                first,
-                fallback_qty=0.0,
-                fallback_price=float(price),
-                dry_run=False,
-            )
-        )
-        if executed <= 0.0:
-            raise BinanceAPIError(
-                "First roundtrip order response did not include executed quantity"
-            )
-        mid = client.get_account()
-        second_quantity = _roundtrip_second_quantity(
-            client,
-            runtime.symbol,
-            quote_asset,
-            base_asset,
-            second_side,
-            executed,
-            mid,
-            float(price),
-            first_order=first if isinstance(first, Mapping) else None,
-        )
-        if second_quantity <= 0.0:
-            raise BinanceAPIError(
-                f"Could not size {second_side} leg from post-{first_side} balances"
-            )
-        second = client.place_order(
-            runtime.symbol, second_side, second_quantity, dry_run=False
-        )
-        after = client.get_account()
-    except (BinanceAPIError, ValueError) as exc:
-        if first is not None:
-            partial_payload = {
-                "command": "spot-roundtrip",
-                "status": "partial_failed",
-                "timestamp": int(time.time()),
-                "runtime": _public_runtime_payload(runtime),
-                "symbol": runtime.symbol,
-                "mode": mode,
-                "error": str(exc),
-                "price_reference": float(price),
-                "quantity_requested": float(quantity_requested),
-                "quantity_first": float(quantity),
-                "quantity_second_attempted": float(second_quantity),
-                "notional_reference": float(notional),
-                "balances_before": (
-                    {
-                        base_asset: _asset_free_balance(before, base_asset),
-                        quote_asset: _asset_free_balance(before, quote_asset),
-                    }
-                    if before is not None
-                    else None
-                ),
-                "balances_after_first": (
-                    {
-                        base_asset: _asset_free_balance(mid, base_asset),
-                        quote_asset: _asset_free_balance(mid, quote_asset),
-                    }
-                    if mid is not None
-                    else None
-                ),
-                "first_order": {
-                    "side": first_side,
-                    "status": first.get("status") if isinstance(first, dict) else None,
-                    "orderId": first.get("orderId")
-                    if isinstance(first, dict)
-                    else None,
-                    "executedQty": first.get("executedQty")
-                    if isinstance(first, dict)
-                    else None,
-                    "fill_source": first_fill_source,
-                },
-                "second_order": {"side": second_side, "status": "not_completed"},
-            }
-            try:
-                artifact_path = _persist_run_artifact(
-                    "spot_roundtrip_partial", Path("data"), partial_payload
-                )
-                print(
-                    f"Partial spot roundtrip recorded at {artifact_path}",
-                    file=sys.stderr,
-                )
-            except (OSError, RuntimeError, TypeError, ValueError) as persist_exc:
-                print(
-                    f"Partial spot roundtrip could not be recorded: {persist_exc}",
-                    file=sys.stderr,
-                )
-        print(_credential_failure_message("Test order", exc), file=sys.stderr)
-        return 2
-
-    payload = {
-        "command": "spot-roundtrip",
-        "timestamp": int(time.time()),
-        "runtime": _public_runtime_payload(runtime),
-        "symbol": runtime.symbol,
-        "mode": mode,
-        "price_reference": float(price),
-        "quantity_requested": float(quantity_requested),
-        "quantity_first": float(quantity),
-        "quantity_second": float(second_quantity),
-        "notional_reference": float(notional),
-        "balances_before": {
-            base_asset: _asset_free_balance(before, base_asset),
-            quote_asset: _asset_free_balance(before, quote_asset),
-        },
-        "balances_after": {
-            base_asset: _asset_free_balance(after, base_asset),
-            quote_asset: _asset_free_balance(after, quote_asset),
-        },
-        "first_order": {
-            "side": first_side,
-            "status": first.get("status") if isinstance(first, dict) else None,
-            "orderId": first.get("orderId") if isinstance(first, dict) else None,
-            "executedQty": first.get("executedQty")
-            if isinstance(first, dict)
-            else None,
-            "fill_source": first_fill_source,
-        },
-        "second_order": {
-            "side": second_side,
-            "status": second.get("status") if isinstance(second, dict) else None,
-            "orderId": second.get("orderId") if isinstance(second, dict) else None,
-            "executedQty": second.get("executedQty")
-            if isinstance(second, dict)
-            else None,
-        },
-    }
-    artifact_path = _persist_run_artifact("spot_roundtrip", Path("data"), payload)
-    print(f"Spot {_runtime_environment(runtime)} roundtrip complete.")
-    print(json.dumps({**payload, "artifact": str(artifact_path)}, indent=2))
-    return 0
+    runtime = None if getattr(args, "action", "execute") == "status" else load_runtime()
+    status, payload = run_spot_roundtrip(
+        args, runtime=runtime, client_factory=_build_client
+    )
+    print(json.dumps(payload, indent=2), file=sys.stdout if status == 0 else sys.stderr)
+    return status
 
 
 def command_configure(_: argparse.Namespace) -> int:

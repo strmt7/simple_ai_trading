@@ -216,75 +216,38 @@ infer current legal applicability from search snippets.
   now has an admitted immutable publisher copy; the first HTML shell remains
   rejected. It informs the roundtrip's outstanding operation-cash/two-leg design,
   without changing transport or qualifying any edge.
-- [Quote-principal work](review/2026-11-10/spot-quote-principal/review.md)
-  adds an exact scoped quote BUY primitive and acknowledgment/query binding.
-  Its 236 distinct focused cases pass across stated lanes, including actual
-  signed URL serialization with offline HTTP, no write retry and scope drift.
-  The original roundtrip overspend counterexample is reproduced. The command
-  remains unchanged; total fees, allocation admission and command integration
-  are still required before wiring this primitive. The following local journal
-  extends the implementation; the prior 236-case result keeps its source phase.
-- [Roundtrip journal](review/2026-11-10/spot-roundtrip-journal/review.md)
-  reserves explicit assets and both exact request units in shared namespace v4.
-  Unknown operations block openings, consumed IDs are fenced across writers,
-  and separately recovered owned closing remains available. Net first-leg
-  receipts cap the second principal. All 407 final affected cases pass, including
-  four actual child-exit stages and a noncreating recovery/connect race.
-  The CLI still has its two direct writes. Native capability/fees/balances,
-  Stop/dispatch authority, receipt reconstruction, partial resolution/rearm,
-  independent storage enrollment and supervision remain open. Neither
-  prerequisite qualifies roundtrip capital safety.
-- [Spot fee protocol](review/2026-11-10/spot-commission-source/review.md)
-  admits one immutable primary FAQ and adds an exact scoped account-schedule
-  reader through the existing GET transport. All 230 final focused cases pass,
-  with pre-launch source snapshots. Rates/side terms, flags and charge multiplier
-  remain exact; no fictional rate is a runtime default. The prior 407-case
-  journal result retains its earlier source phase. Native ownership, balance and
-  freshness evidence remain open. At that phase Stop/lease/dispatch machinery
-  was Polymarket-specific; Binance's state-file control is not equivalent. The
-  shared-core checkpoint below addresses that architecture boundary. Native
-  integration, independent supervision and receipt/partial recovery remain required. No native
-  account/order, training or market sample followed.
-- [Shared runtime control](review/2026-11-10/shared-runtime-control/review.md)
-  extracts one neutral lease/Stop/dispatch core with separate venue namespaces.
-  Polymarket keeps its original schema, migration, public types and exceptions;
-  Binance gains its own adapter. All 222 final affected checks pass; a 14-step
-  replay matches the original control rows and behavior. Real owned-process
-  locking verifies Stop waits
-  for an in-flight guard and rejects later dispatch. The earlier fee review's
-  architecture finding describes its preceding source phase. Binance callers
-  and the roundtrip remain unwired; fee-asset admission, recovery/rearm,
-  independent storage identity and session supervision remain open. No native
-  account/order or persistent worker was used.
-- [Fee-asset grants](review/2026-11-10/roundtrip-fee-grants/review.md)
-  extend the journal with exact third-asset allocations shared by both legs,
-  mixed received/discount-asset fees and explicit format-2 records. Legacy
-  format-1 fields remain unchanged. All 435 final affected checks pass with
-  pre-launch source snapshots. An observed overrun stays UNKNOWN; a grant is
-  neither wallet ownership nor a native exchange fee cap. Balance/fee/FX
-  admission, command/runtime integration, recovery/rearm, independent storage
-  identity and supervision remain open. No account, order, model fit or market
-  sample followed.
-- [Roundtrip dispatch gateway](review/2026-11-10/roundtrip-dispatch/review.md)
-  connects the paired journal, exact native request bindings, freshly scoped
-  free balances/commission schedule and enrolled runtime guards. Each leg
-  commits UNKNOWN before its single native write; ambiguous responses never
-  retry. Exact-order recovery reconstructs complete trades without submission,
-  completion or rearm. Only a receipt-owned second SELL can bypass opening Stop;
-  a sell-buy acquisition still needs the lease. External fee routes reject
-  pending native FX/cost admission. All 131 final focused checks pass, including
-  missing-control-database closing, lost-lock rejection, competing dispatch and
-  24 cancellation/recovery cycles with stable observed handles/private memory.
-  This is an offline verified gateway, not native execution or profitability
-  evidence. The legacy CLI remains unwired; partial resolution, verified
-  namespace-loss recovery, universal fencing and independent supervision remain.
+- [Scoped Spot command](review/2026-11-10/roundtrip-command/review.md) now routes
+  both diagnostic writes through the paired durable gateway. Base/quote amounts
+  remain explicit decimal strings; auto never selects wallet inventory. The
+  caller supplies the existing enrolled lease. Execute, recover, continue and
+  complete preserve UNKNOWN, exact net receipts and Stop; only the receipt-owned
+  second SELL can bypass opening Stop. Missing total cash remains missing.
+  Each owned HTTP session closes on completion, rejection and cancellation;
+  constructor setup now also cleans partially initialized sessions. No worker,
+  lease, Stop reset or persistent registration is created by the command.
+  The final source has 224 distinct focused checks across documented lanes:
+  223/224 in the combined lane, then all 32 command checks after correcting one
+  fixture; production stayed unchanged. This is not a whole-suite/native result.
+  Four command/native-declaration checks pass; the native binary is not rebuilt.
+  [Operator guidance](SPOT_ROUNDTRIP.md) explains exact units and restart actions.
+  External fee/FX admission, native filters/capital qualification, partial
+  resolution/rearm, execution-namespace loss/rollback, universal fencing and
+  independent session supervision remain open. Original source phases remain in
+  the [quote primitive](review/2026-11-10/spot-quote-principal/review.md),
+  [paired journal](review/2026-11-10/spot-roundtrip-journal/review.md),
+  [fee source](review/2026-11-10/spot-commission-source/review.md),
+  [shared control](review/2026-11-10/shared-runtime-control/review.md),
+  [fee grants](review/2026-11-10/roundtrip-fee-grants/review.md) and
+  [dispatch gateway](review/2026-11-10/roundtrip-dispatch/review.md). No native
+  account/order, model fit or financial capture was performed; no edge qualifies.
 - [Owned Binance CLI execution](review/2026-11-10/binance-owned-cli/review.md) now
   shares the autonomous write-ahead opening/closing flow and returns typed raw-ack
   outcomes. Entry, normal and emergency close bind scope before dispatch; real
   partial residuals survive. 217 distinct focused cases are supported across
-  documented lanes, with three old-CLI regressions. The Spot roundtrip's two
-  direct writes, other native transports, legacy migration/rearm and independent
-  process fencing remain open; there is no universal gateway or whole-suite claim.
+  documented source-phase lanes, with three old-CLI regressions. The Spot
+  command checkpoint above addresses its original direct-write gap. Other
+  native transports, legacy migration/rearm and independent process fencing
+  remain open; there is no universal gateway or whole-suite claim.
 - [Owned SDK transport](review/2026-11-10/sdk-transport/review.md) binds native
   Polymarket GET/POST/DELETE hooks to each venue's configured timeout and body cap,
   preserving signing bytes, no write retries and no redirects. Incomplete/late
