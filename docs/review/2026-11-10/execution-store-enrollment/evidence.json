@@ -1,0 +1,117 @@
+{
+  "schema": "execution-store-enrollment-review-v1",
+  "base_head": "7e200edf275c749383eb859f7f6bc4a65a0bb0d4",
+  "original_regression": {
+    "source_sha256": {
+      "src/simple_ai_trading/binance_spot_roundtrip_execution.py": "dc9113ddabd62b1fce5af09a26232117d7bd6d6b40bf23eca7320078b6432dcc",
+      "src/simple_ai_trading/binance_spot_roundtrip_intents.py": "8eef57ee357053dcc5b0a3adde3f3114da175aaa6a055cd38198599932303234",
+      "src/simple_ai_trading/binance_spot_roundtrip_cli.py": "5a44ebc9cea3ef371c22cff543e7a36a4a71e877fe59afa7584b3eed5c5dc60a",
+      "src/simple_ai_trading/binance_open_intents.py": "6b61bbb0401007e70bb2ae0ebef475dd8aa32dedfe3fd16b54b24a3fe85e2793",
+      "src/simple_ai_trading/runtime_control.py": "e5e61583eed5e97bd6aa51c44cd9866435d9d8117ed58611443fd1cedf644791",
+      "src/simple_ai_trading/runtime_control_storage.py": "30fbebef310e209f1fd2f74a7a96622b76e86b51f6bfeb55d944e53e962897d3",
+      "tests/test_spot_roundtrip_cli.py": "425268d28fe5724de783ab7277c766527289d20efd496757564afb792f62c06c"
+    },
+    "probe_sha256": "aafa4b33e88015ca0ae4330394cd927bf2dca548e727b462a74023e89735d733",
+    "native_result_sha256": "0f41b234048456221b609d93a8905ab9f52c559591bba89c83371ba551cc3f5a",
+    "observed": {
+      "first_code": 2,
+      "first_phase": "FIRST_UNKNOWN",
+      "original_journal_retained": true,
+      "second_code": 0,
+      "second_phase": "COMPLETE",
+      "synthetic_native_writes": [
+        "BUY 100",
+        "BUY 100",
+        "SELL 0.99900000"
+      ]
+    }
+  },
+  "verification": {
+    "tests": 170,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "tested_source_sha256": {
+      "src/simple_ai_trading/binance_execution_storage.py": "8d90728155f01b078be024f855f45b6185159c3f4fa7f8f21538a8fd803f3533",
+      "src/simple_ai_trading/binance_spot_roundtrip_execution.py": "86cf905f47a70c4caf3dedb662629880e66cc292fba4708e5695ea06bf2fdc29",
+      "src/simple_ai_trading/binance_spot_roundtrip_intents.py": "7bb35add8ddeb1d3fbf9236e9163bd328851f727518f45873c5e37f561cae8d4",
+      "src/simple_ai_trading/binance_spot_roundtrip_cli.py": "3c9e17efafc9d1741d59fbfa7594f67e6afcac5215b4de3c2ce53faffb5ceec6",
+      "src/simple_ai_trading/cli.py": "fea05f643fa9d0876e2824a3d5d5337ef7d5c0c43a68a4db13cd9685a9fd5d6c",
+      "src/simple_ai_trading/runtime_control.py": "e5e61583eed5e97bd6aa51c44cd9866435d9d8117ed58611443fd1cedf644791",
+      "src/simple_ai_trading/runtime_control_storage.py": "30fbebef310e209f1fd2f74a7a96622b76e86b51f6bfeb55d944e53e962897d3",
+      "src/simple_ai_trading/binance_open_intents.py": "6b61bbb0401007e70bb2ae0ebef475dd8aa32dedfe3fd16b54b24a3fe85e2793",
+      "src/simple_ai_trading/position_transactions.py": "743275b5e92337bd24825c7b4e4f2d79c1ecb7556bf02d8d56cadfcbe148d97b",
+      "tests/test_binance_execution_storage.py": "883d4bda003715c1a8b70f06a64a0bd8fa126b7daf65d27f166b5053da3a29e9",
+      "tests/test_spot_roundtrip_execution.py": "4f8ff70a450901775b09ba052ea5b72f528aa9a8d7cd80439d890bf17681ec86",
+      "tests/test_spot_roundtrip_cli.py": "d25b1b6d2376cd12067f8bcb523ebf26dd93a866f384aaf35aa968c89a6392a7",
+      "tests/test_spot_roundtrip_intents.py": "69e781c6a18a467e0bbc028028ea05eabfffda1c34a87fbd74ffc0bb91b8e55b",
+      "tests/test_ai_runtime_and_parity.py": "1f6490adcf1895f916a2b4ee1708af93c97b2bc06ed02097a657043450d7d193",
+      "native/windows/generated/command_contract.hpp": "3b7dee5c0c18edfcd1d6387e2d12ad93ece8383bfdb4cf87a783e55b1a38b59b"
+    },
+    "before_equals_after": true,
+    "junit_sha256": "18334017730cf67191defc7fd901d3b39945f046a13d3add1fd83d1211e9fd08",
+    "native_lifecycle": {
+      "roundtrip_lifecycle_handles_first": 282,
+      "roundtrip_lifecycle_handles_max": 282,
+      "roundtrip_lifecycle_handles_last": 282,
+      "roundtrip_lifecycle_mutexes_first": 0,
+      "roundtrip_lifecycle_mutexes_max": 0,
+      "roundtrip_lifecycle_mutexes_last": 0,
+      "roundtrip_lifecycle_private_bytes_first": 1726693376,
+      "roundtrip_lifecycle_private_bytes_max": 1726693376,
+      "roundtrip_lifecycle_private_bytes_last": 1726693376
+    },
+    "cycles": 24,
+    "warmup_cycles": 4,
+    "initial_lane": {
+      "tests": 160,
+      "passed": 151,
+      "failed": 9,
+      "classification": "Old tests expected absent storage before dispatch; explicit enrollment now creates it before any order."
+    },
+    "intermediate_lane": {
+      "tests": 162,
+      "passed": 162,
+      "failed": 0
+    },
+    "whole_suite_run": false,
+    "native_binary_built": false,
+    "git_lf_source_sha256": {
+      "src/simple_ai_trading/binance_execution_storage.py": "8d90728155f01b078be024f855f45b6185159c3f4fa7f8f21538a8fd803f3533",
+      "src/simple_ai_trading/binance_spot_roundtrip_execution.py": "86cf905f47a70c4caf3dedb662629880e66cc292fba4708e5695ea06bf2fdc29",
+      "src/simple_ai_trading/binance_spot_roundtrip_intents.py": "7bb35add8ddeb1d3fbf9236e9163bd328851f727518f45873c5e37f561cae8d4",
+      "src/simple_ai_trading/binance_spot_roundtrip_cli.py": "3c9e17efafc9d1741d59fbfa7594f67e6afcac5215b4de3c2ce53faffb5ceec6",
+      "src/simple_ai_trading/cli.py": "fea05f643fa9d0876e2824a3d5d5337ef7d5c0c43a68a4db13cd9685a9fd5d6c",
+      "src/simple_ai_trading/runtime_control.py": "e5e61583eed5e97bd6aa51c44cd9866435d9d8117ed58611443fd1cedf644791",
+      "src/simple_ai_trading/runtime_control_storage.py": "30fbebef310e209f1fd2f74a7a96622b76e86b51f6bfeb55d944e53e962897d3",
+      "src/simple_ai_trading/binance_open_intents.py": "6b61bbb0401007e70bb2ae0ebef475dd8aa32dedfe3fd16b54b24a3fe85e2793",
+      "src/simple_ai_trading/position_transactions.py": "743275b5e92337bd24825c7b4e4f2d79c1ecb7556bf02d8d56cadfcbe148d97b",
+      "tests/test_binance_execution_storage.py": "883d4bda003715c1a8b70f06a64a0bd8fa126b7daf65d27f166b5053da3a29e9",
+      "tests/test_spot_roundtrip_execution.py": "4f8ff70a450901775b09ba052ea5b72f528aa9a8d7cd80439d890bf17681ec86",
+      "tests/test_spot_roundtrip_cli.py": "d25b1b6d2376cd12067f8bcb523ebf26dd93a866f384aaf35aa968c89a6392a7",
+      "tests/test_spot_roundtrip_intents.py": "69e781c6a18a467e0bbc028028ea05eabfffda1c34a87fbd74ffc0bb91b8e55b",
+      "tests/test_ai_runtime_and_parity.py": "1ee154300a23bfe0634b87e027cecc503bbf5ee44dd495e21aa4192a1d2f5a71",
+      "native/windows/generated/command_contract.hpp": "c1cd47bab398cd1eafefa1285b01174a733ebed8e84964f22f78e8a18dafaa5c"
+    },
+    "source_encoding_note": "Tested hashes bind raw worktree bytes; Git source hashes bind the same bytes with CRLF normalized to LF."
+  },
+  "scope": [
+    "Paired first-leg opening",
+    "Sell-buy second acquisition",
+    "Explicit local storage setup, exact adoption and committed prepared recovery",
+    "Preserved exact-order recovery and receipt-owned second SELL"
+  ],
+  "limits": [
+    "No universal writer fencing or coordinated rollback resistance",
+    "No verified storage relocation, real reboot or independent supervisor qualification",
+    "No actual account/order access, new economic observation, training or performance benchmark",
+    "No release or standing worker installed"
+  ],
+  "financial_census": {
+    "observations": 205,
+    "hypotheses": 65,
+    "scoped_mechanisms": 37,
+    "qualified_stable_edges": 0
+  },
+  "evidence_sha256": "db96de82036aa2223a7eee8ed32eda9a9113acfaf6b4cff9d8f583e91754b14b"
+}

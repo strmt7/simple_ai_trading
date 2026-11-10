@@ -10,10 +10,12 @@ from __future__ import annotations
 from collections.abc import Mapping
 from dataclasses import dataclass
 from fractions import Fraction
+from pathlib import Path
 import time
 
 from .api import BinanceClient
 from .binance_execution_scope import BinanceExecutionScope, parse_execution_id
+from .binance_execution_storage import BinanceExecutionStorage
 from .binance_open_intents import OpenIntentError
 from .binance_order_responses import SpotQuoteOrderBinding
 from .binance_runtime_control import BinanceRuntimeControl, RuntimeLeaseInterlock
@@ -63,6 +65,7 @@ class SpotRoundtripExecution:
     interlock: RuntimeLeaseInterlock
     maximum_preflight_age_ms: int = 5_000
     close_lock_timeout_seconds: float = 1.0
+    execution_enrollment_path: Path | None = None
 
     def __post_init__(self) -> None:
         if (
@@ -84,6 +87,11 @@ class SpotRoundtripExecution:
                 "roundtrip dispatch requires a testnet/Demo Spot scope"
             )
         return scope
+
+    def _storage(self) -> BinanceExecutionStorage:
+        return BinanceExecutionStorage(
+            self.journal.journal, self.interlock.control, self.execution_enrollment_path
+        )
 
     def _preflight(
         self,
@@ -163,15 +171,19 @@ class SpotRoundtripExecution:
             raise OpenIntentError("roundtrip requires an explicit validated allocation")
         self.interlock.assert_opening_allowed()
         scope = self._scope()
+        storage = self._storage()
+        storage.verify(scope=scope)
         started = self._preflight(
             request, scope=scope, first=True, required=request.allocations
         )
         with self.interlock.submission_guard():
             self._fresh(started, scope)
-            self.journal.prepare(request, scope=scope)
+            storage.verify(scope=scope)
+            self.journal.prepare(request, scope=scope, create=False)
             revision, _ = self._pending(scope, request.operation_id)
             self._fresh(started, scope)
             self.interlock.assert_opening_allowed()
+            storage.verify(scope=scope)
             order = self._dispatch(request.binding(first=True), scope=scope)
             self.journal.record_order(
                 request.operation_id,
@@ -207,6 +219,7 @@ class SpotRoundtripExecution:
         opening = isinstance(binding, SpotQuoteOrderBinding)
         if opening:
             self.interlock.assert_opening_allowed()
+            self._storage().verify(scope=scope)
         delta = _movements(request, record["first"], first=True)
         remaining = {
             asset: allocated + delta[asset]
@@ -222,6 +235,8 @@ class SpotRoundtripExecution:
         )
         with guard:
             self._fresh(started, scope)
+            if opening:
+                self._storage().verify(scope=scope)
             self.journal.prepare_second(
                 operation_id, amount, scope=scope, expected_revision=revision
             )
@@ -229,6 +244,7 @@ class SpotRoundtripExecution:
             self._fresh(started, scope)
             if opening:
                 self.interlock.assert_opening_allowed()
+                self._storage().verify(scope=scope)
             order = self._dispatch(binding, scope=scope)
             self.journal.record_order(
                 operation_id,

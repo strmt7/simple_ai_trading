@@ -473,7 +473,16 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     parser_roundtrip.add_argument(
         "--action",
-        choices=["execute", "status", "recover", "continue", "complete"],
+        choices=[
+            "execute",
+            "status",
+            "recover",
+            "continue",
+            "complete",
+            "inspect-storage",
+            "provision-storage",
+            "recover-storage",
+        ],
         default="execute",
         help="new operation, local status, exact-order recovery, continuation or local completion",
     )
@@ -508,6 +517,22 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     parser_roundtrip.add_argument(
         "--runtime-enrollment", type=Path, help="independent control enrollment record"
+    )
+    parser_roundtrip.add_argument(
+        "--execution-enrollment",
+        type=Path,
+        help="independent execution enrollment record",
+    )
+    parser_roundtrip.add_argument(
+        "--expected-snapshot-sha256",
+        help="exact local journal snapshot for explicit adoption",
+    )
+    parser_roundtrip.add_argument(
+        "--expected-store-id", help="exact prepared execution store UUID for recovery"
+    )
+    parser_roundtrip.add_argument(
+        "--expected-record-sha256",
+        help="exact prepared execution enrollment digest for recovery",
     )
     parser_roundtrip.add_argument(
         "--yes",

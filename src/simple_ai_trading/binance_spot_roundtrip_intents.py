@@ -460,7 +460,11 @@ class SpotRoundtripJournal:
     journal: BinanceOpenIntentJournal
 
     def prepare(
-        self, request: SpotRoundtripRequest, *, scope: BinanceExecutionScope
+        self,
+        request: SpotRoundtripRequest,
+        *,
+        scope: BinanceExecutionScope,
+        create: bool = True,
     ) -> None:
         """Reserve an explicit allocation and first UNKNOWN under the common writer."""
         from .positions import PositionsStore
@@ -473,7 +477,9 @@ class SpotRoundtripJournal:
             raise OpenIntentError(
                 "roundtrip requires a validated Spot request and scope"
             )
-        with position_transaction(self.journal, write=True) as transaction:
+        with position_transaction(
+            self.journal, write=True, create=create
+        ) as transaction:
             self.journal._prepare_scope(transaction, scope)
             connection = transaction.connection
             if connection is None:

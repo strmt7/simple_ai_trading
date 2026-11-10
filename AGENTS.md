@@ -286,6 +286,11 @@ result and all other consumed populations, including WNBA September 3-9.
   base or quote allocation units. Its caller supplies the existing lease. The
   diagnostic command must not acquire/release that lease, clear Stop or provision
   storage as an error repair.
+  Paired opening also requires independent execution-store enrollment. Missing
+  or changed journal/UUID/marker/interlocks must reject before account preflight
+  and again under opening admission; never bootstrap lost execution storage.
+  Only explicit local Stop-latched setup/adoption or exact committed prepared
+  recovery may enroll it. Preserve recovery and receipt-owned SELL separately.
   Recovery may observe an exact UNKNOWN order but never resubmit it. Do not
   restore the old direct-write pattern or claim universal caller fencing.
   First scope enrollment must reject unscoped live/unclassified history and

@@ -227,8 +227,13 @@ class Venue:
 
 @pytest.fixture
 def context(tmp_path, monkeypatch):
+    from simple_ai_trading.binance_execution_storage import BinanceExecutionStorage
+
     control = BinanceRuntimeControl(tmp_path / "binance_runtime_control.sqlite3")
     control.provision_storage()
+    BinanceExecutionStorage(
+        PositionsStore(tmp_path).opening_intents, control
+    ).provision(scope=SCOPE)
     # The constructed fixture has no prior owned/native obligations.
     assert control.complete_stale_stop(exposure_closed=True)
     lease = control.acquire()
@@ -460,10 +465,87 @@ def test_missing_enrollment_never_bootstraps_from_execute(context):
 
 def test_missing_operation_is_not_found_proof_or_new_namespace_authority(context):
     root, _, _, _, venue = context
+    original = PositionsStore(root).opening_intents.path.read_bytes()
     assert command(context, "recover")[0] == 2
     assert venue.writes == [] and venue.reads == []
-    assert not PositionsStore(root).opening_intents.path.exists()
+    assert PositionsStore(root).opening_intents.path.read_bytes() == original
     assert venue.clients[-1].session.closed
+
+
+@pytest.mark.parametrize("damage", ["missing", "replacement", "truncated", "marker"])
+def test_unknown_journal_loss_cannot_authorize_another_native_buy(context, damage):
+    from simple_ai_trading.binance_execution_storage import BinanceExecutionStorage
+
+    root, control, _, _, venue = context
+    venue.raise_leg = 1
+    assert command(context)[1]["phase"] == "FIRST_UNKNOWN"
+    storage = BinanceExecutionStorage(PositionsStore(root).opening_intents, control)
+    if damage in {"missing", "replacement"}:
+        original = storage.journal.path.read_bytes()
+        storage.journal.path.rename(root / "retained.sqlite3")
+        if damage == "replacement":
+            storage.journal.path.write_bytes(original)
+    elif damage == "truncated":
+        storage.journal.path.write_bytes(b"")
+    else:
+        storage.enrollment_path.unlink()
+    reads = len(venue.reads)
+    metadata = venue.metadata_reads
+    venue.raise_leg = None
+    code, _ = command(context, operation_id="b" * 29)
+    assert code == 2 and len(venue.writes) == 1
+    assert len(venue.reads) == reads and venue.metadata_reads == metadata
+    assert all(client.session.closed for client in venue.clients)
+
+
+def test_missing_execution_marker_preserves_recovery_and_receipt_owned_sale(context):
+    from simple_ai_trading.binance_execution_storage import BinanceExecutionStorage
+
+    root, control, _, _, venue = context
+    venue.raise_leg = 1
+    assert command(context)[1]["phase"] == "FIRST_UNKNOWN"
+    BinanceExecutionStorage(
+        PositionsStore(root).opening_intents, control
+    ).enrollment_path.unlink()
+    venue.raise_leg = None
+    assert command(context, "recover")[1]["phase"] == "FIRST_TERMINAL"
+    assert command(context, "continue")[1]["phase"] == "COMPLETE"
+    assert [item[0] for item in venue.writes] == ["BUY", "SELL"]
+
+
+def test_missing_execution_marker_blocks_sell_buy_acquisition(context):
+    from simple_ai_trading.binance_execution_storage import BinanceExecutionStorage
+
+    root, control, _, _, venue = context
+    venue.raise_leg = 1
+    first = command(context, quote_budget=None, quantity="1", mode="sell-buy")
+    assert first[1]["phase"] == "FIRST_UNKNOWN"
+    venue.raise_leg = None
+    assert command(context, "recover")[1]["phase"] == "FIRST_TERMINAL"
+    BinanceExecutionStorage(
+        PositionsStore(root).opening_intents, control
+    ).enrollment_path.unlink()
+    reads = len(venue.reads)
+    assert command(context, "continue")[0] == 2
+    assert [item[0] for item in venue.writes] == ["SELL"]
+    assert len(venue.reads) == reads
+
+
+def test_explicit_storage_actions_are_local_and_leave_stop_latched(context, tmp_path):
+    root = tmp_path / "fresh"
+    control = BinanceRuntimeControl(root / "binance_runtime_control.sqlite3")
+    control.provision_storage()
+    fresh = (root, control, None, context[3], context[4])
+    before = control.snapshot()
+    inspected = command(fresh, "inspect-storage", operation_id=None)
+    assert inspected[0] == 0 and inspected[1]["journal_exists"] is False
+    assert context[4].clients == []
+    result = command(fresh, "provision-storage", operation_id=None)
+    assert result[0] == 0 and result[1]["enrollment_state"] == "ready"
+    assert control.snapshot() == before
+    assert context[4].reads == [] and context[4].writes == []
+    assert context[4].metadata_reads == 0
+    assert len(context[4].clients) == 1 and context[4].clients[0].session.closed
 
 
 def test_lot_and_quote_rounding_cannot_enlarge_receipts():

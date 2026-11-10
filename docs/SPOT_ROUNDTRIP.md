@@ -8,7 +8,8 @@ guarantee. Native account/order use still needs its separately authorized sessio
 ## Authority and lifetime
 
 The session owner must already have enrolled the control store, reconciled its
-owned obligations and obtained a valid running lease. It supplies that lease to
+owned obligations, enrolled the execution journal and obtained a valid running
+lease. It supplies that lease to
 the command through `SIMPLE_AI_TRADING_BINANCE_RUNTIME_LEASE`. Never print,
 persist or recover its value from logs. The command does not acquire or release
 the lease, clear Stop, enroll control storage, or install a worker or restart
@@ -24,6 +25,39 @@ lost responses and cancellation. No process or thread is created. Request-level
 timeouts/freshness checks do not replace the pending independent hard-deadline
 supervisor. Do not infer application-wide crash or reboot protection from this
 command integration.
+
+## Execution storage setup
+
+Before acquiring an opening lease, inspect the shared execution directory and
+explicitly enroll its journal while the controller has no owner and Stop is
+latched. These actions are local: they send no account or order request, do not
+clear Stop and do not establish flat exposure. Setup constructs and closes one
+client solely to validate the configured testnet/Demo scope.
+
+```text
+python -m simple_ai_trading.entrypoint spot-roundtrip --action inspect-storage
+python -m simple_ai_trading.entrypoint spot-roundtrip --action provision-storage --yes
+```
+
+An existing journal requires the exact `journal_snapshot_sha256` returned by
+inspection, supplied as `--expected-snapshot-sha256`. This is explicit adoption,
+not permission to migrate a foreign or unscoped live ledger. Changed snapshots,
+already assigned UUIDs and existing markers reject. Adoption preserves pending
+obligations; it neither reconciles native exposure nor authorizes a new order.
+
+The independent marker defaults beside the journal. `--execution-enrollment`
+selects another explicit location; keep it consistent across setup and execution.
+Preserve it along with the journal and existing controller interlocks. Normal
+opening rejects missing/replaced journal files, missing/changed UUIDs, unfinished
+or missing markers and different enrolled interlocks. It never recreates them.
+
+If interruption left a **committed** prepared enrollment, inspect it and use
+`--action recover-storage --expected-store-id <exact-id>
+--expected-record-sha256 <exact-digest> --yes`. Both values must match the prepared
+record, and its committed UUID, scope and resources must still verify. An
+uncommitted or conflicting preparation stays blocked for reviewed restoration;
+do not delete its marker or provision over it. Coordinated rollback of all local
+authority remains outside this protection.
 
 ## Explicit allocations
 
@@ -91,5 +125,8 @@ write or automatic rearm. Unsupported partial resolution remains blocked.
 Output distinguishes observed movements from complete net asset movements.
 UNKNOWN output leaves total movements missing; it does not report zero cash or
 zero PnL. `COMPLETE` means the two orders reconciled, not restored initial assets,
-flat risk or profit. Independent execution-namespace loss/rollback detection,
-full writer fencing and native capital qualification remain open.
+flat risk or profit. Execution-store loss/replacement now blocks paired opening;
+coordinated rollback resistance, full writer fencing, verified relocation and
+native capital qualification remain open. Recovery and the receipt-owned second
+SELL do not require this opening enrollment; they retain their exact journal,
+scope, receipt and closing-interlock checks. A second BUY requires it.

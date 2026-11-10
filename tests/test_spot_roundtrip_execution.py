@@ -10,6 +10,7 @@ from simple_ai_trading.binance_execution_scope import (
     BINANCE_SPOT_TESTNET,
     BinanceExecutionScope,
 )
+from simple_ai_trading.binance_execution_storage import BinanceExecutionStorage
 from simple_ai_trading.binance_open_intents import (
     BinanceOpenIntentJournal,
     OpenIntentError,
@@ -170,6 +171,7 @@ def setup(tmp_path, mode="buy-sell"):
     )
     control = BinanceRuntimeControl(tmp_path / "runtime.sqlite3")
     control.provision_storage()
+    BinanceExecutionStorage(journal.journal, control).provision(scope=SCOPE)
     # This fixture has no positions or native account; it starts reconciled flat.
     assert control.complete_stale_stop(exposure_closed=True)
     lease = control.acquire()
@@ -258,7 +260,7 @@ def test_unqualified_account_or_fee_route_rejects_before_unknown(tmp_path, chang
     with pytest.raises(OpenIntentError):
         gateway.submit_first(req)
     assert client.writes == []
-    assert not gateway.journal.journal.path.exists()
+    assert gateway.journal.pending(scope=SCOPE) is None
 
 
 def test_stop_during_preflight_is_rechecked_before_journal_or_dispatch(tmp_path):
@@ -267,7 +269,7 @@ def test_stop_during_preflight_is_rechecked_before_journal_or_dispatch(tmp_path)
     with pytest.raises(RuntimeControlBlocked):
         gateway.submit_first(req)
     assert client.writes == []
-    assert not gateway.journal.journal.path.exists()
+    assert gateway.journal.pending(scope=SCOPE) is None
 
 
 def test_scope_rotation_and_expiry_fail_before_dispatch(tmp_path, monkeypatch):
@@ -286,7 +288,7 @@ def test_scope_rotation_and_expiry_fail_before_dispatch(tmp_path, monkeypatch):
     )
     with pytest.raises(OpenIntentError, match="expired"):
         gateway.submit_first(req)
-    assert not gateway.journal.journal.path.exists()
+    assert gateway.journal.pending(scope=SCOPE) is None
 
 
 @pytest.mark.parametrize(
@@ -363,10 +365,48 @@ def test_competing_second_dispatches_have_one_winner(tmp_path):
 
 def test_recovery_does_not_create_missing_storage(tmp_path):
     gateway, _, client, _ = setup(tmp_path)
+    gateway.journal.journal.path.unlink()
     with pytest.raises(OpenIntentError, match="no matching"):
         gateway.recover(IDENTITY)
     assert client.queries == [] and client.writes == []
     assert not gateway.journal.journal.path.exists()
+
+
+def test_opening_rechecks_execution_enrollment_after_account_preflight(tmp_path):
+    gateway, req, client, control = setup(tmp_path)
+    storage = BinanceExecutionStorage(gateway.journal.journal, control)
+    client.account_hook = storage.enrollment_path.unlink
+    with pytest.raises(OpenIntentError):
+        gateway.submit_first(req)
+    assert client.writes == []
+    assert gateway.journal.pending(scope=SCOPE) is None
+
+
+@pytest.mark.parametrize("after_prepare", [False, True])
+def test_storage_loss_inside_opening_guard_never_creates_or_dispatches(
+    tmp_path, monkeypatch, after_prepare
+):
+    gateway, req, client, control = setup(tmp_path)
+    original = SpotRoundtripJournal.prepare
+    storage = BinanceExecutionStorage(gateway.journal.journal, control)
+
+    def interrupted(journal, request, *, scope, create):
+        assert create is False
+        if after_prepare:
+            original(journal, request, scope=scope, create=create)
+            storage.enrollment_path.unlink()
+        else:
+            journal.journal.path.rename(tmp_path / "retained.sqlite3")
+            original(journal, request, scope=scope, create=create)
+
+    monkeypatch.setattr(SpotRoundtripJournal, "prepare", interrupted)
+    with pytest.raises(ValueError):
+        gateway.submit_first(req)
+    assert client.writes == []
+    if after_prepare:
+        assert gateway.journal.pending(scope=SCOPE)[1]["phase"] == "FIRST_UNKNOWN"
+    else:
+        assert not gateway.journal.journal.path.exists()
 
 
 def test_second_principal_rejects_foreign_wallet_inventory_before_account_access(
@@ -458,7 +498,7 @@ def test_known_second_side_external_fee_rejects_before_first_submission(tmp_path
     with pytest.raises(OpenIntentError, match="external fee"):
         gateway.submit_first(req)
     assert client.writes == []
-    assert not gateway.journal.journal.path.exists()
+    assert gateway.journal.pending(scope=SCOPE) is None
 
 
 @pytest.mark.skipif(

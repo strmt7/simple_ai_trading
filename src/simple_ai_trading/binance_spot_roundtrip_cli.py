@@ -16,6 +16,7 @@ import uuid
 
 from .api import BinanceAPIError, BinanceClient
 from .assets import is_supported_major_symbol, symbol_base_for_supported_quote
+from .binance_execution_storage import BinanceExecutionStorage
 from .binance_open_intents import OpenIntentError
 from .binance_runtime_control import (
     BinanceRuntimeControl,
@@ -264,6 +265,12 @@ def run_spot_roundtrip(
             ),
             enrollment_path=getattr(args, "runtime_enrollment", None),
         )
+        storage = BinanceExecutionStorage(
+            journal.journal, control, getattr(args, "execution_enrollment", None)
+        )
+        if action == "inspect-storage":
+            payload.update(storage.inspect())
+            return 0, payload
         if action == "status":
             payload["new_exposure_authorized"] = False
             payload.update(
@@ -284,7 +291,14 @@ def run_spot_roundtrip(
             except (RuntimeControlError, OSError, sqlite3.Error, ValueError):
                 payload.update(control_available=False, runtime_state="unavailable")
             return 0, payload
-        if action not in {"execute", "recover", "continue", "complete"}:
+        if action not in {
+            "execute",
+            "recover",
+            "continue",
+            "complete",
+            "provision-storage",
+            "recover-storage",
+        }:
             raise RoundtripCommandError("Unsupported roundtrip action.")
         if not getattr(args, "yes", False):
             raise RoundtripCommandError(
@@ -306,6 +320,43 @@ def run_spot_roundtrip(
             raise RoundtripCommandError(
                 "Roundtrip requires configured Binance credentials; no history lookup is permitted."
             )
+        if action in {"provision-storage", "recover-storage"}:
+            if any(
+                getattr(args, name, None) is not None
+                for name in (
+                    "quantity",
+                    "quote_budget",
+                    "operation_id",
+                )
+            ):
+                raise RoundtripCommandError(
+                    "Storage setup does not accept order allocations or IDs."
+                )
+            try:
+                client = client_factory(runtime)
+            except (TypeError, ValueError, OverflowError):
+                raise RoundtripCommandError(
+                    "Binance client configuration is invalid."
+                ) from None
+            with closing(client.session):
+                scope = client.execution_scope()
+                if action == "provision-storage":
+                    result = storage.provision(
+                        scope=scope,
+                        expected_snapshot_sha256=getattr(
+                            args, "expected_snapshot_sha256", None
+                        ),
+                    )
+                else:
+                    result = storage.recover(
+                        scope=scope,
+                        expected_store_id=getattr(args, "expected_store_id", None),
+                        expected_record_sha256=getattr(
+                            args, "expected_record_sha256", None
+                        ),
+                    )
+                payload.update(result)
+                return 0, payload
         if action != "execute" and (
             getattr(args, "quantity", None) is not None
             or getattr(args, "quote_budget", None) is not None
@@ -346,8 +397,13 @@ def run_spot_roundtrip(
             ) from None
         with closing(client.session):
             scope = client.execution_scope()
+            if action == "execute":
+                storage.verify(scope=scope)
             gateway = SpotRoundtripExecution(
-                client, journal, RuntimeLeaseInterlock(control, lease)
+                client,
+                journal,
+                RuntimeLeaseInterlock(control, lease),
+                execution_enrollment_path=getattr(args, "execution_enrollment", None),
             )
             if action == "execute":
                 request = _request(

@@ -231,13 +231,25 @@ infer current legal applicability from search snippets.
   Each owned HTTP session closes on completion, rejection and cancellation;
   constructor setup now also cleans partially initialized sessions. No worker,
   lease, Stop reset or persistent registration is created by the command.
-  The final source has 224 distinct focused checks across documented lanes:
+  That checkpoint's source has 224 distinct focused checks across documented lanes:
   223/224 in the combined lane, then all 32 command checks after correcting one
   fixture; production stayed unchanged. This is not a whole-suite/native result.
   Four command/native-declaration checks pass; the native binary is not rebuilt.
+- [Execution-store enrollment](review/2026-11-10/execution-store-enrollment/review.md)
+  closes a reproduced journal-loss path that allowed another BUY after an
+  unresolved fill. Paired opening requires an independent journal UUID/file and
+  controller-interlock binding before preflight and under admission; dispatch
+  never initializes missing storage. Explicit local Stop-latched setup, exact
+  adoption and committed prepared recovery preserve UNKNOWN and leave Stop
+  unchanged. Exact recovery and receipt-owned second SELL retain separate
+  authority; the second BUY requires opening enrollment. All 170 final focused
+  cases pass, including three native-declaration checks and a stable 24-cycle
+  handle/memory check. No native binary, account, market or training claim follows.
+  Coordinated rollback, verified relocation, universal fencing and independent
+  supervision remain open; see the updated [operator procedure](SPOT_ROUNDTRIP.md).
   [Operator guidance](SPOT_ROUNDTRIP.md) explains exact units and restart actions.
   External fee/FX admission, native filters/capital qualification, partial
-  resolution/rearm, execution-namespace loss/rollback, universal fencing and
+  resolution/rearm, coordinated rollback resistance, universal fencing and
   independent session supervision remain open. Original source phases remain in
   the [quote primitive](review/2026-11-10/spot-quote-principal/review.md),
   [paired journal](review/2026-11-10/spot-roundtrip-journal/review.md),
