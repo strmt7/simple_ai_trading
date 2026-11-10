@@ -3,8 +3,8 @@ from __future__ import annotations
 import asyncio
 from contextlib import closing
 import sqlite3
-import subprocess
 import sys
+from pathlib import Path
 from threading import Event, Thread
 
 import pytest
@@ -19,7 +19,8 @@ from simple_ai_trading.polymarket_runtime_control import (
     PolymarketRuntimeControlService,
     PolymarketRuntimeLeaseInterlock,
 )
-from simple_ai_trading import polymarket_runtime_control as runtime_control_module
+from simple_ai_trading import runtime_control as runtime_control_module
+from tools.cocoindex_agent_search import run_captured_process
 
 
 def test_runtime_control_enforces_one_lease_and_persistent_stop(tmp_path) -> None:
@@ -568,13 +569,14 @@ def test_expiry_stop_is_visible_in_a_fresh_interpreter(tmp_path) -> None:
         "assert not control.heartbeat(snapshot.lease_id); "
         "print(snapshot.stop_reason)"
     )
-    result = subprocess.run(
-        [sys.executable, "-c", script, str(path)],
-        capture_output=True,
-        text=True,
-        check=True,
+    result = run_captured_process(
+        [str(Path(sys.executable).resolve()), "-c", script, str(path)],
+        cwd=Path.cwd(),
+        env=None,
+        input_text="",
         timeout=10,
     )
+    assert result.returncode == 0, result.stderr
     assert result.stdout.strip() == "heartbeat_invalid_or_expired"
 
 

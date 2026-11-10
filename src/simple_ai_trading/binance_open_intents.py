@@ -61,18 +61,21 @@ class BinanceOpenIntentJournal:
             columns = tuple(
                 row[1] for row in connection.execute("PRAGMA table_info(open_intent)")
             )
-            if version not in {1, 2, 3} or columns != (
+            if version not in {1, 2, 3, 4} or columns != (
                 "client_id",
                 "position_id",
                 "request_json",
                 "state",
             ):
                 raise OpenIntentError("opening intent schema is not recognized")
-            if version in {2, 3} and tuple(
+            if version in {2, 3, 4} and tuple(
                 row[1]
                 for row in connection.execute("PRAGMA table_info(execution_scope)")
             ) != ("id", "scope_json"):
                 raise OpenIntentError("opening scope schema is not recognized")
+            from .binance_spot_roundtrip_intents import roundtrip_pending
+
+            roundtrip_pending(connection)
             return connection
         except BaseException:
             connection.close()
@@ -84,7 +87,7 @@ class BinanceOpenIntentJournal:
         scope: BinanceExecutionScope,
     ) -> None:
         """Fence the complete journal; legacy storage needs explicit migration."""
-        if connection.execute("PRAGMA user_version").fetchone()[0] not in {2, 3}:
+        if connection.execute("PRAGMA user_version").fetchone()[0] not in {2, 3, 4}:
             raise OpenIntentError("legacy journal requires explicit scope migration")
         encoded = json.dumps(asdict(scope), sort_keys=True, allow_nan=False)
         rows = connection.execute(
@@ -105,17 +108,17 @@ class BinanceOpenIntentJournal:
         if connection is None:
             raise OpenIntentError("opening requires durable execution storage")
         version = connection.execute("PRAGMA user_version").fetchone()[0]
-        if version not in {2, 3}:
+        if version not in {2, 3, 4}:
             raise OpenIntentError("legacy journal requires explicit scope migration")
         if connection.execute("SELECT 1 FROM execution_scope LIMIT 1").fetchone():
             self._bind_scope(connection, scope)
-            if version != 3:
+            if version not in {3, 4}:
                 raise OpenIntentError(
                     "legacy scope enrollment requires verified migration"
                 )
             return
         if (
-            version == 3
+            version in {3, 4}
             or connection.execute("SELECT 1 FROM open_intent LIMIT 1").fetchone()
         ):
             raise OpenIntentError("existing journal has lost its execution scope")
@@ -231,6 +234,15 @@ class BinanceOpenIntentJournal:
                     raise OpenIntentError("opening requires durable execution storage")
                 if unresolved_close_count(connection):
                     raise OpenIntentError("an unresolved closing blocks new exposure")
+                from .binance_spot_roundtrip_intents import (
+                    roundtrip_client_id_consumed,
+                    roundtrip_pending,
+                )
+
+                if roundtrip_pending(connection) is not None:
+                    raise OpenIntentError("an unresolved roundtrip blocks new exposure")
+                if roundtrip_client_id_consumed(connection, position.open_client_order_id):
+                    raise OpenIntentError("opening client identity belongs to a roundtrip")
                 if connection.execute(
                     "SELECT 1 FROM open_intent WHERE state != 'RECORDED' LIMIT 1"
                 ).fetchone():
@@ -382,6 +394,10 @@ class BinanceOpenIntentJournal:
                 closing_count = unresolved_close_count(connection)
                 if closing_count:
                     return f"unresolved_closing_intents={closing_count}"
+                from .binance_spot_roundtrip_intents import roundtrip_pending
+
+                if roundtrip_pending(connection) is not None:
+                    return "unresolved_spot_roundtrip=1"
                 if row[0] and not positions_present:
                     return "recorded_openings_missing_position_ledger"
                 return None

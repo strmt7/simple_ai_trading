@@ -1,5 +1,24 @@
 # Capital protection and final release verification
 
+The [local shared runtime control](review/2026-11-10/shared-runtime-control/review.md)
+extracts the Polymarket lease, pause, Stop and dispatch interlock into one neutral
+core. Its Polymarket adapter preserves existing storage and public interfaces;
+Binance has an independent namespace, with no cross-venue execution dependency.
+Real contained-process locking checks Stop ordering and later dispatch rejection.
+Binance integration, independent storage identity and session supervision remain
+open. A controller or cooperative guard alone cannot fence unguarded native calls
+or preempt a frozen process. The existing state-file control is not upgraded by
+creating this adapter, and the roundtrip still has its two direct writes.
+
+The [local roundtrip journal](review/2026-11-10/spot-roundtrip-journal/review.md)
+adds shared UNKNOWN admission, exact request units, source-bound observed cash,
+cross-writer client-ID consumption and noncreating recovery. Its 407 final
+affected checks include actual exit at four unfinished stages. It is not yet
+connected to the command's two native writes. Fee/capability/availability and
+dispatch authority, partial resolution, independent storage identity and the
+session supervisor remain requirements; no universal capital-protection claim
+follows from this local stage.
+
 The [Binance enrollment repair](review/2026-11-10/binance-scope-enrollment/review.md)
 prevents fresh credentials from inheriting unscoped live/unclassified history.
 Scope, exact paired bytes, version 3 and UNKNOWN enroll atomically. Changed or

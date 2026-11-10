@@ -1,0 +1,66 @@
+{
+  "accepted_edge": false,
+  "admission": [
+    "Qualified matching-user-agent robots policy or explicit 404/410 absence; strict precheck failure blocks navigation.",
+    "Exact URL, native actual HTTP 200/success, no native error, substantive complete target text within retained-output bound.",
+    "Manual review of received-asset, tax/special, discount/fallback meaning; fictional figures are not current account fees."
+  ],
+  "authority": {
+    "account_requests": 0,
+    "credential_use": false,
+    "market_requests": 0,
+    "orders": 0,
+    "protected_captures": 0,
+    "public_unauthenticated_read_only": true
+  },
+  "base_head": "34c80953011fc1f9ddf671520ee81b68450ee908",
+  "contract_sha256": "5a27e945109034aec8dc70851fe464e11b2be88a14542d3bb3fa5a9e5990853a",
+  "frozen_at_utc": "2026-11-10T05:08:04.951127+00:00",
+  "limits": {
+    "minimum_markdown_characters": 2000,
+    "native_primary_navigations": 1,
+    "native_retries": 0,
+    "native_robots_checks": true,
+    "overflow_prefix_extra_byte": 1,
+    "owned_child_deadline_seconds": 150,
+    "required_terms": [
+      "commission",
+      "standard",
+      "special",
+      "tax",
+      "bnb"
+    ],
+    "retained_native_output_byte_ceiling": 8388608,
+    "retained_output_ceiling_is_not_a_network_byte_cap": true,
+    "robots_body_budget_seconds": 20,
+    "robots_prefix_byte_ceiling": 262144,
+    "robots_socket_timeouts_seconds": [
+      10,
+      10
+    ],
+    "source_page_timeout_ms": 45000,
+    "strict_robots_precheck": 1,
+    "user_agent": "simple-ai-trading-public-research/1"
+  },
+  "private_intent_sha256": "1bcec405b8af4deb5105653a2b9ca1c17b3367e57e7c467c238eada2d8fb2636",
+  "profitability_claim": false,
+  "provenance": {
+    "coverage_limit": "Tracked docs and named small structured private records; raw bodies, immutable archived Git objects and external caches excluded. No global unused-source claim.",
+    "matches": 3,
+    "path": "data/research/2026-11-10-spot-commission-source-0500/url-provenance.json",
+    "scanned_files": 3164,
+    "sha256": "2332f358ec24db47feb542c7f73cc9b10c4749443e1c9835bea179247c24d59d"
+  },
+  "provider": {
+    "controller_sha256": "552d3a1dc6ada3e3785ec282f84ae9822bdcd84e1a58634b8c7c28622c39bb3e",
+    "preflight_sha256": "53cc92f67be0bdf25e3d0f02bb983a7509bfe6006d5809c98da7300832cffc79",
+    "read_only_verification_sha256": "d53ef55f91d6665063338d7b6e085daf12da0ac30e2910eb76fd2e751c80924f",
+    "shim_sha256": "f019c6e445af17431052613457f114e380f2dfa7735067e1ecaf31e97978a650",
+    "version": "0.9.5+flitzzip.portable2"
+  },
+  "question": "Which assets pay BUY/SELL commissions, how are standard/tax/special rates combined, and how do returned BNB flags and discount multiplier affect routing and fallback?",
+  "schema": "one-use-spot-commission-primary-doc-contract-v1",
+  "source_selection": "The admitted REST document at this exact immutable publisher revision links this FAQ. Older August contracts cite a different revision and raw hash; no saved FAQ body was found in the inspected filename/metadata coverage. This is documentation-only current-protocol alignment, not renewed fee-hedge or triangle sampling.",
+  "terminal_rule": "Any failed attempt is terminal and retained; no alias, redirect follow-up, changed threshold or challenge bypass. Successful source admission permits protocol implementation only, not signed account requests, orders, economic sampling or edge qualification.",
+  "url": "https://raw.githubusercontent.com/binance/binance-spot-api-docs/2bae3f5bd622ebfdea593daed066df14dc7e7362/faqs/commission_faq.md"
+}

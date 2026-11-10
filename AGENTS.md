@@ -467,15 +467,21 @@ large CSV files. The detailed workflow and imported-tool provenance are in
 
 ## Verification
 
-- Invoke repository tests as `uv run python -m pytest`; the `uv run pytest`
-  console entry may omit the repository root and cause false collection errors
-  for tests that import `tools.*`.
+- Invoke tests as `uv run --no-sync python -m pytest` in the explicitly selected
+  project environment. An owned subprocess may equivalently use that environment's
+  verified absolute `sys.executable -m pytest`; do not infer a host interpreter or
+  use a relative Windows executable. The `uv run pytest` console entry may omit
+  the repository root and cause false collection errors for `tools.*` imports.
 - Give each test invocation a new, verified-nonexistent `--basetemp` under
   ignored task-owned storage. Pytest can delete an existing explicit base and
   inspect shared default temporary directories during cleanup. Never reuse a
   base, remove another session's files or change host ACLs to repair that cleanup.
 - During iteration, run the smallest focused test and Ruff check. Every new
   branch needs a direct assertion, including normal and fallback error paths.
+- Bind exact source bytes before a lane used for checkpoint claims. Preserve
+  needed uncommitted source or patches before later edits. Logs without their
+  complete source phase are diagnostic history, not reproducible qualification;
+  do not relabel them as the current revision or rerun unchanged checks for prose.
 - At a behavior checkpoint, run the complete affected-domain suite once.
 - Run full pytest and coverage only for shared core, release preparation, or a
   significant final handoff; do not repeat them after each edit.

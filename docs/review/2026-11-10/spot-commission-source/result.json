@@ -1,0 +1,120 @@
+{
+  "accepted_edge": false,
+  "authority": {
+    "account_requests": 0,
+    "benchmarks": 0,
+    "credential_use": false,
+    "market_requests": 0,
+    "model_fits": 0,
+    "native_robots_check_enabled": true,
+    "new_primary_document_navigations": 1,
+    "orders": 0,
+    "persistent_tasks_installed": 0,
+    "protected_data_access": false,
+    "strict_robots_prechecks": 1
+  },
+  "base_head": "34c80953011fc1f9ddf671520ee81b68450ee908",
+  "capture": {
+    "exit_code": 0,
+    "markdown_characters": 6332,
+    "native_bytes": 30444,
+    "native_navigation_started": true,
+    "native_sha256": "6210cc877d69e85dbf6a152cfb67182860364d166ca5b286b9cdf8ccb140aa32",
+    "native_success": true,
+    "required_terms": {
+      "bnb": true,
+      "commission": true,
+      "special": true,
+      "standard": true,
+      "tax": true
+    },
+    "source_admitted": true,
+    "status_code": 200,
+    "url": "https://raw.githubusercontent.com/binance/binance-spot-api-docs/2bae3f5bd622ebfdea593daed066df14dc7e7362/faqs/commission_faq.md"
+  },
+  "contract_sha256": "5a27e945109034aec8dc70851fe464e11b2be88a14542d3bb3fa5a9e5990853a",
+  "created_at_utc": "2026-11-10T05:52:27.493349+00:00",
+  "current_source_canonical_LF_sha256": {
+    "src/simple_ai_trading/api.py": "699f7e36fdd6329d0f846cb0c67a91b5a799c3c4a74d2421cc7a5e1e9edba8ca",
+    "src/simple_ai_trading/binance_close_intents.py": "75a07b50ce061343f48a00c3f49e360fd4931b81e73d874f09f8a9820358853b",
+    "src/simple_ai_trading/binance_open_intents.py": "6b61bbb0401007e70bb2ae0ebef475dd8aa32dedfe3fd16b54b24a3fe85e2793",
+    "src/simple_ai_trading/binance_order_responses.py": "0094163663698b5ba63303e4c7a68153d37a4e6c3ca819d1a5283ca343de7e38",
+    "src/simple_ai_trading/binance_spot_commissions.py": "f5d735860fc2ecfdf637fda192d14e183a2060f83d390b0afeae09c4843fea3f",
+    "src/simple_ai_trading/binance_spot_roundtrip_intents.py": "06e356a7907f3a9cc4f00db75c12f1c4bd118d1580045f7266b1e6ebdba64e09",
+    "src/simple_ai_trading/position_transactions.py": "743275b5e92337bd24825c7b4e4f2d79c1ecb7556bf02d8d56cadfcbe148d97b",
+    "tests/test_spot_commission_schedule.py": "796fd236f9b7b900476217a1eb0e5d1bd963c760ac70c4288cb3c8e894ca1fc1",
+    "tests/test_spot_quote_order_binding.py": "af653c1f501627a403eec6e2a7f8d711075bef2e264f52b854d9e4896223ed91",
+    "tests/test_spot_roundtrip_intents.py": "4b33813f7eb8e7f34541715ae5f142af406839629a0c4dbfaa0294fa1626bb80"
+  },
+  "decisions": {
+    "actual_account_rates_or_fee_asset_funding_qualified": false,
+    "fee_hedge_triangle_populations_reopened": false,
+    "independent_supervisor_complete": false,
+    "legacy_float_calculation_changed": false,
+    "native_command_wired": false,
+    "persistent_binance_dispatch_control_integrated": false,
+    "positive_extra_asset_fees_supported_by_current_journal": false,
+    "prior_journal_phase_requalified_by_this_lane": false,
+    "protocol_source_admitted": true,
+    "rate_output_is_actual_fee_asset_amount": false
+  },
+  "goal_complete": false,
+  "local_unpublished_at_recording": true,
+  "native_source": {
+    "complete_relevant_text_reviewed": true,
+    "fictional_values_used_as_runtime_defaults": false,
+    "journal_sha256": "c97fd3aa9459c0e0146ef8cb24368a0ebd1326928d271798e8750b17ea853307",
+    "path": "data/research/2026-11-10-spot-commission-source-0500/commission-faq.native.json",
+    "redirected_status_code": 200,
+    "redirected_url": "https://raw.githubusercontent.com/binance/binance-spot-api-docs/2bae3f5bd622ebfdea593daed066df14dc7e7362/faqs/commission_faq.md",
+    "robots_http_status": 404,
+    "robots_raw_sha256": "d5558cd419c8d46bdc958064cb97f963d1ea793866414c025906ec15033512ed",
+    "sha256": "6210cc877d69e85dbf6a152cfb67182860364d166ca5b286b9cdf8ccb140aa32"
+  },
+  "navigation": {
+    "index_is_current_after_later_api_edits": false,
+    "index_refresh_log_sha256": "4944864b23a7a84f099c22b774b4992b8a2d3a5d8d34ef8928f7266021db643b",
+    "relevant_live_sources_confirmed": [
+      "src/simple_ai_trading/autonomous.py",
+      "src/simple_ai_trading/polymarket_runtime_control.py",
+      "src/simple_ai_trading/polymarket_live.py",
+      "src/simple_ai_trading/polymarket_live_cli.py"
+    ],
+    "semantic_search_receipt_sha256": "10a9d50f7910f7e1af1cc6a08086ab3b111dfa769598583702c9fd439a23a3be"
+  },
+  "profitability_claim": false,
+  "registered_counts": {
+    "hypotheses": 65,
+    "observations": 204,
+    "qualified_stable_edges": 0,
+    "scoped_mechanisms": 37
+  },
+  "result_sha256": "c4ddcdae3963da98266fd00fea321696ac45f2f35e283709403db27266136414",
+  "schema": "local-spot-commission-source-and-exact-reader-v1",
+  "test_phases": [
+    {
+      "errors": 0,
+      "failures": 0,
+      "lane": "fee-tests-01",
+      "log_sha256": "66cbe2ddb6aa4d8803edb0d7a0a99436c63a10a1df04703356c3346ae65c2458",
+      "skipped": 0,
+      "source_bound_before_launch": true,
+      "source_receipt": "data/research/2026-11-10-spot-commission-source-0500/fee-phase-01-source/receipt.json",
+      "source_receipt_sha256": "0747e8d9c0e058d9f57fd97b55860262571f68574e9259d60ac0bd9de18c8ba6",
+      "tests": 116,
+      "xml_sha256": "76f0f032de3b857bab891730a29a52cc9185c7e1d33d550ff9e11f11a2a4c785"
+    },
+    {
+      "errors": 0,
+      "failures": 0,
+      "lane": "fee-final-02",
+      "log_sha256": "badf4f38758780d0ca31e4b2536eb55e0d174f929b6d3f4a7ea3e6721aad05f2",
+      "skipped": 0,
+      "source_bound_before_launch": true,
+      "source_receipt": "data/research/2026-11-10-spot-commission-source-0500/fee-phase-02-source/receipt.json",
+      "source_receipt_sha256": "a3b56138081ff3c5f08563afc624dd394625551b44bcdc49c1b8ba3b38f01634",
+      "tests": 230,
+      "xml_sha256": "3c2262230f6e4d36673e754acc8d01e953ed5efcafdc2c1ca5b6b18f90e27231"
+    }
+  ]
+}

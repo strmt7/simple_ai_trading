@@ -97,6 +97,10 @@ def prepare_close(
                 raise OpenIntentError("closing requires durable execution storage")
             # Legacy positions cannot inherit the currently configured account.
             store.opening_intents._bind_scope(connection, scope)
+            from .binance_spot_roundtrip_intents import roundtrip_client_id_consumed
+
+            if roundtrip_client_id_consumed(connection, client_id):
+                raise OpenIntentError("closing client identity belongs to a roundtrip")
             opens = store._open_entries(
                 store._decode(transaction.read(store.open_path), strict=True),
                 strict=True,

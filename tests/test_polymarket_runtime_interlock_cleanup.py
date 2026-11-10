@@ -100,14 +100,14 @@ def test_interlock_setup_failure_closes_handle_and_releases_mutex(
 ):
     path = tmp_path / "entry.lock"
     files = observe_first_open(monkeypatch, path, setup_failure=failure)
-    original_fsync = runtime.os.fsync
+    original_fsync = os.fsync
 
     def fsync(fd):
         if failure == "fsync" and files and not files[0].raw.closed:
             raise OSError("injected setup fsync failure")
         return original_fsync(fd)
 
-    monkeypatch.setattr(runtime.os, "fsync", fsync)
+    monkeypatch.setattr(os, "fsync", fsync)
     lock = runtime._CrossProcessFileLock(path, timeout_seconds=0.2)
     try:
         with pytest.raises(OSError, match="injected setup"):

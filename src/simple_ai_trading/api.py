@@ -14,13 +14,17 @@ from decimal import Decimal, ROUND_DOWN, InvalidOperation
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from collections.abc import Mapping, Sequence
-from typing import Any, Dict, List, Tuple
+from typing import TYPE_CHECKING, Any, Dict, List, Tuple
 from urllib.parse import parse_qsl, urlencode, urlsplit
 
 import requests
 
-from .assets import MAX_AUTONOMOUS_LEVERAGE
-from .binance_order_responses import MarketOrderBinding, validate_queried_order
+from .assets import MAX_AUTONOMOUS_LEVERAGE, is_supported_major_symbol
+from .binance_order_responses import (
+    MarketOrderBinding,
+    SpotQuoteOrderBinding,
+    validate_queried_order,
+)
 from .binance_execution_scope import (
     BINANCE_FUTURES_DEMO,
     BINANCE_FUTURES_TESTNET,
@@ -38,6 +42,9 @@ _RETRY_BAPI_CODES = {-1003, -1007}
 _SENSITIVE_QUERY_FIELDS = {"signature", "timestamp", "recvWindow"}
 
 JsonMap = dict[str, Any]
+
+if TYPE_CHECKING:
+    from .binance_spot_commissions import SpotCommissionSchedule
 
 
 def _scope_kwargs(
@@ -1106,13 +1113,7 @@ class BinanceClient:
                 source="binance_futures_user_commission_rate",
             )
 
-        payload = self._request_dict(
-            "GET",
-            "/api/v3/account/commission",
-            {"symbol": normalized_symbol},
-            signed=True,
-            label="spot commission rate",
-        )
+        payload = self._spot_commission_payload(normalized_symbol)
         response_symbol = str(payload.get("symbol") or "").strip().upper()
         if response_symbol != normalized_symbol:
             raise BinanceAPIError("Unexpected symbol in spot commission-rate response")
@@ -1155,6 +1156,43 @@ class BinanceClient:
             taker_rate=total_rate("taker"),
             source="binance_spot_user_commission_rate_conservative",
         )
+
+    def _spot_commission_payload(
+        self, symbol: str, *, expected_scope: BinanceExecutionScope | None = None
+    ) -> JsonMap:
+        return self._request_dict(
+            "GET",
+            "/api/v3/account/commission",
+            {"symbol": symbol},
+            signed=True,
+            label="spot commission rate",
+            **_scope_kwargs(expected_scope),
+        )
+
+    def get_spot_commission_schedule(
+        self, symbol: str, *, expected_scope: BinanceExecutionScope
+    ) -> SpotCommissionSchedule:
+        """Retain exact side rates and routing; the caller must bind age/allocation."""
+        from .binance_spot_commissions import parse_spot_commission_schedule
+
+        normalized = str(symbol or "").strip().upper()
+        if (
+            self.market_type != "spot"
+            or re.fullmatch(r"[A-Z0-9]{1,32}", normalized) is None
+            or not is_supported_major_symbol(normalized)
+        ):
+            raise BinanceAPIError("Exact Spot commission query requires BTC/ETH/SOL")
+        if (
+            not isinstance(expected_scope, BinanceExecutionScope)
+            or expected_scope.market_type != "spot"
+            or self.execution_scope() != expected_scope
+        ):
+            raise BinanceAPIError("Spot commission execution scope differs")
+        payload = self._spot_commission_payload(normalized, expected_scope=expected_scope)
+        try:
+            return parse_spot_commission_schedule(payload, symbol=normalized)
+        except ValueError as exc:
+            raise BinanceAPIError(str(exc)) from None
 
     def get_symbol_price(self, symbol: str) -> Tuple[float, int]:
         endpoint = (
@@ -1310,6 +1348,64 @@ class BinanceClient:
             raise BinanceAPIError(str(exc)) from None
         return response
 
+    def place_spot_quote_buy(
+        self,
+        symbol: str,
+        quote_quantity: str,
+        *,
+        dry_run: bool,
+        client_order_id: str,
+        expected_scope: BinanceExecutionScope,
+    ) -> Dict[str, object]:
+        """Submit an exact quote principal, excluding commissions and other costs.
+
+        A durable caller must allocate cash and persist this exact client ID and
+        amount before dispatch. This primitive proves neither that allocation nor
+        terminal fees, acquired inventory or roundtrip recovery. No price-based
+        conversion or automatic client ID is available on this path.
+        """
+        if self.market_type != "spot" or type(dry_run) is not bool:
+            raise BinanceAPIError("Quote BUY requires Spot and an explicit dry_run boolean")
+        if (
+            not isinstance(expected_scope, BinanceExecutionScope)
+            or expected_scope.market_type != "spot"
+        ):
+            raise BinanceAPIError("Quote BUY requires an explicit Spot execution scope")
+        symbol = str(symbol or "").upper()
+        if not is_supported_major_symbol(symbol):
+            raise BinanceAPIError("Quote BUY supports only BTC/ETH/SOL in USDC/USDT")
+        try:
+            binding = SpotQuoteOrderBinding(
+                symbol, quote_quantity, _validated_client_order_id(client_order_id)
+            )
+        except ValueError as exc:
+            raise BinanceAPIError(str(exc)) from None
+        payload = {
+            "symbol": symbol,
+            "side": "BUY",
+            "type": "MARKET",
+            "quoteOrderQty": binding.quote_quantity,
+            "newClientOrderId": binding.client_order_id,
+            "newOrderRespType": "FULL",
+        }
+        if dry_run:
+            return {"dryRun": True, **payload, "clientOrderId": binding.client_order_id}
+        if self.execution_scope() != expected_scope:
+            raise BinanceAPIError("Quote BUY execution scope changed before dispatch")
+        response = self._request_dict(
+            "POST",
+            "/api/v3/order",
+            payload,
+            signed=True,
+            label="quote BUY order",
+            expected_scope=expected_scope,
+        )
+        try:
+            binding.validate(response)
+        except ValueError as exc:
+            raise BinanceAPIError(str(exc)) from None
+        return response
+
     def get_order(
         self,
         symbol: str,
@@ -1317,7 +1413,7 @@ class BinanceClient:
         order_id: int | str | None = None,
         orig_client_order_id: str | None = None,
         expected_scope: BinanceExecutionScope | None = None,
-        expected_order_binding: MarketOrderBinding | None = None,
+        expected_order_binding: MarketOrderBinding | SpotQuoteOrderBinding | None = None,
     ) -> Dict[str, object]:
         symbol = str(symbol or "").upper()
         if not symbol:
@@ -1337,7 +1433,7 @@ class BinanceClient:
         if "orderId" not in params and "origClientOrderId" not in params:
             raise BinanceAPIError("Order query requires orderId or origClientOrderId")
         if expected_order_binding is not None and (
-            not isinstance(expected_order_binding, MarketOrderBinding)
+            not isinstance(expected_order_binding, (MarketOrderBinding, SpotQuoteOrderBinding))
             or expected_order_binding.symbol != symbol
             or expected_order_binding.market_type != self.market_type
             or expected_order_binding.client_order_id != orig_client_order_id
@@ -1345,6 +1441,11 @@ class BinanceClient:
             raise BinanceAPIError(
                 "Order query binding differs from its selectors or product scope"
             )
+        if isinstance(expected_order_binding, SpotQuoteOrderBinding) and (
+            not isinstance(expected_scope, BinanceExecutionScope)
+            or expected_scope.market_type != "spot"
+        ):
+            raise BinanceAPIError("Quote BUY recovery requires its explicit Spot scope")
         endpoint = "/api/v3/order" if self.market_type == "spot" else "/fapi/v1/order"
         response = self._request_dict(
             "GET",

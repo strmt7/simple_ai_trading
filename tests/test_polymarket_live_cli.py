@@ -979,7 +979,7 @@ def test_polymarket_operator_module_has_no_binance_execution_dependency() -> Non
     assert "PolymarketSettlementService" in source
 
 
-def test_polymarket_authority_modules_import_only_polymarket_local_boundaries() -> None:
+def test_polymarket_authority_modules_keep_venue_boundaries_independent() -> None:
     authority_modules = (
         "polymarket_live.py",
         "polymarket_live_v2.py",
@@ -998,7 +998,11 @@ def test_polymarket_authority_modules_import_only_polymarket_local_boundaries() 
         for node in ast.walk(tree):
             if isinstance(node, ast.ImportFrom) and node.level:
                 assert node.module is not None
-                assert node.module.startswith("polymarket"), (
+                shared_control = (
+                    filename == "polymarket_runtime_control.py"
+                    and node.module == "runtime_control"
+                )
+                assert node.module.startswith("polymarket") or shared_control, (
                     f"{filename} imports non-Polymarket local module "
                     f"{node.module!r}; keep venue authority independent"
                 )
@@ -1009,6 +1013,15 @@ def test_polymarket_authority_modules_import_only_polymarket_local_boundaries() 
                             f"{filename} imports non-Polymarket package module "
                             f"{alias.name!r}; keep venue authority independent"
                         )
+
+    # The sole shared control dependency contains no venue adapter imports.
+    shared = ast.parse((package_root / "runtime_control.py").read_text(encoding="utf-8"))
+    for node in ast.walk(shared):
+        if isinstance(node, ast.ImportFrom):
+            assert node.level == 0
+            assert not (node.module or "").startswith("simple_ai_trading")
+        elif isinstance(node, ast.Import):
+            assert all(not alias.name.startswith("simple_ai_trading") for alias in node.names)
 
 
 def test_supervision_argument_bounds_fail_before_network_tasks() -> None:

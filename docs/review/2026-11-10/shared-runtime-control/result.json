@@ -1,0 +1,120 @@
+{
+  "accepted_edge": false,
+  "authority": {
+    "account_requests": 0,
+    "benchmarks": 0,
+    "credential_use": false,
+    "market_requests": 0,
+    "model_fits": 0,
+    "new_document_navigations": 0,
+    "orders": 0,
+    "persistent_tasks_installed": 0,
+    "protected_partial_data_access": false
+  },
+  "base_head": "34c80953011fc1f9ddf671520ee81b68450ee908",
+  "checks": {
+    "benchmark_timing_claim": false,
+    "diff_check_passed": true,
+    "full_pytest_or_coverage_run": false,
+    "ruff_passed": true
+  },
+  "compatibility": {
+    "full_behavior_equivalence_proved": false,
+    "matching_lifecycle_steps": 14,
+    "original_database_control_row_unchanged_on_adoption": true,
+    "original_source_sha256": "48f91bee8aaa111e21f67a9d7466be49a35e61e3f4c522d4e691e5661e0ada7d",
+    "replay_sha256": "2749fef7a9f117cc037921e9ae32ccc00bc2c0516198457af0eda0be8845cc0b",
+    "runner_sha256": "3c6ecd426643f86416a22f469d51f216c74cfea7fd11b27a016e3b508479ea93",
+    "snapshots_rows_digests_returns_and_exception_messages_match": true
+  },
+  "created_at_utc": "2026-11-10T06:07:59.815913+00:00",
+  "current_source_canonical_LF_sha256": {
+    "src/simple_ai_trading/api.py": "699f7e36fdd6329d0f846cb0c67a91b5a799c3c4a74d2421cc7a5e1e9edba8ca",
+    "src/simple_ai_trading/binance_close_intents.py": "75a07b50ce061343f48a00c3f49e360fd4931b81e73d874f09f8a9820358853b",
+    "src/simple_ai_trading/binance_open_intents.py": "6b61bbb0401007e70bb2ae0ebef475dd8aa32dedfe3fd16b54b24a3fe85e2793",
+    "src/simple_ai_trading/binance_order_responses.py": "0094163663698b5ba63303e4c7a68153d37a4e6c3ca819d1a5283ca343de7e38",
+    "src/simple_ai_trading/binance_runtime_control.py": "f41c91aff53f75a3c728f6ee68a4b09879a6132591df3b75e0d808f4258d6433",
+    "src/simple_ai_trading/binance_spot_commissions.py": "f5d735860fc2ecfdf637fda192d14e183a2060f83d390b0afeae09c4843fea3f",
+    "src/simple_ai_trading/binance_spot_roundtrip_intents.py": "06e356a7907f3a9cc4f00db75c12f1c4bd118d1580045f7266b1e6ebdba64e09",
+    "src/simple_ai_trading/polymarket_runtime_control.py": "1903deb0c1dcf684fa328ffbe2eb3dec45b429fd87777b18e69e89bc7d194af2",
+    "src/simple_ai_trading/position_transactions.py": "743275b5e92337bd24825c7b4e4f2d79c1ecb7556bf02d8d56cadfcbe148d97b",
+    "src/simple_ai_trading/runtime_control.py": "cbae8d2692887495914086351bcaecfd154ddbbc247474db8de72ba0270947ab",
+    "tests/test_polymarket_live.py": "ec793bd0b2381d350bea64338ac1bdf0de5cb2db9b9f2d9c4f6aa539c6872267",
+    "tests/test_polymarket_live_cli.py": "54bd3c4c3f6224dae7e03f3e2f18f21e1e175b7b8e36e0ba78c0aff7368eca77",
+    "tests/test_polymarket_runtime_control.py": "5bd3f514a5b69b29c713c56311738de5148649ea5dea1f07ef4ecb1e9920ec1e",
+    "tests/test_polymarket_runtime_interlock_cleanup.py": "f4e9e4eaa8fef508cd10d8c037409666859fd9c914d42f4302130fc862c515a6",
+    "tests/test_shared_runtime_control.py": "3fc0039af63ae12c0256979628a57be7f99568790a60c135750bdf226de6eead",
+    "tests/test_spot_commission_schedule.py": "796fd236f9b7b900476217a1eb0e5d1bd963c760ac70c4288cb3c8e894ca1fc1",
+    "tests/test_spot_quote_order_binding.py": "af653c1f501627a403eec6e2a7f8d711075bef2e264f52b854d9e4896223ed91",
+    "tests/test_spot_roundtrip_intents.py": "4b33813f7eb8e7f34541715ae5f142af406839629a0c4dbfaa0294fa1626bb80"
+  },
+  "goal_complete": false,
+  "implementation": {
+    "binance_separate_namespace": true,
+    "independent_trading_supervisor_complete": false,
+    "native_binance_callers_wired": false,
+    "new_namespace_guesses_legacy_schema": false,
+    "older_test_subprocess_containment_repaired": true,
+    "one_shared_neutral_core": true,
+    "polymarket_original_table_schema_migration_exceptions_and_public_types_preserved": true,
+    "real_owned_child_dispatch_lock_test_passes": true,
+    "roundtrip_command_wired": false,
+    "whole_namespace_or_database_loss_independently_fenced": false
+  },
+  "local_unpublished_at_recording": true,
+  "navigation": {
+    "exact_previously_routed_source_only": true,
+    "index_refreshed_for_this_phase": false,
+    "new_broad_or_semantic_search": false
+  },
+  "previous_phase_logs_relabelled_as_current": false,
+  "profitability_claim": false,
+  "registered_counts": {
+    "hypotheses": 65,
+    "observations": 204,
+    "qualified_stable_edges": 0,
+    "scoped_mechanisms": 37
+  },
+  "result_sha256": "370d8d8f12f7310e914b46b817edae3e7edec0070f5206a12b16d55ca511387b",
+  "schema": "local-shared-runtime-control-v1",
+  "test_phases": [
+    {
+      "errors": 0,
+      "failures": 0,
+      "full_source_snapshot": "data/research/2026-11-10-shared-runtime-control-0600/phase-01-source",
+      "lane": "runtime-phase-01",
+      "log_sha256": "77ac46c9af24fe71cc4b830f90072daaa577590e8d82cc83e719d64ad4587e95",
+      "skipped": 0,
+      "source_captured_before_launch_at_utc": "2026-11-10T06:01:11.009511+00:00",
+      "source_receipt_sha256": "b5f19dbc54487fa6de12f976f9c013f3008e103a6c442aef29bf6402bfda986f",
+      "test_modules": [
+        "tests/test_shared_runtime_control.py",
+        "tests/test_polymarket_runtime_control.py",
+        "tests/test_polymarket_runtime_interlock_cleanup.py",
+        "tests/test_polymarket_live.py",
+        "tests/test_polymarket_live_cli.py"
+      ],
+      "tests": 222,
+      "xml_sha256": "fe20b3a50348fb6e0509ce767f0ae2407666ac5b935e2ef88ddb64305ddbf5d8"
+    },
+    {
+      "errors": 0,
+      "failures": 0,
+      "full_source_snapshot": "data/research/2026-11-10-shared-runtime-control-0600/phase-02-source",
+      "lane": "runtime-final-02",
+      "log_sha256": "77ac46c9af24fe71cc4b830f90072daaa577590e8d82cc83e719d64ad4587e95",
+      "skipped": 0,
+      "source_captured_before_launch_at_utc": "2026-11-10T06:05:29.283989+00:00",
+      "source_receipt_sha256": "d8f2af11908c754b4f5b4353c049301babfb2d35b6cc44a97cb162ab569f6d5a",
+      "test_modules": [
+        "tests/test_shared_runtime_control.py",
+        "tests/test_polymarket_runtime_control.py",
+        "tests/test_polymarket_runtime_interlock_cleanup.py",
+        "tests/test_polymarket_live.py",
+        "tests/test_polymarket_live_cli.py"
+      ],
+      "tests": 222,
+      "xml_sha256": "66480eedeed5404b318a4ce1cefd8b3c5b72373ce766cf437a40ad13a888a15d"
+    }
+  ]
+}

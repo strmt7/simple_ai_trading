@@ -1,0 +1,77 @@
+{
+  "accepted_edge": false,
+  "added_api_methods": [
+    "place_spot_quote_buy"
+  ],
+  "base_head": "34c80953011fc1f9ddf671520ee81b68450ee908",
+  "changed_api_methods": [
+    "get_order"
+  ],
+  "command_migrated": false,
+  "durable_two_leg_workflow_complete": false,
+  "fees_or_complete_cash_budget_qualified": false,
+  "focused_case_union": 236,
+  "lanes": [
+    {
+      "errors": 0,
+      "failures": 0,
+      "name": "quote-tests-01",
+      "raw_log": {
+        "path": "data/research/2026-11-10-spot-roundtrip-cash-0400/quote-tests-01.log",
+        "sha256": "2b7c77c0ce7f6a1db04b698f66ff729454c4c3a18cb58e6372d0257ebe62d72d"
+      },
+      "tests": 144
+    },
+    {
+      "errors": 0,
+      "failures": 0,
+      "name": "quote-final-02",
+      "raw_log": {
+        "path": "data/research/2026-11-10-spot-roundtrip-cash-0400/quote-final-02.log",
+        "sha256": "c916f09fa4d2f511a008f0cf7dc7ee3eb47fa955d9ebf0db05dc2151e050f36d"
+      },
+      "tests": 233
+    },
+    {
+      "errors": 0,
+      "failures": 0,
+      "name": "native-transport-04",
+      "raw_log": {
+        "path": "data/research/2026-11-10-spot-roundtrip-cash-0400/native-transport-04.log",
+        "sha256": "ebe84d960920387b50d8cb31d9331e72a7130478a5c6dcbe34d900f6832ac3c2"
+      },
+      "tests": 3
+    }
+  ],
+  "local_unpublished_work": true,
+  "no_native_account_or_order_requests": true,
+  "profitability_claim": false,
+  "qualified_stable_edges": 0,
+  "result_sha256": "4ab1f300157078ed1a294f89e2c91623f01f5c77669db25cb8129ad65d91a50b",
+  "roundtrip_counterexample": {
+    "constructed_later_buy_price": "200",
+    "current_cli_uses_new_quote_api": false,
+    "excess_over_first_sale_proceeds": "100",
+    "foreign_free_quote_balance": "900",
+    "native_first_sale_quote_proceeds": "100",
+    "new_quote_api_would_transmit_principal": "100",
+    "required_quote_principal_at_later_price": "200",
+    "returned_base_buy_quantity": "1",
+    "stale_reference_price": "100",
+    "total_wallet_free_quote": "1000"
+  },
+  "schema": "local-spot-quote-principal-prerequisite-v1",
+  "scope": "Synthetic cash counterexample and exact changed API definitions only; current roundtrip remains unchanged and unqualified.",
+  "source_provenance": {
+    "adjudication_sha256": "ca4ebf3f7c047fda9bf85cac1f6dd1cf96804004b9b232a3fc8444eccd29637d",
+    "new_source_requests": 0,
+    "prior_review": "docs/review/2026-11-10/spot-quote-budget-source/adjudication.json",
+    "retained_native_sha256": "b6145ce261b578c46f79d54d4659ef4f82f950594c44b60639c8893b76b865c7"
+  },
+  "source_sha256": {
+    "src/simple_ai_trading/api.py": "41487f0beefbea15596d95cb44b38b4c7eab79e6b1fb4269e20ca52ebc47ff06",
+    "src/simple_ai_trading/binance_order_responses.py": "0094163663698b5ba63303e4c7a68153d37a4e6c3ca819d1a5283ca343de7e38",
+    "src/simple_ai_trading/cli.py": "885399ed1d59a7fe4af459bd0f020a05141fad8cede46834d62d8e84118daaeb",
+    "tests/test_spot_quote_order_binding.py": "af653c1f501627a403eec6e2a7f8d711075bef2e264f52b854d9e4896223ed91"
+  }
+}

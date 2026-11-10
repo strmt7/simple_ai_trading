@@ -1,0 +1,140 @@
+{
+  "accepted_edge": false,
+  "authority": {
+    "actual_user_namespaces_migrated": 0,
+    "benchmarks": 0,
+    "credential_use": false,
+    "market_requests": 0,
+    "model_fits": 0,
+    "native_account_or_order_requests": 0,
+    "new_source_requests": 0,
+    "persistent_tasks_installed": 0,
+    "unrelated_processes_touched": false
+  },
+  "base_head": "34c80953011fc1f9ddf671520ee81b68450ee908",
+  "created_at_utc": "2026-11-10T04:50:36.276681+00:00",
+  "goal_complete": false,
+  "guarantee_scope": {
+    "all_instruction_crash_or_power_loss_qualified": false,
+    "cross_writer_client_ids_consumed": true,
+    "hidden_actual_process_exit_phases": [
+      "FIRST_UNKNOWN",
+      "FIRST_TERMINAL",
+      "SECOND_UNKNOWN",
+      "SECOND_TERMINAL"
+    ],
+    "initial_enrollment_rollback_tested": true,
+    "native_account_identity_qualified": false,
+    "native_future_fee_or_wallet_ownership_qualified": false,
+    "noncreating_recovery_connect_race_tested": true,
+    "orders_dispatched_by_journal": false,
+    "principal_units_explicit": true,
+    "second_principal_limited_to_first_net_receipts": true,
+    "separately_recovered_owned_close_tested": true,
+    "shared_pending_opening_barrier": true,
+    "universal_write_gateway": false,
+    "whole_namespace_loss_or_rollback_protected": false
+  },
+  "implementation_remaining": [
+    "Native symbol permission/precision, fee and balance evidence before dispatch.",
+    "Stop/risk authority, exact native request admission and command wiring.",
+    "Complete query/trade receipt reconstruction and partial-order resolution/rearm.",
+    "Independent storage identity, kernel/supervisor and universal native-write fencing."
+  ],
+  "lanes": [
+    {
+      "errors": 0,
+      "failures": 0,
+      "log_sha256": "b74394646b31210f6c36cd567995c0cd66f3f735cb5b96a47ab474e17dfa8715",
+      "name": "journal-tests-01",
+      "skipped": 0,
+      "tests": 131,
+      "xml_relative_path": "data/research/2026-11-10-spot-roundtrip-cash-0400/journal-tests-01.xml",
+      "xml_sha256": "e3e1497a307f6d41cffd80925c01811cf8e551f19cb5449f2abe81902b1de342"
+    },
+    {
+      "errors": 0,
+      "failures": 1,
+      "log_sha256": "a49bf905a48795d5022835e7607b1b039158fe8c34c69baffba866d6324c9265",
+      "name": "journal-final-02",
+      "skipped": 0,
+      "tests": 176,
+      "xml_relative_path": "data/research/2026-11-10-spot-roundtrip-cash-0400/journal-final-02.xml",
+      "xml_sha256": "6d7d370b5fcb65620c7589308f7c505e363d6c8a4704475ea20d9ad4b53888e0"
+    },
+    {
+      "errors": 0,
+      "failures": 0,
+      "log_sha256": "b17966c068c50a564c909ed7395d27cd6c003d8c90ca160db514b1dad682128b",
+      "name": "journal-rollback-03",
+      "skipped": 0,
+      "tests": 1,
+      "xml_relative_path": "data/research/2026-11-10-spot-roundtrip-cash-0400/journal-rollback-03.xml",
+      "xml_sha256": "c9a49f7f7599305c2809d6097799f509e6af17af8ef45176e499e49a68a194cc"
+    },
+    {
+      "errors": 0,
+      "failures": 0,
+      "log_sha256": "6c99612b1dae5ff09a1af74284627c22e7b2190454b06d8f95ea814f457ad98a",
+      "name": "journal-final-04",
+      "skipped": 0,
+      "tests": 405,
+      "xml_relative_path": "data/research/2026-11-10-spot-roundtrip-cash-0400/journal-final-04.xml",
+      "xml_sha256": "f5210c9b8e2029670916a41aa691da63b4f91d68344a00696582506c8c75fdd9"
+    },
+    {
+      "errors": 0,
+      "failures": 0,
+      "log_sha256": "b17966c068c50a564c909ed7395d27cd6c003d8c90ca160db514b1dad682128b",
+      "name": "journal-connect-race-05",
+      "skipped": 0,
+      "tests": 1,
+      "xml_relative_path": "data/research/2026-11-10-spot-roundtrip-cash-0400/journal-connect-race-05.xml",
+      "xml_sha256": "d46bea1a7a059bae2af0fcb04ee36f195aef0a4c907ff12019ba2a351850becb"
+    },
+    {
+      "errors": 0,
+      "failures": 0,
+      "log_sha256": "4afeac3c43a777a1daf9a24e96b03fc5f5ed3456dd0da6e793addf8ace915a58",
+      "name": "journal-identity-final-06",
+      "skipped": 0,
+      "tests": 407,
+      "xml_relative_path": "data/research/2026-11-10-spot-roundtrip-cash-0400/journal-identity-final-06.xml",
+      "xml_sha256": "b29d65c33a475c58f6d405b90cfe23b04409751711595f23146f92ecdebfae8a"
+    }
+  ],
+  "local_unpublished_at_recording": true,
+  "namespace_version": 4,
+  "profitability_claim": false,
+  "prototype_comparison": {
+    "path": "data/research/2026-11-10-spot-roundtrip-cash-0400/missing-storage-comparison.json",
+    "replayed_method_source_sha256": "202be8b7bd36559b525e0323b2c216eeccbcd459509dcbe3200ece3e7b40f004",
+    "scope": "Earlier prototype method replayed with the current transaction helper default, which still creates for ordinary writes. Current recovery explicitly forbids initialization; this is not a full historical-environment replay.",
+    "sha256": "6f950eb4c91623576d4245ccd163ee48bd772afc17dceb278a4678704be4a84c"
+  },
+  "registered_counts": {
+    "hypotheses": 65,
+    "observations": 204,
+    "qualified_stable_edges": 0,
+    "scoped_mechanisms": 37
+  },
+  "result_sha256": "b30367bb7000cbf1f9ea4d4a6dba7e13daf734a12f010659d23894dc54a977d6",
+  "schema": "local-shared-spot-roundtrip-journal-review-v1",
+  "source_canonical_LF_sha256": {
+    "src/simple_ai_trading/api.py": "41487f0beefbea15596d95cb44b38b4c7eab79e6b1fb4269e20ca52ebc47ff06",
+    "src/simple_ai_trading/binance_close_intents.py": "75a07b50ce061343f48a00c3f49e360fd4931b81e73d874f09f8a9820358853b",
+    "src/simple_ai_trading/binance_open_intents.py": "6b61bbb0401007e70bb2ae0ebef475dd8aa32dedfe3fd16b54b24a3fe85e2793",
+    "src/simple_ai_trading/binance_order_responses.py": "0094163663698b5ba63303e4c7a68153d37a4e6c3ca819d1a5283ca343de7e38",
+    "src/simple_ai_trading/binance_spot_roundtrip_intents.py": "06e356a7907f3a9cc4f00db75c12f1c4bd118d1580045f7266b1e6ebdba64e09",
+    "src/simple_ai_trading/position_transactions.py": "743275b5e92337bd24825c7b4e4f2d79c1ecb7556bf02d8d56cadfcbe148d97b",
+    "tests/test_spot_quote_order_binding.py": "af653c1f501627a403eec6e2a7f8d711075bef2e264f52b854d9e4896223ed91",
+    "tests/test_spot_roundtrip_intents.py": "4b33813f7eb8e7f34541715ae5f142af406839629a0c4dbfaa0294fa1626bb80"
+  },
+  "source_phase_notes": [
+    "The 131-case source is retained separately under the private journal-phase-01-source directory.",
+    "One 176-case fixture expected raw OSError rather than the existing normalized ValueError; a focused correction then passed.",
+    "The final 407-case lane uses the current production/test source; earlier lanes are overlapping phase evidence, not additional distinct final cases.",
+    "The prior quote-principal result preserves its earlier source phase; it is not relabeled as this journal result.",
+    "Intermediate raw logs whose entire source phase was not preserved are retained as diagnostic history only. Final 407-case qualification binds the current source and is not inferred from their counts."
+  ]
+}

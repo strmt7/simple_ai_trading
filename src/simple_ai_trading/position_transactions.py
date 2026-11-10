@@ -56,7 +56,7 @@ def _recover(connection: sqlite3.Connection, root: Path) -> None:
         row[1] for row in connection.execute("PRAGMA table_info(position_replacement)")
     )
     if not columns:
-        if connection.execute("PRAGMA user_version").fetchone()[0] == 3:
+        if connection.execute("PRAGMA user_version").fetchone()[0] in {3, 4}:
             raise ValueError("enrolled position transaction record is missing")
         return
     if columns != _COLUMNS:
@@ -158,11 +158,11 @@ class PositionTransaction:
 
 @contextmanager
 def position_transaction(
-    journal: BinanceOpenIntentJournal, *, write: bool = False
+    journal: BinanceOpenIntentJournal, *, write: bool = False, create: bool = True
 ) -> Iterator[PositionTransaction]:
-    """Fence participating readers/writers without creating storage on first read."""
+    """Fence participants; create=False also forbids initialization on mutation."""
     root = Path(journal.path).resolve().parent
-    initializing = write and not Path(journal.path).exists()
+    initializing = write and create and not Path(journal.path).exists()
     if not write and not Path(journal.path).exists():
         before = _snapshot(root)
         # A first writer may have enrolled the pair while we read the files.
@@ -170,7 +170,7 @@ def position_transaction(
             yield PositionTransaction(root, None, before)
             return
     try:
-        with closing(journal._connect(create=write, write=True)) as connection:
+        with closing(journal._connect(create=write and create, write=True)) as connection:
             try:
                 if initializing:
                     # Rollback of the first invalid ledger mutation must not
