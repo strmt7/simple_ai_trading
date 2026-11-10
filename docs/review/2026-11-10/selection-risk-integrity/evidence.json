@@ -1,0 +1,249 @@
+{
+  "admission_invariant": "For fixed finite selected score and nondecreasing search counters, added candidates cannot reduce counted N or finite score range R; log(N+1)*max(R,0.03*abs(selected),0.0001) therefore cannot decrease. Exact score-pair copies cannot reweight the separate rank proxy. This is not calibrated uncertainty or an independence estimate.",
+  "all_other_top_level_definitions_AST_identical": true,
+  "base_revision": "75ff02e22eeda88b637d057e072c5c5cdb258deb",
+  "changed_production_definitions": [
+    {
+      "end_line": 751,
+      "name": "_finite_number_or_none",
+      "start_line": 744
+    },
+    {
+      "end_line": 1156,
+      "name": "_overfit_diagnostics",
+      "start_line": 995
+    },
+    {
+      "end_line": 962,
+      "name": "_score_quantile",
+      "start_line": 949
+    },
+    {
+      "end_line": 1313,
+      "name": "_selection_risk_report",
+      "start_line": 1159
+    }
+  ],
+  "created_at_utc": "2026-11-10T01:58:59.800403+00:00",
+  "earlier_104_case_production_source": {
+    "path": "data/research/2026-11-10-selection-risk/training-suite.verified.py.txt",
+    "sha256": "bc67624978a90d91d8626b861a9805a4090aaa8a4ee827abd2f22f0707fecd4d"
+  },
+  "explicit_trial_metadata": "Declared counts require nonnegative integers and explicit internal variant counts require positive integers. Missing legacy internal-variant metadata retains the one-trial compatibility interpretation; this is not proof of complete historical search provenance. Valid large integer counts are accumulated exactly.",
+  "final_executed_sources": {
+    "src/simple_ai_trading/training_suite.py": {
+      "canonical_LF_sha256": "1a9bbbb32f955d5243dee7ef757e9461326e87a453b8cdf08dbb40b82d9c67b0",
+      "executed_sha256": "1a9bbbb32f955d5243dee7ef757e9461326e87a453b8cdf08dbb40b82d9c67b0",
+      "retained_source": {
+        "path": "data/research/2026-11-10-selection-risk/training_suite.py.counts-final-source.txt",
+        "sha256": "1a9bbbb32f955d5243dee7ef757e9461326e87a453b8cdf08dbb40b82d9c67b0"
+      }
+    },
+    "tests/test_model_lab.py": {
+      "canonical_LF_sha256": "8e5ab73aab7f2fde2b0b38530a0ef7163b5571436ff1f802ee9a94e4b0bd2d28",
+      "executed_sha256": "8e5ab73aab7f2fde2b0b38530a0ef7163b5571436ff1f802ee9a94e4b0bd2d28",
+      "retained_source": {
+        "path": "data/research/2026-11-10-selection-risk/test_model_lab.py.counts-final-source.txt",
+        "sha256": "8e5ab73aab7f2fde2b0b38530a0ef7163b5571436ff1f802ee9a94e4b0bd2d28"
+      }
+    },
+    "tests/test_selection_guard_integrity.py": {
+      "canonical_LF_sha256": "eebc041f21c84fd19de1943bd0bf94c8267d3de4b8f4a0075e16036dda1655ae",
+      "executed_sha256": "eebc041f21c84fd19de1943bd0bf94c8267d3de4b8f4a0075e16036dda1655ae",
+      "retained_source": {
+        "path": "data/research/2026-11-10-selection-risk/test_selection_guard_integrity.py.counts-final-source.txt",
+        "sha256": "eebc041f21c84fd19de1943bd0bf94c8267d3de4b8f4a0075e16036dda1655ae"
+      }
+    },
+    "tests/test_training_suite.py": {
+      "canonical_LF_sha256": "9df5aa6f2617784205ef1b0b91f5c76472f6ec4263a6163150046df657c736cf",
+      "executed_sha256": "9df5aa6f2617784205ef1b0b91f5c76472f6ec4263a6163150046df657c736cf",
+      "retained_source": {
+        "path": "data/research/2026-11-10-selection-risk/test_training_suite.py.counts-final-source.txt",
+        "sha256": "9df5aa6f2617784205ef1b0b91f5c76472f6ec4263a6163150046df657c736cf"
+      }
+    }
+  },
+  "financial_counts_unchanged": [
+    204,
+    65,
+    37,
+    0
+  ],
+  "lane_interpretation": "Counts overlap. Initial 23-case lane had one prior synthetic expectation failure, corrected without relaxing the production rule. The 104-case phase precedes numeric-input handling; 108 precedes explicit-count validation. Their original source/evidence is retained. The final 124-case lane binds all current production and test sources. Original-source controls had six failures and zero collection errors; their selected test definitions are unchanged.",
+  "market_account_order_or_real_credentials_access": false,
+  "navigation": {
+    "actual_semantic_and_same_index_lexical_results": {
+      "path": "data/research/2026-11-10-selection-risk/source-routing.log",
+      "sha256": "24475a061e310c0e425d1ef4ecfb2f622c2523b6f5b88b517a779cb555b22f91"
+    },
+    "index_refresh": {
+      "path": "data/research/2026-11-10-selection-risk/index-refresh.log",
+      "sha256": "10537c758ee15f8c737a429976a43e4d63c8c1bef3d061629b67029cb19833fb"
+    },
+    "post_edit_binding": "Index is stale after source edits; refresh before another broad search.",
+    "pre_edit_revision": "75ff02e22eeda88b637d057e072c5c5cdb258deb"
+  },
+  "original_control": {
+    "controller": {
+      "path": "data/research/2026-11-10-selection-risk/check_old_guard.py",
+      "sha256": "16caf21e651c87c51502ca352700bbbe64f75295aa274cd3ce3e213a7d1ebdca"
+    },
+    "restoration_phase": "Pre-final numeric refinement; exact working bytes restored before later edits.",
+    "restore_record": {
+      "path": "data/research/2026-11-10-selection-risk/original-guard-tests-01.json",
+      "sha256": "93ae2b83819cab19d7fd1c1804b83fa6db41eb2ccb24a35b78bb1a8a8a3d255b"
+    }
+  },
+  "original_regression_test_definitions_AST_unchanged": true,
+  "preceding_108_case_sources": {
+    "src/simple_ai_trading/training_suite.py": {
+      "canonical_LF_sha256": "ea9b9d4c04e1ec3294088c0b0bad401d669d09d8d0126e0e4019e742dc08fd06",
+      "executed_sha256": "ea9b9d4c04e1ec3294088c0b0bad401d669d09d8d0126e0e4019e742dc08fd06",
+      "retained_source": {
+        "path": "data/research/2026-11-10-selection-risk/training_suite.py.final-source.txt",
+        "sha256": "ea9b9d4c04e1ec3294088c0b0bad401d669d09d8d0126e0e4019e742dc08fd06"
+      }
+    },
+    "tests/test_model_lab.py": {
+      "canonical_LF_sha256": "8e5ab73aab7f2fde2b0b38530a0ef7163b5571436ff1f802ee9a94e4b0bd2d28",
+      "executed_sha256": "8e5ab73aab7f2fde2b0b38530a0ef7163b5571436ff1f802ee9a94e4b0bd2d28",
+      "retained_source": {
+        "path": "data/research/2026-11-10-selection-risk/test_model_lab.py.final-source.txt",
+        "sha256": "8e5ab73aab7f2fde2b0b38530a0ef7163b5571436ff1f802ee9a94e4b0bd2d28"
+      }
+    },
+    "tests/test_selection_guard_integrity.py": {
+      "canonical_LF_sha256": "43a61f9cdfcc514bd606229c817541c478c3056ce2d228ca7e69a515684ee942",
+      "executed_sha256": "43a61f9cdfcc514bd606229c817541c478c3056ce2d228ca7e69a515684ee942",
+      "retained_source": {
+        "path": "data/research/2026-11-10-selection-risk/test_selection_guard_integrity.py.final-source.txt",
+        "sha256": "43a61f9cdfcc514bd606229c817541c478c3056ce2d228ca7e69a515684ee942"
+      }
+    },
+    "tests/test_training_suite.py": {
+      "canonical_LF_sha256": "9df5aa6f2617784205ef1b0b91f5c76472f6ec4263a6163150046df657c736cf",
+      "executed_sha256": "9df5aa6f2617784205ef1b0b91f5c76472f6ec4263a6163150046df657c736cf",
+      "retained_source": {
+        "path": "data/research/2026-11-10-selection-risk/test_training_suite.py.final-source.txt",
+        "sha256": "9df5aa6f2617784205ef1b0b91f5c76472f6ec4263a6163150046df657c736cf"
+      }
+    }
+  },
+  "previous_unpublished_phase_evidence": {
+    "path": "data/research/2026-11-10-selection-risk/phase-108/evidence.json",
+    "sha256": "72df557fe753118316b8ae6b61dcaac728cced377f93bf6d2ee4a90024b5386a"
+  },
+  "production_training_or_performance_evaluation": false,
+  "protected_capture_access": false,
+  "remaining_requirements": [
+    "Full primary methodological text and source-bound formula implementation",
+    "Net return paths with matched observation intervals, dependence and sample-length assumptions",
+    "Complete tuning/search provenance and controlled untouched evaluation",
+    "Native cash/cost/clock/capital coverage and independent financial recurrence",
+    "Whole-app integration, whole-tree review, supervisor and final bug hunting"
+  ],
+  "result_sha256": "8c2ede211a3ed747588a84493baced6b8821d04dbffb3fe870859bd270a00020",
+  "schema": "model-selection-bookkeeping-integrity-repair-v1",
+  "services_tasks_or_persistent_workers_installed": false,
+  "statistical_significance_qualified": false,
+  "synthetic_reproductions": [
+    {
+      "path": "data/research/2026-11-10-selection-risk/guard-reproduction.intent.json",
+      "sha256": "f183e34bb503526371c250d834b6ebf76184e916f9f5720ee3efa4673c70faa5"
+    },
+    {
+      "path": "data/research/2026-11-10-selection-risk/guard-reproduction.original.json",
+      "sha256": "7c9ea9acff04381d6efc61c910517f722cf21c7c9f1832915768e04cd4ee2aa6"
+    },
+    {
+      "path": "data/research/2026-11-10-selection-risk/panel-reproduction.intent.json",
+      "sha256": "c417bb78c90b75c0eb63c23d8f06b85bcb5918dafa6b8aa7dc8234074ddfb95c"
+    },
+    {
+      "path": "data/research/2026-11-10-selection-risk/panel-reproduction.original.json",
+      "sha256": "ee7ae5a0d551503adfb8e7a658d109211eabe38f0cf1ed5bf224545f2d05d7c2"
+    },
+    {
+      "path": "data/research/2026-11-10-selection-risk/guard-and-panel.repaired.json",
+      "sha256": "70dd4b3d35434be87d5d6fa492ebb5286aca4beb9b8a54506b9c8f8aec7acc6f"
+    }
+  ],
+  "verification_lanes": [
+    {
+      "JUnit": {
+        "path": "data/research/2026-11-10-selection-risk/guard-tests-01.xml",
+        "sha256": "5a58458c1133c2d7aef406beff735bd5704fb9dbea7e89b9567a00b47baa4d2c"
+      },
+      "errors": 0,
+      "failures": 1,
+      "log": {
+        "path": "data/research/2026-11-10-selection-risk/guard-tests-01.log",
+        "sha256": "c87741b6523ee9dfc2ed0ef7752142b8b8a6ddcedd7bd0fdf87a064376a5b688"
+      },
+      "name": "guard-tests-01",
+      "skipped": 0,
+      "tests": 23
+    },
+    {
+      "JUnit": {
+        "path": "data/research/2026-11-10-selection-risk/model-integration-01.xml",
+        "sha256": "5e15d91f34bf369f70b5d0bb5f50bf00280804dde546703a1a2679df5b89ed37"
+      },
+      "errors": 0,
+      "failures": 0,
+      "log": {
+        "path": "data/research/2026-11-10-selection-risk/model-integration-01.log",
+        "sha256": "89abe0022556087d0a57f944305831e8ad25cc7666fb2db649b66fdcf70345b4"
+      },
+      "name": "model-integration-01",
+      "skipped": 0,
+      "tests": 104
+    },
+    {
+      "JUnit": {
+        "path": "data/research/2026-11-10-selection-risk/model-final-01.xml",
+        "sha256": "708afb4b6b9ba8bef321a9e44945dce10038530a688b3fd3a616cf7a9cafe728"
+      },
+      "errors": 0,
+      "failures": 0,
+      "log": {
+        "path": "data/research/2026-11-10-selection-risk/model-final-01.log",
+        "sha256": "08321bcc6dfdebcc3713eb62156ca65c4e934d67fed1540bbc413a0c0427ffb7"
+      },
+      "name": "model-final-01",
+      "skipped": 0,
+      "tests": 108
+    },
+    {
+      "JUnit": {
+        "path": "data/research/2026-11-10-selection-risk/original-guard-tests-01.xml",
+        "sha256": "643c8f795e186b55ec3f91aefc3b43716db713fabf8fa05cda18c0656157c658"
+      },
+      "errors": 0,
+      "failures": 6,
+      "log": {
+        "path": "data/research/2026-11-10-selection-risk/original-guard-tests-01.log",
+        "sha256": "76a733e5f213b95584e3c533c3fec90b17e53af2789d40e357cf7ce3b74e8d13"
+      },
+      "name": "original-guard-tests-01",
+      "skipped": 0,
+      "tests": 6
+    },
+    {
+      "JUnit": {
+        "path": "data/research/2026-11-10-selection-risk/model-counts-final-01.xml",
+        "sha256": "ea1b505bc7fc335f1d87b696c7743e6f4ee0dc8207d09ff84d66e3acce966dc8"
+      },
+      "errors": 0,
+      "failures": 0,
+      "log": {
+        "path": "data/research/2026-11-10-selection-risk/model-counts-final-01.log",
+        "sha256": "003d566a5d460da3e83c3d8dba3fd2ce4174ab760530b5b400f158f6d6465ac4"
+      },
+      "name": "model-counts-final-01",
+      "skipped": 0,
+      "tests": 124
+    }
+  ]
+}

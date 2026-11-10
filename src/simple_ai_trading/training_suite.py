@@ -742,9 +742,12 @@ def _gate_result_payload(result: BacktestResult, objective: ObjectiveSpec | None
 
 
 def _finite_number_or_none(value: object) -> float | None:
-    if not isinstance(value, (int, float)):
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
         return None
-    parsed = float(value)
+    try:
+        parsed = float(value)
+    except OverflowError:
+        return None
     return parsed if math.isfinite(parsed) else None
 
 
@@ -955,7 +958,8 @@ def _score_quantile(values: Sequence[float], q: float) -> float | None:
     if low == high:
         return clean[low]
     fraction = position - low
-    return clean[low] + (clean[high] - clean[low]) * fraction
+    # Weighted endpoints avoid overflowing a finite opposite-sign difference.
+    return (1.0 - fraction) * clean[low] + fraction * clean[high]
 
 
 def _score_rank_percentile(values: Sequence[float], index: int) -> float | None:
@@ -976,7 +980,9 @@ def _pbo_logit(rank_percentile: float) -> float:
     return math.log(clipped / (1.0 - clipped))
 
 
-def _mean_panel_score(entry: dict[str, Any], panel_names: Sequence[str]) -> float | None:
+def _mean_panel_score(
+    entry: dict[str, Any], panel_names: Sequence[str]
+) -> float | None:
     values: list[float] = []
     for panel in panel_names:
         value = _finite_number_or_none(entry.get(f"{panel}_score"))
@@ -986,35 +992,51 @@ def _mean_panel_score(entry: dict[str, Any], panel_names: Sequence[str]) -> floa
     return sum(values) / len(values) if values else None
 
 
-def _overfit_diagnostics(best: dict[str, Any], ranked_pool: Sequence[dict[str, Any]]) -> dict[str, object]:
+def _overfit_diagnostics(
+    best: dict[str, Any], ranked_pool: Sequence[dict[str, Any]]
+) -> dict[str, object]:
     """Return a compact CSCV/PBO-style diagnostic over selection/validation panels.
 
     This is deliberately conservative in naming: with the current artifacts all
     candidates expose at most one selection panel and one holdout validation
-    panel, so this is a two-panel CSCV proxy rather than full CPCV over many
-    purged folds. It still catches the dangerous case where the selected
-    in-sample winner ranks poorly out-of-sample in both symmetric views.
+    panel, so this is a rank-reversal proxy, not calibrated PBO or full CPCV.
+    Equal score pairs contribute one rank profile, regardless of object copies.
+    Every searched trial still counts in the separate score guard. Among tied
+    panel winners use the worst opposite-panel rank, not input-list order.
     """
 
     entries: list[dict[str, Any]] = []
     seen: set[int] = set()
+    pairs: set[tuple[float, float]] = set()
+    duplicate_pairs = 0
     for entry in [*ranked_pool, best]:
         entry_id = id(entry)
         if entry_id in seen:
             continue
         seen.add(entry_id)
-        if (
-            _finite_number_or_none(entry.get("selection_score")) is not None
-            and _finite_number_or_none(entry.get("validation_score")) is not None
-        ):
-            entries.append(entry)
+        selection = _finite_number_or_none(entry.get("selection_score"))
+        validation = _finite_number_or_none(entry.get("validation_score"))
+        if selection is None or validation is None:
+            continue
+        pair = (selection, validation)
+        if pair in pairs:
+            duplicate_pairs += 1
+            continue
+        pairs.add(pair)
+        entries.append(entry)
+
+    identity = {
+        "method": "two_panel_distinct_score_pair_proxy_v1",
+        "candidate_count": len(entries),
+        "duplicate_score_pairs": duplicate_pairs,
+        "statistical_significance_qualified": False,
+    }
 
     if len(entries) < _PBO_MIN_CANDIDATES:
         return {
             "status": "skipped",
             "reason": "requires_selection_and_validation_scores",
-            "method": "two_panel_cscv_proxy",
-            "candidate_count": len(entries),
+            **identity,
             "min_candidates": _PBO_MIN_CANDIDATES,
             "passed": False,
         }
@@ -1029,61 +1051,99 @@ def _overfit_diagnostics(best: dict[str, Any], ranked_pool: Sequence[dict[str, A
     for in_sample_panels, out_sample_panels in split_specs:
         in_scores = [_mean_panel_score(entry, in_sample_panels) for entry in entries]
         out_scores = [_mean_panel_score(entry, out_sample_panels) for entry in entries]
-        if any(score is None for score in in_scores) or any(score is None for score in out_scores):
+        if any(score is None for score in in_scores) or any(
+            score is None for score in out_scores
+        ):
             continue
         in_values = [float(score) for score in in_scores if score is not None]
         out_values = [float(score) for score in out_scores if score is not None]
-        winner_index = max(range(len(in_values)), key=lambda index: (in_values[index], -index))
+        maximum = max(in_values)
+        winners = (index for index, score in enumerate(in_values) if score == maximum)
+        winner_index = min(
+            winners,
+            key=lambda index: (out_values[index], index),
+        )
         rank_percentile = _score_rank_percentile(out_values, winner_index)
         if rank_percentile is None:
             continue
         logit_rank = _pbo_logit(rank_percentile)
         degradation = out_values[winner_index] - in_values[winner_index]
+        if not math.isfinite(degradation):
+            return {
+                **identity,
+                "status": "unavailable",
+                "passed": False,
+                "reason": "nonfinite_panel_score_difference",
+            }
         degradation_values.append(float(degradation))
         overfit = bool(logit_rank < 0.0)
         if overfit:
             overfit_splits += 1
-        split_reports.append({
-            "in_sample_panels": list(in_sample_panels),
-            "out_sample_panels": list(out_sample_panels),
-            "winner_index": int(winner_index),
-            "winner_in_sample_score": float(in_values[winner_index]),
-            "winner_out_sample_score": float(out_values[winner_index]),
-            "winner_out_sample_rank_percentile": float(rank_percentile),
-            "logit_rank": float(logit_rank),
-            "performance_degradation": float(degradation),
-            "overfit": overfit,
-        })
+        split_reports.append(
+            {
+                "in_sample_panels": list(in_sample_panels),
+                "out_sample_panels": list(out_sample_panels),
+                "winner_index": int(winner_index),
+                "winner_in_sample_score": float(in_values[winner_index]),
+                "winner_out_sample_score": float(out_values[winner_index]),
+                "winner_out_sample_rank_percentile": float(rank_percentile),
+                "logit_rank": float(logit_rank),
+                "performance_degradation": float(degradation),
+                "overfit": overfit,
+            }
+        )
 
     if not split_reports:
         return {
             "status": "skipped",
             "reason": "no_comparable_cscv_splits",
-            "method": "two_panel_cscv_proxy",
-            "candidate_count": len(entries),
+            **identity,
             "min_candidates": _PBO_MIN_CANDIDATES,
-            "passed": True,
+            "passed": False,
         }
 
-    selected_index = next((index for index, entry in enumerate(entries) if id(entry) == id(best)), None)
+    selected_pair = (
+        _finite_number_or_none(best.get("selection_score")),
+        _finite_number_or_none(best.get("validation_score")),
+    )
+    selected_index = next(
+        (
+            index
+            for index, entry in enumerate(entries)
+            if (
+                _finite_number_or_none(entry.get("selection_score")),
+                _finite_number_or_none(entry.get("validation_score")),
+            )
+            == selected_pair
+        ),
+        None,
+    )
     selected_validation_percentile = None
     if selected_index is not None:
-        validation_scores = [float(_finite_number_or_none(entry.get("validation_score")) or 0.0) for entry in entries]
-        selected_validation_percentile = _score_rank_percentile(validation_scores, selected_index)
+        validation_scores = [
+            float(_finite_number_or_none(entry.get("validation_score")) or 0.0)
+            for entry in entries
+        ]
+        selected_validation_percentile = _score_rank_percentile(
+            validation_scores, selected_index
+        )
     probability = overfit_splits / len(split_reports)
     passed = probability <= _PBO_MAX_PROBABILITY
     return {
         "status": "available",
-        "method": "two_panel_cscv_proxy",
+        **identity,
         "passed": bool(passed),
         "reason": None if passed else "selection_risk_pbo>0.50",
         "probability_backtest_overfit": float(probability),
         "max_probability_backtest_overfit": float(_PBO_MAX_PROBABILITY),
-        "candidate_count": len(entries),
         "split_count": len(split_reports),
         "overfit_splits": int(overfit_splits),
         "mean_performance_degradation": (
-            float(sum(degradation_values) / len(degradation_values))
+            float(
+                math.fsum(
+                    value / len(degradation_values) for value in degradation_values
+                )
+            )
             if degradation_values
             else None
         ),
@@ -1106,23 +1166,56 @@ def _selection_risk_report(
     hybrid_rescue_candidates: int,
     hybrid_profile_trials: int = 0,
 ) -> dict[str, object]:
-    """Estimate whether the selected score survives the number of tried models.
+    """Apply a deterministic search-size guard, never a significance test.
 
-    This is a deterministic multiple-trials haircut inspired by PBO/Deflated
-    Sharpe discipline. It is intentionally scale-light: use observed score
-    dispersion when available, otherwise use a small relative/fixed floor.
+    Candidate count is search breadth, not a return-series sample size. For a
+    fixed selected score, the range and trial multiplier cannot decrease when
+    more candidates are added. IQR remains diagnostic only: cloning losing
+    candidates must not shrink admission's reference scale or uncertainty.
+    This is not PSR, DSR or a probability that the strategy is profitable.
     """
 
     best_score = _finite_number_or_none(best.get("score"))
+    method = {
+        "method": "monotone_search_score_guard_v1",
+        "statistical_significance_qualified": False,
+        "trial_count_interpretation": "counted_search_trials_not_independent_return_observations",
+    }
+    declared_counts = (
+        base_candidate_count,
+        local_refinement_candidates,
+        ensemble_refinement_candidates,
+        hybrid_rescue_candidates,
+        hybrid_profile_trials,
+    )
+    variant_counts = [entry.get("internal_variant_count", 1) for entry in ranked_pool]
+    if any(
+        isinstance(value, bool) or not isinstance(value, int) or value < 0
+        for value in declared_counts
+    ) or any(
+        isinstance(value, bool) or not isinstance(value, int) or value < 1
+        for value in variant_counts
+    ):
+        return {
+            **method,
+            "passed": False,
+            "reason": "invalid_search_trial_count",
+            "reasons": ["invalid_search_trial_count"],
+            "effective_trials": None,
+            "overfit_diagnostics": {
+                "status": "unavailable",
+                "passed": False,
+                "reason": "invalid_search_trial_count",
+            },
+        }
     entry_ids = {id(entry) for entry in ranked_pool}
     entries = list(ranked_pool)
     if id(best) not in entry_ids:
         entries.append(best)
-    internal_variants_evaluated = sum(
-        max(1, int(_finite_number_or_none(entry.get("internal_variant_count")) or 1))
-        for entry in ranked_pool
+    internal_variants_evaluated = sum(variant_counts)
+    internal_variant_extra_trials = max(
+        0, internal_variants_evaluated - len(ranked_pool)
     )
-    internal_variant_extra_trials = max(0, internal_variants_evaluated - len(ranked_pool))
     scores = [
         score
         for entry in entries
@@ -1141,6 +1234,7 @@ def _selection_risk_report(
     if best_score is None:
         overfit = _overfit_diagnostics(best, entries)
         return {
+            **method,
             "passed": False,
             "reason": "no_finite_selected_score",
             "reasons": ["no_finite_selected_score"],
@@ -1162,23 +1256,32 @@ def _selection_risk_report(
     median = _score_quantile(scores, 0.50)
     q3 = _score_quantile(scores, 0.75)
     iqr = max(0.0, float(q3 - q1)) if q1 is not None and q3 is not None else 0.0
+    score_range = sorted_desc[0] - sorted_desc[-1]
     dispersion = max(
-        iqr,
+        score_range,
         abs(float(best_score)) * _SELECTION_RISK_RELATIVE_FLOOR,
         _SELECTION_RISK_DISPERSION_FLOOR,
     )
-    trial_penalty = math.log1p(float(effective_trials)) * dispersion / math.sqrt(max(1.0, float(len(scores))))
+    trial_penalty = math.log(effective_trials + 1) * dispersion
     deflated_score = float(best_score) - trial_penalty
     overfit = _overfit_diagnostics(best, entries)
-    score_passed = bool(float(best_score) > 0.0 and deflated_score > 0.0)
-    overfit_passed = bool(overfit.get("passed", True))
+    arithmetic_finite = all(
+        math.isfinite(value) for value in (score_range, trial_penalty, deflated_score)
+    )
+    score_passed = bool(
+        arithmetic_finite and float(best_score) > 0.0 and deflated_score > 0.0
+    )
+    overfit_passed = overfit.get("passed") is True
     passed = score_passed and overfit_passed
     reasons: list[str] = []
-    if not score_passed:
+    if not arithmetic_finite:
+        reasons.append("selection_risk_nonfinite_arithmetic")
+    elif not score_passed:
         reasons.append("selection_risk_deflated_score<=0")
     if not overfit_passed:
         reasons.append(str(overfit.get("reason") or "selection_risk_pbo_failed"))
     return {
+        **method,
         "passed": passed,
         "reason": None if passed else reasons[0],
         "reasons": reasons,
@@ -1194,13 +1297,15 @@ def _selection_risk_report(
         "selected_score": float(best_score),
         "runner_up_score": float(runner_up) if runner_up is not None else None,
         "median_score": float(median) if median is not None else None,
-        "score_iqr": float(iqr),
+        "score_iqr": _finite_number_or_none(iqr),
+        "score_range": _finite_number_or_none(score_range),
+        "admission_dispersion": _finite_number_or_none(dispersion),
         "dispersion_floor": float(_SELECTION_RISK_DISPERSION_FLOOR),
         "relative_floor": float(_SELECTION_RISK_RELATIVE_FLOOR),
-        "trial_penalty": float(trial_penalty),
-        "deflated_score": float(deflated_score),
+        "trial_penalty": _finite_number_or_none(trial_penalty),
+        "deflated_score": _finite_number_or_none(deflated_score),
         "score_margin_to_runner_up": (
-            float(best_score - runner_up)
+            _finite_number_or_none(best_score - runner_up)
             if runner_up is not None
             else None
         ),
@@ -1211,7 +1316,9 @@ def _selection_risk_report(
 class _FeatureAblationModel:
     """Proxy that zeroes one contiguous feature group before scoring."""
 
-    def __init__(self, model: TrainedModel, *, group_name: str, start: int, end: int) -> None:
+    def __init__(
+        self, model: TrainedModel, *, group_name: str, start: int, end: int
+    ) -> None:
         self._model = model
         self.ablated_feature_group = str(group_name)
         self.ablated_feature_start = int(start)
@@ -1252,12 +1359,14 @@ def _feature_ablation_report(
         return []
     expected_dim = advanced_feature_dimension(feature_cfg)
     if int(getattr(model, "feature_dim", -1)) != expected_dim:
-        return [{
-            "status": "skipped",
-            "reason": "feature_dimension_mismatch",
-            "model_feature_dim": int(getattr(model, "feature_dim", -1)),
-            "expected_feature_dim": expected_dim,
-        }]
+        return [
+            {
+                "status": "skipped",
+                "reason": "feature_dimension_mismatch",
+                "model_feature_dim": int(getattr(model, "feature_dim", -1)),
+                "expected_feature_dim": expected_dim,
+            }
+        ]
     baseline_result = run_backtest(
         list(rows),
         model,
@@ -1268,7 +1377,9 @@ def _feature_ablation_report(
         score_batch_size=score_batch_size,
     )
     baseline_accepted = objective.accepts(baseline_result)
-    baseline_score = objective.score(baseline_result) if baseline_accepted else float("-inf")
+    baseline_score = (
+        objective.score(baseline_result) if baseline_accepted else float("-inf")
+    )
     reports: list[dict[str, object]] = []
     for span in advanced_feature_group_spans(feature_cfg):
         proxy = _FeatureAblationModel(

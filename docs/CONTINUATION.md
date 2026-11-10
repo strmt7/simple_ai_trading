@@ -118,6 +118,17 @@ LLMs may veto/reduce risk, never bypass deterministic Stop/ownership/close contr
 
 ## Platform work and publication
 
+- [Model selection integrity](review/2026-11-10/selection-risk-integrity/review.md)
+  repairs two reproduced fail-to-pass paths caused by copying losing candidates.
+  Search penalties no longer treat candidate count as time-series sample size;
+  identical panel profiles cannot reweight the rank proxy, and ties are handled
+  conservatively. Malformed explicit counts reject; valid large integer counts
+  remain exact. All 124 final affected checks pass; six original-source
+  regressions fail. The guard explicitly remains heuristic, with no significance
+  or profitability qualification. Current author metadata was admitted, while
+  three article captures failed their frozen gates. Full methodological text,
+  return-path/search provenance and calibrated inference remain open; no expanded
+  production fit or market resampling followed.
 - [Binance scope enrollment](review/2026-11-10/binance-scope-enrollment/review.md)
   closes a reproduced first-binding gap that could assign unscoped legacy live
   inventory to new credentials. Version 3 binds paired bytes, scope and UNKNOWN

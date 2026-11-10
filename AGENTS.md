@@ -240,6 +240,11 @@ result and all other consumed populations, including WNBA September 3-9.
   is not an edge. The training suite's heuristic score haircut and two-panel
   overfitting proxy are not a statistical Deflated Sharpe Ratio or full
   combinatorial validation. Preserve old results and label these limits.
+  Candidate count is search breadth, not independent return sample size. Do not
+  let copied candidates shrink score admission penalties or reweight identical
+  two-panel rank profiles. Keep counted trials separate from diagnostic profile
+  counts; reject malformed explicit counts instead of truncating or defaulting
+  them. A passing heuristic never supplies statistical significance evidence.
 - Portfolio correlation and tail-risk evidence must align returns by both
   observation endpoints. Never substitute equally sized row tails for disjoint
   histories, match unequal return horizons only by their final timestamp, or

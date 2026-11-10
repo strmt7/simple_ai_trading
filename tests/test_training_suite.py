@@ -1287,8 +1287,11 @@ def test_selection_risk_report_deflates_tiny_scores_under_large_trial_count() ->
         hybrid_rescue_candidates=0,
     )
 
-    assert stronger_report["passed"] is True
-    assert stronger_report["deflated_score"] > 0.0
+    # Three finite scores do not provide 2,023 trials with additional return
+    # observations. The former candidate-count denominator weakened this guard.
+    assert stronger_report["passed"] is False
+    assert stronger_report["reason"] == "selection_risk_deflated_score<=0"
+    assert stronger_report["deflated_score"] < 0.0
 
     missing_panels = training_suite._selection_risk_report(
         {"score": 1.0},

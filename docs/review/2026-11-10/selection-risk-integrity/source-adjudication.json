@@ -1,0 +1,171 @@
+{
+  "admitted_scope": "Author bibliography and high-level methodological scope only; no full-paper formulas or calibrated inference qualified.",
+  "base_revision": "75ff02e22eeda88b637d057e072c5c5cdb258deb",
+  "capture_boundaries_sha256": "f971726268ba2e630b2ebbe8d5bcf02f7b3f23b92ccb16efe23aef82cebe950f",
+  "created_at_utc": "2026-11-10T01:54:56.733381+00:00",
+  "economic_or_statistical_validation_claim": false,
+  "financial_counts_unchanged": [
+    204,
+    65,
+    37,
+    0
+  ],
+  "full_methodological_text_qualified": false,
+  "market_account_order_or_credentials_access": 0,
+  "navigation_attempts": 4,
+  "phases": [
+    {
+      "contract": {
+        "path": "data/research/2026-11-10-selection-risk/source/intent.json",
+        "sha256": "f16d747e5d6dd690c13759035b9e98fe5025ca2df779d882e18be91666b89086"
+      },
+      "controller": {
+        "path": "data/research/2026-11-10-selection-risk/source/crawl_once.py",
+        "sha256": "da07332476cc484e50a5b860ddf58f600e9b8ccea0cf1a578bbc16583cc822c2"
+      },
+      "documents": [
+        {
+          "admission": {
+            "admitted": true,
+            "characters": 94103,
+            "checks": {
+              "error_free": true,
+              "exact_url": true,
+              "native_size": true,
+              "status_200": true,
+              "substantive_length": true,
+              "success": true
+            },
+            "name": "author-publications",
+            "native_sha256": "6965aeada91ae357de1a8459cc64968eb05c7d812156d9ba10956d79f918f2e5",
+            "scope": "author primary publication metadata only, not full article or formulas"
+          },
+          "error": "",
+          "name": "author-publications",
+          "native": {
+            "path": "data/research/2026-11-10-selection-risk/source/author-publications.native.json",
+            "sha256": "6965aeada91ae357de1a8459cc64968eb05c7d812156d9ba10956d79f918f2e5"
+          },
+          "native_success": true,
+          "status_code": 200,
+          "url": "https://www.quantresearch.org/Publications.htm"
+        },
+        {
+          "admission": {
+            "admitted": false,
+            "characters": 505,
+            "checks": {
+              "error_free": true,
+              "exact_url": true,
+              "native_size": true,
+              "status_200": false,
+              "substantive_length": false,
+              "success": true
+            },
+            "name": "unified-dsr-abstract",
+            "native_sha256": "468901c5188d21f7f1dbc413944a3bff8480e54a4b22ef27e3f1a3f85402e512",
+            "scope": "rejected; native 307 and 505 characters are insufficient"
+          },
+          "error": "",
+          "name": "unified-dsr-abstract",
+          "native": {
+            "path": "data/research/2026-11-10-selection-risk/source/unified-dsr-abstract.native.json",
+            "sha256": "468901c5188d21f7f1dbc413944a3bff8480e54a4b22ef27e3f1a3f85402e512"
+          },
+          "native_success": true,
+          "status_code": 307,
+          "url": "https://papers.ssrn.com/sol3/papers.cfm?abstract_id=7198158"
+        }
+      ],
+      "journal": {
+        "path": "data/research/2026-11-10-selection-risk/source/journal.jsonl",
+        "sha256": "df9e6dec7f7edd8d0bdd36fe51b6547ae10dd16df5be298499e0bbc8316a2a57"
+      },
+      "preflight": {
+        "path": "data/research/2026-11-10-selection-risk/source/preflight.json",
+        "sha256": "87ab9c71d5dc23175108a2225ad60f69bc41c9022302d90bc239973aacb3b72b"
+      }
+    },
+    {
+      "contract": {
+        "path": "data/research/2026-11-10-selection-risk/source/publisher/intent.json",
+        "sha256": "8d994d5f146d7ba6cbcfe2f3d6472fc189bbdaccbdeb522504a4fc13799f7f55"
+      },
+      "controller": {
+        "path": "data/research/2026-11-10-selection-risk/source/publisher/crawl_once.py",
+        "sha256": "2a1e87c604e9175e0cacf7d4255828399192734f2a996d9c25a0f081d6794295"
+      },
+      "documents": [
+        {
+          "admission": {
+            "admitted": false,
+            "characters": 15902,
+            "checks": {
+              "error_free": true,
+              "exact_url": true,
+              "minimum_markdown": true,
+              "native_size": true,
+              "status_200": false,
+              "success": true
+            },
+            "name": "unified-dsr-journal",
+            "native_sha256": "72179f5be2fe489ffaf16d318a6aa1ad818da105bbf22d9586c3bd15a87f3ecd",
+            "scope": "No full methodological text qualified; effective native status is 302. Do not repair the frozen gate or infer equations from publisher navigation/metadata.",
+            "status_code": 302
+          },
+          "error": "",
+          "name": "unified-dsr-journal",
+          "native": {
+            "path": "data/research/2026-11-10-selection-risk/source/publisher/unified-dsr-journal.native.json",
+            "sha256": "72179f5be2fe489ffaf16d318a6aa1ad818da105bbf22d9586c3bd15a87f3ecd"
+          },
+          "native_success": true,
+          "status_code": 302,
+          "url": "https://www.pm-research.com/content/iijpormgmt/53/1/70"
+        },
+        {
+          "admission": {
+            "admitted": false,
+            "characters": 16009,
+            "checks": {
+              "error_free": true,
+              "exact_url": true,
+              "minimum_markdown": true,
+              "native_size": true,
+              "status_200": false,
+              "success": true
+            },
+            "name": "sharpe-inference-journal",
+            "native_sha256": "16a79d01fcb52fd6c0c4851acf4fa83a52f0af0b5131ed69e9778e9631c15024",
+            "scope": "No full methodological text qualified; effective native status is 302. Do not repair the frozen gate or infer equations from publisher navigation/metadata.",
+            "status_code": 302
+          },
+          "error": "",
+          "name": "sharpe-inference-journal",
+          "native": {
+            "path": "data/research/2026-11-10-selection-risk/source/publisher/sharpe-inference-journal.native.json",
+            "sha256": "16a79d01fcb52fd6c0c4851acf4fa83a52f0af0b5131ed69e9778e9631c15024"
+          },
+          "native_success": true,
+          "status_code": 302,
+          "url": "https://www.pm-research.com/content/iijpormgmt/52/6/6"
+        }
+      ],
+      "journal": {
+        "path": "data/research/2026-11-10-selection-risk/source/publisher/journal.jsonl",
+        "sha256": "1b48044d1981e8d131a2d947aed55a11ca6bdefb3051b2cf91ea6216d923a2ba"
+      },
+      "preflight": {
+        "path": "data/research/2026-11-10-selection-risk/source/publisher/preflight.json",
+        "sha256": "8565229792c06e394c0c7ed06c41aec847f21c85a97cd10beeeff871359458fc"
+      }
+    }
+  ],
+  "provider_lock_sha256": "5fc27973200b72184199428bee436c8deee9fe65ef3f0762cb871ac5c69abe53",
+  "provider_tool_sha256": "e84a0e54ee07e4e13d3d2f35491f641730096a78126068f232c1f2397a467d8c",
+  "provider_version": "0.9.5+flitzzip.portable2",
+  "publisher_copy_selection": "Exact journal links from the admitted author listing, separately frozen after SSRN source failure under the existing documentation delegation. Prior failure retained unchanged; no alternate reader, login or challenge bypass.",
+  "result_sha256": "59bd2e06773cfb6996472b570198099753d887d97f6609b43fe6ee81636a5c60",
+  "retries_per_contract": 0,
+  "schema": "selection-risk-primary-source-adjudication-v1"
+}
