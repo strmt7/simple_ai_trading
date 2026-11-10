@@ -26,6 +26,17 @@ current full-suite failure count without rerunning the appropriate scope.
 
 ## Financial and source frontier
 
+- [Fully paid long-option research](review/2026-11-10/fully-paid-options/review.md)
+  adds an exact supplied-law payout floor for a lower-strike long call plus a
+  higher-strike long put. Capped exercise fees can put the minimum between the
+  strikes; rational breakpoints avoid grid error. All 31 focused checks pass.
+  Three primary Binance FAQ captures failed HTTP-202/empty-content admission;
+  no metadata, prices or accounts followed. This unpriced construction does not
+  reprice the consumed option/perpetual populations or qualify a profitable
+  entry. Primary product/fee/common-settlement scope and a separate new-population
+  contract precede economic access. The old completion baseline already exists;
+  its 66 selected locks remain unsuitable for training without their missing
+  decision-time liquidation/depth/fee comparator.
 - [Spot protocol sources](review/2026-11-09/native-clock-source/review.md): two
   immutable official revisions passed native source admission. Both document
   default milliseconds and optional microseconds; Spot bookTicker has no native

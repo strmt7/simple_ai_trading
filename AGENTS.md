@@ -367,6 +367,9 @@ result and all other consumed populations, including WNBA September 3-9.
   That mandatory companion preserves the full detailed capture/retry rules;
   do not treat its separation from this file as optional guidance or permission
   to reopen consumed studies. Relevant executable contracts remain controlling.
+  URL provenance lookup must include result and journal records, not only files
+  named as contracts. A filename-limited search cannot prove a source is unused;
+  preserve and disclose that coverage limit rather than inferring novelty.
 
 ## Working Method
 

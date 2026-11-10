@@ -1,0 +1,644 @@
+{
+  "cases": [
+    {
+      "inputs": {
+        "call_exercise_fee": {
+          "index_rate": "0.1",
+          "intrinsic_cap_fraction": "0.5"
+        },
+        "lower_call_strike": "100",
+        "matched_base_quantity": "1",
+        "put_exercise_fee": {
+          "index_rate": "0.1",
+          "intrinsic_cap_fraction": "0.5"
+        },
+        "terminal_cost_reserve_quote": "0",
+        "upper_put_strike": "300"
+      },
+      "name": "interior_fee_minimum",
+      "result": {
+        "critical_points": [
+          {
+            "call_exercise_fee_quote": {
+              "denominator": "1",
+              "numerator": "0"
+            },
+            "call_gross_payout_quote": {
+              "denominator": "1",
+              "numerator": "0"
+            },
+            "put_exercise_fee_quote": {
+              "denominator": "1",
+              "numerator": "0"
+            },
+            "put_gross_payout_quote": {
+              "denominator": "1",
+              "numerator": "300"
+            },
+            "settlement_price": {
+              "denominator": "1",
+              "numerator": "0"
+            },
+            "terminal_net_payout_quote": {
+              "denominator": "1",
+              "numerator": "300"
+            }
+          },
+          {
+            "call_exercise_fee_quote": {
+              "denominator": "1",
+              "numerator": "0"
+            },
+            "call_gross_payout_quote": {
+              "denominator": "1",
+              "numerator": "0"
+            },
+            "put_exercise_fee_quote": {
+              "denominator": "1",
+              "numerator": "10"
+            },
+            "put_gross_payout_quote": {
+              "denominator": "1",
+              "numerator": "200"
+            },
+            "settlement_price": {
+              "denominator": "1",
+              "numerator": "100"
+            },
+            "terminal_net_payout_quote": {
+              "denominator": "1",
+              "numerator": "190"
+            }
+          },
+          {
+            "call_exercise_fee_quote": {
+              "denominator": "2",
+              "numerator": "25"
+            },
+            "call_gross_payout_quote": {
+              "denominator": "1",
+              "numerator": "25"
+            },
+            "put_exercise_fee_quote": {
+              "denominator": "2",
+              "numerator": "25"
+            },
+            "put_gross_payout_quote": {
+              "denominator": "1",
+              "numerator": "175"
+            },
+            "settlement_price": {
+              "denominator": "1",
+              "numerator": "125"
+            },
+            "terminal_net_payout_quote": {
+              "denominator": "1",
+              "numerator": "175"
+            }
+          },
+          {
+            "call_exercise_fee_quote": {
+              "denominator": "1",
+              "numerator": "25"
+            },
+            "call_gross_payout_quote": {
+              "denominator": "1",
+              "numerator": "150"
+            },
+            "put_exercise_fee_quote": {
+              "denominator": "1",
+              "numerator": "25"
+            },
+            "put_gross_payout_quote": {
+              "denominator": "1",
+              "numerator": "50"
+            },
+            "settlement_price": {
+              "denominator": "1",
+              "numerator": "250"
+            },
+            "terminal_net_payout_quote": {
+              "denominator": "1",
+              "numerator": "150"
+            }
+          },
+          {
+            "call_exercise_fee_quote": {
+              "denominator": "1",
+              "numerator": "30"
+            },
+            "call_gross_payout_quote": {
+              "denominator": "1",
+              "numerator": "200"
+            },
+            "put_exercise_fee_quote": {
+              "denominator": "1",
+              "numerator": "0"
+            },
+            "put_gross_payout_quote": {
+              "denominator": "1",
+              "numerator": "0"
+            },
+            "settlement_price": {
+              "denominator": "1",
+              "numerator": "300"
+            },
+            "terminal_net_payout_quote": {
+              "denominator": "1",
+              "numerator": "170"
+            }
+          }
+        ],
+        "gross_payout_floor_quote": {
+          "denominator": "1",
+          "numerator": "200"
+        },
+        "minimizing_breakpoints": [
+          {
+            "denominator": "1",
+            "numerator": "250"
+          }
+        ],
+        "qualified_edge": false,
+        "terminal_net_payout_floor_quote": {
+          "denominator": "1",
+          "numerator": "150"
+        }
+      }
+    },
+    {
+      "inputs": {
+        "call_exercise_fee": {
+          "index_rate": "0.2",
+          "intrinsic_cap_fraction": "0.5"
+        },
+        "lower_call_strike": "100",
+        "matched_base_quantity": "1",
+        "put_exercise_fee": {
+          "index_rate": "0.2",
+          "intrinsic_cap_fraction": "0.5"
+        },
+        "terminal_cost_reserve_quote": "0",
+        "upper_put_strike": "300"
+      },
+      "name": "nonterminating_switch",
+      "result": {
+        "critical_points": [
+          {
+            "call_exercise_fee_quote": {
+              "denominator": "1",
+              "numerator": "0"
+            },
+            "call_gross_payout_quote": {
+              "denominator": "1",
+              "numerator": "0"
+            },
+            "put_exercise_fee_quote": {
+              "denominator": "1",
+              "numerator": "0"
+            },
+            "put_gross_payout_quote": {
+              "denominator": "1",
+              "numerator": "300"
+            },
+            "settlement_price": {
+              "denominator": "1",
+              "numerator": "0"
+            },
+            "terminal_net_payout_quote": {
+              "denominator": "1",
+              "numerator": "300"
+            }
+          },
+          {
+            "call_exercise_fee_quote": {
+              "denominator": "1",
+              "numerator": "0"
+            },
+            "call_gross_payout_quote": {
+              "denominator": "1",
+              "numerator": "0"
+            },
+            "put_exercise_fee_quote": {
+              "denominator": "1",
+              "numerator": "20"
+            },
+            "put_gross_payout_quote": {
+              "denominator": "1",
+              "numerator": "200"
+            },
+            "settlement_price": {
+              "denominator": "1",
+              "numerator": "100"
+            },
+            "terminal_net_payout_quote": {
+              "denominator": "1",
+              "numerator": "180"
+            }
+          },
+          {
+            "call_exercise_fee_quote": {
+              "denominator": "3",
+              "numerator": "100"
+            },
+            "call_gross_payout_quote": {
+              "denominator": "3",
+              "numerator": "200"
+            },
+            "put_exercise_fee_quote": {
+              "denominator": "3",
+              "numerator": "100"
+            },
+            "put_gross_payout_quote": {
+              "denominator": "3",
+              "numerator": "400"
+            },
+            "settlement_price": {
+              "denominator": "3",
+              "numerator": "500"
+            },
+            "terminal_net_payout_quote": {
+              "denominator": "3",
+              "numerator": "400"
+            }
+          },
+          {
+            "call_exercise_fee_quote": {
+              "denominator": "7",
+              "numerator": "300"
+            },
+            "call_gross_payout_quote": {
+              "denominator": "7",
+              "numerator": "800"
+            },
+            "put_exercise_fee_quote": {
+              "denominator": "7",
+              "numerator": "300"
+            },
+            "put_gross_payout_quote": {
+              "denominator": "7",
+              "numerator": "600"
+            },
+            "settlement_price": {
+              "denominator": "7",
+              "numerator": "1500"
+            },
+            "terminal_net_payout_quote": {
+              "denominator": "7",
+              "numerator": "800"
+            }
+          },
+          {
+            "call_exercise_fee_quote": {
+              "denominator": "1",
+              "numerator": "60"
+            },
+            "call_gross_payout_quote": {
+              "denominator": "1",
+              "numerator": "200"
+            },
+            "put_exercise_fee_quote": {
+              "denominator": "1",
+              "numerator": "0"
+            },
+            "put_gross_payout_quote": {
+              "denominator": "1",
+              "numerator": "0"
+            },
+            "settlement_price": {
+              "denominator": "1",
+              "numerator": "300"
+            },
+            "terminal_net_payout_quote": {
+              "denominator": "1",
+              "numerator": "140"
+            }
+          }
+        ],
+        "gross_payout_floor_quote": {
+          "denominator": "1",
+          "numerator": "200"
+        },
+        "minimizing_breakpoints": [
+          {
+            "denominator": "7",
+            "numerator": "1500"
+          }
+        ],
+        "qualified_edge": false,
+        "terminal_net_payout_floor_quote": {
+          "denominator": "7",
+          "numerator": "800"
+        }
+      }
+    },
+    {
+      "inputs": {
+        "call_exercise_fee": {
+          "index_rate": "0",
+          "intrinsic_cap_fraction": "0.5"
+        },
+        "lower_call_strike": "100",
+        "matched_base_quantity": "1",
+        "put_exercise_fee": {
+          "index_rate": "0",
+          "intrinsic_cap_fraction": "0.5"
+        },
+        "terminal_cost_reserve_quote": "0",
+        "upper_put_strike": "300"
+      },
+      "name": "no_exercise_fees",
+      "result": {
+        "critical_points": [
+          {
+            "call_exercise_fee_quote": {
+              "denominator": "1",
+              "numerator": "0"
+            },
+            "call_gross_payout_quote": {
+              "denominator": "1",
+              "numerator": "0"
+            },
+            "put_exercise_fee_quote": {
+              "denominator": "1",
+              "numerator": "0"
+            },
+            "put_gross_payout_quote": {
+              "denominator": "1",
+              "numerator": "300"
+            },
+            "settlement_price": {
+              "denominator": "1",
+              "numerator": "0"
+            },
+            "terminal_net_payout_quote": {
+              "denominator": "1",
+              "numerator": "300"
+            }
+          },
+          {
+            "call_exercise_fee_quote": {
+              "denominator": "1",
+              "numerator": "0"
+            },
+            "call_gross_payout_quote": {
+              "denominator": "1",
+              "numerator": "0"
+            },
+            "put_exercise_fee_quote": {
+              "denominator": "1",
+              "numerator": "0"
+            },
+            "put_gross_payout_quote": {
+              "denominator": "1",
+              "numerator": "200"
+            },
+            "settlement_price": {
+              "denominator": "1",
+              "numerator": "100"
+            },
+            "terminal_net_payout_quote": {
+              "denominator": "1",
+              "numerator": "200"
+            }
+          },
+          {
+            "call_exercise_fee_quote": {
+              "denominator": "1",
+              "numerator": "0"
+            },
+            "call_gross_payout_quote": {
+              "denominator": "1",
+              "numerator": "200"
+            },
+            "put_exercise_fee_quote": {
+              "denominator": "1",
+              "numerator": "0"
+            },
+            "put_gross_payout_quote": {
+              "denominator": "1",
+              "numerator": "0"
+            },
+            "settlement_price": {
+              "denominator": "1",
+              "numerator": "300"
+            },
+            "terminal_net_payout_quote": {
+              "denominator": "1",
+              "numerator": "200"
+            }
+          }
+        ],
+        "gross_payout_floor_quote": {
+          "denominator": "1",
+          "numerator": "200"
+        },
+        "minimizing_breakpoints": [
+          {
+            "denominator": "1",
+            "numerator": "100"
+          },
+          {
+            "denominator": "1",
+            "numerator": "300"
+          }
+        ],
+        "qualified_edge": false,
+        "terminal_net_payout_floor_quote": {
+          "denominator": "1",
+          "numerator": "200"
+        }
+      }
+    },
+    {
+      "inputs": {
+        "call_exercise_fee": {
+          "index_rate": "0",
+          "intrinsic_cap_fraction": "0.5"
+        },
+        "lower_call_strike": "100",
+        "matched_base_quantity": "1",
+        "put_exercise_fee": {
+          "index_rate": "0.1",
+          "intrinsic_cap_fraction": "0.5"
+        },
+        "terminal_cost_reserve_quote": "0",
+        "upper_put_strike": "300"
+      },
+      "name": "unequal_leg_fees",
+      "result": {
+        "critical_points": [
+          {
+            "call_exercise_fee_quote": {
+              "denominator": "1",
+              "numerator": "0"
+            },
+            "call_gross_payout_quote": {
+              "denominator": "1",
+              "numerator": "0"
+            },
+            "put_exercise_fee_quote": {
+              "denominator": "1",
+              "numerator": "0"
+            },
+            "put_gross_payout_quote": {
+              "denominator": "1",
+              "numerator": "300"
+            },
+            "settlement_price": {
+              "denominator": "1",
+              "numerator": "0"
+            },
+            "terminal_net_payout_quote": {
+              "denominator": "1",
+              "numerator": "300"
+            }
+          },
+          {
+            "call_exercise_fee_quote": {
+              "denominator": "1",
+              "numerator": "0"
+            },
+            "call_gross_payout_quote": {
+              "denominator": "1",
+              "numerator": "0"
+            },
+            "put_exercise_fee_quote": {
+              "denominator": "1",
+              "numerator": "10"
+            },
+            "put_gross_payout_quote": {
+              "denominator": "1",
+              "numerator": "200"
+            },
+            "settlement_price": {
+              "denominator": "1",
+              "numerator": "100"
+            },
+            "terminal_net_payout_quote": {
+              "denominator": "1",
+              "numerator": "190"
+            }
+          },
+          {
+            "call_exercise_fee_quote": {
+              "denominator": "1",
+              "numerator": "0"
+            },
+            "call_gross_payout_quote": {
+              "denominator": "1",
+              "numerator": "150"
+            },
+            "put_exercise_fee_quote": {
+              "denominator": "1",
+              "numerator": "25"
+            },
+            "put_gross_payout_quote": {
+              "denominator": "1",
+              "numerator": "50"
+            },
+            "settlement_price": {
+              "denominator": "1",
+              "numerator": "250"
+            },
+            "terminal_net_payout_quote": {
+              "denominator": "1",
+              "numerator": "175"
+            }
+          },
+          {
+            "call_exercise_fee_quote": {
+              "denominator": "1",
+              "numerator": "0"
+            },
+            "call_gross_payout_quote": {
+              "denominator": "1",
+              "numerator": "200"
+            },
+            "put_exercise_fee_quote": {
+              "denominator": "1",
+              "numerator": "0"
+            },
+            "put_gross_payout_quote": {
+              "denominator": "1",
+              "numerator": "0"
+            },
+            "settlement_price": {
+              "denominator": "1",
+              "numerator": "300"
+            },
+            "terminal_net_payout_quote": {
+              "denominator": "1",
+              "numerator": "200"
+            }
+          }
+        ],
+        "gross_payout_floor_quote": {
+          "denominator": "1",
+          "numerator": "200"
+        },
+        "minimizing_breakpoints": [
+          {
+            "denominator": "1",
+            "numerator": "250"
+          }
+        ],
+        "qualified_edge": false,
+        "terminal_net_payout_floor_quote": {
+          "denominator": "1",
+          "numerator": "175"
+        }
+      }
+    }
+  ],
+  "counterexamples": {
+    "different_settlement_scalars_break_the_floor": {
+      "actual_gross_payout": {
+        "denominator": "1",
+        "numerator": "0"
+      },
+      "call_settlement_price": {
+        "denominator": "1",
+        "numerator": "0"
+      },
+      "invalid_common_scalar_floor": {
+        "denominator": "1",
+        "numerator": "200"
+      },
+      "lower_strike": {
+        "denominator": "1",
+        "numerator": "100"
+      },
+      "put_settlement_price": {
+        "denominator": "1",
+        "numerator": "400"
+      },
+      "upper_strike": {
+        "denominator": "1",
+        "numerator": "300"
+      }
+    },
+    "positive_payout_is_not_profit": {
+      "alternative_terminal_multiplier": {
+        "denominator": "50",
+        "numerator": "51"
+      },
+      "incremental_floor": {
+        "denominator": "2",
+        "numerator": "-57"
+      },
+      "net_payout_floor": {
+        "denominator": "1",
+        "numerator": "150"
+      },
+      "upfront_cash_debit": {
+        "denominator": "1",
+        "numerator": "175"
+      }
+    }
+  },
+  "qualified_edge": false,
+  "schema": "fully-paid-long-option-synthetic-controls-v1",
+  "scope": "Constructed supplied-law arithmetic only; no vendor coefficients, market observations or independent financial validation.",
+  "source_canonical_LF_sha256": "8fa1cb19c79db1d7bf904a72373b00414be31786304558364ae22e8633540b50"
+}

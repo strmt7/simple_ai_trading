@@ -1,0 +1,248 @@
+{
+  "base_revision": "704fa4ea417126a9ff846e5c8bfd6d7a3f58d2f6",
+  "control_generator": {
+    "path": "docs/review/2026-11-10/fully-paid-options/controls.py",
+    "sha256": "7a575100fec104d5f68c65c04cffef69f2aafc69583463f81fa487a085816134"
+  },
+  "controls": {
+    "path": "docs/review/2026-11-10/fully-paid-options/controls.json",
+    "sha256": "e28799418960cdbb57fd81d910ba815f2a7c9c1f8a20227df2a9e20a7f448f47"
+  },
+  "controls_byte_identical_reproduction": {
+    "path": "data/research/2026-11-10-completion-baseline/controls.reproduced.json",
+    "sha256": "e28799418960cdbb57fd81d910ba815f2a7c9c1f8a20227df2a9e20a7f448f47"
+  },
+  "created_at_utc": "2026-11-10T02:39:58.302485+00:00",
+  "figure": {
+    "path": "docs/review/2026-11-10/fully-paid-options/payout-floor.svg",
+    "sha256": "d33112975a3b2c0815b38f58cf1666653ba2389adf45ad9e2dfd78403a92d4ea"
+  },
+  "figure_before_whitespace_normalization_retained": {
+    "path": "data/research/2026-11-10-completion-baseline/payout.pre-whitespace-normalization.svg",
+    "sha256": "98e7c737599629a3220e7d1d42b1b1d7d1cb628a1b53bdf22e693362a05855ad"
+  },
+  "figure_byte_identical_reproduction": {
+    "path": "data/research/2026-11-10-completion-baseline/payout.final.reproduced.svg",
+    "sha256": "d33112975a3b2c0815b38f58cf1666653ba2389adf45ad9e2dfd78403a92d4ea"
+  },
+  "figure_normalization": "Windows CRLF and generated SVG trailing padding normalized by renderer. Original exports retained. Exact path/point tokens and text labels verified unchanged; final published SVG is byte-identical to a fresh export. Preview inspected; graph is explanatory, not numeric authority.",
+  "figure_original_windows_newlines_retained": {
+    "path": "data/research/2026-11-10-completion-baseline/payout.pre-normalization.svg",
+    "sha256": "bb7eedbc63fb3eb7e5c92eaf9214579f1989fb6ba65a8302a842d65ad0b44d4d"
+  },
+  "hypothesis_prospectus": {
+    "path": "data/research/2026-11-10-completion-baseline/long-options-prospectus.json",
+    "sha256": "875166a1f90a2dad5ad1f7ec13b0899ddc5d51ca87f57c4f577c1e669db7d572"
+  },
+  "market_account_order_or_real_credentials_access": false,
+  "mathematical_contract": {
+    "critical_points": "Domain boundary 0, both strikes, valid call cap*K_low/(cap-rate), valid put cap*K_high/(cap+rate). Skip zero denominators and inactive branches. Final tail slopes are nonnegative.",
+    "domain": "S>=0; 0<K_low<K_high; matched q>0; common linear quote-cash settlement law",
+    "exercise_fees": "Per leg q*min(rate*S,cap*positive_intrinsic); supplied rate/cap in [0,1]; additional terminal quote cost reserve is subtracted once.",
+    "gross_floor": "q*(K_high-K_low)",
+    "gross_payout": "q*(max(S-K_low,0)+max(K_high-S,0))",
+    "numeric_contract": "Bounded finite Decimal inputs converted to exact Fraction arithmetic; no rounding up of the floor or sampled-price proof.",
+    "scope": "Payout after supplied terminal exercise costs/reserve, not profit; no native source, fee, margin, eligibility, settlement or complete execution qualification."
+  },
+  "navigation": {
+    "actual_source_bound_semantic_and_lexical_results": {
+      "path": "data/research/2026-11-10-completion-baseline/long-options-source-routing.log",
+      "sha256": "3b0d77ecfbe617ecf5305afdd044812c7a6f3b06b46d1613de6a120797ab44bd"
+    },
+    "index_refresh": {
+      "path": "data/research/2026-11-10-completion-baseline/index-refresh.log",
+      "sha256": "2e95c946c6342889cfc83a2bb89f36154b8354240708f529645de5eaa0d8bb02"
+    },
+    "post_edit_index_stale": true
+  },
+  "next_economic_access": "Require admitted primary product/fee/common-settlement scope and a separately frozen genuinely new population/candidate contract with complete consumed-symbol exclusions. No repricing of exhausted option/perpetual data, unqualified fee substitution or retry-until-winner.",
+  "prior_completion_baseline": {
+    "decision": "Already implemented; do not rebuild or train on its selected 66 locks without missing decision-time liquidation/depth/fee evidence.",
+    "review": {
+      "path": "docs/review/2026-09-05/completion-decision-review.md",
+      "sha256": "590879d3b17ac92ab20b1a16111d1fc158a1fe9d0ec8b96ef3659d10b952f145"
+    }
+  },
+  "production_source": {
+    "path": "src/simple_ai_trading/option_long_floor.py",
+    "sha256": "8fa1cb19c79db1d7bf904a72373b00414be31786304558364ae22e8633540b50"
+  },
+  "production_training_or_benchmark": false,
+  "protected_capture_access": false,
+  "qualified_edge": false,
+  "registry": {
+    "canonical_LF_sha256": "74d3ab6dd8499496e341705c0892b0879892f95a1e4a53c4c9f13319b57e6a9e",
+    "new_registered_hypotheses_or_terminal_market_observations": 0,
+    "path": "docs/model-research/structural-edge-priority-registry-v1.json",
+    "registered_counts": [
+      204,
+      65,
+      37,
+      0
+    ],
+    "unchanged_from_base": true
+  },
+  "renderer": {
+    "path": "docs/review/2026-11-10/fully-paid-options/render.py",
+    "sha256": "8f326a83d67d89277684ee6b38aa97c3ab2112be1fe72fa64d2b50325fb2704b"
+  },
+  "result_sha256": "66d22c1669447547161f4de05ac720cc020d4eab29b97cd8ea4aad4356f823d1",
+  "schema": "fully-paid-long-option-conditional-floor-research-v1",
+  "semantic_review": {
+    "definitions": [
+      {
+        "end_line": 21,
+        "name": "_rational",
+        "start_line": 16
+      },
+      {
+        "end_line": 36,
+        "name": "CappedExerciseFee",
+        "start_line": 25
+      },
+      {
+        "end_line": 46,
+        "name": "LongOptionFloorPoint",
+        "start_line": 40
+      },
+      {
+        "end_line": 56,
+        "name": "LongOptionFloor",
+        "start_line": 50
+      },
+      {
+        "end_line": 137,
+        "name": "evaluate_fully_paid_long_option_floor",
+        "start_line": 59
+      }
+    ],
+    "module_line_count": 137,
+    "scope": "Complete new standalone module and its direct tests/render/control generators. No other runtime implementation changed or whole-repository completion claimed."
+  },
+  "services_tasks_or_persistent_workers_installed": false,
+  "source_capture": {
+    "all_source_admissions_failed": true,
+    "capture_boundaries_sha256": "f971726268ba2e630b2ebbe8d5bcf02f7b3f23b92ccb16efe23aef82cebe950f",
+    "contract": {
+      "path": "data/research/2026-11-10-completion-baseline/long-options-source/intent.json",
+      "sha256": "71670af372edd6d1b1f0a12875cbe835dce2c532e2870a3065031ead5cbab133"
+    },
+    "controller": {
+      "path": "data/research/2026-11-10-completion-baseline/long-options-source/crawl_once.py",
+      "sha256": "bf442d524ed8bbbf75cfb086d138b22541dde3f65bac1169bad5196cb77a001b"
+    },
+    "documents": [
+      {
+        "admitted": false,
+        "checks": {
+          "exact_url": true,
+          "http_200": false,
+          "native_size": true,
+          "native_success": true,
+          "no_native_error": true,
+          "substantive_content": false
+        },
+        "error": "",
+        "extracted_markdown_characters": 1,
+        "name": "long-buyer-margin",
+        "native": {
+          "path": "data/research/2026-11-10-completion-baseline/long-options-source/long-buyer-margin.native.json",
+          "sha256": "44fe10696b22b3cacb8855c1288ac678eb30c4b109bc107b3ce4bd292ab7a581"
+        },
+        "native_success": true,
+        "status_code": 202,
+        "url": "https://www.binance.com/en/support/faq/detail/1ceb77f837344e3085ecf98d9a6a8097"
+      },
+      {
+        "admitted": false,
+        "checks": {
+          "exact_url": true,
+          "http_200": false,
+          "native_size": true,
+          "native_success": true,
+          "no_native_error": true,
+          "substantive_content": false
+        },
+        "error": "",
+        "extracted_markdown_characters": 1,
+        "name": "payoff-law",
+        "native": {
+          "path": "data/research/2026-11-10-completion-baseline/long-options-source/payoff-law.native.json",
+          "sha256": "3444aa8fd5c7b9c40aeb99d53cbbd7dfabf96624c88d8a104a7afdf2b9f639ab"
+        },
+        "native_success": true,
+        "status_code": 202,
+        "url": "https://www.binance.com/en/support/faq/detail/acc50814eb0f4beba3799643d8b7a0d4"
+      },
+      {
+        "admitted": false,
+        "checks": {
+          "exact_url": true,
+          "http_200": false,
+          "native_size": true,
+          "native_success": true,
+          "no_native_error": true,
+          "substantive_content": false
+        },
+        "error": "",
+        "extracted_markdown_characters": 1,
+        "name": "fee-law",
+        "native": {
+          "path": "data/research/2026-11-10-completion-baseline/long-options-source/fee-law.native.json",
+          "sha256": "35719fb716eb57062beafec37fe6cd461f82c34f3a033c0654a88a8315e7a1ce"
+        },
+        "native_success": true,
+        "status_code": 202,
+        "url": "https://www.binance.com/en-ZA/support/faq/detail/5326e5de61c34fed98abe28d2f175a23"
+      }
+    ],
+    "journal": {
+      "path": "data/research/2026-11-10-completion-baseline/long-options-source/journal.jsonl",
+      "sha256": "564fb30264a93bcabc9bec251b6a9da3ab1fe4ab4c207a210568c8817ed509e2"
+    },
+    "native_attempts": 3,
+    "preflight": {
+      "path": "data/research/2026-11-10-completion-baseline/long-options-source/preflight.json",
+      "sha256": "f50725e7d6f85231394762a862738e78d9d610bcadc8d2e8f0793e9636ad225a"
+    },
+    "provider_lock_sha256": "5fc27973200b72184199428bee436c8deee9fe65ef3f0762cb871ac5c69abe53",
+    "provider_tool_sha256": "e84a0e54ee07e4e13d3d2f35491f641730096a78126068f232c1f2397a467d8c",
+    "provider_version": "0.9.5+flitzzip.portable2",
+    "retries": 0
+  },
+  "source_provenance_lookup": {
+    "consequence": "No claimed source novelty, no request repeat or market escalation. Failed native captures and source gate remain unchanged. AGENTS now states the result/journal lookup requirement explicitly.",
+    "coverage_limit": "That filename restriction alone did not cover every result/journal record. It must not be called proof that a URL was globally unused.",
+    "post_access_tracked_audit": "Repository doc JSON/JSONL/Markdown scan with normal ignore rules and raw directories excluded found only the current new result for the three canonical FAQ IDs. No exhaustive private-history or ignored-record coverage is claimed.",
+    "pre_access_scope": "Tracked contract, intent and Markdown references; no canonical FAQ-ID hit."
+  },
+  "status": "supplied_law_proof_complete_native_product_and_fee_source_gate_failed_no_economic_capture",
+  "test_source": {
+    "path": "tests/test_option_long_floor.py",
+    "sha256": "5a74380ad284ab8801239a43b37233dc1b75cb5a2277df9ec345191cf3b51931"
+  },
+  "tested_snapshots": [
+    {
+      "path": "data/research/2026-11-10-completion-baseline/option_long_floor.py.tested-source.txt",
+      "sha256": "8fa1cb19c79db1d7bf904a72373b00414be31786304558364ae22e8633540b50"
+    },
+    {
+      "path": "data/research/2026-11-10-completion-baseline/test_option_long_floor.py.tested-source.txt",
+      "sha256": "5a74380ad284ab8801239a43b37233dc1b75cb5a2277df9ec345191cf3b51931"
+    }
+  ],
+  "verification": {
+    "JUnit": {
+      "path": "data/research/2026-11-10-completion-baseline/long-floor-tests-01.xml",
+      "sha256": "706466ee26d760ee083394af3a616a5f8cd31f0237aac19914eaac1829c6c914"
+    },
+    "errors": 0,
+    "failures": 0,
+    "full_unchanged_engine_suite_rerun": false,
+    "log": {
+      "path": "data/research/2026-11-10-completion-baseline/long-floor-tests-01.log",
+      "sha256": "97d69e0dc34dc36495ba3305f1354db37988e9db84619c94a3d189c1aaf90e99"
+    },
+    "passing_cases": 31
+  }
+}
