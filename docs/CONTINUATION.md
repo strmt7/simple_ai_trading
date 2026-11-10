@@ -102,6 +102,12 @@ current full-suite failure count without rerunning the appropriate scope.
   token/lot ownership and costs. Protected partial captures, all consumed windows
   and their literal retry triggers remain unchanged. No blanket venue-wide block
   and no repeated polling of unchanged promotional programs is justified.
+- [Finality and cash](review/2026-11-10/finality-cash/review.md): two native primary
+  paper captures passed. First-redemption-by-any-holder timing cannot qualify this
+  bot's usable collateral clock or turnover. The source cohort predates the August
+  rank-6 screen; its intended post-oracle/pre-adapter probe window and exact retry
+  trigger remain unchanged. Holder/payout lineage and effective/available clocks
+  now have explicit evidence requirements. No market request, fit or edge followed.
 
 Next choose a distinct informative source/economic question whose complete retry
 trigger is independently satisfied, or close a demonstrated capital/recovery gap.
@@ -112,6 +118,13 @@ LLMs may veto/reduce risk, never bypass deterministic Stop/ownership/close contr
 
 ## Platform work and publication
 
+- [Owned Binance CLI execution](review/2026-11-10/binance-owned-cli/review.md) now
+  shares the autonomous write-ahead opening/closing flow and returns typed raw-ack
+  outcomes. Entry, normal and emergency close bind scope before dispatch; real
+  partial residuals survive. 217 distinct focused cases are supported across
+  documented lanes, with three old-CLI regressions. The Spot roundtrip's two
+  direct writes, other native transports, legacy migration/rearm and independent
+  process fencing remain open; there is no universal gateway or whole-suite claim.
 - [Owned SDK transport](review/2026-11-10/sdk-transport/review.md) binds native
   Polymarket GET/POST/DELETE hooks to each venue's configured timeout and body cap,
   preserving signing bytes, no write retries and no redirects. Incomplete/late

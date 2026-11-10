@@ -217,6 +217,14 @@ result and all other consumed populations, including WNBA September 3-9.
   boundary defaults off. Public unauthenticated read-only structural discovery
   may cover other Polymarket markets when it uses the same fail-closed payoff,
   source, and cost gates. No live-money authority exists.
+- New or revised owned Binance position execution must use
+  `binance_owned_execution.submit_durable_open` / `submit_durable_close`.
+  Keep UNKNOWN and exact endpoint/product/API-key scope durable before native
+  dispatch; publish owned inventory before releasing admission. Plain
+  `BinanceClient.place_order` is a transport primitive, not a recovery gateway.
+  Preserve native receipt/quantity checks and separate owned-close admission.
+  The legacy Spot roundtrip diagnostic remains a tracked two-leg recovery gap,
+  not permission to copy its direct-write pattern or claim universal fencing.
 - Conservative is default. Leverage is a ceiling, never edge. Profitability,
   ROI, readiness, and drawdown claims require source-bound after-cost evidence.
 - Aggregate performance never establishes an all-regime edge. Apply

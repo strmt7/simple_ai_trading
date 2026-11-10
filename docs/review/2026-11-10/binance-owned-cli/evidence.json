@@ -1,0 +1,180 @@
+{
+  "base_revision": "925a49295644be8f0e37d714d413108ff887801b",
+  "before_sources_sha256": {
+    "autonomous.before.py.txt": "0abae4b70205fd282134d767c4255f82ee130c3cad9528c4e4bd1c1c25707ebe",
+    "cli-tests.before.py.txt": "2482ba7f0d671e0c257dbc51024757e8ab46ebe7dacb8a02439f99cf2e66b407",
+    "cli.before.py.txt": "4a1b65edd8bc086bcc7f5e77bf87c17586866249b00e1273a14c52cdf43e2719"
+  },
+  "behavior": [
+    "CLI signed entry, normal close and emergency close use the same shared durable owned execution as autonomous mode.",
+    "UNKNOWN and exact execution scope are committed before native dispatch; transport uncertainty queries the exact owned client ID without resubmitting.",
+    "Raw acknowledgements remain available with typed persisted-position/trade outcomes. Native Spot receipt and quantity helpers are reused rather than duplicated.",
+    "Real partial residuals remain present; 99.9 percent is not a full close. Unresolved closing obligations prevent a blind repeat and new exposure.",
+    "Internal paper helper refuses signed dispatch; supplied real credentials were never read or used.",
+    "Scope-unproven legacy positions are not assigned to the current account; their controlled migration remains separate."
+  ],
+  "created_at_utc": "2026-11-10T00:35:31.180785+00:00",
+  "exact_named_place_order_inventory": [
+    {
+      "dry_run_argument": null,
+      "function": "_submit_open_order",
+      "line": 246,
+      "path": "src/simple_ai_trading/binance_owned_execution.py"
+    },
+    {
+      "dry_run_argument": "False",
+      "function": "_submit_close_order",
+      "line": 345,
+      "path": "src/simple_ai_trading/binance_owned_execution.py"
+    },
+    {
+      "dry_run_argument": null,
+      "function": "_paper_or_live_order",
+      "line": 6915,
+      "path": "src/simple_ai_trading/cli.py"
+    },
+    {
+      "dry_run_argument": "False",
+      "function": "command_spot_roundtrip",
+      "line": 7235,
+      "path": "src/simple_ai_trading/cli.py"
+    },
+    {
+      "dry_run_argument": "False",
+      "function": "command_spot_roundtrip",
+      "line": 7266,
+      "path": "src/simple_ai_trading/cli.py"
+    }
+  ],
+  "financial_counts_unchanged": [
+    204,
+    65,
+    37,
+    0
+  ],
+  "inventory_limit": "Literal place_order calls only; not a complete native-write, reflection or alternate-transport inventory. Round74 has its own test-environment transport.",
+  "native_market_account_order_or_real_credentials_access": false,
+  "navigation_receipt": {
+    "path": "data/research/2026-11-10-supervision/binance-cli-source-routing.log",
+    "phase": "Current pre-edit dirty worktree routing; later code changes invalidate that index for new semantic searches.",
+    "sha256": "c1b2af6df98aac7ad92c97620b00db8ddc3ecd77bfba67b1ca33da7f8f0fcaa8"
+  },
+  "previous_goal_turn": "progress: two primary financial paper captures admitted; rank-6 holder/cash-clock requirements clarified without resampling or claiming an edge",
+  "private_artifacts_sha256": {
+    "caller-cases-tests.log": "e39c7c8495c11b3781a4116112e8edaad58e79f9e534b4818722b9eae3cfa6a2",
+    "caller-cases-tests.xml": "f704afb47bfaeafc6bfa43cb0e61a2f9455e7c280f11a9cd703bbde8513ef577",
+    "intent.json": "da774d53dad2ff8053846c65489b22407fc568df21a3f44432d35c2df41ee13c",
+    "old-cli-tests.log": "a491dc9b5b80c2615e5f4045a65f201314bd067b21832e84eba0683570b49eca",
+    "old-cli-tests.xml": "2bb1bdb58a1d9e20f4f3942f44126295126faee2c207b065f31781cd0cab357a",
+    "owned-scenarios-tests.log": "c7e4112ee00157f6cd73b78553233801e1ebd66836f258ef8f46fb8e60480444",
+    "owned-scenarios-tests.xml": "b7a76e143ca133c8332239c3a94c36f67fafa243342dda8673e8b86cd81a169e",
+    "verified-phase.sources.json": "c7d8e919f9b167d919f4f1aab225982933fd24cd4ecfe7daf7ed045329572607",
+    "verified-phase.tests.py.txt": "1adb7f65e7392ece9420dfe5aa2e57ddea826f4b952dd13ed1f4e3cbd0a70344",
+    "verified-tests.log": "53e5c93851e69350693d6a37d68865490a83c23132d6dc1daeada2812d3da0bd",
+    "verified-tests.xml": "94253e1f218b76e35144c3d7e03223c01e083ab86850f366da2b44cca83ad60b"
+  },
+  "private_retention_directory": "data/research/2026-11-10-binance-owned-cli",
+  "production_sources_sha256": {
+    "src/simple_ai_trading/autonomous.py": "e5e83fce127d666a9e0a8cc516f0ad7e3b9d08af440beac72b88add9c81218b0",
+    "src/simple_ai_trading/binance_owned_execution.py": "4eee25777c60463171f314c7c8cf8e030bf1343529a4cb42b7ec64ca784e8b50",
+    "src/simple_ai_trading/cli.py": "885399ed1d59a7fe4af459bd0f020a05141fad8cede46834d62d8e84118daaeb"
+  },
+  "remaining_boundaries": [
+    "Spot roundtrip diagnostic still has two direct native writes and needs a separately complete two-leg inventory/recovery design.",
+    "Low-level API and private wire primitives remain callable; no universal technical write fence or independent supervisor is implemented.",
+    "Terminal partial recovery/rearm, legacy account-scope migration, shared persistent risk budgets and hard process deadlines remain incomplete.",
+    "Futures fees/float adapter and CLI cash display remain scoped estimates; source-native account/margin/cash qualification and whole-tree final review remain open."
+  ],
+  "result_sha256": "05bdc35d4a777a634eb3953f728987142ceeef9a3e610ebf460fa59b8279adf3",
+  "schema": "binance-owned-cli-durable-execution-repair-v1",
+  "services_tasks_or_persistent_workers_installed": false,
+  "source_scope": {
+    "all_other_CLI_top_level_definitions_AST_identical": true,
+    "all_remaining_autonomous_definitions_AST_identical": true,
+    "changed_CLI_top_level_definitions": [
+      "_paper_or_live_order",
+      "command_live"
+    ],
+    "compatibility_private_import_names_retained": true,
+    "pure_execution_helpers_moved_AST_identical": [
+      "_position_order_side",
+      "_order_text",
+      "_order_float",
+      "_order_fill_details",
+      "_order_has_fill_evidence",
+      "_order_exchange_status",
+      "_apply_open_order",
+      "_apply_close_order",
+      "_next_close_client_order_id"
+    ]
+  },
+  "test_checkout_sources_sha256": {
+    "tests/test_autonomous.py": "ddff5a227d1d92e6b3f32c7e560a378ef778dc9ebcf32f96d49dc783fdd4960f",
+    "tests/test_binance_close_intents.py": "b399a258c57284a356bf356660b3ddb9e51ba32541b4c309744d5a0e5b87343d",
+    "tests/test_binance_open_intents.py": "dc4ef26d5807e347d1e452e2db5dcbbe5d191caba573337aa2c18620448fcd7a",
+    "tests/test_cli.py": "2946d2bd191be487a4687661bb8cee445e3189cea169f711c8cbf8094282dd40",
+    "tests/test_cli_coverage.py": "9e6e36f2e0b6a226757c8a00f8b6c53be809443e4cdeb13ea210ca21b3294353"
+  },
+  "test_source_binding": {
+    "Git_canonical_test_hashes_verified": true,
+    "executed_checkout_hashes_retained_separately": true,
+    "no_test_logic_changed_for_normalization": true,
+    "only_CRLF_to_LF_differences_verified": [
+      "tests/test_autonomous.py",
+      "tests/test_cli.py"
+    ]
+  },
+  "test_sources_sha256": {
+    "tests/test_autonomous.py": "6b1685d91068a94e67edd93049b1d984941ab9309d41b10a61a0bf91e83491bf",
+    "tests/test_binance_close_intents.py": "b399a258c57284a356bf356660b3ddb9e51ba32541b4c309744d5a0e5b87343d",
+    "tests/test_binance_open_intents.py": "dc4ef26d5807e347d1e452e2db5dcbbe5d191caba573337aa2c18620448fcd7a",
+    "tests/test_cli.py": "6bee85659bc43fba519ad4268a8210e99732eaa5a77c75d16a9a1dca9b57b8e3",
+    "tests/test_cli_coverage.py": "9e6e36f2e0b6a226757c8a00f8b6c53be809443e4cdeb13ea210ca21b3294353"
+  },
+  "verification": {
+    "additional_direct_helper_callers_passed": 2,
+    "all_other_test_AST_definitions_unchanged_outside_declared_scenario_and_caller_changes": true,
+    "corrected_new_cases_passed": 5,
+    "distinct_current_focused_cases_supported": 217,
+    "existing_cases_passed": 210,
+    "failed_case_names_exactly_equal_corrected_lane_case_names": true,
+    "initial_to_corrected_scenario_lane_test_AST_change": "_owned_live_scenario fixture: invalid 100 percent stop changed to 50 percent and explicit 1x leverage; production risk gates unchanged",
+    "inter_lane_scope": "Initial 215-case lane passed 210 unchanged existing cases; its five failed new scenarios were corrected and passed in a separate five-case lane. A subsequent exact helper-call inventory identified two additional cases, now migrated and passed separately. No production bytes changed across these lanes.",
+    "lanes": {
+      "caller-cases-tests": {
+        "errors": 0,
+        "failures": 0,
+        "skipped": 0,
+        "tests": 2
+      },
+      "old-cli-tests": {
+        "errors": 0,
+        "failures": 3,
+        "skipped": 0,
+        "tests": 3
+      },
+      "owned-scenarios-tests": {
+        "errors": 0,
+        "failures": 0,
+        "skipped": 0,
+        "tests": 5
+      },
+      "verified-tests": {
+        "errors": 0,
+        "failures": 5,
+        "skipped": 0,
+        "tests": 215
+      }
+    },
+    "later_test_definition_changes": [
+      "test_paper_order_is_logged now verifies paper output and rejection before signed dispatch",
+      "test_live_order_forwards_entry_notional_to_bracket_aware_client replaced by test_owned_order_forwards_entry_notional_to_bracket_aware_client against the shared durable gateway"
+    ],
+    "not_one_final_217_case_green_run": true,
+    "old_cli_regression_failures_at_pre_native_durable_boundary": 3,
+    "production_bytes_identical_across_lanes": true,
+    "production_format": "pass",
+    "ruff_lint": "pass",
+    "test_AST_changes_limited_to_declared_verified_definitions": true
+  }
+}

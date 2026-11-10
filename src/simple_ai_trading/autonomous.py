@@ -27,7 +27,7 @@ import json
 import logging
 import math
 import time
-from dataclasses import asdict, dataclass, field, replace
+from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from typing import Callable, Mapping
 
@@ -38,9 +38,23 @@ from .api_budget import (
     summarize_api_budget,
 )
 from .api import BinanceAPIError, BinanceClient
-from .binance_execution_scope import BinanceExecutionScope
+from .binance_owned_execution import (
+    close_trade_template as _close_to_trade,
+    _position_order_side as _position_order_side,
+    _order_text as _order_text,
+    _order_float as _order_float,
+    _order_fill_details as _order_fill_details,
+    _order_has_fill_evidence as _order_has_fill_evidence,
+    _order_exchange_status as _order_exchange_status,
+    _apply_open_order as _apply_open_order,
+    _apply_close_order as _apply_close_order,
+    _submit_open_position as _submit_open_position,
+    _submit_durable_open_position as _submit_durable_open_position,
+    _submit_close_position as _submit_close_position,
+    _submit_durable_close_position as _submit_durable_close_position,
+    _next_close_client_order_id as _next_close_client_order_id,
+)
 from .binance_open_intents import OpenIntentError
-from .binance_order_responses import MarketOrderBinding
 from .binance_paper import BinancePaperBroker
 from .execution_lifecycle import ExecutionLifecyclePlan, build_execution_lifecycle_plan
 from .intervals import interval_milliseconds
@@ -171,10 +185,16 @@ class AutonomousConfig:
     stop_after_iterations: int | None = None  # None = infinite
     heartbeat_every: int = 1  # write heartbeat every N iterations
     dry_run: bool = True  # paper by default — operator must explicitly live
-    control_path: Path = field(default_factory=lambda: _DEFAULT_AUTONOMOUS_DIR / "state.json")
-    heartbeat_path: Path = field(default_factory=lambda: _DEFAULT_AUTONOMOUS_DIR / "heartbeat.json")
+    control_path: Path = field(
+        default_factory=lambda: _DEFAULT_AUTONOMOUS_DIR / "state.json"
+    )
+    heartbeat_path: Path = field(
+        default_factory=lambda: _DEFAULT_AUTONOMOUS_DIR / "heartbeat.json"
+    )
     positions_root: Path = field(default_factory=lambda: _DEFAULT_AUTONOMOUS_DIR)
-    log_path: Path = field(default_factory=lambda: _DEFAULT_AUTONOMOUS_DIR / "autonomous.log")
+    log_path: Path = field(
+        default_factory=lambda: _DEFAULT_AUTONOMOUS_DIR / "autonomous.log"
+    )
     paper_journal_path: Path | None = None
     starting_reference_cash: float = 1000.0
 
@@ -195,7 +215,9 @@ def ensure_credentials(runtime: RuntimeConfig, cfg: AutonomousConfig) -> None:
     if cfg.dry_run:
         return
     if not runtime.api_key or not runtime.api_secret:
-        raise RuntimeError("Autonomous live mode requires runtime.api_key and runtime.api_secret.")
+        raise RuntimeError(
+            "Autonomous live mode requires runtime.api_key and runtime.api_secret."
+        )
 
 
 def ensure_api_budget_headroom(
@@ -259,8 +281,12 @@ class Decision:
     ai_assist_entry_ready: bool = True
 
 
-DecisionFn = Callable[[BinanceClient, RuntimeConfig, StrategyConfig, ObjectiveSpec], Decision]
-ReconcileFn = Callable[[BinanceClient, RuntimeConfig, PositionsStore], ReconciliationReport]
+DecisionFn = Callable[
+    [BinanceClient, RuntimeConfig, StrategyConfig, ObjectiveSpec], Decision
+]
+ReconcileFn = Callable[
+    [BinanceClient, RuntimeConfig, PositionsStore], ReconciliationReport
+]
 
 
 @dataclass(frozen=True)
@@ -306,7 +332,9 @@ def _default_reconcile(
 
 
 def _lifecycle_reasons(plan: ExecutionLifecyclePlan, *, capability: str) -> str:
-    reasons = plan.open_block_reasons if capability == "open" else plan.close_block_reasons
+    reasons = (
+        plan.open_block_reasons if capability == "open" else plan.close_block_reasons
+    )
     return "; ".join(reasons) or "execution lifecycle blocked"
 
 
@@ -375,12 +403,22 @@ def _evaluate_auto_close(
         if cash_mark is not None
         else position.unrealized_pnl_pct(mark_price)
     )
-    if cfg.max_unrealized_close_pct is not None and pnl_pct >= cfg.max_unrealized_close_pct:
+    if (
+        cfg.max_unrealized_close_pct is not None
+        and pnl_pct >= cfg.max_unrealized_close_pct
+    ):
         return True, f"auto-take-profit@{cfg.max_unrealized_close_pct:+.2%}"
-    if cfg.min_unrealized_close_pct is not None and pnl_pct <= cfg.min_unrealized_close_pct:
+    if (
+        cfg.min_unrealized_close_pct is not None
+        and pnl_pct <= cfg.min_unrealized_close_pct
+    ):
         return True, f"auto-stop-loss@{cfg.min_unrealized_close_pct:+.2%}"
     signal_direction = {"LONG": 1, "SHORT": -1}.get(str(decision_side).upper(), 0)
-    elapsed_ms = max(0, int(observed_at_ms) - int(position.opened_at_ms)) if observed_at_ms > 0 else 0
+    elapsed_ms = (
+        max(0, int(observed_at_ms) - int(position.opened_at_ms))
+        if observed_at_ms > 0
+        else 0
+    )
     bars_held = elapsed_ms // max(1, int(interval_ms))
     lifecycle_exit = evaluate_position_exit(
         position_side=1 if str(position.side).upper() == "LONG" else -1,
@@ -421,9 +459,13 @@ def _open_position_from_decision(
     if not decision.ai_assist_entry_ready:
         raise ValueError("position entry requires a completed AI pre-entry review")
     price = max(0.01, float(decision.mark_price))
-    notional_pct = stop_loss_sized_notional_pct(strategy, runtime.market_type, leverage=strategy.leverage)
+    notional_pct = stop_loss_sized_notional_pct(
+        strategy, runtime.market_type, leverage=strategy.leverage
+    )
     size_multiplier = _decision_size_multiplier(decision)
-    target_notional = max(0.0, cfg.starting_reference_cash * notional_pct * size_multiplier)
+    target_notional = max(
+        0.0, cfg.starting_reference_cash * notional_pct * size_multiplier
+    )
     qty = max(0.0, target_notional / price)
     notional = qty * price
     position_id = new_position_id()
@@ -448,458 +490,6 @@ def _open_position_from_decision(
         ai_review_mode=decision.ai_assist_mode,
         ai_review_case_id=decision.ai_assist_case_id,
         ai_review_status=decision.ai_assist_status,
-    )
-
-
-def _close_to_trade(
-    position: OpenPosition,
-    mark_price: float,
-    reason: str,
-    *,
-    clock=time.time,
-    fees: float = 0.0,
-) -> ClosedTrade:
-    pnl = position.unrealized_pnl(mark_price)
-    realized_pnl = pnl - fees
-    entry_notional = float(position.entry_price) * float(position.qty)
-    return ClosedTrade(
-        id=position.id,
-        symbol=position.symbol,
-        market_type=position.market_type,
-        side=position.side,
-        qty=position.qty,
-        entry_price=position.entry_price,
-        exit_price=float(mark_price),
-        leverage=position.leverage,
-        opened_at_ms=position.opened_at_ms,
-        closed_at_ms=int(clock() * 1000),
-        realized_pnl=realized_pnl,
-        realized_pnl_pct=(realized_pnl / entry_notional) if entry_notional > 0.0 else 0.0,
-        fees=fees,
-        reason=reason,
-        strategy_profile=position.strategy_profile,
-        objective=position.objective,
-        dry_run=position.dry_run,
-        owner=position.owner,
-        open_client_order_id=position.open_client_order_id,
-        open_exchange_order_id=position.open_exchange_order_id,
-        paper_open_intent_id=position.paper_open_intent_id,
-        ai_review_mode=position.ai_review_mode,
-        ai_review_case_id=position.ai_review_case_id,
-        ai_review_status=position.ai_review_status,
-        spot_gross_entry_quantity=position.spot_gross_entry_quantity,
-        spot_entry_base_commission=position.spot_entry_base_commission,
-        spot_entry_cash_receipt=position.spot_entry_cash_receipt,
-    )
-
-
-def _position_order_side(position: OpenPosition, *, close: bool = False) -> str:
-    side = str(position.side or "").upper()
-    if side == "SHORT":
-        return "BUY" if close else "SELL"
-    return "SELL" if close else "BUY"
-
-
-def _order_text(order: Mapping[str, object], *names: str) -> str:
-    for name in names:
-        value = order.get(name)
-        if value is not None and str(value).strip():
-            return str(value).strip()
-    return ""
-
-
-def _order_float(order: Mapping[str, object], *names: str) -> float:
-    for name in names:
-        value = order.get(name)
-        if value is None:
-            continue
-        try:
-            parsed = float(value)
-        except (TypeError, ValueError, OverflowError):
-            continue
-        if parsed == parsed and abs(parsed) != float("inf"):
-            return parsed
-    return 0.0
-
-
-def _order_fill_details(
-    order: Mapping[str, object],
-    *,
-    fallback_qty: float,
-    fallback_price: float,
-    market_type: str,
-) -> tuple[float, float]:
-    del fallback_qty, fallback_price
-    from .binance_acknowledgements import acknowledged_fill
-
-    fill = acknowledged_fill(order, market_type=market_type)
-    return (0.0, 0.0) if fill is None else (float(fill.quantity), float(fill.price))
-
-
-def _order_has_fill_evidence(order: Mapping[str, object]) -> bool:
-    if _order_float(order, "executedQty") > 0.0:
-        return True
-    fills = order.get("fills")
-    if not isinstance(fills, list):
-        return False
-    for fill in fills:
-        if not isinstance(fill, Mapping):
-            continue
-        if _order_float(fill, "qty") > 0.0:
-            return True
-    return False
-
-
-def _order_exchange_status(order: Mapping[str, object]) -> str:
-    return _order_text(order, "status") or (
-        "FILLED" if _order_has_fill_evidence(order) else "accepted"
-    )
-
-
-def _apply_open_order(
-    position: OpenPosition, order: Mapping[str, object]
-) -> OpenPosition:
-    qty, entry_price = _order_fill_details(
-        order,
-        fallback_qty=position.qty,
-        fallback_price=position.entry_price,
-        market_type=position.market_type,
-    )
-    if qty <= 0.0 or entry_price <= 0.0:
-        raise BinanceAPIError(
-            "open order response did not include resolved execution fill"
-        )
-    gross_qty = qty
-    gross_text = base_fee_text = ""
-    cash_receipt = ""
-    if position.market_type == "spot" and not position.dry_run:
-        from decimal import Decimal, localcontext
-
-        from .assets import symbol_base_for_supported_quote
-        from .binance_spot_cash import encode_spot_cash_receipt
-        from .binance_spot_receipts import (
-            exact_spot_wire_quantity,
-            spot_buy_received_quantity,
-        )
-        from .binance_terminal_fills import _text
-
-        base = symbol_base_for_supported_quote(position.symbol)
-        received = exact_spot_wire_quantity(
-            spot_buy_received_quantity(
-                order,
-                symbol=position.symbol,
-                base_asset=base,
-                quote_asset=position.symbol[len(base) :],
-            )
-        )
-        with localcontext() as context:
-            context.prec = 128
-            gross = Decimal(str(order["executedQty"]))
-            gross_text, base_fee_text = _text(gross), _text(gross - received)
-        qty = float(received)
-        cash_receipt = encode_spot_cash_receipt(
-            order,
-            symbol=position.symbol,
-            side="BUY",
-            client_id=position.open_client_order_id,
-            order_id=_order_text(order, "orderId"),
-        )
-    modeled_entry_fee_rate = max(0.0, float(position.entry_fees)) / max(
-        float(position.notional),
-        1e-18,
-    )
-    return replace(
-        position,
-        qty=qty,
-        entry_price=entry_price,
-        notional=qty * entry_price,
-        entry_fees=gross_qty * entry_price * modeled_entry_fee_rate,
-        spot_gross_entry_quantity=gross_text,
-        spot_entry_base_commission=base_fee_text,
-        spot_entry_cash_receipt=cash_receipt,
-        open_exchange_order_id=_order_text(order, "orderId"),
-        open_client_order_id=_order_text(order, "clientOrderId", "origClientOrderId")
-        or position.open_client_order_id,
-        exchange_status=_order_exchange_status(order),
-    )
-
-
-def _apply_close_order(
-    trade: ClosedTrade,
-    order: Mapping[str, object],
-    close_client_order_id: str,
-    *,
-    exit_taker_fee_bps: float = 0.0,
-) -> ClosedTrade:
-    qty, exit_price = _order_fill_details(
-        order,
-        fallback_qty=trade.qty,
-        fallback_price=trade.exit_price,
-        market_type=trade.market_type,
-    )
-    if qty <= 0.0 or exit_price <= 0.0:
-        raise BinanceAPIError(
-            "close order response did not include resolved execution fill"
-        )
-    recorded = replace(
-        trade,
-        qty=qty,
-        exit_price=exit_price,
-        close_exchange_order_id=_order_text(order, "orderId"),
-        close_client_order_id=_order_text(order, "clientOrderId", "origClientOrderId")
-        or close_client_order_id,
-        exchange_status=_order_exchange_status(order),
-    )
-    if trade.spot_entry_cash_receipt:
-        from .binance_spot_cash import (
-            encode_spot_cash_receipt,
-            native_spot_cash_projection,
-        )
-
-        recorded = replace(
-            recorded,
-            spot_close_cash_receipt=encode_spot_cash_receipt(
-                order,
-                symbol=trade.symbol,
-                side="SELL",
-                client_id=close_client_order_id,
-                order_id=recorded.close_exchange_order_id,
-            ),
-        )
-        pnl, native_fees, pct = native_spot_cash_projection(recorded)
-        return replace(
-            recorded, realized_pnl=pnl, fees=native_fees, realized_pnl_pct=pct
-        )
-    fee_bps = float(exit_taker_fee_bps)
-    if not math.isfinite(fee_bps) or fee_bps < 0.0:
-        raise BinanceAPIError("close order fee rate must be finite and non-negative")
-    allocation = min(1.0, qty / max(float(trade.qty), 1e-18))
-    entry_fees = max(0.0, float(trade.fees)) * allocation
-    exit_fees = qty * exit_price * fee_bps / 10_000.0
-    fees = entry_fees + exit_fees
-    if str(trade.side).upper() == "LONG":
-        gross_pnl = (exit_price - float(trade.entry_price)) * qty
-    else:
-        gross_pnl = (float(trade.entry_price) - exit_price) * qty
-    realized = gross_pnl - fees
-    entry_notional = float(trade.entry_price) * qty
-    return replace(
-        recorded,
-        realized_pnl=realized,
-        realized_pnl_pct=(realized / entry_notional) if entry_notional > 0.0 else 0.0,
-        fees=fees,
-    )
-
-
-def _submit_open_position(
-    client: BinanceClient,
-    position: OpenPosition,
-    *,
-    expected_scope: BinanceExecutionScope | None = None,
-) -> OpenPosition:
-    if position.dry_run:
-        return position
-    order_kwargs = {
-        "dry_run": False,
-        "leverage": position.leverage,
-        "reduce_only": False,
-        "client_order_id": position.open_client_order_id,
-    }
-    if hasattr(client, "get_max_leverage_for_notional"):
-        order_kwargs["notional"] = abs(float(position.notional))
-    if expected_scope is not None:
-        order_kwargs["expected_scope"] = expected_scope
-    try:
-        order = client.place_order(
-            position.symbol,
-            _position_order_side(position, close=False),
-            position.qty,
-            **order_kwargs,
-        )
-    except BinanceAPIError:
-        # The request may have reached the exchange before the network failed.
-        # Query by the deterministic client id before treating the position as
-        # untracked.
-        order = client.get_order(
-            position.symbol,
-            orig_client_order_id=position.open_client_order_id,
-            expected_order_binding=MarketOrderBinding(
-                position.symbol,
-                _position_order_side(position, close=False),
-                f"{position.qty:.8f}",
-                position.open_client_order_id,
-                position.market_type,
-                False,
-            ),
-            **(
-                {"expected_scope": expected_scope} if expected_scope is not None else {}
-            ),
-        )
-    identities = [
-        order[key] for key in ("clientOrderId", "origClientOrderId") if key in order
-    ]
-    if (
-        not identities
-        or any(identity != position.open_client_order_id for identity in identities)
-        or order.get("symbol") != position.symbol
-        or order.get("status") not in {"FILLED", "PARTIALLY_FILLED"}
-        or (
-            "side" in order
-            and order["side"] != _position_order_side(position, close=False)
-        )
-    ):
-        raise BinanceAPIError(
-            "opening acknowledgement identity or status is unresolved"
-        )
-    return _apply_open_order(position, order)
-
-
-def _submit_durable_open_position(
-    client: BinanceClient, position: OpenPosition, store: PositionsStore
-) -> OpenPosition:
-    """Persist uncertainty before submission and the fill before releasing admission."""
-    journal = store.opening_intents
-    reason = journal.entry_block_reason(positions_present=store.open_path.is_file())
-    if reason:
-        raise OpenIntentError(reason)
-    scope = client.execution_scope()
-    journal.prepare(position, scope=scope)
-    recorded = _submit_open_position(client, position, expected_scope=scope)
-    journal.validate_result(position, recorded)
-    store.record_open(recorded)
-    journal.record_complete(position, recorded, scope=scope)
-    return recorded
-
-
-def _submit_close_position(
-    client: BinanceClient,
-    position: OpenPosition,
-    trade: ClosedTrade,
-    *,
-    reduce_only: bool,
-    taker_fee_bps: float = 0.0,
-    close_client_order_id: str | None = None,
-    expected_scope: BinanceExecutionScope | None = None,
-) -> ClosedTrade:
-    if position.dry_run:
-        return replace(trade, exchange_status="paper")
-    from .binance_spot_receipts import exact_spot_wire_quantity, native_spot_entry_net
-
-    native_net = native_spot_entry_net(position)
-    close_client_order_id = close_client_order_id or bot_client_order_id(
-        position.id,
-        "close",
-    )
-    try:
-        order = client.place_order(
-            position.symbol,
-            _position_order_side(position, close=True),
-            position.qty,
-            dry_run=False,
-            leverage=position.leverage,
-            reduce_only=reduce_only,
-            client_order_id=close_client_order_id,
-            **(
-                {"expected_scope": expected_scope} if expected_scope is not None else {}
-            ),
-        )
-    except BinanceAPIError:
-        order = client.get_order(
-            position.symbol,
-            orig_client_order_id=close_client_order_id,
-            expected_order_binding=MarketOrderBinding(
-                position.symbol,
-                _position_order_side(position, close=True),
-                f"{position.qty:.8f}",
-                close_client_order_id,
-                position.market_type,
-                reduce_only,
-            ),
-            **(
-                {"expected_scope": expected_scope} if expected_scope is not None else {}
-            ),
-        )
-    identities = [
-        order[key] for key in ("clientOrderId", "origClientOrderId") if key in order
-    ]
-    if (
-        not identities
-        or any(value != close_client_order_id for value in identities)
-        or order.get("symbol") != position.symbol
-        or order.get("status") not in {"FILLED", "PARTIALLY_FILLED"}
-        or order.get("side") != _position_order_side(position, close=True)
-        or position.market_type == "futures"
-        and (order.get("reduceOnly") is not True or order.get("positionSide") != "BOTH")
-    ):
-        raise BinanceAPIError(
-            "closing acknowledgement identity or status is unresolved"
-        )
-    if native_net is not None:
-        exact_spot_wire_quantity(order.get("executedQty"))
-    return _apply_close_order(
-        trade,
-        order,
-        close_client_order_id,
-        exit_taker_fee_bps=taker_fee_bps,
-    )
-
-
-def _submit_durable_close_position(
-    client: BinanceClient,
-    position: OpenPosition,
-    trade: ClosedTrade,
-    store: PositionsStore,
-    *,
-    reduce_only: bool,
-    taker_fee_bps: float = 0.0,
-) -> ClosedTrade:
-    """Persist the close obligation before transmission and retain uncertainty."""
-    from .binance_close_intents import (
-        complete_close,
-        prepare_close,
-        validate_close_result,
-    )
-
-    scope = client.execution_scope()
-    client_id = _next_close_client_order_id(store, position)
-    prepare_close(
-        store, position, client_id=client_id, scope=scope, reduce_only=reduce_only
-    )
-    recorded = _submit_close_position(
-        client,
-        position,
-        trade,
-        reduce_only=reduce_only,
-        taker_fee_bps=taker_fee_bps,
-        close_client_order_id=client_id,
-        expected_scope=scope,
-    )
-    validate_close_result(position, recorded, client_id=client_id)
-    store.record_close_result(position, recorded)
-    complete_close(
-        store,
-        position,
-        recorded,
-        client_id=client_id,
-        scope=scope,
-        reduce_only=reduce_only,
-    )
-    return recorded
-
-
-def _next_close_client_order_id(
-    store: PositionsStore,
-    position: OpenPosition,
-) -> str:
-    prior_close_fills = sum(
-        1
-        for trade in store.load_ledger()
-        if trade.id == position.id
-    )
-    return bot_client_order_id(
-        position.id,
-        "close",
-        attempt=prior_close_fills + 1,
     )
 
 
@@ -946,7 +536,9 @@ def close_tracked_open_positions(
     if paper_positions and paper_broker is not None:
         paper_reconciliation = paper_broker.reconcile_positions(store)
         if not paper_reconciliation.can_close:
-            reason_text = f"paper-reconciliation-blocked:{paper_reconciliation.asdict()}"
+            reason_text = (
+                f"paper-reconciliation-blocked:{paper_reconciliation.asdict()}"
+            )
             return CloseAllReport(
                 closed=0,
                 skipped=0,
@@ -968,7 +560,11 @@ def close_tracked_open_positions(
             skipped += 1
             failures.append(f"{position.id}:{ownership_rejection}")
             continue
-        close_price = float(mark_price) if mark_price and mark_price > 0 else float(position.entry_price)
+        close_price = (
+            float(mark_price)
+            if mark_price and mark_price > 0
+            else float(position.entry_price)
+        )
         trade = _close_to_trade(
             position,
             close_price,
@@ -1093,8 +689,14 @@ def _decision_size_multiplier(decision: Decision) -> float:
 
 
 def _daily_entry_count(store: PositionsStore, day: int) -> int:
-    opened = sum(1 for position in store.load_open() if _safe_day_ms(position.opened_at_ms) == day)
-    closed = sum(1 for trade in store.load_ledger() if _safe_day_ms(trade.opened_at_ms) == day)
+    opened = sum(
+        1
+        for position in store.load_open()
+        if _safe_day_ms(position.opened_at_ms) == day
+    )
+    closed = sum(
+        1 for trade in store.load_ledger() if _safe_day_ms(trade.opened_at_ms) == day
+    )
     return opened + closed
 
 
@@ -1266,11 +868,15 @@ def _entry_gate(
     if cooldown_ms > 0 and last_activity > 0:
         cooldown_remaining = max(0, cooldown_ms - max(0, now_ms_value - last_activity))
     if decision.regime_unpredictability_score is None:
-        regime_score = market_regime_unpredictability(
-            decision.regime,
-            decision.regime_confidence,
-            decision.regime_notes,
-        ) if decision.regime else 0.0
+        regime_score = (
+            market_regime_unpredictability(
+                decision.regime,
+                decision.regime_confidence,
+                decision.regime_notes,
+            )
+            if decision.regime
+            else 0.0
+        )
     else:
         try:
             regime_score = float(decision.regime_unpredictability_score)
@@ -1308,13 +914,17 @@ def _entry_gate(
         reason = "max-open-disabled"
     elif len(opens) >= max_open:
         reason = f"max-open-reached:{len(opens)}/{max_open}"
-    elif int(strategy.max_trades_per_day) > 0 and daily_entries >= int(strategy.max_trades_per_day):
+    elif int(strategy.max_trades_per_day) > 0 and daily_entries >= int(
+        strategy.max_trades_per_day
+    ):
         reason = f"daily-cap-reached:{daily_entries}/{int(strategy.max_trades_per_day)}"
     elif cooldown_remaining > 0:
         reason = f"cooldown-active:{cooldown_remaining}ms"
     elif regime_score > regime_limit:
         regime_name = decision.regime or "unknown"
-        reason = f"regime-unpredictable:{regime_name}:{regime_score:.2f}>{regime_limit:.2f}"
+        reason = (
+            f"regime-unpredictable:{regime_name}:{regime_score:.2f}>{regime_limit:.2f}"
+        )
     elif not capital_guard.allowed:
         reason = capital_guard.reason
     elif strategy.max_drawdown_limit > 0.0 and drawdown >= strategy.max_drawdown_limit:
@@ -1398,7 +1008,9 @@ def run_loop(
             api_budget_report=api_budget_report,
         )
         needs_new_entry_permission = startup_lifecycle.local_open_count == 0
-        if not startup_lifecycle.can_close or (needs_new_entry_permission and not startup_lifecycle.can_open):
+        if not startup_lifecycle.can_close or (
+            needs_new_entry_permission and not startup_lifecycle.can_open
+        ):
             raise RuntimeError(
                 "Autonomous live mode refuses to start with unsafe execution lifecycle: "
                 f"{startup_lifecycle.asdict()}"
@@ -1425,7 +1037,9 @@ def run_loop(
             iteration += 1
             state = control.state()
             if state == STATE_STOPPING:
-                mark_price = _stop_close_mark_price(client, runtime, store, last_mark_price, logger)
+                mark_price = _stop_close_mark_price(
+                    client, runtime, store, last_mark_price, logger
+                )
                 if not cfg.dry_run:
                     try:
                         stop_lifecycle = _loop_lifecycle_plan(
@@ -1440,7 +1054,11 @@ def run_loop(
                             require_api_budget_headroom=False,
                         )
                     except BinanceAPIError as exc:
-                        logger.error("autonomous iter=%d operator-stop reconciliation failed: %s", iteration, exc)
+                        logger.error(
+                            "autonomous iter=%d operator-stop reconciliation failed: %s",
+                            iteration,
+                            exc,
+                        )
                         exit_reason = "operator-stop-reconciliation-failed"
                         break
                     if not stop_lifecycle.can_close:
@@ -1457,13 +1075,18 @@ def run_loop(
                     "operator-stop",
                     clock=clock,
                     client=None if cfg.dry_run else client,
-                    reduce_only=runtime.market_type == "futures" and strategy.reduce_only_on_close,
+                    reduce_only=runtime.market_type == "futures"
+                    and strategy.reduce_only_on_close,
                     taker_fee_bps=strategy.taker_fee_bps,
                     paper_broker=paper_broker,
                 )
                 closed += close_report.closed
                 if close_report.closed:
-                    logger.info("autonomous iter=%d force-close-open=%d reason=operator-stop", iteration, close_report.closed)
+                    logger.info(
+                        "autonomous iter=%d force-close-open=%d reason=operator-stop",
+                        iteration,
+                        close_report.closed,
+                    )
                 if not close_report.ok or close_report.skipped:
                     logger.error(
                         "autonomous iter=%d operator-stop incomplete close report=%s",
@@ -1545,7 +1168,11 @@ def run_loop(
                 decision.mark_price,
                 decision.ai_assist_status or "inactive",
             )
-            last_mark_price = float(decision.mark_price) if decision.mark_price > 0 else last_mark_price
+            last_mark_price = (
+                float(decision.mark_price)
+                if decision.mark_price > 0
+                else last_mark_price
+            )
             if recovery_pending:
                 if not cfg.dry_run:
                     recovery_report = reconcile(client, runtime, store)
@@ -1582,14 +1209,20 @@ def run_loop(
                                     require_api_budget_headroom=False,
                                 )
                             except BinanceAPIError as exc:
-                                logger.error("autonomous iter=%d recovery close reconciliation failed: %s", iteration, exc)
+                                logger.error(
+                                    "autonomous iter=%d recovery close reconciliation failed: %s",
+                                    iteration,
+                                    exc,
+                                )
                                 exit_reason = "recovery-close-reconciliation-failed"
                                 break
                             if not close_lifecycle.can_close:
                                 logger.error(
                                     "autonomous iter=%d recovery close lifecycle blocked: %s",
                                     iteration,
-                                    _lifecycle_reasons(close_lifecycle, capability="close"),
+                                    _lifecycle_reasons(
+                                        close_lifecycle, capability="close"
+                                    ),
                                 )
                                 exit_reason = "recovery-close-lifecycle-blocked"
                                 break
@@ -1599,7 +1232,8 @@ def run_loop(
                             capital_guard.reason,
                             clock=clock,
                             client=None if cfg.dry_run else client,
-                            reduce_only=runtime.market_type == "futures" and strategy.reduce_only_on_close,
+                            reduce_only=runtime.market_type == "futures"
+                            and strategy.reduce_only_on_close,
                             taker_fee_bps=strategy.taker_fee_bps,
                             paper_broker=paper_broker,
                         )
@@ -1641,7 +1275,10 @@ def run_loop(
                 ).write(cfg.heartbeat_path)
                 heartbeats += 1
                 sleep(max(poll, float(cooldown)))
-                if cfg.stop_after_iterations is not None and iteration >= cfg.stop_after_iterations:
+                if (
+                    cfg.stop_after_iterations is not None
+                    and iteration >= cfg.stop_after_iterations
+                ):
                     exit_reason = "iteration-cap"
                     break
                 continue
@@ -1671,7 +1308,11 @@ def run_loop(
                                 require_api_budget_headroom=False,
                             )
                         except BinanceAPIError as exc:
-                            logger.error("autonomous iter=%d risk close reconciliation failed: %s", iteration, exc)
+                            logger.error(
+                                "autonomous iter=%d risk close reconciliation failed: %s",
+                                iteration,
+                                exc,
+                            )
                             exit_reason = "risk-close-reconciliation-failed"
                             break
                         if not close_lifecycle.can_close:
@@ -1688,7 +1329,8 @@ def run_loop(
                         capital_guard.reason,
                         clock=clock,
                         client=None if cfg.dry_run else client,
-                        reduce_only=runtime.market_type == "futures" and strategy.reduce_only_on_close,
+                        reduce_only=runtime.market_type == "futures"
+                        and strategy.reduce_only_on_close,
                         taker_fee_bps=strategy.taker_fee_bps,
                         paper_broker=paper_broker,
                     )
@@ -1708,7 +1350,11 @@ def run_loop(
 
             # Close any open position that meets auto-close thresholds first
             for position in store.load_open():
-                observed_at_ms = int(decision.observed_at_ms) if int(decision.observed_at_ms) > 0 else int(clock() * 1000)
+                observed_at_ms = (
+                    int(decision.observed_at_ms)
+                    if int(decision.observed_at_ms) > 0
+                    else int(clock() * 1000)
+                )
                 should_close, reason = _evaluate_auto_close(
                     position,
                     decision.mark_price,
@@ -1752,7 +1398,12 @@ def run_loop(
                                 require_api_budget_headroom=False,
                             )
                         except BinanceAPIError as exc:
-                            logger.error("autonomous iter=%d close reconciliation failed id=%s error=%s", iteration, position.id, exc)
+                            logger.error(
+                                "autonomous iter=%d close reconciliation failed id=%s error=%s",
+                                iteration,
+                                position.id,
+                                exc,
+                            )
                             exit_reason = "close-reconciliation-failed"
                             break
                         if not close_lifecycle.can_close:
@@ -1886,7 +1537,11 @@ def run_loop(
                             api_budget_report=api_budget_report,
                         )
                     except BinanceAPIError as exc:
-                        logger.error("autonomous iter=%d open reconciliation failed: %s", iteration, exc)
+                        logger.error(
+                            "autonomous iter=%d open reconciliation failed: %s",
+                            iteration,
+                            exc,
+                        )
                         exit_reason = "open-reconciliation-failed"
                         break
                     if not open_lifecycle.can_open:
@@ -1898,7 +1553,12 @@ def run_loop(
                         exit_reason = "open-lifecycle-blocked"
                         break
                 position = _open_position_from_decision(
-                    decision, runtime, strategy, objective, cfg, clock=clock,
+                    decision,
+                    runtime,
+                    strategy,
+                    objective,
+                    cfg,
+                    clock=clock,
                 )
                 try:
                     paper_result = None
@@ -1909,9 +1569,16 @@ def run_loop(
                             )
                         position, paper_result = paper_broker.open_position(position)
                     else:
-                        position = _submit_durable_open_position(client, position, store)
+                        position = _submit_durable_open_position(
+                            client, position, store
+                        )
                 except (BinanceAPIError, ValueError, OSError) as exc:
-                    logger.error("autonomous iter=%d open-order-failed id=%s error=%s", iteration, position.id, exc)
+                    logger.error(
+                        "autonomous iter=%d open-order-failed id=%s error=%s",
+                        iteration,
+                        position.id,
+                        exc,
+                    )
                     exit_reason = "open-order-failed"
                     break
                 if position is None:
@@ -1931,7 +1598,11 @@ def run_loop(
                     opened += 1
                     logger.info(
                         "autonomous iter=%d open id=%s side=%s qty=%.6f entry=%.2f",
-                        iteration, position.id, position.side, position.qty, position.entry_price,
+                        iteration,
+                        position.id,
+                        position.side,
+                        position.qty,
+                        position.entry_price,
                     )
             elif decision.side in {"LONG", "SHORT"}:
                 skipped += 1
@@ -1946,8 +1617,11 @@ def run_loop(
                 )
 
             if iteration % max(1, cfg.heartbeat_every) == 0:
-                stats = compute_stats(store, mark_price=decision.mark_price,
-                                     starting_reference_cash=cfg.starting_reference_cash)
+                stats = compute_stats(
+                    store,
+                    mark_price=decision.mark_price,
+                    starting_reference_cash=cfg.starting_reference_cash,
+                )
                 heartbeat = Heartbeat(
                     iteration=iteration,
                     state=STATE_RUNNING,
@@ -1976,7 +1650,10 @@ def run_loop(
                 heartbeat.write(cfg.heartbeat_path)
                 heartbeats += 1
 
-            if cfg.stop_after_iterations is not None and iteration >= cfg.stop_after_iterations:
+            if (
+                cfg.stop_after_iterations is not None
+                and iteration >= cfg.stop_after_iterations
+            ):
                 exit_reason = "iteration-cap"
                 break
             sleep(poll)
@@ -2002,9 +1679,7 @@ def run_loop(
         else:
             local_open_count = len(store.load_open())
             if local_open_count:
-                terminal_reasons.append(
-                    f"tracked-open-positions={local_open_count}"
-                )
+                terminal_reasons.append(f"tracked-open-positions={local_open_count}")
         if paper_broker is not None:
             try:
                 paper_terminal = paper_broker.reconcile_positions(store)

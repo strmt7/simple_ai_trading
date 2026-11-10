@@ -1,5 +1,13 @@
 # Capital protection and final release verification
 
+The [owned Binance CLI repair](review/2026-11-10/binance-owned-cli/review.md)
+routes signed entry, normal close and emergency close through the same durable
+owned execution as autonomous mode. UNKNOWN and scope precede dispatch; native
+receipt/quantity checks and real partial residuals are preserved. 217 distinct
+focused cases are supported across documented lanes. The roundtrip diagnostic,
+alternate transports, universal fencing, legacy migration/rearm and independent
+process supervision remain incomplete.
+
 The [owned SDK transport](review/2026-11-10/sdk-transport/review.md) now applies
 per-venue native request timeouts, an observed response deadline and bounded
 bodies without SDK-global mutation, write retry or redirects. Incomplete errors

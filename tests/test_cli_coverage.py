@@ -124,7 +124,9 @@ def _promoted_execution_validation(
         "stress": {"accepted": True},
         "temporal_robustness": {"accepted": True},
         "portfolio": {"accepted": True},
-        "data_coverage": _live_data_coverage(symbol, market_type=market_type, interval=interval),
+        "data_coverage": _live_data_coverage(
+            symbol, market_type=market_type, interval=interval
+        ),
     }
     if market_type == "futures":
         payload["microstructure_replay"] = {
@@ -135,7 +137,7 @@ def _promoted_execution_validation(
             "immutable_market_data": True,
             "engine": "hftbacktest",
             "engine_version": "2.4.4",
-            "schema_version": "binance-usdm-l2-v3",
+            "schema_version": "binance-usdm-l2-v4",
             "symbol": symbol,
             "queue_model": "risk_adverse_queue_model",
             "latency_model": "empirical_feed_and_order_latency",
@@ -217,7 +219,71 @@ def _bind_promoted_selection_risk(model: TrainedModel) -> TrainedModel:
     return model
 
 
+def _native_cli_ack(
+    symbol,
+    side,
+    quantity,
+    client_order_id,
+    *,
+    price=100.0,
+    order_id="101",
+    reduce_only=False,
+    status="FILLED",
+):
+    from decimal import Decimal
+
+    runtime = load_runtime()
+    quote = str(Decimal(str(quantity)) * Decimal(str(price)))
+    value = {
+        "symbol": symbol,
+        "side": side,
+        "type": "MARKET",
+        "status": status,
+        "orderId": order_id,
+        "clientOrderId": client_order_id,
+        "origQty": str(quantity),
+        "executedQty": str(quantity),
+        "avgPrice": str(price),
+    }
+    if runtime.market_type == "futures":
+        value.update(reduceOnly=reduce_only, positionSide="BOTH", cumQuote=quote)
+    else:
+        value["cummulativeQuoteQty"] = quote
+        value["fills"] = [
+            {
+                "price": str(price),
+                "qty": str(quantity),
+                "commission": "0",
+                "commissionAsset": runtime.symbol[3:],
+            }
+        ]
+    return value
+
+
 class _SignedCommissionClientEvidence:
+    def execution_scope(self):
+        from simple_ai_trading.api import _default_base_url
+        from simple_ai_trading.binance_execution_scope import BinanceExecutionScope
+
+        runtime = load_runtime()
+        origin, _ = _default_base_url(
+            runtime.testnet, runtime.market_type, demo=runtime.demo
+        )
+        return BinanceExecutionScope.from_api_key(
+            origin, runtime.market_type, runtime.api_key
+        )
+
+    def get_order(
+        self,
+        symbol,
+        *,
+        orig_client_order_id,
+        expected_order_binding=None,
+        expected_scope=None,
+    ):
+        assert expected_scope == self.execution_scope()
+        raise BinanceAPIError("synthetic exact-order recovery remains unresolved")
+
     def get_commission_rates(self, symbol: str):
         return CommissionRates(
             symbol=symbol,
@@ -251,12 +317,41 @@ class _FakeClient(_SignedCommissionClientEvidence):
     def get_symbol_constraints(self, symbol: str):
         return SimpleNamespace()  # placeholder unused in tests
 
-    def get_klines(self, symbol: str, interval: str, limit: int = 500, start_time=None, end_time=None):
+    def get_klines(
+        self,
+        symbol: str,
+        interval: str,
+        limit: int = 500,
+        start_time=None,
+        end_time=None,
+    ):
         return []
 
-    def place_order(self, symbol: str, side: str, size: float, *, dry_run: bool, leverage: float = 1.0):
+    def place_order(
+        self,
+        symbol,
+        side,
+        size,
+        *,
+        dry_run,
+        leverage=1.0,
+        reduce_only=False,
+        client_order_id=None,
+        expected_scope=None,
+    ):
         self.orders.append((symbol, side, size, dry_run, leverage))
-        return {"symbol": symbol, "side": side, "size": size, "dry_run": dry_run, "leverage": leverage}
+        if dry_run:
+            return {
+                "symbol": symbol,
+                "side": side,
+                "size": size,
+                "dry_run": True,
+                "leverage": leverage,
+            }
+        assert expected_scope == self.execution_scope()
+        return _native_cli_ack(
+            symbol, side, size, client_order_id, reduce_only=reduce_only
+        )
 
 
 class _SignedFeeModelEvidence:
@@ -3316,19 +3411,46 @@ def test_futures_direction_clamps_low_threshold_to_avoid_overlap() -> None:
     assert cli._score_to_direction(0.55, cfg, "futures", threshold=0.40) == 1
 
 
-def test_paper_order_is_logged(tmp_path, monkeypatch) -> None:
+def test_paper_order_is_logged(tmp_path, monkeypatch, capsys) -> None:
     client = _FakeClient()
     cfg = StrategyConfig()
 
     monkeypatch.setenv("HOME", str(tmp_path))
     save_runtime(RuntimeConfig())
 
-    cli._paper_or_live_order(client, RuntimeConfig(), cfg, side="BUY", size=0.1, dry_run=True, leverage=3.0)
-    cli._paper_or_live_order(client, RuntimeConfig(), cfg, side="SELL", size=0.2, dry_run=False, leverage=2.0)
+    cli._paper_or_live_order(
+        client, RuntimeConfig(), cfg, side="BUY", size=0.1, dry_run=True, leverage=3.0
+    )
+    with pytest.raises(BinanceAPIError, match="durable owned execution"):
+        cli._paper_or_live_order(
+            client,
+            RuntimeConfig(),
+            cfg,
+            side="SELL",
+            size=0.2,
+            dry_run=False,
+            leverage=2.0,
+        )
     assert client.orders[0][0] == "BTCUSDC"
+    assert len(client.orders) == 1
+    assert "paper order:" in capsys.readouterr().out
 
 
-def test_live_order_forwards_entry_notional_to_bracket_aware_client() -> None:
+def test_owned_order_forwards_entry_notional_to_bracket_aware_client(
+    tmp_path, monkeypatch
+) -> None:
+    from simple_ai_trading.binance_owned_execution import submit_durable_open
+
+    save_runtime(
+        RuntimeConfig(
+            testnet=True,
+            dry_run=False,
+            market_type="futures",
+            api_key="k",
+            api_secret="s",
+        )
+    )
+
     class _BracketAwareClient(_FakeClient):
         def get_max_leverage_for_notional(self, _symbol: str, _notional: float) -> int:
             return 5
@@ -3342,22 +3464,37 @@ def test_live_order_forwards_entry_notional_to_bracket_aware_client() -> None:
             dry_run: bool,
             leverage: float = 1.0,
             notional: float | None = None,
+            reduce_only=False,
+            client_order_id=None,
+            expected_scope=None,
         ):
+            assert expected_scope == self.execution_scope()
             self.orders.append((symbol, side, size, dry_run, leverage, notional))
-            return {"symbol": symbol, "side": side, "size": size, "dry_run": dry_run, "notional": notional}
+            return _native_cli_ack(
+                symbol,
+                side,
+                size,
+                client_order_id,
+                price=12500.0,
+                reduce_only=reduce_only,
+            )
 
     client = _BracketAwareClient()
 
-    cli._paper_or_live_order(
-        client,
-        RuntimeConfig(market_type="futures"),
-        StrategyConfig(),
-        side="BUY",
-        size=0.2,
-        dry_run=False,
+    position = OpenPosition(
+        id="bracket-owned-probe",
+        symbol="BTCUSDC",
+        market_type="futures",
+        side="LONG",
+        qty=0.2,
+        entry_price=12500.0,
         leverage=10.0,
-        notional=2_500.0,
+        opened_at_ms=1,
+        notional=2500.0,
+        dry_run=False,
+        open_client_order_id=bot_client_order_id("bracket-owned-probe", "open"),
     )
+    submit_durable_open(client, position, PositionsStore())
 
     assert client.orders[-1][-1] == pytest.approx(2_500.0)
 
@@ -6082,28 +6219,28 @@ def test_command_live_paper_recovers_after_feature_drift_check_failure(tmp_path,
     assert train_calls == [1]
 
 
-def test_paper_or_live_order_passes_reduce_only_for_authenticated_futures(capsys) -> None:
-    class _OrderClient:
-        def __init__(self) -> None:
-            self.kwargs = {}
+def test_paper_helper_rejects_unjournaled_signed_execution(capsys) -> None:
+    class Client:
+        calls = 0
 
-        def place_order(self, symbol, side, size, **kwargs):
-            self.kwargs = kwargs
-            return {"status": "FILLED", "symbol": symbol, "side": side, "size": size}
+        def place_order(self, *args, **kwargs):
+            self.calls += 1
+            raise AssertionError("unjournaled signed request must not dispatch")
 
-    client = _OrderClient()
-    cli._paper_or_live_order(
-        client,
-        RuntimeConfig(market_type="futures"),
-        StrategyConfig(),
-        side="SELL",
-        size=0.1,
-        dry_run=False,
-        leverage=2.0,
-        reduce_only=True,
-    )
-    assert client.kwargs == {"dry_run": False, "leverage": 2.0, "reduce_only": True}
-    assert "live order: SELL" in capsys.readouterr().out
+    client = Client()
+    with pytest.raises(BinanceAPIError, match="durable owned execution"):
+        cli._paper_or_live_order(
+            client,
+            RuntimeConfig(market_type="futures"),
+            StrategyConfig(),
+            side="SELL",
+            size=0.1,
+            dry_run=False,
+            leverage=2.0,
+            reduce_only=True,
+        )
+    assert client.calls == 0
+    assert not capsys.readouterr().out
 
 
 def test_command_live_detects_existing_positions_and_failures(tmp_path, monkeypatch, capsys) -> None:
@@ -6183,9 +6320,17 @@ def test_command_live_detects_existing_positions_and_failures(tmp_path, monkeypa
     assert "Account balance check failed: rate limit" in capsys.readouterr().err
 
 
-def test_command_live_signed_entry_records_bot_owned_position(tmp_path, monkeypatch) -> None:
+def test_command_live_signed_entry_records_bot_owned_position(
+    tmp_path, monkeypatch
+) -> None:
     rows = [
-        ModelRow(timestamp=index * 60_000, close=100.0, features=(0.1,), label=1, volume=1000.0)
+        ModelRow(
+            timestamp=index * 60_000,
+            close=100.0,
+            features=(0.1,),
+            label=1,
+            volume=1000.0,
+        )
         for index in range(20)
     ]
 
@@ -6207,15 +6352,32 @@ def test_command_live_signed_entry_records_bot_owned_position(tmp_path, monkeypa
             return {"leverage": leverage}
 
         def get_account(self):
-            return {"positions": [], "assets": [{"asset": "USDC", "availableBalance": "1000"}]}
+            return {
+                "positions": [],
+                "assets": [{"asset": "USDC", "availableBalance": "1000"}],
+            }
 
         def get_symbol_constraints(self, symbol: str):
-            return SimpleNamespace(symbol=symbol, min_qty=0.0001, max_qty=100.0, step_size=0.0001, min_notional=1.0, max_notional=0.0)
+            return SimpleNamespace(
+                symbol=symbol,
+                min_qty=0.0001,
+                max_qty=100.0,
+                step_size=0.0001,
+                min_notional=1.0,
+                max_notional=0.0,
+            )
 
         def normalize_quantity(self, symbol: str, quantity: float):
             return max(0.0001, round(quantity, 4)), self.get_symbol_constraints(symbol)
 
-        def get_klines(self, symbol: str, interval: str, limit: int = 500, start_time=None, end_time=None):
+        def get_klines(
+            self,
+            symbol: str,
+            interval: str,
+            limit: int = 500,
+            start_time=None,
+            end_time=None,
+        ):
             return _simple_candles(limit)
 
         def place_order(
@@ -6228,17 +6390,20 @@ def test_command_live_signed_entry_records_bot_owned_position(tmp_path, monkeypa
             leverage: float = 1.0,
             reduce_only: bool = False,
             client_order_id: str | None = None,
+            expected_scope=None,
         ):
+            assert expected_scope == self.execution_scope()
             assert client_order_id is not None and client_order_id.startswith("sait-o-")
             self.submitted_client_ids.append(client_order_id)
-            return {
-                "status": "FILLED",
-                "orderId": "101",
-                "clientOrderId": client_order_id,
-                "executedQty": str(size),
-                "avgPrice": "100",
-                "cumQuote": str(size * 100.0),
-            }
+            return _native_cli_ack(
+                symbol,
+                side,
+                size,
+                client_order_id,
+                price=100.0,
+                order_id="101",
+                reduce_only=reduce_only,
+            )
 
     client = _SignedEntryClient()
     monkeypatch.setenv("HOME", str(tmp_path))
@@ -6273,7 +6438,19 @@ def test_command_live_signed_entry_records_bot_owned_position(tmp_path, monkeypa
     monkeypatch.setattr(cli, "_readiness_model_rows", lambda *_a, **_k: rows)
     monkeypatch.setattr(cli.time, "sleep", lambda *_args: None)
 
-    assert cli.command_live(_live_args(tmp_path, steps=1, sleep=1, paper=False, live=True, model=str(model_file))) == 0
+    assert (
+        cli.command_live(
+            _live_args(
+                tmp_path,
+                steps=1,
+                sleep=1,
+                paper=False,
+                live=True,
+                model=str(model_file),
+            )
+        )
+        == 0
+    )
 
     open_positions = PositionsStore().load_open()
     assert len(open_positions) == 1
@@ -6282,7 +6459,9 @@ def test_command_live_signed_entry_records_bot_owned_position(tmp_path, monkeypa
     assert open_positions[0].open_client_order_id.startswith("sait-o-")
 
 
-def test_command_live_signed_close_records_ledger_and_removes_open(tmp_path, monkeypatch) -> None:
+def test_command_live_signed_close_records_ledger_and_removes_open(
+    tmp_path, monkeypatch
+) -> None:
     position_id = "ownedclose001"
     open_client_id = bot_client_order_id(position_id, "open")
     PositionsStore().record_open(
@@ -6298,11 +6477,18 @@ def test_command_live_signed_close_records_ledger_and_removes_open(tmp_path, mon
             notional=20.0,
             dry_run=False,
             open_client_order_id=open_client_id,
+            open_exchange_order_id="101",
             exchange_status="FILLED",
         )
     )
     rows = [
-        ModelRow(timestamp=index * 60_000, close=102.0, features=(0.1,), label=1, volume=1000.0)
+        ModelRow(
+            timestamp=index * 60_000,
+            close=102.0,
+            features=(0.1,),
+            label=1,
+            volume=1000.0,
+        )
         for index in range(20)
     ]
 
@@ -6325,17 +6511,33 @@ def test_command_live_signed_close_records_ledger_and_removes_open(tmp_path, mon
 
         def get_account(self):
             return {
-                "positions": [{"symbol": "BTCUSDC", "positionAmt": "0.2", "entryPrice": "100"}],
+                "positions": [
+                    {"symbol": "BTCUSDC", "positionAmt": "0.2", "entryPrice": "100"}
+                ],
                 "assets": [{"asset": "USDC", "availableBalance": "1000"}],
             }
 
         def get_symbol_constraints(self, symbol: str):
-            return SimpleNamespace(symbol=symbol, min_qty=0.0001, max_qty=100.0, step_size=0.0001, min_notional=1.0, max_notional=0.0)
+            return SimpleNamespace(
+                symbol=symbol,
+                min_qty=0.0001,
+                max_qty=100.0,
+                step_size=0.0001,
+                min_notional=1.0,
+                max_notional=0.0,
+            )
 
         def normalize_quantity(self, symbol: str, quantity: float):
             return max(0.0001, round(quantity, 4)), self.get_symbol_constraints(symbol)
 
-        def get_klines(self, symbol: str, interval: str, limit: int = 500, start_time=None, end_time=None):
+        def get_klines(
+            self,
+            symbol: str,
+            interval: str,
+            limit: int = 500,
+            start_time=None,
+            end_time=None,
+        ):
             return _simple_candles(limit)
 
         def place_order(
@@ -6348,19 +6550,22 @@ def test_command_live_signed_close_records_ledger_and_removes_open(tmp_path, mon
             leverage: float = 1.0,
             reduce_only: bool = False,
             client_order_id: str | None = None,
+            expected_scope=None,
         ):
+            assert expected_scope == self.execution_scope()
             assert side == "SELL"
             assert reduce_only is True
             assert client_order_id is not None and client_order_id.startswith("sait-c-")
             self.close_client_id = client_order_id
-            return {
-                "status": "FILLED",
-                "orderId": "202",
-                "clientOrderId": client_order_id,
-                "executedQty": str(size),
-                "avgPrice": "102",
-                "cumQuote": str(size * 102.0),
-            }
+            return _native_cli_ack(
+                symbol,
+                side,
+                size,
+                client_order_id,
+                price=102.0,
+                order_id="202",
+                reduce_only=reduce_only,
+            )
 
     client = _SignedCloseClient()
     monkeypatch.setenv("HOME", str(tmp_path))
@@ -6393,7 +6598,25 @@ def test_command_live_signed_close_records_ledger_and_removes_open(tmp_path, mon
     monkeypatch.setattr(cli, "_readiness_model_rows", lambda *_a, **_k: rows)
     monkeypatch.setattr(cli.time, "sleep", lambda *_args: None)
 
-    assert cli.command_live(_live_args(tmp_path, steps=1, sleep=1, paper=False, live=True, model=str(model_file))) == 0
+    store = PositionsStore()
+    seeded = store.find_open(position_id)
+    scope = client.execution_scope()
+    store.opening_intents.prepare(seeded, scope=scope)
+    store.opening_intents.record_complete(seeded, seeded, scope=scope)
+
+    assert (
+        cli.command_live(
+            _live_args(
+                tmp_path,
+                steps=1,
+                sleep=1,
+                paper=False,
+                live=True,
+                model=str(model_file),
+            )
+        )
+        == 0
+    )
 
     store = PositionsStore()
     assert store.load_open() == []
@@ -7732,7 +7955,14 @@ def test_command_live_persists_entry_order_error(tmp_path, monkeypatch, capsys) 
         def get_account(self):
             return _exchange_account()
 
-        def get_klines(self, symbol: str, interval: str, limit: int = 500, start_time=None, end_time=None):
+        def get_klines(
+            self,
+            symbol: str,
+            interval: str,
+            limit: int = 500,
+            start_time=None,
+            end_time=None,
+        ):
             return _simple_candles(limit)
 
         def get_symbol_constraints(self, symbol: str):
@@ -7758,7 +7988,10 @@ def test_command_live_persists_entry_order_error(tmp_path, monkeypatch, capsys) 
             dry_run: bool,
             leverage: float = 1.0,
             client_order_id: str | None = None,
+            expected_scope=None,
+            reduce_only=False,
         ):
+            assert expected_scope == self.execution_scope()
             raise BinanceAPIError("Filter failure: NOTIONAL")
 
     class _AlwaysLongModel(_SignedFeeModelEvidence):
@@ -7771,12 +8004,23 @@ def test_command_live_persists_entry_order_error(tmp_path, monkeypatch, capsys) 
         return output_dir / "live.json"
 
     monkeypatch.setenv("HOME", str(tmp_path))
-    save_runtime(RuntimeConfig(testnet=True, dry_run=False, market_type="spot", api_key="k", api_secret="s", managed_usdc=1000.0))
+    save_runtime(
+        RuntimeConfig(
+            testnet=True,
+            dry_run=False,
+            market_type="spot",
+            api_key="k",
+            api_secret="s",
+            managed_usdc=1000.0,
+        )
+    )
     save_strategy(StrategyConfig(risk_per_trade=0.01, max_position_pct=0.2))
     model_file = tmp_path / "model.json"
     model_file.write_text("{}", encoding="utf-8")
     monkeypatch.setattr(cli, "_build_client", lambda _runtime: _RejectEntryClient())
-    monkeypatch.setattr(cli, "_load_runtime_model", lambda *_a, **_k: _AlwaysLongModel())
+    monkeypatch.setattr(
+        cli, "_load_runtime_model", lambda *_a, **_k: _AlwaysLongModel()
+    )
     monkeypatch.setattr(cli, "_persist_run_artifact", fake_persist)
     monkeypatch.setattr(cli.time, "sleep", lambda *_args: None)
 
@@ -7812,7 +8056,14 @@ def test_command_live_persists_close_order_error(tmp_path, monkeypatch, capsys) 
         def get_account(self):
             return _exchange_account()
 
-        def get_klines(self, symbol: str, interval: str, limit: int = 500, start_time=None, end_time=None):
+        def get_klines(
+            self,
+            symbol: str,
+            interval: str,
+            limit: int = 500,
+            start_time=None,
+            end_time=None,
+        ):
             return _simple_candles(limit)
 
         def get_symbol_constraints(self, symbol: str):
@@ -7838,11 +8089,16 @@ def test_command_live_persists_close_order_error(tmp_path, monkeypatch, capsys) 
             dry_run: bool,
             leverage: float = 1.0,
             client_order_id: str | None = None,
+            expected_scope=None,
+            reduce_only=False,
         ):
+            assert expected_scope == self.execution_scope()
             self.order_calls += 1
             if self.order_calls == 2:
                 raise BinanceAPIError("close rejected")
-            return {"symbol": symbol, "side": side, "executedQty": str(size), "avgPrice": "100", "dry_run": dry_run}
+            return _native_cli_ack(
+                symbol, side, size, client_order_id, reduce_only=reduce_only
+            )
 
     class _OpenThenCloseModel(_SignedFeeModelEvidence):
         def __init__(self) -> None:
@@ -7858,12 +8114,25 @@ def test_command_live_persists_close_order_error(tmp_path, monkeypatch, capsys) 
         return output_dir / "live.json"
 
     monkeypatch.setenv("HOME", str(tmp_path))
-    save_runtime(RuntimeConfig(testnet=True, dry_run=False, market_type="spot", api_key="k", api_secret="s", managed_usdc=1000.0))
-    save_strategy(StrategyConfig(risk_per_trade=0.01, max_position_pct=0.2, cooldown_minutes=0))
+    save_runtime(
+        RuntimeConfig(
+            testnet=True,
+            dry_run=False,
+            market_type="spot",
+            api_key="k",
+            api_secret="s",
+            managed_usdc=1000.0,
+        )
+    )
+    save_strategy(
+        StrategyConfig(risk_per_trade=0.01, max_position_pct=0.2, cooldown_minutes=0)
+    )
     model_file = tmp_path / "model.json"
     model_file.write_text("{}", encoding="utf-8")
     monkeypatch.setattr(cli, "_build_client", lambda _runtime: _RejectCloseClient())
-    monkeypatch.setattr(cli, "_load_runtime_model", lambda *_a, **_k: _OpenThenCloseModel())
+    monkeypatch.setattr(
+        cli, "_load_runtime_model", lambda *_a, **_k: _OpenThenCloseModel()
+    )
     monkeypatch.setattr(cli, "_persist_run_artifact", fake_persist)
     monkeypatch.setattr(cli.time, "sleep", lambda *_args: None)
 
@@ -7890,7 +8159,9 @@ def test_command_live_persists_close_order_error(tmp_path, monkeypatch, capsys) 
     assert captured[0]["events"][-1]["side"] == "SELL"
 
 
-def test_command_live_persists_emergency_close_order_error(tmp_path, monkeypatch, capsys) -> None:
+def test_command_live_persists_emergency_close_order_error(
+    tmp_path, monkeypatch, capsys
+) -> None:
     captured: list[dict[str, object]] = []
 
     class _RejectEmergencyCloseClient(_SignedCommissionClientEvidence):
@@ -7901,7 +8172,14 @@ def test_command_live_persists_emergency_close_order_error(tmp_path, monkeypatch
         def get_account(self):
             return _exchange_account()
 
-        def get_klines(self, symbol: str, interval: str, limit: int = 500, start_time=None, end_time=None):
+        def get_klines(
+            self,
+            symbol: str,
+            interval: str,
+            limit: int = 500,
+            start_time=None,
+            end_time=None,
+        ):
             close = 100.0 if self.market_calls == 0 else 80.0
             self.market_calls += 1
             return [
@@ -7940,11 +8218,16 @@ def test_command_live_persists_emergency_close_order_error(tmp_path, monkeypatch
             dry_run: bool,
             leverage: float = 1.0,
             client_order_id: str | None = None,
+            expected_scope=None,
+            reduce_only=False,
         ):
+            assert expected_scope == self.execution_scope()
             self.order_calls += 1
             if self.order_calls == 2:
                 raise BinanceAPIError("emergency close rejected")
-            return {"symbol": symbol, "side": side, "executedQty": str(size), "avgPrice": "100", "dry_run": dry_run}
+            return _native_cli_ack(
+                symbol, side, size, client_order_id, reduce_only=reduce_only
+            )
 
     class _AlwaysLongModel(_SignedFeeModelEvidence):
         def predict_proba(self, _features: tuple[float, ...]) -> float:
@@ -7979,8 +8262,12 @@ def test_command_live_persists_emergency_close_order_error(tmp_path, monkeypatch
     )
     model_file = tmp_path / "model.json"
     model_file.write_text("{}", encoding="utf-8")
-    monkeypatch.setattr(cli, "_build_client", lambda _runtime: _RejectEmergencyCloseClient())
-    monkeypatch.setattr(cli, "_load_runtime_model", lambda *_a, **_k: _AlwaysLongModel())
+    monkeypatch.setattr(
+        cli, "_build_client", lambda _runtime: _RejectEmergencyCloseClient()
+    )
+    monkeypatch.setattr(
+        cli, "_load_runtime_model", lambda *_a, **_k: _AlwaysLongModel()
+    )
     monkeypatch.setattr(cli, "_persist_run_artifact", fake_persist)
     monkeypatch.setattr(cli.time, "sleep", lambda *_args: None)
 
@@ -8006,18 +8293,34 @@ def test_command_live_persists_emergency_close_order_error(tmp_path, monkeypatch
     assert captured[0]["events"][-1]["side"] == "SELL"
 
 
-def test_command_live_records_malformed_entry_fill_response(tmp_path, monkeypatch, capsys) -> None:
+def test_command_live_records_malformed_entry_fill_response(
+    tmp_path, monkeypatch, capsys
+) -> None:
     captured: list[dict[str, object]] = []
 
     class _EntryClient(_FakeClient):
         def get_account(self):
             return _exchange_account()
 
-        def get_klines(self, symbol: str, interval: str, limit: int = 500, start_time=None, end_time=None):
+        def get_klines(
+            self,
+            symbol: str,
+            interval: str,
+            limit: int = 500,
+            start_time=None,
+            end_time=None,
+        ):
             return _simple_candles(limit)
 
         def get_symbol_constraints(self, symbol: str):
-            return SimpleNamespace(symbol=symbol, min_qty=0.0001, max_qty=100.0, step_size=0.0001, min_notional=1.0, max_notional=0.0)
+            return SimpleNamespace(
+                symbol=symbol,
+                min_qty=0.0001,
+                max_qty=100.0,
+                step_size=0.0001,
+                min_notional=1.0,
+                max_notional=0.0,
+            )
 
         def normalize_quantity(self, symbol: str, quantity: float):
             return max(0.0001, round(quantity, 4)), self.get_symbol_constraints(symbol)
@@ -8031,40 +8334,76 @@ def test_command_live_records_malformed_entry_fill_response(tmp_path, monkeypatc
             dry_run: bool,
             leverage: float = 1.0,
             client_order_id: str | None = None,
+            expected_scope=None,
+            reduce_only=False,
         ):
-            return {"symbol": symbol, "side": side, "executedQty": str(size), "avgPrice": "100"}
+            assert expected_scope == self.execution_scope()
+            return {
+                "symbol": symbol,
+                "side": side,
+                "executedQty": str(size),
+                "avgPrice": "100",
+            }
 
     class _AlwaysLongModel(_SignedFeeModelEvidence):
         def predict_proba(self, _features: tuple[float, ...]) -> float:
             return 0.99
 
     monkeypatch.setenv("HOME", str(tmp_path))
-    save_runtime(RuntimeConfig(testnet=True, dry_run=False, market_type="spot", api_key="k", api_secret="s", managed_usdc=1000.0))
+    save_runtime(
+        RuntimeConfig(
+            testnet=True,
+            dry_run=False,
+            market_type="spot",
+            api_key="k",
+            api_secret="s",
+            managed_usdc=1000.0,
+        )
+    )
     save_strategy(StrategyConfig(risk_per_trade=0.01, max_position_pct=0.2))
     model_file = tmp_path / "model.json"
     model_file.write_text("{}", encoding="utf-8")
     monkeypatch.setattr(cli, "_build_client", lambda _runtime: _EntryClient())
-    monkeypatch.setattr(cli, "_load_runtime_model", lambda *_a, **_k: _AlwaysLongModel())
+    monkeypatch.setattr(
+        cli, "_load_runtime_model", lambda *_a, **_k: _AlwaysLongModel()
+    )
     monkeypatch.setattr(cli, "_order_fill_details", lambda *_a, **_k: (0.0, 0.0, 0.0))
-    monkeypatch.setattr(cli, "_persist_run_artifact", lambda _kind, _output_dir, payload: captured.append(payload) or tmp_path / "live.json")
+    monkeypatch.setattr(
+        cli,
+        "_persist_run_artifact",
+        lambda _kind, _output_dir, payload: (
+            captured.append(payload) or tmp_path / "live.json"
+        ),
+    )
     monkeypatch.setattr(cli.time, "sleep", lambda *_args: None)
 
-    assert cli.command_live(
-        argparse.Namespace(
-            steps=1,
-            sleep=1,
-            paper=False,
-            live=True,
-            model=str(model_file),
-            leverage=None,
-            retrain_interval=0,
-            retrain_window=300,
-            retrain_min_rows=240,
-            external_signals=None,
+    assert (
+        cli.command_live(
+            argparse.Namespace(
+                steps=1,
+                sleep=1,
+                paper=False,
+                live=True,
+                model=str(model_file),
+                leverage=None,
+                retrain_interval=0,
+                retrain_window=300,
+                retrain_min_rows=240,
+                external_signals=None,
+            )
         )
-    ) == 2
-    assert "Order response did not include executed quantity" in capsys.readouterr().err
+        == 2
+    )
+    assert (
+        "opening acknowledgement identity or status is unresolved"
+        in capsys.readouterr().err
+    )
     assert captured[0]["result"]["status"] == "order_error"
+    assert (
+        PositionsStore().opening_intents.entry_block_reason()
+        == "unresolved_opening_intents=1"
+    )
+
 
 
 def test_command_live_records_malformed_regular_close_fill_response(tmp_path, monkeypatch, capsys) -> None:
@@ -8666,7 +9005,14 @@ def test_command_live_futures_leverage_override(tmp_path, monkeypatch, capsys) -
         def get_account(self):
             return _exchange_account()
 
-        def get_klines(self, symbol: str, interval: str, limit: int = 500, start_time=None, end_time=None):
+        def get_klines(
+            self,
+            symbol: str,
+            interval: str,
+            limit: int = 500,
+            start_time=None,
+            end_time=None,
+        ):
             return [
                 Candle(
                     open_time=i * 60_000,
@@ -8716,28 +9062,47 @@ def test_command_live_futures_leverage_override(tmp_path, monkeypatch, capsys) -
             notional: float | None = None,
             reduce_only: bool = False,
             client_order_id: str | None = None,
+            expected_scope=None,
         ):
+            assert expected_scope == self.execution_scope()
             self.orders.append((side, size, dry_run, leverage, notional))
-            return {"symbol": symbol, "side": side, "executedQty": str(size), "avgPrice": "100"}
+            return _native_cli_ack(
+                symbol, side, size, client_order_id, reduce_only=reduce_only
+            )
 
     class _AlwaysLongModel(_SignedFeeModelEvidence):
         def predict_proba(self, _features: tuple[float, ...]) -> float:
             return 0.99
 
     monkeypatch.setenv("HOME", str(tmp_path))
-    save_runtime(RuntimeConfig(testnet=True, dry_run=False, market_type="futures", api_key="k", api_secret="s", managed_usdc=1000.0))
+    save_runtime(
+        RuntimeConfig(
+            testnet=True,
+            dry_run=False,
+            market_type="futures",
+            api_key="k",
+            api_secret="s",
+            managed_usdc=1000.0,
+        )
+    )
     save_strategy(StrategyConfig(risk_per_trade=0.005, max_position_pct=0.5))
     model_file = tmp_path / "model.json"
     model_file.write_text("{}", encoding="utf-8")
 
     client = _LeverageClient()
     monkeypatch.setattr(cli, "_build_client", lambda _runtime: client)
-    monkeypatch.setattr(cli, "_load_runtime_model", lambda *_a, **_k: _AlwaysLongModel())
+    monkeypatch.setattr(
+        cli, "_load_runtime_model", lambda *_a, **_k: _AlwaysLongModel()
+    )
     monkeypatch.setattr(cli.time, "sleep", lambda *_args: None)
     monkeypatch.setattr(cli, "train", lambda *_a, **_k: _AlwaysLongModel())
 
     assert (
-        cli.command_live(argparse.Namespace(steps=1, sleep=5, paper=False, model=str(model_file), leverage=12.0))
+        cli.command_live(
+            argparse.Namespace(
+                steps=1, sleep=5, paper=False, model=str(model_file), leverage=12.0
+            )
+        )
         == 0
     )
     assert client.set_calls == []
@@ -9135,3 +9500,258 @@ def test_command_autonomous_start_success_error_and_client_failure(tmp_path, mon
     )
     assert cli.command_autonomous(argparse.Namespace(**base_args)) == 2
     assert "blocked by AI governance: review model differs" in capsys.readouterr().err
+
+
+
+def _owned_live_scenario(
+    monkeypatch, root: Path, *, mode="open", partial=False, crash=False
+):
+    """Drive the actual CLI with synthetic models/venue responses and real journals."""
+    from contextlib import closing
+    from simple_ai_trading.binance_close_intents import unresolved_close_count
+
+    monkeypatch.chdir(root)
+    monkeypatch.setenv("HOME", str(root))
+    save_runtime(
+        RuntimeConfig(
+            testnet=True,
+            dry_run=False,
+            market_type="futures",
+            interval="1s",
+            api_key="offline-key",
+            api_secret="offline-secret",
+            managed_usdc=1000.0,
+        )
+    )
+    save_strategy(
+        StrategyConfig(
+            leverage=1.0,
+            risk_per_trade=0.001,
+            max_position_pct=0.2,
+            stop_loss_pct=0.5,
+            take_profit_pct=1.0 if mode == "emergency" else 0.01,
+            max_drawdown_limit=0.0001 if mode == "emergency" else 0.5,
+            signal_threshold=0.7,
+            max_regime_unpredictability=1.0,
+            dynamic_liquidity_session_enabled=False,
+        )
+    )
+    store = PositionsStore()
+    captured, writes = [], []
+    state = {"partial_seen": False}
+
+    class Client(_FakeClient):
+        def get_account(self):
+            account = _exchange_account()
+            if mode != "open":
+                account["positions"] = [
+                    {"symbol": "BTCUSDC", "positionAmt": "0.2", "entryPrice": "100"}
+                ]
+            return account
+
+        def get_symbol_constraints(self, symbol):
+            return SimpleNamespace(
+                symbol=symbol,
+                min_qty=0.0001,
+                max_qty=100.0,
+                step_size=0.0001,
+                min_notional=1.0,
+                max_notional=0.0,
+            )
+
+        def normalize_quantity(self, symbol, quantity):
+            return max(0.0001, round(quantity, 4)), self.get_symbol_constraints(symbol)
+
+        def get_klines(self, *args, **kwargs):
+            return _simple_candles(kwargs.get("limit", 500))
+
+        def place_order(
+            self,
+            symbol,
+            side,
+            size,
+            *,
+            dry_run,
+            leverage=1.0,
+            reduce_only=False,
+            client_order_id=None,
+            expected_scope=None,
+        ):
+            assert dry_run is False
+            scope = self.execution_scope()
+            if side == "BUY":
+                pending = store.opening_intents.pending_position(scope=scope)
+                assert pending is not None, (
+                    "opening must be durable before native dispatch"
+                )
+                assert pending.open_client_order_id == client_order_id
+                assert not store.load_open()
+            else:
+                with closing(store.opening_intents._connect()) as connection:
+                    assert unresolved_close_count(connection) == 1, (
+                        "closing must be durable before native dispatch"
+                    )
+                    row = connection.execute(
+                        "SELECT client_id FROM close_intent WHERE state='UNKNOWN'"
+                    ).fetchone()
+                    assert row == (client_order_id,)
+                assert store.find_open("owned-cli-probe") is not None
+            assert expected_scope == scope
+            writes.append((side, size, client_order_id))
+            if crash:
+                import os
+
+                os._exit(39)
+            price = 80.0 if mode == "emergency" else 102.0 if side == "SELL" else 100.0
+            response = _native_cli_ack(
+                symbol,
+                side,
+                size,
+                client_order_id,
+                price=price,
+                reduce_only=reduce_only,
+            )
+            if partial and side == "SELL":
+                response["executedQty"] = "0.1999"
+                response["cumQuote"] = "20.3898"
+                response["status"] = "PARTIALLY_FILLED"
+                state["partial_seen"] = True
+            return response
+
+    class Model(_SignedFeeModelEvidence):
+        feature_signature = "runtime-signature"
+
+        def predict_proba(self, features):
+            return 0.95
+
+    client = Client()
+    if mode != "open":
+        position = OpenPosition(
+            id="owned-cli-probe",
+            symbol="BTCUSDC",
+            market_type="futures",
+            side="LONG",
+            qty=0.2,
+            entry_price=100.0,
+            leverage=1.0,
+            opened_at_ms=1,
+            notional=20.0,
+            dry_run=False,
+            open_client_order_id=bot_client_order_id("owned-cli-probe", "open"),
+            open_exchange_order_id="100",
+            exchange_status="FILLED",
+        )
+        scope = client.execution_scope()
+        store.opening_intents.prepare(position, scope=scope)
+        store.record_open(position)
+        store.opening_intents.record_complete(position, position, scope=scope)
+
+    def rows_for_model(*args, **kwargs):
+        price = (
+            100.0
+            if state["partial_seen"] or mode == "open"
+            else 80.0
+            if mode == "emergency"
+            else 102.0
+        )
+        return [
+            ModelRow(
+                timestamp=i * 60_000,
+                close=price,
+                features=(0.1,),
+                label=1,
+                volume=1000.0,
+            )
+            for i in range(20)
+        ]
+
+    model = root / "model.json"
+    model.write_text("{}", encoding="utf-8")
+    monkeypatch.setattr(cli, "_build_client", lambda runtime: client)
+    monkeypatch.setattr(cli, "_load_runtime_model", lambda *args, **kwargs: Model())
+    monkeypatch.setattr(cli, "_live_rows_for_model", rows_for_model)
+    monkeypatch.setattr(cli, "_readiness_model_rows", rows_for_model)
+    monkeypatch.setattr(
+        cli,
+        "_persist_run_artifact",
+        lambda kind, path, payload: captured.append(payload) or path / "live.json",
+    )
+    monkeypatch.setattr(cli.time, "sleep", lambda *args: None)
+    code = cli.command_live(
+        _live_args(
+            root,
+            steps=2 if partial else 1,
+            sleep=1,
+            paper=False,
+            live=True,
+            model=str(model),
+        )
+    )
+    return code, store, captured, writes
+
+
+@pytest.mark.parametrize("mode", ["open", "close", "emergency"])
+def test_cli_owned_write_is_precommitted_before_native_dispatch(
+    tmp_path, monkeypatch, mode
+):
+    code, store, captured, writes = _owned_live_scenario(
+        monkeypatch, tmp_path, mode=mode
+    )
+    assert code == 0, captured
+    assert len(writes) == 1
+    assert store.opening_intents.entry_block_reason() is None
+    if mode == "open":
+        assert len(store.load_open()) == 1 and not store.load_ledger()
+    else:
+        assert not store.load_open() and len(store.load_ledger()) == 1
+        assert store.load_ledger()[0].close_client_order_id == writes[0][2]
+
+
+def test_cli_near_full_partial_close_retains_residual_and_unknown(
+    tmp_path, monkeypatch
+):
+    code, store, captured, writes = _owned_live_scenario(
+        monkeypatch, tmp_path, mode="close", partial=True
+    )
+    assert code == 0, captured
+    assert len(writes) == 1 and writes[0][0] == "SELL"
+    assert store.find_open("owned-cli-probe").qty == pytest.approx(0.0001)
+    assert store.opening_intents.entry_block_reason() == "unresolved_closing_intents=1"
+    assert captured[0]["result"]["entries"] == 0
+
+
+def test_cli_process_exit_at_native_dispatch_retains_exact_opening(tmp_path):
+    import os
+    import subprocess
+    import sys
+    from simple_ai_trading.api import _default_base_url
+    from simple_ai_trading.binance_execution_scope import BinanceExecutionScope
+
+    repo = Path(__file__).resolve().parents[1]
+    child_root = tmp_path / "child"
+    child_root.mkdir()
+    script = """import sys
+from pathlib import Path
+import pytest
+sys.path.insert(0,str(Path(sys.argv[1])/'tests'))
+from test_cli_coverage import _owned_live_scenario
+with pytest.MonkeyPatch.context() as patch:
+    _owned_live_scenario(patch,Path(sys.argv[2]),crash=True)
+"""
+    result = subprocess.run(
+        [sys.executable, "-c", script, str(repo), str(child_root)],
+        cwd=repo,
+        capture_output=True,
+        text=True,
+        timeout=45,
+        creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0),
+        env={**os.environ, "PYTHONUTF8": "1", "PYTEST_DISABLE_PLUGIN_AUTOLOAD": "1"},
+    )
+    assert result.returncode == 39, result.stdout + result.stderr
+    store = PositionsStore(child_root / "data" / "autonomous")
+    assert store.opening_intents.entry_block_reason() == "unresolved_opening_intents=1"
+    origin, _ = _default_base_url(True, "futures", demo=False)
+    scope = BinanceExecutionScope.from_api_key(origin, "futures", "offline-key")
+    pending = store.opening_intents.pending_position(scope=scope)
+    assert pending is not None and pending.open_client_order_id.startswith("sait-o-")
+    assert not store.load_open()

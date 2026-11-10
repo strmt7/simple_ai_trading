@@ -1,0 +1,110 @@
+{
+  "base_revision": "925a49295644be8f0e37d714d413108ff887801b",
+  "capture_boundaries_sha256": "f971726268ba2e630b2ebbe8d5bcf02f7b3f23b92ccb16efe23aef82cebe950f",
+  "created_at_utc": "2026-11-09T23:59:30.314525+00:00",
+  "limits": {
+    "model_training_or_benchmark_runs": 0,
+    "native_market_account_order_or_real_credentials_access": false,
+    "new_market_observations": 0,
+    "new_verified_profitable_edge": false,
+    "persistent_worker_or_task_installed": false,
+    "protected_partial_data_access": false
+  },
+  "live_source_scope": {
+    "complete_caller_or_receipt_audit_claimed": false,
+    "git_sources_sha256": {
+      "src/simple_ai_trading/polymarket_live.py": "118ee7a385e2b8b8fe013114ba441d59a037904c30265d21f2737e839650781b",
+      "src/simple_ai_trading/polymarket_live_settlement.py": "661be1174d07746a9a260a45f13d390f7e1d3c5643979e9fce7686daa3904816"
+    },
+    "observed_at_ms_is_observation_time_not_chain_cash_settlement_time": true,
+    "production_change_made": false,
+    "redemption_ledger_already_separates_confirmed_state_and_verified_payout_accounting": true,
+    "remaining_qualification": "Complete source/holder/payout-unit lineage, both effective and locally available clocks, and actual usable collateral recovery must qualify turnover; a digest or an event-state label alone is not that proof.",
+    "source_hash_note": "Original sources_sha256 binds the inspected checkout bytes. git_sources_sha256 binds published canonical bytes; any difference was verified to be CRLF/LF only.",
+    "sources_sha256": {
+      "src/simple_ai_trading/polymarket_live.py": "118ee7a385e2b8b8fe013114ba441d59a037904c30265d21f2737e839650781b",
+      "src/simple_ai_trading/polymarket_live_settlement.py": "661be1174d07746a9a260a45f13d390f7e1d3c5643979e9fce7686daa3904816"
+    }
+  },
+  "next_evidence": [
+    "Preserve exact oracle-request, adapter-generation, condition, token and normalized payout identities through entry and subsequent payout.",
+    "Record decision-time source availability separately from on-chain effective event ordering; do not backdate knowledge.",
+    "For any separately authorized owned probe, bind fills, redemption route, actual same-unit collateral receipt and usable balance to the same inventory; charge capital until the specified discharge event.",
+    "Retain censored and delayed attempts and residual inventory; do not use a condition-level median as a promised recovery bound or train on it as holder labels."
+  ],
+  "own_financial_adjudication": {
+    "do_not_require_prior_CTF_resolution_and_eliminate_the_intended_window": true,
+    "existing_post_oracle_pre_adapter_probe_window_preserved": true,
+    "financial_counts_unchanged": [
+      204,
+      65,
+      37,
+      0
+    ],
+    "historical_screen_preserved": true,
+    "new_public_market_history_or_account_probe_authorized": false,
+    "observed_entry_price": "0.999",
+    "old_break_even_is_not_actual_cost_or_delay_evidence": true,
+    "old_conditional_10_percent_break_even_delay_days": "3.65365365365365365365365365",
+    "paper_median_must_not_replace_own_cash_clock_or_tail_evidence": true,
+    "rank": 6,
+    "retry_trigger_unchanged": "not_before_2026_08_29T23_40_00Z_plus_explicit_authenticated_paper_authority_for_one_minimum_size_post_finality_order_acceptance_probe",
+    "screen_file_sha256": "147c800d40dad8006f0568f485a5b42c2adc1f4e9c6daa3fd557c3e72ebb92b0"
+  },
+  "private_retention_directory": "data/research/2026-11-10-finality-paper",
+  "provider_lock_sha256": "5fc27973200b72184199428bee436c8deee9fe65ef3f0762cb871ac5c69abe53",
+  "provider_tool_sha256": "e84a0e54ee07e4e13d3d2f35491f641730096a78126068f232c1f2397a467d8c",
+  "provider_version": "0.9.5+flitzzip.portable2",
+  "result_sha256": "43270fae14ee9e75b45c9152b0e5c269ea678abfef7f37df89f14ad6532bae50",
+  "schema": "polymarket-finality-cash-source-adjudication-v1",
+  "source_attribution": {
+    "author": "Maksym Nechepurenko",
+    "cohort_followup_end_utc": "2026-07-12T17:11:41Z",
+    "empirical_results_independently_replicated": false,
+    "not_this_bot_cash_availability_bound": true,
+    "reported_Kaplan_Meier_median_seconds": 200,
+    "reported_observed_endpoint": "First positive-payout redemption by any holder in the resolved exact-linked cohort",
+    "submitted_utc": "2026-09-14T10:58:51Z",
+    "title": "Resolution Is Not Settlement, Part II: Protocol Finality and Observed Redemption on Polymarket",
+    "version": "arXiv:2609.15373v1"
+  },
+  "source_documents": [
+    {
+      "controller_sha256": "579ab913440be73176bb2b1db5a16f5003545f1dfc5818f50cbefa73952f646d",
+      "error_message": "",
+      "final_url": "https://arxiv.org/abs/2609.15373",
+      "intent_path": "data/research/2026-11-10-finality-paper/intent.json",
+      "intent_sha256": "edf0e74f94fcdc5bb2565dd18d3123c91fdb9aa35bd7cb03ea8f82a4b02f15b2",
+      "journal_sha256": "3dd90b49ec5df96a77bb075651a33f6afe808c2e2cf7bb8bbe3dc816d58023f9",
+      "markdown_characters": 9177,
+      "markdown_sha256": "0472741579b10e610134ddad4bb84478eaae615072300f9f61cf14af37f537b4",
+      "native_bytes": 144519,
+      "native_result": "data/research/2026-11-10-finality-paper/abstract.native.json",
+      "native_sha256": "40d71a6929874c29c3689b8c9a268fe7b07889ec5c234b16e4911f8b2d824ec7",
+      "native_success": true,
+      "original_url": "https://arxiv.org/abs/2609.15373",
+      "redirected_status_code": 200,
+      "review_scope": "abstract and metadata",
+      "status_code": 200
+    },
+    {
+      "controller_sha256": "84a5f8e12d7a7fb40eb999577f905441cf710314849911dd9a69ef70d402f4a5",
+      "error_message": "",
+      "final_url": "https://arxiv.org/html/2609.15373v1",
+      "intent_path": "data/research/2026-11-10-finality-paper/fulltext/intent.json",
+      "intent_sha256": "fc277eade85c961680b9fc5916b3b76c87c0f858522560f0cf2062b143646889",
+      "journal_sha256": "75072fa77e9a6dbbfd025793394668a5358cc3a224682f6c370cfc2e27d4f01e",
+      "markdown_characters": 187346,
+      "markdown_sha256": "1f1fdd4b822b2556507c35493d7e2d34b1db478cffb59b0a84504cb6bb1f5d3c",
+      "native_bytes": 1949012,
+      "native_result": "data/research/2026-11-10-finality-paper/fulltext/paper.native.json",
+      "native_sha256": "f673e70e5d24bdd706405c9c0029d9ed0abed3e1b95bd51f0357f19581f07d50",
+      "native_success": true,
+      "original_url": "https://arxiv.org/html/2609.15373v1",
+      "redirected_status_code": 200,
+      "review_scope": "version-1 full HTML with selected formal, empirical and limitation sections reviewed",
+      "status_code": 200
+    }
+  ],
+  "source_summary": "Oracle finality, recorded condition payout and holder cash realization are separate. First-holder redemption timing does not identify this holder cash recovery. Redemption events alone do not identify total entitlement completion. The frozen historical cohort and incomplete cross-contract ordering limit transfer to later mechanisms."
+}

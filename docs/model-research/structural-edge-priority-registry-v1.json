@@ -485,12 +485,18 @@
         "owned order creation acceptance fill cancellation and token lineage with zero pre-finality resting exposure",
         "adapter pause flag reset emergency and manual-resolution state checked at order time",
         "successful gasless redemption latency and pUSD balance reconciliation",
-        "multi-day BTC ETH SOL recurrence capacity queue and latency stress beyond the frozen five-hour public screen"
+        "multi-day BTC ETH SOL recurrence capacity queue and latency stress beyond the frozen five-hour public screen",
+        "exact_oracle_request_adapter_generation_condition_token_and_normalized_payout_lineage_for_the_probe_without_requiring_protocol_resolution_before_its_intended_pre_adapter_entry",
+        "holder_specific_same_unit_usable_collateral_clock_with_local_source_availability_and_censored_residual_attempts_before_turnover_or_delay_model_qualification"
       ],
       "canonical_artifacts": [
         {
           "path": "docs/model-research/action-value/polymarket-finalized-winner-redemption-latency-gate-v1-2026-08-26.json",
           "result_sha256": "3df84b6639c409ffca472bb4566e623ac78f160e7d8bc66795009f619edfdcb1"
+        },
+        {
+          "path": "docs/review/2026-11-10/finality-cash/adjudication.json",
+          "result_sha256": "43270fae14ee9e75b45c9152b0e5c269ea678abfef7f37df89f14ad6532bae50"
         }
       ],
       "current_status": "highest_priority_positive_direct_cost_execution_lead_two_of_five_consecutive_hourly_clusters_had_onchain_confirmed_taker_sells_into_0_999_maker_bids_after_UMA_Expired_state_and_before_adapter_close_totaling_278_14_winning_shares_and_0_27814_pUSD_gross_with_zero_maker_fee_and_documented_gasless_redemption_but_public_history_cannot_prove_post_finality_order_creation",
@@ -504,10 +510,18 @@
         "using_proposed_outcome_without_exact_no_disputer_expiration_and_non_ignore_checks",
         "ignoring_adapter_pause_flag_reset_emergency_or_manual_resolution_state",
         "crediting_maker_rebates_or_zeroing_redemption_latency_external_costs",
-        "submitting_any_order_before_the_protected_boundary_and_explicit_authority"
+        "submitting_any_order_before_the_protected_boundary_and_explicit_authority",
+        "using_a_historical_condition_level_first_positive_redemption_median_as_this_bot_cash_availability_deadline_or_holder_training_label",
+        "using_a_first_redemption_event_to_infer_complete_entitlement_recovery_or_backdating_source_availability_to_an_onchain_effective_timestamp"
       ],
       "retry_trigger": "not_before_2026_08_29T23_40_00Z_plus_explicit_authenticated_paper_authority_for_one_minimum_size_post_finality_order_acceptance_probe",
-      "venue_scope": "polymarket_BTC_ETH_SOL_hourly_UMA_resolution_latency"
+      "venue_scope": "polymarket_BTC_ETH_SOL_hourly_UMA_resolution_latency",
+      "finality_cash_source_update_2026_11_10": {
+        "decision": "Do not substitute first-redemption-by-any-holder statistics for this bot usable collateral clock. Preserve the intended post-oracle/pre-adapter entry window and qualify subsequent payout and cash recovery separately.",
+        "primary_paper": "https://arxiv.org/html/2609.15373v1",
+        "scope": "New primary literature admission; no new market observations or probe authority. Historical screen and literal retry trigger unchanged.",
+        "source_cutoff_utc": "2026-07-12T17:11:41Z"
+      }
     },
     {
       "blocking_evidence": [
@@ -4563,7 +4577,7 @@
       ]
     }
   ],
-  "result_sha256": "f0d0e81ad96f11b37833ab9d8b70a0f4ed2b76109c8992f744375f24c9351309",
+  "result_sha256": "9be9da3c3fcbf68022836af7cbc97e8bba2b0d529216653ad34953a6e7cfac6e",
   "schema_version": "structural-edge-priority-registry-v1",
   "terminal_do_not_repeat": [
     {
@@ -5617,6 +5631,6 @@
       "canonical_result_sha256": "70b9b8dccce9da88a9178f999ae62e75fb432691eaa8a3137d6a0186896d3e9e"
     }
   ],
-  "updated_at_utc": "2026-11-09T22:37:23.265254+00:00",
+  "updated_at_utc": "2026-11-10T00:00:33.034703+00:00",
   "usage_rule": "advance_the_highest_ranked_hypothesis_whose_retry_trigger_is_satisfied_otherwise_do_not_repeat_a_blocked_or_terminal_screen"
 }
