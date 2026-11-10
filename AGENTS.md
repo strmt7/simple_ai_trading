@@ -116,6 +116,18 @@ cleaned up on completion, cancellation, parent death and failure. Keep historica
 data/results; never confuse preserving evidence with keeping a launcher active.
 Follow the [host lifecycle and teardown rules](docs/AGENT_WORKFLOWS.md#host-lifecycle-and-teardown).
 
+Throughout development, prevent stale helpers and unbounded resource retention,
+not just at the final checkpoint. Set relevant process, concurrency, memory and
+output budgets before resource-intensive work; release owned children, handles,
+connections, temporary mappings and accelerator allocations on every exit path.
+Changes to long-lived or repeated work require bounded resource-lifetime
+verification. Distinguish legitimate warm caches from sustained unexplained
+growth; do not hide leaks with periodic restarts or indiscriminate cache clearing.
+Verify task-owned teardown before handing back control. Never terminate another
+task, reset its GPU, purge shared caches or alter host services to obtain a clean
+measurement. Retained evidence and reusable isolated environments are inert
+files, not permission to leave a process or restart mechanism running.
+
 October 7 user priority: long-term profitability, not expiring campaigns or
 promotional tricks. Follow the clarified WORK_PRIORITIES decision order. Do not
 hardcode campaign rules in runtime trading logic or spend resources collecting

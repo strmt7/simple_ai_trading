@@ -9,6 +9,15 @@ Neither partial verification nor an administrative checkpoint completes it.
 
 ## Current decision
 
+The [post-publication assessment](PRODUCT_READINESS_2026_11_10.md) binds commit
+`851e732cf85c814df24cca59340670438ec04088` and prioritizes independent storage
+enrollment, complete testnet execution, eligible structural economics, admitted
+model targets and final product qualification. The reproduced whole-database
+loss path remains open; its unfinished prototype is private and unintegrated.
+The current release composite creates a draft even with publishing disabled:
+do not dispatch it for validation. Enforce bounded resource lifetimes and
+task-owned teardown throughout development, without touching other host tasks.
+
 Financial counts are **205 observations / 65 hypotheses / 37 scoped mechanisms
 / 0 qualified stable edges**. Favor recurring net cash and sound payoff identities;
 expiring promotions and larger datasets alone are not the objective. Use the full

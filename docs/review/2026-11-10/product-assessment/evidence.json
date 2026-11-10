@@ -1,0 +1,105 @@
+{
+  "assessed_revision": "851e732cf85c814df24cca59340670438ec04088",
+  "assessment_sha256": "e4cd8dabc9a4ac9719f2fc56653485bfc4574d0cbb0289d21c77446e8933e05c",
+  "created_at_utc": "2026-11-10T08:25:34.298859+00:00",
+  "current_financial_census": [
+    205,
+    65,
+    37,
+    0
+  ],
+  "no_release_authority": true,
+  "offline_primary_library_research": {
+    "application_enrollment_authority_qualified": false,
+    "inspected_sources_sha256": {
+      "filelock/_api.py": "22a116177ffb5d0a562f5d1e9405f70bd812bb05828ee68568098755078e09c9",
+      "filelock/_identity.py": "9c870961c29c3527cc114b07eef77669a4fd978af3e499b7b1ce7ba4c50f6636",
+      "filelock/_strict.py": "7a6ab421076418e432539c5b8453c121413590e1539bf932f121c8ddbef7544d",
+      "filelock/_windows.py": "906c3001085fa3cc0c58916da69ab35791c20adab3cb9cb86538009af7fb378d"
+    },
+    "package": "filelock",
+    "public_native_lock_options": [
+      "preserve_lock_file",
+      "on_acquired"
+    ],
+    "source_transport": "Retained PyPI wheel; no repeated page or package download",
+    "version": "4.2.10",
+    "wheel_sha256": "9479aaeb4db20b5a53e3da28493edd24720b66b8a0b84030aa56ccdf243d6857"
+  },
+  "required_ledger_frontier_lane": {
+    "counts": {
+      "errors": 0,
+      "failures": 0,
+      "skipped": 0,
+      "tests": 2
+    },
+    "intent_sha256": "49f5deb301d600a577591f43e0c70fc46aa33d08d7b4a38cf5fc49bf60198f7e",
+    "new_economic_observations": 0,
+    "xml_sha256": "af4432d39e5074c291d8d899eba9940cf0e3251774adb7244a391574574e2d91"
+  },
+  "resource_lifecycle": {
+    "host_wide_absence_or_memory_leak_proof": false,
+    "matching_live_controller_markers_in_scoped_read_only_cim_query": 0,
+    "owned_runner_sessions_completed": true,
+    "registrations_services_or_schedules_created": 0,
+    "unrelated_tasks_modified": false
+  },
+  "result_sha256": "fae7f5c29e31efe3060bf9dcb3f835e6c89f99a32e3b2c945279beae137c94cd",
+  "retained_database_loss_reproduction": {
+    "actual_user_storage_touched": false,
+    "original_database_preserved": true,
+    "private_relative_path": "data/research/2026-11-10-runtime-enrollment-0730/original-loss-reproduction.json",
+    "replacement_epoch": 0,
+    "replacement_lease_acquired": true,
+    "sha256": "a6c3f6b31417341dd0406d8f9337c5d675056bf3722c379d7cb81ef38901dfb7",
+    "source_matches_current_selected_code": true,
+    "stopped_epoch_before_loss": 1,
+    "unfinished_prototype_integrated": false
+  },
+  "scanner_quota_status": "unknown; no dependent scan or quota retry performed",
+  "schema": "source-bound-product-assessment-v1",
+  "scope": "Selected critical gaps and next development plan; not a whole-repository semantic review",
+  "selected_live_sources_sha256": {
+    ".github/actions/windows-beta-release/action.yml": "3b3ca1388e3081aa4b672bc608468e80f34869595bcfae005abeebf8c7bd3fc8",
+    ".github/workflows/release.yml": "d8f6fbe3f0d974ce08d970eb86a19c0413f29b3ddff67b56377da42a8825a0f6",
+    "src/simple_ai_trading/binance_runtime_control.py": "f41c91aff53f75a3c728f6ee68a4b09879a6132591df3b75e0d808f4258d6433",
+    "src/simple_ai_trading/binance_spot_roundtrip_intents.py": "8eef57ee357053dcc5b0a3adde3f3114da175aaa6a055cd38198599932303234",
+    "src/simple_ai_trading/causal_meta_label_ai_veto.py": "9e89473275848ca9938ae0500d9857b1c812df907bc4cd6370c4e5fa3f89e5d9",
+    "src/simple_ai_trading/cli.py": "885399ed1d59a7fe4af459bd0f020a05141fad8cede46834d62d8e84118daaeb",
+    "src/simple_ai_trading/model_blueprint.py": "415821f5ea1398cbfaa62859805f8bc7d854c8c0d78bc5acca6816efe70a3ba5",
+    "src/simple_ai_trading/polymarket_ai_veto.py": "217e3a9c969117f32a1f97bd8bcf07f042b3d642d30b615d01a0ca2fe3a8cd6e",
+    "src/simple_ai_trading/runtime_control.py": "cbae8d2692887495914086351bcaecfd154ddbbc247474db8de72ba0270947ab",
+    "src/simple_ai_trading/stateful_cash_labels.py": "7e0fd124133f01cad16250ac9bf6befa9745af49ccfb4be088462b211a8e2b3a"
+  },
+  "semantic_navigation": {
+    "index_reused_and_explicitly_refreshed": true,
+    "indexed_chunks": 56626,
+    "indexed_files": 2224,
+    "language": "python",
+    "limit_per_query": 5,
+    "live_candidates_confirmed": [
+      "binance_runtime_control.py",
+      "binance_spot_roundtrip_intents.py",
+      "runtime_control.py",
+      "stateful_cash_labels.py",
+      "polymarket_ai_veto.py",
+      "model_blueprint.py",
+      "causal_meta_label_ai_veto.py"
+    ],
+    "native_semantic_plus_same_index_lexical": true,
+    "path": "src/simple_ai_trading/**",
+    "private_receipts_sha256": {
+      "control-routing.stderr.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "control-routing.stdout.log": "b5a5f75610117baf563a2f3cf59e6848cf63f983f5f7db63e480bb8a4a5826a0",
+      "index.stderr.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "index.stdout.log": "f090ec871069191e15d1ba851dfe052e91febbffd617b3784c0d77732a2cad54",
+      "model-routing.stderr.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "model-routing.stdout.log": "a57f763ecb3173ada532478e9ce403d12ad7bfac99ec739d945783b594cc56ba"
+    },
+    "queries": [
+      "How are runtime Stop leases, durable owned submission and Spot roundtrip writes connected, and which controls still bootstrap storage?",
+      "How are causal net economic model targets admitted, selection risk validated and risk reducing LLM decisions enforced?"
+    ],
+    "semantic_coverage_is_not_exhaustive": true
+  }
+}

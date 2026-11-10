@@ -27,6 +27,8 @@ The full R&D, application revamp and final-review goal remains active.
 - No recurring tasks, services, startup hooks, unattended workers or visible
   helper terminals. Keep helpers bounded and session-owned. Leave unrelated PC
   tasks untouched; defer timing only when contention materially affects it.
+  Enforce resource budgets and exception-safe teardown throughout development;
+  verify owned process and memory lifetimes when changing repeated/long-lived work.
 - Follow [connector-only publication](AI_COMMIT_IDENTITY.md). Batch substantive
   work; no invented attribution, extra PR, release or release tag.
 - Separate alert counts from scanner coverage and quota. Explicit exhausted

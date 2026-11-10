@@ -474,6 +474,39 @@ the overall goal complete only when its full requested end state is proved.
   parent death. On pause or stop, reconcile task-owned work and leave no capture,
   training or restart loop behind. Preserve partial evidence without resuming it.
   On-demand tools must not install unattended jobs to remain available.
+- Apply resource ownership throughout development. Before expensive or repeated
+  work, set relevant wall-clock, worker/thread, RAM/VRAM, queue, output and disk
+  budgets; avoid unbounded buffering or repeated cold installation. Retain the
+  original ownership handles and record enough private lifecycle evidence to
+  verify termination. A timeout on a waiting parent is insufficient if its child
+  tree remains active. Do not add periodic restart or cleanup jobs to conceal
+  resource-lifetime defects.
+- Use explicit context management and exception-safe teardown for owned process
+  trees, threads, HTTP sessions/responses, database connections, files, pipes,
+  sockets, mapped arrays and accelerator resources. Bound IPC and output
+  retention; join owned threads or terminate the contained child when cooperative
+  shutdown cannot complete. Preserve durable UNKNOWN/reconciliation obligations
+  if interruption could have crossed a trading boundary.
+- When changing a long-lived worker, cancellation path, streaming loop or large
+  repeated allocation, verify resource behavior with a bounded representative
+  lifecycle check. Compare owned process/handle counts and relevant memory after
+  warmup and completed cycles. Report the scope and observed trend; allocator
+  reserves, OS page cache and one high working-set sample do not establish a
+  leak. Sustained unexplained growth blocks acceptance of that changed boundary.
+  Fix ownership and retention rather than masking them with forced garbage
+  collection, repeated restarts or global cache purges.
+- Before handing back control, verify that helpers started for the task have
+  exited, their owned listeners and queues are closed, and no restart mechanism
+  remains. Check authoritative registrations when one was created, changed or
+  suspected; do not repeat a host-wide audit after every read-only command.
+  Retained raw evidence, private journals and reusable isolated package caches
+  may remain as inert files under their existing retention rules. Do not claim
+  universal absence of leaks or processes from one narrow check.
+- Leave other applications and concurrent tasks intact. Never kill by executable
+  name, stale/reported PID or broad command-line match, reset another GPU context,
+  flush shared caches, change global power settings, or stop unrelated services.
+  If contention materially affects benchmark timing, defer timing only; continue
+  independent development and functional checks within the agreed resource budget.
 - Check authoritative host state before claiming cleanup: matching scheduled
   tasks/actions (including encoded actions), services, startup/Run entries,
   legacy launchers and live owned processes. An empty Codex automation directory,
