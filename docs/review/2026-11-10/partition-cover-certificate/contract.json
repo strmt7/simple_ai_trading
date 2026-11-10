@@ -1,0 +1,43 @@
+{
+  "schema": "posthoc-partition-cover-certificate-contract-v1",
+  "frozen_at_utc": "2026-11-10T18:59:19.869786+00:00",
+  "base_head": "b9f1da97f034943b713ca46da5b2ec2187552e76",
+  "family_priority_rank": 31,
+  "information_gain": "Construct a state-price certificate covering arbitrary nonnegative mixed and unequal YES/NO quantities, rather than merely retaining the existing eighteen basis rows.",
+  "promotion_eligible": false,
+  "outcome_known_before_freeze": "The existing source screen rejected all eighteen rows; this is post-hoc mathematical strengthening, not new validation or repricing.",
+  "raw_source": {
+    "path": "data/research/2026-11-10-nyc-nov11-frontier-0650/raw/event.json",
+    "sha256": "a8adde859c8dd4a5362fc11e8b7a6e6a86bc0623591c284cd312ad0ba6aa93ed",
+    "bytes": 90246
+  },
+  "prior_result": {
+    "path": "docs/review/2026-11-10/nyc-nov11-frontier/result.json",
+    "sha256": "77438b998247c1c1c6bceda2247b159350176ae5597a5c5b4115f7f097f500cc"
+  },
+  "source_sha256": {
+    "src/simple_ai_trading/partition_cover.py": "85b72662f2653171dbe0c1b9b9bbba79e70075a830d9a81fa44bac0dcb052ffe",
+    "tests/test_partition_cover.py": "ac9bf15a0cba9671004080993c1d68e96402113f05a2eb79903addbd8ba9bc0c"
+  },
+  "capture_boundaries_sha256": "f971726268ba2e630b2ebbe8d5bcf02f7b3f23b92ccb16efe23aef82cebe950f",
+  "population": {
+    "event_id": "1347307",
+    "markets": 11,
+    "yes_sides": 11,
+    "no_sides": 9,
+    "ordering": "all markets, ascending numeric market ID"
+  },
+  "law": "One exhaustive mutually exclusive winner. YES_i pays 1 only in i; NO_i pays 1 in every state except i. Supplied costs are nonnegative, linear and in the same unit.",
+  "prices": "Preserve direct bestAsk YES and one-minus-bestBid NO proxies from the exact retained response. Strictly outside (0,1) or missing sides stay unavailable. No fee, tick or old-row recalculation.",
+  "certificate": "Find exact nonnegative weights summing to one, with w_i <= YES_i and 1-w_i <= NO_i for every available side. Failure produces a strictly profitable supplied-law cover; preserve contradiction without escalation.",
+  "cost_limit": "Certificate concerns the supplied gross vector. Additional nonnegative costs cannot create a nominal floor surplus. Nonlinear costs, rebates, funding and execution are not qualified.",
+  "consequences": "Preserve original result and missing sides. No refetch, sibling, repair, book, fee endpoint, account, order, on-chain, model, training or protected capture follows from either outcome.",
+  "controls": {
+    "tests": 21,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "network_requests": 0,
+  "contract_sha256": "e2e0c8a4a96f1be477e3f2d610d412fd65d238be5f22aac2f6da4bee0e5dd1a8"
+}

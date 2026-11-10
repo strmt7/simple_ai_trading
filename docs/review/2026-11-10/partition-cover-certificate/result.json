@@ -1,0 +1,83 @@
+{
+  "schema": "posthoc-partition-cover-certificate-result-v1",
+  "contract_sha256": "e2e0c8a4a96f1be477e3f2d610d412fd65d238be5f22aac2f6da4bee0e5dd1a8",
+  "created_at_utc": "2026-11-10T18:59:20.183754+00:00",
+  "conditional_no_strict_floor_profit_certificate": true,
+  "state_rows": [
+    {
+      "market_id": "6898097",
+      "yes_cost": "1/1000",
+      "no_cost": null,
+      "weight": "1/1000"
+    },
+    {
+      "market_id": "6898098",
+      "yes_cost": "1/250",
+      "no_cost": "999/1000",
+      "weight": "1/250"
+    },
+    {
+      "market_id": "6898099",
+      "yes_cost": "1/40",
+      "no_cost": "499/500",
+      "weight": "1/40"
+    },
+    {
+      "market_id": "6898100",
+      "yes_cost": "1/40",
+      "no_cost": "997/1000",
+      "weight": "11/500"
+    },
+    {
+      "market_id": "6898101",
+      "yes_cost": "11/200",
+      "no_cost": "487/500",
+      "weight": "13/500"
+    },
+    {
+      "market_id": "6898102",
+      "yes_cost": "13/50",
+      "no_cost": "77/100",
+      "weight": "23/100"
+    },
+    {
+      "market_id": "6898103",
+      "yes_cost": "11/20",
+      "no_cost": "1/2",
+      "weight": "1/2"
+    },
+    {
+      "market_id": "6898104",
+      "yes_cost": "49/250",
+      "no_cost": "33/40",
+      "weight": "7/40"
+    },
+    {
+      "market_id": "6898105",
+      "yes_cost": "29/1000",
+      "no_cost": "493/500",
+      "weight": "7/500"
+    },
+    {
+      "market_id": "6898106",
+      "yes_cost": "19/1000",
+      "no_cost": "997/1000",
+      "weight": "3/1000"
+    },
+    {
+      "market_id": "6898107",
+      "yes_cost": "1/1000",
+      "no_cost": null,
+      "weight": "0"
+    }
+  ],
+  "available_leg_inequalities_verified": 20,
+  "prior_rows_compared": 18,
+  "strict_witness": null,
+  "weights_are_forecasts": false,
+  "actual_market_no_arbitrage_proved": false,
+  "stable_edge_qualified": false,
+  "economic_observations_added": 0,
+  "network_requests": 0,
+  "result_sha256": "6055b166a789e97e47d13adecbfc1e885c03cca6030a596de9aaa6fb5a80ae71"
+}

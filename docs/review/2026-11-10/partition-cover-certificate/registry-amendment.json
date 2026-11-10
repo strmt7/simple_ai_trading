@@ -1,0 +1,30 @@
+{
+  "schema": "partition-certificate-metadata-amendment-v1",
+  "created_at_utc": "2026-11-10T19:03:27.248843+00:00",
+  "before": {
+    "validation_kind": "registry_binding_and_recorded_census_only",
+    "observations": 205,
+    "hypotheses": 65,
+    "scoped_mechanisms": 37,
+    "recorded_qualified_stable_edges": 0,
+    "registry_sha256": "ba3d5455ff37edf89929d50fb2af7cc7a3df4ee9a56f04f4b229508b2ded27f4",
+    "audit_sha256": "ce34cc446ed76d9271e355ea1671fd164c48c656cca949aa2b9d2382b6e4b010",
+    "profitability_qualification_supplied_by_verifier": false
+  },
+  "after": {
+    "validation_kind": "registry_binding_and_recorded_census_only",
+    "observations": 205,
+    "hypotheses": 65,
+    "scoped_mechanisms": 37,
+    "recorded_qualified_stable_edges": 0,
+    "registry_sha256": "aff7ed14ceae23f5b29fdd1d916e250c6dc94552d853122ae7047fd212f5c3b9",
+    "audit_sha256": "cd3a04d2fabe56cf3edd84a5ebb5d9be2254bcac9010ab721c669f5d37577090",
+    "profitability_qualification_supplied_by_verifier": false
+  },
+  "original_terminal_rows_unchanged": true,
+  "original_hypothesis_fields_unchanged": true,
+  "qualified_edge_decision_and_classification_unchanged": true,
+  "new_economic_observations": 0,
+  "file_pair_transactional": false,
+  "result_sha256": "bf15933854056cfed5910ac7f27aaf4c4e59384be8791dde73f20f7f64c2e28c"
+}

@@ -3015,6 +3015,14 @@
         {
           "path": "docs/review/2026-11-10/nyc-nov11-frontier/result.json",
           "result_sha256": "5cbe00a879162d27f0ff4f974001b528bb071c7bebece873900549a7594ff26e"
+        },
+        {
+          "path": "docs/review/2026-11-10/partition-cover-certificate/contract.json",
+          "result_sha256": "e2e0c8a4a96f1be477e3f2d610d412fd65d238be5f22aac2f6da4bee0e5dd1a8"
+        },
+        {
+          "path": "docs/review/2026-11-10/partition-cover-certificate/result.json",
+          "result_sha256": "6055b166a789e97e47d13adecbfc1e885c03cca6030a596de9aaa6fb5a80ae71"
         }
       ],
       "nyc_october8_frontier_status": "One prospectively frozen NYC October 8 Gamma GET returned event 1141602 and all 11 expected markets: 11 YES and 10 NO acquisition proxies complete. All 20 retained complete frontier rows failed the gross gate; the missing NO side remained unavailable. All-YES cost 1.076 pUSD per share for a conditional one-pUSD common-valid-resolution floor. Best gross binary straddle cost 1.001; best finite fee-plus-one-tick result lost 0.02150 pUSD at five shares. Exceptional oracle correction/clarification states are not source-proved by that floor. No book, fee endpoint, on-chain, account, credential, order, fund or protected access. Exact event terminal without refetch, repricing, alias or missing-side repair; no edge promoted and no family-wide negative-EV claim.",
@@ -3111,7 +3119,8 @@
       "inflation_definition_mapping_status": "The exact August 2026 annual and monthly CPI definition pair is consumed: events 838710 and 838709, all 12 and 9 markets, with no price inspection. Annual is unadjusted; monthly is seasonally adjusted. Two retained BLS tool extractions distinguish component aggregation and seasonal revisions. No same-scalar or known single-factor hedge is proved. A positive-component reciprocal-factor bound is conditional algebra, not a current BLS adapter. Require exact first-release aggregation/factors/denominators, rounding and all fallback vintages before any separately frozen exploratory retained-price screen. Do not refetch, alias or select siblings on unchanged evidence. No economic observation, acceptance or negative-EV proof is added.",
       "inflation_within_event_partition_status": "The distinct zero-request within-event CPI screen is consumed: event 838710 has 12 markets and 24 frontier rows; event 838709 has 9 markets and 18 rows. All sides were price-complete. Every one of 42 long-only rows failed before fees, and none survived configured fees plus one tick per leg at five shares. Complete YES costs were 1.217 and 1.102 pUSD for a one-pUSD optimistic common-valid-resolution floor. Best gross floors were negative 0.020 and 0.015 pUSD at five shares. No annual/monthly map, fresh validation or family-wide negative-EV inference; no network, account or protected access. Do not refresh, reprice, repair, substitute siblings or request books for these exact partitions. The prior component-mapping source question and its requirements remain unchanged.",
       "nyc_september6_frontier_status": "One prospectively selected NYC September 6 Gamma GET returned event 963328 and all 11 expected markets. Eleven YES and eight NO sides were price-complete. All 21 frontier rows failed the gross gate; the best metadata binary straddle cost 1.003 pUSD per share, losing 0.015 pUSD at five shares. The best finite fee-and-one-tick result was negative 0.04837 pUSD. Three NO sides remain incomplete; no missing-side request, book, fee endpoint, account, credential, order or protected capture. This exact event is terminal; do not refetch, reprice, alias or book-test it under unchanged economics. No edge promoted.",
-      "nyc_november11_frontier_status": "One prospectively frozen NYC November 11 Gamma GET returned event 1347307, HTTP 200, 90,246 bytes and exactly 11 markets. Eleven YES and nine NO acquisition proxies were price-complete. All 18 complete source rows failed the gross and configured-fee/one-tick gates. Best gross binary cost was 1.003 pUSD per share for a conditional one-pUSD floor; best finite stressed floor was negative 0.09540 pUSD at five shares. Both unavailable NO quotes remain missing, not free. No books, fee endpoints, on-chain, account, credential, order, model or protected capture followed. Exact event terminal without refetch, repricing, alias or missing-side repair; no qualified edge or family-wide negative-EV claim."
+      "nyc_november11_frontier_status": "One prospectively frozen NYC November 11 Gamma GET returned event 1347307, HTTP 200, 90,246 bytes and exactly 11 markets. Eleven YES and nine NO acquisition proxies were price-complete. All 18 complete source rows failed the gross and configured-fee/one-tick gates. Best gross binary cost was 1.003 pUSD per share for a conditional one-pUSD floor; best finite stressed floor was negative 0.09540 pUSD at five shares. Both unavailable NO quotes remain missing, not free. No books, fee endpoints, on-chain, account, credential, order, model or protected capture followed. Exact event terminal without refetch, repricing, alias or missing-side repair; no qualified edge or family-wide negative-EV claim.",
+      "nyc_november11_partition_certificate_status": "A zero-network post-hoc exact state-price certificate validates all 20 available YES/NO cost inequalities across the retained 11 states, proving no strictly positive nominal floor surplus for arbitrary nonnegative mixed and unequal quantities under the same supplied linear gross-cost and one-winner law. Two NO sides remain unavailable; all 18 original rows and raw bytes are unchanged. The shared separator passes 21 constructed controls. Weights are mathematical certificates, not forecasts. Gamma proxy costs do not prove actual executable no-arbitrage, complete exceptional settlement, family-wide negative expected value or profitability. No new observation, request, retry, promotion, book, account, order, protected capture or training authority. Existing triggers remain."
     },
     {
       "blocking_evidence": [
@@ -4597,7 +4606,7 @@
       ]
     }
   ],
-  "result_sha256": "ba3d5455ff37edf89929d50fb2af7cc7a3df4ee9a56f04f4b229508b2ded27f4",
+  "result_sha256": "aff7ed14ceae23f5b29fdd1d916e250c6dc94552d853122ae7047fd212f5c3b9",
   "schema_version": "structural-edge-priority-registry-v1",
   "terminal_do_not_repeat": [
     {
@@ -5656,6 +5665,6 @@
       "canonical_result_sha256": "5cbe00a879162d27f0ff4f974001b528bb071c7bebece873900549a7594ff26e"
     }
   ],
-  "updated_at_utc": "2026-11-10T10:05:40.737372+00:00",
+  "updated_at_utc": "2026-11-10T19:03:26.731267+00:00",
   "usage_rule": "advance_the_highest_ranked_hypothesis_whose_retry_trigger_is_satisfied_otherwise_do_not_repeat_a_blocked_or_terminal_screen"
 }

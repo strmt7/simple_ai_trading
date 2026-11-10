@@ -158,7 +158,7 @@
       "why_not_stable_deployable": "Current rate remains conflict-qualified rather than proven, the evidence is from public wallets rather than the owned account, every external friction and best alternative is not bound, and future persistence is not guaranteed."
     }
   },
-  "result_sha256": "ce34cc446ed76d9271e355ea1671fd164c48c656cca949aa2b9d2382b6e4b010",
+  "result_sha256": "cd3a04d2fabe56cf3edd84a5ebb5d9be2254bcac9010ab721c669f5d37577090",
   "routing": {
     "october8_9_nfl_total_ladder_resource_failure": {
       "status": "terminal_resource_unqualified_no_price_evaluation",
@@ -342,7 +342,12 @@
   "source_binding": {
     "accepted_edge_count": 37,
     "registry_path": "docs/model-research/structural-edge-priority-registry-v1.json",
-    "registry_result_sha256": "ba3d5455ff37edf89929d50fb2af7cc7a3df4ee9a56f04f4b229508b2ded27f4"
+    "registry_result_sha256": "aff7ed14ceae23f5b29fdd1d916e250c6dc94552d853122ae7047fd212f5c3b9",
+    "registry_metadata_partition_certificate": {
+      "path": "docs/review/2026-11-10/partition-cover-certificate/result.json",
+      "result_sha256": "6055b166a789e97e47d13adecbfc1e885c03cca6030a596de9aaa6fb5a80ae71",
+      "effect": "metadata only; existing observations, scope and qualified-edge decisions unchanged"
+    }
   },
   "updated_at_utc": "2026-11-10T10:05:40.737372+00:00"
 }

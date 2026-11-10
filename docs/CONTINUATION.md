@@ -67,6 +67,13 @@ current full-suite failure count without rerunning the appropriate scope.
   zero-qualified-edge classification. A new read-only binding/census guard has
   21 passing focused checks. This checkpoint raises terminal observations to
   205; they do not qualify a stable edge or complete the full financial audit.
+  The [exact partition certificate](review/2026-11-10/partition-cover-certificate/review.md)
+  now proves rejection for arbitrary mixed/unequal nonnegative quantities under
+  that same supplied one-winner gross-cost model. All 20 available-side
+  inequalities validate across 11 states; the two missing NO sides stay missing.
+  This post-hoc strengthening preserves all 18 old rows and adds no observation,
+  request or actual-market no-arbitrage claim. The shared exact rational
+  separator passes 21 controls; state weights are certificates, not forecasts.
 - [Fully paid long-option research](review/2026-11-10/fully-paid-options/review.md)
   adds an exact supplied-law payout floor for a lower-strike long call plus a
   higher-strike long put. Capped exercise fees can put the minimum between the

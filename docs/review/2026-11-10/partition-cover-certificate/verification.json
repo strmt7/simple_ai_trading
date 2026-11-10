@@ -1,0 +1,59 @@
+{
+  "schema": "partition-cover-certificate-verification-v1",
+  "created_at_utc": "2026-11-10T19:09:05.963898+00:00",
+  "base_head": "b9f1da97f034943b713ca46da5b2ec2187552e76",
+  "verification": {
+    "tested_source_sha256": {
+      "src/simple_ai_trading/partition_cover.py": "85b72662f2653171dbe0c1b9b9bbba79e70075a830d9a81fa44bac0dcb052ffe",
+      "tests/test_partition_cover.py": "ac9bf15a0cba9671004080993c1d68e96402113f05a2eb79903addbd8ba9bc0c",
+      "docs/model-research/structural-edge-priority-registry-v1.json": "4a9b5a496ff57ac39fa13d1174f0e1b04ca3f6ef7cd66736f907b685f7c92e76",
+      "docs/model-research/action-value/accepted-edge-profitability-durability-audit-v1-2026-08-30.json": "d14f600909d3b72498cc121544818eb754137494331973504a6e71a0e23b03d2",
+      "tests/test_research_registry_binding.py": "6e35de9b939fe271e49b739f5f93fb473eec54daa3ffbb43017b3f20799f9827",
+      "tests/test_accepted_edge_profitability_durability_audit.py": "f63ab02ffdd2cf4ba23abdaa77fb2794a2eaa2535343f8d870655e920cbb8670"
+    },
+    "constructed_law_controls": {
+      "tests": 21,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "ledger_controls": {
+      "tests": 23,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "lanes_disjoint": true,
+    "whole_suite_run": false
+  },
+  "navigation": [
+    {
+      "native_receipt_sha256": "7b07576c4030ab2f4cc66f3c756f9aab92f1d2d853de5e2c16add69263fd721b",
+      "package": "cocoindex-code[full]==0.2.43",
+      "source_digest": "9077afcae1abd67ab43ccd028e05e16d",
+      "source_root_matched": true,
+      "index_current_at_search": true,
+      "all_candidates_matched_live_source": true,
+      "query": "NegRisk exhaustive long-only YES NO mixed unequal quantities dual state-price certificate no arbitrage"
+    },
+    {
+      "native_receipt_sha256": "0def51a076353741e8e19c7e8b4a2347571bfd19481687fbe48d83c89ff431ea",
+      "package": "cocoindex-code[full]==0.2.43",
+      "source_digest": "9077afcae1abd67ab43ccd028e05e16d",
+      "source_root_matched": true,
+      "index_current_at_search": true,
+      "all_candidates_matched_live_source": true,
+      "query": "NegRisk exhaustive long-only YES NO mixed unequal quantities dual state-price certificate no arbitrage"
+    }
+  ],
+  "audit_runner_sha256": "a5989314c4be5e5f50c403bec2227b01244106d06e9e976def57763f68f6b4d6",
+  "controls_junit_sha256": "489c2fc1c1a6ce6e15a4f5c7c094972c384240aab5bb2584ffaf3e77706bc256",
+  "metadata_junit_sha256": "d44c3abe8eb0d52e6b60f4e4277a145a502cf16b04c0f22de73334cdb3f09b0d",
+  "certificate_result_sha256": "6055b166a789e97e47d13adecbfc1e885c03cca6030a596de9aaa6fb5a80ae71",
+  "canonicalizer": "tools.hash_json_without_field",
+  "new_market_requests": 0,
+  "old_event_result_unchanged": true,
+  "qualified_stable_edges": 0,
+  "goal_complete": false,
+  "result_sha256": "3feed8c8dbed72f3e11aa10be2ed6a9dcd2a6ff4bfae3bfc6bee620216b7cec6"
+}
