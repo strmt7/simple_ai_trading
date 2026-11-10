@@ -461,7 +461,11 @@ or supplies completion evidence for its unverified remainder.
 Reuse a check only with its actual scope and source binding. A passing result
 remains evidence until an affected implementation, dependency, configuration,
 input, runtime assumption or acceptance requirement changes. Reopen that affected
-scope, not every unrelated suite. If only a fixture changes, verify the corrected
+scope, not every unrelated suite. Before rerunning a stale receipt's checks, look
+for a complete passing lane whose exact current code, dependencies and profile
+match. Historical capture plans can precede later qualified repairs; preserve
+both phases and identify the lane actually reused. If only a fixture changes,
+verify the corrected
 lane and prove production/other test definitions unchanged before combining
 coverage; report the separate lanes and original failure honestly. Fresh market,
 credential, process, quota and other external-state claims still need their own

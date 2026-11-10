@@ -1,0 +1,30 @@
+{
+  "after": {
+    "audit_sha256": "204ab81a2ed2cb6f61d502ef7a8662dd655d5126a2774b81ed7db0af202bd057",
+    "hypotheses": 65,
+    "observations": 205,
+    "profitability_qualification_supplied_by_verifier": false,
+    "recorded_qualified_stable_edges": 0,
+    "registry_sha256": "f38e2a0ff864a494fc833002381499e9cac151d7762fea2e9d3f9333da4dded8",
+    "scoped_mechanisms": 37,
+    "validation_kind": "registry_binding_and_recorded_census_only"
+  },
+  "before": {
+    "audit_sha256": "cd3a04d2fabe56cf3edd84a5ebb5d9be2254bcac9010ab721c669f5d37577090",
+    "hypotheses": 65,
+    "observations": 205,
+    "profitability_qualification_supplied_by_verifier": false,
+    "recorded_qualified_stable_edges": 0,
+    "registry_sha256": "aff7ed14ceae23f5b29fdd1d916e250c6dc94552d853122ae7047fd212f5c3b9",
+    "scoped_mechanisms": 37,
+    "validation_kind": "registry_binding_and_recorded_census_only"
+  },
+  "created_at_utc": "2026-11-10T20:03:05.350641+00:00",
+  "file_pair_transactional": false,
+  "new_economic_observations": 0,
+  "original_hypothesis_fields_unchanged": true,
+  "original_terminal_rows_unchanged": true,
+  "qualified_edge_decisions_and_classification_unchanged": true,
+  "result_sha256": "d8874c03d9af016afdb67d2b4878dc7f21456d2ca4e4a975b80c1a220b09206b",
+  "schema": "clearing-notice-metadata-amendment-v1"
+}

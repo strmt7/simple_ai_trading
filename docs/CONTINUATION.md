@@ -187,12 +187,19 @@ capital before expanding fits. Actual backend/precision, useful dataset coverage
 and measured bottlenecks determine GPU work; do not disturb other host tasks.
 LLMs may veto/reduce risk, never bypass deterministic Stop/ownership/close controls.
 
-The [current governing-terms routing attempt](review/2026-11-10/inverse-term-routing/review.md)
+The [governing-terms routing attempt](review/2026-11-10/inverse-term-routing/review.md)
 failed HTTP 202 with one extracted character after strict robots admission.
 It supplies no correction or effective-version evidence for the inverse clearing
 sign conflict. Old tutorials/PDFs were not retried, and no economic follow-up
 occurred. Reuse the conditional model; do not repeat generic PnL tutorials or
-infer current legal applicability from search snippets.
+infer current legal applicability from search snippets. A distinct
+[publisher amendment notice](review/2026-11-10/clearing-amendment-source/review.md)
+now passes HTTP/native admission: two pages announce Version 1.3 and May 21,
+2026 at 10:00 UTC. The referenced redline and corrected formulas were not admitted;
+no latest-version, sign-resolution or account-applicability claim follows.
+Revisiting the same object through a second discovery query caused no refetch.
+Require an exact independently located publisher revision/redline and retain
+the unchanged account-fee gate before economic access. No new observation added.
 
 ## Platform work and publication
 

@@ -1,0 +1,53 @@
+{
+  "base_head": "d01fddf7f0b7a184545d30497767a6ab244b16ab",
+  "capture_controller_sha256": "3e534d002e48235d8e28c3c05abd2a82e3fe93a63ba3a824370f1b058317b30b",
+  "complete_raw_native_evidence_private": true,
+  "contract_sha256": "06c1be0ab9dfa279d0e2da83bc74b424e938a090dd152a0795f162f96c2beff1",
+  "created_at_utc": "2026-11-10T20:07:20.619977+00:00",
+  "goal_complete": false,
+  "ledger_junit_sha256": "e9cb5f71dc38cde1cf2b33cbee23f65ddd4d67454a592bb2c3b11ece926cbd34",
+  "navigation": {
+    "all_candidates_matched_live_source": true,
+    "index_matched_source_at_search": true,
+    "package": "cocoindex-code[full]==0.2.43",
+    "query": "Inverse coin margined delivery futures fully collateralized cash carry short BTC collateral reciprocal mark margin liquidation invariant",
+    "root_matched": true,
+    "sha256": "5e8123cef1e9ec571e3b8dfc51ba6923649d550fb4a19c6ff4d6381d3638af9e",
+    "source_digest": "36c8c21b174ec0728a9aeabec89c392d"
+  },
+  "new_economic_observations": 0,
+  "prior_clearing_pdf_bytes_unchanged": true,
+  "provider_reuse_sha256": "72fe3a90ee5f484b0697a9be532187a80c13ea1a9bf8c0225616c5a432b17b04",
+  "qualified_stable_edges": 0,
+  "result_sha256": "84ee09abb2dcc6cb02bbf41edd4a375dd2c510071de837f3ee2a28cbac8854cf",
+  "schema": "clearing-notice-source-verification-v1",
+  "source_phases": {
+    "earlier_capture_worker_sha256": "329a49e7c30ddf403d0df47db05f2721637e85b09539057063ecf6bb7d1e6824",
+    "qualified_final_controls_sha256": "23af72c63118240089431430eef41685d2d5126a31c7fb8cdd4769edc550e305",
+    "qualified_final_worker_sha256": "7642a2a3122cfac3ee6855d4bbea380b00de4e5a314dcac36b594d7c5e45ccd7",
+    "reason": "Reuse complete final source-profile lane matching current EOF-budget guard; preserve earlier capture phase without calling it current."
+  },
+  "source_preflight_sha256": "44beddcf553dd82f08bc1a5cbc892be3b58949d1e97605ac51241193077f0dfa",
+  "source_result_sha256": "3acb0953dead0872fce90d3ea10ce485ffe2f7b96d75a3640dcf53df09989024",
+  "structure_controller_sha256": "1c6d0df3b7a9fe6e29725b149f2de52b62edc35b145dde2aa61f57d2caf9ab51",
+  "verification": {
+    "ledger_controls": {
+      "errors": 0,
+      "failures": 0,
+      "skipped": 0,
+      "tests": 23
+    },
+    "production_application_tests_rerun": 0,
+    "source_profile_controls_rerun": 0,
+    "source_profile_controls_reused": 8,
+    "tested_source_sha256": {
+      "docs/model-research/action-value/accepted-edge-profitability-durability-audit-v1-2026-08-30.json": "44e3b84c8cfae0dc45e4d024c6d4e344b033f38ec5109ee2ff3c556ecb2c8b14",
+      "docs/model-research/structural-edge-priority-registry-v1.json": "60fd76de8cf3485b4a59e5b5b505dc78801d2b25c2fefbbd0dc36f696b2aadba",
+      "tests/test_accepted_edge_profitability_durability_audit.py": "f63ab02ffdd2cf4ba23abdaa77fb2794a2eaa2535343f8d870655e920cbb8670",
+      "tests/test_research_registry_binding.py": "6e35de9b939fe271e49b739f5f93fb473eec54daa3ffbb43017b3f20799f9827",
+      "tools/capture_crawl4ai_pdf.py": "bfdbad4ec9edf77f3f9a252f4a039cafd9fdb877b753959200387bfb41758d13",
+      "tools/crawl4ai_pdf_source.py": "7642a2a3122cfac3ee6855d4bbea380b00de4e5a314dcac36b594d7c5e45ccd7"
+    },
+    "whole_suite_run": false
+  }
+}

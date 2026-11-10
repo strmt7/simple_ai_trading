@@ -1,0 +1,75 @@
+{
+  "accepted_edge": false,
+  "account_or_order_authority_added": false,
+  "admission": [
+    "Qualified robots policy and public peer, HTTP 200, identity encoding and complete raw PDF.",
+    "Valid unencrypted PDF, complete native Crawl4AI page coverage and substantive text within the frozen limits.",
+    "Separate manual verification of publisher/title/date, affected clauses, product labels, effective-version evidence and any correction; visual formula review before a sign-resolution claim."
+  ],
+  "base_head": "d01fddf7f0b7a184545d30497767a6ab244b16ab",
+  "contract_sha256": "06c1be0ab9dfa279d0e2da83bc74b424e938a090dd152a0795f162f96c2beff1",
+  "controller": {
+    "path": "tools/capture_crawl4ai_pdf.py",
+    "sha256": "bfdbad4ec9edf77f3f9a252f4a039cafd9fdb877b753959200387bfb41758d13"
+  },
+  "family": {
+    "account_fee_retry_trigger_unchanged": true,
+    "new_hypothesis": false,
+    "priority_rank": 14
+  },
+  "frozen_at_utc": "2026-11-10T19:51:43.502205+00:00",
+  "limits": {
+    "body_budget_seconds": 30,
+    "document_bytes": 8388608,
+    "document_requests_maximum": 1,
+    "maximum_pages": 64,
+    "minimum_each_page_characters": 20,
+    "minimum_total_characters": 1000,
+    "overflow_bytes_retained": 1,
+    "owned_process_deadline_seconds": 150,
+    "redirects": 0,
+    "retries": 0,
+    "robots_bytes": 524288,
+    "robots_requests": 1,
+    "socket_connect_seconds": 10,
+    "socket_read_seconds": 10
+  },
+  "market_requests_authorized": 0,
+  "prior_source": {
+    "sha256": "53197b612332da02c20b5b7d19b81ff53ee5f4938c6330c72a30a1ca4f91049f",
+    "source_conflict": "Retained clearing sections 80 and 86.2 have opposite reciprocal differences with the same direction labels; convention hypothesis must be checked rather than assumed."
+  },
+  "private_plan_sha256": "269a415180e3226fa0a9104b74f1d1e456788ff2206c8aac3a1b02c4c431323b",
+  "provenance": {
+    "errors": 0,
+    "global_novelty_claim": false,
+    "matches": 0,
+    "metadata_files": 680,
+    "receipt_sha256": "2229765b80237c145fbfe45f792e2f6649ca18114bd3247adc8b7e5ca00ec084",
+    "skipped": 0
+  },
+  "provider": {
+    "environment_inheritance_disabled": true,
+    "parser": "pypdf==7.0.0",
+    "runtime_manifest_sha256": "07c8f3420b8339ca212c3bd6951b5d945588f5bfbb76c41eec93938b6cecfdb2",
+    "verification_sha256": "32742379061a2b9ad8615fcdecb33c8b3fa4a28c6f8e97a793dbd48453cb6336",
+    "version": "0.9.5+flitzzip.portable2"
+  },
+  "question": "Does the exact discovered publisher amendment notice/redline identify an authoritative revision affecting the retained inverse PnL sign or its product/version scope?",
+  "reused_controls": {
+    "cases": 8,
+    "note": "Final EOF-budget worker phase matches current bytes; the earlier public-capture worker does not.",
+    "passed": true,
+    "path": "data/research/2026-11-10-option-legal/final-supervised-controls/summary.json",
+    "sha256": "23af72c63118240089431430eef41685d2d5126a31c7fb8cdd4769edc550e305"
+  },
+  "schema": "one-use-clearing-amendment-source-contract-v1",
+  "scope": "One documentation-only PDF read and robots policy; no old PDF refetch, Terms locale, tutorial, market, fee, account or order access.",
+  "selection": "Discovered official publisher PDF object; search title/snippets select the object only and are not admitted terms.",
+  "terminal_rule": "Failure consumes this exact source attempt without alias, redirect follow, larger cap, retry or dependent economics. Successful extraction permits legal-source review only. A historical notice alone does not prove latest governing terms or account applicability.",
+  "url": "https://bin.bnbstatic.com/static/cms/cg08ou2ak0tn7mcplvfg/file/fa97cef498054d23290ba2a132eda63816395d84766af2db7b433d906432dd0b.pdf",
+  "worker": {
+    "path": "tools/crawl4ai_pdf_source.py",
+    "sha256": "7642a2a3122cfac3ee6855d4bbea380b00de4e5a314dcac36b594d7c5e45ccd7"
+  }
+}

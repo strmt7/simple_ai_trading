@@ -1009,6 +1009,14 @@
         {
           "path": "docs/model-research/action-value/binance-quarterly-carry-account-evidence-contract-v1.json",
           "result_sha256": "901c16bf3e7e4082339f3ddd2a910a904a3cd46d51c0dc16f7074c16351145e5"
+        },
+        {
+          "path": "docs/review/2026-11-10/clearing-amendment-source/contract.json",
+          "result_sha256": "06c1be0ab9dfa279d0e2da83bc74b424e938a090dd152a0795f162f96c2beff1"
+        },
+        {
+          "path": "docs/review/2026-11-10/clearing-amendment-source/result.json",
+          "result_sha256": "3acb0953dead0872fce90d3ea10ce485ffe2f7b96d75a3640dcf53df09989024"
         }
       ],
       "current_status": "read_only_authority_received_and_exact_get_only_fee_capture_frozen_but_required_ephemeral_environment_variables_are_absent_so_zero_authenticated_requests_were_made",
@@ -1031,7 +1039,19 @@
         "kline presence as authenticated position or fill state"
       ],
       "retry_trigger": "both_SIMPLE_AI_TRADING_BINANCE_MAINNET_API_KEY_and_SIMPLE_AI_TRADING_BINANCE_MAINNET_API_SECRET_available_to_the_process",
-      "venue_scope": "binance_btc_eth_quarterly"
+      "venue_scope": "binance_btc_eth_quarterly",
+      "clearing_amendment_notice_review_2026_11_10": {
+        "path": "docs/review/2026-11-10/clearing-amendment-source/result.json",
+        "result_sha256": "3acb0953dead0872fce90d3ea10ce485ffe2f7b96d75a3640dcf53df09989024",
+        "classification": "historical notice/version-date evidence; no redline, sign correction, latest final rules or account applicability admitted",
+        "announced_final_version": "1.3",
+        "announced_effective_at_utc": "2026-05-21T10:00:00+00:00",
+        "next_source": "Exact independently located publisher-linked complete redline/final revision; do not guess object IDs or refetch this notice or the old PDF.",
+        "account_fee_trigger_unchanged": true,
+        "price_requests_authorized": false,
+        "new_hypothesis": false,
+        "new_economic_observations": 0
+      }
     },
     {
       "blocking_evidence": [
@@ -4606,7 +4626,7 @@
       ]
     }
   ],
-  "result_sha256": "aff7ed14ceae23f5b29fdd1d916e250c6dc94552d853122ae7047fd212f5c3b9",
+  "result_sha256": "f38e2a0ff864a494fc833002381499e9cac151d7762fea2e9d3f9333da4dded8",
   "schema_version": "structural-edge-priority-registry-v1",
   "terminal_do_not_repeat": [
     {
@@ -5665,6 +5685,6 @@
       "canonical_result_sha256": "5cbe00a879162d27f0ff4f974001b528bb071c7bebece873900549a7594ff26e"
     }
   ],
-  "updated_at_utc": "2026-11-10T19:03:26.731267+00:00",
+  "updated_at_utc": "2026-11-10T20:03:05.347141+00:00",
   "usage_rule": "advance_the_highest_ranked_hypothesis_whose_retry_trigger_is_satisfied_otherwise_do_not_repeat_a_blocked_or_terminal_screen"
 }
