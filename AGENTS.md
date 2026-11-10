@@ -259,8 +259,14 @@ result and all other consumed populations, including WNBA September 3-9.
   dispatch; publish owned inventory before releasing admission. Plain
   `BinanceClient.place_order` is a transport primitive, not a recovery gateway.
   Preserve native receipt/quantity checks and separate owned-close admission.
-  The legacy Spot roundtrip diagnostic remains a tracked two-leg recovery gap,
-  not permission to copy its direct-write pattern or claim universal fencing.
+  Paired Spot allocation execution must instead use
+  `binance_spot_roundtrip_execution.SpotRoundtripExecution` with the shared
+  paired journal, enrolled Binance control and an explicitly supplied lease.
+  Never treat a sell-buy acquisition as an owned close, retry UNKNOWN writes,
+  or equate two reconciled orders with flat assets or profit. External fee
+  routes require native FX/cost admission; a fee-asset grant alone is insufficient.
+  The legacy Spot roundtrip CLI still has two direct writes and is not wired
+  to this gateway; do not copy that pattern or claim universal caller fencing.
   First scope enrollment must reject unscoped live/unclassified history and
   bind the exact paired inventory bytes atomically with UNKNOWN. Do not reset
   lost enrollment or automatically qualify an old binding from current keys;

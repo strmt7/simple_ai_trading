@@ -1060,11 +1060,20 @@ class BinanceClient:
         )
         return [dict(item) for item in payload if isinstance(item, dict)]
 
-    def get_account(self) -> Dict[str, object]:
+    def get_account(
+        self, *, expected_scope: BinanceExecutionScope | None = None
+    ) -> Dict[str, object]:
         endpoint = (
             "/api/v3/account" if self.market_type == "spot" else "/fapi/v2/account"
         )
-        return self._request_dict("GET", endpoint, {}, signed=True, label="account")
+        return self._request_dict(
+            "GET",
+            endpoint,
+            {},
+            signed=True,
+            label="account",
+            **_scope_kwargs(expected_scope),
+        )
 
     @staticmethod
     def _validated_commission_rate(value: Any, label: str) -> float:

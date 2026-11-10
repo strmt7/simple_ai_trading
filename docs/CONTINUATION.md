@@ -265,6 +265,19 @@ infer current legal applicability from search snippets.
   admission, command/runtime integration, recovery/rearm, independent storage
   identity and supervision remain open. No account, order, model fit or market
   sample followed.
+- [Roundtrip dispatch gateway](review/2026-11-10/roundtrip-dispatch/review.md)
+  connects the paired journal, exact native request bindings, freshly scoped
+  free balances/commission schedule and enrolled runtime guards. Each leg
+  commits UNKNOWN before its single native write; ambiguous responses never
+  retry. Exact-order recovery reconstructs complete trades without submission,
+  completion or rearm. Only a receipt-owned second SELL can bypass opening Stop;
+  a sell-buy acquisition still needs the lease. External fee routes reject
+  pending native FX/cost admission. All 131 final focused checks pass, including
+  missing-control-database closing, lost-lock rejection, competing dispatch and
+  24 cancellation/recovery cycles with stable observed handles/private memory.
+  This is an offline verified gateway, not native execution or profitability
+  evidence. The legacy CLI remains unwired; partial resolution, verified
+  namespace-loss recovery, universal fencing and independent supervision remain.
 - [Owned Binance CLI execution](review/2026-11-10/binance-owned-cli/review.md) now
   shares the autonomous write-ahead opening/closing flow and returns typed raw-ack
   outcomes. Entry, normal and emergency close bind scope before dispatch; real
