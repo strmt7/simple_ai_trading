@@ -224,7 +224,7 @@ def test_invalid_transmitted_quantity_or_boolean_never_posts(
     "changes", [{"side": "SELL"}, {"origQty": "2"}, {"type": "LIMIT"}]
 )
 def test_response_loss_query_cannot_bypass_submission_binding(
-    monkeypatch, tmp_path, product, changes
+    monkeypatch, tmp_path, product, changes, enrolled_binance_runtime
 ):
     client = _client(product, monkeypatch)
     binding = _binding(product)
@@ -251,6 +251,7 @@ def test_response_loss_query_cannot_bypass_submission_binding(
 
     monkeypatch.setattr(client, "_request_dict", transport)
     store = PositionsStore(tmp_path)
+    enrolled_binance_runtime(store, client.execution_scope())
     with pytest.raises(BinanceAPIError):
         _submit_durable_open_position(client, position, store)
     assert calls == ["POST", "GET"]
@@ -376,7 +377,7 @@ def test_missing_required_post_evidence_is_not_accepted(monkeypatch, product, fi
     "changes", [{"side": "BUY"}, {"origQty": "2"}, {"type": "LIMIT"}]
 )
 def test_close_response_loss_preserves_owned_lot_and_unknown(
-    monkeypatch, tmp_path, product, changes
+    monkeypatch, tmp_path, product, changes, enrolled_binance_runtime
 ):
     client = _client(product, monkeypatch)
     binding = _binding(product)
@@ -395,6 +396,7 @@ def test_close_response_loss_preserves_owned_lot_and_unknown(
     )
     monkeypatch.setattr(client, "_request_dict", Mock(return_value=_response(binding)))
     store = PositionsStore(tmp_path)
+    enrolled_binance_runtime(store, client.execution_scope())
     recorded = _submit_durable_open_position(client, position, store)
     calls = []
     closing = None
@@ -457,7 +459,7 @@ def test_nonbinding_query_context_is_rejected_before_transmission(monkeypatch):
 @pytest.mark.parametrize("product", ["spot", "futures"])
 @pytest.mark.parametrize("phase", ["opening", "closing"])
 def test_exact_response_loss_recovery_still_completes_normally(
-    monkeypatch, tmp_path, product, phase
+    monkeypatch, tmp_path, product, phase, enrolled_binance_runtime
 ):
     client = _client(product, monkeypatch)
     binding = _binding(product)
@@ -475,6 +477,7 @@ def test_exact_response_loss_recovery_still_completes_normally(
         open_client_order_id=binding.client_order_id,
     )
     store = PositionsStore(tmp_path)
+    enrolled_binance_runtime(store, client.execution_scope())
     if phase == "closing":
         monkeypatch.setattr(
             client, "_request_dict", Mock(return_value=_response(binding))

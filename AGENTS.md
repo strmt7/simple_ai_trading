@@ -155,6 +155,12 @@ New storage starts with Stop latched; metadata or a checksum is not evidence of
 flat exposure. Keep generated enrollment records and their local filesystem
 identities private. This guard does not qualify account ownership, anti-rollback,
 universal caller fencing, physical reboot behavior or independent supervision.
+Ordinary owned Binance opening now requires the shared durable gateway's current
+lease and independent execution-journal enrollment. Never bypass that rejection
+through a legacy nondurable helper, automatic Stop completion or implicit setup.
+Owned reductions use the separate enrolled closing guard; preserve reconciliation
+barriers and original obligations when opening authority is unavailable. Follow
+the [owned-order procedure](docs/RUNTIME_CONTROL_STORAGE.md#ordinary-owned-binance-orders).
 
 October 7 user priority: long-term profitability, not expiring campaigns or
 promotional tricks. Follow the clarified WORK_PRIORITIES decision order. Do not

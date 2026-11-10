@@ -3437,7 +3437,7 @@ def test_paper_order_is_logged(tmp_path, monkeypatch, capsys) -> None:
 
 
 def test_owned_order_forwards_entry_notional_to_bracket_aware_client(
-    tmp_path, monkeypatch
+    tmp_path, monkeypatch, enrolled_binance_runtime
 ) -> None:
     from simple_ai_trading.binance_owned_execution import submit_durable_open
 
@@ -3494,7 +3494,9 @@ def test_owned_order_forwards_entry_notional_to_bracket_aware_client(
         dry_run=False,
         open_client_order_id=bot_client_order_id("bracket-owned-probe", "open"),
     )
-    submit_durable_open(client, position, PositionsStore())
+    store = PositionsStore(tmp_path / "owned")
+    enrolled_binance_runtime(store, client.execution_scope())
+    submit_durable_open(client, position, store)
 
     assert client.orders[-1][-1] == pytest.approx(2_500.0)
 
@@ -9478,6 +9480,11 @@ def _owned_live_scenario(
             return 0.95
 
     client = Client()
+    from conftest import enroll_synthetic_binance_runtime
+    from simple_ai_trading.binance_runtime_control import BINANCE_RUNTIME_LEASE_ENV
+
+    authority = enroll_synthetic_binance_runtime(store, client.execution_scope())
+    monkeypatch.setenv(BINANCE_RUNTIME_LEASE_ENV, authority.lease_id)
     if mode != "open":
         position = OpenPosition(
             id="owned-cli-probe",
@@ -9574,9 +9581,8 @@ def test_cli_near_full_partial_close_retains_residual_and_unknown(
 
 
 def test_cli_process_exit_at_native_dispatch_retains_exact_opening(tmp_path):
-    import os
-    import subprocess
     import sys
+    from tools.cocoindex_agent_search import run_captured_process
     from simple_ai_trading.api import _default_base_url
     from simple_ai_trading.binance_execution_scope import BinanceExecutionScope
 
@@ -9591,14 +9597,12 @@ from test_cli_coverage import _owned_live_scenario
 with pytest.MonkeyPatch.context() as patch:
     _owned_live_scenario(patch,Path(sys.argv[2]),crash=True)
 """
-    result = subprocess.run(
+    result = run_captured_process(
         [sys.executable, "-c", script, str(repo), str(child_root)],
         cwd=repo,
-        capture_output=True,
-        text=True,
+        input_text="",
         timeout=45,
-        creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0),
-        env={**os.environ, "PYTHONUTF8": "1", "PYTEST_DISABLE_PLUGIN_AUTOLOAD": "1"},
+        env={"PYTHONUTF8": "1", "PYTEST_DISABLE_PLUGIN_AUTOLOAD": "1"},
     )
     assert result.returncode == 39, result.stdout + result.stderr
     store = PositionsStore(child_root / "data" / "autonomous")

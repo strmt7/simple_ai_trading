@@ -17,6 +17,7 @@ from .runtime_control import (
 
 
 BINANCE_RUNTIME_CONTROL_SCHEMA_VERSION = "binance-runtime-control-v1"
+BINANCE_RUNTIME_LEASE_ENV = "SIMPLE_AI_TRADING_BINANCE_RUNTIME_LEASE"
 
 
 class BinanceRuntimeControl(RuntimeControl):
@@ -31,6 +32,7 @@ class BinanceRuntimeControl(RuntimeControl):
 
 __all__ = [
     "BINANCE_RUNTIME_CONTROL_SCHEMA_VERSION",
+    "BINANCE_RUNTIME_LEASE_ENV",
     "BinanceRuntimeControl",
     "RuntimeControlBlocked",
     "RuntimeControlError",

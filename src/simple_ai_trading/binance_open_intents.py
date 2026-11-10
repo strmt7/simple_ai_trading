@@ -218,7 +218,13 @@ class BinanceOpenIntentJournal:
                 "opening position template is not serializable"
             ) from exc
 
-    def prepare(self, position: OpenPosition, *, scope: BinanceExecutionScope) -> None:
+    def prepare(
+        self,
+        position: OpenPosition,
+        *,
+        scope: BinanceExecutionScope,
+        create: bool = True,
+    ) -> None:
         """Commit UNKNOWN before transmission; an existing identity is never replayable."""
         from .binance_close_intents import unresolved_close_count
         from .position_transactions import position_transaction
@@ -227,7 +233,7 @@ class BinanceOpenIntentJournal:
             raise OpenIntentError("opening requires an execution scope")
         payload = self._request(position, scope)
         try:
-            with position_transaction(self, write=True) as transaction:
+            with position_transaction(self, write=True, create=create) as transaction:
                 self._prepare_scope(transaction, scope)
                 connection = transaction.connection
                 if connection is None:
@@ -241,8 +247,12 @@ class BinanceOpenIntentJournal:
 
                 if roundtrip_pending(connection) is not None:
                     raise OpenIntentError("an unresolved roundtrip blocks new exposure")
-                if roundtrip_client_id_consumed(connection, position.open_client_order_id):
-                    raise OpenIntentError("opening client identity belongs to a roundtrip")
+                if roundtrip_client_id_consumed(
+                    connection, position.open_client_order_id
+                ):
+                    raise OpenIntentError(
+                        "opening client identity belongs to a roundtrip"
+                    )
                 if connection.execute(
                     "SELECT 1 FROM open_intent WHERE state != 'RECORDED' LIMIT 1"
                 ).fetchone():

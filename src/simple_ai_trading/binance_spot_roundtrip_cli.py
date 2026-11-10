@@ -19,6 +19,7 @@ from .assets import is_supported_major_symbol, symbol_base_for_supported_quote
 from .binance_execution_storage import BinanceExecutionStorage
 from .binance_open_intents import OpenIntentError
 from .binance_runtime_control import (
+    BINANCE_RUNTIME_LEASE_ENV,
     BinanceRuntimeControl,
     RuntimeControlError,
     RuntimeLeaseInterlock,
@@ -36,7 +37,7 @@ from .positions import PositionsStore
 from .types import RuntimeConfig
 
 
-LEASE_ENV = "SIMPLE_AI_TRADING_BINANCE_RUNTIME_LEASE"
+LEASE_ENV = BINANCE_RUNTIME_LEASE_ENV
 
 
 class RoundtripCommandError(ValueError):

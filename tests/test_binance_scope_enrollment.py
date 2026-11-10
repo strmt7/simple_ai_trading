@@ -77,7 +77,7 @@ def _row_counts(store):
 @pytest.mark.parametrize("closed", [False, True])
 @pytest.mark.parametrize("classification", [False, None, "true", 1])
 def test_legacy_live_or_unclassified_history_never_acquires_scope(
-    tmp_path, closed, classification
+    tmp_path, closed, classification, enrolled_binance_runtime
 ):
     store = PositionsStore(tmp_path)
     row = asdict(_closed() if closed else _position(id="legacy"))
@@ -100,7 +100,17 @@ def test_legacy_live_or_unclassified_history_never_acquires_scope(
             raise AssertionError("unscoped history reached native dispatch")
 
     client = Client()
+    from simple_ai_trading.binance_execution_storage import BinanceExecutionStorage
+
+    authority = enrolled_binance_runtime(store, _scope(), execution=False, start=False)
+    binding = BinanceExecutionStorage(store.opening_intents, authority.control)
+    existing = binding.inspect()
     with pytest.raises(OpenIntentError, match="migration"):
+        binding.provision(
+            scope=_scope(),
+            expected_snapshot_sha256=existing.get("journal_snapshot_sha256"),
+        )
+    with pytest.raises(OpenIntentError):
         submit_durable_open(client, _position(), store)
     assert client.writes == 0
     assert _row_counts(store) == (0, 0)

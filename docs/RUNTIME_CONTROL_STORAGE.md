@@ -69,6 +69,40 @@ relocation/replacement migration remains an explicit unfinished requirement;
 editing file identities, removing guards or manufacturing a fresh namespace is
 not a supported migration procedure.
 
+## Ordinary owned Binance orders
+
+The shared `submit_durable_open` gateway, used by ordinary CLI and autonomous
+owned-position entry, requires an already enrolled controller, a current running
+lease and an independently enrolled execution journal. It never acquires a
+lease, clears Stop or provisions missing storage. Its default controller is
+`binance_runtime_control.sqlite3` beside the position store; the caller supplies
+the existing lease through `SIMPLE_AI_TRADING_BINANCE_RUNTIME_LEASE`. Keep that
+value private and never put it in logs, commands committed to Git, or evidence.
+
+Programmatic callers can instead pass a `RuntimeLeaseInterlock` with their
+configured `BinanceRuntimeControl`, plus `execution_enrollment_path` when using a
+custom execution marker. Set up or adopt that exact journal with
+`BinanceExecutionStorage` while the controller is ownerless, paused and Stop is
+latched. The [Spot storage actions](SPOT_ROUNDTRIP.md#execution-storage-setup)
+provide the Spot operator flow; they do not provision a futures account. A
+supervisor must reconcile real obligations before completing Stop and must own
+lease heartbeat and teardown. The gateway borrows that authority; it does not
+create an independent supervisor or infer flat exposure from local metadata.
+
+Opening admission holds the existing runtime submission guard through UNKNOWN
+precommit, dispatch, acknowledgement validation and durable inventory completion.
+It rechecks controller and journal authority before dispatch and never recreates
+a missing execution journal. Interrupted or ambiguous execution retains the
+existing reconciliation barrier. Signed uses of the legacy nondurable position
+helpers are rejected; paper uses keep their existing behavior.
+
+`submit_durable_close` uses the separate enrolled closing lock around the entire
+owned close attempt. Persisted Stop, loss of the opening marker, or loss of the
+controller database does not itself disable this reduction path. Lost closing
+serialization still rejects the attempt; closing still needs the original owned
+inventory, scope and exact acknowledgement. These are local synthetic-path
+verification results, not authority to trade or proof of venue execution.
+
 ## Scope and remaining work
 
 Owned closing retains its separate enrolled lock and can serialize even when

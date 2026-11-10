@@ -1,0 +1,143 @@
+{
+  "schema": "owned-binance-runtime-fence-review-v1",
+  "base_head": "b85be889a4434cf5f5c39b520f316923da8c4ce8",
+  "created_at_utc": "2026-11-10T20:49:15.798262+00:00",
+  "original_reproduction": {
+    "behavior": {
+      "stop_state_before": "stop_requested",
+      "stop_state_after": "stop_requested",
+      "paused_before": true,
+      "native_writes": 1,
+      "owned_position_recorded": true,
+      "all_venue_methods_synthetic": true
+    },
+    "native_result_sha256": "f34ec47ccc1240b7b53413766401e40b656312f7f0c2a69a5660af82af81d52e",
+    "source_sha256": {
+      "src/simple_ai_trading/binance_owned_execution.py": "4eee25777c60463171f314c7c8cf8e030bf1343529a4cb42b7ec64ca784e8b50",
+      "src/simple_ai_trading/runtime_control.py": "e5e61583eed5e97bd6aa51c44cd9866435d9d8117ed58611443fd1cedf644791",
+      "tests/test_binance_open_intents.py": "dc4ef26d5807e347d1e452e2db5dcbbe5d191caba573337aa2c18620448fcd7a"
+    },
+    "initial_environment_failure_retained": true,
+    "initial_environment_failure_sha256": "b0579f30d45f86b9f01e4d3bc6aaf71dd9978f03fdde43c9e070f2cddb2f49e3"
+  },
+  "initial_integration": {
+    "tests": 434,
+    "failures": 12,
+    "errors": 0,
+    "skipped": 0,
+    "junit_sha256": "7b50cda5835b0a673819ba31c43f946e1ee73adef8a752bbccaaa4b6e2fb6d34",
+    "disposition": "Twelve existing native fixtures lacked newly explicit authority; supplied real local enrollment/leases or closing-only enrollment without weakening original assertions."
+  },
+  "verification": {
+    "lanes": {
+      "integration-second": {
+        "tests": 484,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "junit_sha256": "d14c97e1201d55299e32b9f8b6a070777b1a38ecd0bfcde8b412677a7325b3b5",
+        "native_result_sha256": "1f362e272273d32a987ddbdf7370d350dcb9a546fa592aabbb5a74a8c9ce13ad",
+        "resource_properties": {
+          "owned_lifecycle_handles_first": 282,
+          "owned_lifecycle_handles_max": 282,
+          "owned_lifecycle_handles_last": 282,
+          "owned_lifecycle_mutexes_first": 0,
+          "owned_lifecycle_mutexes_max": 0,
+          "owned_lifecycle_mutexes_last": 0,
+          "owned_lifecycle_private_bytes_first": 1734365184,
+          "owned_lifecycle_private_bytes_max": 1734365184,
+          "owned_lifecycle_private_bytes_last": 1734365184
+        }
+      },
+      "storage-regression": {
+        "tests": 261,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "junit_sha256": "ee85e1b3c916e90ed1d2f600dd79aa2e88e51f55d76042344c4adf01b2b5a6c7",
+        "native_result_sha256": "450c361374f9a2a308866fe4f83c25eb32bee89c6a46d37cc2e01cd4784dcbe5",
+        "resource_properties": {
+          "roundtrip_lifecycle_handles_first": 284,
+          "roundtrip_lifecycle_handles_max": 284,
+          "roundtrip_lifecycle_handles_last": 284,
+          "roundtrip_lifecycle_mutexes_first": 0,
+          "roundtrip_lifecycle_mutexes_max": 0,
+          "roundtrip_lifecycle_mutexes_last": 0,
+          "roundtrip_lifecycle_private_bytes_first": 1728843776,
+          "roundtrip_lifecycle_private_bytes_max": 1728843776,
+          "roundtrip_lifecycle_private_bytes_last": 1728843776
+        }
+      }
+    },
+    "distinct_passing_cases": 745,
+    "tested_source_sha256": {
+      "src/simple_ai_trading/autonomous.py": "e5e83fce127d666a9e0a8cc516f0ad7e3b9d08af440beac72b88add9c81218b0",
+      "src/simple_ai_trading/binance_execution_storage.py": "8d90728155f01b078be024f855f45b6185159c3f4fa7f8f21538a8fd803f3533",
+      "src/simple_ai_trading/binance_open_intents.py": "9a78e005880962a9d2d6b638e581a2f3d77cfcdd08dee413da9b1ddf8ff0408d",
+      "src/simple_ai_trading/binance_owned_execution.py": "34d32d5c28a19b302445f989be47617cef6ba0acc9e838b19a9e2ada565b7e6d",
+      "src/simple_ai_trading/binance_runtime_control.py": "98fa0ef62a27b7bf659ab77602fd4a34381b0819d44978077c359c05a55e2fa3",
+      "src/simple_ai_trading/binance_spot_roundtrip_cli.py": "73f67d5f489e8f6d099fab3617249b8b11aaafc4e37a68cb3ec9cfd83fc850f1",
+      "src/simple_ai_trading/cli.py": "fea05f643fa9d0876e2824a3d5d5337ef7d5c0c43a68a4db13cd9685a9fd5d6c",
+      "src/simple_ai_trading/positions.py": "42121e8130a4a660ba0d39a893c50666af00327261148a7752aeceea89ca6046",
+      "src/simple_ai_trading/runtime_control.py": "e5e61583eed5e97bd6aa51c44cd9866435d9d8117ed58611443fd1cedf644791",
+      "tests/conftest.py": "090974084e8c25f16dc18ed084269d75edb9fdb5f4d7d15e6e72bb23853d9abc",
+      "tests/test_autonomous.py": "2b870d25f717f6f2cfaa21a8543c14a5cfb4b1057fc49309c085899a548841b3",
+      "tests/test_autonomous_spot_inventory.py": "15409804f10f5f0e97eef4abdcfc1ed63ffe7e20212afaf856511358ba2c3091",
+      "tests/test_binance_acknowledgements.py": "05f94ef1e55114277ec5a3c26abe16b5215a2d87195047d759da7c1a73be4607",
+      "tests/test_binance_close_intents.py": "21653b3415e032de3937be036d92db9fcc8024d8633a1eb21c134cc14e392d99",
+      "tests/test_binance_execution_scope.py": "1b3a602a202e69d64aaab994cf5de22987b6fe68992128158052400804fa302a",
+      "tests/test_binance_execution_storage.py": "883d4bda003715c1a8b70f06a64a0bd8fa126b7daf65d27f166b5053da3a29e9",
+      "tests/test_binance_open_intents.py": "c439f6d917c66a6b29b4c925ef1b791ef2f62f12a52ed7da244a7bb5e2967417",
+      "tests/test_binance_opening_inventory.py": "308400178d1f26111e018c009687f2eb953371a6576bc1a782d9307c9e7f0fb2",
+      "tests/test_binance_order_responses.py": "6d2872561e7fc976c8f524659842edf8b36f6be0dc463265f925f1da4ad96f0b",
+      "tests/test_binance_owned_runtime.py": "afd64cf5573834f43caec275ec157b49b685761c3c9b5db31c3ce4dd1e6e85dd",
+      "tests/test_binance_scope_enrollment.py": "26ddfb238b634dd065cb007b8a5be88e2c7ea770e7305ce8f63714aff98328d1",
+      "tests/test_cli_coverage.py": "4c8e4ab581abbcb6939981d37bec2def814343e599264aae3846e6feae26d897",
+      "tests/test_runtime_control_storage.py": "2fefd0dd99331373169eb81321f91662a0639c98ed01076ba26d24cb51f107f6",
+      "tests/test_shared_runtime_control.py": "caa277f01feaee802caa6628e2dd5616003299b051de373b7460ae0c7900072c",
+      "tests/test_spot_roundtrip_cli.py": "d25b1b6d2376cd12067f8bcb523ebf26dd93a866f384aaf35aa968c89a6392a7",
+      "tests/test_spot_roundtrip_execution.py": "4f8ff70a450901775b09ba052ea5b72f528aa9a8d7cd80439d890bf17681ec86",
+      "tests/test_spot_roundtrip_intents.py": "69e781c6a18a467e0bbc028028ea05eabfffda1c34a87fbd74ffc0bb91b8e55b"
+    },
+    "lint_changed_python_files": 16,
+    "lint_passed": true,
+    "full_suite_run": false
+  },
+  "resource_scope": {
+    "cycles": 24,
+    "warmup_cycles": 4,
+    "observed_cycles": 20,
+    "native_process_counters": true,
+    "scope": "Synthetic owned roundtrips in the pytest process; no performance or indefinite leak-free claim.",
+    "process_helpers": "Suspended enrollment into the original Windows kill-on-close job; bounded capture, hidden windows and terminal results. Abrupt child exits 71, 73 and 39 observed by affected tests.",
+    "persistent_jobs_services_automations_created": 0
+  },
+  "formatting_scope": {
+    "changed_definitions": [
+      "_owned_live_scenario",
+      "test_cli_process_exit_at_native_dispatch_retains_exact_opening",
+      "test_owned_order_forwards_entry_notional_to_bracket_aware_client"
+    ],
+    "whole_module_ast_equal_to_tested_formatted_source": true,
+    "unrelated_original_text_preserved": true,
+    "before_sha256": "68c97c6061da6ef7b35abe98b5977600d98b053188f0e6fdef39bd1aca0288ba",
+    "after_sha256": "ee9b53cea8e47ee4b69c2468a8c65c73996363731ba8e260c6a3a06e7b4a4e27"
+  },
+  "financial_scope": {
+    "new_market_requests": 0,
+    "account_requests": 0,
+    "real_native_orders": 0,
+    "new_economic_observations": 0,
+    "qualified_stable_edges": 0,
+    "canonical_ledgers_changed": false,
+    "protected_boundaries_sha256": "f971726268ba2e630b2ebbe8d5bcf02f7b3f23b92ccb16efe23aef82cebe950f"
+  },
+  "remaining": [
+    "Independent session-owned trading supervisor, heartbeat ownership, generation fencing and hard native-process deadlines.",
+    "Complete native write-caller inventory and universal transport/credential isolation.",
+    "Actual account, margin, balance, capital, reboot and continuous resource acceptance.",
+    "Stable financial edge, model-target qualification, complete repository review and final bug hunt."
+  ],
+  "goal_complete": false,
+  "evidence_sha256": "45f66107f9eac3dbf96ff5d33a183072fcdb57e308756eb86e56a7003dcf7a24"
+}

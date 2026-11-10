@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 import json
+from pathlib import Path
 import sqlite3
-import subprocess
 import sys
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import replace
@@ -21,6 +21,7 @@ from simple_ai_trading.binance_open_intents import (
     OpenIntentError,
 )
 from simple_ai_trading.positions import OpenPosition, PositionsStore
+from tools.cocoindex_agent_search import run_captured_process
 
 
 def _position(**changes) -> OpenPosition:
@@ -96,8 +97,11 @@ class _Client:
 
 
 @pytest.mark.parametrize("market_type", ["spot", "futures"])
-def test_intent_precedes_submission_and_releases_after_full_fill(tmp_path, market_type):
+def test_intent_precedes_submission_and_releases_after_full_fill(
+    tmp_path, market_type, enrolled_binance_runtime
+):
     store = PositionsStore(tmp_path)
+    enrolled_binance_runtime(store, _scope(market_type))
     client = _Client(store, market_type=market_type)
     result = _submit_durable_open_position(
         client, _position(market_type=market_type), store
@@ -127,8 +131,11 @@ def test_intent_precedes_submission_and_releases_after_full_fill(tmp_path, marke
 
 
 @pytest.mark.parametrize("failure", [BinanceAPIError("timeout"), KeyboardInterrupt()])
-def test_failed_or_interrupted_submission_survives_store_reopen(tmp_path, failure):
+def test_failed_or_interrupted_submission_survives_store_reopen(
+    tmp_path, failure, enrolled_binance_runtime
+):
     store = PositionsStore(tmp_path)
+    enrolled_binance_runtime(store, _scope())
     client = _Client(store, failure=failure)
     with pytest.raises((BinanceAPIError, KeyboardInterrupt)):
         _submit_durable_open_position(client, _position(), store)
@@ -144,8 +151,11 @@ def test_failed_or_interrupted_submission_survives_store_reopen(tmp_path, failur
     assert client.writes == 1
 
 
-def test_ledger_write_failure_preserves_obligation(tmp_path, monkeypatch):
+def test_ledger_write_failure_preserves_obligation(
+    tmp_path, monkeypatch, enrolled_binance_runtime
+):
     store = PositionsStore(tmp_path)
+    enrolled_binance_runtime(store, _scope())
     client = _Client(store)
 
     def fail_write(*args, **kwargs):
@@ -159,8 +169,11 @@ def test_ledger_write_failure_preserves_obligation(tmp_path, monkeypatch):
 
 
 @pytest.mark.parametrize("market_type", ["spot", "futures"])
-def test_partial_fill_keeps_pending_remainder(tmp_path, market_type):
+def test_partial_fill_keeps_pending_remainder(
+    tmp_path, market_type, enrolled_binance_runtime
+):
     store = PositionsStore(tmp_path)
+    enrolled_binance_runtime(store, _scope(market_type))
     client = _Client(store, status="PARTIALLY_FILLED", market_type=market_type)
     position = _position(market_type=market_type)
     if market_type == "spot":
@@ -238,7 +251,10 @@ def test_invalid_acknowledgement_keeps_obligation(tmp_path, changes):
     assert journal.entry_block_reason() == "unresolved_opening_intents=1"
 
 
-def test_process_death_during_submission_retains_durable_intent(tmp_path):
+def test_process_death_during_submission_retains_durable_intent(
+    tmp_path, enrolled_binance_runtime
+):
+    enrolled_binance_runtime(PositionsStore(tmp_path), _scope())
     code = """
 import os, sys
 from simple_ai_trading.autonomous import _submit_durable_open_position
@@ -254,8 +270,12 @@ position = OpenPosition(id='crash', symbol='BTCUSDT', market_type='spot',
     notional=50., dry_run=False, open_client_order_id='sait-o-crash')
 _submit_durable_open_position(Client(), position, PositionsStore(sys.argv[1]))
 """
-    result = subprocess.run(
-        [sys.executable, "-c", code, str(tmp_path)], timeout=15, capture_output=True
+    result = run_captured_process(
+        [sys.executable, "-c", code, str(tmp_path)],
+        cwd=Path.cwd(),
+        env=None,
+        input_text="",
+        timeout=15,
     )
     assert result.returncode == 71
     reopened = PositionsStore(tmp_path)
@@ -276,8 +296,11 @@ _submit_durable_open_position(Client(), position, PositionsStore(sys.argv[1]))
         {"origClientOrderId": "sait-o-other"},
     ],
 )
-def test_raw_acknowledgement_must_bind_exact_intent(tmp_path, changes):
+def test_raw_acknowledgement_must_bind_exact_intent(
+    tmp_path, changes, enrolled_binance_runtime
+):
     store = PositionsStore(tmp_path)
+    enrolled_binance_runtime(store, _scope())
 
     class Client(_Client):
         def place_order(self, *args, **kwargs):
@@ -291,8 +314,11 @@ def test_raw_acknowledgement_must_bind_exact_intent(tmp_path, changes):
     assert store.opening_intents.entry_block_reason() == "unresolved_opening_intents=1"
 
 
-def test_interruption_after_position_write_keeps_intent_blocked(tmp_path, monkeypatch):
+def test_interruption_after_position_write_keeps_intent_blocked(
+    tmp_path, monkeypatch, enrolled_binance_runtime
+):
     store = PositionsStore(tmp_path)
+    enrolled_binance_runtime(store, _scope())
 
     def interrupted(*args, **kwargs):
         raise KeyboardInterrupt()
@@ -304,8 +330,11 @@ def test_interruption_after_position_write_keeps_intent_blocked(tmp_path, monkey
     assert store.opening_intents.entry_block_reason() == "unresolved_opening_intents=1"
 
 
-def test_recorded_journal_does_not_mask_missing_position_ledger(tmp_path):
+def test_recorded_journal_does_not_mask_missing_position_ledger(
+    tmp_path, enrolled_binance_runtime
+):
     store = PositionsStore(tmp_path)
+    enrolled_binance_runtime(store, _scope())
     client = _Client(store)
     _submit_durable_open_position(client, _position(), store)
     store.open_path.unlink()
@@ -320,8 +349,12 @@ def test_recorded_journal_does_not_mask_missing_position_ledger(tmp_path):
     assert client.writes == 1
 
 
-def test_failed_intent_storage_prevents_transmission(tmp_path):
+def test_failed_intent_storage_prevents_transmission(
+    tmp_path, enrolled_binance_runtime
+):
     store = PositionsStore(tmp_path)
+    enrolled_binance_runtime(store, _scope())
+    store.opening_intents.path.rename(tmp_path / "retained.sqlite3")
     store.opening_intents.path.mkdir()
     client = _Client(store)
     with pytest.raises(OpenIntentError):

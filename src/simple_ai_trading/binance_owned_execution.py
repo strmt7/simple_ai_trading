@@ -4,13 +4,22 @@ from __future__ import annotations
 
 from dataclasses import dataclass, replace
 import math
+import os
+from pathlib import Path
 import time
 from typing import Mapping
 
 from .api import BinanceAPIError, BinanceClient
 from .binance_execution_scope import BinanceExecutionScope
+from .binance_execution_storage import BinanceExecutionStorage
 from .binance_open_intents import OpenIntentError
 from .binance_order_responses import MarketOrderBinding
+from .binance_runtime_control import (
+    BINANCE_RUNTIME_LEASE_ENV,
+    BinanceRuntimeControl,
+    RuntimeControlError,
+    RuntimeLeaseInterlock,
+)
 from .positions import ClosedTrade, OpenPosition, PositionsStore, bot_client_order_id
 
 
@@ -287,21 +296,61 @@ def _submit_open_order(
     return order
 
 
+def _runtime_interlock(
+    store: PositionsStore, interlock: RuntimeLeaseInterlock | None
+) -> RuntimeLeaseInterlock:
+    if interlock is None:
+        interlock = RuntimeLeaseInterlock(
+            BinanceRuntimeControl(Path(store.root) / "binance_runtime_control.sqlite3"),
+            os.environ.get(BINANCE_RUNTIME_LEASE_ENV, ""),
+        )
+    if not isinstance(interlock, RuntimeLeaseInterlock) or not isinstance(
+        interlock.control, BinanceRuntimeControl
+    ):
+        raise OpenIntentError(
+            "owned execution requires enrolled Binance runtime control"
+        )
+    return interlock
+
+
 def submit_durable_open(
-    client: BinanceClient, position: OpenPosition, store: PositionsStore
+    client: BinanceClient,
+    position: OpenPosition,
+    store: PositionsStore,
+    *,
+    interlock: RuntimeLeaseInterlock | None = None,
+    execution_enrollment_path: Path | None = None,
 ) -> BinanceOpeningResult:
     """Persist uncertainty before transmission and inventory before admission release."""
+    position = replace(position)
     journal = store.opening_intents
+    scope = client.execution_scope()
+    # Validate the request without creating storage or acquiring authority.
+    journal._request(position, scope)
     reason = journal.entry_block_reason(positions_present=store.open_path.is_file())
     if reason:
         raise OpenIntentError(reason)
-    scope = client.execution_scope()
-    journal.prepare(position, scope=scope)
-    response = _submit_open_order(client, position, expected_scope=scope)
-    recorded = _apply_open_order(position, response)
-    journal.validate_result(position, recorded)
-    store.record_open(recorded)
-    journal.record_complete(position, recorded, scope=scope)
+    authority = _runtime_interlock(store, interlock)
+    storage = BinanceExecutionStorage(
+        journal, authority.control, execution_enrollment_path
+    )
+    try:
+        authority.assert_opening_allowed()
+        storage.verify(scope=scope)
+        with authority.submission_guard():
+            storage.verify(scope=scope)
+            journal.prepare(position, scope=scope, create=False)
+            authority.assert_opening_allowed()
+            storage.verify(scope=scope)
+            response = _submit_open_order(client, position, expected_scope=scope)
+            recorded = _apply_open_order(position, response)
+            journal.validate_result(position, recorded)
+            store.record_open(recorded)
+            journal.record_complete(position, recorded, scope=scope)
+    except RuntimeControlError as exc:
+        raise OpenIntentError(
+            "owned opening runtime authority is unavailable or blocked"
+        ) from exc
     return BinanceOpeningResult(recorded, response)
 
 
@@ -313,15 +362,24 @@ def _submit_open_position(
 ) -> OpenPosition:
     if position.dry_run:
         return position
-    return _apply_open_order(
-        position, _submit_open_order(client, position, expected_scope=expected_scope)
-    )
+    raise OpenIntentError("signed opening requires the durable owned execution gateway")
 
 
 def _submit_durable_open_position(
-    client: BinanceClient, position: OpenPosition, store: PositionsStore
+    client: BinanceClient,
+    position: OpenPosition,
+    store: PositionsStore,
+    *,
+    interlock: RuntimeLeaseInterlock | None = None,
+    execution_enrollment_path: Path | None = None,
 ) -> OpenPosition:
-    return submit_durable_open(client, position, store).position
+    return submit_durable_open(
+        client,
+        position,
+        store,
+        interlock=interlock,
+        execution_enrollment_path=execution_enrollment_path,
+    ).position
 
 
 def _submit_close_order(
@@ -398,8 +456,11 @@ def submit_durable_close(
     *,
     reduce_only: bool,
     taker_fee_bps: float = 0.0,
+    interlock: RuntimeLeaseInterlock | None = None,
+    close_lock_timeout_seconds: float = 1.0,
 ) -> BinanceClosingResult:
     """Retain the owned close obligation, exact acknowledgement and paired inventory."""
+    position, trade = replace(position), replace(trade)
     from .binance_close_intents import (
         complete_close,
         prepare_close,
@@ -407,30 +468,39 @@ def submit_durable_close(
     )
 
     scope = client.execution_scope()
-    client_id = _next_close_client_order_id(store, position)
-    prepare_close(
-        store, position, client_id=client_id, scope=scope, reduce_only=reduce_only
-    )
-    response = _submit_close_order(
-        client,
-        position,
-        reduce_only=reduce_only,
-        close_client_order_id=client_id,
-        expected_scope=scope,
-    )
-    recorded = _apply_close_order(
-        trade, response, client_id, exit_taker_fee_bps=taker_fee_bps
-    )
-    validate_close_result(position, recorded, client_id=client_id)
-    store.record_close_result(position, recorded)
-    complete_close(
-        store,
-        position,
-        recorded,
-        client_id=client_id,
-        scope=scope,
-        reduce_only=reduce_only,
-    )
+    authority = _runtime_interlock(store, interlock)
+    try:
+        with authority.control.close_guard(timeout_seconds=close_lock_timeout_seconds):
+            client_id = _next_close_client_order_id(store, position)
+            prepare_close(
+                store,
+                position,
+                client_id=client_id,
+                scope=scope,
+                reduce_only=reduce_only,
+            )
+            response = _submit_close_order(
+                client,
+                position,
+                reduce_only=reduce_only,
+                close_client_order_id=client_id,
+                expected_scope=scope,
+            )
+            recorded = _apply_close_order(
+                trade, response, client_id, exit_taker_fee_bps=taker_fee_bps
+            )
+            validate_close_result(position, recorded, client_id=client_id)
+            store.record_close_result(position, recorded)
+            complete_close(
+                store,
+                position,
+                recorded,
+                client_id=client_id,
+                scope=scope,
+                reduce_only=reduce_only,
+            )
+    except RuntimeControlError as exc:
+        raise OpenIntentError("owned closing interlock is unavailable") from exc
     return BinanceClosingResult(recorded, response)
 
 
@@ -446,17 +516,7 @@ def _submit_close_position(
 ) -> ClosedTrade:
     if position.dry_run:
         return replace(trade, exchange_status="paper")
-    client_id = close_client_order_id or bot_client_order_id(position.id, "close")
-    response = _submit_close_order(
-        client,
-        position,
-        reduce_only=reduce_only,
-        close_client_order_id=client_id,
-        expected_scope=expected_scope,
-    )
-    return _apply_close_order(
-        trade, response, client_id, exit_taker_fee_bps=taker_fee_bps
-    )
+    raise OpenIntentError("signed closing requires the durable owned execution gateway")
 
 
 def _submit_durable_close_position(
@@ -467,6 +527,8 @@ def _submit_durable_close_position(
     *,
     reduce_only: bool,
     taker_fee_bps: float = 0.0,
+    interlock: RuntimeLeaseInterlock | None = None,
+    close_lock_timeout_seconds: float = 1.0,
 ) -> ClosedTrade:
     return submit_durable_close(
         client,
@@ -475,6 +537,8 @@ def _submit_durable_close_position(
         store,
         reduce_only=reduce_only,
         taker_fee_bps=taker_fee_bps,
+        interlock=interlock,
+        close_lock_timeout_seconds=close_lock_timeout_seconds,
     ).trade
 
 

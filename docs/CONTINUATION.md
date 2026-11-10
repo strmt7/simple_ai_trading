@@ -18,6 +18,16 @@ rejects missing/replaced controller storage instead of issuing fresh authority.
 Its independent ready marker, UUID and file identities require explicit setup
 or exact prepared-state recovery. Legacy Stop history is preserved; new storage
 starts with Stop latched. The old prototype remains private and unintegrated.
+The [ordinary owned-order fence](review/2026-11-10/owned-runtime-fence/review.md)
+closes a reproduced opening-through-persisted-Stop gap in the shared Binance
+gateway. Opening now borrows an existing lease and verifies independent journal
+enrollment; owned closing uses its separate enrolled lock. Neither path silently
+provisions authority. The affected CLI/autonomous execution lane passes 484
+cases; supplementary storage/roundtrip counts and exact source hashes are in its
+evidence. Synthetic repeated cycles show bounded observed resources, not an
+indefinite leak-free or venue-execution claim. Independent trading supervision,
+complete writer fencing and real account/capital qualification remain open.
+
 The current release composite creates a draft even with publishing disabled:
 do not dispatch it for validation. Enforce bounded resource lifetimes and
 task-owned teardown throughout development, without touching other host tasks.

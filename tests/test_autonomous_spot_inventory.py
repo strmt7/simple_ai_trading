@@ -108,7 +108,7 @@ class Client:
 @pytest.mark.parametrize("quote", ["USDT", "USDC"])
 @pytest.mark.parametrize("fee_kind", ["base", "quote", "BNB", "zero"])
 def test_native_open_close_persists_only_received_inventory(
-    tmp_path, base, quote, fee_kind
+    tmp_path, base, quote, fee_kind, enrolled_binance_runtime
 ):
     p = position(symbol=base + quote)
     fee_asset = (
@@ -122,6 +122,7 @@ def test_native_open_close_persists_only_received_inventory(
         receipt(p, fee="0" if fee_kind == "zero" else "0.001", fee_asset=fee_asset)
     )
     store = PositionsStore(tmp_path)
+    enrolled_binance_runtime(store, client.execution_scope())
     opened = _submit_durable_open_position(client, p, store)
     expected = 0.999 if fee_kind == "base" else 1.0
     assert opened.qty == expected
@@ -163,7 +164,9 @@ def test_native_open_close_persists_only_received_inventory(
 @pytest.mark.parametrize(
     "failure", ["missing_fee", "partial", "sub_wire", "missing_status"]
 )
-def test_unproved_native_open_preserves_unknown_after_restart(tmp_path, failure):
+def test_unproved_native_open_preserves_unknown_after_restart(
+    tmp_path, failure, enrolled_binance_runtime
+):
     p = position()
     order = receipt(p)
     if failure == "missing_fee":
@@ -175,8 +178,10 @@ def test_unproved_native_open_preserves_unknown_after_restart(tmp_path, failure)
     else:
         del order["status"]
     client = Client(order)
+    store = PositionsStore(tmp_path)
+    enrolled_binance_runtime(store, client.execution_scope())
     with pytest.raises((OpenIntentError, BinanceAPIError)):
-        _submit_durable_open_position(client, p, PositionsStore(tmp_path))
+        _submit_durable_open_position(client, p, store)
     reopened = PositionsStore(tmp_path)
     assert reopened.load_open() == []
     assert (
@@ -317,10 +322,13 @@ def test_paper_and_futures_do_not_claim_native_spot_receipts(changes):
     assert native_spot_entry_net(opened) is None
 
 
-def test_native_close_unrepresentable_fill_keeps_lot_and_unknown(tmp_path):
+def test_native_close_unrepresentable_fill_keeps_lot_and_unknown(
+    tmp_path, enrolled_binance_runtime
+):
     p = position()
     store = PositionsStore(tmp_path)
     client = Client(receipt(p))
+    enrolled_binance_runtime(store, client.execution_scope())
     opened = _submit_durable_open_position(client, p, store)
 
     class PartialClient(Client):
@@ -348,13 +356,14 @@ def test_native_close_unrepresentable_fill_keeps_lot_and_unknown(tmp_path):
 
 
 def test_native_open_interruption_preserves_net_position_and_pending_gross(
-    tmp_path, monkeypatch
+    tmp_path, monkeypatch, enrolled_binance_runtime
 ):
     from simple_ai_trading.binance_open_intents import BinanceOpenIntentJournal
 
     p = position()
     store = PositionsStore(tmp_path)
     client = Client(receipt(p))
+    enrolled_binance_runtime(store, client.execution_scope())
 
     def interrupted(*args, **kwargs):
         raise KeyboardInterrupt()

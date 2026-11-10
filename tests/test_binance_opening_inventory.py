@@ -4,8 +4,8 @@ from __future__ import annotations
 
 import json
 import sqlite3
-import subprocess
 import sys
+from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import asdict, replace
 from decimal import localcontext
@@ -26,6 +26,7 @@ from simple_ai_trading.binance_open_intents import (
 from simple_ai_trading.binance_open_recovery import collect_opening_recovery
 from simple_ai_trading.binance_opening_inventory import retain_opening_inventory
 from simple_ai_trading.positions import OpenPosition
+from tools.cocoindex_agent_search import run_captured_process
 
 
 def _case(
@@ -264,7 +265,7 @@ scope=BinanceExecutionScope(**json.loads(sys.argv[2]))
 retain_opening_inventory(BinanceOpenIntentJournal(Path(sys.argv[1])), scope=scope, instrument_scope=scope, instrument={'symbol':'BTCUSDT','baseAsset':'BTC','quoteAsset':'USDT'})
 os._exit(71)
 """
-    child = subprocess.run(
+    child = run_captured_process(
         [
             sys.executable,
             "-c",
@@ -272,7 +273,9 @@ os._exit(71)
             str(journal.path),
             json.dumps(asdict(kwargs["scope"])),
         ],
-        capture_output=True,
+        cwd=Path.cwd(),
+        env=None,
+        input_text="",
         timeout=15,
     )
     assert child.returncode == 71

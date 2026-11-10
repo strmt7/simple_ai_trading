@@ -4,8 +4,8 @@ from __future__ import annotations
 
 import json
 import sqlite3
-import subprocess
 import sys
+from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import asdict, replace
 
@@ -33,6 +33,13 @@ def _scope(product="spot", key="offline-placeholder"):
 
 def _stage(tmp_path, *, product="spot", side="LONG", identity="owned"):
     store = PositionsStore(tmp_path)
+    from simple_ai_trading.binance_runtime_control import BinanceRuntimeControl
+
+    control = BinanceRuntimeControl(tmp_path / "binance_runtime_control.sqlite3")
+    if not control.enrollment_path.exists():
+        control.provision_storage()
+    else:
+        control.snapshot()
     requested = OpenPosition(
         id=identity,
         symbol="BTCUSDT",
@@ -207,11 +214,16 @@ def test_wrong_scope_cannot_adopt_or_close_existing_lot(tmp_path):
     assert store.load_snapshot() == ([position], [])
 
 
-def test_legacy_unbound_lot_cannot_inherit_current_account(tmp_path):
+def test_legacy_unbound_lot_cannot_inherit_current_account(
+    tmp_path, enrolled_binance_runtime
+):
     store, position = _stage(tmp_path / "scoped")
     legacy = PositionsStore(tmp_path / "legacy")
     legacy.record_open(position)
     client = _Client(legacy)
+    enrolled_binance_runtime(
+        legacy, client.execution_scope(), execution=False, start=False
+    )
     with pytest.raises(OpenIntentError, match="different or missing execution scope"):
         _close(client, legacy, position)
     assert client.writes == 0
@@ -306,10 +318,14 @@ class Client:
 position = OpenPosition(**json.loads(sys.argv[2]))
 _submit_durable_close_position(Client(), position, _close_to_trade(position, 101, 'child', clock=lambda: 2), PositionsStore(sys.argv[1]), reduce_only=True)
 """
-    child = subprocess.run(
+    from tools.cocoindex_agent_search import run_captured_process
+
+    child = run_captured_process(
         [sys.executable, "-c", script, str(tmp_path), json.dumps(asdict(position))],
+        cwd=Path.cwd(),
+        env=None,
+        input_text="",
         timeout=20,
-        check=False,
     )
     assert child.returncode == 73
     assert (

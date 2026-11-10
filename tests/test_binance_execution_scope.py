@@ -58,14 +58,16 @@ def client():
     ],
 )
 def test_persisted_scope_rejects_configuration_change_before_transmission(
-    client, tmp_path, monkeypatch, field, value
+    client, tmp_path, monkeypatch, field, value, enrolled_binance_runtime
 ):
     store = PositionsStore(tmp_path)
     original_scope = client.execution_scope()
+    enrolled_binance_runtime(store, original_scope)
     prepare = BinanceOpenIntentJournal.prepare
 
-    def prepare_then_mutate(journal, position, *, scope):
-        prepare(journal, position, scope=scope)
+    def prepare_then_mutate(journal, position, *, scope, create):
+        assert create is False
+        prepare(journal, position, scope=scope, create=create)
         setattr(client, field, value)
 
     monkeypatch.setattr(BinanceOpenIntentJournal, "prepare", prepare_then_mutate)
@@ -262,7 +264,7 @@ def test_lost_scope_and_deleted_journal_are_not_repaired_by_acknowledgement(
 
 @pytest.mark.parametrize("market_type", ["spot", "futures"])
 def test_full_signed_operation_preserves_scope_through_all_requests(
-    tmp_path, market_type
+    tmp_path, market_type, enrolled_binance_runtime
 ):
     instance = BinanceClient(
         "offline-placeholder",
@@ -272,6 +274,7 @@ def test_full_signed_operation_preserves_scope_through_all_requests(
     )
     instance._throttle = lambda: None
     store = PositionsStore(tmp_path)
+    enrolled_binance_runtime(store, instance.execution_scope())
     paths = []
 
     def request(method, url, **kwargs):
@@ -341,6 +344,7 @@ def test_full_signed_operation_preserves_scope_through_all_requests(
 
 def test_futures_key_change_after_leverage_never_transmits_order_or_recovery_query(
     tmp_path,
+    enrolled_binance_runtime,
 ):
     instance = BinanceClient(
         "offline-placeholder",
@@ -351,6 +355,7 @@ def test_futures_key_change_after_leverage_never_transmits_order_or_recovery_que
     instance._throttle = lambda: None
     store = PositionsStore(tmp_path)
     scope = instance.execution_scope()
+    enrolled_binance_runtime(store, scope)
     calls = []
 
     def request(method, url, **kwargs):

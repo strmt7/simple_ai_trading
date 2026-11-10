@@ -30,7 +30,7 @@ from simple_ai_trading.autonomous import (
     _loss_budget_guard,
     _apply_open_order,
     _open_position_from_decision,
-    _submit_open_position,
+    _submit_durable_open_position,
     close_all_open_positions,
     close_tracked_open_positions,
     ensure_api_budget_headroom,
@@ -146,8 +146,20 @@ class FakeClient:
         raise BinanceAPIError("order not found")
 
 
-def test_submit_open_position_passes_notional_to_bracket_aware_client() -> None:
+def test_submit_open_position_passes_notional_to_bracket_aware_client(
+    tmp_path, enrolled_binance_runtime
+) -> None:
     class BracketAwareClient(FakeClient):
+        def execution_scope(self):
+            from simple_ai_trading.binance_execution_scope import (
+                BinanceExecutionScope,
+                BINANCE_FUTURES_TESTNET,
+            )
+
+            return BinanceExecutionScope.from_api_key(
+                BINANCE_FUTURES_TESTNET, "futures", "offline-placeholder"
+            )
+
         def get_max_leverage_for_notional(self, _symbol: str, _notional: float) -> int:
             return 5
 
@@ -171,7 +183,9 @@ def test_submit_open_position_passes_notional_to_bracket_aware_client() -> None:
     )
     client = BracketAwareClient(price=50_000.0)
 
-    submitted = _submit_open_position(client, position)
+    store = PositionsStore(tmp_path)
+    enrolled_binance_runtime(store, client.execution_scope())
+    submitted = _submit_durable_open_position(client, position, store)
 
     assert client.orders[0]["notional"] == pytest.approx(2_500.0)
     assert submitted.exchange_status == "FILLED"
@@ -1002,7 +1016,7 @@ def _stage_scoped_live_position(store: PositionsStore, position: OpenPosition) -
 
 
 def test_close_tracked_live_verified_position_uses_reduce_only_order(
-    tmp_path: Path,
+    tmp_path: Path, enrolled_binance_runtime
 ) -> None:
     store = PositionsStore(root=tmp_path / "positions")
     position = _make_position("LONG", entry=100.0)
@@ -1010,6 +1024,9 @@ def test_close_tracked_live_verified_position_uses_reduce_only_order(
     position.open_client_order_id = bot_client_order_id(position.id, "open")
     position.exchange_status = "FILLED"
     _stage_scoped_live_position(store, position)
+    enrolled_binance_runtime(
+        store, FakeClient().execution_scope(), execution=False, start=False
+    )
     client = FakeClient(price=111.0)
 
     report = close_tracked_open_positions(
@@ -1035,7 +1052,7 @@ def test_close_tracked_live_verified_position_uses_reduce_only_order(
 
 
 def test_close_tracked_live_ack_without_execution_preserves_open_position(
-    tmp_path: Path,
+    tmp_path: Path, enrolled_binance_runtime
 ) -> None:
     class AckOnlyCloseClient(FakeClient):
         def place_order(self, symbol: str, side: str, quantity: float, **kwargs):
@@ -1052,6 +1069,9 @@ def test_close_tracked_live_ack_without_execution_preserves_open_position(
     position.open_client_order_id = bot_client_order_id(position.id, "open")
     position.exchange_status = "FILLED"
     _stage_scoped_live_position(store, position)
+    enrolled_binance_runtime(
+        store, FakeClient().execution_scope(), execution=False, start=False
+    )
 
     report = close_tracked_open_positions(
         store,
@@ -1073,7 +1093,7 @@ def test_close_tracked_live_ack_without_execution_preserves_open_position(
 
 
 def test_close_tracked_live_partial_fill_preserves_open_remainder(
-    tmp_path: Path,
+    tmp_path: Path, enrolled_binance_runtime
 ) -> None:
     class PartialCloseClient(FakeClient):
         def place_order(self, symbol: str, side: str, quantity: float, **kwargs):
@@ -1089,6 +1109,9 @@ def test_close_tracked_live_partial_fill_preserves_open_remainder(
     position.open_client_order_id = bot_client_order_id(position.id, "open")
     position.exchange_status = "FILLED"
     _stage_scoped_live_position(store, position)
+    enrolled_binance_runtime(
+        store, FakeClient().execution_scope(), execution=False, start=False
+    )
     client = PartialCloseClient(price=110.0)
 
     report = close_tracked_open_positions(
@@ -1116,7 +1139,7 @@ def test_close_tracked_live_partial_fill_preserves_open_remainder(
 
 
 def test_close_tracked_live_recovers_lost_response_by_client_order_id(
-    tmp_path: Path,
+    tmp_path: Path, enrolled_binance_runtime
 ) -> None:
     class LostResponseClient(FakeClient):
         def place_order(self, symbol: str, side: str, quantity: float, **kwargs):
@@ -1129,6 +1152,9 @@ def test_close_tracked_live_recovers_lost_response_by_client_order_id(
     position.open_client_order_id = bot_client_order_id(position.id, "open")
     position.exchange_status = "FILLED"
     _stage_scoped_live_position(store, position)
+    enrolled_binance_runtime(
+        store, FakeClient().execution_scope(), execution=False, start=False
+    )
     client = LostResponseClient(price=111.0)
 
     report = close_tracked_open_positions(
@@ -1151,7 +1177,7 @@ def test_close_tracked_live_recovers_lost_response_by_client_order_id(
 
 
 def test_close_tracked_live_partial_retry_requires_terminal_reconciliation(
-    tmp_path: Path,
+    tmp_path: Path, enrolled_binance_runtime
 ) -> None:
     class PartialThenFullClient(FakeClient):
         def place_order(self, symbol: str, side: str, quantity: float, **kwargs):
@@ -1167,6 +1193,9 @@ def test_close_tracked_live_partial_retry_requires_terminal_reconciliation(
     position.open_client_order_id = bot_client_order_id(position.id, "open")
     position.exchange_status = "FILLED"
     _stage_scoped_live_position(store, position)
+    enrolled_binance_runtime(
+        store, FakeClient().execution_scope(), execution=False, start=False
+    )
     client = PartialThenFullClient(price=110.0)
 
     first = close_tracked_open_positions(
@@ -1322,9 +1351,12 @@ def test_run_loop_live_startup_mismatch_never_publishes_running_state(
 
 
 def test_run_loop_reconciles_and_observes_before_post_outage_entry(
-    tmp_path: Path,
+    tmp_path: Path, enrolled_binance_runtime
 ) -> None:
     cfg = _make_config(tmp_path, stop_after_iterations=3, dry_run=False)
+    enrolled_binance_runtime(
+        PositionsStore(root=cfg.positions_root), FakeClient().execution_scope()
+    )
     attempts = {"n": 0}
     reconciliations: list[str] = []
 
@@ -1368,8 +1400,13 @@ def test_run_loop_reconciles_and_observes_before_post_outage_entry(
     assert reconciliations == ["BTCUSDC"] * 4
 
 
-def test_run_loop_recovery_cooldown_observes_before_entry(tmp_path: Path) -> None:
+def test_run_loop_recovery_cooldown_observes_before_entry(
+    tmp_path: Path, enrolled_binance_runtime
+) -> None:
     cfg = _make_config(tmp_path, stop_after_iterations=3, dry_run=False)
+    enrolled_binance_runtime(
+        PositionsStore(root=cfg.positions_root), FakeClient().execution_scope()
+    )
     attempts = {"n": 0}
 
     def dec(_c, _r, _s, _o):
@@ -1513,7 +1550,9 @@ def test_run_loop_closes_position_via_auto_close(tmp_path: Path) -> None:
     assert result.iterations == 1
 
 
-def test_run_loop_partial_auto_close_exits_incomplete(tmp_path: Path) -> None:
+def test_run_loop_partial_auto_close_exits_incomplete(
+    tmp_path: Path, enrolled_binance_runtime
+) -> None:
     class PartialCloseClient(FakeClient):
         def place_order(self, symbol: str, side: str, quantity: float, **kwargs):
             order = super().place_order(symbol, side, quantity / 2.0, **kwargs)
@@ -1534,6 +1573,9 @@ def test_run_loop_partial_auto_close_exits_incomplete(tmp_path: Path) -> None:
     position.open_client_order_id = bot_client_order_id(position.id, "open")
     position.exchange_status = "FILLED"
     _stage_scoped_live_position(store, position)
+    enrolled_binance_runtime(
+        store, FakeClient().execution_scope(), execution=False, start=False
+    )
 
     def dec(_c, _r, _s, _o):
         return Decision(side="LONG", confidence=0.9, mark_price=110.0)
@@ -1654,10 +1696,15 @@ def test_run_loop_paper_close_book_outage_preserves_retryable_position(
         assert report.journal.blocking_intent_ids == ()
 
 
-def test_run_loop_live_open_submits_bot_client_order_id(tmp_path: Path) -> None:
+def test_run_loop_live_open_submits_bot_client_order_id(
+    tmp_path: Path, enrolled_binance_runtime
+) -> None:
     from simple_ai_trading.binance_open_intents import BinanceOpenIntentJournal
 
     cfg = _make_config(tmp_path, stop_after_iterations=1, dry_run=False)
+    enrolled_binance_runtime(
+        PositionsStore(root=cfg.positions_root), FakeClient().execution_scope()
+    )
 
     class ObservingClient(FakeClient):
         def place_order(self, *args, **kwargs):
