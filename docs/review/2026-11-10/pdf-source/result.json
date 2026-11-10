@@ -1,0 +1,273 @@
+{
+  "accepted_edge": false,
+  "arithmetic_controls": {
+    "common_mean_totals": [
+      "200",
+      "200"
+    ],
+    "constructed_paths": 2,
+    "gross_payouts": [
+      "0",
+      "190"
+    ],
+    "path": "docs/review/2026-11-10/pdf-source/settlement-controls.json",
+    "sha256": "c7e314ac4342ef7f332d7ee9d93e2ba36237d0f9937f9dc5567bdf8d328cccb2",
+    "venue_sampling_or_payout_qualification": false
+  },
+  "authority_and_counts": {
+    "account_requests": 0,
+    "credential_use": false,
+    "fresh_public_document_downloads": 1,
+    "fresh_robots_requests": 1,
+    "gpu_benchmarks": 0,
+    "hypotheses": 65,
+    "market_requests": 0,
+    "model_fits": 0,
+    "orders": 0,
+    "protected_data_access": false,
+    "qualified_stable_edges": 0,
+    "registered_observations": 204,
+    "retained_document_refetches": 0,
+    "scoped_mechanisms": 37
+  },
+  "base_head": "3d91ff2c4aa984e478e85d1c8d950f8afa8eb780",
+  "classification": "primary_source_scope_and_unresolved_reference_identity_not_an_edge",
+  "created_at_utc": "2026-11-10T03:51:20.523425+00:00",
+  "fresh_source": {
+    "account_api_applicability_verified": false,
+    "admission": {
+      "admitted": true,
+      "document_requests": 1,
+      "gates": {
+        "actual_http_200": true,
+        "complete_pages": true,
+        "native_success": true,
+        "robots_allowed": true,
+        "substantive_text": true
+      },
+      "markdown_characters": 7323,
+      "native_status_is_not_transport_evidence": true,
+      "page_characters": [
+        {
+          "characters": 1826,
+          "page": 1
+        },
+        {
+          "characters": 1688,
+          "page": 2
+        },
+        {
+          "characters": 1977,
+          "page": 3
+        },
+        {
+          "characters": 1762,
+          "page": 4
+        }
+      ],
+      "raw_pages": 4
+    },
+    "capture_worker_private_copy": "data/research/2026-11-10-option-legal/worker-at-public-capture.py",
+    "capture_worker_sha256": "329a49e7c30ddf403d0df47db05f2721637e85b09539057063ecf6bb7d1e6824",
+    "complete_worker_session_seconds": 1.891848,
+    "contract_path": "docs/review/2026-11-10/pdf-source/contract.json",
+    "contract_sha256": "af644fea8fbcf367c269e51e8020102e9dc5ce68f71f0ada1ed6f07f8988161a",
+    "controller_terminal_sha256": "0efe405ceb01debefe92dbf4794704df74029951dcbb2b64318366dd350c76b8",
+    "http_status": 200,
+    "journal_sha256": "705aa5a94365bb6cb88f80e4221b602b71a05fcb227e5870036b56489284ac3b",
+    "native_scraping_sha256": "9bb39fd426bc9b521f7a8d41cbe4e9c750a52f06faac09b30d1f4f392d951d6b",
+    "native_sha256": "49b110120a4ae02f75e922fe41d8e894a75303fb0230f12f68bc199f8c66871f",
+    "publication_date": "2026-01-05",
+    "raw_bytes": 186353,
+    "raw_sha256": "443bcc67fde7274898ff8e3f7af23c7d89e654c5e609d250772e0ddaa96409be",
+    "robots_raw_sha256": "603587120bf7a39aaec16e02e0665735019d2281f3bf16ae1eaa57d532dc5372",
+    "semantic_pages_reviewed": [
+      1,
+      2,
+      3,
+      4
+    ],
+    "title": "Binance Options Contract Specifications",
+    "url": "https://bin.bnbstatic.com/static/cms/cg08ou2ak0tn7mcplvfg/file/443bcc67fde7274898ff8e3f7af23c7d89e654c5e609d250772e0ddaa96409be.pdf"
+  },
+  "goal_complete": false,
+  "profitability_claim": false,
+  "research_decision": {
+    "account_applicability_qualified": false,
+    "common_call_put_reference_qualified": false,
+    "fee_unit_and_current_schedule_qualified": false,
+    "fully_paid_unconditional_capital_protection_qualified": false,
+    "historical_inverse_conflict_resolved": false,
+    "independent_authoritative_reconciliation_required": true,
+    "price_capture_permitted_by_this_result": false,
+    "source_inconsistency_is_not_market_edge": true,
+    "venue_actual_payout_bug_claim": false
+  },
+  "result_sha256": "7ffd95a15262e09b149ddf8d208b9960a82a91eeed6a574476f4b73e5adfde78",
+  "retained_source": {
+    "effective_date_verified": false,
+    "entire_document_semantically_reviewed": false,
+    "native_offline_extraction": {
+      "native_sha256": "6b90833298346251639bbbc8b1cac9b4657b5a299ea3be52155b763c04b7375a",
+      "native_success": true,
+      "new_source_capture": false,
+      "original_unchanged": true,
+      "pages_sha256": "2d30d6197e1b46583672c162ec59f2eb24027c28ecf37cb1c33c37523e215d50",
+      "pdf_pages": 52,
+      "public_requests": 0,
+      "source_sha256": "53197b612332da02c20b5b7d19b81ff53ee5f4938c6330c72a30a1ca4f91049f"
+    },
+    "new_download": false,
+    "offline_plan_sha256": "d91ab4bc0c5cea7110fc06bdfed3708d2f366d244ea657a44c5f439ec57d6234",
+    "original_result": "docs/review/2026-09-04/inverse-clearing-source-review.json",
+    "path": "docs/review/2026-09-04/inverse-clearing-source.pdf",
+    "render_receipt_sha256": "3a7968e3064246a19ceb808f264b5a67f396e0a924195567c3e0681fdbe5d545",
+    "sha256": "53197b612332da02c20b5b7d19b81ff53ee5f4938c6330c72a30a1ca4f91049f",
+    "text_reviewed_pdf_pages": [
+      5,
+      8,
+      13,
+      14,
+      23,
+      37,
+      38,
+      44,
+      45,
+      46,
+      47,
+      48,
+      52
+    ],
+    "url": "https://bin.bnbstatic.com/static/cms/cg08ou2ak0tn7mcplvfg/file/53197b612332da02c20b5b7d19b81ff53ee5f4938c6330c72a30a1ca4f91049f.pdf",
+    "visually_reviewed_pdf_pages": [
+      37,
+      38,
+      48
+    ]
+  },
+  "schema": "primary-option-terms-and-native-pdf-review-v1",
+  "source_files": {
+    "docs/review/2026-11-10/pdf-source/controls.py": "9187ef3df12e29f6fd94865bdf2672cfb9d2e57238928da5de86401fb82285cb",
+    "docs/review/2026-11-10/pdf-source/reuse_clearing.py": "a4392391817e44db95b6b2cdaf3ba8da73d5c5b1cdeb4ff2046f3e57b28441ff",
+    "docs/review/2026-11-10/pdf-source/settlement_controls.py": "f9b899819f4b2ff118cf2becc2b87a661d86f0ff04836e58fed518cb95538f90",
+    "tools/capture_crawl4ai_pdf.py": "bfdbad4ec9edf77f3f9a252f4a039cafd9fdb877b753959200387bfb41758d13",
+    "tools/crawl4ai_pdf_source.py": "7642a2a3122cfac3ee6855d4bbea380b00de4e5a314dcac36b594d7c5e45ccd7",
+    "tools/requirements/crawl4ai-pdf.txt": "84d4380aa5373b285f3701bd65050d422933b81b8dbcb03e2c9c699b123b7bfb"
+  },
+  "tool_qualification": {
+    "base_provider_modified": false,
+    "extension_file_count": 67,
+    "final_eof_deadline_check_added_after_capture": true,
+    "native_fixture_controls": {
+      "cases": [
+        {
+          "admitted": true,
+          "case": "valid",
+          "exit_code": 0,
+          "native_result_retained": true,
+          "passed": true,
+          "requests": [
+            "/robots.txt",
+            "/source.pdf"
+          ],
+          "temporary_files": 0
+        },
+        {
+          "admitted": false,
+          "case": "robots-deny",
+          "exit_code": 0,
+          "native_result_retained": true,
+          "passed": true,
+          "requests": [
+            "/robots.txt"
+          ],
+          "temporary_files": 0
+        },
+        {
+          "admitted": false,
+          "case": "robots-error",
+          "exit_code": 0,
+          "native_result_retained": true,
+          "passed": true,
+          "requests": [
+            "/robots.txt"
+          ],
+          "temporary_files": 0
+        },
+        {
+          "admitted": false,
+          "case": "http-202",
+          "exit_code": 0,
+          "native_result_retained": true,
+          "passed": true,
+          "requests": [
+            "/robots.txt",
+            "/source.pdf"
+          ],
+          "temporary_files": 0
+        },
+        {
+          "admitted": false,
+          "case": "redirect",
+          "exit_code": 0,
+          "native_result_retained": true,
+          "passed": true,
+          "requests": [
+            "/robots.txt",
+            "/source.pdf"
+          ],
+          "temporary_files": 0
+        },
+        {
+          "admitted": false,
+          "case": "not-pdf",
+          "exit_code": 0,
+          "native_result_retained": true,
+          "passed": true,
+          "requests": [
+            "/robots.txt",
+            "/source.pdf"
+          ],
+          "temporary_files": 0
+        },
+        {
+          "admitted": false,
+          "case": "page-cap",
+          "exit_code": 0,
+          "native_result_retained": true,
+          "passed": true,
+          "requests": [
+            "/robots.txt",
+            "/source.pdf"
+          ],
+          "temporary_files": 0
+        },
+        {
+          "admitted": false,
+          "case": "blank",
+          "exit_code": 0,
+          "native_result_retained": true,
+          "passed": true,
+          "requests": [
+            "/robots.txt",
+            "/source.pdf"
+          ],
+          "temporary_files": 0
+        }
+      ],
+      "controls_sha256": "9187ef3df12e29f6fd94865bdf2672cfb9d2e57238928da5de86401fb82285cb",
+      "passed": true,
+      "public_source_requests": 0,
+      "server_stopped": true,
+      "worker_sha256": "7642a2a3122cfac3ee6855d4bbea380b00de4e5a314dcac36b594d7c5e45ccd7"
+    },
+    "non_windows_descendant_containment_qualified": false,
+    "optional_lock_sha256": "84d4380aa5373b285f3701bd65050d422933b81b8dbcb03e2c9c699b123b7bfb",
+    "optional_parser_version": "7.0.0",
+    "partial_qualification_phases_preserved": true,
+    "provider_version": "0.9.5+flitzzip.portable2",
+    "read_only_base_verification_sha256": "e1a4b662f90f9b8bf221a2b7fbeb47eefa05ed0ade78e11fc4315c64f7b384bb",
+    "runtime_manifest_sha256": "07c8f3420b8339ca212c3bd6951b5d945588f5bfbb76c41eec93938b6cecfdb2",
+    "system_packages_modified": false
+  }
+}

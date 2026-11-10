@@ -1,0 +1,3 @@
+# Optional PDF parser only. Keep the admitted Crawl4AI provider unchanged.
+# Install into an isolated research extension; no system or provider mutation.
+pypdf==7.0.0 --hash=sha256:112a2c7cbabefd8dfe498f7a13977e575e762d58cdb0d832acb8886922602c6f

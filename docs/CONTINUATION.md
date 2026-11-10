@@ -37,6 +37,18 @@ current full-suite failure count without rerunning the appropriate scope.
   contract precede economic access. The old completion baseline already exists;
   its 66 selected locks remain unsuitable for training without their missing
   decision-time liquidation/depth/fee comparator.
+- [Primary option terms](review/2026-11-10/pdf-source/review.md) admit the distinct
+  four-page RIE/RCH specification and reuse the exact retained 52-page Clearing
+  Procedures offline, without another download. The printed put reference is
+  Price Index while the call uses Settlement Price; the latter is a 30-minute
+  average. Visual inspection confirms this unresolved source inconsistency.
+  Conditional positive paths show why common-reference proof is necessary.
+  Long liquidation, ADL, fee changes and payment substitution also qualify the
+  protection argument. No fee defaults, metadata, prices, accounts or training
+  followed. Require authoritative reference/unit/version/scope reconciliation
+  before economic access; preserve old FAQ failures and the 2,944-symbol union.
+  Eight supervised native-PDF fixture controls pass; reader/tool evidence does
+  not qualify the venue law, capital protection or profitability.
 - [Spot protocol sources](review/2026-11-09/native-clock-source/review.md): two
   immutable official revisions passed native source admission. Both document
   default milliseconds and optional microseconds; Spot bookTicker has no native

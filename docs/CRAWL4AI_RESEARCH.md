@@ -100,6 +100,50 @@ Missing provider setup is an explicit tool limitation, not permission to claim
 that Crawl4AI was used. Qualify a provider change only in its own affected lane;
 do not repeat a broad website matrix or trading suite for ordinary page reading.
 
+## Bounded native PDF extraction
+
+For separately selected primary PDFs, the HTML CLI is insufficient: the current
+provider's CLI replaces the configured PDF scraper with its HTML strategy.
+Use [the owned-process controller](../tools/capture_crawl4ai_pdf.py) and
+[native PDF worker](../tools/crawl4ai_pdf_source.py) instead. The worker pairs
+`PDFCrawlerStrategy` with `PDFContentScrapingStrategy`; extraction is native
+Crawl4AI, with a reviewed Requests adapter for bounded raw downloads. The native
+PDF crawler's status 200 is a placeholder and is never HTTP admission evidence.
+
+Keep the existing provider unchanged. Install only the separately reviewed
+[optional parser lock](../tools/requirements/crawl4ai-pdf.txt) into a new owned
+extension directory with dependency resolution disabled and hashes required.
+Bind the extension's complete file inventory, installed parser identity, native
+module bytes, read-only provider dependency/repair verification and capture code
+before access. This profile is qualified for the exact provider and optional
+parser versions in its evidence, not arbitrary future library combinations.
+
+The frozen private plan supplies explicit provider/configuration paths, their
+digests, exact URL, new output destinations, text/page gates and code hashes.
+It also binds the supervisor's 150-second deadline. Run its real entry point
+with `python -m tools.capture_crawl4ai_pdf --plan <private-plan> --preflight`
+before the single authorized invocation without `--preflight`. The controller
+reserves a durable one-use journal before launching the hidden owned child;
+reusing any output is rejected, including after a failed launch.
+
+Both robots and document requests have no retries, redirects, proxies, profiles,
+authentication or LLM. Robots must be qualified before the document request;
+403/429/5xx, redirects, timeouts and malformed policy fail closed. Explicit
+404/410 absence is permitted. DNS and the connected peer must be public, TLS
+verification remains enabled, and the same user agent is used for policy and
+download. One robots request and at most one document request are permitted.
+The hard retained-body ceilings are 512 KiB and 8 MiB respectively, plus one
+overflow byte; partial bodies and actual status/headers remain evidence.
+
+Keep raw PDF, native scraping/result JSON, timestamps, journals and hashes in
+ignored storage. Reject encoded bodies, invalid/encrypted PDF, more than the
+declared maximum of 64 pages, missing/empty page extraction and insufficient
+text. Check the actual complete PDF page count: the upstream page limit can
+silently truncate extraction. Only the temporary copy is deleted; original
+source bytes stay retained. Local fixtures use only their explicitly owned
+loopback server, never a fallback reader or a remote test population. Technical
+admission still requires separate review of title, product, date and legal scope.
+
 The [October 8 retained run](review/2026-10-08/crawl4ai-research-result.json)
 used this integration on official USD-M trade documentation. Native success was
 true, but HTTP 202 and one Markdown character rejected source admission. No

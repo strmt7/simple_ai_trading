@@ -1,0 +1,82 @@
+{
+  "cases": [
+    {
+      "arithmetic_mean": {
+        "denominator": "1",
+        "numerator": "100"
+      },
+      "base_quantity": "1",
+      "call_on_mean_gross": {
+        "denominator": "1",
+        "numerator": "0"
+      },
+      "common_mean_gross_total": {
+        "denominator": "1",
+        "numerator": "200"
+      },
+      "earlier_identical_positive_index_values": 1799,
+      "earlier_index": {
+        "denominator": "1799",
+        "numerator": "179600"
+      },
+      "invalid_assumed_width_floor": "200",
+      "last_index": {
+        "denominator": "1",
+        "numerator": "400"
+      },
+      "lower_call_strike": "100",
+      "mixed_reference_gross_total": {
+        "denominator": "1",
+        "numerator": "0"
+      },
+      "name": "both_legs_zero",
+      "put_on_final_index_gross": {
+        "denominator": "1",
+        "numerator": "0"
+      },
+      "samples": 1800,
+      "upper_put_strike": "300"
+    },
+    {
+      "arithmetic_mean": {
+        "denominator": "1",
+        "numerator": "200"
+      },
+      "base_quantity": "1",
+      "call_on_mean_gross": {
+        "denominator": "1",
+        "numerator": "100"
+      },
+      "common_mean_gross_total": {
+        "denominator": "1",
+        "numerator": "200"
+      },
+      "earlier_identical_positive_index_values": 1799,
+      "earlier_index": {
+        "denominator": "1799",
+        "numerator": "359790"
+      },
+      "invalid_assumed_width_floor": "200",
+      "last_index": {
+        "denominator": "1",
+        "numerator": "210"
+      },
+      "lower_call_strike": "100",
+      "mixed_reference_gross_total": {
+        "denominator": "1",
+        "numerator": "190"
+      },
+      "name": "small_reference_gap",
+      "put_on_final_index_gross": {
+        "denominator": "1",
+        "numerator": "90"
+      },
+      "samples": 1800,
+      "upper_put_strike": "300"
+    }
+  ],
+  "market_observations": 0,
+  "qualified_edge": false,
+  "schema": "conditional-settlement-reference-counterexamples-v1",
+  "scope": "Constructed positive index paths only. Gross payouts, before entry/terminal costs. Final-index put is one literal interpretation of an ambiguous retained source, not a verified venue law."
+}

@@ -1,0 +1,65 @@
+{
+  "accepted_edge": false,
+  "admission": [
+    "Qualified robots policy or explicit 404/410 absence; matching user agent.",
+    "Actual HTTP 200, public connected peer, identity encoding, retained complete raw PDF.",
+    "Valid unencrypted PDF, exact complete native page coverage and substantive text.",
+    "Manual title, publisher, product, legal entity, effective-date and statement-scope review. Search snippets are not admitted terms."
+  ],
+  "base_head": "3d91ff2c4aa984e478e85d1c8d950f8afa8eb780",
+  "contract_sha256": "af644fea8fbcf367c269e51e8020102e9dc5ce68f71f0ada1ed6f07f8988161a",
+  "controller": {
+    "path": "tools/capture_crawl4ai_pdf.py",
+    "sha256": "bfdbad4ec9edf77f3f9a252f4a039cafd9fdb877b753959200387bfb41758d13"
+  },
+  "discovery_is_not_content_evidence": true,
+  "frozen_at_utc": "2026-11-10T03:42:07.566195+00:00",
+  "limits": {
+    "body_budget_seconds": 30,
+    "document_bytes": 8388608,
+    "document_requests_maximum": 1,
+    "maximum_pages": 64,
+    "minimum_characters_each_page": 20,
+    "minimum_total_markdown_characters": 1000,
+    "overflow_bytes_retained": 1,
+    "owned_process_deadline_seconds": 150,
+    "redirects": 0,
+    "retries": 0,
+    "robots_bytes": 524288,
+    "robots_requests": 1,
+    "socket_connect_seconds": 10,
+    "socket_read_seconds": 10
+  },
+  "native_fixture_qualification": {
+    "cases": 8,
+    "passed": true,
+    "path": "data/research/2026-11-10-option-legal/supervised-controls/summary.json",
+    "sha256": "01ebc5c55e3f818e455ceba5916f8e44fd3f9322dbad91864077dd451c549c56"
+  },
+  "private_plan_sha256": "e827fd6c85031a7189711f7a2aff94e136fdbf9becb359e66524ed66aea4adc4",
+  "profitability_claim": false,
+  "provenance_lookup": {
+    "coverage_limit": "Documentation and structured research journals/results/contracts only; one unrelated oversize NFL result, raw bodies, immutable archived objects and external caches excluded. No global unused-source claim.",
+    "matching_records": 0,
+    "path": "data/research/2026-11-10-option-legal/pdf-url-provenance.json",
+    "scanned_files": 3055,
+    "sha256": "678e242cad97abf759587cb32a04e09a6a86cf6ed914cb9e751ac10740e183c8"
+  },
+  "provider": {
+    "optional_lock_sha256": "84d4380aa5373b285f3701bd65050d422933b81b8dbcb03e2c9c699b123b7bfb",
+    "optional_parser": "pypdf==7.0.0",
+    "read_only_verification_sha256": "e1a4b662f90f9b8bf221a2b7fbeb47eefa05ed0ade78e11fc4315c64f7b384bb",
+    "runtime_manifest_sha256": "07c8f3420b8339ca212c3bd6951b5d945588f5bfbb76c41eec93938b6cecfdb2",
+    "version": "0.9.5+flitzzip.portable2"
+  },
+  "question": "Does the official January 2026 Binance Options Contract Specifications establish the settlement, fully paid buyer treatment and fee-law scope needed for the distinct two-long-option cash-floor hypothesis?",
+  "rationale": "Distinct primary legal specification after preserved failed FAQ captures, under explicit session delegation for routine public source decisions. Not a retry of consumed financial populations.",
+  "schema_version": "one-use-native-pdf-source-contract-v1",
+  "scope": "One public legal PDF and its robots policy only; no discovery pagination, other legal documents, market metadata, quotes, accounts or orders.",
+  "terminal_rule": "Any failure consumes this exact source attempt; retain evidence, no alias, redirect follow, retries, challenge bypass or dependent prices. Successful extraction permits legal review only, not economic access or edge promotion.",
+  "url": "https://bin.bnbstatic.com/static/cms/cg08ou2ak0tn7mcplvfg/file/443bcc67fde7274898ff8e3f7af23c7d89e654c5e609d250772e0ddaa96409be.pdf",
+  "worker": {
+    "path": "tools/crawl4ai_pdf_source.py",
+    "sha256": "329a49e7c30ddf403d0df47db05f2721637e85b09539057063ecf6bb7d1e6824"
+  }
+}

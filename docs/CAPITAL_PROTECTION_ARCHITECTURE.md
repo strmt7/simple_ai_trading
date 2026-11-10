@@ -90,6 +90,24 @@ Safeguards are core requirements during development, not an afterthought once
 edge research ends. They reduce operational risk; they cannot guarantee capital
 against gaps, illiquidity, exchange failure, custody loss, or every outage.
 
+## Contractual payoff and forced-close conditions
+
+The [primary option-terms review](review/2026-11-10/pdf-source/review.md) identifies
+long liquidation after other short losses, ADL against profitable opposing
+positions, fee changes and possible alternative-asset settlement. An all-state
+arithmetic payout is conditional on retaining the exact rights through exercise;
+fully paid premium or account segregation alone does not prove that condition.
+The source's common call/put settlement reference also remains unresolved.
+
+Future model admission and durable risk policy must bind authoritative reference
+rules, effective terms, fee units and settlement asset. Changed or ambiguous terms
+must suspend new exposure and quarantine affected model claims until reviewed.
+Involuntary close/ADL, unexpected asset credits and fee debt require retained
+native events and position/cash reconciliation before rearm. Preserve owned
+reduction and operator Stop. These are outstanding requirements, not implemented
+event handling, venue eligibility or a capital guarantee. Do not encode one
+document's fee numbers, campaign terms or workstation settings as runtime defaults.
+
 ## What the current code actually establishes
 
 The September 8 [order-response binding repair](review/2026-09-08/binance-order-response-binding.md)
