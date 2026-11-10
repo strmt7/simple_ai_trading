@@ -31,7 +31,7 @@ dependencies = [
 gpu = [
     "safetensors==0.8.0",
     "torch==2.15.0",
-    "filelock>=4.2.1",
+    "filelock>=4.2.10",
     "setuptools>=84.2.1",
 ]
 directml = [
@@ -47,21 +47,21 @@ microstructure = [
     # Bokeh's image dependency must also be patched for non-uv installs.
     "pillow>=13.0.0,<14",
     # Include the current server fixes for non-uv installs as well.
-    "tornado==6.6",
+    "tornado==6.6.1",
 ]
 reporting = [
     "matplotlib==3.11.2",
     "pillow>=13.0.0,<14",
 ]
 polymarket-live = [
-    "polymarket-client==0.17.0",
+    "polymarket-client==0.18.0",
     "py-clob-client-v2==1.2.1",
     "msgpack>=1.2.3,<2",
 ]
 foundation-ai = [
     "einops==0.8.2",
     "huggingface_hub==2.4.0",
-    "filelock>=4.2.1",
+    "filelock>=4.2.10",
     "pandas>=2.2,<4",
     "safetensors==0.8.0",
     "tqdm>=4.67,<5",

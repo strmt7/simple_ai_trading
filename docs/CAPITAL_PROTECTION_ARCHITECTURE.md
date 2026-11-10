@@ -1,5 +1,13 @@
 # Capital protection and final release verification
 
+The [local fee-asset grants](review/2026-11-10/roundtrip-fee-grants/review.md)
+add explicit third-asset units to the roundtrip journal. Both legs share those
+units; mixed discount/received-asset fees preserve the net receipt cap. All 435
+final affected checks pass. Excess observed debits stay UNKNOWN, but may already
+have occurred at the exchange: grants do not enforce native fee caps or qualify
+wallet ownership, availability or FX. The command remains unwired; native
+admission, partial recovery/rearm and independent storage/supervision remain open.
+
 The [local shared runtime control](review/2026-11-10/shared-runtime-control/review.md)
 extracts the Polymarket lease, pause, Stop and dispatch interlock into one neutral
 core. Its Polymarket adapter preserves existing storage and public interfaces;

@@ -1,0 +1,69 @@
+{
+  "accepted_edge": false,
+  "authority": {
+    "account_requests": 0,
+    "actual_user_ledgers_migrated": 0,
+    "credentials_used": false,
+    "market_requests": 0,
+    "model_fits": 0,
+    "orders": 0,
+    "persistent_tasks_installed": 0
+  },
+  "base_head": "eeadcb1882a27cc8a3017f02670317fc7abbeeb2",
+  "checks": {
+    "benchmark_claim": false,
+    "full_pytest_or_coverage_run": false,
+    "ruff_passed": true
+  },
+  "created_at_utc": "2026-11-10T06:38:21.415229+00:00",
+  "current_source_canonical_LF_sha256": {
+    "src/simple_ai_trading/binance_spot_roundtrip_intents.py": "8eef57ee357053dcc5b0a3adde3f3114da175aaa6a055cd38198599932303234",
+    "tests/test_spot_roundtrip_intents.py": "69e781c6a18a467e0bbc028028ea05eabfffda1c34a87fbd74ffc0bb91b8e55b"
+  },
+  "goal_complete": false,
+  "local_unpublished_at_recording": true,
+  "profitability_claim": false,
+  "registered_counts": {
+    "hypotheses": 65,
+    "observations": 204,
+    "qualified_stable_edges": 0,
+    "scoped_mechanisms": 37
+  },
+  "result_sha256": "e1ec155eccb255d0370ab11cb84168a782636e914354429e7e08b3eaf673de5c",
+  "schema": "local-roundtrip-fee-asset-grants-v1",
+  "semantics": {
+    "actual_wallet_ownership_balances_fx_or_fee_freshness_qualified": false,
+    "both_legs_share_one_fee_grant": true,
+    "complete_implies_flat_wealth_or_profit": false,
+    "execution_namespace_version": 4,
+    "explicit_third_asset_units_retained": true,
+    "extended_payload_format": 2,
+    "legacy_format_1_request_fields_preserved": true,
+    "mixed_received_and_discount_asset_fees_supported": true,
+    "native_cli_wired": false,
+    "native_exchange_fee_cap_enforced": false,
+    "positive_unallocated_or_overrun_fee_clears_unknown": false
+  },
+  "test_lane": {
+    "errors": 0,
+    "failures": 0,
+    "log_sha256": "06431a7ab2a0479501f297e5077f93c0831628b9a654d4ff56588d8c76d38e37",
+    "skipped": 0,
+    "source_receipt_sha256": "adbf633432b25c1b96a57b269e692234d0a34e931b5a4ad677fa65c6421be40a",
+    "source_snapshot": "data/research/2026-11-10-roundtrip-fee-grants-0630/phase-01-source",
+    "source_snapshot_created_before_launch_at_utc": "2026-11-10T06:31:37.949442+00:00",
+    "test_modules": [
+      "tests/test_spot_roundtrip_intents.py",
+      "tests/test_binance_open_intents.py",
+      "tests/test_binance_scope_enrollment.py",
+      "tests/test_binance_close_intents.py",
+      "tests/test_position_transactions.py",
+      "tests/test_spot_quote_order_binding.py",
+      "tests/test_binance_order_responses.py",
+      "tests/test_autonomous_spot_cash.py"
+    ],
+    "tests": 435,
+    "unchanged_test_and_production_dependencies_bound_to_base_head": true,
+    "xml_sha256": "23e7d66d2a3e25dc76d8722cf32e2457a2592a2fa339e63c67cd2238e13ae3db"
+  }
+}

@@ -32,6 +32,14 @@ exact canonical contracts and the current registry control conflicts.
 - Batch coherent, substantive local changes before publishing. Do not push
   routine status updates or every small checkpoint; follow explicit user
   publication requests and preserve reviewable local evidence between pushes.
+- Report alert inventory separately from scanner execution and coverage. An
+  authenticated, complete empty alert response means zero currently open alerts,
+  not a fresh successful scan or zero vulnerabilities. Distinguish exhausted
+  service quota, API rate limits, disabled/stale analysis and successful analysis;
+  retain the exact status and source time. On an explicit quota-exhaustion result,
+  skip dependent scans and retries until the provider's reset or independently
+  verified availability change. Do not spend retries or infer a reset from time
+  alone; continue independent dependency/source work. Unknown quota stays unknown.
 
 ## Portable paths and publication privacy
 
@@ -65,6 +73,11 @@ exact canonical contracts and the current registry control conflicts.
   It rejects new workstation-path candidates and private migration content;
   values are withheld from its diagnostics. It is a publication gate, not proof
   that old history or every possible binary artifact is free of private data.
+- When either canonical research ledger changes, run
+  `uv run --no-sync python -m tools.verify_research_registry_binding` before
+  publication. Both self-hashes, the registry/audit cross-binding, unique census
+  identities and scope classification must agree. This structural check does
+  not qualify profitability; preserve historical source phases and decisions.
 - Follow [historical storage guidance](docs/RESEARCH_STORAGE.md) for portable
   input resolution, low-I/O relocation and separate verified source retirement.
 
@@ -370,6 +383,12 @@ result and all other consumed populations, including WNBA September 3-9.
   URL provenance lookup must include result and journal records, not only files
   named as contracts. A filename-limited search cannot prove a source is unused;
   preserve and disclose that coverage limit rather than inferring novelty.
+  Deduplicate a publisher's stable article identifier across locale URLs before
+  opening or crawling it. A repeated tutorial cannot reconcile contradictory
+  governing rules; seek an authoritative correction and effective version.
+  Keep private provenance lookup to relevant plan, contract, result and journal
+  metadata. Exclude protected roots, raw datasets and installed environments
+  before opening files; do not broadly traverse their contents for URL lookup.
 
 ## Working Method
 
@@ -392,6 +411,9 @@ and verify reproducibly. Do not load upstream `EXAMPLES.md`.
    and print selected scalar fields instead. PowerShell does not expand globs
    for `rg` path arguments; use `rg -g '<pattern>' <directory>` or `rg --files`.
    Triage alone still cannot authorize capture.
+   Separate schema/length inspection from value reads. Cap serialized output
+   before printing; do not dump a large field in the same call that first
+   discovers its size or rely on tool truncation to bound a compact JSON value.
 4. Freeze causal inputs, costs, roles, rejection gates, and test access before
    viewing a new model outcome.
    Before a multi-request public screen, validate parsing and aggregation on one
@@ -431,6 +453,10 @@ and verify reproducibly. Do not load upstream `EXAMPLES.md`.
    runtime, dependency, or module-path difference after freezing evidence. If a
    pre-main import still fails, journal it as a local unconsumed preflight error
    before any corrected invocation.
+   Set Windows controller UTF-8 explicitly (`-X utf8`) and declare artifact
+   encodings in readers; never depend on the host's default code page. Probe
+   optional diagnostic imports before using them, or use bounded native read-only
+   counters without installing another dependency for a one-off host check.
 9. Before adding a runner at a reusable-looking path, check path ownership with
    `git ls-files --error-unmatch <path>`. Never replace a tracked generic runner
    with a one-event implementation: pass it a new frozen contract or use a

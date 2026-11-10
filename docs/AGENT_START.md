@@ -7,7 +7,7 @@ The full R&D, application revamp and final-review goal remains active.
 
 ## Mandatory boundaries
 
-- Financial counts: 204 observations / 65 hypotheses / 37 scoped mechanisms /
+- Financial counts: 205 observations / 65 hypotheses / 37 scoped mechanisms /
   **0 qualified stable edges**. Historical scoped results are not deployable
   profit. Reverify live state before relying on it.
 - Prioritize sound recurring after-cost cashflows, executable payoff identities,
@@ -29,6 +29,9 @@ The full R&D, application revamp and final-review goal remains active.
   tasks untouched; defer timing only when contention materially affects it.
 - Follow [connector-only publication](AI_COMMIT_IDENTITY.md). Batch substantive
   work; no invented attribution, extra PR, release or release tag.
+- Separate alert counts from scanner coverage and quota. Explicit exhausted
+  quota means skip dependent scans and retries until verified availability;
+  empty alert lists do not prove a fresh successful scan.
 
 ## Navigation and history
 

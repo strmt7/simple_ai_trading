@@ -3,6 +3,8 @@
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import replace
 from decimal import Decimal, localcontext
+from fractions import Fraction
+import json
 from pathlib import Path
 import sqlite3
 import sys
@@ -21,6 +23,7 @@ from simple_ai_trading.binance_open_intents import (
 from simple_ai_trading.binance_spot_roundtrip_intents import (
     SpotRoundtripJournal,
     SpotRoundtripRequest,
+    _validate_record,
 )
 from simple_ai_trading.binance_close_intents import prepare_close
 from simple_ai_trading.positions import OpenPosition, PositionsStore
@@ -598,3 +601,174 @@ os._exit(23)
     assert (
         journal(tmp_path).journal.entry_block_reason() == "unresolved_spot_roundtrip=1"
     )
+
+
+@pytest.mark.parametrize("mode", ["buy-sell", "sell-buy"])
+def test_explicit_fee_asset_units_survive_both_legs_and_restart(tmp_path, mode):
+    req = request(mode, fee_asset_allocations=(("BNB", "0.003"),))
+    j = journal(tmp_path)
+    j.prepare(req, scope=SCOPE)
+    prepared = j.pending(scope=SCOPE)[1]
+    assert prepared["format"] == 2
+    assert prepared["request"]["fee_asset_allocations"] == [["BNB", "0.003"]]
+    record(j, req, receipt(req, fee="0.001", fee_asset="BNB"))
+    j = journal(tmp_path)
+    second(j, req, "1" if mode == "buy-sell" else "100")
+    record(
+        j,
+        req,
+        receipt(
+            req,
+            first=False,
+            amount="1" if mode == "buy-sell" else "100",
+            fee="0.002",
+            fee_asset="BNB",
+            order_id=43,
+        ),
+        first=False,
+    )
+    revision, _ = j.pending(scope=SCOPE)
+    j.complete(req.operation_id, scope=SCOPE, expected_revision=revision)
+    assert journal(tmp_path).pending(scope=SCOPE) is None
+    completed = journal(tmp_path).operation(req.operation_id, scope=SCOPE)
+    restored = _validate_record(completed)
+    assert restored == req
+    assert restored.allocations["BNB"] == Fraction(3, 1000)
+    assert completed["first"]["fills"][0]["commission"] == "0.001"
+    assert completed["second"]["fills"][0]["commission"] == "0.002"
+
+
+@pytest.mark.parametrize("first", [True, False])
+def test_fee_debits_share_one_allocation_and_cannot_clear_unknown_after_overrun(
+    tmp_path, first
+):
+    req = request(fee_asset_allocations=(("BNB", "0.001"),))
+    j = journal(tmp_path)
+    j.prepare(req, scope=SCOPE)
+    if not first:
+        record(j, req, receipt(req, fee="0.001", fee_asset="BNB"))
+        second(j, req, "1")
+    before = j.pending(scope=SCOPE)
+    with pytest.raises(OpenIntentError, match="allocated assets"):
+        record(
+            j,
+            req,
+            receipt(
+                req,
+                first=first,
+                amount=None if first else "1",
+                fee="0.002" if first else "0.001",
+                fee_asset="BNB",
+                order_id=42 if first else 43,
+            ),
+            first=first,
+        )
+    assert j.pending(scope=SCOPE) == before
+    assert j.journal.entry_block_reason() == "unresolved_spot_roundtrip=1"
+
+
+def test_split_fill_fee_fallback_preserves_net_received_second_principal(tmp_path):
+    req = request(fee_asset_allocations=(("BNB", "0.002"),))
+    j = journal(tmp_path)
+    j.prepare(req, scope=SCOPE)
+    observed = receipt(req)
+    original = observed["fills"][0]
+    observed["fills"] = [
+        {**original, "qty": "0.4", "commissionAsset": "BNB", "commission": "0.0004"},
+        {
+            **original,
+            "qty": "0.6",
+            "commissionAsset": "BTC",
+            "commission": "0.0006",
+            "tradeId": 43,
+        },
+    ]
+    record(j, req, observed)
+    before = j.pending(scope=SCOPE)
+    with pytest.raises(OpenIntentError, match="first-leg owned receipts"):
+        second(j, req, "1")
+    assert j.pending(scope=SCOPE) == before
+    second(j, req, "0.9994")
+    record(
+        j,
+        req,
+        receipt(
+            req,
+            first=False,
+            amount="0.9994",
+            quantity="0.9994",
+            fee="0.001",
+            fee_asset="BNB",
+            order_id=44,
+        ),
+        first=False,
+    )
+    assert j.pending(scope=SCOPE)[1]["phase"] == "SECOND_TERMINAL"
+
+
+@pytest.mark.parametrize(
+    "grants",
+    [
+        [],
+        (("BNB", "0.001"), ["X", "1"]),
+        (("BNB",),),
+        (("BTC", "1"),),
+        (("USDC", "1"),),
+        (("bnb", "1"),),
+        (("BNB", "1"), ("BNB", "2")),
+        (("ZZZ", "1"), ("BNB", "1")),
+        (("BNB", 0.001),),
+        (("BNB", "-1"),),
+        (("BNB", "1e-3"),),
+        (("BNB", "NaN"),),
+        (("BNB", None),),
+        tuple((f"X{i:02}", "1") for i in range(17)),
+    ],
+)
+def test_fee_allocations_require_immutable_canonical_exact_units(grants):
+    with pytest.raises(OpenIntentError):
+        request(fee_asset_allocations=grants)
+
+
+def test_zero_fee_allocation_is_not_permission_for_a_positive_debit(tmp_path):
+    req = request(fee_asset_allocations=(("BNB", "0"),))
+    j = journal(tmp_path)
+    j.prepare(req, scope=SCOPE)
+    with pytest.raises(OpenIntentError, match="allocated assets"):
+        record(j, req, receipt(req, fee="0.00000001", fee_asset="BNB"))
+    assert j.pending(scope=SCOPE)[1]["phase"] == "FIRST_UNKNOWN"
+
+
+def test_no_extra_grants_preserves_legacy_record_format_and_fields(tmp_path):
+    req = request()
+    j = journal(tmp_path)
+    j.prepare(req, scope=SCOPE)
+    value = j.pending(scope=SCOPE)[1]
+    assert value["format"] == 1
+    assert "fee_asset_allocations" not in value["request"]
+    assert _validate_record(value) == req
+
+
+@pytest.mark.parametrize(
+    "change",
+    [
+        {"format": 1},
+        {"fee_asset_allocations": []},
+        {"fee_asset_allocations": {}},
+        {"fee_asset_allocations": ["BNB", "1"]},
+        {"fee_asset_allocations": [["BNB", "1", "foreign"]]},
+        {"fee_asset_allocations": [["BNB", 0.001]]},
+        {"fee_asset_allocations": [["BTC", "1"]]},
+    ],
+)
+def test_stored_fee_grants_cannot_be_guessed_or_mislabelled(tmp_path, change):
+    req = request(fee_asset_allocations=(("BNB", "0.003"),))
+    j = journal(tmp_path)
+    j.prepare(req, scope=SCOPE)
+    value = json.loads(json.dumps(j.pending(scope=SCOPE)[1]))
+    if "format" in change:
+        value.update(change)
+    else:
+        value["request"].update(change)
+    with pytest.raises(OpenIntentError):
+        _validate_record(value)

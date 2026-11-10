@@ -9,7 +9,7 @@ Neither partial verification nor an administrative checkpoint completes it.
 
 ## Current decision
 
-Financial counts are **204 observations / 65 hypotheses / 37 scoped mechanisms
+Financial counts are **205 observations / 65 hypotheses / 37 scoped mechanisms
 / 0 qualified stable edges**. Favor recurring net cash and sound payoff identities;
 expiring promotions and larger datasets alone are not the objective. Use the full
 [revamp work map](REVAMP_2026_11_09.md) and [work priorities](WORK_PRIORITIES.md).
@@ -26,6 +26,17 @@ current full-suite failure count without rerunning the appropriate scope.
 
 ## Financial and source frontier
 
+- [NYC November 11 frontier](review/2026-11-10/nyc-nov11-frontier/review.md)
+  completed one prospectively frozen public event GET: all 11 expected markets,
+  18 price-complete package rows and zero gross or fee/tick survivors. The best
+  finite stressed floor lost 0.09540 pUSD at five shares; two unavailable NO
+  quotes stay missing. No books, fee endpoints or account work followed, and
+  this exact event is consumed. Rational totals and 171 native decimal values
+  reconcile. Registration also repaired a pre-existing registry/audit
+  cross-binding drift while preserving every original terminal field and the
+  zero-qualified-edge classification. A new read-only binding/census guard has
+  21 passing focused checks. This checkpoint raises terminal observations to
+  205; they do not qualify a stable edge or complete the full financial audit.
 - [Fully paid long-option research](review/2026-11-10/fully-paid-options/review.md)
   adds an exact supplied-law payout floor for a lower-strike long call plus a
   higher-strike long put. Capped exercise fees can put the minimum between the
@@ -139,6 +150,13 @@ capital before expanding fits. Actual backend/precision, useful dataset coverage
 and measured bottlenecks determine GPU work; do not disturb other host tasks.
 LLMs may veto/reduce risk, never bypass deterministic Stop/ownership/close controls.
 
+The [current governing-terms routing attempt](review/2026-11-10/inverse-term-routing/review.md)
+failed HTTP 202 with one extracted character after strict robots admission.
+It supplies no correction or effective-version evidence for the inverse clearing
+sign conflict. Old tutorials/PDFs were not retried, and no economic follow-up
+occurred. Reuse the conditional model; do not repeat generic PnL tutorials or
+infer current legal applicability from search snippets.
+
 ## Platform work and publication
 
 - [Model selection integrity](review/2026-11-10/selection-risk-integrity/review.md)
@@ -186,11 +204,11 @@ LLMs may veto/reduce risk, never bypass deterministic Stop/ownership/close contr
   reader through the existing GET transport. All 230 final focused cases pass,
   with pre-launch source snapshots. Rates/side terms, flags and charge multiplier
   remain exact; no fictional rate is a runtime default. The prior 407-case
-  journal result retains its earlier source phase. Native fee-asset grants and
-  balance/freshness evidence remain open. Current Stop/lease/dispatch machinery
-  is Polymarket-specific; Binance's state-file control is not equivalent. Extract
-  a proper shared control boundary before wiring the roundtrip's two writes;
-  independent supervision and receipt/partial recovery remain required. No native
+  journal result retains its earlier source phase. Native ownership, balance and
+  freshness evidence remain open. At that phase Stop/lease/dispatch machinery
+  was Polymarket-specific; Binance's state-file control is not equivalent. The
+  shared-core checkpoint below addresses that architecture boundary. Native
+  integration, independent supervision and receipt/partial recovery remain required. No native
   account/order, training or market sample followed.
 - [Shared runtime control](review/2026-11-10/shared-runtime-control/review.md)
   extracts one neutral lease/Stop/dispatch core with separate venue namespaces.
@@ -203,6 +221,15 @@ LLMs may veto/reduce risk, never bypass deterministic Stop/ownership/close contr
   and the roundtrip remain unwired; fee-asset admission, recovery/rearm,
   independent storage identity and session supervision remain open. No native
   account/order or persistent worker was used.
+- [Fee-asset grants](review/2026-11-10/roundtrip-fee-grants/review.md)
+  extend the journal with exact third-asset allocations shared by both legs,
+  mixed received/discount-asset fees and explicit format-2 records. Legacy
+  format-1 fields remain unchanged. All 435 final affected checks pass with
+  pre-launch source snapshots. An observed overrun stays UNKNOWN; a grant is
+  neither wallet ownership nor a native exchange fee cap. Balance/fee/FX
+  admission, command/runtime integration, recovery/rearm, independent storage
+  identity and supervision remain open. No account, order, model fit or market
+  sample followed.
 - [Owned Binance CLI execution](review/2026-11-10/binance-owned-cli/review.md) now
   shares the autonomous write-ahead opening/closing flow and returns typed raw-ack
   outcomes. Entry, normal and emergency close bind scope before dispatch; real
@@ -253,6 +280,15 @@ LLMs may veto/reduce risk, never bypass deterministic Stop/ownership/close contr
   scopes. Readback at 16:57 UTC November 9 confirmed all 17 audited Dependabot
   alerts fixed, no open alerts/PRs and no public releases/tags. Other hosted
   quality findings, comprehensive security acceptance and final review remain open.
+- [Current dependency compatibility](review/2026-11-10/dependencies/review.md)
+  updates polymarket-client to 0.18.0, Tornado to 6.6.1 and filelock to 4.2.10.
+  A fresh isolated runtime passes dependency/lock/import/CLI and the recorded
+  focused checks. Existing ready environments remain unchanged. The API lists
+  zero open alerts/PRs at capture; this is inventory, not fresh scanner coverage
+  or zero vulnerabilities. Quota availability remains unknown. Explicit quota
+  exhaustion stops dependent scans and retries until verified availability.
+  No release workflow, tag, draft or release is authorized. After publication,
+  reassess the exact committed product gaps before the next development round.
 - Normal commits use only the official GitHub connector's assigned attribution
   and expected-head leases; see [identity rules](AI_COMMIT_IDENTITY.md). The
   authorized historical cleanup preserves every tree and original result identity

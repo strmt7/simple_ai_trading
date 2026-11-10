@@ -1,0 +1,67 @@
+{
+  "accepted_edge": false,
+  "admission": {
+    "effective_http_status": 200,
+    "minimum_markdown_characters": 2000,
+    "native_error_empty": true,
+    "native_success": true,
+    "only_two_predeclared_final_urls": true,
+    "reject_empty_challenge_wrong_document": true,
+    "required_terms": [
+      "clearing procedures",
+      "binance rch",
+      "clearing rules"
+    ]
+  },
+  "allowed_final_urls": [
+    "https://www.binance.com/en-JP/terms",
+    "https://www.binance.com/en/terms"
+  ],
+  "authority": {
+    "account_requests": false,
+    "credential_use": false,
+    "market_requests": false,
+    "orders": false,
+    "persistent_tasks": false,
+    "protected_partial_access": false
+  },
+  "base_head": "eeadcb1882a27cc8a3017f02670317fc7abbeeb2",
+  "contract_sha256": "dde31deb9206a52f9c4105d04d5fe393e3cc366a11df2e2d748724c72add2437",
+  "controller_sha256": "9aeb54b07f3623cedf8f9386a797f950d2c93070301961466c839036df4b16c0",
+  "frozen_at_utc": "2026-11-10T06:25:03.478719+00:00",
+  "limits": {
+    "native_document_navigations": 1,
+    "native_output_admission_maximum_bytes": 8388608,
+    "native_page_timeout_ms": 45000,
+    "native_retries": 0,
+    "native_robots_check": true,
+    "output_ceiling_is_not_hard_network_byte_cap": true,
+    "owned_native_child_timeout_seconds": 150,
+    "robots_body_deadline_seconds": 20,
+    "robots_maximum_bytes": 262144,
+    "robots_overflow_sentinel_bytes": 1,
+    "robots_socket_timeout_seconds": [
+      10,
+      10
+    ],
+    "strict_robots_prechecks": 1
+  },
+  "preflight_sha256": "264f07a65d1b1d3a3f4fa67a3bc70e83897b584fdff363c9885b18661937399d",
+  "private_intent_sha256": "39f09b9c4328a637552a5bab0f5b1b710701b2d9713bf5509edae754bdbbaf1c",
+  "profitability_claim": false,
+  "provenance_sha256": "e637e624ca5013aa9309e04753898bf8bd406f92ba26b75bf0480cd7a96d64bb",
+  "provider": {
+    "external_llm": false,
+    "new_isolated_browser_state": true,
+    "personal_profile": false,
+    "read_only_repair_and_dependency_verification_passed": true,
+    "stealth_or_challenge_bypass": false,
+    "version": "0.9.5+flitzzip.portable2"
+  },
+  "question": "Does the current primary Terms page identify a corrected/effective clearing-procedure document that can reconcile the retained section-80/86.2 inverse-PnL contradiction? This stage admits document routing only, never a tutorial as legal amendment.",
+  "schema": "current-governing-terms-document-routing-v1",
+  "shim_sha256": "f019c6e445af17431052613457f114e380f2dfa7735067e1ecaf31e97978a650",
+  "source_selection": "Exact en-JP Terms URL discovered in official-domain search. Terms scope and original/final URL must pass native admission; locale is not proof of account jurisdiction. Prior tutorial IDs were found and excluded before any page read.",
+  "terminal_rule": "Preserve any denial, timeout, source-scope or extraction failure; no native PDF, market, account or order follow-up. A successful Terms page may route a separately frozen, deduplicated primary document question; it does not resolve the legal sign or effective applicability by itself. No failed tutorial, old PDF or financial population is retried.",
+  "url": "https://www.binance.com/en-JP/terms"
+}

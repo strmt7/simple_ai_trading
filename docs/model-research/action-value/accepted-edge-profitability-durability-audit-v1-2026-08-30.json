@@ -158,7 +158,7 @@
       "why_not_stable_deployable": "Current rate remains conflict-qualified rather than proven, the evidence is from public wallets rather than the owned account, every external friction and best alternative is not bound, and future persistence is not guaranteed."
     }
   },
-  "result_sha256": "55b566da2a3073ba3cf76c56327e50d27479c2f6495b79b922bac11b3e8a5f4d",
+  "result_sha256": "a5e4e3108e56c7e0852d93eab700d5dde411ffa5da796ca632f7d295b7d31b96",
   "routing": {
     "october8_9_nfl_total_ladder_resource_failure": {
       "status": "terminal_resource_unqualified_no_price_evaluation",
@@ -305,13 +305,32 @@
       "book_requests": 0,
       "fee_requests": 0,
       "retry_rule": "Do not refetch, reprice, repair or book-capture this entire window or any returned sibling. This is a scoped gross-floor rejection, not family-wide impossibility or a guarantee about future states."
-    }
+    },
+    "registry_binding_reconciliation_2026_11_10": {
+      "previous_audit_bound_registry_sha256": "a855fe50efb4c0909b5657f97f2fc30497dc21254f29d8ec670ec8bcfcf0bbf3",
+      "previous_current_registry_sha256": "9be9da3c3fcbf68022836af7cbc97e8bba2b0d529216653ad34953a6e7cfac6e",
+      "intervening_changed_hypothesis_ranks": [
+        6,
+        13,
+        59
+      ],
+      "accepted_scope_roots_unchanged_since_previous_audit_binding": true,
+      "all_original_terminal_record_fields_and_result_ids_preserved": true,
+      "intervening_new_terminal_families": [
+        "binance_paradex_2025_calendar_year_conditional_funding_fully_funded_capital_rejection",
+        "binance_paradex_weekly_2026_09_07_through_2026_11_09_inventory_capped_source"
+      ],
+      "prior_terminal_successor_annotation_preserved": true,
+      "existing_classification_definitions_frontier_and_zero_qualified_decision_unchanged": true,
+      "not_a_complete_financial_reaudit_or_new_promotion": true
+    },
+    "polymarket_nyc_november11_frontier": "One prospectively frozen NYC November 11 Gamma GET returned event 1347307, HTTP 200, 90,246 bytes and exactly 11 markets. Eleven YES and nine NO acquisition proxies were price-complete. All 18 complete source rows failed the gross and configured-fee/one-tick gates. Best gross binary cost was 1.003 pUSD per share for a conditional one-pUSD floor; best finite stressed floor was negative 0.09540 pUSD at five shares. Both unavailable NO quotes remain missing, not free. No books, fee endpoints, on-chain, account, credential, order, model or protected capture followed. Exact event terminal without refetch, repricing, alias or missing-side repair; no qualified edge or family-wide negative-EV claim."
   },
   "schema_version": "accepted-edge-profitability-durability-audit-v1",
   "source_binding": {
     "accepted_edge_count": 37,
     "registry_path": "docs/model-research/structural-edge-priority-registry-v1.json",
-    "registry_result_sha256": "a855fe50efb4c0909b5657f97f2fc30497dc21254f29d8ec670ec8bcfcf0bbf3"
+    "registry_result_sha256": "761fdbeb147adffa6734320e869a588789d5485801794adbe6c2bccccc6892de"
   },
-  "updated_at_utc": "2026-11-09T08:53:08Z"
+  "updated_at_utc": "2026-11-10T07:08:01.671283+00:00"
 }

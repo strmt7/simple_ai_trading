@@ -1,0 +1,41 @@
+{
+  "recorded_at_utc": "2026-11-10T07:08:01.671283+00:00",
+  "before": {
+    "registry": "9be9da3c3fcbf68022836af7cbc97e8bba2b0d529216653ad34953a6e7cfac6e",
+    "audit": "55b566da2a3073ba3cf76c56327e50d27479c2f6495b79b922bac11b3e8a5f4d",
+    "audit_bound_registry": "a855fe50efb4c0909b5657f97f2fc30497dc21254f29d8ec670ec8bcfcf0bbf3",
+    "observations": 204
+  },
+  "after": {
+    "validation_kind": "registry_binding_and_recorded_census_only",
+    "observations": 205,
+    "hypotheses": 65,
+    "scoped_mechanisms": 37,
+    "recorded_qualified_stable_edges": 0,
+    "registry_sha256": "761fdbeb147adffa6734320e869a588789d5485801794adbe6c2bccccc6892de",
+    "audit_sha256": "a5e4e3108e56c7e0852d93eab700d5dde411ffa5da796ca632f7d295b7d31b96",
+    "profitability_qualification_supplied_by_verifier": false
+  },
+  "reconciliation": {
+    "previous_audit_bound_registry_sha256": "a855fe50efb4c0909b5657f97f2fc30497dc21254f29d8ec670ec8bcfcf0bbf3",
+    "previous_current_registry_sha256": "9be9da3c3fcbf68022836af7cbc97e8bba2b0d529216653ad34953a6e7cfac6e",
+    "intervening_changed_hypothesis_ranks": [
+      6,
+      13,
+      59
+    ],
+    "accepted_scope_roots_unchanged_since_previous_audit_binding": true,
+    "all_original_terminal_record_fields_and_result_ids_preserved": true,
+    "intervening_new_terminal_families": [
+      "binance_paradex_2025_calendar_year_conditional_funding_fully_funded_capital_rejection",
+      "binance_paradex_weekly_2026_09_07_through_2026_11_09_inventory_capped_source"
+    ],
+    "prior_terminal_successor_annotation_preserved": true,
+    "existing_classification_definitions_frontier_and_zero_qualified_decision_unchanged": true,
+    "not_a_complete_financial_reaudit_or_new_promotion": true
+  },
+  "new_terminal_family": "polymarket_nyc_november11_complete_long_only_frontier",
+  "original_registry_and_audit_bytes_preserved_privately": true,
+  "individual_file_replacement_atomic_but_two_file_update_not_atomic": true,
+  "readback_crossbinding_verified": true
+}

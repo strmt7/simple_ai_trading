@@ -1,0 +1,153 @@
+{
+  "arithmetic_audit": {
+    "fee_law_or_complete_resolution_proof_supplied_by_this_audit": false,
+    "native_decimal_values_unchanged_by_frozen_parser": true,
+    "native_json_decimal_values_compared": 171,
+    "new_requests": 0,
+    "raw_sha256": "a8adde859c8dd4a5362fc11e8b7a6e6a86bc0623591c284cd312ad0ba6aa93ed",
+    "rows_reconciled_with_fraction_arithmetic": 18,
+    "source_rows_repriced_with_new_values_or_thresholds": false
+  },
+  "authority": {
+    "account_requests": 0,
+    "benchmarks": 0,
+    "book_requests": 0,
+    "credential_use": false,
+    "fee_endpoint_requests": 0,
+    "model_fits": 0,
+    "onchain_requests": 0,
+    "orders": 0,
+    "persistent_tasks_installed": 0,
+    "protected_capture_access": false,
+    "public_native_event_requests": 1
+  },
+  "base_head": "eeadcb1882a27cc8a3017f02670317fc7abbeeb2",
+  "binding_guard": {
+    "actual_repaired_ledgers": {
+      "audit_sha256": "a5e4e3108e56c7e0852d93eab700d5dde411ffa5da796ca632f7d295b7d31b96",
+      "hypotheses": 65,
+      "observations": 205,
+      "profitability_qualification_supplied_by_verifier": false,
+      "recorded_qualified_stable_edges": 0,
+      "registry_sha256": "761fdbeb147adffa6734320e869a588789d5485801794adbe6c2bccccc6892de",
+      "scoped_mechanisms": 37,
+      "validation_kind": "registry_binding_and_recorded_census_only"
+    },
+    "before_reconciliation_proof_sha256": "a90efdeb258b0ba24e92028c008027e9624ae506b873274b5d26fc91b7a7210a",
+    "current_source_canonical_LF_sha256": {
+      "tests/test_research_registry_binding.py": "6e35de9b939fe271e49b739f5f93fb473eec54daa3ffbb43017b3f20799f9827",
+      "tools/verify_research_registry_binding.py": "ad4734e2f3ebf997045d9c7b2438bc49812caab5a0bf686b88e1a1fe555a467e"
+    },
+    "log_sha256": "01864cbba6a730719323c33d0b29d756a17b4492019b74d89b8c8b00a2325a44",
+    "profitability_qualification": false,
+    "source_receipt_sha256": "59d3196d5226e31ace866fdde6dd1a8ee03e8382f1a4114a49f05ee9c7e11682",
+    "source_snapshot_captured_before_launch_at_utc": "2026-11-10T07:10:13.796023+00:00",
+    "tests": {
+      "errors": 0,
+      "failures": 0,
+      "skipped": 0,
+      "tests": 21
+    },
+    "xml_sha256": "1686b6f9535bee65b1019689458dfe50aa437adde51f5833c6f4bb4a1c9278f3"
+  },
+  "captured_result_copied_without_changes": true,
+  "captured_result_sha256": "5cbe00a879162d27f0ff4f974001b528bb071c7bebece873900549a7594ff26e",
+  "checks": {
+    "current_event_resampled": false,
+    "historical_result_bytes_modified": false,
+    "old_market_populations_repriced": false,
+    "ruff_passed": true,
+    "whole_pytest_or_coverage_run": false
+  },
+  "contract_file_sha256": "09bd4ca318c646194df5b4e63cc44c21d39b83dbe74f1443194950dccfefce02",
+  "created_at_utc": "2026-11-10T07:17:00.995531+00:00",
+  "goal_complete": false,
+  "local_unpublished_at_recording": true,
+  "navigation": {
+    "actual_source_bound_semantic_receipts_retained": true,
+    "exact_live_registration_helpers_confirmed_terminal_list_census": true,
+    "index_is_current_after_new_tool_and_instruction_edits": false,
+    "initial_semantic_queries_did_not_identify_census_storage": true
+  },
+  "private_evidence": {
+    "arithmetic-audit.json": {
+      "bytes": 408,
+      "path": "data/research/2026-11-10-nyc-nov11-frontier-0650/arithmetic-audit.json",
+      "sha256": "077c81ca8376db7edec97b2a7d2bfcc3dc8ff174f2676b482e7167d809e0d646"
+    },
+    "audit-bound-registry.original.json": {
+      "bytes": 611381,
+      "path": "data/research/2026-11-10-nyc-nov11-frontier-0650/audit-bound-registry.original.json",
+      "sha256": "cec90096f62c8e6e7002b2dc469e0715f608dc600ce10e7c8260600761461bd7"
+    },
+    "audit-crossbinding-diagnosis.json": {
+      "bytes": 652,
+      "path": "data/research/2026-11-10-nyc-nov11-frontier-0650/audit-crossbinding-diagnosis.json",
+      "sha256": "68bc2acddacc0f5b87a3cec7c49786e5f5448b0312929b2b14fac43a7ad61561"
+    },
+    "capture.log": {
+      "bytes": 206,
+      "path": "data/research/2026-11-10-nyc-nov11-frontier-0650/capture.log",
+      "sha256": "e0d1cd80764ed1905e60a3131057308b19e241d5c77c6ebe83f5d6f00c276068"
+    },
+    "contract-preflight.log": {
+      "bytes": 164,
+      "path": "data/research/2026-11-10-nyc-nov11-frontier-0650/contract-preflight.log",
+      "sha256": "d12e13c10af29a2bc389d5695f1d0b3b1ba4417140ca9c4e67904b0cf2d52720"
+    },
+    "controller-terminal.json": {
+      "bytes": 360,
+      "path": "data/research/2026-11-10-nyc-nov11-frontier-0650/controller-terminal.json",
+      "sha256": "8e4561cb48fee0530388452237b5e125a1a48211de288153b0f0551c1aae825a"
+    },
+    "durability-before.json": {
+      "bytes": 73877,
+      "path": "data/research/2026-11-10-nyc-nov11-frontier-0650/durability-before.json",
+      "sha256": "2d8278d9f789fd9527efd71e1f3250148e546a93d4ee6700523de2e04a903224"
+    },
+    "ledger-index-refresh.log": {
+      "bytes": 393,
+      "path": "data/research/2026-11-10-nyc-nov11-frontier-0650/ledger-index-refresh.log",
+      "sha256": "17ca9bb172045ae91422edd80c8cbdcfb1a51c5006390ed688559e43a7f33f39"
+    },
+    "ledger-runtime-routing.log": {
+      "bytes": 5166,
+      "path": "data/research/2026-11-10-nyc-nov11-frontier-0650/ledger-runtime-routing.log",
+      "sha256": "41f0e3751f4e77d23aa572b7c7507a26ebddb320a2e87ec7e128294d80f4090e"
+    },
+    "ledger-semantic-routing.log": {
+      "bytes": 3710,
+      "path": "data/research/2026-11-10-nyc-nov11-frontier-0650/ledger-semantic-routing.log",
+      "sha256": "7144b99a66c04beca9708263159be88aed53aa9b2262ff398ba23d48ff8ccf4b"
+    },
+    "raw/event.json": {
+      "bytes": 90246,
+      "path": "data/research/2026-11-10-nyc-nov11-frontier-0650/raw/event.json",
+      "sha256": "a8adde859c8dd4a5362fc11e8b7a6e6a86bc0623591c284cd312ad0ba6aa93ed"
+    },
+    "registry-before.json": {
+      "bytes": 617476,
+      "path": "data/research/2026-11-10-nyc-nov11-frontier-0650/registry-before.json",
+      "sha256": "74d3ab6dd8499496e341705c0892b0879892f95a1e4a53c4c9f13319b57e6a9e"
+    },
+    "request-journal.jsonl": {
+      "bytes": 1027,
+      "path": "data/research/2026-11-10-nyc-nov11-frontier-0650/request-journal.jsonl",
+      "sha256": "092056259b1bff2985d7674b757ffa0916c4d61ef514100d1c6f67b8317a7bf6"
+    },
+    "retained-parser-preflight.json": {
+      "bytes": 314,
+      "path": "data/research/2026-11-10-nyc-nov11-frontier-0650/retained-parser-preflight.json",
+      "sha256": "86643d27b079cb1f07ff3a0a25c91da9c438e72887d547b21438a7122eb861f2"
+    },
+    "selection-and-provenance.json": {
+      "bytes": 837,
+      "path": "data/research/2026-11-10-nyc-nov11-frontier-0650/selection-and-provenance.json",
+      "sha256": "ff7226897197bf19cdca2b2076096958c035c875f09f62d28851a5f26366ade1"
+    }
+  },
+  "qualified_stable_edges": 0,
+  "registry_amendment_file_sha256": "a258f2c4beee26df8fdba4ac0b9e1d0a57ac2a5206170d0629565d01d275b95e",
+  "result_sha256": "7036a9828e7113dd6277d1e0c56e15ee85a5892185d322ee0d8431eebf2b4e8f",
+  "schema": "nyc-november11-source-and-registry-verification-v1"
+}

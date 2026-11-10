@@ -90,6 +90,7 @@ class SpotRoundtripRequest:
     first_amount: str
     initial_base_allocation: str
     initial_quote_allocation: str
+    fee_asset_allocations: tuple[tuple[str, str], ...] = ()
 
     def __post_init__(self) -> None:
         if (
@@ -103,6 +104,31 @@ class SpotRoundtripRequest:
             _decimal(self.initial_base_allocation),
             _decimal(self.initial_quote_allocation),
         )
+        if (
+            not isinstance(self.fee_asset_allocations, tuple)
+            or len(self.fee_asset_allocations) > 16
+        ):
+            raise OpenIntentError(
+                "roundtrip fee allocations must be bounded immutable pairs"
+            )
+        previous_asset = ""
+        for allocation in self.fee_asset_allocations:
+            if not isinstance(allocation, tuple) or len(allocation) != 2:
+                raise OpenIntentError(
+                    "roundtrip fee allocation must be an asset/amount pair"
+                )
+            asset, allocated = allocation
+            if (
+                not isinstance(asset, str)
+                or re.fullmatch(r"[A-Z0-9]{1,32}", asset) is None
+                or asset in {self.base, self.quote}
+                or asset <= previous_asset
+            ):
+                raise OpenIntentError(
+                    "roundtrip fee assets must be distinct, sorted extra assets"
+                )
+            _decimal(allocated)
+            previous_asset = asset
         binding = self.binding(first=True)
         amount = _decimal(self.first_amount)
         if amount <= 0 or amount > (
@@ -119,6 +145,15 @@ class SpotRoundtripRequest:
     @property
     def quote(self) -> str:
         return self.symbol[len(self.base) :]
+
+    @property
+    def allocations(self) -> dict[str, Fraction]:
+        """Explicit asset units; no FX valuation or wallet-ownership inference."""
+        return {
+            self.base: Fraction(self.initial_base_allocation),
+            self.quote: Fraction(self.initial_quote_allocation),
+            **{asset: Fraction(amount) for asset, amount in self.fee_asset_allocations},
+        }
 
     def binding(self, *, first: bool, amount: str | None = None):
         if type(first) is not bool:
@@ -190,7 +225,7 @@ def _movements(
         fill = acknowledged_fill(order, market_type="spot")
         if fill is None or fill.quote_quantity is None or not order["fills"]:
             raise OpenIntentError("roundtrip lacks complete native cash/fill evidence")
-    fees = {request.base: Fraction(0), request.quote: Fraction(0)}
+    fees = dict.fromkeys(request.allocations, Fraction(0))
     for row in order["fills"]:
         asset = row.get("commissionAsset")
         commission = Fraction(_decimal(row.get("commission")))
@@ -206,12 +241,10 @@ def _movements(
         if asset in fees:
             fees[asset] += commission
     buy = isinstance(binding, SpotQuoteOrderBinding)
-    return {
-        request.base: (Fraction(quantity) if buy else -Fraction(quantity))
-        - fees[request.base],
-        request.quote: (-Fraction(cash) if buy else Fraction(cash))
-        - fees[request.quote],
-    }
+    movements = {asset: -fee for asset, fee in fees.items()}
+    movements[request.base] += Fraction(quantity) if buy else -Fraction(quantity)
+    movements[request.quote] += -Fraction(cash) if buy else Fraction(cash)
+    return movements
 
 
 def _validate_record(record: dict) -> SpotRoundtripRequest:
@@ -220,21 +253,42 @@ def _validate_record(record: dict) -> SpotRoundtripRequest:
         or set(record)
         != {"format", "request", "scope", "phase", "first", "second_amount", "second"}
         or type(record["format"]) is not int
-        or record["format"] != 1
+        or record["format"] not in {1, 2}
         or record["phase"] not in _PHASES
     ):
         raise OpenIntentError("roundtrip record schema is invalid")
-    request = SpotRoundtripRequest(**record["request"])
+    request_fields = record["request"]
+    legacy_fields = {
+        "operation_id",
+        "symbol",
+        "mode",
+        "first_amount",
+        "initial_base_allocation",
+        "initial_quote_allocation",
+    }
+    expected = legacy_fields | (
+        {"fee_asset_allocations"} if record["format"] == 2 else set()
+    )
+    if not isinstance(request_fields, dict) or set(request_fields) != expected:
+        raise OpenIntentError("roundtrip request fields differ from its record format")
+    values = dict(request_fields)
+    if record["format"] == 2:
+        rows = values["fee_asset_allocations"]
+        if (
+            not isinstance(rows, list)
+            or not 1 <= len(rows) <= 16
+            or any(not isinstance(row, list) or len(row) != 2 for row in rows)
+        ):
+            raise OpenIntentError("roundtrip stored fee allocations are not canonical")
+        values["fee_asset_allocations"] = tuple(tuple(row) for row in rows)
+    request = SpotRoundtripRequest(**values)
     scope = BinanceExecutionScope(**record["scope"])
     if scope.market_type != "spot":
         raise OpenIntentError("roundtrip scope must be Spot")
     phase = record["phase"]
     if phase != "FIRST_UNKNOWN" and record["first"] is None:
         raise OpenIntentError("roundtrip phase lacks its first observation")
-    balances = {
-        request.base: Fraction(request.initial_base_allocation),
-        request.quote: Fraction(request.initial_quote_allocation),
-    }
+    balances = request.allocations
     if record["first"] is not None:
         if _selected(record["first"]) != record["first"]:
             raise OpenIntentError("roundtrip first observation is not canonical")
@@ -478,8 +532,16 @@ class SpotRoundtripJournal:
             _save(
                 connection,
                 {
-                    "format": 1,
-                    "request": asdict(request),
+                    "format": 2 if request.fee_asset_allocations else 1,
+                    "request": {
+                        key: (
+                            [list(row) for row in value]
+                            if key == "fee_asset_allocations"
+                            else value
+                        )
+                        for key, value in asdict(request).items()
+                        if key != "fee_asset_allocations" or value
+                    },
                     "scope": asdict(scope),
                     "phase": "FIRST_UNKNOWN",
                     "first": None,

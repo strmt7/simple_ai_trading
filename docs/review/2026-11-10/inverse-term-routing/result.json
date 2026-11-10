@@ -1,0 +1,154 @@
+{
+  "accepted_edge": false,
+  "authority": {
+    "account_requests": 0,
+    "both_designated_mainnet_variables_present": false,
+    "credential_values_recovered_or_printed": false,
+    "discovery_search_queries": 3,
+    "market_requests": 0,
+    "model_fits": 0,
+    "new_document_navigations": 1,
+    "orders": 0,
+    "persistent_tasks_installed": 0,
+    "protected_partial_content_access": false,
+    "strict_robots_prechecks": 1
+  },
+  "base_head": "eeadcb1882a27cc8a3017f02670317fc7abbeeb2",
+  "capture": {
+    "exit_code": 0,
+    "markdown_characters": 1,
+    "native_bytes": 4361,
+    "native_error_message": "",
+    "native_navigation_started": true,
+    "native_sha256": "b57bc96bd1a36d35e2c314b43fee430a820c64a55e003ee202d288bcad9034d2",
+    "native_success": true,
+    "redirected_status_code": 202,
+    "redirected_url": "https://www.binance.com/en-JP/terms",
+    "required_terms": {
+      "binance rch": false,
+      "clearing procedures": false,
+      "clearing rules": false
+    },
+    "source_admitted": false,
+    "status_code": 202,
+    "url": "https://www.binance.com/en-JP/terms"
+  },
+  "contract_sha256": "dde31deb9206a52f9c4105d04d5fe393e3cc366a11df2e2d748724c72add2437",
+  "created_at_utc": "2026-11-10T06:38:21.426559+00:00",
+  "goal_complete": false,
+  "local_preflight_corrections": {
+    "initial_reader_host_codepage_failure_corrected_to_explicit_utf8": true,
+    "native_read_only_host_counters_used": true,
+    "new_diagnostic_dependency_installed": false,
+    "optional_psutil_import_absent": true,
+    "research_requests_started_by_those_preflight_errors": 0
+  },
+  "local_unpublished_at_recording": true,
+  "navigation": {
+    "actual_source_bound_index_refresh_and_search_retained": true,
+    "index_chunks": 56591,
+    "index_files": 2222,
+    "index_is_current_after_subsequent_source_and_instruction_edits": false
+  },
+  "profitability_claim": false,
+  "provenance": {
+    "generic_lookup_files_read": 5966,
+    "generic_small_metadata_lookup_was_unnecessarily_large": true,
+    "old_article_ids_deduplicated_before_any_article_open": true,
+    "private_lookup_subsequently_restricted_to_plan_contract_result_journal_metadata": true,
+    "protected_v7_root_outside_lookup_roots_and_raw_extension_excluded": true,
+    "universal_source_novelty_claim": false
+  },
+  "raw_sources": {
+    "capture_terms_once.py": {
+      "bytes": 9325,
+      "path": "data/research/2026-11-10-inverse-collateral-source-0620/capture_terms_once.py",
+      "sha256": "9aeb54b07f3623cedf8f9386a797f950d2c93070301961466c839036df4b16c0"
+    },
+    "index-refresh.log": {
+      "bytes": 393,
+      "path": "data/research/2026-11-10-inverse-collateral-source-0620/index-refresh.log",
+      "sha256": "4966fcd95d986732671f8fc47dc267d08eac5fc4bef20de1bd89343db1b93f68"
+    },
+    "journal.jsonl": {
+      "bytes": 1140,
+      "path": "data/research/2026-11-10-inverse-collateral-source-0620/journal.jsonl",
+      "sha256": "b6df39ea0101f7480fce15840bf13d1c153fab04c0d3b0368ddcda9e483d461e"
+    },
+    "native.log": {
+      "bytes": 444,
+      "path": "data/research/2026-11-10-inverse-collateral-source-0620/native.log",
+      "sha256": "165d12aa730104e53d144efd0e59db9db0292fb1ef5b6182a622852faad369b5"
+    },
+    "native_cli.py": {
+      "bytes": 128,
+      "path": "data/research/2026-11-10-inverse-collateral-source-0620/native_cli.py",
+      "sha256": "f019c6e445af17431052613457f114e380f2dfa7735067e1ecaf31e97978a650"
+    },
+    "preflight.json": {
+      "bytes": 316,
+      "path": "data/research/2026-11-10-inverse-collateral-source-0620/preflight.json",
+      "sha256": "264f07a65d1b1d3a3f4fa67a3bc70e83897b584fdff363c9885b18661937399d"
+    },
+    "provider-verification.log": {
+      "bytes": 48,
+      "path": "data/research/2026-11-10-inverse-collateral-source-0620/provider-verification.log",
+      "sha256": "d53ef55f91d6665063338d7b6e085daf12da0ac30e2910eb76fd2e751c80924f"
+    },
+    "robots-decision.json": {
+      "bytes": 161,
+      "path": "data/research/2026-11-10-inverse-collateral-source-0620/robots-decision.json",
+      "sha256": "f1418ee0689a2f68b7a440f497ed0c2914f1b92b6860421afe23420c3dc02fb3"
+    },
+    "robots-http.json": {
+      "bytes": 663,
+      "path": "data/research/2026-11-10-inverse-collateral-source-0620/robots-http.json",
+      "sha256": "02b6f5bbe85af2f7a9e6788d473e4286f90a76fd25afcbb7ea52c13870e18e67"
+    },
+    "robots.raw": {
+      "bytes": 6722,
+      "path": "data/research/2026-11-10-inverse-collateral-source-0620/robots.raw",
+      "sha256": "586a4080a9685511e613e2beb856731a1434217d134f843f31290904eae814f4"
+    },
+    "semantic-source-routing.log": {
+      "bytes": 4408,
+      "path": "data/research/2026-11-10-inverse-collateral-source-0620/semantic-source-routing.log",
+      "sha256": "895ba8f0d4be00bf28129f599654de5a897774775f0e8b98a2a20b797785c202"
+    },
+    "source-provenance.json": {
+      "bytes": 996,
+      "path": "data/research/2026-11-10-inverse-collateral-source-0620/source-provenance.json",
+      "sha256": "ac073a1536180b0c82089ee1007bdfa08679b0a48d7ee5333da7d2e4cb789bf1"
+    },
+    "terms-source-provenance.json": {
+      "bytes": 648,
+      "path": "data/research/2026-11-10-inverse-collateral-source-0620/terms-source-provenance.json",
+      "sha256": "e637e624ca5013aa9309e04753898bf8bd406f92ba26b75bf0480cd7a96d64bb"
+    },
+    "terms.native.json": {
+      "bytes": 4361,
+      "path": "data/research/2026-11-10-inverse-collateral-source-0620/terms.native.json",
+      "sha256": "b57bc96bd1a36d35e2c314b43fee430a820c64a55e003ee202d288bcad9034d2"
+    }
+  },
+  "registered_counts": {
+    "hypotheses": 65,
+    "observations": 204,
+    "qualified_stable_edges": 0,
+    "scoped_mechanisms": 37
+  },
+  "result_sha256": "b0ea837967520d0756d9ab4efe9e8e6758784ec031bf39c059dce495b771fc70",
+  "schema": "current-governing-terms-routing-failure-v1",
+  "source_decisions": {
+    "corrected_legal_sign_or_effective_version_established": false,
+    "current_clearing_link_map_obtained": false,
+    "locale_retry_after_terms_failure": false,
+    "market_population_retry_trigger_established": false,
+    "native_robots_checks_enabled": true,
+    "native_success_not_sufficient_for_admission": true,
+    "old_tutorial_or_clearing_pdf_retried": false,
+    "search_snippets_admitted_as_evidence": false,
+    "strict_robots_http_status": 200,
+    "terms_failure_is_proof_of_no_correction": false
+  }
+}
