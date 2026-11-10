@@ -25,5 +25,6 @@ passed across the two verified phases. [Verification evidence](evidence.json)
 
 This process owns discovery only. Forecast evaluation, public quote reads in
 the providers, and admitted authenticated operations still need independent
-containment. A durable Stop issued during initial discovery is subject to the
-startup deadline because its polling service starts afterward.
+containment. This checkpoint started Stop polling after initial discovery.
+The subsequent startup fix moved discovery under the safety services.
+[Startup Stop follow-up](../startup-stop/review.md)

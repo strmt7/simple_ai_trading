@@ -49,6 +49,13 @@ current full-suite failure count without rerunning the appropriate scope.
 
 ## Financial and source frontier
 
+- [Samsung dividend reconciliation](review/2026-11-10/samsung-reconciliation/review.md)
+  binds two exact Binance article records and Samsung's issuer disclosure.
+  The 4,500 KRW estimate plus 101 KRW true-up equals the 4,601 KRW dividend.
+  The true-up uses the September position snapshot and a scheduled November
+  posting. Keep those clocks and source availability separate in funding
+  replays. No new market observation or cross-venue equivalence was qualified.
+
 - [Seoul November 12 partition](review/2026-11-10/seoul-nov12-frontier/review.md)
   admitted one exact event with eleven contiguous Celsius bins. The exact
   certificate rejects every mixed or unequal long-only cover using its 21
@@ -238,10 +245,16 @@ the unchanged account-fee gate before economic access. No new observation added.
 
 ## Platform work and publication
 
+- [Startup Stop](review/2026-11-10/startup-stop/review.md) starts durable control
+  before initial public discovery. Windows tests persist Stop in the local
+  control store and verify that the discovery child exits before owned recovery
+  at startup and rollover. An initial discovery failure still drains and
+  surfaces the startup error.
+
 - [Owned market discovery](review/2026-11-10/owned-discovery/review.md) isolates
   the live CLI's public BTC discovery in a bounded child. Stop terminates and
   reaps the stalled rollover child before owned recovery. Forecast, execution
-  and initial durable-control coverage remain separate.
+  and authenticated preflight containment remain separate.
 
 - [Wallet backing](review/2026-11-10/wallet-backing/review.md) applies the
   nominal configured allocation test at the promoted opening gateway using

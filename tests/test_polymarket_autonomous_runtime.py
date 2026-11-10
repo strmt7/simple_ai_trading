@@ -38,6 +38,10 @@ from simple_ai_trading.polymarket_live import (
     PolymarketWalletCapitalShortfall,
 )
 from simple_ai_trading.polymarket_live_risk import PolymarketLiveRiskState
+from simple_ai_trading.polymarket_runtime_control import (
+    PolymarketRuntimeControl,
+    PolymarketRuntimeControlService,
+)
 from simple_ai_trading.polymarket_live_promotion import (
     VerifiedPolymarketLivePromotion,
     load_polymarket_live_promotion,
@@ -844,13 +848,15 @@ def test_stop_closes_owned_exposure_when_public_discovery_fails(
     supervisor.decision_provider.decide.assert_not_called()
 
 
+@pytest.mark.parametrize("phase", ["startup", "rollover"])
 def test_stop_reaps_owned_discovery_child_before_closing_exposure(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, phase: str
 ) -> None:
     async def run() -> None:
         loop = asyncio.get_running_loop()
         first_decision = asyncio.Event()
         child_launched = asyncio.Event()
+        recovery_started = asyncio.Event()
         owned = {OWNED_MARKET_ID}
         observed = NOW_MS
         calls = 0
@@ -876,13 +882,14 @@ def test_stop_reaps_owned_discovery_child_before_closing_exposure(
         async def discover(**kwargs):
             nonlocal calls
             calls += 1
-            if calls == 1:
+            if phase == "rollover" and calls == 1:
                 return active, upcoming
             return await worker.discover(**kwargs)
 
         async def close() -> bool:
             close_exit_codes.append(children[0].poll())
             owned.clear()
+            recovery_started.set()
             return True
 
         monkeypatch.setattr(discovery_module.subprocess, "Popen", start)
@@ -901,25 +908,37 @@ def test_stop_reaps_owned_discovery_child_before_closing_exposure(
             ],
         )
         supervisor = _supervisor(tmp_path, provider=SimpleNamespace(decide=decide))
+        control = PolymarketRuntimeControl(supervisor.ledger.path)
+        control.provision_storage()
+        assert control.complete_stale_stop(exposure_closed=True)
+        lease = control.acquire()
+        supervisor.durable_control_service = PolymarketRuntimeControlService(
+            control, lease_id=lease, stop_poll_interval_seconds=0.1
+        )
         supervisor.market_discovery = SimpleNamespace(discover=discover)
         supervisor._clock_ms = lambda: observed
         supervisor._owned_market_ids = lambda: set(owned)  # type: ignore[method-assign]
         supervisor._close_owned = close  # type: ignore[method-assign]
         task = asyncio.create_task(supervisor.run())
         try:
-            await asyncio.wait_for(first_decision.wait(), timeout=3)
-            observed = EVENT_END_MS + 1
+            if phase == "rollover":
+                await asyncio.wait_for(first_decision.wait(), timeout=3)
+                observed = EVENT_END_MS + 1
             await asyncio.wait_for(child_launched.wait(), timeout=3)
             async with asyncio.timeout(3):
                 while not ready.is_file():
                     await asyncio.sleep(0.02)
             assert len(children) == 1 and children[0].poll() is None
+            control.request_stop(reason="synthetic_external_stop")
+            assert control.snapshot().state == "stop_requested"
+            await asyncio.wait_for(recovery_started.wait(), timeout=2)
         finally:
             supervisor.request_stop()
             await asyncio.wait_for(task, timeout=4)
 
         assert len(close_exit_codes) == 1 and close_exit_codes[0] is not None
         assert not finished.exists()
+        assert first_decision.is_set() is (phase == "rollover")
         assert supervisor.snapshot().stop_completed is True
 
     asyncio.run(run())
@@ -1066,6 +1085,35 @@ def test_startup_network_failure_drains_owned_exposure_before_exit(
     assert supervisor.snapshot().stop_completed is True
     assert supervisor.snapshot().stop_requested is True
     assert supervisor.snapshot().last_fault == "startup_failure:ConnectionError"
+
+
+def test_initial_discovery_failure_still_drains_owned_exposure(tmp_path: Path) -> None:
+    supervisor = _supervisor(tmp_path, provider=SimpleNamespace(decide=Mock()))
+    owned = {OWNED_MARKET_ID}
+
+    async def unavailable(**_kwargs: object) -> None:
+        raise ConnectionError("public discovery unavailable at startup")
+
+    async def close() -> bool:
+        owned.clear()
+        return True
+
+    supervisor.market_discovery = SimpleNamespace(discover=unavailable)
+    supervisor._owned_market_ids = lambda: set(owned)  # type: ignore[method-assign]
+    supervisor._close_owned = close  # type: ignore[method-assign]
+
+    async def run() -> None:
+        async with asyncio.timeout(3):
+            await supervisor.run()
+
+    with pytest.raises(
+        ConnectionError, match="public discovery unavailable at startup"
+    ):
+        asyncio.run(run())
+
+    assert supervisor.snapshot().stop_completed is True
+    assert supervisor.snapshot().last_fault == "startup_failure:ConnectionError"
+    supervisor.decision_provider.decide.assert_not_called()
 
 
 def test_forced_exit_window_never_opens_new_exposure(tmp_path: Path) -> None:

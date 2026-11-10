@@ -945,8 +945,6 @@ class PolymarketAutonomousSupervisor:
             self._wallet_capital_gate_passed = (
                 self.live_risk.risk_capital_quote <= self._wallet_capital_support_quote
             )
-            if not self._shutdown_requested.is_set():
-                await self._discover_and_subscribe(observed_at_ms=self._clock_ms())
         except Exception as exc:
             self._last_fault = f"startup_failure:{exc.__class__.__name__}"
             try:
@@ -990,46 +988,50 @@ class PolymarketAutonomousSupervisor:
                 self.request_stop()
 
             timer = asyncio.create_task(request_stop_after_duration())
-        critical_error: RuntimeError | None = None
+        initial_discovery_complete = False
+
+        async def run_model() -> None:
+            nonlocal initial_discovery_complete
+            if self._shutdown_requested.is_set():
+                return
+            await self._discover_and_subscribe(observed_at_ms=self._clock_ms())
+            initial_discovery_complete = True
+            await self._model_loop(services_stop)
+
+        critical_error: Exception | None = None
         critical_fault = ""
         try:
-            # Give safety services one scheduling turn before model decisions.
+            # Start Stop polling before any public discovery can block startup.
             await asyncio.sleep(0)
-            early = {name: task for name, task in tasks.items() if task.done()}
-            if early:
-                name, task = next(iter(early.items()))
-                exception = task.exception() if not task.cancelled() else None
+            done = {task for task in tasks.values() if task.done()}
+            if not self._shutdown_requested.is_set() and not done:
+                tasks["model"] = asyncio.create_task(run_model())
+                done, _ = await asyncio.wait(
+                    set(tasks.values()),
+                    return_when=asyncio.FIRST_COMPLETED,
+                )
+            if not self._shutdown_requested.is_set():
+                name, task = next(
+                    (name, task) for name, task in tasks.items() if task in done
+                )
+                exception = None if task.cancelled() else task.exception()
                 detail = (
                     exception.__class__.__name__
                     if exception is not None
                     else "returned"
                 )
-                critical_fault = f"critical_service_exit:{name}:{detail}"
+                if (
+                    name == "model"
+                    and not initial_discovery_complete
+                    and exception is not None
+                ):
+                    critical_fault = f"startup_failure:{detail}"
+                    critical_error = exception
+                else:
+                    critical_fault = f"critical_service_exit:{name}:{detail}"
+                    critical_error = RuntimeError(critical_fault)
                 self._last_fault = critical_fault
                 self.request_stop()
-                critical_error = RuntimeError(critical_fault)
-            else:
-                tasks["model"] = asyncio.create_task(self._model_loop(services_stop))
-                done, _ = await asyncio.wait(
-                    set(tasks.values()),
-                    return_when=asyncio.FIRST_COMPLETED,
-                )
-                if not self._shutdown_requested.is_set():
-                    by_task = {task: name for name, task in tasks.items()}
-                    failed_task = next(iter(done))
-                    name = by_task[failed_task]
-                    exception = (
-                        failed_task.exception() if not failed_task.cancelled() else None
-                    )
-                    detail = (
-                        exception.__class__.__name__
-                        if exception is not None
-                        else "returned"
-                    )
-                    critical_fault = f"critical_service_exit:{name}:{detail}"
-                    self._last_fault = critical_fault
-                    self.request_stop()
-                    critical_error = RuntimeError(critical_fault)
         finally:
             self.request_stop()
             if timer is not None:

@@ -154,6 +154,14 @@ model as Binance's payment law. Predicted funding, the last settled rate and a
 native receipt are different evidence. Features require actual availability
 before decisions; future realized prices/rates belong only in labels.
 
+For equity perpetual dividend adjustments, retain the position snapshot, the
+availability time of each published estimate or correction, and the actual
+wallet posting as distinct fields. Attribute the estimate and true-up to the
+same eligible position and apply cash to margin only when its posting is
+verified. Bind both legs' sign, settlement currency and conversion separately.
+An ordinary funding cap cannot bound a dividend adjustment that the venue
+explicitly exempts. [Samsung reconciliation](../review/2026-11-10/samsung-reconciliation/review.md)
+
 Price scaling is also a model assumption. If fractional funding `F` is modeled
 as OU and cash funding is `f = S * F`, then `df = F dS + S dF + d[S,F]`.
 An independent, constant-parameter cash OU does not follow automatically.

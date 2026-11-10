@@ -1,0 +1,69 @@
+{
+  "base_head": "593997537ff01f968e8e46789d0fded7dc7b2953",
+  "calculation": {
+    "actual_cash_currency_fx_sign_and_wallet_posting_qualified": false,
+    "constructed_unsigned_krw_examples": {
+      "flat_snapshot_then_ten_units": "0",
+      "ten_snapshot_units_then_flat": "1010"
+    },
+    "cross_venue_cash_equivalence_qualified": false,
+    "exchange": {
+      "announced_reconciliation_percent": "-0.037336",
+      "announced_reconciliation_start_utc": "2026-11-06T06:00:00+00:00",
+      "combined_nominal_krw_per_share": "4601",
+      "entitlement_snapshot_utc": "2026-09-28T23:00:00+00:00",
+      "estimate_article": {
+        "api_last_update_field": 0,
+        "api_version_field": "1",
+        "article_code": "fd194d0fda6e44f2af6bc6333f61600f",
+        "article_id": 285735,
+        "native_bytes": 30642,
+        "native_sha256": "1652659a17ab5fc8044ae76c9bf20137a8e1ab610ccb5a60666ec050813da7fc",
+        "reported_publish_time_utc": "2026-09-28T12:45:07.313000+00:00",
+        "title": "Important Updates on Dividend Adjustment Process of SAMSUNGUSDT TradFi Perpetual Contract (2026-09-28)"
+      },
+      "estimated_krw_per_share": "4500",
+      "ordinary_funding_cap_applied_to_dividend_adjustment": false,
+      "reconciliation_article": {
+        "api_last_update_field": 0,
+        "api_version_field": "1",
+        "article_code": "c88b113255244de1953dd416c4806bc3",
+        "article_id": 289067,
+        "native_bytes": 37729,
+        "native_sha256": "39e22214746db274eb08fb4b69c0d5927d9779ee340923471fa961dd44239c61",
+        "reported_publish_time_utc": "2026-11-05T07:00:06.025000+00:00",
+        "title": "Important Updates on Dividend Adjustment Process of SAMSUNGUSDT TradFi Perpetual Contract (2026-11-06)"
+      },
+      "reconciliation_krw_per_share": "101",
+      "snapshot_to_reconciliation_start_hours": "919"
+    },
+    "issuer": {
+      "common_share_amount_krw": "4601",
+      "native_bytes": 220709,
+      "native_sha256": "f79e641dcd40506d11ed4295ae2fb22279d222785b23a61bb7842907a5b6fece",
+      "record_date": "2026-09-30",
+      "reported_approval_date": "2026-10-29",
+      "scheduled_payment_date": "2026-11-27",
+      "url": "https://www.samsung.com/global/ir/reports-disclosures/public-disclosure-view.84796/"
+    },
+    "new_economic_observations": 0
+  },
+  "derivation_sha256": "d7afdec968320b0e1e7418a691591984037c00c083cc329919ff2667899cfad0",
+  "new_economic_observations": 0,
+  "private_receipts": {
+    "controller.journal.jsonl": "e0988598847bcbaacd29796817544a817fb4909554d93611f3ad8e7344a7feec",
+    "estimate.journal.jsonl": "bc2002e157d28c885b4e4882114a2e0adf6aaf67fa25fbb40bebca6ebd916f88",
+    "journal.jsonl": "260267043ef84794258b6849745fd0585e552368b9e1a951dca81044263d16a2",
+    "reconciliation.journal.jsonl": "b842edc1206cfbfd85c1cfb8f987b43563cd7aac556e71d1d49c699303a38437",
+    "result.json": "0419861aca5eac9793385f0c07501bab3ab62f71be8b7a997e202552d5d1a2af",
+    "study.local.json": "874ccfa92d9a3cf0e222108d10f5a006a055aeab6094c1048eca5ab9e4c796ea"
+  },
+  "rank_43_economic_capture_authorized": false,
+  "registry_rank": 43,
+  "result_sha256": "cda0c8e387ccaa6fe8fc4fdb9c0090af17cbc31a8cb1ed6bb808a698a21f8fa8",
+  "schema_version": "samsung-special-funding-source-reconciliation-v1",
+  "sources_admitted": {
+    "binance_native_cms_json": 2,
+    "issuer_crawl4ai_html": 1
+  }
+}

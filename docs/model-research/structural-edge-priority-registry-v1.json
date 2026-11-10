@@ -3708,7 +3708,13 @@
         "calling_gross_funding_spread_an_edge_or_deployment_ready"
       ],
       "retry_trigger": "A later material Polymarket or Binance TradFi perpetual funding cash-flow, fee, market-session, instrument-conversion or execution-architecture change; the September 6 time gate has been consumed and is not a rolling-window trigger. For the exact BYD/HK0992 no-match population: Material independently observed exact Polymarket counterpart listing with matching share class, unit and settlement, or a separately source-proved conversion architecture. Do not repeat this inventory, request funding or prices, or use a similar ticker as a hedge. For the nine September 10 contracts: Independently observed exact counterpart listing or source-proved conversion architecture, or later material exact funding/fee/settlement change. Passage of September 10 alone cannot reopen a missing-counterpart population.",
-      "venue_scope": "Polymarket_Perps_and_Binance_USDT_margined_TradFi_perpetuals_with_exact_non_crypto_base_asset_matches"
+      "venue_scope": "Polymarket_Perps_and_Binance_USDT_margined_TradFi_perpetuals_with_exact_non_crypto_base_asset_matches",
+      "samsung_special_funding_reconciliation_2026_11_10": {
+        "path": "docs/review/2026-11-10/samsung-reconciliation/evidence.json",
+        "result_sha256": "cda0c8e387ccaa6fe8fc4fdb9c0090af17cbc31a8cb1ed6bb808a698a21f8fa8",
+        "classification": "Historical source reconciliation only. The estimate and later Special Funding Fee refer to the same earlier net position. Actual cash, sign, FX and counterpart rules remain unqualified.",
+        "economic_capture_authorized": false
+      }
     },
     {
       "blocking_evidence": [
@@ -4631,7 +4637,7 @@
       ]
     }
   ],
-  "result_sha256": "635344592a59068be2cf85c4a69b36c550f6495d60ab14c2f4fd30d17ed8eaae",
+  "result_sha256": "7fdd57c5bfc9341c565e58f47eeeb8c0a7bde17774585e72a9002d08b485e36d",
   "schema_version": "structural-edge-priority-registry-v1",
   "terminal_do_not_repeat": [
     {
@@ -5695,6 +5701,6 @@
       "canonical_result_sha256": "e68dbd4532f61fe399e2b04ae9d64d25041731b6bffa847289ea2b01d4da3a3d"
     }
   ],
-  "updated_at_utc": "2026-11-10T23:17:15.112667+00:00",
+  "updated_at_utc": "2026-11-10T23:46:22.100712+00:00",
   "usage_rule": "advance_the_highest_ranked_hypothesis_whose_retry_trigger_is_satisfied_otherwise_do_not_repeat_a_blocked_or_terminal_screen"
 }
