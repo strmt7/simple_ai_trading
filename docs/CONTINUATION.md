@@ -220,6 +220,23 @@ the unchanged account-fee gate before economic access. No new observation added.
 
 ## Platform work and publication
 
+- [Stop recovery](review/2026-11-10/stop-recovery/review.md) removes public
+  discovery from the owned close path after Stop. Recovery waits for the
+  model loop to hand off, then closes while authenticated services remain
+  available. CLI cleanup now latches Stop for unresolved owned orders even
+  without recorded inventory. 107 distinct affected cases pass, including
+  decision expiry. Close-until-flat policy is unchanged; hard termination
+  remains open.
+
+- [Decision expiry](review/2026-11-10/decision-expiry/review.md) closes a
+  reproduced Polymarket late-result path. One invocation owns one deadline;
+  timeout/cancellation abandons its output and Pause/Stop revokes its generation.
+  The pending slot is retained until provider completion, preventing overlap.
+  All 104 affected cases pass. This is an in-process authority fence, not hard
+  termination. The live CLI's Round 21 public scorer and Round 16 predictor
+  remain in the credential-bearing process; integrate actual isolated forecast
+  delivery before claiming independent supervision.
+
 - [Post-dispatch persistence](review/2026-11-10/post-dispatch-storage/review.md)
   closes a reproduced empty-journal recreation after an accepted synthetic fill.
   Native accounting and close preparation/completion now remain noncreating;

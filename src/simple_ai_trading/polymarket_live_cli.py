@@ -783,6 +783,10 @@ def _build_autonomous_decision_stack(
     return predictor_feed, decision_provider
 
 
+def _has_unresolved_owned_exposure(ledger: PolymarketLiveOrderLedger) -> bool:
+    return bool(ledger.open_owned_order_ids() or ledger.owned_inventory())
+
+
 def _finalize_autonomous_resources(
     *,
     runtime_control: PolymarketRuntimeControl,
@@ -794,19 +798,19 @@ def _finalize_autonomous_resources(
 ) -> None:
     errors: list[BaseException] = []
     if not runtime_released:
-        inventory_known = True
+        ownership_known = True
         try:
-            has_owned_inventory = bool(ledger.owned_inventory())
+            unresolved = _has_unresolved_owned_exposure(ledger)
         except BaseException as exc:
-            inventory_known = False
-            has_owned_inventory = True
+            ownership_known = False
+            unresolved = True
             errors.append(exc)
         try:
-            if has_owned_inventory:
+            if unresolved:
                 runtime_control.request_stop(
                     reason=(
                         "autonomous_exit_with_owned_exposure"
-                        if inventory_known
+                        if ownership_known
                         else "autonomous_exit_inventory_unknown"
                     )
                 )
@@ -989,7 +993,7 @@ async def _autonomous(
         await supervisor.run(duration_seconds=duration)
         final = await asyncio.to_thread(coordinator.reconcile)
         snapshot = supervisor.snapshot()
-        if ledger.owned_inventory():
+        if not snapshot.stop_completed or _has_unresolved_owned_exposure(ledger):
             runtime_control.request_stop(reason="autonomous_exit_with_owned_exposure")
             raise PolymarketLiveBlocked(
                 "Polymarket autonomous runtime retained owned exposure at exit"

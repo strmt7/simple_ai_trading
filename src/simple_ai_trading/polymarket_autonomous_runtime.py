@@ -404,6 +404,7 @@ class PolymarketAutonomousSupervisor:
         self._last_fault = ""
         self._consumed_proposals: set[str] = set()
         self._pending_decision: asyncio.Task[PolymarketAutonomousDecision] | None = None
+        self._decision_generation = 0
         self._last_risk_state: PolymarketLiveRiskState | None = None
         self._wallet_capital_support_quote = Decimal("0")
         self._wallet_capital_gate_passed = False
@@ -411,7 +412,9 @@ class PolymarketAutonomousSupervisor:
     def pause(self) -> None:
         """Block model decisions while reconciliation and close loops continue."""
 
-        self._paused = True
+        if not self._paused:
+            self._decision_generation += 1
+            self._paused = True
 
     def resume(self) -> None:
         if self._shutdown_requested.is_set():
@@ -421,7 +424,7 @@ class PolymarketAutonomousSupervisor:
     def request_stop(self) -> None:
         """Block new entries and keep supervising until owned exposure is closed."""
 
-        self._paused = True
+        self.pause()
         self._shutdown_requested.set()
 
     def snapshot(self) -> PolymarketAutonomousRuntimeSnapshot:
@@ -629,36 +632,58 @@ class PolymarketAutonomousSupervisor:
     def _market_has_owned_exposure(self, market_id: str) -> bool:
         return market_id in self._owned_market_ids()
 
+    def _retire_decision(
+        self, task: asyncio.Task[PolymarketAutonomousDecision]
+    ) -> None:
+        # Abandoned providers may still finish or raise. Observe completion,
+        # but never deliver their result or reopen the slot while they run.
+        if not task.cancelled():
+            task.exception()
+        if self._pending_decision is task:
+            self._pending_decision = None
+
     async def _decision(
         self,
         markets: tuple[PolymarketFiveMinuteMarket, ...],
         *,
         observed_at_ms: int,
     ) -> PolymarketAutonomousDecision | None:
-        if self._pending_decision is None:
-            portfolio = self._portfolio(
-                markets[0],
+        if (
+            self._pending_decision is not None
+            or self._paused
+            or self._shutdown_requested.is_set()
+        ):
+            return None
+        portfolio = self._portfolio(markets[0], observed_at_ms=observed_at_ms)
+        generation = self._decision_generation
+        loop = asyncio.get_running_loop()
+        deadline = loop.time() + self.decision_timeout_seconds
+        task = asyncio.create_task(
+            asyncio.to_thread(
+                self.decision_provider.decide,
+                markets=markets,
                 observed_at_ms=observed_at_ms,
+                portfolio=portfolio,
             )
-            self._pending_decision = asyncio.create_task(
-                asyncio.to_thread(
-                    self.decision_provider.decide,
-                    markets=markets,
-                    observed_at_ms=observed_at_ms,
-                    portfolio=portfolio,
-                )
-            )
+        )
+        self._pending_decision = task
         try:
-            decision = await asyncio.wait_for(
-                asyncio.shield(self._pending_decision),
-                timeout=self.decision_timeout_seconds,
-            )
+            async with asyncio.timeout_at(deadline):
+                decision = await asyncio.shield(task)
         except TimeoutError:
             self._last_fault = "decision_timeout"
             return None
         finally:
-            if self._pending_decision is not None and self._pending_decision.done():
-                self._pending_decision = None
+            if task.done():
+                self._retire_decision(task)
+            else:
+                task.add_done_callback(self._retire_decision)
+        if loop.time() >= deadline:
+            self._last_fault = "decision_timeout"
+            return None
+        if self._decision_generation != generation:
+            self._last_fault = "decision_revoked_by_control"
+            return None
         if not isinstance(decision, PolymarketAutonomousDecision):
             raise TypeError("decision provider returned an invalid decision")
         self._decisions += 1
@@ -813,25 +838,19 @@ class PolymarketAutonomousSupervisor:
             self._last_fault = ""
 
     async def _model_loop(self, services_stop: asyncio.Event) -> None:
-        while not services_stop.is_set():
+        while not (services_stop.is_set() or self._shutdown_requested.is_set()):
             now = self._clock_ms()
             try:
                 active = await self._discover_and_subscribe(observed_at_ms=now)
+                if self._shutdown_requested.is_set():
+                    return
                 market = active[0]
-                owned = self._owned_market_ids()
                 entry_window_closed = (
                     market.end_ms - now <= self.forced_exit_seconds * 1_000
                 )
-                if self._shutdown_requested.is_set() or entry_window_closed:
-                    if owned and await self._close_owned():
-                        self._stop_completed = self._shutdown_requested.is_set()
-                    if (
-                        self._shutdown_requested.is_set()
-                        and not self._owned_market_ids()
-                    ):
-                        self._stop_completed = True
-                        services_stop.set()
-                        break
+                if entry_window_closed:
+                    if self._owned_market_ids():
+                        await self._close_owned()
                 elif not self._paused:
                     decision = await self._decision(active, observed_at_ms=now)
                     if decision is not None:
@@ -846,7 +865,7 @@ class PolymarketAutonomousSupervisor:
                 self._last_fault = f"supervisor_iteration:{exc.__class__.__name__}"
             try:
                 await asyncio.wait_for(
-                    services_stop.wait(),
+                    self._shutdown_requested.wait(),
                     timeout=self.decision_interval_seconds,
                 )
             except TimeoutError:
@@ -859,10 +878,10 @@ class PolymarketAutonomousSupervisor:
         if not 0 <= duration <= 31_536_000:
             raise ValueError("duration_seconds must lie in [0, 31536000]")
         if self._shutdown_requested.is_set():
-            if self._owned_market_ids():
+            try:
                 await self._drain_owned_exposure()
-            self._stop_completed = not self._owned_market_ids()
-            self.runtime_guard.mark_stopped()
+            finally:
+                self.runtime_guard.mark_stopped()
             return
         try:
             initial = await asyncio.to_thread(self.coordinator.preflight)
@@ -890,13 +909,16 @@ class PolymarketAutonomousSupervisor:
             self._wallet_capital_gate_passed = (
                 self.live_risk.risk_capital_quote <= self._wallet_capital_support_quote
             )
-            await self._discover_and_subscribe(observed_at_ms=self._clock_ms())
+            if not self._shutdown_requested.is_set():
+                await self._discover_and_subscribe(observed_at_ms=self._clock_ms())
         except Exception as exc:
             self._last_fault = f"startup_failure:{exc.__class__.__name__}"
-            if self._owned_market_ids():
-                self.request_stop()
-                await self._drain_owned_exposure()
-            self.runtime_guard.mark_stopped()
+            try:
+                if self._owned_market_ids():
+                    self.request_stop()
+                    await self._drain_owned_exposure()
+            finally:
+                self.runtime_guard.mark_stopped()
             raise
         services_stop = asyncio.Event()
         tasks: dict[str, asyncio.Task[None]] = {
@@ -974,18 +996,23 @@ class PolymarketAutonomousSupervisor:
                     critical_error = RuntimeError(critical_fault)
         finally:
             self.request_stop()
-            if self._owned_market_ids():
-                await self._drain_owned_exposure()
-            services_stop.set()
             if timer is not None:
                 timer.cancel()
-            await asyncio.gather(*tasks.values(), return_exceptions=True)
-            if timer is not None:
-                await asyncio.gather(timer, return_exceptions=True)
+            try:
+                # Let an already admitted operation finish before taking over close.
+                # Keep the authenticated services available during recovery.
+                if (model := tasks.get("model")) is not None:
+                    await asyncio.gather(model, return_exceptions=True)
+                await self._drain_owned_exposure()
+            finally:
+                services_stop.set()
+                await asyncio.gather(*tasks.values(), return_exceptions=True)
+                if timer is not None:
+                    await asyncio.gather(timer, return_exceptions=True)
+                self.runtime_guard.mark_stopped()
+                if critical_fault:
+                    self._last_fault = critical_fault
             self._stop_completed = not self._owned_market_ids()
-            self.runtime_guard.mark_stopped()
-            if critical_fault:
-                self._last_fault = critical_fault
         if critical_error is not None:
             raise critical_error
 

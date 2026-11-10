@@ -593,6 +593,147 @@ def test_timed_out_model_is_not_started_twice(tmp_path: Path) -> None:
     assert calls == 1
 
 
+def test_expired_decision_cannot_close_exposure_in_the_next_market(
+    tmp_path: Path,
+) -> None:
+    release = Event()
+    calls = []
+    closed = []
+
+    def decide(*, markets, **_kwargs):
+        calls.append(markets[0].condition_id)
+        if len(calls) == 1:
+            if not release.wait(timeout=5):
+                raise RuntimeError("synthetic decision was not released")
+            return PolymarketAutonomousDecision(close_owned_exposure=True)
+        return PolymarketAutonomousDecision(reasons=("fresh-context",))
+
+    supervisor = _supervisor(tmp_path, provider=SimpleNamespace(decide=decide))
+    later = _market(condition_id=NEXT_MARKET_ID, start_ms=EVENT_END_MS)
+
+    async def close() -> bool:
+        closed.append(NEXT_MARKET_ID)
+        return True
+
+    supervisor._close_owned = close  # type: ignore[method-assign]
+
+    async def run() -> None:
+        try:
+            assert (
+                await supervisor._decision((_market(),), observed_at_ms=NOW_MS) is None
+            )
+            pending = supervisor._pending_decision
+            assert pending is not None and not pending.done()
+            assert (
+                await supervisor._decision((later,), observed_at_ms=EVENT_END_MS + 1000)
+                is None
+            )
+            assert calls == [MARKET_ID]
+            release.set()
+            await asyncio.wait_for(asyncio.shield(pending), timeout=2)
+            fresh = await supervisor._decision(
+                (later,), observed_at_ms=EVENT_END_MS + 1000
+            )
+            assert fresh is not None
+            supervisor._owned_market_ids = lambda: {NEXT_MARKET_ID}  # type: ignore[method-assign]
+            await supervisor._apply_decision(
+                fresh, later, observed_at_ms=EVENT_END_MS + 1000
+            )
+            assert fresh.reasons == ("fresh-context",)
+        finally:
+            release.set()
+
+    asyncio.run(run())
+    assert calls == [MARKET_ID, NEXT_MARKET_ID] and closed == []
+    assert supervisor.snapshot().decisions == 1
+
+
+@pytest.mark.parametrize("control", ["pause_resume", "stop"])
+def test_control_transition_revokes_in_flight_result(
+    tmp_path: Path, control: str
+) -> None:
+    release = Event()
+
+    async def run() -> None:
+        entered = asyncio.Event()
+        loop = asyncio.get_running_loop()
+
+        def decide(**_kwargs):
+            loop.call_soon_threadsafe(entered.set)
+            if not release.wait(timeout=5):
+                raise RuntimeError("synthetic decision was not released")
+            return PolymarketAutonomousDecision(close_owned_exposure=True)
+
+        supervisor = _supervisor(tmp_path, provider=SimpleNamespace(decide=decide))
+        supervisor.decision_timeout_seconds = 2
+        waiter = asyncio.create_task(
+            supervisor._decision((_market(),), observed_at_ms=NOW_MS)
+        )
+        try:
+            await asyncio.wait_for(entered.wait(), timeout=2)
+            if control == "pause_resume":
+                supervisor.pause()
+                supervisor.resume()
+            else:
+                supervisor.request_stop()
+            release.set()
+            assert await waiter is None
+            assert supervisor.snapshot().decisions == 0
+        finally:
+            release.set()
+            await asyncio.gather(waiter, return_exceptions=True)
+
+    asyncio.run(run())
+
+
+def test_cancelled_waiter_retires_late_error_without_overlapping_provider(
+    tmp_path: Path,
+) -> None:
+    release = Event()
+    calls = 0
+
+    async def run() -> None:
+        entered = asyncio.Event()
+        loop = asyncio.get_running_loop()
+
+        def decide(**_kwargs):
+            nonlocal calls
+            calls += 1
+            if calls == 1:
+                loop.call_soon_threadsafe(entered.set)
+                release.wait(timeout=5)
+                raise RuntimeError("late synthetic error")
+            return PolymarketAutonomousDecision(reasons=("fresh",))
+
+        supervisor = _supervisor(tmp_path, provider=SimpleNamespace(decide=decide))
+        supervisor.decision_timeout_seconds = 2
+        waiter = asyncio.create_task(
+            supervisor._decision((_market(),), observed_at_ms=NOW_MS)
+        )
+        try:
+            await asyncio.wait_for(entered.wait(), timeout=2)
+            pending = supervisor._pending_decision
+            assert pending is not None and not pending.done()
+            waiter.cancel()
+            with pytest.raises(asyncio.CancelledError):
+                await waiter
+            assert (
+                await supervisor._decision((_market(),), observed_at_ms=NOW_MS) is None
+            )
+            assert calls == 1
+            release.set()
+            done, _ = await asyncio.wait({pending}, timeout=2)
+            assert done == {pending} and supervisor._pending_decision is None
+            fresh = await supervisor._decision((_market(),), observed_at_ms=NOW_MS)
+            assert fresh is not None and fresh.reasons == ("fresh",)
+        finally:
+            release.set()
+            await asyncio.gather(waiter, return_exceptions=True)
+
+    asyncio.run(run())
+    assert calls == 2
+
+
 def test_stop_retries_until_owned_exposure_is_closed(tmp_path: Path) -> None:
     supervisor = _supervisor(
         tmp_path,
@@ -614,17 +755,52 @@ def test_stop_retries_until_owned_exposure_is_closed(tmp_path: Path) -> None:
     supervisor.request_stop()
 
     async def run() -> None:
-        services_stop = asyncio.Event()
-        await asyncio.wait_for(
-            supervisor._model_loop(services_stop),
-            timeout=2,
-        )
-        assert services_stop.is_set()
+        await asyncio.wait_for(supervisor.run(), timeout=2)
 
     asyncio.run(run())
 
     assert attempts == 2
     assert supervisor.snapshot().stop_completed is True
+
+
+def test_stop_closes_owned_exposure_when_public_discovery_fails(
+    tmp_path: Path,
+) -> None:
+    supervisor = _supervisor(
+        tmp_path,
+        provider=SimpleNamespace(decide=Mock()),
+    )
+    owned = {OWNED_MARKET_ID}
+    discover = supervisor._discover_and_subscribe
+    discovery_calls = 0
+
+    async def discover_until_stop(
+        *, observed_at_ms: int
+    ) -> tuple[PolymarketFiveMinuteMarket, ...]:
+        nonlocal discovery_calls
+        discovery_calls += 1
+        if discovery_calls == 1:
+            markets = await discover(observed_at_ms=observed_at_ms)
+            supervisor.request_stop()
+            return markets
+        raise ConnectionError("public market discovery unavailable")
+
+    async def close_owned() -> bool:
+        owned.clear()
+        return True
+
+    supervisor._owned_market_ids = lambda: set(owned)  # type: ignore[method-assign]
+    supervisor._discover_and_subscribe = discover_until_stop  # type: ignore[method-assign]
+    supervisor._close_owned = close_owned  # type: ignore[method-assign]
+
+    async def run() -> None:
+        await asyncio.wait_for(supervisor.run(), timeout=2)
+
+    asyncio.run(run())
+    assert discovery_calls == 1
+    assert not owned
+    assert supervisor.snapshot().stop_completed is True
+    supervisor.decision_provider.decide.assert_not_called()
 
 
 def test_close_failure_is_retained_as_retriable_state(
@@ -684,6 +860,57 @@ def test_critical_service_failure_drains_owned_exposure_before_exit(
 
     assert attempts == 2
     assert supervisor.snapshot().stop_completed is True
+
+
+def test_stop_waits_for_in_flight_forced_close_before_recovery(tmp_path: Path) -> None:
+    supervisor = _supervisor(tmp_path, provider=SimpleNamespace(decide=Mock()))
+    supervisor._clock_ms = lambda: EVENT_END_MS - 10_000
+    owned = {OWNED_MARKET_ID}
+    supervisor._owned_market_ids = lambda: set(owned)  # type: ignore[method-assign]
+
+    async def run() -> None:
+        close_started = asyncio.Event()
+        release_close = asyncio.Event()
+        stop_requested = asyncio.Event()
+        request_stop = supervisor.request_stop
+        close_calls = 0
+        overlapped = False
+
+        def observe_stop() -> None:
+            request_stop()
+            stop_requested.set()
+
+        async def close_owned() -> bool:
+            nonlocal close_calls, overlapped
+            close_calls += 1
+            if close_calls == 1:
+                close_started.set()
+                await release_close.wait()
+                return False
+            overlapped = not release_close.is_set()
+            owned.clear()
+            return True
+
+        async def failed_stream(_stop: asyncio.Event) -> None:
+            await close_started.wait()
+            raise ConnectionError("authenticated stream failed during close")
+
+        supervisor.request_stop = observe_stop  # type: ignore[method-assign]
+        supervisor._close_owned = close_owned  # type: ignore[method-assign]
+        supervisor.user_stream.run = failed_stream  # type: ignore[method-assign]
+        task = asyncio.create_task(supervisor.run())
+        try:
+            await asyncio.wait_for(stop_requested.wait(), timeout=2)
+        finally:
+            release_close.set()
+            with pytest.raises(RuntimeError, match="critical_service_exit"):
+                await asyncio.wait_for(task, timeout=2)
+
+        assert close_calls == 2
+        assert not overlapped
+        assert supervisor.snapshot().stop_completed is True
+
+    asyncio.run(run())
 
 
 def test_startup_network_failure_drains_owned_exposure_before_exit(

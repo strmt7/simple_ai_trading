@@ -8,6 +8,7 @@ from pathlib import Path
 from types import SimpleNamespace
 import tomllib
 from decimal import Decimal
+from unittest.mock import Mock
 
 import pytest
 
@@ -1421,6 +1422,7 @@ def test_autonomous_assembles_independent_promoted_runtime(
         path=tmp_path / "live.sqlite3",
         records=lambda: (),
         owned_inventory=lambda: (),
+        open_owned_order_ids=lambda: (),
     )
     _enroll_flat_control(PolymarketRuntimeControl(ledger.path))
     clean = _reconciliation()
@@ -1657,7 +1659,9 @@ def test_autonomous_cleanup_surfaces_failed_stop_latch_after_closing_resources()
         def release(*_args: object, **_kwargs: object) -> None:
             pytest.fail("owned exposure must never release the runtime lease")
 
-    ledger = SimpleNamespace(owned_inventory=lambda: (object(),))
+    ledger = SimpleNamespace(
+        owned_inventory=lambda: (object(),), open_owned_order_ids=lambda: ()
+    )
     settlement = SimpleNamespace(close=lambda: events.append("settlement-close"))
     public = SimpleNamespace(
         session=SimpleNamespace(close=lambda: events.append("public-close"))
@@ -1695,7 +1699,9 @@ def test_autonomous_cleanup_latches_stop_when_inventory_is_unknown() -> None:
     def unreadable_inventory() -> tuple[object, ...]:
         raise OSError("ownership ledger unavailable")
 
-    ledger = SimpleNamespace(owned_inventory=unreadable_inventory)
+    ledger = SimpleNamespace(
+        owned_inventory=unreadable_inventory, open_owned_order_ids=lambda: ()
+    )
     settlement = SimpleNamespace(close=lambda: events.append("settlement-close"))
     public = SimpleNamespace(
         session=SimpleNamespace(close=lambda: events.append("public-close"))
@@ -1716,6 +1722,28 @@ def test_autonomous_cleanup_latches_stop_when_inventory_is_unknown() -> None:
         "settlement-close",
         "public-close",
     ]
+
+
+def test_autonomous_cleanup_latches_stop_for_unresolved_order() -> None:
+    control = Mock(spec=PolymarketRuntimeControl)
+    ledger = SimpleNamespace(
+        owned_inventory=lambda: (),
+        open_owned_order_ids=lambda: ("0x" + "1" * 64,),
+    )
+
+    live_cli._finalize_autonomous_resources(
+        runtime_control=control,
+        runtime_lease="lease",
+        runtime_released=False,
+        ledger=ledger,
+        settlement_venue=None,
+        public_client=None,
+    )
+
+    control.request_stop.assert_called_once_with(
+        reason="autonomous_exit_with_owned_exposure"
+    )
+    control.release.assert_not_called()
 
 
 def test_autonomous_command_dispatches_explicit_operator_pins(

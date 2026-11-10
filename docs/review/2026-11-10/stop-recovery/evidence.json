@@ -1,0 +1,52 @@
+{
+  "base_head": "8b9fbecfb0b41b69837c153579312226a86edfbb",
+  "baseline": {
+    "public_discovery_failure_prevented_timely_stop_recovery": true,
+    "synthetic_cases": 2,
+    "tested_source_sha256": {
+      "src/simple_ai_trading/polymarket_autonomous_runtime.py": "1f896f4b620eac4bf72fb44f676d92a5221439d76b6d6d219093b13ae055d0b0",
+      "src/simple_ai_trading/polymarket_live.py": "118ee7a385e2b8b8fe013114ba441d59a037904c30265d21f2737e839650781b",
+      "src/simple_ai_trading/polymarket_live_cli.py": "72eabee16fb1df5015e32b6b9939de7319a14be28564ff334ad7ffb023e6eb44",
+      "src/simple_ai_trading/polymarket_live_risk.py": "f677fb32f40caecd9733f1fe418608d32284982a09332db561b2b695580220c1",
+      "src/simple_ai_trading/polymarket_live_stop.py": "d22438e22ce7526f3d6dd52b3cba09c9f8402c86776a69687e9db02300d72aab",
+      "src/simple_ai_trading/polymarket_runtime_control.py": "1903deb0c1dcf684fa328ffbe2eb3dec45b429fd87777b18e69e89bc7d194af2",
+      "src/simple_ai_trading/runtime_control.py": "e5e61583eed5e97bd6aa51c44cd9866435d9d8117ed58611443fd1cedf644791",
+      "tests/conftest.py": "090974084e8c25f16dc18ed084269d75edb9fdb5f4d7d15e6e72bb23853d9abc",
+      "tests/polymarket_live_support.py": "cc3369f4a17be4c4a3eaa5b196d2a5ea76c7d699ee9f542b4d8e87da84e83d4c",
+      "tests/test_polymarket_autonomous_runtime.py": "1cd67a82a6d6f4b7c10c35df987dc3c5b142992b304702e8a4c24284bb4a78dd",
+      "tests/test_polymarket_live_cli.py": "8049d9ba0583c7a73be71d0e176021bcfe519666ad5b9285102f0b8b24f96556"
+    },
+    "unresolved_owned_order_without_position_did_not_latch_stop": true
+  },
+  "evidence_sha256": "cbe3637fe0c3578498a17fc3a266fc449b4d4b38c4df6b6c0042f4e6b296c5b5",
+  "receipts": {
+    "stop-baseline-junit.xml": "db45362c8a5e0b8abdb346581c438509f8e4517d1bf19471f95daf16b37e7559",
+    "stop-baseline.json": "c09c1e10e5de80ad073f61e013c5c4cbd898e7f483c5c5029d20cb1a94877626",
+    "stop-cli-junit.xml": "dc4ed1ba685cff860dd58ab9f3cede62c4142c216481d2588e8344bf7241f5b9",
+    "stop-cli.json": "c3231ce9a29146723222721b140c2d8ddba17b695dc60aa45831da3204ab0f0e",
+    "stop-recovery-junit.xml": "123593a661fb2a5f0391e9bec41af58ed52984e95449ca285f32c1f9fc384b55",
+    "stop-recovery.json": "ec9347aeb21bc3678cfdfe3d0d8f999342db4b60f4f2778376f93fb82ff792ca"
+  },
+  "schema": "polymarket-stop-recovery-evidence-v1",
+  "verification": {
+    "distinct_passed": 107,
+    "replaced_phase_issue": "fixture missing open_owned_order_ids method",
+    "replacement_cli_module_passed": 47,
+    "runtime_and_supervisor_passed": 60,
+    "same_source_within_each_phase": true,
+    "tested_source_sha256": {
+      "src/simple_ai_trading/polymarket_autonomous_runtime.py": "38a6073b4e4de411955a63bedabebecd7a4a7cc42ee49431ee6d2c86058786a6",
+      "src/simple_ai_trading/polymarket_live.py": "118ee7a385e2b8b8fe013114ba441d59a037904c30265d21f2737e839650781b",
+      "src/simple_ai_trading/polymarket_live_cli.py": "d30a5bc1a160a4bd727a72e5abe4bb45dd5435b03aeecc3ba6561874a669b795",
+      "src/simple_ai_trading/polymarket_live_risk.py": "f677fb32f40caecd9733f1fe418608d32284982a09332db561b2b695580220c1",
+      "src/simple_ai_trading/polymarket_live_stop.py": "d22438e22ce7526f3d6dd52b3cba09c9f8402c86776a69687e9db02300d72aab",
+      "src/simple_ai_trading/polymarket_runtime_control.py": "1903deb0c1dcf684fa328ffbe2eb3dec45b429fd87777b18e69e89bc7d194af2",
+      "src/simple_ai_trading/runtime_control.py": "e5e61583eed5e97bd6aa51c44cd9866435d9d8117ed58611443fd1cedf644791",
+      "tests/conftest.py": "090974084e8c25f16dc18ed084269d75edb9fdb5f4d7d15e6e72bb23853d9abc",
+      "tests/polymarket_live_support.py": "cc3369f4a17be4c4a3eaa5b196d2a5ea76c7d699ee9f542b4d8e87da84e83d4c",
+      "tests/test_polymarket_autonomous_runtime.py": "b388a93e29599de1407e1406df3aef91d4b1f4b8b2f9166ba068a6978b8ec017",
+      "tests/test_polymarket_live_cli.py": "15dc39ac6e2782448bb1cf1577136d30e9c518b272be3d0a913022b31e3d2fd2",
+      "tests/test_polymarket_runtime_control.py": "3750f0a497cd53fc6c0db74fc3274ef4b5b18ef69d9b578f89b6ba1536f0dbd3"
+    }
+  }
+}

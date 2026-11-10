@@ -1,0 +1,51 @@
+{
+  "baseline": {
+    "observations": {
+      "all_market_and_execution_calls_synthetic": true,
+      "different_owned_market_close_callback_count": 1,
+      "initial_timeout": true,
+      "late_result_admitted": true,
+      "provider_calls": 1,
+      "provider_observed_first_market": true
+    },
+    "receipt_sha256": "09681193404de6a201367ed17eb0259042d1e12a476f3316555cad554c9a4f15",
+    "source_sha256": {
+      "polymarket_autonomous_runtime.py": "66c90feb238a2ab561267fddf1e204830b2eb0265ada1b6b31a3f1ad42a6e7d3",
+      "polymarket_live.py": "118ee7a385e2b8b8fe013114ba441d59a037904c30265d21f2737e839650781b",
+      "polymarket_live_cli.py": "72eabee16fb1df5015e32b6b9939de7319a14be28564ff334ad7ffb023e6eb44"
+    }
+  },
+  "baseline_head": "8b9fbecfb0b41b69837c153579312226a86edfbb",
+  "evidence_sha256": "38b871caa4644ce8198a6aa9525ad5756ac6bc65a387bad92297d3ce162489ec",
+  "navigation": {
+    "matched_live_candidates": 5,
+    "mirror_digest": "a180c30f46ec7fdbb717d209ddc6278d",
+    "receipt_sha256": "c8bcc5a68e600c0cae997483af0808b84b6c3b291f064246e0d39ac024a16cfe"
+  },
+  "schema": "polymarket-decision-expiry-evidence-v1",
+  "verification": {
+    "counts": {
+      "errors": 0,
+      "failures": 0,
+      "skipped": 0,
+      "tests": 104
+    },
+    "junit_sha256": "3fea8c640a9e61601fad0ab6dafb84daef96fd9c0eb361a79bbe810345c12098",
+    "phase": "decision_expiry",
+    "receipt_sha256": "873f5f2dbe768b6c557ab2a728549e427ae518a36637fc0de8f3d71dd73c35e1",
+    "same_source_before_and_after": true,
+    "source_sha256": {
+      "src/simple_ai_trading/polymarket_autonomous_runtime.py": "1f896f4b620eac4bf72fb44f676d92a5221439d76b6d6d219093b13ae055d0b0",
+      "src/simple_ai_trading/polymarket_live.py": "118ee7a385e2b8b8fe013114ba441d59a037904c30265d21f2737e839650781b",
+      "src/simple_ai_trading/polymarket_live_cli.py": "72eabee16fb1df5015e32b6b9939de7319a14be28564ff334ad7ffb023e6eb44",
+      "src/simple_ai_trading/polymarket_live_risk.py": "f677fb32f40caecd9733f1fe418608d32284982a09332db561b2b695580220c1",
+      "src/simple_ai_trading/polymarket_runtime_control.py": "1903deb0c1dcf684fa328ffbe2eb3dec45b429fd87777b18e69e89bc7d194af2",
+      "src/simple_ai_trading/runtime_control.py": "e5e61583eed5e97bd6aa51c44cd9866435d9d8117ed58611443fd1cedf644791",
+      "tests/conftest.py": "090974084e8c25f16dc18ed084269d75edb9fdb5f4d7d15e6e72bb23853d9abc",
+      "tests/polymarket_live_support.py": "cc3369f4a17be4c4a3eaa5b196d2a5ea76c7d699ee9f542b4d8e87da84e83d4c",
+      "tests/test_polymarket_autonomous_runtime.py": "1946fd4b814eec977abf646e9fd405ff91de7b19545190d652d98d42c1391e08",
+      "tests/test_polymarket_live_cli.py": "312ff001c5a104918f17abec6f6bfd4b7f8a2d49727cb278c2174881bd11e06a",
+      "tests/test_polymarket_runtime_control.py": "3750f0a497cd53fc6c0db74fc3274ef4b5b18ef69d9b578f89b6ba1536f0dbd3"
+    }
+  }
+}
