@@ -970,6 +970,8 @@ async def _autonomous(
             automatic_redemption_enabled=automatic_redemption,
             interval_seconds=max(5.0, interval),
         )
+        from .polymarket_market_discovery import PolymarketOwnedMarketDiscovery
+
         supervisor = components.PolymarketAutonomousSupervisor(
             public_client=public_client,
             coordinator=coordinator,
@@ -984,6 +986,7 @@ async def _autonomous(
             risk_level=risk_level,
             settlement=settlement,
             decision_data_service=predictor_feed,
+            market_discovery=PolymarketOwnedMarketDiscovery(),
             durable_control_service=PolymarketRuntimeControlService(
                 runtime_control,
                 lease_id=runtime_lease,

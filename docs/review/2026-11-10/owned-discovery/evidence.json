@@ -1,0 +1,51 @@
+{
+  "base_head": "4eabdce3fe46a09f8404a621c2c2114ee9c84333",
+  "baseline": {
+    "observations": {
+      "all_market_and_execution_calls_synthetic": true,
+      "calls": 2,
+      "closed_after_discovery_released": true,
+      "closed_while_discovery_blocked": false,
+      "rollover_thread_entered": true
+    },
+    "runtime_source_sha256": "c03497f5cac87eda3108f37a007e414febef3b0695dfeee324490df10c7f0ddc"
+  },
+  "evidence_sha256": "eaf9ee92639d43e5339ed23fa9bd3184287f21ce522d4119f91d2e530b33d539",
+  "hard_forecast_or_authenticated_operation_termination_qualified": false,
+  "platform": "Windows",
+  "real_process_with_synthetic_reply_and_hang": true,
+  "real_venue_or_account_requests": 0,
+  "receipts": {
+    "baseline.json": "c9c89d51b8b6257aedca82b9e2051bf7c2407f6d0563d09381bd11f00e2a1035",
+    "owned-discovery-junit.xml": "5533bce4672570a50fd0133e39becde2599e66821f79defbe592ec0ac80368b3",
+    "owned-discovery-runtime-junit.xml": "30105b235efde77aac2997dc6d8a33f52f9cd84494bcdc47ae6f153c1cedf141",
+    "owned-discovery-runtime.json": "0a532f601ea31f8f3325a2be08ba44e3e5ed488eabb85a4be21f04514ce3103d",
+    "owned-discovery.json": "de963adb065ed2d1aa920bd24048e3a2d23780cc8754dffa0567e1f41314800c"
+  },
+  "schema": "polymarket-owned-discovery-evidence-v1",
+  "verification": {
+    "distinct_passed": 114,
+    "fixture_correction": "Windows may return zero for job termination. The final fixture proves child startup and checks the original process handle at close, plus absence of its normal-finish marker.",
+    "production_bytes_identical_in_both_phases": true,
+    "replacement_runtime_cases": 29,
+    "reused_public_and_cli_cases": 85,
+    "tested_source_sha256": {
+      "src/simple_ai_trading/polymarket.py": "be0a77d3690e3a229e80aa33fe13d60f53d4e9d3d010f00acd03aae3fdb3cfff",
+      "src/simple_ai_trading/polymarket_autonomous.py": "47e0d1343f99185f1bace2f1cb26aca8edaaa2016801babdbc311550679dcae3",
+      "src/simple_ai_trading/polymarket_autonomous_runtime.py": "85ca797944f39ff4ad020fa744b7df04f86e75b24f9a059f15acfd0c64ca8f23",
+      "src/simple_ai_trading/polymarket_live.py": "59ea64bc2eec18297453a34f472dff7c7baa60aadc56bcb4cb4fe39d5b1f86aa",
+      "src/simple_ai_trading/polymarket_live_cli.py": "c31e1461199ef9efa92093859987d53e0350f5628fe5dbb8a654420d73cf6fb8",
+      "src/simple_ai_trading/polymarket_live_risk.py": "5341275b933a2d34da066fcf1e2ecd58505b3b2ec5a55ad812439feaf29b8f96",
+      "src/simple_ai_trading/polymarket_live_stop.py": "d22438e22ce7526f3d6dd52b3cba09c9f8402c86776a69687e9db02300d72aab",
+      "src/simple_ai_trading/polymarket_market_discovery.py": "aa509fb4258790b26dcc3a39d085501600678e6bf03112429febb1f770598cc8",
+      "src/simple_ai_trading/polymarket_runtime_control.py": "1903deb0c1dcf684fa328ffbe2eb3dec45b429fd87777b18e69e89bc7d194af2",
+      "src/simple_ai_trading/runtime_control.py": "e5e61583eed5e97bd6aa51c44cd9866435d9d8117ed58611443fd1cedf644791",
+      "src/simple_ai_trading/windows_owned_job.py": "82dd0e80340c8388f20d6871863fdf5075d4f271d0c7fe9276a295db962f05ae",
+      "tests/conftest.py": "090974084e8c25f16dc18ed084269d75edb9fdb5f4d7d15e6e72bb23853d9abc",
+      "tests/polymarket_live_support.py": "cc3369f4a17be4c4a3eaa5b196d2a5ea76c7d699ee9f542b4d8e87da84e83d4c",
+      "tests/test_polymarket.py": "9f5454d3c605ada1aa81c3c5926010d07501e031f61b6246714b651d6eee4b19",
+      "tests/test_polymarket_autonomous_runtime.py": "f1d8622bf60507b8168a928c20728151f46728a31d35ec6af66b0b3429bef7bf",
+      "tests/test_polymarket_live_cli.py": "c434a646fc15e3370e7cfa65fe7a54b2914cd896e86fd9402c32f5713cb95d4f"
+    }
+  }
+}

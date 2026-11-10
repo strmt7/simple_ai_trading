@@ -1,8 +1,10 @@
 from __future__ import annotations
 
+import asyncio
 from copy import deepcopy
 from decimal import Decimal
 import json
+import sys
 
 import pytest
 
@@ -17,6 +19,7 @@ from simple_ai_trading.polymarket import (
     validate_clob_order_book,
     validate_clob_market_info,
 )
+from simple_ai_trading.polymarket_market_discovery import PolymarketOwnedMarketDiscovery
 
 
 EPOCH = 1_784_058_600
@@ -60,6 +63,64 @@ def _fifteen_minute_market(*, epoch: int = EPOCH_15) -> dict[str, object]:
     payload["eventStartTime"] = "2026-07-14T19:45:00Z"
     payload["endDate"] = "2026-07-14T20:00:00Z"
     return payload
+
+
+@pytest.mark.parametrize(
+    ("variant", "epoch", "payload_factory"),
+    [
+        ("fiveminute", EPOCH, _market),
+        ("fifteenminute", EPOCH_15, _fifteen_minute_market),
+    ],
+)
+def test_owned_discovery_admits_only_bound_public_reply(
+    monkeypatch, variant, epoch, payload_factory
+) -> None:
+    worker = PolymarketOwnedMarketDiscovery()
+    payload = json.dumps([payload_factory()], ensure_ascii=True)
+    monkeypatch.setenv("TRADING_DISCOVERY_TEST_SECRET", "fixture")
+    script = (
+        "import os; assert 'TRADING_DISCOVERY_TEST_SECRET' not in os.environ; "
+        f"print({payload!r})"
+    )
+    monkeypatch.setattr(
+        worker, "_command", lambda *_args: [sys.executable, "-I", "-B", "-c", script]
+    )
+
+    async def discover():
+        return await worker.discover(
+            market_variant=variant, observed_at_ms=epoch * 1_000, stop=asyncio.Event()
+        )
+
+    markets = asyncio.run(discover())
+    assert markets is not None and len(markets) == 1
+    assert markets[0].event_start_ms == epoch * 1_000
+    assert markets[0].asset == "BTC" and markets[0].slug == payload_factory()["slug"]
+
+
+def test_owned_discovery_deadline_reaps_hung_child(monkeypatch) -> None:
+    worker = PolymarketOwnedMarketDiscovery(timeout_seconds=0.2)
+    monkeypatch.setattr(
+        worker,
+        "_command",
+        lambda *_args: [
+            sys.executable,
+            "-I",
+            "-B",
+            "-c",
+            "import time; time.sleep(60)",
+        ],
+    )
+
+    async def discover():
+        async with asyncio.timeout(4):
+            return await worker.discover(
+                market_variant="fiveminute",
+                observed_at_ms=EPOCH * 1_000,
+                stop=asyncio.Event(),
+            )
+
+    with pytest.raises(TimeoutError, match="market discovery deadline expired"):
+        asyncio.run(discover())
 
 
 def test_market_parser_requires_exact_five_minute_chainlink_contract() -> None:

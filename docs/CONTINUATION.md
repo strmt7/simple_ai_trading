@@ -32,7 +32,7 @@ The current release composite creates a draft even with publishing disabled:
 do not dispatch it for validation. Enforce bounded resource lifetimes and
 task-owned teardown throughout development, without touching other host tasks.
 
-Financial counts are **205 observations / 65 hypotheses / 37 scoped mechanisms
+Financial counts are **206 observations / 65 hypotheses / 37 scoped mechanisms
 / 0 qualified stable edges**. Favor recurring net cash and sound payoff identities;
 expiring promotions and larger datasets alone are not the objective. Use the full
 [revamp work map](REVAMP_2026_11_09.md) and [work priorities](WORK_PRIORITIES.md).
@@ -48,6 +48,12 @@ readiness fixture was subsequently repaired in a focused lane. Do not infer a
 current full-suite failure count without rerunning the appropriate scope.
 
 ## Financial and source frontier
+
+- [Seoul November 12 partition](review/2026-11-10/seoul-nov12-frontier/review.md)
+  admitted one exact event with eleven contiguous Celsius bins. The exact
+  certificate rejects every mixed or unequal long-only cover using its 21
+  available gross Gamma acquisition proxies. The upper-tail NO proxy was
+  unavailable. The event is terminal and no order book request followed.
 
 - [APPB contract mapping](review/2026-11-10/appb-mapping/review.md) stopped
   at HTTP 202 with no substantive publisher text. APPB was chosen by ticker
@@ -231,6 +237,11 @@ Require an exact independently located publisher revision/redline and retain
 the unchanged account-fee gate before economic access. No new observation added.
 
 ## Platform work and publication
+
+- [Owned market discovery](review/2026-11-10/owned-discovery/review.md) isolates
+  the live CLI's public BTC discovery in a bounded child. Stop terminates and
+  reaps the stalled rollover child before owned recovery. Forecast, execution
+  and initial durable-control coverage remain separate.
 
 - [Wallet backing](review/2026-11-10/wallet-backing/review.md) applies the
   nominal configured allocation test at the promoted opening gateway using

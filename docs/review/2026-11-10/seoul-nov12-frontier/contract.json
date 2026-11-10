@@ -1,0 +1,120 @@
+{
+  "adjudication_path": "data/research/2026-11-10-seoul-nov12-frontier/adjudication.json",
+  "admission": "Accept only 3..32 active binary rows in one fixed non-augmented exact event, with a shared station, date, resolution source, whole Celsius convention and contiguous singly numbered integer bins including both tails. This ordinary-state payoff model does not imply exceptional or on-chain settlement equivalence.",
+  "authority": {
+    "account_requests": 0,
+    "credentials_used": false,
+    "funds_used": false,
+    "orders_or_transactions": 0,
+    "protected_capture_touched": false,
+    "public_unauthenticated_read_only_requests": 1,
+    "signed_requests": 0,
+    "trading_authority": false
+  },
+  "base_head": "4eabdce3fe46a09f8404a621c2c2114ee9c84333",
+  "boundaries_sha256": "f971726268ba2e630b2ebbe8d5bcf02f7b3f23b92ccb16efe23aef82cebe950f",
+  "consequences": "One exact GET. No refresh, alias, missing-side repair, sibling selection, order book, fee request, on-chain request, account, or order follows this action. A conditional surviving proxy would need separate exact rule and adapter qualification before even freezing a new depth request.",
+  "contract_path": "docs/review/2026-11-10/seoul-nov12-frontier/contract.json",
+  "contract_sha256": "bcfa3ee39358f2bd1feba6e96972992d121e43f3b088898cf59987ea8f22bbd8",
+  "date_markers": [
+    "12 nov '26",
+    "12 nov \u201926",
+    "november 12, 2026",
+    "2026-11-12"
+  ],
+  "discovered_publisher_url": "https://polymarket.com/event/highest-temperature-in-seoul-on-november-12-2026",
+  "economics": "YES bestAsk and NO 1 - YES bestBid as a rejection proxy. Missing sides stay unavailable. Reject crossed or malformed prices. Exact arbitrary-size nominal gross certificate first. If a witness exists, evaluate a 5-share-per-leg configured-fee stress with one adverse tick and the fee curve maximum at 0.5. No ordinary account fees, book depth, atomicity or profit inferred.",
+  "event_slug": "highest-temperature-in-seoul-on-november-12-2026",
+  "frozen_at_utc": "2026-11-10T23:14:11.064820Z",
+  "hard_owned_controller_seconds": 65,
+  "implementations": [
+    {
+      "path": "docs/review/2026-11-10/seoul-nov12-frontier/adjudicate.py",
+      "sha256": "5fc7b3044f75884eda1b9163333f60a3817a41800dab1c880374de157a33a299"
+    },
+    {
+      "path": "tools/capture_public_source_bounded.py",
+      "sha256": "760339a7602abfa9eb97f3f1cca0ef79191b07ff5f5aa42515f30f191f9888fc"
+    },
+    {
+      "path": "tools/capture_public_source_contract.py",
+      "sha256": "9dbb14651455abade755fe96091b9eaafe1153f56a1baad4cd60b1a888d41b8c"
+    },
+    {
+      "path": "tools/screen_polymarket_exact_negrisk_long_only_frontier.py",
+      "sha256": "1527dbf87fbaf7315a9f505d022c877f9c7b3eece9f1e5fc8dbb8cf2e19fdf2b"
+    },
+    {
+      "path": "tools/screen_polymarket_exact_two_leg_package.py",
+      "sha256": "374fcc3c3485c466b4929a91256450bdc7db70f93ef4c6bda627e05fe8938327"
+    },
+    {
+      "path": "tools/adjudicate_polymarket_exact_mlb_monotone_prefilter.py",
+      "sha256": "958a44d78029b9a1eb69a3771ce18e53ac1ed3c7bc161c8e4318beedce2cf99f"
+    },
+    {
+      "path": "tools/adjudicate_polymarket_retained_negrisk_pairwise_no.py",
+      "sha256": "59e610511f1e423c6191669931a6a887d190fa10c27eb90e36fd8a370407f71b"
+    },
+    {
+      "path": "tools/adjudicate_polymarket_retained_negrisk_pairwise_no_v2.py",
+      "sha256": "fe601915bd4db210441dc56978dba919ba7e68cb4a586ee9f19d00f807f2afb1"
+    },
+    {
+      "path": "tools/screen_polymarket_negrisk_complete_set_catalog.py",
+      "sha256": "5d5dd88fe9f77be92063d4b55bbcb8dd1b96db06b99dd0d021774916cf2b5ae9"
+    },
+    {
+      "path": "src/simple_ai_trading/partition_cover.py",
+      "sha256": "85b72662f2653171dbe0c1b9b9bbba79e70075a830d9a81fa44bac0dcb052ffe"
+    },
+    {
+      "path": "src/simple_ai_trading/polymarket_fees.py",
+      "sha256": "4002aa8008874708931cc182f352adf436a65baee24e23bfc72617acdf127c8d"
+    }
+  ],
+  "integer_celsius_markers": [
+    "whole degrees celsius",
+    "whole degree celsius",
+    "whole degree,",
+    "integer degrees celsius"
+  ],
+  "outputs": {
+    "journal_path": "data/research/2026-11-10-seoul-nov12-frontier/request-journal.jsonl",
+    "raw_path": "data/research/2026-11-10-seoul-nov12-frontier/raw/event.json",
+    "result_path": "data/research/2026-11-10-seoul-nov12-frontier/capture.json"
+  },
+  "preflight_controls": [
+    "complete gross rejection",
+    "gross witness but no configured stress survivor",
+    "invalid bins rejected"
+  ],
+  "request": {
+    "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "count": 1,
+    "method": "GET",
+    "url": "https://gamma-api.polymarket.com/events/slug/highest-temperature-in-seoul-on-november-12-2026"
+  },
+  "request_name": "Seoul November 12 exact fixed-temperature event and rejection proxy",
+  "required_utf8_phrases": [
+    "highest-temperature-in-seoul-on-november-12-2026",
+    "negRiskMarketID"
+  ],
+  "response_byte_ceiling": 2097152,
+  "retry_trigger_rank": 31,
+  "selection": "Exact dated Seoul publisher title/URL only from discovery, without returning target prices to the decision context. No previously screened Seoul series found in the bounded published and private metadata scopes. This one exact native request must establish fixed NegRisk deployment and complete ordinary-state partition itself before its price fields are read.",
+  "station_markers": [
+    "incheon international airport",
+    "incheon intl airport",
+    "rksi"
+  ],
+  "stress_quantity_shares_each_leg": "5",
+  "title": "Highest temperature in Seoul (Incheon) on November 12?",
+  "transport": {
+    "proxies": false,
+    "read_budget_seconds": 30,
+    "redirects": false,
+    "retries": 0,
+    "socket_timeout_seconds": 10
+  }
+}

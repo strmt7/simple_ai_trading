@@ -151,7 +151,9 @@ class WindowsOwnedJob:
             raise OSError("owned suspended child thread identity changed")
         return int(thread)
 
-    def enroll_and_resume(self, process: subprocess.Popen[str]) -> None:
+    def enroll_and_resume(
+        self, process: subprocess.Popen[str] | subprocess.Popen[bytes]
+    ) -> None:
         """Assign the original Popen process handle before its first instruction."""
         process_handle = getattr(process, "_handle", None)
         if (

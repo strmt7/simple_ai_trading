@@ -158,7 +158,7 @@
       "why_not_stable_deployable": "Current rate remains conflict-qualified rather than proven, the evidence is from public wallets rather than the owned account, every external friction and best alternative is not bound, and future persistence is not guaranteed."
     }
   },
-  "result_sha256": "204ab81a2ed2cb6f61d502ef7a8662dd655d5126a2774b81ed7db0af202bd057",
+  "result_sha256": "57e05642941a9bb954035a468f91641178f560da7a6a68c4536eb9b0693b61b4",
   "routing": {
     "october8_9_nfl_total_ladder_resource_failure": {
       "status": "terminal_resource_unqualified_no_price_evaluation",
@@ -342,7 +342,7 @@
   "source_binding": {
     "accepted_edge_count": 37,
     "registry_path": "docs/model-research/structural-edge-priority-registry-v1.json",
-    "registry_result_sha256": "f38e2a0ff864a494fc833002381499e9cac151d7762fea2e9d3f9333da4dded8",
+    "registry_result_sha256": "635344592a59068be2cf85c4a69b36c550f6495d60ab14c2f4fd30d17ed8eaae",
     "registry_metadata_partition_certificate": {
       "path": "docs/review/2026-11-10/partition-cover-certificate/result.json",
       "result_sha256": "6055b166a789e97e47d13adecbfc1e885c03cca6030a596de9aaa6fb5a80ae71",
@@ -352,7 +352,12 @@
       "path": "docs/review/2026-11-10/clearing-amendment-source/result.json",
       "result_sha256": "3acb0953dead0872fce90d3ea10ce485ffe2f7b96d75a3640dcf53df09989024",
       "effect": "metadata only; no scope, decision or observation change"
+    },
+    "registry_seoul_november12_gross_cover": {
+      "path": "docs/review/2026-11-10/seoul-nov12-frontier/result.json",
+      "result_sha256": "e68dbd4532f61fe399e2b04ae9d64d25041731b6bffa847289ea2b01d4da3a3d",
+      "effect": "one terminal economic observation and no change to scope or qualified edges"
     }
   },
-  "updated_at_utc": "2026-11-10T10:05:40.737372+00:00"
+  "updated_at_utc": "2026-11-10T23:17:15.112667+00:00"
 }

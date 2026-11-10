@@ -7,6 +7,7 @@ from decimal import Decimal
 import inspect
 import json
 from pathlib import Path
+import sys
 from threading import Event
 from types import SimpleNamespace
 from unittest.mock import Mock
@@ -15,6 +16,7 @@ import pytest
 
 from polymarket_live_support import build_polymarket_live_promotion_fixture
 import simple_ai_trading.polymarket_autonomous_runtime as runtime_module
+import simple_ai_trading.polymarket_market_discovery as discovery_module
 from simple_ai_trading.polymarket import (
     PolymarketFeeSchedule,
     PolymarketFifteenMinuteMarket,
@@ -840,6 +842,87 @@ def test_stop_closes_owned_exposure_when_public_discovery_fails(
     assert not owned
     assert supervisor.snapshot().stop_completed is True
     supervisor.decision_provider.decide.assert_not_called()
+
+
+def test_stop_reaps_owned_discovery_child_before_closing_exposure(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    async def run() -> None:
+        loop = asyncio.get_running_loop()
+        first_decision = asyncio.Event()
+        child_launched = asyncio.Event()
+        owned = {OWNED_MARKET_ID}
+        observed = NOW_MS
+        calls = 0
+        children = []
+        close_exit_codes = []
+        active = _market()
+        upcoming = _market(condition_id=NEXT_MARKET_ID, start_ms=EVENT_END_MS)
+        worker = discovery_module.PolymarketOwnedMarketDiscovery()
+        popen = discovery_module.subprocess.Popen
+        ready = tmp_path / "discovery-started"
+        finished = tmp_path / "discovery-finished"
+
+        def start(*args, **kwargs):
+            child = popen(*args, **kwargs)
+            children.append(child)
+            child_launched.set()
+            return child
+
+        def decide(**_kwargs):
+            loop.call_soon_threadsafe(first_decision.set)
+            return PolymarketAutonomousDecision()
+
+        async def discover(**kwargs):
+            nonlocal calls
+            calls += 1
+            if calls == 1:
+                return active, upcoming
+            return await worker.discover(**kwargs)
+
+        async def close() -> bool:
+            close_exit_codes.append(children[0].poll())
+            owned.clear()
+            return True
+
+        monkeypatch.setattr(discovery_module.subprocess, "Popen", start)
+        monkeypatch.setattr(
+            worker,
+            "_command",
+            lambda *_args: [
+                sys.executable,
+                "-I",
+                "-B",
+                "-c",
+                "import sys,time; from pathlib import Path; "
+                "Path(sys.argv[1]).touch(); time.sleep(60); Path(sys.argv[2]).touch()",
+                str(ready),
+                str(finished),
+            ],
+        )
+        supervisor = _supervisor(tmp_path, provider=SimpleNamespace(decide=decide))
+        supervisor.market_discovery = SimpleNamespace(discover=discover)
+        supervisor._clock_ms = lambda: observed
+        supervisor._owned_market_ids = lambda: set(owned)  # type: ignore[method-assign]
+        supervisor._close_owned = close  # type: ignore[method-assign]
+        task = asyncio.create_task(supervisor.run())
+        try:
+            await asyncio.wait_for(first_decision.wait(), timeout=3)
+            observed = EVENT_END_MS + 1
+            await asyncio.wait_for(child_launched.wait(), timeout=3)
+            async with asyncio.timeout(3):
+                while not ready.is_file():
+                    await asyncio.sleep(0.02)
+            assert len(children) == 1 and children[0].poll() is None
+        finally:
+            supervisor.request_stop()
+            await asyncio.wait_for(task, timeout=4)
+
+        assert len(close_exit_codes) == 1 and close_exit_codes[0] is not None
+        assert not finished.exists()
+        assert supervisor.snapshot().stop_completed is True
+
+    asyncio.run(run())
 
 
 def test_close_failure_is_retained_as_retriable_state(

@@ -1,0 +1,25 @@
+{
+  "before": {
+    "validation_kind": "registry_binding_and_recorded_census_only",
+    "observations": 205,
+    "hypotheses": 65,
+    "scoped_mechanisms": 37,
+    "recorded_qualified_stable_edges": 0,
+    "registry_sha256": "f38e2a0ff864a494fc833002381499e9cac151d7762fea2e9d3f9333da4dded8",
+    "audit_sha256": "204ab81a2ed2cb6f61d502ef7a8662dd655d5126a2774b81ed7db0af202bd057",
+    "profitability_qualification_supplied_by_verifier": false
+  },
+  "after": {
+    "validation_kind": "registry_binding_and_recorded_census_only",
+    "observations": 206,
+    "hypotheses": 65,
+    "scoped_mechanisms": 37,
+    "recorded_qualified_stable_edges": 0,
+    "registry_sha256": "635344592a59068be2cf85c4a69b36c550f6495d60ab14c2f4fd30d17ed8eaae",
+    "audit_sha256": "57e05642941a9bb954035a468f91641178f560da7a6a68c4536eb9b0693b61b4",
+    "profitability_qualification_supplied_by_verifier": false
+  },
+  "family": "polymarket_seoul_november12_exact_gross_partition_cover",
+  "prior_results_unchanged": true,
+  "new_qualified_edges": 0
+}

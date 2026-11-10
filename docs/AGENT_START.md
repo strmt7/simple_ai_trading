@@ -7,7 +7,7 @@ The full R&D, application revamp and final-review goal remains active.
 
 ## Mandatory boundaries
 
-- Financial counts: 205 observations / 65 hypotheses / 37 scoped mechanisms /
+- Financial counts: 206 observations / 65 hypotheses / 37 scoped mechanisms /
   **0 qualified stable edges**. Historical scoped results are not deployable
   profit. Reverify live state before relying on it.
 - Prioritize sound recurring after-cost cashflows, executable payoff identities,

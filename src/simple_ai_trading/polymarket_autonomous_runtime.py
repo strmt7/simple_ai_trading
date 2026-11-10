@@ -68,6 +68,16 @@ class PolymarketDecisionDataService(Protocol):
     async def run(self, stop: asyncio.Event) -> None: ...
 
 
+class PolymarketMarketDiscovery(Protocol):
+    async def discover(
+        self,
+        *,
+        market_variant: str,
+        observed_at_ms: int,
+        stop: asyncio.Event,
+    ) -> tuple[PolymarketFiveMinuteMarket, ...] | None: ...
+
+
 class PolymarketDurableControlService(Protocol):
     """Persistent single-writer and Stop supervision with no order authority."""
 
@@ -310,6 +320,7 @@ class PolymarketAutonomousSupervisor:
         settlement: PolymarketSettlementService | None = None,
         decision_data_service: PolymarketDecisionDataService | None = None,
         durable_control_service: PolymarketDurableControlService | None = None,
+        market_discovery: PolymarketMarketDiscovery | None = None,
         decision_interval_seconds: float = 1.0,
         decision_timeout_seconds: float = 3.0,
         forced_exit_seconds: int = 20,
@@ -383,6 +394,7 @@ class PolymarketAutonomousSupervisor:
         self.settlement = settlement
         self.decision_data_service = decision_data_service
         self.durable_control_service = durable_control_service
+        self.market_discovery = market_discovery
         self.decision_interval_seconds = interval
         self.decision_timeout_seconds = timeout
         self.forced_exit_seconds = forced_exit
@@ -570,7 +582,21 @@ class PolymarketAutonomousSupervisor:
         ):
             await synchronize_subscriptions(self._markets)
             return cached
-        if market_variant == "fiveminute":
+        if self.market_discovery is not None:
+            discovered = await self.market_discovery.discover(
+                market_variant=market_variant,
+                observed_at_ms=observed_at_ms,
+                stop=self._shutdown_requested,
+            )
+            if self._shutdown_requested.is_set():
+                return ()
+            if discovered is None:
+                raise PolymarketLiveBlocked(
+                    "public market discovery returned no result"
+                )
+            markets = discovered
+            expected_horizon = 5 if market_variant == "fiveminute" else 15
+        elif market_variant == "fiveminute":
             markets = await asyncio.to_thread(
                 self.public_client.discover_five_minute_markets,
                 now_ms=observed_at_ms,
@@ -1036,4 +1062,5 @@ __all__ = [
     "PolymarketAutonomousSupervisor",
     "PolymarketDecisionDataService",
     "PolymarketDurableControlService",
+    "PolymarketMarketDiscovery",
 ]

@@ -17,6 +17,7 @@ from simple_ai_trading import polymarket_live_cli as live_cli
 from simple_ai_trading.polymarket_autonomous_runtime import (
     PolymarketAutonomousRuntimeSnapshot,
 )
+from simple_ai_trading.polymarket_market_discovery import PolymarketOwnedMarketDiscovery
 from simple_ai_trading.polymarket_historical_shadow_feed import (
     PolymarketShadowFeedHealth,
 )
@@ -1626,6 +1627,7 @@ def test_autonomous_assembles_independent_promoted_runtime(
     )
 
     assert captured["decision_data_service"].trading_authority is False
+    assert isinstance(captured["market_discovery"], PolymarketOwnedMarketDiscovery)
     assert captured["lifecycle_qualification"] is lifecycle_qualification
     assert captured["durable_control_service"].trading_authority is False
     assert "external_signal_provider" not in captured
