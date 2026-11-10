@@ -1057,6 +1057,37 @@ class PolymarketLedgerRevision:
 
 
 @dataclass(frozen=True, slots=True)
+class PolymarketOpeningApproval:
+    """The ledger and wallet backing used to approve one promoted opening."""
+
+    ledger_revision: PolymarketLedgerRevision
+    risk_capital_quote: Decimal
+    owned_cost_basis_quote: Decimal
+
+    def __post_init__(self) -> None:
+        if not isinstance(self.ledger_revision, PolymarketLedgerRevision):
+            raise TypeError("opening approval requires a ledger revision")
+        object.__setattr__(
+            self,
+            "risk_capital_quote",
+            _decimal(self.risk_capital_quote, name="risk capital", positive=True),
+        )
+        object.__setattr__(
+            self,
+            "owned_cost_basis_quote",
+            _decimal(self.owned_cost_basis_quote, name="owned cost basis", nonnegative=True),
+        )
+
+
+class PolymarketWalletCapitalShortfall(PolymarketLiveBlocked):
+    def __init__(self, supported_capital_quote: Decimal) -> None:
+        super().__init__(
+            "current wallet cannot support configured Polymarket risk capital"
+        )
+        self.supported_capital_quote = supported_capital_quote
+
+
+@dataclass(frozen=True, slots=True)
 class PolymarketRealizedPnlEvent:
     """Exact fee-inclusive realized PnL from one owned close or redemption."""
 
@@ -1895,26 +1926,28 @@ class PolymarketLiveOrderLedger:
                     raise PolymarketLiveBlocked(
                         "intent_id was already bound differently"
                     )
-                connection.execute("COMMIT")
-                return
             if admit_submission and not intent.closing_only:
-                pending = connection.execute(
-                    "SELECT * FROM polymarket_live_orders WHERE state IN ("
-                    + ",".join("?" for _ in _OPEN_STATES)
-                    + ") LIMIT 1",
-                    sorted(_OPEN_STATES),
-                ).fetchone()
-                if pending is not None:
-                    self._verify_order_row(pending)
-                    raise PolymarketLiveBlocked(
-                        "opening reservation blocked by an unresolved owned order"
-                    )
+                if existing is None:
+                    pending = connection.execute(
+                        "SELECT * FROM polymarket_live_orders WHERE state IN ("
+                        + ",".join("?" for _ in _OPEN_STATES)
+                        + ") LIMIT 1",
+                        sorted(_OPEN_STATES),
+                    ).fetchone()
+                    if pending is not None:
+                        self._verify_order_row(pending)
+                        raise PolymarketLiveBlocked(
+                            "opening reservation blocked by an unresolved owned order"
+                        )
                 if self._revision(connection) != expected_revision:
                     raise PolymarketLiveBlocked(
                         "ledger changed after opening approval; obtain a new decision"
                     )
-            elif admit_submission:
+            elif admit_submission and existing is None:
                 self._assert_close_capacity(connection, intent)
+            if existing is not None:
+                connection.execute("COMMIT")
+                return
             connection.execute(
                 """
                 INSERT INTO polymarket_live_orders (
@@ -4137,12 +4170,25 @@ class PolymarketLiveCoordinator:
         *,
         tick_size: Decimal,
         neg_risk: bool,
+        opening_approval: PolymarketOpeningApproval | None = None,
     ) -> PolymarketLiveOrderRecord:
+        if opening_approval is not None and (
+            intent.closing_only
+            or not isinstance(opening_approval, PolymarketOpeningApproval)
+        ):
+            raise ValueError("portfolio approval is only valid for an opening order")
         now = int(time.time() * 1_000)
         self._assert_intent_current(intent, observed_at_ms=now)
         self._assert_order_dispatch_available()
         risk_limits = self.risk_limits
         approved_revision = None if intent.closing_only else self.ledger.revision()
+        if (
+            opening_approval is not None
+            and opening_approval.ledger_revision != approved_revision
+        ):
+            raise PolymarketLiveBlocked(
+                "ledger changed after opening approval; obtain a new decision"
+            )
         gate = self.preflight()
         if self.runtime_authority is not None:
             self.runtime_authority.assert_submission_allowed(
@@ -4216,6 +4262,12 @@ class PolymarketLiveCoordinator:
         if intent.side == "BUY":
             if funding.asset_type != "COLLATERAL":
                 raise PolymarketLiveBlocked("venue returned the wrong funding asset")
+            if opening_approval is not None:
+                supported_capital = (
+                    funding.available_balance + opening_approval.owned_cost_basis_quote
+                )
+                if supported_capital < opening_approval.risk_capital_quote:
+                    raise PolymarketWalletCapitalShortfall(supported_capital)
             required = intent.limit_price * intent.quantity + intent.fee_reserve_quote
         else:
             if (
@@ -4842,6 +4894,8 @@ __all__ = [
     "PolymarketConditionAccounting",
     "PolymarketFundingPreflight",
     "PolymarketLedgerRevision",
+    "PolymarketOpeningApproval",
+    "PolymarketWalletCapitalShortfall",
     "PolymarketLiveBlocked",
     "PolymarketLiveCoordinator",
     "PolymarketLiveError",

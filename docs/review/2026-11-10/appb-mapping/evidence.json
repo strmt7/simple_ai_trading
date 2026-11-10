@@ -1,0 +1,75 @@
+{
+  "base_head": "0fc5bd754ee4d4062c131ef9547b44700a5e99e0",
+  "capture": {
+    "exit_code": 0,
+    "markdown_characters": 1,
+    "native_bytes": 4400,
+    "native_error_message": "",
+    "native_navigation_started": true,
+    "native_sha256": "fe045346bcd6964483912977efa267aa28d8f9036de24b2dbb7c3e9a91b4cae8",
+    "native_success": true,
+    "redirected_status_code": 202,
+    "redirected_url": "https://www.binance.com/en/square/post/382014523428073",
+    "required_terms": {
+      "1:1": false,
+      "appb/usdt": false,
+      "applovin": false,
+      "binance announcement": false
+    },
+    "source_admitted": false,
+    "status_code": 202,
+    "url": "https://www.binance.com/en/square/post/382014523428073"
+  },
+  "evidence_sha256": "8280f17c523386edfb5b254785e4f7481a563ee1c481e3ad924af494b66c92d8",
+  "frozen_at_utc": "2026-11-10T22:57:28.659454+00:00",
+  "market_requests": 0,
+  "new_economic_observations": 0,
+  "provider": "0.9.5+flitzzip.portable2",
+  "rank_12_mapping_gate_satisfied": false,
+  "receipts": {
+    "intent.local.json": "e445336641fc0dbc3c195072d534716a9e52fc6eb9bbc5cbf85d34fff5f1dde8",
+    "journal.jsonl": "7a73a9c2b712073956442de814a1d120a69906eaeecdbc40161a370681d0e381",
+    "preflight.json": "a32416da702067e6d888609bc0da7dcd4192a47f47b8582b1841555352d76e1f",
+    "robots-decision.json": "f1418ee0689a2f68b7a440f497ed0c2914f1b92b6860421afe23420c3dc02fb3"
+  },
+  "robots_allowed": true,
+  "schema": "binance-appb-exact-mapping-source-attempt-v1",
+  "selection": "APPB precedes GEVB lexicographically among newly announced tokens whose exact named issuer also appeared in a Binance TradFi perpetual announcement. No market price influenced selection. No replacement candidate.",
+  "source_inventory": {
+    "private_metadata": {
+      "exit_code": 1,
+      "matches": [],
+      "maximum_file_bytes": 4194304,
+      "search_scope": [
+        "--no-ignore",
+        "--glob",
+        "*intent*.json",
+        "--glob",
+        "*journal*.json*",
+        "--glob",
+        "*receipt*.json",
+        "--glob",
+        "*result*.json",
+        "--glob",
+        "*contract*.json",
+        "data/research",
+        "data/edge-research"
+      ]
+    },
+    "published": {
+      "exit_code": 1,
+      "matches": [],
+      "maximum_file_bytes": 4194304,
+      "search_scope": [
+        "--glob",
+        "*.md",
+        "--glob",
+        "*.json",
+        "docs"
+      ]
+    }
+  },
+  "terminal_at_utc": "2026-11-10T22:57:45.022214+00:00",
+  "top_level_navigations": 1,
+  "universal_novelty_claim": false
+}

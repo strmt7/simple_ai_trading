@@ -23,10 +23,12 @@ from simple_ai_trading.polymarket_external_signal import (
 from simple_ai_trading.polymarket_live import (
     PolymarketCloseQuote,
     PolymarketConditionAccounting,
+    PolymarketLedgerRevision,
     PolymarketLiveBlocked,
     PolymarketLiveOrderIntent,
     PolymarketLiveOrderRecord,
     PolymarketOpenQuote,
+    PolymarketOpeningApproval,
 )
 from simple_ai_trading.polymarket_live_promotion import (
     VerifiedPolymarketLivePromotion,
@@ -44,6 +46,9 @@ MARKET_ID = "0x" + "1" * 64
 TOKEN_ID = "1" * 40
 MODEL_SHA = "2" * 64
 BOOK_SHA = "3" * 64
+OPENING_APPROVAL = PolymarketOpeningApproval(
+    PolymarketLedgerRevision(0, "0" * 64), Decimal("100"), Decimal("2.00")
+)
 
 
 def _canonical(value: object) -> str:
@@ -254,6 +259,7 @@ class _Coordinator:
     def __init__(self, venue: _Venue) -> None:
         self.venue = venue
         self.submissions: list[tuple[PolymarketLiveOrderIntent, Decimal, bool]] = []
+        self.opening_approvals: list[PolymarketOpeningApproval | None] = []
         self.targeted_closes: list[dict[str, object]] = []
         self.ledger = Mock()
         self.ledger.condition_accounting.return_value = PolymarketConditionAccounting(
@@ -274,8 +280,10 @@ class _Coordinator:
         *,
         tick_size: Decimal,
         neg_risk: bool,
+        opening_approval: PolymarketOpeningApproval | None = None,
     ) -> PolymarketLiveOrderRecord:
         self.submissions.append((intent, tick_size, neg_risk))
+        self.opening_approvals.append(opening_approval)
         return PolymarketLiveOrderRecord(
             intent=intent,
             expected_order_id="0x" + "9" * 64,
@@ -458,6 +466,7 @@ def test_external_signal_can_only_veto_or_reduce(tmp_path: Path) -> None:
             _proposal(promotion),
             promotion,
             coordinator,  # type: ignore[arg-type]
+            opening_approval=OPENING_APPROVAL,
             lifecycle_qualification=_qualification(),
             external_signal=reduce_below_minimum,
             clock_ms=lambda: NOW_MS,
@@ -476,6 +485,7 @@ def test_after_cost_edge_gate_counts_worst_fee(tmp_path: Path) -> None:
             _proposal(promotion, probability="0.51"),
             promotion,
             coordinator,  # type: ignore[arg-type]
+            opening_approval=OPENING_APPROVAL,
             lifecycle_qualification=_qualification(),
             clock_ms=lambda: NOW_MS,
         )
@@ -496,6 +506,7 @@ def test_execution_quote_cannot_exceed_bound_live_risk_headroom(
             _proposal(promotion, maximum_downside="4.5"),
             promotion,
             coordinator,  # type: ignore[arg-type]
+            opening_approval=OPENING_APPROVAL,
             lifecycle_qualification=_qualification(),
             clock_ms=lambda: NOW_MS,
         )
@@ -521,12 +532,14 @@ def test_valid_promoted_proposal_submits_exact_conservative_fok(
         _proposal(promotion, quantity="10"),
         promotion,
         coordinator,  # type: ignore[arg-type]
+        opening_approval=OPENING_APPROVAL,
         lifecycle_qualification=_qualification(),
         external_signal=reduce,
         clock_ms=lambda: NOW_MS,
     )
 
     intent, tick_size, neg_risk = coordinator.submissions[0]
+    assert coordinator.opening_approvals == [OPENING_APPROVAL]
     assert intent.order_type == "FOK"
     assert intent.side == "BUY"
     assert intent.outcome == "Up"
@@ -538,6 +551,23 @@ def test_valid_promoted_proposal_submits_exact_conservative_fok(
     assert result.net_edge_quote_per_share == Decimal("0.0825")
     assert tick_size == Decimal("0.01")
     assert neg_risk is False
+
+
+def test_promoted_open_requires_portfolio_approval_before_quote(tmp_path: Path) -> None:
+    promotion = _verified_promotion(tmp_path)
+    venue = _Venue()
+    coordinator = _Coordinator(venue)
+
+    with pytest.raises(PolymarketLiveBlocked, match="approved portfolio"):
+        submit_promoted_open(
+            _proposal(promotion),
+            promotion,
+            coordinator,  # type: ignore[arg-type]
+            lifecycle_qualification=_qualification(),
+            clock_ms=lambda: NOW_MS,
+        )
+
+    assert not venue.calls and not coordinator.submissions
 
 
 def test_valid_promoted_reduction_submits_one_parent_bound_fak(

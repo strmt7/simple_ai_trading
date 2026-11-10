@@ -49,6 +49,18 @@ current full-suite failure count without rerunning the appropriate scope.
 
 ## Financial and source frontier
 
+- [APPB contract mapping](review/2026-11-10/appb-mapping/review.md) stopped
+  at HTTP 202 with no substantive publisher text. APPB was chosen by ticker
+  order without a price criterion. Rank 12 still needs exact current token
+  and perpetual units. No market request or economic observation followed.
+
+- [RWUSD exit comparison](review/2026-11-10/rwusd-spot/review.md) rejects a
+  distinct official listing-page extraction after HTTP 202 and one character.
+  Spot-purchased redemption rights remain unverified. Exact constructed cash
+  reverses the exit ranking after converting USDT to USDC at executable terms
+  and using a common horizon. Use a distinct controlling source before pricing
+  a permitted existing-holding exit. No new economic observation was added.
+
 - [Partial-fixing feasibility](review/2026-11-10/fixing-floor-source/review.md)
   identifies the raw-weight/clock proof needed for prepaid-call or binary floors.
   Futures/removal one-second rules cannot be imported into ordinary options;
@@ -219,6 +231,19 @@ Require an exact independently located publisher revision/redline and retain
 the unchanged account-fee gate before economic access. No new observation added.
 
 ## Platform work and publication
+
+- [Wallet backing](review/2026-11-10/wallet-backing/review.md) applies the
+  nominal configured allocation test at the promoted opening gateway using
+  the existing funding response and revision-bound owned basis. A shortfall
+  blocks further openings for the session. Existing owned reduction and Stop
+  use their separate authority.
+
+- [Opening approval revision](review/2026-11-10/opening-revision/review.md)
+  binds promoted Polymarket risk approval to the ledger revision checked at
+  native reservation. A synthetic order reached the venue callback after an
+  intervening journal change before the repair and was blocked after it. The
+  handoff through quote fetch and the existing-reservation branch are covered
+  by the source-bound evidence. All 160 focused cases passed.
 
 - [Stop recovery](review/2026-11-10/stop-recovery/review.md) removes public
   discovery from the owned close path after Stop. Recovery waits for the

@@ -26,6 +26,7 @@ from simple_ai_trading.polymarket_live import (
     PolymarketLiveOrderLedger,
     PolymarketLiveRiskLimits,
     PolymarketLiveUnknownState,
+    PolymarketOpeningApproval,
     PolymarketOwnedInventory,
     PolymarketOwnedLot,
     PolymarketPreparedOrder,
@@ -37,6 +38,7 @@ from simple_ai_trading.polymarket_live import (
     PolymarketVenuePreflight,
     PolymarketVenueRejected,
     PolymarketVenueTemporarilyUnavailable,
+    PolymarketWalletCapitalShortfall,
 )
 from simple_ai_trading.polymarket_live_runtime import (
     PolymarketLiveRuntimeGuard,
@@ -1010,6 +1012,88 @@ def test_opening_cannot_omit_its_approval_revision(tmp_path: Path) -> None:
             prepared, observed_at_ms=NOW_MS, expected_revision=None
         )
     assert not ledger.records()
+
+
+def test_gateway_does_not_replace_an_outdated_portfolio_approval(tmp_path: Path) -> None:
+    ledger = PolymarketLiveOrderLedger(tmp_path / "portfolio-approval.sqlite3")
+    venue = FakeVenue()
+    coordinator = PolymarketLiveCoordinator(venue, ledger, risk_limits=RISK_LIMITS)
+    approved = PolymarketOpeningApproval(ledger.revision(), Decimal("100"), Decimal("0"))
+    failed = venue.prepare_order(_intent(2), tick_size=Decimal("0.01"), neg_risk=False)
+    ledger.reserve(failed, observed_at_ms=NOW_MS)
+    ledger.transition(
+        failed.intent.intent_id,
+        expected_states=("prepared",),
+        state="failed",
+        observed_at_ms=NOW_MS,
+        failure_code="synthetic_change_after_approval",
+    )
+    assert not ledger.open_owned_order_ids()
+
+    with pytest.raises(PolymarketLiveBlocked, match="ledger changed after opening approval"):
+        coordinator.submit(
+            _intent(),
+            tick_size=Decimal("0.01"),
+            neg_risk=False,
+            opening_approval=approved,
+        )
+
+    assert venue.submit_calls == 0
+    assert [record.intent for record in ledger.records()] == [failed.intent]
+    coordinator.submit(
+        _intent(),
+        tick_size=Decimal("0.01"),
+        neg_risk=False,
+        opening_approval=replace(approved, ledger_revision=ledger.revision()),
+    )
+    assert venue.submit_calls == 1
+
+
+def test_opening_rechecks_wallet_support_with_verified_owned_basis(tmp_path: Path) -> None:
+    ledger = PolymarketLiveOrderLedger(tmp_path / "wallet-support.sqlite3")
+    venue = FakeVenue()
+    _confirmed_admission_parent(ledger, venue)
+    risk = PolymarketLiveRiskService(ledger, risk_capital_quote=Decimal("1000"))
+    approval = risk.opening_approval(risk.capture(MARKET_ID, observed_at_ms=NOW_MS).state)
+    assert approval.owned_cost_basis_quote == Decimal("0.51")
+    coordinator = PolymarketLiveCoordinator(venue, ledger, risk_limits=RISK_LIMITS)
+    intent = _intent(2)
+
+    venue.funding_balance = Decimal("999.48")
+    with pytest.raises(PolymarketWalletCapitalShortfall) as blocked:
+        coordinator.submit(
+            intent,
+            tick_size=Decimal("0.01"),
+            neg_risk=False,
+            opening_approval=approval,
+        )
+    assert blocked.value.supported_capital_quote == Decimal("999.99")
+    assert venue.submit_calls == 0 and len(ledger.records()) == 1
+
+    venue.funding_balance = Decimal("999.49")
+    coordinator.submit(
+        intent,
+        tick_size=Decimal("0.01"),
+        neg_risk=False,
+        opening_approval=approval,
+    )
+    assert venue.submit_calls == 1
+
+
+def test_opening_approval_also_fences_an_existing_reservation(tmp_path: Path) -> None:
+    ledger = PolymarketLiveOrderLedger(tmp_path / "stale-prepared.sqlite3")
+    prepared = FakeVenue().prepare_order(
+        _intent(), tick_size=Decimal("0.01"), neg_risk=False
+    )
+    approved = ledger.revision()
+    ledger.reserve(prepared, observed_at_ms=NOW_MS)
+
+    with pytest.raises(PolymarketLiveBlocked, match="ledger changed after opening approval"):
+        ledger.reserve_submission(
+            prepared, observed_at_ms=NOW_MS, expected_revision=approved
+        )
+
+    assert ledger.record(prepared.intent.intent_id).state == "prepared"
 
 
 def test_distinct_ledger_connections_admit_only_one_concurrent_opening(

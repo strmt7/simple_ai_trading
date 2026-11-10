@@ -13,6 +13,7 @@ from .polymarket_live import (
     PolymarketLedgerRevision,
     PolymarketLiveBlocked,
     PolymarketLiveOrderLedger,
+    PolymarketOpeningApproval,
     PolymarketRealizedPnlEvent,
 )
 
@@ -439,6 +440,30 @@ class PolymarketLiveRiskService:
                 return cached
         raise PolymarketLiveBlocked(
             "Polymarket ownership changed while live risk was reconstructed"
+        )
+
+    def opening_approval(
+        self, state: PolymarketLiveRiskState
+    ) -> PolymarketOpeningApproval:
+        evidence = self._cache
+        if (
+            evidence is None
+            or evidence.revision != state.ledger_revision
+            or state.risk_capital_quote != self.risk_capital_quote
+            or not state.entry_allowed
+        ):
+            raise PolymarketLiveBlocked(
+                "Polymarket opening requires current portfolio approval"
+            )
+        owned_cost_basis = sum(
+            (
+                item.up_cost_basis_quote + item.down_cost_basis_quote
+                for item in evidence.accountings
+            ),
+            start=Decimal("0"),
+        )
+        return PolymarketOpeningApproval(
+            evidence.revision, self.risk_capital_quote, owned_cost_basis
         )
 
     @staticmethod

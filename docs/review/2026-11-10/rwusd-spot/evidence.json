@@ -1,0 +1,62 @@
+{
+  "admission": "rejected_http_202_one_character",
+  "base_head": "0fc5bd754ee4d4062c131ef9547b44700a5e99e0",
+  "capture_terminal_at_utc": "2026-11-10T22:38:04.996314+00:00",
+  "constructed_cash_comparison": {
+    "derivation_sha256": "0a68957b3b33ab6b2d861f1721b4c6aa6c396aeb1f7a6a28aec69fc5eb581ebf",
+    "fraction_results": {
+      "net_redemption_cash_usdc": "1999/2",
+      "redemption_advantage_at_par_without_time_value_usdc": "1249/500",
+      "redemption_advantage_with_conversion_and_time_value_usdc": "-123750001/250000000",
+      "spot_cash_at_par_without_time_value_usdc": "498501/500",
+      "spot_cash_with_conversion_and_time_value_usdc": "249998750001/250000000",
+      "strict_break_even_spot_bid_usdt_per_rwusd": "499750000/500999499"
+    },
+    "market_or_account_inputs_used": false
+  },
+  "evidence_sha256": "b8e088059f1da31bf160a36f46250c9fb405f98848eafaad15236b77634db93d",
+  "frozen_at_utc": "2026-11-10T22:37:50.589625+00:00",
+  "navigation_receipt": {
+    "matched_candidates": 5,
+    "mirror_digest": "48d07a2b40f01fa43fa8bd48d293b534",
+    "native_sha256": "0beaade99d97853c2d50c834c49a6e631f5d51bd503d4b10693c22ab937f93e4"
+  },
+  "new_economic_observations": 0,
+  "new_qualified_edges": 0,
+  "private_receipts": {
+    "intent.local.json": "4fcc94b79e278ea1a9fb04ff6688a6ce8215e04db8c36bfe0f06da665deaf994",
+    "journal.jsonl": "65899c78747f1ebc0db60d42024c738731bc11d40f8b4d19e294a6ceffb3ac56",
+    "robots-decision.json": "f1418ee0689a2f68b7a440f497ed0c2914f1b92b6860421afe23420c3dc02fb3",
+    "source-inventory.json": "329825e676a7116c60977b20d5af30e0181eb3e2a0383f8aca954b1f7aa3cd98"
+  },
+  "provider_version": "0.9.5+flitzzip.portable2",
+  "result": {
+    "exit_code": 0,
+    "markdown_characters": 1,
+    "native_bytes": 4471,
+    "native_error_message": "",
+    "native_navigation_started": true,
+    "native_sha256": "7df217f31aa141d2200c26246ef3fcca700e60ae6b70cbf181965d4f5978580f",
+    "native_success": true,
+    "redirected_status_code": 202,
+    "redirected_url": "https://www.binance.com/en-AE/support/announcement/detail/1dfe10f0e0fb4e7ab0eb8874e9fdab0e",
+    "required_terms": {
+      "cross margin": false,
+      "redemption": false,
+      "rwusd/usdt": false
+    },
+    "source_admitted": false,
+    "status_code": 202,
+    "url": "https://www.binance.com/en-AE/support/announcement/detail/1dfe10f0e0fb4e7ab0eb8874e9fdab0e"
+  },
+  "retained_source_provenance": {
+    "files_checked": 2910,
+    "identifier_matches": 0,
+    "oversized_skipped": 19,
+    "scope": "bounded published prose and JSON, plus ignored research intent/journal/receipt/result/contract/plan metadata; excluded protected/raw/partial/archive and cache directories",
+    "universal_novelty_claim": false
+  },
+  "robots_allowed": true,
+  "schema": "rwusd-spot-exit-source-and-constructed-cash-v1",
+  "top_level_navigations": 1
+}

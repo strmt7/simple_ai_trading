@@ -25,6 +25,7 @@ from .polymarket_live import (
     PolymarketLiveOrderIntent,
     PolymarketLiveOrderRecord,
     PolymarketOpenQuote,
+    PolymarketOpeningApproval,
 )
 from .polymarket_live_promotion import VerifiedPolymarketLivePromotion
 from .polymarket_live_qualification import (
@@ -554,6 +555,7 @@ def submit_promoted_open(
     promotion: VerifiedPolymarketLivePromotion,
     coordinator: PolymarketLiveCoordinator,
     *,
+    opening_approval: PolymarketOpeningApproval | None = None,
     lifecycle_qualification: VerifiedPolymarketLifecycleQualification | None = None,
     external_signal: PolymarketExternalSignalDecision | None = None,
     clock_ms: Callable[[], int] | None = None,
@@ -594,6 +596,8 @@ def submit_promoted_open(
         observed_at_ms=observed_at_ms,
         maximum_signal_age_ms=policy.maximum_prediction_age_ms,
     )
+    if not isinstance(opening_approval, PolymarketOpeningApproval):
+        raise PolymarketLiveBlocked("promoted open requires its approved portfolio")
     quote = coordinator.venue.open_quote(
         market_id=proposal.market_id,
         token_id=proposal.token_id,
@@ -704,6 +708,7 @@ def submit_promoted_open(
         intent,
         tick_size=quote.tick_size,
         neg_risk=quote.neg_risk,
+        opening_approval=opening_approval,
     )
     return PolymarketAutonomousOpenResult(
         record=record,

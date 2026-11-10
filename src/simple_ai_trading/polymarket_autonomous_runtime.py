@@ -28,6 +28,7 @@ from .polymarket_live import (
     PolymarketLiveBlocked,
     PolymarketLiveCoordinator,
     PolymarketLiveOrderLedger,
+    PolymarketWalletCapitalShortfall,
 )
 from .polymarket_live_promotion import VerifiedPolymarketLivePromotion
 from .polymarket_live_qualification import (
@@ -803,13 +804,16 @@ class PolymarketAutonomousSupervisor:
                     raise PolymarketLiveBlocked(
                         "bot already owns exposure in this Polymarket event"
                     )
+                if not self._wallet_capital_gate_passed:
+                    raise PolymarketWalletCapitalShortfall(
+                        self._wallet_capital_support_quote
+                    )
                 fresh_portfolio = self._portfolio(
                     market,
                     observed_at_ms=observed_at_ms,
                 )
                 if (
-                    not self._wallet_capital_gate_passed
-                    or not fresh_portfolio.risk_state.entry_allowed
+                    not fresh_portfolio.risk_state.entry_allowed
                     or proposal.risk_state_sha256
                     != fresh_portfolio.risk_state.risk_state_sha256
                     or proposal.maximum_projected_inventory_downside_quote
@@ -823,11 +827,17 @@ class PolymarketAutonomousSupervisor:
                     proposal,
                     self.promotion,
                     self.coordinator,
+                    opening_approval=self.live_risk.opening_approval(
+                        fresh_portfolio.risk_state
+                    ),
                     lifecycle_qualification=self.lifecycle_qualification,
                     external_signal=None,
                     clock_ms=self._clock_ms,
                 )
             except PolymarketLiveBlocked as exc:
+                if isinstance(exc, PolymarketWalletCapitalShortfall):
+                    self._wallet_capital_support_quote = exc.supported_capital_quote
+                    self._wallet_capital_gate_passed = False
                 self._blocked_opens += 1
                 self._last_fault = str(exc)
                 continue

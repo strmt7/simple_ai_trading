@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import ast
 import asyncio
+from dataclasses import replace
 from decimal import Decimal
 import inspect
 import json
@@ -32,6 +33,7 @@ from simple_ai_trading.polymarket_live import (
     PolymarketLedgerRevision,
     PolymarketLiveBlocked,
     PolymarketLiveOrderLedger,
+    PolymarketWalletCapitalShortfall,
 )
 from simple_ai_trading.polymarket_live_risk import PolymarketLiveRiskState
 from simple_ai_trading.polymarket_live_promotion import (
@@ -458,6 +460,43 @@ def test_pause_or_stop_prevents_a_late_model_submission(
     asyncio.run(run())
 
     assert submitted is False
+
+
+def test_wallet_shortfall_blocks_further_openings_for_the_session(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    supervisor = _supervisor(tmp_path, provider=SimpleNamespace())
+    supervisor._wallet_capital_gate_passed = True
+    market = _market()
+    state = supervisor._portfolio(market, observed_at_ms=NOW_MS).risk_state
+    proposal = replace(
+        _proposal(supervisor.promotion),
+        risk_state_sha256=state.risk_state_sha256,
+        proposal_sha256="",
+    )
+    submit = Mock(side_effect=PolymarketWalletCapitalShortfall(Decimal("100")))
+    monkeypatch.setattr(runtime_module, "submit_promoted_open", submit)
+
+    async def run() -> None:
+        decision = PolymarketAutonomousDecision(proposals=(proposal,))
+        await supervisor._apply_decision(decision, market, observed_at_ms=NOW_MS)
+        snapshot = supervisor.snapshot()
+        assert not snapshot.entry_allowed and not snapshot.wallet_capital_gate_passed
+        assert snapshot.wallet_capital_support_quote == "100"
+        assert snapshot.last_fault == (
+            "current wallet cannot support configured Polymarket risk capital"
+        )
+        await supervisor._apply_decision(decision, market, observed_at_ms=NOW_MS)
+
+    asyncio.run(run())
+
+    submit.assert_called_once()
+    assert (
+        submit.call_args.kwargs["opening_approval"].ledger_revision
+        == state.ledger_revision
+    )
+    assert supervisor.snapshot().submitted_opens == 0
 
 
 def test_pause_still_allows_a_model_requested_close(tmp_path: Path) -> None:

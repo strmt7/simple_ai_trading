@@ -1,0 +1,86 @@
+{
+  "base_head": "0fc5bd754ee4d4062c131ef9547b44700a5e99e0",
+  "baseline": {
+    "observations": {
+      "blocked_opens": 0,
+      "configured_risk_capital": "10000",
+      "funding_checks": [
+        {
+          "order": "2.58750",
+          "wallet": "100"
+        }
+      ],
+      "last_fault": "",
+      "startup_collateral": "10000",
+      "synthetic_venue_submit_calls": 1
+    },
+    "source_sha256": {
+      "src/simple_ai_trading/polymarket_autonomous.py": "0e618d08785c215e597e37d1aa8a96cda76e7c21346ea6e5d64dd26e5a1683e8",
+      "src/simple_ai_trading/polymarket_autonomous_runtime.py": "eb4ebd7b931aa108094a8fb736c4cc5f024ade515e948ff1dd930d13a7f6326d",
+      "src/simple_ai_trading/polymarket_live.py": "57d9f64cfdbec788aefec442a9bb940442d35726ba41e3c61f6a29bf493a2471",
+      "src/simple_ai_trading/polymarket_live_risk.py": "f677fb32f40caecd9733f1fe418608d32284982a09332db561b2b695580220c1"
+    }
+  },
+  "combined_opening_revision_probe": {
+    "approved_revision": 0,
+    "blocked_opens": 1,
+    "last_fault": "ledger changed after opening approval; obtain a new decision",
+    "quote_revisions": [
+      0,
+      2
+    ],
+    "submitted_opens": 0,
+    "synthetic_venue_submit_calls": 0
+  },
+  "evidence_sha256": "cca32863eab2b3803ae2fd3cbb6eb33e3c0e36d5e3bcdf01b999e38f556fa799",
+  "new_economic_observations": 0,
+  "patched": {
+    "observations": {
+      "blocked_opens": 1,
+      "configured_risk_capital": "10000",
+      "funding_checks": [
+        {
+          "order": "2.58750",
+          "wallet": "100"
+        }
+      ],
+      "last_fault": "current wallet cannot support configured Polymarket risk capital",
+      "startup_collateral": "10000",
+      "synthetic_venue_submit_calls": 0
+    },
+    "source_sha256": {
+      "src/simple_ai_trading/polymarket_autonomous.py": "47e0d1343f99185f1bace2f1cb26aca8edaaa2016801babdbc311550679dcae3",
+      "src/simple_ai_trading/polymarket_autonomous_runtime.py": "c03497f5cac87eda3108f37a007e414febef3b0695dfeee324490df10c7f0ddc",
+      "src/simple_ai_trading/polymarket_live.py": "59ea64bc2eec18297453a34f472dff7c7baa60aadc56bcb4cb4fe39d5b1f86aa",
+      "src/simple_ai_trading/polymarket_live_risk.py": "5341275b933a2d34da066fcf1e2ecd58505b3b2ec5a55ad812439feaf29b8f96"
+    }
+  },
+  "receipts": {
+    "baseline.json": "47e6f9650de5f649cfe9c38c3ab1a94b5958edfe01d0902e7bab8947a7157a60",
+    "final-wallet-backed.json": "48f5212f0ccbe60fb814dd1ce3f059cbcff4d53635903425f4b9b2a3f7cac0a5",
+    "patched.json": "49e69aa931bd7d8c85ddf956c77fdd9c1f48fde8ef7fae65926a9cf9bdc19574",
+    "wallet-backing-junit.xml": "cc4bf63bf76bc2803ec62cb803489671a9e51ef5e32a86d1104dc96d3be9ab46",
+    "wallet-backing.json": "7f7dc13d5f927820e7082f958547174bb81a2a4e8724683a2668f27ed42a28c2"
+  },
+  "schema": "polymarket-wallet-backing-evidence-v1",
+  "synthetic_venue_only": true,
+  "verification": {
+    "distinct_passed": 162,
+    "same_source_before_and_after": true,
+    "tested_source_sha256": {
+      "src/simple_ai_trading/polymarket_autonomous.py": "47e0d1343f99185f1bace2f1cb26aca8edaaa2016801babdbc311550679dcae3",
+      "src/simple_ai_trading/polymarket_autonomous_runtime.py": "c03497f5cac87eda3108f37a007e414febef3b0695dfeee324490df10c7f0ddc",
+      "src/simple_ai_trading/polymarket_live.py": "59ea64bc2eec18297453a34f472dff7c7baa60aadc56bcb4cb4fe39d5b1f86aa",
+      "src/simple_ai_trading/polymarket_live_cli.py": "d30a5bc1a160a4bd727a72e5abe4bb45dd5435b03aeecc3ba6561874a669b795",
+      "src/simple_ai_trading/polymarket_live_risk.py": "5341275b933a2d34da066fcf1e2ecd58505b3b2ec5a55ad812439feaf29b8f96",
+      "src/simple_ai_trading/polymarket_live_stop.py": "d22438e22ce7526f3d6dd52b3cba09c9f8402c86776a69687e9db02300d72aab",
+      "src/simple_ai_trading/polymarket_runtime_control.py": "1903deb0c1dcf684fa328ffbe2eb3dec45b429fd87777b18e69e89bc7d194af2",
+      "src/simple_ai_trading/runtime_control.py": "e5e61583eed5e97bd6aa51c44cd9866435d9d8117ed58611443fd1cedf644791",
+      "tests/conftest.py": "090974084e8c25f16dc18ed084269d75edb9fdb5f4d7d15e6e72bb23853d9abc",
+      "tests/polymarket_live_support.py": "cc3369f4a17be4c4a3eaa5b196d2a5ea76c7d699ee9f542b4d8e87da84e83d4c",
+      "tests/test_polymarket_autonomous.py": "4fa583b80081adfd59fd9fefe8b826f6d4b730a4f36c13a1e3d21780d5cc457a",
+      "tests/test_polymarket_autonomous_runtime.py": "2f3636465cc46c01e165a579b0f04ec4e194d9db2c20d48ec0fdc7ce37379177",
+      "tests/test_polymarket_live.py": "3ed930a6111f49ce058753a638395aaa5ba4e9a2d5b2c4831d052b81ba448f72"
+    }
+  }
+}
