@@ -1,0 +1,107 @@
+{
+  "authority": "Existing session-only routine technical-document delegation; separate frozen immutable same-publisher copy, preserving the failed wrapper. No consumed financial population reopened.",
+  "base_revision": "67e29d7b9c9441a7595b5f89d3e93314f4127c69",
+  "capture_boundaries_sha256": "f971726268ba2e630b2ebbe8d5bcf02f7b3f23b92ccb16efe23aef82cebe950f",
+  "copies": [
+    {
+      "admitted": false,
+      "checks": {
+        "cummulativeQuoteQty": false,
+        "error_free": true,
+        "minimum_markdown": false,
+        "native_size": true,
+        "origQuoteOrderQty": false,
+        "quoteOrderQty": false,
+        "quoteOrderQtyMarketAllowed": false,
+        "status": true,
+        "success": true,
+        "title": false,
+        "url": true
+      },
+      "contract": {
+        "path": "data/research/2026-11-10-spot-roundtrip/source/intent.json",
+        "sha256": "5428a9610b9d2b2301c9c41eded77b6994a796d9135477b1e066a1ed2fadb406"
+      },
+      "controller": {
+        "path": "data/research/2026-11-10-spot-roundtrip/source/crawl_once.py",
+        "sha256": "cdc299db1e807997318bfc39098dbab9e59d888c9b25a8f6802c8b27c5099580"
+      },
+      "journal": {
+        "path": "data/research/2026-11-10-spot-roundtrip/source/journal.jsonl",
+        "sha256": "adb4e3fa47c9cedc5dd90efb260faf7c1de998218e1247594c11a998c78002f8"
+      },
+      "markdown_characters": 8737,
+      "native": {
+        "path": "data/research/2026-11-10-spot-roundtrip/source/rest-api.native.json",
+        "sha256": "84e010d78f5c233a9ce7f484657e9cc344136f8e68b1845e047351bbf5329381"
+      },
+      "preflight": {
+        "path": "data/research/2026-11-10-spot-roundtrip/source/preflight.json",
+        "sha256": "c93899cf9c6218d37c6b9c2ad65715db14833774c45f1b5fc32993c65e1c37d7"
+      },
+      "url": "https://github.com/binance/binance-spot-api-docs/blob/2bae3f5bd622ebfdea593daed066df14dc7e7362/rest-api.md"
+    },
+    {
+      "admitted": true,
+      "checks": {
+        "cummulativeQuoteQty": true,
+        "error_free": true,
+        "minimum_markdown": true,
+        "native_size": true,
+        "origQuoteOrderQty": true,
+        "quoteOrderQty": true,
+        "quoteOrderQtyMarketAllowed": true,
+        "status": true,
+        "success": true,
+        "title": true,
+        "url": true
+      },
+      "contract": {
+        "path": "data/research/2026-11-10-spot-roundtrip/source/publisher-raw/intent.json",
+        "sha256": "767039adef1db78a7070fd23fc72a8f96d97c4b14bee5ed507402389696d9e83"
+      },
+      "controller": {
+        "path": "data/research/2026-11-10-spot-roundtrip/source/publisher-raw/crawl_once.py",
+        "sha256": "3a88baafdca6290e2165fcb310e9c6653db0fe890fa7befd1e89496e2a3358a8"
+      },
+      "journal": {
+        "path": "data/research/2026-11-10-spot-roundtrip/source/publisher-raw/journal.jsonl",
+        "sha256": "875e55c6311fdf8bf96ccedbb57d61bfd20dca90a80d7ced0bff514a3935ca92"
+      },
+      "markdown_characters": 207075,
+      "native": {
+        "path": "data/research/2026-11-10-spot-roundtrip/source/publisher-raw/rest-api.native.json",
+        "sha256": "b6145ce261b578c46f79d54d4659ef4f82f950594c44b60639c8893b76b865c7"
+      },
+      "preflight": {
+        "path": "data/research/2026-11-10-spot-roundtrip/source/publisher-raw/preflight.json",
+        "sha256": "b4f9cd37e7883167f287ff32f657215ab0e3d85e2e8a8730bc7305ef5ed8062b"
+      },
+      "url": "https://raw.githubusercontent.com/binance/binance-spot-api-docs/2bae3f5bd622ebfdea593daed066df14dc7e7362/rest-api.md"
+    }
+  ],
+  "created_at_utc": "2026-11-10T01:27:18.135131+00:00",
+  "financial_counts_unchanged": [
+    204,
+    65,
+    37,
+    0
+  ],
+  "inference": "The sell-then-buy diagnostic needs an owned first-sale cash allocation and separate amount-unit binding, per-leg durable identities, fee accounting and recovery. Wallet total free quote is not the operation budget. No implementation or economic qualification follows from documentation alone.",
+  "provider_lock_sha256": "5fc27973200b72184199428bee436c8deee9fe65ef3f0762cb871ac5c69abe53",
+  "provider_tool_sha256": "e84a0e54ee07e4e13d3d2f35491f641730096a78126068f232c1f2397a467d8c",
+  "provider_version": "0.9.5+flitzzip.portable2",
+  "publisher_revision": "2bae3f5bd622ebfdea593daed066df14dc7e7362",
+  "requests": {
+    "market_account_order_or_credentials_access": 0,
+    "public_document_navigations": 2,
+    "retries_per_contract": 0
+  },
+  "result_sha256": "55a27c951ea439e08852418860b2f3a194446cf2718659277aa73aae0e0b6ef4",
+  "schema": "binance-spot-quote-budget-primary-document-adjudication-v1",
+  "source_semantics": [
+    "MARKET quantity is base amount; quoteOrderQty is quote amount spent for BUY or targeted receipts for SELL.",
+    "Base execution depends on liquidity and LOT_SIZE handling.",
+    "Permission and original quote amount fields and native cumulative quote/commission examples are present; no current per-symbol or all-cost guarantee follows."
+  ]
+}

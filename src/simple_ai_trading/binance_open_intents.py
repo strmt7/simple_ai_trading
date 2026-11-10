@@ -13,6 +13,7 @@ from typing import TYPE_CHECKING
 from .binance_execution_scope import BinanceExecutionScope
 
 if TYPE_CHECKING:
+    from .position_transactions import PositionTransaction
     from .positions import OpenPosition
 
 
@@ -39,7 +40,12 @@ class BinanceOpenIntentJournal:
             if create or write:
                 connection.execute("PRAGMA synchronous=FULL")
                 connection.execute("BEGIN IMMEDIATE")
-                if not existed:
+                # A competing first writer may have initialized and enrolled the
+                # namespace while this connection waited for its writer lock.
+                if (
+                    not existed
+                    and connection.execute("PRAGMA user_version").fetchone()[0] == 0
+                ):
                     connection.execute(
                         "CREATE TABLE IF NOT EXISTS open_intent ("
                         "client_id TEXT PRIMARY KEY, position_id TEXT NOT NULL UNIQUE, "
@@ -55,14 +61,14 @@ class BinanceOpenIntentJournal:
             columns = tuple(
                 row[1] for row in connection.execute("PRAGMA table_info(open_intent)")
             )
-            if version not in {1, 2} or columns != (
+            if version not in {1, 2, 3} or columns != (
                 "client_id",
                 "position_id",
                 "request_json",
                 "state",
             ):
                 raise OpenIntentError("opening intent schema is not recognized")
-            if version == 2 and tuple(
+            if version in {2, 3} and tuple(
                 row[1]
                 for row in connection.execute("PRAGMA table_info(execution_scope)")
             ) != ("id", "scope_json"):
@@ -76,24 +82,78 @@ class BinanceOpenIntentJournal:
     def _bind_scope(
         connection: sqlite3.Connection,
         scope: BinanceExecutionScope,
-        *,
-        initialize: bool = False,
     ) -> None:
         """Fence the complete journal; legacy storage needs explicit migration."""
-        if connection.execute("PRAGMA user_version").fetchone()[0] != 2:
+        if connection.execute("PRAGMA user_version").fetchone()[0] not in {2, 3}:
             raise OpenIntentError("legacy journal requires explicit scope migration")
         encoded = json.dumps(asdict(scope), sort_keys=True, allow_nan=False)
         rows = connection.execute(
             "SELECT id, scope_json FROM execution_scope LIMIT 2"
         ).fetchall()
-        if not rows and initialize:
-            if connection.execute("SELECT 1 FROM open_intent LIMIT 1").fetchone():
-                raise OpenIntentError("existing journal has lost its execution scope")
-            connection.execute("INSERT INTO execution_scope VALUES (1, ?)", (encoded,))
-        elif rows != [(1, encoded)]:
+        if rows != [(1, encoded)]:
             raise OpenIntentError(
                 "journal belongs to a different or missing execution scope"
             )
+
+    def _prepare_scope(
+        self, transaction: PositionTransaction, scope: BinanceExecutionScope
+    ) -> None:
+        """Enroll only a fresh namespace or explicitly paper-only legacy files."""
+        from .positions import PositionsStore
+
+        connection = transaction.connection
+        if connection is None:
+            raise OpenIntentError("opening requires durable execution storage")
+        version = connection.execute("PRAGMA user_version").fetchone()[0]
+        if version not in {2, 3}:
+            raise OpenIntentError("legacy journal requires explicit scope migration")
+        if connection.execute("SELECT 1 FROM execution_scope LIMIT 1").fetchone():
+            self._bind_scope(connection, scope)
+            if version != 3:
+                raise OpenIntentError(
+                    "legacy scope enrollment requires verified migration"
+                )
+            return
+        if (
+            version == 3
+            or connection.execute("SELECT 1 FROM open_intent LIMIT 1").fetchone()
+        ):
+            raise OpenIntentError("existing journal has lost its execution scope")
+        # An unscoped auxiliary execution record cannot inherit new credentials.
+        # Table names come from SQLite metadata, and still require identifier quoting.
+        for (name,) in connection.execute(
+            "SELECT name FROM sqlite_master WHERE type='table'"
+        ):
+            if name in {
+                "open_intent",
+                "execution_scope",
+                "position_replacement",
+            } or name.startswith("sqlite_"):
+                continue
+            quoted = '"' + name.replace('"', '""') + '"'
+            if connection.execute(f"SELECT 1 FROM {quoted} LIMIT 1").fetchone():
+                raise OpenIntentError(
+                    "unscoped execution history requires verified migration"
+                )
+        store = PositionsStore(transaction.root)
+        for path, parse in (
+            (store.open_path, store._open_entries),
+            (store.ledger_path, store._closed_entries),
+        ):
+            entries = store._decode(transaction.read(path), strict=True)
+            if any(entry.get("dry_run") is not True for entry in entries):
+                raise OpenIntentError(
+                    "unscoped live or unclassified history requires verified migration"
+                )
+            parse(entries, strict=True)
+        transaction.enroll_unchanged()
+        connection.execute(
+            "INSERT INTO execution_scope VALUES (1, ?)",
+            (json.dumps(asdict(scope), sort_keys=True, allow_nan=False),),
+        )
+        # Namespace version, scope, paired-byte enrollment and UNKNOWN are one
+        # transaction. Request payloads retain their existing intent_version=2.
+        connection.execute("PRAGMA user_version=3")
 
     @staticmethod
     def _request(
@@ -158,13 +218,17 @@ class BinanceOpenIntentJournal:
     def prepare(self, position: OpenPosition, *, scope: BinanceExecutionScope) -> None:
         """Commit UNKNOWN before transmission; an existing identity is never replayable."""
         from .binance_close_intents import unresolved_close_count
+        from .position_transactions import position_transaction
 
         if not isinstance(scope, BinanceExecutionScope):
             raise OpenIntentError("opening requires an execution scope")
         payload = self._request(position, scope)
         try:
-            with closing(self._connect(create=True)) as connection, connection:
-                self._bind_scope(connection, scope, initialize=True)
+            with position_transaction(self, write=True) as transaction:
+                self._prepare_scope(transaction, scope)
+                connection = transaction.connection
+                if connection is None:
+                    raise OpenIntentError("opening requires durable execution storage")
                 if unresolved_close_count(connection):
                     raise OpenIntentError("an unresolved closing blocks new exposure")
                 if connection.execute(
@@ -177,7 +241,9 @@ class BinanceOpenIntentJournal:
                     "INSERT INTO open_intent VALUES (?, ?, ?, 'UNKNOWN')",
                     (position.open_client_order_id, position.id, payload),
                 )
-        except (sqlite3.Error, OSError) as exc:
+        except OpenIntentError:
+            raise
+        except (sqlite3.Error, OSError, TypeError, ValueError) as exc:
             raise OpenIntentError("opening intent could not be committed") from exc
 
     def record_complete(

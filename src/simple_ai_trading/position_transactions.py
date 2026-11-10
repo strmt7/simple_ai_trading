@@ -56,6 +56,8 @@ def _recover(connection: sqlite3.Connection, root: Path) -> None:
         row[1] for row in connection.execute("PRAGMA table_info(position_replacement)")
     )
     if not columns:
+        if connection.execute("PRAGMA user_version").fetchone()[0] == 3:
+            raise ValueError("enrolled position transaction record is missing")
         return
     if columns != _COLUMNS:
         raise ValueError("position transaction schema is not recognized")
@@ -102,6 +104,35 @@ class PositionTransaction:
                 return self.before[index]
         raise ValueError("position transaction path is outside its ledger pair")
 
+    def _record(self, after: tuple[bytes | None, ...], *, state: str) -> None:
+        connection = self.connection
+        if connection is None or not connection.in_transaction:
+            raise ValueError("position enrollment requires an active writer")
+        if _snapshot(self.root) != self.before:
+            raise ValueError("position files changed during the transaction")
+        connection.execute(
+            "CREATE TABLE IF NOT EXISTS position_replacement ("
+            "id INTEGER PRIMARY KEY CHECK(id=1), state TEXT NOT NULL "
+            "CHECK(state IN ('PREPARED', 'APPLIED')), before_open BLOB, "
+            "before_closed BLOB, after_open BLOB, after_closed BLOB, digest TEXT NOT NULL)"
+        )
+        connection.execute(
+            "INSERT INTO position_replacement VALUES (1, ?, ?, ?, ?, ?, ?) "
+            "ON CONFLICT(id) DO UPDATE SET state=excluded.state, "
+            "before_open=excluded.before_open, before_closed=excluded.before_closed, "
+            "after_open=excluded.after_open, after_closed=excluded.after_closed, "
+            "digest=excluded.digest",
+            (state, *self.before, *after, _digest((*self.before, *after))),
+        )
+
+    def enroll_unchanged(self) -> None:
+        """Bind exact existing bytes atomically with the caller's scope/intent.
+
+        Do not commit or rewrite projections: failed admission must roll back
+        this enrollment together with the credential scope and opening intent.
+        """
+        self._record(self.before, state="APPLIED")
+
     def replace(self, replacements: dict[str, bytes]) -> None:
         """Commit the exact pair before publishing either JSON projection."""
         if (
@@ -117,22 +148,7 @@ class PositionTransaction:
         after = tuple(
             replacements.get(name, old) for name, old in zip(_FILES, self.before)
         )
-        if _snapshot(self.root) != self.before:
-            raise ValueError("position files changed during the transaction")
-        connection.execute(
-            "CREATE TABLE IF NOT EXISTS position_replacement ("
-            "id INTEGER PRIMARY KEY CHECK(id=1), state TEXT NOT NULL "
-            "CHECK(state IN ('PREPARED', 'APPLIED')), before_open BLOB, "
-            "before_closed BLOB, after_open BLOB, after_closed BLOB, digest TEXT NOT NULL)"
-        )
-        connection.execute(
-            "INSERT INTO position_replacement VALUES (1, 'PREPARED', ?, ?, ?, ?, ?) "
-            "ON CONFLICT(id) DO UPDATE SET state='PREPARED', "
-            "before_open=excluded.before_open, before_closed=excluded.before_closed, "
-            "after_open=excluded.after_open, after_closed=excluded.after_closed, "
-            "digest=excluded.digest",
-            (*self.before, *after, _digest((*self.before, *after))),
-        )
+        self._record(after, state="PREPARED")
         connection.commit()
         # A competing participant may finish this redo first, then transact its
         # own change. Recover the CURRENT row, never replay our stale snapshot.

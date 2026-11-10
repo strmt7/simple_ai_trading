@@ -225,6 +225,10 @@ result and all other consumed populations, including WNBA September 3-9.
   Preserve native receipt/quantity checks and separate owned-close admission.
   The legacy Spot roundtrip diagnostic remains a tracked two-leg recovery gap,
   not permission to copy its direct-write pattern or claim universal fencing.
+  First scope enrollment must reject unscoped live/unclassified history and
+  bind the exact paired inventory bytes atomically with UNKNOWN. Do not reset
+  lost enrollment or automatically qualify an old binding from current keys;
+  preserve scope-bound recovery and owned reduction during verified migration.
 - Conservative is default. Leverage is a ceiling, never edge. Profitability,
   ROI, readiness, and drawdown claims require source-bound after-cost evidence.
 - Aggregate performance never establishes an all-regime edge. Apply

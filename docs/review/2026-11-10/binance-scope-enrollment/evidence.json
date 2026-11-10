@@ -1,0 +1,154 @@
+{
+  "base_revision": "67e29d7b9c9441a7595b5f89d3e93314f4127c69",
+  "created_at_utc": "2026-11-10T01:27:18.121599+00:00",
+  "final_enrollment_JUnit": {
+    "path": "data/research/2026-11-10-spot-roundtrip/scope-final-01.xml",
+    "sha256": "62231d8ac58e2ef23d2ac9b24d587895089f5a43c20d945e51eb86300f368781"
+  },
+  "final_enrollment_test_source": {
+    "path": "tests/test_binance_scope_enrollment.py",
+    "sha256": "6ee8ee3b223d00fee57feac655b858764a670409d313441f82b1ed2e176a23e7"
+  },
+  "financial_counts_unchanged": [
+    204,
+    65,
+    37,
+    0
+  ],
+  "lane_interpretation": "154 includes the original 24 enrollment cases; 470 includes one subsequently strengthened enrollment concurrency case. The final module has 27 cases after that change and three additions. Counts overlap; this is not a single whole-suite run. Production bytes remained unchanged. Earlier enrollment-module bytes were not separately frozen; bind the current 27-case result to its final source instead.",
+  "native_market_account_order_or_real_credentials_access": false,
+  "navigation": {
+    "actual_semantic_and_lexical_result": {
+      "path": "data/research/2026-11-10-spot-roundtrip/scope-source-routing.log",
+      "sha256": "be66a32e1ae9f46786d4175be44e1b6e54678866c9f59227169600d6751bdf87"
+    },
+    "current_after_edit_index": "stale; refresh before another broad semantic search",
+    "index_refresh_log": {
+      "path": "data/research/2026-11-10-spot-roundtrip/index-refresh.log",
+      "sha256": "7b1404da4683c0698445355ee4f9fcef0ceff6198ef9e75223c359d77afd055c"
+    },
+    "pre_edit_revision": "67e29d7b9c9441a7595b5f89d3e93314f4127c69"
+  },
+  "original_isolated_reproduction": {
+    "path": "data/research/2026-11-10-spot-roundtrip/scope-reproduction/result.json",
+    "sha256": "d37f8f34a677b1cd88b078f48fc940d346d4ab61a30da85cf7d252a5c2b69d3e"
+  },
+  "original_source_regressions": {
+    "controller": {
+      "path": "data/research/2026-11-10-spot-roundtrip/check_old_scope.py",
+      "sha256": "e887699726cf4b871106c6da2b8fcb593d61d28132904a75245668499394fd2f"
+    },
+    "failures_at_missing_rejection": 3,
+    "log": {
+      "path": "data/research/2026-11-10-spot-roundtrip/scope-old-tests-01.log",
+      "sha256": "8da6df0e447656015183964208257030498bf267a9dba1dc7b465754a323a66f"
+    },
+    "source_restoration": {
+      "path": "data/research/2026-11-10-spot-roundtrip/scope-old-tests-01.json",
+      "sha256": "69e6139e50af167a7c23f7dda37b6df1a9fdb395356663dde9b14387e0469a53"
+    }
+  },
+  "production_sources_sha256": {
+    "src/simple_ai_trading/binance_open_intents.py": "1795049a140b7460b92a908b0da097a51f126c520846e4cddc6b039858303d06",
+    "src/simple_ai_trading/position_transactions.py": "7b22c3dc634f45dc3af0eaf9099bc2ff19edbd94457a29ac57ad249e298cab6f"
+  },
+  "protected_capture_access": false,
+  "remaining_boundaries": [
+    "Verified legacy enrollment migration and account/key-rotation identity",
+    "Whole database loss and coordinated rollback",
+    "Spot roundtrip two-leg cash allocation and durable recovery",
+    "Independent supervisor, persistent risk budgets, alternate native writers and full final review"
+  ],
+  "result_sha256": "5638b4384e48cb9f2b4b8c081e666bba4c0e016b525ad75ea5dd34255a654e1e",
+  "schema": "binance-scope-enrollment-repair-v1",
+  "scope": "Fresh namespace enrollment and subsequent owned opening admission. Bound v2 read/recovery/acknowledgement/owned-close behavior retained; no automatic migration or universal gateway qualification.",
+  "services_tasks_or_persistent_workers_installed": false,
+  "unchanged_domain_test_bindings": {
+    "tests/test_autonomous_spot_cash.py": {
+      "Git_canonical_sha256": "4aa6979f8d0e05e52cb10c5b43bc81fdda101d2d48981d77d6619872c3043045",
+      "checkout_sha256": "4aa6979f8d0e05e52cb10c5b43bc81fdda101d2d48981d77d6619872c3043045"
+    },
+    "tests/test_autonomous_spot_inventory.py": {
+      "Git_canonical_sha256": "2cc7dd2e097b5179218e10376e2c15a49e28159dcf909053d2ba9e7ca17a46fb",
+      "checkout_sha256": "2cc7dd2e097b5179218e10376e2c15a49e28159dcf909053d2ba9e7ca17a46fb"
+    },
+    "tests/test_binance_close_intents.py": {
+      "Git_canonical_sha256": "b399a258c57284a356bf356660b3ddb9e51ba32541b4c309744d5a0e5b87343d",
+      "checkout_sha256": "b399a258c57284a356bf356660b3ddb9e51ba32541b4c309744d5a0e5b87343d"
+    },
+    "tests/test_binance_close_recovery.py": {
+      "Git_canonical_sha256": "0b368d1ecc0141bf6a944a4fc9fd58fd28e309a74cfbad5049384226ddc1e0fa",
+      "checkout_sha256": "0b368d1ecc0141bf6a944a4fc9fd58fd28e309a74cfbad5049384226ddc1e0fa"
+    },
+    "tests/test_binance_closing_inventory.py": {
+      "Git_canonical_sha256": "33a09db60c616198f265cb12e70fc78bfce04f875f698c6a7b458f0f6184a3cc",
+      "checkout_sha256": "33a09db60c616198f265cb12e70fc78bfce04f875f698c6a7b458f0f6184a3cc"
+    },
+    "tests/test_binance_execution_scope.py": {
+      "Git_canonical_sha256": "79e38c30cd7e343c16f5cfdbb490da4340f21479041a5929049b4aaac0e4333a",
+      "checkout_sha256": "79e38c30cd7e343c16f5cfdbb490da4340f21479041a5929049b4aaac0e4333a"
+    },
+    "tests/test_binance_open_intents.py": {
+      "Git_canonical_sha256": "dc4ef26d5807e347d1e452e2db5dcbbe5d191caba573337aa2c18620448fcd7a",
+      "checkout_sha256": "dc4ef26d5807e347d1e452e2db5dcbbe5d191caba573337aa2c18620448fcd7a"
+    },
+    "tests/test_binance_open_recovery.py": {
+      "Git_canonical_sha256": "8f972deb6f73b96cbbb78904e7ca29b7ba849b43949882fd19b87f659c5d2b21",
+      "checkout_sha256": "8f972deb6f73b96cbbb78904e7ca29b7ba849b43949882fd19b87f659c5d2b21"
+    },
+    "tests/test_binance_opening_inventory.py": {
+      "Git_canonical_sha256": "4a4d621f2ffd59fc8f39bec2d629d8a0e5a0680d7252cc471d9fe865251f0047",
+      "checkout_sha256": "4a4d621f2ffd59fc8f39bec2d629d8a0e5a0680d7252cc471d9fe865251f0047"
+    },
+    "tests/test_binance_spot_receipts.py": {
+      "Git_canonical_sha256": "c047a84e7e4acdcd248ec90e7d02a253db1bb596b0bf72ab3a08c670d4311921",
+      "checkout_sha256": "c047a84e7e4acdcd248ec90e7d02a253db1bb596b0bf72ab3a08c670d4311921"
+    },
+    "tests/test_execution_lifecycle.py": {
+      "Git_canonical_sha256": "386473168053ae4d13d8a3b7b74e4551a2fc159b29ea40b087bc8be8e27468eb",
+      "checkout_sha256": "386473168053ae4d13d8a3b7b74e4551a2fc159b29ea40b087bc8be8e27468eb"
+    },
+    "tests/test_position_lifecycle.py": {
+      "Git_canonical_sha256": "445ee07d12ffcf3abdea879487721a2a04669d444b144d6bc3b778c0ec6a6da3",
+      "checkout_sha256": "445ee07d12ffcf3abdea879487721a2a04669d444b144d6bc3b778c0ec6a6da3"
+    },
+    "tests/test_position_mutation_integrity.py": {
+      "Git_canonical_sha256": "a16ab8980e6c90b4b8c8c040684656e1293917d199bc157cb46a3afd0986d9f8",
+      "checkout_sha256": "a16ab8980e6c90b4b8c8c040684656e1293917d199bc157cb46a3afd0986d9f8"
+    },
+    "tests/test_position_transactions.py": {
+      "Git_canonical_sha256": "09cd44e3111a35c9e0cc8f193ca69498885ae4bd07efa3ebff11701813349d2b",
+      "checkout_sha256": "09cd44e3111a35c9e0cc8f193ca69498885ae4bd07efa3ebff11701813349d2b"
+    },
+    "tests/test_spot_short_opening_scope.py": {
+      "Git_canonical_sha256": "8199b52961f29d12735c0e3e38441ae343f62fe09f77a7d86369dde922830294",
+      "checkout_sha256": "8199b52961f29d12735c0e3e38441ae343f62fe09f77a7d86369dde922830294"
+    }
+  },
+  "verification_lanes": [
+    {
+      "log": {
+        "path": "data/research/2026-11-10-spot-roundtrip/scope-tests-01.log",
+        "sha256": "8174451b2980e24add7060e77427affecf3171ae83e97a26e1235c0633721dd3"
+      },
+      "name": "scope-tests-01",
+      "passing_cases": 154
+    },
+    {
+      "log": {
+        "path": "data/research/2026-11-10-spot-roundtrip/scope-integration-01.log",
+        "sha256": "7a29081e09327c2858612bd8a35d6dd38cc3945284917303598129e9fad64cd5"
+      },
+      "name": "scope-integration-01",
+      "passing_cases": 470
+    },
+    {
+      "log": {
+        "path": "data/research/2026-11-10-spot-roundtrip/scope-final-01.log",
+        "sha256": "18395083f2cb1e70edeb9bfc9b39da059cb217359d0fe9eaea01cc89e8d751d4"
+      },
+      "name": "scope-final-01",
+      "passing_cases": 27
+    }
+  ]
+}

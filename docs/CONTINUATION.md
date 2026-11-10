@@ -118,6 +118,17 @@ LLMs may veto/reduce risk, never bypass deterministic Stop/ownership/close contr
 
 ## Platform work and publication
 
+- [Binance scope enrollment](review/2026-11-10/binance-scope-enrollment/review.md)
+  closes a reproduced first-binding gap that could assign unscoped legacy live
+  inventory to new credentials. Version 3 binds paired bytes, scope and UNKNOWN
+  atomically; new openings reject changed/lost enrollment. Bound version 2 retains
+  recovery/owned closing, while new exposure requires verified migration. The
+  passing 154/470/27-case lanes overlap; three original-source regressions fail.
+  Complete migration, database-loss protection and universal fencing remain open.
+  [Spot quote-budget documentation](review/2026-11-10/spot-quote-budget-source/review.md)
+  now has an admitted immutable publisher copy; the first HTML shell remains
+  rejected. It informs the roundtrip's outstanding operation-cash/two-leg design,
+  without changing transport or qualifying any edge.
 - [Owned Binance CLI execution](review/2026-11-10/binance-owned-cli/review.md) now
   shares the autonomous write-ahead opening/closing flow and returns typed raw-ack
   outcomes. Entry, normal and emergency close bind scope before dispatch; real

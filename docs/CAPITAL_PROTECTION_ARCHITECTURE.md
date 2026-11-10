@@ -1,5 +1,15 @@
 # Capital protection and final release verification
 
+The [Binance enrollment repair](review/2026-11-10/binance-scope-enrollment/review.md)
+prevents fresh credentials from inheriting unscoped live/unclassified history.
+Scope, exact paired bytes, version 3 and UNKNOWN enroll atomically. Changed or
+missing enrolled data blocks new exposure; bound version-2 recovery and owned
+closing remain available pending verified migration. Three original-source
+regressions fail; affected passing lanes and their overlaps are documented.
+Whole-database loss, account identity/rotation and controlled migration remain
+open. This corrects the earlier first-enrollment coverage gap without rewriting
+the historical reports or claiming universal execution fencing.
+
 The [owned Binance CLI repair](review/2026-11-10/binance-owned-cli/review.md)
 routes signed entry, normal close and emergency close through the same durable
 owned execution as autonomous mode. UNKNOWN and scope precede dispatch; native
