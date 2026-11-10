@@ -15,6 +15,13 @@ from threading import Lock, RLock
 import time
 from typing import BinaryIO, Callable, Iterator, Mapping
 import uuid
+from weakref import WeakValueDictionary
+
+from .runtime_control_storage import (
+    FileIdentity,
+    RuntimeStorageEnrollment,
+    validate_parent,
+)
 
 
 class RuntimeControlError(RuntimeError):
@@ -53,7 +60,7 @@ class RuntimeControlNamespace:
 
 
 _CONTROL_STATES = frozenset({"stopped", "running", "stop_requested"})
-_LOCAL_LOCKS: dict[str, RLock] = {}
+_LOCAL_LOCKS: WeakValueDictionary[str, RLock] = WeakValueDictionary()
 _LOCAL_LOCKS_GUARD = Lock()
 
 
@@ -94,6 +101,7 @@ class _CrossProcessFileLock:
         timeout_seconds: float,
         monotonic: Callable[[], float] = time.monotonic,
         sleep: Callable[[float], None] = time.sleep,
+        expected_identity: FileIdentity | None = None,
     ) -> None:
         self.path = path
         self.timeout_seconds = float(timeout_seconds)
@@ -102,16 +110,40 @@ class _CrossProcessFileLock:
         self._local = _local_lock(path)
         self._handle: BinaryIO | None = None
         self._cleanup: ExitStack | None = None
+        self._expected_identity = expected_identity
+
+    def _verify_identity(self, handle: BinaryIO | None = None) -> None:
+        if self._expected_identity is not None:
+            try:
+                self._expected_identity.verify(self.path, handle)
+            except (OSError, ValueError) as exc:
+                raise self.blocked_error(
+                    "runtime enrolled interlock is missing or changed"
+                ) from exc
 
     def __enter__(self) -> "_CrossProcessFileLock":
+        if self._cleanup is not None:
+            raise self.blocked_error("runtime interlock instance is already entered")
         deadline = self._monotonic() + self.timeout_seconds
         if not self._local.acquire(timeout=self.timeout_seconds):
             raise self.blocked_error(f"{self.label} runtime interlock timed out")
         with ExitStack() as cleanup:
             cleanup.callback(self._local.release)
-            self.path.parent.mkdir(parents=True, exist_ok=True)
-            handle = self.path.open("a+b", buffering=0)
+            if self._expected_identity is None:
+                self.path.parent.mkdir(parents=True, exist_ok=True)
+            try:
+                self._verify_identity()
+                handle = self.path.open(
+                    "a+b" if self._expected_identity is None else "r+b", buffering=0
+                )
+            except (OSError, ValueError) as exc:
+                if self._expected_identity is None:
+                    raise
+                raise self.blocked_error(
+                    "runtime enrolled interlock is missing or changed"
+                ) from exc
             cleanup.callback(handle.close)
+            self._verify_identity(handle)
             if handle.seek(0, os.SEEK_END) == 0:
                 handle.write(b"\0")
                 handle.flush()
@@ -130,16 +162,18 @@ class _CrossProcessFileLock:
                             handle.fileno(),
                             fcntl.LOCK_EX | fcntl.LOCK_NB,
                         )
-                    cleanup.callback(self._unlock, handle)
-                    self._handle = handle
-                    self._cleanup = cleanup.pop_all()
-                    return self
                 except OSError as exc:
                     if self._monotonic() >= deadline:
                         raise self.blocked_error(
                             f"{self.label} runtime interlock timed out"
                         ) from exc
                     self._sleep(min(0.05, max(0.0, deadline - self._monotonic())))
+                    continue
+                cleanup.callback(self._unlock, handle)
+                self._verify_identity(handle)
+                self._handle = handle
+                self._cleanup = cleanup.pop_all()
+                return self
 
     @staticmethod
     def _unlock(handle: BinaryIO) -> None:
@@ -200,14 +234,31 @@ class RuntimeControl:
         maximum_heartbeat_age_ms: int = 30_000,
         interlock_timeout_seconds: float = 30.0,
         clock_ms: Callable[[], int] | None = None,
+        enrollment_path: str | Path | None = None,
     ) -> None:
-        self.ledger_path = Path(ledger_path)
+        self.ledger_path = Path(os.path.abspath(ledger_path))
         self.lock_path = self.ledger_path.with_name(
             self.ledger_path.name + ".runtime.lock"
         )
         self.close_lock_path = self.ledger_path.with_name(
             self.ledger_path.name + ".runtime.close.lock"
         )
+        self.enrollment_path = (
+            Path(os.path.abspath(enrollment_path))
+            if enrollment_path is not None
+            else self.ledger_path.with_name(
+                self.ledger_path.name + f".{self.namespace.table_name}.enrollment.json"
+            )
+        )
+        if os.path.normcase(str(self.enrollment_path)) in {
+            os.path.normcase(str(path))
+            for path in (self.ledger_path, self.lock_path, self.close_lock_path)
+            + tuple(
+                self.ledger_path.with_name(self.ledger_path.name + suffix)
+                for suffix in ("-wal", "-shm", "-journal")
+            )
+        }:
+            raise ValueError("runtime enrollment must use an independent file")
         self.maximum_heartbeat_age_ms = int(maximum_heartbeat_age_ms)
         self.interlock_timeout_seconds = float(interlock_timeout_seconds)
         if not 5_000 <= self.maximum_heartbeat_age_ms <= 300_000:
@@ -217,10 +268,260 @@ class RuntimeControl:
         self._clock_ms = clock_ms or (lambda: int(time.time() * 1_000))
 
     def _interlock(self) -> _CrossProcessFileLock:
+        enrollment = self._enrollment()
         return self.lock_type(
             self.lock_path,
             timeout_seconds=self.interlock_timeout_seconds,
+            expected_identity=enrollment.submission_lock,
         )
+
+    def _enrollment(self, *, allow_prepared: bool = False) -> RuntimeStorageEnrollment:
+        try:
+            result = RuntimeStorageEnrollment.read(
+                self.enrollment_path, allow_prepared=allow_prepared
+            )
+            if (
+                result.namespace != self.namespace.table_name
+                or result.control_schema_version != self.namespace.schema_version
+            ):
+                raise ValueError("runtime enrollment namespace or schema differs")
+            return result
+        except (OSError, ValueError, TypeError) as exc:
+            raise self.error(
+                "runtime storage enrollment is unavailable or invalid; "
+                "explicit provisioning or recovery is required"
+            ) from exc
+
+    def _verify_resources(self, enrollment: RuntimeStorageEnrollment) -> None:
+        try:
+            enrollment.database.verify(self.ledger_path)
+            enrollment.submission_lock.verify(self.lock_path)
+            enrollment.close_lock.verify(self.close_lock_path)
+        except (OSError, ValueError) as exc:
+            raise self.error(
+                "runtime enrolled storage resource is missing or changed"
+            ) from exc
+
+    def _verify_store(
+        self, connection: sqlite3.Connection, enrollment: RuntimeStorageEnrollment
+    ) -> None:
+        try:
+            row = connection.execute(
+                "SELECT store_id FROM runtime_storage_enrollment WHERE namespace = ?",
+                (self.namespace.table_name,),
+            ).fetchone()
+            if row is None or row[0] != enrollment.store_id:
+                raise self.error("runtime database enrollment differs")
+        except sqlite3.Error as exc:
+            raise self.error(
+                "runtime database enrollment is missing or invalid"
+            ) from exc
+
+    def _existing_record_digest(self, connection: sqlite3.Connection) -> str:
+        row = connection.execute(
+            f"SELECT * FROM {self.namespace.table_name} WHERE singleton = 1"
+        ).fetchone()
+        if row is None:
+            raise self.error("runtime control record is missing")
+        if "paused" in row.keys():
+            self._verify_row(row)
+        elif self.namespace.legacy_schema_version is not None:
+            self._verified_legacy_payload(row)
+        else:
+            raise self.error("runtime control pause fields are missing")
+        return str(row["record_sha256"])
+
+    def inspect_storage(self) -> dict[str, object]:
+        """Inspect existing control evidence without creating or adopting storage."""
+        try:
+            FileIdentity.at(self.ledger_path)
+            connection = sqlite3.connect(
+                self.ledger_path.as_uri() + "?mode=ro", uri=True
+            )
+        except (OSError, ValueError, sqlite3.Error) as exc:
+            raise self.error("existing runtime database is unavailable") from exc
+        connection.row_factory = sqlite3.Row
+        try:
+            digest = (
+                self._existing_record_digest(connection)
+                if self._control_table_exists(connection)
+                else None
+            )
+            enrollment_exists = self.enrollment_path.exists()
+            enrollment = (
+                self._enrollment(allow_prepared=True) if enrollment_exists else None
+            )
+            return {
+                "control_record_sha256": digest,
+                "namespace": self.namespace.table_name,
+                "enrollment_exists": enrollment_exists,
+                "enrollment_state": "unenrolled"
+                if enrollment is None
+                else enrollment.state,
+                "enrollment_store_id": None
+                if enrollment is None
+                else enrollment.store_id,
+                "new_exposure_authorized": False,
+            }
+        finally:
+            connection.close()
+
+    def provision_storage(
+        self, *, expected_record_sha256: str | None = None
+    ) -> RuntimeControlSnapshot:
+        """Explicitly create/adopt one namespace; never replace an enrollment."""
+        if expected_record_sha256 is not None and (
+            not isinstance(expected_record_sha256, str)
+            or re.fullmatch(r"[0-9a-f]{64}", expected_record_sha256) is None
+        ):
+            raise ValueError("expected runtime record digest is invalid")
+        if self.enrollment_path.exists() or self.enrollment_path.is_symlink():
+            raise self.error(
+                "runtime enrollment already exists; restore or explicitly recover it"
+            )
+        if self.ledger_path.exists():
+            # An absent anchor must never silently rebind an already enrolled
+            # database or recreate its potentially missing interlock files.
+            FileIdentity.at(self.ledger_path)
+            probe = sqlite3.connect(self.ledger_path.as_uri() + "?mode=ro", uri=True)
+            try:
+                if (
+                    probe.execute(
+                        "SELECT 1 FROM sqlite_master WHERE type='table' AND name='runtime_storage_enrollment'"
+                    ).fetchone()
+                    and probe.execute(
+                        "SELECT 1 FROM runtime_storage_enrollment WHERE namespace = ?",
+                        (self.namespace.table_name,),
+                    ).fetchone()
+                ):
+                    raise self.error(
+                        "runtime database is already enrolled; restore its independent enrollment"
+                    )
+            finally:
+                probe.close()
+        self.ledger_path.parent.mkdir(parents=True, exist_ok=True)
+        self.enrollment_path.parent.mkdir(parents=True, exist_ok=True)
+        validate_parent(self.ledger_path)
+        validate_parent(self.enrollment_path)
+        with (
+            self.lock_type(
+                self.lock_path, timeout_seconds=self.interlock_timeout_seconds
+            ),
+            self.lock_type(
+                self.close_lock_path, timeout_seconds=self.interlock_timeout_seconds
+            ),
+        ):
+            if self.enrollment_path.exists() or self.enrollment_path.is_symlink():
+                raise self.error(
+                    "runtime enrollment already exists; restore or explicitly recover it"
+                )
+            if not self.ledger_path.exists():
+                if expected_record_sha256 is not None:
+                    raise self.error("expected runtime database is missing")
+                with self.ledger_path.open("xb") as stream:
+                    stream.flush()
+                    os.fsync(stream.fileno())
+            FileIdentity.at(self.ledger_path)
+            connection = sqlite3.connect(
+                self.ledger_path.as_uri() + "?mode=rw",
+                uri=True,
+                timeout=30.0,
+                isolation_level=None,
+            )
+            connection.row_factory = sqlite3.Row
+            try:
+                connection.execute("BEGIN IMMEDIATE")
+                exists = self._control_table_exists(connection)
+                if exists:
+                    if (
+                        self._existing_record_digest(connection)
+                        != expected_record_sha256
+                    ):
+                        raise self.error(
+                            "explicit adoption requires the exact existing runtime record digest"
+                        )
+                elif expected_record_sha256 is not None:
+                    raise self.error("expected runtime control namespace is missing")
+                connection.execute(
+                    "CREATE TABLE IF NOT EXISTS runtime_storage_enrollment "
+                    "(namespace TEXT PRIMARY KEY, store_id TEXT NOT NULL)"
+                )
+                if connection.execute(
+                    "SELECT 1 FROM runtime_storage_enrollment WHERE namespace = ?",
+                    (self.namespace.table_name,),
+                ).fetchone():
+                    raise self.error(
+                        "runtime database is already enrolled; restore its independent enrollment"
+                    )
+                enrollment = RuntimeStorageEnrollment(
+                    self.namespace.table_name,
+                    self.namespace.schema_version,
+                    uuid.uuid4().hex,
+                    "prepared",
+                    FileIdentity.at(self.ledger_path),
+                    FileIdentity.at(self.lock_path),
+                    FileIdentity.at(self.close_lock_path),
+                )
+                enrollment.prepare(self.enrollment_path)
+                if not exists:
+                    self._bootstrap_control(connection, require_reconciliation=True)
+                connection.execute(
+                    "INSERT INTO runtime_storage_enrollment VALUES (?, ?)",
+                    (self.namespace.table_name, enrollment.store_id),
+                )
+                connection.execute("COMMIT")
+                enrollment.finish(self.enrollment_path)
+            except BaseException:
+                if connection.in_transaction:
+                    connection.execute("ROLLBACK")
+                raise
+            finally:
+                connection.close()
+        return self.snapshot()
+
+    def recover_storage_enrollment(
+        self, *, expected_store_id: str, expected_record_sha256: str
+    ) -> RuntimeControlSnapshot:
+        """Finish a committed prepared enrollment without resetting its control row."""
+        enrollment = self._enrollment(allow_prepared=True)
+        if enrollment.state != "prepared" or enrollment.store_id != expected_store_id:
+            raise self.error("prepared runtime enrollment identity differs")
+        with (
+            self.lock_type(
+                self.lock_path,
+                timeout_seconds=self.interlock_timeout_seconds,
+                expected_identity=enrollment.submission_lock,
+            ),
+            self.lock_type(
+                self.close_lock_path,
+                timeout_seconds=self.interlock_timeout_seconds,
+                expected_identity=enrollment.close_lock,
+            ),
+        ):
+            if self._enrollment(allow_prepared=True) != enrollment:
+                raise self.error("prepared runtime enrollment changed")
+            self._verify_resources(enrollment)
+            connection = sqlite3.connect(
+                self.ledger_path.as_uri() + "?mode=rw",
+                uri=True,
+                timeout=30.0,
+                isolation_level=None,
+            )
+            connection.row_factory = sqlite3.Row
+            try:
+                connection.execute("BEGIN IMMEDIATE")
+                self._verify_store(connection, enrollment)
+                if self._existing_record_digest(connection) != expected_record_sha256:
+                    raise self.error("prepared runtime control record differs")
+                enrollment.finish(self.enrollment_path)
+                connection.execute("COMMIT")
+            except BaseException:
+                if connection.in_transaction:
+                    connection.execute("ROLLBACK")
+                raise
+            finally:
+                connection.close()
+        return self.snapshot()
 
     @contextmanager
     def close_guard(self, *, timeout_seconds: float) -> Iterator[None]:
@@ -230,18 +531,27 @@ class RuntimeControl:
         with self.lock_type(
             self.close_lock_path,
             timeout_seconds=timeout,
+            expected_identity=self._enrollment().close_lock,
         ):
             yield
 
     def _connect(self) -> sqlite3.Connection:
-        self.ledger_path.parent.mkdir(parents=True, exist_ok=True)
-        connection = sqlite3.connect(
-            self.ledger_path,
-            timeout=30.0,
-            isolation_level=None,
-        )
+        enrollment = self._enrollment()
+        self._verify_resources(enrollment)
+        try:
+            connection = sqlite3.connect(
+                self.ledger_path.as_uri() + "?mode=rw",
+                uri=True,
+                timeout=30.0,
+                isolation_level=None,
+            )
+        except sqlite3.Error as exc:
+            raise self.error("enrolled runtime database could not be opened") from exc
         connection.row_factory = sqlite3.Row
         try:
+            self._verify_resources(enrollment)
+            self._verify_store(connection, enrollment)
+            self._initialize(connection)
             connection.execute("PRAGMA busy_timeout=30000")
             connection.execute("PRAGMA trusted_schema=OFF")
             mode = str(
@@ -252,7 +562,6 @@ class RuntimeControl:
             connection.execute("PRAGMA synchronous=FULL")
             connection.execute("PRAGMA wal_autocheckpoint=100")
             connection.execute("PRAGMA journal_size_limit=1048576")
-            self._initialize(connection)
             check = connection.execute("PRAGMA quick_check").fetchone()
             if check is None or str(check[0]).lower() != "ok":
                 raise self.error(
@@ -264,20 +573,10 @@ class RuntimeControl:
             raise
 
     def _initialize(self, connection: sqlite3.Connection) -> None:
-        if self._control_table_exists(connection):
-            self._require_initialized_record(connection)
-            return
-        connection.execute("BEGIN IMMEDIATE")
-        try:
-            # Another first-time reader may have initialized while this writer
-            # waited. Never interpret its existing namespace as a fresh store.
-            if not self._control_table_exists(connection):
-                self._bootstrap_control(connection)
-            connection.execute("COMMIT")
-        except BaseException:
-            if connection.in_transaction:
-                connection.execute("ROLLBACK")
-            raise
+        if not self._control_table_exists(connection):
+            raise self.error(
+                "runtime control namespace is missing; restore enrolled storage"
+            )
         self._require_initialized_record(connection)
 
     def _control_table_exists(self, connection: sqlite3.Connection) -> bool:
@@ -310,7 +609,9 @@ class RuntimeControl:
                 )
         self._verify_row(row)
 
-    def _bootstrap_control(self, connection: sqlite3.Connection) -> None:
+    def _bootstrap_control(
+        self, connection: sqlite3.Connection, *, require_reconciliation: bool = False
+    ) -> None:
         """Create table and first record inside the caller's writer transaction."""
         connection.execute(
             f"""
@@ -340,18 +641,22 @@ class RuntimeControl:
         now = self._now_ms()
         payload = {
             "schema_version": self.namespace.schema_version,
-            "state": "stopped",
+            "state": "stop_requested" if require_reconciliation else "stopped",
             "lease_id": "",
             "owner_process_id": 0,
             "started_at_ms": 0,
             "heartbeat_at_ms": 0,
-            "stop_epoch": 0,
-            "stop_requested_at_ms": 0,
-            "stop_reason": "never_started",
-            "paused": False,
+            "stop_epoch": int(require_reconciliation),
+            "stop_requested_at_ms": now if require_reconciliation else 0,
+            "stop_reason": "storage_enrollment_requires_reconciliation"
+            if require_reconciliation
+            else "never_started",
+            "paused": require_reconciliation,
             "pause_epoch": 0,
             "pause_changed_at_ms": now,
-            "pause_reason": "never_started",
+            "pause_reason": "storage_enrollment_requires_reconciliation"
+            if require_reconciliation
+            else "never_started",
             "updated_at_ms": now,
         }
         connection.execute(
@@ -395,24 +700,7 @@ class RuntimeControl:
                 self._verify_row(row)
                 connection.execute("COMMIT")
                 return
-            legacy = {
-                "schema_version": str(row["schema_version"]),
-                "state": str(row["state"]),
-                "lease_id": str(row["lease_id"]),
-                "owner_process_id": int(row["owner_process_id"]),
-                "started_at_ms": int(row["started_at_ms"]),
-                "heartbeat_at_ms": int(row["heartbeat_at_ms"]),
-                "stop_epoch": int(row["stop_epoch"]),
-                "stop_requested_at_ms": int(row["stop_requested_at_ms"]),
-                "stop_reason": str(row["stop_reason"]),
-                "updated_at_ms": int(row["updated_at_ms"]),
-            }
-            if legacy["schema_version"] != self.namespace.legacy_schema_version or str(
-                row["record_sha256"]
-            ) != _canonical_sha256(legacy):
-                raise self.error(
-                    f"{self.namespace.label} runtime control v1 record differs"
-                )
+            legacy = self._verified_legacy_payload(row)
             connection.execute(
                 f"ALTER TABLE {self.namespace.table_name} "
                 "ADD COLUMN paused INTEGER NOT NULL DEFAULT 0 "
@@ -460,6 +748,29 @@ class RuntimeControl:
             if connection.in_transaction:
                 connection.execute("ROLLBACK")
             raise
+
+    def _verified_legacy_payload(self, row: Mapping[str, object]) -> dict[str, object]:
+        legacy = {
+            "schema_version": str(row["schema_version"]),
+            "state": str(row["state"]),
+            "lease_id": str(row["lease_id"]),
+            "owner_process_id": int(row["owner_process_id"]),
+            "started_at_ms": int(row["started_at_ms"]),
+            "heartbeat_at_ms": int(row["heartbeat_at_ms"]),
+            "stop_epoch": int(row["stop_epoch"]),
+            "stop_requested_at_ms": int(row["stop_requested_at_ms"]),
+            "stop_reason": str(row["stop_reason"]),
+            "updated_at_ms": int(row["updated_at_ms"]),
+        }
+        if (
+            legacy["schema_version"] != self.namespace.legacy_schema_version
+            or legacy["state"] not in _CONTROL_STATES
+            or str(row["record_sha256"]) != _canonical_sha256(legacy)
+        ):
+            raise self.error(
+                f"{self.namespace.label} runtime control v1 record differs"
+            )
+        return legacy
 
     @staticmethod
     def _row_payload(row: Mapping[str, object]) -> dict[str, object]:

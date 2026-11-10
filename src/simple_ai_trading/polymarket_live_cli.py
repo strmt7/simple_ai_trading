@@ -16,6 +16,7 @@ from typing import Mapping
 
 from .polymarket_live import (
     PolymarketLiveBlocked,
+    PolymarketLiveError,
     PolymarketLiveCoordinator,
     PolymarketLiveOrderLedger,
     PolymarketLiveRiskLimits,
@@ -52,6 +53,9 @@ from .polymarket_runtime_control import (
 DEFAULT_POLYMARKET_LIVE_LEDGER = Path("data/polymarket/live-ownership.sqlite3")
 _ACTIONS = (
     "status",
+    "inspect-control",
+    "enroll-control",
+    "recover-control-enrollment",
     "preflight",
     "reconcile",
     "supervise",
@@ -95,6 +99,21 @@ def register_polymarket_live_command(
         choices=tuple(_RISK_LIMITS),
         default="conservative",
         help="hard Polymarket execution ceiling profile; conservative is default",
+    )
+    parser.add_argument(
+        "--runtime-enrollment",
+        default=None,
+        help="independent non-secret runtime storage enrollment file",
+    )
+    parser.add_argument(
+        "--expected-control-record-sha256",
+        default=None,
+        help="exact inspected control record digest for explicit adoption or enrollment recovery",
+    )
+    parser.add_argument(
+        "--expected-control-store-id",
+        default=None,
+        help="exact prepared store ID for interrupted enrollment recovery",
     )
     parser.add_argument(
         "--duration-seconds",
@@ -237,7 +256,9 @@ _POLYMARKET_LIVE_STATUS_BOUNDARY: dict[str, object] = {
 }
 
 
-def _local_status(path: Path) -> dict[str, object]:
+def _local_status(
+    path: Path, *, enrollment_path: str | None = None
+) -> dict[str, object]:
     if not path.exists():
         return {
             **_POLYMARKET_LIVE_STATUS_BOUNDARY,
@@ -251,7 +272,12 @@ def _local_status(path: Path) -> dict[str, object]:
             "reason": "authenticated_preflight_required",
         }
     ledger = PolymarketLiveOrderLedger(path)
-    runtime_control = PolymarketRuntimeControl(path).snapshot()
+    try:
+        runtime_control = PolymarketRuntimeControl(
+            path, enrollment_path=enrollment_path
+        ).snapshot()
+    except PolymarketLiveError:
+        runtime_control = None
     records = ledger.records()
     inventory = ledger.owned_inventory()
     redemptions = ledger.redemption_records()
@@ -276,10 +302,16 @@ def _local_status(path: Path) -> dict[str, object]:
             ledger.unverified_redemption_accounting_count()
         ),
         "unresolved_redemption_count": len(unresolved),
-        "runtime_state": runtime_control.state,
-        "runtime_control": runtime_control.asdict(),
+        "runtime_state": "control_unavailable"
+        if runtime_control is None
+        else runtime_control.state,
+        "runtime_control": None
+        if runtime_control is None
+        else runtime_control.asdict(),
         "can_open": False,
-        "reason": "authenticated_preflight_and_promoted_model_required",
+        "reason": "runtime_storage_enrollment_or_recovery_required"
+        if runtime_control is None
+        else "authenticated_preflight_and_promoted_model_required",
     }
 
 
@@ -315,6 +347,7 @@ def _stop_owned_exposure(
     coordinator: PolymarketLiveCoordinator,
     ledger: PolymarketLiveOrderLedger,
     timeout_seconds: float,
+    runtime_control: PolymarketRuntimeControl | None = None,
 ) -> tuple[dict[str, object], int]:
     return stop_owned_polymarket_exposure(
         coordinator=coordinator,
@@ -322,6 +355,7 @@ def _stop_owned_exposure(
         timeout_seconds=timeout_seconds,
         monotonic=time.monotonic,
         sleep=time.sleep,
+        runtime_control=runtime_control,
     )
 
 
@@ -823,6 +857,7 @@ async def _autonomous(
     activation_file_sha256: str = "",
     promotion_file_sha256: str = "",
     round16_contract_file_sha256: str = "",
+    enrollment_path: str | None = None,
 ) -> dict[str, object]:
     duration = float(duration_seconds)
     interval = float(reconciliation_seconds)
@@ -873,7 +908,9 @@ async def _autonomous(
         promotion=promotion,
         observed_at_ms=observed_at_ms,
     )
-    runtime_control = PolymarketRuntimeControl(ledger.path)
+    runtime_control = PolymarketRuntimeControl(
+        ledger.path, enrollment_path=enrollment_path
+    )
     runtime_lease = runtime_control.acquire()
     runtime_released = False
     public_client: object | None = None
@@ -1025,7 +1062,13 @@ def command_polymarket_live(args: argparse.Namespace) -> int:
     ledger_path = Path(args.ledger)
     try:
         if action == "status":
-            payload = {"action": action, **_local_status(ledger_path)}
+            payload = {
+                "action": action,
+                **_local_status(
+                    ledger_path,
+                    enrollment_path=getattr(args, "runtime_enrollment", None),
+                ),
+            }
             if args.activation:
                 activation = load_polymarket_live_activation(args.activation)
                 payload.update(
@@ -1047,7 +1090,33 @@ def command_polymarket_live(args: argparse.Namespace) -> int:
             _render(payload, as_json=bool(args.json))
             return 0
 
-        runtime_control = PolymarketRuntimeControl(ledger_path)
+        runtime_control = PolymarketRuntimeControl(
+            ledger_path, enrollment_path=getattr(args, "runtime_enrollment", None)
+        )
+        if action in {
+            "inspect-control",
+            "enroll-control",
+            "recover-control-enrollment",
+        }:
+            if action == "inspect-control":
+                result = runtime_control.inspect_storage()
+            elif action == "enroll-control":
+                result = runtime_control.provision_storage(
+                    expected_record_sha256=getattr(
+                        args, "expected_control_record_sha256", None
+                    )
+                ).asdict()
+            else:
+                result = runtime_control.recover_storage_enrollment(
+                    expected_store_id=getattr(args, "expected_control_store_id", None),
+                    expected_record_sha256=getattr(
+                        args, "expected_control_record_sha256", None
+                    ),
+                ).asdict()
+            _render(
+                {"action": action, "runtime_control": result}, as_json=bool(args.json)
+            )
+            return 0
         if action in {"pause", "resume"}:
             snapshot = runtime_control.set_paused(
                 action == "pause",
@@ -1124,6 +1193,7 @@ def command_polymarket_live(args: argparse.Namespace) -> int:
                     coordinator=coordinator,
                     ledger=ledger,
                     timeout_seconds=args.stop_timeout_seconds,
+                    runtime_control=runtime_control,
                 )
                 if bool(payload.get("completed")):
                     runtime_control.complete_stale_stop(
@@ -1244,6 +1314,7 @@ def command_polymarket_live(args: argparse.Namespace) -> int:
                         round16_contract_file_sha256=str(
                             autonomous_arguments["round16_contract_file_sha256"]
                         ),
+                        enrollment_path=getattr(args, "runtime_enrollment", None),
                     )
                 )
                 payload["action"] = action

@@ -1,5 +1,15 @@
 # Capital protection and final release verification
 
+The [runtime storage enrollment checkpoint](review/2026-11-10/runtime-storage-enrollment/review.md)
+now rejects normal access to missing/replaced controller storage and identities.
+Explicit setup/adoption and committed prepared-state recovery preserve Stop;
+new namespaces start paused with Stop requested. Owned closing keeps its separate
+enrolled lock. Verified migration/replacement, complete in-place rollback
+resistance, account qualification, universal native-writer integration and
+independent process/credential fencing remain open. The source-bound combined
+and diagnostic lanes overlap; they do not establish whole-product or physical
+reboot acceptance. No persistent service or background launcher was installed.
+
 The [local fee-asset grants](review/2026-11-10/roundtrip-fee-grants/review.md)
 add explicit third-asset units to the roundtrip journal. Both legs share those
 units; mixed discount/received-asset fees preserve the net receipt cap. All 435

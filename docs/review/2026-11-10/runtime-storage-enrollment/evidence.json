@@ -1,0 +1,143 @@
+{
+  "base_revision": "f2beb804699f720eb372a2d32b33ccf477b27e5c",
+  "capture_boundaries_sha256": "f971726268ba2e630b2ebbe8d5bcf02f7b3f23b92ccb16efe23aef82cebe950f",
+  "created_at_utc": "2026-11-10T09:20:53.395068+00:00",
+  "current_goal_turn_classification": "progress: implemented shared noncreating storage authority, explicit setup/recovery and reproduced resource retention repairs",
+  "financial_census": [
+    205,
+    65,
+    37,
+    0
+  ],
+  "market_sample_model_fit_GPU_benchmark_or_scanner_retry": false,
+  "original_database_loss_reproduction": {
+    "path": "data/research/2026-11-10-runtime-enrollment-0730/original-loss-reproduction.json",
+    "replacement_lease_acquired": true,
+    "replacement_stop_epoch": 0,
+    "retained_stop_epoch": 1,
+    "sha256": "a6c3f6b31417341dd0406d8f9337c5d675056bf3722c379d7cb81ef38901dfb7",
+    "source_matches_before_core": true
+  },
+  "original_resource_counterexamples": {
+    "native_account_order_or_credential_requests": 0,
+    "original_atomic_cancellation": {
+      "bytes": {
+        "original_policy_unchanged": true,
+        "retained_temporary_sha256": "f58699b7cc73b48b9a688d53264592bfad4dca379257f5905454366699e1897e",
+        "temporary_files_left_by_original": 1
+      },
+      "json": {
+        "original_policy_unchanged": true,
+        "retained_temporary_sha256": "6f00b0d5583765d05390a52f843272a8478fa121b203fca8358a6aa06e5c615e",
+        "temporary_files_left_by_original": 1
+      }
+    },
+    "original_mutex_entries_after_deleting_128_owners_and_collecting": 128,
+    "source_sha256": {
+      "runtime_control.py": "cbae8d2692887495914086351bcaecfd154ddbbc247474db8de72ba0270947ab",
+      "storage.py": "325b5f407896d2d2655040de33115e8d763f646d97f6d3a99f91ed889b0e6610"
+    }
+  },
+  "previous_goal_turn_classification": "progress: published dependency compatibility, resource-lifetime instructions and source-bound product assessment",
+  "private_evidence_sha256": {
+    "callers.stderr.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "callers.stdout.log": "dfc36dca5ec64faa9e275f08b6fc5c507834ba079729e759cd2898879b3413d5",
+    "index.stderr.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "index.stdout.log": "49303052f85388c4f8ed939e6e1d0e283fb17af64b26899425a22a87133e713e",
+    "original-resource-counterexamples/result.json": "3b43050691c3be1650043c19338f15da0440a08aa23bdf20703121a621fb2bca",
+    "original/receipt.json": "b444e2b82c26947804a8004211871ec8af84c1fafe3a3e4a82b3f78b6ca6ef70",
+    "original/storage.py": "325b5f407896d2d2655040de33115e8d763f646d97f6d3a99f91ed889b0e6610",
+    "owned-controller-readback.json": "c3b56f881803fa6e07a2612c6e827f38c6ddc0c39fade080afeab02840837a7f",
+    "phase-01/source-receipt.json": "a828c93f6b063c46f0ad711b986102439fcb349179e9dac00cd84f9cdc6a6ff3",
+    "phase-01/stderr.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "phase-01/stdout.log": "abe44b69d92605dad56fec783cc33667043f1757ed065674c4cbeeef7564be95",
+    "phase-01/tests.xml": "9555dc877d0d048376f788a92a310ae8c6f2a11f8a5dfc6fd0391a86fbafdc60",
+    "phase-03/source-receipt.json": "1fa6591be3f625a9ca77e7367f54fa9ee47fdc06fe86f9d456960a4a54dd49f8",
+    "phase-03/stderr.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "phase-03/stdout.log": "d3beab958c7dc741c6bc124ab91da59012eb9098606c74714c96ae0d455a759a",
+    "phase-03/tests.xml": "7e0a7501ccccc1de33bc4c156264516b27b59bdff5302bd8b8862be8d2f00123",
+    "phase-04/source-receipt.json": "f95bd07bd576fee60aafabb2157213e38d6337c805b823ea6c90a95bc3b88c6c",
+    "phase-04/stderr.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "phase-04/stdout.log": "24cbe392b4436585a09e5787cdc9c7797b88f046be8e5e681fa53ac24620539b",
+    "phase-04/tests.xml": "5772ecf8845b843fdd479fce095b3df9cf781cd0c836f7b5dc85b9968601e136",
+    "phase-05/source-receipt.json": "922802ae99ec2f00ef1f70bb74e72289d6b7b560793b69c157e863f87d8a890c",
+    "phase-05/stderr.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "phase-05/stdout.log": "99971dbc61b1af55513515ba5b4912f46c99a0bfde2e23cd6bd831b6fd0235d8",
+    "phase-05/tests.xml": "0e39ca1d0dea7490a679db85809cd0065a21524d3612f8eea3a5f0550e310ae4",
+    "phase-06/source-receipt.json": "0833954cc9dc67e1560694195205b779ee23ab7712bb1f030350f9edc40dffaa",
+    "phase-06/stderr.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "phase-06/stdout.log": "17c305008c3fe12821cf56c325367fd8daa6137fb3fc8a346c2e52a8d16ce4e3",
+    "phase-06/tests.xml": "eaa0e2cef555b3d6b0d6d29502f6d1ef7d3a0e25bf5063a5afc371ebf92f0efa",
+    "phase-07-contract/source-receipt.json": "f7572d910a8ec7221462cc223753724e58f11a51da0b6d1dad89743d8aab588e",
+    "phase-07-contract/stderr.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "phase-07-contract/stdout.log": "cb5d2c1876fefa2f2d26238e6392160790f86584eb11d30940c24e11c0fc5f4e",
+    "phase-07-contract/tests.xml": "26073ce9b87e0a1d62b0253c03c3b6c74383c9b2cde8bb3321df316d67ee214a",
+    "preflight-error-observation.json": "6038110f431565d232f9c53a7776d80196095eb68d168832a6713c11e3a8dbb4"
+  },
+  "private_retention_directory": "data/research/2026-11-10-runtime-enrollment-0930",
+  "production_sources_sha256": {
+    "native/windows/generated/command_contract.hpp": "b3077cc735df2d7ea0e0356ff88a5bd39e2c350b1506f817b1cf193a4183e42b",
+    "src/simple_ai_trading/polymarket_live_cli.py": "72eabee16fb1df5015e32b6b9939de7319a14be28564ff334ad7ffb023e6eb44",
+    "src/simple_ai_trading/polymarket_live_runtime.py": "fcc394e2014fea2bf10d1ecd5d9afc0be8cbdd0edf11a73d46c77e146a85de02",
+    "src/simple_ai_trading/polymarket_live_stop.py": "d22438e22ce7526f3d6dd52b3cba09c9f8402c86776a69687e9db02300d72aab",
+    "src/simple_ai_trading/runtime_control.py": "e5e61583eed5e97bd6aa51c44cd9866435d9d8117ed58611443fd1cedf644791",
+    "src/simple_ai_trading/runtime_control_storage.py": "30fbebef310e209f1fd2f74a7a96622b76e86b51f6bfeb55d944e53e962897d3",
+    "src/simple_ai_trading/storage.py": "4f127e8d1f34eb26890d618f4243532534cfffdf5a0071ebc568a1dcf4fdffa3"
+  },
+  "real_credential_venue_account_order_or_protected_partial_access": false,
+  "release_tag_draft_or_release_workflow_dispatched": false,
+  "remaining": [
+    "Native Binance roundtrip/runtime admission and universal writer integration",
+    "Independent session supervisor, credential/generation fencing and physical reboot qualification",
+    "Verified relocation/replacement migration, in-place rollback and adversarial local authority resistance",
+    "Current account/fee/balance/model qualification, profitable stable edge and complete product acceptance"
+  ],
+  "resource_readback": {
+    "matching_live_task_python_controllers": 0,
+    "observed_at_utc": "2026-11-10T09:20:52.5354316Z",
+    "scope": "Unique task marker in Python command lines; not a host-wide absence or leak audit"
+  },
+  "result_sha256": "ab0509837cfbec8e970f5da15a59d4d9c1fbb7c2940c9806fa7a19857258528f",
+  "schema": "runtime-control-independent-storage-enrollment-v1",
+  "semantic_navigation": {
+    "complete_caller_inventory_claimed": false,
+    "exact_symbol_inventory_and_live_source_confirmation_required": true,
+    "explicit_index_refresh": true,
+    "indexed_chunks": 56642,
+    "indexed_files": 2225,
+    "language": "python",
+    "limit": 5,
+    "path": "src/simple_ai_trading/**",
+    "query": "Where are PolymarketRuntimeControl and BinanceRuntimeControl constructed by CLI start stop recovery and configuration with account scope?",
+    "receipt_sha256": "dfc36dca5ec64faa9e275f08b6fc5c507834ba079729e759cd2898879b3413d5",
+    "root_bound_revision": "f2beb804699f720eb372a2d32b33ccf477b27e5c"
+  },
+  "service_schedule_startup_hook_or_persistent_worker_installed": false,
+  "verification": {
+    "actual_owned_child_exit_cases": 4,
+    "all_other_shared_core_AST_and_production_dependency_hashes_match": true,
+    "combined_phase_05": {
+      "errors": 0,
+      "failures": 0,
+      "skipped": 0,
+      "tests": 321
+    },
+    "full_suite_run": false,
+    "inspection_phase_06": {
+      "errors": 0,
+      "failures": 0,
+      "skipped": 0,
+      "tests": 121
+    },
+    "lanes_overlap_do_not_sum_as_independent_coverage": true,
+    "native_binary_rebuild_or_UI_interaction_run": false,
+    "native_declaration_contract_phase_07": {
+      "errors": 0,
+      "failures": 0,
+      "skipped": 0,
+      "tests": 4
+    },
+    "phase_05_to_current_only_changed_shared_definition": "RuntimeControl.inspect_storage",
+    "real_native_lock_cleanup_checks": true
+  }
+}

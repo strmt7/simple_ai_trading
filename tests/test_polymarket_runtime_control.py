@@ -23,8 +23,18 @@ from simple_ai_trading import runtime_control as runtime_control_module
 from tools.cocoindex_agent_search import run_captured_process
 
 
+def _enroll_flat_control(control):
+    """Provision this test's empty namespace and explicitly reconcile it flat."""
+    assert not control.enrollment_path.exists()
+    control.provision_storage()
+    assert control.complete_stale_stop(exposure_closed=True)
+    return control
+
+
 def test_runtime_control_enforces_one_lease_and_persistent_stop(tmp_path) -> None:
-    control = PolymarketRuntimeControl(tmp_path / "ownership.sqlite3")
+    control = _enroll_flat_control(
+        PolymarketRuntimeControl(tmp_path / "ownership.sqlite3")
+    )
 
     assert control.snapshot().state == "stopped"
     lease = control.acquire(owner_process_id=101)
@@ -40,7 +50,7 @@ def test_runtime_control_enforces_one_lease_and_persistent_stop(tmp_path) -> Non
 
     requested = control.request_stop(reason="operator_stop")
     assert requested.state == "stop_requested"
-    assert requested.stop_epoch == 1
+    assert requested.stop_epoch == 2
     assert control.heartbeat(lease) is False
     with pytest.raises(PolymarketLiveBlocked, match="does not permit"):
         control.assert_opening_allowed(lease)
@@ -51,11 +61,13 @@ def test_runtime_control_enforces_one_lease_and_persistent_stop(tmp_path) -> Non
     stopped = control.snapshot()
     assert stopped.state == "stopped"
     assert stopped.lease_id == ""
-    assert stopped.stop_epoch == 1
+    assert stopped.stop_epoch == 2
 
 
 def test_pause_is_durable_ordered_and_keeps_the_heartbeat_alive(tmp_path) -> None:
-    control = PolymarketRuntimeControl(tmp_path / "ownership.sqlite3")
+    control = _enroll_flat_control(
+        PolymarketRuntimeControl(tmp_path / "ownership.sqlite3")
+    )
     lease = control.acquire(owner_process_id=101)
     entered = Event()
     release = Event()
@@ -94,7 +106,9 @@ def test_pause_is_durable_ordered_and_keeps_the_heartbeat_alive(tmp_path) -> Non
 
 
 def test_stop_is_ordered_after_an_inflight_submission_guard(tmp_path) -> None:
-    control = PolymarketRuntimeControl(tmp_path / "ownership.sqlite3")
+    control = _enroll_flat_control(
+        PolymarketRuntimeControl(tmp_path / "ownership.sqlite3")
+    )
     lease = control.acquire(owner_process_id=101)
     entered = Event()
     release = Event()
@@ -129,7 +143,9 @@ def test_stop_is_ordered_after_an_inflight_submission_guard(tmp_path) -> None:
 
 
 def test_owned_close_routines_are_cross_process_serialized(tmp_path) -> None:
-    control = PolymarketRuntimeControl(tmp_path / "ownership.sqlite3")
+    control = _enroll_flat_control(
+        PolymarketRuntimeControl(tmp_path / "ownership.sqlite3")
+    )
     first_entered = Event()
     first_release = Event()
     second_entered = Event()
@@ -160,10 +176,12 @@ def test_owned_close_routines_are_cross_process_serialized(tmp_path) -> None:
 
 def test_stale_stop_requires_closed_exposure_and_expired_heartbeat(tmp_path) -> None:
     now = [1_800_000_000_000]
-    control = PolymarketRuntimeControl(
-        tmp_path / "ownership.sqlite3",
-        maximum_heartbeat_age_ms=5_000,
-        clock_ms=lambda: now[0],
+    control = _enroll_flat_control(
+        PolymarketRuntimeControl(
+            tmp_path / "ownership.sqlite3",
+            maximum_heartbeat_age_ms=5_000,
+            clock_ms=lambda: now[0],
+        )
     )
     lease = control.acquire(owner_process_id=101)
     control.request_stop(reason="operator_stop")
@@ -182,7 +200,9 @@ def test_stale_stop_requires_closed_exposure_and_expired_heartbeat(tmp_path) -> 
 def test_ownerless_stop_stays_latched_until_exposure_is_proven_closed(
     tmp_path,
 ) -> None:
-    control = PolymarketRuntimeControl(tmp_path / "ownership.sqlite3")
+    control = _enroll_flat_control(
+        PolymarketRuntimeControl(tmp_path / "ownership.sqlite3")
+    )
 
     requested = control.request_stop(reason="operator_stop")
 
@@ -198,7 +218,7 @@ def test_ownerless_stop_stays_latched_until_exposure_is_proven_closed(
 
 def test_runtime_control_detects_record_tampering(tmp_path) -> None:
     path = tmp_path / "ownership.sqlite3"
-    control = PolymarketRuntimeControl(path)
+    control = _enroll_flat_control(PolymarketRuntimeControl(path))
     control.snapshot()
     connection = sqlite3.connect(path)
     try:
@@ -218,7 +238,9 @@ def test_runtime_control_detects_record_tampering(tmp_path) -> None:
 
 
 def test_runtime_lease_interlock_delegates_both_checks(tmp_path) -> None:
-    control = PolymarketRuntimeControl(tmp_path / "ownership.sqlite3")
+    control = _enroll_flat_control(
+        PolymarketRuntimeControl(tmp_path / "ownership.sqlite3")
+    )
     lease = control.acquire(owner_process_id=101)
     interlock = PolymarketRuntimeLeaseInterlock(control, lease)
 
@@ -233,7 +255,9 @@ def test_runtime_lease_interlock_delegates_both_checks(tmp_path) -> None:
 
 def test_control_service_turns_external_stop_into_shutdown(tmp_path) -> None:
     async def scenario() -> None:
-        control = PolymarketRuntimeControl(tmp_path / "ownership.sqlite3")
+        control = _enroll_flat_control(
+            PolymarketRuntimeControl(tmp_path / "ownership.sqlite3")
+        )
         lease = control.acquire(owner_process_id=101)
         service = PolymarketRuntimeControlService(
             control,
@@ -256,7 +280,9 @@ def test_control_service_turns_external_stop_into_shutdown(tmp_path) -> None:
 
 def test_control_service_applies_external_pause_and_resume(tmp_path) -> None:
     async def scenario() -> None:
-        control = PolymarketRuntimeControl(tmp_path / "ownership.sqlite3")
+        control = _enroll_flat_control(
+            PolymarketRuntimeControl(tmp_path / "ownership.sqlite3")
+        )
         lease = control.acquire(owner_process_id=101)
         service = PolymarketRuntimeControlService(
             control,
@@ -339,7 +365,9 @@ def test_runtime_control_migrates_a_hash_valid_v1_record(tmp_path) -> None:
     }
     _write_v1_runtime_control(path, legacy)
 
-    snapshot = PolymarketRuntimeControl(path).snapshot()
+    snapshot = PolymarketRuntimeControl(path).provision_storage(
+        expected_record_sha256=runtime_control_module._canonical_sha256(legacy)
+    )
 
     assert snapshot.state == "stopped"
     assert snapshot.stop_epoch == 3
@@ -374,7 +402,9 @@ def test_runtime_control_rejects_tampered_v1_without_partial_migration(
     _write_v1_runtime_control(path, legacy, record_sha256="0" * 64)
 
     with pytest.raises(PolymarketLiveError, match="v1 record differs"):
-        PolymarketRuntimeControl(path).snapshot()
+        PolymarketRuntimeControl(path).provision_storage(
+            expected_record_sha256="0" * 64
+        )
 
     connection = sqlite3.connect(path)
     try:
@@ -391,10 +421,12 @@ def test_runtime_control_rejects_tampered_v1_without_partial_migration(
 
 def test_resume_rejects_stale_heartbeat_and_preserves_pause(tmp_path) -> None:
     now = [100_000]
-    control = PolymarketRuntimeControl(
-        tmp_path / "ownership.sqlite3",
-        maximum_heartbeat_age_ms=5_000,
-        clock_ms=lambda: now[0],
+    control = _enroll_flat_control(
+        PolymarketRuntimeControl(
+            tmp_path / "ownership.sqlite3",
+            maximum_heartbeat_age_ms=5_000,
+            clock_ms=lambda: now[0],
+        )
     )
     control.acquire(owner_process_id=101)
     control.set_paused(True, reason="operator_pause")
@@ -415,8 +447,10 @@ def test_invalid_heartbeat_latches_stop_across_restart(
 ) -> None:
     now = [100_000]
     path = tmp_path / "ownership.sqlite3"
-    control = PolymarketRuntimeControl(
-        path, maximum_heartbeat_age_ms=5_000, clock_ms=lambda: now[0]
+    control = _enroll_flat_control(
+        PolymarketRuntimeControl(
+            path, maximum_heartbeat_age_ms=5_000, clock_ms=lambda: now[0]
+        )
     )
     lease = control.acquire(owner_process_id=101)
     if paused:
@@ -450,10 +484,12 @@ def test_invalid_heartbeat_latches_stop_across_restart(
 
 def test_heartbeat_age_boundary_and_foreign_lease(tmp_path) -> None:
     now = [100_000]
-    control = PolymarketRuntimeControl(
-        tmp_path / "ownership.sqlite3",
-        maximum_heartbeat_age_ms=5_000,
-        clock_ms=lambda: now[0],
+    control = _enroll_flat_control(
+        PolymarketRuntimeControl(
+            tmp_path / "ownership.sqlite3",
+            maximum_heartbeat_age_ms=5_000,
+            clock_ms=lambda: now[0],
+        )
     )
     lease = control.acquire()
     initial = control.snapshot()
@@ -467,10 +503,12 @@ def test_heartbeat_age_boundary_and_foreign_lease(tmp_path) -> None:
 def test_expired_control_service_requests_shutdown_without_renewal(tmp_path) -> None:
     async def scenario() -> None:
         now = [100_000]
-        control = PolymarketRuntimeControl(
-            tmp_path / "ownership.sqlite3",
-            maximum_heartbeat_age_ms=5_000,
-            clock_ms=lambda: now[0],
+        control = _enroll_flat_control(
+            PolymarketRuntimeControl(
+                tmp_path / "ownership.sqlite3",
+                maximum_heartbeat_age_ms=5_000,
+                clock_ms=lambda: now[0],
+            )
         )
         lease = control.acquire()
         now[0] += 5_001
@@ -487,10 +525,12 @@ def test_expired_control_service_requests_shutdown_without_renewal(tmp_path) -> 
 
 def test_expiry_is_ordered_after_inflight_submission(tmp_path) -> None:
     now = [100_000]
-    control = PolymarketRuntimeControl(
-        tmp_path / "ownership.sqlite3",
-        maximum_heartbeat_age_ms=5_000,
-        clock_ms=lambda: now[0],
+    control = _enroll_flat_control(
+        PolymarketRuntimeControl(
+            tmp_path / "ownership.sqlite3",
+            maximum_heartbeat_age_ms=5_000,
+            clock_ms=lambda: now[0],
+        )
     )
     lease = control.acquire()
     entered, release, renewed = Event(), Event(), Event()
@@ -527,10 +567,12 @@ def test_expired_heartbeat_write_failure_never_reenables_open(
     tmp_path, monkeypatch
 ) -> None:
     now = [100_000]
-    control = PolymarketRuntimeControl(
-        tmp_path / "ownership.sqlite3",
-        maximum_heartbeat_age_ms=5_000,
-        clock_ms=lambda: now[0],
+    control = _enroll_flat_control(
+        PolymarketRuntimeControl(
+            tmp_path / "ownership.sqlite3",
+            maximum_heartbeat_age_ms=5_000,
+            clock_ms=lambda: now[0],
+        )
     )
     lease = control.acquire()
     initial = control.snapshot()
@@ -553,8 +595,10 @@ def test_expired_heartbeat_write_failure_never_reenables_open(
 def test_expiry_stop_is_visible_in_a_fresh_interpreter(tmp_path) -> None:
     now = [100_000]
     path = tmp_path / "ownership.sqlite3"
-    control = PolymarketRuntimeControl(
-        path, maximum_heartbeat_age_ms=5_000, clock_ms=lambda: now[0]
+    control = _enroll_flat_control(
+        PolymarketRuntimeControl(
+            path, maximum_heartbeat_age_ms=5_000, clock_ms=lambda: now[0]
+        )
     )
     lease = control.acquire()
     now[0] += 5_001
@@ -606,9 +650,9 @@ def test_missing_runtime_record_never_recreates_stop_or_admits_replacement(
     tmp_path, operation
 ):
     path = tmp_path / "missing.sqlite3"
-    control = PolymarketRuntimeControl(path)
+    control = _enroll_flat_control(PolymarketRuntimeControl(path))
     control.acquire(owner_process_id=101)
-    assert control.request_stop(reason="operator_stop").stop_epoch == 1
+    assert control.request_stop(reason="operator_stop").stop_epoch == 2
     _delete_runtime_record(path)
 
     with pytest.raises(PolymarketLiveError, match="record is missing"):
@@ -625,7 +669,7 @@ def test_missing_legacy_runtime_record_never_migrates_into_fresh_state(tmp_path)
     _delete_runtime_record(path)
 
     with pytest.raises(PolymarketLiveError, match="record is missing"):
-        PolymarketRuntimeControl(path).snapshot()
+        PolymarketRuntimeControl(path).inspect_storage()
     with closing(sqlite3.connect(path)) as connection:
         assert "paused" not in {
             row[1]
@@ -640,7 +684,7 @@ def test_missing_legacy_runtime_record_never_migrates_into_fresh_state(tmp_path)
 
 def test_missing_control_record_preserves_the_separate_close_guard(tmp_path):
     path = tmp_path / "closing-guard.sqlite3"
-    control = PolymarketRuntimeControl(path)
+    control = _enroll_flat_control(PolymarketRuntimeControl(path))
     control.snapshot()
     _delete_runtime_record(path)
     with control.close_guard(timeout_seconds=1):
@@ -670,7 +714,7 @@ def test_cancelled_bootstrap_rolls_back_schema_and_closes_connection(
     monkeypatch.setattr(runtime_control_module.sqlite3, "connect", tracked_connect)
     try:
         with pytest.raises(KeyboardInterrupt, match="cancelled bootstrap"):
-            PolymarketRuntimeControl(path, clock_ms=cancelled_clock).snapshot()
+            PolymarketRuntimeControl(path, clock_ms=cancelled_clock).provision_storage()
         with pytest.raises(sqlite3.ProgrammingError, match="closed database"):
             opened[0].execute("SELECT 1")
         with closing(connect(path)) as connection:
@@ -680,7 +724,8 @@ def test_cancelled_bootstrap_rolls_back_schema_and_closes_connection(
                 ).fetchone()
                 is None
             )
-        assert PolymarketRuntimeControl(path).snapshot().state == "stopped"
+        with pytest.raises(PolymarketLiveError, match="enrollment"):
+            PolymarketRuntimeControl(path).snapshot()
     finally:
         for connection in opened:
             connection.close()
@@ -709,9 +754,12 @@ def test_cancelled_legacy_migration_preserves_record_schema_and_closes_connectio
     monkeypatch.setattr(runtime_control_module.sqlite3, "connect", tracked_connect)
     try:
         with pytest.raises(KeyboardInterrupt, match="cancelled migration"):
-            PolymarketRuntimeControl(path).snapshot()
-        with pytest.raises(sqlite3.ProgrammingError, match="closed database"):
-            opened[0].execute("SELECT 1")
+            PolymarketRuntimeControl(path).provision_storage(
+                expected_record_sha256=runtime_control_module._canonical_sha256(legacy)
+            )
+        for opened_connection in opened:
+            with pytest.raises(sqlite3.ProgrammingError, match="closed database"):
+                opened_connection.execute("SELECT 1")
         with closing(connect(path)) as connection:
             connection.row_factory = sqlite3.Row
             row = dict(
@@ -754,7 +802,10 @@ def test_first_bootstrap_is_atomic_to_other_connections_and_readers(
 
     def snapshot(*, second=False):
         try:
-            snapshots.append(PolymarketRuntimeControl(path).snapshot())
+            control = PolymarketRuntimeControl(path)
+            snapshots.append(
+                control.snapshot() if second else control.provision_storage()
+            )
         except BaseException as error:
             errors.append(error)
         finally:
@@ -775,22 +826,23 @@ def test_first_bootstrap_is_atomic_to_other_connections_and_readers(
                 is None
             )
         second.start()
-        assert not second_finished.wait(timeout=0.1)
+        assert second_finished.wait(timeout=1)
     finally:
         proceed.set()
         first.join(timeout=5)
         if second.ident is not None:
             second.join(timeout=5)
     assert not first.is_alive() and not second.is_alive()
-    assert not errors
-    assert len(snapshots) == 2 and all(s.state == "stopped" for s in snapshots)
+    assert len(errors) == 1 and isinstance(errors[0], PolymarketLiveError)
+    assert len(snapshots) == 1 and snapshots[0].state == "stop_requested"
+    assert PolymarketRuntimeControl(path).snapshot() == snapshots[0]
 
 
 def test_stale_absence_observation_cannot_overwrite_an_existing_stop(
     tmp_path, monkeypatch
 ):
     path = tmp_path / "stale-bootstrap.sqlite3"
-    other = PolymarketRuntimeControl(path)
+    other = _enroll_flat_control(PolymarketRuntimeControl(path))
     other.acquire(owner_process_id=101)
     expected = other.request_stop(reason="operator_stop")
     control = PolymarketRuntimeControl(path)
@@ -805,7 +857,9 @@ def test_stale_absence_observation_cannot_overwrite_an_existing_stop(
         return actual_exists(connection)
 
     monkeypatch.setattr(control, "_control_table_exists", stale_once)
-    assert control.snapshot() == expected
+    with pytest.raises(PolymarketLiveError, match="namespace is missing"):
+        control.snapshot()
+    assert other.snapshot() == expected
 
 
 def test_stale_legacy_migrator_accepts_the_already_committed_valid_migration(tmp_path):
@@ -819,7 +873,11 @@ def test_stale_legacy_migrator_accepts_the_already_committed_valid_migration(tmp
             .fetchone()
             .keys()
         )
-        expected = PolymarketRuntimeControl(path).snapshot()
+        expected = PolymarketRuntimeControl(path).provision_storage(
+            expected_record_sha256=runtime_control_module._canonical_sha256(
+                _legacy_stopped_by_operator()
+            )
+        )
         PolymarketRuntimeControl(path)._migrate_v1(stale)
     assert PolymarketRuntimeControl(path).snapshot() == expected
 
@@ -842,7 +900,11 @@ def test_record_disappearing_at_migration_boundary_never_becomes_fresh_state(
 
     monkeypatch.setattr(control, "_migrate_v1", interrupted)
     with pytest.raises(PolymarketLiveError, match="record is missing"):
-        control.snapshot()
+        control.provision_storage(
+            expected_record_sha256=runtime_control_module._canonical_sha256(
+                _legacy_stopped_by_operator()
+            )
+        )
     with closing(sqlite3.connect(path)) as connection:
         assert connection.execute(
             "SELECT COUNT(*) FROM polymarket_runtime_control"

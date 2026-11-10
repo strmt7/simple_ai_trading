@@ -3088,6 +3088,8 @@ def test_durable_stop_is_ordered_after_final_network_dispatch(
     ledger = PolymarketLiveOrderLedger(path)
     venue = FakeVenue()
     control = PolymarketRuntimeControl(path)
+    control.provision_storage()
+    assert control.complete_stale_stop(exposure_closed=True)
     lease = control.acquire(owner_process_id=101)
     guard = PolymarketLiveRuntimeGuard(
         opening_interlock=PolymarketRuntimeLeaseInterlock(control, lease)

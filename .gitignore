@@ -29,6 +29,8 @@ artifacts/dependency-audit/
 .mypy_cache/
 .ruff_cache/
 .cocoindex_code/
+# Generated runtime enrollment contains private filesystem identities.
+*.enrollment.json
 # Local scholarly bodies; source receipts are published, redistribution is unqualified.
 /docs/review/2026-10-07/maker-income-source/*.html
 /docs/review/2026-10-07/funding-aware-maker-source/*.html

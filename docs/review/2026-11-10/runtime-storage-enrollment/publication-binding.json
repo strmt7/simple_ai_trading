@@ -1,0 +1,92 @@
+{
+  "base_revision": "f2beb804699f720eb372a2d32b33ccf477b27e5c",
+  "bindings": {
+    "native/windows/generated/command_contract.hpp": {
+      "staged_blob_sha1": "a620090cdaed9679e047772c2488298858aee247",
+      "staged_bytes_sha256": "40f0d0766ed5a5e0221d61ad8cfc63b3200302a31c12607853a8444d777db501",
+      "tested_phase": "phase-07-contract",
+      "tested_raw_sha256": "b3077cc735df2d7ea0e0356ff88a5bd39e2c350b1506f817b1cf193a4183e42b",
+      "transformation": "CRLF_to_LF_only"
+    },
+    "src/simple_ai_trading/polymarket_live_cli.py": {
+      "staged_blob_sha1": "814588d8bb66d2c966aaf9b4fc76ee116fedac7c",
+      "staged_bytes_sha256": "72eabee16fb1df5015e32b6b9939de7319a14be28564ff334ad7ffb023e6eb44",
+      "tested_phase": "phase-07-contract",
+      "tested_raw_sha256": "72eabee16fb1df5015e32b6b9939de7319a14be28564ff334ad7ffb023e6eb44",
+      "transformation": "none"
+    },
+    "src/simple_ai_trading/polymarket_live_runtime.py": {
+      "staged_blob_sha1": "f30b922603efdcf7c2e180c72334e11f173c00c8",
+      "staged_bytes_sha256": "fcc394e2014fea2bf10d1ecd5d9afc0be8cbdd0edf11a73d46c77e146a85de02",
+      "tested_phase": "phase-06",
+      "tested_raw_sha256": "fcc394e2014fea2bf10d1ecd5d9afc0be8cbdd0edf11a73d46c77e146a85de02",
+      "transformation": "none"
+    },
+    "src/simple_ai_trading/polymarket_live_stop.py": {
+      "staged_blob_sha1": "3961c72e49ed946321caea616c2ffc8d9caacde2",
+      "staged_bytes_sha256": "d22438e22ce7526f3d6dd52b3cba09c9f8402c86776a69687e9db02300d72aab",
+      "tested_phase": "phase-06",
+      "tested_raw_sha256": "d22438e22ce7526f3d6dd52b3cba09c9f8402c86776a69687e9db02300d72aab",
+      "transformation": "none"
+    },
+    "src/simple_ai_trading/runtime_control.py": {
+      "staged_blob_sha1": "fd98adc862fef2f48117499a20c6723368eff5a3",
+      "staged_bytes_sha256": "e5e61583eed5e97bd6aa51c44cd9866435d9d8117ed58611443fd1cedf644791",
+      "tested_phase": "phase-06",
+      "tested_raw_sha256": "e5e61583eed5e97bd6aa51c44cd9866435d9d8117ed58611443fd1cedf644791",
+      "transformation": "none"
+    },
+    "src/simple_ai_trading/runtime_control_storage.py": {
+      "staged_blob_sha1": "c4257d789f31134ba8b76342e8b3e4b6fe67ffdc",
+      "staged_bytes_sha256": "30fbebef310e209f1fd2f74a7a96622b76e86b51f6bfeb55d944e53e962897d3",
+      "tested_phase": "phase-06",
+      "tested_raw_sha256": "30fbebef310e209f1fd2f74a7a96622b76e86b51f6bfeb55d944e53e962897d3",
+      "transformation": "none"
+    },
+    "src/simple_ai_trading/storage.py": {
+      "staged_blob_sha1": "7f220c7cc2b106c494ddce26296cc4c22476bf2a",
+      "staged_bytes_sha256": "4f127e8d1f34eb26890d618f4243532534cfffdf5a0071ebc568a1dcf4fdffa3",
+      "tested_phase": "phase-06",
+      "tested_raw_sha256": "4f127e8d1f34eb26890d618f4243532534cfffdf5a0071ebc568a1dcf4fdffa3",
+      "transformation": "none"
+    },
+    "tests/test_polymarket_live.py": {
+      "staged_blob_sha1": "51dfc1902bf47036968bafd8d6691030d054943b",
+      "staged_bytes_sha256": "3eed51e14fb200d357721ea851d877f45754e5f7de2b2d43b73ee2ecaf76514b",
+      "tested_phase": "phase-05",
+      "tested_raw_sha256": "3eed51e14fb200d357721ea851d877f45754e5f7de2b2d43b73ee2ecaf76514b",
+      "transformation": "none"
+    },
+    "tests/test_polymarket_live_cli.py": {
+      "staged_blob_sha1": "1cf424b226021f93c67edcb699e41fb411c73ebd",
+      "staged_bytes_sha256": "312ff001c5a104918f17abec6f6bfd4b7f8a2d49727cb278c2174881bd11e06a",
+      "tested_phase": "phase-06",
+      "tested_raw_sha256": "312ff001c5a104918f17abec6f6bfd4b7f8a2d49727cb278c2174881bd11e06a",
+      "transformation": "none"
+    },
+    "tests/test_polymarket_runtime_control.py": {
+      "staged_blob_sha1": "2ff430deb2eb737f30f0858e85cdb220c68ad0a9",
+      "staged_bytes_sha256": "3750f0a497cd53fc6c0db74fc3274ef4b5b18ef69d9b578f89b6ba1536f0dbd3",
+      "tested_phase": "phase-05",
+      "tested_raw_sha256": "3750f0a497cd53fc6c0db74fc3274ef4b5b18ef69d9b578f89b6ba1536f0dbd3",
+      "transformation": "none"
+    },
+    "tests/test_runtime_control_storage.py": {
+      "staged_blob_sha1": "db5babd46308bafbfe5dd70bad2e4eb48f931be2",
+      "staged_bytes_sha256": "2fefd0dd99331373169eb81321f91662a0639c98ed01076ba26d24cb51f107f6",
+      "tested_phase": "phase-06",
+      "tested_raw_sha256": "2fefd0dd99331373169eb81321f91662a0639c98ed01076ba26d24cb51f107f6",
+      "transformation": "none"
+    },
+    "tests/test_shared_runtime_control.py": {
+      "staged_blob_sha1": "303abc96cac3c99dfc3654be0e69ed650903accd",
+      "staged_bytes_sha256": "caa277f01feaee802caa6628e2dd5616003299b051de373b7460ae0c7900072c",
+      "tested_phase": "phase-05",
+      "tested_raw_sha256": "caa277f01feaee802caa6628e2dd5616003299b051de373b7460ae0c7900072c",
+      "transformation": "none"
+    }
+  },
+  "capture_or_historical_result_normalization_authorized": false,
+  "result_sha256": "efee15249be336cd04f67103fb33ddc9a4d9d9dd1ed2f3ff1b3150c372c982ef",
+  "schema": "runtime-storage-publication-binding-v1"
+}

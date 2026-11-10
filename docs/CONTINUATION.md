@@ -12,8 +12,12 @@ Neither partial verification nor an administrative checkpoint completes it.
 The [post-publication assessment](PRODUCT_READINESS_2026_11_10.md) binds commit
 `851e732cf85c814df24cca59340670438ec04088` and prioritizes independent storage
 enrollment, complete testnet execution, eligible structural economics, admitted
-model targets and final product qualification. The reproduced whole-database
-loss path remains open; its unfinished prototype is private and unintegrated.
+model targets and final product qualification. The subsequent
+[runtime storage enrollment repair](review/2026-11-10/runtime-storage-enrollment/review.md)
+rejects missing/replaced controller storage instead of issuing fresh authority.
+Its independent ready marker, UUID and file identities require explicit setup
+or exact prepared-state recovery. Legacy Stop history is preserved; new storage
+starts with Stop latched. The old prototype remains private and unintegrated.
 The current release composite creates a draft even with publishing disabled:
 do not dispatch it for validation. Enforce bounded resource lifetimes and
 task-owned teardown throughout development, without touching other host tasks.
@@ -167,6 +171,17 @@ occurred. Reuse the conditional model; do not repeat generic PnL tutorials or
 infer current legal applicability from search snippets.
 
 ## Platform work and publication
+
+- [Runtime storage enrollment](review/2026-11-10/runtime-storage-enrollment/review.md)
+  implements strict noncreating access for both controller adapters and local
+  CLI setup/inspection/recovery. The 321-case lane and overlapping 121-case
+  diagnostic follow-up pass, including four actual contained child exits; four
+  CLI/native declaration checks also pass. Generated Windows metadata matches
+  the parser; no native binary rebuild or UI acceptance is claimed. Weak mutex
+  ownership and atomic-write cancellation cleanup repair reproduced resource
+  retention. Verified relocation, full anti-rollback, independent supervision,
+  account qualification and universal caller integration remain open. Follow the
+  [operator procedure](RUNTIME_CONTROL_STORAGE.md); never erase guards to rearm.
 
 - [Model selection integrity](review/2026-11-10/selection-risk-integrity/review.md)
   repairs two reproduced fail-to-pass paths caused by copying losing candidates.

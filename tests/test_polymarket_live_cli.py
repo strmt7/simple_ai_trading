@@ -54,6 +54,14 @@ def _reconciliation(
     )
 
 
+def _enroll_flat_control(control):
+    """Provision this test's empty namespace and explicitly reconcile it flat."""
+    assert not control.enrollment_path.exists()
+    control.provision_storage()
+    assert control.complete_stale_stop(exposure_closed=True)
+    return control
+
+
 def test_entrypoint_registers_independent_polymarket_live_command() -> None:
     args = _args()
 
@@ -195,7 +203,7 @@ def test_pause_and_resume_are_durable_and_do_not_require_credentials(
     capsys: pytest.CaptureFixture[str],
 ) -> None:
     path = tmp_path / "live.sqlite3"
-    control = PolymarketRuntimeControl(path)
+    control = _enroll_flat_control(PolymarketRuntimeControl(path))
     control.acquire(owner_process_id=101)
     monkeypatch.setattr(
         live_cli,
@@ -660,6 +668,7 @@ def test_stop_command_dispatches_bounded_owned_close(
     tmp_path: Path,
     capsys: pytest.CaptureFixture[str],
 ) -> None:
+    PolymarketRuntimeControl(tmp_path / "live.sqlite3").provision_storage()
     venue = SimpleNamespace(close=lambda: None)
     monkeypatch.setattr(
         live_cli,
@@ -710,7 +719,7 @@ def test_stop_latch_survives_missing_live_credentials(
     tmp_path: Path,
 ) -> None:
     path = tmp_path / "live.sqlite3"
-    control = PolymarketRuntimeControl(path)
+    control = _enroll_flat_control(PolymarketRuntimeControl(path))
     control.acquire(owner_process_id=101)
 
     def fail_credentials():
@@ -1014,14 +1023,26 @@ def test_polymarket_authority_modules_keep_venue_boundaries_independent() -> Non
                             f"{alias.name!r}; keep venue authority independent"
                         )
 
-    # The sole shared control dependency contains no venue adapter imports.
-    shared = ast.parse((package_root / "runtime_control.py").read_text(encoding="utf-8"))
-    for node in ast.walk(shared):
-        if isinstance(node, ast.ImportFrom):
-            assert node.level == 0
-            assert not (node.module or "").startswith("simple_ai_trading")
-        elif isinstance(node, ast.Import):
-            assert all(not alias.name.startswith("simple_ai_trading") for alias in node.names)
+    # Explicit neutral dependencies may only reach the next reviewed neutral
+    # helper; no venue, account, model or native order adapter is admitted.
+    neutral_dependencies = {
+        "runtime_control.py": {"runtime_control_storage"},
+        "runtime_control_storage.py": {"storage"},
+        "storage.py": set(),
+    }
+    for filename, permitted in neutral_dependencies.items():
+        shared = ast.parse((package_root / filename).read_text(encoding="utf-8"))
+        for node in ast.walk(shared):
+            if isinstance(node, ast.ImportFrom):
+                if node.level:
+                    assert node.level == 1 and node.module in permitted
+                else:
+                    assert not (node.module or "").startswith("simple_ai_trading")
+            elif isinstance(node, ast.Import):
+                assert all(
+                    not alias.name.startswith("simple_ai_trading")
+                    for alias in node.names
+                )
 
 
 def test_supervision_argument_bounds_fail_before_network_tasks() -> None:
@@ -1401,6 +1422,7 @@ def test_autonomous_assembles_independent_promoted_runtime(
         records=lambda: (),
         owned_inventory=lambda: (),
     )
+    _enroll_flat_control(PolymarketRuntimeControl(ledger.path))
     clean = _reconciliation()
 
     class Coordinator:

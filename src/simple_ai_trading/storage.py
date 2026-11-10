@@ -48,7 +48,7 @@ def write_json_atomic(
         _replace_with_transient_lock_retries(tmp_path, target)
         if mode is not None:
             os.chmod(target, mode)
-    except Exception:
+    except BaseException:
         try:
             tmp_path.unlink()
         except OSError:
@@ -82,7 +82,7 @@ def write_bytes_atomic(
         _replace_with_transient_lock_retries(tmp_path, target)
         if mode is not None:
             os.chmod(target, mode)
-    except Exception:
+    except BaseException:
         try:
             tmp_path.unlink()
         except OSError:

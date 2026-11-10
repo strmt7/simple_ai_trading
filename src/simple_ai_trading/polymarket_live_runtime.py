@@ -79,6 +79,11 @@ class PolymarketLiveRuntimeGuard:
         self._hard_faults: set[str] = set()
         self._stopped = False
 
+    @property
+    def opening_interlock(self) -> PolymarketOpeningInterlock | None:
+        """Expose the configured control so owned closing shares its lock domain."""
+        return self._opening_interlock
+
     def note_stream_liveness(self) -> None:
         with self._lock:
             if not self._stream_connected:

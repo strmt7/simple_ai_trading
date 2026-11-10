@@ -128,6 +128,17 @@ task, reset its GPU, purge shared caches or alter host services to obtain a clea
 measurement. Retained evidence and reusable isolated environments are inert
 files, not permission to leave a process or restart mechanism running.
 
+Shared runtime control now requires explicit storage enrollment. Normal reads,
+leases, Stop and dispatch must never bootstrap a missing database, namespace or
+interlock. Preserve the independent enrollment and existing UUID/file identities;
+do not repair a failed open by deleting a marker or provisioning again. Follow
+the [storage enrollment procedure](docs/RUNTIME_CONTROL_STORAGE.md) for first
+setup, exact-record legacy adoption and committed prepared-state recovery.
+New storage starts with Stop latched; metadata or a checksum is not evidence of
+flat exposure. Keep generated enrollment records and their local filesystem
+identities private. This guard does not qualify account ownership, anti-rollback,
+universal caller fencing, physical reboot behavior or independent supervision.
+
 October 7 user priority: long-term profitability, not expiring campaigns or
 promotional tricks. Follow the clarified WORK_PRIORITIES decision order. Do not
 hardcode campaign rules in runtime trading logic or spend resources collecting

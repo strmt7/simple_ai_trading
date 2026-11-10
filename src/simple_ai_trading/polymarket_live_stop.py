@@ -5,6 +5,7 @@ from __future__ import annotations
 from contextlib import nullcontext
 from dataclasses import asdict
 from decimal import Decimal
+import os
 import time
 from typing import Callable
 
@@ -127,6 +128,7 @@ def stop_owned_polymarket_exposure(
     timeout_seconds: float,
     monotonic: Clock = time.monotonic,
     sleep: Sleeper = time.sleep,
+    runtime_control: PolymarketRuntimeControl | None = None,
 ) -> tuple[dict[str, object], int]:
     """Serialize, cancel, and close only exact bot-owned Polymarket exposure."""
 
@@ -135,8 +137,22 @@ def stop_owned_polymarket_exposure(
         raise ValueError("stop-timeout-seconds must lie in [1, 300]")
     started = monotonic()
     path = getattr(ledger, "path", None)
+    if runtime_control is None:
+        authority = getattr(coordinator, "runtime_authority", None)
+        interlock = getattr(authority, "opening_interlock", None)
+        candidate = getattr(interlock, "control", None)
+        if isinstance(candidate, PolymarketRuntimeControl):
+            runtime_control = candidate
+    if runtime_control is not None and (
+        path is None
+        or os.path.normcase(str(runtime_control.ledger_path))
+        != os.path.normcase(os.path.abspath(path))
+    ):
+        raise ValueError("owned close control differs from its ledger")
     guard = (
-        PolymarketRuntimeControl(path).close_guard(timeout_seconds=timeout)
+        (runtime_control or PolymarketRuntimeControl(path)).close_guard(
+            timeout_seconds=timeout
+        )
         if path is not None
         else nullcontext()
     )

@@ -28,6 +28,14 @@ from simple_ai_trading.runtime_control import (
 from tools.cocoindex_agent_search import run_captured_process
 
 
+def _enroll_flat_control(control):
+    """Provision this test's empty namespace and explicitly reconcile it flat."""
+    assert not control.enrollment_path.exists()
+    control.provision_storage()
+    assert control.complete_stale_stop(exposure_closed=True)
+    return control
+
+
 @pytest.mark.parametrize(
     ("factory", "blocked", "error"),
     [
@@ -39,7 +47,7 @@ def test_stop_survives_controller_restart_and_missing_record_is_not_reset(
     tmp_path, factory, blocked, error
 ):
     path = tmp_path / "control.sqlite3"
-    control = factory(path)
+    control = _enroll_flat_control(factory(path))
     lease = control.acquire()
     stopped = control.request_stop(reason="risk_limit")
     reopened = factory(path)
@@ -58,8 +66,8 @@ def test_stop_survives_controller_restart_and_missing_record_is_not_reset(
 
 def test_venue_control_rows_and_error_types_remain_independent(tmp_path):
     path = tmp_path / "shared.sqlite3"
-    poly = PolymarketRuntimeControl(path)
-    binance = BinanceRuntimeControl(path)
+    poly = _enroll_flat_control(PolymarketRuntimeControl(path))
+    binance = _enroll_flat_control(BinanceRuntimeControl(path))
     poly_lease = poly.acquire()
     binance_lease = binance.acquire()
     assert isinstance(poly.snapshot(), PolymarketRuntimeControlSnapshot)
@@ -81,8 +89,10 @@ def test_venue_control_rows_and_error_types_remain_independent(tmp_path):
 def test_binance_pause_and_expired_heartbeat_cannot_revive_old_lease(tmp_path):
     now = [100_000]
     path = tmp_path / "control.sqlite3"
-    control = BinanceRuntimeControl(
-        path, maximum_heartbeat_age_ms=5_000, clock_ms=lambda: now[0]
+    control = _enroll_flat_control(
+        BinanceRuntimeControl(
+            path, maximum_heartbeat_age_ms=5_000, clock_ms=lambda: now[0]
+        )
     )
     lease = control.acquire()
     interlock = RuntimeLeaseInterlock(control, lease)
@@ -138,7 +148,7 @@ def test_new_namespace_does_not_guess_legacy_migration(tmp_path):
         db.execute("INSERT INTO binance_runtime_control VALUES (1)")
         db.commit()
     with pytest.raises(RuntimeControlError, match="pause fields are missing"):
-        BinanceRuntimeControl(path).snapshot()
+        BinanceRuntimeControl(path).provision_storage(expected_record_sha256="0" * 64)
     with closing(sqlite3.connect(path)) as db:
         assert (
             len(db.execute("PRAGMA table_info(binance_runtime_control)").fetchall())
@@ -149,7 +159,7 @@ def test_new_namespace_does_not_guess_legacy_migration(tmp_path):
 def test_stop_orders_after_another_process_guard_and_blocks_later_dispatch(tmp_path):
     """Use a real contained process and real OS file locks, not a mocked mutex."""
     path = tmp_path / "control.sqlite3"
-    control = BinanceRuntimeControl(path)
+    control = _enroll_flat_control(BinanceRuntimeControl(path))
     lease = control.acquire()
     entered_path = tmp_path / "entered"
     release_path = tmp_path / "release"
@@ -233,6 +243,6 @@ print('guard_released')
 
 
 def test_generic_control_uses_separate_default_namespace(tmp_path):
-    control = RuntimeControl(tmp_path / "generic.sqlite3")
+    control = _enroll_flat_control(RuntimeControl(tmp_path / "generic.sqlite3"))
     assert control.snapshot().state == "stopped"
     assert control.namespace.table_name == "runtime_control"
