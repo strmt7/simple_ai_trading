@@ -39,6 +39,17 @@ current full-suite failure count without rerunning the appropriate scope.
 
 ## Financial and source frontier
 
+- [Capital necessary bound](review/2026-11-10/capital-bound/review.md) reconciles
+  all nine retained annual-funding roles without new market access. Every asset
+  still fails at least one unchanged role even at an optimistic one-leg 20x
+  reference floor; no raw mark paths or training followed. Original 2N results,
+  reserve, roles and orientations remain intact. The new exact helper passes
+  18 algebraic controls and never qualifies native capital or an edge. Registry
+  and audit add metadata only; totals remain 205 / 65 / 37 / 0. One account-doc
+  capture ended 302/202 with one character and admits no wallet semantics.
+  Do not search this panel for a capital parameter to force a pass. Future work
+  still needs an informative literal trigger and native cost/collateral proof.
+
 - [NYC November 11 frontier](review/2026-11-10/nyc-nov11-frontier/review.md)
   completed one prospectively frozen public event GET: all 11 expected markets,
   18 price-complete package rows and zero gross or fee/tick survivors. The best

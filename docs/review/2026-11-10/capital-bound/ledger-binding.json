@@ -1,0 +1,19 @@
+{
+  "after_audit_sha256": "ce34cc446ed76d9271e355ea1671fd164c48c656cca949aa2b9d2382b6e4b010",
+  "after_registry_sha256": "ba3d5455ff37edf89929d50fb2af7cc7a3df4ee9a56f04f4b229508b2ded27f4",
+  "before_audit_sha256": "a5e4e3108e56c7e0852d93eab700d5dde411ffa5da796ca632f7d295b7d31b96",
+  "before_registry_sha256": "761fdbeb147adffa6734320e869a588789d5485801794adbe6c2bccccc6892de",
+  "file_replacements_individually_atomic_pair_not_atomic": true,
+  "original_terminal_rows_classification_frontier_decisions_preserved": true,
+  "readback": {
+    "audit_sha256": "ce34cc446ed76d9271e355ea1671fd164c48c656cca949aa2b9d2382b6e4b010",
+    "hypotheses": 65,
+    "observations": 205,
+    "profitability_qualification_supplied_by_verifier": false,
+    "recorded_qualified_stable_edges": 0,
+    "registry_sha256": "ba3d5455ff37edf89929d50fb2af7cc7a3df4ee9a56f04f4b229508b2ded27f4",
+    "scoped_mechanisms": 37,
+    "validation_kind": "registry_binding_and_recorded_census_only"
+  },
+  "schema": "capital-diagnostic-ledger-routing-delta-v1"
+}

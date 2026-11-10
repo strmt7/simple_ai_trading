@@ -1,0 +1,45 @@
+{
+  "schema": "retained-capital-bound-reconciliation-v1",
+  "result_sha256": "b13a4702f7ace3d6921a0ce605de3675dac9bd7da5ff73ead83738fa341f53b1",
+  "checked_rows": [
+    [
+      "BTC",
+      "test"
+    ],
+    [
+      "BTC",
+      "training"
+    ],
+    [
+      "BTC",
+      "validation"
+    ],
+    [
+      "ETH",
+      "test"
+    ],
+    [
+      "ETH",
+      "training"
+    ],
+    [
+      "ETH",
+      "validation"
+    ],
+    [
+      "SOL",
+      "test"
+    ],
+    [
+      "SOL",
+      "training"
+    ],
+    [
+      "SOL",
+      "validation"
+    ]
+  ],
+  "identities_checked": 36,
+  "helper_not_imported_for_independent_reconciliation": true,
+  "new_source_access_or_acceptance_change": false
+}

@@ -1,0 +1,52 @@
+{
+  "assets": [
+    "BTC",
+    "ETH",
+    "SOL"
+  ],
+  "authority": {
+    "accepted_edge": false,
+    "new_network_market_account_order_credential_requests": 0,
+    "new_raw_capture": false,
+    "protected_partials": false,
+    "registry_observation_increment": 0,
+    "training": false
+  },
+  "base_revision": "3628fa479f1f0d36b4325c48233884b1e7702c99",
+  "contract_sha256": "fcf89aea265add2157878fc365be6c50fd8bd1cc4c5d4f5f17cc7f451e5e3d41",
+  "created_at_utc": "2026-11-10T09:53:32.104074+00:00",
+  "execution": "One exclusive outcome file and durable journal; preserve failed source checks and do not lower hurdles or rerun to select a winner",
+  "invalidity": "Reject any source hash, role, duration, reserve, rate, reference, orientation or original gross/capital/net identity mismatch. Do not infer real equity, fees, financing, eligibility, account value, total wealth, native profit or training admission.",
+  "law": "After-cost budget B=original gross at par minus unchanged 80/10000 times original reference N. With original 10% simple annual charge k=(1/10)*duration_ms/(365*86400000), strictly positive net requires total capital C<B/k. Compare the deliberately optimistic reference-only single-leg floor C_min=N/20. No second-leg capital, maintenance, stress buffer or native margin tier is assumed to be zero in reality.",
+  "orientation": "Use each original training-only sign unchanged; never reorient or exclude an asset or failed role",
+  "outcome_destination": "data/research/2026-11-10-collateral-lower-bound-1030/capital-result.json",
+  "phase_A": "Compute all nine exact rational rows. An asset passes this necessary condition only if every original role has B-k*C_min>0. Equality rejects. Original 2N capital outcome and every historical result remain unchanged.",
+  "phase_B_authority": "Not granted here. If all three assets fail phase A, stop without reading raw mark paths or building a collateral-path model; further data would not repair this fixed-policy necessary rejection.",
+  "previous_goal_turn_classification": "progress: published strict shared runtime-storage enrollment and reproduced resource-lifetime repairs",
+  "question": "Can any asset clear every unchanged chronological role even if the entire strategy required only one leg of reference collateral at the existing 20x policy ceiling?",
+  "roles": {
+    "test": [
+      9,
+      12
+    ],
+    "training": [
+      0,
+      6
+    ],
+    "validation": [
+      6,
+      9
+    ]
+  },
+  "schema": "retained-funding-capital-necessary-bound-contract-v1",
+  "selection": "Exploratory post-hoc methodology question selected from the already known annual rejection; not a new independent validation or new market population",
+  "source_sha256": {
+    "docs/RESEARCH_CAPTURE_BOUNDARIES.md": "f971726268ba2e630b2ebbe8d5bcf02f7b3f23b92ccb16efe23aef82cebe950f",
+    "docs/review/2026-11-09/year-funding/adjudication.json": "fa05fd2a76b17c9284e2a85acb02e601a6a3f2136747f1aba3a591de409c572e",
+    "docs/review/2026-11-09/year-funding/contract.json": "b7f6db0167e818428146f0f6d687da3c6edc553690dbcdff9595d73e9cbe2405",
+    "docs/review/2026-11-09/year-funding/full-result.json": "4236abe674a3e559fdc147f9f0fdfeeb5fc8b3003ad2a051ac5d6db31070c580",
+    "src/simple_ai_trading/assets.py": "a2532c31f4667905ed6c3b3f5e969a17eeadfc43ee351763adcd31efe2707ea1",
+    "src/simple_ai_trading/types.py": "bd91cb6210b8fca83eff2a6c112d99c127099616c2ead65a308aa5f9778d0479"
+  },
+  "valuation": "Preserve original separate USDC/USDT cash; add only under the original explicitly unqualified par scenario. Reference mark is not executable entry."
+}

@@ -437,6 +437,9 @@ and verify reproducibly. Do not load upstream `EXAMPLES.md`.
    Separate schema/length inspection from value reads. Cap serialized output
    before printing; do not dump a large field in the same call that first
    discovers its size or rely on tool truncation to bound a compact JSON value.
+   Preserve existing JSON key order when updating mutable ledgers; canonical
+   hashing may sort independently. Do not reorder unchanged historical payloads
+   through whole-file serialization, and inspect changed-line scope before staging.
 4. Freeze causal inputs, costs, roles, rejection gates, and test access before
    viewing a new model outcome.
    Before a multi-request public screen, validate parsing and aggregation on one

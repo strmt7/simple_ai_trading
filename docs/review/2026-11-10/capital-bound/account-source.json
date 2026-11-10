@@ -1,0 +1,67 @@
+{
+  "journal_sha256": "815863e4709dc83d760908964deabcc04ffdd3761fccaad4e9b2480d24a92395",
+  "native_log_sha256": "165d12aa730104e53d144efd0e59db9db0292fb1ef5b6182a622852faad369b5",
+  "native_result": {
+    "exit_code": 0,
+    "markdown_characters": 1,
+    "native_bytes": 5202,
+    "native_error_message": "",
+    "native_navigation_started": true,
+    "native_sha256": "97f9ea696682ff4335cf5f23ef982faeb7d52886948c43679c67ea42dd2fe82b",
+    "native_success": true,
+    "redirected_status_code": 202,
+    "redirected_url": "https://developers.binance.com/en/docs/catalog/core-trading-derivatives-trading-usd-s-m-futures/api/rest-api/account#account-information-v3",
+    "required_terms": {
+      "availablebalance": false,
+      "maxwithdrawamount": false,
+      "totalmarginbalance": false,
+      "totalunrealizedprofit": false,
+      "totalwalletbalance": false
+    },
+    "source_admitted": false,
+    "status_code": 302,
+    "url": "https://developers.binance.com/docs/derivatives/usds-margined-futures/account/rest-api/Account-Information-V3"
+  },
+  "no_document_content_or_native_account_semantics_admitted": true,
+  "private_retention_directory": "data/research/2026-11-10-collateral-lower-bound-1030/account-source",
+  "provider_preflight_sha256": "d85b08f33845c50bc1ea6c8613a58492209913e05650a0c26003a7c97398ddab",
+  "provider_version": "0.9.5+flitzzip.portable2",
+  "schema": "capital-account-document-source-attempt-v1",
+  "source_plan": {
+    "allowed_final_urls": [
+      "https://developers.binance.com/docs/derivatives/usds-margined-futures/account/rest-api/Account-Information-V3",
+      "https://developers.binance.com/docs/derivatives/usds-margined-futures/account/rest-api/Account-Information-V3/"
+    ],
+    "challenge_bypass": false,
+    "external_llm": false,
+    "failure_policy": "Retain failure. No alias, account endpoint, credential or numerical claim follows from unavailable documentation.",
+    "frozen_at_utc": "2026-11-10T09:50:23.086823+00:00",
+    "minimum_markdown_characters": 1000,
+    "native_output_admission_limit_bytes": 8388608,
+    "native_retries": 0,
+    "native_robots_checks": true,
+    "output_limit_is_not_network_byte_limit": true,
+    "owned_child_timeout_seconds": 150,
+    "page_timeout_ms": 45000,
+    "personal_profile": false,
+    "provider": "0.9.5+flitzzip.portable2",
+    "question": "Identify the official distinction among wallet balance, unrealized profit, margin balance, available balance and maximum withdrawal for future cash/collateral admission; do not infer actual transferability from arithmetic wealth",
+    "required_terms": [
+      "totalwalletbalance",
+      "totalunrealizedprofit",
+      "totalmarginbalance",
+      "availablebalance",
+      "maxwithdrawamount"
+    ],
+    "selected_url": "https://developers.binance.com/docs/derivatives/usds-margined-futures/account/rest-api/Account-Information-V3",
+    "selection": "Known official documentation route; search returned no result and supplies no facts",
+    "strict_robots_precheck": true
+  },
+  "source_provenance": {
+    "coverage": "Selected November 9/10 published/private metadata only; not universal URL novelty; raw/protected/tool environments excluded before content reads",
+    "matched_metadata": [],
+    "metadata_files_read": 47,
+    "over_size_files_not_read": [],
+    "query_stable_document_id": "account-information-v3"
+  }
+}

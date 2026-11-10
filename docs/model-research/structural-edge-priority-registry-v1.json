@@ -4359,7 +4359,7 @@
       "index_boundary_study_status": "The distinct August 27 00:00 through September 4 16:00 2026 nominal population is consumed, including the frozen five-minute post-boundary windows. All 84 public responses passed source gates (1,308,306 bytes): 27 index boundaries and one Binance history per BTC ETH SOL asset, 78 fixed-base intervals and 13/6/7 chronological roles. Training selected short Paradex and long Binance for each asset. All nine par-valued gross role funding spreads were positive at 0.7858-7.5875 bips, but each was negative after even the frozen 20-bip execution allowance alone. No survivor passed the full unchanged 80-bip reserves plus 10-percent-annual total-two-leg capital stress. These are stress diagnostics, not actual fees, converted realized account PnL, current profit or a family-wide negative-EV proof. No basis books accounts orders or protected data.",
       "market_direction_forecast_required": false,
       "mechanism": "binance_Paradex_cross_venue_USD_perpetual_funding_spread",
-      "next_action": "do_not_refetch_alias_paginate_or_consume_any_continuation_cursor_for_the_exact_population_reopen_only_for_a_distinct_prospectively_frozen_nonoverlapping_population_or_independently_known_material_API_cadence_pagination_or_architecture_change_with_every_page_total_byte_and_row_ceiling_frozen_before_access_then_require_exact_realized_index_alignment_current_fees_finite_size_basis_depth_and_all_costs_also_do_not_refetch_reprice_interpolate_fill_missing_windows_or_reorient_the_consumed_2026_08_27_through_2026_09_04_16_05_01_index_population_a_new_study_requires_the_literal_nonoverlapping_population_or_material_architecture_trigger_and_an_explicit_information_gain_case_not_a_rolling_retry_to_hunt_a_winner The nine-week September7-November9 study is now consumed after inventory byte-ceiling failure. Do not increase its cap, retry or alias inventory, or request its funding histories, indices, prices or books. Time alone is not a rolling retry; require an independent material source-access/architecture fact or a genuinely informative distinct frozen nonoverlapping population. The 2025 January1-2026 January1 calendar population, including fixed post-boundary windows, is now consumed by a complete conditional funding rejection. Do not refetch, subset, reorient, lower hurdles or reprice it into independent validation. Use only the existing literal genuinely informative nonoverlapping-population or independently evidenced material architecture trigger; source-only capital/collateral methodology work cannot authorize new books/accounts for this failed population.",
+      "next_action": "do_not_refetch_alias_paginate_or_consume_any_continuation_cursor_for_the_exact_population_reopen_only_for_a_distinct_prospectively_frozen_nonoverlapping_population_or_independently_known_material_API_cadence_pagination_or_architecture_change_with_every_page_total_byte_and_row_ceiling_frozen_before_access_then_require_exact_realized_index_alignment_current_fees_finite_size_basis_depth_and_all_costs_also_do_not_refetch_reprice_interpolate_fill_missing_windows_or_reorient_the_consumed_2026_08_27_through_2026_09_04_16_05_01_index_population_a_new_study_requires_the_literal_nonoverlapping_population_or_material_architecture_trigger_and_an_explicit_information_gain_case_not_a_rolling_retry_to_hunt_a_winner The nine-week September7-November9 study is now consumed after inventory byte-ceiling failure. Do not increase its cap, retry or alias inventory, or request its funding histories, indices, prices or books. Time alone is not a rolling retry; require an independent material source-access/architecture fact or a genuinely informative distinct frozen nonoverlapping population. The 2025 January1-2026 January1 calendar population, including fixed post-boundary windows, is now consumed by a complete conditional funding rejection. Do not refetch, subset, reorient, lower hurdles or reprice it into independent validation. Use only the existing literal genuinely informative nonoverlapping-population or independently evidenced material architecture trigger; source-only capital/collateral methodology work cannot authorize new books/accounts for this failed population. The retained 2025 roles also fail an optimistic reference-only one-leg 20x capital floor; do not search that same panel for a capital/leverage parameter that makes every unchanged role pass. This post-hoc diagnostic creates no market/account/training access or acceptance authority; existing literal retry triggers remain controlling.",
       "prior_90_bin_source_failure_status": "terminal_exact_90_bin_population_source_incomplete_before_economics_all_three_Paradex_histories_hit_5000_rows_and_returned_continuation_cursors_frozen_byte_ceilings_also_failed_no_funding_values_were_viewed_or_used_no_pagination_adaptation_basis_books_accounts_credentials_orders_or_funds_public_profit_floor_zero_not_accepted_stable_or_deployment_ready",
       "priority_rank": 59,
       "prohibited_shortcuts": [
@@ -4384,6 +4384,16 @@
         "monthly_cash_intervals": 36,
         "conditional_funding_survivors": 0,
         "historical_terms_and_index_continuity_qualified": false
+      },
+      "capital_policy_floor_diagnostic_2026_11_10": {
+        "accepted_classification_changed": false,
+        "necessary_candidates": 0,
+        "original_2N_results_and_80bps_reserves_unchanged": true,
+        "path": "docs/review/2026-11-10/capital-bound/result.json",
+        "policy_leverage_ceiling": 20,
+        "raw_mark_paths_read": 0,
+        "result_sha256": "b13a4702f7ace3d6921a0ce605de3675dac9bd7da5ff73ead83738fa341f53b1",
+        "scope": "Exploratory retained-source capital methodology; not new economic validation"
       }
     },
     {
@@ -4587,7 +4597,7 @@
       ]
     }
   ],
-  "result_sha256": "761fdbeb147adffa6734320e869a588789d5485801794adbe6c2bccccc6892de",
+  "result_sha256": "ba3d5455ff37edf89929d50fb2af7cc7a3df4ee9a56f04f4b229508b2ded27f4",
   "schema_version": "structural-edge-priority-registry-v1",
   "terminal_do_not_repeat": [
     {
@@ -5646,6 +5656,6 @@
       "canonical_result_sha256": "5cbe00a879162d27f0ff4f974001b528bb071c7bebece873900549a7594ff26e"
     }
   ],
-  "updated_at_utc": "2026-11-10T07:08:01.671283+00:00",
+  "updated_at_utc": "2026-11-10T10:05:40.737372+00:00",
   "usage_rule": "advance_the_highest_ranked_hypothesis_whose_retry_trigger_is_satisfied_otherwise_do_not_repeat_a_blocked_or_terminal_screen"
 }

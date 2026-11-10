@@ -1,5 +1,16 @@
 # Funding-aware control: cash truth before an optimizer
 
+The November 10 [capital necessary-bound diagnostic](../review/2026-11-10/capital-bound/review.md)
+shows that leverage/collateral sensitivity cannot make every unchanged 2025
+funding role pass: BTC's forward budgets are below the optimistic one-leg
+reference floor, and ETH/SOL test budgets fail before capital charge. This is
+post-hoc methodology, not new validation or native margin evidence. The reusable
+`capital_budget` helper requires exact comparable cash and an explicit charge
+convention; its positive interval never qualifies an edge or admits training.
+Keep all existing cash, source, chronology, fee, financing and margin gates.
+Do not spend another fit or raw-path pass on a fixed candidate whose necessary
+capital budget is already empty under its unchanged declared law.
+
 November 9 [term-premium research](../review/2026-11-09/funding-term-premium/review.md)
 adds a conditional comparison of a dated future against an opposite perpetual:
 matched-base price cash is `q * ((D_T - P_T) - (D_0 - P_0))`. Add both legs' actual

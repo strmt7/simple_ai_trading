@@ -1,0 +1,166 @@
+{
+  "base_revision": "3628fa479f1f0d36b4325c48233884b1e7702c99",
+  "created_at_utc": "2026-11-10T10:11:46.433198+00:00",
+  "decision": "Stop capital/leverage parameter search on the same fixed 2025 role law; no asset clears the optimistic necessary policy floor in every role",
+  "evidence_sha256": "3e3e0e9b516379373f474b9db641528ea2d702658792b2a1d50e53d46cbd6fc0",
+  "exploratory_post_hoc_question_not_independent_validation": true,
+  "financial_census": [
+    205,
+    65,
+    37,
+    0
+  ],
+  "helper_and_tests_sha256": {
+    "src/simple_ai_trading/capital_budget.py": "1a64ded2be735c96bf1da52004a5349551f4059475ab82ceda6e1191611f3b13",
+    "tests/test_capital_budget.py": "2134b73ff1a7fe24b3865f5944487f5c226b3770de6a5a88089c846b48c30cd2"
+  },
+  "independent_arithmetic": {
+    "checked_rows": [
+      [
+        "BTC",
+        "test"
+      ],
+      [
+        "BTC",
+        "training"
+      ],
+      [
+        "BTC",
+        "validation"
+      ],
+      [
+        "ETH",
+        "test"
+      ],
+      [
+        "ETH",
+        "training"
+      ],
+      [
+        "ETH",
+        "validation"
+      ],
+      [
+        "SOL",
+        "test"
+      ],
+      [
+        "SOL",
+        "training"
+      ],
+      [
+        "SOL",
+        "validation"
+      ]
+    ],
+    "helper_not_imported_for_independent_reconciliation": true,
+    "identities_checked": 36,
+    "new_source_access_or_acceptance_change": false,
+    "result_sha256": "b13a4702f7ace3d6921a0ce605de3675dac9bd7da5ff73ead83738fa341f53b1",
+    "schema": "retained-capital-bound-reconciliation-v1"
+  },
+  "ledger_tests": {
+    "errors": 0,
+    "failures": 0,
+    "skipped": 0,
+    "tests": 23
+  },
+  "new_market_account_or_order_requests": 0,
+  "new_raw_mark_paths_opened": 0,
+  "original_year_result_contract_rows_and_costs_unchanged": true,
+  "preflight_tests": {
+    "errors": 0,
+    "failures": 0,
+    "skipped": 0,
+    "tests": 18
+  },
+  "private_evidence_sha256": {
+    "account-source-provenance.json": "b487884c889aa3477b61c3cf2162b21e5b141136ef781e989395faf771126c79",
+    "account-source/account.native.json": "97f9ea696682ff4335cf5f23ef982faeb7d52886948c43679c67ea42dd2fe82b",
+    "account-source/intent.local.json": "8e55b18246cfa7365b7d1fb47eac65e3156eb9726bb210ab3fb73d53d2624ca3",
+    "account-source/journal.jsonl": "815863e4709dc83d760908964deabcc04ffdd3761fccaad4e9b2480d24a92395",
+    "account-source/native.log": "165d12aa730104e53d144efd0e59db9db0292fb1ef5b6182a622852faad369b5",
+    "account-source/preflight.json": "d85b08f33845c50bc1ea6c8613a58492209913e05650a0c26003a7c97398ddab",
+    "account-source/result.json": "b1b7577520423b82a04e535dedd8ebb194fa0f7d8eb4bcdbb414e68f3529833b",
+    "account-source/source-plan.json": "13936e085e9741990df7890d4f0cde8f8a59de4ef301c7d3abb49ca59d950deb",
+    "analysis-journal.jsonl": "a85d310d35a7237d7817360fb2e097023a8f1f06e2339dbe2e977402c6d83d23",
+    "analysis.stderr.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "analysis.stdout.log": "2553360837c0f067f5680617756bc5e07ca622c8495a6af7918c3a34148a1f80",
+    "audit.before.json": "00bb378c40d224ce3bd0e54f0feb769e3676fef6436cdd9a9ea0970263337be7",
+    "contract.json": "585f6f72ae73e42d4f48c490cb2fb4a7ea9f3ac43d16f77dfb955ea1ace183fb",
+    "execution-intent.json": "d79754294f2cf2c8e8affd641ca76663cfd70ab4f85b4c0377c635e73bfdee85",
+    "ledger-verification-final/stdout.log": "5bff63dd61b6cc089c17c9ea30f5aa934c53f8b45380ebbf4cace58b3ab68f3c",
+    "ledger-verification-final/tests.xml": "6112c60076276662874c667bcd860d794abb44061d16858bcb65c5572c4b4fa6",
+    "preflight/source-receipt.json": "219bd64503b358fb503f4acd956e26643a00c147a71e1baba534bfa55bc018d2",
+    "preflight/stdout.log": "a8e0c469d75423f6605624a33177ad94cc24971a3b4959df77bebfd6ee543ee8",
+    "preflight/tests.xml": "0caebc6a7d5b12f0bd7b321c1453dd9be55b98622b963d79534d7b6eb9ee0606",
+    "process-readback.json": "87c017b8c09512395fd1a072ce972f24a7e27951dda2c1ae1093b3806a07552c",
+    "registry.before.json": "c9ab668311b1a35fd3c0ce9f0cd49c1a3855e91759f7624b1dcaad34685d33ae"
+  },
+  "private_retention_directory": "data/research/2026-11-10-collateral-lower-bound-1030",
+  "public_result_byte_identical": true,
+  "qualification_limits": [
+    "Reference-only initial-capital assumption, not executable entry or native collateral",
+    "Unqualified historical index/contract continuity and USDC/USDT parity",
+    "No native fees, basis, cash/withdrawal rights, transfer latency or continuous solvency admission",
+    "Generic helper is not wired into trainer, native order admission or whole-product release acceptance"
+  ],
+  "real_credentials_used": false,
+  "resource_readback": {
+    "matching_live_task_python_controllers": 0,
+    "observed_at_utc": "2026-11-10T10:09:43.4209654Z",
+    "scope": "Current task marker only; not universal host absence or leak proof",
+    "services_or_schedules_created": 0
+  },
+  "result_sha256": "b13a4702f7ace3d6921a0ce605de3675dac9bd7da5ff73ead83738fa341f53b1",
+  "schema": "retained-capital-feasibility-evidence-v1",
+  "semantic_navigation": {
+    "actual_query_output_sha256": "ff86d350a4d76124b2e57d870482fac675796f611bc3a61a6f30b34615a1082d",
+    "index_log_sha256": "5e795144d0ffa4b9a13b5cd98000927c6fc531f6ccc0f57a59a25e46d19cb48e",
+    "language": "python",
+    "limit": 5,
+    "live_confirmed": [
+      "src/simple_ai_trading/spot_prefunding.py",
+      "src/simple_ai_trading/collateral_stress.py",
+      "src/simple_ai_trading/funding_cash.py"
+    ],
+    "not_claimed": "Complete semantic repository review, model admission or measured speed",
+    "path": "src/simple_ai_trading/**",
+    "query": "Where are exact funding cash, required prefunding and derivative collateral equity paths modeled without counting unrealized gains as transferable wallet cash?"
+  },
+  "source_before_outcome": {
+    "code_sha256": {
+      "data/research/2026-11-10-collateral-lower-bound-1030/evaluate.py": "942674786a862d51fbf0dc3451d5af7569f178cceef360cbcdc066ef568c211e",
+      "src/simple_ai_trading/capital_budget.py": "1a64ded2be735c96bf1da52004a5349551f4059475ab82ceda6e1191611f3b13"
+    },
+    "contract_sha256": "585f6f72ae73e42d4f48c490cb2fb4a7ea9f3ac43d16f77dfb955ea1ace183fb",
+    "created_at_utc": "2026-11-10T10:00:37.058981+00:00",
+    "maximum_child_seconds": 60,
+    "new_network_requests": 0,
+    "preflight_tests_xml_sha256": "0caebc6a7d5b12f0bd7b321c1453dd9be55b98622b963d79534d7b6eb9ee0606"
+  },
+  "source_document_admitted": false,
+  "source_document_native_result": {
+    "exit_code": 0,
+    "markdown_characters": 1,
+    "native_bytes": 5202,
+    "native_error_message": "",
+    "native_navigation_started": true,
+    "native_sha256": "97f9ea696682ff4335cf5f23ef982faeb7d52886948c43679c67ea42dd2fe82b",
+    "native_success": true,
+    "redirected_status_code": 202,
+    "redirected_url": "https://developers.binance.com/en/docs/catalog/core-trading-derivatives-trading-usd-s-m-futures/api/rest-api/account#account-information-v3",
+    "required_terms": {
+      "availablebalance": false,
+      "maxwithdrawamount": false,
+      "totalmarginbalance": false,
+      "totalunrealizedprofit": false,
+      "totalwalletbalance": false
+    },
+    "source_admitted": false,
+    "status_code": 302,
+    "url": "https://developers.binance.com/docs/derivatives/usds-margined-futures/account/rest-api/Account-Information-V3"
+  },
+  "source_http_document_navigation_only": 1,
+  "training_GPU_benchmark_scanner_retry_or_release_dispatch": false
+}
