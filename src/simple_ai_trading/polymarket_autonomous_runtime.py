@@ -693,6 +693,10 @@ class PolymarketAutonomousSupervisor:
             self._pending_decision is not None
             or self._paused
             or self._shutdown_requested.is_set()
+            or (
+                self.forecast_worker is not None
+                and not getattr(self.forecast_worker, "available", True)
+            )
         ):
             return None
         portfolio = self._portfolio(markets[0], observed_at_ms=observed_at_ms)

@@ -450,6 +450,7 @@ class Round21RollingPublicDataService:
             coordinator = self._active_coordinator
             return (
                 self._discovery_healthy
+                and self.scorer.inference_available
                 and self._active_market is not None
                 and self._active_market.condition_id == market.condition_id
                 and coordinator is not None

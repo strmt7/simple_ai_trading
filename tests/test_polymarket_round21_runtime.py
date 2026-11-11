@@ -30,6 +30,7 @@ from simple_ai_trading.polymarket_round21_sealed import (
 from simple_ai_trading.polymarket_round21_session import (
     Round21RollingPublicDataService,
 )
+from simple_ai_trading.polymarket_round21_worker import PolymarketRound21InferenceWorker
 
 
 MODEL_FILE_SHA = sha("round21-runtime-model-file")
@@ -62,6 +63,7 @@ def _evidence():
     artifact.artifact = {"artifact_sha256": MODEL_SHA}
     result = SimpleNamespace(
         candidate_accepted=True,
+        selected_population_layer="core",
         predictive=SimpleNamespace(model_artifact_sha256=MODEL_SHA),
     )
     evaluation = Mock(spec=VerifiedRound21SealedResultBundle)
@@ -79,6 +81,9 @@ def test_round21_runtime_composes_exact_promotion_evidence(
     artifact, evaluation, result = _evidence()
     scorer = Mock(spec=Round21ProspectiveScorer)
     scorer.source_model_artifact_sha256 = MODEL_SHA
+    worker = Mock(spec=PolymarketRound21InferenceWorker)
+    worker.artifact_sha256 = MODEL_SHA
+    scorer.inference_worker = worker
     service = Mock(spec=Round21RollingPublicDataService)
     service.scorer = scorer
     provider = Mock(spec=PolymarketRound21PromotedDecisionProvider)
@@ -106,10 +111,21 @@ def test_round21_runtime_composes_exact_promotion_evidence(
     )
     monkeypatch.setattr(
         runtime_module,
+        "PolymarketRound21InferenceWorker",
+        lambda source, *, population_layer: (
+            worker
+            if source is artifact.artifact and population_layer == "core"
+            else pytest.fail("unexpected inference worker evidence")
+        ),
+    )
+    monkeypatch.setattr(
+        runtime_module,
         "Round21ProspectiveScorer",
-        lambda *, artifact, sealed_result: (
+        lambda *, artifact, sealed_result, inference_worker: (
             scorer
-            if artifact is artifact_evidence.artifact and sealed_result is result
+            if artifact is artifact_evidence.artifact
+            and sealed_result is result
+            and inference_worker is worker
             else pytest.fail("unexpected scorer evidence")
         ),
     )
@@ -153,6 +169,7 @@ def test_round21_runtime_composes_exact_promotion_evidence(
     assert stack.evaluation_evidence.result is result
     assert stack.data_service is service
     assert stack.decision_provider is provider
+    assert stack.inference_worker is worker
     assert stack.credentials_used is False
     assert stack.account_connected is False
     assert stack.binance_execution_connected is False

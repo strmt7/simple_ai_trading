@@ -21,6 +21,7 @@ from simple_ai_trading.polymarket_round21_prospective import (
 from simple_ai_trading.polymarket_round21_sealed import (
     Round21SealedEvaluationResult,
 )
+from simple_ai_trading.polymarket_round21_worker import PolymarketRound21InferenceWorker
 
 from polymarket_round21_support import sha
 
@@ -166,6 +167,63 @@ def test_inference_panel_is_target_free_contiguous_and_hash_bound() -> None:
     assert panel.source_dataset_sha256 != rows[0].row_sha256
     with pytest.raises(ValueError, match="not contiguous"):
         build_round21_inference_panel((_row(1_000), _row(1_500)))
+
+
+def test_scorer_delegates_numerical_work_without_parent_compilation(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _install_boundaries(monkeypatch)
+    compiled = prospective_module.compile_round21_probability_predictor(
+        _artifact(), population_layer="core"
+    )
+    worker = Mock(spec=PolymarketRound21InferenceWorker)
+    worker.population_layer = "core"
+    worker.artifact_sha256 = MODEL_SHA
+    for name in (
+        "core_feature_names_sha256",
+        "spot_feature_names_sha256",
+        "usdm_feature_names_sha256",
+    ):
+        setattr(worker, name, getattr(compiled, name))
+    worker.tcn_runtime_backend_kind = "pending"
+
+    def predict(panel):
+        worker.tcn_runtime_backend_kind = "cpu"
+        return compiled.predict(panel)
+
+    worker.predict.side_effect = predict
+    monkeypatch.setattr(
+        prospective_module,
+        "compile_round21_probability_predictor",
+        lambda *_args, **_kwargs: pytest.fail("parent compiled a numerical model"),
+    )
+    scorer = Round21ProspectiveScorer(
+        artifact=_artifact(),
+        sealed_result=_sealed(),
+        inference_worker=worker,
+    )
+    assert scorer.tcn_runtime_backend_kind == "pending"
+    result = scorer.evaluate(_row(0), observed_at_ms=START_MS)
+    assert result.status == "observed" and worker.predict.call_count == 1
+    assert scorer.tcn_runtime_backend_kind == "cpu"
+
+
+def test_scorer_rejects_an_inference_worker_from_another_layer(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(
+        prospective_module,
+        "compile_round21_probability_predictor",
+        lambda *_args, **_kwargs: pytest.fail("parent compiled a numerical model"),
+    )
+    worker = Mock(spec=PolymarketRound21InferenceWorker)
+    worker.population_layer = "core_spot"
+    with pytest.raises(ValueError, match="inference worker differs"):
+        Round21ProspectiveScorer(
+            artifact=_artifact(),
+            sealed_result=_sealed(),
+            inference_worker=worker,
+        )
 
 
 def test_scorer_emits_idempotent_target_free_probability_evidence(

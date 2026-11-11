@@ -22,6 +22,7 @@ from .polymarket_round21_sealed import (
     load_verified_round21_sealed_result_bundle,
 )
 from .polymarket_round21_session import Round21RollingPublicDataService
+from .polymarket_round21_worker import PolymarketRound21InferenceWorker
 
 
 POLYMARKET_ROUND21_RUNTIME_SCHEMA_VERSION = "polymarket-round21-runtime-v1"
@@ -38,6 +39,7 @@ class PolymarketRound21RuntimeStack:
     scorer: Round21ProspectiveScorer
     data_service: Round21RollingPublicDataService
     decision_provider: PolymarketRound21PromotedDecisionProvider
+    inference_worker: PolymarketRound21InferenceWorker
     credentials_used: bool = False
     account_connected: bool = False
     binance_execution_connected: bool = False
@@ -59,6 +61,9 @@ class PolymarketRound21RuntimeStack:
             != self.artifact_evidence.artifact_sha256
             or self.scorer.source_model_artifact_sha256
             != self.artifact_evidence.artifact_sha256
+            or self.inference_worker.artifact_sha256
+            != self.artifact_evidence.artifact_sha256
+            or self.scorer.inference_worker is not self.inference_worker
             or self.data_service.scorer is not self.scorer
             or self.decision_provider.data_service is not self.data_service
             or self.decision_provider.artifact_evidence is not self.artifact_evidence
@@ -111,9 +116,14 @@ def build_polymarket_round21_runtime_stack(
         raise PolymarketLiveBlocked(
             "Round 21 model differs from accepted sealed evaluation"
         )
+    inference_worker = PolymarketRound21InferenceWorker(
+        artifact_evidence.artifact,
+        population_layer=result.selected_population_layer,
+    )
     scorer = Round21ProspectiveScorer(
         artifact=artifact_evidence.artifact,
         sealed_result=result,
+        inference_worker=inference_worker,
     )
     data_service = Round21RollingPublicDataService(
         public_client=public_client,
@@ -138,6 +148,7 @@ def build_polymarket_round21_runtime_stack(
         scorer=scorer,
         data_service=data_service,
         decision_provider=decision_provider,
+        inference_worker=inference_worker,
     )
 
 

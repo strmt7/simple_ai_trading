@@ -470,6 +470,24 @@ def test_pause_or_stop_prevents_a_late_model_submission(
     assert submitted is False
 
 
+def test_decisions_wait_for_the_owned_numerical_worker(tmp_path: Path) -> None:
+    provider = SimpleNamespace(decide=Mock(return_value=PolymarketAutonomousDecision()))
+    supervisor = _supervisor(tmp_path, provider=provider)
+    worker = SimpleNamespace(available=False)
+    supervisor.forecast_worker = worker
+
+    async def exercise():
+        assert await supervisor._decision((_market(),), observed_at_ms=NOW_MS) is None
+        provider.decide.assert_not_called()
+        worker.available = True
+        assert (
+            await supervisor._decision((_market(),), observed_at_ms=NOW_MS) is not None
+        )
+
+    asyncio.run(exercise())
+    provider.decide.assert_called_once()
+
+
 def test_wallet_shortfall_blocks_further_openings_for_the_session(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
@@ -1000,6 +1018,7 @@ def test_persisted_stop_reaps_active_round16_inference_before_recovery(
     import numpy as np
 
     from simple_ai_trading import polymarket_round16_worker as worker_module
+    from simple_ai_trading import polymarket_inference_process as process_module
     from simple_ai_trading.polymarket_round16_shadow import (
         ROUND16_FEATURE_NAMES,
         VerifiedRound16ShadowPredictor,
@@ -1027,7 +1046,7 @@ def test_persisted_stop_reaps_active_round16_inference_before_recovery(
         children = []
         owned = {OWNED_MARKET_ID}
         command = worker._command
-        popen = worker_module.subprocess.Popen
+        popen = process_module.subprocess.Popen
         script = """
 import os, sys, time
 from pathlib import Path
@@ -1068,7 +1087,7 @@ module._worker(int(sys.argv[2]))
             return True
 
         monkeypatch.setenv("TRADING_WORKER_TEST_SECRET", "fixture")
-        monkeypatch.setattr(worker_module.subprocess, "Popen", launch)
+        monkeypatch.setattr(process_module.subprocess, "Popen", launch)
         monkeypatch.setattr(
             worker,
             "_command",

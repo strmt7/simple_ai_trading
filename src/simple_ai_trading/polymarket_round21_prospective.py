@@ -27,6 +27,7 @@ from .polymarket_round21_model import (
 from .polymarket_round21_policy import Round21ProbabilityEnvelope
 from .polymarket_round21_sealed import Round21SealedEvaluationResult
 from .polymarket_round21_tcn import ROUND21_TCN_SEQUENCE_LENGTH
+from .polymarket_round21_worker import PolymarketRound21InferenceWorker
 
 
 POLYMARKET_ROUND21_PROSPECTIVE_SCHEMA_VERSION = (
@@ -508,6 +509,7 @@ class Round21ProspectiveScorer:
         artifact: Mapping[str, object],
         sealed_result: Round21SealedEvaluationResult,
         monotonic_ns: Callable[[], int] = time.perf_counter_ns,
+        inference_worker: PolymarketRound21InferenceWorker | None = None,
     ) -> None:
         if not isinstance(sealed_result, Round21SealedEvaluationResult):
             raise TypeError("Round 21 prospective sealed result type differs")
@@ -517,10 +519,19 @@ class Round21ProspectiveScorer:
         layer = selected_result.selected_population_layer
         if layer not in _LAYERS:
             raise ValueError("Round 21 prospective population layer differs")
-        predictor = compile_round21_probability_predictor(
-            artifact,
-            population_layer=layer,
-        )
+        if inference_worker is None:
+            predictor = compile_round21_probability_predictor(
+                artifact,
+                population_layer=layer,
+            )
+        else:
+            if (
+                not isinstance(inference_worker, PolymarketRound21InferenceWorker)
+                or inference_worker.population_layer != layer
+                or artifact.get("artifact_sha256") != inference_worker.artifact_sha256
+            ):
+                raise ValueError("Round21 prospective inference worker differs")
+            predictor = inference_worker
         model_sha = predictor.artifact_sha256
         if selected_result.predictive.model_artifact_sha256 != model_sha:
             raise ValueError("Round 21 prospective model and sealed result differ")
@@ -536,12 +547,7 @@ class Round21ProspectiveScorer:
         self.sealed_result = selected_result
         self.population_layer = layer
         self.source_model_artifact_sha256 = model_sha
-        self.tcn_training_backend_kind = predictor.tcn_training_backend_kind
-        self.tcn_training_backend_device = predictor.tcn_training_backend_device
-        self.tcn_runtime_backend_kind = predictor.tcn_runtime_backend_kind
-        self.tcn_runtime_backend_device = predictor.tcn_runtime_backend_device
-        self.tcn_backend_substituted = predictor.tcn_backend_substituted
-        self.tcn_accelerator_fallback = predictor.tcn_accelerator_fallback
+        self.inference_worker = inference_worker
         self._predictor = predictor
         self._monotonic_ns = monotonic_ns
         self._history: deque[Round21CausalFeatureRow] = deque(
@@ -549,6 +555,34 @@ class Round21ProspectiveScorer:
         )
         self._last_prediction: Round21ProspectivePrediction | None = None
         self._lock = Lock()
+
+    @property
+    def inference_available(self) -> bool:
+        return self.inference_worker is None or self.inference_worker.available
+
+    @property
+    def tcn_training_backend_kind(self) -> str:
+        return self._predictor.tcn_training_backend_kind
+
+    @property
+    def tcn_training_backend_device(self) -> str:
+        return self._predictor.tcn_training_backend_device
+
+    @property
+    def tcn_runtime_backend_kind(self) -> str:
+        return self._predictor.tcn_runtime_backend_kind
+
+    @property
+    def tcn_runtime_backend_device(self) -> str:
+        return self._predictor.tcn_runtime_backend_device
+
+    @property
+    def tcn_backend_substituted(self) -> bool:
+        return self._predictor.tcn_backend_substituted
+
+    @property
+    def tcn_accelerator_fallback(self) -> bool:
+        return self._predictor.tcn_accelerator_fallback
 
     def reset_history(self) -> None:
         """Discard temporal rows when the required public source changes epoch."""

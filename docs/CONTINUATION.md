@@ -90,7 +90,9 @@ before continuing an affected family. None supplies a qualified stable edge.
   required source epochs. [Final admission](review/2026-11-11/source-dispatch/review.md)
   carries revocation through signing/journaling to the local venue-call boundary
   for opens, locks and model reductions. Separate 197-case and 130-case source
-  phases pass. Hard Round21 inference termination remains next process work.
+  phases pass. [Owned five-minute inference](review/2026-11-11/round21-worker/review.md)
+  contains model compilation/evaluation; CPU fixtures cover parity, reply faults
+  and persisted Stop before recovery. GPU/POSIX qualification remains open.
 - [Owned discovery](review/2026-11-10/owned-discovery/review.md),
   [startup Stop](review/2026-11-10/startup-stop/review.md) and
   [shared five-minute discovery](review/2026-11-10/shared-discovery/review.md)

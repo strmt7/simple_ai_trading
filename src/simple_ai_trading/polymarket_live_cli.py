@@ -744,7 +744,7 @@ def _build_autonomous_decision_stack(
             requested_quantity=requested_quantity,
             risk_level=risk_level,
         )
-        return stack.data_service, stack.decision_provider, None
+        return stack.data_service, stack.decision_provider, stack.inference_worker
     if policy.market_variant != "fifteenminute":
         raise PolymarketLiveBlocked(
             "autonomous Polymarket promotion market variant is unsupported"

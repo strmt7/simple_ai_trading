@@ -1333,11 +1333,13 @@ def test_five_minute_autonomous_stack_does_not_require_round16_pins() -> None:
     promotion = SimpleNamespace(promotion=SimpleNamespace(market_variant="fiveminute"))
     data_service = object()
     decision_provider = object()
+    inference_worker = object()
     components = SimpleNamespace(
         build_polymarket_round21_runtime_stack=lambda **kwargs: (
             SimpleNamespace(
                 data_service=data_service,
                 decision_provider=decision_provider,
+                inference_worker=inference_worker,
             )
             if kwargs
             == {
@@ -1366,7 +1368,7 @@ def test_five_minute_autonomous_stack_does_not_require_round16_pins() -> None:
         risk_level="aggressive",
     )
 
-    assert actual == (data_service, decision_provider, None)
+    assert actual == (data_service, decision_provider, inference_worker)
 
 
 def test_autonomous_assembles_independent_promoted_runtime(

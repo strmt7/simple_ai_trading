@@ -166,6 +166,23 @@ def test_session_activates_and_returns_fail_closed_causal_state() -> None:
     )
 
 
+def test_session_revokes_admission_when_its_inference_worker_is_unavailable() -> None:
+    service = _service(
+        client=Mock(spec=PolymarketPublicClient),
+        clock=lambda: MARKET.event_start_ms + 60_000,
+        factory=_FeedFactory(),
+    )
+    service._discovery_healthy = True
+    service._active_market = MARKET
+    service._active_coordinator = Mock()
+    service._active_coordinator.admits.return_value = True
+    prediction = Mock()
+    service.scorer.inference_available = True
+    assert service.admits(MARKET, prediction)
+    service.scorer.inference_available = False
+    assert not service.admits(MARKET, prediction)
+
+
 def test_session_rolls_market_without_reusing_feed_or_coordinator() -> None:
     async def exercise():
         second = _next_market()

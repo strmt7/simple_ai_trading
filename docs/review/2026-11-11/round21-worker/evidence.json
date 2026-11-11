@@ -1,0 +1,161 @@
+{
+  "base_revision": "4f13534d502c9e6e728308fd2b47040a83e3ddf4",
+  "evidence_sha256": "532c56f4fb55651cb271698f32a288733390f808697a9cb9be34555c04389427",
+  "schema_version": "polymarket-round21-owned-inference-v1",
+  "scope": {
+    "account_requests": 0,
+    "background_service_or_schedule_created": false,
+    "gpu_verified": false,
+    "independent_trading_gateway_complete": false,
+    "market_requests": 0,
+    "native_account_calls_contained": false,
+    "new_economic_observations": 0,
+    "numerical_compilation_and_inference_contained": true,
+    "orders": 0,
+    "performance_benchmark": false,
+    "posix_verified": false,
+    "protected_capture_touched": false,
+    "stable_edges_qualified": 0,
+    "whole_repository_review_complete": false,
+    "windows_cpu_fixture_verified": true
+  },
+  "source_navigation": {
+    "confirmed_round16_source_sha256": "adda420380eb4ae793ec86840f0208240224606699e0f7ea6eb70370bae1c0de",
+    "index_matches_pre_edit_source": true,
+    "native_semantic_receipt_sha256": "61c12698e9a019e3d7f7c3b578c9f5f53b25be8818bf304313a5a645ad607129",
+    "receipt_sha256": "1c68919658cded0ed4f975f3a357c5780cb11651718913f88266bb3383b4ed5c",
+    "source_digest": "65510aaf43cdf958f68a4d8ea657211b"
+  },
+  "verification": {
+    "blocked_caller_returned_before_recovery": true,
+    "earlier_temporary_directory_limit": "focused/corrected used default pytest temporary storage; no isolation claim",
+    "exact_native_core_hull_parity_rows": [
+      1,
+      8,
+      16
+    ],
+    "final_affected_domain_passed": 145,
+    "final_source_snapshot_sha256": "f9bd34a1e61873b6a4d343534e8c43e6464f9e1f59034ae80b738363a0574428",
+    "fixture_only_training": {
+      "backend": "cpu",
+      "candidate_count": 6,
+      "tcn_epochs": 1
+    },
+    "formatting_only_after_final": [
+      {
+        "ast_equal": true,
+        "current_sha256": "7f48e1e2e869770725c5e3961ad6c7943cc89cc860586681728a54b4eca77793",
+        "path": "tests/test_polymarket_autonomous_runtime.py",
+        "tested_sha256": "f790e33ff926fbdd0568ec01e06cb1f1154b97f5d91fa78bdd1cb8f4f249b804"
+      }
+    ],
+    "initial_collection_error": "incorrect runtime-control test import; corrected before behavioral tests",
+    "owned_child_dead_before_recovery": true,
+    "persisted_stop_phases": [
+      "startup",
+      "inference"
+    ],
+    "phases": {
+      "corrected": {
+        "complete_retained_source_snapshot": false,
+        "new_explicit_private_basetemp": false,
+        "receipt_sha256": "cdc9e4d70d131753d10863eeb3945b94a253ea507f1e6c1d00c776044a100b73",
+        "returncode": 0,
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout_sha256": "fc302ad2890b841f40b8e2c3afd45039e29df77ae535a14a1c3fc44a309a1693",
+        "summary": "143 passed in 63.55s (0:01:03)",
+        "unchanged_during_run": true
+      },
+      "final": {
+        "complete_retained_source_snapshot": true,
+        "new_explicit_private_basetemp": true,
+        "receipt_sha256": "051ec0a8f33f799f34423adc6c32b7e43101fb620c5f32f8d2885a57bdd7f774",
+        "returncode": 0,
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout_sha256": "7fcd86f1f0d311c2d1e4ec8ab85e9e9b595671533225fe49554b2bc58697b5d5",
+        "summary": "145 passed in 67.51s (0:01:07)",
+        "unchanged_during_run": true
+      },
+      "focused": {
+        "complete_retained_source_snapshot": false,
+        "new_explicit_private_basetemp": false,
+        "receipt_sha256": "d0ef7f2c8d43427513840deb4ba708ebfd6fee1a2aaadae71a0a78fde8e3eaf3",
+        "returncode": 2,
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout_sha256": "95d5a9d307ec6c6672c4dbc19c718d10c8752d1f76fd47ac4a57662117089791",
+        "summary": "1 error in 9.40s",
+        "unchanged_during_run": true
+      },
+      "protocol": {
+        "complete_retained_source_snapshot": false,
+        "new_explicit_private_basetemp": true,
+        "receipt_sha256": "12755d347e6ad79545d18319abef32e7e63a2832746a042a0119603cbaa68145",
+        "returncode": 0,
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout_sha256": "7c1711deafd84b06db6505d6bde3f4c13628a10289ece80a64563222c4bcfc76",
+        "summary": "10 passed in 26.39s",
+        "unchanged_during_run": true
+      }
+    },
+    "prior_unmodified_live_feature_formatting_findings": 2,
+    "semantic_review": [
+      "shared lifecycle and bootstrap ownership",
+      "target-free bounded serialization and strict decoding",
+      "response identity and backend continuity",
+      "factory and CLI service wiring",
+      "availability and final forecast admission",
+      "persisted Stop teardown before recovery"
+    ],
+    "static": {
+      "entry_bytes": 16260,
+      "final-ruff-check": {
+        "returncode": 0,
+        "summary": "All checks passed!"
+      },
+      "final-ruff-format": {
+        "returncode": 0,
+        "summary": "14 files already formatted"
+      },
+      "formatting_only_after_final": [
+        {
+          "ast_equal": true,
+          "current_sha256": "7f48e1e2e869770725c5e3961ad6c7943cc89cc860586681728a54b4eca77793",
+          "path": "tests/test_polymarket_autonomous_runtime.py",
+          "tested_sha256": "f790e33ff926fbdd0568ec01e06cb1f1154b97f5d91fa78bdd1cb8f4f249b804"
+        }
+      ]
+    },
+    "synthetic_environment_secret_not_inherited": true,
+    "test_modules": [
+      "tests/test_polymarket_round16_worker.py",
+      "tests/test_polymarket_round21_worker.py",
+      "tests/test_polymarket_round21_prospective.py",
+      "tests/test_polymarket_round21_runtime.py",
+      "tests/test_polymarket_round21_session.py",
+      "tests/test_polymarket_round21_live_features.py",
+      "tests/test_polymarket_round21_decision.py",
+      "tests/test_polymarket_autonomous_runtime.py",
+      "tests/test_polymarket_live_cli.py"
+    ],
+    "tested_source_sha256": {
+      "src/simple_ai_trading/polymarket_autonomous_runtime.py": "f2cb5e229cbc81198b045efdc05dfaf5b6104f26a6bab4347b574d756b59e46a",
+      "src/simple_ai_trading/polymarket_inference_process.py": "6b552c656f5d5ecf2ab3470e933d4ae699bcfb109ec62792f4ff90b2abbda9e6",
+      "src/simple_ai_trading/polymarket_live_cli.py": "c78b6b0675ea3987cb973b1a8d515e394370cf7969a884295b4ef521e621baf0",
+      "src/simple_ai_trading/polymarket_round16_worker.py": "dae1af23efe5ea7f064da1539e1159d7bb77bf97876baed9ba530aecdb4d39f7",
+      "src/simple_ai_trading/polymarket_round21_model.py": "4cd03c7a90926c9860a919e01d69b8ff28ee86334e4bb67df4a17c5cbc627b5a",
+      "src/simple_ai_trading/polymarket_round21_prospective.py": "12c204bf5b6f219d3f445f8c36baae4b854a1f686e90f36c051e4a94a8d0c132",
+      "src/simple_ai_trading/polymarket_round21_runtime.py": "d72bc96f904035ef16182317dca91f0d9fcb698ae61c0a4fe13c97bb9eb287e1",
+      "src/simple_ai_trading/polymarket_round21_session.py": "ef36950837738f6b586327f112b67d91464817273c6fc87b48fc99552800008c",
+      "src/simple_ai_trading/polymarket_round21_worker.py": "bf8011384cff8f968fc8f4b64429dd1683786ca393f9ad24b7cd79db60c1a830",
+      "tests/test_polymarket_autonomous_runtime.py": "7f48e1e2e869770725c5e3961ad6c7943cc89cc860586681728a54b4eca77793",
+      "tests/test_polymarket_live_cli.py": "957096d23918201163e2c092a2056d4d526db2914b87bd468cc3b1b9c59542c1",
+      "tests/test_polymarket_round16_worker.py": "a418991dc7640fac1b979c354a41aa8faa11a201315cd57cbce79254f5cc95f1",
+      "tests/test_polymarket_round21_decision.py": "9f3c52c4cb5aca165fe4c59271d1de571a9752c8b00b50489dae82abcf9c4521",
+      "tests/test_polymarket_round21_live_features.py": "9e289401f134c0853a8976492ff8eb6c790b78d8f1a80ff3bdc44e8476e28c21",
+      "tests/test_polymarket_round21_prospective.py": "54559ecd116f3f24f2c857e1a6874192f4361eb7a0d385431b13474a37b52590",
+      "tests/test_polymarket_round21_runtime.py": "ee6513dd7d7662a1459c998fb4c98eea60bfdced1e822fc025b138eb3df6af91",
+      "tests/test_polymarket_round21_session.py": "84b6d2ddea820ad4b3d1fb64afad51899ccf317c735f724e360bd50944b25958",
+      "tests/test_polymarket_round21_worker.py": "a2b659c221cd8220b5e7c73c509920e63ddf85e491031e8c5365f524a2a21557"
+    }
+  }
+}
