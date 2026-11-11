@@ -85,6 +85,8 @@ def capture(plan_path: Path, *, preflight: bool = False) -> dict | None:
                 provider["provider_python"],
                 "-B",
                 "-I",
+                "-X",
+                "pycache_prefix=" + str(paths["output"] / "import-cache"),
                 str(worker),
                 "--plan",
                 str(plan_path.resolve()),
@@ -93,6 +95,7 @@ def capture(plan_path: Path, *, preflight: bool = False) -> dict | None:
             env=json.loads(Path(plan["environment"]).read_bytes()),
             input_text="",
             timeout=150,
+            inherit_environment=False,
         )
         terminal["exit_code"] = completed.returncode
         with paths["controller_log"].open(

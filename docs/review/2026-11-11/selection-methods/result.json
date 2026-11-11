@@ -1,0 +1,245 @@
+{
+  "base_revision": "d8e9f80587b855a23cc2241ceb32e163f6494daa",
+  "contract_sha256": "546299b7df695a0fc6ed19740ddcbb530683a1aeada0d3b2bfb722e9bd7e45ea",
+  "controller_repair": {
+    "fresh_import_cache_prefix": true,
+    "implicit_environment_inheritance_disabled": true,
+    "source_import_security_sandbox_claim": false,
+    "worker_source_unchanged": true
+  },
+  "lifecycle": {
+    "persistent_task_service_or_hook_created": false,
+    "scoped_helper_count_after_terminal": 0,
+    "verified_at_utc": "2026-11-11T04:55:30Z"
+  },
+  "next_boundary": "This exact route is terminal. Do not cycle SSRN routes absent independently changed access or an independently published relevant primary source. Full method assumptions, after-cost causal paths, search provenance and untouched evaluation remain prerequisites for calibrated model qualification.",
+  "private_evidence": {
+    "controller-journal.jsonl": {
+      "bytes": 380,
+      "sha256": "e105970c9233bfbd5eefd20b0566b215fc8ef9c1ae0a5d3f977ee6294353f53c"
+    },
+    "controller-result.json": {
+      "bytes": 174,
+      "sha256": "5c9f8279b21c978c8c7efed7cb7fa0eb3e7ce220710fd29853c0e40e06655a6b"
+    },
+    "controller.log": {
+      "bytes": 1728,
+      "sha256": "597b0b9c4147b09767c7bf25e86ea23b5b04099addb2960761051a494b0eb3d5"
+    },
+    "controls-source.zip": {
+      "bytes": 11566,
+      "sha256": "bef93558206d1687ea8543db514e6516e446adf7c4cb81a4992643e700450dea"
+    },
+    "controls.log": {
+      "bytes": 1593,
+      "sha256": "1ed39d45b579bb9766043759ec4be245ed2f9de539a046380c8b29be11225a7e"
+    },
+    "corrected-source.zip": {
+      "bytes": 11605,
+      "sha256": "e29cdf0214f717a8356994b5a5a456f6728aa7a586687286f2b0f60cab60a44a"
+    },
+    "corrected.stderr.log": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "corrected.stdout.log": {
+      "bytes": 1123,
+      "sha256": "7e7df506a1953e42704fefdc80733520780f79eecedccc23aac4461524d1a607"
+    },
+    "discovery.json": {
+      "bytes": 17242,
+      "sha256": "14c2451cd58be74da82f7446f520fd4e65e887dc4755e27bf9250f2f843b07c0"
+    },
+    "final-verification.json": {
+      "bytes": 906,
+      "sha256": "78df6a04e1d4fbc094585a41520984961bfc39f49264f36caa47dc334803abe1"
+    },
+    "focused.stderr.log": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "focused.stdout.log": {
+      "bytes": 5698,
+      "sha256": "0d2b755be9133c3381294b82a5576dbb306b2d6ed1722c9a3c0af218f6773c45"
+    },
+    "native-controls/summary.json": {
+      "bytes": 2200,
+      "sha256": "23af72c63118240089431430eef41685d2d5126a31c7fb8cdd4769edc550e305"
+    },
+    "paper/admission.json": {
+      "bytes": 340,
+      "sha256": "392d3fe1ea2c8779984cac77154e9a276477c0497e39b032d18bb0e342061b26"
+    },
+    "paper/journal.jsonl": {
+      "bytes": 437,
+      "sha256": "d87f1e55e739704d25e8f06340650ff97815a22e0a0e8b270f112f40819c33f9"
+    },
+    "paper/native-result.json": {
+      "bytes": 1832,
+      "sha256": "44024e4ad3d54f420d18a6e0cecf0fe18ea310f9acf7f2a7c3129ea77a66d07a"
+    },
+    "paper/robots-http.json": {
+      "bytes": 937,
+      "sha256": "5b1b4182a49e7591ed5784b70335ad7ea5fa02f1e0d66f153364af523a1de0f8"
+    },
+    "paper/robots.raw": {
+      "bytes": 524289,
+      "sha256": "a2fa53391b78c6ecd8672417642b2c8c5dd57b1c7b2a0f00a4eff915af0839cf"
+    },
+    "plan.local.json": {
+      "bytes": 2019,
+      "sha256": "8004517f3054e773793a502ccddb4815b3cda5bc09f3f61eabe9e93398317e56"
+    },
+    "preflight-env-restored.json": {
+      "bytes": 169,
+      "sha256": "6dbfd95f35cf50b56d9ff1521b303f6707c4ba5aee741d10af06df92f02de3e2"
+    },
+    "preflight.json": {
+      "bytes": 1050,
+      "sha256": "2f0c530d9146af9411b87571fe4e5304ee1eea3b97d504d012141aac0a1459d6"
+    },
+    "provenance.json": {
+      "bytes": 2500,
+      "sha256": "43e26d5a3bf8b1aacab0a787a7b3dfd84741b51292b65908e1e1bc4f0e683bcf"
+    },
+    "provider-environment.local.json": {
+      "bytes": 7202,
+      "sha256": "10af93cb892e025b1776095906320bd3e68031ff4e91330b474bd20b0b4eae50"
+    },
+    "provider-inspection.stderr.log": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "provider-inspection.stdout.log": {
+      "bytes": 244,
+      "sha256": "f3441a8fb812a230ccfe3dd5cdb904c9b7ed12281fc0af5b3560e3fa7b0f3040"
+    },
+    "provider-pdf.local.json": {
+      "bytes": 1260,
+      "sha256": "bc6b756db0ba74e26ae41877350ea79ce217563be067853fa217e1b30dc3f55f"
+    },
+    "provider-verification.log": {
+      "bytes": 56,
+      "sha256": "48edc2dac07ab0b69d366cd56185ca485c3c9a2933b90243f1f93f8dcf08435b"
+    },
+    "provider.local.json": {
+      "bytes": 1134,
+      "sha256": "35e93bac32c48a925029113f43c015eff2a8d201f6cbc0ce420c667aad7a445e"
+    },
+    "restored-source.zip": {
+      "bytes": 11605,
+      "sha256": "e29cdf0214f717a8356994b5a5a456f6728aa7a586687286f2b0f60cab60a44a"
+    },
+    "restored-verification.json": {
+      "bytes": 907,
+      "sha256": "5f86a64f00544e42049ac60f7fbb19f5767c45fd1ecdd24778a43a1295af5198"
+    },
+    "restored.stderr.log": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "restored.stdout.log": {
+      "bytes": 100,
+      "sha256": "76ad25bb0c6892d58334160d4e79d70c2c1c4841fa039be300479d3dedd5912e"
+    },
+    "runtime-check.log": {
+      "bytes": 2,
+      "sha256": "7eb70257593da06f682a3ddda54a9d260d4fc514f645237f5ca74b08f8da61a6"
+    },
+    "runtime.local.json": {
+      "bytes": 8075,
+      "sha256": "b3a76f61bbc02a6affcd4dcc53922e045a688472e39ae414d7342e39fda53c43"
+    },
+    "verification.json": {
+      "bytes": 664,
+      "sha256": "afb85f01ea6b04653fa8cd51b27b29225c751c363ce11c25c0fae57282b43fd6"
+    }
+  },
+  "provenance": {
+    "coverage": "Named contract/plan/intent/journal/provenance/receipt/result/adjudication/evidence metadata; raw/protected/payload/snapshot material and oversize files excluded.",
+    "exact_delivery_matches": 0,
+    "global_novelty_claim": false,
+    "matches": 4,
+    "metadata_bytes": 14794360,
+    "metadata_files": 1647,
+    "oversize_exclusions": 5,
+    "receipt_sha256": "43e26d5a3bf8b1aacab0a787a7b3dfd84741b51292b65908e1e1bc4f0e683bcf"
+  },
+  "provider": {
+    "cache_identity": "01fbef3b628f772e4aba9724b6ced11c0f211d4d3bf51e38d1b9d0039eac997b",
+    "environment_inheritance_disabled": true,
+    "fresh_import_cache_prefix": true,
+    "installation_or_other_task_mutation": false,
+    "lock_sha256": "6a42b0ff5ff6c63c843c6329ce823b819fd4f6f068e68d1836ab6dbec96e8f2f",
+    "pypdf": "7.0.0",
+    "runtime_manifest_sha256": "b3a76f61bbc02a6affcd4dcc53922e045a688472e39ae414d7342e39fda53c43",
+    "tool_sha256": "e84a0e54ee07e4e13d3d2f35491f641730096a78126068f232c1f2397a467d8c",
+    "verification_sha256": "48edc2dac07ab0b69d366cd56185ca485c3c9a2933b90243f1f93f8dcf08435b",
+    "version": "0.9.5+flitzzip.portable2"
+  },
+  "provider_drift": {
+    "initial_source_preflight_rejected_stale_lock": true,
+    "new_cohort_already_installed": true,
+    "new_cohort_readonly_verification_passed": true,
+    "other_task_files_or_processes_modified": false,
+    "prior_cache_identity": "53669a7d23f4c6ebbfccf11c6cb711b3ee0b817511c198e3b10250eb48971c70"
+  },
+  "raw_source_reconstructible_from_repository": false,
+  "recorded_at_utc": "2026-11-11T04:57:20.581953+00:00",
+  "result_sha256": "eb7cb4b6e1e83be80762b509ed31cfe934fe3c25fae190b84c5256b5852bc2bc",
+  "schema_version": "selection-methods-terminal-source-review-v1",
+  "scope": {
+    "account_or_venue_order_access": false,
+    "admitted_full_method": false,
+    "benchmark": false,
+    "calibrated_statistical_significance": false,
+    "dependency_installations": 0,
+    "financial_counts": [
+      206,
+      65,
+      37,
+      0
+    ],
+    "formulas_implemented": false,
+    "model_trained": false,
+    "native_provider_unchanged": true,
+    "new_financial_observation": false,
+    "release": false
+  },
+  "source": {
+    "admitted": false,
+    "controller_exit_code": 0,
+    "document_requests": 0,
+    "failure": "Robots HTTP 403 response reached its retained-body cap. Robots policy unqualified; native request aborted before any PDF request.",
+    "native_markdown_characters": 0,
+    "native_status_code": null,
+    "native_success": false,
+    "overflow_bytes": 1,
+    "raw_headers_kept_private": true,
+    "robots_byte_ceiling": 524288,
+    "robots_http_status": 403,
+    "robots_retained_bytes": 524289,
+    "robots_server": "cloudflare",
+    "same_article_as_prior_abstract": true,
+    "study_identifier": "SSRN 7198158",
+    "transport_and_extraction_admitted": false,
+    "url": "https://papers.ssrn.com/sol3/Delivery.cfm/7198158.pdf?abstractid=7198158&mirid=1"
+  },
+  "verification": {
+    "focused_check": "1 passed in 0.48s",
+    "local_launcher_failures": "One unit-test lane and one controller preflight omitted the required Windows system environment and failed during networking imports before source access. Corrected launchers reuse the validated explicit environment.",
+    "native_controls_passed": true,
+    "native_controls_reused_for_fixture_only_changes": true,
+    "native_loopback_server_stopped": true,
+    "native_supervised_loopback_controls": 8,
+    "original_fixture_failure": "Raw CRLF fixture identity differed from LF-normalized provider source identity; only fixture corrected.",
+    "ruff": "Targeted changed Python source and test checks passed.",
+    "tested_source_sha256": {
+      "docs/review/2026-11-10/pdf-source/controls.py": "9187ef3df12e29f6fd94865bdf2672cfb9d2e57238928da5de86401fb82285cb",
+      "tests/test_capture_crawl4ai_pdf.py": "4b07b54acac4002934bceaa958056d66d709b151f23c161267ad4efc3c67a876",
+      "tools/capture_crawl4ai_pdf.py": "c891570c0521742e59ba19184b24797767adf7f2d40c5d505ecf83344081283c",
+      "tools/crawl4ai_pdf_source.py": "7642a2a3122cfac3ee6855d4bbea380b00de4e5a314dcac36b594d7c5e45ccd7"
+    },
+    "whole_product_test_claim": false
+  }
+}

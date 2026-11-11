@@ -102,11 +102,11 @@ before continuing an affected family. None supplies a qualified stable edge.
   rejects late results and prevents overlapping abandoned decisions. These
   component boundaries do not complete independent trading supervision.
 - [Selection integrity](review/2026-11-10/selection-risk-integrity/review.md)
-  repairs candidate-copy/tie false passes. Its guard remains heuristic. Qualified
-  causal economic targets, dependence-aware inference and held-out utility
-  precede expanded training. Use GPU only with verified backend/precision and
-  useful data/bottleneck evidence. LLMs may veto/reduce risk and cannot override
-  deterministic Stop, ownership or closing.
+  prevents copy/tie false passes; its guard remains heuristic. The
+  [method source](review/2026-11-11/selection-methods/review.md) failed before PDF
+  access. Causal net targets, dependence and untouched utility precede training.
+  Require verified GPU backend/precision and useful data/bottleneck evidence.
+  LLMs may veto/reduce risk; they cannot override Stop, ownership or closing.
 - [Native operator controls](review/2026-11-11/operator-control/review.md) give
   Stop priority during Pause, reject stale control-status samples and label both
   dry-run venue states simulated. Release presentation checks and 53 focused

@@ -481,6 +481,13 @@ plumbing when the avoided work justifies its maintenance and verification cost;
 do not duplicate generic controllers for each date or optimize prompts endlessly.
 Never claim a measured token/speed saving from output-byte counts alone.
 
+When disabling environment inheritance, preserve the declared native platform
+prerequisites, including `SystemRoot` on Windows. An empty environment can break
+Python's Windows networking imports before application code runs. Reuse the
+validated explicit launch profile and preflight its real entry point; do not
+rediscover the same omission in later controllers or consume source access to
+diagnose it. Keep unrelated credentials and proxy settings out of that profile.
+
 Record material decisions in the existing handoff/evidence locations, avoiding
 duplicate status-only artifacts or pushes. Report exactly what changed, what
 failed, what remains unknown, and the next actionable condition. A whole-repo

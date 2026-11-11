@@ -1,0 +1,71 @@
+{
+  "admission": [
+    "Actual HTTP 200 and robots allowance, public peer and unencoded complete unencrypted PDF within frozen bounds.",
+    "Native Crawl4AI success and complete substantive pages; native placeholder status alone is excluded.",
+    "Separate author/title/version and mathematical-method review before formula implementation; discovery values cannot supply missing equations."
+  ],
+  "authority": "Documentation-only separately selected source copy under resumed-session delegation; no market, fee, account, order, credential, protected-capture or training access.",
+  "base_revision": "d8e9f80587b855a23cc2241ceb32e163f6494daa",
+  "contract_sha256": "546299b7df695a0fc6ed19740ddcbb530683a1aeada0d3b2bfb722e9bd7e45ea",
+  "controller": {
+    "path": "tools/capture_crawl4ai_pdf.py",
+    "sha256": "c891570c0521742e59ba19184b24797767adf7f2d40c5d505ecf83344081283c"
+  },
+  "financial_counts_unchanged": [
+    206,
+    65,
+    37,
+    0
+  ],
+  "frozen_at_utc": "2026-11-11T04:54:17.498885+00:00",
+  "limits": {
+    "body_seconds": 30,
+    "document_bytes": 8388608,
+    "document_requests_maximum": 1,
+    "maximum_pages": 64,
+    "minimum_each_page_characters": 20,
+    "minimum_total_characters": 1000,
+    "overflow_bytes": 1,
+    "owned_process_seconds": 150,
+    "redirects": 0,
+    "retries": 0,
+    "robots_bytes": 524288,
+    "robots_requests": 1,
+    "socket_connect_seconds": 10,
+    "socket_read_seconds": 10
+  },
+  "preflight_sha256": "6dbfd95f35cf50b56d9ff1521b303f6707c4ba5aee741d10af06df92f02de3e2",
+  "private_plan_sha256": "0a907a62c3f183c1302db807c8a4a46a4cb0f19c99d5cebf8d3ceec42666a2a6",
+  "provenance": {
+    "coverage": "Named contract/plan/intent/journal/provenance/receipt/result/adjudication/evidence metadata; raw/protected/payload/snapshot material and oversize files excluded.",
+    "exact_delivery_matches": 0,
+    "global_novelty_claim": false,
+    "matches": 4,
+    "metadata_bytes": 14794360,
+    "metadata_files": 1647,
+    "oversize_exclusions": 5,
+    "receipt_sha256": "43e26d5a3bf8b1aacab0a787a7b3dfd84741b51292b65908e1e1bc4f0e683bcf"
+  },
+  "provider": {
+    "cache_identity": "01fbef3b628f772e4aba9724b6ced11c0f211d4d3bf51e38d1b9d0039eac997b",
+    "environment_inheritance_disabled": true,
+    "fresh_import_cache_prefix": true,
+    "installation_or_other_task_mutation": false,
+    "lock_sha256": "6a42b0ff5ff6c63c843c6329ce823b819fd4f6f068e68d1836ab6dbec96e8f2f",
+    "pypdf": "7.0.0",
+    "runtime_manifest_sha256": "b3a76f61bbc02a6affcd4dcc53922e045a688472e39ae414d7342e39fda53c43",
+    "tool_sha256": "e84a0e54ee07e4e13d3d2f35491f641730096a78126068f232c1f2397a467d8c",
+    "verification_sha256": "48edc2dac07ab0b69d366cd56185ca485c3c9a2933b90243f1f93f8dcf08435b",
+    "version": "0.9.5+flitzzip.portable2"
+  },
+  "question": "Can the independently discovered publisher PDF supply the complete 2026 Unified Deflated Sharpe Ratio method, assumptions and limitations for a future statistically calibrated replacement of the preliminary score guard?",
+  "schema_version": "selection-methods-pdf-source-contract-v1",
+  "selection": "Search discovery selects the exact publisher delivery URL only. Same article identifier as terminal abstract capture; not a novel paper or a repair of its failed capture. No abstract, journal, DOI, redirect target or alias will be fetched.",
+  "terminal_rule": "Any refusal, challenge, redirect, cap, missing page or extraction failure consumes this PDF route; retain all raw/partial bytes and do not alias, follow, raise caps, retry or implement unseen formulas. No statistical or financial qualification follows from source availability alone.",
+  "url": "https://papers.ssrn.com/sol3/Delivery.cfm/7198158.pdf?abstractid=7198158&mirid=1",
+  "verification_sha256": "5f86a64f00544e42049ac60f7fbb19f5767c45fd1ecdd24778a43a1295af5198",
+  "worker": {
+    "path": "tools/crawl4ai_pdf_source.py",
+    "sha256": "7642a2a3122cfac3ee6855d4bbea380b00de4e5a314dcac36b594d7c5e45ccd7"
+  }
+}

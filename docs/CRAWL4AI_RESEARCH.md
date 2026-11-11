@@ -48,7 +48,9 @@ Installation/help success does not prove a successful source extraction.
 ## Evidence and access rules
 
 1. Read `RESEARCH_CAPTURE_BOUNDARIES.md` and the exact controlling contract.
-   Check the canonical URL against retained journals and source bindings first.
+   Check the canonical URL and stable article identifier against retained result,
+   journal, receipt, adjudication and source-binding records first. A lookup
+   limited to contract/plan filenames does not cover these records.
    Reuse admissible saved content; changing the crawler is not a retry trigger.
 2. Before access, record the distinct research question, selected canonical URL,
    provider/version, new output path, page/time limits and terminal consequence.
@@ -132,6 +134,8 @@ with `python -m tools.capture_crawl4ai_pdf --plan <private-plan> --preflight`
 before the single authorized invocation without `--preflight`. The controller
 reserves a durable one-use journal before launching the hidden owned child;
 reusing any output is rejected, including after a failed launch.
+The supervised worker uses an explicit environment and a fresh import-cache
+prefix. `-B` alone prevents cache writes but still permits cached-bytecode reads.
 
 Both robots and document requests have no retries, redirects, proxies, profiles,
 authentication or LLM. Robots must be qualified before the document request;
