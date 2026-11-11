@@ -139,6 +139,14 @@ and explicit rearm require their own verified continuation stages.
 
 ### SAFE-02 — Durable risk policy and recovery state
 
+The [cash-peak repair](review/2026-11-11/cash-peak-risk/review.md) fixes a reproduced
+Binance capital-admission defect: retracement of settled gains was treated as zero
+drawdown while lifetime PnL stayed positive. The guard reconstructs that scoped
+peak from existing retained history, so a restart does not clear it. This adds no
+policy store or activation authority. Full marked high-water, day baselines,
+external cash movements, policy/model/generation binding, reservations, quarantine
+and explicit rearm remain required below. Polymarket behavior is unchanged.
+
 Define a versioned policy contract separate from transactional mutable state,
 using existing authoritative ledgers rather than another competing store. Cover
 scope, units, allocation/exposure, leverage and margin headroom, order/rate/price

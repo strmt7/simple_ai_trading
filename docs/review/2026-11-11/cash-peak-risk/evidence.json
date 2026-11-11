@@ -1,0 +1,149 @@
+{
+  "authority": {
+    "goal_complete": false,
+    "historical_results_modified": false,
+    "market_requests": 0,
+    "new_financial_observations": 0,
+    "orders": 0,
+    "protected_captures_touched": false,
+    "real_account_requests": 0,
+    "real_credentials_used": false,
+    "schedules_services_or_startup_hooks_created": false,
+    "training_or_benchmark_runs": 0
+  },
+  "baseline": "abf36376761fc198cd89fc7ef4f3208be5b0225a",
+  "captured_at_utc": "2026-11-11T11:43:10.262958+00:00",
+  "changed_document_sha256": {
+    "docs/CAPITAL_PROTECTION_ARCHITECTURE.md": "f15be4bd122dfb82c7b7e6e2dfba45b462c0f830c95b4e215040bd92ddcfc8de",
+    "docs/CONTINUATION.md": "3f4619e68e772e3f4efe26edac009d103c6ac76cc41f34c73c09cba4747e7d6a",
+    "docs/DEVELOPMENT_PLAN.md": "4b3e560a3f9eff5075d41c40119b9f9ee061214b295059ac60c696cd4e761ce5",
+    "docs/DEVELOPMENT_WORK_GRAPH.json": "5ad6e2f4406dee8a3a5bef2f6a9ee791cbc491ebec2318a8b062fadc466f93b8",
+    "docs/review/2026-11-11/cash-peak-risk/review.md": "cbdaf49a1d2b1f99b9e931f4e53eae37c32ad73dbbef02afac94e0dd15fb2b2e"
+  },
+  "fixture_corrections": [
+    "Constructor normalization is unchanged; invalid effective fields are injected after construction.",
+    "Ordering tests do not rewrite enrolled history; its integrity rejection was retained.",
+    "The existing snapshot wrapper now accepts and asserts strict coherent reading."
+  ],
+  "implemented": [
+    "Exact reconstruction of retained chronological settled-PnL peak with grouped equal-time closes",
+    "Current qualified unrealized PnL counted once against that peak",
+    "Configured capital-reference-normalized drawdown enforced by the common autonomous capital guard and propagated to the entry gate",
+    "Existing owned risk-close paths used on a drawdown breach",
+    "Strict coherent capital snapshot; invalid effective loss-limit/count values reject admission"
+  ],
+  "limitations": [
+    "The denominator is configured risk capital, not peak NAV; the metric is scoped to retained settled PnL plus the current qualified mark.",
+    "Rational arithmetic preserves declared decimal values; it does not create native provenance or recover earlier lost precision.",
+    "No new policy store, activation, rollback protection or whole-product acceptance was implemented.",
+    "Polymarket behavior, financial census and accepted-edge qualification are unchanged."
+  ],
+  "numerical_example": {
+    "capital_reference_fraction": "2/25",
+    "configured_limit": "0.05",
+    "current_unrealized_pnl_quote": "0",
+    "lifetime_pnl_quote": "20",
+    "new_admission": "blocked",
+    "old_admission": "allowed with reported drawdown zero",
+    "reference_quote": "1000",
+    "retracement_quote": "80",
+    "settled_peak_pnl_quote": "100",
+    "settled_pnl_quote": [
+      "100",
+      "-80"
+    ]
+  },
+  "package_complete": false,
+  "phase_receipts": {
+    "before": {
+      "exit_code": 1,
+      "log_sha256": {
+        "stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout": "d686c3d153b34205e73c035ca7063ffd5f37addbc72f85070565339f3849ed58"
+      },
+      "receipt_sha256": "abad438c5a23b51b11a71196d23881bf35083b466affcfff6b464f78cf2c0bf4"
+    },
+    "domain": {
+      "exit_code": 1,
+      "log_sha256": {
+        "stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout": "557474fe14b1366dd8f07da3f23294db455dc4fab0bd4449099c1d49db0d6cd4"
+      },
+      "receipt_sha256": "da8944f8daecb65e0b793b02ab6571c12880db92984befaa4ecc48fc5ac16a8f"
+    },
+    "domain-final": {
+      "exit_code": 0,
+      "log_sha256": {
+        "stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout": "c29b77ac0c7e01c9af1503dc6b83382caf76c37a3dd332bf3080e0c861c109e0"
+      },
+      "receipt_sha256": "c8ad62a47245434a541d0a84c705572bb63798ea8615a13c3c7a59dbb98b75ae"
+    }
+  },
+  "remaining": [
+    "Versioned policy activation and persistent parameter/model/generation binding",
+    "Complete native marked high-water and UTC-day baselines",
+    "External cash movements, account/FX/margin qualification",
+    "Omitted/replaced intermediate fill/mark history, transactional reservations and quarantine",
+    "Explicit rearm, independent supervision and universal writer integration"
+  ],
+  "result_sha256": "8aebcd03a27e3418840f828dc39d5cc57a3d9c013208ad6ef237ca34f293a490",
+  "schema_version": "settled-cash-peak-capital-evidence-v1",
+  "verification": {
+    "final_affected_cases_passed": 264,
+    "original_source_regressions_failed": 3,
+    "physical_reboot_or_live_account_qualification": false,
+    "static_checks": {
+      "format": {
+        "exit_code": 0,
+        "log_sha256": {
+          "stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "stdout": "177f260a5645724013185e4b140c7045cc39e56c0c97b120f5cb23599f85f0de"
+        },
+        "name": "format"
+      },
+      "ruff": {
+        "exit_code": 0,
+        "log_sha256": {
+          "stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "stdout": "82b3e6a6c090a57601d22943bd23fca9218d1031dbe5a7b754092f9a156b4f18"
+        },
+        "name": "ruff"
+      },
+      "terminology": {
+        "exit_code": 0,
+        "log_sha256": {
+          "stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "stdout": "0ea6905b288c43c28f866dcb0df9885bcf26b2698079328822c03b416102e4e1"
+        },
+        "name": "terminology"
+      },
+      "vulture": {
+        "exit_code": 0,
+        "log_sha256": {
+          "stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "stdout": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "name": "vulture"
+      }
+    },
+    "tested_source_sha256": {
+      "src/simple_ai_trading/autonomous.py": "eb40c601913df90939dd125051aebcb771d1bdc9e693c6afe0d82fdbe17bd852",
+      "src/simple_ai_trading/binance_owned_execution.py": "25ce3f202cba7acfabedf12231a5bdff0528e32baa2c6cd2ff707e4951511e5c",
+      "src/simple_ai_trading/binance_runtime_control.py": "b6b5c58f474d76b2df3ad50ed2d20b1a2031e41fd078b95a203d34dc9e665cd4",
+      "src/simple_ai_trading/binance_spot_cash.py": "31b82c79811a4c12cde00ec5affa32f498d768fef2247041f69851dd0a4d9bc7",
+      "src/simple_ai_trading/capital_drawdown.py": "61cd7b955339b7a70038ae0856ffe4cc601face1f24921d6a1878f24a633cbe3",
+      "src/simple_ai_trading/position_transactions.py": "743275b5e92337bd24825c7b4e4f2d79c1ecb7556bf02d8d56cadfcbe148d97b",
+      "src/simple_ai_trading/positions.py": "0baf01909be1135d56d887fa7499fc4d3ebccf74f04844d49c61f288c7378154",
+      "src/simple_ai_trading/runtime_control.py": "518064c99eaf7a0492c2bbaa8ce15abdad68757b7f5fa3da96996c3649add815",
+      "src/simple_ai_trading/types.py": "bd91cb6210b8fca83eff2a6c112d99c127099616c2ead65a308aa5f9778d0479",
+      "tests/conftest.py": "090974084e8c25f16dc18ed084269d75edb9fdb5f4d7d15e6e72bb23853d9abc",
+      "tests/test_autonomous.py": "79a4bdf347f21136a932d8bf943cb3830058621d90ae1ad97e7086d99cebf608",
+      "tests/test_autonomous_capital_valuation.py": "f37b02c0dc1867966e73cc0a38b35f0eb29d628e7c52e590e98ac01e45d0afce",
+      "tests/test_autonomous_cash_peak.py": "1119df1a79b7e4adbd36f77daf3949fc7c5b946f47d1e13c34d26e4ba7a748a2",
+      "tests/test_autonomous_spot_cash.py": "6afd9deea4af3ba31354c6f6ca6aaf85caa8a27a9a19e0382b27525517f0052a",
+      "tests/test_autonomous_spot_inventory.py": "15409804f10f5f0e97eef4abdcfc1ed63ffe7e20212afaf856511358ba2c3091"
+    }
+  },
+  "work_package": "SAFE-02"
+}

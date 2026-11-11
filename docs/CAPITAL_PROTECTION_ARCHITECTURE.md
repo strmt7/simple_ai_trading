@@ -1,5 +1,14 @@
 # Capital protection and final release verification
 
+The [settled-cash peak repair](review/2026-11-11/cash-peak-risk/review.md) corrects
+Binance admission after gains followed by retracement, including reconstruction
+from retained history after restart. Its risk-capital-normalized metric is not a
+complete marked/account NAV high-water or a persisted policy contract. The
+[operator workflow](review/2026-11-11/recovery-workflow/review.md) now connects pending
+inspection, explicit bounded collection and separate retained Spot application.
+Full durable policy, independent supervision and broader recovery remain open;
+dated component statements below retain their original scope.
+
 The [Spot terminal application](review/2026-11-11/terminal-application/review.md)
 reconciles receipt-backed cumulative closes through the paired journal while Stop
 remains latched. It also repairs unowned empty-lease release for both venues and

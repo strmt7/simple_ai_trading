@@ -26,6 +26,7 @@ from __future__ import annotations
 import json
 import logging
 import math
+import sqlite3
 import time
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
@@ -301,6 +302,7 @@ class CapitalGuard:
     session_loss: float
     consecutive_losses: int
     force_close: bool = False
+    realized_peak_drawdown: float | None = None
 
 
 @dataclass(frozen=True)
@@ -713,6 +715,23 @@ def _loss_budget_guard(
     mark_market_type: str = "",
 ) -> CapitalGuard:
     """Apply cash-aware native loss limits; unqualified metrics never admit risk."""
+    limits = (
+        strategy.max_daily_loss_pct,
+        strategy.max_session_loss_pct,
+        strategy.max_drawdown_limit,
+    )
+    if (
+        any(
+            isinstance(value, bool)
+            or not isinstance(value, (int, float))
+            or not math.isfinite(value)
+            or value < 0
+            for value in limits
+        )
+        or type(strategy.max_consecutive_losses) is not int
+        or strategy.max_consecutive_losses < 0
+    ):
+        return CapitalGuard(False, "risk-policy-loss-limits-unqualified", 0.0, 0.0, 0)
     mark = (
         float(mark_price)
         if not isinstance(mark_price, bool)
@@ -721,7 +740,10 @@ def _loss_budget_guard(
         and mark_price > 0.0
         else None
     )
-    snapshot = store.load_snapshot()
+    try:
+        snapshot = store.load_snapshot(strict=True)
+    except (OSError, sqlite3.Error, ValueError, TypeError, OverflowError):
+        return CapitalGuard(False, "cash-valuation-ledger-unqualified", 0.0, 0.0, 0)
     opens, closed = snapshot
     consecutive_losses = 0
     for trade in reversed(closed):
@@ -803,6 +825,28 @@ def _loss_budget_guard(
         return CapitalGuard(
             False, "cash-valuation-nonfinite", 0.0, 0.0, consecutive_losses
         )
+    from .capital_drawdown import settled_cash_drawdown
+
+    try:
+        cash_peak = settled_cash_drawdown(
+            closed,
+            unrealized_pnl_quote=unrealized,
+            reference_cash_quote=reference,
+            observed_at_ms=now_ms_value,
+        )
+        drawdown = float(cash_peak.reference_fraction)
+    except (ValueError, TypeError):
+        return CapitalGuard(
+            False, "cash-valuation-history-unqualified", 0.0, 0.0, consecutive_losses
+        )
+    except OverflowError:
+        return CapitalGuard(
+            False, "cash-valuation-nonfinite", 0.0, 0.0, consecutive_losses
+        )
+    if not math.isfinite(drawdown):
+        return CapitalGuard(
+            False, "cash-valuation-nonfinite", 0.0, 0.0, consecutive_losses
+        )
     if strategy.max_daily_loss_pct > 0.0 and daily_loss >= strategy.max_daily_loss_pct:
         return CapitalGuard(
             False,
@@ -811,6 +855,7 @@ def _loss_budget_guard(
             session_loss,
             consecutive_losses,
             force_close=True,
+            realized_peak_drawdown=drawdown,
         )
     if (
         strategy.max_session_loss_pct > 0.0
@@ -823,6 +868,17 @@ def _loss_budget_guard(
             session_loss,
             consecutive_losses,
             force_close=True,
+            realized_peak_drawdown=drawdown,
+        )
+    if strategy.max_drawdown_limit > 0.0 and drawdown >= strategy.max_drawdown_limit:
+        return CapitalGuard(
+            False,
+            f"drawdown-lockout:{drawdown:.2%}",
+            daily_loss,
+            session_loss,
+            consecutive_losses,
+            force_close=True,
+            realized_peak_drawdown=drawdown,
         )
     if (
         strategy.max_consecutive_losses > 0
@@ -835,8 +891,16 @@ def _loss_budget_guard(
             session_loss,
             consecutive_losses,
             force_close=False,
+            realized_peak_drawdown=drawdown,
         )
-    return CapitalGuard(True, "allowed", daily_loss, session_loss, consecutive_losses)
+    return CapitalGuard(
+        True,
+        "allowed",
+        daily_loss,
+        session_loss,
+        consecutive_losses,
+        realized_peak_drawdown=drawdown,
+    )
 
 
 def _last_activity_ms(store: PositionsStore) -> int:
@@ -871,7 +935,11 @@ def _entry_gate(
         mark_symbol=symbol,
         mark_market_type=market_type,
     )
-    drawdown = capital_guard.session_loss
+    drawdown = (
+        capital_guard.realized_peak_drawdown
+        if capital_guard.realized_peak_drawdown is not None
+        else capital_guard.session_loss
+    )
     confidence = _directional_confidence(decision)
     min_confidence = (
         objective.training.signal_threshold
@@ -946,8 +1014,6 @@ def _entry_gate(
         )
     elif not capital_guard.allowed:
         reason = capital_guard.reason
-    elif strategy.max_drawdown_limit > 0.0 and drawdown >= strategy.max_drawdown_limit:
-        reason = f"drawdown-lockout:{drawdown:.2%}"
     else:
         reason = "allowed"
 

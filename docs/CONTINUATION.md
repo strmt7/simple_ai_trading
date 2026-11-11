@@ -63,11 +63,11 @@ before continuing an affected family. None supplies a qualified stable edge.
   close their reproduced gaps. Bound legacy version 2 retains owned recovery;
   new exposure requires verified migration. Account UID, coordinated rollback,
   universal writer fencing and complete recovery/rearm remain open.
-  [Valuation admission](review/2026-11-11/capital-valuation/review.md) covers
-  legacy/Futures marks, quote units and finite capital. [Signed residuals](review/2026-11-11/signed-residual/review.md)
+  [Valuation](review/2026-11-11/capital-valuation/review.md) and
+  [cash peak](review/2026-11-11/cash-peak-risk/review.md) bind scoped marks and retained cash.
+  [Signed residuals](review/2026-11-11/signed-residual/review.md)
   preserve positive quantities. [Spot application](review/2026-11-11/terminal-application/review.md)
-  reconciles receipt-backed cumulative closes under ownerless Stop. Empty-lease
-  release and zero-fill close-ID reuse are repaired. [Operator recovery](review/2026-11-11/recovery-operator/review.md)
+  reconciles cumulative cash under ownerless Stop. [Operator recovery](review/2026-11-11/recovery-operator/review.md)
   adds offline CLI inspect/apply and native expert registration. Authenticated
   [stopped collection](review/2026-11-11/close-collection/review.md) now has bounded original-order reads.
   [Operator collection](review/2026-11-11/recovery-workflow/review.md) connects pending inspection,

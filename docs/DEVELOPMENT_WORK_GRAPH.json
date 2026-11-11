@@ -234,10 +234,14 @@
       "scope_refs": [
         "docs/CAPITAL_PROTECTION_ARCHITECTURE.md",
         "src/simple_ai_trading/runtime_control.py",
-        "src/simple_ai_trading/runtime_control_storage.py"
+        "src/simple_ai_trading/runtime_control_storage.py",
+        "src/simple_ai_trading/autonomous.py",
+        "src/simple_ai_trading/capital_drawdown.py"
       ],
-      "status": "planned",
-      "title": "Durable policy, loss and recovery authority"
+      "status": "partially_complete",
+      "title": "Durable policy, loss and recovery authority",
+      "progress_evidence": "docs/review/2026-11-11/cash-peak-risk/evidence.json",
+      "remaining": "Versioned policy activation/binding; native marked high-water/day baselines and external flows; reservations, model/generation identity, quarantine and explicit rearm."
     },
     {
       "depends_on": [

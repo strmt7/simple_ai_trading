@@ -221,9 +221,9 @@ def test_guard_uses_one_coherent_snapshot(tmp_path, monkeypatch) -> None:
     store.record_open(_apply_open_order(position(), receipt("BUY", "1")))
     original, calls = store.load_snapshot, []
 
-    def snapshot():
-        calls.append(True)
-        return original()
+    def snapshot(*, strict=False):
+        calls.append(strict)
+        return original(strict=strict)
 
     monkeypatch.setattr(store, "load_snapshot", snapshot)
     guard = _loss_budget_guard(
