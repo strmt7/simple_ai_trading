@@ -10,12 +10,32 @@ import httpx
 from py_clob_client_v2.exceptions import PolyApiException
 
 
-class PolymarketSdkTransport:
-    """Bound socket waits and observed response work without replaying a request.
+def _limits(timeout_seconds: float, maximum_response_bytes: int) -> float:
+    timeout = float(timeout_seconds)
+    if not math.isfinite(timeout) or timeout <= 0:
+        raise ValueError("SDK transport timeout must be finite and positive")
+    if (
+        isinstance(maximum_response_bytes, bool)
+        or not isinstance(maximum_response_bytes, int)
+        or maximum_response_bytes <= 0
+    ):
+        raise ValueError("SDK response byte limit must be a positive integer")
+    return timeout
 
-    An observed deadline cannot interrupt a stalled native call. Independent
-    process containment remains necessary for a hard wall-clock deadline.
-    """
+
+def _check_origin(origin: httpx.URL, endpoint: str) -> httpx.URL:
+    url = httpx.URL(endpoint)
+    if (
+        (url.scheme, url.host, url.port) != (origin.scheme, origin.host, origin.port)
+        or url.userinfo
+        or url.fragment
+    ):
+        raise ValueError("SDK request differs from its configured origin")
+    return url
+
+
+class PolymarketSdkTransport:
+    """Own a terminatable HTTP child; injected offline transports stay local."""
 
     def __init__(
         self,
@@ -26,15 +46,55 @@ class PolymarketSdkTransport:
         transport: httpx.BaseTransport | None = None,
     ) -> None:
         self._origin = httpx.URL(base_url)
-        self.timeout_seconds = float(timeout_seconds)
-        if not math.isfinite(self.timeout_seconds) or self.timeout_seconds <= 0:
-            raise ValueError("SDK transport timeout must be finite and positive")
-        if (
-            isinstance(maximum_response_bytes, bool)
-            or not isinstance(maximum_response_bytes, int)
-            or maximum_response_bytes <= 0
-        ):
-            raise ValueError("SDK response byte limit must be a positive integer")
+        self.timeout_seconds = _limits(timeout_seconds, maximum_response_bytes)
+        self.maximum_response_bytes = maximum_response_bytes
+        if transport is None:
+            from .polymarket_http_process import PolymarketHttpProcess
+
+            self._client = PolymarketHttpProcess(
+                base_url=base_url,
+                timeout_seconds=self.timeout_seconds,
+                maximum_response_bytes=maximum_response_bytes,
+            )
+        else:
+            self._client = _InlineSdkTransport(
+                base_url=base_url,
+                timeout_seconds=self.timeout_seconds,
+                maximum_response_bytes=maximum_response_bytes,
+                transport=transport,
+            )
+
+    def request(
+        self,
+        method: str,
+        endpoint: str,
+        *,
+        headers: Mapping[str, str] | None = None,
+        data: object = None,
+        params: Mapping[str, object] | None = None,
+    ) -> object:
+        _check_origin(self._origin, endpoint)
+        return self._client.request(
+            method, endpoint, headers=headers, data=data, params=params
+        )
+
+    def close(self) -> None:
+        self._client.close()
+
+
+class _InlineSdkTransport:
+    """Run the native exchange once inside the owned child or an offline fixture."""
+
+    def __init__(
+        self,
+        *,
+        base_url: str,
+        timeout_seconds: float,
+        maximum_response_bytes: int,
+        transport: httpx.BaseTransport | None = None,
+    ) -> None:
+        self._origin = httpx.URL(base_url)
+        self.timeout_seconds = _limits(timeout_seconds, maximum_response_bytes)
         self.maximum_response_bytes = maximum_response_bytes
         self._client = httpx.Client(
             http2=True,
@@ -52,14 +112,7 @@ class PolymarketSdkTransport:
         data: object = None,
         params: Mapping[str, object] | None = None,
     ) -> object:
-        url = httpx.URL(endpoint)
-        if (
-            (url.scheme, url.host, url.port)
-            != (self._origin.scheme, self._origin.host, self._origin.port)
-            or url.userinfo
-            or url.fragment
-        ):
-            raise ValueError("SDK request differs from its configured origin")
+        url = _check_origin(self._origin, endpoint)
         request_headers = {
             "User-Agent": "py_clob_client_v2",
             "Accept": "*/*",
@@ -129,3 +182,7 @@ class PolymarketSdkTransport:
 
     def close(self) -> None:
         self._client.close()
+
+    @property
+    def is_closed(self) -> bool:
+        return self._client.is_closed

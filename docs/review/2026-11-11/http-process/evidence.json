@@ -1,0 +1,136 @@
+{
+  "base_revision": "74796e5c429c353db691e2d96354c50dbee1076a",
+  "dependencies": {
+    "dependency_install_or_upgrade": false,
+    "httpx": "0.28.1",
+    "py-clob-client-v2": "1.2.1",
+    "uv_lock_sha256": "b1cfcb732433e7f4294ccbab128838435a72e9ab6025ea4622816ea51bde6f06"
+  },
+  "evidence_sha256": "e9fcfcba69cefcdb57de53bc2f846c5d738469487bda83fdc79488be8e911150",
+  "navigation": {
+    "current_index_freshness_claim": false,
+    "method": "exact known transport, caller and ledger symbols; no new broad navigation",
+    "pre_change_candidate_worktree_sha256": "f5d880fbc7087cdba8c6149f21cfad733a7dccaedf1bd94ca64b8cd39d140651",
+    "pre_change_transport_matches_prior_candidate": true,
+    "prior_semantic_receipt_sha256": "826843e9dd5663ce3cfffbb8d5b103771e10d48fa504ac6ab4e38a45814101c6"
+  },
+  "schema_version": "polymarket-owned-sdk-http-v1",
+  "scope": {
+    "authenticated_account_requests": 0,
+    "background_service_or_schedule_created": false,
+    "credential_security_sandbox": false,
+    "external_network_requests_by_tests": 0,
+    "independent_trading_gateway_complete": false,
+    "native_venue_orders": 0,
+    "new_economic_observations": 0,
+    "ordinary_sdk_http_contained": true,
+    "owned_loopback_http_used": true,
+    "parent_sdk_signing_contained": false,
+    "performance_benchmark": false,
+    "posix_execution_verified": false,
+    "protected_capture_touched": false,
+    "qualified_stable_edges": 0,
+    "separate_public_session_contained": false,
+    "whole_product_qualification": false,
+    "windows_native_children_verified": true
+  },
+  "verification": {
+    "close_interrupts_blocked_native_call": true,
+    "complete_rejection_status_retained": true,
+    "entry_bytes": 16349,
+    "exact_signed_string_and_header_roundtrip": true,
+    "fault_reaped_before_later_explicit_get": true,
+    "final_affected_domain_passed": 296,
+    "fixture_correction": "raw literal plus ast.parse before any child launch; prior logs and full source snapshots retained",
+    "initial_domain_failure": "seven new child fixtures failed at startup because formatted embedded Python reinterpreted a newline escape",
+    "ledger_unknown_persists_after_native_stall_and_reopen": true,
+    "native_decimal_boolean_null_repeated_query_encoding_parity": true,
+    "no_automatic_request_replay": true,
+    "one_native_child_for_successive_requests": true,
+    "phases": {
+      "corrected": {
+        "json_sha256": "f1a29876f0341554c3bb5184a559922fef81f22428447c0c947a2cb98a9dbd44",
+        "returncode": 0,
+        "source_zip_sha256": "13f36331428d88ba4156835d851a7daf14657759daa4e0ec5df22f38ad6beb6f",
+        "stderr_log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout_log_sha256": "ff301da9cf61215f7acdd854a980a78f4b972dc4b8a3e186b4e52489106cb6cd",
+        "summary": "37 passed in 17.37s",
+        "unchanged_after_test": true
+      },
+      "domain": {
+        "json_sha256": "2cacf096bfde270d05e5294d06845913670a82af60eec9259cb4c2c7ab30f8e8",
+        "returncode": 1,
+        "source_zip_sha256": "9795f1336900f7c2a32d27c4811326d430716890ee0c5b59ab3d9c1137732ad2",
+        "stderr_log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout_log_sha256": "63c4fa853a5fcdfaae03387735feb7e1f14b5fdf7e9de31f2d34eb5df1600ea2",
+        "summary": "7 failed, 288 passed in 43.29s",
+        "unchanged_after_test": true
+      },
+      "final": {
+        "json_sha256": "2c23b47c950e1e4651da44341b3621ac1085bc0871f503ea21c5a7b795ea0063",
+        "returncode": 0,
+        "source_zip_sha256": "d57dad201de8636257e5d3b979f363a2e672510e74e611f154b53d4fcb09b8e5",
+        "stderr_log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout_log_sha256": "b6e4ab73ec1ada9d840b8544f1166b692df492933cc429995a85bfd0d75fda88",
+        "summary": "296 passed in 56.76s",
+        "unchanged_after_test": true
+      },
+      "focused": {
+        "json_sha256": "16afde1aae70fac4d491faa5db632fa83bbe2e55d00c456c6cd12ceeb1d1ab2b",
+        "returncode": 0,
+        "source_zip_sha256": "fec13a389ab4f78e396a4fef735322fdc9df683304d396432184b88f27a01b04",
+        "stderr_log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout_log_sha256": "edb8e3b207e1948c6b33b91d866133022ca9f61662cc53c21c029f00cd976749",
+        "summary": "34 passed in 11.44s",
+        "unchanged_after_test": true
+      }
+    },
+    "semantic_review": [
+      "all ordinary SDK GET POST DELETE factory overrides route to the facade",
+      "original bounded native adapter and pinned exception semantics",
+      "source origin validation on both sides",
+      "Windows suspended enrollment and owned process cleanup",
+      "lazy startup and single bounded exchange",
+      "deadline and sequence binding",
+      "failed generation teardown before a later request",
+      "per-request authentication material stays out of bootstrap and diagnostics",
+      "UNKNOWN classification and durable reopen",
+      "close concurrency and explicit noncreating recovery semantics"
+    ],
+    "startup_and_capacity_deadlines_exercised": true,
+    "static": {
+      "ruff-check": {
+        "returncode": 0,
+        "stdout_sha256": "a4443afdcfb6d7363adb285762515ccf7cf50473b1a05c20c1a50f6bed4d26b0"
+      },
+      "ruff-format": {
+        "returncode": 0,
+        "stdout_sha256": "55b5a2cb0bdd55641f1b6dad60805a4c29520e41d507781e75aa8ec8d6ed9a10"
+      }
+    },
+    "synthetic_environment_sentinel_not_inherited": true,
+    "test_modules": [
+      "tests/test_polymarket_http_process.py",
+      "tests/test_polymarket_sdk_transport.py",
+      "tests/test_polymarket_live_v2.py",
+      "tests/test_polymarket_live.py",
+      "tests/test_polymarket_autonomous_runtime.py",
+      "tests/test_polymarket_live_cli.py"
+    ],
+    "tested_source_sha256": {
+      "src/simple_ai_trading/polymarket_autonomous_runtime.py": "f2cb5e229cbc81198b045efdc05dfaf5b6104f26a6bab4347b574d756b59e46a",
+      "src/simple_ai_trading/polymarket_http_process.py": "4d92f955366dc497ea09629ba354ca355054b1405f3cefe5e2e7efa538b1a669",
+      "src/simple_ai_trading/polymarket_inference_process.py": "6b552c656f5d5ecf2ab3470e933d4ae699bcfb109ec62792f4ff90b2abbda9e6",
+      "src/simple_ai_trading/polymarket_live.py": "24bc60beb1b2b843e46187c309f9beeafd425af6fea03c2730f7f1e1642ba7ca",
+      "src/simple_ai_trading/polymarket_live_v2.py": "0ff79e5828b13255ea3a2c52aed11ede50f58f653d76a1ea735834089f1f78a6",
+      "src/simple_ai_trading/polymarket_sdk_transport.py": "339e956667bd33dc1a526cc040eb04cd93cedd54dcc63239bdc75b1ca3842138",
+      "src/simple_ai_trading/windows_owned_job.py": "82dd0e80340c8388f20d6871863fdf5075d4f271d0c7fe9276a295db962f05ae",
+      "tests/test_polymarket_autonomous_runtime.py": "7f48e1e2e869770725c5e3961ad6c7943cc89cc860586681728a54b4eca77793",
+      "tests/test_polymarket_http_process.py": "f8a74a6de503327782d9f2d2d295cc3986af59f6578613ce614e9f4894392dd2",
+      "tests/test_polymarket_live.py": "e03984e12ad59cdaf44f8a23dc209e05b7955d005d11296720940217c70a5655",
+      "tests/test_polymarket_live_cli.py": "957096d23918201163e2c092a2056d4d526db2914b87bd468cc3b1b9c59542c1",
+      "tests/test_polymarket_live_v2.py": "9ff1aa18f72d1b7995e0b84ea4b63dd21d314f4e9c0d90d5ef9fed84d5fb1a39",
+      "tests/test_polymarket_sdk_transport.py": "288dbde6ddaf0452595995bb15cb25ce48b1761b1445e287a91c3842c1417620"
+    }
+  }
+}

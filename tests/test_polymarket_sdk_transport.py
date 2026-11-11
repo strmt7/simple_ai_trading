@@ -291,6 +291,7 @@ def test_owned_loopback_drip_exceeds_total_observed_deadline_without_idle_timeou
     )
     thread.start()
     try:
+        transport._client.start(timeout_seconds=5)
         with pytest.raises(PolyApiException, match="response deadline exceeded"):
             transport.request("GET", f"http://127.0.0.1:{server.server_port}/drip")
     finally:
