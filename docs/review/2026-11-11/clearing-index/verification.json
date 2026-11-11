@@ -1,0 +1,42 @@
+{
+  "application_code_modified": false,
+  "base_revision": "ec4e5f9aa1aefb97bd0f7f3cc28fb5f435942b3a",
+  "created_at_utc": "2026-11-11T04:28:56.950538+00:00",
+  "financial_qualification_supplied_by_tests": false,
+  "goal_complete": false,
+  "native_result_sha256": "86b8c50f652f956ba6f9e0a96e01e9b65e90d70e304b2bdc091d51fcfabe0c35",
+  "old_financial_results_rewritten": false,
+  "result_sha256": "e8811f12fbe55c48907c60eac13a4e0fbb7f67cd3220040ad1e94e9e8aa105a9",
+  "schema_version": "clearing-index-source-verification-v1",
+  "source_journal_sha256": "160195cddf954e82851f8274c5e208417e43a827b8ad5db4d87fc2d78bccf64e",
+  "source_result_sha256": "8fbb788d4b4e40b0cd3001eb45852b1ecdab3fcb84235b9ec53e7bbd2aedb01b",
+  "verification": {
+    "application_domain_tests_rerun": 0,
+    "entry_bytes": 16353,
+    "focused_passed": 37,
+    "modules": [
+      "tests/test_research_registry_binding.py",
+      "tests/test_handoff_archive.py"
+    ],
+    "source_phase_receipt_sha256": "02c50a44fa1873529da2de73f719b8d43118237d81b3ccfc5da1a62a8f334b46",
+    "source_requests_by_checks": 0,
+    "source_snapshot_sha256": "cb297440bf4dc5f3935ab4921701b0fc97db4806ba416dbed4e47d721b9d0f59",
+    "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "stdout_sha256": "9726c21cb8116075055a4b9b149d0cf1b182707444abedc07a46b8a00ce2d49f",
+    "tested_source_sha256": {
+      "docs/CONTINUATION.md": "1c75cae880c530eddfaaffa29b8514a07bbc9db4598e269bae37c6c618004b47",
+      "docs/CRAWL4AI_RESEARCH.md": "47b17cac00a531d63ccf10201f383a2366e25a7640e51089bb45b6779db13ab9",
+      "docs/model-research/action-value/accepted-edge-profitability-durability-audit-v1-2026-08-30.json": "2958e9764dd83821d67993212ef9b25bcfe0a1be45fbe9bf6c810a0161130f25",
+      "docs/model-research/structural-edge-priority-registry-v1.json": "b6b2dbf65e57933faffc6bb0a935840e9adb1b74d581b3aeb4020c3d52264668",
+      "docs/review/2026-11-11/clearing-index/contract.json": "fb8be0d55d296995c7c0486a77622ef2326ea920ed4732fe011443b607fc1863",
+      "docs/review/2026-11-11/clearing-index/registry-update.json": "11062f2afb61c0f77343f0eb1231dc27aa334f4ba2a278b828aac1c6955a996d",
+      "docs/review/2026-11-11/clearing-index/result.json": "f14312c1843544697673b3e85bd73745a234d9689a5d4e8e5c4f899ea4e0e14c",
+      "docs/review/2026-11-11/clearing-index/review.md": "c1d4cbe9ad49a3151b48877841daac6b4701105791ed0cf6e686c3c4b5516c71",
+      "tests/test_handoff_archive.py": "c6d08fa68a8148f1f3cd73d1d35b4156384f74d6b619e6db3880acfef58d5339",
+      "tests/test_research_registry_binding.py": "6e35de9b939fe271e49b739f5f93fb473eec54daa3ffbb43017b3f20799f9827",
+      "tools/read_handoff_archive.py": "9bdaf23c2c7ac24d3a5f3957ccf1270e49aa1dc6802801b5309884baf87fd39c",
+      "tools/verify_research_registry_binding.py": "ad4734e2f3ebf997045d9c7b2438bc49812caab5a0bf686b88e1a1fe555a467e"
+    },
+    "unchanged_during_verification": true
+  }
+}

@@ -1057,6 +1057,13 @@
         "price_requests_authorized": false,
         "new_hypothesis": false,
         "new_economic_observations": 0
+      },
+      "clearing_rules_index_review_2026_11_11": {
+        "path": "docs/review/2026-11-11/clearing-index/result.json",
+        "result_sha256": "8fbb788d4b4e40b0cd3001eb45852b1ecdab3fcb84235b9ec53e7bbd2aedb01b",
+        "classification": "One-use official clearing-rules HTML source returned HTTP 202, explicit challenge header and one Markdown character; no rule, formula, revision or account applicability admitted. No fallback or dependent economics.",
+        "account_fee_trigger_unchanged": true,
+        "new_economic_observations": 0
       }
     },
     {
@@ -4693,7 +4700,7 @@
       ]
     }
   ],
-  "result_sha256": "25196890d5e4733a17a9af740582e33c145f0791e2459059a4f98ccb8b044bf2",
+  "result_sha256": "2ad8ec89f780486222374a041ec0bf3ac2763626a2dae7f2c8dfbd875bbd63c0",
   "schema_version": "structural-edge-priority-registry-v1",
   "terminal_do_not_repeat": [
     {
@@ -5757,6 +5764,6 @@
       "canonical_result_sha256": "e68dbd4532f61fe399e2b04ae9d64d25041731b6bffa847289ea2b01d4da3a3d"
     }
   ],
-  "updated_at_utc": "2026-11-11T01:46:10.511524+00:00",
+  "updated_at_utc": "2026-11-11T04:25:28.348893+00:00",
   "usage_rule": "advance_the_highest_ranked_hypothesis_whose_retry_trigger_is_satisfied_otherwise_do_not_repeat_a_blocked_or_terminal_screen"
 }

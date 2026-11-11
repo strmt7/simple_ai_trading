@@ -1,0 +1,64 @@
+{
+  "account_fee_trigger_changed": false,
+  "authority": {
+    "account_requests": 0,
+    "benchmark": false,
+    "exact_http_request_count_claim": false,
+    "fee_requests": 0,
+    "market_requests": 0,
+    "new_economic_observations": 0,
+    "new_hypothesis": false,
+    "orders": 0,
+    "persistent_task_created": false,
+    "protected_capture_touched": false,
+    "qualified_stable_edges": 0,
+    "top_level_crawl_navigations": 1,
+    "training": false
+  },
+  "base_revision": "ec4e5f9aa1aefb97bd0f7f3cc28fb5f435942b3a",
+  "challenge_bypass_attempted": false,
+  "contract_sha256": "cd9303e9615e98f246830e3821d8524adbf44049862a224928d5ad039c640e08",
+  "controller_sha256": "c879a5a3c84bad4a8a46f4c221b0a01605dbdcffea94d04199bfb1e2a63ed8ee",
+  "created_at_utc": "2026-11-11T04:25:28.331505+00:00",
+  "journal_sha256": "160195cddf954e82851f8274c5e208417e43a827b8ad5db4d87fc2d78bccf64e",
+  "native": {
+    "cache_status": "miss",
+    "error_message": "",
+    "markdown_characters": 1,
+    "markdown_sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+    "native_bytes": 4398,
+    "native_sha256": "86b8c50f652f956ba6f9e0a96e01e9b65e90d70e304b2bdc091d51fcfabe0c35",
+    "redirected_status_code": 202,
+    "retained_headers": {
+      "content-type": "text/html; charset=UTF-8",
+      "server": "CloudFront",
+      "x-amzn-waf-action": "challenge"
+    },
+    "status_code": 202,
+    "success": true
+  },
+  "next_source_requirement": "Independently published relevant complete final revision/redline or independently observed access-policy change; no neighboring HTML fallback for the same claim.",
+  "preflight_sha256": "af114e8aadf2842150cdb90e70c5869d9514c01154b382a4fdaa351e7dee1437",
+  "provenance": {
+    "global_novelty_claim": false,
+    "matching_records": 0,
+    "metadata_bytes": 4506580,
+    "metadata_files": 1102,
+    "oversize_exclusions": 1,
+    "receipt_sha256": "033d42c43f114414c3a57518863609b7c47dfb46d3db839a1b749985f8de0e60"
+  },
+  "provider": {
+    "all_readonly_checks_passed": true,
+    "cache_identity": "53669a7d23f4c6ebbfccf11c6cb711b3ee0b817511c198e3b10250eb48971c70",
+    "installed_or_modified": false,
+    "provider_record_sha256": "3328134c7a3c4b80b7aef3729632541ac4a0f69163536dca0c129f0698110a6c",
+    "version": "0.9.5+flitzzip.portable2"
+  },
+  "raw_native_reconstructible_from_repository": false,
+  "redirected_url": "https://www.binance.com/en/about-legal/clearing-rules",
+  "result_sha256": "8fbb788d4b4e40b0cd3001eb45852b1ecdab3fcb84235b9ec53e7bbd2aedb01b",
+  "rulebook_or_formula_or_effective_revision_admitted": false,
+  "schema_version": "clearing-rules-index-source-result-v1",
+  "source_admission": false,
+  "url": "https://www.binance.com/en/about-legal/clearing-rules"
+}

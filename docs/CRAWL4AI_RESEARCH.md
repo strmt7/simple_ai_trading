@@ -100,6 +100,13 @@ Missing provider setup is an explicit tool limitation, not permission to claim
 that Crawl4AI was used. Qualify a provider change only in its own affected lane;
 do not repeat a broad website matrix or trading suite for ordinary page reading.
 
+After a Binance HTML source returns an explicit challenge and empty content,
+do not cycle through neighboring legal/support pages to recover the same claim.
+Reuse the source-bound access result. Further work needs an independently
+published relevant document/revision or independently observed access-policy
+change, with its own deduplication and frozen admission. This route guidance
+does not authorize challenge bypass or change financial/account retry gates.
+
 ## Bounded native PDF extraction
 
 For separately selected primary PDFs, the HTML CLI is insufficient: the current

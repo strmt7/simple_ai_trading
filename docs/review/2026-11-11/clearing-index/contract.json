@@ -1,0 +1,54 @@
+{
+  "admission": {
+    "effective_status": 200,
+    "native_success": true,
+    "redirect_policy": "Only HTTPS www.binance.com and the same English clearing-rules legal document, with canonical path/trailing-slash variation. No terms page, locale fallback or different host.",
+    "scope": "Actual official clearing-rule content or substantive publisher document index with exact in-scope publisher links; no challenge, empty page or unrelated site shell.",
+    "substantive_markdown_characters_minimum": 500
+  },
+  "authority": {
+    "account_requests": 0,
+    "authenticated_requests": 0,
+    "market_requests": 0,
+    "orders": 0,
+    "protected_captures": false
+  },
+  "base_revision": "ec4e5f9aa1aefb97bd0f7f3cc28fb5f435942b3a",
+  "budget": {
+    "browser_auxiliary_requests_are_not_an_exact_single_get": true,
+    "external_llm_personal_profile_stealth_or_challenge_bypass": false,
+    "output_review_byte_ceiling": 33554432,
+    "owned_controller_timeout_seconds": 150,
+    "page_timeout_ms": 45000,
+    "robots_check": true,
+    "top_level_navigations": 1
+  },
+  "capture_boundaries_sha256": "f971726268ba2e630b2ebbe8d5bcf02f7b3f23b92ccb16efe23aef82cebe950f",
+  "controller_sha256": "c879a5a3c84bad4a8a46f4c221b0a01605dbdcffea94d04199bfb1e2a63ed8ee",
+  "documents": [
+    {
+      "name": "clearing-rules-index",
+      "output": "native-result.json",
+      "url": "https://www.binance.com/en/about-legal/clearing-rules"
+    }
+  ],
+  "frozen_at_utc": "2026-11-11T04:12:50.341140+00:00",
+  "intent_sha256": "cd9303e9615e98f246830e3821d8524adbf44049862a224928d5ad039c640e08",
+  "preflight_sha256": "af114e8aadf2842150cdb90e70c5869d9514c01154b382a4fdaa351e7dee1437",
+  "prepared_intent_sha256": "35813bf90a6b26c577a40c18097fb86356b8862d4e0d76b2a837adf11dbe9631",
+  "provider_cache_identity": "53669a7d23f4c6ebbfccf11c6cb711b3ee0b817511c198e3b10250eb48971c70",
+  "provider_record_sha256": "3328134c7a3c4b80b7aef3729632541ac4a0f69163536dca0c129f0698110a6c",
+  "provider_version": "0.9.5+flitzzip.portable2",
+  "question": "Does the independently publisher-linked clearing-rules landing page identify a complete authoritative rulebook or current final revision that can resolve the retained option reference/inverse-sign source gate? Index links alone cannot settle a payoff formula.",
+  "schema_version": "one-use-clearing-rules-index-source-v1",
+  "source_selection": {
+    "discovery": "Publisher-hosted Belgium Terms search result exposed the exact clearing-rules URL; snippets supply the URL only.",
+    "global_novelty_claim": false,
+    "governing_clause_admission_from_search_snippets": false,
+    "lookup_sha256": "033d42c43f114414c3a57518863609b7c47dfb46d3db839a1b749985f8de0e60",
+    "matching_metadata_records": 0,
+    "metadata_files": 1102,
+    "previous_notice_and_clearing_pdf_refetch_permitted": false
+  },
+  "terminal_consequence": "The attempt is one-use including launch, denial, timeout or wrong-scope failure. Retain native result and journal, no retry or alias, no economic/book/account access. Only a separately deduplicated and frozen exact publisher document may follow a successful in-scope index extraction."
+}
