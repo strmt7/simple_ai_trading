@@ -2,7 +2,7 @@
 
 namespace simple_ai_trading::native_contract {
 
-inline constexpr const wchar_t* kCommandContractSha256 = L"d782539180f6bb2ebd7f9871f491a4bb84981d71fde2fccacc805fc83f1714f2";
+inline constexpr const wchar_t* kCommandContractSha256 = L"e5700ba8408311aafee1b70324dcf506384fe564239553fd3b96e27346bd1cff";
 
 struct CommandOptionSpec {
     const wchar_t* flags;
@@ -1015,14 +1015,16 @@ inline constexpr CommandOptionSpec kOptions_reconcile[] = {
 };
 
 inline constexpr CommandOptionSpec kOptions_recover_close[] = {
-    {L"--action", L"action", L"inspect, apply", L"inspect", L"", L"1", false, true, false},
+    {L"--action", L"action", L"inspect, collect, apply", L"inspect", L"", L"1", false, true, false},
     {L"--data-dir", L"data_dir", L"", L"", L"existing owned execution directory", L"1", true, true, false},
     {L"--client-order-id", L"client_order_id", L"", L"", L"exact retained bot closing client ID", L"1", true, true, false},
-    {L"--expected-scope-sha256", L"expected_scope_sha256", L"", L"", L"apply only: execution scope digest from inspection", L"1", false, true, false},
+    {L"--expected-scope-sha256", L"expected_scope_sha256", L"", L"", L"collect/apply: original execution scope digest from inspection", L"1", false, true, false},
     {L"--expected-recovery-sha256", L"expected_recovery_sha256", L"", L"", L"apply only: retained closing evidence digest from inspection", L"1", false, true, false},
-    {L"--runtime-control", L"runtime_control", L"", L"", L"apply only: existing enrolled Binance control database", L"1", false, true, false},
-    {L"--runtime-enrollment", L"runtime_enrollment", L"", L"", L"apply only: independent control enrollment", L"1", false, true, false},
-    {L"--execution-enrollment", L"execution_enrollment", L"", L"", L"apply only: independent execution enrollment", L"1", false, true, false},
+    {L"--expected-request-sha256", L"expected_request_sha256", L"", L"", L"collect only: original unresolved request digest from inspection", L"1", false, true, false},
+    {L"--read-timeout-seconds", L"read_timeout_seconds", L"", L"", L"collect only: shared authenticated read deadline, 1–60 seconds (default 20)", L"1", false, true, false},
+    {L"--runtime-control", L"runtime_control", L"", L"", L"collect/apply: existing enrolled Binance control database", L"1", false, true, false},
+    {L"--runtime-enrollment", L"runtime_enrollment", L"", L"", L"collect/apply: independent control enrollment", L"1", false, true, false},
+    {L"--execution-enrollment", L"execution_enrollment", L"", L"", L"collect/apply: independent execution enrollment", L"1", false, true, false},
     {L"--json", L"json", L"", L"false", L"", L"0", false, false, false},
 };
 
@@ -1480,7 +1482,7 @@ inline constexpr CommandSpec kCommands[] = {
     {L"positions", L"usage: simple-ai-trading positions [-h] [--stats] [--learning]", kOptions_positions, 2},
     {L"prepare", L"usage: simple-ai-trading prepare [-h] [--historical HISTORICAL] [--model MODEL] [--limit LIMIT] [--batch-size BATCH_SIZE] [--preset {balanced,custom,quick,thorough}] [--epochs EPOCHS] [--learning-rate LEARNING_RATE] [--l2-penalty L2_PENALTY] [--seed SEED] [--start-cash START_CASH] [--walk-forward] [--no-walk-forward] [--walk-forward-train WALK_FORWARD_TRAIN] [--walk-forward-test WALK_FORWARD_TEST] [--walk-forward-step WALK_FORWARD_STEP] [--calibrate-threshold] [--no-calibrate-threshold] [--online-doctor]", kOptions_prepare, 18},
     {L"reconcile", L"usage: simple-ai-trading reconcile [-h] [--json] [--output OUTPUT] [--quantity-tolerance QUANTITY_TOLERANCE]", kOptions_reconcile, 3},
-    {L"recover-close", L"usage: simple-ai-trading recover-close [-h] [--action {inspect,apply}] --data-dir DATA_DIR --client-order-id CLIENT_ORDER_ID [--expected-scope-sha256 EXPECTED_SCOPE_SHA256] [--expected-recovery-sha256 EXPECTED_RECOVERY_SHA256] [--runtime-control RUNTIME_CONTROL] [--runtime-enrollment RUNTIME_ENROLLMENT] [--execution-enrollment EXECUTION_ENROLLMENT] [--json]", kOptions_recover_close, 9},
+    {L"recover-close", L"usage: simple-ai-trading recover-close [-h] [--action {inspect,collect,apply}] --data-dir DATA_DIR --client-order-id CLIENT_ORDER_ID [--expected-scope-sha256 EXPECTED_SCOPE_SHA256] [--expected-recovery-sha256 EXPECTED_RECOVERY_SHA256] [--expected-request-sha256 EXPECTED_REQUEST_SHA256] [--read-timeout-seconds READ_TIMEOUT_SECONDS] [--runtime-control RUNTIME_CONTROL] [--runtime-enrollment RUNTIME_ENROLLMENT] [--execution-enrollment EXECUTION_ENROLLMENT] [--json]", kOptions_recover_close, 11},
     {L"report", L"usage: simple-ai-trading report [-h] [--account] [--doctor] [--no-doctor] [--online] [--input INPUT] [--model MODEL]", kOptions_report, 6},
     {L"risk", L"usage: simple-ai-trading risk [-h] [--model MODEL] [--paper] [--live] [--leverage LEVERAGE] [--json]", kOptions_risk, 5},
     {L"shell", L"usage: simple-ai-trading shell [-h]", nullptr, 0},

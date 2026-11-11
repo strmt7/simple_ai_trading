@@ -593,10 +593,10 @@ def _build_parser() -> argparse.ArgumentParser:
 
     parser_recover_close = subparsers.add_parser(
         "recover-close",
-        help="inspect or apply retained owned Spot closing evidence locally",
+        help="inspect owned closes, explicitly collect status/fills, or apply retained Spot evidence",
     )
     parser_recover_close.add_argument(
-        "--action", choices=["inspect", "apply"], default="inspect"
+        "--action", choices=["inspect", "collect", "apply"], default="inspect"
     )
     parser_recover_close.add_argument(
         "--data-dir",
@@ -609,26 +609,35 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     parser_recover_close.add_argument(
         "--expected-scope-sha256",
-        help="apply only: execution scope digest from inspection",
+        help="collect/apply: original execution scope digest from inspection",
     )
     parser_recover_close.add_argument(
         "--expected-recovery-sha256",
         help="apply only: retained closing evidence digest from inspection",
     )
     parser_recover_close.add_argument(
+        "--expected-request-sha256",
+        help="collect only: original unresolved request digest from inspection",
+    )
+    parser_recover_close.add_argument(
+        "--read-timeout-seconds",
+        type=float,
+        help="collect only: shared authenticated read deadline, 1–60 seconds (default 20)",
+    )
+    parser_recover_close.add_argument(
         "--runtime-control",
         type=Path,
-        help="apply only: existing enrolled Binance control database",
+        help="collect/apply: existing enrolled Binance control database",
     )
     parser_recover_close.add_argument(
         "--runtime-enrollment",
         type=Path,
-        help="apply only: independent control enrollment",
+        help="collect/apply: independent control enrollment",
     )
     parser_recover_close.add_argument(
         "--execution-enrollment",
         type=Path,
-        help="apply only: independent execution enrollment",
+        help="collect/apply: independent execution enrollment",
     )
     parser_recover_close.add_argument("--json", action="store_true")
     parser_recover_close.set_defaults(func=command_recover_close)
@@ -7389,7 +7398,7 @@ def command_risk(args: argparse.Namespace) -> int:
 def command_recover_close(args: argparse.Namespace) -> int:
     from .binance_close_application_cli import run_close_recovery
 
-    status, payload = run_close_recovery(args)
+    status, payload = run_close_recovery(args, load_runtime_fn=load_runtime)
     output = sys.stdout if status == 0 else sys.stderr
     if getattr(args, "json", False):
         print(json.dumps(payload, indent=2), file=output)
@@ -7405,6 +7414,13 @@ def command_recover_close(args: argparse.Namespace) -> int:
                 file=output,
             )
             print(f"  scope_sha256={payload['execution_scope_sha256']}", file=output)
+            print(f"  request_sha256={payload['request_sha256']}", file=output)
+            print(f"  recovery_sha256={payload['recovery_sha256'] or 'absent'}", file=output)
+        elif status == 0 and payload["action"] == "collect":
+            print(
+                f"  collection={payload['collection_outcome']} order_read={payload['order_read_state']} trades_read={payload['trades_read_state']}",
+                file=output,
+            )
             print(f"  recovery_sha256={payload['recovery_sha256']}", file=output)
         elif status == 0:
             result = payload["result"]
@@ -7415,6 +7431,11 @@ def command_recover_close(args: argparse.Namespace) -> int:
         elif payload["application_outcome"] == "unknown":
             print(
                 "  Application may have committed. Inspect and retry this application; do not resubmit its order.",
+                file=output,
+            )
+        elif payload["action"] == "collect":
+            print(
+                f"  collection={payload['collection_outcome']} order_read={payload['order_read_state']} trades_read={payload['trades_read_state']}; inspect retained state before retrying; never resubmit the order.",
                 file=output,
             )
     return status

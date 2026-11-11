@@ -70,7 +70,9 @@ before continuing an affected family. None supplies a qualified stable edge.
   release and zero-fill close-ID reuse are repaired. [Operator recovery](review/2026-11-11/recovery-operator/review.md)
   adds offline CLI inspect/apply and native expert registration. Authenticated
   [stopped collection](review/2026-11-11/close-collection/review.md) now has bounded original-order reads.
-  CLI collection, guided forms, futures/legacy application, account qualification and rearm remain open.
+  [Operator collection](review/2026-11-11/recovery-workflow/review.md) connects pending inspection,
+  bounded reads and Spot application with cached/uncertain outcomes. Guided
+  forms, futures/legacy application, account qualification and rearm remain open.
 - The [Spot roundtrip](review/2026-11-10/roundtrip-command/review.md) routes both
   writes through the enrolled durable gateway. Only the receipt-owned second
   SELL uses closing authority through Stop. Actual scope, cash, commission/fee
@@ -128,7 +130,7 @@ scope; alert inventory, scanner coverage and quota remain separate. Skip exhaust
 providers until verified availability. [Feedback repair](review/2026-11-11/feedback-repair/review.md)
 passes 48 affected cases plus local Ruff, terminology and Vulture scopes, preserving
 historical evidence. Markdown/workflow diagnostics and current whole-suite status
-remain open. Next local slice: `EXEC-01`; eligible financial work retains priority.
+remain open. Next local slice: `SAFE-02`; eligible financial work retains priority.
 
 Preserve licensing and readable development source. [Commercial protection](WORK_PRIORITIES.md#commercial-code-protection-recorded-not-implemented)
 still needs a measured distribution boundary and clean-host qualification.

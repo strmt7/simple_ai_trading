@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import json
+import hashlib
+import re
 import sqlite3
 from contextlib import closing
 from dataclasses import asdict, dataclass
@@ -115,10 +117,19 @@ def _evidence(
 
 
 def collect_closing_recovery(
-    client: BinanceClient, store: PositionsStore, *, client_id: str
+    client: BinanceClient,
+    store: PositionsStore,
+    *,
+    client_id: str,
+    expected_request_sha256: str | None = None,
 ) -> ClosingRecoveryEvidence | None:
     """Retain one exact pending close's terminal fills; never submit or release it."""
     validate_closing_client_id(client_id)
+    if expected_request_sha256 is not None and (
+        not isinstance(expected_request_sha256, str)
+        or re.fullmatch(r"[0-9a-f]{64}", expected_request_sha256) is None
+    ):
+        raise OpenIntentError("closing recovery request digest is invalid")
     journal = store.opening_intents
     if not journal.path.exists():
         return None
@@ -129,6 +140,11 @@ def collect_closing_recovery(
             if pending is None:
                 return None
             position, request_json = pending
+            if expected_request_sha256 is not None and (
+                hashlib.sha256(request_json.encode("utf-8")).hexdigest()
+                != expected_request_sha256
+            ):
+                raise OpenIntentError("closing request changed before its order read")
             retained = _record(connection, client_id)
         if retained is not None:
             request, order_json, trades_json, encoded = retained

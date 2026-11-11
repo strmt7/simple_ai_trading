@@ -26,9 +26,9 @@ is preserved, and a source-bound result overrides an unsupported plan assertion.
    or no progress under the existing protocol.
 2. Select one bounded work package. An eligible informative financial decision
    has priority; a demonstrated capital/security failure can preempt it. The
-   default next local batch is `EXEC-01`; `BASE-01` has a recorded partial repair.
-   Do not infer that
-   every research trigger is closed merely because no new one is asserted here.
+   default next local batch is `SAFE-02`; `BASE-01` and `EXEC-01` have recorded
+   partial implementations. Do not infer that every research trigger is closed
+   merely because no new one is asserted here.
 3. Read the selected package and its exact current source/evidence dependencies.
    Reuse previously reviewed material only under the exact-hash rule. Mandatory
    semantic navigation precedes broad source searches; exact known scopes remain
@@ -63,7 +63,7 @@ dependent deliverable finished.
 | --- | --- | --- | --- |
 | Continuous priority | `FIN-01` | One genuinely informative financial decision whose literal evidence/access gate is satisfied | No routine re-sampling, speculative probability or promotion-based activity |
 | Feedback continuation | `BASE-01` | Three local diagnostic scopes repaired; retained-source Markdown and workflow advisory remain | Preserve old results and frozen source lineage; do not spend an open-ended phase polishing unrelated history |
-| Next local/operating slice | `EXEC-01` | Pending-close inspect → bounded collection → retained application through one explicit operator workflow | No order replay, implicit credentials, automatic rearm or actual account request during synthetic development |
+| Operator continuation | `EXEC-01` | Spot inspect → bounded collection → retained application is implemented; guided forms, futures/legacy application and rearm remain | No order replay, implicit credentials, automatic rearm or actual account request during synthetic development |
 | Next safety slice | `SAFE-02`, then `SAFE-01` and `EXEC-02` | Durable policy and an independent supervised gateway, then all-writer integration | Keep the owned reduction path outside a frozen strategy process |
 | Research/model admission | `DATA-01`, `MODEL-01`, `FIN-02/03` as applicable | Causal economically meaningful inputs and independent utility/capacity evidence | More rows, larger models and high GPU usage do not supply missing evidence |
 
@@ -112,6 +112,14 @@ families rather than treating the historical 86 as current. Independent economic
 research and urgent capital repairs can proceed alongside this bounded work.
 
 ### EXEC-01 — Complete operator recovery
+
+The [operator collection phase](review/2026-11-11/recovery-workflow/review.md)
+connects pending inspection, bounded reads, cached reuse and retained Spot
+application through the real parser/handler and generated expert contract.
+Original request bindings are rechecked before reads, and uncertain read/retention
+outcomes remain explicit. Futures/legacy application, guided native forms, account
+qualification and controlled rearm still require their own acceptance. Continue
+`SAFE-02` for the durable policy/recovery contract needed by the larger workflow.
 
 Extend the existing `recover-close` workflow to inspect an unresolved original
 request even before terminal evidence exists, then explicitly collect that

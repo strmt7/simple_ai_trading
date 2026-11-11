@@ -1,0 +1,138 @@
+{
+  "authority": {
+    "goal_complete": false,
+    "historical_results_modified": false,
+    "market_requests": 0,
+    "new_financial_observations": 0,
+    "orders": 0,
+    "protected_captures_touched": false,
+    "real_account_requests": 0,
+    "real_credentials_used": false,
+    "schedules_services_or_startup_hooks_created": false,
+    "training_or_benchmark_runs": 0
+  },
+  "baseline": "40bd11cd86770b2a87c50d7cf245f327e952cff8",
+  "captured_at_utc": "2026-11-11T11:26:14.291389+00:00",
+  "changed_document_sha256": {
+    "docs/CONTINUATION.md": "4f0576f3dfbaaf970f8e7b06d12a995d64b93390181e8041fb091c27d7753d62",
+    "docs/DEVELOPMENT_PLAN.md": "e05f606eeb7b4bba3b1c1f298ceb7db8b7c04ffeae1588ede82ed0cdd81be9a8",
+    "docs/DEVELOPMENT_WORK_GRAPH.json": "6443673c8733b8be6304b548228501ba8b20c86733ca734c62219707ad32e7a0",
+    "docs/RUNTIME_CONTROL_STORAGE.md": "ee55e9620686dfae945836b17bd539f81b99013ff35a3ef6f934fcc217671531",
+    "docs/review/2026-11-11/recovery-workflow/review.md": "e623d76eec59a531e02fa0a20a19561b42b169a3f023abd68348ae6cf31b111a"
+  },
+  "corrections": [
+    "First focused phase: invalid synthetic owner-state setup; 20 passed and one setup failure retained.",
+    "Domain phase: 199 passed and one real CLI control-error handling failure. RuntimeControlError is now handled as a sanitized operator block; no admission gate was weakened.",
+    "Final domain phase: 205 passed. Complete source snapshots and log digests are retained for all three phases."
+  ],
+  "implemented": [
+    "Pending request inspection without terminal evidence",
+    "Explicit digest-bound collection through the real CLI and generated native expert command",
+    "Private configuration only after local enrollment/ownerless Stop admission; exact original endpoint/product/key matching",
+    "Request digest checked again before reads; enrollment rechecked after credential loading",
+    "Cached validation without credentials or reader startup; changed cached records fail without network fallback",
+    "Separate read-attempt, response, cache, retention and application states; post-retention uncertainty preserved",
+    "Separate offline Spot application remains digest-bound and idempotent"
+  ],
+  "limitations": [
+    "Synthetic testnet/Demo protocol evidence is not mainnet qualification or profitable capacity.",
+    "Declared affected cases and static scopes do not qualify the full application, physical reboot behavior or current hosted acceptance.",
+    "Historical frozen implementations/results remain at their original revisions; these changes grant no retry, account, order or release authority."
+  ],
+  "next_preferred_local_batch": "SAFE-02",
+  "package_complete": false,
+  "phase_receipts": {
+    "domain": {
+      "exit_code": 1,
+      "receipt_sha256": "2cb1ccf52ddf462e98d67cce74a24757c08e8143ea04590a3787335c4e05373c"
+    },
+    "domain-final": {
+      "exit_code": 0,
+      "receipt_sha256": "14f7835c4563e5b5e9145d85b9810b30330859d1b677f8e714212983ee782ef7"
+    },
+    "focused": {
+      "exit_code": 1,
+      "receipt_sha256": "97f3295920c85d1c982d4456eee9b0775c2926c181925c496cfd357bc71b7b52"
+    }
+  },
+  "remaining": [
+    "Futures/legacy inventory application",
+    "Guided native forms and complete native operational acceptance",
+    "Account UID/capability qualification",
+    "Controlled lost-owner migration and explicit rearm",
+    "Independent full gateway/supervisor and durable policy"
+  ],
+  "result_sha256": "b684feb7de969ee6b880077cea9fe5e7eafac3b2f650bad55ca23c1835c58304",
+  "schema_version": "owned-close-operator-collection-evidence-v1",
+  "verification": {
+    "affected_cases_passed": 205,
+    "native_contract": "Generated header digest/options checked against the real CLI parser; no GUI/physical-host acceptance claimed.",
+    "static_checks": {
+      "format": {
+        "exit_code": 0,
+        "log_sha256": {
+          "stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "stdout": "ef7d13d02214e98ca902b05257cdbe6a8e84f3b4714508efdc19766460b54209"
+        },
+        "name": "format"
+      },
+      "ruff": {
+        "exit_code": 0,
+        "log_sha256": {
+          "stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "stdout": "82b3e6a6c090a57601d22943bd23fca9218d1031dbe5a7b754092f9a156b4f18"
+        },
+        "name": "ruff"
+      },
+      "terminology": {
+        "exit_code": 0,
+        "log_sha256": {
+          "stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "stdout": "0ea6905b288c43c28f866dcb0df9885bcf26b2698079328822c03b416102e4e1"
+        },
+        "name": "terminology"
+      },
+      "vulture": {
+        "exit_code": 0,
+        "log_sha256": {
+          "stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "stdout": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "name": "vulture"
+      }
+    },
+    "test_transport": "Synthetic responses in actual contained hidden HTTP children; no actual account or market request.",
+    "tested_source_sha256": {
+      "native/windows/generated/command_contract.hpp": "218864b82d230e3c2608724768430dce165f0718a0e478dfb0b6f1673146e851",
+      "src/simple_ai_trading/api.py": "2909349385a5112565750fec73e92b9c159d24aba4cbe69af9b33bea6fdce12d",
+      "src/simple_ai_trading/binance_close_application.py": "24c5377701918e5b325838b700c189f3627942f2264a84d03b727e63342484fc",
+      "src/simple_ai_trading/binance_close_application_cli.py": "63dc36eb950956e10227c99732c0606f5c1194090e552a9e2cd587351d26ae9c",
+      "src/simple_ai_trading/binance_close_intents.py": "fe5fb6a8d92ff892b777c53792a1220be1bf771420d4fa4eeef4b5e2eff9f5e8",
+      "src/simple_ai_trading/binance_close_recovery.py": "a98885e49913cee972b79c24ebee48b467057236f4332826670011d86488a403",
+      "src/simple_ai_trading/binance_execution_payloads.py": "7337b1ff06533584f60c67dd528a478d36614f55dc259033efc0cc901c57e583",
+      "src/simple_ai_trading/binance_execution_scope.py": "03b65d88f29595c069e4ef0de3ab6def497ce74f2756e762a932a8765cdd2b6d",
+      "src/simple_ai_trading/binance_execution_storage.py": "8d90728155f01b078be024f855f45b6185159c3f4fa7f8f21538a8fd803f3533",
+      "src/simple_ai_trading/binance_open_intents.py": "9a78e005880962a9d2d6b638e581a2f3d77cfcdd08dee413da9b1ddf8ff0408d",
+      "src/simple_ai_trading/binance_recovery_reads.py": "24ada0b0c60fd9767c15df70b8adcd085c675cdae39aab89a4bb1813849135d5",
+      "src/simple_ai_trading/binance_runtime_control.py": "b6b5c58f474d76b2df3ad50ed2d20b1a2031e41fd078b95a203d34dc9e665cd4",
+      "src/simple_ai_trading/binance_terminal_fills.py": "d2b8444453b936b71f516d735e8a43a48c8ab17091de31b6cce1a66b3f76eb2f",
+      "src/simple_ai_trading/cli.py": "05814041f677fb8c830a888ee350366e7b4bd6382a859dd1b6ca5c5eb3a6f261",
+      "src/simple_ai_trading/command_contract.py": "ad7766ce06941931006076b531efd877c7f4d00ba57f87c1146ba7d83aabb6cd",
+      "src/simple_ai_trading/config.py": "5949c227e09c88b5014a19fc4de2fe67f5dd65eb6df9875c747a6c1a8f4a1530",
+      "src/simple_ai_trading/entrypoint.py": "dd73ccc7e8d72bb115f0281d583b55c67a8a40f32cc95af7465720b94c8538f8",
+      "src/simple_ai_trading/polymarket_http_process.py": "690d699118e47265df377676565ec2e44d934b75d792e8ebe8006b30e8287921",
+      "src/simple_ai_trading/polymarket_sdk_transport.py": "84cabf51be81f568ee275b3c3183be0862e1022045efff9edf7de108bd83233b",
+      "src/simple_ai_trading/position_transactions.py": "743275b5e92337bd24825c7b4e4f2d79c1ecb7556bf02d8d56cadfcbe148d97b",
+      "src/simple_ai_trading/positions.py": "0baf01909be1135d56d887fa7499fc4d3ebccf74f04844d49c61f288c7378154",
+      "src/simple_ai_trading/runtime_control.py": "518064c99eaf7a0492c2bbaa8ce15abdad68757b7f5fa3da96996c3649add815",
+      "tests/conftest.py": "090974084e8c25f16dc18ed084269d75edb9fdb5f4d7d15e6e72bb23853d9abc",
+      "tests/test_binance_close_application.py": "81be068666e0a0a5c8f705856f20b9f65360fd66bb1f4ff950aef4940633ef9d",
+      "tests/test_binance_close_recovery.py": "0b368d1ecc0141bf6a944a4fc9fd58fd28e309a74cfbad5049384226ddc1e0fa",
+      "tests/test_binance_recovery_reads.py": "3b423f1be2f6096992c6ffbaaeb18d0ced85b71f2587d9ce2ef55f2256726178",
+      "tests/test_close_recovery_cli.py": "d0ee08536b5ba8e282634e52d2aa62edd1a42d89ddf1d0722dca0d817cc90663",
+      "tests/test_close_recovery_collection_cli.py": "1226f328c7e46a62d23b1099ca5670e6cc77ce8c731b09057deb249c87d80bb5",
+      "tools/generate_windows_contract.py": "820d08bdf5ac7a7fa99ed786ef5ebd0fff73a64a3cf30241ca15d8aa86d0c8bc"
+    }
+  },
+  "work_package": "EXEC-01"
+}

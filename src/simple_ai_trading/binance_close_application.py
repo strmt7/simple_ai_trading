@@ -16,7 +16,7 @@ from .binance_close_intents import (
     unresolved_close_count,
     validate_closing_client_id,
 )
-from .binance_close_recovery import _encode, _evidence, _record
+from .binance_close_recovery import _encode, _evidence, _pending, _record
 from .binance_execution_scope import BinanceExecutionScope
 from .binance_execution_storage import BinanceExecutionStorage
 from .binance_open_intents import OpenIntentError
@@ -55,9 +55,11 @@ class ClosingApplicationResult:
 
 @dataclass(frozen=True)
 class ClosingRecoveryInspection:
-    recovery_sha256: str
+    recovery_sha256: str | None
     local_intent_state: str
     application_recorded: bool
+    request_sha256: str
+    symbol: str
 
 
 @dataclass(frozen=True)
@@ -121,8 +123,20 @@ def inspect_closing_recovery(
     try:
         with closing(store.opening_intents._connect()) as connection:
             connection.execute("BEGIN")
-            source = _source(connection, store, scope, client_id)
+            pending = _pending(connection, store, scope, client_id)
             application = _application_record(connection, client_id)
+            if pending is not None and _record(connection, client_id) is None:
+                if application is not None:
+                    raise OpenIntentError("application receipt lacks terminal evidence")
+                position, request = pending
+                return ClosingRecoveryInspection(
+                    None,
+                    "UNKNOWN",
+                    False,
+                    hashlib.sha256(request.encode("utf-8")).hexdigest(),
+                    position.symbol,
+                )
+            source = _source(connection, store, scope, client_id)
             if application is not None:
                 request, digest, before, encoded, _ = application
                 prior = None if before == "null" else ClosedTrade(**json.loads(before))
@@ -136,7 +150,11 @@ def inspect_closing_recovery(
                         "application receipt conflicts with retained evidence"
                     )
             return ClosingRecoveryInspection(
-                source.digest, source.state, application is not None
+                source.digest,
+                source.state,
+                application is not None,
+                hashlib.sha256(source.request.encode("utf-8")).hexdigest(),
+                source.position.symbol,
             )
     except (
         sqlite3.Error,

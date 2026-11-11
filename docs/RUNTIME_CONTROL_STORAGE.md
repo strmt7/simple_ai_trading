@@ -160,13 +160,14 @@ zero-fill cancellation.
 A post-commit feedback error does not mean the application was rolled back.
 Inspect the retained receipt and retry the same application; never resubmit its
 order. Repeated application is local and idempotent. Its result describes this
-particular application, not current account balances or global flatness. CLI/native
-integration and explicit rearm remain separate unfinished work.
+particular application, not current account balances or global flatness. Guided
+native forms, broader product application and explicit rearm remain unfinished.
 
 ### Local operator command
 
-The [operator workflow](review/2026-11-11/recovery-operator/review.md) exposes
-retained Spot evidence without loading credentials or requesting account data:
+The [operator workflow](review/2026-11-11/recovery-workflow/review.md) inspects an
+unresolved original request and any retained evidence without credentials or
+account data. Terminal evidence need not exist yet:
 
 ```text
 simple-ai-trading recover-close --data-dir "<existing-owned-directory>" --client-order-id "<exact-owned-close-id>" --json
@@ -174,9 +175,29 @@ simple-ai-trading recover-close --data-dir "<existing-owned-directory>" --client
 
 Inspection is the default and does not publish pending redo. Its
 `execution_scope_sha256` identifies the original stored endpoint/product/key scope;
-`recovery_sha256` identifies the retained closing evidence. It also distinguishes
+`request_sha256` identifies the original request; `recovery_sha256` identifies
+retained terminal evidence, or is null when absent. It also distinguishes
 local intent state from a committed application receipt. Neither is current-account
 or flat-exposure proof, and application admission is explicitly unchecked.
+
+Collection is a separate authenticated read: select `--action collect` and pass
+the inspected values as `--expected-scope-sha256` and `--expected-request-sha256`.
+Optional `--read-timeout-seconds` selects a 1–60 second shared read deadline
+(default 20). Existing control/execution enrollment and ownerless Stop are
+required before current private configuration is loaded. Its actual endpoint,
+product and API-key scope must match the original request. No key/secret argument,
+prompt, order submission, account-wide query, automatic application or rearm exists.
+This command must be run only with separate authority for that account read.
+
+Already retained evidence is validated locally without credential loading or a
+reader child. `collection_outcome` distinguishes cached and newly retained
+evidence; error state `unknown` requires local inspection before another explicit
+read. `order_read_state` and `trades_read_state` distinguish not started, attempted
+and response received. `account_queried` is false before a read attempt, null when
+only an attempt is known, and true after a response. None of these fields proves
+that evidence was retained or inventory applied. A post-retention error can leave
+`retained_evidence` null; it must never be reported as evidence absence. Inspect
+again rather than resubmitting the original order.
 
 To apply, use the same directory/client selection with `--action apply` and pass
 those exact values through `--expected-scope-sha256` and
@@ -189,7 +210,7 @@ submitting its order again.
 The generated native expert dropdown registers `recover-close` under Risk's
 Owned close recovery group. Its required selection and apply hashes use Extra
 Flags. Missing arguments fail parsing; the default does not apply anything.
-Guided forms and collection selection are separate remaining operator work.
+The expert command includes explicit collection; guided native forms remain open.
 
 ### Bounded programmatic collection
 
@@ -210,8 +231,13 @@ fills and native cash must reconcile before retention. Cached evidence causes no
 account refresh. Missing prerequisites or ambiguous responses preserve the
 unresolved obligation. No order, application, Stop completion or rearm follows.
 This API requires the existing locked optional HTTP runtime; missing dependencies
-produce an actionable isolated-setup error. Current CLI/native `recover-close`
-continues to inspect/apply already retained evidence and does not collect it.
+produce an actionable isolated-setup error. The API also accepts a lazy
+`credential_provider` instead of explicit credential strings. It is called only
+after local admission and only when new evidence is required. Optional fresh
+`RecoveryReadProgress` records conservative read states independently of retention.
+The inspected request digest is checked again by the collector before any order
+read. Storage is reverified after private configuration loading and after
+collection. The current CLI and generated native expert command use this API.
 
 ## Scope and remaining work
 

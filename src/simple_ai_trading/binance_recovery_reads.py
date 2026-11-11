@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from contextlib import closing
+from dataclasses import dataclass
 import hashlib
 import hmac
 import math
@@ -11,6 +12,7 @@ import re
 import sqlite3
 from threading import Lock
 from time import monotonic, time
+from typing import Callable
 from urllib.parse import urlencode
 
 from .api import BinanceAPIError
@@ -18,6 +20,7 @@ from .binance_order_responses import validate_queried_order
 from .binance_close_recovery import (
     ClosingRecoveryEvidence,
     _pending,
+    _record,
     collect_closing_recovery,
 )
 from .binance_close_intents import validate_closing_client_id
@@ -26,6 +29,42 @@ from .binance_execution_storage import BinanceExecutionStorage
 from .binance_open_intents import OpenIntentError
 from .binance_runtime_control import BinanceRuntimeControl
 from .positions import PositionsStore
+
+
+@dataclass
+class RecoveryReadProgress:
+    """Conservative read observations, independent of retention or application."""
+
+    order_state: str = "not_started"
+    trades_state: str = "not_started"
+    retained_reused: bool = False
+
+
+class _RetainedScope:
+    """Validate cached evidence without constructing an authenticated reader."""
+
+    def __init__(self, scope: BinanceExecutionScope):
+        self._scope = scope
+
+    def execution_scope(self):
+        return self._scope
+
+    def get_order(self, *args, **kwargs):
+        raise OpenIntentError("cached evidence changed; inspect before collection")
+
+    def get_order_trades(self, *args, **kwargs):
+        raise OpenIntentError("cached evidence changed; inspect before collection")
+
+
+def _validated_timeout(value):
+    if (
+        isinstance(value, bool)
+        or not isinstance(value, (int, float))
+        or not math.isfinite(value)
+        or not 1 <= value <= 60
+    ):
+        raise OpenIntentError("recovery deadline must be between 1 and 60 seconds")
+    return float(value)
 
 
 def _http_process(**configuration):
@@ -56,6 +95,7 @@ class BinanceRecoveryReadClient:
         api_key: str,
         api_secret: str,
         timeout_seconds: float = 20.0,
+        progress: RecoveryReadProgress | None = None,
     ):
         if not isinstance(scope, BinanceExecutionScope):
             raise OpenIntentError("recovery reads require the original execution scope")
@@ -80,13 +120,7 @@ class BinanceRecoveryReadClient:
             raise OpenIntentError(
                 "recovery credentials differ from the original key scope"
             )
-        if (
-            isinstance(timeout_seconds, bool)
-            or not isinstance(timeout_seconds, (int, float))
-            or not math.isfinite(timeout_seconds)
-            or not 1 <= timeout_seconds <= 60
-        ):
-            raise OpenIntentError("recovery deadline must be between 1 and 60 seconds")
+        timeout_seconds = _validated_timeout(timeout_seconds)
         prefix = "/api/v3" if scope.market_type == "spot" else "/fapi/v1"
         self._order_endpoint = scope.origin + prefix + "/order"
         self._trade_endpoint = (
@@ -98,6 +132,9 @@ class BinanceRecoveryReadClient:
         self._key, self._secret = api_key, api_secret.encode("utf-8")
         self._deadline = monotonic() + timeout_seconds
         self._order_read = self._trades_read = self._closed = False
+        if progress is not None and not isinstance(progress, RecoveryReadProgress):
+            raise OpenIntentError("recovery read progress is invalid")
+        self._progress = progress if progress is not None else RecoveryReadProgress()
         self._order_id: str | None = None
         self._reads = Lock()
         self._http = _http_process(
@@ -134,13 +171,19 @@ class BinanceRecoveryReadClient:
             params["signature"] = hmac.new(
                 self._secret, urlencode(params).encode("ascii"), hashlib.sha256
             ).hexdigest()
-            return self._http.request(
+            field = (
+                "order_state" if endpoint == self._order_endpoint else "trades_state"
+            )
+            setattr(self._progress, field, "attempted")
+            result = self._http.request(
                 "GET",
                 endpoint,
                 headers={"X-MBX-APIKEY": self._key},
                 params=params,
                 deadline=self._deadline,
             )
+            setattr(self._progress, field, "response_received")
+            return result
         except Exception:
             # Neither upstream error bodies nor signed query details are diagnostics.
             self.close()
@@ -241,10 +284,12 @@ def collect_stopped_closing_recovery(
     client_id: str,
     expected_request_sha256: str,
     control: BinanceRuntimeControl,
-    api_key: str,
-    api_secret: str,
+    api_key: str | None = None,
+    api_secret: str | None = None,
     execution_enrollment_path: Path | None = None,
     timeout_seconds: float = 20.0,
+    credential_provider: Callable[[], tuple[str, str]] | None = None,
+    progress: RecoveryReadProgress | None = None,
 ) -> ClosingRecoveryEvidence:
     """Collect under ownerless Stop; retain uncertainty, never apply or rearm.
 
@@ -259,6 +304,18 @@ def collect_stopped_closing_recovery(
         raise OpenIntentError(
             "collection requires enrolled control and an exact request digest"
         )
+    if progress is not None and not isinstance(progress, RecoveryReadProgress):
+        raise OpenIntentError("recovery read progress is invalid")
+    progress = progress if progress is not None else RecoveryReadProgress()
+    if progress != RecoveryReadProgress():
+        raise OpenIntentError("collection requires fresh read progress")
+    timeout_seconds = _validated_timeout(timeout_seconds)
+    if credential_provider is not None and (
+        not callable(credential_provider)
+        or api_key is not None
+        or api_secret is not None
+    ):
+        raise OpenIntentError("choose one explicit recovery credential source")
     storage = BinanceExecutionStorage(
         store.opening_intents, control, execution_enrollment_path
     )
@@ -281,6 +338,32 @@ def collect_stopped_closing_recovery(
             ):
                 raise OpenIntentError("closing request changed before collection")
             symbol = pending[0].symbol
+            cached = _record(connection, client_id) is not None
+        if cached:
+            evidence = collect_closing_recovery(
+                _RetainedScope(scope),
+                store,
+                client_id=client_id,
+                expected_request_sha256=expected_request_sha256,
+            )
+            storage.verify(scope=scope)
+            if evidence is None:
+                raise OpenIntentError("cached closing changed; inspect the journal")
+            progress.retained_reused = True
+            return evidence
+        if credential_provider is not None:
+            try:
+                credentials = credential_provider()
+                if not isinstance(credentials, tuple) or len(credentials) != 2:
+                    raise ValueError
+                api_key, api_secret = credentials
+            except Exception:
+                raise OpenIntentError(
+                    "Configured recovery credentials are unavailable or differ from the original scope."
+                ) from None
+        # Loading private configuration is an external step; recheck enrollment
+        # before constructing a reader. The collector rechecks the request too.
+        storage.verify(scope=scope)
         with closing(
             BinanceRecoveryReadClient(
                 scope=scope,
@@ -289,12 +372,20 @@ def collect_stopped_closing_recovery(
                 api_key=api_key,
                 api_secret=api_secret,
                 timeout_seconds=timeout_seconds,
+                progress=progress,
             )
         ) as client:
-            evidence = collect_closing_recovery(client, store, client_id=client_id)
+            evidence = collect_closing_recovery(
+                client,
+                store,
+                client_id=client_id,
+                expected_request_sha256=expected_request_sha256,
+            )
         storage.verify(scope=scope)
         if evidence is None:
             raise OpenIntentError(
                 "closing changed during collection; inspect the original journal"
             )
+        if progress.order_state == "not_started":
+            progress.retained_reused = True
         return evidence

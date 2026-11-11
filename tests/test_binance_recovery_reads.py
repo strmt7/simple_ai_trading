@@ -37,7 +37,7 @@ def request(self,method,endpoint,*,headers=None,data=None,params=None):
     if mode=='reject':
         raise engine.PolyApiException(error_msg='PRIVATE-SENTINEL')
     if mode!='policy':
-        if headers != {'X-MBX-APIKEY':'offline-placeholder'}:
+        if headers != {'X-MBX-APIKEY':source['expected_api_key']}:
             raise RuntimeError('key binding differs')
         values={key:value[0] for key,value in params.items()}
         signature=values.pop('signature')
@@ -63,9 +63,11 @@ def native_reads(tmp_path, monkeypatch):
     monkeypatch.setattr(http_module.subprocess, "Popen", launch)
     monkeypatch.setenv("RECOVERY_PARENT_SECRET", "synthetic sentinel")
 
-    def configure(order, trades, mode="normal"):
+    def configure(order, trades, mode="normal", *, api_key="offline-placeholder"):
         payload = tmp_path / f"fixture-{len(settings)}.json"
-        payload.write_text(json.dumps(dict(order=order, trades=trades)))
+        payload.write_text(
+            json.dumps(dict(order=order, trades=trades, expected_api_key=api_key))
+        )
         marker = payload.with_suffix(".calls")
         markers.append(marker)
 
