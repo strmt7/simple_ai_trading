@@ -559,6 +559,7 @@ def submit_promoted_open(
     lifecycle_qualification: VerifiedPolymarketLifecycleQualification | None = None,
     external_signal: PolymarketExternalSignalDecision | None = None,
     clock_ms: Callable[[], int] | None = None,
+    source_admission_check: Callable[[], None] | None = None,
 ) -> PolymarketAutonomousOpenResult:
     """Submit one immediate-or-cancelled open only after every authority gate."""
 
@@ -704,11 +705,15 @@ def submit_promoted_open(
         created_at_ms=submit_at_ms,
         expires_at_ms=expires_at_ms,
     )
+    submission_options = {}
+    if source_admission_check is not None:
+        submission_options["source_admission_check"] = source_admission_check
     record = coordinator.submit(
         intent,
         tick_size=quote.tick_size,
         neg_risk=quote.neg_risk,
         opening_approval=opening_approval,
+        **submission_options,
     )
     return PolymarketAutonomousOpenResult(
         record=record,
@@ -728,6 +733,7 @@ def submit_promoted_reduction(
     *,
     lifecycle_qualification: VerifiedPolymarketLifecycleQualification | None = None,
     clock_ms: Callable[[], int] | None = None,
+    source_admission_check: Callable[[], None] | None = None,
 ) -> PolymarketAutonomousReduceResult:
     """Reduce one exact bot-owned lot without weakening deterministic Stop."""
 
@@ -763,12 +769,16 @@ def submit_promoted_reduction(
         proposal.maximum_outcome_probability
         + policy.minimum_expected_edge_quote_per_share
     )
+    submission_options = {}
+    if source_admission_check is not None:
+        submission_options["source_admission_check"] = source_admission_check
     record, quote = coordinator.submit_owned_close_order(
         parent_intent_id=proposal.parent_intent_id,
         quantity=proposal.requested_quantity,
         action_binding_sha256=proposal.proposal_sha256,
         minimum_net_quote=minimum_net_quote,
         maximum_book_age_ms=policy.maximum_prediction_age_ms,
+        **submission_options,
     )
     if (
         quote.market_id != proposal.market_id
@@ -805,6 +815,7 @@ def submit_promoted_lock(
     *,
     lifecycle_qualification: VerifiedPolymarketLifecycleQualification | None = None,
     clock_ms: Callable[[], int] | None = None,
+    source_admission_check: Callable[[], None] | None = None,
 ) -> PolymarketAutonomousLockResult:
     """Buy only enough complementary inventory to reduce event downside."""
 
@@ -947,10 +958,14 @@ def submit_promoted_lock(
         created_at_ms=submit_at_ms,
         expires_at_ms=expires_at_ms,
     )
+    submission_options = {}
+    if source_admission_check is not None:
+        submission_options["source_admission_check"] = source_admission_check
     record = coordinator.submit(
         intent,
         tick_size=quote.tick_size,
         neg_risk=quote.neg_risk,
+        **submission_options,
     )
     return PolymarketAutonomousLockResult(
         record=record,

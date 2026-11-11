@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from dataclasses import replace
 from decimal import Decimal, InvalidOperation
 import hashlib
 import json
@@ -651,6 +652,15 @@ class PolymarketRound21PromotedDecisionProvider:
                 decision.proposals or decision.locks or decision.reductions
             ) and not self.data_service.admits(market, selected):
                 return self._no_proposal("round21_public_source_changed")
+            if decision.proposals or decision.locks or decision.reductions:
+
+                def assert_source_admission() -> None:
+                    if not self.data_service.admits(market, selected):
+                        raise PolymarketLiveBlocked("round21_public_source_changed")
+
+                decision = replace(
+                    decision, source_admission_check=assert_source_admission
+                )
             return decision
         except BaseException:
             with self._lock:

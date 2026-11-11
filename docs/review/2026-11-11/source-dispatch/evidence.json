@@ -1,0 +1,60 @@
+{
+  "admission": {
+    "deterministic_owned_closing_independent_of_forecast": true,
+    "future_events_after_admission_reconciled_normally": true,
+    "initial_and_pre_venue_dispatch_checks": true,
+    "legacy_providers_without_callback_preserve_behavior": true,
+    "post_reservation_revocation_blocks_wire": true,
+    "post_signing_revocation_blocks_wire": true,
+    "post_submitting_journal_revocation_blocks_wire": true,
+    "real_round21_model_open_lock_and_reduction_bound": true,
+    "unsent_failure_code": "source_admission_revoked_before_dispatch",
+    "unsent_reserved_order_terminal_state": "rejected"
+  },
+  "base_revision": "86390139b67881d38a364f32cc2c7b24a32dd50b",
+  "evidence_sha256": "39552728bc894f346c6f5405e5676a3b3e219f704292915956234a06f7c4dd9b",
+  "prior_source_continuity_evidence": {
+    "evidence_sha256": "3fa6688ea2093cce648ab1e2c352374b1cd878f2ba7a58f4621f7c984f562ba9",
+    "path": "docs/review/2026-11-11/round21-scoring/evidence.json"
+  },
+  "schema_version": "polymarket-final-source-admission-v1",
+  "scope": {
+    "account_requests": 0,
+    "exchange_execution_qualified": false,
+    "fixture_venue_submissions_only": true,
+    "independent_supervision_qualified": false,
+    "market_requests": 0,
+    "new_external_economic_evidence_admitted": false,
+    "orders": 0,
+    "profitability_qualified": false,
+    "protected_capture_touched": false
+  },
+  "verification": {
+    "controller_sha256": "186355e4b8656bd10967eb5180d7e4a79e9a419a3f1c07f4e6a4820cc3a5b970",
+    "passed_cases": 197,
+    "returncode": 0,
+    "ruff_changed_modules": "pass",
+    "stderr_bytes": 0,
+    "stdout_sha256": "4ef65ed089c0b3bf95bc35f83906d7ebefcb19b6644ed2f010d2a1a1b81d746f",
+    "summary": "197 passed in 46.75s",
+    "test_modules": [
+      "tests/test_polymarket_round21_decision.py",
+      "tests/test_polymarket_autonomous.py",
+      "tests/test_polymarket_autonomous_runtime.py",
+      "tests/test_polymarket_live.py",
+      "tests/test_polymarket_round21_runtime.py"
+    ],
+    "tested_source_sha256": {
+      "src/simple_ai_trading/polymarket_autonomous.py": "ef51e4a380135f2a1d75fe4dd641a9817d8480092494712a295943c3a09eeb19",
+      "src/simple_ai_trading/polymarket_autonomous_runtime.py": "dc80752d1e3132ec55c5cf8af869aea956f7d2276f16186b73930901fdfdbde0",
+      "src/simple_ai_trading/polymarket_live.py": "caaf8f8a82a2168fc16f7ffec847b31beaec884ccd0bf14f8a6a92cd1d2adc46",
+      "src/simple_ai_trading/polymarket_round21_decision.py": "be392775a8dc6e71685119055b47dbc2f060246527c9604ef5c0f942bbc9253c",
+      "tests/test_polymarket_autonomous.py": "71d0a983333ef93facac689890d79d273f4851e9ffe421cf78d2c8630403d5b6",
+      "tests/test_polymarket_autonomous_runtime.py": "f3da4f5b3a0e50555d58a61736bfd71387d91646f647e409b4b7520bddeebd31",
+      "tests/test_polymarket_live.py": "536e61c6a80e69a879953138f8175fdf47f07dc547e2b95866c988c983bfad50",
+      "tests/test_polymarket_round21_decision.py": "9f3c52c4cb5aca165fe4c59271d1de571a9752c8b00b50489dae82abcf9c4521",
+      "tests/test_polymarket_round21_runtime.py": "8ab9b9a80c8557fe4474860736ae4b116b89c2f6c5cf4efe13ddb286539babe1"
+    },
+    "unchanged_after_test": true
+  }
+}

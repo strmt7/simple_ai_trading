@@ -17,7 +17,7 @@ from threading import RLock
 import re
 import sqlite3
 import time
-from typing import ContextManager, Mapping, Protocol, Sequence, cast
+from typing import Callable, ContextManager, Mapping, Protocol, Sequence, cast
 
 
 POLYMARKET_LIVE_LEDGER_SCHEMA_VERSION = "polymarket-live-ledger-v3"
@@ -4171,7 +4171,12 @@ class PolymarketLiveCoordinator:
         tick_size: Decimal,
         neg_risk: bool,
         opening_approval: PolymarketOpeningApproval | None = None,
+        source_admission_check: Callable[[], None] | None = None,
     ) -> PolymarketLiveOrderRecord:
+        if source_admission_check is not None:
+            if not callable(source_admission_check):
+                raise TypeError("source admission check must be callable")
+            source_admission_check()
         if opening_approval is not None and (
             intent.closing_only
             or not isinstance(opening_approval, PolymarketOpeningApproval)
@@ -4325,9 +4330,23 @@ class PolymarketLiveCoordinator:
                     state="submitting",
                     observed_at_ms=now,
                 )
+                if source_admission_check is not None:
+                    try:
+                        source_admission_check()
+                    except Exception:
+                        self.ledger.transition(
+                            intent.intent_id,
+                            expected_states=("submitting",),
+                            state="rejected",
+                            observed_at_ms=int(time.time() * 1_000),
+                            failure_code="source_admission_revoked_before_dispatch",
+                        )
+                        raise
                 dispatch_started = True
                 response = self.venue.submit_order(prepared)
         except PolymarketVenueRejected as exc:
+            if not dispatch_started:
+                raise
             current = self.ledger.record(intent.intent_id)
             if current.state != "submitting":
                 self.ledger.transition(
@@ -4552,6 +4571,7 @@ class PolymarketLiveCoordinator:
         action_binding_sha256: str,
         minimum_net_quote: Decimal = Decimal("0"),
         maximum_book_age_ms: int = 1_500,
+        source_admission_check: Callable[[], None] | None = None,
     ) -> tuple[PolymarketLiveOrderRecord, PolymarketCloseQuote]:
         """Submit one model-requested reduction of an exact bot-owned lot."""
 
@@ -4659,6 +4679,7 @@ class PolymarketLiveCoordinator:
                 intent,
                 tick_size=quote.tick_size,
                 neg_risk=quote.neg_risk,
+                source_admission_check=source_admission_check,
             ),
             quote,
         )

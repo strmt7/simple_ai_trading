@@ -49,14 +49,6 @@ current full-suite failure count without rerunning the appropriate scope.
 
 ## Financial and source frontier
 
-- [Native Stop priority and status](review/2026-11-11/operator-control/review.md)
-  repairs a reproduced lost Stop during Polymarket Pause, guards Overview
-  Pause/Start during Stop and rejects status samples predating control actions.
-  Hidden native probes confirm dispatch ordering. The Release presentation
-  checks and 53 focused cases pass. Both previewed venue states are explicitly
-  simulated. Independent supervision, final-dispatch fencing and full
-  accessibility coverage remain open.
-
 - [Binance Spot Auto Order Routing](review/2026-11-11/binance-auto-routing/review.md)
   binds commission-free intermediary conversion, spread, discretionary
   capacity and actual fill asset terms. Compare final proceeds at the same
@@ -289,11 +281,22 @@ the unchanged account-fee gate before economic access. No new observation added.
 
 ## Platform work and publication
 
+- [Native Stop priority and status](review/2026-11-11/operator-control/review.md)
+  repairs a reproduced lost Stop during Polymarket Pause, guards Overview
+  Pause/Start during Stop and rejects status samples predating control actions.
+  Hidden native probes confirm dispatch ordering. The Release presentation
+  checks and 53 focused cases pass. Both previewed venue states are explicitly
+  simulated. Independent supervision and full accessibility coverage remain open.
+
 - [Five-minute forecast continuity](review/2026-11-11/round21-scoring/review.md)
   removes scoring from the public intake lock. Required source changes
   revoke cached and in-flight forecasts, with admission checked across
-  quote retrieval. Hard inference termination and final dispatch fencing
-  remain open.
+  quote retrieval. The subsequent [dispatch repair](review/2026-11-11/source-dispatch/review.md)
+  carries that admission through signing and durable journaling to the final
+  local venue-call boundary for opens, locks and targeted reductions. Its
+  197-case lane and 130-case affected exception follow-up verify unsent terminal
+  rejection on revocation and preserve deterministic owned closing. Hard inference
+  and native-call containment remain open.
 
 - [Owned fifteen-minute inference](review/2026-11-11/round16-worker/review.md)
   runs the promoted Round 16 numerical predictor in a session-owned worker.

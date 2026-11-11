@@ -767,6 +767,74 @@ def test_opening_admission_rechecks_pending_orders_created_during_signing(
     ]
 
 
+@pytest.mark.parametrize("phase", ["initial", "signing", "reservation", "journal"])
+@pytest.mark.parametrize("error_type", [PolymarketLiveBlocked, PolymarketVenueRejected])
+def test_revoked_source_cannot_dispatch_after_execution_preparation(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    phase: str,
+    error_type: type[Exception],
+) -> None:
+    ledger = PolymarketLiveOrderLedger(tmp_path / "source-check.sqlite3")
+    venue = FakeVenue()
+    coordinator = PolymarketLiveCoordinator(venue, ledger, risk_limits=RISK_LIMITS)
+    revoked = phase == "initial"
+    target, method = {
+        "initial": (venue, "prepare_order"),
+        "signing": (venue, "prepare_order"),
+        "reservation": (ledger, "reserve_submission"),
+        "journal": (ledger, "transition"),
+    }[phase]
+    original = getattr(target, method)
+
+    def revoke_after_preparation(*args, **kwargs):
+        nonlocal revoked
+        result = original(*args, **kwargs)
+        revoked = True
+        return result
+
+    monkeypatch.setattr(target, method, revoke_after_preparation)
+
+    def assert_source_admission() -> None:
+        if revoked:
+            raise error_type("public source changed")
+
+    with pytest.raises(error_type, match="public source changed"):
+        coordinator.submit(
+            _intent(),
+            tick_size=Decimal("0.01"),
+            neg_risk=False,
+            source_admission_check=assert_source_admission,
+        )
+
+    assert venue.submit_calls == 0
+    records = ledger.records()
+    if phase == "initial":
+        assert records == ()
+    else:
+        assert len(records) == 1
+        assert records[0].state == "rejected"
+        assert records[0].failure_code == "source_admission_revoked_before_dispatch"
+        assert ledger.open_owned_order_ids() == ()
+
+
+def test_current_source_admission_reaches_dispatch(tmp_path: Path) -> None:
+    ledger = PolymarketLiveOrderLedger(tmp_path / "source-check.sqlite3")
+    venue = FakeVenue()
+    coordinator = PolymarketLiveCoordinator(venue, ledger, risk_limits=RISK_LIMITS)
+    checks = []
+
+    result = coordinator.submit(
+        _intent(),
+        tick_size=Decimal("0.01"),
+        neg_risk=False,
+        source_admission_check=lambda: checks.append("current"),
+    )
+
+    assert checks == ["current", "current"]
+    assert venue.submit_calls == 1 and result.state == "live"
+
+
 def test_opening_rejects_completed_fill_created_during_signing(tmp_path: Path) -> None:
     ledger = PolymarketLiveOrderLedger(tmp_path / "filled-during-signing.sqlite3")
     venue = FakeVenue()
@@ -2757,8 +2825,10 @@ def test_owned_close_uses_fresh_polymarket_quote_for_exact_parent_lot(
     assert close.state == "live"
 
 
+@pytest.mark.parametrize("source_revoked", [False, True])
 def test_targeted_close_binds_exact_parent_quantity_and_policy_hash(
     tmp_path: Path,
+    source_revoked: bool,
 ) -> None:
     ledger = PolymarketLiveOrderLedger(tmp_path / "targeted-close.sqlite3")
     venue = FakeVenue()
@@ -2783,12 +2853,25 @@ def test_targeted_close_binds_exact_parent_quantity_and_policy_hash(
     )
     coordinator = PolymarketLiveCoordinator(venue, ledger, risk_limits=RISK_LIMITS)
 
-    record, quote = coordinator.submit_owned_close_order(
-        parent_intent_id=parent.intent_id,
-        quantity=Decimal("2"),
-        action_binding_sha256="b" * 64,
-        maximum_book_age_ms=500,
-    )
+    def assert_source_admission() -> None:
+        if source_revoked:
+            raise PolymarketLiveBlocked("public source changed")
+
+    request = {
+        "parent_intent_id": parent.intent_id,
+        "quantity": Decimal("2"),
+        "action_binding_sha256": "b" * 64,
+        "maximum_book_age_ms": 500,
+        "source_admission_check": assert_source_admission,
+    }
+    if source_revoked:
+        with pytest.raises(PolymarketLiveBlocked, match="public source changed"):
+            coordinator.submit_owned_close_order(**request)
+        assert venue.submit_calls == 0
+        assert len(ledger.records()) == 1
+        return
+
+    record, quote = coordinator.submit_owned_close_order(**request)
 
     assert venue.close_quote_calls == [(MARKET_ID, TOKEN_ID, Decimal("2"), 500)]
     assert record.intent.intent_id.startswith("policy-close-")

@@ -328,6 +328,8 @@ def test_runtime_imports_no_binance_execution_module() -> None:
 
 
 def test_decision_rejects_duplicate_proposals(tmp_path: Path) -> None:
+    with pytest.raises(TypeError, match="source admission check must be callable"):
+        PolymarketAutonomousDecision(source_admission_check=False)
     proposal = _proposal(_promotion(tmp_path))
     reduction = _reduction(_promotion(tmp_path / "reduce"))
     with pytest.raises(ValueError, match="duplicate"):
@@ -505,6 +507,50 @@ def test_wallet_shortfall_blocks_further_openings_for_the_session(
     assert supervisor.snapshot().submitted_opens == 0
 
 
+@pytest.mark.parametrize("transition", ["open", "lock", "reduce"])
+def test_source_admission_reaches_each_promoted_execution_lane(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, transition: str
+) -> None:
+    supervisor = _supervisor(tmp_path, provider=SimpleNamespace())
+    supervisor._wallet_capital_gate_passed = True
+    market = _market()
+    state = supervisor._portfolio(market, observed_at_ms=NOW_MS).risk_state
+    proposals = {
+        "open": replace(
+            _proposal(supervisor.promotion),
+            risk_state_sha256=state.risk_state_sha256,
+            proposal_sha256="",
+        ),
+        "lock": _lock(supervisor.promotion),
+        "reduce": _reduction(supervisor.promotion),
+    }
+    supervisor._owned_market_ids = lambda: (
+        set() if transition == "open" else {MARKET_ID}
+    )
+
+    def assert_source_admission() -> None:
+        raise PolymarketLiveBlocked("public source changed")
+
+    submit = Mock(
+        side_effect=lambda *_args, **kwargs: kwargs["source_admission_check"]()
+    )
+    action = {"open": "open", "lock": "lock", "reduce": "reduction"}[transition]
+    monkeypatch.setattr(runtime_module, "submit_promoted_" + action, submit)
+    field_name = {"open": "proposals", "lock": "locks", "reduce": "reductions"}[
+        transition
+    ]
+    decision = PolymarketAutonomousDecision(
+        **{field_name: (proposals[transition],)},
+        source_admission_check=assert_source_admission,
+    )
+
+    asyncio.run(supervisor._apply_decision(decision, market, observed_at_ms=NOW_MS))
+
+    submit.assert_called_once()
+    assert submit.call_args.kwargs["source_admission_check"] is assert_source_admission
+    assert supervisor.snapshot().last_fault == "public source changed"
+
+
 def test_pause_still_allows_a_model_requested_close(tmp_path: Path) -> None:
     supervisor = _supervisor(
         tmp_path,
@@ -520,15 +566,19 @@ def test_pause_still_allows_a_model_requested_close(tmp_path: Path) -> None:
 
     supervisor._close_owned = close_owned  # type: ignore[method-assign]
     supervisor.pause()
+    source_check = Mock(side_effect=PolymarketLiveBlocked("public source changed"))
     asyncio.run(
         supervisor._apply_decision(
-            PolymarketAutonomousDecision(close_owned_exposure=True),
+            PolymarketAutonomousDecision(
+                close_owned_exposure=True, source_admission_check=source_check
+            ),
             _market(),
             observed_at_ms=NOW_MS,
         )
     )
 
     assert closed is True
+    source_check.assert_not_called()
 
 
 def test_parent_bound_reduction_is_dispatched_without_close_all(

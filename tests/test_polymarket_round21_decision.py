@@ -309,6 +309,40 @@ def test_round21_provider_vetoes_forecast_revoked_before_or_during_quote(
     assert client.calls == (0 if gap_before_quote else 1)
 
 
+@pytest.mark.parametrize("transition", ["open", "lock", "reduce"])
+def test_round21_decision_retains_revocable_source_admission(transition: str) -> None:
+    service = _service(
+        _coordinated(probability="0.10", lower="0.05", upper="0.20")
+        if transition == "reduce"
+        else _coordinated()
+    )
+    provider = _provider(service=service)
+    portfolio = (
+        _portfolio()
+        if transition == "open"
+        else _portfolio(
+            outcome="Up",
+            quantity="5",
+            cost_basis="2.00" if transition == "lock" else "3.50",
+        )
+    )
+    decision = provider.decide(
+        markets=(MARKET,), observed_at_ms=NOW_MS, portfolio=portfolio
+    )
+
+    actions = {
+        "open": decision.proposals,
+        "lock": decision.locks,
+        "reduce": decision.reductions,
+    }
+    assert len(actions[transition]) == 1
+    assert decision.source_admission_check is not None
+    decision.source_admission_check()
+    service.admits.return_value = False
+    with pytest.raises(PolymarketLiveBlocked, match="round21_public_source_changed"):
+        decision.source_admission_check()
+
+
 def test_round21_provider_selects_down_from_the_conservative_hull() -> None:
     provider = _provider(
         service=_service(_coordinated(probability="0.28", lower="0.25", upper="0.30"))

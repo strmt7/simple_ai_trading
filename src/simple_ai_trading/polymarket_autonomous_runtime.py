@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import asyncio
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from decimal import Decimal
 import hashlib
 import json
@@ -230,8 +230,15 @@ class PolymarketAutonomousDecision:
     reductions: tuple[PolymarketAutonomousReduceProposal, ...] = ()
     close_owned_exposure: bool = False
     reasons: tuple[str, ...] = ()
+    source_admission_check: Callable[[], None] | None = field(
+        default=None, repr=False, compare=False
+    )
 
     def __post_init__(self) -> None:
+        if self.source_admission_check is not None and not callable(
+            self.source_admission_check
+        ):
+            raise TypeError("decision source admission check must be callable")
         proposals = tuple(self.proposals)
         if any(
             not isinstance(item, PolymarketAutonomousOpenProposal) for item in proposals
@@ -770,6 +777,11 @@ class PolymarketAutonomousSupervisor:
             await self._close_owned()
         if self._paused:
             return
+        submission_options = {}
+        if decision.source_admission_check is not None:
+            submission_options["source_admission_check"] = (
+                decision.source_admission_check
+            )
         for proposal in decision.locks:
             if self._shutdown_requested.is_set() or self._paused:
                 return
@@ -788,6 +800,7 @@ class PolymarketAutonomousSupervisor:
                     self.coordinator,
                     lifecycle_qualification=self.lifecycle_qualification,
                     clock_ms=self._clock_ms,
+                    **submission_options,
                 )
             except PolymarketLiveBlocked as exc:
                 self._blocked_locks += 1
@@ -816,6 +829,7 @@ class PolymarketAutonomousSupervisor:
                     self.coordinator,
                     lifecycle_qualification=self.lifecycle_qualification,
                     clock_ms=self._clock_ms,
+                    **submission_options,
                 )
             except PolymarketLiveBlocked as exc:
                 self._blocked_reductions += 1
@@ -866,6 +880,7 @@ class PolymarketAutonomousSupervisor:
                     lifecycle_qualification=self.lifecycle_qualification,
                     external_signal=None,
                     clock_ms=self._clock_ms,
+                    **submission_options,
                 )
             except PolymarketLiveBlocked as exc:
                 if isinstance(exc, PolymarketWalletCapitalShortfall):

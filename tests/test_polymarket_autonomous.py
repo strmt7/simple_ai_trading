@@ -643,6 +643,46 @@ def test_promoted_lock_is_fak_and_cannot_increase_event_downside(
     assert neg_risk is False
 
 
+@pytest.mark.parametrize("transition", ["open", "lock", "reduce"])
+def test_promoted_transition_forwards_the_final_source_check(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, transition: str
+) -> None:
+    promotion = _verified_promotion(tmp_path)
+    coordinator = _Coordinator(_Venue())
+    functions = {
+        "open": (submit_promoted_open, _proposal),
+        "lock": (submit_promoted_lock, _lock),
+        "reduce": (submit_promoted_reduction, _reduction),
+    }
+    submit, proposal = functions[transition]
+    observed = []
+
+    def assert_source_admission() -> None:
+        observed.append("revoked")
+        raise PolymarketLiveBlocked("public source changed")
+
+    def receive_source_check(*_args, source_admission_check, **_kwargs):
+        assert source_admission_check is assert_source_admission
+        source_admission_check()
+
+    method = "submit_owned_close_order" if transition == "reduce" else "submit"
+    monkeypatch.setattr(coordinator, method, receive_source_check)
+    options = {"opening_approval": OPENING_APPROVAL} if transition == "open" else {}
+    with pytest.raises(PolymarketLiveBlocked, match="public source changed"):
+        submit(
+            proposal(promotion),
+            promotion,
+            coordinator,
+            lifecycle_qualification=_qualification(),
+            clock_ms=lambda: NOW_MS,
+            source_admission_check=assert_source_admission,
+            **options,
+        )
+
+    assert observed == ["revoked"]
+    assert coordinator.submissions == [] and coordinator.targeted_closes == []
+
+
 def test_promoted_lock_cannot_exceed_unpaired_owned_inventory(
     tmp_path: Path,
 ) -> None:
