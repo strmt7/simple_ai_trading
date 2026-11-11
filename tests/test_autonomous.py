@@ -207,6 +207,17 @@ def _make_config(tmp_path: Path, **overrides) -> AutonomousConfig:
     return AutonomousConfig(**defaults)
 
 
+def _capital_policy_for(cfg, strategy):
+    return {
+        "quote_asset": "USDC",
+        "reference_cash_quote": str(cfg.starting_reference_cash),
+        "maximum_daily_loss_fraction": str(strategy.max_daily_loss_pct),
+        "maximum_lifetime_loss_fraction": str(strategy.max_session_loss_pct),
+        "maximum_settled_peak_drawdown_fraction": str(strategy.max_drawdown_limit),
+        "maximum_consecutive_losses": strategy.max_consecutive_losses,
+    }
+
+
 def _runtime(
     testnet: bool = True, *, api_key: str = "k", api_secret: str = "s"
 ) -> RuntimeConfig:
@@ -1355,7 +1366,9 @@ def test_run_loop_reconciles_and_observes_before_post_outage_entry(
 ) -> None:
     cfg = _make_config(tmp_path, stop_after_iterations=3, dry_run=False)
     enrolled_binance_runtime(
-        PositionsStore(root=cfg.positions_root), FakeClient().execution_scope()
+        PositionsStore(root=cfg.positions_root),
+        FakeClient().execution_scope(),
+        capital_policy=_capital_policy_for(cfg, _strategy()),
     )
     attempts = {"n": 0}
     reconciliations: list[str] = []
@@ -1405,7 +1418,9 @@ def test_run_loop_recovery_cooldown_observes_before_entry(
 ) -> None:
     cfg = _make_config(tmp_path, stop_after_iterations=3, dry_run=False)
     enrolled_binance_runtime(
-        PositionsStore(root=cfg.positions_root), FakeClient().execution_scope()
+        PositionsStore(root=cfg.positions_root),
+        FakeClient().execution_scope(),
+        capital_policy=_capital_policy_for(cfg, _strategy()),
     )
     attempts = {"n": 0}
 
@@ -1703,7 +1718,9 @@ def test_run_loop_live_open_submits_bot_client_order_id(
 
     cfg = _make_config(tmp_path, stop_after_iterations=1, dry_run=False)
     enrolled_binance_runtime(
-        PositionsStore(root=cfg.positions_root), FakeClient().execution_scope()
+        PositionsStore(root=cfg.positions_root),
+        FakeClient().execution_scope(),
+        capital_policy=_capital_policy_for(cfg, _strategy()),
     )
 
     class ObservingClient(FakeClient):

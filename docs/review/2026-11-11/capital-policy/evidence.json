@@ -1,0 +1,154 @@
+{
+  "authority": {
+    "goal_complete": false,
+    "historical_results_modified": false,
+    "market_requests": 0,
+    "new_financial_observations": 0,
+    "orders": 0,
+    "protected_captures_touched": false,
+    "real_account_requests": 0,
+    "real_credentials_used": false,
+    "schedules_services_or_startup_hooks_created": false,
+    "training_or_benchmarks": 0
+  },
+  "baseline": "48c2df41f0d856d55fdd939223fe45eee724fb8e",
+  "captured_at_utc": "2026-11-11T12:14:21.783467+00:00",
+  "changed_document_sha256": {
+    "docs/BINANCE_CAPITAL_POLICY.md": "f5fbdae9a502fc7df35dc7d9036a60e4b551088aba7f4e8e1a82b78d7b14f055",
+    "docs/CAPITAL_PROTECTION_ARCHITECTURE.md": "f4332378e4038501a3d0f9c2ba3e67105cf880baee44b50a0d877a8b84de2a50",
+    "docs/CONTINUATION.md": "c1a75651d9b697ad7fe915f6ce18cf7e608663a85acce730c9f9c344decd6457",
+    "docs/DEVELOPMENT_PLAN.md": "5762b6fa126a3eaa60e4f728f9514a985fd217e773bbbb9e8f1c9b885ef76bc5",
+    "docs/DEVELOPMENT_WORK_GRAPH.json": "72c686809e725b7fc53bea32a5a8b89eb50832209aaa32183c160846953b4153",
+    "docs/review/2026-11-11/capital-policy/review.md": "9a2471f77cbdf6e9f5711149afcad93b007ab89445eb039a033ce64f0c225186"
+  },
+  "corrections": [
+    "Three legacy entry fixtures now explicitly activate a synthetic policy before starting their owner.",
+    "The first domain phase exposed an owned-exit regression. Entry-policy denial is now separate from owned management; known cash-loss reduction is not masked.",
+    "All source snapshots and original failure logs remain retained. No admission gate was weakened."
+  ],
+  "implemented": [
+    "Strict canonical loss policy with original scope/execution identity, quote/reference and effective-limit binding",
+    "Existing-journal hash-linked history/head and independent prepared/ready resource enrollment",
+    "Ownerless-Stop activation with exact head CAS, atomic updates, explicit committed-preparation recovery and noncreating ordinary reads",
+    "Reference/unit changes rejected pending qualified cash-flow migration; prior cash/UNKNOWN history preserved",
+    "Signed autonomous capital admission requires the policy; owned managed closing remains separate",
+    "Offline installed capital-policy command and generated native expert registration"
+  ],
+  "limitations": [
+    "This is a signed-autonomous loss-policy boundary, not full gateway, account or financial qualification.",
+    "Local identity/hash checks do not defeat coordinated rollback/rewrite of all authority material.",
+    "The financial census and zero-qualified-stable-edge status are unchanged."
+  ],
+  "package_complete": false,
+  "phase_receipts": {
+    "domain": {
+      "exit_code": 1,
+      "log_sha256": {
+        "stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout": "8d2b71a34a0fda9ab4b8fbb5257b4ad07ec9c57c009f6882e81550d3dbcf68d1"
+      },
+      "receipt_sha256": "6293973a9d842847d265f0aefc407f7282f93b478dba076b82cc95ab336f4d61"
+    },
+    "domain-final": {
+      "exit_code": 0,
+      "log_sha256": {
+        "stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout": "ef7eadaea86f2dbd3c7e69173909341a30b7365375c84f91e1d02f726d2530a2"
+      },
+      "receipt_sha256": "50984ed0d5392296e9c6e0ffd70fd8a25d9060e48cc6db26883f5d7e9ae714e4"
+    },
+    "focused": {
+      "exit_code": 0,
+      "log_sha256": {
+        "stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout": "163940ded7ea562a7564c87b482db235081c8b7c248935035e5cb99e596fd94f"
+      },
+      "receipt_sha256": "019fb9df96d2adf91c91dcd81f4f9f9a52f409a4b1bca4436eb70eac93697ba7"
+    },
+    "format-confirmation": {
+      "exit_code": 0,
+      "log_sha256": {
+        "stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout": "7a3b91ca130281bcbd64ffccf88b379820ff32dfb09bd4b6af0e081bd036189f"
+      },
+      "receipt_sha256": "e0dd5a2e6352fa8331a03cb5293d5eaaf37cf0b8c62dda37a555b643075ecc0f"
+    }
+  },
+  "remaining": [
+    "Universal direct-writer/roundtrip and final-intent policy fencing",
+    "Polymarket policy integration",
+    "Complete marked/day/external-flow state, account UID/capabilities and reservations",
+    "Model/generation identity, quarantine, controlled rearm and independent supervision",
+    "Alternate session-resource wiring, backup/restore, physical reboot and complete native operations"
+  ],
+  "result_sha256": "3d56423950e71a6f6e7bfac7dff9799bf17f5a5bfadd99be5af8091cf42be80e",
+  "schema_version": "enrolled-binance-loss-policy-evidence-v1",
+  "verification": {
+    "affected_domain_cases_passed": 373,
+    "case_counts_overlap": true,
+    "formatted_module_cases_passed": 70,
+    "native_contract": "Installed parser options and generated expert digest/registration tested; no GUI/reboot acceptance claimed.",
+    "reused_scopes": "Only tests/test_autonomous.py changed after the full phase; that complete module was requalified. All other current source hashes match the full phase.",
+    "static_checks": {
+      "format": {
+        "exit_code": 0,
+        "log_sha256": {
+          "stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "stdout": "8e93d18ae56550d4eef2feac77e6630617c7e169246e56e39c75d58b46167985"
+        },
+        "name": "format"
+      },
+      "ruff": {
+        "exit_code": 0,
+        "log_sha256": {
+          "stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "stdout": "82b3e6a6c090a57601d22943bd23fca9218d1031dbe5a7b754092f9a156b4f18"
+        },
+        "name": "ruff"
+      },
+      "terminology": {
+        "exit_code": 0,
+        "log_sha256": {
+          "stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "stdout": "0ea6905b288c43c28f866dcb0df9885bcf26b2698079328822c03b416102e4e1"
+        },
+        "name": "terminology"
+      },
+      "vulture": {
+        "exit_code": 0,
+        "log_sha256": {
+          "stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "stdout": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "name": "vulture"
+      }
+    },
+    "tested_source_sha256": {
+      "native/windows/generated/command_contract.hpp": "532f279d316ed132ee4c026d246969a436c1fe7ae8a02bec4f5e91a6b57748d7",
+      "src/simple_ai_trading/autonomous.py": "50060d49fda627d2f64eebb739b27ad8b1f47503ff9c71b4945a5d6f9f42d2dd",
+      "src/simple_ai_trading/binance_capital_policy.py": "724c6889206823cb29f9041bab2090ca0290f27a63f5728c4b45dafb48beab09",
+      "src/simple_ai_trading/binance_capital_policy_cli.py": "eab22e6f56f492db5355c77137ebcea1275f89e9e7152e6d2380b8e9e3a5b370",
+      "src/simple_ai_trading/binance_execution_storage.py": "8d90728155f01b078be024f855f45b6185159c3f4fa7f8f21538a8fd803f3533",
+      "src/simple_ai_trading/binance_open_intents.py": "9a78e005880962a9d2d6b638e581a2f3d77cfcdd08dee413da9b1ddf8ff0408d",
+      "src/simple_ai_trading/binance_runtime_control.py": "b6b5c58f474d76b2df3ad50ed2d20b1a2031e41fd078b95a203d34dc9e665cd4",
+      "src/simple_ai_trading/capital_drawdown.py": "61cd7b955339b7a70038ae0856ffe4cc601face1f24921d6a1878f24a633cbe3",
+      "src/simple_ai_trading/command_contract.py": "85b7740e74f2d3fac72cc8ff65980d226572441a7c029932d737e15a56d3bcc5",
+      "src/simple_ai_trading/entrypoint.py": "fc57cc5ff0795b4da9d7701ac187ca3f682b39b89b73db61f1a75361a0008935",
+      "src/simple_ai_trading/position_transactions.py": "743275b5e92337bd24825c7b4e4f2d79c1ecb7556bf02d8d56cadfcbe148d97b",
+      "src/simple_ai_trading/positions.py": "0baf01909be1135d56d887fa7499fc4d3ebccf74f04844d49c61f288c7378154",
+      "src/simple_ai_trading/runtime_control.py": "518064c99eaf7a0492c2bbaa8ce15abdad68757b7f5fa3da96996c3649add815",
+      "src/simple_ai_trading/runtime_control_storage.py": "30fbebef310e209f1fd2f74a7a96622b76e86b51f6bfeb55d944e53e962897d3",
+      "src/simple_ai_trading/types.py": "bd91cb6210b8fca83eff2a6c112d99c127099616c2ead65a308aa5f9778d0479",
+      "tests/conftest.py": "a355f47ddcbd029c5722b45d118a7dfb4577e439a264b899e8cfd376883d0a7c",
+      "tests/test_autonomous.py": "23647c024bdb39732276e11c87d557b665ce093738d10a6adc23e0643317488d",
+      "tests/test_autonomous_capital_valuation.py": "f37b02c0dc1867966e73cc0a38b35f0eb29d628e7c52e590e98ac01e45d0afce",
+      "tests/test_autonomous_cash_peak.py": "1119df1a79b7e4adbd36f77daf3949fc7c5b946f47d1e13c34d26e4ba7a748a2",
+      "tests/test_autonomous_spot_cash.py": "6afd9deea4af3ba31354c6f6ca6aaf85caa8a27a9a19e0382b27525517f0052a",
+      "tests/test_autonomous_spot_inventory.py": "15409804f10f5f0e97eef4abdcfc1ed63ffe7e20212afaf856511358ba2c3091",
+      "tests/test_binance_capital_policy.py": "76f89817db44768b51ca59a95f5f71376899e181ad52552e1ececc77bd3def50",
+      "tests/test_close_recovery_cli.py": "d0ee08536b5ba8e282634e52d2aa62edd1a42d89ddf1d0722dca0d817cc90663",
+      "tests/test_close_recovery_collection_cli.py": "1226f328c7e46a62d23b1099ca5670e6cc77ce8c731b09057deb249c87d80bb5"
+    }
+  },
+  "work_package": "SAFE-02"
+}

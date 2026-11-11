@@ -303,6 +303,7 @@ class CapitalGuard:
     consecutive_losses: int
     force_close: bool = False
     realized_peak_drawdown: float | None = None
+    capital_policy_sha256: str | None = None
 
 
 @dataclass(frozen=True)
@@ -732,6 +733,32 @@ def _loss_budget_guard(
         or strategy.max_consecutive_losses < 0
     ):
         return CapitalGuard(False, "risk-policy-loss-limits-unqualified", 0.0, 0.0, 0)
+    if type(cfg.dry_run) is not bool:
+        return CapitalGuard(
+            False, "risk-policy-execution-mode-unqualified", 0.0, 0.0, 0
+        )
+    policy_digest = None
+    policy_blocked = False
+    if not cfg.dry_run:
+        from .binance_capital_policy import BinanceCapitalPolicyStore
+        from .binance_runtime_control import RuntimeControlError
+
+        try:
+            policy_digest = BinanceCapitalPolicyStore(store).assert_effective(
+                strategy,
+                cfg.starting_reference_cash,
+                symbol=mark_symbol,
+                market_type=mark_market_type,
+            )
+        except (
+            OSError,
+            sqlite3.Error,
+            ValueError,
+            TypeError,
+            KeyError,
+            RuntimeControlError,
+        ):
+            policy_blocked = True
     mark = (
         float(mark_price)
         if not isinstance(mark_price, bool)
@@ -856,6 +883,7 @@ def _loss_budget_guard(
             consecutive_losses,
             force_close=True,
             realized_peak_drawdown=drawdown,
+            capital_policy_sha256=policy_digest,
         )
     if (
         strategy.max_session_loss_pct > 0.0
@@ -869,6 +897,7 @@ def _loss_budget_guard(
             consecutive_losses,
             force_close=True,
             realized_peak_drawdown=drawdown,
+            capital_policy_sha256=policy_digest,
         )
     if strategy.max_drawdown_limit > 0.0 and drawdown >= strategy.max_drawdown_limit:
         return CapitalGuard(
@@ -879,6 +908,7 @@ def _loss_budget_guard(
             consecutive_losses,
             force_close=True,
             realized_peak_drawdown=drawdown,
+            capital_policy_sha256=policy_digest,
         )
     if (
         strategy.max_consecutive_losses > 0
@@ -892,14 +922,29 @@ def _loss_budget_guard(
             consecutive_losses,
             force_close=False,
             realized_peak_drawdown=drawdown,
+            capital_policy_sha256=policy_digest,
         )
     return CapitalGuard(
-        True,
-        "allowed",
+        not policy_blocked,
+        "risk-policy-activation-unqualified" if policy_blocked else "allowed",
         daily_loss,
         session_loss,
         consecutive_losses,
         realized_peak_drawdown=drawdown,
+        capital_policy_sha256=policy_digest,
+    )
+
+
+def _capital_blocks_owned_management(
+    guard: CapitalGuard, store: PositionsStore
+) -> bool:
+    """Keep qualified owned exits running when only new-entry policy is unavailable."""
+    if guard.allowed:
+        return False
+    if guard.force_close:
+        return True
+    return guard.reason != "risk-policy-activation-unqualified" or not store.load_open(
+        strict=True
     )
 
 
@@ -1278,7 +1323,7 @@ def run_loop(
                     mark_symbol=runtime.symbol,
                     mark_market_type=runtime.market_type,
                 )
-                if not capital_guard.allowed:
+                if _capital_blocks_owned_management(capital_guard, store):
                     if capital_guard.force_close:
                         if not cfg.dry_run:
                             try:
@@ -1377,7 +1422,7 @@ def run_loop(
                 mark_symbol=runtime.symbol,
                 mark_market_type=runtime.market_type,
             )
-            if not capital_guard.allowed:
+            if _capital_blocks_owned_management(capital_guard, store):
                 if capital_guard.force_close:
                     if not cfg.dry_run:
                         try:

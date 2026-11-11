@@ -139,6 +139,13 @@ and explicit rearm require their own verified continuation stages.
 
 ### SAFE-02 — Durable risk policy and recovery state
 
+The [enrolled loss-policy phase](review/2026-11-11/capital-policy/review.md) binds
+signed autonomous evaluation to explicit scope/unit/reference/limit revisions
+in the existing execution journal. The [procedure](BINANCE_CAPITAL_POLICY.md)
+preserves Stop, cash history and owned reduction. Universal writer/final-intent
+integration, complete policy fields and the remaining state contract below are
+still required; the active loss-policy hash is not a full gateway qualification.
+
 The [cash-peak repair](review/2026-11-11/cash-peak-risk/review.md) fixes a reproduced
 Binance capital-admission defect: retracement of settled gains was treated as zero
 drawdown while lifetime PnL stayed positive. The guard reconstructs that scoped

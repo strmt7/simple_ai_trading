@@ -206,7 +206,7 @@ _WORKFLOW_GROUPS: tuple[tuple[str, str, tuple[str, ...]], ...] = (
         "Evidence and reporting",
         ("audit", "report", "signals", "source-grades"),
     ),
-    ("Risk", "Owned close recovery", ("recover-close",)),
+    ("Risk", "Owned close recovery", ("recover-close", "capital-policy")),
     (
         "Data",
         "Market data",

@@ -236,12 +236,14 @@
         "src/simple_ai_trading/runtime_control.py",
         "src/simple_ai_trading/runtime_control_storage.py",
         "src/simple_ai_trading/autonomous.py",
-        "src/simple_ai_trading/capital_drawdown.py"
+        "src/simple_ai_trading/capital_drawdown.py",
+        "src/simple_ai_trading/binance_capital_policy.py",
+        "src/simple_ai_trading/binance_capital_policy_cli.py"
       ],
       "status": "partially_complete",
       "title": "Durable policy, loss and recovery authority",
-      "progress_evidence": "docs/review/2026-11-11/cash-peak-risk/evidence.json",
-      "remaining": "Versioned policy activation/binding; native marked high-water/day baselines and external flows; reservations, model/generation identity, quarantine and explicit rearm."
+      "progress_evidence": "docs/review/2026-11-11/capital-policy/evidence.json",
+      "remaining": "Universal/final-intent policy fencing, Polymarket policy, full marked/day/external-flow state, reservations, model/generation identity, quarantine, explicit rearm and complete recovery qualification."
     },
     {
       "depends_on": [

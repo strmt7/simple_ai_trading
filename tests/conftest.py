@@ -24,7 +24,9 @@ def isolate_decimal_context():
         yield
 
 
-def enroll_synthetic_binance_runtime(store, scope, *, execution=True, start=True):
+def enroll_synthetic_binance_runtime(
+    store, scope, *, execution=True, start=True, capital_policy=None
+):
     """Construct explicit authority for an account with no real venue obligations."""
     from simple_ai_trading.binance_execution_storage import BinanceExecutionStorage
     from simple_ai_trading.binance_runtime_control import (
@@ -41,6 +43,21 @@ def enroll_synthetic_binance_runtime(store, scope, *, execution=True, start=True
             scope=scope,
             expected_snapshot_sha256=existing.get("journal_snapshot_sha256"),
         )
+    if capital_policy is not None:
+        from simple_ai_trading.binance_capital_policy import (
+            BinanceCapitalPolicy,
+            BinanceCapitalPolicyStore,
+        )
+
+        policies = BinanceCapitalPolicyStore(store, control=control)
+        observed = policies.inspect()
+        policy = BinanceCapitalPolicy(
+            schema_version="binance-capital-policy-v1",
+            execution_scope_sha256=observed["execution_scope_sha256"],
+            execution_store_id=observed["execution_store_id"],
+            **capital_policy,
+        )
+        policies.activate(policy, expected_head_sha256=observed["head_sha256"])
     lease = ""
     if start:
         assert control.complete_stale_stop(exposure_closed=True)
@@ -52,9 +69,13 @@ def enroll_synthetic_binance_runtime(store, scope, *, execution=True, start=True
 def enrolled_binance_runtime(monkeypatch):
     from simple_ai_trading.binance_runtime_control import BINANCE_RUNTIME_LEASE_ENV
 
-    def enroll(store, scope, *, execution=True, start=True):
+    def enroll(store, scope, *, execution=True, start=True, capital_policy=None):
         authority = enroll_synthetic_binance_runtime(
-            store, scope, execution=execution, start=start
+            store,
+            scope,
+            execution=execution,
+            start=start,
+            capital_policy=capital_policy,
         )
         if start:
             monkeypatch.setenv(BINANCE_RUNTIME_LEASE_ENV, authority.lease_id)

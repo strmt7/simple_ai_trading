@@ -1,5 +1,11 @@
 # Capital protection and final release verification
 
+The [enrolled loss policy](review/2026-11-11/capital-policy/review.md) now binds
+signed Binance autonomous capital evaluation to explicit scope, quote/reference
+and limit revisions. Activation/recovery preserve Stop and prior cash history;
+owned automatic exits remain separate from entry-policy permission. This is a
+loss-policy boundary, not full policy/gateway or account qualification.
+
 The [settled-cash peak repair](review/2026-11-11/cash-peak-risk/review.md) corrects
 Binance admission after gains followed by retracement, including reconstruction
 from retained history after restart. Its risk-capital-normalized metric is not a

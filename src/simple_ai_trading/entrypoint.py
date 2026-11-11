@@ -6,6 +6,7 @@ import argparse
 import sys
 
 from . import cli
+from .binance_capital_policy_cli import register_binance_capital_policy_command
 from .polymarket_live_cli import register_polymarket_live_command
 from .polymarket_round21_cli import register_polymarket_round21_commands
 from .round74_segmented_development_cli import (
@@ -31,6 +32,7 @@ def _build_parser() -> argparse.ArgumentParser:
     if subparsers is None:
         raise RuntimeError("CLI parser has no command registry")
     register_polymarket_live_command(subparsers)
+    register_binance_capital_policy_command(subparsers)
     register_polymarket_round21_commands(subparsers)
     register_round74_segmented_development_command(subparsers)
     register_round74_segmented_terminal_commands(subparsers)

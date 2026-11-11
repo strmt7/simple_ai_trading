@@ -2,7 +2,7 @@
 
 namespace simple_ai_trading::native_contract {
 
-inline constexpr const wchar_t* kCommandContractSha256 = L"e5700ba8408311aafee1b70324dcf506384fe564239553fd3b96e27346bd1cff";
+inline constexpr const wchar_t* kCommandContractSha256 = L"caff720323d545bfa4aa1de1a8ab6436946f92795871fe75b903cf0a3f7ff878";
 
 struct CommandOptionSpec {
     const wchar_t* flags;
@@ -247,6 +247,20 @@ inline constexpr CommandOptionSpec kOptions_binance_round74_sealed_evaluate[] = 
     {L"--inference-minibatch-rows", L"inference_minibatch_rows", L"", L"2048", L"bounded inference minibatch rows", L"1", false, true, false},
     {L"--terminal-observed-wall-ns", L"terminal_observed_wall_ns", L"", L"", L"optional fixed terminal observation time", L"1", false, true, false},
     {L"--acknowledge-one-use-test-access", L"acknowledge_one_use_test_access", L"", L"false", L"confirm that reservation permanently consumes sealed-test access", L"0", true, false, false},
+};
+
+inline constexpr CommandOptionSpec kOptions_capital_policy[] = {
+    {L"--action", L"action", L"inspect, activate, recover", L"inspect", L"", L"1", false, true, false},
+    {L"--data-dir", L"data_dir", L"", L"", L"", L"1", true, true, false},
+    {L"--policy", L"policy", L"", L"", L"activate only: private strict policy JSON, at most 8192 bytes", L"1", false, true, false},
+    {L"--expected-head-sha256", L"expected_head_sha256", L"", L"", L"activate only: exact inspected policy head", L"1", false, true, false},
+    {L"--expected-store-id", L"expected_store_id", L"", L"", L"recover only: prepared policy storage ID", L"1", false, true, false},
+    {L"--expected-record-sha256", L"expected_record_sha256", L"", L"", L"recover only: exact prepared enrollment digest", L"1", false, true, false},
+    {L"--runtime-control", L"runtime_control", L"", L"", L"", L"1", false, true, false},
+    {L"--runtime-enrollment", L"runtime_enrollment", L"", L"", L"", L"1", false, true, false},
+    {L"--execution-enrollment", L"execution_enrollment", L"", L"", L"", L"1", false, true, false},
+    {L"--policy-enrollment", L"policy_enrollment", L"", L"", L"", L"1", false, true, false},
+    {L"--json", L"json", L"", L"false", L"", L"0", false, false, false},
 };
 
 inline constexpr CommandOptionSpec kOptions_close[] = {
@@ -1411,6 +1425,7 @@ inline constexpr CommandSpec kCommands[] = {
     {L"binance-round74-develop", L"Route every admitted training and tuning run across completed event database shards before reading target manifests, train the frozen ML family, and optionally qualify the local-AI veto. This development-only command never accesses the sealed test or grants trading authority.", kOptions_binance_round74_develop, 19},
     {L"binance-round74-recover-sealed", L"Export the complete validated result from its one-use store. This command does not reopen the event database, targets, or AI models.", kOptions_binance_round74_recover_sealed, 2},
     {L"binance-round74-sealed-evaluate", L"Reserve the terminal test before reading target artifacts, run the frozen ML and two-model AI family, perform exact delayed L2 replay, and persist a recoverable result. This command grants no trading authority and cannot be retried after access is reserved.", kOptions_binance_round74_sealed_evaluate, 20},
+    {L"capital-policy", L"usage: simple-ai-trading capital-policy [-h] [--action {inspect,activate,recover}] --data-dir DATA_DIR [--policy POLICY] [--expected-head-sha256 EXPECTED_HEAD_SHA256] [--expected-store-id EXPECTED_STORE_ID] [--expected-record-sha256 EXPECTED_RECORD_SHA256] [--runtime-control RUNTIME_CONTROL] [--runtime-enrollment RUNTIME_ENROLLMENT] [--execution-enrollment EXECUTION_ENROLLMENT] [--policy-enrollment POLICY_ENROLLMENT] [--json]", kOptions_capital_policy, 11},
     {L"close", L"usage: simple-ai-trading close [-h] position_id", kOptions_close, 1},
     {L"compute", L"usage: simple-ai-trading compute [-h] [--backend {auto,cpu,cuda,rocm,xpu,mps,directml}]", kOptions_compute, 1},
     {L"configure", L"usage: simple-ai-trading configure [-h]", nullptr, 0},
@@ -1589,6 +1604,7 @@ inline constexpr WorkflowCommandSpec kWorkflowCommands[] = {
     {L"Risk", L"Evidence and reporting", L"signals"},
     {L"Risk", L"Evidence and reporting", L"source-grades"},
     {L"Risk", L"Owned close recovery", L"recover-close"},
+    {L"Risk", L"Owned close recovery", L"capital-policy"},
     {L"Data", L"Market data", L"fetch"},
     {L"Data", L"Market data", L"data-sync"},
     {L"Data", L"Market data", L"archive-sync"},

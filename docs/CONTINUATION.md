@@ -62,14 +62,15 @@ before continuing an affected family. None supplies a qualified stable edge.
   and [native receipts](review/2026-11-10/spot-response-receipts/review.md)
   close their reproduced gaps. Bound legacy version 2 retains owned recovery;
   new exposure requires verified migration. Account UID, coordinated rollback,
-  universal writer fencing and complete recovery/rearm remain open.
+  universal writer fencing and recovery/rearm remain open.
+  [Loss policy](review/2026-11-11/capital-policy/review.md) binds signed autonomous
+  evaluation to explicit revisions; activation never clears Stop or cash history.
   [Valuation](review/2026-11-11/capital-valuation/review.md) and
   [cash peak](review/2026-11-11/cash-peak-risk/review.md) bind scoped marks and retained cash.
   [Signed residuals](review/2026-11-11/signed-residual/review.md)
   preserve positive quantities. [Spot application](review/2026-11-11/terminal-application/review.md)
-  reconciles cumulative cash under ownerless Stop. [Operator recovery](review/2026-11-11/recovery-operator/review.md)
-  adds offline CLI inspect/apply and native expert registration. Authenticated
-  [stopped collection](review/2026-11-11/close-collection/review.md) now has bounded original-order reads.
+  reconciles cumulative cash under ownerless Stop.
+  [Stopped collection](review/2026-11-11/close-collection/review.md) has bounded original-order reads.
   [Operator collection](review/2026-11-11/recovery-workflow/review.md) connects pending inspection,
   bounded reads and Spot application with cached/uncertain outcomes. Guided
   forms, futures/legacy application, account qualification and rearm remain open.
