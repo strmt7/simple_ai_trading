@@ -1,0 +1,233 @@
+{
+  "accepted_edge": false,
+  "actual_account_requests": 0,
+  "base_revision": "8f3986161bfedb8d6c811bd270bd5bf7ab663d55",
+  "canonical_census": {
+    "audit_sha256": "f0e0a9124e80f6463c77597c3dc16030b44e225f5eaa0e8f7308d551910dbf96",
+    "hypotheses": 65,
+    "observations": 206,
+    "profitability_qualification_supplied_by_verifier": false,
+    "recorded_qualified_stable_edges": 0,
+    "registry_sha256": "ac47c5ed812682737ac3e576baeade1b03c98b7bc83b5c118cd3e953b0c4c03c",
+    "scoped_mechanisms": 37,
+    "validation_kind": "registry_binding_and_recorded_census_only"
+  },
+  "contract_sha256": "ddd8a65ba9a1697302937d3406085594d4fe2919cfde74d6149bf084b36c5ff4",
+  "full_goal_complete": false,
+  "new_economic_observations": 0,
+  "new_fit": false,
+  "new_network_requests": 0,
+  "orders": 0,
+  "private_evidence": {
+    "controls-corrected-stderr.log": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "controls-corrected-stdout.log": {
+      "bytes": 101,
+      "sha256": "b0054dcbed88b40b431a14e0e50db733065e908e28038b8708aa549112992624"
+    },
+    "controls-stderr.log": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "controls-stdout.log": {
+      "bytes": 2302,
+      "sha256": "a1a94198f5bf0ac4392aab4813e648c0c01dd01689ed09832608844d74b8df2a"
+    },
+    "execute.py": {
+      "bytes": 3372,
+      "sha256": "da1a3cff942ede6539aadbe226bb481fde356d872ac6cf69cd9537072878428f"
+    },
+    "execution-stderr.log": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "execution-stdout.log": {
+      "bytes": 225,
+      "sha256": "432833812f5230c4ecb86471e412838a714ed7e7a1ed81d5d0bd970f519df1b6"
+    },
+    "execution.json": {
+      "bytes": 378,
+      "sha256": "a2b07a5e1b2328534ce4e7e479d71c9e275952d11916eadfa2c37daa18c09982"
+    },
+    "independent-stderr.log": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "independent-stdout.log": {
+      "bytes": 675,
+      "sha256": "22f7b110c70df6ad6c381311f4c4914f97542883fa073cbdbaf589066595f7ac"
+    },
+    "metadata-intent.json": {
+      "bytes": 1107,
+      "sha256": "d66a8aff8eb50e80a1ccfb57c75e4ed60ad259706f7f41e2f729cbbd490b87b0"
+    },
+    "metadata-result.json": {
+      "bytes": 372,
+      "sha256": "eac641d7a17ffff9ff69c8cb7543f2c2f250c38d61b5541c9990d7f5b2cd7e81"
+    },
+    "metadata.py": {
+      "bytes": 3147,
+      "sha256": "5c2b678ee9b7f5027e5827278dc50010cdd6b4ae320a58db036640a00f6dcc40"
+    },
+    "preflight-stderr.log": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "preflight-stdout.log": {
+      "bytes": 190,
+      "sha256": "0161cd1956a7594bcd4361883e29c734c2abc3a31871f05f61cbae87ac76bc39"
+    },
+    "preflight.json": {
+      "bytes": 298,
+      "sha256": "ea8ceb8d565aec693918117aad983e89716eb9db85a129bcd39894c2b426ca31"
+    },
+    "rule-metadata.json": {
+      "bytes": 90658,
+      "sha256": "730d82124b4392d643d5bba6316ca3aac88a1deef722c9ffb848dc8179e54acc"
+    },
+    "screen-journal.jsonl": {
+      "bytes": 384,
+      "sha256": "f43277ecc3d50e8ed4a300c5346ad33377bffef77112871ca128032003b0f858"
+    },
+    "source-before-economics.zip": {
+      "bytes": 13891,
+      "sha256": "79f789b68b36c914ec8df51ff15cd43161ad5f46c0308a81d0b97f972f8a73f5"
+    },
+    "source-corrected-before-economics.zip": {
+      "bytes": 13942,
+      "sha256": "8e678da754bd2381e5cab8fa67c0c02b13991f2dbc630cb06dcbed9bb00b5168"
+    },
+    "verification-corrected.json": {
+      "bytes": 730,
+      "sha256": "66a9e76fda020c9044e13aabe85641a29ab8ee83c1470c0e9cb8cde122cbf764"
+    },
+    "verification.json": {
+      "bytes": 740,
+      "sha256": "4a0c88bdefd9831c01f16f076c7237969d3cac537bea00c90e476a85204b036c"
+    }
+  },
+  "profitability_claim": false,
+  "protected_capture_touched": false,
+  "public_artifacts_sha256": {
+    "contract.json": "8a4fda0281b9c73bafd12efb5e7a481cbf74e35a645dcdf9b66ebad3a4205484",
+    "independent-reconciliation.json": "a04b9451acb89f80ecee6c89d6ef0e399cc10f549cc123819d8dd716818499b3",
+    "reconcile.py": "d8ff932c51eb654bd76bca5277f5cb582ea0b3fd3d629b523e75e265222a11c2",
+    "registry-update.json": "d1cc8183b138e87d7e77a7294d787b89f356e7c7c53c386c790a5fca603fd07a",
+    "result.json": "faddd8234355c207a90af6f1bbccdec7e0dbcb88cdbc9a0bc1a7cc1de215d03f",
+    "review.md": "c96eebb27720a02fc39af73001307be92634bbd142f32340b6544633ec7ffa7c"
+  },
+  "recorded_at_utc": "2026-11-11T09:40:52.961334+00:00",
+  "result_sha256": "517d993dc3ae70363d8f072cf1dade6f1763780e03f9f79f3f244b849225aee4",
+  "result_sha256_bound": "40b73b91af8cf9bd02a00602d68ce002513d7d3744bb166599e5a746296d669a",
+  "runtime": {
+    "network_and_new_subprocess_denied": true,
+    "numerical_runtime": {
+      "numpy": "2.2.6",
+      "scipy": "1.18.1"
+    },
+    "other_tasks_modified": false,
+    "outer_deadline_seconds": 120,
+    "own_worker_affinity_maximum_logical_cpus": 2,
+    "owned_child_terminal": true,
+    "performance_or_gpu_benchmark": false,
+    "solver_limit_seconds": 20
+  },
+  "schema_version": "retained-joint-score-cover-review-v1",
+  "scope": {
+    "conditional_payoff_floor": "1",
+    "conditional_payoff_vectors": 1171,
+    "dual_support_states": 54,
+    "independent_validation": false,
+    "markets": 78,
+    "maximum_returned_portfolio_payoff": "2",
+    "minimum_conditional_proxy_cost": "1",
+    "numerical_dual_is_probability_forecast": false,
+    "priced_outcomes": 156,
+    "residual_expected_value_qualified": false,
+    "retrospective_consumed_response": true,
+    "score_bound": 89,
+    "strict_subfloor_cover_found": false
+  },
+  "semantic_review": {
+    "complete_new_files": [
+      "src/simple_ai_trading/score_cover.py",
+      "tools/screen_retained_score_cover.py",
+      "tests/test_score_cover.py",
+      "tests/test_screen_retained_score_cover.py",
+      "docs/review/2026-11-11/score-cover/reconcile.py"
+    ],
+    "whole_repository_complete": false
+  },
+  "source_bound_semantic_search": [
+    {
+      "name": "search-fade26133b2b42bf8b9f482362b28c95.json",
+      "sha256": "6a86889ee11e0abe6230ccdc2c182a56a035d003f6fb454ef9d446b38d15b808",
+      "source_snapshot": "1694eba6357e8ab6e6ae0d621384614f"
+    },
+    {
+      "name": "search-1a3eebba9f4d48b793a3e07d8a78661e.json",
+      "sha256": "47b03254342bb74b03484e2c40b0e327422e696eac7bfb6f24918ee7cfc9c199",
+      "source_snapshot": "1694eba6357e8ab6e6ae0d621384614f"
+    }
+  ],
+  "source_sha256": "34c9c9cbb09c878229b455d019b230c579433a5114c94dd6dd2197a9085ab592",
+  "verification": {
+    "all_source_unchanged_after_controls_and_economic_access": true,
+    "control_phase_before_economic_access": true,
+    "independent_rational_reconciliation_passed": true,
+    "independent_resealed_tamper_controls": [
+      "threshold",
+      "objective",
+      "authority"
+    ],
+    "native_preflight_passed": true,
+    "one_actual_calculation": true,
+    "original_zero_ask_control_failure_preserved": true,
+    "retained_result_or_frozen_implementation_modified_after_access": false,
+    "summary": "34 passed in 1.40s",
+    "tested_source_sha256": {
+      "docs/review/2026-11-11/score-cover/reconcile.py": "d8ff932c51eb654bd76bca5277f5cb582ea0b3fd3d629b523e75e265222a11c2",
+      "native/windows/generated/command_contract.hpp": "bdefd69c54f2879af230f5ce0ba6d49476767946ec9ff9e87e66d419f31e1edb",
+      "native/windows/src/main.cpp": "79c8af5084ea6109acf275cd07088754b81cb24ab1bce63500110ea4bd6d233d",
+      "src/simple_ai_trading/binance_acknowledgements.py": "ee91860a6a4469518aa8735b199222f9e97a53ee490ea02ebd3197ea562b570e",
+      "src/simple_ai_trading/binance_close_application.py": "dce2d54097af9ff210ebc615edb368acaa82eba64cd37108b0d0659660b8e64f",
+      "src/simple_ai_trading/binance_close_application_cli.py": "6098676306a5022c281b05415a5d55418dd00714b201a7f03db8a50698203c9d",
+      "src/simple_ai_trading/binance_close_intents.py": "fe5fb6a8d92ff892b777c53792a1220be1bf771420d4fa4eeef4b5e2eff9f5e8",
+      "src/simple_ai_trading/binance_close_recovery.py": "768322f2ba84c8819507dd8e9beaa29994e67595d9812d6e9f42f7e6d25e2aea",
+      "src/simple_ai_trading/binance_closing_inventory.py": "ebe0a64ea63564463c290b0d6a44215abe8930e06f1c1502c81e1ecbd8c8811e",
+      "src/simple_ai_trading/binance_execution_payloads.py": "7337b1ff06533584f60c67dd528a478d36614f55dc259033efc0cc901c57e583",
+      "src/simple_ai_trading/binance_execution_storage.py": "8d90728155f01b078be024f855f45b6185159c3f4fa7f8f21538a8fd803f3533",
+      "src/simple_ai_trading/binance_open_intents.py": "9a78e005880962a9d2d6b638e581a2f3d77cfcdd08dee413da9b1ddf8ff0408d",
+      "src/simple_ai_trading/binance_order_responses.py": "0094163663698b5ba63303e4c7a68153d37a4e6c3ca819d1a5283ca343de7e38",
+      "src/simple_ai_trading/binance_owned_execution.py": "25ce3f202cba7acfabedf12231a5bdff0528e32baa2c6cd2ff707e4951511e5c",
+      "src/simple_ai_trading/binance_recovery_reads.py": "0b93b6b7c7ded5e91a10b19b2ef7bfd848ff86a400eeb3cc4a32e960566d6b1b",
+      "src/simple_ai_trading/binance_runtime_control.py": "b6b5c58f474d76b2df3ad50ed2d20b1a2031e41fd078b95a203d34dc9e665cd4",
+      "src/simple_ai_trading/binance_spot_cash.py": "31b82c79811a4c12cde00ec5affa32f498d768fef2247041f69851dd0a4d9bc7",
+      "src/simple_ai_trading/binance_spot_receipts.py": "4c0ee7c05df80f3642ea043c963841ff87cae6b1bebfd89614a27a8245475945",
+      "src/simple_ai_trading/binance_terminal_fills.py": "d2b8444453b936b71f516d735e8a43a48c8ab17091de31b6cce1a66b3f76eb2f",
+      "src/simple_ai_trading/cli.py": "69eb0a7e974a6b041f8ccc5bf3c6a70b7a510c44277265563fe0e8131bcc9776",
+      "src/simple_ai_trading/command_contract.py": "ad7766ce06941931006076b531efd877c7f4d00ba57f87c1146ba7d83aabb6cd",
+      "src/simple_ai_trading/polymarket_http_process.py": "690d699118e47265df377676565ec2e44d934b75d792e8ebe8006b30e8287921",
+      "src/simple_ai_trading/polymarket_sdk_transport.py": "84cabf51be81f568ee275b3c3183be0862e1022045efff9edf7de108bd83233b",
+      "src/simple_ai_trading/position_transactions.py": "743275b5e92337bd24825c7b4e4f2d79c1ecb7556bf02d8d56cadfcbe148d97b",
+      "src/simple_ai_trading/positions.py": "0baf01909be1135d56d887fa7499fc4d3ebccf74f04844d49c61f288c7378154",
+      "src/simple_ai_trading/runtime_control.py": "518064c99eaf7a0492c2bbaa8ce15abdad68757b7f5fa3da96996c3649add815",
+      "src/simple_ai_trading/score_cover.py": "09fe5c8b5f756a47284ed71dd3518f84d2c1022e2c909e715b5af768f6860bbd",
+      "src/simple_ai_trading/windows_app.py": "81736a184cb4e2d945585212627782e4ed83e4b0c837d34dcf9ed1afb9846f7a",
+      "src/simple_ai_trading/windows_owned_job.py": "82dd0e80340c8388f20d6871863fdf5075d4f271d0c7fe9276a295db962f05ae",
+      "tests/conftest.py": "090974084e8c25f16dc18ed084269d75edb9fdb5f4d7d15e6e72bb23853d9abc",
+      "tests/test_ai_runtime_and_parity.py": "1f6490adcf1895f916a2b4ee1708af93c97b2bc06ed02097a657043450d7d193",
+      "tests/test_binance_close_application.py": "81be068666e0a0a5c8f705856f20b9f65360fd66bb1f4ff950aef4940633ef9d",
+      "tests/test_binance_close_recovery.py": "0b368d1ecc0141bf6a944a4fc9fd58fd28e309a74cfbad5049384226ddc1e0fa",
+      "tests/test_binance_recovery_reads.py": "c218d3e8e31a1673388be692d98c333cb0f697611c284d93fa20d87c6099f7e8",
+      "tests/test_cli_new_commands.py": "3adb7d3f59dc02f6294a351af75a600a9a8eed0c60fe1feb796d6ce6312ba856",
+      "tests/test_close_recovery_cli.py": "d0ee08536b5ba8e282634e52d2aa62edd1a42d89ddf1d0722dca0d817cc90663",
+      "tests/test_polymarket_http_process.py": "a8839b971093edf97cb9e6bd96c880be714a8da69ed6fc10989cfb7a2bdd4beb",
+      "tests/test_score_cover.py": "1dea21301f1e0f2d8a8f53e84b401d7868d05b0085cc932c9b5756016969160c",
+      "tests/test_screen_retained_score_cover.py": "01f71e072878f1e3fcab5e3163c1dd263e0655cb1f2d178a35347f2f67b07679",
+      "tools/screen_retained_score_cover.py": "a718402d593c6be7144018bf8637340b7a68114f44b9f2b4fdeac9a4fe8a06ee"
+    }
+  }
+}

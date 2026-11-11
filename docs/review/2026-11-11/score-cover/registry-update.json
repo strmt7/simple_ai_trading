@@ -1,0 +1,23 @@
+{
+  "after": {
+    "audit_sha256": "f0e0a9124e80f6463c77597c3dc16030b44e225f5eaa0e8f7308d551910dbf96",
+    "hypotheses": 65,
+    "observations": 206,
+    "profitability_qualification_supplied_by_verifier": false,
+    "recorded_qualified_stable_edges": 0,
+    "registry_sha256": "ac47c5ed812682737ac3e576baeade1b03c98b7bc83b5c118cd3e953b0c4c03c",
+    "scoped_mechanisms": 37,
+    "validation_kind": "registry_binding_and_recorded_census_only"
+  },
+  "before": {
+    "audit_sha256": "075accf1c68ddee0e6ec0aa7d538e3358d538708d02da29cb5997d3a9ddc4474",
+    "hypotheses": 65,
+    "observations": 206,
+    "profitability_qualification_supplied_by_verifier": false,
+    "recorded_qualified_stable_edges": 0,
+    "registry_sha256": "2ad8ec89f780486222374a041ec0bf3ac2763626a2dae7f2c8dfbd875bbd63c0",
+    "scoped_mechanisms": 37,
+    "validation_kind": "registry_binding_and_recorded_census_only"
+  },
+  "effect": "Rank 30 consumed-source exploratory method metadata only; all counts, decisions and retry conditions unchanged."
+}

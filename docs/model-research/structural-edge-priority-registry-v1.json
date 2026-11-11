@@ -2304,7 +2304,9 @@
           "result_sha256": "cb855483afdb1cd8fa23e13f40d806403ae56470611186b516fb233631cd0ec3"
         },
         "docs/review/2026-11-09/nfl-nov10-total-floor/contract.json",
-        "docs/review/2026-11-09/nfl-nov10-total-floor/result.json"
+        "docs/review/2026-11-09/nfl-nov10-total-floor/result.json",
+        "docs/review/2026-11-11/score-cover/contract.json",
+        "docs/review/2026-11-11/score-cover/result.json"
       ],
       "current_status": "distinct_direction_independent_NBA_WNBA_NFL_and_CFB_moneyline_spread_and_total_monotone_payoff_family_remains_unaccepted_the_complete_nonoverlapping_WNBA_catalog_returned_three_events_two_exact_relations_and_zero_Gamma_sub_floor_candidates_the_prior_complete_NFL_catalog_retained_4621_relations_and_674_midpoint_like_candidates_but_the_zero_network_side_specific_correction_repriced_every_relation_with_bestAsk_or_conservative_one_minus_bestBid_found_zero_strict_sub_floor_candidates_and_a_best_1_05_pUSD_cost_for_a_1_pUSD_floor_so_the_entire_consumed_NFL_window_is_rejected_before_books_and_fees_the_prior_precommitted_Commanders_Cowboys_exact_depth_lost_2_550_pUSD_zero_fee_with_25189367_ms_skew_and_is_preserved_as_superseded_work_the_Ball_State_Ohio_State_CFB_superhedge_had_exactly_1_0000_pUSD_displayed_cost_the_distinct_Clemson_LSU_CFB_event_had_best_displayed_cost_1_045_pUSD_the_complete_2026_09_03_through_2026_09_04_CFB_catalog_retained_zero_sub_floor_candidates_the_complete_2026_09_05_CFB_catalog_returned_89_events_excluded_both_consumed_games_included_58_rule_complete_events_proved_88_exact_relations_and_found_6_Gamma_sub_floor_candidates_but_its_precommitted_best_Fordham_North_Dakota_State_package_lost_4_2_pUSD_before_fees_the_distinct_complete_2026_09_06_CFB_catalog_returned_24_events_included_15_rule_complete_events_proved_31_exact_relations_and_found_2_Gamma_sub_floor_candidates_its_precommitted_best_Mercyhurst_plus_29_5_plus_New_Mexico_State_minus_28_5_package_displayed_0_995_pUSD_but_exact_five_share_asks_cost_9_8_pUSD_for_a_5_pUSD_floor_lost_4_8_pUSD_before_fees_had_1763317_ms_oldest_book_age_and_337138_ms_skew_so_no_fee_request_or_second_candidate_access_was_justified_the_complete_distinct_2026_09_07_CFB_catalog_returned_one_rule_complete_SMU_Florida_State_event_one_exact_relation_and_zero_Gamma_sub_floor_candidates_the_first_source_selected_nonconsumed_Patriots_Seahawks_NFL_event_proved_291_exact_relations_and_two_displayed_0_995_pUSD_candidates_but_the_precommitted_Over_24_5_plus_Under_26_5_five_share_package_cost_5_55_pUSD_for_a_5_pUSD_floor_even_at_zero_fee_and_5_65_pUSD_after_one_adverse_tick_per_leg_with_11031_ms_oldest_book_age_so_zero_fee_requests_and_no_sibling_selection_were_justified_the_distinct_zero_request_team_to_full_game_total_graph_proved_9_valid_implications_and_zero_sub_floor_packages_with_best_Seahawks_Under_24_5_plus_game_Over_24_5_at_1_465_pUSD_for_a_1_pUSD_floor_the_v1_team_ladder_and_additive_artifact_is_superseded_because_it_unnecessarily_required_G_greater_than_or_equal_to_A_plus_B_minus_1_and_used_midpoint_like_outcomePrices_the_v2_zero_network_correction_proved_the_complete_condition_is_only_G_less_than_or_equal_to_A_plus_B_exhausted_325_full_team_additive_covers_including_292_previously_omitted_and_20_full_team_ladders_with_zero_side_specific_sub_floor_candidates_and_best_costs_1_78_and_1_34_pUSD_it_also_exhausted_8508_half_quarter_team_period_and_spread_ladders_and_partitions_for_8853_total_relations_zero_side_specific_or_diagnostic_sub_floor_candidates_and_best_remaining_period_cost_1_44_pUSD_the_distinct_previously_unconsumed_2026_09_13T00_00_00Z_through_20_25_00Z_NFL_catalog_returned_12_events_included_10_rule_complete_events_and_proved_2978_relations_120_midpoint_like_candidates_collapsed_to_zero_strict_side_specific_sub_floor_candidates_across_2965_price_complete_relations_with_best_1_04_pUSD_for_a_1_pUSD_floor_13_Atlanta_Pittsburgh_relations_lacked_required_bestBid_and_two_duplicate_threshold_events_were_excluded_the_frozen_zero_network_catalog_level_team_half_and_quarter_graph_then_exhausted_84508_additional_total_ladder_and_additive_partition_relations_across_all_12_events_76607_were_side_specific_price_complete_zero_were_strictly_sub_floor_and_the_best_complete_package_cost_1_04_pUSD_for_a_1_pUSD_floor_7901_relations_remain_price_incomplete_due_only_to_retained_missing_selected_side_quotes_the_distinct_period_moneyline_to_negative_half_point_spread_cover_then_exhausted_227_quarter_and_second_half_relations_215_were_price_complete_zero_were_strictly_sub_floor_the_best_complete_package_cost_1_53_pUSD_and_12_relations_remain_price_incomplete_so_no_refetch_candidate_selection_book_or_fee_request_is_permitted_no_credential_account_order_fund_network_or_protected_capture_access_no_accepted_edge_or_deployment_readiness",
       "latest_wnba_delta_status": "the_prospectively_frozen_complete_2026_09_03_through_2026_09_09_WNBA_catalog_returned_HTTP_200_with_zero_events_no_cursor_and_a_complete_empty_population_so_zero_relations_books_fees_accounts_credentials_orders_funds_transactions_or_protected_capture_requests_were_justified_do_not_repeat_refine_alias_or_shift_this_exact_window",
@@ -2393,6 +2395,17 @@
         "book_requests": 0,
         "fee_requests": 0,
         "retry_rule": "Do not refetch, reprice, repair or book-capture this entire window or any returned sibling. This is a scoped gross-floor rejection, not family-wide impossibility or a guarantee about future states."
+      },
+      "retained_joint_score_cover_2026_11_11": {
+        "path": "docs/review/2026-11-11/score-cover/result.json",
+        "result_sha256": "40b73b91af8cf9bd02a00602d68ce002513d7d3744bb166599e5a746296d669a",
+        "contract_path": "docs/review/2026-11-11/score-cover/contract.json",
+        "contract_sha256": "ddd8a65ba9a1697302937d3406085594d4fe2919cfde74d6149bf084b36c5ff4",
+        "classification": "Retrospective conditional integer-score proxy certificate for every long-only fractional portfolio of the original selected event's 156 full-game outcomes. Exact minimum cost and payoff floor equal one. No strict gross cover in this model; residual expected value remains unproved. Dual weights are not forecast probabilities.",
+        "new_economic_observations": 0,
+        "new_independent_validation": false,
+        "book_fee_account_or_order_authority": false,
+        "next_action": "Preserve all consumed populations and retry gates. Do not reprice, reoptimize or change precision on this source. Any future residual-payoff study requires independent chronological probability/cost evidence and its own valid source gate; no middle-payout credit is assigned here."
       }
     },
     {
@@ -4700,7 +4713,7 @@
       ]
     }
   ],
-  "result_sha256": "2ad8ec89f780486222374a041ec0bf3ac2763626a2dae7f2c8dfbd875bbd63c0",
+  "result_sha256": "ac47c5ed812682737ac3e576baeade1b03c98b7bc83b5c118cd3e953b0c4c03c",
   "schema_version": "structural-edge-priority-registry-v1",
   "terminal_do_not_repeat": [
     {
@@ -5764,6 +5777,6 @@
       "canonical_result_sha256": "e68dbd4532f61fe399e2b04ae9d64d25041731b6bffa847289ea2b01d4da3a3d"
     }
   ],
-  "updated_at_utc": "2026-11-11T04:25:28.348893+00:00",
+  "updated_at_utc": "2026-11-11T09:40:52.961334+00:00",
   "usage_rule": "advance_the_highest_ranked_hypothesis_whose_retry_trigger_is_satisfied_otherwise_do_not_repeat_a_blocked_or_terminal_screen"
 }

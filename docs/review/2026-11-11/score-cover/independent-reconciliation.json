@@ -1,0 +1,22 @@
+{
+  "all_primal_state_and_dual_leg_inequalities_verified_exactly": true,
+  "cost_lower": "1",
+  "cost_upper": "1",
+  "dual_support_count": 54,
+  "leg_count": 156,
+  "market_count": 78,
+  "new_independent_validation": false,
+  "new_network_requests": 0,
+  "numpy_or_scipy_imported": false,
+  "payoff_maximum": "2",
+  "payoff_minimum": "1",
+  "result_sha256": "40b73b91af8cf9bd02a00602d68ce002513d7d3744bb166599e5a746296d669a",
+  "source_sha256": "34c9c9cbb09c878229b455d019b230c579433a5114c94dd6dd2197a9085ab592",
+  "state_count": 1171,
+  "tampered_resealed_controls_rejected": [
+    "threshold",
+    "objective",
+    "authority"
+  ],
+  "verifier_sha256": "d8ff932c51eb654bd76bca5277f5cb582ea0b3fd3d629b523e75e265222a11c2"
+}

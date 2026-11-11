@@ -158,7 +158,7 @@
       "why_not_stable_deployable": "Current rate remains conflict-qualified rather than proven, the evidence is from public wallets rather than the owned account, every external friction and best alternative is not bound, and future persistence is not guaranteed."
     }
   },
-  "result_sha256": "075accf1c68ddee0e6ec0aa7d538e3358d538708d02da29cb5997d3a9ddc4474",
+  "result_sha256": "f0e0a9124e80f6463c77597c3dc16030b44e225f5eaa0e8f7308d551910dbf96",
   "routing": {
     "october8_9_nfl_total_ladder_resource_failure": {
       "status": "terminal_resource_unqualified_no_price_evaluation",
@@ -342,7 +342,7 @@
   "source_binding": {
     "accepted_edge_count": 37,
     "registry_path": "docs/model-research/structural-edge-priority-registry-v1.json",
-    "registry_result_sha256": "2ad8ec89f780486222374a041ec0bf3ac2763626a2dae7f2c8dfbd875bbd63c0",
+    "registry_result_sha256": "ac47c5ed812682737ac3e576baeade1b03c98b7bc83b5c118cd3e953b0c4c03c",
     "registry_metadata_partition_certificate": {
       "path": "docs/review/2026-11-10/partition-cover-certificate/result.json",
       "result_sha256": "6055b166a789e97e47d13adecbfc1e885c03cca6030a596de9aaa6fb5a80ae71",
@@ -417,7 +417,18 @@
       "classification": "One-use official clearing-rules HTML source returned HTTP 202, explicit challenge header and one Markdown character; no rule, formula, revision or account applicability admitted. No fallback or dependent economics.",
       "account_fee_trigger_unchanged": true,
       "new_economic_observations": 0
+    },
+    "registry_metadata_retained_joint_score_cover": {
+      "path": "docs/review/2026-11-11/score-cover/result.json",
+      "result_sha256": "40b73b91af8cf9bd02a00602d68ce002513d7d3744bb166599e5a746296d669a",
+      "contract_path": "docs/review/2026-11-11/score-cover/contract.json",
+      "contract_sha256": "ddd8a65ba9a1697302937d3406085594d4fe2919cfde74d6149bf084b36c5ff4",
+      "classification": "Retrospective conditional integer-score proxy certificate for every long-only fractional portfolio of the original selected event's 156 full-game outcomes. Exact minimum cost and payoff floor equal one. No strict gross cover in this model; residual expected value remains unproved. Dual weights are not forecast probabilities.",
+      "new_economic_observations": 0,
+      "new_independent_validation": false,
+      "book_fee_account_or_order_authority": false,
+      "next_action": "Preserve all consumed populations and retry gates. Do not reprice, reoptimize or change precision on this source. Any future residual-payoff study requires independent chronological probability/cost evidence and its own valid source gate; no middle-payout credit is assigned here."
     }
   },
-  "updated_at_utc": "2026-11-11T04:25:28.348893+00:00"
+  "updated_at_utc": "2026-11-11T09:40:52.961334+00:00"
 }
