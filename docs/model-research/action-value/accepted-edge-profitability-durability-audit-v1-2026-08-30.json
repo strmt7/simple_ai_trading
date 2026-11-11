@@ -158,7 +158,7 @@
       "why_not_stable_deployable": "Current rate remains conflict-qualified rather than proven, the evidence is from public wallets rather than the owned account, every external friction and best alternative is not bound, and future persistence is not guaranteed."
     }
   },
-  "result_sha256": "f0e0a9124e80f6463c77597c3dc16030b44e225f5eaa0e8f7308d551910dbf96",
+  "result_sha256": "089d11282a630fd1373c56b8f818adf8bfbc939cd3885162db4e02b1b046b36d",
   "routing": {
     "october8_9_nfl_total_ladder_resource_failure": {
       "status": "terminal_resource_unqualified_no_price_evaluation",
@@ -342,7 +342,7 @@
   "source_binding": {
     "accepted_edge_count": 37,
     "registry_path": "docs/model-research/structural-edge-priority-registry-v1.json",
-    "registry_result_sha256": "ac47c5ed812682737ac3e576baeade1b03c98b7bc83b5c118cd3e953b0c4c03c",
+    "registry_result_sha256": "e347543275eb7c72c38b69db2503f933dcc563b3b3c43d976544a587f3558400",
     "registry_metadata_partition_certificate": {
       "path": "docs/review/2026-11-10/partition-cover-certificate/result.json",
       "result_sha256": "6055b166a789e97e47d13adecbfc1e885c03cca6030a596de9aaa6fb5a80ae71",
@@ -428,7 +428,13 @@
       "new_independent_validation": false,
       "book_fee_account_or_order_authority": false,
       "next_action": "Preserve all consumed populations and retry gates. Do not reprice, reoptimize or change precision on this source. Any future residual-payoff study requires independent chronological probability/cost evidence and its own valid source gate; no middle-payout credit is assigned here."
+    },
+    "registry_metadata_routing_api_distinction": {
+      "path": "docs/review/2026-11-11/routing-access/evidence.json",
+      "result_sha256": "9ee7278502e71c8fdff2b4fa02402cd1e5686582fe043a93aab63992d7022a93",
+      "classification": "SOR API/allocations are distinct from AOR intermediary conversion; AOR API/testnet support remains unproved. Announced future lock/spend features do not establish current capability.",
+      "new_economic_observations": 0
     }
   },
-  "updated_at_utc": "2026-11-11T09:40:52.961334+00:00"
+  "updated_at_utc": "2026-11-11T12:39:38.605579+00:00"
 }

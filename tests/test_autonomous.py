@@ -542,8 +542,8 @@ def test_evaluate_auto_close_uses_model_time_barrier_and_reverse_signal() -> Non
 # ----- _open_position_from_decision ----------------------------------------
 
 
-def test_open_position_from_decision_clamps_price(tmp_path: Path) -> None:
-    decision = Decision(side="LONG", confidence=0.7, mark_price=-5.0)
+def test_open_position_from_decision_preserves_positive_price(tmp_path: Path) -> None:
+    decision = Decision(side="LONG", confidence=0.7, mark_price=0.001)
     runtime = _runtime()
     strat = StrategyConfig()
     cfg = _make_config(tmp_path)
@@ -555,7 +555,7 @@ def test_open_position_from_decision_clamps_price(tmp_path: Path) -> None:
         cfg,
         clock=lambda: 1.0,
     )
-    assert position.entry_price == 0.01
+    assert position.entry_price == 0.001
     assert position.side == "LONG"
     assert position.dry_run is True
 
@@ -2123,3 +2123,271 @@ def test_run_loop_skips_heartbeat_when_not_on_cadence(tmp_path: Path) -> None:
     )
     assert result.heartbeats_written == 0
     assert result.iterations == 1
+
+
+_INVALID_DECISION_FRACTIONS = (
+    float("nan"),
+    float("inf"),
+    float("-inf"),
+    -0.001,
+    1.001,
+    None,
+    "bad",
+    "0.9",
+    True,
+    False,
+    10**400,
+)
+
+
+@pytest.mark.parametrize("side", ["LONG", "SHORT"])
+@pytest.mark.parametrize("field", ["confidence", "size_multiplier"])
+@pytest.mark.parametrize("value", _INVALID_DECISION_FRACTIONS)
+def test_entry_and_constructor_reject_invalid_decision_fractions(
+    tmp_path, side, field, value
+):
+    cfg = _make_config(tmp_path)
+    decision = Decision(side=side, confidence=0.9, mark_price=100)
+    setattr(decision, field, value)
+    gate = _entry_gate(
+        PositionsStore(cfg.positions_root),
+        decision,
+        _strategy(),
+        cfg,
+        get_objective("default"),
+        now_ms_value=3000,
+        symbol="BTCUSDC",
+        market_type="spot",
+    )
+    assert not gate.allowed
+    assert gate.reason == (
+        "decision-confidence-unqualified"
+        if field == "confidence"
+        else "decision-size-unqualified"
+    )
+    with pytest.raises(ValueError, match="decision-.*-unqualified"):
+        _open_position_from_decision(
+            decision, _runtime(), _strategy(), get_objective("default"), cfg
+        )
+    if field == "confidence":
+        assert _directional_confidence(decision) == 0
+
+
+@pytest.mark.parametrize(
+    "value",
+    [
+        float("nan"),
+        float("inf"),
+        float("-inf"),
+        0,
+        -1,
+        None,
+        "bad",
+        "100",
+        True,
+        False,
+        10**400,
+    ],
+)
+def test_entry_and_constructor_reject_invalid_decision_marks(tmp_path, value):
+    cfg = _make_config(tmp_path)
+    decision = Decision(side="LONG", confidence=0.9, mark_price=value)
+    gate = _entry_gate(
+        PositionsStore(cfg.positions_root),
+        decision,
+        _strategy(),
+        cfg,
+        get_objective("default"),
+        now_ms_value=3000,
+        symbol="BTCUSDC",
+        market_type="spot",
+    )
+    assert not gate.allowed and gate.reason == "decision-mark-unqualified"
+    with pytest.raises(ValueError, match="decision-mark-unqualified"):
+        _open_position_from_decision(
+            decision, _runtime(), _strategy(), get_objective("default"), cfg
+        )
+
+
+@pytest.mark.parametrize(
+    "field,value",
+    [
+        ("confidence", float("nan")),
+        ("confidence", "bad"),
+        ("size_multiplier", float("nan")),
+        ("mark_price", float("nan")),
+        ("mark_price", "bad"),
+    ],
+)
+def test_signed_loop_never_dispatches_unqualified_decision(
+    tmp_path, enrolled_binance_runtime, field, value
+):
+    cfg = _make_config(tmp_path, dry_run=False)
+    store = PositionsStore(cfg.positions_root)
+    client = FakeClient()
+    enrolled_binance_runtime(
+        store,
+        client.execution_scope(),
+        capital_policy=_capital_policy_for(cfg, _strategy()),
+    )
+    decision = Decision(
+        side="SHORT" if field == "confidence" else "LONG",
+        confidence=0.9,
+        mark_price=100,
+    )
+    setattr(decision, field, value)
+    result = run_loop(
+        client,
+        _runtime(),
+        _strategy(),
+        cfg,
+        decision_fn=lambda *_: decision,
+        sleep=lambda _: None,
+        clock=_tick_clock(),
+        reconcile_fn=lambda _c, r, _s: ReconciliationReport(
+            ok=True,
+            market_type=r.market_type,
+            symbols_checked=[r.symbol],
+            local_open_count=0,
+            local_live_open_count=0,
+            local_paper_open_count=0,
+            exchange_exposure_count=0,
+        ),
+    )
+    assert result.opened_trades == 0 and client.orders == []
+    assert (
+        store.opening_intents.pending_position(scope=client.execution_scope()) is None
+    )
+    assert store.load_open(strict=True) == []
+    if field == "mark_price":
+        assert result.exit_reason == "decision-mark-unqualified"
+    else:
+        heartbeat = json.loads(cfg.heartbeat_path.read_text())
+        assert "unqualified" in heartbeat["message"]
+        assert heartbeat["last_signal"] == (0 if field == "confidence" else 0.9)
+
+
+@pytest.mark.parametrize("confidence", [float("nan"), "bad"])
+def test_invalid_entry_confidence_preserves_owned_price_exit(tmp_path, confidence):
+    cfg = _make_config(tmp_path, stop_after_iterations=2)
+    decisions = iter(
+        [
+            Decision(side="LONG", confidence=0.9, mark_price=100),
+            Decision(side="LONG", confidence=confidence, mark_price=125),
+        ]
+    )
+    result = run_loop(
+        FakeClient(),
+        _runtime(),
+        _strategy(),
+        cfg,
+        decision_fn=lambda *_: next(decisions),
+        sleep=lambda _: None,
+        clock=_tick_clock(),
+    )
+    assert result.opened_trades == 1 and result.closed_trades == 1
+    store = PositionsStore(cfg.positions_root)
+    assert (
+        store.load_open(strict=True) == [] and len(store.load_ledger(strict=True)) == 1
+    )
+
+
+@pytest.mark.parametrize(
+    "reference", [0, -1, float("nan"), float("inf"), 10**400, True, "1000"]
+)
+def test_constructor_rejects_nonfinite_or_zero_position_amounts(tmp_path, reference):
+    cfg = _make_config(tmp_path, starting_reference_cash=reference)
+    strategy = _strategy()
+    with pytest.raises(ValueError, match="finite positive"):
+        _open_position_from_decision(
+            Decision(side="LONG", confidence=0.9, mark_price=100),
+            _runtime(),
+            strategy,
+            get_objective("default"),
+            cfg,
+        )
+
+
+def test_constructor_rejects_quantity_overflow_from_finite_inputs(tmp_path):
+    cfg = _make_config(tmp_path, starting_reference_cash=1e308)
+    with pytest.raises(ValueError, match="finite positive quantity"):
+        _open_position_from_decision(
+            Decision(side="LONG", confidence=0.9, mark_price=1e-308),
+            _runtime(),
+            _strategy(),
+            get_objective("default"),
+            cfg,
+        )
+
+
+@pytest.mark.parametrize("side,multiplier", [("FLAT", 1), ("LONG", 0)])
+def test_constructor_cannot_bypass_direction_or_zero_size_admission(
+    tmp_path, side, multiplier
+):
+    with pytest.raises(ValueError):
+        _open_position_from_decision(
+            Decision(
+                side=side, confidence=0.9, mark_price=100, size_multiplier=multiplier
+            ),
+            _runtime(),
+            _strategy(),
+            get_objective("default"),
+            _make_config(tmp_path),
+        )
+
+
+@pytest.mark.parametrize("field", ["ai_assist_entry_ready", "model_entry_ready"])
+@pytest.mark.parametrize("value", [False, None, "false", "true", 0, 1])
+def test_entry_approval_requires_explicit_true_at_gate_and_constructor(
+    tmp_path, field, value
+):
+    cfg = _make_config(tmp_path)
+    decision = Decision(side="LONG", confidence=0.9, mark_price=100)
+    setattr(decision, field, value)
+    gate = _entry_gate(
+        PositionsStore(cfg.positions_root),
+        decision,
+        _strategy(),
+        cfg,
+        get_objective("default"),
+        now_ms_value=3000,
+        symbol="BTCUSDC",
+        market_type="spot",
+    )
+    assert not gate.allowed
+    assert gate.reason == (
+        "ai-pre-entry-review-unavailable"
+        if field == "ai_assist_entry_ready"
+        else "model-opening-evidence-unavailable"
+    )
+    with pytest.raises(ValueError, match="position entry requires"):
+        _open_position_from_decision(
+            decision, _runtime(), _strategy(), get_objective("default"), cfg
+        )
+
+
+def test_invalid_model_mark_retains_owned_inventory_and_stopping_state(tmp_path):
+    cfg = _make_config(tmp_path, stop_after_iterations=2)
+    decisions = iter(
+        [
+            Decision(side="LONG", confidence=0.9, mark_price=100),
+            Decision(side="LONG", confidence=0.9, mark_price=float("nan")),
+        ]
+    )
+    result = run_loop(
+        FakeClient(),
+        _runtime(),
+        _strategy(),
+        cfg,
+        decision_fn=lambda *_: next(decisions),
+        sleep=lambda _: None,
+        clock=_tick_clock(),
+    )
+    assert result.exit_reason == "decision-mark-unqualified"
+    assert result.final_state == STATE_STOPPING
+    assert result.opened_trades == 1 and result.closed_trades == 0
+    store = PositionsStore(cfg.positions_root)
+    assert (
+        len(store.load_open(strict=True)) == 1 and store.load_ledger(strict=True) == []
+    )
+    assert AutonomousControl(cfg.control_path).state() == STATE_STOPPING

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import re
 import subprocess
 from dataclasses import dataclass
 from pathlib import Path
@@ -45,8 +46,6 @@ TEXT_EXCLUSIONS = {"tools/audit_financial_terminology.py"}
 # Provenance and the four newly classified before/audit records are documented
 # in docs/review/2026-11-11/feedback-repair/review.md.
 IMMUTABLE_EVIDENCE_TEXT_SHA256 = {
-    "docs/model-research/action-value/accepted-edge-profitability-durability-audit-v1-2026-08-30.json": "eea73f41a823c9914c26f1339c7d839ef927d1262eddaa1745415fff482a4100",
-    "docs/model-research/action-value/polymarket-us-combo-rfq-overview-adjudication-v1-2026-09-01.json": "ff077d8165ecba526a395d2c02a024b3eb99f3b389f25cf36f28e7325c7fefe9",
     "docs/model-research/action-value/round-040-causal-meta-label-capacity-ai-design.json": "85a8ee86d42905f1a7875132794a38fac921201aa22e79b6c9a8be4c7af4ad8b",
     "docs/model-research/action-value/round-041-prequential-meta-label-ai-design.json": "a7d5df6ac4b848ec8ab195a182f2686fb1aeaff526bd1009ddd96e3b630de41c",
     "docs/model-research/action-value/round-047-cost-aware-utility-tcn-design.json": "31965b3544674a1f82a07f2a4f6c7d90df49a5194c6718eaeebb8d23e4044c98",
@@ -54,9 +53,6 @@ IMMUTABLE_EVIDENCE_TEXT_SHA256 = {
     "docs/model-research/action-value/round-049-cost-aware-action-hurdle-tcn-design.json": "96d325dc8636550a9b78d27a61467ba05143739eb5fc7cb425d79f000e71f7a9",
     "docs/model-research/action-value/round-074-event-sequence-model-design-v108.json": "473e672687a733cba4d2ffe932547165323e9941ad539d53038cb67ef3bdea4c",
     "docs/model-research/action-value/round-074-event-sequence-model-design-v116.json": "9112cc3486aa30a3f53207606d804b7d9e7271547b4282b76d1a3d9069d3ddd3",
-    "docs/review/2026-09-04/nyc-sep5-frontier/durability-before.json": "a727031f643003aab7516742d9ef49fb855c396b9289d5303f78de53f8151253",
-    "docs/review/2026-09-04/paradex-index-publication/durability-before.json": "5412354d9dc5861e9e49acfa7fc4025db39e1227a2c56fea62c5a6398549ab61",
-    "docs/review/2026-10-07/model-integration/audit-before.json": "9359919129109c78651272955bd8a558f686aa188bf65e431cc19c49b020d052",
     "docs/review/2026-10-07/model-integration/review.md": "bf81672840e13babcfb0d521dec1211cda203635cfe410b8aa781a6031d84cf5",
     "src/simple_ai_trading/impact_absorption_ai_contract_screen.py": "652a84da10794dcd53b45befc5c1164ac50d6c3c0ce744b94601d69dda423767",
     "src/simple_ai_trading/polymarket_round17_publication.py": "3f75bbd348cf7d29cdcbacccef58cc4d1866efd7123cfe130456591ef467eeaa",
@@ -73,6 +69,7 @@ _BANNED_PHRASE_SPECS = (
     (("policy", " replay"), "policy-validation simulation"),
     (("policy", " trade"), "policy-validation simulated trade"),
     (("calibration threshold", " trace"), "threshold-selection simulation"),
+    (("calibration threshold", " traces"), "threshold-selection simulations"),
     (("stress", " gates"), "stress-test acceptance criteria"),
     (("pressure", "-capacity"), "depth-normalized order flow"),
     (("model", " zoo"), "candidate-model set"),
@@ -81,6 +78,7 @@ _BANNED_PHRASE_SPECS = (
     (("profile", " zoo"), "candidate-profile set"),
     (("low-base", " rescue"), "reduced-base-model-weight fallback"),
     (("ai", " reviewer"), "LLM risk-assessment overlay"),
+    (("ai", " reviewers"), "LLM risk-assessment overlays"),
     (("magic", " alpha"), "validated alpha evidence"),
     (("trade", " anything"), "trade supported instruments"),
     (("action", " gates"), "pre-trade risk controls"),
@@ -177,6 +175,10 @@ def _specs(
 
 
 BANNED_PHRASES = _specs(_BANNED_PHRASE_SPECS)
+BANNED_PHRASE_PATTERNS = tuple(
+    (re.compile(r"(?<!\w)" + re.escape(term) + r"(?!\w)"), term, replacement)
+    for term, replacement in BANNED_PHRASES
+)
 BANNED_FILENAME_PARTS = _specs(_BANNED_FILENAME_SPECS)
 
 
@@ -225,8 +227,8 @@ def audit_entries(entries: Iterable[tuple[str, str]]) -> list[TerminologyFinding
                 continue
         for line_number, line in enumerate(text.splitlines(), start=1):
             folded_line = line.casefold()
-            for term, replacement in BANNED_PHRASES:
-                if term in folded_line:
+            for pattern, term, replacement in BANNED_PHRASE_PATTERNS:
+                if term in folded_line and pattern.search(folded_line):
                     findings.append(
                         TerminologyFinding(
                             path=path,

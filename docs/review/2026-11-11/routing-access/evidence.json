@@ -1,0 +1,99 @@
+{
+  "schema_version": "binance-routing-access-adjudication-v1",
+  "base_revision": "386034f4a674e8d45127282789c2c4932e3868ae",
+  "captured_at_utc": "2026-11-11T12:39:38.605579+00:00",
+  "registry_rank": 44,
+  "intent_sha256": "c7aca572b80a56a386bc29863f1a07eeaaf70df1375b7bba4b03a311be9740f8",
+  "journal_sha256": "deea0107402ea362a6564b56642d7a447696d00b14cd40ccc51b83f6c576a190",
+  "controller_sha256": "a1b073c97bd9238d79200b0efa31bd4cbc3e98a92808b48dabd6a1f05b9603c8",
+  "provider_record_sha256": "35e93bac32c48a925029113f43c015eff2a8d201f6cbc0ce420c667aad7a445e",
+  "provider_version": "0.9.5+flitzzip.portable2",
+  "provider_cache_identity": "01fbef3b628f772e4aba9724b6ced11c0f211d4d3bf51e38d1b9d0039eac997b",
+  "sources": [
+    {
+      "url": "https://github.com/binance/binance-spot-api-docs/blob/master/CHANGELOG.md",
+      "native_sha256": "f601b6493ec8e7ba9769cf462e8263708b565d1de74058b209f1fa147def247f",
+      "native_bytes": 2518591,
+      "native_success": true,
+      "effective_status": 200,
+      "redirected_url": "https://github.com/binance/binance-spot-api-docs/blob/master/CHANGELOG.md",
+      "markdown_sha256": "5182f94ea16f83c22f4376bc1bd662bfdc28c69bdf6faa331607e1f07fe8d1a5",
+      "markdown_characters": 178397,
+      "crawl_stats": {
+        "attempts": 1,
+        "retries": 0,
+        "proxies_used": [
+          {
+            "proxy": null,
+            "status_code": 200,
+            "blocked": false,
+            "reason": ""
+          }
+        ],
+        "fallback_fetch_used": false,
+        "resolved_by": "direct"
+      },
+      "admission": "substantive selected official document scope"
+    },
+    {
+      "url": "https://github.com/binance/binance-spot-api-docs/blob/master/faqs/sor_faq.md",
+      "native_sha256": "2a5de9248fe35c24a8de9c3e609d8799ea2fa0758a4bff8d9c94a39837d3b204",
+      "native_bytes": 798960,
+      "native_success": true,
+      "effective_status": 200,
+      "redirected_url": "https://github.com/binance/binance-spot-api-docs/blob/master/faqs/sor_faq.md",
+      "markdown_sha256": "e99ea559345fe686a137650531f1e416f0c744934532553b942e4a6655def8e2",
+      "markdown_characters": 24523,
+      "crawl_stats": {
+        "attempts": 1,
+        "retries": 0,
+        "proxies_used": [
+          {
+            "proxy": null,
+            "status_code": 200,
+            "blocked": false,
+            "reason": ""
+          }
+        ],
+        "fallback_fetch_used": false,
+        "resolved_by": "direct"
+      },
+      "admission": "substantive selected official document scope"
+    }
+  ],
+  "retained_aor_faq": {
+    "source_sha256": "286d58716b5dff60422d12b98bbc694323148c81cc07141ed5a955d200de5b61",
+    "article_code": "1dce8dc66adc450a8e669676d64a5135",
+    "text_characters": 5932,
+    "text_sha256": "5c4728774312e3d0639947820c50285153f3c8af7af9f0a41614eb63ed082076",
+    "access_term_mentions": [],
+    "interpretation": "Term inspection only; absence is not evidence of unavailable API or testnet support.",
+    "new_source_requests": 0
+  },
+  "retained_faq_text_file_sha256": "464a174268fca18d3d9a198e9a863d651a89380061ca7c593bbd91e5d6fbf645",
+  "retained_faq_text_digest_semantics": "Existing text_sha256 binds UTF-8 logical text before Windows newline translation; file bytes are separately bound.",
+  "findings": {
+    "sor": "Fixed 1:1 interchangeable quotes with dedicated API endpoints; allocations and ordinary trades can coexist, requiring distinct fill reconciliation.",
+    "aor": "Commission-free intermediary conversion is distinct from SOR parity. The retained FAQ describes interface access; API/testnet support remains unproved. Phrase absence is not proof of unavailability.",
+    "announced_lock_release": "Changelog announces surplus quote-lock release for partially executed resting BUY limits after 2026-11-20 07:00 UTC. Future notice is not current operational qualification or permission to revise retained cash studies.",
+    "announced_spend_limit": "quoteNotionalLimit has no decided enablement time; SOR rejects it. Neither symbol support nor account capability is established."
+  },
+  "decision": "Source distinction established; no matched executable economic comparison admitted.",
+  "next_condition": "AOR needs authoritative API/testnet and exact product/account/symbol support, independently necessary legitimate flow and separately eligible matched after-cost/capacity evidence. The consumed SOR screen keeps its literal material-change trigger.",
+  "scope": {
+    "new_economic_observations": 0,
+    "new_market_or_configuration_requests": 0,
+    "account_requests": 0,
+    "orders": 0,
+    "protected_partial_data_touched": false,
+    "historical_results_changed": false,
+    "spot_arbitrage_population_reopened": false,
+    "wire_byte_or_network_volume_proof": false
+  },
+  "provenance_lookup": {
+    "receipt_sha256": "65e17218d16ac39867661b4462d0f6d6d390ce76bdd1e9a64e13e8bd6dda7608",
+    "global_novelty_claim": false,
+    "excluded_raw_protected_and_oversize_inputs": true
+  },
+  "result_sha256": "9ee7278502e71c8fdff2b4fa02402cd1e5686582fe043a93aab63992d7022a93"
+}

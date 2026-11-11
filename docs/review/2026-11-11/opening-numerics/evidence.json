@@ -1,0 +1,121 @@
+{
+  "schema_version": "autonomous-opening-decision-boundary-v1",
+  "base_revision": "386034f4a674e8d45127282789c2c4932e3868ae",
+  "captured_at_utc": "2026-11-11T13:04:24.533548+00:00",
+  "work_package": "SAFE-02",
+  "before": {
+    "production_sha256": "50060d49fda627d2f64eebb739b27ad8b1f47503ff9c71b4945a5d6f9f42d2dd",
+    "test_sha256": "23647c024bdb39732276e11c87d557b665ce093738d10a6adc23e0643317488d",
+    "reproduction_sha256": "256b1a945144cfb3dcccd0aaa2c413964c544cae5e9bb6c83fee37bab34d8ce7",
+    "admitted_malformed_cases": 4,
+    "observation_scope": "Offline existing entry gate; no real native dispatch."
+  },
+  "verification": {
+    "affected_domain_counts": {
+      "tests": 390,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "final_module_counts": {
+      "tests": 155,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "additional_ai_consumer_counts": {
+      "tests": 41,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "module_counts_overlap_domain": true,
+    "tested_source_sha256": {
+      "native/windows/generated/command_contract.hpp": "532f279d316ed132ee4c026d246969a436c1fe7ae8a02bec4f5e91a6b57748d7",
+      "src/simple_ai_trading/autonomous.py": "23cf9c4a61a463e8158b271803f34d901da9ff2669e58883ddc80debb7c7029a",
+      "src/simple_ai_trading/binance_capital_policy.py": "724c6889206823cb29f9041bab2090ca0290f27a63f5728c4b45dafb48beab09",
+      "src/simple_ai_trading/binance_capital_policy_cli.py": "eab22e6f56f492db5355c77137ebcea1275f89e9e7152e6d2380b8e9e3a5b370",
+      "src/simple_ai_trading/binance_execution_storage.py": "8d90728155f01b078be024f855f45b6185159c3f4fa7f8f21538a8fd803f3533",
+      "src/simple_ai_trading/binance_open_intents.py": "9a78e005880962a9d2d6b638e581a2f3d77cfcdd08dee413da9b1ddf8ff0408d",
+      "src/simple_ai_trading/binance_runtime_control.py": "b6b5c58f474d76b2df3ad50ed2d20b1a2031e41fd078b95a203d34dc9e665cd4",
+      "src/simple_ai_trading/capital_drawdown.py": "61cd7b955339b7a70038ae0856ffe4cc601face1f24921d6a1878f24a633cbe3",
+      "src/simple_ai_trading/command_contract.py": "85b7740e74f2d3fac72cc8ff65980d226572441a7c029932d737e15a56d3bcc5",
+      "src/simple_ai_trading/entrypoint.py": "fc57cc5ff0795b4da9d7701ac187ca3f682b39b89b73db61f1a75361a0008935",
+      "src/simple_ai_trading/position_transactions.py": "743275b5e92337bd24825c7b4e4f2d79c1ecb7556bf02d8d56cadfcbe148d97b",
+      "src/simple_ai_trading/positions.py": "0baf01909be1135d56d887fa7499fc4d3ebccf74f04844d49c61f288c7378154",
+      "src/simple_ai_trading/runtime_control.py": "518064c99eaf7a0492c2bbaa8ce15abdad68757b7f5fa3da96996c3649add815",
+      "src/simple_ai_trading/runtime_control_storage.py": "30fbebef310e209f1fd2f74a7a96622b76e86b51f6bfeb55d944e53e962897d3",
+      "src/simple_ai_trading/types.py": "bd91cb6210b8fca83eff2a6c112d99c127099616c2ead65a308aa5f9778d0479",
+      "tests/conftest.py": "a355f47ddcbd029c5722b45d118a7dfb4577e439a264b899e8cfd376883d0a7c",
+      "tests/test_autonomous.py": "bdb326bff6bb310b17f7a0e1257457983c66e7e072689c7559ca211b50877791",
+      "tests/test_autonomous_capital_valuation.py": "f37b02c0dc1867966e73cc0a38b35f0eb29d628e7c52e590e98ac01e45d0afce",
+      "tests/test_autonomous_cash_peak.py": "1119df1a79b7e4adbd36f77daf3949fc7c5b946f47d1e13c34d26e4ba7a748a2",
+      "tests/test_autonomous_spot_cash.py": "6afd9deea4af3ba31354c6f6ca6aaf85caa8a27a9a19e0382b27525517f0052a",
+      "tests/test_autonomous_spot_inventory.py": "15409804f10f5f0e97eef4abdcfc1ed63ffe7e20212afaf856511358ba2c3091",
+      "tests/test_binance_capital_policy.py": "76f89817db44768b51ca59a95f5f71376899e181ad52552e1ececc77bd3def50",
+      "tests/test_close_recovery_cli.py": "d0ee08536b5ba8e282634e52d2aa62edd1a42d89ddf1d0722dca0d817cc90663",
+      "tests/test_close_recovery_collection_cli.py": "1226f328c7e46a62d23b1099ca5670e6cc77ce8c731b09057deb249c87d80bb5",
+      "tests/test_live_ai_assist.py": "ced0a19ef2d7b2af8ee32b9e53634e1d873fb0245c5cf7f25cdc0f06aab33096"
+    },
+    "static_checks": [
+      {
+        "check": "ruff",
+        "returncode": 0,
+        "stdout_sha256": "a4443afdcfb6d7363adb285762515ccf7cf50473b1a05c20c1a50f6bed4d26b0",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "check": "format",
+        "returncode": 0,
+        "stdout_sha256": "97d85b4b6c185a05396e2d09a3c304ff0f7cc77f8b7b7bb7989ec6cd875b3898",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    ],
+    "phase3_log_hash_readback_correction": "Original phase-3 receipt referenced the phase-2 stdout hash after a first-occurrence filename replacement. Actual phase-3 logs, JUnit, source and original receipt are preserved; this is zero-test readback.",
+    "native_contract": "Parser/command contract unchanged; no generated update required."
+  },
+  "behavior": {
+    "finite_real_decision_values_required": true,
+    "probability_and_size_range": "[0, 1]; zero size vetoes entry",
+    "positive_price_preserved_without_floor": true,
+    "constructor_checks_approval_reference_quantity_and_notional": true,
+    "invalid_confidence_preserves_qualified_owned_price_exit": true,
+    "invalid_price_preserves_remaining_inventory_and_stopping_state": true,
+    "no_universal_final_dispatch_claim": true
+  },
+  "private_artifact_sha256": {
+    "before.json": "256b1a945144cfb3dcccd0aaa2c413964c544cae5e9bb6c83fee37bab34d8ce7",
+    "reproduce.py": "12857bdfd5a5ae886ef44d572b6e91951998a6676f9838bc42b86d6cc1353eea",
+    "verify.py": "d09ecfbfb41461753cf4bdf4c5ccd55c013f2cad89511a329b06e66d80e8ae57",
+    "verify_final.py": "debbda87bee07cec285246c89a2034d0b12eab4d32e81e5e64c04fbe0ea0b62a",
+    "verify_receipts.py": "7c38493bd36a8ef40394b5d58f215313658a2ffd45c2743f3e8c20419e20fc14",
+    "verify_terminal.py": "2a0f8da2318a938e51afdb310bac4286e057f0655fc1598ac23f02b7aba2ca95",
+    "domain-3.json": "d991f5d8606222250b0086c6f0ea521c809461885ad74069752c6076db2e4057",
+    "domain-3-verified.json": "c6a1a6f3e002607b9573261897e317f85ab7eb76f1fa6999ffec3fb0711845f8",
+    "domain-3.stdout.log": "81231dce72debff5f74b0e350f39a328f270762ab11bd03a5ad885d8285b3fbf",
+    "domain-3.stderr.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "domain-3.junit.xml": "6ef5ed8f873ba7f84f08c10e6d0caeb03b1e5751037d4a293f5f7dd5d98c5fa9",
+    "terminal.json": "26e08b62d0ef811cb27a7f73533f08b3bbcb2f3329f0e3ac54b125fc9ec97747",
+    "terminal.junit.xml": "d55957353a37e32eb38c382fa793a3ab06b3de466c9919fd61a3589f097a8aca",
+    "ai-consumer.json": "c4fdf773605aef53940a6036694420baf4ffed3993811803f9818ef3c81c49b7",
+    "ai-consumer.junit.xml": "735fbad386468180538d4f19cfd6154dd73a22981a1ddbc3b2a9cde7d0c8eedd",
+    "phase-1/failures.json": "d4996a77a5e8e614289c150e8a01d892ba998414baad334867efec81ade9fbb3"
+  },
+  "source_bound_reviews": {
+    "routing": "docs/review/2026-11-11/routing-access/evidence.json",
+    "prior_policy": "docs/review/2026-11-11/capital-policy/evidence.json"
+  },
+  "authority": {
+    "market_or_account_requests": 0,
+    "orders": 0,
+    "credentials_used": false,
+    "new_financial_observations": 0,
+    "protected_captures_touched": false,
+    "historical_results_changed": false,
+    "training_or_benchmarks": 0,
+    "schedule_service_or_startup_hook_created": false,
+    "goal_complete": false
+  },
+  "remaining": "Universal writer/roundtrip and final-intent policy/generation fencing, complete marked/day/external-flow state, reserves, independent supervision, native/account acceptance and financial qualification remain open.",
+  "result_sha256": "5e959250eef504eeaebf5a9cc3fbbe9a9cd9e2e9a4a52f15c0a3c10b0a93b370"
+}

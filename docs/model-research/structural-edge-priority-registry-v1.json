@@ -3865,6 +3865,12 @@
         "result_sha256": "caea324eddbbb3f1b524dcd61da23d97e2232439904cf2d61ce22ee3595e4883",
         "classification": "Venue-managed single intermediary conversion carries no separate commission but has spread and no minimum guaranteed quantity. Exact eligibility, API support and matched final proceeds are unproved.",
         "new_economic_observations": 0
+      },
+      "routing_api_distinction_2026_11_11": {
+        "path": "docs/review/2026-11-11/routing-access/evidence.json",
+        "result_sha256": "9ee7278502e71c8fdff2b4fa02402cd1e5686582fe043a93aab63992d7022a93",
+        "classification": "SOR API/allocations are distinct from AOR intermediary conversion; AOR API/testnet support remains unproved. Announced future lock/spend features do not establish current capability.",
+        "new_economic_observations": 0
       }
     },
     {
@@ -4713,7 +4719,7 @@
       ]
     }
   ],
-  "result_sha256": "ac47c5ed812682737ac3e576baeade1b03c98b7bc83b5c118cd3e953b0c4c03c",
+  "result_sha256": "e347543275eb7c72c38b69db2503f933dcc563b3b3c43d976544a587f3558400",
   "schema_version": "structural-edge-priority-registry-v1",
   "terminal_do_not_repeat": [
     {
@@ -5777,6 +5783,6 @@
       "canonical_result_sha256": "e68dbd4532f61fe399e2b04ae9d64d25041731b6bffa847289ea2b01d4da3a3d"
     }
   ],
-  "updated_at_utc": "2026-11-11T09:40:52.961334+00:00",
+  "updated_at_utc": "2026-11-11T12:39:38.605579+00:00",
   "usage_rule": "advance_the_highest_ranked_hypothesis_whose_retry_trigger_is_satisfied_otherwise_do_not_repeat_a_blocked_or_terminal_screen"
 }

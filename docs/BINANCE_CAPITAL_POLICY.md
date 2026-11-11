@@ -83,6 +83,15 @@ Entry-policy denial does not veto qualified owned automatic exits. Known cash-lo
 breaches still reach their existing risk-close path. Ownership, quantity, native
 receipts, reconciliation and Stop remain controlling for every close.
 
+Autonomous entry also requires explicit boolean model/AI approval and qualified
+decision values: finite real confidence and size fractions in `[0, 1]`, positive
+finite price, and positive finite reference cash, quantity and notional.
+Booleans and strings do not stand in for numbers. An invalid model price ends
+the iteration without fabricating a replacement price; remaining owned exposure
+keeps the terminal state STOPPING. Invalid entry confidence does not block a
+qualified price-based owned exit. The [boundary review](review/2026-11-11/opening-numerics/review.md)
+records this scoped repair; it does not complete final-dispatch policy fencing.
+
 ## Scope limits
 
 This phase binds signed autonomous loss-policy evaluation. Universal direct-writer

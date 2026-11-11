@@ -1,0 +1,85 @@
+{
+  "schema_version": "publication-phrase-boundary-repair-v1",
+  "base_revision": "386034f4a674e8d45127282789c2c4932e3868ae",
+  "captured_at_utc": "2026-11-11T13:15:20.724619+00:00",
+  "work_package": "BASE-01",
+  "opening_evidence_sha256": "5e959250eef504eeaebf5a9cc3fbbe9a9cd9e2e9a4a52f15c0a3c10b0a93b370",
+  "trigger": {
+    "term_tokens": [
+      "executed",
+      "mean"
+    ],
+    "unchanged_historical_field": "routing/polymarket_us_new_mechanism_index_all_five_families_adjudicated",
+    "unchanged_value_sha256": "9cec5bbe3f1dc3c6eba47eefdc1a24dc5f8ce3b02d56fef01aaf54d47bff137f"
+  },
+  "repair": {
+    "complete_phrase_matching": true,
+    "explicit_plural_terms_enforced": true,
+    "substring_prefilter_retained": true,
+    "obsolete_whole_file_exemptions_removed": 5,
+    "historical_numerical_results_modified": false,
+    "blanket_waiver_added": false
+  },
+  "verification": {
+    "test_counts": {
+      "tests": 37,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "test_receipt_sha256": "6c118feaa74d6c3dd2bd11f1d6bbbe079ff99597307986a08c72403e2d9f4e76",
+    "junit_sha256": "4264d642a8b43649a436a7556909d49912a9909891f55b160c80be914498a94f",
+    "tested_source_sha256": {
+      "native/windows/generated/command_contract.hpp": "532f279d316ed132ee4c026d246969a436c1fe7ae8a02bec4f5e91a6b57748d7",
+      "src/simple_ai_trading/autonomous.py": "23cf9c4a61a463e8158b271803f34d901da9ff2669e58883ddc80debb7c7029a",
+      "src/simple_ai_trading/binance_capital_policy.py": "724c6889206823cb29f9041bab2090ca0290f27a63f5728c4b45dafb48beab09",
+      "src/simple_ai_trading/binance_capital_policy_cli.py": "eab22e6f56f492db5355c77137ebcea1275f89e9e7152e6d2380b8e9e3a5b370",
+      "src/simple_ai_trading/binance_execution_storage.py": "8d90728155f01b078be024f855f45b6185159c3f4fa7f8f21538a8fd803f3533",
+      "src/simple_ai_trading/binance_open_intents.py": "9a78e005880962a9d2d6b638e581a2f3d77cfcdd08dee413da9b1ddf8ff0408d",
+      "src/simple_ai_trading/binance_runtime_control.py": "b6b5c58f474d76b2df3ad50ed2d20b1a2031e41fd078b95a203d34dc9e665cd4",
+      "src/simple_ai_trading/capital_drawdown.py": "61cd7b955339b7a70038ae0856ffe4cc601face1f24921d6a1878f24a633cbe3",
+      "src/simple_ai_trading/command_contract.py": "85b7740e74f2d3fac72cc8ff65980d226572441a7c029932d737e15a56d3bcc5",
+      "src/simple_ai_trading/entrypoint.py": "fc57cc5ff0795b4da9d7701ac187ca3f682b39b89b73db61f1a75361a0008935",
+      "src/simple_ai_trading/position_transactions.py": "743275b5e92337bd24825c7b4e4f2d79c1ecb7556bf02d8d56cadfcbe148d97b",
+      "src/simple_ai_trading/positions.py": "0baf01909be1135d56d887fa7499fc4d3ebccf74f04844d49c61f288c7378154",
+      "src/simple_ai_trading/runtime_control.py": "518064c99eaf7a0492c2bbaa8ce15abdad68757b7f5fa3da96996c3649add815",
+      "src/simple_ai_trading/runtime_control_storage.py": "30fbebef310e209f1fd2f74a7a96622b76e86b51f6bfeb55d944e53e962897d3",
+      "src/simple_ai_trading/types.py": "bd91cb6210b8fca83eff2a6c112d99c127099616c2ead65a308aa5f9778d0479",
+      "tests/conftest.py": "a355f47ddcbd029c5722b45d118a7dfb4577e439a264b899e8cfd376883d0a7c",
+      "tests/test_autonomous.py": "bdb326bff6bb310b17f7a0e1257457983c66e7e072689c7559ca211b50877791",
+      "tests/test_autonomous_capital_valuation.py": "f37b02c0dc1867966e73cc0a38b35f0eb29d628e7c52e590e98ac01e45d0afce",
+      "tests/test_autonomous_cash_peak.py": "1119df1a79b7e4adbd36f77daf3949fc7c5b946f47d1e13c34d26e4ba7a748a2",
+      "tests/test_autonomous_spot_cash.py": "6afd9deea4af3ba31354c6f6ca6aaf85caa8a27a9a19e0382b27525517f0052a",
+      "tests/test_autonomous_spot_inventory.py": "15409804f10f5f0e97eef4abdcfc1ed63ffe7e20212afaf856511358ba2c3091",
+      "tests/test_binance_capital_policy.py": "76f89817db44768b51ca59a95f5f71376899e181ad52552e1ececc77bd3def50",
+      "tests/test_close_recovery_cli.py": "d0ee08536b5ba8e282634e52d2aa62edd1a42d89ddf1d0722dca0d817cc90663",
+      "tests/test_close_recovery_collection_cli.py": "1226f328c7e46a62d23b1099ca5670e6cc77ce8c731b09057deb249c87d80bb5",
+      "tests/test_live_ai_assist.py": "ced0a19ef2d7b2af8ee32b9e53634e1d873fb0245c5cf7f25cdc0f06aab33096",
+      "tools/audit_financial_terminology.py": "bb3af1c341776825673eba5b714cd7ec8db033e64996a20b2a1477c1be40022d",
+      "tests/test_financial_terminology.py": "8bfdb3a0c0f3f43393c2567f19bdf4c83d5750e0d6c186ac3dfdcfbd8406ae0b"
+    },
+    "static_checks": [
+      {
+        "name": "ruff-publication",
+        "returncode": 0,
+        "stdout_sha256": "a4443afdcfb6d7363adb285762515ccf7cf50473b1a05c20c1a50f6bed4d26b0"
+      },
+      {
+        "name": "format-publication",
+        "returncode": 0,
+        "stdout_sha256": "97d85b4b6c185a05396e2d09a3c304ff0f7cc77f8b7b7bb7989ec6cd875b3898"
+      }
+    ]
+  },
+  "original_source_sha256": {
+    "tool": "959afd5b1cbe159638d52bbbdd0f7e0b3e1fcb53fe5f12ab71c4a8812b32aa96",
+    "test": "6ecdb7ae7cfd747d3b2015de9aa0ebd639edfd3772343bcfc3beb2ba01533a40"
+  },
+  "diagnostic_history": {
+    "first_scanner_run": "Retained failures exposed existing plural spellings and obsolete exemption expectations; diagnostic history is not final qualification.",
+    "first_log_sha256": "2660466b37cb0acec1fbdcee51c355ded804de18452af41bc6da1170e79993c4"
+  },
+  "remaining": "Markdown/workflow diagnostics, broader hosted acceptance and scanner disposition reconciliation remain open.",
+  "goal_complete": false,
+  "result_sha256": "36b1782369cbd5b0b20f4697a40aeb3c36db55fb651f782ed4809a3627f10d11"
+}

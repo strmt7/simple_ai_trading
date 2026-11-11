@@ -24,7 +24,7 @@ selected inspections and planning checks.
 - **Financial qualification is still the largest gap:** the recorded census is
   206 observations / 65 hypotheses / 37 historical scoped mechanisms /
   **0 qualified stable edges**. Neither implementation progress nor the
-  documentation captures currently awaiting adjudication change that result.
+  documentation captures awaiting adjudication at this checkpoint change that result.
 - **Operator recovery has advanced:** [explicit collection](review/2026-11-11/recovery-workflow/review.md)
   now connects pending inspection, bounded collection, cached reuse and retained
   Spot application through the real command. The earlier paragraphs saying

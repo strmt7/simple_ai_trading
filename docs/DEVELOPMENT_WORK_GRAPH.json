@@ -182,7 +182,12 @@
         "docs/RESEARCH_CAPTURE_BOUNDARIES.md"
       ],
       "status": "continuous",
-      "title": "Informative structural-edge decision"
+      "title": "Informative structural-edge decision",
+      "latest_source_phase": {
+        "path": "docs/review/2026-11-11/routing-access/evidence.json",
+        "result_sha256": "9ee7278502e71c8fdff2b4fa02402cd1e5686582fe043a93aab63992d7022a93",
+        "outcome": "SOR/AOR distinction established; AOR API/testnet and matched economics unproved; no economic population reopened."
+      }
     },
     {
       "depends_on": [
@@ -202,7 +207,12 @@
       "status": "partially_complete",
       "title": "Restore useful mainline feedback",
       "progress_evidence": "docs/review/2026-11-11/feedback-repair/evidence.json",
-      "remaining": "Retained-source Markdown and workflow advisory treatment; current broad-suite and hosted acceptance remain unproved."
+      "remaining": "Retained-source Markdown and workflow advisory treatment; current broad-suite and hosted acceptance remain unproved.",
+      "terminology_followup": {
+        "path": "docs/review/2026-11-11/opening-numerics/publication-check.json",
+        "result_sha256": "36b1782369cbd5b0b20f4697a40aeb3c36db55fb651f782ed4809a3627f10d11",
+        "outcome": "Complete-phrase matching and explicit plurals; five obsolete whole-file exemptions removed. Markdown/workflow and broad hosted acceptance remain open."
+      }
     },
     {
       "depends_on": [
@@ -244,7 +254,12 @@
       "status": "partially_complete",
       "title": "Durable policy, loss and recovery authority",
       "progress_evidence": "docs/review/2026-11-11/capital-policy/evidence.json",
-      "remaining": "Universal/final-intent policy fencing, Polymarket policy, full marked/day/external-flow state, reservations, model/generation identity, quarantine, explicit rearm and complete recovery qualification."
+      "remaining": "Universal/final-intent policy fencing, Polymarket policy, full marked/day/external-flow state, reservations, model/generation identity, quarantine, explicit rearm and complete recovery qualification.",
+      "entry_boundary_validation": {
+        "path": "docs/review/2026-11-11/opening-numerics/evidence.json",
+        "classification": "Reproduced malformed-decision admission repaired; explicit model/AI approvals and finite numerical construction. Final policy/generation and universal writer integration remain open.",
+        "result_sha256": "5e959250eef504eeaebf5a9cc3fbbe9a9cd9e2e9a4a52f15c0a3c10b0a93b370"
+      }
     },
     {
       "depends_on": [
@@ -557,7 +572,7 @@
       "title": "Complete product and financial readiness audit"
     }
   ],
-  "updated_at_utc": "2026-11-11T12:34:06.945596+00:00",
+  "updated_at_utc": "2026-11-11T13:02:51.732Z",
   "current_checkpoint": {
     "inspected_production_source": "4ce19f8c5ad7fa1f2c51342c94854ae2792f0ee2",
     "assessment_addendum": "docs/REPO_STATE_2026_11_11.md#current-checkpoint-addendum",
@@ -571,7 +586,7 @@
       "task": "FIN-01",
       "milestone": "M1",
       "priority": 0,
-      "action": "Adjudicate retained official routing documentation; select one eligible Polymarket source/payoff decision against all literal retry conjuncts.",
+      "action": "Select one eligible Polymarket source/payoff decision against all literal retry conjuncts; use the terminal routing distinction instead of repeating documentation access.",
       "output": "Source-bound economic decision or precise unresolved source/access condition for each selected question.",
       "stop": "No eligible access means no request. Documentation alone never reopens old quotes, protected partials, accounts or orders."
     },

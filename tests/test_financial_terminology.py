@@ -208,3 +208,47 @@ def test_audit_rejects_execution_language_for_simulated_statistics() -> None:
     assert [(item.path, item.line, item.replacement) for item in findings] == [
         ("docs/chart.svg", 1, "simulated-trade mean")
     ]
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        "Quote executed means the orders were submitted.",
+        "The unexecuted mean is not an executed metric.",
+        "The model zoology example is unrelated.",
+    ],
+)
+def test_phrase_matching_does_not_flag_word_substrings(text):
+    assert audit_entries([("docs/example.md", text)]) == []
+
+
+@pytest.mark.parametrize("wrapped", ["{}", "({})", '"{}"', "{}:", "{}\n"])
+def test_metric_phrase_is_rejected_as_a_complete_token_sequence(wrapped):
+    term = "executed" + " mean"
+    findings = audit_entries([("docs/example.md", wrapped.format(term))])
+    assert len(findings) == 1 and findings[0].term == term
+
+
+@pytest.mark.parametrize(
+    "relative",
+    [
+        "docs/model-research/action-value/accepted-edge-profitability-durability-audit-v1-2026-08-30.json",
+        "docs/model-research/action-value/polymarket-us-combo-rfq-overview-adjudication-v1-2026-09-01.json",
+        "docs/review/2026-09-04/nyc-sep5-frontier/durability-before.json",
+        "docs/review/2026-09-04/paradex-index-publication/durability-before.json",
+        "docs/review/2026-10-07/model-integration/audit-before.json",
+    ],
+)
+def test_reclassified_evidence_is_checked_without_whole_file_exemption(relative):
+    assert relative not in IMMUTABLE_EVIDENCE_TEXT_SHA256
+    text = (REPO_ROOT / relative).read_text(encoding="utf-8")
+    assert audit_entries([(relative, text)]) == []
+    term = "executed" + " mean"
+    assert any(f.term == term for f in audit_entries([(relative, text + "\n" + term)]))
+
+
+@pytest.mark.parametrize(
+    "term", ["calibration threshold" + " traces", "ai" + " reviewers"]
+)
+def test_explicit_plural_terms_remain_enforced(term):
+    assert any(f.term == term for f in audit_entries([("docs/example.md", term)]))

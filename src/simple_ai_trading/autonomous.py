@@ -28,7 +28,8 @@ import logging
 import math
 import sqlite3
 import time
-from dataclasses import asdict, dataclass, field
+from dataclasses import asdict, dataclass, field, replace
+from numbers import Real
 from pathlib import Path
 from typing import Callable, Mapping
 
@@ -461,18 +462,32 @@ def _open_position_from_decision(
 ) -> OpenPosition:
     """Build a position record from a decision + runtime state."""
 
-    if not decision.ai_assist_entry_ready:
+    if decision.model_entry_ready is not True:
+        raise ValueError("position entry requires qualified model-opening evidence")
+    if decision.ai_assist_entry_ready is not True:
         raise ValueError("position entry requires a completed AI pre-entry review")
-    price = max(0.01, float(decision.mark_price))
+    numeric_rejection = _opening_decision_numeric_rejection(decision)
+    if decision.side not in {"LONG", "SHORT"} or numeric_rejection:
+        raise ValueError(
+            numeric_rejection or "position entry requires a directional decision"
+        )
+    price = float(decision.mark_price)
     notional_pct = stop_loss_sized_notional_pct(
         strategy, runtime.market_type, leverage=strategy.leverage
     )
     size_multiplier = _decision_size_multiplier(decision)
-    target_notional = max(
-        0.0, cfg.starting_reference_cash * notional_pct * size_multiplier
-    )
+    if size_multiplier <= 0.0:
+        raise ValueError("position entry requires a positive qualified size")
+    reference = _decision_number(cfg.starting_reference_cash)
+    if reference is None or reference <= 0.0:
+        raise ValueError("position entry requires finite positive reference cash")
+    target_notional = max(0.0, reference * notional_pct * size_multiplier)
     qty = max(0.0, target_notional / price)
     notional = qty * price
+    if not all(math.isfinite(value) and value > 0.0 for value in (qty, notional)):
+        raise ValueError(
+            "position entry requires finite positive quantity and notional"
+        )
     position_id = new_position_id()
     return OpenPosition(
         id=position_id,
@@ -672,25 +687,46 @@ def _safe_day_ms(timestamp_ms: int) -> int:
     return int(timestamp_ms // (24 * 60 * 60 * 1000))
 
 
-def _directional_confidence(decision: Decision) -> float:
-    """Convert model probability-like confidence into side confidence."""
-
+def _decision_number(value: object) -> float | None:
+    """Accept finite real decision values without boolean or string coercion."""
+    if isinstance(value, bool) or not isinstance(value, Real):
+        return None
     try:
-        raw_confidence = float(decision.confidence)
-    except (TypeError, ValueError):
-        raw_confidence = 0.0
-    confidence = max(0.0, min(1.0, raw_confidence))
+        number = float(value)
+    except (TypeError, ValueError, OverflowError):
+        return None
+    return number if math.isfinite(number) else None
+
+
+def _decision_unit_fraction(value: object) -> float | None:
+    number = _decision_number(value)
+    return number if number is not None and 0.0 <= number <= 1.0 else None
+
+
+def _opening_decision_numeric_rejection(decision: Decision) -> str | None:
+    if _decision_unit_fraction(decision.confidence) is None:
+        return "decision-confidence-unqualified"
+    if _decision_unit_fraction(decision.size_multiplier) is None:
+        return "decision-size-unqualified"
+    price = _decision_number(decision.mark_price)
+    if price is None or price <= 0.0:
+        return "decision-mark-unqualified"
+    return None
+
+
+def _directional_confidence(decision: Decision) -> float:
+    """Convert only a qualified probability into directional confidence."""
+    confidence = _decision_unit_fraction(decision.confidence)
+    if confidence is None:
+        return 0.0
     if decision.side == "SHORT":
         return 1.0 - confidence
     return confidence
 
 
 def _decision_size_multiplier(decision: Decision) -> float:
-    try:
-        multiplier = float(decision.size_multiplier)
-    except (TypeError, ValueError):
-        return 0.0
-    return max(0.0, min(1.0, multiplier))
+    multiplier = _decision_unit_fraction(decision.size_multiplier)
+    return multiplier if multiplier is not None else 0.0
 
 
 def _daily_entry_count(store: PositionsStore, day: int) -> int:
@@ -721,14 +757,9 @@ def _loss_budget_guard(
         strategy.max_session_loss_pct,
         strategy.max_drawdown_limit,
     )
+    qualified_limits = tuple(_decision_number(value) for value in limits)
     if (
-        any(
-            isinstance(value, bool)
-            or not isinstance(value, (int, float))
-            or not math.isfinite(value)
-            or value < 0
-            for value in limits
-        )
+        any(value is None or value < 0 for value in qualified_limits)
         or type(strategy.max_consecutive_losses) is not int
         or strategy.max_consecutive_losses < 0
     ):
@@ -759,14 +790,9 @@ def _loss_budget_guard(
             RuntimeControlError,
         ):
             policy_blocked = True
-    mark = (
-        float(mark_price)
-        if not isinstance(mark_price, bool)
-        and isinstance(mark_price, (int, float))
-        and math.isfinite(mark_price)
-        and mark_price > 0.0
-        else None
-    )
+    mark = _decision_number(mark_price)
+    if mark is not None and mark <= 0.0:
+        mark = None
     try:
         snapshot = store.load_snapshot(strict=True)
     except (OSError, sqlite3.Error, ValueError, TypeError, OverflowError):
@@ -1034,9 +1060,11 @@ def _entry_gate(
         reason = decision.model_entry_reason or "model-opening-evidence-unavailable"
     elif decision.side not in {"LONG", "SHORT"}:
         reason = "flat-signal"
+    elif numeric_rejection := _opening_decision_numeric_rejection(decision):
+        reason = numeric_rejection
     elif same_instrument_open:
         reason = f"same-instrument-open:{normalized_symbol}:{normalized_market_type or 'any'}"
-    elif not decision.ai_assist_entry_ready:
+    elif decision.ai_assist_entry_ready is not True:
         reason = decision.ai_assist_reason or "ai-pre-entry-review-unavailable"
     elif _decision_size_multiplier(decision) <= 0.0:
         reason = decision.meta_label_reason or "meta-label-skip"
@@ -1290,11 +1318,20 @@ def run_loop(
                 exit_reason = "decision-exception"
                 break
 
+            decision_mark = _decision_number(decision.mark_price)
+            if decision_mark is None or decision_mark <= 0.0:
+                logger.error("autonomous iter=%d decision-mark-unqualified", iteration)
+                exit_reason = "decision-mark-unqualified"
+                break
+            decision = replace(decision, mark_price=decision_mark)
+            decision_confidence = _decision_unit_fraction(decision.confidence)
             logger.info(
-                "autonomous iter=%d side=%s conf=%.4f mark=%.2f ai=%s",
+                "autonomous iter=%d side=%s conf=%s mark=%.2f ai=%s",
                 iteration,
                 decision.side,
-                decision.confidence,
+                decision_confidence
+                if decision_confidence is not None
+                else "unqualified",
                 decision.mark_price,
                 decision.ai_assist_status or "inactive",
             )
@@ -1391,7 +1428,9 @@ def run_loop(
                 Heartbeat(
                     iteration=iteration,
                     state=STATE_RUNNING,
-                    last_signal=decision.confidence,
+                    last_signal=decision_confidence
+                    if decision_confidence is not None
+                    else 0.0,
                     last_side="RECOVERY_OBSERVE",
                     last_price=decision.mark_price,
                     open_positions=stats.open_positions,
@@ -1755,7 +1794,9 @@ def run_loop(
                 heartbeat = Heartbeat(
                     iteration=iteration,
                     state=STATE_RUNNING,
-                    last_signal=decision.confidence,
+                    last_signal=decision_confidence
+                    if decision_confidence is not None
+                    else 0.0,
                     last_side=decision.side,
                     last_price=decision.mark_price,
                     open_positions=stats.open_positions,
