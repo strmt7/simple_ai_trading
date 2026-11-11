@@ -17,7 +17,7 @@ from tools.cocoindex_agent_search import run_captured_process
 
 
 ROOT = Path(__file__).resolve().parents[1]
-MANIFEST = ROOT / "docs/archive/agent-history/handoff-2026-11-09.json"
+MANIFEST = ROOT / "docs/archive/agent-history/handoff-2026-11-11.json"
 MAX_BLOB_BYTES = 2_000_000
 MAX_MANIFEST_BYTES = 65_536
 MAX_WINDOW_LINES = 120
@@ -171,7 +171,9 @@ def archive_find(name: str, *, literal: str) -> dict[str, object]:
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("archive", choices=("agent-start", "continuation"))
+    parser.add_argument(
+        "archive", help="Archive name from the current verified manifest"
+    )
     selection = parser.add_mutually_exclusive_group(required=True)
     selection.add_argument("--line", type=int)
     selection.add_argument(

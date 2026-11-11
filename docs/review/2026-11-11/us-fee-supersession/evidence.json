@@ -1,0 +1,169 @@
+{
+  "account_requests": 0,
+  "announced_future_combo_activation_proved_by_execution": false,
+  "assigned_account_tiers_or_overrides_proved": false,
+  "base_revision": "27e97291d2a7385a3bbf7583cb30644a59565d0d",
+  "calculation": {
+    "account_eligibility_or_assigned_coefficients_proved": false,
+    "actual_fee_activation_or_owned_receipt_proved": false,
+    "announced_times": {
+      "combo_maker_announced_effective_utc": "2026-11-14T05:00:00+00:00",
+      "combo_taker_announced_effective_utc": "2026-11-11T18:00:00+00:00"
+    },
+    "constructed_100_contracts_at_0_50": {
+      "combo_maker_announced_post_change_usd": "0.75",
+      "combo_taker_post_change_usd_by_tier": {
+        "1": "2.56",
+        "2": "2.31",
+        "3": "2.06",
+        "4": "1.92"
+      },
+      "combo_taker_pre_change_usd": "2.00",
+      "historical_flat_maker_rebate_usd": "0.31",
+      "standard_maker_rebate_usd_by_tier": {
+        "1": "0.00",
+        "2": "0.09",
+        "3": "0.18",
+        "4": "0.26"
+      },
+      "standard_taker_usd_by_tier": {
+        "1": "2.38",
+        "2": "2.12",
+        "3": "1.88",
+        "4": "1.74"
+      }
+    },
+    "constructed_two_100_contract_fills_at_0_10": {
+      "actual_taker_adjustment_algorithm_or_owned_receipts_proved": false,
+      "incorrect_coalesced_maker_rebate_usd": "0.19",
+      "maker_rebate_usd_per_fill_sum": "0.18",
+      "minimum_required_taker_adjustment_usd": "0.01",
+      "rounded_cumulative_exact_taker_usd_ceiling": "1.25",
+      "taker_exact_usd_per_fill": "0.62550000",
+      "unadjusted_rounded_taker_usd_sum": "1.26"
+    },
+    "new_orders_or_economic_observations": 0,
+    "rounding_bound": {
+      "absolute_usd_per_eligible_maker_fill": "0.005",
+      "aggregate_absolute_usd_bound": "0.005 times eligible maker fill count",
+      "historical_rounded_taker_share_grid_applied_to_new_schedule": false
+    },
+    "sources": {
+      "changelog": {
+        "cache_status": "miss",
+        "error_message": "",
+        "markdown_characters": 341739,
+        "markdown_sha256": "8e974719a376daee270fb666db1f3e2c95a679a8a2db04074f4d8a610b3f77bc",
+        "native_bytes": 2119224,
+        "native_sha256": "9912b4a2ee599c9ef47192aac66377fa6f917759cd407c890b2a52340f8b8ffe",
+        "redirected_status_code": 200,
+        "status_code": 200,
+        "success": true,
+        "title": "Changelog - Polymarket US Documentation",
+        "url": "https://docs.polymarket.us/changelog"
+      },
+      "fees": {
+        "cache_status": "miss",
+        "error_message": "",
+        "markdown_characters": 177041,
+        "markdown_sha256": "ea437dd029ed607c9d52e0770096afc8b49bd1a05e210d29d9e841f0aa51b42a",
+        "native_bytes": 1260789,
+        "native_sha256": "eaf057d31a543cd69d66978cb914ecf7865f0e88bb2008063ff3881ced1c6fe9",
+        "redirected_status_code": 200,
+        "status_code": 200,
+        "success": true,
+        "title": "Fee Schedule - Polymarket US Documentation",
+        "url": "https://docs.polymarket.us/fees"
+      }
+    },
+    "standard_maker_rebate_magnitudes_by_tier": [
+      "0",
+      "0.0035",
+      "0.0070",
+      "0.0104"
+    ],
+    "standard_taker_coefficients_by_tier": [
+      "0.095",
+      "0.085",
+      "0.075",
+      "0.0695"
+    ]
+  },
+  "captures": {
+    "changelog": {
+      "completed_at_utc": "2026-11-11T01:35:13.394944+00:00",
+      "controller_sha256": "a1b073c97bd9238d79200b0efa31bd4cbc3e98a92808b48dabd6a1f05b9603c8",
+      "intent_sha256": "60d234d0d6502e8043c7e7b16d38269bedad762119a2adf84f195bfaee12f8de",
+      "journal_sha256": "1fd507ec9db07900e073271e554b9521b2fcbf58b19a1303e4d689e7cc0befc0",
+      "native_receipt": {
+        "cache_status": "miss",
+        "error_message": "",
+        "markdown_characters": 341739,
+        "markdown_sha256": "8e974719a376daee270fb666db1f3e2c95a679a8a2db04074f4d8a610b3f77bc",
+        "native_bytes": 2119224,
+        "native_sha256": "9912b4a2ee599c9ef47192aac66377fa6f917759cd407c890b2a52340f8b8ffe",
+        "redirected_status_code": 200,
+        "status_code": 200,
+        "success": true,
+        "title": "Changelog - Polymarket US Documentation",
+        "url": "https://docs.polymarket.us/changelog"
+      },
+      "preflight_sha256": "163775c58bb46d7e1108266482e6f268b665f62c2cce738670799cd2cd412bb5",
+      "provider_record_sha256": "3328134c7a3c4b80b7aef3729632541ac4a0f69163536dca0c129f0698110a6c",
+      "requested_at_utc": "2026-11-11T01:34:59.048870+00:00"
+    },
+    "fees": {
+      "completed_at_utc": "2026-11-11T01:38:10.191635+00:00",
+      "controller_sha256": "a1b073c97bd9238d79200b0efa31bd4cbc3e98a92808b48dabd6a1f05b9603c8",
+      "intent_sha256": "3dfdda1b84b1d1b1e056935b5b93a89a1fd4fd9e743fbf435688b60d36652948",
+      "journal_sha256": "2e5b032d1718664b29090fcc98e53c9a0e57ce59d800eaf756dd7bed716ed740",
+      "native_receipt": {
+        "cache_status": "miss",
+        "error_message": "",
+        "markdown_characters": 177041,
+        "markdown_sha256": "ea437dd029ed607c9d52e0770096afc8b49bd1a05e210d29d9e841f0aa51b42a",
+        "native_bytes": 1260789,
+        "native_sha256": "eaf057d31a543cd69d66978cb914ecf7865f0e88bb2008063ff3881ced1c6fe9",
+        "redirected_status_code": 200,
+        "status_code": 200,
+        "success": true,
+        "title": "Fee Schedule - Polymarket US Documentation",
+        "url": "https://docs.polymarket.us/fees"
+      },
+      "preflight_sha256": "163775c58bb46d7e1108266482e6f268b665f62c2cce738670799cd2cd412bb5",
+      "provider_record_sha256": "3328134c7a3c4b80b7aef3729632541ac4a0f69163536dca0c129f0698110a6c",
+      "requested_at_utc": "2026-11-11T01:37:55.427108+00:00"
+    }
+  },
+  "current_base_tier1_standard_maker_rebate_coefficient": "0",
+  "derivation_sha256": "e521f8db97ecb7e772cb8cb581f99fd1fd803b1ada01cfe94958c3bfa532e4b5",
+  "earlier_flat_schedule_superseded_for_future_economic_inputs": true,
+  "historical_results_modified": false,
+  "independent_fraction_arithmetic_controls": 21,
+  "market_requests": 0,
+  "model_training_runs": 0,
+  "new_economic_observations": 0,
+  "orders": 0,
+  "protected_capture_touched": false,
+  "provider": {
+    "cache_identity": "53669a7d23f4c6ebbfccf11c6cb711b3ee0b817511c198e3b10250eb48971c70",
+    "checks": {
+      "cached_interpreter_exists": true,
+      "download_contract_matches": true,
+      "installed_versions_and_source_repairs": true,
+      "model_contract_matches": true,
+      "platform_matches": true,
+      "receipt_identity_matches": true,
+      "version_matches": true
+    },
+    "guide_sha256": "e9f21cacca9f7cef7dbc652f48f56f9916f458c10afb3fd69a4b8e55d08d943e",
+    "lock_sha256": "2b64b1bca1ef5484d642646a4ebf019bf30a2571c4392217a1dcec3325014477",
+    "process_owner_sha256": "d735aa33ec5a55d3c447278b1553f2e3b135380458fd675dce737881c34ef38b",
+    "tool_sha256": "e84a0e54ee07e4e13d3d2f35491f641730096a78126068f232c1f2397a467d8c",
+    "version": "0.9.5+flitzzip.portable2"
+  },
+  "public_forward_profit_floor_usd": "0",
+  "result_sha256": "3c25cae15f9a8600a5a4192ab73068a139bea53cc2350363226fed2dcfc526db",
+  "schema_version": "polymarket-us-fee-supersession-v1",
+  "source_refetch_requires_new_independent_material_change": true
+}

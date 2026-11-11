@@ -158,7 +158,7 @@
       "why_not_stable_deployable": "Current rate remains conflict-qualified rather than proven, the evidence is from public wallets rather than the owned account, every external friction and best alternative is not bound, and future persistence is not guaranteed."
     }
   },
-  "result_sha256": "c15154bc66b9291201a7f938b2ece9ef65087f61d4c51543b5d02b9ab18a992b",
+  "result_sha256": "0c32116c5a68aa97b3f67d0d71df507559ddfb0f0ea5269522aab07f3e1c93f4",
   "routing": {
     "october8_9_nfl_total_ladder_resource_failure": {
       "status": "terminal_resource_unqualified_no_price_evaluation",
@@ -342,7 +342,7 @@
   "source_binding": {
     "accepted_edge_count": 37,
     "registry_path": "docs/model-research/structural-edge-priority-registry-v1.json",
-    "registry_result_sha256": "b92a9dbdea06996633dcaa2d9743848f3cc10fc9b5564c83efdb9d6759c13f5b",
+    "registry_result_sha256": "25196890d5e4733a17a9af740582e33c145f0791e2459059a4f98ccb8b044bf2",
     "registry_metadata_partition_certificate": {
       "path": "docs/review/2026-11-10/partition-cover-certificate/result.json",
       "result_sha256": "6055b166a789e97e47d13adecbfc1e885c03cca6030a596de9aaa6fb5a80ae71",
@@ -401,7 +401,16 @@
       "result_sha256": "caea324eddbbb3f1b524dcd61da23d97e2232439904cf2d61ce22ee3595e4883",
       "classification": "Venue-managed single intermediary conversion carries no separate commission but has spread and no minimum guaranteed quantity. Exact eligibility, API support and matched final proceeds are unproved.",
       "new_economic_observations": 0
+    },
+    "registry_metadata_polymarket_us_fee_supersession": {
+      "path": "docs/review/2026-11-11/us-fee-supersession/evidence.json",
+      "result_sha256": "3c25cae15f9a8600a5a4192ab73068a139bea53cc2350363226fed2dcfc526db",
+      "classification": "Current primary US terms supersede historical flat fee inputs. Standard maker rebates require an assigned positive tier; fill grouping and announced combo fee clocks are explicit. Account terms, actual activation, collected cash and stable profitability remain unproved.",
+      "current_base_tier1_standard_maker_rebate_coefficient": "0",
+      "public_forward_profit_floor_usd": "0",
+      "new_economic_observations": 0,
+      "source_refetch_requires_new_independent_material_change": true
     }
   },
-  "updated_at_utc": "2026-11-11T00:55:53.833373+00:00"
+  "updated_at_utc": "2026-11-11T01:46:10.511524+00:00"
 }

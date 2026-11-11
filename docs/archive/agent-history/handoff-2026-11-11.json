@@ -1,0 +1,46 @@
+{
+  "access": "Use the bounded local reader. It performs no fetch. A shallow clone missing objects must explicitly fetch the recorded source revision or use the official connector at that revision.",
+  "archives": {
+    "agent-start": {
+      "bytes": 371074,
+      "git_blob_sha1": "e1cb5ef180a509e012c8803e16746af528037bca",
+      "lines": 5572,
+      "permalink": "https://github.com/strmt7/simple_ai_trading/blob/eaad2d1605f6256ba43cd78ab6b96479294b6155/docs/AGENT_START.md",
+      "reference_base": "docs/",
+      "sha256": "9c307b5aabd2f27566427c5afb3adc7ce6ab08eeb82e8e32828101fbaf84d6b9",
+      "source_path": "docs/AGENT_START.md",
+      "source_revision": "eaad2d1605f6256ba43cd78ab6b96479294b6155"
+    },
+    "continuation": {
+      "bytes": 728170,
+      "git_blob_sha1": "7f0ecf780c0a3c58174dd09c8f27be6202af87ed",
+      "lines": 11456,
+      "permalink": "https://github.com/strmt7/simple_ai_trading/blob/eaad2d1605f6256ba43cd78ab6b96479294b6155/docs/CONTINUATION.md",
+      "reference_base": "docs/",
+      "sha256": "f4032976224d2ddc67203a56e6568aecf87a84a595f31075736beba81ca43c87",
+      "source_path": "docs/CONTINUATION.md",
+      "source_revision": "eaad2d1605f6256ba43cd78ab6b96479294b6155"
+    },
+    "continuation-2026-11-11": {
+      "bytes": 38227,
+      "git_blob_sha1": "4af5816dab6a50ec6ef2c139ac22fd6956df5231",
+      "lines": 534,
+      "permalink": "https://github.com/strmt7/simple_ai_trading/blob/27e97291d2a7385a3bbf7583cb30644a59565d0d/docs/CONTINUATION.md",
+      "reference_base": "docs/",
+      "sha256": "00bb2cccf36296539492b0d1e0d214ca4f76dd38a6b08b66172e962afcdb9fd9",
+      "source_path": "docs/CONTINUATION.md",
+      "source_revision": "27e97291d2a7385a3bbf7583cb30644a59565d0d"
+    }
+  },
+  "created_at_utc": "2026-11-11T01:53:29.997627+00:00",
+  "object_retention": "Keep the recorded source revision and blobs reachable during any separately authorized future history rewrite; do not silently substitute rewritten text.",
+  "previous_manifest_file_sha256": "0cfd5736ad2bcea1e53e5bedc0566c7115edf3c252b8c1f02c5f9de305d2fdc3",
+  "previous_manifest_git_blob_sha1": "fc82e24eacd0836676b2f54ec5d4123f629ea06a",
+  "previous_manifest_path": "docs/archive/agent-history/handoff-2026-11-09.json",
+  "previous_manifest_result_sha256": "68470de6a0d49141772dac1c440b59de74dd3afb5f18b26e3090b5bd744409eb",
+  "previous_manifest_source_revision": "27e97291d2a7385a3bbf7583cb30644a59565d0d",
+  "relative_reference_rule": "Resolve original relative paths from docs/, not from this manifest directory. Use the immutable permalink for rendered original links.",
+  "result_sha256": "ab49788dd9262008e16c5b663d0b6f74adf0d3b129db1180210e494b29fcf9c3",
+  "schema": "immutable-handoff-archive-v1",
+  "scope": "Immutable published originals. Historical progress is provenance; affected studies retain every non-superseded access/retry/account constraint. Current user instructions, AGENTS and exact canonical contracts control. Archiving creates no authority."
+}

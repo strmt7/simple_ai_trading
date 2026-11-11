@@ -1,0 +1,67 @@
+{
+  "base_revision": "27e97291d2a7385a3bbf7583cb30644a59565d0d",
+  "corrected_manifest_result_sha256": "ab49788dd9262008e16c5b663d0b6f74adf0d3b129db1180210e494b29fcf9c3",
+  "evidence_sha256": "b5a9c71784278f72bdc1a0d5ef6f43072e34a4a411e70974d0d8e8c6ad856e93",
+  "initial_evidence_sha256": "3bf6f3524790e21dffdb4e6c50c8798991e0f56508441fdeb3625d5a7d96bff5",
+  "original_manifest_bytes_changed": false,
+  "parent_digest_uses_immutable_published_bytes": true,
+  "parent_manifest": {
+    "git_blob_sha1": "fc82e24eacd0836676b2f54ec5d4123f629ea06a",
+    "published_file_sha256": "0cfd5736ad2bcea1e53e5bedc0566c7115edf3c252b8c1f02c5f9de305d2fdc3",
+    "result_sha256": "68470de6a0d49141772dac1c440b59de74dd3afb5f18b26e3090b5bd744409eb",
+    "source_revision": "27e97291d2a7385a3bbf7583cb30644a59565d0d",
+    "working_and_published_canonical_values_equal": true,
+    "working_file_sha256": "7318d889f4f9f0cfb51af9c9f02444e80f4fafe8d9eace4662fa084fb34586b1"
+  },
+  "schema_version": "handoff-parent-manifest-portability-v1",
+  "verification": {
+    "application_tests_rerun": 0,
+    "bounded_lookup": {
+      "archive": "continuation-2026-11-11",
+      "locations_truncated": false,
+      "match_count": 1,
+      "matching_lines": [
+        294
+      ],
+      "sha256": "00bb2cccf36296539492b0d1e0d214ca4f76dd38a6b08b66172e962afcdb9fd9",
+      "source_revision": "27e97291d2a7385a3bbf7583cb30644a59565d0d"
+    },
+    "changed_scope": "new archive manifest metadata only",
+    "initial_unit_checks_reused": 16,
+    "network_fetches": 0,
+    "real_archive_objects_reverified": [
+      {
+        "bytes": 371074,
+        "lines": 5572,
+        "name": "agent-start",
+        "sha256": "9c307b5aabd2f27566427c5afb3adc7ce6ab08eeb82e8e32828101fbaf84d6b9",
+        "source_revision": "eaad2d1605f6256ba43cd78ab6b96479294b6155"
+      },
+      {
+        "bytes": 728170,
+        "lines": 11456,
+        "name": "continuation",
+        "sha256": "f4032976224d2ddc67203a56e6568aecf87a84a595f31075736beba81ca43c87",
+        "source_revision": "eaad2d1605f6256ba43cd78ab6b96479294b6155"
+      },
+      {
+        "bytes": 38227,
+        "lines": 534,
+        "name": "continuation-2026-11-11",
+        "sha256": "00bb2cccf36296539492b0d1e0d214ca4f76dd38a6b08b66172e962afcdb9fd9",
+        "source_revision": "27e97291d2a7385a3bbf7583cb30644a59565d0d"
+      }
+    ],
+    "tested_source_sha256": {
+      "docs/AGENT_START.md": "5d2f9f374be404ba839bded425d86e1c9347f055c41e50d7830e8b9746c7718b",
+      "docs/CONTINUATION.md": "34550c7be58457d938791d5d695f02776a2a55ccf81501bd078e9d452986dfa2",
+      "docs/archive/agent-history/README.md": "b1c2dc4caa4db8fdb1a6ee42ca0fb1fc9a037357dd28b09d9b3b7f63a8d2fc16",
+      "docs/archive/agent-history/handoff-2026-11-09.json": "7318d889f4f9f0cfb51af9c9f02444e80f4fafe8d9eace4662fa084fb34586b1",
+      "docs/archive/agent-history/handoff-2026-11-11.json": "0604bc0c40f6959a3b67123e5f9b98b1059a255e6bdbf7cbdc7233d5406aaa38",
+      "tests/test_handoff_archive.py": "c6d08fa68a8148f1f3cd73d1d35b4156384f74d6b619e6db3880acfef58d5339",
+      "tools/read_handoff_archive.py": "9bdaf23c2c7ac24d3a5f3957ccf1270e49aa1dc6802801b5309884baf87fd39c"
+    },
+    "unchanged_after_test": true,
+    "unit_source_and_tests_unchanged": true
+  }
+}

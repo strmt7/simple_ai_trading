@@ -4088,7 +4088,16 @@
         "using_Binance_or_Binance_testnet_credentials_for_Polymarket_US"
       ],
       "retry_trigger": "explicit_separate_read_only_Polymarket_US_account_authority_plus_independently_existing_bona_fide_organic_maker_fills_or_a_material_official_fee_coefficient_rounding_cadence_fill_grouping_rebate_payment_or_exchange_architecture_change",
-      "venue_scope": "Polymarket_US_exchange_wide_maker_fills"
+      "venue_scope": "Polymarket_US_exchange_wide_maker_fills",
+      "primary_us_fee_supersession_2026_11_11": {
+        "path": "docs/review/2026-11-11/us-fee-supersession/evidence.json",
+        "result_sha256": "3c25cae15f9a8600a5a4192ab73068a139bea53cc2350363226fed2dcfc526db",
+        "classification": "Current primary US terms supersede historical flat fee inputs. Standard maker rebates require an assigned positive tier; fill grouping and announced combo fee clocks are explicit. Account terms, actual activation, collected cash and stable profitability remain unproved.",
+        "current_base_tier1_standard_maker_rebate_coefficient": "0",
+        "public_forward_profit_floor_usd": "0",
+        "new_economic_observations": 0,
+        "source_refetch_requires_new_independent_material_change": true
+      }
     },
     {
       "blocking_evidence": [
@@ -4366,7 +4375,16 @@
         "self_trading_wash_trading_spoofing_reference_price_manipulation_information_abuse_or_manipulative_cancellation"
       ],
       "retry_trigger": "explicit_separate_quote_only_Polymarket_US_Retail_API_authority_plus_independently_existing_beta_enabled_access_a_frozen_legitimate_required_exact_combo_and_side_exact_payoff_identical_public_leg_counterfactual_quote_and_last_look_contract_fees_finite_size_fill_and_remainder_semantics_reconciliation_failure_unwind_costs_and_a_prospectively_captured_authentic_quote_or_a_material_official_combo_RFQ_quote_acceptance_confirmation_order_fill_fee_settlement_cancellation_access_replay_remainder_or_architecture_change_quote_acceptance_confirmation_cancellation_order_fill_transfer_fund_or_state_change_always_requires_separate_explicit_authority",
-      "venue_scope": "Polymarket_US_combo_RFQ"
+      "venue_scope": "Polymarket_US_combo_RFQ",
+      "primary_us_fee_supersession_2026_11_11": {
+        "path": "docs/review/2026-11-11/us-fee-supersession/evidence.json",
+        "result_sha256": "3c25cae15f9a8600a5a4192ab73068a139bea53cc2350363226fed2dcfc526db",
+        "classification": "Current primary US terms supersede historical flat fee inputs. Standard maker rebates require an assigned positive tier; fill grouping and announced combo fee clocks are explicit. Account terms, actual activation, collected cash and stable profitability remain unproved.",
+        "current_base_tier1_standard_maker_rebate_coefficient": "0",
+        "public_forward_profit_floor_usd": "0",
+        "new_economic_observations": 0,
+        "source_refetch_requires_new_independent_material_change": true
+      }
     },
     {
       "blocking_evidence": [
@@ -4675,7 +4693,7 @@
       ]
     }
   ],
-  "result_sha256": "b92a9dbdea06996633dcaa2d9743848f3cc10fc9b5564c83efdb9d6759c13f5b",
+  "result_sha256": "25196890d5e4733a17a9af740582e33c145f0791e2459059a4f98ccb8b044bf2",
   "schema_version": "structural-edge-priority-registry-v1",
   "terminal_do_not_repeat": [
     {
@@ -5739,6 +5757,6 @@
       "canonical_result_sha256": "e68dbd4532f61fe399e2b04ae9d64d25041731b6bffa847289ea2b01d4da3a3d"
     }
   ],
-  "updated_at_utc": "2026-11-11T00:55:53.833373+00:00",
+  "updated_at_utc": "2026-11-11T01:46:10.511524+00:00",
   "usage_rule": "advance_the_highest_ranked_hypothesis_whose_retry_trigger_is_satisfied_otherwise_do_not_repeat_a_blocked_or_terminal_screen"
 }

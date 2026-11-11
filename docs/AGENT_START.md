@@ -41,7 +41,8 @@ The continuation summarizes current decisions and links exact evidence.
 [REVAMP](REVAMP_2026_11_09.md) retains the whole application/research scope;
 [work priorities](WORK_PRIORITIES.md) determine the next deliverable.
 
-Full prior handoffs remain byte-for-byte in immutable Git objects, routed by the
+Full prior handoffs, including the detailed November 11 source phases, remain
+byte-for-byte in immutable Git objects, routed by the
 [archive index](archive/agent-history/README.md). Historical progress is provenance;
 non-superseded study constraints there still apply. Archiving grants no new
 access, retry, training or trading authority. Use the bounded verified reader to

@@ -1,0 +1,23 @@
+{
+  "after": {
+    "audit_sha256": "0c32116c5a68aa97b3f67d0d71df507559ddfb0f0ea5269522aab07f3e1c93f4",
+    "hypotheses": 65,
+    "observations": 206,
+    "profitability_qualification_supplied_by_verifier": false,
+    "recorded_qualified_stable_edges": 0,
+    "registry_sha256": "25196890d5e4733a17a9af740582e33c145f0791e2459059a4f98ccb8b044bf2",
+    "scoped_mechanisms": 37,
+    "validation_kind": "registry_binding_and_recorded_census_only"
+  },
+  "before": {
+    "audit_sha256": "c15154bc66b9291201a7f938b2ece9ef65087f61d4c51543b5d02b9ab18a992b",
+    "hypotheses": 65,
+    "observations": 206,
+    "profitability_qualification_supplied_by_verifier": false,
+    "recorded_qualified_stable_edges": 0,
+    "registry_sha256": "b92a9dbdea06996633dcaa2d9743848f3cc10fc9b5564c83efdb9d6759c13f5b",
+    "scoped_mechanisms": 37,
+    "validation_kind": "registry_binding_and_recorded_census_only"
+  },
+  "effect": "Ranks 49 and 57 current source supersession metadata only; every prior row field and terminal result preserved."
+}

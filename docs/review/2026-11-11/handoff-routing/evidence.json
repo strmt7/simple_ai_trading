@@ -1,0 +1,84 @@
+{
+  "after": {
+    "archive_manifest_result_sha256": "75f813690dfd4e0cde79e1d1c49991aa565b8c0ec6ba2ffe60d7179071cb6ac6",
+    "archived_source_lines": 17562,
+    "continuation_lines": 151,
+    "entry_bytes": 16091,
+    "full_goal_scope_preserved": true,
+    "original_manifest_and_entries_unchanged": true,
+    "stale_round16_process_guidance_corrected": true
+  },
+  "base_revision": "27e97291d2a7385a3bbf7583cb30644a59565d0d",
+  "before": {
+    "compactness_check": {
+      "returncode": 1,
+      "summary": "1 failed in 0.43s"
+    },
+    "continuation_bytes": 38781,
+    "continuation_sha256": "8ff3cf4272042624c7a67f46f86e690664ddc1026e5c14db26d9baaf652fb622",
+    "entry_bytes": 41968,
+    "stderr_bytes": 0,
+    "stdout_sha256": "dbd0b16b02d44bef31984349f5747ee7da46dd3bcb89bdb1f31ceaace9a276e9"
+  },
+  "evidence_sha256": "3bf6f3524790e21dffdb4e6c50c8798991e0f56508441fdeb3625d5a7d96bff5",
+  "schema_version": "current-handoff-routing-v1",
+  "scope": {
+    "background_or_scheduled_task_created": false,
+    "financial_or_trading_authority_expanded": false,
+    "historical_result_bytes_modified": false,
+    "measured_model_token_or_speed_saving": false,
+    "whole_repository_semantic_review_complete": false
+  },
+  "verification": {
+    "bounded_lookup": {
+      "archive": "continuation-2026-11-11",
+      "locations_truncated": false,
+      "match_count": 1,
+      "matching_lines": [
+        294
+      ],
+      "sha256": "00bb2cccf36296539492b0d1e0d214ca4f76dd38a6b08b66172e962afcdb9fd9",
+      "source_revision": "27e97291d2a7385a3bbf7583cb30644a59565d0d"
+    },
+    "passed_cases": 16,
+    "real_archive_objects_verified": [
+      {
+        "bytes": 371074,
+        "lines": 5572,
+        "name": "agent-start",
+        "sha256": "9c307b5aabd2f27566427c5afb3adc7ce6ab08eeb82e8e32828101fbaf84d6b9",
+        "source_revision": "eaad2d1605f6256ba43cd78ab6b96479294b6155"
+      },
+      {
+        "bytes": 728170,
+        "lines": 11456,
+        "name": "continuation",
+        "sha256": "f4032976224d2ddc67203a56e6568aecf87a84a595f31075736beba81ca43c87",
+        "source_revision": "eaad2d1605f6256ba43cd78ab6b96479294b6155"
+      },
+      {
+        "bytes": 38227,
+        "lines": 534,
+        "name": "continuation-2026-11-11",
+        "sha256": "00bb2cccf36296539492b0d1e0d214ca4f76dd38a6b08b66172e962afcdb9fd9",
+        "source_revision": "27e97291d2a7385a3bbf7583cb30644a59565d0d"
+      }
+    ],
+    "returncode": 0,
+    "ruff_changed_scope": "pass",
+    "source_access_network_fetches": 0,
+    "stderr_bytes": 0,
+    "stdout_sha256": "f1651dccda16ef08313fc2e8d4130f354a4f8c76072966d5f86ca3cd706a2c2b",
+    "summary": "16 passed in 0.46s",
+    "tested_source_sha256": {
+      "docs/AGENT_START.md": "5d2f9f374be404ba839bded425d86e1c9347f055c41e50d7830e8b9746c7718b",
+      "docs/CONTINUATION.md": "34550c7be58457d938791d5d695f02776a2a55ccf81501bd078e9d452986dfa2",
+      "docs/archive/agent-history/README.md": "b1c2dc4caa4db8fdb1a6ee42ca0fb1fc9a037357dd28b09d9b3b7f63a8d2fc16",
+      "docs/archive/agent-history/handoff-2026-11-09.json": "7318d889f4f9f0cfb51af9c9f02444e80f4fafe8d9eace4662fa084fb34586b1",
+      "docs/archive/agent-history/handoff-2026-11-11.json": "8176d04ab50f26b543c36dfe4cf54003d69820571f599e0bfea5fbebe637406c",
+      "tests/test_handoff_archive.py": "c6d08fa68a8148f1f3cd73d1d35b4156384f74d6b619e6db3880acfef58d5339",
+      "tools/read_handoff_archive.py": "9bdaf23c2c7ac24d3a5f3957ccf1270e49aa1dc6802801b5309884baf87fd39c"
+    },
+    "unchanged_after_test": true
+  }
+}

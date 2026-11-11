@@ -77,6 +77,26 @@ def test_find_reports_only_bounded_locations_and_exact_count(tmp_path, monkeypat
     assert "lines" not in result
 
 
+def test_cli_accepts_a_new_verified_manifest_entry(tmp_path, monkeypatch, capsys):
+    manifest, path, _ = install(tmp_path, monkeypatch)
+    name = "continuation-2026-11-11"
+    manifest["archives"][name] = dict(manifest["archives"]["agent-start"])
+    sign(manifest)
+    path.write_text(json.dumps(manifest), encoding="utf-8")
+
+    assert reader.main([name, "--find", "alpha"]) == 0
+    result = json.loads(capsys.readouterr().out)
+    assert result["archive"] == name and result["matching_lines"] == [1]
+
+
+def test_unregistered_archive_name_stops_before_git(tmp_path, monkeypatch, capsys):
+    _, _, calls = install(tmp_path, monkeypatch)
+
+    assert reader.main(["unregistered", "--find", "alpha"]) == 2
+    output = capsys.readouterr()
+    assert not calls and not output.out and "Unknown handoff archive" in output.err
+
+
 @pytest.mark.parametrize("changes", [(0, 1), (1, 121), (True, 1), (1, True)])
 def test_invalid_window_stops_before_read(monkeypatch, changes):
     monkeypatch.setattr(
