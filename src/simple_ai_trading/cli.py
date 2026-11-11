@@ -591,6 +591,48 @@ def _build_parser() -> argparse.ArgumentParser:
     parser_reconcile.add_argument("--quantity-tolerance", type=float, default=1e-8)
     parser_reconcile.set_defaults(func=command_reconcile)
 
+    parser_recover_close = subparsers.add_parser(
+        "recover-close",
+        help="inspect or apply retained owned Spot closing evidence locally",
+    )
+    parser_recover_close.add_argument(
+        "--action", choices=["inspect", "apply"], default="inspect"
+    )
+    parser_recover_close.add_argument(
+        "--data-dir",
+        type=Path,
+        required=True,
+        help="existing owned execution directory",
+    )
+    parser_recover_close.add_argument(
+        "--client-order-id", required=True, help="exact retained bot closing client ID"
+    )
+    parser_recover_close.add_argument(
+        "--expected-scope-sha256",
+        help="apply only: execution scope digest from inspection",
+    )
+    parser_recover_close.add_argument(
+        "--expected-recovery-sha256",
+        help="apply only: retained closing evidence digest from inspection",
+    )
+    parser_recover_close.add_argument(
+        "--runtime-control",
+        type=Path,
+        help="apply only: existing enrolled Binance control database",
+    )
+    parser_recover_close.add_argument(
+        "--runtime-enrollment",
+        type=Path,
+        help="apply only: independent control enrollment",
+    )
+    parser_recover_close.add_argument(
+        "--execution-enrollment",
+        type=Path,
+        help="apply only: independent execution enrollment",
+    )
+    parser_recover_close.add_argument("--json", action="store_true")
+    parser_recover_close.set_defaults(func=command_recover_close)
+
     parser_universe = subparsers.add_parser(
         "universe", help="measure BTC/ETH/SOL high-liquidity eligibility"
     )
@@ -7342,6 +7384,40 @@ def command_risk(args: argparse.Namespace) -> int:
         load_runtime_fn=load_runtime,
         load_strategy_fn=load_strategy,
     )
+
+
+def command_recover_close(args: argparse.Namespace) -> int:
+    from .binance_close_application_cli import run_close_recovery
+
+    status, payload = run_close_recovery(args)
+    output = sys.stdout if status == 0 else sys.stderr
+    if getattr(args, "json", False):
+        print(json.dumps(payload, indent=2), file=output)
+    else:
+        print(f"recover-close: {payload['status']} - {payload['message']}", file=output)
+        if status == 0 and payload["action"] == "inspect":
+            print(
+                f"  {payload['market_type']} {payload['venue_origin']} client={payload['client_order_id']}",
+                file=output,
+            )
+            print(
+                f"  local_intent={payload['local_intent_state']} application_receipt={'committed' if payload['application_recorded'] else 'absent'}",
+                file=output,
+            )
+            print(f"  scope_sha256={payload['execution_scope_sha256']}", file=output)
+            print(f"  recovery_sha256={payload['recovery_sha256']}", file=output)
+        elif status == 0:
+            result = payload["result"]
+            print(
+                f"  terminal={result['terminal_status']} executed={result['executed_quantity']} remaining={result['remaining_quantity']}",
+                file=output,
+            )
+        elif payload["application_outcome"] == "unknown":
+            print(
+                "  Application may have committed. Inspect and retry this application; do not resubmit its order.",
+                file=output,
+            )
+    return status
 
 
 def command_reconcile(args: argparse.Namespace) -> int:

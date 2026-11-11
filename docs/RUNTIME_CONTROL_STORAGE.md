@@ -163,6 +163,34 @@ order. Repeated application is local and idempotent. Its result describes this
 particular application, not current account balances or global flatness. CLI/native
 integration and explicit rearm remain separate unfinished work.
 
+### Local operator command
+
+The [operator workflow](review/2026-11-11/recovery-operator/review.md) exposes
+retained Spot evidence without loading credentials or requesting account data:
+
+```text
+simple-ai-trading recover-close --data-dir "<existing-owned-directory>" --client-order-id "<exact-owned-close-id>" --json
+```
+
+Inspection is the default and does not publish pending redo. Its
+`execution_scope_sha256` identifies the original stored endpoint/product/key scope;
+`recovery_sha256` identifies the retained closing evidence. It also distinguishes
+local intent state from a committed application receipt. Neither is current-account
+or flat-exposure proof, and application admission is explicitly unchecked.
+
+To apply, use the same directory/client selection with `--action apply` and pass
+those exact values through `--expected-scope-sha256` and
+`--expected-recovery-sha256`. Optional `--runtime-control`, `--runtime-enrollment`
+and `--execution-enrollment` select existing configured resources. There is no
+prompt, implicit setup, account call or rearm. Error exit 2 after application
+entry can mean a committed operation; inspect/retry this application rather than
+submitting its order again.
+
+The generated native expert dropdown registers `recover-close` under Risk's
+Owned close recovery group. Its required selection and apply hashes use Extra
+Flags. Missing arguments fail parsing; the default does not apply anything.
+Guided forms and authenticated evidence collection are separate remaining work.
+
 ## Scope and remaining work
 
 Owned closing retains its separate enrolled lock and can serialize even when

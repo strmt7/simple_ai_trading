@@ -1,0 +1,183 @@
+{
+  "schema_version": "owned-close-operator-review-v1",
+  "base_revision": "8d648a464542dd6269d657f104106127a8dc204a",
+  "recorded_at_utc": "2026-11-11T08:13:25.708126+00:00",
+  "behavior": {
+    "command": "recover-close",
+    "default_action": "inspect",
+    "explicit_existing_directory_and_client_id_required": true,
+    "original_scope_read_from_retained_journal_not_current_runtime": true,
+    "raw_credential_fingerprint_not_emitted": true,
+    "read_only_inspection_uses_one_journal_snapshot": true,
+    "inspection_does_not_publish_redo_or_read_position_projections": true,
+    "local_intent_and_committed_application_receipt_reported_separately": true,
+    "inspection_does_not_claim_application_admission": true,
+    "apply_requires_exact_scope_and_recovery_digests": true,
+    "core_stop_enrollment_inventory_and_native_cost_guards_retained": true,
+    "errors_distinguish_not_started_from_unknown_application_outcome": true,
+    "runtime_credential_loading_or_client_construction": false,
+    "rearm_added": false,
+    "native_expert_group": [
+      "Risk",
+      "Owned close recovery"
+    ]
+  },
+  "verification": {
+    "summary": "102 passed in 31.58s",
+    "tested_source_sha256": {
+      "native/windows/generated/command_contract.hpp": "bdefd69c54f2879af230f5ce0ba6d49476767946ec9ff9e87e66d419f31e1edb",
+      "native/windows/src/main.cpp": "79c8af5084ea6109acf275cd07088754b81cb24ab1bce63500110ea4bd6d233d",
+      "src/simple_ai_trading/binance_acknowledgements.py": "ee91860a6a4469518aa8735b199222f9e97a53ee490ea02ebd3197ea562b570e",
+      "src/simple_ai_trading/binance_close_application.py": "dce2d54097af9ff210ebc615edb368acaa82eba64cd37108b0d0659660b8e64f",
+      "src/simple_ai_trading/binance_close_application_cli.py": "6098676306a5022c281b05415a5d55418dd00714b201a7f03db8a50698203c9d",
+      "src/simple_ai_trading/binance_close_intents.py": "fe5fb6a8d92ff892b777c53792a1220be1bf771420d4fa4eeef4b5e2eff9f5e8",
+      "src/simple_ai_trading/binance_close_recovery.py": "768322f2ba84c8819507dd8e9beaa29994e67595d9812d6e9f42f7e6d25e2aea",
+      "src/simple_ai_trading/binance_closing_inventory.py": "ebe0a64ea63564463c290b0d6a44215abe8930e06f1c1502c81e1ecbd8c8811e",
+      "src/simple_ai_trading/binance_execution_storage.py": "8d90728155f01b078be024f855f45b6185159c3f4fa7f8f21538a8fd803f3533",
+      "src/simple_ai_trading/binance_open_intents.py": "9a78e005880962a9d2d6b638e581a2f3d77cfcdd08dee413da9b1ddf8ff0408d",
+      "src/simple_ai_trading/binance_owned_execution.py": "25ce3f202cba7acfabedf12231a5bdff0528e32baa2c6cd2ff707e4951511e5c",
+      "src/simple_ai_trading/binance_runtime_control.py": "b6b5c58f474d76b2df3ad50ed2d20b1a2031e41fd078b95a203d34dc9e665cd4",
+      "src/simple_ai_trading/binance_spot_cash.py": "31b82c79811a4c12cde00ec5affa32f498d768fef2247041f69851dd0a4d9bc7",
+      "src/simple_ai_trading/binance_spot_receipts.py": "4c0ee7c05df80f3642ea043c963841ff87cae6b1bebfd89614a27a8245475945",
+      "src/simple_ai_trading/cli.py": "69eb0a7e974a6b041f8ccc5bf3c6a70b7a510c44277265563fe0e8131bcc9776",
+      "src/simple_ai_trading/command_contract.py": "ad7766ce06941931006076b531efd877c7f4d00ba57f87c1146ba7d83aabb6cd",
+      "src/simple_ai_trading/position_transactions.py": "743275b5e92337bd24825c7b4e4f2d79c1ecb7556bf02d8d56cadfcbe148d97b",
+      "src/simple_ai_trading/positions.py": "0baf01909be1135d56d887fa7499fc4d3ebccf74f04844d49c61f288c7378154",
+      "src/simple_ai_trading/runtime_control.py": "518064c99eaf7a0492c2bbaa8ce15abdad68757b7f5fa3da96996c3649add815",
+      "src/simple_ai_trading/windows_app.py": "81736a184cb4e2d945585212627782e4ed83e4b0c837d34dcf9ed1afb9846f7a",
+      "tests/conftest.py": "090974084e8c25f16dc18ed084269d75edb9fdb5f4d7d15e6e72bb23853d9abc",
+      "tests/test_ai_runtime_and_parity.py": "1f6490adcf1895f916a2b4ee1708af93c97b2bc06ed02097a657043450d7d193",
+      "tests/test_binance_close_application.py": "81be068666e0a0a5c8f705856f20b9f65360fd66bb1f4ff950aef4940633ef9d",
+      "tests/test_cli_new_commands.py": "3adb7d3f59dc02f6294a351af75a600a9a8eed0c60fe1feb796d6ce6312ba856",
+      "tests/test_close_recovery_cli.py": "d0ee08536b5ba8e282634e52d2aa62edd1a42d89ddf1d0722dca0d817cc90663"
+    },
+    "source_unchanged_after_run": true,
+    "domains": [
+      "tests/test_close_recovery_cli.py",
+      "tests/test_binance_close_application.py",
+      "tests/test_cli_new_commands.py",
+      "tests/test_ai_runtime_and_parity.py::test_windows_vram_measurement_deduplicates_and_clamps",
+      "tests/test_ai_runtime_and_parity.py::test_windows_app_commands_match_cli_contract",
+      "tests/test_ai_runtime_and_parity.py::test_command_contract_ignores_usage_wrapping_but_preserves_options",
+      "tests/test_ai_runtime_and_parity.py::test_windows_workflow_taxonomy_is_complete_unique_and_model_first",
+      "tests/test_ai_runtime_and_parity.py::test_windows_launcher_reports_missing_native_executable",
+      "tests/test_ai_runtime_and_parity.py::test_windows_launcher_runs_native_executable",
+      "tests/test_ai_runtime_and_parity.py::test_windows_launcher_help_exits_cleanly",
+      "tests/test_ai_runtime_and_parity.py::test_generated_native_contract_matches_cli",
+      "tests/test_ai_runtime_and_parity.py::test_native_window_initializes_hwnd_during_create",
+      "tests/test_ai_runtime_and_parity.py::test_native_build_fails_closed_on_command_generation_error",
+      "tests/test_ai_runtime_and_parity.py::test_native_window_has_repeatable_smoke_and_capture_tools"
+    ],
+    "source_archive_sha256": "80b2ec79351e0168a5d2872bffe85044decf3fa1e56b72777c9559beb4ab58dd",
+    "raw_stdout_sha256": "2efe00d80dfd4a058f320eefaae165258d0876c7856c38ded42d56b56f5e99db",
+    "raw_stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "earlier_source_phase_summaries": [
+      "20 passed in 5.20s",
+      "102 passed in 24.71s"
+    ],
+    "real_owned_subprocess_actions": [
+      "inspect",
+      "apply",
+      "repeat apply"
+    ],
+    "subprocess_guards": [
+      "socket.socket.connect blocked",
+      "CLI runtime credential loading blocked",
+      "CLI venue-client construction blocked",
+      "explicit system-only environment"
+    ],
+    "pending_redo_case": "After durable application commit and before JSON publication, inspection reported the committed receipt without publishing; same-application retry recovered.",
+    "custom_directory_spaces_and_independent_enrollments": true,
+    "existing_file_bytes_unchanged_by_inspection": true,
+    "ruff_check": "pass",
+    "new_module_format_checks": "pass",
+    "legacy_formatting_scope": "authored ranges only"
+  },
+  "native_build": {
+    "configuration": "Release",
+    "workers": 2,
+    "native_compiler_input_sha256": {
+      "native/windows/CMakeLists.txt": "0c7fa5f48ac0075ec143fd66526bd0f4e6007cf47c228ab486bced68dd107ae1",
+      "native/windows/generated/command_contract.hpp": "bdefd69c54f2879af230f5ce0ba6d49476767946ec9ff9e87e66d419f31e1edb",
+      "native/windows/src/main.cpp": "79c8af5084ea6109acf275cd07088754b81cb24ab1bce63500110ea4bd6d233d",
+      "native/windows/src/operator_presentation.hpp": "758cc04d147d27f62060f0709a1434e22fdc6e3e700453180f4cf4107f940fbd",
+      "native/windows/src/window_snapshot.hpp": "f1d438f68ca9c6f3ff54c001258365ba85af6944cbe1d14e5f70ccf28d0bb8b9",
+      "native/windows/src/workspace_layout.hpp": "7393e08706ac8ab485d09271252f4d118b06d2546b596811ddbba4e85ead3fdc",
+      "native/windows/tests/operator_presentation_tests.cpp": "50f30a1479d63f6fc440b0715c8ece9c24814e5e3353a7a89ae303b295cbd9e2"
+    },
+    "native_executable_sha256": "4fa65ebf618bf50870b1b5ae18ee0649ca0d5413440a7902c229d8fee71182f0",
+    "presentation_test_returncode": 0,
+    "build_log_sha256": "f847e2152c0d00a632ad514221fe96ab06b1bef32cee60c0ada1e0508775f47b",
+    "presentation_log_sha256": "7eb70257593da06f682a3ddda54a9d260d4fc514f645237f5ca74b08f8da61a6",
+    "generated_contract_parity_verified_against_final_python_source": true,
+    "gui_launches": 0,
+    "fresh_visual_or_keyboard_acceptance_claim": false
+  },
+  "navigation": {
+    "index_source_revision": "8d648a464542dd6269d657f104106127a8dc204a",
+    "snapshot": "4aca01b993614e4027d582ce94684fd9",
+    "current_at_search": true,
+    "current_after_patch_claim": false,
+    "query": "Local CLI storage recovery commands without credential loading or authenticated client construction; generated native workflow contract registration",
+    "candidate_source_checks": [
+      {
+        "live_sha256": "5cd9ce709ff744b96fc00b3ab7ea5e8b0bf74dc76d116482ee7f0459d5e56acf",
+        "matches": true,
+        "mirror_sha256": "5cd9ce709ff744b96fc00b3ab7ea5e8b0bf74dc76d116482ee7f0459d5e56acf",
+        "path": "src/simple_ai_trading/cli.py"
+      },
+      {
+        "live_sha256": "96745bd629f7928e3b19bae213e82e2273b5aad26aba185392accf7bce5a2243",
+        "matches": true,
+        "mirror_sha256": "96745bd629f7928e3b19bae213e82e2273b5aad26aba185392accf7bce5a2243",
+        "path": "src/simple_ai_trading/command_contract.py"
+      },
+      {
+        "live_sha256": "62dc158edbbdb527c77926da21b4fd7b9d0fe1855410bd27add6087f8b02c78e",
+        "matches": true,
+        "mirror_sha256": "62dc158edbbdb527c77926da21b4fd7b9d0fe1855410bd27add6087f8b02c78e",
+        "path": "src/simple_ai_trading/polymarket_round20_campaign.py"
+      },
+      {
+        "live_sha256": "b79c99da903ab52595368ea3c3159216c0f2ea8f32bdd45c85b4e808e63ba2ce",
+        "matches": true,
+        "mirror_sha256": "b79c99da903ab52595368ea3c3159216c0f2ea8f32bdd45c85b4e808e63ba2ce",
+        "path": "src/simple_ai_trading/round74_event_cohort_operator.py"
+      },
+      {
+        "live_sha256": "eddf7fa7351e64577f4fd19839f6eb1b610bc9b5f6687f74576a089c03cf5b49",
+        "matches": true,
+        "mirror_sha256": "eddf7fa7351e64577f4fd19839f6eb1b610bc9b5f6687f74576a089c03cf5b49",
+        "path": "src/simple_ai_trading/binance_close_application.py"
+      }
+    ],
+    "actual_cli_semantic_and_lexical_search": true,
+    "fused_receipt_sha256": "d269f0e91c5103701294cd2811edd9c296f58d1ed069588e01b1c85bcd7ef944",
+    "native_receipt_sha256": "1def3b5d1437f85c85de97ada3ca6b4fc8714d445d2af5b607104d38edc2a3aa"
+  },
+  "authority": {
+    "remote_source_or_market_requests": 0,
+    "account_requests": 0,
+    "orders": 0,
+    "credentials_read": false,
+    "actual_user_ledger_mutations": 0,
+    "protected_partial_capture_access": false,
+    "production_model_fits": 0,
+    "gpu_benchmarks": 0,
+    "persistent_launchers_installed": 0
+  },
+  "financial_frontier": {
+    "observations": 206,
+    "hypotheses": 65,
+    "historical_scoped_mechanisms": 37,
+    "qualified_stable_edges": 0,
+    "new_economic_observations": 0
+  },
+  "limits": [
+    "No authenticated collection action was added.",
+    "Native registration/build/parity is not a visual, keyboard or guided-form acceptance.",
+    "Current account UID/cash, unsupported fee assets, missing fill lineage, instrument/dust and lost-owner qualification remain separate.",
+    "Futures/legacy application, explicit rearm, independent supervision and complete product/profitability qualification remain unfinished."
+  ],
+  "evidence_sha256": "64dc1321a368f3784044791eb16b0aa2140b237c0b8033244427489b60ed9162"
+}

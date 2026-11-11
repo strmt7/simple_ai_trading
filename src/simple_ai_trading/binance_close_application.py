@@ -54,6 +54,13 @@ class ClosingApplicationResult:
 
 
 @dataclass(frozen=True)
+class ClosingRecoveryInspection:
+    recovery_sha256: str
+    local_intent_state: str
+    application_recorded: bool
+
+
+@dataclass(frozen=True)
 class _Source:
     position: OpenPosition
     request: str
@@ -105,6 +112,43 @@ def closing_recovery_sha256(
         if isinstance(exc, OpenIntentError):
             raise
         raise OpenIntentError("closing application evidence is unavailable") from None
+
+
+def inspect_closing_recovery(
+    store: PositionsStore, *, scope: BinanceExecutionScope, client_id: str
+) -> ClosingRecoveryInspection:
+    """Inspect one journal snapshot without publishing redo or assuming live balances."""
+    try:
+        with closing(store.opening_intents._connect()) as connection:
+            connection.execute("BEGIN")
+            source = _source(connection, store, scope, client_id)
+            application = _application_record(connection, client_id)
+            if application is not None:
+                request, digest, before, encoded, _ = application
+                prior = None if before == "null" else ClosedTrade(**json.loads(before))
+                _, _, result = _projection(source, client_id, prior)
+                if source.state != "RECORDED" or (request, digest, encoded) != (
+                    source.request,
+                    source.digest,
+                    _encode(asdict(result)),
+                ):
+                    raise OpenIntentError(
+                        "application receipt conflicts with retained evidence"
+                    )
+            return ClosingRecoveryInspection(
+                source.digest, source.state, application is not None
+            )
+    except (
+        sqlite3.Error,
+        OSError,
+        TypeError,
+        ValueError,
+        KeyError,
+        ArithmeticError,
+    ) as exc:
+        if isinstance(exc, OpenIntentError):
+            raise
+        raise OpenIntentError("closing application inspection is unavailable") from None
 
 
 def _previous_fills(source: _Source, prior: ClosedTrade) -> None:

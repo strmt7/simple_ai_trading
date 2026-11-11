@@ -2,7 +2,7 @@
 
 namespace simple_ai_trading::native_contract {
 
-inline constexpr const wchar_t* kCommandContractSha256 = L"50a96f007f8d68ebdb78de532df5ed466717696f110ccb62faa4ae871cc50482";
+inline constexpr const wchar_t* kCommandContractSha256 = L"d782539180f6bb2ebd7f9871f491a4bb84981d71fde2fccacc805fc83f1714f2";
 
 struct CommandOptionSpec {
     const wchar_t* flags;
@@ -1014,6 +1014,18 @@ inline constexpr CommandOptionSpec kOptions_reconcile[] = {
     {L"--quantity-tolerance", L"quantity_tolerance", L"", L"1e-08", L"", L"1", false, true, false},
 };
 
+inline constexpr CommandOptionSpec kOptions_recover_close[] = {
+    {L"--action", L"action", L"inspect, apply", L"inspect", L"", L"1", false, true, false},
+    {L"--data-dir", L"data_dir", L"", L"", L"existing owned execution directory", L"1", true, true, false},
+    {L"--client-order-id", L"client_order_id", L"", L"", L"exact retained bot closing client ID", L"1", true, true, false},
+    {L"--expected-scope-sha256", L"expected_scope_sha256", L"", L"", L"apply only: execution scope digest from inspection", L"1", false, true, false},
+    {L"--expected-recovery-sha256", L"expected_recovery_sha256", L"", L"", L"apply only: retained closing evidence digest from inspection", L"1", false, true, false},
+    {L"--runtime-control", L"runtime_control", L"", L"", L"apply only: existing enrolled Binance control database", L"1", false, true, false},
+    {L"--runtime-enrollment", L"runtime_enrollment", L"", L"", L"apply only: independent control enrollment", L"1", false, true, false},
+    {L"--execution-enrollment", L"execution_enrollment", L"", L"", L"apply only: independent execution enrollment", L"1", false, true, false},
+    {L"--json", L"json", L"", L"false", L"", L"0", false, false, false},
+};
+
 inline constexpr CommandOptionSpec kOptions_report[] = {
     {L"--account", L"account", L"", L"false", L"include authenticated account state", L"0", false, false, false},
     {L"--doctor", L"doctor", L"", L"true", L"include readiness checks", L"0", false, false, false},
@@ -1468,6 +1480,7 @@ inline constexpr CommandSpec kCommands[] = {
     {L"positions", L"usage: simple-ai-trading positions [-h] [--stats] [--learning]", kOptions_positions, 2},
     {L"prepare", L"usage: simple-ai-trading prepare [-h] [--historical HISTORICAL] [--model MODEL] [--limit LIMIT] [--batch-size BATCH_SIZE] [--preset {balanced,custom,quick,thorough}] [--epochs EPOCHS] [--learning-rate LEARNING_RATE] [--l2-penalty L2_PENALTY] [--seed SEED] [--start-cash START_CASH] [--walk-forward] [--no-walk-forward] [--walk-forward-train WALK_FORWARD_TRAIN] [--walk-forward-test WALK_FORWARD_TEST] [--walk-forward-step WALK_FORWARD_STEP] [--calibrate-threshold] [--no-calibrate-threshold] [--online-doctor]", kOptions_prepare, 18},
     {L"reconcile", L"usage: simple-ai-trading reconcile [-h] [--json] [--output OUTPUT] [--quantity-tolerance QUANTITY_TOLERANCE]", kOptions_reconcile, 3},
+    {L"recover-close", L"usage: simple-ai-trading recover-close [-h] [--action {inspect,apply}] --data-dir DATA_DIR --client-order-id CLIENT_ORDER_ID [--expected-scope-sha256 EXPECTED_SCOPE_SHA256] [--expected-recovery-sha256 EXPECTED_RECOVERY_SHA256] [--runtime-control RUNTIME_CONTROL] [--runtime-enrollment RUNTIME_ENROLLMENT] [--execution-enrollment EXECUTION_ENROLLMENT] [--json]", kOptions_recover_close, 9},
     {L"report", L"usage: simple-ai-trading report [-h] [--account] [--doctor] [--no-doctor] [--online] [--input INPUT] [--model MODEL]", kOptions_report, 6},
     {L"risk", L"usage: simple-ai-trading risk [-h] [--model MODEL] [--paper] [--live] [--leverage LEVERAGE] [--json]", kOptions_risk, 5},
     {L"shell", L"usage: simple-ai-trading shell [-h]", nullptr, 0},
@@ -1573,6 +1586,7 @@ inline constexpr WorkflowCommandSpec kWorkflowCommands[] = {
     {L"Risk", L"Evidence and reporting", L"report"},
     {L"Risk", L"Evidence and reporting", L"signals"},
     {L"Risk", L"Evidence and reporting", L"source-grades"},
+    {L"Risk", L"Owned close recovery", L"recover-close"},
     {L"Data", L"Market data", L"fetch"},
     {L"Data", L"Market data", L"data-sync"},
     {L"Data", L"Market data", L"archive-sync"},

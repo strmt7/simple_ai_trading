@@ -67,8 +67,9 @@ before continuing an affected family. None supplies a qualified stable edge.
   legacy/Futures marks, quote units and finite capital. [Signed residuals](review/2026-11-11/signed-residual/review.md)
   preserve positive quantities. [Spot application](review/2026-11-11/terminal-application/review.md)
   reconciles receipt-backed cumulative closes under ownerless Stop. Empty-lease
-  release and zero-fill close-ID reuse are repaired. CLI/native integration,
-  futures/legacy recovery, account qualification and rearm remain open.
+  release and zero-fill close-ID reuse are repaired. [Operator recovery](review/2026-11-11/recovery-operator/review.md)
+  adds offline CLI inspect/apply and native expert registration. Authenticated
+  collection, guided forms, futures/legacy recovery, account qualification and rearm remain open.
 - The [Spot roundtrip](review/2026-11-10/roundtrip-command/review.md) routes both
   writes through the enrolled durable gateway. Only the receipt-owned second
   SELL uses closing authority through Stop. Actual scope, cash, commission/fee
@@ -146,9 +147,3 @@ and dependencies isolated/configurable. Every helper must be bounded, hidden
 and session-owned, with teardown verified. No recurring development service,
 schedule, startup hook or unattended worker is authorized. Leave unrelated tasks
 untouched and defer benchmark timing only for material CPU/GPU/RAM/disk contention.
-
-## Detailed source phases
-
-The [archive index](archive/agent-history/README.md) routes immutable evidence.
-Use the bounded `tools.read_handoff_archive` reader. Omission grants no capture,
-training, account, retry or trading authority; source-bound constraints persist.
