@@ -1,0 +1,63 @@
+{
+  "base_revision": "215c2f6b277958c81fdfb8009bde0f33abfa9121",
+  "before": {
+    "intake_waited_for_stalled_scorer": true,
+    "reproduction_script_sha256": "83ba0a9880819cfc40a9c216cff1eb83655320434d6b670f7f7a83f8cf5a8481",
+    "reproduction_stdout_sha256": "80fe5ad239c22b6669a02f9507f54ef118df8dfba6aa0fd507b78cfccc64ebb0",
+    "same_slot_observed_cache_survived_gap": true
+  },
+  "evidence_sha256": "3fa6688ea2093cce648ab1e2c352374b1cd878f2ba7a58f4621f7c984f562ba9",
+  "schema_version": "polymarket-round21-scoring-source-continuity-v1",
+  "scope": {
+    "account_requests": 0,
+    "inference_hard_termination_qualified": false,
+    "market_requests": 0,
+    "native_final_dispatch_source_epoch_bound": false,
+    "orders": 0,
+    "protected_capture_touched": false
+  },
+  "source_navigation": {
+    "index_matches_current_source": true,
+    "receipt_sha256": "7ee708c5845cb7f60251fe5d9cc054148b20846c8cfbe871a25bc5d02c78141e",
+    "source_digest": "50f47d96e2462882885e3c09e0b98e09"
+  },
+  "verification": {
+    "in_flight_and_cached_forecast_revoked": true,
+    "optional_gap_preserves_core_only_forecast": true,
+    "passed_cases": 85,
+    "proposal_vetoed_for_revocation_before_and_during_quote": true,
+    "required_gap_processed_while_model_stalled": true,
+    "required_optional_gap_resets_temporal_history": true,
+    "stdout_sha256": "901cf9c31ca24b78eeb168446546b3dec5d3ff11345412109ee3baf3d687f6c2",
+    "test_modules": [
+      "tests/test_polymarket_round21_live_features.py",
+      "tests/test_polymarket_round21_prospective.py",
+      "tests/test_polymarket_round21_decision.py",
+      "tests/test_polymarket_round21_session.py",
+      "tests/test_polymarket_round21_public_feed.py",
+      "tests/test_polymarket_round21_binance_feed.py",
+      "tests/test_polymarket_round21_runtime.py",
+      "tests/test_polymarket_autonomous_runtime.py"
+    ],
+    "tested_source_sha256": {
+      "src/simple_ai_trading/polymarket_autonomous_runtime.py": "b99fd0d30c4ab67dadf4dd0945c4b103fb4a857838660fc44f9265e33fad0986",
+      "src/simple_ai_trading/polymarket_market_discovery.py": "9eecb8ad83960d0c9c127716e35bd9464f86671c858f459c4f38febe9042f1f0",
+      "src/simple_ai_trading/polymarket_round21_binance_feed.py": "b88263306b5feef6dad033b91950774e455f552c8b90ef2abba055b6834ab433",
+      "src/simple_ai_trading/polymarket_round21_decision.py": "d3720f29864a24074903af416710f1ae63b53220a12cdc7c5f1e007971b66b6d",
+      "src/simple_ai_trading/polymarket_round21_live_features.py": "9be176f874bdc562815b678be05867e36332973202488f2bfac3c19307ac1b7e",
+      "src/simple_ai_trading/polymarket_round21_prospective.py": "3d3d61908012bf50eb01f196892185f4dfd8b135f825c7d0f6b8f62ed296e51f",
+      "src/simple_ai_trading/polymarket_round21_public_feed.py": "56133e558f662d13785166018d22b1b175efed5ad8d6595222c598a9a56c7545",
+      "src/simple_ai_trading/polymarket_round21_runtime.py": "07784610992c761ba687c7ed6b87c9dcdec49cf701a6ae5f4c0c06e22e07ed56",
+      "src/simple_ai_trading/polymarket_round21_session.py": "47c503482b97de86fffe15bb28767d207f11d44d301ccd2a306d26ad06473159",
+      "tests/test_polymarket_autonomous_runtime.py": "77c82e5f0066d0e3da4c05e518d858a0ac481503d57277a37e6911b643a4f2b8",
+      "tests/test_polymarket_round21_binance_feed.py": "30e30c451c123b28f0b7237beba0f6b60a5c81746d65e00ab533166d2c3fdeaa",
+      "tests/test_polymarket_round21_decision.py": "1163057c5899ef1c6b7bbf9f68390635cef809730192e2d68ce4cc544137a094",
+      "tests/test_polymarket_round21_live_features.py": "9e289401f134c0853a8976492ff8eb6c790b78d8f1a80ff3bdc44e8476e28c21",
+      "tests/test_polymarket_round21_prospective.py": "b49b73dec9846354c6ec66013e35b79e7c916d3a23fe7d4d6c8313f5799ee2c5",
+      "tests/test_polymarket_round21_public_feed.py": "342f4608b21454c7046a851752eb64c6a56945611b40aee18c5bc8f3f2d45619",
+      "tests/test_polymarket_round21_runtime.py": "8ab9b9a80c8557fe4474860736ae4b116b89c2f6c5cf4efe13ddb286539babe1",
+      "tests/test_polymarket_round21_session.py": "f884f01cefa5aaa0f344b44dea11b1bc3c5f6551bbf62ec0eede29d830d1c90e"
+    },
+    "unchanged_after_test": true
+  }
+}

@@ -86,4 +86,15 @@ inline Status ledger(std::wstring_view state, std::wstring_view positions) {
     return {};
 }
 
+inline Status runtime(std::wstring_view state) {
+    if (state == L"running") return {L"Running state", Tone::observed};
+    if (state == L"stopped") return {L"Stopped state", Tone::observed};
+    if (state == L"paused") return {L"Paused", Tone::caution};
+    if (state == L"stopping") return {L"Stopping", Tone::caution};
+    if (state == L"stop_requested") return {L"Stop latched", Tone::caution};
+    if (state == L"unconfigured") return {L"Unconfigured", Tone::unknown};
+    if (state == L"control_unavailable") return {L"Control unavailable", Tone::critical};
+    return {};
+}
+
 }  // namespace simple_ai_trading::presentation

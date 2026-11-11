@@ -1,0 +1,92 @@
+{
+  "account_requests": 0,
+  "api_or_testnet_supported_proved": false,
+  "base_revision": "215c2f6b277958c81fdfb8009bde0f33abfa9121",
+  "calculation": {
+    "announcement": {
+      "code": "2f6fa2926253415a81def145af35014e",
+      "id": 286495,
+      "last_update_utc": null,
+      "publish_utc": "2026-10-12T07:30:02.991000+00:00",
+      "response_bytes": 38170,
+      "response_sha256": "66e6f68ac98fe69f1fb5e84765abd74f2a063e4ae231a26d5418ac94f9fa3bb6",
+      "version": "1"
+    },
+    "constructed": {
+      "automatic_minus_direct_u": "-0.5009985",
+      "automatic_minus_manual_u": "0.9984990015",
+      "automatic_route_net_u": "998.4990015",
+      "direct_gross_u": "1000",
+      "direct_net_u": "999.000",
+      "executed_conversion_u_per_usdt": "0.9985",
+      "illustrative_fee_fraction_per_commission": "0.001",
+      "intermediary_gross_usdt": "1001",
+      "manual_route_net_u_at_same_conversion": "997.5005024985",
+      "parity_conversion_u_per_usdt_exact": "1000/1001"
+    },
+    "faq": {
+      "code": "1dce8dc66adc450a8e669676d64a5135",
+      "id": 283263,
+      "last_update_utc": "2026-10-15T09:43:00+00:00",
+      "publish_utc": "2026-08-27T09:00:01.076000+00:00",
+      "response_bytes": 18880,
+      "response_sha256": "286d58716b5dff60422d12b98bbc694323148c81cc07141ed5a955d200de5b61",
+      "version": "1"
+    }
+  },
+  "current_exact_symbol_and_account_eligibility_proved": false,
+  "derivation_sha256": "8332905aada2c8862a153b5e7a66c47c4b18526e09466abf9d0d8d9b63b31221",
+  "full_fill_or_minimum_capacity_proved": false,
+  "market_requests": 0,
+  "new_economic_observations": 0,
+  "orders": 0,
+  "protected_capture_touched": false,
+  "registry_rank": 44,
+  "result_sha256": "caea324eddbbb3f1b524dcd61da23d97e2232439904cf2d61ce22ee3595e4883",
+  "schema_version": "binance-spot-auto-order-routing-source-v1",
+  "sources": {
+    "announcement": {
+      "contract_sha256": "6f87e25d18942690a018a8dcde0d7ea0d51ba243ad042501b5ddf093ace65bdf",
+      "journal_sha256": "e7ee2f102d16a95385f45c406812609551ef04c26dbe3e380e938cfb3f52b620",
+      "native_receipt": {
+        "completed_at_ms": 1794358302365,
+        "error_type": null,
+        "oversize_body_is_truncated": false,
+        "phase": "completed",
+        "requested_at_ms": 1794358302277,
+        "response_bytes": 38170,
+        "response_sha256": "66e6f68ac98fe69f1fb5e84765abd74f2a063e4ae231a26d5418ac94f9fa3bb6",
+        "status_code": 200
+      },
+      "request": {
+        "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "count": 1,
+        "method": "GET",
+        "url": "https://www.binance.com/bapi/composite/v1/public/cms/article/detail/query?articleCode=2f6fa2926253415a81def145af35014e"
+      },
+      "result_sha256": "d4336ee12c2cdbfb395d730e70a32035580ed29169f2774520cfa95caaa43b54"
+    },
+    "faq": {
+      "contract_sha256": "48b138dc9fffe2b02d8c4de263f5e322203e54f5f66f3ff5057df0c0eb4b677d",
+      "journal_sha256": "57b91fd275225067fe604135c755f3b30f60835824cc18c26c4d033b1e6e536b",
+      "native_receipt": {
+        "completed_at_ms": 1794358367445,
+        "error_type": null,
+        "oversize_body_is_truncated": false,
+        "phase": "completed",
+        "requested_at_ms": 1794358367101,
+        "response_bytes": 18880,
+        "response_sha256": "286d58716b5dff60422d12b98bbc694323148c81cc07141ed5a955d200de5b61",
+        "status_code": 200
+      },
+      "request": {
+        "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "count": 1,
+        "method": "GET",
+        "url": "https://www.binance.com/bapi/composite/v1/public/cms/article/detail/query?articleCode=1dce8dc66adc450a8e669676d64a5135"
+      },
+      "result_sha256": "3854208cc8aad2abe6fabff4d6fe6417022bbd98d42b806c667f751dd7648f26"
+    }
+  },
+  "spot_arbitrage_population_reopened": false
+}

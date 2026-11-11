@@ -1,0 +1,166 @@
+{
+  "base_revision": "215c2f6b277958c81fdfb8009bde0f33abfa9121",
+  "evidence_sha256": "6b799467e6252f3943b7ac422ee3740f0c7f1cb2c1831543ac110c694cb3d49e",
+  "interaction": {
+    "after": {
+      "hidden": true,
+      "mode": "after",
+      "native_executable_sha256": "af9018d6b3251f2655a64afa2c6e3ddf18bb090460d0f93bb9ee72852e89240b",
+      "output_sha256": "fd49f24af0d3ac75d09b9ccce230897301bae6a5b77d1642d2258d0a78756b58",
+      "owned_process_exited": true,
+      "pause_in_flight": true,
+      "stop_forwarded": true
+    },
+    "before": {
+      "hidden": true,
+      "mode": "before",
+      "native_executable_sha256": "10f133af1c59402b356c685ba39d119269c7ac3c14b6b96fc801e14e4ee4b1b8",
+      "output_sha256": "9e8666a5918d322310a3996c1043c4cdbfd36018255d47b89c3d8907ec0edb66",
+      "owned_process_exited": true,
+      "pause_in_flight": true,
+      "stop_forwarded": false
+    },
+    "priority_receipts_retained_under_unique_names": true,
+    "stop_priority": {
+      "hidden": true,
+      "mode": "after",
+      "native_executable_sha256": "af9018d6b3251f2655a64afa2c6e3ddf18bb090460d0f93bb9ee72852e89240b",
+      "output_sha256": "d376f5c53b258c61099a2717134389b3def01c220ae7b63fbff4038565249d55",
+      "owned_process_exited": true,
+      "pause_and_start_blocked": true,
+      "stop_in_flight": true
+    }
+  },
+  "native_build": {
+    "after": {
+      "native_executable_sha256": "af9018d6b3251f2655a64afa2c6e3ddf18bb090460d0f93bb9ee72852e89240b",
+      "native_sources": {
+        "native/windows/CMakeLists.txt": "0c7fa5f48ac0075ec143fd66526bd0f4e6007cf47c228ab486bced68dd107ae1",
+        "native/windows/generated/command_contract.hpp": "3b7dee5c0c18edfcd1d6387e2d12ad93ece8383bfdb4cf87a783e55b1a38b59b",
+        "native/windows/src/main.cpp": "514b9d41c351b86e59ef25110cfcb3c9b57ca861a96bf2d12f950663b7471594",
+        "native/windows/src/operator_presentation.hpp": "d208cc4b0c40b29e09cab259e90965b14f19158dec2adac605765a1f2d0b7e79",
+        "native/windows/src/window_snapshot.hpp": "f1d438f68ca9c6f3ff54c001258365ba85af6944cbe1d14e5f70ccf28d0bb8b9",
+        "native/windows/tests/operator_presentation_tests.cpp": "537d4c3076fb19ad90494841b286fa6caf5433df301ec768f378c6d786a97464"
+      }
+    },
+    "before": {
+      "native_executable_sha256": "10f133af1c59402b356c685ba39d119269c7ac3c14b6b96fc801e14e4ee4b1b8",
+      "native_sources": {
+        "native/windows/CMakeLists.txt": "0c7fa5f48ac0075ec143fd66526bd0f4e6007cf47c228ab486bced68dd107ae1",
+        "native/windows/generated/command_contract.hpp": "3b7dee5c0c18edfcd1d6387e2d12ad93ece8383bfdb4cf87a783e55b1a38b59b",
+        "native/windows/src/main.cpp": "b4c7568981949b31ef27c7e3f19ca2511b3bf35dd801a25d81da9d7e6dd893b9",
+        "native/windows/src/operator_presentation.hpp": "4540a71dfe3757542fa13aef5b81cb40fbf8b18b630ffb6d07d267960fa03ec7",
+        "native/windows/src/window_snapshot.hpp": "f1d438f68ca9c6f3ff54c001258365ba85af6944cbe1d14e5f70ccf28d0bb8b9",
+        "native/windows/tests/operator_presentation_tests.cpp": "fcf74abd5528b63fc087720380c41777ac3ae6ea6ac527abd58027547e56781f"
+      }
+    },
+    "compiler": "MSVC 19.52.37029.0",
+    "configuration": "Release",
+    "fresh_matching_toolchain_build": true,
+    "parallel_workers": 2,
+    "presentation_test_returncode": 0
+  },
+  "retained_private_artifacts_sha256": {
+    "after-build.log": "a559fc3e45f3a6fdafd67a478fa5a7e8f31e3b5286ed4a7abaac7f270ea9091f",
+    "after-control-output.log": "fd49f24af0d3ac75d09b9ccce230897301bae6a5b77d1642d2258d0a78756b58",
+    "after-control.json": "80a201b74bf00821b008f3d8477d097bf9a04a4c0f884c5a0406aeb9cba463c7",
+    "after-native-tests.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "after-preview-1280.log": "10c6e69b22f11818f48a2dcaa4bbb9469dae85a3b8bec3650b583a8c19cb3176",
+    "after-preview-1680.log": "acb89d41b8b557f63c6a884015f021430cd8d384d4974946e0fb4b05f8634b71",
+    "after-priority-output.log": "d376f5c53b258c61099a2717134389b3def01c220ae7b63fbff4038565249d55",
+    "after-priority.json": "375eac322d5b5c0baf92cf5bc4aebaa164edfcf2f437b1688e3882c3cc3ffe44",
+    "after-sources.json": "3a1abbb990b2a3c59255f519eb1de1bf7f933900be2a76008cab059290c968d8",
+    "before-build-compiler-mismatch.log": "6a9d8df236d3bc07905949a4fc6a5002e6c5123af5e88ec5bb2919ae08513b85",
+    "before-build-quoting-failure.log": "9280c55cb0051146ebe6684a5efc8f0215ed87fda4d688ac9d7c6230c713cbfa",
+    "before-build.log": "75f7b32d7514e847b120bb79dad14ab9cbb156f20d09aada12d2406edf4f1fb2",
+    "before-control-output.log": "9e8666a5918d322310a3996c1043c4cdbfd36018255d47b89c3d8907ec0edb66",
+    "before-control.json": "dc6bc0e79537f019bb9d451f2da769fb34b54fe97305156f04de0190842ac42f",
+    "before-preview-1280.log": "73956a8f4a126c0d0615e4885756a456ea4d9861cb35e8f89cb35d3432b7291e",
+    "before-sources.json": "e556604a94dec53ff3625a59f5fd89214a356119d970aba182326bb711d66f7e",
+    "control-probe.py": "26903e88e05782d813f9cc421a512273106ec9798defeb5f2b6b006a16290df5",
+    "focused.json": "94778c872c4f3bc12fd0ebb8aa064f999db4675f59cc6e4a330dd269a825d97e",
+    "focused.stderr.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "focused.stdout.log": "b9a138b3c1d87c45df0b7b84222d5e670f0781963c1b618156aa14ba96b174aa",
+    "priority-probe.py": "2c34a068179ca1f84c884931e4457ecf90b33a0380e7ce1ebfb63797b2aa0ed9",
+    "render.py": "f00ef4cb3278f792ad9c14b9522f16b8d2e01ff2461ef76b1b01cf046b34c035",
+    "verify.py": "0da5944313cfcfcf3b4ced92c36cecb983357ba8e82baa2bbde50cee73eed9d6"
+  },
+  "schema_version": "native-operator-control-review-v1",
+  "scope": {
+    "account_requests": 0,
+    "all_pages_accessibility_or_dpi_qualified": false,
+    "durable_profitability_qualified": false,
+    "hidden_dry_run": true,
+    "independent_supervision_qualified": false,
+    "market_requests": 0,
+    "orders": 0,
+    "protected_capture_touched": false
+  },
+  "screenshots": {
+    "after-1280.png": {
+      "bytes": 73841,
+      "height_pixels": 1290,
+      "sha256": "1a6fb98bb1062409a63f017c9f089af36cfdd7e390294f91e7dda3279adbb489",
+      "width_pixels": 1920
+    },
+    "after-1680.png": {
+      "bytes": 79526,
+      "height_pixels": 1530,
+      "sha256": "09f7fa6ae3957c2c69329bb523c456a71a1c285c42c7c81926df7517e8f82d81",
+      "width_pixels": 2520
+    },
+    "before-1280.png": {
+      "bytes": 72561,
+      "height_pixels": 1290,
+      "sha256": "0cccdb6f1c773d62367a1b22f081734d3128fd5b77551935aed18d2af13b9204",
+      "width_pixels": 1920
+    }
+  },
+  "source_navigation": {
+    "candidate_source_checks_passed": true,
+    "index_matched_source_at_navigation": true,
+    "receipt_sha256": "b09e8dece7ff4ecbf24c787a40ca358d1a3b555f798f1d36499292e9c44911af",
+    "source_digest_before_native_edit": "7d9261479c709b54d427523847182cc5"
+  },
+  "verification": {
+    "passed_cases": 53,
+    "round21_evidence_sha256": "3fa6688ea2093cce648ab1e2c352374b1cd878f2ba7a58f4621f7c984f562ba9",
+    "round21_passed_cases": 85,
+    "summary": "53 passed in 6.21s",
+    "test_modules": [
+      "tests/test_native_windows_preview.py",
+      "tests/test_polymarket_runtime_control.py"
+    ],
+    "tested_source_sha256": {
+      "native/windows/CMakeLists.txt": "0c7fa5f48ac0075ec143fd66526bd0f4e6007cf47c228ab486bced68dd107ae1",
+      "native/windows/generated/command_contract.hpp": "3b7dee5c0c18edfcd1d6387e2d12ad93ece8383bfdb4cf87a783e55b1a38b59b",
+      "native/windows/src/main.cpp": "514b9d41c351b86e59ef25110cfcb3c9b57ca861a96bf2d12f950663b7471594",
+      "native/windows/src/operator_presentation.hpp": "d208cc4b0c40b29e09cab259e90965b14f19158dec2adac605765a1f2d0b7e79",
+      "native/windows/src/window_snapshot.hpp": "f1d438f68ca9c6f3ff54c001258365ba85af6944cbe1d14e5f70ccf28d0bb8b9",
+      "native/windows/tests/operator_presentation_tests.cpp": "537d4c3076fb19ad90494841b286fa6caf5433df301ec768f378c6d786a97464",
+      "src/simple_ai_trading/polymarket_autonomous_runtime.py": "b99fd0d30c4ab67dadf4dd0945c4b103fb4a857838660fc44f9265e33fad0986",
+      "src/simple_ai_trading/polymarket_market_discovery.py": "9eecb8ad83960d0c9c127716e35bd9464f86671c858f459c4f38febe9042f1f0",
+      "src/simple_ai_trading/polymarket_round21_binance_feed.py": "b88263306b5feef6dad033b91950774e455f552c8b90ef2abba055b6834ab433",
+      "src/simple_ai_trading/polymarket_round21_decision.py": "d3720f29864a24074903af416710f1ae63b53220a12cdc7c5f1e007971b66b6d",
+      "src/simple_ai_trading/polymarket_round21_live_features.py": "9be176f874bdc562815b678be05867e36332973202488f2bfac3c19307ac1b7e",
+      "src/simple_ai_trading/polymarket_round21_prospective.py": "3d3d61908012bf50eb01f196892185f4dfd8b135f825c7d0f6b8f62ed296e51f",
+      "src/simple_ai_trading/polymarket_round21_public_feed.py": "56133e558f662d13785166018d22b1b175efed5ad8d6595222c598a9a56c7545",
+      "src/simple_ai_trading/polymarket_round21_runtime.py": "07784610992c761ba687c7ed6b87c9dcdec49cf701a6ae5f4c0c06e22e07ed56",
+      "src/simple_ai_trading/polymarket_round21_session.py": "47c503482b97de86fffe15bb28767d207f11d44d301ccd2a306d26ad06473159",
+      "src/simple_ai_trading/polymarket_runtime_control.py": "1903deb0c1dcf684fa328ffbe2eb3dec45b429fd87777b18e69e89bc7d194af2",
+      "src/simple_ai_trading/runtime_control.py": "e5e61583eed5e97bd6aa51c44cd9866435d9d8117ed58611443fd1cedf644791",
+      "tests/test_native_windows_preview.py": "ed4b2c28808e88ec4a19eca4326ad257f0c23d6312fcf25f57a40bbbdb78385d",
+      "tests/test_polymarket_autonomous_runtime.py": "77c82e5f0066d0e3da4c05e518d858a0ac481503d57277a37e6911b643a4f2b8",
+      "tests/test_polymarket_round21_binance_feed.py": "30e30c451c123b28f0b7237beba0f6b60a5c81746d65e00ab533166d2c3fdeaa",
+      "tests/test_polymarket_round21_decision.py": "1163057c5899ef1c6b7bbf9f68390635cef809730192e2d68ce4cc544137a094",
+      "tests/test_polymarket_round21_live_features.py": "9e289401f134c0853a8976492ff8eb6c790b78d8f1a80ff3bdc44e8476e28c21",
+      "tests/test_polymarket_round21_prospective.py": "b49b73dec9846354c6ec66013e35b79e7c916d3a23fe7d4d6c8313f5799ee2c5",
+      "tests/test_polymarket_round21_public_feed.py": "342f4608b21454c7046a851752eb64c6a56945611b40aee18c5bc8f3f2d45619",
+      "tests/test_polymarket_round21_runtime.py": "8ab9b9a80c8557fe4474860736ae4b116b89c2f6c5cf4efe13ddb286539babe1",
+      "tests/test_polymarket_round21_session.py": "f884f01cefa5aaa0f344b44dea11b1bc3c5f6551bbf62ec0eede29d830d1c90e",
+      "tests/test_polymarket_runtime_control.py": "5da0f47579b16bae62c011c9be8e27228bedfe931535fbb4c939cca80c15c665",
+      "tools/capture_native_windows_preview.py": "3b7a15df4f20064e02aa2c650ad40332ce1138b8cf5bb3dca987f06f3e791de3"
+    },
+    "unchanged_after_test": true
+  }
+}

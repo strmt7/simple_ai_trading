@@ -550,6 +550,13 @@ class Round21ProspectiveScorer:
         self._last_prediction: Round21ProspectivePrediction | None = None
         self._lock = Lock()
 
+    def reset_history(self) -> None:
+        """Discard temporal rows when the required public source changes epoch."""
+
+        with self._lock:
+            self._history.clear()
+            self._last_prediction = None
+
     def _layer_available(self, row: Round21CausalFeatureRow) -> bool:
         if self.population_layer == "core":
             return True

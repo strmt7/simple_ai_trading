@@ -273,6 +273,7 @@ class MainWindow {
     std::atomic_bool binance_control_running_{false};
     std::atomic_bool polymarket_control_running_{false};
     std::atomic_bool binance_pause_control_running_{false};
+    std::atomic_bool polymarket_pause_control_running_{false};
     std::atomic_bool api_budget_running_{false};
     std::atomic_bool operator_status_running_{false};
     std::atomic_bool command_contract_synced_{false};
@@ -280,9 +281,12 @@ class MainWindow {
     std::atomic_uint32_t active_workers_{0};
     std::atomic_uint64_t workflow_generation_{0};
     std::atomic_uint64_t settings_revision_{0};
+    std::atomic_uint64_t control_revision_{0};
     std::wstring environment_state_{L"Environment pending"};
     std::wstring bot_state_{L"Binance pending"};
     std::wstring polymarket_state_{L"Polymarket live pending"};
+    presentation::Tone bot_state_tone_ = presentation::Tone::unknown;
+    presentation::Tone polymarket_state_tone_ = presentation::Tone::unknown;
     std::wstring persisted_profile_{L"Conservative"};
     std::wstring persisted_leverage_{L"5x"};
     std::wstring persisted_execution_{L"Paper"};
@@ -934,6 +938,8 @@ class MainWindow {
         presentation::Tone api_reserve_tone;
         presentation::Tone compute_tone;
         presentation::Tone ledger_tone;
+        presentation::Tone bot_state_tone;
+        presentation::Tone polymarket_state_tone;
         bool ai_enabled = false;
         {
             std::lock_guard lock(operator_status_mutex_);
@@ -951,6 +957,8 @@ class MainWindow {
             api_reserve_tone = api_reserve_tone_;
             compute_tone = compute_tone_;
             ledger_tone = ledger_tone_;
+            bot_state_tone = bot_state_tone_;
+            polymarket_state_tone = polymarket_state_tone_;
             ai_enabled = persisted_ai_enabled_;
         }
         const bool ai_gpu_resident = !dry_run_ && ai_enabled && ai_runtime_state == L"gpu";
@@ -982,7 +990,11 @@ class MainWindow {
         }
         if (dry_run_) {
             environment_state = L"Dry-run preview";
+            bot_state = L"Binance simulated";
+            polymarket_state = L"Polymarket simulated";
             ai_state = L"AI simulated";
+            bot_state_tone = presentation::Tone::simulation;
+            polymarket_state_tone = presentation::Tone::simulation;
         }
         const std::array<std::wstring, 5> states{
             environment_state,
@@ -990,6 +1002,12 @@ class MainWindow {
             polymarket_state,
             command_contract_state,
             ai_state};
+        const std::array<presentation::Tone, 5> state_tones{
+            dry_run_ ? presentation::Tone::simulation : presentation::Tone::unknown,
+            bot_state_tone,
+            polymarket_state_tone,
+            command_contract_synced_.load() ? presentation::Tone::observed : presentation::Tone::unknown,
+            dry_run_ ? presentation::Tone::simulation : presentation::Tone::unknown};
         const int ai_state_index = static_cast<int>(states.size()) - 1;
         const int state_width = static_cast<int>(state_band.right - state_band.left) / static_cast<int>(states.size());
         for (int index = 0; index < static_cast<int>(states.size()); ++index) {
@@ -998,13 +1016,15 @@ class MainWindow {
                 fill_rect(dc, RECT{cell.left, cell.top + scale(12), cell.left + scale(1), cell.bottom - scale(12)}, RGB(58, 72, 79));
             }
             RECT dot{cell.left + scale(14), cell.top + scale(19), cell.left + scale(22), cell.top + scale(27)};
-            HBRUSH dot_brush = CreateSolidBrush(index == ai_state_index && ai_gpu_resident ? RGB(68, 207, 137) : RGB(145, 158, 165));
+            const auto state_color = index == ai_state_index && ai_gpu_resident
+                ? RGB(68, 207, 137) : status_color(state_tones[static_cast<std::size_t>(index)]);
+            HBRUSH dot_brush = CreateSolidBrush(state_color);
             HGDIOBJ old = SelectObject(dc, dot_brush);
             Ellipse(dc, dot.left, dot.top, dot.right, dot.bottom);
             SelectObject(dc, old);
             DeleteObject(dot_brush);
             RECT text_rect{cell.left + scale(30), cell.top, cell.right - scale(8), cell.bottom};
-            draw_text(dc, states[static_cast<std::size_t>(index)], text_rect, body_font_, index == ai_state_index && ai_gpu_resident ? RGB(86, 210, 155) : RGB(222, 229, 232),
+            draw_text(dc, states[static_cast<std::size_t>(index)], text_rect, body_font_, state_color,
                       DT_LEFT | DT_VCENTER | DT_SINGLELINE | DT_END_ELLIPSIS);
         }
 
@@ -1528,9 +1548,11 @@ class MainWindow {
             run_selected_help();
             return;
         case kBinanceStopId:
+            control_revision_.fetch_add(1);
             {
                 std::lock_guard lock(operator_status_mutex_);
-                bot_state_ = L"Binance Stop requested";
+                bot_state_ = L"Binance Sending Stop";
+                bot_state_tone_ = presentation::Tone::caution;
             }
             InvalidateRect(hwnd_, nullptr, FALSE);
             run_control_sequence(
@@ -1540,9 +1562,11 @@ class MainWindow {
                 {L"autonomous stop"});
             return;
         case kPolymarketStopId:
+            control_revision_.fetch_add(1);
             {
                 std::lock_guard lock(operator_status_mutex_);
-                polymarket_state_ = L"Polymarket live Stop requested";
+                polymarket_state_ = L"Polymarket Sending Stop";
+                polymarket_state_tone_ = presentation::Tone::caution;
             }
             InvalidateRect(hwnd_, nullptr, FALSE);
             run_control_sequence(
@@ -1555,21 +1579,33 @@ class MainWindow {
             run_polymarket_start();
             return;
         case kPolymarketPauseId:
+            if (polymarket_control_running_.load()) {
+                append_output(L"\r\nPolymarket Stop is in progress; Pause was not sent.\r\n");
+                return;
+            }
+            control_revision_.fetch_add(1);
             {
                 std::lock_guard lock(operator_status_mutex_);
-                polymarket_state_ = L"Polymarket live Pause requested";
+                polymarket_state_ = L"Polymarket Sending Pause";
+                polymarket_state_tone_ = presentation::Tone::caution;
             }
             InvalidateRect(hwnd_, nullptr, FALSE);
             run_control_sequence(
-                polymarket_control_running_,
+                polymarket_pause_control_running_,
                 L"Polymarket",
                 false,
                 {L"polymarket-live --action pause"});
             return;
         case kAiPreflightId:
+            if (binance_control_running_.load()) {
+                append_output(L"\r\nBinance Stop is in progress; Pause was not sent.\r\n");
+                return;
+            }
+            control_revision_.fetch_add(1);
             {
                 std::lock_guard lock(operator_status_mutex_);
-                bot_state_ = L"Binance Pause requested";
+                bot_state_ = L"Binance Sending Pause";
+                bot_state_tone_ = presentation::Tone::caution;
             }
             InvalidateRect(hwnd_, nullptr, FALSE);
             run_control_sequence(
@@ -1788,6 +1824,11 @@ class MainWindow {
     }
 
     void run_overview_start() {
+        if (binance_control_running_.load()) {
+            append_output(L"\r\nBinance Stop is in progress; Start was not sent.\r\n");
+            return;
+        }
+        control_revision_.fetch_add(1);
         std::wstring profile = combo_text(profile_combo_);
         std::transform(profile.begin(), profile.end(), profile.begin(), [](wchar_t value) {
             return static_cast<wchar_t>(towlower(value));
@@ -1830,6 +1871,11 @@ class MainWindow {
     }
 
     void run_polymarket_start() {
+        if (polymarket_control_running_.load()) {
+            append_output(L"\r\nPolymarket Stop is in progress; Start was not sent.\r\n");
+            return;
+        }
+        control_revision_.fetch_add(1);
         if (!dry_run_enabled()) {
             const int answer = MessageBoxW(
                 hwnd_,
@@ -2003,6 +2049,7 @@ class MainWindow {
             binance_control_running_.load() ||
             polymarket_control_running_.load() ||
             binance_pause_control_running_.load() ||
+            polymarket_pause_control_running_.load() ||
             api_budget_running_.load() ||
             operator_status_running_.load()) {
             return;
@@ -2264,7 +2311,8 @@ class MainWindow {
             return;
         }
         const std::uint64_t settings_revision = settings_revision_.load();
-        launch_worker(operator_status_running_, WM_APP + 3, [this, settings_revision] {
+        const std::uint64_t control_revision = control_revision_.load();
+        launch_worker(operator_status_running_, WM_APP + 3, [this, settings_revision, control_revision] {
             const std::wstring line = execute_cli_first_line(L"status --compact");
             const std::wstring polymarket_line =
                 execute_cli_first_line(L"polymarket-live --action status");
@@ -2288,10 +2336,13 @@ class MainWindow {
             {
                 std::lock_guard lock(operator_status_mutex_);
                 environment_state_ = environment.empty() ? L"Environment unavailable" : display_token(environment);
-                bot_state_ = state.empty()
-                    ? L"Binance unavailable"
-                    : L"Binance " + display_token(state);
-                if (!polymarket_runtime.empty()) {
+                const bool current_control_sample = control_revision == control_revision_.load();
+                if (current_control_sample && !binance_control_running_.load() && !binance_pause_control_running_.load()) {
+                    const auto observed = presentation::runtime(state);
+                    bot_state_ = L"Binance " + observed.label;
+                    bot_state_tone_ = observed.tone;
+                }
+                if (current_control_sample && !polymarket_control_running_.load() && !polymarket_pause_control_running_.load()) {
                     const bool preserve_blocked =
                         polymarket_runtime == L"unconfigured" &&
                         polymarket_state_.starts_with(L"Polymarket live blocked");
@@ -2299,8 +2350,9 @@ class MainWindow {
                         polymarket_runtime == L"unconfigured" &&
                         polymarket_start_running_.load();
                     if (!preserve_blocked && !preserve_starting) {
-                        polymarket_state_ =
-                            L"Polymarket live " + display_token(polymarket_runtime);
+                        const auto observed = presentation::runtime(polymarket_runtime);
+                        polymarket_state_ = L"Polymarket " + observed.label;
+                        polymarket_state_tone_ = observed.tone;
                     }
                 }
                 if (!profile.empty()) persisted_profile_ = display_token(profile);

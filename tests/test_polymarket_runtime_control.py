@@ -105,6 +105,24 @@ def test_pause_is_durable_ordered_and_keeps_the_heartbeat_alive(tmp_path) -> Non
     control.assert_opening_allowed(lease)
 
 
+@pytest.mark.parametrize("paused", [True, False])
+def test_late_pause_or_resume_cannot_weaken_operator_stop(tmp_path, paused) -> None:
+    control = _enroll_flat_control(
+        PolymarketRuntimeControl(tmp_path / "ownership.sqlite3")
+    )
+    control.acquire(owner_process_id=101)
+    stopped = control.request_stop(reason="operator_stop")
+
+    with pytest.raises(PolymarketLiveBlocked, match="requires an active"):
+        control.set_paused(paused, reason="late_pause_or_resume")
+
+    current = control.snapshot()
+    assert current.state == "stop_requested"
+    assert current.stop_epoch == stopped.stop_epoch
+    assert current.stop_reason == "operator_stop"
+    assert current.paused is True
+
+
 def test_stop_is_ordered_after_an_inflight_submission_guard(tmp_path) -> None:
     control = _enroll_flat_control(
         PolymarketRuntimeControl(tmp_path / "ownership.sqlite3")

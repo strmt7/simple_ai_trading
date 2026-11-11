@@ -3839,7 +3839,13 @@
         "treating_the_secondary_independent_replication_summary_as_current_executable_profit_without_route_level_code_books_fills_owned_fees_and_no_look_ahead_reconstruction"
       ],
       "retry_trigger": "for_the_accepted_shorter_overlay_an_independently_planned_legitimate_same_account_organic_Spot_conversion_plus_explicit_read_only_exact_symbol_commission_authority_for_the_exact_direct_and_one_intermediary_symbols_for_the_rejected_exactly_two_intermediary_extension_only_a_material_Binance_Spot_fee_filter_activity_order_batch_or_execution_architecture_change_for_the_rejected_standalone_statistical_spread_public_reproducible_audit_code_and_exact_route_outputs_or_a_material_fee_perpetual_leg_listing_or_current_executable_capacity_change_capable_of_clearing_fixed_costs",
-      "venue_scope": "Binance_Spot_direct_and_exactly_one_intermediary_routes_for_independently_required_organic_conversions_with_the_exactly_two_intermediary_extension_terminal_for_the_retained_population"
+      "venue_scope": "Binance_Spot_direct_and_exactly_one_intermediary_routes_for_independently_required_organic_conversions_with_the_exactly_two_intermediary_extension_terminal_for_the_retained_population",
+      "native_spot_auto_order_routing_2026_11_11": {
+        "path": "docs/review/2026-11-11/binance-auto-routing/evidence.json",
+        "result_sha256": "caea324eddbbb3f1b524dcd61da23d97e2232439904cf2d61ce22ee3595e4883",
+        "classification": "Venue-managed single intermediary conversion carries no separate commission but has spread and no minimum guaranteed quantity. Exact eligibility, API support and matched final proceeds are unproved.",
+        "new_economic_observations": 0
+      }
     },
     {
       "blocking_evidence": [
@@ -4669,7 +4675,7 @@
       ]
     }
   ],
-  "result_sha256": "afa51a6d3fa17f879dcf5766a962fd4ee1b5a483520cddf5358e3f758d52a88a",
+  "result_sha256": "b92a9dbdea06996633dcaa2d9743848f3cc10fc9b5564c83efdb9d6759c13f5b",
   "schema_version": "structural-edge-priority-registry-v1",
   "terminal_do_not_repeat": [
     {
@@ -5733,6 +5739,6 @@
       "canonical_result_sha256": "e68dbd4532f61fe399e2b04ae9d64d25041731b6bffa847289ea2b01d4da3a3d"
     }
   ],
-  "updated_at_utc": "2026-11-11T00:40:43.294314+00:00",
+  "updated_at_utc": "2026-11-11T00:55:53.833373+00:00",
   "usage_rule": "advance_the_highest_ranked_hypothesis_whose_retry_trigger_is_satisfied_otherwise_do_not_repeat_a_blocked_or_terminal_screen"
 }

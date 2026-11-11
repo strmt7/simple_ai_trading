@@ -637,12 +637,21 @@ class PolymarketRound21PromotedDecisionProvider:
         if not self._claim_timestamp(*key):
             return self._no_proposal("round21_timestamp_already_consumed")
         try:
-            return self._build_proposal(
+            if selected.status == "observed" and not self.data_service.admits(
+                market, selected
+            ):
+                return self._no_proposal("round21_public_source_changed")
+            decision = self._build_proposal(
                 market,
                 coordinated=selected,
                 portfolio=portfolio,
                 observed_at_ms=now,
             )
+            if (
+                decision.proposals or decision.locks or decision.reductions
+            ) and not self.data_service.admits(market, selected):
+                return self._no_proposal("round21_public_source_changed")
+            return decision
         except BaseException:
             with self._lock:
                 self._consumed.discard(key)

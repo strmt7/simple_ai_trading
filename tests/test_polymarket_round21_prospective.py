@@ -266,6 +266,25 @@ def test_scorer_resets_gaps_and_abstains_when_selected_layer_is_missing(
     assert predict.call_count == 2
 
 
+def test_explicit_history_reset_restarts_at_next_contiguous_row(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _install_boundaries(monkeypatch)
+    scorer = Round21ProspectiveScorer(artifact=_artifact(), sealed_result=_sealed())
+    for offset in (1_000, 1_250):
+        row = _row(offset)
+        previous = scorer.evaluate(row, observed_at_ms=row.decision_time_ms)
+    assert previous.history_row_count == 2
+
+    scorer.reset_history()
+    row = _row(1_500)
+    resumed = scorer.evaluate(row, observed_at_ms=row.decision_time_ms)
+
+    assert resumed.status == "observed"
+    assert resumed.reset_reason == "initial"
+    assert resumed.history_row_count == 1
+
+
 def test_scorer_rejects_unaccepted_or_mismatched_evidence(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:

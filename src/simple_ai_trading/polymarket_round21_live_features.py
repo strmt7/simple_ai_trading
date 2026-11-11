@@ -339,9 +339,13 @@ class Round21LiveFeatureCoordinator:
         self._optional_connections: dict[str, str] = {}
         self._core_gaps: list[Round21PublicSourceGap] = []
         self._last_core_monotonic_ns = 0
-        self._last_decision_time_ms = 0
+        self._core_epoch = 0
+        self._optional_epoch = 0
+        self._scored_epoch: tuple[int, int] | None = None
+        self._last_decision_epoch = (0, 0)
         self._last_decision: Round21CoordinatedPrediction | None = None
         self._lock = Lock()
+        self._decision_lock = Lock()
 
     def _assert_core_order(self, received_monotonic_ns: int) -> None:
         received = int(received_monotonic_ns)
@@ -381,6 +385,8 @@ class Round21LiveFeatureCoordinator:
                     connection,
                     first_sequence_number=record.sequence_number,
                 )
+                if self._chainlink_connection:
+                    self._core_epoch += 1
                 self._chainlink_connection = connection
             self._core.ingest_chainlink_record(record)
 
@@ -395,6 +401,10 @@ class Round21LiveFeatureCoordinator:
             if self._optional_connections.get(market) != connection:
                 self._optional.reset_market(market, connection)
                 self._optional_connections[market] = connection
+                if self.scorer.population_layer == "core_spot_usdm" or (
+                    self.scorer.population_layer == "core_spot" and market == "spot"
+                ):
+                    self._optional_epoch += 1
             self._optional.ingest_record(record)
 
     def record_gap(self, gap: Round21PublicSourceGap) -> None:
@@ -403,13 +413,68 @@ class Round21LiveFeatureCoordinator:
         with self._lock:
             if gap.stream in _CORE_STREAMS:
                 self._assert_core_order(gap.observed_monotonic_ns)
-                if gap.gap_sha256 not in {
-                    item.gap_sha256 for item in self._core_gaps
-                }:
+                if gap.gap_sha256 not in {item.gap_sha256 for item in self._core_gaps}:
                     self._core_gaps.append(gap)
+                    self._core_epoch += 1
             else:
                 self._optional = Round21IndependentBinanceFeatureEngine()
                 self._optional_connections.clear()
+                if self.scorer.population_layer != "core":
+                    self._optional_epoch += 1
+
+    def _core_gap_reasons(self) -> tuple[str, ...]:
+        return tuple(
+            dict.fromkeys(f"core_source_gap:{gap.stream}" for gap in self._core_gaps)
+        )
+
+    def _finish_decision(
+        self,
+        *,
+        decision: int,
+        observed: int,
+        epoch: tuple[int, int],
+        status: str,
+        reasons: tuple[str, ...],
+        core_healthy: bool,
+        optional_healthy: bool,
+        prediction: Round21ProspectivePrediction | None,
+    ) -> Round21CoordinatedPrediction:
+        # Called under the feed lock. An epoch change revokes the captured row.
+        core_changed = epoch[0] != self._core_epoch
+        optional_changed = epoch[1] != self._optional_epoch
+        if core_changed or optional_changed:
+            status, prediction, reasons = "abstain", None, ()
+            if core_changed:
+                core_healthy = False
+                reasons = self._core_gap_reasons() or ("core_source_epoch_changed",)
+            if optional_changed:
+                optional_healthy = False
+                reasons = (*reasons, "optional_source_epoch_changed")
+        result = Round21CoordinatedPrediction.create(
+            status=status,
+            reasons=reasons,
+            market=self.market,
+            decision_time_ms=decision,
+            observed_at_ms=observed,
+            core_source_healthy=core_healthy,
+            optional_source_healthy=optional_healthy,
+            core_gap_sha256=tuple(gap.gap_sha256 for gap in self._core_gaps),
+            prediction=prediction,
+        ).validated()
+        self._last_decision_epoch = (self._core_epoch, self._optional_epoch)
+        self._last_decision = result
+        return result
+
+    def admits(self, prediction: Round21CoordinatedPrediction) -> bool:
+        """Check whether the latest observed forecast still uses current sources."""
+
+        with self._lock:
+            return (
+                self._last_decision is prediction
+                and prediction.status == "observed"
+                and self._last_decision_epoch
+                == (self._core_epoch, self._optional_epoch)
+            )
 
     def evaluate(
         self,
@@ -428,57 +493,64 @@ class Round21LiveFeatureCoordinator:
             or observed < decision
         ):
             raise ValueError("Round 21 coordinated decision chronology is invalid")
-        with self._lock:
-            if decision == self._last_decision_time_ms:
-                if self._last_decision is None:
-                    raise RuntimeError("Round 21 coordinated decision cache is missing")
-                return self._last_decision
-            if decision < self._last_decision_time_ms:
-                raise ValueError("Round 21 coordinated decision time regressed")
-            self._assert_core_order(monotonic)
-            self._route_union(self._union.advance(monotonic))
-            prediction: Round21ProspectivePrediction | None = None
-            optional = self._optional.build(decision)
-            if self._core_gaps:
-                reasons = tuple(
-                    dict.fromkeys(f"core_source_gap:{gap.stream}" for gap in self._core_gaps)
+        with self._decision_lock:
+            with self._lock:
+                epoch = (self._core_epoch, self._optional_epoch)
+                cached = self._last_decision
+                if cached is not None:
+                    if decision < cached.decision_time_ms:
+                        raise ValueError("Round 21 coordinated decision time regressed")
+                    if decision == cached.decision_time_ms:
+                        if epoch == self._last_decision_epoch:
+                            return cached
+                        return self._finish_decision(
+                            decision=decision,
+                            observed=observed,
+                            epoch=self._last_decision_epoch,
+                            status=cached.status,
+                            reasons=cached.reasons,
+                            core_healthy=cached.core_source_healthy,
+                            optional_healthy=cached.optional_source_healthy,
+                            prediction=cached.prediction,
+                        )
+                self._assert_core_order(monotonic)
+                self._route_union(self._union.advance(monotonic))
+                optional = self._optional.build(decision)
+                layer = self.scorer.population_layer
+                optional_healthy = layer == "core" or (
+                    optional.spot_available
+                    and (layer == "core_spot" or optional.usdm_available)
                 )
-                status = "abstain"
+                reasons = self._core_gap_reasons()
                 core_healthy = False
-            else:
-                core = self._core.build(decision)
-                core_healthy = core.available
-                if not core.available:
-                    reasons = tuple(dict.fromkeys(core.reasons))
-                    status = "abstain"
-                else:
-                    row = join_round21_causal_features(core, optional)
-                    prediction = self.scorer.evaluate(row, observed_at_ms=observed)
-                    status = prediction.status
-                    reasons = (() if status == "observed" else (prediction.reason,))
-            optional_healthy = (
-                optional.spot_available
-                if self.scorer.population_layer == "core_spot"
-                else (
-                    optional.usdm_available
-                    if self.scorer.population_layer == "core_spot_usdm"
-                    else True
+                row = None
+                if not reasons:
+                    core = self._core.build(decision)
+                    core_healthy = core.available
+                    if core_healthy:
+                        row = join_round21_causal_features(core, optional)
+                    else:
+                        reasons = tuple(dict.fromkeys(core.reasons))
+            prediction = None
+            status = "abstain"
+            if row is not None:
+                if self._scored_epoch is not None and self._scored_epoch != epoch:
+                    self.scorer.reset_history()
+                self._scored_epoch = epoch
+                prediction = self.scorer.evaluate(row, observed_at_ms=observed)
+                status = prediction.status
+                reasons = () if status == "observed" else (prediction.reason,)
+            with self._lock:
+                return self._finish_decision(
+                    decision=decision,
+                    observed=observed,
+                    epoch=epoch,
+                    status=status,
+                    reasons=reasons,
+                    core_healthy=core_healthy,
+                    optional_healthy=optional_healthy,
+                    prediction=prediction,
                 )
-            )
-            result = Round21CoordinatedPrediction.create(
-                status=status,
-                reasons=reasons,
-                market=self.market,
-                decision_time_ms=decision,
-                observed_at_ms=observed,
-                core_source_healthy=core_healthy,
-                optional_source_healthy=optional_healthy,
-                core_gap_sha256=tuple(gap.gap_sha256 for gap in self._core_gaps),
-                prediction=prediction,
-            ).validated()
-            self._last_decision_time_ms = decision
-            self._last_decision = result
-            return result
 
 
 credentials_used = False

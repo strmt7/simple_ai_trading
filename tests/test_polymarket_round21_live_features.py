@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from concurrent.futures import ThreadPoolExecutor
+from threading import Event
 from types import SimpleNamespace
 from unittest.mock import Mock
 
@@ -221,6 +223,102 @@ def test_duplicate_decision_is_idempotent_and_regression_fails(boundaries) -> No
             observed_at_ms=MARKET.event_start_ms + 2_000,
             observed_monotonic_ns=2_000,
         )
+
+
+@pytest.mark.parametrize(
+    ("stream", "layer", "revocation"),
+    [
+        ("clob_market", "core", "core_source_gap:clob_market"),
+        ("binance_spot", "core_spot", "optional_source_epoch_changed"),
+        ("binance_spot", "core", None),
+    ],
+)
+def test_feed_gap_is_processed_during_scoring(boundaries, stream, layer, revocation):
+    entered, release = Event(), Event()
+    scorer = _scorer(layer=layer)
+    prediction = _prediction()
+    coordinator = Round21LiveFeatureCoordinator(market=MARKET, scorer=scorer)
+    coordinator._optional.snapshot.spot_available = True
+    gap = Round21PublicSourceGap(
+        stream=stream,
+        connection_id="fixture:gap",
+        observed_wall_ms=MARKET.event_start_ms + 1_020,
+        observed_monotonic_ns=1_020,
+        last_sequence_number=1,
+        reason="fixture_gap",
+    )
+    observation = {
+        "decision_time_ms": MARKET.event_start_ms + 1_000,
+        "observed_at_ms": MARKET.event_start_ms + 1_010,
+        "observed_monotonic_ns": 1_000,
+    }
+
+    def score(*_args, **_kwargs):
+        entered.set()
+        assert release.wait(4)
+        return prediction
+
+    scorer.evaluate.side_effect = score
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        scoring = pool.submit(coordinator.evaluate, **observation)
+        try:
+            assert entered.wait(2)
+            pool.submit(coordinator.record_gap, gap).result(timeout=1)
+            assert not scoring.done()
+        finally:
+            release.set()
+        outcome = scoring.result(timeout=2)
+
+    if revocation is None:
+        assert outcome.status == "observed"
+        assert coordinator.admits(outcome)
+    else:
+        assert outcome.status == "abstain" and outcome.prediction is None
+        assert outcome.reasons == (revocation,)
+        assert not coordinator.admits(outcome)
+    assert coordinator.evaluate(**observation) is outcome
+    assert scorer.evaluate.call_count == 1
+
+    if layer == "core_spot":
+        next_prediction = _prediction()
+        next_prediction.decision_time_ms += 250
+        scorer.evaluate.side_effect = None
+        scorer.evaluate.return_value = next_prediction
+        coordinator._optional.snapshot.spot_available = True
+        next_outcome = coordinator.evaluate(
+            decision_time_ms=next_prediction.decision_time_ms,
+            observed_at_ms=next_prediction.decision_time_ms + 10,
+            observed_monotonic_ns=1_300,
+        )
+        assert next_outcome.status == "observed"
+        scorer.reset_history.assert_called_once()
+
+
+def test_cached_forecast_cannot_survive_later_core_gap(boundaries):
+    scorer = _scorer()
+    scorer.evaluate.return_value = _prediction()
+    coordinator = Round21LiveFeatureCoordinator(market=MARKET, scorer=scorer)
+    observation = {
+        "decision_time_ms": MARKET.event_start_ms + 1_000,
+        "observed_at_ms": MARKET.event_start_ms + 1_010,
+        "observed_monotonic_ns": 1_000,
+    }
+    cached = coordinator.evaluate(**observation)
+    assert coordinator.admits(cached)
+    gap = Round21PublicSourceGap(
+        stream="polymarket_rtds",
+        connection_id="fixture:gap",
+        observed_wall_ms=MARKET.event_start_ms + 1_025,
+        observed_monotonic_ns=1_025,
+        last_sequence_number=1,
+        reason="fixture_gap",
+    )
+    coordinator.record_gap(gap)
+    assert not coordinator.admits(cached)
+    current = coordinator.evaluate(**observation)
+    assert current.status == "abstain"
+    assert current.prediction is None and current.core_gap_sha256 == (gap.gap_sha256,)
+    scorer.evaluate.assert_called_once()
 
 
 def test_gap_and_decision_evidence_reject_tampering(boundaries) -> None:

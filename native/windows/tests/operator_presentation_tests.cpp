@@ -65,6 +65,13 @@ int main() {
         check(view::ledger(L"tracked", count).tone == view::Tone::unknown, count);
     }
     check(view::ledger(L"future", L"1").tone == view::Tone::unknown, L"future ledger protocol");
+    check(view::runtime(L"running").label == L"Running state", L"running is a recorded state");
+    check(view::runtime(L"stop_requested").label == L"Stop latched", L"durable Stop observation");
+    check(view::runtime(L"stop_requested").tone == view::Tone::caution, L"Stop does not establish flatness");
+    check(view::runtime(L"control_unavailable").tone == view::Tone::critical, L"lost control observation");
+    for (const auto state : {L"", L"future", L"stale", L"STOPPED"}) {
+        check(view::runtime(state).tone == view::Tone::unknown, L"unknown runtime evidence");
+    }
     std::uint64_t maximum = 0;
     check(view::unsigned_count(L"18446744073709551615", maximum) &&
               maximum == std::numeric_limits<std::uint64_t>::max(), L"uint64 boundary");

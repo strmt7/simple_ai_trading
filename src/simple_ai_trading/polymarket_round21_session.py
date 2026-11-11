@@ -439,6 +439,23 @@ class Round21RollingPublicDataService:
                 return None
         return result
 
+    def admits(
+        self,
+        market: PolymarketFiveMinuteMarket,
+        prediction: Round21CoordinatedPrediction,
+    ) -> bool:
+        """Check that the forecast still belongs to the active, healthy feed."""
+
+        with self._lock:
+            coordinator = self._active_coordinator
+            return (
+                self._discovery_healthy
+                and self._active_market is not None
+                and self._active_market.condition_id == market.condition_id
+                and coordinator is not None
+                and coordinator.admits(prediction)
+            )
+
 
 credentials_used = False
 account_connected = False

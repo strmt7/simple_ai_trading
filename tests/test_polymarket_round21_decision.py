@@ -158,6 +158,7 @@ def _service(result) -> Mock:
         sealed_result=SimpleNamespace(result_sha256=SEALED_SHA),
     )
     service.evaluate.return_value = result
+    service.admits.return_value = True
     return service
 
 
@@ -288,6 +289,24 @@ def test_round21_provider_builds_one_conservative_hash_bound_proposal() -> None:
             provider.trading_authority,
         )
     )
+
+
+@pytest.mark.parametrize("gap_before_quote", [True, False])
+def test_round21_provider_vetoes_forecast_revoked_before_or_during_quote(
+    gap_before_quote: bool,
+) -> None:
+    client = _PublicClient()
+    service = _service(_coordinated())
+    service.admits.side_effect = lambda *_: not gap_before_quote and client.calls == 0
+    provider = _provider(client=client, service=service)
+
+    result = provider.decide(
+        markets=(MARKET,), observed_at_ms=NOW_MS, portfolio=_portfolio()
+    )
+
+    assert result.proposals == ()
+    assert result.reasons == ("round21_public_source_changed",)
+    assert client.calls == (0 if gap_before_quote else 1)
 
 
 def test_round21_provider_selects_down_from_the_conservative_hull() -> None:
