@@ -1,0 +1,26 @@
+{
+  "base_revision": "690f260fb44531c97f2aab1809bda3f3a5a84045",
+  "question": "Does the autonomous builder consume a stale payoff-cost model before enforcing the changed v3 cost law, and can entry be denied while deterministic closing remains available?",
+  "inputs": "Synthetic one-feature model with one signed payoff expert tagged v2; fixture loader returns it after its existing startup boundary. No actual financial promotion claim.",
+  "required_behavior": [
+    "No numerical inference, feature construction or external AI for incompatible dependent payoff experts.",
+    "Fresh price-only decision carries explicit opening denial to the entry gate.",
+    "Existing owned automatic and operator-Stop closing remain available.",
+    "Read-only historical model loading and unrelated model families remain unchanged."
+  ],
+  "authority": {
+    "source_or_market_requests": 0,
+    "accounts_or_orders": 0,
+    "production_fits": 0,
+    "protected_data_access": false
+  },
+  "source_sha256": {
+    "src/simple_ai_trading/autonomous.py": "6f76ef43f0c219568122a8dee94bb8f5b23a74451475d4e3b020509fe12c9ed6",
+    "src/simple_ai_trading/cli.py": "fea05f643fa9d0876e2824a3d5d5337ef7d5c0c43a68a4db13cd9685a9fd5d6c",
+    "src/simple_ai_trading/model.py": "c5978c76bd9be351d6a32b4b2f610491929c97c758e95ae048daa2465c945cd0",
+    "src/simple_ai_trading/execution_simulation.py": "385098153c077fb4b6df8d29d7e57ca5e7257850d7706905f0524c31b13253c3",
+    "src/simple_ai_trading/live_ai_assist.py": "1fe71b432dd345edc63557415136d99a2a06b2f669ee43004940be7bb8fcbb1c",
+    "tests/test_model_execution_admission.py": "013e1caee30422dabe7d35e1e1e542b77b0a428f026089d613f46b91da9d6012"
+  },
+  "intent_sha256": "6cddb9a1e40f087065a58d2cf9a8b68f88eb8fde0228615f914d17164366703d"
+}

@@ -56,6 +56,13 @@ values and tag newly generated payoff experts with
 artifacts; they require new qualification rather than a metadata retag. This
 fix does not turn impact proxies or assumed liquidity into native fill evidence.
 
+Autonomous decisions now veto incompatible `signed_payoff_` expert cost tags
+before inference and again after feature work or a paper fallback fit. A veto
+uses a fresh price-only decision and blocks entry while retaining the existing
+owned-close loop. The heartbeat reports the reason. Historical artifacts remain
+readable and unchanged. This [entry boundary](review/2026-11-11/model-entry/review.md)
+does not qualify a matching tag, other model families or every execution caller.
+
 - `ticker/24hr` supplies quote volume and trade count.
 - `ticker/bookTicker` supplies bid/ask spread.
 - Authenticated startup queries the account- and symbol-specific commission

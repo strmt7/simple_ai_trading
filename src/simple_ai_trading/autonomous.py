@@ -279,6 +279,8 @@ class Decision:
     ai_assist_risk_multiplier: float = 0.0
     ai_assist_reason: str = ""
     ai_assist_entry_ready: bool = True
+    model_entry_ready: bool = True
+    model_entry_reason: str = ""
 
 
 DecisionFn = Callable[
@@ -915,7 +917,9 @@ def _entry_gate(
         )
     )
 
-    if decision.side not in {"LONG", "SHORT"}:
+    if decision.model_entry_ready is not True:
+        reason = decision.model_entry_reason or "model-opening-evidence-unavailable"
+    elif decision.side not in {"LONG", "SHORT"}:
         reason = "flat-signal"
     elif same_instrument_open:
         reason = f"same-instrument-open:{normalized_symbol}:{normalized_market_type or 'any'}"
@@ -1649,14 +1653,18 @@ def run_loop(
                     objective=objective.name,
                     updated_at_ms=int(clock() * 1000),
                     message=(
-                        f"ai:{decision.ai_assist_status}:{decision.ai_assist_reason}"
-                        if decision.ai_assist_status
-                        and decision.ai_assist_status
-                        not in {"shadow_idle", "shadow_approve"}
+                        gate.reason
+                        if decision.model_entry_ready is not True
                         else (
-                            ""
-                            if gate.allowed or decision.side == "FLAT"
-                            else gate.reason
+                            f"ai:{decision.ai_assist_status}:{decision.ai_assist_reason}"
+                            if decision.ai_assist_status
+                            and decision.ai_assist_status
+                            not in {"shadow_idle", "shadow_approve"}
+                            else (
+                                ""
+                                if gate.allowed or decision.side == "FLAT"
+                                else gate.reason
+                            )
                         )
                     ),
                     ai_assist_status=decision.ai_assist_status,

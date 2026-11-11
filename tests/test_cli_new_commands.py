@@ -942,6 +942,7 @@ def test_command_autonomous_blocks_ai_cases_that_cannot_be_revisited(
 def test_build_autonomous_decision_fn_scores_model_and_external_signals(monkeypatch, tmp_path):
     class _Model:
         feature_signature = None
+        hybrid_experts = []
 
         def predict_proba(self, features):
             assert features == (0.2,)

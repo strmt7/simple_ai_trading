@@ -355,6 +355,7 @@ class _FakeClient(_SignedCommissionClientEvidence):
 
 
 class _SignedFeeModelEvidence:
+    hybrid_experts = []
     strategy_overrides = {"taker_fee_bps": 4.0}
 
 

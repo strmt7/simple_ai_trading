@@ -101,12 +101,12 @@ before continuing an affected family. None supplies a qualified stable edge.
   preserve child teardown before recovery. [Decision expiry](review/2026-11-10/decision-expiry/review.md)
   rejects late results and prevents overlapping abandoned decisions. These
   component boundaries do not complete independent trading supervision.
-- [Selection guard](review/2026-11-10/selection-risk-integrity/review.md)
-  is heuristic; [method access](review/2026-11-11/selection-methods/review.md)
-  failed. [Exit impact](review/2026-11-11/model-utility/review.md) uses held
-  quantity × exit reference. Causal net targets, dependence and untouched
-  utility precede training. Require verified GPU backend/precision and useful
-  data/bottleneck evidence. LLMs cannot override Stop, ownership or closing.
+- [Autonomous payoff admission](review/2026-11-11/model-entry/review.md) rejects
+  stale cost tags; owned closing remains available. [Selection](review/2026-11-10/selection-risk-integrity/review.md)
+  is heuristic; [method access](review/2026-11-11/selection-methods/review.md) failed.
+  Causal net targets, dependence and untouched utility precede training. Require
+  verified GPU backend/precision and useful data/bottleneck evidence. LLMs
+  cannot override Stop, ownership or closing.
 - [Native operator controls](review/2026-11-11/operator-control/review.md) give
   Stop priority during Pause, reject stale control-status samples and label both
   dry-run venue states simulated. Release presentation checks and 53 focused
@@ -145,11 +145,9 @@ untouched and defer benchmark timing only for material CPU/GPU/RAM/disk contenti
 
 ## Detailed source phases
 
-The [archive index](archive/agent-history/README.md) preserves the earlier
-17,028 handoff lines and the complete published November 11 continuation through
-immutable Git objects. Use `tools.read_handoff_archive` with
-`continuation-2026-11-11 --find "exact-study-name"`, then a bounded line window.
-Original relative references resolve from `docs/`. Historical constraints remain
-binding until explicitly superseded; omission here grants no access, training,
-account, retry or trading authority. Keep one current summary per workstream and
-place detailed results beside their source-bound evidence.
+The [archive index](archive/agent-history/README.md) preserves original published
+bytes and constraints. Use `tools.read_handoff_archive` with
+`continuation-2026-11-11 --find "exact-study-name"` and a bounded line window.
+Original references resolve from `docs/`. Omission grants no capture, training,
+account, retry or trading authority. Keep one current summary per workstream;
+detailed results belong beside their source-bound evidence.

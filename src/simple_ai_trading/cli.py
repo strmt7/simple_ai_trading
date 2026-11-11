@@ -17519,6 +17519,7 @@ def _build_autonomous_decision_fn(
     minimum_model_taker_fee_bps: float | None = None,
 ):
     from .autonomous import Decision
+    from .model_execution_admission import payoff_execution_version_error
 
     model, model_error, model_notice = _load_live_start_model(
         model_path,
@@ -17553,11 +17554,30 @@ def _build_autonomous_decision_fn(
     )
     state: dict[str, object] = {"model": model, "step": 0}
 
+    def blocked_model_decision(client, runtime, candidate):
+        if candidate is None:
+            return None
+        reason = payoff_execution_version_error(candidate)
+        if reason is None:
+            return None
+        price, observed_at_ms = client.get_symbol_price(runtime.symbol)
+        return Decision(
+            side="FLAT",
+            confidence=0.0,
+            mark_price=float(price),
+            observed_at_ms=int(observed_at_ms),
+            model_entry_ready=False,
+            model_entry_reason=reason,
+        )
+
     def decide(
         client, runtime: RuntimeConfig, current_strategy: StrategyConfig, _objective
     ) -> Decision:
         state["step"] = int(state["step"]) + 1
         current_model = cast(TrainedModel | None, state["model"])
+        blocked = blocked_model_decision(client, runtime, current_model)
+        if blocked is not None:
+            return blocked
         candles = client.get_klines(
             runtime.symbol,
             runtime.interval,
@@ -17605,6 +17625,9 @@ def _build_autonomous_decision_fn(
                 batch_size=8192,
             )
             state["model"] = current_model
+        blocked = blocked_model_decision(client, runtime, current_model)
+        if blocked is not None:
+            return blocked
         latest = rows[-1]
         raw_score = current_model.predict_proba(latest.features)
         threshold = model_decision_threshold(

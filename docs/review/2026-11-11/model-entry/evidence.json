@@ -1,0 +1,185 @@
+{
+  "schema_version": "autonomous-payoff-execution-entry-review-v1",
+  "base_revision": "690f260fb44531c97f2aab1809bda3f3a5a84045",
+  "recorded_at_utc": "2026-11-11T05:52:46.729448+00:00",
+  "intent_sha256": "6cddb9a1e40f087065a58d2cf9a8b68f88eb8fde0228615f914d17164366703d",
+  "baseline": {
+    "summary": "1 failed in 7.30s",
+    "observed_failure": "Stale v2 payoff model reached numerical inference after the fixture startup boundary returned it.",
+    "financial_promotion_or_venue_order_claim": false,
+    "tested_source_sha256": {
+      "src/simple_ai_trading/autonomous.py": "6f76ef43f0c219568122a8dee94bb8f5b23a74451475d4e3b020509fe12c9ed6",
+      "src/simple_ai_trading/cli.py": "fea05f643fa9d0876e2824a3d5d5337ef7d5c0c43a68a4db13cd9685a9fd5d6c",
+      "src/simple_ai_trading/model.py": "c5978c76bd9be351d6a32b4b2f610491929c97c758e95ae048daa2465c945cd0",
+      "src/simple_ai_trading/execution_simulation.py": "385098153c077fb4b6df8d29d7e57ca5e7257850d7706905f0524c31b13253c3",
+      "src/simple_ai_trading/live_ai_assist.py": "1fe71b432dd345edc63557415136d99a2a06b2f669ee43004940be7bb8fcbb1c",
+      "tests/test_model_execution_admission.py": "013e1caee30422dabe7d35e1e1e542b77b0a428f026089d613f46b91da9d6012"
+    }
+  },
+  "behavior": {
+    "scope": "Ordinary autonomous CLI decision builder and autonomous entry gate; signed_payoff_ dependent experts.",
+    "cost_version": "causal-adv-square-root-fixed-base-v3",
+    "loaded_model_checked_before_candles": true,
+    "checked_again_before_inference_after_feature_work_or_paper_fit": true,
+    "blocked_path": "Independent current price-only FLAT decision carrying explicit model entry veto.",
+    "opening_readiness_requires_explicit_boolean_true": true,
+    "heartbeat_preserves_model_veto_even_when_flat": true,
+    "model_loader_and_old_artifact_bytes_unchanged": true,
+    "other_promotion_gates_relaxed": false
+  },
+  "verification": {
+    "summary": "316 passed in 23.51s",
+    "earlier_focused_summary": "40 passed in 3.58s",
+    "focused_cases_included_in_domain_total": true,
+    "tested_source_sha256": {
+      "src/simple_ai_trading/autonomous.py": "98c0a12350cd0675b481675b9f9ebe50f88db1017214d9c35063c4faa0c6c56b",
+      "src/simple_ai_trading/cli.py": "5cd9ce709ff744b96fc00b3ab7ea5e8b0bf74dc76d116482ee7f0459d5e56acf",
+      "src/simple_ai_trading/execution_simulation.py": "385098153c077fb4b6df8d29d7e57ca5e7257850d7706905f0524c31b13253c3",
+      "src/simple_ai_trading/live_ai_assist.py": "1fe71b432dd345edc63557415136d99a2a06b2f669ee43004940be7bb8fcbb1c",
+      "src/simple_ai_trading/model.py": "c5978c76bd9be351d6a32b4b2f610491929c97c758e95ae048daa2465c945cd0",
+      "src/simple_ai_trading/model_execution_admission.py": "8c3bddf3367b00f0391bb35bc9c4c00868c72df6a860a86c0764c28862fddf6f",
+      "tests/test_autonomous.py": "79a4bdf347f21136a932d8bf943cb3830058621d90ae1ad97e7086d99cebf608",
+      "tests/test_autonomous_spot_cash.py": "ac727f6f5fea7dd20c3bf71acd1902fdbc114c11c3671472946f80f1eaa2e579",
+      "tests/test_autonomous_spot_inventory.py": "15409804f10f5f0e97eef4abdcfc1ed63ffe7e20212afaf856511358ba2c3091",
+      "tests/test_cli_coverage.py": "ba042a4e09a8460775a3808f883b849809dbbcc878ecd193dfec290782c420d2",
+      "tests/test_cli_new_commands.py": "3adb7d3f59dc02f6294a351af75a600a9a8eed0c60fe1feb796d6ce6312ba856",
+      "tests/test_live_ai_assist.py": "ced0a19ef2d7b2af8ee32b9e53634e1d873fb0245c5cf7f25cdc0f06aab33096",
+      "tests/test_model_execution_admission.py": "437fa76d102691421fa4af203d503997cf15d598de047309da125751f0dbd671"
+    },
+    "source_unchanged_after_run": true,
+    "domains": [
+      "new model entry metadata/lifecycle tests",
+      "autonomous loop",
+      "autonomous Spot cash",
+      "autonomous Spot inventory",
+      "live AI assist",
+      "CLI new commands",
+      "five exact autonomous-builder nodes from CLI coverage"
+    ],
+    "full_cli_coverage_or_repository_suite_claim": false,
+    "synthetic_owned_closing": [
+      "Actual shared paper broker/journal: automatic threshold close succeeds with stale-model entry veto, zero new openings and explicit heartbeat reason.",
+      "Actual shared paper broker/journal: operator Stop closes owned inventory with stale-model entry veto and zero new openings."
+    ],
+    "readonly_history": "Actual serialize/load roundtrip preserves v2 artifact bytes and metadata while entry compatibility rejects it.",
+    "fixture_changes": "Two existing CLI mocks explicitly declare empty hybrid_experts, matching the real model default; no production gate was relaxed.",
+    "ruff": "Targeted six changed Python modules passed.",
+    "ast_scope": {
+      "autonomous": {
+        "changed_top_level_definitions": [
+          "Decision",
+          "_entry_gate",
+          "run_loop"
+        ],
+        "all_other_top_level_definitions_AST_identical": true
+      },
+      "cli": {
+        "changed_top_level_definitions": [
+          "_build_autonomous_decision_fn"
+        ],
+        "all_other_top_level_definitions_AST_identical": true
+      },
+      "model": {
+        "changed_top_level_definitions": [],
+        "all_other_top_level_definitions_AST_identical": true
+      },
+      "execution_simulation": {
+        "changed_top_level_definitions": [],
+        "all_other_top_level_definitions_AST_identical": true
+      },
+      "live_ai_assist": {
+        "changed_top_level_definitions": [],
+        "all_other_top_level_definitions_AST_identical": true
+      }
+    },
+    "remaining_review_scope": "AST/source checks bound the local change; they are not whole-repository semantic coverage."
+  },
+  "navigation": {
+    "method": "Exact known paths and symbols from preceding execution-law checkpoint, traced through run_loop, CLI builder and entry gate.",
+    "broad_semantic_search_this_phase": false,
+    "fresh_index_claim": false
+  },
+  "private_evidence": {
+    "baseline.json": {
+      "bytes": 872,
+      "sha256": "2ed03a4ea939dc522ae82bf108180708b5ad65d6c89bdf955cf60bb2d0642214"
+    },
+    "baseline-source.zip": {
+      "bytes": 190004,
+      "sha256": "f311a742c64fc320ed6d85798cf0a1a84fa6ceeaa12c489dd1757ccfdd37d447"
+    },
+    "baseline.stdout.log": {
+      "bytes": 2826,
+      "sha256": "6048aa8aecf5477aad44c1b28945d75f4704e3ada344aea628135438daf909e9"
+    },
+    "baseline.stderr.log": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "fixed.json": {
+      "bytes": 1000,
+      "sha256": "a2360cc255fd5e485ee2bc05227182ac4d2e2bc68b4ce14c536667ad3003ba7b"
+    },
+    "fixed-source.zip": {
+      "bytes": 192508,
+      "sha256": "ca52c3ab98640710e5ce763d63fde6baa9a3f6933e5daf12f37947533ea5312a"
+    },
+    "fixed.stdout.log": {
+      "bytes": 101,
+      "sha256": "240bd060567cc10be6309bc4c380a05923536f5f5dd06928ff6b52d5f9630a31"
+    },
+    "fixed.stderr.log": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "domain.json": {
+      "bytes": 2362,
+      "sha256": "a9cd7f1fea2e6b283086d4d282c9f651554e185092a2edb0b16bd10abf5afaa9"
+    },
+    "domain-source.zip": {
+      "bytes": 278139,
+      "sha256": "7ab64448d57c363a12cd5daac1da8f40399388b2ddcb1dfe5200ca01d0874c1c"
+    },
+    "domain.stdout.log": {
+      "bytes": 427,
+      "sha256": "b0374eafb9092b94b8e985356ccd7c4da15b0abd237dfca3d20e8a49e343100b"
+    },
+    "domain.stderr.log": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  },
+  "baseline_phase_reconstructible_from_repository_hashes_alone": false,
+  "lifecycle": {
+    "observed_at_utc": "2026-11-11T05:49:34Z",
+    "scoped_helpers_after_terminal": 0,
+    "persistent_task_service_or_hook_created": false,
+    "unrelated_processes_modified": false
+  },
+  "authority": {
+    "external_source_or_market_requests": false,
+    "accounts_or_venue_orders": false,
+    "real_credentials_used": false,
+    "protected_data_access": false,
+    "production_training": false,
+    "benchmark": false,
+    "dependency_installations": 0,
+    "release": false
+  },
+  "financial_frontier": {
+    "observations": 206,
+    "hypotheses": 65,
+    "historical_scoped_mechanisms": 37,
+    "qualified_stable_edges": 0,
+    "changed": false
+  },
+  "remaining": [
+    "A matching cost tag is not evidence of actual training law, promotion, native economics or profitability.",
+    "Other model families, execution callers and injected custom decisions are not a universal compatibility boundary.",
+    "Other startup load/promotion errors can still occur before loop construction; this is not complete model-independent recovery.",
+    "Independent supervision, gateway/caller fencing and native crash/reboot acceptance remain open.",
+    "Source-complete causal net targets, native costs/cash/capital, search provenance, dependence/tail evidence and untouched utility remain required.",
+    "Do not retag old artifacts or retrain consumed populations to manufacture qualification."
+  ],
+  "evidence_sha256": "2e577229499cf176ec59726ddc5720bc2b26b0aa784bb5271b5a17342f29c22f"
+}
