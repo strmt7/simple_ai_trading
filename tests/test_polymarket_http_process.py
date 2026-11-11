@@ -6,6 +6,7 @@ from decimal import Decimal
 import socket
 import time
 from types import SimpleNamespace
+from threading import Event
 
 import pytest
 import httpx
@@ -14,13 +15,20 @@ pytest.importorskip("py_clob_client_v2")
 from py_clob_client_v2.exceptions import PolyApiException
 
 from simple_ai_trading import polymarket_http_process as module
+from simple_ai_trading import polymarket_sdk_transport as sdk_transport
 from simple_ai_trading.polymarket import CLOB_BASE_URL
 from simple_ai_trading.polymarket_live import (
     PolymarketLiveCoordinator,
+    PolymarketLiveBlocked,
+    PolymarketLiveError,
     PolymarketLiveOrderLedger,
     PolymarketLiveUnknownState,
 )
 from simple_ai_trading.polymarket_live_v2 import OfficialPolymarketV2Venue
+from simple_ai_trading.polymarket_order_dispatch import (
+    OrderDispatchAdmission,
+    PolymarketOrderNotSent,
+)
 import test_polymarket_live as live_fixture
 from test_polymarket_live_v2 import _credentials
 
@@ -319,3 +327,167 @@ def test_hung_http_submission_stays_unknown_after_ledger_reopen(
     finally:
         worker.close()
         official.close()
+
+
+@pytest.mark.parametrize("revocation", ["source", "intent", "authority"])
+def test_source_revoked_during_http_startup_never_transmits_order(
+    harness, tmp_path, monkeypatch, revocation
+):
+    create, children = harness
+    original_factory = sdk_transport.PolymarketSdkTransport
+    revoked = False
+    markers = []
+
+    def transport_factory(**kwargs):
+        transport = original_factory(**kwargs)
+        worker, marker = create(worker=transport._client)
+        markers.append(marker)
+        connect = worker._connect
+
+        def connect_then_revoke(deadline):
+            nonlocal revoked
+            connection = connect(deadline)
+            revoked = True
+            return connection
+
+        monkeypatch.setattr(worker, "_connect", connect_then_revoke)
+        return transport
+
+    monkeypatch.setattr(sdk_transport, "PolymarketSdkTransport", transport_factory)
+    official = OfficialPolymarketV2Venue(_credentials())
+    official._client.get_version = lambda: 2
+    official._client.get_tick_size = lambda token: "0.01"
+    venue = live_fixture.FakeVenue()
+    venue.prepare_order = official.prepare_order
+    venue.submit_order = official.submit_order
+    ledger = PolymarketLiveOrderLedger(tmp_path / "startup-revocation.sqlite3")
+    coordinator = PolymarketLiveCoordinator(
+        venue, ledger, risk_limits=live_fixture.RISK_LIMITS
+    )
+    if revocation == "intent":
+        monkeypatch.setattr(
+            live_fixture.polymarket_live_module,
+            "time",
+            SimpleNamespace(
+                time=lambda: live_fixture.NOW_MS / 1000 + (121 if revoked else 0)
+            ),
+        )
+    elif revocation == "authority":
+
+        def assert_authority(*, closing_only):
+            if revoked:
+                raise PolymarketLiveBlocked("runtime authority changed during startup")
+
+        coordinator.runtime_authority = SimpleNamespace(
+            assert_submission_allowed=assert_authority,
+            reconciliation_checkpoint=lambda: None,
+            note_reconciliation=lambda result, *, checkpoint: None,
+            note_reconciliation_failure=lambda reason, *, checkpoint: None,
+        )
+
+    def assert_current():
+        if revoked and revocation == "source":
+            raise PolymarketLiveBlocked("public source changed during startup")
+
+    try:
+        monkeypatch.setattr(live_fixture, "NOW_MS", int(time.time() * 1000))
+        intent = live_fixture._intent()
+        with pytest.raises(PolymarketLiveError):
+            coordinator.submit(
+                intent,
+                tick_size=Decimal("0.01"),
+                neg_risk=False,
+                source_admission_check=assert_current,
+            )
+        assert revoked and children
+        assert all(not marker.exists() for marker in markers)
+        record = PolymarketLiveOrderLedger(ledger.path).record(intent.intent_id)
+        assert record.state == "rejected"
+        assert record.failure_code == "admission_revoked_before_http_dispatch"
+    finally:
+        official.close()
+    assert all(child.poll() is not None for child in children)
+
+
+def test_source_rechecked_after_capacity_wait_without_dropping_healthy_child(
+    harness, monkeypatch
+):
+    create, children = harness
+    worker, marker = create(timeout=2)
+    waiting = Event()
+    revoked = False
+    native_lock = worker._exchange
+
+    class ObservedLock:
+        def acquire(self, **kwargs):
+            waiting.set()
+            return native_lock.acquire(**kwargs)
+
+        def release(self):
+            native_lock.release()
+
+    def check():
+        if revoked:
+            raise RuntimeError("offline source revoked")
+
+    executor = ThreadPoolExecutor(max_workers=1)
+    held = False
+    try:
+        worker.start(timeout_seconds=5)
+        monkeypatch.setattr(worker, "_exchange", ObservedLock())
+        native_lock.acquire()
+        held = True
+        admission = OrderDispatchAdmission(check)
+        pending = executor.submit(
+            worker.request,
+            "POST",
+            CLOB_BASE_URL + "/order",
+            admission=admission,
+        )
+        assert waiting.wait(timeout=2)
+        revoked = True
+        native_lock.release()
+        held = False
+        with pytest.raises(PolymarketOrderNotSent):
+            pending.result(timeout=2)
+        assert admission.rejected_before_transmission
+        assert not marker.exists() and children[0].poll() is None
+        assert worker.request("GET", CLOB_BASE_URL + "/offline")["method"] == "GET"
+        assert len(children) == 1 and marker.read_text().splitlines() == ["GET"]
+    finally:
+        if held:
+            native_lock.release()
+        worker.close()
+        executor.shutdown(wait=True)
+    assert all(child.poll() is not None for child in children)
+
+
+def test_admitted_native_send_cannot_later_prove_the_submission_unsent(harness):
+    create, children = harness
+    worker, marker = create(timeout=2)
+    revoked = False
+    checks = []
+
+    def check():
+        checks.append("checked")
+        if revoked:
+            raise RuntimeError("offline revocation after an admitted exchange")
+
+    admission = OrderDispatchAdmission(check)
+    try:
+        worker.start(timeout_seconds=5)
+        assert (
+            worker.request("POST", CLOB_BASE_URL + "/order", admission=admission)[
+                "method"
+            ]
+            == "POST"
+        )
+        assert checks == ["checked"] and not admission.rejected_before_transmission
+        revoked = True
+        with pytest.raises(PolymarketOrderNotSent):
+            worker.request("POST", CLOB_BASE_URL + "/order", admission=admission)
+        assert not admission.rejected_before_transmission
+        assert marker.read_text().splitlines() == ["POST"]
+    finally:
+        worker.close()
+    assert all(child.poll() is not None for child in children)

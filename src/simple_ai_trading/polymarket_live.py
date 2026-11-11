@@ -19,6 +19,8 @@ import sqlite3
 import time
 from typing import Callable, ContextManager, Mapping, Protocol, Sequence, cast
 
+from .polymarket_order_dispatch import PolymarketOrderNotSent, order_dispatch_scope
+
 
 POLYMARKET_LIVE_LEDGER_SCHEMA_VERSION = "polymarket-live-ledger-v3"
 POLYMARKET_LIVE_ORDER_SCHEMA_VERSION = "polymarket-live-order-v1"
@@ -1075,7 +1077,9 @@ class PolymarketOpeningApproval:
         object.__setattr__(
             self,
             "owned_cost_basis_quote",
-            _decimal(self.owned_cost_basis_quote, name="owned cost basis", nonnegative=True),
+            _decimal(
+                self.owned_cost_basis_quote, name="owned cost basis", nonnegative=True
+            ),
         )
 
 
@@ -4342,8 +4346,41 @@ class PolymarketLiveCoordinator:
                             failure_code="source_admission_revoked_before_dispatch",
                         )
                         raise
-                dispatch_started = True
-                response = self.venue.submit_order(prepared)
+
+                def assert_http_dispatch_current() -> None:
+                    self._assert_intent_current(
+                        intent, observed_at_ms=int(time.time() * 1_000)
+                    )
+                    if self.runtime_authority is not None:
+                        self.runtime_authority.assert_submission_allowed(
+                            closing_only=intent.closing_only
+                        )
+                    if source_admission_check is not None:
+                        source_admission_check()
+
+                with order_dispatch_scope(assert_http_dispatch_current) as admission:
+                    dispatch_started = True
+                    try:
+                        response = self.venue.submit_order(prepared)
+                    except PolymarketOrderNotSent:
+                        if not admission.rejected_before_transmission:
+                            raise
+                        current = self.ledger.record(intent.intent_id)
+                        if current.state != "submitting" or current.matched_quantity:
+                            raise PolymarketLiveUnknownState(
+                                "Unsent denial conflicts with order evidence"
+                            ) from None
+                        self.ledger.transition(
+                            intent.intent_id,
+                            expected_states=("submitting",),
+                            state="rejected",
+                            observed_at_ms=int(time.time() * 1_000),
+                            failure_code="admission_revoked_before_http_dispatch",
+                        )
+                        dispatch_started = False
+                        raise PolymarketLiveBlocked(
+                            "Order admission was revoked before HTTP dispatch"
+                        ) from None
         except PolymarketVenueRejected as exc:
             if not dispatch_started:
                 raise

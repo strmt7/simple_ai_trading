@@ -89,9 +89,9 @@ before continuing an affected family. None supplies a qualified stable edge.
   Earlier reports placing this predictor in the main process describe an old phase.
 - The [five-minute scorer](review/2026-11-11/round21-scoring/review.md) releases
   intake during numerical work and revokes in-flight/cached forecasts across
-  required source epochs. [Final admission](review/2026-11-11/source-dispatch/review.md)
-  carries revocation through signing/journaling to the local venue-call boundary
-  for opens, locks and model reductions. Both documented source phases pass.
+  required source epochs. [Dispatch admission](review/2026-11-11/dispatch-admission/review.md)
+  rechecks source, intent TTL and runtime authority after HTTP queue/startup,
+  before order IPC. Sent or conflicting outcomes retain recovery obligations.
   [Owned five-minute inference](review/2026-11-11/round21-worker/review.md)
   contains model compilation/evaluation; CPU fixtures cover parity, reply faults
   and persisted Stop before recovery. GPU/POSIX qualification remains open.

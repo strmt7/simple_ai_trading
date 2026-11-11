@@ -54,6 +54,10 @@ from simple_ai_trading.polymarket_runtime_control import (
     PolymarketRuntimeLeaseInterlock,
 )
 from simple_ai_trading.polymarket_round21_policy import round21_risk_profile
+from simple_ai_trading.polymarket_order_dispatch import (
+    PolymarketOrderNotSent,
+    current_order_dispatch,
+)
 
 
 NOW_MS = int(time.time() * 1_000)
@@ -835,6 +839,81 @@ def test_current_source_admission_reaches_dispatch(tmp_path: Path) -> None:
     assert venue.submit_calls == 1 and result.state == "live"
 
 
+@pytest.mark.parametrize("denial", ["after_send", "unproven"])
+def test_unproven_unsent_exception_cannot_erase_transmission_obligations(
+    tmp_path: Path, denial: str
+) -> None:
+    ledger = PolymarketLiveOrderLedger(tmp_path / "dispatch-proof.sqlite3")
+    venue = FakeVenue()
+    coordinator = PolymarketLiveCoordinator(venue, ledger, risk_limits=RISK_LIMITS)
+    revoked = False
+
+    def assert_current():
+        if revoked:
+            raise PolymarketLiveBlocked("offline source revoked after simulated send")
+
+    def submit(prepared):
+        nonlocal revoked
+        admission = current_order_dispatch()
+        assert admission is not None
+        if denial == "unproven":
+            raise PolymarketOrderNotSent("unproven adapter assertion")
+        admission.begin_transmission()
+        revoked = True
+        admission.assert_current()
+        raise AssertionError("revoked source must raise")
+
+    venue.submit_order = submit
+    intent = _intent()
+    with pytest.raises(PolymarketLiveUnknownState, match="no retry"):
+        coordinator.submit(
+            intent,
+            tick_size=Decimal("0.01"),
+            neg_risk=False,
+            source_admission_check=assert_current,
+        )
+    assert ledger.record(intent.intent_id).state == "unknown"
+    assert current_order_dispatch() is None
+
+
+def test_unsent_denial_cannot_overwrite_conflicting_authenticated_order_state(
+    tmp_path: Path,
+) -> None:
+    ledger = PolymarketLiveOrderLedger(tmp_path / "dispatch-conflict.sqlite3")
+    venue = FakeVenue()
+    coordinator = PolymarketLiveCoordinator(venue, ledger, risk_limits=RISK_LIMITS)
+    revoked = False
+
+    def assert_current():
+        if revoked:
+            raise PolymarketLiveBlocked("offline source revoked")
+
+    def submit(prepared):
+        nonlocal revoked
+        ledger.transition(
+            prepared.intent.intent_id,
+            expected_states=("submitting",),
+            state="live",
+            observed_at_ms=NOW_MS,
+            remote_status="live",
+        )
+        revoked = True
+        admission = current_order_dispatch()
+        assert admission is not None
+        admission.assert_current()
+        raise AssertionError("revoked source must raise")
+
+    venue.submit_order = submit
+    result = coordinator.submit(
+        _intent(),
+        tick_size=Decimal("0.01"),
+        neg_risk=False,
+        source_admission_check=assert_current,
+    )
+    assert result.state == "live" and not result.failure_code
+    assert current_order_dispatch() is None
+
+
 def test_opening_rejects_completed_fill_created_during_signing(tmp_path: Path) -> None:
     ledger = PolymarketLiveOrderLedger(tmp_path / "filled-during-signing.sqlite3")
     venue = FakeVenue()
@@ -1082,11 +1161,15 @@ def test_opening_cannot_omit_its_approval_revision(tmp_path: Path) -> None:
     assert not ledger.records()
 
 
-def test_gateway_does_not_replace_an_outdated_portfolio_approval(tmp_path: Path) -> None:
+def test_gateway_does_not_replace_an_outdated_portfolio_approval(
+    tmp_path: Path,
+) -> None:
     ledger = PolymarketLiveOrderLedger(tmp_path / "portfolio-approval.sqlite3")
     venue = FakeVenue()
     coordinator = PolymarketLiveCoordinator(venue, ledger, risk_limits=RISK_LIMITS)
-    approved = PolymarketOpeningApproval(ledger.revision(), Decimal("100"), Decimal("0"))
+    approved = PolymarketOpeningApproval(
+        ledger.revision(), Decimal("100"), Decimal("0")
+    )
     failed = venue.prepare_order(_intent(2), tick_size=Decimal("0.01"), neg_risk=False)
     ledger.reserve(failed, observed_at_ms=NOW_MS)
     ledger.transition(
@@ -1098,7 +1181,9 @@ def test_gateway_does_not_replace_an_outdated_portfolio_approval(tmp_path: Path)
     )
     assert not ledger.open_owned_order_ids()
 
-    with pytest.raises(PolymarketLiveBlocked, match="ledger changed after opening approval"):
+    with pytest.raises(
+        PolymarketLiveBlocked, match="ledger changed after opening approval"
+    ):
         coordinator.submit(
             _intent(),
             tick_size=Decimal("0.01"),
@@ -1117,12 +1202,16 @@ def test_gateway_does_not_replace_an_outdated_portfolio_approval(tmp_path: Path)
     assert venue.submit_calls == 1
 
 
-def test_opening_rechecks_wallet_support_with_verified_owned_basis(tmp_path: Path) -> None:
+def test_opening_rechecks_wallet_support_with_verified_owned_basis(
+    tmp_path: Path,
+) -> None:
     ledger = PolymarketLiveOrderLedger(tmp_path / "wallet-support.sqlite3")
     venue = FakeVenue()
     _confirmed_admission_parent(ledger, venue)
     risk = PolymarketLiveRiskService(ledger, risk_capital_quote=Decimal("1000"))
-    approval = risk.opening_approval(risk.capture(MARKET_ID, observed_at_ms=NOW_MS).state)
+    approval = risk.opening_approval(
+        risk.capture(MARKET_ID, observed_at_ms=NOW_MS).state
+    )
     assert approval.owned_cost_basis_quote == Decimal("0.51")
     coordinator = PolymarketLiveCoordinator(venue, ledger, risk_limits=RISK_LIMITS)
     intent = _intent(2)
@@ -1156,7 +1245,9 @@ def test_opening_approval_also_fences_an_existing_reservation(tmp_path: Path) ->
     approved = ledger.revision()
     ledger.reserve(prepared, observed_at_ms=NOW_MS)
 
-    with pytest.raises(PolymarketLiveBlocked, match="ledger changed after opening approval"):
+    with pytest.raises(
+        PolymarketLiveBlocked, match="ledger changed after opening approval"
+    ):
         ledger.reserve_submission(
             prepared, observed_at_ms=NOW_MS, expected_revision=approved
         )

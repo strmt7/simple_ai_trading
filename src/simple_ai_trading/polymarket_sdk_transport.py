@@ -9,6 +9,8 @@ from typing import Mapping, Sequence
 import httpx
 from py_clob_client_v2.exceptions import PolyApiException
 
+from .polymarket_order_dispatch import OrderDispatchAdmission, current_order_dispatch
+
 
 def _limits(timeout_seconds: float, maximum_response_bytes: int) -> float:
     timeout = float(timeout_seconds)
@@ -73,9 +75,15 @@ class PolymarketSdkTransport:
         data: object = None,
         params: Mapping[str, object] | None = None,
     ) -> object:
-        _check_origin(self._origin, endpoint)
+        url = _check_origin(self._origin, endpoint)
+        admission = (
+            current_order_dispatch()
+            if method == "POST" and url.path == "/order"
+            else None
+        )
+        options = {} if admission is None else {"admission": admission}
         return self._client.request(
-            method, endpoint, headers=headers, data=data, params=params
+            method, endpoint, headers=headers, data=data, params=params, **options
         )
 
     def close(self) -> None:
@@ -158,6 +166,7 @@ class _InlineSdkTransport:
         headers: Mapping[str, str] | None = None,
         data: object = None,
         params: Mapping[str, object] | None = None,
+        admission: OrderDispatchAdmission | None = None,
     ) -> object:
         url = _check_origin(self._origin, endpoint)
         request_headers = {
@@ -175,7 +184,11 @@ class _InlineSdkTransport:
             else {"json": data}
         )
         deadline = monotonic() + self.timeout_seconds
+        if admission is not None:
+            admission.assert_current()
         try:
+            if admission is not None:
+                admission.begin_transmission()
             with self._client.stream(
                 method,
                 url,

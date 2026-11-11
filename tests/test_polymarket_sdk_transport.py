@@ -15,6 +15,11 @@ from simple_ai_trading.polymarket_live_v2 import (
     OfficialPolymarketV2Venue,
     PolymarketLiveCredentials,
 )
+from simple_ai_trading.polymarket_order_dispatch import (
+    PolymarketOrderNotSent,
+    current_order_dispatch,
+    order_dispatch_scope,
+)
 
 httpx = pytest.importorskip("httpx")
 PolyApiException = pytest.importorskip("py_clob_client_v2.exceptions").PolyApiException
@@ -43,6 +48,45 @@ def _transport(handler, **kwargs):
         transport=httpx.MockTransport(handler),
         **kwargs,
     )
+
+
+def test_admission_denial_leaves_reads_and_cancels_available_and_scope_is_restored():
+    captured = []
+    transport = _transport(
+        lambda request: captured.append(request.method) or httpx.Response(200, json={})
+    )
+
+    def deny():
+        raise RuntimeError("offline admission denial")
+
+    try:
+        with order_dispatch_scope(deny) as admission:
+            assert transport.request("GET", CLOB_BASE_URL + "/offline") == {}
+            assert transport.request("DELETE", CLOB_BASE_URL + "/order") == {}
+            with pytest.raises(PolymarketOrderNotSent):
+                transport.request("POST", CLOB_BASE_URL + "/order")
+            assert admission.rejected_before_transmission
+            assert captured == ["GET", "DELETE"]
+        assert current_order_dispatch() is None
+        assert transport.request("POST", CLOB_BASE_URL + "/order") == {}
+        assert captured == ["GET", "DELETE", "POST"]
+    finally:
+        transport.close()
+
+
+def test_nested_admission_scopes_restore_after_failure_and_do_not_leak_to_threads():
+    with order_dispatch_scope(lambda: None) as outer:
+        seen = []
+        thread = Thread(target=lambda: seen.append(current_order_dispatch()))
+        thread.start()
+        thread.join(timeout=2)
+        assert not thread.is_alive() and seen == [None]
+        with pytest.raises(RuntimeError, match="offline scope failure"):
+            with order_dispatch_scope(lambda: None) as inner:
+                assert current_order_dispatch() is inner and inner is not outer
+                raise RuntimeError("offline scope failure")
+        assert current_order_dispatch() is outer
+    assert current_order_dispatch() is None
 
 
 @pytest.mark.parametrize("method", ["GET", "POST", "DELETE"])
@@ -239,7 +283,10 @@ def test_real_sdk_uses_isolated_transport_and_never_its_global_client(monkeypatc
         prepared = first.prepare_order(
             intent, tick_size=Decimal("0.01"), neg_risk=False
         )
-        assert first.submit_order(prepared).accepted
+        checks = []
+        with order_dispatch_scope(lambda: checks.append("current")) as admission:
+            assert first.submit_order(prepared).accepted
+            assert checks == ["current"] and not admission.rejected_before_transmission
         first._client._get(CLOB_BASE_URL + "/offline")
         first._client._delete(CLOB_BASE_URL + "/offline", data='{"id":"offline"}')
         assert [request.method for request in captured] == ["POST", "GET", "DELETE"]

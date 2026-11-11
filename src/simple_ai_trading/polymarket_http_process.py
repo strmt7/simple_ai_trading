@@ -22,6 +22,7 @@ import httpx
 from py_clob_client_v2.exceptions import PolyApiException
 
 from .polymarket_inference_process import read_bootstrap, receive_exact
+from .polymarket_order_dispatch import OrderDispatchAdmission
 from .windows_owned_job import CREATE_SUSPENDED, WindowsOwnedJob
 
 
@@ -280,6 +281,7 @@ class PolymarketHttpProcess:
         data: object = None,
         params: Mapping[str, object] | None = None,
         deadline: float | None = None,
+        admission: OrderDispatchAdmission | None = None,
     ) -> object:
         now = monotonic()
         if deadline is not None and (
@@ -321,11 +323,23 @@ class PolymarketHttpProcess:
         try:
             try:
                 connection = self._connect(deadline)
+            except Exception:
+                self._drop_child()
+                raise PolyApiException(
+                    error_msg="SDK response deadline exceeded or worker unavailable"
+                ) from None
+            # Check after serialized capacity and startup, before any order frame.
+            # Callback failure does not invalidate an otherwise healthy child.
+            if admission is not None:
+                admission.assert_current()
+            try:
                 remaining = deadline - monotonic()
                 if remaining <= 0:
                     raise TimeoutError
                 connection.settimeout(remaining)
                 self._sequence += 1
+                if admission is not None:
+                    admission.begin_transmission()
                 connection.sendall(_HEADER.pack(self._sequence, len(body)) + body)
                 sequence, reply = _receive(
                     connection, self._maximum_reply, deadline=deadline
