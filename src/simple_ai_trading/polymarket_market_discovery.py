@@ -84,6 +84,25 @@ class PolymarketOwnedMarketDiscovery:
             raise ValueError("discovery timeout must lie in [0.1, 30] seconds")
         self._timeout = timeout_seconds
         self._cleanup_failed = False
+        self._active_market: PolymarketFiveMinuteMarket | None = None
+        self._market_published = asyncio.Event()
+
+    def current_market(self, observed_at_ms: int) -> PolymarketFiveMinuteMarket | None:
+        """Read the last admitted active market while its event is current."""
+
+        market = self._active_market
+        if (
+            market is not None
+            and market.event_start_ms <= observed_at_ms < market.end_ms
+        ):
+            return market
+        return None
+
+    async def wait_for_publication(self) -> None:
+        """Wake the session's public feed when a current market is published."""
+
+        await self._market_published.wait()
+        self._market_published.clear()
 
     def _command(self, variant: str, observed_at_ms: int) -> list[str]:
         return [
@@ -107,6 +126,7 @@ class PolymarketOwnedMarketDiscovery:
         _horizon(market_variant)
         if type(observed_at_ms) is not int or observed_at_ms <= 0:
             raise ValueError("Polymarket discovery observation time is invalid")
+        self._active_market = None
         if self._cleanup_failed:
             raise RuntimeError("previous Polymarket discovery child cleanup failed")
         if stop.is_set():
@@ -154,7 +174,7 @@ class PolymarketOwnedMarketDiscovery:
                 if process.returncode != 0:
                     raise RuntimeError("Polymarket public discovery child failed")
                 output.seek(0)
-                return _decode_reply(
+                markets = _decode_reply(
                     output.read(_MAX_REPLY_BYTES + 1),
                     variant=market_variant,
                     observed_at_ms=observed_at_ms,
@@ -172,6 +192,15 @@ class PolymarketOwnedMarketDiscovery:
                 except (OSError, subprocess.TimeoutExpired):
                     self._cleanup_failed = True
                     raise
+        active = tuple(
+            market
+            for market in markets
+            if market.event_start_ms <= observed_at_ms < market.end_ms
+        )
+        if len(active) == 1:
+            self._active_market = active[0]
+            self._market_published.set()
+        return markets
 
 
 class _DiscoveryHttpClient(PolymarketPublicClient):

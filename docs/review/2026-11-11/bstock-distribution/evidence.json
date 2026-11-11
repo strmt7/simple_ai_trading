@@ -1,0 +1,48 @@
+{
+  "account_requests": 0,
+  "capture": {
+    "exit_code": 0,
+    "markdown_characters": 1,
+    "native_bytes": 4399,
+    "native_error_message": "",
+    "native_navigation_started": true,
+    "native_sha256": "2f03bc8a1034a530581def2c19697ce05381876b5d788495e25bc1dd8f62cb81",
+    "native_success": true,
+    "redirected_status_code": 202,
+    "redirected_url": "https://www.binance.com/en/square/post/385170151544773",
+    "required_terms": {
+      "aaplb": false,
+      "cash dividend distribution": false,
+      "glwb": false,
+      "ibmb": false,
+      "llyb": false
+    },
+    "source_admitted": false,
+    "status_code": 202,
+    "url": "https://www.binance.com/en/square/post/385170151544773"
+  },
+  "classification": "All four predeclared siblings are source-incomplete. Cash floors and timing remain unadjudicated.",
+  "frozen_at_utc": "2026-11-11T00:10:37.101383+00:00",
+  "frozen_intent_sha256": "68635c0009c53a7dc62cfc8ab2e237cf8931096778b92914955fd15d1ae41eaf",
+  "issuer_requests": 0,
+  "journal_sha256": "76839583729d1386743e62744fa74af0535d0357bc73bf272105a65ac8d7efaf",
+  "market_requests": 0,
+  "new_economic_observations": 0,
+  "orders": 0,
+  "predeclared_siblings": [
+    "IBM",
+    "AAPL",
+    "GLW",
+    "LLY"
+  ],
+  "protected_capture_touched": false,
+  "provider": "0.9.5+flitzzip.portable2",
+  "registry_rank": 34,
+  "result_sha256": "d9630bbdd152b7521d36d026b6c827800c007c45a2f0d99223534f78687bc2ec",
+  "schema_version": "binance-bstock-november-distribution-source-gate-v1",
+  "strict_robots": {
+    "allowed": true,
+    "raw_sha256": "586a4080a9685511e613e2beb856731a1434217d134f843f31290904eae814f4",
+    "user_agent": "simple-ai-trading-public-research/1"
+  }
+}

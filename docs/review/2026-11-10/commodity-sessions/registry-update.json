@@ -1,0 +1,23 @@
+{
+  "after": {
+    "audit_sha256": "4c4e331856582ff009f262080ec5e1ca38b54fcedd1f9b3288d96d6fdc099723",
+    "hypotheses": 65,
+    "observations": 206,
+    "profitability_qualification_supplied_by_verifier": false,
+    "recorded_qualified_stable_edges": 0,
+    "registry_sha256": "c0f7a85a423d9db1572fbaa2b2fff4074d559a71f7f6c2fa0078407a0454af7d",
+    "scoped_mechanisms": 37,
+    "validation_kind": "registry_binding_and_recorded_census_only"
+  },
+  "before": {
+    "audit_sha256": "dd0be16965c9452f51e837fe8da736953c151ad93ed2ce6518ab1208ab95d19f",
+    "hypotheses": 65,
+    "observations": 206,
+    "profitability_qualification_supplied_by_verifier": false,
+    "recorded_qualified_stable_edges": 0,
+    "registry_sha256": "7fdd57c5bfc9341c565e58f47eeeb8c0a7bde17774585e72a9002d08b485e36d",
+    "scoped_mechanisms": 37,
+    "validation_kind": "registry_binding_and_recorded_census_only"
+  },
+  "effect": "rank 40 source metadata only"
+}

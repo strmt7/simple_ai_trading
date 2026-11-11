@@ -477,7 +477,13 @@
       ],
       "retry_trigger": "for_Cross_Margin_both_designated_credentials_explicit_signed_GET_only_authority_and_an_independently_existing_legitimate_borrow_with_preexisting_same_account_BNB_or_a_material_official_discount_scope_payment_asset_interest_accounting_API_or_eligibility_change_or_otherwise_authorized_independently_positive_organic_TradFi_perpetual_spot_direct_stock_or_bStocks_flow_with_one_fresh_exact_fee_source_or_fresh_official_fee_or_VIP_6_for_Six_term_change_or_both_SIMPLE_AI_TRADING_BINANCE_MAINNET_API_KEY_and_SIMPLE_AI_TRADING_BINANCE_MAINNET_API_SECRET_available_with_explicit_signed_GET_only_authority_for_current_tier_commission_history_and_existing_upgrade_state_or_user_supplied_external_VIP_3_plus_evidence_with_explicit_Growth_Track_evaluation_authority_before_2026_10_16T23_59_59Z_or_for_Spot_Block_Matching_both_designated_credentials_explicit_signed_read_only_authority_an_independently_planned_legitimate_large_bilateral_master_account_Spot_trade_existing_whitelist_authentic_counterparty_and_frozen_exact_pair_quantity_side_and_decision_time_or_not_before_2026_09_06T03_47_16_3134381Z_for_one_separately_frozen_public_blockTrade_observation_or_a_material_official_block_stream_fee_pair_minimum_whitelist_API_settlement_price_band_volume_or_observed_public_event_change_or_for_RPI_a_material_new_official_byte_retainable_fee_or_execution_contract_or_both_designated_credentials_explicit_signed_GET_only_commission_authority_and_an_independently_positive_organic_equal_base_hedge_question_or_for_amend_keep_priority_an_independently_required_existing_simple_BTCUSDT_ETHUSDT_or_SOLUSDT_maker_order_same_price_quantity_reduction_plus_explicit_testnet_or_paper_order_authority_or_a_material_official_semantics_request_weight_filter_or_production_configuration_change_or_for_PRIMARY_PEG_explicit_separate_Spot_testnet_or_paper_order_authority_for_one_minimum_size_LIMIT_MAKER_acknowledgement_and_cancel_comparison_against_a_frozen_fixed_price_counterfactual_or_a_material_official_pegged_order_semantics_filter_fee_or_production_configuration_change_or_for_STP_TRANSFER_both_designated_credentials_explicit_signed_GET_only_tradeGroup_authority_and_an_independently_existing_legitimate_cross_account_BTC_ETH_or_SOL_inventory_rebalance_whose_exact_ordinary_internal_transfer_comparator_leaves_positive_incremental_value_then_separate_explicit_testnet_or_paper_order_authority_or_a_material_official_STP_transfer_accounting_fee_limit_or_production_configuration_change_or_for_USDM_Futures_BNB_fee_reduction_a_material_new_byte_retainable_current_official_discount_source_or_both_designated_credentials_explicit_signed_GET_only_authority_and_an_independently_planned_legitimate_organic_BTC_ETH_or_SOL_USDM_positive_commission_question",
       "sbe_depth_freshness_retry_trigger": "designated_ephemeral_Ed25519_API_key_plus_explicit_read_only_public_market_data_authority_for_a_precommitted_same_host_same_symbol_SBE_20ms_versus_JSON_100ms_dual_feed_capture_or_a_material_official_SBE_JSON_cadence_authentication_schema_auto_culling_or_testnet_support_change",
-      "venue_scope": "binance_BTC_ETH_SOL_spot_Cross_Margin_TradFi_perpetual_direct_Stocks_bStocks_and_USD_M_organic_fee_flow_USDC_FDUSD_U_USD1_quotes_USDT_to_BNB_Convert_VIP_6_for_Six_whitelisted_master_account_Spot_Block_Matching_USD_M_RPI_Spot_amend_keep_priority_PRIMARY_PEG_STP_TRANSFER_USDM_Futures_BNB_fee_reduction_Link_and_Trade_client_kickback_exchange_native_Spot_TWAP_USDM_TWAP_VP_execution_cost_Spot_OPO_OPOCO_received_quantity_contingent_sell_execution_Spot_SBE_depth_freshness_and_Spot_FIX_UNORDERED_execution_risk_control"
+      "venue_scope": "binance_BTC_ETH_SOL_spot_Cross_Margin_TradFi_perpetual_direct_Stocks_bStocks_and_USD_M_organic_fee_flow_USDC_FDUSD_U_USD1_quotes_USDT_to_BNB_Convert_VIP_6_for_Six_whitelisted_master_account_Spot_Block_Matching_USD_M_RPI_Spot_amend_keep_priority_PRIMARY_PEG_STP_TRANSFER_USDM_Futures_BNB_fee_reduction_Link_and_Trade_client_kickback_exchange_native_Spot_TWAP_USDM_TWAP_VP_execution_cost_Spot_OPO_OPOCO_received_quantity_contingent_sell_execution_Spot_SBE_depth_freshness_and_Spot_FIX_UNORDERED_execution_risk_control",
+      "tradfi_fee_notice_supersession_2026_11_11": {
+        "path": "docs/review/2026-11-11/tradfi-fee-notices/evidence.json",
+        "result_sha256": "7ee766453dbda8ed5ef0d78ad64a85fb1d47d0a8f179f110c4dfe710970e61f5",
+        "classification": "The publisher withdrew the 40% VIP 4-9 taker discount proposal before it could replace 50%. No change to the prior effective advertised schedule and no new economic population.",
+        "new_economic_observations": 0
+      }
     },
     {
       "blocking_evidence": [
@@ -3298,7 +3304,13 @@
         "placing_orders_or_accessing_account_state_without_separate_explicit_authority"
       ],
       "retry_trigger": "a_future_independent_dividend_episode_where_the_bStock_snapshot_materially_precedes_the_official_exchange_ex_dividend_adjustment_not_merely_the_record_date_and_current_primary_terms_bind_a_strictly_positive_conservative_net_distribution_floor_before_a_complete_precommitted_adjustment_and_book_sequence",
-      "venue_scope": "binance_bStock_and_matching_TradFi_perpetual_dividend_adjustment_timing_gap"
+      "venue_scope": "binance_bStock_and_matching_TradFi_perpetual_dividend_adjustment_timing_gap",
+      "november_bstock_dividend_source_gate_2026_11_11": {
+        "path": "docs/review/2026-11-11/bstock-distribution/evidence.json",
+        "result_sha256": "d9630bbdd152b7521d36d026b6c827800c007c45a2f0d99223534f78687bc2ec",
+        "classification": "Frozen publisher page failed HTTP/content admission. No current shared entitlement or floor was admitted for the four candidate siblings.",
+        "new_economic_observations": 0
+      }
     },
     {
       "blocking_evidence": [
@@ -3548,7 +3560,13 @@
         "calling_a_negative_gross_snapshot_an_edge_or_deployment_ready"
       ],
       "retry_trigger": "new_official_XAU_or_XAG_commodity_option_listing_or_relisting_announcement_after_2026_08_29T13_58_50_782Z_or_material_option_fee_funding_basis_book_or_product_access_change",
-      "venue_scope": "Binance_XAU_XAG_USDT_long_only_commodity_options_and_matching_TradFi_perpetuals"
+      "venue_scope": "Binance_XAU_XAG_USDT_long_only_commodity_options_and_matching_TradFi_perpetuals",
+      "commodity_perpetual_session_basis_2026_11_10": {
+        "path": "docs/review/2026-11-10/commodity-sessions/evidence.json",
+        "result_sha256": "46a0f6aecaf3756170ebc1b519dce67492ce95fe14930003eb3516f329b59950",
+        "classification": "Historical clearing notice binds the commodity perpetual index-mode switch. It does not establish the option payout sample, an executable exit basis bound or current inventory.",
+        "market_capture_authorized_by_this_record": false
+      }
     },
     {
       "blocking_evidence": [
@@ -4637,7 +4655,7 @@
       ]
     }
   ],
-  "result_sha256": "7fdd57c5bfc9341c565e58f47eeeb8c0a7bde17774585e72a9002d08b485e36d",
+  "result_sha256": "8589fec4ebceafcafc1943fbf205379bf1b1e6ee62d88464248a1d724448efcc",
   "schema_version": "structural-edge-priority-registry-v1",
   "terminal_do_not_repeat": [
     {
@@ -5701,6 +5719,6 @@
       "canonical_result_sha256": "e68dbd4532f61fe399e2b04ae9d64d25041731b6bffa847289ea2b01d4da3a3d"
     }
   ],
-  "updated_at_utc": "2026-11-10T23:46:22.100712+00:00",
+  "updated_at_utc": "2026-11-11T00:13:04.172031+00:00",
   "usage_rule": "advance_the_highest_ranked_hypothesis_whose_retry_trigger_is_satisfied_otherwise_do_not_repeat_a_blocked_or_terminal_screen"
 }

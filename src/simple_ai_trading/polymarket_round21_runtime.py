@@ -8,6 +8,7 @@ from decimal import Decimal
 from .polymarket import PolymarketPublicClient
 from .polymarket_live import PolymarketLiveBlocked
 from .polymarket_live_promotion import VerifiedPolymarketLivePromotion
+from .polymarket_market_discovery import PolymarketOwnedMarketDiscovery
 from .polymarket_round21_decision import (
     PolymarketRound21PromotedDecisionProvider,
 )
@@ -79,6 +80,7 @@ def build_polymarket_round21_runtime_stack(
     promotion: VerifiedPolymarketLivePromotion,
     requested_quantity: Decimal,
     risk_level: str = "conservative",
+    market_discovery: PolymarketOwnedMarketDiscovery | None = None,
     discovery_interval_seconds: float = 1.0,
     queue_capacity: int = 20_000,
 ) -> PolymarketRound21RuntimeStack:
@@ -116,6 +118,7 @@ def build_polymarket_round21_runtime_stack(
     data_service = Round21RollingPublicDataService(
         public_client=public_client,
         scorer=scorer,
+        market_discovery=market_discovery,
         discovery_interval_seconds=discovery_interval_seconds,
         queue_capacity=queue_capacity,
     )

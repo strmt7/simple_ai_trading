@@ -49,6 +49,24 @@ current full-suite failure count without rerunning the appropriate scope.
 
 ## Financial and source frontier
 
+- [TradFi fee supersession](review/2026-11-11/tradfi-fee-notices/review.md)
+  binds the cancelled November fee increase and the continuing fee table.
+  The prior effective fee schedule stays in force according to the retained
+  notices. The proposed rate never takes effect in an advertised fee replay.
+  No new cost advantage or funding retry trigger follows.
+
+- [November bStock dividend source](review/2026-11-11/bstock-distribution/review.md)
+  rejected one exact publisher post after HTTP 202 and one extracted character.
+  The common entitlement and cash floor remain unproved for all four siblings.
+  No issuer, book, fee or funding request followed.
+
+- [Commodity session basis](review/2026-11-10/commodity-sessions/review.md)
+  binds Binance's vendor-index to order-book EWMA switch for XAU/XAG
+  perpetuals. The regular Friday switch coincides with the retained nominal
+  option expiry clock. Require side-specific executable exit bounds and
+  exact settlement samples before qualifying a hedge floor. No new quote,
+  funding or economic observation was added.
+
 - [Samsung dividend reconciliation](review/2026-11-10/samsung-reconciliation/review.md)
   binds two exact Binance article records and Samsung's issuer disclosure.
   The 4,500 KRW estimate plus 101 KRW true-up equals the 4,601 KRW dividend.
@@ -244,6 +262,12 @@ Require an exact independently located publisher revision/redline and retain
 the unchanged account-fee gate before economic access. No new observation added.
 
 ## Platform work and publication
+
+- [Shared five-minute discovery](review/2026-11-10/shared-discovery/review.md)
+  removes a second in-process discovery request from the promoted Round 21
+  feed. It wakes on the supervisor's active-market publication after child
+  teardown. The focused lane covers initial publication, rollover and Stop.
+  Forecast inference and authenticated native calls still need containment.
 
 - [Startup Stop](review/2026-11-10/startup-stop/review.md) starts durable control
   before initial public discovery. Windows tests persist Stop in the local

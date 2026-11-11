@@ -2,13 +2,16 @@ from __future__ import annotations
 
 import asyncio
 from dataclasses import replace
+from datetime import datetime, timezone
 import json
+import sys
 from unittest.mock import Mock
 
 import pytest
 
 from simple_ai_trading.polymarket import PolymarketPublicClient
 from simple_ai_trading.polymarket_capture_frame import CaptureFrameRecord
+from simple_ai_trading.polymarket_market_discovery import PolymarketOwnedMarketDiscovery
 from simple_ai_trading.polymarket_round21_binance_feed import (
     Round21BinancePublicFeedHealth,
     Round21BinancePublicSidecar,
@@ -92,6 +95,8 @@ def _service(
     factory,
     layer="core",
     sidecar_factory=None,
+    market_discovery=None,
+    discovery_interval=0.25,
 ):
     scorer = Mock(spec=Round21ProspectiveScorer)
     scorer.population_layer = layer
@@ -104,7 +109,8 @@ def _service(
     return Round21RollingPublicDataService(
         public_client=client,
         scorer=scorer,
-        discovery_interval_seconds=0.25,
+        market_discovery=market_discovery,
+        discovery_interval_seconds=discovery_interval,
         feed_factory=factory,
         binance_sidecar_factory=sidecar_factory,
         wall_clock_ms=clock,
@@ -193,6 +199,88 @@ def test_session_rolls_market_without_reusing_feed_or_coordinator() -> None:
     assert service.health().market_rollover_count == 1
     assert len(factory.feeds) == 2
     assert all(feed.run.await_count == 1 for feed in factory.feeds)
+
+
+def test_session_wakes_on_owned_market_publication_without_duplicate_discovery(
+    monkeypatch,
+) -> None:
+    async def exercise():
+        worker = PolymarketOwnedMarketDiscovery()
+        factory = _FeedFactory()
+        client = Mock(spec=PolymarketPublicClient)
+        client.discover_five_minute_markets.side_effect = AssertionError(
+            "the Round 21 feed must not start a second discovery"
+        )
+        start = MARKET.event_start_ms // 300_000 * 300_000
+        now = start + 1_000
+        stop = asyncio.Event()
+        service = _service(
+            client=client,
+            clock=lambda: now,
+            factory=factory,
+            market_discovery=worker,
+            discovery_interval=30,
+        )
+
+        def command(_variant, observed):
+            epoch = observed // 300_000 * 300
+            is_first = observed < start + 300_000
+            digit = "a" if is_first else "b"
+            token = "7" if is_first else "8"
+            row = {
+                "id": str(epoch),
+                "question": "Bitcoin Up or Down",
+                "conditionId": "0x" + digit * 64,
+                "slug": f"btc-updown-5m-{epoch}",
+                "eventStartTime": datetime.fromtimestamp(
+                    epoch, timezone.utc
+                ).isoformat(),
+                "endDate": datetime.fromtimestamp(
+                    epoch + 300, timezone.utc
+                ).isoformat(),
+                "active": True,
+                "closed": False,
+                "enableOrderBook": True,
+                "acceptingOrders": True,
+                "clobTokenIds": json.dumps([token * 40, token * 39 + "1"]),
+                "outcomes": '["Up", "Down"]',
+                "orderPriceMinTickSize": 0.01,
+                "orderMinSize": 5,
+                "feesEnabled": True,
+                "feeSchedule": {
+                    "exponent": 1,
+                    "rate": 0.07,
+                    "takerOnly": True,
+                    "rebateRate": 0.2,
+                },
+                "resolutionSource": "https://data.chain.link/streams/btc-usd",
+            }
+            return [sys.executable, "-I", "-B", "-c", f"print({json.dumps([row])!r})"]
+
+        monkeypatch.setattr(worker, "_command", command)
+        task = asyncio.create_task(service.run(stop))
+        try:
+            await _wait_for(lambda: service.health().running)
+            assert service.current_market() is None
+            for activation in (1, 2):
+                markets = await worker.discover(
+                    market_variant="fiveminute", observed_at_ms=now, stop=stop
+                )
+                assert markets is not None and len(markets) == 1
+                await _wait_for(
+                    lambda: service.health().market_activation_count == activation
+                )
+                assert service.current_market() is markets[0]
+                now += 300_000
+        finally:
+            stop.set()
+            await asyncio.wait_for(task, timeout=2)
+        client.discover_five_minute_markets.assert_not_called()
+        assert service.health().market_rollover_count == 1
+        assert service.health().running is False
+        assert all(feed.run.await_count == 1 for feed in factory.feeds)
+
+    asyncio.run(exercise())
 
 
 def test_session_retries_discovery_but_blocks_decisions_while_unhealthy() -> None:

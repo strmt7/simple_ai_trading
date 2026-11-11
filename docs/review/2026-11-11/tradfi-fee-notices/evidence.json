@@ -1,0 +1,139 @@
+{
+  "account_requests": 0,
+  "calculation": {
+    "cancelled_planned_effective_utc": "2026-11-05T08:00:00+00:00",
+    "displayed_maker_fee_bps": "0.00",
+    "original_publish_utc": "2026-10-28T06:00:10.486000+00:00",
+    "original_reported_update_utc": "2026-11-04T06:00:00+00:00",
+    "superseding_notice_replaces_prospective_fee_change": true,
+    "superseding_publish_utc": "2026-11-04T06:00:00.784000+00:00",
+    "tiers": {
+      "Regular User": {
+        "cancelled_increase_bps_per_side": "0.00",
+        "cancelled_increase_bps_two_equal_notionals": "0.00",
+        "cancelled_taker_fee_bps": "4.00",
+        "retained_bnb_taker_fee_bps_as_displayed": "3.60",
+        "retained_taker_fee_bps": "4.00"
+      },
+      "VIP 1": {
+        "cancelled_increase_bps_per_side": "0.00",
+        "cancelled_increase_bps_two_equal_notionals": "0.00",
+        "cancelled_taker_fee_bps": "4.00",
+        "retained_bnb_taker_fee_bps_as_displayed": "3.60",
+        "retained_taker_fee_bps": "4.00"
+      },
+      "VIP 2": {
+        "cancelled_increase_bps_per_side": "0.00",
+        "cancelled_increase_bps_two_equal_notionals": "0.00",
+        "cancelled_taker_fee_bps": "3.20",
+        "retained_bnb_taker_fee_bps_as_displayed": "2.88",
+        "retained_taker_fee_bps": "3.20"
+      },
+      "VIP 3": {
+        "cancelled_increase_bps_per_side": "0.00",
+        "cancelled_increase_bps_two_equal_notionals": "0.00",
+        "cancelled_taker_fee_bps": "2.56",
+        "retained_bnb_taker_fee_bps_as_displayed": "2.30",
+        "retained_taker_fee_bps": "2.56"
+      },
+      "VIP 4": {
+        "cancelled_increase_bps_per_side": "0.30",
+        "cancelled_increase_bps_two_equal_notionals": "0.60",
+        "cancelled_taker_fee_bps": "1.80",
+        "retained_bnb_taker_fee_bps_as_displayed": "1.35",
+        "retained_taker_fee_bps": "1.50"
+      },
+      "VIP 5": {
+        "cancelled_increase_bps_per_side": "0.27",
+        "cancelled_increase_bps_two_equal_notionals": "0.54",
+        "cancelled_taker_fee_bps": "1.62",
+        "retained_bnb_taker_fee_bps_as_displayed": "1.22",
+        "retained_taker_fee_bps": "1.35"
+      },
+      "VIP 6": {
+        "cancelled_increase_bps_per_side": "0.25",
+        "cancelled_increase_bps_two_equal_notionals": "0.50",
+        "cancelled_taker_fee_bps": "1.50",
+        "retained_bnb_taker_fee_bps_as_displayed": "1.13",
+        "retained_taker_fee_bps": "1.25"
+      },
+      "VIP 7": {
+        "cancelled_increase_bps_per_side": "0.22",
+        "cancelled_increase_bps_two_equal_notionals": "0.44",
+        "cancelled_taker_fee_bps": "1.32",
+        "retained_bnb_taker_fee_bps_as_displayed": "0.99",
+        "retained_taker_fee_bps": "1.10"
+      },
+      "VIP 8": {
+        "cancelled_increase_bps_per_side": "0.20",
+        "cancelled_increase_bps_two_equal_notionals": "0.40",
+        "cancelled_taker_fee_bps": "1.20",
+        "retained_bnb_taker_fee_bps_as_displayed": "0.90",
+        "retained_taker_fee_bps": "1.00"
+      },
+      "VIP 9": {
+        "cancelled_increase_bps_per_side": "0.17",
+        "cancelled_increase_bps_two_equal_notionals": "0.34",
+        "cancelled_taker_fee_bps": "1.02",
+        "retained_bnb_taker_fee_bps_as_displayed": "0.77",
+        "retained_taker_fee_bps": "0.85"
+      }
+    }
+  },
+  "derivation_sha256": "a08a34156baa92ff492331882b0436828a732bfa6858f98b7956e22c820193d1",
+  "market_requests": 0,
+  "new_economic_observations": 0,
+  "orders": 0,
+  "protected_capture_touched": false,
+  "rank_43_economic_retry_trigger_satisfied_by_this_record": false,
+  "registry_rank": 5,
+  "result_sha256": "7ee766453dbda8ed5ef0d78ad64a85fb1d47d0a8f179f110c4dfe710970e61f5",
+  "schema_version": "binance-tradfi-fee-notice-supersession-v1",
+  "source_plan_frozen_utc": "2026-11-11T00:05:45.104997+00:00",
+  "sources": {
+    "original": {
+      "contract_sha256": "34f190e1fb1df07c9199e552808f53ddeb4b980844b5a038e02ba89e0825caaf",
+      "frozen_at_utc": "2026-11-11T00:05:43.894409Z",
+      "journal_sha256": "ec0fa5bf7fa579e26b272dffd212dd56bb79333b1d415ba714775e916560283e",
+      "native_receipt": {
+        "completed_at_ms": 1794355545943,
+        "error_type": null,
+        "oversize_body_is_truncated": false,
+        "phase": "completed",
+        "requested_at_ms": 1794355545619,
+        "response_bytes": 102702,
+        "response_sha256": "dee25b61d003d8564e6c431198db27de98b98048061899f22833366ced301d91",
+        "status_code": 200
+      },
+      "request": {
+        "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "count": 1,
+        "method": "GET",
+        "url": "https://www.binance.com/bapi/composite/v1/public/cms/article/detail/query?articleCode=4f406308840549ffb8fdaac9873c25a8"
+      },
+      "result_sha256": "efff75ae4aae7b0f08f5f0ec28e09e24438358211e78e4b516c29fd55f77d6d5"
+    },
+    "superseding": {
+      "contract_sha256": "6eb6184de1999872421f8384764a3892cbf1273a1bb373dbd816bc568ee53bda",
+      "frozen_at_utc": "2026-11-11T00:05:43.895947Z",
+      "journal_sha256": "468374e19fb09b73ef919071b1b853b2d44a2608210973a454375dcda386d68b",
+      "native_receipt": {
+        "completed_at_ms": 1794355546807,
+        "error_type": null,
+        "oversize_body_is_truncated": false,
+        "phase": "completed",
+        "requested_at_ms": 1794355546472,
+        "response_bytes": 94747,
+        "response_sha256": "bca195e4d75f6ab9ccb73570807166cff0e31b16d50c5e6ac99f918e3370b6f6",
+        "status_code": 200
+      },
+      "request": {
+        "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "count": 1,
+        "method": "GET",
+        "url": "https://www.binance.com/bapi/composite/v1/public/cms/article/detail/query?articleCode=e3424d3a781841eb8b507bc694c0ca3a"
+      },
+      "result_sha256": "2ef3d8635f09f9d6f73a2a71d83d4519108d7224173c2c32f1cd5792d7f90ee6"
+    }
+  }
+}

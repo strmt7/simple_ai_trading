@@ -11,6 +11,7 @@ from typing import Any
 
 from .polymarket import PolymarketFiveMinuteMarket, PolymarketPublicClient
 from .polymarket_capture_frame import CaptureFrameRecord
+from .polymarket_market_discovery import PolymarketOwnedMarketDiscovery
 from .polymarket_round21_binance_feed import (
     Round21BinancePublicFeedHealth,
     Round21BinancePublicSidecar,
@@ -70,6 +71,7 @@ class Round21RollingPublicDataService:
         *,
         public_client: PolymarketPublicClient,
         scorer: Round21ProspectiveScorer,
+        market_discovery: PolymarketOwnedMarketDiscovery | None = None,
         discovery_interval_seconds: float = 1.0,
         queue_capacity: int = 20_000,
         feed_factory: Callable[..., Round21PolymarketPublicFeed] | None = None,
@@ -100,6 +102,7 @@ class Round21RollingPublicDataService:
             raise TypeError("Round 21 rolling-session monotonic clock is invalid")
         self.public_client = public_client
         self.scorer = scorer
+        self._market_discovery = market_discovery
         self.discovery_interval_seconds = interval
         self.queue_capacity = capacity
         self._feed_factory = feed_factory or Round21PolymarketPublicFeed
@@ -211,14 +214,20 @@ class Round21RollingPublicDataService:
             raise TypeError("Round 21 rolling-session Binance sidecar differs")
         return sidecar
 
-    async def _discover(self, observed_at_ms: int) -> PolymarketFiveMinuteMarket:
-        markets = await asyncio.to_thread(
-            self.public_client.discover_five_minute_markets,
-            now_ms=observed_at_ms,
-            include_next=True,
-            require_all_assets=True,
-            assets=("BTC",),
-        )
+    async def _discover(self, observed_at_ms: int) -> PolymarketFiveMinuteMarket | None:
+        if self._market_discovery is not None:
+            market = self._market_discovery.current_market(observed_at_ms)
+            if market is None:
+                return None
+            markets = (market,)
+        else:
+            markets = await asyncio.to_thread(
+                self.public_client.discover_five_minute_markets,
+                now_ms=observed_at_ms,
+                include_next=True,
+                require_all_assets=True,
+                assets=("BTC",),
+            )
         if any(
             market.asset != "BTC" or market.horizon_minutes != 5 for market in markets
         ):
@@ -297,7 +306,12 @@ class Round21RollingPublicDataService:
     ) -> None:
         stopping = asyncio.create_task(stop.wait())
         interval = asyncio.create_task(asyncio.sleep(self.discovery_interval_seconds))
-        tasks: set[asyncio.Task[Any]] = {stopping, interval}
+        waiters: set[asyncio.Task[Any]] = {stopping, interval}
+        if self._market_discovery is not None:
+            waiters.add(
+                asyncio.create_task(self._market_discovery.wait_for_publication())
+            )
+        tasks = set(waiters)
         if feed_task is not None:
             tasks.add(feed_task)
         try:
@@ -310,10 +324,10 @@ class Round21RollingPublicDataService:
                 if not stop.is_set():
                     raise RuntimeError("Round 21 public feed returned unexpectedly")
         finally:
-            for task in (stopping, interval):
+            for task in waiters:
                 if not task.done():
                     task.cancel()
-            await asyncio.gather(stopping, interval, return_exceptions=True)
+            await asyncio.gather(*waiters, return_exceptions=True)
 
     async def _run_polymarket(self, stop: asyncio.Event) -> None:
         feed: Round21PolymarketPublicFeed | None = None
@@ -331,6 +345,13 @@ class Round21RollingPublicDataService:
                     raise
                 except Exception as exc:
                     self._record_discovery_failure(exc)
+                    await self._wait_iteration(stop, feed_task)
+                    continue
+                if stop.is_set():
+                    break
+                if market is None:
+                    with self._lock:
+                        self._discovery_healthy = False
                     await self._wait_iteration(stop, feed_task)
                     continue
                 self._record_discovery_success()

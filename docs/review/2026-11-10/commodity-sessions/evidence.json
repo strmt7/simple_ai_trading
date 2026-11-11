@@ -1,0 +1,72 @@
+{
+  "base_head": "652988131c58b9682e30d34d2d2402aedf7a570c",
+  "calculation": {
+    "article": {
+      "code": "f69c05ebdba7422e9c614685abe84dc5",
+      "effective_utc": "2026-09-15T21:00:00+00:00",
+      "id": 284483,
+      "publish_utc": "2026-09-15T02:15:58.627000+00:00",
+      "response_bytes": 45030,
+      "response_sha256": "2f90231b6a819c33fff0c5bbb16d68a91c39f9e0714cf340861e0b0db1ac5562",
+      "updated_utc": "2026-09-15T06:05:00+00:00",
+      "version": "1"
+    },
+    "constructed_per_unit_usdt": {
+      "all_in_cost": 3,
+      "call_assuming_equal_exit": 7,
+      "call_at_constructed_exit": -1,
+      "long_entry_ask": 90,
+      "long_exit_bid": 92,
+      "put_assuming_equal_exit": 7,
+      "put_at_constructed_exit": -1,
+      "settlement_and_strike": 100,
+      "short_entry_bid": 110,
+      "short_exit_ask": 108
+    },
+    "constructed_regular_weekend_utc": {
+      "elapsed_hours": 50,
+      "next_friday_switch_to_ewma": "2026-11-06T22:00:00+00:00",
+      "switch_to_ewma": "2026-10-30T21:00:00+00:00",
+      "switch_to_standard": "2026-11-01T23:00:00+00:00"
+    }
+  },
+  "derivation_sha256": "27d48ae3b85b7a9538501d8afa5537d9551611f871a07e4e5255c328906d4437",
+  "market_capture_authorized_by_this_record": false,
+  "new_economic_observations": 0,
+  "rank": 40,
+  "result_sha256": "46a0f6aecaf3756170ebc1b519dce67492ce95fe14930003eb3516f329b59950",
+  "schema_version": "binance-commodity-perpetual-session-basis-v1",
+  "side_specific_executable_basis_bound_proved": false,
+  "source": {
+    "authority": {
+      "account_requests": 0,
+      "credentials_used": false,
+      "funds_used": false,
+      "orders_or_transactions": 0,
+      "protected_capture_touched": false,
+      "public_unauthenticated_read_only_requests": 1,
+      "signed_requests": 0,
+      "trading_authority": false
+    },
+    "contract_sha256": "160cbb671c6bf50e6789efa61a1df36434c943d40c155ea2210a42ddc3591f44",
+    "frozen_at_utc": "2026-11-10T23:53:21.492379Z",
+    "journal_sha256": "3962de03ef12e1261d9279cf0fceda6312735b2d2e7664cf787476685c3ad655",
+    "native_receipt": {
+      "completed_at_ms": 1794354802976,
+      "error_type": null,
+      "oversize_body_is_truncated": false,
+      "phase": "completed",
+      "requested_at_ms": 1794354802630,
+      "response_bytes": 45030,
+      "response_sha256": "2f90231b6a819c33fff0c5bbb16d68a91c39f9e0714cf340861e0b0db1ac5562",
+      "status_code": 200
+    },
+    "request": {
+      "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "count": 1,
+      "method": "GET",
+      "url": "https://www.binance.com/bapi/composite/v1/public/cms/article/detail/query?articleCode=f69c05ebdba7422e9c614685abe84dc5"
+    },
+    "result_sha256": "3f61d41db8d6dcc44d431ff37d72144336c7e19d20595b99c7034b014a49fb7e"
+  }
+}

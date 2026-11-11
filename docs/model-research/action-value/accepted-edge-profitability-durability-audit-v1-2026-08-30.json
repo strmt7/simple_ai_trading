@@ -158,7 +158,7 @@
       "why_not_stable_deployable": "Current rate remains conflict-qualified rather than proven, the evidence is from public wallets rather than the owned account, every external friction and best alternative is not bound, and future persistence is not guaranteed."
     }
   },
-  "result_sha256": "dd0be16965c9452f51e837fe8da736953c151ad93ed2ce6518ab1208ab95d19f",
+  "result_sha256": "91b5a0e1418fad7abd084ff2e6d732ed98a8bfdd045eae85bed5c4f96f892218",
   "routing": {
     "october8_9_nfl_total_ladder_resource_failure": {
       "status": "terminal_resource_unqualified_no_price_evaluation",
@@ -342,7 +342,7 @@
   "source_binding": {
     "accepted_edge_count": 37,
     "registry_path": "docs/model-research/structural-edge-priority-registry-v1.json",
-    "registry_result_sha256": "7fdd57c5bfc9341c565e58f47eeeb8c0a7bde17774585e72a9002d08b485e36d",
+    "registry_result_sha256": "8589fec4ebceafcafc1943fbf205379bf1b1e6ee62d88464248a1d724448efcc",
     "registry_metadata_partition_certificate": {
       "path": "docs/review/2026-11-10/partition-cover-certificate/result.json",
       "result_sha256": "6055b166a789e97e47d13adecbfc1e885c03cca6030a596de9aaa6fb5a80ae71",
@@ -363,7 +363,25 @@
       "result_sha256": "cda0c8e387ccaa6fe8fc4fdb9c0090af17cbc31a8cb1ed6bb808a698a21f8fa8",
       "classification": "Historical source reconciliation only. The estimate and later Special Funding Fee refer to the same earlier net position. Actual cash, sign, FX and counterpart rules remain unqualified.",
       "economic_capture_authorized": false
+    },
+    "registry_metadata_commodity_perpetual_session_basis": {
+      "path": "docs/review/2026-11-10/commodity-sessions/evidence.json",
+      "result_sha256": "46a0f6aecaf3756170ebc1b519dce67492ce95fe14930003eb3516f329b59950",
+      "classification": "Historical clearing notice binds the commodity perpetual index-mode switch. It does not establish the option payout sample, an executable exit basis bound or current inventory.",
+      "market_capture_authorized_by_this_record": false
+    },
+    "registry_metadata_tradfi_fee_notice_supersession": {
+      "path": "docs/review/2026-11-11/tradfi-fee-notices/evidence.json",
+      "result_sha256": "7ee766453dbda8ed5ef0d78ad64a85fb1d47d0a8f179f110c4dfe710970e61f5",
+      "classification": "The publisher withdrew the 40% VIP 4-9 taker discount proposal before it could replace 50%. No change to the prior effective advertised schedule and no new economic population.",
+      "new_economic_observations": 0
+    },
+    "registry_metadata_november_bstock_dividend_source_gate": {
+      "path": "docs/review/2026-11-11/bstock-distribution/evidence.json",
+      "result_sha256": "d9630bbdd152b7521d36d026b6c827800c007c45a2f0d99223534f78687bc2ec",
+      "classification": "Frozen publisher page failed HTTP/content admission. No current shared entitlement or floor was admitted for the four candidate siblings.",
+      "new_economic_observations": 0
     }
   },
-  "updated_at_utc": "2026-11-10T23:46:22.100712+00:00"
+  "updated_at_utc": "2026-11-11T00:13:04.172031+00:00"
 }

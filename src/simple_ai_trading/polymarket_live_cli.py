@@ -12,7 +12,7 @@ from pathlib import Path
 import sys
 import time
 from types import SimpleNamespace
-from typing import Mapping
+from typing import Mapping, TYPE_CHECKING
 
 from .polymarket_live import (
     PolymarketLiveBlocked,
@@ -48,6 +48,9 @@ from .polymarket_runtime_control import (
     PolymarketRuntimeControlService,
     PolymarketRuntimeLeaseInterlock,
 )
+
+if TYPE_CHECKING:
+    from .polymarket_market_discovery import PolymarketOwnedMarketDiscovery
 
 
 DEFAULT_POLYMARKET_LIVE_LEDGER = Path("data/polymarket/live-ownership.sqlite3")
@@ -719,6 +722,7 @@ def _build_autonomous_decision_stack(
     *,
     components: SimpleNamespace,
     public_client: object,
+    market_discovery: PolymarketOwnedMarketDiscovery,
     promotion: object,
     round16_contract: object,
     pretest_envelope_sha256: object,
@@ -733,6 +737,7 @@ def _build_autonomous_decision_stack(
     if policy.market_variant == "fiveminute":
         stack = components.build_polymarket_round21_runtime_stack(
             public_client=public_client,
+            market_discovery=market_discovery,
             promotion=promotion,
             requested_quantity=requested_quantity,
             risk_level=risk_level,
@@ -921,10 +926,14 @@ async def _autonomous(
     settlement_venue: OfficialPolymarketUnifiedRedemptionVenue | None = None
     started = time.monotonic()
     try:
+        from .polymarket_market_discovery import PolymarketOwnedMarketDiscovery
+
+        market_discovery = PolymarketOwnedMarketDiscovery()
         public_client = components.PolymarketPublicClient()
         predictor_feed, decision_provider = _build_autonomous_decision_stack(
             components=components,
             public_client=public_client,
+            market_discovery=market_discovery,
             promotion=promotion,
             round16_contract=round16_contract,
             pretest_envelope_sha256=pretest_envelope_sha256,
@@ -970,8 +979,6 @@ async def _autonomous(
             automatic_redemption_enabled=automatic_redemption,
             interval_seconds=max(5.0, interval),
         )
-        from .polymarket_market_discovery import PolymarketOwnedMarketDiscovery
-
         supervisor = components.PolymarketAutonomousSupervisor(
             public_client=public_client,
             coordinator=coordinator,
@@ -986,7 +993,7 @@ async def _autonomous(
             risk_level=risk_level,
             settlement=settlement,
             decision_data_service=predictor_feed,
-            market_discovery=PolymarketOwnedMarketDiscovery(),
+            market_discovery=market_discovery,
             durable_control_service=PolymarketRuntimeControlService(
                 runtime_control,
                 lease_id=runtime_lease,

@@ -95,6 +95,8 @@ def test_owned_discovery_admits_only_bound_public_reply(
     assert markets is not None and len(markets) == 1
     assert markets[0].event_start_ms == epoch * 1_000
     assert markets[0].asset == "BTC" and markets[0].slug == payload_factory()["slug"]
+    assert worker.current_market(epoch * 1_000) is markets[0]
+    assert worker.current_market(markets[0].end_ms) is None
 
 
 def test_owned_discovery_deadline_reaps_hung_child(monkeypatch) -> None:

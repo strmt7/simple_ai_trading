@@ -1329,6 +1329,7 @@ def test_autonomous_requires_explicit_positive_risk_capital() -> None:
 
 def test_five_minute_autonomous_stack_does_not_require_round16_pins() -> None:
     public_client = object()
+    market_discovery = PolymarketOwnedMarketDiscovery()
     promotion = SimpleNamespace(promotion=SimpleNamespace(market_variant="fiveminute"))
     data_service = object()
     decision_provider = object()
@@ -1341,6 +1342,7 @@ def test_five_minute_autonomous_stack_does_not_require_round16_pins() -> None:
             if kwargs
             == {
                 "public_client": public_client,
+                "market_discovery": market_discovery,
                 "promotion": promotion,
                 "requested_quantity": Decimal("2.5"),
                 "risk_level": "aggressive",
@@ -1355,6 +1357,7 @@ def test_five_minute_autonomous_stack_does_not_require_round16_pins() -> None:
     actual = live_cli._build_autonomous_decision_stack(
         components=components,
         public_client=public_client,
+        market_discovery=market_discovery,
         promotion=promotion,
         round16_contract=None,
         pretest_envelope_sha256=None,
