@@ -51,6 +51,15 @@ def request(self, method, endpoint, *, headers=None, data=None, params=None):
         error = module.PolyApiException(error_msg={"error": "offline rejection"})
         error.status_code = 422
         raise error
+    if mode == "public":
+        if endpoint.endswith("/version"):
+            return {"version": 2}
+        if endpoint.endswith("/time"):
+            return int(time.time() * 1000)
+        if endpoint.endswith("/api/geoblock"):
+            return {"blocked": False, "country": "XX", "region": ""}
+        if endpoint.endswith("/positions"):
+            return []
     return {
         "method": method,
         "endpoint": endpoint,
@@ -77,8 +86,7 @@ module._worker(int(sys.argv[2]))
 """
 
 
-@pytest.fixture
-def harness(tmp_path, monkeypatch):
+def make_http_process_harness(tmp_path, monkeypatch):
     ast.parse(_SCRIPT)
     children = []
     native_popen = module.subprocess.Popen
@@ -91,12 +99,14 @@ def harness(tmp_path, monkeypatch):
     monkeypatch.setattr(module.subprocess, "Popen", launch)
     monkeypatch.setenv("HTTP_WORKER_TEST_SECRET", "synthetic sentinel")
 
-    def create(mode="normal", timeout=0.4):
-        worker = module.PolymarketHttpProcess(
-            base_url=CLOB_BASE_URL,
-            timeout_seconds=timeout,
-            maximum_response_bytes=4096,
-        )
+    def create(mode="normal", timeout=0.4, *, worker=None, **settings):
+        if worker is None:
+            worker = module.PolymarketHttpProcess(
+                base_url=CLOB_BASE_URL,
+                timeout_seconds=timeout,
+                maximum_response_bytes=4096,
+                **settings,
+            )
         command = worker._command
         marker = tmp_path / f"{mode}-{len(children)}.calls"
         monkeypatch.setattr(
@@ -113,6 +123,11 @@ def harness(tmp_path, monkeypatch):
         return worker, marker
 
     return create, children
+
+
+@pytest.fixture
+def harness(tmp_path, monkeypatch):
+    return make_http_process_harness(tmp_path, monkeypatch)
 
 
 def test_one_child_preserves_individual_requests_without_replay(harness):

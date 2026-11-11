@@ -2,9 +2,10 @@
 
 from __future__ import annotations
 
-from contextlib import suppress
+from contextlib import ExitStack, suppress
 import hashlib
 import json
+import math
 import os
 from pathlib import Path
 import signal
@@ -74,6 +75,34 @@ def _receive(connection, maximum_bytes, *, deadline=None):
     return sequence, _decode(body)
 
 
+def _origin_key(value: str) -> str:
+    url = httpx.URL(value)
+    if (
+        url.scheme not in {"http", "https"}
+        or not url.host
+        or url.userinfo
+        or url.fragment
+    ):
+        raise ValueError("HTTP worker origin is invalid")
+    return str(url.copy_with(path="/", query=None, fragment=None))
+
+
+def _public_endpoints(values, origins, public_only):
+    if not isinstance(values, (list, tuple)) or len(values) > 32:
+        raise ValueError("HTTP public endpoint policy is invalid")
+    if bool(values) != public_only:
+        raise ValueError("HTTP public endpoint policy differs from its role")
+    output = set()
+    for value in values:
+        if not isinstance(value, str):
+            raise ValueError("HTTP public endpoint is invalid")
+        url = httpx.URL(value)
+        if _origin_key(value) not in origins or url.query:
+            raise ValueError("HTTP public endpoint exceeds its origin policy")
+        output.add(str(url))
+    return frozenset(output)
+
+
 class PolymarketHttpProcess:
     """Own one persistent HTTP child and serialize bounded individual exchanges.
 
@@ -83,12 +112,29 @@ class PolymarketHttpProcess:
     This is process containment, not a credential-security sandbox.
     """
 
-    def __init__(self, *, base_url, timeout_seconds, maximum_response_bytes):
+    def __init__(
+        self,
+        *,
+        base_url: str,
+        timeout_seconds: float,
+        maximum_response_bytes: int,
+        additional_origins: tuple[str, ...] = (),
+        public_only: bool = False,
+        allowed_endpoints: tuple[str, ...] = (),
+    ):
+        origins = tuple(
+            dict.fromkeys(_origin_key(url) for url in (base_url, *additional_origins))
+        )
+        if not 1 <= len(origins) <= 8 or type(public_only) is not bool:
+            raise ValueError("HTTP worker origin policy is invalid")
+        endpoints = _public_endpoints(allowed_endpoints, origins, public_only)
         self._timeout = timeout_seconds
         self._maximum_reply = 6 * maximum_response_bytes + 16 * 1024
         self._bootstrap = _encode(
             {
-                "base_url": base_url,
+                "base_urls": origins,
+                "public_only": public_only,
+                "allowed_endpoints": sorted(endpoints),
                 "timeout_seconds": timeout_seconds,
                 "maximum_response_bytes": maximum_response_bytes,
             },
@@ -233,8 +279,25 @@ class PolymarketHttpProcess:
         headers: Mapping[str, str] | None = None,
         data: object = None,
         params: Mapping[str, object] | None = None,
+        deadline: float | None = None,
     ) -> object:
-        deadline = monotonic() + self._timeout
+        now = monotonic()
+        if deadline is not None and (
+            isinstance(deadline, bool)
+            or not isinstance(deadline, (int, float))
+            or not math.isfinite(deadline)
+        ):
+            raise ValueError("HTTP caller deadline is invalid")
+        deadline = (
+            min(now + self._timeout, deadline)
+            if deadline is not None
+            else now + self._timeout
+        )
+        budget = deadline - now
+        if budget <= 0:
+            raise PolyApiException(
+                error_msg="SDK response deadline exceeded before dispatch"
+            )
         # Use the pinned native query encoder before JSON IPC. Decimal, bool,
         # null and repeated values must retain HTTPX's exact wire semantics.
         query = httpx.QueryParams(params) if params is not None else None
@@ -253,7 +316,7 @@ class PolymarketHttpProcess:
             },
             _MAX_REQUEST_BYTES,
         )
-        if not self._exchange.acquire(timeout=min(self._timeout, TIMEOUT_MAX)):
+        if not self._exchange.acquire(timeout=min(budget, TIMEOUT_MAX)):
             raise PolyApiException(error_msg="SDK transport capacity deadline exceeded")
         try:
             try:
@@ -310,13 +373,38 @@ def _worker(descriptor):
     with connection:
         configuration = _decode(bootstrap)
         if not isinstance(configuration, dict) or set(configuration) != {
-            "base_url",
+            "base_urls",
+            "public_only",
+            "allowed_endpoints",
             "timeout_seconds",
             "maximum_response_bytes",
         }:
             raise ValueError("HTTP bootstrap fields differ")
-        transport = _InlineSdkTransport(**configuration)
-        try:
+        origins = configuration["base_urls"]
+        public_only = configuration["public_only"]
+        if (
+            not isinstance(origins, list)
+            or not 1 <= len(origins) <= 8
+            or type(public_only) is not bool
+            or any(
+                not isinstance(url, str) or _origin_key(url) != url for url in origins
+            )
+            or len(set(origins)) != len(origins)
+        ):
+            raise ValueError("HTTP bootstrap origin policy differs")
+        endpoints = _public_endpoints(
+            configuration["allowed_endpoints"], origins, public_only
+        )
+        with ExitStack() as owned:
+            transports = {}
+            for origin in origins:
+                transport = _InlineSdkTransport(
+                    base_url=origin,
+                    timeout_seconds=configuration["timeout_seconds"],
+                    maximum_response_bytes=configuration["maximum_response_bytes"],
+                )
+                owned.callback(transport.close)
+                transports[origin] = transport
             maximum_reply = 6 * configuration["maximum_response_bytes"] + 16 * 1024
             connection.sendall(hashlib.sha256(bootstrap).digest())
             del bootstrap, configuration
@@ -335,6 +423,21 @@ def _worker(descriptor):
                 }:
                     raise ValueError("HTTP request fields differ")
                 deadline = request.pop("deadline")
+                transport = transports.get(_origin_key(request["endpoint"]))
+                if (
+                    transport is None
+                    or public_only
+                    and (
+                        request["method"] != "GET"
+                        or request["headers"]
+                        or request["data"] is not None
+                        or str(httpx.URL(request["endpoint"]).copy_with(query=None))
+                        not in endpoints
+                    )
+                ):
+                    raise ValueError(
+                        "HTTP request exceeds its origin or public-read policy"
+                    )
                 try:
                     if monotonic() >= deadline:
                         raise PolyApiException(
@@ -354,8 +457,6 @@ def _worker(descriptor):
                 body = _encode(reply, maximum_reply)
                 connection.sendall(_HEADER.pack(sequence, len(body)) + body)
                 del request, reply, body
-        finally:
-            transport.close()
 
 
 if __name__ == "__main__":

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import math
 from time import monotonic
-from typing import Mapping
+from typing import Mapping, Sequence
 
 import httpx
 from py_clob_client_v2.exceptions import PolyApiException
@@ -77,6 +77,53 @@ class PolymarketSdkTransport:
         return self._client.request(
             method, endpoint, headers=headers, data=data, params=params
         )
+
+    def close(self) -> None:
+        self._client.close()
+
+
+class PolymarketPublicReadTransport:
+    """Read an explicit endpoint set through one credential-free HTTP child."""
+
+    def __init__(
+        self,
+        *,
+        allowed_endpoints: Sequence[str],
+        timeout_seconds: float,
+        maximum_response_bytes: int,
+    ) -> None:
+        from .polymarket_http_process import PolymarketHttpProcess, _origin_key
+
+        timeout = _limits(timeout_seconds, maximum_response_bytes)
+        endpoints = tuple(httpx.URL(url) for url in allowed_endpoints)
+        if not 1 <= len(endpoints) <= 32:
+            raise ValueError("Public HTTP endpoint policy is invalid")
+        origins = tuple(dict.fromkeys(_origin_key(str(url)) for url in endpoints))
+        self._allowed = frozenset(str(url.copy_with(query=None)) for url in endpoints)
+        self._client = PolymarketHttpProcess(
+            base_url=origins[0],
+            additional_origins=origins[1:],
+            public_only=True,
+            allowed_endpoints=tuple(sorted(self._allowed)),
+            timeout_seconds=timeout,
+            maximum_response_bytes=maximum_response_bytes,
+        )
+
+    def get_json(
+        self,
+        endpoint: str,
+        *,
+        params: Mapping[str, object] | None = None,
+        deadline: float | None = None,
+    ) -> object:
+        url = httpx.URL(endpoint)
+        if (
+            url.userinfo
+            or url.fragment
+            or str(url.copy_with(query=None)) not in self._allowed
+        ):
+            raise ValueError("Public HTTP endpoint is not admitted")
+        return self._client.request("GET", endpoint, params=params, deadline=deadline)
 
     def close(self) -> None:
         self._client.close()

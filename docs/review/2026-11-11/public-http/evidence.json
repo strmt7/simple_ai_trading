@@ -1,0 +1,127 @@
+{
+  "base_revision": "93265124821b3fd7ccf33506fc485a217e2ecd00",
+  "evidence_sha256": "472f05a8a948bc587303bfeef3afe78d2958214d90273048833e6abd1ae53d93",
+  "financial_frontier": {
+    "both_present": false,
+    "consumed_financial_study_reopened": false,
+    "mainnet_carry_required_environment_variables_checked_for_presence_only": true,
+    "negative_risk_material_trigger_newly_established": false
+  },
+  "navigation": {
+    "current_index_freshness_claim": false,
+    "method": "exact known HTTP, V2 adapter, preflight, position and test symbols; current source and diff reviewed",
+    "new_broad_navigation": false
+  },
+  "schema_version": "polymarket-owned-public-http-v1",
+  "scope": {
+    "authenticated_account_requests": 0,
+    "background_service_or_schedule_created": false,
+    "external_venue_requests": 0,
+    "independent_trading_gateway_complete": false,
+    "injected_session_native_containment_qualified": false,
+    "new_economic_observations": 0,
+    "orders": 0,
+    "ordinary_v2_sdk_and_public_http_contained": true,
+    "other_clients_and_streams_qualified": false,
+    "parent_signing_contained": false,
+    "performance_benchmark": false,
+    "posix_execution_verified": false,
+    "protected_capture_touched": false,
+    "qualified_stable_edges": 0,
+    "remote_dispatch_source_fencing_complete": false,
+    "whole_repository_review_complete": false,
+    "windows_native_children_verified": true
+  },
+  "verification": {
+    "caller_shorter_deadline_reaps_stalled_read": true,
+    "child_get_only_no_caller_headers_or_body_verified": true,
+    "default_four_endpoint_three_origin_preflight_uses_one_public_child": true,
+    "entry_bytes": 16363,
+    "expired_or_invalid_budget_starts_no_child": true,
+    "final_affected_domain_passed": 316,
+    "initial_failure": "one new preflight fixture omitted fake SDK closed-only and open-order methods; production guards preserved",
+    "parent_and_child_exact_endpoint_policy_verified": true,
+    "phases": {
+      "corrected": {
+        "json_sha256": "880e0a73833e0c8a83400a056b65599cd5febee0fd5e073d982a7c36b5a1a2a7",
+        "returncode": 0,
+        "source_zip_sha256": "22e5d885f013ff3f7a23403f001a77933d1475cec4826f9dc6f95d55b46c16aa",
+        "stderr_log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout_log_sha256": "40c6cff0348a63f5d75c0b2fd331bbe45e9dd0b67348d1ed99bfb378eb357af5",
+        "summary": "54 passed in 30.33s",
+        "unchanged_after_test": true
+      },
+      "domain": {
+        "json_sha256": "57be1b5c14f0551b7516f701c85ab0c3638e111c2b02b76157a789be16378d18",
+        "returncode": 0,
+        "source_zip_sha256": "fc8eeea68652e73ceafe14ed9e6282e9a407545fe4b5f9aaee6f42b527d8c999",
+        "stderr_log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout_log_sha256": "5d77e7ccb2520eb54688c05da50b5ae5d25cb84b7009a8a47af2aab35fdf21fa",
+        "summary": "316 passed in 72.80s (0:01:12)",
+        "unchanged_after_test": true
+      },
+      "focused": {
+        "json_sha256": "2dd50e3b4c4df74e55124cd5209e7e304de7cf4a992a416d873ee226bef0c6c7",
+        "returncode": 1,
+        "source_zip_sha256": "1e045deedbb3ec9ef1359296a14cf496f5e3e492ffa5b796134d15c776c49bdb",
+        "stderr_log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout_log_sha256": "87d4509019aa8c168673cefe101063513273853ca88ef4a2f6f2624d372b564c",
+        "summary": "1 failed, 52 passed in 36.85s",
+        "unchanged_after_test": true
+      }
+    },
+    "position_deadline_phases": [
+      "network_delivery",
+      "materialization"
+    ],
+    "sdk_signed_serialization_unknown_and_close_domain_preserved": true,
+    "semantic_review": [
+      "default factory and explicit injected-session separation",
+      "exact endpoint and origin policy bound to bootstrap",
+      "read-only child capability versus authenticated SDK worker",
+      "request/caller budget and queue expiry",
+      "one total position query deadline and no partial flatness",
+      "time request midpoint scope",
+      "native client ownership with ExitStack cleanup",
+      "unchanged UNKNOWN/order authority and no replay",
+      "optional dependency setup failure and construction teardown"
+    ],
+    "shared_fixture_factory_reused_without_global_plugin_registration": true,
+    "static": {
+      "ruff-check": {
+        "returncode": 0,
+        "stdout_sha256": "a4443afdcfb6d7363adb285762515ccf7cf50473b1a05c20c1a50f6bed4d26b0"
+      },
+      "ruff-format": {
+        "returncode": 0,
+        "stdout_sha256": "f57152af69ed696672a20f7a07dc500ce85005053092505a680768f611957e48"
+      }
+    },
+    "test_modules": [
+      "tests/test_polymarket_public_transport.py",
+      "tests/test_polymarket_http_process.py",
+      "tests/test_polymarket_sdk_transport.py",
+      "tests/test_polymarket_live_v2.py",
+      "tests/test_polymarket_live.py",
+      "tests/test_polymarket_autonomous_runtime.py",
+      "tests/test_polymarket_live_cli.py"
+    ],
+    "tested_source_sha256": {
+      "src/simple_ai_trading/polymarket_autonomous_runtime.py": "f2cb5e229cbc81198b045efdc05dfaf5b6104f26a6bab4347b574d756b59e46a",
+      "src/simple_ai_trading/polymarket_http_process.py": "d16d1f51ee6c8ae3cce554f716dc56f16f4044247d320e7d149ad8956de5bfa1",
+      "src/simple_ai_trading/polymarket_inference_process.py": "6b552c656f5d5ecf2ab3470e933d4ae699bcfb109ec62792f4ff90b2abbda9e6",
+      "src/simple_ai_trading/polymarket_live.py": "24bc60beb1b2b843e46187c309f9beeafd425af6fea03c2730f7f1e1642ba7ca",
+      "src/simple_ai_trading/polymarket_live_v2.py": "f958deb7ad0ffce1af87a0612b998b9f133ee127fe7d1a56b54390cd1c4189ec",
+      "src/simple_ai_trading/polymarket_sdk_transport.py": "99cb719c4b1fe3a77436797983e0fbf8eaf577b77b1fcf4ef3e0f07d8a71f985",
+      "src/simple_ai_trading/windows_owned_job.py": "82dd0e80340c8388f20d6871863fdf5075d4f271d0c7fe9276a295db962f05ae",
+      "tests/test_polymarket_autonomous_runtime.py": "7f48e1e2e869770725c5e3961ad6c7943cc89cc860586681728a54b4eca77793",
+      "tests/test_polymarket_http_process.py": "f2931d7cce502aa0957dcdd53389fce46bc50e0510bc4435beaeb96033c144a3",
+      "tests/test_polymarket_live.py": "e03984e12ad59cdaf44f8a23dc209e05b7955d005d11296720940217c70a5655",
+      "tests/test_polymarket_live_cli.py": "957096d23918201163e2c092a2056d4d526db2914b87bd468cc3b1b9c59542c1",
+      "tests/test_polymarket_live_v2.py": "9ff1aa18f72d1b7995e0b84ea4b63dd21d314f4e9c0d90d5ef9fed84d5fb1a39",
+      "tests/test_polymarket_public_transport.py": "d4ac2c9cfe3c275954f536d468bc0ba27e2b6464a5544f88e9d822e0afd786b1",
+      "tests/test_polymarket_sdk_transport.py": "8fba403828f9105c8b326d0136558e5e82372e268f7843d91acc9864611299b8"
+    },
+    "version_latency_excluded_from_clock_midpoint": true
+  }
+}

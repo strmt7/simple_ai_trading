@@ -76,10 +76,10 @@ before continuing an affected family. None supplies a qualified stable edge.
   checks configured allocation against funding plus owned basis. Shortfall
   blocks further openings for the session; owned reduction uses separate authority.
 - [Stop recovery](review/2026-11-10/stop-recovery/review.md) preserves authenticated
-  services for owned closing. [SDK HTTP containment](review/2026-11-11/http-process/review.md)
-  bounds native SDK HTTP calls in an owned child without request replay. Public
-  requests, signing, independent gateway supervision and crash/reboot acceptance
-  remain incomplete.
+  services for owned closing. [Venue HTTP containment](review/2026-11-11/public-http/review.md)
+  covers ordinary V2 SDK/public reads without request replay; position pagination
+  shares one deadline. Signing, independent gateway supervision and crash/reboot
+  acceptance remain incomplete.
 
 ## Models, supervision and operator
 

@@ -12,11 +12,9 @@ import os
 import re
 from threading import Lock
 import time
-from typing import Mapping, Sequence
+from typing import TYPE_CHECKING, Mapping, Sequence
 
 import requests
-from requests.adapters import HTTPAdapter
-from urllib3.util.retry import Retry
 
 from .polymarket import CLOB_BASE_URL, POLYMARKET_REQUIRED_CLOB_PROTOCOL_VERSION
 from .polymarket_live import (
@@ -36,6 +34,9 @@ from .polymarket_live import (
     PolymarketVenueTemporarilyUnavailable,
 )
 from .polymarket_fees import PolymarketFeeModel
+
+if TYPE_CHECKING:
+    from .polymarket_sdk_transport import PolymarketPublicReadTransport
 
 
 POLYMARKET_LIVE_SDK_VERSION = "1.2.1"
@@ -126,27 +127,27 @@ class PolymarketLiveCredentials:
         )
 
 
-def _public_session() -> requests.Session:
-    retry = Retry(
-        total=2,
-        connect=2,
-        read=2,
-        status=2,
-        backoff_factor=0.25,
-        status_forcelist=(429, 500, 502, 503, 504),
-        allowed_methods=frozenset({"GET"}),
-        respect_retry_after_header=True,
-        raise_on_status=False,
+def _public_session(
+    *,
+    timeout_seconds: float,
+    maximum_response_bytes: int,
+) -> PolymarketPublicReadTransport:
+    try:
+        from .polymarket_sdk_transport import PolymarketPublicReadTransport
+    except ImportError as exc:
+        raise RuntimeError(
+            "Polymarket live execution requires the 'polymarket-live' extra"
+        ) from exc
+    return PolymarketPublicReadTransport(
+        allowed_endpoints=(
+            f"{CLOB_BASE_URL}/version",
+            f"{CLOB_BASE_URL}/time",
+            POLYMARKET_GEOBLOCK_URL,
+            POLYMARKET_DATA_POSITIONS_URL,
+        ),
+        timeout_seconds=timeout_seconds,
+        maximum_response_bytes=maximum_response_bytes,
     )
-    session = requests.Session()
-    session.headers.update(
-        {"User-Agent": "simple-ai-trading/0.1.0-beta.1 polymarket-live-preflight"}
-    )
-    session.mount(
-        "https://",
-        HTTPAdapter(max_retries=retry, pool_connections=4, pool_maxsize=4),
-    )
-    return session
 
 
 def _mapping(value: object, *, name: str) -> Mapping[str, object]:
@@ -193,7 +194,15 @@ class OfficialPolymarketV2Venue:
         self.credentials = credentials
         self.timeout_seconds = max(1.0, min(30.0, float(timeout_seconds)))
         self.maximum_response_bytes = 8 * 1024 * 1024
-        self.session = session or _public_session()
+        self._uses_owned_public_reader = session is None
+        self.session = (
+            session
+            if session is not None
+            else _public_session(
+                timeout_seconds=self.timeout_seconds,
+                maximum_response_bytes=self.maximum_response_bytes,
+            )
+        )
         try:
             self._client = client or self._build_client()
         except BaseException:
@@ -313,22 +322,33 @@ class OfficialPolymarketV2Venue:
         url: str,
         *,
         params: Mapping[str, object] | None = None,
+        deadline: float | None = None,
     ) -> object:
+        if self._uses_owned_public_reader:
+            return self.session.get_json(url, params=params, deadline=deadline)
+        # Explicitly injected sessions retain their offline integration seam.
+        timeout = self.timeout_seconds
+        if deadline is not None:
+            timeout = min(timeout, deadline - time.monotonic())
+            if timeout <= 0:
+                raise TimeoutError("Polymarket public read deadline exceeded")
         response = self.session.get(
             url,
             params=params,
-            timeout=self.timeout_seconds,
+            timeout=timeout,
         )
         response.raise_for_status()
         if len(response.content) > self.maximum_response_bytes:
             raise ValueError("Polymarket public response exceeded the bounded size")
         try:
-            return response.json()
+            payload = response.json()
         except requests.JSONDecodeError as exc:
             raise ValueError("Polymarket public response was not JSON") from exc
+        if deadline is not None and time.monotonic() >= deadline:
+            raise TimeoutError("Polymarket public read deadline exceeded")
+        return payload
 
     def _protocol_and_time(self) -> tuple[int, int, int]:
-        started = int(time.time() * 1_000)
         version_payload = _mapping(
             self._get_json(f"{CLOB_BASE_URL}/version"),
             name="CLOB version response",
@@ -336,6 +356,7 @@ class OfficialPolymarketV2Venue:
         version = version_payload.get("version")
         if type(version) is not int:
             raise ValueError("CLOB protocol version is invalid")
+        started = int(time.time() * 1_000)
         server_time = _server_time_ms(self._get_json(f"{CLOB_BASE_URL}/time"))
         finished = int(time.time() * 1_000)
         return int(version), server_time, (started + finished) // 2
@@ -773,6 +794,7 @@ class OfficialPolymarketV2Venue:
     def positions(self) -> tuple[PolymarketRemotePosition, ...]:
         output: list[PolymarketRemotePosition] = []
         offset = 0
+        deadline = time.monotonic() + self.timeout_seconds
         while True:
             payload = self._get_json(
                 POLYMARKET_DATA_POSITIONS_URL,
@@ -782,6 +804,7 @@ class OfficialPolymarketV2Venue:
                     "limit": 500,
                     "offset": offset,
                 },
+                deadline=deadline,
             )
             if not isinstance(payload, list):
                 raise ValueError("Polymarket position response is invalid")
@@ -807,7 +830,10 @@ class OfficialPolymarketV2Venue:
                 )
         if len({item.token_id for item in output}) != len(output):
             raise ValueError("Polymarket position response contains duplicate tokens")
-        return tuple(sorted(output, key=lambda item: (item.market_id, item.token_id)))
+        result = tuple(sorted(output, key=lambda item: (item.market_id, item.token_id)))
+        if time.monotonic() >= deadline:
+            raise TimeoutError("Polymarket position read deadline exceeded")
+        return result
 
     @staticmethod
     def _asset_amount(value: object, *, name: str) -> Decimal:

@@ -318,8 +318,8 @@ def test_cancelled_sdk_construction_closes_both_owned_clients(monkeypatch):
         owned.append(result)
         return result
 
-    def session_factory():
-        session = native_session()
+    def session_factory(**kwargs):
+        session = native_session(**kwargs)
         close = session.close
         session.was_closed = False
 
