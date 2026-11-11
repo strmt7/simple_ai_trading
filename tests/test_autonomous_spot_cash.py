@@ -439,7 +439,9 @@ def test_cash_receipt_drops_unknown_fields_and_rejects_noncanonical_duplicates()
     "failure",
     ["missing_fills", "missing_fee", "base_fee", "third_fee", "entry_third_fee"],
 )
-def test_unqualified_cash_after_sell_preserves_durable_unknown(tmp_path, failure):
+def test_unqualified_cash_after_sell_preserves_durable_unknown(
+    tmp_path, failure, enrolled_binance_runtime
+):
     class CashClient(Client):
         def place_order(self, symbol, side, quantity, **kwargs):
             result = super().place_order(symbol, side, quantity, **kwargs)
@@ -466,6 +468,7 @@ def test_unqualified_cash_after_sell_preserves_durable_unknown(tmp_path, failure
         )
     )
     store = PositionsStore(tmp_path)
+    enrolled_binance_runtime(store, client.execution_scope())
     opened = _submit_durable_open_position(client, position(), store)
     with pytest.raises(OpenIntentError):
         _submit_durable_close_position(
@@ -591,14 +594,18 @@ def test_legacy_gross_net_lot_is_not_automatically_cash_qualified(tmp_path):
     assert closed.realized_pnl == 0  # Preserved modeled behavior, not native proof.
 
 
-def test_interrupted_native_close_keeps_cash_record_and_unknown_after_restart(tmp_path):
+def test_interrupted_native_close_keeps_cash_record_and_unknown_after_restart(
+    tmp_path, enrolled_binance_runtime
+):
     client = Client(receipt("BUY", "1", fee="0.001", asset="BTC"))
     store = PositionsStore(tmp_path)
+    enrolled_binance_runtime(store, client.execution_scope())
     opened = _submit_durable_open_position(client, position(), store)
     original_record = store.record_close_result
 
-    def interrupted_record(position, trade):
-        original_record(position, trade)
+    def interrupted_record(position, trade, *, create):
+        assert create is False
+        original_record(position, trade, create=create)
         raise RuntimeError("simulated interruption after paired publication")
 
     store.record_close_result = interrupted_record

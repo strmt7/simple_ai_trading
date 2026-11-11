@@ -726,11 +726,21 @@ def _loss_budget_guard(
         if trade.realized_pnl >= 0.0:
             break
         consecutive_losses += 1
-    # Closing inventory does not erase the denomination of its realized cash.
-    native_cash_present = any(
-        record.spot_entry_cash_receipt for record in (*opens, *closed)
-    )
-    if native_cash_present:
+    try:
+        reference = float(cfg.starting_reference_cash)
+    except (TypeError, ValueError, OverflowError):
+        reference = float("nan")
+    if (
+        isinstance(cfg.starting_reference_cash, bool)
+        or not math.isfinite(reference)
+        or reference <= 0
+    ):
+        return CapitalGuard(
+            False, "cash-valuation-reference-unqualified", 0.0, 0.0, consecutive_losses
+        )
+    # A scalar mark can value only its exact instrument. Closing inventory does
+    # not erase the denomination of realized cash, including legacy records.
+    if opens or closed:
         if (
             not mark_symbol
             or mark_market_type not in {"spot", "futures"}
@@ -770,7 +780,6 @@ def _loss_budget_guard(
         return CapitalGuard(
             False, "cash-valuation-fees-unqualified", 0.0, 0.0, consecutive_losses
         )
-    reference = max(1.0, float(cfg.starting_reference_cash))
     day = _safe_day_ms(now_ms_value)
     realized_today = sum(
         trade.realized_pnl
@@ -778,8 +787,20 @@ def _loss_budget_guard(
         if _safe_day_ms(trade.closed_at_ms) == day
     )
     unrealized = float(stats.unrealized_pnl) if mark is not None else 0.0
-    daily_loss = max(0.0, -(realized_today + unrealized) / reference)
-    session_loss = max(0.0, -(float(stats.realized_pnl) + unrealized) / reference)
+    daily_cash = realized_today + unrealized
+    session_cash = float(stats.realized_pnl) + unrealized
+    # Finite records can overflow when aggregated. NaN must never become zero
+    # loss through max(), nor can infinite profit offset real losses.
+    if not all(math.isfinite(value) for value in (daily_cash, session_cash)):
+        return CapitalGuard(
+            False, "cash-valuation-nonfinite", 0.0, 0.0, consecutive_losses
+        )
+    daily_loss = max(0.0, -daily_cash / reference)
+    session_loss = max(0.0, -session_cash / reference)
+    if not math.isfinite(daily_loss) or not math.isfinite(session_loss):
+        return CapitalGuard(
+            False, "cash-valuation-nonfinite", 0.0, 0.0, consecutive_losses
+        )
     if strategy.max_daily_loss_pct > 0.0 and daily_loss >= strategy.max_daily_loss_pct:
         return CapitalGuard(
             False,
@@ -848,13 +869,7 @@ def _entry_gate(
         mark_symbol=symbol,
         mark_market_type=market_type,
     )
-    drawdown = (
-        capital_guard.session_loss
-        * max(1.0, float(cfg.starting_reference_cash))
-        / cfg.starting_reference_cash
-        if cfg.starting_reference_cash > 0
-        else 0.0
-    )
+    drawdown = capital_guard.session_loss
     confidence = _directional_confidence(decision)
     min_confidence = (
         objective.training.signal_threshold

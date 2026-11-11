@@ -1907,6 +1907,8 @@ def test_entry_gate_blocks_daily_cap_cooldown_drawdown_and_low_confidence(
         cfg,
         get_objective("default"),
         now_ms_value=3_000,
+        symbol="BTCUSDC",
+        market_type="spot",
     )
     assert gate.allowed is False
     assert gate.reason.startswith("daily-cap-reached")
@@ -1919,6 +1921,8 @@ def test_entry_gate_blocks_daily_cap_cooldown_drawdown_and_low_confidence(
         cfg,
         get_objective("default"),
         now_ms_value=3_000,
+        symbol="BTCUSDC",
+        market_type="spot",
     )
     assert gate.reason.startswith("cooldown-active")
 
@@ -1936,6 +1940,8 @@ def test_entry_gate_blocks_daily_cap_cooldown_drawdown_and_low_confidence(
         cfg,
         get_objective("default"),
         now_ms_value=3_000,
+        symbol="BTCUSDC",
+        market_type="spot",
     )
     assert gate.reason.startswith("drawdown-lockout")
 
@@ -1947,6 +1953,8 @@ def test_entry_gate_blocks_daily_cap_cooldown_drawdown_and_low_confidence(
         cfg,
         get_objective("default"),
         now_ms_value=3_000,
+        symbol="BTCUSDC",
+        market_type="spot",
     )
     assert gate.reason.startswith("low-confidence")
 
@@ -1957,8 +1965,11 @@ def test_entry_gate_blocks_daily_cap_cooldown_drawdown_and_low_confidence(
         _make_config(tmp_path / "zero-cfg", starting_reference_cash=0.0),
         get_objective("default"),
         now_ms_value=3_000,
+        symbol="BTCUSDC",
+        market_type="spot",
     )
-    assert zero_reference.allowed is True
+    assert zero_reference.allowed is False
+    assert zero_reference.reason == "cash-valuation-reference-unqualified"
     assert zero_reference.drawdown == 0.0
 
 
@@ -1991,7 +2002,15 @@ def test_loss_budget_guard_and_entry_gate_block_capital_erosion(tmp_path: Path) 
         max_consecutive_losses=3,
     )
 
-    guard = _loss_budget_guard(store, 100.0, strategy, cfg, now_ms_value=3_000)
+    guard = _loss_budget_guard(
+        store,
+        100.0,
+        strategy,
+        cfg,
+        now_ms_value=3_000,
+        mark_symbol="BTCUSDC",
+        mark_market_type="spot",
+    )
     assert guard.allowed is False
     assert guard.force_close is True
     assert guard.reason.startswith("daily-loss-lockout")
@@ -2003,6 +2022,8 @@ def test_loss_budget_guard_and_entry_gate_block_capital_erosion(tmp_path: Path) 
         cfg,
         get_objective("default"),
         now_ms_value=3_000,
+        symbol="BTCUSDC",
+        market_type="spot",
     )
     assert gate.allowed is False
     assert gate.reason.startswith("daily-loss-lockout")
@@ -2037,7 +2058,15 @@ def test_loss_budget_guard_blocks_loss_streak_without_forced_close(
         max_consecutive_losses=2,
     )
 
-    guard = _loss_budget_guard(store, 100.0, strategy, cfg, now_ms_value=3_000)
+    guard = _loss_budget_guard(
+        store,
+        100.0,
+        strategy,
+        cfg,
+        now_ms_value=3_000,
+        mark_symbol="BTCUSDC",
+        mark_market_type="spot",
+    )
     assert guard.allowed is False
     assert guard.force_close is False
     assert guard.reason == "loss-streak-lockout:2"

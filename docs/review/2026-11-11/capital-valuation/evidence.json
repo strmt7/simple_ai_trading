@@ -1,0 +1,118 @@
+{
+  "base_revision": "1e6568424279d61dc8badb217a7c253cc02a7193",
+  "evidence_sha256": "02f34783607b8eb972021a9fc612424a6bb6bd6fedbdb942bea8b810b49b4039",
+  "schema_version": "autonomous-capital-valuation-admission-v1",
+  "scope": {
+    "account_requests": 0,
+    "independent_gateway_implemented": false,
+    "market_requests": 0,
+    "multi_instrument_portfolio_valuation_implemented": false,
+    "native_cash_truth_added": false,
+    "new_economic_observations": 0,
+    "orders": 0,
+    "persistent_service_or_schedule_created": false,
+    "price_freshness_qualified": false,
+    "protected_capture_touched": false,
+    "qualified_stable_edges": 0,
+    "whole_product_qualification": false
+  },
+  "source_navigation": {
+    "index_matches_pre_edit_source": true,
+    "native_semantic_receipt_sha256": "04db284e1d60f71c62a0b1e9b197936dba2a9a2ac0bf9a1d51950321cc95c4d7",
+    "query_scope": "independent execution supervision; then exact known capital guard and accounting symbols",
+    "receipt_sha256": "826843e9dd5663ce3cfffbb8d5b103771e10d48fa504ac6ab4e38a45814101c6",
+    "source_digest": "989e5027f70940e46a9eda2d526d363d"
+  },
+  "verification": {
+    "earlier_domain_failures": {
+      "domain": {
+        "changed_admission_fixtures": 3,
+        "missing_synthetic_runtime_enrollment": 6
+      },
+      "verified": {
+        "outdated_interruption_wrapper_missing_create_keyword": 1
+      }
+    },
+    "edited_function_formatting": "seven functions pass",
+    "entry_bytes": 16379,
+    "final_affected_domain_passed": 239,
+    "final_new_regression_cases": 16,
+    "final_test_modules": [
+      "tests/test_autonomous_capital_valuation.py",
+      "tests/test_autonomous.py",
+      "tests/test_autonomous_spot_cash.py",
+      "tests/test_autonomous_spot_inventory.py",
+      "tests/test_positions.py"
+    ],
+    "initial_control_passes": 1,
+    "initial_regression_failures": 13,
+    "new_regression_module_formatting": "pass",
+    "phases": {
+      "before": {
+        "json_sha256": "dc0bee21a3f871639bf39deead60f9cc6a36096197808a29e8c4f017f78e9f31",
+        "returncode": 1,
+        "source_snapshot_sha256": "b02ec14c526a9d9f607b5b4555b394e87d213661d903c79034a4797931fd91a2",
+        "stderr_log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout_log_sha256": "521501b620ae22dc11590577cc189564b49850c53ea7332dafc4d230e1e9fbb2",
+        "summary": "13 failed, 1 passed in 1.11s",
+        "unchanged_after_test": true
+      },
+      "domain": {
+        "json_sha256": "f9db60cc917d8ec4f201018f5af934542e3055adb66a8c76ccb93bacd5d88ba5",
+        "returncode": 1,
+        "source_snapshot_sha256": "cbf3f440a0f94398fcbb0c72982afddffd80cec4a4a04c075b52b22826d3c4a0",
+        "stderr_log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout_log_sha256": "5b1035e7ae33bded1d0fdf2eeff011036fb29dd7a8e834d0b441f6d3c97626e6",
+        "summary": "9 failed, 228 passed in 15.68s",
+        "unchanged_after_test": true
+      },
+      "final": {
+        "json_sha256": "614be2f721eb8721681920e0a8c42720e981aba408b042ba6f51b78216566919",
+        "returncode": 0,
+        "source_snapshot_sha256": "d5dadd6841c6d3136137567c2c976a9c4428f653041528eb0a3668281b14ad19",
+        "stderr_log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout_log_sha256": "1d722191e35185ad34c0dc200de91f4d0bf9d2a23bd0c89016fb9760b408a264",
+        "summary": "239 passed in 15.67s",
+        "unchanged_after_test": true
+      },
+      "focused": {
+        "json_sha256": "e669e18ceb493fdcd29d76feba59bcd3ed23737d5ae1393fc19f60c013ada0ac",
+        "returncode": 0,
+        "source_snapshot_sha256": "421b2ed89a294df87a4a1616c7c5d8036851e1f864fb7fb83a2e5a39a6c4dce5",
+        "stderr_log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout_log_sha256": "fdd87d4cae218397cdf23279842cabd9d44108ee53ef9b3045a6bfb147ad8d74",
+        "summary": "14 passed in 0.91s",
+        "unchanged_after_test": true
+      },
+      "verified": {
+        "json_sha256": "d724129dac06bf33cdc81be1783fb7b7e2e658628ccb4e8d45615ede1bd5536c",
+        "returncode": 1,
+        "source_snapshot_sha256": "f62dae33ed232dbd5b1d9efeb6f2dd8dfcdb062afff601dd4d62c0f1debe9749",
+        "stderr_log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout_log_sha256": "48c2d6aecf4949bafecfa6767a8c9f66ceed6bef3e936696f71e5a990fe075e0",
+        "summary": "1 failed, 236 passed in 17.32s",
+        "unchanged_after_test": true
+      }
+    },
+    "pre_change_autonomous_sha256": "e5e83fce127d666a9e0a8cc516f0ad7e3b9d08af440beac72b88add9c81218b0",
+    "ruff_check": "pass",
+    "semantic_review": [
+      "all ordinary loss-guard call sites supply runtime instrument",
+      "scalar-mark association for all open records",
+      "same quote for all realized cash",
+      "reference and aggregate finite checks",
+      "fractional reference denominator and entry drawdown",
+      "unqualified valuation has no forced liquidation authority",
+      "existing loop halts with explicit reason",
+      "fixture enrollment and interrupted noncreating publication"
+    ],
+    "tested_source_sha256": {
+      "src/simple_ai_trading/autonomous.py": "6f76ef43f0c219568122a8dee94bb8f5b23a74451475d4e3b020509fe12c9ed6",
+      "tests/test_autonomous.py": "79a4bdf347f21136a932d8bf943cb3830058621d90ae1ad97e7086d99cebf608",
+      "tests/test_autonomous_capital_valuation.py": "f37b02c0dc1867966e73cc0a38b35f0eb29d628e7c52e590e98ac01e45d0afce",
+      "tests/test_autonomous_spot_cash.py": "ac727f6f5fea7dd20c3bf71acd1902fdbc114c11c3671472946f80f1eaa2e579",
+      "tests/test_autonomous_spot_inventory.py": "15409804f10f5f0e97eef4abdcfc1ed63ffe7e20212afaf856511358ba2c3091",
+      "tests/test_positions.py": "bd3c83ef26d4df48c9f61b2514ec5792a618749fe0e6a14fa370f3ba3522684d"
+    }
+  }
+}

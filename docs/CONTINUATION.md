@@ -63,6 +63,8 @@ before continuing an affected family. None supplies a qualified stable edge.
   close their reproduced gaps. Bound legacy version 2 retains owned recovery;
   new exposure requires verified migration. Account UID, coordinated rollback,
   universal writer fencing and complete recovery/rearm remain open.
+  [Valuation admission](review/2026-11-11/capital-valuation/review.md) covers
+  legacy/Futures marks, quote units and finite capital.
 - The [Spot roundtrip](review/2026-11-10/roundtrip-command/review.md) routes both
   writes through the enrolled durable gateway. Only the receipt-owned second
   SELL uses closing authority through Stop. Actual scope, cash, commission/fee
@@ -89,8 +91,8 @@ before continuing an affected family. None supplies a qualified stable edge.
   intake during numerical work and revokes in-flight/cached forecasts across
   required source epochs. [Final admission](review/2026-11-11/source-dispatch/review.md)
   carries revocation through signing/journaling to the local venue-call boundary
-  for opens, locks and model reductions. Separate 197-case and 130-case source
-  phases pass. [Owned five-minute inference](review/2026-11-11/round21-worker/review.md)
+  for opens, locks and model reductions. Both documented source phases pass.
+  [Owned five-minute inference](review/2026-11-11/round21-worker/review.md)
   contains model compilation/evaluation; CPU fixtures cover parity, reply faults
   and persisted Stop before recovery. GPU/POSIX qualification remains open.
 - [Owned discovery](review/2026-11-10/owned-discovery/review.md),
