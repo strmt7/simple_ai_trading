@@ -65,8 +65,10 @@ before continuing an affected family. None supplies a qualified stable edge.
   universal writer fencing and complete recovery/rearm remain open.
   [Valuation admission](review/2026-11-11/capital-valuation/review.md) covers
   legacy/Futures marks, quote units and finite capital. [Signed residuals](review/2026-11-11/signed-residual/review.md)
-  now survive epsilon-sized partial closes; 446 affected cases pass. UNKNOWN
-  still blocks replay; terminal application, native cash and rearm remain open.
+  preserve positive quantities. [Spot application](review/2026-11-11/terminal-application/review.md)
+  reconciles receipt-backed cumulative closes under ownerless Stop. Empty-lease
+  release and zero-fill close-ID reuse are repaired. CLI/native integration,
+  futures/legacy recovery, account qualification and rearm remain open.
 - The [Spot roundtrip](review/2026-11-10/roundtrip-command/review.md) routes both
   writes through the enrolled durable gateway. Only the receipt-owned second
   SELL uses closing authority through Stop. Actual scope, cash, commission/fee
@@ -147,9 +149,6 @@ untouched and defer benchmark timing only for material CPU/GPU/RAM/disk contenti
 
 ## Detailed source phases
 
-The [archive index](archive/agent-history/README.md) preserves original published
-bytes and constraints. Use `tools.read_handoff_archive` with
-`continuation-2026-11-11 --find "exact-study-name"` and a bounded line window.
-Original references resolve from `docs/`. Omission grants no capture, training,
-account, retry or trading authority. Keep one current summary per workstream;
-detailed results belong beside their source-bound evidence.
+The [archive index](archive/agent-history/README.md) routes immutable evidence.
+Use the bounded `tools.read_handoff_archive` reader. Omission grants no capture,
+training, account, retry or trading authority; source-bound constraints persist.

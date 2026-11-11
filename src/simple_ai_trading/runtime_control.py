@@ -1138,9 +1138,19 @@ class RuntimeControl:
                 connection.close()
 
     def release(self, lease_id: str, *, reason: str) -> None:
+        if (
+            not isinstance(lease_id, str)
+            or not lease_id.strip()
+            or lease_id != lease_id.strip()
+        ):
+            raise self.blocked_error("runtime release requires an exact nonempty lease")
         normalized_reason = str(reason or "").strip()
         if not normalized_reason or len(normalized_reason) > 160:
             raise ValueError("release reason is invalid")
+        with self._interlock():
+            self._release_locked(lease_id, reason=normalized_reason)
+
+    def _release_locked(self, lease_id: str, *, reason: str) -> None:
         connection = self._connect()
         try:
             connection.execute("BEGIN IMMEDIATE")
@@ -1169,7 +1179,7 @@ class RuntimeControl:
                 "heartbeat_at_ms": 0,
                 "stop_epoch": current.stop_epoch,
                 "stop_requested_at_ms": current.stop_requested_at_ms,
-                "stop_reason": normalized_reason,
+                "stop_reason": reason,
                 "paused": False,
                 "pause_epoch": current.pause_epoch,
                 "pause_changed_at_ms": now,

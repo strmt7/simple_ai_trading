@@ -448,10 +448,11 @@ class PositionsStore:
                 }
             )
 
-    def record_close_result(
-        self, position: OpenPosition, trade: ClosedTrade, *, create: bool = True
-    ) -> ClosedTrade:
-        """Record a close fill and remainder; native dispatch must forbid creation."""
+    @staticmethod
+    def close_result_remainder(
+        position: OpenPosition, trade: ClosedTrade
+    ) -> OpenPosition | None:
+        """Project the remaining lot without persistence or caller decimal rounding."""
 
         from fractions import Fraction
 
@@ -498,14 +499,12 @@ class PositionsStore:
             else open_qty <= 0.0 or close_qty >= open_qty - tolerance
         )
         if fully_closed:
-            self._record_close_pair(trade, expected=position, create=create)
-            write_learning_feedback(self)
-            return trade
+            return None
 
         remaining_qty = (
             native_remaining_qty if native_quantity else max(0.0, open_qty - close_qty)
         )
-        remaining = replace(
+        return replace(
             position,
             qty=remaining_qty,
             notional=max(0.0, remaining_qty * float(position.entry_price)),
@@ -515,6 +514,12 @@ class PositionsStore:
                 float(position.entry_fees) * (remaining_qty / max(open_qty, 1e-18)),
             ),
         )
+
+    def record_close_result(
+        self, position: OpenPosition, trade: ClosedTrade, *, create: bool = True
+    ) -> ClosedTrade:
+        """Record a close fill and remainder; native dispatch must forbid creation."""
+        remaining = self.close_result_remainder(position, trade)
         self._record_close_pair(
             trade, remaining=remaining, expected=position, create=create
         )

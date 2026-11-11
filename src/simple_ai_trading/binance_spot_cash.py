@@ -69,7 +69,17 @@ def _receipt(
         or side not in {"BUY", "SELL"}
         or order.get("type") != "MARKET"
         or order.get("status")
-        not in ({"FILLED"} if side == "BUY" else {"FILLED", "PARTIALLY_FILLED"})
+        not in (
+            {"FILLED"}
+            if side == "BUY"
+            else {
+                "FILLED",
+                "PARTIALLY_FILLED",
+                "CANCELED",
+                "EXPIRED",
+                "EXPIRED_IN_MATCH",
+            }
+        )
         or order.get("clientOrderId") != client_id
         or not isinstance(client_id, str)
         or not re.fullmatch(r"sait-[oc]-[A-Za-z0-9_-]{1,29}", client_id)

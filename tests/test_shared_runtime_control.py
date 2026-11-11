@@ -36,6 +36,41 @@ def _enroll_flat_control(control):
     return control
 
 
+@pytest.mark.parametrize("factory,blocked", [(BinanceRuntimeControl, RuntimeControlBlocked), (PolymarketRuntimeControl, PolymarketLiveBlocked)])
+def test_empty_release_cannot_clear_ownerless_stop(tmp_path, factory, blocked):
+    control = factory(tmp_path / "control.sqlite3")
+    control.provision_storage()
+    before = control.snapshot()
+    with pytest.raises(blocked):
+        control.release("", reason="unowned release")
+    assert control.snapshot() == before
+
+
+def test_owned_release_waits_for_the_current_submission_guard(tmp_path):
+    control = _enroll_flat_control(BinanceRuntimeControl(tmp_path / "control.sqlite3"))
+    lease = control.acquire()
+    competing = BinanceRuntimeControl(control.ledger_path, interlock_timeout_seconds=1)
+    outcomes = Queue()
+
+    def release():
+        try:
+            competing.release(lease, reason="owned shutdown")
+        except RuntimeControlError:
+            outcomes.put("blocked")
+        else:
+            outcomes.put("released")
+
+    with control.submission_guard(lease):
+        thread = Thread(target=release)
+        thread.start()
+        thread.join(timeout=3)
+        assert not thread.is_alive()
+        assert outcomes.get_nowait() == "blocked"
+        assert control.snapshot().state == "running"
+    control.release(lease, reason="owned shutdown")
+    assert control.snapshot().state == "stopped"
+
+
 @pytest.mark.parametrize(
     ("factory", "blocked", "error"),
     [

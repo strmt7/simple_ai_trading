@@ -126,6 +126,43 @@ remainder that cannot be represented exactly rejects before paired-store mutatio
 This preserves the original UNKNOWN obligation; it does not apply retained terminal
 observations or establish that a residual meets native filters or available cash.
 
+## Retained Spot closing application
+
+The [terminal application checkpoint](review/2026-11-11/terminal-application/review.md)
+adds a programmatic API for existing receipt-backed Spot closes. It does not
+construct a client, request credentials or query an account. Independently
+authorized read-only collection must already have retained the exact terminal
+order and complete native fills in the original scoped journal.
+
+`closing_recovery_sha256(store, scope=scope, client_id=client_id)` inspects that
+record without mutating ledgers. Supply its digest as `expected_recovery_sha256`
+to `apply_spot_closing_recovery`, together with the same store, scope, client ID,
+Binance control and any explicit `execution_enrollment_path`. These are configured
+objects; never substitute a guessed current account for the original scope.
+
+Application requires ready original execution enrollment and ownerless, paused,
+Stop-latched control. End the owned session normally before recovery. If its
+owner or lease remains unresolved, preserve that state; do not declare exposure
+flat, erase ownership, delete guards or provision another namespace to pass this
+gate. Latching Stop on an already ownerless controller is local control, not an
+account-flatness or rearm declaration.
+
+The applier replaces a matching partial ledger projection with its verified
+cumulative terminal projection and atomically records its application and resolved
+intent through the existing paired redo. Zero execution leaves the owned lot
+unchanged. Prior fill IDs and native cash/fee evidence must reconcile. Unsupported
+fees, products, missing lineage, changed inventory and unrepresentable residuals
+reject. Both ordinary dispatch and owned-close serialization remain held during
+application. No Stop completion, lease acquisition, account mutation or new order
+occurs. Later owned closes use unconsumed journal identities, including after a
+zero-fill cancellation.
+
+A post-commit feedback error does not mean the application was rolled back.
+Inspect the retained receipt and retry the same application; never resubmit its
+order. Repeated application is local and idempotent. Its result describes this
+particular application, not current account balances or global flatness. CLI/native
+integration and explicit rearm remain separate unfinished work.
+
 ## Scope and remaining work
 
 Owned closing retains its separate enrolled lock and can serialize even when

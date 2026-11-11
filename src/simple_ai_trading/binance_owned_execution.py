@@ -2,10 +2,12 @@
 
 from __future__ import annotations
 
+from contextlib import closing
 from dataclasses import dataclass, replace
 import math
 import os
 from pathlib import Path
+import sqlite3
 import time
 from typing import Mapping
 
@@ -584,11 +586,37 @@ def _next_close_client_order_id(
     prior_close_fills = sum(
         1 for trade in store.load_ledger() if trade.id == position.id
     )
-    return bot_client_order_id(
-        position.id,
-        "close",
-        attempt=prior_close_fills + 1,
-    )
+    journal = store.opening_intents
+    if journal.path.exists():
+        from .binance_close_intents import unresolved_close_count
+
+        try:
+            with closing(journal._connect()) as connection:
+                unresolved_close_count(connection)
+                if connection.execute("PRAGMA table_info(close_intent)").fetchone():
+                    consumed = connection.execute(
+                        "SELECT COUNT(*) FROM close_intent"
+                    ).fetchone()[0]
+                    # Canceled zero-fill orders have no closed-trade projection.
+                    # Every persisted identity, including another lot's, stays
+                    # consumed. At most N identities can block N+1 candidates.
+                    for offset in range(consumed + 1):
+                        candidate = bot_client_order_id(
+                            position.id, "close", attempt=prior_close_fills + offset + 1
+                        )
+                        if (
+                            connection.execute(
+                                "SELECT 1 FROM close_intent WHERE client_id=?",
+                                (candidate,),
+                            ).fetchone()
+                            is None
+                        ):
+                            return candidate
+        except (sqlite3.Error, OSError) as exc:
+            raise OpenIntentError(
+                "consumed closing identities are unavailable"
+            ) from exc
+    return bot_client_order_id(position.id, "close", attempt=prior_close_fills + 1)
 
 
 def close_trade_template(

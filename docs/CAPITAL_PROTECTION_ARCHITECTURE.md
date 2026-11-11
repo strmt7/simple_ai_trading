@@ -1,5 +1,11 @@
 # Capital protection and final release verification
 
+The [Spot terminal application](review/2026-11-11/terminal-application/review.md)
+reconciles receipt-backed cumulative closes through the paired journal while Stop
+remains latched. It also repairs unowned empty-lease release for both venues and
+post-cancellation close-ID reuse. This is a programmatic boundary, not completed
+CLI/native recovery, current-account qualification, rearm or independent supervision.
+
 The [signed residual repair](review/2026-11-11/signed-residual/review.md) prevents
 epsilon-based removal of positive remaining futures and legacy signed Spot lots.
 Exact supplied quantity projections survive partial-close accounting and restart;
