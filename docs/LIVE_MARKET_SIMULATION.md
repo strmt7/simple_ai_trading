@@ -45,7 +45,16 @@ Primary references used for the current design:
 
 ## Implemented Controls and Evidence
 
-Execution cost is symbol-specific where market data exists:
+Execution cost is symbol-specific where market data exists.
+
+Fixed-base closes size modeled exit impact from held base quantity times the
+exit reference price. They do not reuse entry notional after prices change.
+Backtests and payoff labels share this rule, reject invalid/overflowing quote
+values and tag newly generated payoff experts with
+`causal-adv-square-root-fixed-base-v3`. The
+[source-bound repair](review/2026-11-11/model-utility/review.md) preserves earlier
+artifacts; they require new qualification rather than a metadata retag. This
+fix does not turn impact proxies or assumed liquidity into native fill evidence.
 
 - `ticker/24hr` supplies quote volume and trade count.
 - `ticker/bookTicker` supplies bid/ask spread.

@@ -9,7 +9,7 @@ from typing import SupportsFloat, SupportsIndex
 from .types import StrategyConfig
 
 
-EXECUTION_MODEL_VERSION = "causal-adv-square-root-v2"
+EXECUTION_MODEL_VERSION = "causal-adv-square-root-fixed-base-v3"
 EXECUTION_ACTIVITY_ESTIMATOR = "causal-trailing-24h-volume; annualized-after-5m; no-future-data"
 
 
@@ -244,6 +244,30 @@ def market_row_execution_assumptions(
         volatility_buffer_bps=float(volatility_buffer_bps),
         testnet_to_live_buffer_bps=float(testnet_to_live_buffer_bps),
     )
+
+
+def fixed_base_quote_notional(quantity: float, reference_price: float) -> float:
+    """Value an existing base quantity at its current positive quote reference."""
+    if isinstance(quantity, bool) or isinstance(reference_price, bool):
+        raise ValueError("Fixed-base quantity and reference must be finite numbers")
+    try:
+        quantity = float(quantity)
+        reference = float(reference_price)
+        notional = abs(quantity) * reference
+    except (TypeError, ValueError, OverflowError):
+        raise ValueError(
+            "Fixed-base quantity and reference must be finite numbers"
+        ) from None
+    if (
+        not math.isfinite(quantity)
+        or quantity == 0.0
+        or not math.isfinite(reference)
+        or reference <= 0.0
+        or not math.isfinite(notional)
+        or notional <= 0.0
+    ):
+        raise ValueError("Fixed-base quote notional must be finite and positive")
+    return notional
 
 
 def simulate_market_fill(

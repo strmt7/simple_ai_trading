@@ -30,6 +30,7 @@ from .execution_simulation import (
     market_row_reported_quote_volume_notional,
     market_row_trailing_quote_volume_24h_estimate,
     simulate_market_fill,
+    fixed_base_quote_notional,
 )
 from .features import ModelRow
 from .lightgbm_backend import lightgbm_backend_parameters
@@ -1070,8 +1071,12 @@ def path_net_edge_bps(
         side,
         notional,
         strategy,
-        bar_volume_notional=market_row_quote_volume_notional(rows[entry_index], entry_reference),
-        daily_volume_notional=market_row_trailing_quote_volume_24h_estimate(rows[entry_index]),
+        bar_volume_notional=market_row_quote_volume_notional(
+            rows[entry_index], entry_reference
+        ),
+        daily_volume_notional=market_row_trailing_quote_volume_24h_estimate(
+            rows[entry_index]
+        ),
         assumptions=entry_assumptions,
         symbol_profile=symbol_profile,
     )
@@ -1087,6 +1092,11 @@ def path_net_edge_bps(
     )
     if exit_reference <= 0.0 or not math.isfinite(exit_reference):
         return None
+    quantity = notional / entry_fill.fill_price
+    try:
+        exit_notional = fixed_base_quote_notional(quantity, exit_reference)
+    except ValueError:
+        return None
     exit_assumptions = market_row_execution_assumptions(
         rows[exit_index],
         strategy,
@@ -1097,16 +1107,19 @@ def path_net_edge_bps(
     exit_fill = simulate_market_fill(
         exit_reference,
         -side,
-        notional,
+        exit_notional,
         strategy,
-        bar_volume_notional=(reported_exit_volume if reported_exit_volume > 0.0 else notional * 20.0),
-        daily_volume_notional=market_row_trailing_quote_volume_24h_estimate(rows[exit_index]),
+        bar_volume_notional=(
+            reported_exit_volume if reported_exit_volume > 0.0 else exit_notional * 20.0
+        ),
+        daily_volume_notional=market_row_trailing_quote_volume_24h_estimate(
+            rows[exit_index]
+        ),
         assumptions=exit_assumptions,
         symbol_profile=symbol_profile,
     )
     if exit_fill.fill_price <= 0.0 or not math.isfinite(exit_fill.fill_price):
         return None
-    quantity = notional / entry_fill.fill_price
     realized = float(side) * (exit_fill.fill_price - entry_fill.fill_price) * quantity
     fee_rate = max(0.0, float(strategy.taker_fee_bps)) / 10_000.0
     entry_fee = notional * fee_rate

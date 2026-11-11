@@ -101,12 +101,12 @@ before continuing an affected family. None supplies a qualified stable edge.
   preserve child teardown before recovery. [Decision expiry](review/2026-11-10/decision-expiry/review.md)
   rejects late results and prevents overlapping abandoned decisions. These
   component boundaries do not complete independent trading supervision.
-- [Selection integrity](review/2026-11-10/selection-risk-integrity/review.md)
-  prevents copy/tie false passes; its guard remains heuristic. The
-  [method source](review/2026-11-11/selection-methods/review.md) failed before PDF
-  access. Causal net targets, dependence and untouched utility precede training.
-  Require verified GPU backend/precision and useful data/bottleneck evidence.
-  LLMs may veto/reduce risk; they cannot override Stop, ownership or closing.
+- [Selection guard](review/2026-11-10/selection-risk-integrity/review.md)
+  is heuristic; [method access](review/2026-11-11/selection-methods/review.md)
+  failed. [Exit impact](review/2026-11-11/model-utility/review.md) uses held
+  quantity × exit reference. Causal net targets, dependence and untouched
+  utility precede training. Require verified GPU backend/precision and useful
+  data/bottleneck evidence. LLMs cannot override Stop, ownership or closing.
 - [Native operator controls](review/2026-11-11/operator-control/review.md) give
   Stop priority during Pause, reject stale control-status samples and label both
   dry-run venue states simulated. Release presentation checks and 53 focused

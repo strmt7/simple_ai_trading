@@ -1,0 +1,36 @@
+{
+  "base_revision": "d04b2880434c766b8a52aee69a26d3ed3800d0bd",
+  "question": "Do fixed-base backtest closes and payoff labels size exit impact from the actual held quantity times the exit reference rather than original entry notional?",
+  "supplied_controls": {
+    "initial_quote_notional": 1000,
+    "fixed_base_quantity_for_direct_close": 10,
+    "entry_reference": 100,
+    "exit_references": [
+      50,
+      200
+    ],
+    "sides": [
+      1,
+      -1
+    ],
+    "adv_quote_notional": 1000000,
+    "bar_quote_notional": 100000,
+    "impact_coefficient_bps": 100,
+    "taker_fee_bps": 2
+  },
+  "law": "Exit reference quote notional = abs(held signed base quantity) * exit reference price; model spread/impact changes fill price but does not resize the held base quantity.",
+  "scope": "Synthetic accounting/impact controls only; no market/account/order/protected data access, production fit or benchmark. Existing impact/volume proxies do not become native execution evidence.",
+  "financial_counts_unchanged": [
+    206,
+    65,
+    37,
+    0
+  ],
+  "source_sha256": {
+    "src/simple_ai_trading/backtest.py": "8c609634e14e76b3b6084de51f6120255b227e595c0935ecd2fb2a694628afff",
+    "src/simple_ai_trading/hybrid_models.py": "e5cd049845dc23a8424406ab4eadb4861c59d56b16114f614b4c3e2f84605268",
+    "src/simple_ai_trading/execution_simulation.py": "2204144e64e8f21e81cbb80a546e11fddddc1023e79de604ec23122574b8d36c",
+    "tests/test_exit_notional.py": "e11e055cd1d433b6d371c252be8a382a83e7aefc1f7d89a21f8af630e54f2ce6"
+  },
+  "intent_sha256": "5bd7ae1f25174bcfeac62b9e07e5be79121179b2461cc5387a18dc59171ce62a"
+}

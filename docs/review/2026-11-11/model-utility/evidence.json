@@ -1,0 +1,299 @@
+{
+  "schema_version": "fixed-base-exit-model-utility-review-v1",
+  "base_revision": "d04b2880434c766b8a52aee69a26d3ed3800d0bd",
+  "created_at_utc": "2026-11-11T05:20:16.543888+00:00",
+  "intent_sha256": "5bd7ae1f25174bcfeac62b9e07e5be79121179b2461cc5387a18dc59171ce62a",
+  "scope": "Correct fixed-base exit participation in shared backtests and next-entry payoff labels; no economic dataset, fit or profitability qualification.",
+  "independent_control_law": "Exit reference quote notional = abs(held signed base quantity) * exit reference price; model spread/impact changes fill price but does not resize the held base quantity.",
+  "constructed_impact_controls": [
+    {
+      "base_quantity": 10,
+      "exit_reference": 50.0,
+      "entry_quote_notional": 1000,
+      "actual_exit_reference_quote_notional": 500.0,
+      "baseline_modeled_exit_impact_bps": 3.162277660168379,
+      "corrected_modeled_exit_impact_bps": 2.23606797749979
+    },
+    {
+      "base_quantity": 10,
+      "exit_reference": 200.0,
+      "entry_quote_notional": 1000,
+      "actual_exit_reference_quote_notional": 2000.0,
+      "baseline_modeled_exit_impact_bps": 3.162277660168379,
+      "corrected_modeled_exit_impact_bps": 4.47213595499958
+    }
+  ],
+  "baseline": {
+    "summary": "8 failed in 0.68s",
+    "all_failures_numeric_not_collection_or_import": true,
+    "tested_source_sha256": {
+      "src/simple_ai_trading/backtest.py": "8c609634e14e76b3b6084de51f6120255b227e595c0935ecd2fb2a694628afff",
+      "src/simple_ai_trading/hybrid_models.py": "e5cd049845dc23a8424406ab4eadb4861c59d56b16114f614b4c3e2f84605268",
+      "src/simple_ai_trading/execution_simulation.py": "2204144e64e8f21e81cbb80a546e11fddddc1023e79de604ec23122574b8d36c",
+      "tests/test_exit_notional.py": "e11e055cd1d433b6d371c252be8a382a83e7aefc1f7d89a21f8af630e54f2ce6"
+    }
+  },
+  "verification": {
+    "summary": "247 passed, 10 skipped in 34.84s",
+    "focused_summary": "24 passed in 0.69s",
+    "focused_cases_included_in_domain_total": true,
+    "tested_source_sha256": {
+      "src/simple_ai_trading/backtest.py": "9ed50167272d84b0d765b4686773fb054798dc74c4964c0c3d9945670bed9fa4",
+      "src/simple_ai_trading/hybrid_models.py": "7e15307544e974efce69d5f2c4cb576f73bfe589aef7bcd033cf83d655f08bb4",
+      "src/simple_ai_trading/execution_simulation.py": "385098153c077fb4b6df8d29d7e57ca5e7257850d7706905f0524c31b13253c3",
+      "tests/test_exit_notional.py": "84e49af6c1c28e595d5143ab8f311376f2feda890ffab59a07876a5359491c20",
+      "tests/test_backtest.py": "3f51834b6936b33e8b5d84ab55f38c97d00085cfed37a63b2470a81532e1c089",
+      "tests/test_backtest_panel.py": "58a871e4b14c6ac875f0ca02d6b2b9a0716b62d0faa7ad3cdf07f0d5db032676",
+      "tests/test_backtest_coverage.py": "8e114a8878785a7acd40e3f7939bb903b62eca824816bdd5a58e28c6a37db286",
+      "tests/test_execution_simulation.py": "8021cf3fe8d0c3956dd90092aefbfcac335d44fcb14a1aaf22b45bd4f1f68742",
+      "tests/test_hybrid_models.py": "7923866bd7af52f9514c3edf7f066dd065e4bde0ec0aade6531bb9063cc2260f",
+      "tests/test_training_suite.py": "9df5aa6f2617784205ef1b0b91f5c76472f6ec4263a6163150046df657c736cf",
+      "tests/test_training_suite_parallel.py": "9b8ba2976648a46154a330bdcf642c1e5183f936f50cbf528bd56f5ac0b61f21"
+    },
+    "source_unchanged_after_run": true,
+    "skipped_scope": "Ten conditional DirectML cases skipped in the selected environment; no backend parity or benchmark claim.",
+    "ruff": "Targeted four changed Python modules passed; only edited production definitions range-formatted.",
+    "ast_scope": {
+      "backtest": {
+        "changed_definitions": [
+          "_close_position",
+          "run_backtest"
+        ],
+        "new_definitions": [],
+        "all_other_top_level_definitions_AST_identical": true,
+        "run_backtest_only_removes_obsolete_argument_from_three_close_calls": true
+      },
+      "hybrid_models": {
+        "changed_definitions": [
+          "path_net_edge_bps"
+        ],
+        "new_definitions": [],
+        "all_other_top_level_definitions_AST_identical": true
+      },
+      "execution_simulation": {
+        "changed_definitions": [],
+        "new_definitions": [
+          "fixed_base_quote_notional"
+        ],
+        "all_other_top_level_definitions_AST_identical": true
+      }
+    },
+    "semantic_review": "Held quantity, exit reference notional, impact participation, realized cash and exit fees reviewed together. Remaining modeling assumptions are not qualified by AST equality."
+  },
+  "navigation": {
+    "indexed_pre_edit_source_phase": "e41378c728108519c198e830a6f7beb3",
+    "storage_digest_preserved": "2e30b5330483d9e4d9f0204fdb60cf6b",
+    "package": "cocoindex-code[full]==0.2.43",
+    "receipts": [
+      {
+        "name": "search-8e3ea481a2bc4a26be8a67b315518d81.json",
+        "sha256": "bcce1f45f3dd1fdf2e496688bf7ec37760f4401af823a11200380a59b31c6495",
+        "raw_output_sha256": "5b71b78dcf82328c9cb9b0ec157f7bfefd2f8990bca23adf3e69666b5f0391e9",
+        "source_phase": "e41378c728108519c198e830a6f7beb3",
+        "candidate_source_checks": [
+          {
+            "live_sha256": "7a714e321e77292e65ec468e4d6d10fd2438ecf89b755266319a88ea175b2d48",
+            "matches": true,
+            "mirror_sha256": "7a714e321e77292e65ec468e4d6d10fd2438ecf89b755266319a88ea175b2d48",
+            "path": "src/simple_ai_trading/inventory_cash_actions.py"
+          },
+          {
+            "live_sha256": "f35d39bc3577cf4c17094d9ec5d1a8e9700968b74562f38f35c88e0311d4821b",
+            "matches": true,
+            "mirror_sha256": "f35d39bc3577cf4c17094d9ec5d1a8e9700968b74562f38f35c88e0311d4821b",
+            "path": "src/simple_ai_trading/stateful_cash_replay.py"
+          },
+          {
+            "live_sha256": "415821f5ea1398cbfaa62859805f8bc7d854c8c0d78bc5acca6816efe70a3ba5",
+            "matches": true,
+            "mirror_sha256": "415821f5ea1398cbfaa62859805f8bc7d854c8c0d78bc5acca6816efe70a3ba5",
+            "path": "src/simple_ai_trading/model_blueprint.py"
+          },
+          {
+            "live_sha256": "fa6f60fcf171d5a623be6d3156ebdb8cb4ba6c459f8caa6aa6ca61d74a1d649c",
+            "matches": true,
+            "mirror_sha256": "fa6f60fcf171d5a623be6d3156ebdb8cb4ba6c459f8caa6aa6ca61d74a1d649c",
+            "path": "src/simple_ai_trading/funding_cash_inventory.py"
+          },
+          {
+            "live_sha256": "e5cd049845dc23a8424406ab4eadb4861c59d56b16114f614b4c3e2f84605268",
+            "matches": true,
+            "mirror_sha256": "e5cd049845dc23a8424406ab4eadb4861c59d56b16114f614b4c3e2f84605268",
+            "path": "src/simple_ai_trading/hybrid_models.py"
+          }
+        ],
+        "financial_evidence": false
+      },
+      {
+        "name": "search-4cc80fd2d9fe43a4bd59b1cc79462cbf.json",
+        "sha256": "cf5e1924d95dd3059405ee2ca7361fa8803000a9c344cdc1ac0e7c15b76b2e1f",
+        "raw_output_sha256": "86d2e5a2d3b6f349cfc7ef6ee29a649e44d5b9b8683e0c9e783f18ae13676592",
+        "source_phase": "e41378c728108519c198e830a6f7beb3",
+        "candidate_source_checks": [
+          {
+            "live_sha256": "7a714e321e77292e65ec468e4d6d10fd2438ecf89b755266319a88ea175b2d48",
+            "matches": true,
+            "mirror_sha256": "7a714e321e77292e65ec468e4d6d10fd2438ecf89b755266319a88ea175b2d48",
+            "path": "src/simple_ai_trading/inventory_cash_actions.py"
+          },
+          {
+            "live_sha256": "44bf7bc5bb194e65fe4c539c30713e84faf97b7b9893306c3f6dad721707f093",
+            "matches": true,
+            "mirror_sha256": "44bf7bc5bb194e65fe4c539c30713e84faf97b7b9893306c3f6dad721707f093",
+            "path": "src/simple_ai_trading/stateful_turnover_model.py"
+          },
+          {
+            "live_sha256": "e5cd049845dc23a8424406ab4eadb4861c59d56b16114f614b4c3e2f84605268",
+            "matches": true,
+            "mirror_sha256": "e5cd049845dc23a8424406ab4eadb4861c59d56b16114f614b4c3e2f84605268",
+            "path": "src/simple_ai_trading/hybrid_models.py"
+          },
+          {
+            "live_sha256": "f35d39bc3577cf4c17094d9ec5d1a8e9700968b74562f38f35c88e0311d4821b",
+            "matches": true,
+            "mirror_sha256": "f35d39bc3577cf4c17094d9ec5d1a8e9700968b74562f38f35c88e0311d4821b",
+            "path": "src/simple_ai_trading/stateful_cash_replay.py"
+          },
+          {
+            "live_sha256": "ceebcde40ecdec11ac325e1074d6f277064e4c4e73ea9ffa29362d96e8ab53b9",
+            "matches": true,
+            "mirror_sha256": "ceebcde40ecdec11ac325e1074d6f277064e4c4e73ea9ffa29362d96e8ab53b9",
+            "path": "src/simple_ai_trading/impact_absorption_event_pretraining.py"
+          }
+        ],
+        "financial_evidence": false
+      }
+    ],
+    "current_after_edit_index_claim": false,
+    "other_registration_modified": false,
+    "refresh_resource_context": {
+      "passive_cpu_percent": 19,
+      "available_RAM_GiB": 30.22,
+      "free_workspace_GiB": 889.53,
+      "compute_threads": 2,
+      "index_timeout_seconds": 240,
+      "outer_timeout_seconds": 300,
+      "benchmark": false
+    }
+  },
+  "model_version": {
+    "before": "causal-adv-square-root-v2",
+    "after": "causal-adv-square-root-fixed-base-v3",
+    "historical_artifacts_modified": false,
+    "automatic_retraining_or_retagging": false,
+    "universal_artifact_admission_implemented": false
+  },
+  "financial_frontier": {
+    "observations": 206,
+    "hypotheses": 65,
+    "historical_scoped_mechanisms": 37,
+    "qualified_stable_edges": 0,
+    "new_financial_observation": false
+  },
+  "authority": {
+    "external_source_requests": false,
+    "market_requests": false,
+    "account_or_order_access": false,
+    "real_credentials_used": false,
+    "protected_data_access": false,
+    "production_training": false,
+    "release": false,
+    "persistent_task_service_or_hook_created": false
+  },
+  "private_evidence": {
+    "intent.json": {
+      "bytes": 1651,
+      "sha256": "ff98df6d14d19ad7d579ffce95611f37427c338af3fb7dd0e5ed6c58b7f49602"
+    },
+    "baseline.json": {
+      "bytes": 633,
+      "sha256": "d2392577bb36a357e3d5d0e5dfac0ac143c4b885982249e79722a56d27342df1"
+    },
+    "baseline-source.zip": {
+      "bytes": 55180,
+      "sha256": "2e030f49671f9593ec7dd9d42fb23e7023dc4364a9a0361c5ea64282c7b93665"
+    },
+    "baseline.stdout.log": {
+      "bytes": 16018,
+      "sha256": "4b99e840e190ccc45817372bf5b0d15c8aeb127b371ed9846036e9a5b2a9516e"
+    },
+    "baseline.stderr.log": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "fixed.json": {
+      "bytes": 634,
+      "sha256": "4936acbb0023850c637296b4c27d3604cbf03a369578aeb9458ec4db637bbfd5"
+    },
+    "fixed-source.zip": {
+      "bytes": 55845,
+      "sha256": "95afdec98b25c61b1c368f09221e8d8fb3b897aae5968b46d751e596d82b8ff4"
+    },
+    "fixed.stdout.log": {
+      "bytes": 101,
+      "sha256": "5f31e4fba971e417126e3276e01adf2cd563213bf235a5b13391e7b81e14e6a5"
+    },
+    "fixed.stderr.log": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "domain.json": {
+      "bytes": 1664,
+      "sha256": "de7b7cda70e6a934db4c6d09b8ed7b0d91144ca1b807954e369a55ea502fdaa0"
+    },
+    "domain-source.zip": {
+      "bytes": 104585,
+      "sha256": "e50c429d35405dfc3ac98f3145d1b9b5cabbd2aaeb8a31c113436d7f55a8db53"
+    },
+    "domain.stdout.log": {
+      "bytes": 358,
+      "sha256": "947b7a51c2bbe1c00651a84d6994bb692857d6fa18ba1b37a9e3d2c6c03fa682"
+    },
+    "domain.stderr.log": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "index.stdout.log": {
+      "bytes": 391,
+      "sha256": "bdc596392a79ed8eac77b7c6ba66ae58b7786224a7f439c206d9e11dcabf2549"
+    },
+    "index.stderr.log": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "search.stdout.log": {
+      "bytes": 4225,
+      "sha256": "06338e3f25487a751e43f1ed2cec9763737f528852dc69502ae0969053250038"
+    },
+    "search.stderr.log": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "current-search.stdout.log": {
+      "bytes": 4702,
+      "sha256": "c485760e3a067e5da23df5ea02b4d4804e310cb6c78bb421ac50fd718a3d74c5"
+    },
+    "current-search.stderr.log": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "navigation.json": {
+      "bytes": 680,
+      "sha256": "9bbdf215056dba8f17311f4244e8094a32193b04af233bcf15eb9a5fedadcc1f"
+    },
+    "navigation-receipts.json": {
+      "bytes": 3650,
+      "sha256": "0951d5cbd271d462d76b7f84a880f2c98072209f88b85e314fbf760c402455d5"
+    }
+  },
+  "baseline_source_phase_publicly_reconstructible_from_hashes_alone": false,
+  "remaining": [
+    "Conditional ADV/impact and missing-volume proxies are not native liquidity, fills or fee qualification.",
+    "Independent lifecycle labels and supplied cash action tables do not supply a continuous hedged trainer.",
+    "Causal net targets, cash/funding/financing, feasible equal-capital alternatives and complete native coverage precede larger training.",
+    "Full search provenance, untouched chronological utility and dependence/tail evidence remain required.",
+    "Version provenance is not universal model/runtime admission; invalid models must not block independent owned closing.",
+    "Whole-repository semantic review, final bug hunt and complete product qualification remain incomplete."
+  ],
+  "evidence_sha256": "693e693fcfef8cb919518aedb40970f245f1af275e75ab0d8fff7756238ddd33"
+}

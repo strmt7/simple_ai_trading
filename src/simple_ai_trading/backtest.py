@@ -32,6 +32,7 @@ from .execution_simulation import (
     market_row_reported_quote_volume_notional,
     market_row_trailing_quote_volume_24h_estimate,
     simulate_market_fill,
+    fixed_base_quote_notional,
 )
 from .features import ModelRow
 from .financial_sanity import blocking_reasons, build_backtest_financial_sanity_report
@@ -483,7 +484,6 @@ def _close_position(
     price: float,
     entry_price: float,
     qty: float,
-    notional: float,
     margin_used: float,
     cfg: StrategyConfig,
     *,
@@ -493,12 +493,15 @@ def _close_position(
     execution_assumptions: ExecutionAssumptions | None = None,
 ) -> tuple[float, float, float, float, float]:
     fee_rate = _bps_to_rate(cfg.taker_fee_bps)
+    exit_notional = fixed_base_quote_notional(qty, price)
     exit_fill = _simulate_fill(
         price,
         -position_side,
         cfg,
-        notional=abs(notional),
-        volume=fill_volume_notional if fill_volume_notional > 0.0 else abs(notional) * 20.0,
+        notional=exit_notional,
+        volume=fill_volume_notional
+        if fill_volume_notional > 0.0
+        else exit_notional * 20.0,
         daily_volume=daily_volume_notional,
         symbol_profile=symbol_profile,
         assumptions=execution_assumptions,
@@ -506,7 +509,13 @@ def _close_position(
     exit_price = exit_fill.fill_price
     realized = position_side * (exit_price - entry_price) * qty
     exit_fee = abs(exit_price * qty) * fee_rate
-    return margin_used + realized - exit_fee, realized, exit_fee, exit_fill.total_cost_bps, exit_price
+    return (
+        margin_used + realized - exit_fee,
+        realized,
+        exit_fee,
+        exit_fill.total_cost_bps,
+        exit_price,
+    )
 
 
 def _futures_liquidation_state(
@@ -3130,7 +3139,6 @@ def run_backtest(
                         price=close_mark_price,
                         entry_price=entry_price,
                         qty=qty,
-                        notional=notional,
                         margin_used=margin_used,
                         cfg=cfg,
                         symbol_profile=symbol_profile,
@@ -3215,7 +3223,6 @@ def run_backtest(
                     price=drawdown_mark_price,
                     entry_price=entry_price,
                     qty=qty,
-                    notional=notional,
                     margin_used=margin_used,
                     cfg=cfg,
                     symbol_profile=symbol_profile,
@@ -3289,7 +3296,6 @@ def run_backtest(
             price=final_mark_price,
             entry_price=entry_price,
             qty=qty,
-            notional=notional,
             margin_used=margin_used,
             cfg=cfg,
             symbol_profile=symbol_profile,
