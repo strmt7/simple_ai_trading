@@ -109,11 +109,12 @@ before continuing an affected family. None supplies a qualified stable edge.
   cannot override Stop, ownership or closing.
 - [Native operator controls](review/2026-11-11/operator-control/review.md) give
   Stop priority during Pause, reject stale control-status samples and label both
-  dry-run venue states simulated. Release presentation checks and 53 focused
-  cases pass. Other pages, real backend/position freshness, keyboard/accessibility,
-  minimum-size/DPI coverage, diagnostics and persistent policy acceptance remain open.
-  Use the bounded hidden preview. Prior cross-process black-frame probes and
-  foreground activation must not be repeated.
+  dry-run venue states simulated. [Workspace repair](review/2026-11-11/operator-workspace/review.md)
+  fixes System/Risk help clipping and console overlap at 1280×860 DIPs, binds
+  hidden exports to a page and passes 61 focused cases plus Release checks.
+  Real backend/position freshness, other pages/states, keyboard/accessibility,
+  broader DPI coverage and persistent policy acceptance remain open. Use the
+  bounded hidden preview; never repeat black-frame probes or foreground activation.
 
 ## Maintenance and full qualification
 

@@ -1,6 +1,7 @@
 #include "command_contract.hpp"
 #include "operator_presentation.hpp"
 #include "window_snapshot.hpp"
+#include "workspace_layout.hpp"
 
 #include <dwmapi.h>
 #include <shellapi.h>
@@ -136,7 +137,19 @@ class MainWindow {
         if (env_present(L"SIMPLE_AI_TRADING_GUI_PREVIEW_BMP") && !env_present(L"SIMPLE_AI_TRADING_GUI_DRY_RUN")) {
             return 2;
         }
-        if (env_present(L"SIMPLE_AI_TRADING_GUI_PREVIEW_BMP")) show = SW_HIDE;
+        if (env_present(L"SIMPLE_AI_TRADING_GUI_PREVIEW_BMP")) {
+            show = SW_HIDE;
+            const auto requested_page = env_string(L"SIMPLE_AI_TRADING_GUI_PREVIEW_PAGE");
+            bool found = requested_page.empty();
+            for (std::size_t i = 0; i < kPages.size(); ++i) {
+                if (requested_page == kPages[i]) {
+                    page_index_ = static_cast<int>(i);
+                    found = true;
+                    break;
+                }
+            }
+            if (!found) return 2;
+        }
         instance_ = instance;
         SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
         WNDCLASSEXW wc{};
@@ -371,8 +384,10 @@ class MainWindow {
             return 0;
         case WM_GETMINMAXINFO: {
             auto* info = reinterpret_cast<MINMAXINFO*>(lparam);
-            info->ptMinTrackSize.x = scale(kMinWidth);
-            info->ptMinTrackSize.y = scale(kMinHeight);
+            RECT frame{0, 0, scale(kMinWidth), scale(kMinHeight)};
+            AdjustWindowRectExForDpi(&frame, WS_OVERLAPPEDWINDOW | WS_CLIPCHILDREN, FALSE, 0, dpi_);
+            info->ptMinTrackSize.x = frame.right - frame.left;
+            info->ptMinTrackSize.y = frame.bottom - frame.top;
             return 0;
         }
         case WM_DPICHANGED:
@@ -419,6 +434,12 @@ class MainWindow {
             if (!preview_path_.empty() && active_workers_.load() == 0 && operator_status_initialized_) {
                 preview_exit_code_ = presentation::save_hidden_snapshot(
                     hwnd_, preview_path_, [this](HDC dc) { render(dc); }) ? 0 : 2;
+                if (preview_exit_code_ == 0) {
+                    std::ofstream receipt(std::filesystem::path(preview_path_ + L".page"), std::ios::binary);
+                    receipt << page_index_ << '\n';
+                    receipt.flush();
+                    if (!receipt.good()) preview_exit_code_ = 2;
+                }
                 preview_path_.clear();
                 request_close();
             }
@@ -446,9 +467,12 @@ class MainWindow {
         preview_path_ = dry_run_ ? env_string(L"SIMPLE_AI_TRADING_GUI_PREVIEW_BMP") : L"";
         rebuild_fonts();
         create_controls();
+        apply_fonts();
         populate_pages();
         refresh_page();
-        output_ = L"Ready.\r\n" + runtime_summary() + L"\r\n";
+        output_ = dry_run_
+            ? L"Dry-run preview. Commands and venue states are simulated.\r\nNo account or order requests are sent.\r\n"
+            : L"Ready.\r\n" + runtime_summary() + L"\r\n";
         sync_output();
         layout();
         SetTimer(hwnd_, kApiBudgetTimerId, kApiBudgetRefreshMs, nullptr);
@@ -537,17 +561,21 @@ class MainWindow {
         body_font_ = make_font(15, FW_NORMAL);
         small_font_ = make_font(12, FW_NORMAL);
         mono_font_ = make_font(13, FW_NORMAL, L"Consolas");
+        apply_fonts();
+    }
+
+    void apply_fonts() {
         for (HWND control : all_controls()) {
             if (control) {
                 SendMessageW(control, WM_SETFONT, reinterpret_cast<WPARAM>(body_font_), TRUE);
             }
         }
-        if (title_) SendMessageW(title_, WM_SETFONT, reinterpret_cast<WPARAM>(title_font_), TRUE);
         if (subtitle_) SendMessageW(subtitle_, WM_SETFONT, reinterpret_cast<WPARAM>(small_font_), TRUE);
-        if (safety_) SendMessageW(safety_, WM_SETFONT, reinterpret_cast<WPARAM>(body_font_), TRUE);
+        if (safety_) SendMessageW(safety_, WM_SETFONT, reinterpret_cast<WPARAM>(small_font_), TRUE);
         if (page_title_) SendMessageW(page_title_, WM_SETFONT, reinterpret_cast<WPARAM>(title_font_), TRUE);
         if (page_summary_) SendMessageW(page_summary_, WM_SETFONT, reinterpret_cast<WPARAM>(small_font_), TRUE);
         if (output_edit_) SendMessageW(output_edit_, WM_SETFONT, reinterpret_cast<WPARAM>(mono_font_), TRUE);
+        if (help_label_) SendMessageW(help_label_, WM_SETFONT, reinterpret_cast<WPARAM>(small_font_), TRUE);
     }
 
     std::vector<HWND> all_controls() const {
@@ -588,7 +616,7 @@ class MainWindow {
         subtitle_ = create_control(L"STATIC", L"Day-trading workstation", SS_LEFT, 0);
         safety_ = create_control(
             L"STATIC",
-            L"Conservative default: 5x futures, spot stays 1x. Testnet first.\r\nProfit reinvestment is off. Binance and Polymarket Stops are independent.",
+            L"Conservative defaults: futures 5x; spot 1x. Testnet first.\r\nReinvestment off. Venue Stops are independent.",
             SS_LEFT | SS_NOPREFIX,
             0);
         page_title_ = create_control(L"STATIC", L"Home", SS_LEFT, 0);
@@ -602,14 +630,15 @@ class MainWindow {
             kCommandComboId);
         args_label_ = create_control(L"STATIC", L"Extra Flags", SS_LEFT, 0);
         args_edit_ = create_control(L"EDIT", L"", ES_AUTOHSCROLL | WS_TABSTOP, kArgsEditId);
-        help_label_ = create_control(L"STATIC", L"", SS_LEFT | SS_NOPREFIX, 0);
+        help_label_ = create_control(
+            L"EDIT", L"", ES_MULTILINE | ES_READONLY | ES_AUTOVSCROLL | WS_VSCROLL | WS_TABSTOP, 0);
         quick_label_ = create_control(L"STATIC", L"Recommended Workflows", SS_LEFT, 0);
         tools_label_ = create_control(L"STATIC", L"Safety Controls", SS_LEFT, 0);
         output_label_ = create_control(L"STATIC", L"Activity Log", SS_LEFT, 0);
         output_edit_ = create_control(
             L"EDIT",
             L"",
-            ES_MULTILINE | ES_READONLY | ES_AUTOVSCROLL | WS_TABSTOP,
+            ES_MULTILINE | ES_READONLY | ES_AUTOVSCROLL | WS_VSCROLL | WS_TABSTOP,
             kOutputEditId);
         run_selected_ = create_control(L"BUTTON", L"Run Command", BS_OWNERDRAW | WS_TABSTOP, kRunSelectedId);
         selected_help_ = create_control(L"BUTTON", L"Command Help", BS_OWNERDRAW | WS_TABSTOP, kSelectedHelpId);
@@ -691,7 +720,7 @@ class MainWindow {
         for (const wchar_t* page : kPages) {
             SendMessageW(page_list_, LB_ADDSTRING, 0, reinterpret_cast<LPARAM>(page));
         }
-        SendMessageW(page_list_, LB_SETCURSEL, 0, 0);
+        SendMessageW(page_list_, LB_SETCURSEL, static_cast<WPARAM>(page_index_), 0);
     }
 
     static void set_visible(HWND control, bool visible) {
@@ -791,6 +820,16 @@ class MainWindow {
         (void)gap;
     }
 
+    presentation::WorkspaceLayout workspace_geometry(const RECT& client) const {
+        return presentation::workspace_layout(
+            MulDiv(client.right, 96, dpi_), MulDiv(client.bottom, 96, dpi_),
+            static_cast<int>(quick_actions_.size()));
+    }
+
+    void place(HWND control, int left, int top, int width, int height) const {
+        MoveWindow(control, scale(left), scale(top), scale(width), scale(height), TRUE);
+    }
+
     void layout() {
         if (!hwnd_ || !title_) return;
         RECT client{};
@@ -815,83 +854,60 @@ class MainWindow {
         SetWindowTextW(pause_polymarket_, L"Pause Polymarket");
         SetWindowTextW(stop_binance_, L"Stop Binance");
         SetWindowTextW(stop_polymarket_, L"Stop Polymarket");
-        const int pad = scale(20);
-        const int sidebar = scale(236);
-        const int header_h = scale(86);
-        const int footer_h = scale(68);
-        const int gap = scale(18);
-        const int right = client.right - pad;
-        const int footer_top = client.bottom - footer_h;
-        const int bottom = footer_top - pad;
-        const int main_left = sidebar + gap;
-        const int main_width = std::max(scale(720), right - main_left);
+        const auto view = workspace_geometry(client);
+        const int main_left = view.main_left;
+        const int right = view.right;
+        const int main_width = view.width;
 
-        MoveWindow(title_, pad + scale(48), scale(20), sidebar - scale(76), scale(34), TRUE);
-        MoveWindow(subtitle_, pad + scale(48), scale(56), sidebar - scale(76), scale(24), TRUE);
-        MoveWindow(safety_, main_left + scale(58), scale(22), std::max(scale(460), main_width - scale(560)), scale(54), TRUE);
-        MoveWindow(page_list_, scale(14), scale(128), sidebar - scale(28), std::max(scale(300), bottom - scale(128)), TRUE);
-        MoveWindow(page_title_, main_left + scale(42), header_h + scale(24), main_width - scale(42), scale(38), TRUE);
-        MoveWindow(page_summary_, main_left + scale(42), header_h + scale(64), main_width - scale(42), scale(28), TRUE);
+        place(title_, 68, 20, 160, 28);
+        place(subtitle_, 68, 52, 160, 24);
+        place(safety_, main_left + 58, 24, main_width - 488, 54);
+        place(page_list_, 14, 128, 208, view.bottom - 128);
+        place(page_title_, main_left + 42, view.header_height + 8, main_width - 42, 38);
+        place(page_summary_, main_left + 42, view.header_height + 50, main_width - 42, 24);
 
-        const int command_card_top = header_h + scale(102);
-        const int command_card_h = scale(136);
-        const int command_inner_top = command_card_top + scale(18);
-        const int action_w = scale(156);
-        const int action_left = right - action_w - scale(22);
-        const int field_left = main_left + scale(22);
-        const int field_gap = scale(16);
-        const int field_area_w = std::max(scale(500), action_left - field_left - gap);
-        const int combo_w = std::max(scale(230), (field_area_w - field_gap) / 2);
-        const int args_w = std::max(scale(230), field_area_w - combo_w - field_gap);
+        const int command_inner_top = view.command_top + 18;
+        const int action_w = 156;
+        const int action_left = right - action_w - 22;
+        const int field_left = main_left + 22;
+        const int field_gap = 16;
+        const int field_area_w = action_left - field_left - 18;
+        const int combo_w = (field_area_w - field_gap) / 2;
+        const int args_w = field_area_w - combo_w - field_gap;
         const int args_left = field_left + combo_w + field_gap;
-        MoveWindow(command_label_, field_left, command_inner_top, combo_w, scale(24), TRUE);
-        MoveWindow(command_combo_, field_left, command_inner_top + scale(34), combo_w, scale(240), TRUE);
-        MoveWindow(args_label_, args_left, command_inner_top, args_w, scale(24), TRUE);
-        MoveWindow(args_edit_, args_left, command_inner_top + scale(34), args_w, scale(38), TRUE);
-        MoveWindow(help_label_, field_left, command_inner_top + scale(82), std::max(scale(320), field_area_w), scale(36), TRUE);
-        MoveWindow(run_selected_, action_left, command_inner_top + scale(6), action_w, scale(42), TRUE);
-        MoveWindow(selected_help_, action_left, command_inner_top + scale(60), action_w, scale(40), TRUE);
+        place(command_label_, field_left, command_inner_top, combo_w, 24);
+        place(command_combo_, field_left, command_inner_top + 30, combo_w, 240);
+        place(args_label_, args_left, command_inner_top, args_w, 24);
+        place(args_edit_, args_left, command_inner_top + 30, args_w, 30);
+        place(help_label_, field_left, command_inner_top + 74, field_area_w, 54);
+        place(run_selected_, action_left, command_inner_top + 6, action_w, 42);
+        place(selected_help_, action_left, command_inner_top + 62, action_w, 40);
 
-        const int quick_label_top = command_card_top + command_card_h + scale(24);
-        MoveWindow(quick_label_, main_left, quick_label_top, main_width, scale(26), TRUE);
-        const int quick_top = quick_label_top + scale(34);
-        const int quick_cols = main_width >= scale(1040) ? 4 : (main_width >= scale(760) ? 2 : 1);
-        const int quick_gap = scale(14);
-        const int quick_h = scale(76);
-        const int quick_w = (main_width - (quick_gap * (quick_cols - 1))) / quick_cols;
+        place(quick_label_, main_left, view.workflow_label_top, main_width, 24);
+        const int quick_cols = view.workflow_columns;
+        const int quick_w = (main_width - view.workflow_gap * (quick_cols - 1)) / quick_cols;
         for (int i = 0; i < static_cast<int>(quick_buttons_.size()); ++i) {
             const int col = i % quick_cols;
             const int row = i / quick_cols;
-            MoveWindow(
+            place(
                 quick_buttons_[static_cast<std::size_t>(i)],
-                main_left + (col * (quick_w + quick_gap)),
-                quick_top + (row * (quick_h + quick_gap)),
-                quick_w,
-                quick_h,
-                TRUE);
+                main_left + col * (quick_w + view.workflow_gap),
+                view.workflow_top + row * (view.workflow_height + view.workflow_gap),
+                quick_w, view.workflow_height);
         }
 
-        const int visible_actions = std::min(static_cast<int>(quick_actions_.size()), static_cast<int>(quick_buttons_.size()));
-        const int quick_rows = std::max(1, (visible_actions + quick_cols - 1) / quick_cols);
-        const int tools_label_top = quick_top + (quick_rows * quick_h) + ((quick_rows - 1) * quick_gap) + scale(26);
-        MoveWindow(tools_label_, main_left, tools_label_top, main_width, scale(26), TRUE);
-        const int tools_top = tools_label_top + scale(34);
-        const int tool_gap = scale(12);
-        const int tool_w = (main_width - (tool_gap * 3)) / 4;
-        const int tool_h = scale(46);
-        MoveWindow(ai_preflight_, main_left, tools_top, tool_w, tool_h, TRUE);
-        MoveWindow(stop_binance_, main_left + (tool_w + tool_gap), tools_top, tool_w, tool_h, TRUE);
-        MoveWindow(pause_polymarket_, main_left + (2 * (tool_w + tool_gap)), tools_top, tool_w, tool_h, TRUE);
-        MoveWindow(stop_polymarket_, main_left + (3 * (tool_w + tool_gap)), tools_top, tool_w, tool_h, TRUE);
-        const int diagnostic_top = tools_top + tool_h + tool_gap;
-        MoveWindow(backtest_chart_, main_left, diagnostic_top, tool_w, tool_h, TRUE);
-        MoveWindow(model_lab_, main_left + (tool_w + tool_gap), diagnostic_top, tool_w, tool_h, TRUE);
-        MoveWindow(risk_report_, main_left + (2 * (tool_w + tool_gap)), diagnostic_top, tool_w, tool_h, TRUE);
-
-        const int output_top = tools_top + scale(116);
-        MoveWindow(output_label_, main_left + scale(18), output_top - scale(34), main_width - scale(36), scale(28), TRUE);
-        MoveWindow(output_edit_, main_left + scale(18), output_top, main_width - scale(36), std::max(scale(96), bottom - output_top), TRUE);
-        MoveWindow(status_bar_, scale(28), footer_top + scale(24), client.right - scale(56), scale(30), TRUE);
+        place(tools_label_, main_left, view.safety_label_top, main_width, 24);
+        const int tool_w = (main_width - view.safety_gap * 3) / 4;
+        const std::array<HWND, 7> tools{
+            ai_preflight_, stop_binance_, pause_polymarket_, stop_polymarket_,
+            backtest_chart_, model_lab_, risk_report_};
+        for (std::size_t i = 0; i < tools.size(); ++i) {
+            place(tools[i], main_left + static_cast<int>(i % 4) * (tool_w + view.safety_gap),
+                  i < 4 ? view.safety_top : view.diagnostic_top, tool_w, view.safety_height);
+        }
+        place(output_label_, main_left + 18, view.output_label_top, main_width - 36, 20);
+        place(output_edit_, main_left + 18, view.output_top, main_width - 36, view.bottom - view.output_top - 12);
+        place(status_bar_, 28, view.footer_top + 16, right - 36, 26);
     }
 
     int telemetry_cell_width(int client_width) const {
@@ -990,22 +1006,20 @@ class MainWindow {
         }
         if (dry_run_) {
             environment_state = L"Dry-run preview";
-            bot_state = L"Binance simulated";
-            polymarket_state = L"Polymarket simulated";
             ai_state = L"AI simulated";
-            bot_state_tone = presentation::Tone::simulation;
-            polymarket_state_tone = presentation::Tone::simulation;
         }
+        const auto binance_display = presentation::runtime_display(L"Binance", {bot_state, bot_state_tone}, dry_run_);
+        const auto polymarket_display = presentation::runtime_display(L"Polymarket", {polymarket_state, polymarket_state_tone}, dry_run_);
         const std::array<std::wstring, 5> states{
             environment_state,
-            bot_state,
-            polymarket_state,
+            binance_display.label,
+            polymarket_display.label,
             command_contract_state,
             ai_state};
         const std::array<presentation::Tone, 5> state_tones{
             dry_run_ ? presentation::Tone::simulation : presentation::Tone::unknown,
-            bot_state_tone,
-            polymarket_state_tone,
+            binance_display.tone,
+            polymarket_display.tone,
             command_contract_synced_.load() ? presentation::Tone::observed : presentation::Tone::unknown,
             dry_run_ ? presentation::Tone::simulation : presentation::Tone::unknown};
         const int ai_state_index = static_cast<int>(states.size()) - 1;
@@ -1143,13 +1157,12 @@ class MainWindow {
 
         const int pad = scale(20);
         const int sidebar = scale(236);
-        const int header_h = scale(86);
-        const int footer_h = scale(68);
+        const auto view = workspace_geometry(client);
+        const int header_h = scale(view.header_height);
         const int gap = scale(18);
-        const int footer_top = client.bottom - footer_h;
+        const int footer_top = scale(view.footer_top);
         const int main_left = sidebar + gap;
         const int right = client.right - pad;
-        const int main_width = std::max(scale(720), right - main_left);
 
         RECT sidebar_rect{0, 0, sidebar, footer_top};
         fill_rect(dc, sidebar_rect, RGB(20, 27, 32));
@@ -1163,21 +1176,27 @@ class MainWindow {
         RECT shield{main_left + scale(16), scale(28), main_left + scale(42), scale(54)};
         draw_simple_icon(dc, shield, RGB(185, 196, 202), 0);
 
-        RECT health_box{right - scale(414), scale(12), right - scale(270), scale(76)};
-        RECT time_box{right - scale(254), scale(12), right - scale(122), scale(76)};
-        RECT config_box{right - scale(108), scale(12), right, scale(76)};
+        RECT health_box{right - scale(414), scale(12), right - scale(148), scale(84)};
+        RECT time_box{right - scale(132), scale(12), right, scale(84)};
         round_rect(dc, health_box, RGB(22, 30, 36), RGB(44, 58, 66), scale(8));
         round_rect(dc, time_box, RGB(22, 30, 36), RGB(44, 58, 66), scale(8));
-        round_rect(dc, config_box, RGB(22, 30, 36), RGB(44, 58, 66), scale(8));
         RECT health_title{health_box.left + scale(16), health_box.top + scale(10), health_box.right - scale(12), health_box.top + scale(31)};
-        RECT health_status{health_box.left + scale(16), health_box.top + scale(34), health_box.right - scale(12), health_box.bottom - scale(8)};
-        std::wstring runtime_state;
+        RECT health_status{health_box.left + scale(16), health_box.top + scale(30), health_box.right - scale(12), health_box.top + scale(48)};
+        RECT polymarket_status{health_status.left, health_box.top + scale(48), health_status.right, health_box.bottom - scale(6)};
+        std::wstring runtime_state, polymarket_state;
+        presentation::Tone runtime_tone, polymarket_tone;
         {
             std::lock_guard lock(operator_status_mutex_);
             runtime_state = bot_state_;
+            polymarket_state = polymarket_state_;
+            runtime_tone = bot_state_tone_;
+            polymarket_tone = polymarket_state_tone_;
         }
+        const auto binance_display = presentation::runtime_display(L"Binance", {runtime_state, runtime_tone}, dry_run_);
+        const auto polymarket_display = presentation::runtime_display(L"Polymarket", {polymarket_state, polymarket_tone}, dry_run_);
         draw_text(dc, L"Operator state", health_title, small_font_, kText, DT_LEFT | DT_SINGLELINE | DT_END_ELLIPSIS);
-        draw_text(dc, runtime_state, health_status, small_font_, kMuted, DT_LEFT | DT_SINGLELINE | DT_END_ELLIPSIS);
+        draw_text(dc, binance_display.label, health_status, small_font_, status_color(binance_display.tone), DT_LEFT | DT_SINGLELINE | DT_END_ELLIPSIS);
+        draw_text(dc, polymarket_display.label, polymarket_status, small_font_, status_color(polymarket_display.tone), DT_LEFT | DT_SINGLELINE | DT_END_ELLIPSIS);
         SYSTEMTIME local_time{};
         GetLocalTime(&local_time);
         wchar_t time_value[16]{};
@@ -1186,30 +1205,17 @@ class MainWindow {
         RECT time_caption{time_box.left + scale(14), time_box.top + scale(35), time_box.right - scale(10), time_box.bottom - scale(8)};
         draw_text(dc, time_value, time_main, body_font_, kText, DT_LEFT | DT_SINGLELINE | DT_END_ELLIPSIS);
         draw_text(dc, L"Local Time", time_caption, small_font_, kMuted, DT_LEFT | DT_SINGLELINE | DT_END_ELLIPSIS);
-        RECT config_text{config_box.left + scale(14), config_box.top, config_box.right - scale(10), config_box.bottom};
-        draw_text(dc, L"Configure", config_text, small_font_, kText, DT_CENTER | DT_VCENTER | DT_SINGLELINE | DT_END_ELLIPSIS);
 
-        RECT page_icon{main_left + scale(2), header_h + scale(33), main_left + scale(28), header_h + scale(59)};
+        RECT page_icon{main_left + scale(2), header_h + scale(16), main_left + scale(28), header_h + scale(42)};
         draw_simple_icon(dc, page_icon, RGB(176, 190, 198), page_index_);
 
-        const int command_card_top = header_h + scale(102);
-        RECT command_card{main_left, command_card_top, right, command_card_top + scale(136)};
+        RECT command_card{main_left, scale(view.command_top), right, scale(view.command_top + view.command_height)};
         round_rect(dc, command_card, RGB(22, 30, 36), RGB(43, 57, 65), scale(8));
         const int action_left = right - scale(156) - scale(22);
         RECT command_divider{action_left - scale(16), command_card.top + scale(18), action_left - scale(15), command_card.bottom - scale(18)};
         fill_rect(dc, command_divider, RGB(35, 45, 52));
 
-        const int quick_label_top = command_card.bottom + scale(24);
-        const int quick_top = quick_label_top + scale(34);
-        const int quick_cols = main_width >= scale(1040) ? 4 : (main_width >= scale(760) ? 2 : 1);
-        const int quick_gap = scale(14);
-        const int quick_h = scale(76);
-        const int visible_actions = std::min(static_cast<int>(quick_actions_.size()), static_cast<int>(quick_buttons_.size()));
-        const int quick_rows = std::max(1, (visible_actions + quick_cols - 1) / quick_cols);
-        const int tools_label_top = quick_top + (quick_rows * quick_h) + ((quick_rows - 1) * quick_gap) + scale(26);
-        const int tools_top = tools_label_top + scale(34);
-        const int output_top = tools_top + scale(116);
-        RECT output_card{main_left, output_top - scale(46), right, footer_top - pad};
+        RECT output_card{main_left, scale(view.output_card_top), right, scale(view.bottom)};
         round_rect(dc, output_card, RGB(20, 27, 32), RGB(43, 57, 65), scale(8));
 
         RECT footer_line{pad, footer_top, client.right - pad, footer_top + scale(1)};
@@ -1254,7 +1260,7 @@ class MainWindow {
     LRESULT color_control(HDC dc, HWND control, UINT message) {
         SetTextColor(dc, kText);
         SetBkColor(dc, kBg);
-        if (control == output_edit_ || control == args_edit_) {
+        if (control == output_edit_ || control == args_edit_ || control == help_label_) {
             SetTextColor(dc, RGB(218, 228, 232));
             SetBkColor(dc, RGB(14, 18, 21));
             return reinterpret_cast<LRESULT>(edit_brush_);
@@ -1405,7 +1411,8 @@ class MainWindow {
             label.left += scale(44);
             draw_text(item->hDC, text_value, label, small_font_, text, DT_LEFT | DT_VCENTER | DT_SINGLELINE | DT_END_ELLIPSIS);
         } else if ((workflow_card || safety_card) && !compact_overview_action) {
-            RECT icon{label.left + scale(10), label.top + scale(14), label.left + scale(34), label.top + scale(38)};
+            const int icon_top = label.top + (label.bottom - label.top - scale(24)) / 2;
+            RECT icon{label.left + scale(10), icon_top, label.left + scale(34), icon_top + scale(24)};
             draw_simple_icon(item->hDC, icon, danger ? RGB(255, 92, 104) : (primary ? RGB(61, 210, 184) : RGB(67, 188, 220)), id);
             label.left += scale(54);
             draw_text(item->hDC, text_value, label, body_font_, text, DT_LEFT | DT_VCENTER | DT_SINGLELINE | DT_END_ELLIPSIS);

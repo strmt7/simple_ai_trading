@@ -1,0 +1,164 @@
+{
+  "schema_version": "native-operator-workspace-review-v1",
+  "base_revision": "c5f66017f6d02369ae18b6099146684b927af6ca",
+  "recorded_at_utc": "2026-11-11T06:28:57.875021+00:00",
+  "scope": "Actual hidden Release dry-run frames for Overview, System and Risk at 1280x860 client DIPs; minimum-size layout, simulation presentation and page-bound export.",
+  "screenshots": [
+    {
+      "file": "01-overview.png",
+      "sha256": "1a6fb98bb1062409a63f017c9f089af36cfdd7e390294f91e7dda3279adbb489",
+      "preview": {
+        "width": 1920,
+        "height": 1290,
+        "width_dips": 1280,
+        "height_dips": 860,
+        "page": "Overview",
+        "page_binding_verified": true,
+        "implicit_environment_inheritance": false,
+        "hidden": true,
+        "dry_run": true,
+        "owned_process_exited": true
+      },
+      "visually_inspected": true,
+      "publication_privacy_review": "accepted: no workstation paths or credentials visible"
+    },
+    {
+      "file": "02-system.png",
+      "sha256": "8a6a042d9dc6026082236d2f5ccd018f5dfebef109478259bb3829cae978e68e",
+      "preview": {
+        "width": 1920,
+        "height": 1290,
+        "width_dips": 1280,
+        "height_dips": 860,
+        "page": "System",
+        "page_binding_verified": true,
+        "implicit_environment_inheritance": false,
+        "hidden": true,
+        "dry_run": true,
+        "owned_process_exited": true
+      },
+      "visually_inspected": true,
+      "publication_privacy_review": "accepted: no workstation paths or credentials visible"
+    },
+    {
+      "file": "03-risk.png",
+      "sha256": "de34c11b8fe59b097c09fcf21b69f54ba295a2e2a3741ebcc73dca953a908c80",
+      "preview": {
+        "width": 1920,
+        "height": 1290,
+        "width_dips": 1280,
+        "height_dips": 860,
+        "page": "Risk",
+        "page_binding_verified": true,
+        "implicit_environment_inheritance": false,
+        "hidden": true,
+        "dry_run": true,
+        "owned_process_exited": true
+      },
+      "visually_inspected": true,
+      "publication_privacy_review": "accepted: no workstation paths or credentials visible"
+    }
+  ],
+  "native_executable_sha256": "649e4b634a8a05a36187157b801f6e56c7191f81971d1d2baee1714664c167e2",
+  "native_source_sha256": {
+    "native/windows/CMakeLists.txt": "0c7fa5f48ac0075ec143fd66526bd0f4e6007cf47c228ab486bced68dd107ae1",
+    "native/windows/generated/command_contract.hpp": "3b7dee5c0c18edfcd1d6387e2d12ad93ece8383bfdb4cf87a783e55b1a38b59b",
+    "native/windows/src/main.cpp": "79c8af5084ea6109acf275cd07088754b81cb24ab1bce63500110ea4bd6d233d",
+    "native/windows/src/operator_presentation.hpp": "758cc04d147d27f62060f0709a1434e22fdc6e3e700453180f4cf4107f940fbd",
+    "native/windows/src/window_snapshot.hpp": "f1d438f68ca9c6f3ff54c001258365ba85af6944cbe1d14e5f70ccf28d0bb8b9",
+    "native/windows/src/workspace_layout.hpp": "7393e08706ac8ab485d09271252f4d118b06d2546b596811ddbba4e85ead3fdc",
+    "native/windows/tests/operator_presentation_tests.cpp": "50f30a1479d63f6fc440b0715c8ece9c24814e5e3353a7a89ae303b295cbd9e2",
+    "tools/capture_native_windows_preview.py": "cb62d0dea1b2a61cb03b6654e02d0dc6ca41c362208bd25b70d621bf1c3ea3d6"
+  },
+  "verification": {
+    "summary": "61 passed in 11.02s",
+    "tested_source_sha256": {
+      "native/windows/CMakeLists.txt": "0c7fa5f48ac0075ec143fd66526bd0f4e6007cf47c228ab486bced68dd107ae1",
+      "native/windows/generated/command_contract.hpp": "3b7dee5c0c18edfcd1d6387e2d12ad93ece8383bfdb4cf87a783e55b1a38b59b",
+      "native/windows/src/main.cpp": "79c8af5084ea6109acf275cd07088754b81cb24ab1bce63500110ea4bd6d233d",
+      "native/windows/src/operator_presentation.hpp": "758cc04d147d27f62060f0709a1434e22fdc6e3e700453180f4cf4107f940fbd",
+      "native/windows/src/window_snapshot.hpp": "f1d438f68ca9c6f3ff54c001258365ba85af6944cbe1d14e5f70ccf28d0bb8b9",
+      "native/windows/src/workspace_layout.hpp": "7393e08706ac8ab485d09271252f4d118b06d2546b596811ddbba4e85ead3fdc",
+      "native/windows/tests/operator_presentation_tests.cpp": "50f30a1479d63f6fc440b0715c8ece9c24814e5e3353a7a89ae303b295cbd9e2",
+      "pyproject.toml": "ba3abf799470355457fa6ec0c94d183d59a707793bc09e80686e8f27632a9658",
+      "src/simple_ai_trading/command_contract.py": "96745bd629f7928e3b19bae213e82e2273b5aad26aba185392accf7bce5a2243",
+      "src/simple_ai_trading/windows_app.py": "81736a184cb4e2d945585212627782e4ed83e4b0c837d34dcf9ed1afb9846f7a",
+      "src/simple_ai_trading/windows_owned_job.py": "82dd0e80340c8388f20d6871863fdf5075d4f271d0c7fe9276a295db962f05ae",
+      "tests/test_ai_runtime_and_parity.py": "1f6490adcf1895f916a2b4ee1708af93c97b2bc06ed02097a657043450d7d193",
+      "tests/test_native_windows_preview.py": "b2f4278b88de28549b9ee485d088f18b3f61b4e16b6bd60707f36018b3709d9b",
+      "tests/test_windows_owned_job.py": "be1d91b65ba67e4f74650ac135921ada1025e472a99b2d2648c08aeee2738cf3",
+      "tools/capture_native_windows_preview.py": "cb62d0dea1b2a61cb03b6654e02d0dc6ca41c362208bd25b70d621bf1c3ea3d6",
+      "tools/cocoindex_agent_search.py": "6816e66b07646a4d7c68ea46a82d72f0f2eba2c991e341e64f6b06d9b4357a32",
+      "uv.lock": "b1cfcb732433e7f4294ccbab128838435a72e9ab6025ea4622816ea51bde6f06"
+    },
+    "source_unchanged_after_run": true,
+    "native_presentation_returncode": 0,
+    "native_preview_rejections": [
+      {
+        "case": "missing-dry-run",
+        "returncode": 2,
+        "frame_created": false,
+        "page_receipt_created": false,
+        "owned_child_exited": true
+      },
+      {
+        "case": "unknown-page",
+        "returncode": 2,
+        "frame_created": false,
+        "page_receipt_created": false,
+        "owned_child_exited": true
+      }
+    ],
+    "ruff_check": "pass",
+    "ruff_format_check": "pass",
+    "build_workers": 2,
+    "raw_log_sha256": {
+      "final-build.log": "4effd41333f03ac51448843b676cc99c7935131d7527117c9e925ff377e4e1a1",
+      "final-presentation.log": "7eb70257593da06f682a3ddda54a9d260d4fc514f645237f5ca74b08f8da61a6",
+      "final-tests.stdout.log": "407c04390acdb707d0e8190cabc5b652360481e29c2ba59446b35254ba5805cd",
+      "final-tests.stderr.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "source_archive_sha256": "45050d7c82e8563aedb0709b500bf6a99342e8b4ee0edefd42592c8ec7e8dc67"
+  },
+  "baseline": {
+    "overview_sha256": "1a6fb98bb1062409a63f017c9f089af36cfdd7e390294f91e7dda3279adbb489",
+    "overview_final_equals_baseline": true,
+    "other_raw_images_retained_privately": true,
+    "observed_defects": [
+      "System/Risk help clipped; diagnostic controls and activity console overlapped; console crossed footer.",
+      "Header state clipped and Polymarket omitted.",
+      "Initial font roles were not applied after controls were created."
+    ],
+    "intermediate_defect": "The first layout repair exposed a simulated Binance state with observed tone; final shared presentation marks both venues simulated."
+  },
+  "navigation": {
+    "scope": "Exact previously reviewed native paths and symbols; no broad conceptual repository search this phase.",
+    "new_cocoindex_search_claim": false,
+    "old_semantic_binding_reused_as_current": false
+  },
+  "authority": {
+    "source_content_or_market_captures": 0,
+    "account_requests": 0,
+    "venue_orders": 0,
+    "production_model_fits": 0,
+    "gpu_benchmarks": 0,
+    "protected_partial_data_accessed": false,
+    "visible_helper_windows": 0,
+    "persistent_launchers_installed": 0
+  },
+  "financial_frontier": {
+    "observations": 206,
+    "hypotheses": 65,
+    "historical_scoped_mechanisms": 37,
+    "qualified_stable_edges": 0,
+    "new_economic_observations": 0,
+    "discovery_snippets_admitted_as_evidence": false
+  },
+  "limits": [
+    "Other native pages/states were not visually audited in this phase.",
+    "No keyboard, screen-reader, scrolling interaction, multiple-monitor DPI transition or real backend acceptance.",
+    "Geometry assertions at other sizes are not visual or accessibility qualification.",
+    "No claim of observed flat exposure, capital safety, profitability or completed institutional product."
+  ],
+  "evidence_sha256": "921f9eeea5c8ad93e6620617e2d37560c7d0c182de1ecd3b79d95175c5de701d"
+}

@@ -15,6 +15,11 @@ struct Status {
     Tone tone = Tone::unknown;
 };
 
+inline Status runtime_display(std::wstring_view venue, Status observation, bool simulated) {
+    if (simulated) return {std::wstring(venue) + L" simulated", Tone::simulation};
+    return observation;
+}
+
 inline bool unsigned_count(std::wstring_view text, std::uint64_t& value) {
     if (text.empty()) return false;
     value = 0;

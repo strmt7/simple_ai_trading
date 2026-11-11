@@ -9,6 +9,16 @@ from pathlib import Path
 import subprocess
 import tempfile
 
+PREVIEW_PAGES = (
+    "Overview",
+    "Trading",
+    "Research",
+    "Risk",
+    "Data",
+    "System",
+    "Settings",
+)
+
 
 def capture(
     executable: Path,
@@ -17,6 +27,7 @@ def capture(
     repository_root: Path | None = None,
     width_dips: int = 1680,
     height_dips: int = 1020,
+    page: str = "Overview",
 ) -> dict[str, object]:
     """Render in-process, retaining a new PNG only after clean owned-child exit."""
     if os.name != "nt":
@@ -26,6 +37,8 @@ def capture(
     from simple_ai_trading.windows_owned_job import CREATE_SUSPENDED, WindowsOwnedJob
 
     executable, output = executable.resolve(), output.resolve()
+    if not isinstance(page, str) or page not in PREVIEW_PAGES:
+        raise ValueError("Preview page is outside the native bounded scope")
     root = (repository_root or Path(__file__).resolve().parents[1]).resolve()
     if (
         type(width_dips) is not int
@@ -48,11 +61,25 @@ def capture(
     startup.wShowWindow = subprocess.SW_HIDE
     with tempfile.TemporaryDirectory(prefix="trading-native-preview-") as directory:
         bitmap = Path(directory) / "preview.bmp"
-        env = os.environ.copy()
+        allowed = {
+            "PATH",
+            "SYSTEMROOT",
+            "WINDIR",
+            "COMSPEC",
+            "TEMP",
+            "TMP",
+            "USERPROFILE",
+            "LOCALAPPDATA",
+            "APPDATA",
+        }
+        env = {
+            key: value for key, value in os.environ.items() if key.upper() in allowed
+        }
         env["SIMPLE_AI_TRADING_GUI_DRY_RUN"] = "1"
         env["SIMPLE_AI_TRADING_GUI_PREVIEW_BMP"] = str(bitmap)
         env["SIMPLE_AI_TRADING_GUI_PREVIEW_WIDTH_DIPS"] = str(width_dips)
         env["SIMPLE_AI_TRADING_GUI_PREVIEW_HEIGHT_DIPS"] = str(height_dips)
+        env["SIMPLE_AI_TRADING_GUI_PREVIEW_PAGE"] = page
         env["SIMPLE_AI_TRADING_REPO_ROOT"] = str(root)
         env.pop("SIMPLE_AI_TRADING_GUI_SMOKE", None)
         job, process = WindowsOwnedJob(), None
@@ -72,6 +99,14 @@ def capture(
                 raise RuntimeError(
                     "Native hidden preview did not exit with a complete frame"
                 )
+            page_receipt = Path(str(bitmap) + ".page")
+            if (
+                not page_receipt.is_file()
+                or page_receipt.stat().st_size != 2
+                or page_receipt.read_bytes()
+                != f"{PREVIEW_PAGES.index(page)}\n".encode("ascii")
+            ):
+                raise RuntimeError("Native hidden preview page binding differs")
         finally:
             try:
                 job.close()
@@ -95,6 +130,9 @@ def capture(
         "height": height,
         "width_dips": width_dips,
         "height_dips": height_dips,
+        "page": page,
+        "page_binding_verified": True,
+        "implicit_environment_inheritance": False,
         "hidden": True,
         "dry_run": True,
         "owned_process_exited": True,
@@ -109,6 +147,7 @@ def main() -> None:
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--width-dips", type=int, default=1680)
     parser.add_argument("--height-dips", type=int, default=1020)
+    parser.add_argument("--page", choices=PREVIEW_PAGES, default="Overview")
     args = parser.parse_args()
     print(
         json.dumps(
@@ -117,6 +156,7 @@ def main() -> None:
                 args.output,
                 width_dips=args.width_dips,
                 height_dips=args.height_dips,
+                page=args.page,
             ),
             sort_keys=True,
         )

@@ -1,5 +1,7 @@
 #include "operator_presentation.hpp"
+#include "workspace_layout.hpp"
 
+#include <array>
 #include <iostream>
 #include <string_view>
 #include <vector>
@@ -31,6 +33,17 @@ int main() {
             std::wcerr << L"FAIL: " << description << L'\n';
         }
     };
+    for (const auto venue : {L"Binance", L"Polymarket"}) {
+        const auto simulated = view::runtime_display(venue, {L"Stopped state", view::Tone::observed}, true);
+        check(simulated.label == std::wstring(venue) + L" simulated" && simulated.tone == view::Tone::simulation,
+              L"simulation overrides an observed fixture on every page");
+        const auto observed = view::runtime_display(venue, {L"Control unavailable", view::Tone::critical}, false);
+        check(observed.label == L"Control unavailable" && observed.tone == view::Tone::critical,
+              L"real observation and critical tone are preserved");
+        const auto unknown = view::runtime_display(venue, {}, false);
+        check(unknown.label == L"Unavailable" && unknown.tone == view::Tone::unknown,
+              L"missing observation stays unknown");
+    }
     for (const auto& c : cases) {
         const auto result = view::api_budget(c.input);
         check(result.label == c.label && result.tone == c.tone, c.input);
@@ -75,5 +88,28 @@ int main() {
     std::uint64_t maximum = 0;
     check(view::unsigned_count(L"18446744073709551615", maximum) &&
               maximum == std::numeric_limits<std::uint64_t>::max(), L"uint64 boundary");
+    for (const auto dimensions : {std::array{1280, 860}, std::array{1313, 860},
+                                  std::array{1314, 860}, std::array{1680, 1020},
+                                  std::array{3840, 2160}}) {
+        for (const int actions : {-1, 0, 1, 2, 3, 4, 99}) {
+            const auto layout = view::workspace_layout(dimensions[0], dimensions[1], actions);
+            check(layout.output_top + 90 <= layout.bottom - 12, L"readable output within client area");
+            check(layout.output_card_top > layout.diagnostic_top + layout.safety_height,
+                  L"output does not cover diagnostic controls");
+            check(layout.output_label_top + 20 <= layout.output_top,
+                  L"activity heading does not overlap output");
+            check(layout.bottom < layout.footer_top && layout.footer_top < dimensions[1],
+                  L"footer remains separate from output");
+            check(layout.workflow_top > layout.command_top + layout.command_height,
+                  L"workflows do not cover command help");
+            check(layout.workflow_columns == (dimensions[0] >= 1314 ? 4 : 2),
+                  L"workflow breakpoint uses available width");
+            check(layout.workflow_rows >= 0 && layout.workflow_rows <= 2,
+                  L"bounded workflow rows");
+        }
+    }
+    check(view::workspace_layout(1280, 860, 0).workflow_rows == 0, L"no phantom empty workflow row");
+    check(view::workspace_layout(1280, 860, 99).workflow_rows == 2, L"action count is bounded");
+    check(view::workspace_layout(1280, 860, -1).workflow_rows == 0, L"negative action count is bounded");
     return failures == 0 ? 0 : 1;
 }

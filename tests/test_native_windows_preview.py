@@ -16,7 +16,19 @@ pytestmark = pytest.mark.skipif(
 
 @pytest.mark.parametrize(
     "outcome",
-    ["success", "blank", "nonzero", "missing", "timeout", "enroll", "spawn", "close"],
+    [
+        "success",
+        "blank",
+        "nonzero",
+        "missing",
+        "timeout",
+        "enroll",
+        "spawn",
+        "close",
+        "wrong_page",
+        "missing_page",
+        "oversized_page",
+    ],
 )
 def test_owned_preview_cleans_every_exit_without_uncontained_fallback(
     tmp_path, monkeypatch, outcome
@@ -70,6 +82,8 @@ def test_owned_preview_cleans_every_exit_without_uncontained_fallback(
         assert kwargs["startupinfo"].wShowWindow == subprocess.SW_HIDE
         assert kwargs["env"]["SIMPLE_AI_TRADING_GUI_DRY_RUN"] == "1"
         assert "SIMPLE_AI_TRADING_GUI_SMOKE" not in kwargs["env"]
+        assert "PREVIEW_PARENT_ONLY_TEST_VALUE" not in kwargs["env"]
+        assert kwargs["env"]["SIMPLE_AI_TRADING_GUI_PREVIEW_PAGE"] == "System"
         bitmap = Path(kwargs["env"]["SIMPLE_AI_TRADING_GUI_PREVIEW_BMP"])
         observations["temporary"] = bitmap.parent
         if outcome == "spawn":
@@ -79,19 +93,33 @@ def test_owned_preview_cleans_every_exit_without_uncontained_fallback(
             if outcome != "blank":
                 image.putdata([(i % 256, i // 256, 99) for i in range(1024)])
             image.save(bitmap)
+            if outcome != "missing_page":
+                index = (
+                    0
+                    if outcome == "wrong_page"
+                    else module.PREVIEW_PAGES.index("System")
+                )
+                Path(str(bitmap) + ".page").write_bytes(f"{index}\n".encode("ascii"))
+                if outcome == "oversized_page":
+                    Path(str(bitmap) + ".page").write_bytes(b"5\nextra")
         return process
 
     monkeypatch.setattr(module.subprocess, "Popen", start)
     monkeypatch.setattr(windows_owned_job, "WindowsOwnedJob", Job)
     monkeypatch.setenv("SIMPLE_AI_TRADING_GUI_SMOKE", "1")
+    monkeypatch.setenv("PREVIEW_PARENT_ONLY_TEST_VALUE", "synthetic sentinel")
     if outcome == "success":
-        result = module.capture(executable, output, repository_root=tmp_path)
+        result = module.capture(
+            executable, output, repository_root=tmp_path, page="System"
+        )
         assert result["hidden"] and result["dry_run"] and result["owned_process_exited"]
+        assert result["page"] == "System" and result["page_binding_verified"]
+        assert result["implicit_environment_inheritance"] is False
         with image_module.open(output) as saved:
             assert saved.size == (32, 32)
     else:
         with pytest.raises((RuntimeError, OSError, subprocess.TimeoutExpired)):
-            module.capture(executable, output, repository_root=tmp_path)
+            module.capture(executable, output, repository_root=tmp_path, page="System")
         assert not output.exists()
     assert observations["closed"]
     assert not observations["temporary"].exists()
@@ -162,3 +190,17 @@ def test_unowned_or_missing_paths_cannot_launch(tmp_path, monkeypatch, invalid):
     )
     with pytest.raises(ValueError, match="owned executable"):
         module.capture(executable, output, repository_root=root)
+
+
+@pytest.mark.parametrize("page", ["", "system", "../System", None, 1, ["System"]])
+def test_unknown_preview_page_cannot_launch(tmp_path, monkeypatch, page):
+    pytest.importorskip("PIL.Image")
+    executable = tmp_path / "SimpleAITrading.exe"
+    executable.touch()
+    monkeypatch.setattr(
+        module.subprocess, "Popen", lambda *a, **k: pytest.fail("invalid page launched")
+    )
+    with pytest.raises(ValueError, match="page"):
+        module.capture(
+            executable, tmp_path / "new.png", repository_root=tmp_path, page=page
+        )
