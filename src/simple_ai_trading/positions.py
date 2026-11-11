@@ -32,7 +32,7 @@ from pathlib import Path
 from typing import Any, Mapping
 
 from .binance_open_intents import BinanceOpenIntentJournal
-from .position_transactions import position_transaction
+from .position_transactions import PositionTransaction, position_transaction
 from .storage import write_json_atomic
 
 BOT_OWNER = "simple_ai_trading"
@@ -84,6 +84,7 @@ class OpenPosition:
     spot_gross_entry_quantity: str = ""
     spot_entry_base_commission: str = ""
     spot_entry_cash_receipt: str = ""
+    capital_policy_sha256: str = ""
 
     def unrealized_pnl(self, mark_price: float) -> float:
         if self.side == "LONG":
@@ -356,16 +357,27 @@ class PositionsStore:
     ) -> tuple[list[OpenPosition], list[ClosedTrade]]:
         """Read open and closed state from the same fenced generation."""
         with position_transaction(self.opening_intents) as transaction:
-            return (
-                self._open_entries(
-                    self._decode(transaction.read(self.open_path), strict=strict),
-                    strict=strict,
-                ),
-                self._closed_entries(
-                    self._decode(transaction.read(self.ledger_path), strict=strict),
-                    strict=strict,
-                ),
-            )
+            return self.snapshot_from_transaction(transaction, strict=strict)
+
+    def snapshot_from_transaction(
+        self, transaction: PositionTransaction, *, strict: bool = True
+    ) -> tuple[list[OpenPosition], list[ClosedTrade]]:
+        """Decode the caller's already fenced pair without a second connection."""
+        if (
+            not isinstance(transaction, PositionTransaction)
+            or transaction.root.resolve() != self.root.resolve()
+        ):
+            raise ValueError("position snapshot transaction belongs to another store")
+        return (
+            self._open_entries(
+                self._decode(transaction.read(self.open_path), strict=strict),
+                strict=strict,
+            ),
+            self._closed_entries(
+                self._decode(transaction.read(self.ledger_path), strict=strict),
+                strict=strict,
+            ),
+        )
 
     def _closed_entries(
         self, entries: list[dict[str, Any]], *, strict: bool

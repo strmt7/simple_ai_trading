@@ -101,7 +101,7 @@ def test_intent_precedes_submission_and_releases_after_full_fill(
     tmp_path, market_type, enrolled_binance_runtime
 ):
     store = PositionsStore(tmp_path)
-    enrolled_binance_runtime(store, _scope(market_type))
+    enrolled_binance_runtime(store, _scope(market_type), opening_policy_quote="USDT")
     client = _Client(store, market_type=market_type)
     result = _submit_durable_open_position(
         client, _position(market_type=market_type), store
@@ -135,7 +135,7 @@ def test_failed_or_interrupted_submission_survives_store_reopen(
     tmp_path, failure, enrolled_binance_runtime
 ):
     store = PositionsStore(tmp_path)
-    enrolled_binance_runtime(store, _scope())
+    enrolled_binance_runtime(store, _scope(), opening_policy_quote="USDT")
     client = _Client(store, failure=failure)
     with pytest.raises((BinanceAPIError, KeyboardInterrupt)):
         _submit_durable_open_position(client, _position(), store)
@@ -155,7 +155,7 @@ def test_ledger_write_failure_preserves_obligation(
     tmp_path, monkeypatch, enrolled_binance_runtime
 ):
     store = PositionsStore(tmp_path)
-    enrolled_binance_runtime(store, _scope())
+    enrolled_binance_runtime(store, _scope(), opening_policy_quote="USDT")
     client = _Client(store)
 
     def fail_write(*args, **kwargs):
@@ -173,7 +173,7 @@ def test_partial_fill_keeps_pending_remainder(
     tmp_path, market_type, enrolled_binance_runtime
 ):
     store = PositionsStore(tmp_path)
-    enrolled_binance_runtime(store, _scope(market_type))
+    enrolled_binance_runtime(store, _scope(market_type), opening_policy_quote="USDT")
     client = _Client(store, status="PARTIALLY_FILLED", market_type=market_type)
     position = _position(market_type=market_type)
     if market_type == "spot":
@@ -254,7 +254,9 @@ def test_invalid_acknowledgement_keeps_obligation(tmp_path, changes):
 def test_process_death_during_submission_retains_durable_intent(
     tmp_path, enrolled_binance_runtime
 ):
-    enrolled_binance_runtime(PositionsStore(tmp_path), _scope())
+    enrolled_binance_runtime(
+        PositionsStore(tmp_path), _scope(), opening_policy_quote="USDT"
+    )
     code = """
 import os, sys
 from simple_ai_trading.autonomous import _submit_durable_open_position
@@ -300,7 +302,7 @@ def test_raw_acknowledgement_must_bind_exact_intent(
     tmp_path, changes, enrolled_binance_runtime
 ):
     store = PositionsStore(tmp_path)
-    enrolled_binance_runtime(store, _scope())
+    enrolled_binance_runtime(store, _scope(), opening_policy_quote="USDT")
 
     class Client(_Client):
         def place_order(self, *args, **kwargs):
@@ -318,7 +320,7 @@ def test_interruption_after_position_write_keeps_intent_blocked(
     tmp_path, monkeypatch, enrolled_binance_runtime
 ):
     store = PositionsStore(tmp_path)
-    enrolled_binance_runtime(store, _scope())
+    enrolled_binance_runtime(store, _scope(), opening_policy_quote="USDT")
 
     def interrupted(*args, **kwargs):
         raise KeyboardInterrupt()
@@ -334,7 +336,7 @@ def test_recorded_journal_does_not_mask_missing_position_ledger(
     tmp_path, enrolled_binance_runtime
 ):
     store = PositionsStore(tmp_path)
-    enrolled_binance_runtime(store, _scope())
+    enrolled_binance_runtime(store, _scope(), opening_policy_quote="USDT")
     client = _Client(store)
     _submit_durable_open_position(client, _position(), store)
     store.open_path.unlink()
@@ -353,7 +355,7 @@ def test_failed_intent_storage_prevents_transmission(
     tmp_path, enrolled_binance_runtime
 ):
     store = PositionsStore(tmp_path)
-    enrolled_binance_runtime(store, _scope())
+    enrolled_binance_runtime(store, _scope(), opening_policy_quote="USDT")
     store.opening_intents.path.rename(tmp_path / "retained.sqlite3")
     store.opening_intents.path.mkdir()
     client = _Client(store)

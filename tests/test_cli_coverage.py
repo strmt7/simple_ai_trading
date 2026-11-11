@@ -17,10 +17,21 @@ from simple_ai_trading.advanced_model import (
     default_config_for,
     make_advanced_rows,
 )
-from simple_ai_trading.api import BinanceAPIError, Candle, CommissionRates, SymbolConstraints
+from simple_ai_trading.api import (
+    BinanceAPIError,
+    Candle,
+    CommissionRates,
+    SymbolConstraints,
+)
 from simple_ai_trading.assets import DEFAULT_AGGRESSIVE_LEVERAGE
 from simple_ai_trading.autonomous import AutonomousControl, STATE_RUNNING
-from simple_ai_trading.config import RuntimeConfig, load_runtime, load_strategy, save_runtime, save_strategy
+from simple_ai_trading.config import (
+    RuntimeConfig,
+    load_runtime,
+    load_strategy,
+    save_runtime,
+    save_strategy,
+)
 from simple_ai_trading.compute import BackendInfo
 from simple_ai_trading.model import (
     ModelFeatureMismatchError,
@@ -31,7 +42,11 @@ from simple_ai_trading.model import (
 )
 from simple_ai_trading.features import ModelRow, feature_signature
 from simple_ai_trading.market_store import MarketDataStore
-from simple_ai_trading.positions import OpenPosition, PositionsStore, bot_client_order_id
+from simple_ai_trading.positions import (
+    OpenPosition,
+    PositionsStore,
+    bot_client_order_id,
+)
 from simple_ai_trading.terminal_holdout_ledger import (
     terminal_model_fingerprint,
     terminal_result_fingerprint,
@@ -338,7 +353,10 @@ class _FakeClient(_SignedCommissionClientEvidence):
         reduce_only=False,
         client_order_id=None,
         expected_scope=None,
+        before_dispatch=None,
     ):
+        if before_dispatch is not None:
+            before_dispatch()
         self.orders.append((symbol, side, size, dry_run, leverage))
         if dry_run:
             return {
@@ -401,9 +419,17 @@ def test_threshold_classification_guard_modes() -> None:
     rejected = SimpleNamespace(accuracy=0.45, precision=0.20, f1=0.10)
 
     assert cli._threshold_classification_guard(baseline, stable)["mode"] == "f1_stable"
-    assert cli._threshold_classification_guard(baseline, conservative)["mode"] == "accuracy_precision"
-    zero_hit = SimpleNamespace(accuracy=0.90, precision=0.00, f1=0.00, true_positive=0, false_negative=3)
-    assert cli._threshold_classification_guard(baseline, zero_hit)["mode"] == "zero_true_positive"
+    assert (
+        cli._threshold_classification_guard(baseline, conservative)["mode"]
+        == "accuracy_precision"
+    )
+    zero_hit = SimpleNamespace(
+        accuracy=0.90, precision=0.00, f1=0.00, true_positive=0, false_negative=3
+    )
+    assert (
+        cli._threshold_classification_guard(baseline, zero_hit)["mode"]
+        == "zero_true_positive"
+    )
     guard = cli._threshold_classification_guard(baseline, rejected)
     assert guard["mode"] == "rejected"
     assert guard["passed"] is False
@@ -456,18 +482,32 @@ def test_threshold_capital_preservation_guard_modes() -> None:
 def test_parse_args_and_main_dispatch(monkeypatch) -> None:
     args = cli._parse_args(["status"])
     assert callable(args.func)
-    doctor_args = cli._parse_args(["doctor", "--input", "i.json", "--model", "m.json", "--online"])
+    doctor_args = cli._parse_args(
+        ["doctor", "--input", "i.json", "--model", "m.json", "--online"]
+    )
     assert doctor_args.input == "i.json"
     assert doctor_args.model == "m.json"
     assert doctor_args.online is True
     audit_args = cli._parse_args(["audit", "--input", "i.json", "--model", "m.json"])
     assert audit_args.input == "i.json"
     assert audit_args.model == "m.json"
-    roundtrip_args = cli._parse_args(["spot-roundtrip", "--quantity", "0.0002", "--mode", "sell-buy", "--yes"])
+    roundtrip_args = cli._parse_args(
+        ["spot-roundtrip", "--quantity", "0.0002", "--mode", "sell-buy", "--yes"]
+    )
     assert roundtrip_args.quantity == "0.0002"
     assert roundtrip_args.mode == "sell-buy"
     assert roundtrip_args.yes is True
-    train_args = cli._parse_args(["train", "--preset", "quick", "--compute-backend", "directml", "--batch-size", "128"])
+    train_args = cli._parse_args(
+        [
+            "train",
+            "--preset",
+            "quick",
+            "--compute-backend",
+            "directml",
+            "--batch-size",
+            "128",
+        ]
+    )
     assert train_args.preset == "quick"
     assert train_args.compute_backend == "directml"
     assert train_args.batch_size == 128
@@ -500,9 +540,7 @@ def test_parse_args_and_main_dispatch(monkeypatch) -> None:
     assert micro_shadow.input == "shadow-candidate.json"
     assert micro_shadow.output is None
     assert micro_shadow.seconds == 25_260.0
-    tick_plan = cli._parse_args(
-        ["tick-archive-sync", "--full-history", "--plan-only"]
-    )
+    tick_plan = cli._parse_args(["tick-archive-sync", "--full-history", "--plan-only"])
     assert tick_plan.full_history is True
     assert tick_plan.plan_only is True
     assert tick_plan.start_date is None
@@ -537,9 +575,10 @@ def test_parse_args_and_main_dispatch(monkeypatch) -> None:
     assert tape_prequential.selection_lock is None
     assert tape_prequential.maximum_cached_rows == 15_000_000
     assert tape_prequential.dataset_cache is True
-    assert cli._parse_args(
-        ["tape-depth-prequential", "--no-dataset-cache"]
-    ).dataset_cache is False
+    assert (
+        cli._parse_args(["tape-depth-prequential", "--no-dataset-cache"]).dataset_cache
+        is False
+    )
     tape_select = cli._parse_args(
         [
             "tape-depth-select",
@@ -567,22 +606,24 @@ def test_parse_args_and_main_dispatch(monkeypatch) -> None:
     assert tape_confirm.selection == "selection.json"
     assert tape_confirm.report == "confirmation.json"
     assert tape_confirm.func is cli.command_tape_depth_confirm
-    signals_args = cli._parse_args([
-        "signals",
-        "--compute-backend",
-        "directml",
-        "--short-reaction-refresh",
-        "5",
-        "--min-providers",
-        "7",
-        "--news-provider-limit",
-        "30",
-        "--provider-parallelism",
-        "6",
-        "--provider-jitter",
-        "0.2",
-        "--ollama-news",
-    ])
+    signals_args = cli._parse_args(
+        [
+            "signals",
+            "--compute-backend",
+            "directml",
+            "--short-reaction-refresh",
+            "5",
+            "--min-providers",
+            "7",
+            "--news-provider-limit",
+            "30",
+            "--provider-parallelism",
+            "6",
+            "--provider-jitter",
+            "0.2",
+            "--ollama-news",
+        ]
+    )
     assert signals_args.compute_backend == "directml"
     assert signals_args.short_reaction_refresh == 5
     assert signals_args.min_providers == 7
@@ -590,23 +631,29 @@ def test_parse_args_and_main_dispatch(monkeypatch) -> None:
     assert signals_args.provider_parallelism == 6
     assert signals_args.provider_jitter == 0.2
     assert signals_args.ollama_news is True
-    grade_args = cli._parse_args(["source-grades", "--window-hours", "12", "--no-ollama"])
+    grade_args = cli._parse_args(
+        ["source-grades", "--window-hours", "12", "--no-ollama"]
+    )
     assert grade_args.window_hours == 12
     assert grade_args.ollama is False
-    benchmark_args = cli._parse_args(["signals-benchmark", "--provider-limit", "30", "--parallelism", "8"])
+    benchmark_args = cli._parse_args(
+        ["signals-benchmark", "--provider-limit", "30", "--parallelism", "8"]
+    )
     assert benchmark_args.provider_limit == [30]
     assert benchmark_args.parallelism == [8]
-    suite_args = cli._parse_args([
-        "train-suite",
-        "--max-workers",
-        "2",
-        "--compute-backend",
-        "auto",
-        "--batch-size",
-        "64",
-        "--symbol",
-        "ETHUSDT",
-    ])
+    suite_args = cli._parse_args(
+        [
+            "train-suite",
+            "--max-workers",
+            "2",
+            "--compute-backend",
+            "auto",
+            "--batch-size",
+            "64",
+            "--symbol",
+            "ETHUSDT",
+        ]
+    )
     assert suite_args.max_workers == 2
     assert suite_args.compute_backend == "auto"
     assert suite_args.batch_size == 64
@@ -801,7 +848,10 @@ def test_command_microstructure_prequential_rebuilds_exact_candidate_contract(
     assert calls["build"]["reference_order_notional_quote"] == 1_000.0  # type: ignore[index]
     assert calls["evaluate"][0] is artifact  # type: ignore[index]
     assert calls["evaluate"][1] is dataset  # type: ignore[index]
-    assert "terminal_holdout=not_accessed trading_authority=false" in capsys.readouterr().out
+    assert (
+        "terminal_holdout=not_accessed trading_authority=false"
+        in capsys.readouterr().out
+    )
 
 
 def test_command_microstructure_promote_binds_evidence_before_terminal_and_refit(
@@ -833,7 +883,10 @@ def test_command_microstructure_promote_binds_evidence_before_terminal_and_refit
         split=split,
     )
     attached = SimpleNamespace(
-        **{**vars(candidate), "prequential_validation": SimpleNamespace(report_sha256="e" * 64)}
+        **{
+            **vars(candidate),
+            "prequential_validation": SimpleNamespace(report_sha256="e" * 64),
+        }
     )
     terminal_metrics = SimpleNamespace(trades=40, total_net_bps=120.0)
     validated = SimpleNamespace(
@@ -1019,9 +1072,7 @@ def test_command_microstructure_shadow_is_no_order_and_saves_only_acceptance(
     )
     monkeypatch.setattr(
         "simple_ai_trading.microstructure_model.save_microstructure_model_artifact",
-        lambda value, path: (
-            calls.update({"saved": (value, Path(path))}) or "a" * 64
-        ),
+        lambda value, path: calls.update({"saved": (value, Path(path))}) or "a" * 64,
     )
     monkeypatch.setattr(
         "simple_ai_trading.microstructure_shadow.evaluate_shadow_capture",
@@ -1122,8 +1173,7 @@ def test_tick_archive_full_history_plan_uses_independent_official_coverage(
     assert payload["inventory_errors"] == []
     assert len(payload["inventory_snapshots"]) == 4
     assert [
-        snapshot["verification_phase"]
-        for snapshot in payload["inventory_snapshots"]
+        snapshot["verification_phase"] for snapshot in payload["inventory_snapshots"]
     ] == ["initial", "initial", "verification_refresh", "verification_refresh"]
     assert payload["planned_files"] == 4
     assert payload["missing"] == []
@@ -1226,10 +1276,14 @@ def test_tick_archive_full_history_rejects_inventory_change_during_sync(
     def listing(**_kwargs):
         nonlocal listing_calls
         listing_calls += 1
-        return [item("2026-07-08")] if listing_calls == 1 else [
-            item("2026-07-08"),
-            item("2026-07-09"),
-        ]
+        return (
+            [item("2026-07-08")]
+            if listing_calls == 1
+            else [
+                item("2026-07-08"),
+                item("2026-07-09"),
+            ]
+        )
 
     class Warehouse:
         def __init__(self, *_args, **_kwargs) -> None:
@@ -1556,15 +1610,18 @@ def test_tape_depth_study_command_plans_without_opening_warehouse(
     capsys,
 ) -> None:
     design_path = tmp_path / "design.json"
-    assert cli.command_tape_depth_design(
-        argparse.Namespace(
-            risk_level="conservative",
-            sampled_count=4,
-            seed=19,
-            output=str(design_path),
-            json=False,
+    assert (
+        cli.command_tape_depth_design(
+            argparse.Namespace(
+                risk_level="conservative",
+                sampled_count=4,
+                seed=19,
+                output=str(design_path),
+                json=False,
+            )
         )
-    ) == 0
+        == 0
+    )
     capsys.readouterr()
 
     result = cli.command_tape_depth_study(
@@ -1583,7 +1640,9 @@ def test_tape_depth_study_command_plans_without_opening_warehouse(
     )
     assert payload["status"] == "planned_research_only"
     assert payload["completed_candidates"] == 0
-    assert "profitability_claim=false trading_authority=false" in capsys.readouterr().out
+    assert (
+        "profitability_claim=false trading_authority=false" in capsys.readouterr().out
+    )
 
 
 def test_tape_depth_confirm_command_is_fail_closed(
@@ -1700,22 +1759,35 @@ def test_tape_depth_selection_commands_render_json_and_fail_closed(
     assert json.loads(capsys.readouterr().out) == confirmation
 
 
-def test_command_report_renders_dashboard_and_readiness(tmp_path, monkeypatch, capsys) -> None:
+def test_command_report_renders_dashboard_and_readiness(
+    tmp_path, monkeypatch, capsys
+) -> None:
     monkeypatch.setenv("HOME", str(tmp_path))
     save_runtime(RuntimeConfig(api_key="secret-key", api_secret="secret-value"))
     save_strategy(StrategyConfig())
-    monkeypatch.setattr(cli, "_readiness_report", lambda **_kwargs: (False, ["[fix] training data: missing"]))
-    monkeypatch.setattr(cli, "_account_overview_lines", lambda _runtime: ["Account overview", "USDC: free=100 locked=0"])
+    monkeypatch.setattr(
+        cli,
+        "_readiness_report",
+        lambda **_kwargs: (False, ["[fix] training data: missing"]),
+    )
+    monkeypatch.setattr(
+        cli,
+        "_account_overview_lines",
+        lambda _runtime: ["Account overview", "USDC: free=100 locked=0"],
+    )
 
-    assert cli.command_report(
-        argparse.Namespace(
-            account=True,
-            doctor=True,
-            online=True,
-            input="data/historical_market.json",
-            model="data/model.json",
+    assert (
+        cli.command_report(
+            argparse.Namespace(
+                account=True,
+                doctor=True,
+                online=True,
+                input="data/historical_market.json",
+                model="data/model.json",
+            )
         )
-    ) == 0
+        == 0
+    )
     output = capsys.readouterr().out
     assert "Session" in output
     assert "USDC: free=100 locked=0" in output
@@ -1724,28 +1796,41 @@ def test_command_report_renders_dashboard_and_readiness(tmp_path, monkeypatch, c
     assert "secret-value" not in output
 
     save_runtime(RuntimeConfig())
-    assert cli.command_report(
-        argparse.Namespace(
-            account=True,
-            doctor=False,
-            online=False,
-            input="data/historical_market.json",
-            model="data/model.json",
+    assert (
+        cli.command_report(
+            argparse.Namespace(
+                account=True,
+                doctor=False,
+                online=False,
+                input="data/historical_market.json",
+                model="data/model.json",
+            )
         )
-    ) == 2
-    assert "Full report account section requires Binance API key" in capsys.readouterr().err
+        == 2
+    )
+    assert (
+        "Full report account section requires Binance API key"
+        in capsys.readouterr().err
+    )
 
     save_runtime(RuntimeConfig(api_key="secret-key", api_secret="secret-value"))
-    monkeypatch.setattr(cli, "_account_overview_lines", lambda _runtime: ["Account balances failed: bad signature"])
-    assert cli.command_report(
-        argparse.Namespace(
-            account=True,
-            doctor=False,
-            online=False,
-            input="data/historical_market.json",
-            model="data/model.json",
+    monkeypatch.setattr(
+        cli,
+        "_account_overview_lines",
+        lambda _runtime: ["Account balances failed: bad signature"],
+    )
+    assert (
+        cli.command_report(
+            argparse.Namespace(
+                account=True,
+                doctor=False,
+                online=False,
+                input="data/historical_market.json",
+                model="data/model.json",
+            )
         )
-    ) == 2
+        == 2
+    )
     assert "Account balances failed: bad signature" in capsys.readouterr().out
 
     plain = cli._render_operator_report(
@@ -1773,9 +1858,16 @@ def test_command_audit_success_and_load_failure(tmp_path, monkeypatch, capsys) -
         gap_count = 0
         max_feature_delta = 0.0
 
-    monkeypatch.setattr(cli, "_load_rows_for_command", lambda *_args, **_kwargs: _simple_candles())
-    monkeypatch.setattr("simple_ai_trading.audit.build_audit_report", lambda *_args, **_kwargs: _Report())
-    monkeypatch.setattr("simple_ai_trading.audit.render_audit_report", lambda _report: "audit ok")
+    monkeypatch.setattr(
+        cli, "_load_rows_for_command", lambda *_args, **_kwargs: _simple_candles()
+    )
+    monkeypatch.setattr(
+        "simple_ai_trading.audit.build_audit_report",
+        lambda *_args, **_kwargs: _Report(),
+    )
+    monkeypatch.setattr(
+        "simple_ai_trading.audit.render_audit_report", lambda _report: "audit ok"
+    )
 
     assert cli.command_audit(argparse.Namespace(input="i.json", model="m.json")) == 0
     assert "audit ok" in capsys.readouterr().out
@@ -1783,14 +1875,19 @@ def test_command_audit_success_and_load_failure(tmp_path, monkeypatch, capsys) -
     class _BadReport(_Report):
         ok = False
 
-    monkeypatch.setattr("simple_ai_trading.audit.build_audit_report", lambda *_args, **_kwargs: _BadReport())
+    monkeypatch.setattr(
+        "simple_ai_trading.audit.build_audit_report",
+        lambda *_args, **_kwargs: _BadReport(),
+    )
     assert cli.command_audit(argparse.Namespace(input="i.json", model="m.json")) == 2
 
     monkeypatch.setattr(cli, "_load_rows_for_command", lambda *_args, **_kwargs: None)
     assert cli.command_audit(argparse.Namespace(input="bad.json", model="m.json")) == 2
 
 
-def test_command_prepare_success_failure_and_validation(tmp_path, monkeypatch, capsys) -> None:
+def test_command_prepare_success_failure_and_validation(
+    tmp_path, monkeypatch, capsys
+) -> None:
     monkeypatch.setenv("HOME", str(tmp_path))
     save_runtime(RuntimeConfig(symbol="BTCUSDC", interval="15m"))
     calls: list[tuple[str, argparse.Namespace]] = []
@@ -1820,7 +1917,14 @@ def test_command_prepare_success_failure_and_validation(tmp_path, monkeypatch, c
         online_doctor=True,
     )
     assert cli.command_prepare(args) == 0
-    assert [name for name, _args in calls] == ["fetch", "train", "evaluate", "backtest", "audit", "doctor"]
+    assert [name for name, _args in calls] == [
+        "fetch",
+        "train",
+        "evaluate",
+        "backtest",
+        "audit",
+        "doctor",
+    ]
     assert calls[1][1].preset == "custom"
     assert calls[1][1].requested_preset == "quick"
     assert calls[1][1].epochs == 9
@@ -1856,7 +1960,9 @@ def test_command_prepare_success_failure_and_validation(tmp_path, monkeypatch, c
         assert "Prepare settings invalid" in capsys.readouterr().err
 
 
-def test_training_preset_helper_and_invalid_command(tmp_path, monkeypatch, capsys) -> None:
+def test_training_preset_helper_and_invalid_command(
+    tmp_path, monkeypatch, capsys
+) -> None:
     monkeypatch.setenv("HOME", str(tmp_path))
     assert cli._parse_optional_form_bool("") is None
     assert cli._parse_optional_form_bool("yes") is True
@@ -1876,7 +1982,11 @@ def test_training_preset_helper_and_invalid_command(tmp_path, monkeypatch, capsy
         )
     )
     assert custom.epochs == 999
-    quick = cli._apply_training_preset(argparse.Namespace(preset="quick", epochs=999, walk_forward=True, calibrate_threshold=True))
+    quick = cli._apply_training_preset(
+        argparse.Namespace(
+            preset="quick", epochs=999, walk_forward=True, calibrate_threshold=True
+        )
+    )
     assert quick.epochs == 80
     assert quick.walk_forward is False
     balanced = cli._apply_training_preset(argparse.Namespace(preset="balanced"))
@@ -1888,7 +1998,9 @@ def test_training_preset_helper_and_invalid_command(tmp_path, monkeypatch, capsy
     with pytest.raises(ValueError):
         cli._apply_training_preset(argparse.Namespace(preset="wild"))
 
-    assert cli.command_train(argparse.Namespace(input="x", output="y", preset="wild")) == 2
+    assert (
+        cli.command_train(argparse.Namespace(input="x", output="y", preset="wild")) == 2
+    )
     assert "Training settings invalid" in capsys.readouterr().err
 
 
@@ -1901,20 +2013,30 @@ def test_clamp_and_direction_helpers() -> None:
     assert cli._score_to_direction(0.56, cfg, "futures") == 1
     assert cli._score_to_direction(0.40, cfg, "futures") == -1
     assert cli._score_to_direction(0.50, cfg, "futures") == 0
-    assert cli._score_to_direction(0.50, cfg, "futures", threshold=0.50, short_threshold=0.50) == 0
+    assert (
+        cli._score_to_direction(
+            0.50, cfg, "futures", threshold=0.50, short_threshold=0.50
+        )
+        == 0
+    )
     assert cli._score_to_direction(0.10, cfg, "futures") == -1
-    assert cli._score_to_direction(
-        0.10,
-        cfg,
-        "futures",
-        threshold=0.55,
-        short_threshold=None,
-        side_thresholds_explicit=True,
-    ) == 0
+    assert (
+        cli._score_to_direction(
+            0.10,
+            cfg,
+            "futures",
+            threshold=0.55,
+            short_threshold=None,
+            side_thresholds_explicit=True,
+        )
+        == 0
+    )
 
 
 def test_resolve_futures_leverage(monkeypatch) -> None:
-    runtime = RuntimeConfig(market_type="futures", api_key="k", api_secret="s", symbol="BTCUSDC")
+    runtime = RuntimeConfig(
+        market_type="futures", api_key="k", api_secret="s", symbol="BTCUSDC"
+    )
     cfg = StrategyConfig(leverage=50.0)
 
     fake = _FakeClient()
@@ -1944,13 +2066,34 @@ def test_entry_leverage_for_notional_uses_live_notional_bracket() -> None:
     client = _BracketClient()
     runtime = RuntimeConfig(market_type="futures", symbol="BTCUSDC")
 
-    assert cli._entry_leverage_for_notional(client, runtime, 20.0, 2_500.0, effective_dry_run=False) == 8.0
+    assert (
+        cli._entry_leverage_for_notional(
+            client, runtime, 20.0, 2_500.0, effective_dry_run=False
+        )
+        == 8.0
+    )
     assert client.calls == [("BTCUSDC", 2_500.0)]
-    assert cli._entry_leverage_for_notional(client, runtime, 20.0, 2_500.0, effective_dry_run=True) == 20.0
+    assert (
+        cli._entry_leverage_for_notional(
+            client, runtime, 20.0, 2_500.0, effective_dry_run=True
+        )
+        == 20.0
+    )
     assert client.calls == [("BTCUSDC", 2_500.0)]
-    assert cli._entry_leverage_for_notional(client, RuntimeConfig(market_type="spot"), 20.0, 2_500.0, effective_dry_run=False) == 1.0
+    assert (
+        cli._entry_leverage_for_notional(
+            client,
+            RuntimeConfig(market_type="spot"),
+            20.0,
+            2_500.0,
+            effective_dry_run=False,
+        )
+        == 1.0
+    )
     with pytest.raises(BinanceAPIError, match="positive entry notional"):
-        cli._entry_leverage_for_notional(client, runtime, 20.0, 0.0, effective_dry_run=False)
+        cli._entry_leverage_for_notional(
+            client, runtime, 20.0, 0.0, effective_dry_run=False
+        )
 
 
 def test_build_client_forwards_runtime_request_window(monkeypatch) -> None:
@@ -1961,13 +2104,17 @@ def test_build_client_forwards_runtime_request_window(monkeypatch) -> None:
             captured.update(kwargs)
 
     monkeypatch.setattr(cli, "BinanceClient", _Client)
-    cli._build_client(RuntimeConfig(api_key="k", api_secret="s", recv_window_ms=9000, demo=True))
+    cli._build_client(
+        RuntimeConfig(api_key="k", api_secret="s", recv_window_ms=9000, demo=True)
+    )
     assert captured["recv_window_ms"] == 9000
     assert captured["max_calls_per_minute"] == 1100
     assert captured["demo"] is True
 
 
-def test_command_api_budget_auto_refreshes_stale_cache(tmp_path, monkeypatch, capsys) -> None:
+def test_command_api_budget_auto_refreshes_stale_cache(
+    tmp_path, monkeypatch, capsys
+) -> None:
     db = tmp_path / "market.sqlite"
     with MarketDataStore(db) as store:
         store.insert_api_rate_limit_snapshot(
@@ -1987,12 +2134,29 @@ def test_command_api_budget_auto_refreshes_stale_cache(tmp_path, monkeypatch, ca
         last_request_info = {"rate_limit_headers": {"X-MBX-USED-WEIGHT-1M": "12"}}
 
         def get_exchange_info(self):
-            return {"rateLimits": [{"rateLimitType": "REQUEST_WEIGHT", "interval": "MINUTE", "intervalNum": 1, "limit": 1200}]}
+            return {
+                "rateLimits": [
+                    {
+                        "rateLimitType": "REQUEST_WEIGHT",
+                        "interval": "MINUTE",
+                        "intervalNum": 1,
+                        "limit": 1200,
+                    }
+                ]
+            }
 
     monkeypatch.setattr(cli, "_build_client", lambda _runtime: BudgetClient())
     monkeypatch.setattr(cli.time, "time", lambda: 1_000_000.0)
 
-    args = argparse.Namespace(db=str(db), market=None, refresh=False, cached_only=False, max_age_seconds=90, compact=True, json=False)
+    args = argparse.Namespace(
+        db=str(db),
+        market=None,
+        refresh=False,
+        cached_only=False,
+        max_age_seconds=90,
+        compact=True,
+        json=False,
+    )
     assert cli.command_api_budget(args) == 0
 
     assert "remaining=1188/1200" in capsys.readouterr().out
@@ -2002,9 +2166,15 @@ def test_command_api_budget_auto_refreshes_stale_cache(tmp_path, monkeypatch, ca
     assert "1188" in str(latest)
 
 
-def test_command_archive_sync_delegates_archive_listing_and_ingestion(tmp_path, monkeypatch, capsys) -> None:
+def test_command_archive_sync_delegates_archive_listing_and_ingestion(
+    tmp_path, monkeypatch, capsys
+) -> None:
     save_runtime(RuntimeConfig(symbol="BTCUSDC", interval="1s", market_type="spot"))
-    monkeypatch.setattr(cli, "list_archive_urls", lambda **_kwargs: ["https://data.binance.vision/x/BTCUSDC-1s-2026-01.zip"])
+    monkeypatch.setattr(
+        cli,
+        "list_archive_urls",
+        lambda **_kwargs: ["https://data.binance.vision/x/BTCUSDC-1s-2026-01.zip"],
+    )
 
     captured: dict[str, object] = {}
 
@@ -2127,8 +2297,14 @@ def test_command_archive_sync_writes_atomic_progress_sidecar(
     assert "archive-sync-progress: phase=ingesting" in capsys.readouterr().err
 
 
-def test_command_archive_sync_defaults_futures_one_second_to_agg_trades(tmp_path, monkeypatch, capsys) -> None:
-    save_runtime(RuntimeConfig(symbol="BTCUSDT", interval="1s", market_type="futures", quote_asset="USDT"))
+def test_command_archive_sync_defaults_futures_one_second_to_agg_trades(
+    tmp_path, monkeypatch, capsys
+) -> None:
+    save_runtime(
+        RuntimeConfig(
+            symbol="BTCUSDT", interval="1s", market_type="futures", quote_asset="USDT"
+        )
+    )
     list_kwargs: dict[str, object] = {}
     ingest_kwargs: dict[str, object] = {}
 
@@ -2161,22 +2337,27 @@ def test_command_archive_sync_defaults_futures_one_second_to_agg_trades(tmp_path
     monkeypatch.setattr(cli, "list_archive_urls", fake_list)
     monkeypatch.setattr(cli, "ingest_archive_urls", fake_ingest)
 
-    assert cli.command_archive_sync(argparse.Namespace(
-        db=str(tmp_path / "m.sqlite"),
-        symbol=None,
-        symbols=None,
-        top_symbols=0,
-        quote_asset=None,
-        max_scan=250,
-        interval=None,
-        market="futures",
-        cadence="daily",
-        data_type=None,
-        max_files=1,
-        timeout=120,
-        force=False,
-        json=False,
-    )) == 0
+    assert (
+        cli.command_archive_sync(
+            argparse.Namespace(
+                db=str(tmp_path / "m.sqlite"),
+                symbol=None,
+                symbols=None,
+                top_symbols=0,
+                quote_asset=None,
+                max_scan=250,
+                interval=None,
+                market="futures",
+                cadence="daily",
+                data_type=None,
+                max_files=1,
+                timeout=120,
+                force=False,
+                json=False,
+            )
+        )
+        == 0
+    )
 
     assert list_kwargs["data_type"] == "aggTrades"
     assert ingest_kwargs["data_type"] == "aggTrades"
@@ -2184,8 +2365,14 @@ def test_command_archive_sync_defaults_futures_one_second_to_agg_trades(tmp_path
     assert "data_type=aggTrades" in capsys.readouterr().out
 
 
-def test_command_archive_sync_plan_only_filters_period_window(tmp_path, monkeypatch, capsys) -> None:
-    save_runtime(RuntimeConfig(symbol="BTCUSDT", interval="1s", market_type="futures", quote_asset="USDT"))
+def test_command_archive_sync_plan_only_filters_period_window(
+    tmp_path, monkeypatch, capsys
+) -> None:
+    save_runtime(
+        RuntimeConfig(
+            symbol="BTCUSDT", interval="1s", market_type="futures", quote_asset="USDT"
+        )
+    )
     listed = [
         "https://data.binance.vision/data/futures/um/daily/aggTrades/BTCUSDT/BTCUSDT-aggTrades-2024-05-31.zip",
         "https://data.binance.vision/data/futures/um/daily/aggTrades/BTCUSDT/BTCUSDT-aggTrades-2024-06-01.zip",
@@ -2197,33 +2384,42 @@ def test_command_archive_sync_plan_only_filters_period_window(tmp_path, monkeypa
     monkeypatch.setattr(
         cli,
         "archive_listing_items_by_url",
-        lambda urls: {url: SimpleNamespace(size_bytes=sizes[url]) for url in urls if url in sizes},
+        lambda urls: {
+            url: SimpleNamespace(size_bytes=sizes[url]) for url in urls if url in sizes
+        },
     )
     monkeypatch.setattr(
         cli,
         "ingest_archive_urls",
-        lambda **_kwargs: (_ for _ in ()).throw(AssertionError("plan-only should not ingest")),
+        lambda **_kwargs: (_ for _ in ()).throw(
+            AssertionError("plan-only should not ingest")
+        ),
     )
 
-    assert cli.command_archive_sync(argparse.Namespace(
-        db=str(tmp_path / "m.sqlite"),
-        symbol=None,
-        symbols=None,
-        top_symbols=0,
-        quote_asset=None,
-        max_scan=250,
-        interval=None,
-        market="futures",
-        cadence="daily",
-        data_type=None,
-        max_files=None,
-        start_period="2024-06-01",
-        end_period="2024-06-30",
-        plan_only=True,
-        timeout=120,
-        force=False,
-        json=True,
-    )) == 0
+    assert (
+        cli.command_archive_sync(
+            argparse.Namespace(
+                db=str(tmp_path / "m.sqlite"),
+                symbol=None,
+                symbols=None,
+                top_symbols=0,
+                quote_asset=None,
+                max_scan=250,
+                interval=None,
+                market="futures",
+                cadence="daily",
+                data_type=None,
+                max_files=None,
+                start_period="2024-06-01",
+                end_period="2024-06-30",
+                plan_only=True,
+                timeout=120,
+                force=False,
+                json=True,
+            )
+        )
+        == 0
+    )
 
     payload = json.loads(capsys.readouterr().out)
     assert payload["plan_only"] is True
@@ -2240,39 +2436,58 @@ def test_command_archive_sync_plan_only_filters_period_window(tmp_path, monkeypa
     assert payload["archive_plans"][0]["last_period"] == "2024-06-02"
 
 
-def test_command_archive_sync_rejects_invalid_period_window_before_listing(tmp_path, monkeypatch, capsys) -> None:
-    save_runtime(RuntimeConfig(symbol="BTCUSDT", interval="1s", market_type="futures", quote_asset="USDT"))
+def test_command_archive_sync_rejects_invalid_period_window_before_listing(
+    tmp_path, monkeypatch, capsys
+) -> None:
+    save_runtime(
+        RuntimeConfig(
+            symbol="BTCUSDT", interval="1s", market_type="futures", quote_asset="USDT"
+        )
+    )
     monkeypatch.setattr(
         cli,
         "list_archive_urls",
-        lambda **_kwargs: (_ for _ in ()).throw(AssertionError("invalid window should not list")),
+        lambda **_kwargs: (_ for _ in ()).throw(
+            AssertionError("invalid window should not list")
+        ),
     )
 
-    assert cli.command_archive_sync(argparse.Namespace(
-        db=str(tmp_path / "m.sqlite"),
-        symbol=None,
-        symbols=None,
-        top_symbols=0,
-        quote_asset=None,
-        max_scan=250,
-        interval=None,
-        market="futures",
-        cadence="daily",
-        data_type=None,
-        max_files=None,
-        start_period="2024/06/01",
-        end_period="2024-06-30",
-        plan_only=True,
-        timeout=120,
-        force=False,
-        json=True,
-    )) == 2
+    assert (
+        cli.command_archive_sync(
+            argparse.Namespace(
+                db=str(tmp_path / "m.sqlite"),
+                symbol=None,
+                symbols=None,
+                top_symbols=0,
+                quote_asset=None,
+                max_scan=250,
+                interval=None,
+                market="futures",
+                cadence="daily",
+                data_type=None,
+                max_files=None,
+                start_period="2024/06/01",
+                end_period="2024-06-30",
+                plan_only=True,
+                timeout=120,
+                force=False,
+                json=True,
+            )
+        )
+        == 2
+    )
 
     assert "invalid period window" in capsys.readouterr().err
 
 
-def test_command_archive_sync_blocks_oversized_non_plan_backfill(tmp_path, monkeypatch, capsys) -> None:
-    save_runtime(RuntimeConfig(symbol="BTCUSDT", interval="1s", market_type="futures", quote_asset="USDT"))
+def test_command_archive_sync_blocks_oversized_non_plan_backfill(
+    tmp_path, monkeypatch, capsys
+) -> None:
+    save_runtime(
+        RuntimeConfig(
+            symbol="BTCUSDT", interval="1s", market_type="futures", quote_asset="USDT"
+        )
+    )
     listed = [
         "https://data.binance.vision/data/futures/um/daily/aggTrades/BTCUSDT/BTCUSDT-aggTrades-2024-06-01.zip",
         "https://data.binance.vision/data/futures/um/daily/aggTrades/BTCUSDT/BTCUSDT-aggTrades-2024-06-02.zip",
@@ -2282,34 +2497,43 @@ def test_command_archive_sync_blocks_oversized_non_plan_backfill(tmp_path, monke
     monkeypatch.setattr(
         cli,
         "archive_listing_items_by_url",
-        lambda urls: {url: SimpleNamespace(size_bytes=sizes[url]) for url in urls if url in sizes},
+        lambda urls: {
+            url: SimpleNamespace(size_bytes=sizes[url]) for url in urls if url in sizes
+        },
     )
     monkeypatch.setattr(
         cli,
         "ingest_archive_urls",
-        lambda **_kwargs: (_ for _ in ()).throw(AssertionError("oversized plan should not ingest")),
+        lambda **_kwargs: (_ for _ in ()).throw(
+            AssertionError("oversized plan should not ingest")
+        ),
     )
 
-    assert cli.command_archive_sync(argparse.Namespace(
-        db=str(tmp_path / "m.sqlite"),
-        symbol=None,
-        symbols=None,
-        top_symbols=0,
-        quote_asset=None,
-        max_scan=250,
-        interval=None,
-        market="futures",
-        cadence="daily",
-        data_type=None,
-        max_files=None,
-        start_period="2024-06-01",
-        end_period="2024-06-02",
-        plan_only=False,
-        max_planned_gb=0.05,
-        timeout=120,
-        force=False,
-        json=True,
-    )) == 2
+    assert (
+        cli.command_archive_sync(
+            argparse.Namespace(
+                db=str(tmp_path / "m.sqlite"),
+                symbol=None,
+                symbols=None,
+                top_symbols=0,
+                quote_asset=None,
+                max_scan=250,
+                interval=None,
+                market="futures",
+                cadence="daily",
+                data_type=None,
+                max_files=None,
+                start_period="2024-06-01",
+                end_period="2024-06-02",
+                plan_only=False,
+                max_planned_gb=0.05,
+                timeout=120,
+                force=False,
+                json=True,
+            )
+        )
+        == 2
+    )
 
     payload = json.loads(capsys.readouterr().out)
     assert payload["planned_bytes"] == 80_000_000
@@ -2319,7 +2543,9 @@ def test_command_archive_sync_blocks_oversized_non_plan_backfill(tmp_path, monke
     ]
 
 
-def test_command_archive_sync_accepts_explicit_symbol_batch(tmp_path, monkeypatch, capsys) -> None:
+def test_command_archive_sync_accepts_explicit_symbol_batch(
+    tmp_path, monkeypatch, capsys
+) -> None:
     save_runtime(RuntimeConfig(symbol="BTCUSDC", interval="1s", market_type="spot"))
     list_calls: list[str] = []
     ingest_calls: list[str] = []
@@ -2356,21 +2582,26 @@ def test_command_archive_sync_accepts_explicit_symbol_batch(tmp_path, monkeypatc
     monkeypatch.setattr(cli, "list_archive_urls", fake_list)
     monkeypatch.setattr(cli, "ingest_archive_urls", fake_ingest)
 
-    assert cli.command_archive_sync(argparse.Namespace(
-        db=str(tmp_path / "m.sqlite"),
-        symbol=None,
-        symbols="btcusdc, ethusdc",
-        top_symbols=0,
-        quote_asset=None,
-        max_scan=250,
-        interval="1s",
-        market="spot",
-        cadence="monthly",
-        max_files=1,
-        timeout=120,
-        force=False,
-        json=True,
-    )) == 0
+    assert (
+        cli.command_archive_sync(
+            argparse.Namespace(
+                db=str(tmp_path / "m.sqlite"),
+                symbol=None,
+                symbols="btcusdc, ethusdc",
+                top_symbols=0,
+                quote_asset=None,
+                max_scan=250,
+                interval="1s",
+                market="spot",
+                cadence="monthly",
+                max_files=1,
+                timeout=120,
+                force=False,
+                json=True,
+            )
+        )
+        == 0
+    )
 
     payload = json.loads(capsys.readouterr().out)
     assert payload["symbols"] == ["BTCUSDC", "ETHUSDC"]
@@ -2380,34 +2611,45 @@ def test_command_archive_sync_accepts_explicit_symbol_batch(tmp_path, monkeypatc
     assert ingest_calls == ["BTCUSDC", "ETHUSDC"]
 
 
-def test_command_archive_sync_rejects_non_major_symbols(tmp_path, monkeypatch, capsys) -> None:
+def test_command_archive_sync_rejects_non_major_symbols(
+    tmp_path, monkeypatch, capsys
+) -> None:
     save_runtime(RuntimeConfig(symbol="BTCUSDC", interval="1s", market_type="spot"))
     monkeypatch.setattr(
         cli,
         "list_archive_urls",
-        lambda **_kwargs: (_ for _ in ()).throw(AssertionError("unsupported symbol should not be listed")),
+        lambda **_kwargs: (_ for _ in ()).throw(
+            AssertionError("unsupported symbol should not be listed")
+        ),
     )
 
-    assert cli.command_archive_sync(argparse.Namespace(
-        db=str(tmp_path / "m.sqlite"),
-        symbol=None,
-        symbols="ALTUSDC",
-        top_symbols=0,
-        quote_asset=None,
-        max_scan=250,
-        interval="1s",
-        market="spot",
-        cadence="monthly",
-        max_files=1,
-        timeout=120,
-        force=False,
-        json=True,
-    )) == 2
+    assert (
+        cli.command_archive_sync(
+            argparse.Namespace(
+                db=str(tmp_path / "m.sqlite"),
+                symbol=None,
+                symbols="ALTUSDC",
+                top_symbols=0,
+                quote_asset=None,
+                max_scan=250,
+                interval="1s",
+                market="spot",
+                cadence="monthly",
+                max_files=1,
+                timeout=120,
+                force=False,
+                json=True,
+            )
+        )
+        == 2
+    )
 
     assert "supports only BTC, ETH, and SOL" in capsys.readouterr().err
 
 
-def test_command_archive_sync_can_auto_rank_high_liquidity_symbols(tmp_path, monkeypatch, capsys) -> None:
+def test_command_archive_sync_can_auto_rank_high_liquidity_symbols(
+    tmp_path, monkeypatch, capsys
+) -> None:
     save_runtime(RuntimeConfig(symbol="BTCUSDC", interval="1s", market_type="spot"))
     ranked: dict[str, object] = {}
 
@@ -2428,36 +2670,49 @@ def test_command_archive_sync_can_auto_rank_high_liquidity_symbols(tmp_path, mon
     def fake_select(client, strategy, *, quote_asset, count, max_scan, strict_only):
         assert client.testnet is False
         assert client.market_type == "spot"
-        ranked.update({
-            "client": client,
-            "risk_level": strategy.risk_level,
-            "quote_asset": quote_asset,
-            "count": count,
-            "max_scan": max_scan,
-            "strict_only": strict_only,
-        })
+        ranked.update(
+            {
+                "client": client,
+                "risk_level": strategy.risk_level,
+                "quote_asset": quote_asset,
+                "count": count,
+                "max_scan": max_scan,
+                "strict_only": strict_only,
+            }
+        )
         return [SimpleNamespace(symbol="BTCUSDT"), SimpleNamespace(symbol="ETHUSDT")]
 
     monkeypatch.setattr(cli, "_build_client", lambda _runtime: object())
     monkeypatch.setattr(cli, "select_top_liquidity_symbols", fake_select)
-    monkeypatch.setattr(cli, "list_archive_urls", lambda **kwargs: [f"https://data.binance.vision/x/{kwargs['symbol']}.zip"])
-    monkeypatch.setattr(cli, "ingest_archive_urls", lambda **kwargs: [Result(str(kwargs["symbol"]))])
+    monkeypatch.setattr(
+        cli,
+        "list_archive_urls",
+        lambda **kwargs: [f"https://data.binance.vision/x/{kwargs['symbol']}.zip"],
+    )
+    monkeypatch.setattr(
+        cli, "ingest_archive_urls", lambda **kwargs: [Result(str(kwargs["symbol"]))]
+    )
 
-    assert cli.command_archive_sync(argparse.Namespace(
-        db=str(tmp_path / "m.sqlite"),
-        symbol=None,
-        symbols=None,
-        top_symbols=2,
-        quote_asset="USDT",
-        max_scan=50,
-        interval="1s",
-        market="spot",
-        cadence="daily",
-        max_files=1,
-        timeout=120,
-        force=False,
-        json=True,
-    )) == 0
+    assert (
+        cli.command_archive_sync(
+            argparse.Namespace(
+                db=str(tmp_path / "m.sqlite"),
+                symbol=None,
+                symbols=None,
+                top_symbols=2,
+                quote_asset="USDT",
+                max_scan=50,
+                interval="1s",
+                market="spot",
+                cadence="daily",
+                max_files=1,
+                timeout=120,
+                force=False,
+                json=True,
+            )
+        )
+        == 0
+    )
 
     payload = json.loads(capsys.readouterr().out)
     assert payload["symbols"] == ["BTCUSDT", "ETHUSDT"]
@@ -2506,7 +2761,10 @@ def test_command_archive_sync_filters_auto_ranked_symbols_by_history_depth(
     def fake_list(**kwargs):
         symbol = str(kwargs["symbol"])
         counts = {"BTCUSDT": 3, "SOLUSDT": 1, "ETHUSDT": 2}
-        return [f"https://data.binance.vision/x/{symbol}-{index}.zip" for index in range(counts[symbol])]
+        return [
+            f"https://data.binance.vision/x/{symbol}-{index}.zip"
+            for index in range(counts[symbol])
+        ]
 
     def fake_ingest(**kwargs):
         symbol = str(kwargs["symbol"])
@@ -2518,22 +2776,27 @@ def test_command_archive_sync_filters_auto_ranked_symbols_by_history_depth(
     monkeypatch.setattr(cli, "list_archive_urls", fake_list)
     monkeypatch.setattr(cli, "ingest_archive_urls", fake_ingest)
 
-    assert cli.command_archive_sync(argparse.Namespace(
-        db=str(tmp_path / "m.sqlite"),
-        symbol=None,
-        symbols=None,
-        top_symbols=2,
-        quote_asset="USDT",
-        max_scan=10,
-        min_history_months=2,
-        interval="1m",
-        market="futures",
-        cadence="monthly",
-        max_files=None,
-        timeout=120,
-        force=False,
-        json=True,
-    )) == 0
+    assert (
+        cli.command_archive_sync(
+            argparse.Namespace(
+                db=str(tmp_path / "m.sqlite"),
+                symbol=None,
+                symbols=None,
+                top_symbols=2,
+                quote_asset="USDT",
+                max_scan=10,
+                min_history_months=2,
+                interval="1m",
+                market="futures",
+                cadence="monthly",
+                max_files=None,
+                timeout=120,
+                force=False,
+                json=True,
+            )
+        )
+        == 0
+    )
 
     payload = json.loads(capsys.readouterr().out)
     assert payload["symbols"] == ["BTCUSDT", "ETHUSDT"]
@@ -2565,29 +2828,40 @@ def test_command_archive_sync_max_files_zero_dry_runs_ranked_symbols(
 
     monkeypatch.setattr(cli, "_build_client", lambda _runtime: object())
     monkeypatch.setattr(cli, "select_top_liquidity_symbols", fake_select)
-    monkeypatch.setattr(cli, "list_archive_urls", lambda **kwargs: [f"https://data.binance.vision/x/{kwargs['symbol']}.zip"])
+    monkeypatch.setattr(
+        cli,
+        "list_archive_urls",
+        lambda **kwargs: [f"https://data.binance.vision/x/{kwargs['symbol']}.zip"],
+    )
     monkeypatch.setattr(
         cli,
         "ingest_archive_urls",
-        lambda **_kwargs: (_ for _ in ()).throw(AssertionError("dry run should not ingest")),
+        lambda **_kwargs: (_ for _ in ()).throw(
+            AssertionError("dry run should not ingest")
+        ),
     )
 
-    assert cli.command_archive_sync(argparse.Namespace(
-        db=str(tmp_path / "m.sqlite"),
-        symbol=None,
-        symbols=None,
-        top_symbols=2,
-        quote_asset="USDT",
-        max_scan=2,
-        min_history_months=1,
-        interval="1m",
-        market="futures",
-        cadence="monthly",
-        max_files=0,
-        timeout=120,
-        force=False,
-        json=True,
-    )) == 0
+    assert (
+        cli.command_archive_sync(
+            argparse.Namespace(
+                db=str(tmp_path / "m.sqlite"),
+                symbol=None,
+                symbols=None,
+                top_symbols=2,
+                quote_asset="USDT",
+                max_scan=2,
+                min_history_months=1,
+                interval="1m",
+                market="futures",
+                cadence="monthly",
+                max_files=0,
+                timeout=120,
+                force=False,
+                json=True,
+            )
+        )
+        == 0
+    )
 
     payload = json.loads(capsys.readouterr().out)
     assert payload["status"] == "ok"
@@ -2596,7 +2870,9 @@ def test_command_archive_sync_max_files_zero_dry_runs_ranked_symbols(
     assert payload["errors"] == []
 
 
-def test_command_data_health_reports_verified_archive_coverage(tmp_path, monkeypatch, capsys) -> None:
+def test_command_data_health_reports_verified_archive_coverage(
+    tmp_path, monkeypatch, capsys
+) -> None:
     db = tmp_path / "market.sqlite"
     candles = [
         Candle(
@@ -2611,9 +2887,17 @@ def test_command_data_health_reports_verified_archive_coverage(tmp_path, monkeyp
         for index in range(3)
     ]
     with MarketDataStore(db) as store:
-        store.upsert_candles("BTCUSDC", "spot", "1s", candles, source="binance_public_archive")
+        store.upsert_candles(
+            "BTCUSDC", "spot", "1s", candles, source="binance_public_archive"
+        )
         url = "https://data.binance.vision/data/spot/daily/klines/BTCUSDC/1s/BTCUSDC-1s-2026-01-01.zip"
-        store.begin_archive_file(url=url, symbol="BTCUSDC", market_type="spot", interval="1s", period="2026-01-01")
+        store.begin_archive_file(
+            url=url,
+            symbol="BTCUSDC",
+            market_type="spot",
+            interval="1s",
+            period="2026-01-01",
+        )
         store.complete_archive_file(
             url=url,
             status="complete",
@@ -2626,18 +2910,23 @@ def test_command_data_health_reports_verified_archive_coverage(tmp_path, monkeyp
     monkeypatch.setenv("HOME", str(tmp_path))
     save_runtime(RuntimeConfig(symbol="BTCUSDC", interval="1s", market_type="spot"))
 
-    assert cli.command_data_health(argparse.Namespace(
-        db=str(db),
-        symbol=None,
-        symbols=None,
-        interval="1s",
-        market="spot",
-        min_rows=3,
-        min_coverage_ratio=1.0,
-        max_gap_count=0,
-        require_verified_checksum=True,
-        json=True,
-    )) == 0
+    assert (
+        cli.command_data_health(
+            argparse.Namespace(
+                db=str(db),
+                symbol=None,
+                symbols=None,
+                interval="1s",
+                market="spot",
+                min_rows=3,
+                min_coverage_ratio=1.0,
+                max_gap_count=0,
+                require_verified_checksum=True,
+                json=True,
+            )
+        )
+        == 0
+    )
 
     payload = json.loads(capsys.readouterr().out)
     assert payload["status"] == "ok"
@@ -2664,10 +2953,18 @@ def test_command_data_health_warns_when_archive_error_is_superseded_by_verified_
         for index in range(3)
     ]
     with MarketDataStore(db) as store:
-        store.upsert_candles("BTCUSDC", "spot", "1s", candles, source="binance_public_archive")
+        store.upsert_candles(
+            "BTCUSDC", "spot", "1s", candles, source="binance_public_archive"
+        )
         good_url = "https://data.binance.vision/data/spot/daily/klines/BTCUSDC/1s/BTCUSDC-1s-2026-01-01.zip"
         bad_url = "https://data.binance.vision/data/spot/monthly/klines/BTCUSDC/1s/BTCUSDC-1s-2026-01.zip"
-        store.begin_archive_file(url=good_url, symbol="BTCUSDC", market_type="spot", interval="1s", period="2026-01-01")
+        store.begin_archive_file(
+            url=good_url,
+            symbol="BTCUSDC",
+            market_type="spot",
+            interval="1s",
+            period="2026-01-01",
+        )
         store.complete_archive_file(
             url=good_url,
             status="complete",
@@ -2677,7 +2974,13 @@ def test_command_data_health_warns_when_archive_error_is_superseded_by_verified_
             checksum_sha256="a" * 64,
             checksum_status="verified",
         )
-        store.begin_archive_file(url=bad_url, symbol="BTCUSDC", market_type="spot", interval="1s", period="2026-01")
+        store.begin_archive_file(
+            url=bad_url,
+            symbol="BTCUSDC",
+            market_type="spot",
+            interval="1s",
+            period="2026-01",
+        )
         store.complete_archive_file(
             url=bad_url,
             status="error",
@@ -2690,50 +2993,92 @@ def test_command_data_health_warns_when_archive_error_is_superseded_by_verified_
     monkeypatch.setenv("HOME", str(tmp_path))
     save_runtime(RuntimeConfig(symbol="BTCUSDC", interval="1s", market_type="spot"))
 
-    assert cli.command_data_health(argparse.Namespace(
-        db=str(db),
-        symbol="BTCUSDC",
-        symbols=None,
-        interval="1s",
-        market="spot",
-        min_rows=3,
-        min_coverage_ratio=1.0,
-        max_gap_count=0,
-        require_verified_checksum=True,
-        json=True,
-    )) == 0
+    assert (
+        cli.command_data_health(
+            argparse.Namespace(
+                db=str(db),
+                symbol="BTCUSDC",
+                symbols=None,
+                interval="1s",
+                market="spot",
+                min_rows=3,
+                min_coverage_ratio=1.0,
+                max_gap_count=0,
+                require_verified_checksum=True,
+                json=True,
+            )
+        )
+        == 0
+    )
 
     payload = json.loads(capsys.readouterr().out)
     assert payload["items"][0]["reasons"] == []
     assert payload["items"][0]["warnings"] == ["superseded_archive_errors:1"]
 
 
-def test_command_data_health_blocks_missing_rows_gaps_and_checksum(tmp_path, monkeypatch, capsys) -> None:
+def test_command_data_health_blocks_missing_rows_gaps_and_checksum(
+    tmp_path, monkeypatch, capsys
+) -> None:
     db = tmp_path / "market.sqlite"
     candles = [
-        Candle(open_time=0, open=100.0, high=101.0, low=99.0, close=100.0, volume=1.0, close_time=999),
-        Candle(open_time=3000, open=100.0, high=101.0, low=99.0, close=100.0, volume=1.0, close_time=3999),
+        Candle(
+            open_time=0,
+            open=100.0,
+            high=101.0,
+            low=99.0,
+            close=100.0,
+            volume=1.0,
+            close_time=999,
+        ),
+        Candle(
+            open_time=3000,
+            open=100.0,
+            high=101.0,
+            low=99.0,
+            close=100.0,
+            volume=1.0,
+            close_time=3999,
+        ),
     ]
     with MarketDataStore(db) as store:
-        store.upsert_candles("BTCUSDC", "spot", "1s", candles, source="binance_public_archive")
+        store.upsert_candles(
+            "BTCUSDC", "spot", "1s", candles, source="binance_public_archive"
+        )
         url = "https://data.binance.vision/data/spot/daily/klines/BTCUSDC/1s/BTCUSDC-1s-2026-01-01.zip"
-        store.begin_archive_file(url=url, symbol="BTCUSDC", market_type="spot", interval="1s", period="2026-01-01")
-        store.complete_archive_file(url=url, status="complete", rows_inserted=2, bytes_downloaded=123, sha256="a" * 64)
+        store.begin_archive_file(
+            url=url,
+            symbol="BTCUSDC",
+            market_type="spot",
+            interval="1s",
+            period="2026-01-01",
+        )
+        store.complete_archive_file(
+            url=url,
+            status="complete",
+            rows_inserted=2,
+            bytes_downloaded=123,
+            sha256="a" * 64,
+        )
     monkeypatch.setenv("HOME", str(tmp_path))
     save_runtime(RuntimeConfig(symbol="BTCUSDC", interval="1s", market_type="spot"))
 
-    assert cli.command_data_health(argparse.Namespace(
-        db=str(db),
-        symbol="BTCUSDC",
-        symbols=None,
-        interval="1s",
-        market="spot",
-        min_rows=3,
-        min_coverage_ratio=1.0,
-        max_gap_count=0,
-        require_verified_checksum=True,
-        json=True,
-    )) == 2
+    assert (
+        cli.command_data_health(
+            argparse.Namespace(
+                db=str(db),
+                symbol="BTCUSDC",
+                symbols=None,
+                interval="1s",
+                market="spot",
+                min_rows=3,
+                min_coverage_ratio=1.0,
+                max_gap_count=0,
+                require_verified_checksum=True,
+                json=True,
+            )
+        )
+        == 2
+    )
 
     payload = json.loads(capsys.readouterr().out)
     reasons = payload["items"][0]["reasons"]
@@ -2742,7 +3087,9 @@ def test_command_data_health_blocks_missing_rows_gaps_and_checksum(tmp_path, mon
     assert "no_verified_archive_checksum" in reasons
 
 
-def test_live_startup_blocks_when_cached_api_budget_is_over_eighty_percent(tmp_path, monkeypatch) -> None:
+def test_live_startup_blocks_when_cached_api_budget_is_over_eighty_percent(
+    tmp_path, monkeypatch
+) -> None:
     db = tmp_path / "market.sqlite"
     now_ms = 1_000_000
     with MarketDataStore(db) as store:
@@ -2771,7 +3118,9 @@ def test_live_startup_blocks_when_cached_api_budget_is_over_eighty_percent(tmp_p
             },
             ts_ms=now_ms,
         )
-    runtime = RuntimeConfig(api_key="k", api_secret="s", dry_run=False, testnet=True, market_type="spot")
+    runtime = RuntimeConfig(
+        api_key="k", api_secret="s", dry_run=False, testnet=True, market_type="spot"
+    )
     client = _FakeClient()
     monkeypatch.setattr(cli.time, "time", lambda: now_ms / 1000.0)
 
@@ -2804,29 +3153,63 @@ def test_connection_status_line_branches(tmp_path, monkeypatch) -> None:
     class NoAuthClient(_FakeClient):
         pass
 
-    save_runtime(RuntimeConfig(api_key="", api_secret="", dry_run=True, testnet=True, market_type="spot"))
+    save_runtime(
+        RuntimeConfig(
+            api_key="", api_secret="", dry_run=True, testnet=True, market_type="spot"
+        )
+    )
     monkeypatch.setattr(cli, "_build_client", lambda _runtime: NoAuthClient())
     line = cli._connection_status_line()
     assert "public endpoint reachable spot/testnet paper-default" in line
     assert "credentials missing" in line
 
-    save_runtime(RuntimeConfig(api_key="k", api_secret="s", dry_run=False, testnet=True, market_type="futures"))
+    save_runtime(
+        RuntimeConfig(
+            api_key="k",
+            api_secret="s",
+            dry_run=False,
+            testnet=True,
+            market_type="futures",
+        )
+    )
     monkeypatch.setattr(cli, "_build_client", lambda _runtime: _FakeClient())
     line = cli._connection_status_line()
     assert "authenticated futures/testnet testnet-live-default" in line
 
-    save_runtime(RuntimeConfig(api_key="k", api_secret="s", dry_run=False, testnet=False, demo=True, market_type="spot"))
+    save_runtime(
+        RuntimeConfig(
+            api_key="k",
+            api_secret="s",
+            dry_run=False,
+            testnet=False,
+            demo=True,
+            market_type="spot",
+        )
+    )
     monkeypatch.setattr(cli, "_build_client", lambda _runtime: _FakeClient())
     assert "authenticated spot/demo demo-live-default" in cli._connection_status_line()
 
-    save_runtime(RuntimeConfig(api_key="k", api_secret="s", dry_run=False, testnet=False, demo=False, market_type="spot"))
+    save_runtime(
+        RuntimeConfig(
+            api_key="k",
+            api_secret="s",
+            dry_run=False,
+            testnet=False,
+            demo=False,
+            market_type="spot",
+        )
+    )
     assert "signed validation locked" in cli._connection_status_line()
 
     class OddAuthClient(_FakeClient):
         def get_account(self):
             return "accepted"
 
-    save_runtime(RuntimeConfig(api_key="k", api_secret="s", dry_run=False, testnet=True, market_type="spot"))
+    save_runtime(
+        RuntimeConfig(
+            api_key="k", api_secret="s", dry_run=False, testnet=True, market_type="spot"
+        )
+    )
     monkeypatch.setattr(cli, "_build_client", lambda _runtime: OddAuthClient())
     assert "auth response ok" in cli._connection_status_line()
 
@@ -2834,9 +3217,19 @@ def test_connection_status_line_branches(tmp_path, monkeypatch) -> None:
         def ping(self):
             raise BinanceAPIError("timeout")
 
-    save_runtime(RuntimeConfig(api_key="k", api_secret="s", dry_run=False, testnet=True, market_type="futures"))
+    save_runtime(
+        RuntimeConfig(
+            api_key="k",
+            api_secret="s",
+            dry_run=False,
+            testnet=True,
+            market_type="futures",
+        )
+    )
     monkeypatch.setattr(cli, "_build_client", lambda _runtime: OfflineClient())
-    assert "public endpoint unreachable futures/testnet" in cli._connection_status_line()
+    assert (
+        "public endpoint unreachable futures/testnet" in cli._connection_status_line()
+    )
 
     class AuthFailClient(_FakeClient):
         def get_account(self):
@@ -2850,7 +3243,10 @@ def test_readiness_report_and_command_doctor(tmp_path, monkeypatch, capsys) -> N
     monkeypatch.setenv("HOME", str(tmp_path))
     save_runtime(RuntimeConfig(testnet=False, dry_run=False, api_key="", api_secret=""))
     save_strategy(StrategyConfig())
-    ok, lines = cli._readiness_report(input_path=str(tmp_path / "missing.json"), model_path=str(tmp_path / "missing-model.json"))
+    ok, lines = cli._readiness_report(
+        input_path=str(tmp_path / "missing.json"),
+        model_path=str(tmp_path / "missing-model.json"),
+    )
     assert ok is False
     assert any(line.startswith("[fix] safety target") for line in lines)
     assert any("training data" in line for line in lines)
@@ -2860,10 +3256,27 @@ def test_readiness_report_and_command_doctor(tmp_path, monkeypatch, capsys) -> N
     data_file.write_text("[]", encoding="utf-8")
     model_file.write_text("{}", encoding="utf-8")
     save_runtime(RuntimeConfig(testnet=True, dry_run=True, api_key="", api_secret=""))
-    monkeypatch.setattr(cli, "_load_rows_for_command", lambda *_args, **_kwargs: [object()] * 80)
-    monkeypatch.setattr(cli, "_load_runtime_model", lambda *_args, **_kwargs: SimpleNamespace(feature_dim=3))
-    monkeypatch.setattr(cli, "_connection_status_line", lambda: "Connection 00: public endpoint reachable spot/testnet paper-default; credentials missing")
-    assert cli.command_doctor(argparse.Namespace(input=str(data_file), model=str(model_file), online=True)) == 2
+    monkeypatch.setattr(
+        cli, "_load_rows_for_command", lambda *_args, **_kwargs: [object()] * 80
+    )
+    monkeypatch.setattr(
+        cli,
+        "_load_runtime_model",
+        lambda *_args, **_kwargs: SimpleNamespace(feature_dim=3),
+    )
+    monkeypatch.setattr(
+        cli,
+        "_connection_status_line",
+        lambda: (
+            "Connection 00: public endpoint reachable spot/testnet paper-default; credentials missing"
+        ),
+    )
+    assert (
+        cli.command_doctor(
+            argparse.Namespace(input=str(data_file), model=str(model_file), online=True)
+        )
+        == 2
+    )
     output = capsys.readouterr().out
     assert "Readiness report" in output
     assert "[fix] exchange connectivity" in output
@@ -2877,12 +3290,22 @@ def test_readiness_report_and_command_doctor(tmp_path, monkeypatch, capsys) -> N
             quality_warnings=["weak validation"],
         ),
     )
-    ok, lines = cli._readiness_report(input_path=str(data_file), model_path=str(model_file), online=False)
+    ok, lines = cli._readiness_report(
+        input_path=str(data_file), model_path=str(model_file), online=False
+    )
     assert ok is False
-    assert any("[fix] model quality" in line and "weak validation" in line for line in lines)
+    assert any(
+        "[fix] model quality" in line and "weak validation" in line for line in lines
+    )
 
-    monkeypatch.setattr(cli, "_load_runtime_model", lambda *_args, **_kwargs: (_ for _ in ()).throw(ModelLoadError("bad model")))
-    ok, lines = cli._readiness_report(input_path=str(data_file), model_path=str(model_file), online=False)
+    monkeypatch.setattr(
+        cli,
+        "_load_runtime_model",
+        lambda *_args, **_kwargs: (_ for _ in ()).throw(ModelLoadError("bad model")),
+    )
+    ok, lines = cli._readiness_report(
+        input_path=str(data_file), model_path=str(model_file), online=False
+    )
     assert ok is False
     assert any("bad model" in line for line in lines)
 
@@ -2905,40 +3328,64 @@ def test_readiness_report_includes_feature_drift(tmp_path, monkeypatch) -> None:
         feature_stds=[1.0],
     )
 
-    monkeypatch.setattr(cli, "_load_rows_for_command", lambda *_args, **_kwargs: [object()] * 80)
+    monkeypatch.setattr(
+        cli, "_load_rows_for_command", lambda *_args, **_kwargs: [object()] * 80
+    )
     monkeypatch.setattr(cli, "_build_model_rows", lambda *_args, **_kwargs: [drift_row])
     monkeypatch.setattr(cli, "_load_runtime_model", lambda *_args, **_kwargs: model)
 
-    ok, lines = cli._readiness_report(input_path=str(data_file), model_path=str(model_file), online=False)
+    ok, lines = cli._readiness_report(
+        input_path=str(data_file), model_path=str(model_file), online=False
+    )
 
     assert ok is False
-    assert any("[fix] feature drift" in line and "hard threshold" in line for line in lines)
+    assert any(
+        "[fix] feature drift" in line and "hard threshold" in line for line in lines
+    )
 
     monkeypatch.setattr(cli, "_load_rows_for_command", lambda *_args, **_kwargs: None)
-    ok, lines = cli._readiness_report(input_path=str(data_file), model_path=str(model_file), online=False)
+    ok, lines = cli._readiness_report(
+        input_path=str(data_file), model_path=str(model_file), online=False
+    )
     assert ok is False
     assert any("[ok] model artifact" in line for line in lines)
     assert not any("feature drift" in line for line in lines)
 
     model.probability_brier_after = 0.20
     model.probability_ece_after = 0.12
-    ok, lines = cli._readiness_report(input_path=str(data_file), model_path=str(model_file), online=False)
-    assert any("[ok] probability calibration" in line and "ece=0.120" in line for line in lines)
+    ok, lines = cli._readiness_report(
+        input_path=str(data_file), model_path=str(model_file), online=False
+    )
+    assert any(
+        "[ok] probability calibration" in line and "ece=0.120" in line for line in lines
+    )
 
     model.probability_brier_after = 0.42
     model.probability_ece_after = None
-    ok, lines = cli._readiness_report(input_path=str(data_file), model_path=str(model_file), online=False)
+    ok, lines = cli._readiness_report(
+        input_path=str(data_file), model_path=str(model_file), online=False
+    )
     assert ok is False
-    assert any("[fix] probability calibration" in line and "brier=0.420" in line for line in lines)
+    assert any(
+        "[fix] probability calibration" in line and "brier=0.420" in line
+        for line in lines
+    )
 
     model.probability_brier_after = 0.20
     model.probability_ece_after = 0.24
-    ok, lines = cli._readiness_report(input_path=str(data_file), model_path=str(model_file), online=False)
+    ok, lines = cli._readiness_report(
+        input_path=str(data_file), model_path=str(model_file), online=False
+    )
     assert ok is False
-    assert any("[fix] probability calibration" in line and "ece=0.240" in line for line in lines)
+    assert any(
+        "[fix] probability calibration" in line and "ece=0.240" in line
+        for line in lines
+    )
 
 
-def test_readiness_report_accepts_train_suite_advanced_model(tmp_path, monkeypatch) -> None:
+def test_readiness_report_accepts_train_suite_advanced_model(
+    tmp_path, monkeypatch
+) -> None:
     monkeypatch.setenv("HOME", str(tmp_path))
     save_runtime(RuntimeConfig(testnet=True, dry_run=True))
     strategy = StrategyConfig()
@@ -2970,13 +3417,23 @@ def test_readiness_report_accepts_train_suite_advanced_model(tmp_path, monkeypat
     model_file = tmp_path / "model_default.json"
     data_file.write_text("[]", encoding="utf-8")
     serialize_model(model, model_file)
-    monkeypatch.setattr(cli, "_load_rows_for_command", lambda *_args, **_kwargs: candles)
+    monkeypatch.setattr(
+        cli, "_load_rows_for_command", lambda *_args, **_kwargs: candles
+    )
 
-    ok, lines = cli._readiness_report(input_path=str(data_file), model_path=str(model_file), online=False)
+    ok, lines = cli._readiness_report(
+        input_path=str(data_file), model_path=str(model_file), online=False
+    )
 
     assert ok is True
-    assert any("[ok] model artifact" in line and "kind=advanced:regular" in line for line in lines)
-    assert any("[ok] model strategy overlay" in line and "risk=0.0050" in line for line in lines)
+    assert any(
+        "[ok] model artifact" in line and "kind=advanced:regular" in line
+        for line in lines
+    )
+    assert any(
+        "[ok] model strategy overlay" in line and "risk=0.0050" in line
+        for line in lines
+    )
     assert any("[ok] feature drift" in line for line in lines)
 
 
@@ -3002,7 +3459,9 @@ def test_readiness_model_rejects_unknown_advanced_signature(
     monkeypatch.setattr(
         cli,
         "_load_runtime_model",
-        lambda *_args, **_kwargs: (_ for _ in ()).throw(ModelFeatureMismatchError("runtime mismatch")),
+        lambda *_args, **_kwargs: (_ for _ in ()).throw(
+            ModelFeatureMismatchError("runtime mismatch")
+        ),
     )
     with pytest.raises(ModelFeatureMismatchError, match="runtime mismatch"):
         cli._load_readiness_model(model_file, strategy)
@@ -3046,39 +3505,43 @@ def test_live_helpers_accept_train_suite_advanced_model(tmp_path, monkeypatch) -
     advanced_rows = make_advanced_rows(candles, feature_cfg)
     assert advanced_rows
 
-    model = _bind_promoted_selection_risk(TrainedModel(
-        weights=[0.0] * len(advanced_rows[0].features),
-        bias=0.0,
-        feature_dim=len(advanced_rows[0].features),
-        epochs=1,
-        feature_means=[0.0] * len(advanced_rows[0].features),
-        feature_stds=[1.0] * len(advanced_rows[0].features),
-        feature_signature=advanced_feature_signature(feature_cfg),
-        selection_risk=_promoted_selection_risk(
-            effective_trials=24,
-            trial_penalty=0.01,
-            deflated_score=0.11,
-        ),
-        execution_validation=_promoted_execution_validation(market_type="spot", interval="1s"),
-        probability_calibration_size=128,
-        probability_log_loss_before=0.62,
-        probability_log_loss_after=0.58,
-        probability_brier_before=0.24,
-        probability_brier_after=0.22,
-        probability_ece_before=0.10,
-        probability_ece_after=0.08,
-        probability_calibration_backend_requested="directml",
-        probability_calibration_backend_kind="directml",
-        probability_calibration_backend_device="privateuseone:0",
-        training_backend_requested="directml",
-        training_backend_kind="directml",
-        training_backend_device="privateuseone:0",
-        training_backend_vendor="DirectML",
-        model_candidate_count=3,
-        model_selected_candidate="triple_barrier_base",
-        model_selection_score=0.42,
-        strategy_overrides={"taker_fee_bps": 4.0},
-    ))
+    model = _bind_promoted_selection_risk(
+        TrainedModel(
+            weights=[0.0] * len(advanced_rows[0].features),
+            bias=0.0,
+            feature_dim=len(advanced_rows[0].features),
+            epochs=1,
+            feature_means=[0.0] * len(advanced_rows[0].features),
+            feature_stds=[1.0] * len(advanced_rows[0].features),
+            feature_signature=advanced_feature_signature(feature_cfg),
+            selection_risk=_promoted_selection_risk(
+                effective_trials=24,
+                trial_penalty=0.01,
+                deflated_score=0.11,
+            ),
+            execution_validation=_promoted_execution_validation(
+                market_type="spot", interval="1s"
+            ),
+            probability_calibration_size=128,
+            probability_log_loss_before=0.62,
+            probability_log_loss_after=0.58,
+            probability_brier_before=0.24,
+            probability_brier_after=0.22,
+            probability_ece_before=0.10,
+            probability_ece_after=0.08,
+            probability_calibration_backend_requested="directml",
+            probability_calibration_backend_kind="directml",
+            probability_calibration_backend_device="privateuseone:0",
+            training_backend_requested="directml",
+            training_backend_kind="directml",
+            training_backend_device="privateuseone:0",
+            training_backend_vendor="DirectML",
+            model_candidate_count=3,
+            model_selected_candidate="triple_barrier_base",
+            model_selection_score=0.42,
+            strategy_overrides={"taker_fee_bps": 4.0},
+        )
+    )
     model_file = tmp_path / "model_default.json"
     serialize_model(model, model_file)
     monkeypatch.setattr(
@@ -3086,7 +3549,9 @@ def test_live_helpers_accept_train_suite_advanced_model(tmp_path, monkeypatch) -
         lambda *_args, **_kwargs: True,
     )
 
-    loaded, error, notice = cli._load_live_start_model(model_file, strategy, effective_dry_run=False)
+    loaded, error, notice = cli._load_live_start_model(
+        model_file, strategy, effective_dry_run=False
+    )
 
     assert error is None
     assert notice is None
@@ -3095,18 +3560,28 @@ def test_live_helpers_accept_train_suite_advanced_model(tmp_path, monkeypatch) -
     live_rows = cli._live_rows_for_model(candles, strategy, loaded)
     assert live_rows
     assert len(live_rows[0].features) == loaded.feature_dim
-    assert cli._live_model_feature_signature(loaded, strategy) == model.feature_signature
+    assert (
+        cli._live_model_feature_signature(loaded, strategy) == model.feature_signature
+    )
 
     base_rows = cli._live_rows_for_model(candles, strategy, None)
     assert base_rows
     assert len(base_rows[0].features) == len(strategy.enabled_features)
-    assert cli._live_model_feature_signature(None, strategy) == cli._strategy_feature_signature(strategy)
+    assert cli._live_model_feature_signature(
+        None, strategy
+    ) == cli._strategy_feature_signature(strategy)
 
 
-def test_evaluate_and_backtest_accept_train_suite_advanced_model(tmp_path, monkeypatch) -> None:
+def test_evaluate_and_backtest_accept_train_suite_advanced_model(
+    tmp_path, monkeypatch
+) -> None:
     monkeypatch.setenv("HOME", str(tmp_path))
     strategy = StrategyConfig()
-    save_runtime(RuntimeConfig(testnet=True, dry_run=True, market_type="spot", managed_usdc=1000.0))
+    save_runtime(
+        RuntimeConfig(
+            testnet=True, dry_run=True, market_type="spot", managed_usdc=1000.0
+        )
+    )
     save_strategy(strategy)
     candles = _simple_candles(320)
     feature_cfg = default_config_for("default", strategy.enabled_features)
@@ -3114,18 +3589,20 @@ def test_evaluate_and_backtest_accept_train_suite_advanced_model(tmp_path, monke
     assert rows
     data_file = tmp_path / "history.json"
     data_file.write_text(
-        json.dumps([
-            {
-                "open_time": candle.open_time,
-                "open": candle.open,
-                "high": candle.high,
-                "low": candle.low,
-                "close": candle.close,
-                "volume": candle.volume,
-                "close_time": candle.close_time,
-            }
-            for candle in candles
-        ]),
+        json.dumps(
+            [
+                {
+                    "open_time": candle.open_time,
+                    "open": candle.open,
+                    "high": candle.high,
+                    "low": candle.low,
+                    "close": candle.close,
+                    "volume": candle.volume,
+                    "close_time": candle.close_time,
+                }
+                for candle in candles
+            ]
+        ),
         encoding="utf-8",
     )
     model_file = tmp_path / "model_default.json"
@@ -3143,17 +3620,25 @@ def test_evaluate_and_backtest_accept_train_suite_advanced_model(tmp_path, monke
         model_file,
     )
 
-    assert cli.command_evaluate(
-        argparse.Namespace(
-            input=str(data_file),
-            model=str(model_file),
-            threshold=None,
-            calibrate_threshold=False,
+    assert (
+        cli.command_evaluate(
+            argparse.Namespace(
+                input=str(data_file),
+                model=str(model_file),
+                threshold=None,
+                calibrate_threshold=False,
+            )
         )
-    ) == 0
-    assert cli.command_backtest(
-        argparse.Namespace(input=str(data_file), model=str(model_file), start_cash=1000.0)
-    ) == 0
+        == 0
+    )
+    assert (
+        cli.command_backtest(
+            argparse.Namespace(
+                input=str(data_file), model=str(model_file), start_cash=1000.0
+            )
+        )
+        == 0
+    )
 
 
 def test_backtest_rows_include_latest_inference_window() -> None:
@@ -3189,19 +3674,26 @@ def test_command_evaluate_reports_no_rows_after_model_specific_row_build(
         feature_stds=[1.0],
     )
 
-    monkeypatch.setattr(cli, "_load_rows_for_command", lambda *_args, **_kwargs: [object()])
+    monkeypatch.setattr(
+        cli, "_load_rows_for_command", lambda *_args, **_kwargs: [object()]
+    )
     monkeypatch.setattr(cli, "_build_model_rows", lambda *_args, **_kwargs: [row])
-    monkeypatch.setattr(cli, "_load_readiness_model", lambda *_args, **_kwargs: (model, "runtime"))
+    monkeypatch.setattr(
+        cli, "_load_readiness_model", lambda *_args, **_kwargs: (model, "runtime")
+    )
     monkeypatch.setattr(cli, "_readiness_model_rows", lambda *_args, **_kwargs: [])
 
-    assert cli.command_evaluate(
-        argparse.Namespace(
-            input="history.json",
-            model=str(model_file),
-            threshold=None,
-            calibrate_threshold=False,
+    assert (
+        cli.command_evaluate(
+            argparse.Namespace(
+                input="history.json",
+                model=str(model_file),
+                threshold=None,
+                calibrate_threshold=False,
+            )
         )
-    ) == 2
+        == 2
+    )
     assert "No rows available" in capsys.readouterr().out
 
 
@@ -3210,8 +3702,14 @@ def test_command_live_applies_model_strategy_overrides_before_risk_policy(
     monkeypatch,
 ) -> None:
     monkeypatch.setenv("HOME", str(tmp_path))
-    save_runtime(RuntimeConfig(testnet=True, dry_run=True, market_type="spot", managed_usdc=1000.0))
-    save_strategy(StrategyConfig(risk_per_trade=0.02, signal_threshold=0.58, take_profit_pct=0.03))
+    save_runtime(
+        RuntimeConfig(
+            testnet=True, dry_run=True, market_type="spot", managed_usdc=1000.0
+        )
+    )
+    save_strategy(
+        StrategyConfig(risk_per_trade=0.02, signal_threshold=0.58, take_profit_pct=0.03)
+    )
     model = TrainedModel(
         weights=[0.0] * 13,
         bias=0.0,
@@ -3234,47 +3732,72 @@ def test_command_live_applies_model_strategy_overrides_before_risk_policy(
         return SimpleNamespace(allowed=True, warning_count=0)
 
     monkeypatch.setattr(cli, "_build_client", lambda _runtime: _FakeClient())
-    monkeypatch.setattr(cli, "_load_live_start_model", lambda *_args, **_kwargs: (model, None, None))
-    monkeypatch.setattr(cli, "_resolve_symbol_constraints", lambda *_args, **_kwargs: SymbolConstraints("BTCUSDC", 0.00001, 1.0, 0.00001, 5.0, 1000.0))
+    monkeypatch.setattr(
+        cli, "_load_live_start_model", lambda *_args, **_kwargs: (model, None, None)
+    )
+    monkeypatch.setattr(
+        cli,
+        "_resolve_symbol_constraints",
+        lambda *_args, **_kwargs: SymbolConstraints(
+            "BTCUSDC", 0.00001, 1.0, 0.00001, 5.0, 1000.0
+        ),
+    )
     monkeypatch.setattr(cli, "build_risk_policy_report", fake_policy)
     monkeypatch.setattr(cli, "build_live_run_payload", lambda **kwargs: {"events": []})
-    monkeypatch.setattr(cli, "_persist_run_artifact", lambda *_args, **_kwargs: tmp_path / "live.json")
+    monkeypatch.setattr(
+        cli, "_persist_run_artifact", lambda *_args, **_kwargs: tmp_path / "live.json"
+    )
 
-    assert cli.command_live(
-        argparse.Namespace(
-            steps=0,
-            sleep=0,
-            paper=True,
-            live=False,
-            model=str(tmp_path / "model.json"),
-            leverage=None,
-            retrain_interval=0,
-            retrain_window=300,
-            retrain_min_rows=240,
-            external_signals=None,
+    assert (
+        cli.command_live(
+            argparse.Namespace(
+                steps=0,
+                sleep=0,
+                paper=True,
+                live=False,
+                model=str(tmp_path / "model.json"),
+                leverage=None,
+                retrain_interval=0,
+                retrain_window=300,
+                retrain_min_rows=240,
+                external_signals=None,
+            )
         )
-    ) == 0
+        == 0
+    )
 
     assert captured == {"risk": 0.005, "threshold": 0.64, "take": 0.04}
 
 
-def test_load_live_start_model_handles_unexpected_model_loader_failure(tmp_path, monkeypatch) -> None:
+def test_load_live_start_model_handles_unexpected_model_loader_failure(
+    tmp_path, monkeypatch
+) -> None:
     model_file = tmp_path / "model.json"
     model_file.write_text("{}", encoding="utf-8")
-    monkeypatch.setattr(cli, "_load_readiness_model", lambda *_args, **_kwargs: (_ for _ in ()).throw(RuntimeError("boom")))
+    monkeypatch.setattr(
+        cli,
+        "_load_readiness_model",
+        lambda *_args, **_kwargs: (_ for _ in ()).throw(RuntimeError("boom")),
+    )
 
-    model, error, notice = cli._load_live_start_model(model_file, StrategyConfig(), effective_dry_run=True)
+    model, error, notice = cli._load_live_start_model(
+        model_file, StrategyConfig(), effective_dry_run=True
+    )
     assert model is None
     assert error is None
     assert notice is None
 
-    model, error, notice = cli._load_live_start_model(model_file, StrategyConfig(), effective_dry_run=False)
+    model, error, notice = cli._load_live_start_model(
+        model_file, StrategyConfig(), effective_dry_run=False
+    )
     assert model is None
     assert "requires a readable model" in str(error)
     assert notice is None
 
 
-def test_load_live_start_model_rejects_unpromoted_model_for_signed_mode(tmp_path) -> None:
+def test_load_live_start_model_rejects_unpromoted_model_for_signed_mode(
+    tmp_path,
+) -> None:
     model_file = tmp_path / "model.json"
     serialize_model(
         TrainedModel(
@@ -3284,45 +3807,57 @@ def test_load_live_start_model_rejects_unpromoted_model_for_signed_mode(tmp_path
             epochs=1,
             feature_means=[0.0],
             feature_stds=[1.0],
-            feature_signature=cli._strategy_feature_signature(StrategyConfig(enabled_features=("momentum_1",))),
+            feature_signature=cli._strategy_feature_signature(
+                StrategyConfig(enabled_features=("momentum_1",))
+            ),
         ),
         model_file,
     )
     strategy = StrategyConfig(enabled_features=("momentum_1",))
 
-    model, error, notice = cli._load_live_start_model(model_file, strategy, effective_dry_run=False)
+    model, error, notice = cli._load_live_start_model(
+        model_file, strategy, effective_dry_run=False
+    )
     assert model is None
     assert "requires a promoted model" in str(error)
     assert notice is None
 
-    model, error, notice = cli._load_live_start_model(model_file, strategy, effective_dry_run=True)
+    model, error, notice = cli._load_live_start_model(
+        model_file, strategy, effective_dry_run=True
+    )
     assert model is not None
     assert error is None
     assert "promotion warning" in str(notice)
 
 
-def test_load_live_start_model_can_require_live_grade_candidate_and_gpu_evidence(tmp_path) -> None:
+def test_load_live_start_model_can_require_live_grade_candidate_and_gpu_evidence(
+    tmp_path,
+) -> None:
     strategy = StrategyConfig(enabled_features=("momentum_1",))
     model_file = tmp_path / "model.json"
     serialize_model(
-        _bind_promoted_selection_risk(TrainedModel(
-            weights=[0.0],
-            bias=0.0,
-            feature_dim=1,
-            epochs=1,
-            feature_means=[0.0],
-            feature_stds=[1.0],
-            feature_signature=cli._strategy_feature_signature(strategy),
-            selection_risk=_promoted_selection_risk(),
-            execution_validation=_promoted_execution_validation(market_type="futures", interval="1s"),
-            probability_calibration_size=128,
-            probability_log_loss_before=0.62,
-            probability_log_loss_after=0.58,
-            probability_brier_before=0.24,
-            probability_brier_after=0.22,
-            probability_ece_before=0.10,
-            probability_ece_after=0.08,
-        )),
+        _bind_promoted_selection_risk(
+            TrainedModel(
+                weights=[0.0],
+                bias=0.0,
+                feature_dim=1,
+                epochs=1,
+                feature_means=[0.0],
+                feature_stds=[1.0],
+                feature_signature=cli._strategy_feature_signature(strategy),
+                selection_risk=_promoted_selection_risk(),
+                execution_validation=_promoted_execution_validation(
+                    market_type="futures", interval="1s"
+                ),
+                probability_calibration_size=128,
+                probability_log_loss_before=0.62,
+                probability_log_loss_after=0.58,
+                probability_brier_before=0.24,
+                probability_brier_after=0.22,
+                probability_ece_before=0.10,
+                probability_ece_after=0.08,
+            )
+        ),
         model_file,
     )
 
@@ -3353,22 +3888,39 @@ def test_build_order_notional_paths() -> None:
             type(
                 "Constraint",
                 (),
-                {"symbol": "BTCUSDC", "min_qty": 0.001, "step_size": 0.001, "min_notional": 5.0, "max_notional": 300.0},
+                {
+                    "symbol": "BTCUSDC",
+                    "min_qty": 0.001,
+                    "step_size": 0.001,
+                    "min_notional": 5.0,
+                    "max_notional": 300.0,
+                },
             )(),
         ),
     )
-    notional, qty = cli._build_order_notional(1000.0, 10_000.0, cfg, "futures", 3.0, client)
+    notional, qty = cli._build_order_notional(
+        1000.0, 10_000.0, cfg, "futures", 3.0, client
+    )
     assert math.isclose(notional, 1000.0)
     assert math.isclose(qty, 0.10)
 
     bad_constraints = type(
         "C",
         (),
-        {"symbol": "BTCUSDC", "min_qty": 10.0, "step_size": 1.0, "min_notional": 5000.0, "max_notional": 0.0},
+        {
+            "symbol": "BTCUSDC",
+            "min_qty": 10.0,
+            "step_size": 1.0,
+            "min_notional": 5000.0,
+            "max_notional": 0.0,
+        },
     )()
 
     client_too_small = SimpleNamespace(
-        normalize_quantity=lambda symbol, qty: (0.0 if qty < bad_constraints.min_qty else qty, bad_constraints)
+        normalize_quantity=lambda symbol, qty: (
+            0.0 if qty < bad_constraints.min_qty else qty,
+            bad_constraints,
+        )
     )
     assert cli._build_order_notional(
         1000.0,
@@ -3380,8 +3932,14 @@ def test_build_order_notional_paths() -> None:
         constraints=bad_constraints,
     ) == (0.0, 0.0)
 
-    assert cli._build_order_notional(0.0, 10000.0, cfg, "futures", 3.0, client) == (0.0, 0.0)
-    assert cli._build_order_notional(1000.0, -1.0, cfg, "futures", 3.0, client) == (0.0, 0.0)
+    assert cli._build_order_notional(0.0, 10000.0, cfg, "futures", 3.0, client) == (
+        0.0,
+        0.0,
+    )
+    assert cli._build_order_notional(1000.0, -1.0, cfg, "futures", 3.0, client) == (
+        0.0,
+        0.0,
+    )
 
 
 def test_live_inference_rows_include_latest_closed_candle() -> None:
@@ -3468,7 +4026,10 @@ def test_owned_order_forwards_entry_notional_to_bracket_aware_client(
             reduce_only=False,
             client_order_id=None,
             expected_scope=None,
+            before_dispatch=None,
         ):
+            if before_dispatch is not None:
+                before_dispatch()
             assert expected_scope == self.execution_scope()
             self.orders.append((symbol, side, size, dry_run, leverage, notional))
             return _native_cli_ack(
@@ -3496,30 +4057,53 @@ def test_owned_order_forwards_entry_notional_to_bracket_aware_client(
         open_client_order_id=bot_client_order_id("bracket-owned-probe", "open"),
     )
     store = PositionsStore(tmp_path / "owned")
-    enrolled_binance_runtime(store, client.execution_scope())
+    enrolled_binance_runtime(
+        store, client.execution_scope(), opening_policy_quote="USDC"
+    )
     submit_durable_open(client, position, store)
 
     assert client.orders[-1][-1] == pytest.approx(2_500.0)
 
 
 def test_roundtrip_helpers_cover_balances_and_sizing() -> None:
-    account = {"balances": [{"asset": "USDC", "free": "10"}, {"asset": "USDC", "free": "2.5"}, {"asset": "BTC", "free": "bad"}]}
+    account = {
+        "balances": [
+            {"asset": "USDC", "free": "10"},
+            {"asset": "USDC", "free": "2.5"},
+            {"asset": "BTC", "free": "bad"},
+        ]
+    }
     assert cli._asset_free_balance(account, "USDC") == 12.5
     assert cli._asset_free_balance([], "USDC") == 0.0
     assert cli._order_executed_qty({"executedQty": "0.01"}) == 0.01
     assert cli._order_executed_qty({"origQty": "0.02"}) == 0.0
-    assert cli._order_executed_qty({"fills": [{"qty": "0.01"}, {"qty": "0.02"}]}) == pytest.approx(0.03)
+    assert cli._order_executed_qty(
+        {"fills": [{"qty": "0.01"}, {"qty": "0.02"}]}
+    ) == pytest.approx(0.03)
     assert cli._order_executed_qty([]) == 0.0
     qty, average, notional = cli._order_fill_details(
-        {"fills": [{"qty": "0.01", "price": "50000"}, {"qty": "0.02", "price": "51000"}]},
+        {
+            "fills": [
+                {"qty": "0.01", "price": "50000"},
+                {"qty": "0.02", "price": "51000"},
+            ]
+        },
         fallback_qty=0.5,
         fallback_price=1.0,
     )
     assert qty == pytest.approx(0.03)
     assert average == pytest.approx((0.01 * 50000 + 0.02 * 51000) / 0.03)
     assert notional == pytest.approx(1520.0)
-    assert cli._order_fill_details({"executedQty": "0.1", "cummulativeQuoteQty": "12"}, fallback_qty=0.0, fallback_price=0.0) == (0.1, 120.0, 12.0)
-    assert cli._order_fill_details({}, fallback_qty=0.2, fallback_price=50.0) == (0.2, 50.0, 10.0)
+    assert cli._order_fill_details(
+        {"executedQty": "0.1", "cummulativeQuoteQty": "12"},
+        fallback_qty=0.0,
+        fallback_price=0.0,
+    ) == (0.1, 120.0, 12.0)
+    assert cli._order_fill_details({}, fallback_qty=0.2, fallback_price=50.0) == (
+        0.2,
+        50.0,
+        10.0,
+    )
     assert cli._order_fill_details(
         {"status": "NEW", "origQty": "0.2"},
         fallback_qty=0.2,
@@ -3527,11 +4111,23 @@ def test_roundtrip_helpers_cover_balances_and_sizing() -> None:
         allow_quantity_fallback=False,
     ) == (0.0, 50.0, 0.0)
     assert cli._order_fill_details(
-        {"fills": [object(), {"qty": "0", "price": "1"}, {"qty": "0.1", "price": "0"}], "executedQty": "0.2", "avgPrice": "77"},
+        {
+            "fills": [
+                object(),
+                {"qty": "0", "price": "1"},
+                {"qty": "0.1", "price": "0"},
+            ],
+            "executedQty": "0.2",
+            "avgPrice": "77",
+        },
         fallback_qty=0.0,
         fallback_price=0.0,
     ) == (0.2, 77.0, 15.4)
-    assert cli._order_fill_details(None, fallback_qty=0.3, fallback_price=10.0) == (0.3, 10.0, 3.0)
+    assert cli._order_fill_details(None, fallback_qty=0.3, fallback_price=10.0) == (
+        0.3,
+        10.0,
+        3.0,
+    )
 
     constraints = SymbolConstraints("BTCUSDC", 0.00001, 1.0, 0.00001, 5.0, 1000.0)
 
@@ -3541,7 +4137,9 @@ def test_roundtrip_helpers_cover_balances_and_sizing() -> None:
             rounded = math.floor(quantity * 100000) / 100000
             return rounded, constraints
 
-    quantity, parsed, notional = cli._roundtrip_quantity(_Client(), "BTCUSDC", 0.00001, 76000.0)
+    quantity, parsed, notional = cli._roundtrip_quantity(
+        _Client(), "BTCUSDC", 0.00001, 76000.0
+    )
     assert parsed == constraints
     assert quantity >= 0.00008
     assert notional >= 5.0
@@ -3562,7 +4160,12 @@ def test_roundtrip_helpers_cover_balances_and_sizing() -> None:
                 "status": "FILLED",
                 "executedQty": "0.0002",
                 "fills": [
-                    {"qty": "0.0002", "price": "76000", "commission": "0", "commissionAsset": "BTC"}
+                    {
+                        "qty": "0.0002",
+                        "price": "76000",
+                        "commission": "0",
+                        "commissionAsset": "BTC",
+                    }
                 ],
             },
         )
@@ -3658,7 +4261,9 @@ def test_resolved_order_fill_queries_exchange_when_live_ack_has_no_fill() -> Non
     assert client.queries == [("ETHUSDC", 123, "abc")]
 
 
-def test_resolved_order_fill_does_not_query_or_trust_orig_qty_for_unidentified_live_order() -> None:
+def test_resolved_order_fill_does_not_query_or_trust_orig_qty_for_unidentified_live_order() -> (
+    None
+):
     client = _FakeClient()
     qty, average, notional, source = cli._resolved_order_fill_details(
         client,  # type: ignore[arg-type]
@@ -3721,7 +4326,9 @@ def test_command_status_prints_masked_secret(tmp_path, monkeypatch, capsys) -> N
     assert "visible-key" not in output
 
 
-def test_command_status_compact_reports_execution_and_lossless_ledger_state(tmp_path, monkeypatch, capsys) -> None:
+def test_command_status_compact_reports_execution_and_lossless_ledger_state(
+    tmp_path, monkeypatch, capsys
+) -> None:
     monkeypatch.setenv("HOME", str(tmp_path))
     monkeypatch.chdir(tmp_path)
     monkeypatch.setattr(
@@ -3817,7 +4424,13 @@ def test_command_configure_validation_failure_returns_nonzero(
             raise BinanceAPIError("no symbol")
 
     monkeypatch.setenv("HOME", str(tmp_path))
-    monkeypatch.setattr(cli, "prompt_runtime", lambda _current: RuntimeConfig(api_key="k", api_secret="s", validate_account=True))
+    monkeypatch.setattr(
+        cli,
+        "prompt_runtime",
+        lambda _current: RuntimeConfig(
+            api_key="k", api_secret="s", validate_account=True
+        ),
+    )
     monkeypatch.setattr(cli, "_build_client", lambda _runtime: _BadClient())
     assert cli.command_configure(argparse.Namespace()) == 2
     assert "validation failed" in capsys.readouterr().err
@@ -3831,9 +4444,15 @@ def test_command_configure_validation_failure_returns_nonzero(
     assert "bad key" in capsys.readouterr().err
 
 
-def test_command_configure_futures_prints_mode_line(tmp_path, monkeypatch, capsys) -> None:
+def test_command_configure_futures_prints_mode_line(
+    tmp_path, monkeypatch, capsys
+) -> None:
     monkeypatch.setenv("HOME", str(tmp_path))
-    monkeypatch.setattr(cli, "prompt_runtime", lambda _current: RuntimeConfig(market_type="futures", validate_account=False))
+    monkeypatch.setattr(
+        cli,
+        "prompt_runtime",
+        lambda _current: RuntimeConfig(market_type="futures", validate_account=False),
+    )
     assert cli.command_configure(argparse.Namespace()) == 0
     assert "futures-mode enabled" in capsys.readouterr().out
 
@@ -3841,7 +4460,9 @@ def test_command_configure_futures_prints_mode_line(tmp_path, monkeypatch, capsy
 def test_command_connect_spot_and_futures(tmp_path, monkeypatch, capsys) -> None:
     fake = _FakeClient()
     monkeypatch.setenv("HOME", str(tmp_path))
-    runtime = RuntimeConfig(api_key="k", api_secret="s", market_type="futures", symbol="BTCUSDC")
+    runtime = RuntimeConfig(
+        api_key="k", api_secret="s", market_type="futures", symbol="BTCUSDC"
+    )
     save_runtime(runtime)
     monkeypatch.setattr(cli, "_build_client", lambda _runtime: fake)
     assert cli.command_connect(argparse.Namespace()) == 0
@@ -3869,7 +4490,11 @@ def test_command_connect_failure_returns_nonzero(tmp_path, monkeypatch, capsys) 
     assert cli.command_connect(argparse.Namespace()) == 2
     assert "Connection failed: offline" in capsys.readouterr().err
 
-    save_runtime(RuntimeConfig(api_key="fake-api-key", api_secret="fake-secret", testnet=False, demo=False))
+    save_runtime(
+        RuntimeConfig(
+            api_key="fake-api-key", api_secret="fake-secret", testnet=False, demo=False
+        )
+    )
     assert cli.command_connect(argparse.Namespace()) == 2
     assert "only on Binance testnet or demo" in capsys.readouterr().err
 
@@ -3879,29 +4504,77 @@ def test_command_connect_failure_returns_nonzero(tmp_path, monkeypatch, capsys) 
     assert "Connect requires valid Binance API credentials" in capsys.readouterr().err
 
 
-def test_command_risk_reports_json_text_and_conflicting_modes(tmp_path, monkeypatch, capsys) -> None:
+def test_command_risk_reports_json_text_and_conflicting_modes(
+    tmp_path, monkeypatch, capsys
+) -> None:
     monkeypatch.setenv("HOME", str(tmp_path))
     save_runtime(RuntimeConfig())
     save_strategy(StrategyConfig())
-    assert cli.command_risk(argparse.Namespace(model=str(tmp_path / "missing.json"), paper=True, live=True, leverage=None, json=False)) == 2
+    assert (
+        cli.command_risk(
+            argparse.Namespace(
+                model=str(tmp_path / "missing.json"),
+                paper=True,
+                live=True,
+                leverage=None,
+                json=False,
+            )
+        )
+        == 2
+    )
     assert "Choose either" in capsys.readouterr().out
 
-    assert cli.command_risk(argparse.Namespace(model=str(tmp_path / "missing.json"), paper=True, live=False, leverage=None, json=False)) == 0
+    assert (
+        cli.command_risk(
+            argparse.Namespace(
+                model=str(tmp_path / "missing.json"),
+                paper=True,
+                live=False,
+                leverage=None,
+                json=False,
+            )
+        )
+        == 0
+    )
     assert "Risk policy report" in capsys.readouterr().out
 
-    assert cli.command_risk(argparse.Namespace(model=str(tmp_path / "missing.json"), paper=False, live=False, leverage=3.0, json=True)) == 0
+    assert (
+        cli.command_risk(
+            argparse.Namespace(
+                model=str(tmp_path / "missing.json"),
+                paper=False,
+                live=False,
+                leverage=3.0,
+                json=True,
+            )
+        )
+        == 0
+    )
     payload = json.loads(capsys.readouterr().out)
     assert payload["effective_dry_run"] is True
     assert payload["leverage"] == 1.0
 
     save_runtime(RuntimeConfig(dry_run=False, api_key="", api_secret=""))
-    assert cli.command_risk(argparse.Namespace(model=str(tmp_path / "missing.json"), paper=False, live=True, leverage=3.0, json=True)) == 2
+    assert (
+        cli.command_risk(
+            argparse.Namespace(
+                model=str(tmp_path / "missing.json"),
+                paper=False,
+                live=True,
+                leverage=3.0,
+                json=True,
+            )
+        )
+        == 2
+    )
     payload = json.loads(capsys.readouterr().out)
     assert payload["allowed"] is False
     assert payload["block_count"] >= 1
 
 
-def test_command_risk_live_requests_strict_model_evidence(tmp_path, monkeypatch, capsys) -> None:
+def test_command_risk_live_requests_strict_model_evidence(
+    tmp_path, monkeypatch, capsys
+) -> None:
     from simple_ai_trading import risk_workflows
 
     captured: dict[str, object] = {}
@@ -3917,18 +4590,37 @@ def test_command_risk_live_requests_strict_model_evidence(tmp_path, monkeypatch,
         return _Report()
 
     monkeypatch.setenv("HOME", str(tmp_path))
-    save_runtime(RuntimeConfig(testnet=True, dry_run=False, api_key="k", api_secret="s", compute_backend="directml"))
+    save_runtime(
+        RuntimeConfig(
+            testnet=True,
+            dry_run=False,
+            api_key="k",
+            api_secret="s",
+            compute_backend="directml",
+        )
+    )
     save_strategy(StrategyConfig())
     monkeypatch.setattr(
         risk_workflows,
         "resolve_backend",
-        lambda _backend: cli.BackendInfo("directml", "directml", "privateuseone:0", "DirectML", ""),
+        lambda _backend: cli.BackendInfo(
+            "directml", "directml", "privateuseone:0", "DirectML", ""
+        ),
     )
     monkeypatch.setattr(risk_workflows, "build_risk_policy_report", fake_report)
 
-    assert cli.command_risk(
-        argparse.Namespace(model=str(tmp_path / "model.json"), paper=False, live=True, leverage=None, json=True)
-    ) == 0
+    assert (
+        cli.command_risk(
+            argparse.Namespace(
+                model=str(tmp_path / "model.json"),
+                paper=False,
+                live=True,
+                leverage=None,
+                json=True,
+            )
+        )
+        == 0
+    )
     assert json.loads(capsys.readouterr().out)["allowed"] is True
     assert captured["require_model_candidate_search"] is True
     assert captured["require_accelerator_evidence"] is True
@@ -3939,10 +4631,14 @@ def test_command_risk_live_requests_strict_model_evidence(tmp_path, monkeypatch,
     assert captured["expected_interval"] == "15m"
 
 
-def test_command_live_risk_policy_and_generic_entry_gate(tmp_path, monkeypatch, capsys) -> None:
+def test_command_live_risk_policy_and_generic_entry_gate(
+    tmp_path, monkeypatch, capsys
+) -> None:
     monkeypatch.setenv("HOME", str(tmp_path))
     monkeypatch.chdir(tmp_path)
-    save_runtime(RuntimeConfig(managed_usdc=0.0, dry_run=False, api_key="k", api_secret="s"))
+    save_runtime(
+        RuntimeConfig(managed_usdc=0.0, dry_run=False, api_key="k", api_secret="s")
+    )
     save_strategy(StrategyConfig())
     monkeypatch.setattr(cli, "_build_client", lambda _runtime: _FakeClient())
     model_file = tmp_path / "model.json"
@@ -3954,7 +4650,9 @@ def test_command_live_risk_policy_and_generic_entry_gate(tmp_path, monkeypatch, 
         def predict_proba(self, _features) -> float:
             return 0.5
 
-    monkeypatch.setattr(cli, "_load_runtime_model", lambda *_args, **_kwargs: _LoadedModel())
+    monkeypatch.setattr(
+        cli, "_load_runtime_model", lambda *_args, **_kwargs: _LoadedModel()
+    )
     args = argparse.Namespace(
         steps=1,
         sleep=0,
@@ -3977,10 +4675,22 @@ def test_command_live_risk_policy_and_generic_entry_gate(tmp_path, monkeypatch, 
             return 0.99
 
     save_runtime(RuntimeConfig(managed_usdc=1000.0, dry_run=True))
-    save_strategy(StrategyConfig(enabled_features=("momentum_1",), max_regime_unpredictability=1.0))
+    save_strategy(
+        StrategyConfig(
+            enabled_features=("momentum_1",), max_regime_unpredictability=1.0
+        )
+    )
     args.paper = True
-    monkeypatch.setattr(cli, "_build_model_rows", lambda *_args, **_kwargs: [SimpleNamespace(timestamp=1, close=0.0, features=(0.0,))])
-    monkeypatch.setattr(cli, "_build_live_model", lambda *_args, **_kwargs: _RiskModel())
+    monkeypatch.setattr(
+        cli,
+        "_build_model_rows",
+        lambda *_args, **_kwargs: [
+            SimpleNamespace(timestamp=1, close=0.0, features=(0.0,))
+        ],
+    )
+    monkeypatch.setattr(
+        cli, "_build_live_model", lambda *_args, **_kwargs: _RiskModel()
+    )
     monkeypatch.setattr(cli.time, "sleep", lambda _seconds: None)
     assert cli.command_live(args) == 0
     assert "risk gate blocked entry (price)" in capsys.readouterr().out
@@ -3989,15 +4699,35 @@ def test_command_live_risk_policy_and_generic_entry_gate(tmp_path, monkeypatch, 
     assert any(event["status"] == "skip_risk_price" for event in events)
 
 
-def test_command_live_requires_exchange_filters_before_signed_loop(tmp_path, monkeypatch, capsys) -> None:
+def test_command_live_requires_exchange_filters_before_signed_loop(
+    tmp_path, monkeypatch, capsys
+) -> None:
     monkeypatch.setenv("HOME", str(tmp_path))
     monkeypatch.chdir(tmp_path)
-    save_runtime(RuntimeConfig(managed_usdc=1000.0, dry_run=False, api_key="k", api_secret="s", testnet=True))
+    save_runtime(
+        RuntimeConfig(
+            managed_usdc=1000.0,
+            dry_run=False,
+            api_key="k",
+            api_secret="s",
+            testnet=True,
+        )
+    )
     save_strategy(StrategyConfig())
     monkeypatch.setattr(cli, "_build_client", lambda _runtime: _FakeClient())
-    monkeypatch.setattr(cli, "_load_live_start_model", lambda *_args, **_kwargs: (SimpleNamespace(strategy_overrides={}), None, None))
-    monkeypatch.setattr(cli, "_resolve_symbol_constraints", lambda *_args, **_kwargs: None)
-    monkeypatch.setattr(cli, "build_risk_policy_report", lambda *_args, **_kwargs: SimpleNamespace(allowed=True, warning_count=0))
+    monkeypatch.setattr(
+        cli,
+        "_load_live_start_model",
+        lambda *_args, **_kwargs: (SimpleNamespace(strategy_overrides={}), None, None),
+    )
+    monkeypatch.setattr(
+        cli, "_resolve_symbol_constraints", lambda *_args, **_kwargs: None
+    )
+    monkeypatch.setattr(
+        cli,
+        "build_risk_policy_report",
+        lambda *_args, **_kwargs: SimpleNamespace(allowed=True, warning_count=0),
+    )
 
     assert cli.command_live(_live_args(tmp_path, steps=0, paper=False, live=True)) == 2
     assert "requires BTCUSDC exchange filters" in capsys.readouterr().err
@@ -4015,7 +4745,12 @@ def test_command_fetch_handles_binar_errors(tmp_path, monkeypatch) -> None:
     monkeypatch.setenv("HOME", str(tmp_path))
     save_runtime(runtime)
     monkeypatch.setattr(cli, "_build_client", lambda _runtime: _ErrorClient())
-    assert cli.command_fetch(argparse.Namespace(symbol=None, interval=None, limit=10, output=str(output))) == 2
+    assert (
+        cli.command_fetch(
+            argparse.Namespace(symbol=None, interval=None, limit=10, output=str(output))
+        )
+        == 2
+    )
 
 
 def test_command_fetch_accepts_non_default_symbol(tmp_path, monkeypatch) -> None:
@@ -4023,21 +4758,39 @@ def test_command_fetch_accepts_non_default_symbol(tmp_path, monkeypatch) -> None
     save_runtime(RuntimeConfig())
     monkeypatch.setattr(cli, "_build_client", lambda _runtime: _FakeClient())
     output = tmp_path / "candles.json"
-    assert cli.command_fetch(argparse.Namespace(symbol="ETHUSDC", interval=None, limit=10, output=str(output))) == 0
+    assert (
+        cli.command_fetch(
+            argparse.Namespace(
+                symbol="ETHUSDC", interval=None, limit=10, output=str(output)
+            )
+        )
+        == 0
+    )
     assert output.exists()
 
 
-def test_command_fetch_rejects_non_major_symbol_before_client_build(tmp_path, monkeypatch, capsys) -> None:
+def test_command_fetch_rejects_non_major_symbol_before_client_build(
+    tmp_path, monkeypatch, capsys
+) -> None:
     monkeypatch.setenv("HOME", str(tmp_path))
     save_runtime(RuntimeConfig())
     monkeypatch.setattr(
         cli,
         "_build_client",
-        lambda _runtime: (_ for _ in ()).throw(AssertionError("unsupported symbol should not build a client")),
+        lambda _runtime: (_ for _ in ()).throw(
+            AssertionError("unsupported symbol should not build a client")
+        ),
     )
 
     output = tmp_path / "candles.json"
-    assert cli.command_fetch(argparse.Namespace(symbol="ALTUSDC", interval=None, limit=10, output=str(output))) == 2
+    assert (
+        cli.command_fetch(
+            argparse.Namespace(
+                symbol="ALTUSDC", interval=None, limit=10, output=str(output)
+            )
+        )
+        == 2
+    )
     assert "only BTC, ETH, and SOL" in capsys.readouterr().err
     assert not output.exists()
 
@@ -4063,21 +4816,26 @@ def test_command_train_workflow(tmp_path, monkeypatch) -> None:
     data_file.write_text(json.dumps(candles), encoding="utf-8")
 
     monkeypatch.setenv("HOME", str(tmp_path))
-    assert cli.command_train(
-        argparse.Namespace(
-            input=str(data_file),
-            output=str(model_file),
-            epochs=12,
-            walk_forward=False,
-            walk_forward_train=10,
-            walk_forward_test=5,
-            walk_forward_step=1,
-            calibrate_threshold=False,
+    assert (
+        cli.command_train(
+            argparse.Namespace(
+                input=str(data_file),
+                output=str(model_file),
+                epochs=12,
+                walk_forward=False,
+                walk_forward_train=10,
+                walk_forward_test=5,
+                walk_forward_step=1,
+                calibrate_threshold=False,
+            )
         )
-    ) == 0
+        == 0
+    )
 
 
-def test_command_train_accepts_profit_threshold_candidate(tmp_path, monkeypatch, capsys) -> None:
+def test_command_train_accepts_profit_threshold_candidate(
+    tmp_path, monkeypatch, capsys
+) -> None:
     monkeypatch.setenv("HOME", str(tmp_path))
     save_runtime(RuntimeConfig())
     save_strategy(StrategyConfig())
@@ -4155,21 +4913,28 @@ def test_command_train_accepts_profit_threshold_candidate(tmp_path, monkeypatch,
             false_negative=12,
         ),
     ]
-    monkeypatch.setattr(cli, "calibrate_threshold_for_backtest", lambda *_a, **_k: _ProfitCalibration())
-    monkeypatch.setattr(cli, "evaluate_classification", lambda *_a, **_k: reports.pop(0))
+    monkeypatch.setattr(
+        cli, "calibrate_threshold_for_backtest", lambda *_a, **_k: _ProfitCalibration()
+    )
+    monkeypatch.setattr(
+        cli, "evaluate_classification", lambda *_a, **_k: reports.pop(0)
+    )
 
-    assert cli.command_train(
-        argparse.Namespace(
-            input=str(data_file),
-            output=str(model_file),
-            epochs=12,
-            walk_forward=False,
-            walk_forward_train=10,
-            walk_forward_test=5,
-            walk_forward_step=1,
-            calibrate_threshold=True,
+    assert (
+        cli.command_train(
+            argparse.Namespace(
+                input=str(data_file),
+                output=str(model_file),
+                epochs=12,
+                walk_forward=False,
+                walk_forward_train=10,
+                walk_forward_test=5,
+                walk_forward_step=1,
+                calibrate_threshold=True,
+            )
         )
-    ) == 0
+        == 0
+    )
     output = capsys.readouterr().out
     model_payload = json.loads(model_file.read_text(encoding="utf-8"))
     assert "profit threshold candidate: accepted" in output
@@ -4179,7 +4944,9 @@ def test_command_train_accepts_profit_threshold_candidate(tmp_path, monkeypatch,
     assert model_payload["threshold_calibration_trades"] == 4
 
 
-def test_command_train_keeps_strategy_threshold_when_profit_candidate_rejected(tmp_path, monkeypatch, capsys) -> None:
+def test_command_train_keeps_strategy_threshold_when_profit_candidate_rejected(
+    tmp_path, monkeypatch, capsys
+) -> None:
     monkeypatch.setenv("HOME", str(tmp_path))
     save_runtime(RuntimeConfig())
     save_strategy(StrategyConfig(signal_threshold=0.61))
@@ -4258,21 +5025,30 @@ def test_command_train_keeps_strategy_threshold_when_profit_candidate_rejected(t
         ),
     ]
     monkeypatch.setattr(cli, "calibrate_threshold", lambda *_args, **_kwargs: 0.2)
-    monkeypatch.setattr(cli, "calibrate_threshold_for_backtest", lambda *_args, **_kwargs: _RejectedProfitCalibration())
-    monkeypatch.setattr(cli, "evaluate_classification", lambda *_args, **_kwargs: reports.pop(0))
+    monkeypatch.setattr(
+        cli,
+        "calibrate_threshold_for_backtest",
+        lambda *_args, **_kwargs: _RejectedProfitCalibration(),
+    )
+    monkeypatch.setattr(
+        cli, "evaluate_classification", lambda *_args, **_kwargs: reports.pop(0)
+    )
 
-    assert cli.command_train(
-        argparse.Namespace(
-            input=str(data_file),
-            output=str(model_file),
-            epochs=12,
-            walk_forward=False,
-            walk_forward_train=10,
-            walk_forward_test=5,
-            walk_forward_step=1,
-            calibrate_threshold=True,
+    assert (
+        cli.command_train(
+            argparse.Namespace(
+                input=str(data_file),
+                output=str(model_file),
+                epochs=12,
+                walk_forward=False,
+                walk_forward_train=10,
+                walk_forward_test=5,
+                walk_forward_step=1,
+                calibrate_threshold=True,
+            )
         )
-    ) == 0
+        == 0
+    )
     output = capsys.readouterr().out
     model_payload = json.loads(model_file.read_text(encoding="utf-8"))
     assert "profit threshold candidate: rejected" in output
@@ -4287,21 +5063,26 @@ def test_command_train_rejects_bad_json_input(tmp_path, monkeypatch) -> None:
     save_strategy(StrategyConfig())
     bad_input = tmp_path / "bad.json"
     bad_input.write_text("{", encoding="utf-8")
-    assert cli.command_train(
-        argparse.Namespace(
-            input=str(bad_input),
-            output=str(tmp_path / "model.json"),
-            epochs=12,
-            walk_forward=False,
-            walk_forward_train=10,
-            walk_forward_test=5,
-            walk_forward_step=1,
-            calibrate_threshold=False,
+    assert (
+        cli.command_train(
+            argparse.Namespace(
+                input=str(bad_input),
+                output=str(tmp_path / "model.json"),
+                epochs=12,
+                walk_forward=False,
+                walk_forward_train=10,
+                walk_forward_test=5,
+                walk_forward_step=1,
+                calibrate_threshold=False,
+            )
         )
-    ) == 2
+        == 2
+    )
 
 
-def test_command_train_walk_forward_unavailable_still_succeeds(tmp_path, monkeypatch, capsys) -> None:
+def test_command_train_walk_forward_unavailable_still_succeeds(
+    tmp_path, monkeypatch, capsys
+) -> None:
     monkeypatch.setenv("HOME", str(tmp_path))
     save_runtime(RuntimeConfig())
     save_strategy(StrategyConfig())
@@ -4319,27 +5100,38 @@ def test_command_train_walk_forward_unavailable_still_succeeds(tmp_path, monkeyp
     ]
     data_file = tmp_path / "history.json"
     data_file.write_text(json.dumps(candles), encoding="utf-8")
-    monkeypatch.setattr(cli, "walk_forward_report", lambda *_a, **_k: (_ for _ in ()).throw(ValueError("not enough rows")))
-    assert cli.command_train(
-        argparse.Namespace(
-            input=str(data_file),
-            output=str(tmp_path / "model.json"),
-            epochs=12,
-            walk_forward=True,
-            walk_forward_train=1000,
-            walk_forward_test=1000,
-            walk_forward_step=10,
-            calibrate_threshold=False,
+    monkeypatch.setattr(
+        cli,
+        "walk_forward_report",
+        lambda *_a, **_k: (_ for _ in ()).throw(ValueError("not enough rows")),
+    )
+    assert (
+        cli.command_train(
+            argparse.Namespace(
+                input=str(data_file),
+                output=str(tmp_path / "model.json"),
+                epochs=12,
+                walk_forward=True,
+                walk_forward_train=1000,
+                walk_forward_test=1000,
+                walk_forward_step=10,
+                calibrate_threshold=False,
+            )
         )
-    ) == 0
+        == 0
+    )
     assert "walk-forward unavailable" in capsys.readouterr().out
 
 
-def test_command_train_rejects_invalid_optimizer_parameters(tmp_path, monkeypatch, capsys) -> None:
+def test_command_train_rejects_invalid_optimizer_parameters(
+    tmp_path, monkeypatch, capsys
+) -> None:
     monkeypatch.setenv("HOME", str(tmp_path))
     save_runtime(RuntimeConfig())
     save_strategy(StrategyConfig())
-    monkeypatch.setattr(cli, "_load_rows_for_command", lambda *_args, **_kwargs: [object()])
+    monkeypatch.setattr(
+        cli, "_load_rows_for_command", lambda *_args, **_kwargs: [object()]
+    )
     monkeypatch.setattr(cli, "_build_model_rows", lambda *_args, **_kwargs: [object()])
 
     base = dict(
@@ -4354,15 +5146,25 @@ def test_command_train_rejects_invalid_optimizer_parameters(tmp_path, monkeypatc
         walk_forward_step=1,
         calibrate_threshold=False,
     )
-    assert cli.command_train(argparse.Namespace(**base, learning_rate=0.0, l2_penalty=0.0)) == 2
+    assert (
+        cli.command_train(argparse.Namespace(**base, learning_rate=0.0, l2_penalty=0.0))
+        == 2
+    )
     assert "learning_rate must be > 0" in capsys.readouterr().err
-    assert cli.command_train(argparse.Namespace(**base, learning_rate=0.1, l2_penalty=-0.1)) == 2
+    assert (
+        cli.command_train(
+            argparse.Namespace(**base, learning_rate=0.1, l2_penalty=-0.1)
+        )
+        == 2
+    )
     assert "l2_penalty must be >= 0" in capsys.readouterr().err
     with pytest.raises(ValueError, match="unsupported compute backend"):
         RuntimeConfig(compute_backend="not-real")
 
 
-def test_command_train_handles_no_calibration_split(tmp_path, monkeypatch, capsys) -> None:
+def test_command_train_handles_no_calibration_split(
+    tmp_path, monkeypatch, capsys
+) -> None:
     monkeypatch.setenv("HOME", str(tmp_path))
     save_runtime(RuntimeConfig())
     save_strategy(StrategyConfig())
@@ -4370,31 +5172,38 @@ def test_command_train_handles_no_calibration_split(tmp_path, monkeypatch, capsy
         SimpleNamespace(timestamp=1, close=100.0, features=(0.0,), label=0),
         SimpleNamespace(timestamp=2, close=101.0, features=(1.0,), label=1),
     ]
-    monkeypatch.setattr(cli, "_load_rows_for_command", lambda *_args, **_kwargs: [object()])
+    monkeypatch.setattr(
+        cli, "_load_rows_for_command", lambda *_args, **_kwargs: [object()]
+    )
     monkeypatch.setattr(cli, "_build_model_rows", lambda *_args, **_kwargs: rows)
 
-    assert cli.command_train(
-        argparse.Namespace(
-            input="history.json",
-            output=str(tmp_path / "model.json"),
-            preset="custom",
-            epochs=3,
-            learning_rate=0.05,
-            l2_penalty=0.0,
-            seed=7,
-            walk_forward=False,
-            walk_forward_train=10,
-            walk_forward_test=5,
-            walk_forward_step=1,
-            calibrate_threshold=False,
+    assert (
+        cli.command_train(
+            argparse.Namespace(
+                input="history.json",
+                output=str(tmp_path / "model.json"),
+                preset="custom",
+                epochs=3,
+                learning_rate=0.05,
+                l2_penalty=0.0,
+                seed=7,
+                walk_forward=False,
+                walk_forward_train=10,
+                walk_forward_test=5,
+                walk_forward_step=1,
+                calibrate_threshold=False,
+            )
         )
-    ) == 0
+        == 0
+    )
     output = capsys.readouterr().out
     assert "probability calibration: fail" in output
 
 
 def test_command_train_artifact_includes_signature(tmp_path, monkeypatch) -> None:
-    strategy = StrategyConfig(feature_windows=(4, 20), label_threshold=0.002, training_epochs=7)
+    strategy = StrategyConfig(
+        feature_windows=(4, 20), label_threshold=0.002, training_epochs=7
+    )
     monkeypatch.setenv("HOME", str(tmp_path))
     save_runtime(RuntimeConfig(api_key="secret-key", api_secret="secret-value"))
     save_strategy(strategy)
@@ -4423,18 +5232,21 @@ def test_command_train_artifact_includes_signature(tmp_path, monkeypatch) -> Non
 
     monkeypatch.setattr(cli, "_persist_run_artifact", fake_persist)
 
-    assert cli.command_train(
-        argparse.Namespace(
-            input=str(history),
-            output=str(model_file),
-            epochs=11,
-            walk_forward=False,
-            walk_forward_train=10,
-            walk_forward_test=5,
-            walk_forward_step=1,
-            calibrate_threshold=False,
+    assert (
+        cli.command_train(
+            argparse.Namespace(
+                input=str(history),
+                output=str(model_file),
+                epochs=11,
+                walk_forward=False,
+                walk_forward_train=10,
+                walk_forward_test=5,
+                walk_forward_step=1,
+                calibrate_threshold=False,
+            )
         )
-    ) == 0
+        == 0
+    )
 
     assert len(captured) == 1
     kind, _output_dir, payload = captured[0]
@@ -4451,7 +5263,9 @@ def test_command_train_artifact_includes_signature(tmp_path, monkeypatch) -> Non
     assert payload["runtime"]["api_secret"] == "<redacted>"
 
 
-def test_command_train_written_artifact_does_not_leak_credentials(tmp_path, monkeypatch) -> None:
+def test_command_train_written_artifact_does_not_leak_credentials(
+    tmp_path, monkeypatch
+) -> None:
     strategy = StrategyConfig()
     monkeypatch.setenv("HOME", str(tmp_path))
     save_runtime(RuntimeConfig(api_key="secret-key", api_secret="secret-value"))
@@ -4472,18 +5286,21 @@ def test_command_train_written_artifact_does_not_leak_credentials(tmp_path, monk
     model_file = tmp_path / "model.json"
     data_file.write_text(json.dumps(candles), encoding="utf-8")
 
-    assert cli.command_train(
-        argparse.Namespace(
-            input=str(data_file),
-            output=str(model_file),
-            epochs=12,
-            walk_forward=False,
-            walk_forward_train=10,
-            walk_forward_test=5,
-            walk_forward_step=1,
-            calibrate_threshold=False,
+    assert (
+        cli.command_train(
+            argparse.Namespace(
+                input=str(data_file),
+                output=str(model_file),
+                epochs=12,
+                walk_forward=False,
+                walk_forward_train=10,
+                walk_forward_test=5,
+                walk_forward_step=1,
+                calibrate_threshold=False,
+            )
         )
-    ) == 0
+        == 0
+    )
 
     artifact_text = next(tmp_path.glob("train_run_*.json")).read_text(encoding="utf-8")
     assert "secret-key" not in artifact_text
@@ -4527,14 +5344,17 @@ def test_command_evaluate_runs_with_model_file(tmp_path, monkeypatch) -> None:
         encoding="utf-8",
     )
     monkeypatch.setenv("HOME", str(tmp_path))
-    assert cli.command_evaluate(
-        argparse.Namespace(
-            input=str(data_file),
-            model=str(model_file),
-            threshold=None,
-            calibrate_threshold=False,
+    assert (
+        cli.command_evaluate(
+            argparse.Namespace(
+                input=str(data_file),
+                model=str(model_file),
+                threshold=None,
+                calibrate_threshold=False,
+            )
         )
-    ) == 0
+        == 0
+    )
 
 
 def test_command_evaluate_artifact_is_emitted(tmp_path, monkeypatch) -> None:
@@ -4601,7 +5421,9 @@ def test_command_evaluate_artifact_is_emitted(tmp_path, monkeypatch) -> None:
     assert payload["runtime"]["api_secret"] == "<redacted>"
 
 
-def test_command_evaluate_prints_zero_train_metrics_when_split_has_no_train_rows(tmp_path, monkeypatch, capsys) -> None:
+def test_command_evaluate_prints_zero_train_metrics_when_split_has_no_train_rows(
+    tmp_path, monkeypatch, capsys
+) -> None:
     monkeypatch.setenv("HOME", str(tmp_path))
     save_runtime(RuntimeConfig())
     save_strategy(StrategyConfig())
@@ -4623,14 +5445,33 @@ def test_command_evaluate_prints_zero_train_metrics_when_split_has_no_train_rows
         ),
         encoding="utf-8",
     )
-    monkeypatch.setattr(cli, "_load_rows_for_command", lambda *_args, **_kwargs: [object()])
-    monkeypatch.setattr(cli, "_build_model_rows", lambda _candles, _cfg, **_kwargs: [row])
-    monkeypatch.setattr(cli, "temporal_validation_split", lambda _rows: TemporalValidationSplit([], [], [row]))
+    monkeypatch.setattr(
+        cli, "_load_rows_for_command", lambda *_args, **_kwargs: [object()]
+    )
+    monkeypatch.setattr(
+        cli, "_build_model_rows", lambda _candles, _cfg, **_kwargs: [row]
+    )
+    monkeypatch.setattr(
+        cli,
+        "temporal_validation_split",
+        lambda _rows: TemporalValidationSplit([], [], [row]),
+    )
 
-    assert cli.command_evaluate(
-        argparse.Namespace(input="x", model=str(model_file), threshold=None, calibrate_threshold=False)
-    ) == 0
-    assert "train_accuracy: 0.000 precision=0.000 recall=0.000 f1=0.000" in capsys.readouterr().out
+    assert (
+        cli.command_evaluate(
+            argparse.Namespace(
+                input="x",
+                model=str(model_file),
+                threshold=None,
+                calibrate_threshold=False,
+            )
+        )
+        == 0
+    )
+    assert (
+        "train_accuracy: 0.000 precision=0.000 recall=0.000 f1=0.000"
+        in capsys.readouterr().out
+    )
 
 
 def test_command_evaluate_rejects_bad_json_input(tmp_path, monkeypatch) -> None:
@@ -4639,14 +5480,17 @@ def test_command_evaluate_rejects_bad_json_input(tmp_path, monkeypatch) -> None:
     save_strategy(StrategyConfig())
     bad_input = tmp_path / "history.json"
     bad_input.write_text("{", encoding="utf-8")
-    assert cli.command_evaluate(
-        argparse.Namespace(
-            input=str(bad_input),
-            model=str(tmp_path / "model.json"),
-            threshold=None,
-            calibrate_threshold=False,
+    assert (
+        cli.command_evaluate(
+            argparse.Namespace(
+                input=str(bad_input),
+                model=str(tmp_path / "model.json"),
+                threshold=None,
+                calibrate_threshold=False,
+            )
         )
-    ) == 2
+        == 2
+    )
 
 
 def test_command_evaluate_rejects_invalid_model_payload(tmp_path, monkeypatch) -> None:
@@ -4669,14 +5513,17 @@ def test_command_evaluate_rejects_invalid_model_payload(tmp_path, monkeypatch) -
     data_file.write_text(json.dumps(candles), encoding="utf-8")
     model_file = tmp_path / "model.json"
     model_file.write_text("{", encoding="utf-8")
-    assert cli.command_evaluate(
-        argparse.Namespace(
-            input=str(data_file),
-            model=str(model_file),
-            threshold=None,
-            calibrate_threshold=False,
+    assert (
+        cli.command_evaluate(
+            argparse.Namespace(
+                input=str(data_file),
+                model=str(model_file),
+                threshold=None,
+                calibrate_threshold=False,
+            )
         )
-    ) == 2
+        == 2
+    )
 
 
 def test_command_backtest_rejects_invalid_model_payload(tmp_path, monkeypatch) -> None:
@@ -4699,7 +5546,14 @@ def test_command_backtest_rejects_invalid_model_payload(tmp_path, monkeypatch) -
     model_file = tmp_path / "model.json"
     input_file.write_text(json.dumps(candles), encoding="utf-8")
     model_file.write_text("{", encoding="utf-8")
-    assert cli.command_backtest(argparse.Namespace(input=str(input_file), model=str(model_file), start_cash=1000.0)) == 2
+    assert (
+        cli.command_backtest(
+            argparse.Namespace(
+                input=str(input_file), model=str(model_file), start_cash=1000.0
+            )
+        )
+        == 2
+    )
 
 
 def test_command_backtest_rejects_bad_json_input(tmp_path, monkeypatch) -> None:
@@ -4710,7 +5564,14 @@ def test_command_backtest_rejects_bad_json_input(tmp_path, monkeypatch) -> None:
     model_file = tmp_path / "model.json"
     input_file.write_text("{", encoding="utf-8")
     model_file.write_text("{}", encoding="utf-8")
-    assert cli.command_backtest(argparse.Namespace(input=str(input_file), model=str(model_file), start_cash=1000.0)) == 2
+    assert (
+        cli.command_backtest(
+            argparse.Namespace(
+                input=str(input_file), model=str(model_file), start_cash=1000.0
+            )
+        )
+        == 2
+    )
 
 
 def test_command_tune_needs_more_rows(tmp_path, monkeypatch, capsys) -> None:
@@ -4731,27 +5592,32 @@ def test_command_tune_needs_more_rows(tmp_path, monkeypatch, capsys) -> None:
     ]
     data_file = tmp_path / "history.json"
     data_file.write_text(json.dumps(candles), encoding="utf-8")
-    assert cli.command_tune(
-        argparse.Namespace(
-            input=str(data_file),
-            save_best=False,
-            min_risk=0.002,
-            max_risk=0.02,
-            steps=2,
-            min_leverage=1.0,
-            max_leverage=2.0,
-            min_threshold=0.52,
-            max_threshold=0.6,
-            min_take=0.01,
-            max_take=0.02,
-            min_stop=0.008,
-            max_stop=0.02,
+    assert (
+        cli.command_tune(
+            argparse.Namespace(
+                input=str(data_file),
+                save_best=False,
+                min_risk=0.002,
+                max_risk=0.02,
+                steps=2,
+                min_leverage=1.0,
+                max_leverage=2.0,
+                min_threshold=0.52,
+                max_threshold=0.6,
+                min_take=0.01,
+                max_take=0.02,
+                min_stop=0.008,
+                max_stop=0.02,
+            )
         )
-    ) == 2
+        == 2
+    )
     assert "Need more data rows" in capsys.readouterr().out
 
 
-def test_command_tune_uses_fallback_and_can_save_best(tmp_path, monkeypatch, capsys) -> None:
+def test_command_tune_uses_fallback_and_can_save_best(
+    tmp_path, monkeypatch, capsys
+) -> None:
     monkeypatch.setenv("HOME", str(tmp_path))
     save_runtime(RuntimeConfig())
     save_strategy(StrategyConfig())
@@ -4782,37 +5648,60 @@ def test_command_tune_uses_fallback_and_can_save_best(tmp_path, monkeypatch, cap
         ),
     )
 
-    assert cli.command_tune(
-        argparse.Namespace(
-            input=str(data_file),
-            save_best=True,
-            min_risk=0.002,
-            max_risk=0.003,
-            steps=1,
-            min_leverage=1.0,
-            max_leverage=1.0,
-            min_threshold=0.52,
-            max_threshold=0.52,
-            min_take=0.01,
-            max_take=0.01,
-            min_stop=0.008,
-            max_stop=0.008,
+    assert (
+        cli.command_tune(
+            argparse.Namespace(
+                input=str(data_file),
+                save_best=True,
+                min_risk=0.002,
+                max_risk=0.003,
+                steps=1,
+                min_leverage=1.0,
+                max_leverage=1.0,
+                min_threshold=0.52,
+                max_threshold=0.52,
+                min_take=0.01,
+                max_take=0.01,
+                min_stop=0.008,
+                max_stop=0.008,
+            )
         )
-    ) == 0
+        == 0
+    )
     output = capsys.readouterr().out
     assert "all tune candidates hit drawdown limit" in output
     assert "Saved tuned strategy." in output
 
 
-def test_command_live_paper_flag_overrides_runtime_live_without_credentials(tmp_path, monkeypatch) -> None:
+def test_command_live_paper_flag_overrides_runtime_live_without_credentials(
+    tmp_path, monkeypatch
+) -> None:
     class _LiveClient:
         def ensure_btcusdc(self):
             return {"symbol": "BTCUSDC"}
 
-        def get_klines(self, symbol: str, interval: str, limit: int = 500, start_time=None, end_time=None):
+        def get_klines(
+            self,
+            symbol: str,
+            interval: str,
+            limit: int = 500,
+            start_time=None,
+            end_time=None,
+        ):
             return _simple_candles(limit)
 
-        def place_order(self, symbol: str, side: str, size: float, *, dry_run: bool, leverage: float = 1.0):
+        def place_order(
+            self,
+            symbol: str,
+            side: str,
+            size: float,
+            *,
+            dry_run: bool,
+            leverage: float = 1.0,
+            before_dispatch=None,
+        ):
+            if before_dispatch is not None:
+                before_dispatch()
             return {"symbol": symbol, "side": side, "size": size, "dry_run": dry_run}
 
         def get_symbol_constraints(self, symbol: str):
@@ -4837,24 +5726,67 @@ def test_command_live_paper_flag_overrides_runtime_live_without_credentials(tmp_
             return int(0.95 >= threshold)
 
     monkeypatch.setenv("HOME", str(tmp_path))
-    save_runtime(RuntimeConfig(testnet=True, dry_run=False, market_type="spot", api_key="", api_secret=""))
+    save_runtime(
+        RuntimeConfig(
+            testnet=True, dry_run=False, market_type="spot", api_key="", api_secret=""
+        )
+    )
     save_strategy(StrategyConfig(risk_per_trade=0.001, max_position_pct=0.2))
     monkeypatch.setattr(cli, "train", lambda *_a, **_k: _AlwaysLongModel())
     monkeypatch.setattr(cli, "_build_client", lambda _runtime: _LiveClient())
     monkeypatch.setattr(cli.time, "sleep", lambda *_args: None)
-    assert cli.command_live(argparse.Namespace(steps=1, sleep=0, paper=True, leverage=None, retrain_interval=0, retrain_window=300, retrain_min_rows=240)) == 0
+    assert (
+        cli.command_live(
+            argparse.Namespace(
+                steps=1,
+                sleep=0,
+                paper=True,
+                leverage=None,
+                retrain_interval=0,
+                retrain_window=300,
+                retrain_min_rows=240,
+            )
+        )
+        == 0
+    )
 
 
-def test_command_live_spot_leverage_override_is_inactive(tmp_path, monkeypatch, capsys) -> None:
+def test_command_live_spot_leverage_override_is_inactive(
+    tmp_path, monkeypatch, capsys
+) -> None:
     class _LiveClient:
         def ensure_btcusdc(self):
             return {"symbol": "BTCUSDC"}
 
-        def get_klines(self, symbol: str, interval: str, limit: int = 500, start_time=None, end_time=None):
+        def get_klines(
+            self,
+            symbol: str,
+            interval: str,
+            limit: int = 500,
+            start_time=None,
+            end_time=None,
+        ):
             return _simple_candles(limit)
 
-        def place_order(self, symbol: str, side: str, size: float, *, dry_run: bool, leverage: float = 1.0):
-            return {"symbol": symbol, "side": side, "size": size, "dry_run": dry_run, "leverage": leverage}
+        def place_order(
+            self,
+            symbol: str,
+            side: str,
+            size: float,
+            *,
+            dry_run: bool,
+            leverage: float = 1.0,
+            before_dispatch=None,
+        ):
+            if before_dispatch is not None:
+                before_dispatch()
+            return {
+                "symbol": symbol,
+                "side": side,
+                "size": size,
+                "dry_run": dry_run,
+                "leverage": leverage,
+            }
 
         def get_symbol_constraints(self, symbol: str):
             return SimpleNamespace(
@@ -4878,7 +5810,11 @@ def test_command_live_spot_leverage_override_is_inactive(tmp_path, monkeypatch, 
             return int(0.95 >= threshold)
 
     monkeypatch.setenv("HOME", str(tmp_path))
-    save_runtime(RuntimeConfig(testnet=True, dry_run=True, market_type="spot", managed_usdc=1000.0))
+    save_runtime(
+        RuntimeConfig(
+            testnet=True, dry_run=True, market_type="spot", managed_usdc=1000.0
+        )
+    )
     save_strategy(StrategyConfig(risk_per_trade=0.001, max_position_pct=0.2))
     monkeypatch.setattr(cli, "train", lambda *_a, **_k: _AlwaysLongModel())
     monkeypatch.setattr(cli, "_build_client", lambda _runtime: _LiveClient())
@@ -5071,7 +6007,12 @@ def test_command_backtest_uses_top_of_book_execution_db(
             "binance",
             "ETHUSDC",
             "spot",
-            {"bidPrice": "2500.00", "bidQty": "12", "askPrice": "2500.50", "askQty": "10"},
+            {
+                "bidPrice": "2500.00",
+                "bidQty": "12",
+                "askPrice": "2500.50",
+                "askQty": "10",
+            },
             ts_ms=int(cli.time.time() * 1000),
         )
 
@@ -5136,13 +6077,31 @@ def test_command_live_paper_path_runs_a_tick(tmp_path, monkeypatch) -> None:
         def ensure_btcusdc(self):
             return {"symbol": "BTCUSDC"}
 
-        def get_klines(self, symbol: str, interval: str, limit: int = 500, start_time=None, end_time=None):
+        def get_klines(
+            self,
+            symbol: str,
+            interval: str,
+            limit: int = 500,
+            start_time=None,
+            end_time=None,
+        ):
             return _simple_candles(limit)
 
         def set_leverage(self, symbol: str, leverage: int):
             return {"leverage": leverage}
 
-        def place_order(self, symbol: str, side: str, size: float, *, dry_run: bool, leverage: float = 1.0):
+        def place_order(
+            self,
+            symbol: str,
+            side: str,
+            size: float,
+            *,
+            dry_run: bool,
+            leverage: float = 1.0,
+            before_dispatch=None,
+        ):
+            if before_dispatch is not None:
+                before_dispatch()
             self.calls += 1
             return {"side": side, "symbol": symbol, "size": size, "dry_run": dry_run}
 
@@ -5162,7 +6121,11 @@ def test_command_live_paper_path_runs_a_tick(tmp_path, monkeypatch) -> None:
             return normalized, constraints
 
     monkeypatch.setenv("HOME", str(tmp_path))
-    save_runtime(RuntimeConfig(testnet=True, dry_run=True, market_type="spot", managed_usdc=1000.0))
+    save_runtime(
+        RuntimeConfig(
+            testnet=True, dry_run=True, market_type="spot", managed_usdc=1000.0
+        )
+    )
     save_strategy(StrategyConfig(risk_per_trade=0.001, max_position_pct=0.2))
 
     class _AlwaysLongModel(_SignedFeeModelEvidence):
@@ -5190,14 +6153,23 @@ def test_command_live_paper_path_runs_a_tick(tmp_path, monkeypatch) -> None:
     )
 
 
-def test_command_live_applies_data_probed_liquidity_guard_to_entry(tmp_path, monkeypatch) -> None:
+def test_command_live_applies_data_probed_liquidity_guard_to_entry(
+    tmp_path, monkeypatch
+) -> None:
     captured: list[tuple[str, str, dict[str, object]]] = []
 
     class _LiveClient:
         def __init__(self) -> None:
             self.orders: list[tuple[str, str, float]] = []
 
-        def get_klines(self, symbol: str, interval: str, limit: int = 500, start_time=None, end_time=None):
+        def get_klines(
+            self,
+            symbol: str,
+            interval: str,
+            limit: int = 500,
+            start_time=None,
+            end_time=None,
+        ):
             return _simple_candles(limit)
 
         def get_symbol_constraints(self, symbol: str):
@@ -5213,7 +6185,18 @@ def test_command_live_applies_data_probed_liquidity_guard_to_entry(tmp_path, mon
         def normalize_quantity(self, symbol: str, quantity: float):
             return max(0.0001, round(quantity, 4)), self.get_symbol_constraints(symbol)
 
-        def place_order(self, symbol: str, side: str, size: float, *, dry_run: bool, leverage: float = 1.0):
+        def place_order(
+            self,
+            symbol: str,
+            side: str,
+            size: float,
+            *,
+            dry_run: bool,
+            leverage: float = 1.0,
+            before_dispatch=None,
+        ):
+            if before_dispatch is not None:
+                before_dispatch()
             self.orders.append((symbol, side, size))
             return {"symbol": symbol, "side": side, "size": size, "dry_run": dry_run}
 
@@ -5239,7 +6222,11 @@ def test_command_live_applies_data_probed_liquidity_guard_to_entry(tmp_path, mon
         return output_dir / "live.json"
 
     monkeypatch.setenv("HOME", str(tmp_path))
-    save_runtime(RuntimeConfig(testnet=True, dry_run=True, market_type="spot", managed_usdc=1000.0))
+    save_runtime(
+        RuntimeConfig(
+            testnet=True, dry_run=True, market_type="spot", managed_usdc=1000.0
+        )
+    )
     save_strategy(
         StrategyConfig(
             risk_per_trade=0.01,
@@ -5268,7 +6255,11 @@ def test_command_live_applies_data_probed_liquidity_guard_to_entry(tmp_path, mon
 
     assert client.orders == [("BTCUSDC", "BUY", pytest.approx(1.25))]
     assert captured and captured[0][0] == "live"
-    statuses = [event.get("status") for event in captured[0][2]["events"] if isinstance(event, dict)]
+    statuses = [
+        event.get("status")
+        for event in captured[0][2]["events"]
+        if isinstance(event, dict)
+    ]
     assert "liquidity_session_guard" in statuses
 
 
@@ -5279,7 +6270,14 @@ def test_command_live_artifact_is_emitted(tmp_path, monkeypatch) -> None:
         def __init__(self) -> None:
             self.orders: list[tuple[str, str, float]] = []
 
-        def get_klines(self, symbol: str, interval: str, limit: int = 500, start_time=None, end_time=None):
+        def get_klines(
+            self,
+            symbol: str,
+            interval: str,
+            limit: int = 500,
+            start_time=None,
+            end_time=None,
+        ):
             return [
                 Candle(
                     open_time=i * 60_000,
@@ -5306,7 +6304,18 @@ def test_command_live_artifact_is_emitted(tmp_path, monkeypatch) -> None:
         def normalize_quantity(self, symbol: str, quantity: float):
             return max(0.0001, round(quantity, 4)), self.get_symbol_constraints(symbol)
 
-        def place_order(self, symbol: str, side: str, size: float, *, dry_run: bool, leverage: float = 1.0):
+        def place_order(
+            self,
+            symbol: str,
+            side: str,
+            size: float,
+            *,
+            dry_run: bool,
+            leverage: float = 1.0,
+            before_dispatch=None,
+        ):
+            if before_dispatch is not None:
+                before_dispatch()
             self.orders.append((symbol, side, size))
             return {"symbol": symbol, "side": side, "size": size, "dry_run": dry_run}
 
@@ -5345,7 +6354,9 @@ def test_command_live_artifact_is_emitted(tmp_path, monkeypatch) -> None:
     assert payload["runtime"]["api_secret"] == "<redacted>"
 
 
-def test_command_live_retries_market_data_and_observes_before_entry(tmp_path, monkeypatch) -> None:
+def test_command_live_retries_market_data_and_observes_before_entry(
+    tmp_path, monkeypatch
+) -> None:
     captured: list[dict[str, object]] = []
 
     def candles_for(close: float, n: int = 320) -> list[Candle]:
@@ -5380,7 +6391,14 @@ def test_command_live_retries_market_data_and_observes_before_entry(tmp_path, mo
             self.kline_calls = 0
             self.orders: list[tuple[str, str, float]] = []
 
-        def get_klines(self, symbol: str, interval: str, limit: int = 500, start_time=None, end_time=None):
+        def get_klines(
+            self,
+            symbol: str,
+            interval: str,
+            limit: int = 500,
+            start_time=None,
+            end_time=None,
+        ):
             self.kline_calls += 1
             if self.kline_calls == 1:
                 raise BinanceAPIError("temporary network outage")
@@ -5399,7 +6417,18 @@ def test_command_live_retries_market_data_and_observes_before_entry(tmp_path, mo
         def normalize_quantity(self, symbol: str, quantity: float):
             return max(0.0001, round(quantity, 4)), self.get_symbol_constraints(symbol)
 
-        def place_order(self, symbol: str, side: str, size: float, *, dry_run: bool, leverage: float = 1.0):
+        def place_order(
+            self,
+            symbol: str,
+            side: str,
+            size: float,
+            *,
+            dry_run: bool,
+            leverage: float = 1.0,
+            before_dispatch=None,
+        ):
+            if before_dispatch is not None:
+                before_dispatch()
             self.orders.append((symbol, side, size))
             return {"symbol": symbol, "side": side, "size": size, "dry_run": dry_run}
 
@@ -5414,12 +6443,16 @@ def test_command_live_retries_market_data_and_observes_before_entry(tmp_path, mo
         return _output_dir / "live.json"
 
     monkeypatch.setenv("HOME", str(tmp_path))
-    save_runtime(RuntimeConfig(testnet=True, dry_run=True, market_type="spot", managed_usdc=1000.0))
+    save_runtime(
+        RuntimeConfig(
+            testnet=True, dry_run=True, market_type="spot", managed_usdc=1000.0
+        )
+    )
     save_strategy(
-            StrategyConfig(
-                risk_per_trade=0.001,
-                max_position_pct=0.2,
-                stop_loss_pct=0.01,
+        StrategyConfig(
+            risk_per_trade=0.001,
+            max_position_pct=0.2,
+            stop_loss_pct=0.01,
             signal_threshold=0.70,
             taker_fee_bps=0.0,
             slippage_bps=0.0,
@@ -5440,18 +6473,31 @@ def test_command_live_retries_market_data_and_observes_before_entry(tmp_path, mo
 
     assert client.kline_calls == 3
     assert client.orders == [("BTCUSDC", "BUY", pytest.approx(0.5338, rel=1e-4))]
-    statuses = [event.get("status") for event in captured[0]["events"] if isinstance(event, dict)]
+    statuses = [
+        event.get("status")
+        for event in captured[0]["events"]
+        if isinstance(event, dict)
+    ]
     assert "market_error_retry" in statuses
     assert "skip_risk_recovery_pending" in statuses
     assert "recovery_observation" in statuses
     assert captured[0]["result"]["status"] == "completed"
 
 
-def test_command_live_market_recovery_pending_exits_nonzero(tmp_path, monkeypatch) -> None:
+def test_command_live_market_recovery_pending_exits_nonzero(
+    tmp_path, monkeypatch
+) -> None:
     captured: list[dict[str, object]] = []
 
     class _OfflineClient:
-        def get_klines(self, symbol: str, interval: str, limit: int = 500, start_time=None, end_time=None):
+        def get_klines(
+            self,
+            symbol: str,
+            interval: str,
+            limit: int = 500,
+            start_time=None,
+            end_time=None,
+        ):
             raise BinanceAPIError("offline")
 
         def get_symbol_constraints(self, symbol: str):
@@ -5472,7 +6518,11 @@ def test_command_live_market_recovery_pending_exits_nonzero(tmp_path, monkeypatc
         return _output_dir / "live.json"
 
     monkeypatch.setenv("HOME", str(tmp_path))
-    save_runtime(RuntimeConfig(testnet=True, dry_run=True, market_type="spot", managed_usdc=1000.0))
+    save_runtime(
+        RuntimeConfig(
+            testnet=True, dry_run=True, market_type="spot", managed_usdc=1000.0
+        )
+    )
     save_strategy(StrategyConfig(max_network_errors=1, recovery_cooldown_seconds=0))
     monkeypatch.setattr(cli, "_build_client", lambda _runtime: _OfflineClient())
     monkeypatch.setattr(cli, "_persist_run_artifact", fake_persist)
@@ -5482,11 +6532,17 @@ def test_command_live_market_recovery_pending_exits_nonzero(tmp_path, monkeypatc
 
     assert captured[0]["result"]["status"] == "market_recovery_pending"
     assert captured[0]["result"]["steps_executed"] == 0
-    statuses = [event.get("status") for event in captured[0]["events"] if isinstance(event, dict)]
+    statuses = [
+        event.get("status")
+        for event in captured[0]["events"]
+        if isinstance(event, dict)
+    ]
     assert statuses == ["market_error_retry_limit", "market_error_retry_limit"]
 
 
-def test_command_live_daily_trade_cap_counts_entries_not_closures(tmp_path, monkeypatch) -> None:
+def test_command_live_daily_trade_cap_counts_entries_not_closures(
+    tmp_path, monkeypatch
+) -> None:
     class _CappedClient:
         def __init__(self) -> None:
             self.iteration = 0
@@ -5495,7 +6551,14 @@ def test_command_live_daily_trade_cap_counts_entries_not_closures(tmp_path, monk
         def ensure_btcusdc(self):
             return {"symbol": "BTCUSDC"}
 
-        def get_klines(self, symbol: str, interval: str, limit: int = 500, start_time=None, end_time=None):
+        def get_klines(
+            self,
+            symbol: str,
+            interval: str,
+            limit: int = 500,
+            start_time=None,
+            end_time=None,
+        ):
             day = 24 * 60 * 60 * 1000
             closes_by_call = [
                 [100.0] * (limit - 1) + [100.0],
@@ -5520,7 +6583,18 @@ def test_command_live_daily_trade_cap_counts_entries_not_closures(tmp_path, monk
             self.iteration += 1
             return candles
 
-        def place_order(self, symbol: str, side: str, size: float, *, dry_run: bool, leverage: float = 1.0):
+        def place_order(
+            self,
+            symbol: str,
+            side: str,
+            size: float,
+            *,
+            dry_run: bool,
+            leverage: float = 1.0,
+            before_dispatch=None,
+        ):
+            if before_dispatch is not None:
+                before_dispatch()
             self.orders.append((symbol, side, size, dry_run))
             return {"symbol": symbol, "side": side, "size": size, "dry_run": dry_run}
 
@@ -5558,7 +6632,11 @@ def test_command_live_daily_trade_cap_counts_entries_not_closures(tmp_path, monk
         return output_dir / "live.json"
 
     monkeypatch.setenv("HOME", str(tmp_path))
-    save_runtime(RuntimeConfig(testnet=True, dry_run=True, market_type="spot", managed_usdc=1000.0))
+    save_runtime(
+        RuntimeConfig(
+            testnet=True, dry_run=True, market_type="spot", managed_usdc=1000.0
+        )
+    )
     save_strategy(
         StrategyConfig(
             risk_per_trade=0.01,
@@ -5572,29 +6650,79 @@ def test_command_live_daily_trade_cap_counts_entries_not_closures(tmp_path, monk
     monkeypatch.setattr(cli, "_build_client", lambda _runtime: _CappedClient())
     monkeypatch.setattr(cli, "_persist_run_artifact", fake_persist)
     monkeypatch.setattr(cli.time, "sleep", lambda *_args: None)
-    assert cli.command_live(argparse.Namespace(steps=3, sleep=0, paper=False, model=str(tmp_path / "missing-model.json"), leverage=None, retrain_interval=0, retrain_window=300, retrain_min_rows=240)) == 0
+    assert (
+        cli.command_live(
+            argparse.Namespace(
+                steps=3,
+                sleep=0,
+                paper=False,
+                model=str(tmp_path / "missing-model.json"),
+                leverage=None,
+                retrain_interval=0,
+                retrain_window=300,
+                retrain_min_rows=240,
+            )
+        )
+        == 0
+    )
     assert captured[0]["result"]["entries"] == 2
 
 
-def test_command_live_rejects_non_testnet_runtime(tmp_path, monkeypatch, capsys) -> None:
+def test_command_live_rejects_non_testnet_runtime(
+    tmp_path, monkeypatch, capsys
+) -> None:
     monkeypatch.setenv("HOME", str(tmp_path))
     save_runtime(RuntimeConfig(testnet=False, dry_run=True, market_type="spot"))
     save_strategy(StrategyConfig())
     monkeypatch.setattr(cli, "_build_client", lambda _runtime: _FakeClient())
-    assert cli.command_live(argparse.Namespace(steps=1, sleep=0, paper=False, leverage=None, retrain_interval=0, retrain_window=300, retrain_min_rows=240)) == 2
+    assert (
+        cli.command_live(
+            argparse.Namespace(
+                steps=1,
+                sleep=0,
+                paper=False,
+                leverage=None,
+                retrain_interval=0,
+                retrain_window=300,
+                retrain_min_rows=240,
+            )
+        )
+        == 2
+    )
     assert "Real-money execution is disabled" in capsys.readouterr().out
 
 
-def test_command_live_rejects_missing_credentials_for_live_mode(tmp_path, monkeypatch, capsys) -> None:
+def test_command_live_rejects_missing_credentials_for_live_mode(
+    tmp_path, monkeypatch, capsys
+) -> None:
     monkeypatch.setenv("HOME", str(tmp_path))
-    save_runtime(RuntimeConfig(testnet=True, dry_run=False, market_type="spot", api_key="", api_secret=""))
+    save_runtime(
+        RuntimeConfig(
+            testnet=True, dry_run=False, market_type="spot", api_key="", api_secret=""
+        )
+    )
     save_strategy(StrategyConfig())
     monkeypatch.setattr(cli, "_build_client", lambda _runtime: _FakeClient())
-    assert cli.command_live(argparse.Namespace(steps=1, sleep=0, paper=False, leverage=None, retrain_interval=0, retrain_window=300, retrain_min_rows=240)) == 2
+    assert (
+        cli.command_live(
+            argparse.Namespace(
+                steps=1,
+                sleep=0,
+                paper=False,
+                leverage=None,
+                retrain_interval=0,
+                retrain_window=300,
+                retrain_min_rows=240,
+            )
+        )
+        == 2
+    )
     assert "Authenticated live mode requires Binance API key" in capsys.readouterr().err
 
 
-def test_command_live_requests_strict_readiness_for_signed_gpu_mode(tmp_path, monkeypatch) -> None:
+def test_command_live_requests_strict_readiness_for_signed_gpu_mode(
+    tmp_path, monkeypatch
+) -> None:
     captured: dict[str, object] = {}
 
     def fake_load_live_start_model(model_path, strategy, **kwargs):
@@ -5624,7 +6752,10 @@ def test_command_live_requests_strict_readiness_for_signed_gpu_mode(tmp_path, mo
     monkeypatch.setattr(cli, "_build_client", lambda _runtime: _FakeClient())
     monkeypatch.setattr(cli, "_load_live_start_model", fake_load_live_start_model)
 
-    assert cli.command_live(_live_args(tmp_path, steps=1, sleep=1, paper=False, live=True)) == 2
+    assert (
+        cli.command_live(_live_args(tmp_path, steps=1, sleep=1, paper=False, live=True))
+        == 2
+    )
     assert captured["effective_dry_run"] is False
     assert captured["require_model_candidate_search"] is True
     assert captured["require_accelerator_evidence"] is True
@@ -5635,7 +6766,9 @@ def test_command_live_requests_strict_readiness_for_signed_gpu_mode(tmp_path, mo
     assert captured["expected_interval"] == "15m"
 
 
-def test_command_live_futures_startup_does_not_call_set_leverage(tmp_path, monkeypatch, capsys) -> None:
+def test_command_live_futures_startup_does_not_call_set_leverage(
+    tmp_path, monkeypatch, capsys
+) -> None:
     class _NoStartupLeverageClient(_FakeClient):
         def set_leverage(self, symbol: str, leverage: int):
             raise AssertionError("startup must not mutate futures leverage")
@@ -5656,48 +6789,70 @@ def test_command_live_futures_startup_does_not_call_set_leverage(tmp_path, monke
     save_strategy(strategy)
     model_file = tmp_path / "model.json"
     serialize_model(
-        _bind_promoted_selection_risk(TrainedModel(
-            weights=[0.0] * 13,
-            bias=0.0,
-            feature_dim=13,
-            epochs=1,
-            feature_means=[0.0] * 13,
-            feature_stds=[1.0] * 13,
-            feature_signature=cli._strategy_feature_signature(strategy),
-            selection_risk=_promoted_selection_risk(),
-            execution_validation=_promoted_execution_validation(market_type="futures", interval="1s"),
-            probability_calibration_size=128,
-            probability_log_loss_before=0.62,
-            probability_log_loss_after=0.58,
-            probability_brier_before=0.24,
-            probability_brier_after=0.22,
-            probability_ece_before=0.10,
-            probability_ece_after=0.08,
-            probability_calibration_backend_requested="directml",
-            probability_calibration_backend_kind="directml",
-            probability_calibration_backend_device="privateuseone:0",
-            training_backend_requested="directml",
-            training_backend_kind="directml",
-            training_backend_device="privateuseone:0",
-            training_backend_vendor="DirectML",
-            model_candidate_count=3,
-            model_selected_candidate="triple_barrier_base",
-            model_selection_score=0.42,
-            strategy_overrides={"taker_fee_bps": 4.0},
-        )),
+        _bind_promoted_selection_risk(
+            TrainedModel(
+                weights=[0.0] * 13,
+                bias=0.0,
+                feature_dim=13,
+                epochs=1,
+                feature_means=[0.0] * 13,
+                feature_stds=[1.0] * 13,
+                feature_signature=cli._strategy_feature_signature(strategy),
+                selection_risk=_promoted_selection_risk(),
+                execution_validation=_promoted_execution_validation(
+                    market_type="futures", interval="1s"
+                ),
+                probability_calibration_size=128,
+                probability_log_loss_before=0.62,
+                probability_log_loss_after=0.58,
+                probability_brier_before=0.24,
+                probability_brier_after=0.22,
+                probability_ece_before=0.10,
+                probability_ece_after=0.08,
+                probability_calibration_backend_requested="directml",
+                probability_calibration_backend_kind="directml",
+                probability_calibration_backend_device="privateuseone:0",
+                training_backend_requested="directml",
+                training_backend_kind="directml",
+                training_backend_device="privateuseone:0",
+                training_backend_vendor="DirectML",
+                model_candidate_count=3,
+                model_selected_candidate="triple_barrier_base",
+                model_selection_score=0.42,
+                strategy_overrides={"taker_fee_bps": 4.0},
+            )
+        ),
         model_file,
     )
-    monkeypatch.setattr(cli, "_build_client", lambda _runtime: _NoStartupLeverageClient())
+    monkeypatch.setattr(
+        cli, "_build_client", lambda _runtime: _NoStartupLeverageClient()
+    )
     monkeypatch.setattr(cli, "_resolve_futures_leverage", lambda _runtime, _cfg: 5.0)
     monkeypatch.setattr(
         "simple_ai_trading.model_readiness.TerminalHoldoutLedger.evidence_matches",
         lambda *_args, **_kwargs: True,
     )
-    assert cli.command_live(argparse.Namespace(steps=1, sleep=0, paper=False, model=str(model_file), leverage=None, retrain_interval=0, retrain_window=300, retrain_min_rows=240)) == 0
+    assert (
+        cli.command_live(
+            argparse.Namespace(
+                steps=1,
+                sleep=0,
+                paper=False,
+                model=str(model_file),
+                leverage=None,
+                retrain_interval=0,
+                retrain_window=300,
+                retrain_min_rows=240,
+            )
+        )
+        == 0
+    )
     assert "Failed to set leverage" not in capsys.readouterr().err
 
 
-def test_command_live_recovers_from_invalid_saved_model(tmp_path, monkeypatch, capsys) -> None:
+def test_command_live_recovers_from_invalid_saved_model(
+    tmp_path, monkeypatch, capsys
+) -> None:
     class _LiveClient:
         def __init__(self) -> None:
             self.orders: list[tuple[str, str, float, bool]] = []
@@ -5705,10 +6860,28 @@ def test_command_live_recovers_from_invalid_saved_model(tmp_path, monkeypatch, c
         def ensure_btcusdc(self):
             return {"symbol": "BTCUSDC"}
 
-        def get_klines(self, symbol: str, interval: str, limit: int = 500, start_time=None, end_time=None):
+        def get_klines(
+            self,
+            symbol: str,
+            interval: str,
+            limit: int = 500,
+            start_time=None,
+            end_time=None,
+        ):
             return _simple_candles(limit)
 
-        def place_order(self, symbol: str, side: str, size: float, *, dry_run: bool, leverage: float = 1.0):
+        def place_order(
+            self,
+            symbol: str,
+            side: str,
+            size: float,
+            *,
+            dry_run: bool,
+            leverage: float = 1.0,
+            before_dispatch=None,
+        ):
+            if before_dispatch is not None:
+                before_dispatch()
             self.orders.append((symbol, side, size, dry_run))
             return {"symbol": symbol, "side": side, "size": size, "dry_run": dry_run}
 
@@ -5729,7 +6902,11 @@ def test_command_live_recovers_from_invalid_saved_model(tmp_path, monkeypatch, c
 
     monkeypatch.chdir(tmp_path)
     monkeypatch.setenv("HOME", str(tmp_path))
-    save_runtime(RuntimeConfig(testnet=True, dry_run=True, market_type="spot", managed_usdc=100.0))
+    save_runtime(
+        RuntimeConfig(
+            testnet=True, dry_run=True, market_type="spot", managed_usdc=100.0
+        )
+    )
     save_strategy(StrategyConfig(risk_per_trade=0.001, max_position_pct=0.2))
     model_dir = tmp_path / "data"
     model_dir.mkdir(parents=True, exist_ok=True)
@@ -5744,16 +6921,44 @@ def test_command_live_recovers_from_invalid_saved_model(tmp_path, monkeypatch, c
 
     monkeypatch.setattr(cli, "train", lambda *_a, **_k: _AlwaysLongModel())
     monkeypatch.setattr(cli, "_build_client", lambda _runtime: _LiveClient())
-    monkeypatch.setattr(cli, "_load_runtime_model", lambda *_a, **_k: (_ for _ in ()).throw(cli.ModelLoadError("bad model")))
+    monkeypatch.setattr(
+        cli,
+        "_load_runtime_model",
+        lambda *_a, **_k: (_ for _ in ()).throw(cli.ModelLoadError("bad model")),
+    )
     monkeypatch.setattr(cli.time, "sleep", lambda *_args: None)
-    assert cli.command_live(argparse.Namespace(steps=1, sleep=0, paper=False, leverage=None, retrain_interval=0, retrain_window=300, retrain_min_rows=240)) == 0
+    assert (
+        cli.command_live(
+            argparse.Namespace(
+                steps=1,
+                sleep=0,
+                paper=False,
+                leverage=None,
+                retrain_interval=0,
+                retrain_window=300,
+                retrain_min_rows=240,
+            )
+        )
+        == 0
+    )
     captured = capsys.readouterr()
     assert "Model load failed; regenerating" in captured.err
 
 
-def test_command_live_strictly_requires_valid_model_for_authenticated_live(tmp_path, monkeypatch, capsys) -> None:
+def test_command_live_strictly_requires_valid_model_for_authenticated_live(
+    tmp_path, monkeypatch, capsys
+) -> None:
     monkeypatch.setenv("HOME", str(tmp_path))
-    save_runtime(RuntimeConfig(testnet=True, dry_run=False, market_type="spot", api_key="k", api_secret="s", managed_usdc=1000.0))
+    save_runtime(
+        RuntimeConfig(
+            testnet=True,
+            dry_run=False,
+            market_type="spot",
+            api_key="k",
+            api_secret="s",
+            managed_usdc=1000.0,
+        )
+    )
     save_strategy(StrategyConfig())
     monkeypatch.setattr(cli, "_build_client", lambda _runtime: _FakeClient())
 
@@ -5769,21 +6974,40 @@ def test_command_live_strictly_requires_valid_model_for_authenticated_live(tmp_p
     }
 
     missing = tmp_path / "missing-model.json"
-    assert cli.command_live(argparse.Namespace(**{**base_args, "model": str(missing)})) == 2
+    assert (
+        cli.command_live(argparse.Namespace(**{**base_args, "model": str(missing)}))
+        == 2
+    )
     assert "Live mode needs model file" in capsys.readouterr().err
 
     model_file = tmp_path / "model.json"
     model_file.write_text("{}", encoding="utf-8")
-    monkeypatch.setattr(cli, "_load_runtime_model", lambda *_a, **_k: (_ for _ in ()).throw(ModelLoadError("signature mismatch")))
-    assert cli.command_live(argparse.Namespace(**{**base_args, "model": str(model_file)})) == 2
+    monkeypatch.setattr(
+        cli,
+        "_load_runtime_model",
+        lambda *_a, **_k: (_ for _ in ()).throw(ModelLoadError("signature mismatch")),
+    )
+    assert (
+        cli.command_live(argparse.Namespace(**{**base_args, "model": str(model_file)}))
+        == 2
+    )
     assert "Live mode requires a compatible model" in capsys.readouterr().err
 
-    monkeypatch.setattr(cli, "_load_runtime_model", lambda *_a, **_k: (_ for _ in ()).throw(RuntimeError("disk unavailable")))
-    assert cli.command_live(argparse.Namespace(**{**base_args, "model": str(model_file)})) == 2
+    monkeypatch.setattr(
+        cli,
+        "_load_runtime_model",
+        lambda *_a, **_k: (_ for _ in ()).throw(RuntimeError("disk unavailable")),
+    )
+    assert (
+        cli.command_live(argparse.Namespace(**{**base_args, "model": str(model_file)}))
+        == 2
+    )
     assert "Live mode requires a readable model" in capsys.readouterr().err
 
 
-def test_command_live_loaded_model_signature_and_authenticated_sleep_floor(tmp_path, monkeypatch, capsys) -> None:
+def test_command_live_loaded_model_signature_and_authenticated_sleep_floor(
+    tmp_path, monkeypatch, capsys
+) -> None:
     captured: list[dict[str, object]] = []
 
     class _SignedModel(_SignedFeeModelEvidence):
@@ -5798,7 +7022,16 @@ def test_command_live_loaded_model_signature_and_authenticated_sleep_floor(tmp_p
         return output_dir / "live.json"
 
     monkeypatch.setenv("HOME", str(tmp_path))
-    save_runtime(RuntimeConfig(testnet=True, dry_run=False, market_type="spot", api_key="k", api_secret="s", managed_usdc=1000.0))
+    save_runtime(
+        RuntimeConfig(
+            testnet=True,
+            dry_run=False,
+            market_type="spot",
+            api_key="k",
+            api_secret="s",
+            managed_usdc=1000.0,
+        )
+    )
     save_strategy(StrategyConfig())
     model_file = tmp_path / "model.json"
     model_file.write_text("{}", encoding="utf-8")
@@ -5826,7 +7059,9 @@ def test_command_live_loaded_model_signature_and_authenticated_sleep_floor(tmp_p
     assert captured[0]["model_signature"] == "runtime-signature"
 
 
-def test_command_live_records_feature_drift_warning(tmp_path, monkeypatch, capsys) -> None:
+def test_command_live_records_feature_drift_warning(
+    tmp_path, monkeypatch, capsys
+) -> None:
     captured: list[dict[str, object]] = []
     feature_count = 13
     row = SimpleNamespace(
@@ -5877,11 +7112,15 @@ def test_command_live_records_feature_drift_warning(tmp_path, monkeypatch, capsy
         == 0
     )
     assert "feature drift warning" in capsys.readouterr().out
-    drift_events = [event for event in captured[0]["events"] if event["status"] == "feature_drift"]
+    drift_events = [
+        event for event in captured[0]["events"] if event["status"] == "feature_drift"
+    ]
     assert drift_events[0]["drift_status"] == "warn"
 
 
-def test_command_live_blocks_failed_feature_drift(tmp_path, monkeypatch, capsys) -> None:
+def test_command_live_blocks_failed_feature_drift(
+    tmp_path, monkeypatch, capsys
+) -> None:
     captured: list[dict[str, object]] = []
     feature_count = 13
     row = SimpleNamespace(
@@ -5932,42 +7171,50 @@ def test_command_live_blocks_failed_feature_drift(tmp_path, monkeypatch, capsys)
         == 0
     )
     assert "feature drift block" in capsys.readouterr().out
-    drift_events = [event for event in captured[0]["events"] if event["status"] == "feature_drift"]
+    drift_events = [
+        event for event in captured[0]["events"] if event["status"] == "feature_drift"
+    ]
     assert drift_events[0]["drift_status"] == "fail"
     assert captured[0]["result"]["entries"] == 0
 
 
-def test_command_live_halts_on_authenticated_feature_drift_check_failure(tmp_path, monkeypatch, capsys) -> None:
+def test_command_live_halts_on_authenticated_feature_drift_check_failure(
+    tmp_path, monkeypatch, capsys
+) -> None:
     captured: list[dict[str, object]] = []
     row = SimpleNamespace(timestamp=60_000, close=100.0, features=(1.0, 2.0), label=1)
-    model = _bind_promoted_selection_risk(TrainedModel(
-        weights=[0.0],
-        bias=0.0,
-        feature_dim=1,
-        epochs=1,
-        feature_means=[0.0],
-        feature_stds=[1.0],
-        selection_risk=_promoted_selection_risk(),
-        execution_validation=_promoted_execution_validation(market_type="spot", interval="1s"),
-        probability_calibration_size=128,
-        probability_log_loss_before=0.62,
-        probability_log_loss_after=0.58,
-        probability_brier_before=0.24,
-        probability_brier_after=0.22,
-        probability_ece_before=0.10,
-        probability_ece_after=0.08,
-        probability_calibration_backend_requested="directml",
-        probability_calibration_backend_kind="directml",
-        probability_calibration_backend_device="privateuseone:0",
-        training_backend_requested="directml",
-        training_backend_kind="directml",
-        training_backend_device="privateuseone:0",
-        training_backend_vendor="DirectML",
-        model_candidate_count=3,
-        model_selected_candidate="triple_barrier_base",
-        model_selection_score=0.42,
-        strategy_overrides={"taker_fee_bps": 4.0},
-    ))
+    model = _bind_promoted_selection_risk(
+        TrainedModel(
+            weights=[0.0],
+            bias=0.0,
+            feature_dim=1,
+            epochs=1,
+            feature_means=[0.0],
+            feature_stds=[1.0],
+            selection_risk=_promoted_selection_risk(),
+            execution_validation=_promoted_execution_validation(
+                market_type="spot", interval="1s"
+            ),
+            probability_calibration_size=128,
+            probability_log_loss_before=0.62,
+            probability_log_loss_after=0.58,
+            probability_brier_before=0.24,
+            probability_brier_after=0.22,
+            probability_ece_before=0.10,
+            probability_ece_after=0.08,
+            probability_calibration_backend_requested="directml",
+            probability_calibration_backend_kind="directml",
+            probability_calibration_backend_device="privateuseone:0",
+            training_backend_requested="directml",
+            training_backend_kind="directml",
+            training_backend_device="privateuseone:0",
+            training_backend_vendor="DirectML",
+            model_candidate_count=3,
+            model_selected_candidate="triple_barrier_base",
+            model_selection_score=0.42,
+            strategy_overrides={"taker_fee_bps": 4.0},
+        )
+    )
 
     def fake_persist(kind: str, output_dir: Path, payload: dict[str, object]) -> Path:
         assert kind == "live"
@@ -6020,7 +7267,9 @@ def test_command_live_halts_on_authenticated_feature_drift_check_failure(tmp_pat
     assert captured[0]["events"][-1]["status"] == "feature_drift_check_failed"
 
 
-def test_command_live_paper_recovers_after_feature_drift_check_failure(tmp_path, monkeypatch, capsys) -> None:
+def test_command_live_paper_recovers_after_feature_drift_check_failure(
+    tmp_path, monkeypatch, capsys
+) -> None:
     row = SimpleNamespace(timestamp=60_000, close=100.0, features=(1.0, 2.0), label=1)
     incompatible = TrainedModel(
         weights=[0.0],
@@ -6051,7 +7300,9 @@ def test_command_live_paper_recovers_after_feature_drift_check_failure(tmp_path,
     model_file.write_text("{}", encoding="utf-8")
     monkeypatch.setattr(cli, "_build_client", lambda _runtime: _FakeClient())
     monkeypatch.setattr(cli, "_build_model_rows", lambda *_args, **_kwargs: [row])
-    monkeypatch.setattr(cli, "_load_runtime_model", lambda *_args, **_kwargs: incompatible)
+    monkeypatch.setattr(
+        cli, "_load_runtime_model", lambda *_args, **_kwargs: incompatible
+    )
     monkeypatch.setattr(cli, "train", fake_train)
     monkeypatch.setattr(cli.time, "sleep", lambda *_args: None)
 
@@ -6099,7 +7350,9 @@ def test_paper_helper_rejects_unjournaled_signed_execution(capsys) -> None:
     assert not capsys.readouterr().out
 
 
-def test_command_live_detects_existing_positions_and_failures(tmp_path, monkeypatch, capsys) -> None:
+def test_command_live_detects_existing_positions_and_failures(
+    tmp_path, monkeypatch, capsys
+) -> None:
     class _SignedModel(_SignedFeeModelEvidence):
         feature_signature = "runtime-signature"
 
@@ -6126,7 +7379,16 @@ def test_command_live_detects_existing_positions_and_failures(tmp_path, monkeypa
     monkeypatch.setenv("HOME", str(tmp_path))
     model_file = tmp_path / "model.json"
     model_file.write_text("{}", encoding="utf-8")
-    save_runtime(RuntimeConfig(testnet=True, dry_run=False, market_type="futures", api_key="k", api_secret="s", managed_usdc=1000.0))
+    save_runtime(
+        RuntimeConfig(
+            testnet=True,
+            dry_run=False,
+            market_type="futures",
+            api_key="k",
+            api_secret="s",
+            managed_usdc=1000.0,
+        )
+    )
     save_strategy(StrategyConfig())
     monkeypatch.setattr(cli, "_load_runtime_model", lambda *_a, **_k: _SignedModel())
     monkeypatch.setattr(cli, "_build_client", lambda _runtime: _PositionClient())
@@ -6142,7 +7404,10 @@ def test_command_live_detects_existing_positions_and_failures(tmp_path, monkeypa
         retrain_min_rows=240,
     )
     assert cli.command_live(live_args) == 2
-    assert "exchange exposure does not match the bot-owned local ledger" in capsys.readouterr().err
+    assert (
+        "exchange exposure does not match the bot-owned local ledger"
+        in capsys.readouterr().err
+    )
 
     position_id = "livepos001"
     PositionsStore().record_open(
@@ -6176,8 +7441,9 @@ def test_command_live_detects_existing_positions_and_failures(tmp_path, monkeypa
     assert "Account balance check failed: rate limit" in capsys.readouterr().err
 
 
+@pytest.mark.parametrize("activate_policy", [True, False])
 def test_command_live_signed_entry_records_bot_owned_position(
-    tmp_path, monkeypatch
+    tmp_path, monkeypatch, activate_policy
 ) -> None:
     rows = [
         ModelRow(
@@ -6247,7 +7513,10 @@ def test_command_live_signed_entry_records_bot_owned_position(
             reduce_only: bool = False,
             client_order_id: str | None = None,
             expected_scope=None,
+            before_dispatch=None,
         ):
+            if before_dispatch is not None:
+                before_dispatch()
             assert expected_scope == self.execution_scope()
             assert client_order_id is not None and client_order_id.startswith("sait-o-")
             self.submitted_client_ids.append(client_order_id)
@@ -6294,19 +7563,21 @@ def test_command_live_signed_entry_records_bot_owned_position(
     monkeypatch.setattr(cli, "_readiness_model_rows", lambda *_a, **_k: rows)
     monkeypatch.setattr(cli.time, "sleep", lambda *_args: None)
 
-    assert (
-        cli.command_live(
-            _live_args(
-                tmp_path,
-                steps=1,
-                sleep=1,
-                paper=False,
-                live=True,
-                model=str(model_file),
-            )
+    _enroll_signed_cli_fixture(monkeypatch, client, opening=activate_policy)
+
+    result = cli.command_live(
+        _live_args(
+            tmp_path, steps=1, sleep=1, paper=False, live=True, model=str(model_file)
         )
-        == 0
     )
+    assert result == (0 if activate_policy else 2)
+    if not activate_policy:
+        from simple_ai_trading.binance_capital_policy import BinanceCapitalPolicyStore
+
+        assert PositionsStore().load_open(strict=True) == []
+        assert client.submitted_client_ids == []
+        assert not BinanceCapitalPolicyStore(PositionsStore()).enrollment_path.exists()
+        return
 
     open_positions = PositionsStore().load_open()
     assert len(open_positions) == 1
@@ -6320,22 +7591,20 @@ def test_command_live_signed_close_records_ledger_and_removes_open(
 ) -> None:
     position_id = "ownedclose001"
     open_client_id = bot_client_order_id(position_id, "open")
-    PositionsStore().record_open(
-        OpenPosition(
-            id=position_id,
-            symbol="BTCUSDC",
-            market_type="futures",
-            side="LONG",
-            qty=0.2,
-            entry_price=100.0,
-            leverage=1.0,
-            opened_at_ms=1,
-            notional=20.0,
-            dry_run=False,
-            open_client_order_id=open_client_id,
-            open_exchange_order_id="101",
-            exchange_status="FILLED",
-        )
+    seeded = OpenPosition(
+        id=position_id,
+        symbol="BTCUSDC",
+        market_type="futures",
+        side="LONG",
+        qty=0.2,
+        entry_price=100.0,
+        leverage=1.0,
+        opened_at_ms=1,
+        notional=20.0,
+        dry_run=False,
+        open_client_order_id=open_client_id,
+        open_exchange_order_id="101",
+        exchange_status="FILLED",
     )
     rows = [
         ModelRow(
@@ -6407,7 +7676,10 @@ def test_command_live_signed_close_records_ledger_and_removes_open(
             reduce_only: bool = False,
             client_order_id: str | None = None,
             expected_scope=None,
+            before_dispatch=None,
         ):
+            if before_dispatch is not None:
+                before_dispatch()
             assert expected_scope == self.execution_scope()
             assert side == "SELL"
             assert reduce_only is True
@@ -6454,10 +7726,10 @@ def test_command_live_signed_close_records_ledger_and_removes_open(
     monkeypatch.setattr(cli, "_readiness_model_rows", lambda *_a, **_k: rows)
     monkeypatch.setattr(cli.time, "sleep", lambda *_args: None)
 
-    store = PositionsStore()
-    seeded = store.find_open(position_id)
+    store = _enroll_signed_cli_fixture(monkeypatch, client, opening=False)
     scope = client.execution_scope()
-    store.opening_intents.prepare(seeded, scope=scope)
+    store.opening_intents.prepare(seeded, scope=scope, create=False)
+    store.record_open(seeded, create=False)
     store.opening_intents.record_complete(seeded, seeded, scope=scope)
 
     assert (
@@ -6484,7 +7756,9 @@ def test_command_live_signed_close_records_ledger_and_removes_open(
     assert ledger[0].realized_pnl > 0.0
 
 
-def test_command_live_caps_managed_cash_to_exchange_balance(tmp_path, monkeypatch, capsys) -> None:
+def test_command_live_caps_managed_cash_to_exchange_balance(
+    tmp_path, monkeypatch, capsys
+) -> None:
     class _SignedModel(_SignedFeeModelEvidence):
         feature_signature = "runtime-signature"
 
@@ -6496,12 +7770,24 @@ def test_command_live_caps_managed_cash_to_exchange_balance(tmp_path, monkeypatc
             return {"leverage": leverage}
 
         def get_account(self):
-            return {"positions": [], "assets": [{"asset": "USDC", "availableBalance": "25"}]}
+            return {
+                "positions": [],
+                "assets": [{"asset": "USDC", "availableBalance": "25"}],
+            }
 
     monkeypatch.setenv("HOME", str(tmp_path))
     model_file = tmp_path / "model.json"
     model_file.write_text("{}", encoding="utf-8")
-    save_runtime(RuntimeConfig(testnet=True, dry_run=False, market_type="futures", api_key="k", api_secret="s", managed_usdc=100.0))
+    save_runtime(
+        RuntimeConfig(
+            testnet=True,
+            dry_run=False,
+            market_type="futures",
+            api_key="k",
+            api_secret="s",
+            managed_usdc=100.0,
+        )
+    )
     save_strategy(StrategyConfig())
     monkeypatch.setattr(cli, "_load_runtime_model", lambda *_a, **_k: _SignedModel())
     monkeypatch.setattr(cli, "_build_client", lambda _runtime: _BalanceClient())
@@ -6518,10 +7804,15 @@ def test_command_live_caps_managed_cash_to_exchange_balance(tmp_path, monkeypatc
     )
 
     assert cli.command_live(args) == 0
-    assert "Authenticated live cash capped to exchange free USDC=25.00" in capsys.readouterr().out
+    assert (
+        "Authenticated live cash capped to exchange free USDC=25.00"
+        in capsys.readouterr().out
+    )
 
 
-def test_command_live_uses_runtime_quote_asset_for_cash_cap(tmp_path, monkeypatch, capsys) -> None:
+def test_command_live_uses_runtime_quote_asset_for_cash_cap(
+    tmp_path, monkeypatch, capsys
+) -> None:
     class _SignedModel(_SignedFeeModelEvidence):
         feature_signature = "runtime-signature"
 
@@ -6533,7 +7824,10 @@ def test_command_live_uses_runtime_quote_asset_for_cash_cap(tmp_path, monkeypatc
             return {"leverage": leverage}
 
         def get_account(self):
-            return {"positions": [], "assets": [{"asset": "USDT", "availableBalance": "30"}]}
+            return {
+                "positions": [],
+                "assets": [{"asset": "USDT", "availableBalance": "30"}],
+            }
 
     monkeypatch.setenv("HOME", str(tmp_path))
     model_file = tmp_path / "model.json"
@@ -6567,10 +7861,15 @@ def test_command_live_uses_runtime_quote_asset_for_cash_cap(tmp_path, monkeypatc
     )
 
     assert cli.command_live(args) == 0
-    assert "Authenticated live cash capped to exchange free USDT=30.00" in capsys.readouterr().out
+    assert (
+        "Authenticated live cash capped to exchange free USDT=30.00"
+        in capsys.readouterr().out
+    )
 
 
-def test_command_live_blocks_when_exchange_has_no_available_usdc(tmp_path, monkeypatch, capsys) -> None:
+def test_command_live_blocks_when_exchange_has_no_available_usdc(
+    tmp_path, monkeypatch, capsys
+) -> None:
     class _SignedModel(_SignedFeeModelEvidence):
         feature_signature = "runtime-signature"
 
@@ -6579,34 +7878,51 @@ def test_command_live_blocks_when_exchange_has_no_available_usdc(tmp_path, monke
 
     class _NoBalanceClient(_FakeClient):
         def get_account(self):
-            return {"positions": [], "assets": [{"asset": "USDC", "availableBalance": "0"}]}
+            return {
+                "positions": [],
+                "assets": [{"asset": "USDC", "availableBalance": "0"}],
+            }
 
     monkeypatch.setenv("HOME", str(tmp_path))
     model_file = tmp_path / "model.json"
     model_file.write_text("{}", encoding="utf-8")
-    save_runtime(RuntimeConfig(testnet=True, dry_run=False, market_type="spot", api_key="k", api_secret="s", managed_usdc=100.0))
+    save_runtime(
+        RuntimeConfig(
+            testnet=True,
+            dry_run=False,
+            market_type="spot",
+            api_key="k",
+            api_secret="s",
+            managed_usdc=100.0,
+        )
+    )
     save_strategy(StrategyConfig())
     monkeypatch.setattr(cli, "_load_runtime_model", lambda *_a, **_k: _SignedModel())
     monkeypatch.setattr(cli, "_build_client", lambda _runtime: _NoBalanceClient())
 
-    assert cli.command_live(
-        argparse.Namespace(
-            steps=0,
-            sleep=1,
-            paper=False,
-            live=True,
-            model=str(model_file),
-            leverage=None,
-            retrain_interval=0,
-            retrain_window=300,
-            retrain_min_rows=240,
-            external_signals=None,
+    assert (
+        cli.command_live(
+            argparse.Namespace(
+                steps=0,
+                sleep=1,
+                paper=False,
+                live=True,
+                model=str(model_file),
+                leverage=None,
+                retrain_interval=0,
+                retrain_window=300,
+                retrain_min_rows=240,
+                external_signals=None,
+            )
         )
-    ) == 2
+        == 2
+    )
     assert "requires available USDC" in capsys.readouterr().err
 
 
-def test_command_live_reports_risk_policy_after_balance_check(tmp_path, monkeypatch, capsys) -> None:
+def test_command_live_reports_risk_policy_after_balance_check(
+    tmp_path, monkeypatch, capsys
+) -> None:
     class _SignedModel(_SignedFeeModelEvidence):
         feature_signature = "runtime-signature"
 
@@ -6616,31 +7932,51 @@ def test_command_live_reports_risk_policy_after_balance_check(tmp_path, monkeypa
     monkeypatch.setenv("HOME", str(tmp_path))
     model_file = tmp_path / "model.json"
     model_file.write_text("{}", encoding="utf-8")
-    save_runtime(RuntimeConfig(testnet=True, dry_run=False, market_type="spot", api_key="k", api_secret="s", managed_usdc=100.0))
+    save_runtime(
+        RuntimeConfig(
+            testnet=True,
+            dry_run=False,
+            market_type="spot",
+            api_key="k",
+            api_secret="s",
+            managed_usdc=100.0,
+        )
+    )
     save_strategy(StrategyConfig())
     monkeypatch.setattr(cli, "_load_runtime_model", lambda *_a, **_k: _SignedModel())
     monkeypatch.setattr(cli, "_build_client", lambda _runtime: _FakeClient())
-    monkeypatch.setattr(cli, "build_risk_policy_report", lambda *_a, **_k: SimpleNamespace(allowed=False, warning_count=0))
-    monkeypatch.setattr(cli, "render_risk_policy_report", lambda _report: "Risk policy report denied")
+    monkeypatch.setattr(
+        cli,
+        "build_risk_policy_report",
+        lambda *_a, **_k: SimpleNamespace(allowed=False, warning_count=0),
+    )
+    monkeypatch.setattr(
+        cli, "render_risk_policy_report", lambda _report: "Risk policy report denied"
+    )
 
-    assert cli.command_live(
-        argparse.Namespace(
-            steps=0,
-            sleep=1,
-            paper=False,
-            live=True,
-            model=str(model_file),
-            leverage=None,
-            retrain_interval=0,
-            retrain_window=300,
-            retrain_min_rows=240,
-            external_signals=None,
+    assert (
+        cli.command_live(
+            argparse.Namespace(
+                steps=0,
+                sleep=1,
+                paper=False,
+                live=True,
+                model=str(model_file),
+                leverage=None,
+                retrain_interval=0,
+                retrain_window=300,
+                retrain_min_rows=240,
+                external_signals=None,
+            )
         )
-    ) == 2
+        == 2
+    )
     assert "Risk policy report denied" in capsys.readouterr().err
 
 
-def test_command_live_reconciliation_mismatch_after_balance(tmp_path, monkeypatch, capsys) -> None:
+def test_command_live_reconciliation_mismatch_after_balance(
+    tmp_path, monkeypatch, capsys
+) -> None:
     class _SignedModel(_SignedFeeModelEvidence):
         feature_signature = "runtime-signature"
 
@@ -6667,27 +8003,48 @@ def test_command_live_reconciliation_mismatch_after_balance(tmp_path, monkeypatc
     monkeypatch.setenv("HOME", str(tmp_path))
     model_file = tmp_path / "model.json"
     model_file.write_text("{}", encoding="utf-8")
-    save_runtime(RuntimeConfig(testnet=True, dry_run=False, market_type="futures", api_key="k", api_secret="s", managed_usdc=100.0))
+    save_runtime(
+        RuntimeConfig(
+            testnet=True,
+            dry_run=False,
+            market_type="futures",
+            api_key="k",
+            api_secret="s",
+            managed_usdc=100.0,
+        )
+    )
     save_strategy(StrategyConfig())
     monkeypatch.setattr(cli, "_load_runtime_model", lambda *_a, **_k: _SignedModel())
     monkeypatch.setattr(cli, "_build_client", lambda _runtime: _SignedClient())
-    monkeypatch.setattr(cli, "_resolve_symbol_constraints", lambda *_a, **_k: SymbolConstraints("BTCUSDC", 0.00001, 1.0, 0.00001, 5.0, 1000.0))
+    monkeypatch.setattr(
+        cli,
+        "_resolve_symbol_constraints",
+        lambda *_a, **_k: SymbolConstraints(
+            "BTCUSDC", 0.00001, 1.0, 0.00001, 5.0, 1000.0
+        ),
+    )
 
-    assert cli.command_live(
-        argparse.Namespace(
-            steps=0,
-            sleep=1,
-            paper=False,
-            live=True,
-            model=str(model_file),
-            leverage=None,
-            retrain_interval=0,
-            retrain_window=300,
-            retrain_min_rows=240,
-            external_signals=None,
+    assert (
+        cli.command_live(
+            argparse.Namespace(
+                steps=0,
+                sleep=1,
+                paper=False,
+                live=True,
+                model=str(model_file),
+                leverage=None,
+                retrain_interval=0,
+                retrain_window=300,
+                retrain_min_rows=240,
+                external_signals=None,
+            )
         )
-    ) == 2
-    assert "exchange exposure does not match the bot-owned local ledger" in capsys.readouterr().err
+        == 2
+    )
+    assert (
+        "exchange exposure does not match the bot-owned local ledger"
+        in capsys.readouterr().err
+    )
 
 
 def test_command_tune_saves_candidate(monkeypatch, tmp_path) -> None:
@@ -6714,13 +8071,17 @@ def test_command_tune_saves_candidate(monkeypatch, tmp_path) -> None:
         def __init__(self, score: float) -> None:
             self.score = score
 
-        def predict_proba(self, features: tuple[float, ...]) -> float:  # pragma: no cover
+        def predict_proba(
+            self, features: tuple[float, ...]
+        ) -> float:  # pragma: no cover
             return self.score
 
     monkeypatch.setattr(
         cli,
         "run_backtest",
-        lambda rows, model, cfg, **_kwargs: SimpleNamespace(realized_pnl=1.0, total_fees=0.0),
+        lambda rows, model, cfg, **_kwargs: SimpleNamespace(
+            realized_pnl=1.0, total_fees=0.0
+        ),
     )
     monkeypatch.setattr(cli, "train", lambda *_a, **_k: _Model(0.8))
     monkeypatch.setattr(cli.time, "sleep", lambda *_args: None)
@@ -6785,9 +8146,17 @@ def test_resolve_symbol_constraints_error_returns_none() -> None:
 
 def test_resolve_live_retrain_rows() -> None:
     rows = list(range(5))
-    assert cli._resolve_live_retrain_rows(rows, retrain_window=10, retrain_min_rows=10) == []
-    assert cli._resolve_live_retrain_rows(rows, retrain_window=10, retrain_min_rows=3) == rows
-    assert cli._resolve_live_retrain_rows(list(range(15)), retrain_window=10, retrain_min_rows=3) == list(range(5, 15))
+    assert (
+        cli._resolve_live_retrain_rows(rows, retrain_window=10, retrain_min_rows=10)
+        == []
+    )
+    assert (
+        cli._resolve_live_retrain_rows(rows, retrain_window=10, retrain_min_rows=3)
+        == rows
+    )
+    assert cli._resolve_live_retrain_rows(
+        list(range(15)), retrain_window=10, retrain_min_rows=3
+    ) == list(range(5, 15))
 
 
 def test_build_live_model_retrain_interval(monkeypatch) -> None:
@@ -6842,7 +8211,9 @@ def test_build_live_model_retrain_interval(monkeypatch) -> None:
     assert calls[-1][0] == 50
 
 
-def test_command_configure_save_and_validation_paths(tmp_path, monkeypatch, capsys) -> None:
+def test_command_configure_save_and_validation_paths(
+    tmp_path, monkeypatch, capsys
+) -> None:
     class _ValidClient(_FakeClient):
         def ping(self):
             return {"ok": True}
@@ -6855,7 +8226,13 @@ def test_command_configure_save_and_validation_paths(tmp_path, monkeypatch, caps
             raise BinanceAPIError("bad")
 
     monkeypatch.setenv("HOME", str(tmp_path))
-    monkeypatch.setattr(cli, "prompt_runtime", lambda _current: RuntimeConfig(api_key="k", api_secret="s", validate_account=True))
+    monkeypatch.setattr(
+        cli,
+        "prompt_runtime",
+        lambda _current: RuntimeConfig(
+            api_key="k", api_secret="s", validate_account=True
+        ),
+    )
     monkeypatch.setattr(cli, "_build_client", lambda _runtime: _ValidClient())
     assert cli.command_configure(argparse.Namespace()) == 0
     first = capsys.readouterr()
@@ -6867,9 +8244,15 @@ def test_command_configure_save_and_validation_paths(tmp_path, monkeypatch, caps
     assert "Configuration saved, but validation failed" in captured.err
 
 
-def test_command_connect_paths_for_errors_and_leverage_exception(tmp_path, monkeypatch, capsys) -> None:
+def test_command_connect_paths_for_errors_and_leverage_exception(
+    tmp_path, monkeypatch, capsys
+) -> None:
     monkeypatch.setenv("HOME", str(tmp_path))
-    save_runtime(RuntimeConfig(api_key="k", api_secret="s", market_type="futures", symbol="BTCUSDC"))
+    save_runtime(
+        RuntimeConfig(
+            api_key="k", api_secret="s", market_type="futures", symbol="BTCUSDC"
+        )
+    )
 
     class _ConnectionClient(_FakeClient):
         def get_exchange_time(self):
@@ -6943,7 +8326,9 @@ def test_command_strategy_covers_full_update_path(tmp_path, monkeypatch) -> None
     assert updated.label_threshold == 0.0001
 
 
-def test_command_strategy_profiles_apply_and_explicit_args_override(tmp_path, monkeypatch, capsys) -> None:
+def test_command_strategy_profiles_apply_and_explicit_args_override(
+    tmp_path, monkeypatch, capsys
+) -> None:
     monkeypatch.setenv("HOME", str(tmp_path))
     save_runtime(RuntimeConfig(market_type="spot"))
     save_strategy(StrategyConfig())
@@ -6982,7 +8367,9 @@ def test_command_strategy_profiles_apply_and_explicit_args_override(tmp_path, mo
     assert conservative.signal_threshold == 0.66
     assert conservative.training_epochs == 180
 
-    assert cli.command_strategy(args_for("active", risk=0.003, signal_threshold=0.7)) == 0
+    assert (
+        cli.command_strategy(args_for("active", risk=0.003, signal_threshold=0.7)) == 0
+    )
     active = load_strategy()
     assert active.leverage == pytest.approx(DEFAULT_AGGRESSIVE_LEVERAGE)
     assert active.risk_per_trade == 0.003
@@ -6992,7 +8379,9 @@ def test_command_strategy_profiles_apply_and_explicit_args_override(tmp_path, mo
     assert "Invalid strategy profile" in capsys.readouterr().err
 
 
-def test_tui_strategy_profile_uses_unchanged_fields_as_profile_defaults(tmp_path, monkeypatch) -> None:
+def test_tui_strategy_profile_uses_unchanged_fields_as_profile_defaults(
+    tmp_path, monkeypatch
+) -> None:
     monkeypatch.setenv("HOME", str(tmp_path))
     cfg = StrategyConfig()
     save_strategy(cfg)
@@ -7066,13 +8455,18 @@ def test_tui_strategy_profile_uses_unchanged_fields_as_profile_defaults(tmp_path
 def test_existing_position_detection_helpers() -> None:
     assert cli._safe_float("1.25") == 1.25
     assert cli._safe_float(object()) == 0.0
-    assert cli._detect_existing_position(RuntimeConfig(), object(), leverage=1.0) is None
+    assert (
+        cli._detect_existing_position(RuntimeConfig(), object(), leverage=1.0) is None
+    )
 
     class NonDictAccount:
         def get_account(self):
             return []
 
-    assert cli._detect_existing_position(RuntimeConfig(), NonDictAccount(), leverage=1.0) is None
+    assert (
+        cli._detect_existing_position(RuntimeConfig(), NonDictAccount(), leverage=1.0)
+        is None
+    )
 
     class FuturesAccount:
         def get_account(self):
@@ -7081,7 +8475,12 @@ def test_existing_position_detection_helpers() -> None:
                     object(),
                     {"symbol": "BTCUSDC", "positionAmt": "0", "entryPrice": "50000"},
                     {"symbol": "ETHUSDC", "positionAmt": "1"},
-                    {"symbol": "BTCUSDC", "positionAmt": "-0.2", "entryPrice": "50000", "positionInitialMargin": "100"},
+                    {
+                        "symbol": "BTCUSDC",
+                        "positionAmt": "-0.2",
+                        "entryPrice": "50000",
+                        "positionInitialMargin": "100",
+                    },
                 ]
             }
 
@@ -7101,7 +8500,15 @@ def test_existing_position_detection_helpers() -> None:
     assert (
         cli._detect_existing_position(
             RuntimeConfig(market_type="futures", symbol="BTCUSDC"),
-            type("FlatFutures", (), {"get_account": lambda self: {"positions": [{"symbol": "BTCUSDC", "positionAmt": "0"}]}})(),
+            type(
+                "FlatFutures",
+                (),
+                {
+                    "get_account": lambda self: {
+                        "positions": [{"symbol": "BTCUSDC", "positionAmt": "0"}]
+                    }
+                },
+            )(),
             leverage=5.0,
         )
         is None
@@ -7109,12 +8516,27 @@ def test_existing_position_detection_helpers() -> None:
 
     class SpotAccount:
         def get_account(self):
-            return {"balances": [object(), {"asset": "ETH", "free": "1", "locked": "0"}, {"asset": "BTC", "free": "0", "locked": "0"}, {"asset": "BTC", "free": "0.01", "locked": "0.02"}]}
+            return {
+                "balances": [
+                    object(),
+                    {"asset": "ETH", "free": "1", "locked": "0"},
+                    {"asset": "BTC", "free": "0", "locked": "0"},
+                    {"asset": "BTC", "free": "0.01", "locked": "0.02"},
+                ]
+            }
 
         def get_symbol_price(self, symbol: str):
             return 60000.0, 123
 
-    assert cli._detect_existing_position(RuntimeConfig(market_type="spot"), SpotAccount(), leverage=1.0, reference_price=60000.0) is None
+    assert (
+        cli._detect_existing_position(
+            RuntimeConfig(market_type="spot"),
+            SpotAccount(),
+            leverage=1.0,
+            reference_price=60000.0,
+        )
+        is None
+    )
 
     spot = cli._detect_existing_position(
         RuntimeConfig(market_type="spot", managed_btc=0.02),
@@ -7126,11 +8548,17 @@ def test_existing_position_detection_helpers() -> None:
     assert spot["qty"] == 0.02
     assert spot["entry_price"] == 60000.0
     assert (
-        cli._detect_existing_position(RuntimeConfig(market_type="spot", managed_btc=0.01), SpotAccount(), leverage=1.0)["entry_price"]
+        cli._detect_existing_position(
+            RuntimeConfig(market_type="spot", managed_btc=0.01),
+            SpotAccount(),
+            leverage=1.0,
+        )["entry_price"]
         == 60000.0
     )
     eth_spot = cli._detect_existing_position(
-        RuntimeConfig(market_type="spot", symbol="ETHUSDT", quote_asset="USDT", managed_btc=0.5),
+        RuntimeConfig(
+            market_type="spot", symbol="ETHUSDT", quote_asset="USDT", managed_btc=0.5
+        ),
         SpotAccount(),
         leverage=1.0,
         reference_price=3000.0,
@@ -7141,7 +8569,15 @@ def test_existing_position_detection_helpers() -> None:
     assert (
         cli._detect_existing_position(
             RuntimeConfig(market_type="spot", managed_btc=1.0),
-            type("NoBtcAccount", (), {"get_account": lambda self: {"balances": [{"asset": "BTC", "free": "0", "locked": "0"}]}})(),
+            type(
+                "NoBtcAccount",
+                (),
+                {
+                    "get_account": lambda self: {
+                        "balances": [{"asset": "BTC", "free": "0", "locked": "0"}]
+                    }
+                },
+            )(),
             leverage=1.0,
         )
         is None
@@ -7153,12 +8589,24 @@ def test_command_fetch_success_path(tmp_path, monkeypatch) -> None:
     save_runtime(RuntimeConfig())
 
     class _FetchClient(_FakeClient):
-        def get_klines(self, symbol: str, interval: str, limit: int = 500, start_time=None, end_time=None):
+        def get_klines(
+            self,
+            symbol: str,
+            interval: str,
+            limit: int = 500,
+            start_time=None,
+            end_time=None,
+        ):
             return _simple_candles(limit)
 
     monkeypatch.setattr(cli, "_build_client", lambda _runtime: _FetchClient())
     out = tmp_path / "history.json"
-    assert cli.command_fetch(argparse.Namespace(symbol=None, interval=None, limit=10, output=str(out))) == 0
+    assert (
+        cli.command_fetch(
+            argparse.Namespace(symbol=None, interval=None, limit=10, output=str(out))
+        )
+        == 0
+    )
     assert out.exists()
     assert len(json.loads(out.read_text(encoding="utf-8"))) == 10
 
@@ -7172,7 +8620,14 @@ def test_command_fetch_batches_large_requests(tmp_path, monkeypatch) -> None:
             super().__init__()
             self.calls: list[tuple[int, int | None]] = []
 
-        def get_klines(self, symbol: str, interval: str, limit: int = 500, start_time=None, end_time=None):
+        def get_klines(
+            self,
+            symbol: str,
+            interval: str,
+            limit: int = 500,
+            start_time=None,
+            end_time=None,
+        ):
             self.calls.append((limit, end_time))
             latest_index = 1204 if end_time is None else end_time // 60_000
             first_index = max(0, latest_index - limit + 1)
@@ -7194,7 +8649,14 @@ def test_command_fetch_batches_large_requests(tmp_path, monkeypatch) -> None:
     client = _PagedFetchClient()
     monkeypatch.setattr(cli, "_build_client", lambda _runtime: client)
     out = tmp_path / "history.json"
-    assert cli.command_fetch(argparse.Namespace(symbol=None, interval=None, limit=1205, batch_size=500, output=str(out))) == 0
+    assert (
+        cli.command_fetch(
+            argparse.Namespace(
+                symbol=None, interval=None, limit=1205, batch_size=500, output=str(out)
+            )
+        )
+        == 0
+    )
     rows = json.loads(out.read_text(encoding="utf-8"))
     assert len(rows) == 1205
     assert [call[0] for call in client.calls] == [500, 500, 205]
@@ -7207,25 +8669,63 @@ def test_command_fetch_stops_on_empty_or_short_batches(tmp_path, monkeypatch) ->
     save_runtime(RuntimeConfig())
 
     class _EmptyFetchClient(_FakeClient):
-        def get_klines(self, symbol: str, interval: str, limit: int = 500, start_time=None, end_time=None):
+        def get_klines(
+            self,
+            symbol: str,
+            interval: str,
+            limit: int = 500,
+            start_time=None,
+            end_time=None,
+        ):
             return []
 
     monkeypatch.setattr(cli, "_build_client", lambda _runtime: _EmptyFetchClient())
     empty_out = tmp_path / "empty.json"
-    assert cli.command_fetch(argparse.Namespace(symbol=None, interval=None, limit=10, batch_size=5, output=str(empty_out))) == 0
+    assert (
+        cli.command_fetch(
+            argparse.Namespace(
+                symbol=None,
+                interval=None,
+                limit=10,
+                batch_size=5,
+                output=str(empty_out),
+            )
+        )
+        == 0
+    )
     assert json.loads(empty_out.read_text(encoding="utf-8")) == []
 
     class _ShortFetchClient(_FakeClient):
-        def get_klines(self, symbol: str, interval: str, limit: int = 500, start_time=None, end_time=None):
+        def get_klines(
+            self,
+            symbol: str,
+            interval: str,
+            limit: int = 500,
+            start_time=None,
+            end_time=None,
+        ):
             return _simple_candles(2)
 
     monkeypatch.setattr(cli, "_build_client", lambda _runtime: _ShortFetchClient())
     short_out = tmp_path / "short.json"
-    assert cli.command_fetch(argparse.Namespace(symbol=None, interval=None, limit=10, batch_size=5, output=str(short_out))) == 0
+    assert (
+        cli.command_fetch(
+            argparse.Namespace(
+                symbol=None,
+                interval=None,
+                limit=10,
+                batch_size=5,
+                output=str(short_out),
+            )
+        )
+        == 0
+    )
     assert len(json.loads(short_out.read_text(encoding="utf-8"))) == 2
 
 
-def test_command_fetch_stops_when_batch_adds_no_new_candles(tmp_path, monkeypatch) -> None:
+def test_command_fetch_stops_when_batch_adds_no_new_candles(
+    tmp_path, monkeypatch
+) -> None:
     monkeypatch.setenv("HOME", str(tmp_path))
     save_runtime(RuntimeConfig())
 
@@ -7234,7 +8734,14 @@ def test_command_fetch_stops_when_batch_adds_no_new_candles(tmp_path, monkeypatc
             super().__init__()
             self.calls = 0
 
-        def get_klines(self, symbol: str, interval: str, limit: int = 500, start_time=None, end_time=None):
+        def get_klines(
+            self,
+            symbol: str,
+            interval: str,
+            limit: int = 500,
+            start_time=None,
+            end_time=None,
+        ):
             self.calls += 1
             if self.calls > 2:
                 raise AssertionError("fetch did not stop after duplicate page")
@@ -7254,17 +8761,33 @@ def test_command_fetch_stops_when_batch_adds_no_new_candles(tmp_path, monkeypatc
     client = _DuplicateFetchClient()
     monkeypatch.setattr(cli, "_build_client", lambda _runtime: client)
     out = tmp_path / "duplicate.json"
-    assert cli.command_fetch(argparse.Namespace(symbol=None, interval=None, limit=12, batch_size=6, output=str(out))) == 0
+    assert (
+        cli.command_fetch(
+            argparse.Namespace(
+                symbol=None, interval=None, limit=12, batch_size=6, output=str(out)
+            )
+        )
+        == 0
+    )
     assert len(json.loads(out.read_text(encoding="utf-8"))) == 6
     assert client.calls == 2
 
 
-def test_command_fetch_exits_after_exact_limit_and_after_short_late_page(tmp_path, monkeypatch) -> None:
+def test_command_fetch_exits_after_exact_limit_and_after_short_late_page(
+    tmp_path, monkeypatch
+) -> None:
     monkeypatch.setenv("HOME", str(tmp_path))
     save_runtime(RuntimeConfig())
 
     class _ExactLimitClient(_FakeClient):
-        def get_klines(self, symbol: str, interval: str, limit: int = 500, start_time=None, end_time=None):
+        def get_klines(
+            self,
+            symbol: str,
+            interval: str,
+            limit: int = 500,
+            start_time=None,
+            end_time=None,
+        ):
             return [
                 Candle(
                     open_time=(50 + i) * 60_000,
@@ -7280,11 +8803,25 @@ def test_command_fetch_exits_after_exact_limit_and_after_short_late_page(tmp_pat
 
     exact_out = tmp_path / "exact.json"
     monkeypatch.setattr(cli, "_build_client", lambda _runtime: _ExactLimitClient())
-    assert cli.command_fetch(argparse.Namespace(symbol=None, interval=None, limit=6, batch_size=6, output=str(exact_out))) == 0
+    assert (
+        cli.command_fetch(
+            argparse.Namespace(
+                symbol=None, interval=None, limit=6, batch_size=6, output=str(exact_out)
+            )
+        )
+        == 0
+    )
     assert len(json.loads(exact_out.read_text(encoding="utf-8"))) == 6
 
     class _ShortLateClient(_FakeClient):
-        def get_klines(self, symbol: str, interval: str, limit: int = 500, start_time=None, end_time=None):
+        def get_klines(
+            self,
+            symbol: str,
+            interval: str,
+            limit: int = 500,
+            start_time=None,
+            end_time=None,
+        ):
             return [
                 Candle(
                     open_time=(80 + i) * 60_000,
@@ -7300,7 +8837,14 @@ def test_command_fetch_exits_after_exact_limit_and_after_short_late_page(tmp_pat
 
     short_out = tmp_path / "short-late.json"
     monkeypatch.setattr(cli, "_build_client", lambda _runtime: _ShortLateClient())
-    assert cli.command_fetch(argparse.Namespace(symbol=None, interval=None, limit=6, batch_size=5, output=str(short_out))) == 0
+    assert (
+        cli.command_fetch(
+            argparse.Namespace(
+                symbol=None, interval=None, limit=6, batch_size=5, output=str(short_out)
+            )
+        )
+        == 0
+    )
     assert len(json.loads(short_out.read_text(encoding="utf-8"))) == 2
 
 
@@ -7311,18 +8855,21 @@ def test_command_train_empty_rows_and_walk_forward_path(tmp_path, monkeypatch) -
 
     empty = tmp_path / "empty.json"
     empty.write_text("[]", encoding="utf-8")
-    assert cli.command_train(
-        argparse.Namespace(
-            input=str(empty),
-            output=str(tmp_path / "model.json"),
-            epochs=2,
-            walk_forward=False,
-            walk_forward_train=10,
-            walk_forward_test=5,
-            walk_forward_step=1,
-            calibrate_threshold=False,
+    assert (
+        cli.command_train(
+            argparse.Namespace(
+                input=str(empty),
+                output=str(tmp_path / "model.json"),
+                epochs=2,
+                walk_forward=False,
+                walk_forward_train=10,
+                walk_forward_test=5,
+                walk_forward_step=1,
+                calibrate_threshold=False,
+            )
         )
-    ) == 2
+        == 2
+    )
 
     candles = []
     for i in range(220):
@@ -7373,7 +8920,9 @@ def test_command_train_empty_rows_and_walk_forward_path(tmp_path, monkeypatch) -
     assert wf_calls == [1]
 
 
-def test_command_train_walk_forward_errors_do_not_abort_training(tmp_path, monkeypatch) -> None:
+def test_command_train_walk_forward_errors_do_not_abort_training(
+    tmp_path, monkeypatch
+) -> None:
     monkeypatch.setenv("HOME", str(tmp_path))
     save_runtime(RuntimeConfig())
     save_strategy(StrategyConfig())
@@ -7393,7 +8942,11 @@ def test_command_train_walk_forward_errors_do_not_abort_training(tmp_path, monke
     history = tmp_path / "history.json"
     history.write_text(json.dumps(candles), encoding="utf-8")
 
-    monkeypatch.setattr(cli, "walk_forward_report", lambda *_args, **_kwargs: (_ for _ in ()).throw(ValueError("unavailable")))
+    monkeypatch.setattr(
+        cli,
+        "walk_forward_report",
+        lambda *_args, **_kwargs: (_ for _ in ()).throw(ValueError("unavailable")),
+    )
 
     assert (
         cli.command_train(
@@ -7412,7 +8965,9 @@ def test_command_train_walk_forward_errors_do_not_abort_training(tmp_path, monke
     )
 
 
-def test_command_tune_uses_default_leverage_when_no_api_keys(tmp_path, monkeypatch, capsys) -> None:
+def test_command_tune_uses_default_leverage_when_no_api_keys(
+    tmp_path, monkeypatch, capsys
+) -> None:
     monkeypatch.setenv("HOME", str(tmp_path))
     save_runtime(RuntimeConfig(market_type="futures", api_key="", api_secret=""))
     save_strategy(StrategyConfig(training_epochs=80))
@@ -7437,7 +8992,11 @@ def test_command_tune_uses_default_leverage_when_no_api_keys(tmp_path, monkeypat
             return 0.6
 
     monkeypatch.setattr(cli, "train", lambda *_a, **_k: _Model())
-    monkeypatch.setattr(cli, "run_backtest", lambda *a, **k: SimpleNamespace(realized_pnl=0.0, total_fees=0.0))
+    monkeypatch.setattr(
+        cli,
+        "run_backtest",
+        lambda *a, **k: SimpleNamespace(realized_pnl=0.0, total_fees=0.0),
+    )
     monkeypatch.setattr(cli.time, "sleep", lambda *_args: None)
 
     args = argparse.Namespace(
@@ -7461,12 +9020,28 @@ def test_command_tune_uses_default_leverage_when_no_api_keys(tmp_path, monkeypat
 
 
 def test_tune_score_penalizes_drawdown_stops() -> None:
-    bad = SimpleNamespace(realized_pnl=200.0, total_fees=1.0, max_drawdown=0.5, stopped_by_drawdown=True, closed_trades=1)
-    good = SimpleNamespace(realized_pnl=120.0, total_fees=1.0, max_drawdown=0.01, stopped_by_drawdown=False, closed_trades=2)
-    assert cli._tune_score(bad, starting_cash=1000.0) < cli._tune_score(good, starting_cash=1000.0)
+    bad = SimpleNamespace(
+        realized_pnl=200.0,
+        total_fees=1.0,
+        max_drawdown=0.5,
+        stopped_by_drawdown=True,
+        closed_trades=1,
+    )
+    good = SimpleNamespace(
+        realized_pnl=120.0,
+        total_fees=1.0,
+        max_drawdown=0.01,
+        stopped_by_drawdown=False,
+        closed_trades=2,
+    )
+    assert cli._tune_score(bad, starting_cash=1000.0) < cli._tune_score(
+        good, starting_cash=1000.0
+    )
 
 
-def test_command_tune_falls_back_to_drawdown_fallback(tmp_path, monkeypatch, capsys) -> None:
+def test_command_tune_falls_back_to_drawdown_fallback(
+    tmp_path, monkeypatch, capsys
+) -> None:
     monkeypatch.setenv("HOME", str(tmp_path))
     save_runtime(RuntimeConfig())
     save_strategy(StrategyConfig(training_epochs=80))
@@ -7495,7 +9070,13 @@ def test_command_tune_falls_back_to_drawdown_fallback(tmp_path, monkeypatch, cap
 
     def _mock_run_backtest(*_args, **_kwargs):
         calls.append(1)
-        return SimpleNamespace(realized_pnl=float(len(calls)), total_fees=0.0, max_drawdown=0.9, stopped_by_drawdown=True, closed_trades=1)
+        return SimpleNamespace(
+            realized_pnl=float(len(calls)),
+            total_fees=0.0,
+            max_drawdown=0.9,
+            stopped_by_drawdown=True,
+            closed_trades=1,
+        )
 
     monkeypatch.setattr(cli, "train", lambda *_a, **_k: _Model())
     monkeypatch.setattr(cli, "run_backtest", _mock_run_backtest)
@@ -7521,9 +9102,15 @@ def test_command_tune_falls_back_to_drawdown_fallback(tmp_path, monkeypatch, cap
     assert "all tune candidates hit drawdown limit" in capsys.readouterr().out
 
 
-def test_command_live_uses_generated_model_when_saved_model_is_invalid(tmp_path, monkeypatch) -> None:
+def test_command_live_uses_generated_model_when_saved_model_is_invalid(
+    tmp_path, monkeypatch
+) -> None:
     monkeypatch.setenv("HOME", str(tmp_path))
-    save_runtime(RuntimeConfig(testnet=True, dry_run=True, market_type="spot", managed_usdc=100.0))
+    save_runtime(
+        RuntimeConfig(
+            testnet=True, dry_run=True, market_type="spot", managed_usdc=100.0
+        )
+    )
     save_strategy(StrategyConfig(risk_per_trade=0.002, max_position_pct=0.2))
 
     model_file = tmp_path / "data" / "model.json"
@@ -7531,9 +9118,24 @@ def test_command_live_uses_generated_model_when_saved_model_is_invalid(tmp_path,
     model_file.write_text("{invalid-json}", encoding="utf-8")
 
     class _FlowClient(_SignedCommissionClientEvidence):
-        def get_klines(self, symbol: str, interval: str, limit: int = 500, start_time=None, end_time=None):
+        def get_klines(
+            self,
+            symbol: str,
+            interval: str,
+            limit: int = 500,
+            start_time=None,
+            end_time=None,
+        ):
             return [
-                Candle(open_time=i * 60_000, open=100.0 + i, high=101.0 + i, low=99.0 + i, close=100.0 + i, volume=1.0, close_time=(i + 1) * 60_000)
+                Candle(
+                    open_time=i * 60_000,
+                    open=100.0 + i,
+                    high=101.0 + i,
+                    low=99.0 + i,
+                    close=100.0 + i,
+                    volume=1.0,
+                    close_time=(i + 1) * 60_000,
+                )
                 for i in range(limit)
             ]
 
@@ -7548,9 +9150,23 @@ def test_command_live_uses_generated_model_when_saved_model_is_invalid(tmp_path,
             )
 
         def normalize_quantity(self, symbol: str, quantity: float):
-            return (max(0.0001, round(quantity, 4)), self.get_symbol_constraints(symbol))
+            return (
+                max(0.0001, round(quantity, 4)),
+                self.get_symbol_constraints(symbol),
+            )
 
-        def place_order(self, symbol: str, side: str, quantity: float, dry_run: bool, leverage: float):
+        def place_order(
+            self,
+            symbol: str,
+            side: str,
+            quantity: float,
+            dry_run: bool,
+            leverage: float,
+            *,
+            before_dispatch=None,
+        ):
+            if before_dispatch is not None:
+                before_dispatch()
             return {
                 "symbol": symbol,
                 "side": side,
@@ -7570,13 +9186,24 @@ def test_command_live_uses_generated_model_when_saved_model_is_invalid(tmp_path,
     assert cli.command_live(argparse.Namespace(steps=1, sleep=5, paper=False)) == 0
 
 
-def test_command_live_skips_entry_when_cash_is_insufficient_after_fees(tmp_path, monkeypatch) -> None:
+def test_command_live_skips_entry_when_cash_is_insufficient_after_fees(
+    tmp_path, monkeypatch
+) -> None:
     monkeypatch.setenv("HOME", str(tmp_path))
     save_runtime(RuntimeConfig(testnet=True, dry_run=True, market_type="spot"))
-    save_strategy(StrategyConfig(risk_per_trade=1.0, max_position_pct=1.0, taker_fee_bps=20000.0))
+    save_strategy(
+        StrategyConfig(risk_per_trade=1.0, max_position_pct=1.0, taker_fee_bps=20000.0)
+    )
 
     class _FlowClient(_SignedCommissionClientEvidence):
-        def get_klines(self, symbol: str, interval: str, limit: int = 500, start_time=None, end_time=None):
+        def get_klines(
+            self,
+            symbol: str,
+            interval: str,
+            limit: int = 500,
+            start_time=None,
+            end_time=None,
+        ):
             return [
                 Candle(
                     open_time=0,
@@ -7613,14 +9240,23 @@ def test_command_live_skips_entry_when_cash_is_insufficient_after_fees(tmp_path,
     assert cli.command_live(argparse.Namespace(steps=1, sleep=5, paper=False)) == 0
 
 
-def test_command_live_persists_model_incompatibility_in_authenticated_live(tmp_path, monkeypatch, capsys) -> None:
+def test_command_live_persists_model_incompatibility_in_authenticated_live(
+    tmp_path, monkeypatch, capsys
+) -> None:
     captured: list[dict[str, object]] = []
 
     class _FlowClient(_SignedCommissionClientEvidence):
         def get_account(self):
             return _exchange_account()
 
-        def get_klines(self, symbol: str, interval: str, limit: int = 500, start_time=None, end_time=None):
+        def get_klines(
+            self,
+            symbol: str,
+            interval: str,
+            limit: int = 500,
+            start_time=None,
+            end_time=None,
+        ):
             return _simple_candles(limit)
 
         def get_symbol_constraints(self, symbol: str):
@@ -7664,7 +9300,9 @@ def test_command_live_persists_model_incompatibility_in_authenticated_live(tmp_p
     model_file = tmp_path / "model.json"
     model_file.write_text("{}", encoding="utf-8")
     monkeypatch.setattr(cli, "_build_client", lambda _runtime: _FlowClient())
-    monkeypatch.setattr(cli, "_load_runtime_model", lambda *_a, **_k: _BadRuntimeModel())
+    monkeypatch.setattr(
+        cli, "_load_runtime_model", lambda *_a, **_k: _BadRuntimeModel()
+    )
     monkeypatch.setattr(cli, "_persist_run_artifact", fake_persist)
     monkeypatch.setattr(cli.time, "sleep", lambda *_args: None)
 
@@ -7689,9 +9327,18 @@ def test_command_live_persists_model_incompatibility_in_authenticated_live(tmp_p
     assert captured[0]["events"][-1]["status"] == "model_incompatible"
 
 
-def test_command_live_paper_retrains_incompatible_model(tmp_path, monkeypatch, capsys) -> None:
+def test_command_live_paper_retrains_incompatible_model(
+    tmp_path, monkeypatch, capsys
+) -> None:
     class _FlowClient(_SignedCommissionClientEvidence):
-        def get_klines(self, symbol: str, interval: str, limit: int = 500, start_time=None, end_time=None):
+        def get_klines(
+            self,
+            symbol: str,
+            interval: str,
+            limit: int = 500,
+            start_time=None,
+            end_time=None,
+        ):
             return _simple_candles(limit)
 
         def get_symbol_constraints(self, symbol: str):
@@ -7728,7 +9375,9 @@ def test_command_live_paper_retrains_incompatible_model(tmp_path, monkeypatch, c
     model_file = tmp_path / "model.json"
     model_file.write_text("{}", encoding="utf-8")
     monkeypatch.setattr(cli, "_build_client", lambda _runtime: _FlowClient())
-    monkeypatch.setattr(cli, "_load_runtime_model", lambda *_a, **_k: _BadRuntimeModel())
+    monkeypatch.setattr(
+        cli, "_load_runtime_model", lambda *_a, **_k: _BadRuntimeModel()
+    )
     monkeypatch.setattr(cli, "train", fake_train)
     monkeypatch.setattr(cli.time, "sleep", lambda *_args: None)
 
@@ -7752,17 +9401,37 @@ def test_command_live_paper_retrains_incompatible_model(tmp_path, monkeypatch, c
     assert "paper model incompatible; retraining" in capsys.readouterr().err
 
 
-def test_command_live_reports_no_training_rows_when_model_cannot_be_built(tmp_path, monkeypatch, capsys) -> None:
+def test_command_live_reports_no_training_rows_when_model_cannot_be_built(
+    tmp_path, monkeypatch, capsys
+) -> None:
     class _FlowClient(_SignedCommissionClientEvidence):
-        def get_klines(self, symbol: str, interval: str, limit: int = 500, start_time=None, end_time=None):
+        def get_klines(
+            self,
+            symbol: str,
+            interval: str,
+            limit: int = 500,
+            start_time=None,
+            end_time=None,
+        ):
             return _simple_candles(limit)
 
         def get_symbol_constraints(self, symbol: str):
-            return SimpleNamespace(symbol=symbol, min_qty=0.0001, max_qty=100.0, step_size=0.0001, min_notional=1.0, max_notional=0.0)
+            return SimpleNamespace(
+                symbol=symbol,
+                min_qty=0.0001,
+                max_qty=100.0,
+                step_size=0.0001,
+                min_notional=1.0,
+                max_notional=0.0,
+            )
 
     row = ModelRow(timestamp=60_000, close=100.0, features=(0.1,), label=0)
     monkeypatch.setenv("HOME", str(tmp_path))
-    save_runtime(RuntimeConfig(testnet=True, dry_run=True, market_type="spot", managed_usdc=1000.0))
+    save_runtime(
+        RuntimeConfig(
+            testnet=True, dry_run=True, market_type="spot", managed_usdc=1000.0
+        )
+    )
     save_strategy(StrategyConfig())
     monkeypatch.setattr(cli, "_build_client", lambda _runtime: _FlowClient())
     monkeypatch.setattr(cli, "_live_rows_for_model", lambda *_args, **_kwargs: [row])
@@ -7771,16 +9440,35 @@ def test_command_live_reports_no_training_rows_when_model_cannot_be_built(tmp_pa
     monkeypatch.setattr(cli.time, "sleep", lambda *_args: None)
 
     assert cli.command_live(_live_args(tmp_path, steps=1)) == 0
-    assert "not enough labeled historical data to train a live model" in capsys.readouterr().out
+    assert (
+        "not enough labeled historical data to train a live model"
+        in capsys.readouterr().out
+    )
 
 
-def test_command_live_paper_incompatible_model_without_training_rows_halts(tmp_path, monkeypatch, capsys) -> None:
+def test_command_live_paper_incompatible_model_without_training_rows_halts(
+    tmp_path, monkeypatch, capsys
+) -> None:
     class _FlowClient(_SignedCommissionClientEvidence):
-        def get_klines(self, symbol: str, interval: str, limit: int = 500, start_time=None, end_time=None):
+        def get_klines(
+            self,
+            symbol: str,
+            interval: str,
+            limit: int = 500,
+            start_time=None,
+            end_time=None,
+        ):
             return _simple_candles(limit)
 
         def get_symbol_constraints(self, symbol: str):
-            return SimpleNamespace(symbol=symbol, min_qty=0.0001, max_qty=100.0, step_size=0.0001, min_notional=1.0, max_notional=0.0)
+            return SimpleNamespace(
+                symbol=symbol,
+                min_qty=0.0001,
+                max_qty=100.0,
+                step_size=0.0001,
+                min_notional=1.0,
+                max_notional=0.0,
+            )
 
     class _BadRuntimeModel(_SignedFeeModelEvidence):
         def predict_proba(self, _features: tuple[float, ...]) -> float:
@@ -7788,12 +9476,18 @@ def test_command_live_paper_incompatible_model_without_training_rows_halts(tmp_p
 
     row = ModelRow(timestamp=60_000, close=100.0, features=(0.1,), label=0)
     monkeypatch.setenv("HOME", str(tmp_path))
-    save_runtime(RuntimeConfig(testnet=True, dry_run=True, market_type="spot", managed_usdc=1000.0))
+    save_runtime(
+        RuntimeConfig(
+            testnet=True, dry_run=True, market_type="spot", managed_usdc=1000.0
+        )
+    )
     save_strategy(StrategyConfig())
     model_file = tmp_path / "model.json"
     model_file.write_text("{}", encoding="utf-8")
     monkeypatch.setattr(cli, "_build_client", lambda _runtime: _FlowClient())
-    monkeypatch.setattr(cli, "_load_runtime_model", lambda *_args, **_kwargs: _BadRuntimeModel())
+    monkeypatch.setattr(
+        cli, "_load_runtime_model", lambda *_args, **_kwargs: _BadRuntimeModel()
+    )
     monkeypatch.setattr(cli, "_live_rows_for_model", lambda *_args, **_kwargs: [row])
     monkeypatch.setattr(cli, "_readiness_model_rows", lambda *_args, **_kwargs: [])
     monkeypatch.setattr(cli.time, "sleep", lambda *_args: None)
@@ -7846,7 +9540,10 @@ def test_command_live_persists_entry_order_error(tmp_path, monkeypatch, capsys) 
             client_order_id: str | None = None,
             expected_scope=None,
             reduce_only=False,
+            before_dispatch=None,
         ):
+            if before_dispatch is not None:
+                before_dispatch()
             assert expected_scope == self.execution_scope()
             raise BinanceAPIError("Filter failure: NOTIONAL")
 
@@ -7947,7 +9644,10 @@ def test_command_live_persists_close_order_error(tmp_path, monkeypatch, capsys) 
             client_order_id: str | None = None,
             expected_scope=None,
             reduce_only=False,
+            before_dispatch=None,
         ):
+            if before_dispatch is not None:
+                before_dispatch()
             assert expected_scope == self.execution_scope()
             self.order_calls += 1
             if self.order_calls == 2:
@@ -7991,6 +9691,8 @@ def test_command_live_persists_close_order_error(tmp_path, monkeypatch, capsys) 
     )
     monkeypatch.setattr(cli, "_persist_run_artifact", fake_persist)
     monkeypatch.setattr(cli.time, "sleep", lambda *_args: None)
+
+    _enroll_signed_cli_fixture(monkeypatch, _RejectCloseClient())
 
     assert (
         cli.command_live(
@@ -8076,7 +9778,10 @@ def test_command_live_persists_emergency_close_order_error(
             client_order_id: str | None = None,
             expected_scope=None,
             reduce_only=False,
+            before_dispatch=None,
         ):
+            if before_dispatch is not None:
+                before_dispatch()
             assert expected_scope == self.execution_scope()
             self.order_calls += 1
             if self.order_calls == 2:
@@ -8126,6 +9831,8 @@ def test_command_live_persists_emergency_close_order_error(
     )
     monkeypatch.setattr(cli, "_persist_run_artifact", fake_persist)
     monkeypatch.setattr(cli.time, "sleep", lambda *_args: None)
+
+    _enroll_signed_cli_fixture(monkeypatch, _RejectEmergencyCloseClient())
 
     assert (
         cli.command_live(
@@ -8192,7 +9899,10 @@ def test_command_live_records_malformed_entry_fill_response(
             client_order_id: str | None = None,
             expected_scope=None,
             reduce_only=False,
+            before_dispatch=None,
         ):
+            if before_dispatch is not None:
+                before_dispatch()
             assert expected_scope == self.execution_scope()
             return {
                 "symbol": symbol,
@@ -8233,6 +9943,8 @@ def test_command_live_records_malformed_entry_fill_response(
     )
     monkeypatch.setattr(cli.time, "sleep", lambda *_args: None)
 
+    _enroll_signed_cli_fixture(monkeypatch, _EntryClient())
+
     assert (
         cli.command_live(
             argparse.Namespace(
@@ -8261,22 +9973,53 @@ def test_command_live_records_malformed_entry_fill_response(
     )
 
 
-
-def test_command_live_records_malformed_regular_close_fill_response(tmp_path, monkeypatch, capsys) -> None:
+def test_command_live_records_malformed_regular_close_fill_response(
+    tmp_path, monkeypatch, capsys
+) -> None:
     captured: list[dict[str, object]] = []
 
     class _CloseClient(_FakeClient):
-        def get_klines(self, symbol: str, interval: str, limit: int = 500, start_time=None, end_time=None):
+        def get_klines(
+            self,
+            symbol: str,
+            interval: str,
+            limit: int = 500,
+            start_time=None,
+            end_time=None,
+        ):
             return _simple_candles(limit)
 
         def get_symbol_constraints(self, symbol: str):
-            return SimpleNamespace(symbol=symbol, min_qty=0.0001, max_qty=100.0, step_size=0.0001, min_notional=1.0, max_notional=0.0)
+            return SimpleNamespace(
+                symbol=symbol,
+                min_qty=0.0001,
+                max_qty=100.0,
+                step_size=0.0001,
+                min_notional=1.0,
+                max_notional=0.0,
+            )
 
         def normalize_quantity(self, symbol: str, quantity: float):
             return max(0.0001, round(quantity, 4)), self.get_symbol_constraints(symbol)
 
-        def place_order(self, symbol: str, side: str, size: float, *, dry_run: bool, leverage: float = 1.0):
-            return {"symbol": symbol, "side": side, "executedQty": str(size), "avgPrice": "100"}
+        def place_order(
+            self,
+            symbol: str,
+            side: str,
+            size: float,
+            *,
+            dry_run: bool,
+            leverage: float = 1.0,
+            before_dispatch=None,
+        ):
+            if before_dispatch is not None:
+                before_dispatch()
+            return {
+                "symbol": symbol,
+                "side": side,
+                "executedQty": str(size),
+                "avgPrice": "100",
+            }
 
     class _OpenThenFlatModel(_SignedFeeModelEvidence):
         def __init__(self) -> None:
@@ -8293,20 +10036,44 @@ def test_command_live_records_malformed_regular_close_fill_response(tmp_path, mo
         return (1.0, 100.0, 100.0) if fill_calls["count"] == 1 else (0.0, 0.0, 0.0)
 
     monkeypatch.setenv("HOME", str(tmp_path))
-    save_runtime(RuntimeConfig(testnet=True, dry_run=True, market_type="spot", managed_usdc=1000.0))
-    save_strategy(StrategyConfig(risk_per_trade=0.01, max_position_pct=0.2, cooldown_minutes=0))
+    save_runtime(
+        RuntimeConfig(
+            testnet=True, dry_run=True, market_type="spot", managed_usdc=1000.0
+        )
+    )
+    save_strategy(
+        StrategyConfig(risk_per_trade=0.01, max_position_pct=0.2, cooldown_minutes=0)
+    )
     monkeypatch.setattr(cli, "_build_client", lambda _runtime: _CloseClient())
     monkeypatch.setattr(cli, "train", lambda *_args, **_kwargs: _OpenThenFlatModel())
     monkeypatch.setattr(cli, "_order_fill_details", fake_fill)
-    monkeypatch.setattr(cli, "_persist_run_artifact", lambda _kind, _output_dir, payload: captured.append(payload) or tmp_path / "live.json")
+    monkeypatch.setattr(
+        cli,
+        "_persist_run_artifact",
+        lambda _kind, _output_dir, payload: (
+            captured.append(payload) or tmp_path / "live.json"
+        ),
+    )
     monkeypatch.setattr(cli.time, "sleep", lambda *_args: None)
 
-    assert cli.command_live(_live_args(tmp_path, steps=2, paper=False, model=str(tmp_path / "missing.json"))) == 2
-    assert "Close order response did not include executed quantity" in capsys.readouterr().err
+    assert (
+        cli.command_live(
+            _live_args(
+                tmp_path, steps=2, paper=False, model=str(tmp_path / "missing.json")
+            )
+        )
+        == 2
+    )
+    assert (
+        "Close order response did not include executed quantity"
+        in capsys.readouterr().err
+    )
     assert captured[0]["result"]["status"] == "order_error"
 
 
-def test_command_live_records_malformed_emergency_close_fill_response(tmp_path, monkeypatch, capsys) -> None:
+def test_command_live_records_malformed_emergency_close_fill_response(
+    tmp_path, monkeypatch, capsys
+) -> None:
     captured: list[dict[str, object]] = []
 
     class _EmergencyClient(_FakeClient):
@@ -8314,7 +10081,14 @@ def test_command_live_records_malformed_emergency_close_fill_response(tmp_path, 
             super().__init__()
             self.market_calls = 0
 
-        def get_klines(self, symbol: str, interval: str, limit: int = 500, start_time=None, end_time=None):
+        def get_klines(
+            self,
+            symbol: str,
+            interval: str,
+            limit: int = 500,
+            start_time=None,
+            end_time=None,
+        ):
             close = 100.0 if self.market_calls == 0 else 10.0
             self.market_calls += 1
             return [
@@ -8331,13 +10105,36 @@ def test_command_live_records_malformed_emergency_close_fill_response(tmp_path, 
             ]
 
         def get_symbol_constraints(self, symbol: str):
-            return SimpleNamespace(symbol=symbol, min_qty=0.0001, max_qty=100.0, step_size=0.0001, min_notional=1.0, max_notional=0.0)
+            return SimpleNamespace(
+                symbol=symbol,
+                min_qty=0.0001,
+                max_qty=100.0,
+                step_size=0.0001,
+                min_notional=1.0,
+                max_notional=0.0,
+            )
 
         def normalize_quantity(self, symbol: str, quantity: float):
             return max(0.0001, round(quantity, 4)), self.get_symbol_constraints(symbol)
 
-        def place_order(self, symbol: str, side: str, size: float, *, dry_run: bool, leverage: float = 1.0):
-            return {"symbol": symbol, "side": side, "executedQty": str(size), "avgPrice": "100"}
+        def place_order(
+            self,
+            symbol: str,
+            side: str,
+            size: float,
+            *,
+            dry_run: bool,
+            leverage: float = 1.0,
+            before_dispatch=None,
+        ):
+            if before_dispatch is not None:
+                before_dispatch()
+            return {
+                "symbol": symbol,
+                "side": side,
+                "executedQty": str(size),
+                "avgPrice": "100",
+            }
 
     class _AlwaysLongModel(_SignedFeeModelEvidence):
         def predict_proba(self, _features: tuple[float, ...]) -> float:
@@ -8350,7 +10147,11 @@ def test_command_live_records_malformed_emergency_close_fill_response(tmp_path, 
         return (1.0, 100.0, 100.0) if fill_calls["count"] == 1 else (0.0, 0.0, 0.0)
 
     monkeypatch.setenv("HOME", str(tmp_path))
-    save_runtime(RuntimeConfig(testnet=True, dry_run=True, market_type="spot", managed_usdc=1000.0))
+    save_runtime(
+        RuntimeConfig(
+            testnet=True, dry_run=True, market_type="spot", managed_usdc=1000.0
+        )
+    )
     save_strategy(
         StrategyConfig(
             risk_per_trade=0.5,
@@ -8364,11 +10165,27 @@ def test_command_live_records_malformed_emergency_close_fill_response(tmp_path, 
     monkeypatch.setattr(cli, "_build_client", lambda _runtime: _EmergencyClient())
     monkeypatch.setattr(cli, "train", lambda *_args, **_kwargs: _AlwaysLongModel())
     monkeypatch.setattr(cli, "_order_fill_details", fake_fill)
-    monkeypatch.setattr(cli, "_persist_run_artifact", lambda _kind, _output_dir, payload: captured.append(payload) or tmp_path / "live.json")
+    monkeypatch.setattr(
+        cli,
+        "_persist_run_artifact",
+        lambda _kind, _output_dir, payload: (
+            captured.append(payload) or tmp_path / "live.json"
+        ),
+    )
     monkeypatch.setattr(cli.time, "sleep", lambda *_args: None)
 
-    assert cli.command_live(_live_args(tmp_path, steps=2, paper=False, model=str(tmp_path / "missing.json"))) == 2
-    assert "Emergency close order response did not include executed quantity" in capsys.readouterr().err
+    assert (
+        cli.command_live(
+            _live_args(
+                tmp_path, steps=2, paper=False, model=str(tmp_path / "missing.json")
+            )
+        )
+        == 2
+    )
+    assert (
+        "Emergency close order response did not include executed quantity"
+        in capsys.readouterr().err
+    )
     assert captured[0]["result"]["status"] == "order_error"
 
 
@@ -8380,19 +10197,49 @@ def test_command_live_handles_partial_regular_close(tmp_path, monkeypatch) -> No
             super().__init__()
             self.order_calls = 0
 
-        def get_klines(self, symbol: str, interval: str, limit: int = 500, start_time=None, end_time=None):
+        def get_klines(
+            self,
+            symbol: str,
+            interval: str,
+            limit: int = 500,
+            start_time=None,
+            end_time=None,
+        ):
             return _simple_candles(limit)
 
         def get_symbol_constraints(self, symbol: str):
-            return SimpleNamespace(symbol=symbol, min_qty=0.0001, max_qty=100.0, step_size=0.0001, min_notional=1.0, max_notional=0.0)
+            return SimpleNamespace(
+                symbol=symbol,
+                min_qty=0.0001,
+                max_qty=100.0,
+                step_size=0.0001,
+                min_notional=1.0,
+                max_notional=0.0,
+            )
 
         def normalize_quantity(self, symbol: str, quantity: float):
             return max(0.0001, round(quantity, 4)), self.get_symbol_constraints(symbol)
 
-        def place_order(self, symbol: str, side: str, size: float, *, dry_run: bool, leverage: float = 1.0):
+        def place_order(
+            self,
+            symbol: str,
+            side: str,
+            size: float,
+            *,
+            dry_run: bool,
+            leverage: float = 1.0,
+            before_dispatch=None,
+        ):
+            if before_dispatch is not None:
+                before_dispatch()
             self.order_calls += 1
             executed = size if self.order_calls == 1 else size / 2.0
-            return {"symbol": symbol, "side": side, "executedQty": str(executed), "avgPrice": "100"}
+            return {
+                "symbol": symbol,
+                "side": side,
+                "executedQty": str(executed),
+                "avgPrice": "100",
+            }
 
     class _OpenThenFlatModel(_SignedFeeModelEvidence):
         def __init__(self) -> None:
@@ -8403,30 +10250,47 @@ def test_command_live_handles_partial_regular_close(tmp_path, monkeypatch) -> No
             return 0.99 if self.calls == 1 else 0.01
 
     monkeypatch.setenv("HOME", str(tmp_path))
-    save_runtime(RuntimeConfig(testnet=True, dry_run=True, market_type="spot", managed_usdc=1000.0))
-    save_strategy(StrategyConfig(risk_per_trade=0.01, max_position_pct=0.2, cooldown_minutes=0))
+    save_runtime(
+        RuntimeConfig(
+            testnet=True, dry_run=True, market_type="spot", managed_usdc=1000.0
+        )
+    )
+    save_strategy(
+        StrategyConfig(risk_per_trade=0.01, max_position_pct=0.2, cooldown_minutes=0)
+    )
     monkeypatch.setattr(cli, "_build_client", lambda _runtime: _PartialCloseClient())
     monkeypatch.setattr(cli, "train", lambda *_a, **_k: _OpenThenFlatModel())
     monkeypatch.setattr(cli, "_build_order_notional", lambda *_a, **_k: (100.0, 1.0))
     monkeypatch.setattr(cli, "_record_model_telemetry", lambda *_a, **_k: None)
-    monkeypatch.setattr(cli, "_persist_run_artifact", lambda _kind, _output_dir, payload: captured.append(payload) or tmp_path / "live.json")
+    monkeypatch.setattr(
+        cli,
+        "_persist_run_artifact",
+        lambda _kind, _output_dir, payload: (
+            captured.append(payload) or tmp_path / "live.json"
+        ),
+    )
     monkeypatch.setattr(cli.time, "sleep", lambda *_args: None)
 
-    assert cli.command_live(
-        argparse.Namespace(
-            steps=2,
-            sleep=0,
-            paper=False,
-            live=False,
-            model=str(tmp_path / "missing.json"),
-            leverage=None,
-            retrain_interval=0,
-            retrain_window=300,
-            retrain_min_rows=240,
-            external_signals=None,
+    assert (
+        cli.command_live(
+            argparse.Namespace(
+                steps=2,
+                sleep=0,
+                paper=False,
+                live=False,
+                model=str(tmp_path / "missing.json"),
+                leverage=None,
+                retrain_interval=0,
+                retrain_window=300,
+                retrain_min_rows=240,
+                external_signals=None,
+            )
         )
-    ) == 0
-    close_events = [event for event in captured[0]["events"] if event.get("status") == "close"]
+        == 0
+    )
+    close_events = [
+        event for event in captured[0]["events"] if event.get("status") == "close"
+    ]
     assert close_events
     assert close_events[0]["qty_closed"] == 0.5
 
@@ -8440,7 +10304,14 @@ def test_command_live_handles_partial_emergency_close(tmp_path, monkeypatch) -> 
             self.market_calls = 0
             self.order_calls = 0
 
-        def get_klines(self, symbol: str, interval: str, limit: int = 500, start_time=None, end_time=None):
+        def get_klines(
+            self,
+            symbol: str,
+            interval: str,
+            limit: int = 500,
+            start_time=None,
+            end_time=None,
+        ):
             close = 100.0 if self.market_calls == 0 else 10.0
             self.market_calls += 1
             return [
@@ -8457,22 +10328,49 @@ def test_command_live_handles_partial_emergency_close(tmp_path, monkeypatch) -> 
             ]
 
         def get_symbol_constraints(self, symbol: str):
-            return SimpleNamespace(symbol=symbol, min_qty=0.0001, max_qty=100.0, step_size=0.0001, min_notional=1.0, max_notional=0.0)
+            return SimpleNamespace(
+                symbol=symbol,
+                min_qty=0.0001,
+                max_qty=100.0,
+                step_size=0.0001,
+                min_notional=1.0,
+                max_notional=0.0,
+            )
 
         def normalize_quantity(self, symbol: str, quantity: float):
             return max(0.0001, round(quantity, 4)), self.get_symbol_constraints(symbol)
 
-        def place_order(self, symbol: str, side: str, size: float, *, dry_run: bool, leverage: float = 1.0):
+        def place_order(
+            self,
+            symbol: str,
+            side: str,
+            size: float,
+            *,
+            dry_run: bool,
+            leverage: float = 1.0,
+            before_dispatch=None,
+        ):
+            if before_dispatch is not None:
+                before_dispatch()
             self.order_calls += 1
             executed = size if self.order_calls == 1 else size / 2.0
-            return {"symbol": symbol, "side": side, "executedQty": str(executed), "avgPrice": "100"}
+            return {
+                "symbol": symbol,
+                "side": side,
+                "executedQty": str(executed),
+                "avgPrice": "100",
+            }
 
     class _AlwaysLongModel(_SignedFeeModelEvidence):
         def predict_proba(self, _features: tuple[float, ...]) -> float:
             return 0.99
 
     monkeypatch.setenv("HOME", str(tmp_path))
-    save_runtime(RuntimeConfig(testnet=True, dry_run=True, market_type="spot", managed_usdc=1000.0))
+    save_runtime(
+        RuntimeConfig(
+            testnet=True, dry_run=True, market_type="spot", managed_usdc=1000.0
+        )
+    )
     save_strategy(
         StrategyConfig(
             risk_per_trade=0.01,
@@ -8483,37 +10381,61 @@ def test_command_live_handles_partial_emergency_close(tmp_path, monkeypatch) -> 
             max_regime_unpredictability=1.0,
         )
     )
-    monkeypatch.setattr(cli, "_build_client", lambda _runtime: _PartialEmergencyClient())
+    monkeypatch.setattr(
+        cli, "_build_client", lambda _runtime: _PartialEmergencyClient()
+    )
     monkeypatch.setattr(cli, "train", lambda *_a, **_k: _AlwaysLongModel())
     monkeypatch.setattr(cli, "_build_order_notional", lambda *_a, **_k: (100.0, 1.0))
     monkeypatch.setattr(cli, "_record_model_telemetry", lambda *_a, **_k: None)
-    monkeypatch.setattr(cli, "_persist_run_artifact", lambda _kind, _output_dir, payload: captured.append(payload) or tmp_path / "live.json")
+    monkeypatch.setattr(
+        cli,
+        "_persist_run_artifact",
+        lambda _kind, _output_dir, payload: (
+            captured.append(payload) or tmp_path / "live.json"
+        ),
+    )
     monkeypatch.setattr(cli.time, "sleep", lambda *_args: None)
 
-    assert cli.command_live(
-        argparse.Namespace(
-            steps=2,
-            sleep=0,
-            paper=False,
-            live=False,
-            model=str(tmp_path / "missing.json"),
-            leverage=None,
-            retrain_interval=0,
-            retrain_window=300,
-            retrain_min_rows=240,
-            external_signals=None,
+    assert (
+        cli.command_live(
+            argparse.Namespace(
+                steps=2,
+                sleep=0,
+                paper=False,
+                live=False,
+                model=str(tmp_path / "missing.json"),
+                leverage=None,
+                retrain_interval=0,
+                retrain_window=300,
+                retrain_min_rows=240,
+                external_signals=None,
+            )
         )
-    ) == 0
-    emergency_events = [event for event in captured[0]["events"] if event.get("status") == "emergency_close"]
+        == 0
+    )
+    emergency_events = [
+        event
+        for event in captured[0]["events"]
+        if event.get("status") == "emergency_close"
+    ]
     assert emergency_events
     assert captured[0]["result"]["drawdown_seen"] >= 0.01
 
 
-def test_command_live_skips_entry_when_cash_is_insufficient_before_fill(tmp_path, monkeypatch, capsys) -> None:
+def test_command_live_skips_entry_when_cash_is_insufficient_before_fill(
+    tmp_path, monkeypatch, capsys
+) -> None:
     captured: list[dict[str, object]] = []
 
     class _FlowClient(_SignedCommissionClientEvidence):
-        def get_klines(self, symbol: str, interval: str, limit: int = 500, start_time=None, end_time=None):
+        def get_klines(
+            self,
+            symbol: str,
+            interval: str,
+            limit: int = 500,
+            start_time=None,
+            end_time=None,
+        ):
             return _simple_candles(limit)
 
         def get_symbol_constraints(self, symbol: str):
@@ -8536,7 +10458,11 @@ def test_command_live_skips_entry_when_cash_is_insufficient_before_fill(tmp_path
         return output_dir / "live.json"
 
     monkeypatch.setenv("HOME", str(tmp_path))
-    save_runtime(RuntimeConfig(testnet=True, dry_run=True, market_type="spot", managed_usdc=100.0))
+    save_runtime(
+        RuntimeConfig(
+            testnet=True, dry_run=True, market_type="spot", managed_usdc=100.0
+        )
+    )
     save_strategy(StrategyConfig())
     monkeypatch.setattr(cli, "_build_client", lambda _runtime: _FlowClient())
     monkeypatch.setattr(cli, "train", lambda *_a, **_k: _AlwaysLongModel())
@@ -8589,12 +10515,21 @@ def test_command_tune_data_insufficient(tmp_path) -> None:
     assert cli.command_tune(args) == 2
 
 
-def test_command_live_retrain_interval_rebuilds_model_in_loop(tmp_path, monkeypatch) -> None:
+def test_command_live_retrain_interval_rebuilds_model_in_loop(
+    tmp_path, monkeypatch
+) -> None:
     monkeypatch.setenv("HOME", str(tmp_path))
     monkeypatch.setattr(cli.time, "sleep", lambda *_args: None)
 
     class _FlowClient(_SignedCommissionClientEvidence):
-        def get_klines(self, symbol: str, interval: str, limit: int = 500, start_time=None, end_time=None):
+        def get_klines(
+            self,
+            symbol: str,
+            interval: str,
+            limit: int = 500,
+            start_time=None,
+            end_time=None,
+        ):
             return _simple_candles(limit)
 
         def get_symbol_constraints(self, symbol: str):
@@ -8611,7 +10546,18 @@ def test_command_live_retrain_interval_rebuilds_model_in_loop(tmp_path, monkeypa
             constraints = self.get_symbol_constraints(symbol)
             return max(constraints.min_qty, round(quantity, 4)), constraints
 
-        def place_order(self, symbol: str, side: str, size: float, *, dry_run: bool, leverage: float = 1.0):
+        def place_order(
+            self,
+            symbol: str,
+            side: str,
+            size: float,
+            *,
+            dry_run: bool,
+            leverage: float = 1.0,
+            before_dispatch=None,
+        ):
+            if before_dispatch is not None:
+                before_dispatch()
             return {"symbol": symbol, "side": side, "size": size, "dry_run": dry_run}
 
     class _AlwaysLongModel(_SignedFeeModelEvidence):
@@ -8636,46 +10582,77 @@ def test_command_live_retrain_interval_rebuilds_model_in_loop(tmp_path, monkeypa
     monkeypatch.setattr(cli, "_build_client", lambda _runtime: _FlowClient())
     monkeypatch.setattr(cli, "train", fake_train)
 
-    assert cli.command_live(
-        argparse.Namespace(
-            steps=3,
-            sleep=5,
-            paper=False,
-            model=str(tmp_path / "missing-model.json"),
-            retrain_interval=2,
-            retrain_window=120,
-            retrain_min_rows=100,
+    assert (
+        cli.command_live(
+            argparse.Namespace(
+                steps=3,
+                sleep=5,
+                paper=False,
+                model=str(tmp_path / "missing-model.json"),
+                retrain_interval=2,
+                retrain_window=120,
+                retrain_min_rows=100,
+            )
         )
-    ) == 0
+        == 0
+    )
 
     # initial build at step 1 + rebuild at step 2 (interval=2), no rebuild at step 3
     assert train_calls == [120, 120]
     assert train_signatures == [cli._strategy_feature_signature(load_strategy())] * 2
 
 
-
 def test_command_live_rejects_live_when_not_testnet(tmp_path, monkeypatch) -> None:
     monkeypatch.setenv("HOME", str(tmp_path))
-    save_runtime(RuntimeConfig(testnet=False, dry_run=False, api_key="k", api_secret="s"))
+    save_runtime(
+        RuntimeConfig(testnet=False, dry_run=False, api_key="k", api_secret="s")
+    )
     assert cli.command_live(argparse.Namespace(steps=1, sleep=5, paper=False)) == 2
 
 
 def test_command_live_allows_demo_environment(tmp_path, monkeypatch) -> None:
     monkeypatch.setenv("HOME", str(tmp_path))
-    save_runtime(RuntimeConfig(testnet=False, demo=True, dry_run=False, api_key="k", api_secret="s"))
+    save_runtime(
+        RuntimeConfig(
+            testnet=False, demo=True, dry_run=False, api_key="k", api_secret="s"
+        )
+    )
     save_strategy(StrategyConfig())
     monkeypatch.setattr(cli, "_resolve_futures_leverage", lambda runtime, cfg: 1.0)
     monkeypatch.setattr(cli, "_load_runtime_model", lambda *args, **kwargs: None)
-    assert cli.command_live(argparse.Namespace(steps=1, sleep=5, paper=False, live=False, leverage=None)) == 2
+    assert (
+        cli.command_live(
+            argparse.Namespace(steps=1, sleep=5, paper=False, live=False, leverage=None)
+        )
+        == 2
+    )
 
 
-def test_command_live_futures_does_not_set_leverage_before_market_data(tmp_path, monkeypatch) -> None:
+def test_command_live_futures_does_not_set_leverage_before_market_data(
+    tmp_path, monkeypatch
+) -> None:
     monkeypatch.setenv("HOME", str(tmp_path))
-    save_runtime(RuntimeConfig(testnet=True, dry_run=False, market_type="futures", api_key="k", api_secret="s", managed_usdc=1000.0))
+    save_runtime(
+        RuntimeConfig(
+            testnet=True,
+            dry_run=False,
+            market_type="futures",
+            api_key="k",
+            api_secret="s",
+            managed_usdc=1000.0,
+        )
+    )
     save_strategy(StrategyConfig(leverage=5.0))
 
     class _NoStartupLeverageClient:
-        def get_klines(self, symbol: str, interval: str, limit: int = 500, start_time=None, end_time=None):
+        def get_klines(
+            self,
+            symbol: str,
+            interval: str,
+            limit: int = 500,
+            start_time=None,
+            end_time=None,
+        ):
             raise BinanceAPIError("market data unavailable")
 
         def get_symbol_constraints(self, symbol: str):
@@ -8700,13 +10677,26 @@ def test_command_live_futures_does_not_set_leverage_before_market_data(tmp_path,
         def get_account(self):
             return {"assets": [{"asset": "USDC", "availableBalance": "1000"}]}
 
-    monkeypatch.setattr(cli, "_build_client", lambda _runtime: _NoStartupLeverageClient())
+    monkeypatch.setattr(
+        cli, "_build_client", lambda _runtime: _NoStartupLeverageClient()
+    )
     assert cli.command_live(argparse.Namespace(steps=1, sleep=5, paper=False)) == 2
 
 
-def test_command_live_futures_preflight_blocks_before_leverage_mutation(tmp_path, monkeypatch) -> None:
+def test_command_live_futures_preflight_blocks_before_leverage_mutation(
+    tmp_path, monkeypatch
+) -> None:
     monkeypatch.setenv("HOME", str(tmp_path))
-    save_runtime(RuntimeConfig(testnet=True, dry_run=False, market_type="futures", api_key="k", api_secret="s", managed_usdc=0.0))
+    save_runtime(
+        RuntimeConfig(
+            testnet=True,
+            dry_run=False,
+            market_type="futures",
+            api_key="k",
+            api_secret="s",
+            managed_usdc=0.0,
+        )
+    )
     save_strategy(StrategyConfig(leverage=5.0))
     calls: list[str] = []
 
@@ -8717,7 +10707,9 @@ def test_command_live_futures_preflight_blocks_before_leverage_mutation(tmp_path
 
         def set_leverage(self, _symbol: str, _leverage: int):
             calls.append("set_leverage")
-            raise AssertionError("leverage must not be changed before live preflight passes")
+            raise AssertionError(
+                "leverage must not be changed before live preflight passes"
+            )
 
         def get_max_leverage(self, symbol: str) -> int:
             return 10
@@ -8727,7 +10719,9 @@ def test_command_live_futures_preflight_blocks_before_leverage_mutation(tmp_path
     assert calls == ["get_account"]
 
 
-def test_command_backtest_model_missing_and_success(tmp_path, monkeypatch, capsys) -> None:
+def test_command_backtest_model_missing_and_success(
+    tmp_path, monkeypatch, capsys
+) -> None:
     from simple_ai_trading.model import serialize_model
 
     monkeypatch.setenv("HOME", str(tmp_path))
@@ -8737,7 +10731,14 @@ def test_command_backtest_model_missing_and_success(tmp_path, monkeypatch, capsy
     input_file = tmp_path / "hist.json"
     input_file.write_text("[]", encoding="utf-8")
     missing_model = tmp_path / "missing.json"
-    assert cli.command_backtest(argparse.Namespace(input=str(input_file), model=str(missing_model), start_cash=1000.0)) == 2
+    assert (
+        cli.command_backtest(
+            argparse.Namespace(
+                input=str(input_file), model=str(missing_model), start_cash=1000.0
+            )
+        )
+        == 2
+    )
 
     candles = []
     for i in range(120):
@@ -8766,11 +10767,20 @@ def test_command_backtest_model_missing_and_success(tmp_path, monkeypatch, capsy
         ),
         model_file,
     )
-    assert cli.command_backtest(argparse.Namespace(input=str(input_file), model=str(model_file), start_cash=1000.0)) == 0
+    assert (
+        cli.command_backtest(
+            argparse.Namespace(
+                input=str(input_file), model=str(model_file), start_cash=1000.0
+            )
+        )
+        == 0
+    )
     assert "trades:" in capsys.readouterr().out
 
 
-def test_command_live_rejects_non_testnet_and_missing_keys(tmp_path, monkeypatch) -> None:
+def test_command_live_rejects_non_testnet_and_missing_keys(
+    tmp_path, monkeypatch
+) -> None:
     monkeypatch.setenv("HOME", str(tmp_path))
     save_strategy(StrategyConfig())
 
@@ -8789,10 +10799,25 @@ def test_command_live_detailed_flow(tmp_path, monkeypatch) -> None:
         def __init__(self):
             self.orders = []
 
-        def get_klines(self, symbol: str, interval: str, limit: int = 500, start_time=None, end_time=None):
+        def get_klines(
+            self,
+            symbol: str,
+            interval: str,
+            limit: int = 500,
+            start_time=None,
+            end_time=None,
+        ):
             base = 100.0
             return [
-                Candle(open_time=i * 60_000, open=base + i, high=base + i + 1, low=base + i - 1, close=base + i, volume=1.0, close_time=(i + 1) * 60_000)
+                Candle(
+                    open_time=i * 60_000,
+                    open=base + i,
+                    high=base + i + 1,
+                    low=base + i - 1,
+                    close=base + i,
+                    volume=1.0,
+                    close_time=(i + 1) * 60_000,
+                )
                 for i in range(320)
             ]
 
@@ -8810,7 +10835,18 @@ def test_command_live_detailed_flow(tmp_path, monkeypatch) -> None:
             constraints = self.get_symbol_constraints(symbol)
             return max(constraints.min_qty, round(quantity, 4)), constraints
 
-        def place_order(self, symbol: str, side: str, size: float, *, dry_run: bool, leverage: float = 1.0):
+        def place_order(
+            self,
+            symbol: str,
+            side: str,
+            size: float,
+            *,
+            dry_run: bool,
+            leverage: float = 1.0,
+            before_dispatch=None,
+        ):
+            if before_dispatch is not None:
+                before_dispatch()
             self.orders.append((side, size))
             return {"symbol": symbol, "side": side, "size": size}
 
@@ -8830,12 +10866,44 @@ def test_command_live_detailed_flow(tmp_path, monkeypatch) -> None:
     monkeypatch.setattr(cli, "_build_client", lambda _runtime: client)
     monkeypatch.setattr(cli, "train", lambda *_a, **_k: _ScoredModel())
 
-    save_runtime(RuntimeConfig(testnet=True, dry_run=True, market_type="spot", max_rate_calls_per_minute=1))
-    save_strategy(StrategyConfig(risk_per_trade=0.001, max_position_pct=0.2, max_trades_per_day=1, training_epochs=40, cooldown_minutes=1))
-    assert cli.command_live(argparse.Namespace(steps=3, sleep=5, paper=False, model=str(tmp_path / "missing-model.json"))) == 0
+    save_runtime(
+        RuntimeConfig(
+            testnet=True, dry_run=True, market_type="spot", max_rate_calls_per_minute=1
+        )
+    )
+    save_strategy(
+        StrategyConfig(
+            risk_per_trade=0.001,
+            max_position_pct=0.2,
+            max_trades_per_day=1,
+            training_epochs=40,
+            cooldown_minutes=1,
+        )
+    )
+    assert (
+        cli.command_live(
+            argparse.Namespace(
+                steps=3,
+                sleep=5,
+                paper=False,
+                model=str(tmp_path / "missing-model.json"),
+            )
+        )
+        == 0
+    )
 
     # futures startup should not mutate leverage before a fresh entry exists.
-    save_runtime(RuntimeConfig(testnet=True, dry_run=False, market_type="futures", api_key="k", api_secret="s", managed_usdc=1000.0, max_rate_calls_per_minute=1))
+    save_runtime(
+        RuntimeConfig(
+            testnet=True,
+            dry_run=False,
+            market_type="futures",
+            api_key="k",
+            api_secret="s",
+            managed_usdc=1000.0,
+            max_rate_calls_per_minute=1,
+        )
+    )
 
     class _SetLeverageErrorClient(_FlowClient):
         def get_max_leverage(self, symbol: str) -> int:
@@ -8847,7 +10915,9 @@ def test_command_live_detailed_flow(tmp_path, monkeypatch) -> None:
         def set_leverage(self, symbol: str, leverage: int):
             raise AssertionError("startup must not mutate futures leverage")
 
-    monkeypatch.setattr(cli, "_build_client", lambda _runtime: _SetLeverageErrorClient())
+    monkeypatch.setattr(
+        cli, "_build_client", lambda _runtime: _SetLeverageErrorClient()
+    )
     assert cli.command_live(argparse.Namespace(steps=1, sleep=5, paper=False)) == 2
 
 
@@ -8919,7 +10989,10 @@ def test_command_live_futures_leverage_override(tmp_path, monkeypatch, capsys) -
             reduce_only: bool = False,
             client_order_id: str | None = None,
             expected_scope=None,
+            before_dispatch=None,
         ):
+            if before_dispatch is not None:
+                before_dispatch()
             assert expected_scope == self.execution_scope()
             self.orders.append((side, size, dry_run, leverage, notional))
             return _native_cli_ack(
@@ -8953,6 +11026,8 @@ def test_command_live_futures_leverage_override(tmp_path, monkeypatch, capsys) -
     monkeypatch.setattr(cli.time, "sleep", lambda *_args: None)
     monkeypatch.setattr(cli, "train", lambda *_a, **_k: _AlwaysLongModel())
 
+    _enroll_signed_cli_fixture(monkeypatch, client)
+
     assert (
         cli.command_live(
             argparse.Namespace(
@@ -8972,14 +11047,27 @@ def test_command_live_futures_leverage_override(tmp_path, monkeypatch, capsys) -
     assert "effective leverage" in capsys.readouterr().out
 
 
-def test_command_live_spot_leverage_override_is_logged(tmp_path, monkeypatch, capsys) -> None:
+def test_command_live_spot_leverage_override_is_logged(
+    tmp_path, monkeypatch, capsys
+) -> None:
     monkeypatch.setenv("HOME", str(tmp_path))
-    save_runtime(RuntimeConfig(testnet=True, dry_run=True, market_type="spot", managed_usdc=1000.0))
+    save_runtime(
+        RuntimeConfig(
+            testnet=True, dry_run=True, market_type="spot", managed_usdc=1000.0
+        )
+    )
     save_strategy(StrategyConfig())
     monkeypatch.setattr(cli.time, "sleep", lambda *_args: None)
 
     class _SpotClient:
-        def get_klines(self, symbol: str, interval: str, limit: int = 500, start_time=None, end_time=None):
+        def get_klines(
+            self,
+            symbol: str,
+            interval: str,
+            limit: int = 500,
+            start_time=None,
+            end_time=None,
+        ):
             return [
                 Candle(
                     open_time=i * 60_000,
@@ -9007,7 +11095,18 @@ def test_command_live_spot_leverage_override_is_logged(tmp_path, monkeypatch, ca
             constraints = self.get_symbol_constraints(symbol)
             return max(constraints.min_qty, round(quantity, 4)), constraints
 
-        def place_order(self, symbol: str, side: str, size: float, *, dry_run: bool, leverage: float = 1.0):
+        def place_order(
+            self,
+            symbol: str,
+            side: str,
+            size: float,
+            *,
+            dry_run: bool,
+            leverage: float = 1.0,
+            before_dispatch=None,
+        ):
+            if before_dispatch is not None:
+                before_dispatch()
             return {"symbol": symbol, "side": side, "size": size}
 
     class _AlwaysLongModel(_SignedFeeModelEvidence):
@@ -9016,13 +11115,24 @@ def test_command_live_spot_leverage_override_is_logged(tmp_path, monkeypatch, ca
 
     monkeypatch.setattr(cli, "_build_client", lambda _runtime: _SpotClient())
     monkeypatch.setattr(cli, "train", lambda *_a, **_k: _AlwaysLongModel())
-    assert cli.command_live(argparse.Namespace(steps=1, sleep=5, paper=False, leverage=10.0)) == 0
+    assert (
+        cli.command_live(
+            argparse.Namespace(steps=1, sleep=5, paper=False, leverage=10.0)
+        )
+        == 0
+    )
     assert "Leverage override is spot-inactive" in capsys.readouterr().out
 
 
-def test_command_live_drawdown_limit_forces_emergency_close(tmp_path, monkeypatch, capsys) -> None:
+def test_command_live_drawdown_limit_forces_emergency_close(
+    tmp_path, monkeypatch, capsys
+) -> None:
     monkeypatch.setenv("HOME", str(tmp_path))
-    save_runtime(RuntimeConfig(testnet=True, dry_run=True, market_type="spot", managed_usdc=1000.0))
+    save_runtime(
+        RuntimeConfig(
+            testnet=True, dry_run=True, market_type="spot", managed_usdc=1000.0
+        )
+    )
     save_strategy(
         StrategyConfig(
             risk_per_trade=0.5,
@@ -9030,16 +11140,23 @@ def test_command_live_drawdown_limit_forces_emergency_close(tmp_path, monkeypatc
             max_asset_allocation_pct=1.0,
             take_profit_pct=0.95,
             stop_loss_pct=0.99,
-                max_drawdown_limit=0.20,
-                feature_windows=(4, 20),
-                max_regime_unpredictability=1.0,
-            )
+            max_drawdown_limit=0.20,
+            feature_windows=(4, 20),
+            max_regime_unpredictability=1.0,
         )
+    )
 
     class _DrawdownClient:
         call_count = 0
 
-        def get_klines(self, symbol: str, interval: str, limit: int = 500, start_time=None, end_time=None):
+        def get_klines(
+            self,
+            symbol: str,
+            interval: str,
+            limit: int = 500,
+            start_time=None,
+            end_time=None,
+        ):
             if interval != "15m":
                 return []
 
@@ -9077,7 +11194,18 @@ def test_command_live_drawdown_limit_forces_emergency_close(tmp_path, monkeypatc
             constraints = self.get_symbol_constraints(symbol)
             return max(constraints.min_qty, round(quantity, 4)), constraints
 
-        def place_order(self, symbol: str, side: str, size: float, *, dry_run: bool, leverage: float = 1.0):
+        def place_order(
+            self,
+            symbol: str,
+            side: str,
+            size: float,
+            *,
+            dry_run: bool,
+            leverage: float = 1.0,
+            before_dispatch=None,
+        ):
+            if before_dispatch is not None:
+                before_dispatch()
             return {
                 "symbol": symbol,
                 "side": side,
@@ -9094,21 +11222,44 @@ def test_command_live_drawdown_limit_forces_emergency_close(tmp_path, monkeypatc
     monkeypatch.setattr(cli, "_build_client", lambda _runtime: _DrawdownClient())
     monkeypatch.setattr(cli, "train", lambda *_a, **_k: _AlwaysLongModel())
 
-    assert cli.command_live(argparse.Namespace(steps=3, sleep=5, paper=False, model=str(tmp_path / "missing-model.json"))) == 0
+    assert (
+        cli.command_live(
+            argparse.Namespace(
+                steps=3,
+                sleep=5,
+                paper=False,
+                model=str(tmp_path / "missing-model.json"),
+            )
+        )
+        == 0
+    )
     output = capsys.readouterr().out
     assert "emergency close from drawdown" in output
     assert "drawdown limit reached" in output
 
 
-def test_build_autonomous_decision_fn_error_and_flat_no_row_paths(tmp_path, monkeypatch) -> None:
+def test_build_autonomous_decision_fn_error_and_flat_no_row_paths(
+    tmp_path, monkeypatch
+) -> None:
     class _Client:
-        def get_klines(self, symbol: str, interval: str, limit: int = 500, start_time=None, end_time=None):
+        def get_klines(
+            self,
+            symbol: str,
+            interval: str,
+            limit: int = 500,
+            start_time=None,
+            end_time=None,
+        ):
             return _simple_candles(limit)
 
         def get_symbol_price(self, symbol: str):
             return 101.0, 123
 
-    monkeypatch.setattr(cli, "_load_live_start_model", lambda *_args, **_kwargs: (None, "bad model", "notice"))
+    monkeypatch.setattr(
+        cli,
+        "_load_live_start_model",
+        lambda *_args, **_kwargs: (None, "bad model", "notice"),
+    )
     decision_fn, error, notice = cli._build_autonomous_decision_fn(
         model_path=tmp_path / "model.json",
         strategy=StrategyConfig(),
@@ -9122,7 +11273,9 @@ def test_build_autonomous_decision_fn_error_and_flat_no_row_paths(tmp_path, monk
         def predict_proba(self, _features: tuple[float, ...]) -> float:
             return 0.99
 
-    monkeypatch.setattr(cli, "_load_live_start_model", lambda *_args, **_kwargs: (_Model(), None, None))
+    monkeypatch.setattr(
+        cli, "_load_live_start_model", lambda *_args, **_kwargs: (_Model(), None, None)
+    )
     monkeypatch.setattr(cli, "_live_rows_for_model", lambda *_args, **_kwargs: [])
     monkeypatch.setattr(cli, "_readiness_model_rows", lambda *_args, **_kwargs: [])
     decision_fn, error, _notice = cli._build_autonomous_decision_fn(
@@ -9131,14 +11284,25 @@ def test_build_autonomous_decision_fn_error_and_flat_no_row_paths(tmp_path, monk
         effective_dry_run=True,
     )
     assert error is None and decision_fn is not None
-    decision = decision_fn(_Client(), RuntimeConfig(testnet=True), StrategyConfig(), None)
+    decision = decision_fn(
+        _Client(), RuntimeConfig(testnet=True), StrategyConfig(), None
+    )
     assert decision.side == "FLAT"
     assert decision.mark_price == 101.0
 
 
-def test_build_autonomous_decision_fn_trains_and_applies_external_signals(tmp_path, monkeypatch) -> None:
+def test_build_autonomous_decision_fn_trains_and_applies_external_signals(
+    tmp_path, monkeypatch
+) -> None:
     class _Client:
-        def get_klines(self, symbol: str, interval: str, limit: int = 500, start_time=None, end_time=None):
+        def get_klines(
+            self,
+            symbol: str,
+            interval: str,
+            limit: int = 500,
+            start_time=None,
+            end_time=None,
+        ):
             return _simple_candles(limit)
 
     class _Model(_SignedFeeModelEvidence):
@@ -9158,12 +11322,24 @@ def test_build_autonomous_decision_fn_trains_and_applies_external_signals(tmp_pa
     train_calls: list[int] = []
     signal_calls: list[str] = []
     payoff_calls: list[str] = []
-    monkeypatch.setattr(cli, "_load_live_start_model", lambda *_args, **_kwargs: (None, None, None))
+    monkeypatch.setattr(
+        cli, "_load_live_start_model", lambda *_args, **_kwargs: (None, None, None)
+    )
     monkeypatch.setattr(cli, "_live_rows_for_model", lambda *_args, **_kwargs: [row])
     monkeypatch.setattr(cli, "_build_model_rows", lambda *_args, **_kwargs: [row])
-    monkeypatch.setattr(cli, "train", lambda rows, **_kwargs: train_calls.append(len(rows)) or _Model())
-    monkeypatch.setattr(cli, "collect_external_signals", lambda **_kwargs: signal_calls.append(str(_kwargs["symbol"])) or object())
-    monkeypatch.setattr(cli, "_apply_external_signal_to_score", lambda score, strategy, report: (0.99, strategy, 0.09))
+    monkeypatch.setattr(
+        cli, "train", lambda rows, **_kwargs: train_calls.append(len(rows)) or _Model()
+    )
+    monkeypatch.setattr(
+        cli,
+        "collect_external_signals",
+        lambda **_kwargs: signal_calls.append(str(_kwargs["symbol"])) or object(),
+    )
+    monkeypatch.setattr(
+        cli,
+        "_apply_external_signal_to_score",
+        lambda score, strategy, report: (0.99, strategy, 0.09),
+    )
     monkeypatch.setattr(cli, "_record_model_telemetry", lambda *_args, **_kwargs: None)
 
     strategy = StrategyConfig(external_signals_enabled=True)
@@ -9183,9 +11359,18 @@ def test_build_autonomous_decision_fn_trains_and_applies_external_signals(tmp_pa
     assert decision.model_features == row.features
 
 
-def test_build_autonomous_decision_fn_applies_liquidity_guard(tmp_path, monkeypatch) -> None:
+def test_build_autonomous_decision_fn_applies_liquidity_guard(
+    tmp_path, monkeypatch
+) -> None:
     class _Client:
-        def get_klines(self, symbol: str, interval: str, limit: int = 500, start_time=None, end_time=None):
+        def get_klines(
+            self,
+            symbol: str,
+            interval: str,
+            limit: int = 500,
+            start_time=None,
+            end_time=None,
+        ):
             return _simple_candles(limit)
 
     class _Model(_SignedFeeModelEvidence):
@@ -9203,7 +11388,9 @@ def test_build_autonomous_decision_fn_applies_liquidity_guard(tmp_path, monkeypa
         )
         for index in range(9)
     ]
-    monkeypatch.setattr(cli, "_load_live_start_model", lambda *_args, **_kwargs: (_Model(), None, None))
+    monkeypatch.setattr(
+        cli, "_load_live_start_model", lambda *_args, **_kwargs: (_Model(), None, None)
+    )
     monkeypatch.setattr(cli, "_live_rows_for_model", lambda *_args, **_kwargs: rows)
     monkeypatch.setattr(cli, "_readiness_model_rows", lambda *_args, **_kwargs: rows)
     monkeypatch.setattr(cli, "_record_model_telemetry", lambda *_args, **_kwargs: None)
@@ -9230,9 +11417,18 @@ def test_build_autonomous_decision_fn_applies_liquidity_guard(tmp_path, monkeypa
     assert "low_liquidity_requires_stronger_signal" in decision.meta_label_reason
 
 
-def test_build_autonomous_decision_fn_loaded_model_short_without_external_signals(tmp_path, monkeypatch) -> None:
+def test_build_autonomous_decision_fn_loaded_model_short_without_external_signals(
+    tmp_path, monkeypatch
+) -> None:
     class _Client:
-        def get_klines(self, symbol: str, interval: str, limit: int = 500, start_time=None, end_time=None):
+        def get_klines(
+            self,
+            symbol: str,
+            interval: str,
+            limit: int = 500,
+            start_time=None,
+            end_time=None,
+        ):
             return _simple_candles(limit)
 
     class _ShortModel(_SignedFeeModelEvidence):
@@ -9240,11 +11436,19 @@ def test_build_autonomous_decision_fn_loaded_model_short_without_external_signal
             return 0.01
 
     row = ModelRow(timestamp=60_000, close=100.0, features=(0.1,), label=0)
-    monkeypatch.setattr(cli, "_load_live_start_model", lambda *_args, **_kwargs: (_ShortModel(), None, None))
+    monkeypatch.setattr(
+        cli,
+        "_load_live_start_model",
+        lambda *_args, **_kwargs: (_ShortModel(), None, None),
+    )
     monkeypatch.setattr(cli, "_live_rows_for_model", lambda *_args, **_kwargs: [row])
     monkeypatch.setattr(cli, "_readiness_model_rows", lambda *_args, **_kwargs: [row])
     monkeypatch.setattr(cli, "_record_model_telemetry", lambda *_args, **_kwargs: None)
-    monkeypatch.setattr(cli, "collect_external_signals", lambda **_kwargs: pytest.fail("external signals are disabled"))
+    monkeypatch.setattr(
+        cli,
+        "collect_external_signals",
+        lambda **_kwargs: pytest.fail("external signals are disabled"),
+    )
 
     decision_fn, error, _notice = cli._build_autonomous_decision_fn(
         model_path=tmp_path / "model.json",
@@ -9261,16 +11465,27 @@ def test_build_autonomous_decision_fn_loaded_model_short_without_external_signal
     assert decision.side == "SHORT"
 
 
-def test_build_autonomous_decision_fn_returns_flat_without_training_rows(tmp_path, monkeypatch) -> None:
+def test_build_autonomous_decision_fn_returns_flat_without_training_rows(
+    tmp_path, monkeypatch
+) -> None:
     class _Client:
-        def get_klines(self, symbol: str, interval: str, limit: int = 500, start_time=None, end_time=None):
+        def get_klines(
+            self,
+            symbol: str,
+            interval: str,
+            limit: int = 500,
+            start_time=None,
+            end_time=None,
+        ):
             return _simple_candles(limit)
 
         def get_symbol_price(self, symbol: str):
             return 102.0, 123
 
     row = ModelRow(timestamp=60_000, close=100.0, features=(0.1,), label=1)
-    monkeypatch.setattr(cli, "_load_live_start_model", lambda *_args, **_kwargs: (None, None, None))
+    monkeypatch.setattr(
+        cli, "_load_live_start_model", lambda *_args, **_kwargs: (None, None, None)
+    )
     monkeypatch.setattr(cli, "_live_rows_for_model", lambda *_args, **_kwargs: [row])
     monkeypatch.setattr(cli, "_build_model_rows", lambda *_args, **_kwargs: [])
 
@@ -9280,12 +11495,16 @@ def test_build_autonomous_decision_fn_returns_flat_without_training_rows(tmp_pat
         effective_dry_run=True,
     )
     assert error is None and decision_fn is not None
-    decision = decision_fn(_Client(), RuntimeConfig(testnet=True), StrategyConfig(), None)
+    decision = decision_fn(
+        _Client(), RuntimeConfig(testnet=True), StrategyConfig(), None
+    )
     assert decision.side == "FLAT"
     assert decision.mark_price == 102.0
 
 
-def test_command_autonomous_start_success_error_and_client_failure(tmp_path, monkeypatch, capsys) -> None:
+def test_command_autonomous_start_success_error_and_client_failure(
+    tmp_path, monkeypatch, capsys
+) -> None:
     from simple_ai_trading import ai_start_gate, autonomous
 
     base_args = {
@@ -9318,7 +11537,11 @@ def test_command_autonomous_start_success_error_and_client_failure(tmp_path, mon
             exit_reason="max-iterations",
         )
 
-    monkeypatch.setattr(cli, "_build_autonomous_decision_fn", lambda **_kwargs: (fake_decision, None, "Model load failed; regenerating: old"))
+    monkeypatch.setattr(
+        cli,
+        "_build_autonomous_decision_fn",
+        lambda **_kwargs: (fake_decision, None, "Model load failed; regenerating: old"),
+    )
     monkeypatch.setattr(cli, "_build_client", lambda _runtime: object())
     monkeypatch.setattr(autonomous, "run_loop", fake_run_loop)
 
@@ -9327,14 +11550,29 @@ def test_command_autonomous_start_success_error_and_client_failure(tmp_path, mon
     assert "Model load failed; regenerating" in captured.err
     assert "autonomous: max-iterations iterations=1" in captured.out
 
-    monkeypatch.setattr(cli, "_build_autonomous_decision_fn", lambda **_kwargs: (None, "model missing", None))
+    monkeypatch.setattr(
+        cli,
+        "_build_autonomous_decision_fn",
+        lambda **_kwargs: (None, "model missing", None),
+    )
     assert cli.command_autonomous(argparse.Namespace(**base_args)) == 2
     assert "model missing" in capsys.readouterr().err
 
-    monkeypatch.setattr(cli, "_build_autonomous_decision_fn", lambda **_kwargs: (fake_decision, None, None))
-    monkeypatch.setattr(cli, "_build_client", lambda _runtime: (_ for _ in ()).throw(BinanceAPIError("startup down")))
+    monkeypatch.setattr(
+        cli,
+        "_build_autonomous_decision_fn",
+        lambda **_kwargs: (fake_decision, None, None),
+    )
+    monkeypatch.setattr(
+        cli,
+        "_build_client",
+        lambda _runtime: (_ for _ in ()).throw(BinanceAPIError("startup down")),
+    )
     assert cli.command_autonomous(argparse.Namespace(**base_args)) == 2
-    assert "Autonomous startup blocked: commission-rate verification failed: startup down" in capsys.readouterr().err
+    assert (
+        "Autonomous startup blocked: commission-rate verification failed: startup down"
+        in capsys.readouterr().err
+    )
 
     monkeypatch.setattr(
         cli,
@@ -9356,7 +11594,6 @@ def test_command_autonomous_start_success_error_and_client_failure(tmp_path, mon
     )
     assert cli.command_autonomous(argparse.Namespace(**base_args)) == 2
     assert "blocked by AI governance: review model differs" in capsys.readouterr().err
-
 
 
 def _owned_live_scenario(
@@ -9432,7 +11669,10 @@ def _owned_live_scenario(
             reduce_only=False,
             client_order_id=None,
             expected_scope=None,
+            before_dispatch=None,
         ):
+            if before_dispatch is not None:
+                before_dispatch()
             assert dry_run is False
             scope = self.execution_scope()
             if side == "BUY":
@@ -9484,7 +11724,9 @@ def _owned_live_scenario(
     from conftest import enroll_synthetic_binance_runtime
     from simple_ai_trading.binance_runtime_control import BINANCE_RUNTIME_LEASE_ENV
 
-    authority = enroll_synthetic_binance_runtime(store, client.execution_scope())
+    authority = enroll_synthetic_binance_runtime(
+        store, client.execution_scope(), opening_policy_quote="USDC"
+    )
     monkeypatch.setenv(BINANCE_RUNTIME_LEASE_ENV, authority.lease_id)
     if mode != "open":
         position = OpenPosition(
@@ -9613,3 +11855,18 @@ with pytest.MonkeyPatch.context() as patch:
     pending = store.opening_intents.pending_position(scope=scope)
     assert pending is not None and pending.open_client_order_id.startswith("sait-o-")
     assert not store.load_open()
+
+
+def _enroll_signed_cli_fixture(monkeypatch, client, *, opening=True):
+    """Explicit isolated account state for CLI transport/recovery fixtures."""
+    from conftest import enroll_synthetic_binance_runtime
+    from simple_ai_trading.binance_runtime_control import BINANCE_RUNTIME_LEASE_ENV
+
+    store = PositionsStore()
+    authority = enroll_synthetic_binance_runtime(
+        store,
+        client.execution_scope(),
+        opening_policy_quote="USDC" if opening else None,
+    )
+    monkeypatch.setenv(BINANCE_RUNTIME_LEASE_ENV, authority.lease_id)
+    return store

@@ -10,6 +10,7 @@ import pytest
 
 from simple_ai_trading import cli
 from simple_ai_trading.api import BinanceAPIError, BinanceClient
+from simple_ai_trading.binance_capital_policy import BinanceCapitalPolicyStore
 from simple_ai_trading.autonomous import (
     _close_to_trade,
     _submit_durable_close_position,
@@ -251,14 +252,18 @@ def test_response_loss_query_cannot_bypass_submission_binding(
 
     monkeypatch.setattr(client, "_request_dict", transport)
     store = PositionsStore(tmp_path)
-    enrolled_binance_runtime(store, client.execution_scope())
+    enrolled_binance_runtime(
+        store, client.execution_scope(), opening_policy_quote="USDC"
+    )
     with pytest.raises(BinanceAPIError):
         _submit_durable_open_position(client, position, store)
     assert calls == ["POST", "GET"]
     assert store.load_open() == []
-    assert (
-        store.opening_intents.pending_position(scope=client.execution_scope())
-        == position
+    assert store.opening_intents.pending_position(
+        scope=client.execution_scope()
+    ) == replace(
+        position,
+        capital_policy_sha256=BinanceCapitalPolicyStore(store).inspect()["head_sha256"],
     )
 
 
@@ -396,7 +401,9 @@ def test_close_response_loss_preserves_owned_lot_and_unknown(
     )
     monkeypatch.setattr(client, "_request_dict", Mock(return_value=_response(binding)))
     store = PositionsStore(tmp_path)
-    enrolled_binance_runtime(store, client.execution_scope())
+    enrolled_binance_runtime(
+        store, client.execution_scope(), opening_policy_quote="USDC"
+    )
     recorded = _submit_durable_open_position(client, position, store)
     calls = []
     closing = None
@@ -477,7 +484,9 @@ def test_exact_response_loss_recovery_still_completes_normally(
         open_client_order_id=binding.client_order_id,
     )
     store = PositionsStore(tmp_path)
-    enrolled_binance_runtime(store, client.execution_scope())
+    enrolled_binance_runtime(
+        store, client.execution_scope(), opening_policy_quote="USDC"
+    )
     if phase == "closing":
         monkeypatch.setattr(
             client, "_request_dict", Mock(return_value=_response(binding))

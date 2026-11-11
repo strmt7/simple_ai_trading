@@ -1,7 +1,7 @@
 # Enrolled Binance loss policy
 
-Signed Binance autonomous capital evaluation requires an explicitly activated loss
-policy. Paper mode grants no native account authority and keeps its existing
+Signed Binance autonomous evaluation and ordinary owned opening through the
+durable gateway require an explicitly activated loss policy. Paper mode grants no native account authority and keeps its existing
 configuration behavior. Activation is necessary for this admission scope; it is
 not account qualification, final native-write permission or rearm.
 
@@ -90,12 +90,34 @@ Booleans and strings do not stand in for numbers. An invalid model price ends
 the iteration without fabricating a replacement price; remaining owned exposure
 keeps the terminal state STOPPING. Invalid entry confidence does not block a
 qualified price-based owned exit. The [boundary review](review/2026-11-11/opening-numerics/review.md)
-records this scoped repair; it does not complete final-dispatch policy fencing.
+records this numerical repair. The dispatch integration below is a separate scope.
+
+## Ordinary owned opening admission
+
+The [dispatch review](review/2026-11-11/opening-policy-transaction/review.md) binds
+the autonomous and CLI ordinary opening path to current enrolled limits. The
+gateway evaluates a strictly decoded open/closed snapshot and the active policy
+inside the same SQLite writer transaction before inserting UNKNOWN. Its private
+position copy and original request retain the accepted policy-head digest. Empty
+new fields remain omitted from legacy version-2 request bytes.
+
+The gateway checks the original UNKNOWN request, policy revision, loss state,
+storage and runtime authority again before transport. The SDK repeats admission
+after throttling and before signing/sending the order and any futures leverage
+write. A later failure preserves UNKNOWN for reconciliation; it never authorizes
+replay or automatic clearing. A leverage write may already have completed before
+a subsequent order denial; no automatic rollback is attempted.
+
+These evaluations use the supplied entry mark and retained local cash history.
+They do not establish independently fresh native NAV, available account funds or
+margin. Qualified owned closes and exact recovery reads carry no opening-policy
+callback; their separate ownership, quantity and reconciliation guards still apply.
 
 ## Scope limits
 
-This phase binds signed autonomous loss-policy evaluation. Universal direct-writer
-and roundtrip fencing, Polymarket policy, final-intent policy binding, account UID,
+This phase binds ordinary owned Binance openings through the SDK send boundary.
+Universal direct-writer and roundtrip policy fencing, Polymarket policy, complete
+intent/source/model/gateway-generation binding, account UID,
 complete native marked/day baselines, external flows, reservations, price/margin
 limits, model/generation identity, quarantine, rearm and independent supervision
 remain unfinished. Physical reboot, full backup/restore, alternate resource

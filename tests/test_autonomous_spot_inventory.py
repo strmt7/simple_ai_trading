@@ -6,6 +6,7 @@ from dataclasses import asdict, replace
 from decimal import Decimal, localcontext
 
 import pytest
+from simple_ai_trading.binance_capital_policy import BinanceCapitalPolicyStore
 
 from simple_ai_trading.autonomous import (
     _apply_close_order,
@@ -122,7 +123,9 @@ def test_native_open_close_persists_only_received_inventory(
         receipt(p, fee="0" if fee_kind == "zero" else "0.001", fee_asset=fee_asset)
     )
     store = PositionsStore(tmp_path)
-    enrolled_binance_runtime(store, client.execution_scope())
+    enrolled_binance_runtime(
+        store, client.execution_scope(), opening_policy_quote=quote
+    )
     opened = _submit_durable_open_position(client, p, store)
     expected = 0.999 if fee_kind == "base" else 1.0
     assert opened.qty == expected
@@ -179,7 +182,9 @@ def test_unproved_native_open_preserves_unknown_after_restart(
         del order["status"]
     client = Client(order)
     store = PositionsStore(tmp_path)
-    enrolled_binance_runtime(store, client.execution_scope())
+    enrolled_binance_runtime(
+        store, client.execution_scope(), opening_policy_quote="USDC"
+    )
     with pytest.raises((OpenIntentError, BinanceAPIError)):
         _submit_durable_open_position(client, p, store)
     reopened = PositionsStore(tmp_path)
@@ -187,8 +192,11 @@ def test_unproved_native_open_preserves_unknown_after_restart(
     assert (
         reopened.opening_intents.entry_block_reason() == "unresolved_opening_intents=1"
     )
-    assert (
-        reopened.opening_intents.pending_position(scope=client.execution_scope()) == p
+    assert reopened.opening_intents.pending_position(
+        scope=client.execution_scope()
+    ) == replace(
+        p,
+        capital_policy_sha256=BinanceCapitalPolicyStore(store).inspect()["head_sha256"],
     )
     assert len(client.orders) == 1
 
@@ -295,6 +303,7 @@ def test_empty_receipt_fields_preserve_legacy_pending_request_bytes(tmp_path):
     template.pop("spot_gross_entry_quantity")
     template.pop("spot_entry_base_commission")
     template.pop("spot_entry_cash_receipt")
+    template.pop("capital_policy_sha256")
     assert payload["position_template"] == template
     original = json.dumps(payload, sort_keys=True, allow_nan=False)
     store.opening_intents.prepare(p, scope=scope)
@@ -328,7 +337,9 @@ def test_native_close_unrepresentable_fill_keeps_lot_and_unknown(
     p = position()
     store = PositionsStore(tmp_path)
     client = Client(receipt(p))
-    enrolled_binance_runtime(store, client.execution_scope())
+    enrolled_binance_runtime(
+        store, client.execution_scope(), opening_policy_quote="USDC"
+    )
     opened = _submit_durable_open_position(client, p, store)
 
     class PartialClient(Client):
@@ -363,7 +374,9 @@ def test_native_open_interruption_preserves_net_position_and_pending_gross(
     p = position()
     store = PositionsStore(tmp_path)
     client = Client(receipt(p))
-    enrolled_binance_runtime(store, client.execution_scope())
+    enrolled_binance_runtime(
+        store, client.execution_scope(), opening_policy_quote="USDC"
+    )
 
     def interrupted(*args, **kwargs):
         raise KeyboardInterrupt()

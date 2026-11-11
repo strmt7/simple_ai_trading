@@ -27,7 +27,7 @@ def test_storage_loss_after_fill_never_creates_a_replacement(
     tmp_path, monkeypatch, enrolled_binance_runtime, phase, point
 ):
     store = PositionsStore(tmp_path)
-    authority = enrolled_binance_runtime(store, SCOPE)
+    authority = enrolled_binance_runtime(store, SCOPE, opening_policy_quote="USDT")
     venue = Venue(store)
     requested = position()
     if phase == "closing":
@@ -115,7 +115,7 @@ def test_missing_close_journal_is_not_created_before_dispatch(
     tmp_path, enrolled_binance_runtime
 ):
     store = PositionsStore(tmp_path)
-    enrolled_binance_runtime(store, SCOPE)
+    enrolled_binance_runtime(store, SCOPE, opening_policy_quote="USDT")
     venue = Venue(store)
     opened = submit_durable_open(venue, position(), store).position
     store.opening_intents.path.rename(tmp_path / "retained-original.sqlite3")

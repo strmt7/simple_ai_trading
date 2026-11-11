@@ -63,8 +63,8 @@ before continuing an affected family. None supplies a qualified stable edge.
   close their reproduced gaps. Bound legacy version 2 retains owned recovery;
   new exposure requires verified migration. Account UID, coordinated rollback,
   universal writer fencing and recovery/rearm remain open.
-  [Loss policy](review/2026-11-11/capital-policy/review.md) binds signed autonomous
-  evaluation to explicit revisions; activation never clears Stop or cash history.
+  [Loss admission](review/2026-11-11/opening-policy-transaction/review.md) binds
+  ordinary openings through SDK dispatch; paired policy and supervision remain.
   [Valuation](review/2026-11-11/capital-valuation/review.md) and
   [cash peak](review/2026-11-11/cash-peak-risk/review.md) bind scoped marks and retained cash.
   [Signed residuals](review/2026-11-11/signed-residual/review.md)

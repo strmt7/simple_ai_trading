@@ -13,7 +13,7 @@ import uuid
 from decimal import Decimal, ROUND_DOWN, InvalidOperation
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
-from collections.abc import Mapping, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from typing import TYPE_CHECKING, Any, Dict, List, Tuple
 from urllib.parse import parse_qsl, urlencode, urlsplit
 
@@ -51,6 +51,12 @@ def _scope_kwargs(
     scope: BinanceExecutionScope | None,
 ) -> dict[str, BinanceExecutionScope]:
     return {} if scope is None else {"expected_scope": scope}
+
+
+def _dispatch_kwargs(
+    before_dispatch: Callable[[], None] | None,
+) -> dict[str, Callable[[], None]]:
+    return {} if before_dispatch is None else {"before_dispatch": before_dispatch}
 
 
 def _extract_retry_after(value: str | None) -> float | None:
@@ -404,6 +410,7 @@ class BinanceClient:
         signed: bool = False,
         *,
         expected_scope: BinanceExecutionScope | None = None,
+        before_dispatch: Callable[[], None] | None = None,
     ) -> Any:
         if params is None:
             params = {}
@@ -438,6 +445,10 @@ class BinanceClient:
                 )
         if signed:
             self._ensure_signed_endpoint_allowed(base_url)
+        if before_dispatch is not None and (
+            not signed or expected_scope is None or not callable(before_dispatch)
+        ):
+            raise BinanceAPIError("write admission requires an exact signed scope")
 
         # A failed response can follow an accepted write. The owning workflow
         # must reconcile the exact intent before deciding whether to resubmit.
@@ -449,6 +460,8 @@ class BinanceClient:
 
         for attempt in range(max_attempts):
             self._throttle()
+            if before_dispatch is not None:
+                before_dispatch()
 
             if signed:
                 if not api_key or not api_secret:
@@ -494,10 +507,7 @@ class BinanceClient:
                 retry_after = _extract_retry_after(response_headers.get("Retry-After"))
                 response_text = _redact_sensitive_text(response.text, url)
                 last_error = f"HTTP {response_status}: {response_text}"
-                if (
-                    response_status in _RETRY_HTTP_STATUSES
-                    and attempt < retry_budget
-                ):
+                if response_status in _RETRY_HTTP_STATUSES and attempt < retry_budget:
                     delay = self._retry_delay(
                         attempt,
                         response_status=response_status,
@@ -538,10 +548,7 @@ class BinanceClient:
                 raise BinanceAPIError("Malformed response from Binance") from err
 
             if isinstance(data, dict) and data.get("code") and data.get("msg"):
-                if (
-                    self._is_retryable_code(data.get("code"))
-                    and attempt < retry_budget
-                ):
+                if self._is_retryable_code(data.get("code")) and attempt < retry_budget:
                     code = data.get("code")
                     last_error = _redact_sensitive_text(
                         f"Binance API error {code}: {data['msg']}", url
@@ -584,13 +591,25 @@ class BinanceClient:
         signed: bool = False,
         label: str,
         expected_scope: BinanceExecutionScope | None = None,
+        before_dispatch: Callable[[], None] | None = None,
     ) -> JsonMap:
         payload = (
             self._request(
-                method, path, params, signed=True, **_scope_kwargs(expected_scope)
+                method,
+                path,
+                params,
+                signed=True,
+                **_scope_kwargs(expected_scope),
+                **_dispatch_kwargs(before_dispatch),
             )
             if signed
-            else self._request(method, path, params, **_scope_kwargs(expected_scope))
+            else self._request(
+                method,
+                path,
+                params,
+                **_scope_kwargs(expected_scope),
+                **_dispatch_kwargs(before_dispatch),
+            )
         )
         if not isinstance(payload, dict):
             raise BinanceAPIError(f"Unexpected {label} payload")
@@ -1203,7 +1222,9 @@ class BinanceClient:
             or self.execution_scope() != expected_scope
         ):
             raise BinanceAPIError("Spot commission execution scope differs")
-        payload = self._spot_commission_payload(normalized, expected_scope=expected_scope)
+        payload = self._spot_commission_payload(
+            normalized, expected_scope=expected_scope
+        )
         try:
             return parse_spot_commission_schedule(payload, symbol=normalized)
         except ValueError as exc:
@@ -1229,6 +1250,7 @@ class BinanceClient:
         *,
         notional: float | int | None = None,
         expected_scope: BinanceExecutionScope | None = None,
+        before_dispatch: Callable[[], None] | None = None,
     ) -> Dict[str, object]:
         if self.market_type != "futures":
             raise BinanceAPIError("Leverage is available only in futures mode")
@@ -1248,6 +1270,7 @@ class BinanceClient:
             signed=True,
             label="leverage",
             **_scope_kwargs(expected_scope),
+            **_dispatch_kwargs(before_dispatch),
         )
 
     def place_order(
@@ -1262,6 +1285,7 @@ class BinanceClient:
         reduce_only: bool = False,
         client_order_id: str | None = None,
         expected_scope: BinanceExecutionScope | None = None,
+        before_dispatch: Callable[[], None] | None = None,
     ) -> Dict[str, object]:
         symbol = str(symbol or "").upper()
         side = str(side or "").upper()
@@ -1334,6 +1358,7 @@ class BinanceClient:
                 signed=True,
                 label="order",
                 **_scope_kwargs(expected_scope),
+                **_dispatch_kwargs(before_dispatch),
             )
 
         else:
@@ -1348,6 +1373,7 @@ class BinanceClient:
                     int(max(1, round(leverage))),
                     notional=notional_value,
                     **_scope_kwargs(expected_scope),
+                    **_dispatch_kwargs(before_dispatch),
                 )
             response = self._request_dict(
                 "POST",
@@ -1356,6 +1382,7 @@ class BinanceClient:
                 signed=True,
                 label="order",
                 **_scope_kwargs(expected_scope),
+                **_dispatch_kwargs(before_dispatch),
             )
         try:
             binding.validate(response)
@@ -1380,7 +1407,9 @@ class BinanceClient:
         conversion or automatic client ID is available on this path.
         """
         if self.market_type != "spot" or type(dry_run) is not bool:
-            raise BinanceAPIError("Quote BUY requires Spot and an explicit dry_run boolean")
+            raise BinanceAPIError(
+                "Quote BUY requires Spot and an explicit dry_run boolean"
+            )
         if (
             not isinstance(expected_scope, BinanceExecutionScope)
             or expected_scope.market_type != "spot"
@@ -1428,7 +1457,9 @@ class BinanceClient:
         order_id: int | str | None = None,
         orig_client_order_id: str | None = None,
         expected_scope: BinanceExecutionScope | None = None,
-        expected_order_binding: MarketOrderBinding | SpotQuoteOrderBinding | None = None,
+        expected_order_binding: MarketOrderBinding
+        | SpotQuoteOrderBinding
+        | None = None,
     ) -> Dict[str, object]:
         symbol = str(symbol or "").upper()
         if not symbol:
@@ -1448,7 +1479,9 @@ class BinanceClient:
         if "orderId" not in params and "origClientOrderId" not in params:
             raise BinanceAPIError("Order query requires orderId or origClientOrderId")
         if expected_order_binding is not None and (
-            not isinstance(expected_order_binding, (MarketOrderBinding, SpotQuoteOrderBinding))
+            not isinstance(
+                expected_order_binding, (MarketOrderBinding, SpotQuoteOrderBinding)
+            )
             or expected_order_binding.symbol != symbol
             or expected_order_binding.market_type != self.market_type
             or expected_order_binding.client_order_id != orig_client_order_id

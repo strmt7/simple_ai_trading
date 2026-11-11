@@ -99,7 +99,10 @@ class FakeClient:
         reduce_only: bool = False,
         client_order_id: str | None = None,
         expected_scope=None,
+        before_dispatch=None,
     ):
+        if before_dispatch is not None:
+            before_dispatch()
         order = {
             "orderId": len(self.orders) + 1,
             "clientOrderId": client_order_id or "",
@@ -184,7 +187,9 @@ def test_submit_open_position_passes_notional_to_bracket_aware_client(
     client = BracketAwareClient(price=50_000.0)
 
     store = PositionsStore(tmp_path)
-    enrolled_binance_runtime(store, client.execution_scope())
+    enrolled_binance_runtime(
+        store, client.execution_scope(), opening_policy_quote="USDC"
+    )
     submitted = _submit_durable_open_position(client, position, store)
 
     assert client.orders[0]["notional"] == pytest.approx(2_500.0)

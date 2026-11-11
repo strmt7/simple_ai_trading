@@ -121,7 +121,7 @@ def test_opening_requires_current_lease_and_both_enrollments(
     tmp_path, monkeypatch, enrolled_binance_runtime, damage
 ):
     store = PositionsStore(tmp_path)
-    authority = enrolled_binance_runtime(store, SCOPE)
+    authority = enrolled_binance_runtime(store, SCOPE, opening_policy_quote="USDT")
     binding = BinanceExecutionStorage(store.opening_intents, authority.control)
     if damage == "lease":
         monkeypatch.delenv(BINANCE_RUNTIME_LEASE_ENV)
@@ -152,7 +152,7 @@ def test_default_session_authority_and_explicit_authority_publish_owned_inventor
     tmp_path, enrolled_binance_runtime
 ):
     store = PositionsStore(tmp_path)
-    authority = enrolled_binance_runtime(store, SCOPE)
+    authority = enrolled_binance_runtime(store, SCOPE, opening_policy_quote="USDT")
     venue = Venue(store)
     first = submit_durable_open(venue, position(), store)
     second = submit_durable_open(
@@ -165,18 +165,24 @@ def test_default_session_authority_and_explicit_authority_publish_owned_inventor
     assert venue.writes == ["BUY", "BUY"]
 
 
-@pytest.mark.parametrize("damage", ["stop", "controller", "opening-marker"])
+@pytest.mark.parametrize(
+    "damage", ["stop", "controller", "opening-marker", "capital-policy-marker"]
+)
 def test_owned_close_survives_opening_authority_loss(
     tmp_path, enrolled_binance_runtime, damage
 ):
     store = PositionsStore(tmp_path)
-    authority = enrolled_binance_runtime(store, SCOPE)
+    authority = enrolled_binance_runtime(store, SCOPE, opening_policy_quote="USDT")
     venue = Venue(store)
     opened = submit_durable_open(venue, position(), store).position
     if damage == "stop":
         authority.control.request_stop(reason="close-only")
     elif damage == "controller":
         authority.control.ledger_path.unlink()
+    elif damage == "capital-policy-marker":
+        from simple_ai_trading.binance_capital_policy import BinanceCapitalPolicyStore
+
+        BinanceCapitalPolicyStore(store).enrollment_path.unlink()
     else:
         BinanceExecutionStorage(
             store.opening_intents, authority.control
@@ -196,7 +202,7 @@ def test_lost_closing_lock_cannot_be_recreated_for_close(
     tmp_path, enrolled_binance_runtime
 ):
     store = PositionsStore(tmp_path)
-    authority = enrolled_binance_runtime(store, SCOPE)
+    authority = enrolled_binance_runtime(store, SCOPE, opening_policy_quote="USDT")
     venue = Venue(store)
     opened = submit_durable_open(venue, position(), store).position
     authority.control.close_lock_path.unlink()
@@ -216,17 +222,17 @@ def test_loss_during_admission_never_reinitializes_or_dispatches(
     tmp_path, monkeypatch, enrolled_binance_runtime, after_prepare
 ):
     store = PositionsStore(tmp_path)
-    authority = enrolled_binance_runtime(store, SCOPE)
+    authority = enrolled_binance_runtime(store, SCOPE, opening_policy_quote="USDT")
     original = BinanceOpenIntentJournal.prepare
 
-    def interrupted(journal, request, *, scope, create):
+    def interrupted(journal, request, *, scope, create, admission):
         assert create is False
         if after_prepare:
-            original(journal, request, scope=scope, create=create)
+            original(journal, request, scope=scope, create=create, admission=admission)
             BinanceExecutionStorage(journal, authority.control).enrollment_path.unlink()
         else:
             journal.path.rename(tmp_path / "retained.sqlite3")
-            original(journal, request, scope=scope, create=create)
+            original(journal, request, scope=scope, create=create, admission=admission)
 
     monkeypatch.setattr(BinanceOpenIntentJournal, "prepare", interrupted)
     venue = Venue(store)
@@ -245,7 +251,7 @@ def test_cancel_preserves_unknown_and_releases_runtime_gate(
     tmp_path, enrolled_binance_runtime
 ):
     store = PositionsStore(tmp_path)
-    authority = enrolled_binance_runtime(store, SCOPE)
+    authority = enrolled_binance_runtime(store, SCOPE, opening_policy_quote="USDT")
     venue = Venue(store)
     venue.failure = KeyboardInterrupt()
     with pytest.raises(KeyboardInterrupt):
@@ -282,12 +288,12 @@ def test_opening_uses_a_private_snapshot_of_the_journaled_request(
     tmp_path, monkeypatch, enrolled_binance_runtime
 ):
     store = PositionsStore(tmp_path)
-    enrolled_binance_runtime(store, SCOPE)
+    enrolled_binance_runtime(store, SCOPE, opening_policy_quote="USDT")
     requested = position()
     original = BinanceOpenIntentJournal.prepare
 
-    def mutate_caller(journal, frozen, *, scope, create):
-        original(journal, frozen, scope=scope, create=create)
+    def mutate_caller(journal, frozen, *, scope, create, admission):
+        original(journal, frozen, scope=scope, create=create, admission=admission)
         requested.qty, requested.symbol = 10, "ETHUSDT"
 
     monkeypatch.setattr(BinanceOpenIntentJournal, "prepare", mutate_caller)
@@ -302,7 +308,7 @@ def test_repeated_owned_cycles_release_locks_connections_and_native_resources(
     record_testsuite_property,
 ):
     store = PositionsStore(tmp_path)
-    authority = enrolled_binance_runtime(store, SCOPE)
+    authority = enrolled_binance_runtime(store, SCOPE, opening_policy_quote="USDT")
     venue = Venue(store)
     observations = []
     for index in range(24):

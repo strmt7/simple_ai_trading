@@ -13,50 +13,45 @@ full goal. This assessment creates no release or trading authority.
 
 ## Current checkpoint addendum
 
-Rechecked at production HEAD `4ce19f8c5ad7fa1f2c51342c94854ae2792f0ee2`
-on November 11. The checkout was clean. The tables and diagnostics below retain
-their original assessment baseline and capture times; they are not fresh remote
-inventories or a new whole-repository review. The existing harness goal was
-verified active, with its full financial and application scope preserved.
-The [refresh evidence](review/2026-11-11/plan-refresh/evidence.json) binds these
-selected inspections and planning checks.
+Rechecked at base HEAD `84315ef5da743ab5c18819c67dc4561ad8a95619` on November 11,
+with the [ordinary opening integration](review/2026-11-11/opening-policy-transaction/review.md)
+uncommitted at assessment. Its evidence binds exact source bytes; the original
+tables below retain their capture times and are not fresh remote inventories.
+The existing harness goal remains active; no new goal, agent or schedule exists.
 
-- **Financial qualification is still the largest gap:** the recorded census is
-  206 observations / 65 hypotheses / 37 historical scoped mechanisms /
-  **0 qualified stable edges**. Neither implementation progress nor the
-  documentation captures awaiting adjudication at this checkpoint change that result.
-- **Operator recovery has advanced:** [explicit collection](review/2026-11-11/recovery-workflow/review.md)
-  now connects pending inspection, bounded collection, cached reuse and retained
-  Spot application through the real command. The earlier paragraphs saying
-  collection is only programmatic describe the original baseline. Guided forms,
-  futures/legacy application, account qualification and controlled rearm remain.
-- **Persistent loss policy exists in a specific scope:** [policy activation](review/2026-11-11/capital-policy/review.md)
-  uses the existing execution journal, independent enrollment and compare-and-swap
-  revisions. Signed autonomous evaluation checks effective policy. Direct source
-  inspection confirms this is not yet a universal final-dispatch policy fence;
-  full marked/day/external-flow state, reservations, Polymarket policy,
-  quarantine and independent supervision remain incomplete.
-- **Some feedback blockers were repaired:** [the repair phase](review/2026-11-11/feedback-repair/review.md)
-  establishes its affected local scopes. Original Markdown/workflow findings,
-  current whole-suite acceptance and CodeQL disposition reconciliation remain
-  open. The old 86-failure result is not a current failure count. Quota-gated
-  analysis must not be retried without independent availability evidence.
-- **Delivery integration is now the safety bottleneck:** complete one contained
-  proposal → final admission → uncertain acknowledgement → retained recovery →
-  owned reduction path. Do not wait for every advanced policy field or guided
-  form before developing this slice; missing protections must continue to deny
-  unsupported new exposure.
-- **The efficiency risk is repeated partial work:** stale prose, large source
-  entry points, repeated indexing, duplicated controllers and separate component
-  checkpoints increase cost. Use one current task graph, versioned contracts,
-  exact evidence reuse and integration acceptance. Do not start another generic
-  audit, enlarged fit or infrastructure project without a decision it will change.
+- **Financial qualification remains the primary blocker:** 206 observations,
+  65 hypotheses, 37 historical scoped mechanisms and **0 qualified stable edges**.
+  Ordinary execution repairs do not change that census.
+- **Recovery is integrated further than the original baseline:** the
+  [operator workflow](review/2026-11-11/recovery-workflow/review.md) connects
+  pending inspection, bounded reads, cached reuse and retained Spot application.
+  Guided forms, futures/legacy application, account qualification and rearm remain.
+- **Ordinary Binance loss admission now reaches the actual SDK send:** policy
+  and the strict open/closed pair are evaluated atomically before UNKNOWN; the
+  request binds the accepted head. Post-throttle checks cover the order and
+  futures leverage write. Owned closes and recovery remain independent.
+  Source-bound composite verification has 1,070 passing non-CLI cases plus
+  188 final CLI cases, 1,258 distinct cases. Earlier failures remain retained;
+  this is not one full-suite run or native operational acceptance.
+- **The next safety bottleneck is independent supervision:** prepare one
+  contained proposal → deterministic gateway → uncertain acknowledgement →
+  retained recovery → owned reduction path. Paired/alternate policy callers,
+  intent/generation identity, native NAV, reserves and controlled rearm remain.
+  Do not wait for every policy field or UI form to begin synthetic integration.
+- **Feedback repairs are scoped:** local fixes do not prove current whole-suite
+  or hosted acceptance. Original Markdown/workflow findings and CodeQL disposition
+  reconciliation remain open. Quota-gated scans stay skipped; older zero-open
+  alert/PR inventories below are dated observations, not refreshed assurances.
+- **Efficiency needs disciplined convergence:** use the existing 24-package,
+  12-requirement work graph; one active package, source-bound evidence reuse,
+  informative financial decisions and complete vertical slices. Avoid repeated
+  unchanged triggers, unfounded larger fits and status-only publications.
 
-The [ordered milestones](DEVELOPMENT_PLAN.md#next-delivery-milestones) and
-[work graph](DEVELOPMENT_WORK_GRAPH.json) now identify the next concrete outputs,
-their stopping conditions and the distinction between starting a slice and
-qualifying the full package. No percentage complete, delivery date, current
-scanner-clean claim or guaranteed profitability follows from this addendum.
+The [ordered milestones](DEVELOPMENT_PLAN.md#next-delivery-milestones) define
+outputs, acceptance and stopping decisions. FIN-01 stays continuously first;
+SAFE-01 is the next independent local implementation slice after this checkpoint.
+M2 and SAFE-02 remain partially complete. No completion percentage, release date,
+all-regime profit or whole-repository semantic-review claim is supported.
 
 ## Verified snapshot
 

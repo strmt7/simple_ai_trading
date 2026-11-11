@@ -9,6 +9,7 @@ import hashlib
 import json
 from pathlib import Path
 import re
+import sqlite3
 import uuid
 
 from .binance_execution_scope import BinanceExecutionScope
@@ -422,3 +423,115 @@ class BinanceCapitalPolicyStore:
                 "effective capital limits differ from the activated policy"
             )
         return current["head_sha256"]
+
+    def admit_opening(self, position, transaction, *, scope, now_ms_value):
+        """Evaluate current enrolled limits and the caller's locked ledger pair.
+
+        The owning gateway holds its runtime submission guard. No connection,
+        policy activation, enrollment, lease or account request is created here.
+        """
+        from .binance_capital_state import (
+            CapitalLossLimits,
+            evaluate_capital_snapshot,
+            finite_real_number,
+        )
+
+        if (
+            transaction.connection is None
+            or not transaction.connection.in_transaction
+            or transaction.root.resolve() != self.store.root.resolve()
+        ):
+            raise OpenIntentError("opening policy requires the original transaction")
+        original_scope = self._scope(transaction.connection)
+        if original_scope != scope:
+            raise OpenIntentError("opening policy scope differs from native execution")
+        self.storage.verify(scope=scope)
+        current = self._read(transaction.connection, scope)
+        if current["policy"] is None:
+            raise OpenIntentError("owned opening requires an activated capital policy")
+        policy = BinanceCapitalPolicy(**current["policy"])
+        values = tuple(
+            float(value)
+            for value in (
+                policy.maximum_daily_loss_fraction,
+                policy.maximum_lifetime_loss_fraction,
+                policy.maximum_settled_peak_drawdown_fraction,
+                policy.reference_cash_quote,
+            )
+        )
+        if any(finite_real_number(value) is None or value <= 0 for value in values):
+            raise OpenIntentError("capital policy is outside runtime numeric bounds")
+        limits = CapitalLossLimits(
+            *values[:3], policy.maximum_consecutive_losses, values[3]
+        )
+        if not policy.matches(
+            limits,
+            policy.reference_cash_quote,
+            symbol=position.symbol,
+            market_type=position.market_type,
+            scope_market_type=scope.market_type,
+        ):
+            raise OpenIntentError("opening policy instrument or quote unit differs")
+        if position.capital_policy_sha256 and (
+            position.capital_policy_sha256 != current["head_sha256"]
+        ):
+            raise OpenIntentError("opening capital policy revision changed")
+        mark = finite_real_number(position.entry_price)
+        if mark is None or mark <= 0:
+            raise OpenIntentError("opening capital valuation mark is unqualified")
+        snapshot = self.store.snapshot_from_transaction(transaction, strict=True)
+        decision = evaluate_capital_snapshot(
+            snapshot,
+            mark,
+            limits,
+            now_ms_value=now_ms_value,
+            mark_symbol=position.symbol,
+            mark_market_type=position.market_type,
+            policy_digest=current["head_sha256"],
+        )
+        if not decision.allowed:
+            raise OpenIntentError(
+                "owned opening capital policy blocked: " + decision.reason
+            )
+        return current["head_sha256"]
+
+    def assert_opening_current(self, position, *, scope, now_ms_value):
+        """Recheck the bound revision and cash state before native transport."""
+        from .position_transactions import position_transaction
+        from .binance_close_intents import unresolved_close_count
+        from .binance_spot_roundtrip_intents import roundtrip_pending
+
+        try:
+            with position_transaction(
+                self.storage.journal, create=False
+            ) as transaction:
+                connection = transaction.connection
+                if connection is None:
+                    raise OpenIntentError("opening intent transaction is unavailable")
+                rows = connection.execute(
+                    "SELECT client_id, position_id, request_json, state FROM open_intent "
+                    "WHERE state != 'RECORDED' LIMIT 2"
+                ).fetchall()
+                if rows != [
+                    (
+                        position.open_client_order_id,
+                        position.id,
+                        self.storage.journal._request(position, scope),
+                        "UNKNOWN",
+                    )
+                ]:
+                    raise OpenIntentError("original prepared opening intent changed")
+                if (
+                    unresolved_close_count(connection)
+                    or roundtrip_pending(connection) is not None
+                ):
+                    raise OpenIntentError("another unresolved operation blocks opening")
+                return self.admit_opening(
+                    position, transaction, scope=scope, now_ms_value=now_ms_value
+                )
+        except OpenIntentError:
+            raise
+        except (OSError, sqlite3.Error, TypeError, ValueError) as failure:
+            raise OpenIntentError(
+                "opening capital authority is unavailable"
+            ) from failure

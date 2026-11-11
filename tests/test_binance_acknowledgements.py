@@ -87,7 +87,7 @@ def test_active_open_and_close_preserve_unknown_on_contradiction(
     tmp_path, phase, changes, enrolled_binance_runtime
 ):
     store, position = PositionsStore(tmp_path), _position()
-    enrolled_binance_runtime(store, _scope())
+    enrolled_binance_runtime(store, _scope(), opening_policy_quote="USDT")
     if phase == "closing":
         store.opening_intents.prepare(position, scope=_scope())
         recorded = replace(

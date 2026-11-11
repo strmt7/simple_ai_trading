@@ -14,7 +14,7 @@
     "continuous_financial_priority": "FIN-01",
     "dependencies": "Delivery acceptance dependencies, not a prohibition on useful independent preparation. Exact source/capture/account rules always control.",
     "host_lifecycle": "Bounded hidden session-owned helpers; exception-safe teardown; no service, scheduler, startup hook or interference with unrelated work.",
-    "next_preferred_local_batch": "SAFE-02",
+    "next_preferred_local_batch": "SAFE-01",
     "preemption": "A verified capital/security failure or eligible higher-information financial decision can preempt the default batch.",
     "publication": "Official connector only; coherent batches; identity/tree/parent/expected-head lease audit; no extra PR, release, tag or draft.",
     "source_reading": "Read selected task scope and fresh relevant evidence; reuse exact-hash material. Do not dump the whole plan per turn.",
@@ -249,12 +249,15 @@
         "src/simple_ai_trading/autonomous.py",
         "src/simple_ai_trading/capital_drawdown.py",
         "src/simple_ai_trading/binance_capital_policy.py",
-        "src/simple_ai_trading/binance_capital_policy_cli.py"
+        "src/simple_ai_trading/binance_capital_policy_cli.py",
+        "src/simple_ai_trading/binance_capital_state.py",
+        "src/simple_ai_trading/binance_owned_execution.py",
+        "src/simple_ai_trading/api.py"
       ],
       "status": "partially_complete",
       "title": "Durable policy, loss and recovery authority",
-      "progress_evidence": "docs/review/2026-11-11/capital-policy/evidence.json",
-      "remaining": "Universal/final-intent policy fencing, Polymarket policy, full marked/day/external-flow state, reservations, model/generation identity, quarantine, explicit rearm and complete recovery qualification.",
+      "progress_evidence": "docs/review/2026-11-11/opening-policy-transaction/evidence.json",
+      "remaining": "Paired/alternate final admission, Polymarket policy, complete intent/source/model/gateway-generation binding, native valuation/day/external-flow state, reservations, quarantine, explicit rearm and independent supervision.",
       "entry_boundary_validation": {
         "path": "docs/review/2026-11-11/opening-numerics/evidence.json",
         "classification": "Reproduced malformed-decision admission repaired; explicit model/AI approvals and finite numerical construction. Final policy/generation and universal writer integration remain open.",
@@ -572,14 +575,16 @@
       "title": "Complete product and financial readiness audit"
     }
   ],
-  "updated_at_utc": "2026-11-11T13:02:51.732Z",
+  "updated_at_utc": "2026-11-11T14:40:47.288Z",
   "current_checkpoint": {
-    "inspected_production_source": "4ce19f8c5ad7fa1f2c51342c94854ae2792f0ee2",
+    "inspected_production_source": "84315ef5da743ab5c18819c67dc4561ad8a95619",
     "assessment_addendum": "docs/REPO_STATE_2026_11_11.md#current-checkpoint-addendum",
-    "planning_evidence": "docs/review/2026-11-11/plan-refresh/evidence.json",
+    "planning_evidence": "docs/review/2026-11-11/opening-policy-transaction/evidence.json",
     "harness_goal_status_verified": "active",
-    "implementation_changed_by_planning_refresh": false,
-    "full_goal_complete": false
+    "implementation_changed_by_planning_refresh": true,
+    "full_goal_complete": false,
+    "implementation_evidence": "docs/review/2026-11-11/opening-policy-transaction/evidence.json",
+    "scope": "Ordinary owned opening integration plus current assessment/plan delta; not universal admission or complete M2."
   },
   "next_actions": [
     {
@@ -594,7 +599,7 @@
       "task": "SAFE-02",
       "milestone": "M2",
       "priority": 1,
-      "action": "Trace ordinary and paired Binance policy-to-dispatch authority; integrate one complete final-admission path, including policy/state change during queued work.",
+      "action": "Extend the now integrated ordinary owned policy path to paired/alternate callers after a source-bound writer map; preserve native cash, generation and recovery limits.",
       "output": "Source-bound caller map and a fully integrated path preserving owned reduction and UNKNOWN obligations.",
       "stop": "Reject unsupported new exposure; do not claim universal writer or complete capital protection from this slice."
     },

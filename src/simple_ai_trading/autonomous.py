@@ -29,7 +29,6 @@ import math
 import sqlite3
 import time
 from dataclasses import asdict, dataclass, field, replace
-from numbers import Real
 from pathlib import Path
 from typing import Callable, Mapping
 
@@ -56,7 +55,13 @@ from .binance_owned_execution import (
     _submit_durable_close_position as _submit_durable_close_position,
     _next_close_client_order_id as _next_close_client_order_id,
 )
-from .binance_open_intents import OpenIntentError
+from .binance_capital_state import (
+    CapitalGuard,
+    CapitalLossLimits,
+    evaluate_capital_snapshot,
+    finite_real_number as _decision_number,
+    utc_day_index as _safe_day_ms,
+)
 from .binance_paper import BinancePaperBroker
 from .execution_lifecycle import ExecutionLifecyclePlan, build_execution_lifecycle_plan
 from .intervals import interval_milliseconds
@@ -69,7 +74,6 @@ from .positions import (
     bot_client_order_id,
     bot_ownership_rejection_reason,
     compute_stats,
-    compute_snapshot_stats,
     new_position_id,
     now_ms,
 )
@@ -291,20 +295,6 @@ DecisionFn = Callable[
 ReconcileFn = Callable[
     [BinanceClient, RuntimeConfig, PositionsStore], ReconciliationReport
 ]
-
-
-@dataclass(frozen=True)
-class CapitalGuard:
-    """Hard local capital-at-risk decision for autonomous execution."""
-
-    allowed: bool
-    reason: str
-    daily_loss: float
-    session_loss: float
-    consecutive_losses: int
-    force_close: bool = False
-    realized_peak_drawdown: float | None = None
-    capital_policy_sha256: str | None = None
 
 
 @dataclass(frozen=True)
@@ -683,21 +673,6 @@ class EntryGate:
     directional_confidence: float
 
 
-def _safe_day_ms(timestamp_ms: int) -> int:
-    return int(timestamp_ms // (24 * 60 * 60 * 1000))
-
-
-def _decision_number(value: object) -> float | None:
-    """Accept finite real decision values without boolean or string coercion."""
-    if isinstance(value, bool) or not isinstance(value, Real):
-        return None
-    try:
-        number = float(value)
-    except (TypeError, ValueError, OverflowError):
-        return None
-    return number if math.isfinite(number) else None
-
-
 def _decision_unit_fraction(value: object) -> float | None:
     number = _decision_number(value)
     return number if number is not None and 0.0 <= number <= 1.0 else None
@@ -752,32 +727,30 @@ def _loss_budget_guard(
     mark_market_type: str = "",
 ) -> CapitalGuard:
     """Apply cash-aware native loss limits; unqualified metrics never admit risk."""
-    limits = (
+    limits = CapitalLossLimits(
         strategy.max_daily_loss_pct,
         strategy.max_session_loss_pct,
         strategy.max_drawdown_limit,
+        strategy.max_consecutive_losses,
+        cfg.starting_reference_cash,
     )
-    qualified_limits = tuple(_decision_number(value) for value in limits)
-    if (
-        any(value is None or value < 0 for value in qualified_limits)
-        or type(strategy.max_consecutive_losses) is not int
-        or strategy.max_consecutive_losses < 0
-    ):
+    if not limits.loss_limits_valid():
         return CapitalGuard(False, "risk-policy-loss-limits-unqualified", 0.0, 0.0, 0)
-    if type(cfg.dry_run) is not bool:
+    dry_run = cfg.dry_run
+    if type(dry_run) is not bool:
         return CapitalGuard(
             False, "risk-policy-execution-mode-unqualified", 0.0, 0.0, 0
         )
     policy_digest = None
     policy_blocked = False
-    if not cfg.dry_run:
+    if not dry_run:
         from .binance_capital_policy import BinanceCapitalPolicyStore
         from .binance_runtime_control import RuntimeControlError
 
         try:
             policy_digest = BinanceCapitalPolicyStore(store).assert_effective(
-                strategy,
-                cfg.starting_reference_cash,
+                limits,
+                limits.reference_cash_quote,
                 symbol=mark_symbol,
                 market_type=mark_market_type,
             )
@@ -790,174 +763,19 @@ def _loss_budget_guard(
             RuntimeControlError,
         ):
             policy_blocked = True
-    mark = _decision_number(mark_price)
-    if mark is not None and mark <= 0.0:
-        mark = None
     try:
         snapshot = store.load_snapshot(strict=True)
     except (OSError, sqlite3.Error, ValueError, TypeError, OverflowError):
         return CapitalGuard(False, "cash-valuation-ledger-unqualified", 0.0, 0.0, 0)
-    opens, closed = snapshot
-    consecutive_losses = 0
-    for trade in reversed(closed):
-        if trade.realized_pnl >= 0.0:
-            break
-        consecutive_losses += 1
-    try:
-        reference = float(cfg.starting_reference_cash)
-    except (TypeError, ValueError, OverflowError):
-        reference = float("nan")
-    if (
-        isinstance(cfg.starting_reference_cash, bool)
-        or not math.isfinite(reference)
-        or reference <= 0
-    ):
-        return CapitalGuard(
-            False, "cash-valuation-reference-unqualified", 0.0, 0.0, consecutive_losses
-        )
-    # A scalar mark can value only its exact instrument. Closing inventory does
-    # not erase the denomination of realized cash, including legacy records.
-    if opens or closed:
-        if (
-            not mark_symbol
-            or mark_market_type not in {"spot", "futures"}
-            or opens
-            and (
-                mark is None
-                or any(
-                    (position.symbol, position.market_type)
-                    != (mark_symbol, mark_market_type)
-                    for position in opens
-                )
-            )
-        ):
-            return CapitalGuard(
-                False,
-                "cash-valuation-instrument-unqualified",
-                0.0,
-                0.0,
-                consecutive_losses,
-            )
-        from .assets import symbol_base_for_supported_quote
-
-        base = symbol_base_for_supported_quote(mark_symbol)
-        quote = mark_symbol[len(base) :] if base else ""
-        if not quote or any(not trade.symbol.endswith(quote) for trade in closed):
-            return CapitalGuard(
-                False, "cash-valuation-quote-unqualified", 0.0, 0.0, consecutive_losses
-            )
-    try:
-        stats = compute_snapshot_stats(
-            snapshot,
-            mark_price=mark,
-            starting_reference_cash=cfg.starting_reference_cash,
-            include_native_entry_costs=True,
-        )
-    except OpenIntentError:
-        return CapitalGuard(
-            False, "cash-valuation-fees-unqualified", 0.0, 0.0, consecutive_losses
-        )
-    day = _safe_day_ms(now_ms_value)
-    realized_today = sum(
-        trade.realized_pnl
-        for trade in closed
-        if _safe_day_ms(trade.closed_at_ms) == day
-    )
-    unrealized = float(stats.unrealized_pnl) if mark is not None else 0.0
-    daily_cash = realized_today + unrealized
-    session_cash = float(stats.realized_pnl) + unrealized
-    # Finite records can overflow when aggregated. NaN must never become zero
-    # loss through max(), nor can infinite profit offset real losses.
-    if not all(math.isfinite(value) for value in (daily_cash, session_cash)):
-        return CapitalGuard(
-            False, "cash-valuation-nonfinite", 0.0, 0.0, consecutive_losses
-        )
-    daily_loss = max(0.0, -daily_cash / reference)
-    session_loss = max(0.0, -session_cash / reference)
-    if not math.isfinite(daily_loss) or not math.isfinite(session_loss):
-        return CapitalGuard(
-            False, "cash-valuation-nonfinite", 0.0, 0.0, consecutive_losses
-        )
-    from .capital_drawdown import settled_cash_drawdown
-
-    try:
-        cash_peak = settled_cash_drawdown(
-            closed,
-            unrealized_pnl_quote=unrealized,
-            reference_cash_quote=reference,
-            observed_at_ms=now_ms_value,
-        )
-        drawdown = float(cash_peak.reference_fraction)
-    except (ValueError, TypeError):
-        return CapitalGuard(
-            False, "cash-valuation-history-unqualified", 0.0, 0.0, consecutive_losses
-        )
-    except OverflowError:
-        return CapitalGuard(
-            False, "cash-valuation-nonfinite", 0.0, 0.0, consecutive_losses
-        )
-    if not math.isfinite(drawdown):
-        return CapitalGuard(
-            False, "cash-valuation-nonfinite", 0.0, 0.0, consecutive_losses
-        )
-    if strategy.max_daily_loss_pct > 0.0 and daily_loss >= strategy.max_daily_loss_pct:
-        return CapitalGuard(
-            False,
-            f"daily-loss-lockout:{daily_loss:.2%}",
-            daily_loss,
-            session_loss,
-            consecutive_losses,
-            force_close=True,
-            realized_peak_drawdown=drawdown,
-            capital_policy_sha256=policy_digest,
-        )
-    if (
-        strategy.max_session_loss_pct > 0.0
-        and session_loss >= strategy.max_session_loss_pct
-    ):
-        return CapitalGuard(
-            False,
-            f"session-loss-lockout:{session_loss:.2%}",
-            daily_loss,
-            session_loss,
-            consecutive_losses,
-            force_close=True,
-            realized_peak_drawdown=drawdown,
-            capital_policy_sha256=policy_digest,
-        )
-    if strategy.max_drawdown_limit > 0.0 and drawdown >= strategy.max_drawdown_limit:
-        return CapitalGuard(
-            False,
-            f"drawdown-lockout:{drawdown:.2%}",
-            daily_loss,
-            session_loss,
-            consecutive_losses,
-            force_close=True,
-            realized_peak_drawdown=drawdown,
-            capital_policy_sha256=policy_digest,
-        )
-    if (
-        strategy.max_consecutive_losses > 0
-        and consecutive_losses >= strategy.max_consecutive_losses
-    ):
-        return CapitalGuard(
-            False,
-            f"loss-streak-lockout:{consecutive_losses}",
-            daily_loss,
-            session_loss,
-            consecutive_losses,
-            force_close=False,
-            realized_peak_drawdown=drawdown,
-            capital_policy_sha256=policy_digest,
-        )
-    return CapitalGuard(
-        not policy_blocked,
-        "risk-policy-activation-unqualified" if policy_blocked else "allowed",
-        daily_loss,
-        session_loss,
-        consecutive_losses,
-        realized_peak_drawdown=drawdown,
-        capital_policy_sha256=policy_digest,
+    return evaluate_capital_snapshot(
+        snapshot,
+        mark_price,
+        limits,
+        now_ms_value=now_ms_value,
+        mark_symbol=mark_symbol,
+        mark_market_type=mark_market_type,
+        policy_digest=policy_digest,
+        policy_blocked=policy_blocked,
     )
 
 

@@ -284,3 +284,5 @@ native/windows/CMakeLists.txt text eol=lf
 docs/review/2026-11-09/operator-overview/*.json binary -eol
 
 docs/review/2026-11-09/paired-inventory-cash/*.json text eol=lf
+
+docs/review/2026-11-11/opening-policy-transaction/** text eol=lf

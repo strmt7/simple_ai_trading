@@ -9,7 +9,7 @@ import os
 from pathlib import Path
 import sqlite3
 import time
-from typing import Mapping
+from typing import Callable, Mapping
 
 from .api import BinanceAPIError, BinanceClient
 from .binance_execution_scope import BinanceExecutionScope
@@ -241,6 +241,7 @@ def _submit_open_order(
     position: OpenPosition,
     *,
     expected_scope: BinanceExecutionScope | None = None,
+    before_dispatch: Callable[[], None] | None = None,
 ) -> Mapping[str, object]:
     if position.dry_run:
         raise BinanceAPIError("native opening requires a signed position")
@@ -254,6 +255,8 @@ def _submit_open_order(
         order_kwargs["notional"] = abs(float(position.notional))
     if expected_scope is not None:
         order_kwargs["expected_scope"] = expected_scope
+    if before_dispatch is not None:
+        order_kwargs["before_dispatch"] = before_dispatch
     try:
         order = client.place_order(
             position.symbol,
@@ -353,15 +356,40 @@ def submit_durable_open(
     storage = BinanceExecutionStorage(
         journal, authority.control, execution_enrollment_path
     )
+    from .binance_capital_policy import BinanceCapitalPolicyStore
+
+    policies = BinanceCapitalPolicyStore(
+        store,
+        control=authority.control,
+        execution_enrollment_path=execution_enrollment_path,
+    )
+
+    def admit(transaction):
+        position.capital_policy_sha256 = policies.admit_opening(
+            position, transaction, scope=scope, now_ms_value=int(time.time() * 1000)
+        )
+
+    def before_dispatch():
+        authority.assert_opening_allowed()
+        storage.verify(scope=scope)
+        policies.assert_opening_current(
+            position, scope=scope, now_ms_value=int(time.time() * 1000)
+        )
+
     try:
         authority.assert_opening_allowed()
         storage.verify(scope=scope)
         with authority.submission_guard():
             storage.verify(scope=scope)
-            journal.prepare(position, scope=scope, create=False)
+            journal.prepare(position, scope=scope, create=False, admission=admit)
             authority.assert_opening_allowed()
             storage.verify(scope=scope)
-            response = _submit_open_order(client, position, expected_scope=scope)
+            policies.assert_opening_current(
+                position, scope=scope, now_ms_value=int(time.time() * 1000)
+            )
+            response = _submit_open_order(
+                client, position, expected_scope=scope, before_dispatch=before_dispatch
+            )
             recorded = _apply_open_order(position, response)
             journal.validate_result(position, recorded)
             store.record_open(recorded, create=False)

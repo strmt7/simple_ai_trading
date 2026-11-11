@@ -8,7 +8,7 @@ import sqlite3
 from contextlib import closing
 from dataclasses import asdict, dataclass
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Callable
 
 from .binance_execution_scope import BinanceExecutionScope
 
@@ -185,11 +185,24 @@ class BinanceOpenIntentJournal:
         ):
             raise OpenIntentError("opening intent identity or quantity is invalid")
         template = asdict(position)
+        policy_digest = position.capital_policy_sha256
+        if (
+            not isinstance(policy_digest, str)
+            or policy_digest
+            and (
+                len(policy_digest) != 64
+                or any(
+                    character not in "0123456789abcdef" for character in policy_digest
+                )
+            )
+        ):
+            raise OpenIntentError("opening capital policy digest is invalid")
         # Empty new receipt fields must not change old pending request bytes.
         for field in (
             "spot_gross_entry_quantity",
             "spot_entry_base_commission",
             "spot_entry_cash_receipt",
+            "capital_policy_sha256",
         ):
             if template.get(field) == "":
                 template.pop(field)
@@ -224,6 +237,7 @@ class BinanceOpenIntentJournal:
         *,
         scope: BinanceExecutionScope,
         create: bool = True,
+        admission: Callable[[PositionTransaction], None] | None = None,
     ) -> None:
         """Commit UNKNOWN before transmission; an existing identity is never replayable."""
         from .binance_close_intents import unresolved_close_count
@@ -259,6 +273,9 @@ class BinanceOpenIntentJournal:
                     raise OpenIntentError(
                         "an unresolved opening requires reconciliation"
                     )
+                if admission is not None:
+                    admission(transaction)
+                    payload = self._request(position, scope)
                 connection.execute(
                     "INSERT INTO open_intent VALUES (?, ?, ?, 'UNKNOWN')",
                     (position.open_client_order_id, position.id, payload),

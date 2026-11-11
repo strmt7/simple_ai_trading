@@ -26,7 +26,7 @@ is preserved, and a source-bound result overrides an unsupported plan assertion.
    or no progress under the existing protocol.
 2. Select one bounded work package. An eligible informative financial decision
    has priority; a demonstrated capital/security failure can preempt it. The
-   default next local batch is `SAFE-02`; `BASE-01` and `EXEC-01` have recorded
+   default next local batch is `SAFE-01`; `BASE-01` and `EXEC-01` have recorded
    partial implementations. Do not infer that every research trigger is closed
    merely because no new one is asserted here.
 3. Read the selected package and its exact current source/evidence dependencies.
@@ -60,14 +60,15 @@ dependent deliverable finished.
 ## Next delivery milestones
 
 Planning refresh: inspected production source
-`4ce19f8c5ad7fa1f2c51342c94854ae2792f0ee2`. Existing package statuses and
+`84315ef5da743ab5c18819c67dc4561ad8a95619` plus the source-bound
+[ordinary opening integration](review/2026-11-11/opening-policy-transaction/review.md). Existing package statuses and
 historical evidence remain separate from these future deliverables. This is a
 dependency order, not a calendar estimate or a promise of permanent profit.
 
 | Milestone | Concrete next output | Acceptance and stopping decision |
 | --- | --- | --- |
 | M1 — Financial decision, continuously first | `FIN-01`: use the [terminal routing distinction](review/2026-11-11/routing-access/review.md); resolve one eligible Polymarket source/payoff question or record the exact missing trigger | Retain native failures and scope limits. A documentation result changes only its source claim. If no eligible economic access follows, close that question and move to useful independent work; do not fetch another quote population to manufacture progress. |
-| M2 — Admission across the actual dispatch boundary | `SAFE-02` with `EXEC-02` preparation: map policy checks from strategy evaluation to ordinary and paired Binance dispatch; implement one complete final-admission path | Recheck the required policy revision and relevant state under the authoritative dispatch guard. Changed/missing policy, Stop, expired intent or changed scope prevents new native dispatch; originally owned reduction and UNKNOWN reconciliation remain available. Other callers remain explicitly unqualified until integrated. |
+| M2 — Admission across the actual dispatch boundary | `SAFE-02` with `EXEC-02`: ordinary policy admission now reaches SDK dispatch; extend the caller map to paired/alternate paths and complete intent/generation fencing | Recheck the required policy revision and relevant state under the authoritative dispatch guard. Changed/missing policy, Stop, expired intent or changed scope prevents new native dispatch; originally owned reduction and UNKNOWN reconciliation remain available. Other callers remain explicitly unqualified until integrated. |
 | M3 — Independent safety slice | `SAFE-01` with `EXEC-01`: connect one contained strategy worker to a deterministic session gateway and independent useful-progress observer | A real worker hang, parent exit or stale proposal cannot keep opening authority. Demonstrate bounded teardown, retained uncertainty and available owned recovery through the actual path. No host service or persistent launcher. Start preparation now; do not wait for all UI forms or advanced policy fields. |
 | M4 — Economically usable data and baseline | `DATA-01`, `MODEL-01`, and applicable `FIN-02/03`: select one source-qualified objective and feasible comparator | Bind units, clocks, information availability, quantities, all costs, capital and chronological roles before fitting. If the target is a proxy, native coverage is absent or optimistic economics already fail, retain that decision and change the research question instead of expanding training. |
 | M5 — Model and acceleration improvement | `MODEL-02`, `ACCEL-01`: compare a simple admitted baseline with an ensemble/local model and any justified LLM contribution on the same roles | Require incremental net utility, calibration/tail behavior, latency and usable capacity. Qualify the installed accelerator and precision first. Keep an accelerator only when it improves useful end-to-end throughput; larger datasets must add independent information. |
@@ -220,12 +221,15 @@ and explicit rearm require their own verified continuation stages.
 
 ### SAFE-02 — Durable risk policy and recovery state
 
-The [enrolled loss-policy phase](review/2026-11-11/capital-policy/review.md) binds
-signed autonomous evaluation to explicit scope/unit/reference/limit revisions
-in the existing execution journal. The [procedure](BINANCE_CAPITAL_POLICY.md)
-preserves Stop, cash history and owned reduction. Universal writer/final-intent
-integration, complete policy fields and the remaining state contract below are
-still required; the active loss-policy hash is not a full gateway qualification.
+The [enrolled loss-policy phase](review/2026-11-11/capital-policy/review.md) and
+[ordinary opening integration](review/2026-11-11/opening-policy-transaction/review.md)
+bind policy and the strict position pair atomically before UNKNOWN, then recheck
+through actual SDK dispatch after throttling. Autonomous and CLI ordinary owned
+openings use this path; owned closes and recovery retain separate authority.
+The [procedure](BINANCE_CAPITAL_POLICY.md) preserves Stop and cash history.
+Paired/alternate writers, complete intent/generation fencing, native valuation
+and the remaining state contract below still require integration. This slice
+does not complete M2 or justify delaying independent M3 preparation.
 
 The [cash-peak repair](review/2026-11-11/cash-peak-risk/review.md) fixes a reproduced
 Binance capital-admission defect: retracement of settled gains was treated as zero
@@ -329,6 +333,16 @@ against the feasible direct alternative, including commission assets, spread,
 partial completion and unwind. API/testnet support and eligibility must be
 source-proved. Deliver an independent net-utility/capacity result or a precise
 abstention condition; do not build a collector merely because a mechanism exists.
+
+A distinct next preparation candidate is an independently sourced chronological
+score-probability study for the residual-cover family. Before any score/outcome
+access, freeze the full candidate interval universe, pregame information cutoff,
+training/calibration/untouched roles, dependence units and selection budget.
+Qualify exceptional settlement rules and native cost/price availability separately.
+The consumed NFL example cannot become a holdout, and an estimate for its
+nine-point outcome cannot retroactively promote it. If source timing or settlement
+identity cannot be qualified, stop that question and advance a different family.
+This is a planning candidate, not a frozen capture or new access permission.
 
 ### DATA-01 — Causal data and provenance
 

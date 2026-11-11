@@ -24,7 +24,7 @@ def lost_spot_response(tmp_path, monkeypatch, enrolled_binance_runtime):
         clients.append(client)
         scope = client.execution_scope()
         store = PositionsStore(tmp_path / phase)
-        enrolled_binance_runtime(store, scope)
+        enrolled_binance_runtime(store, scope, opening_policy_quote="USDT")
         state = {"lose": phase == "opening", "calls": [], "count": 0}
 
         def forbidden(*args, **kwargs):

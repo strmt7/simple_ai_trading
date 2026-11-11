@@ -10,6 +10,7 @@ import pytest
 
 from simple_ai_trading.api import BinanceAPIError, BinanceClient
 from simple_ai_trading.autonomous import _submit_durable_open_position
+from simple_ai_trading.binance_capital_policy import BinanceCapitalPolicyStore
 from simple_ai_trading.binance_execution_scope import (
     BINANCE_SPOT_DEMO,
     BINANCE_SPOT_TESTNET,
@@ -62,19 +63,22 @@ def test_persisted_scope_rejects_configuration_change_before_transmission(
 ):
     store = PositionsStore(tmp_path)
     original_scope = client.execution_scope()
-    enrolled_binance_runtime(store, original_scope)
+    enrolled_binance_runtime(store, original_scope, opening_policy_quote="USDT")
     prepare = BinanceOpenIntentJournal.prepare
 
-    def prepare_then_mutate(journal, position, *, scope, create):
+    def prepare_then_mutate(journal, position, *, scope, create, admission):
         assert create is False
-        prepare(journal, position, scope=scope, create=create)
+        prepare(journal, position, scope=scope, create=create, admission=admission)
         setattr(client, field, value)
 
     monkeypatch.setattr(BinanceOpenIntentJournal, "prepare", prepare_then_mutate)
     with pytest.raises(BinanceAPIError, match="scope"):
         _submit_durable_open_position(client, _position(), store)
     client.session.request.assert_not_called()
-    assert store.opening_intents.pending_position(scope=original_scope) == _position()
+    assert store.opening_intents.pending_position(scope=original_scope) == replace(
+        _position(),
+        capital_policy_sha256=BinanceCapitalPolicyStore(store).inspect()["head_sha256"],
+    )
     assert store.opening_intents.entry_block_reason() == "unresolved_opening_intents=1"
     assert store.load_open() == []
 
@@ -274,13 +278,20 @@ def test_full_signed_operation_preserves_scope_through_all_requests(
     )
     instance._throttle = lambda: None
     store = PositionsStore(tmp_path)
-    enrolled_binance_runtime(store, instance.execution_scope())
+    enrolled_binance_runtime(
+        store, instance.execution_scope(), opening_policy_quote="USDT"
+    )
+    expected_position = replace(
+        _position(market_type),
+        capital_policy_sha256=BinanceCapitalPolicyStore(store).inspect()["head_sha256"],
+    )
     paths = []
 
     def request(method, url, **kwargs):
-        assert store.opening_intents.pending_position(
-            scope=instance.execution_scope()
-        ) == _position(market_type)
+        assert (
+            store.opening_intents.pending_position(scope=instance.execution_scope())
+            == expected_position
+        )
         assert kwargs["headers"]["X-MBX-APIKEY"] == "offline-placeholder"
         path = url.split("?", 1)[0]
         paths.append(path.rsplit("/", 1)[-1])
@@ -355,7 +366,7 @@ def test_futures_key_change_after_leverage_never_transmits_order_or_recovery_que
     instance._throttle = lambda: None
     store = PositionsStore(tmp_path)
     scope = instance.execution_scope()
-    enrolled_binance_runtime(store, scope)
+    enrolled_binance_runtime(store, scope, opening_policy_quote="USDT")
     calls = []
 
     def request(method, url, **kwargs):
@@ -374,8 +385,11 @@ def test_futures_key_change_after_leverage_never_transmits_order_or_recovery_que
         with pytest.raises(BinanceAPIError, match="scope"):
             _submit_durable_open_position(instance, _position("futures"), store)
         assert calls == ["leverageBracket", "leverage"]
-        assert store.opening_intents.pending_position(scope=scope) == _position(
-            "futures"
+        assert store.opening_intents.pending_position(scope=scope) == replace(
+            _position("futures"),
+            capital_policy_sha256=BinanceCapitalPolicyStore(store).inspect()[
+                "head_sha256"
+            ],
         )
         assert store.load_open() == []
     finally:

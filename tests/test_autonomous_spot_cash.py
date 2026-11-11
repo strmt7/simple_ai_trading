@@ -468,7 +468,9 @@ def test_unqualified_cash_after_sell_preserves_durable_unknown(
         )
     )
     store = PositionsStore(tmp_path)
-    enrolled_binance_runtime(store, client.execution_scope())
+    enrolled_binance_runtime(
+        store, client.execution_scope(), opening_policy_quote="USDC"
+    )
     opened = _submit_durable_open_position(client, position(), store)
     with pytest.raises(OpenIntentError):
         _submit_durable_close_position(
@@ -599,7 +601,9 @@ def test_interrupted_native_close_keeps_cash_record_and_unknown_after_restart(
 ):
     client = Client(receipt("BUY", "1", fee="0.001", asset="BTC"))
     store = PositionsStore(tmp_path)
-    enrolled_binance_runtime(store, client.execution_scope())
+    enrolled_binance_runtime(
+        store, client.execution_scope(), opening_policy_quote="USDC"
+    )
     opened = _submit_durable_open_position(client, position(), store)
     original_record = store.record_close_result
 
