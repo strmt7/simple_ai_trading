@@ -1,0 +1,35 @@
+{
+  "accepted_edge": false,
+  "authority": {
+    "account_requests": 0,
+    "credentials_used": false,
+    "funds_used": false,
+    "orders_or_transactions": 0,
+    "protected_capture_touched": false,
+    "public_unauthenticated_read_only_requests": 1,
+    "signed_requests": 0,
+    "trading_authority": false
+  },
+  "books_requested": 0,
+  "capture_result_sha256": "24a92886ca55182f40901ed8f9a3c25a6a7b4f8deebba82a9bc533ed3094882a",
+  "contract_sha256": "2fbf0083b42dd9b02e92309e93dfa961777cb3dc02aed6378ebbd71d18d006c4",
+  "decision": "source_or_rule_admission_failed",
+  "economics": null,
+  "failure": "exact active event identity or common rule differs",
+  "fee_endpoints_requested": 0,
+  "journal_sha256": "e6a1f96d7772556b626b32172546dd3bfae3ca714a8152f62bca0ceab6d8e944",
+  "native_receipt": {
+    "completed_at_ms": 1794357219016,
+    "error_type": null,
+    "oversize_body_is_truncated": false,
+    "phase": "completed",
+    "requested_at_ms": 1794357218858,
+    "response_bytes": 41864,
+    "response_sha256": "f1c27c8b852118ddbfcdd7517ba0b73a06f7ce90aa1c2ec3c7696c82f6432d3e",
+    "status_code": 200
+  },
+  "new_economic_observations": 0,
+  "result_sha256": "683e822bbe118171ba3bdba288a25bc409a6fa9880639bf1d4b6099ee44700ee",
+  "schema_version": "polymarket-btc-november-12-ladder-v1",
+  "stable_edge_qualified": false
+}

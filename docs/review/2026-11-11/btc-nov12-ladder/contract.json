@@ -1,0 +1,80 @@
+{
+  "admission": "All returned markets must form one active 3..32-row binary ladder with consecutive ordinal coverage, unique positive integer thresholds, disjoint tokens and exact common normalized wording, structured source and scheduled metadata. Rules are adjudicated before prices. Controlling semantics are the one-minute Binance BTC/USDT candle close at noon Eastern, strict greater-than, exact ties NO, source precision. Ordinary model only.",
+  "authority": {
+    "account_requests": 0,
+    "credentials_used": false,
+    "funds_used": false,
+    "orders_or_transactions": 0,
+    "protected_capture_touched": false,
+    "public_unauthenticated_read_only_requests": 1,
+    "signed_requests": 0,
+    "trading_authority": false
+  },
+  "base_head": "85a15e756578f1f6a98cf1931fba84b6a6bbf60b",
+  "boundaries_sha256": "f971726268ba2e630b2ebbe8d5bcf02f7b3f23b92ccb16efe23aef82cebe950f",
+  "consequences": "One exact bounded Gamma GET. Any failure or gross rejection consumes the event. Do not reprice, alias, fetch missing sides, choose another day from this result or request books, fees, accounts, or orders. A strict proxy survivor permits only separate review and a separately frozen depth contract after full rule admission. Gamma alone does not qualify an edge.",
+  "contract_path": "docs/review/2026-11-11/btc-nov12-ladder/contract.json",
+  "contract_sha256": "2fbf0083b42dd9b02e92309e93dfa961777cb3dc02aed6378ebbd71d18d006c4",
+  "economics": "Enumerate all ordered lower-YES plus higher-NO pairs using bestAsk and 1 - higher YES bestBid. Missing, zero and one side prices are unavailable. Uncrossed in-range prices have at most 12 decimal places. Gross strict sub-floor gate. The suffix-max bid valuation gives a certificate across every nonnegative available proxy combination. No fees, depth or executable terms are inferred.",
+  "event_slug": "bitcoin-above-on-november-12-2026",
+  "frozen_at_utc": "2026-11-11T00:33:08.970047Z",
+  "implementations": [
+    {
+      "path": "docs/review/2026-11-11/btc-nov12-ladder/adjudicate.py",
+      "sha256": "a72f05f4680f95068ca8a3ba1cc6d5873c2ede56cbb33554fa640b68a15f975a"
+    },
+    {
+      "path": "tools/capture_public_source_bounded.py",
+      "sha256": "760339a7602abfa9eb97f3f1cca0ef79191b07ff5f5aa42515f30f191f9888fc"
+    },
+    {
+      "path": "tools/capture_public_source_contract.py",
+      "sha256": "9dbb14651455abade755fe96091b9eaafe1153f56a1baad4cd60b1a888d41b8c"
+    },
+    {
+      "path": "tools/adjudicate_polymarket_exact_mlb_monotone_prefilter.py",
+      "sha256": "958a44d78029b9a1eb69a3771ce18e53ac1ed3c7bc161c8e4318beedce2cf99f"
+    },
+    {
+      "path": "tools/screen_polymarket_exact_two_leg_package.py",
+      "sha256": "374fcc3c3485c466b4929a91256450bdc7db70f93ef4c6bda627e05fe8938327"
+    }
+  ],
+  "normalized_rule": "This market will resolve to \"Yes\" if the Binance 1 minute candle for BTC/USDT 12:00 in the ET timezone (noon) on the date specified in the title has a final \"Close\" price higher than the price specified in the title. Otherwise, this market will resolve to \"No\". The resolution source for this market is Binance, specifically the BTC/USDT \"Close\" prices currently available at https://www.binance.com/en/trade/BTC_USDT with \"1m\" and \"Candles\" selected on the top bar. Please note that this market is about the price according to Binance BTC/USDT, not according to other exchanges or trading pairs. Price precision is determined by the number of decimal places in the source.",
+  "outputs": {
+    "journal_path": "data/research/2026-11-11-btc-nov12-ladder/request-journal.jsonl",
+    "raw_path": "data/research/2026-11-11-btc-nov12-ladder/raw/event.json",
+    "result_path": "data/research/2026-11-11-btc-nov12-ladder/capture.json"
+  },
+  "preflight_controls": [
+    "exact gross rejection with state weights",
+    "strict pair witness",
+    "zero side treated as missing",
+    "rule conflict before malformed price"
+  ],
+  "request": {
+    "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "count": 1,
+    "method": "GET",
+    "url": "https://gamma-api.polymarket.com/events/slug/bitcoin-above-on-november-12-2026"
+  },
+  "request_name": "Polymarket November 12 BTC exact threshold ladder",
+  "required_utf8_phrases": [
+    "bitcoin-above-on-november-12-2026",
+    "conditionId",
+    "groupItemTitle"
+  ],
+  "resolution_url": "https://www.binance.com/en/trade/BTC_USDT",
+  "response_byte_ceiling": 2097152,
+  "retained_rule_template_sha256": "d45e2bcaba331730d697a10dbfc47a4a0a1ee51c39bd90c9e659a3aa8a1027e0",
+  "scheduled_observation_utc": "2026-11-12T17:00:00+00:00",
+  "selection": "Exact publisher event slug discovered independently by title and date. Select November 12 as the first discovered calendar date after November 11 without any price criterion. One exact public event route; no inventory pagination.",
+  "title": "Bitcoin above ___ on November 12?",
+  "transport": {
+    "proxies": false,
+    "read_budget_seconds": 30,
+    "redirects": false,
+    "retries": 0,
+    "socket_timeout_seconds": 10
+  }
+}

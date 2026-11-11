@@ -7,7 +7,7 @@ import hashlib
 import json
 import math
 from pathlib import Path
-from typing import Mapping
+from typing import Callable, Mapping
 
 import numpy as np
 
@@ -195,20 +195,19 @@ class VerifiedRound16ShadowPredictor:
         _sha(self.dataset_sha256, name="Round 16 dataset")
 
     def predict_up_probability(self, features: np.ndarray) -> float:
-        vector = np.asarray(features, dtype=np.float32)
-        if vector.shape != (len(ROUND16_FEATURE_NAMES),) or np.any(
-            ~np.isfinite(vector)
-        ):
-            raise ValueError("Round 16 shadow feature vector is invalid")
-        probability = float(
-            predict_round16_candidate(
-                self.candidate,
-                vector.reshape(1, -1),
-            )[0]
-        )
-        if not math.isfinite(probability) or not 0.0 < probability < 1.0:
-            raise RuntimeError("Round 16 shadow prediction is invalid")
-        return probability
+        return _predict_up_probability(self.candidate, features)
+
+
+def _predict_up_probability(
+    candidate: Mapping[str, object], features: np.ndarray
+) -> float:
+    vector = np.asarray(features, dtype=np.float32)
+    if vector.shape != (len(ROUND16_FEATURE_NAMES),) or np.any(~np.isfinite(vector)):
+        raise ValueError("Round 16 shadow feature vector is invalid")
+    probability = float(predict_round16_candidate(candidate, vector.reshape(1, -1))[0])
+    if not math.isfinite(probability) or not 0.0 < probability < 1.0:
+        raise RuntimeError("Round 16 shadow prediction is invalid")
+    return probability
 
 
 @dataclass(frozen=True, slots=True)
@@ -260,13 +259,21 @@ class PolymarketRound16ShadowScorer:
         *,
         predictor: VerifiedRound16ShadowPredictor,
         feature_builder: PolymarketRound16LiveFeatureBuilder,
+        predict_probability: Callable[[np.ndarray], float] | None = None,
     ) -> None:
         if not isinstance(predictor, VerifiedRound16ShadowPredictor):
             raise TypeError("predictor must be a verified Round 16 predictor")
         if not isinstance(feature_builder, PolymarketRound16LiveFeatureBuilder):
             raise TypeError("feature_builder must be a Round 16 live builder")
+        if predict_probability is not None and not callable(predict_probability):
+            raise TypeError("Round 16 probability provider is invalid")
         self.predictor = predictor
         self.feature_builder = feature_builder
+        self._predict_probability = (
+            predictor.predict_up_probability
+            if predict_probability is None
+            else predict_probability
+        )
 
     def _decision(
         self,
@@ -375,7 +382,7 @@ class PolymarketRound16ShadowScorer:
             event_start_ms=event_start_ms,
             decision_time_ms=decision_time_ms,
             observed_at_ms=observed_at_ms,
-            probability_up=self.predictor.predict_up_probability(features),
+            probability_up=self._predict_probability(features),
             input_sha256=input_sha256,
             outside=int(outside[0]),
             extreme=int(extreme[0]),

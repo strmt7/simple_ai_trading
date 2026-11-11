@@ -1,0 +1,22 @@
+{
+  "amends_or_reopens_consumed_contract": false,
+  "constructed_mixed_clock_counterexample": {
+    "earlier_close": 73000,
+    "higher_no_at_earlier_close_pays": 0,
+    "higher_threshold": 72000,
+    "later_close": 69000,
+    "lower_threshold": 70000,
+    "lower_yes_at_later_close_pays": 0
+  },
+  "gamma_event_id": "1320610",
+  "market_descriptions_equal_to_event": 11,
+  "native_response_sha256": "f1c27c8b852118ddbfcdd7517ba0b73a06f7ce90aa1c2ec3c7696c82f6432d3e",
+  "new_economic_observations": 0,
+  "normalized_native_rule_sha256": "0c7efaf509cb13b81592d1f8d1522783662c96e2998d43bb820208f78a9df2cf",
+  "normalized_old_rule_sha256": "999cd2f71a8af8421e2868619fb34c7ea6438b1d233270a940c453e81653b7a3",
+  "normalized_text_change": "The native rule adds 'closing at' before the noon observation.",
+  "price_fields_inspected": false,
+  "result_sha256": "5a50ad4b82a5a30621a0cd64c83dfb2dbd9e45ee392f08c1b84d5ec1564dba3f",
+  "result_sha256_of_consumed_study": "683e822bbe118171ba3bdba288a25bc409a6fa9880639bf1d4b6099ee44700ee",
+  "schema_version": "polymarket-btc-threshold-candle-clock-diagnostic-v1"
+}

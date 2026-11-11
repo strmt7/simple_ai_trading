@@ -27,6 +27,11 @@ was involved.
 
 ## Process boundary still required
 
+The [Round 16 follow-up](../../2026-11-11/round16-worker/review.md) now isolates
+the promoted fifteen-minute numerical predictor and reaps it before owned
+recovery. The paragraphs below describe the source revision verified in
+this report.
+
 The live CLI builds Round 21's five-minute public data service and scorer or
 Round 16's fifteen-minute flow feed and predictor in the process that owns the
 authenticated coordinator and lease. The supervisor's `asyncio.to_thread`

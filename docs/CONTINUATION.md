@@ -49,6 +49,18 @@ current full-suite failure count without rerunning the appropriate scope.
 
 ## Financial and source frontier
 
+- [BITO split and hedge continuity](review/2026-11-11/bito-unit/review.md)
+  reconciles the issuer's share and CUSIP change with Binance's scheduled
+  perpetual halt, order cancellation and position reinstatement. Separate
+  units, actual exposure and margin cash through the transition. No exact
+  Polymarket counterpart or executable economic result is established.
+
+- [November 12 BTC ladder](review/2026-11-11/btc-nov12-ladder/review.md)
+  returned the exact event and 11 rows. The explicit noon-closing candle
+  differs from the frozen rule text. The event was consumed before price
+  inspection. The checker records a state-valuation certificate for future
+  rule-complete ladders.
+
 - [TradFi fee supersession](review/2026-11-11/tradfi-fee-notices/review.md)
   binds the cancelled November fee increase and the continuing fee table.
   The prior effective fee schedule stays in force according to the retained
@@ -262,6 +274,13 @@ Require an exact independently located publisher revision/redline and retain
 the unchanged account-fee gate before economic access. No new observation added.
 
 ## Platform work and publication
+
+- [Owned fifteen-minute inference](review/2026-11-11/round16-worker/review.md)
+  runs the promoted Round 16 numerical predictor in a session-owned worker.
+  Windows verification covers exact ridge and LightGBM fixture parity,
+  invalid and expired replies, and persisted Stop with a hung child. Recovery
+  begins after teardown. Round 21 inference and native call containment remain
+  open.
 
 - [Shared five-minute discovery](review/2026-11-10/shared-discovery/review.md)
   removes a second in-process discovery request from the promoted Round 21

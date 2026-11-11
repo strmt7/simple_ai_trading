@@ -944,6 +944,131 @@ def test_stop_reaps_owned_discovery_child_before_closing_exposure(
     asyncio.run(run())
 
 
+def test_persisted_stop_reaps_active_round16_inference_before_recovery(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    import numpy as np
+
+    from simple_ai_trading import polymarket_round16_worker as worker_module
+    from simple_ai_trading.polymarket_round16_shadow import (
+        ROUND16_FEATURE_NAMES,
+        VerifiedRound16ShadowPredictor,
+    )
+
+    async def run() -> None:
+        predictor = VerifiedRound16ShadowPredictor(
+            candidate={"test": "synthetic stalled inference"},
+            candidate_id="fixture",
+            pretest_envelope_sha256="1" * 64,
+            evaluation_envelope_sha256="2" * 64,
+            dataset_sha256="3" * 64,
+            pretest_file_sha256="4" * 64,
+            evaluation_file_sha256="5" * 64,
+            feature_support={},
+            settlement_controls={},
+        )
+        worker = worker_module.PolymarketRound16InferenceWorker(
+            predictor, timeout_seconds=3
+        )
+        marker = tmp_path / "forecast-entered"
+        finished = tmp_path / "forecast-returned"
+        recovery_started = asyncio.Event()
+        inference_finished = Event()
+        children = []
+        owned = {OWNED_MARKET_ID}
+        command = worker._command
+        popen = worker_module.subprocess.Popen
+        script = """
+import os, sys, time
+from pathlib import Path
+sys.path.insert(0, sys.argv[1])
+from simple_ai_trading import polymarket_round16_worker as module
+assert 'TRADING_WORKER_TEST_SECRET' not in os.environ
+calls = 0
+def stall(candidate, features):
+    global calls
+    calls += 1
+    if calls > 1:
+        Path(sys.argv[3]).touch()
+        time.sleep(60)
+        Path(sys.argv[4]).touch()
+    return 0.61
+module._predict_up_probability = stall
+module._worker(int(sys.argv[2]))
+"""
+
+        def launch(*args, **kwargs):
+            child = popen(*args, **kwargs)
+            children.append(child)
+            return child
+
+        def decide(**_kwargs):
+            try:
+                worker.predict(np.zeros(len(ROUND16_FEATURE_NAMES), dtype=np.float32))
+                return PolymarketAutonomousDecision()
+            finally:
+                if marker.is_file():
+                    inference_finished.set()
+
+        async def close() -> bool:
+            assert len(children) == 1 and children[0].poll() is not None
+            assert inference_finished.is_set()
+            owned.clear()
+            recovery_started.set()
+            return True
+
+        monkeypatch.setenv("TRADING_WORKER_TEST_SECRET", "fixture")
+        monkeypatch.setattr(worker_module.subprocess, "Popen", launch)
+        monkeypatch.setattr(
+            worker,
+            "_command",
+            lambda descriptor: [
+                *command(descriptor)[:4],
+                script,
+                *command(descriptor)[5:],
+                str(marker),
+                str(finished),
+            ],
+        )
+        supervisor = _supervisor(
+            tmp_path,
+            provider=SimpleNamespace(decide=decide),
+            markets=(_market(horizon_minutes=15),),
+            market_variant="fifteenminute",
+        )
+        supervisor.forecast_worker = worker
+        supervisor.decision_timeout_seconds = 3
+        control = PolymarketRuntimeControl(supervisor.ledger.path)
+        control.provision_storage()
+        assert control.complete_stale_stop(exposure_closed=True)
+        lease = control.acquire()
+        supervisor.durable_control_service = PolymarketRuntimeControlService(
+            control, lease_id=lease, stop_poll_interval_seconds=0.1
+        )
+        supervisor._owned_market_ids = lambda: set(owned)  # type: ignore[method-assign]
+        supervisor._close_owned = close  # type: ignore[method-assign]
+        task = asyncio.create_task(supervisor.run())
+        try:
+            async with asyncio.timeout(12):
+                while not marker.is_file():
+                    if task.done():
+                        await task
+                        pytest.fail("supervisor returned before inference started")
+                    await asyncio.sleep(0.02)
+            assert len(children) == 1 and children[0].poll() is None
+            control.request_stop(reason="synthetic_external_forecast_stop")
+            assert control.snapshot().state == "stop_requested"
+            await asyncio.wait_for(recovery_started.wait(), timeout=2)
+        finally:
+            supervisor.request_stop()
+            await asyncio.wait_for(task, timeout=4)
+
+        assert not finished.exists()
+        assert supervisor.snapshot().stop_completed is True
+
+    asyncio.run(run())
+
+
 def test_close_failure_is_retained_as_retriable_state(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,

@@ -698,6 +698,7 @@ def _load_autonomous_components() -> SimpleNamespace:
         PolymarketRound16ShadowScorer,
         load_verified_round16_shadow_predictor,
     )
+    from .polymarket_round16_worker import PolymarketRound16InferenceWorker
 
     return SimpleNamespace(
         PolymarketAutonomousSupervisor=PolymarketAutonomousSupervisor,
@@ -705,6 +706,7 @@ def _load_autonomous_components() -> SimpleNamespace:
         PolymarketHistoricalShadowFeed=PolymarketHistoricalShadowFeed,
         PolymarketPublicClient=PolymarketPublicClient,
         PolymarketRound16LiveFeatureBuilder=PolymarketRound16LiveFeatureBuilder,
+        PolymarketRound16InferenceWorker=PolymarketRound16InferenceWorker,
         PolymarketRound16PromotedDecisionProvider=(
             PolymarketRound16PromotedDecisionProvider
         ),
@@ -730,7 +732,7 @@ def _build_autonomous_decision_stack(
     requested_quantity: Decimal,
     risk_level: str,
     round16_contract_file_sha256: str = "",
-) -> tuple[object, object]:
+) -> tuple[object, object, object | None]:
     """Select one promotion-bound predictor without sharing venue state."""
 
     policy = promotion.promotion
@@ -742,7 +744,7 @@ def _build_autonomous_decision_stack(
             requested_quantity=requested_quantity,
             risk_level=risk_level,
         )
-        return stack.data_service, stack.decision_provider
+        return stack.data_service, stack.decision_provider, None
     if policy.market_variant != "fifteenminute":
         raise PolymarketLiveBlocked(
             "autonomous Polymarket promotion market variant is unsupported"
@@ -773,11 +775,13 @@ def _build_autonomous_decision_stack(
     predictor = components.load_verified_round16_shadow_predictor(
         **predictor_arguments,
     )
+    forecast_worker = components.PolymarketRound16InferenceWorker(predictor)
     flow = components.PolymarketBtcFlowBuffer(retention_seconds=1_200)
     predictor_feed = components.PolymarketHistoricalShadowFeed(flow=flow)
     scorer = components.PolymarketRound16ShadowScorer(
         predictor=predictor,
         feature_builder=components.PolymarketRound16LiveFeatureBuilder(flow),
+        predict_probability=forecast_worker.predict,
     )
     decision_provider = components.PolymarketRound16PromotedDecisionProvider(
         public_client=public_client,
@@ -785,7 +789,7 @@ def _build_autonomous_decision_stack(
         promotion=promotion,
         requested_quantity=requested_quantity,
     )
-    return predictor_feed, decision_provider
+    return predictor_feed, decision_provider, forecast_worker
 
 
 def _has_unresolved_owned_exposure(ledger: PolymarketLiveOrderLedger) -> bool:
@@ -930,17 +934,19 @@ async def _autonomous(
 
         market_discovery = PolymarketOwnedMarketDiscovery()
         public_client = components.PolymarketPublicClient()
-        predictor_feed, decision_provider = _build_autonomous_decision_stack(
-            components=components,
-            public_client=public_client,
-            market_discovery=market_discovery,
-            promotion=promotion,
-            round16_contract=round16_contract,
-            pretest_envelope_sha256=pretest_envelope_sha256,
-            evaluation_envelope_sha256=evaluation_envelope_sha256,
-            requested_quantity=requested_quantity,
-            risk_level=risk_level,
-            round16_contract_file_sha256=round16_contract_file_sha256,
+        predictor_feed, decision_provider, forecast_worker = (
+            _build_autonomous_decision_stack(
+                components=components,
+                public_client=public_client,
+                market_discovery=market_discovery,
+                promotion=promotion,
+                round16_contract=round16_contract,
+                pretest_envelope_sha256=pretest_envelope_sha256,
+                evaluation_envelope_sha256=evaluation_envelope_sha256,
+                requested_quantity=requested_quantity,
+                risk_level=risk_level,
+                round16_contract_file_sha256=round16_contract_file_sha256,
+            )
         )
         guard = PolymarketLiveRuntimeGuard(
             maximum_reconciliation_age_ms=max(5_000, int(interval * 3_000)),
@@ -993,6 +999,7 @@ async def _autonomous(
             risk_level=risk_level,
             settlement=settlement,
             decision_data_service=predictor_feed,
+            forecast_worker=forecast_worker,
             market_discovery=market_discovery,
             durable_control_service=PolymarketRuntimeControlService(
                 runtime_control,

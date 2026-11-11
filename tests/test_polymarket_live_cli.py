@@ -1366,7 +1366,7 @@ def test_five_minute_autonomous_stack_does_not_require_round16_pins() -> None:
         risk_level="aggressive",
     )
 
-    assert actual == (data_service, decision_provider)
+    assert actual == (data_service, decision_provider, None)
 
 
 def test_autonomous_assembles_independent_promoted_runtime(
@@ -1537,8 +1537,18 @@ def test_autonomous_assembles_independent_promoted_runtime(
         assert selected_flow is flow
         return "builder"
 
+    forecast_worker = SimpleNamespace(predict=lambda features: 0.5)
+
+    def build_worker(selected_predictor):
+        assert selected_predictor is predictor
+        return forecast_worker
+
     def build_scorer(**kwargs):
-        assert kwargs == {"predictor": predictor, "feature_builder": "builder"}
+        assert kwargs == {
+            "predictor": predictor,
+            "feature_builder": "builder",
+            "predict_probability": forecast_worker.predict,
+        }
         return "scorer"
 
     def build_decision_provider(**_kwargs):
@@ -1569,6 +1579,7 @@ def test_autonomous_assembles_independent_promoted_runtime(
         PolymarketBtcFlowBuffer=build_flow,
         PolymarketHistoricalShadowFeed=Feed,
         PolymarketRound16LiveFeatureBuilder=build_feature,
+        PolymarketRound16InferenceWorker=build_worker,
         PolymarketRound16ShadowScorer=build_scorer,
         PolymarketRound16PromotedDecisionProvider=build_decision_provider,
         PolymarketAutonomousSupervisor=Supervisor,
@@ -1630,6 +1641,7 @@ def test_autonomous_assembles_independent_promoted_runtime(
     )
 
     assert captured["decision_data_service"].trading_authority is False
+    assert captured["forecast_worker"] is forecast_worker
     assert isinstance(captured["market_discovery"], PolymarketOwnedMarketDiscovery)
     assert captured["lifecycle_qualification"] is lifecycle_qualification
     assert captured["durable_control_service"].trading_authority is False

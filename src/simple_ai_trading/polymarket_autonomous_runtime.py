@@ -319,6 +319,7 @@ class PolymarketAutonomousSupervisor:
         risk_level: str,
         settlement: PolymarketSettlementService | None = None,
         decision_data_service: PolymarketDecisionDataService | None = None,
+        forecast_worker: PolymarketDecisionDataService | None = None,
         durable_control_service: PolymarketDurableControlService | None = None,
         market_discovery: PolymarketMarketDiscovery | None = None,
         decision_interval_seconds: float = 1.0,
@@ -363,13 +364,18 @@ class PolymarketAutonomousSupervisor:
             raise ValueError("user stream and supervisor ledgers differ")
         if user_stream.consumer.runtime_guard is not runtime_guard:
             raise ValueError("user stream and supervisor runtime guards differ")
-        if decision_data_service is not None:
-            if getattr(decision_data_service, "trading_authority", None) is not False:
+        for service, name in (
+            (decision_data_service, "predictor-data service"),
+            (forecast_worker, "forecast worker"),
+        ):
+            if service is None:
+                continue
+            if getattr(service, "trading_authority", None) is not False:
                 raise PolymarketLiveBlocked(
-                    "Polymarket predictor-data service must have no trading authority"
+                    f"Polymarket {name} must have no trading authority"
                 )
-            if not callable(getattr(decision_data_service, "run", None)):
-                raise TypeError("predictor-data service must expose an async run loop")
+            if not callable(getattr(service, "run", None)):
+                raise TypeError(f"{name} must expose an async run loop")
         if durable_control_service is not None:
             if getattr(durable_control_service, "trading_authority", None) is not False:
                 raise PolymarketLiveBlocked(
@@ -393,6 +399,7 @@ class PolymarketAutonomousSupervisor:
         )
         self.settlement = settlement
         self.decision_data_service = decision_data_service
+        self.forecast_worker = forecast_worker
         self.durable_control_service = durable_control_service
         self.market_discovery = market_discovery
         self.decision_interval_seconds = interval
@@ -980,6 +987,10 @@ class PolymarketAutonomousSupervisor:
                     resume_runtime=self.resume,
                 )
             )
+        if self.forecast_worker is not None:
+            tasks["forecast_inference"] = asyncio.create_task(
+                self.forecast_worker.run(self._shutdown_requested)
+            )
         timer: asyncio.Task[None] | None = None
         if duration:
 
@@ -1039,6 +1050,13 @@ class PolymarketAutonomousSupervisor:
             try:
                 # Let an already admitted operation finish before taking over close.
                 # Keep the authenticated services available during recovery.
+                if (forecast := tasks.get("forecast_inference")) is not None:
+                    (failure,) = await asyncio.gather(forecast, return_exceptions=True)
+                    if isinstance(failure, BaseException) and critical_error is None:
+                        critical_fault = (
+                            f"forecast_worker_shutdown:{type(failure).__name__}"
+                        )
+                        critical_error = RuntimeError(critical_fault)
                 if (model := tasks.get("model")) is not None:
                     await asyncio.gather(model, return_exceptions=True)
                 await self._drain_owned_exposure()

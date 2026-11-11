@@ -1,0 +1,10 @@
+{
+  "actual_event_economics_inspected": false,
+  "adjudicator_sha256": "a72f05f4680f95068ca8a3ba1cc6d5873c2ede56cbb33554fa640b68a15f975a",
+  "frozen_contract_sha256": "2fbf0083b42dd9b02e92309e93dfa961777cb3dc02aed6378ebbd71d18d006c4",
+  "grid_cases_checked_against_independent_state_weight_enumeration": 2197,
+  "new_economic_observations": 0,
+  "result_sha256": "800545687a7e4564fafe1e49205aad95fc9b5d79e0790f46e4dc88eb55793fb6",
+  "state_grid_denominator": 4,
+  "threshold_count": 3
+}

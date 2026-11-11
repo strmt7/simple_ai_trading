@@ -1,0 +1,87 @@
+{
+  "account_requests": 0,
+  "calculation": {
+    "constructed": {
+      "equivalent_post_split_share_value": "200",
+      "isolated_reserve_relocation_if_old_30_and_new_20": "10",
+      "pre_split_share_value": "200",
+      "unhedged_long_value_change": "-20.0"
+    },
+    "exchange_schedule_utc_as_announced": {
+      "halt_start": "2026-11-19T01:00:00Z",
+      "nominal_continuous_resume": "2026-11-19T03:30:00Z",
+      "nominal_end_of_last_price_protection": "2026-11-19T14:30:00Z",
+      "nominal_post_only_start": "2026-11-19T03:25:00Z",
+      "strategy_bot_termination": "2026-11-19T00:45:00Z"
+    },
+    "issuer_instrument": {
+      "announced_effective": "before market open on 2026-11-19",
+      "issuer_fractional_shares_redeemed_in_cash": true,
+      "new_cusip": "74350X405",
+      "old_cusip": "74347G440",
+      "share_quantity_factor": "0.5",
+      "ticker": "BITO"
+    }
+  },
+  "current_native_market_state_verified": false,
+  "derivation_sha256": "0ac0e914a7df9696c247f4d3529c394520ff7d7088c2242661d5f3a7a8ed0af7",
+  "market_requests": 0,
+  "matched_polymarket_counterpart_established": false,
+  "new_economic_observations": 0,
+  "orders": 0,
+  "protected_capture_touched": false,
+  "registry_rank": 43,
+  "result_sha256": "727c52d05aba8a902fee54701524581f904f95ea043d99837e93cd566065682f",
+  "schema_version": "binance-bito-split-and-hedge-continuity-v1",
+  "sources": {
+    "exchange_native_cms_json": {
+      "contract_sha256": "9144bd9df5a93ba301181f602b3be4f23d20170dead1388f9bbfe0059db3b534",
+      "journal_sha256": "077d5d2213e3b35cc0333e0e38a47715bb52ca430772eb21dcfa2ec521e59775",
+      "native_receipt": {
+        "completed_at_ms": 1794357297464,
+        "error_type": null,
+        "oversize_body_is_truncated": false,
+        "phase": "completed",
+        "requested_at_ms": 1794357297135,
+        "response_bytes": 93746,
+        "response_sha256": "738cf0649e1dfa1931d9d8b2a08dde363b209caf3658f7557d0473073941e783",
+        "status_code": 200
+      },
+      "request": {
+        "body_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "count": 1,
+        "method": "GET",
+        "url": "https://www.binance.com/bapi/composite/v1/public/cms/article/detail/query?articleCode=dfd8cf5e698146ce83b560026529a752"
+      }
+    },
+    "issuer_crawl4ai_html": {
+      "intent_sha256": "e7cb63ae694ecf2094dabed42962058a1e23b5d6af0b6d61a82db1d44a736997",
+      "journal_sha256": "5bd346f595ea292a663254cd697f74fbe4f616ef25c86f525a8b093fa718fe07",
+      "native_capture": {
+        "exit_code": 0,
+        "markdown_characters": 38123,
+        "native_bytes": 656523,
+        "native_error_message": "",
+        "native_navigation_started": true,
+        "native_sha256": "025be4429f349c51995d30b459a312f12befa5d45be5bcc350fc8dfc950c7068",
+        "native_success": true,
+        "redirected_status_code": 200,
+        "redirected_url": "https://www.proshares.com/press-releases/proshares-announces-share-splits",
+        "required_terms": {
+          "bito": true,
+          "november": true,
+          "reverse": true
+        },
+        "source_admitted": true,
+        "status_code": 200,
+        "url": "https://www.proshares.com/press-releases/proshares-announces-share-splits"
+      },
+      "provider": "0.9.5+flitzzip.portable2",
+      "strict_robots": {
+        "allowed": true,
+        "raw_sha256": "e1514475722d6d8e97b888ef93e3a8ab61f80e9606ef4f681563a76f20408348",
+        "user_agent": "simple-ai-trading-public-research/1"
+      }
+    }
+  }
+}
