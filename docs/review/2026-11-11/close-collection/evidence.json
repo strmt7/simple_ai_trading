@@ -1,0 +1,190 @@
+{
+  "actual_account_requests": 0,
+  "auto_order_routing_api_support": "unverified; targeted discovery was empty, not proof of absence",
+  "base_revision": "e32758f68eeb037a0b9c9ee40e0f420df2d11238",
+  "behavior": {
+    "api_secret_transmitted_to_child": false,
+    "authenticated_child_get_only_endpoint_policy": true,
+    "automatic_retries": 0,
+    "cached_evidence_queries_account": false,
+    "cli_collection_added": false,
+    "configurable_response_deadline_seconds": [
+      1,
+      60
+    ],
+    "default_shared_response_deadline_seconds": 20,
+    "exact_unresolved_request_digest_required": true,
+    "inventory_application_or_intent_resolution_added": false,
+    "maximum_order_requests": 1,
+    "maximum_response_bytes": 2097152,
+    "maximum_trade_page_requests": 1,
+    "maximum_trades_in_page": 1000,
+    "optional_http_runtime": "polymarket-live; lazy import and isolated-setup error",
+    "original_testnet_or_demo_scope_and_key_fingerprint_required": true,
+    "ownerless_stop_and_existing_execution_enrollment_required": true,
+    "programmatic_collection_only": true,
+    "secrets_in_command_arguments_or_diagnostics": false,
+    "signed_receive_window_ms": 5000,
+    "startup_within_shared_deadline_maximum_seconds": 5,
+    "stop_completion_or_rearm_added": false
+  },
+  "financial_counts": {
+    "hypotheses": 65,
+    "observations": 206,
+    "qualified_stable_edges": 0,
+    "scoped_mechanisms": 37
+  },
+  "market_captures": 0,
+  "new_source_content_admitted": false,
+  "orders": 0,
+  "private_evidence": {
+    "api-discovery.json": {
+      "bytes": 71,
+      "sha256": "1048ddaf93c0dfa7b1304db3ffef722f4a37db0018ad2c63d0062118c5d92b42"
+    },
+    "corrected-stderr.log": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "corrected-stdout.log": {
+      "bytes": 102,
+      "sha256": "718676c6ab7896549205a67dc6f6e622a03f34fc2d502e0498c254c1392bb270"
+    },
+    "final-stderr.log": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "final-stdout.log": {
+      "bytes": 2461,
+      "sha256": "797d24624e0032f31c7d08cbc8e2605737a81d6a4d82683102c3185cf1d63e3e"
+    },
+    "source-corrected.zip": {
+      "bytes": 46374,
+      "sha256": "f3ad0d393985532a6950844024d2d51be0654f187e206828b866f79ce68de5ac"
+    },
+    "source-final.zip": {
+      "bytes": 46218,
+      "sha256": "6b4f9df1ab12d96342c61324cbb540532d72080503b167a32c5e074312e0fbfc"
+    },
+    "source.zip": {
+      "bytes": 45779,
+      "sha256": "edaad1461420f1c58b1d94c3ca66b314edce81018e7ac9d8fcfbc4ce511d875a"
+    },
+    "stderr.log": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "stdout.log": {
+      "bytes": 3784,
+      "sha256": "7a9506d4ea060be6a99f1dc0088e64205949d750a2d6b9a3280235b781b7e6a4"
+    },
+    "verification-corrected.json": {
+      "bytes": 2023,
+      "sha256": "75e20f33eaf9133fee4f88fc98c8a66a66712ee33ad18bf6b152d82143cf0519"
+    },
+    "verification-final.json": {
+      "bytes": 1934,
+      "sha256": "d60b4445c4b90bb3f5edb6009c0d6e1b4a9cd8414f1c234f35bf4e034b71a118"
+    },
+    "verification.json": {
+      "bytes": 1934,
+      "sha256": "07a7b0449919d71fd4ef3d3a11315b5424dc3efdfba8549ebdcc48de38928e4a"
+    }
+  },
+  "protected_capture_touched": false,
+  "recorded_at_utc": "2026-11-11T08:46:32.446022+00:00",
+  "remaining": [
+    "operator collection selection and credential provisioning",
+    "actual account UID and symbol/filter qualification",
+    "futures inventory application",
+    "complete recovery/rearm",
+    "independent trading supervision",
+    "full code review and final bug hunt"
+  ],
+  "result_sha256": "45dd32e1ed9670a6f355389b3e6e1ec2930cd67dce6f2435781fdcd80894b015",
+  "schema_version": "bounded-owned-close-collection-v1",
+  "semantic_review": {
+    "complete_new_module_reviewed": true,
+    "new_module": "src/simple_ai_trading/binance_recovery_reads.py",
+    "shared_engine_changes": "authenticated read policy configuration and child enforcement",
+    "whole_repository_review_complete": false
+  },
+  "semantic_search_receipts": [
+    {
+      "name": "search-79cf04cedba04c7c9f73b16b49eb8861.json",
+      "sha256": "821c8a7ab8bce7c13e98f623b5fd06679b95229692b9b8007ad95732a510073b",
+      "source_snapshot": "0f5625564da6201eb2817f6491b6fbc2"
+    },
+    {
+      "name": "search-ad03b9bc92c141f6b7d47d993f26a1cc.json",
+      "sha256": "ecc66a580efcfb405c0ad0c4502ba76118ea4d22a9cad34ce43ad2e132dae33f",
+      "source_snapshot": "0f5625564da6201eb2817f6491b6fbc2"
+    }
+  ],
+  "training_or_benchmark": false,
+  "verification": {
+    "all_observed_children_exited": true,
+    "corrected_new_cases_passed": 24,
+    "corrected_summary": "24 passed in 49.93s",
+    "existing_cases_passed": 132,
+    "forced_garbage_collection_or_production_cleanup_substitution": false,
+    "handle_growth_bound": 4,
+    "local_lock_growth_bound": 0,
+    "native_child_faults": [
+      "order stall",
+      "trade stall",
+      "process exit",
+      "explicit rejection",
+      "invalid identity",
+      "incomplete fills",
+      "cash conflict"
+    ],
+    "private_memory_growth_bound_bytes": 8388608,
+    "production_source_unchanged_between_final_and_corrected_phases": true,
+    "repeated_native_lifetimes_after_warmup": 12,
+    "resource_results_are_not_a_benchmark": true,
+    "retained_failed_phases": [
+      "wrong test exception family for correct owner rejection",
+      "test fixture retained completed Popen observation handles"
+    ],
+    "single_all_pass_run_claimed": false,
+    "summary": "156 distinct affected passing cases across retained final and corrected phases",
+    "tested_source_sha256": {
+      "native/windows/generated/command_contract.hpp": "bdefd69c54f2879af230f5ce0ba6d49476767946ec9ff9e87e66d419f31e1edb",
+      "native/windows/src/main.cpp": "79c8af5084ea6109acf275cd07088754b81cb24ab1bce63500110ea4bd6d233d",
+      "src/simple_ai_trading/binance_acknowledgements.py": "ee91860a6a4469518aa8735b199222f9e97a53ee490ea02ebd3197ea562b570e",
+      "src/simple_ai_trading/binance_close_application.py": "dce2d54097af9ff210ebc615edb368acaa82eba64cd37108b0d0659660b8e64f",
+      "src/simple_ai_trading/binance_close_application_cli.py": "6098676306a5022c281b05415a5d55418dd00714b201a7f03db8a50698203c9d",
+      "src/simple_ai_trading/binance_close_intents.py": "fe5fb6a8d92ff892b777c53792a1220be1bf771420d4fa4eeef4b5e2eff9f5e8",
+      "src/simple_ai_trading/binance_close_recovery.py": "768322f2ba84c8819507dd8e9beaa29994e67595d9812d6e9f42f7e6d25e2aea",
+      "src/simple_ai_trading/binance_closing_inventory.py": "ebe0a64ea63564463c290b0d6a44215abe8930e06f1c1502c81e1ecbd8c8811e",
+      "src/simple_ai_trading/binance_execution_payloads.py": "7337b1ff06533584f60c67dd528a478d36614f55dc259033efc0cc901c57e583",
+      "src/simple_ai_trading/binance_execution_storage.py": "8d90728155f01b078be024f855f45b6185159c3f4fa7f8f21538a8fd803f3533",
+      "src/simple_ai_trading/binance_open_intents.py": "9a78e005880962a9d2d6b638e581a2f3d77cfcdd08dee413da9b1ddf8ff0408d",
+      "src/simple_ai_trading/binance_order_responses.py": "0094163663698b5ba63303e4c7a68153d37a4e6c3ca819d1a5283ca343de7e38",
+      "src/simple_ai_trading/binance_owned_execution.py": "25ce3f202cba7acfabedf12231a5bdff0528e32baa2c6cd2ff707e4951511e5c",
+      "src/simple_ai_trading/binance_recovery_reads.py": "0b93b6b7c7ded5e91a10b19b2ef7bfd848ff86a400eeb3cc4a32e960566d6b1b",
+      "src/simple_ai_trading/binance_runtime_control.py": "b6b5c58f474d76b2df3ad50ed2d20b1a2031e41fd078b95a203d34dc9e665cd4",
+      "src/simple_ai_trading/binance_spot_cash.py": "31b82c79811a4c12cde00ec5affa32f498d768fef2247041f69851dd0a4d9bc7",
+      "src/simple_ai_trading/binance_spot_receipts.py": "4c0ee7c05df80f3642ea043c963841ff87cae6b1bebfd89614a27a8245475945",
+      "src/simple_ai_trading/binance_terminal_fills.py": "d2b8444453b936b71f516d735e8a43a48c8ab17091de31b6cce1a66b3f76eb2f",
+      "src/simple_ai_trading/cli.py": "69eb0a7e974a6b041f8ccc5bf3c6a70b7a510c44277265563fe0e8131bcc9776",
+      "src/simple_ai_trading/command_contract.py": "ad7766ce06941931006076b531efd877c7f4d00ba57f87c1146ba7d83aabb6cd",
+      "src/simple_ai_trading/polymarket_http_process.py": "690d699118e47265df377676565ec2e44d934b75d792e8ebe8006b30e8287921",
+      "src/simple_ai_trading/polymarket_sdk_transport.py": "84cabf51be81f568ee275b3c3183be0862e1022045efff9edf7de108bd83233b",
+      "src/simple_ai_trading/position_transactions.py": "743275b5e92337bd24825c7b4e4f2d79c1ecb7556bf02d8d56cadfcbe148d97b",
+      "src/simple_ai_trading/positions.py": "0baf01909be1135d56d887fa7499fc4d3ebccf74f04844d49c61f288c7378154",
+      "src/simple_ai_trading/runtime_control.py": "518064c99eaf7a0492c2bbaa8ce15abdad68757b7f5fa3da96996c3649add815",
+      "src/simple_ai_trading/windows_app.py": "81736a184cb4e2d945585212627782e4ed83e4b0c837d34dcf9ed1afb9846f7a",
+      "src/simple_ai_trading/windows_owned_job.py": "82dd0e80340c8388f20d6871863fdf5075d4f271d0c7fe9276a295db962f05ae",
+      "tests/conftest.py": "090974084e8c25f16dc18ed084269d75edb9fdb5f4d7d15e6e72bb23853d9abc",
+      "tests/test_ai_runtime_and_parity.py": "1f6490adcf1895f916a2b4ee1708af93c97b2bc06ed02097a657043450d7d193",
+      "tests/test_binance_close_application.py": "81be068666e0a0a5c8f705856f20b9f65360fd66bb1f4ff950aef4940633ef9d",
+      "tests/test_binance_close_recovery.py": "0b368d1ecc0141bf6a944a4fc9fd58fd28e309a74cfbad5049384226ddc1e0fa",
+      "tests/test_binance_recovery_reads.py": "c218d3e8e31a1673388be692d98c333cb0f697611c284d93fa20d87c6099f7e8",
+      "tests/test_cli_new_commands.py": "3adb7d3f59dc02f6294a351af75a600a9a8eed0c60fe1feb796d6ce6312ba856",
+      "tests/test_close_recovery_cli.py": "d0ee08536b5ba8e282634e52d2aa62edd1a42d89ddf1d0722dca0d817cc90663",
+      "tests/test_polymarket_http_process.py": "a8839b971093edf97cb9e6bd96c880be714a8da69ed6fc10989cfb7a2bdd4beb"
+    }
+  }
+}

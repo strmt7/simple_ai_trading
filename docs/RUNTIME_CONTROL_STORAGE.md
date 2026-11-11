@@ -189,7 +189,29 @@ submitting its order again.
 The generated native expert dropdown registers `recover-close` under Risk's
 Owned close recovery group. Its required selection and apply hashes use Extra
 Flags. Missing arguments fail parsing; the default does not apply anything.
-Guided forms and authenticated evidence collection are separate remaining work.
+Guided forms and collection selection are separate remaining operator work.
+
+### Bounded programmatic collection
+
+The [stopped collection boundary](review/2026-11-11/close-collection/review.md)
+provides a separate authenticated read API. Inspect the original unresolved
+request with `closing_collection_sha256(store, scope=scope, client_id=client_id)`.
+Pass its exact digest to `collect_stopped_closing_recovery` through
+`expected_request_sha256`, together with that original scope, store, client ID,
+matching Binance controller and explicitly supplied HMAC credentials. An optional
+`execution_enrollment_path` selects the existing enrollment. It never retrieves
+credentials from logs/history or grants account authority merely because a local
+request exists. Do not place keys or secrets in command arguments.
+
+The existing execution enrollment must be ready, and control must be ownerless,
+paused and Stop-latched. One scoped order read and at most one matching trade
+page share a bounded response deadline in a hidden owned worker. Exact terminal
+fills and native cash must reconcile before retention. Cached evidence causes no
+account refresh. Missing prerequisites or ambiguous responses preserve the
+unresolved obligation. No order, application, Stop completion or rearm follows.
+This API requires the existing locked optional HTTP runtime; missing dependencies
+produce an actionable isolated-setup error. Current CLI/native `recover-close`
+continues to inspect/apply already retained evidence and does not collect it.
 
 ## Scope and remaining work
 

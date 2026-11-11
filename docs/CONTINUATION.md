@@ -69,7 +69,8 @@ before continuing an affected family. None supplies a qualified stable edge.
   reconciles receipt-backed cumulative closes under ownerless Stop. Empty-lease
   release and zero-fill close-ID reuse are repaired. [Operator recovery](review/2026-11-11/recovery-operator/review.md)
   adds offline CLI inspect/apply and native expert registration. Authenticated
-  collection, guided forms, futures/legacy recovery, account qualification and rearm remain open.
+  [stopped collection](review/2026-11-11/close-collection/review.md) now has bounded original-order reads.
+  CLI collection, guided forms, futures/legacy application, account qualification and rearm remain open.
 - The [Spot roundtrip](review/2026-11-10/roundtrip-command/review.md) routes both
   writes through the enrolled durable gateway. Only the receipt-owned second
   SELL uses closing authority through Stop. Actual scope, cash, commission/fee

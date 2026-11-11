@@ -121,20 +121,28 @@ class PolymarketHttpProcess:
         maximum_response_bytes: int,
         additional_origins: tuple[str, ...] = (),
         public_only: bool = False,
+        read_only: bool = False,
         allowed_endpoints: tuple[str, ...] = (),
     ):
         origins = tuple(
             dict.fromkeys(_origin_key(url) for url in (base_url, *additional_origins))
         )
-        if not 1 <= len(origins) <= 8 or type(public_only) is not bool:
+        if (
+            not 1 <= len(origins) <= 8
+            or type(public_only) is not bool
+            or type(read_only) is not bool
+        ):
             raise ValueError("HTTP worker origin policy is invalid")
-        endpoints = _public_endpoints(allowed_endpoints, origins, public_only)
+        endpoints = _public_endpoints(
+            allowed_endpoints, origins, public_only or read_only
+        )
         self._timeout = timeout_seconds
         self._maximum_reply = 6 * maximum_response_bytes + 16 * 1024
         self._bootstrap = _encode(
             {
                 "base_urls": origins,
                 "public_only": public_only,
+                "read_only": read_only,
                 "allowed_endpoints": sorted(endpoints),
                 "timeout_seconds": timeout_seconds,
                 "maximum_response_bytes": maximum_response_bytes,
@@ -389,6 +397,7 @@ def _worker(descriptor):
         if not isinstance(configuration, dict) or set(configuration) != {
             "base_urls",
             "public_only",
+            "read_only",
             "allowed_endpoints",
             "timeout_seconds",
             "maximum_response_bytes",
@@ -396,10 +405,12 @@ def _worker(descriptor):
             raise ValueError("HTTP bootstrap fields differ")
         origins = configuration["base_urls"]
         public_only = configuration["public_only"]
+        read_only = configuration["read_only"]
         if (
             not isinstance(origins, list)
             or not 1 <= len(origins) <= 8
             or type(public_only) is not bool
+            or type(read_only) is not bool
             or any(
                 not isinstance(url, str) or _origin_key(url) != url for url in origins
             )
@@ -407,7 +418,7 @@ def _worker(descriptor):
         ):
             raise ValueError("HTTP bootstrap origin policy differs")
         endpoints = _public_endpoints(
-            configuration["allowed_endpoints"], origins, public_only
+            configuration["allowed_endpoints"], origins, public_only or read_only
         )
         with ExitStack() as owned:
             transports = {}
@@ -440,18 +451,17 @@ def _worker(descriptor):
                 transport = transports.get(_origin_key(request["endpoint"]))
                 if (
                     transport is None
-                    or public_only
+                    or (public_only or read_only)
                     and (
                         request["method"] != "GET"
-                        or request["headers"]
+                        or public_only
+                        and request["headers"]
                         or request["data"] is not None
                         or str(httpx.URL(request["endpoint"]).copy_with(query=None))
                         not in endpoints
                     )
                 ):
-                    raise ValueError(
-                        "HTTP request exceeds its origin or public-read policy"
-                    )
+                    raise ValueError("HTTP request exceeds its origin or read policy")
                 try:
                     if monotonic() >= deadline:
                         raise PolyApiException(
