@@ -1,0 +1,83 @@
+{
+  "schema_version": "trading-plan-refresh-v1",
+  "assessed_production_source": "4ce19f8c5ad7fa1f2c51342c94854ae2792f0ee2",
+  "captured_at_utc": "2026-11-11T12:34:06.945596+00:00",
+  "scope": "Planning delta, selected live-source inspections, retained component evidence and active-goal binding; not whole-repository semantic coverage.",
+  "goal_status_verified": "active",
+  "goal_complete": false,
+  "current_source_sha256": {
+    "src/simple_ai_trading/binance_capital_policy.py": "724c6889206823cb29f9041bab2090ca0290f27a63f5728c4b45dafb48beab09",
+    "src/simple_ai_trading/binance_capital_policy_cli.py": "eab22e6f56f492db5355c77137ebcea1275f89e9e7152e6d2380b8e9e3a5b370",
+    "src/simple_ai_trading/binance_close_application_cli.py": "63dc36eb950956e10227c99732c0606f5c1194090e552a9e2cd587351d26ae9c",
+    "src/simple_ai_trading/binance_owned_execution.py": "25ce3f202cba7acfabedf12231a5bdff0528e32baa2c6cd2ff707e4951511e5c",
+    "src/simple_ai_trading/autonomous.py": "50060d49fda627d2f64eebb739b27ad8b1f47503ff9c71b4945a5d6f9f42d2dd",
+    "src/simple_ai_trading/entrypoint.py": "fc57cc5ff0795b4da9d7701ac187ca3f682b39b89b73db61f1a75361a0008935",
+    "src/simple_ai_trading/model_blueprint.py": "415821f5ea1398cbfaa62859805f8bc7d854c8c0d78bc5acca6816efe70a3ba5",
+    "src/simple_ai_trading/stateful_cash_labels.py": "7e0fd124133f01cad16250ac9bf6befa9745af49ccfb4be088462b211a8e2b3a",
+    "src/simple_ai_trading/cli.py": "05814041f677fb8c830a888ee350366e7b4bd6382a859dd1b6ca5c5eb3a6f261"
+  },
+  "changed_planning_sha256": {
+    "docs/REPO_STATE_2026_11_11.md": "3377d04de02669189c4cbb43b4a3066100864972be729c16be97308c02b7a314",
+    "docs/DEVELOPMENT_PLAN.md": "59ae635ba685ce4a33e2591afe110bf5a3c46746c26ee7124319efcbc97fa611",
+    "docs/DEVELOPMENT_WORK_GRAPH.json": "e26c1b2d5d4dc33585cc77831d3172bcf40800dbf6c0cdb8fd8985d2f895b9b4"
+  },
+  "component_evidence": [
+    {
+      "path": "docs/review/2026-11-11/repo-assessment/evidence.json",
+      "sha256": "1a1d173c0c554a880dad93e680b2cef39632967540bd89a520eaec1bda8b1daf"
+    },
+    {
+      "path": "docs/review/2026-11-11/feedback-repair/evidence.json",
+      "sha256": "7ad9664a0f268ea8f34bb5865930c5fc32b9604d10f4fd253aa087a7156b91a5"
+    },
+    {
+      "path": "docs/review/2026-11-11/recovery-workflow/evidence.json",
+      "sha256": "1d2d325c164d4653e8447a2533f94bb4db609fe9775050fbe7733eee2c807500"
+    },
+    {
+      "path": "docs/review/2026-11-11/capital-policy/evidence.json",
+      "sha256": "4754df53fe1114132e3cd4db73dd8a5998f40a59b7e78d2c7c183d25da83c18f"
+    }
+  ],
+  "navigation": {
+    "initial_mcp": "stale source snapshot; explicitly refreshed existing cache",
+    "second_mcp": "transport closed; used reviewed same-repository CLI adapter",
+    "retained_search_receipts": [
+      {
+        "file": "search-9e3529415b7e4caf88123ad805c24204.json",
+        "sha256": "1454cf9c06708166417b7e6daacdbb73b3776ecfd331386c5f9a4bd2278bab01",
+        "source_digest": "809d6b2aa4da77adcfb30a46deafae11",
+        "candidate_checks": 5
+      },
+      {
+        "file": "search-dc31a9398a714685b0d755f70f58cbaa.json",
+        "sha256": "cd2e819b8ffce91721fba7b721a41c5fcdb24451d71bbab2d8d798e2f533dfae",
+        "source_digest": "809d6b2aa4da77adcfb30a46deafae11",
+        "candidate_checks": 0
+      }
+    ],
+    "candidate_source_checks_passed": true,
+    "source_binding_applies_at_search_time": true,
+    "planning_edits_require_explicit_refresh_before_future_broad_navigation": true
+  },
+  "verification": {
+    "task_ids_unique": 24,
+    "requirement_ids": 12,
+    "dependency_graph": "acyclic; references resolve",
+    "scope_refs": "all tracked-scope paths exist",
+    "next_actions": 4,
+    "application_tests_rerun": 0,
+    "reason": "Documentation/graph changes only; unaffected behavior receipts reused."
+  },
+  "authority": {
+    "new_goal_schedule_service_or_subagent": false,
+    "application_code_changed": false,
+    "historical_numerical_results_changed": false,
+    "new_economic_or_account_requests": 0,
+    "orders": 0,
+    "new_scanner_execution_or_quota_retry": false,
+    "new_training_or_benchmark": false,
+    "pending_private_document_captures": "Preserved; not admitted by this planning refresh."
+  },
+  "result_sha256": "0a3893744cfffbe2c959d3ced5dacbdb60a9a1d54314294723706d5f8e056716"
+}

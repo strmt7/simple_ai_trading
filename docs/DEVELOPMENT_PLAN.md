@@ -12,7 +12,7 @@ and integration with the existing agent entry point. It does not claim another
 implementation, market observation or completed trading strategy.
 
 The [current assessment](REPO_STATE_2026_11_11.md) binds the November 11 production
-baseline and observed problems. The [work graph](DEVELOPMENT_WORK_GRAPH.json)
+baseline, its later checkpoint addendum and observed problems. The [work graph](DEVELOPMENT_WORK_GRAPH.json)
 contains task IDs, acceptance dependencies and next-work routing. The
 [revamp map](REVAMP_2026_11_09.md), [work priorities](WORK_PRIORITIES.md),
 [capital architecture](CAPITAL_PROTECTION_ARCHITECTURE.md), exact capture contracts
@@ -57,6 +57,87 @@ ownership, not an inference from this graph. Dependency edges describe delivery
 acceptance; useful independent preparation may proceed without claiming the
 dependent deliverable finished.
 
+## Next delivery milestones
+
+Planning refresh: inspected production source
+`4ce19f8c5ad7fa1f2c51342c94854ae2792f0ee2`. Existing package statuses and
+historical evidence remain separate from these future deliverables. This is a
+dependency order, not a calendar estimate or a promise of permanent profit.
+
+| Milestone | Concrete next output | Acceptance and stopping decision |
+| --- | --- | --- |
+| M1 — Financial decision, continuously first | `FIN-01`: adjudicate the already retained official routing documents; resolve one eligible Polymarket source/payoff question or record the exact missing trigger | Retain native failures and scope limits. A documentation result changes only its source claim. If no eligible economic access follows, close that question and move to useful independent work; do not fetch another quote population to manufacture progress. |
+| M2 — Admission across the actual dispatch boundary | `SAFE-02` with `EXEC-02` preparation: map policy checks from strategy evaluation to ordinary and paired Binance dispatch; implement one complete final-admission path | Recheck the required policy revision and relevant state under the authoritative dispatch guard. Changed/missing policy, Stop, expired intent or changed scope prevents new native dispatch; originally owned reduction and UNKNOWN reconciliation remain available. Other callers remain explicitly unqualified until integrated. |
+| M3 — Independent safety slice | `SAFE-01` with `EXEC-01`: connect one contained strategy worker to a deterministic session gateway and independent useful-progress observer | A real worker hang, parent exit or stale proposal cannot keep opening authority. Demonstrate bounded teardown, retained uncertainty and available owned recovery through the actual path. No host service or persistent launcher. Start preparation now; do not wait for all UI forms or advanced policy fields. |
+| M4 — Economically usable data and baseline | `DATA-01`, `MODEL-01`, and applicable `FIN-02/03`: select one source-qualified objective and feasible comparator | Bind units, clocks, information availability, quantities, all costs, capital and chronological roles before fitting. If the target is a proxy, native coverage is absent or optimistic economics already fail, retain that decision and change the research question instead of expanding training. |
+| M5 — Model and acceleration improvement | `MODEL-02`, `ACCEL-01`: compare a simple admitted baseline with an ensemble/local model and any justified LLM contribution on the same roles | Require incremental net utility, calibration/tail behavior, latency and usable capacity. Qualify the installed accelerator and precision first. Keep an accelerator only when it improves useful end-to-end throughput; larger datasets must add independent information. |
+| M6 — Complete operator product | `OPS-01`, `UI-01`, `ARCH-01`, `SEC-01`, `DEPS-01`, `DIST-01`, `IP-01` | Finish guided safe setup/recovery, both venues' truthful status, accessible UI and portable isolated installation. Reconcile scanner coverage, compatible locks and obsolete branches. Validate packaging through a path that cannot create a release. |
+| M7 — Final qualification | `REVIEW-01` → `BUG-01` → `QUAL-01` | Complete revision/range-bound semantic coverage, then exhaustive fault hunting and supported-profile acceptance. Financial qualification is independent and still required for both venues. Produce the readiness assessment; only the user may authorize release. |
+
+### Financial decision protocol
+
+Maintain separate Polymarket and Binance frontiers. Prefer a question with a
+clear economic consequence, admissible evidence and a small decisive next
+step. Compare information gained and total acquisition/implementation cost;
+do not assign invented probabilities or a numerical value-of-information score.
+A source-complete rejection can be more useful than another ambiguous fit.
+
+For Polymarket, prioritize exact outcome/settlement identities, collateral and
+cash availability before probabilistic residual claims. Bind observation
+intervals, cancellation/dispute rules, fees, selected-side depth, locked capital,
+execution sequence and worst-case orphan exposure. An apparent cover is not a
+cash guarantee when its contracts settle on different events or clocks. The
+holding-yield branch requires its exact independent refresh trigger; a new date
+or general instruction to continue does not satisfy it.
+
+For Binance, separate financed carry/convergence from execution savings on
+independently necessary flow. Carry requires actual funding cash, borrow and
+collateral feasibility through stress, rather than direction prediction or a
+leveraged ROI denominator. Routing requires matched final inventory/cash after
+commissions, conversion spread, residuals and failure costs. A venue mechanism
+with unproved API access or execution capacity is a source lead, not a strategy.
+
+For either venue, passive-fill claims need admissible execution evidence or
+valid bounds; aggregate L2 and hypothetical queue positions are insufficient.
+Direction-independent payoff mechanics can still lose through financing,
+liquidity, basis, settlement, software or counterparty risk. Specify abstention
+when costs, state or evidence fail; do not promise all-regime positive returns.
+
+Each research batch records: exact decision, universe/access trigger, available
+information, comparator, same-unit net cash/capital law, selection budget,
+validation roles, adverse scenarios, process/data/output budget and terminal
+action. Freeze outcome-sensitive choices before access. Read retained bytes
+first where admissible; keep every consumed population and historical result.
+Promotion requires independently evaluated after-all-cost utility, recurrence,
+capacity and risk evidence under the controlling acceptance contracts.
+
+### Work selection and resource discipline
+
+- Keep one active implementation/research package. Reassess financial priority
+  at a meaningful package boundary or a material new fact, without repeatedly
+  polling unchanged triggers. A demonstrated capital/security defect can preempt.
+- Start supervisor and writer-map preparation from the already accepted Stop,
+  enrollment, recovery and scoped-policy interfaces. Full package dependencies
+  still govern completion; they do not require finishing every advanced field,
+  UI form or venue before an independent synthetic integration slice can start.
+- Set a concrete output and stopping condition before each batch. If it cannot
+  change a decision or user-visible behavior, defer it. If a source/provider is
+  gated, record the exact resume condition once and select independent work.
+- Reuse unchanged test/source receipts. Run one affected-domain checkpoint after
+  behavior converges; broader suites are for changed shared contracts or final
+  integration, not every edit. Inventory counts, syntax scans and test passes
+  are separate from financial qualification and semantic review.
+- Keep one current overview and graph; update only superseded current claims.
+  Add detailed evidence when it is needed to reproduce a decision, not another
+  transcript or copy of an unchanged controller. Batch coherent publications.
+- Use bounded, hidden, session-owned processes and verified teardown. Observe
+  resource lifetime during repeated work. Other tasks remain untouched; only
+  performance-timing conclusions depend on material contention checks.
+
+The graph's `next_actions` makes these first decisions explicit for subsequent
+continuations. Entries are routing instructions inside the existing goal, never
+a scheduler or permission to run a gated capture/account/order operation.
+
 ## Immediate batches
 
 | Order | Package | Concrete outcome | Boundary |
@@ -64,7 +145,7 @@ dependent deliverable finished.
 | Continuous priority | `FIN-01` | One genuinely informative financial decision whose literal evidence/access gate is satisfied | No routine re-sampling, speculative probability or promotion-based activity |
 | Feedback continuation | `BASE-01` | Three local diagnostic scopes repaired; retained-source Markdown and workflow advisory remain | Preserve old results and frozen source lineage; do not spend an open-ended phase polishing unrelated history |
 | Operator continuation | `EXEC-01` | Spot inspect → bounded collection → retained application is implemented; guided forms, futures/legacy application and rearm remain | No order replay, implicit credentials, automatic rearm or actual account request during synthetic development |
-| Next safety slice | `SAFE-02`, then `SAFE-01` and `EXEC-02` | Durable policy and an independent supervised gateway, then all-writer integration | Keep the owned reduction path outside a frozen strategy process |
+| Next safety slice | `SAFE-02`, with `SAFE-01` and `EXEC-02` preparation | Final admission and an independent supervised gateway slice, then all-writer acceptance | Keep the owned reduction path outside a frozen strategy process; preparation does not grant opening authority |
 | Research/model admission | `DATA-01`, `MODEL-01`, `FIN-02/03` as applicable | Causal economically meaningful inputs and independent utility/capacity evidence | More rows, larger models and high GPU usage do not supply missing evidence |
 
 This delivery view shows shared dependencies; it does not start parallel agents

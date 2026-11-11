@@ -19,7 +19,8 @@
     "publication": "Official connector only; coherent batches; identity/tree/parent/expected-head lease audit; no extra PR, release, tag or draft.",
     "source_reading": "Read selected task scope and fresh relevant evidence; reuse exact-hash material. Do not dump the whole plan per turn.",
     "subagents_authorized": false,
-    "work_in_progress": 1
+    "work_in_progress": 1,
+    "start_vs_completion": "depends_on governs full delivery acceptance. Independent synthetic gateway/supervisor preparation may start from accepted interfaces before all policy fields and UI forms are complete; it cannot grant unsupported opening authority or complete a package."
   },
   "gated_services": [
     {
@@ -556,5 +557,47 @@
       "title": "Complete product and financial readiness audit"
     }
   ],
-  "updated_at_utc": "2026-11-11T10:33:19.401066+00:00"
+  "updated_at_utc": "2026-11-11T12:34:06.945596+00:00",
+  "current_checkpoint": {
+    "inspected_production_source": "4ce19f8c5ad7fa1f2c51342c94854ae2792f0ee2",
+    "assessment_addendum": "docs/REPO_STATE_2026_11_11.md#current-checkpoint-addendum",
+    "planning_evidence": "docs/review/2026-11-11/plan-refresh/evidence.json",
+    "harness_goal_status_verified": "active",
+    "implementation_changed_by_planning_refresh": false,
+    "full_goal_complete": false
+  },
+  "next_actions": [
+    {
+      "task": "FIN-01",
+      "milestone": "M1",
+      "priority": 0,
+      "action": "Adjudicate retained official routing documentation; select one eligible Polymarket source/payoff decision against all literal retry conjuncts.",
+      "output": "Source-bound economic decision or precise unresolved source/access condition for each selected question.",
+      "stop": "No eligible access means no request. Documentation alone never reopens old quotes, protected partials, accounts or orders."
+    },
+    {
+      "task": "SAFE-02",
+      "milestone": "M2",
+      "priority": 1,
+      "action": "Trace ordinary and paired Binance policy-to-dispatch authority; integrate one complete final-admission path, including policy/state change during queued work.",
+      "output": "Source-bound caller map and a fully integrated path preserving owned reduction and UNKNOWN obligations.",
+      "stop": "Reject unsupported new exposure; do not claim universal writer or complete capital protection from this slice."
+    },
+    {
+      "task": "SAFE-01",
+      "milestone": "M3",
+      "priority": 1,
+      "action": "Prepare and integrate a contained strategy/gateway/supervisor slice using accepted Stop, enrollment, recovery and scoped-policy interfaces.",
+      "output": "Independent useful-progress observation, stale-generation denial, real hang/parent-exit teardown and retained owned recovery.",
+      "stop": "Full package acceptance dependencies remain. No service, recurring task, automatic rearm or real account operation."
+    },
+    {
+      "task": "DATA-01",
+      "milestone": "M4",
+      "priority": 1,
+      "action": "Choose an economically plausible source-qualified objective; bind required clocks, quantities, costs, cash/capital and chronological roles before model fitting.",
+      "output": "Admitted dataset/objective and feasible comparator, or precise rejection/missingness decision.",
+      "stop": "Proxy labels, absent native coverage or failed optimistic economics block expanded fitting, not independent research."
+    }
+  ]
 }

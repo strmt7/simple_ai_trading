@@ -11,6 +11,53 @@ protection, whole-repository semantic review and release qualification remain
 unproved. The [development plan](DEVELOPMENT_PLAN.md) coordinates the existing
 full goal. This assessment creates no release or trading authority.
 
+## Current checkpoint addendum
+
+Rechecked at production HEAD `4ce19f8c5ad7fa1f2c51342c94854ae2792f0ee2`
+on November 11. The checkout was clean. The tables and diagnostics below retain
+their original assessment baseline and capture times; they are not fresh remote
+inventories or a new whole-repository review. The existing harness goal was
+verified active, with its full financial and application scope preserved.
+The [refresh evidence](review/2026-11-11/plan-refresh/evidence.json) binds these
+selected inspections and planning checks.
+
+- **Financial qualification is still the largest gap:** the recorded census is
+  206 observations / 65 hypotheses / 37 historical scoped mechanisms /
+  **0 qualified stable edges**. Neither implementation progress nor the
+  documentation captures currently awaiting adjudication change that result.
+- **Operator recovery has advanced:** [explicit collection](review/2026-11-11/recovery-workflow/review.md)
+  now connects pending inspection, bounded collection, cached reuse and retained
+  Spot application through the real command. The earlier paragraphs saying
+  collection is only programmatic describe the original baseline. Guided forms,
+  futures/legacy application, account qualification and controlled rearm remain.
+- **Persistent loss policy exists in a specific scope:** [policy activation](review/2026-11-11/capital-policy/review.md)
+  uses the existing execution journal, independent enrollment and compare-and-swap
+  revisions. Signed autonomous evaluation checks effective policy. Direct source
+  inspection confirms this is not yet a universal final-dispatch policy fence;
+  full marked/day/external-flow state, reservations, Polymarket policy,
+  quarantine and independent supervision remain incomplete.
+- **Some feedback blockers were repaired:** [the repair phase](review/2026-11-11/feedback-repair/review.md)
+  establishes its affected local scopes. Original Markdown/workflow findings,
+  current whole-suite acceptance and CodeQL disposition reconciliation remain
+  open. The old 86-failure result is not a current failure count. Quota-gated
+  analysis must not be retried without independent availability evidence.
+- **Delivery integration is now the safety bottleneck:** complete one contained
+  proposal → final admission → uncertain acknowledgement → retained recovery →
+  owned reduction path. Do not wait for every advanced policy field or guided
+  form before developing this slice; missing protections must continue to deny
+  unsupported new exposure.
+- **The efficiency risk is repeated partial work:** stale prose, large source
+  entry points, repeated indexing, duplicated controllers and separate component
+  checkpoints increase cost. Use one current task graph, versioned contracts,
+  exact evidence reuse and integration acceptance. Do not start another generic
+  audit, enlarged fit or infrastructure project without a decision it will change.
+
+The [ordered milestones](DEVELOPMENT_PLAN.md#next-delivery-milestones) and
+[work graph](DEVELOPMENT_WORK_GRAPH.json) now identify the next concrete outputs,
+their stopping conditions and the distinction between starting a slice and
+qualifying the full package. No percentage complete, delivery date, current
+scanner-clean claim or guaranteed profitability follows from this addendum.
+
 ## Verified snapshot
 
 | Item | Observed state | Limit of the evidence |
