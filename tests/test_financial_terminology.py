@@ -2,7 +2,14 @@
 
 from __future__ import annotations
 
-from tools.audit_financial_terminology import audit_entries, audit_repository
+import pytest
+
+from tools.audit_financial_terminology import (
+    IMMUTABLE_EVIDENCE_TEXT_SHA256,
+    REPO_ROOT,
+    audit_entries,
+    audit_repository,
+)
 
 
 def test_audit_does_not_read_retained_raw_evidence(tmp_path, monkeypatch) -> None:
@@ -20,6 +27,7 @@ def test_audit_does_not_read_retained_raw_evidence(tmp_path, monkeypatch) -> Non
         raise AssertionError("raw evidence must not be read by terminology lint")
 
     monkeypatch.setattr(Path, "read_text", forbidden_read)
+    monkeypatch.setattr(Path, "read_bytes", forbidden_read)
     assert audit.audit_repository(tmp_path) == []
 
 
@@ -57,35 +65,53 @@ def test_audit_accepts_established_financial_terms() -> None:
     assert findings == []
 
 
-def test_audit_preserves_exact_frozen_evidence_bytes() -> None:
-    frozen_term = "policy" + " replay"
-    frozen_overlay_term = "ai" + " reviewer"
-    findings = audit_entries(
-        [
-            (
-                "docs/model-research/action-value/"
-                "round-049-cost-aware-action-hurdle-tcn-design.json",
-                f'"uses": ["fixed-{frozen_term}"]',
-            ),
-            (
-                "docs/model-research/action-value/"
-                "round-074-event-sequence-model-design-v116.json",
-                f'"role": "{frozen_overlay_term}"',
-            ),
-            (
-                "src/simple_ai_trading/impact_absorption_ai_contract_screen.py",
-                f'"""Frozen {frozen_overlay_term} contract."""',
-            ),
-            ("docs/current.json", f'"uses": ["fixed-{frozen_term}"]'),
-            (
-                "docs/model-research/action-value/"
-                "polymarket-us-combo-rfq-overview-adjudication-v1-2026-09-01.json",
-                "executed" + " mean",
-            ),
-        ]
-    )
+@pytest.mark.parametrize("relative", sorted(IMMUTABLE_EVIDENCE_TEXT_SHA256))
+def test_audit_preserves_only_exact_frozen_content(relative: str) -> None:
+    text = (REPO_ROOT / relative).read_text(encoding="utf-8")
+    assert audit_entries([(relative, text)]) == []
+    # A Windows checkout may materialize CRLF without changing historical text.
+    assert audit_entries([(relative, text.replace("\n", "\r\n"))]) == []
+    assert audit_entries([(relative, text.replace("\n", "\r"))])
 
-    assert [(item.path, item.line) for item in findings] == [("docs/current.json", 1)]
+    extra = "magic" + " alpha"
+    changed = audit_entries([(relative, text + "\n" + extra)])
+    assert any(item.term == extra for item in changed)
+    assert audit_entries([(relative, extra)])[0].term == extra
+    # A matching body at another authored path does not inherit the exemption.
+    copied = audit_entries([("docs/copied-evidence.md", text)])
+    assert copied
+
+
+def test_audit_checks_modified_historical_content_on_disk(
+    tmp_path, monkeypatch
+) -> None:
+    from tools import audit_financial_terminology as audit
+
+    relative = next(iter(IMMUTABLE_EVIDENCE_TEXT_SHA256))
+    target = tmp_path / relative
+    target.parent.mkdir(parents=True)
+    target.write_bytes((REPO_ROOT / relative).read_bytes())
+    monkeypatch.setattr(audit, "git_visible_files", lambda _root: [relative])
+    assert audit_repository(tmp_path) == []
+    with target.open("a", encoding="utf-8") as stream:
+        stream.write("\n" + "magic" + " alpha")
+    assert any(item.term == "magic" + " alpha" for item in audit_repository(tmp_path))
+
+
+def test_frozen_content_does_not_exempt_a_superseded_filename(monkeypatch) -> None:
+    from tools import audit_financial_terminology as audit
+
+    relative = next(iter(IMMUTABLE_EVIDENCE_TEXT_SHA256))
+    text = (REPO_ROOT / relative).read_text(encoding="utf-8")
+    name = "docs/action" + "-funnel.md"
+    monkeypatch.setitem(
+        audit.IMMUTABLE_EVIDENCE_TEXT_SHA256,
+        name,
+        audit.IMMUTABLE_EVIDENCE_TEXT_SHA256[relative],
+    )
+    findings = audit_entries([(name, text)])
+    assert len(findings) == 1
+    assert findings[0].line is None
 
 
 def test_audit_rejects_superseded_text_and_artifact_names() -> None:

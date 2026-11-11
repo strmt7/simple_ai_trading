@@ -68,7 +68,7 @@ from tools.publish_round52_executable_support_hurdle import (  # noqa: E402
 )
 from simple_ai_trading.storage import write_json_atomic  # noqa: E402
 
-from simple_ai_trading.research_paths import historical_research_path
+from simple_ai_trading.research_paths import historical_research_path  # noqa: E402
 
 
 def _git(*arguments: str) -> str:

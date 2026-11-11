@@ -1,0 +1,241 @@
+{
+  "authority": {
+    "account_requests": 0,
+    "benchmarks_or_training_runs": 0,
+    "credentials_used": false,
+    "goal_complete": false,
+    "market_requests": 0,
+    "orders": 0,
+    "protected_captures_touched": false,
+    "schedules_services_or_startup_hooks_created": false
+  },
+  "baseline": "982bd9ac3056137e7361114f9e262ac16d6bc42b",
+  "captured_at_utc": "2026-11-11T11:01:12.304174+00:00",
+  "changed_document_sha256": {
+    "docs/CONTINUATION.md": "86ced92eb5b450810c3d15e17c5861f21615a0665b9830bfdcbf1f0335b7d473",
+    "docs/DEVELOPMENT_PLAN.md": "8d0a68092ef4a5a36739c6964a9890c3b8fbe07893223a048eae3243f71f6893",
+    "docs/DEVELOPMENT_WORK_GRAPH.json": "18c12202b93be87bb82ef5ffe0e672ed190af43b640f83028d8a5d290024a6b2",
+    "docs/review/2026-11-11/feedback-repair/review.md": "5d15d2cd06c1ba02548eef67179990e3874444c093f762cfe4276e759fd8bf0f"
+  },
+  "corrections": [
+    "The initial redirect test incorrectly expected the direct handler to raise; the fixed test proves the full in-memory opener chain.",
+    "Vulture was absent from the application environment. No pass was claimed. The reviewed CI lock was installed into a separate owned environment."
+  ],
+  "frozen_source_provenance": {
+    "before_file_sha256": {
+      "docs/model-research/action-value/accepted-edge-profitability-durability-audit-v1-2026-08-30.json": "eea73f41a823c9914c26f1339c7d839ef927d1262eddaa1745415fff482a4100",
+      "docs/model-research/action-value/polymarket-us-combo-rfq-overview-adjudication-v1-2026-09-01.json": "ff077d8165ecba526a395d2c02a024b3eb99f3b389f25cf36f28e7325c7fefe9",
+      "docs/model-research/action-value/round-040-causal-meta-label-capacity-ai-design.json": "85a8ee86d42905f1a7875132794a38fac921201aa22e79b6c9a8be4c7af4ad8b",
+      "docs/model-research/action-value/round-041-prequential-meta-label-ai-design.json": "a7d5df6ac4b848ec8ab195a182f2686fb1aeaff526bd1009ddd96e3b630de41c",
+      "docs/model-research/action-value/round-047-cost-aware-utility-tcn-design.json": "31965b3544674a1f82a07f2a4f6c7d90df49a5194c6718eaeebb8d23e4044c98",
+      "docs/model-research/action-value/round-048-minute-logistic-mixture-tcn-design.json": "5ee9414c12fd3aaf5c5064d3cfea0b369526f3cd3cecbad69b8e974a736e2efd",
+      "docs/model-research/action-value/round-049-cost-aware-action-hurdle-tcn-design.json": "96d325dc8636550a9b78d27a61467ba05143739eb5fc7cb425d79f000e71f7a9",
+      "docs/model-research/action-value/round-074-event-sequence-model-design-v108.json": "473e672687a733cba4d2ffe932547165323e9941ad539d53038cb67ef3bdea4c",
+      "docs/model-research/action-value/round-074-event-sequence-model-design-v116.json": "9112cc3486aa30a3f53207606d804b7d9e7271547b4282b76d1a3d9069d3ddd3",
+      "docs/review/2026-09-04/nyc-sep5-frontier/durability-before.json": "a727031f643003aab7516742d9ef49fb855c396b9289d5303f78de53f8151253",
+      "docs/review/2026-09-04/paradex-index-publication/durability-before.json": "5412354d9dc5861e9e49acfa7fc4025db39e1227a2c56fea62c5a6398549ab61",
+      "docs/review/2026-10-07/model-integration/audit-before.json": "9359919129109c78651272955bd8a558f686aa188bf65e431cc19c49b020d052",
+      "docs/review/2026-10-07/model-integration/review.md": "bf81672840e13babcfb0d521dec1211cda203635cfe410b8aa781a6031d84cf5",
+      "src/simple_ai_trading/impact_absorption_ai_contract_screen.py": "652a84da10794dcd53b45befc5c1164ac50d6c3c0ce744b94601d69dda423767",
+      "src/simple_ai_trading/polymarket_round17_publication.py": "3f75bbd348cf7d29cdcbacccef58cc4d1866efd7123cfe130456591ef467eeaa",
+      "src/simple_ai_trading/round74_ai_qualification_operator.py": "239ba4afc7ace70ebb0023bb94b4edd9fafdc78d6f11e232f71f5467139bae61",
+      "tests/test_financial_terminology.py": "758a0cefae571c496dc0a991e2a89b613155836a0f413b2fa91713bae8ad3192",
+      "tools/audit_financial_terminology.py": "08a6f3566ab3ea97aef8e0c06770c68b8be17084ce20cd0c979ec081d6cc1754",
+      "tools/capture_binance_triangle_window.py": "39139dab13515cd5252d8cbfd021abb7c909370c5203fe9540f97eb5b37be5a2",
+      "tools/capture_public_source_bounded.py": "760339a7602abfa9eb97f3f1cca0ef79191b07ff5f5aa42515f30f191f9888fc",
+      "tools/create_round61_carry_event_manifest.py": "c5a9d0feb3f3cf208a84e9209393312329c9d2612cabee971ea88db821535f7a",
+      "tools/diagnose_round51_payoff_tail.py": "4f57bbd24e3c0255238b4ba97d3d14dff957abbb3a1655bbfdece4f31dc42647",
+      "tools/diagnose_round55_controller_attrition.py": "ed786e11748c564f4daa891f3ea4f67a2e8b37d935517ca60ede5420677dcf20",
+      "tools/extract_paradex_funding_sources.py": "e34c3c7ab1d9aeb9187dadc194b387317a767667ed6beb031510c553e3262a6f",
+      "tools/publish_round51_categorical_payoff_fincast.py": "d4af87ee5f6431cfa33dad39fb884aeefa7809bbf3650dbf2e2fac9fa21e2fdc",
+      "tools/publish_round53_executable_csm.py": "b31cdf89f4b70510f385f030526978e0e7d4e46b2ece6d2b3237e866342217b5",
+      "tools/publish_round54_sequential_failure.py": "eed68fe27ba5b10c7b34458d1a06dfb7ae6d52ea7b1517c9e495ebfe85a68614",
+      "tools/publish_round55_bounded_alpha.py": "886991c65b49c5365e18b35f2fb5b0ac59dd9d9941938dbaec2cc4acf4d928b2",
+      "tools/publish_round56_paired_action.py": "81fb170ac55e2e1a1073aaa491dd6aaef14f3159a541594150198576d3ca8129",
+      "tools/publish_round57_queue_censored_make_take.py": "c489bbc96c4ae65e0839a2ef107c7c7053e30365ee7a068b1e46f48694b2f2ff",
+      "tools/publish_round58_two_sided_maker_feasibility.py": "e9566983f104237ac76d7d026bc56b3db9cca7f3f2db7066891bc2f705610da4",
+      "tools/publish_round59_funding_persistence_feasibility.py": "7040e44ab45f2f649af65b1432e0fe896a3c5cf02289211de76049c4e657926f",
+      "tools/publish_round60_full_history_funding_replication.py": "027667af47a882400f0ca8199aa8ee63679962b04d52d75a573be6c0da70ce1a",
+      "tools/run_round59_funding_persistence_feasibility.py": "b4b71358ef0bb21d5a79f9d62d5ce9ae193fc1302e710cdb38408e0a0fc8718a",
+      "tools/screen_paradex_index_boundaries.py": "3d76d057b7fc7fdcbd70e5b996ccda5952c072e7666166331f73d58c67640168",
+      "tools/screen_polymarket_exact_negrisk_long_only_frontier_v2.py": "c2eced31b6d961de60742f855e8bece9778e4e8e551ed07081d4f7b49a88f7e5"
+    },
+    "commit": "982bd9ac3056137e7361114f9e262ac16d6bc42b"
+  },
+  "limitations": [
+    "No financial claim or new observation; the financial census is unchanged.",
+    "Local declared static scopes and affected cases do not prove whole-suite, security or hosted acceptance."
+  ],
+  "next_preferred_local_batch": "EXEC-01",
+  "package_complete": false,
+  "phase_receipts": {
+    "focused": {
+      "exit_code": 1,
+      "log_sha256": {
+        "stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout": "5674b163f44e049d7988bfa78ffe2cecddee2b4405f0a00a1dcdbec29914e46e"
+      },
+      "receipt_file_sha256": "80b7a68dbbf3836a026f28822b016ccc2989285375700f4cd9bac7bd0df7e677"
+    },
+    "focused-final": {
+      "exit_code": 0,
+      "log_sha256": {
+        "stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout": "6dd786dc72d45e02d32f9a2c96fbee7f0ea69261b610e86a41d1a671dd0186ef"
+      },
+      "receipt_file_sha256": "ce8c587a64395ab645ecc3516d91799f3c95e92ba064050072119555aee8a87b"
+    },
+    "focused-v2": {
+      "exit_code": 0,
+      "log_sha256": {
+        "stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout": "6dd786dc72d45e02d32f9a2c96fbee7f0ea69261b610e86a41d1a671dd0186ef"
+      },
+      "receipt_file_sha256": "4b1595be38f2edd2305846a3b46d12e44f5c0e9623018d4844e67e3491ab7763"
+    },
+    "ruff": {
+      "exit_code": 0,
+      "log_sha256": {
+        "stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout": "82b3e6a6c090a57601d22943bd23fca9218d1031dbe5a7b754092f9a156b4f18"
+      },
+      "receipt_file_sha256": "cb83775aa6111b385fb1616e81a095f0a00f864b834bbc5524e9799fc71c3285"
+    },
+    "ruff-final": {
+      "exit_code": 0,
+      "log_sha256": {
+        "stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout": "82b3e6a6c090a57601d22943bd23fca9218d1031dbe5a7b754092f9a156b4f18"
+      },
+      "receipt_file_sha256": "15bed60ac0f983e77a9020eda8013acaa91042520466af7cfea0790d4d40c2a5"
+    },
+    "terminology": {
+      "exit_code": 0,
+      "log_sha256": {
+        "stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout": "0ea6905b288c43c28f866dcb0df9885bcf26b2698079328822c03b416102e4e1"
+      },
+      "receipt_file_sha256": "abc8425fd24c73552210167ec2d11b9c2954d8bfba50bb499efc66446fd04f66"
+    },
+    "terminology-final": {
+      "exit_code": 0,
+      "log_sha256": {
+        "stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout": "0ea6905b288c43c28f866dcb0df9885bcf26b2698079328822c03b416102e4e1"
+      },
+      "receipt_file_sha256": "7a2a3a248c87a9d786b46e31eef36b98ee7a33bc47815a41bd671bf36c421e95"
+    },
+    "vulture": {
+      "exit_code": 1,
+      "log_sha256": {
+        "stderr": "6a6dcd540295e94d2b787f94835085d50d1836a2ae20e22b3755569dc53dcd39",
+        "stdout": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "receipt_file_sha256": "81078f8ba1771e45ba61bda0f481829cd5a4cc693ee7c109f4d7c49b2a0b3096"
+    },
+    "vulture-final": {
+      "exit_code": 0,
+      "log_sha256": {
+        "stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "receipt_file_sha256": "d29179877b0f41974e572de935c60226dfa6314a9e6f9ed096185c7aa8d4e9fc"
+    },
+    "vulture-qualified": {
+      "exit_code": 0,
+      "log_sha256": {
+        "stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "receipt_file_sha256": "3d840418f931b3cd57e68e1d7a1c8338488f75ec67b3fe8ea240a33ea7bf5d14"
+    }
+  },
+  "remaining": [
+    "Retained-source Markdown diagnostics",
+    "Low workflow self-repository advisory and existing suppression review",
+    "Current broad pytest/coverage status and hosted acceptance"
+  ],
+  "result_sha256": "2890a0adc1019441f92ec05618330d1e6373d1ab13d6faf71e4d8568241ca111",
+  "schema_version": "mainline-feedback-repair-v1",
+  "verification": {
+    "affected_cases_passed": 48,
+    "financial_terminology_repository_scope": "passed",
+    "historical_files_modified": 0,
+    "historical_lf_text_sha256": {
+      "docs/model-research/action-value/accepted-edge-profitability-durability-audit-v1-2026-08-30.json": "eea73f41a823c9914c26f1339c7d839ef927d1262eddaa1745415fff482a4100",
+      "docs/model-research/action-value/polymarket-us-combo-rfq-overview-adjudication-v1-2026-09-01.json": "ff077d8165ecba526a395d2c02a024b3eb99f3b389f25cf36f28e7325c7fefe9",
+      "docs/model-research/action-value/round-040-causal-meta-label-capacity-ai-design.json": "85a8ee86d42905f1a7875132794a38fac921201aa22e79b6c9a8be4c7af4ad8b",
+      "docs/model-research/action-value/round-041-prequential-meta-label-ai-design.json": "a7d5df6ac4b848ec8ab195a182f2686fb1aeaff526bd1009ddd96e3b630de41c",
+      "docs/model-research/action-value/round-047-cost-aware-utility-tcn-design.json": "31965b3544674a1f82a07f2a4f6c7d90df49a5194c6718eaeebb8d23e4044c98",
+      "docs/model-research/action-value/round-048-minute-logistic-mixture-tcn-design.json": "5ee9414c12fd3aaf5c5064d3cfea0b369526f3cd3cecbad69b8e974a736e2efd",
+      "docs/model-research/action-value/round-049-cost-aware-action-hurdle-tcn-design.json": "96d325dc8636550a9b78d27a61467ba05143739eb5fc7cb425d79f000e71f7a9",
+      "docs/model-research/action-value/round-074-event-sequence-model-design-v108.json": "473e672687a733cba4d2ffe932547165323e9941ad539d53038cb67ef3bdea4c",
+      "docs/model-research/action-value/round-074-event-sequence-model-design-v116.json": "9112cc3486aa30a3f53207606d804b7d9e7271547b4282b76d1a3d9069d3ddd3",
+      "docs/review/2026-09-04/nyc-sep5-frontier/durability-before.json": "a727031f643003aab7516742d9ef49fb855c396b9289d5303f78de53f8151253",
+      "docs/review/2026-09-04/paradex-index-publication/durability-before.json": "5412354d9dc5861e9e49acfa7fc4025db39e1227a2c56fea62c5a6398549ab61",
+      "docs/review/2026-10-07/model-integration/audit-before.json": "9359919129109c78651272955bd8a558f686aa188bf65e431cc19c49b020d052",
+      "docs/review/2026-10-07/model-integration/review.md": "bf81672840e13babcfb0d521dec1211cda203635cfe410b8aa781a6031d84cf5",
+      "src/simple_ai_trading/impact_absorption_ai_contract_screen.py": "652a84da10794dcd53b45befc5c1164ac50d6c3c0ce744b94601d69dda423767",
+      "src/simple_ai_trading/polymarket_round17_publication.py": "3f75bbd348cf7d29cdcbacccef58cc4d1866efd7123cfe130456591ef467eeaa",
+      "src/simple_ai_trading/round74_ai_qualification_operator.py": "239ba4afc7ace70ebb0023bb94b4edd9fafdc78d6f11e232f71f5467139bae61"
+    },
+    "import_only_annotations_ast_equal": [
+      "tools/create_round61_carry_event_manifest.py",
+      "tools/diagnose_round51_payoff_tail.py",
+      "tools/diagnose_round55_controller_attrition.py",
+      "tools/publish_round51_categorical_payoff_fincast.py",
+      "tools/publish_round53_executable_csm.py",
+      "tools/publish_round54_sequential_failure.py",
+      "tools/publish_round55_bounded_alpha.py",
+      "tools/publish_round56_paired_action.py",
+      "tools/publish_round57_queue_censored_make_take.py",
+      "tools/publish_round58_two_sided_maker_feasibility.py",
+      "tools/publish_round59_funding_persistence_feasibility.py",
+      "tools/publish_round60_full_history_funding_replication.py",
+      "tools/run_round59_funding_persistence_feasibility.py"
+    ],
+    "ruff_repository_scope": "passed",
+    "source_phase_objects_retained": 42,
+    "tested_source_sha256": {
+      "docs/model-research/action-value/accepted-edge-profitability-durability-audit-v1-2026-08-30.json": "eea73f41a823c9914c26f1339c7d839ef927d1262eddaa1745415fff482a4100",
+      "docs/model-research/action-value/polymarket-us-combo-rfq-overview-adjudication-v1-2026-09-01.json": "ff077d8165ecba526a395d2c02a024b3eb99f3b389f25cf36f28e7325c7fefe9",
+      "docs/model-research/action-value/round-040-causal-meta-label-capacity-ai-design.json": "85a8ee86d42905f1a7875132794a38fac921201aa22e79b6c9a8be4c7af4ad8b",
+      "docs/model-research/action-value/round-041-prequential-meta-label-ai-design.json": "a7d5df6ac4b848ec8ab195a182f2686fb1aeaff526bd1009ddd96e3b630de41c",
+      "docs/model-research/action-value/round-047-cost-aware-utility-tcn-design.json": "31965b3544674a1f82a07f2a4f6c7d90df49a5194c6718eaeebb8d23e4044c98",
+      "docs/model-research/action-value/round-048-minute-logistic-mixture-tcn-design.json": "5ee9414c12fd3aaf5c5064d3cfea0b369526f3cd3cecbad69b8e974a736e2efd",
+      "docs/model-research/action-value/round-049-cost-aware-action-hurdle-tcn-design.json": "96d325dc8636550a9b78d27a61467ba05143739eb5fc7cb425d79f000e71f7a9",
+      "docs/model-research/action-value/round-074-event-sequence-model-design-v108.json": "473e672687a733cba4d2ffe932547165323e9941ad539d53038cb67ef3bdea4c",
+      "docs/model-research/action-value/round-074-event-sequence-model-design-v116.json": "9112cc3486aa30a3f53207606d804b7d9e7271547b4282b76d1a3d9069d3ddd3",
+      "docs/review/2026-09-04/nyc-sep5-frontier/durability-before.json": "a727031f643003aab7516742d9ef49fb855c396b9289d5303f78de53f8151253",
+      "docs/review/2026-09-04/paradex-index-publication/durability-before.json": "5412354d9dc5861e9e49acfa7fc4025db39e1227a2c56fea62c5a6398549ab61",
+      "docs/review/2026-10-07/model-integration/audit-before.json": "9359919129109c78651272955bd8a558f686aa188bf65e431cc19c49b020d052",
+      "docs/review/2026-10-07/model-integration/review.md": "bf81672840e13babcfb0d521dec1211cda203635cfe410b8aa781a6031d84cf5",
+      "src/simple_ai_trading/impact_absorption_ai_contract_screen.py": "652a84da10794dcd53b45befc5c1164ac50d6c3c0ce744b94601d69dda423767",
+      "src/simple_ai_trading/polymarket_round17_publication.py": "3f75bbd348cf7d29cdcbacccef58cc4d1866efd7123cfe130456591ef467eeaa",
+      "src/simple_ai_trading/round74_ai_qualification_operator.py": "239ba4afc7ace70ebb0023bb94b4edd9fafdc78d6f11e232f71f5467139bae61",
+      "tests/test_financial_terminology.py": "6ecdb7ae7cfd747d3b2015de9aa0ebd639edfd3772343bcfc3beb2ba01533a40",
+      "tests/test_research_transport_callbacks.py": "c78d9677f1611ae4fe89e1881562d221ed7246c8ff194d4647e5e174b9005266",
+      "tools/audit_financial_terminology.py": "959afd5b1cbe159638d52bbbdd0f7e0b3e1fcb53fe5f12ab71c4a8812b32aa96",
+      "tools/capture_binance_triangle_window.py": "7e932b3e76e5de39fb4e2fd5ef07cb53b50f46ebce02e85c5a711079a40cebff",
+      "tools/capture_public_source_bounded.py": "e7d2c87dd2bcbab58eabad7255200ea9179a0aa3adcc74ef2b4c0be0728d9ea4",
+      "tools/create_round61_carry_event_manifest.py": "c54594301dc5511efe456250d54035c35d9c22a55b6422850d12e2e107e1026d",
+      "tools/diagnose_round51_payoff_tail.py": "f6b1d824b0a154d7a10c87d1d31f6beeb6cff205f5e98ca4b45689999d53b272",
+      "tools/diagnose_round55_controller_attrition.py": "62f695e2e70a4b999f08d42fa908fb89429d0a89ea214751f975bfd5e14c8480",
+      "tools/extract_paradex_funding_sources.py": "012f23c2f2de8e91dfce2996460bb976af7189e7bcbd5d3a649af4c5c389fa9d",
+      "tools/publish_round51_categorical_payoff_fincast.py": "de7718e6d27f2838090bf97be5432da66e0704f65621b3a01eb763cc035060de",
+      "tools/publish_round53_executable_csm.py": "46c0b80ea2b3104141b90e7890258bf5b72bf5559203454402ea8869cea1c27a",
+      "tools/publish_round54_sequential_failure.py": "39e70e7b50e0cd4619a4cd0b8bde7b5b96f4e5d0461be8037b894955541eb3a7",
+      "tools/publish_round55_bounded_alpha.py": "4629e9f98cc30f264dafad86fecf5b39fef059aab600af5ebec24117e271525d",
+      "tools/publish_round56_paired_action.py": "689d1fb89431e20dc2d3efd0073e1cf4fcdf609dddeb51d84a2dd747c6ff44a3",
+      "tools/publish_round57_queue_censored_make_take.py": "ea94df8630ceb9625bee53385a9e3e34dd9af979523fbdcd0464b650f4afea3f",
+      "tools/publish_round58_two_sided_maker_feasibility.py": "25fc656b3fa43574020611536e49dd71439e0494b42bd32366ba119c75a9a9c3",
+      "tools/publish_round59_funding_persistence_feasibility.py": "4c15cb3c82191a5f05ce5f2a8c60392e19892df14cabb53ce4f916bab93aed32",
+      "tools/publish_round60_full_history_funding_replication.py": "be80321f47c6aca02bfe0de8f5ee62c3f1ed450d1ac1a247fffa99857a2868e7",
+      "tools/run_round59_funding_persistence_feasibility.py": "9c7b2c7d167d472836e72a039706e43032ad293f0be3c85a9f2c165fa599f0a7",
+      "tools/screen_paradex_index_boundaries.py": "1e2f49e7357893bdc64d6c1a8a046d731204836799a0fcc29b554d41f2bff04b",
+      "tools/screen_polymarket_exact_negrisk_long_only_frontier_v2.py": "a4bf3f55e8006c5bba45b19adc034bb3b74389ca385c7cc89d1211a1cdcf7018"
+    },
+    "vulture_tracked_production_scope": "passed with hash-locked Vulture 2.16 in an isolated owned environment"
+  },
+  "work_package": "BASE-01"
+}

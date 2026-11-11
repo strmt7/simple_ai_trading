@@ -14,7 +14,7 @@
     "continuous_financial_priority": "FIN-01",
     "dependencies": "Delivery acceptance dependencies, not a prohibition on useful independent preparation. Exact source/capture/account rules always control.",
     "host_lifecycle": "Bounded hidden session-owned helpers; exception-safe teardown; no service, scheduler, startup hook or interference with unrelated work.",
-    "next_preferred_local_batch": "BASE-01",
+    "next_preferred_local_batch": "EXEC-01",
     "preemption": "A verified capital/security failure or eligible higher-information financial decision can preempt the default batch.",
     "publication": "Official connector only; coherent batches; identity/tree/parent/expected-head lease audit; no extra PR, release, tag or draft.",
     "source_reading": "Read selected task scope and fresh relevant evidence; reuse exact-hash material. Do not dump the whole plan per turn.",
@@ -198,8 +198,10 @@
         ".github/workflows/vulture.yml",
         ".github/workflows/super-linter.yml"
       ],
-      "status": "planned",
-      "title": "Restore useful mainline feedback"
+      "status": "partially_complete",
+      "title": "Restore useful mainline feedback",
+      "progress_evidence": "docs/review/2026-11-11/feedback-repair/evidence.json",
+      "remaining": "Retained-source Markdown and workflow advisory treatment; current broad-suite and hosted acceptance remain unproved."
     },
     {
       "depends_on": [

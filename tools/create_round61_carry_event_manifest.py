@@ -37,7 +37,7 @@ from tools.run_round60_full_history_funding_replication import (  # noqa: E402
     _validate_design,
 )
 
-from simple_ai_trading.research_paths import historical_research_path
+from simple_ai_trading.research_paths import historical_research_path  # noqa: E402
 
 
 ROUND60_REPORT_FILE_SHA256 = (

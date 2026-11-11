@@ -123,12 +123,12 @@ before continuing an affected family. None supplies a qualified stable edge.
 
 ## Maintenance and full qualification
 
-The [November 10 dependency cohort](review/2026-11-10/dependencies/review.md)
-passed its isolated compatibility scope. Its zero-open-alert/PR response is
-dated inventory. Scanner coverage, freshness and quota remain separate. Explicit
-quota exhaustion means skip dependent scans/retries until verified availability.
-The old full-suite phase retained 86 failures; one stale fixture was later repaired.
-Current whole-suite success and a current remaining-failure count are unproved.
+The [dependency cohort](review/2026-11-10/dependencies/review.md) passed its isolated
+scope; alert inventory, scanner coverage and quota remain separate. Skip exhausted
+providers until verified availability. [Feedback repair](review/2026-11-11/feedback-repair/review.md)
+passes 48 affected cases plus local Ruff, terminology and Vulture scopes, preserving
+historical evidence. Markdown/workflow diagnostics and current whole-suite status
+remain open. Next local slice: `EXEC-01`; eligible financial work retains priority.
 
 Preserve licensing and readable development source. [Commercial protection](WORK_PRIORITIES.md#commercial-code-protection-recorded-not-implemented)
 still needs a measured distribution boundary and clean-host qualification.

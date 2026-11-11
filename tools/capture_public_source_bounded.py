@@ -23,6 +23,8 @@ from tools.capture_public_source_contract import (
 
 class NoRedirect(HTTPRedirectHandler):
     def redirect_request(self, req, fp, code, msg, headers, newurl):
+        # Preserve urllib's callback signature; every redirect is denied.
+        del req, newurl
         return None
 
 

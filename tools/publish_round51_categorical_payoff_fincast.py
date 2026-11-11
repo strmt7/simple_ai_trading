@@ -25,7 +25,7 @@ from tools.publish_cross_asset_cost_aware_ai_ablation import (  # noqa: E402
     _research_progress_svg,
 )
 
-from simple_ai_trading.research_paths import historical_research_path
+from simple_ai_trading.research_paths import historical_research_path  # noqa: E402
 
 
 ROUND = 51

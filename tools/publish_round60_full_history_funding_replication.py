@@ -40,7 +40,7 @@ from tools.publish_round59_funding_persistence_feasibility import (  # noqa: E40
     _transition_rows as _round59_transition_rows,
 )
 
-from simple_ai_trading.research_paths import historical_research_path
+from simple_ai_trading.research_paths import historical_research_path  # noqa: E402
 
 
 ROUND = 60

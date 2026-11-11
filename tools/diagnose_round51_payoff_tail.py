@@ -37,7 +37,7 @@ from tools.run_round51_categorical_payoff_fincast import (  # noqa: E402
     _role_indexes,
 )
 
-from simple_ai_trading.research_paths import historical_research_path
+from simple_ai_trading.research_paths import historical_research_path  # noqa: E402
 
 
 ROUND = 51

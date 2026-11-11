@@ -31,6 +31,8 @@ URL = "https://data-api.binance.vision/api/v3/ticker/bookTicker?" + urlencode(
 
 class NoRedirect(HTTPRedirectHandler):
     def redirect_request(self, req, fp, code, msg, headers, newurl):
+        # Preserve urllib's callback signature; every redirect is denied.
+        del req, newurl
         return None
 
 

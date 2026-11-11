@@ -21,6 +21,8 @@ class VisibleText(HTMLParser):
         self.parts = []
 
     def handle_starttag(self, tag, attrs):
+        # HTMLParser supplies attributes; only the tag controls visibility.
+        del attrs
         if tag in ("script", "style"):
             self.skip += 1
 

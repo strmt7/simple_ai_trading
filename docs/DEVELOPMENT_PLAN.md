@@ -26,7 +26,8 @@ is preserved, and a source-bound result overrides an unsupported plan assertion.
    or no progress under the existing protocol.
 2. Select one bounded work package. An eligible informative financial decision
    has priority; a demonstrated capital/security failure can preempt it. The
-   default next local batch is `BASE-01`, followed by `EXEC-01`. Do not infer that
+   default next local batch is `EXEC-01`; `BASE-01` has a recorded partial repair.
+   Do not infer that
    every research trigger is closed merely because no new one is asserted here.
 3. Read the selected package and its exact current source/evidence dependencies.
    Reuse previously reviewed material only under the exact-hash rule. Mandatory
@@ -61,8 +62,8 @@ dependent deliverable finished.
 | Order | Package | Concrete outcome | Boundary |
 | --- | --- | --- | --- |
 | Continuous priority | `FIN-01` | One genuinely informative financial decision whose literal evidence/access gate is satisfied | No routine re-sampling, speculative probability or promotion-based activity |
-| Next local batch | `BASE-01` | Repair the finite diagnosed causes that prevent useful mainline feedback | Preserve old results and frozen source lineage; do not spend an open-ended phase polishing unrelated history |
-| Next operating slice | `EXEC-01` | Pending-close inspect → bounded collection → retained application through one explicit operator workflow | No order replay, implicit credentials, automatic rearm or actual account request during synthetic development |
+| Feedback continuation | `BASE-01` | Three local diagnostic scopes repaired; retained-source Markdown and workflow advisory remain | Preserve old results and frozen source lineage; do not spend an open-ended phase polishing unrelated history |
+| Next local/operating slice | `EXEC-01` | Pending-close inspect → bounded collection → retained application through one explicit operator workflow | No order replay, implicit credentials, automatic rearm or actual account request during synthetic development |
 | Next safety slice | `SAFE-02`, then `SAFE-01` and `EXEC-02` | Durable policy and an independent supervised gateway, then all-writer integration | Keep the owned reduction path outside a frozen strategy process |
 | Research/model admission | `DATA-01`, `MODEL-01`, `FIN-02/03` as applicable | Causal economically meaningful inputs and independent utility/capacity evidence | More rows, larger models and high GPU usage do not supply missing evidence |
 
@@ -86,6 +87,12 @@ flowchart TD
 ```
 
 ### BASE-01 — Restore useful feedback without changing the economic record
+
+The [first repair phase](review/2026-11-11/feedback-repair/review.md) passes the
+affected cases and local Ruff, terminology and Vulture scopes. Historical text
+bindings are now content-specific. Markdown/workflow issues and hosted/full-suite
+acceptance remain open. Continue `EXEC-01` without repeatedly running these
+unchanged successful scopes or turning historical formatting into a broad phase.
 
 Use the retained exact-commit logs: four terminology findings, 13 Ruff import
 diagnostics, nine unused-parameter diagnostics, nine Markdown diagnostic instances

@@ -33,7 +33,7 @@ from tools.publish_round52_executable_support_hurdle import (  # noqa: E402
     _write_text,
 )
 
-from simple_ai_trading.research_paths import historical_research_path
+from simple_ai_trading.research_paths import historical_research_path  # noqa: E402
 
 
 ROUND = 58

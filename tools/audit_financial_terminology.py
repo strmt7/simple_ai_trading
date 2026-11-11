@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import subprocess
 from dataclasses import dataclass
 from pathlib import Path
@@ -38,19 +39,28 @@ AUTHORED_SUFFIXES = (
 )
 MACHINE_EVIDENCE_JSON_PREFIXES = ("docs/ai/risk-review/latest/",)
 TEXT_EXCLUSIONS = {"tools/audit_financial_terminology.py"}
-IMMUTABLE_EVIDENCE_TEXT_EXCLUSIONS = {
-    "docs/model-research/action-value/accepted-edge-profitability-durability-audit-v1-2026-08-30.json",
-    "docs/model-research/action-value/polymarket-us-combo-rfq-overview-adjudication-v1-2026-09-01.json",
-    "docs/model-research/action-value/round-040-causal-meta-label-capacity-ai-design.json",
-    "docs/model-research/action-value/round-041-prequential-meta-label-ai-design.json",
-    "docs/model-research/action-value/round-047-cost-aware-utility-tcn-design.json",
-    "docs/model-research/action-value/round-048-minute-logistic-mixture-tcn-design.json",
-    "docs/model-research/action-value/round-049-cost-aware-action-hurdle-tcn-design.json",
-    "docs/model-research/action-value/round-074-event-sequence-model-design-v108.json",
-    "docs/model-research/action-value/round-074-event-sequence-model-design-v116.json",
-    "src/simple_ai_trading/impact_absorption_ai_contract_screen.py",
-    "src/simple_ai_trading/polymarket_round17_publication.py",
-    "src/simple_ai_trading/round74_ai_qualification_operator.py",
+# Exact historical content at 982bd9ac is evidence, not current editorial copy.
+# Hash UTF-8 text with CRLF normalized to LF for portable Git checkouts. A path
+# alone never exempts modified content; filename checks remain unconditional.
+# Provenance and the four newly classified before/audit records are documented
+# in docs/review/2026-11-11/feedback-repair/review.md.
+IMMUTABLE_EVIDENCE_TEXT_SHA256 = {
+    "docs/model-research/action-value/accepted-edge-profitability-durability-audit-v1-2026-08-30.json": "eea73f41a823c9914c26f1339c7d839ef927d1262eddaa1745415fff482a4100",
+    "docs/model-research/action-value/polymarket-us-combo-rfq-overview-adjudication-v1-2026-09-01.json": "ff077d8165ecba526a395d2c02a024b3eb99f3b389f25cf36f28e7325c7fefe9",
+    "docs/model-research/action-value/round-040-causal-meta-label-capacity-ai-design.json": "85a8ee86d42905f1a7875132794a38fac921201aa22e79b6c9a8be4c7af4ad8b",
+    "docs/model-research/action-value/round-041-prequential-meta-label-ai-design.json": "a7d5df6ac4b848ec8ab195a182f2686fb1aeaff526bd1009ddd96e3b630de41c",
+    "docs/model-research/action-value/round-047-cost-aware-utility-tcn-design.json": "31965b3544674a1f82a07f2a4f6c7d90df49a5194c6718eaeebb8d23e4044c98",
+    "docs/model-research/action-value/round-048-minute-logistic-mixture-tcn-design.json": "5ee9414c12fd3aaf5c5064d3cfea0b369526f3cd3cecbad69b8e974a736e2efd",
+    "docs/model-research/action-value/round-049-cost-aware-action-hurdle-tcn-design.json": "96d325dc8636550a9b78d27a61467ba05143739eb5fc7cb425d79f000e71f7a9",
+    "docs/model-research/action-value/round-074-event-sequence-model-design-v108.json": "473e672687a733cba4d2ffe932547165323e9941ad539d53038cb67ef3bdea4c",
+    "docs/model-research/action-value/round-074-event-sequence-model-design-v116.json": "9112cc3486aa30a3f53207606d804b7d9e7271547b4282b76d1a3d9069d3ddd3",
+    "docs/review/2026-09-04/nyc-sep5-frontier/durability-before.json": "a727031f643003aab7516742d9ef49fb855c396b9289d5303f78de53f8151253",
+    "docs/review/2026-09-04/paradex-index-publication/durability-before.json": "5412354d9dc5861e9e49acfa7fc4025db39e1227a2c56fea62c5a6398549ab61",
+    "docs/review/2026-10-07/model-integration/audit-before.json": "9359919129109c78651272955bd8a558f686aa188bf65e431cc19c49b020d052",
+    "docs/review/2026-10-07/model-integration/review.md": "bf81672840e13babcfb0d521dec1211cda203635cfe410b8aa781a6031d84cf5",
+    "src/simple_ai_trading/impact_absorption_ai_contract_screen.py": "652a84da10794dcd53b45befc5c1164ac50d6c3c0ce744b94601d69dda423767",
+    "src/simple_ai_trading/polymarket_round17_publication.py": "3f75bbd348cf7d29cdcbacccef58cc4d1866efd7123cfe130456591ef467eeaa",
+    "src/simple_ai_trading/round74_ai_qualification_operator.py": "239ba4afc7ace70ebb0023bb94b4edd9fafdc78d6f11e232f71f5467139bae61",
 }
 
 # Build phrases from fragments so this enforcement module cannot flag itself.
@@ -178,11 +188,7 @@ def _is_authored_text(path: str) -> bool:
     normalized = _normalize(path)
     if normalized.startswith("docs/model-research/") and "/raw/" in normalized:
         return False
-    # Frozen evidence must retain its hash-bound historical bytes.
-    if (
-        normalized in TEXT_EXCLUSIONS
-        or normalized in IMMUTABLE_EVIDENCE_TEXT_EXCLUSIONS
-    ):
+    if normalized in TEXT_EXCLUSIONS:
         return False
     if not normalized.lower().endswith(AUTHORED_SUFFIXES):
         return False
@@ -210,6 +216,13 @@ def audit_entries(entries: Iterable[tuple[str, str]]) -> list[TerminologyFinding
                 )
         if not _is_authored_text(path):
             continue
+        historical_digest = IMMUTABLE_EVIDENCE_TEXT_SHA256.get(path)
+        if historical_digest is not None:
+            text_digest = hashlib.sha256(
+                text.replace("\r\n", "\n").encode("utf-8")
+            ).hexdigest()
+            if historical_digest == text_digest:
+                continue
         for line_number, line in enumerate(text.splitlines(), start=1):
             folded_line = line.casefold()
             for term, replacement in BANNED_PHRASES:
@@ -252,7 +265,9 @@ def audit_repository(repo_root: Path = REPO_ROOT) -> list[TerminologyFinding]:
         if not path.is_file():
             continue
         text = (
-            path.read_text(encoding="utf-8") if _is_authored_text(relative_path) else ""
+            path.read_bytes().decode("utf-8")
+            if _is_authored_text(relative_path)
+            else ""
         )
         entries.append((relative_path, text))
     return audit_entries(entries)

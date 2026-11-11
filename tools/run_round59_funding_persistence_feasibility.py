@@ -29,7 +29,7 @@ from simple_ai_trading.types import (  # noqa: E402
     DEFAULT_SPOT_TAKER_FEE_BPS,
 )
 
-from simple_ai_trading.research_paths import historical_research_path
+from simple_ai_trading.research_paths import historical_research_path  # noqa: E402
 
 
 ROUND = 59

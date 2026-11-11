@@ -39,7 +39,7 @@ from simple_ai_trading.stop_time_payoff_data import (  # noqa: E402
 )
 from simple_ai_trading.storage import write_json_atomic  # noqa: E402
 
-from simple_ai_trading.research_paths import historical_research_path
+from simple_ai_trading.research_paths import historical_research_path  # noqa: E402
 
 
 ROUND = 55
