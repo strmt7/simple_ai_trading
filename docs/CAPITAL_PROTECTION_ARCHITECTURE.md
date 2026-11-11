@@ -1,5 +1,13 @@
 # Capital protection and final release verification
 
+The [signed residual repair](review/2026-11-11/signed-residual/review.md) prevents
+epsilon-based removal of positive remaining futures and legacy signed Spot lots.
+Exact supplied quantity projections survive partial-close accounting and restart;
+oversells and unrepresentable remainders reject before mutation. UNKNOWN remains
+unresolved. Terminal inventory application, native cash/fee qualification,
+instrument dust policy, explicit rearm and independent supervision remain open.
+This current boundary does not revise the dated evidence retained below.
+
 The [runtime storage enrollment checkpoint](review/2026-11-10/runtime-storage-enrollment/review.md)
 now rejects normal access to missing/replaced controller storage and identities.
 Explicit setup/adoption and committed prepared-state recovery preserve Stop;

@@ -40,13 +40,13 @@ before continuing an affected family. None supplies a qualified stable edge.
 
 | Family | Current information and next boundary |
 | --- | --- |
-| Polymarket US fees | [Current primary terms](review/2026-11-11/us-fee-supersession/review.md) supersede historical flat US rebate inputs. Base maker Tier 1 pays zero below $10M qualifying maker volume. Independent tiers, per-fill rounding, cumulative taker caps and announced combo fee clocks require actual account/fill evidence. No new economic observation. |
+| Polymarket US fees | [US terms](review/2026-11-11/us-fee-supersession/review.md) supersede flat rebates: base maker Tier 1 pays zero below $10M qualifying maker volume. Tiers, per-fill rounding, taker caps and combo clocks need actual account/fill evidence. No new economic observation. |
 | Binance routing | [Spot Auto Order Routing](review/2026-11-11/binance-auto-routing/review.md) has commission-free intermediary conversion with spread and discretionary capacity. Match same-unit final proceeds against direct and manual routes. API/testnet support and executable improvement remain unproved. |
 | Financing and carry | [Capital necessary bound](review/2026-11-10/capital-bound/review.md) rejects all nine retained funding roles even at its optimistic one-leg 20x reference floor. The [annual study](review/2026-11-09/year-funding/review.md) and consumed weekly partial remain closed under their literal triggers. Native financing, collateral, continuous solvency and paired costs precede another fit. |
 | Option payoff and settlement | [Primary option terms](review/2026-11-10/pdf-source/review.md) retain unresolved call/put references. [Fully paid options](review/2026-11-10/fully-paid-options/review.md) supply conditional algebra. [Legal-source routing](review/2026-11-11/clearing-index/review.md) leaves the authoritative revision and reference/sign reconciliation unresolved. [September 25 settlement](review/2026-11-09/settlement-equivalence/review.md) lacks the exact futures delivery record. Preserve each source gate. |
 | Polymarket covers | [NYC November 11](review/2026-11-10/nyc-nov11-frontier/review.md), [Seoul November 12](review/2026-11-10/seoul-nov12-frontier/review.md) and [BTC November 12](review/2026-11-11/btc-nov12-ladder/review.md) are consumed. Exact certificates strengthen the retained gross-cover rejections; the BTC candle-rule gate failed before prices. Missing selected-side prices remain missing. |
 | Commodity hedges | [Session basis](review/2026-11-10/commodity-sessions/review.md) binds the vendor-index/order-book switch. Require exact settlement samples and executable side-specific exit bounds before assigning a hedge floor. |
-| Equity wrappers | [BITO split continuity](review/2026-11-11/bito-unit/review.md), [Samsung funding](review/2026-11-10/samsung-reconciliation/review.md) and [fee supersession](review/2026-11-11/tradfi-fee-notices/review.md) bind their particular clocks/units. [APPB](review/2026-11-10/appb-mapping/review.md) and [November dividends](review/2026-11-11/bstock-distribution/review.md) failed source admission. Exact current wrapper/hedge identity remains necessary. |
+| Equity wrappers | [BITO](review/2026-11-11/bito-unit/review.md), [Samsung](review/2026-11-10/samsung-reconciliation/review.md) and [fees](review/2026-11-11/tradfi-fee-notices/review.md) bind specific clocks/units. [APPB](review/2026-11-10/appb-mapping/review.md) and [dividends](review/2026-11-11/bstock-distribution/review.md) failed admission. Exact wrapper/hedge identity remains necessary. |
 | Cash and clocks | [Paired cash](review/2026-11-09/paired-inventory-cash/review.md), [reserved Spot cash](review/2026-11-09/spot-reserved-cash/review.md), [native clock audit](review/2026-11-09/spot-clock-audit/review.md) and [timed replay](review/2026-11-09/timed-snapshot-normalization/review.md) retain causal availability and orphan ranges. Full paired coverage, native cash/fees and independent clock offsets remain unqualified. |
 | Other source gates | [RWUSD exits](review/2026-11-10/rwusd-spot/review.md), [partial funding information](review/2026-11-10/funding-fixing/review.md), [partial fixing](review/2026-11-10/fixing-floor-source/review.md) and [finality/cash](review/2026-11-10/finality-cash/review.md) retain their exact source limits. A coupon sign or another holder's redemption time does not establish this bot's usable cash. |
 
@@ -64,7 +64,9 @@ before continuing an affected family. None supplies a qualified stable edge.
   new exposure requires verified migration. Account UID, coordinated rollback,
   universal writer fencing and complete recovery/rearm remain open.
   [Valuation admission](review/2026-11-11/capital-valuation/review.md) covers
-  legacy/Futures marks, quote units and finite capital.
+  legacy/Futures marks, quote units and finite capital. [Signed residuals](review/2026-11-11/signed-residual/review.md)
+  now survive epsilon-sized partial closes; 446 affected cases pass. UNKNOWN
+  still blocks replay; terminal application, native cash and rearm remain open.
 - The [Spot roundtrip](review/2026-11-10/roundtrip-command/review.md) routes both
   writes through the enrolled durable gateway. Only the receipt-owned second
   SELL uses closing authority through Stop. Actual scope, cash, commission/fee
@@ -108,13 +110,12 @@ before continuing an affected family. None supplies a qualified stable edge.
   verified GPU backend/precision and useful data/bottleneck evidence. LLMs
   cannot override Stop, ownership or closing.
 - [Native operator controls](review/2026-11-11/operator-control/review.md) give
-  Stop priority during Pause, reject stale control-status samples and label both
-  dry-run venue states simulated. [Workspace repair](review/2026-11-11/operator-workspace/review.md)
-  fixes System/Risk help clipping and console overlap at 1280×860 DIPs, binds
-  hidden exports to a page and passes 61 focused cases plus Release checks.
-  Real backend/position freshness, other pages/states, keyboard/accessibility,
-  broader DPI coverage and persistent policy acceptance remain open. Use the
-  bounded hidden preview; never repeat black-frame probes or foreground activation.
+  Stop priority during Pause and reject stale status. [Workspace repair](review/2026-11-11/operator-workspace/review.md)
+  fixes System/Risk overlap at 1280×860 DIPs, labels both venues simulated and
+  binds hidden exports to a page; 61 focused cases and Release checks pass.
+  Real data freshness, other pages/states, keyboard/accessibility, broader DPI
+  and persistent policy acceptance remain open. Use bounded hidden previews;
+  never repeat black-frame probes or foreground activation.
 
 ## Maintenance and full qualification
 

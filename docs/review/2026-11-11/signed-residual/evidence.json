@@ -1,0 +1,156 @@
+{
+  "schema_version": "signed-close-residual-review-v1",
+  "base_revision": "709d77692269efc4d609f0c359f7df131420c1f8",
+  "recorded_at_utc": "2026-11-11T06:51:39.579003+00:00",
+  "baseline": {
+    "summary": "2 failed in 1.15s",
+    "observed_failure": "Both synthetic long and short futures durable-gateway partial closes removed a positive 0.000000001 remaining lot, while UNKNOWN persisted.",
+    "tested_source_sha256": {
+      "src/simple_ai_trading/binance_acknowledgements.py": "ee91860a6a4469518aa8735b199222f9e97a53ee490ea02ebd3197ea562b570e",
+      "src/simple_ai_trading/binance_close_intents.py": "fe5fb6a8d92ff892b777c53792a1220be1bf771420d4fa4eeef4b5e2eff9f5e8",
+      "src/simple_ai_trading/binance_close_recovery.py": "768322f2ba84c8819507dd8e9beaa29994e67595d9812d6e9f42f7e6d25e2aea",
+      "src/simple_ai_trading/binance_closing_inventory.py": "ebe0a64ea63564463c290b0d6a44215abe8930e06f1c1502c81e1ecbd8c8811e",
+      "src/simple_ai_trading/binance_open_intents.py": "9a78e005880962a9d2d6b638e581a2f3d77cfcdd08dee413da9b1ddf8ff0408d",
+      "src/simple_ai_trading/binance_owned_execution.py": "cbe5e05a306116c25e7f63b4fa1880488753092785dd3271c19f9f09507281a7",
+      "src/simple_ai_trading/binance_spot_cash.py": "61027340d2645c281c44395e276e1545e35d6b25f39b20a58932e461ac8be2f5",
+      "src/simple_ai_trading/binance_spot_receipts.py": "4c0ee7c05df80f3642ea043c963841ff87cae6b1bebfd89614a27a8245475945",
+      "src/simple_ai_trading/position_transactions.py": "743275b5e92337bd24825c7b4e4f2d79c1ecb7556bf02d8d56cadfcbe148d97b",
+      "src/simple_ai_trading/positions.py": "a69d2fcb16818409958b80dc8a684323636bab610d565241830c374606d4676c",
+      "tests/conftest.py": "090974084e8c25f16dc18ed084269d75edb9fdb5f4d7d15e6e72bb23853d9abc",
+      "tests/test_binance_close_intents.py": "0994569fcf9f8077ddd4fb2e61318b6bd7a68075380a28f29ab54487b5fba9bd"
+    },
+    "source_archive_sha256": "136446d5d3bec2193ab2dc2cfd575007562409f97096184d882f608826679183"
+  },
+  "behavior": {
+    "exact_supplied_decimal_projections": true,
+    "arithmetic": "fractions.Fraction; no inherited decimal arithmetic context",
+    "signed_oversell_and_unrepresentable_remainder_reject_before_mutation": true,
+    "zero_only_full_close": true,
+    "positive_signed_residuals_preserved": true,
+    "native_spot_receipt_identity_checks_preserved": true,
+    "paper_tolerance_unchanged": true,
+    "unknown_automatically_cleared": false,
+    "terminal_recovery_application_added": false,
+    "rearm_added": false
+  },
+  "verification": {
+    "summary": "446 passed in 38.14s",
+    "tested_source_sha256": {
+      "src/simple_ai_trading/binance_acknowledgements.py": "ee91860a6a4469518aa8735b199222f9e97a53ee490ea02ebd3197ea562b570e",
+      "src/simple_ai_trading/binance_close_intents.py": "fe5fb6a8d92ff892b777c53792a1220be1bf771420d4fa4eeef4b5e2eff9f5e8",
+      "src/simple_ai_trading/binance_close_recovery.py": "768322f2ba84c8819507dd8e9beaa29994e67595d9812d6e9f42f7e6d25e2aea",
+      "src/simple_ai_trading/binance_closing_inventory.py": "ebe0a64ea63564463c290b0d6a44215abe8930e06f1c1502c81e1ecbd8c8811e",
+      "src/simple_ai_trading/binance_open_intents.py": "9a78e005880962a9d2d6b638e581a2f3d77cfcdd08dee413da9b1ddf8ff0408d",
+      "src/simple_ai_trading/binance_owned_execution.py": "cbe5e05a306116c25e7f63b4fa1880488753092785dd3271c19f9f09507281a7",
+      "src/simple_ai_trading/binance_spot_cash.py": "61027340d2645c281c44395e276e1545e35d6b25f39b20a58932e461ac8be2f5",
+      "src/simple_ai_trading/binance_spot_receipts.py": "4c0ee7c05df80f3642ea043c963841ff87cae6b1bebfd89614a27a8245475945",
+      "src/simple_ai_trading/position_transactions.py": "743275b5e92337bd24825c7b4e4f2d79c1ecb7556bf02d8d56cadfcbe148d97b",
+      "src/simple_ai_trading/positions.py": "0428f779d80a2d2231686a915dfa3499baa0e90eec5b9bf374d1bae4baf45a0d",
+      "tests/conftest.py": "090974084e8c25f16dc18ed084269d75edb9fdb5f4d7d15e6e72bb23853d9abc",
+      "tests/test_autonomous.py": "79a4bdf347f21136a932d8bf943cb3830058621d90ae1ad97e7086d99cebf608",
+      "tests/test_autonomous_capital_valuation.py": "f37b02c0dc1867966e73cc0a38b35f0eb29d628e7c52e590e98ac01e45d0afce",
+      "tests/test_autonomous_spot_cash.py": "ac727f6f5fea7dd20c3bf71acd1902fdbc114c11c3671472946f80f1eaa2e579",
+      "tests/test_autonomous_spot_inventory.py": "15409804f10f5f0e97eef4abdcfc1ed63ffe7e20212afaf856511358ba2c3091",
+      "tests/test_binance_close_intents.py": "f2b50919d00b35e177d74930a314c48ea1f5e6460d34187baf08b136d8a4868e",
+      "tests/test_binance_close_recovery.py": "0b368d1ecc0141bf6a944a4fc9fd58fd28e309a74cfbad5049384226ddc1e0fa",
+      "tests/test_binance_closing_inventory.py": "33a09db60c616198f265cb12e70fc78bfce04f875f698c6a7b458f0f6184a3cc",
+      "tests/test_binance_owned_runtime.py": "afd64cf5573834f43caec275ec157b49b685761c3c9b5db31c3ce4dd1e6e85dd",
+      "tests/test_position_transactions.py": "09cd44e3111a35c9e0cc8f193ca69498885ae4bd07efa3ebff11701813349d2b",
+      "tests/test_positions.py": "bd3c83ef26d4df48c9f61b2514ec5792a618749fe0e6a14fa370f3ba3522684d",
+      "tests/test_signed_close_quantities.py": "383d0dc90b249f143880d1edc14ae191d879cf19cb88d847409f2c6ff028d25f"
+    },
+    "source_unchanged_after_run": true,
+    "domains": [
+      "tests/test_signed_close_quantities.py",
+      "tests/test_positions.py",
+      "tests/test_binance_close_intents.py",
+      "tests/test_binance_close_recovery.py",
+      "tests/test_binance_owned_runtime.py",
+      "tests/test_position_transactions.py",
+      "tests/test_binance_closing_inventory.py",
+      "tests/test_autonomous_spot_inventory.py",
+      "tests/test_autonomous_spot_cash.py",
+      "tests/test_autonomous.py",
+      "tests/test_autonomous_capital_valuation.py"
+    ],
+    "source_archive_sha256": "73dcac9181f03cec95c62ca0142e6dc02d6b46121d88d3993a190e4733b2ca70",
+    "baseline_stdout_sha256": "0a1eb3de21d1c3bc1bad69ae7ff11f7c676ee0dec89f555e5a1007cb95c8195b",
+    "final_stdout_sha256": "14b826a2a7d1cc551aa756c406567f10c36c31f77942b92b7732079ba1d6c2a5",
+    "final_stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "earlier_domain_summary": "446 passed in 47.24s",
+    "earlier_domain_is_different_decimal_arithmetic_phase": true,
+    "ruff_check": "pass",
+    "range_formatting_applied_to_modified_legacy_scopes": true,
+    "new_test_module_format_check": "pass"
+  },
+  "navigation": {
+    "index_source_revision": "709d77692269efc4d609f0c359f7df131420c1f8",
+    "snapshot": "18cdaa2a76ae5b5842b4575f4acff69e",
+    "current_at_search": true,
+    "current_after_patch_claim": false,
+    "query": "Apply terminal Binance closing recovery cumulative partial fills to durable owned position inventory exactly once without replay, then resolve the UNKNOWN intent",
+    "semantic_and_lexical_fusion": true,
+    "candidate_source_checks": [
+      {
+        "live_sha256": "768322f2ba84c8819507dd8e9beaa29994e67595d9812d6e9f42f7e6d25e2aea",
+        "matches": true,
+        "mirror_sha256": "768322f2ba84c8819507dd8e9beaa29994e67595d9812d6e9f42f7e6d25e2aea",
+        "path": "src/simple_ai_trading/binance_close_recovery.py"
+      },
+      {
+        "live_sha256": "ebe0a64ea63564463c290b0d6a44215abe8930e06f1c1502c81e1ecbd8c8811e",
+        "matches": true,
+        "mirror_sha256": "ebe0a64ea63564463c290b0d6a44215abe8930e06f1c1502c81e1ecbd8c8811e",
+        "path": "src/simple_ai_trading/binance_closing_inventory.py"
+      },
+      {
+        "live_sha256": "98c0a12350cd0675b481675b9f9ebe50f88db1017214d9c35063c4faa0c6c56b",
+        "matches": true,
+        "mirror_sha256": "98c0a12350cd0675b481675b9f9ebe50f88db1017214d9c35063c4faa0c6c56b",
+        "path": "src/simple_ai_trading/autonomous.py"
+      },
+      {
+        "live_sha256": "cbe5e05a306116c25e7f63b4fa1880488753092785dd3271c19f9f09507281a7",
+        "matches": true,
+        "mirror_sha256": "cbe5e05a306116c25e7f63b4fa1880488753092785dd3271c19f9f09507281a7",
+        "path": "src/simple_ai_trading/binance_owned_execution.py"
+      },
+      {
+        "live_sha256": "fe5fb6a8d92ff892b777c53792a1220be1bf771420d4fa4eeef4b5e2eff9f5e8",
+        "matches": true,
+        "mirror_sha256": "fe5fb6a8d92ff892b777c53792a1220be1bf771420d4fa4eeef4b5e2eff9f5e8",
+        "path": "src/simple_ai_trading/binance_close_intents.py"
+      }
+    ],
+    "raw_semantic_receipt_sha256": "fabe44d3397dc5271218aa4631c7b7fd9be000723b5a6660c86a16cfca7ff658",
+    "fused_receipt_sha256": "038507a9e957f954027059800cb7cb6a86aa1caa22d214dbd6a99611f5175df1",
+    "mcp_transport_failed": true,
+    "reviewed_cli_adapter_succeeded": true
+  },
+  "research_disposition": {
+    "source_content_admitted": false,
+    "market_captures": 0,
+    "new_economic_observations": 0,
+    "observations": 206,
+    "hypotheses": 65,
+    "historical_scoped_mechanisms": 37,
+    "qualified_stable_edges": 0,
+    "protected_partial_data_access": false
+  },
+  "authority": {
+    "venue_requests": 0,
+    "account_requests": 0,
+    "orders": 0,
+    "production_fits": 0,
+    "gpu_benchmarks": 0,
+    "actual_user_ledger_mutations": 0,
+    "persistent_launchers_installed": 0
+  },
+  "limits": [
+    "The fixtures do not establish actual instrument filters, order capacity, available account cash or tradability of a remainder.",
+    "Exact supplied projections do not reconstruct wire digits lost earlier.",
+    "Native cash/fee application, terminal application, explicit rearm, dust policy and independent supervision remain incomplete.",
+    "No new financial evidence, actual exchange fill or complete capital-safety qualification."
+  ],
+  "evidence_sha256": "b040d7d85cef6fcb379416c17e58e268d1bb20a428ce740bcf726e83f85ce011"
+}

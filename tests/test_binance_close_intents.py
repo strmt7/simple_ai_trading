@@ -194,6 +194,29 @@ def test_partial_blocks_second_order_and_direct_new_entry_after_restart(tmp_path
     assert reopened.load_ledger() == [trade]
 
 
+@pytest.mark.parametrize("side", ["LONG", "SHORT"])
+def test_small_futures_partial_remainder_survives_gateway_and_restart(tmp_path, side):
+    store, position = _stage(tmp_path, product="futures", side=side)
+    client = _Client(
+        store,
+        product="futures",
+        changes={"status": "PARTIALLY_FILLED", "executedQty": "0.999999999"},
+    )
+    trade = _close(client, store, position)
+    reopened = PositionsStore(tmp_path)
+    remaining = reopened.load_open(strict=True)
+    assert len(remaining) == 1
+    assert Decimal(str(remaining[0].qty)) == Decimal("0.000000001")
+    assert remaining[0].side == side
+    assert reopened.load_ledger(strict=True) == [trade]
+    assert (
+        reopened.opening_intents.entry_block_reason() == "unresolved_closing_intents=1"
+    )
+    with pytest.raises(OpenIntentError, match="unresolved closing"):
+        _close(client, reopened, remaining[0])
+    assert client.writes == 1
+
+
 @pytest.mark.parametrize(
     "changes",
     [

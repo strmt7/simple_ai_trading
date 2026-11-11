@@ -453,7 +453,7 @@ class PositionsStore:
     ) -> ClosedTrade:
         """Record a close fill and remainder; native dispatch must forbid creation."""
 
-        from decimal import Decimal, localcontext
+        from fractions import Fraction
 
         from .binance_spot_receipts import native_spot_entry_net
 
@@ -469,17 +469,32 @@ class PositionsStore:
                 raise ValueError(
                     "native close lost its original entry quantity evidence"
                 )
-            with localcontext() as context:
-                context.prec = 128
-                native_remainder = Decimal(str(position.qty)) - Decimal(str(trade.qty))
+        native_quantity = native_net is not None or position.dry_run is False
+        if native_quantity:
+            for quantity in (position.qty, trade.qty):
+                if (
+                    isinstance(quantity, bool)
+                    or not isinstance(quantity, (int, float))
+                    or not math.isfinite(quantity)
+                    or quantity <= 0
+                ):
+                    raise ValueError(
+                        "signed close quantities must be finite and positive"
+                    )
+            # Subtract the complete decimal projections, independent of the
+            # caller's decimal context. A positive residual is never flatness.
+            native_remainder = Fraction(str(position.qty)) - Fraction(str(trade.qty))
             if native_remainder < 0:
                 raise ValueError("native close exceeds remaining owned inventory")
+            native_remaining_qty = float(native_remainder)
+            if Fraction(str(native_remaining_qty)) != native_remainder:
+                raise ValueError("signed close remainder cannot be represented exactly")
         open_qty = max(0.0, float(position.qty))
         close_qty = max(0.0, float(trade.qty))
         tolerance = max(1e-12, open_qty * 1e-8)
         fully_closed = (
             native_remainder == 0
-            if native_net is not None
+            if native_quantity
             else open_qty <= 0.0 or close_qty >= open_qty - tolerance
         )
         if fully_closed:
@@ -488,9 +503,7 @@ class PositionsStore:
             return trade
 
         remaining_qty = (
-            float(native_remainder)
-            if native_net is not None
-            else max(0.0, open_qty - close_qty)
+            native_remaining_qty if native_quantity else max(0.0, open_qty - close_qty)
         )
         remaining = replace(
             position,

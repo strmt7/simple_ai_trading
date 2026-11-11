@@ -120,6 +120,12 @@ retain uncertainty. The order is never resubmitted. This is in-flight receipt
 recovery, not automatic application/rearm of historical terminal observations.
 See the [source-bound repair](review/2026-11-10/spot-response-receipts/review.md).
 
+Signed close accounting [preserves positive residuals](review/2026-11-11/signed-residual/review.md)
+without a full-close epsilon, including futures and legacy Spot. An oversell or
+remainder that cannot be represented exactly rejects before paired-store mutation.
+This preserves the original UNKNOWN obligation; it does not apply retained terminal
+observations or establish that a residual meets native filters or available cash.
+
 ## Scope and remaining work
 
 Owned closing retains its separate enrolled lock and can serialize even when
