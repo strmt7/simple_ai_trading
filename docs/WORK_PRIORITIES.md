@@ -3,6 +3,12 @@
 Current user direction, September 5, 2026: prioritize intelligently; do not let
 easy-to-count activity replace useful financial or engineering progress.
 
+Use the [active development plan](DEVELOPMENT_PLAN.md) and
+[work graph](DEVELOPMENT_WORK_GRAPH.json) for detailed execution within the
+existing full goal. The [current assessment](REPO_STATE_2026_11_11.md) separates
+verified implementation from open product/economic qualification. The decision
+order below controls task selection; a default queue never overrides evidence.
+
 ## Decision order
 
 October 7 explicit user clarification: LONG-TERM profitability is the objective.

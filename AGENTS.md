@@ -16,6 +16,12 @@ training, account or trading authority. Preserve archived Git objects during any
 separately authorized future history change; current user instructions, AGENTS,
 exact canonical contracts and the current registry control conflicts.
 
+Use the [active development plan](docs/DEVELOPMENT_PLAN.md) and
+[work graph](docs/DEVELOPMENT_WORK_GRAPH.json) to coordinate the existing full
+goal across agent continuations. Advance an evidenced work package, preserve
+financial priority and record its actual remaining conditions. These files
+create no new goal, delegation, standing task or trading/release authority.
+
 ## Communication and resource efficiency
 
 - Be laconic: lead with the outcome, material changes, blockers and next decision.

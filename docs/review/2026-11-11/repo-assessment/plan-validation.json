@@ -1,0 +1,16 @@
+{
+  "application_tests_rerun": 0,
+  "changed_document_terminology_findings": 0,
+  "compact_entry_bytes": 16185,
+  "compact_entry_limit": 16384,
+  "delivery_and_conditional_dependency_graph_acyclic": true,
+  "full_repository_review_claimed": false,
+  "goal_complete": false,
+  "local_document_links_checked": 133,
+  "plan_sections_resolve": true,
+  "production_source_bindings_unchanged": 40,
+  "requirement_groups": 12,
+  "requirement_task_coverage_complete": true,
+  "task_ids": 24,
+  "task_scope_paths_exist": true
+}

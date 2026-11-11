@@ -37,9 +37,10 @@ The full R&D, application revamp and final-review goal remains active.
 
 ## Navigation and history
 
-The continuation summarizes current decisions and links exact evidence.
-[REVAMP](REVAMP_2026_11_09.md) retains the whole application/research scope;
-[work priorities](WORK_PRIORITIES.md) determine the next deliverable.
+The [current assessment](REPO_STATE_2026_11_11.md) records verified gaps.
+The [active plan](DEVELOPMENT_PLAN.md) and [work graph](DEVELOPMENT_WORK_GRAPH.json)
+coordinate the existing full goal. Read the selected work package; apply
+[work priorities](WORK_PRIORITIES.md) when evidence changes the next action.
 
 Full prior handoffs, including the detailed November 11 source phases, remain
 byte-for-byte in immutable Git objects, routed by the

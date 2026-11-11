@@ -1,0 +1,473 @@
+{
+  "assessed_source_commit": "9f885638d529d9f4c38d41c11eccc1ed8f2ba562",
+  "assessment_scope": "Tracked metadata, selected semantic/source inspections, exact current GitHub inventories/completed logs and reuse of source-bound component evidence; no whole-repository semantic-review claim.",
+  "current_source_implementation_modified": false,
+  "financial_census": {
+    "audit_sha256": "f0e0a9124e80f6463c77597c3dc16030b44e225f5eaa0e8f7308d551910dbf96",
+    "hypotheses": 65,
+    "observations": 206,
+    "profitability_qualification_supplied_by_verifier": false,
+    "recorded_qualified_stable_edges": 0,
+    "registry_sha256": "ac47c5ed812682737ac3e576baeade1b03c98b7bc83b5c118cd3e953b0c4c03c",
+    "scoped_mechanisms": 37,
+    "validation_kind": "registry_binding_and_recorded_census_only"
+  },
+  "goal_complete": false,
+  "harness_integration": {
+    "all_prior_capture_account_publication_and_host_rules_preserved": true,
+    "entrypoints": [
+      "AGENTS.md",
+      "docs/AGENT_START.md",
+      "docs/CONTINUATION.md",
+      "docs/AGENT_WORKFLOWS.md"
+    ],
+    "existing_goal_active_verified": true,
+    "new_goal_schedule_service_or_agent_created": false,
+    "original_full_objective_preserved": true
+  },
+  "historical_results_modified": false,
+  "not_performed": [
+    "new scanner execution",
+    "quota retry",
+    "market or trading-account request",
+    "order",
+    "training or GPU benchmark",
+    "full-suite rerun",
+    "protected/raw data-content inventory",
+    "new release/tag/draft/PR",
+    "whole-repository semantic review"
+  ],
+  "private_evidence": {
+    "additional-inventory.json": {
+      "bytes": 1087,
+      "sha256": "4bf7fee00128d39eac124d741e8824ccf46af7f2cdf7e7ba75939e4efed5c2f3"
+    },
+    "additional_inventory.py": {
+      "bytes": 2002,
+      "sha256": "68bde59d823174143937ec9d4907e4157479a9a389479da49f256e02439d0ba4"
+    },
+    "analyses-1.stderr.log": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "analyses-1.stdout.log": {
+      "bytes": 60447,
+      "sha256": "5107d186e34961410c8b72512c30b9b198d77e978b8725f5294b3d4ede590d58"
+    },
+    "analyses-bodies.json": {
+      "bytes": 77513,
+      "sha256": "994da5828989657b7d21903807b7e6a75bedc412a0b042ac9bb97224e6f0dc34"
+    },
+    "branches-1.stderr.log": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "branches-1.stdout.log": {
+      "bytes": 2755,
+      "sha256": "c7981b8d01ee380bb7497bcbff35ed924798eafaed6b4ccb506714bf8ed0252a"
+    },
+    "branches-bodies.json": {
+      "bytes": 1864,
+      "sha256": "754087a95810a8f60e8c3930e048513b69cb3d37ca2d3ef11c2bb98354005e49"
+    },
+    "build_evidence.py": {
+      "bytes": 13218,
+      "sha256": "1a36e65f66474fb3a086c852c1a285d4a948edf9b29b89940854f493d96567d0"
+    },
+    "build_graph.py": {
+      "bytes": 13817,
+      "sha256": "8c2f82691bdce2efc356bcc87e664098eab1b015c505126d8d9114bac9b3e05d"
+    },
+    "check_runs-1.stderr.log": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "check_runs-1.stdout.log": {
+      "bytes": 25831,
+      "sha256": "0a466e71b6d66471fc8ba6dbf4f6411de024271368b6bf2983ed41e6ac7db67e"
+    },
+    "check_runs-bodies.json": {
+      "bytes": 36485,
+      "sha256": "fc46e523a92fb13bbfe0dc6b2d1a2d1a7cbd11596578d4cd227e1ba83263e627"
+    },
+    "code_scanning-1.stderr.log": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "code_scanning-1.stdout.log": {
+      "bytes": 1549,
+      "sha256": "e75cd89854dc717d06306b787488815375aeaa304784e76ed10735ba1d05399c"
+    },
+    "code_scanning-bodies.json": {
+      "bytes": 12,
+      "sha256": "29e6e6d3d3a72582575a3ad99a1d5b39218ba4e66ddd4006c87c0cd492b14bff"
+    },
+    "codeql-current-results.stderr.log": {
+      "bytes": 26,
+      "sha256": "a610a1e09352bf51f3b6947315b340b22127697a464711d72e80bea47f576fdc"
+    },
+    "codeql-current-results.stdout.log": {
+      "bytes": 1065,
+      "sha256": "62b33373c38bbfa8d408a1d4ce311dd657f43f6255e5857a9a740f70bd415007"
+    },
+    "commit_status-1.stderr.log": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "commit_status-1.stdout.log": {
+      "bytes": 6078,
+      "sha256": "2c204b1c9b511865f8e6c6cf16ca517ea095a61be0fae5f4fc90631a40c41957"
+    },
+    "commit_status-bodies.json": {
+      "bytes": 5357,
+      "sha256": "0f4174110c5cefa11c9db602d348d47dd287ad0a006c55fdbbaeed0a713ad846"
+    },
+    "dependabot-1.stderr.log": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "dependabot-1.stdout.log": {
+      "bytes": 1548,
+      "sha256": "249df9df95273255063ccbd8e45aae851119e91cafb142e9f225c46d8039f6d6"
+    },
+    "dependabot-bodies.json": {
+      "bytes": 12,
+      "sha256": "29e6e6d3d3a72582575a3ad99a1d5b39218ba4e66ddd4006c87c0cd492b14bff"
+    },
+    "github-state.json": {
+      "bytes": 9130,
+      "sha256": "d7901e7ba180ab87bf70385c38d2b43e17307c699e063e2af0e32e5a0ab9d8b1"
+    },
+    "inventory.py": {
+      "bytes": 7669,
+      "sha256": "d63b6f45522791a532dccb1bc70f373ed1894f9956b744ac5e58bfd0dd0bc968"
+    },
+    "job-130445256100-receipt.json": {
+      "bytes": 150,
+      "sha256": "2a5953d2ba8495bb9a1f548ac8998f08cfc07acbba3afabf767b64e580f0be2a"
+    },
+    "job-130445256100-steps.json": {
+      "bytes": 1229,
+      "sha256": "a1676dbb0270d816dfa601e1664994973f440d781adf7254782ac51766dba984"
+    },
+    "job-130445256100.log": {
+      "bytes": 19700,
+      "sha256": "61fbb4c2d1a8f4d02043cb89268b051005b5a412089322e6fe664707b0c215e5"
+    },
+    "job-130445256145-receipt.json": {
+      "bytes": 150,
+      "sha256": "2ff0eaa53f060d7daaa755666e24a4c90a764fc27229e144481fe30121a4aef9"
+    },
+    "job-130445256145-steps.json": {
+      "bytes": 1108,
+      "sha256": "4bc5af3c14f4f21c83f9fc593861ceac9afa3f4a2242fa1a150057ec1c6f223a"
+    },
+    "job-130445256145.log": {
+      "bytes": 19552,
+      "sha256": "dd8c6af96132b7fd2c81ba9fd901bc3d452453c919f3a267ef302c7954b89e84"
+    },
+    "job-130445256196-receipt.json": {
+      "bytes": 152,
+      "sha256": "009ea31eba5868caa4f2bb17431acf0637afcbe2b8c8787c7569de437585b9d4"
+    },
+    "job-130445256196-steps.json": {
+      "bytes": 821,
+      "sha256": "a9430c67a95943f3f9948018498de6bb34eab41ccfe1e7490d1cbe42f1160256"
+    },
+    "job-130445256196.log": {
+      "bytes": 689383,
+      "sha256": "dcf05a75de1febbc1abbf4e5554df79366a1da3d4108b6fc19ab9adc34ef1431"
+    },
+    "job-130445256772-receipt.json": {
+      "bytes": 150,
+      "sha256": "3b92f5bf0757a101e02c6fd5a16342dea3a3009d20b07a416e245a64cf7a04c2"
+    },
+    "job-130445256772-steps.json": {
+      "bytes": 2297,
+      "sha256": "9d8a7f1a0e068b9e77c5b33f7dada193b8d28f1feba3d0a0c7f1353a9c43e146"
+    },
+    "job-130445256772.log": {
+      "bytes": 38046,
+      "sha256": "17a3ba4802158a6c5db54aeceb7d2c7fe7f1c796bda96732c7d82f1c4b8cc1b3"
+    },
+    "old-sdk-branch.stderr.log": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "old-sdk-branch.stdout.log": {
+      "bytes": 17153,
+      "sha256": "6df23662aa6f528a4dce73be39cd991cfa8dcab03277af3ef70ecfc7f829912e"
+    },
+    "old-torch-branch.stderr.log": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "old-torch-branch.stdout.log": {
+      "bytes": 39404,
+      "sha256": "1329e35a68f806bf69c8fb85de2918b6b2923776c9341f2922671ca7b01c4117"
+    },
+    "releases-1.stderr.log": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "releases-1.stdout.log": {
+      "bytes": 1425,
+      "sha256": "426664f5b121c7d8681a1bd7cf6d42cc2284cc006cff0730681f1fd1b8ca6035"
+    },
+    "releases-bodies.json": {
+      "bytes": 12,
+      "sha256": "29e6e6d3d3a72582575a3ad99a1d5b39218ba4e66ddd4006c87c0cd492b14bff"
+    },
+    "repository-inventory.json": {
+      "bytes": 2948,
+      "sha256": "1a9430b45851d79d3579465d3a582fefab861916558dde0a7d17255f765a86ad"
+    },
+    "request-intent.json": {
+      "bytes": 1125,
+      "sha256": "9f7026bea59f390f59289470c41cf4a887af957d71b4996ec767c8866569def3"
+    },
+    "search-088141fb37014263a0cf32820848e111.json": {
+      "bytes": 7230,
+      "sha256": "f61029d2095d8cf83d51226f5ded923e9fe37b836e4d58c4af07a9a176b3604b"
+    },
+    "search-10f40d0682ea42e2a677b701dee53d21.json": {
+      "bytes": 6157,
+      "sha256": "6090b73a9612e017f307fe886d7e6f86be1d6254900d0263dac9bb2816006f69"
+    },
+    "search-6fb7ab81054b4ceca0092934bd2118c9.json": {
+      "bytes": 5769,
+      "sha256": "da806a896220826f64de8796c538b36549ee3e631fbfc0574f1cf121caa2ad58"
+    },
+    "search-c170cba5cdba4162ab8c445b2b1403c6.json": {
+      "bytes": 7035,
+      "sha256": "f70ecf92aa30d83dcd6aa045c231998ea2097aa93996ec21d296a686a9ce81fd"
+    },
+    "search-c7db9f4be23a4ef4a6e7ffa6dbb4145e.json": {
+      "bytes": 5261,
+      "sha256": "792d4d793f02630be1d740a4e019facebc75e6c69d3ba6746a4c8a2bff81638b"
+    },
+    "search-cc0b49caab774695869529f719ec4b63.json": {
+      "bytes": 6478,
+      "sha256": "3ec39f6ec6498c27918c9f11426730904226f35d0db6d920b7f0c41e7b76c07e"
+    },
+    "tags-1.stderr.log": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "tags-1.stdout.log": {
+      "bytes": 1495,
+      "sha256": "2eac68315368a99313f70b4674518a53a76342c0b0069951d4ae23c07c668466"
+    },
+    "tags-bodies.json": {
+      "bytes": 12,
+      "sha256": "29e6e6d3d3a72582575a3ad99a1d5b39218ba4e66ddd4006c87c0cd492b14bff"
+    },
+    "tracked-tree.txt": {
+      "bytes": 780435,
+      "sha256": "9019c35b1c751f46aa2b8e825e6e853a44bbde6768cf72512cd8234488208a65"
+    }
+  },
+  "public_artifacts_sha256": {
+    "github-state.json": "01459cf8c2460882bafe2bc18a780511289dbd86f13f0130402ef71f687e812f",
+    "plan-validation.json": "c308aa5dc2232c1ff716bebf2d1bf533c0519c3d3fce51245daa40e545f62065",
+    "repository-inventory.json": "b8dfb370a60454a1959c31a61eae64a2efa7f44393052b6e33927b2511ffbaaa",
+    "workflow-diagnostics.json": "86d2cf421ea7298262cb379d6306ba11d88872ed01bcbc4889a31eb2a8bb9029"
+  },
+  "qualified_stable_edges": 0,
+  "recorded_at_utc": "2026-11-11T10:45:50.402169+00:00",
+  "result_sha256": "1590fb9d925cebe152f7e748f4a41a872fdd326aa09ab8f55b33c3fa406810d3",
+  "reviewed_document_sha256": {
+    "AGENTS.md": "941ebda26b6abc3d802803c2fae86077b295cf69714942073eb2225a1881ab66",
+    "docs/AGENT_START.md": "e02f1d7c47dd0e3dd669fc9086f5d54f4eb182de8df91e434e02a2d4e32bff29",
+    "docs/AGENT_WORKFLOWS.md": "69f050f3974b9b3d9fc1792f754492f68111622dadfd96f6042a11b64d321481",
+    "docs/CONTINUATION.md": "06acb8af10d09b1fbb1d340101dd0f2d1c95b4d890306708a1641aafa664b8a2",
+    "docs/DEVELOPMENT_PLAN.md": "ebf6fdb2b47617103995557d00b220be2d5d796c9d30efc8d45629057657e674",
+    "docs/DEVELOPMENT_WORK_GRAPH.json": "cc53b9f539ce628f21f8ec875217f6558f0e12cbe13bd53b5b1791e1226ebf3e",
+    "docs/REPO_STATE_2026_11_11.md": "178e3834f3c9432ae49733d75f209f255a7fdf2e43efeeedf17ea698339c49d3",
+    "docs/REVAMP_2026_11_09.md": "3edf0ee35df5abaee34e4900fba0d065cf30764e0acbf4883bd53129d2630743",
+    "docs/WORK_PRIORITIES.md": "c8b14ecdb794bf25509f1c78369ff1ec7f6d6715a34eab7ad516896d90fa3537"
+  },
+  "schema_version": "repo-state-and-active-development-plan-v1",
+  "semantic_navigation_receipts": [
+    {
+      "arguments": [
+        "hybrid",
+        "search",
+        "--limit",
+        "5",
+        "--path",
+        "native/**",
+        "--lang",
+        "cpp",
+        "--json",
+        "native operator overview risk system simulated data command runtime freshness control stop"
+      ],
+      "name": "search-c7db9f4be23a4ef4a6e7ffa6dbb4145e.json",
+      "sha256": "792d4d793f02630be1d740a4e019facebc75e6c69d3ba6746a4c8a2bff81638b",
+      "source_snapshot": "300c0ea835e770a7998455449c90840f"
+    },
+    {
+      "arguments": [
+        "search",
+        "--limit",
+        "5",
+        "--path",
+        "native/**",
+        "--lang",
+        "cpp",
+        "--json",
+        "native operator overview risk system simulated data command runtime freshness control stop"
+      ],
+      "name": "search-088141fb37014263a0cf32820848e111.json",
+      "sha256": "f61029d2095d8cf83d51226f5ded923e9fe37b836e4d58c4af07a9a176b3604b",
+      "source_snapshot": "300c0ea835e770a7998455449c90840f"
+    },
+    {
+      "arguments": [
+        "hybrid",
+        "search",
+        "--limit",
+        "5",
+        "--path",
+        "src/simple_ai_trading/**",
+        "--lang",
+        "python",
+        "--json",
+        "model training candidate selection causal net payoff targets inventory cash walk forward promotion GPU backend LLM review"
+      ],
+      "name": "search-cc0b49caab774695869529f719ec4b63.json",
+      "sha256": "3ec39f6ec6498c27918c9f11426730904226f35d0db6d920b7f0c41e7b76c07e",
+      "source_snapshot": "300c0ea835e770a7998455449c90840f"
+    },
+    {
+      "arguments": [
+        "search",
+        "--limit",
+        "5",
+        "--path",
+        "src/simple_ai_trading/**",
+        "--lang",
+        "python",
+        "--json",
+        "model training candidate selection causal net payoff targets inventory cash walk forward promotion GPU backend LLM review"
+      ],
+      "name": "search-10f40d0682ea42e2a677b701dee53d21.json",
+      "sha256": "6090b73a9612e017f307fe886d7e6f86be1d6254900d0263dac9bb2816006f69",
+      "source_snapshot": "300c0ea835e770a7998455449c90840f"
+    },
+    {
+      "arguments": [
+        "hybrid",
+        "search",
+        "--limit",
+        "5",
+        "--path",
+        "src/simple_ai_trading/**",
+        "--lang",
+        "python",
+        "--json",
+        "application independent supervisor credential gateway durable runtime Stop order recovery lease execution"
+      ],
+      "name": "search-c170cba5cdba4162ab8c445b2b1403c6.json",
+      "sha256": "f70ecf92aa30d83dcd6aa045c231998ea2097aa93996ec21d296a686a9ce81fd",
+      "source_snapshot": "300c0ea835e770a7998455449c90840f"
+    },
+    {
+      "arguments": [
+        "search",
+        "--limit",
+        "5",
+        "--path",
+        "src/simple_ai_trading/**",
+        "--lang",
+        "python",
+        "--json",
+        "application independent supervisor credential gateway durable runtime Stop order recovery lease execution"
+      ],
+      "name": "search-6fb7ab81054b4ceca0092934bd2118c9.json",
+      "sha256": "da806a896220826f64de8796c538b36549ee3e631fbfc0574f1cf121caa2ad58",
+      "source_snapshot": "300c0ea835e770a7998455449c90840f"
+    }
+  ],
+  "source_paths_sha256": {
+    ".github/actions/windows-beta-release/action.yml": "3b3ca1388e3081aa4b672bc608468e80f34869595bcfae005abeebf8c7bd3fc8",
+    ".github/workflows/ci.yml": "f9de237cfc179c9c25b1e91b8a83712f9859633e89837c3d508b7505b97aa05b",
+    ".github/workflows/codeql.yml": "3df5ba6cf8810663e623d2855ac1b0d513521ca049be4e0d5feadf89c4b43448",
+    ".github/workflows/release.yml": "d8f6fbe3f0d974ce08d970eb86a19c0413f29b3ddff67b56377da42a8825a0f6",
+    ".github/workflows/ruff.yml": "82a95f7f2efb7d9ef526a6de0ab46c50488d8953bfb44db33589edbc628634b9",
+    ".github/workflows/super-linter.yml": "106a0acb84a68ac09bee9236fec8a5fcfb1ee74543166a8b6eaa82a837f251bc",
+    ".github/workflows/vulture.yml": "c2608b345156cef99fd271f598b077425b79047eac6b39038845bbe1ecc8774e",
+    "LICENSE": "1414f9f60e0bb74f740c90bec0cb688fe35ecf6178676ba74f4502fce76863d6",
+    "docs/CAPITAL_PROTECTION_ARCHITECTURE.md": "3e42737f779162221553cba93d2d8aab6d42b3135850c7a22dc4bb175e53fc77",
+    "docs/PRODUCT_READINESS_2026_11_10.md": "e4cd8dabc9a4ac9719f2fc56653485bfc4574d0cbb0289d21c77446e8933e05c",
+    "docs/review/2026-11-10/dependencies/result.json": "a73d3156c12902d4133f87c16ff2da8f9f86dd31928ca9673f05fa45e457ca0a",
+    "native/windows/src/main.cpp": "79c8af5084ea6109acf275cd07088754b81cb24ab1bce63500110ea4bd6d233d",
+    "pyproject.toml": "ba3abf799470355457fa6ec0c94d183d59a707793bc09e80686e8f27632a9658",
+    "src/simple_ai_trading/binance_recovery_reads.py": "0b93b6b7c7ded5e91a10b19b2ef7bfd848ff86a400eeb3cc4a32e960566d6b1b",
+    "src/simple_ai_trading/cli.py": "69eb0a7e974a6b041f8ccc5bf3c6a70b7a510c44277265563fe0e8131bcc9776",
+    "src/simple_ai_trading/polymarket_live_cli.py": "c78b6b0675ea3987cb973b1a8d515e394370cf7969a884295b4ef521e621baf0",
+    "src/simple_ai_trading/training_suite.py": "1a9bbbb32f955d5243dee7ef757e9461326e87a453b8cdf08dbb40b82d9c67b0",
+    "tools/audit_financial_terminology.py": "08a6f3566ab3ea97aef8e0c06770c68b8be17084ce20cd0c979ec081d6cc1754"
+  },
+  "verification": {
+    "plan_validation": {
+      "application_tests_rerun": 0,
+      "changed_document_terminology_findings": 0,
+      "compact_entry_bytes": 16185,
+      "compact_entry_limit": 16384,
+      "delivery_and_conditional_dependency_graph_acyclic": true,
+      "full_repository_review_claimed": false,
+      "goal_complete": false,
+      "local_document_links_checked": 133,
+      "plan_sections_resolve": true,
+      "production_source_bindings_unchanged": 40,
+      "requirement_groups": 12,
+      "requirement_task_coverage_complete": true,
+      "task_ids": 24,
+      "task_scope_paths_exist": true
+    },
+    "summary": "24 work packages and 12 requirement groups validated; source-bound current-state assessment; no application implementation changed.",
+    "tested_source_sha256": {
+      "docs/review/2026-11-11/score-cover/reconcile.py": "d8ff932c51eb654bd76bca5277f5cb582ea0b3fd3d629b523e75e265222a11c2",
+      "native/windows/generated/command_contract.hpp": "bdefd69c54f2879af230f5ce0ba6d49476767946ec9ff9e87e66d419f31e1edb",
+      "native/windows/src/main.cpp": "79c8af5084ea6109acf275cd07088754b81cb24ab1bce63500110ea4bd6d233d",
+      "src/simple_ai_trading/binance_acknowledgements.py": "ee91860a6a4469518aa8735b199222f9e97a53ee490ea02ebd3197ea562b570e",
+      "src/simple_ai_trading/binance_close_application.py": "dce2d54097af9ff210ebc615edb368acaa82eba64cd37108b0d0659660b8e64f",
+      "src/simple_ai_trading/binance_close_application_cli.py": "6098676306a5022c281b05415a5d55418dd00714b201a7f03db8a50698203c9d",
+      "src/simple_ai_trading/binance_close_intents.py": "fe5fb6a8d92ff892b777c53792a1220be1bf771420d4fa4eeef4b5e2eff9f5e8",
+      "src/simple_ai_trading/binance_close_recovery.py": "768322f2ba84c8819507dd8e9beaa29994e67595d9812d6e9f42f7e6d25e2aea",
+      "src/simple_ai_trading/binance_closing_inventory.py": "ebe0a64ea63564463c290b0d6a44215abe8930e06f1c1502c81e1ecbd8c8811e",
+      "src/simple_ai_trading/binance_execution_payloads.py": "7337b1ff06533584f60c67dd528a478d36614f55dc259033efc0cc901c57e583",
+      "src/simple_ai_trading/binance_execution_storage.py": "8d90728155f01b078be024f855f45b6185159c3f4fa7f8f21538a8fd803f3533",
+      "src/simple_ai_trading/binance_open_intents.py": "9a78e005880962a9d2d6b638e581a2f3d77cfcdd08dee413da9b1ddf8ff0408d",
+      "src/simple_ai_trading/binance_order_responses.py": "0094163663698b5ba63303e4c7a68153d37a4e6c3ca819d1a5283ca343de7e38",
+      "src/simple_ai_trading/binance_owned_execution.py": "25ce3f202cba7acfabedf12231a5bdff0528e32baa2c6cd2ff707e4951511e5c",
+      "src/simple_ai_trading/binance_recovery_reads.py": "0b93b6b7c7ded5e91a10b19b2ef7bfd848ff86a400eeb3cc4a32e960566d6b1b",
+      "src/simple_ai_trading/binance_runtime_control.py": "b6b5c58f474d76b2df3ad50ed2d20b1a2031e41fd078b95a203d34dc9e665cd4",
+      "src/simple_ai_trading/binance_spot_cash.py": "31b82c79811a4c12cde00ec5affa32f498d768fef2247041f69851dd0a4d9bc7",
+      "src/simple_ai_trading/binance_spot_receipts.py": "4c0ee7c05df80f3642ea043c963841ff87cae6b1bebfd89614a27a8245475945",
+      "src/simple_ai_trading/binance_terminal_fills.py": "d2b8444453b936b71f516d735e8a43a48c8ab17091de31b6cce1a66b3f76eb2f",
+      "src/simple_ai_trading/cli.py": "69eb0a7e974a6b041f8ccc5bf3c6a70b7a510c44277265563fe0e8131bcc9776",
+      "src/simple_ai_trading/command_contract.py": "ad7766ce06941931006076b531efd877c7f4d00ba57f87c1146ba7d83aabb6cd",
+      "src/simple_ai_trading/polymarket_http_process.py": "690d699118e47265df377676565ec2e44d934b75d792e8ebe8006b30e8287921",
+      "src/simple_ai_trading/polymarket_sdk_transport.py": "84cabf51be81f568ee275b3c3183be0862e1022045efff9edf7de108bd83233b",
+      "src/simple_ai_trading/position_transactions.py": "743275b5e92337bd24825c7b4e4f2d79c1ecb7556bf02d8d56cadfcbe148d97b",
+      "src/simple_ai_trading/positions.py": "0baf01909be1135d56d887fa7499fc4d3ebccf74f04844d49c61f288c7378154",
+      "src/simple_ai_trading/runtime_control.py": "518064c99eaf7a0492c2bbaa8ce15abdad68757b7f5fa3da96996c3649add815",
+      "src/simple_ai_trading/score_cover.py": "09fe5c8b5f756a47284ed71dd3518f84d2c1022e2c909e715b5af768f6860bbd",
+      "src/simple_ai_trading/windows_app.py": "81736a184cb4e2d945585212627782e4ed83e4b0c837d34dcf9ed1afb9846f7a",
+      "src/simple_ai_trading/windows_owned_job.py": "82dd0e80340c8388f20d6871863fdf5075d4f271d0c7fe9276a295db962f05ae",
+      "tests/conftest.py": "090974084e8c25f16dc18ed084269d75edb9fdb5f4d7d15e6e72bb23853d9abc",
+      "tests/test_ai_runtime_and_parity.py": "1f6490adcf1895f916a2b4ee1708af93c97b2bc06ed02097a657043450d7d193",
+      "tests/test_binance_close_application.py": "81be068666e0a0a5c8f705856f20b9f65360fd66bb1f4ff950aef4940633ef9d",
+      "tests/test_binance_close_recovery.py": "0b368d1ecc0141bf6a944a4fc9fd58fd28e309a74cfbad5049384226ddc1e0fa",
+      "tests/test_binance_recovery_reads.py": "c218d3e8e31a1673388be692d98c333cb0f697611c284d93fa20d87c6099f7e8",
+      "tests/test_cli_new_commands.py": "3adb7d3f59dc02f6294a351af75a600a9a8eed0c60fe1feb796d6ce6312ba856",
+      "tests/test_close_recovery_cli.py": "d0ee08536b5ba8e282634e52d2aa62edd1a42d89ddf1d0722dca0d817cc90663",
+      "tests/test_polymarket_http_process.py": "a8839b971093edf97cb9e6bd96c880be714a8da69ed6fc10989cfb7a2bdd4beb",
+      "tests/test_score_cover.py": "1dea21301f1e0f2d8a8f53e84b401d7868d05b0085cc932c9b5756016969160c",
+      "tests/test_screen_retained_score_cover.py": "01f71e072878f1e3fcab5e3163c1dd263e0655cb1f2d178a35347f2f67b07679",
+      "tools/screen_retained_score_cover.py": "a718402d593c6be7144018bf8637340b7a68114f44b9f2b4fdeac9a4fe8a06ee"
+    }
+  }
+}

@@ -1,10 +1,10 @@
 # Continue development
 
-Read [AGENTS](../AGENTS.md), [Agent Start](AGENT_START.md) and the
-[progress and resumption protocol](AGENT_WORKFLOWS.md#progress-blocking-and-resumption).
-The full goal remains active across profitable structural-edge R&D, models,
-data, execution, capital protection, every application surface, security and
-packaging, followed by complete semantic review and exhaustive final bug hunting.
+Read [AGENTS](../AGENTS.md) and [Agent Start](AGENT_START.md). The full goal remains
+active under the [development plan](DEVELOPMENT_PLAN.md) and
+[work graph](DEVELOPMENT_WORK_GRAPH.json). The [assessment](REPO_STATE_2026_11_11.md)
+binds the current planning baseline; select one evidenced work package without
+shrinking the financial, product, final-review or bug-hunt scope.
 
 ## Current decision
 
@@ -143,8 +143,5 @@ extra PR or historical rewrite follows from continuing development. Preserve
 
 [Storage relocation](review/2026-11-09/research-storage/review.md) is complete.
 Do not restart migration or reread the large dataset. Automatic review rejected
-unused temporary-directory deletion; preserve that boundary. Keep paths private
-and dependencies isolated/configurable. Every helper must be bounded, hidden
-and session-owned, with teardown verified. No recurring development service,
-schedule, startup hook or unattended worker is authorized. Leave unrelated tasks
-untouched and defer benchmark timing only for material CPU/GPU/RAM/disk contention.
+unused temporary-directory deletion; preserve that boundary. Mandatory host,
+privacy, dependency-isolation and lifecycle rules in AGENTS apply throughout.

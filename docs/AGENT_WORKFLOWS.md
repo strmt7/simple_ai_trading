@@ -343,6 +343,13 @@ body helper that discards the error payload and forces an identical retry.
 
 ### Objective and meaningful progress
 
+Coordinate the existing full goal through the [active development plan](DEVELOPMENT_PLAN.md)
+and [work graph](DEVELOPMENT_WORK_GRAPH.json). Select one useful package and read
+its exact current scope; do not reread the whole assessment/plan on every turn.
+Record source-bound completion, remaining evidence and the next condition in a
+coherent substantive checkpoint. Package success is not whole-goal completion.
+The graph supplies no capture, account, delegation, release or persistence authority.
+
 Prioritize sound, repeatable, direction-independent after-cost edges on
 Polymarket and Binance. Direction independence does not remove execution,
 financing, collateral, liquidity, resolution or venue risks. Neither accepted

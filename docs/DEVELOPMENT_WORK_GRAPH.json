@@ -1,0 +1,550 @@
+{
+  "assessed_source_commit": "9f885638d529d9f4c38d41c11eccc1ed8f2ba562",
+  "assessment_document": "docs/REPO_STATE_2026_11_11.md",
+  "conditional_dependencies": [
+    {
+      "requires": "FIN-02",
+      "task": "MODEL-01",
+      "when": "The strategy profile uses financing, derivative collateral or hedged cash."
+    }
+  ],
+  "execution_policy": {
+    "check_reuse": "Reuse unchanged qualified scopes; reopen affected source/dependency/profile/input assumptions. External-state claims require current evidence.",
+    "completion": "Task/phase success does not complete the goal. Full requirement-by-requirement proof is necessary.",
+    "continuous_financial_priority": "FIN-01",
+    "dependencies": "Delivery acceptance dependencies, not a prohibition on useful independent preparation. Exact source/capture/account rules always control.",
+    "host_lifecycle": "Bounded hidden session-owned helpers; exception-safe teardown; no service, scheduler, startup hook or interference with unrelated work.",
+    "next_preferred_local_batch": "BASE-01",
+    "preemption": "A verified capital/security failure or eligible higher-information financial decision can preempt the default batch.",
+    "publication": "Official connector only; coherent batches; identity/tree/parent/expected-head lease audit; no extra PR, release, tag or draft.",
+    "source_reading": "Read selected task scope and fresh relevant evidence; reuse exact-hash material. Do not dump the whole plan per turn.",
+    "subagents_authorized": false,
+    "work_in_progress": 1
+  },
+  "gated_services": [
+    {
+      "provider": "DeepSource",
+      "resume_condition": "Independently verified provider availability change; no blind scan/retry.",
+      "source": "docs/review/2026-11-11/repo-assessment/github-state.json",
+      "status": "quota_exhausted"
+    }
+  ],
+  "goal_binding": {
+    "execution": "existing active thread goal",
+    "full_original_scope_preserved": true,
+    "goal_complete": false,
+    "new_goal_or_schedule_created": false,
+    "release_decision": "user only"
+  },
+  "plan_document": "docs/DEVELOPMENT_PLAN.md",
+  "requirements": [
+    {
+      "id": "REQ-ECONOMICS",
+      "scope": "Persistent after-all-cost structural edges on both Polymarket and Binance, capacity, risk/reward and abstention",
+      "tasks": [
+        "FIN-01",
+        "FIN-02",
+        "FIN-03",
+        "QUAL-01"
+      ]
+    },
+    {
+      "id": "REQ-MODELS",
+      "scope": "Causal predictive/stateful/multimodel improvement, local AI, LLM/web integration and calibrated model health",
+      "tasks": [
+        "DATA-01",
+        "MODEL-01",
+        "MODEL-02",
+        "SAFE-02"
+      ]
+    },
+    {
+      "id": "REQ-GPU-DATA",
+      "scope": "Useful larger datasets, actual supported GPU acceleration, speed/precision and efficient resource use",
+      "tasks": [
+        "DATA-01",
+        "ACCEL-01",
+        "TOOLS-01"
+      ]
+    },
+    {
+      "id": "REQ-CAPITAL",
+      "scope": "Independent terminatable supervisor/gateway, durable risk policy, freeze/crash/reboot/UNKNOWN protection and owned reduction",
+      "tasks": [
+        "EXEC-01",
+        "SAFE-01",
+        "SAFE-02",
+        "EXEC-02",
+        "BUG-01"
+      ]
+    },
+    {
+      "id": "REQ-INTERFACE",
+      "scope": "Whole application CLI/terminal/native UI, visual quality, diagnostics, accessibility and homogeneous professional behavior",
+      "tasks": [
+        "OPS-01",
+        "UI-01",
+        "ARCH-01"
+      ]
+    },
+    {
+      "id": "REQ-DEPENDENCIES-SECURITY",
+      "scope": "Latest compatible packages, Dependabot/code-scanning findings, quota interpretation and obsolete branches",
+      "tasks": [
+        "BASE-01",
+        "SEC-01",
+        "DEPS-01"
+      ]
+    },
+    {
+      "id": "REQ-PORTABILITY",
+      "scope": "Same-supported-OS/architecture host/install independence and safe automatic isolated prerequisite setup",
+      "tasks": [
+        "DIST-01",
+        "DEPS-01",
+        "ARCH-01"
+      ]
+    },
+    {
+      "id": "REQ-COMMERCIAL",
+      "scope": "Measured commercial source/distribution protection preserving licensing and safety",
+      "tasks": [
+        "IP-01",
+        "DIST-01"
+      ]
+    },
+    {
+      "id": "REQ-AGENTS",
+      "scope": "Mandatory concise/tool-aware agents, useful official marketplace capabilities and active-goal coordination without new standing tasks",
+      "tasks": [
+        "ASSESS-01",
+        "TOOLS-01"
+      ]
+    },
+    {
+      "id": "REQ-REVIEW",
+      "scope": "Every required file/text/code range reviewed at a source revision, justified homogeneous refactor and exhaustive final bug hunt",
+      "tasks": [
+        "ARCH-01",
+        "REVIEW-01",
+        "BUG-01"
+      ]
+    },
+    {
+      "id": "REQ-HOST",
+      "scope": "No stale/visible/persistent helpers, leaks or interference with other PC work; benchmark-only contention deferral",
+      "tasks": [
+        "SAFE-01",
+        "ACCEL-01",
+        "TOOLS-01",
+        "DIST-01"
+      ]
+    },
+    {
+      "id": "REQ-PROVENANCE",
+      "scope": "Preserved old results/protected captures, no leaked secrets/host paths, official connector commits and user-controlled releases",
+      "tasks": [
+        "FIN-01",
+        "BASE-01",
+        "SEC-01",
+        "DIST-01",
+        "REVIEW-01",
+        "QUAL-01"
+      ]
+    }
+  ],
+  "schema_version": "trading-development-work-graph-v1",
+  "tasks": [
+    {
+      "depends_on": [],
+      "exit_evidence": "Source-bound assessment, complete requirement map, validated work graph and agent entry-point integration.",
+      "id": "ASSESS-01",
+      "plan_section": "ASSESS-01",
+      "priority": 0,
+      "scope_refs": [
+        "docs/REPO_STATE_2026_11_11.md",
+        "docs/DEVELOPMENT_PLAN.md"
+      ],
+      "status": "complete",
+      "title": "Current-state assessment and active-goal plan"
+    },
+    {
+      "depends_on": [
+        "ASSESS-01"
+      ],
+      "exit_evidence": "An eligible frozen decision with complete cash/cost/capital scope, retained failures and a next action; continuous priority, never blanket capture authority.",
+      "id": "FIN-01",
+      "plan_section": "FIN-01",
+      "priority": 0,
+      "scope_refs": [
+        "docs/model-research/structural-edge-priority-registry-v1.json",
+        "docs/RESEARCH_CAPTURE_BOUNDARIES.md"
+      ],
+      "status": "continuous",
+      "title": "Informative structural-edge decision"
+    },
+    {
+      "depends_on": [
+        "ASSESS-01"
+      ],
+      "exit_evidence": "Root-caused diagnostics resolved with immutable evidence/source lineage preserved; current broad-test status distinguished from skipped and historical lanes.",
+      "id": "BASE-01",
+      "plan_section": "BASE-01",
+      "priority": 1,
+      "scope_refs": [
+        "tools/audit_financial_terminology.py",
+        ".github/workflows/ci.yml",
+        ".github/workflows/ruff.yml",
+        ".github/workflows/vulture.yml",
+        ".github/workflows/super-linter.yml"
+      ],
+      "status": "planned",
+      "title": "Restore useful mainline feedback"
+    },
+    {
+      "depends_on": [
+        "ASSESS-01"
+      ],
+      "exit_evidence": "Pending inspection, explicit bounded collection, retained application, truthful unknown/cached outcomes and owned teardown through the real operator path; staged futures/legacy/rearm qualification.",
+      "id": "EXEC-01",
+      "plan_section": "EXEC-01",
+      "priority": 1,
+      "scope_refs": [
+        "src/simple_ai_trading/binance_close_application_cli.py",
+        "src/simple_ai_trading/binance_recovery_reads.py",
+        "src/simple_ai_trading/binance_close_recovery.py",
+        "src/simple_ai_trading/cli.py",
+        "docs/RUNTIME_CONTROL_STORAGE.md"
+      ],
+      "status": "planned",
+      "title": "Complete explicit operator close recovery"
+    },
+    {
+      "depends_on": [
+        "ASSESS-01"
+      ],
+      "exit_evidence": "Versioned policy and transactional state retain limits, reservations, Stop, quarantine and recovery through validated restart/migration paths without implicit rearm.",
+      "id": "SAFE-02",
+      "plan_section": "SAFE-02",
+      "priority": 1,
+      "scope_refs": [
+        "docs/CAPITAL_PROTECTION_ARCHITECTURE.md",
+        "src/simple_ai_trading/runtime_control.py",
+        "src/simple_ai_trading/runtime_control_storage.py"
+      ],
+      "status": "planned",
+      "title": "Durable policy, loss and recovery authority"
+    },
+    {
+      "depends_on": [
+        "EXEC-01",
+        "SAFE-02"
+      ],
+      "exit_evidence": "Real contained faults prove independent useful-progress observation, generation/expiry fencing and available owned reduction during frozen strategy work; no service installation.",
+      "id": "SAFE-01",
+      "plan_section": "SAFE-01",
+      "priority": 1,
+      "scope_refs": [
+        "docs/CAPITAL_PROTECTION_ARCHITECTURE.md",
+        "src/simple_ai_trading/windows_owned_job.py",
+        "src/simple_ai_trading/polymarket_http_process.py"
+      ],
+      "status": "planned",
+      "title": "Independent session supervisor and execution gateway"
+    },
+    {
+      "depends_on": [
+        "SAFE-01"
+      ],
+      "exit_evidence": "Every writer/alternate route has an exact authority map and integration proof; UID/fees/filters/cash/collateral and complete authorized paper/testnet lifecycle accepted.",
+      "id": "EXEC-02",
+      "plan_section": "EXEC-02",
+      "priority": 1,
+      "scope_refs": [
+        "src/simple_ai_trading/binance_owned_execution.py",
+        "src/simple_ai_trading/polymarket_live.py",
+        "src/simple_ai_trading/polymarket_live_cli.py"
+      ],
+      "status": "planned",
+      "title": "Universal native-writer and account integration"
+    },
+    {
+      "depends_on": [
+        "ASSESS-01"
+      ],
+      "exit_evidence": "Required dataset has native clock/availability/coverage and label-completion evidence, explicit missingness and independent chronological roles; no protected-source reopening.",
+      "id": "DATA-01",
+      "plan_section": "DATA-01",
+      "priority": 1,
+      "scope_refs": [
+        "docs/RESEARCH_CAPTURE_BOUNDARIES.md",
+        "docs/REVAMP_2026_11_09.md"
+      ],
+      "status": "planned",
+      "title": "Causal dataset and native provenance admission"
+    },
+    {
+      "depends_on": [
+        "DATA-01"
+      ],
+      "exit_evidence": "Eligible profile binds paired cash, prefunding/locks, financing, collateral, native terms and continuous solvency against feasible equal-wealth alternatives.",
+      "id": "FIN-02",
+      "plan_section": "FIN-02",
+      "priority": 1,
+      "scope_refs": [
+        "docs/review/2026-11-09/year-funding/review.md",
+        "docs/review/2026-11-10/capital-bound/review.md"
+      ],
+      "status": "planned",
+      "title": "Financed/hedged cash and capital feasibility"
+    },
+    {
+      "depends_on": [
+        "ASSESS-01"
+      ],
+      "exit_evidence": "Independently selected population and calibrated probability or matched execution economics yield net-utility/capacity evidence or explicit abstention; no probability credit from dual weights.",
+      "id": "FIN-03",
+      "plan_section": "FIN-03",
+      "priority": 1,
+      "scope_refs": [
+        "docs/review/2026-11-11/score-cover/review.md",
+        "docs/review/2026-11-11/binance-auto-routing/review.md"
+      ],
+      "status": "planned",
+      "title": "Residual-payoff and execution-cost utility"
+    },
+    {
+      "depends_on": [
+        "DATA-01"
+      ],
+      "exit_evidence": "Causal incremental net utility, complete search history, chronological roles, dependence/tail evidence and feasible baselines qualify the particular model profile.",
+      "id": "MODEL-01",
+      "plan_section": "MODEL-01",
+      "priority": 1,
+      "scope_refs": [
+        "src/simple_ai_trading/training_suite.py",
+        "docs/review/2026-11-10/selection-risk-integrity/review.md",
+        "docs/review/2026-11-11/model-utility/review.md"
+      ],
+      "status": "planned",
+      "title": "Economic targets and independent evaluation"
+    },
+    {
+      "depends_on": [
+        "MODEL-01",
+        "SAFE-02"
+      ],
+      "exit_evidence": "Ablations prove incremental economic contribution, latency and failure behavior; model health/quarantine and strict non-override of deterministic authority are integrated.",
+      "id": "MODEL-02",
+      "plan_section": "MODEL-02",
+      "priority": 2,
+      "scope_refs": [
+        "src/simple_ai_trading/model_blueprint.py",
+        "docs/REVAMP_2026_11_09.md"
+      ],
+      "status": "planned",
+      "title": "Stateful ensembles, local AI and LLM integration"
+    },
+    {
+      "depends_on": [
+        "MODEL-01"
+      ],
+      "exit_evidence": "Actual compatible backend/residency/precision, parity and useful workload timing justify batching/data scale; unrelated host tasks remain intact.",
+      "id": "ACCEL-01",
+      "plan_section": "ACCEL-01",
+      "priority": 2,
+      "scope_refs": [
+        "pyproject.toml",
+        "docs/review/2026-11-10/dependencies/review.md"
+      ],
+      "status": "planned",
+      "title": "Qualified useful GPU/data throughput"
+    },
+    {
+      "depends_on": [
+        "EXEC-01",
+        "SAFE-01"
+      ],
+      "exit_evidence": "All surfaces share truthful scope/age/units/generation/unknown state and actionable diagnostics, including degraded operation.",
+      "id": "OPS-01",
+      "plan_section": "OPS-01",
+      "priority": 2,
+      "scope_refs": [
+        "src/simple_ai_trading/command_contract.py",
+        "native/windows/src/main.cpp"
+      ],
+      "status": "planned",
+      "title": "Operational status, diagnostics and observability"
+    },
+    {
+      "depends_on": [
+        "OPS-01"
+      ],
+      "exit_evidence": "All seven native pages and supported CLI/terminal flows have real backend, interaction/accessibility and DPI/error-state acceptance; design visuals never fabricate results.",
+      "id": "UI-01",
+      "plan_section": "UI-01",
+      "priority": 2,
+      "scope_refs": [
+        "native/windows/src/main.cpp",
+        "src/simple_ai_trading/cli.py",
+        "docs/review/2026-11-11/operator-workspace/review.md"
+      ],
+      "status": "planned",
+      "title": "Complete native/terminal/CLI workflows"
+    },
+    {
+      "depends_on": [
+        "ASSESS-01"
+      ],
+      "exit_evidence": "Verified seams separate product/research/evidence and neutral transports; naming/types/comments/errors/resources are coherent without breaking frozen/public contracts.",
+      "id": "ARCH-01",
+      "plan_section": "ARCH-01",
+      "priority": 2,
+      "scope_refs": [
+        "src/simple_ai_trading/cli.py",
+        "src/simple_ai_trading/polymarket_recorder.py",
+        "src/simple_ai_trading/binance_recovery_reads.py"
+      ],
+      "status": "planned",
+      "title": "Cohesive source and resource-ownership refactor"
+    },
+    {
+      "depends_on": [
+        "ASSESS-01"
+      ],
+      "exit_evidence": "Exact-commit triage/repair and alert-result disposition/coverage reconciled; DeepSource unavailable quota lane stays explicit until independently verified change.",
+      "id": "SEC-01",
+      "plan_section": "SEC-01",
+      "priority": 1,
+      "scope_refs": [
+        ".github/workflows/codeql.yml",
+        ".github/workflows/super-linter.yml",
+        "docs/REPO_STATE_2026_11_11.md"
+      ],
+      "status": "planned",
+      "title": "Validated security findings and scanner coverage"
+    },
+    {
+      "depends_on": [
+        "ASSESS-01"
+      ],
+      "exit_evidence": "Current publisher/lock/candidate compatibility evidence and supported profiles; superseded branches provenance-reviewed without merging older pins or unnecessary PRs.",
+      "id": "DEPS-01",
+      "plan_section": "DEPS-01",
+      "priority": 2,
+      "scope_refs": [
+        "pyproject.toml",
+        "uv.lock",
+        "docs/review/2026-11-10/dependencies/review.md"
+      ],
+      "status": "planned",
+      "title": "Latest compatible isolated profiles and branch hygiene"
+    },
+    {
+      "depends_on": [
+        "BASE-01",
+        "UI-01",
+        "EXEC-02"
+      ],
+      "exit_evidence": "Validation cannot create drafts/tags/releases; supported clean-host setup/upgrade/failure/uninstall and native/CLI dependency profiles accepted. Independent validation-path preparation may start immediately.",
+      "id": "DIST-01",
+      "plan_section": "DIST-01",
+      "priority": 2,
+      "scope_refs": [
+        ".github/workflows/release.yml",
+        ".github/actions/windows-beta-release/action.yml",
+        "pyproject.toml"
+      ],
+      "status": "planned",
+      "title": "Mutation-free validation and portable clean-host installation"
+    },
+    {
+      "depends_on": [
+        "DIST-01"
+      ],
+      "exit_evidence": "Chosen compilation/service/protection boundary, shipped/nested asset inventory, notices, signing/updates and recovery under failure measured; no silent license/visibility change.",
+      "id": "IP-01",
+      "plan_section": "IP-01",
+      "priority": 2,
+      "scope_refs": [
+        "docs/WORK_PRIORITIES.md",
+        "LICENSE"
+      ],
+      "status": "planned",
+      "title": "Measured commercial distribution boundary"
+    },
+    {
+      "depends_on": [
+        "ASSESS-01"
+      ],
+      "exit_evidence": "Source-bound navigation/research, bounded context and useful marketplace capability audit operate without repeated catalogs/controllers, persistent helpers or invented savings.",
+      "id": "TOOLS-01",
+      "plan_section": "TOOLS-01",
+      "priority": 2,
+      "scope_refs": [
+        "AGENTS.md",
+        "docs/AGENT_WORKFLOWS.md",
+        "docs/CRAWL4AI_RESEARCH.md"
+      ],
+      "status": "planned",
+      "title": "Efficient mandatory tool and agent operation"
+    },
+    {
+      "depends_on": [
+        "EXEC-02",
+        "SAFE-02",
+        "MODEL-02",
+        "ACCEL-01",
+        "UI-01",
+        "ARCH-01",
+        "SEC-01",
+        "DEPS-01",
+        "DIST-01",
+        "IP-01",
+        "TOOLS-01"
+      ],
+      "exit_evidence": "Every required file/range has revision-bound content review or explicit unresolved/protected/binary status; justified refactors and reopened changed coverage; no blanket review claim.",
+      "id": "REVIEW-01",
+      "plan_section": "REVIEW-01",
+      "priority": 3,
+      "scope_refs": [
+        "docs/CAPITAL_PROTECTION_ARCHITECTURE.md",
+        "CONTRIBUTING.md"
+      ],
+      "status": "planned",
+      "title": "Final complete semantic review and refactor"
+    },
+    {
+      "depends_on": [
+        "REVIEW-01"
+      ],
+      "exit_evidence": "Adversarial state/process/storage/network/numerical/UI/package/physical-restart scenarios and every remaining failure family are resolved with appropriate acceptance evidence.",
+      "id": "BUG-01",
+      "plan_section": "BUG-01",
+      "priority": 3,
+      "scope_refs": [
+        "docs/CAPITAL_PROTECTION_ARCHITECTURE.md"
+      ],
+      "status": "planned",
+      "title": "Exhaustive final bug-hunting campaign"
+    },
+    {
+      "depends_on": [
+        "BUG-01",
+        "FIN-02",
+        "FIN-03"
+      ],
+      "exit_evidence": "Full original goal proved requirement by requirement, including positive independently recurrent after-all-cost economics for the requested venues/profiles and operational acceptance. No release/live-money authority is created.",
+      "id": "QUAL-01",
+      "plan_section": "QUAL-01",
+      "priority": 3,
+      "scope_refs": [
+        "docs/DEVELOPMENT_PLAN.md",
+        "docs/REPO_STATE_2026_11_11.md"
+      ],
+      "status": "planned",
+      "title": "Complete product and financial readiness audit"
+    }
+  ],
+  "updated_at_utc": "2026-11-11T10:33:19.401066+00:00"
+}

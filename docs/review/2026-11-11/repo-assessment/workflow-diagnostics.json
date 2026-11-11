@@ -1,0 +1,211 @@
+{
+  "assessed_commit": "9f885638d529d9f4c38d41c11eccc1ed8f2ba562",
+  "historical_finding_bytes_match_retained_publication_record": true,
+  "markdown": [
+    {
+      "code": "MD041",
+      "line": 1,
+      "path": "docs/review/2026-09-04/paradex-fee-source/fees.md"
+    },
+    {
+      "code": "MD001",
+      "line": 7,
+      "path": "docs/review/2026-09-04/paradex-fee-source/fees.md"
+    },
+    {
+      "code": "MD001",
+      "line": 68,
+      "path": "docs/review/2026-09-04/paradex-fee-source/fees.md"
+    },
+    {
+      "code": "MD001",
+      "line": 92,
+      "path": "docs/review/2026-09-04/paradex-fee-source/fees.md"
+    },
+    {
+      "code": "MD047",
+      "line": 132,
+      "path": "docs/review/2026-09-04/paradex-fee-source/fees.md"
+    },
+    {
+      "code": "MD041",
+      "line": 1,
+      "path": "docs/review/2026-09-04/paradex-fee-source/profiles.md"
+    },
+    {
+      "code": "MD047",
+      "line": 77,
+      "path": "docs/review/2026-09-04/paradex-fee-source/profiles.md"
+    },
+    {
+      "code": "MD038",
+      "line": 25,
+      "path": "docs/review/2026-09-05/settlement-tracking-review.md"
+    },
+    {
+      "code": "MD018",
+      "line": 12,
+      "path": "docs/review/2026-11-09/dependencies/review.md"
+    }
+  ],
+  "production_bug_or_false_positive_status": "Requires source-level triage; diagnostic counts alone do not establish runtime defects.",
+  "raw_logs_private": true,
+  "ruff": [
+    {
+      "code": "E402",
+      "column": 1,
+      "line": 40,
+      "path": "tools/create_round61_carry_event_manifest.py"
+    },
+    {
+      "code": "E402",
+      "column": 1,
+      "line": 40,
+      "path": "tools/diagnose_round51_payoff_tail.py"
+    },
+    {
+      "code": "E402",
+      "column": 1,
+      "line": 42,
+      "path": "tools/diagnose_round55_controller_attrition.py"
+    },
+    {
+      "code": "E402",
+      "column": 1,
+      "line": 28,
+      "path": "tools/publish_round51_categorical_payoff_fincast.py"
+    },
+    {
+      "code": "E402",
+      "column": 1,
+      "line": 71,
+      "path": "tools/publish_round53_executable_csm.py"
+    },
+    {
+      "code": "E402",
+      "column": 1,
+      "line": 36,
+      "path": "tools/publish_round54_sequential_failure.py"
+    },
+    {
+      "code": "E402",
+      "column": 1,
+      "line": 36,
+      "path": "tools/publish_round55_bounded_alpha.py"
+    },
+    {
+      "code": "E402",
+      "column": 1,
+      "line": 39,
+      "path": "tools/publish_round56_paired_action.py"
+    },
+    {
+      "code": "E402",
+      "column": 1,
+      "line": 36,
+      "path": "tools/publish_round57_queue_censored_make_take.py"
+    },
+    {
+      "code": "E402",
+      "column": 1,
+      "line": 36,
+      "path": "tools/publish_round58_two_sided_maker_feasibility.py"
+    },
+    {
+      "code": "E402",
+      "column": 1,
+      "line": 36,
+      "path": "tools/publish_round59_funding_persistence_feasibility.py"
+    },
+    {
+      "code": "E402",
+      "column": 1,
+      "line": 43,
+      "path": "tools/publish_round60_full_history_funding_replication.py"
+    },
+    {
+      "code": "E402",
+      "column": 1,
+      "line": 32,
+      "path": "tools/run_round59_funding_persistence_feasibility.py"
+    }
+  ],
+  "terminology": [
+    {
+      "classification": "preserved historical before/audit/review surface; current claim versus evidence scope needs reconciliation",
+      "line": 170,
+      "path": "docs/review/2026-09-04/nyc-sep5-frontier/durability-before.json"
+    },
+    {
+      "classification": "preserved historical before/audit/review surface; current claim versus evidence scope needs reconciliation",
+      "line": 170,
+      "path": "docs/review/2026-09-04/paradex-index-publication/durability-before.json"
+    },
+    {
+      "classification": "preserved historical before/audit/review surface; current claim versus evidence scope needs reconciliation",
+      "line": 173,
+      "path": "docs/review/2026-10-07/model-integration/audit-before.json"
+    },
+    {
+      "classification": "preserved historical before/audit/review surface; current claim versus evidence scope needs reconciliation",
+      "line": 49,
+      "path": "docs/review/2026-10-07/model-integration/review.md"
+    }
+  ],
+  "vulture": [
+    {
+      "line": 33,
+      "parameter": "newurl",
+      "path": "tools/capture_binance_triangle_window.py"
+    },
+    {
+      "line": 33,
+      "parameter": "req",
+      "path": "tools/capture_binance_triangle_window.py"
+    },
+    {
+      "line": 25,
+      "parameter": "newurl",
+      "path": "tools/capture_public_source_bounded.py"
+    },
+    {
+      "line": 25,
+      "parameter": "req",
+      "path": "tools/capture_public_source_bounded.py"
+    },
+    {
+      "line": 23,
+      "parameter": "attrs",
+      "path": "tools/extract_paradex_funding_sources.py"
+    },
+    {
+      "line": 182,
+      "parameter": "newurl",
+      "path": "tools/screen_paradex_index_boundaries.py"
+    },
+    {
+      "line": 182,
+      "parameter": "req",
+      "path": "tools/screen_paradex_index_boundaries.py"
+    },
+    {
+      "line": 20,
+      "parameter": "newurl",
+      "path": "tools/screen_polymarket_exact_negrisk_long_only_frontier_v2.py"
+    },
+    {
+      "line": 20,
+      "parameter": "req",
+      "path": "tools/screen_polymarket_exact_negrisk_long_only_frontier_v2.py"
+    }
+  ],
+  "zizmor": {
+    "audit": "self-repository",
+    "line": 49,
+    "operating_mode": "offline; some audits unavailable",
+    "path": ".github/workflows/release.yml",
+    "primary_contract_verification_required_before_fix": true,
+    "suppressed_findings": 1,
+    "unsuppressed_low_findings": 1
+  }
+}

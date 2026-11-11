@@ -1,0 +1,130 @@
+{
+  "categories": {
+    "archived_agent_history": {
+      "bytes": 133729,
+      "files": 5
+    },
+    "dated_review_evidence": {
+      "bytes": 24703455,
+      "files": 989
+    },
+    "native": {
+      "bytes": 312982,
+      "files": 7
+    },
+    "other": {
+      "bytes": 69109093,
+      "files": 433
+    },
+    "other_documentation": {
+      "bytes": 1273835,
+      "files": 73
+    },
+    "python_package": {
+      "bytes": 19397442,
+      "files": 581
+    },
+    "research_ledgers_and_artifacts": {
+      "bytes": 77261646,
+      "files": 2296
+    },
+    "tests": {
+      "bytes": 11126507,
+      "files": 1003
+    },
+    "tools": {
+      "bytes": 8768291,
+      "files": 562
+    }
+  },
+  "head": "9f885638d529d9f4c38d41c11eccc1ed8f2ba562",
+  "largest_package_files": [
+    {
+      "bytes": 741064,
+      "inspection": "size_and_line_count_only",
+      "lines": 18334,
+      "path": "src/simple_ai_trading/cli.py"
+    },
+    {
+      "bytes": 344518,
+      "inspection": "size_and_line_count_only",
+      "lines": 8287,
+      "path": "src/simple_ai_trading/polymarket_recorder.py"
+    },
+    {
+      "bytes": 258953,
+      "inspection": "size_and_line_count_only",
+      "lines": 5985,
+      "path": "src/simple_ai_trading/impact_absorption_event_training.py"
+    },
+    {
+      "bytes": 257078,
+      "inspection": "size_and_line_count_only",
+      "lines": 5199,
+      "path": "src/simple_ai_trading/optimization_evidence.py"
+    },
+    {
+      "bytes": 201518,
+      "inspection": "size_and_line_count_only",
+      "lines": 5010,
+      "path": "src/simple_ai_trading/polymarket_publication.py"
+    },
+    {
+      "bytes": 200707,
+      "inspection": "size_and_line_count_only",
+      "lines": 4984,
+      "path": "src/simple_ai_trading/polymarket_live.py"
+    },
+    {
+      "bytes": 169902,
+      "inspection": "size_and_line_count_only",
+      "lines": 3998,
+      "path": "src/simple_ai_trading/impact_absorption_store.py"
+    },
+    {
+      "bytes": 169566,
+      "inspection": "size_and_line_count_only",
+      "lines": 3961,
+      "path": "src/simple_ai_trading/polymarket_replay.py"
+    }
+  ],
+  "protected_or_ignored_data_contents_read": false,
+  "semantic_review_claim": false,
+  "tracked_blob_bytes": 212086980,
+  "tracked_blob_count": 5949,
+  "tracked_extensions": {
+    ".atom": 2,
+    ".base64": 1,
+    ".cmd": 6,
+    ".cpp": 2,
+    ".csv": 38,
+    ".example": 1,
+    ".gz": 6,
+    ".hpp": 4,
+    ".html": 32,
+    ".in": 1,
+    ".jam": 1,
+    ".json": 2820,
+    ".jsonl": 280,
+    ".lock": 1,
+    ".log": 14,
+    ".md": 320,
+    ".patch": 1,
+    ".pdf": 3,
+    ".png": 20,
+    ".ps1": 15,
+    ".py": 2156,
+    ".raw": 127,
+    ".sh": 2,
+    ".sol": 2,
+    ".svg": 26,
+    ".toml": 2,
+    ".ts": 2,
+    ".tsv": 1,
+    ".txt": 34,
+    ".xml": 3,
+    ".yaml": 10,
+    ".yml": 10,
+    "<none>": 6
+  }
+}

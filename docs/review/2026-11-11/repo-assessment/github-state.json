@@ -1,0 +1,206 @@
+{
+  "analyses_sample": {
+    "complete_history": false,
+    "found_current_commit_analyses": {
+      "CodeQL|/language:c-cpp": {
+        "category": "/language:c-cpp",
+        "commit_sha": "9f885638d529d9f4c38d41c11eccc1ed8f2ba562",
+        "created_at": "2026-11-11T09:46:11Z",
+        "error": "",
+        "ref": "refs/heads/main",
+        "results_count": 0,
+        "rules_count": 95,
+        "tool": {
+          "guid": null,
+          "name": "CodeQL",
+          "version": "2.27.4"
+        },
+        "url": "https://api.github.com/repos/strmt7/simple_ai_trading/code-scanning/analyses/2142788030",
+        "warning": ""
+      },
+      "CodeQL|/language:python": {
+        "category": "/language:python",
+        "commit_sha": "9f885638d529d9f4c38d41c11eccc1ed8f2ba562",
+        "created_at": "2026-11-11T09:50:23Z",
+        "error": "",
+        "ref": "refs/heads/main",
+        "results_count": 3,
+        "rules_count": 50,
+        "tool": {
+          "guid": null,
+          "name": "CodeQL",
+          "version": "2.27.4"
+        },
+        "url": "https://api.github.com/repos/strmt7/simple_ai_trading/code-scanning/analyses/2142813386",
+        "warning": ""
+      }
+    },
+    "items": 100
+  },
+  "analysis_result_reconciliation": {
+    "analysis_specific_detail_lookup": "HTTP 404; retained, not retried",
+    "confirmed_new_vulnerability_count": null,
+    "disposition": "unreconciled",
+    "python_analysis_results": 3
+  },
+  "assessed_commit": "9f885638d529d9f4c38d41c11eccc1ed8f2ba562",
+  "branch_comparisons": {
+    "old-sdk-branch": {
+      "ahead_by": 1,
+      "behind_by": 97,
+      "captured_at_utc": "2026-11-11T10:11:16.915799+00:00",
+      "files_in_comparison": 2,
+      "html_url": "https://github.com/strmt7/simple_ai_trading/compare/main...dependabot/uv/polymarket-client-0.11.0",
+      "returncode": 0,
+      "status": "diverged",
+      "stdout_sha256": "4943a2de5adce4d6d1b17d4c53f7ad9f20c6368e6b821a8bf40f666013f2ecb5",
+      "total_commits": 1
+    },
+    "old-torch-branch": {
+      "ahead_by": 1,
+      "behind_by": 93,
+      "captured_at_utc": "2026-11-11T10:11:17.670675+00:00",
+      "files_in_comparison": 2,
+      "html_url": "https://github.com/strmt7/simple_ai_trading/compare/main...dependabot/uv/torch-2.14.0",
+      "returncode": 0,
+      "status": "diverged",
+      "stdout_sha256": "fde71feb6ef03da32438e62676397492bbab4f942a12fb1c7b9e752baa9406e3",
+      "total_commits": 1
+    }
+  },
+  "branches": [
+    {
+      "name": "dependabot/uv/polymarket-client-0.11.0",
+      "protected": false,
+      "sha": "f0013687ad54f307df44e5a827060944533ee140"
+    },
+    {
+      "name": "dependabot/uv/torch-2.14.0",
+      "protected": false,
+      "sha": "4863108d9eb23e0db8377c5920fe9b8f68bf21e4"
+    },
+    {
+      "name": "main",
+      "protected": false,
+      "sha": "9f885638d529d9f4c38d41c11eccc1ed8f2ba562"
+    }
+  ],
+  "captured_at_utc": {
+    "analyses": "2026-11-11T10:04:47.521207+00:00",
+    "branches": "2026-11-11T10:04:49.262578+00:00",
+    "check_runs": "2026-11-11T10:04:48.206070+00:00",
+    "code_scanning": "2026-11-11T10:04:46.979327+00:00",
+    "commit_status": "2026-11-11T10:04:48.751535+00:00",
+    "dependabot": "2026-11-11T10:04:46.415450+00:00",
+    "releases": "2026-11-11T10:04:49.760489+00:00",
+    "tags": "2026-11-11T10:04:50.294835+00:00"
+  },
+  "checks": [
+    {
+      "completed_at": "2026-11-11T09:44:38Z",
+      "conclusion": "success",
+      "html_url": "https://github.com/strmt7/simple_ai_trading/actions/runs/42997536405/job/130445257232",
+      "id": 130445257232,
+      "name": "Windows Python 3.11 and native UI smoke",
+      "started_at": "2026-11-11T09:43:17Z",
+      "status": "completed"
+    },
+    {
+      "completed_at": "2026-11-11T09:44:01Z",
+      "conclusion": "failure",
+      "html_url": "https://github.com/strmt7/simple_ai_trading/actions/runs/42997536405/job/130445256772",
+      "id": 130445256772,
+      "name": "Python tests and coverage",
+      "started_at": "2026-11-11T09:43:17Z",
+      "status": "completed"
+    },
+    {
+      "completed_at": "2026-11-11T09:46:31Z",
+      "conclusion": "success",
+      "html_url": "https://github.com/strmt7/simple_ai_trading/actions/runs/42997536100/job/130445256470",
+      "id": 130445256470,
+      "name": "Analyze (c-cpp)",
+      "started_at": "2026-11-11T09:43:17Z",
+      "status": "completed"
+    },
+    {
+      "completed_at": "2026-11-11T09:45:30Z",
+      "conclusion": "failure",
+      "html_url": "https://github.com/strmt7/simple_ai_trading/actions/runs/42997536265/job/130445256196",
+      "id": 130445256196,
+      "name": "Super-Linter",
+      "started_at": "2026-11-11T09:43:17Z",
+      "status": "completed"
+    },
+    {
+      "completed_at": "2026-11-11T09:43:33Z",
+      "conclusion": "failure",
+      "html_url": "https://github.com/strmt7/simple_ai_trading/actions/runs/42997536142/job/130445256145",
+      "id": 130445256145,
+      "name": "Ruff",
+      "started_at": "2026-11-11T09:43:17Z",
+      "status": "completed"
+    },
+    {
+      "completed_at": "2026-11-11T09:50:48Z",
+      "conclusion": "success",
+      "html_url": "https://github.com/strmt7/simple_ai_trading/actions/runs/42997536100/job/130445256121",
+      "id": 130445256121,
+      "name": "Analyze (python)",
+      "started_at": "2026-11-11T09:43:18Z",
+      "status": "completed"
+    },
+    {
+      "completed_at": "2026-11-11T09:43:36Z",
+      "conclusion": "failure",
+      "html_url": "https://github.com/strmt7/simple_ai_trading/actions/runs/42997536252/job/130445256100",
+      "id": 130445256100,
+      "name": "Vulture",
+      "started_at": "2026-11-11T09:43:17Z",
+      "status": "completed"
+    },
+    {
+      "completed_at": "2026-11-11T09:43:15Z",
+      "conclusion": "skipped",
+      "html_url": "https://github.com/strmt7/simple_ai_trading/runs/130445250570",
+      "id": 130445250570,
+      "name": "DeepSource: Analysis",
+      "started_at": "2026-11-11T09:43:15Z",
+      "status": "completed"
+    }
+  ],
+  "code_scanning_open_alerts": {
+    "complete": true,
+    "count": 0,
+    "zero_vulnerabilities_claimed": false
+  },
+  "commit_status_api_state": "pending",
+  "current_linux_pytest_and_coverage": "skipped after terminology failure",
+  "deepsource": {
+    "availability_reset_verified": false,
+    "check_conclusion": "skipped",
+    "scans_or_retries_dispatched": 0,
+    "status": "quota_exhausted"
+  },
+  "dependabot_open_alerts": {
+    "complete": true,
+    "count": 0,
+    "fresh_scanner_execution_proved": false
+  },
+  "open_pr_search": {
+    "error": false,
+    "query": "is:open",
+    "reported_count": 0,
+    "repository": "strmt7/simple_ai_trading",
+    "source": "Official GitHub connector search_prs normalized response observed during this assessment",
+    "state": "open",
+    "topn": 25
+  },
+  "releases": 0,
+  "secret_scanning": {
+    "alert_bodies_requested": false,
+    "count": null
+  },
+  "tags": 0,
+  "workflow_or_scanner_executions_requested": 0
+}
